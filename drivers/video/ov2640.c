@@ -10,6 +10,7 @@
 #include <zephyr/device.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/video.h>
+#include <zephyr/drivers/video-controls.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/gpio.h>
 
@@ -957,7 +958,7 @@ static int ov2640_set_ctrl(const struct device *dev,
 	case VIDEO_CID_CAMERA_CONTRAST:
 		ret |= ov2640_set_contrast(dev, (int)value);
 		break;
-	case VIDEO_CID_CAMERA_COLORBAR:
+	case VIDEO_CID_CAMERA_TEST_PATTERN:
 		ret |= ov2640_set_colorbar(dev, (int)value);
 		break;
 	case VIDEO_CID_CAMERA_QUALITY:

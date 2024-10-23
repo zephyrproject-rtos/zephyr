@@ -23,6 +23,29 @@ config HCI_NXP_SET_CAL_DATA_ANNEX100
 	  If enabled, the Host will send calibration data annex 100 to the BLE Controller during HCI
 	  init.
 
+config HCI_NXP_RX_THREAD
+	bool "Process RX buffers in a dedicated thread"
+	help
+	  Some platforms receive the HCI RX buffers in ISR context.
+	  If enabled, the HCI RX message is queued by the ISR, and the message is processed
+	  in a dedicated thread.
+
+if HCI_NXP_RX_THREAD
+
+config HCI_NXP_RX_STACK_SIZE
+	int "HCI RX stack size"
+	default 512
+
+config HCI_NXP_RX_MSG_QUEUE_SIZE
+	int "HCI RX message queue size"
+	default 4
+
+config HEAP_MEM_POOL_ADD_SIZE_BT_NXP_RX_THREAD
+	int
+	default 768
+
+endif
+
 if BT_NXP
 
 config BT_DIS_MANUF
@@ -34,7 +57,8 @@ config BT_HCI_ACL_FLOW_CONTROL
 config BT_BUF_EVT_DISCARDABLE_SIZE
 	default 84
 
-config HEAP_MEM_POOL_SIZE
+config HEAP_MEM_POOL_ADD_SIZE_BT_NXP
+	int
 	default 256
 
 config FLASH

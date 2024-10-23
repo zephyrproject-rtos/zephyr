@@ -5,7 +5,7 @@ description: Renesas SmartBond USB device controller
 
 compatible: "renesas,smartbond-usbd"
 
-include: usb-controller.yaml
+include: usb-ep.yaml
 
 properties:
   dma-min-transfer-size:

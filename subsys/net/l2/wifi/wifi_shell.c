@@ -32,15 +32,30 @@ LOG_MODULE_REGISTER(net_wifi_shell, LOG_LEVEL_INF);
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 static const char ca_cert_test[] = {
 	#include <wifi_enterprise_test_certs/ca.pem.inc>
+	'\0'
 };
 
 static const char client_cert_test[] = {
 	#include <wifi_enterprise_test_certs/client.pem.inc>
+	'\0'
 };
 
 static const char client_key_test[] = {
 	#include <wifi_enterprise_test_certs/client-key.pem.inc>
+	'\0'
 };
+
+static const char ca_cert2_test[] = {
+	#include <wifi_enterprise_test_certs/ca2.pem.inc>
+	'\0'};
+
+static const char client_cert2_test[] = {
+	#include <wifi_enterprise_test_certs/client2.pem.inc>
+	'\0'};
+
+static const char client_key2_test[] = {
+	#include <wifi_enterprise_test_certs/client-key2.pem.inc>
+	'\0'};
 #endif
 
 #define WIFI_SHELL_MODULE "wifi"
@@ -100,6 +115,12 @@ static int cmd_wifi_set_enterprise_creds(const struct shell *sh, struct net_if *
 	params.client_cert_len = ARRAY_SIZE(client_cert_test);
 	params.client_key = (uint8_t *)client_key_test;
 	params.client_key_len = ARRAY_SIZE(client_key_test);
+	params.ca_cert2 = (uint8_t *)ca_cert2_test;
+	params.ca_cert2_len = ARRAY_SIZE(ca_cert2_test);
+	params.client_cert2 = (uint8_t *)client_cert2_test;
+	params.client_cert2_len = ARRAY_SIZE(client_cert2_test);
+	params.client_key2 = (uint8_t *)client_key2_test;
+	params.client_key2_len = ARRAY_SIZE(client_key2_test);
 
 	if (net_mgmt(NET_REQUEST_WIFI_ENTERPRISE_CREDS, iface, &params, sizeof(params))) {
 		PR_WARNING("Set enterprise credentials failed\n");
@@ -125,16 +146,16 @@ static bool parse_number(const struct shell *sh, long *param, char *str,
 	}
 
 	if (*endptr != '\0') {
-		PR_ERROR("Invalid number: %s", str_tmp);
+		PR_ERROR("Invalid number: %s\n", str_tmp);
 		return false;
 	}
 
 	if ((num) < (min) || (num) > (max)) {
 		if (pname) {
-			PR_WARNING("%s value out of range: %s, (%ld-%ld)",
+			PR_WARNING("%s value out of range: %s, (%ld-%ld)\n",
 				   pname, str_tmp, min, max);
 		} else {
-			PR_WARNING("Value out of range: %s, (%ld-%ld)",
+			PR_WARNING("Value out of range: %s, (%ld-%ld)\n",
 				   str_tmp, min, max);
 		}
 		return false;
@@ -500,7 +521,26 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 		{"channel", required_argument, 0, 'c'},
 		{"timeout", required_argument, 0, 't'},
 		{"anon-id", required_argument, 0, 'a'},
-		{"key-passwd", required_argument, 0, 'K'},
+		{"key1-pwd", required_argument, 0, 'K'},
+		{"key2-pwd", required_argument, 0, 'K'},
+		{"suiteb-type", required_argument, 0, 'S'},
+		{"eap-version", required_argument, 0, 'V'},
+		{"eap-id1", required_argument, 0, 'I'},
+		{"eap-id2", required_argument, 0, 'I'},
+		{"eap-id3", required_argument, 0, 'I'},
+		{"eap-id4", required_argument, 0, 'I'},
+		{"eap-id5", required_argument, 0, 'I'},
+		{"eap-id6", required_argument, 0, 'I'},
+		{"eap-id7", required_argument, 0, 'I'},
+		{"eap-id8", required_argument, 0, 'I'},
+		{"eap-pwd1", required_argument, 0, 'P'},
+		{"eap-pwd2", required_argument, 0, 'P'},
+		{"eap-pwd3", required_argument, 0, 'P'},
+		{"eap-pwd4", required_argument, 0, 'P'},
+		{"eap-pwd5", required_argument, 0, 'P'},
+		{"eap-pwd6", required_argument, 0, 'P'},
+		{"eap-pwd7", required_argument, 0, 'P'},
+		{"eap-pwd8", required_argument, 0, 'P'},
 		{"help", no_argument, 0, 'h'},
 		{0, 0, 0, 0}};
 	char *endptr;
@@ -516,14 +556,16 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 	char bands_str[MAX_BANDS_STR_LEN] = {0};
 	size_t offset = 0;
 	long channel;
+	int key_passwd_cnt = 0;
 
 	/* Defaults */
 	params->band = WIFI_FREQ_BAND_UNKNOWN;
 	params->channel = WIFI_CHANNEL_ANY;
 	params->security = WIFI_SECURITY_TYPE_NONE;
 	params->mfp = WIFI_MFP_OPTIONAL;
+	params->eap_ver = 1;
 
-	while ((opt = getopt_long(argc, argv, "s:p:k:w:b:c:m:t:a:K:h",
+	while ((opt = getopt_long(argc, argv, "s:p:k:e:w:b:c:m:t:a:K:S:V:I:P:h",
 				  long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
@@ -584,7 +626,8 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			params->channel = channel;
 			break;
 		case 'b':
-			if (iface_mode == WIFI_MODE_INFRA) {
+			if (iface_mode == WIFI_MODE_INFRA ||
+				iface_mode == WIFI_MODE_AP) {
 				switch (atoi(state->optarg)) {
 				case 2:
 					params->band = WIFI_FREQ_BAND_2_4_GHZ;
@@ -636,10 +679,54 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			}
 			break;
 		case 'K':
-			params->key_passwd = optarg;
-			params->key_passwd_length = strlen(params->key_passwd);
-			if (params->key_passwd_length > WIFI_ENT_PSWD_MAX_LEN) {
-				PR_WARNING("key_passwd too long (max %d characters)\n",
+			if (key_passwd_cnt >= 2) {
+				PR_WARNING("too many key_passwd (max 2 key_passwd)\n");
+				return -EINVAL;
+			}
+
+			if (key_passwd_cnt == 0) {
+				params->key_passwd = optarg;
+				params->key_passwd_length = strlen(params->key_passwd);
+				if (params->key_passwd_length > WIFI_ENT_PSWD_MAX_LEN) {
+					PR_WARNING("key_passwd too long (max %d characters)\n",
+							WIFI_ENT_PSWD_MAX_LEN);
+					return -EINVAL;
+				}
+			} else if (key_passwd_cnt == 1) {
+				params->key2_passwd = optarg;
+				params->key2_passwd_length = strlen(params->key2_passwd);
+				if (params->key2_passwd_length > WIFI_ENT_PSWD_MAX_LEN) {
+					PR_WARNING("key2_passwd too long (max %d characters)\n",
+							WIFI_ENT_PSWD_MAX_LEN);
+					return -EINVAL;
+				}
+			}
+			key_passwd_cnt++;
+			break;
+		case 'S':
+			params->suiteb_type = atoi(optarg);
+			break;
+		case 'V':
+			params->eap_ver = atoi(optarg);
+			if (params->eap_ver != 0U && params->eap_ver != 1U) {
+				PR_WARNING("eap_ver error %d\n", params->eap_ver);
+				return -EINVAL;
+			}
+			break;
+		case 'I':
+			params->eap_identity = optarg;
+			params->eap_id_length = strlen(params->eap_identity);
+			if (params->eap_id_length > WIFI_ENT_IDENTITY_MAX_LEN) {
+				PR_WARNING("eap identity too long (max %d characters)\n",
+					    WIFI_ENT_IDENTITY_MAX_LEN);
+				return -EINVAL;
+			}
+			break;
+		case 'P':
+			params->eap_password = optarg;
+			params->eap_passwd_length = strlen(params->eap_password);
+			if (params->eap_passwd_length > WIFI_ENT_PSWD_MAX_LEN) {
+				PR_WARNING("eap password length too long (max %d characters)\n",
 					    WIFI_ENT_PSWD_MAX_LEN);
 				return -EINVAL;
 			}
@@ -706,7 +793,12 @@ static int cmd_wifi_connect(const struct shell *sh, size_t argc,
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 	/* Load the enterprise credentials if needed */
-	if (cnx_params.security == WIFI_SECURITY_TYPE_EAP_TLS) {
+	if (cnx_params.security == WIFI_SECURITY_TYPE_EAP_TLS ||
+	    cnx_params.security == WIFI_SECURITY_TYPE_EAP_PEAP_MSCHAPV2 ||
+	    cnx_params.security == WIFI_SECURITY_TYPE_EAP_PEAP_GTC ||
+	    cnx_params.security == WIFI_SECURITY_TYPE_EAP_TTLS_MSCHAPV2 ||
+	    cnx_params.security == WIFI_SECURITY_TYPE_EAP_PEAP_TLS ||
+	    cnx_params.security == WIFI_SECURITY_TYPE_EAP_TLS_SHA256) {
 		cmd_wifi_set_enterprise_creds(sh, iface);
 	}
 #endif
@@ -950,6 +1042,65 @@ static int cmd_wifi_status(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_wifi_ap_status(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = net_if_get_wifi_sap();
+	struct wifi_iface_status status = {0};
+	uint8_t mac_string_buf[sizeof("xx:xx:xx:xx:xx:xx")];
+
+	context.sh = sh;
+
+	if (net_mgmt(NET_REQUEST_WIFI_IFACE_STATUS, iface, &status,
+		     sizeof(struct wifi_iface_status))) {
+		PR_WARNING("Status request failed\n");
+
+		return -ENOEXEC;
+	}
+
+	switch (status.state) {
+	case WIFI_HAPD_IFACE_UNINITIALIZED:
+		PR("State: %s\n", "HAPD_IFACE_UNINITIALIZED");
+		return 0;
+	case WIFI_HAPD_IFACE_DISABLED:
+		PR("State: %s\n", "HAPD_IFACE_DISABLED");
+		return 0;
+	case WIFI_HAPD_IFACE_COUNTRY_UPDATE:
+		PR("State: %s\n", "HAPD_IFACE_DISABLED");
+		return 0;
+	case WIFI_HAPD_IFACE_ACS:
+		PR("State: %s\n", "HAPD_IFACE_DISABLED");
+		return 0;
+	case WIFI_HAPD_IFACE_HT_SCAN:
+		PR("State: %s\n", "HAPD_IFACE_DISABLED");
+		return 0;
+	case WIFI_HAPD_IFACE_DFS:
+		PR("State: %s\n", "HAPD_IFACE_DISABLED");
+		break;
+	case WIFI_HAPD_IFACE_ENABLED:
+		break;
+	default:
+		return 0;
+	}
+
+	PR("Interface Mode: %s\n", wifi_mode_txt(status.iface_mode));
+	PR("Link Mode: %s\n", wifi_link_mode_txt(status.link_mode));
+	PR("SSID: %.32s\n", status.ssid);
+	PR("BSSID: %s\n", net_sprint_ll_addr_buf(status.bssid, WIFI_MAC_ADDR_LEN, mac_string_buf,
+						 sizeof(mac_string_buf)));
+	PR("Band: %s\n", wifi_band_txt(status.band));
+	PR("Channel: %d\n", status.channel);
+	PR("Security: %s\n", wifi_security_txt(status.security));
+	PR("MFP: %s\n", wifi_mfp_txt(status.mfp));
+	if (status.iface_mode == WIFI_MODE_INFRA) {
+		PR("RSSI: %d\n", status.rssi);
+	}
+	PR("Beacon Interval: %d\n", status.beacon_interval);
+	PR("DTIM: %d\n", status.dtim_period);
+	PR("TWT: %s\n", status.twt_capable ? "Supported" : "Not supported");
+
+	return 0;
+}
+
 #if defined(CONFIG_NET_STATISTICS_WIFI) && \
 					defined(CONFIG_NET_STATISTICS_USER_API)
 static void print_wifi_stats(struct net_if *iface, struct net_stats_wifi *data,
@@ -1061,6 +1212,9 @@ static int cmd_wifi_ps(const struct shell *sh, size_t argc, char *argv[])
 		} else {
 			PR("PS timeout: disabled\n");
 		}
+
+		shell_fprintf(sh, SHELL_NORMAL, "PS exit strategy: %s\n",
+				wifi_ps_exit_strategy_txt(config.ps_params.exit_strategy));
 
 		if (config.num_twt_flows == 0) {
 			PR("No TWT flows\n");
@@ -1671,16 +1825,19 @@ static int cmd_wifi_btm_query(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_first_wifi();
 	uint8_t query_reason = 0;
+	long tmp = 0;
 
 	context.sh = sh;
 
-	if (!parse_number(sh, (long *)&query_reason, argv[1], NULL,
+	if (!parse_number(sh, &tmp, argv[1], NULL,
 			  WIFI_BTM_QUERY_REASON_UNSPECIFIED, WIFI_BTM_QUERY_REASON_LEAVING_ESS)) {
 		return -EINVAL;
 	}
 
+	query_reason = tmp;
+
 	if (net_mgmt(NET_REQUEST_WIFI_BTM_QUERY, iface, &query_reason, sizeof(query_reason))) {
-		PR_WARNING("Setting BTM query Reason failed..Reason :%d\n", query_reason);
+		PR_WARNING("Setting BTM query Reason failed. Reason : %d\n", query_reason);
 		return -ENOEXEC;
 	}
 
@@ -1824,6 +1981,40 @@ static int cmd_wifi_set_rts_threshold(const struct shell *sh, size_t argc, char 
 			shell_fprintf(sh, SHELL_NORMAL, "RTS threshold is off\n");
 		}
 	}
+
+	return 0;
+}
+
+static int cmd_wifi_ps_exit_strategy(const struct shell *sh, size_t argc,
+			    char *argv[])
+{
+	struct net_if *iface = net_if_get_first_wifi();
+	struct wifi_ps_params params = { 0 };
+
+	context.sh = sh;
+
+	if (!strncmp(argv[1], "tim", 3)) {
+		params.exit_strategy = WIFI_PS_EXIT_EVERY_TIM;
+	} else if (!strncmp(argv[1], "custom", 6)) {
+		params.exit_strategy = WIFI_PS_EXIT_CUSTOM_ALGO;
+	} else {
+		shell_fprintf(sh, SHELL_WARNING, "Invalid argument\n");
+		shell_fprintf(sh, SHELL_INFO, "Valid argument : <tim> / <custom>\n");
+		return -ENOEXEC;
+	}
+
+	params.type = WIFI_PS_PARAM_EXIT_STRATEGY;
+
+	if (net_mgmt(NET_REQUEST_WIFI_PS, iface, &params, sizeof(params))) {
+		shell_fprintf(sh, SHELL_WARNING,
+			      "Setting PS exit strategy to %s failed..Reason :%s\n",
+			      wifi_ps_exit_strategy_txt(params.exit_strategy),
+			      wifi_ps_get_config_err_code_str(params.fail_reason));
+		return -ENOEXEC;
+	}
+
+	shell_fprintf(sh, SHELL_NORMAL, "%s\n",
+		      wifi_ps_exit_strategy_txt(params.exit_strategy));
 
 	return 0;
 }
@@ -2710,43 +2901,41 @@ static int cmd_wifi_pmksa_flush(const struct shell *sh, size_t argc, char *argv[
 	return 0;
 }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(wifi_cmd_ap,
-	SHELL_CMD_ARG(disable, NULL,
-		  "Disable Access Point mode.\n",
-		  cmd_wifi_ap_disable,
-		  1, 0),
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	wifi_cmd_ap,
+	SHELL_CMD_ARG(disable, NULL, "Disable Access Point mode.\n", cmd_wifi_ap_disable, 1, 0),
 	SHELL_CMD_ARG(enable, NULL,
-		  "-s --ssid=<SSID>\n"
-		  "-c --channel=<channel number>\n"
-		  "-p --passphrase=<PSK> (valid only for secure SSIDs)\n"
-		  "-k --key-mgmt=<Security type> (valid only for secure SSIDs)\n"
-		  "0:None, 1:WPA2-PSK, 2:WPA2-PSK-256, 3:SAE, 4:WAPI, 5:EAP-TLS, 6:WEP\n"
-		  "7: WPA-PSK, 11: DPP\n"
-		  "-w --ieee-80211w=<MFP> (optional: needs security type to be specified)\n"
-		  "0:Disable, 1:Optional, 2:Required\n"
-		  "-b --band=<band> (2 -2.6GHz, 5 - 5Ghz, 6 - 6GHz)\n"
-		  "-m --bssid=<BSSID>\n"
-		  "-h --help (prints help)",
-		  cmd_wifi_ap_enable,
-		  2, 13),
-	SHELL_CMD_ARG(stations, NULL,
-		  "List stations connected to the AP",
-		  cmd_wifi_ap_stations,
-		  1, 0),
+		      "-s --ssid=<SSID>\n"
+		      "-c --channel=<channel number>\n"
+		      "-p --passphrase=<PSK> (valid only for secure SSIDs)\n"
+		      "-k --key-mgmt=<Security type> (valid only for secure SSIDs)\n"
+		      "0:None, 1:WPA2-PSK, 2:WPA2-PSK-256, 3:SAE, 4:WAPI, 5:EAP-TLS, 6:WEP\n"
+		      "7: WPA-PSK, 11: DPP\n"
+		      "-w --ieee-80211w=<MFP> (optional: needs security type to be specified)\n"
+		      "0:Disable, 1:Optional, 2:Required\n"
+		      "-b --band=<band> (2 -2.6GHz, 5 - 5Ghz, 6 - 6GHz)\n"
+		      "-m --bssid=<BSSID>\n"
+		      "-h --help (prints help)",
+		      cmd_wifi_ap_enable, 2, 13),
+	SHELL_CMD_ARG(stations, NULL, "List stations connected to the AP", cmd_wifi_ap_stations, 1,
+		      0),
 	SHELL_CMD_ARG(disconnect, NULL,
-		  "Disconnect a station from the AP\n"
-		  "<MAC address of the station>\n",
-		  cmd_wifi_ap_sta_disconnect,
-		  2, 0),
+		      "Disconnect a station from the AP\n"
+		      "<MAC address of the station>\n",
+		      cmd_wifi_ap_sta_disconnect, 2, 0),
 	SHELL_CMD_ARG(config, NULL,
-		  "Configure AP parameters.\n"
-		  "-i --max_inactivity=<time duration (in seconds)>\n"
-		  "-s --max_num_sta=<maximum number of stations>\n"
-		  "-h --help (prints help)",
-		  cmd_wifi_ap_config_params,
-		  2, 5),
-	SHELL_SUBCMD_SET_END
-);
+		      "Configure AP parameters.\n"
+		      "-i --max_inactivity=<time duration (in seconds)>\n"
+		      "-s --max_num_sta=<maximum number of stations>\n"
+		      "-h --help (prints help)",
+		      cmd_wifi_ap_config_params, 2, 5),
+	SHELL_CMD_ARG(status, NULL, "Status of Wi-Fi SAP\n", cmd_wifi_ap_status, 1, 0),
+	SHELL_SUBCMD_SET_END);
+
+SHELL_SUBCMD_ADD((wifi), ap, &wifi_cmd_ap,
+		 "Access Point mode commands.",
+		 NULL,
+		 0, 0);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(wifi_twt_ops,
 	SHELL_CMD_ARG(quick_setup, NULL, " Start a TWT flow with defaults:\n"
@@ -2772,6 +2961,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_twt_ops,
 		1, 0),
 	SHELL_SUBCMD_SET_END
 );
+
+SHELL_SUBCMD_ADD((wifi), twt, &wifi_twt_ops,
+		 "Manage TWT flows.",
+		 NULL,
+		 0, 0);
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
 SHELL_STATIC_SUBCMD_SET_CREATE(
@@ -2850,158 +3044,213 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      cmd_wifi_dpp_reconfig, 2, 0),
 	SHELL_SUBCMD_SET_END
 );
+
+SHELL_SUBCMD_ADD((wifi), dpp, &wifi_cmd_dpp,
+		 "DPP actions.",
+		 NULL,
+		 0, 0);
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
 
-SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
-	SHELL_CMD_ARG(version, NULL, "Print Wi-Fi Driver and Firmware versions\n",
-		  cmd_wifi_version,
-		  1, 0),
-	SHELL_CMD(ap, &wifi_cmd_ap, "Access Point mode commands.\n", NULL),
-	SHELL_CMD_ARG(connect, NULL,
+SHELL_SUBCMD_SET_CREATE(wifi_commands, (wifi));
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
+SHELL_SUBCMD_ADD((wifi), 11v_btm_query, &wifi_commands,
+		 "<query_reason: The reason code for a BSS transition management query>.\n",
+		 cmd_wifi_btm_query,
+		 2, 0);
+#endif
+
+SHELL_SUBCMD_ADD((wifi), channel, &wifi_commands,
+		 "wifi channel setting\n"
+		 "This command is used to set the channel when\n"
+		 "monitor or TX-Injection mode is enabled\n"
+		 "Currently 20 MHz is only supported and no BW parameter is provided\n"
+		 "[-i, --if-index <idx>] : Interface index\n"
+		 "[-c, --channel <chan>] : Set a specific channel number to the lower layer\n"
+		 "[-g, --get] : Get current set channel number from the lower layer\n"
+		 "[-h, --help] : Help\n"
+		 "Usage: Get operation example for interface index 1\n"
+		 "wifi channel -g -i1\n"
+		 "Set operation example for interface index 1 (setting channel 5)\n"
+		 "wifi -i1 -c5.\n",
+		 cmd_wifi_channel,
+		 2, 4);
+
+SHELL_SUBCMD_ADD((wifi), connect, &wifi_commands,
 		  "Connect to a Wi-Fi AP\n"
 		  "<-s --ssid \"<SSID>\">: SSID.\n"
-		  "[-c --channel]: Channel that needs to be scanned for connection. 0:any channel.\n"
+		  "[-c --channel]: Channel that needs to be scanned for connection. "
+		 "0:any channel.\n"
 		  "[-b, --band] 0: any band (2:2.4GHz, 5:5GHz, 6:6GHz]\n"
 		  "[-p, --psk]: Passphrase (valid only for secure SSIDs)\n"
 		  "[-k, --key-mgmt]: Key Management type (valid only for secure SSIDs)\n"
 		  "0:None, 1:WPA2-PSK, 2:WPA2-PSK-256, 3:SAE-HNP, 4:SAE-H2E, 5:SAE-AUTO, 6:WAPI,"
-		  " 7:EAP-TLS, 8:WEP, 9: WPA-PSK, 10: WPA-Auto-Personal, 11: DPP\n"
+		  "7:EAP-TLS, 8:WEP, 9: WPA-PSK, 10: WPA-Auto-Personal, 11: DPP\n"
+		  "12: EAP-PEAP-MSCHAPv2, 13: EAP-PEAP-GTC, 14: EAP-TTLS-MSCHAPv2, 15: EAP-PEAP-TLS\n"
 		  "[-w, --ieee-80211w]: MFP (optional: needs security type to be specified)\n"
 		  ": 0:Disable, 1:Optional, 2:Required.\n"
 		  "[-m, --bssid]: MAC address of the AP (BSSID).\n"
 		  "[-t, --timeout]: Timeout for the connection attempt (in seconds).\n"
 		  "[-a, --anon-id]: Anonymous identity for enterprise mode.\n"
-		  "[-K, --key-passwd]: Private key passwd for enterprise mode.\n"
+		  "[-K, --key1-pwd for eap phase1 or --key2-pwd for eap phase2]:\n"
+		  "Private key passwd for enterprise mode. Default no password for private key.\n"
+		  "[-S, --suiteb-type]: 1:suiteb, 2:suiteb-192. Default 0: not suiteb mode.\n"
+		  "[-V, --eap-version]: 0 or 1. Default 1: eap version 1.\n"
+		  "[-I, --eap-id1]: Client Identity. Default no eap identity.\n"
+		  "[-P, --eap-pwd1]: Client Password.\n"
+		  "Default no password for eap user.\n"
 		  "[-h, --help]: Print out the help for the connect command.\n",
 		  cmd_wifi_connect,
-		  2, 13),
-	SHELL_CMD_ARG(disconnect, NULL, "Disconnect from the Wi-Fi AP.\n",
-		  cmd_wifi_disconnect,
-		  1, 0),
-	SHELL_CMD_ARG(ps, NULL, "Configure or display Wi-Fi power save state.\n"
-		  "[on/off]\n",
-		  cmd_wifi_ps,
-		  1, 1),
-	SHELL_CMD_ARG(ps_mode,
-		      NULL,
-		      "<mode: legacy/WMM>.\n",
-		      cmd_wifi_ps_mode,
-		      2, 0),
-	SHELL_CMD_ARG(scan, NULL,
-		  "Scan for Wi-Fi APs\n"
-		    "[-t, --type <active/passive>] : Preferred mode of scan. The actual mode of scan can depend on factors such as the Wi-Fi chip implementation, regulatory domain restrictions. Default type is active\n"
-		    "[-b, --bands <Comma separated list of band values (2/5/6)>] : Bands to be scanned where 2: 2.4 GHz, 5: 5 GHz, 6: 6 GHz\n"
-		    "[-a, --dwell_time_active <val_in_ms>] : Active scan dwell time (in ms) on a channel. Range 5 ms to 1000 ms\n"
-		    "[-p, --dwell_time_passive <val_in_ms>] : Passive scan dwell time (in ms) on a channel. Range 10 ms to 1000 ms\n"
-		    "[-s, --ssid] : SSID to scan for. Can be provided multiple times\n"
-		    "[-m, --max_bss <val>] : Maximum BSSes to scan for. Range 1 - 65535\n"
-		    "[-c, --chans <Comma separated list of channel ranges>] : Channels to be scanned. The channels must be specified in the form band1:chan1,chan2_band2:chan3,..etc. band1, band2 must be valid band values and chan1, chan2, chan3 must be specified as a list of comma separated values where each value is either a single channel or a channel range specified as chan_start-chan_end. Each band channel set has to be separated by a _. For example, a valid channel specification can be 2:1,6_5:36 or 2:1,6-11,14_5:36,163-177,52. Care should be taken to ensure that configured channels don't exceed CONFIG_WIFI_MGMT_SCAN_CHAN_MAX_MANUAL\n"
-		    "[-h, --help] : Print out the help for the scan command.\n",
-		  cmd_wifi_scan,
-		  1, 8),
-	SHELL_CMD_ARG(statistics, NULL, "Wi-Fi interface statistics.\n"
-					"[reset] : Reset Wi-Fi interface statistics\n"
-					"[help] :  Print out the help for the statistics command.",
-					cmd_wifi_stats,
-					1, 1),
-	SHELL_CMD_ARG(status, NULL, "Status of the Wi-Fi interface.\n", cmd_wifi_status, 1, 0),
-	SHELL_CMD(twt, &wifi_twt_ops, "Manage TWT flows.\n", NULL),
-	SHELL_CMD_ARG(reg_domain, NULL,
-		"Set or Get Wi-Fi regulatory domain\n"
-		"[ISO/IEC 3166-1 alpha2]: Regulatory domain\n"
-		"[-f]: Force to use this regulatory hint over any other regulatory hints\n"
-		"Note: This may cause regulatory compliance issues, use it at your own risk.\n",
-		cmd_wifi_reg_domain,
-		1, 2),
-	SHELL_CMD_ARG(mode, NULL, "mode operational setting\n"
-		"This command may be used to set the Wi-Fi device into a specific mode of operation\n"
-		"[-i, --if-index <idx>] : Interface index\n"
-		"[-s, --sta] : Station mode\n"
-		"[-m, --monitor] : Monitor mode\n"
-		"[-a, --ap] : AP mode\n"
-		"[-k, --softap] : Softap mode\n"
-		"[-h, --help] : Help\n"
-		"[-g, --get] : Get current mode for a specific interface index\n"
-		"Usage: Get operation example for interface index 1\n"
-		"wifi mode -g -i1\n"
-		"Set operation example for interface index 1 - set station+promiscuous\n"
-		"wifi mode -i1 -sp.\n",
-		cmd_wifi_mode,
-		1, 9),
-	SHELL_CMD_ARG(packet_filter, NULL, "mode filter setting\n"
-		"This command is used to set packet filter setting when\n"
-		"monitor, TX-Injection and promiscuous mode is enabled\n"
-		"The different packet filter modes are control, management, data and enable all filters\n"
-		"[-i, --if-index <idx>] : Interface index\n"
-		"[-a, --all] : Enable all packet filter modes\n"
-		"[-m, --mgmt] : Enable management packets to allowed up the stack\n"
-		"[-c, --ctrl] : Enable control packets to be allowed up the stack\n"
-		"[-d, --data] : Enable Data packets to be allowed up the stack\n"
-		"[-g, --get] : Get current filter settings for a specific interface index\n"
-		"[-b, --capture-len <len>] : Capture length buffer size for each packet to be captured\n"
-		"[-h, --help] : Help\n"
-		"Usage: Get operation example for interface index 1\n"
-		"wifi packet_filter -g -i1\n"
-		"Set operation example for interface index 1 - set data+management frame filter\n"
-		"wifi packet_filter -i1 -md.\n",
-		cmd_wifi_packet_filter,
-		2, 8),
-	SHELL_CMD_ARG(channel, NULL, "wifi channel setting\n"
-		"This command is used to set the channel when\n"
-		"monitor or TX-Injection mode is enabled\n"
-		"Currently 20 MHz is only supported and no BW parameter is provided\n"
-		"[-i, --if-index <idx>] : Interface index\n"
-		"[-c, --channel <chan>] : Set a specific channel number to the lower layer\n"
-		"[-g, --get] : Get current set channel number from the lower layer\n"
-		"[-h, --help] : Help\n"
-		"Usage: Get operation example for interface index 1\n"
-		"wifi channel -g -i1\n"
-		"Set operation example for interface index 1 (setting channel 5)\n"
-		"wifi -i1 -c5.\n",
-		cmd_wifi_channel,
-		2, 4),
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
-	SHELL_CMD_ARG(11v_btm_query,
-		NULL,
-		"<query_reason: The reason code for a BSS transition management query>.\n",
-		cmd_wifi_btm_query,
-		2, 0),
-#endif
-	SHELL_CMD_ARG(wps_pbc, NULL,
-		"Start a WPS PBC connection.\n",
-		cmd_wifi_wps_pbc, 1, 0),
-	SHELL_CMD_ARG(wps_pin, NULL,
-		"Set and get WPS pin.\n"
-		"[pin] Only applicable for set.\n",
-		cmd_wifi_wps_pin, 1, 1),
-	SHELL_CMD_ARG(ps_timeout,
-		      NULL,
-		      "<val> - PS inactivity timer(in ms).\n",
-		      cmd_wifi_ps_timeout,
-		      2, 0),
-	SHELL_CMD_ARG(ps_listen_interval,
-		      NULL,
-		      "<val> - Listen interval in the range of <0-65535>.\n",
-		      cmd_wifi_listen_interval,
-		      2, 0),
-	SHELL_CMD_ARG(ps_wakeup_mode,
-		      NULL,
-		      "<wakeup_mode: DTIM/Listen Interval>.\n",
-		      cmd_wifi_ps_wakeup_mode,
-		      2, 0),
-	SHELL_CMD_ARG(rts_threshold,
-		      NULL,
-		      "<rts_threshold: rts threshold/off>.\n",
-		      cmd_wifi_set_rts_threshold,
-		      1, 1),
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
-	SHELL_CMD(dpp, &wifi_cmd_dpp, "DPP actions\n", NULL),
-#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
-	SHELL_CMD_ARG(pmksa_flush, NULL,
-		     "Flush PMKSA cache entries.\n",
-		     cmd_wifi_pmksa_flush, 1, 0),
-	SHELL_SUBCMD_SET_END
-);
+		 2, 19);
+
+SHELL_SUBCMD_ADD((wifi), disconnect, &wifi_commands,
+		 "Disconnect from the Wi-Fi AP.\n",
+		 cmd_wifi_disconnect,
+		 1, 0);
+
+SHELL_SUBCMD_ADD((wifi), mode, &wifi_commands,
+		 "mode operational setting\n"
+		 "This command may be used to set the Wi-Fi device into a specific "
+		 "mode of operation\n"
+		 "[-i, --if-index <idx>] : Interface index\n"
+		 "[-s, --sta] : Station mode\n"
+		 "[-m, --monitor] : Monitor mode\n"
+		 "[-a, --ap] : AP mode\n"
+		 "[-k, --softap] : Softap mode\n"
+		 "[-h, --help] : Help\n"
+		 "[-g, --get] : Get current mode for a specific interface index\n"
+		 "Usage: Get operation example for interface index 1\n"
+		 "wifi mode -g -i1\n"
+		 "Set operation example for interface index 1 - set station+promiscuous\n"
+		 "wifi mode -i1 -sp.\n",
+		 cmd_wifi_mode,
+		 1, 9);
+
+SHELL_SUBCMD_ADD((wifi), packet_filter, &wifi_commands,
+		 "mode filter setting\n"
+		 "This command is used to set packet filter setting when\n"
+		 "monitor, TX-Injection and promiscuous mode is enabled\n"
+		 "The different packet filter modes are control, management, "
+		 "data and enable all filters\n"
+		 "[-i, --if-index <idx>] : Interface index\n"
+		 "[-a, --all] : Enable all packet filter modes\n"
+		 "[-m, --mgmt] : Enable management packets to allowed up the stack\n"
+		 "[-c, --ctrl] : Enable control packets to be allowed up the stack\n"
+		 "[-d, --data] : Enable Data packets to be allowed up the stack\n"
+		 "[-g, --get] : Get current filter settings for a specific interface index\n"
+		 "[-b, --capture-len <len>] : Capture length buffer size for each packet "
+		 "to be captured\n"
+		 "[-h, --help] : Help\n"
+		 "Usage: Get operation example for interface index 1\n"
+		 "wifi packet_filter -g -i1\n"
+		 "Set operation example for interface index 1 - set data+management frame filter\n"
+		 "wifi packet_filter -i1 -md.\n",
+		 cmd_wifi_packet_filter,
+		 2, 8);
+
+SHELL_SUBCMD_ADD((wifi), pmksa_flush, &wifi_commands,
+		 "Flush PMKSA cache entries.\n",
+		 cmd_wifi_pmksa_flush,
+		 1, 0);
+
+SHELL_SUBCMD_ADD((wifi), ps, &wifi_commands,
+		 "Configure or display Wi-Fi power save state.\n[on/off]\n",
+		 cmd_wifi_ps,
+		 1, 1);
+
+SHELL_SUBCMD_ADD((wifi), ps_listen_interval, &wifi_commands,
+		 "<val> - Listen interval in the range of <0-65535>.\n",
+		 cmd_wifi_listen_interval,
+		 2, 0);
+
+SHELL_SUBCMD_ADD((wifi), ps_mode, &wifi_commands,
+		 "<mode: legacy/WMM>.\n",
+		 cmd_wifi_ps_mode,
+		 2, 0);
+
+SHELL_SUBCMD_ADD((wifi), ps_timeout, &wifi_commands,
+		 "<val> - PS inactivity timer(in ms).\n",
+		 cmd_wifi_ps_timeout,
+		 2, 0);
+
+SHELL_SUBCMD_ADD((wifi), ps_wakeup_mode, &wifi_commands,
+		 "<wakeup_mode: DTIM/Listen Interval>.\n",
+		 cmd_wifi_ps_wakeup_mode,
+		 2, 0);
+
+SHELL_SUBCMD_ADD((wifi), reg_domain, &wifi_commands,
+		 "Set or Get Wi-Fi regulatory domain\n"
+		 "[ISO/IEC 3166-1 alpha2]: Regulatory domain\n"
+		 "[-f]: Force to use this regulatory hint over any other regulatory hints\n"
+		 "Note: This may cause regulatory compliance issues, use it at your own risk.\n",
+		 cmd_wifi_reg_domain,
+		 1, 2);
+
+SHELL_SUBCMD_ADD((wifi), rts_threshold, &wifi_commands,
+		 "<rts_threshold: rts threshold/off>.\n",
+		 cmd_wifi_set_rts_threshold,
+		 1, 1);
+
+SHELL_SUBCMD_ADD((wifi), scan, &wifi_commands,
+		 "Scan for Wi-Fi APs\n"
+		 "[-t, --type <active/passive>] : Preferred mode of scan. "
+		 "The actual mode of scan can depend on factors such as the Wi-Fi chip "
+		 "implementation, regulatory domain restrictions. Default type is active\n"
+		 "[-b, --bands <Comma separated list of band values (2/5/6)>] : "
+		 "Bands to be scanned where 2: 2.4 GHz, 5: 5 GHz, 6: 6 GHz\n"
+		 "[-a, --dwell_time_active <val_in_ms>] : "
+		 "Active scan dwell time (in ms) on a channel. Range 5 ms to 1000 ms\n"
+		 "[-p, --dwell_time_passive <val_in_ms>] : "
+		 "Passive scan dwell time (in ms) on a channel. Range 10 ms to 1000 ms\n"
+		 "[-s, --ssid] : SSID to scan for. Can be provided multiple times\n"
+		 "[-m, --max_bss <val>] : Maximum BSSes to scan for. Range 1 - 65535\n"
+		 "[-c, --chans <Comma separated list of channel ranges>] : "
+		 "Channels to be scanned. The channels must be specified in the form "
+		 "band1:chan1,chan2_band2:chan3,..etc. band1, band2 must be valid band "
+		 "values and chan1, chan2, chan3 must be specified as a list of comma "
+		 "separated values where each value is either a single channel or a "
+		 "channel range specified as chan_start-chan_end. Each band channel "
+		 "set has to be separated by a _. For example, a valid channel "
+		 "specification can be 2:1,6_5:36 or 2:1,6-11,14_5:36,163-177,52. "
+		 "Care should be taken to ensure that configured channels don't exceed "
+		 "CONFIG_WIFI_MGMT_SCAN_CHAN_MAX_MANUAL\n"
+		 "[-h, --help] : Print out the help for the scan command.\n",
+		 cmd_wifi_scan,
+		 1, 8);
+
+SHELL_SUBCMD_ADD((wifi), statistics, &wifi_commands,
+		 "Wi-Fi interface statistics.\n"
+		 "[reset] : Reset Wi-Fi interface statistics\n"
+		 "[help] :  Print out the help for the statistics command.",
+		 cmd_wifi_stats,
+		 1, 1);
+
+SHELL_SUBCMD_ADD((wifi), status, &wifi_commands,
+		 "Status of the Wi-Fi interface.\n",
+		 cmd_wifi_status,
+		 1, 0);
+
+SHELL_SUBCMD_ADD((wifi), version, &wifi_commands,
+		 "Print Wi-Fi Driver and Firmware versions\n",
+		 cmd_wifi_version,
+		 1, 0);
+
+SHELL_SUBCMD_ADD((wifi), wps_pbc, &wifi_commands,
+		 "Start a WPS PBC connection.\n",
+		 cmd_wifi_wps_pbc,
+		 1, 0);
+
+SHELL_SUBCMD_ADD((wifi), wps_pin, &wifi_commands,
+		 "Set and get WPS pin.\n"
+		 "[pin] Only applicable for set.\n",
+		 cmd_wifi_wps_pin,
+		 1, 1);
+
+SHELL_SUBCMD_ADD((wifi), ps_exit_strategy, &wifi_commands,
+		 "<tim> : Set PS exit strategy to Every TIM\n"
+		 "<custom> : Set PS exit strategy to Custom",
+		 cmd_wifi_ps_exit_strategy,
+		 2, 0);
 
 SHELL_CMD_REGISTER(wifi, &wifi_commands, "Wi-Fi commands", NULL);
 

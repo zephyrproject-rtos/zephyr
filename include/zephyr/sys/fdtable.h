@@ -7,9 +7,10 @@
 #define ZEPHYR_INCLUDE_SYS_FDTABLE_H_
 
 #include <stdarg.h>
-#include <sys/types.h>
+#include <time.h>
+
 /* FIXME: For native_posix ssize_t, off_t. */
-#include <zephyr/fs/fs.h>
+#include <sys/types.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 
@@ -27,8 +28,27 @@
 #define ZVFS_MODE_IFLNK  0120000
 #define ZVFS_MODE_IFSOCK 0140000
 
+#define ZVFS_POLLIN   BIT(0)
+#define ZVFS_POLLPRI  BIT(1)
+#define ZVFS_POLLOUT  BIT(2)
+#define ZVFS_POLLERR  BIT(3)
+#define ZVFS_POLLHUP  BIT(4)
+#define ZVFS_POLLNVAL BIT(5)
+
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+/* FIXME: use k_off_t and k_ssize_t to avoid the POSIX->Zephyr->POSIX dependency cycle */
+#ifdef CONFIG_NEWLIB_LIBC
+#ifndef _OFF_T_DECLARED
+typedef __off_t off_t;
+#define _OFF_T_DECLARED
+#endif
+#ifndef _SSIZE_T_DECLARED
+typedef _ssize_t ssize_t;
+#define _SSIZE_T_DECLARED
+#endif
 #endif
 
 /**
@@ -192,6 +212,31 @@ static inline int zvfs_fdtable_call_ioctl(const struct fd_op_vtable *vtable, voi
 	return res;
 }
 
+struct zvfs_pollfd {
+	int fd;
+	short events;
+	short revents;
+};
+
+__syscall int zvfs_poll(struct zvfs_pollfd *fds, int nfds, int poll_timeout);
+
+struct zvfs_fd_set {
+	uint32_t bitset[(CONFIG_ZVFS_OPEN_MAX + 31) / 32];
+};
+
+/** @brief Number of file descriptors which can be added @ref zvfs_fd_set */
+#define ZVFS_FD_SETSIZE (sizeof(((struct zvfs_fd_set *)0)->bitset) * 8)
+
+void ZVFS_FD_CLR(int fd, struct zvfs_fd_set *fdset);
+int ZVFS_FD_ISSET(int fd, struct zvfs_fd_set *fdset);
+void ZVFS_FD_SET(int fd, struct zvfs_fd_set *fdset);
+void ZVFS_FD_ZERO(struct zvfs_fd_set *fdset);
+
+__syscall int zvfs_select(int nfds, struct zvfs_fd_set *ZRESTRICT readfds,
+			  struct zvfs_fd_set *ZRESTRICT writefds,
+			  struct zvfs_fd_set *ZRESTRICT errorfds,
+			  const struct timespec *ZRESTRICT timeout, const void *ZRESTRICT sigmask);
+
 /**
  * Request codes for fd_op_vtable.ioctl().
  *
@@ -220,5 +265,7 @@ enum {
 #ifdef __cplusplus
 }
 #endif
+
+#include <zephyr/syscalls/fdtable.h>
 
 #endif /* ZEPHYR_INCLUDE_SYS_FDTABLE_H_ */

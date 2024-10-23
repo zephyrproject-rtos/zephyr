@@ -31,6 +31,7 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,display = &gc9a01;
 		zephyr,bt-hci = &esp32_bt_hci;
+		zephyr,touch = &cst816s;
 	};
 
 	/* Buttons */

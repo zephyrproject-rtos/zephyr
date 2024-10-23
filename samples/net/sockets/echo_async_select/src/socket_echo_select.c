@@ -36,8 +36,8 @@
 #endif
 
 /* For Zephyr, keep max number of fd's in sync with max poll() capacity */
-#ifdef CONFIG_NET_SOCKETS_POLL_MAX
-#define NUM_FDS CONFIG_NET_SOCKETS_POLL_MAX
+#ifdef CONFIG_ZVFS_POLL_MAX
+#define NUM_FDS CONFIG_ZVFS_POLL_MAX
 #else
 #define NUM_FDS 5
 #endif

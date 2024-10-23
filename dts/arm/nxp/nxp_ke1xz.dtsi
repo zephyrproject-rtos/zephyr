@@ -419,7 +419,6 @@
 			interrupts = <16 0>;
 			clocks = <&scg KINETIS_SCG_BUS_CLK>;
 			status = "disabled";
-			#io-channel-cells = <2>;
 		};
 
 		lpspi0: spi@4002c000 {

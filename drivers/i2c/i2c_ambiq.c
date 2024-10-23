@@ -15,6 +15,11 @@
 
 #include <am_mcu_apollo.h>
 
+#ifdef CONFIG_I2C_AMBIQ_BUS_RECOVERY
+#include <zephyr/drivers/gpio.h>
+#include "i2c_bitbang.h"
+#endif /* CONFIG_I2C_AMBIQ_BUS_RECOVERY */
+
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/pinctrl.h>
 
@@ -28,6 +33,10 @@ typedef int (*ambiq_i2c_pwr_func_t)(void);
 #include "i2c-priv.h"
 
 struct i2c_ambiq_config {
+#ifdef CONFIG_I2C_AMBIQ_BUS_RECOVERY
+	struct gpio_dt_spec scl;
+	struct gpio_dt_spec sda;
+#endif /* CONFIG_I2C_AMBIQ_BUS_RECOVERY */
 	uint32_t base;
 	int size;
 	uint32_t bitrate;
@@ -47,7 +56,34 @@ struct i2c_ambiq_data {
 	void *callback_data;
 	int inst_idx;
 	uint32_t transfer_status;
+	bool pm_policy_state_on;
 };
+
+static void i2c_ambiq_pm_policy_state_lock_get(const struct device *dev)
+{
+	if (IS_ENABLED(CONFIG_PM)) {
+		struct i2c_ambiq_data *data = dev->data;
+
+		if (!data->pm_policy_state_on) {
+			data->pm_policy_state_on = true;
+			pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
+			pm_device_runtime_get(dev);
+		}
+	}
+}
+
+static void i2c_ambiq_pm_policy_state_lock_put(const struct device *dev)
+{
+	if (IS_ENABLED(CONFIG_PM)) {
+		struct i2c_ambiq_data *data = dev->data;
+
+		if (data->pm_policy_state_on) {
+			data->pm_policy_state_on = false;
+			pm_device_runtime_put(dev);
+			pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
+		}
+	}
+}
 
 #ifdef CONFIG_I2C_AMBIQ_DMA
 static __aligned(32) struct {
@@ -189,11 +225,7 @@ static int i2c_ambiq_transfer(const struct device *dev, struct i2c_msg *msgs, ui
 		return 0;
 	}
 
-	ret = pm_device_runtime_get(dev);
-
-	if (ret < 0) {
-		LOG_ERR("pm_device_runtime_get failed: %d", ret);
-	}
+	i2c_ambiq_pm_policy_state_lock_get(dev);
 
 	/* Send out messages */
 	k_sem_take(&data->bus_sem, K_FOREVER);
@@ -206,24 +238,101 @@ static int i2c_ambiq_transfer(const struct device *dev, struct i2c_msg *msgs, ui
 		}
 
 		if (ret != 0) {
-			k_sem_give(&data->bus_sem);
-			return ret;
+			LOG_ERR("i2c transfer failed: %d", ret);
+			break;
 		}
 	}
 
 	k_sem_give(&data->bus_sem);
 
-	/* Use async put to avoid useless device suspension/resumption
-	 * when doing consecutive transmission.
-	 */
-	ret = pm_device_runtime_put_async(dev, K_MSEC(2));
+	i2c_ambiq_pm_policy_state_lock_put(dev);
 
-	if (ret < 0) {
-		LOG_ERR("pm_device_runtime_put failed: %d", ret);
+	return ret;
+}
+
+#if CONFIG_I2C_AMBIQ_BUS_RECOVERY
+static void i2c_ambiq_bitbang_set_scl(void *io_context, int state)
+{
+	const struct i2c_ambiq_config *config = io_context;
+
+	gpio_pin_set_dt(&config->scl, state);
+}
+
+static void i2c_ambiq_bitbang_set_sda(void *io_context, int state)
+{
+	const struct i2c_ambiq_config *config = io_context;
+
+	gpio_pin_set_dt(&config->sda, state);
+}
+
+static int i2c_ambiq_bitbang_get_sda(void *io_context)
+{
+	const struct i2c_ambiq_config *config = io_context;
+
+	return gpio_pin_get_dt(&config->sda) == 0 ? 0 : 1;
+}
+
+static int i2c_ambiq_recover_bus(const struct device *dev)
+{
+	const struct i2c_ambiq_config *config = dev->config;
+	struct i2c_ambiq_data *data = dev->data;
+	struct i2c_bitbang bitbang_ctx;
+	struct i2c_bitbang_io bitbang_io = {
+		.set_scl = i2c_ambiq_bitbang_set_scl,
+		.set_sda = i2c_ambiq_bitbang_set_sda,
+		.get_sda = i2c_ambiq_bitbang_get_sda,
+	};
+	uint32_t bitrate_cfg;
+	int error = 0;
+
+	LOG_ERR("attempting to recover bus");
+
+	if (!gpio_is_ready_dt(&config->scl)) {
+		LOG_ERR("SCL GPIO device not ready");
+		return -EIO;
 	}
 
-	return 0;
+	if (!gpio_is_ready_dt(&config->sda)) {
+		LOG_ERR("SDA GPIO device not ready");
+		return -EIO;
+	}
+
+	k_sem_take(&data->bus_sem, K_FOREVER);
+
+	error = gpio_pin_configure_dt(&config->scl, GPIO_OUTPUT_HIGH);
+	if (error != 0) {
+		LOG_ERR("failed to configure SCL GPIO (err %d)", error);
+		goto restore;
+	}
+
+	error = gpio_pin_configure_dt(&config->sda, GPIO_OUTPUT_HIGH);
+	if (error != 0) {
+		LOG_ERR("failed to configure SDA GPIO (err %d)", error);
+		goto restore;
+	}
+
+	i2c_bitbang_init(&bitbang_ctx, &bitbang_io, (void *)config);
+
+	bitrate_cfg = i2c_map_dt_bitrate(config->bitrate) | I2C_MODE_CONTROLLER;
+	error = i2c_bitbang_configure(&bitbang_ctx, bitrate_cfg);
+	if (error != 0) {
+		LOG_ERR("failed to configure I2C bitbang (err %d)", error);
+		goto restore;
+	}
+
+	error = i2c_bitbang_recover_bus(&bitbang_ctx);
+	if (error != 0) {
+		LOG_ERR("failed to recover bus (err %d)", error);
+	}
+
+restore:
+	(void)pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+
+	k_sem_give(&data->bus_sem);
+
+	return error;
 }
+#endif /* CONFIG_I2C_AMBIQ_BUS_RECOVERY */
 
 static int i2c_ambiq_init(const struct device *dev)
 {
@@ -275,6 +384,9 @@ end:
 static const struct i2c_driver_api i2c_ambiq_driver_api = {
 	.configure = i2c_ambiq_configure,
 	.transfer = i2c_ambiq_transfer,
+#if CONFIG_I2C_AMBIQ_BUS_RECOVERY
+	.recover_bus = i2c_ambiq_recover_bus,
+#endif /* CONFIG_I2C_AMBIQ_BUS_RECOVERY */
 #ifdef CONFIG_I2C_RTIO
 	.iodev_submit = i2c_iodev_submit_fallback,
 #endif
@@ -335,7 +447,10 @@ static int i2c_ambiq_pm_action(const struct device *dev, enum pm_device_action a
 		.bitrate = DT_INST_PROP(n, clock_frequency),                                       \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 		.irq_config_func = i2c_irq_config_func_##n,                                        \
-		.pwr_func = pwr_on_ambiq_i2c_##n};                                                 \
+		.pwr_func = pwr_on_ambiq_i2c_##n,                                                  \
+		IF_ENABLED(CONFIG_I2C_AMBIQ_BUS_RECOVERY,			\
+		(.scl = GPIO_DT_SPEC_INST_GET_OR(n, scl_gpios, {0}),\
+		 .sda = GPIO_DT_SPEC_INST_GET_OR(n, sda_gpios, {0}),)) };      \
 	PM_DEVICE_DT_INST_DEFINE(n, i2c_ambiq_pm_action);                                          \
 	I2C_DEVICE_DT_INST_DEFINE(n, i2c_ambiq_init, PM_DEVICE_DT_INST_GET(n), &i2c_ambiq_data##n, \
 				  &i2c_ambiq_config##n, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,     \

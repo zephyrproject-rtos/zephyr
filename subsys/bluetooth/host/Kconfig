@@ -129,6 +129,35 @@ config BT_DRIVER_RX_HIGH_PRIO
 	int
 	default 6
 
+config BT_CONN_TX_NOTIFY_WQ
+	bool "Use a separate workqueue for connection TX notify processing [EXPERIMENTAL]"
+	depends on BT_CONN_TX
+	select EXPERIMENTAL
+	help
+	  Use a separate workqueue instead of system workqueue for
+	  bt_conn_tx_notify processing. The option can be used to make Bluetooth
+	  stack more independent from the system workqueue.
+
+if BT_CONN_TX_NOTIFY_WQ
+
+config BT_CONN_TX_NOTIFY_WQ_STACK_SIZE
+	int "Stack size of workqueue for connection TX notify processing"
+	default SYSTEM_WORKQUEUE_STACK_SIZE
+
+config BT_CONN_TX_NOTIFY_WQ_PRIO
+	int "Cooperative priority of workqueue for connection TX notify processing"
+	default 8
+
+config BT_CONN_TX_NOTIFY_WQ_INIT_PRIORITY
+	int "Init priority of workqueue for connection TX notify processing"
+	default 50
+	help
+	  The connection TX notify processing workqueue is initialized during
+	  system initialization (at POST_KERNEL level). The Kconfig option
+	  controls the initialization priority within level.
+
+endif # BT_CONN_TX_NOTIFY_WQ
+
 menu "Bluetooth Host"
 
 if BT_HCI_HOST
@@ -313,6 +342,17 @@ config BT_CONN_PARAM_ANY
 	  However, the Host will still use numerical comparisons between the
 	  min and max connection intervals in order to verify whether the
 	  desired parameters have been established in the connection.
+
+config BT_CONN_CHECK_NULL_BEFORE_CREATE
+	bool "Check if *conn is NULL when creating a connection"
+	help
+	  Enable this option to ensure that bt_conn_le_create and
+	  bt_conn_le_create_synced return an error if *conn is not initialized
+	  to NULL. This option is recommended to use to catch programming
+	  errors where the application reuses the connection pointer of an
+	  active connection object without dereferencing it. Without
+	  dereferencing, the connection object stays alive which can lead to an
+	  unpredictable behavior.
 
 config BT_USER_PHY_UPDATE
 	bool "User control of PHY Update Procedure"
@@ -841,10 +881,6 @@ config BT_DEVICE_APPEARANCE_DYNAMIC
 	help
 	  Enables use of bt_set_appearance.
 	  If CONFIG_BT_SETTINGS is set, the appearance is persistently stored.
-
-config BT_DEVICE_APPEARANCE_GATT_WRITABLE
-	bool "Allow authenticated peers to set GAP Appearance"
-	depends on BT_DEVICE_APPEARANCE_DYNAMIC
 
 config BT_DEVICE_APPEARANCE
 	int "Bluetooth device appearance"

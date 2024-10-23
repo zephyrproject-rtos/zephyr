@@ -9,3 +9,4 @@ tests:
     tags: wifi net
     platform_exclude:
       - rd_rw612_bga/rw612/ethernet # Requires binary blobs to build
+      - frdm_rw612 # Requires binary blobs to build

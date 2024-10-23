@@ -19,6 +19,9 @@ config ZBUS_CHANNEL_NAME
 config ZBUS_OBSERVER_NAME
 	bool "Observer name field"
 
+config ZBUS_CHANNEL_PUBLISH_STATS
+	bool "Channel publishing statistics (Timestamp and count)"
+
 config ZBUS_MSG_SUBSCRIBER
 	select NET_BUF
 	bool "Message subscribers will receive all messages in sequence."
@@ -70,6 +73,13 @@ config ZBUS_ASSERT_MOCK
 	  This configuration enables the developer to change the _ZBUS_ASSERT behavior. When this configuration is
 	  enabled, _ZBUS_ASSERT returns -EFAULT instead of assert. It makes it more straightforward to test invalid
 	  parameters.
+
+
+config HEAP_MEM_POOL_ADD_SIZE_ZBUS
+	int
+	default 2048 if ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC && !ZBUS_RUNTIME_OBSERVERS
+	default 1024 if !ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC && ZBUS_RUNTIME_OBSERVERS
+	default 3072 if ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC && ZBUS_RUNTIME_OBSERVERS
 
 
 module = ZBUS

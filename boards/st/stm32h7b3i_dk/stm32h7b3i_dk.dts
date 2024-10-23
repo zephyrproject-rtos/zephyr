@@ -22,6 +22,7 @@
 		zephyr,flash = &flash0;
 		zephyr,display = &ltdc;
 		zephyr,canbus = &fdcan1;
+		zephyr,touch = &ft5336;
 	};
 
 	leds {

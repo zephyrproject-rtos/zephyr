@@ -8,6 +8,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/display.h>
 #include <zephyr/drivers/video.h>
+#include <zephyr/drivers/video-controls.h>
 #include <lvgl.h>
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
@@ -87,6 +88,10 @@ int main(void)
 		(char)(fmt.pixelformat >> 16), (char)(fmt.pixelformat >> 24), fmt.width, fmt.height,
 		fmt.pitch);
 
+	if (caps.min_line_count != LINE_COUNT_HEIGHT) {
+		LOG_ERR("Partial framebuffers not supported by this sample");
+		return 0;
+	}
 	/* Size to allocate for each buffer */
 	bsize = fmt.pitch * fmt.height;
 

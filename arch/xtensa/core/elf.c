@@ -71,7 +71,7 @@ void arch_elf_relocate_local(struct llext_loader *ldr, struct llext *ext,
 			return;
 
 		uintptr_t link_addr = (uintptr_t)llext_loaded_sect_ptr(ldr, ext, rsym.st_shndx) +
-			rsym.st_value;
+			rsym.st_value + rel->r_addend;
 
 		ssize_t value = (link_addr - (((uintptr_t)got_entry + 3) & ~3)) >> 2;
 

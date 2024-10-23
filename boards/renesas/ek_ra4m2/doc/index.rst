@@ -61,7 +61,7 @@ available internal to the RA MCU
 **Special Feature Access**
 - 32 MB (256 Mb) External Quad-SPI Flash
 
-.. figure:: ek-ra4m2-board.webp
+.. figure:: ek_ra4m2.webp
 	:align: center
 	:alt: RA4M2 Evaluation Kit
 

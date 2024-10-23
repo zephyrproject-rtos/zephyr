@@ -6,6 +6,7 @@ config I2S_MCUX_FLEXCOMM
 	default y
 	depends on DT_HAS_NXP_LPC_I2S_ENABLED
 	select DMA
+	select PINCTRL
 	help
 	  Enable support for mcux flexcomm i2s driver.
 

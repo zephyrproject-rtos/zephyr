@@ -482,11 +482,13 @@
 #define MBEDTLS_PSA_P256M_DRIVER_ENABLED
 #endif
 
-#if defined(CONFIG_ARCH_POSIX)
+#if defined(CONFIG_ARCH_POSIX) && !defined(CONFIG_PICOLIBC)
 #define MBEDTLS_PSA_KEY_SLOT_COUNT 64 /* for BLE Mesh tests */
+#define MBEDTLS_PSA_ITS_FILE_C
+#define MBEDTLS_FS_IO
 #endif
 
-#if defined(CONFIG_SECURE_STORAGE)
+#if defined(CONFIG_SECURE_STORAGE) || (defined(CONFIG_ARCH_POSIX) && !defined(CONFIG_PICOLIBC))
 #define MBEDTLS_PSA_CRYPTO_STORAGE_C
 #endif
 

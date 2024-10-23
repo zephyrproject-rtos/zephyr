@@ -1,5 +1,6 @@
 board:
   name: stm32f411e_disco
+  full_name: STM32F411E Discovery
   vendor: st
   revision:
     format: letter

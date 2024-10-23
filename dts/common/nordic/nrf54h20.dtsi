@@ -7,10 +7,12 @@
 #include <mem.h>
 #include <nordic/nrf_common.dtsi>
 
+#include <zephyr/dt-bindings/adc/nrf-saadc.h>
 #include <zephyr/dt-bindings/misc/nordic-nrf-ficr-nrf54h20.h>
 #include <zephyr/dt-bindings/misc/nordic-domain-id-nrf54h20.h>
 #include <zephyr/dt-bindings/misc/nordic-owner-id-nrf54h20.h>
 #include <zephyr/dt-bindings/misc/nordic-tddconf.h>
+#include <zephyr/dt-bindings/reserved-memory/nordic-owned-memory.h>
 
 /delete-node/ &sw_pwm;
 
@@ -824,11 +826,14 @@
 			};
 
 			comp: comparator@983000 {
+				/*
+				 * Use compatible "nordic,nrf-comp" to configure as COMP
+				 * Use compatible "nordic,nrf-lpcomp" to configure as LPCOMP
+				 */
 				compatible = "nordic,nrf-comp";
 				reg = <0x983000 0x1000>;
 				status = "disabled";
 				interrupts = <387 NRF_DEFAULT_IRQ_PRIORITY>;
-				#io-channel-cells = <1>;
 			};
 
 			temp: temperature-sensor@984000 {

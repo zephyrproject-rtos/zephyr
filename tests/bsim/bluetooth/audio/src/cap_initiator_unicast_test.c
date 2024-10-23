@@ -349,7 +349,7 @@ static void endpoint_cb(struct bt_conn *conn, enum bt_audio_dir dir, struct bt_b
 	}
 }
 
-static const struct bt_bap_unicast_client_cb unicast_client_cbs = {
+static struct bt_bap_unicast_client_cb unicast_client_cbs = {
 	.discover = discover_cb,
 	.pac_record = pac_record_cb,
 	.endpoint = endpoint_cb,

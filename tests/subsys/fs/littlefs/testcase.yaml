@@ -15,7 +15,7 @@ common:
 tests:
   filesystem.littlefs.default:
     timeout: 60
-    platform_allow: nrf54l15dk/nrf54l15/cpuapp nrf54l15pdk/nrf54l15/cpuapp
+    platform_allow: nrf54l15dk/nrf54l15/cpuapp
   filesystem.littlefs.custom:
     timeout: 180
     extra_configs:

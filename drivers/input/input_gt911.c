@@ -272,19 +272,19 @@ static int gt911_init(const struct device *dev)
 		}
 	}
 
-	if (config->alt_addr == 0x0) {
-		/*
-		 * We need to configure the int-pin to 0, in order to enter the
-		 * AddressMode0. Keeping the INT pin low during the reset sequence
-		 * should result in the device selecting an I2C address of 0x5D.
-		 * Note we skip this step if an alternate I2C address is set,
-		 * and fall through to probing for the actual address.
-		 */
-		r = gpio_pin_configure_dt(&config->int_gpio, GPIO_OUTPUT_INACTIVE);
-		if (r < 0) {
-			LOG_ERR("Could not configure int GPIO pin");
-			return r;
-		}
+	/*
+	 * We need to configure the int-pin to 0, in order to enter the
+	 * AddressMode0. Keeping the INT pin low during the reset sequence
+	 * should result in the device selecting an I2C address of 0x5D.
+	 * Note that if an alternate I2C address is set, we will probe
+	 * for the alternate address if 0x5D does not work. This is useful
+	 * for boards that do not route the INT pin, or only permit it
+	 * to be used as an input
+	 */
+	r = gpio_pin_configure_dt(&config->int_gpio, GPIO_OUTPUT_INACTIVE);
+	if (r < 0) {
+		LOG_ERR("Could not configure int GPIO pin");
+		return r;
 	}
 	/* Delay at least 10 ms after power on before we configure gt911 */
 	k_sleep(K_MSEC(20));

@@ -409,9 +409,7 @@ int16_t log_msg_get_source_id(struct log_msg *msg)
 	void *source = (void *)log_msg_get_source(msg);
 
 	if (source != NULL) {
-		return IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)
-					? log_dynamic_source_id(source)
-					: log_const_source_id(source);
+		return log_source_id(source);
 	}
 
 	return -1;

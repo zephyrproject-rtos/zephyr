@@ -1,5 +1,6 @@
 board:
   name: cy8cproto_063_ble
+  full_name: CY8CPROTO-063-BLE
   vendor: infineon
   socs:
   - name: cyble_416045_02

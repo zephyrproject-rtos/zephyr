@@ -26,7 +26,9 @@ LOG_MODULE_REGISTER(qdec_nrfx, CONFIG_SENSOR_LOG_LEVEL);
 
 
 struct qdec_nrfx_data {
+	int32_t fetched_acc;
 	int32_t acc;
+	bool overflow;
 	sensor_trigger_handler_t data_ready_handler;
 	const struct sensor_trigger *data_ready_trigger;
 };
@@ -49,6 +51,8 @@ static void accumulate(struct qdec_nrfx_data *data, int32_t acc)
 
 	if (!overflow) {
 		data->acc += acc;
+	} else {
+		data->overflow = true;
 	}
 
 	irq_unlock(key);
@@ -70,6 +74,18 @@ static int qdec_nrfx_sample_fetch(const struct device *dev,
 
 	accumulate(data, acc);
 
+	unsigned int key = irq_lock();
+
+	data->fetched_acc = data->acc;
+	data->acc = 0;
+
+	irq_unlock(key);
+
+	if (data->overflow) {
+		data->overflow = false;
+		return -EOVERFLOW;
+	}
+
 	return 0;
 }
 
@@ -87,8 +103,7 @@ static int qdec_nrfx_channel_get(const struct device *dev,
 	}
 
 	key = irq_lock();
-	acc = data->acc;
-	data->acc = 0;
+	acc = data->fetched_acc;
 	irq_unlock(key);
 
 	val->val1 = (acc * FULL_ANGLE) / config->steps;
@@ -148,6 +163,10 @@ static void qdec_nrfx_event_handler(nrfx_qdec_event_t event, void *p_context)
 		}
 		break;
 
+	case NRF_QDEC_EVENT_ACCOF:
+		dev_data->overflow = true;
+		break;
+
 	default:
 		LOG_ERR("unhandled event (0x%x)", event.type);
 		break;
@@ -173,81 +192,64 @@ static const struct sensor_driver_api qdec_nrfx_driver_api = {
 	.trigger_set  = qdec_nrfx_trigger_set,
 };
 
-#ifdef CONFIG_PM_DEVICE
-static int qdec_nrfx_pm_action(const struct device *dev,
-			       enum pm_device_action action)
+static void qdec_pm_suspend(const struct device *dev)
 {
 	const struct qdec_nrfx_config *config = dev->config;
-	int ret = 0;
 
+	nrfx_qdec_disable(&config->qdec);
+	qdec_nrfx_gpio_ctrl(dev, false);
+
+	(void)pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
+}
+
+static void qdec_pm_resume(const struct device *dev)
+{
+	const struct qdec_nrfx_config *config = dev->config;
+
+	(void)pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	qdec_nrfx_gpio_ctrl(dev, true);
+	nrfx_qdec_enable(&config->qdec);
+}
+
+static int qdec_nrfx_pm_action(const struct device *dev, enum pm_device_action action)
+{
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-		ret = pinctrl_apply_state(config->pcfg,
-					  PINCTRL_STATE_DEFAULT);
-		if (ret < 0) {
-			return ret;
-		}
-		qdec_nrfx_gpio_ctrl(dev, true);
-		nrfx_qdec_enable(&config->qdec);
-		break;
-
-	case PM_DEVICE_ACTION_TURN_OFF:
-		/* device must be uninitialized */
-		nrfx_qdec_uninit(&config->qdec);
-		ret = pinctrl_apply_state(config->pcfg,
-					  PINCTRL_STATE_SLEEP);
-		if (ret < 0) {
-			return ret;
-		}
+		qdec_pm_resume(dev);
 		break;
 
 	case PM_DEVICE_ACTION_SUSPEND:
-		/* device must be suspended */
-		nrfx_qdec_disable(&config->qdec);
-		qdec_nrfx_gpio_ctrl(dev, false);
-		ret = pinctrl_apply_state(config->pcfg,
-					  PINCTRL_STATE_SLEEP);
-		if (ret < 0) {
-			return ret;
+		if (IS_ENABLED(CONFIG_PM_DEVICE)) {
+			qdec_pm_suspend(dev);
 		}
 		break;
 	default:
 		return -ENOTSUP;
+		break;
 	}
 
-	return ret;
+	return 0;
 }
-#endif /* CONFIG_PM_DEVICE */
 
 static int qdec_nrfx_init(const struct device *dev)
 {
-	const struct qdec_nrfx_config *dev_config = dev->config;
+	const struct qdec_nrfx_config *config = dev->config;
+	nrfx_err_t nerr;
 
-	dev_config->irq_connect();
+	config->irq_connect();
 
-	int err = pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_DEFAULT);
-
-	if (err < 0) {
-		return err;
+	nerr = nrfx_qdec_init(&config->qdec, &config->config, qdec_nrfx_event_handler, (void *)dev);
+	if (nerr != NRFX_SUCCESS) {
+		return (nerr == NRFX_ERROR_INVALID_STATE) ? -EBUSY : -EFAULT;
 	}
 
-	nrfx_err_t nerr = nrfx_qdec_init(&dev_config->qdec,
-					 &dev_config->config,
-					 qdec_nrfx_event_handler,
-					 (void *)dev);
-
-	if (nerr == NRFX_ERROR_INVALID_STATE) {
-		LOG_ERR("qdec already in use");
-		return -EBUSY;
-	} else if (nerr != NRFX_SUCCESS) {
-		LOG_ERR("failed to initialize qdec");
-		return -EFAULT;
+	/* End up in suspend state. */
+	qdec_nrfx_gpio_ctrl(dev, false);
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		(void)pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
 	}
 
-	qdec_nrfx_gpio_ctrl(dev, true);
-	nrfx_qdec_enable(&dev_config->qdec);
-
-	return 0;
+	return pm_device_driver_init(dev, qdec_nrfx_pm_action);
 }
 
 #define QDEC(idx)			DT_NODELABEL(qdec##idx)
@@ -282,7 +284,7 @@ static int qdec_nrfx_init(const struct device *dev)
 		.enable_pin = DT_PROP_OR(QDEC(idx), enable_pin, NRF_QDEC_PIN_NOT_CONNECTED), \
 		.steps = QDEC_PROP(idx, steps),						     \
 	};										     \
-	PM_DEVICE_DT_DEFINE(QDEC(idx), qdec_nrfx_pm_action);				     \
+	PM_DEVICE_DT_DEFINE(QDEC(idx), qdec_nrfx_pm_action, PM_DEVICE_ISR_SAFE);	     \
 	SENSOR_DEVICE_DT_DEFINE(QDEC(idx),						     \
 				qdec_nrfx_init,						     \
 				PM_DEVICE_DT_GET(QDEC(idx)),				     \

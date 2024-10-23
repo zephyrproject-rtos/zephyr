@@ -128,6 +128,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 	uint8_t data_len;
 	uint8_t hdr_len;
 	uint32_t pdu_us;
+	uint8_t phy_aux;
 	uint8_t *ptr;
 	uint8_t phy;
 
@@ -360,13 +361,12 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 
 	h = (void *)p->ext_hdr_adv_data;
 
-	/* Regard PDU as invalid if a RFU field is set, we do not know the
-	 * size of this future field, hence will cause incorrect calculation of
-	 * offset to ACAD field.
+	/* Note: The extended header contains a RFU flag that could potentially cause incorrect
+	 * calculation of offset to ACAD field if it gets used to add a new header field; However,
+	 * from discussion in BT errata ES-8080 it seems clear that BT SIG is aware that the RFU
+	 * bit can not be used to add a new field since existing implementations will not be able
+	 * to calculate the start of ACAD in that case
 	 */
-	if (h->rfu) {
-		goto ull_scan_aux_rx_flush;
-	}
 
 	ptr = h->data;
 
@@ -528,6 +528,53 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 		goto ull_scan_aux_rx_flush;
 	}
 
+	/* CA field contains the clock accuracy of the advertiser;
+	 * 0 - 51 ppm to 500 ppm
+	 * 1 - 0 ppm to 50 ppm
+	 */
+	if (aux_ptr->ca) {
+		window_widening_us = SCA_DRIFT_50_PPM_US(aux_offset_us);
+	} else {
+		window_widening_us = SCA_DRIFT_500_PPM_US(aux_offset_us);
+	}
+
+	phy_aux = BIT(PDU_ADV_AUX_PTR_PHY_GET(aux_ptr));
+	ready_delay_us = lll_radio_rx_ready_delay_get(phy_aux, PHY_FLAGS_S8);
+
+	/* Calculate the aux offset from start of the scan window */
+	aux_offset_us += ftr->radio_end_us;
+	aux_offset_us -= pdu_us;
+	aux_offset_us -= EVENT_TICKER_RES_MARGIN_US;
+	aux_offset_us -= EVENT_JITTER_US;
+	aux_offset_us -= ready_delay_us;
+	aux_offset_us -= window_widening_us;
+
+	ticks_aux_offset = HAL_TICKER_US_TO_TICKS(aux_offset_us);
+
+	/* Check if too late to ULL schedule an auxiliary PDU reception */
+	if (!ftr->aux_lll_sched) {
+		uint32_t ticks_at_expire;
+		uint32_t overhead_us;
+		uint32_t ticks_now;
+		uint32_t diff;
+
+		/* CPU execution overhead to setup the radio for reception plus the
+		 * minimum prepare tick offset. And allow one additional event in
+		 * between as overhead (say, an advertising event in between got closed
+		 * when reception for auxiliary PDU is being setup).
+		 */
+		overhead_us = (EVENT_OVERHEAD_END_US + EVENT_OVERHEAD_START_US +
+			       HAL_TICKER_TICKS_TO_US(HAL_TICKER_CNTR_CMP_OFFSET_MIN)) << 1;
+
+		ticks_now = ticker_ticks_now_get();
+		ticks_at_expire = ftr->ticks_anchor + ticks_aux_offset -
+				  HAL_TICKER_US_TO_TICKS(overhead_us);
+		diff = ticker_ticks_diff_get(ticks_now, ticks_at_expire);
+		if ((diff & BIT(HAL_TICKER_CNTR_MSBIT)) == 0U) {
+			goto ull_scan_aux_rx_flush;
+		}
+	}
+
 	if (!aux) {
 		aux = aux_acquire();
 		if (!aux) {
@@ -637,7 +684,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 	/* Initialize the channel index and PHY for the Auxiliary PDU reception.
 	 */
 	lll_aux->chan = aux_ptr->chan_idx;
-	lll_aux->phy = BIT(PDU_ADV_AUX_PTR_PHY_GET(aux_ptr));
+	lll_aux->phy = phy_aux;
 
 	/* See if this was already scheduled from LLL. If so, store aux context
 	 * in global scan struct so we can pick it when scanned node is received
@@ -718,31 +765,6 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 		aux->rx_head = rx;
 	}
 
-	/* CA field contains the clock accuracy of the advertiser;
-	 * 0 - 51 ppm to 500 ppm
-	 * 1 - 0 ppm to 50 ppm
-	 */
-	if (aux_ptr->ca) {
-		window_widening_us = SCA_DRIFT_50_PPM_US(aux_offset_us);
-	} else {
-		window_widening_us = SCA_DRIFT_500_PPM_US(aux_offset_us);
-	}
-
-	lll_aux->window_size_us = window_size_us;
-	lll_aux->window_size_us += ((EVENT_TICKER_RES_MARGIN_US + EVENT_JITTER_US +
-				     window_widening_us) << 1);
-
-	ready_delay_us = lll_radio_rx_ready_delay_get(lll_aux->phy,
-						      PHY_FLAGS_S8);
-
-	/* Calculate the aux offset from start of the scan window */
-	aux_offset_us += ftr->radio_end_us;
-	aux_offset_us -= pdu_us;
-	aux_offset_us -= EVENT_TICKER_RES_MARGIN_US;
-	aux_offset_us -= EVENT_JITTER_US;
-	aux_offset_us -= ready_delay_us;
-	aux_offset_us -= window_widening_us;
-
 	/* TODO: active_to_start feature port */
 	aux->ull.ticks_active_to_start = 0;
 	aux->ull.ticks_prepare_to_start =
@@ -763,7 +785,10 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 	}
 	ticks_slot_offset += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
 
-	ticks_aux_offset = HAL_TICKER_US_TO_TICKS(aux_offset_us);
+	/* Initialize the window size for the Auxiliary PDU reception. */
+	lll_aux->window_size_us = window_size_us;
+	lll_aux->window_size_us += ((EVENT_TICKER_RES_MARGIN_US + EVENT_JITTER_US +
+				     window_widening_us) << 1);
 
 #if (CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
 	/* disable ticker job, in order to chain yield and start to reduce

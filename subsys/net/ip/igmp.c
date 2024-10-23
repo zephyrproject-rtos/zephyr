@@ -22,18 +22,15 @@ LOG_MODULE_DECLARE(net_ipv4, CONFIG_NET_IPV4_LOG_LEVEL);
 #include "connection.h"
 #include "ipv4.h"
 #include "net_stats.h"
+#include "igmp.h"
 
 /* Timeout for various buffer allocations in this file. */
 #define PKT_WAIT_TIME K_MSEC(50)
 
 #define IPV4_OPT_HDR_ROUTER_ALERT_LEN 4
 
-#define IGMPV3_MODE_IS_INCLUDE        0x01
-#define IGMPV3_MODE_IS_EXCLUDE        0x02
-#define IGMPV3_CHANGE_TO_INCLUDE_MODE 0x03
-#define IGMPV3_CHANGE_TO_EXCLUDE_MODE 0x04
-#define IGMPV3_ALLOW_NEW_SOURCES      0x05
-#define IGMPV3_BLOCK_OLD_SOURCES      0x06
+#define IGMPV2_PAYLOAD_MIN_LEN 8
+#define IGMPV3_PAYLOAD_MIN_LEN 12
 
 static const struct in_addr all_systems = { { { 224, 0, 0, 1 } } };
 #if defined(CONFIG_NET_IPV4_IGMPV3)
@@ -416,28 +413,29 @@ drop:
 
 enum net_verdict net_ipv4_igmp_input(struct net_pkt *pkt, struct net_ipv4_hdr *ip_hdr)
 {
-#if defined(CONFIG_NET_IPV4_IGMPV3)
-	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(igmpv3_access, struct net_ipv4_igmp_v3_query);
-	struct net_ipv4_igmp_v3_query *igmpv3_hdr;
-#endif
-	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(igmpv2_access, struct net_ipv4_igmp_v2_query);
-	struct net_ipv4_igmp_v2_query *igmpv2_hdr;
-	enum igmp_version version;
 	int ret;
-	int igmp_buf_len = pkt->buffer->len - net_pkt_ip_hdr_len(pkt);
+	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(igmpv2_access, struct net_ipv4_igmp_v2_query);
+
+	struct net_ipv4_igmp_v2_query *igmpv2_hdr;
+	int igmp_buf_len =
+		pkt->buffer->len - (net_pkt_ip_hdr_len(pkt) + net_pkt_ipv4_opts_len(pkt));
+#if defined(CONFIG_NET_IPV4_IGMPV3)
+	struct net_ipv4_igmp_v3_query *igmpv3_hdr;
+	enum igmp_version version;
+
+	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(igmpv3_access, struct net_ipv4_igmp_v3_query);
 
 	/* Detect IGMP type (RFC 3376 ch 7.1) */
-	if (igmp_buf_len == 8) {
+	if (igmp_buf_len == IGMPV2_PAYLOAD_MIN_LEN) {
 		/* IGMPv1/2 detected */
 		version = IGMPV2;
-	} else if (igmp_buf_len >= 12) {
+	} else if (igmp_buf_len >= IGMPV3_PAYLOAD_MIN_LEN) {
 		/* IGMPv3 detected */
 		version = IGMPV3;
-#if !defined(CONFIG_NET_IPV4_IGMPV3)
-		NET_DBG("DROP: %sv3 msg received but %s support is disabled", "IGMP", "IGMP");
-		return NET_DROP;
-#endif
 	} else {
+#else
+	if (igmp_buf_len < IGMPV2_PAYLOAD_MIN_LEN) {
+#endif
 		NET_DBG("DROP: unsupported payload length");
 		return NET_DROP;
 	}

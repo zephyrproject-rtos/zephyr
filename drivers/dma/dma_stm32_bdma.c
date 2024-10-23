@@ -758,8 +758,8 @@ BDMA_STM32_EXPORT_API int bdma_stm32_stop(const struct device *dev, uint32_t id)
 		return -EINVAL;
 	}
 
-	if (stream->hal_override) {
-		stream->busy = false;
+	if (channel->hal_override) {
+		channel->busy = false;
 		return 0;
 	}
 

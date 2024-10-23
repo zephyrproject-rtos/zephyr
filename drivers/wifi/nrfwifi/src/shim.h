@@ -19,7 +19,6 @@
 /**
  * struct zep_shim_bus_qspi_priv - Structure to hold context information for the Linux OS
  *                        shim.
- * @opriv: Pointer to OSAL context.
  * @pcie_callbk_data: Callback data to be passed to the PCIe callback functions.
  * @pcie_prb_callbk: The callback function to be called when a PCIe device
  *                   has been probed.

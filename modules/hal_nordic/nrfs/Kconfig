@@ -19,6 +19,9 @@ config NRFS_HAS_DIAG_SERVICE
 config NRFS_HAS_DVFS_SERVICE
 	bool
 
+config NRFS_HAS_GDPWR_SERVICE
+	bool
+
 config NRFS_HAS_MRAM_SERVICE
 	bool
 
@@ -110,6 +113,12 @@ config NRFS_CLOCK_SERVICE_ENABLED
 	bool "Clock service"
 	depends on NRFS_HAS_CLOCK_SERVICE
 	default y
+
+config NRFS_GDPWR_SERVICE_ENABLED
+	bool "Global domain power request service"
+	depends on NRFS_HAS_GDPWR_SERVICE
+	default y
+
 endmenu
 
 rsource "backends/Kconfig"

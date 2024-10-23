@@ -280,7 +280,7 @@ static int mpu9250_init(const struct device *dev)
 	drv_data->accel_sensitivity_shift = 14 - cfg->accel_fs;
 
 	if (cfg->gyro_fs > MPU9250_GYRO_FS_MAX) {
-		LOG_ERR("Gyro FS is too big: %d", cfg->accel_fs);
+		LOG_ERR("Gyro FS is too big: %d", cfg->gyro_fs);
 		return -EINVAL;
 	}
 

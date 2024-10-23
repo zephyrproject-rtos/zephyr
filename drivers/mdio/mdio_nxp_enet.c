@@ -41,17 +41,13 @@ struct nxp_enet_mdio_data {
 static int nxp_enet_mdio_wait_xfer(const struct device *dev)
 {
 	struct nxp_enet_mdio_data *data = dev->data;
-	ENET_Type *base = data->base;
 
 	/* This function will not make sense from IRQ context */
 	if (k_is_in_isr()) {
 		return -EWOULDBLOCK;
 	}
 
-	if (data->interrupt_up) {
-		/* Enable the interrupt */
-		base->EIMR |= ENET_EIMR_MII_MASK;
-	} else {
+	if (!data->interrupt_up) {
 		/* If the interrupt is not available to use yet, just busy wait */
 		k_busy_wait(CONFIG_MDIO_NXP_ENET_TIMEOUT);
 		k_sem_give(&data->mdio_sem);
@@ -77,7 +73,7 @@ static int nxp_enet_mdio_read(const struct device *dev,
 	 * Clear the bit (W1C) that indicates MDIO transfer is ready to
 	 * prepare to wait for it to be set once this read is done
 	 */
-	data->base->EIR |= ENET_EIR_MII_MASK;
+	data->base->EIR = ENET_EIR_MII_MASK;
 
 	/*
 	 * Write MDIO frame to MII management register which will
@@ -105,7 +101,7 @@ static int nxp_enet_mdio_read(const struct device *dev,
 	*read_data = (data->base->MMFR & ENET_MMFR_DATA_MASK) >> ENET_MMFR_DATA_SHIFT;
 
 	/* Clear the same bit as before because the event has been handled */
-	data->base->EIR |= ENET_EIR_MII_MASK;
+	data->base->EIR = ENET_EIR_MII_MASK;
 
 	/* This MDIO interaction is finished */
 	(void)k_mutex_unlock(&data->mdio_mutex);
@@ -127,7 +123,7 @@ static int nxp_enet_mdio_write(const struct device *dev,
 	 * Clear the bit (W1C) that indicates MDIO transfer is ready to
 	 * prepare to wait for it to be set once this write is done
 	 */
-	data->base->EIR |= ENET_EIR_MII_MASK;
+	data->base->EIR = ENET_EIR_MII_MASK;
 
 	/*
 	 * Write MDIO frame to MII management register which will
@@ -153,7 +149,7 @@ static int nxp_enet_mdio_write(const struct device *dev,
 	}
 
 	/* Clear the same bit as before because the event has been handled */
-	data->base->EIR |= ENET_EIR_MII_MASK;
+	data->base->EIR = ENET_EIR_MII_MASK;
 
 	/* This MDIO interaction is finished */
 	(void)k_mutex_unlock(&data->mdio_mutex);
@@ -170,13 +166,9 @@ static void nxp_enet_mdio_isr_cb(const struct device *dev)
 {
 	struct nxp_enet_mdio_data *data = dev->data;
 
-	data->base->EIR |= ENET_EIR_MII_MASK;
+	data->base->EIR = ENET_EIR_MII_MASK;
 
-	/* Signal that operation finished */
 	k_sem_give(&data->mdio_sem);
-
-	/* Disable the interrupt */
-	data->base->EIMR &= ~ENET_EIMR_MII_MASK;
 }
 
 static void nxp_enet_mdio_post_module_reset_init(const struct device *dev)
@@ -212,7 +204,9 @@ void nxp_enet_mdio_callback(const struct device *dev,
 		nxp_enet_mdio_isr_cb(dev);
 		break;
 	case NXP_ENET_INTERRUPT_ENABLED:
+		/* IRQ was enabled in NVIC, now enable in enet */
 		data->interrupt_up = true;
+		data->base->EIMR |= ENET_EIMR_MII_MASK;
 		break;
 	default:
 		break;

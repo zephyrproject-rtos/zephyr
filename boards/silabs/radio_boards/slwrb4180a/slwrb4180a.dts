@@ -61,7 +61,49 @@
 };
 
 &cpu0 {
-	clock-frequency = <38400000>;
+	clock-frequency = <76800000>;
+};
+
+&hfxo {
+	status = "okay";
+	ctune = <129>;
+	precision = <50>;
+};
+
+&lfxo {
+	status = "okay";
+	ctune = <79>;
+	precision = <50>;
+};
+
+&hfrcodpll {
+	clock-frequency = <DT_FREQ_K(76800)>;
+	clocks = <&hfxo>;
+	dpll-n = <3839>;
+	dpll-m = <1919>;
+	dpll-edge = "fall";
+	dpll-lock = "phase";
+	dpll-autorecover;
+};
+
+&em23grpaclk {
+	clocks = <&lfxo>;
+};
+
+&em4grpaclk {
+	clocks = <&lfxo>;
+};
+
+&rtccclk {
+	clocks = <&lfxo>;
+};
+
+&wdog0clk {
+	clocks = <&lfxo>;
+};
+
+&wdog1clk {
+	clocks = <&lfxo>;
 };
 
 &usart0 {

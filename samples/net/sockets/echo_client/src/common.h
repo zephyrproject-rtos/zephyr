@@ -42,7 +42,7 @@ struct udp_control {
 	struct k_timer rx_timer;
 };
 
-struct data {
+struct sample_data {
 	const char *proto;
 
 	struct {
@@ -62,8 +62,8 @@ struct data {
 };
 
 struct configs {
-	struct data ipv4;
-	struct data ipv6;
+	struct sample_data ipv4;
+	struct sample_data ipv6;
 };
 
 #if !defined(CONFIG_NET_CONFIG_PEER_IPV4_ADDR)

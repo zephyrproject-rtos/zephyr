@@ -260,7 +260,7 @@ config BT_PERIPHERAL_PREF_TIMEOUT
 endif # BT_GAP_PERIPHERAL_PREF_PARAMS
 
 config BT_DEVICE_NAME_GATT_WRITABLE
-	bool "Allow to write name by remote GATT clients"
+	bool "Allow to write device name by remote GATT clients"
 	depends on BT_DEVICE_NAME_DYNAMIC
 	default y
 	help
@@ -268,21 +268,52 @@ config BT_DEVICE_NAME_GATT_WRITABLE
 	  name GAP characteristic.
 
 if BT_DEVICE_NAME_GATT_WRITABLE
-config DEVICE_NAME_GATT_WRITABLE_ENCRYPT
-	bool "Encryption required to write name by remote GATT clients"
-	default y
+choice BT_DEVICE_NAME_GATT_WRITABLE_SECURITY
+	prompt "Security requirements"
+	default DEVICE_NAME_GATT_WRITABLE_ENCRYPT
 	help
-	  Enabling this option requires the connection to be encrypted to write
-	  to the device name GAP characteristic.
+	  Select security requirementsf for writing device name by remote GATT
+	  clients.
 
+config DEVICE_NAME_GATT_WRITABLE_NONE
+	bool "No requirements"
+
+config DEVICE_NAME_GATT_WRITABLE_ENCRYPT
+	bool "Encryption required"
 
 config DEVICE_NAME_GATT_WRITABLE_AUTHEN
-	bool "Authentication required to write name by remote GATT clients"
-	help
-	  Enabling this option requires the connection to be encrypted and
-	  authenticated to write to the device name GAP characteristic.
+	bool "Encryption and authentication required"
 
+endchoice  #BT_DEVICE_NAME_GATT_WRITABLE_SECURITY
 endif #BT_DEVICE_NAME_GATT_WRITABLE
+
+config BT_DEVICE_APPEARANCE_GATT_WRITABLE
+	bool "Allow to write GAP Appearance by remote GATT clients"
+	depends on BT_DEVICE_APPEARANCE_DYNAMIC
+	default y
+	help
+	  Enabling this option allows remote GATT clients to write to device
+	  appearance GAP characteristic.
+
+if BT_DEVICE_APPEARANCE_GATT_WRITABLE
+choice BT_DEVICE_APPEARANCE_GATT_WRITABLE
+	prompt "Security requirements"
+	default DEVICE_APPEARANCE_GATT_WRITABLE_AUTHEN
+	help
+	  Select security requirementsf for writing device name by remote GATT
+	  clients.
+
+config BT_DEVICE_APPEARANCE_GATT_WRITABLE_NONE
+	bool "No requirements"
+
+config BT_DEVICE_APPEARANCE_GATT_WRITABLE_ENCRYPT
+	bool "Encryption required"
+
+config DEVICE_APPEARANCE_GATT_WRITABLE_AUTHEN
+	bool "Encryption and authentication required"
+
+endchoice  #BT_DEVICE_APPEARANCE_GATT_WRITABLE
+endif #BT_DEVICE_APPEARANCE_GATT_WRITABLE
 
 config BT_GATT_AUTHORIZATION_CUSTOM
 	bool "Custom authorization of GATT operations"

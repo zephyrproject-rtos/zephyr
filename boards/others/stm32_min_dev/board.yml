@@ -1,7 +1,12 @@
 board:
   name: stm32_min_dev
+  full_name: STM32 Minimum Development Board
   vendor: others
   revision:
     format: custom
+    default: "blue"
+    revisions:
+      - name: "blue"
+      - name: "black"
   socs:
     - name: stm32f103xb

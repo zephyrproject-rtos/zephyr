@@ -144,6 +144,31 @@ void canopen_leds_init(CO_NMT_t *nmt,
  */
 void canopen_leds_program_download(bool in_progress);
 
+/**
+ * @brief Callback for incoming CAN message
+ *
+ * This callback will be called from interrupt context and should therefore
+ * return quickly.
+ *
+ * It can be used to e.g. wake the loop polling calling CO_process.
+ */
+typedef void (*canopen_rxmsg_callback_t)(void);
+
+/**
+ * @brief Set callback for incoming CAN message
+ *
+ * Set up callback to be called on incoming CAN message on any of
+ * the configured filters for CANopenNode.
+ *
+ * This can be used to wake the loop calling CO_process when an incoming
+ * message needs to be processed.
+ *
+ * Setting a new callback will overwrite any existing callback.
+ *
+ * @param callback the callback to set
+ */
+void canopen_set_rxmsg_callback(canopen_rxmsg_callback_t callback);
+
 #ifdef __cplusplus
 }
 #endif

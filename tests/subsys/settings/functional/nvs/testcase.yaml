@@ -16,7 +16,7 @@ tests:
       - settings
       - nvs
   settings.functional.nvs.dk:
-    extra_args: OVERLAY_CONFIG=mpu.conf
+    extra_args: EXTRA_CONF_FILE=mpu.conf
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf52dk/nrf52832

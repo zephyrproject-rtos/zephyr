@@ -8,6 +8,12 @@
 #ifndef ZEPHYR_DRIVERS_CRYPTO_CRYPTO_STM32_PRIV_H_
 #define ZEPHYR_DRIVERS_CRYPTO_CRYPTO_STM32_PRIV_H_
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes)
+#define crypt_config_t CRYP_InitTypeDef
+#else
+#define crypt_config_t CRYP_ConfigTypeDef
+#endif
+
 /* Maximum supported key length is 256 bits */
 #define CRYPTO_STM32_AES_MAX_KEY_LEN (256 / 8)
 
@@ -23,7 +29,7 @@ struct crypto_stm32_data {
 };
 
 struct crypto_stm32_session {
-	CRYP_ConfigTypeDef config;
+	crypt_config_t config;
 	uint32_t key[CRYPTO_STM32_AES_MAX_KEY_LEN / sizeof(uint32_t)];
 	bool in_use;
 };

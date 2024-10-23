@@ -298,29 +298,40 @@ bool bt_bap_valid_qos_pref(const struct bt_bap_qos_cfg_pref *qos_pref)
 		return false;
 	}
 
-	/* The absolute minimum and maximum values of pref_pd_min and pref_pd_max are implicitly
-	 * checked using the bounds of pd_min and pd_max, so we can just compare the preferences
-	 * to the min and max values that have been bound checked already
-	 */
-	if (!IN_RANGE(qos_pref->pref_pd_min, qos_pref->pd_min, qos_pref->pd_max)) {
-		LOG_DBG("Invalid combination of pref_pd_min %u, pd_min %u and pd_max: %u",
-			qos_pref->pref_pd_min, qos_pref->pd_min, qos_pref->pd_max);
+	if (qos_pref->pref_pd_min != BT_AUDIO_PD_PREF_NONE) {
+		/* If pref_pd_min != BT_AUDIO_PD_PREF_NONE then pd_min <= pref_pd_min <= pd_max */
+		if (!IN_RANGE(qos_pref->pref_pd_min, qos_pref->pd_min, qos_pref->pd_max)) {
+			LOG_DBG("Invalid combination of pref_pd_min %u, pd_min %u and pd_max: %u",
+				qos_pref->pref_pd_min, qos_pref->pd_min, qos_pref->pd_max);
 
-		return false;
+			return false;
+		}
 	}
 
-	if (qos_pref->pref_pd_max < qos_pref->pref_pd_min) {
-		LOG_DBG("Invalid combination of pref_pd_min %u and pref_pd_max: %u",
-			qos_pref->pref_pd_min, qos_pref->pref_pd_max);
+	if (qos_pref->pref_pd_max != BT_AUDIO_PD_PREF_NONE) {
+		/* If pref_pd_min == BT_AUDIO_PD_PREF_NONE then pd_min <= pref_pd_max <= pd_max
+		 *
+		 * If pref_pd_min != BT_AUDIO_PD_PREF_NONE then
+		 * pd_min <= pref_pd_min <= pref_pd_max <= pd_max
+		 */
+		if (qos_pref->pref_pd_min == BT_AUDIO_PD_PREF_NONE) {
+			if (!IN_RANGE(qos_pref->pref_pd_max, qos_pref->pd_min, qos_pref->pd_max)) {
+				LOG_DBG("Invalid combination of pref_pd_max %u, pd_min %u and "
+					"pd_max: %u",
+					qos_pref->pref_pd_max, qos_pref->pd_min, qos_pref->pd_max);
 
-		return false;
-	}
+				return false;
+			}
+		} else {
+			if (!IN_RANGE(qos_pref->pref_pd_max, qos_pref->pref_pd_min,
+				      qos_pref->pd_max)) {
+				LOG_DBG("Invalid combination of pref_pd_max %u, pref_pd_min %u and "
+					"pd_max: %u",
+					qos_pref->pref_pd_max, qos_pref->pd_min, qos_pref->pd_max);
 
-	if (!IN_RANGE(qos_pref->pref_pd_max, qos_pref->pd_min, qos_pref->pd_max)) {
-		LOG_DBG("Invalid combination of pref_pd_max %u, pd_min %u and pd_max: %u",
-			qos_pref->pref_pd_max, qos_pref->pd_min, qos_pref->pd_max);
-
-		return false;
+				return false;
+			}
+		}
 	}
 
 	return true;

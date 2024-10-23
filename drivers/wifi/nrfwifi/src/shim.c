@@ -116,7 +116,7 @@ static void zep_shim_qspi_cpy_to(void *priv, unsigned long addr, const void *src
 
 static void *zep_shim_spinlock_alloc(void)
 {
-	struct k_sem *lock = NULL;
+	struct k_mutex *lock = NULL;
 
 	lock = k_malloc(sizeof(*lock));
 
@@ -134,27 +134,29 @@ static void zep_shim_spinlock_free(void *lock)
 
 static void zep_shim_spinlock_init(void *lock)
 {
-	k_sem_init(lock, 1, 1);
+	k_mutex_init(lock);
 }
 
 static void zep_shim_spinlock_take(void *lock)
 {
-	k_sem_take(lock, K_FOREVER);
+	k_mutex_lock(lock, K_FOREVER);
 }
 
 static void zep_shim_spinlock_rel(void *lock)
 {
-	k_sem_give(lock);
+	k_mutex_unlock(lock);
 }
 
 static void zep_shim_spinlock_irq_take(void *lock, unsigned long *flags)
 {
-	k_sem_take(lock, K_FOREVER);
+	ARG_UNUSED(flags);
+	k_mutex_lock(lock, K_FOREVER);
 }
 
 static void zep_shim_spinlock_irq_rel(void *lock, unsigned long *flags)
 {
-	k_sem_give(lock);
+	ARG_UNUSED(flags);
+	k_mutex_unlock(lock);
 }
 
 static int zep_shim_pr_dbg(const char *fmt, va_list args)
@@ -235,6 +237,10 @@ static void *zep_shim_nbuf_alloc(unsigned int size)
 
 static void zep_shim_nbuf_free(void *nbuf)
 {
+	if (!nbuf) {
+		return;
+	}
+
 	k_free(((struct nwb *)nbuf)->priv);
 	k_free(nbuf);
 }
@@ -618,6 +624,20 @@ static unsigned int zep_shim_time_elapsed_us(unsigned long start_time_us)
 	return curr_time_us - start_time_us;
 }
 
+static unsigned long zep_shim_time_get_curr_ms(void)
+{
+	return k_uptime_get();
+}
+
+static unsigned int zep_shim_time_elapsed_ms(unsigned long start_time_ms)
+{
+	unsigned long curr_time_ms = 0;
+
+	curr_time_ms = zep_shim_time_get_curr_ms();
+
+	return curr_time_ms - start_time_ms;
+}
+
 static enum nrf_wifi_status zep_shim_bus_qspi_dev_init(void *os_qspi_dev_ctx)
 {
 	ARG_UNUSED(os_qspi_dev_ctx);
@@ -733,6 +753,11 @@ static void irq_work_handler(struct k_work *work)
 {
 	int ret = 0;
 
+	if (!intr_priv || !intr_priv->callbk_fn || !intr_priv->callbk_data) {
+		LOG_ERR("%s: Invalid intr_priv handler", __func__);
+		return;
+	}
+
 	ret = intr_priv->callbk_fn(intr_priv->callbk_data);
 
 	if (ret) {
@@ -747,6 +772,11 @@ static void zep_shim_irq_handler(const struct device *dev, struct gpio_callback 
 {
 	ARG_UNUSED(cb);
 	ARG_UNUSED(pins);
+
+	if (!(intr_priv && intr_priv->callbk_fn && intr_priv->callbk_data)) {
+		LOG_ERR("%s: Invalid intr_priv", __func__);
+		return;
+	}
 
 	k_work_schedule_for_queue(&zep_wifi_intr_q, &intr_priv->work, K_NO_WAIT);
 }
@@ -938,6 +968,8 @@ const struct nrf_wifi_osal_ops nrf_wifi_os_zep_ops = {
 	.delay_us = k_usleep,
 	.time_get_curr_us = zep_shim_time_get_curr_us,
 	.time_elapsed_us = zep_shim_time_elapsed_us,
+	.time_get_curr_ms = zep_shim_time_get_curr_ms,
+	.time_elapsed_ms = zep_shim_time_elapsed_ms,
 
 	.bus_qspi_init = zep_shim_bus_qspi_init,
 	.bus_qspi_deinit = zep_shim_bus_qspi_deinit,

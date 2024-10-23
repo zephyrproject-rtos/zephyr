@@ -179,12 +179,26 @@ ZTEST(crc, test_crc8_ccitt)
 	uint8_t test1[] = { 'A' };
 	uint8_t test2[] = { '1', '2', '3', '4', '5', '6', '7', '8', '9' };
 
-	zassert(crc8_ccitt(CRC8_CCITT_INITIAL_VALUE, test0,
-			   sizeof(test0)) == 0xF3, "pass", "fail");
-	zassert(crc8_ccitt(CRC8_CCITT_INITIAL_VALUE, test1,
-			   sizeof(test1)) == 0x33, "pass", "fail");
-	zassert(crc8_ccitt(CRC8_CCITT_INITIAL_VALUE, test2,
-			   sizeof(test2)) == 0xFB, "pass", "fail");
+	zassert_equal(crc8_ccitt(CRC8_CCITT_INITIAL_VALUE, test0, sizeof(test0)), 0xF3);
+	zassert_equal(crc8_ccitt(CRC8_CCITT_INITIAL_VALUE, test1, sizeof(test1)), 0x33);
+	zassert_equal(crc8_ccitt(CRC8_CCITT_INITIAL_VALUE, test2, sizeof(test2)), 0xFB);
+}
+
+ZTEST(crc, test_crc8_rohc)
+{
+	uint8_t test0[] = { 0 };
+	uint8_t test1[] = { 'A' };
+	uint8_t test2[] = { '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+	uint8_t test3[] = { 0x07, 0x3F };        /* GSM 07.10 example */
+	uint8_t test4[] = { 0x07, 0x3F, 0x89 };  /* GSM 07.10 example */
+	uint8_t test5[] = { 0x03, 0x3f, 0x01, 0x1c };  /* Our GSM 07.10 calc */
+
+	zassert_equal(crc8_rohc(CRC8_ROHC_INITIAL_VALUE, test0, sizeof(test0)), 0xcf);
+	zassert_equal(crc8_rohc(CRC8_ROHC_INITIAL_VALUE, test1, sizeof(test1)), 0x2e);
+	zassert_equal(crc8_rohc(CRC8_ROHC_INITIAL_VALUE, test2, sizeof(test2)), 0xd0);
+	zassert_equal(crc8_rohc(CRC8_ROHC_INITIAL_VALUE, test3, sizeof(test3)), 0x76);
+	zassert_equal(crc8_rohc(CRC8_ROHC_INITIAL_VALUE, test4, sizeof(test4)), 0xcf);
+	zassert_equal(crc8_rohc(CRC8_ROHC_INITIAL_VALUE, test5, sizeof(test5)), 0xcf);
 }
 
 ZTEST(crc, test_crc7_be)

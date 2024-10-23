@@ -34,7 +34,7 @@ ZTEST_SUITE(bt_id_set_adv_own_addr, NULL, NULL, NULL, NULL, NULL);
  *  privacy is enabled and 'BT_LE_ADV_OPT_USE_IDENTITY' options bit isn't set.
  *
  *  Constraints:
- *   - Options 'BT_LE_ADV_OPT_CONNECTABLE' bit is set
+ *   - Options 'BT_LE_ADV_OPT_CONN' bit is set
  *   - Options 'BT_LE_ADV_OPT_USE_IDENTITY' bit isn't set
  *   - 'CONFIG_BT_PRIVACY' is enabled
  *   - bt_id_set_adv_private_addr() succeeds and returns 0
@@ -53,7 +53,7 @@ ZTEST(bt_id_set_adv_own_addr, test_bt_id_set_adv_private_addr_succeeds_adv_conne
 
 	Z_TEST_SKIP_IFNDEF(CONFIG_BT_PRIVACY);
 
-	options |= BT_LE_ADV_OPT_CONNECTABLE;
+	options |= BT_LE_ADV_OPT_CONN;
 
 	/* This will cause bt_id_set_adv_private_addr() to return 0 */
 	atomic_set_bit(bt_dev.flags, BT_DEV_RPA_VALID);
@@ -82,7 +82,7 @@ ZTEST(bt_id_set_adv_own_addr, test_bt_id_set_adv_private_addr_succeeds_adv_conne
  *  bt_id_set_adv_random_addr() if privacy isn't enabled.
  *
  *  Constraints:
- *   - Options 'BT_LE_ADV_OPT_CONNECTABLE' bit is set
+ *   - Options 'BT_LE_ADV_OPT_CONN' bit is set
  *   - 'CONFIG_BT_PRIVACY' isn't enabled
  *   - bt_id_set_adv_random_addr() succeeds and returns 0
  *
@@ -102,7 +102,7 @@ ZTEST(bt_id_set_adv_own_addr, test_bt_id_set_adv_random_addr_succeeds_adv_connec
 	/* If 'CONFIG_BT_EXT_ADV' is defined, it changes bt_id_set_adv_random_addr() behaviour */
 	Z_TEST_SKIP_IFDEF(CONFIG_BT_EXT_ADV);
 
-	options |= BT_LE_ADV_OPT_CONNECTABLE;
+	options |= BT_LE_ADV_OPT_CONN;
 
 	adv.id = 0;
 	bt_addr_le_copy(&bt_dev.id_addr[adv.id], BT_RPA_LE_ADDR);
@@ -132,12 +132,12 @@ ZTEST(bt_id_set_adv_own_addr, test_bt_id_set_adv_random_addr_succeeds_adv_connec
 /*
  *  Test setting the advertising private address with a static random address through
  *  bt_id_set_adv_random_addr() when device isn't advertising as a connectable device (i.e.
- *  BT_LE_ADV_OPT_CONNECTABLE bit in options isn't set) and the advertisement is using the device
+ *  BT_LE_ADV_OPT_CONN bit in options isn't set) and the advertisement is using the device
  *  identity (i.e. BT_LE_ADV_OPT_USE_IDENTITY bit is set in options).
  *
  *  Constraints:
  *   - Options 'BT_LE_ADV_OPT_USE_IDENTITY' bit is set
- *   - Options 'BT_LE_ADV_OPT_CONNECTABLE' bit isn't set
+ *   - Options 'BT_LE_ADV_OPT_CONN' bit isn't set
  *   - bt_id_set_adv_random_addr() succeeds and returns 0
  *
  *  Expected behaviour:
@@ -156,7 +156,7 @@ ZTEST(bt_id_set_adv_own_addr, test_bt_id_set_adv_random_addr_succeeds_not_connec
 	Z_TEST_SKIP_IFDEF(CONFIG_BT_EXT_ADV);
 
 	options |= BT_LE_ADV_OPT_USE_IDENTITY;
-	options &= ~BT_LE_ADV_OPT_CONNECTABLE;
+	options &= ~BT_LE_ADV_OPT_CONN;
 
 	adv.id = 0;
 	bt_addr_le_copy(&bt_dev.id_addr[adv.id], BT_RPA_LE_ADDR);
@@ -178,7 +178,7 @@ ZTEST(bt_id_set_adv_own_addr, test_bt_id_set_adv_random_addr_succeeds_not_connec
  *  'BT_LE_ADV_OPT_USE_IDENTITY' and 'BT_LE_ADV_OPT_USE_IDENTITY' options bits aren't set.
  *
  *  Constraints:
- *   - Options 'BT_LE_ADV_OPT_CONNECTABLE' bit isn't set
+ *   - Options 'BT_LE_ADV_OPT_CONN' bit isn't set
  *   - Options 'BT_LE_ADV_OPT_USE_IDENTITY' bit isn't set
  *   - bt_id_set_adv_random_addr() succeeds and returns 0
  *
@@ -196,7 +196,7 @@ ZTEST(bt_id_set_adv_own_addr, test_bt_id_set_adv_private_addr_succeeds_not_conne
 
 	Z_TEST_SKIP_IFNDEF(CONFIG_BT_EXT_ADV);
 
-	options &= ~BT_LE_ADV_OPT_CONNECTABLE;
+	options &= ~BT_LE_ADV_OPT_CONN;
 	options &= ~BT_LE_ADV_OPT_USE_IDENTITY;
 
 	/* This will cause bt_id_set_adv_private_addr() to return 0 */
@@ -216,7 +216,7 @@ ZTEST(bt_id_set_adv_own_addr, test_bt_id_set_adv_private_addr_succeeds_not_conne
  *  before updating the device advertising address and then re-enable it after the update is done.
  *
  *  Constraints:
- *   - Options 'BT_LE_ADV_OPT_CONNECTABLE' bit isn't set
+ *   - Options 'BT_LE_ADV_OPT_CONN' bit isn't set
  *   - Options 'BT_LE_ADV_OPT_USE_IDENTITY' bit isn't set
  *
  *  Expected behaviour:
@@ -233,7 +233,7 @@ ZTEST(bt_id_set_adv_own_addr, test_observer_scanning_re_enabled_after_updating_a
 	Z_TEST_SKIP_IFDEF(CONFIG_BT_EXT_ADV);
 	Z_TEST_SKIP_IFNDEF(CONFIG_BT_OBSERVER);
 
-	options &= ~BT_LE_ADV_OPT_CONNECTABLE;
+	options &= ~BT_LE_ADV_OPT_CONN;
 	options &= ~BT_LE_ADV_OPT_USE_IDENTITY;
 
 	/* Set device scanning active flag */

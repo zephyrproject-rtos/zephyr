@@ -85,7 +85,7 @@ features:
 +-----------+------------+-------------------------------------+
 | DAC       | on-chip    | dac                                 |
 +-----------+------------+-------------------------------------+
-| ACMP      | on-chip    | analog comparator                   |
+| ACMP      | on-chip    | sensor                              |
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:

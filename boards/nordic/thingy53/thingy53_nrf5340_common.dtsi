@@ -131,6 +131,18 @@
 		};
 	};
 
+	/* Disabled by default as SPI lines are shared with peripherals on application core */
+	spi_fwd: nrf-spi-forwarder {
+		compatible = "nordic,nrf-gpio-forwarder";
+		status = "disabled";
+		fem-spi-if {
+			gpios = <&gpio0 24 0>,
+				<&gpio0 29 0>,
+				<&gpio0 27 0>,
+				<&gpio0 28 0>;
+		};
+	};
+
 	aliases {
 		sw0 = &button0;
 		sw1 = &button1;

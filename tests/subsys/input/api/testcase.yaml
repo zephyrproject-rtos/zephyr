@@ -9,6 +9,13 @@ tests:
   input.api.thread:
     extra_configs:
       - CONFIG_INPUT_MODE_THREAD=y
+      # There is a check to see if it is no longer able to push more
+      # messages into a full queue. When these is another CPU consuming
+      # messages, the queue would not be full at that point. A new message
+      # can be pushed into the queue and thus failing the "full queue"
+      # check. So limit this to 1 CPU only so this check's assumption
+      # can be fulfilled.
+      - CONFIG_MP_MAX_NUM_CPUS=1
   input.api.synchronous:
     extra_configs:
       - CONFIG_INPUT_MODE_SYNCHRONOUS=y

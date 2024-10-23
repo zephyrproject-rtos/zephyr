@@ -1,5 +1,6 @@
 board:
   name: mg100
+  full_name: Sentrius™ MG100 Gateway
   vendor: ezurio
   socs:
   - name: nrf52840

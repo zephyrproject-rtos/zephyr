@@ -575,7 +575,6 @@
 			interrupts = <40 0>;
 			clocks = <&scg KINETIS_SCG_BUS_CLK>;
 			status = "disabled";
-			#io-channel-cells = <2>;
 		};
 
 		cmp1: cmp@40074000 {
@@ -584,7 +583,6 @@
 			interrupts = <41 0>;
 			clocks = <&scg KINETIS_SCG_BUS_CLK>;
 			status = "disabled";
-			#io-channel-cells = <2>;
 		};
 
 		cmp2: cmp@40075000 {
@@ -593,7 +591,6 @@
 			interrupts = <70 0>;
 			clocks = <&scg KINETIS_SCG_BUS_CLK>;
 			status = "disabled";
-			#io-channel-cells = <2>;
 		};
 
 		flexio1: flexio@4005a000 {

@@ -365,16 +365,13 @@ wdt1: watchdog@19000 {
 
 comp: comparator@1a000 {
 	/*
-	 * This comparator node can be COMP or LPCOMP,
-	 * for the user to pick:
-	 * compatible = "nordic,nrf-comp" or
-	 *              "nordic,nrf-lpcomp".
+	 * Use compatible "nordic,nrf-comp" to configure as COMP
+	 * Use compatible "nordic,nrf-lpcomp" to configure as LPCOMP
 	 */
 	compatible = "nordic,nrf-comp";
 	reg = <0x1a000 0x1000>;
 	interrupts = <26 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "disabled";
-	#io-channel-cells = <1>;
 };
 
 egu0: egu@1b000 {

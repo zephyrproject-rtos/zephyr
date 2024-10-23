@@ -9,6 +9,7 @@ menuconfig ADXL372
 	depends on DT_HAS_ADI_ADXL372_ENABLED
 	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ADI_ADXL372),i2c)
 	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ADI_ADXL372),spi)
+	select RTIO_WORKQ if SENSOR_ASYNC_API
 	help
 	  Enable driver for ADXL372 Three-Axis Digital Accelerometers.
 
@@ -95,14 +96,25 @@ config ADXL372_TRIGGER_NONE
 config ADXL372_TRIGGER_GLOBAL_THREAD
 	bool "Use global thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ADI_ADXL372),int1-gpios)
 	select ADXL372_TRIGGER
 
 config ADXL372_TRIGGER_OWN_THREAD
 	bool "Use own thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ADI_ADXL372),int1-gpios)
 	select ADXL372_TRIGGER
 
 endchoice
+
+config ADXL372_STREAM
+	bool "Use FIFO to stream data"
+	select ADXL372_TRIGGER
+	default y
+	depends on SPI_RTIO
+	depends on SENSOR_ASYNC_API
+	help
+	  Use this configuration option to enable streaming sensor data via RTIO.
 
 config ADXL372_TRIGGER
 	bool

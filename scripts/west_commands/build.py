@@ -11,6 +11,8 @@ import yaml
 
 from west import log
 from west.configuration import config
+from west.util import west_topdir
+from west.version import __version__
 from zcmake import DEFAULT_CMAKE_GENERATOR, run_cmake, run_build, CMakeCache
 from build_helpers import is_zephyr_build, find_build_dir, load_domains, \
     FIND_BUILD_DIR_DESCRIPTION
@@ -21,6 +23,8 @@ _ARG_SEPARATOR = '--'
 
 SYSBUILD_PROJ_DIR = pathlib.Path(__file__).resolve().parent.parent.parent \
                     / pathlib.Path('share/sysbuild')
+
+BUILD_INFO_LOG = 'build_info.yml'
 
 BUILD_USAGE = '''\
 west build [-h] [-b BOARD[@REV]]] [-d BUILD_DIR]
@@ -244,8 +248,24 @@ class Build(Forceable):
                     self.run_cmake = True
         else:
             self.run_cmake = True
+
         self.source_dir = self._find_source_dir()
         self._sanity_check()
+
+        build_info_path = self.build_dir
+        build_info_file = os.path.join(build_info_path, BUILD_INFO_LOG)
+        west_workspace = west_topdir(self.source_dir)
+        if not os.path.exists(build_info_path):
+            os.makedirs(build_info_path)
+        if not os.path.exists(build_info_file):
+            build_command = {'west': {'command': ' '.join(sys.argv[:]),
+                                     'topdir': str(west_workspace),
+                                     'version': str(__version__)}}
+            try:
+                with open(build_info_file, "w") as f:
+                    yaml.dump(build_command, f, default_flow_style=False)
+            except Exception as e:
+                log.wrn(f'Failed to create info file: {build_info_file},', e)
 
         board, origin = self._find_board()
         self._run_cmake(board, origin, self.args.cmake_opts)

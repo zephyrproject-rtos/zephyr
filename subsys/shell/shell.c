@@ -141,6 +141,7 @@ static void tab_item_print(const struct shell *sh, const char *option,
 
 	columns = (sh->ctx->vt100_ctx.cons.terminal_wid
 			- z_shell_strlen(tab)) / longest_option;
+	__ASSERT_NO_MSG(columns != 0);
 	diff = longest_option - z_shell_strlen(option);
 
 	if (sh->ctx->vt100_ctx.printed_cmd++ % columns == 0U) {
@@ -1451,6 +1452,14 @@ int shell_start(const struct shell *sh)
 	 */
 	z_cursor_next_line_move(sh);
 	state_set(sh, SHELL_STATE_ACTIVE);
+
+	/*
+	 * If the shell is stopped with the shell_stop function, its backend remains active
+	 * and continues to buffer incoming data. As a result, when the shell is resumed,
+	 * all buffered data is processed, which may lead to the execution of commands
+	 * received while the shell was stopped.
+	 */
+	z_shell_backend_rx_buffer_flush(sh);
 
 	k_mutex_unlock(&sh->ctx->wr_mtx);
 

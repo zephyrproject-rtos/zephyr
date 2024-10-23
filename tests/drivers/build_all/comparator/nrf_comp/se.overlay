@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&comp {
+	main-mode = "SE";
+	psel = "AIN0";
+	refsel = "INT_1V2";
+	sp-mode = "HIGH";
+	th-up = <36>;
+	th-down = <28>;
+	isource = "DISABLED";
+	status = "okay";
+};

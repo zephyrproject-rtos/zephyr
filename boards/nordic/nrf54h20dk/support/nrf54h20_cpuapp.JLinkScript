@@ -1,29 +1,248 @@
+// Constants specific to the application core
+__constant U32 _CPUCONF_ADDR = 0x52011000;
+__constant U32 _PROCESSOR_ID = 2;
+__constant U32 _DOMAIN_ID = 2;
+__constant U32 _NUM_OTHER_PROCESSORS = 1;
+const U32 _OTHER_PROCESSOR_IDS[1] = {3};
+
 // Debug Halting Control and Status Register
-__constant U32 _DHCSR_ADDR      = 0xE000EDF0;
-__constant U32 _DHCSR_DBGKEY    = (0xA05F << 16);
-__constant U32 _DHCSR_C_DEBUGEN = (1 <<  0);
-__constant U32 _DHCSR_C_HALT    = (1 <<  1);
+__constant U32 _DHCSR_ADDR = 0xE000EDF0;
+__constant U32 _DHCSR_DBGKEY = (0xA05F << 16);
+__constant U32 _DHCSR_C_DEBUGEN = (1 << 0);
+__constant U32 _DHCSR_C_HALT = (1 << 1);
 
 // Debug Exception and Monitor Control Register
-__constant U32 _DEMCR_ADDR         = 0xE000EDFC;
-__constant U32 _DEMCR_VC_CORERESET = (1 <<  0);
-__constant U32 _DEMCR_TRCENA       = (1 << 24);
+__constant U32 _DEMCR_ADDR = 0xE000EDFC;
+__constant U32 _DEMCR_VC_CORERESET = (1 << 0);
+__constant U32 _DEMCR_TRCENA = (1 << 24);
 
 // CPU wait enable register
-__constant U32 _CPUCONF_CPUWAIT_ADDR = 0x5201150C;
+__constant U32 _CPUCONF_CPUWAIT_OFFSET = 0x50C;
 
-int ResetTarget(void) {
-	// ADAC reset
-	JLINK_CORESIGHT_WriteDP(2, 0x04000010);
-	JLINK_CORESIGHT_WriteAP(0, 0xA3030000);
-	JLINK_CORESIGHT_WriteAP(0, 0x00000004);
-	JLINK_CORESIGHT_WriteAP(0, 0x01020000);
+// CTRL-AP
+__constant U32 _CTRLAP_ID = 4;
+__constant U32 _CTRLAP_READY_BANK = 0;
+__constant U32 _CTRLAP_READY_OFFSET = 1;
+__constant U32 _CTRLAP_READY = 0;
+__constant U32 _CTRLAP_MAILBOX_BANK = 1;
+__constant U32 _CTRLAP_MAILBOX_TXDATA_OFFSET = 0;
+__constant U32 _CTRLAP_MAILBOX_TXSTATUS_OFFSET = 1;
+__constant U32 _CTRLAP_MAILBOX_RXDATA_OFFSET = 2;
+__constant U32 _CTRLAP_MAILBOX_RXSTATUS_OFFSET = 3;
+__constant U32 _CTRLAP_MAILBOX_NO_DATA_PENDING = 0;
+__constant U32 _CTRLAP_MAILBOX_DATA_PENDING = 1;
+__constant int _CTRLAP_TIMEOUT_MS = 500;
 
-	JLINK_SYS_Sleep(100);
-	JLINK_CORESIGHT_ReadAP(2);
-	JLINK_CORESIGHT_ReadAP(2);
-	JLINK_CORESIGHT_ReadAP(2);
-	JLINK_CORESIGHT_ReadAP(2);
+// ADAC transaction buffers
+static U32 _adacTx[20];
+static U32 _adacRx[20];
+
+// Failed to send to the CTRL-AP MAILBOX
+__constant int _ERR_TX = -1;
+// Failed to receive from the CTRL-AP MAILBOX
+__constant int _ERR_RX = -2;
+// ADAC command returned an error
+__constant int _ERR_REPLY = -3;
+
+// Wait for an AP register read to return the expected value.
+int _WaitForDataStatus(U32 regOffset, int expectedStatus)
+{
+	int status;
+	int ret;
+	int start;
+	int elapsed;
+
+	status = 0;
+	start = JLINK_GetTime();
+	elapsed = 0;
+
+	do {
+		ret = JLINK_CORESIGHT_ReadDAP(regOffset, 1, &status);
+		elapsed = JLINK_GetTime() - start;
+	} while ((ret < 0 || status != expectedStatus) && (elapsed < _CTRLAP_TIMEOUT_MS));
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	return status;
+}
+
+// Continuously read from the CTRL-AP MAILBOX until there is no more pending data.
+void _DrainMailbox(void)
+{
+	int ret;
+	int status;
+	int data;
+
+	ret = JLINK_CORESIGHT_ReadDAP(_CTRLAP_MAILBOX_RXSTATUS_OFFSET, 1, &status);
+	while (ret >= 0 && status == _CTRLAP_MAILBOX_DATA_PENDING) {
+		JLINK_CORESIGHT_ReadDAP(_CTRLAP_MAILBOX_RXDATA_OFFSET, 1, &data);
+		ret = JLINK_CORESIGHT_ReadDAP(_CTRLAP_MAILBOX_RXSTATUS_OFFSET, 1, &status);
+	}
+}
+
+// Perform an ADAC transaction by:
+// * writing the given sequence of words to MAILBOX.TXDATATA, waiting for MAILBOX.TXSTATUS
+//   readiness before each write.
+// * reading a sequence of words from MAILBOX.RXDATA, waiting for MAILBOX.RXSTATUS readiness before
+//   each read.
+//
+// The message to send is read from _adacTx and the reply is written to _adacRx.
+// Optionally checks if a single data word is returned and returns an error if it is non-zero.
+//
+// Assumes that the correct AP and AP bank for CTRL-AP MAILBOX has been selected in the DP.
+int _DoAdacTransaction(int checkReplyStatus)
+{
+	int numWords;
+	int ret;
+	int data;
+	int i;
+
+	i = 0;
+	numWords = 2 + (_adacTx[1] >> 2); // Length based on the length field of the message
+
+	while (i < numWords) {
+		ret = _WaitForDataStatus(_CTRLAP_MAILBOX_TXSTATUS_OFFSET,
+					 _CTRLAP_MAILBOX_NO_DATA_PENDING);
+		if (ret != _CTRLAP_MAILBOX_NO_DATA_PENDING) {
+			JLINK_SYS_Report1("Timed out waiting for CTRL-AP TX readiness - result: ",
+					  ret);
+			return _ERR_TX;
+		}
+
+		ret = JLINK_CORESIGHT_WriteDAP(_CTRLAP_MAILBOX_TXDATA_OFFSET, 1, _adacTx[i]);
+		if (ret < 0) {
+			JLINK_SYS_Report1("Failed to write CTRL-AP TX data - result: ", ret);
+			return _ERR_TX;
+		}
+
+		i += 1;
+	}
+
+	i = 0;
+	numWords = 2; // Minimum message length
+
+	while (i < numWords) {
+		ret = _WaitForDataStatus(_CTRLAP_MAILBOX_RXSTATUS_OFFSET,
+					 _CTRLAP_MAILBOX_DATA_PENDING);
+		if (ret != _CTRLAP_MAILBOX_DATA_PENDING) {
+			JLINK_SYS_Report1("Timed out waiting for CTRL-AP RX data - result: ", ret);
+			return _ERR_RX;
+		}
+
+		ret = JLINK_CORESIGHT_ReadDAP(_CTRLAP_MAILBOX_RXDATA_OFFSET, 1, &data);
+		if (ret < 0) {
+			JLINK_SYS_Report1("Failed to read CTRL-AP RX data - result: ", ret);
+			return _ERR_RX;
+		}
+
+		if (i == 1) {
+			// Update total length based on the message length field
+			numWords = 2 + (data >> 2);
+		}
+
+		_adacRx[i] = data;
+		i += 1;
+	}
+
+	if (checkReplyStatus && _adacRx[1] == 4 && _adacRx[2] != 0) {
+		JLINK_SYS_Report1("ADAC command failed with status: ", _adacRx[2]);
+		return _ERR_REPLY;
+	}
+
+	return 0;
+}
+
+int ResetTarget(void)
+{
+	int err;
+	U32 adacMajorVersion;
+	U32 i;
+
+	// Select CTRL-AP bank 0, used for the READY register
+	JLINK_CORESIGHT_WriteDAP(JLINK_CORESIGHT_DP_REG_SELECT, 0,
+				 (_CTRLAP_ID << 24) | (_CTRLAP_READY_BANK << 4));
+
+	// Wait for the READY register to indicate that the AP can be used.
+	err = _WaitForDataStatus(_CTRLAP_READY_OFFSET, _CTRLAP_READY);
+	if (err < 0) {
+		JLINK_SYS_Report1("Timed out waiting for CTRL-AP readiness - result: ", err);
+		return -1;
+	}
+
+	// Select CTRL-AP bank 1, used for the MAILBOX registers for ADAC communication
+	JLINK_CORESIGHT_WriteDAP(JLINK_CORESIGHT_DP_REG_SELECT, 0,
+				 (_CTRLAP_ID << 24) | (_CTRLAP_MAILBOX_BANK << 4));
+
+	// Extract any pre-existing data from the mailbox in case there was previously
+	// an aborted transaction.
+	_DrainMailbox();
+
+	// Read the ADAC version
+	_adacTx[0] = 0xA3000000; // Command VERSION
+	_adacTx[1] = 0x00000004; // Data length 4 bytes
+	_adacTx[2] = 0x00000000; // Type 0 (ADAC version)
+	err = _DoAdacTransaction(0);
+	if (err < 0) {
+		return -1;
+	}
+
+	adacMajorVersion = (_adacRx[2] >> 24) & 0xff;
+	JLINK_SYS_Report1("ADAC major version: ", adacMajorVersion);
+
+	if (adacMajorVersion >= 2) {
+		// There is a very small chance that this command fails if the domain reset itself
+		// at the exact same time the command was issued. Therefore we retry a few times.
+		i = 0;
+		while (i < 3) {
+			// Reset non-essential domains
+			_adacTx[0] = 0xA30A0000; // Command RESET
+			_adacTx[1] = 0x00000004; // Data length 4 bytes
+			_adacTx[2] = 0x00000000; // (reserved)
+			err = _DoAdacTransaction(1);
+			if (err >= 0) {
+				break;
+			} else if (err != _ERR_REPLY) {
+				return -1;
+			}
+
+			i = i + 1;
+		}
+
+		// Start the core in halted mode
+		_adacTx[0] = 0xA3090000;                         // Command START
+		_adacTx[1] = 0x00000004;                         // Data length 4 bytes
+		_adacTx[2] = 0x01000000 | (_PROCESSOR_ID << 16); // Own processor, Flags HALT
+		err = _DoAdacTransaction(1);
+		if (err < 0) {
+			return -1;
+		}
+
+		// Start other cores normally (will fail silently if no firmware is present)
+		i = 0;
+		while (i < _NUM_OTHER_PROCESSORS) {
+			_adacTx[0] = 0xA3090000; // Command START
+			_adacTx[1] = 0x00000004; // Data length 4 bytes
+			_adacTx[2] = 0x00000000 |
+				     (_OTHER_PROCESSOR_IDS[i] << 16); // Other processor, No flags
+			err = _DoAdacTransaction(0);
+			if (err < 0 && err != _ERR_REPLY) {
+				return -1;
+			}
+
+			i = i + 1;
+		}
+	} else {
+		// Reset single domain via legacy implementation
+		_adacTx[0] = 0xA3030000;                      // Command RESET
+		_adacTx[1] = 0x00000004;                      // Data length 4 bytes
+		_adacTx[2] = 0x01000000 | (_DOMAIN_ID << 16); // Own domain, Mode HALT
+		err = _DoAdacTransaction(1);
+		if (err < 0) {
+			return -1;
+		}
+	}
 
 	// Halt the CPU
 	JLINK_MEM_WriteU32(_DHCSR_ADDR, (_DHCSR_DBGKEY | _DHCSR_C_HALT | _DHCSR_C_DEBUGEN));
@@ -32,7 +251,7 @@ int ResetTarget(void) {
 	JLINK_MEM_WriteU32(_DEMCR_ADDR, (_DEMCR_VC_CORERESET | _DEMCR_TRCENA));
 
 	// Disable CPU wait
-	JLINK_MEM_WriteU32(_CPUCONF_CPUWAIT_ADDR, 0);
+	JLINK_MEM_WriteU32(_CPUCONF_ADDR + _CPUCONF_CPUWAIT_OFFSET, 0);
 
 	// Clear vector catch stuff
 	JLINK_MEM_WriteU32(_DEMCR_ADDR, _DEMCR_TRCENA);

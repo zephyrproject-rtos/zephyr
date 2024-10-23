@@ -7,5 +7,6 @@ config SPI_MCUX_FLEXIO
 	depends on DT_HAS_NXP_FLEXIO_SPI_ENABLED
 	depends on CLOCK_CONTROL
 	select MCUX_FLEXIO
+	select PINCTRL
 	help
 	  Enable support for MCUX FlexIO SPI driver.

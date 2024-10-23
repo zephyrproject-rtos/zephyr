@@ -160,7 +160,7 @@ RT1170 EVKB (``mimxrt1170_evk@B//cm7/cm4``)
 |           |            | :ref:`rk055hdmipi4ma0`,             |                 |                 |
 |           |            | and :ref:`g1120b0mipi` shields      |                 |                 |
 +-----------+------------+-------------------------------------+-----------------+-----------------+
-| ACMP      | on-chip    | analog comparator                   | Supported       | No support      |
+| ACMP      | on-chip    | sensor                              | Supported       | No support      |
 +-----------+------------+-------------------------------------+-----------------+-----------------+
 | CAAM RNG  | on-chip    | entropy                             | Supported (M7)  | No support      |
 +-----------+------------+-------------------------------------+-----------------+-----------------+
@@ -361,11 +361,6 @@ EVK. See `Using J-Link with MIMXRT1170-EVKB`_ or
 
 Using LinkServer
 ----------------
-
-Known limitations with LinkServer and these boards include:
-- ``west flash`` will not write images to non-flash locations. The flash
-command only works when all data in the image is written to flash memory
-regions.
 
 Install the :ref:`linkserver-debug-host-tools` and make sure they are in your
 search path.  LinkServer works with the default CMSIS-DAP firmware included in

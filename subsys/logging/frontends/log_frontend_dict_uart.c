@@ -233,11 +233,7 @@ static inline void hdr_fill(struct log_dict_output_normal_msg_hdr_t *hdr,
 	hdr->package_len = desc.package_len;
 	hdr->data_len = desc.data_len;
 	hdr->timestamp = z_log_timestamp();
-	hdr->source = (source != NULL) ?
-			(IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ?
-				log_dynamic_source_id((void *)source) :
-				log_const_source_id((void *)source)) :
-			0U;
+	hdr->source = (source != NULL) ? log_source_id(source) : 0U;
 }
 
 /* Handle logging message in synchronous manner, in panic mode. */

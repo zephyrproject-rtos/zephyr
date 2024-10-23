@@ -158,3 +158,8 @@
 	pinctrl-0 = <&spi0b_mosi_p2_28 &spi0b_miso_p2_27 &spi0b_sck_p2_29 &spi0b_ss1_p2_26>;
 	pinctrl-names = "default";
 };
+
+&w1 {
+	pinctrl-0 = <&owm_io_p0_8 &owm_pe_p0_7>;
+	pinctrl-names = "default";
+};

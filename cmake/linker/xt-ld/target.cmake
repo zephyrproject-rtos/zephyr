@@ -130,7 +130,6 @@ function(toolchain_ld_link_elf)
     ${NO_WHOLE_ARCHIVE_LIBS}
     $<TARGET_OBJECTS:${OFFSETS_LIB}>
     -L${PROJECT_BINARY_DIR}
-    ${TOOLCHAIN_LIBS}
 
     ${TOOLCHAIN_LD_LINK_ELF_DEPENDENCIES}
   )

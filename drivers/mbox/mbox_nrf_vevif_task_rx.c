@@ -12,13 +12,8 @@
 #include <hal/nrf_vpr_csr.h>
 #include <hal/nrf_vpr_csr_vevif.h>
 
-#if defined(CONFIG_SOC_NRF54L15_ENGA_CPUFLPR)
-#define TASKS_IDX_MIN 11U
-#define TASKS_IDX_MAX 17U
-#else
 #define TASKS_IDX_MIN NRF_VPR_TASKS_TRIGGER_MIN
 #define TASKS_IDX_MAX NRF_VPR_TASKS_TRIGGER_MAX
-#endif
 
 #define VEVIF_TASKS_NUM  DT_INST_PROP(0, nordic_tasks)
 #define VEVIF_TASKS_MASK DT_INST_PROP(0, nordic_tasks_mask)
@@ -116,9 +111,25 @@ static const struct mbox_driver_api vevif_task_rx_driver_api = {
 	.set_enabled = vevif_task_rx_set_enabled,
 };
 
+#if defined(CONFIG_GEN_SW_ISR_TABLE)
 #define VEVIF_IRQ_CONNECT(idx, _)                                                                  \
 	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, idx, irq), DT_INST_IRQ_BY_IDX(0, idx, priority),         \
 		    vevif_task_rx_isr, &vevif_irqs[idx], 0)
+#else
+
+#define VEVIF_IRQ_FUN(idx, _)                 \
+ISR_DIRECT_DECLARE(vevif_task_##idx##_rx_isr) \
+{                                             \
+	vevif_task_rx_isr(&vevif_irqs[idx]);  \
+	return 1;                             \
+}
+
+LISTIFY(DT_NUM_IRQS(DT_DRV_INST(0)), VEVIF_IRQ_FUN, ())
+
+#define VEVIF_IRQ_CONNECT(idx, _)                                                                 \
+	IRQ_DIRECT_CONNECT(DT_INST_IRQ_BY_IDX(0, idx, irq), DT_INST_IRQ_BY_IDX(0, idx, priority), \
+		    vevif_task_##idx##_rx_isr, 0)
+#endif
 
 static int vevif_task_rx_init(const struct device *dev)
 {

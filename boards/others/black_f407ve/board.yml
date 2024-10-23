@@ -1,5 +1,6 @@
 board:
   name: black_f407ve
+  full_name: Black STM32 F407VE Development Board
   vendor: others
   socs:
     - name: stm32f407xx

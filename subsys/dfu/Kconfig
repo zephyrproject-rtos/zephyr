@@ -10,6 +10,7 @@
 menuconfig IMG_MANAGER
 	bool "DFU image manager"
 	depends on STREAM_FLASH
+	depends on !MCUBOOT_BOOTLOADER_MODE_RAM_LOAD || RETENTION_BOOTLOADER_INFO_OUTPUT_FUNCTION
 	help
 	  Enable support for managing DFU image.
 
@@ -68,8 +69,7 @@ config IMG_BLOCK_BUF_SIZE
 
 config IMG_ERASE_PROGRESSIVELY
 	bool "Erase flash progressively when receiving new firmware"
-	select STREAM_FLASH_ERASE
-	depends on FLASH_HAS_EXPLICIT_ERASE
+	select STREAM_FLASH_ERASE if FLASH_HAS_EXPLICIT_ERASE
 	help
 	  If enabled, flash is erased as necessary when receiving new firmware,
 	  instead of erasing the whole image slot at once. This is necessary

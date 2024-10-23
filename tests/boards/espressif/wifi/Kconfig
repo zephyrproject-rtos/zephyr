@@ -45,6 +45,13 @@ config WIFI_CONNECT_ATTEMPTS
 	  Number of attempts when connecting to a Wi-Fi network.
 	  If connection is not successful after all attempts, test will fail.
 
+config WIFI_PING_ATTEMPTS
+	int "Wi-Fi Ping Attempts"
+	default 5
+	help
+	  Number of gateway ping attempts.
+	  If timeout happens in all attempts, test will fail.
+
 config WIFI_SCAN_TIMEOUT
 	int "Wi-Fi Scan Timeout (in seconds)"
 	default 30
@@ -68,7 +75,7 @@ config WIFI_DISCONNECT_TIMEOUT
 
 config WIFI_PING_TIMEOUT
 	int "Gateway Ping Timeout (in seconds)"
-	default 10
+	default 5
 	help
 	  Timeout duration for pinging the network gateway.
 	  If no reply is received within this time, test will fail.

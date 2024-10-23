@@ -389,3 +389,6 @@ config OPENTHREAD_UPTIME
 
 config OPENTHREAD_VERHOEFF_CHECKSUM
 	bool "Verhoeff checksum"
+
+config OPENTHREAD_CLI_VENDOR_EXTENSION
+	string "Path to CMake file to define and link Openthread CLI vendor extension"

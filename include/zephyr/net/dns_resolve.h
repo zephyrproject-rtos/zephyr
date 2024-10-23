@@ -141,9 +141,9 @@ enum dns_query_type {
 /** How many sockets the dispatcher is able to poll. */
 #define DNS_DISPATCHER_MAX_POLL (DNS_RESOLVER_MAX_POLL + MDNS_MAX_POLL + LLMNR_MAX_POLL)
 
-#if defined(CONFIG_NET_SOCKETS_POLL_MAX)
-BUILD_ASSERT(CONFIG_NET_SOCKETS_POLL_MAX >= DNS_DISPATCHER_MAX_POLL,
-	     "CONFIG_NET_SOCKETS_POLL_MAX must be larger than " STRINGIFY(DNS_DISPATCHER_MAX_POLL));
+#if defined(CONFIG_ZVFS_POLL_MAX)
+BUILD_ASSERT(CONFIG_ZVFS_POLL_MAX >= DNS_DISPATCHER_MAX_POLL,
+	     "CONFIG_ZVFS_POLL_MAX must be larger than " STRINGIFY(DNS_DISPATCHER_MAX_POLL));
 #endif
 
 /** @brief What is the type of the socket given to DNS socket dispatcher,
@@ -202,6 +202,8 @@ struct dns_socket_dispatcher {
 	int fds_len;
 	/** Local socket to dispatch */
 	int sock;
+	/** Interface we are bound to */
+	int ifindex;
 	/** There can be two contexts to dispatch. This points to the other
 	 * context if sharing the socket between resolver / responder.
 	 */

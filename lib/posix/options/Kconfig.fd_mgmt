@@ -21,16 +21,16 @@ if POSIX_FD_MGMT
 config POSIX_FD_MGMT_ALIAS_FCNTL
 	bool
 	help
-	  Select 'y' here and Zephyr will provide an alias for fcntl() as _fcntl().
+	  When selected via Kconfig, Zephyr will provide an alias for fcntl() as _fcntl().
 
 config POSIX_FD_MGMT_ALIAS_FTRUNCATE
 	bool
 	help
-	  Select 'y' here and Zephyr will provide an alias for ftruncate() as _ftruncate().
+	  When selected via Kconfig, Zephyr will provide an alias for ftruncate() as _ftruncate().
 
 config POSIX_FD_MGMT_ALIAS_LSEEK
 	bool
 	help
-	  Select 'y' here and Zephyr will provide an alias for lseek() as _lseek().
+	  When selected via Kconfig, Zephyr will provide an alias for lseek() as _lseek().
 
 endif # POSIX_FD_MGMT

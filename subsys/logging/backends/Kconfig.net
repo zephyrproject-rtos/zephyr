@@ -6,7 +6,6 @@
 config LOG_BACKEND_NET
 	bool "Networking backend"
 	depends on NETWORKING && (NET_UDP || NET_TCP) && !LOG_MODE_IMMEDIATE
-	select LOG_OUTPUT
 	help
 	  Send syslog messages to network server.
 	  See RFC 5424 (syslog protocol) and RFC 5426 (syslog over UDP) and

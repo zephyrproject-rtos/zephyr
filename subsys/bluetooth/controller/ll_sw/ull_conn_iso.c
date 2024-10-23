@@ -489,22 +489,26 @@ void ull_conn_iso_done(struct node_rx_event_done *done)
 							conn->supervision_timeout * 10U * 1000U,
 							cig->iso_interval * CONN_INT_UNIT_US);
 
-				} else if (cis->event_expire > cig->lll.latency_event) {
-					cis->event_expire -= cig->lll.latency_event;
-
 				} else {
-					cis->event_expire = 0U;
+					uint16_t event_elapsed;
 
-					/* Stop CIS and defer cleanup to after teardown. This will
-					 * only generate a terminate event to the host if CIS has
-					 * been established. If CIS was not established, the
-					 * teardown will send CIS_ESTABLISHED with failure.
-					 */
-					ull_conn_iso_cis_stop(cis, NULL,
-							      cis->established ?
-							      BT_HCI_ERR_CONN_TIMEOUT :
-							      BT_HCI_ERR_CONN_FAIL_TO_ESTAB);
+					event_elapsed = cig->lll.latency_event +
+							cig->lll.lazy_prepare + 1U;
+					if (cis->event_expire > event_elapsed) {
+						cis->event_expire -= event_elapsed;
+					} else {
+						cis->event_expire = 0U;
 
+						/* Stop CIS and defer cleanup to after teardown.
+						 * This will only generate a terminate event to the
+						 * host if CIS has been established. If CIS was not
+						 * established, the teardown will send
+						 * CIS_ESTABLISHED with failure.
+						 */
+						ull_conn_iso_cis_stop(cis, NULL, cis->established ?
+								BT_HCI_ERR_CONN_TIMEOUT :
+								BT_HCI_ERR_CONN_FAIL_TO_ESTAB);
+					}
 				}
 			}
 		}
@@ -1032,7 +1036,11 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 
 		/* FIXME: Time reservation for interleaved packing */
 		/* Below is time reservation for sequential packing */
-		slot_us = cis->lll.sub_interval * cis->lll.nse;
+		if (IS_ENABLED(CONFIG_BT_CTLR_PERIPHERAL_ISO_RESERVE_MAX)) {
+			slot_us = cis->lll.sub_interval * cis->lll.nse;
+		} else {
+			slot_us = cis->lll.sub_interval * MAX(cis->lll.tx.bn, cis->lll.rx.bn);
+		}
 
 		if (IS_ENABLED(CONFIG_BT_CTLR_EVENT_OVERHEAD_RESERVE_MAX)) {
 			slot_us += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;

@@ -1,0 +1,241 @@
+/**
+ * Copyright (c) 2024, The Linux Foundation.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+.hidden {
+  display: none !important;
+}
+
+.filter-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.filter-form input,
+.filter-form select {
+  appearance: none;
+  font-family: var(--system-font-family);
+  font-size: 14px;
+  border-radius: 50px;
+  padding: 10px 18px;
+  background-color: var(--input-background-color);
+  color: var(--body-color);
+  transition: all 0.3s ease;
+  box-shadow: none;
+}
+
+.filter-form input:focus, .filter-form select:focus {
+  border-color: var(--input-focus-border-color);
+}
+
+.form-group {
+  flex: 1 1 200px;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  margin-bottom: 10px;
+}
+
+.filter-form .form-group label {
+  color: var(--body-color);
+  font-size: 10px;
+  text-transform: uppercase;
+  padding-left: 18px;
+  margin-bottom: 5px;
+}
+
+.filter-form #family, .filter-form #series, .filter-form #soc {
+  overflow: auto;
+  border-radius: 8px;
+  padding-right: 18px;
+}
+
+.filter-form #family option:checked,
+.filter-form #series option:checked,
+.filter-form #soc option:checked {
+  background-color: var(--admonition-note-title-background-color);
+  color: var(--admonition-note-title-color);
+}
+
+.select-container {
+  position: relative;
+}
+
+.select-container::after {
+  content: "\25BC";
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  font-size: 14px;
+  color: var(--body-color);
+}
+
+.filter-form select {
+  padding-right: 40px;
+  width: 100%;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+#catalog {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+  margin-top: 20px;
+  margin-bottom: 40px;
+}
+
+.board-card {
+  flex: 1 1 calc(33.3% - 20px);
+  /* Three cards per row */
+  max-width: calc(33.3% - 20px);
+  border-radius: 8px;
+  padding: 15px 20px;
+  background-color: var(--admonition-note-background-color);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: transform 0.3s ease;
+}
+
+.board-card:hover,
+.board-card:focus {
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-5px);
+  text-decoration: none;
+}
+
+.board-card .picture {
+  width: auto;
+  height: auto;
+  min-height: 100px;
+  max-height: 180px;
+  border-radius: 4px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  flex-grow: 1;
+  padding: 10px 0px;
+}
+
+.board-card .no-picture {
+  font-size: 5em;
+  color: var(--admonition-note-title-background-color);
+  justify-content: center;
+}
+
+.board-card .vendor {
+  font-size: 12px;
+  color: var(--admonition-note-color);
+  font-weight: 900;
+  margin-bottom: 18px;
+  opacity: 0.5;
+}
+
+.board-card img {
+  max-height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.board-card .board-name {
+  font-family: var(--header-font-family);
+  margin: auto 0 5px;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--body-color);
+  padding-top: 10px;
+}
+
+.board-card .arch {
+  margin: 5px 0;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 100;
+  color: var(--body-color);
+}
+
+@media (max-width: 1024px) {
+  .board-card {
+    flex: 1 1 calc(50% - 20px);
+    max-width: calc(50% - 20px);
+  }
+}
+
+@media (max-width: 768px) {
+  .board-card {
+    flex: 1 1 calc(100% - 20px);
+    max-width: calc(100% - 20px);
+  }
+
+  .board-card .picture {
+    min-height: 60px;
+    max-height: 120px;
+  }
+}
+
+#form-options .btn {
+  font-size: 14px;
+}
+
+#form-options .btn:focus {
+  outline-color: var(--body-color) !important;
+}
+
+#catalog.compact {
+  display: block;
+  list-style-type: disc;
+  margin: 20px;
+}
+
+#catalog.compact .board-card {
+  display: list-item;
+  padding: 4px 0;
+  border: none;
+  background-color: transparent;
+  box-shadow: none;
+  list-style-position: outside;
+  max-width: none;
+}
+
+#catalog.compact .board-card .vendor,
+#catalog.compact .board-card .picture {
+  display: none;
+}
+
+#catalog.compact .board-card .board-name {
+  display: inline;
+  font-family: var(--system-font-family);
+  text-align: left;
+  font-size: 16px;
+  font-weight: normal;
+  color: var(--body-color);
+  margin: 0;
+  padding: 0;
+}
+
+#catalog.compact .board-card .arch {
+  display: inline;
+}
+
+#catalog.compact .board-card .arch::before {
+  content: " (";
+}
+
+#catalog.compact .board-card .arch::after {
+  content: ")";
+}
+
+#catalog.compact .board-card:hover {
+  box-shadow: none;
+  transform: none;
+  text-decoration: underline;
+}

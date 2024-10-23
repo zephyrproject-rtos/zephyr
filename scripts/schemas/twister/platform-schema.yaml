@@ -9,103 +9,112 @@
 # The original spec comes from Zephyr's twister script
 #
 
-type: map
-mapping:
-  "identifier":
-    type: str
-  "maintainers":
-    type: seq
-    seq:
-      - type: str
-  "name":
-    type: str
-  "type":
-    type: str
-    enum: ["mcu", "qemu", "sim", "unit", "native"]
-  "simulation":
-    type: str
-    enum:
-      [
-        "qemu",
-        "simics",
-        "xt-sim",
-        "renode",
-        "nsim",
-        "mdb-nsim",
-        "tsim",
-        "armfvp",
-        "native",
-        "custom",
-      ]
-  "simulation_exec":
-    type: str
-  "arch":
-    type: str
-    enum:
-      [
-        # architectures
-        "arc",
-        "arm",
-        "arm64",
-        "mips",
-        "nios2",
-        "posix",
-        "riscv",
-        "sparc",
-        "x86",
-        "xtensa",
+schema;platform-schema:
+  type: map
+  mapping:
+    "variants":
+      type: map
+      matching-rule: "any"
+      mapping:
+        regex;(([a-zA-Z0-9_]+)):
+          include: platform-schema
+    "identifier":
+      type: str
+    "maintainers":
+      type: seq
+      seq:
+        - type: str
+    "name":
+      type: str
+    "type":
+      type: str
+      enum: ["mcu", "qemu", "sim", "unit", "native"]
+    "simulation":
+      type: str
+      enum:
+        [
+          "qemu",
+          "simics",
+          "xt-sim",
+          "renode",
+          "nsim",
+          "mdb-nsim",
+          "tsim",
+          "armfvp",
+          "native",
+          "custom",
+        ]
+    "simulation_exec":
+      type: str
+    "arch":
+      type: str
+      enum:
+        [
+          # architectures
+          "arc",
+          "arm",
+          "arm64",
+          "mips",
+          "nios2",
+          "posix",
+          "riscv",
+          "sparc",
+          "x86",
+          "xtensa",
 
-        # unit testing
-        "unit",
-      ]
-  "vendor":
-    type: str
-  "tier":
-    type: int
-  "toolchain":
-    type: seq
-    seq:
-      - type: str
-  "sysbuild":
-    type: bool
-  "env":
-    type: seq
-    seq:
-      - type: str
-  "ram":
-    type: int
-  "flash":
-    type: int
-  "twister":
-    type: bool
-  "supported":
-    type: seq
-    seq:
-      - type: str
-  "testing":
-    type: map
-    mapping:
-      "timeout_multiplier":
-        type: number
-        required: false
-      "default":
-        type: bool
-      "binaries":
-        type: seq
-        seq:
-          - type: str
-      "only_tags":
-        type: seq
-        seq:
-          - type: str
-      "ignore_tags":
-        type: seq
-        seq:
-          - type: str
-      "renode":
-        type: map
-        mapping:
-          "uart":
-            type: str
-          "resc":
-            type: str
+          # unit testing
+          "unit",
+        ]
+    "vendor":
+      type: str
+    "tier":
+      type: int
+    "toolchain":
+      type: seq
+      seq:
+        - type: str
+    "sysbuild":
+      type: bool
+    "env":
+      type: seq
+      seq:
+        - type: str
+    "ram":
+      type: int
+    "flash":
+      type: int
+    "twister":
+      type: bool
+    "supported":
+      type: seq
+      seq:
+        - type: str
+    "testing":
+      type: map
+      mapping:
+        "timeout_multiplier":
+          type: number
+          required: false
+        "default":
+          type: bool
+        "binaries":
+          type: seq
+          seq:
+            - type: str
+        "only_tags":
+          type: seq
+          seq:
+            - type: str
+        "ignore_tags":
+          type: seq
+          seq:
+            - type: str
+        "renode":
+          type: map
+          mapping:
+            "uart":
+              type: str
+            "resc":
+              type: str
+
+include: platform-schema

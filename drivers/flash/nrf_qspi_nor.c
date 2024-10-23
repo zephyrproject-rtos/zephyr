@@ -487,7 +487,11 @@ static int qspi_wait_while_writing(const struct device *dev, k_timeout_t poll_pe
 	int rc;
 
 	do {
-		k_sleep(poll_period);
+#ifdef CONFIG_MULTITHREADING
+		if (!K_TIMEOUT_EQ(poll_period, K_NO_WAIT)) {
+			k_sleep(poll_period);
+		}
+#endif
 		rc = qspi_rdsr(dev, 1);
 	} while ((rc >= 0)
 		 && ((rc & SPI_NOR_WIP_BIT) != 0U));

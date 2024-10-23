@@ -1,4 +1,5 @@
 board:
   name: cyclonev_socdk
+  full_name: Cyclone® V SoC Development Kit
   socs:
     - name: cyclonev

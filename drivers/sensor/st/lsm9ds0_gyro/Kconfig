@@ -67,6 +67,7 @@ endmenu
 config LSM9DS0_GYRO_TRIGGERS
 	bool "Triggers"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LSM9DS0_GYRO),irq-gpios)
 
 config LSM9DS0_GYRO_THREAD_STACK_SIZE
 	int "Thread stack size"

@@ -1,0 +1,14 @@
+sample:
+  name: Magnetometer trigger sample
+tests:
+  sample.sensor.magn_trigger:
+    harness: console
+    tags: sensors
+    filter: dt_alias_exists("magn0")
+    harness_config:
+      type: one_line
+      regex:
+        - "^\\s*[0-9A-Za-z_,+-.]*@[0-9A-Fa-f]* \\(x, y, z\\):    \
+          \\(\\s*-?[0-9\\.]*,\\s*-?[0-9\\.]*,\\s*-?[0-9\\.]*\\)$"
+    integration_platforms:
+      - frdm_k64f                       # fxos8700

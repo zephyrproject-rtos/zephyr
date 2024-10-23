@@ -53,7 +53,7 @@ config CAN_MCUX_MCAN
 
 endif # SOC_LPC55S16
 
-if SOC_LPC55S69
+if SOC_LPC55S69_CPU0
 
 config SOC_FLASH_MCUX
 	default y
@@ -63,7 +63,7 @@ config SOC_FLASH_MCUX
 config I2S_MCUX_FLEXCOMM
 	select INIT_PLL0
 
-endif # SOC_LPC55S69
+endif # SOC_LPC55S69_CPU0
 
 if SOC_LPC55S69_CPU1
 

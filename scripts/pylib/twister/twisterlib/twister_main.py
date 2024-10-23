@@ -139,7 +139,7 @@ def main(options: argparse.Namespace, default_options: argparse.Namespace):
 
         for i in tplan.instances.values():
             if i.status == TwisterStatus.FILTER:
-                if options.platform and i.platform.name not in options.platform:
+                if options.platform and not tplan.check_platform(i.platform, options.platform):
                     continue
                 logger.debug(
                     "{:<25} {:<50} {}SKIPPED{}: {}".format(

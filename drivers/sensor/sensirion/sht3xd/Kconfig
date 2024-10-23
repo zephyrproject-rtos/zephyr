@@ -26,11 +26,13 @@ config SHT3XD_TRIGGER_NONE
 config SHT3XD_TRIGGER_GLOBAL_THREAD
 	bool "Use global thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_SENSIRION_SHT3XD),alert-gpios)
 	select SHT3XD_TRIGGER
 
 config SHT3XD_TRIGGER_OWN_THREAD
 	bool "Use own thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_SENSIRION_SHT3XD),alert-gpios)
 	select SHT3XD_TRIGGER
 
 endchoice

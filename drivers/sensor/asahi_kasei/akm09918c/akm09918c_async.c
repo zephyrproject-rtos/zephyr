@@ -48,7 +48,12 @@ void akm09918c_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe
 {
 	struct rtio_work_req *req = rtio_work_req_alloc();
 
-	__ASSERT_NO_MSG(req);
+	if (req == NULL) {
+		LOG_ERR("RTIO work item allocation failed. Consider to increase "
+			"CONFIG_RTIO_WORKQ_POOL_ITEMS.");
+		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
+		return;
+	}
 
 	rtio_work_req_submit(req, iodev_sqe, akm09918c_submit_sync);
 }

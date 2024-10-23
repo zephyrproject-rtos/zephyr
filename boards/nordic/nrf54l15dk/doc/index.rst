@@ -19,6 +19,7 @@ nRF54L15 Arm Cortex-M33 CPU and the following devices:
 * RRAM
 * :abbr:`GPIO (General Purpose Input Output)`
 * :abbr:`TWIM (I2C-compatible two-wire interface master with EasyDMA)`
+* MEMCONF
 * :abbr:`MPU (Memory Protection Unit)`
 * :abbr:`NVIC (Nested Vectored Interrupt Controller)`
 * :abbr:`PWM (Pulse Width Modulation)`
@@ -60,6 +61,8 @@ hardware features:
 +-----------+------------+----------------------+
 | GRTC      | on-chip    | counter              |
 +-----------+------------+----------------------+
+| MEMCONF   | on-chip    | retained_mem         |
++-----------+------------+----------------------+
 | MPU       | on-chip    | arch/arm             |
 +-----------+------------+----------------------+
 | NVIC      | on-chip    | arch/arm             |
@@ -98,7 +101,7 @@ to be built as multicore configuration with code snippet called ``vpr_launcher``
 for the application core.
 
 Enter the following command to compile ``hello_world`` for the FLPR core::
- west build -p -b nrf54l15pdk/nrf54l15/cpuflpr --sysbuild -- -DSB_VPR_LAUNCHER=y
+ west build -p -b nrf54l15dk/nrf54l15/cpuflpr --sysbuild -- -DSB_VPR_LAUNCHER=y
 
 Flashing
 ========

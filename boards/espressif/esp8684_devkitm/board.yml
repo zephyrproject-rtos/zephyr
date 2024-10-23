@@ -1,5 +1,6 @@
 board:
   name: esp8684_devkitm
+  full_name: ESP8684-DevKitM
   vendor: espressif
   socs:
   - name: esp32c2

@@ -46,7 +46,7 @@ The key features of the FPB-RA6E1 board are categorized in three groups as follo
 
 - MCU boot configuration jumper
 
-.. figure:: fpb-ra6e1-board.webp
+.. figure:: fpb_ra6e1.webp
 	:align: center
 	:alt: RA6E1 Evaluation Kit
 

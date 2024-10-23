@@ -136,7 +136,7 @@
 		};
 
 		fmu: flash-controller@40095000 {
-			compatible = "nxp,iap-msf1";
+			compatible = "nxp,msf1";
 			reg = <0x40095000 0x1000>;
 			interrupts = <12 0>;
 

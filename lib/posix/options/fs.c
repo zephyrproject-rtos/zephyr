@@ -85,7 +85,7 @@ static int posix_mode_to_zephyr(int mf)
 	return mode;
 }
 
-int zvfs_open(const char *name, int flags)
+int zvfs_open(const char *name, int flags, int mode)
 {
 	int rc, fd;
 	struct posix_fs_desc *ptr = NULL;
@@ -102,24 +102,44 @@ int zvfs_open(const char *name, int flags)
 
 	ptr = posix_fs_alloc_obj(false);
 	if (ptr == NULL) {
-		zvfs_free_fd(fd);
-		errno = EMFILE;
-		return -1;
+		rc = -EMFILE;
+		goto out_err;
 	}
 
 	fs_file_t_init(&ptr->file);
 
-	rc = fs_open(&ptr->file, name, zmode);
+	if (flags & O_CREAT) {
+		flags &= ~O_CREAT;
 
+		rc = fs_open(&ptr->file, name, FS_O_CREATE | (mode & O_ACCMODE));
+		if (rc < 0) {
+			goto out_err;
+		}
+		rc = fs_close(&ptr->file);
+		if (rc < 0) {
+			goto out_err;
+		}
+	}
+
+	rc = fs_open(&ptr->file, name, zmode);
 	if (rc < 0) {
-		posix_fs_free_obj(ptr);
-		zvfs_free_fd(fd);
-		errno = -rc;
-		return -1;
+		goto out_err;
 	}
 
 	zvfs_finalize_fd(fd, ptr, &fs_fd_op_vtable);
 
+	goto out;
+
+out_err:
+	if (ptr != NULL) {
+		posix_fs_free_obj(ptr);
+	}
+
+	zvfs_free_fd(fd);
+	errno = -rc;
+	return -1;
+
+out:
 	return fd;
 }
 

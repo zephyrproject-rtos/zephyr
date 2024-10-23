@@ -87,7 +87,7 @@
 
 &sim {
 	pllfll-select = <KINETIS_SIM_PLLFLLSEL_MCGPLLCLK>;
-	er32k-select = <KINETIS_SIM_ER32KSEL_LPO1KHZ>;
+	er32k-select = <KINETIS_SIM_ER32KSEL_OSC32KCLK>;
 };
 
 &cpu0 {
@@ -122,6 +122,13 @@
 	pinctrl-names = "default";
 };
 
+&uart2 {
+	status = "disabled";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_uart2>;
+	pinctrl-names = "default";
+};
+
 i2c1: &i2c1 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_i2c1>;
@@ -152,4 +159,24 @@ i2c1: &i2c1 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_adc0>;
 	pinctrl-names = "default";
+};
+
+&lptmr0 {
+	status = "okay";
+};
+
+&rtc {
+	status = "okay";
+};
+
+&pit0 {
+	status = "okay";
+};
+
+&pit0_channel0 {
+	status = "okay";
+};
+
+&pit0_channel1 {
+	status = "okay";
 };

@@ -9,7 +9,6 @@ import pathlib
 import pickle
 import platform
 import shutil
-import shlex
 import subprocess
 import sys
 
@@ -80,22 +79,6 @@ when invoking west sign _indirectly_ through CMake/ninja. See how at
 https://docs.zephyrproject.org/latest/develop/west/sign.html
 '''
 
-
-def config_get_words(west_config, section_key, fallback=None):
-    unparsed = west_config.get(section_key)
-    log.dbg(f'west config {section_key}={unparsed}')
-    return fallback if unparsed is None else shlex.split(unparsed)
-
-
-def config_get(west_config, section_key, fallback=None):
-    words = config_get_words(west_config, section_key)
-    if words is None:
-        return fallback
-    if len(words) != 1:
-        log.die(f'Single word expected for: {section_key}={words}. Use quotes?')
-    return words[0]
-
-
 class ToggleAction(argparse.Action):
 
     def __call__(self, parser, args, ignored, option):
@@ -129,7 +112,7 @@ class Sign(Forceable):
         group = parser.add_argument_group('tool control options')
         group.add_argument('-t', '--tool', choices=['imgtool', 'rimage'],
                            help='''image signing tool name; imgtool and rimage
-                           are currently supported''')
+                           are currently supported (imgtool is deprecated)''')
         group.add_argument('-p', '--tool-path', default=None,
                            help='''path to the tool itself, if needed''')
         group.add_argument('-D', '--tool-data', default=None,
@@ -179,7 +162,7 @@ schema (rimage "target") is not defined in board.cmake.''')
         build_conf = BuildConfiguration(build_dir)
 
         if not args.tool:
-            args.tool = config_get(self.config, 'sign.tool')
+            args.tool = self.config_get('sign.tool')
 
         # Decide on output formats.
         formats = []
@@ -245,6 +228,8 @@ class ImgtoolSigner(Signer):
 
         args = command.args
         b = pathlib.Path(build_dir)
+
+        log.wrn("west sign using imgtool is deprecated and will be removed in a future release")
 
         imgtool = self.find_imgtool(command, args)
         # The vector table offset and application version are set in Kconfig:
@@ -505,7 +490,7 @@ class RimageSigner(Signer):
 
         tool_path = (
             args.tool_path if args.tool_path else
-            config_get(command.config, 'rimage.path', None)
+            self.command.config_get('rimage.path', None)
         )
         err_prefix = '--tool-path' if args.tool_path else 'west config'
 
@@ -570,7 +555,7 @@ class RimageSigner(Signer):
         components = [ ] if bootloader is None else [ bootloader ]
         components += [ kernel ]
 
-        sign_config_extra_args = config_get_words(command.config, 'rimage.extra-args', [])
+        sign_config_extra_args = self.command.config_get_words('rimage.extra-args', [])
 
         if '-k' not in sign_config_extra_args + args.tool_args:
             # rimage requires a key argument even when it does not sign

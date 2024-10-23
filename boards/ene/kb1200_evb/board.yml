@@ -1,5 +1,6 @@
 board:
   name: kb1200_evb
+  full_name: ENE KB1200_EVB
   vendor: ene
   socs:
   - name: kb1200

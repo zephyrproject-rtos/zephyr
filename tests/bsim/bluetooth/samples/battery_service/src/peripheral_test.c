@@ -101,7 +101,7 @@ static void bt_ready(void)
 
 	LOG_DBG("Peripheral Bluetooth initialized\n");
 
-	err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad), NULL, 0);
+	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err) {
 		TEST_FAIL("Advertising failed to start (err %d)\n", err);
 		return;
@@ -158,6 +158,14 @@ static void test_bas_peripheral_main(void)
 	k_work_schedule(&update_bas_char_work, K_SECONDS(1));
 
 	/* Main thread waits for the sync signal from other device */
+	bk_sync_wait();
+
+	/*
+	 * Once BLS Additional status service required flag is set to false,
+	 * BCS Immediate service flag is also set to false. BCS char is
+	 * read from central.
+	 */
+	bt_bas_bls_set_service_required(BT_BAS_BLS_SERVICE_REQUIRED_FALSE);
 	bk_sync_wait();
 
 	bst_result = Passed;

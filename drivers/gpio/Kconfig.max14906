@@ -1,0 +1,20 @@
+# Copyright (c) 2024 Analog Devices Inc.
+# Copyright (c) 2024 BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+# MAX14906 GPIO configuration options
+
+menuconfig GPIO_MAX14906
+	bool "MAX14906 GPIO driver"
+	default y
+	depends on DT_HAS_ADI_MAX14906_GPIO_ENABLED && SPI
+	help
+	  Enabe MAX14906 quad industrial digital
+	  input/output with diagnostics
+
+config GPIO_MAX14906_INIT_PRIORITY
+	int "Driver init priority"
+	default 99
+	depends on GPIO_MAX14906
+	help
+	  Device driver initialization priority.

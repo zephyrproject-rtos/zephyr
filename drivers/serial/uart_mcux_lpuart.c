@@ -515,10 +515,11 @@ static void mcux_lpuart_async_rx_flush(const struct device *dev)
 		const size_t rx_rcv_len = data->async.rx_dma_params.buf_len -
 					  status.pending_length;
 
-		if (rx_rcv_len > data->async.rx_dma_params.counter) {
+		if (rx_rcv_len > data->async.rx_dma_params.counter && status.pending_length) {
 			data->async.rx_dma_params.counter = rx_rcv_len;
 			async_evt_rx_rdy(dev);
 		}
+		LPUART_ClearStatusFlags(config->base, kLPUART_RxOverrunFlag);
 	} else {
 		LOG_ERR("Error getting DMA status");
 	}
@@ -584,7 +585,7 @@ static void prepare_rx_dma_block_config(const struct device *dev)
 	head_block_config->dest_address = (uint32_t)rx_dma_params->buf;
 	head_block_config->source_address = LPUART_GetDataRegisterAddress(lpuart);
 	head_block_config->block_size = rx_dma_params->buf_len;
-	head_block_config->dest_scatter_en = true;
+	head_block_config->dest_scatter_en = false;
 }
 
 static int configure_and_start_rx_dma(
@@ -615,20 +616,38 @@ static int uart_mcux_lpuart_dma_replace_rx_buffer(const struct device *dev)
 	struct mcux_lpuart_data *data = (struct mcux_lpuart_data *)dev->data;
 	const struct mcux_lpuart_config *config = dev->config;
 	LPUART_Type *lpuart = config->base;
+	struct mcux_lpuart_rx_dma_params *rx_dma_params = &data->async.rx_dma_params;
 
 	LOG_DBG("Replacing RX buffer, new length: %d", data->async.next_rx_buffer_len);
+
 	/* There must be a buffer to replace this one with */
 	assert(data->async.next_rx_buffer != NULL);
 	assert(data->async.next_rx_buffer_len != 0U);
-	const int success = dma_reload(config->rx_dma_config.dma_dev,
-				       config->rx_dma_config.dma_channel,
-				       LPUART_GetDataRegisterAddress(lpuart),
-				       (uint32_t)data->async.next_rx_buffer,
-				       data->async.next_rx_buffer_len);
+	rx_dma_params->buf = data->async.next_rx_buffer;
+	rx_dma_params->buf_len = data->async.next_rx_buffer_len;
+	rx_dma_params->offset = 0;
+	rx_dma_params->counter = 0;
+	data->async.next_rx_buffer = NULL;
+	data->async.next_rx_buffer_len = 0U;
+
+	const int success =
+		dma_reload(config->rx_dma_config.dma_dev, config->rx_dma_config.dma_channel,
+			   LPUART_GetDataRegisterAddress(lpuart), (uint32_t)rx_dma_params->buf,
+			   rx_dma_params->buf_len);
 
 	if (success != 0) {
 		LOG_ERR("Error %d reloading DMA with next RX buffer", success);
 	}
+	/* Request next buffer */
+	async_evt_rx_buf_request(dev);
+
+	int ret = dma_start(config->rx_dma_config.dma_dev, config->rx_dma_config.dma_channel);
+
+	if (ret < 0) {
+		LOG_ERR("Failed to start DMA(Rx) Ch %d(%d)", config->rx_dma_config.dma_channel,
+			ret);
+	}
+
 	return success;
 }
 
@@ -673,16 +692,9 @@ static void dma_callback(const struct device *dma_dev, void *callback_arg, uint3
 		async_evt_rx_rdy(dev);
 		async_evt_rx_buf_release(dev);
 
-		rx_dma_params->buf = data->async.next_rx_buffer;
-		rx_dma_params->buf_len = data->async.next_rx_buffer_len;
-		data->async.next_rx_buffer = NULL;
-		data->async.next_rx_buffer_len = 0U;
-
-		/* A new buffer was available (and already loaded into the DMA engine) */
-		if (rx_dma_params->buf != NULL &&
-		    rx_dma_params->buf_len > 0) {
+		if (data->async.next_rx_buffer != NULL && data->async.next_rx_buffer_len > 0) {
 			/* Request the next buffer */
-			async_evt_rx_buf_request(dev);
+			uart_mcux_lpuart_dma_replace_rx_buffer(dev);
 		} else {
 			/* Buffer full without valid next buffer, disable RX DMA */
 			LOG_INF("Disabled RX DMA, no valid next buffer ");
@@ -832,6 +844,8 @@ static int mcux_lpuart_rx_enable(const struct device *dev, uint8_t *buf, const s
 	rx_dma_params->timeout_us = timeout_us;
 	rx_dma_params->buf = buf;
 	rx_dma_params->buf_len = len;
+	data->async.next_rx_buffer = NULL;
+	data->async.next_rx_buffer_len = 0U;
 
 	LPUART_EnableInterrupts(config->base, kLPUART_IdleLineInterruptEnable);
 	prepare_rx_dma_block_config(dev);
@@ -841,10 +855,9 @@ static int mcux_lpuart_rx_enable(const struct device *dev, uint8_t *buf, const s
 	async_evt_rx_buf_request(dev);
 
 	/* Clear these status flags as they can prevent the UART device from receiving data */
-	LPUART_ClearStatusFlags(config->base, kLPUART_RxOverrunFlag |
-					      kLPUART_ParityErrorFlag |
-					      kLPUART_FramingErrorFlag |
-						  kLPUART_NoiseErrorFlag);
+	LPUART_ClearStatusFlags(config->base, kLPUART_RxOverrunFlag | kLPUART_ParityErrorFlag |
+							kLPUART_FramingErrorFlag |
+							kLPUART_NoiseErrorFlag);
 	LPUART_EnableRx(lpuart, true);
 	irq_unlock(key);
 	return ret;
@@ -853,13 +866,14 @@ static int mcux_lpuart_rx_enable(const struct device *dev, uint8_t *buf, const s
 static int mcux_lpuart_rx_buf_rsp(const struct device *dev, uint8_t *buf, size_t len)
 {
 	struct mcux_lpuart_data *data = dev->data;
+	unsigned int key;
 
+	key = irq_lock();
 	assert(data->async.next_rx_buffer == NULL);
 	assert(data->async.next_rx_buffer_len == 0);
 	data->async.next_rx_buffer = buf;
 	data->async.next_rx_buffer_len = len;
-	uart_mcux_lpuart_dma_replace_rx_buffer(dev);
-
+	irq_unlock(key);
 	return 0;
 }
 
@@ -920,6 +934,10 @@ static inline void mcux_lpuart_async_isr(struct mcux_lpuart_data *data,
 		async_timer_start(&data->async.rx_dma_params.timeout_work,
 				  data->async.rx_dma_params.timeout_us);
 		LPUART_ClearStatusFlags(config->base, kLPUART_IdleLineFlag);
+	}
+
+	if (status & kLPUART_RxOverrunFlag) {
+		LPUART_ClearStatusFlags(config->base, kLPUART_RxOverrunFlag);
 	}
 }
 #endif

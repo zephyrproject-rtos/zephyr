@@ -392,7 +392,7 @@ static bool valid_adv_ext_param(const struct bt_le_adv_param *param)
 	    BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
 		if (param->peer &&
 		    !(param->options & BT_LE_ADV_OPT_EXT_ADV) &&
-		    !(param->options & BT_LE_ADV_OPT_CONNECTABLE)) {
+		    !(param->options & _BT_LE_ADV_OPT_CONNECTABLE)) {
 			/* Cannot do directed non-connectable advertising
 			 * without extended advertising.
 			 */
@@ -441,7 +441,7 @@ static bool valid_adv_ext_param(const struct bt_le_adv_param *param)
 		return false;
 	}
 
-	if (!(param->options & BT_LE_ADV_OPT_CONNECTABLE)) {
+	if (!(param->options & _BT_LE_ADV_OPT_CONNECTABLE)) {
 		/*
 		 * BT Core 4.2 [Vol 2, Part E, 7.8.5]
 		 * The Advertising_Interval_Min and Advertising_Interval_Max
@@ -484,7 +484,7 @@ static bool valid_adv_param(const struct bt_le_adv_param *param)
 		return false;
 	}
 
-	if (param->peer && !(param->options & BT_LE_ADV_OPT_CONNECTABLE)) {
+	if (param->peer && !(param->options & _BT_LE_ADV_OPT_CONNECTABLE)) {
 		return false;
 	}
 
@@ -1020,7 +1020,7 @@ int bt_le_adv_start_legacy(struct bt_le_ext_adv *adv,
 
 	name_type = get_adv_name_type_param(param);
 
-	if (param->options & BT_LE_ADV_OPT_CONNECTABLE) {
+	if (param->options & _BT_LE_ADV_OPT_CONNECTABLE) {
 		if (dir_adv) {
 			if (param->options & BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY) {
 				set_param.type = BT_HCI_ADV_DIRECT_IND_LOW_DUTY;
@@ -1062,11 +1062,11 @@ int bt_le_adv_start_legacy(struct bt_le_ext_adv *adv,
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
-	    (param->options & BT_LE_ADV_OPT_CONNECTABLE)) {
+	    (param->options & _BT_LE_ADV_OPT_CONNECTABLE)) {
 		err = le_adv_start_add_conn(adv, &conn);
 		if (err) {
 			if (err == -ENOMEM && !dir_adv &&
-			    !(param->options & BT_LE_ADV_OPT_ONE_TIME)) {
+			    !(param->options & _BT_LE_ADV_OPT_ONE_TIME)) {
 				goto set_adv_state;
 			}
 
@@ -1096,7 +1096,7 @@ int bt_le_adv_start_legacy(struct bt_le_ext_adv *adv,
 
 set_adv_state:
 	atomic_set_bit_to(adv->flags, BT_ADV_PERSIST, !dir_adv &&
-			  !(param->options & BT_LE_ADV_OPT_ONE_TIME));
+			  !(param->options & _BT_LE_ADV_OPT_ONE_TIME));
 
 	atomic_set_bit_to(adv->flags, BT_ADV_INCLUDE_NAME_AD,
 			  name_type == ADV_NAME_TYPE_AD);
@@ -1105,7 +1105,7 @@ set_adv_state:
 			  name_type == ADV_NAME_TYPE_SD);
 
 	atomic_set_bit_to(adv->flags, BT_ADV_CONNECTABLE,
-			  param->options & BT_LE_ADV_OPT_CONNECTABLE);
+			  param->options & _BT_LE_ADV_OPT_CONNECTABLE);
 
 	atomic_set_bit_to(adv->flags, BT_ADV_SCANNABLE, scannable);
 
@@ -1187,7 +1187,7 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 		cp->scan_req_notify_enable = BT_HCI_LE_ADV_SCAN_REQ_ENABLE;
 	}
 
-	if (param->options & BT_LE_ADV_OPT_CONNECTABLE) {
+	if (param->options & _BT_LE_ADV_OPT_CONNECTABLE) {
 		props |= BT_HCI_LE_ADV_PROP_CONN;
 		if (!dir_adv && !(param->options & BT_LE_ADV_OPT_EXT_ADV)) {
 			/* When using non-extended adv packets then undirected
@@ -1252,7 +1252,7 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 			  name_type == ADV_NAME_TYPE_SD);
 
 	atomic_set_bit_to(adv->flags, BT_ADV_CONNECTABLE,
-			  param->options & BT_LE_ADV_OPT_CONNECTABLE);
+			  param->options & _BT_LE_ADV_OPT_CONNECTABLE);
 
 	atomic_set_bit_to(adv->flags, BT_ADV_SCANNABLE, scannable);
 
@@ -1312,11 +1312,11 @@ int bt_le_adv_start_ext(struct bt_le_ext_adv *adv,
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
-	    (param->options & BT_LE_ADV_OPT_CONNECTABLE)) {
+	    (param->options & _BT_LE_ADV_OPT_CONNECTABLE)) {
 		err = le_adv_start_add_conn(adv, &conn);
 		if (err) {
 			if (err == -ENOMEM && !dir_adv &&
-			    !(param->options & BT_LE_ADV_OPT_ONE_TIME)) {
+			    !(param->options & _BT_LE_ADV_OPT_ONE_TIME)) {
 				goto set_adv_state;
 			}
 
@@ -1347,7 +1347,7 @@ int bt_le_adv_start_ext(struct bt_le_ext_adv *adv,
 set_adv_state:
 	/* Flag always set to false by le_ext_adv_param_set */
 	atomic_set_bit_to(adv->flags, BT_ADV_PERSIST, !dir_adv &&
-			  !(param->options & BT_LE_ADV_OPT_ONE_TIME));
+			  !(param->options & _BT_LE_ADV_OPT_ONE_TIME));
 
 	return 0;
 }
@@ -1459,11 +1459,11 @@ static uint32_t adv_get_options(const struct bt_le_ext_adv *adv)
 	uint32_t options = 0;
 
 	if (!atomic_test_bit(adv->flags, BT_ADV_PERSIST)) {
-		options |= BT_LE_ADV_OPT_ONE_TIME;
+		options |= _BT_LE_ADV_OPT_ONE_TIME;
 	}
 
 	if (atomic_test_bit(adv->flags, BT_ADV_CONNECTABLE)) {
-		options |= BT_LE_ADV_OPT_CONNECTABLE;
+		options |= _BT_LE_ADV_OPT_CONNECTABLE;
 	}
 
 	if (atomic_test_bit(adv->flags, BT_ADV_USE_IDENTITY)) {
@@ -1596,7 +1596,7 @@ int bt_le_ext_adv_update_param(struct bt_le_ext_adv *adv,
 		/* If params for per adv has been set, do not allow setting
 		 * connectable, scanable or use legacy adv
 		 */
-		if (param->options & BT_LE_ADV_OPT_CONNECTABLE ||
+		if (param->options & _BT_LE_ADV_OPT_CONNECTABLE ||
 		    param->options & BT_LE_ADV_OPT_SCANNABLE ||
 		    !(param->options & BT_LE_ADV_OPT_EXT_ADV) ||
 		    param->options & BT_LE_ADV_OPT_ANONYMOUS) {

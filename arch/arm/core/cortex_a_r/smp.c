@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Arm Limited (or its affiliates). All rights reserved.
+ * Copyright (c) 2023, 2024 Arm Limited (or its affiliates).
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -139,10 +139,14 @@ void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz, arch_cpustart_
 	arm_cpu_boot_params.arg = arg;
 	arm_cpu_boot_params.cpu_num = cpu_num;
 
+	/* we need the barrier here to make sure the above changes to
+	 * arm_cpu_boot_params are completed before we set the mpid
+	 */
+	barrier_dsync_fence_full();
+
 	/* store mpid last as this is our synchronization point */
 	arm_cpu_boot_params.mpid = cpu_mpid;
 
-	barrier_dsync_fence_full();
 	sys_cache_data_invd_range(
 			(void *)&arm_cpu_boot_params,
 			sizeof(arm_cpu_boot_params));

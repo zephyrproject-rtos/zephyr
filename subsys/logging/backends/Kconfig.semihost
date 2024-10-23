@@ -4,7 +4,6 @@
 config LOG_BACKEND_SEMIHOST
 	bool "Semihost as backend"
 	depends on SEMIHOST
-	select LOG_OUTPUT
 	select LOG_BACKEND_SUPPORTS_FORMAT_TIMESTAMP
 	help
 	  Enable backend in semihost (using host stdout)

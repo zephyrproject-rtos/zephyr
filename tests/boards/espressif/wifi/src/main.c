@@ -13,7 +13,9 @@
 #include <zephyr/net/wifi_nm.h>
 #include <zephyr/net/icmp.h>
 
-LOG_MODULE_REGISTER(wifi_test, CONFIG_NET_L2_ETHERNET_LOG_LEVEL);
+#include "icmpv4.h"
+
+LOG_MODULE_REGISTER(wifi_test, LOG_LEVEL_INF);
 
 #include "net_private.h"
 
@@ -25,11 +27,13 @@ K_SEM_DEFINE(wifi_event, 0, 1);
 
 #define TEST_DATA "ICMP dummy data"
 
-static struct net_if *iface;
-static uint32_t scan_result;
-static bool connecting;
-static int result;
-static struct net_mgmt_event_callback wifi_mgmt_cb;
+static struct wifi_context {
+	struct net_if *iface;
+	uint32_t scan_result;
+	bool connecting;
+	int result;
+	struct net_mgmt_event_callback wifi_mgmt_cb;
+} wifi_ctx;
 
 extern char *net_sprint_ll_addr_buf(const uint8_t *ll, uint8_t ll_len, char *buf, int buflen);
 
@@ -39,9 +43,9 @@ static void wifi_scan_result(struct net_mgmt_event_callback *cb)
 	uint8_t mac_string_buf[sizeof("xx:xx:xx:xx:xx:xx")];
 	uint8_t ssid_print[WIFI_SSID_MAX_LEN + 1];
 
-	scan_result++;
+	wifi_ctx.scan_result++;
 
-	if (scan_result == 1U) {
+	if (wifi_ctx.scan_result == 1U) {
 		printk("\n%-4s | %-32s %-5s | %-13s | %-4s | %-15s | %-17s | %-8s\n", "Num", "SSID",
 		       "(len)", "Chan (Band)", "RSSI", "Security", "BSSID", "MFP");
 	}
@@ -49,9 +53,9 @@ static void wifi_scan_result(struct net_mgmt_event_callback *cb)
 	strncpy(ssid_print, entry->ssid, sizeof(ssid_print) - 1);
 	ssid_print[sizeof(ssid_print) - 1] = '\0';
 
-	printk("%-4d | %-32s %-5u | %-4u (%-6s) | %-4d | %-15s | %-17s | %-8s\n", scan_result,
-	       ssid_print, entry->ssid_length, entry->channel, wifi_band_txt(entry->band),
-	       entry->rssi, wifi_security_txt(entry->security),
+	printk("%-4d | %-32s %-5u | %-4u (%-6s) | %-4d | %-15s | %-17s | %-8s\n",
+	       wifi_ctx.scan_result, ssid_print, entry->ssid_length, entry->channel,
+	       wifi_band_txt(entry->band), entry->rssi, wifi_security_txt(entry->security),
 	       ((entry->mac_length) ? net_sprint_ll_addr_buf(entry->mac, WIFI_MAC_ADDR_LEN,
 							     mac_string_buf, sizeof(mac_string_buf))
 				    : ""),
@@ -62,10 +66,10 @@ static void wifi_connect_result(struct net_mgmt_event_callback *cb)
 {
 	const struct wifi_status *status = (const struct wifi_status *)cb->info;
 
-	result = status->status;
+	wifi_ctx.result = status->status;
 
-	if (result) {
-		LOG_INF("Connection request failed (%d)", result);
+	if (wifi_ctx.result) {
+		LOG_INF("Connection request failed (%d)", wifi_ctx.result);
 	} else {
 		LOG_INF("Connected");
 	}
@@ -75,17 +79,17 @@ static void wifi_disconnect_result(struct net_mgmt_event_callback *cb)
 {
 	const struct wifi_status *status = (const struct wifi_status *)cb->info;
 
-	result = status->status;
+	wifi_ctx.result = status->status;
 
-	if (!connecting) {
-		if (result) {
-			LOG_INF("Disconnect failed (%d)", result);
+	if (!wifi_ctx.connecting) {
+		if (wifi_ctx.result) {
+			LOG_INF("Disconnect failed (%d)", wifi_ctx.result);
 		} else {
 			LOG_INF("Disconnected");
 		}
 	} else {
 		/* Disconnect event while connecting is a failed attempt */
-		result = WIFI_STATUS_CONN_FAIL;
+		wifi_ctx.result = WIFI_STATUS_CONN_FAIL;
 	}
 }
 
@@ -116,9 +120,28 @@ static int icmp_event(struct net_icmp_ctx *ctx, struct net_pkt *pkt, struct net_
 		      struct net_icmp_hdr *icmp_hdr, void *user_data)
 {
 	struct net_ipv4_hdr *ip_hdr = hdr->ipv4;
+	size_t hdr_offset = net_pkt_ip_hdr_len(pkt) + net_pkt_ip_opts_len(pkt) +
+			    sizeof(struct net_icmp_hdr) + sizeof(struct net_icmpv4_echo_req);
+	size_t data_len = net_pkt_get_len(pkt) - hdr_offset;
+	char buf[50];
+
+	if (net_calc_chksum_icmpv4(pkt)) {
+		/* checksum error */
+		wifi_ctx.result = -EIO;
+		goto sem_give;
+	}
+
+	net_pkt_cursor_init(pkt);
+	net_pkt_skip(pkt, hdr_offset);
+	net_pkt_read(pkt, buf, MIN(data_len, sizeof(buf)));
 
 	LOG_INF("Received ICMP reply from %s", net_sprint_ipv4_addr(&ip_hdr->src));
+	LOG_INF("Payload: '%s'", buf);
 
+	/* payload check */
+	wifi_ctx.result = strcmp(buf, TEST_DATA);
+
+sem_give:
 	k_sem_give(&wifi_event);
 
 	return 0;
@@ -126,7 +149,7 @@ static int icmp_event(struct net_icmp_ctx *ctx, struct net_pkt *pkt, struct net_
 
 static int wifi_scan(void)
 {
-	int ret = net_mgmt(NET_REQUEST_WIFI_SCAN, iface, NULL, 0);
+	int ret = net_mgmt(NET_REQUEST_WIFI_SCAN, wifi_ctx.iface, NULL, 0);
 
 	if (ret) {
 		LOG_INF("Scan request failed with error: %d", ret);
@@ -163,7 +186,7 @@ static int wifi_connect(void)
 	params.security = WIFI_SECURITY_TYPE_NONE;
 #endif
 
-	ret = net_mgmt(NET_REQUEST_WIFI_CONNECT, iface, &params,
+	ret = net_mgmt(NET_REQUEST_WIFI_CONNECT, wifi_ctx.iface, &params,
 		       sizeof(struct wifi_connect_req_params));
 
 	if (ret) {
@@ -180,7 +203,7 @@ static int wifi_disconnect(void)
 {
 	int ret;
 
-	ret = net_mgmt(NET_REQUEST_WIFI_DISCONNECT, iface, NULL, 0);
+	ret = net_mgmt(NET_REQUEST_WIFI_DISCONNECT, wifi_ctx.iface, NULL, 0);
 
 	if (ret) {
 		LOG_INF("Disconnect request failed with error: %d", ret);
@@ -194,12 +217,13 @@ static int wifi_state(void)
 {
 	struct wifi_iface_status status = {0};
 
-	net_mgmt(NET_REQUEST_WIFI_IFACE_STATUS, iface, &status, sizeof(struct wifi_iface_status));
+	net_mgmt(NET_REQUEST_WIFI_IFACE_STATUS, wifi_ctx.iface, &status,
+		 sizeof(struct wifi_iface_status));
 
 	return status.state;
 }
 
-ZTEST(wifi, test_wifi_0_scan)
+ZTEST(wifi, test_0_scan)
 {
 	int ret;
 
@@ -212,13 +236,13 @@ ZTEST(wifi, test_wifi_0_scan)
 	LOG_INF("Scan done");
 }
 
-ZTEST(wifi, test_wifi_1_connect)
+ZTEST(wifi, test_1_connect)
 {
 	int ret;
 	int retry = CONFIG_WIFI_CONNECT_ATTEMPTS;
 
 	/* Manage connect retry as disconnect event may happen */
-	connecting = true;
+	wifi_ctx.connecting = true;
 
 	do {
 		ret = wifi_connect();
@@ -227,7 +251,7 @@ ZTEST(wifi, test_wifi_1_connect)
 		zassert_equal(k_sem_take(&wifi_event, K_SECONDS(CONFIG_WIFI_CONNECT_TIMEOUT)), 0,
 			      "Wifi connect timed out");
 
-		if (result) {
+		if (wifi_ctx.result) {
 			zassert(--retry, "Connect failed");
 			LOG_INF("Failed attempt, retry %d", CONFIG_WIFI_CONNECT_ATTEMPTS - retry);
 			k_sleep(K_SECONDS(1));
@@ -236,7 +260,7 @@ ZTEST(wifi, test_wifi_1_connect)
 		}
 	} while (retry);
 
-	connecting = false;
+	wifi_ctx.connecting = false;
 
 	/* Check interface state */
 	int state = wifi_state();
@@ -246,18 +270,19 @@ ZTEST(wifi, test_wifi_1_connect)
 	zassert_equal(state, WIFI_STATE_COMPLETED, "Interface state check failed");
 }
 
-ZTEST(wifi, test_wifi_2_icmp)
+ZTEST(wifi, test_2_icmp)
 {
 	struct net_icmp_ping_params params;
-	struct net_icmp_ctx ctx;
+	struct net_icmp_ctx icmp_ctx;
 	struct in_addr gw_addr_4;
 	struct sockaddr_in dst4 = {0};
+	int retry = CONFIG_WIFI_PING_ATTEMPTS;
 	int ret;
 
-	gw_addr_4 = net_if_ipv4_get_gw(iface);
+	gw_addr_4 = net_if_ipv4_get_gw(wifi_ctx.iface);
 	zassert_not_equal(gw_addr_4.s_addr, 0, "Gateway address is not set");
 
-	ret = net_icmp_init_ctx(&ctx, NET_ICMPV4_ECHO_REPLY, 0, icmp_event);
+	ret = net_icmp_init_ctx(&icmp_ctx, NET_ICMPV4_ECHO_REPLY, 0, icmp_event);
 	zassert_equal(ret, 0, "Cannot init ICMP (%d)", ret);
 
 	dst4.sin_family = AF_INET;
@@ -272,16 +297,28 @@ ZTEST(wifi, test_wifi_2_icmp)
 
 	LOG_INF("Pinging the gateway...");
 
-	ret = net_icmp_send_echo_request(&ctx, iface, (struct sockaddr *)&dst4, &params, NULL);
-	zassert_equal(ret, 0, "Cannot send ICMP echo request (%d)", ret);
+	do {
+		ret = net_icmp_send_echo_request(&icmp_ctx, wifi_ctx.iface,
+						 (struct sockaddr *)&dst4, &params, NULL);
+		zassert_equal(ret, 0, "Cannot send ICMP echo request (%d)", ret);
 
-	zassert_equal(k_sem_take(&wifi_event, K_SECONDS(CONFIG_WIFI_PING_TIMEOUT)), 0,
-		      "Gateway ping (ICMP) timed out");
+		int timeout = k_sem_take(&wifi_event, K_SECONDS(CONFIG_WIFI_PING_TIMEOUT));
 
-	net_icmp_cleanup_ctx(&ctx);
+		if (timeout) {
+			zassert(--retry, "Gateway ping (ICMP) timed out on all attempts");
+			LOG_INF("No reply, retry %d", CONFIG_WIFI_PING_ATTEMPTS - retry);
+		} else {
+			break;
+		}
+	} while (retry);
+
+	/* check result */
+	zassert_equal(wifi_ctx.result, 0, "ICMP data error");
+
+	net_icmp_cleanup_ctx(&icmp_ctx);
 }
 
-ZTEST(wifi, test_wifi_3_disconnect)
+ZTEST(wifi, test_3_disconnect)
 {
 	int ret;
 
@@ -291,15 +328,16 @@ ZTEST(wifi, test_wifi_3_disconnect)
 	zassert_equal(k_sem_take(&wifi_event, K_SECONDS(CONFIG_WIFI_DISCONNECT_TIMEOUT)), 0,
 		      "Wifi disconnect timed out");
 
-	zassert_equal(result, 0, "Disconnect failed");
+	zassert_equal(wifi_ctx.result, 0, "Disconnect failed");
 }
 
 static void *wifi_setup(void)
 {
-	iface = net_if_get_wifi_sta();
+	wifi_ctx.iface = net_if_get_wifi_sta();
 
-	net_mgmt_init_event_callback(&wifi_mgmt_cb, wifi_mgmt_event_handler, WIFI_MGMT_EVENTS);
-	net_mgmt_add_event_callback(&wifi_mgmt_cb);
+	net_mgmt_init_event_callback(&wifi_ctx.wifi_mgmt_cb, wifi_mgmt_event_handler,
+				     WIFI_MGMT_EVENTS);
+	net_mgmt_add_event_callback(&wifi_ctx.wifi_mgmt_cb);
 
 	/* reset semaphore that tracks wifi events */
 	k_sem_reset(&wifi_event);

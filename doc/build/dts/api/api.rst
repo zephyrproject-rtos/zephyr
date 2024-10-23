@@ -456,3 +456,5 @@ device.
    * - zephyr,led-strip
      - A LED-strip node which is used to determine the timings of the
        WS2812 GPIO driver
+   * - zephyr,touch
+     - touchscreen controller device node.

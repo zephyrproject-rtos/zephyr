@@ -274,6 +274,19 @@ over LE connections. A more detailed description of this layer and the
 API reference can be found in the
 :ref:`GATT API reference section <bt_gatt>`.
 
+ATT timeout
+-----------
+
+If the peer device does not respond to an ATT request (such as read or write)
+within the ATT timeout, the host will automatically initiate a disconnect. This
+simplifies error handling by reducing rare failure conditions to a common
+disconnection, allowing developers to manage unexpected disconnects without
+special cases for ATT timeouts.
+
+.. image:: img/att_timeout.svg
+  :align: center
+  :alt: ATT timeout
+
 Mesh
 ====
 

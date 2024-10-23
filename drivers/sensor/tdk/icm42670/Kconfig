@@ -28,11 +28,13 @@ config ICM42670_TRIGGER_NONE
 config ICM42670_TRIGGER_GLOBAL_THREAD
 	bool "Use global thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM42670),int-gpios)
 	select ICM42670_TRIGGER
 
 config ICM42670_TRIGGER_OWN_THREAD
 	bool "Use own thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM42670),int-gpios)
 	select ICM42670_TRIGGER
 
 endchoice

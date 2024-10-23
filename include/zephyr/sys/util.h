@@ -57,6 +57,15 @@ extern "C" {
 #	error Missing required predefined macros for BITS_PER_LONG calculation
 #endif
 
+/** Number of bits in a byte. */
+#define BITS_PER_BYTE (__CHAR_BIT__)
+
+/** Number of bits in a nibble. */
+#define BITS_PER_NIBBLE (__CHAR_BIT__ / 2)
+
+/** Number of nibbles in a byte. */
+#define NIBBLES_PER_BYTE (BITS_PER_BYTE / BITS_PER_NIBBLE)
+
 /** Number of bits in a long int. */
 #define BITS_PER_LONG	(__CHAR_BIT__ * __SIZEOF_LONG__)
 

@@ -1,0 +1,74 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 Carl Zeiss Meditec AG
+# SPDX-License-Identifier: Apache-2.0
+
+description: Global configuration flags for Trinamic stepper controller.
+
+properties:
+  en_spreadcycle:
+    type: boolean
+    description: |
+      A high level on the pin SPREAD inverts this flag to switch between both chopper modes.
+      0: StealthChop mode
+      1: SpreadCycle mode enabled
+
+  i_scale_analog:
+    type: boolean
+    description: |
+      0: Use internal reference derived from 5VOUT
+      1: Use voltage supplied to VREF as current reference
+
+  internal_rsense:
+    type: boolean
+    description: |
+      0: Operation with external sense resistors
+      1: Internal sense resistors. Use current supplied into VREF as reference for internal
+         sense resistor. VREF pin internally is driven to GND in this mode.
+
+  index_otpw:
+    type: boolean
+    description: |
+      0: INDEX shows the first microstep position of sequencer
+      1: INDEX output shows step pulses from internal pulse generator (toggle upon each step)
+
+  index_step:
+    type: boolean
+    description: |
+      0: INDEX output as selected by index_otpw
+      1: INDEX pin shows the current step position of sequencer
+
+  pdn_disable:
+    type: boolean
+    description: |
+      0: Normal operation
+      1: Power down mode
+
+  mstep_reg_select:
+    type: boolean
+    description: |
+      0: Microstep resolution selected by pins MS1, MS2
+      1: Microstep resolution selected by MRES register
+
+  poscmp_enable:
+    type: boolean
+    description: |
+      Enable position compare feature
+      0: Outputs INT and PP are tristated.
+      1: Position compare pulse (PP) and interrupt output (INT) are available
+
+      Attention – do not leave the outputs floating in tristate condition, provide an external
+      pull-up or set poscmp_enable=1
+
+  test_mode:
+    type: boolean
+    description: |
+      Enable test mode
+      0: Normal operation
+      1: Enable analog test output on pin REFR2
+      TEST_SEL selects the function of REFR2: 0…4: T120, DAC1, VDDH1, DAC2, VDDH2
+
+      Attention: Not for user, set to 0 for normal operation!
+
+  lock_gconf:
+    type: boolean
+    description: |
+      1: GCONF is locked against further write access.

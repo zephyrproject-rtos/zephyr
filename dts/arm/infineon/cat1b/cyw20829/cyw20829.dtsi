@@ -138,6 +138,14 @@
 			status = "disabled";
 		};
 
+		rtc0: rtc@40220000 {
+			compatible = "infineon,cat1-rtc";
+			reg = <0x40220000 0x10000>;
+			interrupts = <10 6>;
+			alarms-count = <2>;
+			status = "disabled";
+		};
+
 		counter0_0: counter@404a0000 {
 			compatible = "infineon,cat1-counter";
 			reg = <0x404a0000 0x80>;

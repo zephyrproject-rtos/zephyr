@@ -17,7 +17,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/logging/log_ctrl.h>
-#include <zephyr/mgmt/hawkbit.h>
+#include <zephyr/mgmt/hawkbit/hawkbit.h>
+#include <zephyr/mgmt/hawkbit/config.h>
 #include <zephyr/net/dns_resolve.h>
 #include <zephyr/net/http/client.h>
 #include <zephyr/net/net_ip.h>
@@ -43,6 +44,8 @@ LOG_MODULE_REGISTER(hawkbit, CONFIG_HAWKBIT_LOG_LEVEL);
 #define DDI_SECURITY_TOKEN_SIZE 32
 #define HAWKBIT_RECV_TIMEOUT (300 * MSEC_PER_SEC)
 #define HAWKBIT_SET_SERVER_TIMEOUT K_MSEC(300)
+
+#define HAWKBIT_JSON_URL "/default/controller/v1"
 
 #define HTTP_HEADER_CONTENT_TYPE_JSON "application/json;charset=UTF-8"
 
@@ -144,8 +147,6 @@ int hawkbit_default_config_data_cb(const char *device_id, uint8_t *buffer,
 
 static hawkbit_config_device_data_cb_handler_t hawkbit_config_device_data_cb_handler =
 	hawkbit_default_config_data_cb;
-
-static struct k_work_delayable hawkbit_work_handle;
 
 K_SEM_DEFINE(probe_sem, 1, 1);
 
@@ -499,6 +500,11 @@ int hawkbit_reset_action_id(void)
 int32_t hawkbit_get_action_id(void)
 {
 	return hb_cfg.action_id;
+}
+
+uint32_t hawkbit_get_poll_interval(void)
+{
+	return poll_sleep;
 }
 
 /*
@@ -1469,66 +1475,4 @@ error:
 	k_free(hb_context.response_data);
 	k_sem_give(&probe_sem);
 	return hb_context.code_status;
-}
-
-static void autohandler(struct k_work *work)
-{
-	switch (hawkbit_probe()) {
-	case HAWKBIT_UNCONFIRMED_IMAGE:
-		LOG_ERR("Current image is not confirmed");
-		LOG_ERR("Rebooting to previous confirmed image");
-		LOG_ERR("If this image is flashed using a hardware tool");
-		LOG_ERR("Make sure that it is a confirmed image");
-		hawkbit_reboot();
-		break;
-
-	case HAWKBIT_NO_UPDATE:
-		LOG_INF("No update found");
-		break;
-
-	case HAWKBIT_CANCEL_UPDATE:
-		LOG_INF("hawkBit update cancelled from server");
-		break;
-
-	case HAWKBIT_OK:
-		LOG_INF("Image is already updated");
-		break;
-
-	case HAWKBIT_UPDATE_INSTALLED:
-		LOG_INF("Update installed");
-		hawkbit_reboot();
-		break;
-
-	case HAWKBIT_DOWNLOAD_ERROR:
-		LOG_INF("Update failed");
-		break;
-
-	case HAWKBIT_NETWORKING_ERROR:
-		LOG_INF("Network error");
-		break;
-
-	case HAWKBIT_PERMISSION_ERROR:
-		LOG_INF("Permission error");
-		break;
-
-	case HAWKBIT_METADATA_ERROR:
-		LOG_INF("Metadata error");
-		break;
-
-	case HAWKBIT_NOT_INITIALIZED:
-		LOG_INF("hawkBit not initialized");
-		break;
-
-	case HAWKBIT_PROBE_IN_PROGRESS:
-		LOG_INF("hawkBit is already running");
-		break;
-	}
-
-	k_work_reschedule(&hawkbit_work_handle, K_SECONDS(poll_sleep));
-}
-
-void hawkbit_autohandler(void)
-{
-	k_work_init_delayable(&hawkbit_work_handle, autohandler);
-	k_work_reschedule(&hawkbit_work_handle, K_NO_WAIT);
 }

@@ -59,7 +59,14 @@ The current Zephyr stm32h750b_dk board configuration supports the following hard
 +-----------+------------+-------------------------------------+
 | RTC       | on-chip    | rtc                                 |
 +-----------+------------+-------------------------------------+
-
+| ADC       | on-chip    | adc                                 |
++-----------+------------+-------------------------------------+
+| LTDC      | on-chip    | display                             |
++-----------+------------+-------------------------------------+
+| QSPI NOR  | on-chip    | off-chip flash                      |
++-----------+------------+-------------------------------------+
+| FMC       | on-chip    | memc (SDRAM)                        |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on Zephyr porting.
 
@@ -77,6 +84,7 @@ Default Zephyr Peripheral Mapping:
 - UART_3 TX/RX : PB10/PB11 (ST-Link Virtual Port Com)
 - LD1 : PJ2
 - LD2 : PI13
+- USART1 TX/RX : PB6/PB7 (Arduino D1/D0)
 
 System Clock
 ============

@@ -33,18 +33,18 @@ enum {
 };
 static ATOMIC_DEFINE(brg_cfg_flags, BRG_CFG_FLAGS_COUNT);
 
-static void brg_tbl_compact(void)
+/* Compact the bridge table for all removed entries, input is first removed entry */
+static void brg_tbl_compact(int j)
 {
-	int j = 0;
-
-	for (int k = 0; k < bt_mesh_brg_cfg_row_cnt; k++) {
+	for (int k = j; k < bt_mesh_brg_cfg_row_cnt; k++) {
 		if (brg_tbl[k].direction != 0) {
 			brg_tbl[j] = brg_tbl[k];
 			j++;
 		}
 	}
-	memset(&brg_tbl[j], 0, sizeof(brg_tbl[j]));
-	bt_mesh_brg_cfg_row_cnt--;
+
+	memset(&brg_tbl[j], 0, sizeof(brg_tbl[j]) * (bt_mesh_brg_cfg_row_cnt - j));
+	bt_mesh_brg_cfg_row_cnt = j;
 }
 
 /* Set function for initializing bridging enable state from value stored in settings. */
@@ -167,21 +167,30 @@ void bt_mesh_brg_cfg_pending_store(void)
  */
 static void brg_tbl_netkey_removed_evt(struct bt_mesh_subnet *sub, enum bt_mesh_key_evt evt)
 {
+	int first_removed = -1;
+
 	if (evt != BT_MESH_KEY_DELETED) {
 		return;
 	}
 
-	for (int i = 0; i < CONFIG_BT_MESH_BRG_TABLE_ITEMS_MAX; i++) {
-		if (brg_tbl[i].direction &&
-		    (brg_tbl[i].net_idx1 == sub->net_idx || brg_tbl[i].net_idx2 == sub->net_idx)) {
-			memset(&brg_tbl[i], 0, sizeof(brg_tbl[i]));
-			brg_tbl_compact();
+	for (int i = 0; i < bt_mesh_brg_cfg_row_cnt; i++) {
+		if (brg_tbl[i].net_idx1 == sub->net_idx || brg_tbl[i].net_idx2 == sub->net_idx) {
+			/* Setting direction to 0, entry will be cleared in brg_tbl_compact. */
+			brg_tbl[i].direction = 0;
+			if (first_removed == -1) {
+				first_removed = i;
+			}
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-		atomic_set_bit(brg_cfg_flags, TABLE_UPDATED);
-		bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_BRG_PENDING);
+	if (first_removed != -1) {
+		/* Compact when all rows have been deleted. */
+		brg_tbl_compact(first_removed);
+
+		if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+			atomic_set_bit(brg_cfg_flags, TABLE_UPDATED);
+			bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_BRG_PENDING);
+		}
 	}
 }
 
@@ -263,7 +272,7 @@ int bt_mesh_brg_cfg_tbl_add(uint8_t direction, uint16_t net_idx1, uint16_t net_i
 	}
 
 	/* Empty element, is the current table row counter */
-	if (bt_mesh_brg_cfg_row_cnt == CONFIG_BT_MESH_BRG_TABLE_ITEMS_MAX) {
+	if (bt_mesh_brg_cfg_row_cnt >= CONFIG_BT_MESH_BRG_TABLE_ITEMS_MAX) {
 		*status = STATUS_INSUFF_RESOURCES;
 		return 0;
 	}
@@ -306,7 +315,7 @@ void bt_mesh_brg_cfg_tbl_foreach_subnet(uint16_t src, uint16_t dst, uint16_t net
 int bt_mesh_brg_cfg_tbl_remove(uint16_t net_idx1, uint16_t net_idx2, uint16_t addr1, uint16_t addr2,
 			       uint8_t *status)
 {
-	bool store = false;
+	int first_removed = -1;
 
 	/* Sanity checks */
 	if ((!BT_MESH_ADDR_IS_UNICAST(addr1) && addr1 != BT_MESH_ADDR_UNASSIGNED) ||
@@ -334,26 +343,29 @@ int bt_mesh_brg_cfg_tbl_remove(uint16_t net_idx1, uint16_t net_idx2, uint16_t ad
 
 	for (int i = 0; i < bt_mesh_brg_cfg_row_cnt; i++) {
 		/* Match according to remove behavior in Section 4.4.9.2.2 of MshPRT_v1.1 */
-		if (brg_tbl[i].direction) {
-			if (!(brg_tbl[i].net_idx1 == net_idx1 && brg_tbl[i].net_idx2 == net_idx2)) {
-				continue;
-			}
+		if (!(brg_tbl[i].net_idx1 == net_idx1 && brg_tbl[i].net_idx2 == net_idx2)) {
+			continue;
+		}
 
-			if ((brg_tbl[i].addr1 == addr1 && brg_tbl[i].addr2 == addr2) ||
-			    (addr2 == BT_MESH_ADDR_UNASSIGNED && brg_tbl[i].addr1 == addr1) ||
-			    (addr1 == BT_MESH_ADDR_UNASSIGNED && brg_tbl[i].addr2 == addr2)) {
-				memset(&brg_tbl[i], 0, sizeof(brg_tbl[i]));
-				store = true;
+		if ((brg_tbl[i].addr1 == addr1 && brg_tbl[i].addr2 == addr2) ||
+		    (addr2 == BT_MESH_ADDR_UNASSIGNED && brg_tbl[i].addr1 == addr1) ||
+		    (addr1 == BT_MESH_ADDR_UNASSIGNED && brg_tbl[i].addr2 == addr2)) {
+			/* Setting direction to 0, entry will be cleared in brg_tbl_compact. */
+			brg_tbl[i].direction = 0;
+			if (first_removed == -1) {
+				first_removed = i;
 			}
 		}
 	}
 
-	/* Compact when all rows have been deleted. */
-	brg_tbl_compact();
+	if (first_removed != -1) {
+		/* Compact when all rows have been deleted. */
+		brg_tbl_compact(first_removed);
 
-	if (IS_ENABLED(CONFIG_BT_SETTINGS) && store) {
-		atomic_set_bit(brg_cfg_flags, TABLE_UPDATED);
-		bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_BRG_PENDING);
+		if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+			atomic_set_bit(brg_cfg_flags, TABLE_UPDATED);
+			bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_BRG_PENDING);
+		}
 	}
 
 	*status = STATUS_SUCCESS;

@@ -24,9 +24,6 @@ const int num_leds = ARRAY_SIZE(led_label);
 
 #define MAX_BRIGHTNESS	100
 
-#define FADE_DELAY_MS	10
-#define FADE_DELAY	K_MSEC(FADE_DELAY_MS)
-
 /**
  * @brief Run tests on a single LED using the LED API syscalls.
  *
@@ -66,28 +63,38 @@ static void run_led_test(const struct device *led_pwm, uint8_t led)
 			LOG_ERR("err=%d brightness=%d\n", err, level);
 			return;
 		}
-		k_sleep(FADE_DELAY);
+		k_sleep(K_MSEC(CONFIG_FADE_DELAY));
 	}
 	k_sleep(K_MSEC(1000));
 
-	/* Set LED blinking (on: 0.1 sec, off: 0.1 sec) */
-	err = led_blink(led_pwm, led, 100, 100);
+#if CONFIG_BLINK_DELAY_SHORT > 0
+	/* Start LED blinking (short cycle) */
+	err = led_blink(led_pwm, led, CONFIG_BLINK_DELAY_SHORT, CONFIG_BLINK_DELAY_SHORT);
 	if (err < 0) {
 		LOG_ERR("err=%d", err);
 		return;
 	}
-	LOG_INF("  Blinking on: 0.1 sec, off: 0.1 sec");
+	LOG_INF("  Blinking "
+		"on: " STRINGIFY(CONFIG_BLINK_DELAY_SHORT) " msec, "
+		"off: " STRINGIFY(CONFIG_BLINK_DELAY_SHORT) " msec");
 	k_sleep(K_MSEC(5000));
+#endif
 
-	/* Enable LED blinking (on: 1 sec, off: 1 sec) */
-	err = led_blink(led_pwm, led, 1000, 1000);
+#if CONFIG_BLINK_DELAY_LONG > 0
+	/* Start LED blinking (long cycle) */
+	err = led_blink(led_pwm, led, CONFIG_BLINK_DELAY_LONG, CONFIG_BLINK_DELAY_LONG);
 	if (err < 0) {
 		LOG_ERR("err=%d", err);
-		LOG_INF("  Cycle period not supported - on: 1 sec, off: 1 sec");
+		LOG_INF("  Cycle period not supported - "
+			"on: " STRINGIFY(CONFIG_BLINK_DELAY_LONG) "  msec, "
+			"off: " STRINGIFY(CONFIG_BLINK_DELAY_LONG) " msec");
 	} else {
-		LOG_INF("  Blinking on: 1 sec, off: 1 sec");
+		LOG_INF("  Blinking "
+			"on: " STRINGIFY(CONFIG_BLINK_DELAY_LONG) " msec, "
+			"off: " STRINGIFY(CONFIG_BLINK_DELAY_LONG) " msec");
 	}
 	k_sleep(K_MSEC(5000));
+#endif
 
 	/* Turn LED off. */
 	err = led_off(led_pwm, led);

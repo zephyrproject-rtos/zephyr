@@ -20,10 +20,14 @@ config TCN75A_TRIGGER_NONE
 
 config TCN75A_TRIGGER_OWN_THREAD
 	bool "Use own thread"
+	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_MICROCHIP_TCN75A),alert-gpios)
 	select TCN75A_TRIGGER
 
 config TCN75A_TRIGGER_GLOBAL_THREAD
 	bool "Use global thread"
+	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_MICROCHIP_TCN75A),alert-gpios)
 	select TCN75A_TRIGGER
 
 endchoice

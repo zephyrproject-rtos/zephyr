@@ -1,5 +1,6 @@
 board:
   name: qemu_cortex_r5
+  full_name: QEMU Emulation for ARM Cortex-R5
   vendor: qemu
   socs:
   - name: zynqmp_rpu

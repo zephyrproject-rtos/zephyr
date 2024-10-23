@@ -36,7 +36,7 @@ LOG_MODULE_REGISTER(net_dns_resolve, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 
 extern void dns_dispatcher_svc_handler(struct k_work *work);
 
-NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(resolve_svc, NULL, dns_dispatcher_svc_handler,
+NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(resolve_svc, dns_dispatcher_svc_handler,
 				      DNS_RESOLVER_MAX_POLL);
 
 #define MDNS_IPV4_ADDR "224.0.0.251:5353"

@@ -26,3 +26,4 @@ supported:
   - hwinfo
   - adc
   - dac
+  - netif:eth

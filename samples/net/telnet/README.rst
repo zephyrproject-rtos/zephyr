@@ -128,3 +128,9 @@ On your linux host:
 
 You are now connected, and as for the UART console, you can type in
 your commands and get the output through your telnet client.
+
+Wi-Fi
+=====
+
+The IPv4 Wi-Fi support can be enabled in the sample with
+:ref:`Wi-Fi snippet <snippet-wifi-ipv4>`.

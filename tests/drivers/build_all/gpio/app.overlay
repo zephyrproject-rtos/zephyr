@@ -360,6 +360,8 @@
 				    &test_gpio 0 0
 				    &test_gpio 0 0
 				    &test_gpio 0 0
+				    &test_gpio 0 0
+				    &test_gpio 0 0
 				    &test_gpio 0 0>;
 
 			test_spi_mcp23s17: mcp23s17@0 {
@@ -439,6 +441,45 @@
 				reset-gpios = <&test_gpio 0 0>;
 				ngpios = <8>;
 				#gpio-cells = <2>;
+			};
+
+			test_spi_max14906: max14906@6 {
+				compatible = "adi,max14906-gpio";
+				status = "okay";
+				reg = <0x06>;
+				spi-max-frequency = <0>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <4>;
+				crc-en;
+				spi-addr = <0>;
+				ow-en = <0 0 0 0>;
+				vdd-ov-en = <0 0 0 0>;
+				gdrv-en = <0 0 0 0>;
+				sh-vdd-en = <0 0 0 0>;
+				drdy-gpios = <&test_gpio 0 0>;
+				fault-gpios = <&test_gpio 0 0>;
+				sync-gpios = <&test_gpio 0 0>;
+				en-gpios = <&test_gpio 0 0>;
+			};
+
+			test_spi_max14916: max14916@7 {
+				compatible = "adi,max14916-gpio";
+				status = "okay";
+				reg = <0x07>;
+				spi-max-frequency = <0>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <8>;
+				crc-en;
+				spi-addr = <0>;
+				ow-on-en = <0 0 0 0>;
+				ow-off-en = <0 0 0 0>;
+				sh-vdd-en = <0 0 0 0>;
+				drdy-gpios = <&test_gpio 0 0>;
+				fault-gpios = <&test_gpio 0 0>;
+				sync-gpios = <&test_gpio 0 0>;
+				en-gpios = <&test_gpio 0 0>;
 			};
 		};
 	};

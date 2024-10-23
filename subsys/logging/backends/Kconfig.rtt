@@ -6,7 +6,6 @@ config LOG_BACKEND_RTT
 	depends on USE_SEGGER_RTT
 	default y if !SHELL_BACKEND_RTT
 	select SEGGER_RTT_CUSTOM_LOCKING
-	select LOG_OUTPUT
 	select LOG_BACKEND_SUPPORTS_FORMAT_TIMESTAMP
 	help
 	  When enabled, backend will use RTT for logging. This backend works on a per

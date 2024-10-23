@@ -4,7 +4,6 @@
 config LOG_BACKEND_ADSP_MTRACE
 	bool "Intel ADSP mtrace backend"
 	depends on SOC_FAMILY_INTEL_ADSP
-	select LOG_OUTPUT
 	select LOG_BACKEND_SUPPORTS_FORMAT_TIMESTAMP
 	help
 	  Provide a logging backend which writes to SRAM window

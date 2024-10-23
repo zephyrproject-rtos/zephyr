@@ -1,5 +1,6 @@
 board:
   name: raytac_mdbt53_db_40
+  full_name: MDBT53-DB-40
   vendor: raytac
   socs:
   - name: 'nrf5340'

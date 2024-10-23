@@ -150,6 +150,7 @@ config USB_MCUX
 	bool "NXP MCUX USB Device Controller Driver"
 	default y
 	depends on DT_HAS_NXP_EHCI_ENABLED || DT_HAS_NXP_LPCIP3511_ENABLED
+	select PINCTRL
 	help
 	  NXP MCUX USB Device Controller Driver for MXRT and LPC SoC's.
 
@@ -193,6 +194,7 @@ config USB_DC_IT82XX2
 	bool "ITE IT82XX2 USB Device Controller Driver"
 	default y
 	depends on DT_HAS_ITE_IT82XX2_USB_ENABLED
+	select PINCTRL
 	help
 	  ITE IT82XX2 USB Device Controller Driver
 

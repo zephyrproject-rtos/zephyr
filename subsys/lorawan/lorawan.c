@@ -52,9 +52,8 @@
 /* Use version 1.0.3.0 for ABP */
 #define LORAWAN_ABP_VERSION 0x01000300
 
-#define LOG_LEVEL CONFIG_LORAWAN_LOG_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(lorawan);
+LOG_MODULE_REGISTER(lorawan, CONFIG_LORAWAN_LOG_LEVEL);
 
 K_SEM_DEFINE(mlme_confirm_sem, 0, 1);
 K_SEM_DEFINE(mcps_confirm_sem, 0, 1);

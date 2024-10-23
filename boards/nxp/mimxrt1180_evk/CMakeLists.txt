@@ -4,8 +4,10 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+zephyr_library()
+zephyr_library_sources(board.c)
+
 if(CONFIG_NXP_IMXRT_BOOT_HEADER)
-  zephyr_library()
   if(NOT ((DEFINED CONFIG_BOARD_MIMXRT1180_EVK_MIMXRT1189_CM33)
 	  OR (DEFINED CONFIG_BOARD_MIMXRT1180_EVK_MIMXRT1189_CM7)))
     message(WARNING "It appears you are using the board definition for "

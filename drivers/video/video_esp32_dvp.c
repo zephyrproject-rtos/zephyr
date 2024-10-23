@@ -15,6 +15,7 @@
 #include <zephyr/drivers/dma/dma_esp32.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/video.h>
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <zephyr/kernel.h>
 #include <hal/cam_hal.h>
 #include <hal/cam_ll.h>
@@ -23,6 +24,16 @@
 LOG_MODULE_REGISTER(video_esp32_lcd_cam, CONFIG_VIDEO_LOG_LEVEL);
 
 #define VIDEO_ESP32_DMA_BUFFER_MAX_SIZE 4095
+#define VIDEO_ESP32_VSYNC_MASK          0x04
+
+#ifdef CONFIG_POLL
+#define VIDEO_ESP32_RAISE_OUT_SIG_IF_ENABLED(result)                                               \
+	if (data->signal_out) {                                                                    \
+		k_poll_signal_raise(data->signal_out, result);                                     \
+	}
+#else
+#define VIDEO_ESP32_RAISE_OUT_SIG_IF_ENABLED(result)
+#endif
 
 enum video_esp32_cam_clk_sel_values {
 	VIDEO_ESP32_CAM_CLK_SEL_NONE = 0,
@@ -57,6 +68,9 @@ struct video_esp32_data {
 	struct k_fifo fifo_in;
 	struct k_fifo fifo_out;
 	struct dma_block_config dma_blocks[CONFIG_DMA_ESP32_MAX_DESCRIPTOR_NUM];
+#ifdef CONFIG_POLL
+	struct k_poll_signal *signal_out;
+#endif
 };
 
 static int video_esp32_reload_dma(struct video_esp32_data *data)
@@ -96,20 +110,24 @@ void video_esp32_dma_rx_done(const struct device *dev, void *user_data, uint32_t
 	}
 
 	if (status != DMA_STATUS_COMPLETE) {
+		VIDEO_ESP32_RAISE_OUT_SIG_IF_ENABLED(VIDEO_BUF_ERROR)
 		LOG_ERR("DMA error: %d", status);
 		return;
 	}
 
 	if (data->active_vbuf == NULL) {
+		VIDEO_ESP32_RAISE_OUT_SIG_IF_ENABLED(VIDEO_BUF_ERROR)
 		LOG_ERR("No video buffer available. Enque some buffers first.");
 		return;
 	}
 
 	k_fifo_put(&data->fifo_out, data->active_vbuf);
+	VIDEO_ESP32_RAISE_OUT_SIG_IF_ENABLED(VIDEO_BUF_DONE)
 	data->active_vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT);
 
 	if (data->active_vbuf == NULL) {
 		LOG_WRN("Frame dropped. No buffer available");
+		VIDEO_ESP32_RAISE_OUT_SIG_IF_ENABLED(VIDEO_BUF_ERROR)
 		return;
 	}
 	video_esp32_reload_dma(data);
@@ -196,7 +214,6 @@ static int video_esp32_stream_start(const struct device *dev)
 	if (video_stream_start(cfg->source_dev)) {
 		return -EIO;
 	}
-
 	data->is_streaming = true;
 
 	return 0;
@@ -233,6 +250,9 @@ static int video_esp32_get_caps(const struct device *dev, enum video_endpoint_id
 	if (ep != VIDEO_EP_OUT) {
 		return -EINVAL;
 	}
+
+	/* ESP32 produces full frames */
+	caps->min_line_count = caps->max_line_count = LINE_COUNT_HEIGHT;
 
 	/* Forward the message to the source device */
 	return video_get_caps(config->source_dev, ep, caps);
@@ -284,6 +304,7 @@ static int video_esp32_enqueue(const struct device *dev, enum video_endpoint_id 
 	}
 
 	vbuf->bytesused = data->video_format.pitch * data->video_format.height;
+	vbuf->line_offset = 0;
 
 	k_fifo_put(&data->fifo_in, vbuf);
 
@@ -321,6 +342,21 @@ static int video_esp32_get_ctrl(const struct device *dev, unsigned int cid, void
 
 	return video_get_ctrl(cfg->source_dev, cid, value);
 }
+
+#ifdef CONFIG_POLL
+int video_esp32_set_signal(const struct device *dev, enum video_endpoint_id ep,
+			   struct k_poll_signal *sig)
+{
+	struct video_esp32_data *data = dev->data;
+
+	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
+		LOG_ERR("Invalid endpoint id");
+		return -EINVAL;
+	}
+	data->signal_out = sig;
+	return 0;
+}
+#endif
 
 static void video_esp32_cam_ctrl_init(const struct device *dev)
 {
@@ -373,7 +409,9 @@ static const struct video_driver_api esp32_driver_api = {
 	.flush = NULL,
 	.set_ctrl = video_esp32_set_ctrl,
 	.get_ctrl = video_esp32_get_ctrl,
-	.set_signal = NULL,
+#ifdef CONFIG_POLL
+	.set_signal = video_esp32_set_signal,
+#endif
 };
 
 PINCTRL_DT_INST_DEFINE(0);
@@ -397,8 +435,8 @@ static const struct video_esp32_config esp32_config = {
 
 static struct video_esp32_data esp32_data = {0};
 
-DEVICE_DT_INST_DEFINE(0, video_esp32_init, NULL, &esp32_data, &esp32_config,
-		      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &esp32_driver_api);
+DEVICE_DT_INST_DEFINE(0, video_esp32_init, NULL, &esp32_data, &esp32_config, POST_KERNEL,
+		      CONFIG_VIDEO_INIT_PRIORITY, &esp32_driver_api);
 
 static int video_esp32_cam_init_master_clock(void)
 {

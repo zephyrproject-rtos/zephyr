@@ -1180,3 +1180,36 @@ Code samples
       A flag to include a search box right above the listing. The search box allows users to filter
       the listing by code sample name/description, which can be useful for categories with a large
       number of samples. This option is only available in the HTML builder.
+
+Boards
+======
+
+.. rst:directive:: .. zephyr:board:: name
+
+   This directive is used at the beginning of a document to indicate it is the main documentation
+   page for a board whose name is given as the directive argument.
+
+   For example::
+
+      .. zephyr:board:: wio_terminal
+
+   The metadata for the board is read from various config files and used to automatically populate
+   some sections of the board documentation. A board documentation page that uses this directive
+   can be linked to using the :rst:role:`zephyr:board` role.
+
+.. rst:role:: zephyr:board
+
+   This role is used to reference a board documented using :rst:dir:`zephyr:board`.
+
+   For example::
+
+      Check out :zephyr:board:`wio_terminal` for more information.
+
+   Will render as:
+
+      Check out :zephyr:board:`wio_terminal` for more information.
+
+.. rst:directive:: .. zephyr:board-catalog::
+
+   This directive is used to generate a catalog of Zephyr-supported boards that can be used to
+   quickly browse the list of all supported boards and filter them according to various criteria.

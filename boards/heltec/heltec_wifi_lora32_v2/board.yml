@@ -1,5 +1,6 @@
 board:
   name: heltec_wifi_lora32_v2
+  full_name: WiFi LoRa 32 (V2)
   vendor: heltec
   socs:
   - name: esp32

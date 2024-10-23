@@ -89,6 +89,12 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
 
         parser.set_defaults(reset=True)
 
+    @classmethod
+    def args_from_previous_runner(cls, previous_runner, args):
+        # Propagate the chosen device ID to next runner
+        if args.dev_id is None:
+            args.dev_id = previous_runner.dev_id
+
     def ensure_snr(self):
         if not self.dev_id or "*" in self.dev_id:
             self.dev_id = self.get_board_snr(self.dev_id or "*")

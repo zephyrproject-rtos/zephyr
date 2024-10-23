@@ -62,12 +62,14 @@ config NRF70_SYSTEM_MODE
 
 config NRF70_SCAN_ONLY
 	bool "nRF70 scan only mode"
-	depends on WIFI_NRF7000
 	help
 	  Select this option to enable scan only mode of the nRF70 driver
 
 config NRF70_RADIO_TEST
 	bool "Radio test mode of the nRF70 driver"
+
+config NRF70_OFFLOADED_RAW_TX
+	bool "Offloaded raw Tx mode of the nRF70 driver"
 
 config NRF70_SYSTEM_WITH_RAW_MODES
 	bool "nRF70 system mode with raw modes"
@@ -83,7 +85,7 @@ config NRF70_SYSTEM_MODE_COMMON
 	default y if NRF70_SYSTEM_MODE || NRF70_SYSTEM_WITH_RAW_MODES
 
 config NET_L2_ETHERNET
-	default y if !NRF70_RADIO_TEST
+	default y if (!NRF70_RADIO_TEST && !NRF70_OFFLOADED_RAW_TX)
 
 config HEAP_MEM_POOL_ADD_SIZE_NRF70
 	# Use a maximum that works for typical usecases and boards, each sample/app can override
@@ -128,16 +130,28 @@ config NRF_WIFI_IF_AUTO_START
 	bool "Wi-Fi interface auto start on boot"
 	default y
 
+choice NRF_WIFI_FW_BLOB_HANDLING
+	prompt "nRF70 Firmware blob handling"
+	default NRF_WIFI_PATCHES_BUILTIN
+
+config NRF_WIFI_BUILD_ONLY_MODE
+	bool "Build only mode"
+	help
+	  Enable this option to build the driver without firmware loading, removes
+	  dependency on firmware binary and patches.
+	  This is useful to check the build and link errors.
+
 config NRF_WIFI_PATCHES_BUILTIN
 	bool "Store nRF70 FW patches as part of the driver"
-	default y
 	help
 	  Select this option to store nRF70 FW patches as part of the driver.
 	  This option impacts the code memory footprint of the driver.
 
-config CUSTOM_LINKER_SCRIPT
-	string "Custom linker script for nRF70 FW patches"
-	default "${ZEPHYR_BASE}/../nrf/drivers/wifi/nrf70/rpu_fw_patches.ld"
+config NRF_WIFI_PATCHES_EXTERNAL
+	bool "Load nRF70 FW patches from external binary"
+	help
+	  Select this option to load nRF70 FW patches from an external tooling.
+endchoice
 
 config NRF_WIFI_LOW_POWER
 	bool "low power mode in nRF Wi-Fi chipsets"
@@ -499,8 +513,8 @@ config WIFI_FIXED_MAC_ADDRESS
 
 choice
 	prompt "Wi-Fi MAC address type"
-	default WIFI_OTP_MAC_ADDRESS if WIFI_FIXED_MAC_ADDRESS = ""
 	default WIFI_FIXED_MAC_ADDRESS_ENABLED if WIFI_FIXED_MAC_ADDRESS != ""
+	default WIFI_OTP_MAC_ADDRESS
 	help
 	  Select the type of MAC address to be used by the Wi-Fi driver
 
@@ -640,6 +654,7 @@ config NRF_WIFI_AP_DEAD_DETECT_TIMEOUT
 
 config NRF_WIFI_RPU_RECOVERY
 	bool "RPU recovery mechanism"
+	depends on NRF_WIFI_LOW_POWER
 	select EXPERIMENTAL
 	help
 		Enable RPU recovery mechanism to recover from RPU (nRF70) hang.
@@ -652,7 +667,7 @@ if NRF_WIFI_RPU_RECOVERY
 
 config NRF_WIFI_RPU_RECOVERY_PROPAGATION_DELAY_MS
 	int "RPU recovery propagation delay in milliseconds"
-	default 10
+	default 2000
 	help
 		Propagation delay in milliseconds to wait after RPU is powered down
 		before powering it up. This delay is required to ensure that the recovery
@@ -662,6 +677,66 @@ config NRF_WIFI_RPU_RECOVERY_PROPAGATION_DELAY_MS
 config NET_MGMT_EVENT_QUEUE_SIZE
 	# Doing interface down and up even with delay puts a lot of events in the queue
 	default 16
+
+config NRF_WIFI_RPU_RECOVERY_PROPAGATION_DELAY_MS
+	int "RPU recovery propagation delay in milliseconds"
+	default 10
+	help
+	  Propagation delay in milliseconds to wait after RPU is powered down
+	  before powering it up. This delay is required to ensure that the recovery
+	  is propagated to all the applications and stack and have enough time to
+	  clean up the resources.
+
+config NRF_WIFI_RPU_RECOVERY_PS_ACTIVE_TIMEOUT_MS
+	int "RPU recovery power save active timeout in milliseconds"
+	default 50000
+	help
+	  Power save active timeout in milliseconds after which RPU recovery
+	  mechanism will be triggered. This timeout is used to ensure that the
+	  RPU attempts to enter power save mode in case of inactivity.
+
+config NRF_WIFI_RPU_MIN_TIME_TO_ENTER_SLEEP_MS
+	int "Minimum idle time to enter sleep in milliseconds"
+	range 100 5000
+	default 1000
+	help
+	  Minimum time the host should de-assert WAKEUP_NOW and let RPU enter
+	  sleep mode, assuming there is no activity.
+
+config NRF_WIFI_RPU_RECOVERY_DEBUG
+	bool "RPU recovery debug logs"
+	help
+		Enable RPU recovery debug logs to help debug RPU recovery mechanism.
+
+config NRF_WIFI_RPU_RECOVERY_QUIET_PERIOD_MS
+	int "RPU recovery quiet period in milliseconds"
+	default 5000
+	help
+	  Quiet period in milliseconds after RPU recovery is triggered. During
+	  this period, no new RPU recovery will be triggered.
+
+config NRF_WIFI_RPU_RECOVERY_MAX_RETRIES
+	int "Maximum number of consecutive RPU recovery retries, 0 to disable"
+	default 0
+	help
+	  Maximum number of consecutive RPU recovery retries before giving up
+	  and resetting the system. Set to 0 to keep retrying indefinitely.
+
+config NRF_WIFI_RPU_RECOVERY_RETRY_WINDOW_S
+	int "RPU recovery retry window in seconds"
+	default 900
+	help
+	  Window in seconds during which the number of consecutive RPU recovery
+	  retries are counted. If the number of consecutive RPU recovery retries
+	  exceeds NRF_WIFI_RPU_RECOVERY_MAX_RETRIES within this window, the system
+	  will be reset.
+
+config NRF_WIFI_RPU_RECOVERY_PS_STATE_DEBUG
+	bool "RPU recovery power save state debug logs"
+	help
+	  Enable RPU recovery power save state debug logs to help debug RPU recovery mechanism.
+
+
 endif # NRF_WIFI_RPU_RECOVERY
 
 config NRF_WIFI_FEAT_WMM
@@ -693,11 +768,57 @@ config NRF_WIFI_QOS_NULL_BASED_RETRIEVAL
 
 endchoice
 
-config NRF_WIFI_BUILD_ONLY_MODE
-	bool "Build only mode"
+config NRF_WIFI_MGMT_BUFF_OFFLOAD
+	bool "management buffer offload"
+	default y
 	help
-	  Enable this option to build the driver without firmware loading, removes
-	  dependency on firmware binary and patches.
-	  This is useful to check the build and link errors.
+	  This option offloads the refilling of management buffers to UMAC, saves host
+	  having to exchange commands and events for every management packet even if it is
+	  consumed by UMAC.
 
+config NRF_WIFI_FEAT_KEEPALIVE
+	bool "Wi-Fi keepalive feature for connection maintenance"
+	depends on NRF70_STA_MODE
+	help
+	  Enable Wi-Fi keepalive feature to keep the connection alive by sending
+	  keepalive packets to the AP. Primarily intended to interoperate with APs
+	  that disconnect idle clients without any explicit checks. Slightly increases
+	  power consumption.
+
+if NRF_WIFI_FEAT_KEEPALIVE
+config NRF_WIFI_KEEPALIVE_PERIOD_S
+	int "Keepalive period in seconds"
+	range 30 3600
+	default 60
+	help
+	  Keepalive period in seconds to send keepalive packets to the AP.
+endif
+
+choice NRF_WIFI_PS_EXIT_STRATEGY
+	prompt "Power save exit strategy"
+	default NRF_WIFI_PS_INT_PS
+	help
+	  Select the power save exit strategy to retrieve buffered data from AP.
+
+config NRF_WIFI_PS_EXIT_EVERY_TIM
+	bool "Exit power save every time to retrieve buffered data from AP"
+	help
+	  Exit power save every time to retrieve buffered data from AP. Entering back to
+	  power save mode might take some time and power.
+
+config NRF_WIFI_PS_INT_PS
+	bool "Exit power save based on an intelligent algorithm"
+	help
+	  Exit power save based on an intelligent algorithm to retrieve buffered data from AP.
+	  The algorithm tracks the buffered data at the AP and then dynamically decides
+	  whether to stay in PS (for lower amount of buffered data) or exit PS (for higher
+	  amount of buffered data).
+endchoice
+
+config NRF70_PASSIVE_SCAN_ONLY
+	bool "Forced Passive scan"
+	depends on NRF70_SCAN_ONLY
+	help
+	  Enable this configuration to force passive scan on all channels.
+	  This will override application specified scan type.
 endif # WIFI_NRF70

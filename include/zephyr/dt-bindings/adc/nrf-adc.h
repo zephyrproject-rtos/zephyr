@@ -18,15 +18,4 @@
 #define NRF_ADC_AIN6 BIT(6)
 #define NRF_ADC_AIN7 BIT(7)
 
-#define NRF_SAADC_AIN0     1
-#define NRF_SAADC_AIN1     2
-#define NRF_SAADC_AIN2     3
-#define NRF_SAADC_AIN3     4
-#define NRF_SAADC_AIN4     5
-#define NRF_SAADC_AIN5     6
-#define NRF_SAADC_AIN6     7
-#define NRF_SAADC_AIN7     8
-#define NRF_SAADC_VDD      9
-#define NRF_SAADC_VDDHDIV5 13
-
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_ADC_NRF_ADC_H_ */

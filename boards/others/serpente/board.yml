@@ -1,5 +1,6 @@
 board:
   name: serpente
+  full_name: Arturo182 Serpente
   vendor: solderparty
   socs:
     - name: samd21e18a

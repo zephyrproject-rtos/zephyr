@@ -7,6 +7,7 @@ menuconfig MDIO_NXP_S32_GMAC
 	depends on DT_HAS_NXP_S32_GMAC_MDIO_ENABLED
 	select CLOCK_CONTROL
 	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	select PINCTRL
 	help
 	  Enable GMAC MDIO driver for NXP S32 SoCs.
 

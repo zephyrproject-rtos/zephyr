@@ -53,6 +53,7 @@ struct memc_flexspi_data {
 	bool ahb_cacheable;
 	bool ahb_prefetch;
 	bool ahb_read_addr_opt;
+	uint8_t ahb_boundary;
 	bool combination_mode;
 	bool sck_differential_clock;
 	flexspi_read_sample_clock_t rx_sample_clock;
@@ -265,14 +266,6 @@ void *memc_flexspi_get_ahb_address(const struct device *dev,
 		offset += data->size[i];
 	}
 
-#if defined(FSL_FEATURE_FLEXSPI_SUPPORT_ADDRESS_SHIFT) && \
-	(FSL_FEATURE_FLEXSPI_SUPPORT_ADDRESS_SHIFT)
-	if (data->base->FLSHCR0[port] & FLEXSPI_FLSHCR0_ADDRSHIFT_MASK) {
-		/* Address shift is set, add 0x1000_0000 to AHB address */
-		offset += 0x10000000;
-	}
-#endif
-
 	return data->ahb_base + offset;
 }
 
@@ -350,6 +343,12 @@ FSL_FEATURE_FLEXSPI_SUPPORT_SEPERATE_RXCLKSRC_PORTB
 
 	FLEXSPI_Init(data->base, &flexspi_config);
 
+#if defined(FLEXSPI_AHBCR_ALIGNMENT_MASK)
+	/* Configure AHB alignment boundary */
+	data->base->AHBCR = (data->base->AHBCR & ~FLEXSPI_AHBCR_ALIGNMENT_MASK) |
+		FLEXSPI_AHBCR_ALIGNMENT(data->ahb_boundary);
+#endif
+
 	if (memc_flexspi_is_running_xip(dev)) {
 		/* Restore flash sizes */
 		for (i = 0; i < kFLEXSPI_PortCount; i++) {
@@ -422,6 +421,7 @@ static int memc_flexspi_pm_action(const struct device *dev, enum pm_device_actio
 		.ahb_cacheable = DT_INST_PROP(n, ahb_cacheable),	\
 		.ahb_prefetch = DT_INST_PROP(n, ahb_prefetch),		\
 		.ahb_read_addr_opt = DT_INST_PROP(n, ahb_read_addr_opt),\
+		.ahb_boundary = DT_INST_ENUM_IDX(n, ahb_boundary),	\
 		.combination_mode = DT_INST_PROP(n, combination_mode),	\
 		.sck_differential_clock = DT_INST_PROP(n, sck_differential_clock),	\
 		.rx_sample_clock = DT_INST_PROP(n, rx_clock_source),	\

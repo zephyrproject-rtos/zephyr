@@ -76,8 +76,8 @@
 };
 
 &pll {
-	source = <RA_PLL_SOURCE_HOCO>;
-	div = <RA_PLL_DIV_1>;
+	clocks = <&hoco>;
+	div = <1>;
 	mul = <10 0>;
 	status = "okay";
 };

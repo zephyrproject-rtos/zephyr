@@ -1534,7 +1534,7 @@ static void dhcpv4_server_cb(struct k_work *work)
 	dhcpv4_process_data(ctx, recv_buf, ret);
 }
 
-NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(dhcpv4_server, NULL, dhcpv4_server_cb,
+NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(dhcpv4_server, dhcpv4_server_cb,
 				      CONFIG_NET_DHCPV4_SERVER_INSTANCES);
 
 int net_dhcpv4_server_start(struct net_if *iface, struct in_addr *base_addr)

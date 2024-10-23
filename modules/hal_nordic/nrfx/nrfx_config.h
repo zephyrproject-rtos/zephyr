@@ -209,11 +209,17 @@
 #ifdef CONFIG_NRFX_PDM
 #define NRFX_PDM_ENABLED 1
 #endif
+#ifdef CONFIG_NRFX_PDM_LOG
+#define NRFX_PDM_CONFIG_LOG_ENABLED 1
+#endif
 #ifdef CONFIG_NRFX_PDM0
 #define NRFX_PDM0_ENABLED 1
 #endif
-#ifdef CONFIG_NRFX_PDM_LOG
-#define NRFX_PDM_CONFIG_LOG_ENABLED 1
+#ifdef CONFIG_NRFX_PDM20
+#define NRFX_PDM20_ENABLED 1
+#endif
+#ifdef CONFIG_NRFX_PDM21
+#define NRFX_PDM21_ENABLED 1
 #endif
 
 #ifdef CONFIG_NRFX_POWER
@@ -1050,10 +1056,10 @@
     #include <nrfx_config_nrf54h20_ppr.h>
 #elif (defined(NRF54H20_XXAA) || defined(NRF54H20_ENGB_XXAA)) && defined(NRF_FLPR)
     #include <nrfx_config_nrf54h20_flpr.h>
-#elif (defined(NRF54L15_XXAA) || defined(NRF54L15_ENGA_XXAA)) && defined(NRF_APPLICATION)
-    #include <nrfx_config_nrf54l15_enga_application.h>
-#elif (defined(NRF54L15_XXAA) || defined(NRF54L15_ENGA_XXAA)) && defined(NRF_FLPR)
-    #include <nrfx_config_nrf54l15_enga_flpr.h>
+#elif defined(NRF54L15_XXAA) && defined(NRF_APPLICATION)
+    #include <nrfx_config_nrf54l15_application.h>
+#elif defined(NRF54L15_XXAA) && defined(NRF_FLPR)
+    #include <nrfx_config_nrf54l15_flpr.h>
 #elif (defined(NRF54L20_XXAA) || defined(NRF54L20_ENGA_XXAA)) && defined(NRF_APPLICATION)
     #include <nrfx_config_nrf54l20_enga_application.h>
 #elif defined(NRF9120_XXAA) || defined(NRF9160_XXAA)

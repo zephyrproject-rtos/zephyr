@@ -129,7 +129,7 @@ void create_adv(struct bt_le_ext_adv **adv)
 	int err;
 	struct bt_le_adv_param params = {};
 
-	params.options |= BT_LE_ADV_OPT_CONNECTABLE;
+	params.options |= BT_LE_ADV_OPT_CONN;
 	params.options |= BT_LE_ADV_OPT_EXT_ADV;
 
 	params.id = BT_ID_DEFAULT;

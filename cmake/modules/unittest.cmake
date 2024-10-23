@@ -4,6 +4,7 @@ cmake_minimum_required(VERSION 3.20.0)
 
 include(extensions)
 include(west)
+include(yaml)
 include(root)
 include(zephyr_module)
 include(boards)

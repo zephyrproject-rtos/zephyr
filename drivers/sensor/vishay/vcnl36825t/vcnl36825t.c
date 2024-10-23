@@ -11,14 +11,16 @@
 #include <stdlib.h>
 
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/sensor.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
 
 LOG_MODULE_REGISTER(VCNL36825T, CONFIG_SENSOR_LOG_LEVEL);
 
-static int vcnl36825t_read(const struct i2c_dt_spec *spec, uint8_t reg_addr, uint16_t *value)
+int vcnl36825t_read(const struct i2c_dt_spec *spec, uint8_t reg_addr, uint16_t *value)
 {
 	uint8_t rx_buf[2];
 	int rc;
@@ -33,7 +35,7 @@ static int vcnl36825t_read(const struct i2c_dt_spec *spec, uint8_t reg_addr, uin
 	return 0;
 }
 
-static int vcnl36825t_write(const struct i2c_dt_spec *spec, uint8_t reg_addr, uint16_t value)
+int vcnl36825t_write(const struct i2c_dt_spec *spec, uint8_t reg_addr, uint16_t value)
 {
 	uint8_t tx_buf[3] = {reg_addr};
 
@@ -41,8 +43,8 @@ static int vcnl36825t_write(const struct i2c_dt_spec *spec, uint8_t reg_addr, ui
 	return i2c_write_dt(spec, tx_buf, sizeof(tx_buf));
 }
 
-static int vcnl36825t_update(const struct i2c_dt_spec *spec, uint8_t reg_addr, uint16_t mask,
-			     uint16_t value)
+int vcnl36825t_update(const struct i2c_dt_spec *spec, uint8_t reg_addr, uint16_t mask,
+		      uint16_t value)
 {
 	int rc;
 	uint16_t old_value, new_value;
@@ -65,6 +67,8 @@ static int vcnl36825t_update(const struct i2c_dt_spec *spec, uint8_t reg_addr, u
 static int vcnl36825t_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	const struct vcnl36825t_config *config = dev->config;
+	struct vcnl36825t_data *data = dev->data;
+
 	int rc;
 
 	switch (action) {
@@ -98,6 +102,9 @@ static int vcnl36825t_pm_action(const struct device *dev, enum pm_device_action 
 		if (rc < 0) {
 			return rc;
 		}
+
+		data->meas_timeout_us = data->meas_timeout_wakeup_us;
+
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
 		rc = vcnl36825t_update(&config->i2c, VCNL36825T_REG_PS_CONF2, VCNL36825T_PS_ST_MSK,
@@ -166,6 +173,10 @@ static int vcnl36825t_sample_fetch(const struct device *dev, enum sensor_channel
 			}
 
 			k_usleep(data->meas_timeout_us);
+
+#ifdef CONFIG_PM_DEVICE
+			data->meas_timeout_us = data->meas_timeout_running_us;
+#endif
 		}
 
 		rc = vcnl36825t_read(&config->i2c, VCNL36825T_REG_PS_DATA, &data->proximity);
@@ -201,6 +212,52 @@ static int vcnl36825t_channel_get(const struct device *dev, enum sensor_channel 
 	return 0;
 }
 
+static int vcnl36825t_attr_set(const struct device *dev, enum sensor_channel chan,
+			       enum sensor_attribute attr, const struct sensor_value *val)
+{
+	CHECKIF(dev == NULL) {
+		LOG_ERR("dev: NULL");
+		return -EINVAL;
+	}
+
+	CHECKIF(val == NULL) {
+		LOG_ERR("val: NULL");
+		return -EINVAL;
+	}
+
+	int __maybe_unused rc;
+
+	switch (attr) {
+	default:
+#if CONFIG_VCNL36825T_TRIGGER
+		rc = vcnl36825t_trigger_attr_set(dev, chan, attr, val);
+		if (rc < 0) {
+			return rc;
+		}
+#else
+		return -ENOTSUP;
+#endif
+	}
+
+	return 0;
+}
+
+/**
+ * @brief calculate measurement timeout in us
+ *
+ * @param meas_duration base duration of a measurement in us*VCNL36825T_FORCED_FACTOR_SCALE
+ * @param meas_factor factor which needs to be multiplied to cope with additional delays (multiplied
+ *                    by VCNL36825T_FORCED_FACTOR_SCALE)
+ *
+ * @note
+ *  Always add 1 to prevent corner case losses due to precision.
+ */
+static inline unsigned int vcn36825t_measurement_timeout_us(unsigned int meas_duration,
+							    unsigned int forced_factor)
+{
+	return ((meas_duration * forced_factor) / VCNL36825T_FORCED_FACTOR_SCALE) + 1;
+}
+
 /**
  * @brief helper function to configure the registers
  *
@@ -213,6 +270,8 @@ static int vcnl36825t_init_registers(const struct device *dev)
 
 	int rc;
 	uint16_t reg_value;
+
+	unsigned int meas_duration = 1;
 
 	/* reset registers as defined by the datasheet */
 	const uint16_t resetValues[][2] = {
@@ -228,8 +287,6 @@ static int vcnl36825t_init_registers(const struct device *dev)
 	for (size_t i = 0; i < ARRAY_SIZE(resetValues); ++i) {
 		vcnl36825t_write(&config->i2c, resetValues[i][0], resetValues[i][1]);
 	}
-
-	data->meas_timeout_us = 1;
 
 	/* PS_CONF1 */
 	reg_value = 0x01; /* must be set according to datasheet */
@@ -277,21 +334,21 @@ static int vcnl36825t_init_registers(const struct device *dev)
 	switch (config->proximity_it) {
 	case VCNL36825T_PROXIMITY_INTEGRATION_1T:
 		reg_value |= VCNL36825T_PS_IT_1T;
-		data->meas_timeout_us *= 1;
+		meas_duration *= 1;
 		break;
 	case VCNL36825T_PROXIMITY_INTEGRATION_2T:
 		reg_value |= VCNL36825T_PS_IT_2T;
-		data->meas_timeout_us *= 2;
+		meas_duration *= 2;
 		break;
 	case VCNL36825T_PROXIMITY_INTEGRATION_4T:
 		reg_value |= VCNL36825T_PS_IT_4T;
-		data->meas_timeout_us *= 4;
+		meas_duration *= 4;
 		break;
 	case VCNL36825T_PROXIMITY_INTEGRATION_8T:
 		__fallthrough;
 	default:
 		reg_value |= VCNL36825T_PS_IT_8T;
-		data->meas_timeout_us *= 8;
+		meas_duration *= 8;
 		break;
 	}
 
@@ -315,13 +372,13 @@ static int vcnl36825t_init_registers(const struct device *dev)
 	switch (config->proximity_itb) {
 	case VCNL36825T_PROXIMITY_INTEGRATION_DURATION_25us:
 		reg_value |= VCNL36825T_PS_ITB_25us;
-		data->meas_timeout_us *= 25;
+		meas_duration *= 25;
 		break;
 	case VCNL36825T_PROXIMITY_INTEGRATION_DURATION_50us:
 		__fallthrough;
 	default:
 		reg_value |= VCNL36825T_PS_ITB_50us;
-		data->meas_timeout_us *= 50;
+		meas_duration *= 50;
 		break;
 	}
 
@@ -409,13 +466,22 @@ static int vcnl36825t_init_registers(const struct device *dev)
 		return -EIO;
 	}
 
-	/* calculate measurement timeout
-	 *  Note: always add 1 to prevent corner case losses due to precision.
-	 */
 	data->meas_timeout_us =
-		(data->meas_timeout_us * VCNL36825T_FORCED_FACTOR_SUM) /
-			(VCNL36825T_FORCED_FACTOR_SCALE) +
-		1;
+		vcn36825t_measurement_timeout_us(meas_duration, VCNL36825T_FORCED_FACTOR_SUM);
+
+#ifdef CONFIG_PM_DEVICE
+	data->meas_timeout_running_us = data->meas_timeout_us;
+	data->meas_timeout_wakeup_us = vcn36825t_measurement_timeout_us(
+		meas_duration, VCNL36825T_FORCED_FACTOR_WAKEUP_SUM);
+
+	/* ensure that the time is roughly around VCNL36825T_FORCED_WAKEUP_DELAY_MAX_US if the
+	 * wakeup time is bigger but "normal" measurement time is less
+	 */
+	if (data->meas_timeout_wakeup_us > VCNL36825T_FORCED_WAKEUP_DELAY_MAX_US) {
+		data->meas_timeout_wakeup_us =
+			MAX(data->meas_timeout_running_us, VCNL36825T_FORCED_WAKEUP_DELAY_MAX_US);
+	}
+#endif
 
 	return 0;
 }
@@ -424,6 +490,7 @@ static int vcnl36825t_init(const struct device *dev)
 {
 	const struct vcnl36825t_config *config = dev->config;
 	int rc;
+
 	uint16_t reg_value;
 
 	if (!i2c_is_ready_dt(&config->i2c)) {
@@ -450,6 +517,12 @@ static int vcnl36825t_init(const struct device *dev)
 		return rc;
 	}
 
+#if CONFIG_VCNL36825T_TRIGGER
+	rc = vcnl36825t_trigger_init(dev);
+	if (rc < 0) {
+		return rc;
+	}
+#endif
 	rc = vcnl36825t_update(&config->i2c, VCNL36825T_REG_PS_CONF2, VCNL36825T_PS_ST_MSK,
 			       VCNL36825T_PS_ST_START);
 	if (rc < 0) {
@@ -463,6 +536,10 @@ static int vcnl36825t_init(const struct device *dev)
 static const struct sensor_driver_api vcnl36825t_driver_api = {
 	.sample_fetch = vcnl36825t_sample_fetch,
 	.channel_get = vcnl36825t_channel_get,
+	.attr_set = vcnl36825t_attr_set,
+#if CONFIG_VCNL36825T_TRIGGER
+	.trigger_set = vcnl36825t_trigger_set,
+#endif
 };
 
 #define VCNL36825T_DEFINE(inst)                                                                    \
@@ -489,7 +566,11 @@ static const struct sensor_driver_api vcnl36825t_driver_api = {
 		.laser_current = DT_INST_ENUM_IDX(inst, laser_current),                            \
 		.high_dynamic_output = DT_INST_PROP(inst, high_dynamic_output),                    \
 		.sunlight_cancellation = DT_INST_PROP(inst, sunlight_cancellation),                \
-	};                                                                                         \
+		IF_ENABLED(CONFIG_VCNL36825T_TRIGGER,                                              \
+			   (.int_gpio = GPIO_DT_SPEC_INST_GET(inst, int_gpios),                    \
+			    .int_mode = DT_INST_ENUM_IDX(inst, int_mode),                          \
+			    .int_proximity_count = DT_INST_PROP(inst, int_proximity_count),        \
+			    .int_smart_persistence = DT_INST_PROP(inst, int_smart_persistence)))}; \
 	IF_ENABLED(CONFIG_PM_DEVICE, (PM_DEVICE_DT_INST_DEFINE(inst, vcnl36825t_pm_action)));      \
 	SENSOR_DEVICE_DT_INST_DEFINE(                                                              \
 		inst, vcnl36825t_init,                                                             \

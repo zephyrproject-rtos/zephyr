@@ -9,6 +9,7 @@
 /{
 	chosen {
 		zephyr,display = &st7796s;
+		zephyr,touch = &gt911_lcd_par_s035;
 	};
 
 	lvgl_pointer {

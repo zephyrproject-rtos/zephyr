@@ -1349,10 +1349,12 @@ uint32_t radio_tmr_start(uint8_t trx, uint32_t ticks_start, uint32_t remainder)
 	 * by the Radio ISR, the compare will trigger again.
 	 */
 	uint32_t latency_ticks;
+	uint32_t latency_us;
 
-	latency_ticks = HAL_TICKER_US_TO_TICKS(HAL_RADIO_ISR_LATENCY_MAX_US);
+	latency_us = MAX(remainder, HAL_RADIO_ISR_LATENCY_MAX_US) - remainder;
+	latency_ticks = HAL_TICKER_US_TO_TICKS(latency_us);
 	ticks_start -= latency_ticks;
-	remainder += HAL_TICKER_TICKS_TO_US(latency_ticks);
+	remainder += latency_us;
 #endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
 	nrf_timer_task_trigger(EVENT_TIMER, NRF_TIMER_TASK_CLEAR);
@@ -1473,10 +1475,12 @@ uint32_t radio_tmr_start_tick(uint8_t trx, uint32_t ticks_start)
 	 * by the Radio ISR, the compare will trigger again.
 	 */
 	uint32_t latency_ticks;
+	uint32_t latency_us;
 
-	latency_ticks = HAL_TICKER_US_TO_TICKS(HAL_RADIO_ISR_LATENCY_MAX_US);
+	latency_us = MAX(remainder_us, HAL_RADIO_ISR_LATENCY_MAX_US) - remainder_us;
+	latency_ticks = HAL_TICKER_US_TO_TICKS(latency_us);
 	ticks_start -= latency_ticks;
-	remainder_us += HAL_TICKER_TICKS_TO_US(latency_ticks);
+	remainder_us += latency_us;
 #endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
 	nrf_timer_task_trigger(EVENT_TIMER, NRF_TIMER_TASK_STOP);
@@ -1614,10 +1618,10 @@ uint32_t radio_tmr_start_us(uint8_t trx, uint32_t start_us)
 		 * The timer is cleared on Radio End and if the PPI/DPPI is not disabled
 		 * by the Radio ISR, the compare will trigger again.
 		 */
-		uint32_t latency_ticks;
+		uint32_t latency_us;
 
-		latency_ticks = HAL_TICKER_US_TO_TICKS(HAL_RADIO_ISR_LATENCY_MAX_US);
-		actual_us += HAL_TICKER_TICKS_TO_US(latency_ticks);
+		latency_us = MAX(actual_us, HAL_RADIO_ISR_LATENCY_MAX_US) - actual_us;
+		actual_us += latency_us;
 #endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
 		nrf_timer_event_clear(EVENT_TIMER, NRF_TIMER_EVENT_COMPARE0);

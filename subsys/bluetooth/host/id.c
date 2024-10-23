@@ -792,7 +792,7 @@ bool bt_id_adv_random_addr_check(const struct bt_le_adv_param *param)
 		 * Explicitly stop it here.
 		 */
 
-		if (!(param->options & BT_LE_ADV_OPT_CONNECTABLE) &&
+		if (!(param->options & _BT_LE_ADV_OPT_CONNECTABLE) &&
 		     (param->options & BT_LE_ADV_OPT_USE_IDENTITY)) {
 			/* Attempt to set non-connectable NRPA */
 			return false;
@@ -1785,6 +1785,13 @@ int bt_id_set_scan_own_addr(bool active_scan, uint8_t *own_addr_type)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
+
+		if (BT_FEAT_LE_PRIVACY(bt_dev.le.features)) {
+			*own_addr_type = BT_HCI_OWN_ADDR_RPA_OR_RANDOM;
+		} else {
+			*own_addr_type = BT_ADDR_LE_RANDOM;
+		}
+
 		err = bt_id_set_private_addr(BT_ID_DEFAULT);
 		if (err == -EACCES && (atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING) ||
 				       atomic_test_bit(bt_dev.flags, BT_DEV_INITIATING))) {
@@ -1793,12 +1800,6 @@ int bt_id_set_scan_own_addr(bool active_scan, uint8_t *own_addr_type)
 			return 0;
 		} else if (err) {
 			return err;
-		}
-
-		if (BT_FEAT_LE_PRIVACY(bt_dev.le.features)) {
-			*own_addr_type = BT_HCI_OWN_ADDR_RPA_OR_RANDOM;
-		} else {
-			*own_addr_type = BT_ADDR_LE_RANDOM;
 		}
 	} else {
 		*own_addr_type = bt_dev.id_addr[0].type;
@@ -1870,7 +1871,7 @@ int bt_id_set_adv_own_addr(struct bt_le_ext_adv *adv, uint32_t options,
 		return 0;
 	}
 
-	if (options & BT_LE_ADV_OPT_CONNECTABLE) {
+	if (options & _BT_LE_ADV_OPT_CONNECTABLE) {
 		if (dir_adv && (options & BT_LE_ADV_OPT_DIR_ADDR_RPA) &&
 		    !BT_FEAT_LE_PRIVACY(bt_dev.le.features)) {
 			return -ENOTSUP;

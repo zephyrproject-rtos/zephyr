@@ -404,3 +404,8 @@ void bt_mesh_rpl_pending_store(uint16_t addr)
 		(void)memset(&replay_list[last - shift + 1], 0, sizeof(struct bt_mesh_rpl) * shift);
 	}
 }
+
+void bt_mesh_rpl_pending_store_all_nodes(void)
+{
+	bt_mesh_rpl_pending_store(BT_MESH_ADDR_ALL_NODES);
+}

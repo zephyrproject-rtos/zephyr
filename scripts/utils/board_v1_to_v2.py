@@ -74,7 +74,7 @@ def board_v1_to_v2(board_root, board, new_board, group, vendor, soc, variants):
             }
         }
     else:
-        with open(board_settings_file) as f:
+        with open(board_settings_file, encoding='utf-8') as f:
             yaml = ruamel.yaml.YAML(typ='safe', pure=True)
             board_settings = yaml.load(f) # pylint: disable=assignment-from-no-return
 

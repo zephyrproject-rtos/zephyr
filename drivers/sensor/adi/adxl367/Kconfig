@@ -104,11 +104,13 @@ config ADXL367_TRIGGER_NONE
 config ADXL367_TRIGGER_GLOBAL_THREAD
 	bool "Use global thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ADI_ADXL367),int1-gpios)
 	select ADXL367_TRIGGER
 
 config ADXL367_TRIGGER_OWN_THREAD
 	bool "Use own thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ADI_ADXL367),int1-gpios)
 	select ADXL367_TRIGGER
 
 endchoice

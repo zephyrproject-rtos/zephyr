@@ -136,7 +136,7 @@ static struct unicast_client {
 	ATOMIC_DEFINE(flags, UNICAST_CLIENT_FLAG_NUM_FLAGS);
 } uni_cli_insts[CONFIG_BT_MAX_CONN];
 
-static const struct bt_bap_unicast_client_cb *unicast_client_cbs;
+static sys_slist_t unicast_client_cbs = SYS_SLIST_STATIC_INIT(&unicast_client_cbs);
 
 /* TODO: Move the functions to avoid these prototypes */
 static int unicast_client_ep_set_metadata(struct bt_bap_ep *ep, void *data, uint8_t len,
@@ -588,6 +588,185 @@ static void unicast_client_ep_set_local_idle_state(struct bt_bap_ep *ep)
 	unicast_client_ep_set_status(ep, &buf);
 }
 
+static void unicast_client_notify_location(struct bt_conn *conn, enum bt_audio_dir dir,
+					   enum bt_audio_location loc)
+{
+	struct bt_bap_unicast_client_cb *listener, *next;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&unicast_client_cbs, listener, next, _node) {
+		if (listener->location != NULL) {
+			listener->location(conn, dir, loc);
+		}
+	}
+}
+
+static void unicast_client_notify_available_contexts(struct bt_conn *conn,
+						     enum bt_audio_context snk_ctx,
+						     enum bt_audio_context src_ctx)
+{
+	struct bt_bap_unicast_client_cb *listener, *next;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&unicast_client_cbs, listener, next, _node) {
+		if (listener->available_contexts != NULL) {
+			listener->available_contexts(conn, snk_ctx, src_ctx);
+		}
+	}
+}
+
+static void unicast_client_notify_pac_record(struct bt_conn *conn,
+					     const struct bt_audio_codec_cap *codec_cap)
+{
+	const struct unicast_client *client = &uni_cli_insts[bt_conn_index(conn)];
+	struct bt_bap_unicast_client_cb *listener, *next;
+	const enum bt_audio_dir dir = client->dir;
+
+	/* TBD: Since the PAC records are optionally notifiable we may want to supply the
+	 * index and total count of records in the callback, so that it easier for the
+	 * upper layers to determine when a new set of PAC records is being reported.
+	 */
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&unicast_client_cbs, listener, next, _node) {
+		if (listener->pac_record != NULL) {
+			listener->pac_record(conn, dir, codec_cap);
+		}
+	}
+}
+
+static void unicast_client_notify_endpoint(struct bt_conn *conn, struct bt_bap_ep *ep)
+{
+	const struct unicast_client *client = &uni_cli_insts[bt_conn_index(conn)];
+	struct bt_bap_unicast_client_cb *listener, *next;
+	const enum bt_audio_dir dir = client->dir;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&unicast_client_cbs, listener, next, _node) {
+		if (listener->endpoint != NULL) {
+			listener->endpoint(conn, dir, ep);
+		}
+	}
+}
+
+static void unicast_client_discover_complete(struct bt_conn *conn, int err)
+{
+	struct unicast_client *client = &uni_cli_insts[bt_conn_index(conn)];
+	struct bt_bap_unicast_client_cb *listener, *next;
+	const enum bt_audio_dir dir = client->dir;
+
+	/* Discover complete - Reset discovery values */
+	client->dir = 0U;
+	reset_att_buf(client);
+	atomic_clear_bit(client->flags, UNICAST_CLIENT_FLAG_BUSY);
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&unicast_client_cbs, listener, next, _node) {
+		if (listener->discover != NULL) {
+			listener->discover(conn, err, dir);
+		}
+	}
+}
+
+static void unicast_client_notify_ep_config(struct bt_bap_stream *stream,
+					    enum bt_bap_ascs_rsp_code rsp_code,
+					    enum bt_bap_ascs_reason reason)
+{
+	struct bt_bap_unicast_client_cb *listener, *next;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&unicast_client_cbs, listener, next, _node) {
+		if (listener->config != NULL) {
+			listener->config(stream, rsp_code, reason);
+		}
+	}
+}
+
+static void unicast_client_notify_ep_qos(struct bt_bap_stream *stream,
+					 enum bt_bap_ascs_rsp_code rsp_code,
+					 enum bt_bap_ascs_reason reason)
+{
+	struct bt_bap_unicast_client_cb *listener, *next;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&unicast_client_cbs, listener, next, _node) {
+		if (listener->qos != NULL) {
+			listener->qos(stream, rsp_code, reason);
+		}
+	}
+}
+
+static void unicast_client_notify_ep_enable(struct bt_bap_stream *stream,
+					    enum bt_bap_ascs_rsp_code rsp_code,
+					    enum bt_bap_ascs_reason reason)
+{
+	struct bt_bap_unicast_client_cb *listener, *next;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&unicast_client_cbs, listener, next, _node) {
+		if (listener->enable != NULL) {
+			listener->enable(stream, rsp_code, reason);
+		}
+	}
+}
+
+static void unicast_client_notify_ep_start(struct bt_bap_stream *stream,
+					   enum bt_bap_ascs_rsp_code rsp_code,
+					   enum bt_bap_ascs_reason reason)
+{
+	struct bt_bap_unicast_client_cb *listener, *next;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&unicast_client_cbs, listener, next, _node) {
+		if (listener->start != NULL) {
+			listener->start(stream, rsp_code, reason);
+		}
+	}
+}
+
+static void unicast_client_notify_ep_stop(struct bt_bap_stream *stream,
+					  enum bt_bap_ascs_rsp_code rsp_code,
+					  enum bt_bap_ascs_reason reason)
+{
+	struct bt_bap_unicast_client_cb *listener, *next;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&unicast_client_cbs, listener, next, _node) {
+		if (listener->stop != NULL) {
+			listener->stop(stream, rsp_code, reason);
+		}
+	}
+}
+
+static void unicast_client_notify_ep_disable(struct bt_bap_stream *stream,
+					     enum bt_bap_ascs_rsp_code rsp_code,
+					     enum bt_bap_ascs_reason reason)
+{
+	struct bt_bap_unicast_client_cb *listener, *next;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&unicast_client_cbs, listener, next, _node) {
+		if (listener->disable != NULL) {
+			listener->disable(stream, rsp_code, reason);
+		}
+	}
+}
+
+static void unicast_client_notify_ep_metadata(struct bt_bap_stream *stream,
+					      enum bt_bap_ascs_rsp_code rsp_code,
+					      enum bt_bap_ascs_reason reason)
+{
+	struct bt_bap_unicast_client_cb *listener, *next;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&unicast_client_cbs, listener, next, _node) {
+		if (listener->metadata != NULL) {
+			listener->metadata(stream, rsp_code, reason);
+		}
+	}
+}
+
+static void unicast_client_notify_ep_released(struct bt_bap_stream *stream,
+					      enum bt_bap_ascs_rsp_code rsp_code,
+					      enum bt_bap_ascs_reason reason)
+{
+	struct bt_bap_unicast_client_cb *listener, *next;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&unicast_client_cbs, listener, next, _node) {
+		if (listener->release != NULL) {
+			listener->release(stream, rsp_code, reason);
+		}
+	}
+}
+
 static void unicast_client_ep_idle_state(struct bt_bap_ep *ep)
 {
 	struct bt_bap_unicast_client_ep *client_ep =
@@ -631,10 +810,8 @@ static void unicast_client_ep_idle_state(struct bt_bap_ep *ep)
 			 */
 			client_ep->cp_ntf_pending = false;
 
-			if (unicast_client_cbs != NULL && unicast_client_cbs->release != NULL) {
-				unicast_client_cbs->release(stream, BT_BAP_ASCS_RSP_CODE_SUCCESS,
-							    BT_BAP_ASCS_REASON_NONE);
-			}
+			unicast_client_notify_ep_released(stream, BT_BAP_ASCS_RSP_CODE_SUCCESS,
+							  BT_BAP_ASCS_REASON_NONE);
 		}
 	}
 
@@ -1382,10 +1559,6 @@ static uint8_t unicast_client_cp_notify(struct bt_conn *conn,
 			ase_rsp->code, bt_ascs_reason_str(ase_rsp->reason),
 			ase_rsp->reason);
 
-		if (unicast_client_cbs == NULL) {
-			continue;
-		}
-
 		stream = audio_stream_by_ep_id(conn, ase_rsp->id);
 		if (stream == NULL) {
 			LOG_DBG("Could not find stream by id %u", ase_rsp->id);
@@ -1396,40 +1569,25 @@ static uint8_t unicast_client_cp_notify(struct bt_conn *conn,
 
 		switch (rsp->op) {
 		case BT_ASCS_CONFIG_OP:
-			if (unicast_client_cbs->config != NULL) {
-				unicast_client_cbs->config(stream, ase_rsp->code, ase_rsp->reason);
-			}
+			unicast_client_notify_ep_config(stream, ase_rsp->code, ase_rsp->reason);
 			break;
 		case BT_ASCS_QOS_OP:
-			if (unicast_client_cbs->qos != NULL) {
-				unicast_client_cbs->qos(stream, ase_rsp->code, ase_rsp->reason);
-			}
+			unicast_client_notify_ep_qos(stream, ase_rsp->code, ase_rsp->reason);
 			break;
 		case BT_ASCS_ENABLE_OP:
-			if (unicast_client_cbs->enable != NULL) {
-				unicast_client_cbs->enable(stream, ase_rsp->code, ase_rsp->reason);
-			}
+			unicast_client_notify_ep_enable(stream, ase_rsp->code, ase_rsp->reason);
 			break;
 		case BT_ASCS_START_OP:
-			if (unicast_client_cbs->start != NULL) {
-				unicast_client_cbs->start(stream, ase_rsp->code, ase_rsp->reason);
-			}
+			unicast_client_notify_ep_start(stream, ase_rsp->code, ase_rsp->reason);
 			break;
 		case BT_ASCS_DISABLE_OP:
-			if (unicast_client_cbs->disable != NULL) {
-				unicast_client_cbs->disable(stream, ase_rsp->code, ase_rsp->reason);
-			}
+			unicast_client_notify_ep_disable(stream, ase_rsp->code, ase_rsp->reason);
 			break;
 		case BT_ASCS_STOP_OP:
-			if (unicast_client_cbs->stop != NULL) {
-				unicast_client_cbs->stop(stream, ase_rsp->code, ase_rsp->reason);
-			}
+			unicast_client_notify_ep_stop(stream, ase_rsp->code, ase_rsp->reason);
 			break;
 		case BT_ASCS_METADATA_OP:
-			if (unicast_client_cbs->metadata != NULL) {
-				unicast_client_cbs->metadata(stream, ase_rsp->code,
-							     ase_rsp->reason);
-			}
+			unicast_client_notify_ep_metadata(stream, ase_rsp->code, ase_rsp->reason);
 			break;
 		case BT_ASCS_RELEASE_OP:
 			/* client_ep->release_requested is set to false if handled by the
@@ -1442,10 +1600,8 @@ static uint8_t unicast_client_cp_notify(struct bt_conn *conn,
 					client_ep->release_requested = false;
 				}
 
-				if (unicast_client_cbs->release != NULL) {
-					unicast_client_cbs->release(stream, ase_rsp->code,
-								    ase_rsp->reason);
-				}
+				unicast_client_notify_ep_released(stream, ase_rsp->code,
+								  ase_rsp->reason);
 			}
 			break;
 		default:
@@ -1671,52 +1827,13 @@ static int unicast_client_ep_subscribe(struct bt_conn *conn, struct bt_bap_ep *e
 	return 0;
 }
 
-static void pac_record_cb(struct bt_conn *conn, const struct bt_audio_codec_cap *codec_cap)
-{
-	if (unicast_client_cbs != NULL && unicast_client_cbs->pac_record != NULL) {
-		struct unicast_client *client = &uni_cli_insts[bt_conn_index(conn)];
-		const enum bt_audio_dir dir = client->dir;
-
-		/* TBD: Since the PAC records are optionally notifiable we may want to supply the
-		 * index and total count of records in the callback, so that it easier for the
-		 * upper layers to determine when a new set of PAC records is being reported.
-		 */
-		unicast_client_cbs->pac_record(conn, dir, codec_cap);
-	}
-}
-
-static void endpoint_cb(struct bt_conn *conn, struct bt_bap_ep *ep)
-{
-	if (unicast_client_cbs != NULL && unicast_client_cbs->endpoint != NULL) {
-		struct unicast_client *client = &uni_cli_insts[bt_conn_index(conn)];
-		const enum bt_audio_dir dir = client->dir;
-
-		unicast_client_cbs->endpoint(conn, dir, ep);
-	}
-}
-
-static void discover_cb(struct bt_conn *conn, int err)
-{
-	struct unicast_client *client = &uni_cli_insts[bt_conn_index(conn)];
-	const enum bt_audio_dir dir = client->dir;
-
-	/* Discover complete - Reset discovery values */
-	client->dir = 0U;
-	reset_att_buf(client);
-	atomic_clear_bit(client->flags, UNICAST_CLIENT_FLAG_BUSY);
-
-	if (unicast_client_cbs != NULL && unicast_client_cbs->discover != NULL) {
-		unicast_client_cbs->discover(conn, err, dir);
-	}
-}
-
 static void unicast_client_cp_sub_cb(struct bt_conn *conn, uint8_t err,
 				     struct bt_gatt_subscribe_params *sub_params)
 {
 
 	LOG_DBG("conn %p err %u", conn, err);
 
-	discover_cb(conn, err);
+	unicast_client_discover_complete(conn, err);
 }
 
 static void unicast_client_ep_set_cp(struct bt_conn *conn, uint16_t handle)
@@ -1761,12 +1878,12 @@ static void unicast_client_ep_set_cp(struct bt_conn *conn, uint16_t handle)
 		if (err != 0 && err != -EALREADY) {
 			LOG_DBG("Failed to subscribe: %d", err);
 
-			discover_cb(conn, err);
+			unicast_client_discover_complete(conn, err);
 
 			return;
 		}
 	} else { /* already subscribed */
-		discover_cb(conn, 0);
+		unicast_client_discover_complete(conn, 0);
 	}
 }
 
@@ -3463,7 +3580,7 @@ static uint8_t unicast_client_cp_discover_func(struct bt_conn *conn,
 	if (!attr) {
 		LOG_ERR("Unable to find ASE Control Point");
 
-		discover_cb(conn, BT_ATT_ERR_ATTRIBUTE_NOT_FOUND);
+		unicast_client_discover_complete(conn, BT_ATT_ERR_ATTRIBUTE_NOT_FOUND);
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -3562,7 +3679,7 @@ static uint8_t unicast_client_ase_read_func(struct bt_conn *conn, uint8_t err,
 
 	reset_att_buf(client);
 
-	endpoint_cb(conn, ep);
+	unicast_client_notify_endpoint(conn, ep);
 
 	cb_err = unicast_client_ase_discover(conn, handle);
 	if (cb_err != 0) {
@@ -3573,7 +3690,7 @@ static uint8_t unicast_client_ase_read_func(struct bt_conn *conn, uint8_t err,
 	return BT_GATT_ITER_STOP;
 
 fail:
-	discover_cb(conn, cb_err);
+	unicast_client_discover_complete(conn, cb_err);
 	return BT_GATT_ITER_STOP;
 }
 
@@ -3591,7 +3708,7 @@ static uint8_t unicast_client_ase_discover_cb(struct bt_conn *conn,
 		if (err != 0) {
 			LOG_ERR("Unable to discover ASE Control Point");
 
-			discover_cb(conn, err);
+			unicast_client_discover_complete(conn, err);
 		}
 
 		return BT_GATT_ITER_STOP;
@@ -3615,7 +3732,7 @@ static uint8_t unicast_client_ase_discover_cb(struct bt_conn *conn,
 	if (err != 0) {
 		LOG_DBG("Failed to read PAC records: %d", err);
 
-		discover_cb(conn, err);
+		unicast_client_discover_complete(conn, err);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -3662,7 +3779,7 @@ static uint8_t unicast_client_pacs_avail_ctx_read_func(struct bt_conn *conn, uin
 			err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
 		}
 
-		discover_cb(conn, err);
+		unicast_client_discover_complete(conn, err);
 
 		return BT_GATT_ITER_STOP;
 	}
@@ -3673,16 +3790,14 @@ static uint8_t unicast_client_pacs_avail_ctx_read_func(struct bt_conn *conn, uin
 
 	LOG_DBG("sink context %u, source context %u", context.snk, context.src);
 
-	if (unicast_client_cbs != NULL && unicast_client_cbs->available_contexts != NULL) {
-		unicast_client_cbs->available_contexts(conn, context.snk, context.src);
-	}
+	unicast_client_notify_available_contexts(conn, context.snk, context.src);
 
 	/* Read ASE instances */
 	cb_err = unicast_client_ase_discover(conn, BT_ATT_FIRST_ATTRIBUTE_HANDLE);
 	if (cb_err != 0) {
 		LOG_ERR("Unable to read ASE: %d", cb_err);
 
-		discover_cb(conn, cb_err);
+		unicast_client_discover_complete(conn, cb_err);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -3703,11 +3818,6 @@ static uint8_t unicast_client_pacs_avail_ctx_notify_cb(struct bt_conn *conn,
 		return BT_GATT_ITER_STOP;
 	}
 
-	/* Terminate early if there's no callbacks */
-	if (unicast_client_cbs == NULL || unicast_client_cbs->available_contexts == NULL) {
-		return BT_GATT_ITER_CONTINUE;
-	}
-
 	net_buf_simple_init_with_data(&buf, (void *)data, length);
 
 	if (buf.len != sizeof(context)) {
@@ -3721,9 +3831,7 @@ static uint8_t unicast_client_pacs_avail_ctx_notify_cb(struct bt_conn *conn,
 
 	LOG_DBG("sink context %u, source context %u", context.snk, context.src);
 
-	if (unicast_client_cbs != NULL && unicast_client_cbs->available_contexts != NULL) {
-		unicast_client_cbs->available_contexts(conn, context.snk, context.src);
-	}
+	unicast_client_notify_available_contexts(conn, context.snk, context.src);
 
 	return BT_GATT_ITER_CONTINUE;
 }
@@ -3757,7 +3865,7 @@ static uint8_t unicast_client_pacs_avail_ctx_discover_cb(struct bt_conn *conn,
 		 * the characteristic is mandatory
 		 */
 
-		discover_cb(conn, BT_ATT_ERR_ATTRIBUTE_NOT_FOUND);
+		unicast_client_discover_complete(conn, BT_ATT_ERR_ATTRIBUTE_NOT_FOUND);
 
 		return BT_GATT_ITER_STOP;
 	}
@@ -3794,7 +3902,7 @@ static uint8_t unicast_client_pacs_avail_ctx_discover_cb(struct bt_conn *conn,
 		/* If the characteristic is not subscribable we terminate the
 		 * discovery as BT_GATT_CHRC_NOTIFY is mandatory
 		 */
-		discover_cb(conn, BT_ATT_ERR_NOT_SUPPORTED);
+		unicast_client_discover_complete(conn, BT_ATT_ERR_NOT_SUPPORTED);
 
 		return BT_GATT_ITER_STOP;
 	}
@@ -3803,7 +3911,7 @@ static uint8_t unicast_client_pacs_avail_ctx_discover_cb(struct bt_conn *conn,
 	if (err != 0) {
 		LOG_DBG("Failed to read PACS avail_ctx: %d", err);
 
-		discover_cb(conn, err);
+		unicast_client_discover_complete(conn, err);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -3847,7 +3955,7 @@ static uint8_t unicast_client_pacs_location_read_func(struct bt_conn *conn, uint
 			err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
 		}
 
-		discover_cb(conn, err);
+		unicast_client_discover_complete(conn, err);
 
 		return BT_GATT_ITER_STOP;
 	}
@@ -3857,16 +3965,14 @@ static uint8_t unicast_client_pacs_location_read_func(struct bt_conn *conn, uint
 
 	LOG_DBG("dir %s loc %X", bt_audio_dir_str(client->dir), location);
 
-	if (unicast_client_cbs != NULL && unicast_client_cbs->location != NULL) {
-		unicast_client_cbs->location(conn, client->dir, (enum bt_audio_location)location);
-	}
+	unicast_client_notify_location(conn, client->dir, (enum bt_audio_location)location);
 
 	/* Read available contexts */
 	cb_err = unicast_client_pacs_avail_ctx_discover(conn);
 	if (cb_err != 0) {
 		LOG_ERR("Unable to read available contexts: %d", cb_err);
 
-		discover_cb(conn, cb_err);
+		unicast_client_discover_complete(conn, cb_err);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -3886,11 +3992,6 @@ static uint8_t unicast_client_pacs_location_notify_cb(struct bt_conn *conn,
 		LOG_DBG("Unsubscribed");
 		params->value_handle = 0x0000;
 		return BT_GATT_ITER_STOP;
-	}
-
-	/* Terminate early if there's no callbacks */
-	if (unicast_client_cbs == NULL || unicast_client_cbs->location == NULL) {
-		return BT_GATT_ITER_CONTINUE;
 	}
 
 	net_buf_simple_init_with_data(&buf, (void *)data, length);
@@ -3915,9 +4016,7 @@ static uint8_t unicast_client_pacs_location_notify_cb(struct bt_conn *conn,
 
 	LOG_DBG("dir %s loc %X", bt_audio_dir_str(dir), location);
 
-	if (unicast_client_cbs != NULL && unicast_client_cbs->location != NULL) {
-		unicast_client_cbs->location(conn, dir, (enum bt_audio_location)location);
-	}
+	unicast_client_notify_location(conn, dir, (enum bt_audio_location)location);
 
 	return BT_GATT_ITER_CONTINUE;
 }
@@ -3953,7 +4052,7 @@ static uint8_t unicast_client_pacs_location_discover_cb(struct bt_conn *conn,
 		if (err != 0) {
 			LOG_ERR("Unable to read available contexts: %d", err);
 
-			discover_cb(conn, err);
+			unicast_client_discover_complete(conn, err);
 		}
 
 		return BT_GATT_ITER_STOP;
@@ -3993,7 +4092,7 @@ static uint8_t unicast_client_pacs_location_discover_cb(struct bt_conn *conn,
 	if (err != 0) {
 		LOG_DBG("Failed to read PACS location: %d", err);
 
-		discover_cb(conn, err);
+		unicast_client_discover_complete(conn, err);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -4046,7 +4145,7 @@ discover_loc:
 	if (cb_err != 0) {
 		LOG_ERR("Unable to read PACS location: %d", cb_err);
 
-		discover_cb(conn, cb_err);
+		unicast_client_discover_complete(conn, cb_err);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -4064,7 +4163,7 @@ static uint8_t unicast_client_pacs_context_discover_cb(struct bt_conn *conn,
 	if (attr == NULL) {
 		LOG_ERR("Unable to find %s PAC context", bt_audio_dir_str(client->dir));
 
-		discover_cb(conn, BT_ATT_ERR_ATTRIBUTE_NOT_FOUND);
+		unicast_client_discover_complete(conn, BT_ATT_ERR_ATTRIBUTE_NOT_FOUND);
 
 		return BT_GATT_ITER_STOP;
 	}
@@ -4087,7 +4186,7 @@ static uint8_t unicast_client_pacs_context_discover_cb(struct bt_conn *conn,
 	if (err != 0) {
 		LOG_DBG("Failed to read PAC records: %d", err);
 
-		discover_cb(conn, err);
+		unicast_client_discover_complete(conn, err);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -4219,7 +4318,7 @@ static uint8_t unicast_client_read_func(struct bt_conn *conn, uint8_t err,
 		LOG_DBG("codec 0x%02x capabilities len %u meta len %u ", codec_cap.id,
 			codec_cap.data_len, codec_cap.meta_len);
 
-		pac_record_cb(conn, &codec_cap);
+		unicast_client_notify_pac_record(conn, &codec_cap);
 	}
 
 	reset_att_buf(client);
@@ -4240,7 +4339,7 @@ static uint8_t unicast_client_read_func(struct bt_conn *conn, uint8_t err,
 	return BT_GATT_ITER_STOP;
 
 fail:
-	discover_cb(conn, cb_err);
+	unicast_client_discover_complete(conn, cb_err);
 	return BT_GATT_ITER_STOP;
 }
 
@@ -4256,7 +4355,7 @@ static uint8_t unicast_client_pac_discover_cb(struct bt_conn *conn,
 	if (attr == NULL) {
 		LOG_DBG("Unable to find %s PAC", bt_audio_dir_str(client->dir));
 
-		discover_cb(conn, BT_ATT_ERR_ATTRIBUTE_NOT_FOUND);
+		unicast_client_discover_complete(conn, BT_ATT_ERR_ATTRIBUTE_NOT_FOUND);
 
 		return BT_GATT_ITER_STOP;
 	}
@@ -4282,7 +4381,7 @@ static uint8_t unicast_client_pac_discover_cb(struct bt_conn *conn,
 	if (err != 0) {
 		LOG_DBG("Failed to read PAC records: %d", err);
 
-		discover_cb(conn, err);
+		unicast_client_discover_complete(conn, err);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -4351,19 +4450,18 @@ int bt_bap_unicast_client_discover(struct bt_conn *conn, enum bt_audio_dir dir)
 	return 0;
 }
 
-int bt_bap_unicast_client_register_cb(const struct bt_bap_unicast_client_cb *cbs)
+int bt_bap_unicast_client_register_cb(struct bt_bap_unicast_client_cb *cb)
 {
-	CHECKIF(cbs == NULL) {
-		LOG_DBG("cbs is NULL");
+	CHECKIF(cb == NULL) {
+		LOG_DBG("cb is NULL");
 		return -EINVAL;
 	}
 
-	if (unicast_client_cbs != NULL) {
-		LOG_DBG("Callbacks already registered");
-		return -EALREADY;
+	if (sys_slist_find(&unicast_client_cbs, &cb->_node, NULL)) {
+		return -EEXIST;
 	}
 
-	unicast_client_cbs = cbs;
+	sys_slist_append(&unicast_client_cbs, &cb->_node);
 
 	return 0;
 }

@@ -10,6 +10,7 @@
 / {
 	chosen {
 		zephyr,display = &lcdc;
+		zephyr,touch = &display_touch;
 	};
 
 	lvgl_pointer {

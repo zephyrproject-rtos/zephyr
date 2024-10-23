@@ -97,6 +97,20 @@ config I2C_RTIO_CQ_SIZE
 	  is going to be 4 given the device address, register address, and a value
 	  to be read or written.
 
+config I2C_RTIO_FALLBACK_MSGS
+	int "Number of available i2c_msg structs for the default handler to use"
+	default 4
+	help
+		When RTIO is used with a driver that does not yet implement the submit API
+		natively the submissions are converted back to struct i2c_msg values that
+		are given to i2c_transfer. This requires some number of msgs be available to convert
+		the submissions into on the stack. MISRA rules dictate we must know this in
+		advance.
+
+		In all likelihood 4 is going to work for everyone, but in case you do end up with
+		an issue where you are using RTIO, your driver does not implement submit natively,
+		and get an error relating to not enough i2c msgs this is the Kconfig to manipulate.
+
 endif # I2C_RTIO
 
 
@@ -201,6 +215,7 @@ config I2C_IMX
 	bool "i.MX I2C driver"
 	default y
 	depends on DT_HAS_FSL_IMX21_I2C_ENABLED
+	select PINCTRL
 	help
 	  Enable the i.MX I2C driver.
 

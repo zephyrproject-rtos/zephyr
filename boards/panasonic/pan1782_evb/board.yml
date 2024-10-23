@@ -1,5 +1,6 @@
 board:
   name: pan1782_evb
+  full_name: PAN1782 Evaluation Board
   vendor: panasonic
   socs:
   - name: nrf52833

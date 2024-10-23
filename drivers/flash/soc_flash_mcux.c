@@ -34,9 +34,9 @@ LOG_MODULE_REGISTER(flash_mcux);
 #elif DT_NODE_HAS_STATUS_OKAY(DT_INST(0, nxp_iap_fmc553))
 #define DT_DRV_COMPAT nxp_iap_fmc553
 #define SOC_HAS_IAP 1
-#elif DT_NODE_HAS_STATUS_OKAY(DT_INST(0, nxp_iap_msf1))
-#define DT_DRV_COMPAT nxp_iap_msf1
-#define SOC_HAS_IAP_MSF1 1
+#elif DT_NODE_HAS_STATUS_OKAY(DT_INST(0, nxp_msf1))
+#define DT_DRV_COMPAT nxp_msf1
+#define SOC_HAS_MSF1 1
 #else
 #error No matching compatible for soc_flash_mcux.c
 #endif
@@ -300,7 +300,7 @@ static const struct flash_driver_api flash_mcux_api = {
 #endif
 };
 
-#if (defined(SOC_HAS_IAP) || defined(SOC_HAS_IAP_MSF1)) && !defined(CONFIG_MCUX_FLASH_K4_API)
+#if (defined(SOC_HAS_IAP) || defined(SOC_HAS_MSF1)) && !defined(CONFIG_MCUX_FLASH_K4_API)
 #define FLASH_PROP_BLOCK_BASE	kFLASH_PropertyPflashBlockBaseAddr
 #else
 #define FLASH_PROP_BLOCK_BASE kFLASH_PropertyPflash0BlockBaseAddr

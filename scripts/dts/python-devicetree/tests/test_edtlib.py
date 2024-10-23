@@ -572,31 +572,44 @@ def test_prop_enums():
     string_enum = props['string-enum']
     tokenizable_enum = props['tokenizable-enum']
     tokenizable_lower_enum = props['tokenizable-lower-enum']
+    array_enum = props['array-enum']
+    string_array_enum = props['string-array-enum']
     no_enum = props['no-enum']
 
     assert int_enum.val == 1
-    assert int_enum.enum_index == 0
+    assert int_enum.enum_indices[0] == 0
     assert not int_enum.spec.enum_tokenizable
     assert not int_enum.spec.enum_upper_tokenizable
 
     assert string_enum.val == 'foo_bar'
-    assert string_enum.enum_index == 1
+    assert string_enum.enum_indices[0] == 1
     assert not string_enum.spec.enum_tokenizable
     assert not string_enum.spec.enum_upper_tokenizable
 
     assert tokenizable_enum.val == '123 is ok'
-    assert tokenizable_enum.val_as_token == '123_is_ok'
-    assert tokenizable_enum.enum_index == 2
+    assert tokenizable_enum.val_as_tokens[0] == '123_is_ok'
+    assert tokenizable_enum.enum_indices[0] == 2
     assert tokenizable_enum.spec.enum_tokenizable
     assert tokenizable_enum.spec.enum_upper_tokenizable
 
     assert tokenizable_lower_enum.val == 'bar'
-    assert tokenizable_lower_enum.val_as_token == 'bar'
-    assert tokenizable_lower_enum.enum_index == 0
+    assert tokenizable_lower_enum.val_as_tokens[0] == 'bar'
+    assert tokenizable_lower_enum.enum_indices[0] == 0
     assert tokenizable_lower_enum.spec.enum_tokenizable
     assert not tokenizable_lower_enum.spec.enum_upper_tokenizable
 
-    assert no_enum.enum_index is None
+    assert array_enum.val == [0, 40, 40, 10]
+    assert array_enum.enum_indices == [0, 4, 4, 1]
+    assert not array_enum.spec.enum_tokenizable
+    assert not array_enum.spec.enum_upper_tokenizable
+
+    assert string_array_enum.val == ["foo", "bar"]
+    assert string_array_enum.val_as_tokens == ["foo", "bar"]
+    assert string_array_enum.enum_indices == [1, 0]
+    assert string_array_enum.spec.enum_tokenizable
+    assert string_array_enum.spec.enum_upper_tokenizable
+
+    assert no_enum.enum_indices is None
     assert not no_enum.spec.enum_tokenizable
     assert not no_enum.spec.enum_upper_tokenizable
 

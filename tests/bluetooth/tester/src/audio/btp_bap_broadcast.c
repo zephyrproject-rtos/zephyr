@@ -31,7 +31,6 @@ static struct btp_bap_broadcast_local_source local_source;
 static struct btp_bap_broadcast_remote_source *broadcast_source_to_sync;
 /* A mask for the maximum BIS we can sync to. +1 since the BIS indexes start from 1. */
 static const uint32_t bis_index_mask = BIT_MASK(CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT + 1);
-#define INVALID_BROADCAST_ID      (BT_AUDIO_BROADCAST_ID_MAX + 1)
 #define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 20 /* Set the timeout relative to interval */
 #define PA_SYNC_SKIP              5
 static struct bt_bap_bass_subgroup
@@ -62,7 +61,7 @@ static struct btp_bap_broadcast_remote_source *remote_broadcaster_alloc(void)
 	for (size_t i = 0; i < ARRAY_SIZE(remote_broadcast_sources); i++) {
 		struct btp_bap_broadcast_remote_source *broadcaster = &remote_broadcast_sources[i];
 
-		if (broadcaster->broadcast_id == INVALID_BROADCAST_ID) {
+		if (broadcaster->broadcast_id == BT_BAP_INVALID_BROADCAST_ID) {
 			return broadcaster;
 		}
 	}
@@ -214,7 +213,7 @@ static void remote_broadcaster_free(struct btp_bap_broadcast_remote_source *broa
 {
 	(void)memset(broadcaster, 0, sizeof(*broadcaster));
 
-	broadcaster->broadcast_id = INVALID_BROADCAST_ID;
+	broadcaster->broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
 
 	for (size_t i = 0U; i < ARRAY_SIZE(broadcaster->sink_streams); i++) {
 		broadcaster->sink_streams[i] = stream_broadcast_to_bap(&broadcaster->streams[i]);

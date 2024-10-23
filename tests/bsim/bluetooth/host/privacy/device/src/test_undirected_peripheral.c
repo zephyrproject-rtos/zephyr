@@ -166,7 +166,7 @@ static void create_adv(struct bt_le_ext_adv **adv)
 
 	memset(&params, 0, sizeof(struct bt_le_adv_param));
 
-	params.options |= BT_LE_ADV_OPT_CONNECTABLE;
+	params.options |= BT_LE_ADV_OPT_CONN;
 
 	params.id = BT_ID_DEFAULT;
 	params.sid = 0;
@@ -191,11 +191,11 @@ static void update_adv_params(struct bt_le_ext_adv *adv, enum adv_param_t adv_pa
 	memset(&params, 0, sizeof(struct bt_le_adv_param));
 
 	if (adv_params == CONN_SCAN) {
-		params.options |= BT_LE_ADV_OPT_CONNECTABLE;
+		params.options |= BT_LE_ADV_OPT_CONN;
 		params.options |= BT_LE_ADV_OPT_SCANNABLE;
 		LOG_DBG("Advertiser params: CONN_SCAN");
 	} else if (adv_params == CONN_NSCAN) {
-		params.options |= BT_LE_ADV_OPT_CONNECTABLE;
+		params.options |= BT_LE_ADV_OPT_CONN;
 		LOG_DBG("Advertiser params: CONN_NSCAN");
 	} else if (adv_params == NCONN_SCAN) {
 		params.options |= BT_LE_ADV_OPT_SCANNABLE;

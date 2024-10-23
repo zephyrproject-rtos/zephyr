@@ -34,10 +34,6 @@
 	};
 };
 
-&shared_ram3x_region {
-	status = "okay";
-};
-
 &cpuapp_cpurad_ram0x_region {
 	status = "okay";
 };
@@ -99,7 +95,6 @@ ipc0: &cpuapp_cpurad_ipc {
 	pinctrl-0 = <&uart135_default>;
 	pinctrl-1 = <&uart135_sleep>;
 	pinctrl-names = "default", "sleep";
-	hw-flow-control;
 };
 
 &uart136 {

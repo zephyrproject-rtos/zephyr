@@ -1,4 +1,5 @@
 board:
   name: niosv_m
+  full_name: INTEL FPGA niosv_m
   socs:
     - name: niosv_m
