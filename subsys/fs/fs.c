@@ -122,11 +122,34 @@ static int fs_get_mnt_point(struct fs_mount_t **mnt_pntp,
 	}
 
 	*mnt_pntp = mnt_p;
+
+	/*
+	 * Increase use counter only if we can actually close the file,
+	 * otherwise the fs_unmount() call will fail as we have no proper
+	 * way to reduce the use counter.
+	 */
+	CHECKIF(mnt_p->fs->close != NULL) {
+		/* Increase use counter */
+		mnt_p->use_count++;
+	}
+
 	if (match_len) {
 		*match_len = mnt_p->mountp_len;
 	}
 
 	return 0;
+}
+
+static void fs_put_mnt_point(struct fs_mount_t *mnt_pnt)
+{
+	k_mutex_lock(&mutex, K_FOREVER);
+
+	/* Decrease use counter when we have >0 users */
+	if (mnt_pnt->use_count > 0) {
+		mnt_pnt->use_count--;
+	}
+
+	k_mutex_unlock(&mutex);
 }
 
 /* File operations */
@@ -154,22 +177,26 @@ int fs_open(struct fs_file_t *zfp, const char *file_name, fs_mode_t flags)
 
 	if (((mp->flags & FS_MOUNT_FLAG_READ_ONLY) != 0) &&
 	    (flags & FS_O_CREATE || flags & FS_O_WRITE)) {
-		return -EROFS;
+		rc = -EROFS;
+		goto put_mp;
 	}
 
 	CHECKIF(mp->fs->open == NULL) {
-		return -ENOTSUP;
+		rc = -ENOTSUP;
+		goto put_mp;
 	}
 
 	if ((flags & FS_O_TRUNC) != 0) {
 		if ((flags & FS_O_WRITE) == 0) {
 			/** Truncate not allowed when file is not opened for write */
 			LOG_ERR("file should be opened for write to truncate!!");
-			return -EACCES;
+			rc = -EACCES;
+			goto put_mp;
 		}
 		CHECKIF(mp->fs->truncate == NULL) {
 			LOG_ERR("file truncation not supported!!");
-			return -ENOTSUP;
+			rc = -ENOTSUP;
+			goto put_mp;
 		}
 		truncate_file = true;
 	}
@@ -179,7 +206,7 @@ int fs_open(struct fs_file_t *zfp, const char *file_name, fs_mode_t flags)
 	if (rc < 0) {
 		LOG_ERR("file open error (%d)", rc);
 		zfp->mp = NULL;
-		return rc;
+		goto put_mp;
 	}
 
 	/* Copy flags to zfp for use with other fs_ API calls */
@@ -191,9 +218,14 @@ int fs_open(struct fs_file_t *zfp, const char *file_name, fs_mode_t flags)
 		if (rc < 0) {
 			LOG_ERR("file truncation failed (%d)", rc);
 			zfp->mp = NULL;
-			return rc;
+			goto put_mp;
 		}
 	}
+
+	return rc;
+
+put_mp:
+	fs_put_mnt_point(mp);
 
 	return rc;
 }
@@ -215,6 +247,8 @@ int fs_close(struct fs_file_t *zfp)
 		LOG_ERR("file close error (%d)", rc);
 		return rc;
 	}
+
+	fs_put_mnt_point((struct fs_mount_t *)zfp->mp);
 
 	zfp->mp = NULL;
 
@@ -377,7 +411,8 @@ int fs_opendir(struct fs_dir_t *zdp, const char *abs_path)
 	}
 
 	CHECKIF(mp->fs->opendir == NULL) {
-		return -ENOTSUP;
+		rc = -ENOTSUP;
+		goto put_mp;
 	}
 
 	zdp->mp = mp;
@@ -386,7 +421,13 @@ int fs_opendir(struct fs_dir_t *zdp, const char *abs_path)
 		zdp->mp = NULL;
 		zdp->dirp = NULL;
 		LOG_ERR("directory open error (%d)", rc);
+		goto put_mp;
 	}
+
+	return rc;
+
+put_mp:
+	fs_put_mnt_point(mp);
 
 	return rc;
 }
@@ -398,7 +439,7 @@ int fs_readdir(struct fs_dir_t *zdp, struct fs_dirent *entry)
 		int rc = -EINVAL;
 
 		CHECKIF(zdp->mp->fs->readdir == NULL) {
-			return  -ENOTSUP;
+			return -ENOTSUP;
 		}
 
 		/* Loop until error or not special directory */
@@ -492,6 +533,8 @@ int fs_closedir(struct fs_dir_t *zdp)
 		return rc;
 	}
 
+	fs_put_mnt_point((struct fs_mount_t *)zdp->mp);
+
 	zdp->mp = NULL;
 	zdp->dirp = NULL;
 	return rc;
@@ -516,17 +559,22 @@ int fs_mkdir(const char *abs_path)
 	}
 
 	if (mp->flags & FS_MOUNT_FLAG_READ_ONLY) {
-		return -EROFS;
+		rc = -EROFS;
+		goto put_mp;
 	}
 
 	CHECKIF(mp->fs->mkdir == NULL) {
-		return -ENOTSUP;
+		rc = -ENOTSUP;
+		goto put_mp;
 	}
 
 	rc = mp->fs->mkdir(mp, abs_path);
 	if (rc < 0) {
 		LOG_ERR("failed to create directory (%d)", rc);
 	}
+
+put_mp:
+	fs_put_mnt_point(mp);
 
 	return rc;
 }
@@ -549,17 +597,22 @@ int fs_unlink(const char *abs_path)
 	}
 
 	if (mp->flags & FS_MOUNT_FLAG_READ_ONLY) {
-		return -EROFS;
+		rc = -EROFS;
+		goto put_mp;
 	}
 
 	CHECKIF(mp->fs->unlink == NULL) {
-		return -ENOTSUP;
+		rc = -ENOTSUP;
+		goto put_mp;
 	}
 
 	rc = mp->fs->unlink(mp, abs_path);
 	if (rc < 0) {
 		LOG_ERR("failed to unlink path (%d)", rc);
 	}
+
+put_mp:
+	fs_put_mnt_point(mp);
 
 	return rc;
 }
@@ -583,23 +636,29 @@ int fs_rename(const char *from, const char *to)
 	}
 
 	if (mp->flags & FS_MOUNT_FLAG_READ_ONLY) {
-		return -EROFS;
+		rc = -EROFS;
+		goto put_mp;
 	}
 
 	/* Make sure both files are mounted on the same path */
 	if (strncmp(from, to, match_len) != 0) {
 		LOG_ERR("mount point not same!!");
-		return -EINVAL;
+		rc = -EINVAL;
+		goto put_mp;
 	}
 
 	CHECKIF(mp->fs->rename == NULL) {
-		return -ENOTSUP;
+		rc = -ENOTSUP;
+		goto put_mp;
 	}
 
 	rc = mp->fs->rename(mp, from, to);
 	if (rc < 0) {
 		LOG_ERR("failed to rename file or dir (%d)", rc);
 	}
+
+put_mp:
+	fs_put_mnt_point(mp);
 
 	return rc;
 }
@@ -622,7 +681,8 @@ int fs_stat(const char *abs_path, struct fs_dirent *entry)
 	}
 
 	CHECKIF(mp->fs->stat == NULL) {
-		return -ENOTSUP;
+		rc = -ENOTSUP;
+		goto put_mp;
 	}
 
 	rc = mp->fs->stat(mp, abs_path, entry);
@@ -631,6 +691,10 @@ int fs_stat(const char *abs_path, struct fs_dirent *entry)
 	} else if (rc < 0) {
 		LOG_ERR("failed get file or dir stat (%d)", rc);
 	}
+
+put_mp:
+	fs_put_mnt_point(mp);
+
 	return rc;
 }
 
@@ -652,13 +716,17 @@ int fs_statvfs(const char *abs_path, struct fs_statvfs *stat)
 	}
 
 	CHECKIF(mp->fs->statvfs == NULL) {
-		return -ENOTSUP;
+		rc = -ENOTSUP;
+		goto put_mp;
 	}
 
 	rc = mp->fs->statvfs(mp, abs_path, stat);
 	if (rc < 0) {
 		LOG_ERR("failed get file or dir stat (%d)", rc);
 	}
+
+put_mp:
+	fs_put_mnt_point(mp);
 
 	return rc;
 }
@@ -742,6 +810,7 @@ int fs_mount(struct fs_mount_t *mp)
 	/* Update mount point data and append it to the list */
 	mp->mountp_len = len;
 	mp->fs = fs;
+	mp->use_count = 0;
 
 	sys_dlist_append(&fs_mnt_list, &mp->node);
 	LOG_DBG("fs mounted at %s", mp->mnt_point);
@@ -800,6 +869,12 @@ int fs_unmount(struct fs_mount_t *mp)
 
 	if (!sys_dnode_is_linked(&mp->node)) {
 		LOG_ERR("fs not mounted (mp == %p)", mp);
+		goto unmount_err;
+	}
+
+	if (mp->use_count != 0) {
+		LOG_ERR("fs unmount failed, mount point busy");
+		rc = -EBUSY;
 		goto unmount_err;
 	}
 

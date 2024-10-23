@@ -106,6 +106,8 @@ struct fs_mount_t {
 	const struct fs_file_system_t *fs;
 	/** Mount flags */
 	uint8_t flags;
+	/** Use count */
+	size_t use_count;
 };
 
 /**
@@ -571,6 +573,7 @@ int fs_mount(struct fs_mount_t *mp);
  * @retval 0 on success;
  * @retval -EINVAL if no system has been mounted at given mount point;
  * @retval -ENOTSUP when not supported by underlying file system driver;
+ * @retval -EBUSY when mount point is busy;
  * @retval <0 an other negative errno code on error.
  */
 int fs_unmount(struct fs_mount_t *mp);
