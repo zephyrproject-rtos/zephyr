@@ -1,5 +1,0 @@
-board:
-  name: tlsr9518adk80d
-  vendor: telink
-  socs:
-  - name: tlsr9518

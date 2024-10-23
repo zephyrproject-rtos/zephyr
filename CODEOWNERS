@@ -199,7 +199,6 @@
 /drivers/dma/*rpi_pico*                   @soburi
 /drivers/dma/*xmc4xxx*                    @talih0
 /drivers/eeprom/eeprom_stm32.c            @KwonTae-young
-/drivers/entropy/*b91*                    @andy-liu-telink
 /drivers/entropy/*bt_hci*                 @JordanYates
 /drivers/entropy/*rv32m1*                 @dleach02
 /drivers/ethernet/*dwmac*                 @npitre
@@ -216,13 +215,11 @@
 /drivers/ethernet/phy/*adin2111*          @GeorgeCGV
 /drivers/mdio/*adin2111*                  @GeorgeCGV
 /drivers/flash/*stm32_qspi*               @lmajewski
-/drivers/flash/*b91*                      @andy-liu-telink
 /drivers/flash/*cadence*                  @ngboonkhai
 /drivers/flash/*cc13xx_cc26xx*            @pepe2k
 /drivers/flash/*nrf*                      @de-nordic
 /drivers/flash/*esp32*                    @sylvioalves
 /drivers/flash/flash_cadence_nand*        @nbalabak
-/drivers/gpio/*b91*                       @andy-liu-telink
 /drivers/gpio/*lmp90xxx*                  @henrikbrixandersen
 /drivers/gpio/*nct38xx*                   @MulinChao @ChiHuaL
 /drivers/gpio/*eos_s3*                    @fkokosinski @kgugala
@@ -252,7 +249,6 @@
 /drivers/i2s/*nrfx*                       @anangl
 /drivers/i3c/i3c_cdns.c                   @XenuIsWatching
 /drivers/ieee802154/                      @rlubos @tbursztyka @jukkar @fgrandel
-/drivers/ieee802154/*b91*                 @andy-liu-telink
 /drivers/ieee802154/ieee802154_nrf5*      @ankuns
 /drivers/ieee802154/ieee802154_rf2xx*     @tbursztyka @nandojve
 /drivers/ieee802154/ieee802154_cc13xx*    @bwitherspoon @cfriedt @vaishnavachath
@@ -289,7 +285,6 @@
 /drivers/power_domain/                    @ceolin
 /drivers/ps2/*xec*                        @franciscomunoz @sjvasanth1
 /drivers/ps2/*npcx*                       @MulinChao @ChiHuaL
-/drivers/pwm/*b91*                        @andy-liu-telink
 /drivers/pwm/*pca9685*                    @nixward
 /drivers/pwm/*rpi_pico*                   @burumaj
 /drivers/pwm/*rv32m1*                     @henrikbrixandersen
@@ -325,7 +320,6 @@
 /drivers/sensor/st*/                      @avisconti
 /drivers/sensor/veaa_x_3/                 @jeppenodgaard @MaureenHelm
 /drivers/sensor/ene_tack_kb1200/          @ene-steven
-/drivers/serial/*b91*                     @andy-liu-telink
 /drivers/serial/uart_altera_jtag.c        @nashif @gohshunjing
 /drivers/serial/uart_altera.c             @gohshunjing
 /drivers/serial/*ns16550*                 @dcpleung @nashif @gdengi
@@ -351,7 +345,6 @@
 /drivers/serial/*kb1200*                  @ene-steven
 /drivers/disk/sdmmc_stm32.c               @anthonybrandon
 /drivers/ptp_clock/                       @tbursztyka @jukkar
-/drivers/spi/*b91*                        @andy-liu-telink
 /drivers/spi/spi_rv32m1_lpspi*            @karstenkoenig
 /drivers/spi/*esp32*                      @sylvioalves
 /drivers/spi/*pl022*                      @soburi
@@ -375,7 +368,6 @@
 /drivers/timer/*nrf_rtc*                  @anangl
 /drivers/timer/*hpet*                     @dcpleung
 /drivers/usb/device/usb_dc_stm32.c        @ydamigos @loicpoulain
-/drivers/i2c/*b91*                        @andy-liu-telink
 /drivers/i2c/i2c_ll_stm32*                @ydamigos
 /drivers/i2c/i2c_rv32m1_lpi2c*            @henrikbrixandersen
 /drivers/i2c/*sam0*                       @Sizurka

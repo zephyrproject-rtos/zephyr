@@ -1,5 +1,0 @@
-description: Telink B91 Flash Controller
-
-compatible: "telink,b91-flash-controller"
-
-include: flash-controller.yaml

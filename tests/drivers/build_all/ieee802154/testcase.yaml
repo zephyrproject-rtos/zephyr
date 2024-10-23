@@ -17,7 +17,5 @@ tests:
     platform_allow: usb_kw24d512
   drivers.ieee802154.build.nrf5:
     platform_allow: nrf52840dk/nrf52840
-  drivers.ieee802154.build.telink_b91:
-    platform_allow: tlsr9518adk80d
   drivers.ieee802154.build.upipe:
     platform_allow: qemu_x86

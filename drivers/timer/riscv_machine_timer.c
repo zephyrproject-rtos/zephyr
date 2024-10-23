@@ -41,13 +41,7 @@
 #define MTIME_REG	(DT_INST_REG_ADDR(0) + 0xbff8U)
 #define MTIMECMP_REG	(DT_INST_REG_ADDR(0) + 0x4000U)
 #define TIMER_IRQN	DT_INST_IRQ_BY_IDX(0, 1, irq)
-/* telink,machine-timer */
-#elif DT_HAS_COMPAT_STATUS_OKAY(telink_machine_timer)
-#define DT_DRV_COMPAT telink_machine_timer
 
-#define MTIME_REG	DT_INST_REG_ADDR(0)
-#define MTIMECMP_REG	(DT_INST_REG_ADDR(0) + 8)
-#define TIMER_IRQN	DT_INST_IRQN(0)
 /* lowrisc,machine-timer */
 #elif DT_HAS_COMPAT_STATUS_OKAY(lowrisc_machine_timer)
 #define DT_DRV_COMPAT lowrisc_machine_timer
