@@ -29,7 +29,10 @@
 #define RAM_CONSOLE_BUF_ATTR
 #endif
 
+#ifndef CONFIG_RAM_CONSOLE_BUFFER_SECTION
 char ram_console_buf[CONFIG_RAM_CONSOLE_BUFFER_SIZE] RAM_CONSOLE_BUF_ATTR;
+#endif
+
 char *ram_console;
 static int pos;
 

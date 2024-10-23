@@ -29,7 +29,18 @@
 #include <zephyr/kernel.h>
 #include <resource_table.h>
 
-extern char ram_console[];
+#ifdef CONFIG_RAM_CONSOLE_BUFFER_SECTION
+#if DT_HAS_CHOSEN(zephyr_ram_console)
+
+static const uint32_t ram_console_buf = DT_REG_ADDR(DT_CHOSEN(zephyr_ram_console));
+
+#else
+#error "Lack of chosen property zephyr,ram_console!"
+#endif
+
+#else
+extern char ram_console_buf[];
+#endif
 
 #define __resource Z_GENERIC_SECTION(.resource_table)
 
@@ -68,7 +79,7 @@ static struct fw_resource_table __resource resource_table = {
 #if defined(CONFIG_RAM_CONSOLE)
 	.cm_trace = {
 		RSC_TRACE,
-		(uint32_t)ram_console, CONFIG_RAM_CONSOLE_BUFFER_SIZE, 0,
+		(uint32_t)ram_console_buf, CONFIG_RAM_CONSOLE_BUFFER_SIZE, 0,
 		"Zephyr_log",
 	},
 #endif
