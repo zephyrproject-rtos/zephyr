@@ -3875,6 +3875,19 @@ OpenTitan Platforms:
   description: >-
     OpenTitan boards, SOCs, dts files and related drivers.
 
+Realtek EC Platforms:
+  status: maintained
+  maintainers:
+    - JasonLin-RealTek
+  files:
+    - boards/realtek/
+    - drivers/*/*rts5912*
+    - dts/bindings/*/*rts5912*
+    - dts/arm/realtek/ec/
+    - soc/realtek/ec/
+  labels:
+    - "platform: Realtek EC"
+
 Renesas SmartBond Platforms:
   status: maintained
   maintainers:
