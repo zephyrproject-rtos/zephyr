@@ -386,7 +386,7 @@ set(mimx8mp_evk_itcm_DEPRECATED
     imx8mp_evk/mimx8ml8/m7
 )
 set(mimx8mp_phyboard_pollux_DEPRECATED
-    mimx8mp_phyboard_pollux/mimx8ml8/m7
+    phyboard_pollux/mimx8ml8/m7
 )
 set(mimx8mq_evk_cm4_DEPRECATED
     imx8mq_evk/mimx8mq6/m4
@@ -909,4 +909,7 @@ set(xiao_esp32s3_DEPRECATED
 )
 set(yd_esp32_DEPRECATED
     yd_esp32/esp32/procpu
+)
+set(mimx8mp_phyboard_pollux/mimx8ml8/m7_DEPRECATED
+    phyboard_pollux/mimx8ml8/m7
 )
