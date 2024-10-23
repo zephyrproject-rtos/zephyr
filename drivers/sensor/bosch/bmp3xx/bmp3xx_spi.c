@@ -7,26 +7,26 @@
  */
 
 /*
- * Bus-specific functionality for BMP388s accessed via SPI.
+ * Bus-specific functionality for BMP3xx accessed via SPI.
  */
 
 #include <zephyr/logging/log.h>
-#include "bmp388.h"
+#include "bmp3xx.h"
 
 #ifdef BMP3XX_USE_SPI_BUS
 
-LOG_MODULE_DECLARE(BMP388, CONFIG_SENSOR_LOG_LEVEL);
+LOG_MODULE_DECLARE(BMP3XX, CONFIG_SENSOR_LOG_LEVEL);
 
-static int bmp388_bus_check_spi(const union bmp388_bus *bus)
+static int bmp3xx_bus_check_spi(const union bmp3xx_bus *bus)
 {
 	return spi_is_ready_dt(&bus->spi) ? 0 : -ENODEV;
 }
 
-static int bmp388_reg_read_spi(const union bmp388_bus *bus, uint8_t regaddr, uint8_t *buf, int size)
+static int bmp3xx_reg_read_spi(const union bmp3xx_bus *bus, uint8_t regaddr, uint8_t *buf, int size)
 {
 	int ret;
 
-	if ((size <= 0) || (size > BMP388_SAMPLE_BUFFER_SIZE)) {
+	if ((size <= 0) || (size > BMP3XX_SAMPLE_BUFFER_SIZE)) {
 		return -EINVAL;
 	}
 
@@ -37,7 +37,7 @@ static int bmp388_reg_read_spi(const union bmp388_bus *bus, uint8_t regaddr, uin
 	};
 	const struct spi_buf_set rxtx = {
 		.buffers = &rxtx_buf,
-		.count = 1
+		.count = 1,
 	};
 
 	memset(buffer, 0x00, ARRAY_SIZE(buffer));
@@ -54,18 +54,11 @@ static int bmp388_reg_read_spi(const union bmp388_bus *bus, uint8_t regaddr, uin
 	return 0;
 }
 
-static int bmp388_reg_write_spi(const union bmp388_bus *bus,
-				uint8_t reg, uint8_t val)
+static int bmp3xx_reg_write_spi(const union bmp3xx_bus *bus, uint8_t reg, uint8_t val)
 {
-	uint8_t cmd[] = { reg & 0x7F, val };
-	const struct spi_buf tx_buf = {
-		.buf = cmd,
-		.len = sizeof(cmd)
-	};
-	const struct spi_buf_set tx = {
-		.buffers = &tx_buf,
-		.count = 1
-	};
+	uint8_t cmd[] = {reg & 0x7F, val};
+	const struct spi_buf tx_buf = {.buf = cmd, .len = sizeof(cmd)};
+	const struct spi_buf_set tx = {.buffers = &tx_buf, .count = 1};
 	int ret;
 
 	ret = spi_write_dt(&bus->spi, &tx);
@@ -76,9 +69,9 @@ static int bmp388_reg_write_spi(const union bmp388_bus *bus,
 	return 0;
 }
 
-const struct bmp388_bus_io bmp388_bus_io_spi = {
-	.check = bmp388_bus_check_spi,
-	.read = bmp388_reg_read_spi,
-	.write = bmp388_reg_write_spi,
+const struct bmp3xx_bus_io bmp3xx_bus_io_spi = {
+	.check = bmp3xx_bus_check_spi,
+	.read = bmp3xx_reg_read_spi,
+	.write = bmp3xx_reg_write_spi,
 };
 #endif /* BMP3XX_USE_SPI_BUS */
