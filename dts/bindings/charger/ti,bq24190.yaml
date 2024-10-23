@@ -13,3 +13,7 @@ properties:
 
   constant-charge-voltage-max-microvolt:
     required: true
+
+  ce-gpios:
+    type: phandle-array
+    description: Active low, charge enable pin
