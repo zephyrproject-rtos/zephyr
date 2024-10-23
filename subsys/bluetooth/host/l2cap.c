@@ -2554,6 +2554,7 @@ static void l2cap_chan_le_recv_seg_direct(struct bt_l2cap_le_chan *chan, struct 
 	if (seg->len > sdu_remaining) {
 		LOG_WRN("L2CAP RX PDU total exceeds SDU");
 		bt_l2cap_chan_disconnect(&chan->chan);
+		return;
 	}
 
 	/* Commit receive. */
