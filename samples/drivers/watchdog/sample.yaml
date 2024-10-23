@@ -48,7 +48,21 @@ tests:
   sample.drivers.watchdog.stm32h7_wwdg:
     extra_args: DTC_OVERLAY_FILE=boards/stm32h7_wwdg.overlay
     filter: dt_compat_enabled("st,stm32-window-watchdog")
-    platform_allow: nucleo_h743zi
+    # filter CONFIG_SOC_SERIES_STM32H7X and dt_compat_enabled
+    # seems to ignore extra_args
+    platform_allow:
+      - nucleo_h723zg
+      - nucleo_h745zi_q
+      - nucleo_h743zi
+      - stm32h735g_disco
+      - nucleo_h753zi
+      - stm32h750b_dk
+      - stm32h7b3i_dk
+      - stm32h745i_disco
+      - nucleo_h755zi_q
+      - stm32h747i_disco
+    integration_platforms:
+      - nucleo_h743zi
   sample.drivers.watchdog.stm32_iwdg:
     extra_args: DTC_OVERLAY_FILE=boards/stm32_iwdg.overlay
     filter: dt_compat_enabled("st,stm32-watchdog")
