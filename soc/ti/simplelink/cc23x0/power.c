@@ -44,6 +44,7 @@ const PowerCC23X0_Config PowerCC23X0_config = {
 #define SYSTIM_CH(idx)      (SYSTIM_O_CH0CC + idx * SYSTIM_CH_STEP)
 #define SYSTIM_TO_RTC_SHIFT 3U
 #define SYSTIM_CH_CNT       5U
+#define RTC_CH_CNT          2U
 #define RTC_NEXT(val, now)  (((val - PowerCC23X0_WAKEDELAYSTANDBY) >> SYSTIM_TO_RTC_SHIFT) + now)
 
 #endif
@@ -57,8 +58,10 @@ static void pm_cc23x0_systim_standby_restore(void);
 
 /* Global to stash the SysTimer timeouts while we enter standby */
 static uint32_t systim[SYSTIM_CH_CNT];
+static uint32_t rtc[RTC_CH_CNT];
 static uintptr_t key;
 static uint32_t systim_mask;
+static uint32_t rtc_mask;
 
 /* Shift values to convert between the different resolutions of the SysTimer
  * channels. Channel 0 can technically support either 1us or 250ns. Until the
@@ -83,7 +86,10 @@ static void pm_cc23x0_systim_standby_restore(void)
 	ULLSync();
 
 	HwiP_clearInterrupt(INT_CPUIRQ16);
+	HwiP_clearInterrupt(INT_CPUIRQ3);
+
 	HWREG(EVTSVT_BASE + EVTSVT_O_CPUIRQ16SEL) = EVTSVT_CPUIRQ16SEL_PUBID_SYSTIM0;
+	HWREG(EVTSVT_BASE + EVTSVT_O_CPUIRQ3SEL) = EVTSVT_CPUIRQ16SEL_PUBID_AON_RTC_COMB;
 
 	while (HWREG(SYSTIM_BASE + SYSTIM_O_STATUS) != SYSTIM_STATUS_VAL_RUN) {
 		;
@@ -96,9 +102,19 @@ static void pm_cc23x0_systim_standby_restore(void)
 	}
 
 	HWREG(SYSTIM_BASE + SYSTIM_O_IMASK) = systim_mask;
+	HWREG(RTC_BASE + RTC_O_IMASK) = rtc_mask;
+
+	if (rtc_mask != 0) {
+		if (rtc_mask & 0x1) {
+			HWREG(RTC_BASE + RTC_O_CH0CC8U) = rtc[0];
+		}
+		if (rtc_mask & 0x2) {
+			HWREG(RTC_BASE + RTC_O_CH1CC8U) = rtc[1];
+		}
+	}
+
 	LRFDApplyClockDependencies();
 	PowerCC23X0_notify(PowerLPF3_AWAKE_STANDBY);
-
 	HwiP_restore(key);
 }
 #endif
@@ -110,6 +126,7 @@ static void pm_cc23x0_enter_standby(void)
 	uint32_t systim_now = 0;
 	uint32_t systim_next = MAX_SYSTIMER_DELTA;
 	uint32_t systim_delta = 0;
+	uint32_t rtc_delta = 0;
 
 	key = HwiP_disable();
 
@@ -146,7 +163,23 @@ static void pm_cc23x0_enter_standby(void)
 			systim_next = MAX_SYSTIMER_DELTA;
 		}
 
+		rtc_mask = HWREG(RTC_BASE + RTC_O_IMASK);
+		if (rtc_mask != 0) {
+			rtc_now = HWREG(RTC_BASE + RTC_O_TIME8U);
+			if (rtc_mask & 0x1) {
+				rtc[0] = HWREG(RTC_BASE + RTC_O_CH0CC8U);
+				rtc_delta = (rtc[0] - rtc_now) << 3;
+				systim_next = MIN(systim_next, rtc_delta);
+			}
+			if (rtc_mask & 0x2) {
+				rtc[1] = HWREG(RTC_BASE + RTC_O_CH1CC8U);
+				rtc_delta = (rtc[1] - rtc_now) << 3;
+				systim_next = MIN(systim_next, rtc_delta);
+			}
+		}
+
 		if (systim_next > PowerCC23X0_TOTALTIMESTANDBY) {
+			HWREG(EVTSVT_BASE + EVTSVT_O_CPUIRQ3SEL) = 0;
 			HWREG(EVTSVT_BASE + EVTSVT_O_CPUIRQ16SEL) =
 			      EVTSVT_CPUIRQ16SEL_PUBID_AON_RTC_COMB;
 			HwiP_clearInterrupt(INT_CPUIRQ16);
