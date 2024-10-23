@@ -18,6 +18,7 @@ struct internal_ctx {
 	bool new_state: 1;
 	bool terminate: 1;
 	bool is_exit: 1;
+	bool is_run: 1;
 	bool handled: 1;
 };
 
@@ -224,6 +225,7 @@ void smf_set_initial(struct smf_ctx *ctx, const struct smf_state *init_state)
 #endif
 
 	internal->is_exit = false;
+	internal->is_run = false;
 	internal->terminate = false;
 	internal->handled = false;
 	internal->new_state = false;
@@ -267,6 +269,14 @@ void smf_set_state(struct smf_ctx *const ctx, const struct smf_state *new_state)
 		return;
 	}
 
+	/*
+	 * This function should only be called during the entry or run phase of a state.
+	 * Calls from outside the state machine are not allowed and will be ignored.
+	 */
+	if (internal->is_run) {
+		LOG_ERR("Calling %s from outside the state machine", __func__);
+		return;
+	}
 	/*
 	 * It does not make sense to call smf_set_state in an exit phase of a state
 	 * since we are already in a transition; we would always ignore the
@@ -369,6 +379,15 @@ void smf_set_terminate(struct smf_ctx *ctx, int32_t val)
 {
 	struct internal_ctx *const internal = (void *)&ctx->internal;
 
+	/*
+	 * This function should only be called during the entry or run phase of a state.
+	 * Calls from outside the state machine are not allowed and will be ignored.
+	 */
+	if (internal->is_run) {
+		LOG_ERR("Calling %s from outside the state machine", __func__);
+		return;
+	}
+
 	internal->terminate = true;
 	ctx->terminate_val = val;
 }
@@ -392,6 +411,7 @@ int32_t smf_run_state(struct smf_ctx *const ctx)
 #ifdef CONFIG_SMF_ANCESTOR_SUPPORT
 	ctx->executing = ctx->current;
 #endif
+	internal->is_run = true;
 
 	if (ctx->current->run) {
 		ctx->current->run(ctx);
@@ -399,8 +419,10 @@ int32_t smf_run_state(struct smf_ctx *const ctx)
 
 #ifdef CONFIG_SMF_ANCESTOR_SUPPORT
 	if (smf_execute_ancestor_run_actions(ctx)) {
+		internal->is_run = false;
 		return ctx->terminate_val;
 	}
 #endif
+	internal->is_run = false;
 	return 0;
 }
