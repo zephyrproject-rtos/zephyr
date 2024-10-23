@@ -1929,6 +1929,21 @@ if(CONFIG_BUILD_OUTPUT_INFO_HEADER)
     )
 endif()
 
+if (CONFIG_SYSCALL_STACK_USAGE)
+  list(APPEND
+    post_build_commands
+    COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/stack_usage/stack_usage.py
+    --elf-file=${KERNEL_ELF_NAME}
+    --output-file=${PROJECT_BINARY_DIR}/syscall_stack_usage.txt
+    --build-dir=${PROJECT_BINARY_DIR}
+    --input-flags=${CONFIG_SYSCALL_STACK_USAGE_OPTIONS}
+    )
+  list(APPEND
+    post_build_byproducts
+    ${PROJECT_BINARY_DIR}/syscall_stack_usage.txt
+    )
+endif()
+
 if (CONFIG_LLEXT AND CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID)
   #slidgen must be the first post-build command to be executed
   #on the Zephyr ELF to ensure that all other commands, such as
