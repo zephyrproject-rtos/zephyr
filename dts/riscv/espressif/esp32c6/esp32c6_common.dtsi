@@ -67,9 +67,16 @@
 		compatible = "simple-bus";
 		ranges;
 
-		sram0: memory@40800000 {
-			compatible = "mmio-sram";
-			reg = <0x40800000 0x50000>;
+		sramhp: memory@40800000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x40800000 DT_SIZE_K(512)>;
+			zephyr,memory-region = "SRAMHP";
+		};
+
+		sramlp: memory@50000000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x50000000 DT_SIZE_K(16)>;
+			zephyr,memory-region = "SRAMLP ";
 		};
 
 		intc: interrupt-controller@60010000 {

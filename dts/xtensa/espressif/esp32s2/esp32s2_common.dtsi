@@ -80,8 +80,15 @@
 		ranges;
 
 		sram0: memory@3ffb0000 {
-			compatible = "mmio-sram";
-			reg = <0x3ffb0000 0x50000>;
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x3ffb0000 DT_SIZE_K(32)>;
+			zephyr,memory-region = "SRAM0";
+		};
+
+		sram1: memory@3ffb8000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x3ffb8000 DT_SIZE_K(288)>;
+			zephyr,memory-region = "SRAM1";
 		};
 
 		intc: interrupt-controller@3f4c2000 {
