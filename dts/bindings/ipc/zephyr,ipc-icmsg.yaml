@@ -32,7 +32,7 @@ properties:
       For example:
         Side A: no data cache
         Side B: 32 Bytes write-back size, 16 Bytes invalidation size
-        dcache-alignment = 32; for both
+        dcache-alignment = <32>; for both
 
   mboxes:
     description: phandle to the MBOX controller (TX and RX are required)
