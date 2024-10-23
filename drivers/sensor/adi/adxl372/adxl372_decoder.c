@@ -8,11 +8,9 @@
 
 #ifdef CONFIG_ADXL372_STREAM
 
-/*
- * Sensor resolution is 100mg/LSB, 12-bit value needs to be right
- * shifted by 4 or divided by 16. Overall this results in a scale of 160
- */
-#define SENSOR_SCALING_FACTOR (SENSOR_G / (16 * 1000 / 100))
+/* (1.0 / 10 (sensor sensitivity)) * (2^31 / 2^11 (sensor shift) ) * SENSOR_G */
+#define SENSOR_QSCALE_FACTOR UINT32_C(1027604)
+
 #define ADXL372_COMPLEMENT         0xf000
 
 static const uint32_t accel_period_ns[] = {
@@ -31,9 +29,7 @@ static inline void adxl372_accel_convert_q31(q31_t *out, const uint8_t *buff)
 		data_in |= ADXL372_COMPLEMENT;
 	}
 
-	int64_t micro_ms2 = data_in * SENSOR_SCALING_FACTOR;
-
-	*out = CLAMP((micro_ms2 + (micro_ms2 % 1000000)), INT32_MIN, INT32_MAX);
+	*out = data_in * SENSOR_QSCALE_FACTOR;
 }
 
 static int adxl372_decode_stream(const uint8_t *buffer, struct sensor_chan_spec chan_spec,
@@ -54,6 +50,7 @@ static int adxl372_decode_stream(const uint8_t *buffer, struct sensor_chan_spec 
 	memset(data, 0, sizeof(struct sensor_three_axis_data));
 	data->header.base_timestamp_ns = enc_data->timestamp;
 	data->header.reading_count = 1;
+	data->header.shift = 11; /* Sensor shift */
 
 	buffer += sizeof(struct adxl372_fifo_data);
 
