@@ -94,9 +94,16 @@ function(zephyr_mcuboot_tasks)
   endif()
 
   # Basic 'imgtool sign' command with known image information.
-  set(imgtool_sign ${PYTHON_EXECUTABLE} ${imgtool_path} sign
-      --version ${CONFIG_MCUBOOT_IMGTOOL_SIGN_VERSION} --header-size ${CONFIG_ROM_START_OFFSET}
-      --slot-size ${slot_size})
+  # Check if imgtool is available as source or binary.
+  if(${imgtool_path} MATCHES "\\.py$")
+    set(imgtool_sign ${PYTHON_EXECUTABLE} ${imgtool_path} sign
+        --version ${CONFIG_MCUBOOT_IMGTOOL_SIGN_VERSION} --header-size ${CONFIG_ROM_START_OFFSET}
+        --slot-size ${slot_size})
+  else()
+    set(imgtool_sign ${imgtool_path} sign
+        --version ${CONFIG_MCUBOOT_IMGTOOL_SIGN_VERSION} --header-size ${CONFIG_ROM_START_OFFSET}
+        --slot-size ${slot_size})
+  endif()
 
   # Arguments to imgtool.
   if(NOT CONFIG_MCUBOOT_EXTRA_IMGTOOL_ARGS STREQUAL "")
