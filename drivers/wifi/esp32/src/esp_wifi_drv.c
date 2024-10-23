@@ -735,6 +735,7 @@ static int esp32_wifi_status(const struct device *dev, struct wifi_iface_status 
 
 	strncpy(status->ssid, data->status.ssid, WIFI_SSID_MAX_LEN);
 	status->ssid_len = strnlen(data->status.ssid, WIFI_SSID_MAX_LEN);
+	status->ssid[status->ssid_len] = '\0';
 	status->band = WIFI_FREQ_BAND_2_4_GHZ;
 	status->link_mode = WIFI_LINK_MODE_UNKNOWN;
 	status->mfp = WIFI_MFP_DISABLE;
