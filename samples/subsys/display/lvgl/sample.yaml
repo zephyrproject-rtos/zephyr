@@ -73,8 +73,8 @@ tests:
   samples.subsys.display.lvgl.rk043fn66hs_ctg:
     platform_allow:
       - mimxrt1064_evk
-      - mimxrt1060_evk
-      - mimxrt1050_evk
+      - mimxrt1060_evk/mimxrt1062/qspi
+      - mimxrt1050_evk/mimxrt1052/hyperflash
       - mimxrt1040_evk
     tags: display
     harness: console
@@ -84,8 +84,8 @@ tests:
   samples.subsys.display.lvgl.rk043fn02h_ct:
     platform_allow:
       - mimxrt1064_evk
-      - mimxrt1060_evk
-      - mimxrt1050_evk
+      - mimxrt1060_evk/mimxrt1062/qspi
+      - mimxrt1050_evk/mimxrt1052/hyperflash
       - mimxrt1040_evk
     tags: display
     harness: console

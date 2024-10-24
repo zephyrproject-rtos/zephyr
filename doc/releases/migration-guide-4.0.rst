@@ -37,6 +37,9 @@ Boards
   :ref:`native_sim<native_sim>` (:github:`76898`).
 * Nordic nRF53 and nRF91 based boards can use the common devicetree overlays in ``dts/common/nordic``
   to define default flash and ram partitioning based on TF-M.
+* ``mimxrt1050_evk`` and ``mimxrt1060_evk`` revisions for ``qspi`` and ``hyperflash`` have been
+  converted into variants. ``mimxrt1060_evkb`` has been converted into revision ``B`` of
+  ``mimxrt1060_evk``.
 
 * STM32WBA: The command used for fetching blobs required to build ble applications is now
   ``west blobs fetch hal_stm32`` instead of ``west blobs fetch stm32``.

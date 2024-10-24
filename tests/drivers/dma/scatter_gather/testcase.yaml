@@ -8,7 +8,7 @@ tests:
       - intel_adsp/cavs25
       - frdm_k64f
       - mimxrt1010_evk
-      - mimxrt1060_evk
+      - mimxrt1060_evk/mimxrt1062/qspi
       - lpcxpresso55s36
       - native_sim
       - native_sim/native/64

@@ -164,6 +164,9 @@ Boards & SoC Support
     with the old name marked as deprecated.
   * PHYTEC: ``mimx8mm_phyboard_polis`` has been renamed to :ref:`phyboard_polis<phyboard_polis>`,
     with the old name marked as deprecated.
+  * ``mimxrt1050_evk`` and ``mimxrt1060_evk`` revisions for ``qspi`` and ``hyperflash`` have been
+    converted into variants. ``mimxrt1060_evkb`` has been converted into revision ``B`` of
+    ``mimxrt1060_evk``.
 
 * Added support for the following shields:
 

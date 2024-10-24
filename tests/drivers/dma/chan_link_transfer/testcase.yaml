@@ -9,8 +9,8 @@ tests:
       - frdm_k64f
       - mimxrt595_evk/mimxrt595s/cm33
       - mimxrt1010_evk
-      - mimxrt1050_evk
-      - mimxrt1060_evk
+      - mimxrt1050_evk/mimxrt1052/hyperflash
+      - mimxrt1060_evk/mimxrt1062/qspi
       - mimxrt1064_evk
       - mimxrt1160_evk/mimxrt1166/cm7
       - mimxrt1170_evk/mimxrt1176/cm7
