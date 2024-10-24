@@ -563,8 +563,7 @@ static int pwm_ra8_init(const struct device *dev)
 		}                                                                                  \
 		return 0;                                                                          \
 	}                                                                                          \
-	DEVICE_DT_INST_DEFINE(index, pwm_ra8_init_##index, NULL, &pwm_ra8_data_##index,            \
-			      &pwm_ra8_config_##index, POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,      \
-			      &pwm_ra8_driver_api);
+	DEVICE_INSTANCE_FROM_DT_INST(index, pwm_ra8_init_##index, NULL, &pwm_ra8_data_##index,     \
+			      &pwm_ra8_config_##index, POST_KERNEL, &pwm_ra8_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_RA8_INIT);

@@ -124,8 +124,8 @@ static int sb_tsi_pm_action(const struct device *dev, enum pm_device_action acti
 		.i2c = I2C_DT_SPEC_INST_GET(inst),					\
 	};										\
 	PM_DEVICE_DT_INST_DEFINE(inst, sb_tsi_pm_action);				\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, sb_tsi_init, PM_DEVICE_DT_INST_GET(inst),	\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, sb_tsi_init, PM_DEVICE_DT_INST_GET(inst),\
 			      &sb_tsi_data_##inst, &sb_tsi_config_##inst, POST_KERNEL,	\
-			      CONFIG_SENSOR_INIT_PRIORITY, &sb_tsi_driver_api);
+			      &sb_tsi_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SB_TSI_INST)

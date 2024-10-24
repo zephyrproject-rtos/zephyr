@@ -145,8 +145,8 @@ int sx9500_init(const struct device *dev)
 			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),))	\
 	};											\
 												\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, sx9500_init, NULL,					\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, sx9500_init, NULL,				\
 			      &sx9500_data_##inst, &sx9500_config_##inst, POST_KERNEL,		\
-			      CONFIG_SENSOR_INIT_PRIORITY, &sx9500_api_funcs);			\
+			      &sx9500_api_funcs);						\
 
 DT_INST_FOREACH_STATUS_OKAY(SX9500_DEFINE)

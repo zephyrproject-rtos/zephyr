@@ -382,8 +382,8 @@ static const struct sensor_driver_api max17262_battery_driver_api = {
 		.charge_voltage = DT_INST_PROP(n, charge_voltage),                                 \
 	};                                                                                         \
                                                                                                    \
-	SENSOR_DEVICE_DT_INST_DEFINE(n, &max17262_gauge_init, NULL, &max17262_data_##n,            \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(n, &max17262_gauge_init, NULL, &max17262_data_##n,     \
 				     &max17262_config_##n, POST_KERNEL,                            \
-				     CONFIG_SENSOR_INIT_PRIORITY, &max17262_battery_driver_api);
+				     &max17262_battery_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MAX17262_INIT)

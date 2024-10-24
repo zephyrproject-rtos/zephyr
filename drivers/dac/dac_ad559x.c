@@ -108,8 +108,7 @@ static int dac_ad559x_init(const struct device *dev)
                                                                                                    \
 	struct dac_ad559x_data dac_ad559x_data##inst;                                              \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, dac_ad559x_init, NULL, &dac_ad559x_data##inst,                 \
-			      &dac_ad559x_config##inst, POST_KERNEL, CONFIG_MFD_INIT_PRIORITY,     \
-			      &dac_ad559x_api);
+	DEVICE_INSTANCE_FROM_DT_INST(inst, dac_ad559x_init, NULL, &dac_ad559x_data##inst,          \
+			      &dac_ad559x_config##inst, POST_KERNEL, &dac_ad559x_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DAC_AD559X_DEFINE)

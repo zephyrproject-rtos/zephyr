@@ -1125,9 +1125,9 @@ int pcal64xxa_init(const struct device *dev)
 		.work = Z_WORK_INITIALIZER(pcal64xxa_work_handler),                                \
 		.dev = DEVICE_DT_INST_GET(idx),                                                    \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(idx, pcal64xxa_init, NULL, &pcal6408a_data##idx,                     \
+	DEVICE_INSTANCE_FROM_DT_INST(idx, pcal64xxa_init, NULL, &pcal6408a_data##idx,              \
 			      &pcal6408a_cfg##idx, POST_KERNEL,                                    \
-			      CONFIG_GPIO_PCAL64XXA_INIT_PRIORITY, &pcal6408a_drv_api##idx);
+			      &pcal6408a_drv_api##idx);
 
 #define DT_DRV_COMPAT nxp_pcal6408a
 DT_INST_FOREACH_STATUS_OKAY(GPIO_PCAL6408A_INST)
@@ -1159,9 +1159,9 @@ DT_INST_FOREACH_STATUS_OKAY(GPIO_PCAL6408A_INST)
 		.work = Z_WORK_INITIALIZER(pcal64xxa_work_handler),                                \
 		.dev = DEVICE_DT_INST_GET(idx),                                                    \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(idx, pcal64xxa_init, NULL, &pcal6416a_data##idx,                     \
+	DEVICE_INSTANCE_FROM_DT_INST(idx, pcal64xxa_init, NULL, &pcal6416a_data##idx,              \
 			      &pcal6416a_cfg##idx, POST_KERNEL,                                    \
-			      CONFIG_GPIO_PCAL64XXA_INIT_PRIORITY, &pcal6416a_drv_api##idx);
+			      &pcal6416a_drv_api##idx);
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT nxp_pcal6416a

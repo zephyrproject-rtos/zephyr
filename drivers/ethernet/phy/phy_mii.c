@@ -500,12 +500,11 @@ static const struct phy_mii_dev_config phy_mii_dev_config_##n = {	 \
 #define PHY_MII_DEVICE(n)						\
 	PHY_MII_CONFIG(n);						\
 	static struct phy_mii_dev_data phy_mii_dev_data_##n;		\
-	DEVICE_DT_INST_DEFINE(n,					\
+	DEVICE_INSTANCE_FROM_DT_INST(n,					\
 			      &phy_mii_initialize,			\
 			      NULL,					\
 			      &phy_mii_dev_data_##n,			\
 			      &phy_mii_dev_config_##n, POST_KERNEL,	\
-			      CONFIG_PHY_INIT_PRIORITY,			\
 			      &phy_mii_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PHY_MII_DEVICE)

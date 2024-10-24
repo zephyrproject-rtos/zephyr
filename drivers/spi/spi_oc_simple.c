@@ -231,13 +231,12 @@ int spi_oc_simple_init(const struct device *dev)
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(inst), ctx) \
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(inst,					\
+	DEVICE_INSTANCE_FROM_DT_INST(inst,				\
 			    spi_oc_simple_init,				\
 			    NULL,					\
 			    &spi_oc_simple_data_##inst,			\
 			    &spi_oc_simple_cfg_##inst,			\
 			    POST_KERNEL,				\
-			    CONFIG_SPI_INIT_PRIORITY,			\
 			    &spi_oc_simple_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_OC_INIT)

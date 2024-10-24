@@ -444,11 +444,10 @@ static const struct sensor_driver_api icm42605_driver_api = {
 #define ICM42605_INIT(index)						\
 	ICM42605_DEFINE_CONFIG(index);					\
 	static struct icm42605_data icm42605_driver_##index;		\
-	SENSOR_DEVICE_DT_INST_DEFINE(index, icm42605_init,		\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(index, icm42605_init,	\
 			    NULL,					\
 			    &icm42605_driver_##index,			\
 			    &icm42605_cfg_##index, POST_KERNEL,		\
-			    CONFIG_SENSOR_INIT_PRIORITY,		\
 			    &icm42605_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ICM42605_INIT)

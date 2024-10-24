@@ -73,8 +73,8 @@ static struct dummy_api test_if_api = {
 	.send = test_send,
 };
 
-NET_DEVICE_INIT(test_dhcpv6, "test_dhcpv6", NULL, NULL, &test_ctx, NULL,
-		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &test_if_api,
+NET_DEVICE_INSTANCE(test_dhcpv6, NULL, NULL, &test_ctx, NULL,
+		&test_if_api,
 		DUMMY_L2, NET_L2_GET_CTX_TYPE(DUMMY_L2), NET_IPV6_MTU);
 
 static void set_dhcpv6_test_fn(test_dhcpv6_pkt_fn_t test_fn)

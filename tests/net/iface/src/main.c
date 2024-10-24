@@ -152,40 +152,34 @@ static struct dummy_api net_iface_api = {
 #define _ETH_L2_LAYER DUMMY_L2
 #define _ETH_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(DUMMY_L2)
 
-NET_DEVICE_INIT_INSTANCE(net_iface1_test,
-			 "iface1",
+NET_DEVICE_INSTANCE_MULTI(net_iface1_test,
 			 iface1,
 			 dev_init,
 			 NULL,
 			 &net_iface1_data,
 			 NULL,
-			 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 			 &net_iface_api,
 			 _ETH_L2_LAYER,
 			 _ETH_L2_CTX_TYPE,
 			 127);
 
-NET_DEVICE_INIT_INSTANCE(net_iface2_test,
-			 "iface2",
+NET_DEVICE_INSTANCE_MULTI(net_iface2_test,
 			 iface2,
 			 NULL,
 			 NULL,
 			 &net_iface2_data,
 			 NULL,
-			 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 			 &net_iface_api,
 			 _ETH_L2_LAYER,
 			 _ETH_L2_CTX_TYPE,
 			 127);
 
-NET_DEVICE_INIT_INSTANCE(net_iface3_test,
-			 "iface3",
+NET_DEVICE_INSTANCE_MULTI(net_iface3_test,
 			 iface3,
 			 NULL,
 			 NULL,
 			 &net_iface3_data,
 			 NULL,
-			 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 			 &net_iface_api,
 			 _ETH_L2_LAYER,
 			 _ETH_L2_CTX_TYPE,
@@ -267,9 +261,8 @@ static int eth_fake_init(const struct device *dev)
 	return 0;
 }
 
-ETH_NET_DEVICE_INIT(eth_fake, "eth_fake", eth_fake_init, NULL,
-		    &eth_fake_data, NULL, CONFIG_ETH_INIT_PRIORITY,
-		    &eth_fake_api_funcs, NET_ETH_MTU);
+ETH_NET_DEVICE_INSTANCE(eth_fake, eth_fake_init, NULL,
+		    &eth_fake_data, NULL, &eth_fake_api_funcs, NET_ETH_MTU);
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 static const char *iface2str(struct net_if *iface)

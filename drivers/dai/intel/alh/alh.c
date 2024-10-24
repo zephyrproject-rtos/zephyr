@@ -219,11 +219,10 @@ static const struct dai_driver_api dai_intel_alh_api_funcs = {
 		},								\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(n,					\
+	DEVICE_INSTANCE_FROM_DT_INST(n,					\
 			NULL, NULL,					\
 			&dai_intel_alh_data_##n,			\
 			&dai_intel_alh_config_##n,			\
-			POST_KERNEL, 32,				\
-			&dai_intel_alh_api_funcs);
+			POST_KERNEL, &dai_intel_alh_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(DAI_INTEL_ALH_DEVICE_INIT)

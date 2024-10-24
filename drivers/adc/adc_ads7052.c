@@ -308,7 +308,7 @@ static const struct adc_driver_api ads7052_api = {
 		ADC_CONTEXT_INIT_SYNC(ads7052_data_##n, ctx),                                      \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, adc_ads7052_init, NULL, &ads7052_data_##n, &ads7052_cfg_##n,      \
-			      POST_KERNEL, CONFIG_ADC_ADS7052_INIT_PRIORITY, &ads7052_api);
+	DEVICE_INSTANCE_FROM_DT_INST(n, adc_ads7052_init, NULL, &ads7052_data_##n, &ads7052_cfg_##n,\
+			      POST_KERNEL, &ads7052_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ADC_ADS7052_INIT)

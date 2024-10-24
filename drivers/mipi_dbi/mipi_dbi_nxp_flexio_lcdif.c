@@ -473,13 +473,12 @@ static struct mipi_dbi_driver_api mipi_dbi_lcdif_driver_api = {
 			}								\
 		},									\
 	};										\
-	DEVICE_DT_INST_DEFINE(n,							\
+	DEVICE_INSTANCE_FROM_DT_INST(n,							\
 		&flexio_lcdif_init,							\
 		NULL,									\
 		&mcux_flexio_lcdif_data_##n,						\
 		&mcux_flexio_lcdif_config_##n,						\
 		POST_KERNEL,								\
-		CONFIG_MIPI_DBI_INIT_PRIORITY,						\
 		&mipi_dbi_lcdif_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MCUX_FLEXIO_LCDIF_DEVICE_INIT)

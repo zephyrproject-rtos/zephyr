@@ -739,12 +739,11 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 			   (.fixed_top = DT_INST_PROP(idx, fixed_top),))       \
 		LOG_INSTANCE_PTR_INIT(log, LOG_MODULE_NAME, idx)	       \
 	};								       \
-	DEVICE_DT_INST_DEFINE(idx,					       \
-			    counter_##idx##_init,			       \
-			    NULL,					       \
-			    &counter_##idx##_data,			       \
-			    &nrfx_counter_##idx##_config.info,		       \
-			    PRE_KERNEL_1, CONFIG_COUNTER_INIT_PRIORITY,	       \
-			    &counter_nrfx_driver_api);
+	DEVICE_INSTANCE_FROM_DT_INST(idx,					       \
+			    counter_##idx##_init,				       \
+			    NULL,						       \
+			    &counter_##idx##_data,				       \
+			    &nrfx_counter_##idx##_config.info,			       \
+			    PRE_KERNEL_1, &counter_nrfx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(COUNTER_NRF_RTC_DEVICE)

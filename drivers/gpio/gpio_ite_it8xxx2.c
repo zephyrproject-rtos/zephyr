@@ -709,13 +709,12 @@ static const struct gpio_ite_cfg gpio_ite_cfg_##inst = {           \
 	.gpio_irq[6] = DT_INST_IRQ_BY_IDX(inst, 6, irq),           \
 	.gpio_irq[7] = DT_INST_IRQ_BY_IDX(inst, 7, irq),           \
 	};                                                         \
-DEVICE_DT_INST_DEFINE(inst,                                        \
+DEVICE_INSTANCE_FROM_DT_INST(inst,                                 \
 		NULL,                                              \
 		NULL,                                              \
 		&gpio_ite_data_##inst,                             \
 		&gpio_ite_cfg_##inst,                              \
-		PRE_KERNEL_1,                                       \
-		CONFIG_GPIO_INIT_PRIORITY,                         \
+		PRE_KERNEL_1,                                      \
 		&gpio_ite_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_ITE_DEV_CFG_DATA)

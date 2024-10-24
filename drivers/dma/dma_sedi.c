@@ -375,9 +375,9 @@ static int dma_sedi_init(const struct device *dev)
 		.chn_num = DT_INST_PROP(inst, dma_channels), \
 		.irq_config = dma_sedi_##inst##_irq_config \
 	}; \
-	DEVICE_DT_DEFINE(DT_INST(inst, DT_DRV_COMPAT), &dma_sedi_init, \
+	DEVICE_INSTANCE(DT_INST(inst, DT_DRV_COMPAT), &dma_sedi_init, \
 	      NULL, &dma_sedi_dev_data_##inst, &dma_sedi_config_data_##inst, PRE_KERNEL_2, \
-	      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, (void *)&dma_funcs); \
+	      (void *)&dma_funcs); \
 									\
 	static void dma_sedi_##inst##_irq_config(void)			\
 	{								\

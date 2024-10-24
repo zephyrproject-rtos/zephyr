@@ -696,9 +696,8 @@ static const struct udc_api udc_vrt_api = {
 		.priv = &udc_priv_##n,						\
 	};									\
 										\
-	DEVICE_DT_INST_DEFINE(n, udc_vrt_driver_preinit, NULL,			\
+	DEVICE_INSTANCE_FROM_DT_INST(n, udc_vrt_driver_preinit, NULL,		\
 			      &udc_data_##n, &udc_vrt_config_##n,		\
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
-			      &udc_vrt_api);
+			      POST_KERNEL, &udc_vrt_api);
 
 DT_INST_FOREACH_STATUS_OKAY(UDC_VRT_DEVICE_DEFINE)

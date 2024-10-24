@@ -8,8 +8,8 @@
 #include <zephyr/drivers/gnss/gnss_publish.h>
 #include <zephyr/device.h>
 
-DEVICE_DEFINE(gnss_dev, "gnss_dev", NULL, NULL, NULL, NULL,
-	      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
+DEVICE_INSTANCE(gnss_dev, NULL, NULL, NULL, NULL,
+	      POST_KERNEL, NULL);
 
 static const struct device *gnss_dev = &DEVICE_NAME_GET(gnss_dev);
 static struct gnss_data test_data;

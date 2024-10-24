@@ -590,8 +590,8 @@ static const struct regulator_driver_api api = {
 		.source = _source,                                                                 \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_DEFINE(node_id, regulator_npm6001_init, NULL, &data_##id, &config_##id,          \
-			 POST_KERNEL, CONFIG_REGULATOR_NPM6001_INIT_PRIORITY, &api);
+	DEVICE_INSTANCE(node_id, regulator_npm6001_init, NULL, &data_##id, &config_##id,           \
+			 POST_KERNEL, &api);
 
 #define REGULATOR_NPM6001_DEFINE_COND(inst, child, source)                                         \
 	COND_CODE_1(DT_NODE_EXISTS(DT_INST_CHILD(inst, child)),                                    \

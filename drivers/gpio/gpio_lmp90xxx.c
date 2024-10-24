@@ -160,12 +160,11 @@ BUILD_ASSERT(CONFIG_GPIO_LMP90XXX_INIT_PRIORITY >
 									\
 	static struct gpio_lmp90xxx_data gpio_lmp90xxx_##id##_data;	\
 									\
-	DEVICE_DT_INST_DEFINE(id,					\
+	DEVICE_INSTANCE_FROM_DT_INST(id,				\
 			    gpio_lmp90xxx_init,				\
 			    NULL,					\
 			    &gpio_lmp90xxx_##id##_data,			\
 			    &gpio_lmp90xxx_##id##_cfg, POST_KERNEL,	\
-			    CONFIG_GPIO_LMP90XXX_INIT_PRIORITY,		\
 			    &gpio_lmp90xxx_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_LMP90XXX_DEVICE)

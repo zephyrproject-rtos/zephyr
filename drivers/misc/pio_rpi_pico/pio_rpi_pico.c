@@ -67,7 +67,7 @@ static int pio_rpi_pico_init(const struct device *dev)
 		.reset = RESET_DT_SPEC_INST_GET(idx),                                              \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(idx, &pio_rpi_pico_init, NULL, NULL, &pio_rpi_pico_config_##idx,     \
-			      PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
+	DEVICE_INSTANCE_FROM_DT_INST(idx, &pio_rpi_pico_init, NULL, NULL, &pio_rpi_pico_config_##idx,\
+			      PRE_KERNEL_2, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(RPI_PICO_PIO_INIT)

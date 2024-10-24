@@ -323,13 +323,12 @@ static const struct spi_driver_api spi_opentitan_api = {
 		.base = DT_INST_REG_ADDR(n), \
 		.f_input = DT_INST_PROP(n, clock_frequency), \
 	}; \
-	DEVICE_DT_INST_DEFINE(n, \
-			spi_opentitan_init, \
-			NULL, \
-			&spi_opentitan_data_##n, \
-			&spi_opentitan_cfg_##n, \
-			POST_KERNEL, \
-			CONFIG_SPI_INIT_PRIORITY, \
+	DEVICE_INSTANCE_FROM_DT_INST(n,\
+			spi_opentitan_init,\
+			NULL,    \
+			&spi_opentitan_data_##n,\
+			&spi_opentitan_cfg_##n,\
+			POST_KERNEL,\
 			&spi_opentitan_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_INIT)

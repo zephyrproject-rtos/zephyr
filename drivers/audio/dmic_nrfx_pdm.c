@@ -632,10 +632,9 @@ static const struct _dmic_ops dmic_ops = {
 				      hfclkaudio_frequency),		     \
 		"Clock source ACLK requires the hfclkaudio-frequency "	     \
 		"property to be defined in the nordic,nrf-clock node.");     \
-	DEVICE_DT_DEFINE(PDM(idx), pdm_nrfx_init##idx, NULL,		     \
-			 &dmic_nrfx_pdm_data##idx, &dmic_nrfx_pdm_cfg##idx,  \
-			 POST_KERNEL, CONFIG_AUDIO_DMIC_INIT_PRIORITY,	     \
-			 &dmic_ops);
+	DEVICE_INSTANCE(PDM(idx), pdm_nrfx_init##idx, NULL,			     \
+			 &dmic_nrfx_pdm_data##idx, &dmic_nrfx_pdm_cfg##idx,	     \
+			 POST_KERNEL, &dmic_ops);
 
 #ifdef CONFIG_HAS_HW_NRF_PDM0
 PDM_NRFX_DEVICE(0);

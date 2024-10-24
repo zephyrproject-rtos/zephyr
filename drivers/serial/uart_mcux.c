@@ -451,13 +451,12 @@ static const struct uart_mcux_config uart_mcux_##n##_config = {		\
 	static const struct uart_mcux_config uart_mcux_##n##_config;	\
 	PM_DEVICE_DT_INST_DEFINE(n, uart_mcux_pm_action);\
 									\
-	DEVICE_DT_INST_DEFINE(n,					\
+	DEVICE_INSTANCE_FROM_DT_INST(n,					\
 			    uart_mcux_init,				\
 			    PM_DEVICE_DT_INST_GET(n),			\
 			    &uart_mcux_##n##_data,			\
 			    &uart_mcux_##n##_config,			\
 			    PRE_KERNEL_1,				\
-			    CONFIG_SERIAL_INIT_PRIORITY,		\
 			    &uart_mcux_driver_api);			\
 									\
 	UART_MCUX_CONFIG_FUNC(n)					\

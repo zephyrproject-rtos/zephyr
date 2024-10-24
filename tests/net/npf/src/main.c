@@ -104,12 +104,10 @@ static struct net_pkt *build_test_ip_pkt(void *src, void *dst,
  * Declare some fake interfaces and test their filter conditions.
  */
 
-ETH_NET_DEVICE_INIT(dummy_iface_a, "dummy_a", NULL, NULL,
-		    NULL, NULL, CONFIG_ETH_INIT_PRIORITY,
-		    NULL, NET_ETH_MTU);
-ETH_NET_DEVICE_INIT(dummy_iface_b, "dummy_b", NULL, NULL,
-		    NULL, NULL, CONFIG_ETH_INIT_PRIORITY,
-		    NULL, NET_ETH_MTU);
+ETH_NET_DEVICE_INSTANCE(dummy_iface_a, NULL, NULL,
+		    NULL, NULL, NULL, NET_ETH_MTU);
+ETH_NET_DEVICE_INSTANCE(dummy_iface_b, NULL, NULL,
+		    NULL, NULL, NULL, NET_ETH_MTU);
 #define dummy_iface_a NET_IF_GET_NAME(dummy_iface_a, 0)[0]
 #define dummy_iface_b NET_IF_GET_NAME(dummy_iface_b, 0)[0]
 

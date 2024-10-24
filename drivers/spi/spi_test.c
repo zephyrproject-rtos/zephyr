@@ -53,8 +53,7 @@ static const struct spi_driver_api vnd_spi_api = {
 };
 
 #define VND_SPI_INIT(n)							\
-	DEVICE_DT_INST_DEFINE(n, NULL, NULL, NULL, NULL, POST_KERNEL,	\
-			      CONFIG_SPI_INIT_PRIORITY,			\
+	DEVICE_INSTANCE_FROM_DT_INST(n, NULL, NULL, NULL, NULL, POST_KERNEL,\
 			      &vnd_spi_api);
 
 DT_INST_FOREACH_STATUS_OKAY(VND_SPI_INIT)

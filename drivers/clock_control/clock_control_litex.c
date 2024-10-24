@@ -1792,6 +1792,6 @@ static const struct litex_clk_device ldev_init = {
 	.nclkout = NCLKOUT
 };
 
-DEVICE_DT_DEFINE(DT_NODELABEL(clock0), litex_clk_init, NULL,
+DEVICE_INSTANCE(DT_NODELABEL(clock0), litex_clk_init, NULL,
 		    NULL, &ldev_init, POST_KERNEL,
-		    CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &litex_clk_api);
+		    &litex_clk_api);

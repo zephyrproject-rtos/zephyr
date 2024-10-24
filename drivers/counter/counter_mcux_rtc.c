@@ -289,10 +289,9 @@ static struct mcux_rtc_config mcux_rtc_config_0 = {
 	},
 };
 
-DEVICE_DT_INST_DEFINE(0, &mcux_rtc_init, NULL,
+DEVICE_INSTANCE_FROM_DT_INST(0, &mcux_rtc_init, NULL,
 		    &mcux_rtc_data_0, &mcux_rtc_config_0.info,
-		    POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY,
-		    &mcux_rtc_driver_api);
+		    POST_KERNEL, &mcux_rtc_driver_api);
 
 static void mcux_rtc_irq_config_0(const struct device *dev)
 {

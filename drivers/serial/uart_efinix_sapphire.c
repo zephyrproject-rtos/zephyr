@@ -86,5 +86,5 @@ static int uart_efinix_sapphire_init(const struct device *dev)
 }
 
 /* Device tree instance 0 init */
-DEVICE_DT_INST_DEFINE(0, uart_efinix_sapphire_init, NULL, NULL, &uart_efinix_sapphire_cfg_0,
-		      PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY, (void *)&uart_efinix_sapphire_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, uart_efinix_sapphire_init, NULL, NULL, &uart_efinix_sapphire_cfg_0,
+		      PRE_KERNEL_1, (void *)&uart_efinix_sapphire_api);

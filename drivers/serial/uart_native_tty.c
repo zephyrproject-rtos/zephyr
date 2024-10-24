@@ -404,9 +404,8 @@ static struct uart_driver_api native_tty_uart_driver_api = {
 		.serial_port = DT_INST_PROP_OR(inst, serial_port, NULL),                           \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, native_tty_serial_init, NULL, &native_tty_##inst##_data,       \
-			      &native_tty_##inst##_cfg, NATIVE_TTY_INIT_LEVEL, 55,                 \
-			      &native_tty_uart_driver_api);
+	DEVICE_INSTANCE_FROM_DT_INST(inst, native_tty_serial_init, NULL, &native_tty_##inst##_data,\
+			      &native_tty_##inst##_cfg, NATIVE_TTY_INIT_LEVEL, &native_tty_uart_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NATIVE_TTY_INSTANCE);
 

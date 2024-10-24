@@ -81,9 +81,8 @@ static const struct gpio_driver_api vnd_gpio_api = {
 									\
 	static struct vnd_gpio_data vnd_gpio_data_##n;			\
 									\
-	DEVICE_DT_INST_DEFINE(n, NULL, NULL, &vnd_gpio_data_##n,	\
+	DEVICE_INSTANCE_FROM_DT_INST(n, NULL, NULL, &vnd_gpio_data_##n,	\
 			      &vnd_gpio_config_##n, POST_KERNEL,	\
-			      CONFIG_GPIO_INIT_PRIORITY,		\
 			      &vnd_gpio_api);
 
 DT_INST_FOREACH_STATUS_OKAY(VND_GPIO_INIT)

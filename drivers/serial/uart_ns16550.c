@@ -1975,10 +1975,9 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 	static struct uart_ns16550_dev_data uart_ns16550_dev_data_##n = {            \
 		UART_NS16550_COMMON_DEV_DATA_INITIALIZER(n)                          \
 	};                                                                           \
-	DEVICE_DT_INST_DEFINE(n, uart_ns16550_init, NULL,                            \
+	DEVICE_INSTANCE_FROM_DT_INST(n, uart_ns16550_init, NULL,                     \
 			      &uart_ns16550_dev_data_##n, &uart_ns16550_dev_cfg_##n, \
-			      PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,             \
-			      &uart_ns16550_driver_api);                             \
+			      PRE_KERNEL_1, &uart_ns16550_driver_api);               \
 	UART_NS16550_IRQ_FUNC_DEFINE(n)
 
 #define UART_NS16550_DEVICE_PCIE_INIT(n)                                             \
@@ -1993,10 +1992,9 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 	static struct uart_ns16550_dev_data uart_ns16550_dev_data_##n = {            \
 		UART_NS16550_COMMON_DEV_DATA_INITIALIZER(n)                          \
 	};                                                                           \
-	DEVICE_DT_INST_DEFINE(n, uart_ns16550_init, NULL,                            \
+	DEVICE_INSTANCE_FROM_DT_INST(n, uart_ns16550_init, NULL,                     \
 			      &uart_ns16550_dev_data_##n, &uart_ns16550_dev_cfg_##n, \
-			      PRE_KERNEL_1,            \
-			      CONFIG_SERIAL_INIT_PRIORITY,                           \
+			      PRE_KERNEL_1,                                          \
 			      &uart_ns16550_driver_api);                             \
 	UART_NS16550_PCIE_IRQ_FUNC_DEFINE(n)
 

@@ -393,8 +393,8 @@ static const struct gpio_driver_api gpio_max14916_api = {
                                                                                                    \
 	static struct max14916_data max14916_##id##_data;                                          \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(id, &gpio_max14916_init, NULL, &max14916_##id##_data,                \
+	DEVICE_INSTANCE_FROM_DT_INST(id, &gpio_max14916_init, NULL, &max14916_##id##_data,         \
 			      &max14916_##id##_cfg, POST_KERNEL,                                   \
-			      CONFIG_GPIO_MAX14916_INIT_PRIORITY, &gpio_max14916_api);
+			      &gpio_max14916_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_MAX14906_DEVICE)

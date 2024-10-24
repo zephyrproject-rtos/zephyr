@@ -167,9 +167,8 @@ static const struct disk_operations ram_disk_ops = {
 											\
 	RAMDISK_DEVICE_CONFIG_DEFINE(n);						\
 											\
-	DEVICE_DT_INST_DEFINE(n, disk_ram_init, NULL,					\
+	DEVICE_INSTANCE_FROM_DT_INST(n, disk_ram_init, NULL,				\
 			      &disk_info_##n, &disk_config_##n,				\
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
-			      &ram_disk_ops);
+			      POST_KERNEL, &ram_disk_ops);
 
 DT_INST_FOREACH_STATUS_OKAY(RAMDISK_DEVICE_DEFINE)

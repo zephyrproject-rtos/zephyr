@@ -369,8 +369,8 @@ static int analog_axis_pm_action(const struct device *dev,
 												\
 	PM_DEVICE_DT_INST_DEFINE(inst, analog_axis_pm_action);					\
 												\
-	DEVICE_DT_INST_DEFINE(inst, analog_axis_init, PM_DEVICE_DT_INST_GET(inst),		\
+	DEVICE_INSTANCE_FROM_DT_INST(inst, analog_axis_init, PM_DEVICE_DT_INST_GET(inst),	\
 			      &analog_axis_data_##inst, &analog_axis_cfg_##inst,		\
-			      POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, NULL);
+			      POST_KERNEL, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(ANALOG_AXIS_INIT)

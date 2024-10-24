@@ -43,7 +43,7 @@ config CRYPTO_TINYCRYPT_SHIM_MAX_SESSION
 
 config CRYPTO_TINYCRYPT_SHIM_DRV_NAME
 	string "Device name for TinyCrypt Pseudo device"
-	default "CRYPTO_TC"
+	default "crypto_tinycrypt"
 	depends on CRYPTO_TINYCRYPT_SHIM
 	help
 	  Device name for TinyCrypt Pseudo device.
@@ -61,7 +61,7 @@ config CRYPTO_MBEDTLS_SHIM
 
 config CRYPTO_MBEDTLS_SHIM_DRV_NAME
 	string "Device name for mbedTLS Pseudo device"
-	default "CRYPTO_MTLS"
+	default "crypto_mtls"
 	depends on CRYPTO_MBEDTLS_SHIM
 	help
 	  Device name for mbedTLS Pseudo device.

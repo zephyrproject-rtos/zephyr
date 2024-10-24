@@ -890,9 +890,9 @@ static const struct spi_driver_api spi_sam_driver_api = {
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)				\
 		IF_ENABLED(CONFIG_SPI_RTIO, (.rtio_ctx = &spi_sam_rtio_##n))			\
 	};											\
-	DEVICE_DT_INST_DEFINE(n, &spi_sam_init, NULL,						\
+	DEVICE_INSTANCE_FROM_DT_INST(n, &spi_sam_init, NULL,					\
 			    &spi_sam_dev_data_##n,						\
 			    &spi_sam_config_##n, POST_KERNEL,					\
-			    CONFIG_SPI_INIT_PRIORITY, &spi_sam_driver_api);
+			    &spi_sam_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_SAM_DEVICE_INIT)

@@ -821,8 +821,8 @@ static const struct bt_hci_driver_api h5_driver_api = {
 		.tx_thread = &tx_thread_##inst, \
 	}; \
 	static struct h5_data h5_##inst; \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &h5_##inst, &h5_config_##inst, \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &h5_driver_api)
+	DEVICE_INSTANCE_FROM_DT_INST(inst, NULL, NULL, &h5_##inst, &h5_config_##inst,\
+			      POST_KERNEL, &h5_driver_api)
 
 
 DT_INST_FOREACH_STATUS_OKAY(BT_UART_DEVICE_INIT)

@@ -1012,13 +1012,12 @@ static int adxl367_init(const struct device *dev)
  */
 
 #define ADXL367_DEVICE_INIT(inst)					\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst,			\
 			      adxl367_init,				\
 			      NULL,					\
 			      &adxl367_data_##inst,			\
 			      &adxl367_config_##inst,			\
 			      POST_KERNEL,				\
-			      CONFIG_SENSOR_INIT_PRIORITY,		\
 			      &adxl367_api_funcs);
 
 #ifdef CONFIG_ADXL367_TRIGGER

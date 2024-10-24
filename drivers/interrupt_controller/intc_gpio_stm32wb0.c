@@ -178,9 +178,9 @@ static int stm32wb0_gpio_intc_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_DEFINE(INTC_NODE, &stm32wb0_gpio_intc_init,
+DEVICE_INSTANCE(INTC_NODE, &stm32wb0_gpio_intc_init,
 		 NULL, &gpio_intc_data, NULL, PRE_KERNEL_1,
-		 CONFIG_INTC_INIT_PRIORITY, NULL);
+		 NULL);
 
 /**
  * @brief STM32 GPIO interrupt controller API implementation

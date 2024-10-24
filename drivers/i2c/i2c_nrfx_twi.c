@@ -166,13 +166,12 @@ static const struct i2c_driver_api i2c_nrfx_twi_driver_api = {
 		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(I2C(idx)),		       \
 	};								       \
 	PM_DEVICE_DT_DEFINE(I2C(idx), twi_nrfx_pm_action);		       \
-	I2C_DEVICE_DT_DEFINE(I2C(idx),					       \
-		      twi_##idx##_init,					       \
-		      PM_DEVICE_DT_GET(I2C(idx)),			       \
-		      &twi_##idx##_data,				       \
-		      &twi_##idx##z_config,				       \
-		      POST_KERNEL,					       \
-		      CONFIG_I2C_INIT_PRIORITY,				       \
+	I2C_DEVICE_INSTANCE(I2C(idx),						       \
+		      twi_##idx##_init,						       \
+		      PM_DEVICE_DT_GET(I2C(idx)),				       \
+		      &twi_##idx##_data,					       \
+		      &twi_##idx##z_config,					       \
+		      POST_KERNEL,						       \
 		      &i2c_nrfx_twi_driver_api)
 
 #ifdef CONFIG_HAS_HW_NRF_TWI0

@@ -992,9 +992,8 @@ static struct sai_data sai_data_##inst = {					\
 										\
 PM_DEVICE_DT_INST_DEFINE(inst, sai_pm_action);					\
 										\
-DEVICE_DT_INST_DEFINE(inst, &sai_init, PM_DEVICE_DT_INST_GET(inst),		\
+DEVICE_INSTANCE_FROM_DT_INST(inst, &sai_init, PM_DEVICE_DT_INST_GET(inst),	\
 		      &sai_data_##inst, &sai_config_##inst,			\
-		      POST_KERNEL, CONFIG_DAI_INIT_PRIORITY,			\
-		      &sai_api);						\
+		      POST_KERNEL, &sai_api);					\
 
 DT_INST_FOREACH_STATUS_OKAY(SAI_INIT);

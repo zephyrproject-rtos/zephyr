@@ -426,11 +426,11 @@ static int rzt2m_gpio_common_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_DEFINE(DT_INST(0, renesas_rzt2m_gpio_common),
+DEVICE_INSTANCE(DT_INST(0, renesas_rzt2m_gpio_common),
 		    rzt2m_gpio_common_init,
 		    NULL,
 		    &rzt2m_gpio_common_data_inst, NULL,
-		    PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,
+		    PRE_KERNEL_1,
 		    NULL);
 
 #define VALUE_2X(i, _) UTIL_X2(i)
@@ -453,8 +453,7 @@ DEVICE_DT_DEFINE(DT_INST(0, renesas_rzt2m_gpio_common),
 		.port = DT_INST_REG_ADDR(inst),                                                    \
 		.pin_irqs = {PORT_IRQS_INITIALIZER(inst)},                                         \
 		.common = {.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst)}};               \
-	DEVICE_DT_INST_DEFINE(inst, rzt2m_gpio_init, NULL, &rzt2m_gpio_data##inst,          \
-			      &rzt2m_gpio_config##inst, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,   \
-			      &rzt2m_gpio_driver_api);
+	DEVICE_INSTANCE_FROM_DT_INST(inst, rzt2m_gpio_init, NULL, &rzt2m_gpio_data##inst,   \
+			      &rzt2m_gpio_config##inst, PRE_KERNEL_1, &rzt2m_gpio_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(RZT2M_GPIO_DEFINE)

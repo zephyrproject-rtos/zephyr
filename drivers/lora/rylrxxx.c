@@ -679,7 +679,7 @@ static const struct lora_driver_api rylr_lora_api = {
 		.uart = DEVICE_DT_GET(DT_INST_BUS(n)),                                             \
 		.reset = GPIO_DT_SPEC_INST_GET(n, reset_gpios),                                    \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n, &rylr_init, NULL, &dev_data_##n, &dev_config_##n, POST_KERNEL,    \
-			      CONFIG_LORA_INIT_PRIORITY, &rylr_lora_api);
+	DEVICE_INSTANCE_FROM_DT_INST(n, &rylr_init, NULL, &dev_data_##n, &dev_config_##n, POST_KERNEL,\
+			      &rylr_lora_api);
 
 DT_INST_FOREACH_STATUS_OKAY(RYLR_DEVICE_INIT)

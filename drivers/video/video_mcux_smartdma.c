@@ -382,10 +382,9 @@ static const struct video_driver_api nxp_video_sdma_api = {
 		.config = &sdma_config_##inst,					\
 	};									\
 										\
-	DEVICE_DT_INST_DEFINE(inst, nxp_video_sdma_init, NULL,			\
+	DEVICE_INSTANCE_FROM_DT_INST(inst, nxp_video_sdma_init, NULL,		\
 				&sdma_data_##inst, &sdma_config_##inst,		\
 				POST_KERNEL,					\
-				CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
 				&nxp_video_sdma_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NXP_VIDEO_SDMA_INIT)

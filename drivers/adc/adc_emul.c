@@ -574,10 +574,9 @@ static int adc_emul_init(const struct device *dev)
 		.ref_int = DT_INST_PROP(_num, ref_internal_mv),		\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(_num, adc_emul_init, NULL,		\
+	DEVICE_INSTANCE_FROM_DT_INST(_num, adc_emul_init, NULL,		\
 			      &adc_emul_data_##_num,			\
 			      &adc_emul_config_##_num, POST_KERNEL,	\
-			      CONFIG_ADC_INIT_PRIORITY,			\
 			      &adc_emul_api_##_num);
 
 DT_INST_FOREACH_STATUS_OKAY(ADC_EMUL_INIT)

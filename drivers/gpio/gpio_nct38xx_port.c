@@ -525,8 +525,8 @@ BUILD_ASSERT(CONFIG_GPIO_NCT38XX_PORT_INIT_PRIORITY > CONFIG_GPIO_NCT38XX_INIT_P
 		!(DT_INST_REG_ADDR(inst) == 0 && !(DT_INST_NODE_HAS_PROP(inst, pinmux_mask))),     \
 		"Port 0 should assign pinmux_mask property.");                                     \
 	static struct gpio_nct38xx_port_data gpio_nct38xx_port_data_##inst;                        \
-	DEVICE_DT_INST_DEFINE(inst, gpio_nct38xx_port_init, NULL, &gpio_nct38xx_port_data_##inst,  \
+	DEVICE_INSTANCE_FROM_DT_INST(inst, gpio_nct38xx_port_init, NULL, &gpio_nct38xx_port_data_##inst,\
 			      &gpio_nct38xx_port_cfg_##inst, POST_KERNEL,                          \
-			      CONFIG_GPIO_NCT38XX_PORT_INIT_PRIORITY, &gpio_nct38xx_driver);
+			      &gpio_nct38xx_driver);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_NCT38XX_PORT_DEVICE_INSTANCE)

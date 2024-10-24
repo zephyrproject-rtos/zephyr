@@ -293,8 +293,8 @@ static const struct regulator_driver_api api = {
 		.dis_en = DT_PROP(node_id, adi_enable_output_discharge),                           \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_DEFINE(node_id, regulator_adp5360_init, NULL, &data_##id, &config_##id,          \
-			 POST_KERNEL, CONFIG_REGULATOR_ADP5360_INIT_PRIORITY, &api);
+	DEVICE_INSTANCE(node_id, regulator_adp5360_init, NULL, &data_##id, &config_##id,           \
+			 POST_KERNEL, &api);
 
 #define REGULATOR_ADP5360_DEFINE_COND(inst, child)                                                 \
 	COND_CODE_1(DT_NODE_EXISTS(DT_INST_CHILD(inst, child)),                                    \

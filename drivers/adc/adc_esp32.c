@@ -744,11 +744,10 @@ static const struct adc_driver_api api_esp32_driver_api = {
 	static struct adc_esp32_data adc_esp32_data_##inst = {			\
 	};									\
 										\
-DEVICE_DT_INST_DEFINE(inst, &adc_esp32_init, NULL,				\
+DEVICE_INSTANCE_FROM_DT_INST(inst, &adc_esp32_init, NULL,			\
 		&adc_esp32_data_##inst,						\
 		&adc_esp32_conf_##inst,						\
 		POST_KERNEL,							\
-		CONFIG_ADC_INIT_PRIORITY,					\
 		&api_esp32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ESP32_ADC_INIT)

@@ -143,12 +143,11 @@ static int sqn_hwspinlock_init(const struct device *dev)
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(idx)),                         \
 		.num_locks = DT_INST_PROP(idx, num_locks),                      \
 	};                                                                      \
-	DEVICE_DT_INST_DEFINE(idx,                                              \
+	DEVICE_INSTANCE_FROM_DT_INST(idx,                                       \
 			      sqn_hwspinlock_init,                              \
 			      NULL,                                             \
 			      &sqn_hwspinlock##idx##_data,                      \
 			      &sqn_hwspinlock##idx##_config,                    \
-			      PRE_KERNEL_1, CONFIG_HWSPINLOCK_INIT_PRIORITY,    \
-			      &hwspinlock_api)
+			      PRE_KERNEL_1, &hwspinlock_api)
 
 DT_INST_FOREACH_STATUS_OKAY(SQN_HWSPINLOCK_INIT);

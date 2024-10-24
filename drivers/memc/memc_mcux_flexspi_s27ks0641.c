@@ -186,13 +186,12 @@ static int memc_flexspi_s27ks0641_init(const struct device *dev)
 		.controller = DEVICE_DT_GET(DT_INST_BUS(n)),	  \
 	};							  \
 								  \
-	DEVICE_DT_INST_DEFINE(n,				  \
+	DEVICE_INSTANCE_FROM_DT_INST(n,				  \
 			      memc_flexspi_s27ks0641_init,	  \
 			      NULL,				  \
-			      &memc_flexspi_s27ks0641_data_##n,  \
+			      &memc_flexspi_s27ks0641_data_##n,	  \
 			      &memc_flexspi_s27ks0641_config_##n,  \
 			      POST_KERNEL,			  \
-			      CONFIG_MEMC_INIT_PRIORITY, \
 			      NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(MEMC_FLEXSPI_S27KS0641)

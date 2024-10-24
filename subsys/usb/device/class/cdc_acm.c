@@ -1221,9 +1221,8 @@ static const struct uart_driver_api cdc_acm_driver_api = {
 		     " is not assigned to a USB device controller");	\
 	CDC_ACM_CFG_AND_DATA_DEFINE(idx)				\
 									\
-	DEVICE_DT_INST_DEFINE(idx, cdc_acm_init, NULL,			\
+	DEVICE_INSTANCE_FROM_DT_INST(idx, cdc_acm_init, NULL,		\
 		&cdc_acm_dev_data_##idx, &cdc_acm_config_##idx,		\
-		PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,		\
-		&cdc_acm_driver_api);
+		PRE_KERNEL_1, &cdc_acm_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CDC_ACM_DT_DEVICE_DEFINE);

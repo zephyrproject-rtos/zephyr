@@ -1397,13 +1397,12 @@ static const struct mcux_lpuart_config mcux_lpuart_##n##_config = {     \
 									\
 	LPUART_MCUX_DECLARE_CFG(n)					\
 									\
-	DEVICE_DT_INST_DEFINE(n,					\
+	DEVICE_INSTANCE_FROM_DT_INST(n,					\
 			    mcux_lpuart_init,				\
 			    NULL,					\
 			    &mcux_lpuart_##n##_data,			\
 			    &mcux_lpuart_##n##_config,			\
 			    PRE_KERNEL_1,				\
-			    CONFIG_SERIAL_INIT_PRIORITY,		\
 			    &mcux_lpuart_driver_api);			\
 
 DT_INST_FOREACH_STATUS_OKAY(LPUART_MCUX_INIT)

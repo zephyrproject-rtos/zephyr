@@ -149,9 +149,8 @@ int ak8975_init(const struct device *dev)
 		.i2c = I2C_DT_SPEC_INST_GET(inst),					\
 	};										\
 											\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, ak8975_init, NULL,				\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, ak8975_init, NULL,			\
 			      &ak8975_data_##inst, &ak8975_config_##inst,		\
-			      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,			\
-			      &ak8975_driver_api);					\
+			      POST_KERNEL, &ak8975_driver_api);				\
 
 DT_INST_FOREACH_STATUS_OKAY(AK8975_DEFINE)

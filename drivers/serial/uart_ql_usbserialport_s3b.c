@@ -81,6 +81,5 @@ static const struct uart_driver_api uart_usbserial_driver_api = {
 	.poll_out		= uart_usbserial_poll_out,
 };
 
-DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, NULL, PRE_KERNEL_1,
-		      CONFIG_SERIAL_INIT_PRIORITY,
+DEVICE_INSTANCE_FROM_DT_INST(0, NULL, NULL, NULL, NULL, PRE_KERNEL_1,
 		      (void *)&uart_usbserial_driver_api);

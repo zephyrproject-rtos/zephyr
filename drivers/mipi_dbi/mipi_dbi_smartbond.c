@@ -561,12 +561,11 @@ static const struct mipi_dbi_driver_api mipi_dbi_smartbond_driver_api = {
 												\
 	PM_DEVICE_DT_INST_DEFINE(inst, mipi_dbi_smartbond_pm_action);	\
 												\
-	DEVICE_DT_INST_DEFINE(inst, mipi_dbi_smartbond_init,	\
-						PM_DEVICE_DT_INST_GET(inst),	\
-						&mipi_dbi_smartbond_data_## inst,	\
-						&mipi_dbi_smartbond_config_## inst,	\
+	DEVICE_INSTANCE_FROM_DT_INST(inst, mipi_dbi_smartbond_init,\
+						PM_DEVICE_DT_INST_GET(inst),\
+						&mipi_dbi_smartbond_data_## inst,\
+						&mipi_dbi_smartbond_config_## inst,\
 						POST_KERNEL,	\
-						CONFIG_MIPI_DBI_INIT_PRIORITY,	\
 						&mipi_dbi_smartbond_driver_api);
 
 SMARTBOND_MIPI_DBI_INIT(0);

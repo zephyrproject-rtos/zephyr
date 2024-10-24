@@ -913,12 +913,11 @@ static const struct dma_mcux_lpc_config dma_##n##_config = {		\
 		.otrig_array = dma_##n##_otrig_arr,			\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(n,					\
+	DEVICE_INSTANCE_FROM_DT_INST(n,					\
 			    &dma_mcux_lpc_init,				\
 			    NULL,					\
 			    &dma_data_##n, &dma_##n##_config,		\
-			    PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY,	\
-			    &dma_mcux_lpc_api);				\
+			    PRE_KERNEL_1, &dma_mcux_lpc_api);		\
 									\
 	DMA_MCUX_LPC_CONFIG_FUNC(n)					\
 	DMA_MCUX_LPC_INIT_CFG(n);

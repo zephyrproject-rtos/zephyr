@@ -189,10 +189,9 @@ static const struct wdt_driver_api wdt_cc32xx_api = {
 		.irq_cfg_func = wdt_cc32xx_irq_cfg_##index,			 \
 	};									 \
 										 \
-	DEVICE_DT_INST_DEFINE(index,						 \
+	DEVICE_INSTANCE_FROM_DT_INST(index,					 \
 			      &wdt_cc32xx_init, NULL,				 \
 			      &wdt_cc32xx_data_##index, &wdt_cc32xx_cfg_##index, \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	 \
-			      &wdt_cc32xx_api);
+			      POST_KERNEL, &wdt_cc32xx_api);
 
 DT_INST_FOREACH_STATUS_OKAY(cc32xx_WDT_INIT)

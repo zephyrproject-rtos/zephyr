@@ -875,8 +875,7 @@ static int eth_enc28j60_init(const struct device *dev)
 		.random_mac = DT_INST_PROP(inst, zephyr_random_mac_address),                    \
 	};                                                                                         \
                                                                                                    \
-	ETH_NET_DEVICE_DT_INST_DEFINE(inst, eth_enc28j60_init, NULL, &eth_enc28j60_runtime_##inst, \
-				      &eth_enc28j60_config_##inst, CONFIG_ETH_INIT_PRIORITY,       \
-				      &api_funcs, NET_ETH_MTU);
+	ETH_NET_DEVICE_INSTANCE_FROM_DT_INST(inst, eth_enc28j60_init, NULL, &eth_enc28j60_runtime_##inst,\
+				      &eth_enc28j60_config_##inst, &api_funcs, NET_ETH_MTU);
 
 DT_INST_FOREACH_STATUS_OKAY(ENC28J60_DEFINE);

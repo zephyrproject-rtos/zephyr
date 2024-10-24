@@ -133,9 +133,8 @@ static int pd_gpio_init(const struct device *dev)
 	};									\
 	static struct pd_gpio_data pd_gpio_##id##_data;				\
 	PM_DEVICE_DT_INST_DEFINE(id, pd_gpio_pm_action);			\
-	DEVICE_DT_INST_DEFINE(id, pd_gpio_init, PM_DEVICE_DT_INST_GET(id),	\
+	DEVICE_INSTANCE_FROM_DT_INST(id, pd_gpio_init, PM_DEVICE_DT_INST_GET(id),\
 			      &pd_gpio_##id##_data, &pd_gpio_##id##_cfg,	\
-			      POST_KERNEL, CONFIG_POWER_DOMAIN_GPIO_INIT_PRIORITY,	\
-			      NULL);
+			      POST_KERNEL, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(POWER_DOMAIN_DEVICE)

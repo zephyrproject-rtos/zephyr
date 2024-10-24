@@ -76,5 +76,5 @@ static const struct clock_control_si32_apb_config config = {
 	.divider = DT_PROP(DT_NODELABEL(clk_apb), divider),
 };
 
-DEVICE_DT_INST_DEFINE(0, clock_control_si32_apb_init, NULL, NULL, &config, PRE_KERNEL_1,
-		      CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &clock_control_si32_apb_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, clock_control_si32_apb_init, NULL, NULL, &config, PRE_KERNEL_1,
+		      &clock_control_si32_apb_api);

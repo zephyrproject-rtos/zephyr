@@ -668,12 +668,11 @@ void counter_stm32_irq_handler(const struct device *dev)
 		.reset = RESET_DT_SPEC_GET(TIMER(idx)),				  \
 	};									  \
 										  \
-	DEVICE_DT_INST_DEFINE(idx,						  \
+	DEVICE_INSTANCE_FROM_DT_INST(idx,					  \
 			      counter_stm32_init_timer,				  \
 			      NULL,						  \
 			      &counter##idx##_data,				  \
 			      &counter##idx##_config,				  \
-			      PRE_KERNEL_1, CONFIG_COUNTER_INIT_PRIORITY,	  \
-			      &counter_stm32_driver_api);
+			      PRE_KERNEL_1, &counter_stm32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(COUNTER_DEVICE_INIT)

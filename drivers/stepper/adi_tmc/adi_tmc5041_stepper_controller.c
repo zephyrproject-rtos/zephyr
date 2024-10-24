@@ -732,9 +732,9 @@ static int tmc5041_stepper_init(const struct device *dev)
 		.set_event_callback = tmc5041_stepper_set_event_callback, };
 
 #define TMC5041_STEPPER_DEFINE(child)								\
-	DEVICE_DT_DEFINE(child, tmc5041_stepper_init, NULL, &tmc5041_stepper_data_##child,	\
+	DEVICE_INSTANCE(child, tmc5041_stepper_init, NULL, &tmc5041_stepper_data_##child,	\
 			 &tmc5041_stepper_config_##child, POST_KERNEL,				\
-			 CONFIG_STEPPER_INIT_PRIORITY, &tmc5041_stepper_api_##child);
+			 &tmc5041_stepper_api_##child);
 
 #define TMC5041_DEFINE(inst)									\
 	BUILD_ASSERT(DT_INST_CHILD_NUM(inst) <= 2, "tmc5041 can drive two steppers at max");	\
@@ -754,8 +754,7 @@ static int tmc5041_stepper_init(const struct device *dev)
 	DT_INST_FOREACH_CHILD(inst, TMC5041_STEPPER_DATA_DEFINE);				\
 	DT_INST_FOREACH_CHILD(inst, TMC5041_STEPPER_API_DEFINE);				\
 	DT_INST_FOREACH_CHILD(inst, TMC5041_STEPPER_DEFINE);					\
-	DEVICE_DT_INST_DEFINE(inst, tmc5041_init, NULL, &tmc5041_data_##inst,			\
-			      &tmc5041_config_##inst, POST_KERNEL, CONFIG_STEPPER_INIT_PRIORITY,\
-			      NULL);
+	DEVICE_INSTANCE_FROM_DT_INST(inst, tmc5041_init, NULL, &tmc5041_data_##inst,		\
+			      &tmc5041_config_##inst, POST_KERNEL, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(TMC5041_DEFINE)

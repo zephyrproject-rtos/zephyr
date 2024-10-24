@@ -962,10 +962,9 @@ struct usbd_class_api uac2_api = {
 		"UAC2 implementation supports up to 32 AS interfaces");		\
 	BUILD_ASSERT(ARRAY_SIZE(entity_types_##inst) <= 255,			\
 		"UAC2 supports up to 255 entities");				\
-	DEVICE_DT_DEFINE(DT_DRV_INST(inst), NULL, NULL,				\
+	DEVICE_INSTANCE(DT_DRV_INST(inst), NULL, NULL,				\
 		&uac2_ctx_##inst, &uac2_cfg_##inst,				\
-		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
-		NULL);
+		POST_KERNEL, NULL);
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_UAC2_CLASS_DATA)
 
 static size_t clock_frequencies(struct usbd_class_data *const c_data,

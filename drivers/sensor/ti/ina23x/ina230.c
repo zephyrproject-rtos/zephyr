@@ -266,9 +266,9 @@ static const struct sensor_driver_api ina230_driver_api = {
 				  (DT_INST_PROP_OR(inst, high_precision, 0) << 1)),                \
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, alert_gpios), (INA230_CFG_IRQ(inst)),      \
 			    ())};   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, &ina230_init, NULL, &drv_data_##inst,                   \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, &ina230_init, NULL, &drv_data_##inst,            \
 				     &drv_config_##type##inst, POST_KERNEL,                        \
-				     CONFIG_SENSOR_INIT_PRIORITY, &ina230_driver_api);
+				     &ina230_driver_api);
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT ti_ina230

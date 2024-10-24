@@ -235,8 +235,7 @@ static int bd8lb600fs_init(const struct device *dev)
 	};                                                                                         \
                                                                                                    \
 	/* This has to be initialized after the SPI peripheral. */                                 \
-	DEVICE_DT_INST_DEFINE(inst, bd8lb600fs_init, NULL, &bd8lb600fs_##inst##_data,              \
-			      &bd8lb600fs_##inst##_config, POST_KERNEL, CONFIG_MFD_INIT_PRIORITY,  \
-			      NULL);
+	DEVICE_INSTANCE_FROM_DT_INST(inst, bd8lb600fs_init, NULL, &bd8lb600fs_##inst##_data,       \
+			      &bd8lb600fs_##inst##_config, POST_KERNEL, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(BD8LB600FS_INIT)

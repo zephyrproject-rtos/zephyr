@@ -168,12 +168,11 @@ static const struct mcux_wdog_config mcux_wdog_config = {
 
 static struct mcux_wdog_data mcux_wdog_data;
 
-DEVICE_DT_INST_DEFINE(0,
+DEVICE_INSTANCE_FROM_DT_INST(0,
 		    &mcux_wdog_init,
 		    NULL,
 		    &mcux_wdog_data, &mcux_wdog_config,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &mcux_wdog_api);
+		    POST_KERNEL, &mcux_wdog_api);
 
 static void mcux_wdog_config_func(const struct device *dev)
 {

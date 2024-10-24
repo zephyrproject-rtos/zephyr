@@ -525,7 +525,6 @@ struct flash_nios2_qspi_config flash_cfg = {
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 	"only one 'altr,nios2-qspi-nor' compatible node may be present");
 
-DEVICE_DT_INST_DEFINE(0,
+DEVICE_INSTANCE_FROM_DT_INST(0,
 		flash_nios2_qspi_init, NULL, &flash_cfg, NULL,
-		POST_KERNEL, CONFIG_FLASH_INIT_PRIORITY,
-		&flash_nios2_qspi_api);
+		POST_KERNEL, &flash_nios2_qspi_api);

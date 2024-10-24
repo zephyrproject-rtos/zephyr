@@ -286,5 +286,5 @@ static const struct display_driver_api ls0xx_driver_api = {
 	.set_pixel_format = ls0xx_set_pixel_format,
 };
 
-DEVICE_DT_INST_DEFINE(0, ls0xx_init, NULL, NULL, &ls0xx_config, POST_KERNEL,
-		      CONFIG_DISPLAY_INIT_PRIORITY, &ls0xx_driver_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, ls0xx_init, NULL, NULL, &ls0xx_config, POST_KERNEL,
+		      &ls0xx_driver_api);

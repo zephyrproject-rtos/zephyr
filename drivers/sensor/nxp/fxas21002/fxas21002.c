@@ -475,9 +475,8 @@ static const struct sensor_driver_api fxas21002_driver_api = {
 									      { 0 }),))))	\
 	};											\
 												\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, fxas21002_init, NULL,				\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, fxas21002_init, NULL,				\
 				     &fxas21002_data_##inst, &fxas21002_config_##inst,		\
-				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,			\
-				     &fxas21002_driver_api);					\
+				     POST_KERNEL, &fxas21002_driver_api);			\
 
 DT_INST_FOREACH_STATUS_OKAY(FXAS21002_DEFINE)

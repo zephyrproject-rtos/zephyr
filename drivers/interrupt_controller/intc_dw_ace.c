@@ -176,9 +176,8 @@ static const struct dw_ace_v1_ictl_driver_api dw_ictl_ace_v1x_apis = {
 #endif
 };
 
-DEVICE_DT_INST_DEFINE(0, dw_ace_init, NULL, NULL, NULL,
-		 PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,
-		 &dw_ictl_ace_v1x_apis);
+DEVICE_INSTANCE_FROM_DT_INST(0, dw_ace_init, NULL, NULL, NULL,
+		 PRE_KERNEL_1, &dw_ictl_ace_v1x_apis);
 
 IRQ_PARENT_ENTRY_DEFINE(ace_intc, DEVICE_DT_INST_GET(0), DT_INST_IRQN(0),
 			INTC_BASE_ISR_TBL_OFFSET(DT_DRV_INST(0)),

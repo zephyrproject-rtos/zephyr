@@ -183,12 +183,11 @@ static const struct mdio_sam_dev_config mdio_sam_dev_config_##n = {	\
 	PINCTRL_DT_INST_DEFINE(n);					\
 	MDIO_SAM_CONFIG(n);						\
 	static struct mdio_sam_dev_data mdio_sam_dev_data##n;		\
-	DEVICE_DT_INST_DEFINE(n,					\
+	DEVICE_INSTANCE_FROM_DT_INST(n,					\
 			      &mdio_sam_initialize,			\
 			      NULL,					\
 			      &mdio_sam_dev_data##n,			\
 			      &mdio_sam_dev_config_##n, POST_KERNEL,	\
-			      CONFIG_MDIO_INIT_PRIORITY,		\
 			      &mdio_sam_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MDIO_SAM_DEVICE)

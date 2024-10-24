@@ -423,5 +423,4 @@ static const struct dma_driver_api dma_si32_driver_api = {
 	.stop = dma_si32_stop,
 };
 
-DEVICE_DT_INST_DEFINE(0, &dma_si32_init, NULL, NULL, NULL, POST_KERNEL, CONFIG_DMA_INIT_PRIORITY,
-		      &dma_si32_driver_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, &dma_si32_init, NULL, NULL, NULL, POST_KERNEL, &dma_si32_driver_api);

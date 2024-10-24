@@ -237,5 +237,5 @@ static const struct intel_adsp_wdt_dev_cfg wdt_intel_adsp_config = {
 
 static struct intel_adsp_wdt_dev_data wdt_intel_adsp_data;
 
-DEVICE_DT_DEFINE(DEV_NODE, &intel_adsp_wdt_init, NULL, &wdt_intel_adsp_data, &wdt_intel_adsp_config,
-		 POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &intel_adsp_wdt_api);
+DEVICE_INSTANCE(DEV_NODE, &intel_adsp_wdt_init, NULL, &wdt_intel_adsp_data, &wdt_intel_adsp_config,
+		 POST_KERNEL, &intel_adsp_wdt_api);

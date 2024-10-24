@@ -81,9 +81,8 @@ static int xmc4xxx_temp_init(const struct device *dev)
 #define XMC4XXX_TEMP_DEFINE(inst)								\
 	static struct xmc4xxx_temp_data xmc4xxx_temp_dev_data_##inst;				\
 												\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, xmc4xxx_temp_init, NULL,				\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, xmc4xxx_temp_init, NULL,			\
 			      &xmc4xxx_temp_dev_data_##inst, NULL,				\
-			      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,				\
-			      &xmc4xxx_temp_driver_api);					\
+			      POST_KERNEL, &xmc4xxx_temp_driver_api);				\
 
 DT_INST_FOREACH_STATUS_OKAY(XMC4XXX_TEMP_DEFINE)

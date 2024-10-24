@@ -251,13 +251,12 @@ static const struct spi_driver_api spi_litex_api = {
 		.data_width = DT_INST_PROP(n, data_width),                                         \
 		.max_cs = DT_INST_PROP(n, max_cs),                                                 \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n,                                                                   \
+	DEVICE_INSTANCE_FROM_DT_INST(n,                                                            \
 			NULL,                                                                      \
 			NULL,                                                                      \
 			&spi_litex_data_##n,                                                       \
 			&spi_litex_cfg_##n,                                                        \
 			POST_KERNEL,                                                               \
-			CONFIG_SPI_INIT_PRIORITY,                                                  \
 			&spi_litex_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_INIT)

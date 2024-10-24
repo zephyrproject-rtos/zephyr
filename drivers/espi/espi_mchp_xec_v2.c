@@ -1297,10 +1297,9 @@ static const struct espi_xec_config espi_xec_config = {
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 };
 
-DEVICE_DT_INST_DEFINE(0, &espi_xec_init, NULL,
+DEVICE_INSTANCE_FROM_DT_INST(0, &espi_xec_init, NULL,
 		    &espi_xec_data_var, &espi_xec_config,
-		    PRE_KERNEL_2, CONFIG_ESPI_INIT_PRIORITY,
-		    &espi_xec_driver_api);
+		    PRE_KERNEL_2, &espi_xec_driver_api);
 
 /*
  * Connect ESPI bus interrupt handlers: ESPI_RESET and channels.

@@ -620,11 +620,10 @@ static const struct spi_driver_api xlnx_quadspi_driver_api = {
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)	\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(n, &xlnx_quadspi_init,			\
+	DEVICE_INSTANCE_FROM_DT_INST(n, &xlnx_quadspi_init,		\
 			    NULL,					\
 			    &xlnx_quadspi_data_##n,			\
 			    &xlnx_quadspi_config_##n, POST_KERNEL,	\
-			    CONFIG_SPI_INIT_PRIORITY,			\
 			    &xlnx_quadspi_driver_api);			\
 									\
 	static void xlnx_quadspi_config_func_##n(const struct device *dev)	\

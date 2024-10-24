@@ -300,6 +300,5 @@ static const struct flash_driver_api flash_cc13xx_cc26xx_api = {
 
 static struct flash_priv flash_data;
 
-DEVICE_DT_INST_DEFINE(0, flash_cc13xx_cc26xx_init, NULL, &flash_data, NULL,
-		      POST_KERNEL, CONFIG_FLASH_INIT_PRIORITY,
-		      &flash_cc13xx_cc26xx_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, flash_cc13xx_cc26xx_init, NULL, &flash_data, NULL,
+		      POST_KERNEL, &flash_cc13xx_cc26xx_api);

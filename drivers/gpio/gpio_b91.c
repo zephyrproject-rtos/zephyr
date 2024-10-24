@@ -551,12 +551,11 @@ static void gpio_b91_irq_connect_4(void)
 	};								    \
 	static struct gpio_b91_data gpio_b91_data_##n;			    \
 									    \
-	DEVICE_DT_INST_DEFINE(n, gpio_b91_init,				    \
-			      NULL,					    \
-			      &gpio_b91_data_##n,			    \
-			      &gpio_b91_config_##n,			    \
-			      PRE_KERNEL_1,				    \
-			      CONFIG_GPIO_INIT_PRIORITY,		    \
+	DEVICE_INSTANCE_FROM_DT_INST(n, gpio_b91_init,				    \
+			      NULL,						    \
+			      &gpio_b91_data_##n,				    \
+			      &gpio_b91_config_##n,				    \
+			      PRE_KERNEL_1,					    \
 			      &gpio_b91_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_B91_INIT)

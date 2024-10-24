@@ -593,13 +593,12 @@ static int lis2dw12_init(const struct device *dev)
  */
 
 #define LIS2DW12_DEVICE_INIT(inst)					\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst,			\
 			    lis2dw12_init,				\
 			    NULL,					\
 			    &lis2dw12_data_##inst,			\
 			    &lis2dw12_config_##inst,			\
 			    POST_KERNEL,				\
-			    CONFIG_SENSOR_INIT_PRIORITY,		\
 			    &lis2dw12_driver_api);
 
 /*

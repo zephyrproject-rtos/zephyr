@@ -574,11 +574,10 @@ static const struct mcux_acmp_config mcux_acmp_config_##n = {		\
 									\
 	PINCTRL_DT_INST_DEFINE(n);					\
 									\
-	SENSOR_DEVICE_DT_INST_DEFINE(n, &mcux_acmp_init,		\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(n, &mcux_acmp_init,		\
 			      NULL,					\
 			      &mcux_acmp_data_##n,			\
 			      &mcux_acmp_config_##n, POST_KERNEL,	\
-			      CONFIG_SENSOR_INIT_PRIORITY,		\
 			      &mcux_acmp_driver_api);			\
 	MCUX_ACMP_CONFIG_FUNC(n)					\
 	MCUX_ACMP_INIT_CONFIG(n);

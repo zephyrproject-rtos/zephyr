@@ -80,9 +80,8 @@ static struct scu_pd_data scu_pd_data_##inst = {			\
 									\
 PM_DEVICE_DT_INST_DEFINE(inst, scu_pd_pm_action);			\
 									\
-DEVICE_DT_INST_DEFINE(inst, scu_pd_init, PM_DEVICE_DT_INST_GET(inst),	\
+DEVICE_INSTANCE_FROM_DT_INST(inst, scu_pd_init, PM_DEVICE_DT_INST_GET(inst),\
 		      &scu_pd_data_##inst, NULL, PRE_KERNEL_1,		\
-		      CONFIG_POWER_DOMAIN_NXP_SCU_INIT_PRIORITY,	\
 		      NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(SCU_PD_DEVICE_DEFINE);

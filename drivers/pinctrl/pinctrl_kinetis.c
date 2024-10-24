@@ -95,12 +95,11 @@ static int pinctrl_mcux_init(const struct device *dev)
 				PINCTRL_MCUX_DT_INST_CLOCK_SUBSYS(n),	\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(n,					\
+	DEVICE_INSTANCE_FROM_DT_INST(n,					\
 			    &pinctrl_mcux_init,				\
 			    NULL,					\
 			    NULL, &pinctrl_mcux_##n##_config,		\
 			    PRE_KERNEL_1,				\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
 			    NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(PINCTRL_MCUX_INIT)

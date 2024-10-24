@@ -138,7 +138,7 @@ static int rt1718s_init(const struct device *dev)
 	static struct rt1718s_data rt1718s_data_##inst = {                                         \
 		.dev = DEVICE_DT_INST_GET(inst),                                                   \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, rt1718s_init, NULL, &rt1718s_data_##inst, &rt1718s_cfg_##inst, \
-			      POST_KERNEL, CONFIG_RT1718S_INIT_PRIORITY, NULL);
+	DEVICE_INSTANCE_FROM_DT_INST(inst, rt1718s_init, NULL, &rt1718s_data_##inst, &rt1718s_cfg_##inst,\
+			      POST_KERNEL, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_RT1718S_DEVICE_INSTANCE)

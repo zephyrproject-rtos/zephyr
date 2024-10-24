@@ -319,5 +319,5 @@ static const struct rtc_driver_api rtc_rpi_pico_driver_api = {
 #endif /* CONFIG_RTC_ALARM */
 };
 
-DEVICE_DT_INST_DEFINE(0, &rtc_rpi_pico_init, NULL, &rtc_data, NULL, POST_KERNEL,
-		      CONFIG_RTC_INIT_PRIORITY, &rtc_rpi_pico_driver_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, &rtc_rpi_pico_init, NULL, &rtc_data, NULL, POST_KERNEL,
+		      &rtc_rpi_pico_driver_api);

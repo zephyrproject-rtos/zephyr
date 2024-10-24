@@ -180,8 +180,7 @@ static const struct led_driver_api lp5569_led_api = {
                                                                                                    \
 	PM_DEVICE_DT_INST_DEFINE(id, lp5569_pm_action);                                            \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(id, &lp5569_init, PM_DEVICE_DT_INST_GET(id), NULL,                   \
-			      &lp5569_config_##id, POST_KERNEL, CONFIG_LED_INIT_PRIORITY,          \
-			      &lp5569_led_api);
+	DEVICE_INSTANCE_FROM_DT_INST(id, &lp5569_init, PM_DEVICE_DT_INST_GET(id), NULL,            \
+			      &lp5569_config_##id, POST_KERNEL, &lp5569_led_api);
 
 DT_INST_FOREACH_STATUS_OKAY(LP5569_DEFINE)

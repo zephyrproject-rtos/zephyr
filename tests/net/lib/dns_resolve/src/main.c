@@ -187,14 +187,12 @@ static struct dummy_api net_iface_api = {
 #define _ETH_L2_LAYER DUMMY_L2
 #define _ETH_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(DUMMY_L2)
 
-NET_DEVICE_INIT_INSTANCE(net_iface1_test,
-			 "iface1",
+NET_DEVICE_INSTANCE_MULTI(net_iface1_test,
 			 iface1,
 			 NULL,
 			 NULL,
 			 &net_iface1_data,
 			 NULL,
-			 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 			 &net_iface_api,
 			 _ETH_L2_LAYER,
 			 _ETH_L2_CTX_TYPE,

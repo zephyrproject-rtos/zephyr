@@ -571,8 +571,8 @@ done:
                                                                                                    \
 	static struct pwm_numaker_data pwm_numaker_data_##inst;                                    \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, &pwm_numaker_init, NULL, &pwm_numaker_data_##inst,             \
+	DEVICE_INSTANCE_FROM_DT_INST(inst, &pwm_numaker_init, NULL, &pwm_numaker_data_##inst,      \
 			      &pwm_numaker_cfg_##inst, PRE_KERNEL_1,                               \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &pwm_numaker_driver_api);
+			      &pwm_numaker_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NUMAKER_PWM_INIT)

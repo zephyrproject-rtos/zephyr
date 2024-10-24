@@ -818,9 +818,8 @@ static const struct adc_driver_api ads1x1x_api = {
 		ADC_CONTEXT_INIT_TIMER(ads##t##_data_##n, ctx),                                    \
 		ADC_CONTEXT_INIT_SYNC(ads##t##_data_##n, ctx),                                     \
 	};                                                                                         \
-	DEVICE_DT_DEFINE(DT_INST_ADS1X1X(n, t), ads1x1x_init, NULL, &ads##t##_data_##n,            \
-			 &ads##t##_config_##n, POST_KERNEL, CONFIG_ADC_ADS1X1X_INIT_PRIORITY,      \
-			 &ads1x1x_api);
+	DEVICE_INSTANCE(DT_INST_ADS1X1X(n, t), ads1x1x_init, NULL, &ads##t##_data_##n,            \
+			&ads##t##_config_##n, POST_KERNEL, &ads1x1x_api);
 
 /* The ADS111X provides 16 bits of data in binary two's complement format
  * A positive full-scale (+FS) input produces an output code of 7FFFh and a

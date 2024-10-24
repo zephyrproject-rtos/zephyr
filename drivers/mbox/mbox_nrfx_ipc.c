@@ -198,6 +198,5 @@ static const struct mbox_driver_api mbox_nrf_driver_api = {
 	.set_enabled = mbox_nrf_set_enabled,
 };
 
-DEVICE_DT_INST_DEFINE(0, mbox_nrf_init, NULL, &nrfx_mbox_data, &nrfx_mbox_conf,
-		    POST_KERNEL, CONFIG_MBOX_INIT_PRIORITY,
-		    &mbox_nrf_driver_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, mbox_nrf_init, NULL, &nrfx_mbox_data, &nrfx_mbox_conf,
+		    POST_KERNEL, &mbox_nrf_driver_api);

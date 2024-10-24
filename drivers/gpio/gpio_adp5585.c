@@ -461,9 +461,9 @@ static const struct gpio_driver_api api_table = {
 		.mfd_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                       \
 	};                                                                        \
 	static struct adp5585_gpio_data adp5585_gpio_drvdata_##inst;              \
-	DEVICE_DT_INST_DEFINE(inst, gpio_adp5585_init, NULL,                      \
-				&adp5585_gpio_drvdata_##inst,                                 \
-				&adp5585_gpio_cfg_##inst, POST_KERNEL,                        \
-			    CONFIG_GPIO_ADP5585_INIT_PRIORITY, &api_table);
+	DEVICE_INSTANCE_FROM_DT_INST(inst, gpio_adp5585_init, NULL,               \
+				&adp5585_gpio_drvdata_##inst,                     \
+				&adp5585_gpio_cfg_##inst, POST_KERNEL,            \
+			    &api_table);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_ADP5585_INIT)

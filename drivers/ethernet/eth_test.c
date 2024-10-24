@@ -128,7 +128,6 @@ struct ethernet_api vnd_ethernet_api = {
 };
 
 #define VND_ETHERNET_INIT(n)                                                                       \
-	DEVICE_DT_INST_DEFINE(n, NULL, NULL, NULL, NULL, POST_KERNEL, CONFIG_ETH_INIT_PRIORITY,    \
-			      &vnd_ethernet_api);
+	DEVICE_INSTANCE_FROM_DT_INST(n, NULL, NULL, NULL, NULL, POST_KERNEL, &vnd_ethernet_api);
 
 DT_INST_FOREACH_STATUS_OKAY(VND_ETHERNET_INIT)

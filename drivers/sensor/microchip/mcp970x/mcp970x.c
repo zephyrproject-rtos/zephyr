@@ -133,8 +133,8 @@ static int init(const struct device *dev)
 		.family = DT_INST_ENUM_IDX(inst, family),                                          \
 	};                                                                                         \
                                                                                                    \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, &init, NULL, &mcp970x_##inst##_data,                    \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, &init, NULL, &mcp970x_##inst##_data,             \
 				     &mcp970x_##inst##_config, POST_KERNEL,                        \
-				     CONFIG_SENSOR_INIT_PRIORITY, &mcp970x_api);
+				     &mcp970x_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MCP970X_INIT)

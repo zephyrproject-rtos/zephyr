@@ -317,8 +317,8 @@ static int iis2dh_init(const struct device *dev)
 			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, drdy_gpios, { 0 }),))	\
 	};											\
 												\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, iis2dh_init, NULL,					\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, iis2dh_init, NULL,				\
 			      &iis2dh_data_##inst, &iis2dh_device_config_##inst, POST_KERNEL,	\
-			      CONFIG_SENSOR_INIT_PRIORITY, &iis2dh_driver_api);			\
+			      &iis2dh_driver_api);						\
 
 DT_INST_FOREACH_STATUS_OKAY(IIS2DH_DEFINE)

@@ -221,13 +221,12 @@ static void wdt_event_handler(const struct device *dev, nrf_wdt_event_t event_ty
 	static const struct wdt_nrfx_config wdt_##idx##z_config = {	       \
 		.wdt = NRFX_WDT_INSTANCE(idx),				       \
 	};								       \
-	DEVICE_DT_DEFINE(WDT(idx),					       \
-			    wdt_##idx##_init,				       \
-			    NULL,					       \
-			    &wdt_##idx##_data,				       \
-			    &wdt_##idx##z_config,			       \
-			    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,  \
-			    &wdt_nrfx_driver_api)
+	DEVICE_INSTANCE(WDT(idx),						       \
+			    wdt_##idx##_init,					       \
+			    NULL,						       \
+			    &wdt_##idx##_data,					       \
+			    &wdt_##idx##z_config,				       \
+			    PRE_KERNEL_1, &wdt_nrfx_driver_api)
 
 #ifdef CONFIG_HAS_HW_NRF_WDT0
 WDT_NRFX_WDT_DEVICE(0);

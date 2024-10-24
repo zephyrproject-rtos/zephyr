@@ -453,12 +453,12 @@ int npcx_miwu_manage_callback(struct miwu_callback *cb, bool set)
 	};                                                                     \
 	struct intc_miwu_data miwu_data_##inst;				       \
 									       \
-	DEVICE_DT_INST_DEFINE(inst,					       \
-			    NPCX_MIWU_INIT_FUNC(inst),                         \
-			    NULL,					       \
-			    &miwu_data_##inst, &miwu_config_##inst,            \
-			    PRE_KERNEL_1,                                      \
-			    CONFIG_INTC_INIT_PRIORITY, NULL);                  \
+	DEVICE_INSTANCE_FROM_DT_INST(inst,					       \
+			    NPCX_MIWU_INIT_FUNC(inst),				       \
+			    NULL,						       \
+			    &miwu_data_##inst, &miwu_config_##inst,		       \
+			    PRE_KERNEL_1,					       \
+			    NULL);						       \
 									       \
 	NPCX_MIWU_ISR_FUNC_IMPL(inst)                                          \
 									       \

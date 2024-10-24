@@ -292,13 +292,12 @@ static const struct spi_driver_api spi_sifive_api = {
 		.f_sys = SIFIVE_PERIPHERAL_CLOCK_FREQUENCY, \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n), \
 	}; \
-	DEVICE_DT_INST_DEFINE(n, \
-			spi_sifive_init, \
-			NULL, \
-			&spi_sifive_data_##n, \
-			&spi_sifive_cfg_##n, \
-			POST_KERNEL, \
-			CONFIG_SPI_INIT_PRIORITY, \
+	DEVICE_INSTANCE_FROM_DT_INST(n,\
+			spi_sifive_init,\
+			NULL,    \
+			&spi_sifive_data_##n,\
+			&spi_sifive_cfg_##n,\
+			POST_KERNEL,\
 			&spi_sifive_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_INIT)

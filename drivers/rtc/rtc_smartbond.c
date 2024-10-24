@@ -654,10 +654,9 @@ static int rtc_smartbond_init(const struct device *dev)
 	\
 	static struct rtc_smartbond_data rtc_smartbond_data_ ## inst; \
 	\
-	DEVICE_DT_INST_DEFINE(0, rtc_smartbond_init, NULL, \
-		&rtc_smartbond_data_ ## inst, NULL, \
-		POST_KERNEL, \
-		CONFIG_RTC_INIT_PRIORITY, \
+	DEVICE_INSTANCE_FROM_DT_INST(0, rtc_smartbond_init, NULL,\
+		&rtc_smartbond_data_ ## inst, NULL,        \
+		POST_KERNEL,                               \
 		&rtc_smartbond_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SMARTBOND_RTC_INIT)

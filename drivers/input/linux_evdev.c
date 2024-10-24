@@ -110,6 +110,6 @@ static int linux_evdev_init(const struct device *dev)
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 	     "Only one zephyr,native-linux-evdev compatible node is supported");
 
-DEVICE_DT_INST_DEFINE(0, linux_evdev_init, NULL,
+DEVICE_INSTANCE_FROM_DT_INST(0, linux_evdev_init, NULL,
 		      NULL, NULL,
-		      POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, NULL);
+		      POST_KERNEL, NULL);

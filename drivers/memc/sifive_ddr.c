@@ -208,5 +208,5 @@ static struct ddr_ctrl_data ddrctl_private_data = {
 	.ddr_size = DT_REG_SIZE(DT_NODELABEL(ram0)),
 };
 
-DEVICE_DT_INST_DEFINE(0, ddr_init, NULL, &ddrctl_private_data, NULL, POST_KERNEL,
-		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
+DEVICE_INSTANCE_FROM_DT_INST(0, ddr_init, NULL, &ddrctl_private_data, NULL, POST_KERNEL,
+		NULL);

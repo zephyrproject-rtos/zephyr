@@ -130,9 +130,8 @@ static const struct can_transceiver_driver_api can_transceiver_gpio_driver_api =
 		CAN_TRANSCEIVER_GPIO_COND(inst, standby)		\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(inst, &can_transceiver_gpio_init,		\
+	DEVICE_INSTANCE_FROM_DT_INST(inst, &can_transceiver_gpio_init,	\
 			NULL, NULL, &can_transceiver_gpio_config_##inst,\
-			POST_KERNEL, CONFIG_CAN_TRANSCEIVER_INIT_PRIORITY, \
-			&can_transceiver_gpio_driver_api);		\
+			POST_KERNEL, &can_transceiver_gpio_driver_api);	\
 
 DT_INST_FOREACH_STATUS_OKAY(CAN_TRANSCEIVER_GPIO_INIT)

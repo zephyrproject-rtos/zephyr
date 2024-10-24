@@ -380,10 +380,9 @@ static void adc_sam_isr(const struct device *dev)
 		ADC_CONTEXT_INIT_SYNC(adc##n##_sam_data, ctx),		\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(n, adc_sam_init, NULL,			\
+	DEVICE_INSTANCE_FROM_DT_INST(n, adc_sam_init, NULL,		\
 			    &adc##n##_sam_data,				\
 			    &adc##n##_sam_cfg, POST_KERNEL,		\
-			    CONFIG_ADC_INIT_PRIORITY,			\
 			    &adc_sam_api);				\
 									\
 	static void adc##n##_sam_cfg_func(const struct device *dev)	\

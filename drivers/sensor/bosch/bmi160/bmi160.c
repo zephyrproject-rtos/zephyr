@@ -1192,10 +1192,10 @@ int bmi160_pm(const struct device *dev, enum pm_device_action action)
 
 #define BMI160_DEVICE_INIT(inst)								\
 	IF_ENABLED(CONFIG_PM_DEVICE_RUNTIME, (PM_DEVICE_DT_INST_DEFINE(inst, bmi160_pm)));	\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, bmi160_init,						\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, bmi160_init,					\
 		COND_CODE_1(CONFIG_PM_DEVICE_RUNTIME, (PM_DEVICE_DT_INST_GET(inst)), (NULL)),	\
 		&bmi160_data_##inst, &bmi160_cfg_##inst,					\
-		POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,					\
+		POST_KERNEL, 									\
 		&bmi160_api);
 
 /* Instantiation macros used when a device is on a SPI bus */

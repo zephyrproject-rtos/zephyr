@@ -516,13 +516,12 @@ static const struct gpio_driver_api gpio_esp32_driver_api = {
 		.gpio_dev = (gpio_dev_t *)DT_REG_ADDR(DT_NODELABEL(gpio##_id)),	\
 		.gpio_port = _id	\
 	};									\
-	DEVICE_DT_DEFINE(DT_NODELABEL(gpio##_id),				\
+	DEVICE_INSTANCE(DT_NODELABEL(gpio##_id),				\
 			&gpio_esp32_init,					\
 			NULL,							\
 			&gpio_data_##_id,					\
 			&gpio_config_##_id,					\
 			PRE_KERNEL_1,						\
-			CONFIG_GPIO_INIT_PRIORITY,				\
 			&gpio_esp32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ESP_SOC_GPIO_INIT);

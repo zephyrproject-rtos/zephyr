@@ -95,10 +95,8 @@ static struct dummy_api fake_dev_if_api = {
 
 PM_DEVICE_DEFINE(fake_dev, fake_dev_pm_action);
 
-NET_DEVICE_INIT(fake_dev, "fake_dev",
-		NULL, PM_DEVICE_GET(fake_dev),
+NET_DEVICE_INSTANCE(fake_dev, NULL, PM_DEVICE_GET(fake_dev),
 		&fake_dev_context_data, NULL,
-		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&fake_dev_if_api, _ETH_L2_LAYER, _ETH_L2_CTX_TYPE, 127);
 
 void *test_setup(void)

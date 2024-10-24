@@ -270,13 +270,12 @@ static int i2c_eeprom_target_init(const struct device *dev)
 		.buffer = i2c_eeprom_target_##inst##_buffer		\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(inst,					\
+	DEVICE_INSTANCE_FROM_DT_INST(inst,				\
 			    &i2c_eeprom_target_init,			\
-			    NULL,			\
+			    NULL,					\
 			    &i2c_eeprom_target_##inst##_dev_data,	\
 			    &i2c_eeprom_target_##inst##_cfg,		\
 			    POST_KERNEL,				\
-			    CONFIG_I2C_TARGET_INIT_PRIORITY,		\
 			    &api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_EEPROM_INIT)

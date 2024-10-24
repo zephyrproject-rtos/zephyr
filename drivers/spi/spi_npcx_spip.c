@@ -443,8 +443,7 @@ static struct spi_driver_api spi_npcx_spip_api = {
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 		NPCX_SPIP_IRQ_HANDLER_FUNC(n)};                                                    \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, spi_npcx_spip_init, NULL, &spi_npcx_spip_data_##n,                \
-			      &spi_npcx_spip_cfg_##n, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,       \
-			      &spi_npcx_spip_api);
+	DEVICE_INSTANCE_FROM_DT_INST(n, spi_npcx_spip_init, NULL, &spi_npcx_spip_data_##n,         \
+			      &spi_npcx_spip_cfg_##n, POST_KERNEL, &spi_npcx_spip_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NPCX_SPI_INIT)

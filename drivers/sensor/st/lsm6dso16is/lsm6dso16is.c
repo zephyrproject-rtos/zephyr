@@ -853,13 +853,12 @@ static int lsm6dso16is_init(const struct device *dev)
  */
 
 #define LSM6DSO16IS_DEVICE_INIT(inst)					\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst,			\
 			    lsm6dso16is_init,				\
 			    NULL,					\
 			    &lsm6dso16is_data_##inst,			\
 			    &lsm6dso16is_config_##inst,			\
 			    POST_KERNEL,				\
-			    CONFIG_SENSOR_INIT_PRIORITY,		\
 			    &lsm6dso16is_driver_api);
 
 /*

@@ -72,9 +72,8 @@ static const struct reset_driver_api reset_nxp_rstctl_driver_api = {
 };
 
 #define NXP_RSTCTL_INIT(n)						\
-	DEVICE_DT_INST_DEFINE(n, NULL, NULL, NULL,			\
+	DEVICE_INSTANCE_FROM_DT_INST(n, NULL, NULL, NULL,		\
 			      (void *)DT_INST_REG_ADDR(n),		\
-			      PRE_KERNEL_1, CONFIG_RESET_INIT_PRIORITY,	\
-			      &reset_nxp_rstctl_driver_api);
+			      PRE_KERNEL_1, &reset_nxp_rstctl_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NXP_RSTCTL_INIT)

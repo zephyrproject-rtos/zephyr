@@ -673,10 +673,9 @@ static int rtc_sam_init(const struct device *dev)
 									\
 	static struct rtc_sam_data rtc_sam_data_##id;			\
 									\
-	DEVICE_DT_INST_DEFINE(id, rtc_sam_init, NULL,			\
+	DEVICE_INSTANCE_FROM_DT_INST(id, rtc_sam_init, NULL,		\
 			      &rtc_sam_data_##id,			\
 			      &rtc_sam_config_##id, POST_KERNEL,	\
-			      CONFIG_RTC_INIT_PRIORITY,			\
 			      &rtc_sam_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(RTC_SAM_DEVICE);

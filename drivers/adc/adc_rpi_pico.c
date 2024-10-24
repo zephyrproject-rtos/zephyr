@@ -375,10 +375,9 @@ static int adc_rpi_init(const struct device *dev)
 		.dev = DEVICE_DT_INST_GET(idx),                                                    \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(idx, adc_rpi_init, NULL,                                             \
+	DEVICE_INSTANCE_FROM_DT_INST(idx, adc_rpi_init, NULL,                                      \
 			      &adc_rpi_data_##idx,                                                 \
 			      &adc_rpi_config_##idx, POST_KERNEL,                                  \
-			      CONFIG_ADC_INIT_PRIORITY,                                            \
 			      &adc_rpi_api_##idx)
 
 DT_INST_FOREACH_STATUS_OKAY(ADC_RPI_INIT);

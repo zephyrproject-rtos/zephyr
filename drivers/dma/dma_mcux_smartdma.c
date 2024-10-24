@@ -152,11 +152,10 @@ static const struct dma_driver_api dma_mcux_smartdma_api = {
 	};									\
 	static struct dma_mcux_smartdma_data smartdma_##n##_data;		\
 										\
-	DEVICE_DT_INST_DEFINE(n,						\
+	DEVICE_INSTANCE_FROM_DT_INST(n,						\
 				&dma_mcux_smartdma_init,			\
 				NULL,						\
 				&smartdma_##n##_data, &smartdma_##n##_config,	\
-				POST_KERNEL, CONFIG_DMA_INIT_PRIORITY,		\
-				&dma_mcux_smartdma_api);
+				POST_KERNEL, &dma_mcux_smartdma_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SMARTDMA_INIT)

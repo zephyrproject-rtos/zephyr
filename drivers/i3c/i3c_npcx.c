@@ -2242,8 +2242,7 @@ static const struct i3c_driver_api npcx_i3c_driver_api = {
 		))                                                                                 \
 	};                                                                                         \
 	static struct npcx_i3c_data npcx_i3c_data_##id;                                            \
-	DEVICE_DT_INST_DEFINE(id, npcx_i3c_init, NULL, &npcx_i3c_data_##id, &npcx_i3c_config_##id, \
-			      POST_KERNEL, CONFIG_I3C_CONTROLLER_INIT_PRIORITY,                    \
-			      &npcx_i3c_driver_api);
+	DEVICE_INSTANCE_FROM_DT_INST(id, npcx_i3c_init, NULL, &npcx_i3c_data_##id, &npcx_i3c_config_##id,\
+			      POST_KERNEL, &npcx_i3c_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(I3C_NPCX_DEVICE)

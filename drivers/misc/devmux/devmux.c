@@ -174,8 +174,8 @@ static int devmux_init(struct device *const dev)
 		.selected = DEVMUX_SELECTED(_n),                                                   \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(_n, devmux_init, NULL, &devmux_data_##_n, &devmux_config_##_n,       \
-			      PRE_KERNEL_1, CONFIG_DEVMUX_INIT_PRIORITY, NULL);
+	DEVICE_INSTANCE_FROM_DT_INST(_n, devmux_init, NULL, &devmux_data_##_n, &devmux_config_##_n,\
+			      PRE_KERNEL_1, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(DEVMUX_DEFINE)
 

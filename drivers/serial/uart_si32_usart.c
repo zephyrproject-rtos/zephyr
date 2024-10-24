@@ -386,9 +386,8 @@ static int usart_si32_init(const struct device *dev)
 		.baud_rate = DT_INST_PROP(index, current_speed),                                   \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(index, &usart_si32_init, NULL, &usart_si32_data_##index,             \
-			      &usart_si32_cfg_##index, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,  \
-			      &usart_si32_driver_api);                                             \
+	DEVICE_INSTANCE_FROM_DT_INST(index, &usart_si32_init, NULL, &usart_si32_data_##index,      \
+			      &usart_si32_cfg_##index, PRE_KERNEL_1, &usart_si32_driver_api);      \
                                                                                                    \
 	SI32_USART_IRQ_HANDLER(index)
 

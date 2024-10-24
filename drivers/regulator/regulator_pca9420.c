@@ -522,9 +522,9 @@ static int regulator_pca9420_common_init(const struct device *dev)
 		.parent = _parent,                                             \
 	};                                                                     \
                                                                                \
-	DEVICE_DT_DEFINE(node_id, regulator_pca9420_init, NULL, &data_##id,    \
+	DEVICE_INSTANCE(node_id, regulator_pca9420_init, NULL, &data_##id,     \
 			 &config_##id, POST_KERNEL,                            \
-			 CONFIG_REGULATOR_PCA9420_INIT_PRIORITY, &api);
+			 &api);
 
 #define REGULATOR_PCA9420_DEFINE_COND(inst, child, parent)                     \
 	COND_CODE_1(DT_NODE_EXISTS(DT_INST_CHILD(inst, child)),                \
@@ -544,10 +544,9 @@ static int regulator_pca9420_common_init(const struct device *dev)
                                                                                \
 	static struct regulator_pca9420_common_data data_##inst;               \
                                                                                \
-	DEVICE_DT_INST_DEFINE(inst, regulator_pca9420_common_init, NULL,       \
+	DEVICE_INSTANCE_FROM_DT_INST(inst, regulator_pca9420_common_init, NULL,\
 			      &data_##inst,                                    \
 			      &config_##inst, POST_KERNEL,                     \
-			      CONFIG_REGULATOR_PCA9420_COMMON_INIT_PRIORITY,   \
 			      &parent_api);                                    \
                                                                                \
 	REGULATOR_PCA9420_DEFINE_COND(inst, buck1, DEVICE_DT_INST_GET(inst))   \

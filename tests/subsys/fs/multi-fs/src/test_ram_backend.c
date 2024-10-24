@@ -84,5 +84,5 @@ static const struct flash_driver_api flash_ram_api = {
 	.page_layout = test_flash_ram_pages_layout,
 };
 
-DEVICE_DEFINE(flash_ram_test, "ram_flash_test_drv", NULL, NULL, NULL, NULL,
-	      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &flash_ram_api);
+DEVICE_INSTANCE(flash_ram_test, NULL, NULL, NULL, NULL,
+	      POST_KERNEL, &flash_ram_api);

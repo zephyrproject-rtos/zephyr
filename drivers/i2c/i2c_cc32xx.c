@@ -398,10 +398,9 @@ static const struct i2c_cc32xx_config i2c_cc32xx_config = {
 
 static struct i2c_cc32xx_data i2c_cc32xx_data;
 
-I2C_DEVICE_DT_INST_DEFINE(0, i2c_cc32xx_init, NULL,
+I2C_DEVICE_INSTANCE_FROM_DT_INST(0, i2c_cc32xx_init, NULL,
 		    &i2c_cc32xx_data, &i2c_cc32xx_config,
-		    POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,
-		    &i2c_cc32xx_driver_api);
+		    POST_KERNEL, &i2c_cc32xx_driver_api);
 
 static void configure_i2c_irq(const struct i2c_cc32xx_config *config)
 {

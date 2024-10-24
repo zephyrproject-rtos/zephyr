@@ -442,11 +442,10 @@ static struct gpio_eos_s3_data gpio_eos_s3_data = {
 	},
 };
 
-DEVICE_DT_INST_DEFINE(0,
+DEVICE_INSTANCE_FROM_DT_INST(0,
 		    gpio_eos_s3_init,
 		    NULL,
 		    &gpio_eos_s3_data,
 		    &gpio_eos_s3_config,
 		    PRE_KERNEL_1,
-		    CONFIG_GPIO_INIT_PRIORITY,
 		    &gpio_eos_s3_driver_api);

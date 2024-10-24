@@ -598,8 +598,8 @@ static const struct sensor_driver_api veml7700_api = {.sample_fetch = veml7700_s
                                                                                                    \
 	PM_DEVICE_DT_INST_DEFINE(n, veml7700_pm_action);                                           \
                                                                                                    \
-	SENSOR_DEVICE_DT_INST_DEFINE(n, veml7700_init, PM_DEVICE_DT_INST_GET(n),                   \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(n, veml7700_init, PM_DEVICE_DT_INST_GET(n),            \
 				     &veml7700_data_##n, &veml7700_config_##n, POST_KERNEL,        \
-				     CONFIG_SENSOR_INIT_PRIORITY, &veml7700_api);
+				     &veml7700_api);
 
 DT_INST_FOREACH_STATUS_OKAY(VEML7700_INIT)

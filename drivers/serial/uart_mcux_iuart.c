@@ -340,13 +340,12 @@ static const struct mcux_iuart_config mcux_iuart_##n##_config = {	\
 									\
 	static const struct mcux_iuart_config mcux_iuart_##n##_config;\
 									\
-	DEVICE_DT_INST_DEFINE(n,					\
+	DEVICE_INSTANCE_FROM_DT_INST(n,					\
 			    mcux_iuart_init,				\
 			    NULL,					\
 			    &mcux_iuart_##n##_data,			\
 			    &mcux_iuart_##n##_config,			\
 			    PRE_KERNEL_1,				\
-			    CONFIG_SERIAL_INIT_PRIORITY,		\
 			    &mcux_iuart_driver_api);			\
 									\
 	PINCTRL_DT_INST_DEFINE(n);					\

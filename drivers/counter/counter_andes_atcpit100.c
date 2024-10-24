@@ -494,13 +494,12 @@ static const struct counter_driver_api atcpit100_driver_api = {
 		.cfg_func = counter_atcpit100_cfg_##n,			\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(n,					\
+	DEVICE_INSTANCE_FROM_DT_INST(n,					\
 		counter_atcpit100_init,					\
 		NULL,							\
 		&atcpit100_data_##n,					\
 		&atcpit100_config_##n,					\
 		PRE_KERNEL_1,						\
-		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,			\
 		&atcpit100_driver_api);					\
 									\
 	static void counter_atcpit100_cfg_##n(void)			\

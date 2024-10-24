@@ -811,11 +811,10 @@ static void mipi_dbi_lcdic_isr(const struct device *dev)
 	static struct mipi_dbi_lcdic_data mipi_dbi_lcdic_data_##n = {	\
 		LCDIC_DMA_CHANNELS(n)					\
 	};								\
-	DEVICE_DT_INST_DEFINE(n, mipi_dbi_lcdic_init, NULL,		\
+	DEVICE_INSTANCE_FROM_DT_INST(n, mipi_dbi_lcdic_init, NULL,	\
 			&mipi_dbi_lcdic_data_##n,			\
 			&mipi_dbi_lcdic_config_##n,			\
 			POST_KERNEL,					\
-			CONFIG_MIPI_DBI_INIT_PRIORITY,			\
 			&mipi_dbi_lcdic_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MIPI_DBI_LCDIC_INIT)

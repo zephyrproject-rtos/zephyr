@@ -401,7 +401,7 @@ static int gt911_init(const struct device *dev)
 		.alt_addr = DT_INST_PROP_OR(index, alt_addr, 0),                                   \
 	};                                                                                         \
 	static struct gt911_data gt911_data_##index;                                               \
-	DEVICE_DT_INST_DEFINE(index, gt911_init, NULL, &gt911_data_##index, &gt911_config_##index, \
-			      POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, NULL);
+	DEVICE_INSTANCE_FROM_DT_INST(index, gt911_init, NULL, &gt911_data_##index, &gt911_config_##index,\
+			      POST_KERNEL, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(GT911_INIT)

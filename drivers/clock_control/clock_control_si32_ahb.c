@@ -99,5 +99,5 @@ static const struct clock_control_si32_ahb_config config = {
 	.freq = DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency),
 };
 
-DEVICE_DT_INST_DEFINE(0, clock_control_si32_ahb_init, NULL, NULL, &config, PRE_KERNEL_1,
-		      CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &clock_control_si32_ahb_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, clock_control_si32_ahb_init, NULL, NULL, &config, PRE_KERNEL_1,
+		      &clock_control_si32_ahb_api);

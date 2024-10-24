@@ -57,8 +57,8 @@ static int ds2482_init(const struct device *dev)
 		.i2c_spec = I2C_DT_SPEC_INST_GET(inst),                                            \
 	};                                                                                         \
 	static struct ds2482_data inst_##inst##_data;                                              \
-	DEVICE_DT_INST_DEFINE(inst, ds2482_init, NULL, &inst_##inst##_data, &inst_##inst##_config, \
-			      POST_KERNEL, CONFIG_W1_INIT_PRIORITY, NULL);
+	DEVICE_INSTANCE_FROM_DT_INST(inst, ds2482_init, NULL, &inst_##inst##_data, &inst_##inst##_config,\
+			      POST_KERNEL, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(DS2482_INIT)
 

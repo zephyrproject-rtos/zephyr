@@ -746,8 +746,7 @@ static int ps8xxx_dev_init(const struct device *dev)
 	static struct ps8xxx_data drv_data_ps8xxx##inst =                                          \
 		PS8XXX_DRIVER_DATA_INIT(DT_DRV_INST(inst));                                        \
 	static struct ps8xxx_cfg drv_cfg_ps8xxx##inst = PS8XXX_DRIVER_CFG_INIT(DT_DRV_INST(inst)); \
-	DEVICE_DT_INST_DEFINE(inst, &ps8xxx_dev_init, NULL, &drv_data_ps8xxx##inst,                \
-			      &drv_cfg_ps8xxx##inst, POST_KERNEL, CONFIG_USBC_TCPC_INIT_PRIORITY,  \
-			      &ps8xxx_driver_api);
+	DEVICE_INSTANCE_FROM_DT_INST(inst, &ps8xxx_dev_init, NULL, &drv_data_ps8xxx##inst,         \
+			      &drv_cfg_ps8xxx##inst, POST_KERNEL, &ps8xxx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PS8XXX_DRIVER_INIT)

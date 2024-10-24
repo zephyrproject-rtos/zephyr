@@ -1639,7 +1639,7 @@ static int it82xx2_usb_driver_preinit(const struct device *dev)
 		.priv = &priv_data_##n,                                                            \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, it82xx2_usb_driver_preinit, NULL, &udc_data_##n, &udc_cfg_##n,    \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &it82xx2_api);
+	DEVICE_INSTANCE_FROM_DT_INST(n, it82xx2_usb_driver_preinit, NULL, &udc_data_##n, &udc_cfg_##n,\
+			      POST_KERNEL, &it82xx2_api);
 
 DT_INST_FOREACH_STATUS_OKAY(IT82xx2_USB_DEVICE_DEFINE)

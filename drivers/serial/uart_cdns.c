@@ -304,8 +304,8 @@ static int uart_cdns_init(const struct device *dev)
 		.parity = CDNS_PARTITY_MAP(DT_ENUM_IDX(DT_DRV_INST(n), parity)),		   \
 		UART_CDNS_IRQ_CFG_FUNC_INIT(n)};						   \
 												   \
-	DEVICE_DT_INST_DEFINE(n, uart_cdns_init, NULL, &uart_cdns_data_##n,			   \
+	DEVICE_INSTANCE_FROM_DT_INST(n, uart_cdns_init, NULL, &uart_cdns_data_##n,		   \
 			      &uart_cdns_dev_cfg_##n, PRE_KERNEL_1,				   \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &uart_cdns_driver_api);
+			      &uart_cdns_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(UART_CDNS_INIT)

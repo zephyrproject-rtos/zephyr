@@ -718,10 +718,9 @@ static const struct _dmic_ops dmic_ops = {
 		.use2fs = DT_INST_PROP(idx, use2fs),				\
 	};									\
 										\
-	DEVICE_DT_INST_DEFINE(idx, mcux_dmic_init, NULL,			\
+	DEVICE_INSTANCE_FROM_DT_INST(idx, mcux_dmic_init, NULL,			\
 			&mcux_dmic_data##idx, &mcux_dmic_cfg##idx,		\
-			POST_KERNEL, CONFIG_AUDIO_DMIC_INIT_PRIORITY,		\
-			&dmic_ops);
+			POST_KERNEL, &dmic_ops);
 
 /* Existing SoCs only have one PDM instance. */
 DT_INST_FOREACH_STATUS_OKAY(MCUX_DMIC_DEVICE)

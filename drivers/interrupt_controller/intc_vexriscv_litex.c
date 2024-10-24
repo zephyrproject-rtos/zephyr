@@ -94,5 +94,5 @@ static int vexriscv_litex_irq_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0, vexriscv_litex_irq_init, NULL, NULL, NULL,
-		      PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY, NULL);
+DEVICE_INSTANCE_FROM_DT_INST(0, vexriscv_litex_irq_init, NULL, NULL, NULL,
+		      PRE_KERNEL_1, NULL);

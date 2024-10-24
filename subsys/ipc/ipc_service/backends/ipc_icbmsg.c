@@ -1445,13 +1445,12 @@ const static struct ipc_service_backend backend_ops = {
 		     "RX region is too small for provided number of blocks");		\
 	BUILD_ASSERT(DT_INST_PROP(i, rx_blocks) <= 256, "Too many RX blocks");		\
 	BUILD_ASSERT(DT_INST_PROP(i, tx_blocks) <= 256, "Too many TX blocks");		\
-	DEVICE_DT_INST_DEFINE(i,							\
+	DEVICE_INSTANCE_FROM_DT_INST(i,							\
 			      &backend_init,						\
 			      NULL,							\
 			      &backend_data_##i,					\
 			      &backend_config_##i,					\
 			      POST_KERNEL,						\
-			      CONFIG_IPC_SERVICE_REG_BACKEND_PRIORITY,			\
 			      &backend_ops);
 
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_BACKEND_DEVICE)

@@ -1043,11 +1043,11 @@ static struct i2s_stm32_data i2s_stm32_data_##index = {			\
 	UTIL_AND(DT_INST_DMAS_HAS_NAME(index, tx),			\
 		I2S_DMA_CHANNEL_INIT(index, tx, TX, MEMORY, PERIPHERAL)),\
 };									\
-DEVICE_DT_INST_DEFINE(index,						\
+DEVICE_INSTANCE_FROM_DT_INST(index,					\
 		      &i2s_stm32_initialize, NULL,			\
 		      &i2s_stm32_data_##index,				\
 		      &i2s_stm32_config_##index, POST_KERNEL,		\
-		      CONFIG_I2S_INIT_PRIORITY, &i2s_stm32_driver_api);	\
+		      &i2s_stm32_driver_api);				\
 									\
 static void i2s_stm32_irq_config_func_##index(const struct device *dev)	\
 {									\

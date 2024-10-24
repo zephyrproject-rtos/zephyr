@@ -126,11 +126,10 @@ static const struct ipm_driver_api ivshmem_ipm_driver_api = {
 		.cb = NULL,	\
 		.user_data = NULL,	\
 	};	\
-	DEVICE_DT_INST_DEFINE(inst,	\
-				ivshmem_ipm_init,	\
+	DEVICE_INSTANCE_FROM_DT_INST(inst,\
+				ivshmem_ipm_init,\
 				NULL,	\
-				&ivshmem_ipm_data_##inst, &ivshmem_ipm_cfg_##inst,  \
-				POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY,      \
-				&ivshmem_ipm_driver_api);                           \
+				&ivshmem_ipm_data_##inst, &ivshmem_ipm_cfg_##inst,\
+				POST_KERNEL, &ivshmem_ipm_driver_api);\
 
 DT_INST_FOREACH_STATUS_OKAY(IPM_IVSHMEM_INIT);

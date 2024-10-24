@@ -277,8 +277,8 @@ static int tsic_xx6_init(const struct device *dev)
 		.data_bits = DT_INST_PROP(n, data_bits),                                           \
 	};                                                                                         \
                                                                                                    \
-	SENSOR_DEVICE_DT_INST_DEFINE(n, &tsic_xx6_init, NULL, &tsic_xx6_data_##n,                  \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(n, &tsic_xx6_init, NULL, &tsic_xx6_data_##n,           \
 				     &tsic_xx6_config_##n, POST_KERNEL,                            \
-				     CONFIG_SENSOR_INIT_PRIORITY, &tsic_xx6_driver_api);
+				     &tsic_xx6_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TSIC_XX6_DEVICE)

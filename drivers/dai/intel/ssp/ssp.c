@@ -2718,11 +2718,10 @@ static struct dai_driver_api dai_intel_ssp_api_funcs = {
 									\
 	PM_DEVICE_DT_INST_DEFINE(n, ssp_pm_action);			\
 									\
-	DEVICE_DT_INST_DEFINE(n,					\
+	DEVICE_INSTANCE_FROM_DT_INST(n,					\
 			ssp_init, PM_DEVICE_DT_INST_GET(n),		\
 			&dai_intel_ssp_data_##n,			\
 			&dai_intel_ssp_config_##n,			\
-			POST_KERNEL, 42,				\
-			&dai_intel_ssp_api_funcs);
+			POST_KERNEL, &dai_intel_ssp_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(DAI_INTEL_SSP_DEVICE_INIT)

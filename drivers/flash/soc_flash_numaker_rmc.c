@@ -274,5 +274,5 @@ static int flash_numaker_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0, flash_numaker_init, NULL, &flash_data, NULL, POST_KERNEL,
-		      CONFIG_FLASH_INIT_PRIORITY, &flash_numaker_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, flash_numaker_init, NULL, &flash_data, NULL, POST_KERNEL,
+		      &flash_numaker_api);

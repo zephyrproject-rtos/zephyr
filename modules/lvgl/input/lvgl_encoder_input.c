@@ -68,8 +68,8 @@ int lvgl_encoder_input_init(const struct device *dev)
 		.button_input_code = BUTTON_CODE(inst),                                            \
 	};                                                                                         \
 	static struct lvgl_common_input_data lvgl_common_input_data_##inst;                        \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &lvgl_common_input_data_##inst,                    \
+	DEVICE_INSTANCE_FROM_DT_INST(inst, NULL, NULL, &lvgl_common_input_data_##inst,             \
 			      &lvgl_encoder_input_config_##inst, POST_KERNEL,                      \
-			      CONFIG_INPUT_INIT_PRIORITY, NULL);
+			      NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(LVGL_ENCODER_INPUT_DEFINE)

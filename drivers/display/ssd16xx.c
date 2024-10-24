@@ -1075,12 +1075,11 @@ static struct ssd16xx_quirks quirks_solomon_ssd1681 = {
 									\
 	static struct ssd16xx_data ssd16xx_data_ ## n;			\
 									\
-	DEVICE_DT_DEFINE(n,						\
+	DEVICE_INSTANCE(n,						\
 			 ssd16xx_init, NULL,				\
 			 &ssd16xx_data_ ## n,				\
 			 &ssd16xx_cfg_ ## n,				\
 			 POST_KERNEL,					\
-			 CONFIG_DISPLAY_INIT_PRIORITY,			\
 			 &ssd16xx_driver_api)
 
 DT_FOREACH_STATUS_OKAY_VARGS(solomon_ssd1608, SSD16XX_DEFINE,

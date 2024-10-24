@@ -352,8 +352,8 @@ static int i2c_kb1200_init(const struct device *dev)
 		.fsmbm = (struct fsmbm_regs *)DT_INST_REG_ADDR(inst),                              \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, &i2c_kb1200_init, NULL, &i2c_kb1200_data_##inst,               \
+	DEVICE_INSTANCE_FROM_DT_INST(inst, &i2c_kb1200_init, NULL, &i2c_kb1200_data_##inst,        \
 			      &i2c_kb1200_config_##inst, PRE_KERNEL_1,                             \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &i2c_kb1200_api);
+			      &i2c_kb1200_api);
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_KB1200_DEVICE)

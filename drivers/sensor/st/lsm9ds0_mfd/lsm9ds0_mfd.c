@@ -758,8 +758,8 @@ int lsm9ds0_mfd_init(const struct device *dev)
 		.i2c = I2C_DT_SPEC_INST_GET(inst),						\
 	};											\
 												\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, lsm9ds0_mfd_init, NULL,				\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, lsm9ds0_mfd_init, NULL,			\
 			      &lsm9ds0_mfd_data_##inst, &lsm9ds0_mfd_config_##inst, POST_KERNEL,\
-			      CONFIG_SENSOR_INIT_PRIORITY, &lsm9ds0_mfd_api_funcs);		\
+			      &lsm9ds0_mfd_api_funcs);						\
 
 DT_INST_FOREACH_STATUS_OKAY(LSM9DS0_MFD_DEFINE)

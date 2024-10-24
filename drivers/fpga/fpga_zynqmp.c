@@ -322,5 +322,5 @@ static const struct fpga_driver_api zynqmp_api = {
 	.get_info = zynqmp_fpga_get_info
 };
 
-DEVICE_DT_INST_DEFINE(0, &zynqmp_fpga_init, NULL, &fpga_data, NULL,
-	      POST_KERNEL, CONFIG_FPGA_INIT_PRIORITY, &zynqmp_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, &zynqmp_fpga_init, NULL, &fpga_data, NULL,
+	      POST_KERNEL, &zynqmp_api);

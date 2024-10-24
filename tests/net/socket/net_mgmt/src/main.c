@@ -264,9 +264,8 @@ static int eth_fake_init(const struct device *dev)
 	return 0;
 }
 
-ETH_NET_DEVICE_INIT(eth_fake, "eth_fake", eth_fake_init, NULL,
-		    &eth_fake_data, NULL, CONFIG_ETH_INIT_PRIORITY,
-		    &eth_fake_api_funcs, NET_ETH_MTU);
+ETH_NET_DEVICE_INSTANCE(eth_fake, eth_fake_init, NULL,
+		    &eth_fake_data, NULL, &eth_fake_api_funcs, NET_ETH_MTU);
 
 /* A test thread that spits out events that we can catch and show to user */
 static void trigger_events(void)

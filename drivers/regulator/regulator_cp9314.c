@@ -705,7 +705,7 @@ static const struct regulator_driver_api api = {
 		.hw_i2c_lock = DT_INST_PROP(inst, cirrus_hw_i2c_lock),                             \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, regulator_cp9314_init, NULL, &data_##inst, &config_##inst,     \
-			      POST_KERNEL, CONFIG_REGULATOR_CP9314_INIT_PRIORITY, &api);
+	DEVICE_INSTANCE_FROM_DT_INST(inst, regulator_cp9314_init, NULL, &data_##inst, &config_##inst,\
+			      POST_KERNEL, &api);
 
 DT_INST_FOREACH_STATUS_OKAY(REGULATOR_CP9314_DEFINE)

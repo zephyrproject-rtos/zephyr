@@ -376,8 +376,7 @@ static const struct wdt_npcx_config wdt_npcx_cfg_0 = {
 
 static struct wdt_npcx_data wdt_npcx_data_0;
 
-DEVICE_DT_INST_DEFINE(0, wdt_npcx_init, NULL,
+DEVICE_INSTANCE_FROM_DT_INST(0, wdt_npcx_init, NULL,
 			&wdt_npcx_data_0, &wdt_npcx_cfg_0,
 			PRE_KERNEL_1,
-			CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 			&wdt_npcx_driver_api);

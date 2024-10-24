@@ -373,8 +373,8 @@ static int gpio_gd32_init(const struct device *port)
 									       \
 	static struct gpio_gd32_data gpio_gd32_data##n;			       \
 									       \
-	DEVICE_DT_INST_DEFINE(n, gpio_gd32_init, NULL, &gpio_gd32_data##n,     \
-			      &gpio_gd32_config##n, PRE_KERNEL_1,	       \
-			      CONFIG_GPIO_INIT_PRIORITY, &gpio_gd32_api);
+	DEVICE_INSTANCE_FROM_DT_INST(n, gpio_gd32_init, NULL, &gpio_gd32_data##n,\
+			      &gpio_gd32_config##n, PRE_KERNEL_1,	     \
+			      &gpio_gd32_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_GD32_DEFINE)

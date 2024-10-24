@@ -804,12 +804,11 @@ static const struct uart_driver_api uart_smartbond_driver_api = {
 		return uart_smartbond_init(dev);						\
 	}											\
 	PM_DEVICE_DT_INST_DEFINE(id, uart_smartbond_pm_action);					\
-	DEVICE_DT_INST_DEFINE(id,								\
+	DEVICE_INSTANCE_FROM_DT_INST(id,							\
 			      uart_smartbond_##id##_init,					\
 			      PM_DEVICE_DT_INST_GET(id),					\
 			      &uart_smartbond_##id##_data,					\
 			      &uart_smartbond_##id##_cfg,					\
-			      PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,			\
-			      &uart_smartbond_driver_api);					\
+			      PRE_KERNEL_1, &uart_smartbond_driver_api);			\
 
 DT_INST_FOREACH_STATUS_OKAY(UART_SMARTBOND_DEVICE)

@@ -421,8 +421,8 @@ static const struct lm75_config lm75_config_##inst = {              \
 	LM75_INT_GPIO_INIT(inst)					\
 };                                                                  \
 PM_DEVICE_DT_INST_DEFINE(inst, lm75_pm_action);						\
-SENSOR_DEVICE_DT_INST_DEFINE(inst, lm75_init, PM_DEVICE_DT_INST_GET(inst), &lm75_data_##inst,	\
-		      &lm75_config_##inst, POST_KERNEL,             \
-		      CONFIG_SENSOR_INIT_PRIORITY, &lm75_driver_api);
+SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, lm75_init, PM_DEVICE_DT_INST_GET(inst), &lm75_data_##inst,\
+		      &lm75_config_##inst, POST_KERNEL,						\
+		      &lm75_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(LM75_INST)

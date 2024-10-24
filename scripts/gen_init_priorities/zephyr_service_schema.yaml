@@ -1,0 +1,70 @@
+# Schema file for service object in YAML
+#
+# Copyright (c) 2024, Tomasz Bursztyka
+#
+# SPDX-License-Identifier: Apache-2.0
+
+type: map
+mapping:
+  "service":
+    type: map
+    mapping:
+      =:
+        type: map
+        mapping:
+          "init":
+            required: False
+            type: map
+            mapping:
+              "level":
+                type: str
+                enum: ['EARLY', 'PRE_KERNEL_1', 'PRE_KERNEL_2',
+                       'POST_KERNEL', 'APPLICATION', 'SMP']
+                required: False
+
+              "dependencies":
+                type: seq
+                seq:
+                  - type: str
+                required: False
+
+              "if":
+                type: str
+                required: False
+              "then":
+                required: False
+                type: map
+                mapping:
+                  "level":
+                    type: str
+                    enum: ['EARLY', 'PRE_KERNEL_1', 'PRE_KERNEL_2',
+                           'POST_KERNEL', 'APPLICATION', 'SMP']
+                    required: False
+
+                  "dependencies":
+                    type: seq
+                    seq:
+                      - type: str
+                    required: False
+
+  "device":
+    type: map
+    mapping:
+      =:
+        type: map
+        mapping:
+          "init":
+            required: False
+            type: map
+            mapping:
+              "level":
+                type: str
+                enum: ['EARLY', 'PRE_KERNEL_1', 'PRE_KERNEL_2',
+                       'POST_KERNEL', 'APPLICATION', 'SMP']
+                required: False
+
+              "dependencies":
+                type: seq
+                seq:
+                  - type: str
+                required: False

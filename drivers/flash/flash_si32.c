@@ -213,5 +213,5 @@ static const struct flash_si32_config flash_si32_config = {
 	.controller = (SI32_FLASHCTRL_A_Type *)DT_INST_REG_ADDR(0),
 };
 
-DEVICE_DT_INST_DEFINE(0, flash_si32_init, NULL, &flash_si32_0_data, &flash_si32_config, POST_KERNEL,
-		      CONFIG_FLASH_INIT_PRIORITY, &flash_si32_driver_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, flash_si32_init, NULL, &flash_si32_0_data, &flash_si32_config, POST_KERNEL,
+		      &flash_si32_driver_api);

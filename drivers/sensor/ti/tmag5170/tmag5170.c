@@ -574,13 +574,12 @@ static int tmag5170_init(const struct device *dev)
 	};										   \
 	PM_DEVICE_DT_INST_DEFINE(_num, tmag5170_pm_action);				   \
 											   \
-	SENSOR_DEVICE_DT_INST_DEFINE(_num,						   \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(_num,					   \
 				tmag5170_init,						   \
 				PM_DEVICE_DT_INST_GET(_num),				   \
 				&tmag5170_data_##_num,					   \
 				&tmag5170_config_##_num,				   \
 				POST_KERNEL,						   \
-				CONFIG_SENSOR_INIT_PRIORITY,				   \
 				&tmag5170_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_TMAG5170)

@@ -3452,6 +3452,120 @@ struct net_if_api {
 #define NET_DEVICE_DT_INST_OFFLOAD_DEFINE(inst, ...) \
 	NET_DEVICE_DT_OFFLOAD_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
 
+
+/* Network device initialization macros */
+
+#define Z_NET_DEVICE_INSTANCE_SFX(ident, sfx, init_fn, pm, data,	\
+				  config, api, l2, l2_ctx_type, mtu)	\
+	DEVICE_INSTANCE(ident, init_fn, pm, data, config,		\
+			POST_KERNEL, api);				\
+	NET_L2_DATA_INIT(Z_DEVICE_ID(ident), sfx, l2_ctx_type);		\
+	NET_IF_INIT(Z_DEVICE_ID(ident), sfx, l2, mtu, NET_IF_MAX_CONFIGS)
+
+/**
+ * @brief Create a network interface and bind it to network device.
+ *
+ * @param ident Either a devicetree node identifier or a plain unique token
+ * @param init_fn Address to the init function of the driver.
+ * @param pm Reference to struct pm_device associated with the device.
+ * (optional).
+ * @param data Pointer to the device's private data.
+ * @param config The address to the structure containing the
+ * configuration information for this instance of the driver.
+ * @param api Provides an initial pointer to the API function struct
+ * used by the driver. Can be NULL.
+ * @param l2 Network L2 layer for this network interface.
+ * @param l2_ctx_type Type of L2 context data.
+ * @param mtu Maximum transfer unit in bytes for this network interface.
+ */
+#define NET_DEVICE_INSTANCE(ident, init_fn, pm, data, config,		\
+			    api, l2, l2_ctx_type, mtu)			\
+	Z_NET_DEVICE_INSTANCE_SFX(ident, 0, init_fn, pm, data, config,	\
+				  api, l2, l2_ctx_type, mtu)
+
+/**
+ * @brief Like NET_DEVICE_INSTANCE for an instance of a DT_DRV_COMPAT compatible
+ *
+ * @param inst instance number.  This is replaced by
+ * <tt>DT_DRV_COMPAT(inst)</tt> in the call to NET_DEVICE_INSTANCE.
+ *
+ * @param ... other parameters as expected by NET_DEVICE_INSTANCE.
+ */
+#define NET_DEVICE_INSTANCE_FROM_DT_INST(inst, ...)		\
+	NET_DEVICE_INSTANCE(DT_DRV_INST(inst), __VA_ARGS__)
+
+/**
+ * @brief Create multiple network interfaces and bind them to network device.
+ * If your network device needs more than one instance of a network interface,
+ * use this macro below and provide a different instance suffix each time
+ * (0, 1, 2, ... or a, b, c ... whatever works for you)
+ *
+ * @param ident Either a devicetree node identifier or a plain unique token
+ * @param sfx Instance suffix for differentiation.
+ * @param init_fn Address to the init function of the driver.
+ * @param pm Reference to struct pm_device associated with the device.
+ * (optional).
+ * @param data Pointer to the device's private data.
+ * @param config The address to the structure containing the
+ * configuration information for this instance of the driver.
+ * @param api Provides an initial pointer to the API function struct
+ * used by the driver. Can be NULL.
+ * @param l2 Network L2 layer for this network interface.
+ * @param l2_ctx_type Type of L2 context data.
+ * @param mtu Maximum transfer unit in bytes for this network interface.
+ */
+#define NET_DEVICE_INSTANCE_MULTI(ident, sfx, init_fn, pm,		\
+				  data, config, api, l2,		\
+				  l2_ctx_type, mtu)			\
+	Z_NET_DEVICE_INSTANCE_SFX(ident, sfx, init_fn, pm, data,	\
+				  config, api, l2, l2_ctx_type, mtu)
+
+/**
+ * @brief Like NET_DEVICE_INSTANCE_MULTI for an instance of a DT_DRV_COMPAT
+ * compatible
+ *
+ * @param inst instance number.  This is replaced by
+ * <tt>DT_DRV_COMPAT(inst)</tt> in the call to NET_DEVICE_INSTANCE_MULTI.
+ *
+ * @param ... other parameters as expected by NET_DEVICE_INSTANCE_MULTI.
+ */
+#define NET_DEVICE_INSTANCE_MULT_FROM_DT_INST(inst, ...)		\
+	NET_DEVICE_INSTANCE_MULTI(DT_DRV_INST(inst), __VA_ARGS__)
+
+/**
+ * @brief Create a offloaded network interface and bind it to network device.
+ * The offloaded network interface is implemented by a device vendor HAL or
+ * similar.
+ *
+ * @param ident Either a devicetree node identifier or a plain unique token
+ * @param init_fn Address to the init function of the driver.
+ * @param pm Reference to struct pm_device associated with the device.
+ * (optional).
+ * @param data Pointer to the device's private data.
+ * @param config The address to the structure containing the
+ * configuration information for this instance of the driver.
+ * @param api Provides an initial pointer to the API function struct
+ * used by the driver. Can be NULL.
+ * @param mtu Maximum transfer unit in bytes for this network interface.
+ */
+#define NET_DEVICE_OFFLOAD_INSTANCE(ident, init_fn, pm, data, config,	\
+				    api, mtu)				\
+	DEVICE_INSTANCE(ident, init_fn, pm, data, config,		\
+			POST_KERNEL, api);				\
+	NET_IF_OFFLOAD_INIT(Z_DEVICE_ID(ident), 0, mtu)
+
+/**
+ * @brief Like NET_DEVICE_OFFLOAD_INSTANCE for an instance of a DT_DRV_COMPAT
+ * compatible
+ *
+ * @param inst instance number.  This is replaced by
+ * <tt>DT_DRV_COMPAT(inst)</tt> in the call to NET_DEVICE_OFFLOAD_INSTANCE.
+ *
+ * @param ... other parameters as expected by NET_DEVICE_OFFLOAD_INSTANCE.
+ */
+#define NET_DEVICE_OFFLOAD_INSTANCE_FROM_DT_INST(inst, ...)		\
+	NET_DEVICE_OFFLOAD_INSTANCE(DT_DRV_INST(inst), __VA_ARGS__)
+
 /**
  * @brief Count the number of network interfaces.
  *

@@ -386,11 +386,10 @@ static const struct dac_driver_api dacx0508_driver_api = {
 		.gain[6] = DT_PROP(INST_DT_DACX0508(n, t), channel6_gain), \
 		.gain[7] = DT_PROP(INST_DT_DACX0508(n, t), channel7_gain), \
 	}; \
-	DEVICE_DT_DEFINE(INST_DT_DACX0508(n, t), \
+	DEVICE_INSTANCE(INST_DT_DACX0508(n, t), \
 			    &dacx0508_init, NULL, \
 			    &dac##t##_data_##n, \
 			    &dac##t##_config_##n, POST_KERNEL, \
-			    CONFIG_DAC_DACX0508_INIT_PRIORITY, \
 			    &dacx0508_driver_api);
 
 /*

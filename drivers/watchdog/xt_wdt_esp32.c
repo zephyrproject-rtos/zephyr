@@ -161,13 +161,12 @@ static struct esp32_xt_wdt_config esp32_xt_wdt_config0 = {
 	.irq_flags = DT_INST_IRQ_BY_IDX(0, 0, flags)
 };
 
-DEVICE_DT_DEFINE(DT_NODELABEL(xt_wdt),
+DEVICE_INSTANCE(DT_NODELABEL(xt_wdt),
 		 &esp32_xt_wdt_init,
 		 NULL,
 		 &esp32_xt_wdt_data0,
 		 &esp32_xt_wdt_config0,
 		 POST_KERNEL,
-		 CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		 &esp32_xt_wdt_api);
 
 #if !(defined(CONFIG_SOC_SERIES_ESP32S2) ||	\

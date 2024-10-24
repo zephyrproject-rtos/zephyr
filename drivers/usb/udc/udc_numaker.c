@@ -1798,8 +1798,8 @@ static const struct udc_api udc_numaker_api = {
 		.priv = &udc_priv_##inst,                                                          \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, udc_numaker_driver_preinit, NULL, &udc_data_##inst,            \
+	DEVICE_INSTANCE_FROM_DT_INST(inst, udc_numaker_driver_preinit, NULL, &udc_data_##inst,     \
 			      &udc_numaker_config_##inst, POST_KERNEL,                             \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &udc_numaker_api);
+			      &udc_numaker_api);
 
 DT_INST_FOREACH_STATUS_OKAY(UDC_NUMAKER_DEVICE_DEFINE)

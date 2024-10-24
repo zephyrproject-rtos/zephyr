@@ -488,8 +488,8 @@ static int fcx_mldx5_init(const struct device *dev)
                                                                                                    \
 	PM_DEVICE_DT_INST_DEFINE(n, pm_action);                                                    \
                                                                                                    \
-	SENSOR_DEVICE_DT_INST_DEFINE(n, fcx_mldx5_init, PM_DEVICE_DT_INST_GET(n),                  \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(n, fcx_mldx5_init, PM_DEVICE_DT_INST_GET(n),           \
 				     &fcx_mldx5_data_##n, &fcx_mldx5_cfg_##n, POST_KERNEL,         \
-				     CONFIG_SENSOR_INIT_PRIORITY, &fcx_mldx5_api_funcs);
+				     &fcx_mldx5_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(FCX_MLDX5_INIT)

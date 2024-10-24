@@ -114,8 +114,8 @@ int hm330x_init(const struct device *dev)
 		.i2c = I2C_DT_SPEC_INST_GET(inst)						\
 	};											\
 												\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, hm330x_init, NULL, &hm330x_data_##inst,		\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, hm330x_init, NULL, &hm330x_data_##inst,	\
 			      &hm330x_config##inst, POST_KERNEL,				\
-			      CONFIG_SENSOR_INIT_PRIORITY, &hm330x_driver_api);			\
+			      &hm330x_driver_api);						\
 
 DT_INST_FOREACH_STATUS_OKAY(HM330X_DEFINE)

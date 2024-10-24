@@ -279,7 +279,6 @@ static const struct wdt_it8xxx2_config wdt_it8xxx2_cfg_0 = {
 
 static struct wdt_it8xxx2_data wdt_it8xxx2_dev_data;
 
-DEVICE_DT_INST_DEFINE(0, wdt_it8xxx2_init, NULL,
+DEVICE_INSTANCE_FROM_DT_INST(0, wdt_it8xxx2_init, NULL,
 			&wdt_it8xxx2_dev_data, &wdt_it8xxx2_cfg_0,
-			PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-			&wdt_it8xxx2_api);
+			PRE_KERNEL_1, &wdt_it8xxx2_api);

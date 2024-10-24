@@ -249,9 +249,8 @@ static int xpt2046_init(const struct device *dev)
 		.reads = DT_INST_PROP(index, reads),                                               \
 	};                                                                                         \
 	static struct xpt2046_data xpt2046_data_##index;                                           \
-	DEVICE_DT_INST_DEFINE(index, xpt2046_init, NULL, &xpt2046_data_##index,                    \
-			      &xpt2046_config_##index, POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY,    \
-			      NULL);                                                               \
+	DEVICE_INSTANCE_FROM_DT_INST(index, xpt2046_init, NULL, &xpt2046_data_##index,             \
+			      &xpt2046_config_##index, POST_KERNEL, NULL);                         \
 	BUILD_ASSERT(DT_INST_PROP(index, min_x) < DT_INST_PROP(index, max_x),                      \
 		     "min_x must be less than max_x");                                             \
 	BUILD_ASSERT(DT_INST_PROP(index, min_y) < DT_INST_PROP(index, max_y),                      \

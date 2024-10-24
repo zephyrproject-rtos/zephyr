@@ -504,8 +504,8 @@ static struct shi_it8xxx2_data shi_data = {
 	.shi_state = SHI_STATE_DISABLED,
 };
 
-DEVICE_DT_INST_DEFINE(0, shi_ite_init, PM_DEVICE_DT_INST_GET(0), &shi_data, &shi_cfg, POST_KERNEL,
-		      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &ec_host_cmd_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, shi_ite_init, PM_DEVICE_DT_INST_GET(0), &shi_data, &shi_cfg, POST_KERNEL,
+		      &ec_host_cmd_api);
 
 EC_HOST_CMD_SHI_ITE_DEFINE(ec_host_cmd_shi_ite);
 

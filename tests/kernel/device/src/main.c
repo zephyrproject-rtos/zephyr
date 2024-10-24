@@ -26,18 +26,17 @@
 #define FAKEDEFERDRIVER1	DEVICE_DT_GET(DT_PATH(fakedeferdriver_e8000000))
 
 /* A device without init call */
-DEVICE_DEFINE(dummy_noinit, DUMMY_NOINIT, NULL, NULL, NULL, NULL,
-	      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
+DEVICE_INSTANCE(dummy_noinit, NULL, NULL, NULL, NULL,
+	      POST_KERNEL, NULL);
 
 /* To access from userspace, the device needs an API. Use a dummy GPIO one */
 static const struct gpio_driver_api fakedeferdriverapi;
 
 /* Fake deferred devices */
-DEVICE_DT_DEFINE(DT_INST(0, fakedeferdriver), NULL, NULL, NULL, NULL,
-	      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
-DEVICE_DT_DEFINE(DT_INST(1, fakedeferdriver), NULL, NULL, NULL, NULL,
-	      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-	      &fakedeferdriverapi);
+DEVICE_INSTANCE(DT_INST(0, fakedeferdriver), NULL, NULL, NULL, NULL,
+	      POST_KERNEL, NULL);
+DEVICE_INSTANCE(DT_INST(1, fakedeferdriver), NULL, NULL, NULL, NULL,
+	      POST_KERNEL, &fakedeferdriverapi);
 
 /**
  * @brief Test cases to verify device objects
@@ -65,7 +64,7 @@ DEVICE_DT_DEFINE(DT_INST(1, fakedeferdriver), NULL, NULL, NULL, NULL,
  *
  * @ingroup kernel_device_tests
  *
- * @see device_get_binding(), DEVICE_DEFINE()
+ * @see device_get_binding(), DEVICE_INSTANCE()
  */
 ZTEST(device, test_dummy_device)
 {
@@ -95,7 +94,7 @@ ZTEST(device, test_dummy_device)
  *
  * Validates device binding for an existing device object.
  *
- * @see device_get_binding(), DEVICE_DEFINE()
+ * @see device_get_binding(), DEVICE_INSTANCE()
  */
 ZTEST_USER(device, test_dynamic_name)
 {
@@ -113,7 +112,7 @@ ZTEST_USER(device, test_dynamic_name)
  * Validates binding of a random device driver(non-defined driver) named
  * "ANOTHER_BOGUS_NAME".
  *
- * @see device_get_binding(), DEVICE_DEFINE()
+ * @see device_get_binding(), DEVICE_INSTANCE()
  */
 ZTEST_USER(device, test_bogus_dynamic_name)
 {
@@ -130,7 +129,7 @@ ZTEST_USER(device, test_bogus_dynamic_name)
  *
  * Validates device binding for device object when given dynamic name is null.
  *
- * @see device_get_binding(), DEVICE_DEFINE()
+ * @see device_get_binding(), DEVICE_INSTANCE()
  */
 ZTEST_USER(device, test_null_dynamic_name)
 {

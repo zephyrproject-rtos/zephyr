@@ -139,5 +139,5 @@ static const struct wdt_driver_api ifx_cat1_wdt_api = {
 	.feed = ifx_cat1_wdt_feed,
 };
 
-DEVICE_DT_INST_DEFINE(0, ifx_cat1_wdt_init, NULL, &wdt_data, NULL, POST_KERNEL,
-		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &ifx_cat1_wdt_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, ifx_cat1_wdt_init, NULL, &wdt_data, NULL, POST_KERNEL,
+		      &ifx_cat1_wdt_api);

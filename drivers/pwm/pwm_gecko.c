@@ -110,9 +110,8 @@ static int pwm_gecko_init(const struct device *dev)
 		.pin = DT_INST_PROP_BY_IDX(index, pin_location, 2),		\
 	};									\
 										\
-	DEVICE_DT_INST_DEFINE(index, &pwm_gecko_init, NULL, NULL,		\
+	DEVICE_INSTANCE_FROM_DT_INST(index, &pwm_gecko_init, NULL, NULL,	\
 				&pwm_gecko_config_##index, POST_KERNEL,		\
-				CONFIG_PWM_INIT_PRIORITY,			\
 				&pwm_gecko_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_GECKO_INIT)

@@ -902,13 +902,12 @@ static int lsm6dsv16x_init(const struct device *dev)
  */
 
 #define LSM6DSV16X_DEVICE_INIT(inst)					\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst,			\
 			    lsm6dsv16x_init,				\
 			    NULL,					\
 			    &lsm6dsv16x_data_##inst,			\
 			    &lsm6dsv16x_config_##inst,			\
 			    POST_KERNEL,				\
-			    CONFIG_SENSOR_INIT_PRIORITY,		\
 			    &lsm6dsv16x_driver_api);
 
 /*

@@ -152,8 +152,8 @@ static const struct clock_control_driver_api clock_control_pwm_api = {
 		.clock_frequency = DT_INST_PROP_OR(i, clock_frequency, 0),                         \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(i, clock_control_pwm_init, NULL, &clock_control_pwm_data_##i,        \
+	DEVICE_INSTANCE_FROM_DT_INST(i, clock_control_pwm_init, NULL, &clock_control_pwm_data_##i, \
 			      &clock_control_pwm_config_##i, POST_KERNEL,                          \
-			      CONFIG_CLOCK_CONTROL_PWM_INIT_PRIORITY, &clock_control_pwm_api);
+			      &clock_control_pwm_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_CLOCK_INIT)

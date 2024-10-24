@@ -613,12 +613,11 @@ static struct i2c_stm32_data i2c_stm32_dev_data_##index;		\
 									\
 PM_DEVICE_DT_INST_DEFINE(index, i2c_stm32_pm_action);			\
 									\
-I2C_DEVICE_DT_INST_DEFINE(index, i2c_stm32_init,			\
+I2C_DEVICE_INSTANCE_FROM_DT_INST(index, i2c_stm32_init,			\
 			 PM_DEVICE_DT_INST_GET(index),			\
 			 &i2c_stm32_dev_data_##index,			\
 			 &i2c_stm32_cfg_##index,			\
-			 POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,		\
-			 &api_funcs);					\
+			 POST_KERNEL, &api_funcs);			\
 									\
 STM32_I2C_IRQ_HANDLER(index)
 

@@ -517,6 +517,6 @@ static const struct audio_codec_api codec_driver_api = {
 	.apply_properties	= codec_apply_properties,
 };
 
-DEVICE_DT_INST_DEFINE(0, codec_initialize, NULL, &codec_device_data,
+DEVICE_INSTANCE_FROM_DT_INST(0, codec_initialize, NULL, &codec_device_data,
 		&codec_device_config, POST_KERNEL,
-		CONFIG_AUDIO_CODEC_INIT_PRIORITY, &codec_driver_api);
+		&codec_driver_api);

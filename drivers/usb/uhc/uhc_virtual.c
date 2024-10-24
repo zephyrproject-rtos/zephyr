@@ -543,9 +543,8 @@ static const struct uhc_api uhc_vrt_api = {
 		.priv = &uhc_priv_##n,						\
 	};									\
 										\
-	DEVICE_DT_INST_DEFINE(n, uhc_vrt_driver_preinit, NULL,			\
+	DEVICE_INSTANCE_FROM_DT_INST(n, uhc_vrt_driver_preinit, NULL,		\
 			      &uhc_data_##n, &uhc_vrt_config_##n,		\
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
-			      &uhc_vrt_api);
+			      POST_KERNEL, &uhc_vrt_api);
 
 DT_INST_FOREACH_STATUS_OKAY(UHC_VRT_DEVICE_DEFINE)

@@ -306,7 +306,6 @@ static struct temp_nrfs_data temp_nrfs_drv_data = {
 #endif
 };
 
-DEVICE_DT_INST_DEFINE(0, temp_nrfs_init, NULL,
+DEVICE_INSTANCE_FROM_DT_INST(0, temp_nrfs_init, NULL,
 		      &temp_nrfs_drv_data, NULL,
-		      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
-		      &temp_nrfs_drv_api);
+		      POST_KERNEL, &temp_nrfs_drv_api);

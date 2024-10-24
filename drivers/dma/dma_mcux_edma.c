@@ -737,11 +737,10 @@ static int dma_mcux_edma_init(const struct device *dev)
 		.channels_atomic = dma_channels_atomic_##n,			\
 	};									\
 										\
-	DEVICE_DT_INST_DEFINE(n,						\
+	DEVICE_INSTANCE_FROM_DT_INST(n,						\
 			      &dma_mcux_edma_init, NULL,			\
 			      &dma_data_##n, &dma_config_##n,			\
-			      PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY,		\
-			      &dma_mcux_edma_api);				\
+			      PRE_KERNEL_1, &dma_mcux_edma_api);		\
 										\
 	DMA_MCUX_EDMA_CONFIG_FUNC(n);
 

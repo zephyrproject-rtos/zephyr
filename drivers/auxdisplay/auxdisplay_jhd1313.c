@@ -367,13 +367,12 @@ static const struct auxdisplay_driver_api auxdisplay_jhd1313_auxdisplay_api = {
 		.cursor = false,								\
 		.blinking = false,								\
 	};											\
-	DEVICE_DT_INST_DEFINE(inst,								\
+	DEVICE_INSTANCE_FROM_DT_INST(inst,							\
 			&auxdisplay_jhd1313_initialize,						\
 			NULL,									\
 			&auxdisplay_jhd1313_data_##inst,					\
 			&auxdisplay_jhd1313_config_##inst,					\
 			POST_KERNEL,								\
-			CONFIG_AUXDISPLAY_INIT_PRIORITY,					\
 			&auxdisplay_jhd1313_auxdisplay_api);
 
 DT_INST_FOREACH_STATUS_OKAY(AUXDISPLAY_JHD1313_DEVICE)

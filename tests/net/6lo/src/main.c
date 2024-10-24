@@ -275,9 +275,7 @@ static struct dummy_api net_6lo_if_api = {
 	.send = tester_send,
 };
 
-NET_DEVICE_INIT(net_6lo_test, "net_6lo_test",
-		net_6lo_dev_init, NULL, NULL, NULL,
-		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+NET_DEVICE_INSTANCE(net_6lo_test, net_6lo_dev_init, NULL, NULL, NULL,
 		&net_6lo_if_api, DUMMY_L2, NET_L2_GET_CTX_TYPE(DUMMY_L2), 127);
 
 static bool compare_ipv6_hdr(struct net_pkt *pkt, struct net_6lo_data *data)

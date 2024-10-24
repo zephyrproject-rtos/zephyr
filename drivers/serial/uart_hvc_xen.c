@@ -264,9 +264,8 @@ int xen_console_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_DEFINE(DT_NODELABEL(xen_hvc), xen_console_init, NULL, &xen_hvc_data,
-		NULL, PRE_KERNEL_1, CONFIG_XEN_HVC_INIT_PRIORITY,
-		&xen_hvc_api);
+DEVICE_INSTANCE(DT_NODELABEL(xen_hvc), xen_console_init, NULL, &xen_hvc_data,
+		NULL, PRE_KERNEL_1, &xen_hvc_api);
 
 #ifdef CONFIG_XEN_EARLY_CONSOLEIO
 int xen_consoleio_putc(int c)

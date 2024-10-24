@@ -560,7 +560,7 @@ static const struct display_drv_config instance_config = {
 #endif
 };
 
-DEVICE_DT_DEFINE(MATRIX_NODE,
+DEVICE_INSTANCE(MATRIX_NODE,
 		 instance_init, NULL,
 		 &instance_data, &instance_config,
-		 POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY, &driver_api);
+		 POST_KERNEL, &driver_api);

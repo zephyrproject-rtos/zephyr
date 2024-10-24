@@ -1473,13 +1473,12 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 0,
 		.ucpd_params.HbitClockDiv = DT_INST_PROP(inst, hbitclkdiv) - 1,		\
 		.ucpd_dead_battery = DT_INST_PROP(inst, dead_battery),			\
 	};										\
-	DEVICE_DT_INST_DEFINE(inst,							\
+	DEVICE_INSTANCE_FROM_DT_INST(inst,						\
 			      &ucpd_init,						\
 			      NULL,							\
 			      &drv_data_##inst,						\
 			      &drv_config_##inst,					\
 			      POST_KERNEL,						\
-			      CONFIG_USBC_TCPC_INIT_PRIORITY,				\
 			      &driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TCPC_DRIVER_INIT)

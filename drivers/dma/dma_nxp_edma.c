@@ -681,9 +681,8 @@ static struct edma_data edma_data_##inst = {					\
 	.hal_cfg = &EDMA_HAL_CFG_GET(inst),					\
 };										\
 										\
-DEVICE_DT_INST_DEFINE(inst, &edma_init, NULL,					\
+DEVICE_INSTANCE_FROM_DT_INST(inst, &edma_init, NULL,				\
 		      &edma_data_##inst, &edma_config_##inst,			\
-		      PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY,			\
-		      &edma_api);						\
+		      PRE_KERNEL_1, &edma_api);					\
 
 DT_INST_FOREACH_STATUS_OKAY(EDMA_INIT);

@@ -318,8 +318,8 @@ static const struct sensor_driver_api dht20_driver_api = {.sample_fetch = dht20_
                                                                                                    \
 	static const struct dht20_config dht20_config_##n = {.bus = I2C_DT_SPEC_INST_GET(n)};      \
                                                                                                    \
-	SENSOR_DEVICE_DT_INST_DEFINE(n, dht20_init, NULL, &dht20_data_##n, &dht20_config_##n,      \
-				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &dht20_driver_api);
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(n, dht20_init, NULL, &dht20_data_##n, &dht20_config_##n,\
+				     POST_KERNEL, &dht20_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_DHT20)
 
@@ -334,8 +334,8 @@ DT_INST_FOREACH_STATUS_OKAY(DEFINE_DHT20)
                                                                                                    \
 	static const struct dht20_config aht20_config_##n = {.bus = I2C_DT_SPEC_INST_GET(n)};      \
                                                                                                    \
-	SENSOR_DEVICE_DT_INST_DEFINE(n, dht20_init, NULL, &aht20_data_##n, &aht20_config_##n,      \
-				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &dht20_driver_api);
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(n, dht20_init, NULL, &aht20_data_##n, &aht20_config_##n,\
+				     POST_KERNEL, &dht20_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_AHT20)
 
@@ -350,8 +350,8 @@ DT_INST_FOREACH_STATUS_OKAY(DEFINE_AHT20)
                                                                                                    \
 	static const struct dht20_config am2301b_config_##n = {.bus = I2C_DT_SPEC_INST_GET(n)};    \
                                                                                                    \
-	SENSOR_DEVICE_DT_INST_DEFINE(n, dht20_init, NULL, &am2301b_data_##n, &am2301b_config_##n,  \
-				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &dht20_driver_api);
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(n, dht20_init, NULL, &am2301b_data_##n, &am2301b_config_##n,\
+				     POST_KERNEL, &dht20_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_AM2301B)
 

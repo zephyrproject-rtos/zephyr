@@ -283,7 +283,7 @@ static const struct display_driver_api ist3931_api = {
 		.y_offset = DT_INST_PROP(inst, y_offset),                                          \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, &ist3931_init, NULL, NULL, &ist3931_config_##inst,             \
-			      POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY, &ist3931_api);
+	DEVICE_INSTANCE_FROM_DT_INST(inst, &ist3931_init, NULL, NULL, &ist3931_config_##inst,      \
+			      POST_KERNEL, &ist3931_api);
 
 DT_INST_FOREACH_STATUS_OKAY(IST3931_INIT)

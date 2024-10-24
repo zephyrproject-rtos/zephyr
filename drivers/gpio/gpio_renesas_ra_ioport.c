@@ -167,8 +167,8 @@ static const struct gpio_driver_api gpio_ra_drv_api_funcs = {
 		.vbatt_pins = DT_PROP_OR(DT_NODELABEL(ioport##suffix), vbatts_pins, {0xFF}),       \
 	};                                                                                         \
 	static struct gpio_ra_data gpio_ra_data_##suffix;                                          \
-	DEVICE_DT_DEFINE(node, NULL, NULL, &gpio_ra_data_##suffix, &gpio_ra_config_##suffix,       \
-			 PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY, &gpio_ra_drv_api_funcs)
+	DEVICE_INSTANCE(node, NULL, NULL, &gpio_ra_data_##suffix, &gpio_ra_config_##suffix,        \
+			 PRE_KERNEL_1, &gpio_ra_drv_api_funcs)
 
 #define GPIO_DEVICE_INIT_RA(suffix)                                                                \
 	GPIO_DEVICE_INIT(DT_NODELABEL(ioport##suffix),                                             \
