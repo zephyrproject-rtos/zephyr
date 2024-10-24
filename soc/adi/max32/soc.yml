@@ -20,3 +20,6 @@ family:
   - name: max32690
     cpuclusters:
     - name: m4
+  - name: max78002
+    cpuclusters:
+    - name: m4
