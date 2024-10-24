@@ -31,5 +31,6 @@ source "drivers/dai/intel/dmic/Kconfig.dmic"
 source "drivers/dai/intel/hda/Kconfig.hda"
 source "drivers/dai/nxp/sai/Kconfig.sai"
 source "drivers/dai/nxp/esai/Kconfig.esai"
+source "drivers/dai/intel/uaol/Kconfig.uaol"
 
 endif # DAI
