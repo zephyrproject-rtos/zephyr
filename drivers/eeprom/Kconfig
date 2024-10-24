@@ -99,6 +99,7 @@ source "drivers/eeprom/Kconfig.eeprom_emu"
 source "drivers/eeprom/Kconfig.tmp116"
 source "drivers/eeprom/Kconfig.xec"
 source "drivers/eeprom/Kconfig.mb85rcxx"
+source "drivers/eeprom/Kconfig.ateccx08"
 
 config EEPROM_SIMULATOR
 	bool "Simulated EEPROM driver"

@@ -16,3 +16,5 @@ zephyr_library_sources_ifdef(CONFIG_MFD_MAX31790 mfd_max31790.c)
 zephyr_library_sources_ifdef(CONFIG_NXP_LP_FLEXCOMM mfd_nxp_lp_flexcomm.c)
 zephyr_library_sources_ifdef(CONFIG_MFD_BD8LB600FS mfd_bd8lb600fs.c)
 zephyr_library_sources_ifdef(CONFIG_MFD_TLE9104 mfd_tle9104.c)
+
+add_subdirectory_ifdef(CONFIG_MFD_ATECCX08 ateccx08)
