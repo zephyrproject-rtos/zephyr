@@ -1,0 +1,20 @@
+identifier: rak3172
+name: RAK3172 LoRa STM32WL
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 64
+flash: 256
+supported:
+  - counter
+  - gpio
+  - i2c
+  - nvs
+  - spi
+  - uart
+  - watchdog
+  - lora
+vendor: rak
