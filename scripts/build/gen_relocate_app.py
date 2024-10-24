@@ -9,16 +9,17 @@
 This script will relocate .text, .rodata, .data and .bss sections from required files
 and places it in the required memory region. This memory region and file
 are given to this python script in the form of a string.
+A regular expression filter can be applied to select only the required sections from the file.
 
 Example of such a string would be::
 
-   SRAM2:COPY:/home/xyz/zephyr/samples/hello_world/src/main.c,\
-   SRAM1:COPY:/home/xyz/zephyr/samples/hello_world/src/main2.c, \
-   FLASH2:NOCOPY:/home/xyz/zephyr/samples/hello_world/src/main3.c
+   SRAM2:COPY:/home/xyz/zephyr/samples/hello_world/src/main.c:.*foo|.*bar,\
+   SRAM1:COPY:/home/xyz/zephyr/samples/hello_world/src/main2.c:.*bar, \
+   FLASH2:NOCOPY:/home/xyz/zephyr/samples/hello_world/src/main3.c:
 
 One can also specify the program header for a given memory region:
 
-   SRAM2\\ :phdr0:COPY:/home/xyz/zephyr/samples/hello_world/src/main.c
+   SRAM2\\ :phdr0:COPY:/home/xyz/zephyr/samples/hello_world/src/main.c:
 
 To invoke this script::
 
@@ -45,6 +46,7 @@ import sys
 import argparse
 import os
 import glob
+import re
 import warnings
 from collections import defaultdict
 from enum import Enum
@@ -225,7 +227,7 @@ def region_is_default_ram(region_name: str) -> bool:
     return region_name == args.default_ram_region
 
 
-def find_sections(filename: str) -> 'dict[SectionKind, list[OutputSection]]':
+def find_sections(filename: str, symbol_filter: str) -> 'dict[SectionKind, list[OutputSection]]':
     """
     Locate relocatable sections in the given object file.
 
@@ -243,6 +245,9 @@ def find_sections(filename: str) -> 'dict[SectionKind, list[OutputSection]]':
         out = defaultdict(list)
 
         for section in sections:
+            if len(symbol_filter) > 0 and not re.search(symbol_filter, section.name):
+                # Section is filtered-out
+                continue
             section_kind = SectionKind.for_section_named(section.name)
             if section_kind is None:
                 continue
@@ -501,9 +506,10 @@ def get_obj_filename(searchpath, filename):
 
 
 # Extracts all possible components for the input string:
-# <mem_region>[\ :program_header]:<flag_1>[;<flag_2>...]:<file_1>[;<file_2>...]
-# Returns a 4-tuple with them: (mem_region, program_header, flags, files)
+# <mem_region>[\ :program_header]:<flag_1>[;<flag_2>...]:<file_1>[;<file_2>...][:filter]
+# Returns a 5-tuple with them: (mem_region, program_header, flags, files, filter)
 # If no `program_header` is defined, returns an empty string
+# If no `filter` is defined, returns an empty string
 def parse_input_string(line):
     # Be careful when splitting by : to avoid breaking absolute paths on Windows
     mem_region, rest = line.split(':', 1)
@@ -514,12 +520,13 @@ def parse_input_string(line):
         phdr, rest = rest.split(':', 1)
 
     # Split lists by semicolons, in part to support generator expressions
-    flag_list, file_list = (lst.split(';') for lst in rest.split(':', 1))
+    flag_list, file_list, symbol_filter = (lst.split(';') for lst in rest.split(':', 2))
 
-    return mem_region, phdr, flag_list, file_list
+    return mem_region, phdr, flag_list, file_list, symbol_filter
 
 
-# Create a dict with key as memory type and files as a list of values.
+# Create a dict with key as memory type and (files, symbol_filter) tuple
+# as a list of values.
 # Also, return another dict with program headers for memory regions
 def create_dict_wrt_mem():
     # need to support wild card *
@@ -529,11 +536,16 @@ def create_dict_wrt_mem():
     input_rel_dict = args.input_rel_dict.read()
     if input_rel_dict == '':
         sys.exit("Disable CONFIG_CODE_DATA_RELOCATION if no file needs relocation")
+
+    # Replace pipes used in symbol filter regular expression
+    input_rel_dict = input_rel_dict.replace("\\|", "##PIPE##")
     for line in input_rel_dict.split('|'):
         if ':' not in line:
             continue
 
-        mem_region, phdr, flag_list, file_list = parse_input_string(line)
+        # Restore pipe used in symbol filter regular expression
+        line = line.replace("##PIPE##", "|")
+        mem_region, phdr, flag_list, file_list, symbol_filter = parse_input_string(line)
 
         # Handle any program header
         if phdr != '':
@@ -556,12 +568,15 @@ def create_dict_wrt_mem():
         if args.verbose:
             print("Memory region ", mem_region, " Selected for files:", file_name_list)
 
+        # Apply filter on files
+        file_name_filter_list = [(f, symbol_filter[0]) for f in file_name_list]
+
         mem_region = "|".join((mem_region, *flag_list))
 
         if mem_region in rel_dict:
-            rel_dict[mem_region].extend(file_name_list)
+            rel_dict[mem_region].extend(file_name_filter_list)
         else:
-            rel_dict[mem_region] = file_name_list
+            rel_dict[mem_region] = file_name_filter_list
 
     return rel_dict, phdrs
 
@@ -585,13 +600,13 @@ def main():
     for memory_type, files in rel_dict.items():
         full_list_of_sections: 'dict[SectionKind, list[OutputSection]]' = defaultdict(list)
 
-        for filename in files:
+        for filename, symbol_filter in files:
             obj_filename = get_obj_filename(searchpath, filename)
             # the obj file wasn't found. Probably not compiled.
             if not obj_filename:
                 continue
 
-            file_sections = find_sections(obj_filename)
+            file_sections = find_sections(obj_filename, symbol_filter)
             # Merge sections from file into collection of sections for all files
             for category, sections in file_sections.items():
                 full_list_of_sections[category].extend(sections)
