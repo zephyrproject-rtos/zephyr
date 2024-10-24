@@ -94,6 +94,12 @@ typedef struct {
 /** number of seconds per minute */
 #define SEC_PER_MIN 60U
 
+/** number of seconds per hour */
+#define SEC_PER_HOUR 3600U
+
+/** number of seconds per day */
+#define SEC_PER_DAY 86400U
+
 /** number of minutes per hour */
 #define MIN_PER_HOUR 60U
 
