@@ -5,6 +5,7 @@
 include:
   - name: ethernet-controller.yaml
   - name: pinctrl-device.yaml
+  - name: nvmem-consumer.yaml
 
 properties:
   reg:
