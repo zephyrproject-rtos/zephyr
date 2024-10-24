@@ -1,0 +1,44 @@
+/*
+ * Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+ /* 32MB flash partition table */
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x0 DT_SIZE_K(64)>;
+		};
+
+		slot0_partition: partition@20000 {
+			label = "image-0";
+			reg = <0x20000 DT_SIZE_K(16192)>;
+		};
+
+		slot1_partition: partition@FF0000 {
+			label = "image-1";
+			reg = <0xFF0000 DT_SIZE_K(16192)>;
+		};
+
+		storage_partition: partition@1FC0000 {
+			label = "storage";
+			reg = <0x1FC0000 DT_SIZE_K(128)>;
+		};
+
+		scratch_partition: partition@1FE0000 {
+			   label = "image-scratch";
+			   reg = <0x1FE0000 DT_SIZE_K(64)>;
+		};
+
+		coredump_partition: partition@1FF0000 {
+			label = "coredump-partition";
+			reg = <0x1FF0000 DT_SIZE_K(4)>;
+		};
+	};
+};
