@@ -122,6 +122,8 @@ int tsn_fill_metadata(const struct device *dev, net_time_t now, struct tx_buffer
 	bool consider_delay = false;
 	net_time_t from, duration_ns;
 
+	ARG_UNUSED(vlan_prio);
+
 	if (tc_id >= NET_TC_TX_COUNT) {
 		/* Invalid priority */
 		fill_default_metadata(dev, now, metadata);
