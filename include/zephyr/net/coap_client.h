@@ -88,7 +88,7 @@ struct coap_client_option {
 struct coap_client_internal_request {
 	uint8_t request_token[COAP_TOKEN_MAX_LEN];
 	uint32_t offset;
-	uint32_t last_id;
+	uint16_t last_id;
 	uint8_t request_tkl;
 	bool request_ongoing;
 	atomic_t in_callback;
