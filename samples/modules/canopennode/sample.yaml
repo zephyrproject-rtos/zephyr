@@ -29,4 +29,7 @@ tests:
       SB_CONFIG_BOOTLOADER_MCUBOOT=y
 
   sample.modules.canopennode.no_storage:
+    filter: not CONFIG_BOOTLOADER_MCUBOOT
     extra_args: CONF_FILE=prj_no_storage.conf
+    platform_exclude:
+      - frdm_mcxn947/mcxn947/cpu0/qspi
