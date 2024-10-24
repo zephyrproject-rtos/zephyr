@@ -143,6 +143,11 @@ i2c1: &i2c1 {
 	};
 };
 
+zephyr_udc0: &usb {
+	status = "okay";
+	num-bidir-endpoints = <8>;
+};
+
 &tpm1 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_tpm1>;
