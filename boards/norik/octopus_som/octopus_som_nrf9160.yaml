@@ -1,0 +1,17 @@
+identifier: octopus_som/nrf9160
+name: Norik Octopus SoM
+type: mcu
+arch: arm
+ram: 88
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - gpio
+  - i2c
+  - spi
+  - pwm
+  - watchdog
+vendor: norik

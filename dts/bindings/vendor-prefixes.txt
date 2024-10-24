@@ -463,6 +463,7 @@ nintendo	Nintendo
 nlt	NLT Technologies, Ltd.
 nokia	Nokia
 nordic	Nordic Semiconductor
+norik	Norik Systems
 noritake	Noritake Co., Inc. Electronics Division
 novtech	NovTech, Inc.
 nuclei	Nuclei System Technology
