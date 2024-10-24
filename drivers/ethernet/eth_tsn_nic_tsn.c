@@ -80,8 +80,8 @@ static void bake_qos_config(struct tsn_config *config);
 static net_time_t bytes_to_ns(uint64_t bytes);
 
 static bool get_timestamps(struct timestamps *timestamps, const struct tsn_config *tsn_config,
-			   net_time_t from, uint8_t vlan_prio, uint64_t bytes, bool consider_delay);
-static void spend_qav_credit(struct tsn_config *tsn_config, net_time_t at, uint8_t vlan_prio,
+			   net_time_t from, uint8_t tc_id, uint64_t bytes, bool consider_delay);
+static void spend_qav_credit(struct tsn_config *tsn_config, net_time_t at, uint8_t tc_id,
 			     uint64_t bytes);
 
 /**
@@ -118,11 +118,11 @@ int tsn_fill_metadata(const struct device *dev, net_time_t now, struct tx_buffer
 	/* TODO: Handle PTP Packets */
 	/* TODO: Track buffer */
 
-	uint8_t vlan_prio = 0, queue_prio = 0; /* TODO: Handle vlan priority */
+	uint8_t vlan_prio = 0, tc_id = 0, queue_prio = 0; /* TODO: Handle vlan priority */
 	bool consider_delay = false;
 	net_time_t from, duration_ns;
 
-	if (vlan_prio >= NET_TC_TX_COUNT) {
+	if (tc_id >= NET_TC_TX_COUNT) {
 		/* Invalid priority */
 		fill_default_metadata(dev, now, metadata);
 		return 0;
@@ -131,16 +131,16 @@ int tsn_fill_metadata(const struct device *dev, net_time_t now, struct tx_buffer
 	from = now + H2C_LATENCY_NS;
 	duration_ns = bytes_to_ns(metadata->frame_length);
 
-	if (tsn_config->qbv.enabled == false && tsn_config->qav[vlan_prio].enabled == false) {
+	if (tsn_config->qbv.enabled == false && tsn_config->qav[tc_id].enabled == false) {
 		timestamps.from = tsn_config->total_available_at;
 		timestamps.to = timestamps.from + DEFAULT_TO_MARGIN_NS;
 		timestamps.delay_from = tsn_config->total_available_at;
 		timestamps.delay_to = timestamps.delay_from + DEFAULT_TO_MARGIN_NS;
 		metadata->fail_policy = TSN_FAIL_POLICY_DROP;
 	} else {
-		if (tsn_config->qav[vlan_prio].enabled == true &&
-		    tsn_config->qav[vlan_prio].available_at > from) {
-			from = tsn_config->qav[vlan_prio].available_at;
+		if (tsn_config->qav[tc_id].enabled == true &&
+		    tsn_config->qav[tc_id].available_at > from) {
+			from = tsn_config->qav[tc_id].available_at;
 		}
 		if (consider_delay) {
 			if (false /* buffer_tracker->pending_packets >= TSN_QUEUE_SIZE */) {
@@ -153,7 +153,7 @@ int tsn_fill_metadata(const struct device *dev, net_time_t now, struct tx_buffer
 			from = MAX(from, tsn_config->total_available_at);
 		}
 
-		get_timestamps(&timestamps, tsn_config, from, vlan_prio, metadata->frame_length,
+		get_timestamps(&timestamps, tsn_config, from, tc_id, metadata->frame_length,
 			       consider_delay);
 		metadata->fail_policy =
 			consider_delay ? TSN_FAIL_POLICY_RETRY : TSN_FAIL_POLICY_DROP;
@@ -174,7 +174,7 @@ int tsn_fill_metadata(const struct device *dev, net_time_t now, struct tx_buffer
 
 	/* TODO: Timestamp ID */
 
-	spend_qav_credit(tsn_config, from, vlan_prio, metadata->frame_length);
+	spend_qav_credit(tsn_config, from, tc_id, metadata->frame_length);
 	tsn_config->queue_available_at[queue_prio] += duration_ns;
 	tsn_config->total_available_at += duration_ns;
 
@@ -198,14 +198,14 @@ static void bake_qos_config(struct tsn_config *config)
 	 * NOTE: This is the exact same copy of the one in the Linux driver
 	 *       Review this when something unexpected happens
 	 */
-	int slot_id, vlan_prio;
+	int slot_id, tc_id;
 	bool qav_disabled = true;
 	struct qbv_baked_config *baked;
 
 	if (config->qbv.enabled == false) {
 		/* TODO: remove this when throughput issue without QoS gets resolved */
-		for (vlan_prio = 0; vlan_prio < NET_TC_TX_COUNT; vlan_prio++) {
-			if (config->qav[vlan_prio].enabled) {
+		for (tc_id = 0; tc_id < NET_TC_TX_COUNT; tc_id++) {
+			if (config->qav[tc_id].enabled) {
 				qav_disabled = false;
 				break;
 			}
@@ -216,8 +216,8 @@ static void bake_qos_config(struct tsn_config *config)
 			config->qbv.start = 0;
 			config->qbv.slot_count = 1;
 			config->qbv.slots[0].duration_ns = NS_IN_1S;
-			for (vlan_prio = 0; vlan_prio < NET_TC_TX_COUNT; vlan_prio++) {
-				config->qbv.slots[0].opened_prios[vlan_prio] = true;
+			for (tc_id = 0; tc_id < NET_TC_TX_COUNT; tc_id++) {
+				config->qbv.slots[0].opened_prios[tc_id] = true;
 			}
 		}
 	}
@@ -227,33 +227,32 @@ static void bake_qos_config(struct tsn_config *config)
 
 	baked->cycle_ns = 0;
 
-	for (vlan_prio = 0; vlan_prio < NET_TC_TX_COUNT; vlan_prio += 1) {
-		baked->prios[vlan_prio].slot_count = 1;
-		baked->prios[vlan_prio].slots[0].opened =
-			config->qbv.slots[0].opened_prios[vlan_prio];
+	for (tc_id = 0; tc_id < NET_TC_TX_COUNT; tc_id += 1) {
+		baked->prios[tc_id].slot_count = 1;
+		baked->prios[tc_id].slots[0].opened = config->qbv.slots[0].opened_prios[tc_id];
 	}
 
 	for (slot_id = 0; slot_id < config->qbv.slot_count; slot_id += 1) {
 		uint64_t slot_duration = config->qbv.slots[slot_id].duration_ns;
 
 		baked->cycle_ns += slot_duration;
-		for (vlan_prio = 0; vlan_prio < NET_TC_TX_COUNT; vlan_prio += 1) {
-			struct qbv_baked_prio *prio = &baked->prios[vlan_prio];
+		for (tc_id = 0; tc_id < NET_TC_TX_COUNT; tc_id += 1) {
+			struct qbv_baked_prio *prio = &baked->prios[tc_id];
 
 			if (prio->slots[prio->slot_count - 1].opened ==
-			    config->qbv.slots[slot_id].opened_prios[vlan_prio]) {
+			    config->qbv.slots[slot_id].opened_prios[tc_id]) {
 				prio->slots[prio->slot_count - 1].duration_ns += slot_duration;
 			} else {
 				prio->slots[prio->slot_count].opened =
-					config->qbv.slots[slot_id].opened_prios[vlan_prio];
+					config->qbv.slots[slot_id].opened_prios[tc_id];
 				prio->slots[prio->slot_count].duration_ns = slot_duration;
 				prio->slot_count += 1;
 			}
 		}
 	}
 
-	for (vlan_prio = 0; vlan_prio < NET_TC_TX_COUNT; vlan_prio += 1) {
-		struct qbv_baked_prio *prio = &baked->prios[vlan_prio];
+	for (tc_id = 0; tc_id < NET_TC_TX_COUNT; tc_id += 1) {
+		struct qbv_baked_prio *prio = &baked->prios[tc_id];
 
 		if (prio->slot_count % 2 == 1) {
 			prio->slots[prio->slot_count].opened =
@@ -265,7 +264,7 @@ static void bake_qos_config(struct tsn_config *config)
 }
 
 static bool get_timestamps(struct timestamps *timestamps, const struct tsn_config *tsn_config,
-			   net_time_t from, uint8_t vlan_prio, uint64_t bytes, bool consider_delay)
+			   net_time_t from, uint8_t tc_id, uint64_t bytes, bool consider_delay)
 {
 	/* TODO: Implement Qbv */
 	/* FIXME: These are for suppressing compile warnings */
@@ -276,7 +275,7 @@ static bool get_timestamps(struct timestamps *timestamps, const struct tsn_confi
 	return false;
 }
 
-static void spend_qav_credit(struct tsn_config *tsn_config, net_time_t at, uint8_t vlan_prio,
+static void spend_qav_credit(struct tsn_config *tsn_config, net_time_t at, uint8_t tc_id,
 			     uint64_t bytes)
 {
 	/* TODO: Implement Qav */
