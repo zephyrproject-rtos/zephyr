@@ -554,9 +554,10 @@ config MBEDTLS_LMS
 	depends on MBEDTLS_SHA256
 	select PSA_WANT_ALG_SHA_256
 
+if MBEDTLS_PSA_CRYPTO_C
+
 config MBEDTLS_PSA_P256M_DRIVER_ENABLED
 	bool "P256-M driver"
-	depends on MBEDTLS_PSA_CRYPTO_C
 	imply PSA_WANT_ALG_SHA_256
 	help
 	  Enable support for the optimized sofware implementation of the secp256r1
@@ -569,6 +570,22 @@ config MBEDTLS_PSA_P256M_DRIVER_RAW
 	  Allow direct access to the p256-m driver interface.
 	  Warning: Usage of this Kconfig option is prohibited in Zephyr's codebase.
 	           Users can enable it in case of very memory-constrained devices, but be aware that the p256-m interface is absolutely not guaranted to remain stable over time.
+
+config MBEDTLS_PSA_STATIC_KEY_SLOTS
+	bool "Use statically allocated key buffers to store key material"
+	default y if !MBEDTLS_ENABLE_HEAP
+	help
+	  By default Mbed TLS's PSA Crypto core uses heap memory to store the
+	  key material for each key slot. This might impose an undesired
+	  requirement to support heap memory and its management code, affecting
+	  RAM and ROM footprints at the same time.
+	  Enabling this symbol causes Mbed TLS to pre-allocate all the key slot
+	  buffers that are used to store the key material at build time, thus
+	  removing the need for heap memory. Each buffer will be sized to
+	  contain the largest asymmetric/symmetric key type enabled in the build
+	  through PSA_WANT symbols.
+
+endif # MBEDTLS_PSA_CRYPTO_C
 
 config MBEDTLS_SSL_DTLS_CONNECTION_ID
 	bool "DTLS Connection ID extension"
