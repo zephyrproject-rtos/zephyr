@@ -88,11 +88,6 @@ LOG_MODULE_REGISTER(nxp_edma);
 		    (_EDMA_CHANNEL_ARRAY_EXPLICIT(inst)),				\
 		    (_EDMA_CHANNEL_ARRAY(inst)))
 
-#define EDMA_HAL_CFG_GET(inst)								\
-	COND_CODE_1(DT_NODE_HAS_PROP(DT_INST(inst, DT_DRV_COMPAT), hal_cfg_index),	\
-		    (s_edmaConfigs[DT_INST_PROP(inst, hal_cfg_index)]),			\
-		    (s_edmaConfigs[0]))
-
 /* used to register edma_isr for all specified interrupts */
 #define EDMA_CONNECT_INTERRUPTS(inst)				\
 	FOR_EACH_FIXED_ARG(_EDMA_INT_CONNECT, (;),		\
