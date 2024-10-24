@@ -1,0 +1,5 @@
+board:
+  name: verdin_imx8mm
+  vendor: toradex
+  socs:
+    - name: mimx8mm6
