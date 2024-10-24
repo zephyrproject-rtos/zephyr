@@ -21,6 +21,7 @@
 #include <zephyr/sys/sem.h>
 #include <zephyr/sys/mutex.h>
 #include <zephyr/kernel/mm.h>
+#include <zephyr/fs/fs.h>
 #include <sys/time.h>
 
 int _fstat(int fd, struct stat *st);
@@ -31,6 +32,7 @@ int _close(int file);
 int _lseek(int file, int ptr, int dir);
 int _kill(int pid, int sig);
 int _getpid(void);
+int _unlink(const char *name);
 
 #ifndef CONFIG_NEWLIB_LIBC_CUSTOM_SBRK
 
@@ -251,6 +253,19 @@ int _close(int file)
 }
 __weak FUNC_ALIAS(_close, close, int);
 #endif /* CONFIG_POSIX_DEVICE_IO */
+
+#ifdef CONFIG_FILE_SYSTEM
+int _unlink(const char *name)
+{
+	int rc = fs_unlink(name);
+
+	if (rc) {
+		errno = rc;
+		rc = -1;
+	}
+	return rc;
+}
+#endif
 
 #ifndef CONFIG_POSIX_FD_MGMT
 int _lseek(int file, int ptr, int dir)
@@ -576,6 +591,14 @@ void *_sbrk_r(struct _reent *r, int count)
 
 	return _sbrk(count);
 }
+
+int _unlink_r(struct _reent *r, const char *name)
+{
+	ARG_UNUSED(r);
+
+	return _unlink(name);
+}
+
 #endif /* CONFIG_XTENSA */
 
 int _gettimeofday(struct timeval *__tp, void *__tzp)
