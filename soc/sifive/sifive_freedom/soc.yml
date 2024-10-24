@@ -7,6 +7,12 @@ family:
       - name: fu500
         socs:
           - name: fu540
+            cpuclusters:
+              - name: e51
+              - name: u54
       - name: fu700
         socs:
           - name: fu740
+            cpuclusters:
+              - name: s7
+              - name: u74

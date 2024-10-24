@@ -1,4 +1,5 @@
 # Copyright (c) 2016 Jean-Paul Etienne <fractalclone@gmail.com>
+# Copyright (c) 2024 Antmicro <www.antmicro.com>
 # SPDX-License-Identifier: Apache-2.0
 
 menu "RISCV Options"
@@ -349,6 +350,15 @@ config NULL_POINTER_EXCEPTION_REGION_SIZE
 	  Minimum is 4 bytes.
 
 endif # NULL_POINTER_EXCEPTION_DETECTION_PMP
+
+config RISCV_IMPRECISE_FPU_STATE_TRACKING
+	bool "Imprecise implementation of FPU state tracking"
+	depends on FPU
+	help
+	  According to the RISC-V Instruction Set Manual: Volume II, Version 20240411
+	  (Section 3.1.6.6), some implementations may choose to track the dirtiness of
+	  the floating-point register state imprecisely by reporting the state to be
+	  dirty even when it has not been modified. This option reflects that.
 
 endmenu
 

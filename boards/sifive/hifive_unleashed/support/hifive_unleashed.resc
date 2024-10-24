@@ -10,6 +10,9 @@ set platform
 """
 using "platforms/cpus/sifive-fu540.repl"
 
+l2lim: Memory.MappedMemory @ sysbus 0x08000000
+    size: 0x2000000
+
 clint:
     frequency: 10000000
 """
