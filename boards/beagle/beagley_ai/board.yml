@@ -1,0 +1,5 @@
+board:
+  name: beagley_ai
+  vendor: beagle
+  socs:
+  - name: j722s

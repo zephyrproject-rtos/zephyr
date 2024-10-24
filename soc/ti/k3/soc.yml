@@ -13,3 +13,7 @@ family:
     - name: j721e
       cpuclusters:
       - name: main_r5f0_0
+    - name: j722s
+      cpuclusters:
+      - name: main_r5f0_0
+      - name: mcu_r5f0_0
