@@ -113,10 +113,10 @@ static bool print_channel_data_iterator(const struct zbus_channel *chan, void *u
 		LOG_INF("      - %s", observation->obs->name);
 	}
 
-	struct zbus_observer_node *obs_nd, *tmp;
+	struct zbus_observer_data *obs_d, *tmp;
 
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&chan->data->observers, obs_nd, tmp, node) {
-		LOG_INF("      - %s", obs_nd->obs->name);
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&chan->data->observers, obs_d, tmp, node) {
+		LOG_INF("      - %s", obs_d->obs->name);
 	}
 
 	return true;
