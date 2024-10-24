@@ -437,10 +437,10 @@ set(mps2_an521_remote_DEPRECATED
     mps2/an521/cpu1
 )
 set(mps3_an547_DEPRECATED
-    mps3
+    mps3/corstone300/547
 )
 set(mps3_an547_ns_DEPRECATED
-    mps3/an547/ns
+    mps3/corstone300/an547/ns
 )
 
 set(native_posix_64_DEPRECATED

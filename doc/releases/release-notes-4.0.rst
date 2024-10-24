@@ -160,6 +160,11 @@ Boards & SoC Support
   * STM32: Deprecated MCO configuration via Kconfig in favour of setting it through devicetree.
     See ``samples/boards/stm32/mco`` sample.
   * Removed the ``nrf54l15pdk`` board, use :ref:`nrf54l15dk_nrf54l15` instead.
+  * The board qualifier for MPS3/AN547 is changed from:
+
+    * ``mps3/an547`` to ``mps3/corstone300/an547`` for secure and
+    * ``mps3/an547/ns`` to ``mps3/corstone300/an547/ns`` for non-secure.
+
 
 * Added support for the following shields:
 
