@@ -23,6 +23,8 @@
  */
 #include <zephyr/types.h>
 #include <zephyr/device.h>
+#include <zephyr/net/mii.h>
+#include <errno.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -122,6 +124,14 @@ __subsystem struct ethphy_driver_api {
 	/** Write PHY register */
 	int (*write)(const struct device *dev, uint16_t reg_addr,
 		     uint32_t data);
+
+	/** Read PHY register on an MMD */
+	int (*read_mmd)(const struct device *dev, uint8_t dev_addr, uint16_t reg_addr,
+			uint32_t *data);
+
+	/** Write PHY register on an MMD */
+	int (*write_mmd)(const struct device *dev, uint8_t dev_addr, uint16_t reg_addr,
+			 uint32_t data);
 };
 /**
  * @endcond
@@ -236,6 +246,69 @@ static inline int phy_write(const struct device *dev, uint16_t reg_addr,
 	return api->write(dev, reg_addr, value);
 }
 
+/**
+ * @brief Read PHY registers on an MMD
+ *
+ * This routine provides a generic interface for reading a register from an MMD
+ * on a given PHY.
+ *
+ * @param[in]  dev       PHY device structure
+ * @param[in]  dev_addr  MMD address
+ * @param[in]  reg_addr  Register address
+ * @param      value     Pointer to receive read value
+ *
+ * @retval 0 If successful.
+ * @retval -EIO If communication with PHY failed.
+ * @retval -ENOSYS if the interface is not implemented.
+ * @retval -EINVAL invalid device or register address.
+ */
+static inline int phy_read_mmd(const struct device *dev, uint8_t dev_addr, uint16_t reg_addr,
+			       uint32_t *value)
+{
+	const struct ethphy_driver_api *api = (const struct ethphy_driver_api *)dev->api;
+
+	if (api->read_mmd == NULL) {
+		return -ENOSYS;
+	}
+
+	if (dev_addr > MII_MMD_ACR_DEVAD_MASK) {
+		return -EINVAL;
+	}
+
+	return api->read_mmd(dev, dev_addr, reg_addr, value);
+}
+
+/**
+ * @brief Write PHY register on an MMD
+ *
+ * This routine provides a generic interface for writing a register on an MMD
+ * on a given PHY.
+ *
+ * @param[in]  dev       PHY device structure
+ * @param[in]  dev_addr  MMD address
+ * @param[in]  reg_addr  Register address
+ * @param[in]  value     Value to write
+ *
+ * @retval 0 If successful.
+ * @retval -EIO If communication with PHY failed.
+ * @retval -ENOSYS if the interface is not implemented.
+ * @retval -EINVAL invalid device or register address.
+ */
+static inline int phy_write_mmd(const struct device *dev, uint8_t dev_addr, uint16_t reg_addr,
+				uint32_t value)
+{
+	const struct ethphy_driver_api *api = (const struct ethphy_driver_api *)dev->api;
+
+	if (api->write_mmd == NULL) {
+		return -ENOSYS;
+	}
+
+	if (dev_addr > MII_MMD_ACR_DEVAD_MASK) {
+		return -EINVAL;
+	}
+
+	return api->write_mmd(dev, dev_addr, reg_addr, value);
+}
 
 #ifdef __cplusplus
 }
