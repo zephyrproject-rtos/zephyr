@@ -60,7 +60,7 @@ More information about STM32F072RB can be found here:
 Supported Features
 ==================
 
-The Zephyr stm32f072b_disco board configuration supports the following hardware
+The Zephyr ``stm32f072b_disco`` board target supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+

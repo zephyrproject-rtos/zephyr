@@ -34,7 +34,7 @@ The MXChip AZ3166 IoT DevKit has the following physical features:
 Supported Features
 ==================
 
-The az3166_iotdevkit board configuration supports the following
+The ``az3166_iotdevkit`` board target supports the following
 hardware features:
 
 +-----------+------------+----------------------+

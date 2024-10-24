@@ -72,7 +72,7 @@ More information about STM32F750x8 can be found here:
 Supported Features
 ==================
 
-The Zephyr stm32f7508_dk board configuration supports the following hardware features:
+The Zephyr ``stm32f7508_dk`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

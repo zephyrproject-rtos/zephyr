@@ -63,7 +63,7 @@ More information about STM32L073RZ can be found in the
 Supported Features
 ==================
 
-The Zephyr nucleo_l073rz board configuration supports the following hardware features:
+The Zephyr ``nucleo_l073rz`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

@@ -50,7 +50,7 @@ More information about STM32F302VC can be found here:
 Supported Features
 ==================
 
-The Zephyr stm32f3_seco_d23 board configuration supports the following hardware
+The Zephyr ``stm32f3_seco_d23`` board target supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+

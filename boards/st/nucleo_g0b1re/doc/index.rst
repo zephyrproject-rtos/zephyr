@@ -67,7 +67,7 @@ More information about STM32G0B1RE can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_g0b1re board configuration supports the following hardware features:
+The Zephyr ``nucleo_g0b1re`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

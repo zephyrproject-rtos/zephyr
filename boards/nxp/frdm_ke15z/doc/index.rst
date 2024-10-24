@@ -32,7 +32,7 @@ these NXP reference documents:
 Supported Features
 ==================
 
-The frdm_ke15z board configuration supports the following hardware
+The ``frdm_ke15z`` board target supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+

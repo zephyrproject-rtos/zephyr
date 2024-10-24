@@ -22,7 +22,7 @@ Hardware
 Supported Features
 ==================
 
-The adafruit_itsybitsy_m4_express board configuration supports the following
+The ``adafruit_itsybitsy_m4_express`` board target supports the following
 hardware features:
 
 +-----------+------------+------------------------------------------+

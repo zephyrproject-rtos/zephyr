@@ -37,7 +37,7 @@ It contains circuitry for LIPO usage and can be charged via the USB port.
 Supported Features
 ==================
 
-The particle_boron board configuration supports the following
+The ``particle_boron`` board target supports the following
 hardware features:
 
 +-----------+------------+----------------------+

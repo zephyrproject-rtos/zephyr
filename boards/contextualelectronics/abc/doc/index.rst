@@ -35,7 +35,7 @@ is 32.768 kHz. The frequency of the main clock is 32 MHz.
 Supported Features
 ==================
 
-The contextualelectronics_abc board configuration supports the following
+The ``contextualelectronics_abc`` board target supports the following
 hardware features:
 
 +-----------+------------+----------------------+

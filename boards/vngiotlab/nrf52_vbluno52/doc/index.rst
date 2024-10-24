@@ -25,7 +25,7 @@ is 64 MHz.
 Supported Features
 ==================
 
-The nrf52_vbluno52 board configuration supports the following
+The ``nrf52_vbluno52`` board target supports the following
 hardware features:
 
 +-----------+------------+----------------------+

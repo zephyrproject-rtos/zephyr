@@ -138,7 +138,7 @@ More information about STM32U575ZI can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_u575zi_q board configuration supports the following hardware features:
+The Zephyr ``nucleo_u575zi_q`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

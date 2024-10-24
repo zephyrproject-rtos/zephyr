@@ -30,7 +30,7 @@ For more information about the KL25Z SoC and FRDM-KL25Z board:
 Supported Features
 ==================
 
-The frdm_kl25z board configuration supports the following hardware features:
+The ``frdm_kl25z`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

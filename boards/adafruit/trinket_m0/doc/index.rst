@@ -21,7 +21,7 @@ Hardware
 Supported Features
 ==================
 
-The adafruit_trinket_m0 board configuration supports the following hardware
+The ``adafruit_trinket_m0`` board target supports the following hardware
 features:
 
 +-----------+------------+------------------------------------------+

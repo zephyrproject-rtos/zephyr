@@ -88,7 +88,7 @@ More information about STM32G474RE can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_g474re board configuration supports the following hardware features:
+The Zephyr ``nucleo_g474re`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

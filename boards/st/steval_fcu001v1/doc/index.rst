@@ -39,7 +39,7 @@ can be found in these documents:
 Supported Features
 ==================
 
-The Zephyr steval_fcu001v1 board configuration supports the following hardware features:
+The Zephyr ``steval_fcu001v1`` board target supports the following hardware features:
 
 +-----------+------------+------------------------------------+
 | Interface | Controller | Driver/Component                   |

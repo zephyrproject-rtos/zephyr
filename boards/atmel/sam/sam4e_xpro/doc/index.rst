@@ -27,7 +27,7 @@ Hardware
 Supported Features
 ==================
 
-The sam4e_xpro board configuration supports the following hardware
+The ``sam4e_xpro`` board target supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+

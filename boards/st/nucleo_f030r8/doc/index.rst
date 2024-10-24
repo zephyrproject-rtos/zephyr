@@ -64,7 +64,7 @@ More information about STM32F030R8 can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_f030r8 board configuration supports the following hardware features:
+The Zephyr ``nucleo_f030r8`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

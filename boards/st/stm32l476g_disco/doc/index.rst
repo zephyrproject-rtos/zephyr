@@ -100,7 +100,7 @@ More information about STM32L476VG can be found here:
 Supported Features
 ==================
 
-The Zephyr stm32l476g_disco board configuration supports the following hardware features:
+The Zephyr ``stm32l476g_disco`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

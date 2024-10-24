@@ -33,7 +33,7 @@ The micro:bit-v2 has the following physical features:
 Supported Features
 ==================
 
-The bbc_microbit_v2 board configuration supports the following
+The ``bbc_microbit_v2`` board target supports the following
 hardware features:
 
 +-----------+------------+----------------------+

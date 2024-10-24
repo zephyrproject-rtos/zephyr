@@ -31,7 +31,7 @@ Hardware
 Supported Features
 ==================
 
-The Zephyr stm32f030_demo board configuration supports the following
+The Zephyr ``stm32f030_demo`` board target supports the following
 hardware features:
 
 +-----------+------------+-------------------------------------+

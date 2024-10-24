@@ -136,7 +136,7 @@ More information about STM32H563ZI can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_h563zi board configuration supports the following hardware features:
+The Zephyr ``nucleo_h563zi`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

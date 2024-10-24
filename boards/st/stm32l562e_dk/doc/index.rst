@@ -139,7 +139,7 @@ More information about STM32L562QE can be found here:
 Supported Features
 ==================
 
-The Zephyr stm32l562e_dk board configuration supports the following
+The Zephyr ``stm32l562e_dk`` board target supports the following
 hardware features:
 
 +-----------+------------+-------------------------------------+

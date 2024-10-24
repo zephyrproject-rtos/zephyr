@@ -30,7 +30,7 @@ For more information about the STM32G03x SoC and the STM32G0316-DISCO board, see
 Supported Features
 ==================
 
-The Zephyr stm32g0316_disco board configuration supports the following hardware features:
+The Zephyr ``stm32g0316_disco`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

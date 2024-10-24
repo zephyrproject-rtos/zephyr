@@ -68,7 +68,7 @@ More information about the STM32F303RE can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_f303re board configuration supports the following hardware
+The Zephyr ``nucleo_f303re`` board target supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+

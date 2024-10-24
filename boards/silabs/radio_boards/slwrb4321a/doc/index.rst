@@ -33,7 +33,7 @@ For more information about the WGM160P and SLWSTK6121A board:
 Supported Features
 ==================
 
-The slwrb4321a board configuration supports the following hardware
+The ``slwrb4321a`` board target supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+

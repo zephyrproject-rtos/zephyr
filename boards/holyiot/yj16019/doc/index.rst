@@ -30,7 +30,7 @@ The nRF52832 of the Holyiot YJ-16019 is clocked by an external crystal with a fr
 Supported Features
 ==================
 
-The holyiot_yj16019 board configuration supports the following
+The ``holyiot_yj16019`` board target supports the following
 hardware features:
 
 +-----------+------------+----------------------+

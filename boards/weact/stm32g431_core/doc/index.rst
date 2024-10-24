@@ -28,7 +28,7 @@ considered reserved for USB-C and not available for other applications.
 Supported Features
 ==================
 
-The Zephyr weact_stm32g431_core board configuration supports the following hardware
+The Zephyr ``weact_stm32g431_core`` board target supports the following hardware
 features:
 
 +------------+------------+-------------------------------------+

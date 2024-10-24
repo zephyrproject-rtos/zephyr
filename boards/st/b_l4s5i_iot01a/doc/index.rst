@@ -99,7 +99,7 @@ More information about STM32L4S5VI can be found here:
 Supported Features
 ==================
 
-The Zephyr b_l4s5i_iot01a board configuration supports the following hardware features:
+The Zephyr ``b_l4s5i_iot01a`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

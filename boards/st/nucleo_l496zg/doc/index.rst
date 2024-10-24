@@ -98,7 +98,7 @@ More information about STM32L496ZG can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_l496zg board configuration supports the following hardware features:
+The Zephyr ``nucleo_l496zg`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

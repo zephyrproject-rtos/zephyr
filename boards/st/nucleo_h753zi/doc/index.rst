@@ -84,7 +84,7 @@ Nucleo H753ZI provides the following hardware components:
 Supported Features
 ==================
 
-The Zephyr nucleo_h753zi board configuration supports the following hardware
+The Zephyr ``nucleo_h753zi`` board target supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+

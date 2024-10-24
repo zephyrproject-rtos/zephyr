@@ -60,7 +60,7 @@ More information about STM32F723IEK6 can be found here:
 Supported Features
 ==================
 
-The Zephyr stm32f723e_disco board configuration supports the following hardware features:
+The Zephyr ``stm32f723e_disco`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

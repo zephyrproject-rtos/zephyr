@@ -39,7 +39,7 @@ More information about STM32C011F6 can be found here:
 Supported Features
 ==================
 
-The Zephyr stm32c0116_dk board configuration supports the following hardware features:
+The Zephyr ``stm32c0116_dk`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

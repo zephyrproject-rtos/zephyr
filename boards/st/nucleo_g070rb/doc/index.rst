@@ -67,7 +67,7 @@ More information about STM32G070RB can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_g070rb board configuration supports the following hardware features:
+The Zephyr ``nucleo_g070rb`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

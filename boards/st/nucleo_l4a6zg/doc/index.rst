@@ -99,7 +99,7 @@ More information about STM32L4A6ZG can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_l4a6zg board configuration supports the following hardware features:
+The Zephyr ``nucleo_l4a6zg`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

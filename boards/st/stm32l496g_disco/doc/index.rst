@@ -115,7 +115,7 @@ More information about STM32L496AG can be found in:
 Supported Features
 ==================
 
-The Zephyr stm32l496g_disco board configuration supports the following hardware features:
+The Zephyr ``stm32l496g_disco`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

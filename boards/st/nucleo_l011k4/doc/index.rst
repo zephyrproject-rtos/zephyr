@@ -62,7 +62,7 @@ More information about STM32L011K4 can be found in the
 Supported Features
 ==================
 
-The Zephyr nucleo_l011k4 board configuration supports the following hardware features:
+The Zephyr ``nucleo_l011k4`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

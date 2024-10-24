@@ -153,7 +153,7 @@ More information about STM32U585AI can be found here:
 Supported Features
 ==================
 
-The Zephyr b_u585i_iot02a board configuration supports the following hardware features:
+The Zephyr ``b_u585i_iot02a`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

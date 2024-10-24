@@ -81,7 +81,7 @@ More information about STM32F407VE SOC can be found here:
 Supported Features
 ==================
 
-The Zephyr black_f407ve board configuration supports the following hardware
+The Zephyr ``black_f407ve`` board target supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+

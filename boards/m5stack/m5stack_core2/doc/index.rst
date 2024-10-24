@@ -104,7 +104,7 @@ These voltages can be controlled via regulator api.
 Supported Features
 ==================
 
-The Zephyr m5stack_core2 board configuration supports the following hardware features:
+The Zephyr ``m5stack_core2`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

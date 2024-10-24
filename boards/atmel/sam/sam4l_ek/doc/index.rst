@@ -49,7 +49,7 @@ Hardware
 Supported Features
 ==================
 
-The sam4l_ek board configuration supports the following hardware features:
+The ``sam4l_ek`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

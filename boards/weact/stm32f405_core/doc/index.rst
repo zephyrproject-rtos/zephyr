@@ -45,7 +45,7 @@ hardware components:
 Supported Features
 ==================
 
-The Zephyr weact_stm32f405_core board configuration supports the following
+The Zephyr ``weact_stm32f405_core`` board target supports the following
 hardware features:
 
 +------------+------------+-------------------------------------+

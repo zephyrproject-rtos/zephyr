@@ -43,7 +43,7 @@ More information about STM32G474RE can be found here:
 Supported Features
 ==================
 
-The Zephyr b_g474e_dpow1 board configuration supports the following hardware features:
+The Zephyr ``b_g474e_dpow1`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

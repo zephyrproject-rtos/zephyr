@@ -172,7 +172,7 @@ More information about STM32U5A5ZJ can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_u5a5zj_q board configuration supports the following hardware features:
+The Zephyr ``nucleo_u5a5zj_q`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

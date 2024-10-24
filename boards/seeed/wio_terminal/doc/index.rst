@@ -33,7 +33,7 @@ Hardware
 Supported Features
 ==================
 
-The wio_terminal board configuration supports the following hardware features:
+The ``wio_terminal`` board target supports the following hardware features:
 
 .. list-table::
     :header-rows: 1

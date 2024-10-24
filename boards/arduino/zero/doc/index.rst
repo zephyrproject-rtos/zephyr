@@ -28,7 +28,7 @@ Hardware
 Supported Features
 ==================
 
-The arduino_zero board configuration supports the following hardware
+The ``arduino_zero`` board target supports the following hardware
 features:
 
 +-----------+------------+------------------------------------------+

@@ -63,7 +63,7 @@ More information about the STM32F303K8 can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_f303k8 board configuration supports the following hardware
+The Zephyr ``nucleo_f303k8`` board target supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+

@@ -87,7 +87,7 @@ More information about STM32F769NIH6 can be found here:
 Supported Features
 ==================
 
-The Zephyr stm32f769i_disco board configuration supports the following hardware features:
+The Zephyr ``stm32f769i_disco`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

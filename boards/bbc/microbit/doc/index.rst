@@ -39,7 +39,7 @@ The micro:bit has the following physical features:
 Supported Features
 ==================
 
-The bbc_microbit board configuration supports the following nRF51
+The ``bbc_microbit`` board target supports the following nRF51
 hardware features:
 
 +-----------+------------+----------------------+

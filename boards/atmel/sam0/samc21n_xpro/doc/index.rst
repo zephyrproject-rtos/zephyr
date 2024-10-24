@@ -25,7 +25,7 @@ Hardware
 Supported Features
 ==================
 
-The samc21n_xpro board configuration supports the following hardware
+The ``samc21n_xpro`` board target supports the following hardware
 features:
 
 .. list-table::

@@ -37,7 +37,7 @@ It contains circuitry for LIPO usage and can be charged via the USB port.
 Supported Features
 ==================
 
-The particle_argon board configuration supports the following
+The ``particle_argon`` board target supports the following
 hardware features:
 
 +-----------+------------+----------------------+

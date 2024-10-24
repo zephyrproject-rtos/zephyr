@@ -42,7 +42,7 @@ has frequency up to 2.0GHz. Zephyr OS is ported to run on it.
 Supported Features
 ==================
 
-The Zephyr roc_rk3568_pc board configuration supports the following hardware
+The Zephyr ``roc_rk3568_pc`` board target supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+

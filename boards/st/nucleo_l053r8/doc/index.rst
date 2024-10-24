@@ -63,7 +63,7 @@ More information about STM32L053R8 can be found in the
 Supported Features
 ==================
 
-The Zephyr nucleo_l053r8 board configuration supports the following hardware features:
+The Zephyr ``nucleo_l053r8`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

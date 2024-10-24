@@ -63,7 +63,7 @@ the `STM32F070 reference manual`_ .
 Supported Features
 ==================
 
-The Zephyr nucleo_f070rb board configuration supports the following hardware features:
+The Zephyr ``nucleo_f070rb`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

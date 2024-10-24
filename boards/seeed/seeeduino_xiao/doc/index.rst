@@ -18,7 +18,7 @@ Hardware
 Supported Features
 ==================
 
-The seeeduino_xiao board configuration supports the following hardware
+The ``seeeduino_xiao`` board target supports the following hardware
 features:
 
 +-----------+------------+------------------------------------------+

@@ -45,7 +45,7 @@ For more information about the SOC please see the `MEC152x Reference Manual`_
 Supported Features
 ==================
 
-The mec1501modular_assy6885 board configuration supports the following hardware
+The ``mec1501modular_assy6885`` board target supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+

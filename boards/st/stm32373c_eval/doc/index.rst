@@ -54,7 +54,7 @@ More information about STM32F373VCT6 can be found here:
 Supported Features
 ==================
 
-The Zephyr stm32373c_eval board configuration supports the following hardware features:
+The Zephyr ``stm32373c_eval`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

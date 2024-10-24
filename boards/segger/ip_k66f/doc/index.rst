@@ -32,7 +32,7 @@ For more information about the K66F SoC and IP-K66F board:
 Supported Features
 ==================
 
-The ip_k66f board configuration supports the following hardware features:
+The ``ip_k66f`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

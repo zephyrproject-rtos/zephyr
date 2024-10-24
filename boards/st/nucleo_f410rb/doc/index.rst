@@ -57,7 +57,7 @@ More information about STM32F410RB can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_f410rb board configuration supports the following hardware features:
+The Zephyr ``nucleo_f410rb`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

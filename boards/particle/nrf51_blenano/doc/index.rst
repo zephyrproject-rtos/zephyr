@@ -15,7 +15,7 @@ is 32.768 kHz. The frequency of the main clock is 16 MHz.
 Supported Features
 ==================
 
-The nrf51_blenano board configuration supports the following nRF51
+The ``nrf51_blenano`` board target supports the following nRF51
 hardware features:
 
 +-----------+------------+----------------------+

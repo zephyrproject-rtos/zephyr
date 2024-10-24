@@ -64,7 +64,7 @@ More information about STM32F103RB can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_f103rb board configuration supports the following hardware features:
+The Zephyr ``nucleo_f103rb`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

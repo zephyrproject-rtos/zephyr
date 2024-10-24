@@ -17,7 +17,7 @@ information and the datasheet.
 Supported Features
 ==================
 
-The olimex_stm32_p405 board configuration supports the following
+The ``olimex_stm32_p405`` board target supports the following
 hardware features:
 
 +-----------+------------+----------------------+

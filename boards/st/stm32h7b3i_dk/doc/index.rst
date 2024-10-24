@@ -94,7 +94,7 @@ More information about STM32H7B3 can be found here:
 Supported Features
 ==================
 
-The current Zephyr stm32h7b3i_dk board configuration supports the following hardware features:
+The current Zephyr ``stm32h7b3i_dk`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

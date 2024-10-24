@@ -81,7 +81,7 @@ respectively.
 Supported Features
 ==================
 
-The stm32_min_dev board configuration supports the following hardware features:
+The ``stm32_min_dev`` board target supports the following hardware features:
 
 +-----------+------------+----------------------+
 | Interface | Controller | Driver/Component     |

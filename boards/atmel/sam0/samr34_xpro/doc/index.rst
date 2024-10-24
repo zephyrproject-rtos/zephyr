@@ -28,7 +28,7 @@ Hardware
 Supported Features
 ==================
 
-The samr34_xpro board configuration supports the following hardware
+The ``samr34_xpro`` board target supports the following hardware
 features:
 
 .. list-table::

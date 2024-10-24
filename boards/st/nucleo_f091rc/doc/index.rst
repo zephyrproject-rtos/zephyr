@@ -63,7 +63,7 @@ More information about STM32F091RC can be found in the
 Supported Features
 ==================
 
-The Zephyr nucleo_f091rc board configuration supports the following hardware features:
+The Zephyr ``nucleo_f091rc`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

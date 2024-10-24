@@ -34,7 +34,7 @@ these NXP reference documents:
 Supported Features
 ==================
 
-The twr_kv58f220m board configuration supports the following hardware
+The ``twr_kv58f220m`` board target supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+

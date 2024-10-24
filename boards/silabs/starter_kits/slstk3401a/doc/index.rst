@@ -28,7 +28,7 @@ For more information about the EFM32PG SoC and SLSTK3401A board:
 Supported Features
 ==================
 
-The slstk3401a board configuration supports the following hardware features:
+The ``slstk3401a`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

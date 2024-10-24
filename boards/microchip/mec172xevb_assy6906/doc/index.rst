@@ -36,7 +36,7 @@ For more information about the SOC's please see `MEC172x Reference Manual`_
 Supported Features
 ==================
 
-The mec172xevb_assy6906 board configuration supports the following hardware
+The ``mec172xevb_assy6906`` board target supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+

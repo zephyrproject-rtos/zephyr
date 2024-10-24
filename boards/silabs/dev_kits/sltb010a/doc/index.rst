@@ -42,7 +42,7 @@ For more information about the EFR32BG SoC and Thunderboard EFR32BG22 board:
 Supported Features
 ==================
 
-The sltb010a board configuration supports the following hardware features:
+The ``sltb010a`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

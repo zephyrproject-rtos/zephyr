@@ -81,7 +81,7 @@ Nucleo F767ZI provides the following hardware components:
 Supported Features
 ==================
 
-The Zephyr nucleo_f767zi board configuration supports the following hardware
+The Zephyr ``nucleo_f767zi`` board target supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+

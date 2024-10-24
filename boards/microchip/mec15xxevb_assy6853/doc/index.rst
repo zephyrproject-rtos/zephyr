@@ -42,7 +42,7 @@ For more information about the SOC's please see `MEC152x Reference Manual`_
 Supported Features
 ==================
 
-The mec15xxevb_assy6853 board configuration supports the following hardware
+The ``mec15xxevb_assy6853`` board target supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+

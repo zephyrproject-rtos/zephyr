@@ -48,7 +48,7 @@ is 16MHz.
 Supported Features
 ==================
 
-The rm1xx_dvk board configuration supports the following
+The ``rm1xx_dvk`` board target supports the following
 hardware features:
 
 +-----------+------------+----------------------+

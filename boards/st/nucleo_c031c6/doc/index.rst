@@ -51,7 +51,7 @@ More information about STM32C031C6 can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_c031c6 board configuration supports the following hardware features:
+The Zephyr ``nucleo_c031c6`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

@@ -47,7 +47,7 @@ More information about STM32U5A9NJH6Q can be found here:
 Supported Features
 ==================
 
-The current Zephyr stm32u5a9j_dk board configuration supports the following
+The current Zephyr ``stm32u5a9j_dk`` board target supports the following
 hardware features:
 
 +-----------+------------+-------------------------------------+

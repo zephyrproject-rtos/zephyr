@@ -32,7 +32,7 @@ For more information, refer to these documents:
 Supported Features
 ==================
 
-The xg27_dk2602a board configuration supports the following hardware features:
+The ``xg27_dk2602a`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

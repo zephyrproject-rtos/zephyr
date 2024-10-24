@@ -147,7 +147,7 @@ More information about STM32P157A can be found here:
 Supported Features
 ==================
 
-The Zephyr 96b_avenger96 board configuration supports the following hardware
+The Zephyr ``96b_avenger96`` board target supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+

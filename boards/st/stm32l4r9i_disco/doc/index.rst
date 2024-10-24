@@ -25,7 +25,7 @@ More information about STM32L4R9 can be found here:
 Supported Features
 ==================
 
-The current Zephyr stm32l4r9i_disco board configuration supports the following hardware features:
+The current Zephyr ``stm32l4r9i_disco`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

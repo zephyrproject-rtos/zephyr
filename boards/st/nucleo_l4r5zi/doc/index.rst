@@ -109,7 +109,7 @@ More information about STM32L4R5ZI can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_l4r5zi board configuration supports the following
+The Zephyr ``nucleo_l4r5zi`` board target supports the following
 hardware features:
 
 +-----------+------------+-------------------------------------+

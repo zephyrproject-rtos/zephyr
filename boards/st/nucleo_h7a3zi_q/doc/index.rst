@@ -78,7 +78,7 @@ Nucleo H7A3ZI-Q provides the following hardware components:
 Supported Features
 ==================
 
-The Zephyr nucleo_h7a3zi_q board configuration supports the following hardware
+The Zephyr ``nucleo_h7a3zi_q`` board target supports the following hardware
 features:
 
 +-------------+------------+------------------------------------+

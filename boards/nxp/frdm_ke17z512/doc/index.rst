@@ -35,7 +35,7 @@ these NXP reference documents:
 Supported Features
 ==================
 
-The frdm_ke17z512 board configuration supports the following hardware
+The ``frdm_ke17z512`` board target supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+

@@ -44,7 +44,7 @@ Hardware
 Supported Features
 ==================
 
-The rpi_pico board configuration supports the following
+The ``rpi_pico`` board target supports the following
 hardware features:
 
 .. list-table::

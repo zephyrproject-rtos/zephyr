@@ -57,7 +57,7 @@ More information about STM32F411RE can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_f411re board configuration supports the following hardware features:
+The Zephyr ``nucleo_f411re`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

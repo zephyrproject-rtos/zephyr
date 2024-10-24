@@ -71,7 +71,7 @@ More information about STM32H743 can be found here:
 Supported Features
 ==================
 
-The mini_stm32h743 board configuration supports the following hardware features:
+The ``mini_stm32h743`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

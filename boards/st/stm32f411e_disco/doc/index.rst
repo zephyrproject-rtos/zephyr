@@ -59,7 +59,7 @@ More information about STM32F411VE can be found here:
 Supported Features
 ==================
 
-The Zephyr stm32f411e_disco board configuration supports the following
+The Zephyr ``stm32f411e_disco`` board target supports the following
 hardware features:
 
 +-----------+------------+-------------------------------------+

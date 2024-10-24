@@ -115,7 +115,7 @@ More information about STM32H533RE can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_h503rb board configuration supports the following hardware features:
+The Zephyr ``nucleo_h503rb`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

@@ -34,7 +34,7 @@ is 32 MHz.
 Supported Features
 ==================
 
-The nrf52840_blip board configuration supports the following
+The ``nrf52840_blip`` board target supports the following
 hardware features currently:
 
 +-----------+------------+----------------------+

@@ -93,7 +93,7 @@ More information about STM32G081RB can be found here:
 Supported Features
 ==================
 
-The Zephyr stm32g081b_eval board configuration supports the following hardware features:
+The Zephyr ``stm32g081b_eval`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

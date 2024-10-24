@@ -43,7 +43,7 @@ For more information about the EFR32MG12 SoC and Thunderboard Sense 2 board:
 Supported Features
 ==================
 
-The sltb004a board configuration supports the following hardware features:
+The ``sltb004a`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

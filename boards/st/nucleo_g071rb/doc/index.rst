@@ -69,7 +69,7 @@ More information about STM32G071RB can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_g071rb board configuration supports the following hardware features:
+The Zephyr ``nucleo_g071rb`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

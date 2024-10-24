@@ -70,7 +70,7 @@ More information about STM32F429ZI can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_f429zi board configuration supports the following hardware features:
+The Zephyr ``nucleo_f429zi`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

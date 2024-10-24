@@ -36,7 +36,7 @@ It contains circuitry for LIPO usage and can be charged via the USB port.
 Supported Features
 ==================
 
-The particle_xenon board configuration supports the following
+The ``particle_xenon`` board target supports the following
 hardware features:
 
 +-----------+------------+----------------------+

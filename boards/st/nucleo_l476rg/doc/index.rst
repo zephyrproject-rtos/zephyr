@@ -94,7 +94,7 @@ More information about STM32L476RG can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_l476rg board configuration supports the following hardware features:
+The Zephyr ``nucleo_l476rg`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

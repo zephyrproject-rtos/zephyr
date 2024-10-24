@@ -35,7 +35,7 @@ More information about the STM32F100x can be found in the
 Supported Features
 ==================
 
-The Zephyr stm32vl_disco board configuration supports the following hardware features:
+The Zephyr ``stm32vl_disco`` board target supports the following hardware features:
 
 .. list-table:: Supported hardware
    :header-rows: 1

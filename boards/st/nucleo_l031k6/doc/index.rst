@@ -55,7 +55,7 @@ More information about STM32L031K6 can be found in the
 Supported Features
 ==================
 
-The Zephyr nucleo_l031k6 board configuration supports the following hardware features:
+The Zephyr ``nucleo_l031k6`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

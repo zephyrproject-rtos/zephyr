@@ -67,7 +67,7 @@ More information about STM32F446ZE can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_f446ze board configuration supports the following hardware features:
+The Zephyr ``nucleo_f446ze`` board target supports the following hardware features:
 
 +-------------+------------+-------------------------------------+
 | Interface   | Controller | Driver/Component                    |

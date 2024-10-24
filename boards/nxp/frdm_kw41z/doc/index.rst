@@ -45,7 +45,7 @@ For more information about the KW41Z SoC and FRDM-KW41Z board:
 Supported Features
 ==================
 
-The frdm_kw41z board configuration supports the following hardware features:
+The ``frdm_kw41z`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

@@ -50,7 +50,7 @@ More information about STM32F107VCT can be found here:
 Supported Features
 ==================
 
-The Zephyr stm3210c_eval board configuration supports the following hardware features:
+The Zephyr ``stm3210c_eval`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

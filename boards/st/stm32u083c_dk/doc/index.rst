@@ -144,7 +144,7 @@ More information about STM32U083MC can be found here:
 Supported Features
 ==================
 
-The Zephyr stm32u083c_dk board configuration supports the following hardware features:
+The Zephyr ``stm32u083c_dk`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

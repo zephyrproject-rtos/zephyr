@@ -67,7 +67,7 @@ More information about STM32F303VC can be found here:
 Supported Features
 ==================
 
-The Zephyr stm32f3_disco board configuration supports the following hardware
+The Zephyr ``stm32f3_disco`` board target supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+

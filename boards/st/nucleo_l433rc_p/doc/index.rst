@@ -90,7 +90,7 @@ More information about STM32L433RC can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_l433rc_p board configuration supports the following hardware features:
+The Zephyr ``nucleo_l433rc_p`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

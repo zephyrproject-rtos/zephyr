@@ -81,7 +81,7 @@ Nucleo F746ZG provides the following hardware components:
 Supported Features
 ==================
 
-The Zephyr nucleo_f746zg board configuration supports the following hardware
+The Zephyr ``nucleo_f746zg`` board target supports the following hardware
 features:
 
 +-------------+------------+-------------------------------------+

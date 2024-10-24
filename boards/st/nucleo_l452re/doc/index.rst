@@ -99,7 +99,7 @@ More information about STM32L452RE can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_l452re board configuration supports the following hardware features:
+The Zephyr ``nucleo_l452re`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

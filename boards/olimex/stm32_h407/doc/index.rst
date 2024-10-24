@@ -23,7 +23,7 @@ information and the datasheet.
 Supported Features
 ==================
 
-The olimex_stm32_h407 board configuration supports the following
+The ``olimex_stm32_h407`` board target supports the following
 hardware features:
 
 +-----------+------------+----------------------+

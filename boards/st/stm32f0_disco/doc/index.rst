@@ -40,7 +40,7 @@ More information about STM32F051R8 can be found in the `STM32F0x8 reference manu
 Supported Features
 ==================
 
-The Zephyr stm32f0_disco board configuration supports the following hardware features:
+The Zephyr ``stm32f0_disco`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

@@ -23,7 +23,7 @@ Hardware
 Supported Features
 ==================
 
-The xiao_ble board configuration supports the following hardware features:
+The ``xiao_ble`` board target supports the following hardware features:
 
 +-----------+------------+----------------------+
 | Interface | Controller | Driver/Component     |

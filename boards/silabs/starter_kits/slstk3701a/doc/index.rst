@@ -34,7 +34,7 @@ For more information about the EFM32GG11 SoC and SLSTK3701A board:
 Supported Features
 ==================
 
-The slstk3701a board configuration supports the following hardware
+The ``slstk3701a`` board target supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+

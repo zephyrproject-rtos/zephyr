@@ -72,7 +72,7 @@ More information about STM32F412ZG can be found here:
 Supported Features
 ==================
 
-The Zephyr stm32f412g_disco board configuration supports the following hardware features:
+The Zephyr ``stm32f412g_disco`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

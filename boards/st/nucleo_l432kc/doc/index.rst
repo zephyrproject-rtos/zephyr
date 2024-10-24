@@ -89,7 +89,7 @@ More information about STM32L432KC can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_l432kc board configuration supports the following hardware features:
+The Zephyr ``nucleo_l432kc`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

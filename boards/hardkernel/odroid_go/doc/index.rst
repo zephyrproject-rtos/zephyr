@@ -51,7 +51,7 @@ External Connector
 Supported Features
 ==================
 
-The Zephyr odroid_go board configuration supports the following hardware
+The Zephyr ``odroid_go`` board target supports the following hardware
 features:
 
 +------------+------------+-------------------------------------+
