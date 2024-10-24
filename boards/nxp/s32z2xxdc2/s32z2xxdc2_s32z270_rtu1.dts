@@ -17,6 +17,7 @@
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,canbus = &flexcan0;
+		zephyr,flash-controller = &s26hs512t;
 	};
 
 	aliases {

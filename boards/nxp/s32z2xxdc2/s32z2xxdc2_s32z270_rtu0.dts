@@ -15,6 +15,7 @@
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,canbus = &canxl0;
+		zephyr,flash-controller = &s26hs512t;
 	};
 
 	aliases {
