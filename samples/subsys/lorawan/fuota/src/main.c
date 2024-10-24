@@ -42,6 +42,16 @@ static void datarate_changed(enum lorawan_datarate dr)
 	LOG_INF("New Datarate: DR %d, Max Payload %d", dr, max_size);
 }
 
+int handle_descriptor(uint32_t descriptor)
+{
+	/*
+	 * In an actual application the firmware may be able to handle
+	 * the descriptor field
+	 */
+
+	return 0;
+}
+
 static void fuota_finished(void)
 {
 	LOG_INF("FUOTA finished. Reset device to apply firmware upgrade.");
@@ -114,6 +124,8 @@ int main(void)
 	 * in that case.
 	 */
 	lorawan_frag_transport_run(fuota_finished);
+
+	lorawan_frag_transport_register_handle_descriptor_callback(handle_descriptor);
 
 	/*
 	 * Regular uplinks are required to open downlink slots in class A for
