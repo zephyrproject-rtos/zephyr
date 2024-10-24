@@ -29,3 +29,22 @@ properties:
     type: int
     description: |
       Define the DMA command queue buffer size in (4-byte) words
+
+  ambiq,rx-config:
+    type: array
+    default: [2, 0, 0, 0, 1, 0, 0, 0, 0, 0]
+    description: |
+      Array of tuples to configure the rx parameters
+      default =
+      <
+        .ui8DQSturn,
+        .bRxHI,
+        .bTaForth,
+        .bHyperIO,
+        .ui8RxSmp,
+        .bRBX,
+        .bWBX,
+        .bSCLKRxHalt,
+        .bRxCapEXT,
+        .ui8Sfturn,
+      >

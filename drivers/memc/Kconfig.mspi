@@ -16,4 +16,11 @@ config MEMC_MSPI_APS6404L
 	select MEMC_MSPI
 	select MSPI_AMBIQ_AP3 if SOC_SERIES_APOLLO3X
 
+config MEMC_MSPI_APS256N
+	bool "MSPI AP Memory APS256N pSRAM driver"
+	default y
+	depends on DT_HAS_MSPI_APS256N_ENABLED
+	select MEMC_MSPI
+	select MSPI_AMBIQ_AP4 if SOC_SERIES_APOLLO4X
+
 endmenu

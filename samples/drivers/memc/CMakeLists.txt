@@ -15,4 +15,9 @@ if(CONFIG_MEMC_MSPI_APS6404L)
   target_include_directories(app PRIVATE ${ZEPHYR_BASE}/drivers/mspi)
 endif()
 
+if(CONFIG_MEMC_MSPI_APS256N)
+  target_include_directories(app PRIVATE ${ZEPHYR_BASE}/include/zephyr/drivers)
+  target_include_directories(app PRIVATE ${ZEPHYR_BASE}/drivers/mspi)
+endif()
+
 target_sources(app PRIVATE src/main.c)

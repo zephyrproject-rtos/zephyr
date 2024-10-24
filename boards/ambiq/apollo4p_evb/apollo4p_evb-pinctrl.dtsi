@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023 Antmicro <www.antmicro.com>
+ * Copyright (c) 2024, Ambiq Micro Inc. <www.ambiq.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -131,12 +132,28 @@
 		group1 {
 			pinmux = <MSPI0_0_P64>,
 				 <MSPI0_1_P65>,
-				 <MSPI0_8_P72>;
+				 <MSPI0_2_P66>,
+				 <MSPI0_3_P67>,
+				 <MSPI0_4_P68>,
+				 <MSPI0_5_P69>,
+				 <MSPI0_6_P70>,
+				 <MSPI0_7_P71>,
+				 <MSPI0_8_P72>,
+				 <MSPI0_9_P73>,
+				 <MSPI1_0_P37>,
+				 <MSPI1_1_P38>,
+				 <MSPI1_2_P39>,
+				 <MSPI1_3_P40>,
+				 <MSPI1_4_P41>,
+				 <MSPI1_5_P42>,
+				 <MSPI1_6_P43>,
+				 <MSPI1_7_P44>;
+			drive-strength = "1.0";
 		};
 		group2 {
 			pinmux = <NCE57_P57>;
-			drive-push-pull;
 			drive-strength = "0.5";
+			ambiq,iom-num = <1>;
 			ambiq,iom-nce-module = <32>;
 		};
 	};
@@ -144,12 +161,20 @@
 		group1 {
 			pinmux = <MSPI1_0_P37>,
 				 <MSPI1_1_P38>,
+				 <MSPI1_2_P39>,
+				 <MSPI1_3_P40>,
+				 <MSPI1_4_P41>,
+				 <MSPI1_5_P42>,
+				 <MSPI1_6_P43>,
+				 <MSPI1_7_P44>,
 				 <MSPI1_8_P45>;
+			drive-strength = "1.0";
 		};
 		group2 {
-			pinmux = <NCE56_P56>;
+			pinmux = <NCE89_P89>;
 			drive-push-pull;
 			drive-strength = "0.5";
+			ambiq,iom-num = <1>;
 			ambiq,iom-nce-module = <34>;
 		};
 	};

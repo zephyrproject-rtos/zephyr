@@ -1,0 +1,96 @@
+/*
+ * Copyright (c) 2024, Ambiq Micro Inc. <www.ambiq.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		mspi0 = &mspi1;
+	};
+};
+
+&gpio64_95 {
+	status = "okay";
+};
+
+&gpio32_63 {
+	status = "okay";
+};
+
+&mspi1 {
+
+	pinctrl-0 = <&mspi1_default>;
+	pinctrl-1 = <&mspi1_sleep>;
+	pinctrl-2 = <&mspi1_flash>;
+	pinctrl-names = "default","sleep","flash";
+	status = "okay";
+
+	ce-gpios = <&gpio64_95 25 GPIO_ACTIVE_LOW>;
+
+	cmdq-buffer-location = ".mspi_buff";
+	cmdq-buffer-size = <256>;
+
+	atxp032: atxp032@0 {
+		compatible = "ambiq,mspi-device", "mspi-atxp032";
+		size = <DT_SIZE_M(32)>;
+		reg = <0>;
+		status = "okay";
+		mspi-max-frequency = <48000000>;
+		mspi-io-mode = "MSPI_IO_MODE_OCTAL";
+		mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
+		mspi-hardware-ce-num = <0>;
+		read-command = <0x0B>;
+		write-command = <0x02>;
+		command-length = "INSTR_1_BYTE";
+		address-length = "ADDR_4_BYTE";
+		rx-dummy = <8>;
+		tx-dummy = <0>;
+		xip-config = <1 0 0 0>;
+		ce-break-config = <0 0>;
+		ambiq,timing-config-mask = <3>;
+		ambiq,timing-config = <0 8 0 0 0 0 0 0>;
+	};
+};
+
+&pinctrl {
+	mspi1_sleep: mspi1_sleep{
+		group1 {
+			pinmux = <GPIO_P37>,
+				 <GPIO_P38>,
+				 <GPIO_P39>,
+				 <GPIO_P40>,
+				 <GPIO_P41>,
+				 <GPIO_P42>,
+				 <GPIO_P43>,
+				 <GPIO_P44>,
+				 <GPIO_P45>,
+				 <GPIO_P89>;
+		};
+	};
+	mspi1_flash: mspi1_flash{
+		group1 {
+			pinmux = <MSPI1_0_P37>,
+				 <MSPI1_1_P38>,
+				 <MSPI1_2_P39>,
+				 <MSPI1_3_P40>,
+				 <MSPI1_4_P41>,
+				 <MSPI1_5_P42>,
+				 <MSPI1_6_P43>,
+				 <MSPI1_7_P44>;
+			drive-strength = "1.0";
+		};
+		group2 {
+			pinmux = <MSPI1_8_P45>;
+			drive-strength = "1.0";
+			ambiq,iom-nce-module = <0>;
+			ambiq,iom-num = <2>;
+		};
+		group3 {
+			pinmux = <NCE89_P89>;
+			drive-strength = "0.5";
+			ambiq,iom-num = <1>;
+			ambiq,iom-nce-module = <34>;
+		};
+	};
+};

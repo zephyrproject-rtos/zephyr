@@ -64,7 +64,7 @@
 };
 
 &adc0 {
-compatible = "ambiq,adc";
+	compatible = "ambiq,adc";
 	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
 	status = "okay";
@@ -99,24 +99,6 @@ compatible = "ambiq,adc";
 	pinctrl-names = "default";
 	cs-gpios = <&gpio0_31 11 GPIO_ACTIVE_LOW>;
 	clock-frequency = <1000000>;
-	status = "okay";
-};
-
-&mspi0 {
-	pinctrl-0 = <&mspi0_default>;
-	pinctrl-names = "default";
-	status = "okay";
-};
-
-&mspi1 {
-	pinctrl-0 = <&mspi1_default>;
-	pinctrl-names = "default";
-	status = "okay";
-};
-
-&mspi2 {
-	pinctrl-0 = <&mspi2_default>;
-	pinctrl-names = "default";
 	status = "okay";
 };
 

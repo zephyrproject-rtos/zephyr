@@ -1,0 +1,8 @@
+# Copyright (c) 2024, Ambiq Micro Inc. <www.ambiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: AP Memory APS256 pSRAM on MSPI bus
+
+compatible: "mspi-aps256n"
+
+include: [mspi-device.yaml, "jedec,jesd216.yaml"]
