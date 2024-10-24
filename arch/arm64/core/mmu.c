@@ -1285,9 +1285,22 @@ int arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 static int map_thread_stack(struct k_thread *thread,
 			    struct arm_mmu_ptables *ptables)
 {
-	return private_map(ptables, "thread_stack", thread->stack_info.start,
-			    thread->stack_info.start, thread->stack_info.size,
-			    MT_P_RW_U_RW | MT_NORMAL);
+	/* map the physical stack obj to the virtual stack object */
+	return private_map(ptables, "thread_stack",
+
+#ifdef CONFIG_ASLR
+			(uintptr_t)thread->stack_obj, (uintptr_t)thread->stack_info.va_addr,
+
+			/*
+			 * additional MMU_PAGE_SIZE as we map from the stack_ptr
+			 * instead of stack_info.start
+			 */
+			CONFIG_MMU_PAGE_SIZE +
+#else
+			(uintptr_t)thread->stack_info.start, (uintptr_t)thread->stack_info.start,
+#endif
+			thread->stack_info.size,
+			MT_P_RW_U_RW | MT_NORMAL);
 }
 
 int arch_mem_domain_thread_add(struct k_thread *thread)
