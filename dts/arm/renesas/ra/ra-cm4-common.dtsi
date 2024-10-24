@@ -8,6 +8,7 @@
 #include <freq.h>
 #include <arm/armv7-m.dtsi>
 #include <zephyr/dt-bindings/interrupt-controller/renesas-ra-icu.h>
+#include <zephyr/dt-bindings/clock/ra_clock.h>
 
 / {
 	cpus {
@@ -21,36 +22,36 @@
 		};
 	};
 
-	clocks {
-		mosc: mosc {
-			compatible = "fixed-clock";
+	clocks: clocks {
+		xtal: clock-main-osc {
+			compatible = "renesas,ra-cgc-external-clock";
 			clock-frequency = <1200000>;
 			status = "disabled";
 			#clock-cells = <0>;
 		};
 
-		sosc: sosc {
-			compatible = "fixed-clock";
+		subclk: clock-subclk {
+			compatible = "renesas,ra-cgc-subclk";
 			clock-frequency = <32768>;
 			status = "disabled";
 			#clock-cells = <0>;
 		};
 
-		hoco: hoco {
+		hoco: clock-hoco {
 			compatible = "fixed-clock";
 			clock-frequency = <24000000>;
 			status = "okay";
 			#clock-cells = <0>;
 		};
 
-		moco: moco {
+		moco: clock-moco {
 			compatible = "fixed-clock";
 			clock-frequency = <8000000>;
 			status = "okay";
 			#clock-cells = <0>;
 		};
 
-		loco: loco {
+		loco: clock-loco {
 			compatible = "fixed-clock";
 			clock-frequency = <32768>;
 			status = "okay";
@@ -58,12 +59,14 @@
 		};
 
 		pll: pll {
-			compatible = "fixed-factor-clock";
-			status = "disabled";
-			clocks = <&mosc>;
-			clock-div = <2>;
-			clock-mult = <8>;
+			compatible = "renesas,ra-cgc-pll";
 			#clock-cells = <0>;
+
+			/* PLL */
+			clocks = <&xtal>;
+			div = <2>;
+			mul = <8 0>;
+			status = "disabled";
 		};
 	};
 
@@ -82,19 +85,64 @@
 			#interrupt-cells = <3>;
 		};
 
-		cgc: cgc@4001e000 {
-			compatible = "renesas,ra-clock-generation-circuit";
-			reg = <0x4001e000 0x40 0x40047000 0x10>;
-			reg-names = "system", "mstp";
-			#clock-cells = <1>;
+		pclkblock: pclkblock@4001e01c {
+			compatible = "renesas,ra-cgc-pclk-block";
+			reg = <0x4001e01c 4>, <0x40047000 4>, <0x40047004 4>,
+			      <0x40047008 4>;
+			reg-names = "MSTPA", "MSTPB","MSTPC",
+				    "MSTPD";
+			compatible = "renesas,ra-cgc-pclk-block";
+			#clock-cells = <0>;
+			clocks = <&moco>;
+			status = "okay";
 
-			clock-source = <&moco>;
-			iclk-div = <16>;
-			pclka-div = <16>;
-			pclkb-div = <16>;
-			pclkc-div = <16>;
-			pclkd-div = <16>;
-			fclk-div = <16>;
+			iclk: iclk {
+				compatible = "renesas,ra-cgc-pclk";
+				div = <16>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			pclka: pclka {
+				compatible = "renesas,ra-cgc-pclk";
+				div = <16>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			pclkb: pclkb {
+				compatible = "renesas,ra-cgc-pclk";
+				div = <16>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			pclkc: pclkc {
+				compatible = "renesas,ra-cgc-pclk";
+				div = <1>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			pclkd: pclkd {
+				compatible = "renesas,ra-cgc-pclk";
+				div = <16>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			fclk: fclk {
+				compatible = "renesas,ra-cgc-pclk";
+				div = <16>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			clkout: clkout {
+				compatible = "renesas,ra-cgc-pclk";
+				#clock-cells = <2>;
+				status = "disabled";
+			};
 		};
 
 		fcu: flash-controller@4001c000 {
@@ -240,7 +288,7 @@
 		};
 
 		pinctrl: pinctrl@40040800 {
-			compatible = "renesas,ra-pinctrl";
+			compatible = "renesas,ra-pinctrl-pfs";
 			reg = <0x40040800 0x500 0x40040d03 0x1>;
 			reg-names = "pfs", "pmisc_pwpr";
 			status = "okay";
@@ -256,7 +304,7 @@
 				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_SCI0_AM>,
 				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_SCI0_RXI_OR_ERI>;
 			interrupt-names = "rxi", "txi", "tei", "eri", "am", "rxi-or-eri";
-			clocks = <&cgc RA_CLOCK_SCI(0)>;
+			clocks = <&pclka MSTPB 31>;
 			#clock-cells = <1>;
 			status = "disabled";
 			uart {
@@ -274,7 +322,7 @@
 				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_SCI1_ERI>,
 				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_SCI1_AM>;
 			interrupt-names = "rxi", "txi", "tei", "eri", "am";
-			clocks = <&cgc RA_CLOCK_SCI(1)>;
+			clocks = <&pclka MSTPB 30>;
 			#clock-cells = <1>;
 			status = "disabled";
 			uart {
@@ -292,7 +340,7 @@
 				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_SCI9_ERI>,
 				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_SCI9_AM>;
 			interrupt-names = "rxi", "txi", "tei", "eri", "am";
-			clocks = <&cgc RA_CLOCK_SCI(9)>;
+			clocks = <&pclka MSTPB 22>;
 			#clock-cells = <1>;
 			status = "disabled";
 			uart {
