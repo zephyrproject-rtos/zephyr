@@ -206,9 +206,23 @@ sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/build_helpers"))
 from twisterlib.environment import add_parse_arguments, parse_arguments
 from twisterlib.twister_main import main
 
+
+def python_version_guard():
+    min_ver = (3, 10)
+    if sys.version_info < min_ver:
+        raise EnvironmentError(
+          "Obsolete Python version!"
+          f" Currently, Twister requires at least Python {'.'.join(min_ver)}."
+          f" You are trying to use Python {sys.version}."
+          " Install a newer Python version and retry."
+        )
+
+
 if __name__ == "__main__":
     ret = 0
     try:
+        python_version_guard()
+
         parser = add_parse_arguments()
         options = parse_arguments(parser, sys.argv[1:])
         default_options = parse_arguments(parser, [], on_init=False)
