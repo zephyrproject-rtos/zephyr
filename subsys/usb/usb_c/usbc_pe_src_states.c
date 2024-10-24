@@ -154,9 +154,12 @@ void pe_src_discovery_run(void *obj)
 	 *	1) The SourceCapabilityTimer times out
 	 *	2) And CapsCounter ≤ nCapsCount
 	 */
-	if (usbc_timer_expired(&pe->pd_t_typec_send_source_cap)
-			&& pe->caps_counter <= PD_N_CAPS_COUNT) {
-		pe_set_state(dev, PE_SRC_SEND_CAPABILITIES);
+	if (usbc_timer_expired(&pe->pd_t_typec_send_source_cap)) {
+		if (pe->caps_counter <= PD_N_CAPS_COUNT) {
+			pe_set_state(dev, PE_SRC_SEND_CAPABILITIES);
+		} else {
+			pe_set_state(dev, PE_SRC_DISABLED);
+		}
 	}
 }
 
@@ -481,6 +484,19 @@ void pe_src_ready_exit(void *obj)
 	if (pe_dpm_initiated_ams(dev)) {
 		prl_first_msg_notificaiton(dev);
 	}
+}
+
+/**
+ * @brief 8.3.3.2.7 PE_SRC_Disabled State
+ */
+void pe_src_disabled_entry(void *obj)
+{
+	LOG_INF("PE_SRC_Disabled");
+
+	/*
+	 * Unresponsive to USB Power Delivery messaging, but not to Hard Reset
+	 * Signaling. See pe_got_hard_reset
+	 */
 }
 
 /**

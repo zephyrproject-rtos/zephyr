@@ -58,6 +58,11 @@ void pe_src_ready_run(void *obj);
 void pe_src_ready_exit(void *obj);
 
 /**
+ * @brief PE_SRC_Disabled State
+ */
+void pe_src_disabled_entry(void *obj);
+
+/**
  * @brief PE_SRC_Transition_To_Default State
  */
 void pe_src_transition_to_default_entry(void *obj);
