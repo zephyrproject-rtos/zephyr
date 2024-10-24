@@ -28,6 +28,9 @@
 #define ZVFS_MODE_IFLNK  0120000
 #define ZVFS_MODE_IFSOCK 0140000
 
+/* Other mode bits not related to files */
+#define ZVFS_MODE_CLOSE2 0000001
+
 #define ZVFS_POLLIN   BIT(0)
 #define ZVFS_POLLPRI  BIT(1)
 #define ZVFS_POLLOUT  BIT(2)
@@ -64,7 +67,10 @@ struct fd_op_vtable {
 		ssize_t (*write)(void *obj, const void *buf, size_t sz);
 		ssize_t (*write_offs)(void *obj, const void *buf, size_t sz, size_t offset);
 	};
-	int (*close)(void *obj);
+	union {
+		int (*close)(void *obj);
+		int (*close2)(void *obj, int fd);
+	};
 	int (*ioctl)(void *obj, unsigned int request, va_list args);
 };
 
