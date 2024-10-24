@@ -3508,9 +3508,9 @@ Nuvoton NPCM Platforms:
 Raspberry Pi Pico Platforms:
   status: maintained
   maintainers:
-    - yonsch
-  collaborators:
     - soburi
+  collaborators:
+    - yonsch
   files:
     - boards/raspberrypi/
     - boards/adafruit/kb2040/
@@ -4806,6 +4806,8 @@ West:
 "West project: hal_rpi_pico":
   status: maintained
   maintainers:
+    - soburi
+  collaborators:
     - yonsch
   files:
     - modules/hal_rpi_pico/
