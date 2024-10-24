@@ -40,8 +40,8 @@ Execute_AC_8_I 24_1_1 24_1_1
 Execute_AC_8_I 24_2_1 24_2_1
 Execute_AC_8_I 32_1_1 32_1_1
 Execute_AC_8_I 32_2_1 32_2_1
-# Execute_AC_8_I 441_1_1 441_1_1 # ASSERTION FAIL [iso_interval_us >= cig->c_sdu_interval]
-# Execute_AC_8_I 441_2_1 441_2_1 # ASSERTION FAIL [iso_interval_us >= cig->c_sdu_interval]
+Execute_AC_8_I 441_1_1 441_1_1
+Execute_AC_8_I 441_2_1 441_2_1
 Execute_AC_8_I 48_1_1 48_1_1
 Execute_AC_8_I 48_2_1 48_2_1
 Execute_AC_8_I 48_3_1 48_3_1
