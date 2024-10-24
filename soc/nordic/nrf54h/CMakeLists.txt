@@ -8,6 +8,7 @@ if(CONFIG_ARM)
   endif()
 endif()
 
+zephyr_library_sources_ifdef(SOC_NRF54H20_GPD nrf_gpd.c)
 zephyr_library_sources_ifdef(CONFIG_PM_S2RAM pm_s2ram.c)
 
 zephyr_include_directories(.)
@@ -15,3 +16,5 @@ zephyr_include_directories(.)
 # Ensure that image size aligns with 16 bytes so that MRAMC finalizes all writes
 # for the image correctly
 zephyr_linker_sources(SECTIONS SORT_KEY zzz_place_align_at_end align.ld)
+
+add_subdirectory(gpd)

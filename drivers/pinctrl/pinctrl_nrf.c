@@ -7,6 +7,9 @@
 #include <zephyr/drivers/pinctrl.h>
 
 #include <hal/nrf_gpio.h>
+#ifdef CONFIG_SOC_NRF54H20_GPD
+#include <nrf/gpd.h>
+#endif
 
 BUILD_ASSERT(((NRF_PULL_NONE == NRF_GPIO_PIN_NOPULL) &&
 	      (NRF_PULL_DOWN == NRF_GPIO_PIN_PULLDOWN) &&
@@ -367,6 +370,24 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 #if NRF_GPIO_HAS_CLOCKPIN
 			nrf_gpio_pin_clock_set(pin, NRF_GET_CLOCKPIN_ENABLE(pins[i]));
 #endif
+#ifdef CONFIG_SOC_NRF54H20_GPD
+			/* if a pin (peripheral) belongs to FAST_ACTIVE1, keep SLOW_ACTIVE alive */
+			if (NRF_GET_GPD_FAST_ACTIVE1(pins[i]) == 1U) {
+				int ret;
+
+				if (NRF_GET_LP(pins[i]) == NRF_LP_ENABLE) {
+					ret = nrf_gpd_release(NRF_GPD_SLOW_ACTIVE);
+					if (ret < 0) {
+						return ret;
+					}
+				} else {
+					ret = nrf_gpd_request(NRF_GPD_SLOW_ACTIVE);
+					if (ret < 0) {
+						return ret;
+					}
+				}
+			}
+#endif /* CONFIG_SOC_NRF54H20_GPD */
 		}
 	}
 

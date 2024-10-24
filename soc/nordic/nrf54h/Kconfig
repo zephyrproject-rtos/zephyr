@@ -75,3 +75,5 @@ config SOC_NRF54H20_CPUFLPR
 
 config SOC_NRF54H20_ENGB_CPUFLPR
 	depends on RISCV_CORE_NORDIC_VPR
+
+rsource "gpd/Kconfig"
