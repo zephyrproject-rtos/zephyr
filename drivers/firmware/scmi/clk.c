@@ -22,8 +22,12 @@ struct scmi_clock_rate_set_reply {
 	uint32_t rate[2];
 };
 
-int scmi_clock_rate_get(struct scmi_protocol *proto,
-			uint32_t clk_id, uint32_t *rate)
+struct scmi_clock_parent_get_reply {
+	int32_t status;
+	uint32_t parent_id;
+};
+
+int scmi_clock_rate_get(struct scmi_protocol *proto, uint32_t clk_id, uint32_t *rate)
 {
 	struct scmi_message msg, reply;
 	int ret;
@@ -38,8 +42,7 @@ int scmi_clock_rate_get(struct scmi_protocol *proto,
 		return -EINVAL;
 	}
 
-	msg.hdr = SCMI_MESSAGE_HDR_MAKE(SCMI_CLK_MSG_CLOCK_RATE_GET,
-					SCMI_COMMAND, proto->id, 0x0);
+	msg.hdr = SCMI_MESSAGE_HDR_MAKE(SCMI_CLK_MSG_CLOCK_RATE_GET, SCMI_COMMAND, proto->id, 0x0);
 	msg.len = sizeof(clk_id);
 	msg.content = &clk_id;
 
@@ -61,8 +64,114 @@ int scmi_clock_rate_get(struct scmi_protocol *proto,
 	return 0;
 }
 
-int scmi_clock_config_set(struct scmi_protocol *proto,
-			  struct scmi_clock_config *cfg)
+int scmi_clock_rate_set(struct scmi_protocol *proto, struct scmi_clock_rate_config *cfg)
+{
+	struct scmi_message msg, reply;
+	int status, ret;
+
+	/* sanity checks */
+	if (!proto || !cfg) {
+		return -EINVAL;
+	}
+
+	if (proto->id != SCMI_PROTOCOL_CLOCK) {
+		return -EINVAL;
+	}
+
+	msg.hdr = SCMI_MESSAGE_HDR_MAKE(SCMI_CLK_MSG_CLOCK_RATE_SET, SCMI_COMMAND, proto->id, 0x0);
+	msg.len = sizeof(*cfg);
+	msg.content = cfg;
+
+	reply.hdr = msg.hdr;
+	reply.len = sizeof(status);
+	reply.content = &status;
+
+	ret = scmi_send_message(proto, &msg, &reply);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (status != SCMI_SUCCESS) {
+		return scmi_status_to_errno(status);
+	}
+
+	return 0;
+}
+
+int scmi_clock_parent_get(struct scmi_protocol *proto, uint32_t clk_id, uint32_t *parent_id)
+{
+	struct scmi_message msg, reply;
+	int ret;
+	struct scmi_clock_parent_get_reply reply_buffer;
+
+	/* sanity checks */
+	if (!proto || !parent_id) {
+		return -EINVAL;
+	}
+
+	if (proto->id != SCMI_PROTOCOL_CLOCK) {
+		return -EINVAL;
+	}
+
+	msg.hdr =
+		SCMI_MESSAGE_HDR_MAKE(SCMI_CLK_MSG_CLOCK_PARENT_GET, SCMI_COMMAND, proto->id, 0x0);
+	msg.len = sizeof(clk_id);
+	msg.content = &clk_id;
+
+	reply.hdr = msg.hdr;
+	reply.len = sizeof(reply_buffer);
+	reply.content = &reply_buffer;
+
+	ret = scmi_send_message(proto, &msg, &reply);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (reply_buffer.status != SCMI_SUCCESS) {
+		return scmi_status_to_errno(reply_buffer.status);
+	}
+
+	*parent_id = reply_buffer.parent_id;
+
+	return 0;
+}
+
+int scmi_clock_parent_set(struct scmi_protocol *proto, struct scmi_clock_parent_config *cfg)
+{
+	struct scmi_message msg, reply;
+	int status, ret;
+
+	/* sanity checks */
+	if (!proto || !cfg) {
+		return -EINVAL;
+	}
+
+	if (proto->id != SCMI_PROTOCOL_CLOCK) {
+		return -EINVAL;
+	}
+
+	msg.hdr =
+		SCMI_MESSAGE_HDR_MAKE(SCMI_CLK_MSG_CLOCK_PARENT_SET, SCMI_COMMAND, proto->id, 0x0);
+	msg.len = sizeof(*cfg);
+	msg.content = cfg;
+
+	reply.hdr = msg.hdr;
+	reply.len = sizeof(status);
+	reply.content = &status;
+
+	ret = scmi_send_message(proto, &msg, &reply);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (status != SCMI_SUCCESS) {
+		return scmi_status_to_errno(status);
+	}
+
+	return 0;
+}
+
+int scmi_clock_config_set(struct scmi_protocol *proto, struct scmi_clock_config *cfg)
 {
 	struct scmi_message msg, reply;
 	int status, ret;
@@ -91,8 +200,8 @@ int scmi_clock_config_set(struct scmi_protocol *proto,
 		return -EINVAL;
 	}
 
-	msg.hdr = SCMI_MESSAGE_HDR_MAKE(SCMI_CLK_MSG_CLOCK_CONFIG_SET,
-					SCMI_COMMAND, proto->id, 0x0);
+	msg.hdr =
+		SCMI_MESSAGE_HDR_MAKE(SCMI_CLK_MSG_CLOCK_CONFIG_SET, SCMI_COMMAND, proto->id, 0x0);
 	msg.len = sizeof(*cfg);
 	msg.content = cfg;
 
@@ -127,8 +236,8 @@ int scmi_clock_protocol_attributes(struct scmi_protocol *proto, uint32_t *attrib
 		return -EINVAL;
 	}
 
-	msg.hdr = SCMI_MESSAGE_HDR_MAKE(SCMI_CLK_MSG_PROTOCOL_ATTRIBUTES,
-					SCMI_COMMAND, proto->id, 0x0);
+	msg.hdr = SCMI_MESSAGE_HDR_MAKE(SCMI_CLK_MSG_PROTOCOL_ATTRIBUTES, SCMI_COMMAND, proto->id,
+					0x0);
 	/* command has no parameters */
 	msg.len = 0x0;
 	msg.content = NULL;
