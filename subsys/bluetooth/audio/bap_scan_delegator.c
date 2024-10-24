@@ -24,6 +24,7 @@
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/l2cap.h>
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/uuid.h>
@@ -67,7 +68,7 @@ struct bass_recv_state_internal {
 	bool active;
 	uint8_t index;
 	struct bt_bap_scan_delegator_recv_state state;
-	uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE];
+	uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE];
 	struct bt_le_per_adv_sync *pa_sync;
 	/** Requested BIS sync bitfield for each subgroup */
 	uint32_t requested_bis_sync[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS];

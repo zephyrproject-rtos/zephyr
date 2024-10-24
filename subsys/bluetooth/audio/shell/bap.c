@@ -3528,7 +3528,7 @@ static int cmd_create_sink_by_name(const struct shell *sh, size_t argc, char *ar
 static int cmd_sync_broadcast(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct bt_bap_stream *streams[ARRAY_SIZE(broadcast_sink_streams)];
-	uint8_t bcode[BT_AUDIO_BROADCAST_CODE_SIZE] = {0};
+	uint8_t bcode[BT_ISO_BROADCAST_CODE_SIZE] = {0};
 	bool bcode_set = false;
 	uint32_t bis_bitfield;
 	size_t stream_cnt;

@@ -186,9 +186,9 @@ static void cap_initiator_broadcast_to_bap_broadcast_param(
 	bap_param->encryption = cap_param->encryption;
 	if (bap_param->encryption) {
 		memcpy(bap_param->broadcast_code, cap_param->broadcast_code,
-		       BT_AUDIO_BROADCAST_CODE_SIZE);
+		       BT_ISO_BROADCAST_CODE_SIZE);
 	} else {
-		memset(bap_param->broadcast_code, 0, BT_AUDIO_BROADCAST_CODE_SIZE);
+		memset(bap_param->broadcast_code, 0, BT_ISO_BROADCAST_CODE_SIZE);
 	}
 
 	for (size_t i = 0U; i < bap_param->params_count; i++) {
