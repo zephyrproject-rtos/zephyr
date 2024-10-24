@@ -330,6 +330,9 @@ ZTEST(adsp_ssp, test_adsp_ssp_transfer)
 		return;
 	}
 
+	k_msleep(50);
+
+	TC_PRINT("waiting for xfer_sem\n");
 
 	if (k_sem_take(&xfer_sem, K_MSEC(1000)) != 0) {
 		TC_PRINT("timed out waiting for xfers\n");
