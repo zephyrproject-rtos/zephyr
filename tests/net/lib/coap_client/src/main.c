@@ -77,7 +77,7 @@ static ssize_t z_impl_zsock_recvfrom_custom_fake(int sock, void *buf, size_t max
 
 	memcpy(buf, ack_data, sizeof(ack_data));
 
-	clear_socket_events();
+	clear_socket_events(ZSOCK_POLLIN);
 
 	return sizeof(ack_data);
 }
@@ -205,7 +205,7 @@ static ssize_t z_impl_zsock_recvfrom_custom_fake_response(int sock, void *buf, s
 
 	memcpy(buf, ack_data, sizeof(ack_data));
 
-	clear_socket_events();
+	clear_socket_events(ZSOCK_POLLIN);
 
 	return sizeof(ack_data);
 }
@@ -247,7 +247,7 @@ static ssize_t z_impl_zsock_recvfrom_custom_fake_unmatching(int sock, void *buf,
 
 	memcpy(buf, ack_data, sizeof(ack_data));
 
-	clear_socket_events();
+	clear_socket_events(ZSOCK_POLLIN);
 
 	return sizeof(ack_data);
 }
@@ -273,7 +273,7 @@ static ssize_t z_impl_zsock_recvfrom_custom_fake_echo(int sock, void *buf, size_
 	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_response;
 	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_echo;
 
-	clear_socket_events();
+	clear_socket_events(ZSOCK_POLLIN);
 
 	return sizeof(ack_data);
 }
@@ -299,7 +299,7 @@ static ssize_t z_impl_zsock_recvfrom_custom_fake_echo_next_req(int sock, void *b
 	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_response;
 	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_echo_next_req;
 
-	clear_socket_events();
+	clear_socket_events(ZSOCK_POLLIN);
 
 	return sizeof(ack_data);
 }
@@ -335,6 +335,9 @@ void coap_callback(int16_t code, size_t offset, const uint8_t *payload, size_t l
 {
 	LOG_INF("CoAP response callback, %d", code);
 	last_response_code = code;
+	if (user_data) {
+		k_sem_give((struct k_sem *) user_data);
+	}
 }
 
 ZTEST_SUITE(coap_client, NULL, suite_setup, test_setup, NULL, NULL);
@@ -392,7 +395,7 @@ ZTEST(coap_client, test_resend_request)
 	ret = coap_client_req(&client, 0, &address, &client_request, NULL);
 	zassert_true(ret >= 0, "Sending request failed, %d", ret);
 	k_sleep(K_MSEC(MORE_THAN_ACK_TIMEOUT_MS));
-	set_socket_events(ZSOCK_POLLIN);
+	set_socket_events(ZSOCK_POLLIN | ZSOCK_POLLOUT);
 
 	k_sleep(K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS));
 	zassert_equal(last_response_code, COAP_RESPONSE_CODE_OK, "Unexpected response");
@@ -547,6 +550,7 @@ ZTEST(coap_client, test_no_response)
 	client_request.len = strlen(short_payload);
 
 	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_no_reply;
+	set_socket_events(ZSOCK_POLLOUT);
 
 	k_sleep(K_MSEC(1));
 
@@ -592,30 +596,35 @@ ZTEST(coap_client, test_multiple_requests)
 {
 	int ret = 0;
 	int retry = MORE_THAN_EXCHANGE_LIFETIME_MS;
+	struct k_sem sem1, sem2;
 
 	struct sockaddr address = {0};
-	struct coap_client_request client_request = {
+	struct coap_client_request req1 = {
 		.method = COAP_METHOD_GET,
 		.confirmable = true,
 		.path = test_path,
 		.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN,
 		.cb = coap_callback,
-		.payload = NULL,
-		.len = 0
+		.payload = short_payload,
+		.len = strlen(short_payload),
+		.user_data = &sem1
 	};
+	struct coap_client_request req2 = req1;
 
-	client_request.payload = short_payload;
-	client_request.len = strlen(short_payload);
+	req2.user_data = &sem2;
+
+	k_sem_init(&sem1, 0, 1);
+	k_sem_init(&sem2, 0, 1);
 
 	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_no_reply;
 
 	k_sleep(K_MSEC(1));
 
 	LOG_INF("Send request");
-	ret = coap_client_req(&client, 0, &address, &client_request, NULL);
+	ret = coap_client_req(&client, 0, &address, &req1, NULL);
 	zassert_true(ret >= 0, "Sending request failed, %d", ret);
 
-	ret = coap_client_req(&client, 0, &address, &client_request, NULL);
+	ret = coap_client_req(&client, 0, &address, &req2, NULL);
 	zassert_true(ret >= 0, "Sending request failed, %d", ret);
 
 	set_socket_events(ZSOCK_POLLIN);
@@ -625,8 +634,10 @@ ZTEST(coap_client, test_multiple_requests)
 	}
 	zassert_equal(last_response_code, COAP_RESPONSE_CODE_OK, "Unexpected response");
 
+	last_response_code = 0;
 	set_socket_events(ZSOCK_POLLIN);
-	k_sleep(K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS));
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_ok(k_sem_take(&sem2, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
 	zassert_equal(last_response_code, COAP_RESPONSE_CODE_OK, "Unexpected response");
 }
 
@@ -653,6 +664,7 @@ ZTEST(coap_client, test_unmatching_tokens)
 	client_request.len = strlen(short_payload);
 
 	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_unmatching;
+	set_socket_events(ZSOCK_POLLIN | ZSOCK_POLLOUT);
 
 	k_sleep(K_MSEC(1));
 
@@ -662,4 +674,58 @@ ZTEST(coap_client, test_unmatching_tokens)
 
 	k_sleep(K_MSEC(MORE_THAN_LONG_EXCHANGE_LIFETIME_MS));
 	zassert_equal(last_response_code, -ETIMEDOUT, "Unexpected response");
+}
+
+ZTEST(coap_client, test_multiple_clients)
+{
+	int ret;
+	int retry = MORE_THAN_EXCHANGE_LIFETIME_MS;
+	static struct coap_client client2 = {
+		.fd = 2,
+	};
+	struct k_sem sem1, sem2;
+	struct sockaddr address = {0};
+	struct coap_client_request req1 = {
+		.method = COAP_METHOD_GET,
+		.confirmable = true,
+		.path = test_path,
+		.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN,
+		.cb = coap_callback,
+		.payload = short_payload,
+		.len = strlen(short_payload),
+		.user_data = &sem1
+	};
+	struct coap_client_request req2 = req1;
+
+	req2.user_data = &sem2;
+	req2.payload = long_payload;
+	req2.len = strlen(long_payload);
+
+	zassert_ok(k_sem_init(&sem1, 0, 1));
+	zassert_ok(k_sem_init(&sem2, 0, 1));
+
+	zassert_ok(coap_client_init(&client2, NULL));
+
+	k_sleep(K_MSEC(1));
+
+	LOG_INF("Sending requests");
+	ret = coap_client_req(&client, 1, &address, &req1, NULL);
+	zassert_true(ret >= 0, "Sending request failed, %d", ret);
+
+	ret = coap_client_req(&client2, 2, &address, &req2, NULL);
+	zassert_true(ret >= 0, "Sending request failed, %d", ret);
+
+	while (last_response_code == 0 && retry > 0) {
+		retry--;
+		k_sleep(K_MSEC(1));
+	}
+	set_socket_events(ZSOCK_POLLIN);
+
+	k_sleep(K_SECONDS(1));
+
+	/* ensure we got both responses */
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_ok(k_sem_take(&sem2, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_OK, "Unexpected response");
+
 }
