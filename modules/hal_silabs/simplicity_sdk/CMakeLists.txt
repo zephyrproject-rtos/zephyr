@@ -114,11 +114,6 @@ zephyr_compile_definitions(
   ${SILABS_DEVICE_PART_NUMBER}
 )
 
-zephyr_compile_definitions_ifdef(CONFIG_SOC_GECKO_DEV_INIT
-  SL_CATALOG_POWER_MANAGER_PRESENT
-  SL_CATALOG_HFXO_MANAGER_PRESENT
-)
-
 zephyr_library_sources(
   ${DEVICE_DIR}/SiliconLabs/${SILABS_DEVICE_FAMILY}/Source/system_${CONFIG_SOC_SERIES}.c
   ${EMLIB_DIR}/src/em_system.c
@@ -131,6 +126,7 @@ zephyr_library_sources(
   ${SERVICE_DIR}/device_manager/src/sl_device_clock.c
   ${SERVICE_DIR}/device_manager/src/sl_device_gpio.c
   ${SERVICE_DIR}/device_manager/src/sl_device_peripheral.c
+  ${SERVICE_DIR}/memory_manager/profiler/src/sli_memory_profiler_stubs.c
 )
 
 if(NOT SILABS_DEVICE_FAMILY_NUMBER EQUAL "21")
@@ -156,18 +152,37 @@ zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_IADC         ${EMLIB_DIR}/src/em_i
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_BURTC        ${EMLIB_DIR}/src/em_burtc.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_CMU          ${EMLIB_DIR}/src/em_cmu.c)
 
+# Device Init
 if(CONFIG_SOC_GECKO_DEV_INIT)
-zephyr_library_sources_ifdef(CONFIG_DT_HAS_SILABS_SERIES2_DCDC_ENABLED
-  ${SERVICE_DIR}/device_init/src/sl_device_init_dcdc_s2.c
-)
+  zephyr_library_sources_ifdef(CONFIG_DT_HAS_SILABS_SERIES2_DCDC_ENABLED
+    ${SERVICE_DIR}/device_init/src/sl_device_init_dcdc_s2.c
+  )
 endif()
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_DEV_INIT
-  ${SERVICE_DIR}/power_manager/src/sl_power_manager.c
-  ${SERVICE_DIR}/power_manager/src/sl_power_manager_hal_s2.c
-  ${SERVICE_DIR}/hfxo_manager/src/sl_hfxo_manager.c
-  ${SERVICE_DIR}/hfxo_manager/src/sl_hfxo_manager_hal_s2.c
-  ${SERVICE_DIR}/memory_manager/profiler/src/sli_memory_profiler_stubs.c
-)
+
+# Power Manager
+if(CONFIG_SOC_GECKO_PM_BACKEND_PMGR)
+  zephyr_library_sources(
+    ${SERVICE_DIR}/power_manager/src/sl_power_manager.c
+    ${SERVICE_DIR}/power_manager/src/sl_power_manager_hal_s2.c
+  )
+  zephyr_compile_definitions(
+    SL_CATALOG_POWER_MANAGER_PRESENT
+  )
+  zephyr_compile_definitions_ifdef(CONFIG_SOC_GECKO_RTCC
+    SL_CATALOG_POWER_MANAGER_DEEPSLEEP_BLOCKING_HFXO_RESTORE_PRESENT
+  )
+endif()
+
+# HFXO Manager
+if(CONFIG_SOC_SILABS_HFXO_MANAGER)
+  zephyr_library_sources(
+    ${SERVICE_DIR}/hfxo_manager/src/sl_hfxo_manager.c
+    ${SERVICE_DIR}/hfxo_manager/src/sl_hfxo_manager_hal_s2.c
+  )
+  zephyr_compile_definitions(
+    SL_CATALOG_HFXO_MANAGER_PRESENT
+  )
+endif()
 
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_DEV_INIT     ${COMMON_DIR}/src/sl_slist.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_CORE

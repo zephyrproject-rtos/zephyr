@@ -208,6 +208,8 @@
 			#clock-cells = <0>;
 			compatible = "silabs,hfxo";
 			reg = <0x5a004000 0x4000>;
+			interrupts = <44 0>;
+			interrupt-names = "hfxo";
 			clock-frequency = <DT_FREQ_M(39)>;
 			ctune = <140>;
 			precision = <50>;
