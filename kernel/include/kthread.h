@@ -122,6 +122,16 @@ static inline bool z_is_thread_queued(struct k_thread *thread)
 	return z_is_thread_state_set(thread, _THREAD_QUEUED);
 }
 
+static inline void z_mark_thread_as_queued(struct k_thread *thread)
+{
+	thread->base.thread_state |= _THREAD_QUEUED;
+}
+
+static inline void z_mark_thread_as_not_queued(struct k_thread *thread)
+{
+	thread->base.thread_state &= ~_THREAD_QUEUED;
+}
+
 static inline void z_mark_thread_as_suspended(struct k_thread *thread)
 {
 	thread->base.thread_state |= _THREAD_SUSPENDED;
