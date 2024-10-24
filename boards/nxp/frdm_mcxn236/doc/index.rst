@@ -74,6 +74,8 @@ The FRDM-MCXN236 board configuration supports the following hardware features:
 | DISPLAY   | on-chip    | flexio; MIPI-DBI. Tested with       |
 |           |            | :ref:`lcd_par_s035`                 |
 +-----------+------------+-------------------------------------+
+| LPTMR     | on-chip    | counter                             |
++-----------+------------+-------------------------------------+
 
 Targets available
 ==================

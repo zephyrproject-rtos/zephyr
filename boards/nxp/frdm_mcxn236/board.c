@@ -217,6 +217,30 @@ static int frdm_mcxn236_init(void)
 	CLOCK_AttachClk(kPLL0_to_FLEXIO);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lptmr0))
+
+/*
+ * Clock Select Decides what input source the lptmr will clock from
+ *
+ * 0 <- 12MHz FRO
+ * 1 <- 16K FRO
+ * 2 <- 32K OSC
+ * 3 <- Output from the OSC_SYS
+ */
+#if DT_PROP(DT_NODELABEL(lptmr0), clk_source) == 0x0
+	CLOCK_SetupClockCtrl(kCLOCK_FRO12MHZ_ENA);
+#elif DT_PROP(DT_NODELABEL(lptmr0), clk_source) == 0x1
+	CLOCK_SetupClk16KClocking(kCLOCK_Clk16KToVsys);
+#elif DT_PROP(DT_NODELABEL(lptmr0), clk_source) == 0x2
+	CLOCK_SetupOsc32KClocking(kCLOCK_Osc32kToVsys);
+#elif DT_PROP(DT_NODELABEL(lptmr0), clk_source) == 0x3
+	/* Value here should not exceed 25MHZ when using lptmr */
+	CLOCK_SetupExtClocking(MHZ(24));
+	CLOCK_SetupClockCtrl(kCLOCK_CLKIN_ENA_FM_USBH_LPT);
+#endif /* DT_PROP(DT_NODELABEL(lptmr0), clk_source) */
+
+#endif /* DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lptmr0)) */
+
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
 
