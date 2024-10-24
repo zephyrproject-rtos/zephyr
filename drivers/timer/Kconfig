@@ -65,6 +65,7 @@ config SYSTEM_CLOCK_LOCK_FREE_COUNT
 
 source "drivers/timer/Kconfig.altera_avalon"
 source "drivers/timer/Kconfig.ambiq"
+source "drivers/timer/Kconfig.amd_tmrctr"
 source "drivers/timer/Kconfig.x86"
 source "drivers/timer/Kconfig.arcv2"
 source "drivers/timer/Kconfig.arm_arch"
