@@ -19,3 +19,7 @@ config DT_DEFINED_NOCACHE_NAME
 endif # DT_DEFINED_NOCACHE
 
 endif # DCACHE
+
+config TEST_LONG_BUFFER_SIZE
+	int "Long buffer size"
+	default 1024
