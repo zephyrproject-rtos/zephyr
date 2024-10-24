@@ -527,6 +527,36 @@
 				status = "disabled";
 			};
 		};
+
+		canfd_global: canfd_global@40380000 {
+			compatible = "renesas,ra-canfd-global";
+			interrupts = <40 1>, <41 1>;
+			interrupt-names = "rxf", "glerr";
+			clocks = <&pclka 0 0>, <&pclke 0 0>;
+			clock-names = "opclk", "ramclk";
+			reg = <0x40380000 0x4000>;
+			status = "disabled";
+
+			canfd0: canfd0 {
+				compatible = "renesas,ra-canfd";
+				channel = <0>;
+				interrupts = <43 12>, <44 12>, <45 12>;
+				interrupt-names = "err", "tx", "rx";
+				clocks = <&canfdclk MSTPC 27>;
+				clock-names = "dllclk";
+				status = "disabled";
+			};
+
+			canfd1: canfd1 {
+				compatible = "renesas,ra-canfd";
+				channel = <1>;
+				interrupts = <46 1>, <47 1>, <48 1>;
+				interrupt-names = "err", "tx", "rx";
+				clocks = <&canfdclk MSTPC 26>;
+				clock-names = "dllclk";
+				status = "disabled";
+			};
+		};
 	};
 };
 
