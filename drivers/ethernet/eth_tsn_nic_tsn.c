@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(eth_tsn_nic, LOG_LEVEL_ERR);
+
 #include <zephyr/arch/common/sys_bitops.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/device.h>
@@ -19,6 +22,8 @@
 #include <zephyr/posix/posix_types.h>
 #include <zephyr/posix/pthread.h>
 #include <zephyr/posix/time.h>
+
+#include <math.h>
 
 #include "eth.h"
 #include "eth_tsn_nic_priv.h"
@@ -155,6 +160,28 @@ int tsn_set_qbv(const struct device *dev, struct ethernet_qbv_param param)
 
 int tsn_set_qav(const struct device *dev, struct ethernet_qav_param param)
 {
+	struct eth_tsn_nic_data *data = dev->data;
+	struct tsn_config *config = &data->tsn_config;
+	struct qav_state *state = &config->qav[param.queue_id];
+
+	switch (param.type) {
+	case ETHERNET_QAV_PARAM_TYPE_STATUS:
+		/* Enable/Disable Qav */
+		state->enabled = param.enabled;
+		break;
+	case ETHERNET_QAV_PARAM_TYPE_DELTA_BANDWIDTH:
+		/* Set bandwidth (percentage) */
+		state->idle_slope = param.delta_bandwidth * LINK_1G / 100;
+		state->send_slope = (param.delta_bandwidth - 100) * LINK_1G / 100;
+		state->hi_credit =
+			(int32_t)ceil((double)state->idle_slope * BUFFER_SIZE / (double)LINK_1G);
+		state->lo_credit =
+			(int32_t)ceil((double)state->send_slope * BUFFER_SIZE / (double)LINK_1G);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
 	return 0;
 }
 
@@ -417,7 +444,43 @@ static bool get_timestamps(struct timestamps *timestamps, const struct tsn_confi
 static void spend_qav_credit(struct tsn_config *tsn_config, net_time_t at, uint8_t tc_id,
 			     uint64_t bytes)
 {
-	/* TODO: Implement Qav */
+	uint64_t elapsed_from_last_update, sending_duration;
+	double earned_credit, spending_credit;
+	net_time_t send_end;
+	struct qav_state *qav = &tsn_config->qav[tc_id];
+
+	if (qav->enabled == false) {
+		return;
+	}
+
+	if (at < qav->last_update || at < qav->available_at) {
+		/* Invalid */
+		LOG_ERR("Invalid timestamp Qav spending");
+		return;
+	}
+
+	elapsed_from_last_update = at - qav->last_update;
+	earned_credit = (double)elapsed_from_last_update * qav->idle_slope;
+	qav->credit += earned_credit;
+	if (qav->credit > qav->hi_credit) {
+		qav->credit = qav->hi_credit;
+	}
+
+	sending_duration = bytes_to_ns(bytes);
+	spending_credit = (double)sending_duration * qav->send_slope;
+	qav->credit += spending_credit;
+	if (qav->credit < qav->lo_credit) {
+		qav->credit = qav->lo_credit;
+	}
+
+	/* Calulate next available time */
+	send_end = at + sending_duration;
+	qav->last_update = send_end;
+	if (qav->credit < 0) {
+		qav->available_at = send_end + -(qav->credit / qav->idle_slope);
+	} else {
+		qav->available_at = send_end;
+	}
 }
 
 #endif /* CONFIG_NET_TC_TX_COUNT */
