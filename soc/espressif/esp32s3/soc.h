@@ -73,8 +73,4 @@ extern int esp_rom_Cache_Ibus_MMU_Set(uint32_t ext_ram, uint32_t vaddr, uint32_t
 extern uint8_t esp_rom_i2c_readReg(uint8_t block, uint8_t host_id, uint8_t reg_add);
 extern void esp_rom_i2c_writeReg(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t data);
 
-/* cache initialization functions */
-void esp_config_instruction_cache_mode(void);
-void esp_config_data_cache_mode(void);
-
 #endif /* __SOC_H__ */
