@@ -570,10 +570,8 @@ static void add_to_waitq_locked(struct k_thread *thread, _wait_q_t *wait_q)
 
 	SYS_PORT_TRACING_FUNC(k_thread, sched_pend, thread);
 
-	if (wait_q != NULL) {
-		thread->base.pended_on = wait_q;
-		_priq_wait_add(&wait_q->waitq, thread);
-	}
+	thread->base.pended_on = wait_q;
+	_priq_wait_add(&wait_q->waitq, thread);
 }
 
 static void add_thread_timeout(struct k_thread *thread, k_timeout_t timeout)
@@ -587,7 +585,7 @@ static void pend_locked(struct k_thread *thread, _wait_q_t *wait_q,
 			k_timeout_t timeout)
 {
 #ifdef CONFIG_KERNEL_COHERENCE
-	__ASSERT_NO_MSG(wait_q == NULL || arch_mem_coherent(wait_q));
+	__ASSERT_NO_MSG(arch_mem_coherent(wait_q));
 #endif /* CONFIG_KERNEL_COHERENCE */
 	add_to_waitq_locked(thread, wait_q);
 	add_thread_timeout(thread, timeout);
