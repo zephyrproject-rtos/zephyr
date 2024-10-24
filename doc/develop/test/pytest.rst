@@ -219,6 +219,8 @@ Shell
 
    .. automethod:: wait_for_prompt
 
+   .. automethod:: get_filtered_output
+
 
 Examples of pytest tests in the Zephyr project
 **********************************************
