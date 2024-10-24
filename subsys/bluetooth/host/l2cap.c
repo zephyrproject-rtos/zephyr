@@ -2553,6 +2553,7 @@ static void l2cap_chan_le_recv_seg_direct(struct bt_l2cap_le_chan *chan, struct 
 	if (seg->len > sdu_remaining) {
 		LOG_WRN("L2CAP RX PDU total exceeds SDU");
 		bt_l2cap_chan_disconnect(&chan->chan);
+		return;
 	}
 
 	/* Commit receive. */
@@ -2944,7 +2945,9 @@ int bt_l2cap_ecred_chan_reconfigure(struct bt_l2cap_chan **chans, uint16_t mtu)
 	struct bt_l2cap_ecred_reconf_req *req;
 	struct bt_conn *conn = NULL;
 	struct bt_l2cap_le_chan *ch;
+	bool seg_direct = false;
 	struct net_buf *buf;
+	uint16_t mps = 0;
 	uint8_t ident;
 	int i;
 
@@ -2971,6 +2974,41 @@ int bt_l2cap_ecred_chan_reconfigure(struct bt_l2cap_chan **chans, uint16_t mtu)
 		/* validate MTU is not decreased */
 		if (mtu < BT_L2CAP_LE_CHAN(chans[i])->rx.mtu) {
 			return -EINVAL;
+		}
+
+#if defined(CONFIG_BT_L2CAP_SEG_RECV)
+		/**
+		 * If more than one channel is being configured, the MPS field
+		 * shall be greater than or equal to the current MPS size of
+		 * each of these channels. If only one channel is being
+		 * configured, the MPS field may be less than the current MPS
+		 * of that channel.
+		 */
+		if (BT_L2CAP_LE_CHAN(chans[i])->chan.ops->seg_recv) {
+			seg_direct = true;
+		}
+#endif
+
+		if (i == 0) {
+			mps = BT_L2CAP_LE_CHAN(chans[i])->rx.mps;
+		}
+
+		if (i > 0) {
+			/* For channels using segment direct API we can only
+			 * decrease MPS and this is not allowed for multiple
+			 * channels. So if any channel is using this MPS cannot
+			 * change.
+			 *
+			 * TODO it should be possible to increase if previously
+			 * decreased but this would require extra tracking
+			 */
+			if (seg_direct) {
+				if (mps != BT_L2CAP_LE_CHAN(chans[i])->rx.mps) {
+					return -EINVAL;
+				}
+			}
+
+			mps = MAX(mps, BT_L2CAP_LE_CHAN(chans[i])->rx.mps);
 		}
 	}
 
@@ -3006,8 +3044,7 @@ int bt_l2cap_ecred_chan_reconfigure(struct bt_l2cap_chan **chans, uint16_t mtu)
 	/* MPS shall not be bigger than MTU + BT_L2CAP_SDU_HDR_SIZE
 	 * as the remaining bytes cannot be used.
 	 */
-	req->mps = sys_cpu_to_le16(MIN(mtu + BT_L2CAP_SDU_HDR_SIZE,
-				       BT_L2CAP_RX_MTU));
+	req->mps = sys_cpu_to_le16(MIN(mtu + BT_L2CAP_SDU_HDR_SIZE, mps));
 
 	for (int j = 0; j < i; j++) {
 		ch = BT_L2CAP_LE_CHAN(chans[j]);
