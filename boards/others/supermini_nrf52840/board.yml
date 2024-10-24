@@ -1,0 +1,7 @@
+board:
+  name: supermini_nrf52840
+  full_name: Supermini Pro Micro nRF52840
+  socs:
+  - name: nrf52840
+    variants:
+    - name: uf2
