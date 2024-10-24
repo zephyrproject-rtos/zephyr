@@ -540,7 +540,8 @@ static int send_acl(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 	hdr->handle = sys_cpu_to_le16(bt_acl_handle_pack(conn->handle, flags));
 	hdr->len = sys_cpu_to_le16(buf->len - sizeof(*hdr));
 
-	bt_buf_set_type(buf, BT_BUF_ACL_OUT);
+	bt_buf_set_type(buf, BT_BUF_H4);
+	net_buf_push_u8(buf, BT_HCI_H4_ACL);
 
 	return bt_send(buf);
 }
@@ -598,7 +599,8 @@ static int send_iso(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 	hdr->handle = sys_cpu_to_le16(bt_iso_handle_pack(conn->handle, flags, ts));
 	hdr->len = sys_cpu_to_le16(buf->len - sizeof(*hdr));
 
-	bt_buf_set_type(buf, BT_BUF_ISO_OUT);
+	bt_buf_set_type(buf, BT_BUF_H4);
+	net_buf_push_u8(buf, BT_HCI_H4_ISO);
 
 	return bt_send(buf);
 }

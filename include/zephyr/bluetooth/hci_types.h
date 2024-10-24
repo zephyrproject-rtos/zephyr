@@ -22,16 +22,19 @@
 extern "C" {
 #endif
 
-/* Bluetooth spec v5.4 Vol 4, Part A Table 2.1: HCI packet indicators
+/**
+ * Bluetooth spec v5.4 Vol 4, Part A Table 2.1: HCI packet indicators
  * The following definitions are intended for use with the UART Transport Layer and
  * may be reused with other transport layers if desired.
  */
-#define BT_HCI_H4_NONE                  0x00    /* None of the known packet types */
-#define BT_HCI_H4_CMD                   0x01    /* HCI Command packet */
-#define BT_HCI_H4_ACL                   0x02    /* HCI ACL Data packet */
-#define BT_HCI_H4_SCO                   0x03    /* HCI Synchronous Data packet */
-#define BT_HCI_H4_EVT                   0x04    /* HCI Event packet */
-#define BT_HCI_H4_ISO                   0x05    /* HCI ISO Data packet */
+enum bt_hci_h4 {
+	BT_HCI_H4_NONE = 0x00, /**< None of the known packet types */
+	BT_HCI_H4_CMD = 0x01,  /**< HCI Command packet */
+	BT_HCI_H4_ACL = 0x02,  /**< HCI ACL Data packet */
+	BT_HCI_H4_SCO = 0x03,  /**< HCI Synchronous Data packet */
+	BT_HCI_H4_EVT = 0x04,  /**< HCI Event packet */
+	BT_HCI_H4_ISO = 0x05,  /**< HCI ISO Data packet */
+};
 
 #define BT_HCI_OWN_ADDR_PUBLIC          0x00
 #define BT_HCI_OWN_ADDR_RANDOM          0x01
