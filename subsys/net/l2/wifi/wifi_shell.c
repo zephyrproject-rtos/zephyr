@@ -524,6 +524,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 		{"key1-pwd", required_argument, 0, 'K'},
 		{"key2-pwd", required_argument, 0, 'K'},
 		{"suiteb-type", required_argument, 0, 'S'},
+		{"TLS-cipher", required_argument, 0, 'T'},
 		{"eap-version", required_argument, 0, 'V'},
 		{"eap-id1", required_argument, 0, 'I'},
 		{"eap-id2", required_argument, 0, 'I'},
@@ -565,7 +566,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 	params->mfp = WIFI_MFP_OPTIONAL;
 	params->eap_ver = 1;
 
-	while ((opt = getopt_long(argc, argv, "s:p:k:e:w:b:c:m:t:a:K:S:V:I:P:h",
+	while ((opt = getopt_long(argc, argv, "s:p:k:e:w:b:c:m:t:a:K:S:T:V:I:P:h",
 				  long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
@@ -705,6 +706,9 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			break;
 		case 'S':
 			params->suiteb_type = atoi(optarg);
+			break;
+		case 'T':
+			params->TLS_cipher = atoi(optarg);
 			break;
 		case 'V':
 			params->eap_ver = atoi(optarg);
@@ -3099,6 +3103,7 @@ SHELL_SUBCMD_ADD((wifi), connect, &wifi_commands,
 		  "[-K, --key1-pwd for eap phase1 or --key2-pwd for eap phase2]:\n"
 		  "Private key passwd for enterprise mode. Default no password for private key.\n"
 		  "[-S, --suiteb-type]: 1:suiteb, 2:suiteb-192. Default 0: not suiteb mode.\n"
+		  "[-T, --TLS-cipher]: 0:TLS-NONE, 1:TLS-ECC-P384, 2:TLS-RSA-3K.\n"
 		  "[-V, --eap-version]: 0 or 1. Default 1: eap version 1.\n"
 		  "[-I, --eap-id1]: Client Identity. Default no eap identity.\n"
 		  "[-P, --eap-pwd1]: Client Password.\n"
