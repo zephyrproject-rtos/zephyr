@@ -12,6 +12,7 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/arch/riscv/irq.h>
 #include <zephyr/drivers/pm_cpu_ops.h>
+#include <zephyr/devicetree.h>
 
 volatile struct {
 	arch_cpustart_t fn;
@@ -84,12 +85,37 @@ void arch_secondary_cpu_init(int hartid)
 
 #ifdef CONFIG_SMP
 
-#define MSIP_BASE 0x2000000UL
-#define MSIP(hartid) ((volatile uint32_t *)MSIP_BASE)[hartid]
-
 static atomic_val_t cpu_pending_ipi[CONFIG_MP_MAX_NUM_CPUS];
 #define IPI_SCHED	0
 #define IPI_FPU_FLUSH	1
+
+#ifdef CONFIG_RISCV_SMP_IPI_CLINT
+#define MSIP_BASE 0x2000000UL
+#define MSIP(hartid) ((volatile uint32_t *)MSIP_BASE)[hartid]
+
+static ALWAYS_INLINE void z_riscv_ipi_send(unsigned int cpu)
+{
+	MSIP(_kernel.cpus[cpu].arch.hartid) = 1;
+}
+
+static ALWAYS_INLINE void z_riscv_ipi_clear(unsigned int cpu)
+{
+	MSIP(_kernel.cpus[cpu].arch.hartid) = 0;
+}
+
+void z_riscv_sched_ipi_handler(const void *unused);
+int arch_smp_init(void)
+{
+	IRQ_CONNECT(RISCV_IRQ_MSOFT, 0, z_riscv_sched_ipi_handler, NULL, 0);
+	irq_enable(RISCV_IRQ_MSOFT);
+
+	return 0;
+}
+#else
+/* The following functions are implemented somewhere else */
+void z_riscv_ipi_send(unsigned int cpu);
+void z_riscv_ipi_clear(unsigned int cpu);
+#endif /* CONFIG_RISCV_SMP_IPI_CLINT */
 
 void arch_sched_directed_ipi(uint32_t cpu_bitmap)
 {
@@ -101,7 +127,7 @@ void arch_sched_directed_ipi(uint32_t cpu_bitmap)
 		if ((i != id) && _kernel.cpus[i].arch.online &&
 		    ((cpu_bitmap & BIT(i)) != 0)) {
 			atomic_set_bit(&cpu_pending_ipi[i], IPI_SCHED);
-			MSIP(_kernel.cpus[i].arch.hartid) = 1;
+			z_riscv_ipi_send(i);
 		}
 	}
 
@@ -117,15 +143,15 @@ void arch_sched_broadcast_ipi(void)
 void arch_flush_fpu_ipi(unsigned int cpu)
 {
 	atomic_set_bit(&cpu_pending_ipi[cpu], IPI_FPU_FLUSH);
-	MSIP(_kernel.cpus[cpu].arch.hartid) = 1;
+	z_riscv_ipi_send(cpu);
 }
 #endif
 
-static void sched_ipi_handler(const void *unused)
+void z_riscv_sched_ipi_handler(const void *unused)
 {
 	ARG_UNUSED(unused);
 
-	MSIP(csr_read(mhartid)) = 0;
+	z_riscv_ipi_clear(_current_cpu->id);
 
 	atomic_val_t pending_ipi = atomic_clear(&cpu_pending_ipi[_current_cpu->id]);
 
@@ -168,12 +194,4 @@ void arch_spin_relax(void)
 }
 #endif
 
-int arch_smp_init(void)
-{
-
-	IRQ_CONNECT(RISCV_IRQ_MSOFT, 0, sched_ipi_handler, NULL, 0);
-	irq_enable(RISCV_IRQ_MSOFT);
-
-	return 0;
-}
 #endif /* CONFIG_SMP */
