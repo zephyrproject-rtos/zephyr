@@ -22,7 +22,7 @@ extern "C" {
  */
 
 /**
- * @brief JWT data tracking.
+ * @brief JWT builder data tracking.
  *
  * JSON Web Tokens contain several sections, each encoded in Base64URL.
  * This structure tracks the token as it is being built, including
@@ -54,6 +54,35 @@ struct jwt_builder {
 };
 
 /**
+ * @brief JWT parser data tracking.
+ */
+struct jwt_parser {
+	/** Internal buffer used to manipulate data. */
+	char *buf;
+
+	/** Length of the buffer in bytes. */
+	size_t buf_len;
+
+	/** Pointer to the token header. */
+	const char *header;
+
+	/** Length of the header in bytes. */
+	size_t header_len;
+
+	/** Pointer to the token payload. */
+	const char *payload;
+
+	/** Length of the payload in bytes. */
+	size_t payload_len;
+
+	/** Pointer to the token signature. */
+	const char *sign;
+
+	/** Length of the signature in bytes. */
+	size_t sign_len;
+};
+
+/**
  * @brief Initialize the JWT builder.
  *
  * Initialize the given JWT builder for the creation of a fresh token.
@@ -67,9 +96,7 @@ struct jwt_builder {
  * @retval 0 Success.
  * @retval -ENOSPC Buffer is insufficient to initialize.
  */
-int jwt_init_builder(struct jwt_builder *builder,
-		     char *buffer,
-		     size_t buffer_size);
+int jwt_init_builder(struct jwt_builder *builder, char *buffer, size_t buffer_size);
 
 /**
  * @brief Add JWT payload.
@@ -82,17 +109,14 @@ int jwt_init_builder(struct jwt_builder *builder,
  * See RFC 7519 section 4.1 to get more information about these fields.
  *
  * @param builder A previously initialized builder.
- * @param exp Expiration Time (epoch format).
+ * @param expt Expiration Time (epoch format).
  * @param iat Issued At (epoch format).
  * @param aud Audience.
  *
  * @retval 0 Success.
  * @retval <0 Failure.
  */
-int jwt_add_payload(struct jwt_builder *builder,
-		    int32_t exp,
-		    int32_t iat,
-		    const char *aud);
+int jwt_add_payload(struct jwt_builder *builder, int32_t expt, int32_t iat, const char *aud);
 
 /**
  * @brief Sign the JWT.
@@ -106,9 +130,53 @@ int jwt_add_payload(struct jwt_builder *builder,
  * @retval 0 Success.
  * @retval <0 Failure.
  */
-int jwt_sign(struct jwt_builder *builder,
-	     const char *der_key,
-	     size_t der_key_len);
+int jwt_sign(struct jwt_builder *builder, const char *der_key, size_t der_key_len);
+
+/**
+ * @brief Initialize the JWT parser.
+ *
+ * Initialize the given JWT parser to parse the given token.
+ * The buffer size should be long enough to store the entire token.
+ *
+ * @param parser The parser to initialize.
+ * @param token The token to parse.
+ * @param buffer A buffer internally used to parse the token.
+ * @param buffer_size The size of the buffer in bytes.
+ *
+ * @retval 0 Success.
+ * @retval -ENOSPC Buffer is too small to store the entire token.
+ * @retval -EINVAL The token format is wrong (must contain 2 dots).
+ */
+int jwt_init_parser(struct jwt_parser *parser, const char *token, char *buffer, size_t buffer_size);
+
+/**
+ * @brief Parse JWT payload.
+ *
+ * Parse JWT payload from a previously initialized parser.
+ *
+ * @param parser A previously initialized parser.
+ * @param expt A valid pointer to store Expiration Time value.
+ * @param iat A valid pointer to store Issued At value.
+ * @param aud A valid pointer to store Audience value.
+ *
+ * @retval 0 Success.
+ * @retval <0 Failure.
+ */
+int jwt_parse_payload(struct jwt_parser *parser, int32_t *expt, int32_t *iat, char *aud);
+
+/**
+ * @brief Verify JWT header and signature.
+ *
+ * Verify header and signature of a previously initialized parser.
+ *
+ * @param parser A previously initialized parser.
+ * @param der_key Private key to use in DER format.
+ * @param der_key_len Size of the private key in bytes.
+ *
+ * @retval 0 Success.
+ * @retval <0 Failure.
+ */
+int jwt_verify(struct jwt_parser *parser, const char *der_key, size_t der_key_len);
 
 #ifdef __cplusplus
 }
