@@ -13,6 +13,7 @@
 #include <zephyr/math/ilog2.h>
 #include <zephyr/drivers/reset.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/irq.h>
 
 #include "wdt_dw.h"
 #include "wdt_dw_common.h"
