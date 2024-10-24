@@ -13,3 +13,28 @@ config NET_CORE_IMAGE_HCI_IPC
 	bool "HCI IPC image on network core"
 	default y
 	depends on NET_CORE_BOARD != ""
+
+config BT_CTLR_SCAN_DATA_LEN_MAX
+	int "Scan data length max"
+	default 36
+	depends on TEST_MODE_EXTENDED || TEST_MODE_PHY_CODED
+
+config BT_BUF_EVT_DISCARDABLE_SIZE
+	int "Discardable buffer size"
+	default 58
+	depends on TEST_MODE_EXTENDED || TEST_MODE_PHY_CODED
+
+choice TEST_MODE
+	prompt "Test mode"
+	default TEST_MODE_MINIMAL
+
+config TEST_MODE_MINIMAL
+	bool "Minimal"
+
+config TEST_MODE_EXTENDED
+	bool "Extended"
+
+config TEST_MODE_PHY_CODED
+	bool "PHY coded"
+
+endchoice

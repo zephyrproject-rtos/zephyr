@@ -11,10 +11,10 @@ EXECUTE_TIMEOUT=60
 
 cd ${BSIM_OUT_PATH}/bin
 
-Execute ./bs_${BOARD_TS}_samples_bluetooth_peripheral_hr_prj_conf_overlay-extended_conf \
+Execute ./bs_${BOARD_TS}_samples_bluetooth_peripheral_hr_prj_conf_FILE_SUFFIX_extended \
   -v=${verbosity_level} -s=${simulation_id} -d=0
 
-Execute ./bs_${BOARD_TS}_${test_long_name}_prj_conf_overlay-extended_conf \
+Execute ./bs_${BOARD_TS}_${test_long_name}_prj_conf_FILE_SUFFIX_extended \
   -v=${verbosity_level} -s=${simulation_id} -d=1 \
   -testid=central_hr_peripheral_hr
 
