@@ -45,6 +45,29 @@ properties:
     required: true
     description: Flash page size in bytes.
 
+  workaround-broken-read-01H:
+    type: boolean
+    description: |
+      You may encounter AT45 flash chips that are expected to support the 01H read opcode
+      [Continuous Array Read (Low Power Mode)] but it doesn't. If set, the driver will read with
+      0BH opcode [Continuous Array Read (High Frequency Mode)] instead.
+
+  workaround-broken-modify-58H:
+    type: boolean
+    description: |
+      You may encounter AT45 flash chips that are expected to support the 58H modify opcode
+      [Read-Modify-Write] but it doesn't. If set, the driver will modify by first doing
+      82H opcode [Main Memory Page Program Through Buffer 1] then 53H opcode
+      [Main Memory Page to Buffer 1 Transfer] instead.
+
+  workaround-broken-write-02H:
+    type: boolean
+    description: |
+      You may encounter AT45 flash chips that are expected to support the 02H write opcode
+      [Main Memory Byte/Page Program through Buffer 1 without Built-In Erase] but it doesn't.
+      If set, the driver will write by first doing 84H opcode [Buffer 1 write] then 88H opcode
+      [Buffer 1 to Main Memory Page Program without Built-In Erase] instead.
+
   no-chip-erase:
     type: boolean
     description: |
