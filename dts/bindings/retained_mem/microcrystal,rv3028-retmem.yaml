@@ -1,0 +1,35 @@
+# Copyright (c) 2024 ANITRA system s.r.o.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Micro Crystal RV3028 RTC User RAM
+
+  There are two free RAM bytes for general use at addresses 0x1f and 0x20.
+
+  Example configuration:
+    rtc: rv3028@52 {
+      compatible = "microcrystal,rv3028";
+      status = "okay";
+      reg = <0x52>;
+      backup-switch-mode = "disabled";
+
+      #address-cells = <1>;
+      #size-cells = <1>;
+
+      rtc_retmem: rv3028-retmem@1f {
+        compatible: "microcrystal,rv3028-retmem";
+        reg = <0x1f 0x2>;
+        status = "okay";
+      };
+    };
+
+compatible: "microcrystal,rv3028-retmem"
+
+include: base.yaml
+
+on-bus: microcrystal,rv3028
+
+properties:
+  reg:
+    required: true
+    description: RAM base address and size in bytes
