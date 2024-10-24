@@ -103,7 +103,7 @@ static inline bool should_queue_thread(struct k_thread *thread)
 
 static ALWAYS_INLINE void queue_thread(struct k_thread *thread)
 {
-	thread->base.thread_state |= _THREAD_QUEUED;
+	z_mark_thread_as_queued(thread);
 	if (should_queue_thread(thread)) {
 		runq_add(thread);
 	}
@@ -117,7 +117,7 @@ static ALWAYS_INLINE void queue_thread(struct k_thread *thread)
 
 static ALWAYS_INLINE void dequeue_thread(struct k_thread *thread)
 {
-	thread->base.thread_state &= ~_THREAD_QUEUED;
+	z_mark_thread_as_not_queued(thread);
 	if (should_queue_thread(thread)) {
 		runq_remove(thread);
 	}
