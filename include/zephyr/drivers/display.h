@@ -164,6 +164,13 @@ typedef int (*display_read_api)(const struct device *dev, const uint16_t x,
 				void *buf);
 
 /**
+ * @typedef display_flush_api
+ * @brief Callback API to indicate that all previous writes should be flushed to the display
+ * See display_flush() for argument description
+ */
+typedef int (*display_flush_api)(const struct device *dev);
+
+/**
  * @typedef display_get_framebuffer_api
  * @brief Callback API to get framebuffer pointer
  * See display_get_framebuffer() for argument description
@@ -222,6 +229,7 @@ __subsystem struct display_driver_api {
 	display_blanking_off_api blanking_off;
 	display_write_api write;
 	display_read_api read;
+	display_flush_api flush;
 	display_get_framebuffer_api get_framebuffer;
 	display_set_brightness_api set_brightness;
 	display_set_contrast_api set_contrast;
@@ -277,6 +285,27 @@ static inline int display_read(const struct device *dev, const uint16_t x,
 	}
 
 	return api->read(dev, x, y, desc, buf);
+}
+
+/**
+ * @brief Indicates that all previous writes should be flushed to the display
+ *
+ * Can be used to present all previous writes simultaneously, for
+ * double buffered or latched displays.
+ *
+ * @param dev Pointer to device structure
+ *
+ * @retval 0 on success else negative errno code.
+ */
+static inline int display_flush(const struct device *dev)
+{
+	struct display_driver_api *api = (struct display_driver_api *)dev->api;
+
+	if (api->flush == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->flush(dev);
 }
 
 /**
