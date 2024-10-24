@@ -966,7 +966,7 @@ otRadioCaps otPlatRadioGetCaps(otInstance *aInstance)
 		caps |= OT_RADIO_CAPS_RECEIVE_TIMING;
 	}
 
-	if (radio_caps & IEEE802154_RX_ON_WHEN_IDLE) {
+	if (radio_caps & IEEE802154_HW_RX_ON_WHEN_IDLE) {
 		caps |= OT_RADIO_CAPS_RX_ON_WHEN_IDLE;
 	}
 
