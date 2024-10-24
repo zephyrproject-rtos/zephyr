@@ -14,6 +14,7 @@ LOG_MODULE_DECLARE(LOG_MODULE_NAME);
 #include <stdlib.h>
 #include <errno.h>
 
+#include <zephyr/posix/fcntl.h>
 #include <zephyr/net/socket_offload.h>
 #include <zephyr/net/tls_credentials.h>
 
@@ -391,8 +392,9 @@ static ssize_t eswifi_socket_recvfrom(void *obj, void *buf, size_t len,
 				      socklen_t *fromlen)
 {
 	if (fromlen != NULL) {
-		errno = EOPNOTSUPP;
-		return -1;
+		int sock = OBJ_TO_SD(obj);
+		struct eswifi_off_socket *socket = &eswifi->socket[sock];
+		*from = socket->peer_addr;
 	}
 
 	return eswifi_socket_recv(obj, buf, len, flags);
@@ -515,6 +517,10 @@ static int eswifi_socket_poll(struct zsock_pollfd *fds, int nfds, int msecs)
 		return -1;
 	}
 
+	if ((fds[0].events & ZSOCK_POLLOUT)) {
+		fds[0].revents = ZSOCK_POLLOUT;
+	}
+
 	if (!k_fifo_is_empty(&socket->fifo)) {
 		goto done;
 	}
@@ -528,7 +534,7 @@ static int eswifi_socket_poll(struct zsock_pollfd *fds, int nfds, int msecs)
 	ret = k_sem_take(&socket->read_sem, timeout);
 	if (ret) {
 		errno = ETIMEDOUT;
-		return -1;
+		return 0;
 	}
 
 done:
@@ -605,6 +611,12 @@ int eswifi_socket_create(int family, int type, int proto)
 static int eswifi_socket_ioctl(void *obj, unsigned int request, va_list args)
 {
 	switch (request) {
+	case F_GETFL:
+		LOG_WRN("F_GETFL not supported, returning flags as 0");
+		return 0;
+	case F_SETFL:
+		LOG_WRN("F_SETFL not supported, ignoring flags");
+		return 0;
 	case ZFD_IOCTL_POLL_PREPARE:
 		return -EXDEV;
 
