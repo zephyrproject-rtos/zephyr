@@ -324,12 +324,10 @@ Check if your SoC is listed in `OpenOCD Supported Devices`_.
 
 .. note:: On Linux, openocd is available though the `Zephyr SDK
    <https://github.com/zephyrproject-rtos/sdk-ng/releases>`_.
-   Windows users should use the following steps to install
-   openocd:
+   To install OpenOCD on Windows, run ``choco install openocd`` as an Administrator.
+   On macOS, run ``brew install openocd``.
 
-   - Download openocd for Windows from here: `OpenOCD Windows`_
-   - Copy bin and share dirs to ``C:\Program Files\OpenOCD\``
-   - Add ``C:\Program Files\OpenOCD\bin`` to 'PATH' environment variable
+   If you did instructions of :ref:`install-required-tools`, OpenOCD is already installed.
 
 .. _pyocd-debug-host-tools:
 
