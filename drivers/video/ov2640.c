@@ -940,28 +940,28 @@ static int ov2640_set_ctrl(const struct device *dev,
 	case VIDEO_CID_VFLIP:
 		ret |= ov2640_set_vertical_flip(dev, (int)value);
 		break;
-	case VIDEO_CID_CAMERA_EXPOSURE:
+	case VIDEO_CID_EXPOSURE:
 		ret |= ov2640_set_exposure_ctrl(dev, (int)value);
 		break;
-	case VIDEO_CID_CAMERA_GAIN:
+	case VIDEO_CID_GAIN:
 		ret |= ov2640_set_gain_ctrl(dev, (int)value);
 		break;
-	case VIDEO_CID_CAMERA_BRIGHTNESS:
+	case VIDEO_CID_BRIGHTNESS:
 		ret |= ov2640_set_brightness(dev, (int)value);
 		break;
-	case VIDEO_CID_CAMERA_SATURATION:
+	case VIDEO_CID_SATURATION:
 		ret |= ov2640_set_saturation(dev, (int)value);
 		break;
-	case VIDEO_CID_CAMERA_WHITE_BAL:
+	case VIDEO_CID_WHITE_BALANCE_TEMPERATURE:
 		ret |= ov2640_set_white_bal(dev, (int)value);
 		break;
-	case VIDEO_CID_CAMERA_CONTRAST:
+	case VIDEO_CID_CONTRAST:
 		ret |= ov2640_set_contrast(dev, (int)value);
 		break;
-	case VIDEO_CID_CAMERA_TEST_PATTERN:
+	case VIDEO_CID_TEST_PATTERN:
 		ret |= ov2640_set_colorbar(dev, (int)value);
 		break;
-	case VIDEO_CID_CAMERA_QUALITY:
+	case VIDEO_CID_JPEG_COMPRESSION_QUALITY:
 		ret |= ov2640_set_quality(dev, (int)value);
 		break;
 	default:
