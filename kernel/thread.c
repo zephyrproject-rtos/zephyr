@@ -853,7 +853,26 @@ int z_stack_space_get(const uint8_t *stack_start, size_t size, size_t *unused_pt
 		size -= 4;
 	}
 
-	for (size_t i = 0; i < size; i++) {
+	/* align to word boundary */
+	const unsigned long *checked_stack_word =
+		(const unsigned long *)ROUND_UP(checked_stack, sizeof(unsigned long));
+	size -= ((const uint8_t *)checked_stack_word - checked_stack);
+
+	/* compare using native machine word size */
+	size_t i;
+
+    for (i = 0; i < size / sizeof(unsigned long); i++) {
+        if (checked_stack_word[i] != (unsigned long)0xaaaaaaaaaaaaaaaa) {
+            break;
+        }
+    }
+    unused = i * sizeof(unsigned long);
+
+	/* Continue checking from last used word to find remaining unused bytes*/
+	size -= unused;
+	checked_stack = (const uint8_t *)checked_stack_word + unused;
+
+	for (i = 0; i < size; i++) {
 		if ((checked_stack[i]) == 0xaaU) {
 			unused++;
 		} else {
