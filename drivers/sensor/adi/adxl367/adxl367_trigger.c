@@ -174,6 +174,8 @@ int adxl367_init_interrupt(const struct device *dev)
 			(k_thread_entry_t)adxl367_thread, drv_data,
 			NULL, NULL, K_PRIO_COOP(CONFIG_ADXL367_THREAD_PRIORITY),
 			0, K_NO_WAIT);
+
+	k_thread_name_set(&drv_data->thread, dev->name);
 #elif defined(CONFIG_ADXL367_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = adxl367_work_cb;
 #endif
