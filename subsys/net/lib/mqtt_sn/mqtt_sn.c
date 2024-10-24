@@ -12,6 +12,7 @@
 #include "mqtt_sn_msg.h"
 
 #include <zephyr/logging/log.h>
+#include <zephyr/random/random.h>
 #include <zephyr/net/mqtt_sn.h>
 LOG_MODULE_REGISTER(net_mqtt_sn, CONFIG_MQTT_SN_LOG_LEVEL);
 
@@ -55,9 +56,19 @@ struct mqtt_sn_topic {
 	enum mqtt_sn_topic_state state;
 };
 
-K_MEM_SLAB_DEFINE_STATIC(publishes, sizeof(struct mqtt_sn_publish),
-			 CONFIG_MQTT_SN_LIB_MAX_PUBLISH, 4);
+struct mqtt_sn_gateway {
+	sys_snode_t next;
+	char gw_id;
+	int64_t adv_timer;
+	char addr[CONFIG_MQTT_SN_LIB_MAX_ADDR_SIZE];
+	size_t addr_len;
+};
+
+K_MEM_SLAB_DEFINE_STATIC(publishes, sizeof(struct mqtt_sn_publish), CONFIG_MQTT_SN_LIB_MAX_PUBLISH,
+			 4);
 K_MEM_SLAB_DEFINE_STATIC(topics, sizeof(struct mqtt_sn_topic), CONFIG_MQTT_SN_LIB_MAX_TOPICS, 4);
+K_MEM_SLAB_DEFINE_STATIC(gateways, sizeof(struct mqtt_sn_gateway), CONFIG_MQTT_SN_LIB_MAX_GATEWAYS,
+			 4);
 
 enum mqtt_sn_client_state {
 	MQTT_SN_CLIENT_DISCONNECTED,
@@ -74,8 +85,10 @@ static void mqtt_sn_set_state(struct mqtt_sn_client *client, enum mqtt_sn_client
 	LOG_DBG("Client %p state (%d) -> (%d)", client, prev_state, state);
 }
 
-#define T_RETRY_MSEC (CONFIG_MQTT_SN_LIB_T_RETRY * MSEC_PER_SEC)
-#define N_RETRY (CONFIG_MQTT_SN_LIB_N_RETRY)
+#define T_SEARCHGW_MSEC  (CONFIG_MQTT_SN_LIB_T_SEARCHGW * MSEC_PER_SEC)
+#define T_GWINFO_MSEC    (CONFIG_MQTT_SN_LIB_T_GWINFO * MSEC_PER_SEC)
+#define T_RETRY_MSEC     (CONFIG_MQTT_SN_LIB_T_RETRY * MSEC_PER_SEC)
+#define N_RETRY          (CONFIG_MQTT_SN_LIB_N_RETRY)
 #define T_KEEPALIVE_MSEC (CONFIG_MQTT_SN_KEEPALIVE * MSEC_PER_SEC)
 
 static uint16_t next_msg_id(void)
@@ -85,7 +98,8 @@ static uint16_t next_msg_id(void)
 	return ++msg_id;
 }
 
-static int encode_and_send(struct mqtt_sn_client *client, struct mqtt_sn_param *p)
+static int encode_and_send(struct mqtt_sn_client *client, struct mqtt_sn_param *p,
+			   uint8_t broadcast_radius)
 {
 	int err;
 
@@ -96,7 +110,7 @@ static int encode_and_send(struct mqtt_sn_client *client, struct mqtt_sn_param *
 
 	LOG_HEXDUMP_DBG(client->tx.data, client->tx.len, "Send message");
 
-	if (!client->transport->msg_send) {
+	if (!client->transport->sendto) {
 		LOG_ERR("Can't send: no callback");
 		err = -ENOTSUP;
 		goto end;
@@ -108,13 +122,26 @@ static int encode_and_send(struct mqtt_sn_client *client, struct mqtt_sn_param *
 		goto end;
 	}
 
-	err = client->transport->msg_send(client, client->tx.data, client->tx.len);
-	if (err) {
-		LOG_ERR("Error during send: %d", err);
-		goto end;
+	if (broadcast_radius) {
+		err = client->transport->sendto(client, client->tx.data, client->tx.len, NULL,
+						broadcast_radius);
+	} else {
+		struct mqtt_sn_gateway *gw;
+
+		gw = SYS_SLIST_PEEK_HEAD_CONTAINER(&client->gateway, gw, next);
+		if (gw == NULL || gw->addr_len == 0) {
+			LOG_WRN("No Gateway Address");
+			err = -ENXIO;
+			goto end;
+		}
+		err = client->transport->sendto(client, client->tx.data, client->tx.len, gw->addr,
+						gw->addr_len);
 	}
 
 end:
+	if (err) {
+		LOG_ERR("Error during send: %d", err);
+	}
 	net_buf_simple_reset(&client->tx);
 
 	return err;
@@ -228,13 +255,13 @@ static struct mqtt_sn_topic *mqtt_sn_topic_create(struct mqtt_sn_data *name)
 }
 
 static struct mqtt_sn_topic *mqtt_sn_topic_find_name(struct mqtt_sn_client *client,
-							 struct mqtt_sn_data *topic_name)
+						     struct mqtt_sn_data *topic_name)
 {
 	struct mqtt_sn_topic *topic;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&client->topic, topic, next) {
 		if (topic->namelen == topic_name->size &&
-			memcmp(topic->name, topic_name->data, topic_name->size) == 0) {
+		    memcmp(topic->name, topic_name->data, topic_name->size) == 0) {
 			return topic;
 		}
 	}
@@ -243,7 +270,7 @@ static struct mqtt_sn_topic *mqtt_sn_topic_find_name(struct mqtt_sn_client *clie
 }
 
 static struct mqtt_sn_topic *mqtt_sn_topic_find_msg_id(struct mqtt_sn_client *client,
-							   uint16_t msg_id)
+						       uint16_t msg_id)
 {
 	struct mqtt_sn_topic *topic;
 
@@ -285,6 +312,66 @@ static void mqtt_sn_topic_destroy_all(struct mqtt_sn_client *client)
 
 		k_mem_slab_free(&topics, (void *)topic);
 	}
+}
+
+static void mqtt_sn_gw_destroy(struct mqtt_sn_client *client, struct mqtt_sn_gateway *gw)
+{
+	LOG_DBG("Destroying gateway %d", gw->gw_id);
+	sys_slist_find_and_remove(&client->gateway, &gw->next);
+	k_mem_slab_free(&gateways, (void *)gw);
+}
+
+static void mqtt_sn_gw_destroy_all(struct mqtt_sn_client *client)
+{
+	struct mqtt_sn_gateway *gw;
+	sys_snode_t *next;
+
+	while ((next = sys_slist_get(&client->gateway)) != NULL) {
+		gw = SYS_SLIST_CONTAINER(next, gw, next);
+		sys_slist_find_and_remove(&client->gateway, next);
+		k_mem_slab_free(&gateways, (void *)gw);
+	}
+}
+
+static struct mqtt_sn_gateway *mqtt_sn_gw_create(uint8_t gw_id, short duration,
+						 struct mqtt_sn_data gw_addr)
+{
+	struct mqtt_sn_gateway *gw;
+
+	LOG_DBG("Free GW slots: %d", k_mem_slab_num_free_get(&gateways));
+	if (k_mem_slab_alloc(&gateways, (void **)&gw, K_NO_WAIT)) {
+		LOG_WRN("Can't create GW: no free slot");
+		return NULL;
+	}
+
+	__ASSERT(gw_addr.size < CONFIG_MQTT_SN_LIB_MAX_ADDR_SIZE,
+		 "Gateway address is larger than allowed by CONFIG_MQTT_SN_LIB_MAX_ADDR_SIZE");
+
+	memset(gw, 0, sizeof(*gw));
+	memcpy(gw->addr, gw_addr.data, gw_addr.size);
+	gw->addr_len = gw_addr.size;
+	gw->gw_id = gw_id;
+	if (duration == -1) {
+		gw->adv_timer = duration;
+	} else {
+		gw->adv_timer =
+			k_uptime_get() + (duration * CONFIG_MQTT_SN_LIB_N_ADV * MSEC_PER_SEC);
+	}
+
+	return gw;
+}
+
+static struct mqtt_sn_gateway *mqtt_sn_gw_find_id(struct mqtt_sn_client *client, uint16_t gw_id)
+{
+	struct mqtt_sn_gateway *gw;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&client->gateway, gw, next) {
+		if (gw->gw_id == gw_id) {
+			return gw;
+		}
+	}
+
+	return NULL;
 }
 
 static void mqtt_sn_disconnect_internal(struct mqtt_sn_client *client)
@@ -348,7 +435,7 @@ static void mqtt_sn_do_subscribe(struct mqtt_sn_client *client, struct mqtt_sn_t
 		return;
 	}
 
-	encode_and_send(client, &p);
+	encode_and_send(client, &p, 0);
 }
 
 static void mqtt_sn_do_unsubscribe(struct mqtt_sn_client *client, struct mqtt_sn_topic *topic)
@@ -380,7 +467,7 @@ static void mqtt_sn_do_unsubscribe(struct mqtt_sn_client *client, struct mqtt_sn
 		return;
 	}
 
-	encode_and_send(client, &p);
+	encode_and_send(client, &p, 0);
 }
 
 static void mqtt_sn_do_register(struct mqtt_sn_client *client, struct mqtt_sn_topic *topic)
@@ -408,7 +495,7 @@ static void mqtt_sn_do_register(struct mqtt_sn_client *client, struct mqtt_sn_to
 		return;
 	}
 
-	encode_and_send(client, &p);
+	encode_and_send(client, &p, 0);
 }
 
 static void mqtt_sn_do_publish(struct mqtt_sn_client *client, struct mqtt_sn_publish *pub, bool dup)
@@ -435,7 +522,37 @@ static void mqtt_sn_do_publish(struct mqtt_sn_client *client, struct mqtt_sn_pub
 	p.params.publish.qos = pub->qos;
 	p.params.publish.dup = dup;
 
-	encode_and_send(client, &p);
+	encode_and_send(client, &p, 0);
+}
+
+static void mqtt_sn_do_searchgw(struct mqtt_sn_client *client)
+{
+	struct mqtt_sn_param p = {.type = MQTT_SN_MSG_TYPE_SEARCHGW};
+
+	p.params.searchgw.radius = CONFIG_MQTT_SN_LIB_BROADCAST_RADIUS;
+
+	encode_and_send(client, &p, CONFIG_MQTT_SN_LIB_BROADCAST_RADIUS);
+}
+
+static void mqtt_sn_do_gwinfo(struct mqtt_sn_client *client)
+{
+	struct mqtt_sn_param response = {.type = MQTT_SN_MSG_TYPE_GWINFO};
+	struct mqtt_sn_gateway *gw;
+	struct mqtt_sn_data addr;
+
+	gw = SYS_SLIST_PEEK_HEAD_CONTAINER(&client->gateway, gw, next);
+
+	if (gw == NULL || gw->addr_len == 0) {
+		LOG_WRN("No Gateway Address");
+		return;
+	}
+
+	response.params.gwinfo.gw_id = gw->gw_id;
+	addr.data = gw->addr;
+	addr.size = gw->addr_len;
+	response.params.gwinfo.gw_add = addr;
+
+	encode_and_send(client, &response, client->radius_gwinfo);
 }
 
 static void mqtt_sn_do_ping(struct mqtt_sn_client *client)
@@ -454,7 +571,7 @@ static void mqtt_sn_do_ping(struct mqtt_sn_client *client)
 		p.params.pingreq.client_id.data = client->client_id.data;
 		p.params.pingreq.client_id.size = client->client_id.size;
 	case MQTT_SN_CLIENT_ACTIVE:
-		encode_and_send(client, &p);
+		encode_and_send(client, &p, 0);
 		break;
 	default:
 		LOG_WRN("Can't ping in state %d", client->state);
@@ -468,8 +585,6 @@ static int process_pubs(struct mqtt_sn_client *client, int64_t *next_cycle)
 	const int64_t now = k_uptime_get();
 	int64_t next_attempt;
 	bool dup;
-
-	*next_cycle = 0;
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&client->publish, pub, pubs, next) {
 		LOG_HEXDUMP_DBG(pub->topic->name, pub->topic->namelen,
@@ -516,6 +631,8 @@ static int process_pubs(struct mqtt_sn_client *client, int64_t *next_cycle)
 			*next_cycle = next_attempt;
 		}
 	}
+
+	LOG_DBG("next_cycle: %lld", *next_cycle);
 
 	return 0;
 }
@@ -583,12 +700,15 @@ static int process_topics(struct mqtt_sn_client *client, int64_t *next_cycle)
 		}
 	}
 
+	LOG_DBG("next_cycle: %lld", *next_cycle);
+
 	return 0;
 }
 
 static int process_ping(struct mqtt_sn_client *client, int64_t *next_cycle)
 {
 	const int64_t now = k_uptime_get();
+	struct mqtt_sn_gateway *gw = NULL;
 	int64_t next_ping;
 
 	if (client->ping_retries == N_RETRY) {
@@ -602,6 +722,9 @@ static int process_ping(struct mqtt_sn_client *client, int64_t *next_cycle)
 		if (!client->ping_retries--) {
 			LOG_WRN("Ping ran out of retries");
 			mqtt_sn_disconnect_internal(client);
+			SYS_SLIST_PEEK_HEAD_CONTAINER(&client->gateway, gw, next);
+			LOG_DBG("Removing non-responsive GW 0x%08x", gw->gw_id);
+			mqtt_sn_gw_destroy(client, gw);
 			return -ETIMEDOUT;
 		}
 
@@ -614,6 +737,63 @@ static int process_ping(struct mqtt_sn_client *client, int64_t *next_cycle)
 	if (*next_cycle == 0 || next_ping < *next_cycle) {
 		*next_cycle = next_ping;
 	}
+
+	LOG_DBG("next_cycle: %lld", *next_cycle);
+
+	return 0;
+}
+
+static int process_search(struct mqtt_sn_client *client, int64_t *next_cycle)
+{
+	const int64_t now = k_uptime_get();
+
+	LOG_DBG("ts_searchgw: %lld", client->ts_searchgw);
+	LOG_DBG("ts_gwinfo: %lld", client->ts_gwinfo);
+
+	if (client->ts_searchgw != 0 && client->ts_searchgw <= now) {
+		LOG_DBG("Sending SEARCHGW");
+		mqtt_sn_do_searchgw(client);
+		client->ts_searchgw = 0;
+	}
+
+	if (client->ts_gwinfo != 0 && client->ts_gwinfo <= now) {
+		LOG_DBG("Sending GWINFO");
+		mqtt_sn_do_gwinfo(client);
+		client->ts_gwinfo = 0;
+	}
+
+	if (*next_cycle == 0 || (client->ts_searchgw != 0 && client->ts_searchgw < *next_cycle)) {
+		*next_cycle = client->ts_searchgw;
+	}
+	if (*next_cycle == 0 || (client->ts_gwinfo != 0 && client->ts_gwinfo < *next_cycle)) {
+		*next_cycle = client->ts_gwinfo;
+	}
+
+	LOG_DBG("next_cycle: %lld", *next_cycle);
+
+	return 0;
+}
+
+static int process_advertise(struct mqtt_sn_client *client, int64_t *next_cycle)
+{
+	const int64_t now = k_uptime_get();
+	struct mqtt_sn_gateway *gw;
+	struct mqtt_sn_gateway *gw_next;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&client->gateway, gw, gw_next, next) {
+		LOG_DBG("Checking if GW 0x%02x is old", gw->gw_id);
+		if (gw->adv_timer != -1 && gw->adv_timer <= now) {
+			LOG_DBG("Removing non-responsive GW 0x%08x", gw->gw_id);
+			if (client->gateway.head == &gw->next) {
+				mqtt_sn_disconnect(client);
+			}
+			mqtt_sn_gw_destroy(client, gw);
+		}
+		if (gw->adv_timer != -1 && (*next_cycle == 0 || gw->adv_timer < *next_cycle)) {
+			*next_cycle = gw->adv_timer;
+		}
+	}
+	LOG_DBG("next_cycle: %lld", *next_cycle);
 
 	return 0;
 }
@@ -628,10 +808,18 @@ static void process_work(struct k_work *wrk)
 	dwork = k_work_delayable_from_work(wrk);
 	client = CONTAINER_OF(dwork, struct mqtt_sn_client, process_work);
 
-	LOG_DBG("Executing work of client %p in state %d", client, client->state);
+	LOG_DBG("Executing work of client %p in state %d at time %lld", client, client->state,
+		k_uptime_get());
 
-	if (client->state == MQTT_SN_CLIENT_DISCONNECTED) {
-		LOG_WRN("%s called while disconnected: Nothing to do", __func__);
+	/* Clean up old advertised gateways from list */
+	err = process_advertise(client, &next_cycle);
+	if (err) {
+		return;
+	}
+
+	/* Handle GW search process timers */
+	err = process_search(client, &next_cycle);
+	if (err) {
 		return;
 	}
 
@@ -653,6 +841,7 @@ static void process_work(struct k_work *wrk)
 	}
 
 	if (next_cycle > 0) {
+		LOG_DBG("next_cycle: %lld", next_cycle);
 		k_work_schedule(dwork, K_MSEC(next_cycle - k_uptime_get()));
 	}
 }
@@ -695,12 +884,47 @@ void mqtt_sn_client_deinit(struct mqtt_sn_client *client)
 
 	mqtt_sn_publish_destroy_all(client);
 	mqtt_sn_topic_destroy_all(client);
+	mqtt_sn_gw_destroy_all(client);
 
 	if (client->transport && client->transport->deinit) {
 		client->transport->deinit(client->transport);
 	}
 
 	k_work_cancel_delayable(&client->process_work);
+}
+
+int mqtt_sn_add_gw(struct mqtt_sn_client *client, uint8_t gw_id, struct mqtt_sn_data gw_addr)
+{
+	struct mqtt_sn_gateway *gw;
+
+	gw = mqtt_sn_gw_find_id(client, gw_id);
+
+	if (gw != NULL) {
+		mqtt_sn_gw_destroy(client, gw);
+	}
+
+	gw = mqtt_sn_gw_create(gw_id, -1, gw_addr);
+	if (!gw) {
+		return -ENOMEM;
+	}
+
+	sys_slist_append(&client->gateway, &gw->next);
+
+	return 0;
+}
+
+int mqtt_sn_search(struct mqtt_sn_client *client, uint8_t radius)
+{
+	if (!client) {
+		return -EINVAL;
+	}
+	/* Set SEARCHGW transmission timer */
+	client->ts_searchgw = k_uptime_get() + (T_SEARCHGW_MSEC * sys_rand8_get() / 255);
+	k_work_schedule(&client->process_work, K_NO_WAIT);
+	LOG_DBG("Requested SEARCHGW for time %lld at time %lld", client->ts_searchgw,
+		k_uptime_get());
+
+	return 0;
 }
 
 int mqtt_sn_connect(struct mqtt_sn_client *client, bool will, bool clean_session)
@@ -728,7 +952,7 @@ int mqtt_sn_connect(struct mqtt_sn_client *client, bool will, bool clean_session
 
 	client->last_ping = k_uptime_get();
 
-	return encode_and_send(client, &p);
+	return encode_and_send(client, &p, 0);
 }
 
 int mqtt_sn_disconnect(struct mqtt_sn_client *client)
@@ -742,7 +966,7 @@ int mqtt_sn_disconnect(struct mqtt_sn_client *client)
 
 	p.params.disconnect.duration = 0;
 
-	err = encode_and_send(client, &p);
+	err = encode_and_send(client, &p, 0);
 	mqtt_sn_disconnect_internal(client);
 
 	return err;
@@ -759,14 +983,14 @@ int mqtt_sn_sleep(struct mqtt_sn_client *client, uint16_t duration)
 
 	p.params.disconnect.duration = duration;
 
-	err = encode_and_send(client, &p);
+	err = encode_and_send(client, &p, 0);
 	mqtt_sn_sleep_internal(client);
 
 	return err;
 }
 
 int mqtt_sn_subscribe(struct mqtt_sn_client *client, enum mqtt_sn_qos qos,
-			  struct mqtt_sn_data *topic_name)
+		      struct mqtt_sn_data *topic_name)
 {
 	struct mqtt_sn_topic *topic;
 	int err;
@@ -833,7 +1057,7 @@ int mqtt_sn_unsubscribe(struct mqtt_sn_client *client, enum mqtt_sn_qos qos,
 }
 
 int mqtt_sn_publish(struct mqtt_sn_client *client, enum mqtt_sn_qos qos,
-			struct mqtt_sn_data *topic_name, bool retain, struct mqtt_sn_data *data)
+		    struct mqtt_sn_data *topic_name, bool retain, struct mqtt_sn_data *data)
 {
 	struct mqtt_sn_publish *pub;
 	struct mqtt_sn_topic *topic;
@@ -885,6 +1109,84 @@ int mqtt_sn_publish(struct mqtt_sn_client *client, enum mqtt_sn_qos qos,
 	return 0;
 }
 
+static void handle_advertise(struct mqtt_sn_client *client, struct mqtt_sn_param_advertise *p,
+			     struct mqtt_sn_data rx_addr)
+{
+	struct mqtt_sn_evt evt = {.type = MQTT_SN_EVT_ADVERTISE};
+	struct mqtt_sn_gateway *gw;
+
+	gw = mqtt_sn_gw_find_id(client, p->gw_id);
+
+	if (gw == NULL) {
+		LOG_DBG("Creating GW 0x%02x with duration %d", p->gw_id, p->duration);
+		gw = mqtt_sn_gw_create(p->gw_id, p->duration, rx_addr);
+		if (!gw) {
+			return;
+		}
+		sys_slist_append(&client->gateway, &gw->next);
+	} else {
+		LOG_DBG("Updating timer for GW 0x%02x with duration %d", p->gw_id, p->duration);
+		gw->adv_timer =
+			k_uptime_get() + (p->duration * CONFIG_MQTT_SN_LIB_N_ADV * MSEC_PER_SEC);
+	}
+
+	k_work_schedule(&client->process_work, K_NO_WAIT);
+	if (client->evt_cb) {
+		client->evt_cb(client, &evt);
+	}
+}
+
+static void handle_searchgw(struct mqtt_sn_client *client, struct mqtt_sn_param_searchgw *p)
+{
+	struct mqtt_sn_evt evt = {.type = MQTT_SN_EVT_SEARCHGW};
+
+	/* Increment SEARCHGW transmission timestamp if waiting */
+	if (client->ts_searchgw != 0) {
+		client->ts_searchgw = k_uptime_get() + (T_SEARCHGW_MSEC * sys_rand8_get() / 255);
+	}
+
+	/* Set transmission timestamp to respond to SEARCHGW if we have a GW */
+	if (sys_slist_len(&client->gateway) > 0) {
+		client->ts_gwinfo = k_uptime_get() + (T_GWINFO_MSEC * sys_rand8_get() / 255);
+	}
+	client->radius_gwinfo = p->radius;
+	k_work_schedule(&client->process_work, K_NO_WAIT);
+
+	if (client->evt_cb) {
+		client->evt_cb(client, &evt);
+	}
+}
+
+static void handle_gwinfo(struct mqtt_sn_client *client, struct mqtt_sn_param_gwinfo *p,
+			  struct mqtt_sn_data rx_addr)
+{
+	struct mqtt_sn_evt evt = {.type = MQTT_SN_EVT_GWINFO};
+	struct mqtt_sn_gateway *gw;
+
+	/* Clear SEARCHGW and GWINFO transmission if waiting */
+	client->ts_searchgw = 0;
+	client->ts_gwinfo = 0;
+	k_work_schedule(&client->process_work, K_NO_WAIT);
+
+	/* Extract GW info and store */
+	if (p->gw_add.size > 0) {
+		rx_addr.data = p->gw_add.data;
+		rx_addr.size = p->gw_add.size;
+	} else {
+	}
+	gw = mqtt_sn_gw_create(p->gw_id, -1, rx_addr);
+
+	if (!gw) {
+		return;
+	}
+
+	sys_slist_append(&client->gateway, &gw->next);
+
+	if (client->evt_cb) {
+		client->evt_cb(client, &evt);
+	}
+}
+
 static void handle_connack(struct mqtt_sn_client *client, struct mqtt_sn_param_connack *p)
 {
 	struct mqtt_sn_evt evt = {.type = MQTT_SN_EVT_CONNECTED};
@@ -922,7 +1224,7 @@ static void handle_willtopicreq(struct mqtt_sn_client *client)
 	response.params.willtopic.topic.data = client->will_topic.data;
 	response.params.willtopic.topic.size = client->will_topic.size;
 
-	encode_and_send(client, &response);
+	encode_and_send(client, &response, 0);
 }
 
 static void handle_willmsgreq(struct mqtt_sn_client *client)
@@ -932,7 +1234,7 @@ static void handle_willmsgreq(struct mqtt_sn_client *client)
 	response.params.willmsg.msg.data = client->will_msg.data;
 	response.params.willmsg.msg.size = client->will_msg.size;
 
-	encode_and_send(client, &response);
+	encode_and_send(client, &response, 0);
 }
 
 static void handle_register(struct mqtt_sn_client *client, struct mqtt_sn_param_register *p)
@@ -955,7 +1257,7 @@ static void handle_register(struct mqtt_sn_client *client, struct mqtt_sn_param_
 	response.params.regack.topic_id = p->topic_id;
 	response.params.regack.msg_id = p->msg_id;
 
-	encode_and_send(client, &response);
+	encode_and_send(client, &response, 0);
 }
 
 static void handle_regack(struct mqtt_sn_client *client, struct mqtt_sn_param_regack *p)
@@ -980,8 +1282,8 @@ static void handle_publish(struct mqtt_sn_client *client, struct mqtt_sn_param_p
 {
 	struct mqtt_sn_param response;
 	struct mqtt_sn_evt evt = {.param.publish = {.data = p->data,
-							.topic_id = p->topic_id,
-							.topic_type = p->topic_type},
+						    .topic_id = p->topic_id,
+						    .topic_type = p->topic_type},
 				  .type = MQTT_SN_EVT_PUBLISH};
 
 	if (p->qos == MQTT_SN_QOS_1) {
@@ -990,12 +1292,12 @@ static void handle_publish(struct mqtt_sn_client *client, struct mqtt_sn_param_p
 		response.params.puback.msg_id = p->msg_id;
 		response.params.puback.ret_code = MQTT_SN_CODE_ACCEPTED;
 
-		encode_and_send(client, &response);
+		encode_and_send(client, &response, 0);
 	} else if (p->qos == MQTT_SN_QOS_2) {
 		response.type = MQTT_SN_MSG_TYPE_PUBREC;
 		response.params.pubrec.msg_id = p->msg_id;
 
-		encode_and_send(client, &response);
+		encode_and_send(client, &response, 0);
 	}
 
 	if (client->evt_cb) {
@@ -1030,7 +1332,7 @@ static void handle_pubrec(struct mqtt_sn_client *client, struct mqtt_sn_param_pu
 
 	response.params.pubrel.msg_id = p->msg_id;
 
-	encode_and_send(client, &response);
+	encode_and_send(client, &response, 0);
 }
 
 static void handle_pubrel(struct mqtt_sn_client *client, struct mqtt_sn_param_pubrel *p)
@@ -1039,7 +1341,7 @@ static void handle_pubrel(struct mqtt_sn_client *client, struct mqtt_sn_param_pu
 
 	response.params.pubcomp.msg_id = p->msg_id;
 
-	encode_and_send(client, &response);
+	encode_and_send(client, &response, 0);
 }
 
 static void handle_pubcomp(struct mqtt_sn_client *client, struct mqtt_sn_param_pubcomp *p)
@@ -1088,7 +1390,7 @@ static void handle_pingreq(struct mqtt_sn_client *client)
 {
 	struct mqtt_sn_param response = {.type = MQTT_SN_MSG_TYPE_PINGRESP};
 
-	encode_and_send(client, &response);
+	encode_and_send(client, &response, 0);
 }
 
 static void handle_pingresp(struct mqtt_sn_client *client)
@@ -1112,7 +1414,7 @@ static void handle_disconnect(struct mqtt_sn_client *client, struct mqtt_sn_para
 	mqtt_sn_disconnect_internal(client);
 }
 
-static int handle_msg(struct mqtt_sn_client *client)
+static int handle_msg(struct mqtt_sn_client *client, struct mqtt_sn_data rx_addr)
 {
 	int err;
 	struct mqtt_sn_param p;
@@ -1125,7 +1427,14 @@ static int handle_msg(struct mqtt_sn_client *client)
 	LOG_INF("Got message of type %d", p.type);
 
 	switch (p.type) {
+	case MQTT_SN_MSG_TYPE_ADVERTISE:
+		handle_advertise(client, &p.params.advertise, rx_addr);
+		break;
+	case MQTT_SN_MSG_TYPE_SEARCHGW:
+		handle_searchgw(client, &p.params.searchgw);
+		break;
 	case MQTT_SN_MSG_TYPE_GWINFO:
+		handle_gwinfo(client, &p.params.gwinfo, rx_addr);
 		break;
 	case MQTT_SN_MSG_TYPE_CONNACK:
 		handle_connack(client, &p.params.connack);
@@ -1189,9 +1498,11 @@ static int handle_msg(struct mqtt_sn_client *client)
 int mqtt_sn_input(struct mqtt_sn_client *client)
 {
 	ssize_t next_frame_size;
+	char addr[CONFIG_MQTT_SN_LIB_MAX_ADDR_SIZE];
+	struct mqtt_sn_data rx_addr = {.data = addr, .size = CONFIG_MQTT_SN_LIB_MAX_ADDR_SIZE};
 	int err;
 
-	if (!client || !client->transport || !client->transport->recv) {
+	if (!client || !client->transport || !client->transport->recvfrom) {
 		return -EINVAL;
 	}
 
@@ -1204,7 +1515,8 @@ int mqtt_sn_input(struct mqtt_sn_client *client)
 
 	net_buf_simple_reset(&client->rx);
 
-	next_frame_size = client->transport->recv(client, client->rx.data, client->rx.size);
+	next_frame_size = client->transport->recvfrom(client, client->rx.data, client->rx.size,
+						      (void *)rx_addr.data, &rx_addr.size);
 	if (next_frame_size <= 0) {
 		return next_frame_size;
 	}
@@ -1217,7 +1529,7 @@ int mqtt_sn_input(struct mqtt_sn_client *client)
 
 	LOG_HEXDUMP_DBG(client->rx.data, client->rx.len, "Received data");
 
-	err = handle_msg(client);
+	err = handle_msg(client, rx_addr);
 
 	if (err) {
 		return err;
