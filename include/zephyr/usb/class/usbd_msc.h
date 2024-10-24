@@ -27,6 +27,8 @@ struct usbd_msc_lun {
  * @brief USB Mass Storage Class device API
  * @defgroup usbd_msc_device USB Mass Storage Class device API
  * @ingroup usb
+ * @since 3.4
+ * @version 0.1.0
  * @{
  */
 

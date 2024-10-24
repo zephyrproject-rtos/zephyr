@@ -38,6 +38,8 @@
  * @brief Buffer macros and definitions used in USB device support
  * @defgroup udc_buf Buffer macros and definitions used in USB device support
  * @ingroup usb
+ * @since 4.0
+ * @version 0.1.0
  * @{
  */
 

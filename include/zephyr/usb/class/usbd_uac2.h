@@ -23,6 +23,8 @@
  * @brief USB Audio Class 2 device API
  * @defgroup uac2_device USB Audio Class 2 device API
  * @ingroup usb
+ * @since 3.6
+ * @version 0.1.0
  * @{
  */
 

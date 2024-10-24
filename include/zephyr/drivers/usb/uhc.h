@@ -22,6 +22,8 @@
  * @brief USB host controller (UHC) driver API
  * @defgroup uhc_api USB host controller driver API
  * @ingroup io_interfaces
+ * @since 3.3
+ * @version 0.1.0
  * @{
  */
 
