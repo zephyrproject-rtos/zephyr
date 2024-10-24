@@ -437,12 +437,12 @@ class CMake:
                     }
         else:
             self.instance.status = TwisterStatus.ERROR
-            self.instance.reason = "Cmake build failure"
+            self.instance.reason = "CMake build failure"
 
             for tc in self.instance.testcases:
                 tc.status = self.instance.status
 
-            logger.error("Cmake build failure: %s for %s" % (self.source_dir, self.platform.name))
+            logger.error("CMake build failure: %s for %s" % (self.source_dir, self.platform.name))
             ret = {"returncode": p.returncode}
 
         if out:
@@ -820,7 +820,7 @@ class ProjectBuilder(FilterBuilder):
                 mode = message.get("mode")
                 if mode == "device":
                     self.cleanup_device_testing_artifacts()
-                elif mode == "passed" or (mode == "all" and self.instance.reason != "Cmake build failure"):
+                elif mode == "passed" or (mode == "all" and self.instance.reason != "CMake build failure"):
                     self.cleanup_artifacts()
             except StatusAttributeError as sae:
                 logger.error(str(sae))
