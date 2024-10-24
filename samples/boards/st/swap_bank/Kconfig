@@ -1,0 +1,11 @@
+# Copyright (c) 2024 STMicroelectronics.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config FLASH_STM32_EXTRA
+	bool "Extended operation for flash option byte control"
+	default y
+	select USE_STM32_HAL_FLASH
+	select USE_STM32_HAL_FLASH_EX
+
+source "Kconfig.zephyr"
