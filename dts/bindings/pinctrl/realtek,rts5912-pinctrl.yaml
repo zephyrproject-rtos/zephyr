@@ -1,0 +1,28 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2024 Realtek Semiconductor Corporation, SIBG-SD7
+#
+
+description: |
+     This binding gives a base representation of the pins configuration
+
+compatible: "realtek,rts5912-pinctrl"
+
+include: [base.yaml, pinctrl-device.yaml, pincfg-node.yaml]
+
+properties:
+  reg:
+    required: true
+
+child-binding:
+  description: |
+    This binding gives a base representation of the pins configuration
+
+  include:
+    - name: pincfg-node.yaml
+
+  properties:
+    pinmux:
+      type: int
+      required: true
+      description: Pinmux selection
