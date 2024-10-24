@@ -1,0 +1,18 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP SDMA node
+
+compatible: "nxp,sdma"
+
+include: [dma-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+  "#dma-cells":
+    const: 2
+
+dma-cells:
+  - channel
+  - mux
