@@ -1,0 +1,16 @@
+# Copyright (c) 2024 Junhui Liu <liujh2818@outlook.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_CANAAN_K230
+	bool
+	select SOC_FAMILY_CANAAN
+
+config SOC_CANAAN_K230
+	bool
+	select SOC_SERIES_CANAAN_K230
+
+config SOC_SERIES
+	default "k230" if SOC_SERIES_CANAAN_K230
+
+config SOC
+	default "k230" if SOC_CANAAN_K230

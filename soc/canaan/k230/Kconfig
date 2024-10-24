@@ -1,0 +1,14 @@
+# Copyright (c) 2024 Junhui Liu <liujh2818@outlook.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_CANAAN_K230
+	select RISCV
+	select RISCV_PRIVILEGED
+	select RISCV_HAS_PLIC
+	select RISCV_ISA_RV64I
+	select RISCV_ISA_EXT_G
+	select RISCV_ISA_EXT_C
+
+	select INCLUDE_RESET_VECTOR
+	select ATOMIC_OPERATIONS_C
+	select 64BIT
