@@ -1371,6 +1371,12 @@ static const struct smf_state pe_states[PE_STATE_COUNT] = {
 		pe_src_ready_exit,
 		NULL,
 		NULL),
+	[PE_SRC_DISABLED] = SMF_CREATE_STATE(
+		pe_src_disabled_entry,
+		NULL,
+		NULL,
+		NULL,
+		NULL),
 	[PE_SRC_TRANSITION_TO_DEFAULT] = SMF_CREATE_STATE(
 		pe_src_transition_to_default_entry,
 		pe_src_transition_to_default_run,
