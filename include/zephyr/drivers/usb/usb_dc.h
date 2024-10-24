@@ -22,6 +22,8 @@
 /**
  * @brief USB Device Controller API
  * @defgroup _usb_device_controller_api USB Device Controller API
+ * @since 1.5
+ * @version 1.0.0
  * @{
  */
 

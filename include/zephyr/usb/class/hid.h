@@ -24,6 +24,8 @@ extern "C" {
  * @brief hid.h API
  * @defgroup usb_hid_definitions USB HID common definitions
  * @ingroup usb
+ * @since 1.11
+ * @version 1.0.0
  * @{
  */
 

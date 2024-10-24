@@ -21,6 +21,8 @@ extern "C" {
 /**
  * @defgroup usbd_msg_api USB device core API
  * @ingroup usb
+ * @since 3.7
+ * @version 0.1.0
  * @{
  */
 
