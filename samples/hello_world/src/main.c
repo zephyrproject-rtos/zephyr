@@ -19,219 +19,222 @@
 #define ATTR_RST "\x1b[37;1m" // ANSI_COLOR_RESET
 #define ATTR_HIL "\x1b[33;1m" // ANSI_COLOR_HIGHLIGHT
 
-#define FLASH_RW_SIZE   255
-#define FLASH_BASE_ADDR 0xB0000000
+#if (CONFIG_SPI_ANDES_ATCSPI200 && CONFIG_SPI_NOR)
+	#define FLASH_RW_SIZE   255
+	#define FLASH_BASE_ADDR 0xB0000000
 
-void Flash_Test(const struct device *flash, const struct device *dma, uint32_t FLASH_ADDR,
-		uint8_t EVEN_ODD_MUL, uint8_t FORMATTER)
-{
-	int errorcode = 0;
-	uint8_t flash_data_write[FLASH_RW_SIZE] = {0};
-	uint8_t flash_data_read[FLASH_RW_SIZE] = {0};
-	errorcode = flash_read(flash, FLASH_ADDR, flash_data_read, FLASH_RW_SIZE);
-	if (errorcode < 0) {
-		printf("%s Error reading from flash with code:%d%s\n", ATTR_ERR, errorcode,
-		       ATTR_RST);
-	} else {
-		printf("%s Reading Back Before Erasing Flash%s\n", ATTR_INF, ATTR_RST);
-		// for(uint8_t i = 0; i < FLASH_RW_SIZE; i++) {
-		// 	printf("%s %d%s", ATTR_INF, flash_data_read[i],i%FORMATTER==0?"\n":"");
-		// } printf("\n");
-	}
-	errorcode = flash_erase(flash, FLASH_ADDR, 0x1000);
-	if (errorcode < 0) {
-		printf("%s\nError Erasing the flash at 0x%08x offset errorcode:%d%s\n", ATTR_ERR,
-		       FLASH_ADDR, errorcode, ATTR_RST);
-	} else {
-		printf("%s\nSuccessfully Erased Flash\n", ATTR_RST);
+	void Flash_Test(const struct device *flash, const struct device *dma, uint32_t FLASH_ADDR,
+			uint8_t EVEN_ODD_MUL, uint8_t FORMATTER)
+	{
+		int errorcode = 0;
+		uint8_t flash_data_write[FLASH_RW_SIZE] = {0};
+		uint8_t flash_data_read[FLASH_RW_SIZE] = {0};
 		errorcode = flash_read(flash, FLASH_ADDR, flash_data_read, FLASH_RW_SIZE);
 		if (errorcode < 0) {
 			printf("%s Error reading from flash with code:%d%s\n", ATTR_ERR, errorcode,
-			       ATTR_RST);
+				ATTR_RST);
 		} else {
-			printf("%s Reading Back After Erasing Area of Flash%s\n", ATTR_INF,
-			       ATTR_RST);
-			for (uint8_t i = 0; i < FLASH_RW_SIZE; i++) {
-				if (flash_data_read[i] != 0xff) {
-					errorcode = -1;
-				}
-			}
-		}
-		if (errorcode == -1) {
-			printf("%s\nFlash erase at 0x%08x did not produce correct results%s\n",
-			       ATTR_ERR, FLASH_ADDR, ATTR_RST);
+			printf("%s Reading Back Before Erasing Flash%s\n", ATTR_INF, ATTR_RST);
 			// for(uint8_t i = 0; i < FLASH_RW_SIZE; i++) {
-			// 	printf("%s 0x%02x%s", ATTR_INF,
-			// flash_data_read[i],i%FORMATTER==0?"\n":""); } printf("\n");
-		} else {
-			printf("%s\nSuccessfully performed erase to flash with code:%d%s\n",
-			       ATTR_INF, errorcode, ATTR_RST);
+			// 	printf("%s %d%s", ATTR_INF, flash_data_read[i],i%FORMATTER==0?"\n":"");
+			// } printf("\n");
 		}
-		errorcode = 0;
-	}
-
-	if (errorcode == 0) {
-		printf("%s Writing the following data After Erasing Flash%s\n", ATTR_INF, ATTR_RST);
-		for (uint8_t i = 0; i < FLASH_RW_SIZE; i++) {
-			flash_data_write[i] = ((rand() % (FLASH_RW_SIZE - 1 + 1)) + 1) +
-					      ((rand() % (FLASH_RW_SIZE - 1 + 1)) + 1);
-			// printf("%s %d%s", ATTR_INF, flash_data_write[i],i%FORMATTER==0?"\n":"");
-		}
-		// printf("\n");
-		errorcode = flash_write(flash, FLASH_ADDR, flash_data_write, FLASH_RW_SIZE);
-	}
-
-	if (errorcode < 0) {
-		printf("%s \nError writing to flash with code:%d%s\n", ATTR_ERR, errorcode,
-		       ATTR_RST);
-	} else {
-		printf("%s \nSuccessfully written to flash with code:%d Resetting the reading "
-		       "buffer....%s\n",
-		       ATTR_INF, errorcode, ATTR_RST);
-		memset(flash_data_read, 0, FLASH_RW_SIZE);
-		errorcode = flash_read(flash, FLASH_ADDR, flash_data_read, FLASH_RW_SIZE);
+		errorcode = flash_erase(flash, FLASH_ADDR, 0x1000);
 		if (errorcode < 0) {
-			printf("%s Error reading from flash with code:%d%s\n", ATTR_ERR, errorcode,
-			       ATTR_RST);
+			printf("%s\nError Erasing the flash at 0x%08x offset errorcode:%d%s\n", ATTR_ERR,
+				FLASH_ADDR, errorcode, ATTR_RST);
 		} else {
-			printf("%s Successfully Read from flash with code:%d%s\n", ATTR_INF,
-			       errorcode, ATTR_RST);
-			bool Data_Validated = true;
-			uint8_t Mismatch_count = 0;
-			for (uint8_t i = 0; i < FLASH_RW_SIZE; i++) {
-				if (flash_data_read[i] != flash_data_write[i]) {
-					Data_Validated = false;
-					Mismatch_count++;
-					printf("%s %d - Read:%d != Write:%d%s\n", ATTR_ERR, i,
-					       flash_data_read[i], flash_data_write[i], ATTR_RST);
+			printf("%s\nSuccessfully Erased Flash\n", ATTR_RST);
+			errorcode = flash_read(flash, FLASH_ADDR, flash_data_read, FLASH_RW_SIZE);
+			if (errorcode < 0) {
+				printf("%s Error reading from flash with code:%d%s\n", ATTR_ERR, errorcode,
+					ATTR_RST);
+			} else {
+				printf("%s Reading Back After Erasing Area of Flash%s\n", ATTR_INF,
+					ATTR_RST);
+				for (uint8_t i = 0; i < FLASH_RW_SIZE; i++) {
+					if (flash_data_read[i] != 0xff) {
+						errorcode = -1;
+					}
 				}
 			}
-			if (!Data_Validated) {
-				printf("%s Flash Integrity Check Failed With %d Mismatched "
-				       "Entries%s\n",
-				       ATTR_ERR, Mismatch_count, ATTR_RST);
+			if (errorcode == -1) {
+				printf("%s\nFlash erase at 0x%08x did not produce correct results%s\n",
+					ATTR_ERR, FLASH_ADDR, ATTR_RST);
+				// for(uint8_t i = 0; i < FLASH_RW_SIZE; i++) {
+				// 	printf("%s 0x%02x%s", ATTR_INF,
+				// flash_data_read[i],i%FORMATTER==0?"\n":""); } printf("\n");
 			} else {
-				printf("%s Flash Integrity Check Passed!!!%s\n", ATTR_INF,
-				       ATTR_RST);
+				printf("%s\nSuccessfully performed erase to flash with code:%d%s\n",
+					ATTR_INF, errorcode, ATTR_RST);
 			}
+			errorcode = 0;
 		}
-	}
 
-	if (errorcode == 0) {
-		uint8_t *MemMapReadAddr = (uint8_t *)(FLASH_BASE_ADDR + FLASH_ADDR);
-		uint8_t MemMapReadDestAddr[FLASH_RW_SIZE];
-		{
-			printf("CPU Memory Mapped Reading Test from address:%p\n", MemMapReadAddr);
-			bool memmaptestfail = false;
+		if (errorcode == 0) {
+			printf("%s Writing the following data After Erasing Flash%s\n", ATTR_INF, ATTR_RST);
 			for (uint8_t i = 0; i < FLASH_RW_SIZE; i++) {
-				if (MemMapReadAddr[i] != flash_data_write[i]) {
-					printf("%s %d%s", ATTR_ERR, MemMapReadAddr[i],
-					       i % FORMATTER == 0 ? "\n" : "");
-					memmaptestfail = true;
-				}
-				// else {
-				// printf("%s %d%s", ATTR_INF,
-				// MemMapReadAddr[i],i%FORMATTER==0?"\n":"");
-				// }
+				flash_data_write[i] = ((rand() % (FLASH_RW_SIZE - 1 + 1)) + 1) +
+							((rand() % (FLASH_RW_SIZE - 1 + 1)) + 1);
+				// printf("%s %d%s", ATTR_INF, flash_data_write[i],i%FORMATTER==0?"\n":"");
 			}
-			printf("\n");
-			if (memmaptestfail) {
-				printf("%s CPU Memory mapped read failed\n", ATTR_ERR);
-			} else {
-				printf("%s CPU Memory mapped read passed\n", ATTR_INF);
-			}
+			// printf("\n");
+			errorcode = flash_write(flash, FLASH_ADDR, flash_data_write, FLASH_RW_SIZE);
 		}
 
-		if (dma != NULL) {
-			printf("%s DMA Memory Mapped Reading Test from address:%p\n", ATTR_RST,
-			       MemMapReadAddr);
-			// Configure DMA Block
-			struct dma_block_config lv_dma_block_config = {
-				.block_size = FLASH_RW_SIZE,
-				.dest_addr_adj = DMA_ADDR_ADJ_INCREMENT,
-				.dest_address = (uint32_t)&MemMapReadDestAddr[0],
-				.dest_reload_en = 0,
-				.dest_scatter_count = 0,
-				.dest_scatter_en = 0,
-				.dest_scatter_interval = 0,
-				.fifo_mode_control = 0,
-				.flow_control_mode = 0,
-				.next_block = NULL,
-				.source_addr_adj = DMA_ADDR_ADJ_INCREMENT,
-				.source_address = (uint32_t)&MemMapReadAddr[0],
-				.source_gather_count = 0,
-				.source_gather_en = 0,
-				.source_gather_interval = 0,
-				.source_reload_en = 0,
-				._reserved = 0};
-			// Configure DMA
-			struct dma_config lv_Dma_Config = {.block_count = 1,
-							   .channel_direction = MEMORY_TO_MEMORY,
-							   .channel_priority = 1,
-							   .complete_callback_en = 0,
-							   .cyclic = 0,
-							   .dest_burst_length = 1,
-							   .dest_chaining_en = 0,
-							   .dest_data_size = 1,
-							   .dest_handshake = 1,
-							   .dma_callback = NULL,
-							   .dma_slot = 0,
-							   .error_callback_dis = 1,
-							   .head_block = &lv_dma_block_config,
-							   .linked_channel = 0,
-							   .source_burst_length = 1,
-							   .source_chaining_en = 0,
-							   .source_data_size = 1,
-							   .user_data = NULL};
-			struct dma_status stat = {0};
-			printf("%s DMA Configuration...\n", ATTR_RST);
-			int dma_error = dma_config(dma, 1, &lv_Dma_Config);
-			k_msleep(10);
-			if (dma_error) {
-				printf("%s Error %d Configuration...\n", ATTR_RST, dma_error);
+		if (errorcode < 0) {
+			printf("%s \nError writing to flash with code:%d%s\n", ATTR_ERR, errorcode,
+				ATTR_RST);
+		} else {
+			printf("%s \nSuccessfully written to flash with code:%d Resetting the reading "
+				"buffer....%s\n",
+				ATTR_INF, errorcode, ATTR_RST);
+			memset(flash_data_read, 0, FLASH_RW_SIZE);
+			errorcode = flash_read(flash, FLASH_ADDR, flash_data_read, FLASH_RW_SIZE);
+			if (errorcode < 0) {
+				printf("%s Error reading from flash with code:%d%s\n", ATTR_ERR, errorcode,
+					ATTR_RST);
 			} else {
-				// Call DMA Read
-				printf("%s DMA Starting...\n", ATTR_INF);
-				dma_error = dma_start(dma, 1);
-				k_msleep(10);
-			}
-			(void)dma_get_status(dma, 1, &stat);
-			while (stat.pending_length > 1) {
-				dma_error = dma_get_status(dma, 1, &stat);
-				if (dma_error) {
-					printf("Error %d dma_status...\n", dma_error);
-					break;
+				printf("%s Successfully Read from flash with code:%d%s\n", ATTR_INF,
+					errorcode, ATTR_RST);
+				bool Data_Validated = true;
+				uint8_t Mismatch_count = 0;
+				for (uint8_t i = 0; i < FLASH_RW_SIZE; i++) {
+					if (flash_data_read[i] != flash_data_write[i]) {
+						Data_Validated = false;
+						Mismatch_count++;
+						printf("%s %d - Read:%d != Write:%d%s\n", ATTR_ERR, i,
+							flash_data_read[i], flash_data_write[i], ATTR_RST);
+					}
+				}
+				if (!Data_Validated) {
+					printf("%s Flash Integrity Check Failed With %d Mismatched "
+						"Entries%s\n",
+						ATTR_ERR, Mismatch_count, ATTR_RST);
 				} else {
-					printf("dma_pending_length:%d \n", stat.pending_length);
+					printf("%s Flash Integrity Check Passed!!!%s\n", ATTR_INF,
+						ATTR_RST);
 				}
 			}
+		}
 
-			if (!dma_error) {
+		if (errorcode == 0) {
+			uint8_t *MemMapReadAddr = (uint8_t *)(FLASH_BASE_ADDR + FLASH_ADDR);
+			uint8_t MemMapReadDestAddr[FLASH_RW_SIZE];
+			{
+				printf("CPU Memory Mapped Reading Test from address:%p\n", MemMapReadAddr);
 				bool memmaptestfail = false;
 				for (uint8_t i = 0; i < FLASH_RW_SIZE; i++) {
-					if (MemMapReadDestAddr[i] != flash_data_write[i]) {
-						printf("%s %d%s", ATTR_ERR, MemMapReadDestAddr[i],
-						       i % FORMATTER == 0 ? "\n" : "");
+					if (MemMapReadAddr[i] != flash_data_write[i]) {
+						printf("%s %d%s", ATTR_ERR, MemMapReadAddr[i],
+							i % FORMATTER == 0 ? "\n" : "");
 						memmaptestfail = true;
 					}
 					// else {
 					// printf("%s %d%s", ATTR_INF,
-					// MemMapReadDestAddr[i],i%FORMATTER==0?"\n":"");
+					// MemMapReadAddr[i],i%FORMATTER==0?"\n":"");
 					// }
 				}
 				printf("\n");
 				if (memmaptestfail) {
-					printf("%s DMA Memory mapped read failed\n", ATTR_ERR);
+					printf("%s CPU Memory mapped read failed\n", ATTR_ERR);
 				} else {
-					printf("%s DMA Memory mapped read passed\n", ATTR_INF);
+					printf("%s CPU Memory mapped read passed\n", ATTR_INF);
 				}
-			} else {
-				printf("Error %d DMA Start...\n", dma_error);
+			}
+
+			if (dma != NULL) {
+				printf("%s DMA Memory Mapped Reading Test from address:%p\n", ATTR_RST,
+					MemMapReadAddr);
+				// Configure DMA Block
+				struct dma_block_config lv_dma_block_config = {
+					.block_size = FLASH_RW_SIZE,
+					.dest_addr_adj = DMA_ADDR_ADJ_INCREMENT,
+					.dest_address = (uint32_t)&MemMapReadDestAddr[0],
+					.dest_reload_en = 0,
+					.dest_scatter_count = 0,
+					.dest_scatter_en = 0,
+					.dest_scatter_interval = 0,
+					.fifo_mode_control = 0,
+					.flow_control_mode = 0,
+					.next_block = NULL,
+					.source_addr_adj = DMA_ADDR_ADJ_INCREMENT,
+					.source_address = (uint32_t)&MemMapReadAddr[0],
+					.source_gather_count = 0,
+					.source_gather_en = 0,
+					.source_gather_interval = 0,
+					.source_reload_en = 0,
+					._reserved = 0};
+				// Configure DMA
+				struct dma_config lv_Dma_Config = {.block_count = 1,
+								.channel_direction = MEMORY_TO_MEMORY,
+								.channel_priority = 1,
+								.complete_callback_en = 0,
+								.cyclic = 0,
+								.dest_burst_length = 1,
+								.dest_chaining_en = 0,
+								.dest_data_size = 1,
+								.dest_handshake = 1,
+								.dma_callback = NULL,
+								.dma_slot = 0,
+								.error_callback_dis = 1,
+								.head_block = &lv_dma_block_config,
+								.linked_channel = 0,
+								.source_burst_length = 1,
+								.source_chaining_en = 0,
+								.source_data_size = 1,
+								.user_data = NULL};
+				struct dma_status stat = {0};
+				printf("%s DMA Configuration...\n", ATTR_RST);
+				int dma_error = dma_config(dma, 1, &lv_Dma_Config);
+				k_msleep(10);
+				if (dma_error) {
+					printf("%s Error %d Configuration...\n", ATTR_RST, dma_error);
+				} else {
+					// Call DMA Read
+					printf("%s DMA Starting...\n", ATTR_INF);
+					dma_error = dma_start(dma, 1);
+					k_msleep(10);
+				}
+				(void)dma_get_status(dma, 1, &stat);
+				while (stat.pending_length > 1) {
+					dma_error = dma_get_status(dma, 1, &stat);
+					if (dma_error) {
+						printf("Error %d dma_status...\n", dma_error);
+						break;
+					} else {
+						printf("dma_pending_length:%d \n", stat.pending_length);
+					}
+				}
+
+				if (!dma_error) {
+					bool memmaptestfail = false;
+					for (uint8_t i = 0; i < FLASH_RW_SIZE; i++) {
+						if (MemMapReadDestAddr[i] != flash_data_write[i]) {
+							printf("%s %d%s", ATTR_ERR, MemMapReadDestAddr[i],
+								i % FORMATTER == 0 ? "\n" : "");
+							memmaptestfail = true;
+						}
+						// else {
+						// printf("%s %d%s", ATTR_INF,
+						// MemMapReadDestAddr[i],i%FORMATTER==0?"\n":"");
+						// }
+					}
+					printf("\n");
+					if (memmaptestfail) {
+						printf("%s DMA Memory mapped read failed\n", ATTR_ERR);
+					} else {
+						printf("%s DMA Memory mapped read passed\n", ATTR_INF);
+					}
+				} else {
+					printf("Error %d DMA Start...\n", dma_error);
+				}
 			}
 		}
 	}
-}
+#endif
 
+#if CONFIG_COUNTER_ANDES_ATCPIT100
 void CounterCallBack(const struct device *dev, void *UserData)
 {
 	uint32_t *lvData = ((uint32_t *)UserData);
@@ -283,7 +286,9 @@ void CounterTest(const struct device *pit)
 	}
 	*/
 }
+#endif
 
+#if CONFIG_CRYPTO_PUF_SECURITY_OTP
 void pufs_otp_test(const struct device *pufs_otp)
 {
 	uint8_t slot_data[32] = {0};
@@ -362,7 +367,8 @@ void pufs_otp_test(const struct device *pufs_otp)
 		}
 	}
 }
-
+#endif
+#if CONFIG_CRYPTO_PUF_SECURITY
 void pufs_hash_sg_test(const struct device *pufs)
 {
 	int status = 0;
@@ -890,88 +896,110 @@ void pufs_ecdsa256_verify_test(const struct device *pufs)
 		printf("%s sign_free_session ECDSA256 Success! %s\n", ATTR_INF, ATTR_RST);
 	}
 }
+#endif
 
 int main(void)
 {
 	int Cnt = 0;
 	uint8_t chip_id = 0, vendor_id = 0;
 
-	printf("%s SPI_(%d)_IRQ_Reg_Val:[0x%08x]; DMA_(%d)_IRQ_Reg_Val:[0x%08x]\n", ATTR_RST,
-	       IRQ_ID_SPI, scu_get_irq_reg_val(IRQ_ID_SPI), IRQ_ID_SYSTEM_DMA,
-	       scu_get_irq_reg_val(IRQ_ID_SYSTEM_DMA));
+	#if DT_HAS_RAPIDSI_SCU_ENABLED
+		printf("%s SPI_(%d)_IRQ_Reg_Val:[0x%08x]; DMA_(%d)_IRQ_Reg_Val:[0x%08x]\n", ATTR_RST,
+			IRQ_ID_SPI, scu_get_irq_reg_val(IRQ_ID_SPI), IRQ_ID_SYSTEM_DMA,
+			scu_get_irq_reg_val(IRQ_ID_SYSTEM_DMA));
 
-	soc_get_id(&chip_id, &vendor_id);
-	scu_assert_reset();
+		soc_get_id(&chip_id, &vendor_id);
+		scu_assert_reset();
+	#endif
 
 	int errorcode = 0;
 	struct sensor_value lvTemp = {0}, lvVolt = {0};
-	const struct device *pvt = DEVICE_DT_GET(DT_NODELABEL(pvt0));
-	const struct device *spi = DEVICE_DT_GET(DT_NODELABEL(spi0));
-	const struct device *flash = DEVICE_DT_GET(DT_NODELABEL(m25p32));
-	const struct device *dma = DEVICE_DT_GET(DT_NODELABEL(dma0));
-	const struct device *pit = DEVICE_DT_GET(DT_NODELABEL(pit0));
-	const struct device *pufs = DEVICE_DT_GET(DT_NODELABEL(pufs));
-	const struct device *pufs_otp = DEVICE_DT_GET(DT_NODELABEL(pufs_otp));
+	#if CONFIG_DTI_PVT
+		const struct device *pvt = DEVICE_DT_GET(DT_NODELABEL(pvt0));
+	#endif
+	#if (CONFIG_SPI_ANDES_ATCSPI200 && CONFIG_SPI_NOR)
+		const struct device *spi = DEVICE_DT_GET(DT_NODELABEL(spi0));
+		const struct device *flash = DEVICE_DT_GET(DT_NODELABEL(m25p32));
+	#endif
+	#if CONFIG_DMA_ANDES_ATCDMAC100
+		const struct device *dma = DEVICE_DT_GET(DT_NODELABEL(dma0));
+	#endif
+	#if CONFIG_COUNTER_ANDES_ATCPIT100
+		const struct device *pit = DEVICE_DT_GET(DT_NODELABEL(pit0));
+	#endif
+	#if CONFIG_CRYPTO_PUF_SECURITY
+		const struct device *pufs = DEVICE_DT_GET(DT_NODELABEL(pufs));
+	#endif
+	#if CONFIG_CRYPTO_PUF_SECURITY_OTP
+		const struct device *pufs_otp = DEVICE_DT_GET(DT_NODELABEL(pufs_otp));
+	#endif
 
-	if ((pufs == NULL) || (!device_is_ready(pufs))) {
-		printf("%s pufs has status disabled or driver is not initialized...%s\n", ATTR_ERR,
-		       ATTR_RST);
-	} else {
-		printf("%s pufs Object is Created %s\n", ATTR_INF, ATTR_RST);
-		pufs_decryption_test(pufs);
-		pufs_hash_test(pufs);
-		pufs_hash_sg_test(pufs);
-		pufs_rsa2048_verify_test(pufs);
-		pufs_ecdsa256_verify_test(pufs);
-	}
-
-	if ((pufs_otp == NULL) || (!device_is_ready(pufs_otp))) {
-		printf("%s pufs_otp has status disabled or driver is not initialized...%s\n",
-		       ATTR_ERR, ATTR_RST);
-	} else {
-		printf("%s pufs_otp Object is Created %s\n", ATTR_INF, ATTR_RST);
-		pufs_otp_test(pufs_otp);
-	}
-
-	if ((pvt == NULL) || (!device_is_ready(pvt))) {
-		printf("%s pvt has status disabled or driver is not initialized...%s\n", ATTR_ERR,
-		       ATTR_RST);
-	} else {
-		printf("%s pvt Object is Created %s\n", ATTR_INF, ATTR_RST);
-		errorcode = sensor_channel_get(pvt, SENSOR_CHAN_DIE_TEMP, &lvTemp);
-		if (errorcode == 0) {
-			printf("%s Error fetching temperature value. Error code:%u%s\n", ATTR_ERR,
-			       errorcode, ATTR_RST);
-		}
-		errorcode = sensor_channel_get(pvt, SENSOR_CHAN_VOLTAGE, &lvVolt);
-		if (errorcode == 0) {
-			printf("%s Error fetching Voltage value. Error code:%u%s\n", ATTR_ERR,
-			       errorcode, ATTR_RST);
-		}
-		printf("%s Die Temperature:%d Voltage:%d%s\n", ATTR_INF, lvTemp.val1, lvVolt.val1,
-		       ATTR_RST);
-	}
-
-	if (spi == NULL) {
-		printf("%s spi has status disabled...%s\n", ATTR_ERR, ATTR_RST);
-	} else {
-		printf("%s spi Object is Created. Test Via DMA\n", ATTR_INF);
-		if (flash == NULL) {
-			printf("%s flash has status disabled or not initialized properly...%s\n",
-			       ATTR_ERR, ATTR_RST);
+	#if CONFIG_CRYPTO_PUF_SECURITY
+		if ((pufs == NULL) || (!device_is_ready(pufs))) {
+			printf("%s pufs has status disabled or driver is not initialized...%s\n", ATTR_ERR,
+				ATTR_RST);
 		} else {
-			printf("%s flash Object is Created. Initialize to Test Via DMA%s\n",
-			       ATTR_INF, ATTR_RST);
-			Flash_Test(flash, dma, 0x1000, 0, 20);
+			printf("%s pufs Object is Created %s\n", ATTR_INF, ATTR_RST);
+			pufs_decryption_test(pufs);
+			pufs_hash_test(pufs);
+			pufs_hash_sg_test(pufs);
+			pufs_rsa2048_verify_test(pufs);
+			pufs_ecdsa256_verify_test(pufs);
 		}
-	}
+	#endif
 
-	if ((pit == NULL) || !device_is_ready(pit)) {
-		printf("%s pit has status disabled or driver is not initialized...%s\n", ATTR_ERR,
-		       ATTR_RST);
-	} else {
-		CounterTest(pit);
-	}
+	#if CONFIG_CRYPTO_PUF_SECURITY_OTP
+		if ((pufs_otp == NULL) || (!device_is_ready(pufs_otp))) {
+			printf("%s pufs_otp has status disabled or driver is not initialized...%s\n",
+				ATTR_ERR, ATTR_RST);
+		} else {
+			printf("%s pufs_otp Object is Created %s\n", ATTR_INF, ATTR_RST);
+			pufs_otp_test(pufs_otp);
+		}
+	#endif
+	#if CONFIG_DTI_PVT
+		if ((pvt == NULL) || (!device_is_ready(pvt))) {
+			printf("%s pvt has status disabled or driver is not initialized...%s\n", ATTR_ERR,
+				ATTR_RST);
+		} else {
+			printf("%s pvt Object is Created %s\n", ATTR_INF, ATTR_RST);
+			errorcode = sensor_channel_get(pvt, SENSOR_CHAN_DIE_TEMP, &lvTemp);
+			if (errorcode == 0) {
+				printf("%s Error fetching temperature value. Error code:%u%s\n", ATTR_ERR,
+					errorcode, ATTR_RST);
+			}
+			errorcode = sensor_channel_get(pvt, SENSOR_CHAN_VOLTAGE, &lvVolt);
+			if (errorcode == 0) {
+				printf("%s Error fetching Voltage value. Error code:%u%s\n", ATTR_ERR,
+					errorcode, ATTR_RST);
+			}
+			printf("%s Die Temperature:%d Voltage:%d%s\n", ATTR_INF, lvTemp.val1, lvVolt.val1,
+				ATTR_RST);
+		}
+	#endif
+	#if (CONFIG_SPI_ANDES_ATCSPI200 && CONFIG_SPI_NOR)
+		if (spi == NULL) {
+			printf("%s spi has status disabled...%s\n", ATTR_ERR, ATTR_RST);
+		} else {
+			printf("%s spi Object is Created. Test Via DMA\n", ATTR_INF);
+			if (flash == NULL) {
+				printf("%s flash has status disabled or not initialized properly...%s\n",
+					ATTR_ERR, ATTR_RST);
+			} else {
+				printf("%s flash Object is Created. Initialize to Test Via DMA%s\n",
+					ATTR_INF, ATTR_RST);
+				Flash_Test(flash, dma, 0x1000, 0, 20);
+			}
+		}
+	#endif
+	#if CONFIG_COUNTER_ANDES_ATCPIT100
+		if ((pit == NULL) || !device_is_ready(pit)) {
+			printf("%s pit has status disabled or driver is not initialized...%s\n", ATTR_ERR,
+				ATTR_RST);
+		} else {
+			CounterTest(pit);
+		}
+	#endif
 
 	while (true) {
 		printf("%s%d - %s [CHIP_ID:0x%02x VENDOR_ID:0x%02x] Build[Date:%s Time:%s]\r",
