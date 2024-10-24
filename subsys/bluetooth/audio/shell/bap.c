@@ -3808,8 +3808,7 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 		src_cnt = CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT;
 	}
 
-	bt_bap_unicast_server_register(&unicast_server_param);
-	bt_bap_unicast_server_register_cb(&unicast_server_cb);
+	bt_bap_unicast_server_register(&unicast_server_param, &unicast_server_cb);
 #endif /* CONFIG_BT_BAP_UNICAST_SERVER */
 
 #if defined(CONFIG_BT_PAC_SNK)

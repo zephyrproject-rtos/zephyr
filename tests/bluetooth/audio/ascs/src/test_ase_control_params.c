@@ -56,10 +56,7 @@ static void test_ase_control_params_before(void *f)
 
 	ARG_UNUSED(fixture);
 
-	err = bt_bap_unicast_server_register(&param);
-	zassert_equal(err, 0, "unexpected err response %d", err);
-
-	err = bt_bap_unicast_server_register_cb(&mock_bap_unicast_server_cb);
+	err = bt_bap_unicast_server_register(&param, &mock_bap_unicast_server_cb);
 	zassert_equal(err, 0, "unexpected err response %d", err);
 
 	test_conn_init(&fixture->conn);
@@ -77,14 +74,11 @@ static void test_ase_control_params_after(void *f)
 {
 	int err;
 
-	err = bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
-	zassert_equal(err, 0, "unexpected err response %d", err);
-
-	err = bt_bap_unicast_server_unregister();
+	err = bt_bap_unicast_server_unregister(&mock_bap_unicast_server_cb);
 	while (err != 0) {
 		zassert_equal(err, -EBUSY, "unexpected err response %d", err);
 		k_sleep(K_MSEC(10));
-		err = bt_bap_unicast_server_unregister();
+		err = bt_bap_unicast_server_unregister(&mock_bap_unicast_server_cb);
 	}
 }
 
