@@ -1,0 +1,19 @@
+identifier: mini_stm32h7b0
+name: WeAct Studio MiniSTM32H7B0 Core Board
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 512
+flash: 2048
+supported:
+  - gpio
+  - counter
+  - spi
+  - backup_sram
+  - watchdog
+  - qspi
+  - video
+vendor: weact
