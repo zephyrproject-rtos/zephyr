@@ -22,6 +22,15 @@ properties:
       - "rfo-lp"
       - "rfo-hp"
 
+  power-amplifier-output-selectable:
+    type: boolean
+    description:
+      Indicates whether the power amplifier output is selectable. When set to true,
+      the board supports switching between different power amplifier outputs.
+      This is typically used in configurations where multiple power amplifier paths are
+      available, such as RFO_LP and RFO_HP. If not specified, the default value is false,
+      meaning the power amplifier output is fixed.
+
   rfo-lp-max-power:
     type: int
     default: 14
