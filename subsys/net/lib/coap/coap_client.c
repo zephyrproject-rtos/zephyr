@@ -31,6 +31,8 @@ static void cancel_requests_with(struct coap_client *client, int error);
 static int recv_response(struct coap_client *client, struct coap_packet *response, bool *truncated);
 static int handle_response(struct coap_client *client, const struct coap_packet *response,
 			   bool response_truncated);
+static struct coap_client_internal_request *get_request_with_mid(
+	struct coap_client *client, const struct coap_packet *resp);
 
 
 static int send_request(int sock, const void *buf, size_t len, int flags,
@@ -689,6 +691,23 @@ static struct coap_client_internal_request *get_request_with_token(
 	return NULL;
 }
 
+static struct coap_client_internal_request *get_request_with_mid(
+	struct coap_client *client, const struct coap_packet *resp)
+{
+	uint16_t mid = coap_header_get_id(resp);
+
+	for (int i = 0; i < CONFIG_COAP_CLIENT_MAX_REQUESTS; i++) {
+		if (client->requests[i].request_ongoing) {
+			if (client->requests[i].last_id == mid) {
+				return &client->requests[i];
+			}
+		}
+	}
+
+	return NULL;
+}
+
+
 static bool find_echo_option(const struct coap_packet *response, struct coap_option *option)
 {
 	return coap_find_options(response, COAP_OPTION_ECHO, option, 1);
@@ -698,7 +717,6 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 			   bool response_truncated)
 {
 	int ret = 0;
-	int response_type;
 	int block_option;
 	int block_num;
 	bool blockwise_transfer = false;
@@ -711,31 +729,43 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 	 * NCON request results only as a separate CON or NCON message as there is no ACK
 	 * With RESET, just drop gloves and call the callback.
 	 */
-	response_type = coap_header_get_type(response);
-
-	internal_req = get_request_with_token(client, response);
-	/* Reset and Ack need to match the message ID with request */
-	if ((response_type == COAP_TYPE_ACK || response_type == COAP_TYPE_RESET) &&
-	     internal_req == NULL)  {
-		LOG_ERR("Unexpected ACK or Reset");
-		return -EFAULT;
-	} else if (response_type == COAP_TYPE_RESET) {
-		coap_pending_clear(&internal_req->pending);
-	}
 
 	/* CON, NON_CON and piggybacked ACK need to match the token with original request */
 	uint16_t payload_len;
+	uint8_t response_type = coap_header_get_type(response);
 	uint8_t response_code = coap_header_get_code(response);
 	uint16_t response_id = coap_header_get_id(response);
 	const uint8_t *payload = coap_packet_get_payload(response, &payload_len);
 
+	if (response_type == COAP_TYPE_RESET) {
+		internal_req = get_request_with_mid(client, response);
+		if (!internal_req) {
+			LOG_WRN("No matching request for RESET");
+			return 0;
+		}
+		report_callback_error(internal_req, -ECONNRESET);
+		reset_internal_request(internal_req);
+		return 0;
+	}
+
 	/* Separate response coming */
 	if (payload_len == 0 && response_type == COAP_TYPE_ACK &&
 	    response_code == COAP_CODE_EMPTY) {
+		internal_req = get_request_with_mid(client, response);
+		if (!internal_req) {
+			LOG_WRN("No matching request for ACK");
+			return 0;
+		}
 		internal_req->pending.t0 = k_uptime_get();
 		internal_req->pending.timeout = internal_req->pending.t0 + COAP_SEPARATE_TIMEOUT;
 		internal_req->pending.retries = 0;
 		return 1;
+	}
+
+	internal_req = get_request_with_token(client, response);
+	if (!internal_req) {
+		LOG_WRN("No matching request for response");
+		return 0;
 	}
 
 	if (internal_req == NULL || !token_compare(internal_req, response)) {
