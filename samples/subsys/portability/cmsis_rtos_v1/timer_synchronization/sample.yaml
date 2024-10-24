@@ -2,6 +2,9 @@ sample:
   name: CMSIS_RTOS_V1 Synchronization
 tests:
   sample.portability.cmsis_rtos_v1.timer_synchronization:
+    platform_key:
+      - arch
+      - simulation
     integration_platforms:
       - native_sim
     tags: cmsis_rtos
