@@ -293,6 +293,11 @@ config WIFI_NM_WPA_SUPPLICANT_DPP
 	select MBEDTLS_X509_CSR_WRITE_C
 	select MBEDTLS_X509_CSR_PARSE_C
 
+config WIFI_NM_WPA_SUPPLICANT_11AX
+	bool "IEEE 802.11ax HE support"
+	depends on WIFI_NM_WPA_SUPPLICANT_AP || WIFI_NM_HOSTAPD_AP
+	default y
+
 config WPA_CLI
 	bool "WPA CLI support"
 	help
