@@ -28,14 +28,14 @@ static int bt_unpair_unreachable_custom_fake(uint8_t id, const bt_addr_le_t *add
 	return 0;
 }
 
-static void bt_conn_foreach_conn_ref_null_custom_fake(int type, bt_conn_foreach_cb func,
-							void *data)
+static void bt_conn_foreach_conn_ref_null_custom_fake(enum bt_conn_type type,
+						      bt_conn_foreach_cb func, void *data)
 {
 	func(NULL, data);
 }
 
-static void bt_conn_foreach_data_ref_null_custom_fake(int type, bt_conn_foreach_cb func,
-							void *data)
+static void bt_conn_foreach_data_ref_null_custom_fake(enum bt_conn_type type,
+						      bt_conn_foreach_cb func, void *data)
 {
 	struct bt_conn conn;
 
