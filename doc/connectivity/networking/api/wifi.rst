@@ -15,7 +15,7 @@ Only personal mode security is supported with below types:
 
 * Open
 * WPA2-PSK
-* WPA3-PSK-256
+* WPA2-PSK-256
 * WPA3-SAE
 
 The Wi-Fi management API is implemented in the ``wifi_mgmt`` module as a part of the networking L2
