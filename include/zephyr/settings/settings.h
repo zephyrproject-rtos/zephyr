@@ -619,6 +619,48 @@ int settings_runtime_commit(const char *name);
  */
 int settings_storage_get(void **storage);
 
+#ifdef CONFIG_SETTINGS_STATIC_DATA
+/**
+ * @struct settings_data_static
+ * Settings data static structure. This can be used to place compile time
+ * data in a format that can be used by the settings subsystem. The settings
+ * static data is registered in a linker section by using a call to
+ * SETTINGS_STATIC_DATA_DEFINE().
+ */
+struct settings_static_data {
+
+	const char *name;
+	/**< Name of data. */
+
+	const void *data;
+	/**< Pointer to data */
+
+	size_t size;
+	/**< Data size */
+};
+
+/**
+ * Define a settings static data item
+ *
+ * @param _lsname linker section static data name
+ * @param _name static data name
+ * @param _data pointer to data
+ * @param _size data size
+ *
+ * This creates a variable _sname prepended by settings_static_data_.
+ *
+ */
+
+#define SETTINGS_STATIC_DATA_DEFINE(_lsname, _name, _data, _size)	     \
+	const STRUCT_SECTION_ITERABLE(settings_static_data,		     \
+				      settings_static_data_ ## _lsname) = {  \
+		.name = _name,						     \
+		.data = _data,						     \
+		.size = _size,						     \
+	}
+
+#endif
+
 #ifdef __cplusplus
 }
 #endif

@@ -10,6 +10,10 @@
 	ITERABLE_SECTION_ROM(settings_handler_static, Z_LINK_ITERABLE_SUBALIGN)
 #endif
 
+#if defined(CONFIG_SETTINGS_STATIC_DATA)
+	ITERABLE_SECTION_ROM(settings_static_data, Z_LINK_ITERABLE_SUBALIGN)
+#endif
+
 #if defined(CONFIG_SENSING)
 	ITERABLE_SECTION_ROM(sensing_sensor_info, Z_LINK_ITERABLE_SUBALIGN)
 #endif
