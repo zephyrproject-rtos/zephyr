@@ -257,21 +257,19 @@ ZTEST(canfd, test_send_fd_dlc_out_of_range)
 }
 
 /**
- * @brief Test error when CAN FD Error State Indicator (ESI) is send without FD format flag (FDF).
+ * @brief Test error when CAN FD Error State Indicator (ESI) is set on transmit frame.
  *
- * CAN FD Error State Indicator (ESI) indicates that the transmitting node is
- * in error-passive state. Only valid in combination with CAN_FRAME_FDF.
+ * CAN FD Error State Indicator (ESI) indicates that the transmitting node is in error-passive
+ * state, but should never be set explicitly. Setting it is handled in the CAN controller hardware.
  */
 ZTEST(canfd, test_send_fd_incorrect_esi)
 {
 	struct can_frame frame = {
-		.flags = CAN_FRAME_ESI,
+		.flags = CAN_FRAME_FDF | CAN_FRAME_ESI,
 		.id = TEST_CAN_STD_ID_1,
 		.dlc = 0,
 	};
 	int err;
-
-	Z_TEST_SKIP_IFNDEF(CONFIG_RUNTIME_ERROR_CHECKS);
 
 	err = can_send(can_dev, &frame, TEST_SEND_TIMEOUT, NULL, NULL);
 	zassert_equal(err, -ENOTSUP, "wrong error on sending invalid frame (err %d)", err);
