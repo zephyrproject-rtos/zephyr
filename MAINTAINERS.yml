@@ -4181,6 +4181,17 @@ Storage:
   tests:
     - storage
 
+Storage ZMS:
+  status: maintained
+  maintainers:
+    - rghaddab
+  files:
+    - subsys/fs/zms/
+    - include/zephyr/fs/zms.h
+    - samples/subsys/fs/zms/
+    - tests/subsys/fs/zms/
+    - doc/services/storage/zms/zms.rst
+
 Sysbuild:
   status: maintained
   maintainers:
