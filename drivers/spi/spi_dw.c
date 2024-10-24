@@ -41,6 +41,8 @@ LOG_MODULE_REGISTER(spi_dw);
 #include <zephyr/drivers/pinctrl.h>
 #endif
 
+#define DW_HSSI_VER_102A		(0x3130322a)
+
 static inline bool spi_dw_is_slave(struct spi_dw_data *spi)
 {
 	return (IS_ENABLED(CONFIG_SPI_SLAVE) &&
@@ -213,6 +215,7 @@ static int spi_dw_configure(const struct device *dev,
 
 	if ((config->operation & SPI_TRANSFER_LSB) ||
 	    (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES) &&
+	     !IS_ENABLED(CONFIG_SPI_DW_HSSI) &&
 	     (config->operation & (SPI_LINES_DUAL |
 				   SPI_LINES_QUAD | SPI_LINES_OCTAL)))) {
 		LOG_ERR("Unsupported configuration");
@@ -226,7 +229,7 @@ static int spi_dw_configure(const struct device *dev,
 	}
 
 	/* Word size */
-	if (info->max_xfer_size == 32) {
+	if (!IS_ENABLED(CONFIG_SPI_DW_HSSI) && (info->max_xfer_size == 32)) {
 		ctrlr0 |= DW_SPI_CTRLR0_DFS_32(SPI_WORD_SIZE_GET(config->operation));
 	} else {
 		ctrlr0 |= DW_SPI_CTRLR0_DFS_16(SPI_WORD_SIZE_GET(config->operation));
@@ -247,6 +250,23 @@ static int spi_dw_configure(const struct device *dev,
 	if (SPI_MODE_GET(config->operation) & SPI_MODE_LOOP) {
 		ctrlr0 |= DW_SPI_CTRLR0_SRL;
 	}
+
+#if defined(CONFIG_SPI_DW_HSSI) && defined(CONFIG_SPI_EXTENDED_MODES)
+	if (spi->version >= DW_HSSI_VER_102A) {
+		/* SPI frame format for Tx/Rx data */
+		switch (SPI_LINES_GET(config->operation)) {
+		case SPI_LINES_DUAL:
+			ctrlr0 |= DW_SPI_CTRLR0_SPI_DUAL;
+			break;
+		case SPI_LINES_QUAD:
+			ctrlr0 |= DW_SPI_CTRLR0_SPI_QUAD;
+			break;
+		case SPI_LINES_OCTAL:
+			ctrlr0 |= DW_SPI_CTRLR0_SPI_OCTAL;
+			break;
+		}
+	}
+#endif
 
 	/* Installing the configuration */
 	write_ctrlr0(dev, ctrlr0);
@@ -323,6 +343,18 @@ static void spi_dw_update_txftlr(const struct device *dev,
 		} else if (spi->ctx.tx_len < dw_spi_txftlr_dflt) {
 			reg_data = spi->ctx.tx_len - 1;
 		}
+	} else {
+#if defined(CONFIG_SPI_DW_HSSI) && defined(CONFIG_SPI_EXTENDED_MODES)
+		/*
+		 * TXFTLR field in the TXFTLR register is valid only for
+		 * Controller mode operation
+		 */
+		if (!spi->ctx.tx_len) {
+			reg_data = 0U;
+		} else if (spi->ctx.tx_len < dw_spi_txftlr_dflt) {
+			reg_data = (spi->ctx.tx_len - 1) << DW_SPI_TXFTLR_TXFTLR_SHIFT;
+		}
+#endif
 	}
 
 	LOG_DBG("TxFTLR: %u", reg_data);
@@ -398,6 +430,23 @@ static int transceive(const struct device *dev,
 
 	write_ctrlr0(dev, reg_data);
 
+#if defined(CONFIG_SPI_DW_HSSI) && defined(CONFIG_SPI_EXTENDED_MODES)
+	if (spi->version >= DW_HSSI_VER_102A) {
+		/* Enhanced SPI operation */
+		reg_data = read_spi_ctrlr0(dev);
+		reg_data &= ~DW_SPI_ESPI_CTRLR0_TRANS_TYPE_MASK;
+		reg_data |= FIELD_PREP(DW_SPI_ESPI_CTRLR0_TRANS_TYPE_MASK,
+				       SPI_TRANS_TYPE_FIELD_GET(config->operation));
+		reg_data &= ~DW_SPI_ESPI_CTRLR0_ADDR_L_MASK;
+		reg_data |= FIELD_PREP(DW_SPI_ESPI_CTRLR0_ADDR_L_MASK,
+				       SPI_ADDR_L_FIELD_GET(config->operation));
+		reg_data &= ~DW_SPI_ESPI_CTRLR0_INST_L_MASK;
+		reg_data |= FIELD_PREP(DW_SPI_ESPI_CTRLR0_INST_L_MASK,
+				       SPI_INST_L_FIELD_GET(config->operation));
+		write_spi_ctrlr0(dev, reg_data);
+	}
+#endif
+
 	/* Set buffers info */
 	spi_context_buffers_setup(&spi->ctx, tx_bufs, rx_bufs, spi->dfs);
 
@@ -422,6 +471,15 @@ static int transceive(const struct device *dev,
 
 	/* Rx Threshold */
 	write_rxftlr(dev, reg_data);
+
+	/* Rx sample delay */
+	if (info->rx_sample_delay) {
+		reg_data = read_rx_sample_dly(dev);
+		reg_data &= ~DW_SPI_RX_SAMPLE_DELAY_MASK;
+		reg_data |= FIELD_PREP(DW_SPI_RX_SAMPLE_DELAY_MASK,
+				       info->rx_sample_delay);
+		write_rx_sample_dly(dev, reg_data);
+	}
 
 	/* Enable interrupts */
 	reg_data = !rx_bufs ?
@@ -554,6 +612,12 @@ int spi_dw_init(const struct device *dev)
 	write_imr(dev, DW_SPI_IMR_MASK);
 	clear_bit_ssienr(dev);
 
+	/* SSI component version */
+	spi->version = read_ssi_comp_version(dev);
+	LOG_DBG("Version: %c.%c%c%c", (spi->version >> 24) & 0xff,
+		(spi->version >> 16) & 0xff, (spi->version >> 8) & 0xff,
+		spi->version & 0xff);
+
 	LOG_DBG("Designware SPI driver initialized on device: %p", dev);
 
 	err = spi_context_cs_configure_all(&spi->ctx);
@@ -647,6 +711,7 @@ COND_CODE_1(IS_EQ(DT_NUM_IRQS(DT_DRV_INST(inst)), 1),              \
 		.serial_target = DT_INST_PROP(inst, serial_target),                         \
 		.fifo_depth = DT_INST_PROP(inst, fifo_depth),                               \
 		.max_xfer_size = DT_INST_PROP(inst, max_xfer_size),                         \
+		.rx_sample_delay = DT_INST_PROP(inst, rx_sample_delay),                     \
 		IF_ENABLED(CONFIG_PINCTRL, (.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),)) \
 		COND_CODE_1(DT_INST_PROP(inst, aux_reg),                                    \
 			(.read_func = aux_reg_read,                                         \

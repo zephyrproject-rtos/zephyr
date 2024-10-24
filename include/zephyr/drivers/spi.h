@@ -146,6 +146,110 @@ extern "C" {
 #define SPI_LINES_OCTAL		(3U << 16)     /**< Octal lines */
 
 #define SPI_LINES_MASK		(0x3U << 16)   /**< Mask for MISO lines in spi_operation_t */
+#define SPI_LINES_GET(_line_)			\
+	((_line_) & SPI_LINES_MASK)
+
+/** @} */
+
+/**
+ * @name SPI Instruction and Address transfer format
+ * @{
+ *
+ * Some controllers support the enhanced SPI operations divided into multi
+ * phases - Instruction/Address/Data.
+ * The Instruction/Address transfer format will be either in Standard SPI mode
+ * or the SPI mode configured in CTRLR0 frame format.
+ *
+ * TT0: Instruction/Address in Standard SPI mode
+ * TT1: Instruction in Standard SPI mode, Address in the mode specified by
+ *      CTRLR0 frame format
+ * TT2: Instruction/Address in the mode specified by CTRLR0 frame format field
+ * TT3: Dual Octal mode. Instruction/Address in octal mode, data is transferred
+ *      on 16 data lines
+ *
+ * Supported only if @kconfig{CONFIG_SPI_EXTENDED_MODES} is enabled
+ */
+
+#define SPI_TRANS_TYPE_SHIFT	(18)
+#define SPI_TRANS_TYPE_MASK	(0x3U << SPI_TRANS_TYPE_SHIFT)
+#define SPI_TRANS_TYPE_TT0	(0U << SPI_TRANS_TYPE_SHIFT)
+#define SPI_TRANS_TYPE_TT1	(1U << SPI_TRANS_TYPE_SHIFT)
+#define SPI_TRANS_TYPE_TT2	(2U << SPI_TRANS_TYPE_SHIFT)
+#define SPI_TRANS_TYPE_TT3	(3U << SPI_TRANS_TYPE_SHIFT)
+#define SPI_TRANS_TYPE_GET(_type_)		\
+	((_type_) & SPI_TRANS_TYPE_MASK)
+#define SPI_TRANS_TYPE_FIELD_GET(_type_)	\
+	(SPI_TRANS_TYPE_GET(_type_) >> SPI_TRANS_TYPE_SHIFT)
+
+/** @} */
+
+/**
+ * @name SPI address length to be transmitted
+ * @{
+ *
+ * Some controllers support the enhanced SPI operations divided into multi
+ * phases - Instruction/Address/Data. The address transfer begins only after
+ * this much bits are programmed into the FIFO.
+ *
+ * L0: No Address
+ * L4: 4 bit Address length
+ * L8: 8 bit Address length
+ * Ln: n bit Address length respectively
+ *
+ * Supported only if @kconfig{CONFIG_SPI_EXTENDED_MODES} is enabled
+ */
+
+#define SPI_ADDR_L_SHIFT	(20)
+#define SPI_ADDR_L_MASK		(0xFU << SPI_ADDR_L_SHIFT)
+#define SPI_ADDR_L0		(0U << SPI_ADDR_L_SHIFT)
+#define SPI_ADDR_L4		(1U << SPI_ADDR_L_SHIFT)
+#define SPI_ADDR_L8		(2U << SPI_ADDR_L_SHIFT)
+#define SPI_ADDR_L12		(3U << SPI_ADDR_L_SHIFT)
+#define SPI_ADDR_L16		(4U << SPI_ADDR_L_SHIFT)
+#define SPI_ADDR_L20		(5U << SPI_ADDR_L_SHIFT)
+#define SPI_ADDR_L24		(6U << SPI_ADDR_L_SHIFT)
+#define SPI_ADDR_L28		(7U << SPI_ADDR_L_SHIFT)
+#define SPI_ADDR_L32		(8U << SPI_ADDR_L_SHIFT)
+#define SPI_ADDR_L36		(9U << SPI_ADDR_L_SHIFT)
+#define SPI_ADDR_L40		(10U << SPI_ADDR_L_SHIFT)
+#define SPI_ADDR_L44		(11U << SPI_ADDR_L_SHIFT)
+#define SPI_ADDR_L48		(12U << SPI_ADDR_L_SHIFT)
+#define SPI_ADDR_L52		(13U << SPI_ADDR_L_SHIFT)
+#define SPI_ADDR_L56		(14U << SPI_ADDR_L_SHIFT)
+#define SPI_ADDR_L60		(15U << SPI_ADDR_L_SHIFT)
+#define SPI_ADDR_L_GET(_length_)	\
+	((_length_) & SPI_ADDR_L_MASK)
+#define SPI_ADDR_L_FIELD_GET(_length_)	\
+	(SPI_ADDR_L_GET(_length_) >> SPI_ADDR_L_SHIFT)
+
+/** @} */
+
+/**
+ * @name SPI Instruction and Address transfer format.
+ * @{
+ *
+ * Some controllers support the enhanced SPI operations divided into multi
+ * phases - Instruction/Address/Data. This specifies the instruction length
+ * in bits.
+ *
+ * L0: No Instruction
+ * L4: 4 bit Instruction length
+ * L8: 8 bit Instruction length
+ * L16: 16 bit Instruction length
+ *
+ * Supported only if @kconfig{CONFIG_SPI_EXTENDED_MODES} is enabled
+ */
+
+#define SPI_INST_L_SHIFT	(24)
+#define SPI_INST_L_MASK		(0x3U << SPI_INST_L_SHIFT)
+#define SPI_INST_L0		(0U << SPI_INST_L_SHIFT)
+#define SPI_INST_L4		(1U << SPI_INST_L_SHIFT)
+#define SPI_INST_L8		(2U << SPI_INST_L_SHIFT)
+#define SPI_INST_L12		(3U << SPI_INST_L_SHIFT)
+#define SPI_INST_L_GET(_length_)	\
+	((_length_) & SPI_INST_L_MASK)
+#define SPI_INST_L_FIELD_GET(_length_)	\
+	(SPI_INST_L_GET(_length_) >> SPI_INST_L_SHIFT)
 
 /** @} */
 
@@ -319,7 +423,10 @@ struct spi_config {
 	 * If @kconfig{CONFIG_SPI_EXTENDED_MODES} is enabled:
 	 *
 	 * - 16..17: MISO lines (Single/Dual/Quad/Octal).
-	 * - 18..31: Reserved for future use.
+	 * - 18..19: Transfer Type (Address and instruction transfer format).
+	 * - 20..23: Length of Address to be transmitted.
+	 * - 24..25: Enhanced SPI mode instruction length in bits
+	 * - 26..31: Reserved for future use.
 	 */
 	spi_operation_t operation;
 	/** @brief Slave number from 0 to host controller slave limit. */

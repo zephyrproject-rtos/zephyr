@@ -35,6 +35,7 @@ struct spi_dw_config {
 	bool serial_target;
 	uint8_t fifo_depth;
 	uint8_t max_xfer_size;
+	uint8_t rx_sample_delay;
 #ifdef CONFIG_PINCTRL
 	const struct pinctrl_dev_config *pcfg;
 #endif
@@ -48,6 +49,7 @@ struct spi_dw_config {
 struct spi_dw_data {
 	DEVICE_MMIO_RAM;
 	struct spi_context ctx;
+	uint32_t version;	/* ssi comp version */
 	uint8_t dfs;	/* dfs in bytes: 1,2 or 4 */
 	uint8_t fifo_diff;	/* cannot be bigger than FIFO depth */
 };
@@ -194,6 +196,23 @@ static int reg_test_bit(uint8_t bit, mm_reg_t addr, uint32_t off)
 #define DW_SPI_CTRLR0_SRL_BIT		(13)
 #endif
 
+#if defined(CONFIG_SPI_DW_HSSI) && defined(CONFIG_SPI_EXTENDED_MODES)
+/* TXFTLR setting. Only valid for Controller operation mode. */
+#define DW_SPI_TXFTLR_TXFTLR_SHIFT	(16)
+
+/* SPI Frame Format */
+#define DW_SPI_CTRLR0_SPI_FRF_SHIFT	(22)
+#define DW_SPI_CTRLR0_SPI_STANDARD	(0 << DW_SPI_CTRLR0_SPI_FRF_SHIFT)
+#define DW_SPI_CTRLR0_SPI_DUAL		(1 << DW_SPI_CTRLR0_SPI_FRF_SHIFT)
+#define DW_SPI_CTRLR0_SPI_QUAD		(2 << DW_SPI_CTRLR0_SPI_FRF_SHIFT)
+#define DW_SPI_CTRLR0_SPI_OCTAL		(3 << DW_SPI_CTRLR0_SPI_FRF_SHIFT)
+
+/* SPI_CTRLR0 settings */
+#define DW_SPI_ESPI_CTRLR0_INST_L_MASK		GENMASK(9, 8)
+#define DW_SPI_ESPI_CTRLR0_ADDR_L_MASK		GENMASK(5, 2)
+#define DW_SPI_ESPI_CTRLR0_TRANS_TYPE_MASK	GENMASK(1, 0)
+#endif
+
 #define DW_SPI_CTRLR0_SCPH		BIT(DW_SPI_CTRLR0_SCPH_BIT)
 #define DW_SPI_CTRLR0_SCPOL		BIT(DW_SPI_CTRLR0_SCPOL_BIT)
 #define DW_SPI_CTRLR0_SRL		BIT(DW_SPI_CTRLR0_SRL_BIT)
@@ -272,6 +291,9 @@ static int reg_test_bit(uint8_t bit, mm_reg_t addr, uint32_t off)
 #define DW_SPI_IMR_MASK_RX		(~(DW_SPI_IMR_RXUIM | \
 					   DW_SPI_IMR_RXOIM | \
 					   DW_SPI_IMR_RXFIM))
+
+/* RX Sample Delay */
+#define DW_SPI_RX_SAMPLE_DELAY_MASK	GENMASK(7, 0)
 
 /*
  * Including the right register definition file
