@@ -21,7 +21,7 @@ enum {
 	UART_RA_INT_RXI,
 	UART_RA_INT_TXI,
 	UART_RA_INT_ERI,
-	NUM_OF_UART_RA_INT,
+	NUM_OF_UART_RA_EVENTS,
 };
 
 struct uart_ra_cfg {
@@ -30,6 +30,7 @@ struct uart_ra_cfg {
 	clock_control_subsys_t clock_id;
 	const struct pinctrl_dev_config *pcfg;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	uint16_t event[NUM_OF_UART_RA_EVENTS];
 	int (*irq_config_func)(const struct device *dev);
 #endif
 };
@@ -39,7 +40,6 @@ struct uart_ra_data {
 	uint32_t clk_rate;
 	struct k_spinlock lock;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	uint32_t irqn[NUM_OF_UART_RA_INT];
 	uart_irq_callback_user_data_t callback;
 	void *cb_data;
 #endif
@@ -469,6 +469,7 @@ static int uart_ra_fifo_read(const struct device *dev, uint8_t *rx_data, const i
 
 static void uart_ra_irq_tx_enable(const struct device *dev)
 {
+	const struct uart_ra_cfg *config = dev->config;
 	struct uart_ra_data *data = dev->data;
 	k_spinlock_key_t key;
 	uint16_t reg_val;
@@ -479,13 +480,14 @@ static void uart_ra_irq_tx_enable(const struct device *dev)
 	reg_val |= (REG_MASK(SCR_TIE));
 	uart_ra_write_8(dev, SCR, reg_val);
 
-	irq_enable(data->irqn[UART_RA_INT_TXI]);
+	ra_icu_event_enable(config->event[UART_RA_INT_TXI]);
 
 	k_spin_unlock(&data->lock, key);
 }
 
 static void uart_ra_irq_tx_disable(const struct device *dev)
 {
+	const struct uart_ra_cfg *config = dev->config;
 	struct uart_ra_data *data = dev->data;
 	k_spinlock_key_t key;
 	uint16_t reg_val;
@@ -496,7 +498,7 @@ static void uart_ra_irq_tx_disable(const struct device *dev)
 	reg_val &= ~(REG_MASK(SCR_TIE));
 	uart_ra_write_8(dev, SCR, reg_val);
 
-	irq_disable(data->irqn[UART_RA_INT_TXI]);
+	ra_icu_event_disable(config->event[UART_RA_INT_TXI]);
 
 	k_spin_unlock(&data->lock, key);
 }
@@ -511,6 +513,7 @@ static int uart_ra_irq_tx_ready(const struct device *dev)
 
 static void uart_ra_irq_rx_enable(const struct device *dev)
 {
+	const struct uart_ra_cfg *config = dev->config;
 	struct uart_ra_data *data = dev->data;
 	k_spinlock_key_t key;
 	uint16_t reg_val;
@@ -521,13 +524,14 @@ static void uart_ra_irq_rx_enable(const struct device *dev)
 	reg_val |= REG_MASK(SCR_RIE);
 	uart_ra_write_8(dev, SCR, reg_val);
 
-	irq_enable(data->irqn[UART_RA_INT_RXI]);
+	ra_icu_event_enable(config->event[UART_RA_INT_RXI]);
 
 	k_spin_unlock(&data->lock, key);
 }
 
 static void uart_ra_irq_rx_disable(const struct device *dev)
 {
+	const struct uart_ra_cfg *config = dev->config;
 	struct uart_ra_data *data = dev->data;
 	k_spinlock_key_t key;
 	uint16_t reg_val;
@@ -538,7 +542,7 @@ static void uart_ra_irq_rx_disable(const struct device *dev)
 	reg_val &= ~REG_MASK(SCR_RIE);
 	uart_ra_write_8(dev, SCR, reg_val);
 
-	irq_disable(data->irqn[UART_RA_INT_RXI]);
+	ra_icu_event_disable(config->event[UART_RA_INT_RXI]);
 
 	k_spin_unlock(&data->lock, key);
 }
@@ -550,16 +554,16 @@ static int uart_ra_irq_rx_ready(const struct device *dev)
 
 static void uart_ra_irq_err_enable(const struct device *dev)
 {
-	struct uart_ra_data *data = dev->data;
+	const struct uart_ra_cfg *config = dev->config;
 
-	irq_enable(data->irqn[UART_RA_INT_ERI]);
+	ra_icu_event_enable(config->event[UART_RA_INT_ERI]);
 }
 
 static void uart_ra_irq_err_disable(const struct device *dev)
 {
-	struct uart_ra_data *data = dev->data;
+	const struct uart_ra_cfg *config = dev->config;
 
-	irq_disable(data->irqn[UART_RA_INT_ERI]);
+	ra_icu_event_disable(config->event[UART_RA_INT_ERI]);
 }
 
 static int uart_ra_irq_is_pending(const struct device *dev)
@@ -601,28 +605,28 @@ static inline void uart_ra_isr(const struct device *dev)
 static void uart_ra_isr_rxi(const void *param)
 {
 	const struct device *dev = param;
-	struct uart_ra_data *data = dev->data;
+	const struct uart_ra_cfg *config = dev->config;
 
 	uart_ra_isr(dev);
-	ra_icu_clear_int_flag(data->irqn[UART_RA_INT_RXI]);
+	ra_icu_event_clear_flag(config->event[UART_RA_INT_RXI]);
 }
 
 static void uart_ra_isr_txi(const void *param)
 {
 	const struct device *dev = param;
-	struct uart_ra_data *data = dev->data;
+	const struct uart_ra_cfg *config = dev->config;
 
 	uart_ra_isr(dev);
-	ra_icu_clear_int_flag(data->irqn[UART_RA_INT_TXI]);
+	ra_icu_event_clear_flag(config->event[UART_RA_INT_TXI]);
 }
 
 static void uart_ra_isr_eri(const void *param)
 {
 	const struct device *dev = param;
-	struct uart_ra_data *data = dev->data;
+	const struct uart_ra_cfg *config = dev->config;
 
 	uart_ra_isr(dev);
-	ra_icu_clear_int_flag(data->irqn[UART_RA_INT_ERI]);
+	ra_icu_event_clear_flag(config->event[UART_RA_INT_ERI]);
 }
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
@@ -662,49 +666,34 @@ static const struct uart_driver_api uart_ra_driver_api = {
 			(clock_control_subsys_t)DT_CLOCKS_CELL_BY_IDX(DT_INST_PARENT(n), 0, id),   \
 		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(DT_INST_PARENT(n)),                              \
 		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, (                                         \
+			.event = {                                                                 \
+				DT_IRQ_BY_NAME(DT_INST_PARENT(n), rxi, event),                     \
+				DT_IRQ_BY_NAME(DT_INST_PARENT(n), txi, event),                     \
+				DT_IRQ_BY_NAME(DT_INST_PARENT(n), eri, event),                     \
+			},                                                                         \
 			.irq_config_func = irq_config_func_##n,                                    \
 		))                                                                                 \
 	}
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
-#define RA_IRQ_CONNECT_DYNAMIC(n, name, dev, isr)                                                  \
-	ra_icu_irq_connect_dynamic(DT_IRQ_BY_NAME(DT_INST_PARENT(n), name, irq),                   \
-				   DT_IRQ_BY_NAME(DT_INST_PARENT(n), name, priority), isr, dev,    \
-				   DT_IRQ_BY_NAME(DT_INST_PARENT(n), name, flags));
-
-#define RA_IRQ_DISCONNECT_DYNAMIC(n, name, dev, isr)                                               \
-	ra_icu_irq_disconnect_dynamic(irqn, 0, NULL, NULL, 0)
 
 #define UART_RA_CONFIG_FUNC(n)                                                                     \
 	static int irq_config_func_##n(const struct device *dev)                                   \
 	{                                                                                          \
-		struct uart_ra_data *data = dev->data;                                             \
-		int irqn;                                                                          \
-                                                                                                   \
-		irqn = RA_IRQ_CONNECT_DYNAMIC(n, rxi, dev, uart_ra_isr_rxi);                       \
-		if (irqn < 0) {                                                                    \
-			return irqn;                                                               \
-		}                                                                                  \
-		data->irqn[UART_RA_INT_RXI] = irqn;                                                \
-		irqn = RA_IRQ_CONNECT_DYNAMIC(n, txi, dev, uart_ra_isr_txi);                       \
-		if (irqn < 0) {                                                                    \
-			goto err_txi;                                                              \
-		}                                                                                  \
-		data->irqn[UART_RA_INT_TXI] = irqn;                                                \
-		irqn = RA_IRQ_CONNECT_DYNAMIC(n, eri, dev, uart_ra_isr_eri);                       \
-		if (irqn < 0) {                                                                    \
-			goto err_eri;                                                              \
-		}                                                                                  \
-		data->irqn[UART_RA_INT_ERI] = irqn;                                                \
+		IRQ_CONNECT(DT_IRQ_BY_NAME(DT_INST_PARENT(n), rxi, event),                         \
+			    DT_IRQ_BY_NAME(DT_INST_PARENT(n), rxi, priority), uart_ra_isr_rxi,     \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+		ra_icu_event_enable(DT_IRQ_BY_NAME(DT_INST_PARENT(n), rxi, event));                \
+		IRQ_CONNECT(DT_IRQ_BY_NAME(DT_INST_PARENT(n), txi, event),                         \
+			    DT_IRQ_BY_NAME(DT_INST_PARENT(n), txi, priority), uart_ra_isr_txi,     \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+		ra_icu_event_enable(DT_IRQ_BY_NAME(DT_INST_PARENT(n), txi, event));                \
+		IRQ_CONNECT(DT_IRQ_BY_NAME(DT_INST_PARENT(n), eri, event),                         \
+			    DT_IRQ_BY_NAME(DT_INST_PARENT(n), eri, priority), uart_ra_isr_eri,     \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+		ra_icu_event_enable(DT_IRQ_BY_NAME(DT_INST_PARENT(n), eri, event));                \
 		return 0;                                                                          \
-                                                                                                   \
-err_eri:                                                                                           \
-		RA_IRQ_DISCONNECT_DYNAMIC(data->irq[UART_RA_INT_TXI], eri, dev, uart_ra_isr_eri);  \
-err_txi:                                                                                           \
-		RA_IRQ_DISCONNECT_DYNAMIC(data->irq[UART_RA_INT_RXI], txi, dev, uart_ra_isr_txi);  \
-                                                                                                   \
-		return irqn;                                                                       \
 	}
 #else
 #define UART_RA_CONFIG_FUNC(n)
