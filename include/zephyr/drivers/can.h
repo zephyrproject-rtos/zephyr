@@ -1000,6 +1000,38 @@ __syscall int can_calc_timing(const struct device *dev, struct can_timing *res,
 			      uint32_t bitrate, uint16_t sample_pnt);
 
 /**
+ * @brief Calculate timing parameters from bitrate and sample point with timming limits
+ *
+ * Calculate the timing parameters from a given bitrate in bits/s and the
+ * sampling point in permill (1/1000) of the entire bit time. The bitrate must
+ * always match perfectly. If no result can be reached for the given parameters,
+ * -EINVAL is returned.
+ *
+ * If the sample point is set to 0, this function defaults to a sample point of 75.0%
+ * for bitrates over 800 kbit/s, 80.0% for bitrates over 500 kbit/s, and 87.5% for
+ * all other bitrates.
+ *
+ * @note The requested ``sample_pnt`` will not always be matched perfectly. The
+ * algorithm calculates the best possible match.
+ *
+ * @param dev        Pointer to the device structure for the driver instance.
+ * @param min        Pointer to the minimum allowed timing parameter values.
+ * @param max        Pointer to the maximum allowed timing parameter values.
+ * @param[out] res   Result is written into the @a can_timing struct provided.
+ * @param bitrate    Target bitrate in bits/s.
+ * @param sample_pnt Sample point in permille of the entire bit time or 0 for
+ *                   automatic sample point location.
+ *
+ * @retval 0 or positive sample point error on success.
+ * @retval -EINVAL if the requested bitrate or sample point is out of range.
+ * @retval -ENOTSUP if the requested bitrate is not supported.
+ * @retval -EIO if @a can_get_core_clock() is not available.
+ */
+__syscall int can_calc_timing_with_limits(const struct device *dev, struct can_timing *min,
+					  struct can_timing *max, struct can_timing *res,
+					  uint32_t bitrate, uint16_t sample_pnt);
+
+/**
  * @brief Get the minimum supported timing parameter values for the data phase.
  *
  * Same as @a can_get_timing_min() but for the minimum values for the data phase.
@@ -1069,6 +1101,32 @@ static inline const struct can_timing *z_impl_can_get_timing_data_max(const stru
  */
 __syscall int can_calc_timing_data(const struct device *dev, struct can_timing *res,
 				   uint32_t bitrate, uint16_t sample_pnt);
+
+/**
+ * @brief Calculate timing parameters for the data phase with timing limits
+ *
+ * Same as @a can_calc_timing() but with the maximum and minimum values from the
+ * data phase.
+ *
+ * @note @kconfig{CONFIG_CAN_FD_MODE} must be selected for this function to be
+ * available.
+ *
+ * @param dev        Pointer to the device structure for the driver instance.
+ * @param min        Pointer to the minimum allowed timing parameter values.
+ * @param max        Pointer to the maximum allowed timing parameter values.
+ * @param[out] res   Result is written into the @a can_timing struct provided.
+ * @param bitrate    Target bitrate for the data phase in bits/s
+ * @param sample_pnt Sample point for the data phase in permille of the entire bit
+ *                   time or 0 for automatic sample point location.
+ *
+ * @retval 0 or positive sample point error on success.
+ * @retval -EINVAL if the requested bitrate or sample point is out of range.
+ * @retval -ENOTSUP if the requested bitrate is not supported.
+ * @retval -EIO if @a can_get_core_clock() is not available.
+ */
+__syscall int can_calc_timing_data_with_limits(const struct device *dev, struct can_timing *min,
+					      struct can_timing *max, struct can_timing *res,
+					      uint32_t bitrate, uint16_t sample_pnt);
 
 /**
  * @brief Configure the bus timing for the data phase of a CAN FD controller.
