@@ -133,9 +133,9 @@ int tsn_fill_metadata(const struct device *dev, net_time_t now, struct tx_buffer
 
 	if (tsn_config->qbv.enabled == false && tsn_config->qav[vlan_prio].enabled == false) {
 		timestamps.from = tsn_config->total_available_at;
-		timestamps.to = timestamps.from + DEFAULT_TO_MARGIN;
+		timestamps.to = timestamps.from + DEFAULT_TO_MARGIN_NS;
 		timestamps.delay_from = tsn_config->total_available_at;
-		timestamps.delay_to = timestamps.delay_from + DEFAULT_TO_MARGIN;
+		timestamps.delay_to = timestamps.delay_from + DEFAULT_TO_MARGIN_NS;
 		metadata->fail_policy = TSN_FAIL_POLICY_DROP;
 	} else {
 		if (tsn_config->qav[vlan_prio].enabled == true &&

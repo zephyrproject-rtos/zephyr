@@ -166,8 +166,8 @@ struct dma_tsn_nic_result {
 #define TX_METADATA_SIZE (sizeof(struct tx_metadata))
 #define RX_METADATA_SIZE (sizeof(struct rx_metadata))
 
-#define DEFAULT_FROM_MARGIN 500
-#define DEFAULT_TO_MARGIN   50000
+#define DEFAULT_FROM_MARGIN_NS 500
+#define DEFAULT_TO_MARGIN_NS   50000
 
 enum tsn_timestamp_id {
 	TSN_TIMESTAMP_ID_NONE = 0,
