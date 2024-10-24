@@ -591,18 +591,32 @@ static int mspi_ambiq_dev_config(const struct device *controller, const struct m
 		if ((param_mask & MSPI_DEVICE_CONFIG_IO_MODE) ||
 		    (param_mask & MSPI_DEVICE_CONFIG_CE_NUM) ||
 		    (param_mask & MSPI_DEVICE_CONFIG_DATA_RATE)) {
-			hal_dev_cfg.eDeviceConfig = mspi_set_line(
-				cfg, dev_cfg->io_mode, dev_cfg->data_rate, dev_cfg->ce_num);
-			if (hal_dev_cfg.eDeviceConfig == AM_HAL_MSPI_FLASH_MAX) {
-				ret = -ENOTSUP;
-				goto e_return;
+			enum mspi_io_mode io_mode;
+			enum mspi_data_rate data_rate;
+			uint8_t ce_num;
+
+			if (param_mask & MSPI_DEVICE_CONFIG_IO_MODE) {
+				io_mode = dev_cfg->io_mode;
+			} else {
+				io_mode = data->dev_cfg.io_mode;
 			}
 
-			ret = am_hal_mspi_disable(data->mspiHandle);
-			if (ret) {
-				LOG_INST_ERR(cfg->log, "%u, fail to disable MSPI, code:%d.",
-					     __LINE__, ret);
-				ret = -EHOSTDOWN;
+			if (param_mask & MSPI_DEVICE_CONFIG_DATA_RATE) {
+				data_rate = dev_cfg->data_rate;
+			} else {
+				data_rate = data->dev_cfg.data_rate;
+			}
+
+			if (param_mask & MSPI_DEVICE_CONFIG_CE_NUM) {
+				ce_num = dev_cfg->ce_num;
+			} else {
+				ce_num = data->dev_cfg.ce_num;
+			}
+
+			hal_dev_cfg.eDeviceConfig = mspi_set_line(cfg, io_mode, data_rate, ce_num);
+
+			if (hal_dev_cfg.eDeviceConfig == AM_HAL_MSPI_FLASH_MAX) {
+				ret = -ENOTSUP;
 				goto e_return;
 			}
 
@@ -610,14 +624,6 @@ static int mspi_ambiq_dev_config(const struct device *controller, const struct m
 						  &hal_dev_cfg.eDeviceConfig);
 			if (ret) {
 				LOG_INST_ERR(cfg->log, "%u, failed to configure device.", __LINE__);
-				ret = -EHOSTDOWN;
-				goto e_return;
-			}
-
-			ret = am_hal_mspi_enable(data->mspiHandle);
-			if (ret) {
-				LOG_INST_ERR(cfg->log, "%u, fail to enable MSPI, code:%d.",
-					     __LINE__, ret);
 				ret = -EHOSTDOWN;
 				goto e_return;
 			}
@@ -649,6 +655,8 @@ static int mspi_ambiq_dev_config(const struct device *controller, const struct m
 			data->dev_cfg.addr_length = dev_cfg->addr_length;
 		}
 	} else {
+		am_hal_mspi_dqs_t *dqsCfg = &g_sMspiDqsCfg;
+
 		if (memcmp(&data->dev_cfg, dev_cfg, sizeof(struct mspi_dev_cfg)) == 0) {
 			/** Nothing to config */
 			data->dev_id = (struct mspi_dev_id *)dev_id;
@@ -657,6 +665,12 @@ static int mspi_ambiq_dev_config(const struct device *controller, const struct m
 
 		if (dev_cfg->endian != MSPI_XFER_LITTLE_ENDIAN) {
 			LOG_INST_ERR(cfg->log, "%u, only support MSB first.", __LINE__);
+			ret = -ENOTSUP;
+			goto e_return;
+		}
+
+		if (dev_cfg->dqs_enable && !cfg->mspicfg.dqs_support) {
+			LOG_INST_ERR(cfg->log, "%u, only support non-DQS mode.", __LINE__);
 			ret = -ENOTSUP;
 			goto e_return;
 		}
@@ -735,18 +749,14 @@ static int mspi_ambiq_dev_config(const struct device *controller, const struct m
 			goto e_return;
 		}
 
-		if (cfg->mspicfg.dqs_support == true) {
-			am_hal_mspi_dqs_t *dqsCfg = &g_sMspiDqsCfg;
+		dqsCfg->bDQSEnable = dev_cfg->dqs_enable;
 
-			dqsCfg->bDQSEnable = dev_cfg->dqs_enable;
-
-			ret = am_hal_mspi_control(data->mspiHandle, AM_HAL_MSPI_REQ_DQS, dqsCfg);
-			if (ret) {
-				LOG_INST_ERR(cfg->log, "%u, failed AM_HAL_MSPI_REQ_DQS, code:%d.",
-					     __LINE__, ret);
-				ret = -EHOSTDOWN;
-				goto e_return;
-			}
+		ret = am_hal_mspi_control(data->mspiHandle, AM_HAL_MSPI_REQ_DQS, dqsCfg);
+		if (ret) {
+			LOG_INST_ERR(cfg->log, "%u, failed AM_HAL_MSPI_REQ_DQS, code:%d.", __LINE__,
+				     ret);
+			ret = -EHOSTDOWN;
+			goto e_return;
 		}
 
 		if (hal_dev_cfg.bEmulateDDR == true) {
@@ -1046,7 +1056,6 @@ static int mspi_pio_prepare(const struct device *controller, am_hal_mspi_pio_tra
 static int mspi_pio_transceive(const struct device *controller, const struct mspi_xfer *xfer,
 			       mspi_callback_handler_t cb, struct mspi_callback_context *cb_ctx)
 {
-	const struct mspi_ambiq_config *cfg = controller->config;
 	struct mspi_ambiq_data *data = controller->data;
 	struct mspi_context *ctx = &data->ctx;
 	const struct mspi_xfer_packet *packet;
@@ -1061,9 +1070,7 @@ static int mspi_pio_transceive(const struct device *controller, const struct msp
 	}
 
 	cfg_flag = mspi_context_lock(ctx, data->dev_id, xfer, cb, cb_ctx, true);
-	/** For async, user must make sure when cfg_flag = 0 the dummy and instr addr length
-	 * in mspi_xfer of the two calls are the same if the first one has not finished yet.
-	 */
+	/** For async, pio will not be implemented */
 	if (cfg_flag) {
 		if (cfg_flag == 1) {
 			ret = mspi_pio_prepare(controller, &trans);
@@ -1098,50 +1105,8 @@ static int mspi_pio_transceive(const struct device *controller, const struct msp
 
 	} else {
 
-		ret = am_hal_mspi_interrupt_enable(data->mspiHandle,
-						   AM_HAL_MSPI_INT_CQUPD | AM_HAL_MSPI_INT_ERR);
-		if (ret) {
-			LOG_INST_ERR(cfg->log, "%u, failed to enable interrupt.", __LINE__);
-			ret = -EHOSTDOWN;
-			goto pio_err;
-		}
-
-		while (ctx->packets_left > 0) {
-			packet_idx = ctx->xfer.num_packet - ctx->packets_left;
-			packet = &ctx->xfer.packets[packet_idx];
-			trans.eDirection = packet->dir;
-			trans.ui16DeviceInstr = (uint16_t)packet->cmd;
-			trans.ui32DeviceAddr = packet->address;
-			trans.ui32NumBytes = packet->num_bytes;
-			trans.pui32Buffer = (uint32_t *)packet->data_buf;
-
-			if (ctx->callback && packet->cb_mask == MSPI_BUS_XFER_COMPLETE_CB) {
-				ctx->callback_ctx->mspi_evt.evt_type = MSPI_BUS_XFER_COMPLETE;
-				ctx->callback_ctx->mspi_evt.evt_data.controller = controller;
-				ctx->callback_ctx->mspi_evt.evt_data.dev_id = data->ctx.owner;
-				ctx->callback_ctx->mspi_evt.evt_data.packet = packet;
-				ctx->callback_ctx->mspi_evt.evt_data.packet_idx = packet_idx;
-				ctx->callback_ctx->mspi_evt.evt_data.status = ~0;
-			}
-
-			am_hal_mspi_callback_t callback = NULL;
-
-			if (packet->cb_mask == MSPI_BUS_XFER_COMPLETE_CB) {
-				callback = (am_hal_mspi_callback_t)ctx->callback;
-			}
-
-			ret = am_hal_mspi_nonblocking_transfer(data->mspiHandle, &trans, MSPI_PIO,
-							       callback, (void *)ctx->callback_ctx);
-			ctx->packets_left--;
-			if (ret) {
-				if (ret == AM_HAL_STATUS_OUT_OF_RANGE) {
-					ret = -ENOMEM;
-				} else {
-					ret = -EIO;
-				}
-				goto pio_err;
-			}
-		}
+		ret = -ENOTSUP;
+		goto pio_err;
 	}
 
 pio_err:
@@ -1403,7 +1368,7 @@ static struct mspi_driver_api mspi_ambiq_driver_api = {
 		.ui16WriteInstr = 0,                                                               \
 		.eDeviceConfig = AM_HAL_MSPI_FLASH_SERIAL_CE0,                                     \
 		.eSpiMode = AM_HAL_MSPI_SPI_MODE_0,                                                \
-		.eClockFreq = MSPI_MAX_FREQ / DT_INST_PROP_OR(n, clock_frequency, MSPI_MAX_FREQ),  \
+		.eClockFreq = AM_HAL_MSPI_CLK_48MHZ,                                               \
 		.bEnWriteLatency = false,                                                          \
 		.bSendAddr = false,                                                                \
 		.bSendInstr = false,                                                               \
@@ -1424,9 +1389,9 @@ static struct mspi_driver_api mspi_ambiq_driver_api = {
 	{                                                                                          \
 		.scramblingStartAddr = 0,                                                          \
 		.scramblingEndAddr = 0,                                                            \
-		.ui32APBaseAddr = 0x14000000 + n * 0x4000000,                                      \
-		.eAPMode = AM_HAL_MSPI_AP_READ_WRITE,                                              \
-		.eAPSize = AM_HAL_MSPI_AP_SIZE64M,                                                 \
+		.ui32APBaseAddr = 0,                                                               \
+		.eAPMode = 0,                                                                      \
+		.eAPSize = 0,                                                                      \
 	}
 
 #define MSPI_HAL_XIP_MISC_CONFIG(n)                                                                \
