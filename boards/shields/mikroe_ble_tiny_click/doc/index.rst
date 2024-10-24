@@ -63,7 +63,7 @@ example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/bluetooth/beacon
-   :board: ek-ra8m1
+   :board: ek_ra8m1
    :shield: mikroe_ble_tiny_click
    :goals: build
 
