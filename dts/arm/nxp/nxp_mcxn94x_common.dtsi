@@ -795,6 +795,16 @@
 		prescale = <0>;
 	};
 
+	sc_timer: pwm@91000 {
+		compatible = "nxp,sctimer-pwm";
+		reg = <0x91000 0x1000>;
+		interrupts = <33 0>;
+		clocks = <&syscon MCUX_SCTIMER_CLK>;
+		status = "disabled";
+		prescaler = <1>;
+		#pwm-cells = <3>;
+	};
+
 	smartdma: smartdma@33000 {
 		compatible = "nxp,smartdma";
 		reg = <0x33000 0x1000>;
