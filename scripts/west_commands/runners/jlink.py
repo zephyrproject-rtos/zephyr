@@ -30,6 +30,8 @@ DEFAULT_JLINK_GDB_PORT = 2331
 DEFAULT_JLINK_RTT_PORT = 19021
 
 def is_ip(ip):
+    if not ip:
+        return False
     try:
         ipaddress.ip_address(ip.split(':')[0])
     except ValueError:
