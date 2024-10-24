@@ -19,7 +19,7 @@
  * @brief BSD socket service API
  * @defgroup bsd_socket_service BSD socket service API
  * @since 3.6
- * @version 0.1.0
+ * @version 0.2.0
  * @ingroup networking
  * @{
  */
