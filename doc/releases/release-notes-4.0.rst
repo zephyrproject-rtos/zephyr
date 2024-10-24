@@ -501,6 +501,9 @@ Libraries / Subsystems
   * LittleFS: The module has been updated with changes committed upstream
     from version 2.8.1, the last module update, up to and including
     the released version 2.9.3.
+  * Shell: :kconfig:option:`CONFIG_FILE_SYSTEM_SHELL_MOUNT_COMMAND` was added,
+    allowing the mount subcommand to be optionally disabled. This can reduce
+    flash and RAM usage since it requires the heap to be present.
 
 * Task Watchdog
 
