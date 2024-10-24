@@ -17,3 +17,7 @@
 		zephyr,sram = &cpuapp_sram;
 	};
 };
+
+zephyr_udc0: &usbhs {
+	status = "okay";
+};
