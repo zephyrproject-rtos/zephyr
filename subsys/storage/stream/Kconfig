@@ -19,6 +19,17 @@ config STREAM_FLASH_ERASE
 	  If disabled an external actor must erase the flash area being written
 	  to.
 
+config STREAM_FLASH_VALIDATE_LAYOUT
+	bool "Validate designated range agains page layout"
+	default y
+	help
+	  Enables validation of designated Stream Flash area on device agains
+	  page layout of device. Validation ensures that area is aligned
+	  to erase page of device.
+	  This option may be disabled to reduce code size and Stream Flash
+	  instance initialization time once testing ensures that all
+	  Stream Flash instances are properly aligned on devices.
+
 config STREAM_FLASH_PROGRESS
 	bool "Persistent stream write progress"
 	depends on SETTINGS

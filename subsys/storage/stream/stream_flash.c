@@ -236,15 +236,31 @@ size_t stream_flash_bytes_written(struct stream_flash_ctx *ctx)
 	return ctx->bytes_written;
 }
 
+#ifdef CONFIG_STREAM_FLASH_VALIDATE_LAYOUT
 struct _inspect_flash {
 	size_t buf_len;
 	size_t total_size;
+	size_t required_size;
+	size_t start_offset;
+	bool unaligned_start;
 };
 
-static bool find_flash_total_size(const struct flash_pages_info *info,
-				  void *data)
+static bool inspect_page(const struct flash_pages_info *info,
+			 void *data)
 {
 	struct _inspect_flash *ctx = (struct _inspect_flash *) data;
+
+	if (ctx->total_size == 0 && ctx->start_offset < info->start_offset) {
+		ctx->unaligned_start = true;
+		return false;
+	}
+
+	/* Skip pages till found one aligned to beginnign of stream flash
+	 * device offset.
+	 */
+	if (ctx->total_size == 0 && ctx->start_offset != info->start_offset) {
+		return true;
+	}
 
 	if (ctx->buf_len > info->size) {
 		LOG_ERR("Buffer size is bigger than page");
@@ -254,16 +270,74 @@ static bool find_flash_total_size(const struct flash_pages_info *info,
 
 	ctx->total_size += info->size;
 
+	if (ctx->required_size == ctx->total_size) {
+		return false;
+	}
+
+	/* Pages in scanned range already have size bigger than required,
+	 * which means that requested size is not aligned to any page.
+	 */
+	if (ctx->required_size < ctx->total_size) {
+		return false;
+	}
+
 	return true;
 }
+
+/* Validate whether selected range on device is aligned to page layout */
+static int validate_flash(const struct stream_flash_ctx *ctx)
+{
+	struct _inspect_flash inspect_flash_ctx = {
+		.buf_len = ctx->buf_len,
+		.total_size = 0,
+		.required_size = ctx->available,
+		.start_offset = ctx->offset,
+		.unaligned_start = false,
+	};
+
+	/* Calculate the total size of the flash device */
+	flash_page_foreach(ctx->fdev, inspect_page, &inspect_flash_ctx);
+
+	if (inspect_flash_ctx.start_offset > ctx->offset) {
+		LOG_ERR("Offset not aligned to page");
+		return -EINVAL;
+	}
+
+	if (inspect_flash_ctx.total_size < inspect_flash_ctx.required_size) {
+		LOG_ERR("Device smaller than required size");
+		return -EINVAL;
+	}
+
+	if (inspect_flash_ctx.total_size != inspect_flash_ctx.required_size) {
+		LOG_ERR("Size not aligned to page");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+#endif
 
 int stream_flash_init(struct stream_flash_ctx *ctx, const struct device *fdev,
 		      uint8_t *buf, size_t buf_len, size_t offset, size_t size,
 		      stream_flash_callback_t cb)
 {
 	const struct flash_parameters *params;
+
 	if (!ctx || !fdev || !buf) {
 		return -EFAULT;
+	}
+
+	params = flash_get_parameters(fdev);
+	ctx->write_block_size = params->write_block_size;
+
+	if (size == 0 || size % params->write_block_size) {
+		LOG_ERR("Invalid size");
+		return -EINVAL;
+	}
+
+	if (offset % ctx->write_block_size) {
+		LOG_ERR("Invalid offset");
+		return -EINVAL;
 	}
 
 #ifdef CONFIG_STREAM_FLASH_PROGRESS
@@ -275,33 +349,10 @@ int stream_flash_init(struct stream_flash_ctx *ctx, const struct device *fdev,
 	}
 #endif
 
-	struct _inspect_flash inspect_flash_ctx = {
-		.buf_len = buf_len,
-		.total_size = 0
-	};
-
-	params = flash_get_parameters(fdev);
-	ctx->write_block_size = params->write_block_size;
-
 	if (buf_len % ctx->write_block_size) {
 		LOG_ERR("Buffer size is not aligned to minimal write-block-size");
-		return -EFAULT;
+		return -EINVAL;
 	}
-
-	/* Calculate the total size of the flash device */
-	flash_page_foreach(fdev, find_flash_total_size, &inspect_flash_ctx);
-
-	/* The flash size counted should never be equal zero */
-	if (inspect_flash_ctx.total_size == 0) {
-		return -EFAULT;
-	}
-
-	if ((offset + size) > inspect_flash_ctx.total_size ||
-	    offset % ctx->write_block_size) {
-		LOG_ERR("Incorrect parameter");
-		return -EFAULT;
-	}
-
 
 	ctx->fdev = fdev;
 	ctx->buf = buf;
@@ -309,9 +360,16 @@ int stream_flash_init(struct stream_flash_ctx *ctx, const struct device *fdev,
 	ctx->bytes_written = 0;
 	ctx->buf_bytes = 0U;
 	ctx->offset = offset;
-	ctx->available = (size == 0 ? inspect_flash_ctx.total_size - offset :
-				      size);
+	ctx->available = size;
 	ctx->callback = cb;
+
+#ifdef CONFIG_STREAM_FLASH_VALIDATE_LAYOUT
+	int ret = validate_flash(ctx);
+
+	if (ret < 0) {
+		return ret;
+	}
+#endif
 
 #ifdef CONFIG_STREAM_FLASH_ERASE
 	ctx->last_erased_page_start_offset = -1;
