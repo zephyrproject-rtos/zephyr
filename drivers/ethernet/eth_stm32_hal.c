@@ -1520,11 +1520,11 @@ static int ptp_stm32_init(const struct device *port)
 	/* Query ethernet clock rate */
 	ret = clock_control_get_rate(eth_dev_data->clock,
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet)
-		(clock_control_subsys_t)&eth_cfg->pclken,
+				     (clock_control_subsys_t)&eth_cfg->pclken,
 #else
-		(clock_control_subsys_t)&eth_cfg->pclken_ptp,
+				     (clock_control_subsys_t)&eth_cfg->pclken_ptp,
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet) */
-		&ptp_hclk_rate);
+				     &ptp_hclk_rate);
 	if (ret) {
 		LOG_ERR("Failed to query ethernet clock");
 		return -EIO;
