@@ -28,6 +28,7 @@
 #include <zephyr/bluetooth/l2cap.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/hci_vs.h>
+#include <zephyr/bluetooth/hci_types.h>
 #if DT_HAS_CHOSEN(zephyr_bt_hci)
 #include <zephyr/drivers/bluetooth.h>
 #else
@@ -2982,13 +2983,16 @@ static const struct event_handler normal_events[] = {
  * Helper for the HCI driver to get HCI event flags that describes rules that.
  * must be followed.
  *
- * @param evt HCI event code.
+ * @param evt The first 3 bytes of the HCI event. The first byte
+ * is the event code. The second is the length. The third is the
+ * first byte of the event payload. Assertion: There are no
+ * zero-length event payloads.
  *
  * @return HCI event flags for the specified event.
  */
-static inline uint8_t bt_hci_evt_get_flags(uint8_t evt)
+static inline uint8_t bt_hci_evt_get_flags(uint8_t evt[static 3])
 {
-	switch (evt) {
+	switch (evt[0]) {
 	case BT_HCI_EVT_DISCONN_COMPLETE:
 		return BT_HCI_EVT_FLAG_RECV | BT_HCI_EVT_FLAG_RECV_PRIO;
 		/* fallthrough */
@@ -3002,6 +3006,13 @@ static inline uint8_t bt_hci_evt_get_flags(uint8_t evt)
 	case BT_HCI_EVT_CMD_COMPLETE:
 	case BT_HCI_EVT_CMD_STATUS:
 		return BT_HCI_EVT_FLAG_RECV_PRIO;
+	case BT_HCI_EVT_LE_META_EVENT:
+		switch (evt[2]) {
+		case BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT:
+			return BT_HCI_EVT_FLAG_RECV_PRIO;
+		default:
+			return BT_HCI_EVT_FLAG_RECV;
+		}
 	default:
 		return BT_HCI_EVT_FLAG_RECV;
 	}
@@ -3017,9 +3028,9 @@ static void hci_event(struct net_buf *buf)
 		return;
 	}
 
+	BT_ASSERT(bt_hci_evt_get_flags(buf->data) & BT_HCI_EVT_FLAG_RECV);
 	hdr = net_buf_pull_mem(buf, sizeof(*hdr));
 	LOG_DBG("event 0x%02x", hdr->evt);
-	BT_ASSERT(bt_hci_evt_get_flags(hdr->evt) & BT_HCI_EVT_FLAG_RECV);
 
 	handle_event(hdr->evt, buf, normal_events, ARRAY_SIZE(normal_events));
 
@@ -4073,6 +4084,11 @@ static const struct event_handler prio_events[] = {
 		      sizeof(struct bt_hci_evt_cmd_complete)),
 	EVENT_HANDLER(BT_HCI_EVT_CMD_STATUS, hci_cmd_status,
 		      sizeof(struct bt_hci_evt_cmd_status)),
+#if defined(CONFIG_BT_OBSERVER)
+	/* Redirect to handle only BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT */
+	EVENT_HANDLER(BT_HCI_EVT_LE_META_EVENT, hci_le_meta_event,
+		      sizeof(struct bt_hci_evt_le_meta_event)),
+#endif	/* CONFIG_BT_OBSERVER */
 #if defined(CONFIG_BT_CONN)
 	EVENT_HANDLER(BT_HCI_EVT_DATA_BUF_OVERFLOW,
 		      hci_data_buf_overflow,
@@ -4101,9 +4117,9 @@ void hci_event_prio(struct net_buf *buf)
 		return;
 	}
 
-	hdr = net_buf_pull_mem(buf, sizeof(*hdr));
-	evt_flags = bt_hci_evt_get_flags(hdr->evt);
+	evt_flags = bt_hci_evt_get_flags(buf->data);
 	BT_ASSERT(evt_flags & BT_HCI_EVT_FLAG_RECV_PRIO);
+	hdr = net_buf_pull_mem(buf, sizeof(*hdr));
 
 	handle_event(hdr->evt, buf, prio_events, ARRAY_SIZE(prio_events));
 
@@ -4112,6 +4128,16 @@ void hci_event_prio(struct net_buf *buf)
 	} else {
 		net_buf_unref(buf);
 	}
+}
+
+struct k_work_q *bt_get_rx_wq(void)
+{
+#if defined(CONFIG_BT_RECV_WORKQ_SYS)
+	return &k_sys_work_q;
+#else
+	/* Assume CONFIG_BT_RECV_WORKQ_BT. Compiler will yell if it's not the case. */
+	return &bt_workq;
+#endif /* CONFIG_BT_RECV_WORKQ_SYS */
 }
 
 static void rx_queue_put(struct net_buf *buf)
@@ -4142,8 +4168,7 @@ static int bt_recv_unsafe(struct net_buf *buf)
 #endif /* BT_CONN */
 	case BT_BUF_EVT:
 	{
-		struct bt_hci_evt_hdr *hdr = (void *)buf->data;
-		uint8_t evt_flags = bt_hci_evt_get_flags(hdr->evt);
+		uint8_t evt_flags = bt_hci_evt_get_flags(buf->data);
 
 		if (evt_flags & BT_HCI_EVT_FLAG_RECV_PRIO) {
 			hci_event_prio(buf);
