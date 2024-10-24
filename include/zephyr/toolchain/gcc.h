@@ -247,6 +247,7 @@ do {                                                                    \
 #define __used		__attribute__((__used__))
 #define __unused	__attribute__((__unused__))
 #define __maybe_unused	__attribute__((__unused__))
+#define __deallocate_with(d, i)	__attribute__((malloc (d, i)))
 
 #ifndef __deprecated
 #define __deprecated	__attribute__((deprecated))
