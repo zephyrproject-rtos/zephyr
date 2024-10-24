@@ -26,6 +26,102 @@ manifest:
 
   group-filter: [-babblesim, -optional]
 
+  venv:
+    name: ".venv"
+    definitions:
+      cipd_url: "https://chrome-infra-packages.appspot.com/dl"
+    bin-requirements:
+      cmake:
+        definitions:
+          package: "infra/3pp/tools/cmake/${platform}"
+          version: "version:3@3.30.3.chromium.8"
+        urls:
+          "*":
+            url: "${cipd_url}/${package}/+/${version}"
+            paths: ["bin"]
+      ninja:
+        definitions:
+          package: "infra/3pp/tools/ninja/${platform}"
+          version: "version:3@1.12.1.chromium.4"
+        urls:
+          "*":
+            url: "${cipd_url}/${package}/+/${version}"
+      gperf:
+        definitions:
+          version: "version:3@3.2"
+        urls:
+          "linux-amd64":
+            url: "${cipd_url}/infra/3pp/tools/gperf/${platform}/+/${version}"
+            paths: ["bin"]
+      ccache:
+        definitions:
+          version: "4.10.2"
+          root_url: "https://github.com/ccache/ccache/releases/download/v${version}/ccache-${version}"
+        urls:
+          "linux-amd64":
+            url: "${root_url}-linux-x86_64.tar.xz"
+            paths: ["ccache-${version}-linux-x86_64"]
+          "mac-*":
+            url: "${root_url}-darwin.tar.gz"
+            paths: ["ccache-${version}-darwin"]
+          "windows-amd64":
+            url: "${root_url}-windows-x86_64.zip"
+            paths: ["ccache-${version}-windows-x86_64"]
+      dfu-util:
+        definitions:
+          version: "0.11"
+        urls:
+          "linux-amd64":
+            url: "https://dfu-util.sourceforge.net/releases/dfu-util-${version}-binaries.tar.xz"
+            paths: ["dfu-util-${version}-binaries/linux-amd64"]
+          "mac-*":
+            url: "https://dfu-util.sourceforge.net/releases/dfu-util-${version}-binaries.tar.xz"
+            paths: ["dfu-util-${version}-binaries/darwin-x86_64"]
+          "windows-amd64":
+            url: "https://dfu-util.sourceforge.net/releases/dfu-util-${version}-binaries.tar.xz"
+            paths: ["dfu-util-${version}-binaries/win64"]
+      # device-tree-compiler:
+      #   definitions:
+      #     version: "1.7.0-2+b1"
+      wget:
+        definitions:
+          version: "1.24.5"         
+        urls:
+          "linux-amd64":
+            url: "https://ftp.gnu.org/gnu/wget/wget-${version}.tar.gz"
+
+
+      # Linux:
+      #   - device-tree-compiler
+      #   - wget
+      #   - python3-dev
+      #   - python3-pip
+      #   - python3-setuptools
+      #   - python3-tk
+      #   - python3-wheel
+      #   - xz-utils
+      #   - file
+      #   - make
+      #   - gcc
+      #   - gcc-multilib
+      #   - g++-multilib
+      #   - libsdl2-dev
+      #   - libmagic1
+      # Darwin:
+      #   - cmake
+      #   - ninja
+      #   - gperf
+      #   - python3
+      #   - python-tk
+      #   - ccache
+      #   - qemu
+      #   - dtc
+      #   - libmagic
+      #   - wget openocd
+    py-requirements:
+      - pattern: "scripts/requirements.txt"
+        type: "requirements"
+
   #
   # Please add items below based on alphabetical order
   projects:

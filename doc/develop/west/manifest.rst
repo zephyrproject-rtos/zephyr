@@ -1176,6 +1176,146 @@ Here, ``west update`` will recursively initialize and update just the
 submodules in ``foo`` with paths ``path/to/foo-first-sub`` and
 ``path/to/foo-second-sub``. Any submodules in ``bar`` are still ignored.
 
+.. _west-project-venv:
+
+Project Virtual Environment
+***************************
+
+West versions v1.3 and later support an optional ``venv`` key in projects.
+
+The ``venv`` allows projects to specify metadata about the build and runtime
+dependencies that they might have. Keep in mind that these are not transitive.
+If a project has a dependency on A and A depends on B, you'll need to list both
+A and B in your ``venv``.
+
+To get started with a West managed virtual environment, give it a name:
+
+.. code-block::yaml
+
+   manifest:
+     venv:
+       name: ".venv"
+
+In the example above, a virtual environment will be created at the project root
+under a directory ``.venv/``. This directory will contain both the python
+virtual environment and any binary requirements. You can sync your virtual
+environment by calling ``west bootstrap``.
+
+Python dependencies
+===================
+
+Python dependencies are listed under the ``py-requirements`` key of the
+``venv``. They are a list of dictionaries containing 2 keys: ``pattern`` which
+is a string name, file, or directory; and ``type`` which is an enum:
+
+- ``requirements``: A requirements file that would be installed into the
+   virtual environment via a ``pip install -r {pattern}`` call.
+- ``package``: A single package name that would be installed into the virtual
+   environment via a ``pip install {pattern}`` call.
+- ``directory``: A directory (relative to the project root) that would be
+   installed into the virtual environment via a ``pip install {pattern}`` call.
+- ``constraints``: A constraints file (relative to the project root) that will
+   be appended to all ``pip install`` calls via ``-c {pattern}``.
+
+Binary dependencies
+===================
+
+Binary dependencies are a bit more complex since they must be targeted to the
+specific OS and architecture. The top level key used to insert a binary
+dependency is ``bin-requirements``. Under that key, a mapping of requirement
+names to install "instructions" exists. The ``urls`` key under
+``bin-requirements`` is required and contains a mapping of OS/architecture to
+download URLs + paths to add to the PATH environment variable. It looks like:
+
+.. code-block::yaml
+
+   manifest:
+     venv:
+       name: ".venv"
+       bin-rquirements:
+         foo:
+           urls:
+             "linux-amd64":
+               url: "https://path/to/linux.file.tar.gz"
+               paths: ["bin"]
+             "windows-amd64":
+               url: "https://path/to/windows.file.zip"
+               paths: ["bin"]
+
+The above example lists a binary requirement for both Linux and Windows running
+the AMD64 architecture. If ``west bootstrap`` detects that we're running on one
+of those platforms, it will download the appropriate file, unpack it into the
+virtual environment and add the path ``bin`` relative to the unpacked directory
+to the ``PATH`` environment variable of the python virtual environment.
+
+.. note::
+   If ``path`` is not specified, it is assumed to be ``["."]``.
+
+Since urls and permutations of operating systems with architectures can get
+large, West provides some variables that can be used in these strings as well
+as the ability to add variables. Every run of ``west bootstrap`` will
+automatically resolve:
+
+- ``${os}`` to the current operating system (``windows``, ``mac``, or
+   ``linux``).
+- ``${arch}`` to the current architecture. West uses the
+   [CIPD](https://chrome-infra-packages.appspot.com/) standard naming which
+   uses ``amd64`` in place of ``x86_64`` and ``arm64`` in place of ``aarch64``.
+- ``${platform}`` which is a shorthand for ``${os}-${arch}``.
+
+This means that our above manifest can become:
+
+.. code-block::yaml
+
+  manifest:
+    venv:
+      name: ".venv"
+      bin-rquirements:
+        foo:
+          urls:
+            "*-amd64":
+              url: "https://path/to/${os}.file.tar.gz"
+              paths: ["bin"]
+
+If that's not enough, ``venv`` also alows custom definitions both at the top
+level and in each binary requirement. Here's an example of downloading cmake
+from CIPD:
+
+.. code-block::yaml
+
+  manifest:
+    venv:
+      name: ".venv"
+      definitions:
+        cipd_url: "https://chrome-infra-packages.appspot.com/dl"
+      bin-requirements:
+        cmake:
+          definitions:
+            package: "infra/3pp/tools/cmake/${platform}"
+            version: "version:3@3.30.3.chromium.8"
+          urls:
+            "*":
+              url: "${cipd_url}/${package}/+/${version}"
+              paths: ["bin"]
+
+The above uses the preset ``platform`` variable as well as a global
+``cipd_url`` variable and 2 local variables: ``package`` and ``version`` to
+construct the final URL which will match any OS/architecture.
+
+West bootstrap
+==============
+
+When we run ``west bootstrap`` we'll get all the python and binary dependencies
+installed locally into the virtual environment. The paths will be injected into
+activate script of the python virtual environment. There are 2 ways this can
+happen.
+
+#. The standard way which will prepend the paths to the current ``PATH``
+   variable (thus allowing any packages that are globally installed to still
+   remain accessible).
+#. Using the ``--hermetic`` flag which will replace ``PATH`` in the activate
+   script.
+
 .. _west-project-userdata:
 
 Repository user data
