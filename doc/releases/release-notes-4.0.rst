@@ -152,6 +152,8 @@ Boards & SoC Support
 
 * Added support for these boards:
 
+  * Added support for :ref:`PHYTEC phyBOARD-Nash <phyboard_nash>`: ``phyboard_nash``.
+
 * Made these board changes:
 
   * :ref:`native_posix<native_posix>` has been deprecated in favour of
