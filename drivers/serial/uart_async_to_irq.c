@@ -284,7 +284,7 @@ void z_uart_async_to_irq_irq_rx_disable(const struct device *dev)
 /** Interrupt driven transfer complete function */
 int z_uart_async_to_irq_irq_tx_complete(const struct device *dev)
 {
-	return z_uart_async_to_irq_irq_tx_ready(dev);
+	return z_uart_async_to_irq_irq_tx_ready(dev) > 0 ? 1 : 0;
 }
 
 /** Interrupt driven receiver ready function */
