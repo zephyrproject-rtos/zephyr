@@ -289,7 +289,6 @@ SECTIONS
 	_app_smem_size = _app_smem_end - _app_smem_start;
 	_app_smem_rom_start = LOADADDR(_APP_SMEM_SECTION_NAME);
 
-	__kernel_ram_start = .;
     SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)
 	{
         /*
@@ -298,6 +297,7 @@ SECTIONS
          */
         . = ALIGN(4);
 	__bss_start = .;
+	__kernel_ram_start = .;
 
 	*(.bss)
 	*(".bss.*")
@@ -358,7 +358,6 @@ SECTIONS
     __data_region_end = .;
 
 #ifndef CONFIG_USERSPACE
-   __kernel_ram_start = .;
    SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)
 	{
         /*
@@ -367,6 +366,7 @@ SECTIONS
          */
         . = ALIGN(4);
 	__bss_start = .;
+	__kernel_ram_start = .;
 
 	*(.bss)
 	*(".bss.*")
