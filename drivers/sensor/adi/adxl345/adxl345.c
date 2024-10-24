@@ -438,7 +438,7 @@ static int adxl345_init(const struct device *dev)
 #ifdef CONFIG_ADXL345_TRIGGER
 	const struct adxl345_dev_config *cfg = dev->config;
 #endif
-	uint8_t dev_id;
+	uint8_t dev_id, full_res;
 
 	data->sample_number = 0;
 
@@ -459,11 +459,13 @@ static int adxl345_init(const struct device *dev)
 		return -EIO;
 	}
 
-	rc = adxl345_reg_write_byte(dev, ADXL345_DATA_FORMAT_REG, ADXL345_RANGE_16G);
+	rc = adxl345_reg_write_byte(dev, ADXL345_DATA_FORMAT_REG, ADXL345_RANGE_8G);
 	if (rc < 0) {
 		LOG_ERR("Data format set failed\n");
 		return -EIO;
 	}
+
+	data->selected_range = ADXL345_RANGE_8G;
 
 	rc = adxl345_reg_write_byte(dev, ADXL345_RATE_REG, ADXL345_RATE_25HZ);
 	if (rc < 0) {
@@ -497,11 +499,16 @@ static int adxl345_init(const struct device *dev)
 	if (rc) {
 		return rc;
 	}
-		rc = adxl345_interrupt_config(dev, ADXL345_INT_MAP_WATERMARK_MSK);
+	rc = adxl345_interrupt_config(dev, ADXL345_INT_MAP_WATERMARK_MSK);
 	if (rc) {
 		return rc;
 	}
 #endif
+
+	rc = adxl345_reg_read_byte(dev, ADXL345_DATA_FORMAT_REG, &full_res);
+	uint8_t is_full_res_set = (full_res & ADXL345_DATA_FORMAT_FULL_RES) != 0;
+
+	data->is_full_res = is_full_res_set;
 	return 0;
 }
 
