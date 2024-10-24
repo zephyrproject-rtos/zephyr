@@ -282,14 +282,20 @@ static int wwdg_stm32_init(const struct device *dev)
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	const struct wwdg_stm32_config *cfg = WWDG_STM32_CFG(dev);
 
-	wwdg_stm32_irq_config(dev);
-
 	if (!device_is_ready(clk)) {
 		LOG_ERR("clock control device not ready");
 		return -ENODEV;
 	}
 
-	return clock_control_on(clk, (clock_control_subsys_t) &cfg->pclken);
+	if (clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken) != 0) {
+		LOG_ERR("clock control on failed");
+		return -EIO;
+	}
+
+	/* Enable IRQ, especially EWKUP, once the peripheral is clocked */
+	wwdg_stm32_irq_config(dev);
+
+	return 0;
 }
 
 static struct wwdg_stm32_data wwdg_stm32_dev_data = {
@@ -318,5 +324,7 @@ static void wwdg_stm32_irq_config(const struct device *dev)
 		    DT_INST_IRQ(0, priority),
 		    wwdg_stm32_isr, DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQN(0));
+
+	LL_WWDG_ClearFlag_EWKUP(wwdg);
 	LL_WWDG_EnableIT_EWKUP(wwdg);
 }
