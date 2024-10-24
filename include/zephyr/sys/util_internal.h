@@ -198,4 +198,7 @@
 /* Used by UTIL_X2 */
 #include "util_internal_util_x2.h"
 
+/* Simple math operations such as UTIL_ADD, UTIL_LSH, etc. use this */
+#include "util_internal_math.h"
+
 #endif /* ZEPHYR_INCLUDE_SYS_UTIL_INTERNAL_H_ */
