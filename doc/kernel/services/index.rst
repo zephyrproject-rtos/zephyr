@@ -42,6 +42,7 @@ synchronization.
    synchronization/condvar.rst
    synchronization/events.rst
    smp/smp.rst
+   system_interrupts.rst
 
 .. _kernel_data_passing_api:
 
