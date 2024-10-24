@@ -185,9 +185,7 @@ set(format_str "{NAME}\;{DIR}\;{HWM}\;")
 set(format_str "${format_str}{REVISION_FORMAT}\;{REVISION_DEFAULT}\;{REVISION_EXACT}\;")
 set(format_str "${format_str}{REVISIONS}\;{SOCS}\;{QUALIFIERS}")
 
-if(BOARD_DIR)
-  set(board_dir_arg "--board-dir=${BOARD_DIR}")
-endif()
+list(TRANSFORM BOARD_DIRECTORIES PREPEND "--board-dir=" OUTPUT_VARIABLE board_dir_arg)
 execute_process(${list_boards_commands} --board=${BOARD} ${board_dir_arg}
   --cmakeformat=${format_str}
                 OUTPUT_VARIABLE ret_board
@@ -200,29 +198,15 @@ endif()
 
 if(NOT "${ret_board}" STREQUAL "")
   string(STRIP "${ret_board}" ret_board)
-  string(FIND "${ret_board}" "\n" idx REVERSE)
-  if(idx GREATER -1)
-    while(TRUE)
-      math(EXPR start "${idx} + 1")
-      string(SUBSTRING "${ret_board}" ${start} -1 line)
-      string(SUBSTRING "${ret_board}" 0 ${idx} ret_board)
-
-      cmake_parse_arguments(LIST_BOARD "" "DIR" "" ${line})
-      set(board_dirs "${board_dirs}\n${LIST_BOARD_DIR}")
-
-      if(idx EQUAL -1)
-        break()
-      endif()
-      string(FIND "${ret_board}" "\n" idx REVERSE)
-    endwhile()
-    message(FATAL_ERROR "Multiple boards named '${BOARD}' found in:${board_dirs}")
-  endif()
-
-  set(single_val "NAME;DIR;HWM;REVISION_FORMAT;REVISION_DEFAULT;REVISION_EXACT")
-  set(multi_val  "REVISIONS;SOCS;QUALIFIERS")
+  set(single_val "NAME;HWM;REVISION_FORMAT;REVISION_DEFAULT;REVISION_EXACT")
+  set(multi_val  "DIR;REVISIONS;SOCS;QUALIFIERS")
   cmake_parse_arguments(LIST_BOARD "" "${single_val}" "${multi_val}" ${ret_board})
-  set(BOARD_DIR ${LIST_BOARD_DIR} CACHE PATH "Board directory for board (${BOARD})" FORCE)
-  set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${BOARD_DIR}/board.yml)
+  list(GET LIST_BOARD_DIR 0 BOARD_DIR)
+  set(BOARD_DIR ${BOARD_DIR} CACHE PATH "Main board directory for board (${BOARD})" FORCE)
+  set(BOARD_DIRECTORIES ${LIST_BOARD_DIR} CACHE INTERNAL "List of board directories for board (${BOARD})" FORCE)
+  foreach(dir ${BOARD_DIRECTORIES})
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${dir}/board.yml)
+  endforeach()
 
   # Create two CMake variables identifying the hw model.
   # CMake variable: HWM=[v1,v2]

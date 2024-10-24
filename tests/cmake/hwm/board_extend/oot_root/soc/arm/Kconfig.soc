@@ -1,0 +1,6 @@
+# Copyright (c) 2024, Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_MPS2_AN521_CPUTEST
+	bool
+	select SOC_MPS2_AN521

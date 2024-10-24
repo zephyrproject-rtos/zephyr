@@ -2,9 +2,13 @@
 
 # SPDX-License-Identifier: Apache-2.0
 
+# In HWMv1 the KCONFIG_BOARD_DIR points directly to the BOARD_DIR.
+# Set the BOARD_DIR variable for backwards compatibility to legacy hardware model.
+BOARD_DIR := $(KCONFIG_BOARD_DIR)
+
 choice
 	prompt "Board Selection"
 
-source "$(BOARD_DIR)/Kconfig.board"
+source "$(KCONFIG_BOARD_DIR)/Kconfig.board"
 
 endchoice
