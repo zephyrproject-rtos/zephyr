@@ -91,6 +91,7 @@ zephyr_file(APPLICATION_ROOT TOOLCHAIN_ROOT)
 # Host-tools don't unconditionally set TOOLCHAIN_HOME anymore,
 # but in case Zephyr's SDK toolchain is used, set TOOLCHAIN_HOME
 if(("${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "zephyr-gnu") OR
+   ("${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "zephyr-llvm") OR
    ("${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "zephyr"))
   set(TOOLCHAIN_HOME ${HOST_TOOLS_HOME})
 endif()
