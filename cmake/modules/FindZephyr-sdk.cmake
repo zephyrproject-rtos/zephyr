@@ -55,6 +55,7 @@ endif()
 # 2) No toolchain specified == Default to Zephyr toolchain
 # Until we completely deprecate it
 if(("zephyr-gnu" STREQUAL ${ZEPHYR_TOOLCHAIN_VARIANT}) OR
+   ("zephyr-llvm" STREQUAL ${ZEPHYR_TOOLCHAIN_VARIANT}) OR
    ("zephyr" STREQUAL ${ZEPHYR_TOOLCHAIN_VARIANT}) OR
    (NOT DEFINED ZEPHYR_TOOLCHAIN_VARIANT) OR
    (DEFINED ZEPHYR_SDK_INSTALL_DIR) OR
