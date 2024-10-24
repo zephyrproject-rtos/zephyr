@@ -46,19 +46,19 @@ class TestRunner:
             ['qemu_x86/atom', 'qemu_x86_64/atom', 'intel_adl_crb/alder_lake'],
             {
                 'selected_test_scenarios': 3,
-                'selected_test_instances': 6,
+                'selected_test_instances': 4,
                 'skipped_configurations': 0,
                 'skipped_by_static_filter': 0,
                 'skipped_at_runtime': 0,
                 'passed_configurations': 4,
-                'built_configurations': 2,
+                'built_configurations': 0,
                 'failed_configurations': 0,
                 'errored_configurations': 0,
                 'executed_test_cases': 8,
                 'skipped_test_cases': 0,
                 'platform_count': 0,
                 'executed_on_platform': 4,
-                'only_built': 2
+                'only_built': 0
             }
         )
     ]

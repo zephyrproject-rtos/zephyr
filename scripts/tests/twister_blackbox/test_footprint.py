@@ -16,6 +16,7 @@ import re
 
 # pylint: disable=no-name-in-module
 from conftest import ZEPHYR_BASE, TEST_DATA, testsuite_filename_mock, clear_log_in_test
+from twisterlib.statuses import TwisterStatus
 from twisterlib.testplan import TestPlan
 
 
@@ -76,9 +77,10 @@ class TestFootprint:
         with open(os.path.join(out_path, 'twister.json')) as f:
             j = json.load(f)
             for ts in j['testsuites']:
-                if 'reason' not in ts:
+                if TwisterStatus(ts.get('status')) == TwisterStatus.NOTRUN:
                     # We assume positive RAM usage.
                     ts[self.RAM_KEY] *= old_ram_multiplier
+
         with open(os.path.join(out_path, 'twister.json'), 'w') as f:
             f.write(json.dumps(j, indent=4))
 
@@ -137,7 +139,7 @@ class TestFootprint:
         with open(os.path.join(out_path, 'twister.json')) as f:
             j = json.load(f)
             for ts in j['testsuites']:
-                if 'reason' not in ts:
+                if TwisterStatus(ts.get('status')) == TwisterStatus.NOTRUN:
                     assert self.RAM_KEY in ts
                     old_values += [ts[self.RAM_KEY]]
 
@@ -162,7 +164,7 @@ class TestFootprint:
         with open(os.path.join(out_path, 'twister.json')) as f:
             j = json.load(f)
             for ts in j['testsuites']:
-                if 'reason' not in ts:
+                if TwisterStatus(ts.get('status')) == TwisterStatus.NOTRUN:
                     assert self.RAM_KEY in ts
                     new_values += [ts[self.RAM_KEY]]
 
@@ -202,7 +204,7 @@ class TestFootprint:
         with open(os.path.join(out_path, 'twister.json')) as f:
             j = json.load(f)
             for ts in j['testsuites']:
-                if 'reason' not in ts:
+                if TwisterStatus(ts.get('status')) == TwisterStatus.NOTRUN:
                     # We assume positive RAM usage.
                     ts[self.RAM_KEY] *= old_ram_multiplier
         with open(os.path.join(out_path, 'twister.json'), 'w') as f:
@@ -271,7 +273,7 @@ class TestFootprint:
         with open(os.path.join(out_path, 'twister.json')) as f:
             j = json.load(f)
             for ts in j['testsuites']:
-                if 'reason' not in ts:
+                if TwisterStatus(ts.get('status')) == TwisterStatus.NOTRUN:
                     # We assume positive RAM usage.
                     ts[self.RAM_KEY] *= old_ram_multiplier
         with open(os.path.join(out_path, 'twister.json'), 'w') as f:
@@ -344,7 +346,7 @@ class TestFootprint:
         with open(os.path.join(out_path, 'twister.json')) as f:
             j = json.load(f)
             for ts in j['testsuites']:
-                if 'reason' not in ts:
+                if TwisterStatus(ts.get('status')) == TwisterStatus.NOTRUN:
                     # We assume positive RAM usage.
                     ts[self.RAM_KEY] *= old_ram_multiplier
         with open(os.path.join(out_path, 'twister.json'), 'w') as f:
@@ -441,7 +443,7 @@ class TestFootprint:
         with open(os.path.join(out_path, 'twister.json')) as f:
             j = json.load(f)
             for ts in j['testsuites']:
-                if 'reason' not in ts:
+                if TwisterStatus(ts.get('status')) == TwisterStatus.NOTRUN:
                     # We assume positive RAM usage.
                     ts[self.RAM_KEY] *= old_ram_multiplier
         with open(os.path.join(out_path, 'twister.json'), 'w') as f:
