@@ -26,6 +26,11 @@ config SETTINGS_DYNAMIC_HANDLERS
 	help
 	  Enables the use of dynamic settings handlers
 
+config SETTINGS_STATIC_DATA
+	bool "settings static data"
+	help
+	  Enables the use of settings static data
+
 # Hidden option to enable encoding length into settings entry
 config SETTINGS_ENCODE_LEN
 	bool

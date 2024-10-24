@@ -39,6 +39,8 @@ int settings_load(void)
 	return settings_load_subtree(NULL);
 }
 
+extern void settings_static_data_load(const struct settings_load_arg *arg);
+
 int settings_load_subtree(const char *subtree)
 {
 	struct settings_store *cs;
@@ -54,9 +56,14 @@ int settings_load_subtree(const char *subtree)
 	 *    commit all
 	 */
 	k_mutex_lock(&settings_lock, K_FOREVER);
+	if (IS_ENABLED(CONFIG_SETTINGS_STATIC_DATA)) {
+		settings_static_data_load(&arg);
+	}
+
 	SYS_SLIST_FOR_EACH_CONTAINER(&settings_load_srcs, cs, cs_next) {
 		cs->cs_itf->csi_load(cs, &arg);
 	}
+
 	rc = settings_commit_subtree(subtree);
 	k_mutex_unlock(&settings_lock);
 	return rc;
@@ -81,9 +88,14 @@ int settings_load_subtree_direct(
 	 *    commit all
 	 */
 	k_mutex_lock(&settings_lock, K_FOREVER);
+	if (IS_ENABLED(CONFIG_SETTINGS_STATIC_DATA)) {
+		settings_static_data_load(&arg);
+	}
+
 	SYS_SLIST_FOR_EACH_CONTAINER(&settings_load_srcs, cs, cs_next) {
 		cs->cs_itf->csi_load(cs, &arg);
 	}
+
 	k_mutex_unlock(&settings_lock);
 	return 0;
 }
