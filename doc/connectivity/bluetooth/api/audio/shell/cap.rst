@@ -257,15 +257,19 @@ the optionally included CSIS instance by calling (:code:`cap_commander discover`
    cap_commander --help
    cap_commander - Bluetooth CAP commander shell commands
    Subcommands:
-     discover                :Discover CAS
-     cancel                  :CAP commander cancel current procedure
-     change_volume           :Change volume on all connections <volume>
-     change_volume_mute      :Change volume mute state on all connections <mute>
-     change_volume_offset    :Change volume offset per connection <volume_offset
-                              [volume_offset [...]]>
-     change_microphone_mute  :Change microphone mute state on all connections <mute>
-     change_microphone_gain  :Change microphone gain per connection <gain
-                              [gain [...]]>
+     discover                  :Discover CAS
+     cancel                    :CAP commander cancel current procedure
+     change_volume             :Change volume on all connections <volume>
+     change_volume_mute        :Change volume mute state on all connections <mute>
+     change_volume_offset      :Change volume offset per connection <volume_offset
+                                [volume_offset [...]]>
+     change_microphone_mute    :Change microphone mute state on all connections <mute>
+     change_microphone_gain    :Change microphone gain per connection <gain
+                                [gain [...]]>
+     broadcast_reception_start : Start broadcast reception on one connection with <address>
+                                 and <type>, using <adv_sid> and <broadcast_id>, optionally
+                                 <pa_interval>, <sync_bis> and <metadata>
+     broadcast_reception_stop  : Stop broadcast reception from <src_id>
 
 
 Before being able to perform any stream operation, the device must also perform the
@@ -437,8 +441,8 @@ and index 1 gets the second offset, etc.:
    Gain set for inst 0x20014188
    Microphone gain change completed
 
-Starting a broadcast reception
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Starting and stopping broadcast reception
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: console
 
@@ -451,3 +455,7 @@ Starting a broadcast reception
    BASS discover done with 1 recv states
    uart:~$ cap_commander broadcast_reception_start <device B> 0 4
    Starting broadcast reception on 1 connection(s)
+   Broadcast reception start completed
+   uart:~$ cap_commander broadcast_reception_stop 0
+   Stopping broadcast reception on 1 connection(s)
+   Broadcast reception stop completed
