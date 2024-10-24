@@ -1313,6 +1313,11 @@ void bt_le_cs_step_data_parse(struct net_buf_simple *step_data_buf,
 
 		step.data = step_data_buf->data;
 
+		if (step.data_len > step_data_buf->len) {
+			LOG_WRN("Step data appears malformed.");
+			return;
+		}
+
 		if (!func(&step, user_data)) {
 			return;
 		}
