@@ -827,6 +827,30 @@ void video_buffer_release(struct video_buffer *buf);
  * @}
  */
 
+/**
+ * @brief Get number of bytes per pixel of a pixel format
+ *
+ * @param pixfmt FourCC pixel format value (\ref video_pixel_formats).
+ */
+static inline unsigned int video_pix_fmt_bpp(uint32_t pixfmt)
+{
+	switch (pixfmt) {
+	case VIDEO_PIX_FMT_BGGR8:
+	case VIDEO_PIX_FMT_GBRG8:
+	case VIDEO_PIX_FMT_GRBG8:
+	case VIDEO_PIX_FMT_RGGB8:
+		return 1;
+	case VIDEO_PIX_FMT_RGB565:
+	case VIDEO_PIX_FMT_YUYV:
+		return 2;
+	case VIDEO_PIX_FMT_XRGB32:
+	case VIDEO_PIX_FMT_XYUV32:
+		return 4;
+	default:
+		return 0;
+	}
+}
+
 #ifdef __cplusplus
 }
 #endif

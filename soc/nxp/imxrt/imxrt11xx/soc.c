@@ -474,17 +474,6 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_EnableClock(kCLOCK_Video_Mux);
 	VIDEO_MUX->VID_MUX_CTRL.SET = VIDEO_MUX_VID_MUX_CTRL_CSI_SEL_MASK;
 
-	/* Configure MIPI CSI-2 Rx clocks */
-	rootCfg.div = 8;
-	rootCfg.mux = kCLOCK_CSI2_ClockRoot_MuxSysPll3Out;
-	CLOCK_SetRootClock(kCLOCK_Root_Csi2, &rootCfg);
-
-	rootCfg.mux = kCLOCK_CSI2_ESC_ClockRoot_MuxSysPll3Out;
-	CLOCK_SetRootClock(kCLOCK_Root_Csi2_Esc, &rootCfg);
-
-	rootCfg.mux = kCLOCK_CSI2_UI_ClockRoot_MuxSysPll3Out;
-	CLOCK_SetRootClock(kCLOCK_Root_Csi2_Ui, &rootCfg);
-
 	/* Enable power domain for MIPI CSI-2 */
 	PGMC_BPC4->BPC_POWER_CTRL |= (PGMC_BPC_BPC_POWER_CTRL_PSW_ON_SOFT_MASK |
 				      PGMC_BPC_BPC_POWER_CTRL_ISO_OFF_SOFT_MASK);
@@ -680,6 +669,41 @@ void imxrt_post_init_display_interface(void)
 			      IOMUXC_GPR_GPR62_MIPI_DSI_DPI_SOFT_RESET_N_MASK);
 }
 
+#endif
+
+#if CONFIG_VIDEO_MCUX_MIPI_CSI2RX
+int mipi_csi2rx_clock_set_freq(clock_root_t clock_root, uint32_t rate)
+{
+	clock_root_config_t rootCfg = {0};
+	uint32_t freq;
+	clock_name_t clk_source;
+
+	switch (clock_root) {
+	case kCLOCK_Root_Csi2:
+		rootCfg.mux = kCLOCK_CSI2_ClockRoot_MuxSysPll3Out;
+		break;
+	case kCLOCK_Root_Csi2_Esc:
+		rootCfg.mux = kCLOCK_CSI2_ESC_ClockRoot_MuxSysPll3Out;
+		break;
+	case kCLOCK_Root_Csi2_Ui:
+		rootCfg.mux = kCLOCK_CSI2_UI_ClockRoot_MuxSysPll3Out;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	clk_source = CLOCK_GetRootClockSource(clock_root, rootCfg.mux);
+	freq = CLOCK_GetFreq(clk_source);
+	if (rate > freq) {
+		LOG_ERR("Requested rate is higher than the maximum clock frequency");
+		return -EINVAL;
+	}
+
+	rootCfg.div = (uint32_t)freq / rate;
+	CLOCK_SetRootClock(clock_root, &rootCfg);
+
+	return 0;
+}
 #endif
 
 /**
