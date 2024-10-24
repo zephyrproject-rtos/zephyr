@@ -14,6 +14,8 @@
  * @brief USB Binary Device Object Store support
  * @defgroup usb_bos USB BOS support
  * @ingroup usb
+ * @since 1.13
+ * @version 1.0.0
  * @{
  */
 
