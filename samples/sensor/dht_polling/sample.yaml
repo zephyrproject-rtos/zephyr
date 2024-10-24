@@ -10,7 +10,8 @@ sample:
 tests:
   sample.sensor.dht_polling:
     tags: sensors
-    filter: dt_alias_exists("dht0")
+    platform_allow:
+      - nucleo_f401re
     integration_platforms:
       - nucleo_f401re
     harness: console

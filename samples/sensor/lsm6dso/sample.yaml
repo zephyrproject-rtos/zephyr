@@ -6,7 +6,8 @@ tests:
     tags:
       - sensors
     timeout: 15
-    filter: dt_compat_enabled("st,lsm6dso")
+    depends_on:
+      - lsm6dso
     integration_platforms:
       - stm32l562e_dk
     harness_config:

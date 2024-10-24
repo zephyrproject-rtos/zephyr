@@ -4,7 +4,6 @@ common:
   harness: console
   integration_platforms:
     - disco_l475_iot1
-  filter: dt_compat_enabled("st,hts221")
   tags: sensors
   depends_on:
     - i2c

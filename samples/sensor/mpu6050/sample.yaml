@@ -9,7 +9,6 @@ sample:
 tests:
   sample.sensor.mpu6050:
     build_only: true
-    platform_allow: nrf52dk/nrf52832
-    tags: sensors
-    integration_platforms:
+    platform_allow:
       - nrf52dk/nrf52832
+    tags: sensors

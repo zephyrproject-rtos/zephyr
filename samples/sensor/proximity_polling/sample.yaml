@@ -6,6 +6,5 @@ tests:
     tags:
       - sensors
       - proximity
-    filter: dt_alias_exists("prox-sensor0")
-    integration_platforms:
+    platform_allow:
       - nrf52840dk/nrf52840

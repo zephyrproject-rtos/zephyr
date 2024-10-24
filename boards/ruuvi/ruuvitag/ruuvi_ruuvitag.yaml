@@ -16,4 +16,5 @@ supported:
   - counter
   - nvs
   - watchdog
+  - bme280
 vendor: ruuvi

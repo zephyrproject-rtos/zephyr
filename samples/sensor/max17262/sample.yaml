@@ -7,7 +7,8 @@ tests:
     depends_on: arduino_i2c
     harness: console
     tags: sensors
-    platform_allow: nrf52840dk/nrf52840
+    platform_allow:
+      - nrf52840dk/nrf52840
     harness_config:
       type: one_line
       regex:

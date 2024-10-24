@@ -7,3 +7,5 @@ tests:
       - i2c
       - vl53l0x
     tags: sensors
+    integration_platforms:
+      - b_l4s5i_iot01a

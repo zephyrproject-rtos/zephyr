@@ -7,4 +7,5 @@ tests:
     depends_on:
       - i2c
       - gpio
-    filter: dt_compat_enabled("semtech,sx9500")
+    platform_allow:
+      - frdm_k64f

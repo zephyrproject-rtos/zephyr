@@ -9,3 +9,5 @@ tests:
     depends_on:
       - i2c
       - lis2dh
+    integration_platforms:
+      - thingy52/nrf52832
