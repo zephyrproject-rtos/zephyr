@@ -462,6 +462,7 @@ Bluetooth Audio:
     - pin-zephyr
     - niym-ot
     - jthm-ot
+    - babrsn
   files:
     - subsys/bluetooth/audio/
     - include/zephyr/bluetooth/audio/
