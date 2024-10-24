@@ -116,12 +116,12 @@ __subsystem struct ethphy_driver_api {
 			   void *user_data);
 
 	/** Read PHY register */
-	int (*read)(const struct device *dev, uint16_t reg_addr,
-		    uint32_t *data);
+	int (*read)(const struct device *dev, uint16_t phy_addr,
+			uint16_t reg_addr, uint32_t *data);
 
 	/** Write PHY register */
-	int (*write)(const struct device *dev, uint16_t reg_addr,
-		     uint32_t data);
+	int (*write)(const struct device *dev, uint16_t phy_addr,
+			uint16_t reg_addr, uint32_t data);
 };
 /**
  * @endcond
@@ -200,19 +200,20 @@ static inline int phy_link_callback_set(const struct device *dev,
  * This routine provides a generic interface to read from a PHY register.
  *
  * @param[in]  dev       PHY device structure
+ * @param[in]  phy_addr  PHY address
  * @param[in]  reg_addr  Register address
  * @param      value     Pointer to receive read value
  *
  * @retval 0 If successful.
  * @retval -EIO If communication with PHY failed.
  */
-static inline int phy_read(const struct device *dev, uint16_t reg_addr,
-			   uint32_t *value)
+static inline int phy_read(const struct device *dev, uint16_t phy_addr,
+			   uint16_t reg_addr, uint32_t *value)
 {
 	const struct ethphy_driver_api *api =
 		(const struct ethphy_driver_api *)dev->api;
 
-	return api->read(dev, reg_addr, value);
+	return api->read(dev, phy_addr, reg_addr, value);
 }
 
 /**
@@ -221,19 +222,20 @@ static inline int phy_read(const struct device *dev, uint16_t reg_addr,
  * This routine provides a generic interface to write to a PHY register.
  *
  * @param[in]  dev       PHY device structure
+ * @param[in]  phy_addr  PHY address
  * @param[in]  reg_addr  Register address
  * @param[in]  value     Value to write
  *
  * @retval 0 If successful.
  * @retval -EIO If communication with PHY failed.
  */
-static inline int phy_write(const struct device *dev, uint16_t reg_addr,
-			    uint32_t value)
+static inline int phy_write(const struct device *dev, uint16_t phy_addr,
+			   uint16_t reg_addr, uint32_t value)
 {
 	const struct ethphy_driver_api *api =
 		(const struct ethphy_driver_api *)dev->api;
 
-	return api->write(dev, reg_addr, value);
+	return api->write(dev, phy_addr, reg_addr, value);
 }
 
 
