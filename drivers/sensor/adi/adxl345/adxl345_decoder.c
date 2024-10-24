@@ -19,13 +19,70 @@ static const uint32_t accel_period_ns[] = {
 	[ADXL345_ODR_400HZ] = UINT32_C(1000000000) / 400,
 };
 
-static inline void adxl345_accel_convert_q31(q31_t *out, uint16_t sample)
+static const uint32_t range_to_shift[] = {
+	[ADXL345_RANGE_2G] = 5,
+	[ADXL345_RANGE_4G] = 6,
+	[ADXL345_RANGE_8G] = 7,
+	[ADXL345_RANGE_16G] = 8,
+};
+
+/* (1 / sensitivity) * (pow(2,31) / pow(2,shift)) * (unit_scaler) */
+static const uint32_t qscale_factor_no_full_res[] = {
+	/* (1.0 / ADXL362_ACCEL_2G_LSB_PER_G) * (2^31 / 2^5) * SENSOR_G / 1000000 */
+	[ADXL345_RANGE_2G] = UINT32_C(2569011),
+	/* (1.0 / ADXL362_ACCEL_4G_LSB_PER_G) * (2^31 / 2^6) * SENSOR_G / 1000000  */
+	[ADXL345_RANGE_4G] = UINT32_C(642253),
+	/* (1.0 / ADXL362_ACCEL_8G_LSB_PER_G) * (2^31 / 2^7) ) * SENSOR_G / 1000000 */
+	[ADXL345_RANGE_8G] = UINT32_C(160563),
+	/* (1.0 / ADXL362_ACCEL_8G_LSB_PER_G) * (2^31 / 2^8) ) * SENSOR_G / 1000000 */
+	[ADXL345_RANGE_16G] = UINT32_C(40141),
+};
+
+/* (1 / sensitivity) * (pow(2,31) / pow(2,shift)) * (unit_scaler) */
+static const uint32_t qscale_factor_full_res[] = {
+	/* (1.0 / ADXL362_ACCEL_2G_LSB_PER_G) * (2^31 / 2^5) * SENSOR_G / 1000000 */
+	[ADXL345_RANGE_2G] = UINT32_C(2569011),
+	/* (1.0 / ADXL362_ACCEL_4G_LSB_PER_G) * (2^31 / 2^6) * SENSOR_G / 1000000  */
+	[ADXL345_RANGE_4G] = UINT32_C(1284506),
+	/* (1.0 / ADXL362_ACCEL_8G_LSB_PER_G) * (2^31 / 2^7) ) * SENSOR_G / 1000000 */
+	[ADXL345_RANGE_8G] = UINT32_C(642253),
+	/* (1.0 / ADXL362_ACCEL_8G_LSB_PER_G) * (2^31 / 2^8) ) * SENSOR_G / 1000000 */
+	[ADXL345_RANGE_16G] = UINT32_C(321126),
+};
+
+static inline void adxl345_accel_convert_q31(q31_t *out, int16_t sample, int32_t range,
+					uint8_t is_full_res)
 {
-	if (sample & BIT(9)) {
-		sample |= ADXL345_COMPLEMENT;
+	if (is_full_res) {
+		switch (range) {
+		case ADXL345_RANGE_2G:
+			if (sample & BIT(9)) {
+				sample |= ADXL345_COMPLEMENT_MASK(10);
+			}
+			break;
+		case ADXL345_RANGE_4G:
+			if (sample & BIT(10)) {
+				sample |= ADXL345_COMPLEMENT_MASK(11);
+			}
+			break;
+		case ADXL345_RANGE_8G:
+			if (sample & BIT(11)) {
+				sample |= ADXL345_COMPLEMENT_MASK(12);
+			}
+			break;
+		case ADXL345_RANGE_16G:
+			if (sample & BIT(12)) {
+				sample |= ADXL345_COMPLEMENT_MASK(13);
+			}
+			break;
+		}
+	} else {
+		if (sample & BIT(9)) {
+			sample |= ADXL345_COMPLEMENT;
+		}
 	}
-	int32_t micro_ms2 = ((sample * SENSOR_G) / 32);
-	*out = CLAMP((((int64_t)micro_ms2) + (micro_ms2 % 1000000)), INT32_MIN, INT32_MAX);
+
+	*out = sample * qscale_factor_no_full_res[range];
 }
 
 static int adxl345_decode_stream(const uint8_t *buffer, struct sensor_chan_spec chan_spec,
@@ -46,11 +103,13 @@ static int adxl345_decode_stream(const uint8_t *buffer, struct sensor_chan_spec 
 	memset(data, 0, sizeof(struct sensor_three_axis_data));
 	data->header.base_timestamp_ns = enc_data->timestamp;
 	data->header.reading_count = 1;
+	data->shift = range_to_shift[enc_data->selected_range];
 
 	buffer += sizeof(struct adxl345_fifo_data);
 
 	uint8_t sample_set_size = enc_data->sample_set_size;
 	uint64_t period_ns = accel_period_ns[enc_data->accel_odr];
+	uint8_t is_full_res = enc_data->is_full_res;
 
 	/* Calculate which sample is decoded. */
 	if ((uint8_t *)*fit >= buffer) {
@@ -73,13 +132,16 @@ static int adxl345_decode_stream(const uint8_t *buffer, struct sensor_chan_spec 
 			data->readings[count].timestamp_delta = sample_num * period_ns;
 			uint8_t buff_offset = 0;
 
-			adxl345_accel_convert_q31(&data->readings[count].x, *(int16_t *)buffer);
+			adxl345_accel_convert_q31(&data->readings[count].x, *(int16_t *)buffer,
+					enc_data->selected_range, is_full_res);
 			buff_offset = 2;
 			adxl345_accel_convert_q31(&data->readings[count].y,
-						*(int16_t *)(buffer + buff_offset));
+						*(int16_t *)(buffer + buff_offset),
+							enc_data->selected_range, is_full_res);
 			buff_offset += 2;
 			adxl345_accel_convert_q31(&data->readings[count].z,
-						*(int16_t *)(buffer + buff_offset));
+						*(int16_t *)(buffer + buff_offset),
+							enc_data->selected_range, is_full_res);
 			break;
 		default:
 			return -ENOTSUP;
