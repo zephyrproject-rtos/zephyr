@@ -1,18 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
-# Remove after 3.7.0 is released
-if(CONFIG_BT_RPMSG)
-	message(FATAL_ERROR  "CONFIG_BT_RPMSG has been renamed to CONFIG_BT_HCI_IPC")
-endif()
-
-# Remove after 3.7.0 is released
-if(CONFIG_BT_HCI_IPC)
-  dt_chosen(chosen_hci_rpmsg PROPERTY "zephyr,bt-hci-rpmsg-ipc")
-  if(DEFINED chosen_hci_rpmsg)
-	message(FATAL_ERROR  "zephyr,bt-hci-rpmsg-ipc has been renamed to zephyr,bt-hci-ipc")
-  endif()
-endif()
-
 zephyr_library_sources_ifdef(CONFIG_BT_ESP32       hci_esp32.c)
 if(CONFIG_DT_HAS_ESPRESSIF_ESP32_BT_HCI_ENABLED)
   zephyr_blobs_verify(MODULE hal_espressif REQUIRED)
