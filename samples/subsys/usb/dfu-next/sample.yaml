@@ -1,0 +1,18 @@
+sample:
+  name: USB DFU sample
+common:
+  min_ram: 64
+  depends_on:
+    - usbd
+  integration_platforms:
+    - nrf52840dk/nrf52840
+    - frdm_k64f
+    - mimxrt1060_evk
+tests:
+  sample.usbd.dfu:
+    tags: usb
+  sample.usbd.dfu-flash:
+    min_flash: 1024
+    tags: usb
+    extra_configs:
+      - CONFIG_APP_USB_DFU_USE_FLASH_BACKEND=y

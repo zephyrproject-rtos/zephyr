@@ -742,6 +742,10 @@ int usbd_register_class(struct usbd_context *uds_ctx,
  * usbd_register_class for any device, configuration number, or instance,
  * either usbd_register_class or this function will fail.
  *
+ * @note Some class implementations are blocklisted because they cannot be
+ * combined with other instances. The instances currently blacklisted are:
+ *  - runtime DFU instance "dfu_dfu"
+ *
  * @param[in] uds_ctx Pointer to USB device support context
  * @param[in] speed   Configuration speed
  * @param[in] cfg     Configuration value (bConfigurationValue)
