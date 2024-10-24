@@ -379,6 +379,12 @@ static int frdm_mcxn947_init(void)
 	CLOCK_AttachClk(kI3C1FCLK_to_I3C1FCLKSTC);
 #endif
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(sc_timer), okay)
+	/* attach FRO HF to SCT */
+	CLOCK_SetClkDiv(kCLOCK_DivSctClk, 1u);
+	CLOCK_AttachClk(kFRO_HF_to_SCT);
+#endif
+
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
 
