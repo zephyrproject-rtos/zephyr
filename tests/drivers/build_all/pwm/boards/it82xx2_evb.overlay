@@ -1,0 +1,41 @@
+/*
+ * Copyright (c) 2024 ITE Corporation. All Rights Reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <ite/it8801-mfd-map.dtsi>
+
+/ {
+	test {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		test_i2c: i2c@11112222 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "vnd,i2c";
+			reg = <0x11112222 0x1000>;
+			status = "okay";
+			clock-frequency = <100000>;
+
+			it8801_mfd: it8801@38 {
+				compatible = "ite,it8801-mfd";
+				reg = <0x38>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				ioex_it8801_pwm: it8801_pwm@90  {
+					compatible = "ite,it8801-pwm";
+					mfdctrl = <&pwm7_gp20_default>;
+					reg = <0x90 1   /* PWMMCR */
+					       0x94 1   /* PWMDCR */
+					       0x96 1   /* PWMPRSL */
+					       0x97 1>; /* PWMPRSM */
+					channel = <7>;
+					#pwm-cells = <3>;
+				};
+			};
+		};
+	};
+};
