@@ -85,31 +85,19 @@ if(SYSROOT_DIR)
   list(APPEND TOOLCHAIN_C_FLAGS
     --sysroot=${SYSROOT_DIR}
     )
-
-  # Use sysroot dir to set the libc path's
-  execute_process(
-    COMMAND ${CMAKE_C_COMPILER} ${TOOLCHAIN_C_FLAGS} --print-multi-directory
-    OUTPUT_VARIABLE NEWLIB_DIR
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-
-  set(LIBC_LIBRARY_DIR "\"${SYSROOT_DIR}\"/lib/${NEWLIB_DIR}")
 endif()
 
-# This libgcc code is partially duplicated in compiler/*/target.cmake
-execute_process(
-  COMMAND ${CMAKE_C_COMPILER} ${TOOLCHAIN_C_FLAGS} --print-libgcc-file-name
-  OUTPUT_VARIABLE LIBGCC_FILE_NAME
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-  )
-
-assert_exists(LIBGCC_FILE_NAME)
-
-get_filename_component(LIBGCC_DIR ${LIBGCC_FILE_NAME} DIRECTORY)
-
-assert_exists(LIBGCC_DIR)
-
-set_linker_property(PROPERTY lib_include_dir "-L\"${LIBGCC_DIR}\"")
+# Use the compiler to find a file within the toolchain
+# This can be used to find files like crtbegin.o and crtend.o
+function(compiler_file_name file output)
+  execute_process(COMMAND ${CMAKE_C_COMPILER}
+    ${TOOLCHAIN_C_FLAGS} ${OPTIMIZATION_FLAG}
+    --print-file-name=${file}
+    OUTPUT_VARIABLE file_name
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+  set(${output} ${file_name} PARENT_SCOPE)
+endfunction()
 
 # For CMake to be able to test if a compiler flag is supported by the
 # toolchain we need to give CMake the necessary flags to compile and
