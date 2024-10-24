@@ -1695,30 +1695,33 @@ static const struct flash_driver_api spi_nor_api = {
 	DEFINE_PAGE_LAYOUT(idx)									\
 	.flash_size = DT_INST_PROP(idx, size) / 8,						\
 	.jedec_id = DT_INST_PROP(idx, jedec_id),						\
-	.dpd_exist = DT_INST_PROP(idx, has_dpd),						\
-	.dpd_wakeup_sequence_exist = DT_INST_NODE_HAS_PROP(idx, dpd_wakeup_sequence),		\
-	.mxicy_mx25r_power_mode_exist = DT_INST_NODE_HAS_PROP(idx, mxicy_mx25r_power_mode),	\
-	.reset_gpios_exist = DT_INST_NODE_HAS_PROP(idx, reset_gpios),				\
-	.requires_ulbpr_exist = DT_INST_PROP(idx, requires_ulbpr),				\
-	.wp_gpios_exist = DT_INST_NODE_HAS_PROP(idx, wp_gpios),					\
-	.hold_gpios_exist = DT_INST_NODE_HAS_PROP(idx, hold_gpios),				\
-	IF_ENABLED(INST_HAS_LOCK(idx), (.has_lock = DT_INST_PROP(idx, has_lock),))		\
 	IF_ENABLED(CONFIG_SPI_NOR_SFDP_MINIMAL, (CONFIGURE_4BYTE_ADDR(idx)))			\
 	IF_ENABLED(CONFIG_SPI_NOR_SFDP_DEVICETREE,						\
 		(.bfp_len = sizeof(bfp_##idx##_data) / 4,					\
-		 .bfp = (const struct jesd216_bfp *)bfp_##idx##_data,))				\
-	IF_ENABLED(ANY_INST_HAS_DPD, (INIT_T_ENTER_DPD(idx),))					\
-	IF_ENABLED(UTIL_AND(ANY_INST_HAS_DPD, ANY_INST_HAS_T_EXIT_DPD), (INIT_T_EXIT_DPD(idx),))\
-	IF_ENABLED(ANY_INST_HAS_DPD_WAKEUP_SEQUENCE, (INIT_WAKEUP_SEQ_PARAMS(idx),))		\
-	IF_ENABLED(ANY_INST_HAS_MXICY_MX25R_POWER_MODE, (INIT_MXICY_MX25R_POWER_MODE(idx),))	\
-	IF_ENABLED(ANY_INST_HAS_RESET_GPIOS, (INIT_RESET_GPIOS(idx),))				\
-	IF_ENABLED(ANY_INST_HAS_WP_GPIOS, (INIT_WP_GPIOS(idx),))				\
-	IF_ENABLED(ANY_INST_HAS_HOLD_GPIOS, (INIT_HOLD_GPIOS(idx),))
+		 .bfp = (const struct jesd216_bfp *)bfp_##idx##_data,))
 
 #define GENERATE_CONFIG_STRUCT(idx)								\
 	static const struct spi_nor_config spi_nor_##idx##_config = {				\
 		.spi = SPI_DT_SPEC_INST_GET(idx, SPI_WORD_SET(8), CONFIG_SPI_NOR_CS_WAIT_DELAY),\
-		COND_CODE_1(CONFIG_SPI_NOR_SFDP_RUNTIME, EMPTY(), (INST_CONFIG_STRUCT_GEN(idx)))};
+		.dpd_exist = DT_INST_PROP(idx, has_dpd),					\
+		.dpd_wakeup_sequence_exist = DT_INST_NODE_HAS_PROP(idx, dpd_wakeup_sequence),	\
+		.mxicy_mx25r_power_mode_exist =							\
+			DT_INST_NODE_HAS_PROP(idx, mxicy_mx25r_power_mode),			\
+		.reset_gpios_exist = DT_INST_NODE_HAS_PROP(idx, reset_gpios),			\
+		.requires_ulbpr_exist = DT_INST_PROP(idx, requires_ulbpr),			\
+		.wp_gpios_exist = DT_INST_NODE_HAS_PROP(idx, wp_gpios),				\
+		.hold_gpios_exist = DT_INST_NODE_HAS_PROP(idx, hold_gpios),			\
+		IF_ENABLED(INST_HAS_LOCK(idx), (.has_lock = DT_INST_PROP(idx, has_lock),))	\
+		IF_ENABLED(ANY_INST_HAS_DPD, (INIT_T_ENTER_DPD(idx),))				\
+		IF_ENABLED(UTIL_AND(ANY_INST_HAS_DPD, ANY_INST_HAS_T_EXIT_DPD),			\
+			(INIT_T_EXIT_DPD(idx),))						\
+		IF_ENABLED(ANY_INST_HAS_DPD_WAKEUP_SEQUENCE, (INIT_WAKEUP_SEQ_PARAMS(idx),))	\
+		IF_ENABLED(ANY_INST_HAS_MXICY_MX25R_POWER_MODE,					\
+			(INIT_MXICY_MX25R_POWER_MODE(idx),))					\
+		IF_ENABLED(ANY_INST_HAS_RESET_GPIOS, (INIT_RESET_GPIOS(idx),))			\
+		IF_ENABLED(ANY_INST_HAS_WP_GPIOS, (INIT_WP_GPIOS(idx),))			\
+		IF_ENABLED(ANY_INST_HAS_HOLD_GPIOS, (INIT_HOLD_GPIOS(idx),))			\
+		IF_DISABLED(CONFIG_SPI_NOR_SFDP_RUNTIME, (INST_CONFIG_STRUCT_GEN(idx)))};
 
 #define ASSIGN_PM(idx)							\
 		PM_DEVICE_DT_INST_DEFINE(idx, spi_nor_pm_control);
