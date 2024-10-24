@@ -4,22 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/irq.h>
 #include <zephyr/kernel.h>
-#include <zephyr/arch/cpu.h>
-#include <zephyr/sys/util.h>
 #include <zephyr/drivers/entropy.h>
 #include <zephyr/logging/log.h>
-#include <cmsis_core.h>
-
-#include <linklayer_plat_local.h>
-
-#include <stm32_ll_pwr.h>
 
 #include "scm.h"
 
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
-LOG_MODULE_REGISTER(linklayer_plat);
+LOG_MODULE_REGISTER(linklayer_plat_adapt);
 
 #define RADIO_INTR_PRIO_HIGH_Z (RADIO_INTR_PRIO_HIGH + _IRQ_PRIO_OFFSET)
 #define RADIO_INTR_PRIO_LOW_Z (RADIO_INTR_PRIO_LOW + _IRQ_PRIO_OFFSET)
@@ -36,50 +28,15 @@ extern const struct device *rng_dev;
 volatile int32_t prio_high_isr_counter;
 volatile int32_t prio_low_isr_counter;
 volatile int32_t prio_sys_isr_counter;
-volatile int32_t irq_counter;
 volatile uint32_t local_basepri_value;
 
 /* Radio SW low ISR global variable */
 volatile uint8_t radio_sw_low_isr_is_running_high_prio;
 
-void LINKLAYER_PLAT_ClockInit(void)
-{
-	LL_PWR_EnableBkUpAccess();
-
-	/* Select LSE as Sleep CLK */
-	__HAL_RCC_RADIOSLPTIM_CONFIG(RCC_RADIOSTCLKSOURCE_LSE);
-
-	LL_PWR_DisableBkUpAccess();
-
-	/* Enable AHB5ENR peripheral clock (bus CLK) */
-	__HAL_RCC_RADIO_CLK_ENABLE();
-}
 
 void LINKLAYER_PLAT_DelayUs(uint32_t delay)
 {
 	k_busy_wait(delay);
-}
-
-void LINKLAYER_PLAT_WaitHclkRdy(void)
-{
-	while (HAL_RCCEx_GetRadioBusClockReadiness() != RCC_RADIO_BUS_CLOCK_READY) {
-	}
-}
-
-void LINKLAYER_PLAT_AclkCtrl(uint8_t enable)
-{
-	LOG_DBG("enable: %d", enable);
-	if (enable) {
-		/* Enable RADIO baseband clock (active CLK) */
-		HAL_RCCEx_EnableRadioBBClock();
-
-		/* Polling on HSE32 activation */
-		while (LL_RCC_HSE_IsReady() == 0) {
-		}
-	} else {
-		/* Disable RADIO baseband clock (active CLK) */
-		HAL_RCCEx_DisableRadioBBClock();
-	}
 }
 
 void LINKLAYER_PLAT_GetRNG(uint8_t *ptr_rnd, uint32_t len)
@@ -191,22 +148,6 @@ void LINKLAYER_PLAT_TriggerSwLowIT(uint8_t priority)
 	NVIC_SetPendingIRQ((IRQn_Type)RADIO_SW_LOW_INTR_NUM);
 }
 
-void LINKLAYER_PLAT_EnableIRQ(void)
-{
-	irq_counter = MAX(0, irq_counter - 1);
-
-	if (irq_counter == 0) {
-		__enable_irq();
-	}
-}
-
-void LINKLAYER_PLAT_DisableIRQ(void)
-{
-	__disable_irq();
-
-	irq_counter++;
-}
-
 void LINKLAYER_PLAT_Assert(uint8_t condition)
 {
 	__ASSERT_NO_MSG(condition);
@@ -265,16 +206,6 @@ void LINKLAYER_PLAT_DisableSpecificIRQ(uint8_t isr_type)
 			__set_BASEPRI_MAX(RADIO_INTR_PRIO_LOW_Z << 4);
 		}
 	}
-}
-
-void LINKLAYER_PLAT_EnableRadioIT(void)
-{
-	irq_enable((IRQn_Type)RADIO_INTR_NUM);
-}
-
-void LINKLAYER_PLAT_DisableRadioIT(void)
-{
-	irq_disable((IRQn_Type)RADIO_INTR_NUM);
 }
 
 void LINKLAYER_PLAT_StartRadioEvt(void)
