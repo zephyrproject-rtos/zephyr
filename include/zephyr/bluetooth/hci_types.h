@@ -3620,7 +3620,8 @@ struct bt_hci_evt_le_cs_config_complete {
 
 #define BT_HCI_LE_CS_REF_POWER_LEVEL_UNAVAILABLE 0x7F
 
-#define BT_HCI_LE_CS_PCT_MASK 0xFFF
+#define BT_HCI_LE_CS_PCT_I_MASK 0x000FFF
+#define BT_HCI_LE_CS_PCT_Q_MASK 0xFFF000
 
 #define BT_HCI_LE_CS_TONE_QUALITY_HIGH        0x0
 #define BT_HCI_LE_CS_TONE_QUALITY_MED         0x1
