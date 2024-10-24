@@ -26,7 +26,7 @@ extern "C" {
 extern struct fcb test_fcb;
 extern struct fcb test_fcb_crc_disabled;
 
-extern struct flash_sector test_fcb_sector[];
+extern struct flash_sector const test_fcb_sector[];
 
 extern uint8_t fcb_test_erase_value;
 

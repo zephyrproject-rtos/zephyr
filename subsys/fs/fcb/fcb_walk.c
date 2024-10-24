@@ -13,7 +13,7 @@
  * only elements with that flash_sector are reported.
  */
 int
-fcb_walk(struct fcb *fcb, struct flash_sector *sector, fcb_walk_cb cb,
+fcb_walk(struct fcb *fcb, struct flash_sector const *sector, fcb_walk_cb cb,
 	 void *cb_arg)
 {
 	struct fcb_entry_ctx entry_ctx;
