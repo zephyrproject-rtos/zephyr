@@ -1,0 +1,13 @@
+# Copyright (c) 2024 Grant Ramsay
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_WIZNET_WIZ550IO
+
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default y
+
+endif # NETWORKING
+
+endif # SHIELD_WIZNET_WIZ550IO

@@ -1,0 +1,36 @@
+# Copyright (c) 2024 Grant Ramsay
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  WIZnet WIZ550io - W5500 Ethernet controller.
+  WIZ550io contains a W5500 Ethernet controller with an extra PIC12F519 MCU.
+  The PIC12F519 MCU initialises the W5500 with a unique MAC address after a
+  GPIO reset. The unique MAC address is used if neither
+  "zephyr,random-mac-address" or "local-mac-address" properties are
+  configured in the corresponding W5500 device.
+
+compatible: "wiznet,wiz550io"
+
+include: base.yaml
+
+properties:
+  wiznet,w5500:
+    type: phandle
+    required: true
+    description: The corresponding W5500 device within the WIZ550io module
+  reset-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Reset pin (active low output).
+      The reset-gpios property must be assigned to WIZ550io rather than
+      the W5500 device. The hardware reset pin is required for WIZ550io,
+      as a software reset of W5500 will clear the MAC address assigned
+      by the PIC12F519.
+  ready-gpios:
+    type: phandle-array
+    description: |
+      Ready pin (active high input).
+      Optional GPIO pin that signals when the PIC12F519 has finished
+      configuring the W5500. Enabling this reduces the 150ms delay
+      after GPIO reset.
