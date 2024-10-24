@@ -147,6 +147,7 @@ static ALWAYS_INLINE void queue_thread(struct k_thread *thread)
 {
 	thread->base.thread_state |= _THREAD_QUEUED;
 	if (should_queue_thread(thread)) {
+		printf("queue_thread\n");
 		runq_add(thread);
 	}
 #ifdef CONFIG_SMP
@@ -1047,7 +1048,11 @@ void z_impl_k_thread_deadline_set(k_tid_t tid, int deadline)
 			thread->base.prio_deadline = newdl;
 			queue_thread(thread);
 		} else {
+			if (!z_is_idle_thread_object(thread)) {
+				queue_thread(thread);
+			}
 			thread->base.prio_deadline = newdl;
+			
 		}
 	}
 }
