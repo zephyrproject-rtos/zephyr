@@ -20,6 +20,20 @@ LOG_MODULE_DECLARE(usbc_stack, CONFIG_USBC_STACK_LOG_LEVEL);
 static const struct smf_state pe_states[PE_STATE_COUNT];
 
 /**
+ * @brief Set the ready state for sink or source.
+ */
+static void pe_set_ready_state(const struct device *dev)
+{
+	struct usbc_port_data *data = dev->data;
+
+	if (data->pe->power_role == TC_ROLE_SOURCE) {
+		pe_set_state(dev, PE_SRC_READY);
+	} else {
+		pe_set_state(dev, PE_SNK_READY);
+	}
+}
+
+/**
  * @brief Handle common DPM requests
  *
  * @retval true if request was handled, else false
@@ -315,7 +329,7 @@ void pe_report_error(const struct device *dev, const enum pe_error e,
 	 * Error during an Interruptible AMS.
 	 */
 	else {
-		pe_set_state(dev, PE_SNK_READY);
+		pe_set_ready_state(dev);
 	}
 }
 
@@ -775,7 +789,7 @@ static void pe_drs_evaluate_swap_run(void *obj)
 			policy_notify(dev, (pe->data_role == TC_ROLE_UFP) ? DATA_ROLE_IS_UFP
 									  : DATA_ROLE_IS_DFP);
 		}
-		pe_set_state(dev, PE_SNK_READY);
+		pe_set_ready_state(dev);
 	} else if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_MSG_DISCARDED)) {
 		/*
 		 * Inform Device Policy Manager that the message was
@@ -848,7 +862,7 @@ static void pe_drs_send_swap_run(void *obj)
 		}
 
 		/* return to ready state */
-		pe_set_state(dev, PE_SNK_READY);
+		pe_set_ready_state(dev);
 		return;
 	} else if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_MSG_DISCARDED)) {
 		/*
@@ -856,7 +870,7 @@ static void pe_drs_send_swap_run(void *obj)
 		 * was discarded
 		 */
 		policy_notify(dev, MSG_DISCARDED);
-		pe_set_state(dev, PE_SNK_READY);
+		pe_set_ready_state(dev);
 		return;
 	}
 }
@@ -912,19 +926,13 @@ void pe_get_sink_cap_run(void *obj)
 					PD_CONVERT_BYTES_TO_PD_HEADER_COUNT(prl_rx->emsg.len);
 
 					policy_set_port_partner_snk_cap(dev, pdos, num_pdos);
-					pe_set_state(dev, PE_SRC_READY);
-#else
-					pe_set_state(dev, PE_SNK_READY);
 #endif
+					pe_set_ready_state(dev);
 					return;
 				} else if (received_control_message(dev, header, PD_CTRL_REJECT) ||
 					received_control_message(dev,
 							header, PD_CTRL_NOT_SUPPORTED)) {
-#ifdef CONFIG_USBC_CSM_SOURCE_ONLY
-					pe_set_state(dev, PE_SRC_READY);
-#else
-					pe_set_state(dev, PE_SNK_READY);
-#endif
+					pe_set_ready_state(dev);
 					return;
 				}
 				/* Unexpected messages fall through to soft reset */
@@ -938,7 +946,7 @@ void pe_get_sink_cap_run(void *obj)
 		 */
 		else if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_MSG_DISCARDED)) {
 			policy_notify(dev, MSG_DISCARDED);
-			pe_set_state(dev, PE_SNK_READY);
+			pe_set_ready_state(dev);
 			return;
 		}
 	}
@@ -1057,7 +1065,7 @@ static void pe_send_soft_reset_run(void *obj)
 	if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_MSG_DISCARDED)) {
 		/* Inform Device Policy Manager that the message was discarded */
 		policy_notify(dev, MSG_DISCARDED);
-		pe_set_state(dev, PE_SNK_READY);
+		pe_set_ready_state(dev);
 	} else if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_MSG_RECEIVED)) {
 		/*
 		 * The Policy Engine Shall transition to the PE_SNK_Wait_for_Capabilities
@@ -1109,7 +1117,7 @@ static void pe_send_not_supported_run(void *obj)
 			atomic_test_bit(pe->flags, PE_FLAGS_MSG_DISCARDED)) {
 		atomic_clear_bit(pe->flags, PE_FLAGS_TX_COMPLETE);
 		atomic_clear_bit(pe->flags, PE_FLAGS_MSG_DISCARDED);
-		pe_set_state(dev, PE_SNK_READY);
+		pe_set_ready_state(dev);
 	}
 }
 
