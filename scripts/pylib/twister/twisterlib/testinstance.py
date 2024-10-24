@@ -46,7 +46,7 @@ class TestInstance:
 
     __test__ = False
 
-    def __init__(self, testsuite, platform, outdir):
+    def __init__(self, testsuite: TestSuite, platform: Platform, outdir):
 
         self.testsuite: TestSuite = testsuite
         self.platform: Platform = platform
@@ -80,6 +80,9 @@ class TestInstance:
         self.init_cases()
         self.filters = []
         self.filter_type = None
+        self.required_images = []
+        self.required_build_dirs = []
+        self.no_own_image = False
 
     def record(self, recording, fname_csv="recording.csv"):
         if recording:
