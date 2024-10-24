@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Nordic Semiconductor ASA
+ * Copyright (c) 2020-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,7 @@
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/iso.h>
 
 #include "subsys/bluetooth/host/hci_core.h"
@@ -71,14 +72,12 @@ static struct bt_iso_chan_ops iso_ops = {
 	.recv		= iso_recv,
 };
 
-static struct bt_iso_chan_path iso_path_rx = {
-	.pid = BT_HCI_DATAPATH_ID_HCI
-};
-
 static struct bt_iso_chan_qos bis_iso_qos;
 static struct bt_iso_chan_io_qos iso_tx_qos;
-static struct bt_iso_chan_io_qos iso_rx_qos = {
-	.path = &iso_path_rx
+static struct bt_iso_chan_io_qos iso_rx_qos;
+static struct bt_iso_chan_path hci_path = {
+	.pid = BT_HCI_DATAPATH_ID_HCI,
+	.format = BT_HCI_CODING_FORMAT_TRANSPARENT,
 };
 
 static struct bt_iso_chan bis_iso_chan = {
@@ -579,10 +578,34 @@ static void iso_recv(struct bt_iso_chan *chan,
 
 static void iso_connected(struct bt_iso_chan *chan)
 {
+	struct bt_iso_info iso_info;
+	int err;
+
 	printk("ISO Channel %p connected\n", chan);
 
 	seq_num = 0U;
 	is_iso_connected = true;
+
+	err = bt_iso_chan_get_info(chan, &iso_info);
+	if (err != 0) {
+		FAIL("Failed to get ISO info: %d\n", err);
+	} else {
+		if (iso_info.can_recv) {
+			err = bt_iso_setup_data_path(chan, BT_HCI_DATAPATH_DIR_CTLR_TO_HOST,
+						     &hci_path);
+			if (err != 0) {
+				FAIL("Failed to setup ISO RX data path: %d\n", err);
+			}
+		}
+
+		if (iso_info.can_send) {
+			err = bt_iso_setup_data_path(chan, BT_HCI_DATAPATH_DIR_HOST_TO_CTLR,
+						     &hci_path);
+			if (err != 0) {
+				FAIL("Failed to setup ISO TX data path: %d\n", err);
+			}
+		}
+	}
 }
 
 static void iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
@@ -908,7 +931,7 @@ static void test_iso_recv_main(void)
 	big_param.mse = 1;
 	big_param.sync_timeout = 100; /* 1000 ms */
 	big_param.encryption = false;
-	iso_path_rx.pid = BT_HCI_DATAPATH_ID_HCI;
+	hci_path.pid = BT_HCI_DATAPATH_ID_HCI;
 	memset(big_param.bcode, 0, sizeof(big_param.bcode));
 	err = bt_iso_big_sync(sync, &big_param, &big);
 	if (err) {
@@ -1128,7 +1151,7 @@ static void test_iso_recv_vs_dp_main(void)
 	is_iso_connected = false;
 	is_iso_disconnected = 0U;
 	is_iso_vs_emitted = false;
-	iso_path_rx.pid = BT_HCI_DATAPATH_ID_VS;
+	hci_path.pid = BT_HCI_DATAPATH_ID_VS;
 
 	err = bt_iso_big_sync(sync, &big_param, &big);
 	if (err) {
