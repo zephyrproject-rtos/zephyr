@@ -123,10 +123,10 @@ struct llext_symtable {
 /* SLID-enabled LLEXT application: export symbols, names in separate section */
 #define Z_EXPORT_SYMBOL(x)							\
 	static const char Z_GENERIC_SECTION("llext_exports_strtab") __used	\
-		x ## _sym_name[] = STRINGIFY(x);				\
+		__llext_sym_name_ ## x[] = STRINGIFY(x);				\
 	static const STRUCT_SECTION_ITERABLE(llext_const_symbol,                \
 					     __llext_sym_ ## x) = {	        \
-		.name = x ## _sym_name, .addr = (const void *)&x,		\
+		.name = __llext_sym_name_ ## x, .addr = (const void *)&x,		\
 	}
 #elif defined(CONFIG_LLEXT)
 /* LLEXT application: export symbols */
