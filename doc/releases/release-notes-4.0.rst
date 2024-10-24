@@ -138,6 +138,12 @@ Bluetooth
     :c:func:`bt_conn_le_create` and :c:func:`bt_conn_le_create_synced` return an error if the
     connection pointer passed as an argument is not NULL.
 
+* Controller
+
+  * Added Periodic Advertising Sync Transfer (PAST) support with support for both sending and receiving roles.
+    The option can be enabled by :kconfig:option:`CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER` and
+    :kconfig:option:`CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER`.
+
 * HCI Drivers
 
 Boards & SoC Support
