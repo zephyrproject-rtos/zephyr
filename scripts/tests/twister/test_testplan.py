@@ -594,7 +594,7 @@ TESTDATA_4 = [
     (None, None, 'load_tests.json', None, '0/4',
      TwisterRuntimeError, set(['lt-p1', 'lt-p3', 'lt-p4', 'lt-p2']), []),
     ('suffix', None, None, True, '2/4',
-     None, set(['ts-p4', 'ts-p2', 'ts-p3']), [2, 4]),
+     None, set(['ts-p4', 'ts-p2', 'ts-p1', 'ts-p3']), [2, 4]),
 ]
 
 @pytest.mark.parametrize(
