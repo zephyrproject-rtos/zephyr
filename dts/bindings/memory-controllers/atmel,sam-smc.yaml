@@ -148,3 +148,17 @@ child-binding:
         is encoded in 9 bits where the two highest bits are multiplied
         with an offset of 256.
         Effective value for each element: 256 x cycle[8:7] + cycle[6:0]
+
+    atmel,smc-bus-width:
+      type: int
+      default: 8
+      description: |
+        Bus Width configuration for the Static Memory Controller that
+        is wired to the external device.
+        SMC on SAMx7 supports 8/16-bit bus width, on SAM4
+        only 8-bit data buses are supported.
+
+        The default value is 8-bit data buses.
+      enum:
+        - 8
+        - 16
