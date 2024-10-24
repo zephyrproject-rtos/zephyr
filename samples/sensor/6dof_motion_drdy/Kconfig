@@ -1,0 +1,9 @@
+# Copyright (c) 2024, TDK Invensense
+# SPDX-License-Identifier: Apache-2.0
+
+# Trigger mode: sample is using interrupt triggering
+choice ICM42670_TRIGGER_MODE
+	default ICM42670_TRIGGER_OWN_THREAD
+endchoice
+
+source "Kconfig.zephyr"

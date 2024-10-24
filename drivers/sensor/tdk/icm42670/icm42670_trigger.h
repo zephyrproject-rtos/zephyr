@@ -14,7 +14,7 @@ int icm42670_trigger_set(const struct device *dev, const struct sensor_trigger *
 			 sensor_trigger_handler_t handler);
 
 /**
- * @brief initialize the icm42670 trigger system
+@brief initialize the icm42670 trigger system
  *
  * @param dev icm42670 device pointer
  * @return int 0 on success, negative error code otherwise
@@ -22,7 +22,7 @@ int icm42670_trigger_set(const struct device *dev, const struct sensor_trigger *
 int icm42670_trigger_init(const struct device *dev);
 
 /**
- * @brief enable the trigger gpio interrupt
+@brief enable the trigger gpio interrupt
  *
  * @param dev icm42670 device pointer
  * @return int 0 on success, negative error code otherwise
@@ -30,14 +30,14 @@ int icm42670_trigger_init(const struct device *dev);
 int icm42670_trigger_enable_interrupt(const struct device *dev);
 
 /**
- * @brief lock access to the icm42670 device driver
+@brief lock access to the icm42670 device driver
  *
  * @param dev icm42670 device pointer
  */
 void icm42670_lock(const struct device *dev);
 
 /**
- * @brief lock access to the icm42670 device driver
+@brief lock access to the icm42670 device driver
  *
  * @param dev icm42670 device pointer
  */

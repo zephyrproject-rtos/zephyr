@@ -4850,6 +4850,17 @@ West:
   labels:
     - "platform: STM32"
 
+"West project: hal_tdk":
+  status: maintained
+  maintainers:
+    - afontaine-invn
+  collaborators:
+    - rbuisson-invn
+    - gjabouley-invn
+    - sriccardi-invn
+  files:
+    - modules/hal_tdk/Kconfig
+
 "West project: hal_telink":
   status: maintained
   maintainers:

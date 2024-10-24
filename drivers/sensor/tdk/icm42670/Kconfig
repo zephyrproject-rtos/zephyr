@@ -1,18 +1,26 @@
-# ICM42670 Six-Axis Motion Tracking device configuration options
+# ICM42670-P ICM42670-S Six-Axis Motion Tracking device configuration options
 #
+# Copyright (c) 2024 TDK Invensense
 # Copyright (c) 2022 Esco Medical ApS
 # Copyright (c) 2020 TDK Invensense
 #
 # SPDX-License-Identifier: Apache-2.0
+config TDK_APEX
+	bool "TDK APEX features"
 
 menuconfig ICM42670
 	bool "ICM42670 Six-Axis Motion Tracking Device"
 	default y
 	depends on DT_HAS_INVENSENSE_ICM42670_ENABLED
+	select ZEPHYR_HAL_TDK_MODULE
 	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM42670),spi)
 	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM42670),i2c)
+	select TDK_APEX if $(dt_node_str_prop_equals,$(dt_nodelabel_path,icm42670),apex,pedometer) \
+		|| $(dt_node_str_prop_equals,$(dt_nodelabel_path,icm42670),apex,tilt) \
+		|| $(dt_node_str_prop_equals,$(dt_nodelabel_path,icm42670),apex,smd) \
+		|| $(dt_node_str_prop_equals,$(dt_nodelabel_path,icm42670),apex,wom)
 	help
-	  Enable driver for ICM42670 SPI-based six-axis motion tracking device.
+	  Enable driver for ICM42670 SPI-based or I2C-based Six-Axis Motion Tracking device.
 
 if ICM42670
 
