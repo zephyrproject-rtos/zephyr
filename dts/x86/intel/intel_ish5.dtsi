@@ -39,7 +39,7 @@
 
 		cpu0: cpu0@0 {
 			device_type = "cpu";
-			compatible = "intel,ish";
+			compatible = "intel,ish", "intel,x86";
 			reg = <0>;
 			cpu-power-states = <&d0i0 &d0i2 &d0i3>;
 		};
