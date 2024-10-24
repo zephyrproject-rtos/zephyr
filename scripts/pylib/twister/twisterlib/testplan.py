@@ -230,11 +230,21 @@ class TestPlan:
             # Get list of connected hardware and filter tests to only be run on connected hardware.
             # If the platform does not exist in the hardware map or was not specified by --platform,
             # just skip it.
-            connected_list = self.options.platform
+
+            connected_list = []
+            excluded_list = []
+            for _cp in self.options.platform:
+                if _cp in self.platform_names:
+                    connected_list.append(self.get_platform(_cp).name)
+
             if self.options.exclude_platform:
-                for excluded in self.options.exclude_platform:
+                for _p in self.options.exclude_platform:
+                    if _p in self.platform_names:
+                        excluded_list.append(self.get_platform(_p).name)
+                for excluded in excluded_list:
                     if excluded in connected_list:
                         connected_list.remove(excluded)
+
             self.load_from_file(last_run, filter_platform=connected_list)
             self.selected_platforms = set(p.platform.name for p in self.instances.values())
         else:

@@ -181,6 +181,15 @@ def main(options: argparse.Namespace, default_options: argparse.Namespace):
         tplan.create_build_dir_links()
 
     runner = TwisterRunner(tplan.instances, tplan.testsuites, env)
+    # FIXME: This is a workaround for the fact that the hardware map can be usng
+    # the short name of the platform, while the testplan is using the full name.
+    #
+    # convert platform names coming from the hardware map to the full target
+    # name.
+    # this is needed to match the platform names in the testplan.
+    for d in hwm.duts:
+        if d.platform in tplan.platform_names:
+            d.platform = tplan.get_platform(d.platform).name
     runner.duts = hwm.duts
     runner.run()
 
