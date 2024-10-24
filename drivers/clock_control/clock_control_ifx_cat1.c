@@ -533,9 +533,16 @@ static int clock_control_infineon_cat1_init(const struct device *dev)
 	clock_source_obj = _get_hal_obj_from_ord(GET_CLK_SOURCE_ORD(clk_hf3));
 	clock_div = DT_PROP(DT_NODELABEL(clk_hf3), clock_div);
 
+#if defined(CONFIG_SOC_FAMILY_INFINEON_CAT1B) && \
+		defined(CONFIG_USE_INFINEON_ADC)
+	Cy_SysClk_ClkHfSetSource(3, CY_SYSCLK_CLKHF_IN_CLKPATH1);
+	Cy_SysClk_ClkHfSetDivider(3, CY_SYSCLK_CLKHF_DIVIDE_BY_2);
+	Cy_SysClk_ClkHfEnable(3);
+#else
 	if (_configure_clk_hf(clock_obj, clock_source_obj, &CYHAL_CLOCK_HF[3], clock_div)) {
 		return -EIO;
 	}
+#endif
 #endif
 
 	/* Configure the HF[4] to source defined in tree device 'clk_hf4' node */
