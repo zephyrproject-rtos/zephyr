@@ -1,0 +1,28 @@
+sample:
+  name: nRF System events
+tests:
+  sample.boards.nordic.nrf_sys_event:
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "constant latency mode disabled"
+    platform_allow:
+      - nrf52dk/nrf52810
+      - nrf52dk/nrf52832
+      - nrf52833dk/nrf52820
+      - nrf52833dk/nrf52833
+      - nrf52840dk/nrf52811
+      - nrf52840dk/nrf52840
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf5340dk/nrf5340/cpunet
+      - nrf54h20dk/nrf54h20/cpuapp
+      - nrf54h20dk/nrf54h20/cpurad
+      - nrf54l15dk/nrf54l15/cpuapp
+    integration_platforms:
+      - nrf52840dk/nrf52840
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf5340dk/nrf5340/cpunet
+      - nrf54h20dk/nrf54h20/cpuapp
+      - nrf54h20dk/nrf54h20/cpurad
+      - nrf54l15dk/nrf54l15/cpuapp
