@@ -853,6 +853,27 @@ int z_stack_space_get(const uint8_t *stack_start, size_t size, size_t *unused_pt
 		size -= 4;
 	}
 
+#ifdef CONFIG_STACK_ALIGN_DOUBLE_WORD
+	const uint64_t *checked_stack_word = (const uint64_t *)checked_stack;
+	const uint64_t unused_pattern = 0xaaaaaaaaaaaaaaaaULL;
+#else
+	const uint32_t *checked_stack_word = (const uint32_t *)checked_stack;
+	const uint32_t unused_pattern = 0xaaaaaaaaU;
+#endif /* CONFIG_STACK_ALIGN_DOUBLE_WORD */
+	const size_t unused_pattern_size = sizeof(*checked_stack_word);
+	size_t word_size = size / unused_pattern_size;
+
+	for (size_t i = 0; i < word_size; i++) {
+		if ((checked_stack_word[i]) == unused_pattern) {
+			unused += unused_pattern_size;
+		} else {
+			break;
+		}
+	}
+	/* Continue checking from last used word to find remaining unused bytes*/
+	size -= unused;
+	checked_stack = stack_start + unused;
+
 	for (size_t i = 0; i < size; i++) {
 		if ((checked_stack[i]) == 0xaaU) {
 			unused++;
