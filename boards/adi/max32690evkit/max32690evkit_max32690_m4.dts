@@ -163,3 +163,7 @@
 	pinctrl-0 = <&owm_io_p0_8 &owm_pe_p0_7>;
 	pinctrl-names = "default";
 };
+
+&rtc_counter {
+	status = "okay";
+};
