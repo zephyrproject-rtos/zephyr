@@ -2,5 +2,7 @@ tests:
   net.wifi_credentials_backend_settings:
     tags:
       - net
+    platform_allow:
+      - native_sim
     integration_platforms:
       - native_sim
