@@ -303,7 +303,7 @@ static inline int mspi_verify_device(const struct device *controller,
 		}
 	}
 
-	if (device_index > cfg->mspicfg.num_periph || device_index != dev_id->dev_idx) {
+	if (device_index >= cfg->mspicfg.num_periph || device_index != dev_id->dev_idx) {
 		LOG_INST_ERR(cfg->log, "%u, invalid device ID.", __LINE__);
 		return -ENODEV;
 	}
@@ -657,6 +657,14 @@ static int mspi_ambiq_dev_config(const struct device *controller, const struct m
 	} else {
 		am_hal_mspi_dqs_t *dqsCfg = &g_sMspiDqsCfg;
 
+		if (data->dev_id != dev_id) {
+			ret = pinctrl_apply_state(cfg->pcfg,
+						  PINCTRL_STATE_PRIV_START + dev_id->dev_idx);
+			if (ret) {
+				goto e_return;
+			}
+		}
+
 		if (memcmp(&data->dev_cfg, dev_cfg, sizeof(struct mspi_dev_cfg)) == 0) {
 			/** Nothing to config */
 			data->dev_id = (struct mspi_dev_id *)dev_id;
@@ -780,13 +788,13 @@ static int mspi_ambiq_dev_config(const struct device *controller, const struct m
 			goto e_return;
 		}
 
-		if (hal_dev_cfg.eDeviceConfig != AM_HAL_MSPI_FLASH_SERIAL_CE0) {
-			ret = pinctrl_apply_state(cfg->pcfg,
-						  PINCTRL_STATE_PRIV_START + dev_id->dev_idx);
-			if (ret) {
-				goto e_return;
-			}
-		}
+		// if (hal_dev_cfg.eDeviceConfig != AM_HAL_MSPI_FLASH_SERIAL_CE0) {
+		// 	ret = pinctrl_apply_state(cfg->pcfg,
+		// 				  PINCTRL_STATE_PRIV_START + dev_id->dev_idx);
+		// 	if (ret) {
+		// 		goto e_return;
+		// 	}
+		// }
 
 		data->dev_cfg = *dev_cfg;
 		data->dev_id = (struct mspi_dev_id *)dev_id;
