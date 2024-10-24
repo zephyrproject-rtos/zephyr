@@ -633,6 +633,19 @@ static int bmi270_attr_set(const struct device *dev, enum sensor_channel chan,
 		case SENSOR_ATTR_FULL_SCALE:
 			ret = set_gyro_range(dev, val);
 			break;
+#ifdef CONFIG_BMI270_CRT
+		case SENSOR_ATTR_CALIBRATION:
+			ARG_UNUSED(val);
+			ret = bmi270_gyro_crt(dev);
+			break;
+		case BMI270_SENSOR_ATTR_NVM_PROG:
+			ARG_UNUSED(val);
+			ret = bmi270_nvm_prog(dev);
+			break;
+		case BMI270_SENSOR_ATTR_GAIN_COMP:
+			ret = bmi270_set_gyro_gain(dev, val);
+			break;
+#endif /* CONFIG_BMI270_CRT */
 		default:
 			ret = -ENOTSUP;
 		}
@@ -641,51 +654,47 @@ static int bmi270_attr_set(const struct device *dev, enum sensor_channel chan,
 	return ret;
 }
 
-static int bmi270_init(const struct device *dev)
+static int bmi270_attr_get(const struct device *dev, enum sensor_channel chan,
+			   enum sensor_attribute attr, struct sensor_value *val)
+{
+	int ret = -ENOTSUP;
+
+	if ((chan == SENSOR_CHAN_ACCEL_X) || (chan == SENSOR_CHAN_ACCEL_Y)
+	    || (chan == SENSOR_CHAN_ACCEL_Z)
+	    || (chan == SENSOR_CHAN_ACCEL_XYZ)) {
+		switch (attr) {
+		default:
+			ret = -ENOTSUP;
+		}
+	} else if ((chan == SENSOR_CHAN_GYRO_X) || (chan == SENSOR_CHAN_GYRO_Y)
+		   || (chan == SENSOR_CHAN_GYRO_Z)
+		   || (chan == SENSOR_CHAN_GYRO_XYZ)) {
+		switch (attr) {
+#ifdef CONFIG_BMI270_CRT
+		case SENSOR_ATTR_CALIBRATION:
+			ret = bmi270_get_gyro_user_gain(dev, val);
+			break;
+#endif /* CONFIG_BMI270_CRT */
+		default:
+			ret = -ENOTSUP;
+		}
+	}
+
+	return ret;
+}
+
+/**
+ * @brief This function resets bmi2 sensor.
+ * All registers are overwritten with their default values.
+ */
+int bmi270_soft_reset(const struct device *dev)
 {
 	int ret;
-	struct bmi270_data *data = dev->data;
-	uint8_t chip_id;
+	uint8_t tries;
 	uint8_t soft_reset_cmd;
 	uint8_t init_ctrl;
-	uint8_t msg;
-	uint8_t tries;
 	uint8_t adv_pwr_save;
-
-	ret = bmi270_bus_check(dev);
-	if (ret < 0) {
-		LOG_ERR("Could not initialize bus");
-		return ret;
-	}
-
-#if CONFIG_BMI270_TRIGGER
-	data->dev = dev;
-	k_mutex_init(&data->trigger_mutex);
-#endif
-
-	data->acc_odr = BMI270_ACC_ODR_100_HZ;
-	data->acc_range = 8;
-	data->gyr_odr = BMI270_GYR_ODR_200_HZ;
-	data->gyr_range = 2000;
-
-	k_usleep(BMI270_POWER_ON_TIME);
-
-	ret = bmi270_bus_init(dev);
-	if (ret != 0) {
-		LOG_ERR("Could not initiate bus communication");
-		return ret;
-	}
-
-	ret = bmi270_reg_read(dev, BMI270_REG_CHIP_ID, &chip_id, 1);
-	if (ret != 0) {
-		return ret;
-	}
-
-	if (chip_id != BMI270_CHIP_ID) {
-		LOG_ERR("Unexpected chip id (%x). Expected (%x)",
-			chip_id, BMI270_CHIP_ID);
-		return -EIO;
-	}
+	uint8_t msg;
 
 	soft_reset_cmd = BMI270_CMD_SOFT_RESET;
 	ret = bmi270_reg_write(dev, BMI270_REG_CMD, &soft_reset_cmd, 1);
@@ -751,6 +760,59 @@ static int bmi270_init(const struct device *dev)
 		return -EIO;
 	}
 
+	adv_pwr_save = BMI270_SET_BITS_POS_0(adv_pwr_save, BMI270_PWR_CONF_ADV_PWR_SAVE,
+					     BMI270_PWR_CONF_ADV_PWR_SAVE_EN);
+	ret = bmi270_reg_write_with_delay(dev, BMI270_REG_PWR_CONF, &adv_pwr_save, 1,
+					  BMI270_INTER_WRITE_DELAY_US);
+	return ret;
+}
+
+static int bmi270_init(const struct device *dev)
+{
+	int ret;
+	struct bmi270_data *data = dev->data;
+	uint8_t chip_id;
+
+	ret = bmi270_bus_check(dev);
+	if (ret < 0) {
+		LOG_ERR("Could not initialize bus");
+		return ret;
+	}
+
+#if CONFIG_BMI270_TRIGGER
+	data->dev = dev;
+	k_mutex_init(&data->trigger_mutex);
+#endif
+
+	data->acc_odr = BMI270_ACC_ODR_100_HZ;
+	data->acc_range = 8;
+	data->gyr_odr = BMI270_GYR_ODR_200_HZ;
+	data->gyr_range = 2000;
+
+	k_usleep(BMI270_POWER_ON_TIME);
+
+	ret = bmi270_bus_init(dev);
+	if (ret != 0) {
+		LOG_ERR("Could not initiate bus communication");
+		return ret;
+	}
+
+	ret = bmi270_reg_read(dev, BMI270_REG_CHIP_ID, &chip_id, 1);
+	if (ret != 0) {
+		return ret;
+	}
+
+	if (chip_id != BMI270_CHIP_ID) {
+		LOG_ERR("Unexpected chip id (%x). Expected (%x)", chip_id, BMI270_CHIP_ID);
+		return -EIO;
+	}
+
+	ret = bmi270_soft_reset(dev);
+	if (ret != 0) {
+		LOG_ERR("Soft reset failed, err: %d", ret);
+		return ret;
+	}
+
 #if CONFIG_BMI270_TRIGGER
 	ret = bmi270_init_interrupts(dev);
 	if (ret) {
@@ -758,14 +820,6 @@ static int bmi270_init(const struct device *dev)
 		return ret;
 	}
 #endif
-
-	adv_pwr_save = BMI270_SET_BITS_POS_0(adv_pwr_save,
-					     BMI270_PWR_CONF_ADV_PWR_SAVE,
-					     BMI270_PWR_CONF_ADV_PWR_SAVE_EN);
-	ret = bmi270_reg_write_with_delay(dev, BMI270_REG_PWR_CONF,
-					  &adv_pwr_save, 1,
-					  BMI270_INTER_WRITE_DELAY_US);
-
 	return ret;
 }
 
@@ -773,6 +827,7 @@ static const struct sensor_driver_api bmi270_driver_api = {
 	.sample_fetch = bmi270_sample_fetch,
 	.channel_get = bmi270_channel_get,
 	.attr_set = bmi270_attr_set,
+	.attr_get = bmi270_attr_get,
 #if defined(CONFIG_BMI270_TRIGGER)
 	.trigger_set = bmi270_trigger_set,
 #endif
@@ -790,6 +845,11 @@ static const struct bmi270_feature_config bmi270_feature_base = {
 	.config_file_len = sizeof(bmi270_config_file_base),
 	.anymo_1 = &(struct bmi270_feature_reg){ .page = 1, .addr = 0x3C },
 	.anymo_2 = &(struct bmi270_feature_reg){ .page = 1, .addr = 0x3E },
+#if defined(CONFIG_BMI270_CRT)
+	.g_trig_1 = &(struct bmi270_feature_reg){.page = 1, .addr = 0x32},
+	.gyr_gain_status = &(struct bmi270_feature_reg){.page = 0, .addr = 0x38},
+	.gen_set_1 = &(struct bmi270_feature_reg){.page = 1, .addr = 0x34},
+#endif
 };
 
 #define BMI270_FEATURE(inst) (						\
