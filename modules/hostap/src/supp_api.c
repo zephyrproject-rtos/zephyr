@@ -380,6 +380,14 @@ static inline enum wifi_security_type wpas_key_mgmt_to_zephyr(int key_mgmt, int 
 		return WIFI_SECURITY_TYPE_SAE;
 	case WPA_KEY_MGMT_SAE | WPA_KEY_MGMT_PSK:
 		return WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL;
+	case WPA_KEY_MGMT_FT_PSK:
+		return WIFI_SECURITY_TYPE_FT_PSK;
+	case WPA_KEY_MGMT_FT_SAE:
+		return WIFI_SECURITY_TYPE_FT_SAE;
+	case WPA_KEY_MGMT_FT_IEEE8021X:
+		return WIFI_SECURITY_TYPE_FT_EAP;
+	case WPA_KEY_MGMT_FT_IEEE8021X_SHA384:
+		return WIFI_SECURITY_TYPE_FT_EAP_SHA384;
 	default:
 		return WIFI_SECURITY_TYPE_UNKNOWN;
 	}
@@ -480,13 +488,21 @@ int process_cipher_config(struct wifi_connect_req_params *params,
 	} else if (params->suiteb_type == WIFI_SUITEB_192) {
 		cipher_capa = WPA_CAPA_ENC_GCMP_256;
 		gropu_mgmt_cipher_capa = WPA_CAPA_ENC_BIP_GMAC_256;
-		cipher_config->key_mgmt = "WPA-EAP-SUITE-B-192";
+		if (params->ft_used) {
+			cipher_config->key_mgmt = "WPA-EAP-SUITE-B-192 FT-EAP-SHA384";
+		} else {
+			cipher_config->key_mgmt = "WPA-EAP-SUITE-B-192";
+		}
 		cipher_config->openssl_ciphers = "SUITEB192";
 		cipher_config->tls_flags = "[SUITEB]";
 	} else {
 		cipher_capa = WPA_CAPA_ENC_CCMP;
 		gropu_mgmt_cipher_capa = WPA_CAPA_ENC_BIP;
-		cipher_config->key_mgmt = "WPA-EAP";
+		if (params->ft_used) {
+			cipher_config->key_mgmt = "WPA-EAP FT-EAP";
+		} else {
+			cipher_config->key_mgmt = "WPA-EAP";
+		}
 	}
 
 	if (params->security == WIFI_SECURITY_TYPE_EAP_TLS_SHA256) {
@@ -678,7 +694,8 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 				}
 			}
 
-			if (!wpa_cli_cmd_v("set_network %d key_mgmt SAE", resp.network_id)) {
+			if (!wpa_cli_cmd_v("set_network %d key_mgmt SAE%s", resp.network_id,
+					   params->ft_used ? " FT-SAE" : "")) {
 				goto out;
 			}
 		} else if (params->security == WIFI_SECURITY_TYPE_PSK_SHA256) {
@@ -698,8 +715,8 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 				goto out;
 			}
 
-			if (!wpa_cli_cmd_v("set_network %d key_mgmt WPA-PSK",
-					   resp.network_id)) {
+			if (!wpa_cli_cmd_v("set_network %d key_mgmt WPA-PSK%s",
+					   resp.network_id, params->ft_used ? " FT-PSK" : "")) {
 				goto out;
 			}
 
@@ -1383,6 +1400,113 @@ out:
 	k_mutex_unlock(&wpa_supplicant_mutex);
 	return ret;
 }
+
+int supplicant_11k_cfg(const struct device *dev, struct wifi_11k_params *params)
+{
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_mgmt_api(dev);
+
+	if (!wifi_mgmt_api || !wifi_mgmt_api->cfg_11k) {
+		wpa_printf(MSG_ERROR, "cfg 11k not supported");
+		return -ENOTSUP;
+	}
+
+	return wifi_mgmt_api->cfg_11k(dev, params);
+}
+
+int supplicant_11k_neighbor_request(const struct device *dev, struct wifi_11k_params *params)
+{
+	int ssid_len = strlen(params->ssid);
+
+	if (params != NULL && ssid_len > 0) {
+		if (ssid_len > WIFI_SSID_MAX_LEN) {
+			wpa_printf(MSG_ERROR, "%s: ssid too long %u",
+				   __func__, ssid_len);
+			return -1;
+		}
+
+		if (!wpa_cli_cmd_v("neighbor_rep_request ssid %s",
+				   params->ssid)) {
+			wpa_printf(MSG_ERROR,
+				   "%s: cli cmd <neighbor_rep_request ssid %s> fail",
+				   __func__, params->ssid);
+			return -1;
+		}
+	} else {
+		if (!wpa_cli_cmd_v("neighbor_rep_request")) {
+			wpa_printf(MSG_ERROR,
+				   "%s: cli cmd <neighbor_rep_request> fail",
+				   __func__);
+			return -1;
+		}
+	}
+
+	return 0;
+}
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING
+#define SUPPLICANT_CANDIDATE_SCAN_CMD_BUF_SIZE 100
+int supplicant_candidate_scan(const struct device *dev, struct wifi_scan_params *params)
+{
+	int i = 0;
+	char cmd[SUPPLICANT_CANDIDATE_SCAN_CMD_BUF_SIZE] = {0};
+	char *pos = cmd;
+	char *end = pos + SUPPLICANT_CANDIDATE_SCAN_CMD_BUF_SIZE;
+	int freq = 0;
+
+	strcpy(pos, "freq=");
+	pos += 5;
+	while (params->band_chan[i].channel) {
+		if (i > 0) {
+			pos += snprintf(pos, end - pos, ",");
+		}
+		freq = chan_to_freq(params->band_chan[i].channel);
+		pos += snprintf(pos, end - pos, "%d", freq);
+		i++;
+	}
+
+	if (!wpa_cli_cmd_v("scan %s", cmd)) {
+		wpa_printf(MSG_ERROR,
+			   "%s: cli cmd <scan %s> fail",
+			   __func__, cmd);
+		return -1;
+	}
+
+	return 0;
+}
+
+int supplicant_11r_roaming(const struct device *dev)
+{
+	struct wpa_supplicant *wpa_s;
+	int ret = 0;
+
+	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
+
+	wpa_s = get_wpa_s_handle(dev);
+	if (!wpa_s) {
+		wpa_printf(MSG_ERROR, "Device %s not found", dev->name);
+		ret = -1;
+		goto out;
+	}
+
+	if (wpa_s->reassociate || (wpa_s->wpa_state >= WPA_AUTHENTICATING &&
+	    wpa_s->wpa_state < WPA_COMPLETED)) {
+		wpa_printf(MSG_INFO, "Reassociation is in progress, skip");
+		ret = 0;
+		goto out;
+	}
+
+	if (!wpa_cli_cmd_v("reassociate")) {
+		wpa_printf(MSG_ERROR, "%s: cli cmd <reassociate> fail",
+			   __func__);
+		ret = -1;
+		goto out;
+	}
+
+out:
+	k_mutex_unlock(&wpa_supplicant_mutex);
+	return ret;
+}
+#endif
 
 int supplicant_set_power_save(const struct device *dev, struct wifi_ps_params *params)
 {

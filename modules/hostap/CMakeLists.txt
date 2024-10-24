@@ -161,6 +161,11 @@ zephyr_library_sources_ifdef(CONFIG_WPA_CLI
 	src/wpa_cli.c
 )
 
+zephyr_library_sources_ifdef(CONFIG_IEEE80211R
+	${HOSTAP_SRC_BASE}/rsn_supp/wpa_ft.c
+	${HOSTAP_SRC_BASE}/ap/wpa_auth_ft.c
+)
+
 zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_AP
 	${WIFI_NM_WPA_SUPPLICANT_BASE}/ap.c
 	${HOSTAP_SRC_BASE}/ap/ap_config.c
@@ -246,8 +251,10 @@ zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
 
 	# FIXME: why do we need these when crypto is not selected?
 	${HOSTAP_SRC_BASE}/crypto/aes-wrap.c
+	${HOSTAP_SRC_BASE}/crypto/aes-unwrap.c
 	${HOSTAP_SRC_BASE}/crypto/aes-internal.c
 	${HOSTAP_SRC_BASE}/crypto/aes-internal-enc.c
+	${HOSTAP_SRC_BASE}/crypto/aes-internal-dec.c
 	${HOSTAP_SRC_BASE}/crypto/aes-omac1.c
 	${HOSTAP_SRC_BASE}/crypto/md5.c
 	${HOSTAP_SRC_BASE}/crypto/md5-internal.c
