@@ -22,4 +22,6 @@ supported:
   - adc
   - netif:eth
   - can
+  - dma
+  - spi
 vendor: nxp

@@ -21,4 +21,6 @@ supported:
   - counter
   - adc
   - can
+  - dma
+  - spi
 vendor: nxp

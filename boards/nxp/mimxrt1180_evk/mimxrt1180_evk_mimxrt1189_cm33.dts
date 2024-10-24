@@ -71,3 +71,15 @@
 &flexcan3 {
 	status = "okay";
 };
+
+&lpspi3 {
+	status = "okay";
+};
+
+&edma3 {
+	status = "okay";
+};
+
+&edma4 {
+	status = "okay";
+};
