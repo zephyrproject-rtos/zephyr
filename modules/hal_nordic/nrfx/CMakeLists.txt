@@ -72,11 +72,14 @@ zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF9230_ENGB_CPUPPR NRF9230_ENGB_XXA
 zephyr_compile_definitions_ifdef(CONFIG_NRF_APPROTECT_LOCK
                                  ENABLE_APPROTECT)
 zephyr_compile_definitions_ifdef(CONFIG_NRF_APPROTECT_USER_HANDLING
-                                 ENABLE_APPROTECT_USER_HANDLING)
+                                 ENABLE_APPROTECT_USER_HANDLING
+                                 ENABLE_AUTHENTICATED_APPROTECT)
 zephyr_compile_definitions_ifdef(CONFIG_NRF_SECURE_APPROTECT_LOCK
-                                 ENABLE_SECURE_APPROTECT)
+                                 ENABLE_SECURE_APPROTECT
+                                 ENABLE_SECUREAPPROTECT)
 zephyr_compile_definitions_ifdef(CONFIG_NRF_SECURE_APPROTECT_USER_HANDLING
-                                 ENABLE_SECURE_APPROTECT_USER_HANDLING)
+                                 ENABLE_SECURE_APPROTECT_USER_HANDLING
+                                 ENABLE_AUTHENTICATED_SECUREAPPROTECT)
 zephyr_library_compile_definitions_ifdef(CONFIG_NRF_TRACE_PORT
                                  ENABLE_TRACE)
 
