@@ -84,6 +84,14 @@ static int disk_sdmmc_access_write(struct disk_info *disk, const uint8_t *buf,
 	return sdmmc_write_blocks(&data->card, buf, sector, count);
 }
 
+static int disk_sdmmc_access_erase(struct disk_info *disk, uint32_t sector, uint32_t count)
+{
+	const struct device *dev = disk->dev;
+	struct sdmmc_data *data = dev->data;
+
+	return sdmmc_erase_blocks(&data->card, sector, count);
+}
+
 static int disk_sdmmc_access_ioctl(struct disk_info *disk, uint8_t cmd, void *buf)
 {
 	const struct device *dev = disk->dev;
@@ -108,6 +116,7 @@ static const struct disk_operations sdmmc_disk_ops = {
 	.status = disk_sdmmc_access_status,
 	.read = disk_sdmmc_access_read,
 	.write = disk_sdmmc_access_write,
+	.erase = disk_sdmmc_access_erase,
 	.ioctl = disk_sdmmc_access_ioctl,
 };
 
