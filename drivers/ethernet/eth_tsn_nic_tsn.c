@@ -74,7 +74,7 @@ void fill_default_metadata(const struct device *dev, net_time_t now, struct tx_m
  * ============================================================================================
  */
 
-#if CONFIG_NET_TC_TX_COUNT > 0
+#if CONFIG_NET_TC_TX_COUNT
 
 static void bake_qos_config(struct tsn_config *config);
 static net_time_t bytes_to_ns(uint64_t bytes);
@@ -282,4 +282,4 @@ static void spend_qav_credit(struct tsn_config *tsn_config, net_time_t at, uint8
 	/* TODO: Implement Qav */
 }
 
-#endif /* CONFIG_NET_TC_TX_COUNT > 0 */
+#endif /* CONFIG_NET_TC_TX_COUNT */

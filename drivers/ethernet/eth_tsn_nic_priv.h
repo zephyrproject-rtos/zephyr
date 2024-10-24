@@ -314,14 +314,14 @@ struct eth_tsn_nic_data {
 
 void fill_default_metadata(const struct device *dev, net_time_t now, struct tx_metadata *metadata);
 
-#if CONFIG_NET_TC_TX_COUNT > 0
+#if CONFIG_NET_TC_TX_COUNT
 
 void tsn_init_configs(const struct device *dev);
 int tsn_set_qbv(const struct device *dev, struct ethernet_qbv_param param);
 int tsn_set_qav(const struct device *dev, struct ethernet_qav_param param);
 int tsn_fill_metadata(const struct device *dev, net_time_t now, struct tx_buffer *tx_buf);
 
-#else
+#else /* CONFIG_NET_TC_TX_COUNT */
 
 inline void tsn_init_configs(const struct device *dev)
 {
@@ -339,6 +339,6 @@ inline int tsn_fill_metadata(const struct device *dev, net_time_t now, struct tx
 	return fill_default_metadata(dev, now, &tx_buf->metadata);
 }
 
-#endif /* CONFIG_NET_TC_TX_COUNT > 0 */
+#endif /* CONFIG_NET_TC_TX_COUNT */
 
 #endif /* ZEPHYR_DRIVERS_ETHERNET_ETH_TSN_NIC_H_ */
