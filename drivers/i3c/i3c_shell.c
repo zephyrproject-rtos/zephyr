@@ -94,8 +94,8 @@ DT_FOREACH_STATUS_OKAY(nxp_mcux_i3c, I3C_CTRL_FN)
 const struct i3c_ctrl i3c_list[] = {
 	/* zephyr-keep-sorted-start */
 	DT_FOREACH_STATUS_OKAY(cdns_i3c, I3C_CTRL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(nuvoton_npcx_i3c, I3C_CTRL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(nxp_mcux_i3c, I3C_CTRL_LIST_ENTRY)
+		DT_FOREACH_STATUS_OKAY(nuvoton_npcx_i3c, I3C_CTRL_LIST_ENTRY)
+			DT_FOREACH_STATUS_OKAY(nxp_mcux_i3c, I3C_CTRL_LIST_ENTRY)
 	/* zephyr-keep-sorted-stop */
 };
 
@@ -207,7 +207,9 @@ static int cmd_i3c_info(const struct shell *sh, size_t argc, char **argv)
 						    "\tmrl: 0x%04x\n"
 						    "\tmwl: 0x%04x\n"
 						    "\tmax_ibi: 0x%02x\n"
-						    "\tgetcaps: 0x%02x; 0x%02x; 0x%02x; 0x%02x",
+						    "\tcrhdly1: 0x%02x\n"
+						    "\tgetcaps: 0x%02x; 0x%02x; 0x%02x; 0x%02x\n"
+						    "\tcrcaps: 0x%02x; 0x%02x",
 						    desc->dev->name, (uint64_t)desc->pid,
 						    desc->static_addr, desc->dynamic_addr,
 #if defined(CONFIG_I3C_USE_GROUP_ADDR)
@@ -217,9 +219,10 @@ static int cmd_i3c_info(const struct shell *sh, size_t argc, char **argv)
 						    desc->data_speed.maxwr,
 						    desc->data_speed.max_read_turnaround,
 						    desc->data_length.mrl, desc->data_length.mwl,
-						    desc->data_length.max_ibi,
+						    desc->data_length.max_ibi, desc->crhdly1,
 						    desc->getcaps.getcap1, desc->getcaps.getcap2,
-						    desc->getcaps.getcap3, desc->getcaps.getcap4);
+						    desc->getcaps.getcap3, desc->getcaps.getcap4,
+						    desc->crcaps.crcaps1, desc->crcaps.crcaps2);
 					found = true;
 					break;
 				}
@@ -253,7 +256,9 @@ static int cmd_i3c_info(const struct shell *sh, size_t argc, char **argv)
 					    "\tmrl: 0x%04x\n"
 					    "\tmwl: 0x%04x\n"
 					    "\tmax_ibi: 0x%02x\n"
-					    "\tgetcaps: 0x%02x; 0x%02x; 0x%02x; 0x%02x",
+					    "\tcrhdly1: 0x%02x\n"
+					    "\tgetcaps: 0x%02x; 0x%02x; 0x%02x; 0x%02x\n"
+					    "\tcrcaps: 0x%02x; 0x%02x",
 					    desc->dev->name, (uint64_t)desc->pid, desc->static_addr,
 					    desc->dynamic_addr,
 #if defined(CONFIG_I3C_USE_GROUP_ADDR)
@@ -263,9 +268,10 @@ static int cmd_i3c_info(const struct shell *sh, size_t argc, char **argv)
 					    desc->data_speed.maxwr,
 					    desc->data_speed.max_read_turnaround,
 					    desc->data_length.mrl, desc->data_length.mwl,
-					    desc->data_length.max_ibi, desc->getcaps.getcap1,
-					    desc->getcaps.getcap2, desc->getcaps.getcap3,
-					    desc->getcaps.getcap4);
+					    desc->data_length.max_ibi, desc->crhdly1,
+					    desc->getcaps.getcap1, desc->getcaps.getcap2,
+					    desc->getcaps.getcap3, desc->getcaps.getcap4,
+					    desc->crcaps.crcaps1, desc->crcaps.crcaps2);
 			}
 		} else {
 			shell_print(sh, "I3C: No devices found.");
@@ -1030,6 +1036,43 @@ static int cmd_i3c_ccc_enttm(const struct shell *sh, size_t argc, char **argv)
 	return ret;
 }
 
+/* i3c ccc getacccr <device> <target> */
+static int cmd_i3c_ccc_getacccr(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev, *tdev;
+	struct i3c_device_desc *desc;
+	struct i3c_ccc_address handoff_address;
+	int ret;
+
+	ret = i3c_parse_args(sh, argv, &dev, &tdev, &desc);
+	if (ret != 0) {
+		return ret;
+	}
+
+	if (!i3c_device_is_controller_capable(desc)) {
+		shell_error(sh, "I3C: Not a Controller Capable Device");
+		return -EINVAL;
+	}
+
+	ret = i3c_ccc_do_getacccr(desc, &handoff_address);
+	if (ret < 0) {
+		shell_error(sh, "I3C: unable to send CCC GETACCCR.");
+		return ret;
+	}
+
+	/* Verify Odd Parity and Correct Dynamic Address Reply */
+	if ((i3c_odd_parity(handoff_address.addr >> 1) != (handoff_address.addr & BIT(0))) ||
+	    (handoff_address.addr >> 1 != desc->dynamic_addr)) {
+		shell_error(sh, "I3C: invalid returned address 0x%02x; expected 0x%02x",
+			    handoff_address.addr, desc->dynamic_addr);
+		return -EIO;
+	}
+
+	shell_print(sh, "I3C: Controller Handoff successful");
+
+	return ret;
+}
+
 /* i3c ccc rstact_bc <device> <defining byte> */
 static int cmd_i3c_ccc_rstact_bc(const struct shell *sh, size_t argc, char **argv)
 {
@@ -1455,6 +1498,7 @@ static int cmd_i3c_ccc_getcaps(const struct shell *sh, size_t argc, char **argv)
 		} else if (defbyte == GETCAPS_FORMAT_2_CRCAPS) {
 			shell_print(sh, "CRCAPS: 0x%02x; 0x%02x", caps.fmt2.crcaps[0],
 				    caps.fmt2.crcaps[1]);
+			memcpy(&desc->crcaps, &caps, sizeof(desc->crcaps));
 		} else if (defbyte == GETCAPS_FORMAT_2_VTCAPS) {
 			shell_print(sh, "VTCAPS: 0x%02x; 0x%02x", caps.fmt2.vtcaps[0],
 				    caps.fmt2.vtcaps[1]);
@@ -1688,6 +1732,7 @@ static int cmd_i3c_ccc_getmxds(const struct shell *sh, size_t argc, char **argv)
 			desc->data_speed.max_read_turnaround = sys_get_le24(&mxds.fmt3.wrrdturn[2]);
 		} else if (defbyte == GETMXDS_FORMAT_3_CRHDLY) {
 			shell_print(sh, "CRHDLY1: 0x%02x", mxds.fmt3.crhdly1);
+			desc->crhdly1 = mxds.fmt3.crhdly1;
 		}
 	} else {
 		shell_print(sh, "GETMXDS: maxwr 0x%02x; maxrd 0x%02x; maxrdturn 0x%06x",
@@ -2225,6 +2270,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "Send CCC RSTACT\n"
 		      "Usage: ccc rstact <device> <target> <\"set\"/\"get\"> <defining byte>",
 		      cmd_i3c_ccc_rstact, 5, 0),
+	SHELL_CMD_ARG(getacccr, &dsub_i3c_device_attached_name,
+		      "Send CCC GETACCCR\n"
+		      "Usage: ccc getacccr <device> <target>",
+		      cmd_i3c_ccc_getacccr, 3, 0),
 	SHELL_CMD_ARG(rstact_bc, &dsub_i3c_device_name,
 		      "Send CCC RSTACT BC\n"
 		      "Usage: ccc rstact_bc <device> <defining byte>",
