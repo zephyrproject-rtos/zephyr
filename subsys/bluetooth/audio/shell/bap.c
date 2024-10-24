@@ -4329,9 +4329,9 @@ static ssize_t nonconnectable_ad_data_add(struct bt_data *data_array,
 		uint32_t broadcast_id;
 		int err;
 
-		err = bt_bap_broadcast_source_get_id(default_source.bap_source, &broadcast_id);
+		err = bt_rand(&broadcast_id, BT_AUDIO_BROADCAST_ID_SIZE);
 		if (err != 0) {
-			printk("Unable to get broadcast ID: %d\n", err);
+			printk("Unable to generate broadcast ID: %d\n", err);
 
 			return -1;
 		}

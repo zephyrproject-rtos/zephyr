@@ -1055,9 +1055,9 @@ static void setup_extended_adv_data(struct bt_cap_broadcast_source *source,
 	uint32_t broadcast_id;
 	int err;
 
-	err = bt_cap_initiator_broadcast_get_id(source, &broadcast_id);
-	if (err != 0) {
-		FAIL("Unable to get broadcast ID: %d\n", err);
+	err = bt_rand(&broadcast_id, BT_AUDIO_BROADCAST_ID_SIZE);
+	if (err) {
+		FAIL("Unable to generate broadcast ID: %d\n", err);
 		return;
 	}
 

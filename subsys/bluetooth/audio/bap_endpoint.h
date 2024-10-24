@@ -108,7 +108,6 @@ struct bt_bap_broadcast_source {
 	uint8_t stream_count;
 	uint8_t packing;
 	bool encryption;
-	uint32_t broadcast_id; /* 24 bit */
 
 	struct bt_iso_big *big;
 	struct bt_bap_qos_cfg *qos;

@@ -450,36 +450,6 @@ static bool encode_base(struct bt_bap_broadcast_source *source, struct net_buf_s
 	return true;
 }
 
-static int generate_broadcast_id(struct bt_bap_broadcast_source *source)
-{
-	bool unique;
-
-	do {
-		int err;
-
-		err = bt_rand(&source->broadcast_id,
-			      BT_AUDIO_BROADCAST_ID_SIZE);
-		if (err) {
-			return err;
-		}
-
-		/* Ensure uniqueness */
-		unique = true;
-		for (int i = 0; i < ARRAY_SIZE(broadcast_sources); i++) {
-			if (&broadcast_sources[i] == source) {
-				continue;
-			}
-
-			if (broadcast_sources[i].broadcast_id == source->broadcast_id) {
-				unique = false;
-				break;
-			}
-		}
-	} while (!unique);
-
-	return 0;
-}
-
 static void broadcast_source_cleanup(struct bt_bap_broadcast_source *source)
 {
 	struct bt_bap_broadcast_subgroup *subgroup, *next_subgroup;
@@ -830,12 +800,6 @@ int bt_bap_broadcast_source_create(struct bt_bap_broadcast_source_param *param,
 		}
 	}
 
-	err = generate_broadcast_id(source);
-	if (err != 0) {
-		LOG_DBG("Could not generate broadcast id: %d", err);
-		return err;
-	}
-
 	/* Finalize state changes and store information */
 	broadcast_source_set_state(source, BT_BAP_EP_STATE_QOS_CONFIGURED);
 	source->qos = qos;
@@ -851,8 +815,6 @@ int bt_bap_broadcast_source_create(struct bt_bap_broadcast_source_param *param,
 		(void)memcpy(source->broadcast_code, param->broadcast_code,
 			     sizeof(source->broadcast_code));
 	}
-
-	LOG_DBG("Broadcasting with ID 0x%6X", source->broadcast_id);
 
 	*out_source = source;
 
@@ -1193,32 +1155,6 @@ int bt_bap_broadcast_source_delete(struct bt_bap_broadcast_source *source)
 
 	/* Reset the broadcast source */
 	broadcast_source_cleanup(source);
-
-	return 0;
-}
-
-int bt_bap_broadcast_source_get_id(struct bt_bap_broadcast_source *source,
-				   uint32_t *const broadcast_id)
-{
-	enum bt_bap_ep_state broadcast_state;
-
-	CHECKIF(source == NULL) {
-		LOG_DBG("source is NULL");
-		return -EINVAL;
-	}
-
-	CHECKIF(broadcast_id == NULL) {
-		LOG_DBG("broadcast_id is NULL");
-		return -EINVAL;
-	}
-
-	broadcast_state = broadcast_source_get_state(source);
-	if (broadcast_state == BT_BAP_EP_STATE_IDLE) {
-		LOG_DBG("Broadcast source invalid state: %u", broadcast_state);
-		return -EBADMSG;
-	}
-
-	*broadcast_id = source->broadcast_id;
 
 	return 0;
 }

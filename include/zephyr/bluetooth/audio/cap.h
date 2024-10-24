@@ -604,23 +604,6 @@ int bt_cap_initiator_broadcast_audio_stop(struct bt_cap_broadcast_source *broadc
 int bt_cap_initiator_broadcast_audio_delete(struct bt_cap_broadcast_source *broadcast_source);
 
 /**
- * @brief Get the broadcast ID of a Common Audio Profile broadcast source
- *
- * This will return the 3-octet broadcast ID that should be advertised in the
- * extended advertising data with @ref BT_UUID_BROADCAST_AUDIO_VAL as
- * @ref BT_DATA_SVC_DATA16.
- *
- * See table 3.14 in the Basic Audio Profile v1.0.1 for the structure.
- *
- * @param[in]  broadcast_source  Pointer to the broadcast source.
- * @param[out] broadcast_id      Pointer to the 3-octet broadcast ID.
- *
- * @return int		0 if on success, errno on error.
- */
-int bt_cap_initiator_broadcast_get_id(const struct bt_cap_broadcast_source *broadcast_source,
-				      uint32_t *const broadcast_id);
-
-/**
  * @brief Get the Broadcast Audio Stream Endpoint of a Common Audio Profile broadcast source
  *
  * This will encode the BASE of a broadcast source into a buffer, that can be
