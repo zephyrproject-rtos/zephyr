@@ -1,0 +1,13 @@
+
+description: Xilinx PS IIC Bus Interface
+
+compatible: "xlnx,xps-iic"
+
+include: [i2c-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
