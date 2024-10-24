@@ -1,0 +1,36 @@
+#
+# Copyright (c) 2024 Bittium Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Texas Instruments TMP435 temperature sensor
+
+compatible: "ti,tmp435"
+
+bus: tmp435
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  external-channel:
+    description: External temperature measurement is enabled
+    type: boolean
+  resistance-correction:
+    description: |
+      Resistance correction feature for the external
+      temperature channel. If not enabled then conversion
+      is faster but with lower accuracy.
+    type: boolean
+  beta-compensation:
+    description: |
+      Beta Compensation Configuration, see Table 8
+      from TMP435 data sheet, some common values.
+      0x0f, Automatically selected range 7 (beta > 27.0) or
+      Automatically detected diode connected sensor
+      0x07, Manually disabled beta correction
+      Default is common value for general purpose transistors.
+    type: int
+    default: 0x0f
+    enum: [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+           0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f]
