@@ -22,14 +22,13 @@ config NUM_IRQS
 config CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS
 	default y
 
-# This Kconfig is SOC Specific and configures the MCU at boot time
-# This SOC is configured via the following bits
+# The flash option register (FOPT) boot options:
 # 0000 0001 - Normal Boot
-# 0000 0100 - Enable Interrupts
+# 0000 0000 - Set NMI pin/interrupts to disabled
 # 0000 1000 - Allow Reset detection from RESET_Pin
-# 0111 0000 - Reserved for Future Expansion
+# 1111 0010 - Reserved for Future Expansion
 config KINETIS_FLASH_CONFIG_FOPT
-	default 0x7d
+	default 0xFB
 	depends on KINETIS_FLASH_CONFIG
 
 endif # SOC_SERIES_KE1XZ
