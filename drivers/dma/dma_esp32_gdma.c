@@ -33,11 +33,7 @@ LOG_MODULE_REGISTER(dma_esp32_gdma, CONFIG_DMA_LOG_LEVEL);
 #define ISR_HANDLER intr_handler_t
 #endif
 
-#if defined(CONFIG_SOC_SERIES_ESP32C6)
-#define DMA_MAX_CHANNEL SOC_GDMA_PAIRS_PER_GROUP_MAX
-#else
 #define DMA_MAX_CHANNEL SOC_GDMA_PAIRS_PER_GROUP
-#endif
 
 #define ESP_DMA_M2M_ON  0
 #define ESP_DMA_M2M_OFF 1

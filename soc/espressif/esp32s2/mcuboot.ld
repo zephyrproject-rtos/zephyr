@@ -54,7 +54,6 @@ SECTIONS
     *libzephyr.a:cbprintf_nano.*(.literal .text .literal.* .text.*)
     *libzephyr.a:cpu.*(.literal .text .literal.* .text.*)
     *libzephyr.a:mmu_hal.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:cache_hal.*(.literal .text .literal.* .text.*)
     *libzephyr.a:flash_map.*(.literal .text .literal.* .text.*)
     *libzephyr.a:esp_rom_spiflash.*(.literal .text .literal.* .text.*)
     *libzephyr.a:heap.*(.literal .text .literal.* .text.*)
@@ -68,8 +67,6 @@ SECTIONS
     *libzephyr.a:rtc_clk.*(.literal .literal.* .text .text.*)
     *libzephyr.a:rtc_clk_init.*(.literal .literal.* .text .text.*)
 
-    *(.literal.bootloader_mmap .text.bootloader_mmap)
-    *(.literal.bootloader_munmap .text.bootloader_munmap)
     *(.literal.esp_intr_disable .literal.esp_intr_disable.* .text.esp_intr_disable .text.esp_intr_disable.*)
     *(.literal.default_intr_handler .text.default_intr_handler .iram1.*.default_intr_handler)
     *(.literal.esp_log_timestamp .text.esp_log_timestamp)

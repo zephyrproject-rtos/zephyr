@@ -50,7 +50,6 @@ SECTIONS
     *libzephyr.a:cbprintf_nano.*(.literal .text .literal.* .text.*)
     *libzephyr.a:cpu.*(.literal .text .literal.* .text.*)
     *libzephyr.a:mmu_hal.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:cache_hal.*(.literal .text .literal.* .text.*)
     *libzephyr.a:flash_map.*(.literal .text .literal.* .text.*)
     *libzephyr.a:esp_rom_spiflash.*(.literal .text .literal.* .text.*)
 
@@ -58,9 +57,6 @@ SECTIONS
 
     *libkernel.a:kheap.*(.literal .text .literal.* .text.*)
     *libkernel.a:mempool.*(.literal .text .literal.* .text.*)
-
-    *(.literal.bootloader_mmap .text.bootloader_mmap)
-    *(.literal.bootloader_munmap .text.bootloader_munmap)
 
     *libzephyr.a:esp_loader.*(.literal .text .literal.* .text.*)
     *libzephyr.a:mmu_hal.*(.literal .text .literal.* .text.*)

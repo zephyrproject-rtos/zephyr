@@ -14,6 +14,7 @@
 #include <esp_private/spi_flash_os.h>
 #include <esp_private/esp_mmu_map_private.h>
 #include <esp_flash_internal.h>
+#include <esp_private/cache_utils.h>
 #if CONFIG_ESP_SPIRAM
 #include "psram.h"
 #endif
