@@ -99,6 +99,25 @@ uint32_t lpuartdiv_calc(const uint64_t clock_rate, const uint32_t baud_rate)
 #endif /* USART_PRESC_PRESCALER */
 #endif /* HAS_LPUART */
 
+#if CONFIG_SERIAL_SUPPORT_RS485
+static void rs485_de_pin_set(const struct uart_stm32_config *config)
+{
+	gpio_pin_set(config->de_pin.port, config->de_pin.pin, config->de_invert);
+}
+
+static void rs485_de_pin_reset(const struct uart_stm32_config *config)
+{
+	gpio_pin_set(config->de_pin.port, config->de_pin.pin, !config->de_invert);
+}
+
+static void rs485_de_time_expire_callback(struct k_timer *timer)
+{
+	const struct uart_stm32_config *config = k_timer_user_data_get(timer);
+	
+	rs485_de_pin_reset(config);
+}
+#endif
+
 #ifdef CONFIG_PM
 static void uart_stm32_pm_policy_state_lock_get(const struct device *dev)
 {
@@ -725,7 +744,7 @@ static void uart_stm32_poll_out(const struct device *dev, unsigned char c)
 #ifdef CONFIG_UART_WIDE_DATA
 
 static void poll_out_u9(USART_TypeDef *usart, void *out)
-{
+{ 
 	LL_USART_TransmitData9(usart, *((uint16_t *)out));
 }
 
@@ -961,6 +980,12 @@ static void uart_stm32_irq_tx_enable(const struct device *dev)
 	unsigned int key;
 #endif
 
+	if (config->de_enable) 
+	{
+		
+		rs485_de_pin_set(config);
+	} 
+
 #ifdef CONFIG_PM
 	key = irq_lock();
 	data->tx_poll_stream_on = false;
@@ -977,8 +1002,22 @@ static void uart_stm32_irq_tx_enable(const struct device *dev)
 static void uart_stm32_irq_tx_disable(const struct device *dev)
 {
 	const struct uart_stm32_config *config = dev->config;
-#ifdef CONFIG_PM
 	struct uart_stm32_data *data = dev->data;
+	if (config->de_enable) 
+	{
+		
+		if (config->de_deassert_time_us) 
+		{
+			k_timer_start(&data->rs485_timer, K_USEC(config->de_deassert_time_us), K_NO_WAIT);
+		}
+		else
+		{
+			rs485_de_pin_reset(config);
+		}
+	} 
+
+#ifdef CONFIG_PM
+	 
 	unsigned int key;
 
 	key = irq_lock();
@@ -1007,14 +1046,12 @@ static int uart_stm32_irq_tx_ready(const struct device *dev)
 static int uart_stm32_irq_tx_complete(const struct device *dev)
 {
 	const struct uart_stm32_config *config = dev->config;
-
 	return LL_USART_IsActiveFlag_TC(config->usart);
 }
 
 static void uart_stm32_irq_rx_enable(const struct device *dev)
 {
-	const struct uart_stm32_config *config = dev->config;
-
+	const struct uart_stm32_config *config = dev->config;	
 	LL_USART_EnableIT_RXNE(config->usart);
 }
 
@@ -2105,6 +2142,7 @@ static int uart_stm32_registers_configure(const struct device *dev)
 static int uart_stm32_init(const struct device *dev)
 {
 	const struct uart_stm32_config *config = dev->config;
+	struct uart_stm32_data *data = dev->data;
 	int err;
 
 	err = uart_stm32_clocks_enable(dev);
@@ -2123,6 +2161,15 @@ static int uart_stm32_init(const struct device *dev)
 		return err;
 	}
 
+#ifdef CONFIG_SERIAL_SUPPORT_RS485	//Init timer and pin
+	if (config->de_enable) {
+		gpio_pin_configure_dt(&config->de_pin, GPIO_ACTIVE_LOW | GPIO_OUTPUT_ACTIVE);
+		gpio_pin_set(config->de_pin.port, config->de_pin.pin, config->de_invert);
+		k_timer_init(&data->rs485_timer, rs485_de_time_expire_callback, NULL);
+		k_timer_user_data_set(&data->rs485_timer, (void *)config);
+	}
+#endif
+
 #if defined(CONFIG_PM) || \
 	defined(CONFIG_UART_INTERRUPT_DRIVEN) || \
 	defined(CONFIG_UART_ASYNC_API)
@@ -2134,6 +2181,7 @@ static int uart_stm32_init(const struct device *dev)
 #else
 	return 0;
 #endif
+
 }
 
 #ifdef CONFIG_PM_DEVICE
@@ -2437,10 +2485,11 @@ static const struct uart_stm32_config uart_stm32_cfg_##index = {	\
 	.tx_rx_swap = DT_INST_PROP(index, tx_rx_swap),			\
 	.rx_invert = DT_INST_PROP(index, rx_invert),			\
 	.tx_invert = DT_INST_PROP(index, tx_invert),			\
-	.de_enable = DT_INST_PROP(index, de_enable),			\
-	.de_assert_time = DT_INST_PROP(index, de_assert_time),		\
-	.de_deassert_time = DT_INST_PROP(index, de_deassert_time),	\
-	.de_invert = DT_INST_PROP(index, de_invert),			\
+	.de_enable = DT_INST_PROP(index, rs485_enabled),			\
+	.de_assert_time_us = DT_INST_PROP(index, rs485_assertion_time_de_us),		\
+	.de_deassert_time_us = DT_INST_PROP(index, rs485_deassertion_time_de_us),	\
+	.de_invert = DT_INST_PROP(index, rs485_de_active_low),			\
+	.de_pin = GPIO_DT_SPEC_INST_GET_OR(index, rs485_de_gpios, {0}), \
 	.fifo_enable = DT_INST_PROP(index, fifo_enable),		\
 	STM32_UART_IRQ_HANDLER_FUNC(index)				\
 	STM32_UART_PM_WAKEUP(index)					\
