@@ -1,0 +1,23 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  LPC SYSCON Flexcomm Fractional Rate Divider. This node accepts one
+  specifier, which sets the numerator of the flexcomm fractional rate divider.
+  The resulting clock frequency will be input_clock / (1 + MULT / 256)
+
+compatible: "nxp,syscon-flexfrg"
+
+include: [clock-node.yaml]
+
+properties:
+  reg:
+    required: true
+    description: |
+      Address of flexfrg control register
+
+  "#clock-cells":
+    const: 1
+
+clock-cells:
+  - numerator

@@ -3557,4 +3557,28 @@ ZTEST(devicetree_api, test_interrupt_controller)
 	zassert_true(DT_SAME_NODE(DT_INST_IRQ_INTC(0), TEST_INTC), "");
 }
 
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_adc_temp_sensor
+ZTEST(devicetree_api, test_clock_management)
+{
+	unsigned int test_clk_supports[] = {
+		DT_SUPPORTS_CLK_ORDS(DT_NODELABEL(test_clk_output))
+	};
+	unsigned int fixed_clk_supports[] = {
+		DT_SUPPORTS_CLK_ORDS(DT_NODELABEL(test_fixed_clk_output))
+	};
+
+	/* DT_CLOCK_OUTPUT_NAME_IDX */
+	zassert_equal(DT_CLOCK_OUTPUT_NAME_IDX(TEST_TEMP, clk_output), 0, "");
+	zassert_equal(DT_CLOCK_OUTPUT_NAME_IDX(TEST_TEMP, fixed_clk_output), 1, "");
+
+	/* DT_CLOCK_STATE_NAME_IDX */
+	zassert_equal(DT_CLOCK_STATE_NAME_IDX(TEST_TEMP, default), 0, "");
+	zassert_equal(DT_CLOCK_STATE_NAME_IDX(TEST_TEMP, sleep), 1, "");
+
+	/* DT_SUPPORTS_CLK_ORDS */
+	zassert_true(ORD_IN_ARRAY(DT_DEP_ORD(TEST_TEMP), test_clk_supports), "");
+	zassert_true(ORD_IN_ARRAY(DT_DEP_ORD(TEST_TEMP), fixed_clk_supports), "");
+}
+
 ZTEST_SUITE(devicetree_api, NULL, NULL, NULL, NULL, NULL);

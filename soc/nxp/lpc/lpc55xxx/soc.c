@@ -23,6 +23,7 @@
 #include <fsl_clock.h>
 #include <fsl_common.h>
 #include <fsl_device_registers.h>
+#include <zephyr/drivers/clock_management.h>
 #ifdef CONFIG_GPIO_MCUX_LPC
 #include <fsl_pint.h>
 #endif
@@ -35,11 +36,10 @@
 #include <fsl_vref.h>
 #endif
 
+#define DT_DRV_COMPAT arm_cortex_m33f
+
 /* System clock frequency */
 extern uint32_t SystemCoreClock;
-
-/*Should be in the range of 12MHz to 32MHz */
-static uint32_t ExternalClockFrequency;
 
 
 #define CTIMER_CLOCK_SOURCE(node_id) \
@@ -73,23 +73,77 @@ const pll_setup_t pll1Setup = {
 #endif
 
 /**
- *
- * @brief Initialize the system clock
- *
+ * @brief Setup core clocks
  */
+#ifdef CONFIG_CLOCK_MANAGEMENT
+CLOCK_MANAGEMENT_DT_INST_DEFINE_OUTPUT(0);
 
-static ALWAYS_INLINE void clock_init(void)
+static const struct clock_output *cpu_clock = CLOCK_MANAGEMENT_DT_INST_GET_OUTPUT(0);
+
+static void change_core_clock(uint32_t new_rate)
 {
-	ExternalClockFrequency = 0;
+	/* Set voltage for new frequency */
+	POWER_SetVoltageForFreq(new_rate);
+	/* Set flash cycles for new clock*/
+	CLOCK_SetFLASHAccessCyclesForFreq(new_rate);
+	SystemCoreClock = new_rate;
+}
 
-#if defined(CONFIG_SOC_LPC55S36)
-	/* Power Management Controller initialization */
-	POWER_PowerInit();
+#ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
+
+static int core_clock_change_cb(const struct clock_management_event *ev, const void *data)
+{
+	ARG_UNUSED(data);
+
+	if (ev->new_rate == 0) {
+		return -ENOTSUP;
+	}
+
+#if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
+	if (ev->type == CLOCK_MANAGEMENT_PRE_RATE_CHANGE &&
+	   (ev->new_rate > ev->old_rate)) {
+		/* Clock frequency will rise */
+		change_core_clock(ev->new_rate);
+	} else if (ev->type == CLOCK_MANAGEMENT_POST_RATE_CHANGE &&
+	    (ev->new_rate < ev->old_rate)) {
+		change_core_clock(ev->new_rate);
+	}
+#endif /* !CONFIG_TRUSTED_EXECUTION_NONSECURE */
+	return 0;
+}
+
+#endif /* CONFIG_CLOCK_MANAGEMENT_RUNTIME */
+
+static void core_clock_init(void)
+{
+	clock_management_state_t default_state =
+		CLOCK_MANAGEMENT_DT_INST_GET_STATE(0, default, default);
+	int new_rate;
+	/* Enable Analog Control module */
+	SYSCON->PRESETCTRLCLR[2] = (1UL << SYSCON_PRESETCTRL2_ANALOG_CTRL_RST_SHIFT);
+	SYSCON->AHBCLKCTRLSET[2] = SYSCON_AHBCLKCTRL2_ANALOG_CTRL_MASK;
+	/* Power up the FRO192M */
+	POWER_DisablePD(kPDRUNCFG_PD_FRO192M);
+#ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
+	clock_management_set_callback(cpu_clock, core_clock_change_cb, NULL);
+#else
+	change_core_clock(SDK_DEVICE_MAXIMUM_CPU_CLOCK_FREQUENCY);
 #endif
-
+	new_rate = clock_management_apply_state(cpu_clock, default_state);
+	change_core_clock(new_rate);
+	clock_management_disable_unused();
+}
+#else /* !CONFIG_CLOCK_MANAGEMENT */
 #if defined(CONFIG_SOC_LPC55S06) || defined(CONFIG_SOC_LPC55S16) || \
 	defined(CONFIG_SOC_LPC55S26) || defined(CONFIG_SOC_LPC55S28) || \
 	defined(CONFIG_SOC_LPC55S36) || defined(CONFIG_SOC_LPC55S69_CPU0)
+static void core_clock_init(void)
+{
+#if defined(CONFIG_INIT_PLL0) || defined(CONFIG_INIT_PLL1)
+	/*Should be in the range of 12MHz to 32MHz */
+	uint32_t ExternalClockFrequency = 0;
+#endif
+
 	/* Set up the clock sources */
 	/* Configure FRO192M */
 	/* Ensure FRO is on  */
@@ -172,11 +226,35 @@ static ALWAYS_INLINE void clock_init(void)
 
 	/* Set up dividers */
 	CLOCK_SetClkDiv(kCLOCK_DivAhbClk, 1U, false);
+}
+#endif /* !CONFIG_CLOCK_MANAGEMENT */
+
+#endif
+/**
+ *
+ * @brief Initialize the system clock
+ *
+ */
+
+static ALWAYS_INLINE void clock_init(void)
+{
+
+#if defined(CONFIG_SOC_LPC55S36)
+	/* Power Management Controller initialization */
+	POWER_PowerInit();
+#endif
+
+#if defined(CONFIG_SOC_LPC55S06) || defined(CONFIG_SOC_LPC55S16) || \
+	defined(CONFIG_SOC_LPC55S28) || defined(CONFIG_SOC_LPC55S36) || \
+	defined(CONFIG_SOC_LPC55S69_CPU0)
+
+	core_clock_init();
 
 	/* Enables the clock for the I/O controller.: Enable Clock. */
 	CLOCK_EnableClock(kCLOCK_Iocon);
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm2), nxp_lpc_usart, okay)
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm2), nxp_lpc_usart, okay) && \
+	CONFIG_UART_MCUX_FLEXCOMM
 #if defined(CONFIG_SOC_LPC55S36)
 	CLOCK_SetClkDiv(kCLOCK_DivFlexcom2Clk, 0U, true);
 	CLOCK_SetClkDiv(kCLOCK_DivFlexcom2Clk, 1U, false);
@@ -184,7 +262,8 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM2);
 #endif
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm4), nxp_lpc_i2c, okay)
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm4), nxp_lpc_i2c, okay) && \
+	CONFIG_I2C_MCUX_FLEXCOMM
 #if defined(CONFIG_SOC_LPC55S36)
 	CLOCK_SetClkDiv(kCLOCK_DivFlexcom4Clk, 0U, true);
 	CLOCK_SetClkDiv(kCLOCK_DivFlexcom4Clk, 1U, false);
@@ -193,23 +272,28 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM4);
 #endif
 
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(hs_lspi))
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(hs_lspi)) && \
+	CONFIG_SPI_MCUX_FLEXCOMM
 	/* Attach 12 MHz clock to HSLSPI */
 	CLOCK_AttachClk(kFRO_HF_DIV_to_HSLSPI);
 #endif
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(wwdt0), nxp_lpc_wwdt, okay)
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(wwdt0), nxp_lpc_wwdt, okay) && \
+	CONFIG_WDT_MCUX_WWDT
 	/* Enable 1 MHz FRO clock for WWDT */
 	SYSCON->CLOCK_CTRL |= SYSCON_CLOCK_CTRL_FRO1MHZ_CLK_ENA_MASK;
 #endif
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(mailbox0), nxp_lpc_mailbox, okay)
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(mailbox0), nxp_lpc_mailbox, okay) && \
+	CONFIG_IPM_MCUX
 	CLOCK_EnableClock(kCLOCK_Mailbox);
 #endif
 
 #if CONFIG_USB_DC_NXP_LPCIP3511 || CONFIG_UDC_NXP_IP3511
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(usbfs), nxp_lpcip3511, okay)
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(usbfs), nxp_lpcip3511, okay) && \
+	CONFIG_USB_MCUX
+
 	/*< Turn on USB Phy */
 #if defined(CONFIG_SOC_LPC55S36)
 	POWER_DisablePD(kPDRUNCFG_PD_USBFSPHY);
@@ -240,7 +324,8 @@ static ALWAYS_INLINE void clock_init(void)
 
 #endif /* USB_DEVICE_TYPE_FS */
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(usbhs), nxp_lpcip3511, okay)
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(usbhs), nxp_lpcip3511, okay) && \
+	CONFIG_USB_MCUX
 	/* enable usb1 host clock */
 	CLOCK_EnableClock(kCLOCK_Usbh1);
 	/* Put PHY powerdown under software control */
@@ -267,11 +352,15 @@ static ALWAYS_INLINE void clock_init(void)
 
 #endif /* CONFIG_USB_DC_NXP_LPCIP3511 */
 
+#if (CONFIG_PWM_MCUX_CTIMER) || (CONFIG_COUNTER_MCUX_CTIMER)
 DT_FOREACH_STATUS_OKAY(nxp_lpc_ctimer, CTIMER_CLOCK_SETUP)
 
 DT_FOREACH_STATUS_OKAY(nxp_ctimer_pwm, CTIMER_CLOCK_SETUP)
+#endif
 
-#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm6), nxp_lpc_i2s, okay))
+
+#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm6), nxp_lpc_i2s, okay)) && \
+	CONFIG_I2S_MCUX_FLEXCOMM
 #if defined(CONFIG_SOC_LPC55S36)
 	CLOCK_SetClkDiv(kCLOCK_DivFlexcom6Clk, 0U, true);
 	CLOCK_SetClkDiv(kCLOCK_DivFlexcom6Clk, 1U, false);
@@ -280,7 +369,8 @@ DT_FOREACH_STATUS_OKAY(nxp_ctimer_pwm, CTIMER_CLOCK_SETUP)
 	CLOCK_AttachClk(kPLL0_DIV_to_FLEXCOMM6);
 #endif
 
-#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm7), nxp_lpc_i2s, okay))
+#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm7), nxp_lpc_i2s, okay)) && \
+	CONFIG_I2S_MCUX_FLEXCOMM
 #if defined(CONFIG_SOC_LPC55S36)
 	CLOCK_SetClkDiv(kCLOCK_DivFlexcom7Clk, 0U, true);
 	CLOCK_SetClkDiv(kCLOCK_DivFlexcom7Clk, 1U, false);
@@ -289,7 +379,8 @@ DT_FOREACH_STATUS_OKAY(nxp_ctimer_pwm, CTIMER_CLOCK_SETUP)
 	CLOCK_AttachClk(kPLL0_DIV_to_FLEXCOMM7);
 #endif
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(can0), nxp_lpc_mcan, okay)
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(can0), nxp_lpc_mcan, okay) && \
+	CONFIG_CAN_MCUX_MCAN
 	CLOCK_SetClkDiv(kCLOCK_DivCanClk, 1U, false);
 	CLOCK_AttachClk(kMCAN_DIV_to_MCAN);
 #endif
@@ -313,7 +404,8 @@ DT_FOREACH_STATUS_OKAY(nxp_ctimer_pwm, CTIMER_CLOCK_SETUP)
 		SYSCON_PWM1SUBCTL_CLK2_EN_MASK);
 #endif
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(adc0), nxp_lpc_lpadc, okay)
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(adc0), nxp_lpc_lpadc, okay) && \
+	CONFIG_ADC_MCUX_LPADC
 #if defined(CONFIG_SOC_LPC55S36)
 	CLOCK_SetClkDiv(kCLOCK_DivAdc0Clk, 2U, true);
 	CLOCK_AttachClk(kFRO_HF_to_ADC0);
@@ -327,12 +419,14 @@ DT_FOREACH_STATUS_OKAY(nxp_ctimer_pwm, CTIMER_CLOCK_SETUP)
 #endif /* SOC platform */
 #endif /* ADC */
 
-#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(vref0), nxp_vref, okay))
+#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(vref0), nxp_vref, okay)) && \
+	CONFIG_REGULATOR_NXP_VREF
 	CLOCK_EnableClock(kCLOCK_Vref);
 	POWER_DisablePD(kPDRUNCFG_PD_VREF);
 #endif /* vref0 */
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(dac0), nxp_lpdac, okay)
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(dac0), nxp_lpdac, okay) && \
+	CONFIG_DAC_MCUX_LPDAC
 #if defined(CONFIG_SOC_LPC55S36)
 	CLOCK_SetClkDiv(kCLOCK_DivDac0Clk, 1U, true);
 	CLOCK_AttachClk(kMAIN_CLK_to_DAC0);
