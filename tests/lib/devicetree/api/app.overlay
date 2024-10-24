@@ -506,6 +506,26 @@
 			status = "okay";
 		};
 
+		test_video_source: video_source {
+			compatible = "vnd,video";
+
+			port {
+				test_video_source_out: endpoint {
+					remote-endpoint-label = "test_video_sink_in";
+				};
+			};
+		};
+
+		test_video_sink: video_sink {
+			compatible = "vnd,video";
+
+			port {
+				test_video_sink_in: endpoint {
+					remote-endpoint-label = "test_video_source_out";
+				};
+			};
+		};
+
 		test_pwm1: pwm@55551111 {
 			compatible = "vnd,pwm";
 			#pwm-cells = <3>;

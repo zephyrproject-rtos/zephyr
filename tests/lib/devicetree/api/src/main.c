@@ -76,6 +76,9 @@
 #define TEST_DMA_CTLR_1 DT_NODELABEL(test_dma1)
 #define TEST_DMA_CTLR_2 DT_NODELABEL(test_dma2)
 
+#define TEST_VIDEO_SOURCE_OUT DT_NODELABEL(test_video_source_out)
+#define TEST_VIDEO_SINK_IN    DT_NODELABEL(test_video_sink_in)
+
 #define TEST_IO_CHANNEL_CTLR_1 DT_NODELABEL(test_adc_1)
 #define TEST_IO_CHANNEL_CTLR_2 DT_NODELABEL(test_adc_2)
 
@@ -1276,6 +1279,19 @@ ZTEST(devicetree_api, test_dma)
 	zassert_true(DT_INST_DMAS_HAS_IDX(0, 1), "");
 	zassert_false(DT_DMAS_HAS_IDX(TEST_TEMP, 2), "");
 	zassert_false(DT_INST_DMAS_HAS_IDX(0, 2), "");
+}
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_video_device
+ZTEST(devicetree_api, test_video)
+{
+	/* DT_REMOTE_ENDPOINT(source) */
+	zassert_true(DT_SAME_NODE(DT_REMOTE_ENDPOINT(TEST_VIDEO_SOURCE_OUT),
+				  TEST_VIDEO_SINK_IN), "");
+
+	/* DT_REMOTE_ENDPOINT(sink) */
+	zassert_true(DT_SAME_NODE(DT_REMOTE_ENDPOINT(TEST_VIDEO_SINK_IN),
+				  TEST_VIDEO_SOURCE_OUT), "");
 }
 
 #undef DT_DRV_COMPAT
