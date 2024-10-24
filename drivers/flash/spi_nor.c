@@ -1632,20 +1632,12 @@ static const struct flash_driver_api spi_nor_api = {
 
 #define INST_HAS_LOCK(idx) DT_INST_NODE_HAS_PROP(idx, has_lock)
 
-#define INST_HAS_WP_GPIO(idx) DT_INST_NODE_HAS_PROP(idx, wp_gpios)
-
-#define INST_HAS_HOLD_GPIO(idx) DT_INST_NODE_HAS_PROP(idx, hold_gpios)
-
 #define LOCK_DEFINE(idx)								\
 	IF_ENABLED(INST_HAS_LOCK(idx), (BUILD_ASSERT(DT_INST_PROP(idx, has_lock) ==	\
 					(DT_INST_PROP(idx, has_lock) & 0xFF),		\
 					"Need support for lock clear beyond SR1");))
 
-#define INST_HAS_ENTER_4BYTE_ADDR(idx) DT_INST_NODE_HAS_PROP(idx, enter_4byte_addr)
-
-#define CONFIGURE_4BYTE_ADDR(idx)					\
-	IF_ENABLED(INST_HAS_ENTER_4BYTE_ADDR(idx),			\
-		(.enter_4byte_addr = DT_INST_PROP(idx, enter_4byte_addr),))
+#define CONFIGURE_4BYTE_ADDR(idx) .enter_4byte_addr = DT_INST_PROP_OR(idx, enter_4byte_addr, 0),
 
 #define INIT_T_ENTER_DPD(idx)								\
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(idx, t_enter_dpd),				\
@@ -1661,15 +1653,9 @@ static const struct flash_driver_api spi_nor_api = {
 		(.t_exit_dpd = 0))
 #endif
 
-#define INIT_WP_GPIOS(idx) \
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(idx, wp_gpios), \
-		(.wp = GPIO_DT_SPEC_INST_GET(idx, wp_gpios)), \
-		(.wp = {0}))
+#define INIT_WP_GPIOS(idx) .wp = GPIO_DT_SPEC_INST_GET_OR(idx, wp_gpios, {0})
 
-#define INIT_HOLD_GPIOS(idx) \
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(idx, hold_gpios), \
-		(.hold = GPIO_DT_SPEC_INST_GET(idx, hold_gpios)), \
-		(.hold = {0},))
+#define INIT_HOLD_GPIOS(idx) .hold = GPIO_DT_SPEC_INST_GET_OR(idx, hold_gpios, {0})
 
 #define INIT_WAKEUP_SEQ_PARAMS(idx)							\
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(idx, dpd_wakeup_sequence),			\
@@ -1681,15 +1667,10 @@ static const struct flash_driver_api spi_nor_api = {
 			DT_INST_PROP_BY_IDX(idx, dpd_wakeup_sequence, 2), NSEC_PER_MSEC)),\
 		(.t_dpdd_ms = 0, .t_crdp_ms = 0, .t_rdp_ms = 0))
 
-#define INIT_MXICY_MX25R_POWER_MODE(idx)						\
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(idx, mxicy_mx25r_power_mode),			\
-		(.mxicy_mx25r_power_mode = DT_INST_ENUM_IDX(idx, mxicy_mx25r_power_mode)),\
-		(.mxicy_mx25r_power_mode = 0))
+#define INIT_MXICY_MX25R_POWER_MODE(idx)							\
+	.mxicy_mx25r_power_mode = DT_INST_ENUM_IDX_OR(idx, mxicy_mx25r_power_mode, 0)
 
-#define INIT_RESET_GPIOS(idx) \
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(idx, reset_gpios), \
-		(.reset = GPIO_DT_SPEC_INST_GET(idx, reset_gpios)), \
-		(.reset = {0}))
+#define INIT_RESET_GPIOS(idx) .reset = GPIO_DT_SPEC_INST_GET_OR(idx, reset_gpios, {0})
 
 #define INST_CONFIG_STRUCT_GEN(idx)								\
 	DEFINE_PAGE_LAYOUT(idx)									\
