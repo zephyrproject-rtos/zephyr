@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2020 Intel Corporation
+# Copyright (c) 2020-2024 Intel Corporation
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -85,7 +85,8 @@ def test_get_all_testsuites_short(class_testplan, all_testsuites_dict):
                       'test_b.check_1', 'test_b.check_2', 'test_c.check_1',
                       'test_c.check_2', 'test_d.check_1.unit_1a',
                       'test_d.check_1.unit_1b',
-                      'test_e.check_1.1a', 'test_e.check_1.1b',
+                      'test_e.check_1.feature5.1a',
+                      'test_e.check_1.feature5.1b',
                       'test_config.main']
 
     assert sorted(plan.get_all_tests()) == sorted(expected_tests)

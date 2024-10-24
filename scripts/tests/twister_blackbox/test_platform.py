@@ -35,8 +35,8 @@ class TestPlatform:
                 'built_configurations': 2,
                 'failed_configurations': 0,
                 'errored_configurations': 0,
-                'executed_test_cases': 8,
-                'skipped_test_cases': 5,
+                'executed_test_cases': 10,
+                'skipped_test_cases': 6,
                 'platform_count': 3,
                 'executed_on_platform': 4,
                 'only_built': 2
@@ -127,7 +127,7 @@ class TestPlatform:
 
         assert str(sys_exit.value) == '0'
 
-        assert len(filtered_j) == 12
+        assert len(filtered_j) == 14
 
     def test_platform(self, out_path):
         path = os.path.join(TEST_DATA, 'tests', 'dummy')
