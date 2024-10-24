@@ -5,11 +5,16 @@ menuconfig LIS3MDL
 	bool "LIS3MDL magnetometer"
 	default y
 	depends on DT_HAS_ST_LIS3MDL_MAGN_ENABLED
-	select I2C
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ST_LIS3MDL_MAGN),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ST_LIS3MDL_MAGN),spi)
 	help
-	  Enable driver for LIS3MDL I2C-based magnetometer.
+	  Enable driver for LIS3MDL magnetometer.
 
 if LIS3MDL
+
+config LIS3MDL_DIE_TEMP_EN
+	bool "Enable die temperature sensor"
+	default y
 
 choice LIS3MDL_TRIGGER_MODE
 	prompt "Trigger mode"

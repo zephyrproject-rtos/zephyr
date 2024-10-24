@@ -1,0 +1,8 @@
+# Copyright (c) 2024, DeMurlot
+# SPDX-License-Identifier: Apache-2.0
+
+description: STMicroelectronics LIS3MDL magnetometer accessed through I2C bus
+
+compatible: "st,lis3mdl-magn"
+
+include: ["i2c-device.yaml", "st,lis3mdl-magn.yaml"]

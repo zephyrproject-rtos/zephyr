@@ -328,6 +328,14 @@ test_spi_lis2de12: lis2de12@29 {
 	status = "okay";
 };
 
+test_spi_lis3mdl_magn: lis3mdl-magn@30 {
+	compatible = "st,lis3mdl-magn";
+	reg = <0x30>;
+	spi-max-frequency = <0>;
+	irq-gpios = <&test_gpio 0 0>;
+	status = "okay";
+};
+
 test_spi_ens160: ens160@2a {
 	compatible = "sciosense,ens160";
 	reg = <0x2a>;
