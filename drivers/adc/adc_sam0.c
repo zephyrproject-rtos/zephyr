@@ -343,26 +343,52 @@ static int start_read(const struct device *dev,
 	switch (sequence->resolution) {
 	case 8:
 		if (sequence->oversampling) {
-			LOG_ERR("Oversampling requires 12 bit resolution");
+			LOG_ERR("Oversampling requires minimum 13 bit resolution");
 			return -EINVAL;
 		}
-
 		ADC_RESSEL(adc) = ADC_RESSEL_8BIT;
 		break;
 	case 10:
 		if (sequence->oversampling) {
-			LOG_ERR("Oversampling requires 12 bit resolution");
+			LOG_ERR("Oversampling requires minimum 13 bit resolution");
 			return -EINVAL;
 		}
-
 		ADC_RESSEL(adc) = ADC_RESSEL_10BIT;
 		break;
 	case 12:
 		if (sequence->oversampling) {
-			ADC_RESSEL(adc) = ADC_RESSEL_16BIT;
-		} else {
-			ADC_RESSEL(adc) = ADC_RESSEL_12BIT;
+			LOG_ERR("Oversampling requires minimum 13 bit resolution");
+			return -EINVAL;
 		}
+		ADC_RESSEL(adc) = ADC_RESSEL_12BIT;
+		break;
+	case 13:
+		if (sequence->oversampling != 2U) {
+			LOG_ERR("13 bit resolution requires an oversampling of 2");
+			return -EINVAL;
+		}
+		ADC_RESSEL(adc) = ADC_RESSEL_16BIT;
+		break;
+	case 14:
+		if (sequence->oversampling != 4U) {
+			LOG_ERR("14 bit resolution requires an oversampling of 4");
+			return -EINVAL;
+		}
+		ADC_RESSEL(adc) = ADC_RESSEL_16BIT;
+		break;
+	case 15:
+		if (sequence->oversampling != 6U) {
+			LOG_ERR("15 bit resolution requires an oversampling of 6");
+			return -EINVAL;
+		}
+		ADC_RESSEL(adc) = ADC_RESSEL_16BIT;
+		break;
+	case 16:
+		if (sequence->oversampling != 8U) {
+			LOG_ERR("16 bit resolution requires an oversampling of 8");
+			return -EINVAL;
+		}
+		ADC_RESSEL(adc) = ADC_RESSEL_16BIT;
 		break;
 	default:
 		LOG_ERR("ADC resolution value %d is not valid",
