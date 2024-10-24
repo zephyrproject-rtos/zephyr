@@ -16,12 +16,10 @@ properties:
 
   clk-divider:
     type: int
-    required: true
     description: clock divider for the converter
 
   clk-source:
     type: int
-    required: true
     description: source to attach the ADC clock to
 
   voltage-ref:

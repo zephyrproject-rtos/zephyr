@@ -476,7 +476,7 @@
 		min-bus-freq = <400000>;
 	};
 
-	lpadc0: lpadc@13a000 {
+	lpadc0: adc@13a000 {
 		compatible = "nxp,lpc-lpadc";
 		reg = <0x13a000 0x304>;
 		interrupts = <22 0>;

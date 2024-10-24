@@ -19,3 +19,5 @@ supported:
   - spi
   - i2c
   - can
+  - regulator
+  - adc

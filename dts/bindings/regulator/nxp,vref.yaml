@@ -34,6 +34,13 @@ properties:
       Maximum bandgap startup time as specified in the
       appropriate device data sheet, in microseconds.
 
+  nxp,current-compensation-en:
+    type: boolean
+    description: |
+      Enable second-order curvature compensation.
+      This must be enabled to achieve the performance stated in the datasheet.
+      However, the reset value of the peripheral has it disabled.
+
   "#nxp,reference-cells":
     type: int
     const: 1
