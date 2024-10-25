@@ -96,11 +96,16 @@ properties:
     type: string
     required: true
     description: |
-      VBUS measurement divider
+      VBUS measurement divider:
+      "divide-20": External VBUS voltage divider circuit should be 1/20
+                   for EPR application. The divided voltage compares with
+                   200mV to set or clean VBUS Present bit.
+      "divide-10": External VBUS voltage divider circuit should be 1/10
+                   for SPR application. The divided voltage compares with
+                   400mV to set or clean VBUS Present bit.
     enum:
-      - "no-divide"
-      - "divide-10"
       - "divide-20"
+      - "divide-10"
 
   dead-battery:
     type: boolean
