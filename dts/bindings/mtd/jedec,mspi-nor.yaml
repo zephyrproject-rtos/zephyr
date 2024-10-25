@@ -1,0 +1,13 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Generic NOR flash on MSPI bus
+
+compatible: "jedec,mspi-nor"
+
+include: [mspi-device.yaml, "jedec,spi-nor-common.yaml"]
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: RESETn pin

@@ -34,6 +34,8 @@
 
 #if DT_HAS_COMPAT_STATUS_OKAY(jedec_spi_nor)
 #define SPI_FLASH_COMPAT jedec_spi_nor
+#elif DT_HAS_COMPAT_STATUS_OKAY(jedec_mspi_nor)
+#define SPI_FLASH_COMPAT jedec_mspi_nor
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_qspi_nor)
 #define SPI_FLASH_COMPAT st_stm32_qspi_nor
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_ospi_nor)
