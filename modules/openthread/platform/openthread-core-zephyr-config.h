@@ -428,6 +428,16 @@
 #endif
 
 /**
+ * @def OPENTHREAD_CONFIG_PLATFORM_MESSAGE_MANAGEMENT
+ *
+ * The message pool is managed by platform defined logic.
+ *
+ */
+#ifdef CONFIG_OPENTHREAD_PLATFORM_MESSAGE_MANAGEMENT
+#define OPENTHREAD_CONFIG_PLATFORM_MESSAGE_MANAGEMENT CONFIG_OPENTHREAD_PLATFORM_MESSAGE_MANAGEMENT
+#endif
+
+/**
  * @def OPENTHREAD_CONFIG_MAC_STAY_AWAKE_BETWEEN_FRAGMENTS
  *
  * Enable to stay awake between fragments while transmitting a large packet,

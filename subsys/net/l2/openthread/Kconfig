@@ -273,6 +273,11 @@ config OPENTHREAD_MESSAGE_BUFFER_SIZE
 	help
 	  "The size of a message buffer in bytes"
 
+config OPENTHREAD_PLATFORM_MESSAGE_MANAGEMENT
+	bool "Use platform message management"
+	help
+	  The message pool is managed by platform defined logic.
+
 config OPENTHREAD_MAX_STATECHANGE_HANDLERS
 	int "The maximum number of state-changed callback handlers"
 	default 2
