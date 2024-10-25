@@ -60,7 +60,9 @@ struct btp_cap_unicast_audio_update_data {
 #define BTP_CAP_UNICAST_AUDIO_STOP		0x06
 struct btp_cap_unicast_audio_stop_cmd {
 	uint8_t cig_id;
+	uint8_t flags;
 } __packed;
+#define BTP_CAP_UNICAST_AUDIO_STOP_FLAG_RELEASE BIT(0)
 
 #define BTP_CAP_BROADCAST_SOURCE_SETUP_STREAM	0x07
 struct btp_cap_broadcast_source_setup_stream_cmd {
