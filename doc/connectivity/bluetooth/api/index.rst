@@ -34,6 +34,7 @@ Bluetooth LE Audio
    audio/shell/csip.rst
    audio/shell/gmap.rst
    audio/shell/mcp.rst
+   audio/shell/tbs.rst
    audio/shell/tmap.rst
    audio/shell/pbp.rst
 

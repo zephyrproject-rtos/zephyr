@@ -14,5 +14,6 @@ source ${ZEPHYR_BASE}/tests/bsim/compile.source
 run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/audio_samples/bap_broadcast_sink/compile.sh
 run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/audio_samples/bap_unicast_client/compile.sh
 run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/audio_samples/cap/compile.sh
+run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/audio_samples/ccp/compile.sh
 
 wait_for_background_jobs
