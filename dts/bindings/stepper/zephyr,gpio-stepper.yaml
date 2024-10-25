@@ -25,6 +25,7 @@ child-binding:
     - name: stepper-controller.yaml
       property-allowlist:
         - micro-step-res
+        - invert-direction
 
   properties:
     gpios:
