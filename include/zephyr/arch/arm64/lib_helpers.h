@@ -24,8 +24,9 @@
 
 #define write_sysreg(val, reg)						\
 ({									\
+	uint64_t reg_val = val;						\
 	__asm__ volatile ("msr " STRINGIFY(reg) ", %0"			\
-			  :: "r" (val) : "memory");			\
+			  :: "r" (reg_val) : "memory");			\
 })
 
 #define zero_sysreg(reg)						\
