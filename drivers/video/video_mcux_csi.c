@@ -32,25 +32,6 @@ struct video_mcux_csi_data {
 	struct k_poll_signal *signal;
 };
 
-static inline unsigned int video_pix_fmt_bpp(uint32_t pixelformat)
-{
-	switch (pixelformat) {
-	case VIDEO_PIX_FMT_BGGR8:
-	case VIDEO_PIX_FMT_GBRG8:
-	case VIDEO_PIX_FMT_GRBG8:
-	case VIDEO_PIX_FMT_RGGB8:
-		return 1;
-	case VIDEO_PIX_FMT_RGB565:
-	case VIDEO_PIX_FMT_YUYV:
-		return 2;
-	case VIDEO_PIX_FMT_XRGB32:
-	case VIDEO_PIX_FMT_XYUV32:
-		return 4;
-	default:
-		return 0;
-	}
-}
-
 static void __frame_done_cb(CSI_Type *base, csi_handle_t *handle, status_t status, void *user_data)
 {
 	struct video_mcux_csi_data *data = user_data;
@@ -141,7 +122,7 @@ static inline void video_pix_fmt_convert(struct video_format *fmt, bool isGetFmt
 		break;
 	}
 
-	fmt->pitch = fmt->width * video_pix_fmt_bpp(fmt->pixelformat);
+	fmt->pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / 8;
 }
 #endif
 
@@ -150,7 +131,7 @@ static int video_mcux_csi_set_fmt(const struct device *dev, enum video_endpoint_
 {
 	const struct video_mcux_csi_config *config = dev->config;
 	struct video_mcux_csi_data *data = dev->data;
-	unsigned int bpp = video_pix_fmt_bpp(fmt->pixelformat);
+	unsigned int bpp = video_bits_per_pixel(fmt->pixelformat) / 8;
 	status_t ret;
 	struct video_format format = *fmt;
 

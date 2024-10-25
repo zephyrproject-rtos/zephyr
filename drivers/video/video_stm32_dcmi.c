@@ -54,22 +54,6 @@ struct video_stm32_dcmi_config {
 	const struct stream dma;
 };
 
-static inline unsigned int video_pix_fmt_bpp(uint32_t pixelformat)
-{
-	switch (pixelformat) {
-	case VIDEO_PIX_FMT_BGGR8:
-	case VIDEO_PIX_FMT_GBRG8:
-	case VIDEO_PIX_FMT_GRBG8:
-	case VIDEO_PIX_FMT_RGGB8:
-		return 1;
-	case VIDEO_PIX_FMT_RGB565:
-	case VIDEO_PIX_FMT_YUYV:
-		return 2;
-	default:
-		return 0;
-	}
-}
-
 void HAL_DCMI_ErrorCallback(DCMI_HandleTypeDef *hdcmi)
 {
 	LOG_WRN("%s", __func__);
@@ -214,7 +198,7 @@ static int video_stm32_dcmi_set_fmt(const struct device *dev,
 {
 	const struct video_stm32_dcmi_config *config = dev->config;
 	struct video_stm32_dcmi_data *data = dev->data;
-	unsigned int bpp = video_pix_fmt_bpp(fmt->pixelformat);
+	unsigned int bpp = video_bits_per_pixel(fmt->pixelformat) / 8;
 
 	if (bpp == 0 || (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL)) {
 		return -EINVAL;
