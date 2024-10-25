@@ -10,3 +10,13 @@ include: [i2c-controller.yaml, pinctrl-device.yaml, pcie-device.yaml]
 properties:
   interrupts:
     required: true
+
+  lcnt-offset:
+    type: int
+    description: |
+      A fixed offset to apply to the SCL lcnt setting.
+
+  hcnt-offset:
+    type: int
+    description: |
+      A fixed offset to apply to the SCL hcnt setting.
