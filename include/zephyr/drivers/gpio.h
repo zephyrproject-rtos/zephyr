@@ -845,6 +845,8 @@ static inline bool gpio_is_ready_dt(const struct gpio_dt_spec *spec)
  *       not controlled directly by the GPIO module. That is, pins which are
  *       routed to other modules such as I2C, SPI, UART.
  *
+ * @funcprops \isr_ok
+ *
  * @param port Pointer to device structure for the driver instance.
  * @param pin Pin number.
  * @param flags Interrupt configuration flags as defined by GPIO_INT_*.
@@ -926,6 +928,8 @@ static inline int z_impl_gpio_pin_interrupt_configure(const struct device *port,
 
 /**
  * @brief Configure pin interrupts from a @p gpio_dt_spec.
+ *
+ * @funcprops \isr_ok
  *
  * This is equivalent to:
  *
