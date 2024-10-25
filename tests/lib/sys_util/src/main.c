@@ -13,6 +13,73 @@
  * @{
  */
 
+ZTEST(sys_util, test_SCALE)
+{
+	/* Test for a few arbitrary values */
+	zassert_equal(SCALE(3, 0, 10, 0, 100), 30);
+	zassert_equal(SCALE(-3, -10, 0, -100, 0), -30);
+	zassert_equal(SCALE(10, -100, 100, -10, 10), 1);
+	zassert_equal(SCALE(0, -10, 40, -50, 0), -40);
+	zassert_equal(SCALE(0, -128, 127, 0, 2), 1);
+	zassert_equal(SCALE(5, -50, 5000, -1000, 10), -989);
+
+	/* Test for i = 1..60 and o = 60..1 */
+	for (int i = 1; i < 61; i++) {
+		int o = 61 - i;
+		int64_t imin = -(1ll << i);
+		int64_t imax = (1ll << i);
+		int64_t omin = -(1ll << o);
+		int64_t omax = (1ll << o);
+
+		/* Special case: the output range can be [0, 0] */
+
+		zassert_equal(SCALE(imin, imin, imax, 0, 0), 0);
+		zassert_equal(SCALE(0, imin, imax, 0, 0), 0);
+		zassert_equal(SCALE(imax, imin, imax, 0, 0), 0);
+
+		zassert_equal(SCALE(0, 0, imax, 0, 0), 0);
+		zassert_equal(SCALE(imax, 0, imax, 0, 0), 0);
+
+		zassert_equal(SCALE(imin, imin, 0, 0, 0), 0);
+		zassert_equal(SCALE(0, imin, 0, 0, 0), 0);
+
+		/* Test the extreme cases */
+
+		zassert_equal(SCALE(imin, imin, imax, omin, omax), omin);
+		zassert_equal(SCALE(0, imin, imax, omin, omax), 0);
+		zassert_equal(SCALE(imax, imin, imax, omin, omax), omax);
+
+		zassert_equal(SCALE(0, 0, imax, omin, omax), omin);
+		zassert_equal(SCALE(imax, 0, imax, omin, omax), omax);
+
+		zassert_equal(SCALE(imin, imin, 0, omin, omax), omin);
+		zassert_equal(SCALE(0, imin, 0, omin, omax), omax);
+
+		zassert_equal(SCALE(imin, imin, imax, 0, omax), 0);
+		zassert_equal(SCALE(0, imin, imax, 0, omax), omax / 2);
+		zassert_equal(SCALE(imax, imin, imax, 0, omax), omax);
+
+		zassert_equal(SCALE(imin, imin, imax, omin, 0), omin);
+		zassert_equal(SCALE(0, imin, imax, omin, 0), omin / 2);
+		zassert_equal(SCALE(imax, imin, imax, omin, 0), 0);
+
+		zassert_equal(SCALE(0, 0, imax, 0, omax), 0);
+		zassert_equal(SCALE(imax, 0, imax, 0, omax), omax);
+
+		zassert_equal(SCALE(0, 0, imax, omin, 0), omin);
+		zassert_equal(SCALE(imax, 0, imax, omin, 0), 0);
+
+		zassert_equal(SCALE(imin, imin, 0, 0, omax), 0);
+		zassert_equal(SCALE(0, imin, 0, 0, omax), omax);
+
+		zassert_equal(SCALE(imin, imin, 0, omin, 0), omin);
+		zassert_equal(SCALE(0, imin, 0, omin, 0), 0);
+
+		zassert_equal(SCALE(0, 0, imax, 0, omax), 0);
+		zassert_equal(SCALE(imax, 0, imax, 0, omax), omax);
+	}
+}
+
 /**
  * @brief Test wait_for works as expected with typical use cases
  *
@@ -70,7 +137,6 @@ ZTEST(sys_util, test_NUM_VA_ARGS_LESS_1)
 /**
  * @}
  */
-
 
 /**
  * @defgroup sys_util_tests Sys Util Tests

@@ -417,6 +417,30 @@ extern "C" {
 #endif
 
 /**
+ * @brief Linearly maps a value from one scale to another.
+ *
+ * A value is considered to fit on an input range, and is scaled to
+ * the same proportion of the output range.
+ * The ranges are described by their minimum and maximum values.
+ *
+ * @note To avoid an overflow, the number of bits of the input and output range
+ *       must be equal or lower to 61. For instance, an input range with min and max
+ *       values between INT8_MIN and INT8_MAX, then the output range must have
+ *       values within INT53_MIN and INT53_MAX.
+ *
+ * @note The size of the output range can be [0, 0].
+ *       The size of the input range must be greater than 0
+ *
+ * @param i The value to convert from the input range to the output range.
+ * @param imin The minimum value of the input range.
+ * @param imax The maximum value of the input range.
+ * @param omin The minimum value of the output range.
+ * @param omax The maximum value of the output range.
+ */
+#define SCALE(i, imin, imax, omin, omax) \
+	(((int64_t)(i) - (imin)) * ((int64_t)(omax) - (omin)) / ((int64_t)(imax) - (imin)) + (omin))
+
+/**
  * @brief Checks if a value is within range.
  *
  * @note @p val is evaluated twice.
