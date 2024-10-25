@@ -1,0 +1,5 @@
+# Copyright (c) 2024 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_ADAFRUIT_AW9523
+	def_bool $(shields_list_contains,adafruit_aw9523)
