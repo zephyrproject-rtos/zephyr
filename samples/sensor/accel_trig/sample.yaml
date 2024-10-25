@@ -12,6 +12,14 @@ tests:
           \\(\\s*-?[0-9\\.]*,\\s*-?[0-9\\.]*,\\s*-?[0-9\\.]*\\)$"
     integration_platforms:
       - frdm_k64f                       # fxos8700
+    platform_exclude:
+      - sensortile_box
+      - stm32f3_disco
+      - stm32f411e_disco
+      - b_l4s5i_iot01a
+      - disco_l475_iot1
+      - stm32l562e_dk
+      - stm32wb5mm_dk
   sample.sensor.accel_trig.adxl362-trigger:
     harness: console
     tags: sensors
