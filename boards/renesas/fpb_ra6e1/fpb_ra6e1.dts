@@ -7,6 +7,7 @@
 
 #include <renesas/ra/ra6/r7fa6e10f2cfp.dtsi>
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input-event-codes.h>
 
 #include "fpb_ra6e1-pinctrl.dtsi"
 
@@ -33,8 +34,18 @@
 		};
 	};
 
+	buttons {
+		compatible = "gpio-keys";
+		button0: s1 {
+			gpios = <&ioport2 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button switch 1";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
 	aliases {
 		led0 = &led1;
+		sw0 = &button0;
 	};
 };
 
@@ -46,6 +57,10 @@
 		current-speed = <115200>;
 		status = "okay";
 	};
+};
+
+&ioport2 {
+	status = "okay";
 };
 
 &ioport4 {
@@ -79,4 +94,9 @@
 			reg = <0x80000 DT_SIZE_K(512)>;
 		};
 	};
+};
+
+&port_irq1 {
+	interrupts = <41 12>;
+	status = "okay";
 };
