@@ -11,4 +11,4 @@
 #define AM_BSP_GPIO_MSPI1_MUX_SEL 34
 #define AM_BSP_GPIO_MSPI1_MUX_OE  35
 
-#endif  /* __INC_SHIELD_H */
+#endif /* __INC_SHIELD_H */

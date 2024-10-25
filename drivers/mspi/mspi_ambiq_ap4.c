@@ -212,19 +212,9 @@ static am_hal_mspi_dma_boundary_e mspi_set_mem_boundary(uint32_t mem_boundary)
 
 static int mspi_check_mem_size(uint32_t mem_size)
 {
-	uint32_t mem_size_array [] = {
-		DT_SIZE_K(64),
-		DT_SIZE_K(128),
-		DT_SIZE_K(256),
-		DT_SIZE_K(512),
-		DT_SIZE_M(1),
-		DT_SIZE_M(2),
-		DT_SIZE_M(4),
-		DT_SIZE_M(8),
-		DT_SIZE_M(16),
-		DT_SIZE_M(32),
-		DT_SIZE_M(64)
-	};
+	uint32_t mem_size_array[] = {DT_SIZE_K(64), DT_SIZE_K(128), DT_SIZE_K(256), DT_SIZE_K(512),
+				     DT_SIZE_M(1),  DT_SIZE_M(2),   DT_SIZE_M(4),   DT_SIZE_M(8),
+				     DT_SIZE_M(16), DT_SIZE_M(32),  DT_SIZE_M(64)};
 
 	for (int i = 0; i < sizeof(mem_size_array) / sizeof(uint32_t); i++) {
 		if (mem_size == mem_size_array[i]) {
@@ -237,18 +227,11 @@ static int mspi_check_mem_size(uint32_t mem_size)
 
 static am_hal_mspi_ap_size_e mspi_get_mem_apsize(uint32_t mem_size)
 {
-	am_hal_mspi_ap_size_e mem_size_enum_array [] = {
-		AM_HAL_MSPI_AP_SIZE64K,
-		AM_HAL_MSPI_AP_SIZE128K,
-		AM_HAL_MSPI_AP_SIZE256K,
-		AM_HAL_MSPI_AP_SIZE512K,
-		AM_HAL_MSPI_AP_SIZE1M,
-		AM_HAL_MSPI_AP_SIZE2M,
-		AM_HAL_MSPI_AP_SIZE4M,
-		AM_HAL_MSPI_AP_SIZE8M,
-		AM_HAL_MSPI_AP_SIZE16M,
-		AM_HAL_MSPI_AP_SIZE32M,
-		AM_HAL_MSPI_AP_SIZE64M,
+	am_hal_mspi_ap_size_e mem_size_enum_array[] = {
+		AM_HAL_MSPI_AP_SIZE64K,  AM_HAL_MSPI_AP_SIZE128K, AM_HAL_MSPI_AP_SIZE256K,
+		AM_HAL_MSPI_AP_SIZE512K, AM_HAL_MSPI_AP_SIZE1M,   AM_HAL_MSPI_AP_SIZE2M,
+		AM_HAL_MSPI_AP_SIZE4M,   AM_HAL_MSPI_AP_SIZE8M,   AM_HAL_MSPI_AP_SIZE16M,
+		AM_HAL_MSPI_AP_SIZE32M,  AM_HAL_MSPI_AP_SIZE64M,
 	};
 
 	return mem_size_enum_array[mem_size];
@@ -835,14 +818,6 @@ static int mspi_ambiq_dev_config(const struct device *controller, const struct m
 			goto e_return;
 		}
 
-		// if (hal_dev_cfg.eDeviceConfig != AM_HAL_MSPI_FLASH_SERIAL_CE0) {
-		// 	ret = pinctrl_apply_state(cfg->pcfg,
-		// 				  PINCTRL_STATE_PRIV_START + dev_id->dev_idx);
-		// 	if (ret) {
-		// 		goto e_return;
-		// 	}
-		// }
-
 		data->dev_cfg = *dev_cfg;
 		data->dev_id = (struct mspi_dev_id *)dev_id;
 	}
@@ -1008,7 +983,6 @@ static int mspi_ambiq_timing_config(const struct device *controller,
 		hal_dev_cfg.ui8TurnAround = time_cfg->ui8TurnAround;
 	}
 
-	// need a AM_HAL_MSPI_REQ_TIMING_GET in hal
 	timing.ui8RxDQSDelay = time_cfg->ui32RxDQSDelay;
 	timing.ui8Turnaround = hal_dev_cfg.ui8TurnAround;
 
@@ -1451,7 +1425,7 @@ static struct mspi_driver_api mspi_ambiq_driver_api = {
 	{                                                                                          \
 		.scramblingStartAddr = 0,                                                          \
 		.scramblingEndAddr = 0,                                                            \
-		.ui32APBaseAddr = DT_INST_REG_ADDR_BY_IDX(n, 1),                                \
+		.ui32APBaseAddr = DT_INST_REG_ADDR_BY_IDX(n, 1),                                   \
 		.eAPMode = 0,                                                                      \
 		.eAPSize = 0,                                                                      \
 	}
