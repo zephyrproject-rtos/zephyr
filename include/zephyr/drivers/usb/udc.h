@@ -6,7 +6,7 @@
 
 /**
  * @file
- * @brief New USB device controller (UDC) driver API
+ * @brief USB device controller (UDC) driver API
  */
 
 #ifndef ZEPHYR_INCLUDE_UDC_H
@@ -17,6 +17,15 @@
 #include <zephyr/drivers/usb/udc_buf.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/usb/usb_ch9.h>
+
+/**
+ * @brief USB device controller (UDC) API
+ * @defgroup udc_api USB device controller API
+ * @ingroup io_interfaces
+ * @since 3.3
+ * @version 0.2.0
+ * @{
+ */
 
 /**
  * @brief Maximum packet size of control endpoint supported by the controller.
