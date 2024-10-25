@@ -1,9 +1,10 @@
 /*
  * SPDX-FileCopyrightText: Copyright (c) 2024 Carl Zeiss Meditec AG
+ * SPDX-FileCopyrightText: Copyright (c) 2024 Jilay Sandeep Pandya
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT gpio_steppers
+#define DT_DRV_COMPAT zephyr_gpio_steppers
 
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
