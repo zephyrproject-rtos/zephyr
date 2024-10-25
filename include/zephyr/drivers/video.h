@@ -123,7 +123,9 @@ struct video_caps {
 struct video_buffer {
 	/** pointer to driver specific data. */
 	void *driver_data;
-	/** pointer to the start of the buffer. */
+	/** pointer to the start of the buffer header. */
+	uint8_t *header;
+	/** pointer to the start of the buffer active region. */
 	uint8_t *buffer;
 	/** size of the buffer in bytes. */
 	uint32_t size;
@@ -727,6 +729,8 @@ static inline int video_set_signal(const struct device *dev, enum video_endpoint
 	return api->set_signal(dev, ep, signal);
 }
 
+struct video_buffer *z_video_buffer_alloc(size_t header_size, size_t buffer_size, size_t align);
+
 /**
  * @brief Allocate aligned video buffer.
  *
@@ -735,7 +739,26 @@ static inline int video_set_signal(const struct device *dev, enum video_endpoint
  *
  * @retval pointer to allocated video buffer
  */
-struct video_buffer *video_buffer_aligned_alloc(size_t size, size_t align);
+static struct video_buffer *video_buffer_aligned_alloc(size_t size, size_t align)
+{
+	return z_video_buffer_alloc(0, size, align);
+}
+
+/**
+ * @brief Allocate video buffer with a header space available before it.
+ *
+ * This allows to access an extra @c vbuf->header field with @c headroom bytes
+ * before the start of @c vbuf->buffer.
+ *
+ * @param header_size Size available before the payload (in bytes).
+ * @param buffer_size Size of the video buffer payload (in bytes).
+ *
+ * @retval pointer to allocated video buffer
+ */
+static struct video_buffer *video_buffer_header_alloc(size_t header_size, size_t buffer_size)
+{
+	return z_video_buffer_alloc(header_size, buffer_size, sizeof(void *));
+}
 
 /**
  * @brief Allocate video buffer.
@@ -744,7 +767,10 @@ struct video_buffer *video_buffer_aligned_alloc(size_t size, size_t align);
  *
  * @retval pointer to allocated video buffer
  */
-struct video_buffer *video_buffer_alloc(size_t size);
+static struct video_buffer *video_buffer_alloc(size_t size)
+{
+	return z_video_buffer_alloc(0, size, sizeof(void *));
+}
 
 /**
  * @brief Release a video buffer.
