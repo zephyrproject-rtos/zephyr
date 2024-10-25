@@ -204,7 +204,7 @@ int main(void)
 	}
 
 	if (i != MAX_ITERATIONS) {
-		printk("Error: Something went wrong at iteration %u rc=%d\n", i - 1, rc);
+		printk("Error: Something went wrong at iteration %u rc=%d\n", i, rc);
 		return 0;
 	}
 
@@ -261,6 +261,13 @@ int main(void)
 		return 0;
 	}
 	printk("Free space in storage is %u bytes\n", free_space);
+
+	/* Let's clean the storage now */
+	rc = zms_clear(&fs);
+	if (rc < 0) {
+		printk("Error while cleaning the storage, rc=%d\n", rc);
+	}
+
 	printk("Sample code finished Successfully\n");
 
 	return 0;

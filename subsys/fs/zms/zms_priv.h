@@ -1,9 +1,10 @@
-/*  ZMS: Zephyr Memory Storage
- *
- * Copyright (c) 2024 BayLibre SAS
+/* Copyright (c) 2024 BayLibre SAS
  *
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * ZMS: Zephyr Memory Storage
  */
+
 #ifndef __ZMS_PRIV_H_
 #define __ZMS_PRIV_H_
 
@@ -46,8 +47,8 @@ extern "C" {
 struct zms_ate {
 	uint8_t crc8;      /* crc8 check of the entry */
 	uint8_t cycle_cnt; /* cycle counter for non erasable devices */
-	uint32_t id;       /* data id */
 	uint16_t len;      /* data len within sector */
+	uint32_t id;       /* data id */
 	union {
 		uint8_t data[8]; /* used to store small size data */
 		struct {

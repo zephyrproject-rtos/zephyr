@@ -1,8 +1,8 @@
-#Zephyr Memory Storage ZMS
-
 #Copyright (c) 2024 BayLibre SAS
 
 #SPDX-License-Identifier: Apache-2.0
+
+#Zephyr Memory Storage ZMS
 
 config ZMS
 	bool "Zephyr Memory Storage"

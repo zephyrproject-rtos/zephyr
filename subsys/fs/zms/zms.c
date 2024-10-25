@@ -1,8 +1,8 @@
-/*  ZMS: Zephyr Memory Storage
- *
- * Copyright (c) 2024 BayLibre SAS
+/* Copyright (c) 2024 BayLibre SAS
  *
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * ZMS: Zephyr Memory Storage
  */
 
 #include <string.h>
@@ -118,7 +118,8 @@ static inline size_t zms_al_size(struct zms_fs *fs, size_t len)
 	if (write_block_size <= 1U) {
 		return len;
 	}
-	return (len + (write_block_size - 1U)) & ~(write_block_size - 1U);
+
+	return ROUND_UP(len, write_block_size);
 }
 
 /* Helper to get empty ATE address */
@@ -149,7 +150,7 @@ static int zms_flash_al_wrt(struct zms_fs *fs, uint64_t addr, const void *data, 
 
 	offset = zms_addr_to_offset(fs, addr);
 
-	blen = len & ~(fs->flash_parameters->write_block_size - 1U);
+	blen = ROUND_DOWN(len, fs->flash_parameters->write_block_size);
 	if (blen > 0) {
 		rc = flash_write(fs->flash_device, offset, data8, blen);
 		if (rc) {
@@ -234,7 +235,7 @@ static int zms_flash_block_cmp(struct zms_fs *fs, uint64_t addr, const void *dat
 	size_t bytes_to_cmp, block_size;
 	uint8_t buf[ZMS_BLOCK_SIZE];
 
-	block_size = ZMS_BLOCK_SIZE & ~(fs->flash_parameters->write_block_size - 1U);
+	block_size = ROUND_DOWN(ZMS_BLOCK_SIZE, fs->flash_parameters->write_block_size);
 
 	while (len) {
 		bytes_to_cmp = MIN(block_size, len);
@@ -263,7 +264,7 @@ static int zms_flash_cmp_const(struct zms_fs *fs, uint64_t addr, uint8_t value, 
 	size_t bytes_to_cmp, block_size;
 	uint8_t cmp[ZMS_BLOCK_SIZE];
 
-	block_size = ZMS_BLOCK_SIZE & ~(fs->flash_parameters->write_block_size - 1U);
+	block_size = ROUND_DOWN(ZMS_BLOCK_SIZE, fs->flash_parameters->write_block_size);
 
 	(void)memset(cmp, value, block_size);
 	while (len) {
@@ -287,7 +288,7 @@ static int zms_flash_block_move(struct zms_fs *fs, uint64_t addr, size_t len)
 	size_t bytes_to_copy, block_size;
 	uint8_t buf[ZMS_BLOCK_SIZE];
 
-	block_size = ZMS_BLOCK_SIZE & ~(fs->flash_parameters->write_block_size - 1U);
+	block_size = ROUND_DOWN(ZMS_BLOCK_SIZE, fs->flash_parameters->write_block_size);
 
 	while (len) {
 		bytes_to_copy = MIN(block_size, len);
@@ -371,17 +372,17 @@ static int zms_ate_crc8_check(const struct zms_ate *entry)
 	return 1;
 }
 
-/* zms_ate_valid validates an ate:
- *     return 1 if crc8 and cycle_cnt valid,
- *            0 otherwise
+/* zms_ate_valid validates an ate in the current sector by checking if the ate crc is valid
+ * and its cycle cnt matches the cycle cnt of the active sector
+ *
+ * return 1 if ATE is valid,
+ *        0 otherwise
+ *
+ * see: zms_ate_valid_different_sector
  */
 static int zms_ate_valid(struct zms_fs *fs, const struct zms_ate *entry)
 {
-	if ((fs->sector_cycle != entry->cycle_cnt) || zms_ate_crc8_check(entry)) {
-		return 0;
-	}
-
-	return 1;
+	return zms_ate_valid_different_sector(fs, entry, fs->sector_cycle);
 }
 
 /* zms_ate_valid_different_sector validates an ate that is in a different
@@ -422,10 +423,11 @@ static inline int zms_get_cycle_on_sector_change(struct zms_fs *fs, uint64_t add
 	return 0;
 }
 
-/* zms_close_ate_valid validates an sector close ate: a valid sector close ate:
- * - valid ate
- * - len = 0 and id = ZMS_HEAD_ID
- * - offset points to location at ate multiple from sector size
+/* zms_close_ate_valid validates a sector close ate.
+ * A valid sector close ate should be:
+ * - a valid ate
+ * - with len = 0 and id = ZMS_HEAD_ID
+ * - and offset points to location at ate multiple from sector size
  * return true if valid, false otherwise
  */
 static bool zms_close_ate_valid(struct zms_fs *fs, const struct zms_ate *entry)
@@ -434,9 +436,10 @@ static bool zms_close_ate_valid(struct zms_fs *fs, const struct zms_ate *entry)
 		(entry->id == ZMS_HEAD_ID) && !((fs->sector_size - entry->offset) % fs->ate_size));
 }
 
-/* zms_empty_ate_valid validates an sector empty ate: a valid sector empty ate:
- * - valid ate
- * - len = 0xffff and id = 0xffffffff
+/* zms_empty_ate_valid validates an sector empty ate.
+ * A valid sector empty ate should be:
+ * - a valid ate
+ * - with len = 0xffff and id = 0xffffffff
  * return true if valid, false otherwise
  */
 static bool zms_empty_ate_valid(struct zms_fs *fs, const struct zms_ate *entry)
@@ -1299,7 +1302,7 @@ int zms_mount(struct zms_fs *fs)
 	}
 
 	fs->ate_size = zms_al_size(fs, sizeof(struct zms_ate));
-	write_block_size = flash_get_write_block_size(fs->flash_device);
+	write_block_size = fs->flash_parameters->write_block_size;
 
 	/* check that the write block size is supported */
 	if (write_block_size > ZMS_BLOCK_SIZE || write_block_size == 0) {
@@ -1718,7 +1721,7 @@ ssize_t zms_calc_free_space(struct zms_fs *fs)
 	return free_space;
 }
 
-size_t zms_sector_max_data_size(struct zms_fs *fs)
+size_t zms_active_sector_free_space(struct zms_fs *fs)
 {
 	if (!fs->ready) {
 		LOG_ERR("ZMS not initialized");
