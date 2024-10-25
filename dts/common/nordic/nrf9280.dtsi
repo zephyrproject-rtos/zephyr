@@ -113,14 +113,12 @@
 			compatible = "nordic,nrf-uicr-v2";
 			reg = <0xfff8000 DT_SIZE_K(2)>;
 			domain = <2>;
-			ptr-ext-uicr = <&cpuapp_uicr_ext>;
 		};
 
 		cpurad_uicr: uicr@fffa000 {
 			compatible = "nordic,nrf-uicr-v2";
 			reg = <0xfffa000 DT_SIZE_K(2)>;
 			domain = <3>;
-			ptr-ext-uicr = <&cpurad_uicr_ext>;
 		};
 
 		ficr: ficr@fffe000 {
