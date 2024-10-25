@@ -371,13 +371,15 @@ At the first run, when Windows asks, enable connection through firewall:
 Troubleshooting
 ****************
 
-- "After running one test, I need to restart my Windows virtual machine to run another, because of fail verdict from APICOM in PTS logs."
+After running one test, I need to restart my Windows virtual machine to run another, because of fail verdict from APICOM in PTS logs
+====================================================================================================================================
 
 It means your virtual machine has not enough processor cores or memory. Try to add more in
 settings. Note that a host with 4 CPUs could be not enough with VirtualBox as hypervisor.
 In this case, choose rather VMWare Workstation.
 
-- "I cannot start autoptsserver-zephyr.py. I always got error:"
+I cannot start autoptsserver-zephyr.py. I always get a Python error
+===================================================================
 
 .. image:: autoptsserver_typical_error.png
    :height: 300
@@ -393,3 +395,18 @@ One or more of the following steps should help:
 - Delete temporary workspace. You will find it in auto-pts-code/workspaces/zephyr/zephyr-master/ as temp_zephyr-master. Be careful, do not remove the original one zephyr-master.pqw6.
 
 - Restart Windows virtual machine.
+
+The PTS automation window keeps opening and closing
+===================================================
+
+This indicates that it fails to capture a PTS dongle.
+If the AutoPTS server is able to find and use a PTS dongle,
+then the title of the window will show the Bluetooth address of the dongle.
+If this does not happen then ensure that the dongle is plugged in, updated and recognized by PTS.
+
+.. image:: pts_automation_window.png
+   :width: 500
+   :align: center
+
+If it still fails to run tests after this,
+please ensure that the Bluetooth Protocol Viewer is installed.
