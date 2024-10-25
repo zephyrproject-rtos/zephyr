@@ -25,7 +25,9 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(uart_nrfx_uarte, CONFIG_UART_LOG_LEVEL);
 
+#if !defined(CONFIG_ARCH_POSIX)
 #define RX_FLUSH_WORKAROUND 1
+#endif
 
 #define UARTE(idx)                DT_NODELABEL(uart##idx)
 #define UARTE_HAS_PROP(idx, prop) DT_NODE_HAS_PROP(UARTE(idx), prop)
@@ -695,9 +697,6 @@ static void uarte_disable_locked(const struct device *dev, uint32_t dis_mask, ui
 
 	nrf_uarte_disable(get_uarte_instance(dev));
 }
-#endif
-
-#ifdef UARTE_ANY_ASYNC
 
 static void rx_timeout(struct k_timer *timer);
 static void tx_timeout(struct k_timer *timer);
@@ -1437,85 +1436,45 @@ static void endrx_isr(const struct device *dev)
 #endif
 }
 
-/* Function for flushing internal RX fifo. Function can be called in case
- * flushed data is discarded or when data is valid and needs to be retrieved.
+/** @brief RX FIFO flushing
  *
- * However, UARTE does not update RXAMOUNT register if fifo is empty. Old value
- * remains. In certain cases it makes it impossible to distinguish between
- * case when fifo was empty and not. Function is trying to minimize chances of
- * error with following measures:
- * - RXAMOUNT is read before flushing and compared against value after flushing
- *   if they differ it indicates that data was flushed
- * - user buffer is dirtied and if RXAMOUNT did not changed it is checked if
- *   it is still dirty. If not then it indicates that data was flushed
- *
- * In other cases function indicates that fifo was empty. It means that if
- * number of bytes in the fifo equal last rx transfer length and data is equal
- * to dirty marker it will be discarded.
+ * Due to the HW bug which does not update RX.AMOUNT register when FIFO was empty
+ * a workaround is applied which checks RXSTARTED event. If that event is set it
+ * means that FIFO was not empty.
  *
  * @param dev Device.
- * @param buf Buffer for flushed data, null indicates that flushed data can be
- *	      dropped but we still want to get amount of data flushed.
- * @param len Buffer size, not used if @p buf is null.
  *
  * @return number of bytes flushed from the fifo.
  */
-
-static uint8_t rx_flush(const struct device *dev, uint8_t *buf)
+static uint8_t rx_flush(const struct device *dev)
 {
-	/* Flushing RX fifo requires buffer bigger than 4 bytes to empty fifo*/
-	static const uint8_t dirty = CONFIG_UART_NRFX_UARTE_RX_FLUSH_MAGIC_BYTE;
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 	const struct uarte_nrfx_config *config = dev->config;
-	uint32_t prev_rx_amount;
 	uint32_t rx_amount;
 
-	if (IS_ENABLED(RX_FLUSH_WORKAROUND)) {
-		memset(buf, dirty, UARTE_HW_RX_FIFO_SIZE);
-		if (IS_ENABLED(UARTE_ANY_CACHE) && (config->flags & UARTE_CFG_FLAG_CACHEABLE)) {
-			sys_cache_data_flush_range(buf, UARTE_HW_RX_FIFO_SIZE);
-		}
-		prev_rx_amount = nrf_uarte_rx_amount_get(uarte);
-	} else {
-		prev_rx_amount = 0;
-	}
-
-	nrf_uarte_rx_buffer_set(uarte, buf, UARTE_HW_RX_FIFO_SIZE);
-	/* Final part of handling RXTO event is in ENDRX interrupt
-	 * handler. ENDRX is generated as a result of FLUSHRX task.
-	 */
-	nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_ENDRX);
+	nrf_uarte_rx_buffer_set(uarte, config->rx_flush_buf, UARTE_HW_RX_FIFO_SIZE);
 	nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_FLUSHRX);
 	while (!nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_ENDRX)) {
 		/* empty */
 	}
 	nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_ENDRX);
-	nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXSTARTED);
 
-	rx_amount = nrf_uarte_rx_amount_get(uarte);
-	if (!buf || !IS_ENABLED(RX_FLUSH_WORKAROUND)) {
-		return rx_amount;
+	if (!IS_ENABLED(RX_FLUSH_WORKAROUND)) {
+		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXSTARTED);
+		rx_amount = nrf_uarte_rx_amount_get(uarte);
+	} else if (nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_RXSTARTED)) {
+		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXSTARTED);
+		rx_amount = nrf_uarte_rx_amount_get(uarte);
+	} else {
+		rx_amount = 0;
 	}
 
-	if (rx_amount != prev_rx_amount) {
-		return rx_amount;
+	if (IS_ENABLED(UARTE_ANY_CACHE) && (config->flags & UARTE_CFG_FLAG_CACHEABLE) &&
+	    rx_amount) {
+		sys_cache_data_invd_range(config->rx_flush_buf, rx_amount);
 	}
 
-	if (rx_amount > UARTE_HW_RX_FIFO_SIZE) {
-		return 0;
-	}
-
-	if (IS_ENABLED(UARTE_ANY_CACHE) && (config->flags & UARTE_CFG_FLAG_CACHEABLE)) {
-		sys_cache_data_invd_range(buf, UARTE_HW_RX_FIFO_SIZE);
-	}
-
-	for (int i = 0; i < rx_amount; i++) {
-		if (buf[i] != dirty) {
-			return rx_amount;
-		}
-	}
-
-	return 0;
+	return rx_amount;
 }
 
 /* This handler is called when the receiver is stopped. If rx was aborted
@@ -1549,17 +1508,14 @@ static void rxto_isr(const struct device *dev)
 		async_rx->discard_fifo = false;
 #if !defined(CONFIG_UART_NRFX_UARTE_ENHANCED_RX)
 		if (HW_RX_COUNTING_ENABLED(config)) {
-			uint8_t buf[UARTE_HW_RX_FIFO_SIZE];
-
 			/* It need to be included because TIMER+PPI got RXDRDY events
 			 * and counted those flushed bytes.
 			 */
-			async_rx->total_user_byte_cnt += rx_flush(dev, buf);
-			(void)buf;
+			async_rx->total_user_byte_cnt += rx_flush(dev);
 		}
 #endif
 	} else {
-		async_rx->flush_cnt = rx_flush(dev, config->rx_flush_buf);
+		async_rx->flush_cnt = rx_flush(dev);
 	}
 
 #ifdef CONFIG_UART_NRFX_UARTE_ENHANCED_RX
