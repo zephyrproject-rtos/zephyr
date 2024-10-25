@@ -357,13 +357,6 @@ static int memc_mspi_aps256n_init(const struct device *psram)
 	struct mspi_dev_cfg lcl_dev_cfg = cfg->tar_dev_cfg;
 	int ret = 0;
 
-#define AM_BSP_GPIO_MSPI1_MUX_SEL 34
-#define AM_BSP_GPIO_MSPI1_MUX_OE  35
-	am_hal_gpio_pinconfig(AM_BSP_GPIO_MSPI1_MUX_SEL, am_hal_gpio_pincfg_output);
-	am_hal_gpio_pinconfig(AM_BSP_GPIO_MSPI1_MUX_OE, am_hal_gpio_pincfg_output);
-	am_hal_gpio_state_write(AM_BSP_GPIO_MSPI1_MUX_SEL, AM_HAL_GPIO_OUTPUT_SET);
-	am_hal_gpio_state_write(AM_BSP_GPIO_MSPI1_MUX_OE, AM_HAL_GPIO_OUTPUT_CLEAR);
-
 	if (!device_is_ready(cfg->bus)) {
 		LOG_ERR("Controller device is not ready");
 		ret = -ENODEV;
