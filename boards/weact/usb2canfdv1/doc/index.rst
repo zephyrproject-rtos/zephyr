@@ -34,7 +34,7 @@ The ``usb2canfdv1`` board configuration supports the following hardware features
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/weact/usb2canfd/usb2canfdv1_defconfig`.
+:zephyr_file:`boards/weact/usb2canfdv1/usb2canfdv1_defconfig`.
 
 Other hardware features are not currently supported by the port.
 
