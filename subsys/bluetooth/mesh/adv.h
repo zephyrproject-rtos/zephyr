@@ -123,4 +123,6 @@ int bt_mesh_scan_active_set(bool active);
 int bt_mesh_adv_bt_data_send(uint8_t num_events, uint16_t adv_interval,
 			     const struct bt_data *ad, size_t ad_len);
 
+int bt_mesh_wq_submit(struct k_work *work);
+
 #endif /* ZEPHYR_SUBSYS_BLUETOOTH_MESH_ADV_H_ */
