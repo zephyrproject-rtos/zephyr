@@ -28,7 +28,8 @@ static void lvgl_encoder_process_event(struct input_event *evt, void *user_data)
 	if (evt->code == cfg->rotation_input_code) {
 		data->pending_event.enc_diff = evt->value;
 	} else if (evt->code == cfg->button_input_code) {
-		data->pending_event.state = evt->value ? LV_INDEV_STATE_PR : LV_INDEV_STATE_REL;
+		data->pending_event.state =
+			evt->value ? LV_INDEV_STATE_PRESSED : LV_INDEV_STATE_RELEASED;
 		data->pending_event.enc_diff = 0;
 		data->pending_event.key = LV_KEY_ENTER;
 	} else {
