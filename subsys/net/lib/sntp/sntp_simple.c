@@ -41,6 +41,16 @@ static int sntp_simple_helper(struct sockaddr *addr, socklen_t addr_len, uint32_
 		if (iter_timeout < 1000) {
 			iter_timeout *= 2;
 		}
+
+		/* The context needs to be reopened (to have a new source port in the UDP packet)
+		 * to prevent receiving response packets from previous attempts.
+		 */
+		sntp_close(&sntp_ctx);
+
+		res = sntp_init(&sntp_ctx, addr, addr_len);
+		if (res < 0) {
+			break;
+		}
 	}
 
 	sntp_close(&sntp_ctx);
