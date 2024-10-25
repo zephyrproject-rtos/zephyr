@@ -1,0 +1,32 @@
+# Copyright (c) 2024 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config TELINK_W91_N22_HART
+	int "N22 HART ID"
+	default 1
+	help
+		This option sets N22 HART ID.
+
+config TELINK_W91_FETCH_N22_BIN
+	bool "Fetch N22 binary after build"
+	default y
+	help
+		This option fetching N22 binary after build.
+
+config TELINK_W91_FETCH_N22_BIN_REVISION
+	string "N22 binaries revision"
+	default "0000000000000000000000000000000000000001"
+	depends on TELINK_W91_FETCH_N22_BIN
+	help
+		This option sets N22 binary revision.
+
+config TELINK_W91_N22_PARTITION_ADDR
+	hex "N22 partition address"
+	default $(dt_node_reg_addr_hex,$(dt_nodelabel_path,n22_partition),0)
+
+config TELINK_W91_N22_MATTER_OTA_LAYOUT
+	bool "Support Matter dual core OTA"
+	depends on TELINK_W91_FETCH_N22_BIN
+	default n
+	help
+		This option enables support Matter dual core OTA

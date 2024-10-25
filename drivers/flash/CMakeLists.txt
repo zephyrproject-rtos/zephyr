@@ -18,6 +18,7 @@ zephyr_library()
 
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_CC13XX_CC26XX soc_flash_cc13xx_cc26xx.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_TELINK_B9X soc_flash_b9x.c)
+zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_TELINK_W91 soc_flash_w91.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_NOR spi_nor.c)
 zephyr_library_sources_ifdef(CONFIG_NORDIC_QSPI_NOR nrf_qspi_nor.c)
 if(CONFIG_FLASH_SIMULATOR)

@@ -1,0 +1,96 @@
+/*
+ * Copyright (c) 2024 Telink Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/w91-pinctrl.h>
+
+&pinctrl {
+	/* Set pad-mul-sel register value.
+	 * Note: Pins functions below (pinmux = <...>) depend on this value.
+	 */
+	pad-mul-sel = <1>;
+
+	/* UART2: TX(P16), RX(P15), RTS(P18), CTS(P17) */
+
+	uart2_tx_p16_default: uart2_tx_p16_default {
+		pinmux = <W91_PINMUX_SET(W91_PIN_16, W91_FUNC_UART2_TXD)>;
+	};
+	uart2_rx_p15_default: uart2_rx_p15_default {
+		pinmux = <W91_PINMUX_SET(W91_PIN_15, W91_FUNC_UART2_RXD)>;
+	};
+	uart2_rts_p18_default: uart2_rts_p18_default {
+		pinmux = <W91_PINMUX_SET(W91_PIN_18, W91_FUNC_UART2_RTS)>;
+	};
+	uart2_cts_p17_default: uart2_cts_p17_default {
+		pinmux = <W91_PINMUX_SET(W91_PIN_17, W91_FUNC_UART2_CTS)>;
+	};
+
+	/* SPI1: CS(P15), CLK(P16), MOSI(P17), MISO(P18) */
+	spi1_cs_default: spi1_cs_default {
+		pinmux = <W91_PINMUX_SET(W91_PIN_15, W91_FUNC_SPI1_CS)>;
+	};
+	spi1_clk_default: spi1_clk_default {
+		pinmux = <W91_PINMUX_SET(W91_PIN_16, W91_FUNC_SPI1_CLK)>;
+	};
+	spi1_mosi_default: spi1_mosi_default {
+		pinmux = <W91_PINMUX_SET(W91_PIN_17, W91_FUNC_SPI1_MOSI)>;
+	};
+	spi1_miso_default: spi1_miso_default {
+		pinmux = <W91_PINMUX_SET(W91_PIN_18, W91_FUNC_SPI1_MISO)>;
+	};
+
+	/* SPI2: CS(P21), CLK(P22), MOSI(P23), MISO(P24) */
+	spi2_cs_default: spi2_cs_default {
+		pinmux = <W91_PINMUX_SET(W91_PIN_21, W91_FUNC_SPI2_CS)>;
+	};
+	spi2_clk_default: spi2_clk_default {
+		pinmux = <W91_PINMUX_SET(W91_PIN_22, W91_FUNC_SPI2_CLK)>;
+	};
+	spi2_mosi_default: spi2_mosi_default {
+		pinmux = <W91_PINMUX_SET(W91_PIN_23, W91_FUNC_SPI2_MOSI)>;
+	};
+	spi2_miso_default: spi2_miso_default {
+		pinmux = <W91_PINMUX_SET(W91_PIN_24, W91_FUNC_SPI2_MISO)>;
+	};
+
+	/* I2C0 */
+	i2c0_scl_default: i2c0_scl_default {
+		pinmux = <W91_PINMUX_SET(W91_PIN_15, W91_FUNC_I2C0_SCL)>;
+	};
+	i2c0_sda_default: i2c0_sda_default {
+		pinmux = <W91_PINMUX_SET(W91_PIN_16, W91_FUNC_I2C0_SDA)>;
+	};
+	/* PWM Channel 0 (P15) */
+
+	pwm_ch0_p15_default: pwm_ch0_p15_default {
+		pinmux = <W91_PINMUX_SET(W91_PIN_15, W91_FUNC_PWM_0)>;
+	};
+	/* PWM Channel 1 (P16) */
+
+	pwm_ch1_p16_default: pwm_ch1_p16_default {
+		pinmux = <W91_PINMUX_SET(W91_PIN_16, W91_FUNC_PWM_1)>;
+	};
+	/* PWM Channel 2 (P17) */
+
+	pwm_ch2_p17_default: pwm_ch2_p17_default {
+		pinmux = <W91_PINMUX_SET(W91_PIN_17, W91_FUNC_PWM_2)>;
+	};
+	/* PWM Channel 3 (P18) */
+
+	pwm_ch3_p18_default: pwm_ch3_p18_default {
+		pinmux = <W91_PINMUX_SET(W91_PIN_18, W91_FUNC_PWM_3)>;
+	};
+	/* PWM Channel 4 (P20) */
+
+	pwm_ch4_p20_default: pwm_ch4_p20_default {
+		pinmux = <W91_PINMUX_SET(W91_PIN_20, W91_FUNC_PWM_5)>;
+	};
+
+	/* Define ADC pins */
+
+	adc_ch0_p7_default: adc_ch0_p7_default {
+		pinmux = <W91_PINMUX_SET(W91_PIN_7, W91_FUNC_DEFAULT)>;
+	};
+};

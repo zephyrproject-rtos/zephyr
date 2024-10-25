@@ -1,0 +1,10 @@
+# Copyright (c) 2022-2023 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_TELINK_W91
+	bool "Telink Semiconductor W91 ADC driver"
+	default y
+	depends on DT_HAS_TELINK_W91_ADC_ENABLED
+	select ADC_CONFIGURABLE_INPUTS
+	help
+	  Enables Telink W91 ADC driver.

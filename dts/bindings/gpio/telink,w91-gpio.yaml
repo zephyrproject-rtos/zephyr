@@ -1,0 +1,19 @@
+# Copyright (c) 2024, Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+description: Telink W91 GPIO node
+
+compatible: "telink,w91-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  "#gpio-cells":
+    const: 2
+
+  ngpios:
+    required: true
+
+gpio-cells:
+  - pin
+  - flags

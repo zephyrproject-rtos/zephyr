@@ -1,0 +1,18 @@
+# Copyright (c) 2024 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config TELINK_W91_CORE_HEARTBEAT
+	bool "Telink W91 intercore heartbeat"
+	default y
+	help
+		This option enables Telink W91 heartbeat messages between cores.
+
+if TELINK_W91_CORE_HEARTBEAT
+
+config CORE_HEARTBEAT_TELINK_W91_TIMEOUT_MS
+	int "Heartbeat signal interval, ms"
+	default 2000
+	help
+	  This option sets heartbeat timeout in mS.
+
+endif # TELINK_W91_CORE_HEARTBEAT

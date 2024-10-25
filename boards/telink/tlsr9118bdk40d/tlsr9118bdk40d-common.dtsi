@@ -1,0 +1,174 @@
+/*
+ * Copyright (c) 2024 Telink Semiconductor
+ * Copyright (c) 2024 Telink Semiconductor (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <freq.h>
+#include <telink/telink_w91.dtsi>
+#include "tlsr9118bdk40d-pinctrl.dtsi"
+
+/ {
+	model = "telink,w91";
+	compatible = "telink,tlsr9118bdk40d";
+
+	aliases {
+		led0 = &led_green;
+		sw0 = &key_1;
+		sw1 = &key_2;
+		pwm-led0 = &pwm_led_red;
+		pwm-0 = &pwm0;
+		watchdog0 = &wdt;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_green: led_1 {
+			gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;
+			label = "LED Green";
+		};
+	};
+
+	pwm_leds {
+		compatible = "pwm-leds";
+
+		pwm_led_red: pwm_led_0 {
+			pwms = <&pwm0 4 PWM_MSEC(1) PWM_POLARITY_NORMAL>;
+			label = "PWM LED Red";
+		};
+	};
+
+	/* Short TL_Key1 (J20 pin 11) to ground (J20 pin 25-35) */
+	keys {
+		compatible = "gpio-keys";
+
+		key_1: button_1 {
+			label = "User KEY1";
+			gpios = <&gpio0 16 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		};
+
+		key_2: button_2 {
+			label = "User KEY2";
+			gpios = <&gpio0 15 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		};
+	};
+
+	chosen {
+/* Note: use RAM_DLM for ".ram_dlm" when a shared SRAM will be used for "zephyr,sram" */
+		zephyr,sram = &ram_dlm;
+		zephyr,flash = &flash;
+		zephyr,flash-controller = &flash_mspi;
+		telink,ipc-interface = &ipc0;
+		zephyr,entropy = &trng0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &bt_hci;
+	};
+};
+
+&cpu0 {
+	clock-frequency = <160000000>;
+};
+
+&flash {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x20000>;
+		};
+		slot0_partition: partition@20000 {
+			label = "image-0";
+			reg = <0x20000 0x120000>;
+		};
+		n22_partition: partition@140000 { // Don't change n22_partition
+			label = "image-n22";
+			reg = <0x140000 0xc7000>;
+		};
+		slot1_partition: partition@207000 {
+			label = "image-1";
+			reg = <0x207000 0x120000>;
+		};
+		scratch_partition: partition@327000 {
+			label = "image-scratch";
+			reg = <0x327000 0x4000>;
+		};
+		storage_partition: partition@32b000 {
+			label = "storage";
+			reg = <0x32b000 0xa000>;
+		};
+		vendor_partition: partition@3fe000 {
+			label = "vendor-data";
+			reg = <0x3fe000 0x2000>;
+		};
+	};
+};
+
+&wifi {
+	status = "okay";
+};
+
+&bt_hci {
+	status = "okay";
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c0_scl_default &i2c0_sda_default>;
+	pinctrl-names = "default";
+};
+
+&spi1 {
+	status = "okay";
+	pinctrl-0 = <&spi1_cs_default &spi1_clk_default &spi1_miso_default &spi1_mosi_default>;
+	pinctrl-names = "default";
+};
+
+&pwm0 {
+	status = "okay";
+	pinctrl-ch4 = <&pwm_ch4_p20_default>;
+};
+
+&uart2 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart2_tx_p16_default &uart2_rx_p15_default>;
+	pinctrl-names = "default";
+};
+
+&adc {
+	status = "okay";
+	pinctrl-0 = <&adc_ch0_p7_default>;
+	pinctrl-names = "default";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+		zephyr,input-positive = <ADC_SINGLE_CH_5>;
+	};
+};
+
+&wdt {
+	status = "okay";
+};

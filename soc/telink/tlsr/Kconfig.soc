@@ -1,6 +1,41 @@
 # Copyright (c) 2024 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+choice
+	prompt "Telink SoCs implementation"
+	default SOC_RISCV_TELINK_NONE
+
+config SOC_RISCV_TELINK_NONE
+	bool "Telink B91 SoC implementation"
+	help
+	  Telink SOC deselected
+
+config SOC_RISCV_TELINK_B91
+	bool "Telink B91 SoC implementation"
+	select SOC_RISCV_TELINK_B9X
+	help
+	  Telink B91
+
+config SOC_RISCV_TELINK_B92
+	bool "Telink B92 SoC implementation"
+	select SOC_RISCV_TELINK_B9X
+	help
+	  Telink B92
+
+config SOC_RISCV_TELINK_B95
+	bool "Telink B95 SoC implementation"
+	select SOC_RISCV_TELINK_B9X
+	help
+	  Telink B95
+
+config SOC_RISCV_TELINK_W91
+	bool "Telink W91 SoC implementation"
+	select SOC_RISCV_TELINK_W9X
+	help
+	  Telink W91
+
+endchoice
+
 config SOC_FAMILY_TELINK_TLSR
 	bool
 

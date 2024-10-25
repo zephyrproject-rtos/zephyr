@@ -152,6 +152,8 @@ comment "Serial Drivers"
 
 rsource "Kconfig.b9x"
 
+rsource "Kconfig.w91"
+
 rsource "Kconfig.ns16550"
 
 rsource "Kconfig.mcux"

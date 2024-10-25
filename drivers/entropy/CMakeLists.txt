@@ -5,6 +5,7 @@ zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/entropy.h)
 zephyr_library()
 
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_TELINK_B9X_TRNG    entropy_b9x_trng.c)
+zephyr_library_sources_ifdef(CONFIG_ENTROPY_TELINK_W91_TRNG    entropy_w91_trng.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_CC13XX_CC26XX_RNG  entropy_cc13xx_cc26xx.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_ESP32_RNG          entropy_esp32.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_MCUX_RNG           entropy_mcux_rng.c)

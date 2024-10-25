@@ -156,6 +156,7 @@
 /drivers/adc/adc_rpi_pico.c               @soburi
 /drivers/adc/*ads114s0x*                  @benediktibk
 /drivers/adc/*b9x*                        @andy-liu-telink
+/drivers/adc/*w91*                        @andy-liu-telink
 /drivers/adc/*max11102_17*                @benediktibk
 /drivers/adc/*kb1200*                     @ene-steven
 /drivers/adc/adc_ad559x.c                 @bbilas
@@ -165,6 +166,7 @@
 /drivers/bbram/*                          @yperess @sjg20 @jackrosenthal
 /drivers/bluetooth/                       @alwa-nordic @jhedberg @Vudentz
 /drivers/bluetooth/hci/*b9x*              @andy-liu-telink
+/drivers/bluetooth/hci/*w91*              @andy-liu-telink
 /drivers/bluetooth/hci/hci_esp32.c        @sylvioalves
 /drivers/can/*mcp2515*                    @karstenkoenig
 /drivers/can/*rcar*                       @aaillet
@@ -202,6 +204,7 @@
 /drivers/dma/*xmc4xxx*                    @talih0
 /drivers/eeprom/eeprom_stm32.c            @KwonTae-young
 /drivers/entropy/*b9x*                    @andy-liu-telink
+/drivers/entropy/*w91*                    @andy-liu-telink
 /drivers/entropy/*bt_hci*                 @JordanYates
 /drivers/entropy/*rv32m1*                 @dleach02
 /drivers/ethernet/*dwmac*                 @npitre
@@ -219,12 +222,14 @@
 /drivers/mdio/*adin2111*                  @GeorgeCGV
 /drivers/flash/*stm32_qspi*               @lmajewski
 /drivers/flash/*b9x*                      @andy-liu-telink
+/drivers/flash/*w91*                      @andy-liu-telink
 /drivers/flash/*cadence*                  @ngboonkhai
 /drivers/flash/*cc13xx_cc26xx*            @pepe2k
 /drivers/flash/*nrf*                      @de-nordic
 /drivers/flash/*esp32*                    @sylvioalves
 /drivers/flash/flash_cadence_nand*        @nbalabak
 /drivers/gpio/*b9x*                       @andy-liu-telink
+/drivers/gpio/*w91*                       @andy-liu-telink
 /drivers/gpio/*lmp90xxx*                  @henrikbrixandersen
 /drivers/gpio/*nct38xx*                   @MulinChao @ChiHuaL
 /drivers/gpio/*eos_s3*                    @fkokosinski @kgugala
@@ -239,6 +244,7 @@
 /drivers/gpio/gpio_altera_pio.c           @shilinte
 /drivers/gpio/gpio_ad559x.c               @bbilas
 /drivers/hwinfo/*b9x*                     @andy-liu-telink
+/drivers/hwinfo/*w91*                     @andy-liu-telink
 /drivers/i2c/i2c_common.c                 @sjg20
 /drivers/i2c/i2c_emul.c                   @sjg20
 /drivers/i2c/i2c_ite_enhance.c            @GTLin08
@@ -286,6 +292,7 @@
 /drivers/modem/Kconfig.hl7800             @rerickson1
 /drivers/modem/Kconfig.simcom-sim7080     @lgehreke
 /drivers/pinctrl/*b9x*                    @andy-liu-telink
+/drivers/pinctrl/*w91*                    @andy-liu-telink
 /drivers/pinctrl/*esp32*                  @sylvioalves
 /drivers/pinctrl/*it8xxx2*                @ite
 /drivers/pinctrl/*kb1200*                 @ene-steven
@@ -294,6 +301,7 @@
 /drivers/ps2/*xec*                        @franciscomunoz @sjvasanth1
 /drivers/ps2/*npcx*                       @MulinChao @ChiHuaL
 /drivers/pwm/*b9x*                        @andy-liu-telink
+/drivers/pwm/*w91*                        @andy-liu-telink
 /drivers/pwm/*pca9685*                    @nixward
 /drivers/pwm/*rpi_pico*                   @burumaj
 /drivers/pwm/*rv32m1*                     @henrikbrixandersen
@@ -330,6 +338,7 @@
 /drivers/sensor/veaa_x_3/                 @jeppenodgaard @MaureenHelm
 /drivers/sensor/ene_tack_kb1200/          @ene-steven
 /drivers/serial/*b9x*                     @andy-liu-telink
+/drivers/serial/*w91*                     @andy-liu-telink
 /drivers/serial/uart_altera_jtag.c        @nashif @gohshunjing
 /drivers/serial/uart_altera.c             @gohshunjing
 /drivers/serial/*ns16550*                 @dcpleung @nashif @gdengi
@@ -356,6 +365,7 @@
 /drivers/disk/sdmmc_stm32.c               @anthonybrandon
 /drivers/ptp_clock/                       @tbursztyka @jukkar
 /drivers/spi/*b9x*                        @andy-liu-telink
+/drivers/spi/*w91*                        @andy-liu-telink
 /drivers/spi/spi_rv32m1_lpspi*            @karstenkoenig
 /drivers/spi/*esp32*                      @sylvioalves
 /drivers/spi/*pl022*                      @soburi
@@ -381,6 +391,7 @@
 /drivers/usb/device/*b9x*                 @andy-liu-telink
 /drivers/usb/device/usb_dc_stm32.c        @ydamigos @loicpoulain
 /drivers/i2c/*b9x*                        @andy-liu-telink
+/drivers/i2c/*w91*                        @andy-liu-telink
 /drivers/i2c/i2c_ll_stm32*                @ydamigos
 /drivers/i2c/i2c_rv32m1_lpi2c*            @henrikbrixandersen
 /drivers/i2c/*sam0*                       @Sizurka
@@ -388,6 +399,7 @@
 /drivers/i2c/*tca954x*                    @kurddt
 /drivers/*/*xec*                          @franciscomunoz @albertofloyd @sjvasanth1
 /drivers/watchdog/*b9x*                   @andy-liu-telink
+/drivers/watchdog/*w91*                   @andy-liu-telink
 /drivers/watchdog/*gecko*                 @oanerer
 /drivers/watchdog/*sifive*                @katsuster
 /drivers/watchdog/wdt_handlers.c          @dcpleung @nashif
@@ -442,6 +454,7 @@
 /dts/riscv/openisa/rv32m1*                @dleach02
 /dts/riscv/starfive/                      @rajnesh-kanwal @pfarwsi
 /dts/riscv/telink/*b9x*                   @andy-liu-telink
+/dts/riscv/telink/*w91*                   @andy-liu-telink
 /dts/riscv/andes/andes_v5*                @cwshu @kevinwang821020 @jimmyzhe
 /dts/riscv/niosv/                         @sweeaun
 /dts/arm/armv*m.dtsi                      @galak @ioannisg
@@ -454,23 +467,35 @@
 /dts/xtensa/espressif/                    @sylvioalves
 /dts/xtensa/nxp/                          @iuliana-prodan @dbaluta
 /dts/bindings/adc/*b9x*                   @andy-liu-telink
+/dts/bindings/adc/*w91*                   @andy-liu-telink
 /dts/bindings/bluetooth/*b9x*             @andy-liu-telink
+/dts/bindings/bluetooth/*w91*             @andy-liu-telink
 /dts/bindings/can/                        @alexanderwachter @henrikbrixandersen
 /dts/bindings/cpu/*b9x*                   @andy-liu-telink
+/dts/bindings/cpu/*w91*                   @andy-liu-telink
 /dts/bindings/i2c/zephyr*i2c-emul*.yaml   @sjg20
 /dts/bindings/flash_controller/*b9x*      @andy-liu-telink
+/dts/bindings/flash_controller/*w91*      @andy-liu-telink
 /dts/bindings/gpio/*b9x*                  @andy-liu-telink
+/dts/bindings/gpio/*w91*                  @andy-liu-telink
 /dts/bindings/i2c/*b9x*                   @andy-liu-telink
+/dts/bindings/i2c/*w91*                   @andy-liu-telink
 /dts/bindings/ieee802154/*b9x*            @andy-liu-telink
 /dts/bindings/pinctrl/*b9x*               @andy-liu-telink
+/dts/bindings/pinctrl/*w91*               @andy-liu-telink
 /dts/bindings/power/*b9x*                 @andy-liu-telink
 /dts/bindings/pwm/*b9x*                   @andy-liu-telink
+/dts/bindings/pwm/*w91*                   @andy-liu-telink
 /dts/bindings/rng/*b9x*                   @andy-liu-telink
+/dts/bindings/rng/*w91*                   @andy-liu-telink
 /dts/bindings/serial/*b9x*                @andy-liu-telink
+/dts/bindings/serial/*w91*                @andy-liu-telink
 /dts/bindings/spi/*b9x*                   @andy-liu-telink
+/dts/bindings/spi/*w91*                   @andy-liu-telink
 /dts/bindings/timer/telink*               @andy-liu-telink
 /dts/bindings/usb/*b9x*                   @andy-liu-telink
-/dts/bindings/watchdog/b9x*               @andy-liu-telink
+/dts/bindings/watchdog/*b9x*              @andy-liu-telink
+/dts/bindings/watchdog/*w91*              @andy-liu-telink
 /dts/bindings/adc/st*stm32-adc.yaml       @cybertale
 /dts/bindings/adc/*ads114s08.yaml         @benediktibk
 /dts/bindings/adc/*max111*                @benediktibk

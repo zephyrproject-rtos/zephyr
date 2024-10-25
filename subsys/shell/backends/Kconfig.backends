@@ -655,4 +655,61 @@ config SHELL_BACKEND_ADSP_MEMORY_WINDOW_POLL_INTERVAL
 
 endif # SHELL_BACKEND_ADSP_MEMORY_WINDOW
 
+config SHELL_BACKEND_TELINK_W91
+	bool "Telink W91 backend"
+	depends on TELINK_W91_DEBUG_ENABLE
+	default y
+	help
+	  When enabled backend is using Telink W91 as shell.
+
+if SHELL_BACKEND_TELINK_W91
+
+config SHELL_PROMPT_TELINK_W91
+	string "Displayed prompt name"
+	default "tl_w91:~$ "
+	help
+	  Displayed prompt name for Telink W91 backend. If prompt is set, the shell will
+	  send two newlines during initialization.
+
+config SHELL_BACKEND_TELINK_W91_RX_BUF_SIZE
+	int "Size of reception buffer"
+	default 128
+	help
+	  This is size of input reception buffer that will be used by Telink W91 backend.
+
+choice
+	prompt "Initial log level limit"
+	default SHELL_TELINK_W91_INIT_LOG_LEVEL_INF
+
+config SHELL_TELINK_W91_INIT_LOG_LEVEL_DEFAULT
+	bool "System limit (LOG_MAX_LEVEL)"
+
+config SHELL_TELINK_W91_INIT_LOG_LEVEL_DBG
+	bool "Debug"
+
+config SHELL_TELINK_W91_INIT_LOG_LEVEL_INF
+	bool "Info"
+
+config SHELL_TELINK_W91_INIT_LOG_LEVEL_WRN
+	bool "Warning"
+
+config SHELL_TELINK_W91_INIT_LOG_LEVEL_ERR
+	bool "Error"
+
+config SHELL_TELINK_W91_INIT_LOG_LEVEL_NONE
+	bool "None"
+
+endchoice
+
+config SHELL_TELINK_W91_INIT_LOG_LEVEL
+	int
+	default 0 if SHELL_TELINK_W91_INIT_LOG_LEVEL_NONE
+	default 1 if SHELL_TELINK_W91_INIT_LOG_LEVEL_ERR
+	default 2 if SHELL_TELINK_W91_INIT_LOG_LEVEL_WRN
+	default 3 if SHELL_TELINK_W91_INIT_LOG_LEVEL_INF
+	default 4 if SHELL_TELINK_W91_INIT_LOG_LEVEL_DBG
+	default 5 if SHELL_TELINK_W91_INIT_LOG_LEVEL_DEFAULT
+
+endif # SHELL_BACKEND_TELINK_W91
+
 endif # SHELL_BACKENDS

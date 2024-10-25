@@ -59,7 +59,7 @@ static void key_pool_poll(struct key_pool_data *key_pool, bool init)
 static void key_pool_event_work(struct k_work *item)
 {
 	struct key_pool_data *key_pool =
-		CONTAINER_OF(item, struct key_pool_data, work);
+		CONTAINER_OF(k_work_delayable_from_work(item), struct key_pool_data, work);
 
 	key_pool_poll(key_pool, false);
 }

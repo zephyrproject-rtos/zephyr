@@ -136,4 +136,6 @@ source "drivers/watchdog/Kconfig.litex"
 
 source "drivers/watchdog/Kconfig.b9x"
 
+source "drivers/watchdog/Kconfig.w91"
+
 endif # WATCHDOG

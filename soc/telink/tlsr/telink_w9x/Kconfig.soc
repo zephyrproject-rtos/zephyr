@@ -1,0 +1,14 @@
+# Copyright (c) 2024 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_RISCV_TELINK_W9X
+	bool
+	select SOC_FAMILY_TELINK_TLSR
+	help
+	  Telink W9X
+
+config SOC_SERIES
+	default "telink_w9x" if SOC_RISCV_TELINK_W9X
+
+config SOC
+	default "telink_w91" if SOC_RISCV_TELINK_W91

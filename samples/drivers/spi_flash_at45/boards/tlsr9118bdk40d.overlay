@@ -1,0 +1,21 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2024 Telink Semiconductor (Shanghai) Co., Ltd.
+ */
+
+&spi1 {
+	at45db0: at45db041d@0 {
+		compatible = "atmel,at45";
+		reg = <0>;
+		spi-max-frequency = <40000000>;
+		jedec-id = [1f 24 00];
+		size = <4194304>;
+		sector-size = <65536>;
+		block-size = <2048>;
+		page-size = <256>;
+		enter-dpd-delay = <3000>;
+		exit-dpd-delay = <35000>;
+		status = "okay";
+	};
+};

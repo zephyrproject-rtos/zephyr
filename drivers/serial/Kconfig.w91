@@ -1,0 +1,30 @@
+# Copyright (c) 2024 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+# Telink W91 UART configuration options
+
+config UART_TELINK_W91
+	bool "Telink W91 UART driver"
+	default y
+	depends on DT_HAS_TELINK_W91_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	help
+	  This option enables the W91 serial driver.
+
+
+if UART_TELINK_W91
+
+config TELINK_W91_UART_IRQ_THREAD_STACK_SIZE
+	int "UART IRQ thread stack size"
+	default 1024
+	help
+	  UART IRQ stack size.
+
+config TELINK_W91_UART_IRQ_THREAD_PRIORITY
+	int "UART IRQ thread priority"
+	default 0
+	help
+	  UART IRQ thread priority.
+
+endif # UART_TELINK_W91

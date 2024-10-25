@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2024 Telink Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	pwm_pool {
+		compatible = "pwm-leds";
+		out {
+			pwms = <&pwm0 3 PWM_MSEC(1) PWM_POLARITY_NORMAL>;
+		};
+	};
+};

@@ -1,0 +1,44 @@
+# Copyright (c) 2024 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config WIFI_W91
+	bool "W91 SoC WiFi support"
+	default y if DT_HAS_TELINK_W91_WIFI_ENABLED
+	select NET_SOCKETS
+	select NET_CONFIG_SETTINGS
+	select NET_MGMT
+	select NET_MGMT_EVENT
+	select NET_L2_WIFI_MGMT
+	help
+		Enable Telink SoC WiFi support.
+
+if WIFI_W91
+
+config NET_MGMT_EVENT_STACK_SIZE
+	default 1024
+
+config TELINK_W91_WIFI_EVENT_THREAD_STACK_SIZE
+	int "WIFI event thread stack size"
+	default 2048
+	help
+	  WIFI event thread stack size.
+
+config TELINK_W91_WIFI_EVENT_THREAD_PRIORITY
+	int "WIFI event thread priority"
+	default 10
+	help
+	  WIFI event thread priority.
+
+config TELINK_W91_WIFI_EVENT_MAX_MSG
+	int "WIFI event max messages"
+	default 16
+	help
+	  WIFI event max messages.
+
+config WIFI_TELINK_W91_IPV6_ADDR_CNT
+	int "Telink IPv6 address count"
+	default 8
+	help
+	  This option sets Telink IPv6 addresses count transferred via IPC.
+
+endif # WIFI_W91

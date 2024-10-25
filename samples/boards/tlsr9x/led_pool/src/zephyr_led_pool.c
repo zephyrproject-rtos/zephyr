@@ -72,7 +72,7 @@ static void led_pool_aux_update(const struct led_pool_data *led_pool)
 static void led_pool_event_work(struct k_work *item)
 {
 	struct led_pool_data *led_pool =
-		CONTAINER_OF(item, struct led_pool_data, work);
+		CONTAINER_OF(k_work_delayable_from_work(item), struct led_pool_data, work);
 
 	led_pool_aux_update(led_pool);
 	(void) k_work_reschedule(&led_pool->work, led_pool_aux_timeout(led_pool));

@@ -74,6 +74,7 @@
 			flash: flash@20000000 {
 				compatible = "soc-nv-flash";
 				write-block-size = <1>;
+				erase-block-size = <4096>;
 			};
 		};
 

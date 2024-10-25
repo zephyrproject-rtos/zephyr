@@ -1,0 +1,12 @@
+# Copyright (c) 2024 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+if BT_W91
+
+config BT_HCI_TX_STACK_SIZE
+	default 2048
+
+config BT_RX_STACK_SIZE
+	default 2048
+
+endif # BT_W91

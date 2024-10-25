@@ -6,3 +6,6 @@ family:
           - name: telink_b91
           - name: telink_b92
           - name: telink_b95
+      - name: telink_w9x
+        socs:
+          - name: telink_w91

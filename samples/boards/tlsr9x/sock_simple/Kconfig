@@ -1,0 +1,32 @@
+# Copyright (c) 2024 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config SAMPLE_WIFI_SSID
+	string "WIFI SSID - Network name"
+
+config SAMPLE_WIFI_PASSWORD
+	string "WIFI PSK - Network password"
+
+menu "Application related configuration"
+
+choice APP_SOCKET_TYPE
+	prompt "Socket type used for data exchange"
+	default APP_SOCKET_UDP
+
+config APP_SOCKET_UDP
+	bool "Use UDP IPV4 socket"
+
+config APP_SOCKET_UDP_IPV6
+	bool "Use UDP IPV6 socket"
+
+config APP_SOCKET_TCP
+	bool "Use TCP IPV4 socket"
+
+config APP_SOCKET_TCP_IPV6
+	bool "Use TCP IPV6 socket"
+
+endchoice
+
+endmenu
+
+source "Kconfig.zephyr"

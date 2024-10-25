@@ -1,0 +1,20 @@
+# Copyright (c) 2024 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+# Telink W91 WDT configuration options
+config WDT_TELINK_W91
+	bool "Telink W91 series Watchdog (WDT) Driver"
+	default y
+	depends on DT_HAS_TELINK_W91_WATCHDOG_ENABLED
+	help
+	  Enable WDT driver for Telink W91-series MCUs.
+
+if WDT_TELINK_W91
+
+config WDT_ALLOW_CALLBACK
+	bool "Telink W91 Watchdog allow callback"
+	default y
+	help
+	  Enable WDT callback for Telink W91-series MCUs.
+
+endif # WDT_TELINK_W91

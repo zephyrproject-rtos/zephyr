@@ -74,3 +74,8 @@ zephyr_sources_ifdef(
   CONFIG_LOG_BACKEND_IPC_SERVICE
   log_backend_ipc_service.c
 )
+
+zephyr_sources_ifdef(
+  CONFIG_LOG_BACKEND_TELINK_W91
+  log_backend_telink_w91.c
+)

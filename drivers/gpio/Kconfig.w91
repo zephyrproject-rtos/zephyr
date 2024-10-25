@@ -1,0 +1,11 @@
+# Copyright (c) 2024 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+# Telink W91-series GPIO configuration options
+
+config GPIO_TELINK_W91
+	bool "Telink W91-series GPIO driver"
+	default y
+	depends on DT_HAS_TELINK_W91_GPIO_ENABLED && TELINK_W91_IPC_DISPATCHER
+	help
+		Enables the W91-series GPIO driver.

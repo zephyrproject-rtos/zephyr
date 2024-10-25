@@ -34,6 +34,8 @@ config PWM_CAPTURE
 
 source "drivers/pwm/Kconfig.b9x"
 
+source "drivers/pwm/Kconfig.w91"
+
 source "drivers/pwm/Kconfig.cc13xx_cc26xx_timer"
 
 source "drivers/pwm/Kconfig.stm32"

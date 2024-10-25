@@ -1,0 +1,10 @@
+boards:
+- name: tlsr9118bdk40d
+  vendor: telink
+  socs:
+  - name: telink_w91
+
+- name: tlsr9118bdk40d_v1
+  vendor: telink
+  socs:
+  - name: telink_w91

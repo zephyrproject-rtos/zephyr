@@ -1,0 +1,17 @@
+# Copyright (c) 2024, Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+description: Telink W91 UART
+
+compatible: "telink,w91-uart"
+
+include: [uart-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  pinctrl-0:
+    type: phandles
+    required: true
+
+  instance-id:
+    type: int
+    required: true

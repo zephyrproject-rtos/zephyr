@@ -35,7 +35,7 @@ static void key_matrix_poll(struct key_matrix_data *key_matrix, bool init)
 static void key_matrix_scan_work(struct k_work *item)
 {
 	struct key_matrix_data *key_matrix =
-		CONTAINER_OF(item, struct key_matrix_data, work);
+		CONTAINER_OF(k_work_delayable_from_work(item), struct key_matrix_data, work);
 
 	(void) k_work_schedule(&key_matrix->work, K_MSEC(KEY_MATRIX_SCAN_PERIOD_MS));
 	key_matrix_poll(key_matrix, false);

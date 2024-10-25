@@ -1,0 +1,91 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+# Copyright (c) 2024 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+"""
+Download Telink N22 core firmware and optionally Matter MCUboot firmware
+###############################################
+
+telink_w91_post_build <1> <2> <3>
+
+1 - zephyr output binary folder
+2 - git revision
+3 - Matter OTA layout (1 if enabled, 0 if not)
+"""
+
+import sys
+import os
+import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util import Retry
+
+BASE_URL = f'https://wiki.telink-semi.cn/wiki/protocols/Zephyr/binaries/public/w91_n22/'
+N22_URL_FORMAT = BASE_URL + f'w91_n22_%s.bin'
+MATTER_MCUBOOT_URL_FORMAT = BASE_URL + f'w91_mcuboot_%s.bin'
+# Retry strategy for fetching URLs
+URL_GET_TIMEOUT = 30
+URL_GET_RETRY = 5
+URL_GET_BACKOFF_FACTOR = 1
+
+def download_file(session, url, destination, timeout=10):
+    print(f'fetching {url}...')
+    try:
+        response = session.get(url, timeout=timeout)
+        if response.status_code != 200:
+            print(f'error: Can\'t fetch {url}.')
+            return False
+    except Exception as e:
+        print(f'error: Can\'t fetch {url}: {str(e)}')
+        return False
+
+    try:
+        with open(destination, 'wb') as f:
+            f.write(response.content)
+        print(f'saved {destination}')
+        return True
+    except Exception as e:
+        print(f'error: Can\'t save {destination}: {str(e)}')
+        return False
+
+def main():
+    if len(sys.argv) < 3:
+        print('error: Invalid arguments.')
+        return
+
+    bin_path = sys.argv[1]
+    n22_revision = sys.argv[2]
+    matter_ota_layout_enabled = sys.argv[3] if len(sys.argv) > 3 else '0'
+
+    if not os.path.exists(bin_path) or not os.path.isdir(bin_path):
+        print(f'error: Invalid binary path \'{bin_path}\'.')
+        return
+
+    # Set up retry strategy
+    retry_strategy = Retry(
+        total=URL_GET_RETRY,
+        backoff_factor=URL_GET_BACKOFF_FACTOR,
+        status_forcelist=[403, 429, 500, 502, 503, 504],
+        allowed_methods=["GET"]
+    )
+    adapter = HTTPAdapter(max_retries=retry_strategy)
+    session = requests.Session()
+    session.mount("http://", adapter)
+    session.mount("https://", adapter)
+
+    # Download N22 core firmware
+    n22_bin_url = N22_URL_FORMAT % n22_revision
+    n22_bin_name = os.path.join(bin_path, 'n22.bin')
+    if not download_file(session, n22_bin_url, n22_bin_name, URL_GET_TIMEOUT):
+        return
+
+    # Download Matter MCUboot firmware if Matter OTA layout is enabled
+    if matter_ota_layout_enabled == '1':
+        matter_mcuboot_url = MATTER_MCUBOOT_URL_FORMAT % n22_revision
+        matter_mcuboot_name = os.path.join(bin_path, 'mcuboot.bin')
+        if not download_file(session, matter_mcuboot_url, matter_mcuboot_name, URL_GET_TIMEOUT):
+            return
+
+if __name__ == "__main__":
+    main()

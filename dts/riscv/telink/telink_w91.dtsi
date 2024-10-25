@@ -1,0 +1,208 @@
+/*
+ * Copyright (c) 2024 Telink Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/adc/w91-adc.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		cpu0: cpu@0 {
+			reg = <0>;
+			clock-frequency = <24000000>;
+			compatible ="telink,w91", "riscv";
+			riscv,isa = "rv32imac_zicsr_zifencei";
+			hlic: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+				interrupt-controller;
+			};
+		};
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "telink,telink_w91-soc";
+		ranges;
+
+		ram_ilm: memory@0 {
+			compatible = "mmio-sram";
+			reg = <0x00000000 0x00008000>;
+		};
+
+		ram_dlm: memory@200000 {
+			compatible = "mmio-sram";
+			reg = <0x00200000 0x00030000>;
+		};
+
+		reserved-memory {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+
+			sram_tx: memory@40000000 {
+				reg = <0x40000000 0x3000>;
+			};
+
+			sram_rx: memory@40003000 {
+				reg = <0x40003000 0x3000>;
+			};
+		};
+
+		mtimer: timer@e6000000 {
+			compatible = "telink,machine-timer";
+			reg = <0xe6000000 0x10000>;
+			interrupts = <7 0>;
+			interrupt-parent = <&hlic>;
+		};
+
+		mbox: mbox@e6400000 {
+			compatible = "telink,mbox-ipc-w91";
+			#mbox-cells = <1>;
+			reg = <0xe6400000 0x4000000>;
+		};
+
+		ipc {
+			ipc0: ipc0 {
+				compatible = "zephyr,ipc-icmsg";
+				tx-region = <&sram_tx>;
+				rx-region = <&sram_rx>;
+				dcache-alignment = <32>;
+				mboxes = <&mbox 0>, <&mbox 1>;
+				mbox-names = "tx", "rx";
+			};
+		};
+
+		flash_mspi: flash-controller {
+			compatible = "telink,w91-flash-controller";
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash: flash@80000000 {
+				compatible = "soc-nv-flash";
+				reg = <0x80000000 0x400000>;
+				write-block-size = <1>;
+				erase-block-size = <4096>;
+			};
+		};
+
+		plic0: interrupt-controller@e4000000 {
+			compatible = "sifive,plic-1.0.0";
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			interrupts-extended = <&hlic 11>;
+			interrupt-parent = <&cpu0>;
+			reg = <0xe4000000 0x00210000>;
+			riscv,max-priority = <3>;
+			riscv,ndev = <46>;
+		};
+
+		wifi: wifi {
+			compatible = "telink,w91-wifi";
+			status = "disabled";
+		};
+
+		bt_hci: bt_hci {
+			compatible = "telink,w91-bt";
+			status = "disabled";
+		};
+
+		trng0: trng0 {
+			compatible = "telink,w91-trng";
+			status = "disabled";
+		};
+
+		gpio0: gpio0 {
+			compatible = "telink,w91-gpio";
+			gpio-controller;
+			status = "disabled";
+			#gpio-cells = <2>;
+			ngpios = <25>;
+		};
+
+		pinctrl: pinctrl{
+			compatible = "telink,w91-pinctrl";
+			status = "okay";
+		};
+
+		spi1: spi1 {
+			compatible = "telink,w91-spi";
+			instance-id = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi2: spi2 {
+			compatible = "telink,w91-spi";
+			instance-id = <2>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		i2c0: i2c0 {
+			compatible = "telink,w91-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+		};
+
+		i2c1: i2c1 {
+			compatible = "telink,w91-i2c";
+			status = "disabled";
+		};
+
+		pwm0: pwm0 {
+			compatible = "telink,w91-pwm";
+			channels = <5>;
+			#pwm-cells = <3>;
+		};
+
+		uart0: uart0 {
+			compatible = "telink,w91-uart";
+			instance-id = <0>;
+			status = "disabled";
+		};
+
+		uart1: uart1 {
+			compatible = "telink,w91-uart";
+			instance-id = <1>;
+			status = "disabled";
+		};
+
+		uart2: uart2 {
+			compatible = "telink,w91-uart";
+			instance-id = <2>;
+			status = "disabled";
+		};
+
+		wdt: watchdog {
+			compatible = "telink,w91-watchdog";
+			status = "disabled";
+		};
+
+		adc: adc {
+			compatible = "telink,w91-adc";
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+	};
+};

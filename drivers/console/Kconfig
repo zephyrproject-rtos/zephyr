@@ -284,4 +284,28 @@ config WINSTREAM_CONSOLE
 
 	  See the WINSTREAM Kconfig help for more information.
 
+config CONSOLE_TELINK_W91
+	bool "Telink W91 console"
+	depends on TELINK_W91_DEBUG_ENABLE
+	default y
+	select CONSOLE_HAS_DRIVER
+	help
+		When enabled Telink W91 console is available.
+
+if CONSOLE_TELINK_W91
+
+config CONSOLE_TELINK_W91_ISR_BUFFER_SIZE
+	int "Telink W91 console ISR buffer size"
+	default 32
+	help
+		Sets the Telink W91 console input ISR queue size in bytes.
+
+config CONSOLE_TELINK_W91_INP_LINE_MAX
+	int "Telink W91 console maximum input line length"
+	default 128
+	help
+		Sets the Telink W91 console maximum input line length.
+
+endif # CONSOLE_TELINK_W91
+
 endif # CONSOLE

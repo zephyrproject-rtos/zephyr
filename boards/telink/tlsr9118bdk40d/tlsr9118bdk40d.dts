@@ -1,0 +1,98 @@
+/*
+ * Copyright (c) 2024 Telink Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "tlsr9118bdk40d-common.dtsi"
+
+/ {
+
+	aliases {
+		led0 = &led1;
+		sw2 = &key_3;
+		sw3 = &key_4;
+	};
+
+	leds {
+		/delete-node/ led_1;
+
+		compatible = "gpio-leds";
+		led1: led1 {
+			gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
+			label = "LED1(Red)";
+		};
+	};
+
+	pwm_leds {
+		compatible = "pwm-leds";
+
+		pwm_led_red: pwm_led_0 {
+			pwms = <&pwm0 3 PWM_MSEC(1) PWM_POLARITY_NORMAL>;
+			label = "PWM LED Red";
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		key_1: button_1 {
+			label = "User KEY1";
+			gpios = <&gpio0 4 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		};
+		key_2: button_2 {
+			label = "User KEY2";
+			gpios = <&gpio0 5 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		};
+		key_3: button_3 {
+			label = "User KEY3";
+			gpios = <&gpio0 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		};
+
+		key_4: button_4 {
+			label = "User KEY4";
+			gpios = <&gpio0 7 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		};
+	};
+
+	/* used in Matter */
+
+	key_pool {
+		compatible = "gpio-keys";
+
+		inp {
+			gpios = <&gpio0 4 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>,
+					<&gpio0 5 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>,
+					<&gpio0 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>,
+					<&gpio0 7 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		};
+	};
+
+	led_pool{
+		compatible = "gpio-leds";
+
+		out {
+			gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	pwm_pool {
+		compatible = "pwm-leds";
+		out {
+			pwms = <&pwm0 2 PWM_MSEC(1) PWM_POLARITY_NORMAL>,
+			       <&pwm0 3 PWM_MSEC(1) PWM_POLARITY_NORMAL>,
+			       <&pwm0 1 PWM_MSEC(1) PWM_POLARITY_NORMAL>;
+		};
+	};
+};
+
+&pwm0 {
+	/delete-property/ pinctrl-ch4;
+
+	status = "okay";
+	pinctrl-ch3 = <&pwm_ch3_p18_default>;
+	pinctrl-ch2 = <&pwm_ch2_p17_default>;
+	pinctrl-ch1 = <&pwm_ch1_p16_default>;
+};

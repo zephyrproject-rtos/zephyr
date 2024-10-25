@@ -1,0 +1,60 @@
+/*
+ * Copyright (c) 2024 Telink Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "tlsr9118bdk40d-common.dtsi"
+
+/* used in Matter */
+/ {
+	pwm_leds {
+		compatible = "pwm-leds";
+
+		pwm_led_1: pwm_led_1 {
+			pwms = <&pwm0 3 PWM_MSEC(1) PWM_POLARITY_NORMAL>;
+			label = "";
+		};
+	};
+
+	/* Short TL_Key1 (J20 pin 11) to ground (J20 pin 25-35) */
+	key_pool {
+		compatible = "gpio-keys";
+
+		inp {
+			gpios = <&gpio0 16 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>,
+					<&gpio0 15 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		};
+	};
+
+	key_matrix {
+		compatible = "gpio-keys";
+
+		col {
+			gpios = <&gpio0 18 GPIO_ACTIVE_HIGH>,
+					<&gpio0 17 GPIO_ACTIVE_HIGH>;
+		};
+
+		row {
+			gpios = <&gpio0 16 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
+					<&gpio0 15 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+		};
+	};
+
+	led_pool{
+		compatible = "gpio-leds";
+
+		out {
+			gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	pwm_pool {
+		compatible = "pwm-leds";
+		out {
+			pwms = <&pwm0 4 PWM_MSEC(1) PWM_POLARITY_NORMAL>;
+		};
+	};
+};

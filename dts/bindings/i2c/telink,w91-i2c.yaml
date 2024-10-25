@@ -1,0 +1,18 @@
+# Copyright (c) 2021-2023, Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+description: Telink W91 I2C
+
+include: [i2c-controller.yaml, pinctrl-device.yaml]
+
+compatible: "telink,w91-i2c"
+
+properties:
+  clock-frequency:
+    type: int
+    description: I2C master clock frequency in Hz
+    required: true
+
+  pinctrl-0:
+    type: phandles
+    required: true

@@ -77,6 +77,8 @@ source "subsys/logging/Kconfig.template.log_config"
 
 source "drivers/spi/Kconfig.b9x"
 
+source "drivers/spi/Kconfig.w91"
+
 source "drivers/spi/Kconfig.stm32"
 
 source "drivers/spi/Kconfig.dw"

@@ -1,0 +1,18 @@
+# Copyright (c) 2024 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config LOG_BACKEND_TELINK_W91
+	bool "Telink W91 backend"
+	depends on TELINK_W91_DEBUG_ENABLE
+	default y
+	select LOG_OUTPUT
+	help
+	  When enabled backend is using Telink W91 to output logs.
+
+if LOG_BACKEND_TELINK_W91
+
+backend = TELINK_W91
+backend-str = telink-w91
+source "subsys/logging/Kconfig.template.log_format_config"
+
+endif # LOG_BACKEND_TELINK_W91

@@ -103,6 +103,7 @@ endif # I2C_RTIO
 # Include these first so that any properties (e.g. defaults) below can be
 # overridden (by defining symbols in multiple locations)
 source "drivers/i2c/Kconfig.b9x"
+source "drivers/i2c/Kconfig.w91"
 source "drivers/i2c/Kconfig.bcm_iproc"
 source "drivers/i2c/Kconfig.cc13xx_cc26xx"
 source "drivers/i2c/Kconfig.dw"

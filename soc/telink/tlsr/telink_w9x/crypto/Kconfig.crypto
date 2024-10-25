@@ -1,0 +1,32 @@
+# Copyright (c) 2024 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+if MBEDTLS
+
+config MBEDTLS_USER_CONFIG_FILE
+	default "crypto/telink_w91_mbedtls_user_config.h"
+
+config MBEDTLS_ENTROPY_POLL_ZEPHYR
+	default y if ENTROPY_HAS_DRIVER
+
+config TELINK_W91_ECC_HW_ACC
+	bool "Telink W91 EC cryptography HW acceleration"
+	default y
+	depends on MBEDTLS_ECP_C
+	help
+		This option enables Telink W91 EC cryptography HW acceleration.
+
+if TELINK_W91_ECC_HW_ACC
+
+config MBEDTLS_ENTROPY_C
+	default y if MBEDTLS_TEST
+
+config MBEDTLS_CTR_DRBG_ENABLED
+	default y if MBEDTLS_TEST
+
+config MBEDTLS_CIPHER_AES_ENABLED
+	default y if MBEDTLS_TEST
+
+endif # TELINK_W91_ECC_HW_ACC
+
+endif # MBEDTLS

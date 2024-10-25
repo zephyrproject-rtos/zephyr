@@ -1,0 +1,87 @@
+# Copyright (c) 2024 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_RISCV_TELINK_W9X
+	bool
+	select RISCV
+	select RISCV_ISA_RV32I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
+	select RISCV_PRIVILEGED
+	select RISCV_HAS_PLIC
+	select ATOMIC_OPERATIONS_BUILTIN
+	select CPU_HAS_FPU
+	select CPU_HAS_DCACHE
+	select CPU_HAS_ICACHE
+	select CACHE_MANAGEMENT
+	select INCLUDE_RESET_VECTOR
+	imply XIP
+	select SOC_EARLY_INIT_HOOK
+
+if SOC_RISCV_TELINK_W9X
+
+config TELINK_W91_HWDSP
+	bool "Support Hardware DSP"
+	select RISCV_SOC_CONTEXT_SAVE
+
+config TELINK_W91_PFT_ARCH
+	bool "Support performance throttling"
+	default y
+	select RISCV_SOC_CONTEXT_SAVE
+
+config TELINK_SOC_REBOOT_ON_FAULT
+	bool "Reboot system when fault happened"
+	help
+		This option enables Telink B9x chip reboot after fault.
+
+config TELINK_SOC_REBOOT_ON_FAULT_DELAY
+	int "Reboot system delay in mS"
+	depends on TELINK_SOC_REBOOT_ON_FAULT
+	default 1000
+	range 0 30000
+	help
+		This option sets Telink B91 chip reboot on fault delay in mS.
+
+config TELINK_W91_2_WIRE_SPI_ENABLE
+	bool "Use 2-wire SPI interface to FLASH"
+	help
+		This option enables 2-wire SPI interface to FLASH
+
+config TELINK_W91_MALLOC_FAILED_HOOK
+	bool "Stop SW execution when system heap allocation failed"
+	default y
+	help
+		This option stops SW execution when system heap allocation failed.
+
+config TELINK_W91_DEBUG_ENABLE
+	bool "Telink W91 debug enable"
+	default y
+	help
+		This option enables Telink W91 debug feature.
+
+config TELINK_W91_DEBUG_PORT
+	int "Telink W91 debug port"
+	range 0 1
+	default 0
+	depends on TELINK_W91_DEBUG_ENABLE
+	help
+		This option sets Telink W91 debug port.
+
+config TELINK_W91_DEBUG_BAUDRATE
+	int "Telink W91 debug baudrate"
+	default 115200
+	depends on TELINK_W91_DEBUG_ENABLE
+	help
+		This option sets Telink W91 debug baudrate, bps.
+
+source "soc/telink/tlsr/telink_w9x/ipc/Kconfig.ipc"
+source "soc/telink/tlsr/telink_w9x/blocking_core/Kconfig.blocking"
+source "soc/telink/tlsr/telink_w9x/core_heartbeat/Kconfig.heartbeat"
+source "soc/telink/tlsr/telink_w9x/bluetooth/Kconfig.bt"
+source "soc/telink/tlsr/telink_w9x/crypto/Kconfig.crypto"
+source "soc/telink/tlsr/telink_w9x/Kconfig.n22"
+
+endif # SOC_RISCV_TELINK_W9X

@@ -1,0 +1,21 @@
+# Copyright (c) 2024 Telink Semiconductor (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Telink W91 ADC node
+
+compatible: "telink,w91-adc"
+
+include: [adc-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  "#io-channel-cells":
+    const: 1
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+io-channel-cells:
+  - input

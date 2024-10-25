@@ -43,6 +43,7 @@ def test_runner_imports():
                     'qemu',
                     'renode',
                     'renode-robot',
+                    'sctool',
                     'silabs_commander',
                     'stm32cubeprogrammer',
                     'stm32flash',

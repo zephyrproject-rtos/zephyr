@@ -119,6 +119,16 @@ config BT_B9X
 	help
 	  Telink B9X HCI bluetooth interface
 
+config BT_W91
+	bool "Telink W91 HCI driver"
+	default y if DT_HAS_TELINK_W91_BT_ENABLED
+	help
+	  Telink W91 HCI bluetooth interface
+
+if BT_W91
+source "drivers/bluetooth/hci/Kconfig.w91"
+endif # BT_W91
+
 config BT_PSOC6_BLESS
 	bool
 	default y

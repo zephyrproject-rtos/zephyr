@@ -1,0 +1,8 @@
+# Copyright (c) 2023 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+description: Telink RISC-V CPU
+
+compatible: "telink,w91"
+
+include: riscv,cpus.yaml

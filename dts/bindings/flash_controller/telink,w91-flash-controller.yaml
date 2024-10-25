@@ -1,0 +1,3 @@
+description: Telink W91 Flash Controller
+
+compatible: "telink,w91-flash-controller"

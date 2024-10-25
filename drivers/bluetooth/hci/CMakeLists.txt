@@ -14,6 +14,7 @@ if(CONFIG_BT_HCI_IPC)
 endif()
 
 zephyr_library_sources_ifdef(CONFIG_BT_B9X         hci_b9x.c)
+zephyr_library_sources_ifdef(CONFIG_BT_W91         hci_w91.c)
 zephyr_library_sources_ifdef(CONFIG_BT_ESP32       hci_esp32.c)
 if(CONFIG_DT_HAS_ESPRESSIF_ESP32_BT_HCI_ENABLED)
   zephyr_blobs_verify(MODULE hal_espressif REQUIRED)

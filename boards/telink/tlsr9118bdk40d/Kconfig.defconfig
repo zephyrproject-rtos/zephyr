@@ -1,0 +1,56 @@
+# Copyright (c) 2023-2024 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_TLSR9118BDK40D || BOARD_TLSR9118BDK40D_V1
+
+config SOC_FLASH_TELINK_W91
+	bool
+	default y if FLASH
+
+if BT
+
+config BT_HCI_ACL_FLOW_CONTROL
+	bool
+	default n
+
+endif # BT
+
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition
+
+config FLASH_LOAD_OFFSET
+	hex
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION)) if USE_DT_CODE_PARTITION
+
+if MCUBOOT
+
+config MCUBOOT_ACTION_HOOKS
+	bool
+	default y
+
+config IMG_BLOCK_BUF_SIZE
+	int
+	default 4096
+
+endif # MCUBOOT
+
+if BOOTLOADER_MCUBOOT
+
+config MCUBOOT_SIGNATURE_KEY_FILE
+	string
+	default "bootloader/mcuboot/root-rsa-2048.pem" if !MCUBOOT_GENERATE_UNSIGNED_IMAGE
+
+config MCUBOOT_EXTRA_IMGTOOL_ARGS
+	string
+	default "--max-sectors 4096"
+
+endif # BOOTLOADER_MCUBOOT
+
+if ZTEST
+
+config ZTEST_THREAD_PRIORITY
+	default 0
+
+endif # ZTEST
+
+endif # BOARD_TLSR9118BDK40D || BOARD_TLSR9118BDK40D_V1

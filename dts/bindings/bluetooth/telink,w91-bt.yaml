@@ -1,0 +1,16 @@
+# Copyright (c) 2024, Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+description: Telink X91 Bluetooth HCI node
+
+compatible: "telink,w91-bt"
+
+include: bt-hci.yaml
+
+properties:
+  bt-hci-name:
+    default: "HCI Controller"
+  bt-hci-bus:
+    default: "BT_HCI_BUS_VIRTUAL"
+  bt-hci-quirks:
+    default: ["BT_HCI_QUIRK_NO_AUTO_DLE"]

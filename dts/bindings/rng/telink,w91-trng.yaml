@@ -1,0 +1,8 @@
+# Copyright (c) 2024, Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+description: Telink W91-series RNG
+
+compatible: "telink,w91-trng"
+
+include: base.yaml

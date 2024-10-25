@@ -1,0 +1,9 @@
+# Copyright (c) 2021-2023 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config I2C_TELINK_W91
+	bool "Telink Semiconductor W91 I2C driver"
+	default y
+	depends on DT_HAS_TELINK_W91_I2C_ENABLED
+	help
+	  Enables Telink W91 I2C driver.
