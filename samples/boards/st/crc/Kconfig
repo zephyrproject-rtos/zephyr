@@ -1,0 +1,11 @@
+# Copyright (c) 2024 STMicroelectronics.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config CRC_STM32_EXTRA
+	bool "Extended operation for crc driver control"
+	default y
+	select USE_STM32_HAL_CRC
+	select USE_STM32_HAL_CRC_EX
+
+source "Kconfig.zephyr"
