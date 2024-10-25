@@ -47,6 +47,7 @@ def test_runner_imports():
         'renode-robot',
         'silabs_commander',
         'spi_burn',
+        'spsdk',
         'stm32cubeprogrammer',
         'stm32flash',
         'teensy',
