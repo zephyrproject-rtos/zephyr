@@ -5,6 +5,7 @@
 # Copyright (c) 2019 Song Qiang <songqiang1304521@gmail.com>
 # Copyright (c) 2021 Marius Scholtz, RIC Electronics
 # Copyright (c) 2022 Hein Wessels, Nobleo Technology
+# Copyright (c) 2024 STMicroelectronics
 # SPDX-License-Identifier: Apache-2.0
 
 config ADC_STM32
@@ -15,7 +16,15 @@ config ADC_STM32
 	help
 	  Enable the driver implementation for the stm32xx ADC
 
-if ADC_STM32
+config ADC_STM32WB0
+	bool "STM32WB0 ADC driver"
+	default y
+	depends on DT_HAS_ST_STM32WB0_ADC_ENABLED
+	select PINCTRL
+	help
+	  Enable the driver implementation for the STM32WB0 series ADC
+
+if ADC_STM32 || ADC_STM32WB0
 
 config ADC_STM32_DMA
 	bool "STM32 MCU ADC DMA Support"

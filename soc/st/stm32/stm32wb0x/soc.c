@@ -41,15 +41,8 @@ uint32_t SystemCoreClock = 16000000U;
 Z_GENERIC_SECTION("stm32wb0_RAM_VR")
 __used RAM_VR_TypeDef RAM_VR;
 
-/** Power Controller node */
+/** Power Controller node (shorthand for upcoming macros) */
 #define PWRC DT_INST(0, st_stm32wb0_pwr)
-
-/** SMPS modes */
-#define STM32WB0_SMPS_MODE_OFF		0
-#define STM32WB0_SMPS_MODE_PRECHARGE	1
-#define STM32WB0_SMPS_MODE_RUN		2
-
-#define SMPS_MODE	_CONCAT(STM32WB0_SMPS_MODE_, DT_STRING_UNQUOTED(PWRC, smps_mode))
 
 /* Convert DTS properties to LL macros */
 #define SMPS_PRESCALER	_CONCAT(LL_RCC_SMPS_DIV_, DT_PROP(PWRC, smps_clock_prescaler))
