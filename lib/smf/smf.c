@@ -193,8 +193,7 @@ static bool smf_execute_all_exit_actions(struct smf_ctx *const ctx, const struct
 	struct internal_ctx *const internal = (void *)&ctx->internal;
 
 	for (const struct smf_state *to_execute = ctx->current;
-	     to_execute != NULL && to_execute != topmost;
-	     to_execute = to_execute->parent) {
+	     to_execute != NULL && to_execute != topmost; to_execute = to_execute->parent) {
 		if (to_execute->exit) {
 			to_execute->exit(ctx);
 
@@ -342,7 +341,7 @@ void smf_set_state(struct smf_ctx *const ctx, const struct smf_state *new_state)
 	}
 #else
 	/* Flat state machines have a very simple transition: */
-	if (ctx->current->exit) {
+	if (ctx->current != NULL && ctx->current->exit) {
 		internal->is_exit = true;
 		ctx->current->exit(ctx);
 		/* No need to continue if terminate was set in the exit action */
@@ -387,6 +386,11 @@ int32_t smf_run_state(struct smf_ctx *const ctx)
 	/* No need to continue if terminate was set */
 	if (internal->terminate) {
 		return ctx->terminate_val;
+	}
+
+	/* No current state */
+	if (ctx->current == NULL) {
+		return -EINVAL;
 	}
 
 #ifdef CONFIG_SMF_ANCESTOR_SUPPORT
