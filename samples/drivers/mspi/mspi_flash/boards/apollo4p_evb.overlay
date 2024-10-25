@@ -14,10 +14,6 @@
 	status = "okay";
 };
 
-&gpio32_63 {
-	status = "okay";
-};
-
 &mspi1 {
 	pinctrl-0 = <&mspi1_default>;
 	pinctrl-1 = <&mspi1_sleep>;
