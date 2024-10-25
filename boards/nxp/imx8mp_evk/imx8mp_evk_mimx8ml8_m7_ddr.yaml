@@ -11,7 +11,7 @@ arch: arm
 ram: 2048
 flash: 2048
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 testing:

@@ -3,7 +3,7 @@ name: SECO SBC-3.5-PX30 (STM32F302)
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 40

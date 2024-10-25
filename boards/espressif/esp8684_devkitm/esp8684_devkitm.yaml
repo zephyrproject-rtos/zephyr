@@ -3,7 +3,7 @@ name: ESP8684
 type: mcu
 arch: riscv
 toolchain:
-  - zephyr
+  - zephyr-gnu
 supported:
   - gpio
   - watchdog

@@ -9,7 +9,7 @@ name: NXP i.MX8M Nano EVK A53
 type: mcu
 arch: arm64
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - cross-compile
 ram: 1024
 supported:

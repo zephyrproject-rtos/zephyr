@@ -3,7 +3,7 @@ name: ST Nucleo F303RE
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 80

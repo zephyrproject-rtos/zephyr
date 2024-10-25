@@ -3,7 +3,7 @@ name: 96Boards STM32 Sensor Mezzanine
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 supported:

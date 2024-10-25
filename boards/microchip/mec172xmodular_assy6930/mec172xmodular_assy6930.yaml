@@ -9,7 +9,7 @@ name: MEC172X MODULAR ASSY 6930
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 ram: 64
 flash: 352

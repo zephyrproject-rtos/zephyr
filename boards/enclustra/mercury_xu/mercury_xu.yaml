@@ -4,6 +4,6 @@ name: MERCURY-XU
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 vendor: xlnx

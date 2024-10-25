@@ -3,7 +3,7 @@ name: IoT Development Kit
 type: mcu
 arch: arc
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - cross-compile
   - xtools
 ram: 128

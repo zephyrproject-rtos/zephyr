@@ -3,7 +3,7 @@ name: CTHINGS.CO Connectivity Card nRF52840
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 supported:

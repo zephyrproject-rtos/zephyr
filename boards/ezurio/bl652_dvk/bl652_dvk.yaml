@@ -3,7 +3,7 @@ name: bl652_dvk
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 64

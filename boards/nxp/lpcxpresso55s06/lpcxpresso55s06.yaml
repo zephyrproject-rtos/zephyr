@@ -10,7 +10,7 @@ arch: arm
 ram: 96
 flash: 256
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 supported:

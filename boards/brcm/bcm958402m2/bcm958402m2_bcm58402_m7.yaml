@@ -3,6 +3,6 @@ name: Broadcom BCM958402M2_M7
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 vendor: brcm

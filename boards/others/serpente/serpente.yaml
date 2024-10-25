@@ -3,7 +3,7 @@ name: SERPENTE
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 flash: 256

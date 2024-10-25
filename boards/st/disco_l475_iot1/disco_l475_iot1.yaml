@@ -3,7 +3,7 @@ name: ST Disco L475 IOT01 (B-L475E-IOT01A)
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 supported:

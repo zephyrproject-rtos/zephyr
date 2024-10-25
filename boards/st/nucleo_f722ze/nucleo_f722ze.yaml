@@ -3,7 +3,7 @@ name: ST Nucleo F722ZE
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 supported:

@@ -3,7 +3,7 @@ name: ST B_U585I_IOT02A Discovery kit non secure target
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 786

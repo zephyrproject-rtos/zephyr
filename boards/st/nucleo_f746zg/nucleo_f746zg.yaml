@@ -3,7 +3,7 @@ name: ST Nucleo F746ZG
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 256

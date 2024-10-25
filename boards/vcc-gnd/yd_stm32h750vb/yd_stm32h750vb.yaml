@@ -3,7 +3,7 @@ name: YD-STM32H750VB
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 1024

@@ -3,7 +3,7 @@ name: Adafruit Feather STM32F405 Express
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 128

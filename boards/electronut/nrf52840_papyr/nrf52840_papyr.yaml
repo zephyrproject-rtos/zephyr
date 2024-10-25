@@ -3,7 +3,7 @@ name: Electronut Labs Papyr
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 supported:

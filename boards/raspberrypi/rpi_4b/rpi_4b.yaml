@@ -3,5 +3,5 @@ name: Raspberry Pi 4 Model B
 type: mcu
 arch: arm64
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - cross-compile

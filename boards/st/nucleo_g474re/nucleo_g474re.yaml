@@ -3,7 +3,7 @@ name: ST Nucleo G474RE
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 128

@@ -3,7 +3,7 @@ name: NXP TWR-KE18F
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 32

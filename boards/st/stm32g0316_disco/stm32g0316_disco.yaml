@@ -3,7 +3,7 @@ name: ST STM32G0316 Discovery
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 8

@@ -3,7 +3,7 @@ name: M5Stack StampS3 PROCPU
 type: mcu
 arch: xtensa
 toolchain:
-  - zephyr
+  - zephyr-gnu
 supported:
   - gpio
   - i2c

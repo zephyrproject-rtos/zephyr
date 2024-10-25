@@ -5,7 +5,7 @@ simulation:
   - name: qemu
 arch: xtensa
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - xtools
 testing:
   default: true

@@ -3,7 +3,7 @@ name: STM32L475 Pandora
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 128

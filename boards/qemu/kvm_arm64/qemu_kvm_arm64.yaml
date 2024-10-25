@@ -3,7 +3,7 @@ name: QEMU Virt Emulation for AArch64 KVM
 type: qemu
 arch: arm64
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - cross-compile
 ram: 128
 testing:

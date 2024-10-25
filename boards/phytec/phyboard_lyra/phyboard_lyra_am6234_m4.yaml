@@ -3,6 +3,6 @@ name: PHYTEC phyBOARD-Lyra AM62x M4
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
 ram: 192
 vendor: phytec

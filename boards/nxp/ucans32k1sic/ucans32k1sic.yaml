@@ -9,7 +9,7 @@ arch: arm
 ram: 124
 flash: 1024
 toolchain:
-  - zephyr
+  - zephyr-gnu
 supported:
   - mpu
   - gpio

@@ -3,7 +3,7 @@ name: ST ST25DV MB1283 Discovery
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 192

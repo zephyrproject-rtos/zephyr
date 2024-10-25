@@ -3,7 +3,7 @@ name: M5Stack ATOM Lite
 type: mcu
 arch: xtensa
 toolchain:
-  - zephyr
+  - zephyr-gnu
 supported:
   - uart
 testing:

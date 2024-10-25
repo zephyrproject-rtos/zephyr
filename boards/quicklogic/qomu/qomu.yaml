@@ -3,7 +3,7 @@ name: QuickLogic Qomu
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 testing:

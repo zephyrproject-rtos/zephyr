@@ -3,7 +3,7 @@ name: MikroE Clicker 2 for STM32
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 192

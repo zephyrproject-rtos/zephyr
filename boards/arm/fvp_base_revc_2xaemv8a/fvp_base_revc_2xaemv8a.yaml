@@ -9,7 +9,7 @@ simulation:
   - name: armfvp
     exec: FVP_Base_RevC-2xAEMvA
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - cross-compile
 ram: 2048
 flash: 64

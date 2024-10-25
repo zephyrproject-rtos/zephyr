@@ -3,7 +3,7 @@ name: Adafruit Feather nRF52840 Sense
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 supported:

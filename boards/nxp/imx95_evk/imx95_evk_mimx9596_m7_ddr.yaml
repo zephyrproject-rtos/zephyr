@@ -10,7 +10,7 @@ type: mcu
 arch: arm
 ram: 256
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 supported:

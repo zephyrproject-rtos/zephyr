@@ -4,7 +4,7 @@ type: mcu
 arch: riscv
 toolchain:
   - cross-compile
-  - zephyr
+  - zephyr-gnu
 ram: 32
 flash: 64
 supported:

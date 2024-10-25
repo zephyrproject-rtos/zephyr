@@ -3,7 +3,7 @@ name: BBC Micro:Bit V2
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 128

@@ -3,7 +3,7 @@ name: QEMU Emulation for X86_64 (KPTI disabled)
 type: qemu
 arch: x86
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - xtools
 supported:
   - smp

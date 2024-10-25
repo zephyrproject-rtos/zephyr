@@ -3,7 +3,7 @@ name: ST SensorTile.box
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 supported:

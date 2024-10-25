@@ -3,7 +3,7 @@ name: ST Nucleo L031K6
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 supported:

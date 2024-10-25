@@ -3,7 +3,7 @@ name: ST Nucleo H7A3ZI-Q
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 1280

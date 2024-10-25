@@ -3,7 +3,7 @@ name: 96boards WisTrio
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 ram: 16
 flash: 128

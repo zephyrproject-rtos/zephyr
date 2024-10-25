@@ -9,7 +9,7 @@ name: NXP RD_RW612_BGA
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 960

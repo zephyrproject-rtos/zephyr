@@ -3,7 +3,7 @@ name: ST Nucleo G031K8
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 supported:

@@ -9,7 +9,7 @@ name: Nuvoton NPCX7M6FB EVB
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 ram: 64
 flash: 192

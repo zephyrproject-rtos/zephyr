@@ -3,7 +3,7 @@ name: SimpleLink Wi-Fi CC3220SF LaunchPad development kit
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 supported:

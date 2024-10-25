@@ -8,7 +8,7 @@ arch: arm
 toolchain:
   - gnuarmemb
   - xtools
-  - zephyr
+  - zephyr-gnu
 sysbuild: true
 ram: 188
 flash: 324

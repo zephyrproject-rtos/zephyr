@@ -3,7 +3,7 @@ name: Heltec Wireless Stick Lite (V3) APPCPU
 type: mcu
 arch: xtensa
 toolchain:
-  - zephyr
+  - zephyr-gnu
 supported:
   - uart
 testing:

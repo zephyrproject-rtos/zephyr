@@ -6,7 +6,7 @@ name: nRF9280-DK-nRF9280-PPR (MRAM XIP)
 type: mcu
 arch: riscv
 toolchain:
-  - zephyr
+  - zephyr-gnu
 sysbuild: true
 ram: 22
 flash: 64

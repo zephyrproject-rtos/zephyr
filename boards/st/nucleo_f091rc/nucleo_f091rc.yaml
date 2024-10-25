@@ -3,7 +3,7 @@ name: ST Nucleo F091RC
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 32

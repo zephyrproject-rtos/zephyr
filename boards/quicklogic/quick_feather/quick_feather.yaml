@@ -3,7 +3,7 @@ name: QuickLogic Quick Feather
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 testing:

@@ -3,7 +3,7 @@ name: XIAO ESP32S3 PROCPU
 type: mcu
 arch: xtensa
 toolchain:
-  - zephyr
+  - zephyr-gnu
 supported:
   - gpio
   - uart

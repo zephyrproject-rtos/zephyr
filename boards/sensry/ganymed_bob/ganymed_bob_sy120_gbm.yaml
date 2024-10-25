@@ -7,7 +7,7 @@ name: Ganymed family breakout board with SY120_GBM chip equipped
 type: mcu
 arch: riscv
 toolchain:
-  - zephyr
+  - zephyr-gnu
 supported:
   - gpio
   - uart

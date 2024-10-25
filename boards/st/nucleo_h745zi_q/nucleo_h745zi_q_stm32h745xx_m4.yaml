@@ -3,7 +3,7 @@ name: ST Nucleo H745ZI-Q (M4)
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 288

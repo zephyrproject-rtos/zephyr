@@ -3,7 +3,7 @@ name: ST Nucleo U575ZI Q
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 supported:
   - arduino_gpio

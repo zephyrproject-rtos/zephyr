@@ -3,7 +3,7 @@ name: ST STM32MP157C-DK2 Discovery
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 supported:

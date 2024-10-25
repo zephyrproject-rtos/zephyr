@@ -3,7 +3,7 @@ name: nRF51-Dongle-nRF51822
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 32

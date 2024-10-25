@@ -6,7 +6,7 @@ name: SAM E54 Xplained Pro
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 flash: 1024

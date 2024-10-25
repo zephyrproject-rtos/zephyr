@@ -3,7 +3,7 @@ name: nRF52840-DK-NRF52811
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 24

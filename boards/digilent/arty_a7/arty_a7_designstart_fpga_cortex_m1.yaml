@@ -3,7 +3,7 @@ name: Digilent Arty A7 ARM DesignStart Cortex-M1
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 32

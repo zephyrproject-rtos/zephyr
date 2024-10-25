@@ -3,7 +3,7 @@ name: SAM4L-EK
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 flash: 256

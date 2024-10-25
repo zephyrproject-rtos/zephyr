@@ -5,7 +5,7 @@ arch: arm
 simulation:
   - name: qemu
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 supported:

@@ -3,7 +3,7 @@ name: ST STM32WB5MMG Ultra-low-power Module
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 256

@@ -3,7 +3,7 @@ name: EM Starterkit EM7D
 type: mcu
 arch: arc
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - cross-compile
   - xtools
 supported:

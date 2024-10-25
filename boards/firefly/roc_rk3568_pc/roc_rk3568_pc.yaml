@@ -3,7 +3,7 @@ name: Rockchip ROC RK3568 PC
 type: mcu
 arch: arm64
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - cross-compile
 ram: 1024
 testing:

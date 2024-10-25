@@ -3,7 +3,7 @@ name: ST Nucleo F303K8
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 12

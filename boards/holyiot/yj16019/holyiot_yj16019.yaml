@@ -3,7 +3,7 @@ name: Holyiot YJ-16019
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 supported:

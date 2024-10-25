@@ -3,7 +3,7 @@ name: ARM V2M MUSCA-S1 NonSecure
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 256

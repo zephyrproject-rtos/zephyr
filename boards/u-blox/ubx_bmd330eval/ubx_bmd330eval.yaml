@@ -3,7 +3,7 @@ name: UBX_BMD330EVAL_NRF52810
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 24

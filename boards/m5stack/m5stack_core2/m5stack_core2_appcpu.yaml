@@ -3,7 +3,7 @@ name: M5Stack Core2 APPCPU
 type: mcu
 arch: xtensa
 toolchain:
-  - zephyr
+  - zephyr-gnu
 supported:
   - uart
 testing:

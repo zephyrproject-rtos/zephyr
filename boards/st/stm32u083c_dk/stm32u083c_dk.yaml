@@ -3,7 +3,7 @@ name: ST STM32U083C-DK Discovery Kit
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 supported:

@@ -3,7 +3,7 @@ name: SAM V71 Xplained Ultra (Revision B)
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 flash: 2048

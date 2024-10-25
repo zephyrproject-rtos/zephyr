@@ -3,7 +3,7 @@ name: titanium_ti60_f225 FPGA development kit with Efinix Sapphire riscv SoC
 type: mcu
 arch: riscv
 toolchain:
-  - zephyr
+  - zephyr-gnu
 ram: 196608
 supported:
   - gpio

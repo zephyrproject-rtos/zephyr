@@ -6,7 +6,7 @@ name: ST STM32F7508 DK
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 320

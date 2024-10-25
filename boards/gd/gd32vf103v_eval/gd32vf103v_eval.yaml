@@ -8,7 +8,7 @@ arch: riscv
 ram: 32
 flash: 128
 toolchain:
-  - zephyr
+  - zephyr-gnu
 supported:
   - dma
   - flash

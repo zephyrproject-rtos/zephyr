@@ -3,7 +3,7 @@ name: STEVAL STWINBX1 Development kit
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 ram: 786
 flash: 2048
