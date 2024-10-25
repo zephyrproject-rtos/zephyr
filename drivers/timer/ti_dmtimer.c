@@ -17,8 +17,6 @@
 
 #define DT_DRV_COMPAT ti_am654_timer
 
-#define TIMER_BASE_ADDR DT_INST_REG_ADDR(0)
-
 #define TIMER_IRQ_NUM   DT_INST_IRQN(0)
 #define TIMER_IRQ_PRIO  DT_INST_IRQ(0, priority)
 #define TIMER_IRQ_FLAGS DT_INST_IRQ(0, flags)
@@ -31,14 +29,15 @@
 static struct k_spinlock lock;
 
 static uint32_t last_cycle;
+static mm_reg_t mmio_addr;
 
-#define TI_DM_TIMER_READ(reg) sys_read32(TIMER_BASE_ADDR + TI_DM_TIMER_ ## reg)
+#define TI_DM_TIMER_READ(reg) sys_read32(mmio_addr + TI_DM_TIMER_ ## reg)
 
 #define TI_DM_TIMER_MASK(reg) TI_DM_TIMER_ ## reg ## _MASK
 #define TI_DM_TIMER_SHIFT(reg) TI_DM_TIMER_ ## reg ## _SHIFT
 #define TI_DM_TIMER_WRITE(data, reg, bits) \
 	ti_dm_timer_write_masks(data, \
-		TIMER_BASE_ADDR + TI_DM_TIMER_ ## reg, \
+		mmio_addr + TI_DM_TIMER_ ## reg, \
 		TI_DM_TIMER_MASK(reg ## _ ## bits), \
 		TI_DM_TIMER_SHIFT(reg ## _ ## bits))
 
@@ -135,6 +134,8 @@ unsigned int sys_clock_elapsed(void)
 static int sys_clock_driver_init(void)
 {
 	last_cycle = 0;
+
+	device_map(&mmio_addr, DT_INST_REG_ADDR(0), DT_INST_REG_SIZE(0), K_MEM_CACHE_NONE);
 
 	IRQ_CONNECT(TIMER_IRQ_NUM, TIMER_IRQ_PRIO, ti_dmtimer_isr, NULL, TIMER_IRQ_FLAGS);
 
