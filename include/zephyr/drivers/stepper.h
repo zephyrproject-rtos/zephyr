@@ -186,6 +186,22 @@ typedef int (*stepper_set_event_callback_t)(const struct device *dev,
 					    stepper_event_callback_t callback, void *user_data);
 
 /**
+ * @brief Set the stepper latch after movement.
+ * 
+ * @see stepper_set_latch() for details.
+ */
+typedef int (*stepper_set_latch_t)(const struct device *dev,
+					  const bool is_latch_after_movement);
+
+
+/**
+ * @brief Get the stepper latch state.
+ *
+ * @see stepper_is_latch() for details.
+ */
+typedef int (*stepper_is_latch_t)(const struct device *dev, bool* is_latch_after_movement);
+
+/**
  * @brief Stepper Motor Controller API
  */
 __subsystem struct stepper_driver_api {
@@ -200,6 +216,8 @@ __subsystem struct stepper_driver_api {
 	stepper_is_moving_t is_moving;
 	stepper_enable_constant_velocity_mode_t enable_constant_velocity_mode;
 	stepper_set_event_callback_t set_event_callback;
+	stepper_set_latch_t set_latch;
+	stepper_is_latch_t is_latch;
 };
 
 /**
@@ -461,6 +479,36 @@ static inline int z_impl_stepper_set_callback(const struct device *dev,
 		return -ENOSYS;
 	}
 	return api->set_event_callback(dev, callback, user_data);
+}
+
+/**
+ * @brief Set whether the stepper motor should latch after movement.
+ *
+ * @param dev Pointer to the device structure for the stepper motor.
+ * @param is_latch_after_movement Boolean indicating whether the motor should latch after movement.
+ * @retval -EIO General input / output error
+ * @retval	0 Success
+ */
+__syscall int stepper_set_latch(const struct device *dev, bool is_latch_after_movement);
+
+static inline int z_impl_stepper_set_latch(const struct device *dev, bool is_latch_after_movement) {
+    const struct stepper_driver_api *api = (const struct stepper_driver_api *)dev->api;
+    return api->set_latch(dev, is_latch_after_movement);
+}
+
+/**
+ * @brief Get the current latch configuration of the stepper motor.
+ *
+ * @param dev Pointer to the device structure for the stepper motor.
+ * @param latching_state Pointer to a boolean where the latch state will be stored.
+ * @retval -EIO General input / output error
+ * @retval	0 Success
+ */
+__syscall int stepper_is_latch(const struct device *dev, bool* latching_state);
+
+static inline int z_impl_stepper_is_latch(const struct device *dev, bool* latching_state) {
+    const struct stepper_driver_api *api = (const struct stepper_driver_api *)dev->api;
+    return api->is_latch(dev, latching_state);
 }
 
 /**
