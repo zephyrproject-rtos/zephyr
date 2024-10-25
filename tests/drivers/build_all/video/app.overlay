@@ -66,5 +66,25 @@
 				reset-gpios = <&test_gpio 0 0>;
 			};
 		};
+
+		test_video_emul_rx: video_emul_rx {
+			compatible = "zephyr,video-emul-rx";
+
+			port {
+				test_video_emul_rx_in: endpoint {
+					remote-endpoint-label = "test_video_emul_rx_in";
+				};
+			};
+		};
+
+		test_video_emul_imager: video_emul_imager {
+			compatible = "zephyr,video-emul-imager";
+
+			port {
+				test_video_emul_rx_out: endpoint {
+					remote-endpoint-label = "test_video_emul_rx_out";
+				};
+			};
+		};
 	};
 };

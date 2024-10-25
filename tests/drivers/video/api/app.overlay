@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2024 tinyVision.ai Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	test {
+		video_emul_imager: video_emul_imager {
+			compatible = "zephyr,video-emul-imager";
+			status = "okay";
+
+			port {
+				video_emul_imager_out: endpoint {
+					remote-endpoint-label = "video_emul_rx_in";
+				};
+			};
+		};
+
+		video_emul_rx: video_emul_rx {
+			compatible = "zephyr,video-emul-rx";
+			status = "okay";
+
+			port {
+				video_emul_rx_in: endpoint {
+					remote-endpoint-label = "video_emul_imager_out";
+				};
+			};
+		};
+	};
+};
