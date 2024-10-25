@@ -6,7 +6,6 @@ common:
     - net
   platform_allow:
     - native_sim
-    - native_sim/native/64
 tests:
   wifi.build.crypto_default:
     extra_configs:
