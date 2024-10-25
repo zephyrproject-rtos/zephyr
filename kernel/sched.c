@@ -968,19 +968,7 @@ int z_unpend_all(_wait_q_t *wait_q)
 
 void init_ready_q(struct _ready_q *ready_q)
 {
-#if defined(CONFIG_SCHED_SCALABLE)
-	ready_q->runq = (struct _priq_rb) {
-		.tree = {
-			.lessthan_fn = z_priq_rb_lessthan,
-		}
-	};
-#elif defined(CONFIG_SCHED_MULTIQ)
-	for (int i = 0; i < ARRAY_SIZE(_kernel.ready_q.runq.queues); i++) {
-		sys_dlist_init(&ready_q->runq.queues[i]);
-	}
-#else
-	sys_dlist_init(&ready_q->runq);
-#endif
+	_priq_run_init(&ready_q->runq);
 }
 
 void z_sched_init(void)
