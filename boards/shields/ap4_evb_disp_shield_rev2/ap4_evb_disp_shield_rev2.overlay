@@ -14,10 +14,6 @@
 	status = "okay";
 };
 
-&gpio32_63 {
-	status = "okay";
-};
-
 &mspi_aps256n {
 
 	pinctrl-0 = <&mspi0_default>;
@@ -118,4 +114,3 @@
 		};
 	};
 };
-
