@@ -304,13 +304,15 @@ static struct arm_mmu_perms_attrs arm_mmu_convert_attr_flags(uint32_t attrs)
 		perms_attrs.cacheable = 0;
 		perms_attrs.domain    = ARM_MMU_DOMAIN_DEVICE;
 
-		if (attrs & MATTR_SHARED) {
-			perms_attrs.tex        = 0;
-			perms_attrs.bufferable = 1;
-		} else {
-			perms_attrs.tex        = 2;
-			perms_attrs.bufferable = 0;
-		}
+		/*
+		 * ARM deprecates the marking of Device memory with a
+		 * shareability attribute other than Outer Shareable
+		 * or Shareable. This means ARM strongly recommends
+		 * that Device memory is never assigned a shareability
+		 * attribute of Non-shareable or Inner Shareable.
+		 */
+		perms_attrs.tex        = 0;
+		perms_attrs.bufferable = 1;
 	} else if (attrs & MT_NORMAL) {
 		/*
 		 * TEX[2] is always 1. TEX[1:0] contain the outer cache attri-
