@@ -50,7 +50,7 @@
 		xip-config = <0 0 0 0>;
 		ce-break-config = <0 0>;
 		ambiq,timing-config-mask = <3>;
-		ambiq,timing-config = <0 8 0 0 0 0 0 0>;
+		ambiq,timing-config = <0 8 0 0 0 0 16 0>;
 		scramble-config = <0 0 0>;
 		mspi-dqs-enable;
 	};
@@ -80,7 +80,8 @@
 				 <MSPI1_4_P41>,
 				 <MSPI1_5_P42>,
 				 <MSPI1_6_P43>,
-				 <MSPI1_7_P44>;
+				 <MSPI1_7_P44>,
+				 <MSPI1_9_P46>;
 			drive-strength = "1.0";
 		};
 		group2 {

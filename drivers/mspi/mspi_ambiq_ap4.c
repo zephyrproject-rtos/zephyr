@@ -871,7 +871,7 @@ static int mspi_ambiq_xip_config(const struct device *controller, const struct m
 
 	ret = mspi_check_mem_size(xip_cfg->size);
 
-	if (ret > ((int)AM_HAL_MSPI_AP_SIZE_MAX)) {
+	if (ret > ((int)AM_HAL_MSPI_AP_SIZE64M)) {
 		LOG_INST_ERR(cfg->log, "%u, fail to configure eAPSize.", __LINE__);
 		return -EHOSTDOWN;
 	}
@@ -996,12 +996,8 @@ static int mspi_ambiq_timing_config(const struct device *controller,
 		hal_dev_cfg.ui8WriteLatency = time_cfg->ui8WriteLatency;
 	}
 
-	ret = am_hal_mspi_control(data->mspiHandle, AM_HAL_MSPI_REQ_NAND_FLASH_SET_WLAT,
-				  &hal_dev_cfg);
-	if (ret) {
-		LOG_INST_ERR(cfg->log, "%u, failed to configure Write Latency.", __LINE__);
-		return -EHOSTDOWN;
-	}
+	MSPIn(cfg->mspicfg.channel_num)->DEV0CFG_b.WRITELATENCY0 = hal_dev_cfg.ui8WriteLatency;
+	MSPIn(cfg->mspicfg.channel_num)->DEV0XIP_b.XIPENWLAT0 = hal_dev_cfg.ui8WriteLatency;
 
 	if (param_mask & MSPI_AMBIQ_SET_RLC) {
 		if (time_cfg->ui8TurnAround) {
@@ -1012,6 +1008,8 @@ static int mspi_ambiq_timing_config(const struct device *controller,
 		hal_dev_cfg.ui8TurnAround = time_cfg->ui8TurnAround;
 	}
 
+	// need a AM_HAL_MSPI_REQ_TIMING_GET in hal
+	timing.ui8RxDQSDelay = time_cfg->ui32RxDQSDelay;
 	timing.ui8Turnaround = hal_dev_cfg.ui8TurnAround;
 
 	if (hal_dev_cfg.bEmulateDDR == true) {

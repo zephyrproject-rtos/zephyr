@@ -48,7 +48,7 @@ properties:
 
   ambiq,timing-config:
     type: array
-    default: [0, 0, 0, 0, 0, 0, 0, 0]
+    default: [0, 0, 0, 0, 0, 0, 16, 0]
     description: |
       Array of tuples to configure the timing parameters
       default =
