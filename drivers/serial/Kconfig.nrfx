@@ -57,16 +57,6 @@ config UART_ASYNC_TX_CACHE_SIZE
 	  in RAM, because EasyDMA in UARTE peripherals can only transfer data
 	  from RAM.
 
-config UART_NRFX_UARTE_RX_FLUSH_MAGIC_BYTE
-	hex "Byte used for RX FIFO flush workaround"
-	default 0xAA
-	range 0x00 0xFF
-	help
-	  Byte used to fill the buffer before RX FIFO is flushed into it. Due to the
-	  HW anomaly a workaround need to be applied which checks if content of the
-	  buffer changed. There are cases when specific value of the magic byte is
-	  used if it is known that certain bytes are less likely to occur.
-
 if HAS_HW_NRF_UART0 || HAS_HW_NRF_UARTE0
 nrfx_uart_num = 0
 rsource "Kconfig.nrfx_uart_instance"
