@@ -414,10 +414,12 @@ Libraries / Subsystems
     * Fixed formatting of milliseconds in :c:enum:`OS_MGMT_ID_DATETIME_STR` by adding
       leading zeros.
     * Added support for custom os mgmt bootloader info responses using notification hooks, this
-      can be enabled witbh :kconfig:option:`CONFIG_MCUMGR_GRP_OS_BOOTLOADER_INFO_HOOK`, the data
+      can be enabled with :kconfig:option:`CONFIG_MCUMGR_GRP_OS_BOOTLOADER_INFO_HOOK`, the data
       structure is :c:struct:`os_mgmt_bootloader_info_data`.
     * Added support for img mgmt slot info command, which allows for listing information on
       images and slots on the device.
+    * Added support for LoRaWAN MCUmgr transport, which can be enabled with
+      :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_LORAWAN`.
 
   * hawkBit
 
