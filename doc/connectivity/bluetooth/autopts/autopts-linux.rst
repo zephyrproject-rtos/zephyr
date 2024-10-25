@@ -55,7 +55,7 @@ VirtualBox. On VirtualBox could be some issues, if your host has fewer than 6 CP
 Create Windows virtual machine instance. Make sure it has at least 2 cores and
 installed guest extensions.
 
-Setup tested with VirtualBox 6.1.18 and VMWare Workstation 16.1.1 Pro.
+Setup tested with VirtualBox 7.1.4 and VMWare Workstation 16.1.1 Pro.
 
 Update Windows
 ==============
@@ -64,8 +64,36 @@ Update Windows in:
 
 Start -> Settings -> Update & Security -> Windows Update
 
+Setup NAT
+=========
+
+It is possible to use NAT and portforwarding to setup communication between a Linux host and a
+Windows guest. This is easiest setup for VirtualBox, and does not require any static IPs to be
+configured, and will not get blocked by the Windows Firewall.
+
+VirtualBox
+----------
+
+Open virtual machine network settings. On adapter 1 you will have created by default NAT.
+Open the Port Forwarding menu an add the ports you want.
+
+
+.. image:: virtualbox_nat_1.png
+   :width: 500
+   :align: center
+
+For example setting up the following will allow you to use
+``localhost:65000`` and ``localhost:65002`` (or ``127.0.0.0:65000`` and ``127.0.0.0:65002``)
+to connect to an AutoPTS Server in Windows running on ports 65000 and 65002.
+
+.. image:: virtualbox_nat_2.png
+   :width: 500
+   :align: center
+
 Setup static IP
 ===============
+
+If you cannot or do not want to use NAT it is possible to configure a static IP.
 
 WMWare Works
 ------------
@@ -94,14 +122,17 @@ If you type 'ifconfig' in terminal, you should be able to find your host IP:
 VirtualBox
 ----------
 
+VirtualBox on Linux, macOS and Solaris Oracle VM VirtualBox will only allow IP addresses in
+``192.168.56.0/21`` range to be assigned to host-only adapters, so if using a static address with
+VirtualBox this is the only address range you can use.
+
 Go to:
 
-File -> Host Network Manager
+File -> Tools -> Network Manager
 
 and create network:
 
 .. image:: virtualbox_static_ip_1.png
-   :height: 400
    :width: 500
    :align: center
 
@@ -109,7 +140,6 @@ Open virtual machine network settings. On adapter 1 you will have created by def
 Add adapter 2:
 
 .. image:: virtualbox_static_ip_2.png
-   :height: 400
    :width: 500
    :align: center
 
@@ -125,6 +155,7 @@ and set:
    :height: 400
    :width: 400
    :align: center
+
 
 Install Python 3
 ================
