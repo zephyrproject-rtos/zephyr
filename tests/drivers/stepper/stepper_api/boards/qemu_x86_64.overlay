@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Jilay Sandeep Pandya
+ * SPDX-FileCopyrightText: Copyright (c) 2024 Jilay Sandeep Pandya
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -20,7 +20,7 @@
 
 / {
 	test_uln2003_motor_cluster: uln2003_motor_cluster {
-		compatible = "gpio-steppers";
+		compatible = "zephyr,gpio-steppers";
 		status = "okay";
 
 		motor_1: motor_1 {

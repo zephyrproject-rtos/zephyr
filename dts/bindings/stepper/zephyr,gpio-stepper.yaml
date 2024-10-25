@@ -1,4 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2024 Carl Zeiss Meditec AG
+# SPDX-FileCopyrightText: Copyright (c) 2024 Jilay Sandeep Pandya
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
@@ -7,7 +8,7 @@ description: |
   Example:
     /* Lead A is connected Lead C and Lead B is connected to Lead D*/
     stepper {
-        compatible = "gpio-steppers";
+        compatible = "zephyr,gpio-steppers";
         motor: motor {
             gpios = <&gpioa 9 GPIO_ACTIVE_HIGH>,  /* Lead A1/A */
                     <&gpioc 7 GPIO_ACTIVE_HIGH>,  /* Lead B1/B */
@@ -16,7 +17,7 @@ description: |
         };
     };
 
-compatible: "gpio-steppers"
+compatible: "zephyr,gpio-steppers"
 
 child-binding:
   description: GPIO Controller for stepper motor
