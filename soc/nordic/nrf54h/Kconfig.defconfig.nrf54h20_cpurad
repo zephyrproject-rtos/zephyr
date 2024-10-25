@@ -3,7 +3,7 @@
 # Copyright (c) 2024 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_NRF54H20_CPURAD || SOC_NRF54H20_ENGB_CPURAD
+if SOC_NRF54H20_CPURAD
 
 config NUM_IRQS
 	default 471
@@ -11,4 +11,4 @@ config NUM_IRQS
 config NRF_REGTOOL_GENERATE_UICR
 	default y
 
-endif # SOC_NRF54H20_CPURAD || SOC_NRF54H20_ENGB_CPURAD
+endif # SOC_NRF54H20_CPURAD
