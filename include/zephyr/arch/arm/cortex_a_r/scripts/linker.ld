@@ -160,6 +160,29 @@ SECTIONS
         z_mapped_start = .;
 #endif
 
+#ifdef CONFIG_ARM_ZIMAGE_HEADER
+        KEEP(*(.image_header))
+        KEEP(*(".image_header.*"))
+	__end = .;
+#endif
+
+	/*
+	 * For AArch32 (A/R), VBAR has Bits [4:0] = RES0. Thus, vector start address
+	 * should be aligned in such a way so that it satisfies the requirements of
+	 * VBAR and VTOR ie Bits [6:0] = 0.
+	 */
+	. = ALIGN( 0x20 );
+	_vector_start = .;
+	KEEP(*(.exc_vector_table))
+	KEEP(*(".exc_vector_table.*"))
+
+#if LINKER_ZEPHYR_FINAL && defined(CONFIG_ISR_TABLES_LOCAL_DECLARATION)
+	INCLUDE isr_tables_vt.ld
+#else
+	KEEP(*(.vectors))
+#endif
+	_vector_end = .;
+
 #include <zephyr/linker/kobject-text.ld>
 
         *(.text)
