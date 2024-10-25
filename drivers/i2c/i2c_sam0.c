@@ -13,6 +13,7 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/gpio.h>
 
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
@@ -23,6 +24,30 @@ LOG_MODULE_REGISTER(i2c_sam0, CONFIG_I2C_LOG_LEVEL);
 #ifndef SERCOM_I2CM_CTRLA_MODE_I2C_MASTER
 #define SERCOM_I2CM_CTRLA_MODE_I2C_MASTER SERCOM_I2CM_CTRLA_MODE(5)
 #endif
+
+#if CONFIG_I2C_SAM0_TRANSFER_TIMEOUT
+#define I2C_TRANSFER_TIMEOUT_MSEC K_MSEC(CONFIG_I2C_SAM0_TRANSFER_TIMEOUT)
+#else
+#define I2C_TRANSFER_TIMEOUT_MSEC K_FOREVER
+#endif
+
+#define SERCOM_I2CM_SDA_PIN_IDX 0
+#define SERCOM_I2CM_SCL_PIN_IDX 1
+
+/** Utility macro that expands to the PORT device if it exists */
+#define SAM_PORT_DEV_OR_NONE(nodelabel)				\
+	IF_ENABLED(DT_NODE_EXISTS(DT_NODELABEL(nodelabel)),	\
+		   (DEVICE_DT_GET(DT_NODELABEL(nodelabel)),))
+
+/** SAM0 port devices */
+static const struct device *sam_port_devs[] = {
+	SAM_PORT_DEV_OR_NONE(porta)
+	SAM_PORT_DEV_OR_NONE(portb)
+	SAM_PORT_DEV_OR_NONE(portc)
+	SAM_PORT_DEV_OR_NONE(portd)
+	SAM_PORT_DEV_OR_NONE(porte)
+	SAM_PORT_DEV_OR_NONE(portf)
+};
 
 struct i2c_sam0_dev_config {
 	SercomI2cm *regs;
@@ -59,6 +84,50 @@ struct i2c_sam0_dev_data {
 	struct i2c_msg *msgs;
 	uint8_t num_msgs;
 };
+
+static int i2c_sam0_recover_bus(const struct device *dev)
+{
+	const struct i2c_sam0_dev_config *cfg = dev->config;
+	pinctrl_soc_pin_t soc_pin_sda, soc_pin_scl;
+
+	/* Save original pin config values */
+	soc_pin_sda = cfg->pcfg->states[PINCTRL_STATE_DEFAULT].pins[SERCOM_I2CM_SDA_PIN_IDX];
+	soc_pin_scl = cfg->pcfg->states[PINCTRL_STATE_DEFAULT].pins[SERCOM_I2CM_SCL_PIN_IDX];
+
+	uint8_t sda_port_idx = SAM_PINMUX_PORT_GET(soc_pin_sda);
+	uint8_t scl_port_idx = SAM_PINMUX_PORT_GET(soc_pin_scl);
+	uint32_t sda_pin = SAM_PINMUX_PIN_GET(soc_pin_sda);
+	uint32_t scl_pin = SAM_PINMUX_PIN_GET(soc_pin_scl);
+	const struct device *sda_dev = sam_port_devs[sda_port_idx];
+	const struct device *scl_dev = sam_port_devs[scl_port_idx];
+
+	gpio_pin_configure(sda_dev, sda_pin, GPIO_INPUT | GPIO_ACTIVE_HIGH);
+	gpio_pin_configure(scl_dev, scl_pin, GPIO_OUTPUT | GPIO_OUTPUT_INIT_HIGH);
+
+	/* Recover bus */
+	for (uint8_t i = 0; i < 9; i++) {
+		if (gpio_pin_get(sda_dev, sda_pin)) {
+			break;
+		}
+		gpio_pin_set(scl_dev, scl_pin, 0);
+		k_usleep(4);
+		gpio_pin_set(scl_dev, scl_pin, 1);
+		k_usleep(4);
+	}
+
+	/* Generate stop condition */
+	gpio_pin_configure(sda_dev, sda_pin, GPIO_OUTPUT | GPIO_OUTPUT_INIT_HIGH);
+	gpio_pin_set(sda_dev, sda_pin, 0);
+	k_usleep(4);
+	gpio_pin_set(sda_dev, sda_pin, 1);
+	k_usleep(4);
+
+	/* Recover pinmux */
+	pinctrl_configure_pins(&soc_pin_sda, 1, PINCTRL_REG_NONE);
+	pinctrl_configure_pins(&soc_pin_scl, 1, PINCTRL_REG_NONE);
+
+	return 0;
+}
 
 static void wait_synchronization(SercomI2cm *regs)
 {
@@ -504,7 +573,13 @@ static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 		irq_unlock(key);
 
 		/* Now wait for the ISR to handle everything */
-		k_sem_take(&data->sem, K_FOREVER);
+		ret = k_sem_take(&data->sem, I2C_TRANSFER_TIMEOUT_MSEC);
+
+		if (ret != 0) {
+			i2c_sam0_recover_bus(dev);
+			ret = -EIO;
+			goto unlock;
+		}
 
 		if (data->msg.status) {
 			if (data->msg.status & SERCOM_I2CM_STATUS_ARBLOST) {
