@@ -102,7 +102,7 @@ config LIBCXX_LIBCPP
 	bool "LLVM C++ Standard Library"
 	depends on "$(TOOLCHAIN_HAS_LIBCXX)" = "y"
 	depends on !NATIVE_APPLICATION
-	depends on NEWLIB_LIBC
+	depends on NEWLIB_LIBC || PICOLIBC
 	select FULL_LIBCPP_SUPPORTED
 	help
 	  Build with LLVM C++ Standard Library (libc++) provided by LLVM
