@@ -806,6 +806,7 @@ static int cmd_big_sync(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
+	err = 0;
 	bis_bitfield = shell_strtoul(argv[1], 0, &err);
 	if (err != 0) {
 		shell_error(sh, "Could not parse bis_bitfield: %d", err);
