@@ -113,10 +113,12 @@ struct input_kbd_matrix_common_config {
 	uint8_t row_size;
 	uint8_t col_size;
 	uint32_t poll_period_us;
+	uint32_t stable_poll_period_us;
 	uint32_t poll_timeout_ms;
 	uint32_t debounce_down_us;
 	uint32_t debounce_up_us;
 	uint32_t settle_time_us;
+	bool no_settle_inactive_columns;
 	bool ghostkey_check;
 	INPUT_KBD_ACTUAL_KEY_MASK_CONST kbd_row_t *actual_key_mask;
 
@@ -192,10 +194,14 @@ struct input_kbd_matrix_common_config {
 		.row_size = _row_size, \
 		.col_size = _col_size, \
 		.poll_period_us = DT_PROP(node_id, poll_period_ms) * USEC_PER_MSEC, \
+		.stable_poll_period_us = DT_PROP_OR(node_id, stable_poll_period_ms, \
+						    DT_PROP(node_id, poll_period_ms)) * \
+							USEC_PER_MSEC, \
 		.poll_timeout_ms = DT_PROP(node_id, poll_timeout_ms), \
 		.debounce_down_us = DT_PROP(node_id, debounce_down_ms) * USEC_PER_MSEC, \
 		.debounce_up_us = DT_PROP(node_id, debounce_up_ms) * USEC_PER_MSEC, \
 		.settle_time_us = DT_PROP(node_id, settle_time_us), \
+		.no_settle_inactive_columns = DT_PROP(node_id, no_settle_inactive_columns), \
 		.ghostkey_check = !DT_PROP(node_id, no_ghostkey_check), \
 		IF_ENABLED(DT_NODE_HAS_PROP(node_id, actual_key_mask), ( \
 		.actual_key_mask = INPUT_KBD_MATRIX_DATA_NAME(node_id, actual_key_mask), \
