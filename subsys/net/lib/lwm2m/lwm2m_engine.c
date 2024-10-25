@@ -1053,6 +1053,7 @@ static const int cipher_list_psk[] = {
 };
 
 static const int cipher_list_cert[] = {
+	MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8,
 	MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
 };
 
