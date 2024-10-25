@@ -7,6 +7,7 @@
 import argparse
 import collections
 from email.utils import parseaddr
+from itertools import takewhile
 import json
 import logging
 import os
@@ -1543,20 +1544,39 @@ class KeepSorted(ComplianceTest):
 
     MARKER = "zephyr-keep-sorted"
 
-    def block_is_sorted(self, block_data):
-        lines = []
+    def block_check_sorted(self, block_data, regex):
+        def _test_indent(txt: str):
+            return txt.startswith((" ", "\t"))
 
-        for line in textwrap.dedent(block_data).splitlines():
-            if len(lines) > 0 and line.startswith((" ", "\t")):
-                # Fold back indented lines
-                lines[-1] += line.strip()
+        if regex is None:
+            block_data = textwrap.dedent(block_data)
+
+        lines = block_data.splitlines()
+        last = ''
+
+        for idx, line in enumerate(lines):
+            if not line.strip():
+                # Ignore blank lines
+                continue
+
+            if regex:
+                # check for regex
+                if not re.match(regex, line):
+                    continue
             else:
-                lines.append(line.strip())
+                if _test_indent(line):
+                    continue
 
-        if lines != sorted(lines):
-            return False
+                # Fold back indented lines after the current one
+                for cont in takewhile(_test_indent, lines[idx + 1:]):
+                    line += cont.strip()
 
-        return True
+            if line < last:
+                return idx
+
+            last = line
+
+        return -1
 
     def check_file(self, file, fp):
         mime_type = magic.from_file(file, mime=True)
@@ -1569,8 +1589,9 @@ class KeepSorted(ComplianceTest):
 
         start_marker = f"{self.MARKER}-start"
         stop_marker = f"{self.MARKER}-stop"
-        start_line = None
-        stop_line = None
+        regex_marker = r"re\((.+)\)"
+        start_line = 0
+        regex = None
 
         for line_num, line in enumerate(fp.readlines(), start=1):
             if start_marker in line:
@@ -1581,22 +1602,22 @@ class KeepSorted(ComplianceTest):
                 in_block = True
                 block_data = ""
                 start_line = line_num + 1
+
+                # Test for a regex block
+                match = re.search(regex_marker, line)
+                regex = match.group(1) if match else None
             elif stop_marker in line:
                 if not in_block:
                     desc = f"{stop_marker} without {start_marker}"
                     self.fmtd_failure("error", "KeepSorted", file, line_num,
                                      desc=desc)
                 in_block = False
-                stop_line = line_num - 1
 
-                if not self.block_is_sorted(block_data):
-                    desc = (f"sorted block is not sorted, sort by running: " +
-                            f"\"ex -s -c '{start_line},{stop_line} sort i|x' {file}\"")
+                idx = self.block_check_sorted(block_data, regex)
+                if idx >= 0:
+                    desc = f"sorted block has out-of-order line at {start_line + idx}"
                     self.fmtd_failure("error", "KeepSorted", file, line_num,
                                       desc=desc)
-            elif not line.strip() or line.startswith("#"):
-                # Ignore comments and blank lines
-                continue
             elif in_block:
                 block_data += line
 
