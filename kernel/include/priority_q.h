@@ -17,6 +17,7 @@ bool z_priq_rb_lessthan(struct rbnode *a, struct rbnode *b);
 
 /* Dumb Scheduling */
 #if defined(CONFIG_SCHED_DUMB)
+#define _priq_run_init		z_priq_dumb_init
 #define _priq_run_add		z_priq_dumb_add
 #define _priq_run_remove	z_priq_dumb_remove
 # if defined(CONFIG_SCHED_CPU_MASK)
@@ -26,6 +27,7 @@ bool z_priq_rb_lessthan(struct rbnode *a, struct rbnode *b);
 # endif /* CONFIG_SCHED_CPU_MASK */
 /* Scalable Scheduling */
 #elif defined(CONFIG_SCHED_SCALABLE)
+#define _priq_run_init		z_priq_rb_init
 #define _priq_run_add		z_priq_rb_add
 #define _priq_run_remove	z_priq_rb_remove
 #define _priq_run_best		z_priq_rb_best
@@ -37,7 +39,7 @@ bool z_priq_rb_lessthan(struct rbnode *a, struct rbnode *b);
 #else
 #define NBITS 32
 #endif /* CONFIG_64BIT */
-
+#define _priq_run_init		z_priq_mq_init
 #define _priq_run_add		z_priq_mq_add
 #define _priq_run_remove	z_priq_mq_remove
 #define _priq_run_best		z_priq_mq_best
@@ -57,6 +59,11 @@ static ALWAYS_INLINE void z_priq_mq_remove(struct _priq_mq *pq, struct k_thread 
 #define _priq_wait_best		z_priq_dumb_best
 #endif
 
+static ALWAYS_INLINE void z_priq_dumb_init(sys_dlist_t *pq)
+{
+	sys_dlist_init(pq);
+}
+
 static ALWAYS_INLINE void z_priq_dumb_remove(sys_dlist_t *pq, struct k_thread *thread)
 {
 	ARG_UNUSED(pq);
@@ -73,6 +80,15 @@ static ALWAYS_INLINE struct k_thread *z_priq_dumb_best(sys_dlist_t *pq)
 		thread = CONTAINER_OF(n, struct k_thread, base.qnode_dlist);
 	}
 	return thread;
+}
+
+static ALWAYS_INLINE void z_priq_rb_init(struct _priq_rb *pq)
+{
+	*pq = (struct _priq_rb) {
+		.tree = {
+			.lessthan_fn = z_priq_rb_lessthan,
+		}
+	};
 }
 
 static ALWAYS_INLINE void z_priq_rb_add(struct _priq_rb *pq, struct k_thread *thread)
@@ -161,6 +177,13 @@ static ALWAYS_INLINE struct prio_info get_prio_info(int8_t old_prio)
 	ret.bit = ret.offset_prio % NBITS;
 
 	return ret;
+}
+
+static ALWAYS_INLINE void z_priq_mq_init(struct _priq_mq *q)
+{
+	for (int i = 0; i < ARRAY_SIZE(q->queues); i++) {
+		sys_dlist_init(&q->queues[i]);
+	}
 }
 
 static ALWAYS_INLINE void z_priq_mq_add(struct _priq_mq *pq,
