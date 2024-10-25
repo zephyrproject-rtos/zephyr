@@ -56,42 +56,6 @@ struct dmamux_stm32_config {
 	const struct dmamux_stm32_channel *mux_channels;
 };
 
-/*
- * LISTIFY is used to generate arrays with function pointers to check
- * and clear interrupt flags using LL functions
- */
-#define DMAMUX_CHANNEL(i, _)		LL_DMAMUX_CHANNEL_ ## i
-#define IS_ACTIVE_FLAG_SOX(i, _)	LL_DMAMUX_IsActiveFlag_SO  ## i
-#define CLEAR_FLAG_SOX(i, _)		LL_DMAMUX_ClearFlag_SO ## i
-#define IS_ACTIVE_FLAG_RGOX(i, _)	LL_DMAMUX_IsActiveFlag_RGO  ## i
-#define CLEAR_FLAG_RGOX(i, _)		LL_DMAMUX_ClearFlag_RGO ## i
-
-uint32_t table_ll_channel[] = {
-	LISTIFY(DT_INST_PROP(0, dma_channels), DMAMUX_CHANNEL, (,))
-};
-
-#if !defined(CONFIG_SOC_SERIES_STM32G0X) && \
-	!defined(CONFIG_SOC_SERIES_STM32C0X)
-#define dmamux_channel_typedef DMAMUX_Channel_TypeDef
-#else
-#define dmamux_channel_typedef const DMAMUX_Channel_TypeDef
-#endif
-uint32_t (*func_ll_is_active_so[])(dmamux_channel_typedef * DMAMUXx) = {
-	LISTIFY(DT_INST_PROP(0, dma_channels), IS_ACTIVE_FLAG_SOX, (,))
-};
-
-void (*func_ll_clear_so[])(dmamux_channel_typedef * DMAMUXx) = {
-	LISTIFY(DT_INST_PROP(0, dma_channels), CLEAR_FLAG_SOX, (,))
-};
-
-uint32_t (*func_ll_is_active_rgo[])(dmamux_channel_typedef * DMAMUXx) = {
-	LISTIFY(DT_INST_PROP(0, dma_generators), IS_ACTIVE_FLAG_RGOX, (,))
-};
-
-void (*func_ll_clear_rgo[])(dmamux_channel_typedef * DMAMUXx) = {
-	LISTIFY(DT_INST_PROP(0, dma_generators), CLEAR_FLAG_RGOX, (,))
-};
-
 typedef int (*dma_configure_fn)(const struct device *dev, uint32_t id, struct dma_config *config);
 typedef int (*dma_start_fn)(const struct device *dev, uint32_t id);
 typedef int (*dma_stop_fn)(const struct device *dev, uint32_t id);
