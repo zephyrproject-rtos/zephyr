@@ -74,7 +74,7 @@ config FULL_LIBCPP_SUPPORTED
 choice LIBCPP_IMPLEMENTATION
 	prompt "C++ Standard Library Implementation"
 	default EXTERNAL_LIBCPP if REQUIRES_FULL_LIBCPP && NATIVE_BUILD
-	default LIBCXX_LIBCPP if REQUIRES_FULL_LIBCPP && "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "llvm"
+	default LIBCXX_LIBCPP if REQUIRES_FULL_LIBCPP && "$(TOOLCHAIN_HAS_LIBCXX)" = "y"
 	default GLIBCXX_LIBCPP if REQUIRES_FULL_LIBCPP && "$(TOOLCHAIN_HAS_GLIBCXX)" = "y"
 	default MINIMAL_LIBCPP
 
@@ -100,9 +100,9 @@ config GLIBCXX_LIBCPP
 
 config LIBCXX_LIBCPP
 	bool "LLVM C++ Standard Library"
+	depends on "$(TOOLCHAIN_HAS_LIBCXX)" = "y"
 	depends on !NATIVE_APPLICATION
 	depends on NEWLIB_LIBC
-	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "llvm"
 	select FULL_LIBCPP_SUPPORTED
 	help
 	  Build with LLVM C++ Standard Library (libc++) provided by LLVM
