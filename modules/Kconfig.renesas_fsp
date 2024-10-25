@@ -71,4 +71,9 @@ config USE_RA_FSP_AGT
 	help
 	  Enable RA FSP AGT driver
 
+config USE_RA_FSP_USB_DEVICE
+	bool
+	help
+	  Enable RA FSP USB Device Controller driver
+
 endif # HAS_RENESAS_RA_FSP
