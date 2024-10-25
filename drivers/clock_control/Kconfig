@@ -50,6 +50,8 @@ source "drivers/clock_control/Kconfig.mcux_sim"
 
 source "drivers/clock_control/Kconfig.mcux_syscon"
 
+source "drivers/clock_control/Kconfig.npcm"
+
 source "drivers/clock_control/Kconfig.npcx"
 
 source "drivers/clock_control/Kconfig.rv32m1"
