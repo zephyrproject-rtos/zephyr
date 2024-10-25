@@ -32,6 +32,32 @@
 		};
 	};
 
+	scu: system-controller {
+		ccm: clock-controller {
+			compatible = "nxp,imx-ccm";
+			#clock-cells = <3>;
+		};
+
+		iomuxc: iomuxc {
+			compatible = "nxp,imx-iomuxc-scu";
+			pinctrl: pinctrl {
+				compatible = "nxp,imx8-pinctrl";
+			};
+		};
+
+		power-domains {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			irqstr_pd: pd@0 {
+				compatible = "nxp,imx8qm-scu-pd", "nxp,scu-pd";
+				reg = <0>;
+				nxp,resource-id = <IMX_SC_R_IRQSTR_DSP>;
+				#power-domain-cells = <0>;
+			};
+		};
+	};
+
 	sram0: memory@92400000 {
 		device_type = "memory";
 		compatible = "mmio-sram";
@@ -84,32 +110,6 @@
 	/* LSIO MU2, used to interact with the SCFW */
 	scu_mu: mailbox@5d1d0000 {
 		reg = <0x5d1d0000 DT_SIZE_K(64)>;
-	};
-
-	scu: system-controller {
-		ccm: clock-controller {
-			compatible = "nxp,imx-ccm";
-			#clock-cells = <3>;
-		};
-
-		iomuxc: iomuxc {
-			compatible = "nxp,imx-iomuxc-scu";
-			pinctrl: pinctrl {
-				compatible = "nxp,imx8-pinctrl";
-			};
-		};
-
-		power-domains {
-			#address-cells = <1>;
-			#size-cells = <0>;
-
-			irqstr_pd: pd@0 {
-				compatible = "nxp,imx8qm-scu-pd", "nxp,scu-pd";
-				reg = <0>;
-				nxp,resource-id = <IMX_SC_R_IRQSTR_DSP>;
-				#power-domain-cells = <0>;
-			};
-		};
 	};
 
 	lpuart2: serial@5a080000 {
