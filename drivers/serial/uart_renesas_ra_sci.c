@@ -1174,7 +1174,7 @@ static void uart_ra_sci_eri_isr(const struct device *dev)
 				.parity = UART_CFG_PARITY_NONE,                                    \
 				.stop_bits = UART_CFG_STOP_BITS_1,                                 \
 				.data_bits = UART_CFG_DATA_BITS_8,                                 \
-				.flow_ctrl = COND_CODE_1(DT_NODE_HAS_PROP(idx, hw_flow_control),   \
+				.flow_ctrl = COND_CODE_1(DT_INST_PROP(index, hw_flow_control),     \
 							 (UART_CFG_FLOW_CTRL_RTS_CTS),             \
 							 (UART_CFG_FLOW_CTRL_NONE)),               \
 			},                                                                         \
