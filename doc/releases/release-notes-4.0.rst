@@ -303,6 +303,8 @@ Drivers and Sensors
 
     * Added Würth Elektronik HIDS-2525020210002
       :dtcompatible:`we,wsen-hids-2525020210002` humidity sensor driver.
+    * Replaced outdated :dtcompatible:`we,wsen-pdus` differential pressure sensor driver
+      and renamed it to :dtcompatible:`we,wsen-pdus-25131308XXXXX`.
 
 * Serial
 

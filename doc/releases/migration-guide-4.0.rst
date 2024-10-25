@@ -271,6 +271,20 @@ Sensors
   has been updated to support both the new and deprecated property names. Uses of the deprecated
   property names should be updated to the new property names.
 
+  * The :dtcompatible:`we,wsen-pdus` driver has been renamed to
+    :dtcompatible:`we,wsen-pdus-25131308XXXXX`.
+    The Device Tree can be configured as follows:
+
+    .. code-block:: devicetree
+
+      &i2c0 {
+        pdus:pdus-25131308XXXXX@78 {
+          compatible = "we,wsen-pdus-25131308XXXXX";
+          reg = < 0x78 >;
+          sensor-type = < 4 >;
+        };
+      };
+
 Serial
 ======
 
