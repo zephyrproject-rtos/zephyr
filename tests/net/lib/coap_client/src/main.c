@@ -322,6 +322,7 @@ static void test_setup(void *data)
 
 	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake;
 	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake;
+	clear_socket_events(ZSOCK_POLLIN | ZSOCK_POLLOUT | ZSOCK_POLLERR);
 
 	for (i = 0; i < ARRAY_SIZE(messages_needing_response); i++) {
 		messages_needing_response[i] = 0;
@@ -727,5 +728,65 @@ ZTEST(coap_client, test_multiple_clients)
 	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
 	zassert_ok(k_sem_take(&sem2, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
 	zassert_equal(last_response_code, COAP_RESPONSE_CODE_OK, "Unexpected response");
+}
 
+
+ZTEST(coap_client, test_poll_err)
+{
+	int ret = 0;
+	struct sockaddr address = {0};
+	struct coap_client_request client_request = {
+		.method = COAP_METHOD_GET,
+		.confirmable = true,
+		.path = test_path,
+		.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN,
+		.cb = coap_callback,
+		.payload = short_payload,
+		.len = strlen(short_payload),
+	};
+
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_no_reply;
+	set_socket_events(ZSOCK_POLLERR);
+
+	k_sleep(K_MSEC(1));
+
+	LOG_INF("Send request");
+	ret = coap_client_req(&client, 0, &address, &client_request, NULL);
+	zassert_true(ret >= 0, "Sending request failed, %d", ret);
+
+	k_sleep(K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS));
+	zassert_equal(last_response_code, -EIO, "Unexpected response");
+}
+
+ZTEST(coap_client, test_poll_err_after_response)
+{
+	int ret = 0;
+	struct k_sem sem1;
+	struct sockaddr address = {0};
+	struct coap_client_request client_request = {
+		.method = COAP_METHOD_GET,
+		.confirmable = true,
+		.path = test_path,
+		.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN,
+		.cb = coap_callback,
+		.payload = short_payload,
+		.len = strlen(short_payload),
+		.user_data = &sem1
+	};
+
+	zassert_ok(k_sem_init(&sem1, 0, 1));
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_no_reply;
+	set_socket_events(ZSOCK_POLLIN);
+
+	k_sleep(K_MSEC(1));
+
+	LOG_INF("Send request");
+	ret = coap_client_req(&client, 0, &address, &client_request, NULL);
+	zassert_true(ret >= 0, "Sending request failed, %d", ret);
+
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_OK, "Unexpected response");
+
+	set_socket_events(ZSOCK_POLLERR);
+	zassert_not_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
 }
