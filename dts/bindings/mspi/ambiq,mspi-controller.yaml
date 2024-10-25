@@ -48,3 +48,23 @@ properties:
         .bRxCapEXT,
         .ui8Sfturn,
       >
+
+  ambiq,dqs-config:
+    type: array
+    default: [0, 0, 0, 0, 16, 0, 0, 0, 0, 0]
+    description: |
+      Array of tuples to configure the dqs parameters
+
+      default =
+      <
+        .bDQSEnable             = 0,
+        .bDQSSyncNeg            = 0,
+        .bEnableFineDelay       = 0,
+        .ui8TxDQSDelay          = 0,
+        .ui8RxDQSDelay          = 16,
+        .ui8RxDQSDelayNeg       = 0,
+        .bRxDQSDelayNegEN       = 0,
+        .ui8RxDQSDelayHi        = 0,
+        .ui8RxDQSDelayNegHi     = 0,
+        .bRxDQSDelayHiEN        = 0,
+      >
