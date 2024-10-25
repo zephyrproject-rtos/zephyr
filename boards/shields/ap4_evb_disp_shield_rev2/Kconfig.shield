@@ -1,0 +1,5 @@
+# Copyright (c) 2024, Ambiq Micro Inc. <www.ambiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_AMBIQ_AP4_EVB_DISP_SHIELD_REV2
+	def_bool $(shields_list_contains,ap4_evb_disp_shield_rev2)

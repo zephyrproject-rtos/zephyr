@@ -1,0 +1,121 @@
+/*
+ * Copyright (c) 2024, Ambiq Micro Inc. <www.ambiq.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		psram0 = &aps256n;
+	};
+};
+
+&gpio64_95 {
+	status = "okay";
+};
+
+&gpio32_63 {
+	status = "okay";
+};
+
+&mspi_aps256n {
+
+	pinctrl-0 = <&mspi0_default>;
+	pinctrl-1 = <&mspi0_sleep>;
+	pinctrl-2 = <&mspi0_psram>;
+	pinctrl-names = "default","sleep","psram";
+	status = "okay";
+
+	ce-gpios = <&gpio32_63 57 GPIO_ACTIVE_LOW>;
+
+	cmdq-buffer-location = ".mspi_buff";
+	cmdq-buffer-size = <256>;
+
+	ambiq,rx-config = <2 0 0 0 1 0 0 0 0 0>;
+
+	dqs-support;
+
+	aps256n: aps256n@0 {
+		compatible = "ambiq,mspi-device", "mspi-aps256n";
+		size = <DT_SIZE_M(256/8)>;
+		reg = <0>;
+		status = "okay";
+		mspi-max-frequency = <48000000>;
+		mspi-io-mode = "MSPI_IO_MODE_HEX";
+		mspi-data-rate = "MSPI_DATA_RATE_DUAL";
+		mspi-hardware-ce-num = <0>;
+		read-command = <0x2020>;
+		write-command = <0xA0A0>;
+		command-length = "INSTR_2_BYTE";
+		address-length = "ADDR_4_BYTE";
+		rx-dummy = <6>;
+		tx-dummy = <6>;
+		xip-config = <1 0 DT_SIZE_M(256/8) 0>;
+		ce-break-config = <1024 2>;
+		ambiq,timing-config-mask = <67>;
+		ambiq,timing-config = <6 6 0 0 0 0 16 0>;
+		mspi-dqs-enable;
+	};
+};
+
+&pinctrl {
+	mspi0_sleep: mspi0_sleep{
+		group1 {
+			pinmux = <GPIO_P64>,
+				 <GPIO_P65>,
+				 <GPIO_P66>,
+				 <GPIO_P67>,
+				 <GPIO_P68>,
+				 <GPIO_P69>,
+				 <GPIO_P70>,
+				 <GPIO_P71>,
+				 <GPIO_P72>,
+				 <GPIO_P73>,
+				 <GPIO_P37>,
+				 <GPIO_P38>,
+				 <GPIO_P39>,
+				 <GPIO_P40>,
+				 <GPIO_P41>,
+				 <GPIO_P42>,
+				 <GPIO_P42>,
+				 <GPIO_P43>,
+				 <GPIO_P44>,
+				 <GPIO_P45>;
+		};
+	};
+	mspi0_psram: mspi0_psram{
+		group1 {
+			pinmux = <MSPI0_0_P64>,
+				 <MSPI0_1_P65>,
+				 <MSPI0_2_P66>,
+				 <MSPI0_3_P67>,
+				 <MSPI0_4_P68>,
+				 <MSPI0_5_P69>,
+				 <MSPI0_6_P70>,
+				 <MSPI0_7_P71>,
+				 <MSPI0_8_P72>,
+				 <MSPI0_9_P73>,
+				 <MSPI1_0_P37>,
+				 <MSPI1_1_P38>,
+				 <MSPI1_2_P39>,
+				 <MSPI1_3_P40>,
+				 <MSPI1_4_P41>,
+				 <MSPI1_5_P42>,
+				 <MSPI1_6_P43>,
+				 <MSPI1_7_P44>;
+			drive-strength = "1.0";
+		};
+		group2 {
+			pinmux = <NCE57_P57>;
+			drive-strength = "0.5";
+			ambiq,iom-num = <1>;
+			ambiq,iom-nce-module = <32>;
+		};
+		group3 {
+			pinmux = <MSPI1_8_P45>;
+			drive-strength = "1.0";
+			ambiq,interrupt-direction = <0x2>;
+		};
+	};
+};
+
