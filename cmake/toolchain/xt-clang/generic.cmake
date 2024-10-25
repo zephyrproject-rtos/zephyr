@@ -16,5 +16,6 @@ set(LINKER xt-ld)
 # obtain license information from remote licensing servers. So here
 # forces the assembler ID to be GNU to speed things up a bit.
 set(CMAKE_ASM_COMPILER_ID "GNU")
+set(TOOLCHAIN_HAS_LIBCXX ON CACHE BOOL "True if toolchain supports libc++")
 
 message(STATUS "Found toolchain: xt-clang (${XTENSA_TOOLCHAIN_PATH})")
