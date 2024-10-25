@@ -325,6 +325,19 @@ static bool flash_callback(const struct flash_pages_info *info, void *data)
 	return true;
 }
 
+ZTEST(flash_driver, test_get_size)
+{
+#if CONFIG_TEST_DRIVER_FLASH_SIZE != -1
+	uint64_t size;
+
+	zassert_ok(flash_get_size(flash_dev, &size));
+	zassert_equal(size, CONFIG_TEST_DRIVER_FLASH_SIZE, "Unexpected size");
+#else
+	/* The test is sipped only because there is no uniform way to get device size */
+	ztest_test_skip();
+#endif
+}
+
 ZTEST(flash_driver, test_flash_page_layout)
 {
 	int rc;

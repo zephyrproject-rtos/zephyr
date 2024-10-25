@@ -364,6 +364,14 @@ static void flash_sim_page_layout(const struct device *dev,
 }
 #endif
 
+static int flash_sim_get_size(const struct device *dev, uint64_t *size)
+{
+	ARG_UNUSED(dev);
+
+	*size = FLASH_SIMULATOR_FLASH_SIZE;
+
+	return 0;
+}
 static const struct flash_parameters *
 flash_sim_get_parameters(const struct device *dev)
 {
@@ -377,6 +385,7 @@ static const struct flash_driver_api flash_sim_api = {
 	.write = flash_sim_write,
 	.erase = flash_sim_erase,
 	.get_parameters = flash_sim_get_parameters,
+	.get_size = flash_sim_get_size,
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_sim_page_layout,
 #endif

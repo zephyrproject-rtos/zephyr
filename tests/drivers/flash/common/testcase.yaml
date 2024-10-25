@@ -13,10 +13,14 @@ tests:
     extra_args:
       - EXTRA_CONF_FILE=boards/nrf52840dk_nrf52840_qspi_nor.conf
       - DTC_OVERLAY_FILE=boards/nrf52840_size_in_bytes.overlay
+    extra_configs:
+      - CONFIG_TEST_DRIVER_FLASH_SIZE=8388608
     integration_platforms:
       - nrf52840dk/nrf52840
   drivers.flash.common.nrf_qspi_nor_4B_addr:
     platform_allow: nrf52840dk/nrf52840
+    extra_configs:
+      - CONFIG_TEST_DRIVER_FLASH_SIZE=67108864
     extra_args:
       - EXTRA_CONF_FILE=boards/nrf52840dk_nrf52840_qspi_nor.conf
       - DTC_OVERLAY_FILE=boards/nrf52840dk_mx25l51245g.overlay
@@ -70,6 +74,8 @@ tests:
              dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
   drivers.flash.common.mx25r_high_perf:
     platform_allow: nrf52840dk/nrf52840
+    extra_configs:
+      - CONFIG_TEST_DRIVER_FLASH_SIZE=216142092
     extra_args:
       - EXTRA_CONF_FILE=boards/nrf52840dk_flash_spi.conf
       - DTC_OVERLAY_FILE=boards/nrf52840dk_mx25r_high_perf.overlay
@@ -81,6 +87,8 @@ tests:
       - CONFIG_FLASH_NXP_S32_QSPI_NOR_SFDP_RUNTIME=y
   drivers.flash.common.spi_nor:
     platform_allow: nrf52840dk/nrf52840
+    extra_configs:
+      - CONFIG_TEST_DRIVER_FLASH_SIZE=2097152
     extra_args:
       - EXTRA_CONF_FILE=boards/nrf52840dk_flash_spi.conf
       - DTC_OVERLAY_FILE=boards/nrf52840dk_spi_nor.overlay
@@ -88,6 +96,8 @@ tests:
       fixture: external_flash_mx25v1635f
   drivers.flash.common.spi_nor_wp_hold:
     platform_allow: nrf52840dk/nrf52840
+    extra_configs:
+      - CONFIG_TEST_DRIVER_FLASH_SIZE=2097152
     extra_args:
       - EXTRA_CONF_FILE=boards/nrf52840dk_flash_spi.conf
       - DTC_OVERLAY_FILE=boards/nrf52840dk_spi_nor_wp_hold.overlay

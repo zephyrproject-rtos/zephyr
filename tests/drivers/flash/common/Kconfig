@@ -1,0 +1,14 @@
+# Copyright (c)2024, Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# Device/scenario dependent information that is not available in
+# other ways.
+
+config TEST_DRIVER_FLASH_SIZE
+	int "size of flash device under test"
+	default -1
+	help
+	  Set to size of device, in bytes, under test. If device do not
+	  support returning size, leave -1 here.
+
+source "Kconfig.zephyr"

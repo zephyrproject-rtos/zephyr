@@ -135,6 +135,15 @@ static int nrf_mram_erase(const struct device *dev, off_t offset, size_t size)
 	return 0;
 }
 
+static int nrf_mram_get_size(const struct device *dev, uint64_t *size)
+{
+	ARG_UNUSED(dev);
+
+	*size = MRAM_SIZE;
+
+	return 0;
+}
+
 static const struct flash_parameters *nrf_mram_get_parameters(const struct device *dev)
 {
 	ARG_UNUSED(dev);
@@ -170,6 +179,7 @@ static const struct flash_driver_api nrf_mram_api = {
 	.read = nrf_mram_read,
 	.write = nrf_mram_write,
 	.erase = nrf_mram_erase,
+	.get_size = nrf_mram_get_size,
 	.get_parameters = nrf_mram_get_parameters,
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = nrf_mram_page_layout,
