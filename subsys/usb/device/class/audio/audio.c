@@ -577,7 +577,7 @@ static int handle_fu_volume_req(struct usb_audio_dev_data *audio_dev_data,
 			return -EINVAL;
 		}
 		if (setup->bRequest == USB_AUDIO_SET_CUR) {
-			target_vol = *((int16_t *)*data);
+			target_vol = sys_get_le16(*data);
 			if (!IN_RANGE(target_vol, audio_dev_data->volumes.volume_min,
 				      audio_dev_data->volumes.volume_max)) {
 				LOG_ERR("Volume out of range: %d", target_vol);
@@ -587,15 +587,16 @@ static int handle_fu_volume_req(struct usb_audio_dev_data *audio_dev_data,
 				target_vol = ROUND_UP(target_vol,
 					audio_dev_data->volumes.volume_res);
 			}
+
+			UNALIGNED_PUT(target_vol, (int16_t *)control_val);
 			evt->val = control_val;
 			evt->val_len = *len;
-			*((int16_t *)evt->val) = sys_le16_to_cpu(target_vol);
 			return 0;
 		}
 	} else {
 		if (setup->bRequest == USB_AUDIO_GET_CUR) {
 			*len = LEN(ch_cnt, VOLUME);
-			temp_vol = sys_cpu_to_le16(*(int16_t *)control_val);
+			temp_vol = sys_cpu_to_le16(UNALIGNED_GET((int16_t *)control_val));
 			memcpy(*data, &temp_vol, *len);
 			return 0;
 		} else if (setup->bRequest == USB_AUDIO_GET_MIN) {
