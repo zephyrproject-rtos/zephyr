@@ -205,6 +205,14 @@ static int update_link_state(const struct device *dev)
 
 		k_sleep(K_MSEC(100));
 
+		/* On some PHY chips, the BMSR bits are latched, so the first read may
+		 * show incorrect status. A second read ensures correct values.
+		 */
+		if (phy_mii_reg_read(dev, MII_BMSR, &bmsr_reg) < 0) {
+			return -EIO;
+		}
+
+		/* Second read, clears the latched bits and gives the correct status */
 		if (phy_mii_reg_read(dev, MII_BMSR, &bmsr_reg) < 0) {
 			return -EIO;
 		}
