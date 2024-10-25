@@ -644,9 +644,6 @@ class TestPlan:
                     if ts.get("run_id"):
                         instance.run_id = ts.get("run_id")
 
-                    if self.options.device_testing:
-                        self.options.filter = 'runnable'
-
                     instance.run = instance.check_runnable(
                         self.options,
                         self.hwm
