@@ -270,22 +270,14 @@ static int ambiq_gpio_port_get_direction(const struct device *dev, gpio_port_pin
 static int ambiq_gpio_port_get_raw(const struct device *dev, gpio_port_value_t *value)
 {
 	const struct ambiq_gpio_config *const dev_cfg = dev->config;
-	am_hal_gpio_pincfg_t pincfg;
 	uint32_t pin_offset;
 
 #if defined(CONFIG_SOC_SERIES_APOLLO3X)
 	pin_offset = dev_cfg->offset;
-	am_hal_gpio_pinconfig_get(pin_offset, &pincfg);
-	if (pincfg.eGPInput == AM_HAL_GPIO_PIN_INPUT_ENABLE) {
 #else
 	pin_offset = dev_cfg->offset >> 2;
-	am_hal_gpio_pinconfig_get(pin_offset, &pincfg);
-	if (pincfg.GP.cfg_b.eGPInput == AM_HAL_GPIO_PIN_INPUT_ENABLE) {
 #endif
-		*value = (*AM_HAL_GPIO_RDn(pin_offset));
-	} else {
-		*value = (*AM_HAL_GPIO_WTn(pin_offset));
-	}
+	*value = (*AM_HAL_GPIO_RDn(pin_offset)) | (*AM_HAL_GPIO_WTn(pin_offset));
 
 	return 0;
 }
