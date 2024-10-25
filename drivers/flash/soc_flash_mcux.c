@@ -55,7 +55,7 @@ LOG_MODULE_REGISTER(flash_mcux);
 
 #define SOC_NV_FLASH_NODE DT_INST(0, soc_nv_flash)
 
-#if defined(CONFIG_CHECK_BEFORE_READING)  && !defined(CONFIG_SOC_LPC55S36)
+#if defined(CONFIG_CHECK_BEFORE_READING) && !defined(CONFIG_SOC_LPC55S36)
 #define FMC_STATUS_FAIL	FLASH_INT_CLR_ENABLE_FAIL_MASK
 #define FMC_STATUS_ERR	FLASH_INT_CLR_ENABLE_ERR_MASK
 #define FMC_STATUS_DONE	FLASH_INT_CLR_ENABLE_DONE_MASK
@@ -204,36 +204,49 @@ static int flash_mcux_read(const struct device *dev, off_t offset,
 	 */
 	addr = offset + priv->pflash_block_base;
 
-#ifdef CONFIG_CHECK_BEFORE_READING
-  #ifdef CONFIG_SOC_LPC55S36
-	/* Validates the given address range is loaded in the flash hiding region. */
-	rc = FLASH_IsFlashAreaReadable(&priv->config, addr, len);
-	if (rc != kStatus_FLASH_Success) {
-		rc = -EIO;
-	} else {
-		/* Check whether the flash is erased ("len" and "addr" must be word-aligned). */
-		rc = FLASH_VerifyErase(&priv->config, ((addr + 0x3) & ~0x3),  ((len + 0x3) & ~0x3));
+#if defined(CONFIG_CHECK_BEFORE_READING) && !defined(CONFIG_SOC_LPC55S36)
+	rc = is_area_readable(addr, len);
+#endif
+
+#if defined(CONFIG_CHECK_BEFORE_READING) && defined(CONFIG_SOC_LPC55S36)
+	/* Use the HAL FLASH_Read function to read the flash, since direct
+	 * access may cause faults on erased pages.
+	 */
+	rc = FLASH_Read(&priv->config, addr, data, len);
+	switch (rc) {
+	case kStatus_FLASH_Success:
+		rc = 0;
+		break;
+	case kStatus_FLASH_EccError:
+		/* Check id the ECC issue is due to the Flash being erased
+		 * ("addr" and "len" must be word-aligned for this call).
+		 */
+		rc = FLASH_VerifyErase(&priv->config, ((addr + 0x3) & ~0x3),
+						      ((len + 0x3) & ~0x3));
 		if (rc == kStatus_FLASH_Success) {
 			rc = -ENODATA;
 		} else {
-			rc = 0;
+			rc = -EIO;
 		}
+		break;
+	default:
+		rc = -EIO;
+		break;
 	}
-  #else
-	rc = is_area_readable(addr, len);
-  #endif /* CONFIG_SOC_LPC55S36 */
-#endif /* CONFIG_CHECK_BEFORE_READING */
-
+#else
 	if (!rc) {
 		memcpy(data, (void *) addr, len);
 	}
+#endif
+
 #ifdef CONFIG_CHECK_BEFORE_READING
-	else if (rc == -ENODATA) {
+	if (rc == -ENODATA) {
 		/* Erased area, return dummy data as an erased page. */
 		memset(data, 0xFF, len);
 		rc = 0;
 	}
 #endif
+
 	return rc;
 }
 
