@@ -18,6 +18,8 @@ set(SYSROOT_TARGET       arm-none-eabi)
 
 set(CROSS_COMPILE ${TOOLCHAIN_HOME}/bin/${CROSS_COMPILE_TARGET}-)
 set(SYSROOT_DIR   ${TOOLCHAIN_HOME}/${SYSROOT_TARGET})
+
 set(TOOLCHAIN_HAS_NEWLIB ON CACHE BOOL "True if toolchain supports newlib")
+set(TOOLCHAIN_HAS_GLIBCXX ON CACHE BOOL "True if toolchain supports libstdc++")
 
 message(STATUS "Found toolchain: gnuarmemb (${GNUARMEMB_TOOLCHAIN_PATH})")

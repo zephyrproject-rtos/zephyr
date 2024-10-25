@@ -54,3 +54,4 @@ if(NOT CROSS_COMPILE_TARGET)
 endif()
 
 set(TOOLCHAIN_HAS_NEWLIB ON CACHE BOOL "True if toolchain supports newlib")
+set(TOOLCHAIN_HAS_GLIBCXX ON CACHE BOOL "True if toolchain supports libstdc++")
