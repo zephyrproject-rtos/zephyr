@@ -10,6 +10,7 @@ LOG_MODULE_REGISTER(net_wifi_mgmt, CONFIG_NET_L2_WIFI_MGMT_LOG_LEVEL);
 
 #include <errno.h>
 #include <string.h>
+#include <stdio.h>
 
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_if.h>
