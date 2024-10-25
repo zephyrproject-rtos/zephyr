@@ -26,7 +26,7 @@ LOG_MODULE_REGISTER(shell_websocket, CONFIG_SHELL_WEBSOCKET_INIT_LOG_LEVEL);
 
 static void ws_server_cb(struct net_socket_service_event *evt);
 
-NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(websocket_server, NULL, ws_server_cb,
+NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(websocket_server, ws_server_cb,
 				      SHELL_WEBSOCKET_SERVICE_COUNT);
 
 static void ws_end_client_connection(struct shell_websocket *ws)
