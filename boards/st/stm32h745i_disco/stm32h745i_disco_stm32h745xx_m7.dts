@@ -151,9 +151,9 @@
 	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
 	pinctrl-names = "default";
 
-	ethernet-phy@0 {
+	ethernet-phy@1 {
 		compatible = "ethernet-phy";
-		reg = <0x00>;
+		reg = <0x01>;
 		status = "okay";
 	};
 };
