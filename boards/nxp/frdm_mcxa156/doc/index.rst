@@ -175,6 +175,12 @@ should see the following message in the terminal:
    *** Booting Zephyr OS build v3.6.0-4478-ge6c3a42f5f52 ***
    Hello World! frdm_mcxa156/mcxa156
 
+Troubleshooting
+===============
+
+.. include:: ../../common/segger-ecc-systemview.rst
+   :start-after: segger-ecc-systemview
+
 .. _MCX-A156 SoC Website:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-microcontrollers/general-purpose-mcus/mcx-arm-cortex-m/mcx-a-series-microcontrollers/mcx-a13x-14x-15x-mcus-with-arm-cortex-m33-scalable-device-options-low-power-and-intelligent-peripherals:MCX-A13X-A14X-A15X
 

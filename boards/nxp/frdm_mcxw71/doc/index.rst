@@ -192,6 +192,12 @@ For more details:
 .. _blhost Website:
    https://www.nxp.com/search?keyword=blhost&start=0
 
+Troubleshooting
+===============
+
+.. include:: ../../common/segger-ecc-systemview.rst
+   :start-after: segger-ecc-systemview
+
 References
 **********
 
