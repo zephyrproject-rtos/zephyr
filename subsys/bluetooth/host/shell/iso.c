@@ -873,8 +873,8 @@ static int cmd_big_sync(const struct shell *sh, size_t argc, char *argv[])
 			}
 
 			if (!IN_RANGE(sync_timeout,
-				      BT_ISO_SYNC_MSE_MIN,
-				      BT_ISO_SYNC_MSE_MAX)) {
+				      BT_ISO_SYNC_TIMEOUT_MIN,
+				      BT_ISO_SYNC_TIMEOUT_MAX)) {
 				shell_error(sh, "Invalid sync_timeout %lu",
 					    sync_timeout);
 
