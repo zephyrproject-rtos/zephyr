@@ -71,7 +71,7 @@ static void eth_enc28j60_set_bank(const struct device *dev, uint16_t reg_addr)
 
 	if (!spi_transceive_dt(&config->spi, &tx, &rx)) {
 		buf[0] = ENC28J60_SPI_WCR | ENC28J60_REG_ECON1;
-		buf[1] = (buf[1] & 0xFC) | ((reg_addr >> 8) & 0x0F);
+		buf[1] = (buf[1] & 0xFC) | ((reg_addr >> 8) & 0x03);
 
 		spi_write_dt(&config->spi, &tx);
 	} else {
