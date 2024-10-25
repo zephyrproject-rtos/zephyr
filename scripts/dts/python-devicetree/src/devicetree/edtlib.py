@@ -743,6 +743,8 @@ class Property:
         - For 'type: int/array/string/string-array', 'val' is what you'd expect
           (a Python integer or string, or a list of them)
 
+        - For 'type: uint8-array', 'val' is a bytes object
+
         - For 'type: phandle' and 'type: path', 'val' is the pointed-to Node
           instance
 
@@ -1095,13 +1097,26 @@ class Node:
       True if the node is a PCI device.
     """
 
-    def __init__(self,
-                 dt_node: dtlib_Node,
-                 edt: 'EDT',
-                 compats: List[str]):
+    def __init__(
+        self,
+        dt_node: dtlib_Node,
+        edt: "EDT",
+        support_fixed_partitions_on_any_bus: bool = True,
+    ):
         '''
         For internal use only; not meant to be used outside edtlib itself.
         '''
+
+        compats = (
+            dt_node.props["compatible"].to_strings()
+            if "compatible" in dt_node.props
+            else []
+        )
+
+        # Private, don't touch outside the class:
+        self._node: dtlib_Node = dt_node
+        self._binding: Optional[Binding] = None
+
         # Public, some of which are initialized properly later:
         self.edt: 'EDT' = edt
         self.dep_ordinal: int = -1
@@ -1113,11 +1128,11 @@ class Node:
         self.props: Dict[str, Property] = {}
         self.interrupts: List[ControllerAndData] = []
         self.pinctrls: List[PinCtrl] = []
-        self.bus_node: Optional['Node'] = None
+        self.bus_node = self._bus_node(support_fixed_partitions_on_any_bus)
 
-        # Private, don't touch outside the class:
-        self._node: dtlib_Node = dt_node
-        self._binding: Optional[Binding] = None
+        self._init_binding()
+        self._init_regs()
+        self._init_ranges()
 
     @property
     def name(self) -> str:
@@ -1324,6 +1339,14 @@ class Node:
         return res
 
     @property
+    def has_child_binding(self) -> bool:
+        """
+        True if the node's binding contains a child-binding definition, False
+        otherwise
+        """
+        return bool(self._binding and self._binding.child_binding)
+
+    @property
     def is_pci_device(self) -> bool:
         "See the class docstring"
         return 'pcie' in self.on_buses
@@ -1477,6 +1500,18 @@ class Node:
         # Same bus node as parent (possibly None)
         return self.parent.bus_node
 
+    def _init_crossrefs(
+        self, default_prop_types: bool = False, err_on_deprecated: bool = False
+    ) -> None:
+        # Initializes all properties that require cross-references to other
+        # nodes, like 'phandle' and 'phandles'. This is done after all nodes
+        # have been initialized.
+        self._init_props(
+            default_prop_types=default_prop_types, err_on_deprecated=err_on_deprecated
+        )
+        self._init_interrupts()
+        self._init_pinctrls()
+
     def _init_props(self, default_prop_types: bool = False,
                     err_on_deprecated: bool = False) -> None:
         # Creates self.props. See the class docstring. Also checks that all
@@ -1484,7 +1519,6 @@ class Node:
 
         self.props = {}
 
-        node = self._node
         if self._binding:
             prop2specs = self._binding.prop2specs
         else:
@@ -1496,12 +1530,11 @@ class Node:
                 self._init_prop(prop_spec, err_on_deprecated)
             self._check_undeclared_props()
         elif default_prop_types:
-            for name in node.props:
+            for name in self._node.props:
                 if name not in _DEFAULT_PROP_SPECS:
                     continue
                 prop_spec = _DEFAULT_PROP_SPECS[name]
-                val = self._prop_val(name, prop_spec.type, False, False, None,
-                                     None, err_on_deprecated)
+                val = self._prop_val(name, prop_spec, err_on_deprecated)
                 self.props[name] = Property(prop_spec, val, self)
 
     def _init_prop(self, prop_spec: PropertySpec,
@@ -1514,9 +1547,7 @@ class Node:
         if not prop_type:
             _err(f"'{name}' in {self.binding_path} lacks 'type'")
 
-        val = self._prop_val(name, prop_type, prop_spec.deprecated,
-                             prop_spec.required, prop_spec.default,
-                             prop_spec.specifier_space, err_on_deprecated)
+        val = self._prop_val(name, prop_spec, err_on_deprecated)
 
         if val is None:
             # 'required: false' property that wasn't there, or a property type
@@ -1544,41 +1575,37 @@ class Node:
 
         self.props[name] = Property(prop_spec, val, self)
 
-    def _prop_val(self, name: str, prop_type: str,
-                  deprecated: bool, required: bool,
-                  default: PropertyValType,
-                  specifier_space: Optional[str],
-                  err_on_deprecated: bool) -> PropertyValType:
+    def _prop_val(
+        self,
+        name: str,
+        prop_spec: PropertySpec,
+        err_on_deprecated: bool,
+    ) -> PropertyValType:
         # _init_prop() helper for getting the property's value
         #
         # name:
         #   Property name from binding
         #
-        # prop_type:
-        #   Property type from binding (a string like "int")
-        #
-        # deprecated:
-        #   True if the property is deprecated
-        #
-        # required:
-        #   True if the property is required to exist
-        #
-        # default:
-        #   Default value to use when the property doesn't exist, or None if
-        #   the binding doesn't give a default value
-        #
-        # specifier_space:
-        #   Property specifier-space from binding (if prop_type is "phandle-array")
+        # prop_spec:
+        #   PropertySpec from binding
         #
         # err_on_deprecated:
         #   If True, a deprecated property is an error instead of warning.
 
         node = self._node
         prop = node.props.get(name)
+        binding_path = prop_spec.binding.path
+        prop_type = prop_spec.type
+        deprecated = prop_spec.deprecated
+        required = prop_spec.required
+        default = prop_spec.default
+        specifier_space = prop_spec.specifier_space
 
         if prop and deprecated:
-            msg = (f"'{name}' is marked as deprecated in 'properties:' "
-                   f"in {self.binding_path} for node {node.path}.")
+            msg = (
+                f"'{name}' is marked as deprecated in 'properties:' "
+                f"in {binding_path} for node {node.path}."
+            )
             if err_on_deprecated:
                 _err(msg)
             else:
@@ -1586,8 +1613,10 @@ class Node:
 
         if not prop:
             if required and self.status == "okay":
-                _err(f"'{name}' is marked as required in 'properties:' in "
-                     f"{self.binding_path}, but does not appear in {node!r}")
+                _err(
+                    f"'{name}' is marked as required in 'properties:' in "
+                    f"{binding_path}, but does not appear in {node!r}"
+                )
 
             if default is not None:
                 # YAML doesn't have a native format for byte arrays. We need to
@@ -1602,9 +1631,11 @@ class Node:
 
         if prop_type == "boolean":
             if prop.type != Type.EMPTY:
-                _err("'{0}' in {1!r} is defined with 'type: boolean' in {2}, "
-                     "but is assigned a value ('{3}') instead of being empty "
-                     "('{0};')".format(name, node, self.binding_path, prop))
+                _err(
+                    "'{0}' in {1!r} is defined with 'type: boolean' in {2}, "
+                    "but is assigned a value ('{3}') instead of being empty "
+                    "('{0};')".format(name, node, binding_path, prop)
+                )
             return True
 
         if prop_type == "int":
@@ -2165,7 +2196,7 @@ class EDT:
         except Exception as e:
             raise EDTError(e)
 
-    def _process_properties_r(self, root_node, props_node):
+    def _process_properties_r(self, root_node: Node, props_node: Node) -> None:
         """
         Process props_node properties for dependencies, and add those as
         dependencies of root_node. Then walk through all the props_node
@@ -2201,14 +2232,14 @@ class EDT:
 
         # If the binding defines child bindings, link the child properties to
         # the root_node as well.
-        if props_node._binding and props_node._binding.child_binding:
+        if props_node.has_child_binding:
             for child in props_node.children.values():
                 if "compatible" in child.props:
                     # Not a child node, normal node on a different binding.
                     continue
                 self._process_properties_r(root_node, child)
 
-    def _process_properties(self, node):
+    def _process_properties(self, node: Node) -> None:
         """
         Add node dependencies based on own as well as child node properties,
         start from the node itself.
@@ -2340,27 +2371,19 @@ class EDT:
         for dt_node in self._dt.node_iter():
             # Warning: We depend on parent Nodes being created before their
             # children. This is guaranteed by node_iter().
-            if "compatible" in dt_node.props:
-                compats = dt_node.props["compatible"].to_strings()
-            else:
-                compats = []
-            node = Node(dt_node, self, compats)
-            node.bus_node = node._bus_node(self._fixed_partitions_no_bus)
-            node._init_binding()
-            node._init_regs()
-            node._init_ranges()
-
+            node = Node(dt_node, self, self._fixed_partitions_no_bus)
             self.nodes.append(node)
             self._node2enode[dt_node] = node
 
         for node in self.nodes:
-            # These depend on all Node objects having been created, because
-            # they (either always or sometimes) reference other nodes, so we
-            # run them separately
-            node._init_props(default_prop_types=self._default_prop_types,
-                             err_on_deprecated=self._werror)
-            node._init_interrupts()
-            node._init_pinctrls()
+            # Initialize properties that may depend on other Node objects having
+            # been created, because they (either always or sometimes) reference
+            # other nodes. Must be called separately after all nodes have been
+            # created.
+            node._init_crossrefs(
+                default_prop_types=self._default_prop_types,
+                err_on_deprecated=self._werror,
+            )
 
         if self._warn_reg_unit_address_mismatch:
             # This warning matches the simple_bus_reg warning in dtc
