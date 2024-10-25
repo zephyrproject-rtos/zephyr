@@ -56,6 +56,12 @@
 	};
 };
 
+&clk_hse {
+	hse-div2;
+	clock-frequency = <DT_FREQ_M(48)>;
+	status = "okay";
+};
+
 &clk_hsi {
 	hsi-div = <1>;
 	status = "okay";
@@ -174,6 +180,9 @@
 	pinctrl-0 = <&usart3_tx_pd8 &usart3_rx_pd9>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
+};
+
+zephyr_udc0: &usbotg_hs1 {
 	status = "okay";
 };
 
