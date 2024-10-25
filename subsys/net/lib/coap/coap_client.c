@@ -471,10 +471,13 @@ static int resend_request(struct coap_client *client,
 {
 	int ret = 0;
 
+	/* Copy the pending structure if we need to restore it */
+	struct coap_pending tmp = internal_req->pending;
+
 	if (internal_req->request_ongoing &&
 	    internal_req->pending.timeout != 0 &&
 	    coap_pending_cycle(&internal_req->pending)) {
-		LOG_ERR("Timeout in poll, retrying send");
+		LOG_ERR("Timeout, retrying send");
 
 		/* Reset send block context as it was updated in previous init from packet */
 		if (internal_req->send_blk_ctx.total_size > 0) {
@@ -483,22 +486,27 @@ static int resend_request(struct coap_client *client,
 		ret = coap_client_init_request(client, &internal_req->coap_request,
 					       internal_req, true);
 		if (ret < 0) {
-			LOG_ERR("Error re-creating CoAP request");
+			LOG_ERR("Error re-creating CoAP request %d", ret);
+			return ret;
+		}
+
+		ret = send_request(client->fd, internal_req->request.data,
+					internal_req->request.offset, 0, &client->address,
+					client->socklen);
+		if (ret > 0) {
+			ret = 0;
+		} else if (ret == -1 && errno == EAGAIN) {
+			/* Restore the pending structure, retry later */
+			internal_req->pending = tmp;
+			/* Not a fatal socket error, will trigger a retry */
+			ret = 0;
 		} else {
-			ret = send_request(client->fd, internal_req->request.data,
-					   internal_req->request.offset, 0, &client->address,
-					   client->socklen);
-			if (ret > 0) {
-				ret = 0;
-			} else {
-				LOG_ERR("Failed to resend request, %d", ret);
-			}
+			ret = -errno;
+			LOG_ERR("Failed to resend request, %d", ret);
 		}
 	} else {
-		LOG_ERR("Timeout in poll, no more retries left");
+		LOG_ERR("Timeout, no more retries left");
 		ret = -ETIMEDOUT;
-		report_callback_error(internal_req, ret);
-		internal_req->request_ongoing = false;
 	}
 
 	return ret;
