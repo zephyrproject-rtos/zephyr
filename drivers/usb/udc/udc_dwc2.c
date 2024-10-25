@@ -1881,7 +1881,10 @@ static int udc_dwc2_init_controller(const struct device *dev)
 		hs_phy = false;
 	}
 
-	if (usb_dwc2_get_ghwcfg4_phydatawidth(ghwcfg4)) {
+	if (IS_ENABLED(CONFIG_UDC_DWC2_PREFER_8BIT_UTMI) &&
+	    usb_dwc2_get_ghwcfg4_phydatawidth(ghwcfg4) == USB_DWC2_GHWCFG4_PHYDATAWIDTH_8_16_BIT) {
+		LOG_INF("Selecting 8-bit interface as preference");
+	} else if (usb_dwc2_get_ghwcfg4_phydatawidth(ghwcfg4)) {
 		gusbcfg |= USB_DWC2_GUSBCFG_PHYIF_16_BIT;
 	}
 
