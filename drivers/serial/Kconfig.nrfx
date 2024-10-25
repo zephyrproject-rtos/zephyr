@@ -31,8 +31,6 @@ config UART_NRFX_UARTE
 config UART_NRFX_UARTE_LEGACY_SHIM
 	bool "Legacy UARTE shim"
 	depends on UART_NRFX_UARTE
-	depends on !SOC_SERIES_NRF54HX || RISCV
-	depends on !SOC_SERIES_NRF92X || RISCV
 	default y
 
 config UART_NRFX_UARTE_ENHANCED_RX
