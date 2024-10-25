@@ -43,6 +43,7 @@ LOG_MODULE_REGISTER(spi_nor, CONFIG_FLASH_LOG_LEVEL);
  */
 
 #define SPI_NOR_MAX_ADDR_WIDTH 4
+#define SPI_NOR_3B_ADDR_MAX 0xFFFFFF
 
 
 #define ANY_INST_HAS_TRUE_(idx, bool_prop)	\
@@ -65,6 +66,7 @@ LOG_MODULE_REGISTER(spi_nor, CONFIG_FLASH_LOG_LEVEL);
 #define ANY_INST_HAS_RESET_GPIOS ANY_INST_HAS_PROP(reset_gpios)
 #define ANY_INST_HAS_WP_GPIOS ANY_INST_HAS_PROP(wp_gpios)
 #define ANY_INST_HAS_HOLD_GPIOS ANY_INST_HAS_PROP(hold_gpios)
+#define ANY_INST_USE_4B_ADDR_OPCODES ANY_INST_HAS_TRUE(use_4b_addr_opcodes)
 
 #ifdef CONFIG_SPI_NOR_ACTIVE_DWELL_MS
 #define ACTIVE_DWELL_MS CONFIG_SPI_NOR_ACTIVE_DWELL_MS
@@ -153,6 +155,10 @@ struct spi_nor_config {
 	bool mxicy_mx25r_power_mode;
 #endif
 
+#if ANY_INST_USE_4B_ADDR_OPCODES
+	bool use_4b_addr_opcodes:1;
+#endif
+
 	/* exist flags for dts opt-ins */
 	bool dpd_exist:1;
 	bool dpd_wakeup_sequence_exist:1;
@@ -220,6 +226,18 @@ static const struct jesd216_erase_type minimal_erase_types[JESD216_NUM_ERASE_TYP
 		.exp = 12,
 	},
 };
+#if ANY_INST_USE_4B_ADDR_OPCODES
+static const struct jesd216_erase_type minimal_erase_types_4b[JESD216_NUM_ERASE_TYPES] = {
+	{
+		.cmd = SPI_NOR_CMD_BE_4B,
+		.exp = 16,
+	},
+	{
+		.cmd = SPI_NOR_CMD_SE_4B,
+		.exp = 12,
+	},
+};
+#endif /* ANY_INST_USE_4B_ADDR_OPCODES */
 #endif /* CONFIG_SPI_NOR_SFDP_MINIMAL */
 
 /* Register writes should be ready extremely quickly */
@@ -239,6 +257,11 @@ static inline const struct jesd216_erase_type *
 dev_erase_types(const struct device *dev)
 {
 #ifdef CONFIG_SPI_NOR_SFDP_MINIMAL
+#if ANY_INST_USE_4B_ADDR_OPCODES
+	if(DEV_CFG(dev)->use_4b_addr_opcodes) {
+		return minimal_erase_types_4b;
+	}
+#endif /* ANY_INST_USE_4B_ADDR_OPCODES */
 	return minimal_erase_types;
 #else /* CONFIG_SPI_NOR_SFDP_MINIMAL */
 	const struct spi_nor_data *data = dev->data;
@@ -432,11 +455,25 @@ static int spi_nor_access(const struct device *const dev,
 	spi_nor_access(dev, opcode, 0, 0, dest, length)
 #define spi_nor_cmd_addr_read(dev, opcode, addr, dest, length) \
 	spi_nor_access(dev, opcode, NOR_ACCESS_ADDRESSED, addr, dest, length)
+#define spi_nor_cmd_addr_read_3b(dev, opcode, addr, dest, length)                                  \
+	spi_nor_access(dev, opcode, NOR_ACCESS_24BIT_ADDR | NOR_ACCESS_ADDRESSED, addr, dest,      \
+		       length)
+#define spi_nor_cmd_addr_read_4b(dev, opcode, addr, dest, length)                                  \
+	spi_nor_access(dev, opcode, NOR_ACCESS_32BIT_ADDR | NOR_ACCESS_ADDRESSED, addr, dest,      \
+		       length)
 #define spi_nor_cmd_write(dev, opcode) \
 	spi_nor_access(dev, opcode, NOR_ACCESS_WRITE, 0, NULL, 0)
 #define spi_nor_cmd_addr_write(dev, opcode, addr, src, length) \
 	spi_nor_access(dev, opcode, NOR_ACCESS_WRITE | NOR_ACCESS_ADDRESSED, \
 		       addr, (void *)src, length)
+#define spi_nor_cmd_addr_write_3b(dev, opcode, addr, src, length)                                  \
+	spi_nor_access(dev, opcode,                                                                \
+		       NOR_ACCESS_24BIT_ADDR | NOR_ACCESS_WRITE | NOR_ACCESS_ADDRESSED, addr,      \
+		       (void *)src, length)
+#define spi_nor_cmd_addr_write_4b(dev, opcode, addr, src, length)                                  \
+	spi_nor_access(dev, opcode,                                                                \
+		       NOR_ACCESS_32BIT_ADDR | NOR_ACCESS_WRITE | NOR_ACCESS_ADDRESSED, addr,      \
+		       (void *)src, length)
 
 /**
  * @brief Wait until the flash is ready
@@ -784,7 +821,19 @@ static int spi_nor_read(const struct device *dev, off_t addr, void *dest,
 
 	acquire_device(dev);
 
-	ret = spi_nor_cmd_addr_read(dev, SPI_NOR_CMD_READ, addr, dest, size);
+#if ANY_INST_USE_4B_ADDR_OPCODES
+	if (DEV_CFG(dev)->use_4b_addr_opcodes) {
+		if (addr > SPI_NOR_3B_ADDR_MAX) {
+			ret = spi_nor_cmd_addr_read_4b(dev, SPI_NOR_CMD_READ_4B, addr, dest, size);
+		} else {
+			ret = spi_nor_cmd_addr_read_3b(dev, SPI_NOR_CMD_READ, addr, dest, size);
+		}
+	} else {
+#else
+	if (1) {
+#endif
+		ret = spi_nor_cmd_addr_read(dev, SPI_NOR_CMD_READ, addr, dest, size);
+	}
 
 	release_device(dev);
 
@@ -867,8 +916,23 @@ static int spi_nor_write(const struct device *dev, off_t addr,
 				break;
 			}
 
-			ret = spi_nor_cmd_addr_write(dev, SPI_NOR_CMD_PP, addr,
-						src, to_write);
+#if ANY_INST_USE_4B_ADDR_OPCODES
+			if (DEV_CFG(dev)->use_4b_addr_opcodes) {
+				if (addr > SPI_NOR_3B_ADDR_MAX) {
+					ret = spi_nor_cmd_addr_write_4b(dev, SPI_NOR_CMD_PP_4B,
+									addr, src, to_write);
+				} else {
+					ret = spi_nor_cmd_addr_write_3b(dev, SPI_NOR_CMD_PP, addr,
+									src, to_write);
+				}
+			} else {
+#else
+			if (1) {
+#endif
+				ret = spi_nor_cmd_addr_write(dev, SPI_NOR_CMD_PP, addr, src,
+							     to_write);
+			}
+
 			if (ret != 0) {
 				break;
 			}
@@ -953,7 +1017,15 @@ static int spi_nor_erase(const struct device *dev, off_t addr, size_t size)
 				}
 			}
 			if (bet != NULL) {
-				ret = spi_nor_cmd_addr_write(dev, bet->cmd, addr, NULL, 0);
+#if ANY_INST_USE_4B_ADDR_OPCODES
+				if(DEV_CFG(dev)->use_4b_addr_opcodes) {
+					ret = spi_nor_cmd_addr_write_4b(dev, bet->cmd, addr, NULL, 0);
+				} else {
+#else
+				if (1) {
+#endif
+					ret = spi_nor_cmd_addr_write(dev, bet->cmd, addr, NULL, 0);
+				}
 				addr += BIT(bet->exp);
 				size -= BIT(bet->exp);
 			} else {
@@ -1142,6 +1214,26 @@ static int spi_nor_process_bfp(const struct device *dev,
 	memset(data->erase_types, 0, sizeof(data->erase_types));
 	for (uint8_t ti = 1; ti <= ARRAY_SIZE(data->erase_types); ++ti) {
 		if (jesd216_bfp_erase(bfp, ti, etp) == 0) {
+#if ANY_INST_USE_4B_ADDR_OPCODES
+			if (DEV_CFG(dev)->use_4b_addr_opcodes) {
+				switch (etp->cmd) {
+				case SPI_NOR_CMD_SE:
+					etp->cmd = SPI_NOR_CMD_SE_4B;
+					LOG_DBG("Rewrite SE to %02x", etp->cmd);
+					break;
+
+				case SPI_NOR_CMD_BE:
+					etp->cmd = SPI_NOR_CMD_BE_4B;
+					LOG_DBG("Rewrite BE to %02x", etp->cmd);
+					break;
+
+				default:
+					etp->cmd = 0;
+					etp->exp = 0;
+					break;
+				}
+			}
+#endif
 			LOG_DBG("Erase %u with %02x", (uint32_t)BIT(etp->exp), etp->cmd);
 		}
 		++etp;
@@ -1163,6 +1255,12 @@ static int spi_nor_process_bfp(const struct device *dev,
 	if (jesd216_bfp_addrbytes(bfp) != JESD216_SFDP_BFP_DW1_ADDRBYTES_VAL_3B) {
 		struct jesd216_bfp_dw16 dw16;
 		int rc = 0;
+#if ANY_INST_USE_4B_ADDR_OPCODES
+		if(DEV_CFG(dev)->use_4b_addr_opcodes) {
+			LOG_DBG("4-byte addressing supported, using it via specific opcodes");
+			return 0;
+		}
+#endif
 
 		if (jesd216_bfp_decode_dw16(php, bfp, &dw16) == 0) {
 			rc = spi_nor_set_address_mode(dev, dw16.enter_4ba);
@@ -1632,20 +1730,13 @@ static const struct flash_driver_api spi_nor_api = {
 
 #define INST_HAS_LOCK(idx) DT_INST_NODE_HAS_PROP(idx, has_lock)
 
-#define INST_HAS_WP_GPIO(idx) DT_INST_NODE_HAS_PROP(idx, wp_gpios)
-
-#define INST_HAS_HOLD_GPIO(idx) DT_INST_NODE_HAS_PROP(idx, hold_gpios)
-
 #define LOCK_DEFINE(idx)								\
 	IF_ENABLED(INST_HAS_LOCK(idx), (BUILD_ASSERT(DT_INST_PROP(idx, has_lock) ==	\
 					(DT_INST_PROP(idx, has_lock) & 0xFF),		\
 					"Need support for lock clear beyond SR1");))
 
-#define INST_HAS_ENTER_4BYTE_ADDR(idx) DT_INST_NODE_HAS_PROP(idx, enter_4byte_addr)
-
-#define CONFIGURE_4BYTE_ADDR(idx)					\
-	IF_ENABLED(INST_HAS_ENTER_4BYTE_ADDR(idx),			\
-		(.enter_4byte_addr = DT_INST_PROP(idx, enter_4byte_addr),))
+#define CONFIGURE_4BYTE_ADDR(idx)							\
+	.enter_4byte_addr = DT_INST_PROP_OR(idx, enter_4byte_addr, 0),
 
 #define INIT_T_ENTER_DPD(idx)								\
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(idx, t_enter_dpd),				\
@@ -1661,15 +1752,9 @@ static const struct flash_driver_api spi_nor_api = {
 		(.t_exit_dpd = 0))
 #endif
 
-#define INIT_WP_GPIOS(idx) \
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(idx, wp_gpios), \
-		(.wp = GPIO_DT_SPEC_INST_GET(idx, wp_gpios)), \
-		(.wp = {0}))
+#define INIT_WP_GPIOS(idx) .wp = GPIO_DT_SPEC_INST_GET_OR(idx, wp_gpios, {0})
 
-#define INIT_HOLD_GPIOS(idx) \
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(idx, hold_gpios), \
-		(.hold = GPIO_DT_SPEC_INST_GET(idx, hold_gpios)), \
-		(.hold = {0},))
+#define INIT_HOLD_GPIOS(idx) .hold = GPIO_DT_SPEC_INST_GET_OR(idx, hold_gpios, {0})
 
 #define INIT_WAKEUP_SEQ_PARAMS(idx)							\
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(idx, dpd_wakeup_sequence),			\
@@ -1681,44 +1766,44 @@ static const struct flash_driver_api spi_nor_api = {
 			DT_INST_PROP_BY_IDX(idx, dpd_wakeup_sequence, 2), NSEC_PER_MSEC)),\
 		(.t_dpdd_ms = 0, .t_crdp_ms = 0, .t_rdp_ms = 0))
 
-#define INIT_MXICY_MX25R_POWER_MODE(idx)						\
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(idx, mxicy_mx25r_power_mode),			\
-		(.mxicy_mx25r_power_mode = DT_INST_ENUM_IDX(idx, mxicy_mx25r_power_mode)),\
-		(.mxicy_mx25r_power_mode = 0))
+#define INIT_MXICY_MX25R_POWER_MODE(idx)							\
+	.mxicy_mx25r_power_mode = DT_INST_ENUM_IDX_OR(idx, mxicy_mx25r_power_mode, 0)
 
-#define INIT_RESET_GPIOS(idx) \
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(idx, reset_gpios), \
-		(.reset = GPIO_DT_SPEC_INST_GET(idx, reset_gpios)), \
-		(.reset = {0}))
+#define INIT_RESET_GPIOS(idx) .reset = GPIO_DT_SPEC_INST_GET_OR(idx, reset_gpios, {0})
 
 #define INST_CONFIG_STRUCT_GEN(idx)								\
 	DEFINE_PAGE_LAYOUT(idx)									\
 	.flash_size = DT_INST_PROP(idx, size) / 8,						\
 	.jedec_id = DT_INST_PROP(idx, jedec_id),						\
-	.dpd_exist = DT_INST_PROP(idx, has_dpd),						\
-	.dpd_wakeup_sequence_exist = DT_INST_NODE_HAS_PROP(idx, dpd_wakeup_sequence),		\
-	.mxicy_mx25r_power_mode_exist = DT_INST_NODE_HAS_PROP(idx, mxicy_mx25r_power_mode),	\
-	.reset_gpios_exist = DT_INST_NODE_HAS_PROP(idx, reset_gpios),				\
-	.requires_ulbpr_exist = DT_INST_PROP(idx, requires_ulbpr),				\
-	.wp_gpios_exist = DT_INST_NODE_HAS_PROP(idx, wp_gpios),					\
-	.hold_gpios_exist = DT_INST_NODE_HAS_PROP(idx, hold_gpios),				\
-	IF_ENABLED(INST_HAS_LOCK(idx), (.has_lock = DT_INST_PROP(idx, has_lock),))		\
 	IF_ENABLED(CONFIG_SPI_NOR_SFDP_MINIMAL, (CONFIGURE_4BYTE_ADDR(idx)))			\
 	IF_ENABLED(CONFIG_SPI_NOR_SFDP_DEVICETREE,						\
 		(.bfp_len = sizeof(bfp_##idx##_data) / 4,					\
-		 .bfp = (const struct jesd216_bfp *)bfp_##idx##_data,))				\
-	IF_ENABLED(ANY_INST_HAS_DPD, (INIT_T_ENTER_DPD(idx),))					\
-	IF_ENABLED(UTIL_AND(ANY_INST_HAS_DPD, ANY_INST_HAS_T_EXIT_DPD), (INIT_T_EXIT_DPD(idx),))\
-	IF_ENABLED(ANY_INST_HAS_DPD_WAKEUP_SEQUENCE, (INIT_WAKEUP_SEQ_PARAMS(idx),))		\
-	IF_ENABLED(ANY_INST_HAS_MXICY_MX25R_POWER_MODE, (INIT_MXICY_MX25R_POWER_MODE(idx),))	\
-	IF_ENABLED(ANY_INST_HAS_RESET_GPIOS, (INIT_RESET_GPIOS(idx),))				\
-	IF_ENABLED(ANY_INST_HAS_WP_GPIOS, (INIT_WP_GPIOS(idx),))				\
-	IF_ENABLED(ANY_INST_HAS_HOLD_GPIOS, (INIT_HOLD_GPIOS(idx),))
+		 .bfp = (const struct jesd216_bfp *)bfp_##idx##_data,))
 
 #define GENERATE_CONFIG_STRUCT(idx)								\
 	static const struct spi_nor_config spi_nor_##idx##_config = {				\
 		.spi = SPI_DT_SPEC_INST_GET(idx, SPI_WORD_SET(8), CONFIG_SPI_NOR_CS_WAIT_DELAY),\
-		COND_CODE_1(CONFIG_SPI_NOR_SFDP_RUNTIME, EMPTY(), (INST_CONFIG_STRUCT_GEN(idx)))};
+		.dpd_exist = DT_INST_PROP(idx, has_dpd),					\
+		.dpd_wakeup_sequence_exist = DT_INST_NODE_HAS_PROP(idx, dpd_wakeup_sequence),	\
+		.mxicy_mx25r_power_mode_exist =							\
+			DT_INST_NODE_HAS_PROP(idx, mxicy_mx25r_power_mode),			\
+		.reset_gpios_exist = DT_INST_NODE_HAS_PROP(idx, reset_gpios),			\
+		.requires_ulbpr_exist = DT_INST_PROP(idx, requires_ulbpr),			\
+		.wp_gpios_exist = DT_INST_NODE_HAS_PROP(idx, wp_gpios),				\
+		.hold_gpios_exist = DT_INST_NODE_HAS_PROP(idx, hold_gpios),			\
+		IF_ENABLED(INST_HAS_LOCK(idx), (.has_lock = DT_INST_PROP(idx, has_lock),))	\
+		IF_ENABLED(ANY_INST_HAS_DPD, (INIT_T_ENTER_DPD(idx),))				\
+		IF_ENABLED(UTIL_AND(ANY_INST_HAS_DPD, ANY_INST_HAS_T_EXIT_DPD),			\
+			(INIT_T_EXIT_DPD(idx),))						\
+		IF_ENABLED(ANY_INST_HAS_DPD_WAKEUP_SEQUENCE, (INIT_WAKEUP_SEQ_PARAMS(idx),))	\
+		IF_ENABLED(ANY_INST_HAS_MXICY_MX25R_POWER_MODE,					\
+			(INIT_MXICY_MX25R_POWER_MODE(idx),))					\
+		IF_ENABLED(ANY_INST_HAS_RESET_GPIOS, (INIT_RESET_GPIOS(idx),))			\
+		IF_ENABLED(ANY_INST_HAS_WP_GPIOS, (INIT_WP_GPIOS(idx),))			\
+		IF_ENABLED(ANY_INST_HAS_HOLD_GPIOS, (INIT_HOLD_GPIOS(idx),))			\
+		IF_ENABLED(ANY_INST_USE_4B_ADDR_OPCODES, 					\
+			(.use_4b_addr_opcodes = DT_INST_PROP(idx, use_4b_addr_opcodes),))	\
+		IF_DISABLED(CONFIG_SPI_NOR_SFDP_RUNTIME, (INST_CONFIG_STRUCT_GEN(idx)))};
 
 #define ASSIGN_PM(idx)							\
 		PM_DEVICE_DT_INST_DEFINE(idx, spi_nor_pm_control);
