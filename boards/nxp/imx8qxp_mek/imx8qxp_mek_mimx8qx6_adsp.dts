@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_imx8.dtsi>
+#include <nxp/nxp_imx8qxp.dtsi>
 #include "imx8qxp_mek_mimx8qx6_adsp-pinctrl.dtsi"
 
 / {
@@ -30,8 +30,4 @@
 &sai1 {
 	pinctrl-0 = <&sai1_default>;
 	pinctrl-names = "default";
-};
-
-&irqsteer {
-	reg = <0x51080000 DT_SIZE_K(64)>;
 };
