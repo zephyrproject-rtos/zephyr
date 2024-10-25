@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_imx8.dtsi>
+#include <nxp/nxp_imx8qm.dtsi>
 #include "imx8qm_mek_mimx8qm6_adsp-pinctrl.dtsi"
 
 / {
