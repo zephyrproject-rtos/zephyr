@@ -580,6 +580,11 @@ test_i2c_bmp388: bmp388@55 {
 	int-gpios = <&test_gpio 0 0>;
 };
 
+test_i2c_hs400x: hs400x@54 {
+	compatible = "renesas,hs400x";
+	reg = <0x54>;
+};
+
 test_i2c_lm75: lm75@56 {
 	compatible = "lm75";
 	reg = <0x56>;
