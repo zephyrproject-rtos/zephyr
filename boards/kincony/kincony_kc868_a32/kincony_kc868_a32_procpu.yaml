@@ -3,7 +3,7 @@ name: KINCONY-KC868-A32 PROCPU
 type: mcu
 arch: xtensa
 toolchain:
-  - zephyr
+  - zephyr-gnu
 supported:
   - gpio
   - i2c

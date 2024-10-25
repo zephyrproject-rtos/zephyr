@@ -3,7 +3,7 @@ name: OLIMEX-STM32-H103
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 20

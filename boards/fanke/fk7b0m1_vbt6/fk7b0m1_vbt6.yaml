@@ -3,7 +3,7 @@ name: FANKE FK7B0M1-VBT6 board
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 1376

@@ -3,7 +3,7 @@ name: EBYTE-E73-TBB-NRF52832
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 64

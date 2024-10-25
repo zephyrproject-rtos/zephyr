@@ -3,7 +3,7 @@ name: ST B-G474E-DPOW1 Discovery
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 128

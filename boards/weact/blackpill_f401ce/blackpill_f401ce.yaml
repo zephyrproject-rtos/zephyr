@@ -3,7 +3,7 @@ name: WeAct Studio Black Pill V3.0 (F401CE)
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 supported:

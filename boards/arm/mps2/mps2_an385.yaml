@@ -4,7 +4,7 @@ type: mcu
 arch: arm
 simulation: qemu
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 supported:

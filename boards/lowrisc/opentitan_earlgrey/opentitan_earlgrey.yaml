@@ -3,7 +3,7 @@ name: OpenTitan Earl Grey
 type: mcu
 arch: riscv
 toolchain:
-  - zephyr
+  - zephyr-gnu
 ram: 128
 testing:
   ignore_tags:

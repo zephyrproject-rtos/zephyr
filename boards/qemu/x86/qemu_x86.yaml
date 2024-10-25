@@ -5,7 +5,7 @@ simulation: qemu
 arch: x86
 ram: 3000
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - xtools
   - llvm
 supported:

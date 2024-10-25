@@ -13,7 +13,7 @@ flash: 384
 simulation: qemu
 toolchain:
   - gnuarmemb
-  - zephyr
+  - zephyr-gnu
   - xtools
 testing:
   default: true

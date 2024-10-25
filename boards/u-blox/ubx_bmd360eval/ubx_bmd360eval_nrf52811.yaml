@@ -3,7 +3,7 @@ name: UBX_BMD360EVAL_NRF52811
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 24

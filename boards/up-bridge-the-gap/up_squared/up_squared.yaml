@@ -3,7 +3,7 @@ name: UP Squared (x86_64)
 type: mcu
 arch: x86
 toolchain:
-  - zephyr
+  - zephyr-gnu
 ram: 256
 supported:
   - acpi

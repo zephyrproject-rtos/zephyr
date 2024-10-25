@@ -3,7 +3,7 @@ name: NXP TWR-KV58F220M
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 128

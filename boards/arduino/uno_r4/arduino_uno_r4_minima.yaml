@@ -3,7 +3,7 @@ name: Arduino Uno R4 Minima
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 32

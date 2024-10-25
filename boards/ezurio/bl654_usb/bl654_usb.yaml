@@ -3,7 +3,7 @@ name: BL654_USB
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 supported:

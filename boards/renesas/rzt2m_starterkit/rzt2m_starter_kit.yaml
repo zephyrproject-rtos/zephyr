@@ -7,7 +7,7 @@ type: mcu
 arch: arm
 ram: 2048
 toolchain:
-  - zephyr
+  - zephyr-gnu
 supported:
   - counter
   - uart

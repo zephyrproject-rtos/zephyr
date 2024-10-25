@@ -3,7 +3,7 @@ name: ESP32-S3 LuatOS Core APPCPU
 type: mcu
 arch: xtensa
 toolchain:
-  - zephyr
+  - zephyr-gnu
 supported:
   - uart
 testing:

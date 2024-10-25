@@ -3,7 +3,7 @@ name: ST B_L4S5I_IOT01A Discovery kit
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 640

@@ -3,7 +3,7 @@ name: STM32 Mini F401
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 supported:

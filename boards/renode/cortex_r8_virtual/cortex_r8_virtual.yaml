@@ -3,7 +3,7 @@ name: Cortex R8 Virtual Board
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
 ram: 131072
 simulation: renode
 simulation_exec: renode

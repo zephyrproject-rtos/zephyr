@@ -13,7 +13,7 @@ flash: 512
 simulation: qemu
 toolchain:
   - gnuarmemb
-  - zephyr
+  - zephyr-gnu
   - xtools
 supported:
   - gpio

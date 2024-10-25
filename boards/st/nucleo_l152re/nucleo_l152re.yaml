@@ -3,7 +3,7 @@ name: ST Nucleo L152RE
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 ram: 80
 flash: 512

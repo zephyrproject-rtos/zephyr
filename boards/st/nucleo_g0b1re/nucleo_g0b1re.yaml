@@ -3,7 +3,7 @@ name: ST Nucleo G0B1RE
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 144

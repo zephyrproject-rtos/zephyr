@@ -3,7 +3,7 @@ name: ST Nucleo G431RB
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 32

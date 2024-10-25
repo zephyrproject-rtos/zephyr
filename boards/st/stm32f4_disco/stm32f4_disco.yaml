@@ -3,7 +3,7 @@ name: ST STM32F4 Discovery
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 128

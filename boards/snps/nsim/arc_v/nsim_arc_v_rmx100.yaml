@@ -5,7 +5,7 @@ simulation_exec: nsimdrv
 type: sim
 arch: riscv
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - cross-compile
   - arcmwdt
 testing:

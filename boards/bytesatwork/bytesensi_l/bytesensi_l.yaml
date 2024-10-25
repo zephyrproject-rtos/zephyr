@@ -5,7 +5,7 @@ name: bytesatwork byteSENSI-L
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 ram: 64
 flash: 512

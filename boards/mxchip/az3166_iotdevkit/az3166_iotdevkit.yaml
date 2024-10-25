@@ -3,7 +3,7 @@ name: MXChip AZ3166 IoT Devkit
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 supported:

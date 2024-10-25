@@ -6,7 +6,7 @@ name: nRF54H20-DK-nRF54H20-FLPR (MRAM XIP) (revision 0.8.0)
 type: mcu
 arch: riscv
 toolchain:
-  - zephyr
+  - zephyr-gnu
 sysbuild: true
 ram: 46
 flash: 48

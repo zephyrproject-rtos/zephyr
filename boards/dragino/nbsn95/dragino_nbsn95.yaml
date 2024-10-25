@@ -3,7 +3,7 @@ name: Dragino NBSN95 NB-IoT Sensor Node
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 20

@@ -6,7 +6,7 @@ name: FVP Emulation FVP_BaseR_AEMv8R (SMP)
 arch: arm64
 type: sim
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - cross-compile
 ram: 2048
 flash: 64

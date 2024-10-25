@@ -3,7 +3,7 @@ name: ESP32 ETHERNET KIT APPCPU
 type: mcu
 arch: xtensa
 toolchain:
-  - zephyr
+  - zephyr-gnu
 supported:
   - uart
 testing:

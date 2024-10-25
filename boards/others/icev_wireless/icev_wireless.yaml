@@ -3,7 +3,7 @@ name: ICE-V Wireless
 type: mcu
 arch: riscv
 toolchain:
-  - zephyr
+  - zephyr-gnu
 testing:
   ignore_tags:
     - net

@@ -3,7 +3,7 @@ name: EM Software Development Platform (EM7D_ESP)
 type: mcu
 arch: arc
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - cross-compile
   - xtools
 ram: 128

@@ -3,7 +3,7 @@ name: Mikroe STM32 M4 Clicker
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 128

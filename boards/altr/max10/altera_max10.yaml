@@ -3,5 +3,5 @@ name: Altera MAX10
 type: mcu
 arch: nios2
 toolchain:
-  - zephyr
+  - zephyr-gnu
 vendor: altr

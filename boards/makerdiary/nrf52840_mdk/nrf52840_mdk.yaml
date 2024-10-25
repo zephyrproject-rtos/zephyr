@@ -3,7 +3,7 @@ name: nRF52840-MDK
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 supported:

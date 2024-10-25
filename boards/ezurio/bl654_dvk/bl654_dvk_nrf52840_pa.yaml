@@ -3,7 +3,7 @@ name: BL654_DVK_NRF52840_PA
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 supported:

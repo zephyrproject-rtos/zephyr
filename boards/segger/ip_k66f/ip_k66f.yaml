@@ -3,7 +3,7 @@ name: SEGGER IP-K66F
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 supported:

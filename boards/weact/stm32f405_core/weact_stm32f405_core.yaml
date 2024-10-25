@@ -3,7 +3,7 @@ name: WeAct Studio STM32F405 Core Board
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 128

@@ -3,7 +3,7 @@ name: Black STM32 F407ZG Pro Development Board
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 192

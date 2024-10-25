@@ -3,7 +3,7 @@ name: Arduino Nicla Vision (M4)
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 288

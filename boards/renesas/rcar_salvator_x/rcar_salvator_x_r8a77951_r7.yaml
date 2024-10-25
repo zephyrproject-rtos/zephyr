@@ -3,7 +3,7 @@ name: Cortex r7 for Renesas H3 Salvator-X
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 supported:
   - i2c

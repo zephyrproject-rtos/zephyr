@@ -3,7 +3,7 @@ name: ST Nucleo L073RZ
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 20

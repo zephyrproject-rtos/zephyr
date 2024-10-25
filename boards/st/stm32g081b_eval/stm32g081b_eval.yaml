@@ -3,7 +3,7 @@ name: ST STM32G081B Evaluation
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 32

@@ -9,7 +9,7 @@ name: MEC15XX EVB ASSY 6853
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 ram: 32
 flash: 224

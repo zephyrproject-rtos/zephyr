@@ -6,7 +6,7 @@ simulation: native
 env:
   - BSIM_OUT_PATH
 toolchain:
-  - zephyr
+  - zephyr-gnu
 supported:
   - counter
 testing:

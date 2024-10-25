@@ -9,7 +9,7 @@ name: NXP VMU RT1170
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 256

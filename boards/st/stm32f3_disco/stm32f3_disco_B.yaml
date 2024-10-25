@@ -3,7 +3,7 @@ name: ST STM32F3 Discovery rev B
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 40

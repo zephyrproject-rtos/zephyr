@@ -3,7 +3,7 @@ name: M5Stack AtomS3-Lite PROCPU
 type: mcu
 arch: xtensa
 toolchain:
-  - zephyr
+  - zephyr-gnu
 supported:
   - gpio
   - uart

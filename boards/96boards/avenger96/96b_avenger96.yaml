@@ -3,7 +3,7 @@ name: 96Boards Avenger96
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 supported:

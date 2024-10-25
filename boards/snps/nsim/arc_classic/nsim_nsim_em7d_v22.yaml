@@ -5,7 +5,7 @@ simulation: nsim
 simulation_exec: nsimdrv
 arch: arc
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - cross-compile
 testing:
   ignore_tags:

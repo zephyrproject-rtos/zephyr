@@ -3,7 +3,7 @@ name: SiFive HiFive1
 type: mcu
 arch: riscv
 toolchain:
-  - zephyr
+  - zephyr-gnu
 ram: 16
 simulation: renode
 simulation_exec: renode

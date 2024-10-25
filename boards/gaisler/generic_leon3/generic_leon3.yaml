@@ -7,7 +7,7 @@ arch: sparc
 ram: 4096
 flash: 2048
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - xtools
 supported:
   - netif

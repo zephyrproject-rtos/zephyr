@@ -1,7 +1,7 @@
 type: mcu
 arch: xtensa
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - xcc
   - xt-clang
 supported:

@@ -3,7 +3,7 @@ name: SiFive HiFive Unmatched
 type: mcu
 arch: riscv
 toolchain:
-  - zephyr
+  - zephyr-gnu
 ram: 3840
 simulation: renode
 simulation_exec: renode

@@ -6,7 +6,7 @@ name: FVP Emulation FVP_Base_RevC-2xAEMvA
 arch: arm64
 type: sim
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - cross-compile
 ram: 2048
 flash: 64

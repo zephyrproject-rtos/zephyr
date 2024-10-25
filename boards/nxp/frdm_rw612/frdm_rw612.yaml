@@ -9,7 +9,7 @@ name: NXP FRDM_RW612
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 960

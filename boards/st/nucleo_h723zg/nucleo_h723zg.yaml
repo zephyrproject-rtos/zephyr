@@ -3,7 +3,7 @@ name: ST Nucleo H723ZG
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 372

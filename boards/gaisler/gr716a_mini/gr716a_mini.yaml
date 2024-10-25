@@ -5,7 +5,7 @@ simulation: tsim
 simulation_exec: tsim-leon3
 arch: sparc
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - xtools
 supported:
   - netif

@@ -6,7 +6,7 @@ name: NUVOTON NUMAKER-M2L31KI Kit
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 168

@@ -3,7 +3,7 @@ name: STM32F030 DEMO BOARD
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 4

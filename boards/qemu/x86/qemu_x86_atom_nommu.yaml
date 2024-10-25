@@ -4,7 +4,7 @@ type: qemu
 arch: x86
 simulation: qemu
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - xtools
 testing:
   default: true

@@ -3,7 +3,7 @@ name: ST Nucleo WBA55CG
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 supported:
   - gpio

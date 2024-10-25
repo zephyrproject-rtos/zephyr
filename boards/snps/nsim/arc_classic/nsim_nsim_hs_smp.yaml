@@ -5,7 +5,7 @@ simulation: mdb-nsim
 simulation_exec: mdb
 arch: arc
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - cross-compile
   - arcmwdt
 supported:

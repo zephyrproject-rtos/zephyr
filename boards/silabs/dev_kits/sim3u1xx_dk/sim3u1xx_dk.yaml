@@ -11,7 +11,7 @@ flash: 256
 toolchain:
   - gnuarmemb
   - xtools
-  - zephyr
+  - zephyr-gnu
 supported:
   - dma
   - flash

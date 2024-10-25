@@ -3,7 +3,7 @@ name: NXP FRDM-KE15Z
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 flash: 256

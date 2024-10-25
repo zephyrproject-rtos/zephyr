@@ -3,6 +3,6 @@ name: Space Cubics OBC module 1
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
 supported:
   - uart

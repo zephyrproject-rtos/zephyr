@@ -3,7 +3,7 @@ name: Andes ADP-XC7K AE350
 type: mcu
 arch: riscv
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - cross-compile
 ram: 512
 supported:

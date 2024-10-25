@@ -5,7 +5,7 @@ simulation: qemu
 arch: riscv
 ram: 16
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - xtools
 testing:
   default: true

@@ -4,7 +4,7 @@ type: qemu
 simulation: qemu
 arch: mips
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - xtools
 ram: 1024
 flash: 512

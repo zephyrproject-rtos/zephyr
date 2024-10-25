@@ -3,7 +3,7 @@ name: ST Nucleo L452RE
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 160

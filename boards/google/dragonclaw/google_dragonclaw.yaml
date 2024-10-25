@@ -3,7 +3,7 @@ name: Google Dragonclaw Development Board
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 256

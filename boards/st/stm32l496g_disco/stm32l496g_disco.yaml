@@ -3,7 +3,7 @@ name: ST STM32L496G Discovery
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 320

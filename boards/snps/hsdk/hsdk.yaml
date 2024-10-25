@@ -3,7 +3,7 @@ name: HS Development Kit
 type: mcu
 arch: arc
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - cross-compile
   - xtools
   - arcmwdt

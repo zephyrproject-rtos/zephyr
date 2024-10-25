@@ -4,7 +4,7 @@ type: qemu
 simulation: qemu
 arch: riscv
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - xtools
 supported:
   - netif

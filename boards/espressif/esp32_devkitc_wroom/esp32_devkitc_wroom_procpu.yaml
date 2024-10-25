@@ -3,7 +3,7 @@ name: ESP32-DevkitC-WROOM-32D
 type: mcu
 arch: xtensa
 toolchain:
-  - zephyr
+  - zephyr-gnu
 supported:
   - adc
   - dac

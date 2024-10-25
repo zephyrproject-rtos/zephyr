@@ -6,7 +6,7 @@ arch: nios2
 ram: 128
 flash: 128
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - xtools
 testing:
   default: true

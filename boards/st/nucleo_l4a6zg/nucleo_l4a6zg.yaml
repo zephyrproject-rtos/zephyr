@@ -3,7 +3,7 @@ name: ST Nucleo L4A6ZG
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
 ram: 320
 flash: 1024

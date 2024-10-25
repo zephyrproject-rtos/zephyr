@@ -3,7 +3,7 @@ name: ADI EVAL-ADIN1110EBZ evaulation board
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 640

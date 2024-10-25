@@ -5,7 +5,7 @@ name: Aspeed AST1030-EVB
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
 ram: 768
 flash: 1024
 supported:

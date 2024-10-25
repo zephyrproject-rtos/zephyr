@@ -6,7 +6,7 @@ name: nRF54H20-DK-nRF54H20-PPR (revision 0.8.0)
 type: mcu
 arch: riscv
 toolchain:
-  - zephyr
+  - zephyr-gnu
 sysbuild: true
 ram: 62
 flash: 62

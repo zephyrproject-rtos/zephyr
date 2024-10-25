@@ -3,7 +3,7 @@ name: ST Nucleo G070RB
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 36

@@ -3,7 +3,7 @@ name: nRF52-DK-NRF52805
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 supported:

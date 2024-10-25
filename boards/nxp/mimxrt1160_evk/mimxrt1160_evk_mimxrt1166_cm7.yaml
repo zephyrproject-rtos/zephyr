@@ -9,7 +9,7 @@ name: NXP MIMXRT1160-EVK CM7
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 256

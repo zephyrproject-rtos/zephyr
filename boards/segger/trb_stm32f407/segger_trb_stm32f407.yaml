@@ -3,7 +3,7 @@ name: Cortex-M Trace Reference Board V1.2
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 192

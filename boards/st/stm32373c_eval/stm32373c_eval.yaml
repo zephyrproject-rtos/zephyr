@@ -3,7 +3,7 @@ name: ST STM32373C Evaluation
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - gnuarmemb
   - xtools
 ram: 32

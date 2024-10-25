@@ -3,7 +3,7 @@ name: Renode RISC-V 32-bit Virtual Board
 type: mcu
 arch: riscv
 toolchain:
-  - zephyr
+  - zephyr-gnu
 ram: 4096
 flash: 4096
 simulation: renode

@@ -6,7 +6,7 @@ name: PHYTEC phyBOARD Nash (i.MX93) M33
 type: mcu
 arch: arm
 toolchain:
-  - zephyr
+  - zephyr-gnu
   - cross-compile
 ram: 128
 flash: 128
