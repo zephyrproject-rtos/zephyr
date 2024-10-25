@@ -1,0 +1,16 @@
+#
+# Copyright (c) 2024 Advanced Micro Devices, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_MBV32
+
+config MBV_CSR_DATA_WIDTH
+	int "Select Control/Status register width"
+	default 32
+
+config NUM_IRQS
+	default 44
+
+endif # SOC_MBV32
