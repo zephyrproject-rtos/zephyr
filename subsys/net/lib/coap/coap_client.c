@@ -594,21 +594,6 @@ static int handle_poll(void)
 	return 0;
 }
 
-static bool token_compare(struct coap_client_internal_request *internal_req,
-			  const struct coap_packet *resp)
-{
-	uint8_t response_token[COAP_TOKEN_MAX_LEN];
-	uint8_t response_tkl;
-
-	response_tkl = coap_header_get_token(resp, response_token);
-
-	if (internal_req->request_tkl != response_tkl) {
-		return false;
-	}
-
-	return memcmp(&internal_req->request_token, &response_token, response_tkl) == 0;
-}
-
 static int recv_response(struct coap_client *client, struct coap_packet *response, bool *truncated)
 {
 	int total_len;
@@ -766,11 +751,6 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 	if (!internal_req) {
 		LOG_WRN("No matching request for response");
 		return 0;
-	}
-
-	if (internal_req == NULL || !token_compare(internal_req, response)) {
-		LOG_WRN("Not matching tokens");
-		return 1;
 	}
 
 	/* MID-based deduplication */
