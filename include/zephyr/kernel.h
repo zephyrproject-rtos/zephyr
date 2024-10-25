@@ -6077,6 +6077,71 @@ static inline void k_cpu_atomic_idle(unsigned int key)
 #define k_panic()	z_except_reason(K_ERR_KERNEL_PANIC)
 
 /**
+ * @defgroup bug_apis BUG APIs
+ * @ingroup kernel_apis
+ * @{
+ */
+
+/**
+ * @cond INTERNAL_HIDDEN
+ */
+
+#if __ASSERT_ON
+/* If asserts are enabled, then these behave exactly like asserts. */
+#define __BUG_ON_IMPL(test) __ASSERT_NO_MSG(test)
+#else
+#if defined(CONFIG_BUG_NO_PANIC)
+#define __BUG_PANIC()
+#else
+#define __BUG_PANIC() k_panic()
+#endif
+
+#if defined(CONFIG_BUG_PRINT_LOCATION)
+#define __BUG_PRINT(fmt, ...) printk(fmt, ##__VA_ARGS__)
+#else
+#define __BUG_PRINT(fmt, ...)
+#endif
+#define __BUG_LOC() __BUG_PRINT("BUG @ %s:%d\n", __FILE__, __LINE__)
+
+#define __BUG_ON_IMPL(test)                                                                        \
+	do {                                                                                       \
+		if (!(test)) {                                                                     \
+			__BUG_LOC();                                                               \
+			__BUG_PANIC();                                                             \
+		}                                                                                  \
+	} while (false)
+#endif /* __ASSERT_ON */
+
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
+
+/**
+ * @brief Marks an unrecoverable fatal condition.
+ *
+ * If asserts are enabled then this behaves exactly like an assert. Otherwise:
+ *
+ * - If CONFIG_BUG_PRINT_LOCATION is enabled file/line information will be printed to the console.
+ * - If CONFIG_BUG_NO_PANIC is NOT enabled k_panic will be called.
+ */
+#define __BUG() __BUG_ON_IMPL(false)
+
+/**
+ * @brief Marks an unrecoverable fatal condition if test condition evaluates to false.
+ *
+ * If asserts are enabled then this behaves exactly like an assert if the test condition fails.
+ * Otherwise:
+ *
+ * - If CONFIG_BUG_PRINT_LOCATION is enabled file/line information will be printed to the console.
+ * - If CONFIG_BUG_NO_PANIC is NOT enabled k_panic will be called.
+ */
+#define __BUG_ON(test) __BUG_ON_IMPL(test)
+
+/**
+ * @}
+ */
+
+/**
  * @cond INTERNAL_HIDDEN
  */
 

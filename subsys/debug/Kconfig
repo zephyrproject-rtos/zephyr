@@ -374,6 +374,16 @@ config OMIT_FRAME_POINTER
 	  If unsure, disable OVERRIDE_FRAME_POINTER_DEFAULT to allow the compiler
 	  to adopt sensible defaults for your architecture.
 
+config BUG_NO_PANIC
+	bool "Disable kernel panic in __BUG macros"
+	help
+	  This option prevents the system from panicking on __BUG macros.
+
+config BUG_PRINT_LOCATION
+	bool "Print file location and line number in __BUG macros"
+	help
+	  This option will cause __BUG macros to print out file and line
+	  information similar to asserts.
 
 #
 # Generic Debugging Options
