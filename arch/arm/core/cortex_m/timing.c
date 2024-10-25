@@ -104,7 +104,7 @@ timing_t arch_timing_counter_get(void)
 uint64_t arch_timing_cycles_get(volatile timing_t *const start,
 				volatile timing_t *const end)
 {
-	return (*end - *start);
+	return ((uint32_t)*end - (uint32_t)*start);
 }
 
 uint64_t arch_timing_freq_get(void)
