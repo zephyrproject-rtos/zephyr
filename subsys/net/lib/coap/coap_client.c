@@ -557,16 +557,17 @@ static int handle_poll(void)
 			struct coap_packet response;
 			bool response_truncated = false;
 
-			k_mutex_lock(&clients[i]->lock, K_FOREVER);
-
 			ret = recv_response(clients[i], &response, &response_truncated);
 			if (ret < 0) {
+				if (ret == -EAGAIN) {
+					continue;
+				}
 				LOG_ERR("Error receiving response");
 				cancel_requests_with(clients[i], -EIO);
-				k_mutex_unlock(&clients[i]->lock);
 				continue;
 			}
 
+			k_mutex_lock(&clients[i]->lock, K_FOREVER);
 			ret = handle_response(clients[i], &response, response_truncated);
 			if (ret < 0) {
 				LOG_ERR("Error handling response");
@@ -622,14 +623,11 @@ static int recv_response(struct coap_client *client, struct coap_packet *respons
 			    &client->address, &client->socklen);
 
 	if (total_len < 0) {
-		LOG_ERR("Error reading response: %d", errno);
-		if (errno == EOPNOTSUPP) {
-			return -errno;
-		}
-		return -EINVAL;
+		ret = -errno;
+		return ret;
 	} else if (total_len == 0) {
-		LOG_ERR("Zero length recv");
-		return -EINVAL;
+		/* Ignore, UDP can be zero length, but it is not CoAP anymore */
+		return 0;
 	}
 
 	available_len = MIN(total_len, sizeof(client->recv_buf));
@@ -640,7 +638,6 @@ static int recv_response(struct coap_client *client, struct coap_packet *respons
 	ret = coap_packet_parse(response, client->recv_buf, available_len, NULL, 0);
 	if (ret < 0) {
 		LOG_ERR("Invalid data received");
-		return ret;
 	}
 
 	return ret;
