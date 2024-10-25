@@ -111,6 +111,9 @@ function(zephyr_mcuboot_tasks)
   endif()
 
   if(NOT "${keyfile}" STREQUAL "")
+    if(CONFIG_MCUBOOT_SIGNATURE_TYPE_PURE)
+       set(imgtool_args --pure ${imgtool_args})
+    endif()
     set(imgtool_args --key "${keyfile}" ${imgtool_args})
   endif()
 

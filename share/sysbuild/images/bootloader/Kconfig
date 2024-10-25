@@ -139,6 +139,17 @@ config BOOT_SIGNATURE_TYPE_ED25519
 
 endchoice
 
+config BOOT_SIGNATURE_TYPE_PURE
+	bool "Use Pure signature of image"
+	help
+	  The Pure signature is calculated directly over image rather than
+	  hash of an image.
+	  This is more secure signature, specifically if hardware can do the
+	  verification without need to share key.
+	  Note that this requires that all slots for which signature is to be
+	  verified need to be accessible through memory address space that
+	  cryptography can access.
+
 config BOOT_SIGNATURE_KEY_FILE
 	string "Signing PEM key file" if !BOOT_SIGNATURE_TYPE_NONE
 	default "$(ZEPHYR_MCUBOOT_MODULE_DIR)/root-ec-p256.pem" if BOOT_SIGNATURE_TYPE_ECDSA_P256
