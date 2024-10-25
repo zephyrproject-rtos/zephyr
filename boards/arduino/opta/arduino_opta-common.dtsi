@@ -87,3 +87,117 @@
 &mailbox {
 	status = "okay";
 };
+
+&rng {
+	status = "okay";
+};
+
+&usart3 {
+	pinctrl-0 = <&usart3_tx_pb10 &usart3_rx_pb11 &usart3_cts_pb13 &usart3_de_pb14>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	/* The RS485 is often used with the ModBus protocol. */
+	modbus0 {
+		compatible = "zephyr,modbus-serial";
+		de-gpios = <&gpiob 14 GPIO_ACTIVE_HIGH>;
+		re-gpios = <&gpiob 13 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&adc1 {
+	pinctrl-0 = <&adc1_inp0_pa0_c &adc1_inp6_pf12>;
+	pinctrl-names = "default";
+	st,adc-clock-source = <SYNC>;
+	st,adc-prescaler = <4>;
+	vref-mv = <10000>;
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	a0: channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <16>;
+	};
+
+	a2: channel@6 {
+		reg = <6>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <16>;
+	};
+
+};
+
+&adc2 {
+	pinctrl-0 = <&adc2_inp9_pb0>;
+	pinctrl-names = "default";
+	st,adc-clock-source = <SYNC>;
+	st,adc-prescaler = <4>;
+	vref-mv = <10000>;
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	a3: channel@9 {
+		reg = <9>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <16>;
+	};
+};
+
+&adc3 {
+	pinctrl-0 = <&adc3_inp6_pf10 &adc3_inp7_pf8 &adc3_inp8_pf6 &adc3_inp9_pf4 &adc3_inp0_pc2_c>;
+	pinctrl-names = "default";
+	st,adc-clock-source = <SYNC>;
+	st,adc-prescaler = <4>;
+	vref-mv = <10000>;
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	a1: channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <16>;
+	};
+
+	a4: channel@6 {
+		reg = <6>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <16>;
+	};
+
+	a5: channel@7 {
+		reg = <7>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <16>;
+	};
+
+	a6: channel@8 {
+		reg = <8>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <16>;
+	};
+
+	a7: channel@9 {
+		reg = <9>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <16>;
+	};
+};
