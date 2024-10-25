@@ -37,7 +37,7 @@
 
 	aps256n: aps256n@0 {
 		compatible = "ambiq,mspi-device", "mspi-aps256n";
-		size = <DT_SIZE_M(32)>;
+		size = <DT_SIZE_M(256/8)>;
 		reg = <0>;
 		status = "okay";
 		mspi-max-frequency = <48000000>;
@@ -50,12 +50,11 @@
 		address-length = "ADDR_4_BYTE";
 		rx-dummy = <6>;
 		tx-dummy = <6>;
-		xip-config = <1 0 0 0>;
+		xip-config = <1 0 DT_SIZE_M(256/8) 0>;
 		ce-break-config = <1024 2>;
 		ambiq,timing-config-mask = <67>;
 		ambiq,timing-config = <6 6 0 0 0 0 16 0>;
 		mspi-dqs-enable;
-		scramble-config = <0 0 0>;
 	};
 };
 

@@ -20,6 +20,9 @@ LOG_MODULE_REGISTER(mspi_ambiq_ap4);
 
 #include "mspi_ambiq.h"
 
+#define DT_SIZE_K(x) ((x) * 1024)
+#define DT_SIZE_M(x) ((x) * 1024 * 1024)
+
 #define MSPI_MAX_FREQ   96000000
 #define MSPI_MAX_DEVICE 2
 #define MSPI_TIMEOUT_US 1000000
@@ -205,6 +208,50 @@ static am_hal_mspi_dma_boundary_e mspi_set_mem_boundary(uint32_t mem_boundary)
 	default:
 		return AM_HAL_MSPI_BOUNDARY_MAX;
 	}
+}
+
+static int mspi_check_mem_size(uint32_t mem_size)
+{
+	uint32_t mem_size_array [] = {
+		DT_SIZE_K(64),
+		DT_SIZE_K(128),
+		DT_SIZE_K(256),
+		DT_SIZE_K(512),
+		DT_SIZE_M(1),
+		DT_SIZE_M(2),
+		DT_SIZE_M(4),
+		DT_SIZE_M(8),
+		DT_SIZE_M(16),
+		DT_SIZE_M(32),
+		DT_SIZE_M(64)
+	};
+
+	for (int i = 0; i < sizeof(mem_size_array) / sizeof(uint32_t); i++) {
+		if (mem_size == mem_size_array[i]) {
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+static am_hal_mspi_ap_size_e mspi_get_mem_apsize(uint32_t mem_size)
+{
+	am_hal_mspi_ap_size_e mem_size_enum_array [] = {
+		AM_HAL_MSPI_AP_SIZE64K,
+		AM_HAL_MSPI_AP_SIZE128K,
+		AM_HAL_MSPI_AP_SIZE256K,
+		AM_HAL_MSPI_AP_SIZE512K,
+		AM_HAL_MSPI_AP_SIZE1M,
+		AM_HAL_MSPI_AP_SIZE2M,
+		AM_HAL_MSPI_AP_SIZE4M,
+		AM_HAL_MSPI_AP_SIZE8M,
+		AM_HAL_MSPI_AP_SIZE16M,
+		AM_HAL_MSPI_AP_SIZE32M,
+		AM_HAL_MSPI_AP_SIZE64M,
+	};
+
+	return mem_size_enum_array[mem_size];
 }
 
 static inline void mspi_context_ce_control(struct mspi_context *ctx, bool on)
@@ -822,6 +869,15 @@ static int mspi_ambiq_xip_config(const struct device *controller, const struct m
 		return -ESTALE;
 	}
 
+	ret = mspi_check_mem_size(xip_cfg->size);
+
+	if (ret > ((int)AM_HAL_MSPI_AP_SIZE_MAX)) {
+		LOG_INST_ERR(cfg->log, "%u, fail to configure eAPSize.", __LINE__);
+		return -EHOSTDOWN;
+	}
+
+	data->hal_xip_cfg.eAPSize = mspi_get_mem_apsize(ret);
+
 	if (xip_cfg->enable) {
 		eRequest = AM_HAL_MSPI_REQ_XIP_EN;
 	} else {
@@ -1397,7 +1453,7 @@ static struct mspi_driver_api mspi_ambiq_driver_api = {
 	{                                                                                          \
 		.scramblingStartAddr = 0,                                                          \
 		.scramblingEndAddr = 0,                                                            \
-		.ui32APBaseAddr = 0,                                                               \
+		.ui32APBaseAddr = DT_INST_REG_ADDR_BY_IDX(n, 1),                                \
 		.eAPMode = 0,                                                                      \
 		.eAPSize = 0,                                                                      \
 	}
