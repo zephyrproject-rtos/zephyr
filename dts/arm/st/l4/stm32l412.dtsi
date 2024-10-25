@@ -85,3 +85,7 @@
 		status = "disabled";
 	};
 };
+
+&pwr {
+	/delete-node/ wkup-pin@3;
+};
