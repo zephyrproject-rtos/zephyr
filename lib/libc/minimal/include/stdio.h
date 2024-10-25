@@ -18,17 +18,27 @@ extern "C" {
 #endif
 
 #if !defined(__FILE_defined)
+
 #define __FILE_defined
-typedef int  FILE;
+#if defined(CONFIG_FDTABLE)
+typedef struct fd_entry  FILE;
+#else
+typedef int FILE;
+#endif
+
 #endif
 
 #if !defined(EOF)
 #define EOF  (-1)
 #endif
 
-#define stdin  ((FILE *) 1)
-#define stdout ((FILE *) 2)
-#define stderr ((FILE *) 3)
+extern FILE* _stdin;
+extern FILE* _stdout;
+extern FILE* _stderr;
+
+#define stdin _stdin
+#define stdout _stdout
+#define stderr _stderr
 
 #define SEEK_SET	0	/* Seek from beginning of file.  */
 #define SEEK_CUR	1	/* Seek from current position.  */
