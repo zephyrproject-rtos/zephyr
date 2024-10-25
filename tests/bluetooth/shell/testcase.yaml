@@ -73,6 +73,13 @@ tests:
     build_only: true
     extra_args: CONF_FILE="log.conf"
     tags: bluetooth
+  bluetooth.shell.bt_ctrl_dtm:
+    build_only: true
+    extra_args:
+      - CONFIG_BT_CTLR_DTM_HCI=y
+    tags: bluetooth
+    platform_allow:
+      - nrf52840dk/nrf52840
 
   # Bluetooth Audio Compile validation tests
   bluetooth.shell.audio:
