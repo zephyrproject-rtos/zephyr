@@ -651,6 +651,26 @@ static int send_ack(struct coap_client *client, const struct coap_packet *req,
 	return 0;
 }
 
+static int send_rst(struct coap_client *client, const struct coap_packet *req)
+{
+	int ret;
+	struct coap_packet rst;
+
+	ret = coap_rst_init(&rst, req, client->send_buf, MAX_COAP_MSG_LEN);
+	if (ret < 0) {
+		LOG_ERR("Failed to initialize CoAP RST-message");
+		return ret;
+	}
+
+	ret = send_request(client->fd, rst.data, rst.offset, 0, &client->address, client->socklen);
+	if (ret < 0) {
+		LOG_ERR("Error sending a CoAP RST-message");
+		return ret;
+	}
+
+	return 0;
+}
+
 static struct coap_client_internal_request *get_request_with_token(
 	struct coap_client *client, const struct coap_packet *resp)
 {
@@ -750,6 +770,7 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 	internal_req = get_request_with_token(client, response);
 	if (!internal_req) {
 		LOG_WRN("No matching request for response");
+		(void) send_rst(client, response); /* Ignore errors, unrelated to our queries */
 		return 0;
 	}
 
