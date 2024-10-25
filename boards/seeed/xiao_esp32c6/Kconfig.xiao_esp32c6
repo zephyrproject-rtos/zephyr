@@ -1,0 +1,7 @@
+# XIAO ESP32C6 board configuration
+
+# Copyright (c) 2024 Mario Paja
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_XIAO_ESP32C6
+	select SOC_ESP32_C6_WROOM_1U_N4
