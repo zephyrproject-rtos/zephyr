@@ -55,6 +55,62 @@
 				nxp,resource-id = <IMX_SC_R_IRQSTR_DSP>;
 				#power-domain-cells = <0>;
 			};
+
+			edma0_ch6_pd: pd@1 {
+				compatible = "nxp,imx8qm-scu-pd", "nxp,scu-pd";
+				reg = <1>;
+				nxp,resource-id = <IMX_SC_R_DMA_0_CH6>;
+				#power-domain-cells = <0>;
+			};
+
+			edma0_ch7_pd: pd@2 {
+				compatible = "nxp,imx8qm-scu-pd", "nxp,scu-pd";
+				reg = <2>;
+				nxp,resource-id = <IMX_SC_R_DMA_0_CH7>;
+				#power-domain-cells = <0>;
+			};
+
+			edma0_ch14_pd: pd@3 {
+				compatible = "nxp,imx8qm-scu-pd", "nxp,scu-pd";
+				reg = <3>;
+				nxp,resource-id = <IMX_SC_R_DMA_0_CH14>;
+				#power-domain-cells = <0>;
+			};
+
+			edma0_ch15_pd: pd@4 {
+				compatible = "nxp,imx8qm-scu-pd", "nxp,scu-pd";
+				reg = <4>;
+				nxp,resource-id = <IMX_SC_R_DMA_0_CH15>;
+				#power-domain-cells = <0>;
+			};
+
+			edma2_ch6_pd: pd@5 {
+				compatible = "nxp,imx8qm-scu-pd", "nxp,scu-pd";
+				reg = <5>;
+				nxp,resource-id = <IMX_SC_R_DMA_2_CH6>;
+				#power-domain-cells = <0>;
+			};
+
+			edma2_ch7_pd: pd@6 {
+				compatible = "nxp,imx8qm-scu-pd", "nxp,scu-pd";
+				reg = <6>;
+				nxp,resource-id = <IMX_SC_R_DMA_2_CH7>;
+				#power-domain-cells = <0>;
+			};
+
+			edma2_ch14_pd: pd@7 {
+				compatible = "nxp,imx8qm-scu-pd", "nxp,scu-pd";
+				reg = <7>;
+				nxp,resource-id = <IMX_SC_R_DMA_2_CH14>;
+				#power-domain-cells = <0>;
+			};
+
+			edma2_ch15_pd: pd@8 {
+				compatible = "nxp,imx8qm-scu-pd", "nxp,scu-pd";
+				reg = <8>;
+				nxp,resource-id = <IMX_SC_R_DMA_2_CH15>;
+				#power-domain-cells = <0>;
+			};
 		};
 	};
 
@@ -74,6 +130,8 @@
 		compatible = "nxp,edma";
 		reg = <0x591f0000 (DT_SIZE_K(64) * 33)>;
 		valid-channels = <6>, <7>, <14>, <15>;
+		power-domains = <&edma0_ch6_pd>, <&edma0_ch7_pd>,
+				<&edma0_ch14_pd>, <&edma0_ch15_pd>;
 		interrupts-extended = <&master6 58>, <&master6 58>,
 				<&master5 29>, <&master5 29>;
 		#dma-cells = <2>;

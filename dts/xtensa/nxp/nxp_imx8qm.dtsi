@@ -81,3 +81,8 @@
 		};
 	};
 };
+
+&edma0 {
+	power-domains = <&edma2_ch6_pd>, <&edma2_ch7_pd>,
+			<&edma2_ch14_pd>, <&edma2_ch15_pd>;
+};
