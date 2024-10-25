@@ -20,6 +20,8 @@ common:
     - mps2/an521/cpu0         # ARM Cortex-M33 (ARMv8-M ISA)
   extra_configs:
     - arch:arm64:CONFIG_LLEXT_HEAP_SIZE=128
+  extra_conf_files:
+    - prj.conf
 
 tests:
   # While there is in practice no value in compiling subsys/llext/*.c
@@ -29,15 +31,15 @@ tests:
   llext.simple.loader_build:
     build_only: true
 
-  # Run the suite with all combinations of core Kconfig options for the llext
-  # subsystem (storage type, ELF type, MPU/MMU etc)
+  # Run the suite with all combinations of core Kconfig options for the LLEXT
+  # subsystem (storage type, ELF type, MPU/MMU etc). To focus on LLEXT issues,
+  # most tests include no_mem_protection.conf, which disables memory protection
+  # hardware completely.
   llext.simple.readonly:
     arch_allow: arm riscv # Xtensa needs writable storage
     filter: not CONFIG_MPU and not CONFIG_MMU
+    extra_conf_files: ['no_mem_protection.conf']
     extra_configs:
-      - arch:arm:CONFIG_ARM_MPU=n
-      - arch:arm:CONFIG_ARM_AARCH32_MMU=n
-      - arch:riscv:CONFIG_RISCV_PMP=n
       - CONFIG_LLEXT_STORAGE_WRITABLE=n
   llext.simple.readonly_mpu:
     min_ram: 128
@@ -58,20 +60,16 @@ tests:
     integration_platforms:
       - qemu_xtensa/dc233c      # Xtensa ISA
     filter: not CONFIG_MPU and not CONFIG_MMU
+    extra_conf_files: ['no_mem_protection.conf']
     extra_configs:
-      - arch:arm:CONFIG_ARM_MPU=n
-      - arch:arm:CONFIG_ARM_AARCH32_MMU=n
-      - arch:riscv:CONFIG_RISCV_PMP=n
       - CONFIG_LLEXT_STORAGE_WRITABLE=y
   llext.simple.writable_relocatable:
     arch_allow: arm xtensa riscv
     integration_platforms:
       - qemu_xtensa/dc233c      # Xtensa ISA
     filter: not CONFIG_MPU and not CONFIG_MMU
+    extra_conf_files: ['no_mem_protection.conf']
     extra_configs:
-      - arch:arm:CONFIG_ARM_MPU=n
-      - arch:arm:CONFIG_ARM_AARCH32_MMU=n
-      - arch:riscv:CONFIG_RISCV_PMP=n
       - CONFIG_LLEXT_STORAGE_WRITABLE=y
       - CONFIG_LLEXT_TYPE_ELF_RELOCATABLE=y
 
@@ -82,10 +80,8 @@ tests:
     integration_platforms:
       - qemu_xtensa/dc233c      # Xtensa ISA
     filter: not CONFIG_MPU and not CONFIG_MMU
+    extra_conf_files: ['no_mem_protection.conf']
     extra_configs:
-      - arch:arm:CONFIG_ARM_MPU=n
-      - arch:arm:CONFIG_ARM_AARCH32_MMU=n
-      - arch:riscv:CONFIG_RISCV_PMP=n
       - CONFIG_LLEXT_STORAGE_WRITABLE=y
       - CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID=y
   llext.simple.writable_relocatable_slid_linking:
@@ -93,10 +89,8 @@ tests:
     integration_platforms:
       - qemu_xtensa/dc233c      # Xtensa ISA
     filter: not CONFIG_MPU and not CONFIG_MMU
+    extra_conf_files: ['no_mem_protection.conf']
     extra_configs:
-      - arch:arm:CONFIG_ARM_MPU=n
-      - arch:arm:CONFIG_ARM_AARCH32_MMU=n
-      - arch:riscv:CONFIG_RISCV_PMP=n
       - CONFIG_LLEXT_STORAGE_WRITABLE=y
       - CONFIG_LLEXT_TYPE_ELF_RELOCATABLE=y
       - CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID=y
