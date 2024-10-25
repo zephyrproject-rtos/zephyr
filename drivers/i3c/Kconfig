@@ -112,6 +112,37 @@ config I3C_INIT_RSTACT
 	  This determines whether the bus initialization routine
 	  sends a reset action command to I3C targets.
 
+config I3C_RTIO
+	bool "I3C RTIO API"
+	select EXPERIMENTAL
+	select RTIO
+	select RTIO_WORKQ
+	help
+	  API and implementations of I3C for RTIO
+
+if I3C_RTIO
+config I3C_RTIO_SQ_SIZE
+	int "Submission queue size for blocking calls"
+	default 4
+	help
+	  Blocking i3c calls when I3C_RTIO is enabled are copied into a per driver
+	  submission queue. The queue depth determines the number of possible i3c_msg
+	  structs that may be in the array given to i3c_transfer. A sensible default
+	  is going to be 4 given the device address, register address, and a value
+	  to be read or written.
+
+config I3C_RTIO_CQ_SIZE
+	int "Completion queue size for blocking calls"
+	default 4
+	help
+	  Blocking i3c calls when I3C_RTIO is enabled are copied into a per driver
+	  submission queue. The queue depth determines the number of possible i3c_msg
+	  structs that may be in the array given to i3c_transfer. A sensible default
+	  is going to be 4 given the device address, register address, and a value
+	  to be read or written.
+
+endif # I3C_RTIO
+
 comment "Device Drivers"
 
 rsource "Kconfig.nxp"

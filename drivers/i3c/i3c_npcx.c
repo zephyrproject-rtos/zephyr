@@ -2207,6 +2207,10 @@ static const struct i3c_driver_api npcx_i3c_driver_api = {
 	.ibi_enable = npcx_i3c_ibi_enable,
 	.ibi_disable = npcx_i3c_ibi_disable,
 #endif
+
+#ifdef CONFIG_I3C_RTIO
+	.iodev_submit = i3c_iodev_submit_fallback,
+#endif
 };
 
 #define I3C_NPCX_DEVICE(id)                                                                        \
