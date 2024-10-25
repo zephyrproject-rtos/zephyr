@@ -1,6 +1,6 @@
 tests:
   cpp.libcxx.glibcxx.newlib:
-    filter: TOOLCHAIN_HAS_NEWLIB == 1
+    filter: TOOLCHAIN_HAS_GLIBCXX == 1 and TOOLCHAIN_HAS_NEWLIB == 1
     toolchain_exclude: xcc
     min_flash: 54
     min_ram: 24
@@ -12,7 +12,7 @@ tests:
     integration_platforms:
       - mps2/an385
   cpp.libcxx.glibcxx.newlib_nano:
-    filter: TOOLCHAIN_HAS_NEWLIB == 1 and CONFIG_HAS_NEWLIB_LIBC_NANO
+    filter: TOOLCHAIN_HAS_GLIBCXX == 1 and TOOLCHAIN_HAS_NEWLIB == 1 and CONFIG_HAS_NEWLIB_LIBC_NANO
     toolchain_exclude: xcc
     min_flash: 54
     tags: cpp
@@ -24,7 +24,7 @@ tests:
     integration_platforms:
       - mps2/an385
   cpp.libcxx.glibcxx.picolibc:
-    filter: TOOLCHAIN_HAS_PICOLIBC == 1
+    filter: TOOLCHAIN_HAS_GLIBCXX == 1 and TOOLCHAIN_HAS_PICOLIBC == 1
     toolchain_exclude: xcc
     tags: cpp
     timeout: 60
