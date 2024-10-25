@@ -179,6 +179,8 @@ Boards & SoC Support
     * ``mps3/an547`` to ``mps3/corstone300/an547`` for secure and
     * ``mps3/an547/ns`` to ``mps3/corstone300/an547/ns`` for non-secure.
 
+  * Added Thingy53 forwarding of network core pins to network core for SPI peripheral (disabled
+    by default) including pin mappings.
 
 * Added support for the following shields:
 
@@ -200,6 +202,10 @@ Build system and Infrastructure
 
 * Switched to using imgtool directly from the build system when signing images instead of calling
   ``west sign``.
+
+* Added support for selecting MCUboot operating mode in sysbuild using ``SB_CONFIG_MCUBOOT_MODE``.
+
+* Added support for RAM-load MCUboot operating mode in build system, including sysbuild support.
 
 Documentation
 *************
@@ -549,6 +555,56 @@ HALs
 
 MCUboot
 *******
+
+  * Removed broken target config header feature.
+  * Removed ``image_index`` from ``boot_encrypt``.
+  * Renamed boot_enc_decrypt to boot_decrypt_key.
+  * Updated to use ``EXTRA_CONF_FILE`` instead of the deprecated ``OVERLAY_CONFIG`` argument.
+  * Updated ``boot_encrypt()`` to instead be ``boot_enc_encrypt()`` and ``boot_enc_decrypt()``.
+  * Updated ``boot_enc_valid`` to take slot instead of image index.
+  * Updated ``boot_enc_load()`` to take slot number instead of image.
+  * Updated logging to debug level in boot_serial.
+  * Updated Kconfig to allow disabling NRFX_WDT on nRF devices.
+  * Updated CMake ERROR statements into FATAL_ERROR.
+  * Added application version that is being booted output prior to booting it.
+  * Added sysbuild support to the hello-world sample.
+  * Added SIG_PURE TLV to bootutil.
+  * Added write block size checking to bootutil.
+  * Added check for unexpected flash sector size.
+  * Added SHA512 support to MCUboot code and support for calculating SHA512 hash in imgtool.
+  * Added fallback to USB DFU option.
+  * Added better mode selection checks to bootutil.
+  * Added bootuil protected TLV size to image size check.
+  * Added functionaliy to remove images with conflicting flags or where features are required
+    that are not supported.
+  * Added compressed image flags and TLVs to MCUboot, Kconfig options and support for generating
+    compressed LZMA2 images with ARM thumb filter to imgtool.
+  * Added image header verification before checking image.
+  * Added state to ``boot_is_header_valid()`` function.
+  * Added ``CONFIG_MCUBOOT_ENC_BUILTIN_KEY`` Kconfig option.
+  * Added non-bootable flag to imgtool.
+  * Added zephyr prefix to generated header path.
+  * Added optional img mgmt slot info feature.
+  * Added bootutil support for maximum image size details for additional images.
+  * Added support for automatically calculcating max sectors.
+  * Added missing ``boot_enc_init()`` function.
+  * Added support for keeping image encrypted in scratch area in bootutil.
+  * Fixed serial recovery for NXP IMX.RT, LPC55x and MCXNx platforms
+  * Fixed issue with public RSA signing in imgtool.
+  * Fixed issue with ``boot_serial_enter()`` being defined but not used warning.
+  * Fixed issue with ``main()`` in sample returning wrong type warning.
+  * Fixed issue with using pointers in bootutil.
+  * Fixed wrong usage of slot numbers in boot_serial.
+  * Fixed slot info for directXIP/RAM load in bootutil.
+  * Fixed bootutil issue with not zeroing AES and SHA-256 contexts with mbedTLS.
+  * Fixed boot_serial ``format`` and ``incompatible-pointer-types`` warnings.
+  * Fixed booltuil wrong definition of ``find_swap_count``.
+  * Fixed bootutil swap move max app size calculation.
+  * Fixed imgtool issue where getpub failed for ed25519 key.
+  * Fixed issue with sysbuild if something else is named mcuboot.
+  * Fixed RAM load chain load address.
+  * Fixed issue with properly retrieving image headers after interrupted swap-scratch in bootutil.
+  * The MCUboot version in this release is version ``2.1.0+0-dev``.
 
 OSDP
 ****
