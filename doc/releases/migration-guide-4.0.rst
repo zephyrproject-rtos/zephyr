@@ -330,6 +330,8 @@ Bluetooth HCI
 
 * The ``bt-hci-bus`` and ``bt-hci-quirks`` devicetree properties for HCI bindings have been changed
   to use lower-case strings without the ``BT_HCI_QUIRK_`` and ``BT_HCI_BUS_`` prefixes.
+* The Kconfig option :kconfig:option:`BT_SPI` is now automatically selected based on devicetree
+  compatibles and can be removed from board ``.defconfig`` files.
 
 Bluetooth Mesh
 ==============

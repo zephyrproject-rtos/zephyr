@@ -9,16 +9,6 @@ config SPI_STM32_INTERRUPT
 	default y
 	depends on SPI
 
-if BT
-
-config SPI
-	default y
-
-config BT_SPI
-	default y
-
-endif # BT
-
 endif # BOARD_96B_CARBON_STM32F401XE
 
 if BOARD_96B_CARBON_NRF51822
