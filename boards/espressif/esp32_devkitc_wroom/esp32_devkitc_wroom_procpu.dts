@@ -16,7 +16,7 @@
 	compatible = "espressif,esp32";
 
 	aliases {
-		uart-0 = &uart0;
+		uart-0 = &sram1_dram;
 		i2c-0 = &i2c0;
 		sw0 = &button0;
 		watchdog0 = &wdt0;

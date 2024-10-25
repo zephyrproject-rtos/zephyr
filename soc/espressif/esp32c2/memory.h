@@ -5,13 +5,13 @@
 #pragma once
 
 /* SRAM0 (16kB) memory */
-#define SRAM0_IRAM_START   0x4037c000
-#define SRAM0_SIZE         0x4000
+#define SRAM0_IRAM_START   DT_REG_ADDR(DT_NODELABEL(sram0_iram))
+#define SRAM0_SIZE         DT_REG_SIZE(DT_NODELABEL(sram0_iram))
 
 /* SRAM1 (256kB) memory */
-#define SRAM1_DRAM_START   0x3fca0000
-#define SRAM1_IRAM_START   0x40380000
-#define SRAM1_SIZE         0x40000
+#define SRAM1_DRAM_START   DT_REG_ADDR(DT_NODELABEL(sram1_dram))
+#define SRAM1_IRAM_START   DT_REG_ADDR(DT_NODELABEL(sram1_iram))
+#define SRAM1_SIZE         DT_REG_SIZE(DT_NODELABEL(sram1_iram))
 
 /* ICache size is fixed to 16KB on ESP32-C2 */
 #define ICACHE_SIZE        SRAM0_SIZE
@@ -31,7 +31,7 @@
 /* The offset between Dbus and Ibus.
  * Used to convert between 0x403xxxxx and 0x3fcxxxxx addresses.
  */
-#define IRAM_DRAM_OFFSET         0x6e0000
+#define IRAM_DRAM_OFFSET         (SRAM1_IRAM_START - SRAM1_DRAM_START)
 
 #define DRAM_BUFFERS_START       0x3fccb264
 #define DRAM_STACK_START         0x3fcdcb70

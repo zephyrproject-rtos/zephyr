@@ -4,16 +4,16 @@
  */
 #pragma once
 
-/* SRAM0 (64k), SRAM1 (416k), SRAM2 (64k) memories
+/* SRAM0 (32k), SRAM1 (416k), SRAM2 (64k) memories
  * Ibus and Dbus address space
  */
-#define SRAM0_IRAM_START    0x40370000
-#define SRAM0_SIZE          0x8000
-#define SRAM1_DRAM_START    0x3fc88000
+#define SRAM0_IRAM_START    DT_REG_ADDR(DT_NODELABEL(sram0_iram))
+#define SRAM0_SIZE          DT_REG_SIZE(DT_NODELABEL(sram0_iram))
+#define SRAM1_DRAM_START    DT_REG_ADDR(DT_NODELABEL(sram1_dram))
 /* IRAM equivalent address where DRAM actually start */
-#define SRAM1_IRAM_START    (SRAM0_IRAM_START + SRAM0_SIZE)
-#define SRAM2_DRAM_START    0x3fcf0000
-#define SRAM2_SIZE          0x10000
+#define SRAM1_IRAM_START    DT_REG_ADDR(DT_NODELABEL(sram1_iram))
+#define SRAM2_DRAM_START    DT_REG_ADDR(DT_NODELABEL(sram2_dram))
+#define SRAM2_SIZE          DT_REG_SIZE(DT_NODELABEL(sram2_dram))
 
 /** Simplified memory map for the bootloader.
  *  Make sure the bootloader can load into main memory without overwriting itself.
@@ -31,7 +31,7 @@
 /* The offset between Dbus and Ibus.
  * Used to convert between 0x403xxxxx and 0x3fcxxxxx addresses.
  */
-#define IRAM_DRAM_OFFSET         0x6f0000
+#define IRAM_DRAM_OFFSET         (SRAM1_IRAM_START - SRAM1_DRAM_START)
 #define DRAM_BUFFERS_START       0x3fcd7e00
 #define DRAM_BUFFERS_END         0x3fce9704
 #define DRAM_PROCPU_STACK_START  0x3fce9710
