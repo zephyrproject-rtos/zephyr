@@ -49,6 +49,26 @@ config FLASH_SIMULATOR_DOUBLE_WRITES
 	 In case when FLASH_SIMULATOR_EXPLICIT_ERASE is selected multiple writes to the same bit
 	 but only change from erase-value to opposite will be registered.
 
+config FLASH_SIMULATOR_PROVISION
+	bool "Initialize flash in QEMU from an image file to simulate provisioning."
+	help
+	  This option maps simulated flash to a memory file on QEMU targets. This
+	  file can be a pre-built binary image so that flash will be pre-populated.
+
+DT_COMPAT_Z_SIM_FLASH:=zephyr,sim-flash
+DT_NODELABEL_ENABLED_WITH_Z_SIM_FLASH:=$(dt_nodelabel_enabled_with_compat,sim_flash_controller,$(DT_COMPAT_Z_SIM_FLASH))
+DT_NODELABEL_SIM_FLASH_MEMORY_REGION:=$(dt_node_ph_prop_path,$(dt_nodelabel_path,sim_flash_controller),memory-region)
+
+config FLASH_SIMULATOR_BASE_ADDRESS
+	hex
+	depends on $(DT_NODELABEL_ENABLED_WITH_Z_SIM_FLASH)
+	default $(dt_node_reg_addr_hex,$(DT_NODELABEL_SIM_FLASH_MEMORY_REGION))
+
+config FLASH_SIMULATOR_SIZE
+	int
+	depends on $(DT_NODELABEL_ENABLED_WITH_Z_SIM_FLASH)
+	default $(dt_node_reg_size_int,$(DT_NODELABEL_SIM_FLASH_MEMORY_REGION))
+
 config FLASH_SIMULATOR_SIMULATE_TIMING
 	bool "Hardware timing simulation"
 

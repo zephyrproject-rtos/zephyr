@@ -74,6 +74,9 @@
 #ifdef CONFIG_XIP
 #error "XIP and a virtual memory kernel are not allowed"
 #endif
+#ifdef CONFIG_FLASH_SIMULATOR_PROVISION
+#error "Simulated flash memory cannot be provisioned for a virtual memory kernel."
+#endif
 #endif
 
 #ifndef _ASMLANGUAGE

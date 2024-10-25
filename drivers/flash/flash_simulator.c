@@ -148,6 +148,9 @@ static bool flash_erase_at_start;
 static bool flash_rm_at_exit;
 static bool flash_in_ram;
 #else
+#if CONFIG_FLASH_SIMULATOR_PROVISION
+static uint8_t *mock_flash = (uint8_t *)FLASH_SIMULATOR_BASE_OFFSET;
+#else
 #if DT_NODE_HAS_PROP(DT_PARENT(SOC_NV_FLASH_NODE), memory_region)
 #define FLASH_SIMULATOR_MREGION \
 	LINKER_DT_NODE_REGION_NAME( \
@@ -156,6 +159,7 @@ static uint8_t mock_flash[FLASH_SIMULATOR_FLASH_SIZE] Z_GENERIC_SECTION(FLASH_SI
 #else
 static uint8_t mock_flash[FLASH_SIMULATOR_FLASH_SIZE];
 #endif
+#endif /* CONFIG_FLASH_SIMULATOR_PROVISION */
 #endif /* CONFIG_ARCH_POSIX */
 
 static const struct flash_driver_api flash_sim_api;
@@ -405,20 +409,23 @@ static int flash_mock_init(const struct device *dev)
 }
 
 #else
-#if DT_NODE_HAS_PROP(DT_PARENT(SOC_NV_FLASH_NODE), memory_region)
+static uint32_t boot_count __noinit;
+
 static int flash_mock_init(const struct device *dev)
 {
+	bool is_provisioned;
+
 	ARG_UNUSED(dev);
+
+	is_provisioned = IS_ENABLED(CONFIG_FLASH_SIMULATOR_PROVISION);
+	if (!is_provisioned && boot_count == 0 && FLASH_SIMULATOR_ERASE_VALUE != 0x00) {
+		memset(mock_flash, FLASH_SIMULATOR_ERASE_VALUE, FLASH_SIMULATOR_FLASH_SIZE);
+	}
+
+	boot_count++;
+
 	return 0;
 }
-#else
-static int flash_mock_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-	memset(mock_flash, FLASH_SIMULATOR_ERASE_VALUE, ARRAY_SIZE(mock_flash));
-	return 0;
-}
-#endif /* DT_NODE_HAS_PROP(DT_PARENT(SOC_NV_FLASH_NODE), memory_region) */
 #endif /* CONFIG_ARCH_POSIX */
 
 static int flash_init(const struct device *dev)

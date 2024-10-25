@@ -4,6 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&sim_flash {
+&sim_flash_controller {
 	erase-value = < 0x00 >;
 };
