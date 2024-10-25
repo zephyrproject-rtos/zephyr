@@ -553,6 +553,21 @@ int coap_ack_init(struct coap_packet *cpkt, const struct coap_packet *req,
 		  uint8_t *data, uint16_t max_len, uint8_t code);
 
 /**
+ * @brief Create a new CoAP Reset message for given request.
+ *
+ * This function works like @ref coap_packet_init, filling CoAP header type,
+ * and CoAP header message id fields.
+ *
+ * @param cpkt New packet to be initialized using the storage from @a data.
+ * @param req CoAP request packet that is being acknowledged
+ * @param data Data that will contain a CoAP packet information
+ * @param max_len Maximum allowable length of data
+ *
+ * @return 0 in case of success or negative in case of error.
+ */
+int coap_rst_init(struct coap_packet *cpkt, const struct coap_packet *req,
+		  uint8_t *data, uint16_t max_len);
+/**
  * @brief Returns a randomly generated array of 8 bytes, that can be
  * used as a message's token.
  *
