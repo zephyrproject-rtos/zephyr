@@ -395,6 +395,8 @@ int zvfs_close(int fd)
 
 	zvfs_free_fd(fd);
 
+	(void)sock_obj_core_dealloc(fd);
+
 	return res;
 }
 
