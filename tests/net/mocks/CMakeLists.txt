@@ -2,6 +2,7 @@
 
 add_library(net_mocks STATIC
             assert.c
+            ${ZEPHYR_BASE}/lib/utils/printk_hexdump.c
 )
 
 target_include_directories(net_mocks PUBLIC

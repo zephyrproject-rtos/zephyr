@@ -10,6 +10,7 @@ target_sources(testbinary
   PRIVATE
   main.c
   ${ZEPHYR_BASE}/lib/utils/dec.c
+  ${ZEPHYR_BASE}/lib/utils/printk_hexdump.c
   ${ZEPHYR_BASE}/lib/utils/utf8.c
 )
 
