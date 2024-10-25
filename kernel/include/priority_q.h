@@ -241,8 +241,8 @@ static ALWAYS_INLINE void z_priq_mq_remove(struct _priq_mq *pq,
 {
 	struct prio_info pos = get_prio_info(thread->base.prio);
 
-	sys_dlist_remove(&thread->base.qnode_dlist);
-	if (sys_dlist_is_empty(&pq->queues[pos.offset_prio])) {
+	sys_dlist_dequeue(&thread->base.qnode_dlist);
+	if (unlikely(sys_dlist_is_empty(&pq->queues[pos.offset_prio]))) {
 		pq->bitmask[pos.idx] &= ~BIT(pos.bit);
 	}
 }
