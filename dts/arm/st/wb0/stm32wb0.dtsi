@@ -202,7 +202,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x41000000 DT_SIZE_K(1)>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 (1 << 21)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 21)>;
 			interrupts = <3 0>;
 			interrupt-names = "combined";
 			status = "disabled";
@@ -213,7 +213,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x41007000 DT_SIZE_K(1)>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 (1 << 14)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 14)>;
 			interrupts = <7 0>;
 			status = "disabled";
 		};
