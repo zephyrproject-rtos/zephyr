@@ -17,11 +17,8 @@ LOG_MODULE_REGISTER(mspi_ambiq_ap4);
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/sys_clock.h>
 #include <zephyr/irq.h>
-
+#include <../dts/common/mem.h>
 #include "mspi_ambiq.h"
-
-#define DT_SIZE_K(x) ((x) * 1024)
-#define DT_SIZE_M(x) ((x) * 1024 * 1024)
 
 #define MSPI_MAX_FREQ   96000000
 #define MSPI_MAX_DEVICE 2
@@ -30,19 +27,6 @@ LOG_MODULE_REGISTER(mspi_ambiq_ap4);
 
 typedef int (*mspi_ambiq_pwr_func_t)(void);
 typedef void (*irq_config_func_t)(void);
-
-am_hal_mspi_dqs_t g_sMspiDqsCfg = {
-	.bDQSEnable = false,
-	.bDQSSyncNeg = 0,
-	.bEnableFineDelay = 0,
-	.ui8TxDQSDelay = 0,
-	.ui8RxDQSDelay = 16,
-	.ui8RxDQSDelayNeg = 0,
-	.bRxDQSDelayNegEN = 0,
-	.ui8RxDQSDelayHi = 0,
-	.ui8RxDQSDelayNegHi = 0,
-	.bRxDQSDelayHiEN = 0,
-};
 
 struct mspi_context {
 	const struct mspi_dev_id *owner;
@@ -78,6 +62,7 @@ struct mspi_ambiq_data {
 	am_hal_mspi_xip_config_t hal_xip_cfg;
 	am_hal_mspi_xip_misc_t hal_xip_misc_cfg;
 	am_hal_mspi_rxcfg_t hal_rx_cfg;
+	am_hal_mspi_dqs_t hal_dqs_cfg;
 
 	struct mspi_dev_id *dev_id;
 	struct k_mutex lock;
@@ -685,7 +670,7 @@ static int mspi_ambiq_dev_config(const struct device *controller, const struct m
 			data->dev_cfg.addr_length = dev_cfg->addr_length;
 		}
 	} else {
-		am_hal_mspi_dqs_t *dqsCfg = &g_sMspiDqsCfg;
+		am_hal_mspi_dqs_t *dqsCfg = &data->hal_dqs_cfg;
 
 		if (data->dev_id != dev_id) {
 			ret = pinctrl_apply_state(cfg->pcfg,
@@ -985,13 +970,6 @@ static int mspi_ambiq_timing_config(const struct device *controller,
 
 	timing.ui8RxDQSDelay = time_cfg->ui32RxDQSDelay;
 	timing.ui8Turnaround = hal_dev_cfg.ui8TurnAround;
-
-	if (hal_dev_cfg.bEmulateDDR == true) {
-		if (param_mask & MSPI_AMBIQ_SET_RXDQSDLY) {
-			timing.ui8RxDQSDelay = time_cfg->ui32RxDQSDelay;
-			timing.bTxNeg = 1;
-		}
-	}
 
 	ret = am_hal_mspi_control(data->mspiHandle, AM_HAL_MSPI_REQ_TIMING_SCAN, &timing);
 	if (ret) {
@@ -1454,6 +1432,20 @@ static struct mspi_driver_api mspi_ambiq_driver_api = {
 		.ui8Sfturn = DT_INST_PROP_BY_IDX(n, ambiq_rx_config, 9),                           \
 	}
 
+#define MSPI_HAL_DQS_CFG(n)                                                                        \
+	{                                                                                          \
+		.bDQSEnable = DT_INST_PROP_BY_IDX(n, ambiq_dqs_config, 0),                         \
+		.bDQSSyncNeg = DT_INST_PROP_BY_IDX(n, ambiq_dqs_config, 1),                        \
+		.bEnableFineDelay = DT_INST_PROP_BY_IDX(n, ambiq_dqs_config, 2),                   \
+		.ui8TxDQSDelay = DT_INST_PROP_BY_IDX(n, ambiq_dqs_config, 3),                      \
+		.ui8RxDQSDelay = DT_INST_PROP_BY_IDX(n, ambiq_dqs_config, 4),                      \
+		.ui8RxDQSDelayNeg = DT_INST_PROP_BY_IDX(n, ambiq_dqs_config, 5),                   \
+		.bRxDQSDelayNegEN = DT_INST_PROP_BY_IDX(n, ambiq_dqs_config, 6),                   \
+		.ui8RxDQSDelayHi = DT_INST_PROP_BY_IDX(n, ambiq_dqs_config, 7),                    \
+		.ui8RxDQSDelayNegHi = DT_INST_PROP_BY_IDX(n, ambiq_dqs_config, 8),                 \
+		.bRxDQSDelayHiEN = DT_INST_PROP_BY_IDX(n, ambiq_dqs_config, 9),                    \
+	}
+
 #define AMBIQ_MSPI_DEFINE(n)                                                                       \
 	LOG_INSTANCE_REGISTER(DT_DRV_INST(n), mspi##n, CONFIG_MSPI_LOG_LEVEL);                     \
 	MSPI_PINCTRL_DT_DEFINE(DT_DRV_INST(n));                                                    \
@@ -1473,6 +1465,7 @@ static struct mspi_driver_api mspi_ambiq_driver_api = {
 		.hal_xip_cfg = MSPI_HAL_XIP_CONFIG(n),                                             \
 		.hal_xip_misc_cfg = MSPI_HAL_XIP_MISC_CONFIG(n),                                   \
 		.hal_rx_cfg = MSPI_HAL_RX_CFG(n),                                                  \
+		.hal_dqs_cfg = MSPI_HAL_DQS_CFG(n),                                                \
 		.dev_id = 0,                                                                       \
 		.lock = Z_MUTEX_INITIALIZER(mspi_ambiq_data##n.lock),                              \
 		.dev_cfg = {0},                                                                    \
