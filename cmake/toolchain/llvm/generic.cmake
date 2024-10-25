@@ -41,4 +41,6 @@ if(NOT LLVM_TOOLCHAIN_PATH STREQUAL "")
   endif()
 endif()
 
+set(TOOLCHAIN_HAS_LIBCXX ON CACHE BOOL "True if toolchain supports libc++")
+
 message(STATUS "Found toolchain: llvm (clang/ld)")
