@@ -4,6 +4,10 @@ zephyr_sources(
   soc.c
   soc_cache.c
   ../common/loader.c
+  ../common/console_init.c
+  ../common/flash_init.c
+  soc_flash_init.c
+  soc_random.c
   )
 
 zephyr_include_directories(.)

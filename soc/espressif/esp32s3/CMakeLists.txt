@@ -8,6 +8,11 @@ else()
     soc_cache.c
     esp32s3-mp.c
     ../common/loader.c
+    ../common/console_init.c
+    ../common/flash_init.c
+    soc_flash_init.c
+    soc_init.c
+    soc_random.c
     )
 endif()
 
