@@ -82,7 +82,7 @@
 			   <21 0 &gpio1 3 0>;	/* D15 */
 	};
 
-	nrf70: coex {
+	nrf_radio_coex: coex {
 		status = "okay";
 		compatible = "nordic,nrf7002-coex";
 
