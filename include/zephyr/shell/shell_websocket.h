@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef SHELL_WEBSOCKET_H__
-#define SHELL_WEBSOCKET_H__
+#ifndef ZEPHYR_INCLUDE_SHELL_WEBSOCKET_H_
+#define ZEPHYR_INCLUDE_SHELL_WEBSOCKET_H_
 
 #include <zephyr/net/socket.h>
 #include <zephyr/net/http/server.h>
@@ -148,4 +148,4 @@ extern int shell_websocket_enable(const struct shell *sh);
 }
 #endif
 
-#endif /* SHELL_WEBSOCKET_H__ */
+#endif /* ZEPHYR_INCLUDE_SHELL_WEBSOCKET_H_ */
