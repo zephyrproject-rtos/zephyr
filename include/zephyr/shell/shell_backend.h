@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef SHELL_BACKEND_H__
-#define SHELL_BACKEND_H__
+#ifndef ZEPHYR_INCLUDE_SHELL_BACKEND_H_
+#define ZEPHYR_INCLUDE_SHELL_BACKEND_H_
 
 #include <zephyr/types.h>
 #include <zephyr/shell/shell.h>
@@ -58,4 +58,4 @@ const struct shell *shell_backend_get_by_name(const char *backend_name);
 }
 #endif
 
-#endif /* SHELL_BACKEND_H__ */
+#endif /* ZEPHYR_INCLUDE_SHELL_BACKEND_H_ */
