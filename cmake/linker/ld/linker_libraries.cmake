@@ -33,6 +33,8 @@ if(CONFIG_NEWLIB_LIBC AND CMAKE_C_COMPILER_ID STREQUAL "GNU")
   # link dependency to libc (strchr), but libc also has dependencies to libgcc.
   # Lib C depends on libgcc. e.g. libc.a(lib_a-fvwrite.o) references __aeabi_idiv
   set_property(TARGET linker APPEND PROPERTY link_order_library "math;c;rt;c")
-else()
+elseif(NOT CONFIG_MINIMAL_LIBC)
   set_property(TARGET linker APPEND PROPERTY link_order_library "c;rt")
+else()
+  set_property(TARGET linker APPEND PROPERTY link_order_library "rt")
 endif()
