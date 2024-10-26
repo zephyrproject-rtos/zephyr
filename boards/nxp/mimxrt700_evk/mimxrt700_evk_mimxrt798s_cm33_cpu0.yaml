@@ -13,7 +13,6 @@ flash: 65536
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
   - gpio
   - uart

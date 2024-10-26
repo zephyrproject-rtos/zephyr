@@ -4,7 +4,6 @@ type: mcu
 arch: riscv
 toolchain:
   - zephyr
-  - xtools
 flash: 64
 ram: 20
 supported:

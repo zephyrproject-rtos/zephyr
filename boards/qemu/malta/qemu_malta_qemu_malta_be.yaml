@@ -6,7 +6,6 @@ simulation:
 arch: mips
 toolchain:
   - zephyr
-  - xtools
 ram: 1024
 flash: 512
 testing:
