@@ -51,7 +51,7 @@ tests:
     build_only: true
     platform_allow: stm32h747i_disco/stm32h747xx/m7
     extra_args:
-      - EXTRA_CONF_FILE=boards/stm32_blk.conf
+      - EXTRA_CONF_FILE=stm32_blk.conf
       - CONF_FILE=prj_blk.conf
     extra_configs:
       - CONFIG_SDMMC_STM32_HWFC=y
@@ -75,7 +75,7 @@ tests:
     build_only: true
     platform_allow: stm32f746g_disco
     extra_args:
-      - EXTRA_CONF_FILE=boards/stm32_blk.conf
+      - EXTRA_CONF_FILE=stm32_blk.conf
       - CONF_FILE=prj_blk.conf
     extra_configs:
       - CONFIG_SDMMC_STM32_HWFC=y

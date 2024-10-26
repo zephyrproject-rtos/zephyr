@@ -359,8 +359,9 @@ Bluetooth Host:
     - alwa-nordic
   collaborators:
     - hermabe
-    - Thalley
+    - rugeGerritsen
     - sjanc
+    - Thalley
     - theob-pro
   files:
     - doc/connectivity/bluetooth/
@@ -506,6 +507,7 @@ Bluetooth ISO:
   collaborators:
     - jhedberg
     - kruithofa
+    - rugeGerritsen
   files:
     - include/zephyr/bluetooth/iso.h
     - doc/connectivity/bluetooth/api/shell/iso.rst
@@ -916,6 +918,7 @@ Disk:
     - subsys/sd/
     - tests/subsys/sd/
     - tests/drivers/disk/
+    - tests/drivers/build_all/disk/
     - include/zephyr/sd/
     - dts/bindings/sd/
     - dts/bindings/mmc/
@@ -1223,6 +1226,7 @@ Release Notes:
     - samples/drivers/crypto/
     - tests/crypto/
     - doc/services/crypto/
+    - tests/drivers/build_all/crypto/
   labels:
     - "area: Crypto / RNG"
   tests:
@@ -2128,6 +2132,7 @@ Release Notes:
     - include/zephyr/drivers/w1.h
     - include/zephyr/drivers/sensor/w1_sensor.h
     - tests/drivers/w1/
+    - tests/drivers/build_all/w1/
     - samples/drivers/w1/
   labels:
     - "area: W1"
@@ -3503,9 +3508,9 @@ Nuvoton NPCM Platforms:
 Raspberry Pi Pico Platforms:
   status: maintained
   maintainers:
-    - yonsch
-  collaborators:
     - soburi
+  collaborators:
+    - yonsch
   files:
     - boards/raspberrypi/
     - boards/adafruit/kb2040/
@@ -3532,7 +3537,7 @@ Silabs Platforms:
     - dts/arm/silabs/
     - dts/bindings/*/silabs*
     - drivers/*/*gecko*
-    - drivers/bluetooth/hci/slz_hci*
+    - drivers/bluetooth/hci/hci_silabs_*
     - drivers/*/*silabs*
   labels:
     - "platform: Silabs"
@@ -4801,6 +4806,8 @@ West:
 "West project: hal_rpi_pico":
   status: maintained
   maintainers:
+    - soburi
+  collaborators:
     - yonsch
   files:
     - modules/hal_rpi_pico/

@@ -1,7 +1,4 @@
-.. _iotdk:
-
-DesignWare(R) ARC(R) IoT Development Kit
-########################################
+.. zephyr:board:: iotdk
 
 Overview
 ********
@@ -13,10 +10,6 @@ detection designs. The ARC IoT Development Kit includes a silicon
 implementation of the ARC Data Fusion IP Subsystem running at 144 MHz on
 SMIC's 55-nm ultra-low power process, and a rich set of peripherals commonly
 used in IoT designs such as USB, UART, SPI, I2C, PWM, SDIO, and ADCs.
-
-.. image:: iotdk.jpg
-   :align: center
-   :alt: DesignWare(R) ARC(R)IoT Development Kit (synopsys.com)
 
 For details about the board, see: `ARC IoT Development Kit
 (IoTDK) <https://www.synopsys.com/dw/ipdir.php?ds=arc_iot_development_kit>`__
@@ -188,6 +181,8 @@ Release Notes
 
 References
 **********
+
+.. target-notes::
 
 .. _embARC website: https://www.embarc.org
 

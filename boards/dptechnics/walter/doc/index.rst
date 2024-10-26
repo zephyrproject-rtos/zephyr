@@ -1,7 +1,4 @@
-.. _walter:
-
-DPTechnics Walter
-#################
+.. zephyr:board:: walter
 
 Overview
 ********
@@ -10,12 +7,6 @@ Walter is a compact IoT development board that combines an Espressif ESP32-S3 So
 with a Sequans Monarch 2 GM02SP LTE-M/NB-IoT/GNSS modem.
 More information about Walter can be found on the `QuickSpot Website`_ and on the
 `QuickSpot GitHub page`_.
-
-.. figure:: img/walter.webp
-   :align: center
-   :alt: DPTechnics Walter board
-
-   DPTechnics Walter board (Credit: DPTechnics bv)
 
 Hardware
 ********

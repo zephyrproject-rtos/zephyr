@@ -1,0 +1,68 @@
+/*
+ * Copyright (c) 2022 PHYTEC Messtechnik GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_imx8ml_m7.dtsi>
+#include "phyboard_pollux-pinctrl.dtsi"
+
+/ {
+	model = "phyBOARD-Pollux i.MX8MP";
+	compatible = "nxp,phyboard_pollux";
+
+	chosen {
+		/* TCM */
+		zephyr,flash = &itcm;
+		zephyr,sram = &dtcm;
+
+		zephyr,console = &uart4;
+		zephyr,shell-uart = &uart4;
+	};
+
+	soc {
+		/*
+		 * BSP-Linux standard output. Can cause problems if used with standard bsp
+		 */
+		uart1: uart@30860000 {
+			compatible = "nxp,imx-iuart";
+			reg = <0x30860000 0x10000>;
+			interrupts = <26 3>;
+			clocks = <&ccm IMX_CCM_UART1_CLK 0x7c 24>;
+			pinctrl-0 = <&uart1_default>;
+			pinctrl-names = "default";
+			status = "disabled";
+		};
+
+		/*
+		 * to Bluetooth module (currently not supported by zephyr)
+		 * Expansion header Pin 31(RX) 33(TX)
+		 */
+		uart3: uart@30880000 {
+			compatible = "nxp,imx-iuart";
+			reg = <0x30880000 0x10000>;
+			interrupts = <28 3>;
+			clocks = <&ccm IMX_CCM_UART3_CLK 0x68 12>;
+			pinctrl-0 = <&uart3_default>;
+			pinctrl-names = "default";
+			hw-flow-control;
+			status = "disabled";
+		};
+	};
+};
+
+/*
+ * Standard uart for the M7-Core
+ */
+&uart4 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart4_default>;
+	pinctrl-names = "default";
+};
+
+&mailbox0 {
+	status = "okay";
+};

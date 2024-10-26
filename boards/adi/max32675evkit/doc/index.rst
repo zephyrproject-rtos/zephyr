@@ -1,7 +1,4 @@
-.. _max32675_evkit:
-
-MAX32675EVKIT
-#############
+.. zephyr:board:: max32675evkit
 
 Overview
 ********
@@ -12,10 +9,6 @@ HART modem which enables the bidirectional transfer of digital data over a curre
 industrial sensors for configuration and diagnostics.
 
 The Zephyr port is running on the MAX32675 MCU.
-
-.. image:: img/max32675evkit.webp
-   :align: center
-   :alt: MAX32675EVKIT
 
 Hardware
 ********

@@ -1,7 +1,4 @@
-.. _adafruit_qt_py_rp2040:
-
-Adafruit QT Py RP2040
-#####################
+.. zephyr:board:: adafruit_qt_py_rp2040
 
 Overview
 ********
@@ -26,13 +23,6 @@ Hardware
 - 8 Programmable I/O (PIO) for custom peripherals
 - On-board RGB LED
 - 1 Watchdog timer peripheral
-
-
-.. figure:: img/qtpy_rp2040.jpg
-     :align: center
-     :alt: Adafruit QT Py RP2040
-
-     Adafruit QT Py RP2040 (Image courtesy of Adafruit)
 
 Supported Features
 ==================

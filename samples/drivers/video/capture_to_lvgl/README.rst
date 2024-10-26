@@ -27,7 +27,7 @@ board to receive console output messages.
 Building and Running
 ********************
 
-For :ref:`mini_stm32h743`, build this sample application with the following commands:
+For :zephyr:board:`mini_stm32h743`, build this sample application with the following commands:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/video/capture_to_lvgl/
@@ -69,5 +69,7 @@ Sample Output
 
 References
 **********
+
+.. target-notes::
 
 .. _WeAct Studio STM32H743: https://github.com/WeActStudio/MiniSTM32H7xx

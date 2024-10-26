@@ -115,7 +115,7 @@
 
 		port {
 			ov7725_ep_out: endpoint {
-				remote-endpoint = <&csi_ep_in>;
+				remote-endpoint-label = "csi_ep_in";
 			};
 		};
 	};
@@ -192,13 +192,12 @@
 
 &csi {
 	status = "okay";
-	source = <&ov7725>;
 	pinctrl-0 = <&pinmux_csi>;
 	pinctrl-names = "default";
 
 	port {
 		csi_ep_in: endpoint {
-			remote-endpoint = <&ov7725_ep_out>;
+			remote-endpoint-label = "ov7725_ep_out";
 		};
 	};
 };

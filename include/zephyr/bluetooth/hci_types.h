@@ -33,7 +33,8 @@ extern "C" {
 #define BT_HCI_H4_EVT                   0x04    /* HCI Event packet */
 #define BT_HCI_H4_ISO                   0x05    /* HCI ISO Data packet */
 
-/* Special own address types for LL privacy (used in adv & scan parameters) */
+#define BT_HCI_OWN_ADDR_PUBLIC          0x00
+#define BT_HCI_OWN_ADDR_RANDOM          0x01
 #define BT_HCI_OWN_ADDR_RPA_OR_PUBLIC   0x02
 #define BT_HCI_OWN_ADDR_RPA_OR_RANDOM   0x03
 #define BT_HCI_OWN_ADDR_RPA_MASK        0x02
@@ -3619,7 +3620,8 @@ struct bt_hci_evt_le_cs_config_complete {
 
 #define BT_HCI_LE_CS_REF_POWER_LEVEL_UNAVAILABLE 0x7F
 
-#define BT_HCI_LE_CS_PCT_MASK 0xFFF
+#define BT_HCI_LE_CS_PCT_I_MASK 0x000FFF
+#define BT_HCI_LE_CS_PCT_Q_MASK 0xFFF000
 
 #define BT_HCI_LE_CS_TONE_QUALITY_HIGH        0x0
 #define BT_HCI_LE_CS_TONE_QUALITY_MED         0x1

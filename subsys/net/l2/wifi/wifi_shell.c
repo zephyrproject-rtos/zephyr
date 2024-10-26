@@ -463,6 +463,38 @@ static void handle_wifi_ap_sta_disconnected(struct net_mgmt_event_callback *cb)
 	k_mutex_unlock(&wifi_ap_sta_list_lock);
 }
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING
+static void handle_wifi_signal_change(struct net_mgmt_event_callback *cb)
+{
+	struct net_if *iface = net_if_get_wifi_sta();
+	const struct shell *sh = context.sh;
+	int ret;
+
+	ret = net_mgmt(NET_REQUEST_WIFI_START_ROAMING, iface, NULL, 0);
+	if (ret) {
+		PR_WARNING("Start roaming failed\n");
+		return;
+	}
+
+	PR("Start roaming requested\n");
+}
+
+static void handle_wifi_neighbor_rep_complete(struct net_mgmt_event_callback *cb)
+{
+	struct net_if *iface = net_if_get_wifi_sta();
+	const struct shell *sh = context.sh;
+	int ret;
+
+	ret = net_mgmt(NET_REQUEST_WIFI_NEIGHBOR_REP_COMPLETE, iface, NULL, 0);
+	if (ret) {
+		PR_WARNING("Neighbor report complete failed\n");
+		return;
+	}
+
+	PR("Neighbor report complete requested\n");
+}
+#endif
+
 static void wifi_mgmt_event_handler(struct net_mgmt_event_callback *cb,
 				    uint32_t mgmt_event, struct net_if *iface)
 {
@@ -499,6 +531,14 @@ static void wifi_mgmt_event_handler(struct net_mgmt_event_callback *cb,
 	case NET_EVENT_WIFI_AP_STA_DISCONNECTED:
 		handle_wifi_ap_sta_disconnected(cb);
 		break;
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING
+	case NET_EVENT_WIFI_SIGNAL_CHANGE:
+		handle_wifi_signal_change(cb);
+		break;
+	case NET_EVENT_WIFI_NEIGHBOR_REP_COMP:
+		handle_wifi_neighbor_rep_complete(cb);
+		break;
+#endif
 	default:
 		break;
 	}
@@ -541,6 +581,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 		{"eap-pwd6", required_argument, 0, 'P'},
 		{"eap-pwd7", required_argument, 0, 'P'},
 		{"eap-pwd8", required_argument, 0, 'P'},
+		{"ieee-80211r", no_argument, 0, 'R'},
 		{"help", no_argument, 0, 'h'},
 		{0, 0, 0, 0}};
 	char *endptr;
@@ -565,7 +606,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 	params->mfp = WIFI_MFP_OPTIONAL;
 	params->eap_ver = 1;
 
-	while ((opt = getopt_long(argc, argv, "s:p:k:e:w:b:c:m:t:a:K:S:V:I:P:h",
+	while ((opt = getopt_long(argc, argv, "s:p:k:e:w:b:c:m:t:a:K:S:V:I:P:Rh",
 				  long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
@@ -730,6 +771,9 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 					    WIFI_ENT_PSWD_MAX_LEN);
 				return -EINVAL;
 			}
+			break;
+		case 'R':
+			params->ft_used = true;
 			break;
 		case 'h':
 			return -ENOEXEC;
@@ -1168,6 +1212,84 @@ static int cmd_wifi_stats(const struct shell *sh, size_t argc, char *argv[])
 		"CONFIG_NET_STATISTICS_WIFI and CONFIG_NET_STATISTICS_USER_API",
 		"statistics");
 #endif /* CONFIG_NET_STATISTICS_WIFI && CONFIG_NET_STATISTICS_USER_API */
+
+	return 0;
+}
+
+static int cmd_wifi_11k(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = net_if_get_first_wifi();
+	struct wifi_11k_params params = { 0 };
+
+	context.sh = sh;
+
+	if (argc > 2) {
+		PR_WARNING("Invalid number of arguments\n");
+		return -ENOEXEC;
+	}
+
+	if (argc == 1) {
+		params.oper = WIFI_MGMT_GET;
+	} else {
+		params.oper = WIFI_MGMT_SET;
+		if (!strncasecmp(argv[1], "enable", 2)) {
+			params.enable_11k = true;
+		} else if (!strncasecmp(argv[1], "disable", 3)) {
+			params.enable_11k = false;
+		} else {
+			PR_WARNING("Invalid argument\n");
+			return -ENOEXEC;
+		}
+	}
+
+	if (net_mgmt(NET_REQUEST_WIFI_11K_CONFIG, iface, &params, sizeof(params))) {
+		PR_WARNING("11k enable/disable failed\n");
+		return -ENOEXEC;
+	}
+
+	if (params.oper == WIFI_MGMT_GET) {
+		PR("11k is %s\n", params.enable_11k ? "disabled" : "enabled");
+	} else {
+		PR("%s %s requested\n", argv[0], argv[1]);
+	}
+
+	return 0;
+}
+
+
+static int cmd_wifi_11k_neighbor_request(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = net_if_get_first_wifi();
+	struct wifi_11k_params params = { 0 };
+
+	context.sh = sh;
+
+	if ((argc != 1 && argc != 3) || (argc == 3 && !strncasecmp("ssid", argv[1], 4))) {
+		PR_WARNING("Invalid input arguments\n");
+		PR_WARNING("Usage: %s\n", argv[0]);
+		PR_WARNING("or	 %s ssid <ssid>\n", argv[0]);
+		return -ENOEXEC;
+	}
+
+	if (argc == 3) {
+		if (strlen(argv[2]) > (sizeof(params.ssid) - 1)) {
+			PR_WARNING("Error: ssid too long\n");
+			return -ENOEXEC;
+		}
+		(void)memcpy((void *)params.ssid, (const void *)argv[2],
+			     (size_t)strlen(argv[2]));
+	}
+
+	if (net_mgmt(NET_REQUEST_WIFI_11K_NEIGHBOR_REQUEST, iface, &params, sizeof(params))) {
+		PR_WARNING("11k neighbor request failed\n");
+		return -ENOEXEC;
+	}
+
+	if (argc == 3) {
+		PR("%s %s %s requested\n", argv[0], argv[1], argv[2]);
+	} else {
+		PR("%s requested\n", argv[0]);
+	}
 
 	return 0;
 }
@@ -1694,7 +1816,11 @@ static int wifi_ap_config_args_to_params(const struct shell *sh, size_t argc, ch
 static int cmd_wifi_ap_config_params(const struct shell *sh, size_t argc,
 				     char *argv[])
 {
+#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
+	struct net_if *iface = net_if_get_wifi_sap();
+#else
 	struct net_if *iface = net_if_get_first_wifi();
+#endif
 	struct wifi_ap_config_params ap_config_params = { 0 };
 	int ret = -1;
 
@@ -3052,6 +3178,18 @@ SHELL_SUBCMD_ADD((wifi), dpp, &wifi_cmd_dpp,
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
 
 SHELL_SUBCMD_SET_CREATE(wifi_commands, (wifi));
+
+SHELL_SUBCMD_ADD((wifi), 11k, &wifi_commands,
+		 "Configure 11k or get 11k status.\n"
+		 "[enable/disable]\n",
+		 cmd_wifi_11k,
+		 1, 1);
+
+SHELL_SUBCMD_ADD((wifi), 11k_neighbor_request, &wifi_commands,
+		 "Send Neighbor Report Request frame.\n"
+		 "[ssid <ssid>]\n",
+		 cmd_wifi_11k_neighbor_request,
+		 1, 2);
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
 SHELL_SUBCMD_ADD((wifi), 11v_btm_query, &wifi_commands,

@@ -47,11 +47,29 @@ static int lps28dfw_sample_fetch(const struct device *dev, enum sensor_channel c
 	return 0;
 }
 
+#ifdef CONFIG_LPS2XDF_TRIGGER
+/**
+ * lps28dfw_config_interrupt - config the interrupt mode
+ */
+static int lps28dfw_config_interrupt(const struct device *dev)
+{
+	const struct lps2xdf_config *const cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+	lps28dfw_int_mode_t mode;
+
+	if (lps28dfw_interrupt_mode_get(ctx, &mode) < 0) {
+		return -EIO;
+	}
+
+	mode.drdy_latched = ~cfg->drdy_pulsed;
+
+	return lps28dfw_interrupt_mode_set(ctx, &mode);
+}
+
 /**
  * lps28dfw_handle_interrupt - handle the drdy event
  * read data and call handler if registered any
  */
-#ifdef CONFIG_LPS2XDF_TRIGGER
 static void lps28dfw_handle_interrupt(const struct device *dev)
 {
 	int ret;
@@ -105,7 +123,7 @@ static int lps28dfw_enable_int(const struct device *dev, int enable)
 }
 
 /**
- * lps22df_trigger_set - link external trigger to event data ready
+ * lps28dfw_trigger_set - link external trigger to event data ready
  */
 static int lps28dfw_trigger_set(const struct device *dev,
 			  const struct sensor_trigger *trig,
@@ -145,6 +163,7 @@ const struct lps2xdf_chip_api st_lps28dfw_chip_api = {
 	.mode_set_odr_raw = lps28dfw_mode_set_odr_raw,
 	.sample_fetch = lps28dfw_sample_fetch,
 #if CONFIG_LPS2XDF_TRIGGER
+	.config_interrupt = lps28dfw_config_interrupt,
 	.handle_interrupt = lps28dfw_handle_interrupt,
 	.trigger_set = lps28dfw_trigger_set,
 #endif

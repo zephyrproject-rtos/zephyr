@@ -48,11 +48,18 @@ static void isr_done(void *param);
 static inline int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
 			     uint8_t *is_rx_enqueue,
 			     struct node_tx **tx_release, uint8_t *is_done);
+
+#if defined(CONFIG_BT_CTLR_TX_DEFER)
+static void isr_tx_deferred_set(void *param);
+#endif /* CONFIG_BT_CTLR_TX_DEFER */
+
 static void empty_tx_init(void);
+
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 static inline bool create_iq_report(struct lll_conn *lll, uint8_t rssi_ready,
 				    uint8_t packet_status);
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
+
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX)
 static struct pdu_data *get_last_tx_pdu(struct lll_conn *lll);
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_TX */
@@ -150,7 +157,9 @@ void lll_conn_prepare_reset(void)
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 }
 
-int lll_conn_is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
+#if defined(CONFIG_BT_CENTRAL)
+int lll_conn_central_is_abort_cb(void *next, void *curr,
+				 lll_prepare_cb_t *resume_cb)
 {
 	struct lll_conn *lll = curr;
 
@@ -159,8 +168,38 @@ int lll_conn_is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 		return 0;
 	}
 
+	/* Do not be aborted by same event if a single central trx has not been
+	 * exchanged.
+	 */
+	if ((next == curr) && (trx_cnt < 1U)) {
+		return -EBUSY;
+	}
+
 	return -ECANCELED;
 }
+#endif /* CONFIG_BT_CENTRAL */
+
+#if defined(CONFIG_BT_PERIPHERAL)
+int lll_conn_peripheral_is_abort_cb(void *next, void *curr,
+				    lll_prepare_cb_t *resume_cb)
+{
+	struct lll_conn *lll = curr;
+
+	/* Do not abort if near supervision timeout */
+	if (lll->forced) {
+		return 0;
+	}
+
+	/* Do not be aborted by same event if a single peripheral trx has not
+	 * been exchanged.
+	 */
+	if ((next == curr) && (trx_cnt <= 1U)) {
+		return -EBUSY;
+	}
+
+	return -ECANCELED;
+}
+#endif /* CONFIG_BT_PERIPHERAL */
 
 void lll_conn_abort_cb(struct lll_prepare_param *prepare_param, void *param)
 {
@@ -365,7 +404,8 @@ void lll_conn_isr_rx(void *param)
 	}
 
 	/* Decide on event continuation and hence Radio Shorts to use */
-	is_done = is_done || ((crc_ok) && (pdu_data_rx->md == 0) &&
+	is_done = is_done || ((crc_ok) &&
+			      (pdu_data_rx->md == 0) &&
 			      (pdu_data_tx->md == 0) &&
 			      (pdu_data_tx->len == 0));
 
@@ -395,7 +435,7 @@ void lll_conn_isr_rx(void *param)
 #endif /* CONFIG_BT_PERIPHERAL */
 		}
 	} else {
-		radio_tmr_tifs_set(EVENT_IFS_US);
+		radio_tmr_tifs_set(lll->tifs_rx_us);
 
 #if defined(CONFIG_BT_CTLR_PHY)
 		radio_switch_complete_and_rx(lll->phy_rx);
@@ -428,7 +468,7 @@ void lll_conn_isr_rx(void *param)
 	radio_gpio_pa_setup();
 
 	pa_lna_enable_us =
-		radio_tmr_tifs_base_get() + EVENT_IFS_US + cte_len - HAL_RADIO_GPIO_PA_OFFSET;
+		radio_tmr_tifs_base_get() + lll->tifs_tx_us - cte_len - HAL_RADIO_GPIO_PA_OFFSET;
 #if defined(CONFIG_BT_CTLR_PHY)
 	pa_lna_enable_us -= radio_rx_chain_delay_get(lll->phy_rx, PHY_FLAGS_S8);
 #else /* !CONFIG_BT_CTLR_PHY */
@@ -444,6 +484,22 @@ void lll_conn_isr_rx(void *param)
 	} else {
 		LL_ASSERT(!radio_is_address());
 	}
+
+#if defined(CONFIG_BT_CTLR_TX_DEFER)
+	if (!is_empty_pdu_tx_retry && (pdu_data_tx->len == 0U)) {
+		uint32_t tx_defer_us;
+		uint32_t defer_us;
+
+		/* Restore state if transmission setup for empty PDU */
+		lll->empty = 0U;
+
+		/* Setup deferred tx packet set */
+		tx_defer_us = radio_tmr_tifs_base_get() + lll->tifs_tx_us -
+			      HAL_RADIO_TMR_DEFERRED_TX_DELAY_US;
+		defer_us = radio_tmr_isr_set(tx_defer_us, isr_tx_deferred_set,
+					     param);
+	}
+#endif /* CONFIG_BT_CTLR_TX_DEFER */
 
 lll_conn_isr_rx_exit:
 	/* Save the AA captured for the first Rx in connection event */
@@ -551,10 +607,10 @@ void lll_conn_isr_tx(void *param)
 	/* Clear radio tx status and events */
 	lll_isr_tx_status_reset();
 
-	/* setup tIFS switching */
-	radio_tmr_tifs_set(EVENT_IFS_US);
-
 	lll = param;
+
+	/* setup tIFS switching */
+	radio_tmr_tifs_set(lll->tifs_tx_us);
 
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 #if defined(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)
@@ -592,6 +648,7 @@ void lll_conn_isr_tx(void *param)
 
 #if defined(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)
 	/* Use special API for SOC that requires compensation for PHYEND event delay. */
+
 #if defined(CONFIG_BT_CTLR_PHY)
 	radio_switch_complete_with_delay_compensation_and_tx(lll->phy_rx, 0, lll->phy_tx,
 							     lll->phy_flags, end_evt_delay);
@@ -636,7 +693,7 @@ void lll_conn_isr_tx(void *param)
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_TX */
 
 	/* +/- 2us active clock jitter, +1 us PPI to timer start compensation */
-	hcto = radio_tmr_tifs_base_get() + EVENT_IFS_US +
+	hcto = radio_tmr_tifs_base_get() + lll->tifs_hcto_us +
 	       (EVENT_CLOCK_JITTER_US << 1) + RANGE_DELAY_US +
 	       HAL_RADIO_TMR_START_DELAY_US;
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX)
@@ -666,20 +723,26 @@ void lll_conn_isr_tx(void *param)
 	}
 
 #if defined(CONFIG_BT_CTLR_PROFILE_ISR) || \
+	defined(CONFIG_BT_CTLR_TX_DEFER) || \
 	defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
 	radio_tmr_end_capture();
-#endif /* CONFIG_BT_CTLR_PROFILE_ISR */
+#endif /* CONFIG_BT_CTLR_PROFILE_ISR ||
+	* CONFIG_BT_CTLR_TX_DEFER ||
+	* HAL_RADIO_GPIO_HAVE_PA_PIN
+	*/
 
 #if defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
 	radio_gpio_lna_setup();
 #if defined(CONFIG_BT_CTLR_PHY)
-	radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() + EVENT_IFS_US - 4 -
+	radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() + lll->tifs_rx_us -
+				 (EVENT_CLOCK_JITTER_US << 1) -
 				 radio_tx_chain_delay_get(lll->phy_tx,
 							  lll->phy_flags) -
 				 HAL_RADIO_GPIO_LNA_OFFSET);
 #else /* !CONFIG_BT_CTLR_PHY */
-	radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() + EVENT_IFS_US - 4 -
-				 radio_tx_chain_delay_get(0, 0) -
+	radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() + lll->tifs_rx_us -
+				 (EVENT_CLOCK_JITTER_US << 1) -
+				 radio_tx_chain_delay_get(0U, 0U) -
 				 HAL_RADIO_GPIO_LNA_OFFSET);
 #endif /* !CONFIG_BT_CTLR_PHY */
 #endif /* HAL_RADIO_GPIO_HAVE_LNA_PIN */
@@ -1122,6 +1185,25 @@ static inline int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
 
 	return 0;
 }
+
+#if defined(CONFIG_BT_CTLR_TX_DEFER)
+static void isr_tx_deferred_set(void *param)
+{
+	struct pdu_data *pdu_data_tx;
+	struct lll_conn *lll;
+
+	/* Prepare Tx PDU, maybe we have non-empty PDU when we check here */
+	lll = param;
+	lll_conn_pdu_tx_prep(lll, &pdu_data_tx);
+
+	/* Fill sn and nesn */
+	pdu_data_tx->sn = lll->sn;
+	pdu_data_tx->nesn = lll->nesn;
+
+	/* setup the radio tx packet buffer */
+	lll_conn_tx_pkt_set(lll, pdu_data_tx);
+}
+#endif /* CONFIG_BT_CTLR_TX_DEFER */
 
 static void empty_tx_init(void)
 {

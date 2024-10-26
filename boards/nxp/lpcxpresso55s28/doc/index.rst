@@ -1,7 +1,4 @@
-.. _lpcxpresso55s28:
-
-NXP LPCXpresso55S28
-###################
+.. zephyr:board:: lpcxpresso55s28
 
 Overview
 ********
@@ -11,10 +8,6 @@ of and development with the LPC552x/S2x MCU based on the Arm® Cortex®-M33
 architecture. The board includes a high-performance onboard debug probe, audio
 subsystem and accelerometer, with several options for adding off-the-shelf
 add-on boards for networking, sensors, displays, and other interfaces.
-
-.. image:: LPC55S28-EVK.jpg
-   :align: center
-   :alt: LPCXpresso55S28
 
 Hardware
 ********
@@ -50,7 +43,7 @@ Supported Features
 
 The lpcxpresso55s28 board configuration supports the hardware features listed
 below.  For additional features not yet supported, please also refer to the
-:ref:`lpcxpresso55s69` , which is the superset board in NXP's LPC55xx series.
+:zephyr:board:`lpcxpresso55s69` , which is the superset board in NXP's LPC55xx series.
 NXP prioritizes enabling the superset board with NXP's Full Platform Support for
 Zephyr.  Therefore, the lpcxpresso55s69 board may have additional features
 already supported, which can also be re-used on this lpcxpresso55s28 board:

@@ -1,7 +1,4 @@
-.. _nucleo_h533re_board:
-
-ST Nucleo H533RE
-################
+.. zephyr:board:: nucleo_h533re
 
 Overview
 ********
@@ -40,10 +37,6 @@ Here are some highlights of the Nucleo H533RE board:
 - 32.768 kHz crystal oscillator
 
 More information about the board can be found at the `NUCLEO_H533RE website`_.
-
-.. image:: img/nucleo_h533re.jpg
-   :align: center
-   :alt: NUCLEO H533RE
 
 Hardware
 ********

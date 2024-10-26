@@ -1,7 +1,4 @@
-.. _stm32373c_eval_board:
-
-ST STM32373C Evaluation
-#######################
+.. zephyr:board:: stm32373c_eval
 
 Overview
 ********
@@ -10,10 +7,6 @@ The STM32373C-EVAL evaluation board is designed as a complete demonstration and 
 The full range of hardware features on the board can help the user evaluate all peripherals (USB FS, USART, audio DAC, microphone ADC, dot-matrix LCD, IrDA, LDR, MicroSD card, HDMI CEC, ECG, pressure sensor, CAN, IR transmitter and receiver, EEPROM, touch slider, temperature sensor, etc.) and develop their own applications.
 
 Extension headers make it possible to easily connect a daughter board or wrapping board for a specific application.
-
-.. image:: img/stm32373c_eval.jpg
-     :align: center
-     :alt: STM32373C-EVAL
 
 More information about the board can be found at the `STM32373C-EVAL website`_.
 

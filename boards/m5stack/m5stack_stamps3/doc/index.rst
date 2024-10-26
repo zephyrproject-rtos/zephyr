@@ -1,7 +1,4 @@
-.. _m5stack_stamps3:
-
-M5Stack StampS3
-###############
+.. zephyr:board:: m5stack_stamps3
 
 Overview
 ********
@@ -16,13 +13,6 @@ It features the following integrated components:
 - Wi-Fi
 - Bluetooth
 - User-Button
-
-.. figure:: img/m5stack_stamps3.webp
-        :align: center
-        :alt: M5Stack StampS3
-        :width: 400 px
-
-        M5Stack StampS3 module
 
 Functional Description
 **********************

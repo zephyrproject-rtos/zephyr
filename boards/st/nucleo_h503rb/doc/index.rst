@@ -1,7 +1,4 @@
-.. _nucleo_h503rb_board:
-
-ST Nucleo H503RB
-################
+.. zephyr:board:: nucleo_h503rb
 
 Overview
 ********

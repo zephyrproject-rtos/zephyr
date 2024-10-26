@@ -3,6 +3,7 @@ sample:
 common:
   sysbuild: true
   tags: mbox
+  timeout: 30
 tests:
   sample.drivers.mbox.real_hw:
     platform_allow:

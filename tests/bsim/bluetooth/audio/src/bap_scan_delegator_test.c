@@ -48,7 +48,7 @@ struct sync_state {
 	bool pa_syncing;
 	struct k_work_delayable pa_timer;
 	struct bt_le_per_adv_sync *pa_sync;
-	uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE];
+	uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE];
 	uint32_t bis_sync_req[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS];
 } sync_states[CONFIG_BT_BAP_SCAN_DELEGATOR_RECV_STATE_COUNT];
 
@@ -138,6 +138,7 @@ static int pa_sync_past(struct bt_conn *conn,
 	struct bt_le_per_adv_sync_transfer_param param = { 0 };
 	int err;
 
+	param.options = BT_LE_PER_ADV_SYNC_TRANSFER_OPT_FILTER_DUPLICATES;
 	param.skip = PA_SYNC_SKIP;
 	param.timeout = interval_to_sync_timeout(pa_interval);
 
@@ -267,6 +268,13 @@ static int pa_sync_req_cb(struct bt_conn *conn,
 
 	if (past_avail) {
 		err = pa_sync_past(conn, state, pa_interval);
+		if (err == 0) {
+			err = bt_bap_scan_delegator_set_pa_state(state->recv_state->src_id,
+								 BT_BAP_PA_STATE_INFO_REQ);
+			if (err != 0) {
+				printk("Failed to set INFO_REQ state: %d", err);
+			}
+		}
 	} else {
 		err = pa_sync_no_past(state, pa_interval);
 	}
@@ -292,7 +300,7 @@ static int pa_sync_term_req_cb(struct bt_conn *conn,
 
 static void broadcast_code_cb(struct bt_conn *conn,
 			      const struct bt_bap_scan_delegator_recv_state *recv_state,
-			      const uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE])
+			      const uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE])
 {
 	struct sync_state *state;
 
@@ -304,7 +312,7 @@ static void broadcast_code_cb(struct bt_conn *conn,
 		return;
 	}
 
-	(void)memcpy(state->broadcast_code, broadcast_code, BT_AUDIO_BROADCAST_CODE_SIZE);
+	(void)memcpy(state->broadcast_code, broadcast_code, BT_ISO_BROADCAST_CODE_SIZE);
 
 	SET_FLAG(flag_broadcast_code_received);
 }
@@ -357,6 +365,14 @@ static void pa_synced_cb(struct bt_le_per_adv_sync *sync,
 	struct sync_state *state;
 
 	printk("PA %p synced\n", sync);
+
+	if (info->conn) { /* if from PAST */
+		for (size_t i = 0U; i < ARRAY_SIZE(sync_states); i++) {
+			if (!sync_states[i].pa_sync) {
+				sync_states[i].pa_sync = sync;
+			}
+		}
+	}
 
 	state = sync_state_get_by_pa(sync);
 	if (state == NULL) {

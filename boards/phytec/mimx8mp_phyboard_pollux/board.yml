@@ -1,6 +1,0 @@
-board:
-  name: mimx8mp_phyboard_pollux
-  full_name: PhyBOARD Pollux (NXP i.MX8M Plus)
-  vendor: phytec
-  socs:
-    - name: mimx8ml8

@@ -62,6 +62,12 @@ static const struct wifi_mgmt_ops mgmt_ops = {
 	.get_stats = supplicant_get_stats,
 	.reset_stats = supplicant_reset_stats,
 #endif
+	.cfg_11k = supplicant_11k_cfg,
+	.send_11k_neighbor_request = supplicant_11k_neighbor_request,
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING
+	.candidate_scan = supplicant_candidate_scan,
+	.start_11r_roaming = supplicant_11r_roaming,
+#endif
 	.set_power_save = supplicant_set_power_save,
 	.set_twt = supplicant_set_twt,
 	.get_power_save_config = supplicant_get_power_save_config,
@@ -94,11 +100,9 @@ DEFINE_WIFI_NM_INSTANCE(wifi_supplicant, &mgmt_ops);
 
 #ifdef CONFIG_WIFI_NM_HOSTAPD_AP
 static const struct wifi_mgmt_ops mgmt_ap_ops = {
-	.set_btwt = supplicant_set_btwt,
 	.ap_enable = supplicant_ap_enable,
 	.ap_disable = supplicant_ap_disable,
 	.ap_sta_disconnect = supplicant_ap_sta_disconnect,
-	.ap_bandwidth = supplicant_ap_bandwidth,
 	.iface_status = supplicant_ap_status,
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
 	.dpp_dispatch = hapd_dpp_dispatch,
@@ -383,7 +387,7 @@ static int del_interface(struct supplicant_context *ctx, struct net_if *iface)
 	supplicant_generate_state_event(ifname, NET_EVENT_SUPPLICANT_CMD_IFACE_REMOVING, 0);
 
 	if (sizeof(event->interface_status.ifname) < strlen(ifname)) {
-		wpa_printf(MSG_ERROR, "Interface name too long: %s (max: %d)",
+		wpa_printf(MSG_ERROR, "Interface name too long: %s (max: %zu)",
 			ifname, sizeof(event->interface_status.ifname));
 		goto free;
 	}

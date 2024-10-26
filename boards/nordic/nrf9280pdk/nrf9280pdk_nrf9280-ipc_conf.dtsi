@@ -24,6 +24,7 @@
 
 		cpuapp_cpurad_ipc: ipc-2-3 {
 			compatible = "zephyr,ipc-icbmsg";
+			dcache-alignment = <32>;
 			status = "disabled";
 			mboxes = <&cpuapp_bellboard 18>,
 				 <&cpurad_bellboard 12>;

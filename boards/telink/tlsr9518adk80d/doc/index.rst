@@ -1,7 +1,4 @@
-.. _tlsr9518adk80d:
-
-Telink TLSR9518ADK80D
-#####################
+.. zephyr:board:: tlsr9518adk80d
 
 Overview
 ********
@@ -11,10 +8,6 @@ can be used to verify the `Telink TLSR951x series chipset`_ and develop applicat
 for several 2.4 GHz air interface standards including Bluetooth 5.2 (Basic data
 rate, Enhanced data rate, LE, Indoor positioning and BLE Mesh),
 Zigbee 3.0, Homekit, 6LoWPAN, Thread and 2.4 Ghz proprietary.
-
-.. figure:: img/tlsr9518adk80d.jpg
-     :align: center
-     :alt: TLSR9518ADK80D
 
 More information about the board can be found at the `Telink B91 Generic Starter Kit Hardware Guide`_ website.
 

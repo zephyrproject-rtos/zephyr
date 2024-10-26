@@ -363,6 +363,16 @@
 		prescale = <0>;
 	};
 
+	sctimer: pwm@146000 {
+		compatible = "nxp,sctimer-pwm";
+		reg = <0x146000 0x1000>;
+		interrupts = <12 0>;
+		clocks = <&clkctl1 MCUX_SCTIMER_CLK>;
+		status = "disabled";
+		prescaler = <8>;
+		#pwm-cells = <3>;
+	};
+
 	mrt0: mrt@2d000 {
 		compatible = "nxp,mrt";
 		reg = <0x2d000 0x100>;

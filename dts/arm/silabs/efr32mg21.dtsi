@@ -138,6 +138,8 @@
 			#clock-cells = <0>;
 			compatible = "silabs,hfxo";
 			reg = <0x5000c000 0x4000>;
+			interrupts = <45 0>;
+			interrupt-names = "hfxo";
 			clock-frequency = <DT_FREQ_K(38400)>;
 			ctune = <140>;
 			precision = <50>;
@@ -260,6 +262,7 @@
 			compatible = "silabs,gecko-stimer";
 			reg = <0x58000000 0x400>;
 			interrupts = <10 0>;
+			interrupt-names = "rtcc";
 			clock-frequency = <32768>;
 			prescaler = <1>;
 			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_RTCCCLK>;

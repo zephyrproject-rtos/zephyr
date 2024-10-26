@@ -769,47 +769,6 @@ static int nxp_wifi_version(const struct device *dev, struct wifi_version *param
 	return 0;
 }
 
-static int nxp_wifi_ap_bandwidth(const struct device *dev, struct wifi_ap_params *params)
-{
-	int status = NXP_WIFI_RET_SUCCESS;
-	int ret = WM_SUCCESS;
-	struct interface *if_handle = (struct interface *)dev->data;
-
-	if (if_handle->state.interface != WLAN_BSS_TYPE_UAP) {
-		LOG_ERR("Wi-Fi not in uAP mode");
-		return -EIO;
-	}
-
-	if (s_nxp_wifi_State != NXP_WIFI_STARTED) {
-		status = NXP_WIFI_RET_NOT_READY;
-	}
-
-	if (status == NXP_WIFI_RET_SUCCESS) {
-
-		if (params->oper == WIFI_MGMT_SET) {
-
-			ret = wlan_uap_set_bandwidth(params->bandwidth);
-
-			if (ret != WM_SUCCESS) {
-				status = NXP_WIFI_RET_FAIL;
-			}
-		} else {
-			ret = wlan_uap_get_bandwidth(&params->bandwidth);
-
-			if (ret != WM_SUCCESS) {
-				status = NXP_WIFI_RET_FAIL;
-			}
-		}
-	}
-
-	if (status != NXP_WIFI_RET_SUCCESS) {
-		LOG_ERR("Failed to get/set Wi-Fi AP bandwidth");
-		return -EAGAIN;
-	}
-
-	return 0;
-}
-
 static int nxp_wifi_connect(const struct device *dev, struct wifi_connect_req_params *params)
 {
 	int status = NXP_WIFI_RET_SUCCESS;
@@ -958,68 +917,6 @@ static inline enum wifi_security_type nxp_wifi_security_type(enum wlan_security_
 	}
 }
 
-#ifndef CONFIG_WIFI_NM_WPA_SUPPLICANT
-static int nxp_wifi_uap_status(const struct device *dev, struct wifi_iface_status *status)
-{
-	enum wlan_connection_state connection_state = WLAN_DISCONNECTED;
-	struct interface *if_handle = (struct interface *)&g_uap;
-
-	wlan_get_uap_connection_state(&connection_state);
-
-	if (connection_state == WLAN_UAP_STARTED) {
-
-		if (!wlan_get_current_uap_network(&nxp_wlan_network)) {
-			strncpy(status->ssid, nxp_wlan_network.ssid, WIFI_SSID_MAX_LEN);
-			status->ssid[WIFI_SSID_MAX_LEN - 1] = 0;
-			status->ssid_len = strlen(status->ssid);
-
-			memcpy(status->bssid, nxp_wlan_network.bssid, WIFI_MAC_ADDR_LEN);
-
-			status->rssi = nxp_wlan_network.rssi;
-
-			status->channel = nxp_wlan_network.channel;
-
-			status->beacon_interval = nxp_wlan_network.beacon_period;
-
-			status->dtim_period = nxp_wlan_network.dtim_period;
-
-			if (if_handle->state.interface == WLAN_BSS_TYPE_STA) {
-				status->iface_mode = WIFI_MODE_INFRA;
-			}
-#ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
-			else if (if_handle->state.interface == WLAN_BSS_TYPE_UAP) {
-				status->iface_mode = WIFI_MODE_AP;
-			}
-#endif
-
-#ifdef CONFIG_NXP_WIFI_11AX
-			if (nxp_wlan_network.dot11ax) {
-				status->link_mode = WIFI_6;
-			}
-#endif
-#ifdef CONFIG_NXP_WIFI_11AC
-			else if (nxp_wlan_network.dot11ac) {
-				status->link_mode = WIFI_5;
-			}
-#endif
-			else if (nxp_wlan_network.dot11n) {
-				status->link_mode = WIFI_4;
-			} else {
-				status->link_mode = WIFI_3;
-			}
-
-			status->band = nxp_wlan_network.channel > 14 ? WIFI_FREQ_BAND_5_GHZ
-								     : WIFI_FREQ_BAND_2_4_GHZ;
-			status->security = nxp_wifi_security_type(nxp_wlan_network.security.type);
-			status->mfp = nxp_wlan_network.security.mfpr ? WIFI_MFP_REQUIRED :
-				(nxp_wlan_network.security.mfpc ? WIFI_MFP_OPTIONAL : 0);
-		}
-	}
-
-	return 0;
-}
-#endif
-
 static int nxp_wifi_status(const struct device *dev, struct wifi_iface_status *status)
 {
 	enum wlan_connection_state connection_state = WLAN_DISCONNECTED;
@@ -1157,6 +1054,17 @@ static void nxp_wifi_auto_connect(void)
 	nxp_wifi_connect(g_mlan.netif->if_dev->dev, &params);
 }
 #endif
+
+static int nxp_wifi_11k_cfg(const struct device *dev, struct wifi_11k_params *params)
+{
+	if (params->oper == WIFI_MGMT_GET) {
+		params->enable_11k = wlan_get_host_11k_status();
+	} else {
+		wlan_host_11k_cfg(params->enable_11k);
+	}
+
+	return 0;
+}
 
 static int nxp_wifi_power_save(const struct device *dev, struct wifi_ps_params *params)
 {
@@ -1443,12 +1351,10 @@ static int nxp_wifi_set_twt(const struct device *dev, struct wifi_twt_params *pa
 		twt_setup_conf.implicit = params->setup.implicit;
 		twt_setup_conf.announced = params->setup.announce;
 		twt_setup_conf.trigger_enabled = params->setup.trigger;
-		twt_setup_conf.twt_info_disabled = params->setup.twt_info_disable;
 		twt_setup_conf.negotiation_type = params->negotiation_type;
 		twt_setup_conf.twt_wakeup_duration = params->setup.twt_wake_interval;
 		twt_setup_conf.flow_identifier = params->flow_id;
 		twt_setup_conf.hard_constraint = 1;
-		twt_setup_conf.twt_exponent = params->setup.exponent;
 		twt_setup_conf.twt_mantissa = params->setup.twt_interval;
 		twt_setup_conf.twt_request = params->setup.responder;
 		ret = wlan_set_twt_setup_cfg(&twt_setup_conf);
@@ -1458,25 +1364,6 @@ static int nxp_wifi_set_twt(const struct device *dev, struct wifi_twt_params *pa
 		teardown_conf.teardown_all_twt = params->teardown.teardown_all;
 		ret = wlan_set_twt_teardown_cfg(&teardown_conf);
 	}
-
-	return ret;
-}
-
-static int nxp_wifi_set_btwt(const struct device *dev, struct wifi_twt_params *params)
-{
-	wlan_btwt_config_t btwt_config;
-	int ret = -1;
-
-	btwt_config.action = 1;
-	btwt_config.sub_id = params->btwt.sub_id;
-	btwt_config.nominal_wake = params->btwt.nominal_wake;
-	btwt_config.max_sta_support = params->btwt.max_sta_support;
-	btwt_config.twt_mantissa = params->btwt.twt_interval;
-	btwt_config.twt_offset = params->btwt.twt_offset;
-	btwt_config.twt_exponent = params->btwt.twt_exponent;
-	btwt_config.sp_gap = params->btwt.sp_gap;
-
-	ret = wlan_set_btwt_cfg(&btwt_config);
 
 	return ret;
 }
@@ -1758,13 +1645,13 @@ static const struct wifi_mgmt_ops nxp_wifi_sta_mgmt = {
 	.reg_domain = nxp_wifi_reg_domain,
 #ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
 	.ap_enable = nxp_wifi_start_ap,
-	.ap_bandwidth = nxp_wifi_ap_bandwidth,
 	.ap_disable = nxp_wifi_stop_ap,
 #endif
 	.iface_status = nxp_wifi_status,
 #if defined(CONFIG_NET_STATISTICS_WIFI)
 	.get_stats = nxp_wifi_stats,
 #endif
+	.cfg_11k = nxp_wifi_11k_cfg,
 	.set_power_save = nxp_wifi_power_save,
 	.get_power_save_config = nxp_wifi_get_power_save,
 	.set_twt = nxp_wifi_set_twt,
@@ -1837,8 +1724,6 @@ static const struct wifi_mgmt_ops nxp_wifi_uap_mgmt = {
 #endif
 	.set_power_save = nxp_wifi_power_save,
 	.get_power_save_config = nxp_wifi_get_power_save,
-	.set_btwt = nxp_wifi_set_btwt,
-	.ap_bandwidth = nxp_wifi_ap_bandwidth,
 	.ap_config_params = nxp_wifi_ap_config_params,
 };
 

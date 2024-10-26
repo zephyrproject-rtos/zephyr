@@ -109,7 +109,7 @@ void ull_periph_setup(struct node_rx_pdu *rx, struct node_rx_ftr *ftr,
 		/* Get identity address */
 		ll_rl_id_addr_get(rl_idx, &peer_addr_type, peer_id_addr);
 		/* Mark it as identity address from RPA (0x02, 0x03) */
-		peer_addr_type += 2;
+		MARK_AS_IDENTITY_ADDR(peer_addr_type);
 	} else {
 #else /* CONFIG_BT_CTLR_PRIVACY */
 	if (1) {
@@ -143,6 +143,11 @@ void ull_periph_setup(struct node_rx_pdu *rx, struct node_rx_ftr *ftr,
 	(void)memcpy(conn->own_id_addr, own_id_addr,
 		     sizeof(conn->own_id_addr));
 #endif /* CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN */
+
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER)
+	/* Set default PAST parameters */
+	conn->past = ull_conn_default_past_param_get();
+#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER */
 
 	memcpy(&lll->crc_init[0], &pdu_adv->connect_ind.crc_init[0], 3);
 	memcpy(&lll->access_addr[0], &pdu_adv->connect_ind.access_addr[0], 4);
@@ -381,9 +386,14 @@ void ull_periph_setup(struct node_rx_pdu *rx, struct node_rx_ftr *ftr,
 	ready_delay_us = lll_radio_rx_ready_delay_get(0U, 0U);
 #endif /* CONFIG_BT_CTLR_PHY */
 
+	lll->tifs_tx_us = EVENT_IFS_DEFAULT_US;
+	lll->tifs_rx_us = EVENT_IFS_DEFAULT_US;
+	lll->tifs_hcto_us = EVENT_IFS_DEFAULT_US;
+	lll->tifs_cis_us = EVENT_IFS_DEFAULT_US;
+
 	/* Calculate event time reservation */
 	slot_us = max_rx_time + max_tx_time;
-	slot_us += EVENT_IFS_US + (EVENT_CLOCK_JITTER_US << 1);
+	slot_us += lll->tifs_rx_us + (EVENT_CLOCK_JITTER_US << 1);
 	slot_us += ready_delay_us;
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_EVENT_OVERHEAD_RESERVE_MAX)) {

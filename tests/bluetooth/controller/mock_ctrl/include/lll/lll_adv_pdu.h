@@ -113,5 +113,11 @@ static inline struct pdu_adv *lll_adv_sync_data_peek(struct lll_adv_sync *lll, v
 
 	return (void *)lll->data.pdu[last];
 }
+
+static inline struct pdu_adv *lll_adv_sync_data_curr_get(struct lll_adv_sync *lll)
+{
+	return (void *)lll->data.pdu[lll->data.first];
+}
+
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */

@@ -1,7 +1,4 @@
-.. _same54_xpro:
-
-SAM E54 Xplained Pro Evaluation Kit
-###################################
+.. zephyr:board:: same54_xpro
 
 Overview
 ********
@@ -11,10 +8,6 @@ prototyping with the SAM E54 Cortex®-M4F processor-based
 microcontrollers. The kit includes Atmel’s Embedded Debugger (EDBG),
 which provides a full debug interface without the need for additional
 hardware.
-
-.. image:: img/atsame54_xpro.jpg
-     :align: center
-     :alt: SAME54-XPRO
 
 Hardware
 ********

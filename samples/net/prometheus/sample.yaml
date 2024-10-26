@@ -13,5 +13,7 @@ common:
   platform_exclude:
     - native_posix
     - native_posix/native/64
+  # Exclude CONFIG_HAS_RENESAS_RA_FSP as Renesas RA HAL has build error with mbedtls Socket
+  filter: not CONFIG_HAS_RENESAS_RA_FSP
 tests:
   sample.net.prometheus: {}

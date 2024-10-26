@@ -655,6 +655,19 @@ you can reference it with::
    Read the `Zephyr Wikipedia Page`_ for more information about the
    project.
 
+.. tip::
+
+   When a document contains many external links, it can be useful to list them in a single
+   "References" section at the end of the document. This can be done using the
+   :rst:dir:`target-notes` directive. Example::
+
+      References
+      ==========
+
+      .. target-notes::
+
+      .. _external_link1: https://example.com
+      .. _external_link2: https://example.org
 
 Cross-referencing C documentation
 =================================
@@ -683,7 +696,6 @@ Cross-referencing C documentation
       Check out :c:func:`gpio_pin_configure` for more information.
 
    You may provide a custom link text, similar to the built-in :rst:role:`ref` role.
-
 
 Visual Elements
 ***************
@@ -1213,3 +1225,9 @@ Boards
 
    This directive is used to generate a catalog of Zephyr-supported boards that can be used to
    quickly browse the list of all supported boards and filter them according to various criteria.
+
+
+References
+**********
+
+.. target-notes::

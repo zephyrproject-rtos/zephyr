@@ -254,7 +254,7 @@
 			status = "disabled";
 		};
 
-		stimer0: stimer@58000000 {
+		rtcc0: stimer0: rtcc@58000000 {
 			compatible = "silabs,gecko-stimer";
 			reg = <0x58000000 0x3054>;
 			clock-frequency = <32768>;
@@ -362,7 +362,7 @@
 	};
 
 	bt_hci_silabs: bt_hci_silabs {
-		compatible = "silabs,bt-hci";
+		compatible = "silabs,bt-hci-efr32";
 		status = "disabled";
 	};
 };

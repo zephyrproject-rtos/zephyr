@@ -1101,17 +1101,27 @@ test_i2c_bmp390: bmp390@99 {
 	iir-filter = <3>;
 };
 
-apds_9306: apds9306@92 {
+apds_9306: apds9306@9a {
 	compatible = "avago,apds9306";
-	reg = <0x92>;
+	reg = <0x9a>;
 	status = "okay";
 	gain = <1>;
 	resolution = <13>;
 	frequency = <2000>;
 };
 
-test_i2c_wsen_hids_2525020210002: wsen_hids_2525020210002@99 {
+test_i2c_wsen_hids_2525020210002: wsen_hids_2525020210002@9b {
 	compatible = "we,wsen-hids-2525020210002";
-	reg = <0x99>;
+	reg = <0x9b>;
 	precision = "high";
+};
+
+test_i2c_ilps22qs: ilps22qs@9c {
+	compatible = "st,ilps22qs";
+	reg = <0x9c>;
+	status = "okay";
+	odr = <LPS2xDF_DT_ODR_10HZ>;
+	lpf = <LPS2xDF_DT_LP_FILTER_ODR_4>;
+	avg = <LPS2xDF_DT_AVG_128_SAMPLES>;
+	fs = <ILPS22QS_DT_FS_MODE_1_1260>;
 };

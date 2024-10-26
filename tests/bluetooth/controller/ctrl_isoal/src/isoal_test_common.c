@@ -20,6 +20,11 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/sys/byteorder.h>
 
+#include "hal/cpu.h"
+#include "hal/ccm.h"
+#include "hal/cntr.h"
+#include "hal/ticker.h"
+
 #include "util/memq.h"
 
 #include "pdu_df.h"
@@ -35,6 +40,8 @@
 #include "isoal_test_common.h"
 #include "isoal_test_debug.h"
 
+#define ULL_TIME_WRAPPING_POINT_US	(HAL_TICKER_TICKS_TO_US_64BIT(HAL_TICKER_CNTR_MASK))
+#define ULL_TIME_SPAN_FULL_US		(ULL_TIME_WRAPPING_POINT_US + 1)
 
 /**
  * Intializes a RX PDU buffer
@@ -269,4 +276,18 @@ void init_test_data_buffer(uint8_t *buf, uint16_t size)
 	for (uint16_t i = 0; i < size; i++) {
 		buf[i] = (uint8_t)(i & 0x00FF);
 	}
+}
+
+/**
+ * @brief Wraps given time within the range of 0 to ULL_TIME_WRAPPING_POINT_US
+ * @param  time_now  Current time value
+ * @param  time_diff Time difference (signed)
+ * @return           Wrapped time after difference
+ */
+uint32_t ull_get_wrapped_time_us(uint32_t time_now_us, int32_t time_diff_us)
+{
+	uint32_t result = ((uint64_t)time_now_us + ULL_TIME_SPAN_FULL_US + time_diff_us) %
+				((uint64_t)ULL_TIME_SPAN_FULL_US);
+
+	return result;
 }

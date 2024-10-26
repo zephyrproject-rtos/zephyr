@@ -330,6 +330,8 @@ Bluetooth HCI
 
 * The ``bt-hci-bus`` and ``bt-hci-quirks`` devicetree properties for HCI bindings have been changed
   to use lower-case strings without the ``BT_HCI_QUIRK_`` and ``BT_HCI_BUS_`` prefixes.
+* The Kconfig option :kconfig:option:`BT_SPI` is now automatically selected based on devicetree
+  compatibles and can be removed from board ``.defconfig`` files.
 
 Bluetooth Mesh
 ==============
@@ -385,6 +387,16 @@ Bluetooth Audio
   structs, enums and defines that used the ``bt_audio_codec_qos`` name. To use the new naming simply
   do a search-and-replace for ``bt_audio_codec_qos`` to ``bt_bap_qos_cfg`` and
   ``BT_AUDIO_CODEC_QOS`` to ``BT_BAP_QOS_CFG``. (:github:`76633`)
+
+* The generation of broadcast ID inside of zephyr stack has been removed, it is now up the
+  application to generate a broadcast ID. This means that the application can now fully decide
+  whether to use a static or random broadcast ID. Reusing and statically defining a broadcast ID was
+  added to the Basic Audio Profile in version 1.0.2, which is the basis for this change. All
+  instances of :c:func:`bt_cap_initiator_broadcast_get_id` and
+  :c:func:`bt_bap_broadcast_source_get_id` has been removed(:github:`80228`)
+
+* ``BT_AUDIO_BROADCAST_CODE_SIZE`` has been removed and ``BT_ISO_BROADCAST_CODE_SIZE`` should be
+  used instead. (:github:`80217`)
 
 Bluetooth Classic
 =================
@@ -501,6 +513,10 @@ Networking
 
 * The ``work_q`` parameter to ``NET_SOCKET_SERVICE_SYNC_DEFINE`` and
   ``NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC`` has been removed as it was always ignored. (:github:`79446`)
+
+* The callback function for the socket service has changed. The
+  ``struct k_work *work`` parameter has been replaced with a pointer to the
+  ``struct net_socket_service_event *pev`` parameter. (:github:`80041`)
 
 * Deprecated the :kconfig:option:`CONFIG_NET_SOCKETS_POLL_MAX` option in favour of
   :kconfig:option:`CONFIG_ZVFS_POLL_MAX`.

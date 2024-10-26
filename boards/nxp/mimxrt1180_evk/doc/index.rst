@@ -1,7 +1,4 @@
-.. _mimxrt1180_evk:
-
-NXP MIMXRT1180-EVK
-##################
+.. zephyr:board:: mimxrt1180_evk
 
 Overview
 ********
@@ -10,10 +7,6 @@ The dual core i.MX RT1180 runs on the Cortex-M33 core at 240 MHz and on the
 Cortex-M7 at 792 MHz. The i.MX RT1180 MCU offers support over a wide
 temperature range and is qualified for consumer, industrial and automotive
 markets.
-
-.. image:: mimxrt1180_evk.webp
-   :align: center
-   :alt: MIMXRT1180-EVK
 
 Hardware
 ********

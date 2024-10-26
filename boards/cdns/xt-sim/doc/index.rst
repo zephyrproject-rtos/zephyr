@@ -1,7 +1,4 @@
-.. _xt-sim:
-
-Xtensa simulator
-################
+.. zephyr:board:: xt-sim
 
 Overview
 ********
@@ -12,12 +9,6 @@ from various processor options and even create customized instructions in
 addition to a base ISA to tailor the processor for a particular application.
 
 For more information, see https://ip.cadence.com/ipportfolio/tensilica-ip/xtensa-customizable
-
-.. figure:: img/xt-sim.jpg
-     :align: center
-     :alt: Xtensa Xplorer (Eclipse base frontend for xt-sim)
-
-     Xtensa Xplorer
 
 Hardware
 ********
@@ -176,5 +167,7 @@ Build and run as follows:
 
 References
 **********
+
+.. target-notes::
 
 .. _Xtensa tools: https://ip.cadence.com/support/sdk-evaluation-request

@@ -365,7 +365,7 @@ set(mimx8mm_evk_a53_smp_DEPRECATED
     imx8mm_evk/mimx8mm6/a53/smp
 )
 set(mimx8mm_phyboard_polis_DEPRECATED
-    mimx8mm_phyboard_polis/mimx8mm6/m4
+    phyboard_polis/mimx8mm6/m4
 )
 set(mimx8mn_evk_a53_DEPRECATED
     imx8mn_evk/mimx8mn6/a53
@@ -386,7 +386,7 @@ set(mimx8mp_evk_itcm_DEPRECATED
     imx8mp_evk/mimx8ml8/m7
 )
 set(mimx8mp_phyboard_pollux_DEPRECATED
-    mimx8mp_phyboard_pollux/mimx8ml8/m7
+    phyboard_pollux/mimx8ml8/m7
 )
 set(mimx8mq_evk_cm4_DEPRECATED
     imx8mq_evk/mimx8mq6/m4
@@ -437,10 +437,10 @@ set(mps2_an521_remote_DEPRECATED
     mps2/an521/cpu1
 )
 set(mps3_an547_DEPRECATED
-    mps3
+    mps3/corstone300/547
 )
 set(mps3_an547_ns_DEPRECATED
-    mps3/an547/ns
+    mps3/corstone300/an547/ns
 )
 
 set(native_posix_64_DEPRECATED
@@ -909,4 +909,10 @@ set(xiao_esp32s3_DEPRECATED
 )
 set(yd_esp32_DEPRECATED
     yd_esp32/esp32/procpu
+)
+set(mimx8mp_phyboard_pollux/mimx8ml8/m7_DEPRECATED
+    phyboard_pollux/mimx8ml8/m7
+)
+set(mimx8mm_phyboard_polis/mimx8mm6/m4_DEPRECATED
+    phyboard_polis/mimx8mm6/m4
 )

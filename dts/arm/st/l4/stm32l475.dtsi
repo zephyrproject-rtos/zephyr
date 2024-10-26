@@ -19,7 +19,7 @@
 			ram-size = <1280>;
 			maximum-speed = "full-speed";
 			phys = <&otgfs_phy>;
-			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00001000>,
+			clocks = <&rcc STM32_CLOCK(AHB2, 12U)>,
 				 <&rcc STM32_SRC_MSI CLK48_SEL(3)>;
 			status = "disabled";
 		};

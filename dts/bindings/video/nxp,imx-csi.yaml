@@ -1,5 +1,6 @@
 #
 # Copyright (c) 2019, Linaro Limited
+# Copyright 2024 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -14,8 +15,6 @@ properties:
   interrupts:
     required: true
 
-  source:
-    required: true
-    type: phandle
-    description: the connected source device,
-      e.g., a mipi csi or a camera sensor
+child-binding:
+  child-binding:
+    include: video-interfaces.yaml

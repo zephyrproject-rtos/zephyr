@@ -48,6 +48,8 @@ config BT_LLL_VENDOR_NORDIC
 	select BT_CTLR_CHAN_SEL_2_SUPPORT
 	select BT_CTLR_MIN_USED_CHAN_SUPPORT
 	select BT_CTLR_SCA_UPDATE_SUPPORT
+	select BT_CTLR_SYNC_TRANSFER_RECEIVER_SUPPORT
+	select BT_CTLR_SYNC_TRANSFER_SENDER_SUPPORT
 	select BT_CTLR_DTM_HCI_SUPPORT
 	select BT_CTLR_CONN_RSSI_SUPPORT
 
@@ -61,7 +63,7 @@ config BT_LLL_VENDOR_NORDIC
 				   (BT_OBSERVER && BT_CTLR_ADV_EXT)
 	select BT_TICKER_START_REMAINDER if BT_CTLR_CENTRAL_ISO
 	select BT_TICKER_REMAINDER_GET if BT_BROADCASTER && BT_CTLR_ADV_EXT
-	select BT_TICKER_LAZY_GET if BT_CTLR_ADV_PERIODIC || BT_CTLR_CENTRAL_ISO
+	select BT_TICKER_LAZY_GET if BT_CTLR_ADV_PERIODIC || BT_CTLR_CENTRAL_ISO || BT_CTLR_SYNC_TRANSFER_SENDER
 
 	select BT_TICKER_PREFER_START_BEFORE_STOP if BT_TICKER_SLOT_AGNOSTIC
 
@@ -496,13 +498,31 @@ config BT_CTRL_ADV_ADI_IN_SCAN_RSP
 	help
 	  Enable ADI field in AUX_SCAN_RSP PDU
 
+config BT_CTLR_SCAN_AUX_USE_CHAINS
+	bool "Use new chains based implementation for following advertising chains"
+	depends on BT_OBSERVER && BT_CTLR_ADV_EXT
+	help
+	  Use the new chains based implementation of following advertising chains
+	  instead of the old sets based one. The new implementation has a much lighter
+	  footprint, since it limits allocations per advertising chain to the bare
+	  minimum and only uses one ticker
+
 config BT_CTLR_SCAN_AUX_SET
 	int "LE Extended Scanning Auxiliary Sets"
-	depends on BT_OBSERVER && BT_CTLR_ADV_EXT
+	depends on BT_OBSERVER && BT_CTLR_ADV_EXT && !BT_CTLR_SCAN_AUX_USE_CHAINS
 	range 1 64
 	default 1
 	help
 	  Maximum supported auxiliary channel scan sets.
+
+config BT_CTLR_SCAN_AUX_CHAIN_COUNT
+	int "LE Extended Scanning Auxiliary Chains"
+	depends on BT_OBSERVER && BT_CTLR_ADV_EXT && BT_CTLR_SCAN_AUX_USE_CHAINS
+	range 1 64
+	default 3
+	help
+	  Maximum number of extended/periodic advertising chains that can be
+	  followed simultaneously
 
 config BT_CTLR_SCAN_AUX_SYNC_RESERVE_MIN
 	bool "Use minimal Scan Auxiliary and Periodic Sync PDU time reservation"
@@ -900,6 +920,13 @@ config BT_CTLR_RADIO_ENABLE_FAST
 	help
 	  Enable use of fast radio ramp-up mode.
 
+config BT_CTLR_RADIO_TIMER_ISR
+	# Hidden, enables use of timer ISR callback
+	bool
+	depends on SOC_COMPATIBLE_NRF52X || SOC_COMPATIBLE_NRF53X
+	help
+	  Enables use of timer ISR callback.
+
 config BT_CTLR_TIFS_HW
 	bool "H/w Accelerated tIFS Trx switching"
 	depends on !BT_CTLR_RADIO_ENABLE_FAST && BT_CTLR_TIFS_HW_SUPPORT
@@ -1013,6 +1040,14 @@ config BT_CTLR_TX_RETRY_DISABLE
 	  would happen in the next connection event instead of repeated retries
 	  in the current connection event.
 
+config BT_CTLR_TX_DEFER
+	bool "Deferred ACL Tx packet transmission setup"
+	select BT_CTLR_RADIO_TIMER_ISR
+	help
+	  Enable deferred ACL Tx packet transmission setup by radio, so that an
+	  enqueued ACL Data packet by the upper layer can be transmitted with
+	  the shortest latency.
+
 config BT_CTLR_THROUGHPUT
 	bool "Measure incoming Tx throughput"
 	help
@@ -1072,6 +1107,19 @@ config BT_CTLR_ALLOW_SAME_PEER_CONN
 
 	  WARNING: This option enables behavior that violates the Bluetooth
 	  specification.
+
+config BT_CTLR_CONN_INTERVAL_LOW_LATENCY
+	bool "Allow low latency connection intervals"
+	help
+	  Allow low latency connection intervals.
+
+config BT_CTLR_EVENT_IFS_LOW_LAT_US
+	prompt "Low latency tIFS value in microseconds" if BT_CTLR_CONN_INTERVAL_LOW_LATENCY
+	int
+	default 52 if BT_CTLR_CONN_INTERVAL_LOW_LATENCY
+	default 150
+	help
+	  Set low latency tIFS value.
 
 endif # BT_CONN
 

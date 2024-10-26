@@ -859,6 +859,20 @@ bt_addr_t *ull_filter_lll_lrpa_get(uint8_t rl_idx)
 	return rl[rl_idx].local_rpa;
 }
 
+bt_addr_t *ull_filter_lll_id_addr_get(uint8_t rl_idx, uint8_t *id_addr_type)
+{
+	struct lll_resolve_list *rl_entry;
+
+	if (rl_idx >= ARRAY_SIZE(rl)) {
+		return NULL;
+	}
+
+	rl_entry = &rl[rl_idx];
+	*id_addr_type = rl_entry->id_addr_type;
+
+	return &rl_entry->id_addr;
+}
+
 uint8_t *ull_filter_lll_irks_get(uint8_t *count)
 {
 	*count = peer_irk_count;
@@ -1153,8 +1167,8 @@ static void rpa_adv_refresh(struct ll_adv_set *adv)
 	uint8_t sec_idx;
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
-	if (adv->own_addr_type != BT_ADDR_LE_PUBLIC_ID &&
-	    adv->own_addr_type != BT_ADDR_LE_RANDOM_ID) {
+	if (adv->own_addr_type != BT_HCI_OWN_ADDR_RPA_OR_PUBLIC &&
+	    adv->own_addr_type != BT_HCI_OWN_ADDR_RPA_OR_RANDOM) {
 		return;
 	}
 

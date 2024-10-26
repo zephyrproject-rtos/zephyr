@@ -115,6 +115,33 @@ ISR_DIRECT_DECLARE(radio_nrf5_isr)
 #endif /* !CONFIG_DYNAMIC_DIRECT_INTERRUPTS */
 }
 
+#if defined(CONFIG_BT_CTLR_RADIO_TIMER_ISR)
+#if defined(CONFIG_BT_CTLR_DYNAMIC_INTERRUPTS) && \
+	defined(CONFIG_DYNAMIC_DIRECT_INTERRUPTS)
+static void timer_nrf5_isr(const void *arg)
+#else /* !CONFIG_BT_CTLR_DYNAMIC_INTERRUPTS */
+ISR_DIRECT_DECLARE(timer_nrf5_isr)
+#endif /* !CONFIG_BT_CTLR_DYNAMIC_INTERRUPTS */
+{
+	DEBUG_RADIO_ISR(1);
+
+	lll_prof_enter_radio();
+
+	isr_radio_tmr();
+
+	ISR_DIRECT_PM();
+
+	lll_prof_exit_radio();
+
+	DEBUG_RADIO_ISR(0);
+
+#if !defined(CONFIG_BT_CTLR_DYNAMIC_INTERRUPTS) || \
+	!defined(CONFIG_DYNAMIC_DIRECT_INTERRUPTS)
+	return 1;
+#endif /* !CONFIG_DYNAMIC_DIRECT_INTERRUPTS */
+}
+#endif /* CONFIG_BT_CTLR_RADIO_TIMER_ISR */
+
 static void rtc0_nrf5_isr(const void *arg)
 {
 	DEBUG_TICKER_ISR(1);
@@ -221,9 +248,19 @@ int lll_init(void)
 				       IRQ_CONNECT_FLAGS, no_reschedule);
 	irq_connect_dynamic(HAL_RADIO_IRQn, CONFIG_BT_CTLR_LLL_PRIO,
 			    radio_nrf5_isr, NULL, IRQ_CONNECT_FLAGS);
+#if defined(CONFIG_BT_CTLR_RADIO_TIMER_ISR)
+	ARM_IRQ_DIRECT_DYNAMIC_CONNECT(TIMER0_IRQn, CONFIG_BT_CTLR_LLL_PRIO,
+				       IRQ_CONNECT_FLAGS, no_reschedule);
+	irq_connect_dynamic(TIMER0_IRQn, CONFIG_BT_CTLR_LLL_PRIO,
+			    timer_nrf5_isr, NULL, IRQ_CONNECT_FLAGS);
+#endif /* CONFIG_BT_CTLR_RADIO_TIMER_ISR */
 #else /* !CONFIG_DYNAMIC_DIRECT_INTERRUPTS */
 	IRQ_DIRECT_CONNECT(HAL_RADIO_IRQn, CONFIG_BT_CTLR_LLL_PRIO,
 			   radio_nrf5_isr, IRQ_CONNECT_FLAGS);
+#if defined(CONFIG_BT_CTLR_RADIO_TIMER_ISR)
+	IRQ_DIRECT_CONNECT(TIMER0_IRQn, CONFIG_BT_CTLR_LLL_PRIO,
+			   timer_nrf5_isr, IRQ_CONNECT_FLAGS);
+#endif /* CONFIG_BT_CTLR_RADIO_TIMER_ISR */
 #endif /* !CONFIG_DYNAMIC_DIRECT_INTERRUPTS */
 	irq_connect_dynamic(HAL_RTC_IRQn, CONFIG_BT_CTLR_ULL_HIGH_PRIO,
 			    rtc0_nrf5_isr, NULL, 0U);
@@ -238,6 +275,10 @@ int lll_init(void)
 #else /* !CONFIG_BT_CTLR_DYNAMIC_INTERRUPTS */
 	IRQ_DIRECT_CONNECT(HAL_RADIO_IRQn, CONFIG_BT_CTLR_LLL_PRIO,
 			   radio_nrf5_isr, IRQ_CONNECT_FLAGS);
+#if defined(CONFIG_BT_CTLR_RADIO_TIMER_ISR)
+	IRQ_DIRECT_CONNECT(TIMER0_IRQn, CONFIG_BT_CTLR_LLL_PRIO,
+			   timer_nrf5_isr, IRQ_CONNECT_FLAGS);
+#endif /* CONFIG_BT_CTLR_RADIO_TIMER_ISR */
 	IRQ_CONNECT(HAL_RTC_IRQn, CONFIG_BT_CTLR_ULL_HIGH_PRIO,
 		    rtc0_nrf5_isr, NULL, 0);
 #if defined(CONFIG_BT_CTLR_ZLI)
@@ -298,6 +339,10 @@ int lll_deinit(void)
 #if defined(CONFIG_DYNAMIC_DIRECT_INTERRUPTS)
 	irq_disconnect_dynamic(HAL_RADIO_IRQn, CONFIG_BT_CTLR_LLL_PRIO,
 			       radio_nrf5_isr, NULL, IRQ_CONNECT_FLAGS);
+#if defined(CONFIG_BT_CTLR_RADIO_TIMER_ISR)
+	irq_disconnect_dynamic(TIMER0_IRQn, CONFIG_BT_CTLR_LLL_PRIO,
+			       timer_nrf5_isr, NULL, IRQ_CONNECT_FLAGS);
+#endif /* CONFIG_BT_CTLR_RADIO_TIMER_ISR */
 #endif /* CONFIG_DYNAMIC_DIRECT_INTERRUPTS */
 	irq_disconnect_dynamic(HAL_RTC_IRQn, CONFIG_BT_CTLR_ULL_HIGH_PRIO,
 			       rtc0_nrf5_isr, NULL, 0U);
@@ -1266,10 +1311,15 @@ preempt_find_preemptor:
 
 	/* Check if current event want to continue */
 	err = event.curr.is_abort_cb(ready->prepare_param.param, event.curr.param, &resume_cb);
-	if (!err) {
-		/* Let preemptor LLL know about the cancelled prepare */
-		ready->is_aborted = 1;
-		ready->abort_cb(&ready->prepare_param, ready->prepare_param.param);
+	if (!err || (err == -EBUSY)) {
+		/* Returns -EBUSY when same curr and next state/role, do not
+		 * abort same curr and next event.
+		 */
+		if (err != -EBUSY) {
+			/* Let preemptor LLL know about the cancelled prepare */
+			ready->is_aborted = 1;
+			ready->abort_cb(&ready->prepare_param, ready->prepare_param.param);
+		}
 
 		return;
 	}

@@ -113,6 +113,14 @@ Bluetooth
     * :c:func:`bt_audio_codec_cap_meta_get_assisted_listening_stream`
     * :c:func:`bt_audio_codec_cap_meta_set_assisted_listening_stream`
 
+  * Added APIs for getting and setting the broadcast name in codec capabilities
+    and codec configuration:
+
+    * :c:func:`bt_audio_codec_cfg_meta_get_broadcast_name`
+    * :c:func:`bt_audio_codec_cfg_meta_set_broadcast_name`
+    * :c:func:`bt_audio_codec_cap_meta_get_broadcast_name`
+    * :c:func:`bt_audio_codec_cap_meta_set_broadcast_name`
+
 * Host
 
   * Added API :c:func:`bt_gatt_get_uatt_mtu` to get current Unenhanced ATT MTU of a given
@@ -152,6 +160,15 @@ Boards & SoC Support
   * STM32: Deprecated MCO configuration via Kconfig in favour of setting it through devicetree.
     See ``samples/boards/stm32/mco`` sample.
   * Removed the ``nrf54l15pdk`` board, use :ref:`nrf54l15dk_nrf54l15` instead.
+  * PHYTEC: ``mimx8mp_phyboard_pollux`` has been renamed to :ref:`phyboard_pollux<phyboard_pollux>`,
+    with the old name marked as deprecated.
+  * PHYTEC: ``mimx8mm_phyboard_polis`` has been renamed to :ref:`phyboard_polis<phyboard_polis>`,
+    with the old name marked as deprecated.
+  * The board qualifier for MPS3/AN547 is changed from:
+
+    * ``mps3/an547`` to ``mps3/corstone300/an547`` for secure and
+    * ``mps3/an547/ns`` to ``mps3/corstone300/an547/ns`` for non-secure.
+
 
 * Added support for the following shields:
 
@@ -402,10 +419,12 @@ Libraries / Subsystems
     * Fixed formatting of milliseconds in :c:enum:`OS_MGMT_ID_DATETIME_STR` by adding
       leading zeros.
     * Added support for custom os mgmt bootloader info responses using notification hooks, this
-      can be enabled witbh :kconfig:option:`CONFIG_MCUMGR_GRP_OS_BOOTLOADER_INFO_HOOK`, the data
+      can be enabled with :kconfig:option:`CONFIG_MCUMGR_GRP_OS_BOOTLOADER_INFO_HOOK`, the data
       structure is :c:struct:`os_mgmt_bootloader_info_data`.
     * Added support for img mgmt slot info command, which allows for listing information on
       images and slots on the device.
+    * Added support for LoRaWAN MCUmgr transport, which can be enabled with
+      :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_LORAWAN`.
 
   * hawkBit
 
@@ -466,6 +485,12 @@ Libraries / Subsystems
 * Random
 
 * SD
+
+* Settings
+
+  * Settings has been extended to allow prioritizing the commit handlers using
+    ``SETTINGS_STATIC_HANDLER_DEFINE_WITH_CPRIO(...)`` for static_handlers and
+    ``settings_register_with_cprio(...)`` for dynamic_handlers.
 
 * Shell:
 

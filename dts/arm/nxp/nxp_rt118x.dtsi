@@ -323,13 +323,11 @@
 		status = "disabled";
 	};
 
-	lpadc1: lpadc@2600000 {
+	lpadc1: adc@2600000 {
 		compatible = "nxp,lpc-lpadc";
 		reg = <0x2600000 0x304>;
 		interrupts = <93 0>;
 		status = "disabled";
-		clk-divider = <7>;
-		clk-source = <1>;
 		voltage-ref= <1>;
 		calibration-average = <128>;
 		no-power-level;
@@ -339,7 +337,7 @@
 		clocks = <&ccm IMX_CCM_LPADC1_CLK 0 0>;
 	};
 
-	lpadc2: lpadc@2e00000 {
+	lpadc2: adc@2e00000 {
 		compatible = "nxp,lpc-lpadc";
 		reg = <0x2e00000 0x304>;
 		interrupts = <189 0>;

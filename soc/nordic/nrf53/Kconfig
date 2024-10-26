@@ -177,7 +177,6 @@ config SOC_NRF53_CPUNET_MGMT
 
 config SOC_NRF53_CPUNET_ENABLE
 	bool "NRF53 Network MCU is enabled at boot time"
-	depends on !BT
 	default y if NRF_802154_SER_HOST
 	select SOC_NRF53_CPUNET_MGMT
 	help
@@ -195,7 +194,6 @@ config BOARD_ENABLE_CPUNET
 	bool "[DEPRECATED] NRF53 Network MCU is enabled at boot time"
 	select SOC_NRF53_CPUNET_ENABLE
 	select DEPRECATED
-	depends on !BT
 	help
 	  Use SOC_NRF53_CPUNET_ENABLE instead.
 

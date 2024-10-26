@@ -148,11 +148,7 @@
 	status = "okay";
 };
 
-&burtc0 {
-	status = "okay";
-};
-
-&stimer0 {
+&sysrtc0 {
 	status = "okay";
 };
 

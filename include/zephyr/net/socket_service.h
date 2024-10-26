@@ -19,7 +19,7 @@
  * @brief BSD socket service API
  * @defgroup bsd_socket_service BSD socket service API
  * @since 3.6
- * @version 0.1.0
+ * @version 0.2.0
  * @ingroup networking
  * @{
  */
@@ -32,15 +32,23 @@
 extern "C" {
 #endif
 
+struct net_socket_service_event;
+
+/** @brief The signature for a net socket service handler function.
+ *
+ * The function will be invoked by the socket service.
+ *
+ * @param pev the socket service event that provided the handler.
+ */
+typedef void (*net_socket_service_handler_t)(struct net_socket_service_event *pev);
+
 /**
  * This struct contains information which socket triggered
  * calls to the callback function.
  */
 struct net_socket_service_event {
-	/** k_work that is done when there is desired activity in file descriptor. */
-	struct k_work work;
 	/** Callback to be called for desired socket activity */
-	k_work_handler_t callback;
+	net_socket_service_handler_t callback;
 	/** Socket information that triggered this event. */
 	struct zsock_pollfd event;
 	/** User data */
@@ -80,8 +88,6 @@ struct net_socket_service_desc {
 #define __z_net_socket_svc_get_name(_svc_id) __z_net_socket_service_##_svc_id
 #define __z_net_socket_svc_get_idx(_svc_id) __z_net_socket_service_idx_##_svc_id
 #define __z_net_socket_svc_get_owner __FILE__ ":" STRINGIFY(__LINE__)
-
-extern void net_socket_service_callback(struct k_work *work);
 
 #if CONFIG_NET_SOCKETS_LOG_LEVEL >= LOG_LEVEL_DBG
 #define NET_SOCKET_SERVICE_OWNER .owner = __z_net_socket_svc_get_owner,

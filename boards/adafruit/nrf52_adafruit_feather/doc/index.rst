@@ -1,7 +1,4 @@
-.. _nrf52_adafruit_feather:
-
-nRF52 Adafruit Feather
-######################
+.. zephyr:board:: nrf52_adafruit_feather
 
 Overview
 ********
@@ -17,12 +14,6 @@ the following devices:
 * FLASH
 * RADIO (Bluetooth Low Energy)
 * Segger RTT (RTT Console)
-
-.. figure:: img/nrf52_adafruit_feather.jpg
-     :align: center
-     :alt: nRF52 Adafruit Feather Board
-
-     nRF52 Adafruit Feather Board (Credit: Adafruit)
 
 More information about the board and its features can be found at the
 `Adafruit Feather nRF52 Bluefruit Learning Guide`_. The `Nordic Semiconductor Infocenter`_

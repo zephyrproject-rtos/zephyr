@@ -38,15 +38,6 @@ struct pwm_rpi_config {
 	const clock_control_subsys_t clk_id;
 };
 
-static float pwm_rpi_get_clkdiv(const struct device *dev, int slice)
-{
-	const struct pwm_rpi_config *cfg = dev->config;
-
-	/* the divider is a fixed point 8.4 convert to float for use in pico-sdk */
-	return (float)cfg->slice_configs[slice].integral +
-		(float)cfg->slice_configs[slice].frac / 16.0f;
-}
-
 static inline uint32_t pwm_rpi_channel_to_slice(uint32_t channel)
 {
 	return channel / 2;
@@ -68,20 +59,22 @@ static int pwm_rpi_get_cycles_per_sec(const struct device *dev, uint32_t ch, uin
 		return -EINVAL;
 	}
 
+	const struct pwm_rpi_slice_config *slice_config = &cfg->slice_configs[slice];
+
 	ret = clock_control_get_rate(cfg->clk_dev, cfg->clk_id, &pclk);
 	if (ret < 0 || pclk == 0) {
 		return -EINVAL;
 	}
 
-	if (cfg->slice_configs[slice].integral == 0) {
+	if (slice_config->integral == 0) {
 		*cycles = pclk;
 	} else {
 		/* No need to check for divide by 0 since the minimum value of
 		 * pwm_rpi_get_clkdiv is 1
 		 */
-		*cycles = (uint64_t)((float)pclk / pwm_rpi_get_clkdiv(dev, slice));
+		*cycles = (uint64_t)pclk * 16 /
+			((uint64_t)slice_config->integral * 16 + slice_config->frac);
 	}
-
 	return 0;
 }
 

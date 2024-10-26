@@ -50,6 +50,7 @@ def test_runner_imports():
         'teensy',
         'trace32',
         'uf2',
+        'xsdb',
         'xtensa',
         # zephyr-keep-sorted-stop
     ))

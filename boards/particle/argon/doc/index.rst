@@ -1,7 +1,4 @@
-.. _particle_argon:
-
-Particle Argon
-##############
+.. zephyr:board:: particle_argon
 
 Overview
 ********
@@ -28,12 +25,6 @@ Hardware
 
 On the front of the board are RGB-LED, LED and LIPO circuitry.
 The RGB-LED is controlled by the nRF52840 via GPIO pins.
-
-.. figure:: img/particle_argon.jpg
-     :align: center
-     :alt: Particle Argon
-
-     Particle Argon (Credit: Particle Industries)
 
 Power supply
 ============

@@ -1,7 +1,4 @@
-.. _nsim:
-
-DesignWare ARC nSIM and HAPS FPGA boards
-########################################
+.. zephyr:board:: nsim
 
 Overview
 ********
@@ -332,6 +329,8 @@ For the MWDT toolchain all hardware-specific compiler options are set directly i
 
 References
 **********
+
+.. target-notes::
 
 .. _Designware ARC nSIM: https://www.synopsys.com/dw/ipdir.php?ds=sim_nsim
 .. _DesignWare ARC Free nSIM: https://www.synopsys.com/cgi-bin/dwarcnsim/req1.cgi

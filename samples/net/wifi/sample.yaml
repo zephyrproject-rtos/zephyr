@@ -67,10 +67,16 @@ tests:
       - nucleo_h723zg
   sample.net.wifi.nrf7002eb:
     extra_args:
-      - NRF70_UTIL=y
+      - CONFIG_NRF70_UTIL=y
       - CONFIG_NRF_WIFI_BUILD_ONLY_MODE=y
       - SHIELD=nrf7002eb
     platform_allow:
       - thingy53/nrf5340/cpuapp
     integration_platforms:
       - thingy53/nrf5340/cpuapp
+  sample.net.wifi.nxp_wifi:
+    extra_args:
+      - CONFIG_NXP_WIFI_BUILD_ONLY_MODE=y
+    platform_allow:
+      - frdm_rw612
+      - rd_rw612_bga

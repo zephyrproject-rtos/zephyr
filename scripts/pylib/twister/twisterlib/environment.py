@@ -382,7 +382,7 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
 
     parser.add_argument(
         "--filter", choices=['buildable', 'runnable'],
-        default='buildable',
+        default='runnable' if "--device-testing" in sys.argv else 'buildable',
         help="""Filter tests to be built and executed. By default everything is
         built and if a test is runnable (emulation or a connected device), it
         is run. This option allows for example to only build tests that can

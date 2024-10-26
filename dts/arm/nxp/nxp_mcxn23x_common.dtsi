@@ -757,6 +757,38 @@
 		clk-source = <0>;
 		status = "disabled";
 	};
+
+	flexio0: flexio@105000 {
+		compatible = "nxp,flexio";
+		reg = <0x105000 0x1000>;
+		status = "disabled";
+		interrupts = <105 0>;
+		clocks = <&syscon MCUX_FLEXIO0_CLK>;
+		flexio0_lcd: flexio0-lcd {
+			compatible = "nxp,mipi-dbi-flexio-lcdif";
+			status = "disabled";
+		};
+	};
+
+	lptmr0: lptmr@4a000 {
+		compatible = "nxp,lptmr";
+		reg = <0x4a000 0x1000>;
+		interrupts = <143 0>;
+		clock-frequency = <16000>;
+		prescaler = <1>;
+		clk-source = <1>;
+		resolution = <32>;
+	};
+
+	lptmr1: lptmr@4b000 {
+		compatible = "nxp,lptmr";
+		reg = <0x4b000 0x1000>;
+		interrupts = <144 0>;
+		clock-frequency = <16000>;
+		prescaler = <1>;
+		clk-source = <1>;
+		resolution = <32>;
+	};
 };
 
 &systick {

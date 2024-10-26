@@ -1,7 +1,4 @@
-.. _m5stack_atoms3:
-
-M5Stack AtomS3
-##############
+.. zephyr:board:: m5stack_atoms3
 
 Overview
 ********
@@ -17,14 +14,6 @@ It features the following integrated components:
 - LCD IPS TFT 0.85", 128x128 px screen (ST7789 compatible)
 - 6-axis IMU MPU6886
 - Infrared emitter
-
-
-.. figure:: img/m5stack_atoms3.webp
-        :align: center
-        :alt: M5Stack AtomS3
-
-        M5Stack AtomS3
-
 
 Supported Features
 ==================

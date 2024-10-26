@@ -1,8 +1,4 @@
-.. _gd32a503v_eval:
-
-GigaDevice GD32A503V-EVAL
-#########################
-
+.. zephyr:board:: gd32a503v_eval
 
 Overview
 ********
@@ -13,11 +9,6 @@ of the GigaDevice A503 Cortex-M4F High Performance MCU.
 The GD32A503VD features a single-core ARM Cortex-M4F MCU which can run up
 to 120-MHz with flash accesses zero wait states, 384kiB of Flash, 48kiB of
 SRAM and 88 GPIOs.
-
-.. image:: img/gd32a503v_eval.jpg
-     :align: center
-     :alt: gd32a503v_eval
-
 
 Hardware
 ********

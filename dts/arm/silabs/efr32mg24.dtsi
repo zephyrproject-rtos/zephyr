@@ -208,6 +208,8 @@
 			#clock-cells = <0>;
 			compatible = "silabs,hfxo";
 			reg = <0x5a004000 0x4000>;
+			interrupts = <44 0>;
+			interrupt-names = "hfxo";
 			clock-frequency = <DT_FREQ_M(39)>;
 			ctune = <140>;
 			precision = <50>;
@@ -330,10 +332,11 @@
 			status = "disabled";
 		};
 
-		stimer0: stimer@500a8000 {
+		sysrtc0: stimer0: sysrtc@500a8000 {
 			compatible = "silabs,gecko-stimer";
 			reg = <0x500a8000 0x3054>;
-			interrupts = <67 0>;
+			interrupts = <67 0>, <68 0>;
+			interrupt-names = "sysrtc_app", "sysrtc_seq";
 			clock-frequency = <32768>;
 			prescaler = <1>;
 			clocks = <&cmu CLOCK_SYSRTC0 CLOCK_BRANCH_SYSRTCCLK>;
@@ -425,7 +428,7 @@
 
 
 	bt_hci_silabs: bt_hci_silabs {
-		compatible = "silabs,bt-hci";
+		compatible = "silabs,bt-hci-efr32";
 		status = "disabled";
 	};
 };

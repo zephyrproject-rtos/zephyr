@@ -1,7 +1,4 @@
-.. _frdm_mcxw71:
-
-NXP FRDM-MCXW71
-################
+.. zephyr:board:: frdm_mcxw71
 
 Overview
 ********
@@ -18,10 +15,6 @@ multiprotocol radio subsystem supporting Matter, Thread, Zigbee and Bluetooth
 LE. The independent radio subsystem, with a dedicated core and memory, offloads
 the main CPU, preserving it for the primary application and allowing firmware
 updates to support future wireless standards.
-
-.. image:: frdm_mcxw71.webp
-   :align: center
-   :alt: FRDM-MCXW71
 
 Hardware
 ********
@@ -68,6 +61,12 @@ The ``frdm_mcxw71`` board target in Zephyr currently supports the following feat
 | LPTMR     | on-chip    | counter                             |
 +-----------+------------+-------------------------------------+
 | BLE       | on-chip    | Bluetooth                           |
++-----------+------------+-------------------------------------+
+| FLEXCAN   | on-chip    | can                                 |
++-----------+------------+-------------------------------------+
+| VREF      | on-chip    | regulator                           |
++-----------+------------+-------------------------------------+
+| LPADC     | on-chip    | adc                                 |
 +-----------+------------+-------------------------------------+
 
 Fetch Binary Blobs
@@ -195,6 +194,8 @@ For more details:
 
 References
 **********
+
+.. target-notes::
 
 .. _MCXW71 SoC Website:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-microcontrollers/general-purpose-mcus/mcx-arm-cortex-m/mcx-w-series-microcontrollers/mcx-w71x-secure-and-ultra-low-power-mcus-for-matter-thread-zigbee-and-bluetooth-le:MCX-W71X

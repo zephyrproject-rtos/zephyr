@@ -307,6 +307,45 @@
 		interrupts = <48 2>;
 		interrupt-names = "hci_int";
 	};
+
+	flexcan0: can@3b000 {
+		compatible = "nxp,flexcan";
+		reg = <0x3b000 0x3080>;
+		interrupts = <47 0>;
+		interrupt-names = "common";
+		clocks = <&scg SCG_K4_FIRC_CLK 0xec>;
+		clk-source = <2>;
+		status = "disabled";
+	};
+
+	adc0: adc@47000 {
+		compatible = "nxp,lpc-lpadc";
+		reg = <0x47000 0x1000>;
+		interrupts = <71 0>;
+		clocks = <&scg SCG_K4_FIRC_CLK 0x11c>;
+		voltage-ref= <1>;
+		calibration-average = <128>;
+		/* pwrlvl 0 is slow speed low power, 1 is opposite */
+		power-level = <0>;
+		offset-value-a = <0>;
+		offset-value-b = <0>;
+		#io-channel-cells = <1>;
+		nxp,references = <&vref 1800>;
+		status = "disabled";
+	};
+
+	vref: regulator@4a000 {
+		compatible = "nxp,vref";
+		regulator-name = "mcxw71-vref";
+		reg = <0x4a000 0x20>;
+		#nxp,reference-cells = <1>;
+		nxp,buffer-startup-delay-us = <400>;
+		nxp,bandgap-startup-time-us = <20>;
+		regulator-min-microvolt = <1000000>;
+		regulator-max-microvolt = <2100000>;
+		nxp,current-compensation-en;
+		status = "disabled";
+	};
 };
 
 &fast_peripheral0 {

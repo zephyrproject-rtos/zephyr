@@ -1,7 +1,4 @@
-.. _olimex_esp32_evb:
-
-Olimex ESP32-EVB
-################
+.. zephyr:board:: olimex_esp32_evb
 
 Overview
 ********
@@ -14,12 +11,6 @@ allows switching power appliances on and off.
 The board can operate from a single LiPo backup battery as it has an internal
 LiPo battery charger. There is no step-up converter, so relays, CAN, and USB
 power does not work when running off battery.
-
-.. figure:: ESP32-EVB.jpg
-   :align: center
-   :alt: ESP32-EVB
-
-   ESP32-EVB (Credit: Olimex)
 
 Hardware
 ********
@@ -255,6 +246,8 @@ You can debug an application in the usual way. Here is an example for the :zephy
 
 References
 **********
+
+.. target-notes::
 
 .. _ESP32-EVB Website:
    https://www.olimex.com/Products/IoT/ESP32/ESP32-EVB/open-source-hardware

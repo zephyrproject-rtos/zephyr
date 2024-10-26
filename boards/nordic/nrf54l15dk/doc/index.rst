@@ -7,9 +7,9 @@ Overview
 ********
 
 .. note::
-
-   All software for the nRF54L15 SoC is experimental and hardware availability
-   is restricted to the participants in the limited sampling program.
+   You can find more information about the nRF54L15 SoC on the `nRF54L15 website`_.
+   For the nRF54L15 technical documentation and other resources (such as
+   SoC Datasheet), see the `nRF54L15 documentation`_ page.
 
 The nRF54L15 Development Kit hardware provides support for the Nordic Semiconductor
 nRF54L15 Arm Cortex-M33 CPU and the following devices:
@@ -146,3 +146,7 @@ Testing the LEDs and buttons in the nRF54L15 DK
 ************************************************
 
 Test the nRF54L15 DK with a :zephyr:code-sample:`blinky` sample.
+
+
+.. _nRF54L15 website: https://www.nordicsemi.com/Products/nRF54L15
+.. _nRF54L15 documentation: https://docs.nordicsemi.com/bundle/ncs-latest/page/nrf/app_dev/device_guides/nrf54l/index.html

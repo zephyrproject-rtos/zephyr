@@ -10,6 +10,7 @@
 #include "testing_common_defs.h"
 
 #include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/fff.h>
 #include <zephyr/kernel.h>
 
@@ -62,7 +63,7 @@ ZTEST(bt_id_set_adv_own_addr, test_bt_id_set_adv_private_addr_succeeds_adv_conne
 		err = bt_id_set_adv_own_addr(&adv, options, dir_adv_test_lut[i], &own_addr_type);
 
 		zassert_ok(err, "Unexpected error code '%d' was returned", err);
-		zassert_true(own_addr_type == BT_ADDR_LE_RANDOM,
+		zassert_true(own_addr_type == BT_HCI_OWN_ADDR_RANDOM,
 			     "Address type reference was incorrectly set");
 	}
 
@@ -114,7 +115,7 @@ ZTEST(bt_id_set_adv_own_addr, test_bt_id_set_adv_random_addr_succeeds_adv_connec
 		err = bt_id_set_adv_own_addr(&adv, options, dir_adv_test_lut[i], &own_addr_type);
 
 		zassert_ok(err, "Unexpected error code '%d' was returned", err);
-		zassert_true(own_addr_type == BT_ADDR_LE_RANDOM,
+		zassert_true(own_addr_type == BT_HCI_OWN_ADDR_RANDOM,
 			     "Address type reference was incorrectly set");
 	}
 
@@ -168,7 +169,7 @@ ZTEST(bt_id_set_adv_own_addr, test_bt_id_set_adv_random_addr_succeeds_not_connec
 		err = bt_id_set_adv_own_addr(&adv, options, dir_adv_test_lut[i], &own_addr_type);
 
 		zassert_ok(err, "Unexpected error code '%d' was returned", err);
-		zassert_true(own_addr_type == BT_ADDR_LE_RANDOM,
+		zassert_true(own_addr_type == BT_HCI_OWN_ADDR_RANDOM,
 			     "Address type reference was incorrectly set");
 	}
 }
@@ -206,7 +207,7 @@ ZTEST(bt_id_set_adv_own_addr, test_bt_id_set_adv_private_addr_succeeds_not_conne
 		err = bt_id_set_adv_own_addr(&adv, options, dir_adv_test_lut[i], &own_addr_type);
 
 		zassert_ok(err, "Unexpected error code '%d' was returned", err);
-		zassert_true(own_addr_type == BT_ADDR_LE_RANDOM,
+		zassert_true(own_addr_type == BT_HCI_OWN_ADDR_RANDOM,
 			     "Address type reference was incorrectly set");
 	}
 }

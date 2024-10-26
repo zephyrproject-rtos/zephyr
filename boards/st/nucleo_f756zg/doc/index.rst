@@ -1,7 +1,4 @@
-.. _nucleo_f756zg_board:
-
-ST Nucleo F756ZG
-################
+.. zephyr:board:: nucleo_f756zg
 
 Overview
 ********
@@ -43,10 +40,6 @@ Key Features
 - Comprehensive free software libraries and examples available with the
 - STM32Cube MCU package.
 - Arm* Mbed Enabled* compliant (only for some Nucleo part numbers)
-
-.. image:: img/nucleo_f756zg.jpg
-   :align: center
-   :alt: Nucleo F756ZG
 
 More information about the board can be found at the `Nucleo F756ZG website`_.
 

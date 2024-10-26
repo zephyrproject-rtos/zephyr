@@ -1,7 +1,4 @@
-.. _max32670_evkit:
-
-MAX32670EVKIT
-#############
+.. zephyr:board:: max32670evkit
 
 Overview
 ********
@@ -14,10 +11,6 @@ The MAX32670 also offers legacy designs an easy and cost optimal upgradepath
 from 8-bit or 16-bit microcontrollers.
 
 The Zephyr port is running on the MAX32670 MCU.
-
-.. image:: img/max32670evkit.webp
-   :align: center
-   :alt: MAX32670 EVKIT
 
 Hardware
 ********

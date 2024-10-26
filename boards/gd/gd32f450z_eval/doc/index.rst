@@ -1,7 +1,4 @@
-.. _gd32f450z_eval:
-
-GigaDevice GD32F450Z-EVAL
-#########################
+.. zephyr:board:: gd32f450z_eval
 
 Overview
 ********
@@ -12,11 +9,6 @@ on GD32F450ZK Cortex-M4F Stretch Performance MCU.
 The GD32F450ZK features a single-core ARM Cortex-M4F MCU which can run up
 to 200 MHz with flash accesses zero wait states, 3072kiB of Flash, 256kiB of
 SRAM and 114 GPIOs.
-
-.. image:: img/gd32f450z_eval.webp
-     :align: center
-     :alt: gd32f450z_eval
-
 
 Hardware
 ********

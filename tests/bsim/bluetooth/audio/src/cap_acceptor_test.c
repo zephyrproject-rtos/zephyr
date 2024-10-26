@@ -414,7 +414,7 @@ static int bis_sync_req_cb(struct bt_conn *conn,
 
 static void broadcast_code_cb(struct bt_conn *conn,
 			      const struct bt_bap_scan_delegator_recv_state *recv_state,
-			      const uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE])
+			      const uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE])
 {
 	printk("Broadcast code received for %p\n", recv_state);
 
@@ -503,21 +503,6 @@ static int unicast_server_qos(struct bt_bap_stream *stream, const struct bt_bap_
 	return 0;
 }
 
-static int unicast_server_enable(struct bt_bap_stream *stream, const uint8_t meta[],
-				 size_t meta_len, struct bt_bap_ascs_rsp *rsp)
-{
-	printk("Enable: stream %p meta_len %zu\n", stream, meta_len);
-
-	return 0;
-}
-
-static int unicast_server_start(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
-{
-	printk("Start: stream %p\n", stream);
-
-	return 0;
-}
-
 static bool ascs_data_func_cb(struct bt_data *data, void *user_data)
 {
 	struct bt_bap_ascs_rsp *rsp = (struct bt_bap_ascs_rsp *)user_data;
@@ -529,6 +514,21 @@ static bool ascs_data_func_cb(struct bt_data *data, void *user_data)
 	}
 
 	return true;
+}
+
+static int unicast_server_enable(struct bt_bap_stream *stream, const uint8_t meta[],
+				 size_t meta_len, struct bt_bap_ascs_rsp *rsp)
+{
+	printk("Enable: stream %p meta_len %zu\n", stream, meta_len);
+
+	return bt_audio_data_parse(meta, meta_len, ascs_data_func_cb, rsp);
+}
+
+static int unicast_server_start(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
+{
+	printk("Start: stream %p\n", stream);
+
+	return 0;
 }
 
 static int unicast_server_metadata(struct bt_bap_stream *stream, const uint8_t meta[],

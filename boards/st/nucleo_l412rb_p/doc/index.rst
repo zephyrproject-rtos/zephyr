@@ -1,7 +1,4 @@
-.. _nucleo_l412rb_p_board:
-
-ST Nucleo L412RB-P
-##################
+.. zephyr:board:: nucleo_l412rb_p
 
 Overview
 ********
@@ -36,10 +33,6 @@ some highlights of the Nucleo L412RB board:
     - MIPI® debug connector
 
   - Arm® Mbed Enabled |trade| compliant
-
-.. image:: img/nucleo_l412rb_p.jpg
-  :align: center
-  :alt: Nucleo L412RB
 
 More information about the board can be found at the `Nucleo L412RB-P website`_.
 

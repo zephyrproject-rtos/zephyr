@@ -1,7 +1,4 @@
-.. _nucleo_f207zg_board:
-
-ST Nucleo F207ZG
-################
+.. zephyr:board:: nucleo_f207zg
 
 Overview
 ********
@@ -28,10 +25,6 @@ some highlights of the Nucleo F207ZG board:
 
 - Three user LEDs
 - Two push-buttons: USER and RESET
-
-.. image:: img/nucleo_f207zg.jpg
-   :align: center
-   :alt: Nucleo F207ZG
 
 More information about the board can be found at the `Nucleo F207ZG website`_.
 

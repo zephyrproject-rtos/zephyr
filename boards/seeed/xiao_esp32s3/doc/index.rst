@@ -228,6 +228,8 @@ You can debug an application in the usual way. Here is an example for the :zephy
 References
 **********
 
+.. target-notes::
+
 .. _`Seeed Studio XIAO ESP32S3`: https://wiki.seeedstudio.com/xiao_esp32s3_getting_started/
 .. _`JTAG debugging for ESP32-S3`: https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/api-guides/jtag-debugging/
 .. _`OpenOCD ESP32`: https://github.com/espressif/openocd-esp32/releases

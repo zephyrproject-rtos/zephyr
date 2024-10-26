@@ -14,9 +14,12 @@ struct stepper_fixture {
 
 struct k_poll_signal stepper_signal;
 struct k_poll_event stepper_event;
+void *user_data_received;
 
-static void stepper_print_event_callback(const struct device *dev, enum stepper_event event)
+static void stepper_print_event_callback(const struct device *dev, enum stepper_event event,
+					void *user_data)
 {
+	user_data_received = user_data;
 	switch (event) {
 	case STEPPER_EVENT_STEPS_COMPLETED:
 		k_poll_signal_raise(&stepper_signal, STEPPER_EVENT_STEPS_COMPLETED);
@@ -45,7 +48,7 @@ static void *stepper_setup(void)
 	k_poll_signal_init(&stepper_signal);
 	k_poll_event_init(&stepper_event, K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY,
 			  &stepper_signal);
-
+	user_data_received = NULL;
 	zassert_not_null(fixture.dev);
 	return &fixture;
 }
@@ -80,8 +83,12 @@ ZTEST_F(stepper, test_target_position)
 	int32_t pos = 100u;
 
 	(void)stepper_set_max_velocity(fixture->dev, 100u);
-	(void)stepper_set_callback(fixture->dev, fixture->callback, NULL);
+
+	/* Pass the function name as user data */
+	(void)stepper_set_callback(fixture->dev, fixture->callback, &fixture);
+
 	(void)stepper_set_target_position(fixture->dev, pos);
+
 	(void)k_poll(&stepper_event, 1, K_SECONDS(5));
 	unsigned int signaled;
 	int result;
@@ -91,4 +98,5 @@ ZTEST_F(stepper, test_target_position)
 	zassert_equal(result, STEPPER_EVENT_STEPS_COMPLETED, "Signal not set");
 	(void)stepper_get_actual_position(fixture->dev, &pos);
 	zassert_equal(pos, 100u, "Target position should be %d but is %d", 100u, pos);
+	zassert_equal(user_data_received, &fixture, "User data not received");
 }

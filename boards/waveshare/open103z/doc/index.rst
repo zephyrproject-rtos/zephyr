@@ -1,14 +1,9 @@
-.. _waveshare_open103z_board:
-
-Waveshare Open103Z
-##################
+.. zephyr:board:: waveshare_open103z
 
 Overview
 ********
 
 The Waveshare Open103Z-64 is a development board equipped with STM32F103ZE MCU.
-
-.. image:: img/waveshare_open103z.jpg
 
 Hardware
 ********

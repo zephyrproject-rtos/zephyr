@@ -1,7 +1,4 @@
-.. _stm3210c_eval_board:
-
-ST STM3210C Evaluation
-######################
+.. zephyr:board:: stm3210c_eval
 
 Overview
 ********
@@ -14,10 +11,6 @@ audio DAC, MEMS, EEPROM and more) and develop your own applications.
 
 Extension headers make it easy to connect a daughterboard or wrapping board for your specific
 application.
-
-.. image:: img/stm3210c_eval.jpg
-     :align: center
-     :alt: STM3210C-EVAL
 
 More information about the board can be found at the `STM3210C-EVAL website`_.
 

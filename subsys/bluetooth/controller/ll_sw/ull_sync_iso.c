@@ -31,18 +31,26 @@
 #include "lll/lll_df_types.h"
 #include "lll_sync.h"
 #include "lll_sync_iso.h"
+#include "lll_conn.h"
+#include "lll_conn_iso.h"
 
 #include "isoal.h"
+
+#include "ull_tx_queue.h"
 
 #include "ull_scan_types.h"
 #include "ull_sync_types.h"
 #include "ull_iso_types.h"
+#include "ull_conn_types.h"
+#include "ull_conn_iso_types.h"
 
 #include "ull_internal.h"
 #include "ull_scan_internal.h"
 #include "ull_sync_internal.h"
 #include "ull_iso_internal.h"
 #include "ull_sync_iso_internal.h"
+#include "ull_conn_internal.h"
+#include "ull_conn_iso_internal.h"
 
 #include "ll.h"
 

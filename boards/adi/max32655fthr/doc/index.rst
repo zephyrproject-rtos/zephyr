@@ -1,7 +1,4 @@
-.. _max32655_fthr:
-
-MAX32655FTHR
-############
+.. zephyr:board:: max32655fthr
 
 Overview
 ********

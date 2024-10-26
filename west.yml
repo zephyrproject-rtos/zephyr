@@ -188,7 +188,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: 5f1210074cb8bb7ec66317af294596a97ac48815
+      revision: cb7600a1be4c8b177867e6d463729c07dd3f6d73
       path: modules/hal/nordic
       groups:
         - hal
@@ -198,7 +198,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 683c007c3b834012358b4adf96a532d18ce05646
+      revision: 4a4741fa2be33f6b638a49e357c5e33bb7ad0544
       path: modules/hal/nxp
       groups:
         - hal
@@ -223,7 +223,7 @@ manifest:
       groups:
         - hal
     - name: hal_silabs
-      revision: 5c7a7834a6df7882518a2da127f950d80987dfcb
+      revision: 69a5fad41aced94dc59d3103edd6ef370851e623
       path: modules/hal/silabs
       groups:
         - hal
@@ -259,7 +259,7 @@ manifest:
         - hal
     - name: hostap
       path: modules/lib/hostap
-      revision: ac59d28778b20cd68702f55dad2a27d648e3d571
+      revision: c533ab18dcf71795dcee61f4d2598ae31098f731
     - name: libmetal
       revision: a6851ba6dba8c9e87d00c42f171a822f7a29639b
       path: modules/hal/libmetal
@@ -285,7 +285,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: b9d69dd2a2d6df32da6608d549138288bb7d7aa5
+      revision: 33de65cebaf78b306501a4195dc0ce4008315e1a
       path: bootloader/mcuboot
       groups:
         - bootloader
@@ -300,7 +300,7 @@ manifest:
       groups:
         - tools
     - name: nrf_hw_models
-      revision: eeed2591d38e5e9bf89658df67555f2777249fc0
+      revision: aca798cf7cf0c5dc1fd89c66cf62670051feb8d0
       path: modules/bsim_hw_models/nrf_hw_models
     - name: open-amp
       revision: b735edbc739ad59156eb55bb8ce2583d74537719

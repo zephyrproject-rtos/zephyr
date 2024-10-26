@@ -1,7 +1,4 @@
-.. _frdm_mcxc242:
-
-NXP FRDM-MCXC242
-################
+.. zephyr:board:: frdm_mcxc242
 
 Overview
 ********
@@ -12,11 +9,6 @@ for easy access to the MCU’s I/Os, integrated open-standard serial
 interfaces and on-board MCU-Link debugger.
 The MCXC is a general purpose ultra-low-power MCU family,
 providing additional memory, communications and analog peripheral.
-
-
-.. image:: frdm_mcxc242.webp
-   :align: center
-   :alt: FRDM-MCXC242
 
 Hardware
 ********
@@ -65,6 +57,8 @@ The ``frdm_mcxc242`` board target supports the following hardware features:
 | FLASH     | on-chip    | soc flash                           |
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
+| USB       | on-chip    | USB device                          |
 +-----------+------------+-------------------------------------+
 | PWM       | on-chip    | pwm                                 |
 +-----------+------------+-------------------------------------+

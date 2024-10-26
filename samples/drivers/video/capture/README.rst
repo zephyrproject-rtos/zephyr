@@ -18,10 +18,10 @@ Supported camera modules on some i.MX RT boards can be found below.
 
 - `Camera iMXRT`_
 
-- :ref:`mimxrt1064_evk`
+- :zephyr:board:`mimxrt1064_evk`
 - `MT9M114 camera module`_
 
-- :ref:`mimxrt1170_evk`
+- :zephyr:board:`mimxrt1170_evk`
 - `OV5640 camera module`_
 
 Also :ref:`arduino_nicla_vision_board` can be used in this sample as capture device, in that case
@@ -30,11 +30,11 @@ The user can transfer the captured frames through on board USB.
 Wiring
 ******
 
-On :ref:`mimxrt1064_evk`, the MT9M114 camera module should be plugged in the
+On :zephyr:board:`mimxrt1064_evk`, the MT9M114 camera module should be plugged in the
 J35 camera connector. A USB cable should be connected from a host to the micro
 USB debug connector (J41) in order to get console output via the freelink interface.
 
-On :ref:`mimxrt1170_evk`, the OV5640 camera module should be plugged into the
+On :zephyr:board:`mimxrt1170_evk`, the OV5640 camera module should be plugged into the
 J2 camera connector. A USB cable should be connected from a host to the micro
 USB debug connector (J11) in order to get console output via the daplink interface.
 
@@ -43,7 +43,7 @@ For :ref:`arduino_nicla_vision_board` there is no extra wiring required.
 Building and Running
 ********************
 
-For :ref:`mimxrt1064_evk`, build this sample application with the following commands:
+For :zephyr:board:`mimxrt1064_evk`, build this sample application with the following commands:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/video/capture
@@ -52,7 +52,7 @@ For :ref:`mimxrt1064_evk`, build this sample application with the following comm
    :goals: build
    :compact:
 
-For :ref:`mimxrt1170_evk`, build this sample application with the following commands:
+For :zephyr:board:`mimxrt1170_evk`, build this sample application with the following commands:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/video/capture
@@ -106,6 +106,8 @@ Sample Output
 
 References
 **********
+
+.. target-notes::
 
 .. _Camera iMXRT: https://community.nxp.com/t5/i-MX-RT-Knowledge-Base/Connecting-camera-and-LCD-to-i-MX-RT-EVKs/ta-p/1122183
 .. _MT9M114 camera module: https://www.onsemi.com/PowerSolutions/product.do?id=MT9M114

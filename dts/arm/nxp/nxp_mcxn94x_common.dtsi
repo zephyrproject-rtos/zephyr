@@ -825,13 +825,11 @@
 
 	};
 
-	lpadc0: lpadc@10d000 {
+	lpadc0: adc@10d000 {
 		compatible = "nxp,lpc-lpadc";
 		reg = <0x10d000 0x1000>;
 		interrupts = <45 0>;
 		status = "disabled";
-		clk-divider = <1>;
-		clk-source = <0>;
 		voltage-ref= <1>;
 		calibration-average = <128>;
 		power-level = <0>;
@@ -842,13 +840,11 @@
 		nxp,references = <&vref 1800>;
 	};
 
-	lpadc1: lpadc@10e000 {
+	lpadc1: adc@10e000 {
 		compatible = "nxp,lpc-lpadc";
 		reg = <0x10e000 0x1000>;
 		interrupts = <46 0>;
 		status = "disabled";
-		clk-divider = <1>;
-		clk-source = <0>;
 		voltage-ref= <0>;
 		calibration-average = <128>;
 		power-level = <1>;
@@ -931,6 +927,31 @@
 		resolution = <32>;
 	};
 
+	i3c0: i3c@21000 {
+		compatible = "nxp,mcux-i3c";
+		reg = <0x21000 0x1000>;
+		interrupts = <95 0>;
+		clocks = <&syscon MCUX_I3C_CLK>;
+		clk-divider = <6>;
+		clk-divider-slow = <1>;
+		clk-divider-tc = <1>;
+		status = "disabled";
+		#address-cells = <3>;
+		#size-cells = <0>;
+	};
+
+	i3c1: i3c@22000 {
+		compatible = "nxp,mcux-i3c";
+		reg = <0x22000 0x1000>;
+		interrupts = <96 0>;
+		clocks = <&syscon MCUX_I3C2_CLK>;
+		clk-divider = <6>;
+		clk-divider-slow = <1>;
+		clk-divider-tc = <1>;
+		status = "disabled";
+		#address-cells = <3>;
+		#size-cells = <0>;
+	};
 
 	flexio0: flexio@105000 {
 		compatible = "nxp,flexio";
@@ -975,6 +996,17 @@
 			reg = <3>;
 			status = "disabled";
 		};
+	};
+
+	rtc: rtc@4c000 {
+		compatible = "nxp,irtc";
+		reg = <0x4c000 0x1000>;
+		status = "disabled";
+		interrupts = <52 0>;
+		prescaler = <1>;
+		clock-frequency = <16384>;
+		clock-src = <0>;
+		alarms-count = <1>;
 	};
 };
 

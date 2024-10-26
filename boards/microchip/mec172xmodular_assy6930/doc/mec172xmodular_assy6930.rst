@@ -1,20 +1,10 @@
-.. _mec172xmodular_6930:
-
-Microchip MEC172x Modular Card ASSY6930 (Rev. B)
-################################################
+.. zephyr:board:: mec172xmodular_assy6930
 
 Overview
 ********
 The MEC172x Modular Card ASSY6930 (Rev. B) is a development board to evaluate the
 Microchip MEC172X series microcontrollers.  This board can work standalone
 or be mated with any platform that complies with MECC specification.
-
-
-.. image:: ./mec172xmodular_assy6930.jpg
-   :width: 576px
-   :align: center
-   :alt: MEC172x Modular ASSY 6930
-
 
 Hardware
 ********

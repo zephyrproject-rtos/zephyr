@@ -298,6 +298,7 @@ uint8_t btp_bap_broadcast_source_setup(const void *cmd, uint16_t cmd_len,
 	const struct btp_bap_broadcast_source_setup_cmd *cp = cmd;
 	struct btp_bap_broadcast_source_setup_rp *rp = rsp;
 	struct bt_le_adv_param param = *BT_LE_EXT_ADV_NCONN;
+	uint32_t broadcast_id;
 
 	/* Only one local source/BIG supported for now */
 	struct btp_bap_broadcast_local_source *source = &local_source;
@@ -338,16 +339,16 @@ uint8_t btp_bap_broadcast_source_setup(const void *cmd, uint16_t cmd_len,
 		return BTP_STATUS_FAILED;
 	}
 
-	err = bt_bap_broadcast_source_get_id(source->bap_broadcast, &source->broadcast_id);
-	if (err != 0) {
-		LOG_DBG("Unable to get broadcast ID: %d", err);
+	err = bt_rand(&broadcast_id, BT_AUDIO_BROADCAST_ID_SIZE);
+	if (err) {
+		LOG_DBG("Unable to generate broadcast ID: %d\n", err);
 
 		return BTP_STATUS_FAILED;
 	}
 
 	/* Setup extended advertising data */
 	net_buf_simple_add_le16(&ad_buf, BT_UUID_BROADCAST_AUDIO_VAL);
-	net_buf_simple_add_le24(&ad_buf, source->broadcast_id);
+	net_buf_simple_add_le24(&ad_buf, broadcast_id);
 	base_ad[0].type = BT_DATA_SVC_DATA16;
 	base_ad[0].data_len = ad_buf.len;
 	base_ad[0].data = ad_buf.data;
@@ -387,7 +388,7 @@ uint8_t btp_bap_broadcast_source_setup(const void *cmd, uint16_t cmd_len,
 	}
 
 	rp->gap_settings = gap_settings;
-	sys_put_le24(source->broadcast_id, rp->broadcast_id);
+	sys_put_le24(broadcast_id, rp->broadcast_id);
 	*rsp_len = sizeof(*rp) + 1;
 
 	return BTP_STATUS_SUCCESS;
@@ -938,7 +939,7 @@ static int pa_sync_term_req_cb(struct bt_conn *conn,
 
 static void broadcast_code_cb(struct bt_conn *conn,
 			      const struct bt_bap_scan_delegator_recv_state *recv_state,
-			      const uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE])
+			      const uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE])
 {
 	int err;
 	uint32_t index_bitfield;
@@ -954,8 +955,7 @@ static void broadcast_code_cb(struct bt_conn *conn,
 	}
 
 	broadcaster->sink_recv_state = recv_state;
-	(void)memcpy(broadcaster->sink_broadcast_code, broadcast_code,
-		     BT_AUDIO_BROADCAST_CODE_SIZE);
+	(void)memcpy(broadcaster->sink_broadcast_code, broadcast_code, BT_ISO_BROADCAST_CODE_SIZE);
 
 	if (!broadcaster->requested_bis_sync) {
 		return;

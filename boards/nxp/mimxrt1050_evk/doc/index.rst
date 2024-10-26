@@ -1,7 +1,4 @@
-.. _mimxrt1050_evk:
-
-NXP MIMXRT1050-EVK
-##################
+.. zephyr:board:: mimxrt1050_evk
 
 Overview
 ********
@@ -16,10 +13,6 @@ interfaces for connecting peripherals, such as WLAN, Bluetooth™, GPS, displays
 and camera sensors. As with other i.MX processors, i.MX RT1050 also has rich
 audio and video features, including LCD display, basic 2D graphics, camera
 interface, SPDIF, and I2S audio interface.
-
-.. image:: mimxrt1050_evk.jpg
-   :align: center
-   :alt: MIMXRT1050-EVK
 
 Hardware
 ********
@@ -104,7 +97,7 @@ Supported Features
 
 The mimxrt1050_evk board configuration supports the hardware features listed
 below.  For additional features not yet supported, please also refer to the
-:ref:`mimxrt1064_evk` , which is the superset board in NXP's i.MX RT10xx family.
+:zephyr:board:`mimxrt1064_evk` , which is the superset board in NXP's i.MX RT10xx family.
 NXP prioritizes enabling the superset board with NXP's Full Platform Support for
 Zephyr.  Therefore, the mimxrt1064_evk board may have additional features
 already supported, which can also be re-used on this mimxrt1050_evk board:

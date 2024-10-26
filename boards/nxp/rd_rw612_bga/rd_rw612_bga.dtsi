@@ -19,6 +19,7 @@
 		watchdog0 = &wwdt;
 		dmic-dev = &dmic0;
 		mcuboot-button0 = &sw_4;
+		pwm-0 = &sctimer;
 	};
 
 	chosen {
@@ -261,6 +262,12 @@ nxp_8080_touch_panel_i2c: &arduino_i2c {
 
 &ctimer0 {
 	status = "okay";
+};
+
+&sctimer {
+	status = "okay";
+	pinctrl-0 = <&pinmux_pwm0>;
+	pinctrl-names = "default";
 };
 
 &pmu {

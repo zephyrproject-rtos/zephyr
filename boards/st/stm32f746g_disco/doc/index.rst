@@ -1,7 +1,4 @@
-.. _stm32f746g_disco_board:
-
-ST STM32F746G Discovery
-#######################
+.. zephyr:board:: stm32f746g_disco
 
 Overview
 ********
@@ -34,10 +31,6 @@ and high-speed connectivity features. Important board features include:
 - USB OTG HS with Micro-AB connectors
 - USB OTG FS with Micro-AB connectors
 - Ethernet connector compliant with IEEE-802.3-2002
-
-.. image:: img/stm32f746g_disco.jpg
-     :align: center
-     :alt: STM32F746G-DISCO
 
 More information about the board can be found at the `32F746G-DISCO website`_.
 

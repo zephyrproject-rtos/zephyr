@@ -10,7 +10,7 @@
 
 config BT_VCP_VOL_REND
 	bool "Volume Control Profile Volume Renderer Support"
-	select BT_GATT_DYNAMIC_DB
+	depends on BT_GATT_DYNAMIC_DB
 	help
 	  This option enables support for Volume Control Profile Volume Renderer
 	  role and the Volume Control Service.

@@ -311,6 +311,11 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	/* Re-initialize the Tx Q */
 	ull_tx_q_init(&conn->tx_q);
 
+	conn_lll->tifs_tx_us = EVENT_IFS_DEFAULT_US;
+	conn_lll->tifs_rx_us = EVENT_IFS_DEFAULT_US;
+	conn_lll->tifs_hcto_us = EVENT_IFS_DEFAULT_US;
+	conn_lll->tifs_cis_us = EVENT_IFS_DEFAULT_US;
+
 	/* TODO: active_to_start feature port */
 	conn->ull.ticks_active_to_start = 0U;
 	conn->ull.ticks_prepare_to_start =
@@ -363,7 +368,7 @@ conn_is_valid:
 
 	/* Calculate event time reservation */
 	slot_us = max_tx_time + max_rx_time;
-	slot_us += EVENT_IFS_US + (EVENT_CLOCK_JITTER_US << 1);
+	slot_us += conn_lll->tifs_rx_us + (EVENT_CLOCK_JITTER_US << 1);
 	slot_us += ready_delay_us;
 	slot_us += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
 
@@ -380,8 +385,8 @@ conn_is_valid:
 						 NULL);
 	}
 
-	if (own_addr_type == BT_ADDR_LE_PUBLIC_ID ||
-	    own_addr_type == BT_ADDR_LE_RANDOM_ID) {
+	if (own_addr_type == BT_HCI_OWN_ADDR_RPA_OR_PUBLIC ||
+	    own_addr_type == BT_HCI_OWN_ADDR_RPA_OR_RANDOM) {
 
 		/* Generate RPAs if required */
 		ull_filter_rpa_update(false);
@@ -722,7 +727,7 @@ void ull_central_setup(struct node_rx_pdu *rx, struct node_rx_ftr *ftr,
 		ll_rl_id_addr_get(rl_idx, &cc->peer_addr_type,
 				  &cc->peer_addr[0]);
 		/* Mark it as identity address from RPA (0x02, 0x03) */
-		cc->peer_addr_type += 2;
+		MARK_AS_IDENTITY_ADDR(cc->peer_addr_type);
 
 		/* Store peer RPA */
 		memcpy(&cc->peer_rpa[0], &peer_addr[0], BDADDR_SIZE);
@@ -748,6 +753,11 @@ void ull_central_setup(struct node_rx_pdu *rx, struct node_rx_ftr *ftr,
 
 	/* Set LLCP as connection-wise connected */
 	ull_cp_state_set(conn, ULL_CP_CONNECTED);
+
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER)
+	/* Set default PAST parameters */
+	conn->past = ull_conn_default_past_param_get();
+#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER */
 
 #if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
 	lll->tx_pwr_lvl = RADIO_TXP_DEFAULT;

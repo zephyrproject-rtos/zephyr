@@ -47,12 +47,12 @@ if(CONFIG_SOC_GECKO_HAS_RADIO)
   )
 
   # sl_protocol_crypto
-  zephyr_library_sources_ifdef(CONFIG_BT_SILABS_HCI
+  zephyr_library_sources_ifdef(CONFIG_BT_SILABS_EFR32
     ${SECURITY_DIR}/sl_component/sl_protocol_crypto/src/sli_radioaes_management.c
     ${SECURITY_DIR}/sl_component/sl_protocol_crypto/src/sli_protocol_crypto_radioaes.c
   )
 
-  if(CONFIG_BT_SILABS_HCI)
+  if(CONFIG_BT_SILABS_EFR32)
     # prebuilt libs
     add_prebuilt_library(liblinklayer protocol/bluetooth/bgstack/ll/lib/libbluetooth_controller_efr32xg${SILABS_DEVICE_FAMILY_NUMBER}_gcc_release.a)
     add_prebuilt_library(libbgcommon  protocol/bluetooth/bgcommon/lib/build/gcc/cortex-m33/bgcommon/release/libbgcommon.a)
@@ -114,15 +114,6 @@ zephyr_compile_definitions(
   ${SILABS_DEVICE_PART_NUMBER}
 )
 
-zephyr_compile_definitions_ifdef(CONFIG_SOC_GECKO_DEV_INIT
-  SL_CATALOG_POWER_MANAGER_PRESENT
-  SL_CATALOG_HFXO_MANAGER_PRESENT
-)
-
-zephyr_compile_options(
-  -mcmse # Cortex-M Security Extensions are needed for startup code
-)
-
 zephyr_library_sources(
   ${DEVICE_DIR}/SiliconLabs/${SILABS_DEVICE_FAMILY}/Source/system_${CONFIG_SOC_SERIES}.c
   ${EMLIB_DIR}/src/em_system.c
@@ -135,6 +126,7 @@ zephyr_library_sources(
   ${SERVICE_DIR}/device_manager/src/sl_device_clock.c
   ${SERVICE_DIR}/device_manager/src/sl_device_gpio.c
   ${SERVICE_DIR}/device_manager/src/sl_device_peripheral.c
+  ${SERVICE_DIR}/memory_manager/profiler/src/sli_memory_profiler_stubs.c
 )
 
 if(NOT SILABS_DEVICE_FAMILY_NUMBER EQUAL "21")
@@ -143,22 +135,54 @@ if(NOT SILABS_DEVICE_FAMILY_NUMBER EQUAL "21")
   )
 endif()
 
+# Sleeptimer
+if(CONFIG_SOC_SILABS_SLEEPTIMER)
+  zephyr_library_sources(
+    ${PERIPHERAL_DIR}/src/sl_hal_sysrtc.c
+    ${SERVICE_DIR}/sleeptimer/src/sl_sleeptimer_hal_rtcc.c
+    ${SERVICE_DIR}/sleeptimer/src/sl_sleeptimer_hal_sysrtc.c
+    ${SERVICE_DIR}/sleeptimer/src/sl_sleeptimer.c
+  )
+  zephyr_compile_definitions(
+    SL_CATALOG_SLEEPTIMER_PRESENT
+  )
+endif()
+
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_IADC         ${EMLIB_DIR}/src/em_iadc.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_BURTC        ${EMLIB_DIR}/src/em_burtc.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_CMU          ${EMLIB_DIR}/src/em_cmu.c)
 
+# Device Init
 if(CONFIG_SOC_GECKO_DEV_INIT)
-zephyr_library_sources_ifdef(CONFIG_DT_HAS_SILABS_SERIES2_DCDC_ENABLED
-  ${SERVICE_DIR}/device_init/src/sl_device_init_dcdc_s2.c
-)
+  zephyr_library_sources_ifdef(CONFIG_DT_HAS_SILABS_SERIES2_DCDC_ENABLED
+    ${SERVICE_DIR}/device_init/src/sl_device_init_dcdc_s2.c
+  )
 endif()
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_DEV_INIT
-  ${SERVICE_DIR}/power_manager/src/sl_power_manager.c
-  ${SERVICE_DIR}/power_manager/src/sl_power_manager_hal_s2.c
-  ${SERVICE_DIR}/hfxo_manager/src/sl_hfxo_manager.c
-  ${SERVICE_DIR}/hfxo_manager/src/sl_hfxo_manager_hal_s2.c
-  ${SERVICE_DIR}/memory_manager/profiler/src/sli_memory_profiler_stubs.c
-)
+
+# Power Manager
+if(CONFIG_SOC_GECKO_PM_BACKEND_PMGR)
+  zephyr_library_sources(
+    ${SERVICE_DIR}/power_manager/src/sl_power_manager.c
+    ${SERVICE_DIR}/power_manager/src/sl_power_manager_hal_s2.c
+  )
+  zephyr_compile_definitions(
+    SL_CATALOG_POWER_MANAGER_PRESENT
+  )
+  zephyr_compile_definitions_ifdef(CONFIG_SOC_GECKO_RTCC
+    SL_CATALOG_POWER_MANAGER_DEEPSLEEP_BLOCKING_HFXO_RESTORE_PRESENT
+  )
+endif()
+
+# HFXO Manager
+if(CONFIG_SOC_SILABS_HFXO_MANAGER)
+  zephyr_library_sources(
+    ${SERVICE_DIR}/hfxo_manager/src/sl_hfxo_manager.c
+    ${SERVICE_DIR}/hfxo_manager/src/sl_hfxo_manager_hal_s2.c
+  )
+  zephyr_compile_definitions(
+    SL_CATALOG_HFXO_MANAGER_PRESENT
+  )
+endif()
 
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_DEV_INIT     ${COMMON_DIR}/src/sl_slist.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_CORE
@@ -176,12 +200,6 @@ zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_PRS          ${EMLIB_DIR}/src/em_p
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_RMU          ${EMLIB_DIR}/src/em_rmu.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_RTC          ${EMLIB_DIR}/src/em_rtc.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_RTCC         ${EMLIB_DIR}/src/em_rtcc.c)
-zephyr_library_sources_ifdef(CONFIG_COUNTER_GECKO_STIMER
-  ${PERIPHERAL_DIR}/src/sl_hal_sysrtc.c
-  ${SERVICE_DIR}/sleeptimer/src/sl_sleeptimer_hal_rtcc.c
-  ${SERVICE_DIR}/sleeptimer/src/sl_sleeptimer_hal_sysrtc.c
-  ${SERVICE_DIR}/sleeptimer/src/sl_sleeptimer.c
-)
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_EUSART       ${EMLIB_DIR}/src/em_eusart.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_TIMER        ${EMLIB_DIR}/src/em_timer.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_USART        ${EMLIB_DIR}/src/em_usart.c)

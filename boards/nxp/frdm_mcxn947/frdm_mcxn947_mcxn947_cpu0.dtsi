@@ -32,6 +32,7 @@
 	aliases{
 		watchdog0 = &wwdt0;
 		pwm-0 = &flexpwm1_pwm0;
+		rtc = &rtc;
 	};
 };
 
@@ -189,10 +190,18 @@ zephyr_udc0: &usb1 {
 	status = "okay";
 };
 
+&i3c1 {
+	status = "okay";
+};
+
 &flexio0 {
 	status = "okay";
 };
 
 &mrt0_channel0 {
+	status = "okay";
+};
+
+&rtc {
 	status = "okay";
 };

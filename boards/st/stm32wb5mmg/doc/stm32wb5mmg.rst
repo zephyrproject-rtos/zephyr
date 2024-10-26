@@ -1,7 +1,4 @@
-.. _stm32wb5mmg_bluetooth_module:
-
-ST STM32WB5MMG
-################
+.. zephyr:board:: stm32wb5mmg
 
 Overview
 ********
@@ -32,10 +29,6 @@ STM32WB5MMG supports the following features:
 - Ultra-low-power modes for battery longevity
 - 68 GPIOs
 - SWD, JTAG
-
-.. image:: img/STM32WB5MMG.jpg
-   :align: center
-   :alt: STM32WB5MMG
 
 More information about the board can be found at the `` `STM32WB5MMG on www.st.com`_.
 

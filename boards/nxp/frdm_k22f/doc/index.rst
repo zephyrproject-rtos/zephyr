@@ -1,7 +1,4 @@
-.. _frdm_k22f:
-
-NXP FRDM-K22F
-##############
+.. zephyr:board:: frdm_k22f
 
 Overview
 ********
@@ -18,10 +15,6 @@ MCUs.
 - OpenSDAv2, the NXP open source hardware embedded serial and debug adapter
   running an open source bootloader, offers options for serial communication,
   flash programming, and run-control debugging
-
-.. image:: frdm_k22f.jpg
-   :align: center
-   :alt: FRDM-K22F
 
 Hardware
 ********
@@ -59,7 +52,7 @@ Supported Features
 
 The frdm_k22f board configuration supports the hardware features listed
 below.  For additional features not yet supported, please also refer to the
-:ref:`frdm_k64f`, which is the superset board in NXP's Kinetis K series.
+:zephyr:board:`frdm_k64f`, which is the superset board in NXP's Kinetis K series.
 NXP prioritizes enabling the superset board with NXP's Full Platform Support for
 Zephyr.  Therefore, the frdm_k64f board may have additional features
 already supported, which can also be re-used on this frdm_k22f board:

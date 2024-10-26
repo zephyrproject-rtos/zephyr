@@ -1,7 +1,4 @@
-.. _imx93_evk:
-
-NXP i.MX93 EVK
-##############
+.. zephyr:board:: imx93_evk
 
 Overview
 ********

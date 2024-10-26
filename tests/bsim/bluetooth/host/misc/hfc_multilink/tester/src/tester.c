@@ -14,6 +14,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/hci_raw.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/gap.h>
 
 #include "common/bt_str.h"
@@ -467,7 +468,7 @@ static void start_adv(uint16_t interval, const char *name, size_t name_len)
 	set_param.channel_map = 0x07;
 	set_param.filter_policy = BT_LE_ADV_FP_NO_FILTER;
 	set_param.type = BT_HCI_ADV_IND;
-	set_param.own_addr_type = 0x01; /* random */
+	set_param.own_addr_type = BT_HCI_OWN_ADDR_RANDOM;
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_PARAM, sizeof(set_param));
 	__ASSERT_NO_MSG(buf);

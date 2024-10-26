@@ -1,7 +1,4 @@
-.. _stm32l496g_disco_board:
-
-ST STM32L496G Discovery
-#######################
+.. zephyr:board:: stm32l496g_disco
 
 Overview
 ********
@@ -40,10 +37,6 @@ some highlights of the STM32L496G Discovery board:
 - 8 LEDs
 - Reset push button
 - 4 direction-joystick with selection
-
-.. image:: img/stm32l496g_disco.jpg
-     :align: center
-     :alt: STM32L496G Discovery
 
 More information about the board can be found at the `STM32L496G Discovery website`_.
 

@@ -1,7 +1,4 @@
-.. _slwrb4255a:
-
-EFR32FG13 2400/915 MHz 19 dBm Dual Band (SLWRB4255A)
-####################################################
+.. zephyr:board:: slwrb4255a
 
 Overview
 ********
@@ -9,12 +6,6 @@ Overview
 The EFR32FG13P Flex Gecko 2.4 GHz and 915 MHz Radio Board is delivered as a
 `standalone Proprietary Wireless radio board`_. It contains a EFR32FG13P Wireless
 SoC built on an ARM Cortex®-M4F processor with excellent low power capabilities.
-
-.. figure:: efr32fg13-slwrb4255a.jpg
-   :align: center
-   :alt: SLWRB4255A Flex Gecko 2.4 GHz and 915 MHz Radio Board
-
-   SLWRB4255A (image courtesy of Silicon Labs)
 
 The BRD4255A a.k.a. SLWRB4255A radio board plugs into the Wireless Starter Kit
 Mainboard BRD4001A and is supported as one of :ref:`silabs_radio_boards`.

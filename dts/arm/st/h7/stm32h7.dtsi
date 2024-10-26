@@ -144,7 +144,7 @@
 			compatible = "st,stm32-flash-controller", "st,stm32h7-flash-controller";
 			reg = <0x52002000 0x400>;
 			interrupts = <4 0>;
-			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x00000100>;
+			clocks = <&rcc STM32_CLOCK(AHB3, 8U)>;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -187,7 +187,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x58020000 0x400>;
-				clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00000001>;
+				clocks = <&rcc STM32_CLOCK(AHB4, 0U)>;
 			};
 
 			gpiob: gpio@58020400 {
@@ -195,7 +195,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x58020400 0x400>;
-				clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00000002>;
+				clocks = <&rcc STM32_CLOCK(AHB4, 1U)>;
 			};
 
 			gpioc: gpio@58020800 {
@@ -203,7 +203,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x58020800 0x400>;
-				clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00000004>;
+				clocks = <&rcc STM32_CLOCK(AHB4, 2U)>;
 			};
 
 			gpiod: gpio@58020C00 {
@@ -211,7 +211,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x58020C00 0x400>;
-				clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00000008>;
+				clocks = <&rcc STM32_CLOCK(AHB4, 3U)>;
 			};
 
 			gpioe: gpio@58021000 {
@@ -219,7 +219,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x58021000 0x400>;
-				clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00000010>;
+				clocks = <&rcc STM32_CLOCK(AHB4, 4U)>;
 			};
 
 			gpiof: gpio@58021400 {
@@ -227,7 +227,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x58021400 0x400>;
-				clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00000020>;
+				clocks = <&rcc STM32_CLOCK(AHB4, 5U)>;
 			};
 
 			gpiog: gpio@58021800 {
@@ -235,7 +235,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x58021800 0x400>;
-				clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00000040>;
+				clocks = <&rcc STM32_CLOCK(AHB4, 6U)>;
 			};
 
 			gpioh: gpio@58021C00 {
@@ -243,7 +243,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x58021C00 0x400>;
-				clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00000080>;
+				clocks = <&rcc STM32_CLOCK(AHB4, 7U)>;
 			};
 
 			gpioi: gpio@58022000 {
@@ -251,7 +251,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x58022000 0x400>;
-				clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00000100>;
+				clocks = <&rcc STM32_CLOCK(AHB4, 8U)>;
 			};
 
 			gpioj: gpio@58022400 {
@@ -259,7 +259,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x58022400 0x400>;
-				clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00000200>;
+				clocks = <&rcc STM32_CLOCK(AHB4, 9U)>;
 			};
 
 			gpiok: gpio@58022800 {
@@ -267,7 +267,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x58022800 0x400>;
-				clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00000400>;
+				clocks = <&rcc STM32_CLOCK(AHB4, 10U)>;
 			};
 		};
 
@@ -280,7 +280,7 @@
 		wwdg: wwdg1: watchdog@50003000 {
 			compatible = "st,stm32-window-watchdog";
 			reg = <0x50003000 0x1000>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00000040>;
+			clocks = <&rcc STM32_CLOCK(APB3, 6U)>;
 			interrupts = <0 7>;
 			status = "disabled";
 		};
@@ -288,7 +288,7 @@
 		usart1: serial@40011000 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40011000 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000010>;
+			clocks = <&rcc STM32_CLOCK(APB2, 4U)>;
 			resets = <&rctl STM32_RESET(APB2, 4U)>;
 			interrupts = <37 0>;
 			status = "disabled";
@@ -296,7 +296,7 @@
 		usart2: serial@40004400 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40004400 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00020000>;
+			clocks = <&rcc STM32_CLOCK(APB1, 17U)>;
 			resets = <&rctl STM32_RESET(APB1L, 17U)>;
 			interrupts = <38 0>;
 			status = "disabled";
@@ -304,7 +304,7 @@
 		usart3: serial@40004800 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40004800 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00040000>;
+			clocks = <&rcc STM32_CLOCK(APB1, 18U)>;
 			resets = <&rctl STM32_RESET(APB1L, 18U)>;
 			interrupts = <39 0>;
 			status = "disabled";
@@ -312,7 +312,7 @@
 		uart4: serial@40004c00 {
 			compatible ="st,stm32-uart";
 			reg = <0x40004c00 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00080000>;
+			clocks = <&rcc STM32_CLOCK(APB1, 19U)>;
 			resets = <&rctl STM32_RESET(APB1L, 19U)>;
 			interrupts = <52 0>;
 			status = "disabled";
@@ -320,7 +320,7 @@
 		uart5: serial@40005000 {
 			compatible = "st,stm32-uart";
 			reg = <0x40005000 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00100000>;
+			clocks = <&rcc STM32_CLOCK(APB1, 20U)>;
 			resets = <&rctl STM32_RESET(APB1L, 20U)>;
 			interrupts = <53 0>;
 			status = "disabled";
@@ -328,7 +328,7 @@
 		usart6: serial@40011400 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40011400 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000020>;
+			clocks = <&rcc STM32_CLOCK(APB2, 5U)>;
 			resets = <&rctl STM32_RESET(APB2, 5U)>;
 			interrupts = <71 0>;
 			status = "disabled";
@@ -336,7 +336,7 @@
 		uart7: serial@40007800 {
 			compatible = "st,stm32-uart";
 			reg = <0x40007800 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x40000000>;
+			clocks = <&rcc STM32_CLOCK(APB1, 30U)>;
 			resets = <&rctl STM32_RESET(APB1L, 30U)>;
 			interrupts = <82 0>;
 			status = "disabled";
@@ -344,7 +344,7 @@
 		uart8: serial@40007c00 {
 			compatible = "st,stm32-uart";
 			reg = <0x40007c00 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>;
+			clocks = <&rcc STM32_CLOCK(APB1, 31U)>;
 			resets = <&rctl STM32_RESET(APB1L, 31U)>;
 			interrupts = <83 0>;
 			status = "disabled";
@@ -353,7 +353,7 @@
 		lpuart1: serial@58000c00 {
 			compatible = "st,stm32-lpuart", "st,stm32-uart";
 			reg = <0x58000c00 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB4 0x00000008>;
+			clocks = <&rcc STM32_CLOCK(APB4, 3U)>;
 			resets = <&rctl STM32_RESET(APB4, 3U)>;
 			interrupts = <142 0>;
 			status = "disabled";
@@ -363,7 +363,7 @@
 			compatible = "st,stm32-rtc";
 			reg = <0x58004000 0x400>;
 			interrupts = <41 0>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB4 0x00010000>;
+			clocks = <&rcc STM32_CLOCK(APB4, 16U)>;
 			prescaler = <32768>;
 			alarms-count = <2>;
 			alrm-exti-line = <17>;
@@ -376,7 +376,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40005400 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00200000>;
+			clocks = <&rcc STM32_CLOCK(APB1, 21U)>;
 			interrupts = <31 0>, <32 0>;
 			interrupt-names = "event", "error";
 			status = "disabled";
@@ -388,7 +388,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40005800 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00400000>;
+			clocks = <&rcc STM32_CLOCK(APB1, 22U)>;
 			interrupts = <33 0>, <34 0>;
 			interrupt-names = "event", "error";
 			status = "disabled";
@@ -400,7 +400,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40005c00 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00800000>;
+			clocks = <&rcc STM32_CLOCK(APB1, 23U)>;
 			interrupts = <72 0>, <73 0>;
 			interrupt-names = "event", "error";
 			status = "disabled";
@@ -412,7 +412,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x58001c00 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB4 0x00000080>;
+			clocks = <&rcc STM32_CLOCK(APB4, 7U)>;
 			interrupts = <95 0>, <96 0>;
 			interrupt-names = "event", "error";
 			status = "disabled";
@@ -423,7 +423,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40013000 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00001000>,
+			clocks = <&rcc STM32_CLOCK(APB2, 12U)>,
 				<&rcc STM32_SRC_PLL1_Q SPI123_SEL(0)>;
 			interrupts = <35 0>;
 			status = "disabled";
@@ -434,7 +434,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40003800 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00004000>,
+			clocks = <&rcc STM32_CLOCK(APB1, 14U)>,
 				<&rcc STM32_SRC_PLL1_Q SPI123_SEL(0)>;
 			interrupts = <36 0>;
 			status = "disabled";
@@ -445,7 +445,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40003c00 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00008000>,
+			clocks = <&rcc STM32_CLOCK(APB1, 15U)>,
 				<&rcc STM32_SRC_PLL1_Q SPI123_SEL(0)>;
 			interrupts = <51 0>;
 			status = "disabled";
@@ -456,7 +456,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40013400 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00002000>;
+			clocks = <&rcc STM32_CLOCK(APB2, 13U)>;
 			interrupts = <84 0>;
 			status = "disabled";
 		};
@@ -466,7 +466,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40015000 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00100000>;
+			clocks = <&rcc STM32_CLOCK(APB2, 20U)>;
 			interrupts = <85 0>;
 			status = "disabled";
 		};
@@ -476,7 +476,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x58001400 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB4 0x00000020>;
+			clocks = <&rcc STM32_CLOCK(APB4, 5U)>;
 			interrupts = <86 0>;
 			status = "disabled";
 		};
@@ -486,7 +486,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40013000 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00001000>,
+			clocks = <&rcc STM32_CLOCK(APB2, 12U)>,
 				 <&rcc STM32_SRC_PLL1_Q SPI123_SEL(0)>;
 			dmas = <&dmamux1 0 38 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)
 				&dmamux1 1 37 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
@@ -500,7 +500,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40003800 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00004000>,
+			clocks = <&rcc STM32_CLOCK(APB1, 14U)>,
 				 <&rcc STM32_SRC_PLL1_Q SPI123_SEL(0)>;
 			dmas = <&dmamux1 0 40 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)
 				&dmamux1 1 39 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
@@ -514,7 +514,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40003c00 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00008000>,
+			clocks = <&rcc STM32_CLOCK(APB1, 15U)>,
 				 <&rcc STM32_SRC_PLL1_Q SPI123_SEL(0)>;
 			dmas = <&dmamux1 0 62 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)
 				&dmamux1 1 61 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
@@ -527,7 +527,7 @@
 			compatible = "st,stm32h7-fdcan";
 			reg = <0x4000a000 0x400>, <0x4000ac00 0x350>;
 			reg-names = "m_can", "message_ram";
-			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000100>;
+			clocks = <&rcc STM32_CLOCK(APB1_2, 8U)>;
 			interrupts = <19 0>, <21 0>, <63 0>;
 			interrupt-names = "int0", "int1", "calib";
 			bosch,mram-cfg = <0x0 28 8 3 3 0 3 3>;
@@ -538,7 +538,7 @@
 			compatible = "st,stm32h7-fdcan";
 			reg = <0x4000a400 0x400>, <0x4000ac00 0x6a0>;
 			reg-names = "m_can", "message_ram";
-			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000100>;
+			clocks = <&rcc STM32_CLOCK(APB1_2, 8U)>;
 			interrupts = <20 0>, <22 0>, <63 0>;
 			interrupt-names = "int0", "int1", "calib";
 			bosch,mram-cfg = <0x350 28 8 3 3 0 3 3>;
@@ -548,7 +548,7 @@
 		timers1: timers@40010000 {
 			compatible = "st,stm32-timers";
 			reg = <0x40010000 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000001>;
+			clocks = <&rcc STM32_CLOCK(APB2, 0U)>;
 			resets = <&rctl STM32_RESET(APB2, 0U)>;
 			interrupts = <24 0>, <25 0>, <26 0>, <27 0>;
 			interrupt-names = "brk", "up", "trgcom", "cc";
@@ -565,7 +565,7 @@
 		timers2: timers@40000000 {
 			compatible = "st,stm32-timers";
 			reg = <0x40000000 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000001>;
+			clocks = <&rcc STM32_CLOCK(APB1, 0U)>;
 			resets = <&rctl STM32_RESET(APB1L, 0U)>;
 			interrupts = <28 0>;
 			interrupt-names = "global";
@@ -587,7 +587,7 @@
 		timers3: timers@40000400 {
 			compatible = "st,stm32-timers";
 			reg = <0x40000400 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000002>;
+			clocks = <&rcc STM32_CLOCK(APB1, 1U)>;
 			resets = <&rctl STM32_RESET(APB1L, 1U)>;
 			interrupts = <29 0>;
 			interrupt-names = "global";
@@ -609,7 +609,7 @@
 		timers4: timers@40000800 {
 			compatible = "st,stm32-timers";
 			reg = <0x40000800 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000004>;
+			clocks = <&rcc STM32_CLOCK(APB1, 2U)>;
 			resets = <&rctl STM32_RESET(APB1L, 2U)>;
 			interrupts = <30 0>;
 			interrupt-names = "global";
@@ -631,7 +631,7 @@
 		timers5: timers@40000c00 {
 			compatible = "st,stm32-timers";
 			reg = <0x40000c00 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000008>;
+			clocks = <&rcc STM32_CLOCK(APB1, 3U)>;
 			resets = <&rctl STM32_RESET(APB1L, 3U)>;
 			interrupts = <50 0>;
 			interrupt-names = "global";
@@ -653,7 +653,7 @@
 		timers6: timers@40001000 {
 			compatible = "st,stm32-timers";
 			reg = <0x40001000 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000010>;
+			clocks = <&rcc STM32_CLOCK(APB1, 4U)>;
 			resets = <&rctl STM32_RESET(APB1L, 4U)>;
 			interrupts = <54 0>;
 			interrupt-names = "global";
@@ -669,7 +669,7 @@
 		timers7: timers@40001400 {
 			compatible = "st,stm32-timers";
 			reg = <0x40001400 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000020>;
+			clocks = <&rcc STM32_CLOCK(APB1, 5U)>;
 			resets = <&rctl STM32_RESET(APB1L, 5U)>;
 			interrupts = <55 0>;
 			interrupt-names = "global";
@@ -685,7 +685,7 @@
 		timers8: timers@40010400 {
 			compatible = "st,stm32-timers";
 			reg = <0x40010400 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000002>;
+			clocks = <&rcc STM32_CLOCK(APB2, 1U)>;
 			resets = <&rctl STM32_RESET(APB2, 1U)>;
 			interrupts = <43 0>, <44 0>, <45 0>, <46 0>;
 			interrupt-names = "brk", "up", "trgcom", "cc";
@@ -702,7 +702,7 @@
 		timers12: timers@40001800 {
 			compatible = "st,stm32-timers";
 			reg = <0x40001800 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000040>;
+			clocks = <&rcc STM32_CLOCK(APB1, 6U)>;
 			resets = <&rctl STM32_RESET(APB1L, 6U)>;
 			interrupts = <43 0>;
 			interrupt-names = "global";
@@ -724,7 +724,7 @@
 		timers13: timers@40001c00 {
 			compatible = "st,stm32-timers";
 			reg = <0x40001c00 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000080>;
+			clocks = <&rcc STM32_CLOCK(APB1, 7U)>;
 			resets = <&rctl STM32_RESET(APB1L, 7U)>;
 			interrupts = <44 0>;
 			interrupt-names = "global";
@@ -746,7 +746,7 @@
 		timers14: timers@40002000 {
 			compatible = "st,stm32-timers";
 			reg = <0x40002000 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000100>;
+			clocks = <&rcc STM32_CLOCK(APB1, 8U)>;
 			resets = <&rctl STM32_RESET(APB1L, 8U)>;
 			interrupts = <45 0>;
 			interrupt-names = "global";
@@ -768,7 +768,7 @@
 		timers15: timers@40014000 {
 			compatible = "st,stm32-timers";
 			reg = <0x40014000 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00010000>;
+			clocks = <&rcc STM32_CLOCK(APB2, 16U)>;
 			resets = <&rctl STM32_RESET(APB2, 16U)>;
 			interrupts = <116 0>;
 			interrupt-names = "global";
@@ -790,7 +790,7 @@
 		timers16: timers@40014400 {
 			compatible = "st,stm32-timers";
 			reg = <0x40014400 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00020000>;
+			clocks = <&rcc STM32_CLOCK(APB2, 17U)>;
 			resets = <&rctl STM32_RESET(APB2, 17U)>;
 			interrupts = <117 0>;
 			interrupt-names = "global";
@@ -812,7 +812,7 @@
 		timers17: timers@40014800 {
 			compatible = "st,stm32-timers";
 			reg = <0x40014800 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00040000>;
+			clocks = <&rcc STM32_CLOCK(APB2, 18U)>;
 			resets = <&rctl STM32_RESET(APB2, 18U)>;
 			interrupts = <118 0>;
 			interrupt-names = "global";
@@ -833,7 +833,7 @@
 
 		lptim1: timers@40002400 {
 			compatible = "st,stm32-lptim";
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000200>;
+			clocks = <&rcc STM32_CLOCK(APB1, 9U)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40002400 0x400>;
@@ -852,7 +852,7 @@
 		adc1: adc@40022000 {
 			compatible = "st,stm32-adc";
 			reg = <0x40022000 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00000020>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 5U)>;
 			interrupts = <18 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
@@ -868,7 +868,7 @@
 		adc2: adc@40022100 {
 			compatible = "st,stm32-adc";
 			reg = <0x40022100 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00000020>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 5U)>;
 			interrupts = <18 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
@@ -885,7 +885,7 @@
 		adc1_2: adc@40022300 {
 			compatible = "st,stm32-adc";
 			reg = <0x40022300 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00000020>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 5U)>;
 			interrupts = <18 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
@@ -901,7 +901,7 @@
 		adc3: adc@58026000 {
 			compatible = "st,stm32-adc";
 			reg = <0x58026000 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x01000000>;
+			clocks = <&rcc STM32_CLOCK(AHB4, 24U)>;
 			interrupts = <127 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
@@ -917,7 +917,7 @@
 		dac1: dac@40007400 {
 			compatible = "st,stm32-dac";
 			reg = <0x40007400 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x20000000>;
+			clocks = <&rcc STM32_CLOCK(APB1, 29U)>;
 			status = "disabled";
 			#io-channel-cells = <1>;
 		};
@@ -928,7 +928,7 @@
 			reg = <0x40020000 0x400>;
 			interrupts = <11 0>, <12 0>, <13 0>, <14 0>, <15 0>, <16 0>,
 						 <17 0>, <47 0>;
-			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00000001>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 0U)>;
 			st,mem2mem;
 			dma-offset = <0>;
 			dma-requests = <8>;
@@ -941,7 +941,7 @@
 			reg = <0x40020400 0x400>;
 			interrupts = <56 0>, <57 0>, <58 0>, <59 0>, <60 0>, <68 0>,
 						<69 0>, <70 0>;
-			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00000002>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 1U)>;
 			st,mem2mem;
 			dma-offset = <8>;
 			dma-requests = <8>;
@@ -954,7 +954,7 @@
 			reg = <0x58025400 0x400>;
 			interrupts = <129 0>, <130 0>, <131 0>, <132 0>, <133 0>, <134 0>,
 						 <135 0>, <136 0>;
-			clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00200000>;
+			clocks = <&rcc STM32_CLOCK(AHB4, 21U)>;
 			st,mem2mem;
 			dma-offset = <0>;
 			dma-requests = <8>;
@@ -967,7 +967,7 @@
 			reg = <0x40020800 0x400>;
 			interrupts = <102 0>;
 			/* dmamux1 has no dedicated clock, so we enable dma1 clock */
-			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00000001>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 0U)>;
 			dma-channels = <16>;
 			dma-generators = <8>;
 			status = "disabled";
@@ -983,7 +983,7 @@
 			reg = <0x58025800 0x400>;
 			interrupts = <128 0>;
 			/* dmamux2 has no dedicated clock, so we enable bdma clock */
-			clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00200000>;
+			clocks = <&rcc STM32_CLOCK(AHB4, 21U)>;
 			dma-channels = <8>;
 			dma-generators = <8>;
 			status = "disabled";
@@ -996,7 +996,7 @@
 		rng: rng@48021800 {
 			compatible = "st,stm32-rng";
 			reg = <0x48021800 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000040>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 6U)>;
 			interrupts = <80 0>;
 			status = "disabled";
 		};
@@ -1004,7 +1004,7 @@
 		sdmmc1: sdmmc@52007000 {
 			compatible = "st,stm32-sdmmc";
 			reg = <0x52007000 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x00010000>,
+			clocks = <&rcc STM32_CLOCK(AHB3, 16U)>,
 				 <&rcc STM32_SRC_PLL1_Q SDMMC_SEL(0)>;
 			resets = <&rctl STM32_RESET(AHB3, 16U)>;
 			interrupts = <49 0>;
@@ -1014,7 +1014,7 @@
 		sdmmc2: sdmmc@48022400 {
 			compatible = "st,stm32-sdmmc";
 			reg = <0x48022400 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000200>,
+			clocks = <&rcc STM32_CLOCK(AHB2, 9U)>,
 				 <&rcc STM32_SRC_PLL1_Q SDMMC_SEL(0)>;
 			resets = <&rctl STM32_RESET(AHB2, 9U)>;
 			interrupts = <124 0>;
@@ -1022,13 +1022,13 @@
 		};
 
 		mac: ethernet@40028000 {
-			compatible = "st,stm32-ethernet";
+			compatible = "st,stm32h7-ethernet", "st,stm32-ethernet";
 			reg = <0x40028000 0x8000>;
 			interrupts = <61 0>;
 			clock-names = "stmmaceth", "mac-clk-tx", "mac-clk-rx";
-			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00008000>,
-				 <&rcc STM32_CLOCK_BUS_AHB1 0x00010000>,
-				 <&rcc STM32_CLOCK_BUS_AHB1 0x00020000>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 15U)>,
+				 <&rcc STM32_CLOCK(AHB1, 16U)>,
+				 <&rcc STM32_CLOCK(AHB1, 17U)>;
 			status = "disabled";
 
 			mdio: mdio {
@@ -1042,7 +1042,7 @@
 		fmc: memory-controller@52004000 {
 			compatible = "st,stm32h7-fmc";
 			reg = <0x52004000 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x00001000>;
+			clocks = <&rcc STM32_CLOCK(AHB3, 12U)>;
 			status = "disabled";
 
 			sdram: sdram {
@@ -1056,7 +1056,7 @@
 		backup_sram: memory@38800000 {
 			compatible = "zephyr,memory-region", "st,stm32-backup-sram";
 			reg = <0x38800000 DT_SIZE_K(4)>;
-			clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x10000000>;
+			clocks = <&rcc STM32_CLOCK(AHB4, 28U)>;
 			zephyr,memory-region = "BACKUP_SRAM";
 			status = "disabled";
 		};
@@ -1067,7 +1067,7 @@
 			#size-cells = <0x0>;
 			reg = <0x52005000 0x34>;
 			interrupts = <92 0>;
-			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x00004000>;
+			clocks = <&rcc STM32_CLOCK(AHB3, 14U)>;
 			status = "disabled";
 		};
 
@@ -1076,7 +1076,7 @@
 			reg = <0x48020000 0x400>;
 			interrupts = <78 0>;
 			interrupt-names = "dcmi";
-			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000001>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 0U)>;
 			status = "disabled";
 		};
 	};

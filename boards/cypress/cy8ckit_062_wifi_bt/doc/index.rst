@@ -186,6 +186,8 @@ serial port:
 References
 **********
 
+.. target-notes::
+
 .. _PSoC 62 MCU SoC Website:
 	https://www.cypress.com/products/32-bit-arm-cortex-m4-psoc-6
 

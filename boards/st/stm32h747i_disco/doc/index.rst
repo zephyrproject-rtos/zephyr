@@ -1,7 +1,4 @@
-.. _stm32h747i_disco_board:
-
-ST STM32H747I Discovery
-#######################
+.. zephyr:board:: stm32h747i_disco
 
 Overview
 ********
@@ -33,10 +30,6 @@ Additionally, the board features:
 - 1 user and reset push-button
 - 4-direction joystick with selection button
 - Arduino Uno V3 connectors
-
-.. image:: img/stm32h747i_disco.jpg
-     :align: center
-     :alt: STM32H747I-DISCO
 
 More information about the board can be found at the `STM32H747I-DISCO website`_.
 More information about STM32H747XIH6 can be found here:

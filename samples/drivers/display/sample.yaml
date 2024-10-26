@@ -14,7 +14,6 @@ tests:
       - native_sim
     extra_args: DTC_OVERLAY_FILE="dummy_dc.overlay"
     extra_configs:
-      - CONFIG_DUMMY_DISPLAY=y
       - CONFIG_SDL_DISPLAY=n
       - CONFIG_TEST=y
     tags: display
@@ -86,3 +85,4 @@ tests:
       - platform:mimxrt1050_evk:SHIELD=rk043fn66hs_ctg
       - platform:mimxrt1040_evk:SHIELD=rk043fn66hs_ctg
       - platform:frdm_mcxn947/mcxn947/cpu0:SHIELD=lcd_par_s035_8080
+      - platform:frdm_mcxn236:SHIELD=lcd_par_s035_8080

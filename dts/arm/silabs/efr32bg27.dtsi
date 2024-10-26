@@ -41,6 +41,11 @@
 	interrupts = <52 0>;
 };
 
+&hfxo {
+	interrupts = <50 0>;
+	interrupt-names = "hfxo";
+};
+
 &msc {
 	flash0: flash@8000000 {
 		compatible = "soc-nv-flash";
@@ -84,8 +89,9 @@
 	clocks = <&cmu CLOCK_BURTC CLOCK_BRANCH_EM4GRPACLK>;
 };
 
-&stimer0 {
+&rtcc0 {
 	interrupts = <15 0>;
+	interrupt-names = "rtcc";
 	clocks = <&cmu CLOCK_RTCC CLOCK_BRANCH_RTCCCLK>;
 };
 

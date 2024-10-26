@@ -85,7 +85,7 @@ debug microcontroller SOC:
 - LPC4322: :ref:`lpc-link2-onboard-debug-probe`
 - MK20: :ref:`opensda-onboard-debug-probe`
 
-For example, the :ref:`frdm_k64f` board has an MK20 debug microcontroller,
+For example, the :zephyr:board:`frdm_k64f` board has an MK20 debug microcontroller,
 so this board uses the :ref:`opensda-onboard-debug-probe`.
 
 .. _mcu-link-onboard-debug-probe:

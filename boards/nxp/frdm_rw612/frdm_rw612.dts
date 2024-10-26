@@ -17,6 +17,7 @@
 		watchdog0 = &wwdt;
 		usart-0 = &flexcomm3;
 		i2c-0 = &flexcomm2;
+		pwm-0 = &sctimer;
 	};
 
 	chosen {
@@ -71,7 +72,7 @@
 		status = "okay";
 		erase-block-size = <4096>;
 		write-block-size = <1>;
-		spi-max-frequency = <133000000>;
+		spi-max-frequency = <104000000>;
 	};
 	aps6404l: aps6404l@2 {
 			compatible = "nxp,imx-flexspi-aps6404l";
@@ -160,6 +161,12 @@
 
 &dac0 {
 	status = "okay";
+};
+
+&sctimer {
+	status = "okay";
+	pinctrl-0 = <&pinmux_pwm0>;
+	pinctrl-names = "default";
 };
 
 zephyr_udc0: &usb_otg {

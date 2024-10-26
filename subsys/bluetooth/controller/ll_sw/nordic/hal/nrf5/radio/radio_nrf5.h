@@ -109,3 +109,6 @@
 #else /* For simulated targets there is no delay for the PPI task -> TIMER start */
 #define HAL_RADIO_TMR_START_DELAY_US 0U
 #endif
+
+/* This is the minimum prepare duration required to setup radio for deferred transmission */
+#define HAL_RADIO_TMR_DEFERRED_TX_DELAY_US 50U

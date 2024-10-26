@@ -1,0 +1,44 @@
+/*
+ * Copyright (c) 2024 Charles Dias
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,camera = &zephyr_camera_dvp;
+	};
+};
+
+&zephyr_camera_i2c {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	ov2640: ov2640@30 {
+		compatible = "ovti,ov2640";
+		reg = <0x30>;
+		status = "okay";
+
+		port {
+			ov2640_ep_out: endpoint {
+				remote-endpoint = <&zephyr_camera_dvp_in>;
+			};
+		};
+	};
+};
+
+&zephyr_camera_dvp {
+	status = "okay";
+	sensor = <&ov2640>;
+	bus-width = <8>;
+	hsync-active = <0>;
+	vsync-active = <0>;
+	pixelclk-active = <1>;
+	capture-rate = <1>;
+
+	port {
+		zephyr_camera_dvp_in: endpoint {
+			remote-endpoint = <&ov2640_ep_out>;
+		};
+	};
+};

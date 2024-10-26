@@ -1,7 +1,4 @@
-.. _cy8ckit_062s4:
-
-INFINEON PSOC 62S4 Pioneer Kit
-##############################
+.. zephyr:board:: cy8ckit_062s4
 
 Overview
 ********
@@ -14,12 +11,6 @@ The board features an onboard
 programmer/debugger (KitProg3), a 512-Mbit Quad SPI NOR flash, a micro-B connector for USB device
 interface, a thermistor, an ambient light sensor, a 5-segment CapSense™ slider, two CapSense™ buttons, two
 user LEDs, and a push button. The board supports operating voltages from 1.8 V to 3.3 V for PSoC™ 6 MCU.
-
-.. figure:: img/cy8ckit_062s4.png
-   :align: center
-   :alt: INFINEON PSOC 62S4 Pioneer Kit
-
-   INFINEON PSOC 62S4 Pioneer Kit (Credit: Infineon)
 
 Hardware
 ********
@@ -99,6 +90,8 @@ To get the OpenOCD package, it is required that you
 
 References
 **********
+
+.. target-notes::
 
 .. _CY8CKIT 062S4 Pioneer Kit Guide:
     https://www.infineon.com/dgdl/Infineon-CY8CKIT_062S4_PSoC62S4_pioneer_kit_guide-UserManual-v01_00-EN.pdf?fileId=8ac78c8c7e7124d1017e962f98992207

@@ -320,15 +320,16 @@ static int buffer_to_index_validate(const struct channel_config *ch_conf,
 /**
  * Allocate buffer for transmission
  *
- * @param[in,out] size	Required size of the buffer. If zero, first available block is
- *			allocated and all subsequent available blocks. Size actually
- *			allocated which is not less than requested.
- * @param[out] buffer	Allocated buffer data.
+ * @param[in,out] size	Required size of the buffer. If set to zero, the first available block will
+ *			be allocated, together with all contiguous free blocks that follow it.
+ *			On success, size will contain the actually allocated size, which will be
+ *			at least the requested size.
+ * @param[out] buffer	Pointer to the newly allocated buffer.
  * @param[in] timeout	Timeout.
  *
  * @return		Positive index of the first allocated block or negative error.
- * @retval -EINVAL	If requested size is bigger than entire allocable space.
- * @retval -ENOSPC	If timeout was K_NO_WAIT and there was not enough space.
+ * @retval -ENOMEM	If requested size is bigger than entire allocable space, or
+ *			the timeout was K_NO_WAIT and there was not enough space.
  * @retval -EAGAIN	If timeout occurred.
  */
 static int alloc_tx_buffer(struct backend_data *dev_data, uint32_t *size,
@@ -1434,11 +1435,11 @@ const static struct ipc_service_backend backend_ops = {
 	};										\
 	BUILD_ASSERT(IS_POWER_OF_TWO(GET_CACHE_ALIGNMENT(i)),				\
 		     "This module supports only power of two cache alignment");		\
-	BUILD_ASSERT((GET_BLOCK_SIZE_INST(i, tx, rx) > GET_CACHE_ALIGNMENT(i)) &&	\
+	BUILD_ASSERT((GET_BLOCK_SIZE_INST(i, tx, rx) >= GET_CACHE_ALIGNMENT(i)) &&	\
 		     (GET_BLOCK_SIZE_INST(i, tx, rx) <					\
 		      GET_MEM_SIZE_INST(i, tx)),					\
 		     "TX region is too small for provided number of blocks");		\
-	BUILD_ASSERT((GET_BLOCK_SIZE_INST(i, rx, tx) > GET_CACHE_ALIGNMENT(i)) &&	\
+	BUILD_ASSERT((GET_BLOCK_SIZE_INST(i, rx, tx) >= GET_CACHE_ALIGNMENT(i)) &&	\
 		     (GET_BLOCK_SIZE_INST(i, rx, tx) <					\
 		      GET_MEM_SIZE_INST(i, rx)),					\
 		     "RX region is too small for provided number of blocks");		\

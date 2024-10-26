@@ -20,7 +20,6 @@ tests:
       - frdm_ke17z512
       - rddrone_fmuk66
       - twr_ke18f
-      - twr_kv58f220m
       - frdm_mcxn947/mcxn947/cpu0
       - lpcxpresso55s06
       - lpcxpresso55s16

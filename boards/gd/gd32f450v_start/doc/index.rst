@@ -1,7 +1,4 @@
-.. _gd32f450v_start:
-
-GigaDevice GD32F450V-START
-##########################
+.. zephyr:board:: gd32f450v_start
 
 Overview
 ********
@@ -12,10 +9,6 @@ on GD32F450VK Cortex-M4F Stretch Performance MCU.
 The GD32F450VK features a single-core ARM Cortex-M4F MCU which can run up
 to 200 MHz with flash accesses zero wait states, 3072kiB of Flash, 256kiB of
 SRAM and 82 GPIOs.
-
-.. image:: img/gd32f450v_start.webp
-     :align: center
-     :alt: gd32f450v_start
 
 Hardware
 ********

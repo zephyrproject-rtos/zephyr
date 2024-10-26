@@ -218,6 +218,12 @@ stm32_lp_tick_source: &lptim1 {
 		drdy-gpios = <&gpiof 9 GPIO_ACTIVE_HIGH>;
 		status = "okay";
 	};
+
+	ilps22qs@5c {
+		compatible = "st,ilps22qs";
+		reg = <0x5c>;
+		status = "okay";
+	};
 };
 
 &timers5 {
