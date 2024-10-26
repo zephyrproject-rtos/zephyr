@@ -7,7 +7,6 @@ ram: 384
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
   - can
   - dma
