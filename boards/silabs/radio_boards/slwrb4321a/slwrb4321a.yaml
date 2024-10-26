@@ -7,7 +7,6 @@ flash: 2048
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
   - counter
   - i2c

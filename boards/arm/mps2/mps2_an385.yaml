@@ -7,7 +7,6 @@ simulation:
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
   - counter
   - netif:serial-net

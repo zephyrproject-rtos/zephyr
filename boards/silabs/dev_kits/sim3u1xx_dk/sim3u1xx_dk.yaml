@@ -10,7 +10,6 @@ ram: 32
 flash: 256
 toolchain:
   - gnuarmemb
-  - xtools
   - zephyr
 supported:
   - crypto
