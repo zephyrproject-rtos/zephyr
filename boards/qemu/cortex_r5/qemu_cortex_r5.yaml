@@ -7,7 +7,6 @@ arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 ram: 65536
 flash: 32768
 testing:
