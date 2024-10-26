@@ -18,4 +18,8 @@ if(CONFIG_CPP
   set_property(TARGET linker PROPERTY link_order_library "c++")
 endif()
 
-set_property(TARGET linker APPEND PROPERTY link_order_library "c;rt")
+if(NOT CONFIG_MINIMAL_LIBC)
+  set_property(TARGET linker APPEND PROPERTY link_order_library "c")
+endif()
+
+set_property(TARGET linker APPEND PROPERTY link_order_library "rt")
