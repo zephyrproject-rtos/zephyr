@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef SHELL_DUMMY_H__
-#define SHELL_DUMMY_H__
+#ifndef ZEPHYR_INCLUDE_SHELL_DUMMY_H_
+#define ZEPHYR_INCLUDE_SHELL_DUMMY_H_
 
 #include <zephyr/shell/shell.h>
 
@@ -68,4 +68,4 @@ void shell_backend_dummy_clear_output(const struct shell *sh);
 }
 #endif
 
-#endif /* SHELL_DUMMY_H__ */
+#endif /* ZEPHYR_INCLUDE_SHELL_DUMMY_H_ */
