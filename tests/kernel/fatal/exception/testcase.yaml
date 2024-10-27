@@ -1,6 +1,12 @@
 common:
   ignore_faults: true
 tests:
+  kernel.common.no_assert:
+    extra_configs:
+      - CONFIG_ASSERT=n
+      - CONFIG_BUG_PRINT_LOCATION=y
+    tags:
+      - kernel
   kernel.common.stack_protection:
     extra_args: CONF_FILE=prj.conf
     platform_exclude:

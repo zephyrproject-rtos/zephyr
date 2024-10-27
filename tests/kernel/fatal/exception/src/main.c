@@ -178,6 +178,14 @@ void entry_arbitrary_reason_negative(void *p1, void *p2, void *p3)
 	rv = TC_FAIL;
 }
 
+void entry_zephyr_bug(void *p1, void *p2, void *p3)
+{
+	expected_reason = K_ERR_KERNEL_PANIC;
+
+	__BUG();
+	rv = TC_FAIL;
+}
+
 #ifndef CONFIG_ARCH_POSIX
 #ifdef CONFIG_STACK_SENTINEL
 __no_optimization void blow_up_stack(void)
@@ -385,6 +393,12 @@ ZTEST(fatal_exception, test_fatal)
 			entry_arbitrary_reason_negative,
 			NULL, NULL, NULL, K_PRIO_COOP(PRIORITY), 0,
 			K_NO_WAIT);
+	k_thread_abort(&alt_thread);
+	zassert_not_equal(rv, TC_FAIL, "thread was not aborted");
+
+	TC_PRINT("test alt thread 7: bug\n");
+	k_thread_create(&alt_thread, alt_stack, K_THREAD_STACK_SIZEOF(alt_stack), entry_zephyr_bug,
+			NULL, NULL, NULL, K_PRIO_COOP(PRIORITY), 0, K_NO_WAIT);
 	k_thread_abort(&alt_thread);
 	zassert_not_equal(rv, TC_FAIL, "thread was not aborted");
 
