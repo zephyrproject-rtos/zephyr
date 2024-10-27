@@ -361,7 +361,19 @@ class Build(Forceable):
                         arg_list = extra
 
                     if data == 'extra_configs':
-                        args = ["-D{}".format(arg.replace('"', '\"')) for arg in arg_list]
+                        args = []
+                        for arg in arg_list:
+                            equals = arg.find('=')
+                            colon = arg.rfind(':', 0, equals)
+                            if colon != -1:
+                                # conditional configs (xxx:yyy:CONFIG_FOO=bar)
+                                # are not supported by 'west build'
+                                self.wrn('"west build" does not support '
+                                         'conditional config "{}". Add "-D{}" '
+                                         'to the supplied CMake arguments if '
+                                         'desired.'.format(arg, arg[colon+1:]))
+                                continue
+                            args.append("-D{}".format(arg.replace('"', '\"')))
                     elif data == 'extra_args':
                         # Retain quotes around config options
                         config_options = [arg for arg in arg_list if arg.startswith("CONFIG_")]
