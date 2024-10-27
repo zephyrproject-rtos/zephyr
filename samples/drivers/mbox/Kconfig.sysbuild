@@ -15,7 +15,6 @@ config REMOTE_BOARD
 	default "mimxrt1160_evk/mimxrt1166/cm4" if $(BOARD) = "mimxrt1160_evk"
 	default "lpcxpresso55s69/lpc55s69/cpu1" if $(BOARD) = "lpcxpresso55s69"
 	default "nrf54h20dk/nrf54h20/cpuapp" if "$(BOARD)${BOARD_QUALIFIERS}" = "nrf54h20dk/nrf54h20/cpurad"
-	default "nrf54l15pdk/nrf54l15/cpuflpr" if $(BOARD) = "nrf54l15pdk"
 	default "nrf54l15dk/nrf54l15/cpuflpr" if $(BOARD) = "nrf54l15dk"
 	default "stm32h747i_disco/stm32h747xx/m4" if $(BOARD) = "stm32h747i_disco"
 	default "esp32_devkitc_wroom/esp32/appcpu" if "$(BOARD)${BOARD_QUALIFIERS}" = "esp32_devkitc_wroom/esp32/procpu"

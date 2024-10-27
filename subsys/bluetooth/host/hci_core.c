@@ -14,6 +14,7 @@
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/check.h>
+#include <zephyr/sys/util_macro.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/byteorder.h>
@@ -28,6 +29,7 @@
 #include <zephyr/bluetooth/l2cap.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/hci_vs.h>
+#include <zephyr/bluetooth/testing.h>
 #if DT_HAS_CHOSEN(zephyr_bt_hci)
 #include <zephyr/drivers/bluetooth.h>
 #else
@@ -263,12 +265,22 @@ void bt_send_one_host_num_completed_packets(uint16_t handle)
 	BT_ASSERT_MSG(err == 0, "Unable to send Host NCP (err %d)", err);
 }
 
+#if defined(CONFIG_BT_TESTING)
+__weak void bt_testing_trace_event_acl_pool_destroy(struct net_buf *buf)
+{
+}
+#endif
+
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
 void bt_hci_host_num_completed_packets(struct net_buf *buf)
 {
 	uint16_t handle = acl(buf)->handle;
 	struct bt_conn *conn;
 	uint8_t index = acl(buf)->index;
+
+	if (IS_ENABLED(CONFIG_BT_TESTING)) {
+		bt_testing_trace_event_acl_pool_destroy(buf);
+	}
 
 	net_buf_destroy(buf);
 
@@ -605,7 +617,7 @@ static void hci_num_completed_packets(struct net_buf *buf)
 			atomic_dec(&conn->in_ll);
 
 			/* TX context free + callback happens in there */
-			k_work_submit(&conn->tx_complete_work);
+			bt_conn_tx_notify(conn, false);
 		}
 
 		bt_conn_unref(conn);
@@ -1929,6 +1941,23 @@ static void le_conn_update_complete(struct net_buf *buf)
 			conn->le.latency = sys_le16_to_cpu(evt->latency);
 			conn->le.timeout = sys_le16_to_cpu(evt->supv_timeout);
 
+			if (!IS_ENABLED(CONFIG_BT_CONN_PARAM_ANY)) {
+				if (!IN_RANGE(conn->le.interval, BT_HCI_LE_INTERVAL_MIN,
+					      BT_HCI_LE_INTERVAL_MAX)) {
+					LOG_WRN("interval exceeds the valid range 0x%04x",
+						conn->le.interval);
+				}
+				if (conn->le.latency > BT_HCI_LE_PERIPHERAL_LATENCY_MAX) {
+					LOG_WRN("latency exceeds the valid range 0x%04x",
+						conn->le.latency);
+				}
+				if (!IN_RANGE(conn->le.timeout, BT_HCI_LE_SUPERVISON_TIMEOUT_MIN,
+					      BT_HCI_LE_SUPERVISON_TIMEOUT_MAX)) {
+					LOG_WRN("supv_timeout exceeds the valid range 0x%04x",
+						conn->le.timeout);
+				}
+			}
+
 #if defined(CONFIG_BT_GAP_AUTO_UPDATE_CONN_PARAMS)
 			atomic_clear_bit(conn->flags,
 					 BT_CONN_PERIPHERAL_PARAM_AUTO_UPDATE);
@@ -2626,6 +2655,27 @@ void bt_hci_le_subrate_change_event(struct net_buf *buf)
 		conn->le.subrate.continuation_number = sys_le16_to_cpu(evt->continuation_number);
 		conn->le.latency = sys_le16_to_cpu(evt->peripheral_latency);
 		conn->le.timeout = sys_le16_to_cpu(evt->supervision_timeout);
+
+		if (!IS_ENABLED(CONFIG_BT_CONN_PARAM_ANY)) {
+			if (!IN_RANGE(conn->le.subrate.factor, BT_HCI_LE_SUBRATE_FACTOR_MIN,
+				      BT_HCI_LE_SUBRATE_FACTOR_MAX)) {
+				LOG_WRN("subrate_factor exceeds the valid range %d",
+					conn->le.subrate.factor);
+			}
+			if (conn->le.latency > BT_HCI_LE_PERIPHERAL_LATENCY_MAX) {
+				LOG_WRN("peripheral_latency exceeds the valid range 0x%04x",
+					conn->le.latency);
+			}
+			if (conn->le.subrate.continuation_number > BT_HCI_LE_CONTINUATION_NUM_MAX) {
+				LOG_WRN("continuation_number exceeds the valid range %d",
+					conn->le.subrate.continuation_number);
+			}
+			if (!IN_RANGE(conn->le.timeout, BT_HCI_LE_SUPERVISON_TIMEOUT_MIN,
+				      BT_HCI_LE_SUPERVISON_TIMEOUT_MAX)) {
+				LOG_WRN("supervision_timeout exceeds the valid range 0x%04x",
+					conn->le.timeout);
+			}
+		}
 	}
 
 	params.status = evt->status;
@@ -2830,6 +2880,23 @@ static const struct event_handler meta_events[] = {
 		      sizeof(struct bt_hci_evt_le_cs_read_remote_fae_table_complete)),
 	EVENT_HANDLER(BT_HCI_EVT_LE_CS_CONFIG_COMPLETE, bt_hci_le_cs_config_complete_event,
 		      sizeof(struct bt_hci_evt_le_cs_config_complete)),
+	EVENT_HANDLER(BT_HCI_EVT_LE_CS_SECURITY_ENABLE_COMPLETE,
+			  bt_hci_le_cs_security_enable_complete,
+			  sizeof(struct bt_hci_evt_le_cs_security_enable_complete)),
+	EVENT_HANDLER(BT_HCI_EVT_LE_CS_PROCEDURE_ENABLE_COMPLETE,
+			  bt_hci_le_cs_procedure_enable_complete,
+			  sizeof(struct bt_hci_evt_le_cs_procedure_enable_complete)),
+	EVENT_HANDLER(BT_HCI_EVT_LE_CS_SUBEVENT_RESULT,
+		      bt_hci_le_cs_subevent_result,
+		      sizeof(struct bt_hci_evt_le_cs_subevent_result)),
+	EVENT_HANDLER(BT_HCI_EVT_LE_CS_SUBEVENT_RESULT_CONTINUE,
+		      bt_hci_le_cs_subevent_result_continue,
+		      sizeof(struct bt_hci_evt_le_cs_subevent_result_continue)),
+#if defined(CONFIG_BT_CHANNEL_SOUNDING_TEST)
+	EVENT_HANDLER(BT_HCI_EVT_LE_CS_TEST_END_COMPLETE,
+		      bt_hci_le_cs_test_end_complete,
+		      sizeof(struct bt_hci_evt_le_cs_test_end_complete)),
+#endif /* CONFIG_BT_CHANNEL_SOUNDING_TEST */
 #endif /* CONFIG_BT_CHANNEL_SOUNDING */
 
 };
@@ -3407,6 +3474,11 @@ static int le_set_event_mask(void)
 		mask |= BT_EVT_MASK_LE_CS_READ_REMOTE_SUPPORTED_CAPABILITIES_COMPLETE;
 		mask |= BT_EVT_MASK_LE_CS_READ_REMOTE_FAE_TABLE_COMPLETE;
 		mask |= BT_EVT_MASK_LE_CS_CONFIG_COMPLETE;
+		mask |= BT_EVT_MASK_LE_CS_SECURITY_ENABLE_COMPLETE;
+		mask |= BT_EVT_MASK_LE_CS_PROCEDURE_ENABLE_COMPLETE;
+		mask |= BT_EVT_MASK_LE_CS_SUBEVENT_RESULT;
+		mask |= BT_EVT_MASK_LE_CS_SUBEVENT_RESULT_CONTINUE;
+		mask |= BT_EVT_MASK_LE_CS_TEST_END_COMPLETE;
 	}
 
 	sys_put_le64(mask, cp_mask->events);

@@ -132,9 +132,6 @@
 #ifdef CONFIG_NRF_GRTC_TIMER_CLOCK_MANAGEMENT
 #define NRF_GRTC_HAS_EXTENDED 1
 #endif
-#ifdef CONFIG_NRF_GRTC_SLEEP_ALLOWED
-#define NRFX_GRTC_CONFIG_SLEEP_ALLOWED 1
-#endif
 #ifdef CONFIG_NRF_GRTC_TIMER_AUTO_KEEP_ALIVE
 #define NRFX_GRTC_CONFIG_AUTOEN 1
 #endif
@@ -214,6 +211,15 @@
 #endif
 #ifdef CONFIG_NRFX_PDM_LOG
 #define NRFX_PDM_CONFIG_LOG_ENABLED 1
+#endif
+#ifdef CONFIG_NRFX_PDM0
+#define NRFX_PDM0_ENABLED 1
+#endif
+#ifdef CONFIG_NRFX_PDM20
+#define NRFX_PDM20_ENABLED 1
+#endif
+#ifdef CONFIG_NRFX_PDM21
+#define NRFX_PDM21_ENABLED 1
 #endif
 
 #ifdef CONFIG_NRFX_POWER
@@ -1042,18 +1048,18 @@
     #include <nrfx_config_nrf5340_application.h>
 #elif defined(NRF5340_XXAA_NETWORK)
     #include <nrfx_config_nrf5340_network.h>
-#elif defined(NRF54H20_XXAA) && defined(NRF_APPLICATION)
+#elif (defined(NRF54H20_XXAA) || defined(NRF54H20_ENGB_XXAA)) && defined(NRF_APPLICATION)
     #include <nrfx_config_nrf54h20_application.h>
-#elif defined(NRF54H20_XXAA) && defined(NRF_RADIOCORE)
+#elif (defined(NRF54H20_XXAA) || defined(NRF54H20_ENGB_XXAA)) && defined(NRF_RADIOCORE)
     #include <nrfx_config_nrf54h20_radiocore.h>
-#elif defined(NRF54H20_XXAA) && defined(NRF_PPR)
+#elif (defined(NRF54H20_XXAA) || defined(NRF54H20_ENGB_XXAA)) && defined(NRF_PPR)
     #include <nrfx_config_nrf54h20_ppr.h>
-#elif defined(NRF54H20_XXAA) && defined(NRF_FLPR)
+#elif (defined(NRF54H20_XXAA) || defined(NRF54H20_ENGB_XXAA)) && defined(NRF_FLPR)
     #include <nrfx_config_nrf54h20_flpr.h>
-#elif (defined(NRF54L15_XXAA) || defined(NRF54L15_ENGA_XXAA)) && defined(NRF_APPLICATION)
-    #include <nrfx_config_nrf54l15_enga_application.h>
-#elif (defined(NRF54L15_XXAA) || defined(NRF54L15_ENGA_XXAA)) && defined(NRF_FLPR)
-    #include <nrfx_config_nrf54l15_enga_flpr.h>
+#elif defined(NRF54L15_XXAA) && defined(NRF_APPLICATION)
+    #include <nrfx_config_nrf54l15_application.h>
+#elif defined(NRF54L15_XXAA) && defined(NRF_FLPR)
+    #include <nrfx_config_nrf54l15_flpr.h>
 #elif (defined(NRF54L20_XXAA) || defined(NRF54L20_ENGA_XXAA)) && defined(NRF_APPLICATION)
     #include <nrfx_config_nrf54l20_enga_application.h>
 #elif defined(NRF9120_XXAA) || defined(NRF9160_XXAA)

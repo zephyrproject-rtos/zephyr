@@ -1,7 +1,4 @@
-.. _nucleo_h7a3zi_q_board:
-
-ST Nucleo H7A3ZI-Q
-##################
+.. zephyr:board:: nucleo_h7a3zi_q
 
 Overview
 ********
@@ -41,10 +38,6 @@ Key Features
 - Comprehensive free software libraries and examples available with the
   STM32Cube MCU package.
 - Arm* Mbed Enabled* compliant (only for some Nucleo part numbers)
-
-.. image:: img/nucleo_h7a3zi_q.jpg
-   :align: center
-   :alt: Nucleo H7A3ZI-Q
 
 More information about the board can be found at the `Nucleo H7A3ZI-Q website`_.
 

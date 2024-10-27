@@ -19,6 +19,7 @@ config ETH_NXP_ENET
 	select MDIO if DT_HAS_NXP_ENET_MDIO_ENABLED
 	select NET_POWER_MANAGEMENT if (PM_DEVICE && SOC_FAMILY_KINETIS)
 	select ETH_DSA_SUPPORT
+	select PINCTRL
 	help
 	  Enable NXP ENET Ethernet driver.
 
@@ -29,6 +30,7 @@ config ETH_MCUX
 	select NET_POWER_MANAGEMENT if PM_DEVICE
 	select ETH_DSA_SUPPORT
 	select DEPRECATED
+	select PINCTRL
 	help
 	  Enable deprecated legacy MCUX Ethernet driver.
 	  Note, this driver performs one shot PHY setup.

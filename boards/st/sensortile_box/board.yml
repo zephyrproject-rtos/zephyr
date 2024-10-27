@@ -1,5 +1,6 @@
 board:
   name: sensortile_box
+  full_name: SensorTile.box
   vendor: st
   socs:
     - name: stm32l4r9xx

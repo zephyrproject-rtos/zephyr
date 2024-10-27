@@ -17,4 +17,5 @@ toolchain:
 supported:
   - uart
   - i2c
+  - pwm
 vendor: nxp

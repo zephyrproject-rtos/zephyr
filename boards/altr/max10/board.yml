@@ -1,5 +1,6 @@
 board:
   name: altera_max10
+  full_name: MAX10
   vendor: altr
   socs:
   - name: zephyr_nios2f

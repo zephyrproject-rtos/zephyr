@@ -184,86 +184,44 @@ static void store_pending(struct k_work *work)
 {
 	LOG_DBG("");
 
-	if (atomic_test_and_clear_bit(pending_flags, BT_MESH_SETTINGS_RPL_PENDING)) {
-		bt_mesh_rpl_pending_store(BT_MESH_ADDR_ALL_NODES);
-	}
+	static const struct {
+		void (*handler)(void);
+	} handlers[BT_MESH_SETTINGS_FLAG_COUNT] = {
+		[BT_MESH_SETTINGS_RPL_PENDING]      = { bt_mesh_rpl_pending_store_all_nodes },
+		[BT_MESH_SETTINGS_NET_KEYS_PENDING] = { bt_mesh_subnet_pending_store },
+		[BT_MESH_SETTINGS_APP_KEYS_PENDING] = { bt_mesh_app_key_pending_store },
+		[BT_MESH_SETTINGS_NET_PENDING]	    = { bt_mesh_net_pending_net_store },
+		[BT_MESH_SETTINGS_IV_PENDING]	    = { bt_mesh_net_pending_iv_store },
+		[BT_MESH_SETTINGS_SEQ_PENDING]	    = { bt_mesh_net_pending_seq_store },
+		[BT_MESH_SETTINGS_DEV_KEY_CAND_PENDING] = {
+			bt_mesh_net_pending_dev_key_cand_store },
+		[BT_MESH_SETTINGS_HB_PUB_PENDING]   = { bt_mesh_hb_pub_pending_store },
+		[BT_MESH_SETTINGS_CFG_PENDING]	    = { bt_mesh_cfg_pending_store },
+		[BT_MESH_SETTINGS_COMP_PENDING]	    = { bt_mesh_comp_data_pending_clear },
+		[BT_MESH_SETTINGS_MOD_PENDING]	    = { bt_mesh_model_pending_store },
+		[BT_MESH_SETTINGS_VA_PENDING]	    = { bt_mesh_va_pending_store },
+		[BT_MESH_SETTINGS_CDB_PENDING]	    = {
+			IS_ENABLED(CONFIG_BT_MESH_CDB) ?
+				bt_mesh_cdb_pending_store : NULL },
+		[BT_MESH_SETTINGS_SRPL_PENDING]     = {
+			IS_ENABLED(CONFIG_BT_MESH_OD_PRIV_PROXY_SRV) ?
+				bt_mesh_srpl_pending_store : NULL },
+		[BT_MESH_SETTINGS_SSEQ_PENDING]     = {
+			IS_ENABLED(CONFIG_BT_MESH_PROXY_SOLICITATION) ?
+				bt_mesh_sseq_pending_store : NULL },
+		[BT_MESH_SETTINGS_BRG_PENDING]      = {
+			IS_ENABLED(CONFIG_BT_MESH_BRG_CFG_SRV) ?
+				bt_mesh_brg_cfg_pending_store : NULL },
+	};
 
-	if (atomic_test_and_clear_bit(pending_flags,
-				      BT_MESH_SETTINGS_NET_KEYS_PENDING)) {
-		bt_mesh_subnet_pending_store();
-	}
+	for (int i = 0; i < ARRAY_SIZE(handlers); i++) {
+		if (!handlers[i].handler) {
+			continue;
+		}
 
-	if (atomic_test_and_clear_bit(pending_flags,
-				      BT_MESH_SETTINGS_APP_KEYS_PENDING)) {
-		bt_mesh_app_key_pending_store();
-	}
-
-	if (atomic_test_and_clear_bit(pending_flags,
-				      BT_MESH_SETTINGS_NET_PENDING)) {
-		bt_mesh_net_pending_net_store();
-	}
-
-	if (atomic_test_and_clear_bit(pending_flags,
-				      BT_MESH_SETTINGS_IV_PENDING)) {
-		bt_mesh_net_pending_iv_store();
-	}
-
-	if (atomic_test_and_clear_bit(pending_flags,
-				      BT_MESH_SETTINGS_SEQ_PENDING)) {
-		bt_mesh_net_pending_seq_store();
-	}
-
-	if (atomic_test_and_clear_bit(pending_flags,
-				      BT_MESH_SETTINGS_DEV_KEY_CAND_PENDING)) {
-		bt_mesh_net_pending_dev_key_cand_store();
-	}
-
-	if (atomic_test_and_clear_bit(pending_flags,
-				      BT_MESH_SETTINGS_HB_PUB_PENDING)) {
-		bt_mesh_hb_pub_pending_store();
-	}
-
-	if (atomic_test_and_clear_bit(pending_flags,
-				      BT_MESH_SETTINGS_CFG_PENDING)) {
-		bt_mesh_cfg_pending_store();
-	}
-
-	if (atomic_test_and_clear_bit(pending_flags,
-				      BT_MESH_SETTINGS_COMP_PENDING)) {
-		bt_mesh_comp_data_pending_clear();
-	}
-
-	if (atomic_test_and_clear_bit(pending_flags,
-				      BT_MESH_SETTINGS_MOD_PENDING)) {
-		bt_mesh_model_pending_store();
-	}
-
-	if (atomic_test_and_clear_bit(pending_flags,
-				      BT_MESH_SETTINGS_VA_PENDING)) {
-		bt_mesh_va_pending_store();
-	}
-
-	if (IS_ENABLED(CONFIG_BT_MESH_CDB) &&
-	    atomic_test_and_clear_bit(pending_flags,
-				      BT_MESH_SETTINGS_CDB_PENDING)) {
-		bt_mesh_cdb_pending_store();
-	}
-
-	if (IS_ENABLED(CONFIG_BT_MESH_OD_PRIV_PROXY_SRV) &&
-		atomic_test_and_clear_bit(pending_flags,
-					  BT_MESH_SETTINGS_SRPL_PENDING)) {
-		bt_mesh_srpl_pending_store();
-	}
-
-	if (IS_ENABLED(CONFIG_BT_MESH_PROXY_SOLICITATION) &&
-		atomic_test_and_clear_bit(pending_flags,
-					  BT_MESH_SETTINGS_SSEQ_PENDING)) {
-		bt_mesh_sseq_pending_store();
-	}
-
-	if (IS_ENABLED(CONFIG_BT_MESH_BRG_CFG_SRV) &&
-	    atomic_test_and_clear_bit(pending_flags, BT_MESH_SETTINGS_BRG_PENDING)) {
-		bt_mesh_brg_cfg_pending_store();
+		if (atomic_test_and_clear_bit(pending_flags, i)) {
+			handlers[i].handler();
+		}
 	}
 }
 

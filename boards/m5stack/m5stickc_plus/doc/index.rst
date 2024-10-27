@@ -1,7 +1,4 @@
-.. _m5stickc_plus:
-
-M5StickC PLUS
-#############
+.. zephyr:board:: m5stickc_plus
 
 Overview
 ********

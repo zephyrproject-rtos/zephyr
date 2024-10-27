@@ -84,11 +84,11 @@ typedef void (*stm32_gpio_irq_cb_t)(gpio_port_pins_t pin, void *user);
  *
  * @param line	GPIO interrupt line
  * @param cb	Interrupt callback function
- * @param data	Custom data for usage by the callback
+ * @param user	Custom user data for usage by the callback
  * @returns 0 on success, -EBUSY if a callback is already set for @p line
  */
 int stm32_gpio_intc_set_irq_callback(stm32_gpio_irq_line_t line,
-					stm32_gpio_irq_cb_t cb, void *data);
+					stm32_gpio_irq_cb_t cb, void *user);
 
 /**
  * @brief Removes the interrupt callback of specified EXTI line
@@ -114,7 +114,7 @@ void stm32_exti_set_line_src_port(gpio_pin_t line, uint32_t port);
  * @param line	EXTI line number (= pin number)
  * @returns GPIO port number (STM32_PORTA, STM32_PORTB, ...)
  */
-uint32_t stm32_exti_get_line_src_port(gpio_pin_t pin);
+uint32_t stm32_exti_get_line_src_port(gpio_pin_t line);
 #endif /* CONFIG_EXTI_STM32 */
 
 #endif /* ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_GPIO_INTC_STM32_H_ */

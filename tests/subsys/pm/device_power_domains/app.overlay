@@ -2,23 +2,26 @@
 	test_reg_0: test_reg_0 {
 		compatible = "power-domain-gpio";
 		enable-gpios = <&gpio0 0 0>;
+		#power-domain-cells = <0>;
 	};
 
 	test_reg_1: test_reg_1 {
 		compatible = "power-domain-gpio";
 		enable-gpios = <&gpio0 1 0>;
+		#power-domain-cells = <0>;
 	};
 
 	test_reg_chained: test_reg_chained {
 		compatible = "power-domain-gpio";
 		enable-gpios = <&gpio0 2 0>;
-		power-domain = <&test_reg_0>;
+		power-domains = <&test_reg_0>;
+		#power-domain-cells = <0>;
 	};
 
 	test_dev: test_dev {
 		compatible = "test-device-pm";
 		status = "okay";
-		power-domain = <&test_reg_1>;
+		power-domains = <&test_reg_1>;
 		alternate-domain = <&test_reg_chained>;
 	};
 };

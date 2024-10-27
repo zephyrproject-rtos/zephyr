@@ -103,10 +103,10 @@ FRDM_K64F
 =========
 
 These are instructions for how to use this sample application running on
-:ref:`frdm_k64f` board to negotiate IP address from DHCPv4 server (kea) running
+:zephyr:board:`frdm_k64f` board to negotiate IP address from DHCPv4 server (kea) running
 on Linux host.
 
-Connect ethernet cable from :ref:`Freedom-K64F board <frdm_k64f>` to Linux host
+Connect ethernet cable from :zephyr:board:`Freedom-K64F board <frdm_k64f>` to Linux host
 machine and check for new interfaces:
 
 .. code-block:: console

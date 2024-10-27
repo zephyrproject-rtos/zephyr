@@ -63,7 +63,8 @@ def test_add_configurations_short(test_data, class_env, board_root_dir):
     plan.parse_configuration(config_file=class_env.test_config)
     if board_root_dir == "board_config":
         plan.add_configurations()
-        assert sorted(plan.default_platforms) == sorted(['demo_board_1', 'demo_board_3'])
+        print(sorted(plan.default_platforms))
+        assert sorted(plan.default_platforms) == sorted(['demo_board_1/unit_testing', 'demo_board_3/unit_testing'])
     elif board_root_dir == "board_config_file_not_exist":
         plan.add_configurations()
         assert sorted(plan.default_platforms) != sorted(['demo_board_1'])
@@ -95,11 +96,11 @@ def test_get_platforms_short(class_testplan, platforms_list):
     plan.platforms = platforms_list
     platform = plan.get_platform("demo_board_1")
     assert isinstance(platform, Platform)
-    assert platform.name == "demo_board_1"
+    assert platform.name == "demo_board_1/unit_testing"
 
 TESTDATA_PART1 = [
     ("toolchain_allow", ['gcc'], None, None, "Not in testsuite toolchain allow list"),
-    ("platform_allow", ['demo_board_1'], None, None, "Not in testsuite platform allow list"),
+    ("platform_allow", ['demo_board_1/unit_testing'], None, None, "Not in testsuite platform allow list"),
     ("toolchain_exclude", ['zephyr'], None, None, "In test case toolchain exclude"),
     ("platform_exclude", ['demo_board_2'], None, None, "In test case platform exclude"),
     ("arch_exclude", ['x86'], None, None, "In test case arch exclude"),
@@ -174,12 +175,12 @@ def test_apply_filters_part1(class_testplan, all_testsuites_dict, platforms_list
     elif plat_attribute == "supported_toolchains":
         plan.apply_filters(force_toolchain=False,
                                                  exclude_platform=['demo_board_1'],
-                                                 platform=['demo_board_2'])
+                                                 platform=['demo_board_2/unit_testing'])
     elif tc_attribute is None and plat_attribute is None:
         plan.apply_filters()
     else:
         plan.apply_filters(exclude_platform=['demo_board_1'],
-                                                 platform=['demo_board_2'])
+                                                 platform=['demo_board_2/unit_testing'])
 
     filtered_instances = list(filter(lambda item:  item.status == TwisterStatus.FILTER, plan.instances.values()))
     for d in filtered_instances:
@@ -277,11 +278,11 @@ QUARANTINE_BASIC = {
 }
 
 QUARANTINE_WITH_REGEXP = {
-    'demo_board_2/scripts/tests/twister/test_data/testsuites/tests/test_a/test_a.check_2' : 'a2 and c2 on x86',
-    'demo_board_1/scripts/tests/twister/test_data/testsuites/tests/test_d/test_d.check_1' : 'all test_d',
-    'demo_board_3/scripts/tests/twister/test_data/testsuites/tests/test_d/test_d.check_1' : 'all test_d',
-    'demo_board_2/scripts/tests/twister/test_data/testsuites/tests/test_d/test_d.check_1' : 'all test_d',
-    'demo_board_2/scripts/tests/twister/test_data/testsuites/tests/test_c/test_c.check_2' : 'a2 and c2 on x86'
+    'demo_board_2/unit_testing/scripts/tests/twister/test_data/testsuites/tests/test_a/test_a.check_2' : 'a2 and c2 on x86',
+    'demo_board_1/unit_testing/scripts/tests/twister/test_data/testsuites/tests/test_d/test_d.check_1' : 'all test_d',
+    'demo_board_3/unit_testing/scripts/tests/twister/test_data/testsuites/tests/test_d/test_d.check_1' : 'all test_d',
+    'demo_board_2/unit_testing/scripts/tests/twister/test_data/testsuites/tests/test_d/test_d.check_1' : 'all test_d',
+    'demo_board_2/unit_testing/scripts/tests/twister/test_data/testsuites/tests/test_c/test_c.check_2' : 'a2 and c2 on x86'
 }
 
 QUARANTINE_PLATFORM = {
@@ -335,7 +336,6 @@ def test_quarantine_short(class_testplan, platforms_list, test_data,
     class_testplan.quarantine = Quarantine(quarantine_list)
     class_testplan.options.quarantine_verify = quarantine_verify
     class_testplan.apply_filters()
-
     for testname, instance in class_testplan.instances.items():
         if quarantine_verify:
             if testname in expected_val:
@@ -380,10 +380,9 @@ def test_required_snippets_short(
                             'testsuites', 'tests', testpath)
     testsuite = class_testplan.testsuites.get(testpath)
     plan.platforms = platforms_list
+    print(platforms_list)
     plan.platform_names = [p.name for p in platforms_list]
     plan.testsuites = {testpath: testsuite}
-
-    print(plan.testsuites)
 
     for _, testcase in plan.testsuites.items():
         testcase.exclude_platform = []
@@ -595,7 +594,7 @@ TESTDATA_4 = [
     (None, None, 'load_tests.json', None, '0/4',
      TwisterRuntimeError, set(['lt-p1', 'lt-p3', 'lt-p4', 'lt-p2']), []),
     ('suffix', None, None, True, '2/4',
-     None, set(['ts-p4', 'ts-p2', 'ts-p3']), [2, 4]),
+     None, set(['ts-p4', 'ts-p2', 'ts-p1', 'ts-p3']), [2, 4]),
 ]
 
 @pytest.mark.parametrize(
@@ -739,6 +738,18 @@ def test_testplan_load(
     testplan.platforms[9].name = 'lt-p2'
     testplan.platforms[10].name = 'lt-p3'
     testplan.platforms[11].name = 'lt-p4'
+    testplan.platforms[0].aliases = ['t-p1']
+    testplan.platforms[1].aliases = ['t-p2']
+    testplan.platforms[2].aliases = ['t-p3']
+    testplan.platforms[3].aliases = ['t-p4']
+    testplan.platforms[4].aliases = ['ts-p1']
+    testplan.platforms[5].aliases = ['ts-p2']
+    testplan.platforms[6].aliases = ['ts-p3']
+    testplan.platforms[7].aliases = ['ts-p4']
+    testplan.platforms[8].aliases = ['lt-p1']
+    testplan.platforms[9].aliases = ['lt-p2']
+    testplan.platforms[10].aliases = ['lt-p3']
+    testplan.platforms[11].aliases = ['lt-p4']
     testplan.platforms[0].normalized_name = 't-p1'
     testplan.platforms[1].normalized_name = 't-p2'
     testplan.platforms[2].normalized_name = 't-p3'
@@ -1071,26 +1082,24 @@ def test_testplan_info(capfd):
 
 
 TESTDATA_8 = [
-    (False, False, ['p1e2', 'p2', 'p3', 'p3@B'], ['p2']),
-    (False, True, None, None),
-    (True, False, ['p1e2', 'p2', 'p3', 'p3@B'], ['p3']),
+    (False, ['p1e2/unit_testing', 'p2/unit_testing', 'p3/unit_testing'], ['p2/unit_testing', 'p3/unit_testing']),
+    (True, ['p1e2/unit_testing', 'p2/unit_testing', 'p3/unit_testing'], ['p3/unit_testing']),
 ]
 
 @pytest.mark.parametrize(
-    'override_default_platforms, create_duplicate, expected_platform_names, expected_defaults',
+    'override_default_platforms, expected_platform_names, expected_defaults',
     TESTDATA_8,
-    ids=['no override defaults', 'create duplicate', 'override defaults']
+    ids=['no override defaults', 'override defaults']
 )
 def test_testplan_add_configurations(
     tmp_path,
     override_default_platforms,
-    create_duplicate,
     expected_platform_names,
     expected_defaults
 ):
     # tmp_path
     # └ boards  <- board root
-    #   ├ x86
+    #   ├ zephyr
     #   │ ├ p1
     #   │ | ├ p1e1.yaml
     #   │ | └ p1e2.yaml
@@ -1102,24 +1111,43 @@ def test_testplan_add_configurations(
     #     └ p3
     #       ├ p3.yaml
     #       └ p3_B.conf
+    tmp_soc_root_dir = tmp_path / 'soc'
+    tmp_soc_root_dir.mkdir()
+
+    tmp_vend1_dir = tmp_soc_root_dir / 'zephyr'
+    tmp_vend1_dir.mkdir()
+
+    tmp_soc1_dir = tmp_vend1_dir / 's1'
+    tmp_soc1_dir.mkdir()
+
+    soc1_yaml = """\
+family:
+  - name: zephyr
+    series:
+      - name: zephyr_testing
+        socs:
+          - name: unit_testing
+"""
+    soc1_yamlfile = tmp_soc1_dir / 'soc.yml'
+    soc1_yamlfile.write_text(soc1_yaml)
 
     tmp_board_root_dir = tmp_path / 'boards'
     tmp_board_root_dir.mkdir()
 
-    tmp_arch1_dir = tmp_board_root_dir / 'x86'
-    tmp_arch1_dir.mkdir()
+    tmp_vend1_dir = tmp_board_root_dir / 'zephyr'
+    tmp_vend1_dir.mkdir()
 
-    tmp_p1_dir = tmp_arch1_dir / 'p1'
+    tmp_p1_dir = tmp_vend1_dir / 'p1'
     tmp_p1_dir.mkdir()
 
     p1e1_bs_yaml = """\
 boards:
 
-  - name: ple1
+  - name: p1e1
     vendor: zephyr
     socs:
       - name: unit_testing
-  - name: ple2
+  - name: p1e2
     vendor: zephyr
     socs:
       - name: unit_testing
@@ -1132,7 +1160,7 @@ identifier: p1e1
 name: Platform 1 Edition 1
 type: native
 arch: x86
-vendor: vendor1
+vendor: zephyr
 toolchain:
   - zephyr
 twister: False
@@ -1145,14 +1173,14 @@ identifier: p1e2
 name: Platform 1 Edition 2
 type: native
 arch: x86
-vendor: vendor1
+vendor: zephyr
 toolchain:
   - zephyr
 """
     p1e2_yamlfile = tmp_p1_dir / 'p1e2.yaml'
     p1e2_yamlfile.write_text(p1e2_yaml)
 
-    tmp_p2_dir = tmp_arch1_dir / 'p2'
+    tmp_p2_dir = tmp_vend1_dir / 'p2'
     tmp_p2_dir.mkdir()
 
     p2_bs_yaml = """\
@@ -1171,7 +1199,7 @@ boards:
     p2_yamlfile.write_text(p2_bs_yaml)
 
     p2_yaml = """\
-identifier: p2
+identifier: p2/unit_testing
 name: Platform 2
 type: sim
 arch: x86
@@ -1184,9 +1212,6 @@ testing:
     p2_yamlfile = tmp_p2_dir / 'p2.yaml'
     p2_yamlfile.write_text(p2_yaml)
 
-    if create_duplicate:
-        p2_yamlfile = tmp_p2_dir / 'p2-1.yaml'
-        p2_yamlfile.write_text(p2_yaml)
 
     p2_2_yaml = """\
 testing:
@@ -1202,15 +1227,14 @@ toolchain:
     p2_2_yamlfile = tmp_p2_dir / 'p2-2.yaml'
     p2_2_yamlfile.write_text(p2_2_yaml)
 
-    tmp_arch2_dir = tmp_board_root_dir / 'arm'
-    tmp_arch2_dir.mkdir()
+    tmp_vend2_dir = tmp_board_root_dir / 'arm'
+    tmp_vend2_dir.mkdir()
 
-    tmp_p3_dir = tmp_arch2_dir / 'p3'
+    tmp_p3_dir = tmp_vend2_dir / 'p3'
     tmp_p3_dir.mkdir()
 
     p3_bs_yaml = """\
 boards:
-
   - name: p3
     vendor: zephyr
     socs:
@@ -1227,11 +1251,11 @@ arch: arm
 vendor: vendor3
 toolchain:
   - zephyr
+testing:
+  default: True
 """
     p3_yamlfile = tmp_p3_dir / 'p3.yaml'
     p3_yamlfile.write_text(p3_yaml)
-    p3_yamlfile = tmp_p3_dir / 'p3_B.conf'
-    p3_yamlfile.write_text('')
 
     env = mock.Mock(board_roots=[tmp_board_root_dir],soc_roots=[tmp_path], arch_roots=[tmp_path])
 
@@ -1244,13 +1268,18 @@ toolchain:
         }
     }
 
-    with pytest.raises(Exception) if create_duplicate else nullcontext():
-        testplan.add_configurations()
+
+    testplan.add_configurations()
 
     if expected_defaults is not None:
+        print(expected_defaults)
+        print(testplan.default_platforms)
         assert sorted(expected_defaults) == sorted(testplan.default_platforms)
     if expected_platform_names is not None:
-        assert sorted(expected_platform_names) == sorted(testplan.platform_names)
+        print(expected_platform_names)
+        print(testplan.platform_names)
+        platform_names = [p.name for p in testplan.platforms]
+        assert sorted(expected_platform_names) == sorted(platform_names)
 
 
 def test_testplan_get_all_tests():
@@ -1404,8 +1433,10 @@ def test_testplan_get_platform(name, expect_found):
     testplan = TestPlan(env=mock.Mock())
     p1 = mock.Mock()
     p1.name = 'some platform'
+    p1.aliases = [p1.name]
     p2 = mock.Mock()
     p2.name = 'a platform'
+    p2.aliases = [p2.name]
     testplan.platforms = [p1, p2]
 
     res = testplan.get_platform(name)
@@ -1639,7 +1670,7 @@ def test_testplan_load_from_file(caplog, device_testing, expected_tfilter):
             assert expected_instances[n]['testcases'][str(t)]['duration'] == t.duration
             assert expected_instances[n]['testcases'][str(t)]['output'] == t.output
 
-    check_runnable_mock.assert_called_with(mock.ANY, expected_tfilter, mock.ANY, mock.ANY)
+    check_runnable_mock.assert_called_with(mock.ANY, mock.ANY)
 
     expected_logs = [
         'loading TestSuite 1...',

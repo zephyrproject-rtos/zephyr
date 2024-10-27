@@ -80,7 +80,7 @@
 		};
 
 		flc0: flash_controller@40029000 {
-			compatible = "flash-controller";
+			compatible = "adi,max32-flash-controller";
 			reg = <0x40029000 0x400>;
 
 			#address-cells = <1>;

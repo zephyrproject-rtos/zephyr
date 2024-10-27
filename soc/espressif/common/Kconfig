@@ -24,7 +24,7 @@ config ESP_SIMPLE_BOOT
 	  Please note that this method brings the system up with all memories set-up, but
 	  all other features, such as secure boot OTA or slots management are not available.
 
-config ESP_RUNTIME_HEAP
+config ESP_HEAP_RUNTIME
 	bool
 	default y
 	help

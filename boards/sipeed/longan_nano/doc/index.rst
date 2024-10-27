@@ -1,11 +1,4 @@
-.. _longan_nano:
-
-Sipeed Longan Nano
-##################
-
-.. image:: img/longan_nano.jpg
-     :align: center
-     :alt: longan_nano
+.. zephyr:board:: longan_nano
 
 Overview
 ********

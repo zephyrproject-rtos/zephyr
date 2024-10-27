@@ -20,5 +20,8 @@ supported:
   - watchdog
   - spi
   - i2c
+  - rtc
+  - dma
+  - pwm
 
 vendor: infineon

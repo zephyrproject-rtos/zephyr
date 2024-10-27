@@ -112,11 +112,50 @@ struct bt_bas_bls {
 void bt_bas_bls_init(void);
 
 /**
+ * @brief Read the Battery Critical Status characteristic.
+ *
+ * @param conn Pointer to the Bluetooth connection object representing the client requesting
+ *             the characteristic.
+ * @param attr Pointer to the GATT attribute of Battery Critical Status characteristic.
+ * @param buf Buffer to store the read value.
+ * @param len Length of the buffer.
+ * @param offset Offset within the characteristic value to start reading.
+ *
+ * @return The number of bytes read and sent to the client, or a negative error code on failure.
+ */
+ssize_t bt_bas_bcs_read_critical_status(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+					void *buf, uint16_t len, uint16_t offset);
+
+/**
+ * @brief Callback function for BCS Client Characteristic Configuration changes.
+ *
+ *
+ * @param attr  Pointer to the GATT attribute of battery critical status char.
+ * @param value The new value of the CCC. This value indicates whether
+ *              notifications or indications are enabled or disabled.
+ */
+void bt_bas_bcs_ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value);
+
+/**
  * @brief Set the battery level characteristic value.
  *
  * @param battery_level The new battery level value in percent (0-100).
  */
 void bt_bas_bls_set_battery_level(uint8_t battery_level);
+
+/**
+ * @brief Set the battery critical state flag.
+ *
+ * @param critical_state The battery critical state to set (true for critical, false otherwise).
+ */
+void bt_bas_bcs_set_battery_critical_state(bool critical_state);
+
+/**
+ * @brief Set the immediate service required flag.
+ *
+ * @param service_required The immediate service required status to set.
+ */
+void bt_bas_bcs_set_immediate_service_required(bool service_required);
 
 /**
  * @brief Read the Battery Level Status characteristic.

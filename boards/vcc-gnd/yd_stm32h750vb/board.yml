@@ -1,5 +1,6 @@
 board:
   name: yd_stm32h750vb
+  full_name: YD-STM32H750VB
   vendor: vcc-gnd
   socs:
     - name: stm32h750xx

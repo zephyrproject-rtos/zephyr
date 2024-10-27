@@ -35,11 +35,11 @@ zephyr_linker_sources(SECTIONS sections-rom.ld)
 zephyr_linker_section_ifdef(CONFIG_NET_SAMPLE_HTTPS_SERVICE NAME
 				http_resource_desc_test_https_service
 				KVMA RAM_REGION GROUP RODATA_REGION
-				SUBALIGN Z_LINK_ITERABLE_SUBALIGN)
+				SUBALIGN ${CONFIG_LINKER_ITERABLE_SUBALIGN})
 zephyr_linker_section_ifdef(CONFIG_NET_SAMPLE_HTTP_SERVICE NAME
 				http_resource_desc_test_http_service
 				KVMA RAM_REGION GROUP RODATA_REGION
-				SUBALIGN Z_LINK_ITERABLE_SUBALIGN)
+				SUBALIGN ${CONFIG_LINKER_ITERABLE_SUBALIGN})
 
 foreach(web_resource
   index.html

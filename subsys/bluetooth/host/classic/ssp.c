@@ -355,10 +355,6 @@ int bt_ssp_start_security(struct bt_conn *conn)
 		return -EBUSY;
 	}
 
-	if (conn->required_sec_level > BT_SECURITY_L3) {
-		return -ENOTSUP;
-	}
-
 	if (get_io_capa() == BT_IO_NO_INPUT_OUTPUT &&
 	    conn->required_sec_level > BT_SECURITY_L2) {
 		return -EINVAL;
@@ -635,6 +631,9 @@ void bt_hci_io_capa_resp(struct net_buf *buf)
 /* Clear Bonding flag */
 #define BT_HCI_SET_NO_BONDING(auth) ((auth) & 0x01)
 
+/* Clear MITM flag */
+#define BT_HCI_SET_NO_MITM(auth) ((auth) & (~0x01))
+
 void bt_hci_io_capa_req(struct net_buf *buf)
 {
 	struct bt_hci_evt_io_capa_req *evt = (void *)buf->data;
@@ -678,6 +677,11 @@ void bt_hci_io_capa_req(struct net_buf *buf)
 			} else {
 				auth = BT_HCI_DEDICATED_BONDING;
 			}
+		}
+
+		if (conn->required_sec_level < BT_SECURITY_L3) {
+			/* If security level less than L3, clear MITM flag. */
+			auth = BT_HCI_SET_NO_MITM(auth);
 		}
 	} else {
 		auth = ssp_get_auth(conn);

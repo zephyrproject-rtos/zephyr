@@ -1,0 +1,25 @@
+/ {
+	sram@2003FC00 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x2003FC00 DT_SIZE_K(1)>;
+		zephyr,memory-region = "RetainedMem";
+		status = "okay";
+
+		retainedmem {
+			compatible = "zephyr,retained-ram";
+			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			boot_info0: boot_info@0 {
+				compatible = "zephyr,retention";
+				status = "okay";
+				reg = <0x0 0x100>;
+			};
+		};
+	};
+
+	chosen {
+		zephyr,bootloader-info = &boot_info0;
+	};
+};

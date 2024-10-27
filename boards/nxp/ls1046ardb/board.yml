@@ -1,5 +1,6 @@
 board:
   name: ls1046ardb
+  full_name: LS1046A RDB
   vendor: nxp
   socs:
   - name: ls1046a

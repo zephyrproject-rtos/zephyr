@@ -126,8 +126,14 @@ config HAS_HW_NRF_NVMC_PE
 config HAS_HW_NRF_OSCILLATORS
 	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_OSCILLATORS))
 
-config HAS_HW_NRF_PDM
-	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_PDM))
+config HAS_HW_NRF_PDM0
+	def_bool $(dt_nodelabel_enabled_with_compat,pdm0,$(DT_COMPAT_NORDIC_NRF_PDM))
+
+config HAS_HW_NRF_PDM20
+	def_bool $(dt_nodelabel_enabled_with_compat,pdm20,$(DT_COMPAT_NORDIC_NRF_PDM))
+
+config HAS_HW_NRF_PDM21
+	def_bool $(dt_nodelabel_enabled_with_compat,pdm21,$(DT_COMPAT_NORDIC_NRF_PDM))
 
 config HAS_HW_NRF_POWER
 	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_POWER))

@@ -88,62 +88,24 @@ enum bt_le_cs_test_cs_sync_antenna_selection {
 	BT_LE_CS_TEST_CS_SYNC_ANTENNA_SELECTION_FOUR = BT_HCI_OP_LE_CS_ANTENNA_SEL_FOUR,
 };
 
-/** CS Test Tone Antennna Config Selection.
- *
- *  These enum values are indices in the following table, where N_AP is the maximum
- *  number of antenna paths (in the range [1, 4]).
- *
- * +--------------+-------------+-------------------+-------------------+--------+
- * | Config Index | Total Paths | Dev A: # Antennas | Dev B: # Antennas | Config |
- * +--------------+-------------+-------------------+-------------------+--------+
- * |            0 |           1 |                 1 |                 1 | 1:1    |
- * |            1 |           2 |                 2 |                 1 | N_AP:1 |
- * |            2 |           3 |                 3 |                 1 | N_AP:1 |
- * |            3 |           4 |                 4 |                 1 | N_AP:1 |
- * |            4 |           2 |                 1 |                 2 | 1:N_AP |
- * |            5 |           3 |                 1 |                 3 | 1:N_AP |
- * |            6 |           4 |                 1 |                 4 | 1:N_AP |
- * |            7 |           4 |                 2 |                 2 | 2:2    |
- * +--------------+-------------+-------------------+-------------------+--------+
- *
- *  There are therefore four groups of possible antenna configurations:
- *
- *  - 1:1 configuration, where both A and B support 1 antenna each
- *  - 1:N_AP configuration, where A supports 1 antenna, B supports N_AP antennas, and
- *    N_AP is a value in the range [2, 4]
- *  - N_AP:1 configuration, where A supports N_AP antennas, B supports 1 antenna, and
- *    N_AP is a value in the range [2, 4]
- *  - 2:2 configuration, where both A and B support 2 antennas and N_AP = 4
- */
-enum bt_le_cs_test_tone_antenna_config_selection {
-	BT_LE_CS_TEST_TONE_ANTENNA_CONFIGURATION_INDEX_ONE = BT_HCI_OP_LE_CS_TEST_ACI_0,
-	BT_LE_CS_TEST_TONE_ANTENNA_CONFIGURATION_INDEX_TWO = BT_HCI_OP_LE_CS_TEST_ACI_1,
-	BT_LE_CS_TEST_TONE_ANTENNA_CONFIGURATION_INDEX_THREE = BT_HCI_OP_LE_CS_TEST_ACI_2,
-	BT_LE_CS_TEST_TONE_ANTENNA_CONFIGURATION_INDEX_FOUR = BT_HCI_OP_LE_CS_TEST_ACI_3,
-	BT_LE_CS_TEST_TONE_ANTENNA_CONFIGURATION_INDEX_FIVE = BT_HCI_OP_LE_CS_TEST_ACI_4,
-	BT_LE_CS_TEST_TONE_ANTENNA_CONFIGURATION_INDEX_SIX = BT_HCI_OP_LE_CS_TEST_ACI_5,
-	BT_LE_CS_TEST_TONE_ANTENNA_CONFIGURATION_INDEX_SEVEN = BT_HCI_OP_LE_CS_TEST_ACI_6,
-	BT_LE_CS_TEST_TONE_ANTENNA_CONFIGURATION_INDEX_EIGHT = BT_HCI_OP_LE_CS_TEST_ACI_7,
-};
-
 /** CS Test Initiator SNR control options */
-enum bt_le_cs_test_initiator_snr_control {
-	BT_LE_CS_TEST_INITIATOR_SNR_CONTROL_18dB = BT_HCI_OP_LE_CS_TEST_INITIATOR_SNR_18,
-	BT_LE_CS_TEST_INITIATOR_SNR_CONTROL_21dB = BT_HCI_OP_LE_CS_TEST_INITIATOR_SNR_21,
-	BT_LE_CS_TEST_INITIATOR_SNR_CONTROL_24dB = BT_HCI_OP_LE_CS_TEST_INITIATOR_SNR_24,
-	BT_LE_CS_TEST_INITIATOR_SNR_CONTROL_27dB = BT_HCI_OP_LE_CS_TEST_INITIATOR_SNR_27,
-	BT_LE_CS_TEST_INITIATOR_SNR_CONTROL_30dB = BT_HCI_OP_LE_CS_TEST_INITIATOR_SNR_30,
-	BT_LE_CS_TEST_INITIATOR_SNR_CONTROL_NOT_USED = BT_HCI_OP_LE_CS_TEST_INITIATOR_SNR_NOT_USED,
+enum bt_le_cs_initiator_snr_control {
+	BT_LE_CS_INITIATOR_SNR_CONTROL_18dB = BT_HCI_OP_LE_CS_INITIATOR_SNR_18,
+	BT_LE_CS_INITIATOR_SNR_CONTROL_21dB = BT_HCI_OP_LE_CS_INITIATOR_SNR_21,
+	BT_LE_CS_INITIATOR_SNR_CONTROL_24dB = BT_HCI_OP_LE_CS_INITIATOR_SNR_24,
+	BT_LE_CS_INITIATOR_SNR_CONTROL_27dB = BT_HCI_OP_LE_CS_INITIATOR_SNR_27,
+	BT_LE_CS_INITIATOR_SNR_CONTROL_30dB = BT_HCI_OP_LE_CS_INITIATOR_SNR_30,
+	BT_LE_CS_INITIATOR_SNR_CONTROL_NOT_USED = BT_HCI_OP_LE_CS_INITIATOR_SNR_NOT_USED,
 };
 
 /** CS Test Reflector SNR control options */
-enum bt_le_cs_test_reflector_snr_control {
-	BT_LE_CS_TEST_REFLECTOR_SNR_CONTROL_18dB = BT_HCI_OP_LE_CS_TEST_REFLECTOR_SNR_18,
-	BT_LE_CS_TEST_REFLECTOR_SNR_CONTROL_21dB = BT_HCI_OP_LE_CS_TEST_REFLECTOR_SNR_21,
-	BT_LE_CS_TEST_REFLECTOR_SNR_CONTROL_24dB = BT_HCI_OP_LE_CS_TEST_REFLECTOR_SNR_24,
-	BT_LE_CS_TEST_REFLECTOR_SNR_CONTROL_27dB = BT_HCI_OP_LE_CS_TEST_REFLECTOR_SNR_27,
-	BT_LE_CS_TEST_REFLECTOR_SNR_CONTROL_30dB = BT_HCI_OP_LE_CS_TEST_REFLECTOR_SNR_30,
-	BT_LE_CS_TEST_REFLECTOR_SNR_CONTROL_NOT_USED = BT_HCI_OP_LE_CS_TEST_REFLECTOR_SNR_NOT_USED,
+enum bt_le_cs_reflector_snr_control {
+	BT_LE_CS_REFLECTOR_SNR_CONTROL_18dB = BT_HCI_OP_LE_CS_REFLECTOR_SNR_18,
+	BT_LE_CS_REFLECTOR_SNR_CONTROL_21dB = BT_HCI_OP_LE_CS_REFLECTOR_SNR_21,
+	BT_LE_CS_REFLECTOR_SNR_CONTROL_24dB = BT_HCI_OP_LE_CS_REFLECTOR_SNR_24,
+	BT_LE_CS_REFLECTOR_SNR_CONTROL_27dB = BT_HCI_OP_LE_CS_REFLECTOR_SNR_27,
+	BT_LE_CS_REFLECTOR_SNR_CONTROL_30dB = BT_HCI_OP_LE_CS_REFLECTOR_SNR_30,
+	BT_LE_CS_REFLECTOR_SNR_CONTROL_NOT_USED = BT_HCI_OP_LE_CS_REFLECTOR_SNR_NOT_USED,
 };
 
 /** CS Test Override 3 T_PM Tone Extension */
@@ -338,24 +300,73 @@ struct bt_le_cs_test_param {
 	 *      it should use as low a transmit power as possible
 	 */
 	uint8_t transmit_power_level;
-	/** Interlude time in microseconds between the RTT packets. */
+	/** Interlude time in microseconds between the RTT packets.
+	 *
+	 *  Valid options are:
+	 *    - 10 us
+	 *    - 20 us
+	 *    - 30 us
+	 *    - 40 us
+	 *    - 50 us
+	 *    - 60 us
+	 *    - 80 us
+	 *    - 145 us
+	 */
 	uint8_t t_ip1_time;
-	/** Interlude time in microseconds between the CS tones. */
+	/** Interlude time in microseconds between the CS tones.
+	 *
+	 *  Valid options are:
+	 *    - 10 us
+	 *    - 20 us
+	 *    - 30 us
+	 *    - 40 us
+	 *    - 50 us
+	 *    - 60 us
+	 *    - 80 us
+	 *    - 145 us
+	 */
 	uint8_t t_ip2_time;
-	/** Time in microseconds for frequency changes. */
+	/** Time in microseconds for frequency changes.
+	 *
+	 *  Valid options are:
+	 *    - 15 us
+	 *    - 20 us
+	 *    - 30 us
+	 *    - 40 us
+	 *    - 50 us
+	 *    - 60 us
+	 *    - 80 us
+	 *    - 100 us
+	 *    - 120 us
+	 *    - 150 us
+	 */
 	uint8_t t_fcs_time;
-	/** Time in microseconds for the phase measurement period of the CS tones. */
+	/** Time in microseconds for the phase measurement period of the CS tones.
+	 *
+	 *  Valid options are:
+	 *    - 10 us
+	 *    - 20 us
+	 *    - 40 us
+	 */
 	uint8_t t_pm_time;
-	/** Time in microseconds for the antenna switch period of the CS tones. */
+	/** Time in microseconds for the antenna switch period of the CS tones.
+	 *
+	 *  Valid options are:
+	 *    - 0 us
+	 *    - 1 us
+	 *    - 2 us
+	 *    - 4 us
+	 *    - 10 us
+	 */
 	uint8_t t_sw_time;
 	/** Antenna Configuration Index used during antenna switching during
 	 *  the tone phases of CS steps.
 	 */
-	enum bt_le_cs_test_tone_antenna_config_selection tone_antenna_config_selection;
+	enum bt_conn_le_cs_tone_antenna_config_selection tone_antenna_config_selection;
 	/** Initiator SNR control options */
-	enum bt_le_cs_test_initiator_snr_control initiator_snr_control;
+	enum bt_le_cs_initiator_snr_control initiator_snr_control;
 	/** Reflector SNR control options */
-	enum bt_le_cs_test_reflector_snr_control reflector_snr_control;
+	enum bt_le_cs_reflector_snr_control reflector_snr_control;
 	/** Determines octets 14 and 15 of the initial value of the DRBG nonce. */
 	uint16_t drbg_nonce;
 
@@ -517,6 +528,47 @@ struct bt_le_cs_create_config_params {
 	uint8_t channel_map[10];
 };
 
+/** Callbacks for CS Test */
+struct bt_le_cs_test_cb {
+	/**@brief CS Test Subevent data.
+	 *
+	 * @param[in] Subevent results.
+	 */
+	void (*le_cs_test_subevent_data_available)(struct bt_conn_le_cs_subevent_result *data);
+	/**@brief CS Test End Complete. */
+	void (*le_cs_test_end_complete)(void);
+};
+
+/** Subevent result step */
+struct bt_le_cs_subevent_step {
+	/** CS step mode. */
+	uint8_t mode;
+	/** CS step channel index. */
+	uint8_t channel;
+	/** Length of role- and mode-specific information being reported. */
+	uint8_t data_len;
+	/** Pointer to role- and mode-specific information. */
+	const uint8_t *data;
+};
+
+/** Sign-extended IQ value extracted from step data. */
+struct bt_le_cs_iq_sample {
+	int16_t i;
+	int16_t q;
+};
+
+/** @brief Extract in-phase and quadrature terms from HCI-formatted PCT.
+ *
+ * Convenience function for processing 24-bit phase correction terms found
+ * in CS step data. The 12-bit signed real and imaginary components are
+ * converted to host endianness and sign-extended.
+ *
+ * @param pct 24-bit little-endian phase correction term.
+ *
+ * @return struct bt_le_cs_iq_sample containing real and imaginary terms as int16_t
+ */
+struct bt_le_cs_iq_sample bt_le_cs_parse_pct(const uint8_t pct[3]);
+
 /** @brief Set all valid channel map bits
  *
  * This command is used to enable all valid channels in a
@@ -567,6 +619,19 @@ int bt_le_cs_set_default_settings(struct bt_conn *conn,
  */
 int bt_le_cs_read_remote_fae_table(struct bt_conn *conn);
 
+/** @brief Register callbacks for the CS Test mode.
+ *
+ * Existing callbacks can be unregistered by providing NULL function
+ * pointers.
+ *
+ * @note To use this API @kconfig{CONFIG_BT_CHANNEL_SOUNDING_TEST} must be set.
+ *
+ * @param cs_test_cb Set of callbacks to be used with CS Test
+ *
+ * @return Zero on success or (negative) error code on failure.
+ */
+int bt_le_cs_test_cb_register(struct bt_le_cs_test_cb cs_test_cb);
+
 /** @brief Start a CS test
  *
  * This command is used to start a CS test where the IUT is placed in the role
@@ -581,7 +646,7 @@ int bt_le_cs_read_remote_fae_table(struct bt_conn *conn);
  * parameters of this command describe the required transmit and receive behavior
  * for the CS test.
  *
- * @note To use this API @kconfig{CONFIG_BT_CHANNEL_SOUNDING} must be set.
+ * @note To use this API @kconfig{CONFIG_BT_CHANNEL_SOUNDING_TEST} must be set.
  *
  * @param params CS Test parameters
  *
@@ -619,6 +684,209 @@ int bt_le_cs_create_config(struct bt_conn *conn, struct bt_le_cs_create_config_p
  * @return Zero on success or (negative) error code on failure.
  */
 int bt_le_cs_remove_config(struct bt_conn *conn, uint8_t config_id);
+
+/** @brief Stop ongoing CS Test
+ *
+ * This command is used to stop any CS test that is in progress.
+ *
+ * The controller is expected to finish reporting any subevent results
+ * before completing this termination.
+ *
+ * @note To use this API @kconfig{CONFIG_BT_CHANNEL_SOUNDING_TEST} must be set.
+ *
+ * @return Zero on success or (negative) error code on failure.
+ */
+int bt_le_cs_stop_test(void);
+
+/** @brief Parse CS Subevent Step Data
+ *
+ * A helper for parsing HCI-formatted step data found in channel sounding subevent results.
+ *
+ * A typical use-case is filtering out data which does not meet certain packet quality or NADM
+ * requirements.
+ *
+ * @warning This function will consume the data when parsing.
+ *
+ * @param step_data_buf Pointer to a buffer containing the step data.
+ * @param func Callback function which will be called for each step data found.
+ *             The callback should return true to continue parsing, or false to stop.
+ * @param user_data User data to be passed to the callback.
+ */
+void bt_le_cs_step_data_parse(struct net_buf_simple *step_data_buf,
+			      bool (*func)(struct bt_le_cs_subevent_step *step, void *user_data),
+			      void *user_data);
+
+/** @brief CS Security Enable
+ *
+ * This commmand is used to start or restart the Channel Sounding Security
+ * Start procedure in the local Controller for the ACL connection identified
+ * in the conn parameter.
+ *
+ * @note To use this API @kconfig{CONFIG_BT_CHANNEL_SOUNDING} must be set.
+ *
+ * @param conn   Connection Object.
+ *
+ * @return Zero on success or (negative) error code on failure.
+ */
+int bt_le_cs_security_enable(struct bt_conn *conn);
+
+struct bt_le_cs_procedure_enable_param {
+	uint8_t config_id;
+	enum bt_conn_le_cs_procedure_enable_state enable;
+};
+
+/** @brief CS Procedure Enable
+ *
+ *  This command is used to enable or disable the scheduling of CS procedures
+ *  by the local Controller, with the remote device identified in the conn
+ *  parameter.
+ *
+ * @note To use this API @kconfig{CONFIG_BT_CHANNEL_SOUNDING} must be set.
+ *
+ * @param conn   Connection Object.
+ * @param params Parameters for the CS Procedure Enable command.
+ *
+ * @return Zero on success or (negative) error code on failure.
+ */
+int bt_le_cs_procedure_enable(struct bt_conn *conn,
+			      const struct bt_le_cs_procedure_enable_param *params);
+
+enum bt_le_cs_procedure_phy {
+	BT_LE_CS_PROCEDURE_PHY_1M = BT_HCI_OP_LE_CS_PROCEDURE_PHY_1M,
+	BT_LE_CS_PROCEUDRE_PHY_2M = BT_HCI_OP_LE_CS_PROCEDURE_PHY_2M,
+	BT_LE_CS_PROCEDURE_PHY_CODED_S8 = BT_HCI_OP_LE_CS_PROCEDURE_PHY_CODED_S8,
+	BT_LE_CS_PROCEDURE_PHY_CODED_S2 = BT_HCI_OP_LE_CS_PROCEDURE_PHY_CODED_S2,
+};
+
+#define BT_LE_CS_PROCEDURE_PREFERRED_PEER_ANTENNA_1 BIT(0)
+#define BT_LE_CS_PROCEDURE_PREFERRED_PEER_ANTENNA_2 BIT(1)
+#define BT_LE_CS_PROCEDURE_PREFERRED_PEER_ANTENNA_3 BIT(2)
+#define BT_LE_CS_PROCEDURE_PREFERRED_PEER_ANTENNA_4 BIT(3)
+
+struct bt_le_cs_set_procedure_parameters_param {
+	/* The ID associated with the desired configuration (0 to 3) */
+	uint8_t config_id;
+
+	/* Max. duration for each CS procedure, where T = N * 0.625 ms (0x0001 to 0xFFFF) */
+	uint16_t max_procedure_len;
+
+	/* Min. number of connection events between consecutive CS procedures (0x0001 to 0xFFFF) */
+	uint16_t min_procedure_interval;
+
+	/* Max. number of connection events between consecutive CS procedures (0x0001 to 0xFFFF) */
+	uint16_t max_procedure_interval;
+
+	/* Max. number of procedures to be scheduled (0x0000 for no limit; otherwise 0x0001
+	 * to 0xFFFF)
+	 */
+	uint16_t max_procedure_count;
+
+	/* Min. suggested duration for each CS subevent in microseconds (1250 us to 4 s) */
+	uint32_t min_subevent_len;
+
+	/* Max. suggested duration for each CS subevent in microseconds (1250 us to 4 s) */
+	uint32_t max_subevent_len;
+
+	/* Antenna configuration index */
+	enum bt_conn_le_cs_tone_antenna_config_selection tone_antenna_config_selection;
+
+	/* Phy */
+	enum bt_le_cs_procedure_phy phy;
+
+	/* Transmit power delta, in signed dB, to indicate the recommended difference between the
+	 * remote device's power level for the CS tones and RTT packets and the existing power
+	 * level for the Phy indicated by the Phy parameter (0x80 for no recommendation)
+	 */
+	int8_t tx_power_delta;
+
+	/* Preferred peer antenna (Bitmask of BT_LE_CS_PROCEDURE_PREFERRED_PEER_ANTENNA_*) */
+	uint8_t preferred_peer_antenna;
+
+	/* Initiator SNR control adjustment */
+	enum bt_le_cs_initiator_snr_control snr_control_initiator;
+
+	/* Reflector SNR control adjustment */
+	enum bt_le_cs_reflector_snr_control snr_control_reflector;
+};
+
+/** @brief CS Set Procedure Parameters
+ *
+ * This command is used to set the parameters for the scheduling of one
+ * or more CS procedures by the local controller.
+ *
+ * @note To use this API @kconfig{CONFIG_BT_CHANNEL_SOUNDING} must be set.
+ *
+ * @param conn Connection Object.
+ * @param params Parameters for the CS Set Procedure Parameters command.
+ *
+ * @return Zero on success or (negative) error code on failure.
+ */
+int bt_le_cs_set_procedure_parameters(struct bt_conn *conn,
+				      const struct bt_le_cs_set_procedure_parameters_param *params);
+
+/** @brief CS Set Channel Classification
+ *
+ * This command is used to update the channel classification based on
+ * its local information.
+ *
+ * The nth bitfield (in the range 0 to 78) contains the value for the CS
+ * channel index n. Channel Enabled = 1; Channel Disabled = 0.
+ *
+ * Channels n = 0, 1, 23, 24, 25, 77, and 78 shall be reserved for future
+ * use and shall be set to zero. At least 15 channels shall be enabled.
+ *
+ * The most significant bit (bit 79) is reserved for future use.
+ *
+ * @note To use this API, @kconfig{CONFIG_BT_CHANNEL_SOUNDING} must be set.
+ *
+ * @param channel_classification Bit fields
+ *
+ * @return Zero on success or (negative) error code on failure.
+ */
+int bt_le_cs_set_channel_classification(uint8_t channel_classification[10]);
+
+/** @brief CS Read Local Supported Capabilities
+ *
+ *  This command is used to read the CS capabilities that are supported
+ *  by the local Controller.
+ *
+ * @note To use this API @kconfig{CONFIG_BT_CHANNEL_SOUNDING} must be set.
+ *
+ * @param ret Return values for the CS Procedure Enable command.
+ *
+ * @return Zero on success or (negative) error code on failure.
+ */
+int bt_le_cs_read_local_supported_capabilities(struct bt_conn_le_cs_capabilities *ret);
+
+/** @brief CS Write Cached Remote Supported Capabilities
+ *
+ *  This command is used to write the cached copy of the CS capabilities
+ *  that are supported by the remote Controller for the connection
+ *  identified.
+ *
+ * @note To use this API @kconfig{CONFIG_BT_CHANNEL_SOUNDING} must be set.
+ *
+ * @param conn   Connection Object.
+ * @param params Parameters for the CS Write Cached Remote Supported Capabilities command.
+ *
+ * @return Zero on success or (negative) error code on failure.
+ */
+int bt_le_cs_write_cached_remote_supported_capabilities(
+	struct bt_conn *conn, const struct bt_conn_le_cs_capabilities *params);
+
+/** @brief CS Write Cached Remote FAE Table
+ *
+ *  This command is used to write a cached copy of the per-channel mode-0
+ *  Frequency Actuation Error table of the remote device in the local Controller.
+ *
+ * @note To use this API @kconfig{CONFIG_BT_CHANNEL_SOUNDING} must be set.
+ *
+ * @param conn   Connection Object.
+ * @param remote_fae_table Per-channel mode-0 FAE table of the local Controller
+ *
+ * @return Zero on success or (negative) error code on failure.
+ */
+int bt_le_cs_write_cached_remote_fae_table(struct bt_conn *conn, uint8_t remote_fae_table[72]);
 
 #ifdef __cplusplus
 }

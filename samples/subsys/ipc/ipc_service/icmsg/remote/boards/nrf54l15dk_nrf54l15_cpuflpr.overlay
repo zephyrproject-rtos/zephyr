@@ -23,6 +23,7 @@
 	ipc {
 		ipc0: ipc0 {
 			compatible = "zephyr,ipc-icmsg";
+			dcache-alignment = <32>;
 			tx-region = <&sram_tx>;
 			rx-region = <&sram_rx>;
 			mboxes = <&cpuflpr_vevif_rx 21>, <&cpuflpr_vevif_tx 20>;
@@ -38,4 +39,8 @@
 
 &cpuflpr_vevif_tx {
 	status = "okay";
+};
+
+&uart30 {
+	/delete-property/ hw-flow-control;
 };

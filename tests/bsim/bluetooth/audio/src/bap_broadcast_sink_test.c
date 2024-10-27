@@ -59,7 +59,7 @@ static struct bt_bap_stream *streams[ARRAY_SIZE(broadcast_sink_streams)];
 static uint32_t requested_bis_sync;
 static struct bt_le_ext_adv *ext_adv;
 static const struct bt_bap_scan_delegator_recv_state *req_recv_state;
-static uint8_t recv_state_broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE];
+static uint8_t recv_state_broadcast_code[BT_ISO_BROADCAST_CODE_SIZE];
 
 #define SUPPORTED_CHAN_COUNTS          BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(1, 2)
 #define SUPPORTED_MIN_OCTETS_PER_FRAME 30
@@ -403,14 +403,21 @@ static int bis_sync_req_cb(struct bt_conn *conn,
 
 static void broadcast_code_cb(struct bt_conn *conn,
 			      const struct bt_bap_scan_delegator_recv_state *recv_state,
-			      const uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE])
+			      const uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE])
 {
 	req_recv_state = recv_state;
 
-	memcpy(recv_state_broadcast_code, broadcast_code, BT_AUDIO_BROADCAST_CODE_SIZE);
+	memcpy(recv_state_broadcast_code, broadcast_code, BT_ISO_BROADCAST_CODE_SIZE);
+}
+
+static void scanning_state_cb(struct bt_conn *conn, bool is_scanning)
+{
+	printk("Assistant scanning %s\n", is_scanning ? "started" : "stopped");
+
 }
 
 static struct bt_bap_scan_delegator_cb scan_delegator_cbs = {
+	.scanning_state = scanning_state_cb,
 	.pa_sync_req = pa_sync_req_cb,
 	.pa_sync_term_req = pa_sync_term_req_cb,
 	.bis_sync_req = bis_sync_req_cb,
@@ -755,7 +762,7 @@ static void test_broadcast_sink_create_inval(void)
 		return;
 	}
 
-	err = bt_bap_broadcast_sink_create(pa_sync, INVALID_BROADCAST_ID, &g_sink);
+	err = bt_bap_broadcast_sink_create(pa_sync, BT_BAP_INVALID_BROADCAST_ID, &g_sink);
 	if (err == 0) {
 		FAIL("bt_bap_broadcast_sink_create did not fail with invalid broadcast ID\n");
 		return;
@@ -768,7 +775,7 @@ static void test_broadcast_sink_create_inval(void)
 	}
 }
 
-static void test_broadcast_sync(const uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE])
+static void test_broadcast_sync(const uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE])
 {
 	int err;
 

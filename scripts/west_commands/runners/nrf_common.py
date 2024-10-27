@@ -7,12 +7,18 @@
 
 import abc
 from collections import deque
+import functools
 import os
 from pathlib import Path
 import shlex
 import subprocess
 import sys
 from re import fullmatch, escape
+
+from zephyr_ext_common import ZEPHYR_BASE
+
+sys.path.append(os.fspath(Path(__file__).parent.parent.parent))
+import zephyr_module
 
 from runners.core import ZephyrBinaryRunner, RunnerCaps
 
@@ -34,6 +40,29 @@ UICR_RANGES = {
     }
 }
 
+# Relative to the root of the hal_nordic module
+SUIT_STARTER_PATH = Path('zephyr/blobs/suit/bin/suit_manifest_starter.hex')
+
+@functools.cache
+def _get_suit_starter():
+    path = None
+    modules = zephyr_module.parse_modules(ZEPHYR_BASE)
+    for m in modules:
+        if 'hal_nordic' in m.meta.get('name'):
+            path = Path(m.project)
+            break
+
+    if not path:
+        raise RuntimeError("hal_nordic project missing in the manifest")
+
+    suit_starter = path / SUIT_STARTER_PATH
+    if not suit_starter.exists():
+        raise RuntimeError("Unable to find suit manifest starter file, "
+                           "please make sure to run \'west blobs fetch "
+                           "hal_nordic\'")
+
+    return str(suit_starter.resolve())
+
 class NrfBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end base class for nrf tools.'''
 
@@ -50,6 +79,9 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
         self.reset = bool(reset)
         self.force = force
         self.recover = bool(recover)
+
+        # Only applicable for nrfutil
+        self.suit_starter = False
 
         self.tool_opt = []
         for opts in [shlex.split(opt) for opt in tool_opt]:
@@ -88,6 +120,12 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
                             flashing (erases flash for both cores on nRF53)''')
 
         parser.set_defaults(reset=True)
+
+    @classmethod
+    def args_from_previous_runner(cls, previous_runner, args):
+        # Propagate the chosen device ID to next runner
+        if args.dev_id is None:
+            args.dev_id = previous_runner.dev_id
 
     def ensure_snr(self):
         if not self.dev_id or "*" in self.dev_id:
@@ -259,8 +297,16 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
         if self.family in ('NRF54H_FAMILY', 'NRF92_FAMILY'):
             erase_arg = 'ERASE_NONE'
 
-            cpuapp = self.build_conf.getboolean('CONFIG_SOC_NRF54H20_CPUAPP') or self.build_conf.getboolean('CONFIG_SOC_NRF9280_CPUAPP')
-            cpurad = self.build_conf.getboolean('CONFIG_SOC_NRF54H20_CPURAD') or self.build_conf.getboolean('CONFIG_SOC_NRF9280_CPURAD')
+            cpuapp = (
+                self.build_conf.getboolean('CONFIG_SOC_NRF54H20_CPUAPP') or
+                self.build_conf.getboolean('CONFIG_SOC_NRF54H20_ENGB_CPUAPP') or
+                self.build_conf.getboolean('CONFIG_SOC_NRF9280_CPUAPP')
+            )
+            cpurad = (
+                self.build_conf.getboolean('CONFIG_SOC_NRF54H20_CPURAD') or
+                self.build_conf.getboolean('CONFIG_SOC_NRF54H20_ENGB_CPURAD') or
+                self.build_conf.getboolean('CONFIG_SOC_NRF9280_CPURAD')
+            )
 
             if self.erase:
                 self.exec_op('erase', core='NRFDL_DEVICE_CORE_APPLICATION')
@@ -411,22 +457,50 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
     def do_require(self):
         ''' Ensure the tool is installed '''
 
+    def _check_suit_starter(self, op):
+        op = op['operation']
+        if op['type'] not in ('erase', 'recover', 'program'):
+            return None
+        elif op['type']  == 'program' and op['chip_erase_mode'] != "ERASE_UICR":
+            return None
+
+        file = _get_suit_starter()
+        self.logger.debug(f'suit starter: {file}')
+
+        return file
+
     def op_program(self, hex_file, erase, qspi_erase, defer=False, core=None):
+        args = self._op_program(hex_file, erase, qspi_erase)
+        self.exec_op('program', defer, core, **args)
+
+    def _op_program(self, hex_file, erase, qspi_erase):
         args = {'firmware': {'file': hex_file},
                 'chip_erase_mode': erase, 'verify': 'VERIFY_READ'}
         if qspi_erase:
             args['qspi_erase_mode'] = qspi_erase
-        self.exec_op('program', defer, core, **args)
+
+        return args
 
     def exec_op(self, op, defer=False, core=None, **kwargs):
-        _op = f'{op}'
-        op = {'operation': {'type': _op}}
-        if core:
-            op['core'] = core
-        op['operation'].update(kwargs)
-        self.logger.debug(f'defer: {defer} op: {op}')
-        if defer or not self.do_exec_op(op, force=False):
-            self.ops.append(op)
+
+        def _exec_op(op, defer=False, core=None, **kwargs):
+            _op = f'{op}'
+            op = {'operation': {'type': _op}}
+            if core:
+                op['core'] = core
+            op['operation'].update(kwargs)
+            self.logger.debug(f'defer: {defer} op: {op}')
+            if defer or not self.do_exec_op(op, force=False):
+                self.ops.append(op)
+            return op
+
+        _op = _exec_op(op, defer, core, **kwargs)
+        # Check if the suit manifest starter needs programming
+        if self.suit_starter and self.family == 'NRF54H_FAMILY':
+            file = self._check_suit_starter(_op)
+            if file:
+                args = self._op_program(file, 'ERASE_NONE', None)
+                _exec_op('program', defer, core, **args)
 
     @abc.abstractmethod
     def do_exec_op(self, op, force=False):

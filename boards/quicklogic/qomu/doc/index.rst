@@ -1,19 +1,9 @@
-.. _qomu:
-
-Qomu
-####
+.. zephyr:board:: qomu
 
 Overview
 ********
 
 The Qomu board is a platform with an on-board QuickLogic EOS S3 Sensor Processing Platform.
-
-
-.. figure:: img/qomu-board.png
-   :align: center
-   :alt: Qomu
-
-   Qomu (Credit: QuickLogic)
 
 Hardware
 ********

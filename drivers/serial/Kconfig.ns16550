@@ -69,10 +69,16 @@ config UART_NS16550_ACCESS_WORD_ONLY
 
 config UART_NS16550_TI_K3
 	bool "Add support for NS16550 variant specific to TI K3 SoCs"
+	select PINCTRL
 	help
 	  Enabling this configuration allows the users to use the UART port in
 	  Texas Instruments K3 SoCs by enabling a vendor specific extended register
 	  set.
+
+config UART_NS16550_DW8250_DW_APB
+	bool "Synopsys DesignWare 8250"
+	help
+	  This enables support for Synopsys DesignWare 8250 UART controller.
 
 config UART_NS16550_ITE_HIGH_SPEED_BAUDRATE
 	bool "IT8XXX2 specific baud rate configuration"

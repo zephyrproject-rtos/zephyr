@@ -34,6 +34,7 @@
 		accel0 = &fxos8700;
 		sdhc0 = &usdhc0;
 		dmic-dev = &dmic0;
+		mcuboot-button0 = &user_button_1;
 	};
 
 	chosen {

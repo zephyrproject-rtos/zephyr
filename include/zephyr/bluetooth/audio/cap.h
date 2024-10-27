@@ -456,7 +456,7 @@ struct bt_cap_initiator_broadcast_create_param {
 	struct bt_cap_initiator_broadcast_subgroup_param *subgroup_params;
 
 	/** Quality of Service configuration. */
-	struct bt_audio_codec_qos *qos;
+	struct bt_bap_qos_cfg *qos;
 
 	/**
 	 * @brief Broadcast Source packing mode.
@@ -482,7 +482,7 @@ struct bt_cap_initiator_broadcast_create_param {
 	 *   The string "Broadcast Code" shall be
 	 *   [42 72 6F 61 64 63 61 73 74 20 43 6F 64 65 00 00]
 	 */
-	uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE];
+	uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE];
 
 #if defined(CONFIG_BT_ISO_TEST_PARAMS) || defined(__DOXYGEN__)
 	/**
@@ -602,23 +602,6 @@ int bt_cap_initiator_broadcast_audio_stop(struct bt_cap_broadcast_source *broadc
  * @return 0 on success or negative error value on failure.
  */
 int bt_cap_initiator_broadcast_audio_delete(struct bt_cap_broadcast_source *broadcast_source);
-
-/**
- * @brief Get the broadcast ID of a Common Audio Profile broadcast source
- *
- * This will return the 3-octet broadcast ID that should be advertised in the
- * extended advertising data with @ref BT_UUID_BROADCAST_AUDIO_VAL as
- * @ref BT_DATA_SVC_DATA16.
- *
- * See table 3.14 in the Basic Audio Profile v1.0.1 for the structure.
- *
- * @param[in]  broadcast_source  Pointer to the broadcast source.
- * @param[out] broadcast_id      Pointer to the 3-octet broadcast ID.
- *
- * @return int		0 if on success, errno on error.
- */
-int bt_cap_initiator_broadcast_get_id(const struct bt_cap_broadcast_source *broadcast_source,
-				      uint32_t *const broadcast_id);
 
 /**
  * @brief Get the Broadcast Audio Stream Endpoint of a Common Audio Profile broadcast source

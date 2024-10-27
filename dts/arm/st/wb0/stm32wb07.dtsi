@@ -15,5 +15,37 @@
 				reg = <0x10040000 DT_SIZE_K(256)>;
 			};
 		};
+
+		i2c2: i2c@41001000 {
+			compatible = "st,stm32-i2c-v2";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x41001000 DT_SIZE_K(1)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 23)>;
+			interrupts = <4 0>;
+			interrupt-names = "combined";
+			status = "disabled";
+		};
+
+		spi1: spi@41002000 {
+			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x41002000 DT_SIZE_K(1)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 0)>;
+			interrupts = <5 0>;
+			status = "disabled";
+		};
+
+		spi2: spi@41003000 {
+			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x41003000 DT_SIZE_K(1)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 12)>;
+			interrupts = <6 0>;
+			status = "disabled";
+		};
 	};
 };

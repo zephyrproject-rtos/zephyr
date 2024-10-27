@@ -1,0 +1,41 @@
+# Config options for prometheus sample application
+
+# Copyright (c) 2024 Mustafa Abdullah Kus, Sparse Technology
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Prometheus sample application"
+
+config NET_SAMPLE_HTTP_SERVICE
+	bool "Enable HTTP service"
+	default y
+
+config NET_SAMPLE_HTTP_SERVER_SERVICE_PORT
+	int "Port number for HTTP service"
+	default 80
+	depends on NET_SAMPLE_HTTP_SERVICE
+
+config NET_SAMPLE_HTTPS_SERVICE
+	bool "Enable HTTPS service"
+	depends on NET_SOCKETS_SOCKOPT_TLS || TLS_CREDENTIALS
+
+config NET_SAMPLE_HTTPS_SERVER_SERVICE_PORT
+	int "Port number for HTTPS service"
+	default 443
+	depends on NET_SAMPLE_HTTPS_SERVICE
+
+config NET_SAMPLE_PSK_HEADER_FILE
+	string "Header file containing PSK"
+	default "dummy_psk.h"
+	depends on MBEDTLS_KEY_EXCHANGE_PSK_ENABLED
+	help
+	  Name of a header file containing a
+	  pre-shared key.
+
+config NET_SAMPLE_CERTS_WITH_SC
+	bool "Signed certificates"
+	depends on NET_SOCKETS_SOCKOPT_TLS
+	help
+	  Enable this flag, if you are interested to run this
+	  application with signed certificates and keys.
+
+source "Kconfig.zephyr"

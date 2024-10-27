@@ -18,7 +18,7 @@ target_include_directories(app PRIVATE ${ZEPHYR_BASE}/include/)
 
 target_compile_definitions(app PRIVATE _POSIX_C_SOURCE=200809L)
 
-add_compile_definitions(CONFIG_NET_SOCKETS_POLL_MAX=3)
+add_compile_definitions(CONFIG_ZVFS_POLL_MAX=3)
 add_compile_definitions(CONFIG_COAP_CLIENT=y)
 add_compile_definitions(CONFIG_COAP_CLIENT_BLOCK_SIZE=256)
 add_compile_definitions(CONFIG_COAP_CLIENT_MESSAGE_SIZE=256)

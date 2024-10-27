@@ -355,8 +355,15 @@ typedef int (*coap_reply_t)(const struct coap_packet *response,
  * @brief CoAP transmission parameters.
  */
 struct coap_transmission_parameters {
-	/**  Initial ACK timeout. Value is used as a base value to retry pending CoAP packets. */
+	/** Initial ACK timeout. Value is used as a base value to retry pending CoAP packets. */
 	uint32_t ack_timeout;
+#if defined(CONFIG_COAP_RANDOMIZE_ACK_TIMEOUT) || defined(__DOXYGEN__)
+	/**
+	 * Set CoAP ack random factor. A value of 150 means a factor of 1.5. A value of 0 defaults
+	 * to @kconfig{CONFIG_COAP_ACK_RANDOM_PERCENT}. The value must be >= 100.
+	 */
+	uint16_t ack_random_percent;
+#endif /* defined(CONFIG_COAP_RANDOMIZE_ACK_TIMEOUT) */
 	/** Set CoAP retry backoff factor. A value of 200 means a factor of 2.0. */
 	uint16_t coap_backoff_percent;
 	/** Maximum number of retransmissions. */

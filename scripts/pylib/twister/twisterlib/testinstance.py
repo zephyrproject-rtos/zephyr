@@ -241,7 +241,14 @@ class TestInstance:
         self.handler = handler
 
     # Global testsuite parameters
-    def check_runnable(self, enable_slow=False, filter='buildable', fixtures=[], hardware_map=None):
+    def check_runnable(self,
+                    options,
+                    hardware_map=None):
+
+        enable_slow = options.enable_slow
+        filter = options.filter
+        fixtures = options.fixture
+        device_testing = options.device_testing
 
         if os.name == 'nt':
             # running on simulators is currently supported only for QEMU on Windows
@@ -264,8 +271,7 @@ class TestInstance:
         target_ready = bool(self.testsuite.type == "unit" or \
                         self.platform.type == "native" or \
                         (self.platform.simulation in SUPPORTED_SIMS and \
-                         self.platform.simulation not in self.testsuite.simulation_exclude) or \
-                        filter == 'runnable')
+                         self.platform.simulation not in self.testsuite.simulation_exclude) or device_testing)
 
         # check if test is runnable in pytest
         if self.testsuite.harness == 'pytest':
@@ -317,9 +323,10 @@ class TestInstance:
             content = "\n".join(new_config_list)
 
         if enable_coverage:
-            if platform.name in coverage_platform:
-                content = content + "\nCONFIG_COVERAGE=y"
-                content = content + "\nCONFIG_COVERAGE_DUMP=y"
+            for cp in coverage_platform:
+                if cp in platform.aliases:
+                    content = content + "\nCONFIG_COVERAGE=y"
+                    content = content + "\nCONFIG_COVERAGE_DUMP=y"
 
         if enable_asan:
             if platform.type == "native":

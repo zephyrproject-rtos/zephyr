@@ -60,3 +60,9 @@ prj_cc2520.conf configuration file enabling IEEE 802.15.4.
 .. _`net-tools`: https://github.com/zephyrproject-rtos/net-tools
 
 .. _`libcoap`: https://github.com/obgm/libcoap
+
+Wi-Fi
+=====
+
+The IPv4 Wi-Fi support can be enabled in the sample with
+:ref:`Wi-Fi snippet <snippet-wifi-ipv4>`.

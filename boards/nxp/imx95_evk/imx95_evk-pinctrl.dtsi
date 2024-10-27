@@ -60,4 +60,15 @@
 			drive-strength = "x4";
 		};
 	};
+
+	tpm2_default: tpm2_default {
+		group0 {
+			pinmux = <&iomuxc_i2c2_scl_tpm_ch_tpm2_ch2>,
+				<&iomuxc_i2c2_sda_tpm_ch_tpm2_ch3>;
+			drive-open-drain;
+			slew-rate = "slightly_fast";
+			drive-strength = "x4";
+			input-enable;
+		};
+	};
 };

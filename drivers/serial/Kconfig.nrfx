@@ -31,11 +31,19 @@ config UART_NRFX_UARTE
 config UART_NRFX_UARTE_LEGACY_SHIM
 	bool "Legacy UARTE shim"
 	depends on UART_NRFX_UARTE
-	depends on !SOC_SERIES_NRF54LX
-	depends on !SOC_SERIES_NRF54HX || RISCV
-	depends on !SOC_SERIES_NRF92X || RISCV
-	# New shim takes more ROM. Until it is fixed use legacy shim.
 	default y
+
+config UART_NRFX_UARTE_ENHANCED_RX
+	bool "Enhanced RX handling"
+	depends on UART_ASYNC_API
+	depends on UART_NRFX_UARTE_LEGACY_SHIM
+	default y if !(UART_0_NRF_HW_ASYNC || UART_1_NRF_HW_ASYNC || UART_2_NRF_HW_ASYNC)
+	help
+	  Enable RX handling mode which is switching buffers on timeout. This is an
+	  enhancement compared to other two modes (default and hardware assisted).
+	  Default mode could miscount bytes when interrupt was not handled on time
+	  and hardware assisted required TIMER peripheral instance and PPI channel
+	  for accurate byte counting.
 
 config UART_ASYNC_TX_CACHE_SIZE
 	int "TX cache buffer size"

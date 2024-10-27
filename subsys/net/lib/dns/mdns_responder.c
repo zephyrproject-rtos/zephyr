@@ -22,6 +22,7 @@ LOG_MODULE_REGISTER(net_mdns_responder, CONFIG_MDNS_RESPONDER_LOG_LEVEL);
 #include <errno.h>
 #include <stdlib.h>
 
+#include <zephyr/net/mld.h>
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_pkt.h>
@@ -48,7 +49,7 @@ LOG_MODULE_REGISTER(net_mdns_responder, CONFIG_MDNS_RESPONDER_LOG_LEVEL);
 #pragma GCC diagnostic ignored "-Wstringop-overread"
 #endif
 
-extern void dns_dispatcher_svc_handler(struct k_work *work);
+extern void dns_dispatcher_svc_handler(struct net_socket_service_event *pev);
 
 #define MDNS_LISTEN_PORT 5353
 
@@ -57,14 +58,14 @@ extern void dns_dispatcher_svc_handler(struct k_work *work);
 #if defined(CONFIG_NET_IPV4)
 static struct mdns_responder_context v4_ctx[MAX_IPV4_IFACE_COUNT];
 
-NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(v4_svc, NULL, dns_dispatcher_svc_handler,
+NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(v4_svc, dns_dispatcher_svc_handler,
 				      MDNS_MAX_IPV4_IFACE_COUNT);
 #endif
 
 #if defined(CONFIG_NET_IPV6)
 static struct mdns_responder_context v6_ctx[MAX_IPV6_IFACE_COUNT];
 
-NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(v6_svc, NULL, dns_dispatcher_svc_handler,
+NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(v6_svc, dns_dispatcher_svc_handler,
 				      MDNS_MAX_IPV6_IFACE_COUNT);
 #endif
 
@@ -683,16 +684,20 @@ static int dispatcher_cb(void *my_ctx, int sock,
 
 static int register_dispatcher(struct mdns_responder_context *ctx,
 			       const struct net_socket_service_desc *svc,
-			       struct sockaddr *local)
+			       struct sockaddr *local,
+			       int ifindex,
+			       struct zsock_pollfd *fds,
+			       size_t fds_len)
 {
 	ctx->dispatcher.type = DNS_SOCKET_RESPONDER;
 	ctx->dispatcher.cb = dispatcher_cb;
-	ctx->dispatcher.fds = ctx->fds;
-	ctx->dispatcher.fds_len = ARRAY_SIZE(ctx->fds);
+	ctx->dispatcher.fds = fds;
+	ctx->dispatcher.fds_len = fds_len;
 	ctx->dispatcher.sock = ctx->sock;
 	ctx->dispatcher.svc = svc;
 	ctx->dispatcher.mdns_ctx = ctx;
 	ctx->dispatcher.pair = NULL;
+	ctx->dispatcher.ifindex = ifindex;
 
 	/* Mark the fd so that "net sockets" can show it. This is needed if there
 	 * is already a socket bound to same port and the dispatcher will mux
@@ -720,13 +725,17 @@ static int init_listener(void)
 	char name[INTERFACE_NAME_LEN + 1];
 	struct ifreq if_req;
 	struct net_if *iface;
-	int iface_count;
+	int iface_count, fds_pos;
 
 	NET_IFACE_COUNT(&iface_count);
 	NET_DBG("Setting %s listener to %d interface%s", "mDNS", iface_count,
 		iface_count > 1 ? "s" : "");
 
 #if defined(CONFIG_NET_IPV6)
+	/* Because there is only one IPv6 socket service context for all
+	 * IPv6 sockets, we must collect the sockets in one place.
+	 */
+	struct zsock_pollfd ipv6_fds[MAX_IPV6_IFACE_COUNT];
 	struct sockaddr_in6 local_addr6;
 	int v6;
 
@@ -737,6 +746,12 @@ static int init_listener(void)
 	}
 
 	setup_ipv6_addr(&local_addr6);
+
+	ARRAY_FOR_EACH(ipv6_fds, i) {
+		ipv6_fds[i].fd = -1;
+	}
+
+	fds_pos = 0;
 
 	ARRAY_FOR_EACH(v6_ctx, i) {
 		ARRAY_FOR_EACH(v6_ctx[i].fds, j) {
@@ -787,6 +802,8 @@ static int init_listener(void)
 			if (v6_ctx[i].fds[j].fd < 0) {
 				v6_ctx[i].fds[j].fd = v6;
 				v6_ctx[i].fds[j].events = ZSOCK_POLLIN;
+				ipv6_fds[fds_pos].fd = v6;
+				ipv6_fds[fds_pos++].events = ZSOCK_POLLIN;
 				ret = 0;
 				break;
 			}
@@ -798,7 +815,8 @@ static int init_listener(void)
 			continue;
 		}
 
-		ret = register_dispatcher(&v6_ctx[i], &v6_svc, (struct sockaddr *)&local_addr6);
+		ret = register_dispatcher(&v6_ctx[i], &v6_svc, (struct sockaddr *)&local_addr6,
+					  ifindex, ipv6_fds, ARRAY_SIZE(ipv6_fds));
 		if (ret < 0) {
 			NET_DBG("Cannot register %s %s socket service (%d)",
 				"IPv6", "mDNS", ret);
@@ -810,6 +828,7 @@ static int init_listener(void)
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
+	struct zsock_pollfd ipv4_fds[MAX_IPV4_IFACE_COUNT];
 	struct sockaddr_in local_addr4;
 	int v4;
 
@@ -820,6 +839,12 @@ static int init_listener(void)
 	}
 
 	setup_ipv4_addr(&local_addr4);
+
+	ARRAY_FOR_EACH(ipv4_fds, i) {
+		ipv4_fds[i].fd = -1;
+	}
+
+	fds_pos = 0;
 
 	ARRAY_FOR_EACH(v4_ctx, i) {
 		ARRAY_FOR_EACH(v4_ctx[i].fds, j) {
@@ -870,6 +895,8 @@ static int init_listener(void)
 			if (v4_ctx[i].fds[j].fd < 0) {
 				v4_ctx[i].fds[j].fd = v4;
 				v4_ctx[i].fds[j].events = ZSOCK_POLLIN;
+				ipv4_fds[fds_pos].fd = v4;
+				ipv4_fds[fds_pos++].events = ZSOCK_POLLIN;
 				ret = 0;
 				break;
 			}
@@ -881,7 +908,8 @@ static int init_listener(void)
 			continue;
 		}
 
-		ret = register_dispatcher(&v4_ctx[i], &v4_svc, (struct sockaddr *)&local_addr4);
+		ret = register_dispatcher(&v4_ctx[i], &v4_svc, (struct sockaddr *)&local_addr4,
+					  ifindex, ipv4_fds, ARRAY_SIZE(ipv4_fds));
 		if (ret < 0) {
 			NET_DBG("Cannot register %s %s socket service (%d)",
 				"IPv4", "mDNS", ret);

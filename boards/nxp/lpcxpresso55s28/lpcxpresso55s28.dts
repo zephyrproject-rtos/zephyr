@@ -21,6 +21,7 @@
 		sw2 = &user_button_3;
 		watchdog0 = &wwdt0;
 		accel0 = &mma8652fc;
+		mcuboot-button0 = &user_button_1;
 	};
 
 	chosen {

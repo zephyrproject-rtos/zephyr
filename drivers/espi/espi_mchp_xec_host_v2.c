@@ -855,6 +855,7 @@ static void p80bd0_isr(const struct device *dev)
 			espi_send_callbacks(&data->callbacks, dev, evt);
 			evt.evt_details = 0;
 		}
+		dattr = p80regs->EC_DA;
 	}
 
 	/* clear GIRQ status */

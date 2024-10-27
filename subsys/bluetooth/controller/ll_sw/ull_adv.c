@@ -455,8 +455,8 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	adv->own_addr_type = own_addr_type;
-	if (adv->own_addr_type == BT_ADDR_LE_PUBLIC_ID ||
-	    adv->own_addr_type == BT_ADDR_LE_RANDOM_ID) {
+	if (adv->own_addr_type == BT_HCI_OWN_ADDR_RPA_OR_PUBLIC ||
+	    adv->own_addr_type == BT_HCI_OWN_ADDR_RPA_OR_RANDOM) {
 		adv->peer_addr_type = direct_addr_type;
 		memcpy(&adv->peer_addr, direct_addr, BDADDR_SIZE);
 	}
@@ -927,8 +927,8 @@ uint8_t ll_adv_enable(uint8_t enable)
 	/* Prepare filter accept list and optionally resolving list */
 	ull_filter_adv_update(lll->filter_policy);
 
-	if (adv->own_addr_type == BT_ADDR_LE_PUBLIC_ID ||
-	    adv->own_addr_type == BT_ADDR_LE_RANDOM_ID) {
+	if (adv->own_addr_type == BT_HCI_OWN_ADDR_RPA_OR_PUBLIC ||
+	    adv->own_addr_type == BT_HCI_OWN_ADDR_RPA_OR_RANDOM) {
 		/* Look up the resolving list */
 		lll->rl_idx = ull_filter_rl_find(adv->peer_addr_type,
 						 adv->peer_addr, NULL);
@@ -1072,6 +1072,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 		conn_lll->role = 1;
 		conn_lll->periph.initiated = 0;
 		conn_lll->periph.cancelled = 0;
+		conn_lll->periph.forced = 0;
 		conn_lll->data_chan_sel = 0;
 		conn_lll->data_chan_use = 0;
 		conn_lll->event_counter = 0;
@@ -1870,7 +1871,7 @@ uint8_t ull_adv_data_set(struct ll_adv_set *adv, uint8_t len,
 
 	pdu->tx_addr = prev->tx_addr;
 	pdu->rx_addr = prev->rx_addr;
-	memcpy(&pdu->adv_ind.addr[0], &prev->adv_ind.addr[0], BDADDR_SIZE);
+	memmove(&pdu->adv_ind.addr[0], &prev->adv_ind.addr[0], BDADDR_SIZE);
 	memcpy(&pdu->adv_ind.data[0], data, len);
 	pdu->len = BDADDR_SIZE + len;
 
@@ -1926,7 +1927,7 @@ uint8_t ull_scan_rsp_set(struct ll_adv_set *adv, uint8_t len,
 	pdu->tx_addr = prev->tx_addr;
 	pdu->rx_addr = 0;
 	pdu->len = BDADDR_SIZE + len;
-	memcpy(&pdu->scan_rsp.addr[0], &prev->scan_rsp.addr[0], BDADDR_SIZE);
+	memmove(&pdu->scan_rsp.addr[0], &prev->scan_rsp.addr[0], BDADDR_SIZE);
 	memcpy(&pdu->scan_rsp.data[0], data, len);
 
 	/* Update time reservation */
@@ -3131,7 +3132,7 @@ static void init_set(struct ll_adv_set *adv)
 {
 	adv->interval = BT_LE_ADV_INTERVAL_DEFAULT;
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-	adv->own_addr_type = BT_ADDR_LE_PUBLIC;
+	adv->own_addr_type = BT_HCI_OWN_ADDR_RPA_OR_PUBLIC;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 	adv->lll.chan_map = BT_LE_ADV_CHAN_MAP_ALL;
 	adv->lll.filter_policy = BT_LE_ADV_FP_NO_FILTER;

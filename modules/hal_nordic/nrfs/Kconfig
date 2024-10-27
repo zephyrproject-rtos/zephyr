@@ -19,6 +19,9 @@ config NRFS_HAS_DIAG_SERVICE
 config NRFS_HAS_DVFS_SERVICE
 	bool
 
+config NRFS_HAS_GDPWR_SERVICE
+	bool
+
 config NRFS_HAS_MRAM_SERVICE
 	bool
 
@@ -36,7 +39,12 @@ config NRFS_HAS_VBUS_DETECTOR_SERVICE
 
 config NRFS
 	bool "nRF Services Support"
-	select NRFS_LOCAL_DOMAIN if (SOC_NRF54H20_CPUAPP || SOC_NRF54H20_CPURAD || SOC_NRF9280_CPUAPP || SOC_NRF9280_CPURAD)
+	select NRFS_LOCAL_DOMAIN if SOC_NRF54H20_CPUAPP || \
+				    SOC_NRF54H20_ENGB_CPUAPP || \
+				    SOC_NRF54H20_CPURAD || \
+				    SOC_NRF54H20_ENGB_CPURAD || \
+				    SOC_NRF9280_CPUAPP || \
+				    SOC_NRF9280_CPURAD
 	depends on HAS_NRFS
 	help
 	  This option enables the nRF Services library.
@@ -95,7 +103,7 @@ config NRFS_PMIC_SERVICE_ENABLED
 config NRFS_DVFS_SERVICE_ENABLED
 	bool "DVFS service"
 	depends on NRFS_HAS_DVFS_SERVICE
-	default y if SOC_NRF54H20_CPUAPP || SOC_NRF9280_CPUAPP
+	default y if SOC_NRF54H20_CPUAPP || SOC_NRF54H20_ENGB_CPUAPP || SOC_NRF9280_CPUAPP
 
 config NRFS_DIAG_SERVICE_ENABLED
 	bool "System Diagnostics service (only for development purposes)"
@@ -105,6 +113,12 @@ config NRFS_CLOCK_SERVICE_ENABLED
 	bool "Clock service"
 	depends on NRFS_HAS_CLOCK_SERVICE
 	default y
+
+config NRFS_GDPWR_SERVICE_ENABLED
+	bool "Global domain power request service"
+	depends on NRFS_HAS_GDPWR_SERVICE
+	default y
+
 endmenu
 
 rsource "backends/Kconfig"

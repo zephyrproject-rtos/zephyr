@@ -19,6 +19,7 @@
 		power_domain_gpio {
 			compatible = "power-domain-gpio";
 			enable-gpios = <&test_gpio 0 0>;
+			#power-domain-cells = <0>;
 			zephyr,pm-device-runtime-auto;
 		};
 
@@ -26,6 +27,7 @@
 			compatible = "power-domain-gpio-monitor";
 			status = "okay";
 			gpios = <&test_gpio 0 0>;
+			#power-domain-cells = <0>;
 		};
 	};
 };

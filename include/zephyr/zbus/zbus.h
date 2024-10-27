@@ -62,6 +62,13 @@ struct zbus_channel_data {
 	 */
 	struct net_buf_pool *msg_subscriber_pool;
 #endif /* ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION */
+
+#if defined(CONFIG_ZBUS_CHANNEL_PUBLISH_STATS) || defined(__DOXYGEN__)
+	/** Kernel timestamp of the last publish action on this channel */
+	k_ticks_t publish_timestamp;
+	/** Number of times data has been published to this channel */
+	uint32_t publish_count;
+#endif /* CONFIG_ZBUS_CHANNEL_PUBLISH_STATS */
 };
 
 /**
@@ -408,7 +415,7 @@ struct zbus_channel_observation {
 			.priority = ZBUS_MIN_THREAD_PRIORITY,                 \
 		))                                                            \
 	};                                                                    \
-	const STRUCT_SECTION_ITERABLE(zbus_observer, _name) = {               \
+	_ZBUS_CPP_EXTERN const STRUCT_SECTION_ITERABLE(zbus_observer, _name) = {  \
 		ZBUS_OBSERVER_NAME_INIT(_name) /* Name field */               \
 		.type = ZBUS_OBSERVER_SUBSCRIBER_TYPE,                        \
 		.data = &_CONCAT(_zbus_obs_data_, _name),                     \
@@ -450,7 +457,7 @@ struct zbus_channel_observation {
 			.priority = ZBUS_MIN_THREAD_PRIORITY,                                      \
 		))                                                                                 \
 	};                                                                                         \
-	const STRUCT_SECTION_ITERABLE(zbus_observer, _name) = {                                    \
+	_ZBUS_CPP_EXTERN const STRUCT_SECTION_ITERABLE(zbus_observer, _name) = {                   \
 		ZBUS_OBSERVER_NAME_INIT(_name) /* Name field */                                    \
 		.type = ZBUS_OBSERVER_LISTENER_TYPE,                                               \
 		.data = &_CONCAT(_zbus_obs_data_, _name),                                          \
@@ -490,7 +497,7 @@ struct zbus_channel_observation {
 			.priority = ZBUS_MIN_THREAD_PRIORITY,                 \
 		))                                                            \
 	};                                                                    \
-	const STRUCT_SECTION_ITERABLE(zbus_observer, _name) = {               \
+	_ZBUS_CPP_EXTERN const STRUCT_SECTION_ITERABLE(zbus_observer, _name) = {  \
 		ZBUS_OBSERVER_NAME_INIT(_name) /* Name field */               \
 		.type = ZBUS_OBSERVER_MSG_SUBSCRIBER_TYPE,                    \
 		.data = &_CONCAT(_zbus_obs_data_, _name),                     \
@@ -721,6 +728,89 @@ static inline void zbus_chan_set_msg_sub_pool(const struct zbus_channel *chan,
 }
 
 #endif /* ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION */
+
+#if defined(CONFIG_ZBUS_CHANNEL_PUBLISH_STATS) || defined(__DOXYGEN__)
+
+/**
+ * @brief Update the publishing statistics for a channel
+ *
+ * This function updates the publishing statistics for the @ref zbus_chan_claim ->
+ * @ref zbus_chan_finish workflow, which cannot automatically determine whether
+ * new data has been published or not.
+ *
+ * @warning This function must only be used directly for already locked channels.
+ *
+ * @param chan The channel's reference.
+ */
+static inline void zbus_chan_pub_stats_update(const struct zbus_channel *chan)
+{
+	__ASSERT(chan != NULL, "chan is required");
+
+	chan->data->publish_timestamp = k_uptime_ticks();
+	chan->data->publish_count += 1;
+}
+
+/**
+ * @brief Get the time a channel was last published to.
+ *
+ * @note Will return 0 if channel has not yet been published to.
+ *
+ * @param chan The channel's reference.
+ *
+ * @return The kernel timestamp of the last publishing action.
+ */
+static inline k_ticks_t zbus_chan_pub_stats_last_time(const struct zbus_channel *chan)
+{
+	__ASSERT(chan != NULL, "chan is required");
+
+	return chan->data->publish_timestamp;
+}
+
+/**
+ * @brief Get the number of times a channel has been published to.
+ *
+ * @note Will return 0 if channel has not yet been published to.
+ *
+ * @param chan The channel's reference.
+ *
+ * @return The number of times a channel has been published to.
+ */
+static inline uint32_t zbus_chan_pub_stats_count(const struct zbus_channel *chan)
+{
+	__ASSERT(chan != NULL, "chan is required");
+
+	return chan->data->publish_count;
+}
+
+/**
+ * @brief Get the average period between publishes to a channel.
+ *
+ * @note Will return 0 if channel has not yet been published to.
+ *
+ * @param chan The channel's reference.
+ *
+ * @return Average duration in milliseconds between publishes.
+ */
+static inline uint32_t zbus_chan_pub_stats_avg_period(const struct zbus_channel *chan)
+{
+	__ASSERT(chan != NULL, "chan is required");
+
+	/* Not yet published, period = 0ms */
+	if (chan->data->publish_count == 0) {
+		return 0;
+	}
+	/* Average period across application runtime */
+	return k_uptime_get() / chan->data->publish_count;
+}
+
+#else
+
+static inline void zbus_chan_pub_stats_update(const struct zbus_channel *chan)
+{
+	(void)chan;
+}
+
+#endif /* CONFIG_ZBUS_CHANNEL_PUBLISH_STATS */
 
 #if defined(CONFIG_ZBUS_RUNTIME_OBSERVERS) || defined(__DOXYGEN__)
 

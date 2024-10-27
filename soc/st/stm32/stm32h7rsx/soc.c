@@ -68,4 +68,14 @@ void soc_early_init_hook(void)
 	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE1);
 	while (LL_PWR_IsActiveFlag_VOSRDY() == 0) {
 	}
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpioo), okay) || DT_NODE_HAS_STATUS(DT_NODELABEL(gpiop), okay)
+	LL_PWR_EnableXSPIM1(); /* Required for powering GPIO O and P */
+#endif /* gpioo || gpio p */
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpion), okay)
+	LL_PWR_EnableXSPIM2(); /* Required for powering GPIO N */
+#endif /* gpio n */
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpiom), okay)
+	LL_PWR_EnableUSBVoltageDetector(); /* Required for powering GPIO M */
+#endif /* gpiom */
 }

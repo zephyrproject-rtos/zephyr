@@ -16,88 +16,75 @@ properties:
 
   divider-int-0:
     type: int
-    default: 1
     description: |
       The integral part of the divider for pwm slice 0.
-      This number should be in the range 1 - 255. Defaults
-      to 1, the same as the RESET value.
+      If a value between 1 and 255 is set, it will be set to the register
+      as the integer part of the divider.
+      If the value is set to 0 or this property is not defined when setting
+      the number of cycles to PWM, a division ratio appropriate to that value is set.
 
   divider-frac-0:
     type: int
-    default: 0
     description: |
       The fractional part of the divider for pwm slice 0.
-      This number should be in the range 0 - 15. Defaults
-      to 0, the same as the RESET value.
+      This number should be in the range 0 - 15.
+      When the "divider-int-0" is set to 0 or is not defined, this property will be
+      ignored.
 
   divider-int-1:
     type: int
-    default: 1
     description: See divider-int-0 for help
 
   divider-frac-1:
     type: int
-    default: 0
     description: See divider-frac-0 for help
 
   divider-int-2:
     type: int
-    default: 1
     description: See divider-int-0 for help
 
   divider-frac-2:
     type: int
-    default: 0
     description: See divider-frac-0 for help
 
   divider-int-3:
     type: int
-    default: 1
     description: See divider-int-0 for help
 
   divider-frac-3:
     type: int
-    default: 0
     description: See divider-frac-0 for help
 
   divider-int-4:
     type: int
-    default: 1
     description: See divider-int-0 for help
 
   divider-frac-4:
     type: int
-    default: 0
     description: See divider-frac-0 for help
 
   divider-int-5:
     type: int
-    default: 1
     description: See divider-int-0 for help
 
   divider-frac-5:
     type: int
-    default: 0
     description: See divider-frac-0 for help
 
   divider-int-6:
     type: int
-    default: 1
     description: See divider-int-0 for help
 
   divider-frac-6:
     type: int
-    default: 0
     description: See divider-frac-0 for help
 
   divider-int-7:
     type: int
-    default: 1
     description: See divider-int-0 for help
 
   divider-frac-7:
     type: int
-    default: 0
     description: See divider-frac-0 for help
 
   "#pwm-cells":

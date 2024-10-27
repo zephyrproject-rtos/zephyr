@@ -38,6 +38,7 @@ include(CheckCXXCompilerFlag)
 # 7.1 llext_* configuration functions
 # 7.2 add_llext_* build control functions
 # 7.3 llext helper functions
+# 8. Script mode handling
 
 ########################################################
 # 1. Zephyr-aware extensions
@@ -108,16 +109,37 @@ endfunction()
 
 # https://cmake.org/cmake/help/latest/command/target_compile_options.html
 function(zephyr_compile_options)
-  target_compile_options(zephyr_interface INTERFACE ${ARGV})
+  if(ARGV0 STREQUAL "PROPERTY")
+    set(property $<TARGET_PROPERTY:compiler,${ARGV1}>)
+    set(property_defined $<BOOL:${property}>)
+    if(ARGC GREATER 3)
+      message(FATAL_ERROR "zephyr_compile_options(PROPERTY <prop> [<var>]) "
+                          "called with too many arguments."
+      )
+    elseif(ARGC EQUAL 3)
+      target_compile_options(zephyr_interface INTERFACE $<${property_defined}:${property}${ARGV2}>)
+    else()
+      target_compile_options(zephyr_interface INTERFACE ${property})
+    endif()
+  else()
+    target_compile_options(zephyr_interface INTERFACE ${ARGV})
+  endif()
 endfunction()
 
 # https://cmake.org/cmake/help/latest/command/target_link_libraries.html
 function(zephyr_link_libraries)
   if(ARGV0 STREQUAL "PROPERTY")
-    if(ARGC GREATER 2)
-      message(FATAL_ERROR "zephyr_link_libraries(PROPERTY <prop>) only allows a single property.")
+    set(property $<TARGET_PROPERTY:linker,${ARGV1}>)
+    set(property_defined $<BOOL:${property}>)
+    if(ARGC GREATER 3)
+      message(FATAL_ERROR "zephyr_link_options(PROPERTY <prop> [<val>]) "
+                          "called with too many arguments."
+      )
+    elseif(ARGC EQUAL 3)
+      target_link_libraries(zephyr_interface INTERFACE $<${property_defined}:${property}${ARGV2}>)
+    else()
+      target_link_libraries(zephyr_interface INTERFACE ${property})
     endif()
-    target_link_libraries(zephyr_interface INTERFACE $<TARGET_PROPERTY:linker,${ARGV1}>)
   else()
     target_link_libraries(zephyr_interface INTERFACE ${ARGV})
   endif()
@@ -2409,6 +2431,43 @@ function(toolchain_parse_make_rule input_file include_files)
   set(${include_files} ${result} PARENT_SCOPE)
 endfunction()
 
+# 'set_linker_property' is a function that sets the property for the linker
+# property target used for toolchain abstraction.
+#
+# This function is similar in nature to the CMake set_property function, but
+# with some additional extension flags for improved behavioral control.
+#
+# NO_CREATE: Flag to indicate that the property should only be set if not already
+#            defined with a value.
+# APPEND: Flag indicated that the property should be appended to the existing
+#         value list for the property.
+# TARGET: Name of target on which to add the property (default: linker)
+# PROPERTY: Name of property with the value(s) following immediately after
+#           property name
+function(set_linker_property)
+  set(options APPEND NO_CREATE)
+  set(single_args TARGET)
+  set(multi_args  PROPERTY)
+  cmake_parse_arguments(LINKER_PROPERTY "${options}" "${single_args}" "${multi_args}" ${ARGN})
+
+  if(LINKER_PROPERTY_APPEND)
+   set(APPEND "APPEND")
+  endif()
+
+  if(NOT DEFINED LINKER_PROPERTY_TARGET)
+   set(LINKER_PROPERTY_TARGET "linker")
+  endif()
+
+  if(LINKER_PROPERTY_NO_CREATE)
+    list(GET LINKER_PROPERTY_PROPERTY 0 property_name)
+    get_target_property(var ${LINKER_PROPERTY_TARGET} ${property_name})
+    if(NOT "${var}" STREQUAL "var-NOTFOUND")
+      return()
+    endif()
+  endif()
+  set_property(TARGET ${LINKER_PROPERTY_TARGET} ${APPEND} PROPERTY ${LINKER_PROPERTY_PROPERTY})
+endfunction()
+
 # 'check_set_linker_property' is a function that check the provided linker
 # flag and only set the linker property if the check succeeds
 #
@@ -2418,7 +2477,7 @@ endfunction()
 #
 # APPEND: Flag indicated that the property should be appended to the existing
 #         value list for the property.
-# TARGET: Name of target on which to add the property (commonly: linker)
+# TARGET: Name of target on which to add the property (default: linker)
 # PROPERTY: Name of property with the value(s) following immediately after
 #           property name
 function(check_set_linker_property)
@@ -2429,6 +2488,10 @@ function(check_set_linker_property)
 
   if(LINKER_PROPERTY_APPEND)
    set(APPEND "APPEND")
+  endif()
+
+  if(NOT DEFINED LINKER_PROPERTY_TARGET)
+   set(LINKER_PROPERTY_TARGET "linker")
   endif()
 
   list(GET LINKER_PROPERTY_PROPERTY 0 property)
@@ -3592,6 +3655,86 @@ function(topological_sort)
   endif()
 
   set(${TS_RESULT} "${sorted_targets}" PARENT_SCOPE)
+endfunction()
+
+# Usage:
+#   build_info(<tag>... VALUE <value>... )
+#   build_info(<tag>... PATH  <path>... )
+#
+# This function populates updates the build_info.yml info file with exchangable build information
+# related to the current build.
+#
+# Example:
+#   build_info(devicetree files VALUE file1.dts file2.dts file3.dts)
+# Will update the 'devicetree files' key in the build info yaml with the list
+# of files, file1.dts file2.dts file3.dts.
+#
+#   build_info(vendor-specific foo VALUE bar)
+# Will place the vendor specific key 'foo' with value 'bar' in the vendor specific section
+# of the build info file.
+#
+# <tag>...: One of the pre-defined valid CMake keys supported by build info or vendor-specific.
+#           See 'scripts/schemas/build-schema.yml' CMake section for valid tags.
+# VALUE <value>... : value(s) to place in the build_info.yml file.
+# PATH  <path>... : path(s) to place in the build_info.yml file. All paths are converted to CMake
+#                   style. If no conversion is required, for example when paths are already
+#                   guaranteed to be CMake style, then VALUE can also be used.
+function(build_info)
+  set(convert_path FALSE)
+  set(arg_list ${ARGV})
+  list(FIND arg_list VALUE index)
+  if(index EQUAL -1)
+    list(FIND arg_list PATH index)
+    set(convert_path TRUE)
+  endif()
+
+  if(index EQUAL -1)
+    message(FATAL_ERROR "${CMAKE_CURRENT_FUNCTION}(...) missing a required argument: VALUE or PATH")
+  endif()
+
+  yaml_context(EXISTS NAME build_info result)
+  if(NOT result)
+    yaml_load(FILE ${ZEPHYR_BASE}/scripts/schemas/build-schema.yml NAME build_info_schema)
+    if(EXISTS ${CMAKE_BINARY_DIR}/build_info.yml)
+      yaml_load(FILE ${CMAKE_BINARY_DIR}/build_info.yml NAME build_info)
+    else()
+      yaml_create(FILE ${CMAKE_BINARY_DIR}/build_info.yml NAME build_info)
+    endif()
+    yaml_set(NAME build_info KEY version VALUE "0.1.0")
+  endif()
+
+  list(SUBLIST arg_list 0 ${index} keys)
+  list(SUBLIST arg_list ${index} -1 values)
+  list(POP_FRONT values)
+
+  if(convert_path)
+    set(converted_values)
+    foreach(val ${values})
+      cmake_path(SET cmake_path "${val}")
+      list(APPEND converted_values "${cmake_path}")
+    endforeach()
+    set(values "${converted_values}")
+  endif()
+
+  if(ARGV0 STREQUAL "vendor-specific")
+    set(type VALUE)
+  else()
+    set(schema_check ${keys})
+    list(TRANSFORM schema_check PREPEND "mapping;")
+    yaml_get(check NAME build_info_schema KEY mapping cmake ${schema_check})
+    if(check MATCHES ".*-NOTFOUND")
+      message(FATAL_ERROR "${CMAKE_CURRENT_FUNCTION}(...) called with invalid tag: ${keys}")
+    endif()
+
+    yaml_get(type NAME build_info_schema KEY mapping cmake ${schema_check} type)
+    if(type MATCHES "seq|sequence")
+      set(type LIST)
+    else()
+      set(type VALUE)
+    endif()
+  endif()
+
+  yaml_set(NAME build_info KEY cmake ${keys} ${type} "${values}")
 endfunction()
 
 ########################################################
@@ -5697,3 +5840,47 @@ function(llext_filter_zephyr_flags filter flags outvar)
 
   set(${outvar} ${zephyr_filtered_flags} PARENT_SCOPE)
 endfunction()
+
+########################################################
+# 8. Script mode handling
+########################################################
+#
+# Certain features are not available when CMake is used in script mode.
+# For example custom targets, and thus features related to custom targets, such
+# as target properties are not available in script mode.
+#
+# This section defines behavior for functions whose default implementation does
+# not work correctly in script mode.
+#
+# The script mode function can be a simple stub or a more complex solution
+# depending on the exact use of the function in script mode.
+#
+# Current Zephyr CMake scripts which includes `extensions.cmake` in script mode
+# are: package_helper.cmake, verify-toolchain.cmake
+#
+
+if(CMAKE_SCRIPT_MODE_FILE)
+  # add_custom_target and set_target_properties are not supported in script mode.
+  # However, Zephyr CMake functions like `zephyr_get()`, `zephyr_create_scope()`,
+  # llext functions creates or relies on custom CMake targets.
+  function(add_custom_target)
+    # This silence the error: 'add_custom_target command is not scriptable'
+  endfunction()
+
+  function(set_target_properties)
+    # This silence the error: 'set_target_properties command is not scriptable'
+  endfunction()
+
+  function(zephyr_set variable)
+    # This silence the error: zephyr_set(...  SCOPE <scope>) doesn't exists.
+  endfunction()
+
+  # Build info creates a custom target for handling of build info.
+  # build_info is not needed in script mode but still called by Zephyr CMake
+  # modules. Therefore disable build_info(...) in when including
+  # extensions.cmake in script mode.
+  function(build_info)
+    # This silence the error: 'YAML context 'build_info' does not exist.'
+    #                         'Remember to create a YAML context'
+  endfunction()
+endif()

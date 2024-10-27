@@ -1,7 +1,4 @@
-.. _frdm_kw41z:
-
-NXP FRDM-KW41Z
-##############
+.. zephyr:board:: frdm_kw41z
 
 Overview
 ********
@@ -21,10 +18,6 @@ The FRDM-KW41Z highly-sensitive, optimized 2.4 GHz radio features a PCB
 F-antenna which can be bypassed to test via SMA connection, multiple power
 supply options, push/capacitive touch buttons, switches, LEDs and integrated
 sensors.
-
-.. image:: frdm_kw41z.jpg
-   :align: center
-   :alt: FRDM-KW41Z
 
 Hardware
 ********

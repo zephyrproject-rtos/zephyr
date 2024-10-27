@@ -8,7 +8,6 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/stepper.h>
-#include <stdlib.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(stepper_shell, CONFIG_STEPPER_LOG_LEVEL);
@@ -21,7 +20,7 @@ enum {
 
 struct stepper_microstep_map {
 	const char *name;
-	enum micro_step_resolution microstep;
+	enum stepper_micro_step_resolution microstep;
 };
 
 struct stepper_direction_map {
@@ -41,18 +40,29 @@ struct stepper_direction_map {
 		.microstep = _microstep,                                                           \
 	}
 
-#ifdef CONFIG_STEPPER_SHELL_ASYNC
+static void print_callback(const struct device *dev, const enum stepper_event event,
+			   void *user_data)
+{
+	const struct shell *sh = user_data;
 
-static struct k_poll_signal stepper_signal;
-static struct k_poll_event stepper_poll_event =
-	K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY, &stepper_signal);
-
-static bool poll_thread_started;
-K_THREAD_STACK_DEFINE(poll_thread_stack, CONFIG_STEPPER_SHELL_THREAD_STACK_SIZE);
-static struct k_thread poll_thread;
-static int start_polling(const struct shell *sh);
-
-#endif /* CONFIG_STEPPER_SHELL_ASYNC */
+	switch (event) {
+	case STEPPER_EVENT_STEPS_COMPLETED:
+		shell_info(sh, "%s: Steps completed.", dev->name);
+		break;
+	case STEPPER_EVENT_STALL_DETECTED:
+		shell_info(sh, "%s: Stall detected.", dev->name);
+		break;
+	case STEPPER_EVENT_LEFT_END_STOP_DETECTED:
+		shell_info(sh, "%s: Left limit switch pressed.", dev->name);
+		break;
+	case STEPPER_EVENT_RIGHT_END_STOP_DETECTED:
+		shell_info(sh, "%s: Right limit switch pressed.", dev->name);
+		break;
+	default:
+		shell_info(sh, "%s: Unknown signal received.", dev->name);
+		break;
+	}
+}
 
 static const struct stepper_direction_map stepper_direction_map[] = {
 	STEPPER_DIRECTION_MAP_ENTRY("positive", STEPPER_DIRECTION_POSITIVE),
@@ -60,7 +70,7 @@ static const struct stepper_direction_map stepper_direction_map[] = {
 };
 
 static const struct stepper_microstep_map stepper_microstep_map[] = {
-	STEPPER_MICROSTEP_MAP("1", STEPPER_FULL_STEP),
+	STEPPER_MICROSTEP_MAP("1", STEPPER_MICRO_STEP_1),
 	STEPPER_MICROSTEP_MAP("2", STEPPER_MICRO_STEP_2),
 	STEPPER_MICROSTEP_MAP("4", STEPPER_MICRO_STEP_4),
 	STEPPER_MICROSTEP_MAP("8", STEPPER_MICRO_STEP_8),
@@ -181,8 +191,7 @@ static int cmd_stepper_move(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
 	int err = 0;
-	struct k_poll_signal *poll_signal =
-		COND_CODE_1(CONFIG_STEPPER_SHELL_ASYNC, (&stepper_signal), (NULL));
+
 	int32_t micro_steps = shell_strtol(argv[ARG_IDX_PARAM], 10, &err);
 
 	if (err < 0) {
@@ -194,11 +203,12 @@ static int cmd_stepper_move(const struct shell *sh, size_t argc, char **argv)
 		return err;
 	}
 
-#ifdef CONFIG_STEPPER_SHELL_ASYNC
-	start_polling(sh);
-#endif /* CONFIG_STEPPER_SHELL_ASYNC */
+	err = stepper_set_callback(dev, print_callback, (void *)sh);
+	if (err != 0) {
+		shell_error(sh, "Failed to set callback: %d", err);
+	}
 
-	err = stepper_move(dev, micro_steps, poll_signal);
+	err = stepper_move(dev, micro_steps);
 	if (err) {
 		shell_error(sh, "Error: %d", err);
 	}
@@ -232,7 +242,7 @@ static int cmd_stepper_set_max_velocity(const struct shell *sh, size_t argc, cha
 static int cmd_stepper_set_micro_step_res(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
-	enum micro_step_resolution resolution;
+	enum stepper_micro_step_resolution resolution;
 	int err = -EINVAL;
 
 	for (int i = 0; i < ARRAY_SIZE(stepper_microstep_map); i++) {
@@ -264,7 +274,7 @@ static int cmd_stepper_get_micro_step_res(const struct shell *sh, size_t argc, c
 {
 	const struct device *dev;
 	int err;
-	enum micro_step_resolution micro_step_res;
+	enum stepper_micro_step_resolution micro_step_res;
 
 	err = parse_device_arg(sh, argv, &dev);
 	if (err < 0) {
@@ -335,19 +345,17 @@ static int cmd_stepper_set_target_position(const struct shell *sh, size_t argc, 
 		return err;
 	}
 
-	struct k_poll_signal *poll_signal =
-		COND_CODE_1(CONFIG_STEPPER_SHELL_ASYNC, (&stepper_signal), (NULL));
-
 	err = parse_device_arg(sh, argv, &dev);
 	if (err < 0) {
 		return err;
 	}
 
-#ifdef CONFIG_STEPPER_SHELL_ASYNC
-	start_polling(sh);
-#endif /* CONFIG_STEPPER_SHELL_ASYNC */
+	err = stepper_set_callback(dev, print_callback, NULL);
+	if (err != 0) {
+		shell_error(sh, "Failed to set callback: %d", err);
+	}
 
-	err = stepper_set_target_position(dev, position, poll_signal);
+	err = stepper_set_target_position(dev, position);
 	if (err) {
 		shell_error(sh, "Error: %d", err);
 	}
@@ -385,6 +393,11 @@ static int cmd_stepper_enable_constant_velocity_mode(const struct shell *sh, siz
 		return err;
 	}
 
+	err = stepper_set_callback(dev, print_callback, NULL);
+	if (err != 0) {
+		shell_error(sh, "Failed to set callback: %d", err);
+	}
+
 	err = stepper_enable_constant_velocity_mode(dev, direction, velocity);
 	if (err) {
 		shell_error(sh, "Error: %d", err);
@@ -400,7 +413,7 @@ static int cmd_stepper_info(const struct shell *sh, size_t argc, char **argv)
 	int err;
 	bool is_moving;
 	int32_t actual_position;
-	enum micro_step_resolution micro_step_res;
+	enum stepper_micro_step_resolution micro_step_res;
 
 	err = parse_device_arg(sh, argv, &dev);
 	if (err < 0) {
@@ -433,50 +446,6 @@ static int cmd_stepper_info(const struct shell *sh, size_t argc, char **argv)
 
 	return 0;
 }
-
-#ifdef CONFIG_STEPPER_SHELL_ASYNC
-
-static void stepper_poll_thread(void *p1, void *p2, void *p3)
-{
-	ARG_UNUSED(p2);
-	ARG_UNUSED(p3);
-	const struct shell *sh = p1;
-
-	while (1) {
-		k_poll(&stepper_poll_event, 1, K_FOREVER);
-
-		if (stepper_poll_event.signal->result == STEPPER_SIGNAL_STEPS_COMPLETED) {
-			shell_print(sh, "Stepper: All steps completed");
-			k_poll_signal_reset(&stepper_signal);
-		}
-	}
-}
-
-static int start_polling(const struct shell *sh)
-{
-	k_tid_t tid;
-
-	if (poll_thread_started) {
-		return 0;
-	}
-
-	k_poll_signal_init(&stepper_signal);
-	tid = k_thread_create(&poll_thread, poll_thread_stack,
-			      K_KERNEL_STACK_SIZEOF(poll_thread_stack), stepper_poll_thread,
-			      (void *)sh, NULL, NULL, CONFIG_STEPPER_SHELL_THREAD_PRIORITY, 0,
-			      K_NO_WAIT);
-	if (!tid) {
-		shell_error(sh, "Cannot start poll thread");
-		return -ENOEXEC;
-	}
-
-	k_thread_name_set(tid, "stepper_shell");
-	k_thread_start(tid);
-	poll_thread_started = true;
-	return 0;
-}
-
-#endif /* CONFIG_STEPPER_SHELL_ASYNC */
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	stepper_cmds,

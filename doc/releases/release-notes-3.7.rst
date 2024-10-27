@@ -407,41 +407,41 @@ Boards & SoC Support
 
 * Added support for these boards:
 
-  * Added support for :ref:`Ambiq Apollo3 Blue board <apollo3_evb>`: ``apollo3_evb``.
-  * Added support for :ref:`Ambiq Apollo3 Blue Plus board <apollo3p_evb>`: ``apollo3p_evb``.
-  * Added support for :ref:`Raspberry Pi 5 board <rpi_5>`: ``rpi_5``.
-  * Added support for :ref:`Seeed Studio XIAO RP2040 board <xiao_rp2040>`: ``xiao_rp2040``.
-  * Added support for :ref:`Mikroe RA4M1 Clicker board <mikroe_clicker_ra4m1>`: ``mikroe_clicker_ra4m1``.
+  * Added support for :zephyr:board:`Ambiq Apollo3 Blue board <apollo3_evb>`: ``apollo3_evb``.
+  * Added support for :zephyr:board:`Ambiq Apollo3 Blue Plus board <apollo3p_evb>`: ``apollo3p_evb``.
+  * Added support for :zephyr:board:`Raspberry Pi 5 board <rpi_5>`: ``rpi_5``.
+  * Added support for :zephyr:board:`Seeed Studio XIAO RP2040 board <xiao_rp2040>`: ``xiao_rp2040``.
+  * Added support for :zephyr:board:`Mikroe RA4M1 Clicker board <mikroe_clicker_ra4m1>`: ``mikroe_clicker_ra4m1``.
   * Added support for :ref:`Arduino UNO R4 WiFi board <arduino_uno_r4>`: ``arduino_uno_r4_wifi``.
   * Added support for :ref:`Renesas EK-RA8M1 board <ek_ra8m1>`: ``ek_ra8m1``.
-  * Added support for :ref:`ST Nucleo H533RE <nucleo_h533re_board>`: ``nucleo_h533re``.
-  * Added support for :ref:`ST STM32C0116-DK Discovery Kit <stm32c0116_dk_board>`: ``stm32c0116_dk``.
-  * Added support for :ref:`ST STM32H745I Discovery <stm32h745i_disco_board>`: ``stm32h745i_disco``.
-  * Added support for :ref:`ST STM32H7S78-DK Discovery <stm32h7s78_dk_board>`: ``stm32h7s78_dk``.
-  * Added support for :ref:`ST STM32L152CDISCOVERY board <stm32l1_disco_board>`: ``stm32l152c_disco``.
-  * Added support for :ref:`ST STEVAL STWINBX1 Development kit <steval_stwinbx1_board>`: ``steval_stwinbx1``.
+  * Added support for :zephyr:board:`ST Nucleo H533RE <nucleo_h533re>`: ``nucleo_h533re``.
+  * Added support for :zephyr:board:`ST STM32C0116-DK Discovery Kit <stm32c0116_dk>`: ``stm32c0116_dk``.
+  * Added support for :zephyr:board:`ST STM32H745I Discovery <stm32h745i_disco>`: ``stm32h745i_disco``.
+  * Added support for :zephyr:board:`ST STM32H7S78-DK Discovery <stm32h7s78_dk>`: ``stm32h7s78_dk``.
+  * Added support for :zephyr:board:`ST STM32L152CDISCOVERY board <stm32l1_disco>`: ``stm32l152c_disco``.
+  * Added support for :zephyr:board:`ST STEVAL STWINBX1 Development kit <steval_stwinbx1>`: ``steval_stwinbx1``.
   * Added support for NXP boards: ``frdm_mcxn947``, ``ke17z512``, ``rd_rw612_bga``, ``frdm_rw612``, ``frdm_ke15z``, ``frdm_ke17z``
-  * Added support for :ref:`Synopsys ARC-V RMX1xx nSIM-based simulation platform <nsim_arc_v>`: ``nsim_arc_v/rmx100``.
-  * Added support for :ref:`Analog Devices MAX32690EVKIT <max32690_evkit>`: ``max32690evkit``.
-  * Added support for :ref:`Analog Devices MAX32680EVKIT <max32680_evkit>`: ``max32680evkit``.
-  * Added support for :ref:`Analog Devices MAX32672EVKIT <max32672_evkit>`: ``max32672evkit``.
-  * Added support for :ref:`Analog Devices MAX32672FTHR <max32672_fthr>`: ``max32672fthr``.
-  * Added support for :ref:`Analog Devices MAX32670EVKIT <max32670_evkit>`: ``max32670evkit``.
-  * Added support for :ref:`Analog Devices MAX32655EVKIT <max32655_evkit>`: ``max32655evkit``.
-  * Added support for :ref:`Analog Devices MAX32655FTHR <max32655_fthr>`: ``max32655fthr``.
-  * Added support for :ref:`Analog Devices AD-APARD32690-SL <ad_apard32690_sl>`: ``ad_apard32690_sl``.
-  * Added support for :ref:`Infineon Technologies CYW920829M2EVK-02 <cyw920829m2evk_02>`: ``cyw920829m2evk_02``.
-  * Added support for :ref:`Nuvoton Numaker M2L31KI board <nuvoton_m2l31ki>`: ``numaker_m2l31ki``.
-  * Added support for :ref:`Espressif ESP32-S2 DevKit-C <esp32s2_devkitc>`: ``esp32s2_devkitc``.
-  * Added support for :ref:`Espressif ESP32-S3 DevKit-C <esp32s3_devkitc>`: ``esp32s3_devkitc``.
-  * Added support for :ref:`Espressif ESP32-C6 DevKit-C <esp32c6_devkitc>`: ``esp32c6_devkitc``.
-  * Added support for :ref:`Waveshare ESP32-S3-Touch-LCD-1.28 <esp32s3_touch_lcd_1_28>`: ``esp32s3_touch_lcd_1_28``.
-  * Added support for :ref:`M5Stack ATOM Lite <m5stack_atom_lite>`: ``m5stack_atom_lite``.
-  * Added support for :ref:`CTHINGS.CO Connectivity Card nRF52840 <ctcc_nrf52840>`: ``ctcc_nrf52840``.
+  * Added support for :zephyr:board:`Synopsys ARC-V RMX1xx nSIM-based simulation platform <nsim_arc_v>`: ``nsim_arc_v/rmx100``.
+  * Added support for :zephyr:board:`Analog Devices MAX32690EVKIT <max32690evkit>`: ``max32690evkit``.
+  * Added support for :zephyr:board:`Analog Devices MAX32680EVKIT <max32680evkit>`: ``max32680evkit``.
+  * Added support for :zephyr:board:`Analog Devices MAX32672EVKIT <max32672evkit>`: ``max32672evkit``.
+  * Added support for :zephyr:board:`Analog Devices MAX32672FTHR <max32672fthr>`: ``max32672fthr``.
+  * Added support for :zephyr:board:`Analog Devices MAX32670EVKIT <max32670evkit>`: ``max32670evkit``.
+  * Added support for :zephyr:board:`Analog Devices MAX32655EVKIT <max32655evkit>`: ``max32655evkit``.
+  * Added support for :zephyr:board:`Analog Devices MAX32655FTHR <max32655fthr>`: ``max32655fthr``.
+  * Added support for :zephyr:board:`Analog Devices AD-APARD32690-SL <apard32690>`: ``ad_apard32690_sl``.
+  * Added support for :zephyr:board:`Infineon Technologies CYW920829M2EVK-02 <cyw920829m2evk_02>`: ``cyw920829m2evk_02``.
+  * Added support for :zephyr:board:`Nuvoton Numaker M2L31KI board <numaker_m2l31ki>`: ``numaker_m2l31ki``.
+  * Added support for :zephyr:board:`Espressif ESP32-S2 DevKit-C <esp32s2_devkitc>`: ``esp32s2_devkitc``.
+  * Added support for :zephyr:board:`Espressif ESP32-S3 DevKit-C <esp32s3_devkitc>`: ``esp32s3_devkitc``.
+  * Added support for :zephyr:board:`Espressif ESP32-C6 DevKit-C <esp32c6_devkitc>`: ``esp32c6_devkitc``.
+  * Added support for :zephyr:board:`Waveshare ESP32-S3-Touch-LCD-1.28 <esp32s3_touch_lcd_1_28>`: ``esp32s3_touch_lcd_1_28``.
+  * Added support for :zephyr:board:`M5Stack ATOM Lite <m5stack_atom_lite>`: ``m5stack_atom_lite``.
+  * Added support for :zephyr:board:`CTHINGS.CO Connectivity Card nRF52840 <ctcc>`: ``ctcc``.
 
 * Made these board changes:
 
-  * On :ref:`ST STM32H7B3I Discovery Kit <stm32h7b3i_dk_board>`: ``stm32h7b3i_dk_board``,
+  * On :zephyr:board:`ST STM32H7B3I Discovery Kit <stm32h7b3i_dk>`: ``stm32h7b3i_dk``,
     enabled full cache management, Chrom-ART, double frame buffer and full refresh for
     optimal LVGL performance.
   * On ST STM32 boards, stm32cubeprogrammer runner can now be used to program external
@@ -455,7 +455,7 @@ Boards & SoC Support
   * nRF54H20 PDK (pre-release) converted to :ref:`nrf54h20dk_nrf54h20`
   * PPR core target in :ref:`nrf54h20dk_nrf54h20` runs from RAM by default. A
     new ``xip`` variant has been introduced which runs from MRAM (XIP).
-  * Refactored :ref:`beagleconnect_freedom` external antenna switch handling.
+  * Refactored :zephyr:board:`beagleconnect_freedom` external antenna switch handling.
   * Added Arduino dts node labels for the nRF5340 Audio DK.
   * Changed the default revision of the nRF54L15 PDK from 0.2.1 to 0.3.0.
   * In boards based on the nRF5340 SoC, replaced direct accesses to the register
@@ -834,15 +834,15 @@ Drivers and Sensors
   * Added support for Ambiq Apollo3 series.
   * Added support for multiple instances of the SPI NOR driver (spi_nor.c).
   * Added preliminary support for non-erase devices with introduction of
-    device capabilities to c:struct:`flash_parameters` and the utility function
-    c:func:`flash_params_get_erase_cap` that allows to obtain the erase type
-    provided by a device; added c:macro:`FLASH_ERASE_C_EXPLICIT`, which is
+    device capabilities to :c:struct:`flash_parameters` and the utility function
+    :c:func:`flash_params_get_erase_cap` that allows to obtain the erase type
+    provided by a device; added :c:macro:`FLASH_ERASE_C_EXPLICIT`, which is
     currently the only supported erase type and is set by all flash devices.
-  * Added the c:func:`flash_flatten` function that can be used on devices,
+  * Added the :c:func:`flash_flatten` function that can be used on devices,
     with or without erase requirement, when erase has been used not for preparing
     a device for a random data write, but rather to remove/scramble data from
     that device.
-  * Added the c:func:`flash_fill` utility function which allows to write
+  * Added the :c:func:`flash_fill` utility function which allows to write
     a single value across a provided range in a selected device.
   * Added support for RRAM on nrf54l15 devices.
   * Added support of non busy wait polling in STM32 OSPI driver.
@@ -868,7 +868,7 @@ Drivers and Sensors
 
   * Added support for Ambiq Apollo3 series.
   * Added Broadcom Set-top box(brcmstb) SoC GPIO driver.
-  * Added c:macro:`STM32_GPIO_WKUP` flag which allows to configure specific pins as wakeup source
+  * Added :c:macro:`STM32_GPIO_WKUP` flag which allows to configure specific pins as wakeup source
     from Power Off state on STM32 L4, U5, WB, & WL SoC series.
   * Added driver for Analog Devices MAX32 SoC series.
   * Added support for Nuvoton Numaker M2L31X series.
@@ -1047,8 +1047,8 @@ Drivers and Sensors
   * Added support for STM32H7R/S series.
   * Added a Add QTMR PWM driver for NXP imxrt11xx
   * Made the NXP MCUX PWM driver thread safe
-  * Fix zephyr:code-sample:`pwm-blinky` code sample to demonstrate PWM support for
-    :ref:`beagleconnect_freedom`.
+  * Fix :zephyr:code-sample:`pwm-blinky` code sample to demonstrate PWM support for
+    :zephyr:board:`beagleconnect_freedom`.
   * Added driver for ENE KB1200.
   * Added support for Nordic nRF54H and nRF54L Series SoCs.
   * Added support for Nuvoton Numaker M2L31X series.
@@ -1403,7 +1403,7 @@ Networking
   * Implemented IPv6 Privacy Extensions according to RFC 8981.
   * Added :c:func:`net_ipv6_is_private_addr` API function.
   * Implemented reachability hint for IPv6. Upper layers can use
-    c:func:`net_if_nbr_reachability_hint` to report Neighbor reachability and
+    :c:func:`net_if_nbr_reachability_hint` to report Neighbor reachability and
     avoid unnecessary Neighbor Discovery solicitations.
   * Added :kconfig:option:`CONFIG_NET_IPV6_MTU` allowing to set custom IPv6 MTU.
   * Added :kconfig:option:`CONFIG_NET_MCAST_ROUTE_MAX_IFACES` which allows to set

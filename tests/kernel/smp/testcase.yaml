@@ -24,3 +24,13 @@ tests:
     filter: (CONFIG_MP_MAX_NUM_CPUS > 1)
     extra_configs:
       - CONFIG_SCHED_CPU_MASK=y
+
+  kernel.multiprocessing.smp.affinity.custom_rom_offset:
+    tags:
+      - kernel
+      - smp
+    ignore_faults: true
+    filter: (CONFIG_MP_MAX_NUM_CPUS > 1)
+    extra_configs:
+      - CONFIG_SCHED_CPU_MASK=y
+      - CONFIG_ROM_START_OFFSET=0x80

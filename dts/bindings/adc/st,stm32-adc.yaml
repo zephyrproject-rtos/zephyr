@@ -32,6 +32,8 @@ properties:
       - <SYNC>: derived from the bus clock.
       - <ASYNC> : independent and asynchronous with the bus clock
       One of the two values may not apply to some series. Refer to the RefMan.
+      If an asynchronous clock is selected, a domain clock in the clock property
+      has to be defined explicitly.
 
   st,adc-prescaler:
     type: int

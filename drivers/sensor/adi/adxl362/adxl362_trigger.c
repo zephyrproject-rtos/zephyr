@@ -17,6 +17,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(ADXL362, CONFIG_SENSOR_LOG_LEVEL);
 
+#if defined(CONFIG_ADXL362_TRIGGER_OWN_THREAD) || defined(CONFIG_ADXL362_TRIGGER_GLOBAL_THREAD)
 static void adxl362_thread_cb(const struct device *dev)
 {
 	struct adxl362_data *drv_data = dev->data;
@@ -47,12 +48,17 @@ static void adxl362_thread_cb(const struct device *dev)
 	}
 	k_mutex_unlock(&drv_data->trigger_mutex);
 }
+#endif /* CONFIG_ADXL362_TRIGGER_OWN_THREAD || CONFIG_ADXL362_TRIGGER_GLOBAL_THREAD */
 
 static void adxl362_gpio_callback(const struct device *dev,
 				  struct gpio_callback *cb, uint32_t pins)
 {
 	struct adxl362_data *drv_data =
 		CONTAINER_OF(cb, struct adxl362_data, gpio_cb);
+
+	if (IS_ENABLED(CONFIG_ADXL362_STREAM)) {
+		adxl362_stream_irq_handler(drv_data->dev);
+	}
 
 #if defined(CONFIG_ADXL362_TRIGGER_OWN_THREAD)
 	k_sem_give(&drv_data->gpio_sem);
@@ -179,6 +185,8 @@ int adxl362_init_interrupt(const struct device *dev)
 			adxl362_thread, drv_data,
 			NULL, NULL, K_PRIO_COOP(CONFIG_ADXL362_THREAD_PRIORITY),
 			0, K_NO_WAIT);
+
+	k_thread_name_set(&drv_data->thread, dev->name);
 #elif defined(CONFIG_ADXL362_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = adxl362_work_cb;
 #endif

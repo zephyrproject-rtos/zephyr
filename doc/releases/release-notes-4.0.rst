@@ -9,6 +9,10 @@ We are pleased to announce the release of Zephyr version 4.0.0.
 
 Major enhancements with this release include:
 
+* The introduction of the :ref:`secure storage<secure_storage>` subsystem. It allows the use of the
+  PSA Secure Storage API and of persistent keys in the PSA Crypto API on all board targets. It
+  is now the standard way to provide device-specific protection to data at rest. (:github:`76222`)
+
 An overview of the changes required or recommended when migrating your application from Zephyr
 v3.7.0 to Zephyr v4.0.0 can be found in the separate :ref:`migration guide<migration_4.0>`.
 
@@ -51,6 +55,16 @@ Deprecated in this release
   :c:func:`k_fifo_put` and :c:func:`k_fifo_get`.
 
 * The :ref:`kscan_api` subsystem has been marked as deprecated.
+
+* The TinyCrypt library was marked as deprecated (:github:`79566`). The reasons
+  for this are (:github:`43712``):
+
+  * the upstream version of this library is unmaintained.
+
+  * to reduce the number of crypto libraries available in Zephyr (currently there are
+    3 different implementations: TinyCrypt, MbedTLS and PSA Crypto APIs).
+
+  The PSA Crypto API is now the de-facto standard to perform crypto operations.
 
 Architectures
 *************
@@ -99,10 +113,30 @@ Bluetooth
     * :c:func:`bt_audio_codec_cap_meta_get_assisted_listening_stream`
     * :c:func:`bt_audio_codec_cap_meta_set_assisted_listening_stream`
 
+  * Added APIs for getting and setting the broadcast name in codec capabilities
+    and codec configuration:
+
+    * :c:func:`bt_audio_codec_cfg_meta_get_broadcast_name`
+    * :c:func:`bt_audio_codec_cfg_meta_set_broadcast_name`
+    * :c:func:`bt_audio_codec_cap_meta_get_broadcast_name`
+    * :c:func:`bt_audio_codec_cap_meta_set_broadcast_name`
+
 * Host
 
   * Added API :c:func:`bt_gatt_get_uatt_mtu` to get current Unenhanced ATT MTU of a given
     connection (experimental).
+  * Added :kconfig:option:`CONFIG_BT_CONN_TX_NOTIFY_WQ`.
+    The option allows using a separate workqueue for connection TX notify processing
+    (:c:func:`bt_conn_tx_notify`) to make Bluetooth stack more independent from the system workqueue.
+
+  * The host now disconnects from the peer upon ATT timeout.
+
+  * Added a warning to :c:func:`bt_conn_le_create` and :c:func:`bt_conn_le_create_synced` if
+    the connection pointer passed as an argument is not NULL.
+
+  * Added Kconfig option :kconfig:option:`CONFIG_BT_CONN_CHECK_NULL_BEFORE_CREATE` to enforce
+    :c:func:`bt_conn_le_create` and :c:func:`bt_conn_le_create_synced` return an error if the
+    connection pointer passed as an argument is not NULL.
 
 * HCI Drivers
 
@@ -125,6 +159,16 @@ Boards & SoC Support
   * Support for Google Kukui EC board (``google_kukui``) has been dropped.
   * STM32: Deprecated MCO configuration via Kconfig in favour of setting it through devicetree.
     See ``samples/boards/stm32/mco`` sample.
+  * Removed the ``nrf54l15pdk`` board, use :ref:`nrf54l15dk_nrf54l15` instead.
+  * PHYTEC: ``mimx8mp_phyboard_pollux`` has been renamed to :ref:`phyboard_pollux<phyboard_pollux>`,
+    with the old name marked as deprecated.
+  * PHYTEC: ``mimx8mm_phyboard_polis`` has been renamed to :ref:`phyboard_polis<phyboard_polis>`,
+    with the old name marked as deprecated.
+  * The board qualifier for MPS3/AN547 is changed from:
+
+    * ``mps3/an547`` to ``mps3/corstone300/an547`` for secure and
+    * ``mps3/an547/ns`` to ``mps3/corstone300/an547/ns`` for non-secure.
+
 
 * Added support for the following shields:
 
@@ -143,6 +187,9 @@ Build system and Infrastructure
    * ``--edt-pickle-out``
    * ``--vendor-prefixes``
    * ``--edtlib-Werror``
+
+* Switched to using imgtool directly from the build system when signing images instead of calling
+  ``west sign``.
 
 Documentation
 *************
@@ -164,6 +211,14 @@ Drivers and Sensors
 
 * Clock control
 
+* Comparator
+
+  * Introduced comparator device driver subsystem selected with :kconfig:option:`CONFIG_COMPARATOR`
+  * Introduced comparator shell commands selected with :kconfig:option:`CONFIG_COMPARATOR_SHELL`
+  * Added support for Nordic nRF COMP (:dtcompatible:`nordic,nrf-comp`)
+  * Added support for Nordic nRF LPCOMP (:dtcompatible:`nordic,nrf-lpcomp`)
+  * Added support for NXP Kinetis ACMP (:dtcompatible:`nxp,kinetis-acmp`)
+
 * Counter
 
 * DAC
@@ -181,6 +236,9 @@ Drivers and Sensors
 * GNSS
 
 * GPIO
+
+  * tle9104: Add support for the parallel output mode via setting the properties ``parallel-out12`` and
+    ``parallel-out34``.
 
 * Hardware info
 
@@ -227,6 +285,8 @@ Drivers and Sensors
 
 * PWM
 
+  * rpi_pico: The driver now configures the divide ratio adaptively.
+
 * Regulators
 
 * Reset
@@ -244,6 +304,11 @@ Drivers and Sensors
     :dtcompatible:`jedec,jc-42.4-temp` compatible string instead to the ``microchip,mcp9808``
     string.
 
+  * WE
+
+    * Added Würth Elektronik HIDS-2525020210002
+      :dtcompatible:`we,wsen-hids-2525020210002` humidity sensor driver.
+
 * Serial
 
   * LiteX: Renamed the ``compatible`` from ``litex,uart0`` to :dtcompatible:`litex,uart`.
@@ -251,6 +316,17 @@ Drivers and Sensors
     index) which had no use after pinctrl driver was introduced.
 
 * SPI
+
+* Steppers
+
+  * Introduced stepper controller device driver subsystem selected with
+    :kconfig:option:`CONFIG_STEPPER`
+  * Introduced stepper shell commands for controlling and configuring
+    stepper motors with :kconfig:option:`CONFIG_STEPPER_SHELL`
+  * Added support for ADI TMC5041 (:dtcompatible:`adi,tmc5041`)
+  * Added support for gpio-stepper-controller (:dtcompatible:`gpio-stepper-controller`)
+  * Added stepper api test-suite
+  * Added stepper shell test-suite
 
 * USB
 
@@ -343,10 +419,33 @@ Libraries / Subsystems
     * Fixed formatting of milliseconds in :c:enum:`OS_MGMT_ID_DATETIME_STR` by adding
       leading zeros.
     * Added support for custom os mgmt bootloader info responses using notification hooks, this
-      can be enabled witbh :kconfig:option:`CONFIG_MCUMGR_GRP_OS_BOOTLOADER_INFO_HOOK`, the data
+      can be enabled with :kconfig:option:`CONFIG_MCUMGR_GRP_OS_BOOTLOADER_INFO_HOOK`, the data
       structure is :c:struct:`os_mgmt_bootloader_info_data`.
     * Added support for img mgmt slot info command, which allows for listing information on
       images and slots on the device.
+    * Added support for LoRaWAN MCUmgr transport, which can be enabled with
+      :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_LORAWAN`.
+
+  * hawkBit
+
+    * :c:func:`hawkbit_autohandler` now takes one argument. If the argument is set to true, the
+      autohandler will reshedule itself after running. If the argument is set to false, the
+      autohandler will not reshedule itself. Both variants are sheduled independent of each other.
+      The autohandler always runs in the system workqueue.
+
+    * Use the :c:func:`hawkbit_autohandler_wait` function to wait for the autohandler to finish.
+
+    * Running hawkBit from the shell is now executed in the system workqueue.
+
+    * Use the :c:func:`hawkbit_autohandler_cancel` function to cancel the autohandler.
+
+    * Use the :c:func:`hawkbit_autohandler_set_delay` function to delay the next run of the
+      autohandler.
+
+    * The hawkBit header file was separated into multiple header files. The main header file is now
+      ``<zephyr/mgmt/hawkbit/hawkbit.h>``, the autohandler header file is now
+      ``<zephyr/mgmt/hawkbit/autohandler.h>`` and the configuration header file is now
+      ``<zephyr/mgmt/hawkbit/config.h>``.
 
 * Logging
 
@@ -356,8 +455,11 @@ Libraries / Subsystems
 
 * Crypto
 
-  * Mbed TLS was updated to version 3.6.1. The release notes can be found at:
-    https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-3.6.1
+  * Mbed TLS was updated to version 3.6.2 (from 3.6.0). The release notes can be found at:
+
+    * https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-3.6.1
+    * https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-3.6.2
+
   * The Kconfig symbol :kconfig:option:`CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG_ALLOW_NON_CSPRNG`
     was added to allow ``psa_get_random()`` to make use of non-cryptographically
     secure random sources when :kconfig:option:`CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG`
@@ -384,6 +486,12 @@ Libraries / Subsystems
 
 * SD
 
+* Settings
+
+  * Settings has been extended to allow prioritizing the commit handlers using
+    ``SETTINGS_STATIC_HANDLER_DEFINE_WITH_CPRIO(...)`` for static_handlers and
+    ``settings_register_with_cprio(...)`` for dynamic_handlers.
+
 * Shell:
 
   * Reorganized the ``kernel threads`` and ``kernel stacks`` shell command under the
@@ -408,6 +516,15 @@ Libraries / Subsystems
 * LoRa/LoRaWAN
 
 * ZBus
+
+* JWT (JSON Web Token)
+
+  * The following new Kconfigs were added to specify which library to use for the
+    signature:
+
+    * :kconfig:option:`CONFIG_JWT_USE_PSA` (default) use the PSA Crypto API;
+    * :kconfig:option:`CONFIG_JWT_USE_LEGACY` use legacy libraries, i.e. TinyCrypt
+      for ECDSA and Mbed TLS for RSA.
 
 HALs
 ****

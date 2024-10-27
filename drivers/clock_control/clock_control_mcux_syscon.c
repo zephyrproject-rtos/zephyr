@@ -25,7 +25,8 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 #endif /* defined(CONFIG_CAN_MCUX_MCAN) */
 #if defined(CONFIG_COUNTER_NXP_MRT)
 	if ((uint32_t)sub_system == MCUX_MRT_CLK) {
-#if defined(CONFIG_SOC_FAMILY_LPC) || defined(CONFIG_SOC_SERIES_RW6XX)
+#if defined(CONFIG_SOC_FAMILY_LPC) || defined(CONFIG_SOC_SERIES_RW6XX) ||\
+	defined(CONFIG_SOC_SERIES_MCXN)
 		CLOCK_EnableClock(kCLOCK_Mrt);
 #elif defined(CONFIG_SOC_FAMILY_NXP_IMXRT)
 		CLOCK_EnableClock(kCLOCK_Mrt0);
@@ -111,6 +112,23 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 #endif
 	}
 #endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(rtc), okay)
+#if CONFIG_SOC_SERIES_IMXRT5XX
+	CLOCK_EnableOsc32K(true);
+#elif CONFIG_SOC_SERIES_IMXRT6XX
+	/* No configuration */
+#else /* !CONFIG_SOC_SERIES_IMXRT5XX | !CONFIG_SOC_SERIES_IMXRT6XX */
+/* 0x0 Clock Select Value Set IRTC to use FRO 16K Clk */
+#if DT_PROP(DT_NODELABEL(rtc), clock_select) == 0x0
+	CLOCK_SetupClk16KClocking(kCLOCK_Clk16KToVbat | kCLOCK_Clk16KToMain);
+/* 0x1 Clock Select Value Set IRTC to use Osc 32K Clk */
+#elif DT_PROP(DT_NODELABEL(rtc), clock_select) == 0x1
+	CLOCK_SetupOsc32KClocking(kCLOCK_Osc32kToVbat | kCLOCK_Osc32kToMain);
+#endif /* DT_PROP(DT_NODELABEL(rtc), clock_select) */
+	CLOCK_EnableClock(kCLOCK_Rtc0);
+#endif /* CONFIG_SOC_SERIES_IMXRT5XX */
+#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(rtc), okay) */
 
 	return 0;
 }
@@ -288,9 +306,23 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 
 #if defined(CONFIG_I3C_MCUX)
 	case MCUX_I3C_CLK:
+#if CONFIG_SOC_SERIES_MCXN
+		*rate = CLOCK_GetI3cClkFreq(0);
+#else
 		*rate = CLOCK_GetI3cClkFreq();
+#endif
+		break;
+#if (FSL_FEATURE_SOC_I3C_COUNT == 2)
+	case MCUX_I3C2_CLK:
+#if CONFIG_SOC_SERIES_MCXN
+		*rate = CLOCK_GetI3cClkFreq(1);
+#else
+		*rate = CLOCK_GetI3cClkFreq();
+#endif
 		break;
 #endif
+
+#endif /* CONFIG_I3C_MCUX */
 
 #if defined(CONFIG_MIPI_DSI_MCUX_2L)
 	case MCUX_MIPI_DSI_DPHY_CLK:

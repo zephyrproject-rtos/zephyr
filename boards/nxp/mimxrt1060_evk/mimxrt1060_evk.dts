@@ -20,6 +20,7 @@
 		sw0 = &user_button;
 		watchdog0 = &wdog0;
 		sdhc0 = &usdhc1;
+		mcuboot-button0 = &user_button;
 	};
 
 	chosen {

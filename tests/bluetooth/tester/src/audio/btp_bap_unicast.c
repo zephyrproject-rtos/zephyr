@@ -25,8 +25,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 #include "btp_bap_audio_stream.h"
 #include "btp_bap_unicast.h"
 
-static struct bt_audio_codec_qos_pref qos_pref =
-	BT_AUDIO_CODEC_QOS_PREF(true, BT_GAP_LE_PHY_2M, 0x02, 10, 10000, 40000, 10000, 40000);
+static struct bt_bap_qos_cfg_pref qos_pref =
+	BT_BAP_QOS_CFG_PREF(true, BT_GAP_LE_PHY_2M, 0x02, 10, 10000, 40000, 10000, 40000);
 
 static struct btp_bap_unicast_connection connections[CONFIG_BT_MAX_CONN];
 static struct btp_bap_unicast_group cigs[CONFIG_BT_ISO_MAX_CIG];
@@ -268,7 +268,7 @@ static void btp_send_ase_found_ev(struct bt_conn *conn, struct bt_bap_ep *ep)
 	tester_event(BTP_SERVICE_ID_BAP, BTP_BAP_EV_ASE_FOUND, &ev, sizeof(ev));
 }
 
-static inline void print_qos(const struct bt_audio_codec_qos *qos)
+static inline void print_qos(const struct bt_bap_qos_cfg *qos)
 {
 	LOG_DBG("QoS: interval %u framing 0x%02x phy 0x%02x sdu %u rtn %u latency %u pd %u",
 		qos->interval, qos->framing, qos->phy, qos->sdu, qos->rtn, qos->latency, qos->pd);
@@ -323,7 +323,7 @@ static int validate_codec_parameters(const struct bt_audio_codec_cfg *codec_cfg)
 
 static int lc3_config(struct bt_conn *conn, const struct bt_bap_ep *ep, enum bt_audio_dir dir,
 		      const struct bt_audio_codec_cfg *codec_cfg, struct bt_bap_stream **stream,
-		      struct bt_audio_codec_qos_pref *const pref, struct bt_bap_ascs_rsp *rsp)
+		      struct bt_bap_qos_cfg_pref *const pref, struct bt_bap_ascs_rsp *rsp)
 {
 	struct bt_bap_ep_info info;
 	struct btp_bap_unicast_connection *u_conn;
@@ -372,7 +372,7 @@ static int lc3_config(struct bt_conn *conn, const struct bt_bap_ep *ep, enum bt_
 
 static int lc3_reconfig(struct bt_bap_stream *stream, enum bt_audio_dir dir,
 			const struct bt_audio_codec_cfg *codec_cfg,
-			struct bt_audio_codec_qos_pref *const pref, struct bt_bap_ascs_rsp *rsp)
+			struct bt_bap_qos_cfg_pref *const pref, struct bt_bap_ascs_rsp *rsp)
 {
 	LOG_DBG("ASE Codec Reconfig: stream %p", stream);
 
@@ -381,7 +381,7 @@ static int lc3_reconfig(struct bt_bap_stream *stream, enum bt_audio_dir dir,
 	return 0;
 }
 
-static int lc3_qos(struct bt_bap_stream *stream, const struct bt_audio_codec_qos *qos,
+static int lc3_qos(struct bt_bap_stream *stream, const struct bt_bap_qos_cfg *qos,
 		   struct bt_bap_ascs_rsp *rsp)
 {
 	LOG_DBG("QoS: stream %p qos %p", stream, qos);
@@ -500,8 +500,7 @@ static const struct bt_bap_unicast_server_cb unicast_server_cb = {
 	.release = lc3_release,
 };
 
-static void stream_configured(struct bt_bap_stream *stream,
-			      const struct bt_audio_codec_qos_pref *pref)
+static void stream_configured(struct bt_bap_stream *stream, const struct bt_bap_qos_cfg_pref *pref)
 {
 	struct bt_bap_ep_info info;
 	struct btp_bap_unicast_connection *u_conn;
@@ -627,6 +626,8 @@ static void stream_started(struct bt_bap_stream *stream)
 {
 	struct btp_bap_unicast_stream *u_stream = stream_bap_to_unicast(stream);
 	struct bt_bap_ep_info info;
+	static uint8_t test_data[CONFIG_BT_ISO_TX_MTU];
+	uint16_t sdu;
 
 	/* Callback called on transition to Streaming state */
 
@@ -636,6 +637,14 @@ static void stream_started(struct bt_bap_stream *stream)
 
 	(void)bt_bap_ep_get_info(stream->ep, &info);
 	btp_send_ascs_ase_state_changed_ev(stream->conn, u_stream->ase_id, info.state);
+
+	/* Send test data after entering streaming state. For now this seems to
+	 * be required by PTS as there is not Upper Tester action for this in
+	 * Test Specification
+	 */
+	memset(test_data, 42, sizeof(test_data));
+	sdu = MIN(stream->qos->sdu, sizeof(test_data));
+	btp_bap_audio_stream_send_data(test_data, sdu);
 }
 
 static void stream_connected(struct bt_bap_stream *stream)
@@ -957,7 +966,7 @@ uint8_t btp_bap_discover(const void *cmd, uint16_t cmd_len,
 
 static int server_stream_config(struct bt_conn *conn, struct bt_bap_stream *stream,
 				struct bt_audio_codec_cfg *codec_cfg,
-				struct bt_audio_codec_qos_pref *qos)
+				struct bt_bap_qos_cfg_pref *qos)
 {
 	int err;
 	struct bt_bap_ep_info info;
@@ -1276,14 +1285,14 @@ uint8_t btp_ascs_preconfigure_qos(const void *cmd, uint16_t cmd_len,
 				  void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_ascs_preconfigure_qos_cmd *cp = cmd;
-	struct bt_audio_codec_qos *qos;
+	struct bt_bap_qos_cfg *qos;
 
 	LOG_DBG("");
 
 	qos = &cigs[cp->cig_id].qos[cp->cis_id];
 	memset(qos, 0, sizeof(*qos));
 
-	qos->phy = BT_AUDIO_CODEC_QOS_2M;
+	qos->phy = BT_BAP_QOS_CFG_2M;
 	qos->framing = cp->framing;
 	qos->rtn = cp->retransmission_num;
 	qos->sdu = sys_le16_to_cpu(cp->max_sdu);

@@ -41,7 +41,7 @@ Network Configuration
 
 Open the project configuration file for your platform, for example:
 :file:`prj_frdm_k64f.conf` is the configuration file for the
-:ref:`frdm_k64f` board.
+:zephyr:board:`frdm_k64f` board.
 
 In this sample application, both static or DHCPv4 IP addresses are supported.
 Static IP addresses are specified in the project configuration file,
@@ -142,7 +142,7 @@ Open a terminal window and type:
    :goals: build flash
    :compact:
 
-See :ref:`Freedom-K64F board documentation <frdm_k64f>` for more information
+See :zephyr:board:`Freedom-K64F board documentation <frdm_k64f>` for more information
 about this board.
 
 Open a terminal window and type:
@@ -155,3 +155,9 @@ Open a terminal window and type:
 Use 'dmesg' to find the right USB device.
 
 Once the binary is loaded into the FRDM board, press the RESET button.
+
+Wi-Fi
+=====
+
+The IPv4 Wi-Fi support can be enabled in the sample with
+:ref:`Wi-Fi snippet <snippet-wifi-ipv4>`.

@@ -1,7 +1,4 @@
-.. _imx8mp_evk:
-
-NXP i.MX8MP EVK
-###############
+.. zephyr:board:: imx8mp_evk
 
 Overview
 ********
@@ -277,7 +274,6 @@ board defconfig.
    @@ -12,3 +12,4 @@ CONFIG_CONSOLE=y
    CONFIG_XIP=y
    CONFIG_CODE_DDR=y
-   CONFIG_PINCTRL=y
    +CONFIG_ROMSTART_RELOCATION_ROM=y
 
 Then use the following steps to boot Zephyr kernel:

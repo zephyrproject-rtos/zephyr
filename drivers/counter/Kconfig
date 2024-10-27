@@ -100,4 +100,6 @@ source "drivers/counter/Kconfig.max32_timer"
 
 source "drivers/counter/Kconfig.nxp_mrt"
 
+source "drivers/counter/Kconfig.renesas_ra"
+
 endif # COUNTER

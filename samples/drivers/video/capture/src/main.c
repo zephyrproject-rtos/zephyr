@@ -10,9 +10,18 @@
 #include <zephyr/drivers/display.h>
 #include <zephyr/drivers/video.h>
 
-#define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(main);
+
+#ifdef CONFIG_TEST
+#include <zephyr/drivers/video-controls.h>
+
+#include "check_test_pattern.h"
+
+#define LOG_LEVEL LOG_LEVEL_DBG
+#else
+#define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
+#endif
 
 #define VIDEO_DEV_SW "VIDEO_SW_GENERATOR"
 
@@ -36,10 +45,14 @@ static inline int display_setup(const struct device *const display_dev, const ui
 	/* Set display pixel format to match the one in use by the camera */
 	switch (pixfmt) {
 	case VIDEO_PIX_FMT_RGB565:
-		ret = display_set_pixel_format(display_dev, PIXEL_FORMAT_RGB_565);
+		if (capabilities.current_pixel_format != PIXEL_FORMAT_BGR_565) {
+			ret = display_set_pixel_format(display_dev, PIXEL_FORMAT_BGR_565);
+		}
 		break;
 	case VIDEO_PIX_FMT_XRGB32:
-		ret = display_set_pixel_format(display_dev, PIXEL_FORMAT_ARGB_8888);
+		if (capabilities.current_pixel_format != PIXEL_FORMAT_ARGB_8888) {
+			ret = display_set_pixel_format(display_dev, PIXEL_FORMAT_ARGB_8888);
+		}
 		break;
 	default:
 		return -ENOTSUP;
@@ -62,9 +75,9 @@ static inline void video_display_frame(const struct device *const display_dev,
 	buf_desc.buf_size = vbuf->bytesused;
 	buf_desc.width = fmt.width;
 	buf_desc.pitch = buf_desc.width;
-	buf_desc.height = fmt.height;
+	buf_desc.height = vbuf->bytesused / fmt.pitch;
 
-	display_write(display_dev, 0, 0, &buf_desc, vbuf->buffer);
+	display_write(display_dev, 0, vbuf->line_offset, &buf_desc, vbuf->buffer);
 }
 #endif
 
@@ -166,6 +179,10 @@ int main(void)
 		fie.index++;
 	}
 
+#ifdef CONFIG_TEST
+	video_set_ctrl(video_dev, VIDEO_CID_CAMERA_TEST_PATTERN, (void *)1);
+#endif
+
 #if DT_HAS_CHOSEN(zephyr_display)
 	const struct device *const display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 
@@ -182,7 +199,11 @@ int main(void)
 #endif
 
 	/* Size to allocate for each buffer */
-	bsize = fmt.pitch * fmt.height;
+	if (caps.min_line_count == LINE_COUNT_HEIGHT) {
+		bsize = fmt.pitch * fmt.height;
+	} else {
+		bsize = fmt.pitch * caps.min_line_count;
+	}
 
 	/* Alloc video buffers and enqueue for capture */
 	for (i = 0; i < ARRAY_SIZE(buffers); i++) {
@@ -217,6 +238,12 @@ int main(void)
 
 		LOG_DBG("Got frame %u! size: %u; timestamp %u ms", frame++, vbuf->bytesused,
 		       vbuf->timestamp);
+
+#ifdef CONFIG_TEST
+		if (is_colorbar_ok(vbuf->buffer, fmt)) {
+			LOG_DBG("Pattern OK!\n");
+		}
+#endif
 
 #if DT_HAS_CHOSEN(zephyr_display)
 		video_display_frame(display_dev, vbuf, fmt);

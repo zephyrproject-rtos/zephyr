@@ -24,6 +24,7 @@
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/l2cap.h>
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/uuid.h>
@@ -60,11 +61,6 @@ enum bass_recv_state_internal_flag {
 	BASS_RECV_STATE_INTERNAL_FLAG_NUM,
 };
 
-struct broadcast_assistant {
-	struct bt_conn *conn;
-	uint8_t scanning;
-};
-
 /* TODO: Merge bass_recv_state_internal_t and bt_bap_scan_delegator_recv_state */
 struct bass_recv_state_internal {
 	const struct bt_gatt_attr *attr;
@@ -72,7 +68,7 @@ struct bass_recv_state_internal {
 	bool active;
 	uint8_t index;
 	struct bt_bap_scan_delegator_recv_state state;
-	uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE];
+	uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE];
 	struct bt_le_per_adv_sync *pa_sync;
 	/** Requested BIS sync bitfield for each subgroup */
 	uint32_t requested_bis_sync[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS];
@@ -82,7 +78,6 @@ struct bass_recv_state_internal {
 
 struct bt_bap_scan_delegator_inst {
 	uint8_t next_src_id;
-	struct broadcast_assistant assistant_configs[CONFIG_BT_MAX_CONN];
 	struct bass_recv_state_internal recv_states
 		[CONFIG_BT_BAP_SCAN_DELEGATOR_RECV_STATE_COUNT];
 };
@@ -264,25 +259,6 @@ static void bis_sync_request_updated(struct bt_conn *conn,
 	}
 }
 
-static void scan_delegator_disconnected(struct bt_conn *conn, uint8_t reason)
-{
-	int i;
-	struct broadcast_assistant *assistant = NULL;
-
-	for (i = 0; i < ARRAY_SIZE(scan_delegator.assistant_configs); i++) {
-		if (scan_delegator.assistant_configs[i].conn == conn) {
-			assistant = &scan_delegator.assistant_configs[i];
-			break;
-		}
-	}
-
-	if (assistant != NULL) {
-		LOG_DBG("Instance %u with addr %s disconnected",
-		       i, bt_addr_le_str(bt_conn_get_dst(conn)));
-		(void)memset(assistant, 0, sizeof(*assistant));
-	}
-}
-
 static void scan_delegator_security_changed(struct bt_conn *conn,
 					    bt_security_t level,
 					    enum bt_security_err err)
@@ -315,32 +291,9 @@ static void scan_delegator_security_changed(struct bt_conn *conn,
 	}
 }
 
-static struct bt_conn_cb conn_cb = {
-	.disconnected = scan_delegator_disconnected,
+BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.security_changed = scan_delegator_security_changed,
 };
-
-static struct broadcast_assistant *get_bap_broadcast_assistant(struct bt_conn *conn)
-{
-	struct broadcast_assistant *new = NULL;
-
-	for (size_t i = 0; i < ARRAY_SIZE(scan_delegator.assistant_configs); i++) {
-		if (scan_delegator.assistant_configs[i].conn == conn) {
-			return &scan_delegator.assistant_configs[i];
-		} else if (new == NULL &&
-			   scan_delegator.assistant_configs[i].conn == NULL) {
-			new = &scan_delegator.assistant_configs[i];
-			new->conn = conn;
-		}
-	}
-
-	if (!atomic_test_and_set_bit(scan_delegator_flags,
-				     SCAN_DELEGATOR_FLAG_REGISTERED_CONN_CB)) {
-		bt_conn_cb_register(&conn_cb);
-	}
-
-	return new;
-}
 
 static uint8_t next_src_id(void)
 {
@@ -870,6 +823,7 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 	 */
 	if (pa_sync != BT_BAP_BASS_PA_REQ_NO_SYNC &&
 	    state->pa_sync_state != BT_BAP_PA_STATE_SYNCED) {
+		const uint8_t pa_sync_state = state->pa_sync_state;
 		const int err = pa_sync_request(conn, state, pa_sync,
 						pa_interval);
 
@@ -882,6 +836,12 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 				err);
 
 			return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
+		} else if (pa_sync_state != state->pa_sync_state) {
+			/* Temporary work around if the state is changed when pa_sync_request is
+			 * called. See https://github.com/zephyrproject-rtos/zephyr/issues/79308 for
+			 * more information about this issue.
+			 */
+			state_changed = true;
 		}
 	} else if (pa_sync == BT_BAP_BASS_PA_REQ_NO_SYNC &&
 		   (state->pa_sync_state == BT_BAP_PA_STATE_INFO_REQ ||
@@ -1023,7 +983,6 @@ static ssize_t write_control_point(struct bt_conn *conn,
 				   const void *data, uint16_t len,
 				   uint16_t offset, uint8_t flags)
 {
-	struct broadcast_assistant *bap_broadcast_assistant;
 	struct net_buf_simple buf;
 	uint8_t opcode;
 	int err;
@@ -1042,12 +1001,6 @@ static ssize_t write_control_point(struct bt_conn *conn,
 		return BT_GATT_ERR(BT_BAP_BASS_ERR_OPCODE_NOT_SUPPORTED);
 	}
 
-	bap_broadcast_assistant = get_bap_broadcast_assistant(conn);
-
-	if (bap_broadcast_assistant == NULL) {
-		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
-	}
-
 	LOG_HEXDUMP_DBG(data, len, "Data");
 
 	switch (opcode) {
@@ -1059,16 +1012,22 @@ static ssize_t write_control_point(struct bt_conn *conn,
 			return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 		}
 
-		bap_broadcast_assistant->scanning = false;
+		if (scan_delegator_cbs != NULL && scan_delegator_cbs->scanning_state != NULL) {
+			scan_delegator_cbs->scanning_state(conn, false);
+		}
+
 		break;
 	case BT_BAP_BASS_OP_SCAN_START:
 		LOG_DBG("Assistant starting scanning");
 
 		if (buf.len != 0) {
-			LOG_DBG("Invalid length %u", buf.size);
 			return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 		}
-		bap_broadcast_assistant->scanning = true;
+
+		if (scan_delegator_cbs != NULL && scan_delegator_cbs->scanning_state != NULL) {
+			scan_delegator_cbs->scanning_state(conn, true);
+		}
+
 		break;
 	case BT_BAP_BASS_OP_ADD_SRC:
 		LOG_DBG("Assistant adding source");

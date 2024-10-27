@@ -1,7 +1,4 @@
-.. _frdm_mcxn236:
-
-NXP FRDM-MCXN236
-################
+.. zephyr:board:: frdm_mcxn236
 
 Overview
 ********
@@ -12,10 +9,6 @@ MCUs I/Os, integrated open-standard serial interfaces, external flash memory and
 an on-board MCU-Link debugger. MCX N Series are high-performance, low-power
 microcontrollers with intelligent peripherals and accelerators providing multi-tasking
 capabilities and performance efficiency.
-
-.. image:: frdm_mcxn236.webp
-   :align: center
-   :alt: FRDM-MCXN236
 
 Hardware
 ********
@@ -67,6 +60,21 @@ The FRDM-MCXN236 board configuration supports the following hardware features:
 | FLASH     | on-chip    | soc flash                           |
 +-----------+------------+-------------------------------------+
 | WATCHDOG  | on-chip    | watchdog                            |
++-----------+------------+-------------------------------------+
+| VREF      | on-chip    | regulator                           |
++-----------+------------+-------------------------------------+
+| ADC       | on-chip    | adc                                 |
++-----------+------------+-------------------------------------+
+| LPCMP     | on-chip    | sensor(comparator)                  |
++-----------+------------+-------------------------------------+
+| FLEXCAN   | on-chip    | CAN                                 |
++-----------+------------+-------------------------------------+
+| FLEXIO    | on-chip    | flexio                              |
++-----------+------------+-------------------------------------+
+| DISPLAY   | on-chip    | flexio; MIPI-DBI. Tested with       |
+|           |            | :ref:`lcd_par_s035`                 |
++-----------+------------+-------------------------------------+
+| LPTMR     | on-chip    | counter                             |
 +-----------+------------+-------------------------------------+
 
 Targets available

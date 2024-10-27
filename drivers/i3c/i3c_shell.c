@@ -146,12 +146,12 @@ static int i3c_parse_args(const struct shell *sh, char **argv, const struct devi
 			  const struct device **tdev, struct i3c_device_desc **desc)
 {
 	*dev = device_get_binding(argv[ARGV_DEV]);
-	if (!dev) {
+	if (!*dev) {
 		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
 		return -ENODEV;
 	}
 	*tdev = device_get_binding(argv[ARGV_TDEV]);
-	if (!tdev) {
+	if (!*tdev) {
 		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_TDEV]);
 		return -ENODEV;
 	}
@@ -182,10 +182,9 @@ static int cmd_i3c_info(const struct shell *sh, size_t argc, char **argv)
 	data = (struct i3c_driver_data *)dev->data;
 
 	if (argc == 3) {
-		/* TODO: is this needed? */
 		tdev = device_get_binding(argv[ARGV_TDEV]);
 		if (!tdev) {
-			shell_error(sh, "I3C: Target Device driver %s not found.", argv[ARGV_DEV]);
+			shell_error(sh, "I3C: Target Device driver %s not found.", argv[ARGV_TDEV]);
 			return -ENODEV;
 		}
 		if (!sys_slist_is_empty(&data->attached_dev.devices.i3c)) {
@@ -867,13 +866,13 @@ static int cmd_i3c_ccc_setmrl(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	/* IBI length is required if the ibi payload bit is set */
-	if ((desc->bcr & I3C_BCR_IBI_PAYLOAD_HAS_DATA_BYTE) && (argc < 4)) {
+	if ((desc->bcr & I3C_BCR_IBI_PAYLOAD_HAS_DATA_BYTE) && (argc < 5)) {
 		shell_error(sh, "I3C: Missing IBI length.");
 		return -EINVAL;
 	}
 
 	mrl.len = strtol(argv[3], NULL, 16);
-	if (argc > 3) {
+	if (argc > 4) {
 		mrl.ibi_len = strtol(argv[4], NULL, 16);
 	}
 
@@ -884,7 +883,7 @@ static int cmd_i3c_ccc_setmrl(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	desc->data_length.mrl = mrl.len;
-	if (argc > 3) {
+	if (argc > 4) {
 		desc->data_length.max_ibi = mrl.ibi_len;
 	}
 
@@ -1081,7 +1080,7 @@ static int cmd_i3c_ccc_rstact(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	if (ret < 0) {
-		shell_error(sh, "I3C: unable to send CCC RSTACT BC.");
+		shell_error(sh, "I3C: unable to send CCC RSTACT.");
 		return ret;
 	}
 
@@ -1134,7 +1133,7 @@ static int cmd_i3c_ccc_disec_bc(const struct shell *sh, size_t argc, char **argv
 
 	ret = i3c_ccc_do_events_all_set(dev, false, &events);
 	if (ret < 0) {
-		shell_error(sh, "I3C: unable to send CCC ENEC BC.");
+		shell_error(sh, "I3C: unable to send CCC DISEC BC.");
 		return ret;
 	}
 
@@ -1158,7 +1157,7 @@ static int cmd_i3c_ccc_enec(const struct shell *sh, size_t argc, char **argv)
 
 	ret = i3c_ccc_do_events_set(desc, true, &events);
 	if (ret < 0) {
-		shell_error(sh, "I3C: unable to send CCC ENEC BC.");
+		shell_error(sh, "I3C: unable to send CCC ENEC.");
 		return ret;
 	}
 
@@ -1182,7 +1181,7 @@ static int cmd_i3c_ccc_disec(const struct shell *sh, size_t argc, char **argv)
 
 	ret = i3c_ccc_do_events_set(desc, false, &events);
 	if (ret < 0) {
-		shell_error(sh, "I3C: unable to send CCC ENEC BC.");
+		shell_error(sh, "I3C: unable to send CCC DISEC.");
 		return ret;
 	}
 
@@ -1927,9 +1926,9 @@ static int cmd_i3c_i2c_scan(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
-#ifdef I3C_USE_IBI
+#ifdef CONFIG_I3C_USE_IBI
 /* i3c ibi hj <device> */
-static void cmd_i3c_ibi_hj(const struct shell *sh, size_t argc, char **argv)
+static int cmd_i3c_ibi_hj(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
 	struct i3c_ibi request;
@@ -1949,10 +1948,12 @@ static void cmd_i3c_ibi_hj(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	shell_print(sh, "I3C: Issued IBI HJ");
+
+	return 0;
 }
 
 /* i3c ibi cr <device> */
-static void cmd_i3c_ibi_cr(const struct shell *sh, size_t argc, char **argv)
+static int cmd_i3c_ibi_cr(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
 	struct i3c_ibi request;
@@ -1972,17 +1973,19 @@ static void cmd_i3c_ibi_cr(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	shell_print(sh, "I3C: Issued IBI CR");
+
+	return 0;
 }
 
 /* i3c ibi tir <device> [<bytes>]*/
-static void cmd_i3c_ibi_tir(const struct shell *sh, size_t argc, char **argv)
+static int cmd_i3c_ibi_tir(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
 	struct i3c_ibi request;
 	uint16_t data_length;
-	char **data;
 	uint8_t buf[MAX_I3C_BYTES];
 	int ret;
+	uint8_t i;
 
 	dev = device_get_binding(argv[ARGV_DEV]);
 	if (!dev) {
@@ -1990,10 +1993,9 @@ static void cmd_i3c_ibi_tir(const struct shell *sh, size_t argc, char **argv)
 		return -ENODEV;
 	}
 
-	data = argv[3];
 	data_length = argc - 3;
 	for (i = 0; i < data_length; i++) {
-		buf[i] = (uint8_t)strtol(data[i], NULL, 16);
+		buf[i] = (uint8_t)strtol(argv[3 + i], NULL, 16);
 	}
 
 	request.ibi_type = I3C_IBI_TARGET_INTR;
@@ -2007,10 +2009,12 @@ static void cmd_i3c_ibi_tir(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	shell_print(sh, "I3C: Issued IBI TIR");
+
+	return 0;
 }
 
 /* i3c ibi enable <device> <target> */
-static void cmd_i3c_ibi_enable(const struct shell *sh, size_t argc, char **argv)
+static int cmd_i3c_ibi_enable(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev, *tdev;
 	struct i3c_device_desc *desc;
@@ -2028,10 +2032,12 @@ static void cmd_i3c_ibi_enable(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	shell_print(sh, "I3C: Enabled IBI");
+
+	return 0;
 }
 
 /* i3c ibi disable <device> <target> */
-static void cmd_i3c_ibi_disable(const struct shell *sh, size_t argc, char **argv)
+static int cmd_i3c_ibi_disable(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev, *tdev;
 	struct i3c_device_desc *desc;
@@ -2049,6 +2055,8 @@ static void cmd_i3c_ibi_disable(const struct shell *sh, size_t argc, char **argv
 	}
 
 	shell_print(sh, "I3C: Disabled IBI");
+
+	return 0;
 }
 #endif
 
@@ -2094,7 +2102,7 @@ static void i3c_device_name_get(size_t idx, struct shell_static_entry *entry)
 
 SHELL_DYNAMIC_CMD_CREATE(dsub_i3c_device_name, i3c_device_name_get);
 
-#ifdef I3C_USE_IBI
+#ifdef CONFIG_I3C_USE_IBI
 /* L2 I3C IBI Shell Commands*/
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_i3c_ibi_cmds,
@@ -2307,7 +2315,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "Get I3C device info\n"
 		      "Usage: info <device> [<target>]",
 		      cmd_i3c_info, 2, 1),
-	SHELL_CMD_ARG(speed, &dsub_i3c_device_attached_name,
+	SHELL_CMD_ARG(speed, &dsub_i3c_device_name,
 		      "Set I3C device speed\n"
 		      "Usage: speed <device> <speed>",
 		      cmd_i3c_speed, 3, 0),
@@ -2363,7 +2371,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "Send I3C HDR\n"
 		      "Usage: hdr <sub cmd>",
 		      NULL, 3, 0),
-#ifdef I3C_USE_IBI
+#ifdef CONFIG_I3C_USE_IBI
 	SHELL_CMD_ARG(ibi, &sub_i3c_ibi_cmds,
 		      "Send I3C IBI\n"
 		      "Usage: ibi <sub cmd>",

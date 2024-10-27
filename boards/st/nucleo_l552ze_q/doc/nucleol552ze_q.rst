@@ -1,7 +1,4 @@
-.. _nucleo_l552ze_q_board:
-
-ST Nucleo L552ZE Q
-##################
+.. zephyr:board:: nucleo_l552ze_q
 
 Overview
 ********
@@ -29,10 +26,6 @@ board:
 - Two push-buttons: USER and RESET
 - External or internal SMPS to generate Vcore logic supply
 - USB OTG full speed or device only
-
-.. image:: img/nucleo_l552ze_q.jpg
-   :align: center
-   :alt: Nucleo L552ZE Q
 
 More information about the board can be found at the `Nucleo L552ZE Q website`_.
 

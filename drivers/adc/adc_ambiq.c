@@ -119,6 +119,7 @@ static void adc_ambiq_isr(const struct device *dev)
 						&Sample);
 			*data->buffer++ = Sample.ui32Sample;
 		}
+		am_hal_adc_disable(data->adcHandle);
 		adc_context_on_sampling_done(&data->ctx, dev);
 	}
 }
@@ -184,9 +185,6 @@ static int adc_ambiq_start_read(const struct device *dev, const struct adc_seque
 		channels &= ~BIT(channel_id);
 	}
 	__ASSERT_NO_MSG(channels == 0);
-
-	/* Enable the ADC. */
-	am_hal_adc_enable(data->adcHandle);
 
 	data->active_channels = active_channels;
 	data->buffer = sequence->buffer;
@@ -269,6 +267,8 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	struct adc_ambiq_data *data = CONTAINER_OF(ctx, struct adc_ambiq_data, ctx);
 
 	data->repeat_buffer = data->buffer;
+	/* Enable the ADC. */
+	am_hal_adc_enable(data->adcHandle);
 	/*Trigger the ADC*/
 	am_hal_adc_sw_trigger(data->adcHandle);
 }

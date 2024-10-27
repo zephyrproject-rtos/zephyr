@@ -17,4 +17,8 @@ if(CONFIG_LLEXT)
     fs_loader.c
 	)
   zephyr_library_sources_ifdef(CONFIG_LLEXT_SHELL shell.c)
+
+  if(CONFIG_RISCV AND CONFIG_USERSPACE)
+	message(WARNING "Running LLEXT extensions from user-space threads on RISC-V is not supported!")
+  endif()
 endif()

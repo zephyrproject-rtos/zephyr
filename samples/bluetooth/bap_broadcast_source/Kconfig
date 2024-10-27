@@ -45,4 +45,18 @@ config BROADCAST_CODE
 	   Setting a non-empty string for this option will encrypt the broadcast using this
 	   string as the broadcast code. The length of the string shall be between 1 and 16 octets.
 
+config STATIC_BROADCAST_ID
+	bool "Use static broadcast ID"
+	default y
+	help
+	   Enabling this option will make the application use static broadcast ID, as opposed to a
+	   randomly generated one.
+
+config BROADCAST_ID
+	hex "The static broadcast ID to use"
+	range 0x000000 0xFFFFFF
+	depends on STATIC_BROADCAST_ID
+	help
+	   This is the 3-octet broadcast ID advertised if static broadcast IDs are enabled.
+
 source "Kconfig.zephyr"

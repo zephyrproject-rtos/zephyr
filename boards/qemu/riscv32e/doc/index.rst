@@ -1,7 +1,4 @@
-.. _qemu_riscv32e:
-
-RISCV32E Emulation (QEMU)
-#########################
+.. zephyr:board:: qemu_riscv32e
 
 Overview
 ********

@@ -115,6 +115,24 @@ int nrf_wifi_set_power_save(const struct device *dev,
 							vif_ctx_zep->vif_idx,
 							params->wakeup_mode);
 	break;
+	case WIFI_PS_PARAM_EXIT_STRATEGY:
+		unsigned int exit_strategy;
+
+		if (params->exit_strategy == WIFI_PS_EXIT_EVERY_TIM) {
+			exit_strategy = EVERY_TIM;
+		} else if (params->exit_strategy == WIFI_PS_EXIT_CUSTOM_ALGO) {
+			exit_strategy = INT_PS;
+		} else {
+			params->fail_reason =
+				WIFI_PS_PARAM_FAIL_INVALID_EXIT_STRATEGY;
+			return -EINVAL;
+		}
+
+		status = nrf_wifi_fmac_set_ps_exit_strategy(
+							rpu_ctx_zep->rpu_ctx,
+							vif_ctx_zep->vif_idx,
+							exit_strategy);
+	break;
 	default:
 		params->fail_reason =
 			WIFI_PS_PARAM_FAIL_CMD_EXEC_FAIL;
@@ -379,6 +397,11 @@ void nrf_wifi_event_proc_get_power_save_info(void *vif_ctx,
 	vif_ctx_zep->ps_info->ps_params.timeout_ms = ps_info->ps_timeout;
 	vif_ctx_zep->ps_info->ps_params.listen_interval = ps_info->listen_interval;
 	vif_ctx_zep->ps_info->ps_params.wakeup_mode = ps_info->extended_ps;
+	if (ps_info->ps_exit_strategy == EVERY_TIM) {
+		vif_ctx_zep->ps_info->ps_params.exit_strategy = WIFI_PS_EXIT_EVERY_TIM;
+	} else if (ps_info->ps_exit_strategy == INT_PS) {
+		vif_ctx_zep->ps_info->ps_params.exit_strategy = WIFI_PS_EXIT_CUSTOM_ALGO;
+	}
 
 	for (int i = 0; i < ps_info->num_twt_flows; i++) {
 		struct twt_interval_float twt_interval_fp;
@@ -912,6 +935,21 @@ int nrf_wifi_filter(const struct device *dev,
 	def_dev_ctx = wifi_dev_priv(fmac_dev_ctx);
 
 	if (filter->oper == WIFI_MGMT_SET) {
+		/**
+		 * If promiscuous mode is enabled, filter settings
+		 * cannot be plumbed to the lower layers as that might
+		 * affect connectivity. Save the filter settings in the
+		 * driver and filter packet type on packet receive by
+		 * checking the 802.11 header in the packet
+		 */
+		if (((def_dev_ctx->vif_ctx[vif_ctx_zep->vif_idx]->mode) &
+		    (NRF_WIFI_PROMISCUOUS_MODE)) == NRF_WIFI_PROMISCUOUS_MODE) {
+			def_dev_ctx->vif_ctx[vif_ctx_zep->vif_idx]->packet_filter =
+				filter->filter;
+			ret = 0;
+			goto out;
+		}
+
 		/**
 		 * In case a user sets data + management + ctrl bits
 		 * or all the filter bits. Map it to bit 0 set to

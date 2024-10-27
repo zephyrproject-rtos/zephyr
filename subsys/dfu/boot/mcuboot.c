@@ -12,6 +12,7 @@
 #include <zephyr/storage/flash_map.h>
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
+#include <zephyr/logging/log.h>
 
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/byteorder.h>
@@ -19,7 +20,14 @@
 #include "bootutil/bootutil_public.h"
 #include <zephyr/dfu/mcuboot.h>
 
+#if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD)
+#include <bootutil/boot_status.h>
+#include <zephyr/retention/blinfo.h>
+#endif
+
 #include "mcuboot_priv.h"
+
+LOG_MODULE_REGISTER(mcuboot_dfu, LOG_LEVEL_DBG);
 
 /*
  * Helpers for image headers and trailers, as defined by mcuboot.
@@ -34,8 +42,15 @@
 #define BOOT_HEADER_MAGIC_V1 0x96f3b83d
 #define BOOT_HEADER_SIZE_V1 32
 
+#if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD)
+/* For RAM LOAD mode, the active image must be fetched from the bootloader */
+static uint8_t boot_fetch_active_slot(void);
+#define ACTIVE_SLOT_FLASH_AREA_ID boot_fetch_active_slot()
+#define INVALID_SLOT_ID 255
+#else
 /* Get active partition. zephyr,code-partition chosen node must be defined */
 #define ACTIVE_SLOT_FLASH_AREA_ID DT_FIXED_PARTITION_ID(DT_CHOSEN(zephyr_code_partition))
+#endif
 
 /*
  * Raw (on-flash) representation of the v1 image header.
@@ -59,6 +74,26 @@ struct mcuboot_v1_raw_header {
 /*
  * End of strict defines
  */
+
+#if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD)
+static uint8_t boot_fetch_active_slot(void)
+{
+	int rc;
+	uint8_t slot;
+
+	rc = blinfo_lookup(BLINFO_RUNNING_SLOT, &slot, sizeof(slot));
+
+	if (rc <= 0) {
+		LOG_ERR("Failed to fetch active slot: %d", rc);
+
+		return INVALID_SLOT_ID;
+	}
+
+	LOG_DBG("Active slot: %d", slot);
+
+	return slot;
+}
+#endif
 
 static int boot_read_v1_header(uint8_t area_id,
 			       struct mcuboot_v1_raw_header *v1_raw)

@@ -25,6 +25,7 @@
 		zephyr,canbus = &can_loopback0;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,bt-hci = &bt_hci_userchan;
+		zephyr,touch = &input_sdl_touch;
 	};
 
 	aliases {

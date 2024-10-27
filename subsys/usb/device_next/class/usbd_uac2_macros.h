@@ -108,6 +108,9 @@
 #define EXT_FORMAT_TYPE_II			130
 #define EXT_FORMAT_TYPE_III			131
 
+/* Convert 0 to empty and everything else to itself */
+#define EMPTY_ON_ZERO(value) COND_CODE_0(value, (), (value))
+
 /* Automatically assign Entity IDs based on entities order in devicetree */
 #define ENTITY_ID(e) UTIL_INC(DT_NODE_CHILD_IDX(e))
 
@@ -168,12 +171,26 @@
  * control is present but read-only and 0b11 when control can be programmed by
  * host. Value 0b10 is not allowed by the specification.
  */
-#define CONTROL_BITS(entity, control_name, bitshift)				\
+#define CONTROL_NOT_PRESENT		0x0
+#define CONTROL_READ_ONLY		0x1
+#define CONTROL_HOST_PROGRAMMABLE	0x3
+
+#define CONTROL_TOKEN(entity, control_name)					\
 	COND_CODE_1(DT_NODE_HAS_PROP(entity, control_name),			\
-		(COND_CODE_0(DT_ENUM_IDX(entity, control_name),			\
-			((0x1 << bitshift)) /* read-only */,			\
-			((0x3 << bitshift)) /* host-programmable */)),		\
-		((0x0 << bitshift)) /* control not present */)
+		(DT_STRING_UPPER_TOKEN(entity, control_name)),			\
+		(NOT_PRESENT))
+
+#define CONTROL_BITS(entity, control_name, bitshift)				\
+	(UTIL_CAT(CONTROL_, CONTROL_TOKEN(entity, control_name)) << bitshift)
+
+#define CONTROL_TOKEN_BY_IDX(entity, control_name, idx)				\
+	COND_CODE_1(DT_PROP_HAS_IDX(entity, control_name, idx),			\
+		(DT_STRING_UPPER_TOKEN_BY_IDX(entity, control_name, idx)),	\
+		(NOT_PRESENT))
+
+#define CONTROL_BITS_BY_IDX(entity, control_name, idx, bitshift)		\
+	(UTIL_CAT(CONTROL_, CONTROL_TOKEN_BY_IDX(entity, control_name, idx))	\
+		<< bitshift)
 
 #define CLOCK_SOURCE_CONTROLS(entity)						\
 	CONTROL_BITS(entity, frequency_control, 0)	|			\
@@ -193,6 +210,23 @@
 	CONTROL_BITS(entity, overload_control, 4)	|			\
 	CONTROL_BITS(entity, underflow_control, 6)	|			\
 	CONTROL_BITS(entity, overflow_control, 8)
+
+#define FEATURE_UNIT_CHANNEL_CONTROLS(entity, ch)				\
+	CONTROL_BITS_BY_IDX(entity, mute_control, ch, 0)		|	\
+	CONTROL_BITS_BY_IDX(entity, volume_control, ch, 2)		|	\
+	CONTROL_BITS_BY_IDX(entity, bass_control, ch, 4)		|	\
+	CONTROL_BITS_BY_IDX(entity, mid_control, ch, 6)			|	\
+	CONTROL_BITS_BY_IDX(entity, treble_control, ch, 8)		|	\
+	CONTROL_BITS_BY_IDX(entity, graphic_equalizer_control, ch, 10)	|	\
+	CONTROL_BITS_BY_IDX(entity, automatic_gain_control, ch, 12)	|	\
+	CONTROL_BITS_BY_IDX(entity, delay_control, ch, 14)		|	\
+	CONTROL_BITS_BY_IDX(entity, bass_boost_control, ch, 16)		|	\
+	CONTROL_BITS_BY_IDX(entity, loudness_control, ch, 18)		|	\
+	CONTROL_BITS_BY_IDX(entity, input_gain_control, ch, 20)		|	\
+	CONTROL_BITS_BY_IDX(entity, input_gain_pad_control, ch, 22)	|	\
+	CONTROL_BITS_BY_IDX(entity, phase_inverter_control, ch, 24)	|	\
+	CONTROL_BITS_BY_IDX(entity, underflow_control, ch, 26)		|	\
+	CONTROL_BITS_BY_IDX(entity, overflow_control, ch, 28)
 
 #define AUDIO_STREAMING_DATA_ENDPOINT_CONTROLS(node)				\
 	CONTROL_BITS(node, pitch_control, 0)		|			\
@@ -233,10 +267,24 @@
 
 #define SPATIAL_LOCATIONS_U32(entity) \
 	(FOR_EACH_IDX(ARRAY_BIT, (|), SPATIAL_LOCATIONS_ARRAY(entity)))
-#define NUM_SPATIAL_LOCATIONS(entity) \
-	(FOR_EACH(IDENTITY, (+), SPATIAL_LOCATIONS_ARRAY(entity)))
+#define NUM_SPATIAL_LOCATIONS(entity)						\
+	NUM_VA_ARGS(LIST_DROP_EMPTY(						\
+		FOR_EACH(EMPTY_ON_ZERO, (,), SPATIAL_LOCATIONS_ARRAY(entity))	\
+	))
 #define SPATIAL_LOCATIONS(entity) U32_LE(SPATIAL_LOCATIONS_U32(entity))
 
+#define FEATURE_UNIT_NUM_CHANNELS(entity)					\
+	NUM_SPATIAL_LOCATIONS(DT_PHANDLE_BY_IDX(entity, data_source, 0))
+
+#define FEATURE_UNIT_CONTROLS_BY_IDX(i, entity)					\
+	U32_LE(FEATURE_UNIT_CHANNEL_CONTROLS(entity, i))
+
+#define FEATURE_UNIT_CONTROLS_ARRAYS(entity)					\
+	LISTIFY(UTIL_INC(FEATURE_UNIT_NUM_CHANNELS(entity)),			\
+		FEATURE_UNIT_CONTROLS_BY_IDX, (,), entity)
+
+#define FEATURE_UNIT_DESCRIPTOR_LENGTH(entity)					\
+	(6 + (FEATURE_UNIT_NUM_CHANNELS(entity) + 1) * 4)
 
 /* 4.7.2.1 Clock Source Descriptor */
 #define CLOCK_SOURCE_DESCRIPTOR(entity)						\
@@ -277,6 +325,16 @@
 	U16_LE(OUTPUT_TERMINAL_CONTROLS(entity)),	/* bmControls */	\
 	0x00,						/* iTerminal */
 
+/* 4.7.2.8 Feature Unit Descriptor */
+#define FEATURE_UNIT_DESCRIPTOR(entity)						\
+	FEATURE_UNIT_DESCRIPTOR_LENGTH(entity),		/* bLength */		\
+	CS_INTERFACE,					/* bDescriptorType */	\
+	AC_DESCRIPTOR_FEATURE_UNIT,			/* bDescriptorSubtype */\
+	ENTITY_ID(entity),				/* bUnitID */		\
+	CONNECTED_ENTITY_ID(entity, data_source),	/* bSourceID */		\
+	FEATURE_UNIT_CONTROLS_ARRAYS(entity),		/* bmaControls 0..ch */	\
+	0x00,						/* iFeature */
+
 #define ENTITY_HEADER(entity)							\
 	IF_ENABLED(DT_NODE_HAS_COMPAT(entity, zephyr_uac2_clock_source), (	\
 		CLOCK_SOURCE_DESCRIPTOR(entity)					\
@@ -286,6 +344,9 @@
 	))									\
 	IF_ENABLED(DT_NODE_HAS_COMPAT(entity, zephyr_uac2_output_terminal), (	\
 		OUTPUT_TERMINAL_DESCRIPTOR(entity)				\
+	))									\
+	IF_ENABLED(DT_NODE_HAS_COMPAT(entity, zephyr_uac2_feature_unit), (	\
+		FEATURE_UNIT_DESCRIPTOR(entity)					\
 	))
 
 #define ENTITY_HEADER_ARRAYS(entity)						\
@@ -318,6 +379,23 @@
 		(FORMAT_TYPE_I), (FORMAT_TYPE_IV))
 #define AUDIO_STREAMING_FORMATS(node) U32_LE(0x00000001)
 
+#define FEATURE_UNIT_CHANNEL_CLUSTER(node)					\
+	IF_ENABLED(DT_NODE_HAS_COMPAT(DT_PROP(node, data_source),		\
+		zephyr_uac2_input_terminal), (					\
+			DT_PROP(node, data_source)				\
+	))
+
+/* Track back Output Terminal data source to entity that has channel cluster */
+#define OUTPUT_TERMINAL_CHANNEL_CLUSTER(node)					\
+	IF_ENABLED(DT_NODE_HAS_COMPAT(DT_PROP(node, data_source),		\
+		zephyr_uac2_input_terminal), (					\
+			DT_PROP(node, data_source)				\
+	))									\
+	IF_ENABLED(DT_NODE_HAS_COMPAT(DT_PROP(node, data_source),		\
+		zephyr_uac2_feature_unit), (					\
+			FEATURE_UNIT_CHANNEL_CLUSTER(DT_PROP(node, data_source))\
+	))
+
 /* If AudioStreaming is linked to input terminal, obtain the channel cluster
  * configuration from the linked terminal. Otherwise (it has to be connected
  * to output terminal) obtain the channel cluster configuration from data source
@@ -329,8 +407,8 @@
 			DT_PROP(node, linked_terminal)				\
 	))									\
 	IF_ENABLED(DT_NODE_HAS_COMPAT(DT_PROP(node, linked_terminal),		\
-		zephyr_uac2_output_terminal), (					\
-			DT_PROP(DT_PROP(node, linked_terminal), data_source)	\
+		zephyr_uac2_output_terminal), (OUTPUT_TERMINAL_CHANNEL_CLUSTER(	\
+			DT_PROP(node, linked_terminal))				\
 	))
 
 #define AUDIO_STREAMING_NUM_SPATIAL_LOCATIONS(node)				\
@@ -928,6 +1006,42 @@
 		DT_NODE_HAS_COMPAT(DT_PROP(entity, assoc_terminal),		\
 			zephyr_uac2_input_terminal))
 
+#define VALIDATE_OUTPUT_TERMINAL_DATA_SOURCE(entity)				\
+	UTIL_OR(DT_NODE_HAS_COMPAT(DT_PROP(entity, data_source),		\
+			zephyr_uac2_input_terminal),				\
+		DT_NODE_HAS_COMPAT(DT_PROP(entity, data_source),		\
+			zephyr_uac2_feature_unit))
+
+#define VALIDATE_FEATURE_UNIT_DATA_SOURCE(entity)				\
+	DT_NODE_HAS_COMPAT(DT_PROP(entity, data_source),			\
+		zephyr_uac2_input_terminal)
+
+#define BUILD_ASSERT_FEATURE_UNIT_CONTROL(fu, control)				\
+	BUILD_ASSERT(UTIL_OR(UTIL_NOT(DT_NODE_HAS_PROP(fu, control)),		\
+		DT_PROP_LEN(fu, control) <= 1 + FEATURE_UNIT_NUM_CHANNELS(fu)),	\
+		"Feature Unit " DT_NODE_PATH(fu) " has "			\
+		STRINGIFY(FEATURE_UNIT_NUM_CHANNELS(fu)) " logical channel(s) "	\
+		"but its property " #control " has "				\
+		STRINGIFY(DT_PROP_LEN(fu, control)) " values"			\
+	);
+
+#define BUILD_ASSERT_FEATURE_UNIT_CONTROLS_LENGTH(entity)			\
+	BUILD_ASSERT_FEATURE_UNIT_CONTROL(entity, mute_control)			\
+	BUILD_ASSERT_FEATURE_UNIT_CONTROL(entity, volume_control)		\
+	BUILD_ASSERT_FEATURE_UNIT_CONTROL(entity, bass_control)			\
+	BUILD_ASSERT_FEATURE_UNIT_CONTROL(entity, mid_control)			\
+	BUILD_ASSERT_FEATURE_UNIT_CONTROL(entity, treble_control)		\
+	BUILD_ASSERT_FEATURE_UNIT_CONTROL(entity, graphic_equalizer_control)	\
+	BUILD_ASSERT_FEATURE_UNIT_CONTROL(entity, automatic_gain_control)	\
+	BUILD_ASSERT_FEATURE_UNIT_CONTROL(entity, delay_control)		\
+	BUILD_ASSERT_FEATURE_UNIT_CONTROL(entity, bass_boost_control)		\
+	BUILD_ASSERT_FEATURE_UNIT_CONTROL(entity, loudness_control)		\
+	BUILD_ASSERT_FEATURE_UNIT_CONTROL(entity, input_gain_control)		\
+	BUILD_ASSERT_FEATURE_UNIT_CONTROL(entity, input_gain_pad_control)	\
+	BUILD_ASSERT_FEATURE_UNIT_CONTROL(entity, phase_inverter_control)	\
+	BUILD_ASSERT_FEATURE_UNIT_CONTROL(entity, underflow_control)		\
+	BUILD_ASSERT_FEATURE_UNIT_CONTROL(entity, overflow_control)
+
 #define NEEDS_SUBSLOT_SIZE_AND_BIT_RESOLUTION(node) UTIL_OR(			\
 	UTIL_OR(IS_EQ(AUDIO_STREAMING_FORMAT_TYPE(node), FORMAT_TYPE_I),	\
 		IS_EQ(AUDIO_STREAMING_FORMAT_TYPE(node), FORMAT_TYPE_III)),	\
@@ -973,6 +1087,13 @@
 	IF_ENABLED(DT_NODE_HAS_COMPAT(node, zephyr_uac2_output_terminal), (	\
 		BUILD_ASSERT(VALIDATE_OUTPUT_TERMINAL_ASSOCIATION(node),	\
 			"Terminals associations must be Input<->Output");	\
+		BUILD_ASSERT(VALIDATE_OUTPUT_TERMINAL_DATA_SOURCE(node),	\
+			"Unsupported Output Terminal data source");		\
+	))									\
+	IF_ENABLED(DT_NODE_HAS_COMPAT(node, zephyr_uac2_feature_unit), (	\
+		BUILD_ASSERT(VALIDATE_FEATURE_UNIT_DATA_SOURCE(node),		\
+			"Unsupported Feature Unit data source");		\
+		BUILD_ASSERT_FEATURE_UNIT_CONTROLS_LENGTH(node);		\
 	))									\
 	IF_ENABLED(DT_NODE_HAS_COMPAT(node, zephyr_uac2_audio_streaming), (	\
 		BUILD_ASSERT(VALIDATE_LINKED_TERMINAL(node),			\

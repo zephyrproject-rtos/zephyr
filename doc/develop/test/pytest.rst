@@ -169,8 +169,8 @@ a fixture ``mcumgr``
       # continue test scenario, check version etc.
 
 
-unlauched_dut
-=============
+unlaunched_dut
+==============
 
 Similar to the ``dut`` fixture, but it does not initialize the device. It can be used when a finer
 control over the build process is needed. It becomes responsibility of the test to initialize the
@@ -180,7 +180,7 @@ device.
 
    from twister_harness import DeviceAdapter
 
-   def test_sample(unlauched_dut: DeviceAdapter):
+   def test_sample(unlaunched_dut: DeviceAdapter):
       unlaunched_dut.launch()
       unlaunched_dut.readlines_until('Hello world')
 

@@ -14,11 +14,12 @@
 
 	aliases {
 		usart-0 = &flexcomm3;
-		led0 = &green_led;
 		sw0 = &sw_4;
 		i2c-0 = &flexcomm2;
 		watchdog0 = &wwdt;
 		dmic-dev = &dmic0;
+		mcuboot-button0 = &sw_4;
+		pwm-0 = &sctimer;
 	};
 
 	chosen {
@@ -29,14 +30,6 @@
 		zephyr,flash-controller = &mx25u51245g;
 		zephyr,console = &flexcomm3;
 		zephyr,shell-uart = &flexcomm3;
-	};
-
-	leds {
-		compatible = "gpio-leds";
-		green_led: led_1 {
-			gpios = <&hsgpio1 20 0>;
-			label = "User LED_GREEN";
-		};
 	};
 
 	gpio_keys {
@@ -75,6 +68,22 @@
 				<19 0 &hsgpio0 4 0>,	/* D13 */
 				<20 0 &hsgpio0 16 0>,	/* D14 */
 				<21 0 &hsgpio0 17 0>;	/* D15 */
+	};
+
+
+	/*
+	 * The pins for this interface are chosen arbitrarily- the RD-RW612
+	 * board does not have the NXP 8080 interface, but can support displays
+	 * using it by connecting signals directly with jumper wires.
+	 */
+	nxp_lcd_8080_connector: lcd-8080-connector {
+		compatible = "nxp,lcd-8080";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =	<9  0 &hsgpio0 3 0>,	/* Pin 9, LCD touch INT */
+				<10  0 &hsgpio0 2 0>,	/* Pin 10, LCD backlight control */
+				<11  0 &hsgpio0 4 0>;	/* Pin 11, LCD and touch reset */
 	};
 };
 
@@ -231,10 +240,20 @@ zephyr_udc0: &usb_otg {
 	status = "okay";
 };
 
-&lcdic {
+zephyr_mipi_dbi_parallel: &lcdic {
 	status = "okay";
 	pinctrl-0 = <&pinmux_lcdic>;
 	pinctrl-names = "default";
+};
+
+/*
+ * Similar to the flexio connection, these pins are not
+ * broken out in the format required to connect directly to
+ * an NXP 8080 display, but they can be connected with jumper
+ * wires.
+ */
+nxp_8080_touch_panel_i2c: &arduino_i2c {
+	status = "okay";
 };
 
 &mrt0_channel0 {
@@ -243,6 +262,12 @@ zephyr_udc0: &usb_otg {
 
 &ctimer0 {
 	status = "okay";
+};
+
+&sctimer {
+	status = "okay";
+	pinctrl-0 = <&pinmux_pwm0>;
+	pinctrl-names = "default";
 };
 
 &pmu {

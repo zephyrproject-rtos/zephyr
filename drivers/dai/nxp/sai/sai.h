@@ -38,7 +38,7 @@ LOG_MODULE_REGISTER(nxp_dai_sai);
 
 /* used to retrieve a clock's ID using its index generated via _SAI_CLOCK_INDEX_ARRAY */
 #define _SAI_GET_CLOCK_ID(clock_idx, inst)\
-	DT_INST_CLOCKS_CELL_BY_IDX(inst, clock_idx, name)
+	DT_INST_PHA_BY_IDX_OR(inst, clocks, clock_idx, name, 0x0)
 
 /* used to retrieve a clock's name using its index generated via _SAI_CLOCK_INDEX_ARRAY */
 #define _SAI_GET_CLOCK_NAME(clock_idx, inst)\
@@ -259,6 +259,7 @@ struct sai_data {
 struct sai_config {
 	uint32_t regmap_phys;
 	uint32_t regmap_size;
+	uint32_t irq;
 	struct sai_clock_data clk_data;
 	bool mclk_is_output;
 	/* if the tx/rx-fifo-watermark properties are not specified, it's going

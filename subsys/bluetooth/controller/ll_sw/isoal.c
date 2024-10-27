@@ -33,6 +33,7 @@
 #include "lll_iso_tx.h"
 #include "isoal.h"
 #include "ull_iso_types.h"
+#include "ull_internal.h"
 
 #include <zephyr/logging/log.h>
 
@@ -134,12 +135,7 @@ isoal_status_t isoal_reset(void)
  */
 uint32_t isoal_get_wrapped_time_us(uint32_t time_now_us, int32_t time_diff_us)
 {
-	LL_ASSERT(time_now_us <= ISOAL_TIME_WRAPPING_POINT_US);
-
-	uint32_t result = ((uint64_t)time_now_us + ISOAL_TIME_SPAN_FULL_US + time_diff_us) %
-				((uint64_t)ISOAL_TIME_SPAN_FULL_US);
-
-	return result;
+	return ull_get_wrapped_time_us(time_now_us, time_diff_us);
 }
 
 /**

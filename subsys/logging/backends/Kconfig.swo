@@ -4,7 +4,6 @@
 config LOG_BACKEND_SWO
 	bool "Serial Wire Output (SWO) backend"
 	depends on HAS_SWO
-	select LOG_OUTPUT
 	select LOG_BACKEND_SUPPORTS_FORMAT_TIMESTAMP
 	help
 	  When enabled, backend will use SWO for logging.

@@ -6,6 +6,7 @@
 
 #include <mem.h>
 #include <nordic/nrf_common.dtsi>
+#include <zephyr/dt-bindings/adc/nrf-saadc-nrf54l.h>
 #include <zephyr/dt-bindings/regulator/nrf5x.h>
 
 /delete-node/ &sw_pwm;
@@ -563,6 +564,17 @@
 				status = "disabled";
 				endtx-stoptx-supported;
 				frame-timeout-supported;
+			};
+
+			comp: comparator@106000 {
+				/*
+				 * Use compatible "nordic,nrf-comp" to configure as COMP
+				 * Use compatible "nordic,nrf-lpcomp" to configure as LPCOMP
+				 */
+				compatible = "nordic,nrf-comp";
+				reg = <0x106000 0x1000>;
+				status = "disabled";
+				interrupts = <262 NRF_DEFAULT_IRQ_PRIORITY>;
 			};
 
 #ifdef USE_NON_SECURE_ADDRESS_MAP

@@ -1,5 +1,6 @@
 board:
   name: stm32f072_eval
+  full_name: STM32F072 Evaluation
   vendor: st
   socs:
     - name: stm32f072xb

@@ -27,10 +27,13 @@ struct lll_sync {
 	uint8_t filter_policy:1;
 	uint8_t is_rx_enabled:1;
 	uint8_t is_aux_sched:1;
+	uint8_t forced:1;
 
-#if defined(CONFIG_BT_CTLR_SYNC_ISO)
+#if defined(CONFIG_BT_CTLR_SYNC_ISO) || \
+	defined(CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER) || \
+	defined(CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER)
 	uint8_t sca:3;
-#endif /* CONFIG_BT_CTLR_SYNC_ISO */
+#endif /* CONFIG_BT_CTLR_SYNC_ISO || CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER/SENDER */
 
 #if defined(CONFIG_BT_CTLR_SCAN_AUX_SYNC_RESERVE_MIN)
 	/* Counter used by LLL abort of event when in unreserved time space to
@@ -41,6 +44,7 @@ struct lll_sync {
 #endif /* CONFIG_BT_CTLR_SCAN_AUX_SYNC_RESERVE_MIN */
 
 	uint16_t skip_prepare;
+	uint16_t lazy_prepare;
 	uint16_t skip_event;
 	uint16_t event_counter;
 

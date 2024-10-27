@@ -1,5 +1,6 @@
 board:
   name: esp32s2_saola
+  full_name: ESP32-S2-Saola
   vendor: espressif
   socs:
   - name: esp32s2

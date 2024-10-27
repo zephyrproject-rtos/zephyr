@@ -304,9 +304,7 @@ static inline uint16_t get_channel(void)
 static inline int16_t get_source_id(const void *source)
 {
 	if (source != NULL) {
-		return IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)
-			       ? log_dynamic_source_id((void *)source)
-			       : log_const_source_id(source);
+		return log_source_id(source);
 	}
 
 	return LOG_FRONTEND_STM_NO_SOURCE;

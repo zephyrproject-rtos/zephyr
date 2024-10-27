@@ -1,7 +1,4 @@
-.. _max32690_fthr:
-
-MAX32690FTHR
-############
+.. zephyr:board:: max32690fthr
 
 Overview
 ********
@@ -84,6 +81,8 @@ Below interfaces are supported by Zephyr on MAX32690FTHR.
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
+| Flash     | on-chip    | flash                               |
 +-----------+------------+-------------------------------------+
 
 Programming and Debugging

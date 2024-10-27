@@ -324,16 +324,23 @@ ZTEST_USER(uart_async_multi_rx, test_multiple_rx_enable)
 }
 
 #if NOCACHE_MEM
-static __aligned(32) uint8_t chained_read_buf[2][8] __used __NOCACHE;
+/* To ensure 32-bit alignment of the buffer array,
+ * the two arrays are defined instead using an array of arrays
+ */
+static __aligned(32) uint8_t chained_read_buf_0[8] __used __NOCACHE;
+static __aligned(32) uint8_t chained_read_buf_1[8] __used __NOCACHE;
 static __aligned(32) uint8_t chained_cpy_buf[10] __used __NOCACHE;
 #else
-ZTEST_BMEM uint8_t chained_read_buf[2][8];
+ZTEST_BMEM uint8_t chained_read_buf_0[8];
+ZTEST_BMEM uint8_t chained_read_buf_1[8];
 ZTEST_BMEM uint8_t chained_cpy_buf[10];
 #endif /* NOCACHE_MEM */
 ZTEST_BMEM volatile uint8_t rx_data_idx;
 ZTEST_BMEM uint8_t rx_buf_idx;
 
 ZTEST_BMEM uint8_t *read_ptr;
+
+static uint8_t *chained_read_buf[2] = {chained_read_buf_0, chained_read_buf_1};
 
 static void test_chained_read_callback(const struct device *dev,
 				struct uart_event *evt, void *user_data)
@@ -352,9 +359,8 @@ static void test_chained_read_callback(const struct device *dev,
 		rx_data_idx += evt->data.rx.len;
 		break;
 	case UART_RX_BUF_REQUEST:
-		err = uart_rx_buf_rsp(dev,
-				      chained_read_buf[rx_buf_idx],
-				      sizeof(chained_read_buf[0]));
+		err = uart_rx_buf_rsp(dev, chained_read_buf[rx_buf_idx],
+				      sizeof(chained_read_buf_0));
 		zassert_equal(err, 0);
 		rx_buf_idx = !rx_buf_idx ? 1 : 0;
 		break;
@@ -387,11 +393,10 @@ ZTEST_USER(uart_async_chain_read, test_chained_read)
 	uint32_t rx_timeout_ms = 50;
 	int err;
 
-	err = uart_rx_enable(uart_dev,
-			     chained_read_buf[rx_buf_idx++],
-			     sizeof(chained_read_buf[0]),
+	err = uart_rx_enable(uart_dev, chained_read_buf[rx_buf_idx++], sizeof(chained_read_buf_0),
 			     rx_timeout_ms * USEC_PER_MSEC);
 	zassert_equal(err, 0);
+	rx_data_idx = 0;
 
 	for (int i = 0; i < iter; i++) {
 		zassert_not_equal(k_sem_take(&rx_disabled, K_MSEC(10)),
@@ -406,7 +411,7 @@ ZTEST_USER(uart_async_chain_read, test_chained_read)
 				"Unexpected amount of data received %d exp:%d",
 				rx_data_idx, sizeof(tx_buf));
 		zassert_equal(memcmp(tx_buf, chained_cpy_buf, sizeof(tx_buf)), 0,
-			      "Buffers not equal");
+			      "Buffers not equal exp %s, real %s", tx_buf, chained_cpy_buf);
 		rx_data_idx = 0;
 	}
 	uart_rx_disable(uart_dev);
@@ -850,14 +855,17 @@ ZTEST_USER(uart_async_chain_write, test_chained_write)
 		      "RX_DISABLED timeout");
 }
 
+#define RX_LONG_BUFFER CONFIG_TEST_LONG_BUFFER_SIZE
+#define TX_LONG_BUFFER (CONFIG_TEST_LONG_BUFFER_SIZE - 8)
+
 #if NOCACHE_MEM
-static __aligned(32) uint8_t long_rx_buf[1024] __used __NOCACHE;
-static __aligned(32) uint8_t long_rx_buf2[1024] __used __NOCACHE;
-static __aligned(32) uint8_t long_tx_buf[1000] __used __NOCACHE;
+static __aligned(32) uint8_t long_rx_buf[RX_LONG_BUFFER] __used __NOCACHE;
+static __aligned(32) uint8_t long_rx_buf2[RX_LONG_BUFFER] __used __NOCACHE;
+static __aligned(32) uint8_t long_tx_buf[TX_LONG_BUFFER] __used __NOCACHE;
 #else
-ZTEST_BMEM uint8_t long_rx_buf[1024];
-ZTEST_BMEM uint8_t long_rx_buf2[1024];
-ZTEST_BMEM uint8_t long_tx_buf[1000];
+ZTEST_BMEM uint8_t long_rx_buf[RX_LONG_BUFFER];
+ZTEST_BMEM uint8_t long_rx_buf2[RX_LONG_BUFFER];
+ZTEST_BMEM uint8_t long_tx_buf[TX_LONG_BUFFER];
 #endif /* NOCACHE_MEM */
 ZTEST_BMEM volatile uint8_t evt_num;
 ZTEST_BMEM size_t long_received[2];
@@ -887,7 +895,7 @@ static void test_long_buffers_callback(const struct device *dev,
 		k_sem_give(&rx_disabled);
 		break;
 	case UART_RX_BUF_REQUEST:
-		uart_rx_buf_rsp(dev, next_buffer, 1024);
+		uart_rx_buf_rsp(dev, next_buffer, RX_LONG_BUFFER);
 		next_buffer = (next_buffer == long_rx_buf2) ? long_rx_buf : long_rx_buf2;
 		break;
 	default:
@@ -906,16 +914,19 @@ static void *long_buffers_setup(void)
 
 ZTEST_USER(uart_async_long_buf, test_long_buffers)
 {
+	size_t tx_len1 = TX_LONG_BUFFER / 2;
+	size_t tx_len2 = TX_LONG_BUFFER;
+
 	memset(long_rx_buf, 0, sizeof(long_rx_buf));
 	memset(long_tx_buf, 1, sizeof(long_tx_buf));
 
 	uart_rx_enable(uart_dev, long_rx_buf, sizeof(long_rx_buf), 10 * USEC_PER_MSEC);
 
-	uart_tx(uart_dev, long_tx_buf, 500, 200 * USEC_PER_MSEC);
+	uart_tx(uart_dev, long_tx_buf, tx_len1, 200 * USEC_PER_MSEC);
 	zassert_equal(k_sem_take(&tx_done, K_MSEC(200)), 0, "TX_DONE timeout");
 	zassert_equal(k_sem_take(&rx_rdy, K_MSEC(200)), 0, "RX_RDY timeout");
-	zassert_equal(long_received[0], 500, "Wrong number of bytes received.");
-	zassert_equal(memcmp(long_tx_buf, long_rx_buf, 500),
+	zassert_equal(long_received[0], tx_len1, "Wrong number of bytes received.");
+	zassert_equal(memcmp(long_tx_buf, long_rx_buf, tx_len1),
 		      0,
 		      "Buffers not equal");
 	k_msleep(10);
@@ -923,19 +934,21 @@ ZTEST_USER(uart_async_long_buf, test_long_buffers)
 	bool release_on_timeout = k_sem_take(&rx_buf_released, K_NO_WAIT) == 0;
 
 	evt_num = 0;
-	uart_tx(uart_dev, long_tx_buf, 1000, 200 * USEC_PER_MSEC);
+	uart_tx(uart_dev, long_tx_buf, tx_len2, 200 * USEC_PER_MSEC);
 	zassert_equal(k_sem_take(&tx_done, K_MSEC(200)), 0, "TX_DONE timeout");
 	zassert_equal(k_sem_take(&rx_rdy, K_MSEC(200)), 0, "RX_RDY timeout");
 
 	if (release_on_timeout) {
-		zassert_equal(long_received[0], 1000, "Wrong number of bytes received.");
+		zassert_equal(long_received[0], tx_len2, "Wrong number of bytes received.");
 		zassert_equal(memcmp(long_tx_buf, long_rx_buf2, long_received[0]), 0,
 			      "Buffers not equal");
 	} else {
 		zassert_equal(k_sem_take(&rx_rdy, K_MSEC(200)), 0, "RX_RDY timeout");
-		zassert_equal(long_received[0], 524, "Wrong number of bytes received.");
-		zassert_equal(long_received[1], 476, "Wrong number of bytes received.");
-		zassert_equal(memcmp(long_tx_buf, long_rx_buf + 500, long_received[0]), 0,
+		zassert_equal(long_received[0], RX_LONG_BUFFER - tx_len1,
+				"Wrong number of bytes received.");
+		zassert_equal(long_received[1], tx_len2 - (RX_LONG_BUFFER - tx_len1),
+				"Wrong number of bytes received.");
+		zassert_equal(memcmp(long_tx_buf, long_rx_buf + tx_len1, long_received[0]), 0,
 			      "Buffers not equal");
 		zassert_equal(memcmp(long_tx_buf, long_rx_buf2, long_received[1]), 0,
 			      "Buffers not equal");

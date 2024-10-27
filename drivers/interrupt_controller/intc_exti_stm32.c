@@ -286,11 +286,11 @@ void stm32_gpio_intc_disable_line(stm32_gpio_irq_line_t line)
 #endif
 }
 
-void stm32_gpio_intc_select_line_trigger(stm32_gpio_irq_line_t line, uint32_t trigger)
+void stm32_gpio_intc_select_line_trigger(stm32_gpio_irq_line_t line, uint32_t trg)
 {
 	z_stm32_hsem_lock(CFG_HW_EXTI_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 
-	switch (trigger) {
+	switch (trg) {
 	case STM32_GPIO_IRQ_TRIG_NONE:
 		LL_EXTI_DisableRisingTrig_0_31(line);
 		LL_EXTI_DisableFallingTrig_0_31(line);
@@ -314,13 +314,13 @@ void stm32_gpio_intc_select_line_trigger(stm32_gpio_irq_line_t line, uint32_t tr
 	z_stm32_hsem_unlock(CFG_HW_EXTI_SEMID);
 }
 
-int stm32_gpio_intc_set_irq_callback(stm32_gpio_irq_line_t line, stm32_gpio_irq_cb_t cb, void *arg)
+int stm32_gpio_intc_set_irq_callback(stm32_gpio_irq_line_t line, stm32_gpio_irq_cb_t cb, void *user)
 {
 	const struct device *const dev = DEVICE_DT_GET(EXTI_NODE);
 	struct stm32_exti_data *data = dev->data;
 	uint32_t line_num = ll_exti_line_to_linenum(line);
 
-	if ((data->cb[line_num].cb == cb) && (data->cb[line_num].data == arg)) {
+	if ((data->cb[line_num].cb == cb) && (data->cb[line_num].data == user)) {
 		return 0;
 	}
 
@@ -330,7 +330,7 @@ int stm32_gpio_intc_set_irq_callback(stm32_gpio_irq_line_t line, stm32_gpio_irq_
 	}
 
 	data->cb[line_num].cb = cb;
-	data->cb[line_num].data = arg;
+	data->cb[line_num].data = user;
 
 	return 0;
 }

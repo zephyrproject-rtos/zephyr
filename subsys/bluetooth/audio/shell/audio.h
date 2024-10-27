@@ -37,9 +37,6 @@
 #define SHELL_PRINT_INDENT_LEVEL_SIZE 2
 #define MAX_CODEC_FRAMES_PER_SDU      4U
 
-/* BIS sync is a 32-bit bitfield where BIT(0) is not allowed */
-#define VALID_BIS_SYNC(_bis_sync) ((bis_sync & BIT(0)) == 0U && bis_sync < UINT32_MAX)
-
 extern struct bt_csip_set_member_svc_inst *svc_inst;
 
 ssize_t audio_ad_data_add(struct bt_data *data, const size_t data_size, const bool discoverable,
@@ -93,7 +90,7 @@ struct named_lc3_preset {
 struct shell_stream {
 	struct bt_cap_stream stream;
 	struct bt_audio_codec_cfg codec_cfg;
-	struct bt_audio_codec_qos qos;
+	struct bt_bap_qos_cfg qos;
 	bool is_tx;
 	bool is_rx;
 
@@ -177,7 +174,7 @@ struct broadcast_source {
 		struct bt_cap_broadcast_source *cap_source;
 	};
 	struct bt_audio_codec_cfg codec_cfg;
-	struct bt_audio_codec_qos qos;
+	struct bt_bap_qos_cfg qos;
 };
 
 struct broadcast_sink {
@@ -236,7 +233,7 @@ int cap_ac_unicast(const struct shell *sh, const struct bap_unicast_ac_param *pa
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 #endif /* CONFIG_BT_BAP_UNICAST */
 
-static inline void print_qos(const struct shell *sh, const struct bt_audio_codec_qos *qos)
+static inline void print_qos(const struct shell *sh, const struct bt_bap_qos_cfg *qos)
 {
 #if defined(CONFIG_BT_BAP_BROADCAST_SOURCE) || defined(CONFIG_BT_BAP_UNICAST)
 	shell_print(sh,

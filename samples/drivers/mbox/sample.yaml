@@ -3,6 +3,7 @@ sample:
 common:
   sysbuild: true
   tags: mbox
+  timeout: 30
 tests:
   sample.drivers.mbox.real_hw:
     platform_allow:
@@ -86,7 +87,6 @@ tests:
   sample.drivers.mbox.nrf54l15:
     platform_allow:
       - nrf54l15dk/nrf54l15/cpuapp
-      - nrf54l15pdk/nrf54l15/cpuapp
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
     extra_args:
@@ -97,13 +97,12 @@ tests:
       type: multi_line
       ordered: false
       regex:
-        - "Ping \\(on channel 16\\)"
-        - "Pong \\(on channel 15\\)"
+        - "Ping \\(on channel 21\\)"
+        - "Pong \\(on channel 20\\)"
 
   sample.drivers.mbox.nrf54l15_no_multithreading:
     platform_allow:
       - nrf54l15dk/nrf54l15/cpuapp
-      - nrf54l15pdk/nrf54l15/cpuapp
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
     extra_args:
@@ -116,13 +115,12 @@ tests:
       type: multi_line
       ordered: false
       regex:
-        - "Ping \\(on channel 16\\)"
-        - "Pong \\(on channel 15\\)"
+        - "Ping \\(on channel 21\\)"
+        - "Pong \\(on channel 20\\)"
 
   sample.drivers.mbox.nrf54l15_remote_no_multithreading:
     platform_allow:
       - nrf54l15dk/nrf54l15/cpuapp
-      - nrf54l15pdk/nrf54l15/cpuapp
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
     extra_args:
@@ -134,5 +132,5 @@ tests:
       type: multi_line
       ordered: false
       regex:
-        - "Ping \\(on channel 16\\)"
-        - "Pong \\(on channel 15\\)"
+        - "Ping \\(on channel 21\\)"
+        - "Pong \\(on channel 20\\)"

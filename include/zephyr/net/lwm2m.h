@@ -217,6 +217,7 @@ struct lwm2m_ctx {
 	sys_slist_t queued_messages;
 #endif
 	sys_slist_t observer;
+	struct k_mutex lock;
 	/** @endcond */
 
 	/** A pointer to currently processed request, for internal LwM2M engine

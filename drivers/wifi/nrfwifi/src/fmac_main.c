@@ -252,7 +252,7 @@ static void nrf_wifi_process_rssi_from_rx(void *vif_ctx,
 
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 
-	if (!rpu_ctx_zep) {
+	if (!(rpu_ctx_zep && rpu_ctx_zep->rpu_ctx)) {
 		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
 		return;
 	}
@@ -320,51 +320,31 @@ int nrf_wifi_reg_domain(const struct device *dev, struct wifi_reg_domain *reg_do
 	k_mutex_lock(&reg_lock, K_FOREVER);
 
 	if (!dev || !reg_domain) {
-		goto err;
+		goto out;
 	}
 
 	vif_ctx_zep = dev->data;
 
 	if (!vif_ctx_zep) {
 		LOG_ERR("%s: vif_ctx_zep is NULL", __func__);
-		goto err;
+		goto out;
 	}
 
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 
 	if (!rpu_ctx_zep) {
 		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
-		goto err;
+		goto out;
 	}
 
 	fmac_dev_ctx = rpu_ctx_zep->rpu_ctx;
 	if (!fmac_dev_ctx) {
 		LOG_ERR("%s: fmac_dev_ctx is NULL", __func__);
-		goto err;
+		goto out;
 	}
 
+#ifdef CONFIG_NRF70_SCAN_ONLY
 	if (reg_domain->oper == WIFI_MGMT_SET) {
-#ifndef CONFIG_NRF70_RADIO_TEST
-#ifdef CONFIG_NRF70_STA_MODE
-		/* Need to check if WPA supplicant is initialized or not.
-		 * Must be checked when CONFIG_WIFI_NM_WPA_SUPPLICANT is enabled.
-		 * Not applicable for RADIO_TEST or when
-		 * CONFIG_WIFI_NM_WPA_SUPPLICANT is not enabled.
-		 */
-		/* It is possbile that during supplicant initialization driver may
-		 * get the command. lock will try to ensure that supplicant
-		 * initialization is complete.
-		 */
-		k_mutex_lock(&vif_ctx_zep->vif_lock, K_FOREVER);
-		if ((!vif_ctx_zep->supp_drv_if_ctx) ||
-		    (!wifi_nm_get_instance_iface(vif_ctx_zep->zep_net_if_ctx))) {
-			LOG_ERR("%s: WPA supplicant initialization not complete yet", __func__);
-			k_mutex_unlock(&vif_ctx_zep->vif_lock);
-			goto err;
-		}
-		k_mutex_unlock(&vif_ctx_zep->vif_lock);
-#endif /* CONFIG_NRF70_STA_MODE */
-#endif /* !CONFIG_NRF70_RADIO_TEST */
 		memcpy(reg_domain_info.alpha2, reg_domain->country_code, WIFI_COUNTRY_CODE_LEN);
 
 		reg_domain_info.force = reg_domain->force;
@@ -372,40 +352,43 @@ int nrf_wifi_reg_domain(const struct device *dev, struct wifi_reg_domain *reg_do
 		status = nrf_wifi_fmac_set_reg(fmac_dev_ctx, &reg_domain_info);
 		if (status != NRF_WIFI_STATUS_SUCCESS) {
 			LOG_ERR("%s: Failed to set regulatory domain", __func__);
-			goto err;
-		}
-	} else if (reg_domain->oper == WIFI_MGMT_GET) {
-
-		if (!reg_domain->chan_info)	{
-			LOG_ERR("%s: Invalid regulatory info (NULL)\n", __func__);
-			goto err;
+			goto out;
 		}
 
-		status = nrf_wifi_fmac_get_reg(fmac_dev_ctx, &reg_domain_info);
-		if (status != NRF_WIFI_STATUS_SUCCESS) {
-			LOG_ERR("%s: Failed to get regulatory domain", __func__);
-			goto err;
-		}
-
-		memcpy(reg_domain->country_code, reg_domain_info.alpha2, WIFI_COUNTRY_CODE_LEN);
-		reg_domain->num_channels = reg_domain_info.reg_chan_count;
-
-		for (chan_idx = 0; chan_idx < reg_domain_info.reg_chan_count; chan_idx++) {
-			chan_info = &(reg_domain->chan_info[chan_idx]);
-			reg_domain_chan_info = &(reg_domain_info.reg_chan_info[chan_idx]);
-			chan_info->center_frequency = reg_domain_chan_info->center_frequency;
-			chan_info->dfs = !!reg_domain_chan_info->dfs;
-			chan_info->max_power = reg_domain_chan_info->max_power;
-			chan_info->passive_only = !!reg_domain_chan_info->passive_channel;
-			chan_info->supported = !!reg_domain_chan_info->supported;
-		}
-	} else {
+		goto out;
+	}
+#endif
+	if (reg_domain->oper != WIFI_MGMT_GET) {
 		LOG_ERR("%s: Invalid operation: %d", __func__, reg_domain->oper);
-		goto err;
+		goto out;
+	}
+
+	if (!reg_domain->chan_info)	{
+		LOG_ERR("%s: Invalid regulatory info (NULL)\n", __func__);
+		goto out;
+	}
+
+	status = nrf_wifi_fmac_get_reg(fmac_dev_ctx, &reg_domain_info);
+	if (status != NRF_WIFI_STATUS_SUCCESS) {
+		LOG_ERR("%s: Failed to get regulatory domain", __func__);
+		goto out;
+	}
+
+	memcpy(reg_domain->country_code, reg_domain_info.alpha2, WIFI_COUNTRY_CODE_LEN);
+	reg_domain->num_channels = reg_domain_info.reg_chan_count;
+
+	for (chan_idx = 0; chan_idx < reg_domain_info.reg_chan_count; chan_idx++) {
+		chan_info = &(reg_domain->chan_info[chan_idx]);
+		reg_domain_chan_info = &(reg_domain_info.reg_chan_info[chan_idx]);
+		chan_info->center_frequency = reg_domain_chan_info->center_frequency;
+		chan_info->dfs = !!reg_domain_chan_info->dfs;
+		chan_info->max_power = reg_domain_chan_info->max_power;
+		chan_info->passive_only = !!reg_domain_chan_info->passive_channel;
+		chan_info->supported = !!reg_domain_chan_info->supported;
 	}
 
 	ret = 0;
-err:
+out:
 	k_mutex_unlock(&reg_lock);
 	return ret;
 }
@@ -453,6 +436,8 @@ void reg_change_callbk_fn(void *vif_ctx,
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
 	struct nrf_wifi_fmac_dev_ctx *fmac_dev_ctx = NULL;
 
+	LOG_DBG("%s: Regulatory change event received", __func__);
+
 	vif_ctx_zep = vif_ctx;
 
 	if (!vif_ctx_zep) {
@@ -469,6 +454,12 @@ void reg_change_callbk_fn(void *vif_ctx,
 	fmac_dev_ctx = rpu_ctx_zep->rpu_ctx;
 	if (!fmac_dev_ctx) {
 		LOG_ERR("%s: fmac_dev_ctx is NULL", __func__);
+		return;
+	}
+
+	if (!fmac_dev_ctx->waiting_for_reg_event) {
+		LOG_DBG("%s: Unsolicited regulatory change event", __func__);
+		/* TODO: Handle unsolicited regulatory change event */
 		return;
 	}
 
@@ -636,7 +627,8 @@ enum nrf_wifi_status nrf_wifi_fmac_dev_add_zep(struct nrf_wifi_drv_priv_zep *drv
 					IS_ENABLED(CONFIG_NRF_WIFI_BEAMFORMING),
 					&tx_pwr_ctrl_params,
 					&tx_pwr_ceil_params,
-					&board_params);
+					&board_params,
+					STRINGIFY(CONFIG_NRF70_REG_DOMAIN));
 #else
 	status = nrf_wifi_fmac_dev_init(rpu_ctx_zep->rpu_ctx,
 #ifdef CONFIG_NRF_WIFI_LOW_POWER
@@ -647,7 +639,8 @@ enum nrf_wifi_status nrf_wifi_fmac_dev_add_zep(struct nrf_wifi_drv_priv_zep *drv
 					IS_ENABLED(CONFIG_NRF_WIFI_BEAMFORMING),
 					&tx_pwr_ctrl_params,
 					&tx_pwr_ceil_params,
-					&board_params);
+					&board_params,
+					STRINGIFY(CONFIG_NRF70_REG_DOMAIN));
 #endif /* CONFIG_NRF70_RADIO_TEST */
 
 
@@ -655,8 +648,6 @@ enum nrf_wifi_status nrf_wifi_fmac_dev_add_zep(struct nrf_wifi_drv_priv_zep *drv
 		LOG_ERR("%s: nrf_wifi_fmac_dev_init failed", __func__);
 		goto err;
 	}
-
-	k_mutex_init(&rpu_ctx_zep->rpu_lock);
 
 	return status;
 err:
@@ -717,7 +708,7 @@ static int nrf_wifi_drv_main_zep(const struct device *dev)
 	callbk_fns.if_carr_state_chg_callbk_fn = nrf_wifi_if_carr_state_chg;
 	callbk_fns.rx_frm_callbk_fn = nrf_wifi_if_rx_frm;
 #if defined(CONFIG_NRF70_RAW_DATA_RX) || defined(CONFIG_NRF70_PROMISC_DATA_RX)
-	callbk_fns.rx_sniffer_frm_callbk_fn = nrf_wifi_if_sniffer_rx_frm;
+	callbk_fns.sniffer_callbk_fn = nrf_wifi_if_sniffer_rx_frm;
 #endif /* CONFIG_NRF70_RAW_DATA_RX || CONFIG_NRF70_PROMISC_DATA_RX */
 #endif
 	rx_buf_pools[0].num_bufs = rx1_num_bufs;
@@ -816,6 +807,7 @@ static int nrf_wifi_drv_main_zep(const struct device *dev)
 			      nrf_wifi_scan_timeout_work);
 #endif /* CONFIG_NRF70_RADIO_TEST */
 
+	k_mutex_init(&rpu_drv_priv_zep.rpu_ctx_zep.rpu_lock);
 	return 0;
 #ifdef CONFIG_NRF70_RADIO_TEST
 fmac_deinit:
@@ -841,7 +833,7 @@ static struct wifi_mgmt_ops nrf_wifi_mgmt_ops = {
 	.get_power_save_config = nrf_wifi_get_power_save_config,
 	.set_rts_threshold = nrf_wifi_set_rts_threshold,
 	.get_rts_threshold = nrf_wifi_get_rts_threshold,
-#endif /* CONFIG_NRF70_STA_MODE */
+#endif
 #ifdef CONFIG_NRF70_SYSTEM_WITH_RAW_MODES
 	.mode = nrf_wifi_mode,
 #endif
@@ -874,6 +866,8 @@ static struct zep_wpa_supp_dev_ops wpa_supp_ops = {
 	.register_frame = nrf_wifi_supp_register_frame,
 	.get_capa = nrf_wifi_supp_get_capa,
 	.get_conn_info = nrf_wifi_supp_get_conn_info,
+	.set_country = nrf_wifi_supp_set_country,
+	.get_country = nrf_wifi_supp_get_country,
 #ifdef CONFIG_NRF70_AP_MODE
 	.init_ap = nrf_wifi_wpa_supp_init_ap,
 	.start_ap = nrf_wifi_wpa_supp_start_ap,

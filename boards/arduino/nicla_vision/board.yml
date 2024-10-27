@@ -1,5 +1,6 @@
 board:
   name: arduino_nicla_vision
+  full_name: Arduino Nicla Vision
   vendor: arduino
   socs:
     - name: stm32h747xx

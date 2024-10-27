@@ -2,6 +2,7 @@
 
 #include <arm/armv7-m.dtsi>
 #include <nordic/nrf_common.dtsi>
+#include <zephyr/dt-bindings/adc/nrf-saadc-v2.h>
 #include <zephyr/dt-bindings/regulator/nrf5x.h>
 
 / {
@@ -268,7 +269,6 @@
 			reg = <0x40013000 0x1000>;
 			interrupts = <19 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "disabled";
-			#io-channel-cells = <1>;
 		};
 
 		egu0: swi0: egu@40014000 {

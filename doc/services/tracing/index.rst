@@ -32,6 +32,18 @@ interface between payload/format (Top Layer) and the transport mechanics
 (bottom Layer) is generic and efficient enough to model these. See the
 *I/O taxonomy* section below.
 
+Named Trace Events
+******************
+
+Although the user can extend any of the supported serialization formats
+to enable additional tracing functions (or provide their own backend), zephyr
+also provides one generic named tracing function for convenience purposes,
+as well as to demonstrate how tracing frameworks could be extended.
+
+Users can generate a custom trace event by calling
+:c:func:`sys_tracing_named_event`, which takes an event name as well as two
+arbitrary 4 byte arguments. Tracing backends may truncate the provided event
+name if it is too long for the serialization format they support.
 
 Serialization Formats
 **********************
@@ -360,24 +372,20 @@ relies on RTT as a transport. Newer versions of SystemView support other
 transports, for example UART or using snapshot mode (both still not
 supported in Zephyr).
 
-To enable tracing support with `SEGGER SystemView`_ add the configuration option
-:kconfig:option:`CONFIG_SEGGER_SYSTEMVIEW` to your project configuration file and set
-it to *y*. For example, this can be added to the
-:zephyr:code-sample:`synchronization` sample to visualize fast switching between threads.
+To enable tracing support with `SEGGER SystemView`_ add the
+:ref:`snippet-rtt-tracing` to your build command:
+
+    .. zephyr-app-commands::
+        :zephyr-app: samples/synchronization
+        :board: <board>
+        :snippets: rtt-tracing
+        :goals: build
+        :compact:
+
 SystemView can also be used for post-mortem tracing, which can be enabled with
 :kconfig:option:`CONFIG_SEGGER_SYSVIEW_POST_MORTEM_MODE`. In this mode, a debugger can
 be attached after the system has crashed using ``west attach`` after which the
-latest data from the internal RAM buffer can be loaded into SystemView::
-
-    CONFIG_STDOUT_CONSOLE=y
-    # enable to use thread names
-    CONFIG_THREAD_NAME=y
-    CONFIG_SEGGER_SYSTEMVIEW=y
-    CONFIG_USE_SEGGER_RTT=y
-    CONFIG_TRACING=y
-    # enable for post-mortem tracing
-    CONFIG_SEGGER_SYSVIEW_POST_MORTEM_MODE=n
-
+latest data from the internal RAM buffer can be loaded into SystemView.
 
 .. figure:: segger_systemview.png
     :align: center

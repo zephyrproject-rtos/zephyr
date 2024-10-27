@@ -1,7 +1,4 @@
-.. _npcm400_evb:
-
-Nuvoton NPCM400_EVB
-####################
+.. zephyr:board:: npcm400_evb
 
 Overview
 ********
@@ -9,10 +6,6 @@ Overview
 The NPCM400_EVB kit is a development platform to evaluate the
 Nuvoton NPCM4 series microcontrollers. This board needs to be mated with
 part number NPCM400 Satellite Management Controller (SMC).
-
-.. image:: npcm400_evb.webp
-     :align: center
-     :alt: NPCM400 Evaluation Board
 
 Hardware
 ********

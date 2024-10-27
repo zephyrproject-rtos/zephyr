@@ -386,12 +386,61 @@ contains toolchains for each of Zephyr's supported architectures, which
 include a compiler, assembler, linker and other programs required to build
 Zephyr applications.
 
-It also contains additional host tools, such as custom QEMU and OpenOCD builds
+For Linux, it also contains additional host tools, such as custom QEMU and OpenOCD builds
 that are used to emulate, flash and debug Zephyr applications.
 
-.. include:: ../toolchains/zephyr_sdk.rst
-   :start-after: toolchain_zephyr_sdk_install_start
-   :end-before: toolchain_zephyr_sdk_install_end
+
+.. tabs::
+
+   .. group-tab:: Ubuntu
+
+      Install the Zephyr SDK using the ``west sdk install``.
+
+         .. code-block:: bash
+
+            cd ~/zephyrproject/zephyr
+            west sdk install
+
+      .. tip::
+
+          Using the command options, you can specify the SDK installation destination
+          and which architecture of toolchains to install.
+          See ``west sdk install --help`` for details.
+
+   .. group-tab:: macOS
+
+      Install the Zephyr SDK using the ``west sdk install``.
+
+         .. code-block:: bash
+
+            cd ~/zephyrproject/zephyr
+            west sdk install
+
+      .. tip::
+
+          Using the command options, you can specify the SDK installation destination
+          and which architecture of toolchains to install.
+          See ``west sdk install --help`` for details.
+
+   .. group-tab:: Windows
+
+      Install the Zephyr SDK using the ``west sdk install``.
+
+         .. code-block:: bat
+
+            cd %HOMEPATH%\zephyrproject\zephyr
+            west sdk install
+
+      .. tip::
+
+          Using the command options, you can specify the SDK installation destination
+          and which architecture of toolchains to install.
+          See ``west sdk install --help`` for details.
+
+.. note::
+
+    If you want to install Zephyr SDK without using the ``west sdk`` command,
+    please see :ref:`toolchain_zephyr_sdk_install`.
 
 .. _getting_started_run_sample:
 
@@ -461,9 +510,17 @@ Then flash the sample using :ref:`west flash <west-flashing>`:
 
    west flash
 
-You may need to install additional :ref:`host tools <flash-debug-host-tools>`
-required by your board. The ``west flash`` command will print an error if any
-required dependencies are missing.
+.. note::
+
+    You may need to install additional :ref:`host tools <flash-debug-host-tools>`
+    required by your board. The ``west flash`` command will print an error if any
+    required dependencies are missing.
+
+.. note::
+
+    When using Linux, you may need to configure udev rules the first time
+    of using a debug probe.
+    Please also see :ref:`setting-udev-rules`.
 
 If you're using blinky, the LED will start to blink as shown in this figure:
 

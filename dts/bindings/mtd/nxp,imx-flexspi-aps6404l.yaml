@@ -1,0 +1,8 @@
+# Copyright 2022 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: AP Memory APS6404L pSRAM on NXP FlexSPI bus
+
+compatible: "nxp,imx-flexspi-aps6404l"
+
+include: nxp,imx-flexspi-device.yaml

@@ -6,6 +6,14 @@
 #include <nxp/mcx/MCXW716CMFTA-pinctrl.h>
 
 &pinctrl {
+	pinmux_lpuart0: pinmux_lpuart0 {
+		group0 {
+			pinmux = <LPUART0_RX_PTA16>, <LPUART0_TX_PTA17>;
+			drive-strength = "low";
+			slew-rate = "fast";
+		};
+	};
+
 	pinmux_lpuart1: pinmux_lpuart1 {
 		group0 {
 			pinmux = <LPUART1_RX_PTC2>, <LPUART1_TX_PTC3>;
@@ -19,6 +27,43 @@
 			pinmux = <TPM0_CH0_PTA21>,
 				<TPM0_CH1_PTA20>,
 				<TPM0_CH2_PTA19>;
+			drive-strength = "low";
+			slew-rate = "fast";
+		};
+	};
+
+	pinmux_lpi2c1: pinmux_lpi2c1 {
+		group0 {
+			pinmux = <LPI2C1_SCL_PTB5>,
+				<LPI2C1_SDA_PTB4>;
+			drive-strength = "low";
+			slew-rate = "fast";
+			drive-open-drain;
+		};
+	};
+
+	pinmux_lpspi1: pinmux_lpspi1 {
+		group0 {
+			pinmux = <LPSPI1_SIN_PTB1>,
+				 <LPSPI1_SOUT_PTB3>;
+			slew-rate = "fast";
+			drive-strength = "low";
+		};
+	};
+
+	pinmux_flexcan: pinmux_flexcan {
+		group0 {
+			pinmux = <CAN0_RX_PTC5>, <CAN0_TX_PTC4>;
+			slew-rate = "slow";
+			drive-strength = "low";
+		};
+	};
+
+	pinmux_lpadc0: pinmux_lpadc0 {
+		group0 {
+			pinmux = <ADC0_A6_PTD2>,
+				<ADC0_B6_PTD3>,
+				<ADC0_B5_PTD1>;
 			drive-strength = "low";
 			slew-rate = "fast";
 		};

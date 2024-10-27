@@ -51,11 +51,6 @@ LOG_MODULE_REGISTER(bt_bap_broadcast_sink, CONFIG_BT_BAP_BROADCAST_SINK_LOG_LEVE
 #define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 20 /* Set the timeout relative to interval */
 #define BROADCAST_SYNC_MIN_INDEX  (BIT(1))
 
-/* any value above 0xFFFFFF is invalid, so we can just use 0xFFFFFFFF to denote
- * invalid broadcast ID
- */
-#define INVALID_BROADCAST_ID 0xFFFFFFFF
-
 static struct bt_bap_ep broadcast_sink_eps[CONFIG_BT_BAP_BROADCAST_SNK_COUNT]
 					  [CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
 static struct bt_bap_broadcast_sink broadcast_sinks[CONFIG_BT_BAP_BROADCAST_SNK_COUNT];
@@ -435,7 +430,7 @@ static struct bt_bap_broadcast_sink *broadcast_sink_free_get(void)
 		if (!atomic_test_bit(broadcast_sinks[i].flags,
 				     BT_BAP_BROADCAST_SINK_FLAG_INITIALIZED)) {
 			broadcast_sinks[i].index = i;
-			broadcast_sinks[i].broadcast_id = INVALID_BROADCAST_ID;
+			broadcast_sinks[i].broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
 
 			return &broadcast_sinks[i];
 		}
@@ -733,7 +728,7 @@ static int store_base_info(struct bt_bap_broadcast_sink *sink, const struct bt_b
 
 	/* Ensure that we have not synced while parsing the BASE */
 	if (sink->big == NULL) {
-		sink->codec_qos.pd = pres_delay;
+		sink->qos_cfg.pd = pres_delay;
 		memcpy(sink->bis, data.bis, sizeof(sink->bis));
 		memcpy(sink->subgroups, data.subgroups, sizeof(sink->subgroups));
 		sink->subgroup_count = data.subgroup_count;
@@ -944,10 +939,10 @@ static void biginfo_recv(struct bt_le_per_adv_sync *sync,
 		}
 	}
 
-	sink->codec_qos.framing = biginfo->framing;
-	sink->codec_qos.phy = biginfo->phy;
-	sink->codec_qos.sdu = biginfo->max_sdu;
-	sink->codec_qos.interval = biginfo->sdu_interval;
+	sink->qos_cfg.framing = biginfo->framing;
+	sink->qos_cfg.phy = biginfo->phy;
+	sink->qos_cfg.sdu = biginfo->max_sdu;
+	sink->qos_cfg.interval = biginfo->sdu_interval;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&sink_cbs, listener, _node) {
 		if (listener->syncable != NULL) {
@@ -1045,13 +1040,13 @@ static int bt_bap_broadcast_sink_setup_stream(struct bt_bap_broadcast_sink *sink
 	bt_bap_iso_init(iso, &broadcast_sink_iso_ops);
 	bt_bap_iso_bind_ep(iso, ep);
 
-	bt_audio_codec_qos_to_iso_qos(iso->chan.qos->rx, &sink->codec_qos);
+	bt_bap_qos_cfg_to_iso_qos(iso->chan.qos->rx, &sink->qos_cfg);
 	bt_bap_iso_configure_data_path(ep, codec_cfg);
 
 	bt_bap_iso_unref(iso);
 
 	bt_bap_stream_attach(NULL, stream, ep, codec_cfg);
-	stream->qos = &sink->codec_qos;
+	stream->qos = &sink->qos_cfg;
 
 	return 0;
 }
@@ -1162,7 +1157,8 @@ int bt_bap_broadcast_sink_create(struct bt_le_per_adv_sync *pa_sync, uint32_t br
 }
 
 int bt_bap_broadcast_sink_sync(struct bt_bap_broadcast_sink *sink, uint32_t indexes_bitfield,
-			       struct bt_bap_stream *streams[], const uint8_t broadcast_code[16])
+			       struct bt_bap_stream *streams[],
+			       const uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE])
 {
 	struct bt_iso_big_sync_param param;
 	struct bt_audio_codec_cfg *codec_cfgs[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT] = {NULL};

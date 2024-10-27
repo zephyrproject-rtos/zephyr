@@ -511,8 +511,9 @@ class KconfigCheck(ComplianceTest):
         soc_roots = self.get_module_setting_root('soc', settings_file)
         soc_roots.insert(0, Path(ZEPHYR_BASE))
         root_args = argparse.Namespace(**{'board_roots': board_roots,
-                                          'soc_roots': soc_roots, 'board': None})
-        v2_boards = list_boards.find_v2_boards(root_args)
+                                          'soc_roots': soc_roots, 'board': None,
+                                          'board_dir': []})
+        v2_boards = list_boards.find_v2_boards(root_args).values()
 
         with open(kconfig_defconfig_file, 'w') as fp:
             for board in v2_boards:
@@ -546,7 +547,7 @@ class KconfigCheck(ComplianceTest):
         root_args = argparse.Namespace(**{'soc_roots': soc_roots})
         v2_systems = list_hardware.find_v2_systems(root_args)
 
-        soc_folders = {soc.folder for soc in v2_systems.get_socs()}
+        soc_folders = {soc.folder[0] for soc in v2_systems.get_socs()}
         with open(kconfig_defconfig_file, 'w') as fp:
             for folder in soc_folders:
                 fp.write('osource "' + (Path(folder) / 'Kconfig.defconfig').as_posix() + '"\n')
@@ -616,7 +617,7 @@ class KconfigCheck(ComplianceTest):
         os.makedirs(os.path.join(kconfiglib_dir, 'soc'), exist_ok=True)
         os.makedirs(os.path.join(kconfiglib_dir, 'arch'), exist_ok=True)
 
-        os.environ["BOARD_DIR"] = kconfiglib_boards_dir
+        os.environ["KCONFIG_BOARD_DIR"] = kconfiglib_boards_dir
         self.get_v2_model(kconfiglib_dir, os.path.join(kconfiglib_dir, "settings_file.txt"))
 
         # Tells Kconfiglib to generate warnings for all references to undefined
@@ -920,6 +921,9 @@ flagged.
                               # Zephyr toolchain variant and therefore not
                               # visible to compliance.
         "BOARD_", # Used as regex in scripts/utils/board_v1_to_v2.py
+        "BOARD_MPS2_AN521_CPUTEST", # Used for board and SoC extension feature tests
+        "BOARD_NATIVE_SIM_NATIVE_64_TWO", # Used for board and SoC extension feature tests
+        "BOARD_NATIVE_SIM_NATIVE_ONE", # Used for board and SoC extension feature tests
         "BOOT_DIRECT_XIP", # Used in sysbuild for MCUboot configuration
         "BOOT_DIRECT_XIP_REVERT", # Used in sysbuild for MCUboot configuration
         "BOOT_FIRMWARE_LOADER", # Used in sysbuild for MCUboot configuration
@@ -1606,6 +1610,33 @@ class KeepSorted(ComplianceTest):
             with open(file, "r") as fp:
                 self.check_file(file, fp)
 
+
+class TextEncoding(ComplianceTest):
+    """
+    Check that any text file is encoded in ascii or utf-8.
+    """
+    name = "TextEncoding"
+    doc = "Check the encoding of text files."
+    path_hint = "<git-top>"
+
+    ALLOWED_CHARSETS = ["us-ascii", "utf-8"]
+
+    def run(self):
+        m = magic.Magic(mime=True, mime_encoding=True)
+
+        for file in get_files(filter="d"):
+            full_path = os.path.join(GIT_TOP, file)
+            mime_type = m.from_file(full_path)
+
+            if not mime_type.startswith("text/"):
+                continue
+
+            # format is "text/<type>; charset=<charset>"
+            if mime_type.rsplit('=')[-1] not in self.ALLOWED_CHARSETS:
+                desc = f"Text file with unsupported encoding: {file} has mime type {mime_type}"
+                self.fmtd_failure("error", "TextEncoding", file, desc=desc)
+
+
 def init_logs(cli_arg):
     # Initializes logging
 
@@ -1717,7 +1748,7 @@ def _main(args):
     logger.info(f'Running tests on commit range {COMMIT_RANGE}')
 
     if args.list:
-        for testcase in inheritors(ComplianceTest):
+        for testcase in sorted(inheritors(ComplianceTest), key=lambda x: x.name):
             print(testcase.name)
         return 0
 

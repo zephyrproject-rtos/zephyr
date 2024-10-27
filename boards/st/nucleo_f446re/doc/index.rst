@@ -1,7 +1,4 @@
-.. _nucleo_f446re_board:
-
-ST Nucleo F446RE
-################
+.. zephyr:board:: nucleo_f446re
 
 Overview
 ********
@@ -24,10 +21,6 @@ some highlights of the Nucleo F446RE board:
 
 - Three LEDs: USB communication (LD1), user LED (LD2), power LED (LD3)
 - Two push-buttons: USER and RESET
-
-.. image:: img/nucleo_f446re.jpg
-   :align: center
-   :alt: Nucleo F446RE
 
 More information about the board can be found at the `Nucleo F446RE website`_.
 

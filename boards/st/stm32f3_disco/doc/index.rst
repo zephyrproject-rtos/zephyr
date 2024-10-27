@@ -1,7 +1,4 @@
-.. _stm32f3_disco_board:
-
-ST STM32F3 Discovery
-####################
+.. zephyr:board:: stm32f3_disco
 
 Overview
 ********
@@ -34,10 +31,6 @@ started quickly. Here are some highlights of the STM32F3DISCOVERY board:
 
 .. HINT::
    Recent PCB revisions (E and newer) are shipped with I3G4250D and LSM303AGR.
-
-.. image:: img/stm32f3_disco.jpg
-     :align: center
-     :alt: STM32F3DISCOVERY
 
 More information about the board can be found at the
 `STM32F3DISCOVERY website`_.

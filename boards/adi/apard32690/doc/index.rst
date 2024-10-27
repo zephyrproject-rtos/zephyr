@@ -1,7 +1,4 @@
-.. _ad_apard32690_sl:
-
-AD-APARD32690-SL
-################
+.. zephyr:board:: apard32690
 
 Overview
 ********
@@ -18,10 +15,6 @@ Power over Ethernet (SPoE) and be used for powering the system via an Arduino sh
 the required power circuitry.
 
 The Zephyr port is running on the MAX32690 MCU.
-
-.. image:: img/apard32690_img.webp
-   :align: center
-   :alt: AD-APARD32690-SL Front
 
 Hardware
 ********
@@ -116,6 +109,8 @@ Below interfaces are supported by Zephyr on APARD32690.
 | TRNG      | on-chip    | entropy                            |
 +-----------+------------+------------------------------------+
 | Timer     | on-chip    | counter                            |
++-----------+------------+------------------------------------+
+| W1        | on-chip    | one wire master                    |
 +-----------+------------+------------------------------------+
 
 

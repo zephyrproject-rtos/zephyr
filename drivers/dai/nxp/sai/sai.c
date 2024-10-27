@@ -7,6 +7,8 @@
 #include <zephyr/drivers/dai.h>
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
+#include <zephyr/pm/device_runtime.h>
+#include <zephyr/pm/device.h>
 
 #include "sai.h"
 
@@ -373,6 +375,12 @@ static int sai_config_set(const struct device *dev,
 	tx_config->syncMode = sai_cfg->tx_sync_mode;
 	rx_config->syncMode = sai_cfg->rx_sync_mode;
 
+	ret = pm_device_runtime_get(dev);
+	if (ret < 0) {
+		LOG_ERR("failed to get() SAI device: %d", ret);
+		return ret;
+	}
+
 	/* commit configuration */
 	SAI_RxSetConfig(UINT_TO_I2S(data->regmap), rx_config);
 	SAI_TxSetConfig(UINT_TO_I2S(data->regmap), tx_config);
@@ -398,6 +406,7 @@ static int sai_config_set(const struct device *dev,
 	ret = sai_mclk_config(dev, tx_config->bitClock.bclkSource, bespoke);
 	if (ret < 0) {
 		LOG_ERR("failed to set MCLK configuration");
+		pm_device_runtime_put(dev);
 		return ret;
 	}
 #endif /* CONFIG_SAI_HAS_MCLK_CONFIG_OPTION */
@@ -432,7 +441,7 @@ static int sai_config_set(const struct device *dev,
 
 	sai_dump_register_data(data->regmap);
 
-	return 0;
+	return pm_device_runtime_put(dev);
 }
 
 /* SOF note: please be very careful with this function as it does
@@ -620,7 +629,9 @@ out_dmareq_disable:
 	SAI_TX_RX_ENABLE_DISABLE_IRQ(dir, data->regmap,
 				     kSAI_FIFOErrorInterruptEnable, false);
 
-	return 0;
+	irq_disable(cfg->irq);
+
+	return pm_device_runtime_put(dev);
 }
 
 /* notes:
@@ -721,7 +732,15 @@ static int sai_trigger_start(const struct device *dev,
 
 	LOG_DBG("start on direction %d", dir);
 
+	ret = pm_device_runtime_get(dev);
+	if (ret < 0) {
+		LOG_ERR("failed to get() SAI device: %d", ret);
+		return ret;
+	}
+
 	sai_tx_rx_sw_reset(data, cfg, dir);
+
+	irq_enable(cfg->irq);
 
 	/* enable error interrupt */
 	SAI_TX_RX_ENABLE_DISABLE_IRQ(dir, data->regmap,
@@ -808,27 +827,71 @@ static const struct dai_driver_api sai_api = {
 	.remove = sai_remove,
 };
 
+static int sai_clks_enable_disable(const struct device *dev, bool enable)
+{
+	int i, ret;
+	const struct sai_config *cfg;
+	void *clk_id;
+
+	cfg = dev->config;
+
+	for (i = 0; i < cfg->clk_data.clock_num; i++) {
+		clk_id = UINT_TO_POINTER(cfg->clk_data.clocks[i]);
+
+		if (enable) {
+			ret = clock_control_on(cfg->clk_data.dev, clk_id);
+		} else {
+			ret = clock_control_off(cfg->clk_data.dev, clk_id);
+		}
+
+		if (ret < 0) {
+			LOG_ERR("failed to gate/ungate clock %u: %d",
+				cfg->clk_data.clocks[i], ret);
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
+__maybe_unused static int sai_pm_action(const struct device *dev,
+					enum pm_device_action action)
+{
+	bool enable = true;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		enable = false;
+		break;
+	case PM_DEVICE_ACTION_TURN_ON:
+	case PM_DEVICE_ACTION_TURN_OFF:
+		return 0;
+	default:
+		return -ENOTSUP;
+	}
+
+	return sai_clks_enable_disable(dev, enable);
+}
+
 static int sai_init(const struct device *dev)
 {
 	const struct sai_config *cfg;
 	struct sai_data *data;
-	int i, ret;
+	int ret;
 
 	cfg = dev->config;
 	data = dev->data;
 
 	device_map(&data->regmap, cfg->regmap_phys, cfg->regmap_size, K_MEM_CACHE_NONE);
 
-	/* enable clocks if any */
-	for (i = 0; i < cfg->clk_data.clock_num; i++) {
-		ret = clock_control_on(cfg->clk_data.dev,
-				       UINT_TO_POINTER(cfg->clk_data.clocks[i]));
-		if (ret < 0) {
-			return ret;
-		}
-
-		LOG_DBG("clock %s has been ungated", cfg->clk_data.clock_names[i]);
+#ifndef CONFIG_PM_DEVICE_RUNTIME
+	ret = sai_clks_enable_disable(dev, true);
+	if (ret < 0) {
+		return ret;
 	}
+#endif /* CONFIG_PM_DEVICE_RUNTIME */
 
 	/* note: optional operation so -ENOENT is allowed (i.e: we
 	 * allow the default state to not be defined)
@@ -842,10 +905,10 @@ static int sai_init(const struct device *dev)
 	data->tx_state = DAI_STATE_NOT_READY;
 	data->rx_state = DAI_STATE_NOT_READY;
 
-	/* register ISR and enable IRQ */
+	/* register ISR */
 	cfg->irq_config();
 
-	return 0;
+	return pm_device_runtime_enable(dev);
 }
 
 #define SAI_INIT(inst)								\
@@ -902,12 +965,12 @@ void irq_config_##inst(void)							\
 		    sai_isr,							\
 		    DEVICE_DT_INST_GET(inst),					\
 		    0);								\
-	irq_enable(DT_INST_IRQN(inst));						\
 }										\
 										\
 static struct sai_config sai_config_##inst = {					\
 	.regmap_phys = DT_INST_REG_ADDR(inst),					\
 	.regmap_size = DT_INST_REG_SIZE(inst),					\
+	.irq = DT_INST_IRQN(inst),						\
 	.clk_data = SAI_CLOCK_DATA_DECLARE(inst),				\
 	.rx_fifo_watermark = SAI_RX_FIFO_WATERMARK(inst),			\
 	.tx_fifo_watermark = SAI_TX_FIFO_WATERMARK(inst),			\
@@ -927,7 +990,9 @@ static struct sai_data sai_data_##inst = {					\
 	.cfg.dai_index = DT_INST_PROP_OR(inst, dai_index, 0),			\
 };										\
 										\
-DEVICE_DT_INST_DEFINE(inst, &sai_init, NULL,					\
+PM_DEVICE_DT_INST_DEFINE(inst, sai_pm_action);					\
+										\
+DEVICE_DT_INST_DEFINE(inst, &sai_init, PM_DEVICE_DT_INST_GET(inst),		\
 		      &sai_data_##inst, &sai_config_##inst,			\
 		      POST_KERNEL, CONFIG_DAI_INIT_PRIORITY,			\
 		      &sai_api);						\

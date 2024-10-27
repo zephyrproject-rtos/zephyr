@@ -1,0 +1,19 @@
+# Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+if BT_ESP32
+
+choice ESP_BT_HEAP
+	prompt "Bluetooth adapter heap in use"
+	default ESP_BT_HEAP_RUNTIME
+
+	config ESP_BT_HEAP_RUNTIME
+		bool "Bluetooth adapter use ESP runtime heap"
+		depends on ESP_HEAP_RUNTIME
+
+	config ESP_BT_HEAP_SYSTEM
+		bool "Bluetooth adapter use system heap"
+
+endchoice # ESP_BT_HEAP
+
+endif

@@ -23,13 +23,13 @@ config WIFI_NM_WPA_SUPPLICANT
 
 if WIFI_NM_WPA_SUPPLICANT
 
-config COMMON_LIBC_MALLOC_ARENA_SIZE
-	default 85000 if WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE && !MBEDTLS_ENABLE_HEAP
-	default 40000 if WIFI_NM_WPA_SUPPLICANT_AP
+config HEAP_MEM_POOL_ADD_SIZE_HOSTAP
+	def_int 85000 if WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE && !MBEDTLS_ENABLE_HEAP
+	def_int 40000 if WIFI_NM_WPA_SUPPLICANT_AP
 	# 8192 for MbedTLS heap
-	default 21808 if MBEDTLS_ENABLE_HEAP
+	def_int 21808 if MBEDTLS_ENABLE_HEAP
 	# 30K is mandatory, but might need more for long duration use cases
-	default 30000
+	def_int 30000
 
 config WIFI_NM_WPA_SUPPLICANT_THREAD_STACK_SIZE
 	int "Stack size for wpa_supplicant thread"
@@ -178,6 +178,59 @@ config WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 	select MBEDTLS_PEM_CERTIFICATE_FORMAT
 	depends on !WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
 
+config EAP_TLS
+	bool "EAP-TLS support"
+
+config EAP_TTLS
+	bool "EAP-TTLS support"
+
+config EAP_PEAP
+	bool "EAP-PEAP support"
+
+config EAP_MD5
+	bool "EAP-MD5 support"
+
+config EAP_GTC
+	bool "EAP-GTC support"
+
+config EAP_MSCHAPV2
+	bool "EAP-MSCHAPv2 support"
+
+config EAP_LEAP
+	bool "EAP-LEAP support"
+
+config EAP_PSK
+	bool "EAP-PSK support"
+
+config EAP_PAX
+	bool "EAP-PAX support"
+
+config EAP_SAKE
+	bool "EAP-SAKE support"
+
+config EAP_GPSK
+	bool "EAP-GPSK support"
+
+config EAP_PWD
+	bool "EAP-PWD support"
+
+config EAP_EKE
+	bool "EAP-EKE support"
+
+config EAP_IKEV2
+	bool "EAP-IKEv2 support"
+
+config EAP_SIM
+	bool "EAP-SIM support"
+
+config EAP_AKA
+	bool "EAP-AKA support"
+
+config EAP_ALL
+	bool "All EAP methods support"
+	select EAP_TLS
+	default y if WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+
 config WIFI_NM_WPA_SUPPLICANT_WPA3
 	bool "WPA3 support"
 	depends on !WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
@@ -194,6 +247,7 @@ config WIFI_NM_WPA_SUPPLICANT_P2P
 	bool "P2P mode support"
 	select WIFI_NM_WPA_SUPPLICANT_AP
 	select WIFI_NM_WPA_SUPPLICANT_WPS
+	select WIFI_NM_WPA_SUPPLICANT_EAPOL
 
 config WIFI_NM_WPA_SUPPLICANT_EAPOL
 	bool "EAPoL supplicant"
@@ -248,6 +302,23 @@ if WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 	config MBEDTLS_SSL_MAX_CONTENT_LEN
 		default 16384
 endif
+
+config WIFI_NM_WPA_SUPPLICANT_ROAMING
+	bool "Roaming support"
+	imply IEEE80211R
+	help
+	  Enable roaming support with wpa_supplicant. When current BSS RSSI drops,
+	  STA will try to find an AP with better RSSI. If found, STA will reassociate
+	  to the new AP automatically without losing connection.
+
+config WIFI_NM_WPA_SUPPLICANT_SKIP_DHCP_ON_ROAMING
+	bool "Skip DHCP after roaming to new AP"
+	help
+	  For L2 roaming, the original AP and new AP are in the same subnet, client
+	  can use same IP address and skip DHCP. Enable this to skip DHCP.
+	  For L3 roaming, the original AP and new AP are in different subnet, client
+	  needs to get new IP address after roaming to new AP. Disable this to keep
+	  DHCP after roaming.
 
 # Create hidden config options that are used in hostap. This way we do not need
 # to mark them as allowed for CI checks, and also someone else cannot use the
@@ -386,9 +457,6 @@ config EAP_EKE
 config EAP_IKEv2
 	bool
 
-config IEEE8021X_EAPOL
-	bool
-
 config CRYPTO_INTERNAL
 	bool
 
@@ -414,6 +482,9 @@ config SHA512
 	bool
 
 config SUITEB192
+	bool
+
+config SUITEB
 	bool
 
 config WEP
@@ -454,6 +525,10 @@ config ACS
 config IEEE80211AC
 	bool
 
+config IEEE80211R
+	bool
+	depends on !WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
+
 config NW_SEL_RELIABILITY
 	bool
 	default y
@@ -484,5 +559,16 @@ config SAE_PWE_EARLY_EXIT
 	  supplicant goes through full iterations, but in some low-resource systems
 	  this can be intensive, so, add an option to exit early.
 	  Note that this is highly insecure and shouldn't be used in production
+
+config WIFI_NM_WPA_SUPPLICANT_CRYPTO_TEST
+	bool
+	depends on WIFI_NM_WPA_SUPPLICANT_CRYPTO_MBEDTLS_PSA
+
+config WIFI_NM_WPA_CTRL_RESP_TIMEOUT_S
+	int "WPA supplicant control interface response timeout in seconds"
+	default 15
+	help
+	  Timeout for the control interface commands to get a response from the
+	  supplicant.
 
 endif # WIFI_NM_WPA_SUPPLICANT

@@ -109,7 +109,7 @@ static void threads_objects_test_setup(struct llext *, struct k_thread *llext_th
 	k_object_access_grant(&my_sem, llext_thread);
 	k_object_access_grant(&my_thread, llext_thread);
 	k_object_access_grant(&my_thread_stack, llext_thread);
-#if DT_HAS_CHOSEN(zephyr_console)
+#if DT_HAS_CHOSEN(zephyr_console) && DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_console))
 	k_object_access_grant(DEVICE_DT_GET(DT_CHOSEN(zephyr_console)), llext_thread);
 #endif
 }
@@ -421,6 +421,12 @@ ZTEST(llext, test_find_section)
 	uintptr_t symbol_ptr = (uintptr_t)llext_find_sym(&ext->exp_tab, "number");
 	uintptr_t section_ptr = (uintptr_t)find_section_ext + section_ofs;
 
+	/*
+	 * FIXME on RISC-V, at least for GCC, the symbols aren't always at the beginning
+	 * of the section when CONFIG_LLEXT_TYPE_ELF_OBJECT is used, breaking this assertion.
+	 * Currently, CONFIG_LLEXT_TYPE_ELF_OBJECT is not supported on RISC-V.
+	 */
+
 	zassert_equal(symbol_ptr, section_ptr,
 		      "symbol at %p != .data section at %p (%zd bytes in the ELF)",
 		      symbol_ptr, section_ptr, section_ofs);
@@ -490,17 +496,16 @@ ZTEST(llext, test_printk_exported)
 }
 
 /*
- * Ensure ext_syscall_fail is exported - as it is picked up by the syscall
- * build machinery - but points to NULL as it is not implemented.
+ * The syscalls test above verifies that custom syscalls defined by extensions
+ * are properly exported. Since `ext_syscalls.h` declares ext_syscall_fail, we
+ * know it is picked up by the syscall build machinery, but the implementation
+ * for it is missing. Make sure the exported symbol for it is NULL.
  */
 ZTEST(llext, test_ext_syscall_fail)
 {
 	const void * const esf_fn = LLEXT_FIND_BUILTIN_SYM(z_impl_ext_syscall_fail);
 
-	zassert_not_null(esf_fn, "est_fn should not be NULL");
-
-	zassert_is_null(*(uintptr_t **)esf_fn, NULL,
-			"ext_syscall_fail should be NULL");
+	zassert_is_null(esf_fn, "est_fn should be NULL");
 }
 
 ZTEST_SUITE(llext, NULL, NULL, NULL, NULL, NULL);

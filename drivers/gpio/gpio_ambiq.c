@@ -55,6 +55,11 @@ static int ambiq_gpio_pin_configure(const struct device *dev, gpio_pin_t pin, gp
 		if (flags & GPIO_SINGLE_ENDED) {
 			if (flags & GPIO_LINE_OPEN_DRAIN) {
 				pincfg.eGPOutcfg = AM_HAL_GPIO_PIN_OUTCFG_OPENDRAIN;
+				if (flags & GPIO_PULL_UP) {
+					pincfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_1_5K;
+				} else if (flags & GPIO_PULL_DOWN) {
+					pincfg.ePullup = AM_HAL_GPIO_PIN_PULLDOWN;
+				}
 			}
 		} else {
 			pincfg.eGPOutcfg = AM_HAL_GPIO_PIN_OUTCFG_PUSHPULL;
@@ -89,6 +94,11 @@ static int ambiq_gpio_pin_configure(const struct device *dev, gpio_pin_t pin, gp
 		if (flags & GPIO_SINGLE_ENDED) {
 			if (flags & GPIO_LINE_OPEN_DRAIN) {
 				pincfg.GP.cfg_b.eGPOutCfg = AM_HAL_GPIO_PIN_OUTCFG_OPENDRAIN;
+				if (flags & GPIO_PULL_UP) {
+					pincfg.GP.cfg_b.ePullup = AM_HAL_GPIO_PIN_PULLUP_50K;
+				} else if (flags & GPIO_PULL_DOWN) {
+					pincfg.GP.cfg_b.ePullup = AM_HAL_GPIO_PIN_PULLDOWN_50K;
+				}
 			}
 		} else {
 			pincfg.GP.cfg_b.eGPOutCfg = AM_HAL_GPIO_PIN_OUTCFG_PUSHPULL;
@@ -260,12 +270,23 @@ static int ambiq_gpio_port_get_direction(const struct device *dev, gpio_port_pin
 static int ambiq_gpio_port_get_raw(const struct device *dev, gpio_port_value_t *value)
 {
 	const struct ambiq_gpio_config *const dev_cfg = dev->config;
+	am_hal_gpio_pincfg_t pincfg;
+	uint32_t pin_offset;
 
 #if defined(CONFIG_SOC_SERIES_APOLLO3X)
-	*value = (*AM_HAL_GPIO_RDn(dev_cfg->offset));
+	pin_offset = dev_cfg->offset;
+	am_hal_gpio_pinconfig_get(pin_offset, &pincfg);
+	if (pincfg.eGPInput == AM_HAL_GPIO_PIN_INPUT_ENABLE) {
 #else
-	*value = (*AM_HAL_GPIO_RDn(dev_cfg->offset >> 2));
+	pin_offset = dev_cfg->offset >> 2;
+	am_hal_gpio_pinconfig_get(pin_offset, &pincfg);
+	if (pincfg.GP.cfg_b.eGPInput == AM_HAL_GPIO_PIN_INPUT_ENABLE) {
 #endif
+		*value = (*AM_HAL_GPIO_RDn(pin_offset));
+	} else {
+		*value = (*AM_HAL_GPIO_WTn(pin_offset));
+	}
+
 	return 0;
 }
 

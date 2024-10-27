@@ -15,9 +15,7 @@
 			compatible = "nordic,owned-memory";
 			reg = <0x2f011000 DT_SIZE_K(4)>;
 			status = "disabled";
-			perm-read;
-			perm-write;
-			perm-secure;
+			nordic,access = <NRF_OWNER_ID_RADIOCORE NRF_PERM_RWS>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x2f011000 0x1000>;
@@ -35,9 +33,7 @@
 			compatible = "nordic,owned-memory";
 			reg = <0x2f012000 DT_SIZE_K(516)>;
 			status = "disabled";
-			perm-read;
-			perm-write;
-			perm-secure;
+			nordic,access = <NRF_OWNER_ID_APPLICATION NRF_PERM_RWS>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x2f012000 0x81000>;
@@ -59,8 +55,8 @@
 			compatible = "nordic,owned-memory";
 			reg = <0x2f0cf000 DT_SIZE_K(4)>;
 			status = "disabled";
-			perm-read;
-			perm-write;
+			nordic,access = <NRF_OWNER_ID_APPLICATION NRF_PERM_RW>,
+					<NRF_OWNER_ID_RADIOCORE NRF_PERM_RW>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x2f0cf000 0x1000>;
@@ -75,8 +71,11 @@
 		};
 
 		cpuapp_cpucell_ram0x_region: memory@2f0d0000 {
+			compatible = "nordic,owned-memory";
 			reg = <0x2f0d0000 DT_SIZE_K(36)>;
 			status = "disabled";
+			nordic,access = <NRF_OWNER_ID_APPLICATION NRF_PERM_RW>,
+					<NRF_OWNER_ID_CELL NRF_PERM_RW>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x2f0d0000 0x9000>;
@@ -99,61 +98,27 @@
 			};
 		};
 
-		/* Shared memory ownership.
-		 * TODO:
-		 * remove these two after https://github.com/zephyrproject-rtos/zephyr/pull/72273
-		 * and let cpuapp_cpucell_ram0x_region use the `access` binding to describe
-		 * the shared memory ownership.
-		 */
-
-		cpuapp_cpucell_ipc_shm: memory@2 {
-			compatible = "nordic,owned-memory";
-			reg = <0x2f0d0000 DT_SIZE_K(36)>;
-			owner-id = <2>;
-			perm-read;
-			perm-write;
-			status = "disabled";
+		cpuapp_cpusys_ipc_shm: memory@2f88fce0 {
+			reg = <0x2f88fce0 0x80>;
 		};
 
-		cpucell_cpuapp_ipc_shm: memory@4 {
-			compatible = "nordic,owned-memory";
-			reg = <0x2f0d0000 DT_SIZE_K(36)>;
-			owner-id = <4>;
-			perm-read;
-			perm-write;
-			status = "disabled";
+		cpusys_cpuapp_ipc_shm: memory@2f88fd60 {
+			reg = <0x2f88fd60 0x80>;
 		};
 
-		shared_ram20_region: memory@2f88f000 {
-			reg = <0x2f88f000 DT_SIZE_K(4)>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-			ranges = <0x0 0x2f88f000 0x1000>;
+		cpurad_cpusys_ipc_shm: memory@2f88fe00 {
+			reg = <0x2f88fe00 0x80>;
+		};
 
-			cpuapp_cpusys_ipc_shm: memory@ce0 {
-				reg = <0xce0 0x80>;
-			};
-
-			cpusys_cpuapp_ipc_shm: memory@d60 {
-				reg = <0xd60 0x80>;
-			};
-
-			cpurad_cpusys_ipc_shm: memory@e00 {
-				reg = <0xe00 0x80>;
-			};
-
-			cpusys_cpurad_ipc_shm: memory@e80 {
-				reg = <0xe80 0x80>;
-			};
+		cpusys_cpurad_ipc_shm: memory@2f88fe80 {
+			reg = <0x2f88fe80 0x80>;
 		};
 
 		ram21_region: memory@2f890000 {
 			compatible = "nordic,owned-memory";
 			status = "disabled";
 			reg = <0x2f890000 DT_SIZE_K(32)>;
-			perm-read;
-			perm-write;
-			perm-secure;
+			nordic,access = <NRF_OWNER_ID_APPLICATION NRF_PERM_RWS>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x2f890000 0x8000>;
@@ -172,9 +137,7 @@
 			compatible = "nordic,owned-memory";
 			reg = <0x2fc00000 DT_SIZE_K(24)>;
 			status = "disabled";
-			perm-read;
-			perm-write;
-			perm-execute;
+			nordic,access = <NRF_OWNER_ID_APPLICATION NRF_PERM_RWX>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x2fc00000 0x6000>;
@@ -192,33 +155,24 @@
 			};
 		};
 
-		shared_ram3x_region: memory@2fc06000 {
-			compatible = "nordic,owned-memory";
-			reg = <0x2fc06000 DT_SIZE_K(8)>;
+		cpuapp_dma_region: memory@2fc06000 {
+			compatible = "nordic,owned-memory", "zephyr,memory-region";
+			reg = <0x2fc06000 DT_SIZE_K(4)>;
 			status = "disabled";
-			perm-read;
-			perm-write;
-			#address-cells = <1>;
-			#size-cells = <1>;
-			ranges = <0x0 0x2fc06000 0x4000>;
+			#memory-region-cells = <0>;
+			nordic,access = <NRF_OWNER_ID_APPLICATION NRF_PERM_RW>;
+			zephyr,memory-region = "DMA_RAM3x_APP";
+			zephyr,memory-attr = <( DT_MEM_DMA )>;
+		};
 
-			cpuapp_dma_region: memory@0 {
-				compatible = "zephyr,memory-region";
-				reg = <0x0 DT_SIZE_K(4)>;
-				status = "disabled";
-				#memory-region-cells = <0>;
-				zephyr,memory-region = "DMA_RAM3x_APP";
-				zephyr,memory-attr = <( DT_MEM_DMA )>;
-			};
-
-			cpurad_dma_region: memory@1000 {
-				compatible = "zephyr,memory-region";
-				reg = <0x1000 0x80>;
-				status = "disabled";
-				#memory-region-cells = <0>;
-				zephyr,memory-region = "DMA_RAM3x_RAD";
-				zephyr,memory-attr = <( DT_MEM_DMA )>;
-			};
+		cpurad_dma_region: memory@2fc07000 {
+			compatible = "nordic,owned-memory", "zephyr,memory-region";
+			reg = <0x2fc07000 DT_SIZE_K(1)>;
+			status = "disabled";
+			#memory-region-cells = <0>;
+			nordic,access = <NRF_OWNER_ID_RADIOCORE NRF_PERM_RW>;
+			zephyr,memory-region = "DMA_RAM3x_RAD";
+			zephyr,memory-attr = <( DT_MEM_DMA )>;
 		};
 	};
 };
@@ -227,9 +181,7 @@
 	cpurad_rx_partitions: cpurad-rx-partitions {
 		compatible = "nordic,owned-partitions", "fixed-partitions";
 		status = "disabled";
-		perm-read;
-		perm-execute;
-		perm-secure;
+		nordic,access = <NRF_OWNER_ID_RADIOCORE NRF_PERM_RXS>;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -241,9 +193,7 @@
 	cpuapp_rx_partitions: cpuapp-rx-partitions {
 		compatible = "nordic,owned-partitions", "fixed-partitions";
 		status = "disabled";
-		perm-read;
-		perm-execute;
-		perm-secure;
+		nordic,access = <NRF_OWNER_ID_APPLICATION NRF_PERM_RXS>;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -259,9 +209,7 @@
 	cpuapp_rw_partitions: cpuapp-rw-partitions {
 		compatible = "nordic,owned-partitions", "fixed-partitions";
 		status = "disabled";
-		perm-read;
-		perm-write;
-		perm-secure;
+		nordic,access = <NRF_OWNER_ID_APPLICATION NRF_PERM_RWS>;
 		#address-cells = <1>;
 		#size-cells = <1>;
 

@@ -1,0 +1,11 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config TEST_CONN_INTERVAL_1MS
+	bool "Test 1 ms connection interval support"
+	help
+	  Test 1 ms connection interval support.
+
+menu "Zephyr Kernel"
+source "Kconfig.zephyr"
+endmenu

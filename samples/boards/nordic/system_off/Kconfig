@@ -21,4 +21,9 @@ config APP_USE_RETAINED_MEM
 
 endchoice
 
+config GRTC_WAKEUP_ENABLE
+	bool "Use GRTC to wake up device from system off"
+	help
+	  Switch wake up source from pressing sw0 button to GRTC
+
 source "Kconfig.zephyr"

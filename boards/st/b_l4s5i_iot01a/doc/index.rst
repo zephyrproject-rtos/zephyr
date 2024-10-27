@@ -1,7 +1,4 @@
-.. _b_l4s5i_iot01a_board:
-
-ST B_L4S5I_IOT01A Discovery kit
-###############################
+.. zephyr:board:: b_l4s5i_iot01a
 
 Overview
 ********
@@ -39,10 +36,6 @@ some highlights of the B_L4S5I_IOT01A Discovery kit:
     - USB FS connector
     - External 5 V
 
-
-.. image:: img/b-l4s5i_iot01a.jpg
-     :align: center
-     :alt: B_L4S5I_IOT01A Discovery kit
 
 More information about the board can be found at the `B L4S5I IOT01A Discovery kit website`_.
 

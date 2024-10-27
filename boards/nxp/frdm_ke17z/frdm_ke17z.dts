@@ -25,6 +25,7 @@
 		pwm-led0 = &red_pwm_led;
 		pwm-led1 = &green_pwm_led;
 		pwm-led2 = &blue_pwm_led;
+		mcuboot-button0 = &user_button_0;
 	};
 
 	chosen {

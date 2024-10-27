@@ -24,7 +24,6 @@ tests:
       - stm32h747i_disco/stm32h747xx/m7
       - stm32h750b_dk
       - nrf54l15dk/nrf54l15/cpuapp
-      - nrf54l15pdk/nrf54l15/cpuapp
       - frdm_ke17z
       - frdm_ke17z512
     integration_platforms:
@@ -40,19 +39,19 @@ tests:
     build_only: true
     platform_allow: nrf52840dk/nrf52840
     extra_args:
-      - OVERLAY_CONFIG=boards/nrf52840dk_nrf52840_spi.conf
+      - EXTRA_CONF_FILE=boards/nrf52840dk_nrf52840_spi.conf
       - DTC_OVERLAY_FILE=boards/nrf52840dk_nrf52840_spi.overlay
   sample.filesystem.littlefs.nrf52840dk_qspi:
     build_only: true
     platform_allow: nrf52840dk/nrf52840
     extra_args:
-      - OVERLAY_CONFIG=boards/nrf52840dk_nrf52840_qspi.conf
+      - EXTRA_CONF_FILE=boards/nrf52840dk_nrf52840_qspi.conf
       - DTC_OVERLAY_FILE=boards/nrf52840dk_nrf52840_qspi.overlay
   sample.filesystem.littlefs.stm32h747i_disco_m7_blk:
     build_only: true
     platform_allow: stm32h747i_disco/stm32h747xx/m7
     extra_args:
-      - OVERLAY_CONFIG=boards/stm32_blk.conf
+      - EXTRA_CONF_FILE=stm32_blk.conf
       - CONF_FILE=prj_blk.conf
     extra_configs:
       - CONFIG_SDMMC_STM32_HWFC=y
@@ -60,23 +59,23 @@ tests:
     build_only: true
     platform_allow: nucleo_h743zi
     extra_args:
-      - OVERLAY_CONFIG=boards/nucleo_h743zi_qspi.conf
+      - EXTRA_CONF_FILE=boards/nucleo_h743zi_qspi.conf
   sample.filesystem.littlefs.nucleo_h743zi_blk:
     build_only: true
     platform_allow: nucleo_h743zi
     extra_args:
-      - OVERLAY_CONFIG=boards/nucleo_h743zi_blk.conf
+      - EXTRA_CONF_FILE=boards/nucleo_h743zi_blk.conf
       - CONF_FILE=prj_blk.conf
   sample.filesystem.littlefs.stm32l562e_dk_ospi:
     build_only: true
     platform_allow: stm32l562e_dk
     extra_args:
-      - OVERLAY_CONFIG=boards/stm32l562e_dk_ospi.conf
+      - EXTRA_CONF_FILE=boards/stm32l562e_dk_ospi.conf
   sample.filesystem.littlefs.stm32f746g_disco_blk:
     build_only: true
     platform_allow: stm32f746g_disco
     extra_args:
-      - OVERLAY_CONFIG=boards/stm32_blk.conf
+      - EXTRA_CONF_FILE=stm32_blk.conf
       - CONF_FILE=prj_blk.conf
     extra_configs:
       - CONFIG_SDMMC_STM32_HWFC=y

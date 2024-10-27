@@ -109,9 +109,9 @@ static int http_send_data(int sock, char *send_buf,
 				end_of_send = 0;
 				continue;
 			} else {
-				strncpy(send_buf + end_of_send,
-					data + end_of_data,
-					remaining_len);
+				memcpy(send_buf + end_of_send,
+				       data + end_of_data,
+				       remaining_len);
 				end_of_send += remaining_len;
 				remaining_len = 0;
 			}

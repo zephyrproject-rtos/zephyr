@@ -145,6 +145,8 @@
 };
 
 &adc1 {
+	clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000400>,
+		 <&rcc STM32_SRC_HCLK ADCDAC_SEL(0)>;
 	pinctrl-0 = <&adc1_inp3_pa6 &adc1_inp15_pa3>; /* Zio A0, Zio D35 */
 	pinctrl-names = "default";
 	st,adc-clock-source = <ASYNC>;

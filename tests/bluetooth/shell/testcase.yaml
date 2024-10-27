@@ -37,11 +37,12 @@ tests:
   bluetooth.shell.channel_sounding:
     extra_configs:
       - CONFIG_BT_CHANNEL_SOUNDING=y
+      - CONFIG_BT_CHANNEL_SOUNDING_TEST=y
       - CONFIG_BT_CTLR=n
     build_only: true
   bluetooth.shell.cdc_acm:
     extra_args:
-      - OVERLAY_CONFIG=cdc_acm.conf
+      - EXTRA_CONF_FILE=cdc_acm.conf
       - DTC_OVERLAY_FILE="usb.overlay"
     depends_on: usb_device
     platform_allow:
@@ -72,6 +73,13 @@ tests:
     build_only: true
     extra_args: CONF_FILE="log.conf"
     tags: bluetooth
+  bluetooth.shell.bt_ctrl_dtm:
+    build_only: true
+    extra_args:
+      - CONFIG_BT_CTLR_DTM_HCI=y
+    tags: bluetooth
+    platform_allow:
+      - nrf52840dk/nrf52840
 
   # Bluetooth Audio Compile validation tests
   bluetooth.shell.audio:

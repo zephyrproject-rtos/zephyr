@@ -19,6 +19,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/crc.h>
+#include <zephyr/sys/util.h>
 
 /*
  * Note: When loading a bitstream, the iCE40 has a 'quirk' in that the CS
@@ -49,18 +50,6 @@
  */
 #define FPGA_ICE40_LOAD_MODE_SPI  0
 #define FPGA_ICE40_LOAD_MODE_GPIO 1
-
-#ifndef BITS_PER_NIBBLE
-#define BITS_PER_NIBBLE 4
-#endif
-
-#ifndef BITS_PER_BYTE
-#define BITS_PER_BYTE 8
-#endif
-
-#ifndef NIBBLES_PER_BYTE
-#define NIBBLES_PER_BYTE (BITS_PER_BYTE / BITS_PER_NIBBLE)
-#endif
 
 /*
  * Values in Hz, intentionally to be comparable with the spi-max-frequency

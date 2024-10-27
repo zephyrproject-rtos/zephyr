@@ -161,6 +161,11 @@ static int frdm_mcxn947_init(void)
 	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM4);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcomm7))
+	CLOCK_SetClkDiv(kCLOCK_DivFlexcom7Clk, 1u);
+	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM7);
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(os_timer))
 	CLOCK_AttachClk(kCLK_1M_to_OSTIMER);
 #endif
@@ -260,6 +265,19 @@ static int frdm_mcxn947_init(void)
 	enable_cache64();
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(smartdma))
+	CLOCK_EnableClock(kCLOCK_Smartdma);
+	RESET_PeripheralReset(kSMART_DMA_RST_SHIFT_RSTn);
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(video_sdma))
+	/* Drive CLKOUT from main clock, divided by 25 to yield 6MHz clock
+	 * The camera will use this clock signal to generate
+	 * PCLK, HSYNC, and VSYNC
+	 */
+	CLOCK_AttachClk(kMAIN_CLK_to_CLKOUT);
+	CLOCK_SetClkDiv(kCLOCK_DivClkOut, 25U);
+#endif
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(vref))
 	CLOCK_EnableClock(kCLOCK_Vref);
 	SPC_EnableActiveModeAnalogModules(SPC0, kSPC_controlVref);
@@ -345,6 +363,20 @@ static int frdm_mcxn947_init(void)
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexio0))
 	CLOCK_SetClkDiv(kCLOCK_DivFlexioClk, 1u);
 	CLOCK_AttachClk(kPLL0_to_FLEXIO);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(i3c1), okay)
+	/* Enable 1MHz clock. */
+	SYSCON->CLOCK_CTRL |= SYSCON_CLOCK_CTRL_FRO1MHZ_CLK_ENA_MASK;
+
+	CLOCK_SetClkDiv(kCLOCK_DivI3c1FClk, DT_PROP(DT_NODELABEL(i3c1), clk_divider));
+	CLOCK_SetClkDiv(kCLOCK_DivI3c1FClkS, DT_PROP(DT_NODELABEL(i3c1), clk_divider_slow));
+	CLOCK_SetClkDiv(kCLOCK_DivI3c1FClkStc, DT_PROP(DT_NODELABEL(i3c1), clk_divider_tc));
+
+	/* Attach PLL0 clock to I3C, 150MHz / 6 = 25MHz. */
+	CLOCK_AttachClk(kPLL0_to_I3C1FCLK);
+	CLOCK_AttachClk(kCLK_1M_to_I3C1FCLKS);
+	CLOCK_AttachClk(kI3C1FCLK_to_I3C1FCLKSTC);
 #endif
 
 	/* Set SystemCoreClock variable. */

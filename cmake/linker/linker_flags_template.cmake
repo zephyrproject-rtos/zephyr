@@ -49,3 +49,7 @@ set_property(TARGET linker PROPERTY no_relax)
 
 # Linker flag for enabling relaxation of address optimization for jump calls.
 set_property(TARGET linker PROPERTY relax)
+
+# Linker flag for defining specs. Defined only by gcc, when gcc is used as
+# front-end for ld.
+set_compiler_property(PROPERTY specs)

@@ -1,5 +1,6 @@
 board:
   name: xiao_ble
+  full_name: XIAO BLE (Sense)
   vendor: seeed
   socs:
   - name: nrf52840

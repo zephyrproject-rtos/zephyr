@@ -72,8 +72,7 @@ CREATE_FLAG(flag_stream_stopped);
 CREATE_FLAG(flag_stream_released);
 CREATE_FLAG(flag_operation_success);
 
-static void stream_configured(struct bt_bap_stream *stream,
-			      const struct bt_audio_codec_qos_pref *pref)
+static void stream_configured(struct bt_bap_stream *stream, const struct bt_bap_qos_cfg_pref *pref)
 {
 	printk("Configured stream %p\n", stream);
 
@@ -1197,9 +1196,8 @@ static void test_main_async_group(void)
 {
 	struct bt_bap_stream rx_stream = {0};
 	struct bt_bap_stream tx_stream = {0};
-	struct bt_audio_codec_qos rx_qos = BT_AUDIO_CODEC_QOS_UNFRAMED(7500U, 30U, 2U, 75U, 40000U);
-	struct bt_audio_codec_qos tx_qos =
-		BT_AUDIO_CODEC_QOS_UNFRAMED(10000U, 40U, 2U, 100U, 40000U);
+	struct bt_bap_qos_cfg rx_qos = BT_BAP_QOS_CFG_UNFRAMED(7500U, 30U, 2U, 75U, 40000U);
+	struct bt_bap_qos_cfg tx_qos = BT_BAP_QOS_CFG_UNFRAMED(10000U, 40U, 2U, 100U, 40000U);
 	struct bt_bap_unicast_group_stream_param rx_param = {
 		.qos = &rx_qos,
 		.stream = &rx_stream,

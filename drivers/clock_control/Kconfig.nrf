@@ -175,6 +175,7 @@ endif # CLOCK_CONTROL_NRF
 
 config CLOCK_CONTROL_NRF2
 	bool "nRF clock control support"
+	default y
 	depends on SOC_SERIES_NRF54HX && !RISCV_CORE_NORDIC_VPR
 	select ONOFF
 	select NRFS if HAS_NRFS

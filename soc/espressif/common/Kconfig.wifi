@@ -35,7 +35,7 @@ choice ESP_WIFI_HEAP
 
 	config ESP_WIFI_HEAP_RUNTIME
 		bool "Wifi adapter use ESP runtime heap"
-		depends on ESP_RUNTIME_HEAP
+		depends on ESP_HEAP_RUNTIME
 
 	config ESP_WIFI_HEAP_SPIRAM
 		bool "Wifi adapter use SPIRAM heap"

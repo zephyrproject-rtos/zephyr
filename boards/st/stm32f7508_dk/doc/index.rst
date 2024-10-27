@@ -1,7 +1,4 @@
-.. _stm32f7508_dk_board:
-
-ST STM32F7508-DK Discovery Kit
-##############################
+.. zephyr:board:: stm32f7508_dk
 
 Overview
 ********
@@ -33,10 +30,6 @@ and high-speed connectivity features. Important board features include:
 - USB OTG HS with Micro-AB connectors
 - USB OTG FS with Micro-AB connectors
 - Ethernet connector compliant with IEEE-802.3-2002
-
-.. image:: img/stm32f7508_dk.jpg
-     :align: center
-     :alt: STM32F7508-DK
 
 More information about the board can be found at the `32F7508-DK website`_.
 

@@ -619,8 +619,8 @@ static int cmd_select_unicast(const struct shell *sh, size_t argc, char *argv[])
 }
 
 #if defined(CONFIG_BT_BAP_UNICAST_SERVER)
-static const struct bt_audio_codec_qos_pref qos_pref =
-	BT_AUDIO_CODEC_QOS_PREF(true, BT_GAP_LE_PHY_2M, 0u, 60u, 10000u, 60000u, 10000u, 60000u);
+static const struct bt_bap_qos_cfg_pref qos_pref =
+	BT_BAP_QOS_CFG_PREF(true, BT_GAP_LE_PHY_2M, 0u, 60u, 10000u, 60000u, 10000u, 60000u);
 
 static struct bt_bap_stream *stream_alloc(void)
 {
@@ -637,7 +637,7 @@ static struct bt_bap_stream *stream_alloc(void)
 
 static int lc3_config(struct bt_conn *conn, const struct bt_bap_ep *ep, enum bt_audio_dir dir,
 		      const struct bt_audio_codec_cfg *codec_cfg, struct bt_bap_stream **stream,
-		      struct bt_audio_codec_qos_pref *const pref, struct bt_bap_ascs_rsp *rsp)
+		      struct bt_bap_qos_cfg_pref *const pref, struct bt_bap_ascs_rsp *rsp)
 {
 	shell_print(ctx_shell, "ASE Codec Config: conn %p ep %p dir %u", conn, ep, dir);
 
@@ -663,7 +663,7 @@ static int lc3_config(struct bt_conn *conn, const struct bt_bap_ep *ep, enum bt_
 
 static int lc3_reconfig(struct bt_bap_stream *stream, enum bt_audio_dir dir,
 			const struct bt_audio_codec_cfg *codec_cfg,
-			struct bt_audio_codec_qos_pref *const pref, struct bt_bap_ascs_rsp *rsp)
+			struct bt_bap_qos_cfg_pref *const pref, struct bt_bap_ascs_rsp *rsp)
 {
 	shell_print(ctx_shell, "ASE Codec Reconfig: stream %p", stream);
 
@@ -678,7 +678,7 @@ static int lc3_reconfig(struct bt_bap_stream *stream, enum bt_audio_dir dir,
 	return 0;
 }
 
-static int lc3_qos(struct bt_bap_stream *stream, const struct bt_audio_codec_qos *qos,
+static int lc3_qos(struct bt_bap_stream *stream, const struct bt_bap_qos_cfg *qos,
 		   struct bt_bap_ascs_rsp *rsp)
 {
 	shell_print(ctx_shell, "QoS: stream %p %p", stream, qos);
@@ -822,8 +822,8 @@ int bap_ac_create_unicast_group(const struct bap_unicast_ac_param *param,
 		0};
 	struct bt_bap_unicast_group_stream_pair_param pair_params[BAP_UNICAST_AC_MAX_PAIR] = {0};
 	struct bt_bap_unicast_group_param group_param = {0};
-	struct bt_audio_codec_qos *snk_qos[BAP_UNICAST_AC_MAX_SNK];
-	struct bt_audio_codec_qos *src_qos[BAP_UNICAST_AC_MAX_SRC];
+	struct bt_bap_qos_cfg *snk_qos[BAP_UNICAST_AC_MAX_SNK];
+	struct bt_bap_qos_cfg *src_qos[BAP_UNICAST_AC_MAX_SRC];
 	size_t snk_stream_cnt = 0U;
 	size_t src_stream_cnt = 0U;
 	size_t pair_cnt = 0U;
@@ -1316,7 +1316,7 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_stream_qos(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct bt_audio_codec_qos *qos;
+	struct bt_bap_qos_cfg *qos;
 	unsigned long interval;
 	int err = 0;
 
@@ -2345,24 +2345,28 @@ static int cmd_preset(const struct shell *sh, size_t argc, char *argv[])
 #endif /* IS_BAP_INITIATOR */
 
 #if defined(CONFIG_BT_BAP_BROADCAST_SINK)
-#define INVALID_BROADCAST_ID (BT_AUDIO_BROADCAST_ID_MAX + 1)
 #define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 20 /* Set the timeout relative to interval */
 #define PA_SYNC_SKIP         5
 
+struct bt_broadcast_info {
+	uint32_t broadcast_id;
+	char broadcast_name[BT_AUDIO_BROADCAST_NAME_LEN_MAX + 1];
+};
+
 static struct broadcast_sink_auto_scan {
 	struct broadcast_sink *broadcast_sink;
-	uint32_t broadcast_id;
+	struct bt_broadcast_info broadcast_info;
 	struct bt_le_per_adv_sync **out_sync;
 } auto_scan = {
-	.broadcast_id = INVALID_BROADCAST_ID,
+	.broadcast_info = {
+		.broadcast_id = BT_BAP_INVALID_BROADCAST_ID,
+	},
 };
 
 static void clear_auto_scan(void)
 {
-	if (auto_scan.broadcast_id != INVALID_BROADCAST_ID) {
-		memset(&auto_scan, 0, sizeof(auto_scan));
-		auto_scan.broadcast_id = INVALID_BROADCAST_ID;
-	}
+	memset(&auto_scan, 0, sizeof(auto_scan));
+	auto_scan.broadcast_info.broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
 }
 
 static uint16_t interval_to_sync_timeout(uint16_t interval)
@@ -2382,40 +2386,85 @@ static uint16_t interval_to_sync_timeout(uint16_t interval)
 
 static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 {
-	const struct bt_le_scan_recv_info *info = user_data;
-	char le_addr[BT_ADDR_LE_STR_LEN];
+	struct bt_broadcast_info *sr_info = (struct bt_broadcast_info *)user_data;
 	struct bt_uuid_16 adv_uuid;
-	uint32_t broadcast_id;
 
-	if (data->type != BT_DATA_SVC_DATA16) {
+	switch (data->type) {
+	case BT_DATA_SVC_DATA16:
+		if (data->data_len < BT_UUID_SIZE_16 + BT_AUDIO_BROADCAST_ID_SIZE) {
+			return true;
+		}
+
+		if (!bt_uuid_create(&adv_uuid.uuid, data->data, BT_UUID_SIZE_16)) {
+			return true;
+		}
+
+		if (bt_uuid_cmp(&adv_uuid.uuid, BT_UUID_BROADCAST_AUDIO) != 0) {
+			return true;
+		}
+
+		sr_info->broadcast_id = sys_get_le24(data->data + BT_UUID_SIZE_16);
+		return true;
+	case BT_DATA_BROADCAST_NAME:
+		if (!IN_RANGE(data->data_len, BT_AUDIO_BROADCAST_NAME_LEN_MIN,
+			      BT_AUDIO_BROADCAST_NAME_LEN_MAX)) {
+			return false;
+		}
+
+		memcpy(sr_info->broadcast_name, data->data, data->data_len);
+		sr_info->broadcast_name[data->data_len] = '\0';
+		return true;
+	default:
 		return true;
 	}
+}
 
-	if (data->data_len < BT_UUID_SIZE_16 + BT_AUDIO_BROADCAST_ID_SIZE) {
-		return true;
+static void broadcast_scan_recv(const struct bt_le_scan_recv_info *info, struct net_buf_simple *ad)
+{
+	struct bt_broadcast_info sr_info = {0};
+	char addr_str[BT_ADDR_LE_STR_LEN];
+	bool identified_broadcast = false;
+
+	sr_info.broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
+
+	if ((auto_scan.broadcast_info.broadcast_id == BT_BAP_INVALID_BROADCAST_ID) &&
+	    (strlen(auto_scan.broadcast_info.broadcast_name) == 0U)) {
+		/* no op */
+		return;
 	}
 
-	if (!bt_uuid_create(&adv_uuid.uuid, data->data, BT_UUID_SIZE_16)) {
-		return true;
+	if (!passes_scan_filter(info, ad)) {
+		return;
 	}
 
-	if (bt_uuid_cmp(&adv_uuid.uuid, BT_UUID_BROADCAST_AUDIO)) {
-		return true;
+	bt_data_parse(ad, scan_check_and_sync_broadcast, (void *)&sr_info);
+
+	/* Verify that it is a BAP broadcaster*/
+	if (sr_info.broadcast_id == BT_BAP_INVALID_BROADCAST_ID) {
+		return;
 	}
 
-	broadcast_id = sys_get_le24(data->data + BT_UUID_SIZE_16);
+	bt_addr_le_to_str(info->addr, addr_str, sizeof(addr_str));
 
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
+	if (sr_info.broadcast_id == auto_scan.broadcast_info.broadcast_id) {
+		identified_broadcast = true;
+	} else if ((strlen(auto_scan.broadcast_info.broadcast_name) != 0U) &&
+		   is_substring(auto_scan.broadcast_info.broadcast_name, sr_info.broadcast_name)) {
+		auto_scan.broadcast_info.broadcast_id = sr_info.broadcast_id;
+		identified_broadcast = true;
 
-	shell_print(ctx_shell,
-		    "Found broadcaster with ID 0x%06X and addr %s and sid 0x%02X (looking for "
-		    "0x%06X)",
-		    broadcast_id, le_addr, info->sid, auto_scan.broadcast_id);
+		shell_print(ctx_shell, "Found matched broadcast name '%s' with address %s",
+			    sr_info.broadcast_name, addr_str);
+	}
 
-	if (auto_scan.broadcast_id == broadcast_id && auto_scan.broadcast_sink != NULL &&
-	    auto_scan.broadcast_sink->pa_sync == NULL) {
+	if (identified_broadcast && (auto_scan.broadcast_sink != NULL) &&
+	    (auto_scan.broadcast_sink->pa_sync == NULL)) {
 		struct bt_le_per_adv_sync_param create_params = {0};
 		int err;
+
+		shell_print(ctx_shell,
+			    "Found broadcaster with ID 0x%06X and addr %s and sid 0x%02X ",
+			    sr_info.broadcast_id, addr_str, info->sid);
 
 		err = bt_le_scan_stop();
 		if (err != 0) {
@@ -2435,16 +2484,6 @@ static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 		} else {
 			auto_scan.broadcast_sink->pa_sync = *auto_scan.out_sync;
 		}
-	}
-
-	/* Stop parsing */
-	return false;
-}
-
-static void broadcast_scan_recv(const struct bt_le_scan_recv_info *info, struct net_buf_simple *ad)
-{
-	if (passes_scan_filter(info, ad)) {
-		bt_data_parse(ad, scan_check_and_sync_broadcast, (void *)info);
 	}
 }
 
@@ -2481,13 +2520,14 @@ static void bap_pa_sync_synced_cb(struct bt_le_per_adv_sync *sync,
 	if (auto_scan.broadcast_sink != NULL && auto_scan.out_sync != NULL &&
 	    sync == *auto_scan.out_sync) {
 		shell_print(ctx_shell, "PA synced to broadcast with broadcast ID 0x%06x",
-			    auto_scan.broadcast_id);
+			    auto_scan.broadcast_info.broadcast_id);
 
 		if (auto_scan.broadcast_sink->bap_sink == NULL) {
 			shell_print(ctx_shell, "Attempting to create the sink");
 			int err;
 
-			err = bt_bap_broadcast_sink_create(sync, auto_scan.broadcast_id,
+			err = bt_bap_broadcast_sink_create(sync,
+							   auto_scan.broadcast_info.broadcast_id,
 							   &auto_scan.broadcast_sink->bap_sink);
 			if (err != 0) {
 				shell_error(ctx_shell, "Could not create broadcast sink: %d", err);
@@ -3134,7 +3174,7 @@ static void stream_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 
 #if defined(CONFIG_BT_BAP_UNICAST)
 static void stream_configured_cb(struct bt_bap_stream *stream,
-				 const struct bt_audio_codec_qos_pref *pref)
+				 const struct bt_bap_qos_cfg_pref *pref)
 {
 	shell_print(ctx_shell, "Stream %p configured\n", stream);
 }
@@ -3409,7 +3449,7 @@ static int cmd_create_broadcast_sink(const struct shell *sh, size_t argc, char *
 
 	if (per_adv_sync == NULL) {
 		const struct bt_le_scan_param param = {
-			.type = BT_LE_SCAN_TYPE_ACTIVE,
+			.type = BT_LE_SCAN_TYPE_PASSIVE,
 			.options = BT_LE_SCAN_OPT_NONE,
 			.interval = BT_GAP_SCAN_FAST_INTERVAL,
 			.window = BT_GAP_SCAN_FAST_WINDOW,
@@ -3426,7 +3466,7 @@ static int cmd_create_broadcast_sink(const struct shell *sh, size_t argc, char *
 		}
 
 		auto_scan.broadcast_sink = &default_broadcast_sink;
-		auto_scan.broadcast_id = broadcast_id;
+		auto_scan.broadcast_info.broadcast_id = broadcast_id;
 		auto_scan.out_sync = &per_adv_syncs[selected_per_adv_sync];
 	} else {
 		shell_print(sh, "Creating broadcast sink with broadcast ID 0x%06X",
@@ -3445,10 +3485,50 @@ static int cmd_create_broadcast_sink(const struct shell *sh, size_t argc, char *
 	return 0;
 }
 
+static int cmd_create_sink_by_name(const struct shell *sh, size_t argc, char *argv[])
+{
+	const struct bt_le_scan_param param = {
+		.type = BT_LE_SCAN_TYPE_PASSIVE,
+		.options = BT_LE_SCAN_OPT_NONE,
+		.interval = BT_GAP_SCAN_FAST_INTERVAL,
+		.window = BT_GAP_SCAN_FAST_WINDOW,
+		.timeout = 1000, /* 10ms units -> 10 second timeout */
+	};
+	char *broadcast_name;
+	int err = 0;
+
+	broadcast_name = argv[1];
+	if (!IN_RANGE(strlen(broadcast_name), BT_AUDIO_BROADCAST_NAME_LEN_MIN,
+		      BT_AUDIO_BROADCAST_NAME_LEN_MAX)) {
+		shell_error(sh, "Broadcast name should be minimum %d and maximum %d characters",
+			    BT_AUDIO_BROADCAST_NAME_LEN_MIN, BT_AUDIO_BROADCAST_NAME_LEN_MAX);
+
+		return -ENOEXEC;
+	}
+
+	shell_print(sh, "Starting scanning for broadcast_name");
+
+	err = bt_le_scan_start(&param, NULL);
+	if (err) {
+		shell_print(sh, "Fail to start scanning: %d", err);
+
+		return -ENOEXEC;
+	}
+
+	memcpy(auto_scan.broadcast_info.broadcast_name, broadcast_name, strlen(broadcast_name));
+	auto_scan.broadcast_info.broadcast_name[strlen(broadcast_name)] = '\0';
+
+	auto_scan.broadcast_info.broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
+	auto_scan.broadcast_sink = &default_broadcast_sink;
+	auto_scan.out_sync = &per_adv_syncs[selected_per_adv_sync];
+
+	return 0;
+}
+
 static int cmd_sync_broadcast(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct bt_bap_stream *streams[ARRAY_SIZE(broadcast_sink_streams)];
-	uint8_t bcode[BT_AUDIO_BROADCAST_CODE_SIZE] = {0};
+	uint8_t bcode[BT_ISO_BROADCAST_CODE_SIZE] = {0};
 	bool bcode_set = false;
 	uint32_t bis_bitfield;
 	size_t stream_cnt;
@@ -4049,8 +4129,9 @@ static int cmd_print_ase_info(const struct shell *sh, size_t argc, char *argv[])
 	"[bcast_flag]" HELP_SEP "[extended <meta>]" HELP_SEP "[vendor <meta>]]"
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
-	bap_cmds, SHELL_CMD_ARG(init, NULL, NULL, cmd_init, 1,
-				IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER) ? 2 : 0),
+	bap_cmds,
+	SHELL_CMD_ARG(init, NULL, NULL, cmd_init, 1,
+		      IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER) ? 2 : 0),
 #if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
 	SHELL_CMD_ARG(select_broadcast, NULL, "<stream>", cmd_select_broadcast_source, 2, 0),
 	SHELL_CMD_ARG(create_broadcast, NULL, "[preset <preset_name>] [enc <broadcast_code>]",
@@ -4062,6 +4143,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 #if defined(CONFIG_BT_BAP_BROADCAST_SINK)
 	SHELL_CMD_ARG(create_broadcast_sink, NULL, "0x<broadcast_id>", cmd_create_broadcast_sink, 2,
 		      0),
+	SHELL_CMD_ARG(create_sink_by_name, NULL, "<broadcast_name>",
+		      cmd_create_sink_by_name, 2, 0),
 	SHELL_CMD_ARG(sync_broadcast, NULL,
 		      "0x<bis_index> [[[0x<bis_index>] 0x<bis_index>] ...] "
 		      "[bcode <broadcast code> || bcode_str <broadcast code as string>]",
@@ -4246,9 +4329,9 @@ static ssize_t nonconnectable_ad_data_add(struct bt_data *data_array,
 		uint32_t broadcast_id;
 		int err;
 
-		err = bt_bap_broadcast_source_get_id(default_source.bap_source, &broadcast_id);
+		err = bt_rand(&broadcast_id, BT_AUDIO_BROADCAST_ID_SIZE);
 		if (err != 0) {
-			printk("Unable to get broadcast ID: %d\n", err);
+			printk("Unable to generate broadcast ID: %d\n", err);
 
 			return -1;
 		}

@@ -9,6 +9,7 @@
 #include <freq.h>
 #include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-ra.h>
 #include <zephyr/dt-bindings/clock/ra_clock.h>
+#include <zephyr/dt-bindings/pwm/ra_pwm.h>
 
 / {
 	cpus {
@@ -332,6 +333,146 @@
 			status = "disabled";
 		};
 
+		pwm0: pwm0@40322000 {
+			compatible = "renesas,ra8-pwm";
+			divider = <RA_PWM_SOURCE_DIV_1>;
+			channel = <RA_PWM_CHANNEL_0>;
+			clocks = <&pclkd MSTPE 31>;
+			reg = <0x40322000 0x100>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm1: pwm1@40322100 {
+			compatible = "renesas,ra8-pwm";
+			divider = <RA_PWM_SOURCE_DIV_1>;
+			channel = <RA_PWM_CHANNEL_1>;
+			clocks = <&pclkd MSTPE 30>;
+			reg = <0x40322100 0x100>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm2: pwm2@40322200 {
+			compatible = "renesas,ra8-pwm";
+			divider = <RA_PWM_SOURCE_DIV_1>;
+			channel = <RA_PWM_CHANNEL_2>;
+			clocks = <&pclkd MSTPE 29>;
+			reg = <0x40322200 0x100>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm3: pwm3@40322300 {
+			compatible = "renesas,ra8-pwm";
+			divider = <RA_PWM_SOURCE_DIV_1>;
+			channel = <RA_PWM_CHANNEL_3>;
+			clocks = <&pclkd MSTPE 28>;
+			reg = <0x40322300 0x100>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm4: pwm4@40322400 {
+			compatible = "renesas,ra8-pwm";
+			divider = <RA_PWM_SOURCE_DIV_1>;
+			channel = <RA_PWM_CHANNEL_4>;
+			clocks = <&pclkd MSTPE 27>;
+			reg = <0x40322400 0x100>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm5: pwm5@40322500 {
+			compatible = "renesas,ra8-pwm";
+			divider = <RA_PWM_SOURCE_DIV_1>;
+			channel = <RA_PWM_CHANNEL_5>;
+			clocks = <&pclkd MSTPE 26>;
+			reg = <0x40322500 0x100>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm6: pwm6@40322600 {
+			compatible = "renesas,ra8-pwm";
+			divider = <RA_PWM_SOURCE_DIV_1>;
+			channel = <RA_PWM_CHANNEL_6>;
+			clocks = <&pclkd MSTPE 25>;
+			reg = <0x40322600 0x100>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm7: pwm7@40322700 {
+			compatible = "renesas,ra8-pwm";
+			divider = <RA_PWM_SOURCE_DIV_1>;
+			channel = <RA_PWM_CHANNEL_7>;
+			clocks = <&pclkd MSTPE 24>;
+			reg = <0x40322700 0x100>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm8: pwm8@40322800 {
+			compatible = "renesas,ra8-pwm";
+			divider = <RA_PWM_SOURCE_DIV_1>;
+			channel = <RA_PWM_CHANNEL_8>;
+			clocks = <&pclkd MSTPE 23>;
+			reg = <0x40322800 0x100>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm9: pwm9@40322900 {
+			compatible = "renesas,ra8-pwm";
+			divider = <RA_PWM_SOURCE_DIV_1>;
+			channel = <RA_PWM_CHANNEL_9>;
+			clocks = <&pclkd MSTPE 22>;
+			reg = <0x40322900 0x100>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm10: pwm10@40322a00 {
+			compatible = "renesas,ra8-pwm";
+			divider = <RA_PWM_SOURCE_DIV_1>;
+			channel = <RA_PWM_CHANNEL_10>;
+			clocks = <&pclkd MSTPE 21>;
+			reg = <0x40322a00 0x100>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm11: pwm11@40322b00 {
+			compatible = "renesas,ra8-pwm";
+			divider = <RA_PWM_SOURCE_DIV_1>;
+			channel = <RA_PWM_CHANNEL_11>;
+			clocks = <&pclkd MSTPE 20>;
+			reg = <0x40322b00 0x100>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm12: pwm12@40322c00 {
+			compatible = "renesas,ra8-pwm";
+			divider = <RA_PWM_SOURCE_DIV_1>;
+			channel = <RA_PWM_CHANNEL_12>;
+			clocks = <&pclkd MSTPE 19>;
+			reg = <0x40322c00 0x100>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm13: pwm13@40322d00 {
+			compatible = "renesas,ra8-pwm";
+			divider = <RA_PWM_SOURCE_DIV_1>;
+			channel = <RA_PWM_CHANNEL_13>;
+			clocks = <&pclkd MSTPE 18>;
+			reg = <0x40322d00 0x100>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
 		option_setting_ofs: option_setting_ofs@300a100 {
 			compatible = "zephyr,memory-region";
 			reg = <0x0300a100 0x18>;
@@ -351,6 +492,70 @@
 			reg = <0x0300a200 0x100>;
 			zephyr,memory-region = "OPTION_SETTING_S";
 			status = "okay";
+		};
+
+		agt0: agt0@40221000 {
+			compatible = "renesas,ra-agt";
+			channel = <0>;
+			reg = <0x40221000 0x100>;
+			interrupts = <83 1>, <84 1>;
+			interrupt-names = "agti", "agtcmai";
+			renesas,count-source = "AGT_CLOCK_LOCO";
+			renesas,prescaler = <0>;
+			renesas,resolution = <16>;
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,ra-agt-counter";
+				status = "disabled";
+			};
+		};
+
+		agt1: agt0@40221100 {
+			compatible = "renesas,ra-agt";
+			channel = <1>;
+			reg = <0x40221100 0x100>;
+			interrupts = <85 1>, <86 1>;
+			interrupt-names = "agti", "agtcmai";
+			renesas,count-source = "AGT_CLOCK_LOCO";
+			renesas,prescaler = <0>;
+			renesas,resolution = <16>;
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,ra-agt-counter";
+				status = "disabled";
+			};
+		};
+
+		canfd_global: canfd_global@40380000 {
+			compatible = "renesas,ra-canfd-global";
+			interrupts = <40 1>, <41 1>;
+			interrupt-names = "rxf", "glerr";
+			clocks = <&pclka 0 0>, <&pclke 0 0>;
+			clock-names = "opclk", "ramclk";
+			reg = <0x40380000 0x4000>;
+			status = "disabled";
+
+			canfd0: canfd0 {
+				compatible = "renesas,ra-canfd";
+				channel = <0>;
+				interrupts = <43 12>, <44 12>, <45 12>;
+				interrupt-names = "err", "tx", "rx";
+				clocks = <&canfdclk MSTPC 27>;
+				clock-names = "dllclk";
+				status = "disabled";
+			};
+
+			canfd1: canfd1 {
+				compatible = "renesas,ra-canfd";
+				channel = <1>;
+				interrupts = <46 1>, <47 1>, <48 1>;
+				interrupt-names = "err", "tx", "rx";
+				clocks = <&canfdclk MSTPC 26>;
+				clock-names = "dllclk";
+				status = "disabled";
+			};
 		};
 	};
 };

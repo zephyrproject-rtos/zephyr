@@ -29,6 +29,7 @@
 		sw1 = &btn_usr;
 		sw2 = &btn_isp;
 		usart-0 = &flexcomm0;
+		mcuboot-button0 = &btn_wk;
 	};
 
 	leds {

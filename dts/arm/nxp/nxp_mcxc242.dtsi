@@ -13,3 +13,7 @@
 &flash0 {
 	reg = <0 DT_SIZE_K(64)>;
 };
+
+&usb {
+	no-voltage-regulator;
+};

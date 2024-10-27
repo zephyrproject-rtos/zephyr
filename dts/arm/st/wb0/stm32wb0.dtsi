@@ -165,7 +165,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x48000000 DT_SIZE_K(1)>;
-				clocks = <&rcc STM32_CLOCK_BUS_AHB0 (1 << 2)>;
+				clocks = <&rcc STM32_CLOCK(AHB0, 2)>;
 			};
 
 			gpiob: gpio@48100000 {
@@ -173,7 +173,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x48100000 DT_SIZE_K(1)>;
-				clocks = <&rcc STM32_CLOCK_BUS_AHB0 (1 << 3)>;
+				clocks = <&rcc STM32_CLOCK(AHB0, 3)>;
 			};
 		};
 
@@ -181,7 +181,7 @@
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x41004000 DT_SIZE_K(1)>;
 
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 (1 << 10)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 10)>;
 			resets = <&rctl STM32_RESET(APB1, 10)>;
 			interrupts = <8 0>;
 			status = "disabled";
@@ -190,9 +190,72 @@
 		lpuart1: serial@41005000 {
 			compatible = "st,stm32-lpuart", "st,stm32-uart";
 			reg = <0x41005000 DT_SIZE_K(1)>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 (1 << 8)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 8)>;
 			resets = <&rctl STM32_RESET(APB1, 8)>;
 			interrupts = <9 0>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@41000000 {
+			compatible = "st,stm32-i2c-v2";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x41000000 DT_SIZE_K(1)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 21)>;
+			interrupts = <3 0>;
+			interrupt-names = "combined";
+			status = "disabled";
+		};
+
+		spi3: spi@41007000 {
+			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x41007000 DT_SIZE_K(1)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 14)>;
+			interrupts = <7 0>;
+			status = "disabled";
+		};
+
+		adc1: adc@41006000 {
+			compatible = "st,stm32wb0-adc";
+			reg = <0x41006000 256>;
+			/* On STM32WB0, the two ADC clock domains (ANALOG / DIGITAL)
+			 * can be controlled independently. Expose this feature to
+			 * the driver by having two `clocks` property entries:
+			 *  - first entry is digital part of ADC block (always-on)
+			 *  - second entry is analog part of ADC block (on-demand)
+			 */
+			clocks = <&rcc STM32_CLOCK(APB1, 4)>,
+				 <&rcc STM32_CLOCK(APB1, 5)>;
+			interrupts = <12 0>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
+		dma1: dma@48700000 {
+			compatible = "st,stm32-dma-v2bis";
+			#dma-cells = <2>;
+			reg = <0x48700000 256>;
+			clocks = <&rcc STM32_CLOCK(AHB0, 0)>;
+			interrupts = <17 0 17 0 17 0 17 0 17 0 17 0 17 0 17 0>;
+			dma-requests = <8>;
+			dma-offset = <0>;
+			status = "disabled";
+		};
+
+		dmamux1: dmamux@48800000 {
+			compatible = "st,stm32-dmamux";
+			reg = <0x48800000 DT_SIZE_K(1)>;
+			/* `clocks` property is identical between DMA and DMAMUX
+			 * because they share a single common bit in RCC registers
+			 */
+			clocks = <&rcc STM32_CLOCK(AHB0, 0)>;
+			#dma-cells = <3>;
+			dma-channels = <8>;
+			dma-generators = <1>;
+			dma-requests= <25>;
 			status = "disabled";
 		};
 	};

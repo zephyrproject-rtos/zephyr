@@ -461,36 +461,41 @@ static inline void get_nibbles64(const uint8_t *src, size_t src_noff, uint8_t *d
 {
 	bool src_ba = (src_noff & 0x1UL) == 0;
 	bool dst_ba = (dst_noff & 0x1UL) == 0;
-	uint64_t *src64 = (uint64_t *)&src[src_noff / 2];
-	uint64_t *dst64 = (uint64_t *)&dst[dst_noff / 2];
+	uint32_t *src32 = (uint32_t *)&src[src_noff / 2];
+	uint32_t *dst32 = (uint32_t *)&dst[dst_noff / 2];
 
 	if (nlen == 16) {
 		/* dst must be aligned. */
 		if (src_ba) {
-			uint32_t *s32 = (uint32_t *)src64;
-			uint32_t *d32 = (uint32_t *)dst64;
-
-			d32[0] = s32[0];
-			d32[1] = s32[1];
+			dst32[0] = src32[0];
+			dst32[1] = src32[1];
 		} else {
-			uint64_t part_a = src64[0] >> 4;
-			uint64_t part_b = src64[1] << 60;
+			uint64_t src0 = src32[0] | ((uint64_t)src32[1] << 32);
+			uint64_t src1 = src32[2] | ((uint64_t)src32[3] << 32);
+			uint64_t part_a = src0 >> 4;
+			uint64_t part_b = src1 << 60;
+			uint64_t out = part_a | part_b;
 
-			dst64[0] = part_a | part_b;
+			dst32[0] = (uint32_t)out;
+			dst32[1] = (uint32_t)(out >> 32);
 		}
 		return;
 	}
 
+	uint64_t src0 = src32[0] | ((uint64_t)src32[1] << 32);
 	uint64_t mask = BIT64_MASK(nlen * 4) << (src_ba ? 0 : 4);
-	uint64_t src_d = src64[0] & mask;
+	uint64_t src_d = src0 & mask;
 
 	if (((src_noff ^ dst_noff) & 0x1UL) == 0) {
-		dst64[0] |= src_d;
+		/* nothing */
 	} else if (dst_ba) {
-		dst64[0] |= (src_d >> 4);
+		src_d >>= 4;
 	} else {
-		dst64[0] |= (src_d << 4);
+		src_d <<= 4;
 	}
+
+	dst32[0] |= (uint32_t)src_d;
+	dst32[1] |= (uint32_t)(src_d >> 32);
 }
 
 /* Function performs getting nibbles in less efficient way but does not use unaligned

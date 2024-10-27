@@ -217,7 +217,7 @@ In addition, TLS_SNI_HOSTNAME in main.c should be defined to match the
 Common Name (CN) in the certificate file in order for the TLS domain
 name verification to succeed.
 
-See the note on Provisioning and Fast Connect in :ref:`cc3220sf_launchxl`.
+See the note on Provisioning and Fast Connect in :zephyr:board:`cc3220sf_launchxl`.
 
 The Secure Socket Offload section has information on programming the
 certificate to flash.
@@ -372,3 +372,9 @@ This is the output from the MQTT broker:
 	1485663807: Received PUBREL from zephyr_publisher (Mid: 49829)
 	1485663807: Sending PUBCOMP to zephyr_publisher (Mid: 49829)
 	1485663808: Received DISCONNECT from zephyr_publisher
+
+Wi-Fi
+=====
+
+The IPv4 Wi-Fi support can be enabled in the sample with
+:ref:`Wi-Fi snippet <snippet-wifi-ipv4>`.

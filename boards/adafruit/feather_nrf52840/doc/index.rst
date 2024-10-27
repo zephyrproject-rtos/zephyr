@@ -1,7 +1,4 @@
-.. _adafruit_feather_nrf52840:
-
-Adafruit Feather nRF52840 (Express, Sense)
-##########################################
+.. zephyr:board:: adafruit_feather_nrf52840
 
 Overview
 ********

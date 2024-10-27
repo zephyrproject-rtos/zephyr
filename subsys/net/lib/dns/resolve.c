@@ -34,9 +34,9 @@ LOG_MODULE_REGISTER(net_dns_resolve, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 #define DNS_SERVER_COUNT CONFIG_DNS_RESOLVER_MAX_SERVERS
 #define SERVER_COUNT     (DNS_SERVER_COUNT + DNS_MAX_MCAST_SERVERS)
 
-extern void dns_dispatcher_svc_handler(struct k_work *work);
+extern void dns_dispatcher_svc_handler(struct net_socket_service_event *pev);
 
-NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(resolve_svc, NULL, dns_dispatcher_svc_handler,
+NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(resolve_svc, dns_dispatcher_svc_handler,
 				      DNS_RESOLVER_MAX_POLL);
 
 #define MDNS_IPV4_ADDR "224.0.0.251:5353"
@@ -1300,7 +1300,7 @@ int dns_resolve_name(struct dns_resolve_context *ctx,
 
 try_resolve:
 #ifdef CONFIG_DNS_RESOLVER_CACHE
-	ret = dns_cache_find(&dns_cache, query, cached_info, sizeof(cached_info));
+	ret = dns_cache_find(&dns_cache, query, cached_info, ARRAY_SIZE(cached_info));
 	if (ret > 0) {
 		/* The query was cached, no
 		 * need to continue further.

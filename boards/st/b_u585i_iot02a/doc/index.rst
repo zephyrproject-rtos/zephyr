@@ -1,7 +1,4 @@
-.. _b_u585i_iot02a_board:
-
-ST B_U585I_IOT02A Discovery kit
-###############################
+.. zephyr:board:: b_u585i_iot02a
 
 Overview
 ********
@@ -34,10 +31,6 @@ some highlights of the B_U585I_IOT02A Discovery kit:
     - USB Vbus
     - External sources
 
-
-.. image:: img/b-u585i-iot02a.jpg
-     :align: center
-     :alt: B_U585I_IOT02A Discovery kit
 
 More information about the board can be found at the `B U585I IOT02A Discovery kit website`_.
 

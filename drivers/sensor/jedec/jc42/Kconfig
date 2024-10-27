@@ -23,11 +23,13 @@ config JC42_TRIGGER_NONE
 
 config JC42_TRIGGER_GLOBAL_THREAD
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_JEDEC_JC_42_4_TEMP),int-gpios)
 	select JC42_TRIGGER
 	bool "Use global thread"
 
 config JC42_TRIGGER_OWN_THREAD
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_JEDEC_JC_42_4_TEMP),int-gpios)
 	select JC42_TRIGGER
 	bool "Use own thread"
 

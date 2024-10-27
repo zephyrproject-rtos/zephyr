@@ -620,7 +620,7 @@ uint32_t radio_is_done(void)
 		 * Note: this depends on the function being called exactly once
 		 * in the ISR function.
 		 */
-		last_pdu_end_us += EVENT_TIMER->CC[2];
+		last_pdu_end_us += EVENT_TIMER->CC[HAL_EVENT_TIMER_TRX_END_CC_OFFSET];
 		return 1;
 	} else {
 		return 0;
@@ -1153,6 +1153,56 @@ uint32_t radio_bc_has_match(void)
 	return (NRF_RADIO->EVENTS_BCMATCH != 0);
 }
 
+#if defined(CONFIG_BT_CTLR_RADIO_TIMER_ISR)
+static radio_isr_cb_t isr_radio_tmr_cb;
+static void           *isr_radio_tmr_cb_param;
+
+void isr_radio_tmr(void)
+{
+	irq_disable(TIMER0_IRQn);
+	nrf_timer_int_disable(EVENT_TIMER, TIMER_INTENSET_COMPARE2_Msk);
+	nrf_timer_event_clear(EVENT_TIMER, HAL_EVENT_TIMER_DEFERRED_TX_EVENT);
+
+	isr_radio_tmr_cb(isr_radio_tmr_cb_param);
+}
+
+uint32_t radio_tmr_isr_set(uint32_t start_us, radio_isr_cb_t cb, void *param)
+{
+	irq_disable(TIMER0_IRQn);
+
+	isr_radio_tmr_cb_param = param;
+	isr_radio_tmr_cb = cb;
+
+	/* start_us could be the current count in the timer */
+	uint32_t now_us = start_us;
+
+	/* Setup timer compare while determining the latency in doing so */
+	do {
+		/* Set start to be, now plus the determined latency */
+		start_us = (now_us << 1) - start_us;
+
+		/* Setup compare event with min. 1 us offset */
+		nrf_timer_event_clear(EVENT_TIMER, HAL_EVENT_TIMER_DEFERRED_TX_EVENT);
+		nrf_timer_cc_set(EVENT_TIMER, HAL_EVENT_TIMER_DEFERRED_TRX_CC_OFFSET,
+				 start_us + 1U);
+
+		/* Capture the current time */
+		nrf_timer_task_trigger(EVENT_TIMER, HAL_EVENT_TIMER_SAMPLE_TASK);
+
+		now_us = EVENT_TIMER->CC[HAL_EVENT_TIMER_SAMPLE_CC_OFFSET];
+	} while ((now_us > start_us) &&
+		 (EVENT_TIMER->EVENTS_COMPARE[HAL_EVENT_TIMER_DEFERRED_TRX_CC_OFFSET] == 0U));
+
+	nrf_timer_int_enable(EVENT_TIMER, TIMER_INTENSET_COMPARE2_Msk);
+
+	NVIC_ClearPendingIRQ(TIMER0_IRQn);
+
+	irq_enable(TIMER0_IRQn);
+
+	return start_us + 1U;
+}
+#endif /* CONFIG_BT_CTLR_RADIO_TIMER_ISR */
+
 void radio_tmr_status_reset(void)
 {
 #if defined(CONFIG_BT_CTLR_NRF_GRTC)
@@ -1349,10 +1399,12 @@ uint32_t radio_tmr_start(uint8_t trx, uint32_t ticks_start, uint32_t remainder)
 	 * by the Radio ISR, the compare will trigger again.
 	 */
 	uint32_t latency_ticks;
+	uint32_t latency_us;
 
-	latency_ticks = HAL_TICKER_US_TO_TICKS(HAL_RADIO_ISR_LATENCY_MAX_US);
+	latency_us = MAX(remainder, HAL_RADIO_ISR_LATENCY_MAX_US) - remainder;
+	latency_ticks = HAL_TICKER_US_TO_TICKS(latency_us);
 	ticks_start -= latency_ticks;
-	remainder += HAL_TICKER_TICKS_TO_US(latency_ticks);
+	remainder += latency_us;
 #endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
 	nrf_timer_task_trigger(EVENT_TIMER, NRF_TIMER_TASK_CLEAR);
@@ -1360,7 +1412,7 @@ uint32_t radio_tmr_start(uint8_t trx, uint32_t ticks_start, uint32_t remainder)
 	EVENT_TIMER->PRESCALER = HAL_EVENT_TIMER_PRESCALER_VALUE;
 	EVENT_TIMER->BITMODE = 2;	/* 24 - bit */
 
-	nrf_timer_cc_set(EVENT_TIMER, 0, remainder);
+	nrf_timer_cc_set(EVENT_TIMER, HAL_EVENT_TIMER_TRX_CC_OFFSET, remainder);
 
 #if defined(CONFIG_BT_CTLR_NRF_GRTC)
 	uint32_t cntr_l, cntr_h, cntr_h_overflow, stale;
@@ -1473,16 +1525,18 @@ uint32_t radio_tmr_start_tick(uint8_t trx, uint32_t ticks_start)
 	 * by the Radio ISR, the compare will trigger again.
 	 */
 	uint32_t latency_ticks;
+	uint32_t latency_us;
 
-	latency_ticks = HAL_TICKER_US_TO_TICKS(HAL_RADIO_ISR_LATENCY_MAX_US);
+	latency_us = MAX(remainder_us, HAL_RADIO_ISR_LATENCY_MAX_US) - remainder_us;
+	latency_ticks = HAL_TICKER_US_TO_TICKS(latency_us);
 	ticks_start -= latency_ticks;
-	remainder_us += HAL_TICKER_TICKS_TO_US(latency_ticks);
+	remainder_us += latency_us;
 #endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
 	nrf_timer_task_trigger(EVENT_TIMER, NRF_TIMER_TASK_STOP);
 	nrf_timer_task_trigger(EVENT_TIMER, NRF_TIMER_TASK_CLEAR);
 
-	nrf_timer_cc_set(EVENT_TIMER, 0, remainder_us);
+	nrf_timer_cc_set(EVENT_TIMER, HAL_EVENT_TIMER_TRX_CC_OFFSET, remainder_us);
 
 #if defined(CONFIG_BT_CTLR_NRF_GRTC)
 	uint32_t cntr_l, cntr_h, cntr_h_overflow, stale;
@@ -1598,7 +1652,7 @@ uint32_t radio_tmr_start_us(uint8_t trx, uint32_t start_us)
 	uint32_t now_us = start_us;
 	uint32_t actual_us;
 
-	/* Setup PPI while determining the latency in doing so */
+	/* Setup timer compare while determining the latency in doing so */
 	do {
 		/* Set start to be, now plus the determined latency */
 		start_us = (now_us << 1) - start_us;
@@ -1614,21 +1668,21 @@ uint32_t radio_tmr_start_us(uint8_t trx, uint32_t start_us)
 		 * The timer is cleared on Radio End and if the PPI/DPPI is not disabled
 		 * by the Radio ISR, the compare will trigger again.
 		 */
-		uint32_t latency_ticks;
+		uint32_t latency_us;
 
-		latency_ticks = HAL_TICKER_US_TO_TICKS(HAL_RADIO_ISR_LATENCY_MAX_US);
-		actual_us += HAL_TICKER_TICKS_TO_US(latency_ticks);
+		latency_us = MAX(actual_us, HAL_RADIO_ISR_LATENCY_MAX_US) - actual_us;
+		actual_us += latency_us;
 #endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
-		nrf_timer_event_clear(EVENT_TIMER, NRF_TIMER_EVENT_COMPARE0);
-		nrf_timer_cc_set(EVENT_TIMER, 0, actual_us);
+		nrf_timer_event_clear(EVENT_TIMER, HAL_EVENT_TIMER_TRX_EVENT);
+		nrf_timer_cc_set(EVENT_TIMER, HAL_EVENT_TIMER_TRX_CC_OFFSET, actual_us);
 
 		/* Capture the current time */
-		nrf_timer_task_trigger(EVENT_TIMER,
-				       HAL_EVENT_TIMER_SAMPLE_TASK);
+		nrf_timer_task_trigger(EVENT_TIMER, HAL_EVENT_TIMER_SAMPLE_TASK);
 
 		now_us = EVENT_TIMER->CC[HAL_EVENT_TIMER_SAMPLE_CC_OFFSET];
-	} while ((now_us > start_us) && (EVENT_TIMER->EVENTS_COMPARE[0] == 0U));
+	} while ((now_us > start_us) &&
+		 (EVENT_TIMER->EVENTS_COMPARE[HAL_EVENT_TIMER_TRX_CC_OFFSET] == 0U));
 
 	return actual_us;
 }
@@ -1684,7 +1738,7 @@ void radio_tmr_stop(void)
 
 void radio_tmr_hcto_configure(uint32_t hcto)
 {
-	nrf_timer_cc_set(EVENT_TIMER, 1, hcto);
+	nrf_timer_cc_set(EVENT_TIMER, HAL_EVENT_TIMER_HCTO_CC_OFFSET, hcto);
 
 	hal_radio_recv_timeout_cancel_ppi_config();
 	hal_radio_disable_on_hcto_ppi_config();
@@ -1704,7 +1758,7 @@ void radio_tmr_aa_capture(void)
 
 uint32_t radio_tmr_aa_get(void)
 {
-	return EVENT_TIMER->CC[1];
+	return EVENT_TIMER->CC[HAL_EVENT_TIMER_HCTO_CC_OFFSET];
 }
 
 static uint32_t radio_tmr_aa;
@@ -1722,7 +1776,7 @@ uint32_t radio_tmr_aa_restore(void)
 
 uint32_t radio_tmr_ready_get(void)
 {
-	return EVENT_TIMER->CC[0];
+	return EVENT_TIMER->CC[HAL_EVENT_TIMER_TRX_CC_OFFSET];
 }
 
 static uint32_t radio_tmr_ready;
@@ -1761,7 +1815,7 @@ uint32_t radio_tmr_end_get(void)
 #if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
 	return last_pdu_end_us;
 #else /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
-	return EVENT_TIMER->CC[2];
+	return EVENT_TIMER->CC[HAL_EVENT_TIMER_TRX_END_CC_OFFSET];
 #endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 }
 
@@ -1905,9 +1959,10 @@ void radio_gpio_lna_off(void)
 
 void radio_gpio_pa_lna_enable(uint32_t trx_us)
 {
-	nrf_timer_cc_set(EVENT_TIMER, 2, trx_us);
+	nrf_timer_cc_set(EVENT_TIMER, HAL_EVENT_TIMER_PA_LNA_CC_OFFSET, trx_us);
 #if defined(HAL_RADIO_FEM_IS_NRF21540) && DT_NODE_HAS_PROP(FEM_NODE, pdn_gpios)
-	nrf_timer_cc_set(EVENT_TIMER, 3, (trx_us - NRF_GPIO_PDN_OFFSET));
+	nrf_timer_cc_set(EVENT_TIMER, HAL_EVENT_TIMER_PA_LNA_PDN_CC_OFFSET,
+			 (trx_us - NRF_GPIO_PDN_OFFSET));
 	hal_radio_nrf_ppi_channels_enable(BIT(HAL_ENABLE_PALNA_PPI) |
 					  BIT(HAL_DISABLE_PALNA_PPI) |
 					  BIT(HAL_ENABLE_FEM_PPI) |
@@ -2052,7 +2107,7 @@ static void *radio_ccm_ext_rx_pkt_set(struct ccm *cnf, uint8_t phy, uint8_t pdu_
 	NRF_CCM->SCRATCHPTR = (uint32_t)_ccm_scratch;
 	NRF_CCM->SHORTS = 0;
 	nrf_ccm_event_clear(NRF_CCM, NRF_CCM_EVENT_ENDKSGEN);
-	nrf_ccm_event_clear(NRF_CCM, NRF_CCM_EVENT_ENDCRYPT);
+	nrf_ccm_event_clear(NRF_CCM, NRF_CCM_EVENT_END);
 	nrf_ccm_event_clear(NRF_CCM, NRF_CCM_EVENT_ERROR);
 
 	nrf_ccm_task_trigger(NRF_CCM, NRF_CCM_TASK_KSGEN);
@@ -2127,7 +2182,7 @@ static void *radio_ccm_ext_tx_pkt_set(struct ccm *cnf, uint8_t pdu_type, void *p
 	NRF_CCM->SCRATCHPTR = (uint32_t)_ccm_scratch;
 	NRF_CCM->SHORTS = CCM_SHORTS_ENDKSGEN_CRYPT_Msk;
 	nrf_ccm_event_clear(NRF_CCM, NRF_CCM_EVENT_ENDKSGEN);
-	nrf_ccm_event_clear(NRF_CCM, NRF_CCM_EVENT_ENDCRYPT);
+	nrf_ccm_event_clear(NRF_CCM, NRF_CCM_EVENT_END);
 	nrf_ccm_event_clear(NRF_CCM, NRF_CCM_EVENT_ERROR);
 
 	nrf_ccm_task_trigger(NRF_CCM, NRF_CCM_TASK_KSGEN);

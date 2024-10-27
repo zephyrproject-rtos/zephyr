@@ -289,15 +289,19 @@ static int bt_esp32_ble_init(void)
 #endif
 
 	ret = esp_bt_controller_init(&bt_cfg);
-	if (ret) {
-		LOG_ERR("Bluetooth controller init failed %d", ret);
-		return ret;
+	if (ret == ESP_ERR_NO_MEM) {
+		LOG_ERR("Not enough memory to initialize Bluetooth.");
+		LOG_ERR("Consider increasing CONFIG_HEAP_MEM_POOL_SIZE value.");
+		return -ENOMEM;
+	} else if (ret != ESP_OK) {
+		LOG_ERR("Unable to initialize the Bluetooth: %d", ret);
+		return -EIO;
 	}
 
 	ret = esp_bt_controller_enable(mode);
 	if (ret) {
 		LOG_ERR("Bluetooth controller enable failed: %d", ret);
-		return ret;
+		return -EIO;
 	}
 
 	esp_vhci_host_register_callback(&vhci_host_cb);

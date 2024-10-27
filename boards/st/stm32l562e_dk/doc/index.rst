@@ -1,7 +1,4 @@
-.. _stm32l562e_dk_board:
-
-ST STM32L562E-DK Discovery
-##########################
+.. zephyr:board:: stm32l562e_dk
 
 Overview
 ********
@@ -42,10 +39,6 @@ the STM32L562E-DK Discovery board:
 
 - 2 user LEDs
 - User and reset push-buttons
-
-.. image:: img/stm32l562e_dk.jpg
-   :align: center
-   :alt: STM32L562E-DK Discovery
 
 More information about the board can be found at the `STM32L562E-DK Discovery website`_.
 

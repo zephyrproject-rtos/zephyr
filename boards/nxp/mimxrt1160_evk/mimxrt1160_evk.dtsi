@@ -15,6 +15,7 @@
 		magn0 = &fxos8700;
 		accel0 = &fxos8700;
 		sdhc0 = &usdhc1;
+		mcuboot-button0 = &user_button;
 	};
 
 	leds {
@@ -94,7 +95,7 @@
 		compatible = "nxp,imx-flexspi-nor";
 		size = <DT_SIZE_M(16*8)>;
 		reg = <0>;
-		spi-max-frequency = <133000000>;
+		spi-max-frequency = <104000000>;
 		status = "okay";
 		jedec-id = [9d 70 17];
 		erase-block-size = <4096>;

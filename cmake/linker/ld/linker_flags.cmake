@@ -7,10 +7,6 @@ check_set_linker_property(TARGET linker PROPERTY base
                           ${LINKERFLAGPREFIX},--build-id=none
 )
 
-if(NOT CONFIG_MINIMAL_LIBCPP AND NOT CONFIG_NATIVE_LIBRARY AND NOT CONFIG_EXTERNAL_MODULE_LIBCPP)
-  set_property(TARGET linker PROPERTY cpp_base -lstdc++)
-endif()
-
 check_set_linker_property(TARGET linker PROPERTY baremetal
                           -nostdlib
                           -static
@@ -40,7 +36,7 @@ endif()
 
 set_property(TARGET linker PROPERTY partial_linking "-r")
 
-set_property(TARGET linker PROPERTY lto_arguments -flto -fno-ipa-sra -ffunction-sections -fdata-sections)
+set_property(TARGET linker PROPERTY lto_arguments -flto=auto -fno-ipa-sra -ffunction-sections -fdata-sections)
 
 check_set_linker_property(TARGET linker PROPERTY no_relax ${LINKERFLAGPREFIX},--no-relax)
 

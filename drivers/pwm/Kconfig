@@ -108,4 +108,8 @@ source "drivers/pwm/Kconfig.nxp_flexio"
 
 source "drivers/pwm/Kconfig.ene"
 
+source "drivers/pwm/Kconfig.renesas_ra8"
+
+source "drivers/pwm/Kconfig.ifx_cat1"
+
 endif # PWM

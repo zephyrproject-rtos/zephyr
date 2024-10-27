@@ -74,6 +74,12 @@ def main():
             out_comment("Node's name with unit-address:")
             out_dt_define(f"{node.z_path_id}_FULL_NAME",
                           f'"{escape(node.name)}"')
+            out_dt_define(f"{node.z_path_id}_FULL_NAME_UNQUOTED",
+                          f'{escape(node.name)}')
+            out_dt_define(f"{node.z_path_id}_FULL_NAME_TOKEN",
+                          f'{edtlib.str_as_token(escape(node.name))}')
+            out_dt_define(f"{node.z_path_id}_FULL_NAME_UPPER_TOKEN",
+                          f'{edtlib.str_as_token(escape(node.name)).upper()}')
 
             if node.parent is not None:
                 out_comment(f"Node parent ({node.parent.path}) identifier:")
@@ -582,12 +588,7 @@ def write_vanilla_props(node: edtlib.Node) -> None:
             macro2val[macro] = val
 
         if prop.spec.type == 'string':
-            # DT_N_<node-id>_P_<prop-id>_IDX_<i>_STRING_UNQUOTED
-            macro2val[macro + "_STRING_UNQUOTED"] = prop.val
-            # DT_N_<node-id>_P_<prop-id>_IDX_<i>_STRING_TOKEN
-            macro2val[macro + "_STRING_TOKEN"] = prop.val_as_token
-            # DT_N_<node-id>_P_<prop-id>_IDX_<i>_STRING_UPPER_TOKEN
-            macro2val[macro + "_STRING_UPPER_TOKEN"] = prop.val_as_token.upper()
+            macro2val.update(string_macros(macro, prop.val))
             # DT_N_<node-id>_P_<prop-id>_IDX_0:
             # DT_N_<node-id>_P_<prop-id>_IDX_0_EXISTS:
             # Allows treating the string like a degenerate case of a
@@ -595,45 +596,13 @@ def write_vanilla_props(node: edtlib.Node) -> None:
             macro2val[macro + "_IDX_0"] = quote_str(prop.val)
             macro2val[macro + "_IDX_0_EXISTS"] = 1
 
-        if prop.enum_index is not None:
-            # DT_N_<node-id>_P_<prop-id>_ENUM_IDX
-            macro2val[macro + "_ENUM_IDX"] = prop.enum_index
-            spec = prop.spec
-
-            if spec.enum_tokenizable:
-                as_token = prop.val_as_token
-
-                # DT_N_<node-id>_P_<prop-id>_ENUM_VAL_<val>_EXISTS 1
-                macro2val[macro + f"_ENUM_VAL_{as_token}_EXISTS"] = 1
-                # DT_N_<node-id>_P_<prop-id>_ENUM_TOKEN
-                macro2val[macro + "_ENUM_TOKEN"] = as_token
-
-                if spec.enum_upper_tokenizable:
-                    # DT_N_<node-id>_P_<prop-id>_ENUM_UPPER_TOKEN
-                    macro2val[macro + "_ENUM_UPPER_TOKEN"] = as_token.upper()
-            else:
-                # DT_N_<node-id>_P_<prop-id>_ENUM_VAL_<val>_EXISTS 1
-                macro2val[macro + f"_ENUM_VAL_{prop.val}_EXISTS"] = 1
+        if prop.enum_indices is not None:
+            macro2val.update(enum_macros(prop, macro))
 
         if "phandle" in prop.type:
             macro2val.update(phandle_macros(prop, macro))
         elif "array" in prop.type:
-            for i, subval in enumerate(prop.val):
-                # DT_N_<node-id>_P_<prop-id>_IDX_<i>
-                # DT_N_<node-id>_P_<prop-id>_IDX_<i>_EXISTS
-
-                if isinstance(subval, str):
-                    macro2val[macro + f"_IDX_{i}"] = quote_str(subval)
-                    subval_as_token = edtlib.str_as_token(subval)
-                    # DT_N_<node-id>_P_<prop-id>_IDX_<i>_STRING_UNQUOTED
-                    macro2val[macro + f"_IDX_{i}_STRING_UNQUOTED"] = subval
-                    # DT_N_<node-id>_P_<prop-id>_IDX_<i>_STRING_TOKEN
-                    macro2val[macro + f"_IDX_{i}_STRING_TOKEN"] = subval_as_token
-                    # DT_N_<node-id>_P_<prop-id>_IDX_<i>_STRING_UPPER_TOKEN
-                    macro2val[macro + f"_IDX_{i}_STRING_UPPER_TOKEN"] = subval_as_token.upper()
-                else:
-                    macro2val[macro + f"_IDX_{i}"] = subval
-                macro2val[macro + f"_IDX_{i}_EXISTS"] = 1
+            macro2val.update(array_macros(prop, macro))
 
         plen = prop_len(prop)
         if plen is not None:
@@ -673,6 +642,66 @@ def write_vanilla_props(node: edtlib.Node) -> None:
             out_dt_define(macro, val)
     else:
         out_comment("(No generic property macros)")
+
+
+def string_macros(macro: str, val: str):
+    # Returns a dict of macros for a string 'val'.
+    # The 'macro' argument is the N_<node-id>_P_<prop-id>... part.
+
+    as_token = edtlib.str_as_token(val)
+    return {
+        # DT_N_<node-id>_P_<prop-id>_IDX_<i>_STRING_UNQUOTED
+        f"{macro}_STRING_UNQUOTED": escape_unquoted(val),
+        # DT_N_<node-id>_P_<prop-id>_IDX_<i>_STRING_TOKEN
+        f"{macro}_STRING_TOKEN": as_token,
+        # DT_N_<node-id>_P_<prop-id>_IDX_<i>_STRING_UPPER_TOKEN
+        f"{macro}_STRING_UPPER_TOKEN": as_token.upper()}
+
+
+def enum_macros(prop: edtlib.Property, macro: str):
+    # Returns a dict of macros for property 'prop' with a defined enum in their dt-binding.
+    # The 'macro' argument is the N_<node-id>_P_<prop-id> part.
+
+    spec = prop.spec
+    # DT_N_<node-id>_P_<prop-id>_IDX_<i>_ENUM_IDX
+    ret = {f"{macro}_IDX_{i}_ENUM_IDX": index for i, index in enumerate(prop.enum_indices)}
+    val = prop.val_as_tokens if spec.enum_tokenizable else (prop.val if isinstance(prop.val, list) else [prop.val])
+
+    for i, subval in enumerate(val):
+        # DT_N_<node-id>_P_<prop-id>_IDX_<i>_EXISTS
+        ret[macro + f"_IDX_{i}_EXISTS"] = 1
+        # DT_N_<node-id>_P_<prop-id>_IDX_<i>_ENUM_VAL_<val>_EXISTS 1
+        ret[macro + f"_IDX_{i}_ENUM_VAL_{subval}_EXISTS"] = 1
+        if not spec.enum_tokenizable:
+            continue
+
+        # DT_N_<node-id>_P_<prop-id>_IDX_<i>_ENUM_TOKEN
+        ret[macro + f"_IDX_{i}_ENUM_TOKEN"] = subval
+        if spec.enum_upper_tokenizable:
+            # DT_N_<node-id>_P_<prop-id>_IDX_<i>_ENUM_UPPER_TOKEN
+            ret[macro + f"_IDX_{i}_ENUM_UPPER_TOKEN"] = subval.upper()
+
+    return ret
+
+
+def array_macros(prop: edtlib.Property, macro: str):
+    # Returns a dict of macros for array property 'prop'.
+    # The 'macro' argument is the N_<node-id>_P_<prop-id> part.
+
+    ret = {}
+    for i, subval in enumerate(prop.val):
+        # DT_N_<node-id>_P_<prop-id>_IDX_<i>_EXISTS
+        ret[macro + f"_IDX_{i}_EXISTS"] = 1
+
+        # DT_N_<node-id>_P_<prop-id>_IDX_<i>
+        if isinstance(subval, str):
+            ret[macro + f"_IDX_{i}"] = quote_str(subval)
+            # DT_N_<node-id>_P_<prop-id>_IDX_<i>_STRING_...
+            ret.update(string_macros(macro + f"_IDX_{i}", subval))
+        else:
+            ret[macro + f"_IDX_{i}"] = subval
+
+    return ret
 
 
 def write_dep_info(node: edtlib.Node) -> None:
@@ -1020,11 +1049,20 @@ def out_comment(s: str, blank_before=True) -> None:
         print("/* " + s + " */", file=header_file)
 
 
-def escape(s: str) -> str:
-    # Backslash-escapes any double quotes and backslashes in 's'
+ESCAPE_TABLE = str.maketrans(
+    {
+        "\n": "\\n",
+        "\r": "\\r",
+        "\\": "\\\\",
+        '"': '\\"',
+    }
+)
 
-    # \ must be escaped before " to avoid double escaping
-    return s.replace("\\", "\\\\").replace('"', '\\"')
+
+def escape(s: str) -> str:
+    # Backslash-escapes any double quotes, backslashes, and new lines in 's'
+
+    return s.translate(ESCAPE_TABLE)
 
 
 def quote_str(s: str) -> str:
@@ -1032,6 +1070,15 @@ def quote_str(s: str) -> str:
     # backslashes within it
 
     return f'"{escape(s)}"'
+
+
+def escape_unquoted(s: str) -> str:
+    # C macros cannot contain line breaks, so replace them with spaces.
+    # Whitespace is used to separate preprocessor tokens, but it does not matter
+    # which whitespace characters are used, so a line break and a space are
+    # equivalent with regards to unquoted strings being used as C code.
+
+    return s.replace("\r", " ").replace("\n", " ")
 
 
 def err(s: str) -> NoReturn:

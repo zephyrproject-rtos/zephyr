@@ -1,0 +1,139 @@
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+
+    <title>Zephyr WS Console</title>
+
+    <script language="javascript" type="text/javascript">
+var connected;
+var ws;
+
+function init() {
+	ws = new WebSocket(location.origin.replace("http", "ws") + "/console");
+
+	ws.onopen = function() {
+		output("Connection opened");
+		connected = "true";
+		// No need to print Escape codes for colors
+		ws.send("shell colors off\n");
+	};
+
+	ws.onmessage = function(e) {
+		zconsole(new Date().timeNow() + " : " + e.data.trim());
+	};
+
+	ws.onclose = function() {
+		output("Connection closed");
+		connected = "false";
+		changeCloseText();
+	};
+
+	ws.onerror = function(e) {
+		output("Error: " + e.data);
+	};
+}
+
+Date.prototype.timeNow = function () {
+	return ((this.getHours() < 10)?"0":"") + this.getHours() +":"+
+	       ((this.getMinutes() < 10)?"0":"") + this.getMinutes() +":"+
+	       ((this.getSeconds() < 10)?"0":"") + this.getSeconds();
+}
+
+function onSendClick() {
+	var input = document.getElementById("prompt");
+	if (connected == "false") {
+		output("Not connected");
+		input.value = "";
+		input.focus();
+		return;
+	}
+
+	output("Sending: " + input.value);
+	ws.send(input.value + "\n");
+	input.value = "";
+	input.focus();
+}
+
+function changeCloseText() {
+	if (connected == "false") {
+		document.getElementById("closebutton").innerText= "Connect";
+	} else {
+		document.getElementById("closebutton").innerText= "Close";
+	}
+}
+
+function onCloseClick() {
+	if (connected == "true") {
+		ws.close();
+		connected = "false";
+		changeCloseText();
+	} else {
+		changeCloseText();
+		wsConnect();
+	}
+}
+
+function wsConnect() {
+	if (connected == "false") {
+		location.reload();
+	}
+}
+
+function scrollToBottom(id){
+	var div = document.getElementById(id);
+	div.scrollTop = div.scrollHeight - div.clientHeight;
+}
+
+function zconsole(str) {
+	var log = document.getElementById("zconsoleline");
+	var escaped = str.replace(/&/, "&amp;").replace(/</, "&lt;").
+		replace(/>/, "&gt;").replace(/\u000d/, "").
+		replace(/\u000a/, "").replace(/\[0\;31m/, "<em>").
+		replace(/\[0m/, "</em>").replace(/"/, "&quot;"); // "
+	log.innerHTML = log.innerHTML + escaped + "<br>";
+	scrollToBottom("zconsole");
+}
+
+function output(str) {
+	var log = document.getElementById("output");
+	var escaped = str.replace(/&/, "&amp;").replace(/</, "&lt;").
+		replace(/>/, "&gt;").replace(/"/, "&quot;"); // "
+	log.innerHTML = log.innerHTML + escaped + "<br>";
+	scrollToBottom("output");
+}
+
+  </script>
+</head>
+
+<body onload="init();">
+  <div id="container" class="container">
+    <div class="textcontainer">
+      <div id="zconsole" class="zconsole">
+	<p id="zconsoleline"></p>
+      </div>
+      <div id="output" class="output">
+      </div>
+    </div>
+    <div id="inputbar" class="inputbar">
+      <table class="inputtable">
+	<tr class="inputrow">
+	  <td class="input_cell">
+	    <label for="prompt" class="command_prompt">Command:</label>
+	    <input id="prompt" type="text" size="32"
+		   onkeydown="if (event.keyCode == 13)
+			      document.getElementById('sendbutton').click()" />
+	    <button type="button" id="sendbutton"
+		    onclick="onSendClick()">Send</button>
+	  </td>
+	  <td class="close_cell">
+	    <button type="button" id="closebutton"
+		    onclick="onCloseClick()">Close</button>
+	  </td>
+	</tr>
+      </table>
+    </div>
+  </div>
+</body>
+</html>

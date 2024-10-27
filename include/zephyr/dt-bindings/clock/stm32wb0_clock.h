@@ -49,7 +49,7 @@
  * @note 'mask' range:	0x00~0x1F	[ 22 : 26 ]
  * @note 'val' range:	0x00~0x1F	[ 27 : 31 ]
  */
-#define STM32_CLOCK(val, mask, shift, reg)				\
+#define STM32_DOMAIN_CLOCK(val, mask, shift, reg)				\
 	((((reg) & STM32_CLOCK_REG_MASK) << STM32_CLOCK_REG_SHIFT) |		\
 	 (((shift) & STM32_CLOCK_SHIFT_MASK) << STM32_CLOCK_SHIFT_SHIFT) |	\
 	 (((mask) & STM32_CLOCK_MASK_MASK) << STM32_CLOCK_MASK_SHIFT) |		\
@@ -62,9 +62,9 @@
 #define APB2ENR_REG	0x60
 
 /** @brief Device clk sources selection helpers */
-#define LPUART1_SEL(val)	STM32_CLOCK(val, 1, 13, CFGR_REG)	/* WB05/WB09 only */
-#define SPI2_I2S2_SEL(val)	STM32_CLOCK(val, 1, 22, CFGR_REG)	/* WB06/WB07 only */
+#define LPUART1_SEL(val)	STM32_DOMAIN_CLOCK(val, 1, 13, CFGR_REG)	/* WB05/WB09 only */
+#define SPI2_I2S2_SEL(val)	STM32_DOMAIN_CLOCK(val, 1, 22, CFGR_REG)	/* WB06/WB07 only */
 /* `mask` is only 0x1 for WB06/WB07, but a single definition with mask=0x3 is acceptable */
-#define SPI3_I2S3_SEL(val)	STM32_CLOCK(val, 3, 22, CFGR_REG)
+#define SPI3_I2S3_SEL(val)	STM32_DOMAIN_CLOCK(val, 3, 22, CFGR_REG)
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32WB0_CLOCK_H_ */

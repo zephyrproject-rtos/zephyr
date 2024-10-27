@@ -29,9 +29,19 @@
 			front-right;
 		};
 
+		out_feature_unit: out_feature_unit {
+			compatible = "zephyr,uac2-feature-unit";
+			data-source = <&out_terminal>;
+			mute-control = "host-programmable";
+			automatic-gain-control =
+				"host-programmable" /* Primary */,
+				"host-programmable" /* Channel 1 */,
+				"host-programmable" /* Channel 2 */;
+		};
+
 		headphones_output: headphones {
 			compatible = "zephyr,uac2-output-terminal";
-			data-source = <&out_terminal>;
+			data-source = <&out_feature_unit>;
 			clock-source = <&uac_aclk>;
 			terminal-type = <BIDIRECTIONAL_TERMINAL_HEADSET>;
 			assoc-terminal = <&mic_input>;
@@ -50,9 +60,18 @@
 			front-left;
 		};
 
+		in_feature_unit: in_feature_unit {
+			compatible = "zephyr,uac2-feature-unit";
+			data-source = <&mic_input>;
+			mute-control = "host-programmable";
+			automatic-gain-control =
+				"not-present" /* Primary */,
+				"host-programmable" /* Channel 1 */;
+		};
+
 		in_terminal: in_terminal {
 			compatible = "zephyr,uac2-output-terminal";
-			data-source = <&mic_input>;
+			data-source = <&in_feature_unit>;
 			clock-source = <&uac_aclk>;
 			terminal-type = <USB_TERMINAL_STREAMING>;
 		};

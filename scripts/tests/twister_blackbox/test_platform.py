@@ -14,6 +14,7 @@ import pytest
 import sys
 import json
 
+# pylint: disable=no-name-in-module
 from conftest import ZEPHYR_BASE, TEST_DATA, testsuite_filename_mock
 from twisterlib.testplan import TestPlan
 
@@ -30,10 +31,11 @@ class TestPlatform:
                 'skipped_configurations': 3,
                 'skipped_by_static_filter': 3,
                 'skipped_at_runtime': 0,
-                'passed_configurations': 6,
+                'passed_configurations': 4,
+                'built_configurations': 2,
                 'failed_configurations': 0,
                 'errored_configurations': 0,
-                'executed_test_cases': 10,
+                'executed_test_cases': 8,
                 'skipped_test_cases': 5,
                 'platform_count': 3,
                 'executed_on_platform': 4,
@@ -50,6 +52,7 @@ class TestPlatform:
                 'skipped_by_static_filter': 3,
                 'skipped_at_runtime': 0,
                 'passed_configurations': 0,
+                'built_configurations': 0,
                 'failed_configurations': 0,
                 'errored_configurations': 0,
                 'executed_test_cases': 0,
@@ -78,7 +81,7 @@ class TestPlatform:
         ids=['dummy in additional board root', 'no additional board root, crash']
     )
     def test_board_root(self, out_path, board_root, expected_returncode):
-        test_platforms = ['qemu_x86', 'dummy_board/dummy_soc']
+        test_platforms = ['qemu_x86', 'dummy/unit_testing']
         board_root_path = os.path.join(TEST_DATA, 'boards')
         path = os.path.join(TEST_DATA, 'tests', 'dummy')
         args = ['-i', '--outdir', out_path, '-T', path, '-y'] + \
@@ -95,7 +98,7 @@ class TestPlatform:
         # but we need to differentiate crashes.
         with open(os.path.join(out_path, 'twister.log')) as f:
             log = f.read()
-            error_regex = r'ERROR.*platform_filter\s+-\s+unrecognized\s+platform\s+-\s+dummy_board/dummy_soc$'
+            error_regex = r'ERROR.*platform_filter\s+-\s+unrecognized\s+platform\s+-\s+dummy/unit_testing$'
             board_error = re.search(error_regex, log)
             assert board_error if not board_root else not board_error
 
@@ -145,7 +148,7 @@ class TestPlatform:
 
         assert str(sys_exit.value) == '0'
 
-        assert all([platform == 'qemu_x86' for platform, _, _ in filtered_j])
+        assert all([platform == 'qemu_x86/atom' for platform, _, _ in filtered_j])
 
     @pytest.mark.parametrize(
         'test_path, test_platforms',
@@ -187,7 +190,7 @@ class TestPlatform:
                 os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
                 ['qemu_x86', 'qemu_x86_64'],
                 {
-                    'passed_configurations': 3,
+                    'passed_configurations': 2,
                     'selected_test_instances': 6,
                     'executed_on_platform': 2,
                     'only_built': 1,
@@ -265,7 +268,8 @@ class TestPlatform:
 
         pass_regex = r'^INFO    - (?P<passed_configurations>[0-9]+) of' \
                      r' (?P<test_instances>[0-9]+) test configurations passed' \
-                     r' \([0-9]+\.[0-9]+%\), (?P<failed_configurations>[0-9]+) failed,' \
+                     r' \([0-9]+\.[0-9]+%\), (?P<built_configurations>[0-9]+) built \(not run\),' \
+                     r' (?P<failed_configurations>[0-9]+) failed,' \
                      r' (?P<errored_configurations>[0-9]+) errored,' \
                      r' (?P<skipped_configurations>[0-9]+) skipped with' \
                      r' [0-9]+ warnings in [0-9]+\.[0-9]+ seconds$'
@@ -304,6 +308,8 @@ class TestPlatform:
                expected['passed_configurations']
         assert int(pass_search.group('test_instances')) == \
                expected['selected_test_instances']
+        assert int(pass_search.group('built_configurations')) == \
+               expected['built_configurations']
         assert int(pass_search.group('failed_configurations')) == \
                expected['failed_configurations']
         assert int(pass_search.group('errored_configurations')) == \

@@ -38,15 +38,6 @@ struct pwm_rpi_config {
 	const clock_control_subsys_t clk_id;
 };
 
-static float pwm_rpi_get_clkdiv(const struct device *dev, int slice)
-{
-	const struct pwm_rpi_config *cfg = dev->config;
-
-	/* the divider is a fixed point 8.4 convert to float for use in pico-sdk */
-	return (float)cfg->slice_configs[slice].integral +
-		(float)cfg->slice_configs[slice].frac / 16.0f;
-}
-
 static inline uint32_t pwm_rpi_channel_to_slice(uint32_t channel)
 {
 	return channel / 2;
@@ -68,15 +59,22 @@ static int pwm_rpi_get_cycles_per_sec(const struct device *dev, uint32_t ch, uin
 		return -EINVAL;
 	}
 
+	const struct pwm_rpi_slice_config *slice_config = &cfg->slice_configs[slice];
+
 	ret = clock_control_get_rate(cfg->clk_dev, cfg->clk_id, &pclk);
 	if (ret < 0 || pclk == 0) {
 		return -EINVAL;
 	}
 
-	/* No need to check for divide by 0 since the minimum value of
-	 * pwm_rpi_get_clkdiv is 1
-	 */
-	*cycles = (uint64_t)((float)pclk / pwm_rpi_get_clkdiv(dev, slice));
+	if (slice_config->integral == 0) {
+		*cycles = pclk;
+	} else {
+		/* No need to check for divide by 0 since the minimum value of
+		 * pwm_rpi_get_clkdiv is 1
+		 */
+		*cycles = (uint64_t)pclk * 16 /
+			((uint64_t)slice_config->integral * 16 + slice_config->frac);
+	}
 	return 0;
 }
 
@@ -104,8 +102,34 @@ static void pwm_rpi_set_channel_polarity(const struct device *dev, int slice,
 static int pwm_rpi_set_cycles(const struct device *dev, uint32_t ch, uint32_t period_cycles,
 			   uint32_t pulse_cycles, pwm_flags_t flags)
 {
+	const struct pwm_rpi_config *cfg = dev->config;
+	int slice = pwm_rpi_channel_to_slice(ch);
+
+	/* this is the channel within a pwm slice */
+	int pico_channel = pwm_rpi_channel_to_pico_channel(ch);
+	int div_int;
+	int div_frac;
+
 	if (ch >= PWM_RPI_NUM_CHANNELS) {
 		return -EINVAL;
+	}
+
+	div_int = cfg->slice_configs[slice].integral;
+	div_frac = cfg->slice_configs[slice].frac;
+
+	if (div_int == 0) {
+		div_int = 1;
+		div_frac = 0;
+		while ((period_cycles / div_int - 1) > PWM_RPI_PICO_COUNTER_TOP_MAX) {
+			div_int *= 2;
+		}
+
+		if (div_int > (UINT8_MAX + 1)) {
+			return -EINVAL;
+		}
+
+		period_cycles /= div_int;
+		pulse_cycles /= div_int;
 	}
 
 	if (period_cycles - 1 > PWM_RPI_PICO_COUNTER_TOP_MAX ||
@@ -113,15 +137,11 @@ static int pwm_rpi_set_cycles(const struct device *dev, uint32_t ch, uint32_t pe
 		return -EINVAL;
 	}
 
-	int slice = pwm_rpi_channel_to_slice(ch);
-
-	/* this is the channel within a pwm slice */
-	int pico_channel = pwm_rpi_channel_to_pico_channel(ch);
-
 	pwm_rpi_set_channel_polarity(dev, slice, pico_channel,
 				     (flags & PWM_POLARITY_MASK) == PWM_POLARITY_INVERTED);
 	pwm_set_wrap(slice, period_cycles - 1);
 	pwm_set_chan_level(slice, pico_channel, pulse_cycles);
+	pwm_set_clkdiv_int_frac(slice, div_int, div_frac);
 
 	return 0;
 };
@@ -160,9 +180,13 @@ static int pwm_rpi_init(const struct device *dev)
 
 		pwm_init(slice_idx, &slice_cfg, false);
 
-		pwm_set_clkdiv_int_frac(slice_idx,
-					cfg->slice_configs[slice_idx].integral,
-					cfg->slice_configs[slice_idx].frac);
+		if (cfg->slice_configs[slice_idx].integral == 0) {
+			pwm_set_clkdiv_int_frac(slice_idx, 1, 0);
+		} else {
+			pwm_set_clkdiv_int_frac(slice_idx,
+						cfg->slice_configs[slice_idx].integral,
+						cfg->slice_configs[slice_idx].frac);
+		}
 		pwm_set_enabled(slice_idx, true);
 	}
 
@@ -171,8 +195,8 @@ static int pwm_rpi_init(const struct device *dev)
 
 #define PWM_INST_RPI_SLICE_DIVIDER(idx, n)				   \
 	{								   \
-		.integral = DT_INST_PROP(idx, UTIL_CAT(divider_int_, n)), \
-		.frac = DT_INST_PROP(idx, UTIL_CAT(divider_frac_, n)),	   \
+		.integral = DT_INST_PROP_OR(idx, UTIL_CAT(divider_int_, n), 0),			   \
+		.frac = DT_INST_PROP_OR(idx, UTIL_CAT(divider_frac_, n), 0),			   \
 	}
 
 #define PWM_RPI_INIT(idx)									   \

@@ -1,7 +1,4 @@
-.. _mimxrt1064_evk:
-
-NXP MIMXRT1064-EVK
-##################
+.. zephyr:board:: mimxrt1064_evk
 
 Overview
 ********
@@ -13,10 +10,6 @@ compatibility with i.MX RT1050. This series introduces additional features
 ideal for real-time applications such as High-Speed GPIO, CAN FD, and
 synchronous parallel NAND/NOR/PSRAM controller. The i.MX RT1064 runs on the
 Arm® Cortex-M7® core up to 600 MHz.
-
-.. image:: mimxrt1064_evk.jpg
-   :align: center
-   :alt: MIMXRT1064-EVK
 
 Hardware
 ********

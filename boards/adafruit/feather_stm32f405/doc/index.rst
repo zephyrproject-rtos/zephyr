@@ -1,7 +1,4 @@
-.. _adafruit_feather_stm32f405:
-
-Adafruit Feather STM32F405 Express
-##################################
+.. zephyr:board:: adafruit_feather_stm32f405
 
 Overview
 ********
@@ -11,10 +8,6 @@ Feather standard layout, sharing peripheral placement with other
 devices labeled as Feathers or FeatherWings. The board is equipped
 with a lithium ion battery charger, native USB C connector, 2MB of
 external flash memory, and SD card socket.
-
-.. image:: img/adafruit_feather_stm32f405.jpg
-     :align: center
-     :alt: Adafruit Feather STM32F405 Express
 
 Hardware
 ********

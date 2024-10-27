@@ -42,7 +42,7 @@ static bool adxl345_bus_is_ready_spi(const union adxl345_bus *bus)
 	return spi_is_ready_dt(&bus->spi);
 }
 
-static int adxl345_reg_access_spi(const struct device *dev, uint8_t cmd, uint8_t reg_addr,
+int adxl345_reg_access_spi(const struct device *dev, uint8_t cmd, uint8_t reg_addr,
 				  uint8_t *data, size_t length)
 {
 	const struct adxl345_dev_config *cfg = dev->config;
@@ -53,17 +53,20 @@ static int adxl345_reg_access_spi(const struct device *dev, uint8_t cmd, uint8_t
 		.buffers = buf,
 		.count = 2,
 	};
+	int ret;
 
 	if (cmd == ADXL345_READ_CMD) {
 		tx.count = 1;
-		return spi_transceive_dt(&cfg->bus.spi, &tx, &rx);
+		ret = spi_transceive_dt(&cfg->bus.spi, &tx, &rx);
+		return ret;
 	} else {
-		return spi_write_dt(&cfg->bus.spi, &tx);
+		ret = spi_write_dt(&cfg->bus.spi, &tx);
+		return ret;
 	}
 }
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
 
-static inline int adxl345_reg_access(const struct device *dev, uint8_t cmd, uint8_t addr,
+int adxl345_reg_access(const struct device *dev, uint8_t cmd, uint8_t addr,
 				     uint8_t *data, size_t len)
 {
 	const struct adxl345_dev_config *cfg = dev->config;
@@ -71,29 +74,48 @@ static inline int adxl345_reg_access(const struct device *dev, uint8_t cmd, uint
 	return cfg->reg_access(dev, cmd, addr, data, len);
 }
 
-static inline int adxl345_reg_write(const struct device *dev, uint8_t addr, uint8_t *data,
+int adxl345_reg_write(const struct device *dev, uint8_t addr, uint8_t *data,
 				    uint8_t len)
 {
 
 	return adxl345_reg_access(dev, ADXL345_WRITE_CMD, addr, data, len);
 }
 
-static inline int adxl345_reg_read(const struct device *dev, uint8_t addr, uint8_t *data,
+int adxl345_reg_read(const struct device *dev, uint8_t addr, uint8_t *data,
 				   uint8_t len)
 {
 
 	return adxl345_reg_access(dev, ADXL345_READ_CMD, addr, data, len);
 }
 
-static inline int adxl345_reg_write_byte(const struct device *dev, uint8_t addr, uint8_t val)
+int adxl345_reg_write_byte(const struct device *dev, uint8_t addr, uint8_t val)
 {
 	return adxl345_reg_write(dev, addr, &val, 1);
 }
 
-static inline int adxl345_reg_read_byte(const struct device *dev, uint8_t addr, uint8_t *buf)
+int adxl345_reg_read_byte(const struct device *dev, uint8_t addr, uint8_t *buf)
 
 {
 	return adxl345_reg_read(dev, addr, buf, 1);
+}
+
+int adxl345_reg_write_mask(const struct device *dev,
+			       uint8_t reg_addr,
+			       uint8_t mask,
+			       uint8_t data)
+{
+	int ret;
+	uint8_t tmp;
+
+	ret = adxl345_reg_read_byte(dev, reg_addr, &tmp);
+	if (ret) {
+		return ret;
+	}
+
+	tmp &= ~mask;
+	tmp |= data;
+
+	return adxl345_reg_write_byte(dev, reg_addr, tmp);
 }
 
 static inline bool adxl345_bus_is_ready(const struct device *dev)
@@ -103,11 +125,168 @@ static inline bool adxl345_bus_is_ready(const struct device *dev)
 	return cfg->bus_is_ready(&cfg->bus);
 }
 
-static int adxl345_read_sample(const struct device *dev,
+int adxl345_get_status(const struct device *dev,
+			   uint8_t *status1,
+			   uint16_t *fifo_entries)
+{
+	uint8_t buf[2], length = 1U;
+	int ret;
+
+	ret = adxl345_reg_read(dev, ADXL345_INT_SOURCE, buf, length);
+
+	*status1 = buf[0];
+	ret = adxl345_reg_read(dev, ADXL345_FIFO_STATUS_REG, buf+1, length);
+	if (fifo_entries) {
+		*fifo_entries = buf[1] & 0x3F;
+	}
+
+	return ret;
+}
+
+/**
+ * Configure the operating parameters for the FIFO.
+ * @param dev - The device structure.
+ * @param mode - FIFO Mode. Specifies FIFO operating mode.
+ *		Accepted values: ADXL345_FIFO_BYPASSED
+ *				 ADXL345_FIFO_STREAMED
+ *				 ADXL345_FIFO_TRIGGERED
+ *				 ADXL345_FIFO_OLD_SAVED
+ * @param trigger - FIFO trigger. Links trigger event to appropriate INT.
+ *		Accepted values: ADXL345_INT1
+ *				 ADXL345_INT2
+ * @param fifo_samples - FIFO Samples. Watermark number of FIFO samples that
+ *			triggers a FIFO_FULL condition when reached.
+ *			Values range from 0 to 32.
+
+ * @return 0 in case of success, negative error code otherwise.
+ */
+int adxl345_configure_fifo(const struct device *dev,
+				  enum adxl345_fifo_mode mode,
+				  enum adxl345_fifo_trigger trigger,
+				  uint16_t fifo_samples)
+{
+	struct adxl345_dev_data *data = dev->data;
+	uint8_t fifo_config;
+	int ret;
+
+	if (fifo_samples > 32) {
+		return -EINVAL;
+	}
+
+	fifo_config = (ADXL345_FIFO_CTL_TRIGGER_MODE(trigger) |
+		       ADXL345_FIFO_CTL_MODE_MODE(mode) |
+		       ADXL345_FIFO_CTL_SAMPLES_MODE(fifo_samples));
+
+	ret = adxl345_reg_write_byte(dev, ADXL345_FIFO_CTL_REG, fifo_config);
+	if (ret) {
+		return ret;
+	}
+
+	data->fifo_config.fifo_trigger = trigger;
+	data->fifo_config.fifo_mode = mode;
+	data->fifo_config.fifo_samples = fifo_samples;
+
+	return 0;
+}
+
+/**
+ * Set the mode of operation.
+ * @param dev - The device structure.
+ * @param op_mode - Mode of operation.
+ *		Accepted values: ADXL345_STANDBY
+ *				 ADXL345_MEASURE
+ * @return 0 in case of success, negative error code otherwise.
+ */
+int adxl345_set_op_mode(const struct device *dev, enum adxl345_op_mode op_mode)
+{
+	return adxl345_reg_write_mask(dev, ADXL345_POWER_CTL_REG,
+					   ADXL345_POWER_CTL_MEASURE_MSK,
+					   ADXL345_POWER_CTL_MEASURE_MODE(op_mode));
+}
+
+/**
+ * Set Output data rate.
+ * @param dev - The device structure.
+ * @param odr - Output data rate.
+ *		Accepted values: ADXL345_ODR_12HZ
+ *				 ADXL345_ODR_25HZ
+ *				 ADXL345_ODR_50HZ
+ *				 ADXL345_ODR_100HZ
+ *				 ADXL345_ODR_200HZ
+ *				 ADXL345_ODR_400HZ
+ * @return 0 in case of success, negative error code otherwise.
+ */
+static int adxl345_set_odr(const struct device *dev, enum adxl345_odr odr)
+{
+	return adxl345_reg_write_mask(dev, ADXL345_RATE_REG,
+					   ADXL345_ODR_MSK,
+					   ADXL345_ODR_MODE(odr));
+}
+
+static int adxl345_attr_set_odr(const struct device *dev,
+				enum sensor_channel chan,
+				enum sensor_attribute attr,
+				const struct sensor_value *val)
+{
+	enum adxl345_odr odr;
+	struct adxl345_dev_config *cfg = (struct adxl345_dev_config *)dev->config;
+
+	switch (val->val1) {
+	case 12:
+		odr = ADXL345_ODR_12HZ;
+		break;
+	case 25:
+		odr = ADXL345_ODR_25HZ;
+		break;
+	case 50:
+		odr = ADXL345_ODR_50HZ;
+		break;
+	case 100:
+		odr = ADXL345_ODR_100HZ;
+		break;
+	case 200:
+		odr = ADXL345_ODR_200HZ;
+		break;
+	case 400:
+		odr = ADXL345_ODR_400HZ;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	int ret = adxl345_set_odr(dev, odr);
+
+	if (ret == 0) {
+		cfg->odr = odr;
+	}
+
+	return ret;
+}
+
+static int adxl345_attr_set(const struct device *dev,
+			    enum sensor_channel chan,
+			    enum sensor_attribute attr,
+			    const struct sensor_value *val)
+{
+	switch (attr) {
+	case SENSOR_ATTR_SAMPLING_FREQUENCY:
+		return adxl345_attr_set_odr(dev, chan, attr, val);
+	default:
+		return -ENOTSUP;
+	}
+}
+
+int adxl345_read_sample(const struct device *dev,
 			       struct adxl345_sample *sample)
 {
 	int16_t raw_x, raw_y, raw_z;
-	uint8_t axis_data[6];
+	uint8_t axis_data[6], status1;
+
+	if (!IS_ENABLED(CONFIG_ADXL345_TRIGGER)) {
+		do {
+			adxl345_get_status(dev, &status1, NULL);
+		} while (!(ADXL345_STATUS_DATA_RDY(status1)));
+	}
 
 	int rc = adxl345_reg_read(dev, ADXL345_X_AXIS_DATA_0_REG, axis_data, 6);
 
@@ -127,7 +306,7 @@ static int adxl345_read_sample(const struct device *dev,
 	return 0;
 }
 
-static void adxl345_accel_convert(struct sensor_value *val, int16_t sample)
+void adxl345_accel_convert(struct sensor_value *val, int16_t sample)
 {
 	if (sample & BIT(9)) {
 		sample |= ADXL345_COMPLEMENT;
@@ -205,14 +384,60 @@ static int adxl345_channel_get(const struct device *dev,
 }
 
 static const struct sensor_driver_api adxl345_api_funcs = {
+	.attr_set = adxl345_attr_set,
 	.sample_fetch = adxl345_sample_fetch,
 	.channel_get = adxl345_channel_get,
+#ifdef CONFIG_ADXL345_TRIGGER
+	.trigger_set = adxl345_trigger_set,
+#endif
+#ifdef CONFIG_SENSOR_ASYNC_API
+	.submit = adxl345_submit,
+	.get_decoder = adxl345_get_decoder,
+#endif
 };
+
+#ifdef CONFIG_ADXL345_TRIGGER
+/**
+ * Configure the INT1 and INT2 interrupt pins.
+ * @param dev - The device structure.
+ * @param int1 -  INT1 interrupt pins.
+ * @return 0 in case of success, negative error code otherwise.
+ */
+static int adxl345_interrupt_config(const struct device *dev,
+				    uint8_t int1)
+{
+	int ret;
+	const struct adxl345_dev_config *cfg = dev->config;
+
+	ret = adxl345_reg_write_byte(dev, ADXL345_INT_MAP, int1);
+	if (ret) {
+		return ret;
+	}
+
+	ret = adxl345_reg_write_byte(dev, ADXL345_INT_ENABLE, int1);
+	if (ret) {
+		return ret;
+	}
+
+	uint8_t samples;
+
+	ret = adxl345_reg_read_byte(dev, ADXL345_INT_MAP, &samples);
+	ret = adxl345_reg_read_byte(dev, ADXL345_INT_ENABLE, &samples);
+#ifdef CONFIG_ADXL345_TRIGGER
+	gpio_pin_interrupt_configure_dt(&cfg->interrupt,
+					      GPIO_INT_EDGE_TO_ACTIVE);
+#endif
+	return 0;
+}
+#endif
 
 static int adxl345_init(const struct device *dev)
 {
 	int rc;
 	struct adxl345_dev_data *data = dev->data;
+#ifdef CONFIG_ADXL345_TRIGGER
+	const struct adxl345_dev_config *cfg = dev->config;
+#endif
 	uint8_t dev_id;
 
 	data->sample_number = 0;
@@ -246,14 +471,60 @@ static int adxl345_init(const struct device *dev)
 		return -EIO;
 	}
 
+#ifdef CONFIG_ADXL345_TRIGGER
+	rc = adxl345_configure_fifo(dev, ADXL345_FIFO_STREAMED,
+				     ADXL345_INT2,
+				     SAMPLE_NUM);
+	if (rc) {
+		return rc;
+	}
+#endif
+
 	rc = adxl345_reg_write_byte(dev, ADXL345_POWER_CTL_REG, ADXL345_ENABLE_MEASURE_BIT);
 	if (rc < 0) {
 		LOG_ERR("Enable measure bit failed\n");
 		return -EIO;
 	}
 
+#ifdef CONFIG_ADXL345_TRIGGER
+	rc = adxl345_init_interrupt(dev);
+	if (rc < 0) {
+		LOG_ERR("Failed to initialize interrupt!");
+		return -EIO;
+	}
+
+	rc = adxl345_set_odr(dev, cfg->odr);
+	if (rc) {
+		return rc;
+	}
+		rc = adxl345_interrupt_config(dev, ADXL345_INT_MAP_WATERMARK_MSK);
+	if (rc) {
+		return rc;
+	}
+#endif
 	return 0;
 }
+
+#ifdef CONFIG_ADXL345_TRIGGER
+#define ADXL345_CFG_IRQ(inst) \
+		.interrupt = GPIO_DT_SPEC_INST_GET(inst, int2_gpios),
+#else
+#define ADXL345_CFG_IRQ(inst)
+#endif /* CONFIG_ADXL345_TRIGGER */
+
+#define ADXL345_RTIO_DEFINE(inst)                                    \
+	SPI_DT_IODEV_DEFINE(adxl345_iodev_##inst, DT_DRV_INST(inst),     \
+						SPI_WORD_SET(8) | SPI_TRANSFER_MSB |    \
+						SPI_MODE_CPOL | SPI_MODE_CPHA, 0U);     \
+	RTIO_DEFINE(adxl345_rtio_ctx_##inst, 64, 64);
+
+#define ADXL345_CONFIG(inst)								\
+		.odr = DT_INST_PROP(inst, odr),						\
+		.fifo_config.fifo_mode = ADXL345_FIFO_STREAMED,				\
+		.fifo_config.fifo_trigger = ADXL345_INT2,			\
+		.fifo_config.fifo_samples = SAMPLE_NUM,					\
+		.op_mode = TRUE,					\
+		.odr = ADXL345_RATE_25HZ,						\
 
 #define ADXL345_CONFIG_SPI(inst)                                       \
 	{                                                              \
@@ -265,6 +536,9 @@ static int adxl345_init(const struct device *dev)
 						    0)},               \
 		.bus_is_ready = adxl345_bus_is_ready_spi,              \
 		.reg_access = adxl345_reg_access_spi,                  \
+		ADXL345_CONFIG(inst)					\
+		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, int2_gpios),	\
+		(ADXL345_CFG_IRQ(inst)), ())				\
 	}
 
 #define ADXL345_CONFIG_I2C(inst)			    \
@@ -275,8 +549,11 @@ static int adxl345_init(const struct device *dev)
 	}
 
 #define ADXL345_DEFINE(inst)								\
-	static struct adxl345_dev_data adxl345_data_##inst;				\
-											\
+	IF_ENABLED(CONFIG_ADXL345_STREAM, (ADXL345_RTIO_DEFINE(inst)));                 \
+	static struct adxl345_dev_data adxl345_data_##inst = {			\
+	IF_ENABLED(CONFIG_ADXL345_STREAM, (.rtio_ctx = &adxl345_rtio_ctx_##inst,        \
+				.iodev = &adxl345_iodev_##inst,)) \
+	};     \
 	static const struct adxl345_dev_config adxl345_config_##inst =                  \
 		COND_CODE_1(DT_INST_ON_BUS(inst, spi), (ADXL345_CONFIG_SPI(inst)),      \
 			    (ADXL345_CONFIG_I2C(inst)));                                \

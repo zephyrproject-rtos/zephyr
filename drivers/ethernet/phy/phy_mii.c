@@ -243,7 +243,7 @@ static int update_link_state(const struct device *dev)
 		data->state.speed = LINK_HALF_10BASE_T;
 	}
 
-	LOG_INF("PHY (%d) Link speed %s Mb, %s duplex\n",
+	LOG_INF("PHY (%d) Link speed %s Mb, %s duplex",
 		cfg->phy_addr,
 		PHY_LINK_IS_SPEED_1000M(data->state.speed) ? "1000" :
 		(PHY_LINK_IS_SPEED_100M(data->state.speed) ? "100" : "10"),
@@ -455,7 +455,7 @@ static int phy_mii_initialize(const struct device *dev)
 				return -EINVAL;
 			}
 
-			LOG_INF("PHY (%d) ID %X\n", cfg->phy_addr, phy_id);
+			LOG_INF("PHY (%d) ID %X", cfg->phy_addr, phy_id);
 		}
 
 		data->gigabit_supported = is_gigabit_supported(dev);

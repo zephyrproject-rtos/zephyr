@@ -8,6 +8,7 @@
 #include <mem.h>
 #include <zephyr/dt-bindings/clock/imx_ccm.h>
 #include <zephyr/dt-bindings/dai/esai.h>
+#include <zephyr/dt-bindings/power/imx_scu_rsrc.h>
 
 / {
 	cpus {
@@ -34,6 +35,7 @@
 	irqsteer: interrupt-controller@510a0000 {
 		compatible = "nxp,irqsteer-intc";
 		reg = <0x510a0000 DT_SIZE_K(64)>;
+		power-domains = <&irqstr_pd>;
 
 		#size-cells = <0>;
 		#address-cells = <1>;
@@ -130,6 +132,8 @@
 		reg = <0x59050000 DT_SIZE_K(64)>;
 		interrupt-parent = <&master5>;
 		interrupts = <28>;
+		clocks = <&ccm IMX_CCM_SAI1_CLK 0x0 0x0>;
+		clock-names = "bus";
 		dai-index = <1>;
 		dmas = <&edma0 15 0>, <&edma0 14 0>;
 		dma-names = "tx", "rx";
@@ -165,6 +169,18 @@
 			compatible = "nxp,imx-iomuxc-scu";
 			pinctrl: pinctrl {
 				compatible = "nxp,imx8-pinctrl";
+			};
+		};
+
+		power-domains {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			irqstr_pd: pd@0 {
+				compatible = "nxp,imx8qm-scu-pd", "nxp,scu-pd";
+				reg = <0>;
+				nxp,resource-id = <IMX_SC_R_IRQSTR_DSP>;
+				#power-domain-cells = <0>;
 			};
 		};
 	};

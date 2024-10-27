@@ -17,6 +17,7 @@ sensors:
 - ISM330DHCX: IMU, 3D accelerometer and 3D gyroscope with Machine Learning Core and Finite State Machine
 - IIS2DLPC: high-performance ultra-low-power 3-axis accelerometer for industrial applications
 - IIS2ICLX: high-accuracy, high-resolution, low-power, 2-axis digital inclinometer with Machine Learning Core
+- ILPS22QS: ultra-compact piezoresistive absolute pressure sensor
 
 Requirements
 ************
@@ -27,7 +28,7 @@ through USB. The board shows up as a USB CDC class standard device.
 References
 **********
 
-- :ref:`steval_stwinbx1_board`
+- :zephyr:board:`steval_stwinbx1`
 
 Building and Running
 ********************
@@ -40,7 +41,7 @@ Build and flash the sample in the following way:
     :goals: build flash
 
 Please note that flashing the board requires a few preliminary steps described
-in :ref:`steval_stwinbx1_board`.
+in :zephyr:board:`steval_stwinbx1`.
 
 Then, power cycle the board by disconnecting and reconnecting the USB cable.
 Run your favorite terminal program to listen for output.
@@ -70,6 +71,8 @@ The sample code outputs sensors data on the STWIN.box console.
     ISM330DHCX: Accel (m.s-2): x: 0.000, y: 5.704, z: 7.982
     ISM330DHCX: Gyro (dps): x: 0.026, y: -0.006, z: -0.008
     IIS2ICLX: Accel (m.s-2): x: -0.157, y: 5.699
+    ILPS22QS: Temperature: 26.4 C
+    ILPS22QS: Pressure: 100.539 kpa
     1:: iis2dlpc trig 2021
     1:: iis2mdc trig 993
     1:: ism330dhcx acc trig 4447

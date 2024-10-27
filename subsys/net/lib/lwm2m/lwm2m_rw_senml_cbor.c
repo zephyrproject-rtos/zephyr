@@ -601,7 +601,9 @@ static int get_time(struct lwm2m_input_context *in, time_t *value)
 	int ret;
 
 	ret = get_s64(in, &temp64);
-	*value = (time_t)temp64;
+	if (ret == 0) {
+		*value = (time_t)temp64;
+	}
 
 	return ret;
 }

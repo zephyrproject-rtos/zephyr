@@ -1,7 +1,4 @@
-.. _esp_wrover_kit:
-
-ESP-WROVER-KIT
-##############
+.. zephyr:board:: esp_wrover_kit
 
 Overview
 ********
@@ -43,7 +40,7 @@ Functional Description
 The following two figures and the table below describe the key components, interfaces, and controls
 of the ESP-WROVER-KIT board.
 
-.. figure:: img/esp-wrover-kit-v4.1-layout-front.jpg
+.. figure:: img/esp_wrover_kit.jpg
      :align: center
      :alt: esp wrover front
 
@@ -651,6 +648,8 @@ You can debug an application in the usual way. Here is an example for the :zephy
 
 References
 **********
+
+.. target-notes::
 
 .. _`ESP32 Datasheet`: https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf (PDF)
 .. _`ESP32-WROVER-E Datasheet`: https://www.espressif.com/sites/default/files/documentation/esp32-wrover-e_esp32-wrover-ie_datasheet_en.pdf (PDF)

@@ -79,7 +79,7 @@ static int cmd_ieee802154_associate(const struct shell *sh,
 				    size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_ieee802154();
-	char ext_addr[EXT_ADDR_STR_SIZE];
+	char ext_addr[EXT_ADDR_STR_SIZE] = {0};
 
 	if (argc < 3) {
 		shell_help(sh);
@@ -99,7 +99,7 @@ static int cmd_ieee802154_associate(const struct shell *sh,
 
 	params = (struct ieee802154_req_params){0};
 	params.pan_id = atoi(argv[1]);
-	strncpy(ext_addr, argv[2], sizeof(ext_addr));
+	strncpy(ext_addr, argv[2], EXT_ADDR_STR_LEN);
 
 	if (strlen(ext_addr) == EXT_ADDR_STR_LEN) {
 		if (parse_extended_address(ext_addr, params.addr) < 0) {

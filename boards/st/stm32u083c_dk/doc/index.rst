@@ -1,7 +1,4 @@
-.. _stm32u083c_dk_board:
-
-ST STM32U083C_DK
-################
+.. zephyr:board:: stm32u083c_dk
 
 Overview
 ********
@@ -35,6 +32,8 @@ board:
 - User joystick
 - Touchkey
 - Temperature sensor
+
+More information about the board can be found at the `STM32U083_DK website`_.
 
 Hardware
 ********

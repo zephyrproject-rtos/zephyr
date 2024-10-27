@@ -1,7 +1,4 @@
-.. _frdm_mcxw71:
-
-NXP FRDM-MCXW71
-################
+.. zephyr:board:: frdm_mcxw71
 
 Overview
 ********
@@ -18,10 +15,6 @@ multiprotocol radio subsystem supporting Matter, Thread, Zigbee and Bluetooth
 LE. The independent radio subsystem, with a dedicated core and memory, offloads
 the main CPU, preserving it for the primary application and allowing firmware
 updates to support future wireless standards.
-
-.. image:: frdm_mcxw71.webp
-   :align: center
-   :alt: FRDM-MCXW71
 
 Hardware
 ********
@@ -55,6 +48,10 @@ The ``frdm_mcxw71`` board target in Zephyr currently supports the following feat
 | LPUART    | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
+| LPI2C     | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
+| LPSPI     | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
 | FMU       | on-chip    | flash                               |
 +-----------+------------+-------------------------------------+
 | TPM       | on-chip    | pwm                                 |
@@ -63,7 +60,24 @@ The ``frdm_mcxw71`` board target in Zephyr currently supports the following feat
 +-----------+------------+-------------------------------------+
 | LPTMR     | on-chip    | counter                             |
 +-----------+------------+-------------------------------------+
+| BLE       | on-chip    | Bluetooth                           |
++-----------+------------+-------------------------------------+
+| FLEXCAN   | on-chip    | can                                 |
++-----------+------------+-------------------------------------+
+| VREF      | on-chip    | regulator                           |
++-----------+------------+-------------------------------------+
+| LPADC     | on-chip    | adc                                 |
++-----------+------------+-------------------------------------+
 
+Fetch Binary Blobs
+******************
+
+To support Bluetooth, frdm_mcxw71 requires fetching binary blobs, which can be
+achieved by running the following command:
+
+.. code-block:: console
+
+   west blobs fetch hal_nxp
 
 Programming and Debugging
 *************************
@@ -140,8 +154,48 @@ should see the following message in the terminal:
    *** Booting Zephyr OS build v3.7.0-xxx-xxxx ***
    Hello World! frdm_mcxw71/mcxw716c
 
+Bluetooth
+=========
+
+BLE functionality requires to fetch binary blobs, so make sure to follow
+the ``Fetch Binary Blobs`` section first.
+
+Two images must be written to the board: one for the host (CM33) and one for the NBU (CM3).
+- To flash the application (CM33) refer to the ``Flashing`` section above.
+- To flash the NBU, follow the instructions below:
+
+   * Install ``blhost`` from NXP's website. This is the tool that will allow you to flash the NBU.
+   * Enter ISP mode. To boot the MCU in ISP mode, follow these steps:
+      - Disconnect the ``FRDM-MCXW71`` board from all power sources.
+      - Keep the ``SW3`` (ISP) button on the board pressed, while connecting the board to the host computer USB port.
+      - Release the ``SW3`` (ISP) button. The MCXW71 MCU boots in ISP mode.
+      - Reconnect any external power supply, if needed.
+   * Use the following command to flash NBU file:
+
+.. code-block:: console
+
+   # On Windows
+   blhost.exe -p COMxx -- receive-sb-file mcxw71_nbu_ble.sb3
+
+   # On Linux
+   ./blhost -p /dev/ttyxx -- receive-sb-file mcxw71_nbu_ble.sb3
+
+Please consider changing ``COMxx`` on Windows or ``ttyxx`` on Linux to the serial port used by your board.
+
+The NBU file can be found in : ``<zephyr workspace>/modules/hal/nxp/zephyr/blobs/mcxw71/mcxw71_nbu_ble.sb3``
+
+For more details:
+
+.. _MCXW71 In-System Programming Utility:
+   https://docs.nxp.com/bundle/AN14427/page/topics/introduction.html
+
+.. _blhost Website:
+   https://www.nxp.com/search?keyword=blhost&start=0
+
 References
 **********
+
+.. target-notes::
 
 .. _MCXW71 SoC Website:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-microcontrollers/general-purpose-mcus/mcx-arm-cortex-m/mcx-w-series-microcontrollers/mcx-w71x-secure-and-ultra-low-power-mcus-for-matter-thread-zigbee-and-bluetooth-le:MCX-W71X

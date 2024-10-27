@@ -27,6 +27,20 @@ extern "C" {
 #endif
 
 /**
+ * @brief Battery Critical Status Characteristic flags.
+ *
+ * Enumeration for the flags indicating the presence
+ * of various fields in the Battery Critical Status characteristic.
+ */
+enum bt_bas_bcs_flags {
+	/**  Battery Critical Status Bit 0: Critical Power State */
+	BT_BAS_BCS_BATTERY_CRITICAL_STATE = BIT(0),
+
+	/**  Battery Critical Status Bit 1: Immediate Service Required */
+	BT_BAS_BCS_IMMEDIATE_SERVICE_REQUIRED = BIT(1),
+};
+
+/**
  * @brief Battery Level Status Characteristic flags.
  *
  * Enumeration for the flags indicating the presence

@@ -75,6 +75,7 @@ The mandatory files are:
 
 #. :file:`soc.yml`: a YAML file describing the high-level meta data of the
    SoC such as:
+
    - SoC name: the name of the SoC
    - CPU clusters: CPU clusters if the SoC contains one or more clusters
    - SoC series: the SoC series to which the SoC belong

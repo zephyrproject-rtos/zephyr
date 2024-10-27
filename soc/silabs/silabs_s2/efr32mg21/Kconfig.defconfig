@@ -8,6 +8,10 @@ config NUM_IRQS
 	# must be >= the highest interrupt number used
 	default 61
 
+config PM
+	select COUNTER
+	select UART_INTERRUPT_DRIVEN
+
 config GPIO_GECKO
 	default y
 	depends on GPIO || LOG_BACKEND_SWO

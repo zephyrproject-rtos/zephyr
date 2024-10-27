@@ -1,7 +1,4 @@
-.. _frdm_kl25z:
-
-NXP FRDM-KL25Z
-##############
+.. zephyr:board:: frdm_kl25z
 
 Overview
 ********
@@ -13,11 +10,6 @@ on ARM |reg| Cortex |reg|-M0+ processor.
 The FRDM-KL25Z features include easy access to MCU I/O, battery-ready,
 low-power operation, a standard-based form factor with expansion board
 options and a built-in debug interface for flash programming and run-control.
-
-
-.. image:: frdm_kl25z.jpg
-   :align: center
-   :alt: FRDM-KL25Z
 
 Hardware
 ********

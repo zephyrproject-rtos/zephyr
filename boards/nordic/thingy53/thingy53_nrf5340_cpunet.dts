@@ -63,6 +63,7 @@
 		mode-gpios  = <&gpio1 12 GPIO_ACTIVE_HIGH>;
 		pdn-gpios   = <&gpio1 10 GPIO_ACTIVE_HIGH>;
 		tx-en-gpios = <&gpio0 30 GPIO_ACTIVE_HIGH>;
+		spi-if = <&nrf_radio_fem_spi>;
 		supply-voltage-mv = <3000>;
 	};
 
@@ -109,6 +110,27 @@
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+};
+
+/* Disabled by default as shares same GPIO lines as SPI peripherals on application core */
+fem_spi: &spi0 {
+	status = "disabled";
+	cs-gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-1 = <&spi0_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	nrf_radio_fem_spi: nrf21540_fem_spi@0 {
+		compatible = "nordic,nrf21540-fem-spi";
+		status = "disabled";
+		reg = <0>;
+		spi-max-frequency = <8000000>;
+	};
+};
+
+&radio {
+	/* Uncomment to enable SPI interface for FEM */
+	/* fem = <&nrf_radio_fem>; */
 };
 
 &flash1 {

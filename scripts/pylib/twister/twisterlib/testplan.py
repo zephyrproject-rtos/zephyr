@@ -182,6 +182,7 @@ class TestPlan:
         if self.options.test:
             self.run_individual_testsuite = self.options.test
 
+        self.add_configurations()
         num = self.add_testsuites(testsuite_filter=self.run_individual_testsuite)
         if num == 0:
             raise TwisterRuntimeError("No test cases found at the specified location...")
@@ -192,9 +193,7 @@ class TestPlan:
             self.scenarios.append(ts.id)
 
         self.report_duplicates()
-
         self.parse_configuration(config_file=self.env.test_config)
-        self.add_configurations()
 
         if self.load_errors:
             raise TwisterRuntimeError("Errors while loading configurations")
@@ -231,11 +230,21 @@ class TestPlan:
             # Get list of connected hardware and filter tests to only be run on connected hardware.
             # If the platform does not exist in the hardware map or was not specified by --platform,
             # just skip it.
-            connected_list = self.options.platform
+
+            connected_list = []
+            excluded_list = []
+            for _cp in self.options.platform:
+                if _cp in self.platform_names:
+                    connected_list.append(self.get_platform(_cp).name)
+
             if self.options.exclude_platform:
-                for excluded in self.options.exclude_platform:
+                for _p in self.options.exclude_platform:
+                    if _p in self.platform_names:
+                        excluded_list.append(self.get_platform(_p).name)
+                for excluded in excluded_list:
                     if excluded in connected_list:
                         connected_list.remove(excluded)
+
             self.load_from_file(last_run, filter_platform=connected_list)
             self.selected_platforms = set(p.platform.name for p in self.instances.values())
         else:
@@ -398,8 +407,13 @@ class TestPlan:
         sys.stdout.write(what + "\n")
         sys.stdout.flush()
 
+    def find_twister_data(self, board_data_list, board_aliases):
+        """Find the twister data for a board in the list of board data based on the aliases"""
+        for board_data in board_data_list:
+            if board_data.get('identifier') in board_aliases:
+                return board_data
+
     def add_configurations(self):
-        board_dirs = set()
         # Create a list of board roots as defined by the build system in general
         # Note, internally in twister a board root includes the `boards` folder
         # but in Zephyr build system, the board root is without the `boards` in folder path.
@@ -407,82 +421,91 @@ class TestPlan:
         lb_args = Namespace(arch_roots=self.env.arch_roots, soc_roots=self.env.soc_roots,
                             board_roots=board_roots, board=None, board_dir=None)
 
-        v1_boards = list_boards.find_boards(lb_args)
-        v2_dirs = list_boards.find_v2_board_dirs(lb_args)
-        for b in v1_boards:
-            board_dirs.add(b.dir)
-        board_dirs.update(v2_dirs)
-        logger.debug("Reading platform configuration files under %s..." % self.env.board_roots)
-
+        known_boards = list_boards.find_v2_boards(lb_args)
+        bdirs = {}
         platform_config = self.test_config.get('platforms', {})
-        for folder in board_dirs:
-            for file in glob.glob(os.path.join(folder, "*.yaml")):
-                # If the user set a platform filter, we can, if no other option would increase
-                # the allowed platform pool, save on time by not loading YAMLs of any boards
-                # that do not start with the required names.
-                if self.options.platform and \
-                    not self.options.all and \
-                    not self.options.integration and \
-                    not any([
-                        os.path.basename(file).startswith(
-                            re.split('[/@]', p)[0]
-                        ) for p in self.options.platform
-                    ]):
-                    continue
-                try:
-                    platform = Platform()
-                    platform.load(file)
-                    if platform.name in [p.name for p in self.platforms]:
-                        logger.error(f"Duplicate platform {platform.name} in {file}")
-                        raise Exception(f"Duplicate platform identifier {platform.name} found")
 
-                    if not platform.twister:
+        # helper function to initialize and add platforms
+        def init_and_add_platforms(data, board, target, qualifier, aliases):
+            platform = Platform()
+            if not new_config_found:
+                data = self.find_twister_data(bdirs[board.dir], aliases)
+                if not data:
+                    return
+            platform.load(board, target, aliases, data)
+            platform.qualifier = qualifier
+            if platform.name in [p.name for p in self.platforms]:
+                logger.error(f"Duplicate platform {platform.name} in {board.dir}")
+                raise Exception(f"Duplicate platform identifier {platform.name} found")
+            if not platform.twister:
+                return
+            logger.debug(f"Adding platform {platform.name} with aliases {platform.aliases}")
+            self.platforms.append(platform)
+
+        for board in known_boards.values():
+            new_config_found = False
+            # don't load the same board data twice
+            if not bdirs.get(board.dir):
+                datas = []
+                for file in glob.glob(os.path.join(board.dir, "*.yaml")):
+                    if os.path.basename(file) == "twister.yaml":
                         continue
-
-                    self.platforms.append(platform)
-                    if not platform_config.get('override_default_platforms', False):
-                        if platform.default:
-                            self.default_platforms.append(platform.name)
-                    else:
-                        if platform.name in platform_config.get('default_platforms', []):
-                            logger.debug(f"adding {platform.name} to default platforms")
-                            self.default_platforms.append(platform.name)
-
-                    # support board@revision
-                    # if there is already an existed <board>_<revision>.yaml, then use it to
-                    # load platform directly, otherwise, iterate the directory to
-                    # get all valid board revision based on each <board>_<revision>.conf.
-                    if '@' not in platform.name:
-                        tmp_dir = os.listdir(os.path.dirname(file))
-                        for item in tmp_dir:
-                            # Need to make sure the revision matches
-                            # the permitted patterns as described in
-                            # cmake/modules/extensions.cmake.
-                            revision_patterns = ["[A-Z]",
-                                                    "[0-9]+",
-                                                    "(0|[1-9][0-9]*)(_[0-9]+){0,2}"]
-
-                            for pattern in revision_patterns:
-                                result = re.match(f"{platform.name}_(?P<revision>{pattern})\\.conf", item)
-                                if result:
-                                    revision = result.group("revision")
-                                    yaml_file = f"{platform.name}_{revision}.yaml"
-                                    if yaml_file not in tmp_dir:
-                                        platform_revision = copy.deepcopy(platform)
-                                        revision = revision.replace("_", ".")
-                                        platform_revision.name = f"{platform.name}@{revision}"
-                                        platform_revision.normalized_name = platform_revision.name.replace("/", "_")
-                                        platform_revision.default = False
-                                        self.platforms.append(platform_revision)
-
-                                    break
-
-
-                except RuntimeError as e:
-                    logger.error("E: %s: can't load: %s" % (file, e))
+                    try:
+                        scp = TwisterConfigParser(file, Platform.platform_schema)
+                        sdata = scp.load()
+                        datas.append(sdata)
+                    except Exception as e:
+                        logger.error(f"Error loading {file}: {e!r}")
+                        self.load_errors += 1
+                        continue
+                bdirs[board.dir] = datas
+            data = {}
+            if os.path.exists(board.dir / 'twister.yaml'):
+                try:
+                    scp = TwisterConfigParser(board.dir / 'twister.yaml', Platform.platform_schema)
+                    data = scp.load()
+                except Exception as e:
+                    logger.error(f"Error loading {board.dir / 'twister.yaml'}: {e!r}")
                     self.load_errors += 1
+                    continue
+                new_config_found = True
 
-        self.platform_names = [p.name for p in self.platforms]
+
+
+            for qual in list_boards.board_v2_qualifiers(board):
+
+                if board.revisions:
+                    for rev in board.revisions:
+                        target = f"{board.name}@{rev.name}/{qual}"
+                        aliases = [target]
+                        target_no_rev = f"{board.name}/{qual}"
+                        if rev.name == board.revision_default:
+                            aliases.append(target_no_rev)
+                        if '/' not in qual and len(board.socs) == 1:
+                            if rev.name == board.revision_default:
+                                aliases.append(f"{board.name}")
+                            aliases.append(f"{board.name}@{rev.name}")
+
+                        init_and_add_platforms(data, board, target, qual, aliases)
+                else:
+                    target = f"{board.name}/{qual}"
+                    aliases = [target]
+                    if '/' not in qual and len(board.socs) == 1:
+                        aliases.append(board.name)
+                    init_and_add_platforms(data, board, target, qual, aliases)
+
+        for platform in self.platforms:
+            if not platform_config.get('override_default_platforms', False):
+                if platform.default:
+                    self.default_platforms.append(platform.name)
+                    #logger.debug(f"adding {platform.name} to default platforms")
+                continue
+            for pp in platform_config.get('default_platforms', []):
+                if pp in platform.aliases:
+                    logger.debug(f"adding {platform.name} to default platforms (override  mode)")
+                    self.default_platforms.append(platform.name)
+
+        self.platform_names = [a for p in self.platforms for a in p.aliases]
 
     def get_all_tests(self):
         testcases = []
@@ -550,6 +573,30 @@ class TestPlan:
                     for name in parsed_data.scenarios.keys():
                         suite_dict = parsed_data.get_scenario(name)
                         suite = TestSuite(root, suite_path, name, data=suite_dict, detailed_test_id=self.options.detailed_test_id)
+
+                        # convert to fully qualified names
+                        _integration = []
+                        _platform_allow = []
+                        _platform_exclude = []
+                        for _ip in suite.integration_platforms:
+                            if _ip in self.platform_names:
+                                _integration.append(self.get_platform(_ip).name)
+                            else:
+                                logger.error(f"Platform {_ip} not found in the list of platforms")
+                        suite.integration_platforms = _integration
+                        for _pe in suite.platform_exclude:
+                            if _pe in self.platform_names:
+                                _platform_exclude.append(self.get_platform(_pe).name)
+                            else:
+                                logger.error(f"Platform {_pe} not found in the list of platforms")
+                        suite.platform_exclude = _platform_exclude
+                        for _pa in suite.platform_allow:
+                            if _pa in self.platform_names:
+                                _platform_allow.append(self.get_platform(_pa).name)
+                            else:
+                                logger.error(f"Platform {_pa} not found in the list of platforms")
+                        suite.platform_allow = _platform_allow
+
                         if suite.harness in ['ztest', 'test']:
                             if subcases is None:
                                 # scan it only once per testsuite
@@ -575,7 +622,7 @@ class TestPlan:
     def get_platform(self, name):
         selected_platform = None
         for platform in self.platforms:
-            if platform.name == name:
+            if name in platform.aliases:
                 selected_platform = platform
                 break
         return selected_platform
@@ -607,14 +654,8 @@ class TestPlan:
                     if ts.get("run_id"):
                         instance.run_id = ts.get("run_id")
 
-                    if self.options.device_testing:
-                        tfilter = 'runnable'
-                    else:
-                        tfilter = 'buildable'
                     instance.run = instance.check_runnable(
-                        self.options.enable_slow,
-                        tfilter,
-                        self.options.fixture,
+                        self.options,
                         self.hwm
                     )
 
@@ -660,13 +701,23 @@ class TestPlan:
                             if tc.get('log'):
                                 case.output = tc.get('log')
 
-
-                    instance.create_overlay(platform, self.options.enable_asan, self.options.enable_ubsan, self.options.enable_coverage, self.options.coverage_platform)
+                    instance.create_overlay(platform,
+                                            self.options.enable_asan,
+                                            self.options.enable_ubsan,
+                                            self.options.enable_coverage,
+                                            self.options.coverage_platform
+                                            )
                     instance_list.append(instance)
                 self.add_instances(instance_list)
         except FileNotFoundError as e:
             logger.error(f"{e}")
             return 1
+
+    def check_platform(self, platform, platform_list):
+        for p in platform_list:
+            if p in platform.aliases:
+                return True
+        return False
 
     def apply_filters(self, **kwargs):
 
@@ -709,8 +760,16 @@ class TestPlan:
         elif vendor_filter:
             vendor_platforms = True
 
+        _platforms = []
         if platform_filter:
+            logger.debug(f"Checking platform filter: {platform_filter}")
+            # find in aliases and rename
             self.verify_platforms_existence(platform_filter, f"platform_filter")
+            for pf in platform_filter:
+                logger.debug(f"Checking platform in filter: {pf}")
+                if pf in self.platform_names:
+                    _platforms.append(self.get_platform(pf).name)
+            platform_filter = _platforms
             platforms = list(filter(lambda p: p.name in platform_filter, self.platforms))
         elif emu_filter:
             platforms = list(filter(lambda p: p.simulation != 'na', self.platforms))
@@ -776,19 +835,12 @@ class TestPlan:
             instance_list = []
             for plat in platform_scope:
                 instance = TestInstance(ts, plat, self.env.outdir)
-                if runnable:
-                    tfilter = 'runnable'
-                else:
-                    tfilter = 'buildable'
-
                 instance.run = instance.check_runnable(
-                    self.options.enable_slow,
-                    tfilter,
-                    self.options.fixture,
+                    self.options,
                     self.hwm
                 )
 
-                if not force_platform and plat.name in exclude_platform:
+                if not force_platform and self.check_platform(plat,exclude_platform):
                     instance.add_filter("Platform is excluded on command line.", Filters.CMD_LINE)
 
                 if (plat.arch == "unit") != (ts.type == "unit"):
@@ -961,13 +1013,13 @@ class TestPlan:
                         keyed_test = keyed_tests.get(test_keys)
                         if keyed_test is not None:
                             plat_key = {key_field: getattr(keyed_test['plat'], key_field) for key_field in key_fields}
-                            instance.add_filter(f"Already covered for key {tuple(key)} by platform {keyed_test['plat'].name} having key {plat_key}", Filters.PLATFORM_KEY)
+                            instance.add_filter(f"Already covered for key {key} by platform {keyed_test['plat'].name} having key {plat_key}", Filters.PLATFORM_KEY)
                         else:
-                            # do not add a platform to keyed tests if previously filtered
+                            # do not add a platform to keyed tests if previously
+                            # filtered
+
                             if not instance.filters:
                                 keyed_tests[test_keys] = {'plat': plat, 'ts': ts}
-                            else:
-                                instance.add_filter(f"Excluded platform missing key fields demanded by test {key_fields}", Filters.PLATFORM)
 
                 # if nothing stopped us until now, it means this configuration
                 # needs to be added.
@@ -981,11 +1033,11 @@ class TestPlan:
             # take all default platforms
             if default_platforms and not ts.build_on_all and not integration:
                 if ts.platform_allow:
-                    a = set(self.default_platforms)
-                    b = set(ts.platform_allow)
-                    c = a.intersection(b)
-                    if c:
-                        aa = list(filter(lambda ts: ts.platform.name in c, instance_list))
+                    _default_p = set(self.default_platforms)
+                    _platform_allow = set(ts.platform_allow)
+                    _intersection = _default_p.intersection(_platform_allow)
+                    if _intersection:
+                        aa = list(filter(lambda _scenario: _scenario.platform.name in _intersection, instance_list))
                         self.add_instances(aa)
                     else:
                         self.add_instances(instance_list)
@@ -1011,7 +1063,11 @@ class TestPlan:
                 self.add_instances(instance_list)
 
         for _, case in self.instances.items():
-            case.create_overlay(case.platform, self.options.enable_asan, self.options.enable_ubsan, self.options.enable_coverage, self.options.coverage_platform)
+            case.create_overlay(case.platform,
+                                self.options.enable_asan,
+                                self.options.enable_ubsan,
+                                self.options.enable_coverage,
+                                self.options.coverage_platform)
 
         self.selected_platforms = set(p.platform.name for p in self.instances.values())
 
@@ -1105,3 +1161,4 @@ def change_skip_to_error_if_integration(options, instance):
             return
         instance.status = TwisterStatus.ERROR
         instance.reason += " but is one of the integration platforms"
+        logger.debug(f"Changing status of {instance.name} to ERROR because it is an integration platform")

@@ -1,0 +1,36 @@
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+  - xcc
+  - xt-clang
+supported:
+  - dma
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+    - mcumgr
+variants:
+  intel_adsp/ace30/ptl:
+    toolchain:
+      - xt-clang
+  intel_adsp/ace30:
+    twister: false
+  intel_adsp/ace30/ptl/sim:
+    toolchain:
+      - xt-clang
+  intel_adsp/cavs25:
+    toolchain:
+      - xcc
+      - zephyr
+    supported:
+      - dma
+      - dai
+  intel_adsp/cavs25/tgph:
+    toolchain:
+      - xcc
+      - zephyr
+    supported:
+      - dma
+      - dai

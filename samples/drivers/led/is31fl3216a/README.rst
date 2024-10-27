@@ -33,7 +33,7 @@ This sample can be built and executed when the devicetree has an I2C device node
 with compatible :dtcompatible:`issi,is31fl3216a` enabled, along with the relevant
 bus controller node also being enabled.
 
-As an example this sample provides a DTS overlay for the :ref:`lpcxpresso55s28`
+As an example this sample provides a DTS overlay for the :zephyr:board:`lpcxpresso55s28`
 board (:file:`boards/lpcxpresso55s28.overlay`). It assumes that a I2C
 _is31fl3216a LED driver (with 16 LEDs wired) is connected to the I2C bus at
 address 0x74.

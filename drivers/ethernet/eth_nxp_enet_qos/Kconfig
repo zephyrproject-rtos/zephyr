@@ -5,6 +5,7 @@ menuconfig ETH_NXP_ENET_QOS
 	bool "NXP ENET QOS Ethernet Module Driver"
 	default y
 	depends on DT_HAS_NXP_ENET_QOS_ENABLED
+	select PINCTRL
 	select MDIO if DT_HAS_NXP_ENET_QOS_MDIO_ENABLED
 	help
 	  Enable NXP ENET Ethernet Module Driver. This driver

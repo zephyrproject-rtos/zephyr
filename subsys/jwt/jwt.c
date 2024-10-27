@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2018 Linaro Ltd
+ * Copyright (C) 2024 BayLibre SAS
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,20 +12,12 @@
 #include <zephyr/data/jwt.h>
 #include <zephyr/data/json.h>
 
-#ifdef CONFIG_JWT_SIGN_RSA
-#include <mbedtls/pk.h>
-#include <mbedtls/rsa.h>
-#include <mbedtls/sha256.h>
-#include <zephyr/random/random.h>
-#endif
+#include "jwt.h"
 
-#ifdef CONFIG_JWT_SIGN_ECDSA
-#include <tinycrypt/ctr_prng.h>
-#include <tinycrypt/sha256.h>
-#include <tinycrypt/ecc_dsa.h>
-#include <tinycrypt/constants.h>
-
-#include <zephyr/random/random.h>
+#if defined(CONFIG_JWT_SIGN_RSA)
+#define JWT_SIGNATURE_LEN 256
+#else /* CONFIG_JWT_SIGN_ECDSA */
+#define JWT_SIGNATURE_LEN 64
 #endif
 
 /*
@@ -153,8 +146,7 @@ static int jwt_add_header(struct jwt_builder *builder)
 #ifdef CONFIG_JWT_SIGN_RSA
 		/* {"alg":"RS256","typ":"JWT"} */
 		"eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9";
-#endif
-#ifdef CONFIG_JWT_SIGN_ECDSA
+#else /* CONFIG_JWT_SIGN_ECDSA */
 		/* {"alg":"ES256","typ":"JWT"} */
 		"eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9";
 #endif
@@ -190,120 +182,24 @@ int jwt_add_payload(struct jwt_builder *builder,
 	return res;
 }
 
-#ifdef CONFIG_JWT_SIGN_RSA
-
-static int csprng_wrapper(void *ctx, unsigned char *dest, size_t size)
-{
-	ARG_UNUSED(ctx);
-
-	return sys_csrand_get((void *)dest, size);
-}
-
 int jwt_sign(struct jwt_builder *builder,
 	     const char *der_key,
 	     size_t der_key_len)
 {
-	int res;
-	mbedtls_pk_context ctx;
+	int ret;
+	unsigned char sig[JWT_SIGNATURE_LEN];
 
-	mbedtls_pk_init(&ctx);
-
-	res = mbedtls_pk_parse_key(&ctx, der_key, der_key_len,
-			       NULL, 0, csprng_wrapper, NULL);
-	if (res != 0) {
-		return res;
-	}
-
-	uint8_t hash[32], sig[256];
-	size_t sig_len = sizeof(sig);
-
-	/*
-	 * The '0' indicates to mbedtls to do a SHA256, instead of
-	 * 224.
-	 */
-	mbedtls_sha256(builder->base, builder->buf - builder->base,
-		       hash, 0);
-
-	res = mbedtls_pk_sign(&ctx, MBEDTLS_MD_SHA256,
-			      hash, sizeof(hash),
-			      sig, sig_len, &sig_len,
-			      csprng_wrapper, NULL);
-	if (res != 0) {
-		return res;
-	}
-
-	base64_outch(builder, '.');
-	base64_append_bytes(sig, sig_len, builder);
-	base64_flush(builder);
-
-	return builder->overflowed ? -ENOMEM : 0;
-}
-#endif
-
-#ifdef CONFIG_JWT_SIGN_ECDSA
-static TCCtrPrng_t prng_state;
-static bool prng_init;
-
-static const char personalize[] = "zephyr:drivers/jwt/jwt.c";
-
-static int setup_prng(void)
-{
-	if (prng_init) {
-		return 0;
-	}
-	prng_init = true;
-
-	uint8_t entropy[TC_AES_KEY_SIZE + TC_AES_BLOCK_SIZE];
-
-	sys_rand_get(entropy, sizeof(entropy));
-
-	int res = tc_ctr_prng_init(&prng_state,
-				   (const uint8_t *) &entropy, sizeof(entropy),
-				   personalize,
-				   sizeof(personalize));
-
-	return res == TC_CRYPTO_SUCCESS ? 0 : -EINVAL;
-}
-
-int default_CSPRNG(uint8_t *dest, unsigned int size)
-{
-	int res = tc_ctr_prng_generate(&prng_state, NULL, 0, dest, size);
-	return res;
-}
-
-int jwt_sign(struct jwt_builder *builder,
-	     const char *der_key,
-	     size_t der_key_len)
-{
-	struct tc_sha256_state_struct ctx;
-	uint8_t hash[32], sig[64];
-	int res;
-
-	tc_sha256_init(&ctx);
-	tc_sha256_update(&ctx, builder->base, builder->buf - builder->base);
-	tc_sha256_final(hash, &ctx);
-
-	res = setup_prng();
-
-	if (res != 0) {
-		return res;
-	}
-	uECC_set_rng(&default_CSPRNG);
-
-	/* Note that tinycrypt only supports P-256. */
-	res = uECC_sign(der_key, hash, sizeof(hash),
-			sig, &curve_secp256r1);
-	if (res != TC_CRYPTO_SUCCESS) {
-		return -EINVAL;
+	ret = jwt_sign_impl(builder, der_key, der_key_len, sig, sizeof(sig));
+	if (ret < 0) {
+		return ret;
 	}
 
 	base64_outch(builder, '.');
 	base64_append_bytes(sig, sizeof(sig), builder);
 	base64_flush(builder);
 
-	return 0;
+	return builder->overflowed ? -ENOMEM : 0;
 }
-#endif
 
 int jwt_init_builder(struct jwt_builder *builder,
 		     char *buffer,

@@ -1,5 +1,6 @@
 board:
   name: adi_eval_adin1110ebz
+  full_name: EVAL-ADIN1110EVB Evaluation board
   vendor: adi
   socs:
     - name: stm32l4s5xx

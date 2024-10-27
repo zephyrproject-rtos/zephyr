@@ -22,7 +22,8 @@ tests:
       - qemu_x86
       - native_sim
       - nrf5340dk/nrf5340/cpuapp
-    extra_args: OVERLAY_CONFIG="overlay-le-audio.conf"
+      - nrf5340_audio_dk/nrf5340/cpuapp
+    extra_args: EXTRA_CONF_FILE="overlay-le-audio.conf"
     tags: bluetooth
     harness: bluetooth
   bluetooth.general.tester_mesh:
@@ -31,6 +32,6 @@ tests:
       - qemu_x86
       - native_sim
       - nrf52840dk/nrf52840
-    extra_args: OVERLAY_CONFIG="overlay-mesh.conf"
+    extra_args: EXTRA_CONF_FILE="overlay-mesh.conf"
     tags: bluetooth
     harness: bluetooth

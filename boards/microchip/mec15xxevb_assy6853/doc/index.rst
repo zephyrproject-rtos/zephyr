@@ -1,7 +1,4 @@
-.. _mec15xxevb_assy6853:
-
-Microchip MEC15xxEVB ASSY6853
-#############################
+.. zephyr:board:: mec15xxevb_assy6853
 
 Overview
 ********
@@ -14,10 +11,6 @@ MEC150x except for an enhanced Boot-ROM SPI loader. The SPI image format has
 been updated requiring a new SPI image tool. MEC1501 and MEC152x SPI image
 formats are not compatible with each other. Evaluation and cpu boards are
 compatible.
-
-.. image:: mec15xxevb_assy6853.jpg
-     :align: center
-     :alt: MEC15XX EVB ASSY 6853
 
 Hardware
 ********

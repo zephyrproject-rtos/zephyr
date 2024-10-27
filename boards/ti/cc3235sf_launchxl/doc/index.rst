@@ -1,7 +1,4 @@
-.. _cc3235sf_launchxl:
-
-CC3235SF LaunchXL
-#################
+.. zephyr:board:: cc3235sf_launchxl
 
 Overview
 ********
@@ -265,6 +262,8 @@ using the TI UniFlash tool for certificate programming.
 
 References
 **********
+
+.. target-notes::
 
 TI SimpleLink MCUs:
     http://www.ti.com/microcontrollers/simplelink-mcus/overview.html

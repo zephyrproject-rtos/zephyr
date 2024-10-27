@@ -391,11 +391,32 @@ static int bq274xx_gauge_configure(const struct device *dev)
 {
 	const struct bq274xx_config *const config = dev->config;
 	struct bq274xx_data *data = dev->data;
-	const struct bq274xx_regs *regs = data->regs;
+	const struct bq274xx_regs *regs;
 	int ret;
 	uint16_t designenergy_mwh, taperrate;
 	uint8_t block[BQ27XXX_DM_SZ];
 	bool block_modified = false;
+	uint16_t id;
+
+	if (data->regs == NULL) {
+		k_sleep(K_TIMEOUT_ABS_MS(POWER_UP_DELAY_MS));
+
+		ret = bq274xx_get_device_type(dev, &id);
+		if (ret < 0) {
+			LOG_ERR("Unable to get device ID");
+			return -EIO;
+		}
+
+		if (id == BQ27421_DEVICE_ID) {
+			data->regs = &bq27421_regs;
+		} else if (id == BQ27427_DEVICE_ID) {
+			data->regs = &bq27427_regs;
+		} else {
+			LOG_ERR("Unsupported device ID: 0x%04x", id);
+			return -ENOTSUP;
+		}
+	}
+	regs = data->regs;
 
 	designenergy_mwh = (uint32_t)config->design_capacity * 37 / 10; /* x3.7 */
 	taperrate = config->design_capacity * 10 / config->taper_current;
@@ -696,9 +717,7 @@ static int bq274xx_sample_fetch(const struct device *dev, enum sensor_channel ch
 static int bq274xx_gauge_init(const struct device *dev)
 {
 	const struct bq274xx_config *const config = dev->config;
-	struct bq274xx_data *data = dev->data;
-	int ret;
-	uint16_t id;
+	int ret = 0;
 
 	if (!device_is_ready(config->i2c.bus)) {
 		LOG_ERR("I2C bus device not ready");
@@ -711,23 +730,6 @@ static int bq274xx_gauge_init(const struct device *dev)
 		return -ENODEV;
 	}
 #endif
-
-	k_sleep(K_TIMEOUT_ABS_MS(POWER_UP_DELAY_MS));
-
-	ret = bq274xx_get_device_type(dev, &id);
-	if (ret < 0) {
-		LOG_ERR("Unable to get device ID");
-		return -EIO;
-	}
-
-	if (id == BQ27421_DEVICE_ID) {
-		data->regs = &bq27421_regs;
-	} else if (id == BQ27427_DEVICE_ID) {
-		data->regs = &bq27427_regs;
-	} else {
-		LOG_ERR("Unsupported device ID: 0x%04x", id);
-		return -ENOTSUP;
-	}
 
 #ifdef CONFIG_BQ274XX_TRIGGER
 	ret = bq274xx_trigger_mode_init(dev);

@@ -88,6 +88,27 @@ static int frdm_mcxn236_init(void)
 	/* Set AHBCLKDIV divider to value 1 */
 	CLOCK_SetClkDiv(kCLOCK_DivAhbClk, 1U);
 
+	CLOCK_SetupExtClocking(BOARD_XTAL0_CLK_HZ);
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcan1))
+	/* Set up PLL1 for 80 MHz FlexCAN clock */
+	const pll_setup_t pll1Setup = {
+		.pllctrl = SCG_SPLLCTRL_SOURCE(1U) | SCG_SPLLCTRL_SELI(27U) |
+			   SCG_SPLLCTRL_SELP(13U),
+		.pllndiv = SCG_SPLLNDIV_NDIV(3U),
+		.pllpdiv = SCG_SPLLPDIV_PDIV(1U),
+		.pllmdiv = SCG_SPLLMDIV_MDIV(10U),
+		.pllRate = 80000000U
+	};
+
+	/* Configure PLL1 to the desired values */
+	CLOCK_SetPLL1Freq(&pll1Setup);
+	/* PLL1 Monitor is disabled */
+	CLOCK_SetPll1MonitorMode(kSCG_Pll1MonitorDisable);
+	/* Set PLL1 CLK0 divider to value 1 */
+	CLOCK_SetClkDiv(kCLOCK_DivPLL1Clk0, 1U);
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcomm1))
 	CLOCK_SetClkDiv(kCLOCK_DivFlexcom1Clk, 1u);
 	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM1);
@@ -169,6 +190,56 @@ static int frdm_mcxn236_init(void)
 	CLOCK_SetClkDiv(kCLOCK_DivCtimer4Clk, 1U);
 	CLOCK_AttachClk(kPLL0_to_CTIMER4);
 #endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcan1))
+	CLOCK_SetClkDiv(kCLOCK_DivFlexcan1Clk, 1U);
+	CLOCK_AttachClk(kPLL1_CLK0_to_FLEXCAN1);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(vref))
+	CLOCK_EnableClock(kCLOCK_Vref);
+	SPC_EnableActiveModeAnalogModules(SPC0, kSPC_controlVref);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpadc0))
+	CLOCK_SetClkDiv(kCLOCK_DivAdc0Clk, 1U);
+	CLOCK_AttachClk(kFRO_HF_to_ADC0);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpcmp0))
+	CLOCK_SetClkDiv(kCLOCK_DivCmp0FClk, 1U);
+	CLOCK_AttachClk(kFRO12M_to_CMP0F);
+	SPC_EnableActiveModeAnalogModules(SPC0, (kSPC_controlCmp0 | kSPC_controlCmp0Dac));
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexio0))
+	CLOCK_SetClkDiv(kCLOCK_DivFlexioClk, 1u);
+	CLOCK_AttachClk(kPLL0_to_FLEXIO);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lptmr0))
+
+/*
+ * Clock Select Decides what input source the lptmr will clock from
+ *
+ * 0 <- 12MHz FRO
+ * 1 <- 16K FRO
+ * 2 <- 32K OSC
+ * 3 <- Output from the OSC_SYS
+ */
+#if DT_PROP(DT_NODELABEL(lptmr0), clk_source) == 0x0
+	CLOCK_SetupClockCtrl(kCLOCK_FRO12MHZ_ENA);
+#elif DT_PROP(DT_NODELABEL(lptmr0), clk_source) == 0x1
+	CLOCK_SetupClk16KClocking(kCLOCK_Clk16KToVsys);
+#elif DT_PROP(DT_NODELABEL(lptmr0), clk_source) == 0x2
+	CLOCK_SetupOsc32KClocking(kCLOCK_Osc32kToVsys);
+#elif DT_PROP(DT_NODELABEL(lptmr0), clk_source) == 0x3
+	/* Value here should not exceed 25MHZ when using lptmr */
+	CLOCK_SetupExtClocking(MHZ(24));
+	CLOCK_SetupClockCtrl(kCLOCK_CLKIN_ENA_FM_USBH_LPT);
+#endif /* DT_PROP(DT_NODELABEL(lptmr0), clk_source) */
+
+#endif /* DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lptmr0)) */
 
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;

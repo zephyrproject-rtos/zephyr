@@ -8,10 +8,10 @@ toolchain:
   - gnuarmemb
   - xtools
 supported:
-  - arduino_gpio
   - gpio
   - hwinfo
   - watchdog
   - i2c
   - spi
   - usb_device
+  - usbd

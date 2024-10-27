@@ -22,7 +22,7 @@
  * Some platforms do not define any usable DT devices (not even the console).
  * In those cases the device API test can't be executed.
  */
-#if DT_HAS_CHOSEN(zephyr_console)
+#if DT_HAS_CHOSEN(zephyr_console) && DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_console))
 #define CONSOLE_DT_NODE DT_CHOSEN(zephyr_console)
 #endif
 

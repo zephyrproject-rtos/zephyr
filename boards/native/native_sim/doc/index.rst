@@ -425,13 +425,14 @@ The following peripherals are currently provided with this board:
   A display driver is provided that creates a window on the host machine to
   render display content.
 
-  This driver requires a 32-bit version of the `SDL2`_ library on the host
-  machine and ``pkg-config`` settings to correctly pickup the SDL2 install path
-  and compiler flags.
+  When building for the default 32bit ``native_sim`` target this driver requires a 32-bit version of
+  the `SDL2`_ development library on the host machine. For
+  :ref:`64bit native_sim<native_sim32_64>` builds you need to have the 64bit version installed.
+  You may also need to set ``pkg-config`` to correctly pickup the SDL2 install path.
 
-  On a Ubuntu 22.04 host system, for example, install the ``pkg-config`` and
-  ``libsdl2-dev:i386`` packages, and configure the pkg-config search path with
-  these commands:
+  On Ubuntu the package is ``libsdl2-dev`` whose 64bit version is likely installed by default.
+  On an Ubuntu 18.04 host system, you can install the ``pkg-config`` and the 32bit
+  ``libsdl2-dev:i386`` packages, and configure the pkg-config search path with these commands:
 
   .. code-block:: console
 
@@ -441,7 +442,7 @@ The following peripherals are currently provided with this board:
      $ export PKG_CONFIG_PATH=/usr/lib/i386-linux-gnu/pkgconfig
 
 .. _SDL2:
-   https://www.libsdl.org/download-2.0.php
+   https://www.libsdl.org
 
 .. _nsim_per_flash_simu:
 

@@ -28,11 +28,13 @@ config LIS2DW12_TRIGGER_NONE
 config LIS2DW12_TRIGGER_GLOBAL_THREAD
 	bool "Use global thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LIS2DW12),irq-gpios)
 	select LIS2DW12_TRIGGER
 
 config LIS2DW12_TRIGGER_OWN_THREAD
 	bool "Use own thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LIS2DW12),irq-gpios)
 	select LIS2DW12_TRIGGER
 
 endchoice

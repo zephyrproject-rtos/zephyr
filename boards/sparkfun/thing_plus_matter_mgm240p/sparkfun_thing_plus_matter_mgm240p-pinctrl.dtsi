@@ -18,6 +18,15 @@
 		};
 	};
 
+	eusart1_default: eusart1_default {
+		group1 {
+			psels = <GECKO_PSEL(SPI_SCK, C, 2)>,
+				<GECKO_PSEL(SPI_MISO, C, 3)>,
+				<GECKO_PSEL(SPI_MOSI, C, 6)>,
+				<GECKO_PSEL(SPI_CSN, A, 7)>;
+		};
+	};
+
 	i2c0_default: i2c0_default {
 		group1 {
 			psels = <GECKO_PSEL(I2C_SDA, B, 3)>,

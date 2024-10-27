@@ -208,7 +208,7 @@ BUILD_ASSERT(offsetof(struct pm_device_isr, base) == 0);
 #ifdef CONFIG_PM_DEVICE_POWER_DOMAIN
 #define	Z_PM_DEVICE_POWER_DOMAIN_INIT(_node_id)			\
 	.domain = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(_node_id,	\
-				   power_domain)),
+				   power_domains)),
 #else
 #define Z_PM_DEVICE_POWER_DOMAIN_INIT(obj)
 #endif /* CONFIG_PM_DEVICE_POWER_DOMAIN */

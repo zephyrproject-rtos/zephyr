@@ -116,7 +116,7 @@ SECTIONS
     {
 		. = ALIGN(16);
 		MPU_ALIGN(__rom_region_size);
-		__rom_region_start = .;
+		__rom_region_start = ABSOLUTE(.);
 /* Located in generated directory. This file is populated by calling
  * zephyr_linker_sources(ROM_START ...).
  */

@@ -48,6 +48,17 @@
 		};
 	};
 
+	temp0: temp0 {
+		compatible = "nxp,kinetis-temperature";
+		io-channels = <&adc0 26>, <&adc0 27>;
+		io-channel-names = "SENSOR", "BANDGAP";
+		bandgap-voltage = <1000000>;
+		vtemp25 = <716000>;
+		sensor-slope-cold = <1620>;
+		sensor-slope-hot = <1620>;
+		status = "disabled";
+	};
+
 	soc {
 		ftfa: flash-controller@40020000 {
 			compatible = "nxp,kinetis-ftfa";
@@ -57,7 +68,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			fsec = <0xff>;
-			fopt = <0xff>;
+			fopt = <0x3d>;
 			config-field-offset = <0x400>;
 
 			flash0: flash@0 {
@@ -202,6 +213,15 @@
 			status = "disabled";
 		};
 
+		usb: usbd@40072000 {
+			compatible = "nxp,kinetis-usbd";
+			reg = <0x40072000 0x1000>;
+			interrupts = <24 1>;
+			interrupt-names = "usb";
+			num-bidir-endpoints = <16>;
+			status = "disabled";
+		};
+
 		lpuart0: uart@40054000 {
 			compatible = "nxp,kinetis-lpuart";
 			reg = <0x40054000 0x1000>;
@@ -252,6 +272,51 @@
 			clocks = <&sim KINETIS_SIM_MCGPCLK 0x103C 26>;
 			status = "disabled";
 			#pwm-cells = <3>;
+		};
+
+		lptmr0: lptmr@40040000 {
+			compatible = "nxp,lptmr";
+			reg = <0x40040000 0x1000>;
+			interrupts = <28 0>;
+			clock-frequency = <1000>;
+			prescaler = <1>;
+			prescale-glitch-filter = <1>;
+			clk-source = <1>;
+			resolution = <16>;
+			status = "disabled";
+		};
+
+		rtc: rtc@4003d000 {
+			compatible = "nxp,kinetis-rtc";
+			reg = <0x4003d000 0x1000>;
+			interrupts = <20 0>, <21 0>;
+			interrupt-names = "alarm", "seconds";
+			clock-frequency = <32768>;
+			prescaler = <32768>;
+			status = "disabled";
+		};
+
+		pit0: pit@40037000 {
+			compatible = "nxp,pit";
+			reg = <0x40037000 0x1000>;
+			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103c 23>;
+			interrupts = <22 0>;
+			max-load-value = <0xffffffff>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			pit0_channel0: pit0_channel@0 {
+				compatible = "nxp,pit-channel";
+				reg = <0>;
+				status = "disabled";
+			};
+
+			pit0_channel1: pit0_channel@1 {
+				compatible = "nxp,pit-channel";
+				reg = <1>;
+				status = "disabled";
+			};
 		};
 	};
 };

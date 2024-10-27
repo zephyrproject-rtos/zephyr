@@ -230,7 +230,7 @@ static void dma_smartbond_set_channel_status(const struct device *dev,
 		DMA->DMA_CLEAR_INT_REG |= BIT(channel);
 
 		/* DMA interrupts should be disabled only if all channels are disabled. */
-		if (!dma_smartbond_is_dma_active()) {
+		if (!dma_smartbond_is_dma_active() && irq_is_enabled(SMARTBOND_IRQN)) {
 			irq_disable(SMARTBOND_IRQN);
 			/* Allow entering sleep once all DMA channels are inactive */
 			dma_smartbond_pm_policy_state_lock_put();

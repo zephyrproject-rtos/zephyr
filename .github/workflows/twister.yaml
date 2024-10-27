@@ -25,7 +25,7 @@ jobs:
     runs-on:
       group: zephyr-runner-v2-linux-x64-4xlarge
     container:
-      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.26.14.20240823
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.27.3.20241022
       options: '--entrypoint /bin/bash'
     outputs:
       subset: ${{ steps.output-services.outputs.subset }}
@@ -130,7 +130,7 @@ jobs:
     needs: twister-build-prep
     if: needs.twister-build-prep.outputs.size != 0
     container:
-      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.26.14.20240823
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.27.3.20241022
       options: '--entrypoint /bin/bash'
     strategy:
       fail-fast: false

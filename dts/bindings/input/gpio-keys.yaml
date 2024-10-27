@@ -41,6 +41,12 @@ properties:
       Do not use interrupts for the key GPIOs, poll the pin periodically at the
       specified debounce-interval-ms instead.
 
+  no-disconnect:
+    type: boolean
+    description: |
+      Do not try to disconnect the pin on suspend. Can be used if the GPIO
+      controller does not support the GPIO_DISCONNECTED flag.
+
 child-binding:
   description: GPIO KEYS child node
   properties:

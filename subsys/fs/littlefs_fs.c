@@ -836,14 +836,30 @@ static int littlefs_init_cfg(struct fs_littlefs *fs, int flags)
 	lcp->context = fs->backend;
 	/* Set the validated/defaulted values. */
 	if (littlefs_on_blkdev(flags)) {
+		lfs_size_t new_cache_size = block_size;
+		lfs_size_t new_lookahead_size = block_size * 4;
+
 		lcp->read = lfs_api_read_blk;
 		lcp->prog = lfs_api_prog_blk;
 		lcp->erase = lfs_api_erase_blk;
 
 		lcp->read_size = block_size;
 		lcp->prog_size = block_size;
-		lcp->cache_size = block_size;
-		lcp->lookahead_size = block_size * 4;
+
+		if (lcp->cache_size < new_cache_size) {
+			LOG_ERR("Configured cache size is too small: %d < %d", lcp->cache_size,
+				new_cache_size);
+			return -ENOMEM;
+		}
+		lcp->cache_size = new_cache_size;
+
+		if (lcp->lookahead_size < new_lookahead_size) {
+			LOG_ERR("Configured lookahead size is too small: %d < %d",
+				lcp->lookahead_size, new_lookahead_size);
+			return -ENOMEM;
+		}
+		lcp->lookahead_size = new_lookahead_size;
+
 		lcp->sync = lfs_api_sync_blk;
 
 		LOG_INF("sizes: rd %u ; pr %u ; ca %u ; la %u",
@@ -1061,6 +1077,7 @@ static struct fs_littlefs fs_data_##inst = { \
 		.prog_size = DT_INST_PROP(inst, prog_size), \
 		.cache_size = DT_INST_PROP(inst, cache_size), \
 		.lookahead_size = DT_INST_PROP(inst, lookahead_size), \
+		.block_cycles = DT_INST_PROP(inst, block_cycles), \
 		.read_buffer = read_buffer_##inst, \
 		.prog_buffer = prog_buffer_##inst, \
 		.lookahead_buffer = lookahead_buffer_##inst, \

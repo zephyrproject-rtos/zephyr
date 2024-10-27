@@ -39,24 +39,17 @@
 #define CONTEXT_CLAIM 0x04
 #define CONTEXT_ENABLE_BASE 0x2000
 #define CONTEXT_ENABLE_SIZE 0x80
+#define CONTEXT_PENDING_BASE 0x1000
+
 /*
  * Trigger type is mentioned, but not defined in the RISCV PLIC specs.
  * However, it is defined and supported by at least the Andes & Telink datasheet, and supported
  * in Linux's SiFive PLIC driver
  */
+#ifdef CONFIG_PLIC_SUPPORTS_TRIG_TYPE
 #define PLIC_TRIG_LEVEL ((uint32_t)0)
 #define PLIC_TRIG_EDGE  ((uint32_t)1)
-#define PLIC_DRV_HAS_COMPAT(compat)                                                                \
-	DT_NODE_HAS_COMPAT(DT_COMPAT_GET_ANY_STATUS_OKAY(DT_DRV_COMPAT), compat)
-
-#if PLIC_DRV_HAS_COMPAT(andestech_nceplic100)
-#define PLIC_SUPPORTS_TRIG_TYPE 1
-#define PLIC_REG_TRIG_TYPE_WIDTH 1
-#define PLIC_REG_TRIG_TYPE_OFFSET 0x1080
-#else
-/* Trigger-type not supported */
-#define PLIC_REG_TRIG_TYPE_WIDTH 0
-#endif
+#endif /* CONFIG_PLIC_SUPPORTS_TRIG_TYPE */
 
 /* PLIC registers are 32-bit memory-mapped */
 #define PLIC_REG_SIZE 32
@@ -87,7 +80,12 @@ struct plic_config {
 	mem_addr_t prio;
 	mem_addr_t irq_en;
 	mem_addr_t reg;
+#ifdef CONFIG_PLIC_SUPPORTS_SOFT_INTERRUPT
+	mem_addr_t pend;
+#endif /* CONFIG_PLIC_SUPPORTS_SOFT_INTERRUPT */
+#ifdef CONFIG_PLIC_SUPPORTS_TRIG_TYPE
 	mem_addr_t trig;
+#endif /* CONFIG_PLIC_SUPPORTS_TRIG_TYPE */
 	uint32_t max_prio;
 	/* Number of IRQs that the PLIC physically supports */
 	uint32_t riscv_ndev;
@@ -164,7 +162,7 @@ static inline mem_addr_t get_context_en_addr(const struct device *dev, uint32_t 
 	/*
 	 * We want to return the irq_en address for the context of given hart.
 	 */
-#if CONFIG_SMP
+#if CONFIG_MP_MAX_NUM_CPUS > 1
 	hartid = _kernel.cpus[cpu_num].arch.hartid;
 #else
 	hartid = arch_proc_id();
@@ -188,7 +186,7 @@ static inline mem_addr_t get_threshold_priority_addr(const struct device *dev, u
 	const struct plic_config *config = dev->config;
 	uint32_t hartid;
 
-#if CONFIG_SMP
+#if CONFIG_MP_MAX_NUM_CPUS > 1
 	hartid = _kernel.cpus[cpu_num].arch.hartid;
 #else
 	hartid = arch_proc_id();
@@ -203,6 +201,15 @@ static ALWAYS_INLINE uint32_t local_irq_to_irq(const struct device *dev, uint32_
 
 	return irq_to_level_2(local_irq) | config->irq;
 }
+
+#ifdef CONFIG_PLIC_SUPPORTS_SOFT_INTERRUPT
+static inline mem_addr_t get_pending_reg(const struct device *dev, uint32_t local_irq)
+{
+	const struct plic_config *config = dev->config;
+
+	return config->pend + local_irq_to_reg_offset(local_irq);
+}
+#endif /* CONFIG_PLIC_SUPPORTS_SOFT_INTERRUPT */
 
 /**
  * @brief Determine the PLIC device from the IRQ
@@ -220,6 +227,7 @@ static inline const struct device *get_plic_dev_from_irq(uint32_t irq)
 #endif
 }
 
+#ifdef CONFIG_PLIC_SUPPORTS_TRIG_TYPE
 /**
  * @brief Return the value of the trigger type register for the IRQ
  *
@@ -232,18 +240,15 @@ static inline const struct device *get_plic_dev_from_irq(uint32_t irq)
  *
  * @return Trigger type register value if PLIC supports trigger type, PLIC_TRIG_LEVEL otherwise
  */
-static uint32_t __maybe_unused riscv_plic_irq_trig_val(const struct device *dev, uint32_t local_irq)
+static uint32_t riscv_plic_irq_trig_val(const struct device *dev, uint32_t local_irq)
 {
-	if (!IS_ENABLED(PLIC_SUPPORTS_TRIG_TYPE)) {
-		return PLIC_TRIG_LEVEL;
-	}
-
 	const struct plic_config *config = dev->config;
 	mem_addr_t trig_addr = config->trig + local_irq_to_reg_offset(local_irq);
-	uint32_t offset = local_irq * PLIC_REG_TRIG_TYPE_WIDTH;
+	uint32_t offset = local_irq * CONFIG_PLIC_TRIG_TYPE_BITWIDTH;
 
-	return sys_read32(trig_addr) & GENMASK(offset + PLIC_REG_TRIG_TYPE_WIDTH - 1, offset);
+	return sys_read32(trig_addr) & GENMASK(offset + CONFIG_PLIC_TRIG_TYPE_BITWIDTH - 1, offset);
 }
+#endif /* CONFIG_PLIC_SUPPORTS_TRIG_TYPE */
 
 static void plic_irq_enable_set_state(uint32_t irq, bool enable)
 {
@@ -358,6 +363,19 @@ void riscv_plic_set_priority(uint32_t irq, uint32_t priority)
 	sys_write32(priority, prio_addr);
 }
 
+#ifdef CONFIG_PLIC_SUPPORTS_SOFT_INTERRUPT
+void riscv_plic_irq_set_pending(uint32_t irq)
+{
+	const struct device *dev = get_plic_dev_from_irq(irq);
+	const uint32_t local_irq = irq_from_level_2(irq);
+	mem_addr_t pend_addr = get_pending_reg(dev, local_irq);
+	uint32_t pend_value = sys_read32(pend_addr);
+
+	WRITE_BIT(pend_value, local_irq & PLIC_REG_MASK, true);
+	sys_write32(pend_value, pend_addr);
+}
+#endif /* CONFIG_PLIC_SUPPORTS_SOFT_INTERRUPT */
+
 /**
  * @brief Get riscv PLIC-specific interrupt line causing an interrupt
  *
@@ -467,7 +485,6 @@ static void plic_irq_handler(const struct device *dev)
 	const struct plic_config *config = dev->config;
 	mem_addr_t claim_complete_addr = get_claim_complete_addr(dev);
 	struct _isr_table_entry *ite;
-	uint32_t __maybe_unused trig_val;
 	uint32_t cpu_id = arch_proc_id();
 	/* Get the IRQ number generating the interrupt */
 	const uint32_t local_irq = sys_read32(claim_complete_addr);
@@ -493,7 +510,7 @@ static void plic_irq_handler(const struct device *dev)
 	 *
 	 * (by RISC-V Privileged Architecture v1.10)
 	 */
-	if (IS_ENABLED(CONFIG_SMP) && (local_irq == 0U)) {
+	if ((CONFIG_MP_MAX_NUM_CPUS > 1) && (local_irq == 0U)) {
 		return;
 	}
 
@@ -514,16 +531,16 @@ static void plic_irq_handler(const struct device *dev)
 		z_irq_spurious(NULL);
 	}
 
-#if PLIC_DRV_HAS_COMPAT(andestech_nceplic100)
-	trig_val = riscv_plic_irq_trig_val(dev, local_irq);
+#ifdef CONFIG_PLIC_SUPPORTS_TRIG_EDGE
+	uint32_t trig_val = riscv_plic_irq_trig_val(dev, local_irq);
 	/*
-	 * Edge-triggered interrupts on Andes NCEPLIC100 have to be acknowledged first before
+	 * Edge-triggered interrupts have to be acknowledged first before
 	 * getting handled so that we don't miss on the next edge-triggered interrupt.
 	 */
 	if (trig_val == PLIC_TRIG_EDGE) {
 		sys_write32(local_irq, claim_complete_addr);
 	}
-#endif
+#endif /* CONFIG_PLIC_SUPPORTS_TRIG_EDGE */
 
 	/* Call the corresponding IRQ handler in _sw_isr_table */
 	ite = &config->isr_table[local_irq];
@@ -534,14 +551,14 @@ static void plic_irq_handler(const struct device *dev)
 	 * PLIC controller that the IRQ has been handled
 	 * for level triggered interrupts.
 	 */
-#if PLIC_DRV_HAS_COMPAT(andestech_nceplic100)
-	/* For NCEPLIC100, handle only if level-triggered */
+#ifdef CONFIG_PLIC_SUPPORTS_TRIG_EDGE
+	/* Handle only if level-triggered */
 	if (trig_val == PLIC_TRIG_LEVEL) {
 		sys_write32(local_irq, claim_complete_addr);
 	}
 #else
 	sys_write32(local_irq, claim_complete_addr);
-#endif
+#endif /* #ifdef CONFIG_PLIC_SUPPORTS_TRIG_EDGE */
 }
 
 /**
@@ -883,8 +900,10 @@ SHELL_CMD_REGISTER(plic, &plic_cmds, "PLIC shell commands", NULL);
 		.prio = PLIC_BASE_ADDR(n),                                                         \
 		.irq_en = PLIC_BASE_ADDR(n) + CONTEXT_ENABLE_BASE,                                 \
 		.reg = PLIC_BASE_ADDR(n) + CONTEXT_BASE,                                           \
-		IF_ENABLED(PLIC_SUPPORTS_TRIG_TYPE,                                                \
-			   (.trig = PLIC_BASE_ADDR(n) + PLIC_REG_TRIG_TYPE_OFFSET,))               \
+		IF_ENABLED(CONFIG_PLIC_SUPPORTS_SOFT_INTERRUPT,                                    \
+			   (.pend = PLIC_BASE_ADDR(n) + CONTEXT_PENDING_BASE,))                    \
+		IF_ENABLED(CONFIG_PLIC_SUPPORTS_TRIG_TYPE,                                         \
+			   (.trig = PLIC_BASE_ADDR(n) + CONFIG_PLIC_TRIG_TYPE_REG_OFFSET,))        \
 		.max_prio = DT_INST_PROP(n, riscv_max_priority),                                   \
 		.riscv_ndev = DT_INST_PROP(n, riscv_ndev),                                         \
 		.nr_irqs = PLIC_MIN_IRQ_NUM(n),                                                    \

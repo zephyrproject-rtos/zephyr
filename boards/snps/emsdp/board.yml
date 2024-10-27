@@ -1,5 +1,6 @@
 board:
   name: emsdp
+  full_name: ARC EM Software Development Platform
   vendor: snps
   socs:
   - name: emsdp_em4

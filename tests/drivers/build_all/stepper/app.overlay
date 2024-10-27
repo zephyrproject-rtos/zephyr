@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Carl Zeiss Meditec AG
+ * SPDX-FileCopyrightText: Copyright (c) 2024 Carl Zeiss Meditec AG
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -16,6 +16,20 @@
 			status = "okay";
 
 			#include "gpio.dtsi"
+		};
+
+		test_spi: spi@33334444 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "zephyr,spi-emul-controller";
+			reg = <0x33334444 0x1000>;
+			status = "okay";
+			clock-frequency = <2000000>;
+
+			/* one entry for every devices at spi.dtsi */
+			cs-gpios = <&test_gpio 0 0>;	/* 0x00 */
+
+			#include "spi.dtsi"
 		};
 	};
 };

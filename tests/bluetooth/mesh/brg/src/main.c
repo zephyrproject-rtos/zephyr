@@ -218,6 +218,111 @@ ZTEST(bt_mesh_brg_cfg, test_basic_functionality_storage)
 	}
 }
 
+static void check_bt_mesh_brg_cfg_tbl_multiple_delete(int expect_left)
+{
+	uint8_t status;
+	int err;
+	int n;
+	const struct bt_mesh_brg_cfg_row *brg_tbl;
+
+	n = bt_mesh_brg_cfg_tbl_get(&brg_tbl);
+	zassert_equal(n, TEST_VECT_SZ - 1);
+
+	ztest_expect_value(bt_mesh_settings_store_schedule, flag, BT_MESH_SETTINGS_BRG_PENDING);
+	err = bt_mesh_brg_cfg_tbl_remove(test_vector[1].net_idx1, test_vector[1].net_idx2,
+					 test_vector[1].addr1, BT_MESH_ADDR_UNASSIGNED, &status);
+	zassert_equal(err, 0);
+
+	n = bt_mesh_brg_cfg_tbl_get(&brg_tbl);
+	zassert_equal(n, expect_left);
+
+	for (int i = 0; i < n; i++) {
+		zassert_true(brg_tbl[i].net_idx1 == test_vector[0].net_idx1);
+		zassert_true(brg_tbl[i].net_idx2 == test_vector[0].net_idx2);
+		zassert_true(brg_tbl[i].addr1 == test_vector[0].addr1);
+		zassert_true(brg_tbl[i].addr2 == test_vector[i * 2].addr2);
+	}
+}
+
+ZTEST(bt_mesh_brg_cfg, test_removal_multiple_entries)
+{
+	check_bt_mesh_brg_cfg_tbl_reset();
+
+	uint8_t status;
+	int err;
+
+	/* Test removal of every second entry */
+	for (int i = 0; i < TEST_VECT_SZ - 1; i++) {
+		ztest_expect_value(bt_mesh_settings_store_schedule, flag,
+				   BT_MESH_SETTINGS_BRG_PENDING);
+		err = bt_mesh_brg_cfg_tbl_add(test_vector[i].direction, test_vector[i % 2].net_idx1,
+					      test_vector[i % 2].net_idx2, test_vector[i % 2].addr1,
+					      test_vector[i].addr2, &status);
+		zassert_equal(err, 0);
+		zassert_equal(status, STATUS_SUCCESS);
+	}
+
+	check_bt_mesh_brg_cfg_tbl_multiple_delete((TEST_VECT_SZ - 1) / 2);
+	check_bt_mesh_brg_cfg_tbl_reset();
+
+	/* Test removal of all entries, except first */
+	for (int i = 0; i < TEST_VECT_SZ - 1; i++) {
+		ztest_expect_value(bt_mesh_settings_store_schedule, flag,
+				   BT_MESH_SETTINGS_BRG_PENDING);
+		if (i == 0) {
+			err = bt_mesh_brg_cfg_tbl_add(test_vector[i].direction,
+						      test_vector[i].net_idx1,
+						      test_vector[i].net_idx2, test_vector[i].addr1,
+						      test_vector[i].addr2, &status);
+		} else {
+			err = bt_mesh_brg_cfg_tbl_add(test_vector[i].direction,
+						      test_vector[1].net_idx1,
+						      test_vector[1].net_idx2, test_vector[1].addr1,
+						      test_vector[i].addr2, &status);
+		}
+		zassert_equal(err, 0);
+		zassert_equal(status, STATUS_SUCCESS);
+	}
+
+	check_bt_mesh_brg_cfg_tbl_multiple_delete(1);
+	check_bt_mesh_brg_cfg_tbl_reset();
+
+	/* Test removal of all entries, except last */
+	for (int i = TEST_VECT_SZ - 2; i >= 0; i--) {
+		ztest_expect_value(bt_mesh_settings_store_schedule, flag,
+				   BT_MESH_SETTINGS_BRG_PENDING);
+		if (i == 0) {
+			err = bt_mesh_brg_cfg_tbl_add(test_vector[i].direction,
+						      test_vector[i].net_idx1,
+						      test_vector[i].net_idx2, test_vector[i].addr1,
+						      test_vector[i].addr2, &status);
+		} else {
+			err = bt_mesh_brg_cfg_tbl_add(test_vector[i].direction,
+						      test_vector[1].net_idx1,
+						      test_vector[1].net_idx2, test_vector[1].addr1,
+						      test_vector[i].addr2, &status);
+		}
+		zassert_equal(err, 0);
+		zassert_equal(status, STATUS_SUCCESS);
+	}
+
+	check_bt_mesh_brg_cfg_tbl_multiple_delete(1);
+	check_bt_mesh_brg_cfg_tbl_reset();
+
+	/* Test removal of all entries */
+	for (int i = 0; i < TEST_VECT_SZ - 1; i++) {
+		ztest_expect_value(bt_mesh_settings_store_schedule, flag,
+				   BT_MESH_SETTINGS_BRG_PENDING);
+		err = bt_mesh_brg_cfg_tbl_add(test_vector[i].direction, test_vector[1].net_idx1,
+					      test_vector[1].net_idx2, test_vector[1].addr1,
+					      test_vector[i].addr2, &status);
+		zassert_equal(err, 0);
+		zassert_equal(status, STATUS_SUCCESS);
+	}
+
+	check_bt_mesh_brg_cfg_tbl_multiple_delete(0);
+}
+
 static void pending_store_enable_create_expectations(bool *enable_val)
 {
 	if (*enable_val) {

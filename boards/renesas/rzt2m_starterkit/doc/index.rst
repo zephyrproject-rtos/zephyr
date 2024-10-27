@@ -95,4 +95,6 @@ Connect GDB to the server and load an application:
 References
 **********
 
+.. target-notes::
+
 .. _RZT2M Product page: https://www.renesas.com/us/en/products/microcontrollers-microprocessors/rz-mpus/rzt2m-high-performance-multi-function-mpu-realizing-high-speed-processing-and-high-precision-control

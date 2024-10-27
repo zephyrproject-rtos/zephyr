@@ -5,18 +5,48 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L /* For strnlen() */
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_wifi_mgmt, CONFIG_NET_L2_WIFI_MGMT_LOG_LEVEL);
 
 #include <errno.h>
 #include <string.h>
-
+#include <stdio.h>
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/wifi_mgmt.h>
 #ifdef CONFIG_WIFI_NM
 #include <zephyr/net/wifi_nm.h>
 #endif /* CONFIG_WIFI_NM */
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING
+#define MAX_NEIGHBOR_AP_LIMIT 6U
+#define MAX_EVENT_STR_LEN 32U
+
+struct wifi_rrm_neighbor_ap_t {
+	char ssid[WIFI_SSID_MAX_LEN + 1];
+	uint8_t bssid[WIFI_SSID_MAX_LEN];
+	uint8_t bssid_info[WIFI_SSID_MAX_LEN];
+	int op_class;
+	int channel;
+	int phy_type;
+};
+
+struct wifi_rrm_neighbor_report_t {
+	struct wifi_rrm_neighbor_ap_t neighbor_ap[MAX_NEIGHBOR_AP_LIMIT];
+	int neighbor_cnt;
+};
+
+struct wifi_roaming_params {
+	bool is_11r_used;
+	bool is_11k_enabled;
+	struct wifi_rrm_neighbor_report_t neighbor_rep;
+};
+
+static struct wifi_roaming_params roaming_params;
+#endif
 
 const char *wifi_security_txt(enum wifi_security_type security)
 {
@@ -41,6 +71,16 @@ const char *wifi_security_txt(enum wifi_security_type security)
 		return "WAPI";
 	case WIFI_SECURITY_TYPE_EAP_TLS:
 		return "EAP";
+	case WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL:
+		return "WPA/WPA2/WPA3 PSK";
+	case WIFI_SECURITY_TYPE_FT_PSK:
+		return "FT-PSK";
+	case WIFI_SECURITY_TYPE_FT_SAE:
+		return "FT-SAE";
+	case WIFI_SECURITY_TYPE_FT_EAP:
+		return "FT-EAP";
+	case WIFI_SECURITY_TYPE_FT_EAP_SHA384:
+		return "FT-EAP-SHA384";
 	case WIFI_SECURITY_TYPE_UNKNOWN:
 	default:
 		return "UNKNOWN";
@@ -240,6 +280,18 @@ const char *wifi_ps_wakeup_mode_txt(enum wifi_ps_wakeup_mode ps_wakeup_mode)
 	}
 }
 
+const char * const wifi_ps_exit_strategy_txt(enum wifi_ps_exit_strategy ps_exit_strategy)
+{
+	switch (ps_exit_strategy) {
+	case WIFI_PS_EXIT_EVERY_TIM:
+		return "Every TIM";
+	case WIFI_PS_EXIT_CUSTOM_ALGO:
+		return "Custom algorithm";
+	default:
+		return "UNKNOWN";
+	}
+}
+
 static const struct wifi_mgmt_ops *const get_wifi_api(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
@@ -294,6 +346,11 @@ static int wifi_connect(uint32_t mgmt_request, struct net_if *iface,
 	    !params->ssid) {
 		return -EINVAL;
 	}
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING
+	memset(&roaming_params, 0x0, sizeof(roaming_params));
+	roaming_params.is_11r_used = params->ft_used;
+#endif
 
 	return wifi_mgmt_api->connect(dev, params);
 }
@@ -385,6 +442,122 @@ void wifi_mgmt_raise_disconnect_result_event(struct net_if *iface, int status)
 					iface, &cnx_status,
 					sizeof(struct wifi_status));
 }
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING
+static int wifi_start_roaming(uint32_t mgmt_request, struct net_if *iface,
+			      void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
+
+	if (roaming_params.is_11r_used) {
+		if (wifi_mgmt_api == NULL ||
+		    wifi_mgmt_api->start_11r_roaming == NULL) {
+			return -ENOTSUP;
+		}
+
+		return wifi_mgmt_api->start_11r_roaming(dev);
+	} else if (roaming_params.is_11k_enabled) {
+		memset(&roaming_params.neighbor_rep, 0x0, sizeof(roaming_params.neighbor_rep));
+		if (wifi_mgmt_api == NULL
+		    || wifi_mgmt_api->send_11k_neighbor_request == NULL) {
+			return -ENOTSUP;
+		}
+
+		return wifi_mgmt_api->send_11k_neighbor_request(dev, NULL);
+	} else if (wifi_mgmt_api == NULL || wifi_mgmt_api->btm_query == NULL) {
+		return -ENOTSUP;
+	}
+
+	return wifi_mgmt_api->btm_query(dev, 0x10);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_START_ROAMING, wifi_start_roaming);
+
+static int wifi_neighbor_rep_complete(uint32_t mgmt_request, struct net_if *iface,
+				      void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
+	struct wifi_scan_params params = {0};
+
+	for (int i = 0; i < roaming_params.neighbor_rep.neighbor_cnt; i++) {
+		params.band_chan[i].channel = roaming_params.neighbor_rep.neighbor_ap[i].channel;
+		if (params.band_chan[i].channel > 14) {
+			params.band_chan[i].band = WIFI_FREQ_BAND_5_GHZ;
+		} else {
+			params.band_chan[i].band = WIFI_FREQ_BAND_2_4_GHZ;
+		}
+	}
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->candidate_scan == NULL) {
+		return -ENOTSUP;
+	}
+
+	return wifi_mgmt_api->candidate_scan(dev, &params);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_NEIGHBOR_REP_COMPLETE,
+				  wifi_neighbor_rep_complete);
+
+void wifi_mgmt_raise_neighbor_rep_recv_event(struct net_if *iface, char *inbuf, size_t buf_len)
+{
+	const uint8_t *buf = inbuf;
+	char event[MAX_EVENT_STR_LEN] = {0};
+	char bssid[WIFI_SSID_MAX_LEN] = {0};
+	char bssid_info[WIFI_SSID_MAX_LEN]  = {0};
+	int op_class, channel, phy_type;
+	int idx = roaming_params.neighbor_rep.neighbor_cnt;
+
+	if (!buf || buf[0] == '\0') {
+		return;
+	}
+	if (sscanf(buf, "%s bssid=%s info=%s op_class=%d chan=%d phy_type=%d",
+		   event, bssid, bssid_info, &op_class, &channel, &phy_type) == 6) {
+		int i;
+		int match  = 0;
+		size_t len = 0;
+
+		for (i = 0; i < roaming_params.neighbor_rep.neighbor_cnt; i++) {
+			if (strncmp((const char *)roaming_params.neighbor_rep.neighbor_ap[i].bssid,
+				    bssid, sizeof(bssid)) == 0) {
+				match = 1;
+				break;
+			}
+
+			if (roaming_params.neighbor_rep.neighbor_ap[i].channel == channel) {
+				match = 1;
+				break;
+			}
+		}
+		if (!match && (roaming_params.neighbor_rep.neighbor_cnt < MAX_NEIGHBOR_AP_LIMIT)) {
+			strncpy((char *)roaming_params.neighbor_rep.neighbor_ap[idx].bssid,
+				bssid, sizeof(roaming_params.neighbor_rep.neighbor_ap[idx].bssid));
+			len = strnlen(bssid, sizeof(bssid) - 1);
+			roaming_params.neighbor_rep.neighbor_ap[idx].bssid[len] = (uint8_t)'\0';
+
+			strncpy((char *)roaming_params.neighbor_rep.neighbor_ap[idx].bssid_info,
+				(bssid_info),
+				sizeof(roaming_params.neighbor_rep.neighbor_ap->bssid_info));
+			len = strnlen(bssid_info, sizeof(bssid_info) - 1);
+			roaming_params.neighbor_rep.neighbor_ap[idx].bssid_info[len] =
+				(uint8_t)'\0';
+
+			roaming_params.neighbor_rep.neighbor_ap[idx].channel  = channel;
+			roaming_params.neighbor_rep.neighbor_ap[idx].op_class = op_class;
+			roaming_params.neighbor_rep.neighbor_ap[idx].phy_type = phy_type;
+
+			roaming_params.neighbor_rep.neighbor_cnt += 1;
+		} else if (match) {
+			LOG_INF("BSSID already present in neighbor list, Skipping %s ",
+				bssid);
+		} else {
+			LOG_INF("Maximum neighbors added to list, Skipping.");
+		}
+	} else {
+		LOG_INF("Failed to Parse Neighbor Report - Skipping entry\n");
+	}
+}
+#endif
 
 static int wifi_ap_enable(uint32_t mgmt_request, struct net_if *iface,
 			  void *data, size_t len)
@@ -538,6 +711,43 @@ static int wifi_iface_stats_reset(uint32_t mgmt_request, struct net_if *iface,
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_STATS_RESET_WIFI, wifi_iface_stats_reset);
 #endif /* CONFIG_NET_STATISTICS_WIFI */
 
+static int wifi_11k_cfg(uint32_t mgmt_request, struct net_if *iface,
+			void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
+	struct wifi_11k_params *params = data;
+
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->cfg_11k == NULL) {
+		return -ENOTSUP;
+	}
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING
+	roaming_params.is_11k_enabled = params->enable_11k;
+#endif
+
+	return wifi_mgmt_api->cfg_11k(dev, params);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_11K_CONFIG, wifi_11k_cfg);
+
+static int wifi_11k_neighbor_request(uint32_t mgmt_request, struct net_if *iface,
+				     void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
+	struct wifi_11k_params *params = data;
+
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->send_11k_neighbor_request == NULL) {
+		return -ENOTSUP;
+	}
+
+	return wifi_mgmt_api->send_11k_neighbor_request(dev, params);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_11K_NEIGHBOR_REQUEST,
+				  wifi_11k_neighbor_request);
+
 static int wifi_set_power_save(uint32_t mgmt_request, struct net_if *iface,
 			  void *data, size_t len)
 {
@@ -570,6 +780,13 @@ static int wifi_set_power_save(uint32_t mgmt_request, struct net_if *iface,
 	case WIFI_PS_PARAM_WAKEUP_MODE:
 	case WIFI_PS_PARAM_TIMEOUT:
 		break;
+	case WIFI_PS_PARAM_EXIT_STRATEGY:
+		if (ps_params->exit_strategy > WIFI_PS_EXIT_MAX) {
+			ps_params->fail_reason =
+				WIFI_PS_PARAM_FAIL_INVALID_EXIT_STRATEGY;
+			return -EINVAL;
+		}
+	break;
 	default:
 		ps_params->fail_reason =
 			WIFI_PS_PARAM_FAIL_OPERATION_NOT_SUPPORTED;
@@ -813,6 +1030,21 @@ static int wifi_get_connection_params(uint32_t mgmt_request, struct net_if *ifac
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_CONN_PARAMS, wifi_get_connection_params);
 
+static int wifi_wps_config(uint32_t mgmt_request, struct net_if *iface, void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
+	struct wifi_wps_config_params *params = data;
+
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->wps_config == NULL) {
+		return -ENOTSUP;
+	}
+
+	return wifi_mgmt_api->wps_config(dev, params);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_WPS_CONFIG, wifi_wps_config);
+
 static int wifi_set_rts_threshold(uint32_t mgmt_request, struct net_if *iface,
 				  void *data, size_t len)
 {
@@ -833,6 +1065,7 @@ static int wifi_set_rts_threshold(uint32_t mgmt_request, struct net_if *iface,
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_RTS_THRESHOLD, wifi_set_rts_threshold);
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
 static int wifi_dpp(uint32_t mgmt_request, struct net_if *iface,
 		    void *data, size_t len)
 {
@@ -848,6 +1081,8 @@ static int wifi_dpp(uint32_t mgmt_request, struct net_if *iface,
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_DPP, wifi_dpp);
+
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
 
 static int wifi_pmksa_flush(uint32_t mgmt_request, struct net_if *iface,
 					   void *data, size_t len)
@@ -970,3 +1205,238 @@ void wifi_mgmt_raise_ap_sta_disconnected_event(struct net_if *iface,
 					iface, sta_info,
 					sizeof(struct wifi_ap_sta_info));
 }
+
+#ifdef CONFIG_WIFI_CREDENTIALS_CONNECT_STORED
+
+#include <zephyr/net/wifi_credentials.h>
+
+#if defined(CONFIG_WIFI_CREDENTIALS_STATIC)
+BUILD_ASSERT(sizeof(CONFIG_WIFI_CREDENTIALS_STATIC_SSID) != 1,
+	     "CONFIG_WIFI_CREDENTIALS_STATIC_SSID required");
+#endif /* defined(CONFIG_WIFI_CREDENTIALS_STATIC) */
+
+static int __stored_creds_to_params(struct wifi_credentials_personal *creds,
+				    struct wifi_connect_req_params *params)
+{
+	char *ssid = NULL;
+	char *psk = NULL;
+	int ret;
+
+	/* SSID */
+	ssid = (char *)k_malloc(creds->header.ssid_len + 1);
+	if (!ssid) {
+		LOG_ERR("Failed to allocate memory for SSID\n");
+		ret = -ENOMEM;
+		goto err_out;
+	}
+
+	memset(ssid, 0, creds->header.ssid_len + 1);
+	ret = snprintf(ssid, creds->header.ssid_len + 1, "%s", creds->header.ssid);
+	if (ret > creds->header.ssid_len) {
+		LOG_ERR("SSID string truncated\n");
+		ret = -EINVAL;
+		goto err_out;
+	}
+
+	params->ssid = ssid;
+	params->ssid_length = creds->header.ssid_len;
+
+	/* PSK (optional) */
+	if (creds->password_len > 0) {
+		psk = (char *)k_malloc(creds->password_len + 1);
+		if (!psk) {
+			LOG_ERR("Failed to allocate memory for PSK\n");
+			ret = -ENOMEM;
+			goto err_out;
+		}
+
+		memset(psk, 0, creds->password_len + 1);
+		ret = snprintf(psk, creds->password_len + 1, "%s", creds->password);
+		if (ret > creds->password_len) {
+			LOG_ERR("PSK string truncated\n");
+			ret = -EINVAL;
+			goto err_out;
+		}
+
+		params->psk = psk;
+		params->psk_length = creds->password_len;
+	}
+
+	/* Defaults */
+	params->security = creds->header.type;
+
+	/* If channel is set to 0 we default to ANY. 0 is not a valid Wi-Fi channel. */
+	params->channel = (creds->header.channel != 0) ? creds->header.channel : WIFI_CHANNEL_ANY;
+	params->timeout = (creds->header.timeout != 0)
+				  ? creds->header.timeout
+				  : CONFIG_WIFI_CREDENTIALS_CONNECT_STORED_CONNECTION_TIMEOUT;
+
+	/* Security type (optional) */
+	if (creds->header.type > WIFI_SECURITY_TYPE_MAX) {
+		params->security = WIFI_SECURITY_TYPE_NONE;
+	}
+
+	if (creds->header.flags & WIFI_CREDENTIALS_FLAG_2_4GHz) {
+		params->band = WIFI_FREQ_BAND_2_4_GHZ;
+	} else if (creds->header.flags & WIFI_CREDENTIALS_FLAG_5GHz) {
+		params->band = WIFI_FREQ_BAND_5_GHZ;
+	} else {
+		params->band = WIFI_FREQ_BAND_UNKNOWN;
+	}
+
+	/* MFP setting (default: optional) */
+	if (creds->header.flags & WIFI_CREDENTIALS_FLAG_MFP_DISABLED) {
+		params->mfp = WIFI_MFP_DISABLE;
+	} else if (creds->header.flags & WIFI_CREDENTIALS_FLAG_MFP_REQUIRED) {
+		params->mfp = WIFI_MFP_REQUIRED;
+	} else {
+		params->mfp = WIFI_MFP_OPTIONAL;
+	}
+
+	return 0;
+err_out:
+	if (ssid) {
+		k_free(ssid);
+		ssid = NULL;
+	}
+
+	if (psk) {
+		k_free(psk);
+		psk = NULL;
+	}
+
+	return ret;
+}
+
+static inline const char *wpa_supp_security_txt(enum wifi_security_type security)
+{
+	switch (security) {
+	case WIFI_SECURITY_TYPE_NONE:
+		return "NONE";
+	case WIFI_SECURITY_TYPE_PSK:
+		return "WPA-PSK";
+	case WIFI_SECURITY_TYPE_PSK_SHA256:
+		return "WPA-PSK-SHA256";
+	case WIFI_SECURITY_TYPE_SAE:
+		return "SAE";
+	case WIFI_SECURITY_TYPE_UNKNOWN:
+	default:
+		return "UNKNOWN";
+	}
+}
+
+static int add_network_from_credentials_struct_personal(struct wifi_credentials_personal *creds,
+							struct net_if *iface)
+{
+	int ret = 0;
+	struct wifi_connect_req_params cnx_params = {0};
+
+	if (__stored_creds_to_params(creds, &cnx_params)) {
+		ret = -ENOEXEC;
+		goto out;
+	}
+
+	if (net_mgmt(NET_REQUEST_WIFI_CONNECT, iface, &cnx_params,
+		     sizeof(struct wifi_connect_req_params))) {
+		LOG_ERR("Connection request failed\n");
+
+		return -ENOEXEC;
+	}
+
+	LOG_INF("Connection requested");
+
+out:
+	if (cnx_params.psk) {
+		k_free((void *)cnx_params.psk);
+	}
+
+	if (cnx_params.ssid) {
+		k_free((void *)cnx_params.ssid);
+	}
+
+	return ret;
+}
+
+static void add_stored_network(void *cb_arg, const char *ssid, size_t ssid_len)
+{
+	int ret = 0;
+	struct wifi_credentials_personal creds;
+
+	/* load stored data */
+	ret = wifi_credentials_get_by_ssid_personal_struct(ssid, ssid_len, &creds);
+
+	if (ret) {
+		LOG_ERR("Loading WiFi credentials failed for SSID [%.*s], len: %d, err: %d",
+			ssid_len, ssid, ssid_len, ret);
+		return;
+	}
+
+	add_network_from_credentials_struct_personal(&creds, (struct net_if *)cb_arg);
+}
+
+static int add_static_network_config(struct net_if *iface)
+{
+#if defined(CONFIG_WIFI_CREDENTIALS_STATIC)
+
+	struct wifi_credentials_personal creds = {
+		.header = {
+			.ssid_len = strlen(CONFIG_WIFI_CREDENTIALS_STATIC_SSID),
+		},
+		.password_len = strlen(CONFIG_WIFI_CREDENTIALS_STATIC_PASSWORD),
+	};
+
+	int ret = wifi_credentials_get_by_ssid_personal_struct(
+		CONFIG_WIFI_CREDENTIALS_STATIC_SSID, strlen(CONFIG_WIFI_CREDENTIALS_STATIC_SSID),
+		&creds);
+
+	if (!ret) {
+		LOG_WRN("Statically configured WiFi network was overridden by storage.");
+		return 0;
+	}
+
+#if defined(CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_OPEN)
+	creds.header.type = WIFI_SECURITY_TYPE_NONE;
+#elif defined(CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_PSK)
+	creds.header.type = WIFI_SECURITY_TYPE_PSK;
+#elif defined(CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_PSK_SHA256)
+	creds.header.type = WIFI_SECURITY_TYPE_PSK_SHA256;
+#elif defined(CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_SAE)
+	creds.header.type = WIFI_SECURITY_TYPE_SAE;
+#elif defined(CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_WPA_PSK)
+	creds.header.type = WIFI_SECURITY_TYPE_WPA_PSK;
+#else
+#error "invalid CONFIG_WIFI_CREDENTIALS_STATIC_TYPE"
+#endif
+
+	memcpy(creds.header.ssid, CONFIG_WIFI_CREDENTIALS_STATIC_SSID,
+	       strlen(CONFIG_WIFI_CREDENTIALS_STATIC_SSID));
+	memcpy(creds.password, CONFIG_WIFI_CREDENTIALS_STATIC_PASSWORD,
+	       strlen(CONFIG_WIFI_CREDENTIALS_STATIC_PASSWORD));
+
+	LOG_DBG("Adding statically configured WiFi network [%s] to internal list.",
+		creds.header.ssid);
+
+	return add_network_from_credentials_struct_personal(&creds, iface);
+#else
+	return 0;
+#endif /* defined(CONFIG_WIFI_CREDENTIALS_STATIC) */
+}
+
+static int connect_stored_command(uint32_t mgmt_request, struct net_if *iface, void *data,
+				  size_t len)
+{
+	int ret = 0;
+
+	ret = add_static_network_config(iface);
+	if (ret) {
+		return ret;
+	}
+
+	wifi_credentials_for_each_ssid(add_stored_network, iface);
+
+	return ret;
+};
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_CONNECT_STORED, connect_stored_command);
+
+#endif /* CONFIG_WIFI_CREDENTIALS_CONNECT_STORED */

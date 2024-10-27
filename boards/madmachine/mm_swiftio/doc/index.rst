@@ -1,7 +1,4 @@
-.. _mm_swiftio:
-
-MadMachine SwiftIO
-##################
+.. zephyr:board:: mm_swiftio
 
 Overview
 ********
@@ -15,12 +12,6 @@ at:
 
 - `MadMachine Homepage`_
 - `SwiftIO API Reference`_
-
-
-
-.. image:: mm_swiftio.jpg
-   :align: center
-   :alt: SwiftIO Board
 
 Hardware
 ********

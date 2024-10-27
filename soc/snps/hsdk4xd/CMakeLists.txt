@@ -16,6 +16,5 @@ else()
 endif()
 
 zephyr_include_directories(.)
-zephyr_library_sources_ifdef(CONFIG_SOC_RESET_HOOK soc_ctrl.S)
 
 set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld CACHE INTERNAL "")

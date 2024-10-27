@@ -135,8 +135,99 @@
 				width = <240>;
 				height = <240>;
 			};
+
+			test_spi_ssd1327fb: ssd1327fb@7 {
+				compatible = "solomon,ssd1327fb";
+				reg = <7>;
+				mipi-max-frequency = <100000000>;
+
+				width = <240>;
+				height = <240>;
+				oscillator-freq = <0>;
+				display-offset = <0>;
+				start-line = <0>;
+				multiplex-ratio = <0>;
+				prechargep = <0>;
+				remap-value = <0>;
+			};
+
+			test_mipi_dbi_ssd1322: ssd1322@9 {
+				compatible = "solomon,ssd1322";
+				reg = <9>;
+				mipi-max-frequency = <16000000>;
+				width =	<128>;
+				height = <64>;
+				column-offset =	<28>;
+			};
 		};
 
+		test_mipi_dsi {
+			compatible = "vnd,mipi-dsi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "okay";
+
+			test_hx8394: hx8394@0 {
+				status = "okay";
+				compatible = "himax,hx8394";
+				reg = <0x0>;
+				reset-gpios = <&test_gpio 0 0>;
+				data-lanes = <2>;
+				width = <720>;
+				height = <1280>;
+				pixel-format = <0>;
+			};
+
+			test_nt35510: nt35510@1 {
+				status = "okay";
+				compatible = "frida,nt35510";
+				reg = <0x1>;
+				height = <800>;
+				width = <480>;
+				reset-gpios = <&test_gpio 0 0>;
+				bl-gpios = <&test_gpio 0 0>;
+				data-lanes = <2>;
+				pixel-format = <0>;
+				rotation = <90>;
+			};
+
+			test_otm8009a: otm8009a@2 {
+				status = "okay";
+				compatible = "orisetech,otm8009a";
+				reg = <0x2>;
+				height = <800>;
+				width = <480>;
+				reset-gpios = <&test_gpio 0 0>;
+				bl-gpios = <&test_gpio 0 0>;
+				data-lanes = <2>;
+				pixel-format = <0>;
+				rotation = <90>;
+			};
+
+			test_rm67162: rm67162@3 {
+				status = "okay";
+				compatible = "raydium,rm67162";
+				reg = <0x3>;
+				reset-gpios = <&test_gpio 0 0>;
+				bl-gpios = <&test_gpio 0 0>;
+				te-gpios = <&test_gpio 0 0>;
+				data-lanes = <1>;
+				width = <400>;
+				height = <392>;
+				pixel-format = <0>;
+			};
+
+			test_rm68200: rm68200@4 {
+				status = "okay";
+				compatible = "raydium,rm68200";
+				reg = <0x4>;
+				reset-gpios = <&test_gpio 0 0>;
+				data-lanes = <2>;
+				width = <720>;
+				height = <1280>;
+				pixel-format = <0>;
+			};
+		};
 
 		test_spi: spi@33334444 {
 			#address-cells = <1>;
@@ -151,7 +242,8 @@
 			 */
 			cs-gpios = <&test_gpio 0 0 &test_gpio 0 1 &test_gpio 0 2
 				&test_gpio 0 3 &test_gpio 0 4 &test_gpio 0 5
-				&test_gpio 0 6 &test_gpio 0 7 &test_gpio 0 8>;
+				&test_gpio 0 6 &test_gpio 0 7 &test_gpio 0 8
+				&test_gpio 0 9>;
 
 			test_led_strip_0: lpd8806@0 {
 				compatible = "greeled,lpd8806";

@@ -53,7 +53,7 @@ tests:
     integration_platforms:
       - nrf52833dk/nrf52833
     extra_args:
-      - OVERLAY_CONFIG=overlay-all-bt_ll_sw_split.conf
+      - EXTRA_CONF_FILE=overlay-all-bt_ll_sw_split.conf
       - DTC_OVERLAY_FILE=./boards/nrf52833dk_nrf52833_df.overlay
     tags:
       - uart

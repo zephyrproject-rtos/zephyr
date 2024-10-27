@@ -190,7 +190,7 @@ static uint8_t btp_cap_discover(const void *cmd, uint16_t cmd_len,
 
 static int cap_unicast_setup_ase(struct bt_conn *conn, uint8_t ase_id, uint8_t cis_id,
 				 uint8_t cig_id, struct bt_audio_codec_cfg *codec_cfg,
-				 struct bt_audio_codec_qos *qos)
+				 struct bt_bap_qos_cfg *qos)
 {
 	struct btp_bap_unicast_group *group;
 	struct btp_bap_unicast_stream *u_stream;
@@ -232,7 +232,7 @@ static uint8_t btp_cap_unicast_setup_ase(const void *cmd, uint16_t cmd_len,
 {
 	const struct btp_cap_unicast_setup_ase_cmd *cp = cmd;
 	struct bt_audio_codec_cfg codec_cfg;
-	struct bt_audio_codec_qos qos;
+	struct bt_bap_qos_cfg qos;
 	struct bt_conn *conn;
 	const uint8_t *ltv_ptr;
 	int err;
@@ -247,7 +247,7 @@ static uint8_t btp_cap_unicast_setup_ase(const void *cmd, uint16_t cmd_len,
 	}
 
 	memset(&qos, 0, sizeof(qos));
-	qos.phy = BT_AUDIO_CODEC_QOS_2M;
+	qos.phy = BT_BAP_QOS_CFG_2M;
 	qos.framing = cp->framing;
 	qos.rtn = cp->retransmission_num;
 	qos.sdu = sys_le16_to_cpu(cp->max_sdu);
@@ -534,6 +534,7 @@ static int cap_broadcast_source_adv_setup(struct btp_bap_broadcast_local_source 
 {
 	int err;
 	struct bt_le_adv_param param = *BT_LE_EXT_ADV_NCONN;
+	uint32_t broadcast_id;
 
 	NET_BUF_SIMPLE_DEFINE(ad_buf, BT_UUID_SIZE_16 + BT_AUDIO_BROADCAST_ID_SIZE);
 	NET_BUF_SIMPLE_DEFINE(base_buf, 128);
@@ -542,9 +543,9 @@ static int cap_broadcast_source_adv_setup(struct btp_bap_broadcast_local_source 
 	struct bt_data base_ad[2];
 	struct bt_data per_ad;
 
-	err = bt_cap_initiator_broadcast_get_id(source->cap_broadcast, &source->broadcast_id);
-	if (err != 0) {
-		LOG_DBG("Unable to get broadcast ID: %d", err);
+	err = bt_rand(&broadcast_id, BT_AUDIO_BROADCAST_ID_SIZE);
+	if (err) {
+		printk("Unable to generate broadcast ID: %d\n", err);
 
 		return -EINVAL;
 	}
@@ -605,7 +606,7 @@ static uint8_t btp_cap_broadcast_source_setup(const void *cmd, uint16_t cmd_len,
 	struct btp_cap_broadcast_source_setup_rp *rp = rsp;
 	struct btp_bap_broadcast_local_source *source =
 		btp_bap_broadcast_local_source_get(cp->source_id);
-	struct bt_audio_codec_qos *qos = &source->qos;
+	struct bt_bap_qos_cfg *qos = &source->qos;
 
 	LOG_DBG("");
 
@@ -651,7 +652,7 @@ static uint8_t btp_cap_broadcast_source_setup(const void *cmd, uint16_t cmd_len,
 	}
 
 	memset(qos, 0, sizeof(*qos));
-	qos->phy = BT_AUDIO_CODEC_QOS_2M;
+	qos->phy = BT_BAP_QOS_CFG_2M;
 	qos->framing = cp->framing;
 	qos->rtn = cp->retransmission_num;
 	qos->sdu = sys_le16_to_cpu(cp->max_sdu);

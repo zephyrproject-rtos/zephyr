@@ -72,7 +72,8 @@ enum bt_hci_bus {
 	BT_HCI_BUS_IPM           = 9,
 };
 
-#define BT_DT_HCI_QUIRK_OR(node_id, prop, idx) DT_STRING_TOKEN_BY_IDX(node_id, prop, idx)
+#define BT_DT_HCI_QUIRK_OR(node_id, prop, idx) \
+	UTIL_CAT(BT_HCI_QUIRK_, DT_STRING_UPPER_TOKEN_BY_IDX(node_id, prop, idx))
 #define BT_DT_HCI_QUIRKS_GET(node_id) COND_CODE_1(DT_NODE_HAS_PROP(node_id, bt_hci_quirks), \
 						  (DT_FOREACH_PROP_ELEM_SEP(node_id, \
 									    bt_hci_quirks, \
@@ -84,7 +85,8 @@ enum bt_hci_bus {
 #define BT_DT_HCI_NAME_GET(node_id) DT_PROP_OR(node_id, bt_hci_name, "HCI")
 #define BT_DT_HCI_NAME_INST_GET(inst) BT_DT_HCI_NAME_GET(DT_DRV_INST(inst))
 
-#define BT_DT_HCI_BUS_GET(node_id) DT_STRING_TOKEN_OR(node_id, bt_hci_bus, BT_HCI_BUS_VIRTUAL)
+#define BT_DT_HCI_BUS_GET(node_id) \
+	UTIL_CAT(BT_HCI_BUS_, DT_STRING_UPPER_TOKEN_OR(node_id, bt_hci_bus, VIRTUAL))
 #define BT_DT_HCI_BUS_INST_GET(inst) BT_DT_HCI_BUS_GET(DT_DRV_INST(inst))
 
 typedef int (*bt_hci_recv_t)(const struct device *dev, struct net_buf *buf);

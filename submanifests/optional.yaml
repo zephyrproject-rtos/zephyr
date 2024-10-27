@@ -34,13 +34,13 @@ manifest:
       groups:
         - optional
     - name: zephyr-lang-rust
-      revision: d2734f48d3ab1dbf584a936b2a05ece7bf0904f5
+      revision: f20afb5bae9a4b64332a230a734c0244b39d4035
       path: modules/lang/rust
       remote: upstream
       groups:
         - optional
     - name: sof
-      revision: 368c944b4c9b5a9e1b5111fa0f62815fd2faa96c
+      revision: 316f414b64dee8e4aefce503af6c2c2e57d266f4
       path: modules/audio/sof
       remote: upstream
       groups:

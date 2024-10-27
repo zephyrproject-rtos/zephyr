@@ -32,13 +32,9 @@ struct ll_sync_set {
 	 */
 	void (*lll_sync_prepare)(void *param);
 
-#if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_SYNC) || \
-	defined(CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT)
 	uint8_t peer_id_addr[BDADDR_SIZE];
 	uint8_t peer_id_addr_type:1;
-#endif /* CONFIG_BT_CTLR_CHECK_SAME_PEER_SYNC ||
-	* CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT
-	*/
+	uint8_t peer_addr_resolved:1;
 
 	uint8_t rx_enable:1;
 
@@ -62,9 +58,7 @@ struct ll_sync_set {
 	uint8_t num_bis : 5;
 #endif /* CONFIG_BT_CTLR_SYNC_ISO */
 
-#if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_SYNC)
 	uint8_t sid;
-#endif /* CONFIG_BT_CTLR_CHECK_SAME_PEER_SYNC */
 
 	/* node rx type with memory aligned storage for sync lost reason.
 	 * HCI will reference the value using the pdu member of
@@ -81,6 +75,11 @@ struct ll_sync_set {
 	 */
 	struct node_rx_pdu *node_rx_sync_estab;
 
+#if defined(CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS)
+	/* Extra node_rx for generating incomplete report */
+	struct node_rx_pdu *rx_incomplete;
+#endif /* CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS */
+
 #if defined(CONFIG_BT_CTLR_SYNC_ISO)
 	struct {
 		struct node_rx_pdu *node_rx_estab;
@@ -93,7 +92,12 @@ struct ll_sync_set {
 	} iso;
 #endif /* CONFIG_BT_CTLR_SYNC_ISO */
 
+#if !defined(CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS)
 	uint16_t data_len;
+#endif /* !CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS */
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER)
+	uint16_t interval;
+#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER */
 };
 
 struct node_rx_sync {
@@ -101,6 +105,12 @@ struct node_rx_sync {
 	uint8_t  phy;
 	uint16_t interval;
 	uint8_t  sca;
+};
+
+struct node_rx_past_received {
+	struct node_rx_sync rx_sync;
+	uint16_t conn_handle;
+	uint16_t service_data;
 };
 
 #if defined(CONFIG_BT_CTLR_SYNC_ISO)

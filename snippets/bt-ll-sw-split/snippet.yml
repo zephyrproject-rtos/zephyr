@@ -1,0 +1,4 @@
+name: bt-ll-sw-split
+append:
+  EXTRA_CONF_FILE: bt-ll-sw-split.conf
+  EXTRA_DTC_OVERLAY_FILE: bt-ll-sw-split.overlay

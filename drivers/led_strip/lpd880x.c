@@ -78,7 +78,7 @@ static int lpd880x_update(const struct device *dev, void *data, size_t size)
 
 	rc = spi_write_dt(&config->bus, &tx);
 	if (rc) {
-		LOG_ERR("can't update strip: %d", rc);
+		LOG_ERR("can't update strip: %zu", rc);
 	}
 
 	return rc;

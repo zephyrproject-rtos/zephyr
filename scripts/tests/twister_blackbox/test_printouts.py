@@ -13,6 +13,7 @@ import pytest
 import sys
 import re
 
+# pylint: disable=no-name-in-module
 from conftest import (
     TEST_DATA,
     ZEPHYR_BASE,
@@ -189,6 +190,8 @@ class TestPrintOuts:
                 pytest.raises(SystemExit) as sys_exit:
             self.loader.exec_module(self.twister_module)
 
+        assert str(sys_exit.value) == '0'
+
         info_regex = r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3} - (?:INFO|DEBUG|ERROR)'
 
         out, err = capfd.readouterr()
@@ -197,6 +200,7 @@ class TestPrintOuts:
 
         output = err.split('\n')
 
+        # Will give false positives on lines with newlines inside of them
         err_lines = []
         for line in output:
             if line.strip():
@@ -207,7 +211,6 @@ class TestPrintOuts:
 
         if err_lines:
             assert False, f'No timestamp in line {err_lines}'
-        assert str(sys_exit.value) == '0'
 
     @pytest.mark.parametrize(
         'flag',
@@ -288,7 +291,7 @@ class TestPrintOuts:
         capfd.readouterr()
 
         p = os.path.relpath(path, ZEPHYR_BASE)
-        prev_path = os.path.join(out_path, 'qemu_x86', p,
+        prev_path = os.path.join(out_path, 'qemu_x86_atom', p,
                                  'sample.basic.helloworld', 'zephyr', 'zephyr.elf')
         args = ['--size', prev_path]
 

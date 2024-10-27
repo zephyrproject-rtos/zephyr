@@ -1,7 +1,4 @@
-.. _VMU RT1170:
-
-NXP VMU RT1170
-##################
+.. zephyr:board:: vmu_rt1170
 
 Overview
 ********
@@ -12,10 +9,6 @@ The i.MX RT1176 MCU offers support over a wide temperature range
 and is qualified for consumer, industrial and automotive markets.
 The VMU RT1170 is the default VMU for CogniPilot's Cerebri, a
 Zephyr RTOS based Autopilot.
-
-.. image:: vmu_rt1170.jpg
-   :align: center
-   :alt: VMU RT1170
 
 Hardware
 ********
@@ -119,7 +112,7 @@ following hardware features:
 +-----------+------------+-------------------------------------+
 | DISPLAY   | on-chip    | display                             |
 +-----------+------------+-------------------------------------+
-| ACMP      | on-chip    | analog comparator                   |
+| ACMP      | on-chip    | sensor                              |
 +-----------+------------+-------------------------------------+
 | CAAM RNG  | on-chip    | entropy                             |
 +-----------+------------+-------------------------------------+

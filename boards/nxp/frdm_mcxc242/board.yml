@@ -1,5 +1,6 @@
 board:
   name: frdm_mcxc242
+  full_name: FRDM-MCXC242
   vendor: nxp
   socs:
     - name: mcxc242

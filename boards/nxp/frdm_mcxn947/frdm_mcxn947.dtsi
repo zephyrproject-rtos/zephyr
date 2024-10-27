@@ -16,6 +16,7 @@
 		sw0 = &user_button_2;
 		sw1 = &user_button_3;
 		sdhc0 = &usdhc0;
+		mcuboot-button0 = &user_button_2;
 	};
 
 	leds {
@@ -88,6 +89,34 @@ nxp_8080_touch_panel_i2c: &flexcomm2_lpi2c2 {
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_flexcomm4_lpuart>;
 	pinctrl-names = "default";
+};
+
+&flexcomm7_lpi2c7 {
+	pinctrl-0 = <&pinmux_flexcomm7_lpi2c>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	ov7670: ov7670@21 {
+		compatible = "ovti,ov7670";
+		reset-gpios = <&gpio1 19 GPIO_ACTIVE_HIGH>;
+		pwdn-gpios = <&gpio1 18 GPIO_ACTIVE_HIGH>;
+		reg = <0x21>;
+	};
+};
+
+/* SmartDMA is used for video driver on this board */
+&smartdma {
+	status = "okay";
+	program-mem = <0x4000000>;
+	video_sdma: video-sdma {
+		status = "okay";
+		compatible = "nxp,video-smartdma";
+		pinctrl-0 = <&pinmux_smartdma_camera>;
+		pinctrl-names = "default";
+		sensor = <&ov7670>;
+		vsync-pin = <4>;
+		hsync-pin = <11>;
+		pclk-pin = <5>;
+	};
 };
 
 /*
@@ -209,7 +238,7 @@ nxp_8080_touch_panel_i2c: &flexcomm2_lpi2c2 {
 	pinctrl-names = "default";
 };
 
-nxp_flexio_lcd: &flexio0_lcd {
+zephyr_mipi_dbi_parallel: &flexio0_lcd {
 	/* DMA channels 0, muxed to FlexIO TX */
 	dmas = <&edma0 0 61>;
 	dma-names = "tx";
@@ -227,6 +256,11 @@ nxp_flexio_lcd: &flexio0_lcd {
 
 &lpcmp0 {
 	pinctrl-0 = <&pinmux_lpcmp0>;
+	pinctrl-names = "default";
+};
+
+&i3c1 {
+	pinctrl-0 = <&pinmux_i3c1>;
 	pinctrl-names = "default";
 };
 

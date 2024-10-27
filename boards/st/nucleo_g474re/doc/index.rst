@@ -1,7 +1,4 @@
-.. _nucleo_g474re_board:
-
-ST Nucleo G474RE
-################
+.. zephyr:board:: nucleo_g474re
 
 Overview
 ********
@@ -20,10 +17,6 @@ some highlights of the Nucleo G474RE board:
 
 - Three LEDs: USB communication (LD1), power LED (LD3), user LED (LD2)
 - Two push-buttons: RESET and USER
-
-.. image:: img/nucleo_g474re.jpg
-  :align: center
-  :alt: Nucleo G474RE
 
 More information about the board can be found at the `Nucleo G474RE website`_.
 

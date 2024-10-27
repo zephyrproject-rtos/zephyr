@@ -1,7 +1,4 @@
-.. _stm32h7s78_dk_board:
-
-ST STM32H7S78-DK Discovery
-##########################
+.. zephyr:board:: stm32h7s78_dk
 
 Overview
 ********
@@ -40,10 +37,6 @@ the STM32H7S78-DK Discovery board:
 
 - 4 user LEDs
 - User and reset push-buttons
-
-.. image:: img/stm32h7s78_dk.jpg
-   :align: center
-   :alt: STM32H7S78-DK Discovery
 
 More information about the board can be found at the `STM32H7S78-DK Discovery website`_.
 

@@ -71,6 +71,16 @@ static const uint32_t lpuart_rate = MHZ(80);
 
 #endif /* CONFIG_UART_MCUX_LPUART */
 
+#ifdef CONFIG_DAI_NXP_SAI
+#if defined(CONFIG_SOC_MIMX8QX6_ADSP) || defined(CONFIG_SOC_MIMX8QM6_ADSP)
+static const clock_ip_name_t sai_clocks[] = {
+	kCLOCK_AUDIO_Sai1,
+	kCLOCK_AUDIO_Sai2,
+	kCLOCK_AUDIO_Sai3,
+};
+#endif
+#endif /* CONFIG_DAI_NXP_SAI */
+
 
 static int mcux_ccm_on(const struct device *dev,
 			      clock_control_subsys_t sub_system)
@@ -107,6 +117,16 @@ static int mcux_ccm_on(const struct device *dev,
 		return 0;
 #endif
 
+#ifdef CONFIG_DAI_NXP_SAI
+#if defined(CONFIG_SOC_MIMX8QM6_ADSP) || defined(CONFIG_SOC_MIMX8QX6_ADSP)
+	case IMX_CCM_SAI1_CLK:
+	case IMX_CCM_SAI2_CLK:
+	case IMX_CCM_SAI3_CLK:
+		CLOCK_EnableClock(sai_clocks[instance]);
+		return 0;
+#endif
+#endif /* CONFIG_DAI_NXP_SAI */
+
 #if defined(CONFIG_ETH_NXP_ENET)
 #ifdef CONFIG_SOC_SERIES_IMX8M
 #define ENET_CLOCK	kCLOCK_Enet1
@@ -138,6 +158,16 @@ static int mcux_ccm_off(const struct device *dev,
 		CLOCK_DisableClock(uart_clocks[instance]);
 		return 0;
 #endif
+
+#ifdef CONFIG_DAI_NXP_SAI
+#if defined(CONFIG_SOC_MIMX8QM6_ADSP) || defined(CONFIG_SOC_MIMX8QX6_ADSP)
+	case IMX_CCM_SAI1_CLK:
+	case IMX_CCM_SAI2_CLK:
+	case IMX_CCM_SAI3_CLK:
+		CLOCK_DisableClock(sai_clocks[instance]);
+		return 0;
+#endif
+#endif /* CONFIG_DAI_NXP_SAI */
 	default:
 		(void)instance;
 		return 0;

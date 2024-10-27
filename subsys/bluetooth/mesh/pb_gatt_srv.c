@@ -34,8 +34,7 @@
 LOG_MODULE_REGISTER(bt_mesh_pb_gatt_srv);
 
 #define ADV_OPT_PROV                                                           \
-	(BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_SCANNABLE |                 \
-	 BT_LE_ADV_OPT_ONE_TIME | ADV_OPT_USE_IDENTITY)
+	(BT_LE_ADV_OPT_CONN | BT_LE_ADV_OPT_SCANNABLE | ADV_OPT_USE_IDENTITY)
 
 #define FAST_ADV_TIME (60LL * MSEC_PER_SEC)
 

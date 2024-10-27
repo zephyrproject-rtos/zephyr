@@ -119,6 +119,10 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_SetIpSrcDiv(kCLOCK_Lpi2c0, kSCG_SysClkDivBy16);
 	CLOCK_SetIpSrc(kCLOCK_Lpi2c1, kCLOCK_IpSrcFro192M);
 	CLOCK_SetIpSrcDiv(kCLOCK_Lpi2c1, kSCG_SysClkDivBy16);
+	CLOCK_SetIpSrc(kCLOCK_Lpspi0, kCLOCK_IpSrcFro192M);
+	CLOCK_SetIpSrc(kCLOCK_Lpspi1, kCLOCK_IpSrcFro192M);
+	CLOCK_SetIpSrc(kCLOCK_Lpadc0, kCLOCK_IpSrcFro192M);
+	CLOCK_SetIpSrcDiv(kCLOCK_Lpadc0, kSCG_SysClkDivBy10);
 
 	/* Ungate clocks if the peripheral is enabled in devicetree */
 	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpuart0), nxp_lpc_lpuart, okay)) {
@@ -135,6 +139,34 @@ static ALWAYS_INLINE void clock_init(void)
 
 	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(tpm1), nxp_kinetis_tpm, okay)) {
 		CLOCK_EnableClock(kCLOCK_Tpm1);
+	}
+
+	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpi2c0), nxp_imx_lpi2c, okay)) {
+		CLOCK_EnableClock(kCLOCK_Lpi2c0);
+	}
+
+	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpi2c1), nxp_imx_lpi2c, okay)) {
+		CLOCK_EnableClock(kCLOCK_Lpi2c1);
+	}
+
+	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpspi0), nxp_imx_lpspi, okay)) {
+		CLOCK_EnableClock(kCLOCK_Lpspi0);
+	}
+
+	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpspi1), nxp_imx_lpspi, okay)) {
+		CLOCK_EnableClock(kCLOCK_Lpspi1);
+	}
+
+	if (IS_ENABLED(CONFIG_CAN_MCUX_FLEXCAN)) {
+		CLOCK_EnableClock(kCLOCK_Can0);
+	}
+
+	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(vref), nxp_vref, okay)) {
+		CLOCK_EnableClock(kCLOCK_Vref0);
+	}
+
+	if (DT_NODE_HAS_COMPAT_STATUS(adc0, nxp_lpadc, okay)) {
+		CLOCK_EnableClock(kCLOCK_Lpadc0);
 	}
 }
 

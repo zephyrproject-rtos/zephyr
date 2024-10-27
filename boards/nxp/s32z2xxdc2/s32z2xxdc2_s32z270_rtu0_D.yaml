@@ -18,4 +18,5 @@ supported:
   - counter
   - adc
   - i2c
+  - dma
 vendor: nxp

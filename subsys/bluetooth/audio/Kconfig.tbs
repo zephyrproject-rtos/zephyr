@@ -12,8 +12,7 @@ if BT_AUDIO
 
 config BT_TBS
 	bool "Telephone Bearer Service Support"
-	select BT_CCID
-	select BT_GATT_DYNAMIC_DB
+	depends on BT_GATT_DYNAMIC_DB
 	depends on UTF8
 	help
 	  This option enables support for Telephone Bearer Service. By default this only

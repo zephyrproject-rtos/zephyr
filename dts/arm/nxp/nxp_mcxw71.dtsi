@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 NXP
+ * Copyright 2023-2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,10 +10,15 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 
 / {
 	aliases {
 		watchdog0 = &wdog0;
+	};
+
+	chosen {
+		zephyr,bt-hci = &hci;
 	};
 
 	cpus {
@@ -64,8 +69,6 @@
 
 		smu2: sram@489c0000 {
 			ranges = <0x0 0x489c0000 DT_SIZE_K(40)>;
-			#address-cells = <1>;
-			#size-cells = <1>;
 		};
 
 		peripheral: peripheral@50000000 {
@@ -83,8 +86,7 @@
 					ranges = <0x0 0x10000000 DT_SIZE_M(1)>;
 					#address-cells = <1>;
 					#size-cells = <1>;
-
-					compatible = "nxp,iap-msf1";
+					compatible = "nxp,msf1";
 					reg = <0x20000 0x1000>;
 					interrupts = <27 0>;
 					status = "disabled";
@@ -119,6 +121,18 @@
 
 &nvic {
 	arm,num-irq-priority-bits = <3>;
+};
+
+&smu2 {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	rpmsgmem: memory@8800 {
+		compatible = "zephyr,memory-region","mmio-sram";
+		reg = <0x8800 DT_SIZE_K(6)>;
+		zephyr,memory-region = "rpmsg_sh_mem";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+	};
 };
 
 &pbridge2 {
@@ -168,6 +182,48 @@
 		reg = <0x39000 0x34>;
 		interrupts = <45 0>;
 		clocks = <&scg SCG_K4_FIRC_CLK 0xe4>;
+		status = "disabled";
+	};
+
+	lpi2c0: i2c@33000 {
+		compatible = "nxp,imx-lpi2c";
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x33000 0x200>;
+		interrupts = <39 0>;
+		clocks = <&scg SCG_K4_FIRC_CLK 0xe0>;
+		status = "disabled";
+	};
+
+	lpi2c1: i2c@34000 {
+		compatible = "nxp,imx-lpi2c";
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x34000 0x200>;
+		interrupts = <40 0>;
+		clocks = <&scg SCG_K4_FIRC_CLK 0xe4>;
+		status = "disabled";
+	};
+
+	lpspi0: spi@36000 {
+		compatible = "nxp,imx-lpspi";
+		reg = <0x36000 0x800>;
+		interrupts = <42 0>;
+		clocks = <&scg SCG_K4_FIRC_CLK 0xd8>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
+	lpspi1: spi@37000 {
+		compatible = "nxp,imx-lpspi";
+		reg = <0x37000 0x800>;
+		interrupts = <43 0>;
+		clocks = <&scg SCG_K4_FIRC_CLK 0xdc>;
+		#address-cells = <1>;
+		#size-cells = <0>;
 		status = "disabled";
 	};
 
@@ -243,6 +299,51 @@
 		clk-source = <2>;
 		prescaler = <1>;
 		resolution = <32>;
+		status = "disabled";
+	};
+
+	hci: hci_ble {
+		compatible = "nxp,hci-ble";
+		interrupts = <48 2>;
+		interrupt-names = "hci_int";
+	};
+
+	flexcan0: can@3b000 {
+		compatible = "nxp,flexcan";
+		reg = <0x3b000 0x3080>;
+		interrupts = <47 0>;
+		interrupt-names = "common";
+		clocks = <&scg SCG_K4_FIRC_CLK 0xec>;
+		clk-source = <2>;
+		status = "disabled";
+	};
+
+	adc0: adc@47000 {
+		compatible = "nxp,lpc-lpadc";
+		reg = <0x47000 0x1000>;
+		interrupts = <71 0>;
+		clocks = <&scg SCG_K4_FIRC_CLK 0x11c>;
+		voltage-ref= <1>;
+		calibration-average = <128>;
+		/* pwrlvl 0 is slow speed low power, 1 is opposite */
+		power-level = <0>;
+		offset-value-a = <0>;
+		offset-value-b = <0>;
+		#io-channel-cells = <1>;
+		nxp,references = <&vref 1800>;
+		status = "disabled";
+	};
+
+	vref: regulator@4a000 {
+		compatible = "nxp,vref";
+		regulator-name = "mcxw71-vref";
+		reg = <0x4a000 0x20>;
+		#nxp,reference-cells = <1>;
+		nxp,buffer-startup-delay-us = <400>;
+		nxp,bandgap-startup-time-us = <20>;
+		regulator-min-microvolt = <1000000>;
+		regulator-max-microvolt = <2100000>;
+		nxp,current-compensation-en;
 		status = "disabled";
 	};
 };

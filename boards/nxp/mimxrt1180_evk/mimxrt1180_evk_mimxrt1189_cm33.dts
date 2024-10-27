@@ -21,6 +21,7 @@
 		zephyr,flash = &w25q128jw;
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
+		zephyr,canbus = &flexcan3;
 	};
 
 	hyperram0: memory@14000000 {
@@ -28,6 +29,26 @@
 		device_type = "memory";
 		reg = <0x14000000 DT_SIZE_M(8)>;
 	};
+};
+
+&emdio {
+	pinctrl-0 = <&emdio_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	phy4: phy@3 {
+		compatible = "ethernet-phy";
+		reg = <0x3>;
+		status = "okay";
+	};
+};
+
+&enetc_psi0 {
+	local-mac-address = [00 00 00 01 02 00];
+	pinctrl-0 = <&eth4_default>;
+	pinctrl-names = "default";
+	phy-handle = <&phy4>;
+	status = "okay";
 };
 
 &lpuart1 {
@@ -44,5 +65,9 @@
 };
 
 &gpt2 {
+	status = "okay";
+};
+
+&flexcan3 {
 	status = "okay";
 };

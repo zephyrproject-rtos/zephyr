@@ -62,6 +62,12 @@ static const struct wifi_mgmt_ops mgmt_ops = {
 	.get_stats = supplicant_get_stats,
 	.reset_stats = supplicant_reset_stats,
 #endif
+	.cfg_11k = supplicant_11k_cfg,
+	.send_11k_neighbor_request = supplicant_11k_neighbor_request,
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING
+	.candidate_scan = supplicant_candidate_scan,
+	.start_11r_roaming = supplicant_11r_roaming,
+#endif
 	.set_power_save = supplicant_set_power_save,
 	.set_twt = supplicant_set_twt,
 	.get_power_save_config = supplicant_get_power_save_config,
@@ -75,12 +81,15 @@ static const struct wifi_mgmt_ops mgmt_ops = {
 	.btm_query = supplicant_btm_query,
 #endif
 	.get_conn_params = supplicant_get_wifi_conn_params,
+	.wps_config = supplicant_wps_config,
 #ifdef CONFIG_AP
 	.ap_enable = supplicant_ap_enable,
 	.ap_disable = supplicant_ap_disable,
 	.ap_sta_disconnect = supplicant_ap_sta_disconnect,
 #endif /* CONFIG_AP */
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
 	.dpp_dispatch = supplicant_dpp_dispatch,
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
 	.pmksa_flush = supplicant_pmksa_flush,
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 	.enterprise_creds = supplicant_add_enterprise_creds,
@@ -91,11 +100,10 @@ DEFINE_WIFI_NM_INSTANCE(wifi_supplicant, &mgmt_ops);
 
 #ifdef CONFIG_WIFI_NM_HOSTAPD_AP
 static const struct wifi_mgmt_ops mgmt_ap_ops = {
-	.set_btwt = supplicant_set_btwt,
 	.ap_enable = supplicant_ap_enable,
 	.ap_disable = supplicant_ap_disable,
 	.ap_sta_disconnect = supplicant_ap_sta_disconnect,
-	.ap_bandwidth = supplicant_ap_bandwidth,
+	.iface_status = supplicant_ap_status,
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
 	.dpp_dispatch = hapd_dpp_dispatch,
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
@@ -373,15 +381,15 @@ static int del_interface(struct supplicant_context *ctx, struct net_if *iface)
 	if (!wpa_s) {
 		ret = -ENOENT;
 		LOG_ERR("Failed to get wpa_s handle for %s", ifname);
-		goto out;
+		goto free;
 	}
 
 	supplicant_generate_state_event(ifname, NET_EVENT_SUPPLICANT_CMD_IFACE_REMOVING, 0);
 
 	if (sizeof(event->interface_status.ifname) < strlen(ifname)) {
-		wpa_printf(MSG_ERROR, "Interface name too long: %s (max: %d)",
+		wpa_printf(MSG_ERROR, "Interface name too long: %s (max: %zu)",
 			ifname, sizeof(event->interface_status.ifname));
-		goto out;
+		goto free;
 	}
 
 	os_memcpy(event->interface_status.ifname, ifname, strlen(ifname));
@@ -399,7 +407,7 @@ static int del_interface(struct supplicant_context *ctx, struct net_if *iface)
 		 * with WPA supplicant so we cannot unregister NM etc.
 		 */
 		wpa_printf(MSG_ERROR, "Failed to send event: %d", ret);
-		goto out;
+		goto free;
 	}
 
 	while (retry++ < count && wpa_s->wpa_state != WPA_INTERFACE_DISABLED) {
@@ -422,7 +430,7 @@ static int del_interface(struct supplicant_context *ctx, struct net_if *iface)
 		goto out;
 	}
 
-	ret = wifi_nm_unregister_mgd_iface(wifi_nm_get_instance("wpa_supplicant"), iface);
+	ret = wifi_nm_unregister_mgd_iface(wifi_nm_get_instance("wifi_supplicant"), iface);
 	if (ret) {
 		LOG_ERR("Failed to unregister mgd iface %s with native stack (%d)",
 			ifname, ret);
@@ -435,11 +443,13 @@ static int del_interface(struct supplicant_context *ctx, struct net_if *iface)
 
 	supplicant_generate_state_event(ifname, NET_EVENT_SUPPLICANT_CMD_IFACE_REMOVED, 0);
 
-out:
+	return 0;
+
+free:
 	if (event) {
 		os_free(event);
 	}
-
+out:
 	return ret;
 }
 #endif
@@ -472,9 +482,6 @@ static void submit_iface_work(struct supplicant_context *ctx,
 static void interface_handler(struct net_mgmt_event_callback *cb,
 			      uint32_t mgmt_event, struct net_if *iface)
 {
-	struct supplicant_context *ctx = CONTAINER_OF(cb, struct supplicant_context,
-						      cb);
-
 	if ((mgmt_event & INTERFACE_EVENT_MASK) != mgmt_event) {
 		return;
 	}
@@ -487,13 +494,13 @@ static void interface_handler(struct net_mgmt_event_callback *cb,
 
 	if (mgmt_event == NET_EVENT_IF_ADMIN_UP) {
 		LOG_INF("Network interface %d (%p) up", net_if_get_by_iface(iface), iface);
-		submit_iface_work(ctx, iface, add_interface);
+		add_interface(get_default_context(), iface);
 		return;
 	}
 
 	if (mgmt_event == NET_EVENT_IF_ADMIN_DOWN) {
 		LOG_INF("Network interface %d (%p) down", net_if_get_by_iface(iface), iface);
-		submit_iface_work(ctx, iface, del_interface);
+		del_interface(get_default_context(), iface);
 		return;
 	}
 }
@@ -872,7 +879,7 @@ struct hostapd_config *hostapd_config_read2(const char *fname)
 
 	bss                 = conf->last_bss;
 	bss->start_disabled = 1;
-	bss->max_num_sta    = 8;
+	bss->max_num_sta    = CONFIG_WIFI_MGMT_AP_MAX_NUM_STA;
 	bss->dtim_period    = 1;
 	os_strlcpy(conf->bss[0]->iface, ifname, sizeof(conf->bss[0]->iface));
 	bss->logger_stdout_level = HOSTAPD_LEVEL_INFO;

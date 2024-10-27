@@ -11,6 +11,7 @@
 LOG_MODULE_DECLARE(net_sock, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <zephyr/kernel.h>
+#include <zephyr/net/mld.h>
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/tracing/tracing.h>
@@ -637,19 +638,6 @@ ssize_t zsock_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 	}
 
 	return status;
-}
-
-size_t msghdr_non_empty_iov_count(const struct msghdr *msg)
-{
-	size_t non_empty_iov_count = 0;
-
-	for (size_t i = 0; i < msg->msg_iovlen; i++) {
-		if (msg->msg_iov[i].iov_len) {
-			non_empty_iov_count++;
-		}
-	}
-
-	return non_empty_iov_count;
 }
 
 ssize_t zsock_sendmsg_ctx(struct net_context *ctx, const struct msghdr *msg,

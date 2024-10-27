@@ -49,6 +49,7 @@ LOG_MODULE_REGISTER(adc_stm32);
 
 #if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H7RSX)
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#include <stm32_ll_system.h>
 #endif
 
 #ifdef CONFIG_NOCACHE_MEMORY
@@ -1353,6 +1354,125 @@ static int adc_stm32_channel_setup(const struct device *dev,
 	return 0;
 }
 
+#if defined(CONFIG_SOC_SERIES_STM32C0X) ||                                                     \
+	defined(CONFIG_SOC_SERIES_STM32G0X) ||                                                     \
+	defined(CONFIG_SOC_SERIES_STM32L0X) ||                                                     \
+	defined(CONFIG_SOC_SERIES_STM32U0X) ||                                                     \
+	(defined(CONFIG_SOC_SERIES_STM32WBX) && defined(ADC_SUPPORT_2_5_MSPS)) ||                  \
+	defined(CONFIG_SOC_SERIES_STM32WLX)
+#define ADC_STM32_HAS_INDIVIDUAL_CLOCKS
+#endif
+
+#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(ADC_STM32_HAS_INDIVIDUAL_CLOCKS)
+static bool adc_stm32_is_clk_sync(const struct adc_stm32_cfg *config)
+{
+	if (config->clk_prescaler == LL_ADC_CLOCK_SYNC_PCLK_DIV1 ||
+	    config->clk_prescaler == LL_ADC_CLOCK_SYNC_PCLK_DIV2 ||
+	    config->clk_prescaler == LL_ADC_CLOCK_SYNC_PCLK_DIV4) {
+		return true;
+	}
+
+	return false;
+}
+#endif
+
+#if defined(CONFIG_SOC_SERIES_STM32H7X)
+static inline int adc_stm32_get_input_freq_prescaler(void)
+{
+	int presc = 2;
+
+#ifdef ADC_VER_V5_X
+	/* For revision Y we have no prescaler of 2 */
+	if (LL_DBGMCU_GetRevisionID() <= 0x1003) {
+		presc = 1;
+	}
+#endif
+
+	return presc;
+}
+
+static int adc_stm32_get_clock_prescaler(const struct adc_stm32_cfg *config)
+{
+	switch (config->clk_prescaler) {
+	case LL_ADC_CLOCK_SYNC_PCLK_DIV1:
+	case LL_ADC_CLOCK_ASYNC_DIV1:
+		return 1;
+	case LL_ADC_CLOCK_SYNC_PCLK_DIV2:
+	case LL_ADC_CLOCK_ASYNC_DIV2:
+		return 2;
+	case LL_ADC_CLOCK_SYNC_PCLK_DIV4:
+	case LL_ADC_CLOCK_ASYNC_DIV4:
+		return 4;
+	case LL_ADC_CLOCK_ASYNC_DIV6:
+		return 6;
+	case LL_ADC_CLOCK_ASYNC_DIV8:
+		return 8;
+	case LL_ADC_CLOCK_ASYNC_DIV10:
+		return 10;
+	case LL_ADC_CLOCK_ASYNC_DIV12:
+		return 12;
+	case LL_ADC_CLOCK_ASYNC_DIV16:
+		return 16;
+	case LL_ADC_CLOCK_ASYNC_DIV32:
+		return 32;
+	case LL_ADC_CLOCK_ASYNC_DIV64:
+		return 64;
+	case LL_ADC_CLOCK_ASYNC_DIV128:
+		return 128;
+	case LL_ADC_CLOCK_ASYNC_DIV256:
+		return 256;
+	default:
+		return -EINVAL;
+	}
+}
+
+static int adc_stm32h7_setup_boost(const struct adc_stm32_cfg *config, ADC_TypeDef *adc,
+				   const struct device *clk)
+{
+	clock_control_subsys_t clk_src;
+	uint32_t input_freq;
+	uint32_t boost;
+	int presc;
+
+	/* Get the input frequency */
+	clk_src = (clock_control_subsys_t)(adc_stm32_is_clk_sync(config) ? &config->pclken[0]
+									 : &config->pclken[1]);
+
+	if (clock_control_get_rate(clk, clk_src, &input_freq) != 0) {
+		LOG_ERR("Failed to get ADC clock frequency");
+		return -EIO;
+	}
+
+	/* Adjust the pre-scaler value so that we can divide down the clock */
+	presc = adc_stm32_get_clock_prescaler(config);
+	if (presc < 0) {
+		LOG_ERR("Invalid clock prescaler value");
+		return presc;
+	}
+
+	input_freq /= presc * adc_stm32_get_input_freq_prescaler();
+
+	if (input_freq <= KHZ(6250)) {
+		boost = LL_ADC_BOOST_MODE_6MHZ25;
+	} else if (input_freq <= KHZ(12500)) {
+		boost = LL_ADC_BOOST_MODE_12MHZ5;
+	} else if (input_freq <= MHZ(20)) {
+		boost = LL_ADC_BOOST_MODE_20MHZ;
+	} else if (input_freq <= MHZ(25)) {
+		boost = LL_ADC_BOOST_MODE_25MHZ;
+	} else if (input_freq <= MHZ(50)) {
+		boost = LL_ADC_BOOST_MODE_50MHZ;
+	} else {
+		LOG_WRN("ADC clock frequency too high %u", input_freq);
+		return -ERANGE;
+	}
+
+	LL_ADC_SetBoostMode(adc, boost);
+
+	return 0;
+}
+#endif
+
 /* This symbol takes the value 1 if one of the device instances */
 /* is configured in dts with a domain clock */
 #if STM32_DT_INST_DEV_DOMAIN_CLOCK_SUPPORT
@@ -1366,6 +1486,7 @@ static int adc_stm32_set_clock(const struct device *dev)
 	const struct adc_stm32_cfg *config = dev->config;
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
+	int ret = 0;
 
 	ARG_UNUSED(adc); /* Necessary to avoid warnings on some series */
 
@@ -1385,15 +1506,8 @@ static int adc_stm32_set_clock(const struct device *dev)
 
 #if defined(CONFIG_SOC_SERIES_STM32F0X)
 	LL_ADC_SetClock(adc, config->clk_prescaler);
-#elif defined(CONFIG_SOC_SERIES_STM32C0X) || \
-	defined(CONFIG_SOC_SERIES_STM32G0X) || \
-	defined(CONFIG_SOC_SERIES_STM32L0X) || \
-	defined(CONFIG_SOC_SERIES_STM32U0X) || \
-	(defined(CONFIG_SOC_SERIES_STM32WBX) && defined(ADC_SUPPORT_2_5_MSPS)) || \
-	defined(CONFIG_SOC_SERIES_STM32WLX)
-	if ((config->clk_prescaler == LL_ADC_CLOCK_SYNC_PCLK_DIV1) ||
-		(config->clk_prescaler == LL_ADC_CLOCK_SYNC_PCLK_DIV2) ||
-		(config->clk_prescaler == LL_ADC_CLOCK_SYNC_PCLK_DIV4)) {
+#elif defined(ADC_STM32_HAS_INDIVIDUAL_CLOCKS)
+	if (adc_stm32_is_clk_sync(config)) {
 		LL_ADC_SetClock(adc, config->clk_prescaler);
 	} else {
 		LL_ADC_SetCommonClock(__LL_ADC_COMMON_INSTANCE(adc),
@@ -1403,9 +1517,14 @@ static int adc_stm32_set_clock(const struct device *dev)
 #elif !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
 	LL_ADC_SetCommonClock(__LL_ADC_COMMON_INSTANCE(adc),
 			      config->clk_prescaler);
+
+#ifdef CONFIG_SOC_SERIES_STM32H7X
+	/* Set boost according to input frequency */
+	ret = adc_stm32h7_setup_boost(config, adc, clk);
+#endif
 #endif
 
-	return 0;
+	return ret;
 }
 
 static int adc_stm32_init(const struct device *dev)
@@ -1635,10 +1754,16 @@ static const struct adc_driver_api api_stm32_driver_api = {
 /* Concat prefix (1st element) and DIV value (2nd element) of st,adc-prescaler */
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
 #define ADC_STM32_DT_PRESC(x)	0
+#define ADC_STM32_CHECK_DT_CLOCK(x)
 #else
 #define ADC_STM32_DT_PRESC(x)	\
 	_CONCAT(ADC_STM32_CLOCK_PREFIX(x), ADC_STM32_DIV(x))
+/* Macro to check if the ADC instance clock setup is correct */
+#define ADC_STM32_CHECK_DT_CLOCK(x)								\
+	BUILD_ASSERT(IS_EQ(ADC_STM32_CLOCK(x), SYNC) || (DT_INST_NUM_CLOCKS(x) > 1),		\
+		     "ASYNC clock mode defined without ASYNC clock defined in device tree")
 #endif
+
 
 #if defined(CONFIG_ADC_STM32_DMA)
 
@@ -1781,6 +1906,8 @@ DT_INST_FOREACH_STATUS_OKAY(GENERATE_ISR)
 			(/* Required for other adc instances without dma */))
 
 #define ADC_STM32_INIT(index)						\
+									\
+ADC_STM32_CHECK_DT_CLOCK(index);					\
 									\
 PINCTRL_DT_INST_DEFINE(index);						\
 									\

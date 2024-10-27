@@ -1,5 +1,6 @@
 board:
   name: ek_ra4m3
+  full_name: RA4M3 Evaluation Kit
   vendor: renesas
   socs:
   - name: r7fa4m3af3cfb

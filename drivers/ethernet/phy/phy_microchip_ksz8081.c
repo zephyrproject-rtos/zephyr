@@ -329,12 +329,6 @@ static int phy_mc_ksz8081_cfg_link(const struct device *dev,
 	/* We are going to reconfigure the phy, don't need to monitor until done */
 	k_work_cancel_delayable(&data->phy_monitor_work);
 
-	/* Reset PHY */
-	ret = phy_mc_ksz8081_reset(dev);
-	if (ret) {
-		goto done;
-	}
-
 	/* DT configurations */
 	ret = phy_mc_ksz8081_static_cfg(dev);
 	if (ret) {

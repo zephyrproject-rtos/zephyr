@@ -21,6 +21,7 @@
 		zephyr,shell-uart = &uart9;
 		zephyr,entropy = &trng;
 		zephyr,flash-controller = &flash1;
+		zephyr,canbus = &canfd0;
 	};
 
 	leds {
@@ -56,21 +57,27 @@
 };
 
 &pll {
-	source = <RA_PLL_SOURCE_MAIN_OSC>;
-	div = <RA_PLL_DIV_2>;
+	clocks = <&xtal>;
+	div = <2>;
 	mul = <96 0>;
-	divp = <RA_PLL_DIV_2>;
+	divp = <2>;
 	freqp = <DT_FREQ_M(480)>;
-	divq = <RA_PLL_DIV_2>;
+	divq = <2>;
 	freqq = <DT_FREQ_M(480)>;
-	divr = <RA_PLL_DIV_2>;
+	divr = <2>;
 	freqr = <DT_FREQ_M(480)>;
 	status = "okay";
 };
 
 &sciclk {
-	clk-src = <RA_CLOCK_SOURCE_PLL1P>;
-	clk-div = <RA_SCI_CLOCK_DIV_4>;
+	clocks = <&pll>;
+	div = <4>;
+	status = "okay";
+};
+
+&canfdclk {
+	clocks = <&pll>;
+	div = <5>;
 	status = "okay";
 };
 
@@ -122,5 +129,23 @@
 			label = "storage";
 			reg = <0X0 DT_SIZE_K(12)>;
 		};
+	};
+};
+
+&pwm7 {
+	pinctrl-0 = <&pwm7_default>;
+	interrupts = <40 1>, <41 1>;
+	interrupt-names = "gtioca", "overflow";
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&canfd_global {
+	status = "okay";
+	canfd0 {
+		pinctrl-0 = <&canfd0_default>;
+		pinctrl-names = "default";
+		rx-max-filters = <16>;
+		status = "okay";
 	};
 };

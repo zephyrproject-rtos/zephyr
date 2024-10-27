@@ -1,7 +1,4 @@
-.. _beaglev_fire:
-
-BeagleV®-Fire
-#############
+.. zephyr:board:: beaglev_fire
 
 Overview
 ********
@@ -14,10 +11,6 @@ Black allowing you to stack your favorite BeagleBone cape on top to expand it’
 Built around the powerful and energy-efficient RISC-V instruction set architecture (ISA) along with
 its versatile FPGA fabric, BeagleV®-Fire SBC offers unparalleled opportunities for developers,
 hobbyists, and researchers to explore and experiment with RISC-V technology.
-
-.. image:: img/BeagleV-Fire-Front-Annotated-768x432.webp
-     :align: center
-     :alt: beaglev_fire
 
 Building
 ========

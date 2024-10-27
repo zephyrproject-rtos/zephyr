@@ -20,6 +20,7 @@
 		sw0 = &user_button;
 		watchdog0 = &wdog0;
 		sdhc0 = &usdhc1;
+		mcuboot-button0 = &user_button;
 	};
 
 	chosen {
@@ -33,6 +34,7 @@
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
 		zephyr,canbus = &flexcan2;
+		zephyr,touch = &ft5336;
 	};
 
 	sdram0: memory@80000000 {
@@ -162,7 +164,7 @@ nxp_parallel_i2c: &lpi2c1 {};
 		compatible = "nxp,imx-flexspi-nor";
 		size = <67108864>;
 		reg = <0>;
-		spi-max-frequency = <133000000>;
+		spi-max-frequency = <104000000>;
 		status = "okay";
 		jedec-id = [9d 70 17];
 

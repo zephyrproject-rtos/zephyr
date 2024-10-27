@@ -1,7 +1,4 @@
-.. _nucleo_l496zg_board:
-
-ST Nucleo L496ZG
-################
+.. zephyr:board:: nucleo_l496zg
 
 Overview
 ********
@@ -27,10 +24,6 @@ some highlights of the Nucleo L476ZG board:
 - 8 LEDs: user LEDs (LD1, LD2, LD3), communication LED (LD4), USB
   power fault(LD5), power LED (LD6), USB FS OTG (LD7, LD8)
 - 2 push buttons: USER and RESET
-
-.. image:: img/nucleo_l496zg.jpg
-   :align: center
-   :alt: Nucleo L496ZG
 
 More information about the board can be found at the `Nucleo L496ZG website`_.
 

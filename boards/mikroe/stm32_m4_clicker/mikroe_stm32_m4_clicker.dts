@@ -62,7 +62,7 @@
 				<6 0 &gpiob 0 0>,	/* PWM  */
 				<7 0 &gpiob 1 0>,	/* INT  */
 				<8 0 &gpioc 11 0>,	/* RX   */
-				<9 0 &gpioc 12 0>,	/* TX   */
+				<9 0 &gpioc 10 0>,	/* TX   */
 				<10 0 &gpiob 10 0>,	/* SCL  */
 				<11 0 &gpiob 11 0>;	/* SDA  */
 							/* +5V */

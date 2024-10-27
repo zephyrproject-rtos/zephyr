@@ -245,8 +245,9 @@ if DYNAMIC_THREAD
 
 config DYNAMIC_THREAD_STACK_SIZE
 	int "Size of each pre-allocated thread stack"
-	default 1024 if !64BIT
-	default 2048 if 64BIT
+	default 4096 if X86
+	default 1024 if !X86 && !64BIT
+	default 2048 if !X86 && 64BIT
 	help
 	  Default stack size (in bytes) for dynamic threads.
 
@@ -449,6 +450,7 @@ config BOOT_BANNER
 config BOOT_BANNER_STRING
 	string "Boot banner string"
 	depends on BOOT_BANNER
+	default "Booting Zephyr OS build (tainted)" if TAINT
 	default "Booting Zephyr OS build"
 	help
 	  Use this option to set the boot banner.

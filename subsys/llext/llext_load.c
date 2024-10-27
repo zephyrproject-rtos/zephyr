@@ -387,6 +387,14 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 				continue;
 			}
 
+			/*
+			 * Exported symbols region can also overlap
+			 * with rodata.
+			 */
+			if (i == LLEXT_MEM_EXPORT || j == LLEXT_MEM_EXPORT) {
+				continue;
+			}
+
 			if (ldr->hdr.e_type == ET_DYN) {
 				/*
 				 * Test all merged VMA ranges for overlaps

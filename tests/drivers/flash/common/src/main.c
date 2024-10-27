@@ -55,9 +55,11 @@ static uint8_t __aligned(4) expected[EXPECTED_SIZE];
 static uint8_t erase_value;
 static bool ebw_required;
 
-static void *flash_driver_setup(void)
+static void flash_driver_before(void *arg)
 {
 	int rc;
+
+	ARG_UNUSED(arg);
 
 	TC_PRINT("Test will run on device %s\n", flash_dev->name);
 	zassert_true(device_is_ready(flash_dev));
@@ -120,8 +122,6 @@ static void *flash_driver_setup(void)
 			zassert_equal(rc, 0, "Flash memory not properly erased");
 		}
 	}
-
-	return NULL;
 }
 
 ZTEST(flash_driver, test_read_unaligned_address)
@@ -374,4 +374,78 @@ ZTEST(flash_driver, test_flash_page_layout)
 		     test_cb_data.page_counter, test_cb_data.exit_page);
 }
 
-ZTEST_SUITE(flash_driver, NULL, flash_driver_setup, NULL, NULL, NULL);
+static void test_flash_copy_inner(const struct device *src_dev, off_t src_offset,
+				  const struct device *dst_dev, off_t dst_offset, off_t size,
+				  uint8_t *buf, size_t buf_size, int expected_result)
+{
+	int actual_result;
+
+	if ((expected_result == 0) && (size != 0) && (src_offset != dst_offset)) {
+		/* prepare for successful copy */
+		zassert_ok(flash_flatten(flash_dev, page_info.start_offset, page_info.size));
+		zassert_ok(flash_fill(flash_dev, 0xaa, page_info.start_offset, page_info.size));
+		zassert_ok(flash_flatten(flash_dev, page_info.start_offset + page_info.size,
+					 page_info.size));
+	}
+
+	/* perform copy (if args are valid) */
+	actual_result = flash_copy(src_dev, src_offset, dst_dev, dst_offset, size, buf, buf_size);
+	zassert_equal(actual_result, expected_result,
+		      "flash_copy(%p, %lx, %p, %lx, %zu, %p, %zu) failed: expected: %d actual: %d",
+		      src_dev, src_offset, dst_dev, dst_offset, size, buf, buf_size,
+		      expected_result, actual_result);
+
+	if ((expected_result == 0) && (size != 0) && (src_offset != dst_offset)) {
+		/* verify a successful copy */
+		zassert_ok(flash_read(flash_dev, TEST_AREA_OFFSET, expected, EXPECTED_SIZE));
+		for (int i = 0; i < EXPECTED_SIZE; i++) {
+			zassert_equal(buf[i], 0xaa, "incorrect data (%02x) at %d", buf[i], i);
+		}
+	}
+}
+
+ZTEST(flash_driver, test_flash_copy)
+{
+	uint8_t buf[EXPECTED_SIZE];
+	const off_t off_max = (sizeof(off_t) == sizeof(int32_t)) ? INT32_MAX : INT64_MAX;
+
+	/*
+	 * Rather than explicitly testing 128+ permutations of input,
+	 * merge redundant cases:
+	 *  - src_dev or dst_dev are invalid
+	 *  - src_offset or dst_offset are invalid
+	 *  - src_offset + size or dst_offset + size overflow
+	 *  - buf is NULL
+	 *  - buf size is invalid
+	 */
+	test_flash_copy_inner(NULL, -1, NULL, -1, -1, NULL, 0, -EINVAL);
+	test_flash_copy_inner(NULL, -1, NULL, -1, -1, NULL, sizeof(buf), -EINVAL);
+	test_flash_copy_inner(NULL, -1, NULL, -1, -1, buf, sizeof(buf), -EINVAL);
+	test_flash_copy_inner(NULL, -1, NULL, -1, page_info.size, buf, sizeof(buf), -EINVAL);
+	test_flash_copy_inner(NULL, -1, NULL, -1, page_info.size, buf, sizeof(buf), -EINVAL);
+	test_flash_copy_inner(NULL, page_info.start_offset, NULL,
+			      page_info.start_offset + page_info.size, page_info.size, buf,
+			      sizeof(buf), -ENODEV);
+	test_flash_copy_inner(flash_dev, page_info.start_offset, flash_dev,
+			      page_info.start_offset + page_info.size, page_info.size, buf,
+			      sizeof(buf), 0);
+
+	/* zero-sized copy should succeed */
+	test_flash_copy_inner(flash_dev, page_info.start_offset, flash_dev,
+			      page_info.start_offset + page_info.size, 0, buf, sizeof(buf), 0);
+
+	/* copy with same offset should succeed */
+	test_flash_copy_inner(flash_dev, page_info.start_offset, flash_dev, page_info.start_offset,
+			      page_info.size, buf, sizeof(buf), 0);
+
+	/* copy with integer overflow should fail */
+	test_flash_copy_inner(flash_dev, off_max, flash_dev, page_info.start_offset, 42, buf,
+			      sizeof(buf), -EINVAL);
+
+	/* copy with overlapping ranges should fail */
+	test_flash_copy_inner(flash_dev, page_info.start_offset, flash_dev,
+			      page_info.start_offset + 32, page_info.size - 32, buf, sizeof(buf),
+			      -EINVAL);
+}
+
+ZTEST_SUITE(flash_driver, NULL, NULL, flash_driver_before, NULL, NULL);

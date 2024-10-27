@@ -1,7 +1,4 @@
-.. _imx95_evk:
-
-NXP i.MX95 EVK
-##############
+.. zephyr:board:: imx95_evk
 
 Overview
 ********
@@ -93,6 +90,8 @@ The Zephyr ``imx95_evk/mimx9596/m7`` board target supports the following hardwar
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
+| TPM       | on-chip    | tpm                                 |
++-----------+------------+-------------------------------------+
 
 The Zephyr ``imx95_evk/mimx9596/a55`` and ``imx95_evk/mimx9596/a55/smp`` board targets support
 the following hardware features:
@@ -123,6 +122,15 @@ Serial Port
 
 This board configuration uses a single serial communication channel with the
 CPU's UART1 for Cortex-A55, UART3 for Cortex-M7.
+
+TPM
+---
+
+Two channels are enabled on TPM2 for PWM for M7. Signals can be observerd with
+oscilloscope.
+Channel 2 signal routed to resistance R881.
+Channel 3 signal routed to resistance R882.
+
 
 Programming and Debugging (A55)
 *******************************

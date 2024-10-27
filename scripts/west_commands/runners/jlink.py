@@ -30,11 +30,16 @@ DEFAULT_JLINK_GDB_PORT = 2331
 DEFAULT_JLINK_RTT_PORT = 19021
 
 def is_ip(ip):
+    if not ip:
+        return False
     try:
-        ipaddress.ip_address(ip)
+        ipaddress.ip_address(ip.split(':')[0])
     except ValueError:
         return False
     return True
+
+def is_tunnel(tunnel):
+    return tunnel.startswith("tunnel:") if tunnel else False
 
 class ToggleAction(argparse.Action):
 
@@ -247,7 +252,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
 
         server_cmd = ([self.gdbserver] +
                       ['-select',
-                                           ('ip' if is_ip(self.dev_id) else 'usb') +
+                                           ('ip' if (is_ip(self.dev_id) or is_tunnel(self.dev_id)) else 'usb') +
                                            (f'={self.dev_id}' if self.dev_id else ''),
                        '-port', str(self.gdb_port),
                        '-if', self.iface,
@@ -404,7 +409,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                 loader_details = "?" + self.loader
 
             cmd = ([self.commander] +
-                   (['-IP', f'{self.dev_id}'] if is_ip(self.dev_id) else (['-USB', f'{self.dev_id}'] if self.dev_id else [])) +
+                   (['-IP', f'{self.dev_id}'] if (is_ip(self.dev_id) or is_tunnel(self.dev_id)) else (['-USB', f'{self.dev_id}'] if self.dev_id else [])) +
                    (['-nogui', '1'] if self.supports_nogui else []) +
                    ['-if', self.iface,
                     '-speed', self.speed,

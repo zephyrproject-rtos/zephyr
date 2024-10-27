@@ -1,7 +1,4 @@
-.. _mimxrt1024_evk:
-
-NXP MIMXRT1024-EVK
-##################
+.. zephyr:board:: mimxrt1024_evk
 
 Overview
 ********
@@ -10,10 +7,6 @@ The i.MX RT1024 expands the i.MX RT crossover processor families by providing
 high-performance feature set in low-cost LQFP packages, further simplifying
 board design and layout for customers. The i.MX RT1024 runs on the Arm®
 Cortex®-M7 core at 500 MHz.
-
-.. image:: mimxrt1024_evk.jpg
-   :align: center
-   :alt: MIMXRT1024-EVK
 
 Hardware
 ********
@@ -82,7 +75,7 @@ Supported Features
 
 The mimxrt1024_evk board configuration supports the hardware features listed
 below.  For additional features not yet supported, please also refer to the
-:ref:`mimxrt1064_evk` , which is the superset board in NXP's i.MX RT10xx family.
+:zephyr:board:`mimxrt1064_evk` , which is the superset board in NXP's i.MX RT10xx family.
 NXP prioritizes enabling the superset board with NXP's Full Platform Support for
 Zephyr.  Therefore, the mimxrt1064_evk board may have additional features
 already supported, which can also be re-used on this mimxrt1024_evk board:
@@ -206,11 +199,12 @@ remaining are not used.
 Programming and Debugging
 *************************
 
-This board supports 2 debug host tools. Please install your preferred host
+This board supports 3 debug host tools. Please install your preferred host
 tool, then follow the instructions in `Configuring a Debug Probe`_ to
 configure the board appropriately.
 
-* :ref:`jlink-debug-host-tools` (Default, Supported by NXP)
+* :ref:`linkserver-debug-host-tools` (Default, Supported by NXP)
+* :ref:`jlink-debug-host-tools` (Supported by NXP)
 * :ref:`pyocd-debug-host-tools` (Not supported by NXP)
 
 Configuring a Debug Probe

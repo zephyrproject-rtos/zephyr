@@ -1,5 +1,7 @@
 sample:
   name: IPC Service example integration (icmsg backend)
+common:
+  timeout: 30
 tests:
   sample.ipc.icmsg:
     platform_allow:
@@ -23,7 +25,7 @@ tests:
         - "host: IPC-service HOST demo ended"
 
   sample.ipc.icmsg.nrf54l15:
-    platform_allow: nrf54l15dk/nrf54l15/cpuapp nrf54l15pdk/nrf54l15/cpuapp
+    platform_allow: nrf54l15dk/nrf54l15/cpuapp
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
     tags: ipc
@@ -43,7 +45,7 @@ tests:
         - "host: IPC-service HOST demo ended"
 
   sample.ipc.icmsg.nrf54l15_no_multithreading:
-    platform_allow: nrf54l15dk/nrf54l15/cpuapp nrf54l15pdk/nrf54l15/cpuapp
+    platform_allow: nrf54l15dk/nrf54l15/cpuapp
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
     tags: ipc
@@ -67,7 +69,7 @@ tests:
         - "I: IPC-service HOST demo ended"
 
   sample.ipc.icmsg.nrf54l15_remote_no_multithreading:
-    platform_allow: nrf54l15dk/nrf54l15/cpuapp nrf54l15pdk/nrf54l15/cpuapp
+    platform_allow: nrf54l15dk/nrf54l15/cpuapp
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
     tags: ipc
@@ -89,16 +91,16 @@ tests:
         - "host: IPC-service HOST demo ended"
 
   sample.ipc.icbmsg.nrf54l15:
-    platform_allow: nrf54l15pdk/nrf54l15/cpuapp
+    platform_allow: nrf54l15dk/nrf54l15/cpuapp
     integration_platforms:
-      - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
     tags: ipc
     extra_args:
       icmsg_SNIPPET=nordic-flpr
       icmsg_CONFIG_IPC_SERVICE_BACKEND_ICBMSG_NUM_EP=1
-      icmsg_DTC_OVERLAY_FILE="boards/nrf54l15pdk_nrf54l15_cpuapp_icbmsg.overlay"
+      icmsg_DTC_OVERLAY_FILE="boards/nrf54l15dk_nrf54l15_cpuapp_icbmsg.overlay"
       remote_CONFIG_IPC_SERVICE_BACKEND_ICBMSG_NUM_EP=1
-      remote_DTC_OVERLAY_FILE="boards/nrf54l15pdk_nrf54l15_cpuflpr_icbmsg.overlay"
+      remote_DTC_OVERLAY_FILE="boards/nrf54l15dk_nrf54l15_cpuflpr_icbmsg.overlay"
     sysbuild: true
     harness: console
     harness_config:
@@ -113,18 +115,18 @@ tests:
         - "host: IPC-service HOST demo ended"
 
   sample.ipc.icbmsg.nrf54l15_no_multithreading:
-    platform_allow: nrf54l15pdk/nrf54l15/cpuapp
+    platform_allow: nrf54l15dk/nrf54l15/cpuapp
     integration_platforms:
-      - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
     tags: ipc
     extra_args:
       icmsg_SNIPPET=nordic-flpr
       icmsg_CONFIG_IPC_SERVICE_BACKEND_ICBMSG_NUM_EP=1
-      icmsg_DTC_OVERLAY_FILE="boards/nrf54l15pdk_nrf54l15_cpuapp_icbmsg.overlay"
+      icmsg_DTC_OVERLAY_FILE="boards/nrf54l15dk_nrf54l15_cpuapp_icbmsg.overlay"
       icmsg_CONFIG_MULTITHREADING=n
       icmsg_CONFIG_LOG_MODE_MINIMAL=y
       remote_CONFIG_IPC_SERVICE_BACKEND_ICBMSG_NUM_EP=1
-      remote_DTC_OVERLAY_FILE="boards/nrf54l15pdk_nrf54l15_cpuflpr_icbmsg.overlay"
+      remote_DTC_OVERLAY_FILE="boards/nrf54l15dk_nrf54l15_cpuflpr_icbmsg.overlay"
       remote_CONFIG_MULTITHREADING=n
       remote_CONFIG_LOG_MODE_MINIMAL=y
     sysbuild: true
@@ -133,24 +135,24 @@ tests:
       type: multi_line
       ordered: false
       regex:
-        - "host: IPC-service HOST demo started"
-        - "host: Ep bounded"
-        - "host: Perform sends for"
-        - "host: Sent"
-        - "host: Received"
-        - "host: IPC-service HOST demo ended"
+        - "I: IPC-service HOST demo started"
+        - "I: Ep bounded"
+        - "I: Perform sends for"
+        - "I: Sent"
+        - "I: Received"
+        - "I: IPC-service HOST demo ended"
 
   sample.ipc.icbmsg.nrf54l15_remote_no_multithreading:
-    platform_allow: nrf54l15pdk/nrf54l15/cpuapp
+    platform_allow: nrf54l15dk/nrf54l15/cpuapp
     integration_platforms:
-      - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
     tags: ipc
     extra_args:
       icmsg_SNIPPET=nordic-flpr
       icmsg_CONFIG_IPC_SERVICE_BACKEND_ICBMSG_NUM_EP=1
-      icmsg_DTC_OVERLAY_FILE="boards/nrf54l15pdk_nrf54l15_cpuapp_icbmsg.overlay"
+      icmsg_DTC_OVERLAY_FILE="boards/nrf54l15dk_nrf54l15_cpuapp_icbmsg.overlay"
       remote_CONFIG_IPC_SERVICE_BACKEND_ICBMSG_NUM_EP=1
-      remote_DTC_OVERLAY_FILE="boards/nrf54l15pdk_nrf54l15_cpuflpr_icbmsg.overlay"
+      remote_DTC_OVERLAY_FILE="boards/nrf54l15dk_nrf54l15_cpuflpr_icbmsg.overlay"
       remote_CONFIG_MULTITHREADING=n
       remote_CONFIG_LOG_MODE_MINIMAL=y
     sysbuild: true

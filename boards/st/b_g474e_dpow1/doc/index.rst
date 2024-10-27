@@ -1,7 +1,4 @@
-.. _b_g474e_dpow1_board:
-
-ST B-G474E-DPOW1 Discovery
-##########################
+.. zephyr:board:: b_g474e_dpow1
 
 Overview
 ********
@@ -33,10 +30,6 @@ the STLINK-V3E debugger and programmer.
 - Flexible power-supply options: ST-LINK USB VBUS or USB Type-C™ VBUS or external source
 - On-board STLINK-V3E debugger/programmer with USB re-enumeration capability: mass storage,
   Virtual COM port, and debug port
-
-.. image:: img/b_g474e_dpow1.jpg
-   :align: center
-   :alt: B-G474E-DPOW1
 
 More information about the board can be found at the `B-G474E-DPOW1 website`_.
 

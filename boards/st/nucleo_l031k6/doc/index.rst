@@ -1,7 +1,4 @@
-.. _nucleo_l031k6_board:
-
-ST Nucleo L031K6
-################
+.. zephyr:board:: nucleo_l031k6
 
 Overview
 ********
@@ -19,10 +16,6 @@ The STM32 Nucleo board integrates the ST-LINK/V2-1 debugger and programmer.
 
 The STM32 Nucleo board comes with the STM32 comprehensive software HAL library together
 with various packaged software examples.
-
-.. image:: img/nucleo_l031k6.jpg
-   :align: center
-   :alt: Nucleo L031K6
 
 More information about the board can be found at the `Nucleo L031K6 website`_.
 

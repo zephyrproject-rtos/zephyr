@@ -483,10 +483,13 @@
 #endif
 
 #if defined(CONFIG_ARCH_POSIX) && !defined(CONFIG_PICOLIBC)
-#define MBEDTLS_PSA_KEY_SLOT_COUNT     64
-#define MBEDTLS_PSA_CRYPTO_STORAGE_C
+#define MBEDTLS_PSA_KEY_SLOT_COUNT 64 /* for BLE Mesh tests */
 #define MBEDTLS_PSA_ITS_FILE_C
 #define MBEDTLS_FS_IO
+#endif
+
+#if defined(CONFIG_SECURE_STORAGE) || (defined(CONFIG_ARCH_POSIX) && !defined(CONFIG_PICOLIBC))
+#define MBEDTLS_PSA_CRYPTO_STORAGE_C
 #endif
 
 #endif /* CONFIG_MBEDTLS_PSA_CRYPTO_C */
@@ -499,7 +502,6 @@
 #define MBEDTLS_PSA_CRYPTO_CLIENT
 #define MBEDTLS_PSA_CRYPTO_CONFIG
 #define MBEDTLS_PSA_CRYPTO_CONFIG_FILE   "config-psa.h"
-
 #endif
 
 #if defined(CONFIG_MBEDTLS_TLS_VERSION_1_2) && defined(CONFIG_MBEDTLS_PSA_CRYPTO_C)

@@ -31,6 +31,7 @@
 		sdhc0 = &sdhc0;
 		accel0 = &mma8652fc;
 		sdhc0 = &sdif;
+		mcuboot-button0 = &user_button_1;
 	};
 
 	chosen {

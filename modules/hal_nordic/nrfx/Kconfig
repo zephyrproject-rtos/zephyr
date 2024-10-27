@@ -162,8 +162,22 @@ config NRFX_NVMC
 		|| $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF91_FLASH_CONTROLLER))
 
 config NRFX_PDM
-	bool "PDM driver"
-	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_PDM))
+	bool
+
+config NRFX_PDM0
+	bool "PDM0 driver instance"
+	depends on $(dt_nodelabel_has_compat,pdm0,$(DT_COMPAT_NORDIC_NRF_PDM))
+	select NRFX_PDM
+
+config NRFX_PDM20
+	bool "PDM20 driver instance"
+	depends on $(dt_nodelabel_has_compat,pdm20,$(DT_COMPAT_NORDIC_NRF_PDM))
+	select NRFX_PDM
+
+config NRFX_PDM21
+	bool "PDM21 driver instance"
+	depends on $(dt_nodelabel_has_compat,pdm21,$(DT_COMPAT_NORDIC_NRF_PDM))
+	select NRFX_PDM
 
 config NRFX_POWER
 	bool "POWER driver"
