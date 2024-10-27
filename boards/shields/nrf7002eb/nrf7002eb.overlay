@@ -24,6 +24,7 @@
 		bucken-gpios = <&edge_connector 9 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 		iovdd-ctrl-gpios = <&edge_connector 9 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 		host-irq-gpios = <&edge_connector 19 GPIO_ACTIVE_HIGH>;
+		srrf-switch-gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
 
 		wlan0: wlan0 {
 			compatible = "nordic,wlan";
