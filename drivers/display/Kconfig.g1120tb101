@@ -1,0 +1,20 @@
+# Copyright (c) 2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+config G1120TB101
+	bool "G1120TB101 display controller"
+	default y
+	depends on DT_HAS_GVO_G1120TB101_ENABLED
+	select MIPI_DSI
+	help
+	  Enable the driver for GVO G1120TB101 display controller.
+
+if G1120TB101
+
+config DISPLAY_G1120TB101_INIT_PRIORITY
+	int "Initialization priority"
+	default DISPLAY_INIT_PRIORITY
+	help
+	  G1120TB101 display driver initialization priority.
+
+endif

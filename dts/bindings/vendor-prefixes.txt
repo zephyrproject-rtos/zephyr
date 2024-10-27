@@ -282,6 +282,7 @@ grinn	Grinn
 grmn	Garmin Limited
 gss	Gas Sensing Solutions Ltd.
 gumstix	Gumstix, Inc.
+gvo	Kunshan Govisionox Optoelectronics Co., Ltd.
 hamamatsu	Hamamatsu Photonics K.K.
 hannstar	HannStar Display Corporation
 haoyu	Haoyu Microelectronic Co. Ltd.
