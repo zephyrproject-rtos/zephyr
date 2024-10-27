@@ -98,6 +98,11 @@ struct ccm_params {
 };
 
 struct ctr_params {
+	/* 
+		This is a pointer to the IV (initialization vector) 
+		provided as input to the counter mode cipher API.
+	*/
+	uint8_t *iv; 
 	/* CTR mode counter is a split counter composed of iv and counter
 	 * such that ivlen + ctr_len = keylen
 	 */
