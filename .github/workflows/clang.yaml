@@ -22,7 +22,7 @@ jobs:
       CCACHE_DIR: /node-cache/ccache-zephyr
       CCACHE_REMOTE_STORAGE: "redis://cache-*.keydb-cache.svc.cluster.local|shards=1,2,3"
       CCACHE_REMOTE_ONLY: "true"
-      LLVM_TOOLCHAIN_PATH: /usr/lib/llvm-16
+      LLVM_TOOLCHAIN_PATH: /usr/lib/llvm-19
       COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
       BASE_REF: ${{ github.base_ref }}
     outputs:
