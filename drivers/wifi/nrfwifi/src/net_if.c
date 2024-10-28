@@ -389,7 +389,7 @@ int nrf_wifi_if_send(const struct device *dev,
 #ifdef CONFIG_NRF70_RAW_DATA_TX
 	if ((*(unsigned int *)pkt->frags->data) == NRF_WIFI_MAGIC_NUM_RAWTX) {
 		if (vif_ctx_zep->if_carr_state != NRF_WIFI_FMAC_IF_CARR_STATE_ON) {
-			goto unlock;
+			goto drop;
 		}
 
 		ret = nrf_wifi_fmac_start_rawpkt_xmit(rpu_ctx_zep->rpu_ctx,
@@ -399,7 +399,7 @@ int nrf_wifi_if_send(const struct device *dev,
 #endif /* CONFIG_NRF70_RAW_DATA_TX */
 		if ((vif_ctx_zep->if_carr_state != NRF_WIFI_FMAC_IF_CARR_STATE_ON) ||
 		    (!vif_ctx_zep->authorized && !is_eapol(pkt))) {
-			goto unlock;
+			goto drop;
 		}
 
 		ret = nrf_wifi_fmac_start_xmit(rpu_ctx_zep->rpu_ctx,
@@ -408,6 +408,10 @@ int nrf_wifi_if_send(const struct device *dev,
 #ifdef CONFIG_NRF70_RAW_DATA_TX
 	}
 #endif /* CONFIG_NRF70_RAW_DATA_TX */
+	goto unlock;
+drop:
+	host_stats->total_tx_drop_pkts++;
+	nrf_wifi_osal_nbuf_free(nbuf);
 unlock:
 	k_mutex_unlock(&vif_ctx_zep->vif_lock);
 #else
