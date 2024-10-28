@@ -1,3 +1,6 @@
+# This configuration is orthogonal to whether the Cortex-M33 or Hazard3 cores
+# are in use, but Zephyr does not support providing a qualifier-agnostic
+# _defconfig file.
 CONFIG_BUILD_OUTPUT_HEX=y
 CONFIG_BUILD_OUTPUT_UF2=y
 CONFIG_CLOCK_CONTROL=y
