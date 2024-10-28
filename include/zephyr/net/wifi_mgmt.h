@@ -499,8 +499,6 @@ struct wifi_connect_req_params {
 	const uint8_t *eap_password;
 	/** eap passwd length, max 128 */
 	uint8_t eap_passwd_length;
-	/** Fast BSS Transition used */
-	int ft_used;
 };
 
 /** @brief Wi-Fi connect result codes. To be overlaid on top of \ref wifi_status
