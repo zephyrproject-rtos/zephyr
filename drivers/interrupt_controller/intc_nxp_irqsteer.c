@@ -385,7 +385,7 @@ static void _irqstr_disp_put_unlocked(struct irqsteer_dispatcher *disp)
 	if (!disp->refcnt) {
 		_irqstr_disp_enable_disable(disp, false);
 
-		ret = pm_device_runtime_put(disp->dev);
+		ret = pm_device_runtime_put_async(disp->dev, K_NO_WAIT);
 		if (ret < 0) {
 			LOG_ERR("failed to disable PM resources: %d", ret);
 			return;
