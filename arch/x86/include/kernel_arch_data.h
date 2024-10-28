@@ -32,6 +32,7 @@
 #define IV_MACHINE_CHECK 18
 #define IV_SIMD_FP 19
 #define IV_VIRT_EXCEPTION 20
+#define IV_CTRL_PROTECTION_EXCEPTION 21
 #define IV_SECURITY_EXCEPTION 30
 
 #define IV_IRQS 32		/* start of vectors available for IRQs */
