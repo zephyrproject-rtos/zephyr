@@ -1,5 +1,5 @@
 identifier: slstk3402a/efm32jg12b500f1024gl125
-name: EFM32JG12 SLSTK3402A
+name: EFM32JG12 Pearl Gecko Starter Kit (SLSTK3402A, BRD2501B)
 type: mcu
 arch: arm
 ram: 256

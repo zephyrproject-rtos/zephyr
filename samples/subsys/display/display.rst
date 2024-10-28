@@ -1,10 +1,5 @@
-.. _display-samples:
+.. zephyr:code-sample-category:: display
+   :name: Display
+   :show-listing:
 
-Display Samples
-###############
-
-.. toctree::
-   :maxdepth: 1
-   :glob:
-
-   **/*
+   These samples demonstrate how to use the display subsystem.

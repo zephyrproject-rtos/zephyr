@@ -189,7 +189,7 @@ _idle_state_cleared:
 	 *
 	 * Note that interrupts are disabled up to this point on the ARM
 	 * architecture variants other than the Cortex-M. It is also important
-	 * to note that that most interrupt controllers require that the nested
+	 * to note that most interrupt controllers require that the nested
 	 * interrupts are handled after the active interrupt is acknowledged;
 	 * this is be done through the `get_active` interrupt controller
 	 * interface function.
@@ -339,6 +339,15 @@ z_arm_cortex_ar_irq_done:
 	str r0, [r2, #___cpu_t_nested_OFFSET]
 	/* Do not context switch if exiting a nested interrupt */
 	cmp r0, #0
+	/* Note that this function is only called from `z_arm_svc`,
+	 *	while handling irq_offload, with below modes set:
+	 *	```
+	 *		if (cpu interrupts are nested)
+	 *			mode=MODE_SYS
+	 *		else
+	 *			mode=MODE_IRQ
+	 *	```
+	 */
 	bhi __EXIT_INT
 
 	/* retrieve pointer to the current thread */

@@ -25,4 +25,5 @@ supported:
   - dma
   - nvs
   - rtc
+  - usbd
 vendor: st

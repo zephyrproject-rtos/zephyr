@@ -24,7 +24,7 @@
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/slist.h>
@@ -33,6 +33,7 @@
 
 LOG_MODULE_REGISTER(bt_bap_broadcast_source, CONFIG_BT_BAP_BROADCAST_SOURCE_LOG_LEVEL);
 
+#include "audio_internal.h"
 #include "bap_iso.h"
 #include "bap_endpoint.h"
 #include "bap_stream.h"
@@ -292,7 +293,7 @@ static struct bt_bap_broadcast_subgroup *broadcast_source_new_subgroup(uint8_t i
 
 static int broadcast_source_setup_stream(uint8_t index, struct bt_bap_stream *stream,
 					 struct bt_audio_codec_cfg *codec_cfg,
-					 struct bt_audio_codec_qos *qos,
+					 struct bt_bap_qos_cfg *qos,
 					 struct bt_bap_broadcast_source *source)
 {
 	struct bt_bap_iso *iso;
@@ -313,7 +314,7 @@ static int broadcast_source_setup_stream(uint8_t index, struct bt_bap_stream *st
 	bt_bap_iso_init(iso, &broadcast_source_iso_ops);
 	bt_bap_iso_bind_ep(iso, ep);
 
-	bt_audio_codec_qos_to_iso_qos(iso->chan.qos->tx, qos);
+	bt_bap_qos_cfg_to_iso_qos(iso->chan.qos->tx, qos);
 	bt_bap_iso_configure_data_path(ep, codec_cfg);
 #if defined(CONFIG_BT_ISO_TEST_PARAMS)
 	iso->chan.qos->num_subevents = qos->num_subevents;
@@ -449,36 +450,6 @@ static bool encode_base(struct bt_bap_broadcast_source *source, struct net_buf_s
 	return true;
 }
 
-static int generate_broadcast_id(struct bt_bap_broadcast_source *source)
-{
-	bool unique;
-
-	do {
-		int err;
-
-		err = bt_rand(&source->broadcast_id,
-			      BT_AUDIO_BROADCAST_ID_SIZE);
-		if (err) {
-			return err;
-		}
-
-		/* Ensure uniqueness */
-		unique = true;
-		for (int i = 0; i < ARRAY_SIZE(broadcast_sources); i++) {
-			if (&broadcast_sources[i] == source) {
-				continue;
-			}
-
-			if (broadcast_sources[i].broadcast_id == source->broadcast_id) {
-				unique = false;
-				break;
-			}
-		}
-	} while (!unique);
-
-	return 0;
-}
-
 static void broadcast_source_cleanup(struct bt_bap_broadcast_source *source)
 {
 	struct bt_bap_broadcast_subgroup *subgroup, *next_subgroup;
@@ -508,7 +479,7 @@ static void broadcast_source_cleanup(struct bt_bap_broadcast_source *source)
 static bool valid_broadcast_source_param(const struct bt_bap_broadcast_source_param *param,
 					 const struct bt_bap_broadcast_source *source)
 {
-	const struct bt_audio_codec_qos *qos;
+	const struct bt_bap_qos_cfg *qos;
 
 	CHECKIF(param == NULL) {
 		LOG_DBG("param is NULL");
@@ -624,38 +595,33 @@ static bool valid_broadcast_source_param(const struct bt_bap_broadcast_source_pa
 	return true;
 }
 
+/** Gets the "highest" state of all BIS in the broadcast source */
 static enum bt_bap_ep_state broadcast_source_get_state(struct bt_bap_broadcast_source *source)
 {
+	enum bt_bap_ep_state state = BT_BAP_EP_STATE_IDLE;
 	struct bt_bap_broadcast_subgroup *subgroup;
-	struct bt_bap_stream *stream;
-	sys_snode_t *head_node;
 
 	if (source == NULL) {
 		LOG_DBG("source is NULL");
-		return BT_BAP_EP_STATE_IDLE;
+		return state;
 	}
 
 	if (sys_slist_is_empty(&source->subgroups)) {
 		LOG_DBG("Source does not have any streams");
-		return BT_BAP_EP_STATE_IDLE;
+		return state;
 	}
 
-	/* Get the first stream */
-	head_node = sys_slist_peek_head(&source->subgroups);
-	subgroup = CONTAINER_OF(head_node, struct bt_bap_broadcast_subgroup, _node);
+	SYS_SLIST_FOR_EACH_CONTAINER(&source->subgroups, subgroup, _node) {
+		struct bt_bap_stream *stream;
 
-	head_node = sys_slist_peek_head(&subgroup->streams);
-	stream = CONTAINER_OF(head_node, struct bt_bap_stream, _node);
-
-	/* All streams in a broadcast source is in the same state,
-	 * so we can just check the first stream
-	 */
-	if (stream->ep == NULL) {
-		LOG_DBG("stream->ep is NULL");
-		return BT_BAP_EP_STATE_IDLE;
+		SYS_SLIST_FOR_EACH_CONTAINER(&subgroup->streams, stream, _node) {
+			if (stream->ep != NULL) {
+				state = MAX(state, stream->ep->status.state);
+			}
+		}
 	}
 
-	return stream->ep->status.state;
+	return state;
 }
 
 static bool merge_bis_and_subgroup_data_cb(struct bt_data *data, void *user_data)
@@ -720,7 +686,7 @@ int bt_bap_broadcast_source_create(struct bt_bap_broadcast_source_param *param,
 				   struct bt_bap_broadcast_source **out_source)
 {
 	struct bt_bap_broadcast_source *source;
-	struct bt_audio_codec_qos *qos;
+	struct bt_bap_qos_cfg *qos;
 	size_t stream_count;
 	uint8_t index;
 	uint8_t bis_count;
@@ -834,12 +800,6 @@ int bt_bap_broadcast_source_create(struct bt_bap_broadcast_source_param *param,
 		}
 	}
 
-	err = generate_broadcast_id(source);
-	if (err != 0) {
-		LOG_DBG("Could not generate broadcast id: %d", err);
-		return err;
-	}
-
 	/* Finalize state changes and store information */
 	broadcast_source_set_state(source, BT_BAP_EP_STATE_QOS_CONFIGURED);
 	source->qos = qos;
@@ -856,8 +816,6 @@ int bt_bap_broadcast_source_create(struct bt_bap_broadcast_source_param *param,
 			     sizeof(source->broadcast_code));
 	}
 
-	LOG_DBG("Broadcasting with ID 0x%6X", source->broadcast_id);
-
 	*out_source = source;
 
 	return 0;
@@ -868,7 +826,7 @@ int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source,
 {
 	struct bt_bap_broadcast_subgroup *subgroup;
 	enum bt_bap_ep_state broadcast_state;
-	struct bt_audio_codec_qos *qos;
+	struct bt_bap_qos_cfg *qos;
 	size_t subgroup_cnt;
 	uint8_t bis_count;
 
@@ -1024,7 +982,7 @@ int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source,
 			struct bt_iso_chan_io_qos *iso_qos;
 
 			iso_qos = stream->ep->iso->chan.qos->tx;
-			bt_audio_codec_qos_to_iso_qos(iso_qos, qos);
+			bt_bap_qos_cfg_to_iso_qos(iso_qos, qos);
 			stream->qos = qos;
 		}
 	}
@@ -1197,32 +1155,6 @@ int bt_bap_broadcast_source_delete(struct bt_bap_broadcast_source *source)
 
 	/* Reset the broadcast source */
 	broadcast_source_cleanup(source);
-
-	return 0;
-}
-
-int bt_bap_broadcast_source_get_id(struct bt_bap_broadcast_source *source,
-				   uint32_t *const broadcast_id)
-{
-	enum bt_bap_ep_state broadcast_state;
-
-	CHECKIF(source == NULL) {
-		LOG_DBG("source is NULL");
-		return -EINVAL;
-	}
-
-	CHECKIF(broadcast_id == NULL) {
-		LOG_DBG("broadcast_id is NULL");
-		return -EINVAL;
-	}
-
-	broadcast_state = broadcast_source_get_state(source);
-	if (broadcast_state == BT_BAP_EP_STATE_IDLE) {
-		LOG_DBG("Broadcast source invalid state: %u", broadcast_state);
-		return -EBADMSG;
-	}
-
-	*broadcast_id = source->broadcast_id;
 
 	return 0;
 }

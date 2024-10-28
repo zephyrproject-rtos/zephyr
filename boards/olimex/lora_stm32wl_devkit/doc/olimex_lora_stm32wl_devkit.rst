@@ -1,19 +1,10 @@
-.. _olimex_lora_stm32wl_devkit:
-
-Olimex LoRa STM32WL DevKit
-##########################
+.. zephyr:board:: olimex_lora_stm32wl_devkit
 
 Overview
 ********
 
 LoRaWAN development kit based on Olimex BB-STM32WL module using the
 STM32WLE5CCU6 MCU.
-
-.. figure:: olimex-stm32wl-devkit.jpg
-     :align: center
-     :alt: Olimex LoRa STM32WL DevKit
-
-     Olimex LoRa STM32WL DevKit (credit: OLIMEX)
 
 Hardware
 ********

@@ -72,6 +72,12 @@ struct bt_l2cap_conn_rsp {
 #define BT_L2CAP_CONF_SUCCESS           0x0000
 #define BT_L2CAP_CONF_UNACCEPT          0x0001
 #define BT_L2CAP_CONF_REJECT            0x0002
+#define BT_L2CAP_CONF_UNKNOWN_OPT       0x0003
+#define BT_L2CAP_CONF_PENDING           0x0004
+#define BT_L2CAP_CONF_FLOW_SPEC_REJECT  0x0005
+
+#define BT_L2CAP_CONF_FLAGS_C           BIT(0)
+#define BT_L2CAP_CONF_FLAGS_MASK        BT_L2CAP_CONF_FLAGS_C
 
 #define BT_L2CAP_CONF_REQ               0x04
 struct bt_l2cap_conf_req {
@@ -90,6 +96,13 @@ struct bt_l2cap_conf_rsp {
 
 /* Option type used by MTU config request data */
 #define BT_L2CAP_CONF_OPT_MTU           0x01
+#define BT_L2CAP_CONF_OPT_FLUSH_TIMEOUT 0x02
+#define BT_L2CAP_CONF_OPT_QOS           0x03
+#define BT_L2CAP_CONF_OPT_RET_FC        0x04
+#define BT_L2CAP_CONF_OPT_FCS           0x05
+#define BT_L2CAP_CONF_OPT_EXT_FLOW_SPEC 0x06
+#define BT_L2CAP_CONF_OPT_EXT_WIN_SIZE  0x07
+
 /* Options bits selecting most significant bit (hint) in type field */
 #define BT_L2CAP_CONF_HINT              0x80
 #define BT_L2CAP_CONF_MASK              0x7f
@@ -98,6 +111,47 @@ struct bt_l2cap_conf_opt {
 	uint8_t type;
 	uint8_t len;
 	uint8_t data[0];
+} __packed;
+
+struct bt_l2cap_conf_opt_mtu {
+	uint16_t mtu;
+} __packed;
+
+struct bt_l2cap_conf_opt_flush_timeout {
+	uint16_t timeout;
+} __packed;
+
+#define BT_L2CAP_QOS_TYPE_NO_TRAFFIC    0x00
+#define BT_L2CAP_QOS_TYPE_BEST_EFFORT   0x01
+#define BT_L2CAP_QOS_TYPE_GUARANTEED    0x02
+struct bt_l2cap_conf_opt_qos {
+	uint8_t flags;
+	uint8_t service_type;
+	uint32_t token_rate;
+	uint32_t token_bucket_size;
+	uint32_t peak_bandwidth;
+	uint32_t latency;
+	uint32_t delay_variation;
+} __packed;
+
+#define BT_L2CAP_RET_FC_MODE_BASIC   0x00
+#define BT_L2CAP_RET_FC_MODE_RET     0x01
+#define BT_L2CAP_RET_FC_MODE_FC      0x02
+#define BT_L2CAP_RET_FC_MODE_ENH_RET 0x03
+#define BT_L2CAP_RET_FC_MODE_STREAM  0x04
+struct bt_l2cap_conf_opt_ret_fc {
+	uint8_t mode;
+	uint8_t tx_windows_size;
+	uint8_t max_transmit;
+	uint16_t retransmission_timeout;
+	uint16_t monitor_timeout;
+	uint16_t mps;
+} __packed;
+
+#define BT_L2CAP_FCS_TYPE_NO         0x00
+#define BT_L2CAP_FCS_TYPE_16BIT      0x01
+struct bt_l2cap_conf_opt_fcs {
+	uint8_t type;
 } __packed;
 
 #define BT_L2CAP_DISCONN_REQ            0x06
@@ -130,18 +184,6 @@ struct bt_l2cap_info_rsp {
 	uint16_t result;
 	uint8_t  data[0];
 } __packed;
-
-/* Need a name different than bt_l2cap_fixed_chan for a different section */
-struct bt_l2cap_br_fixed_chan {
-	uint16_t		cid;
-	int (*accept)(struct bt_conn *conn, struct bt_l2cap_chan **chan);
-};
-
-#define BT_L2CAP_BR_CHANNEL_DEFINE(_name, _cid, _accept)		\
-	const STRUCT_SECTION_ITERABLE(bt_l2cap_br_fixed_chan, _name) = { \
-				.cid = _cid,			\
-				.accept = _accept,		\
-			}
 
 #define BR_CHAN(_ch) CONTAINER_OF(_ch, struct bt_l2cap_br_chan, chan)
 

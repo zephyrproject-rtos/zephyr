@@ -43,7 +43,7 @@ static void gclks_init(void)
 			     | GCLK_GENCTRL_GENEN;
 }
 
-void z_arm_platform_init(void)
+void soc_reset_hook(void)
 {
 	flash_waitstates_init();
 	osc48m_init();

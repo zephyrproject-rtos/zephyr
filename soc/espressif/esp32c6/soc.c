@@ -19,6 +19,7 @@
 #include <soc/interrupt_reg.h>
 #include <esp_private/spi_flash_os.h>
 #include "esp_private/esp_mmu_map_private.h"
+#include <esp_flash_internal.h>
 
 #include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
 
@@ -58,9 +59,9 @@ void IRAM_ATTR __esp_platform_start(void)
 
 	esp_timer_early_init();
 
-#if CONFIG_SOC_FLASH_ESP32
-	spi_flash_guard_set(&g_flash_guard_default_ops);
-#endif
+	esp_mspi_pin_init();
+
+	esp_flash_app_init();
 
 	esp_mmu_map_init();
 

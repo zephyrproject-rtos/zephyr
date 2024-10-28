@@ -18,6 +18,7 @@ supported:
   - adc
   - counter
   - can
+  - display
   - dma
   - gpio
   - hwinfo
@@ -29,4 +30,5 @@ supported:
   - usb_device
   - watchdog
   - video
+  - usbd
 vendor: nxp

@@ -23,6 +23,7 @@
 		zephyr,flash-controller = &is25wp128;
 		zephyr,flash = &is25wp128;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,uart-mcumgr = &lpuart1;
 		zephyr,cpu1-region = &ocram;
 		zephyr,ipc = &mailbox_a;
 	};
@@ -50,6 +51,28 @@
 		gpio-map-pass-thru = <0 0x3f>;
 		gpio-map =	<9 0 &gpio11 15 0>,	/* Pin 9, RESETB */
 				<17 0 &gpio9 25  0>;	/* Pin 17, PWDN */
+	};
+
+	/*
+	 * This node describes the GPIO pins of the MIPI FPC interface,
+	 * J48 on the EVK. This interface is standard to several
+	 * NXP EVKs, and is used with several MIPI displays
+	 * (available as zephyr shields)
+	 */
+	 nxp_mipi_connector: mipi-connector {
+		compatible = "gpio-nexus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =	<0  0 &gpio9 29 0>,	/* Pin 1, LEDK */
+				<21 0 &gpio9 1  0>,	/* Pin 21, RESET */
+				<22 0 &gpio9 4  0>,	/* Pin 22, LPTE */
+				<26 0 &gpio6 4  0>,	/* Pin 26, CTP_I2C SDA */
+				<27 0 &gpio6 5  0>,	/* Pin 27, CTP_I2C SCL */
+				<28 0 &gpio9 0  0>,	/* Pin 28, CTP_RST */
+				<29 0 &gpio2 31 0>,	/* Pin 29, CTP_INT */
+				<32 0 &gpio11 16 0>,	/* Pin 32, PWR_EN */
+				<34 0 &gpio9 29 0>;	/* Pin 34, BL_PWM */
 	};
 };
 
@@ -118,3 +141,16 @@ nxp_cam_i2c: &lpi2c6 {};
 nxp_mipi_csi: &mipi_csi2rx {};
 
 nxp_csi: &csi {};
+
+zephyr_lcdif: &lcdif {};
+
+zephyr_mipi_dsi: &mipi_dsi {
+	dphy-ref-frequency = <24000000>;
+};
+
+nxp_mipi_i2c: &lpi2c5 {
+	pinctrl-0 = <&pinmux_lpi2c5>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+};

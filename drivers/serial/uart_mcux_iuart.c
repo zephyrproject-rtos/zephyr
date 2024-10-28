@@ -341,7 +341,7 @@ static const struct mcux_iuart_config mcux_iuart_##n##_config = {	\
 	static const struct mcux_iuart_config mcux_iuart_##n##_config;\
 									\
 	DEVICE_DT_INST_DEFINE(n,					\
-			    &mcux_iuart_init,				\
+			    mcux_iuart_init,				\
 			    NULL,					\
 			    &mcux_iuart_##n##_data,			\
 			    &mcux_iuart_##n##_config,			\

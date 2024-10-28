@@ -2,7 +2,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
- #include "asm_memory_management.h"
+#include "asm_memory_management.h"
+
+	.section .cached.hpsram_mask, "w"
+	.align 64
+hpsram_mask:
+	.rept MAX_MEMORY_SEGMENTS
+		.word 0
+	.endr
+
+	.global hpsram_mask
 
 	.section .text, "ax"
 	.align 64
@@ -48,7 +57,6 @@ power_down:
 	 * effectively executes:
 	 * xthal_dcache_region_lock(&literals, 128);
 	 * xthal_icache_region_lock(&powerdown, 256);
-	 * xthal_dcache_region_lock(&pu32_hpsram_mask, 64);
 	 */
 	movi pfl_reg, power_down_literals
 	dpfl pfl_reg, 0
@@ -60,12 +68,14 @@ power_down:
 	ipfl pfl_reg, 128
 	ipfl pfl_reg, 192
 
-	mov  pfl_reg, pu32_hpsram_mask
-	dpfl pfl_reg, 0
 	/* move some values to registries before switching off whole memory */
 	/* load address of DIPCTDR register */
 	movi p_ipc_regs, IPC_HOST_BASE
 	movi u32_ipc_response_mask, 0x20000000
+
+	beqz pu32_hpsram_mask, _PD_DISABLE_LPSRAM
+	movi pu32_hpsram_mask, hpsram_mask
+
 _PD_DISABLE_LPSRAM:
 /**
  * effectively executes:
@@ -77,8 +87,7 @@ _PD_DISABLE_LPSRAM:
 	m_ace_lpsram_power_down_entire temp_reg0, temp_reg1, temp_reg2, temp_reg3
 
 _PD_DISABLE_HPSRAM:
-	/* if value in memory pointed by pu32_hpsram_mask = 0
-	 (hpsram_pwrgating_mask) - do not disable hpsram. */
+	/* if value pu32_hpsram_mask = 0 - do not disable hpsram. */
 	beqz pu32_hpsram_mask, _PD_SEND_IPC
 	/**
 	 * effectively executes:

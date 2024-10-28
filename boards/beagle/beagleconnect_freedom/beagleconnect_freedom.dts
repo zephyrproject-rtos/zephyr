@@ -42,17 +42,32 @@
 		};
 	};
 
+	/**
+	 * The BeagleConnect Freedom has an on-board antenna switch (SKY13317-373LF) used to select
+	 * the appropriate RF signal port based on the currently-used PHY.
+	 *
+	 * Truth table:
+	 *
+	 * Path         DIO29 DIO30
+	 * ===========  ===== =====
+	 * Off          0     0
+	 * Sub-1 GHz    0     1     // DIO30 mux to IOC_PORT_RFC_GPO0 for auto
+	 * 20 dBm TX    1     0     // DIO29 mux to IOC_PORT_RFC_GPO3 for auto
+	 */
+	antenna_mux0: antenna_mux0 {
+		compatible = "skyworks,sky13317";
+		status = "okay";
+		gpios = <&gpio0 29 GPIO_ACTIVE_HIGH>, <&gpio0 30 GPIO_ACTIVE_HIGH>;
+		pinctrl-0 = <&board_ant_tx_pa_off &board_ant_subg_off>;
+		pinctrl-1 = <&board_ant_tx_pa_off &board_ant_subg_on>;
+		pinctrl-2 = <&board_ant_tx_pa_on &board_ant_subg_on>;
+		pinctrl-names = "default", "ant_subg", "ant_subg_pa";
+	};
+
 	leds: leds {
 		compatible = "gpio-leds";
 		led0: led_0 {
 			gpios = <&gpio0 18 GPIO_ACTIVE_HIGH>; // 2.4GHz TX/RX
-		};
-
-		/* U.FL connector switch */
-		rf_sw: rf_sw {
-			gpios =
-				<&gpio0 29 GPIO_ACTIVE_HIGH>, // SubG TX +20dB
-				<&gpio0 30 GPIO_ACTIVE_HIGH>; // SubG TX/RX 0dB
 		};
 	};
 
@@ -186,10 +201,87 @@
 	};
 };
 
-&ieee802154 {
+&ieee802154g {
 	status = "okay";
 };
 
-&ieee802154g {
+&gpt0 {
 	status = "okay";
+};
+
+&gpt1 {
+	status = "okay";
+};
+
+&pwm0 {
+	status = "okay";
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-names = "default";
+};
+
+&pwm1 {
+	status = "okay";
+	pinctrl-0 = <&pwm1_default>;
+	pinctrl-names = "default";
+};
+
+&adc0 {
+	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	/* MB1 AN */
+	channel@9 {
+		reg = <9>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+
+	/* MB2 AN */
+	channel@a {
+		reg = <10>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+
+	/* MB1/2 SCL */
+	channel@b {
+		reg = <11>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+
+	/* MB1/2 SDA */
+	channel@c {
+		reg = <12>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+
+	/* MB2 CS */
+	channel@d {
+		reg = <13>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+
+	/* MB1 CS */
+	channel@e {
+		reg = <14>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
 };

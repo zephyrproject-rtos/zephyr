@@ -83,26 +83,26 @@ static int od_priv_proxy_srv_init(const struct bt_mesh_model *mod)
 {
 	od_priv_proxy_srv = mod;
 
-	const struct bt_mesh_model *priv_beacon_srv = bt_mesh_model_find(
-		bt_mesh_model_elem(mod), BT_MESH_MODEL_ID_PRIV_BEACON_SRV);
-	const struct bt_mesh_model *sol_pdu_rpl_srv = bt_mesh_model_find(
-		bt_mesh_model_elem(mod), BT_MESH_MODEL_ID_SOL_PDU_RPL_SRV);
+	const struct bt_mesh_model *priv_beacon_srv =
+		bt_mesh_model_find(bt_mesh_model_elem(mod), BT_MESH_MODEL_ID_PRIV_BEACON_SRV);
+	const struct bt_mesh_model *sol_pdu_rpl_srv =
+		bt_mesh_model_find(bt_mesh_model_elem(mod), BT_MESH_MODEL_ID_SOL_PDU_RPL_SRV);
 
 	if (priv_beacon_srv == NULL) {
-		return -EINVAL;
-	}
-
-	if (!bt_mesh_model_in_primary(mod)) {
-		LOG_ERR("On-Demand Private Proxy server not in primary element");
+		LOG_ERR("On-Demand Private Proxy server cannot extend Private Beacon server");
 		return -EINVAL;
 	}
 
 	mod->keys[0] = BT_MESH_KEY_DEV_LOCAL;
 	mod->rt->flags |= BT_MESH_MOD_DEVKEY_ONLY;
 
-	if (IS_ENABLED(CONFIG_BT_MESH_MODEL_EXTENSIONS)) {
-		bt_mesh_model_extend(mod, priv_beacon_srv);
+	bt_mesh_model_extend(mod, priv_beacon_srv);
+
+	if (sol_pdu_rpl_srv != NULL) {
 		bt_mesh_model_correspond(mod, sol_pdu_rpl_srv);
+	} else {
+		LOG_WRN("On-Demand Private Proxy server cannot be corresponded by Solicitation PDU "
+			"RPL Configuration server");
 	}
 
 	return 0;

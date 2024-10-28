@@ -173,7 +173,7 @@ static void gatt_discover(enum bt_att_chan_opt opt)
 }
 
 static void test_short_subscribed(struct bt_conn *conn, uint8_t err,
-				  struct bt_gatt_write_params *params)
+				  struct bt_gatt_subscribe_params *params)
 {
 	if (err) {
 		FAIL("Subscribe failed (err %d)\n", err);
@@ -186,15 +186,15 @@ static void test_short_subscribed(struct bt_conn *conn, uint8_t err,
 		return;
 	}
 
-	if (params->handle == chrc_handle) {
+	if (params->value_handle == chrc_handle) {
 		printk("Subscribed to short characteristic\n");
 	} else {
-		FAIL("Unknown handle %d\n", params->handle);
+		FAIL("Unknown handle %d\n", params->value_handle);
 	}
 }
 
 static void test_long_subscribed(struct bt_conn *conn, uint8_t err,
-				 struct bt_gatt_write_params *params)
+				 struct bt_gatt_subscribe_params *params)
 {
 	if (err) {
 		FAIL("Subscribe failed (err %d)\n", err);
@@ -207,10 +207,10 @@ static void test_long_subscribed(struct bt_conn *conn, uint8_t err,
 		return;
 	}
 
-	if (params->handle == long_chrc_handle) {
+	if (params->value_handle == long_chrc_handle) {
 		printk("Subscribed to long characteristic\n");
 	} else {
-		FAIL("Unknown handle %d\n", params->handle);
+		FAIL("Unknown handle %d\n", params->value_handle);
 	}
 }
 
@@ -226,18 +226,18 @@ uint8_t test_notify(struct bt_conn *conn, struct bt_gatt_subscribe_params *param
 static struct bt_gatt_discover_params disc_params_short;
 static struct bt_gatt_subscribe_params sub_params_short = {
 	.notify = test_notify,
-	.write = test_short_subscribed,
-	.ccc_handle = 0, /* Auto-discover CCC*/
-	.disc_params = &disc_params_short, /* Auto-discover CCC */
+	.subscribe = test_short_subscribed,
+	.ccc_handle = BT_GATT_AUTO_DISCOVER_CCC_HANDLE,
+	.disc_params = &disc_params_short,
 	.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE,
 	.value = BT_GATT_CCC_NOTIFY,
 };
 static struct bt_gatt_discover_params disc_params_long;
 static struct bt_gatt_subscribe_params sub_params_long = {
 	.notify = test_notify,
-	.write = test_long_subscribed,
-	.ccc_handle = 0, /* Auto-discover CCC*/
-	.disc_params = &disc_params_long, /* Auto-discover CCC */
+	.subscribe = test_long_subscribed,
+	.ccc_handle = BT_GATT_AUTO_DISCOVER_CCC_HANDLE,
+	.disc_params = &disc_params_long,
 	.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE,
 	.value = BT_GATT_CCC_NOTIFY,
 };

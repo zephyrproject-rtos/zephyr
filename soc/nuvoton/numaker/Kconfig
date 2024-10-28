@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_FAMILY_NUMAKER
-	select PLATFORM_SPECIFIC_INIT
+	select SOC_RESET_HOOK
 
 if SOC_FAMILY_NUMAKER
 

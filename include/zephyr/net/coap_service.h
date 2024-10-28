@@ -23,6 +23,8 @@ extern "C" {
 /**
  * @brief CoAP Service API
  * @defgroup coap_service CoAP service API
+ * @since 3.6
+ * @version 0.1.0
  * @ingroup networking
  * @{
  */
@@ -57,7 +59,7 @@ struct coap_service {
 };
 
 #define __z_coap_service_define(_name, _host, _port, _flags, _res_begin, _res_end)		\
-	static struct coap_service_data coap_service_data_##_name = {				\
+	static struct coap_service_data _CONCAT(coap_service_data_, _name) = {			\
 		.sock_fd = -1,									\
 	};											\
 	const STRUCT_SECTION_ITERABLE(coap_service, _name) = {					\
@@ -67,7 +69,7 @@ struct coap_service {
 		.flags = _flags,								\
 		.res_begin = (_res_begin),							\
 		.res_end = (_res_end),								\
-		.data = &coap_service_data_##_name,						\
+		.data = &_CONCAT(coap_service_data_, _name),					\
 	}
 
 /** @endcond */
@@ -109,8 +111,8 @@ struct coap_service {
  * @param _service Name of the associated service.
  */
 #define COAP_RESOURCE_DEFINE(_name, _service, ...)						\
-	STRUCT_SECTION_ITERABLE_ALTERNATE(coap_resource_##_service, coap_resource, _name)	\
-		= __VA_ARGS__
+	STRUCT_SECTION_ITERABLE_ALTERNATE(_CONCAT(coap_resource_, _service), coap_resource,	\
+					  _name) = __VA_ARGS__
 
 /**
  * @brief Define a CoAP service with static resources.
@@ -130,11 +132,11 @@ struct coap_service {
  * @param _flags Configuration flags @see @ref COAP_SERVICE_FLAGS.
  */
 #define COAP_SERVICE_DEFINE(_name, _host, _port, _flags)					\
-	extern struct coap_resource _CONCAT(_coap_resource_##_name, _list_start)[];		\
-	extern struct coap_resource _CONCAT(_coap_resource_##_name, _list_end)[];		\
+	extern struct coap_resource _CONCAT(_CONCAT(_coap_resource_, _name), _list_start)[];	\
+	extern struct coap_resource _CONCAT(_CONCAT(_coap_resource_, _name), _list_end)[];	\
 	__z_coap_service_define(_name, _host, _port, _flags,					\
-				&_CONCAT(_coap_resource_##_name, _list_start)[0],		\
-				&_CONCAT(_coap_resource_##_name, _list_end)[0])
+				&_CONCAT(_CONCAT(_coap_resource_, _name), _list_start)[0],	\
+				&_CONCAT(_CONCAT(_coap_resource_, _name), _list_end)[0])
 
 /**
  * @brief Count the number of CoAP services.
@@ -175,7 +177,7 @@ struct coap_service {
  * @param _it Name of iterator (of type @ref coap_resource)
  */
 #define COAP_RESOURCE_FOREACH(_service, _it)							\
-	STRUCT_SECTION_FOREACH_ALTERNATE(coap_resource_##_service, coap_resource, _it)
+	STRUCT_SECTION_FOREACH_ALTERNATE(_CONCAT(coap_resource_, _service), coap_resource, _it)
 
 /**
  * @brief Iterate over all static resources associated with @p _service .

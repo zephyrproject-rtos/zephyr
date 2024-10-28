@@ -68,7 +68,7 @@
 
 /*
  * The value INTEL_LW_UART_FC is a value set in the device flag field to
- * indicate the the device is using flow control, i.e. the driver must
+ * indicate the device is using flow control, i.e. the driver must
  * throttle on transmit if the nCTS pin is low.
  */
 #define INTEL_LW_UART_FC 0x2

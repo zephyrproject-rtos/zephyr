@@ -23,7 +23,6 @@ supported:
   - pwm
   - netif:eth
   - spi
-  - usb
   - usb_device
   - watchdog
   - xpro_gpio

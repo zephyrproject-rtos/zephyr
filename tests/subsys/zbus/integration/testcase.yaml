@@ -1,10 +1,10 @@
 tests:
   message_bus.zbus.module_interaction_no_error:
     platform_exclude:
+      - m2gl025_miv
       - qemu_cortex_a9
       - hifive_unleashed
-      - fvp_base_revc_2xaemv8a//smp/ns
-      - fvp_baser_aemv8r_aarch32_smp
+      - fvp_base_revc_2xaemv8a/fvp_base_revc_2xaemv8a/smp/ns
     tags: zbus
     integration_platforms:
       - native_sim

@@ -93,6 +93,8 @@ PR Requirements
 - Each commit in the PR must provide a commit message following the
   :ref:`commit-guidelines`.
 
+- The PR description must include a summary of the changes and their rationales.
+
 - All files in the PR must comply with :ref:`Licensing
   Requirements<licensing_requirements>`.
 
@@ -252,7 +254,7 @@ the steps below:
 
 .. _dev-review: https://github.com/zephyrproject-rtos/zephyr/labels/dev-review
 
-.. _Zephyr Dev Meeting: https://github.com/zephyrproject-rtos/zephyr/wiki/Zephyr-Committee-and-Working-Group-Meetings#zephyr-dev-meeting
+.. _Zephyr Dev Meeting: https://github.com/zephyrproject-rtos/zephyr/wiki/Zephyr-Committee-and-Working-Groups#zephyr-dev-meeting
 
 .. _Architecture Project: https://github.com/zephyrproject-rtos/zephyr/projects/18
 

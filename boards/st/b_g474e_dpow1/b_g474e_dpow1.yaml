@@ -13,5 +13,5 @@ supported:
   - gpio
   - watchdog
   - tcpc
-  - usb
+  - usbd
 vendor: st

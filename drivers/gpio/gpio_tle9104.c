@@ -22,6 +22,8 @@ struct tle9104_gpio_config {
 	struct gpio_driver_config common;
 	/* parent MFD */
 	const struct device *parent;
+	bool parallel_mode_out12;
+	bool parallel_mode_out34;
 };
 
 struct tle9104_gpio_data {
@@ -80,6 +82,16 @@ static int tle9104_gpio_pin_configure(const struct device *dev, gpio_pin_t pin, 
 		return -ENOTSUP;
 	}
 
+	if (config->parallel_mode_out12 && pin == 1) {
+		LOG_ERR("cannot configure OUT2 if parallel mode is enabled for OUT1 and OUT2");
+		return -EINVAL;
+	}
+
+	if (config->parallel_mode_out34 && pin == 3) {
+		LOG_ERR("cannot configure OUT4 if parallel mode is enabled for OUT3 and OUT4");
+		return -EINVAL;
+	}
+
 	k_mutex_lock(&data->lock, K_FOREVER);
 
 	if ((flags & GPIO_OUTPUT_INIT_LOW) != 0) {
@@ -110,6 +122,16 @@ static int tle9104_gpio_port_set_masked_raw(const struct device *dev, uint32_t m
 	struct tle9104_gpio_data *data = dev->data;
 	int result;
 
+	if (config->parallel_mode_out12 && (BIT(1) & mask) != 0) {
+		LOG_ERR("cannot set OUT2 if parallel mode is enabled for OUT1 and OUT2");
+		return -EINVAL;
+	}
+
+	if (config->parallel_mode_out34 && (BIT(3) & mask) != 0) {
+		LOG_ERR("cannot set OUT4 if parallel mode is enabled for OUT3 and OUT4");
+		return -EINVAL;
+	}
+
 	/* cannot execute a bus operation in an ISR context */
 	if (k_is_in_isr()) {
 		return -EWOULDBLOCK;
@@ -138,6 +160,16 @@ static int tle9104_gpio_port_toggle_bits(const struct device *dev, uint32_t mask
 	const struct tle9104_gpio_config *config = dev->config;
 	struct tle9104_gpio_data *data = dev->data;
 	int result;
+
+	if (config->parallel_mode_out12 && (BIT(1) & mask) != 0) {
+		LOG_ERR("cannot toggle OUT2 if parallel mode is enabled for OUT1 and OUT2");
+		return -EINVAL;
+	}
+
+	if (config->parallel_mode_out34 && (BIT(3) & mask) != 0) {
+		LOG_ERR("cannot toggle OUT4 if parallel mode is enabled for OUT3 and OUT4");
+		return -EINVAL;
+	}
 
 	/* cannot execute a bus operation in an ISR context */
 	if (k_is_in_isr()) {
@@ -176,6 +208,7 @@ static int tle9104_gpio_init(const struct device *dev)
 {
 	const struct tle9104_gpio_config *config = dev->config;
 	struct tle9104_gpio_data *data = dev->data;
+	int result;
 
 	LOG_DBG("initialize TLE9104 GPIO instance %s", dev->name);
 
@@ -184,7 +217,7 @@ static int tle9104_gpio_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	int result = k_mutex_init(&data->lock);
+	result = k_mutex_init(&data->lock);
 	if (result != 0) {
 		LOG_ERR("unable to initialize mutex");
 		return result;
@@ -199,6 +232,8 @@ static int tle9104_gpio_init(const struct device *dev)
 			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst),                    \
 		},                                                                                 \
 		.parent = DEVICE_DT_GET(DT_PARENT(DT_DRV_INST(inst))),                             \
+		.parallel_mode_out12 = DT_PROP(DT_PARENT(DT_DRV_INST(inst)), parallel_out12),      \
+		.parallel_mode_out34 = DT_PROP(DT_PARENT(DT_DRV_INST(inst)), parallel_out34),      \
 	};                                                                                         \
                                                                                                    \
 	static struct tle9104_gpio_data tle9104_gpio_##inst##_drvdata;                             \

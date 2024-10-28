@@ -45,7 +45,7 @@ static void test_address(bt_addr_le_t *addr)
 	/* Only save the address if this is the first scan */
 	if (bt_addr_le_eq(&adv_set_data[adv_index].old_addr, BT_ADDR_LE_ANY)) {
 		bt_addr_le_copy(&adv_set_data[adv_index].old_addr, addr);
-		adv_set_data[adv_index].old_time = 0;
+		adv_set_data[adv_index].old_time = k_uptime_get();
 		return;
 	}
 
@@ -108,7 +108,7 @@ void start_rpa_scanning(void)
 {
 	/* Start passive scanning */
 	struct bt_le_scan_param scan_param = {
-		.type       = BT_HCI_LE_SCAN_PASSIVE,
+		.type       = BT_LE_SCAN_TYPE_PASSIVE,
 		.options    = BT_LE_SCAN_OPT_FILTER_DUPLICATE,
 		.interval   = 0x0040,
 		.window     = 0x0020,

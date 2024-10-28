@@ -210,14 +210,16 @@ static int malloc_prepare(void)
 
 	/* Align size to power of two */
 	heap_size = 1;
-	while (heap_size * 2 <= HEAP_SIZE)
+	while (heap_size * 2 <= HEAP_SIZE) {
 		heap_size *= 2;
+	}
 
 	/* Search for an aligned heap that fits within the available space */
 	while (heap_size >= HEAP_ALIGN) {
 		heap_base = UINT_TO_POINTER(ROUND_UP(HEAP_BASE, heap_size));
-		if (POINTER_TO_UINT(heap_base) + heap_size <= HEAP_BASE + HEAP_SIZE)
+		if (POINTER_TO_UINT(heap_base) + heap_size <= HEAP_BASE + HEAP_SIZE) {
 			break;
+		}
 		heap_size >>= 1;
 	}
 #else
@@ -260,7 +262,7 @@ void free(void *ptr)
 	malloc_unlock();
 }
 
-SYS_INIT(malloc_prepare, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(malloc_prepare, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_LIBC);
 #else /* No malloc arena */
 void *malloc(size_t size)
 {

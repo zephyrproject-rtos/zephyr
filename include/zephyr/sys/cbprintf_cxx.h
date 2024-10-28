@@ -337,7 +337,7 @@ static inline int z_cbprintf_cxx_is_longdouble(T arg)
 	return 0;
 }
 
-/* C++ version for caluculating argument alignment. */
+/* C++ version for calculating argument alignment. */
 static inline size_t z_cbprintf_cxx_alignment(float arg)
 {
 	ARG_UNUSED(arg);

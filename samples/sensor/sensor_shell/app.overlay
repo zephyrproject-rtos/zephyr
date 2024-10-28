@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
- / {
+/ {
 	app {
 		#address-cells = <1>;
 		#size-cells = <0>;

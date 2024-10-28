@@ -1,7 +1,7 @@
 .. _rk043fn02h_ct:
 
-RK043FN02H-CT Parallel Display
-##############################
+NXP RK043FN02H-CT Parallel Display
+##################################
 
 Overview
 ********
@@ -87,7 +87,7 @@ for the 40+6 pin parallel/I2C FPC interface
 Programming
 ***********
 
-Set ``-DSHIELD=rk043fn02h_ct`` when you invoke ``west build``. For
+Set ``--shield rk043fn02h_ct`` when you invoke ``west build``. For
 example:
 
 .. zephyr-app-commands::

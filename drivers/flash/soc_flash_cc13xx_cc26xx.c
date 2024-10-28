@@ -21,6 +21,7 @@
 #define FLASH_ERASE_SIZE     DT_PROP(SOC_NV_FLASH_NODE, erase_block_size)
 #define FLASH_WRITE_SIZE     DT_PROP(SOC_NV_FLASH_NODE, write_block_size)
 
+#define WRITE_BUFFER_LEN     (32)
 
 struct flash_priv {
 	struct k_sem mutex;
@@ -43,8 +44,9 @@ static int flash_cc13xx_cc26xx_init(const struct device *dev)
 
 static void flash_cc13xx_cc26xx_cache_restore(uint32_t vims_mode)
 {
-	while (VIMSModeGet(VIMS_BASE) == VIMS_MODE_CHANGING)
+	while (VIMSModeGet(VIMS_BASE) == VIMS_MODE_CHANGING) {
 		;
+	}
 
 	/* Restore VIMS mode and line buffers */
 	if (vims_mode != VIMS_MODE_DISABLED) {
@@ -61,8 +63,9 @@ static uint32_t flash_cc13xx_cc26xx_cache_disable(void)
 	/* VIMS and both line buffers should be off during flash update */
 	VIMSLineBufDisable(VIMS_BASE);
 
-	while (VIMSModeGet(VIMS_BASE) == VIMS_MODE_CHANGING)
+	while (VIMSModeGet(VIMS_BASE) == VIMS_MODE_CHANGING) {
 		;
+	}
 
 	/* Save current VIMS mode for restoring it later */
 	vims_mode = VIMSModeGet(VIMS_BASE);
@@ -139,8 +142,9 @@ static int flash_cc13xx_cc26xx_erase(const struct device *dev, off_t offs,
 	/* Erase sector/page one by one, break out in case of an error */
 	cnt = size / FLASH_ERASE_SIZE;
 	for (i = 0; i < cnt; i++, offs += FLASH_ERASE_SIZE) {
-		while (FlashCheckFsmForReady() != FAPI_STATUS_FSM_READY)
+		while (FlashCheckFsmForReady() != FAPI_STATUS_FSM_READY) {
 			;
+		}
 
 		rc = FlashSectorErase(offs);
 		if (rc != FAPI_STATUS_SUCCESS) {
@@ -154,6 +158,26 @@ static int flash_cc13xx_cc26xx_erase(const struct device *dev, off_t offs,
 	flash_cc13xx_cc26xx_cache_restore(vims_mode);
 
 	k_sem_give(&priv->mutex);
+
+	return rc;
+}
+
+static int flash_cc13xx_cc26xx_buffered_write(off_t offs, const void *data, size_t size)
+{
+	uint8_t write_buffer[WRITE_BUFFER_LEN];
+	int rc;
+
+	for (int i = 0; i < size; i += WRITE_BUFFER_LEN) {
+		size_t len = MIN(size - i, WRITE_BUFFER_LEN);
+
+		memcpy(write_buffer, (uint8_t *)data + i, len);
+		rc = FlashProgram(write_buffer, offs, len);
+		if (rc != FAPI_STATUS_SUCCESS) {
+			rc = -EIO;
+			break;
+		}
+		offs += len;
+	}
 
 	return rc;
 }
@@ -178,16 +202,6 @@ static int flash_cc13xx_cc26xx_write(const struct device *dev, off_t offs,
 		return -EINVAL;
 	}
 
-	/*
-	 * From TI's HAL 'driverlib/flash.h':
-	 *
-	 * The pui8DataBuffer pointer can not point to flash.
-	 */
-	if ((data >= (void *)FLASH_ADDR) &&
-	    (data <= (void *)(FLASH_ADDR + FLASH_SIZE))) {
-		return -EINVAL;
-	}
-
 	if (flash_cc13xx_cc26xx_range_protected(offs, size)) {
 		return -EINVAL;
 	}
@@ -200,11 +214,24 @@ static int flash_cc13xx_cc26xx_write(const struct device *dev, off_t offs,
 
 	key = irq_lock();
 
-	while (FlashCheckFsmForReady() != FAPI_STATUS_FSM_READY)
+	while (FlashCheckFsmForReady() != FAPI_STATUS_FSM_READY) {
 		;
-	rc = FlashProgram((uint8_t *)data, offs, size);
-	if (rc != FAPI_STATUS_SUCCESS) {
-		rc = -EIO;
+	}
+
+	/*
+	 * From TI's HAL 'driverlib/flash.h':
+	 *
+	 * The pui8DataBuffer pointer can not point to flash.
+	 * Use a buffer in this situation.
+	 */
+	if ((data >= (void *)FLASH_ADDR) &&
+		(data <= (void *)(FLASH_ADDR + FLASH_SIZE))) {
+		rc = flash_cc13xx_cc26xx_buffered_write(offs, data, size);
+	} else {
+		rc = FlashProgram((uint8_t *)data, offs, size);
+		if (rc != FAPI_STATUS_SUCCESS) {
+			rc = -EIO;
+		}
 	}
 
 	irq_unlock(key);

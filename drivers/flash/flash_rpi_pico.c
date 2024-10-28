@@ -65,10 +65,12 @@ static uint8_t flash_ram_buffer[PAGE_SIZE];
 
 static void __no_inline_not_in_flash_func(flash_init_boot2_copyout)(void)
 {
-	if (boot2_copyout_valid)
+	if (boot2_copyout_valid) {
 		return;
-	for (int i = 0; i < BOOT2_SIZE_WORDS; ++i)
+	}
+	for (int i = 0; i < BOOT2_SIZE_WORDS; ++i) {
 		boot2_copyout[i] = ((uint32_t *)FLASH_BASE)[i];
+	}
 	__compiler_memory_barrier();
 	boot2_copyout_valid = true;
 }
@@ -118,14 +120,16 @@ void __no_inline_not_in_flash_func(flash_put_get)(const uint8_t *tx, uint8_t *rx
 			if (rx_skip) {
 				--rx_skip;
 			} else {
-				if (rx)
+				if (rx) {
 					*rx++ = rxbyte;
+				}
 				--rx_count;
 			}
 		}
 
-		if (!did_something && __builtin_expect(flash_was_aborted(), 0))
+		if (!did_something && __builtin_expect(flash_was_aborted(), 0)) {
 			break;
+		}
 	}
 	flash_cs_force(OUTOVER_HIGH);
 }
@@ -167,9 +171,9 @@ void __no_inline_not_in_flash_func(flash_write_partial)(uint32_t flash_offs, con
 {
 	rom_connect_internal_flash_fn connect_internal_flash = (rom_connect_internal_flash_fn)
 					rom_func_lookup_inline(ROM_FUNC_CONNECT_INTERNAL_FLASH);
-	rom_flash_exit_xip_fn flash_exit_xip = (rom_flash_exit_xip_fn)
+	rom_flash_exit_xip_fn exit_xip = (rom_flash_exit_xip_fn)
 						rom_func_lookup_inline(ROM_FUNC_FLASH_EXIT_XIP);
-	rom_flash_flush_cache_fn flash_flush_cache = (rom_flash_flush_cache_fn)
+	rom_flash_flush_cache_fn flush_cache = (rom_flash_flush_cache_fn)
 						rom_func_lookup_inline(ROM_FUNC_FLASH_FLUSH_CACHE);
 
 	flash_init_boot2_copyout();
@@ -177,9 +181,9 @@ void __no_inline_not_in_flash_func(flash_write_partial)(uint32_t flash_offs, con
 	__compiler_memory_barrier();
 
 	connect_internal_flash();
-	flash_exit_xip();
+	exit_xip();
 	flash_write_partial_internal(flash_offs, data, count);
-	flash_flush_cache();
+	flush_cache();
 	flash_enable_xip_via_boot2();
 }
 

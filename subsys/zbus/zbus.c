@@ -8,7 +8,7 @@
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/printk.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/zbus/zbus.h>
 LOG_MODULE_REGISTER(zbus, CONFIG_ZBUS_LOG_LEVEL);
 
@@ -25,8 +25,6 @@ static struct k_spinlock obs_slock;
 
 NET_BUF_POOL_HEAP_DEFINE(_zbus_msg_subscribers_pool, CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_SIZE,
 			 sizeof(struct zbus_channel *), NULL);
-
-BUILD_ASSERT(K_HEAP_MEM_POOL_SIZE > 0, "MSG_SUBSCRIBER feature requires heap memory pool.");
 
 static inline struct net_buf *_zbus_create_net_buf(struct net_buf_pool *pool, size_t size,
 						   k_timeout_t timeout)
@@ -76,13 +74,7 @@ int _zbus_init(void)
 
 		++(curr->data->observers_end_idx);
 	}
-	STRUCT_SECTION_FOREACH(zbus_channel, chan) {
-		k_sem_init(&chan->data->sem, 1, 1);
 
-#if defined(CONFIG_ZBUS_RUNTIME_OBSERVERS)
-		sys_slist_init(&chan->data->observers);
-#endif /* CONFIG_ZBUS_RUNTIME_OBSERVERS */
-	}
 	return 0;
 }
 SYS_INIT(_zbus_init, APPLICATION, CONFIG_ZBUS_CHANNELS_SYS_INIT_PRIORITY);
@@ -107,7 +99,7 @@ static inline int _zbus_notify_observer(const struct zbus_channel *chan,
 			return -ENOMEM;
 		}
 
-		net_buf_put(obs->message_fifo, cloned_buf);
+		k_fifo_put(obs->message_fifo, cloned_buf);
 
 		break;
 	}
@@ -236,15 +228,7 @@ static inline void chan_update_hop(const struct zbus_channel *chan)
 
 static inline void update_all_channels_hop(const struct zbus_observer *obs)
 {
-	struct zbus_channel_observation *observation;
-
-	int count;
-
-	STRUCT_SECTION_COUNT(zbus_channel_observation, &count);
-
-	for (int16_t i = 0; i < count; ++i) {
-		STRUCT_SECTION_GET(zbus_channel_observation, i, &observation);
-
+	STRUCT_SECTION_FOREACH(zbus_channel_observation, observation) {
 		if (obs != observation->obs) {
 			continue;
 		}
@@ -371,6 +355,11 @@ int zbus_chan_pub(const struct zbus_channel *chan, const void *msg, k_timeout_t 
 		return err;
 	}
 
+#if defined(CONFIG_ZBUS_CHANNEL_PUBLISH_STATS)
+	chan->data->publish_timestamp = k_uptime_ticks();
+	chan->data->publish_count += 1;
+#endif /* CONFIG_ZBUS_CHANNEL_PUBLISH_STATS */
+
 	memcpy(chan->message, msg, chan->message_size);
 
 	err = _zbus_vded_exec(chan, end_time);
@@ -478,7 +467,7 @@ int zbus_sub_wait_msg(const struct zbus_observer *sub, const struct zbus_channel
 	_ZBUS_ASSERT(chan != NULL, "chan is required");
 	_ZBUS_ASSERT(msg != NULL, "msg is required");
 
-	struct net_buf *buf = net_buf_get(sub->message_fifo, timeout);
+	struct net_buf *buf = k_fifo_get(sub->message_fifo, timeout);
 
 	if (buf == NULL) {
 		return -ENOMSG;
@@ -565,7 +554,7 @@ int zbus_obs_is_chan_notification_masked(const struct zbus_observer *obs,
 	return err;
 }
 
-int zbus_obs_set_enable(struct zbus_observer *obs, bool enabled)
+int zbus_obs_set_enable(const struct zbus_observer *obs, bool enabled)
 {
 	_ZBUS_ASSERT(obs != NULL, "obs is required");
 

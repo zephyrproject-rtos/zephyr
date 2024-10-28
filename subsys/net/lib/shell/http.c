@@ -41,6 +41,9 @@ static int cmd_net_http(const struct shell *sh, size_t argc, char *argv[])
 			case HTTP_RESOURCE_TYPE_STATIC:
 				detail_type = "static";
 				break;
+			case HTTP_RESOURCE_TYPE_STATIC_FS:
+				detail_type = "static_fs";
+				break;
 			case HTTP_RESOURCE_TYPE_DYNAMIC:
 				detail_type = "dynamic";
 				break;

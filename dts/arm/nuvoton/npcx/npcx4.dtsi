@@ -21,6 +21,21 @@
 #include "npcx.dtsi"
 
 / {
+	cpus {
+		cpu0: cpu@0 {
+			cpu-power-states = <&suspend_to_idle0>;
+		};
+
+		power-states {
+			suspend_to_idle0: suspend-to-idle0 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <0>;
+				min-residency-us = <1000>;
+			};
+		};
+	};
+
 	def-io-conf-list {
 		pinmux = <&alt0_gpio_no_spip
 			  &alt0_gpio_no_fpip
@@ -62,6 +77,19 @@
 
 	soc {
 		compatible = "nuvoton,npcx4", "nuvoton,npcx", "simple-bus";
+
+		/*
+		 * Writing to BKUP_STS register might affect the value stored in
+		 * the first byte of the BBRAM.
+		 * Workaround it by not using the first byte of the BBRAM.
+		 * (See npcx4 Errata 2.27)
+		 */
+		bbram: bb-ram@400af001 {
+			compatible = "nuvoton,npcx-bbram";
+			reg = <0x400af001 0x7F
+			       0x400af100 0x1>;
+			reg-names = "memory", "status";
+		};
 
 		/* Specific soc devices in npcx4 series */
 		itims: timer@400b0000 {

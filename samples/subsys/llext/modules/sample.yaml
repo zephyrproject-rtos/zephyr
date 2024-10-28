@@ -1,34 +1,36 @@
 common:
   tags: llext
-  arch_allow:
-    - arm
-    - xtensa
-  platform_exclude:
-    - apollo4p_evb            # See #73443
-    - apollo4p_blue_kxr_evb   # See #73443
-    - numaker_pfm_m487        # See #63167
+  platform_allow:
+    - qemu_cortex_a9          # ARM Cortex-A9 (ARMv7-A ISA)
+    - qemu_cortex_r5          # ARM Cortex-R5 (ARMv7-R ISA)
+    - qemu_cortex_a53         # ARM Cortex-A53 (ARMv8-A ISA)
+    - mps2/an385              # ARM Cortex-M3 (ARMv7-M ISA)
+    - mps2/an521/cpu0         # ARM Cortex-M33 (ARMv8-M ISA)
+    - qemu_xtensa/dc233c
   integration_platforms:
-    - qemu_xtensa
-    - qemu_cortex_r5
+    - qemu_xtensa/dc233c
     - mps2/an385
+    - qemu_cortex_a53
   harness: console
+
 sample:
   name: CONFIG_MODULES test
   description: Call code directly and from extensions
+
 tests:
   sample.llext.modules.module_build:
-    filter: not CONFIG_MPU and not CONFIG_MMU and not CONFIG_SOC_SERIES_S32ZE
     extra_configs:
       - CONFIG_HELLO_WORLD_MODE=m
+      # Disabling MPU is the most compatible option. If the target supports
+      # CONFIG_USERSPACE, that should be preferred as it has many additional
+      # security benefits.
       - arch:arm:CONFIG_ARM_MPU=n
-      - arch:xtensa:CONFIG_LLEXT_STORAGE_WRITABLE=y
+      - arch:arm:CONFIG_ARM_AARCH32_MMU=n
     harness_config:
       type: one_line
       regex:
         - "Hello, world, from an llext!"
   sample.llext.modules.builtin_build:
-    extra_configs:
-      - CONFIG_HELLO_WORLD_MODE=y
     harness_config:
       type: one_line
       regex:

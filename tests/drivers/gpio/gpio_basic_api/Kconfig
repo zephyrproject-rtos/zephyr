@@ -5,3 +5,10 @@ source "Kconfig.zephyr"
 
 config SKIP_PULL_TEST
 	bool "Skip the pull test even if the driver supports it"
+
+config READ_DELAY
+	int "delay in ms for read"
+	default 0
+	help
+	  The pin selected may connect with a capacitor so we need
+	  add dealy in read.

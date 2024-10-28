@@ -14,6 +14,7 @@
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,uart-pipe = &uart0;
+		zephyr,flash-controller = &flash;
 	};
 
 	aliases {
@@ -23,6 +24,7 @@
 		led2 = &led2;
 		sw0 = &button0;
 		sw1 = &button1;
+		rtc = &rtc0;
 	};
 
 	leds {
@@ -61,8 +63,20 @@
 	status = "okay";
 };
 
+&adc0 {
+compatible = "ambiq,adc";
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &counter0 {
 	status = "okay";
+};
+
+&rtc0 {
+	status = "okay";
+	clock = "XTAL";
 };
 
 &wdt0 {
@@ -74,6 +88,8 @@
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
+	scl-gpios = <&gpio0_31 5 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
+	sda-gpios = <&gpio0_31 6 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
 	status = "okay";
 };
 
@@ -81,6 +97,7 @@
 	compatible = "ambiq,spi";
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-names = "default";
+	cs-gpios = <&gpio0_31 11 GPIO_ACTIVE_LOW>;
 	clock-frequency = <1000000>;
 	status = "okay";
 };
@@ -101,6 +118,23 @@
 	pinctrl-0 = <&mspi2_default>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+&flash0 {
+	erase-block-size = <2048>;
+	write-block-size = <16>;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Set 16KB of storage at the end of the 1952KB of flash */
+		storage_partition: partition@1e4000 {
+			label = "storage";
+			reg = <0x001e4000 0x4000>;
+		};
+	};
 };
 
 &gpio0_31 {

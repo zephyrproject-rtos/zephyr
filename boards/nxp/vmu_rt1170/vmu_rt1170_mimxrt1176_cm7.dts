@@ -22,6 +22,7 @@
 		sdhc0 = &usdhc1;
 		sw0 = &arming_button;
 		pwm-led0 = &buzzer0;
+		mcuboot-button0 = &arming_button;
 	};
 
 	chosen {
@@ -35,6 +36,7 @@
 		zephyr,flash-controller = &mx25um51345g;
 		zephyr,flash = &mx25um51345g;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,uart-mcumgr = &lpuart1;
 	};
 
 	/* This is the Arming Button on the included GPS module for 10 pin JST-GH */
@@ -241,6 +243,8 @@
 	};
 };
 
+#include <zephyr/dt-bindings/sensor/icm42688.h>
+
 &lpspi1 {
 	status = "okay";
 	cs-gpios =<&gpio2 11 GPIO_ACTIVE_LOW>;
@@ -250,10 +254,12 @@
 		reg = <0>;
 		int-gpios = <&gpio3 19 GPIO_ACTIVE_HIGH>;
 		spi-max-frequency = <24000000>;
-		accel-hz = <1000>;
-		accel-fs = <16>;
-		gyro-hz = <1000>;
-		gyro-fs = <2000>;
+		accel-pwr-mode = <ICM42688_DT_ACCEL_LN>;
+		accel-odr = <ICM42688_DT_ACCEL_ODR_1000>;
+		accel-fs = <ICM42688_DT_ACCEL_FS_16>;
+		gyro-pwr-mode = <ICM42688_DT_GYRO_LN>;
+		gyro-odr = <ICM42688_DT_GYRO_ODR_1000>;
+		gyro-fs = <ICM42688_DT_GYRO_FS_2000>;
 	};
 };
 
@@ -266,10 +272,12 @@
 		reg = <0>;
 		int-gpios = <&gpio2 7 GPIO_ACTIVE_HIGH>;
 		spi-max-frequency = <24000000>;
-		accel-hz = <1000>;
-		accel-fs = <16>;
-		gyro-hz = <1000>;
-		gyro-fs = <2000>;
+		accel-pwr-mode = <ICM42688_DT_ACCEL_LN>;
+		accel-odr = <ICM42688_DT_ACCEL_ODR_1000>;
+		accel-fs = <ICM42688_DT_ACCEL_FS_16>;
+		gyro-pwr-mode = <ICM42688_DT_GYRO_LN>;
+		gyro-odr = <ICM42688_DT_GYRO_ODR_1000>;
+		gyro-fs = <ICM42688_DT_GYRO_FS_2000>;
 	};
 };
 

@@ -1,5 +1,6 @@
 board:
   name: phyboard_electra
+  full_name: phyBOARD-Electra AM64x M4F Core
   vendor: phytec
   socs:
   - name: am6442

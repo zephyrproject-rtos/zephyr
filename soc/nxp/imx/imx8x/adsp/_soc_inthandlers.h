@@ -104,12 +104,13 @@ static inline int _xtensa_handle_one_int2(unsigned int mask)
 	int i = 0;
 
 	mask &= XCHAL_INTLEVEL2_MASK;
-	for (i = 0; i <= 31; i++)
+	for (i = 0; i <= 31; i++) {
 		if (mask & BIT(i)) {
 			mask = BIT(i);
 			irq = i;
 			goto handle_irq;
 		}
+	}
 	return 0;
 handle_irq:
 	_sw_isr_table[irq].isr(_sw_isr_table[irq].arg);

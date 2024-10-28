@@ -1,7 +1,7 @@
 # STM32 HAL Ethernet driver configuration options
 
 # Copyright (c) 2017 Erwin Rol <erwin@erwinrol.com>
-# Copyright (c) 2020 Alexander Kozhinov <AlexanderKozhinov@yandex.com>
+# Copyright (c) 2020 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig ETH_STM32_HAL
@@ -12,6 +12,7 @@ menuconfig ETH_STM32_HAL
 	select NOCACHE_MEMORY if SOC_SERIES_STM32H7X && CPU_CORTEX_M7
 	select HWINFO
 	select ETH_DSA_SUPPORT
+	select PINCTRL
 	select MDIO if SOC_SERIES_STM32H5X || SOC_SERIES_STM32H7X
 	imply CRC
 	help
@@ -45,10 +46,15 @@ config ETH_STM32_HAL_RX_THREAD_STACK_SIZE
 	  RX thread stack size
 
 config ETH_STM32_HAL_RX_THREAD_PRIO
-	int "RX thread priority"
+	int "STM32 Ethernet RX Thread Priority"
 	default 2
 	help
-	  RX thread priority
+	  This option allows to configure the priority of the RX thread that
+	  handles incoming Ethernet packets.
+	  Switching between preemptive and cooperative scheduling can be done by
+	  NET_TC_THREAD_PREEMPTIVE.
+	  Preemptive scheduling can lead to more responsive handling of network traffic,
+	  especially under high load.
 
 config ETH_STM32_HAL_USE_DTCM_FOR_DMA_BUFFER
 	bool "Use DTCM for DMA buffers"

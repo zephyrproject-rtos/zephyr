@@ -19,4 +19,7 @@ supported:
   - gpio
   - pwm
   - dac
+  - usb_device
+  - usbd
+  - arduino_gpio
 vendor: nxp

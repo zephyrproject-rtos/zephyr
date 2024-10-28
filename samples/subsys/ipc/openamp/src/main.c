@@ -16,7 +16,6 @@
 #include <zephyr/init.h>
 
 #include <openamp/open_amp.h>
-#include <metal/device.h>
 
 #include "common.h"
 
@@ -28,25 +27,6 @@ static const struct device *const ipm_handle =
 	DEVICE_DT_GET(DT_CHOSEN(zephyr_ipc));
 
 static metal_phys_addr_t shm_physmap[] = { SHM_START_ADDR };
-static struct metal_device shm_device = {
-	.name = SHM_DEVICE_NAME,
-	.bus = NULL,
-	.num_regions = 1,
-	{
-		{
-			.virt       = (void *) SHM_START_ADDR,
-			.physmap    = shm_physmap,
-			.size       = SHM_SIZE,
-			.page_shift = 0xffffffff,
-			.page_mask  = 0xffffffff,
-			.mem_flags  = 0,
-			.ops        = { NULL },
-		},
-	},
-	.node = { NULL },
-	.irq_num = 0,
-	.irq_info = NULL
-};
 
 static volatile unsigned int received_data;
 
@@ -60,7 +40,8 @@ static struct virtio_vring_info rvrings[2] = {
 };
 static struct virtio_device vdev;
 static struct rpmsg_virtio_device rvdev;
-static struct metal_io_region *io;
+static struct metal_io_region shm_io_data;
+static struct metal_io_region *io = &shm_io_data;
 static struct virtqueue *vqueue[2];
 
 static unsigned char ipc_virtio_get_status(struct virtio_device *dev)
@@ -171,7 +152,6 @@ void app_task(void *arg1, void *arg2, void *arg3)
 
 	int status = 0;
 	unsigned int message = 0U;
-	struct metal_device *device;
 	struct metal_init_params metal_params = METAL_INIT_DEFAULTS;
 
 	printk("\r\nOpenAMP[master] demo started\r\n");
@@ -182,23 +162,8 @@ void app_task(void *arg1, void *arg2, void *arg3)
 		return;
 	}
 
-	status = metal_register_generic_device(&shm_device);
-	if (status != 0) {
-		printk("Couldn't register shared memory device: %d\n", status);
-		return;
-	}
-
-	status = metal_device_open("generic", SHM_DEVICE_NAME, &device);
-	if (status != 0) {
-		printk("metal_device_open failed: %d\n", status);
-		return;
-	}
-
-	io = metal_device_io_region(device, 0);
-	if (io == NULL) {
-		printk("metal_device_io_region failed to get region\n");
-		return;
-	}
+	/* declare shared memory region */
+	metal_io_init(io, (void *)SHM_START_ADDR, shm_physmap, SHM_SIZE, -1, 0, NULL);
 
 	/* setup IPM */
 	if (!device_is_ready(ipm_handle)) {

@@ -94,6 +94,11 @@ static int ad56xx_channel_setup(const struct device *dev, const struct dac_chann
 		return -EINVAL;
 	}
 
+	if (channel_cfg->internal) {
+		LOG_ERR("Internal channels not supported");
+		return -ENOTSUP;
+	}
+
 	return 0;
 }
 
@@ -106,7 +111,7 @@ static int ad56xx_write_value(const struct device *dev, uint8_t channel, uint32_
 		return -EINVAL;
 	}
 
-	if (channel > config->channel_count) {
+	if (channel >= config->channel_count) {
 		LOG_ERR("invalid channel %i", channel);
 		return -EINVAL;
 	}

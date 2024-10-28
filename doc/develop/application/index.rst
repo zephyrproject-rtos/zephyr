@@ -131,7 +131,7 @@ Zephyr repository application
 
 An application located within the ``zephyr`` source code repository in a Zephyr
 :ref:`west workspace <west-workspaces>` is referred to as a Zephyr repository
-application. In the following example, the :ref:`hello_world sample
+application. In the following example, the :zephyr:code-sample:`hello_world sample
 <hello_world>` is a Zephyr repository application:
 
 .. code-block:: none
@@ -303,7 +303,7 @@ Creating an Application by Hand
 
 You can follow these steps to create a basic application directory from
 scratch. However, using the `example-application`_ repository or one of
-Zephyr's :ref:`samples-and-demos` as a starting point is likely to be easier.
+Zephyr's :zephyr:code-sample-category:`samples` as a starting point is likely to be easier.
 
 #. Create an application directory.
 
@@ -639,11 +639,11 @@ Application configuration options are usually set in :file:`prj.conf` in the
 application directory. For example, C++ support could be enabled with this
 assignment:
 
-.. code-block:: none
+.. code-block:: cfg
 
    CONFIG_CPP=y
 
-Looking at :ref:`existing samples <samples-and-demos>` is a good way to get
+Looking at :zephyr:code-sample-category:`existing samples <samples>` is a good way to get
 started.
 
 See :ref:`setting_configuration_values` for detailed documentation on setting
@@ -666,7 +666,7 @@ marked ``[EXPERIMENTAL]`` in their Kconfig title.
 The :kconfig:option:`CONFIG_WARN_EXPERIMENTAL` setting can be used to enable warnings
 at CMake configure time if any experimental feature is enabled.
 
-.. code-block:: none
+.. code-block:: cfg
 
    CONFIG_WARN_EXPERIMENTAL=y
 
@@ -802,7 +802,7 @@ As an example, let's build the Hello World sample for the ``reel_board``:
 
 .. zephyr-app-commands::
    :tool: all
-   :app: samples/hello_world
+   :zephyr-app: samples/hello_world
    :board: reel_board
    :goals: build
 
@@ -820,7 +820,7 @@ Using CMake directly:
 
 .. zephyr-app-commands::
    :tool: cmake
-   :app: samples/hello_world
+   :zephyr-app: samples/hello_world
    :generator: make
    :host-os: unix
    :board: reel_board
@@ -1253,7 +1253,7 @@ An example of loading ``stm31l0`` specific Kconfig files in this structure:
 
 can be done with the following content in ``st/stm32/Kconfig.soc``:
 
-.. code-block:: none
+.. code-block:: kconfig
 
    rsource "*/Kconfig.soc"
 

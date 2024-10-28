@@ -12,11 +12,14 @@
  * for the Nordic Semiconductor nRF54L family processor.
  */
 
+#include <zephyr/devicetree.h>
+#include <zephyr/dt-bindings/regulator/nrf5x.h>
 #include <zephyr/kernel.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/init.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/cache.h>
+#include <zephyr/dt-bindings/regulator/nrf5x.h>
 
 #if defined(NRF_APPLICATION)
 #include <cmsis_core.h>
@@ -65,16 +68,34 @@ static int nordicsemi_nrf54l_init(void)
 	 * where CAPACITANCE is the desired capacitor value in pF, holding any
 	 * value between 4 pF and 18 pF in 0.5 pF steps.
 	 */
-	uint32_t mid_val =
-		(((DT_PROP(LFXO_NODE, load_capacitance_femtofarad) * 2UL) / 1000UL - 8UL) *
-		 (uint32_t)(slope_k + 392)) + (offset_k << 4UL);
-	uint32_t capvalue_k = mid_val >> 10UL;
 
-	/* Round. */
-	if ((mid_val % 1024UL) >= 512UL) {
-		capvalue_k++;
+	/* Encoding of desired capacitance (single ended) to value required for INTCAP core
+	 * calculation: (CAP_VAL - 4 pF)* 0.5
+	 * That translate to ((CAP_VAL_FEMTO_F - 4000fF) * 2UL) / 1000UL
+	 *
+	 * NOTE: The desired capacitance value is used in encoded from in INTCAP calculation formula
+	 *       That is different than in case of HFXO.
+	 */
+	uint32_t cap_val_encoded = (((DT_PROP(LFXO_NODE, load_capacitance_femtofarad) - 4000UL)
+				     * 2UL) / 1000UL);
+
+	/* Calculation of INTCAP code before rounding. Min that calculations here are done on
+	 * values multiplied by 2^9, e.g. 0.765625 * 2^9 = 392.
+	 * offset_k should be divided by 2^6, but to add it to value shifted by 2^9 we have to
+	 * multiply it be 2^3.
+	 */
+	uint32_t mid_val = (cap_val_encoded - 4UL) * (uint32_t)(slope_k + 392UL)
+			   + (offset_k << 3UL);
+
+	/* Get integer part of the INTCAP code */
+	uint32_t lfxo_intcap = mid_val >> 9UL;
+
+	/* Round based on fractional part */
+	if ((mid_val & BIT_MASK(9)) > (BIT_MASK(9) / 2)) {
+		lfxo_intcap++;
 	}
-	nrf_oscillators_lfxo_cap_set(NRF_OSCILLATORS, (nrf_oscillators_lfxo_cap_t)capvalue_k);
+
+	nrf_oscillators_lfxo_cap_set(NRF_OSCILLATORS, lfxo_intcap);
 #elif DT_ENUM_HAS_VALUE(LFXO_NODE, load_capacitors, external)
 	nrf_oscillators_lfxo_cap_set(NRF_OSCILLATORS, (nrf_oscillators_lfxo_cap_t)0);
 #endif
@@ -101,11 +122,28 @@ static int nordicsemi_nrf54l_init(void)
 	 * where CAPACITANCE is the desired total load capacitance value in pF,
 	 * holding any value between 4.0 pF and 17.0 pF in 0.25 pF steps.
 	 */
-	uint32_t capvalue =
-		(((((DT_PROP(HFXO_NODE, load_capacitance_femtofarad) * 4UL) / 1000UL) - 22UL) *
-		  (uint32_t)(slope_m + 791) / 4UL) + (offset_m << 2UL)) >> 8UL;
 
-	nrf_oscillators_hfxo_cap_set(NRF_OSCILLATORS, true, capvalue);
+	/* NOTE 1: Requested HFXO internal capacitance in femto Faradas is used directly in formula
+	 *         to calculate INTCAP code. That is different than in case of LFXO.
+	 *
+	 * NOTE 2: PS formula uses piko Farads, the implementation of the formula uses femto Farads
+	 *         to avoid use of floating point data type.
+	 */
+	uint32_t cap_val_femto_f = DT_PROP(HFXO_NODE, load_capacitance_femtofarad);
+
+	uint32_t mid_val_intcap = (((cap_val_femto_f - 5500UL) * (uint32_t)(slope_m + 791UL))
+		 + (offset_m << 2UL) * 1000UL) >> 8UL;
+
+	/* Convert the calculated value to piko Farads */
+	uint32_t hfxo_intcap = mid_val_intcap / 1000;
+
+	/* Round based on fractional part */
+	if (mid_val_intcap % 1000 >= 500) {
+		hfxo_intcap++;
+	}
+
+	nrf_oscillators_hfxo_cap_set(NRF_OSCILLATORS, true, hfxo_intcap);
+
 #elif DT_ENUM_HAS_VALUE(HFXO_NODE, load_capacitors, external)
 	nrf_oscillators_hfxo_cap_set(NRF_OSCILLATORS, false, 0);
 #endif
@@ -114,13 +152,9 @@ static int nordicsemi_nrf54l_init(void)
 		nrf_power_task_trigger(NRF_POWER, NRF_POWER_TASK_CONSTLAT);
 	}
 
-	if (IS_ENABLED(CONFIG_SOC_NRF54L_VREG_MAIN_DCDC)) {
-		nrf_regulators_vreg_enable_set(NRF_REGULATORS, NRF_REGULATORS_VREG_MAIN, true);
-	}
-
-	if (IS_ENABLED(CONFIG_SOC_NRF54L_NORMAL_VOLTAGE_MODE)) {
-		nrf_regulators_vreg_enable_set(NRF_REGULATORS, NRF_REGULATORS_VREG_MEDIUM, false);
-	}
+#if (DT_PROP(DT_NODELABEL(vregmain), regulator_initial_mode) == NRF5X_REG_MODE_DCDC)
+	nrf_regulators_vreg_enable_set(NRF_REGULATORS, NRF_REGULATORS_VREG_MAIN, true);
+#endif
 
 #if defined(CONFIG_ELV_GRTC_LFXO_ALLOWED)
 	nrf_regulators_elv_mode_allow_set(NRF_REGULATORS, NRF_REGULATORS_ELV_ELVGRTCLFXO_MASK);

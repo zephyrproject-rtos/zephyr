@@ -87,14 +87,22 @@ static int adxl372_set_activity_threshold_xyz(const struct device *dev,
  *				 ADXL372_FULL_BW_MEASUREMENT
  * @return 0 in case of success, negative error code otherwise.
  */
-static int adxl372_set_op_mode(const struct device *dev,
-			       enum adxl372_op_mode op_mode)
+int adxl372_set_op_mode(const struct device *dev, enum adxl372_op_mode op_mode)
 {
 	struct adxl372_data *data = dev->data;
 
-	return data->hw_tf->write_reg_mask(dev, ADXL372_POWER_CTL,
+	int ret = data->hw_tf->write_reg_mask(dev, ADXL372_POWER_CTL,
 					   ADXL372_POWER_CTL_MODE_MSK,
 					   ADXL372_POWER_CTL_MODE(op_mode));
+
+#ifdef CONFIG_ADXL372_STREAM
+	if (ret == 0) {
+		data->pwr_reg &= ~ADXL372_POWER_CTL_MODE_MSK;
+		data->pwr_reg |= ADXL372_POWER_CTL_MODE(op_mode);
+	}
+#endif /* CONFIG_ADXL372_STREAM */
+
+	return ret;
 }
 
 /**
@@ -145,6 +153,11 @@ static int adxl372_set_bandwidth(const struct device *dev,
 		return ret;
 	}
 
+#ifdef CONFIG_ADXL372_STREAM
+	data->pwr_reg &= ~ADXL372_POWER_CTL_LPF_DIS_MSK;
+	data->pwr_reg |= mask;
+#endif /* CONFIG_ADXL372_STREAM */
+
 	return data->hw_tf->write_reg_mask(dev, ADXL372_MEASURE,
 					   ADXL372_MEASURE_BANDWIDTH_MSK,
 					   ADXL372_MEASURE_BANDWIDTH_MODE(bw));
@@ -180,6 +193,11 @@ static int adxl372_set_hpf_corner(const struct device *dev,
 	if (ret) {
 		return ret;
 	}
+
+#ifdef CONFIG_ADXL372_STREAM
+	data->pwr_reg &= ~ADXL372_POWER_CTL_HPF_DIS_MSK;
+	data->pwr_reg |= mask;
+#endif /* CONFIG_ADXL372_STREAM */
 
 	return data->hw_tf->write_reg(dev, ADXL372_HPF, ADXL372_HPF_CORNER(c));
 }
@@ -237,9 +255,18 @@ static int adxl372_set_instant_on_th(const struct device *dev,
 {
 	struct adxl372_data *data = dev->data;
 
-	return data->hw_tf->write_reg_mask(dev, ADXL372_POWER_CTL,
+	int ret = data->hw_tf->write_reg_mask(dev, ADXL372_POWER_CTL,
 					   ADXL372_POWER_CTL_INSTANT_ON_TH_MSK,
 					   ADXL372_POWER_CTL_INSTANT_ON_TH_MODE(mode));
+
+#ifdef CONFIG_ADXL372_STREAM
+	if (ret == 0) {
+		data->pwr_reg &= ~ADXL372_POWER_CTL_INSTANT_ON_TH_MSK;
+		data->pwr_reg |= ADXL372_POWER_CTL_INSTANT_ON_TH_MODE(mode);
+	}
+#endif /* CONFIG_ADXL372_STREAM */
+
+	return ret;
 }
 
 /**
@@ -313,9 +340,18 @@ static int adxl372_set_filter_settle(const struct device *dev,
 {
 	struct adxl372_data *data = dev->data;
 
-	return data->hw_tf->write_reg_mask(dev, ADXL372_POWER_CTL,
+	int ret = data->hw_tf->write_reg_mask(dev, ADXL372_POWER_CTL,
 					   ADXL372_POWER_CTL_FIL_SETTLE_MSK,
 					   ADXL372_POWER_CTL_FIL_SETTLE_MODE(mode));
+
+#ifdef CONFIG_ADXL372_STREAM
+	if (ret == 0) {
+		data->pwr_reg &= ~ADXL372_POWER_CTL_FIL_SETTLE_MSK;
+		data->pwr_reg |= ADXL372_POWER_CTL_FIL_SETTLE_MODE(mode);
+	}
+#endif /* CONFIG_ADXL372_STREAM */
+
+	return ret;
 }
 
 /**
@@ -364,7 +400,16 @@ int adxl372_get_status(const struct device *dev,
 	}
 
 	if (fifo_entries) {
-		length += 2U;
+		if (status2) {
+			length += 2U;
+		} else {
+			/* Registers STATUS1, STATUS2, FIFO_ENTRIES2 and FIFO_ENTRIES1
+			 * are one after the other. If user wants fifo_entries and
+			 * not status2, to get the correct values, STATUS2 register
+			 * also must be read but read value will be ignored.
+			 */
+			length += 3U;
+		}
 	}
 
 	ret = data->hw_tf->read_reg_multiple(dev, ADXL372_STATUS_1, buf, length);
@@ -423,13 +468,10 @@ static int adxl372_reset(const struct device *dev)
  * @param fifo_samples - FIFO Samples. Watermark number of FIFO samples that
  *			triggers a FIFO_FULL condition when reached.
  *			Values range from 0 to 512.
-
  * @return 0 in case of success, negative error code otherwise.
  */
-static int adxl372_configure_fifo(const struct device *dev,
-				  enum adxl372_fifo_mode mode,
-				  enum adxl372_fifo_format format,
-				  uint16_t fifo_samples)
+int adxl372_configure_fifo(const struct device *dev, enum adxl372_fifo_mode mode,
+			   enum adxl372_fifo_format format, uint16_t fifo_samples)
 {
 	struct adxl372_data *data = dev->data;
 	uint8_t fifo_config;
@@ -476,8 +518,8 @@ static int adxl372_configure_fifo(const struct device *dev,
  *		      where (x, y, z) acceleration data will be stored.
  * @return 0 in case of success, negative error code otherwise.
  */
-static int adxl372_get_accel_data(const struct device *dev, bool maxpeak,
-				  struct adxl372_xyz_accel_data *accel_data)
+int adxl372_get_accel_data(const struct device *dev, bool maxpeak,
+			   struct adxl372_xyz_accel_data *accel_data)
 {
 	struct adxl372_data *data = dev->data;
 	uint8_t buf[6];
@@ -492,7 +534,9 @@ static int adxl372_get_accel_data(const struct device *dev, bool maxpeak,
 
 	ret = data->hw_tf->read_reg_multiple(dev, maxpeak ? ADXL372_X_MAXPEAK_H :
 					     ADXL372_X_DATA_H, buf, 6);
-
+#ifdef CONFIG_ADXL372_STREAM
+	accel_data->is_fifo = 0;
+#endif /* CONFIG_ADXL372_STREAM */
 	accel_data->x = (buf[0] << 8) | (buf[1] & 0xF0);
 	accel_data->y = (buf[2] << 8) | (buf[3] & 0xF0);
 	accel_data->z = (buf[4] << 8) | (buf[5] & 0xF0);
@@ -506,6 +550,7 @@ static int adxl372_attr_set_odr(const struct device *dev,
 				const struct sensor_value *val)
 {
 	enum adxl372_odr odr;
+	struct adxl372_dev_config *cfg = (struct adxl372_dev_config *)dev->config;
 
 	switch (val->val1) {
 	case 400:
@@ -527,7 +572,13 @@ static int adxl372_attr_set_odr(const struct device *dev,
 		return -EINVAL;
 	}
 
-	return adxl372_set_odr(dev, odr);
+	int ret = adxl372_set_odr(dev, odr);
+
+	if (ret == 0) {
+		cfg->odr = odr;
+	}
+
+	return ret;
 }
 
 static int adxl372_attr_set_thresh(const struct device *dev,
@@ -601,7 +652,7 @@ static int adxl372_sample_fetch(const struct device *dev,
 				      &data->sample);
 }
 
-static void adxl372_accel_convert(struct sensor_value *val, int16_t value)
+void adxl372_accel_convert(struct sensor_value *val, int16_t value)
 {
 	/*
 	 * Sensor resolution is 100mg/LSB, 12-bit value needs to be right
@@ -642,12 +693,16 @@ static int adxl372_channel_get(const struct device *dev,
 }
 
 static const struct sensor_driver_api adxl372_api_funcs = {
-	.attr_set     = adxl372_attr_set,
+	.attr_set = adxl372_attr_set,
 	.sample_fetch = adxl372_sample_fetch,
-	.channel_get  = adxl372_channel_get,
+	.channel_get = adxl372_channel_get,
 #ifdef CONFIG_ADXL372_TRIGGER
 	.trigger_set = adxl372_trigger_set,
 #endif
+#ifdef CONFIG_SENSOR_ASYNC_API
+	.submit = adxl372_submit,
+	.get_decoder = adxl372_get_decoder,
+#endif /* CONFIG_SENSOR_ASYNC_API */
 
 };
 
@@ -813,6 +868,11 @@ static int adxl372_init(const struct device *dev)
 /*
  * Instantiation macros used when a device is on a SPI bus.
  */
+#define ADXL372_SPI_CFG SPI_WORD_SET(8) | SPI_TRANSFER_MSB
+
+#define ADXL372_RTIO_DEFINE(inst)                                                                  \
+	SPI_DT_IODEV_DEFINE(adxl372_iodev_##inst, DT_DRV_INST(inst), ADXL372_SPI_CFG, 0U);         \
+	RTIO_DEFINE(adxl372_rtio_ctx_##inst, 16, 16);
 
 #ifdef CONFIG_ADXL372_TRIGGER
 #define ADXL372_CFG_IRQ(inst) \
@@ -848,15 +908,18 @@ static int adxl372_init(const struct device *dev)
 #define ADXL372_CONFIG_SPI(inst)					\
 	{								\
 		.bus_init = adxl372_spi_init,				\
-		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8) |	\
-					SPI_TRANSFER_MSB, 0),		\
+		.spi = SPI_DT_SPEC_INST_GET(inst, ADXL372_SPI_CFG, 0),		\
 		ADXL372_CONFIG(inst)					\
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, int1_gpios),	\
 		(ADXL372_CFG_IRQ(inst)), ())				\
 	}
 
 #define ADXL372_DEFINE_SPI(inst)					\
-	static struct adxl372_data adxl372_data_##inst;			\
+	IF_ENABLED(CONFIG_ADXL372_STREAM, (ADXL372_RTIO_DEFINE(inst)));                          \
+	static struct adxl372_data adxl372_data_##inst = {			\
+	IF_ENABLED(CONFIG_ADXL372_STREAM, (.rtio_ctx = &adxl372_rtio_ctx_##inst,                  \
+				.iodev = &adxl372_iodev_##inst,)) \
+	};     \
 	static const struct adxl372_dev_config adxl372_config_##inst =	\
 		ADXL372_CONFIG_SPI(inst);				\
 	ADXL372_DEVICE_INIT(inst)

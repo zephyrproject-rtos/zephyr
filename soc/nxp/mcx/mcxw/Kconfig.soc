@@ -1,0 +1,22 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_MCXW
+	bool
+	select SOC_FAMILY_NXP_MCX
+
+config SOC_SERIES
+	default "mcxw" if SOC_SERIES_MCXW
+
+config SOC_MCXW716C
+	bool
+	select SOC_SERIES_MCXW
+
+config SOC
+	default "mcxw716c" if SOC_MCXW716C
+
+config SOC_PART_NUMBER_MCXW716CMFTA
+	bool
+
+config SOC_PART_NUMBER
+	default "MCXW716CMFTA" if SOC_PART_NUMBER_MCXW716CMFTA

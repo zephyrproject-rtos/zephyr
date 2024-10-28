@@ -28,7 +28,10 @@ static void udp_rcvd(struct net_context *context, struct net_pkt *pkt,
 
 		PR_SHELL(udp_shell, "Received UDP packet: ");
 		for (size_t i = 0; i < len; ++i) {
-			net_pkt_read_u8(pkt, &byte);
+			if (net_pkt_read_u8(pkt, &byte) < 0) {
+				break;
+			}
+
 			PR_SHELL(udp_shell, "%02x ", byte);
 		}
 		PR_SHELL(udp_shell, "\n");

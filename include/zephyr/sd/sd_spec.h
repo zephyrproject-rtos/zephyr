@@ -258,34 +258,34 @@ enum sd_support_flag {
  * supported functions of SD card.
  */
 enum sd_ocr_flag {
+	/** Power up busy status */
 	SD_OCR_PWR_BUSY_FLAG = BIT(31),
-	/*!< Power up busy status */
+	/** Card capacity status */
 	SD_OCR_HOST_CAP_FLAG = BIT(30),
-	/*!< Card capacity status */
+	/** Card capacity status */
 	SD_OCR_CARD_CAP_FLAG = SD_OCR_HOST_CAP_FLAG,
-	/*!< Card capacity status */
+	/** Switch to 1.8V request */
 	SD_OCR_SWITCH_18_REQ_FLAG = BIT(24),
-	/*!< Switch to 1.8V request */
+	/** Switch to 1.8V accepted */
 	SD_OCR_SWITCH_18_ACCEPT_FLAG = SD_OCR_SWITCH_18_REQ_FLAG,
-	/*!< Switch to 1.8V accepted */
+	/** VDD 2.7-2.8 */
 	SD_OCR_VDD27_28FLAG = BIT(15),
-	/*!< VDD 2.7-2.8 */
+	/** VDD 2.8-2.9 */
 	SD_OCR_VDD28_29FLAG = BIT(16),
-	/*!< VDD 2.8-2.9 */
+	/** VDD 2.9-3.0 */
 	SD_OCR_VDD29_30FLAG = BIT(17),
-	/*!< VDD 2.9-3.0 */
+	/** VDD 3.0-3.1 */
 	SD_OCR_VDD30_31FLAG = BIT(18),
-	/*!< VDD 2.9-3.0 */
+	/** VDD 3.1-3.2 */
 	SD_OCR_VDD31_32FLAG = BIT(19),
-	/*!< VDD 3.0-3.1 */
+	/** VDD 3.2-3.3 */
 	SD_OCR_VDD32_33FLAG = BIT(20),
-	/*!< VDD 3.1-3.2 */
+	/** VDD 3.3-3.4 */
 	SD_OCR_VDD33_34FLAG = BIT(21),
-	/*!< VDD 3.2-3.3 */
+	/** VDD 3.4-3.5 */
 	SD_OCR_VDD34_35FLAG = BIT(22),
-	/*!< VDD 3.3-3.4 */
+	/** VDD 3.5-3.6 */
 	SD_OCR_VDD35_36FLAG = BIT(23),
-	/*!< VDD 3.4-3.5 */
 };
 
 /**
@@ -344,10 +344,10 @@ enum sdio_ocr_flag {
  * integer value is used to select it.
  */
 enum sd_switch_arg {
+	/** SD switch mode 0: check function */
 	SD_SWITCH_CHECK = 0U,
-	/*!< SD switch mode 0: check function */
+	/** SD switch mode 1: set function */
 	SD_SWITCH_SET = 1U,
-	/*!< SD switch mode 1: set function */
 };
 
 /**
@@ -357,14 +357,14 @@ enum sd_switch_arg {
  * used to determine which group CMD6 will interact with.
  */
 enum sd_group_num {
+	/** access mode group */
 	SD_GRP_TIMING_MODE = 0U,
-	/*!< access mode group*/
+	/** command system group */
 	SD_GRP_CMD_SYS_MODE = 1U,
-	/*!< command system group*/
+	/** driver strength group */
 	SD_GRP_DRIVER_STRENGTH_MODE = 2U,
-	/*!< driver strength group*/
+	/** current limit group */
 	SD_GRP_CURRENT_LIMIT_MODE = 3U,
-	/*!< current limit group*/
 };
 
 /* Maximum data rate possible for SD high speed cards */
@@ -406,20 +406,20 @@ enum sd_bus_speed {
  * controller to identify timing of card.
  */
 enum sd_timing_mode {
+	/** Default Mode */
 	SD_TIMING_DEFAULT = 0U,
-	/*!< Default Mode */
+	/** SDR12 mode */
 	SD_TIMING_SDR12 = 0U,
-	/*!< SDR12 mode */
+	/** High speed mode */
 	SD_TIMING_HIGH_SPEED = 1U,
-	/*!< High speed mode */
+	/** SDR25 mode */
 	SD_TIMING_SDR25 = 1U,
-	/*!< SDR25 mode */
+	/** SDR50 mode*/
 	SD_TIMING_SDR50 = 2U,
-	/*!< SDR50 mode*/
+	/** SDR104 mode */
 	SD_TIMING_SDR104 = 3U,
-	/*!< SDR104 mode */
+	/** DDR50 mode */
 	SD_TIMING_DDR50 = 4U,
-	/*!< DDR50 mode */
 };
 
 /**
@@ -458,14 +458,14 @@ enum sd_current_setting {
  * Used with CMD6 to determine the maximum current the card will draw.
  */
 enum sd_current_limit {
+	/** default current limit */
 	SD_MAX_CURRENT_200MA = BIT(0),
-	/*!< default current limit */
+	/** current limit to 400MA */
 	SD_MAX_CURRENT_400MA = BIT(1),
-	/*!< current limit to 400MA */
+	/** current limit to 600MA */
 	SD_MAX_CURRENT_600MA = BIT(2),
-	/*!< current limit to 600MA */
+	/** current limit to 800MA */
 	SD_MAX_CURRENT_800MA = BIT(3),
-	/*!< current limit to 800MA */
 };
 
 /**
@@ -486,14 +486,14 @@ enum sd_driver_type {
  * These values are used to select the preferred driver type for an SD card.
  */
 enum sd_driver_strength {
+	/** default driver strength*/
 	SD_DRV_STRENGTH_TYPEB = 0U,
-	/*!< default driver strength*/
+	/** driver strength TYPE A */
 	SD_DRV_STRENGTH_TYPEA = 1U,
-	/*!< driver strength TYPE A */
+	/** driver strength TYPE C */
 	SD_DRV_STRENGTH_TYPEC = 2U,
-	/*!< driver strength TYPE C */
+	/** driver strength TYPE D */
 	SD_DRV_STRENGTH_TYPED = 3U,
-	/*!< driver strength TYPE D */
 };
 
 /**
@@ -519,18 +519,18 @@ struct sd_switch_caps {
  * Layout of SD card identification register
  */
 struct sd_cid {
+	/** Manufacturer ID [127:120] */
 	uint8_t manufacturer;
-	/*!< Manufacturer ID [127:120] */
+	/** OEM/Application ID [119:104] */
 	uint16_t application;
-	/*!< OEM/Application ID [119:104] */
+	/** Product name [103:64] */
 	uint8_t name[SD_PRODUCT_NAME_BYTES];
-	/*!< Product name [103:64] */
+	/** Product revision [63:56] */
 	uint8_t version;
-	/*!< Product revision [63:56] */
+	/** Product serial number [55:24] */
 	uint32_t ser_num;
-	/*!< Product serial number [55:24] */
+	/** Manufacturing date [19:8] */
 	uint16_t date;
-	/*!< Manufacturing date [19:8] */
 };
 
 /**
@@ -539,42 +539,42 @@ struct sd_cid {
  * Card specific data register. contains additional data about SD card.
  */
 struct sd_csd {
+	/** CSD structure [127:126] */
 	uint8_t csd_structure;
-	/*!< CSD structure [127:126] */
+	/** Data read access-time-1 [119:112] */
 	uint8_t read_time1;
-	/*!< Data read access-time-1 [119:112] */
+	/** Data read access-time-2 in clock cycles (NSAC*100) [111:104] */
 	uint8_t read_time2;
-	/*!< Data read access-time-2 in clock cycles (NSAC*100) [111:104] */
+	/** Maximum data transfer rate [103:96] */
 	uint8_t xfer_rate;
-	/*!< Maximum data transfer rate [103:96] */
+	/** Card command classes [95:84] */
 	uint16_t cmd_class;
-	/*!< Card command classes [95:84] */
+	/** Maximum read data block length [83:80] */
 	uint8_t read_blk_len;
-	/*!< Maximum read data block length [83:80] */
+	/** Flags in _sd_csd_flag */
 	uint16_t flags;
-	/*!< Flags in _sd_csd_flag */
+	/** Device size [73:62] */
 	uint32_t device_size;
-	/*!< Device size [73:62] */
+	/** Maximum read current at VDD min [61:59] */
 	uint8_t read_current_min;
-	/*!< Maximum read current at VDD min [61:59] */
+	/** Maximum read current at VDD max [58:56] */
 	uint8_t read_current_max;
-	/*!< Maximum read current at VDD max [58:56] */
+	/** Maximum write current at VDD min [55:53] */
 	uint8_t write_current_min;
-	/*!< Maximum write current at VDD min [55:53] */
+	/** Maximum write current at VDD max [52:50] */
 	uint8_t write_current_max;
-	/*!< Maximum write current at VDD max [52:50] */
+	/** Device size multiplier [49:47] */
 	uint8_t dev_size_mul;
-	/*!< Device size multiplier [49:47] */
+	/** Erase sector size [45:39] */
 	uint8_t erase_size;
-	/*!< Erase sector size [45:39] */
+	/** Write protect group size [38:32] */
 	uint8_t write_prtect_size;
-	/*!< Write protect group size [38:32] */
+	/** Write speed factor [28:26] */
 	uint8_t write_speed_factor;
-	/*!< Write speed factor [28:26] */
+	/** Maximum write data block length [25:22] */
 	uint8_t write_blk_len;
-	/*!< Maximum write data block length [25:22] */
+	/** File format [11:10] */
 	uint8_t file_fmt;
-	/*!< File format [11:10] */
 };
 
 /**
@@ -669,26 +669,26 @@ enum mmc_ext_csd_rev {
  * Contains additional additional data about MMC card.
  */
 struct mmc_ext_csd {
+	/** Sector Count [215:212] */
 	uint32_t sec_count;
-	/*!< Sector Count [215:212] >*/
+	/** Bus Width Mode [183] */
 	uint8_t bus_width;
-	/*!< Bus Width Mode [183] >*/
+	/** High Speed Timing Mode [185] */
 	enum mmc_timing_mode hs_timing;
-	/*!< High Speed Timing Mode [185] >*/
+	/** Device Type [196] */
 	struct mmc_device_type device_type;
-	/*!< Device Type [196] >*/
+	/** Extended CSD Revision [192] */
 	enum mmc_ext_csd_rev rev;
-	/*!< Extended CSD Revision [192] >*/
+	/** Selected power class [187]*/
 	uint8_t power_class;
-	/*!< Selected power class [187]>*/
+	/** Driver strengths [197] */
 	uint8_t mmc_driver_strengths;
-	/*!< Driver strengths [197] >*/
+	/** Power class information for HS200 at VCC!=1.95V [237] */
 	uint8_t pwr_class_200MHZ_VCCQ195;
-	/*!< Power class information for HS200 at VCC!=1.95V [237] >*/
+	/** Power class information for HS400 [253] */
 	uint8_t pwr_class_HS400;
-	/*!< Power class information for HS400 [253] >*/
+	/** Size of eMMC cache [252:249] */
 	uint32_t cache_size;
-	/*!< Size of eMMC cache [252:249]>*/
 };
 
 /**
@@ -697,28 +697,28 @@ struct mmc_ext_csd {
  * flags used in decoding the SD card specific data register
  */
 enum sd_csd_flag {
+	/** Partial blocks for read allowed [79:79] */
 	SD_CSD_READ_BLK_PARTIAL_FLAG = BIT(0),
-	/*!< Partial blocks for read allowed [79:79] */
+	/** Write block misalignment [78:78] */
 	SD_CSD_WRITE_BLK_MISALIGN_FLAG = BIT(1),
-	/*!< Write block misalignment [78:78] */
+	/** Read block misalignment [77:77] */
 	SD_CSD_READ_BLK_MISALIGN_FLAG = BIT(2),
-	/*!< Read block misalignment [77:77] */
+	/** DSR implemented [76:76] */
 	SD_CSD_DSR_IMPLEMENTED_FLAG = BIT(3),
-	/*!< DSR implemented [76:76] */
+	/** Erase single block enabled [46:46] */
 	SD_CSD_ERASE_BLK_EN_FLAG = BIT(4),
-	/*!< Erase single block enabled [46:46] */
+	/** Write protect group enabled [31:31] */
 	SD_CSD_WRITE_PROTECT_GRP_EN_FLAG = BIT(5),
-	/*!< Write protect group enabled [31:31] */
+	/** Partial blocks for write allowed [21:21] */
 	SD_CSD_WRITE_BLK_PARTIAL_FLAG = BIT(6),
-	/*!< Partial blocks for write allowed [21:21] */
+	/** File format group [15:15] */
 	SD_CSD_FILE_FMT_GRP_FLAG = BIT(7),
-	/*!< File format group [15:15] */
+	/** Copy flag [14:14] */
 	SD_CSD_COPY_FLAG = BIT(8),
-	/*!< Copy flag [14:14] */
+	/** Permanent write protection [13:13] */
 	SD_CSD_PERMANENT_WRITE_PROTECT_FLAG = BIT(9),
-	/*!< Permanent write protection [13:13] */
+	/** Temporary write protection [12:12] */
 	SD_CSD_TMP_WRITE_PROTECT_FLAG = BIT(10),
-	/*!< Temporary write protection [12:12] */
 };
 
 /**
@@ -727,22 +727,22 @@ enum sd_csd_flag {
  * Even more SD card data.
  */
 struct sd_scr {
+	/** SCR Structure [63:60] */
 	uint8_t scr_structure;
-	/*!< SCR Structure [63:60] */
+	/** SD memory card specification version [59:56] */
 	uint8_t sd_spec;
-	/*!< SD memory card specification version [59:56] */
+	/** SCR flags in _sd_scr_flag */
 	uint16_t flags;
-	/*!< SCR flags in _sd_scr_flag */
+	/** Security specification supported [54:52] */
 	uint8_t sd_sec;
-	/*!< Security specification supported [54:52] */
+	/** Data bus widths supported [51:48] */
 	uint8_t sd_width;
-	/*!< Data bus widths supported [51:48] */
+	/** Extended security support [46:43] */
 	uint8_t sd_ext_sec;
-	/*!< Extended security support [46:43] */
+	/** Command support bits [33:32] 33-support CMD23, 32-support cmd20*/
 	uint8_t cmd_support;
-	/*!< Command support bits [33:32] 33-support CMD23, 32-support cmd20*/
+	/** reserved for manufacturer usage [31:0] */
 	uint32_t rsvd;
-	/*!< reserved for manufacturer usage [31:0] */
 };
 
 /**
@@ -751,10 +751,10 @@ struct sd_scr {
  * flags used in decoding the SD card configuration register
  */
 enum sd_scr_flag {
+	/** Data status after erases [55:55] */
 	SD_SCR_DATA_STATUS_AFTER_ERASE = BIT(0),
-	/*!< Data status after erases [55:55] */
+	/** Specification version 3.00 or higher [47:47]*/
 	SD_SCR_SPEC3 = BIT(1),
-	/*!< Specification version 3.00 or higher [47:47]*/
 };
 
 /**
@@ -763,14 +763,14 @@ enum sd_scr_flag {
  * SD spec version flags used in decoding the SD card configuration register
  */
 enum sd_spec_version {
+	/** SD card version 1.0-1.01 */
 	SD_SPEC_VER1_0 = BIT(0),
-	/*!< SD card version 1.0-1.01 */
+	/** SD card version 1.10 */
 	SD_SPEC_VER1_1 = BIT(1),
-	/*!< SD card version 1.10 */
+	/** SD card version 2.00 */
 	SD_SPEC_VER2_0 = BIT(2),
-	/*!< SD card version 2.00 */
+	/** SD card version 3.0 */
 	SD_SPEC_VER3_0 = BIT(3),
-	/*!< SD card version 3.0 */
 };
 
 

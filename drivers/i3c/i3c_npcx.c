@@ -21,6 +21,79 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(npcx_i3c, CONFIG_I3C_LOG_LEVEL);
 
+/* MCONFIG options */
+#define MCONFIG_CTRENA_OFF        0x0
+#define MCONFIG_CTRENA_ON         0x1
+#define MCONFIG_CTRENA_CAPABLE    0x2
+#define MCONFIG_HKEEP_EXT_SDA_SCL 0x3
+
+/* MCTRL options */
+#define MCTRL_REQUEST_NONE          0 /* None */
+#define MCTRL_REQUEST_EMITSTARTADDR 1 /* Emit a START */
+#define MCTRL_REQUEST_EMITSTOP      2 /* Emit a STOP */
+#define MCTRL_REQUEST_IBIACKNACK    3 /* Manually ACK or NACK an IBI */
+#define MCTRL_REQUEST_PROCESSDAA    4 /* Starts the DAA process */
+#define MCTRL_REQUEST_FORCEEXIT     6 /* Emit HDR Exit Pattern  */
+/* Emits a START with address 7Eh when a slave pulls I3C_SDA low to request an IBI */
+#define MCTRL_REQUEST_AUTOIBI       7
+
+/* ACK with mandatory byte determined by IBIRULES or ACK with no mandatory byte */
+#define MCTRL_IBIRESP_ACK           0
+#define MCTRL_IBIRESP_NACK          1 /* NACK */
+#define MCTRL_IBIRESP_ACK_MANDATORY 2 /* ACK with mandatory byte  */
+#define MCTRL_IBIRESP_MANUAL        3
+
+/* For REQUEST = EmitStartAddr */
+enum npcx_i3c_mctrl_type {
+	NPCX_I3C_MCTRL_TYPE_I3C,
+	NPCX_I3C_MCTRL_TYPE_I2C,
+	NPCX_I3C_MCTRL_TYPE_I3C_HDR_DDR,
+};
+
+/* For REQUEST = ForceExit/Target Reset */
+#define MCTRL_TYPE_HDR_EXIT    0
+#define MCTRL_TYPE_TGT_RESTART 2
+
+/* MSTATUS options */
+#define MSTATUS_STATE_IDLE    0x0
+#define MSTATUS_STATE_TGTREQ  0x1
+#define MSTATUS_STATE_NORMACT 0x3 /* SDR message mode */
+#define MSTATUS_STATE_MSGDDR  0x4
+#define MSTATUS_STATE_DAA     0x5
+#define MSTATUS_STATE_IBIACK  0x6
+#define MSTATUS_STATE_IBIRCV  0x7
+#define MSTATUS_IBITYPE_NONE  0x0
+#define MSTATUS_IBITYPE_IBI   0x1
+#define MSTATUS_IBITYPE_CR    0x2
+#define MSTATUS_IBITYPE_HJ    0x3
+
+/* IBIRULES */
+#define IBIRULES_ADDR_MSK   0x3F
+#define IBIRULES_ADDR_SHIFT 0x6
+
+/* MDMACTRL options */
+#define MDMA_DMAFB_DISABLE      0x0
+#define MDMA_DMAFB_EN_ONE_FRAME 0x1
+#define MDMA_DMAFB_EN_MANUAL    0x2
+#define MDMA_DMATB_DISABLE      0x0
+#define MDMA_DMATB_EN_ONE_FRAME 0x1
+#define MDMA_DMATB_EN_MANUAL    0x2
+
+/* CTRL options */
+#define CTRL_EVENT_NORMAL    0
+#define CTRL_EVENT_IBI       1
+#define CTRL_EVENT_CNTLR_REQ 2
+#define CTRL_EVENT_HJ        3
+
+/* STATUS options */
+#define STATUS_EVDET_NONE            0
+#define STATUS_EVDET_REQ_NOT_SENT    1
+#define STATUS_EVDET_REQ_SENT_NACKED 2
+#define STATUS_EVDET_REQ_SENT_ACKED  3
+
+/*******************************************************************************
+ * Local Constants Definition
+ ******************************************************************************/
 #define NPCX_I3C_CHK_TIMEOUT_US 10000 /* Timeout for checking register status */
 #define I3C_SCL_PP_FREQ_MAX_MHZ 12500000
 #define I3C_SCL_OD_FREQ_MAX_MHZ 4170000
@@ -1455,7 +1528,6 @@ static void npcx_i3c_ibi_work(struct k_work *work)
 	const struct device *dev = i3c_ibi_work->controller;
 	const struct npcx_i3c_config *config = dev->config;
 	struct npcx_i3c_data *data = dev->data;
-	struct i3c_dev_attached_list *dev_list = &data->common.attached_dev;
 	struct i3c_reg *inst = config->base;
 	struct i3c_device_desc *target = NULL;
 	uint32_t ibitype, ibiaddr;
@@ -1530,7 +1602,7 @@ static void npcx_i3c_ibi_work(struct k_work *work)
 
 	switch (ibitype) {
 	case MSTATUS_IBITYPE_IBI:
-		target = i3c_dev_list_i3c_addr_find(dev_list, (uint8_t)ibiaddr);
+		target = i3c_dev_list_i3c_addr_find(dev, (uint8_t)ibiaddr);
 		if (target != NULL) {
 			if (i3c_ibi_work_enqueue_target_irq(target, &payload[0], payload_sz) != 0) {
 				LOG_ERR("Error enqueue IBI IRQ work");
@@ -1776,7 +1848,8 @@ static void npcx_i3c_isr(const struct device *dev)
 
 		/* MDMA write */
 		if (get_oper_state(dev) == NPCX_I3C_WR) {
-			return i3c_ctrl_notify(dev);
+			i3c_ctrl_notify(dev);
+			return;
 		}
 	}
 
@@ -1785,7 +1858,8 @@ static void npcx_i3c_isr(const struct device *dev)
 
 		/* MDMA read */
 		if (get_oper_state(dev) == NPCX_I3C_RD) {
-			return i3c_ctrl_notify(dev);
+			i3c_ctrl_notify(dev);
+			return;
 		}
 
 	}

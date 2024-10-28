@@ -6,10 +6,11 @@
 
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/usb/usb_ch9.h>
+#include <zephyr/drivers/usb/udc_buf.h>
 #include "udc_common.h"
 
 #include <zephyr/logging/log.h>
@@ -20,9 +21,39 @@
 #endif
 LOG_MODULE_REGISTER(udc, CONFIG_UDC_DRIVER_LOG_LEVEL);
 
+static inline uint8_t *udc_pool_data_alloc(struct net_buf *const buf,
+					   size_t *const size, k_timeout_t timeout)
+{
+	struct net_buf_pool *const buf_pool = net_buf_pool_get(buf->pool_id);
+	struct k_heap *const pool = buf_pool->alloc->alloc_data;
+	void *b;
+
+	*size = ROUND_UP(*size, UDC_BUF_GRANULARITY);
+	b = k_heap_aligned_alloc(pool, UDC_BUF_ALIGN, *size, timeout);
+	if (b == NULL) {
+		*size = 0;
+		return NULL;
+	}
+
+	return b;
+}
+
+static inline void udc_pool_data_unref(struct net_buf *buf, uint8_t *const data)
+{
+	struct net_buf_pool *buf_pool = net_buf_pool_get(buf->pool_id);
+	struct k_heap *pool = buf_pool->alloc->alloc_data;
+
+	k_heap_free(pool, data);
+}
+
+const struct net_buf_data_cb net_buf_dma_cb = {
+	.alloc = udc_pool_data_alloc,
+	.unref = udc_pool_data_unref,
+};
+
 static inline void udc_buf_destroy(struct net_buf *buf);
 
-NET_BUF_POOL_VAR_DEFINE(udc_ep_pool,
+UDC_BUF_POOL_VAR_DEFINE(udc_ep_pool,
 			CONFIG_UDC_BUF_COUNT, CONFIG_UDC_BUF_POOL_SIZE,
 			sizeof(struct udc_buf_info), udc_buf_destroy);
 
@@ -93,7 +124,7 @@ struct net_buf *udc_buf_get(const struct device *dev, const uint8_t ep)
 		return NULL;
 	}
 
-	return net_buf_get(&ep_cfg->fifo, K_NO_WAIT);
+	return k_fifo_get(&ep_cfg->fifo, K_NO_WAIT);
 }
 
 struct net_buf *udc_buf_get_all(const struct device *dev, const uint8_t ep)
@@ -138,7 +169,7 @@ struct net_buf *udc_buf_peek(const struct device *dev, const uint8_t ep)
 void udc_buf_put(struct udc_ep_config *const ep_cfg,
 		 struct net_buf *const buf)
 {
-	net_buf_put(&ep_cfg->fifo, buf);
+	k_fifo_put(&ep_cfg->fifo, buf);
 }
 
 void udc_ep_buf_set_setup(struct net_buf *const buf)
@@ -231,7 +262,7 @@ static bool ep_check_config(const struct device *dev,
 		return false;
 	}
 
-	if (mps > cfg->caps.mps) {
+	if (USB_MPS_EP_SIZE(mps) > USB_MPS_EP_SIZE(cfg->caps.mps)) {
 		return false;
 	}
 
@@ -242,12 +273,16 @@ static bool ep_check_config(const struct device *dev,
 		}
 		break;
 	case USB_EP_TYPE_INTERRUPT:
-		if (!cfg->caps.interrupt) {
+		if (!cfg->caps.interrupt ||
+		    (USB_MPS_ADDITIONAL_TRANSACTIONS(mps) &&
+		     !cfg->caps.high_bandwidth)) {
 			return false;
 		}
 		break;
 	case USB_EP_TYPE_ISO:
-		if (!cfg->caps.iso) {
+		if (!cfg->caps.iso ||
+		    (USB_MPS_ADDITIONAL_TRANSACTIONS(mps) &&
+		     !cfg->caps.high_bandwidth)) {
 			return false;
 		}
 		break;
@@ -739,13 +774,14 @@ udc_disable_error:
 	return ret;
 }
 
-int udc_init(const struct device *dev, udc_event_cb_t event_cb)
+int udc_init(const struct device *dev,
+	     udc_event_cb_t event_cb, const void *const event_ctx)
 {
 	const struct udc_api *api = dev->api;
 	struct udc_data *data = dev->data;
 	int ret;
 
-	if (event_cb == NULL) {
+	if (event_cb == NULL || event_ctx == NULL) {
 		return -EINVAL;
 	}
 
@@ -757,6 +793,7 @@ int udc_init(const struct device *dev, udc_event_cb_t event_cb)
 	}
 
 	data->event_cb = event_cb;
+	data->event_ctx = event_ctx;
 
 	ret = api->init(dev);
 	if (ret == 0) {

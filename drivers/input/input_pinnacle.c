@@ -256,14 +256,14 @@ static inline int pinnacle_clear_cmd_complete(const struct device *dev)
 
 static int pinnacle_era_wait_for_completion(const struct device *dev)
 {
-	int rc;
+	bool ret;
 	uint8_t value;
 
-	rc = WAIT_FOR(!pinnacle_read(dev, PINNACLE_REG_ERA_CTRL, &value) &&
-			      value == PINNACLE_ERA_CTRL_COMPLETE,
-		      PINNACLE_ERA_AWAIT_RETRY_COUNT * PINNACLE_ERA_AWAIT_DELAY_POLL_US,
-		      k_sleep(K_USEC(PINNACLE_ERA_AWAIT_DELAY_POLL_US)));
-	if (rc < 0) {
+	ret = WAIT_FOR(pinnacle_read(dev, PINNACLE_REG_ERA_CTRL, &value) == 0 &&
+		       value == PINNACLE_ERA_CTRL_COMPLETE,
+		       PINNACLE_ERA_AWAIT_RETRY_COUNT * PINNACLE_ERA_AWAIT_DELAY_POLL_US,
+		       k_sleep(K_USEC(PINNACLE_ERA_AWAIT_DELAY_POLL_US)));
+	if (!ret) {
 		return -EIO;
 	}
 
@@ -743,6 +743,7 @@ static int pinnacle_init(const struct device *dev)
 	const struct pinnacle_config *config = dev->config;
 
 	int rc;
+	bool ret;
 	uint8_t value;
 
 	if (!pinnacle_bus_is_ready(dev)) {
@@ -761,12 +762,12 @@ static int pinnacle_init(const struct device *dev)
 	}
 
 	/* Wait until the calibration is completed (SW_CC is asserted) */
-	rc = WAIT_FOR(!pinnacle_read(dev, PINNACLE_REG_STATUS1, &value) &&
-			      (value & PINNACLE_STATUS1_SW_CC) == PINNACLE_STATUS1_SW_CC,
-		      PINNACLE_CALIBRATION_AWAIT_RETRY_COUNT *
-			      PINNACLE_CALIBRATION_AWAIT_DELAY_POLL_US,
-		      k_sleep(K_USEC(PINNACLE_CALIBRATION_AWAIT_DELAY_POLL_US)));
-	if (rc < 0) {
+	ret = WAIT_FOR(pinnacle_read(dev, PINNACLE_REG_STATUS1, &value) == 0 &&
+		       (value & PINNACLE_STATUS1_SW_CC) == PINNACLE_STATUS1_SW_CC,
+		       PINNACLE_CALIBRATION_AWAIT_RETRY_COUNT *
+		       PINNACLE_CALIBRATION_AWAIT_DELAY_POLL_US,
+		       k_sleep(K_USEC(PINNACLE_CALIBRATION_AWAIT_DELAY_POLL_US)));
+	if (!ret) {
 		LOG_ERR("Failed to wait for calibration complition");
 		return -EIO;
 	}

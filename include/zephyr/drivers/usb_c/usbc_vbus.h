@@ -8,7 +8,7 @@
  * @brief USB-C VBUS device APIs
  *
  * This file contains the USB-C VBUS device APIs.
- * All USB-C VBUS measurment and control device drivers should
+ * All USB-C VBUS measurement and control device drivers should
  * implement the APIs described in this file.
  */
 
@@ -89,10 +89,10 @@ static inline int usbc_vbus_discharge(const struct device *dev, bool enable)
 }
 
 /**
- * @brief Controls a pin that enables VBUS measurments
+ * @brief Controls a pin that enables VBUS measurements
  *
  * @param dev     Runtime device structure
- * @param enable  enable VBUS measurments when true
+ * @param enable  enable VBUS measurements when true
  *
  * @retval 0 on success
  * @retval -EIO on failure

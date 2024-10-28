@@ -1,5 +1,6 @@
 board:
   name: nucleo_h563zi
+  full_name: Nucleo H563ZI
   vendor: st
   socs:
     - name: stm32h563xx

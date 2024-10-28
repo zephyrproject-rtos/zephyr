@@ -18,6 +18,7 @@
 #include <zephyr/device.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 
 #ifndef CONFIG_NATIVE_LIBC
 extern void getopt_init(void);
@@ -38,10 +39,6 @@ static bool littleendian;
 
 #define CHAR_CAN 0x18
 #define CHAR_DC1 0x11
-
-#ifndef BITS_PER_BYTE
-#define BITS_PER_BYTE 8
-#endif
 
 static int memory_dump(const struct shell *sh, mem_addr_t phys_addr, size_t size, uint8_t width)
 {
@@ -315,10 +312,6 @@ static int cmd_devmem(const struct shell *sh, size_t argc, char **argv)
 	uint32_t value = 0;
 	uint8_t width;
 
-	if (argc < 2 || argc > 4) {
-		return -EINVAL;
-	}
-
 	phys_addr = strtoul(argv[1], NULL, 16);
 
 #if defined(CONFIG_MMU) || defined(CONFIG_PCIE)
@@ -365,11 +358,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_devmem,
 					     cmd_load, 2, 1),
 			       SHELL_SUBCMD_SET_END);
 
-SHELL_CMD_REGISTER(devmem, &sub_devmem,
+SHELL_CMD_ARG_REGISTER(devmem, &sub_devmem,
 		   "Read/write physical memory\n"
 		   "Usage:\n"
 		   "Read memory at address with optional width:\n"
-		   "devmem address [width]\n"
+		   "devmem <address> [<width>]\n"
 		   "Write memory at address with mandatory width and value:\n"
-		   "devmem address <width> <value>",
-		   cmd_devmem);
+		   "devmem <address> <width> <value>",
+		   cmd_devmem, 2, 2);

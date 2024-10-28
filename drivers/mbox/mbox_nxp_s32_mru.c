@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 NXP
+ * Copyright 2022-2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -80,9 +80,9 @@ static int nxp_s32_mru_send(const struct device *dev, uint32_t channel,
 	tx_cfg.NumTxMB = MRU_MAX_MBOX_PER_CHAN;
 	tx_cfg.LastTxMBIndex = MRU_MAX_MBOX_PER_CHAN - 1;
 	tx_cfg.MBAddList = (volatile uint32 * const *)tx_mbox_addr;
-	tx_cfg.ChMBSTATAdd = &cfg->base->CHXCONFIG[channel].CH_MBSTAT;
+	tx_cfg.ChMBSTATAdd = (volatile uint32 *)&cfg->base->CHXCONFIG[channel].CH_MBSTAT;
 
-	status = Mru_Ip_Transmit(&tx_cfg, (const uint32_t *)msg->data);
+	status = Mru_Ip_Transmit(&tx_cfg, (const uint32 *)msg->data);
 
 	return (status == MRU_IP_STATUS_SUCCESS ? 0 : -EBUSY);
 }
@@ -208,11 +208,11 @@ static const struct mbox_driver_api nxp_s32_mru_driver_api = {
 	}
 
 #define MRU_CH_RX_CFG(i, n)								\
-	static volatile const uint32_t * const						\
+	static volatile const uint32 * const						\
 	nxp_s32_mru_##n##_ch_##i##_rx_mbox_addr[MRU_MAX_MBOX_PER_CHAN] = {		\
-		(uint32_t *const)MRU_MBOX_ADDR(n, i, 0),				\
+		(uint32 *const)MRU_MBOX_ADDR(n, i, 0),					\
 	};										\
-	static uint32_t nxp_s32_mru_##n##_ch_##i##_buf[MRU_MAX_MBOX_PER_CHAN];		\
+	static uint32 nxp_s32_mru_##n##_ch_##i##_buf[MRU_MAX_MBOX_PER_CHAN];		\
 	static const Mru_Ip_ReceiveChannelType nxp_s32_mru_##n##_ch_##i##_rx_cfg = {	\
 		.ChannelId = i,								\
 		.ChannelIndex = i,							\
@@ -235,18 +235,18 @@ static const struct mbox_driver_api nxp_s32_mru_driver_api = {
 
 #define MRU_CH_CFG(i, n)								\
 	{										\
-		.ChCFG0Add = &MRU_BASE(n)->CHXCONFIG[i].CH_CFG0,			\
+		.ChCFG0Add = (volatile uint32 *)&MRU_BASE(n)->CHXCONFIG[i].CH_CFG0,	\
 		.ChCFG0 = RTU_MRU_CH_CFG0_IE(0) | RTU_MRU_CH_CFG0_MBE0(0),		\
-		.ChCFG1Add = &MRU_BASE(n)->CHXCONFIG[i].CH_CFG1,			\
+		.ChCFG1Add = (volatile uint32 *)&MRU_BASE(n)->CHXCONFIG[i].CH_CFG1,	\
 		.ChCFG1 = RTU_MRU_CH_CFG1_MBIC0(MRU_INT_GROUP(DT_INST_IRQN(n))),	\
-		.ChMBSTATAdd = &MRU_BASE(n)->CHXCONFIG[i].CH_MBSTAT,			\
+		.ChMBSTATAdd = (volatile uint32 *)&MRU_BASE(n)->CHXCONFIG[i].CH_MBSTAT,	\
 		.NumMailbox = MRU_MAX_MBOX_PER_CHAN,					\
 		.MBLinkReceiveChCfg = nxp_s32_mru_##n##_ch_##i##_rx_link_cfg		\
 	}
 
 /* Callback wrapper to adapt MRU's baremetal driver callback to Zephyr's mbox driver callback */
 #define MRU_CALLBACK_WRAPPER_FUNC(n)								\
-	void nxp_s32_mru_##n##_cb(uint8_t channel, const uint32_t *buf, uint8_t mbox_count)	\
+	void nxp_s32_mru_##n##_cb(uint8_t channel, const uint32 *buf, uint8_t mbox_count)	\
 	{											\
 		const struct device *dev = DEVICE_DT_INST_GET(n);				\
 		struct nxp_s32_mru_data *data = dev->data;					\
@@ -283,8 +283,8 @@ static const struct mbox_driver_api nxp_s32_mru_driver_api = {
 			.ChannelCfg = COND_CODE_0(MRU_RX_CHANNELS(n),			\
 						  (NULL), (nxp_s32_mru_##n##_ch_cfg)),	\
 			.NOTIFYAdd = {							\
-				&MRU_BASE(n)->NOTIFY[0],				\
-				&MRU_BASE(n)->NOTIFY[1]					\
+				(const volatile uint32 *)&MRU_BASE(n)->NOTIFY[0],	\
+				(const volatile uint32 *)&MRU_BASE(n)->NOTIFY[1]	\
 			},								\
 		},									\
 		.irq_group = MRU_INT_GROUP(DT_INST_IRQN(n)),				\

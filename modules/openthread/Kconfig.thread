@@ -66,7 +66,7 @@ config OPENTHREAD_MAX_CHILDREN
 
 config OPENTHREAD_MAX_IP_ADDR_PER_CHILD
 	int "The maximum number of IPv6 address registrations per child"
-	range 4 255
+	range 4 $(UINT8_MAX)
 	default 6
 
 config OPENTHREAD_CONFIG_PLATFORM_INFO
@@ -80,6 +80,12 @@ config OPENTHREAD_RADIO_LINK_IEEE_802_15_4_ENABLE
 config OPENTHREAD_CSL_AUTO_SYNC
 	bool "CSL autosync"
 	default y if OPENTHREAD_CSL_RECEIVER
+
+config OPENTHREAD_CSL_REQUEST_TIME_AHEAD
+	int "CSL transmitter request time ahead"
+	default 2000
+	help
+	  Defines how many microseconds ahead should MAC deliver a CSL frame to the sub-MAC layer.
 
 config OPENTHREAD_CSL_RECEIVE_TIME_AHEAD
 	int "CSL receiver wake up margin in microseconds"
@@ -99,8 +105,8 @@ config OPENTHREAD_MIN_RECEIVE_ON_AFTER
 
 config OPENTHREAD_PLATFORM_CSL_UNCERT
 	int "CSL uncertainty"
-	default 255
-	range 0 255
+	default $(UINT8_MAX)
+	range 0 $(UINT8_MAX)
 	help
 	  The fixed uncertainty of the Device for scheduling CSL Transmissions in units of 10 microseconds.
 
@@ -146,7 +152,7 @@ config OPENTHREAD_PARENT_SEARCH_RSS_THRESHOLD
 
 config OPENTHREAD_CLI_MAX_LINE_LENGTH
 	int "The maximum size of the CLI line in bytes"
-	range 16 1024
+	range 16 $(UINT16_MAX)
 	default 384
 
 config OPENTHREAD_IP6_MAX_EXT_UCAST_ADDRS
@@ -175,6 +181,13 @@ config OPENTHREAD_MAC_STAY_AWAKE_BETWEEN_FRAGMENTS
 	help
 	  This optimization is done at the expense of power consumption on SED/SSED devices.
 
+config OPENTHREAD_DEFAULT_RX_SENSITIVITY
+	int "OpenThread default RX sensitivity in dBm"
+	range $(INT8_MIN) $(INT8_MAX)
+	default -100
+	help
+	  Set the default receive sensitivity [dBm] in radio driver.
+
 config OPENTHREAD_DEFAULT_TX_POWER
 	int "OpenThread default tx power in dBm"
 	range -40 20 if NRF_802154_RADIO_DRIVER
@@ -187,10 +200,26 @@ config OPENTHREAD_BLE_TCAT_THREAD_STACK_SIZE
 	default 5120 if OPENTHREAD_CRYPTO_PSA
 	default 4200
 	help
-	   Openthread default TCAT stack size.
+	  Openthread default TCAT stack size.
 
 config OPENTHREAD_BLE_TCAT_RING_BUF_SIZE
 	int "Openthread BLE ringbuffer size"
 	default 512
 	help
-	   Openthread BLE TCAT ringbuffer size.
+	  Openthread BLE TCAT ringbuffer size.
+
+config OPENTHREAD_NAT64_CIDR
+	string "Set IPv4 CIDR used by NAT64"
+	default "192.168.255.0/24"
+	depends on OPENTHREAD_BORDER_ROUTING && OPENTHREAD_NAT64_TRANSLATOR
+	help
+	  Set the IPv4 CIDR (Classless Inter-Domain Routing) used by NAT64
+	  to set source address of the outgoing translated IPv4 packets.
+	  The CIDR must have four bytes in the address with the
+	  non-zero length of prefix (e.g., "127.0.0.1/24").
+
+config OPENTHREAD_STORE_FRAME_COUNTER_AHEAD
+	int "Openthread frame counter ahead value"
+	default 100000
+	help
+	  Openthread value ahead of the current frame counter for persistent storage.

@@ -20,6 +20,7 @@
 #include <zephyr/drivers/usb/udc.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
+#include <zephyr/dt-bindings/regulator/nrf5x.h>
 
 #include <nrf_usbd_common.h>
 #include <hal/nrf_usbd.h>
@@ -176,7 +177,8 @@ static void udc_event_xfer_in(const struct device *dev,
 
 		udc_ep_set_busy(dev, ep, false);
 		if (ep == USB_CONTROL_EP_IN) {
-			return udc_event_xfer_ctrl_in(dev, buf);
+			udc_event_xfer_ctrl_in(dev, buf);
+			return;
 		}
 
 		udc_submit_ep_event(dev, buf, 0);
@@ -307,7 +309,7 @@ static int usbd_ctrl_feed_dout(const struct device *dev,
 		return -ENOMEM;
 	}
 
-	net_buf_put(&cfg->fifo, buf);
+	k_fifo_put(&cfg->fifo, buf);
 	udc_nrf_clear_control_out(dev);
 
 	return 0;
@@ -552,7 +554,7 @@ static int udc_nrf_ep_enable(const struct device *dev,
 	uint16_t mps;
 
 	__ASSERT_NO_MSG(cfg);
-	mps = (cfg->mps == 0) ? cfg->caps.mps : cfg->mps;
+	mps = (udc_mps_ep_size(cfg) == 0) ? cfg->caps.mps : udc_mps_ep_size(cfg);
 	nrf_usbd_common_ep_max_packet_size_set(cfg->addr, mps);
 	nrf_usbd_common_ep_enable(cfg->addr);
 	if (!NRF_USBD_EPISO_CHECK(cfg->addr)) {
@@ -818,11 +820,12 @@ static const struct udc_nrf_config udc_nrf_cfg = {
 			     (CLOCK_CONTROL_NRF_SUBSYS_HF192M),
 			     (CLOCK_CONTROL_NRF_SUBSYS_HF)),
 	.pwr = {
-		.dcdcen = IS_ENABLED(CONFIG_SOC_DCDC_NRF52X) ||
-			  IS_ENABLED(CONFIG_SOC_DCDC_NRF53X_APP),
+		.dcdcen = (DT_PROP(DT_INST(0, nordic_nrf5x_regulator), regulator_initial_mode)
+			   == NRF5X_REG_MODE_DCDC),
 #if NRFX_POWER_SUPPORTS_DCDCEN_VDDH
-		.dcdcenhv = IS_ENABLED(CONFIG_SOC_DCDC_NRF52X_HV) ||
-			    IS_ENABLED(CONFIG_SOC_DCDC_NRF53X_HV),
+		.dcdcenhv = COND_CODE_1(CONFIG_SOC_SERIES_NRF52X,
+			(DT_NODE_HAS_STATUS_OKAY(DT_INST(0, nordic_nrf52x_regulator_hv))),
+			(DT_NODE_HAS_STATUS_OKAY(DT_INST(0, nordic_nrf53x_regulator_hv)))),
 #endif
 	},
 

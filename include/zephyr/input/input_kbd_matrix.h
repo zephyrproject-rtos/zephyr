@@ -16,6 +16,8 @@
 
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys_clock.h>
 #include <zephyr/toolchain.h>
@@ -44,7 +46,7 @@ typedef uint8_t kbd_row_t;
  * @brief Enables or disables a specific row, column combination in the actual
  * key mask.
  *
- * This allows enabling or disabling spcific row, column combination in the
+ * This allows enabling or disabling specific row, column combination in the
  * actual key mask in runtime. It can be useful if some of the keys are not
  * present in some configuration, and the specific configuration is determined
  * in runtime. Requires @kconfig{CONFIG_INPUT_KBD_ACTUAL_KEY_MASK_DYNAMIC} to
@@ -53,7 +55,7 @@ typedef uint8_t kbd_row_t;
  * @param dev Pointer to the keyboard matrix device.
  * @param row The matrix row to enable or disable.
  * @param col The matrix column to enable or disable.
- * @param enabled Whether the specificied row, col has to be enabled or disabled.
+ * @param enabled Whether the specified row, col has to be enabled or disabled.
  *
  * @retval 0 If the change is successful.
  * @retval -errno Negative errno if row or col are out of range for the device.
@@ -248,6 +250,9 @@ struct input_kbd_matrix_common_data {
 	uint8_t scan_cycles_idx;
 
 	struct k_sem poll_lock;
+#ifdef CONFIG_PM_DEVICE
+	atomic_t suspended;
+#endif
 
 	struct k_thread thread;
 
@@ -304,6 +309,20 @@ void input_kbd_matrix_drive_column_hook(const struct device *dev, int col);
  * @retval -errno Negative errno in case of failure.
  */
 int input_kbd_matrix_common_init(const struct device *dev);
+
+#ifdef CONFIG_PM_DEVICE
+/**
+ * @brief Common power management action handler.
+ *
+ * This handles PM actions for a keyboard matrix device, meant to be used as
+ * argument of @ref PM_DEVICE_DT_INST_DEFINE.
+ *
+ * @param dev Keyboard matrix device instance.
+ * @param action The power management action to handle.
+ */
+int input_kbd_matrix_pm_action(const struct device *dev,
+			       enum pm_device_action action);
+#endif
 
 /** @} */
 

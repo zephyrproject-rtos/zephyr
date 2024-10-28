@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(net_if, CONFIG_NET_IF_LOG_LEVEL);
 #include <string.h>
 #include <zephyr/net/igmp.h>
 #include <zephyr/net/ipv4_autoconf.h>
+#include <zephyr/net/mld.h>
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_event.h>
 #include <zephyr/net/net_pkt.h>
@@ -84,14 +85,16 @@ static sys_slist_t active_dad_timers;
 static struct k_work_delayable rs_timer;
 static sys_slist_t active_rs_timers;
 #endif
+#endif /* CONFIG_NET_NATIVE_IPV6 */
 
+#if defined(CONFIG_NET_IPV6)
 static struct {
 	struct net_if_ipv6 ipv6;
 	struct net_if *iface;
 } ipv6_addresses[CONFIG_NET_IF_MAX_IPV6_COUNT];
 #endif /* CONFIG_NET_NATIVE_IPV6 */
 
-#if defined(CONFIG_NET_NATIVE_IPV4)
+#if defined(CONFIG_NET_IPV4)
 static struct {
 	struct net_if_ipv4 ipv4;
 	struct net_if *iface;
@@ -172,6 +175,7 @@ struct net_if *z_vrfy_net_if_get_by_index(int index)
 #include <zephyr/syscalls/net_if_get_by_index_mrsh.c>
 #endif
 
+#if defined(CONFIG_NET_NATIVE)
 static inline void net_context_send_cb(struct net_context *context,
 				       int status)
 {
@@ -247,7 +251,8 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 	context = net_pkt_context(pkt);
 
 	if (net_if_flag_is_set(iface, NET_IF_LOWER_UP)) {
-		if (IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS)) {
+		if (IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS) ||
+		    IS_ENABLED(CONFIG_TRACING_NET_CORE)) {
 			pkt_priority = net_pkt_priority(pkt);
 
 			if (IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS_DETAIL)) {
@@ -262,7 +267,8 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 		status = net_if_l2(iface)->send(iface, pkt);
 		net_if_tx_unlock(iface);
 
-		if (IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS)) {
+		if (IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS) ||
+		    IS_ENABLED(CONFIG_TRACING_NET_CORE)) {
 			uint32_t end_tick = k_cycle_get_32();
 
 			net_pkt_set_tx_stats_tick(pkt, end_tick);
@@ -271,6 +277,8 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 						    pkt_priority,
 						    create_time,
 						    end_tick);
+
+			SYS_PORT_TRACING_FUNC(net, tx_time, pkt, end_tick);
 
 			if (IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS_DETAIL)) {
 				update_txtime_stats_detail(
@@ -376,6 +384,7 @@ void net_if_queue_tx(struct net_if *iface, struct net_pkt *pkt)
 			;
 	}
 }
+#endif /* CONFIG_NET_NATIVE */
 
 void net_if_stats_reset(struct net_if *iface)
 {
@@ -439,8 +448,10 @@ static inline void init_iface(struct net_if *iface)
 	net_ipv6_pe_init(iface);
 }
 
+#if defined(CONFIG_NET_NATIVE)
 enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt)
 {
+	const struct net_l2 *l2;
 	struct net_context *context = net_pkt_context(pkt);
 	struct net_linkaddr *dst = net_pkt_lladdr_dst(pkt);
 	enum net_verdict verdict = NET_OK;
@@ -455,10 +466,24 @@ enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt)
 		goto done;
 	}
 
-	if (IS_ENABLED(CONFIG_NET_OFFLOAD) && !net_if_l2(iface)) {
-		NET_WARN("no l2 for iface %p, discard pkt", iface);
-		verdict = NET_DROP;
-		goto done;
+	/* The check for CONFIG_NET_*_OFFLOAD here is an optimization;
+	 * This is currently the only way for net_if_l2 to be NULL or missing send().
+	 */
+	if (IS_ENABLED(CONFIG_NET_OFFLOAD) || IS_ENABLED(CONFIG_NET_SOCKETS_OFFLOAD)) {
+		l2 = net_if_l2(iface);
+		if (l2 == NULL) {
+			/* Offloaded ifaces may choose not to use an L2 at all. */
+			NET_WARN("no l2 for iface %p, discard pkt", iface);
+			verdict = NET_DROP;
+			goto done;
+		} else if (l2->send == NULL) {
+			/* Or, their chosen L2 (for example, OFFLOADED_NETDEV_L2)
+			 * might simply not implement send.
+			 */
+			NET_WARN("l2 for iface %p cannot send, discard pkt", iface);
+			verdict = NET_DROP;
+			goto done;
+		}
 	}
 
 	/* If the ll address is not set at all, then we must set
@@ -530,6 +555,7 @@ done:
 
 	return verdict;
 }
+#endif /* CONFIG_NET_NATIVE */
 
 int net_if_set_link_addr_locked(struct net_if *iface,
 				uint8_t *addr, uint8_t len,
@@ -655,7 +681,7 @@ static enum net_l2_flags l2_flags_get(struct net_if *iface)
 	return flags;
 }
 
-#if defined(CONFIG_NET_NATIVE_IPV4) || defined(CONFIG_NET_NATIVE_IPV6)
+#if defined(CONFIG_NET_IP)
 /* Return how many bits are shared between two IP addresses */
 static uint8_t get_ipaddr_diff(const uint8_t *src, const uint8_t *dst, int addr_len)
 {
@@ -681,7 +707,9 @@ static uint8_t get_ipaddr_diff(const uint8_t *src, const uint8_t *dst, int addr_
 
 	return len;
 }
+#endif /* CONFIG_NET_IP */
 
+#if defined(CONFIG_NET_NATIVE_IPV4) || defined(CONFIG_NET_NATIVE_IPV6)
 static struct net_if_router *iface_router_lookup(struct net_if *iface,
 						 uint8_t family, void *addr)
 {
@@ -1011,7 +1039,7 @@ void net_if_mcast_monitor(struct net_if *iface,
 #define net_if_mcast_monitor(...)
 #endif /* CONFIG_NET_NATIVE_IPV4 || CONFIG_NET_NATIVE_IPV6 */
 
-#if defined(CONFIG_NET_NATIVE_IPV6)
+#if defined(CONFIG_NET_IPV6)
 int net_if_config_ipv6_get(struct net_if *iface, struct net_if_ipv6 **ipv6)
 {
 	int ret = 0;
@@ -1099,11 +1127,16 @@ out:
 	return ret;
 }
 
+#if defined(CONFIG_NET_NATIVE_IPV6)
 #if defined(CONFIG_NET_IPV6_MLD)
 static void join_mcast_allnodes(struct net_if *iface)
 {
 	struct in6_addr addr;
 	int ret;
+
+	if (iface->config.ip.ipv6 == NULL) {
+		return;
+	}
 
 	net_ipv6_addr_create_ll_allnodes_mcast(&addr);
 
@@ -1120,6 +1153,10 @@ static void join_mcast_solicit_node(struct net_if *iface,
 {
 	struct in6_addr addr;
 	int ret;
+
+	if (iface->config.ip.ipv6 == NULL) {
+		return;
+	}
 
 	/* Join to needed multicast groups, RFC 4291 ch 2.8 */
 	net_ipv6_addr_create_solicited_node(my_addr, &addr);
@@ -1160,6 +1197,10 @@ static void leave_mcast_all(struct net_if *iface)
 static void join_mcast_nodes(struct net_if *iface, struct in6_addr *addr)
 {
 	enum net_l2_flags flags = 0;
+
+	if (iface->config.ip.ipv6 == NULL) {
+		return;
+	}
 
 	flags = l2_flags_get(iface);
 	if (flags & NET_L2_MULTICAST) {
@@ -1394,7 +1435,7 @@ static inline void net_if_ipv6_start_dad(struct net_if *iface,
 #endif /* CONFIG_NET_IPV6_DAD */
 
 #if defined(CONFIG_NET_IPV6_ND)
-#define RS_TIMEOUT (1U * MSEC_PER_SEC)
+#define RS_TIMEOUT (CONFIG_NET_IPV6_RS_TIMEOUT * MSEC_PER_SEC)
 #define RS_COUNT 3
 
 static void rs_timeout(struct k_work *work)
@@ -1548,110 +1589,6 @@ out:
 
 #endif
 
-struct net_if_addr *net_if_ipv6_addr_lookup(const struct in6_addr *addr,
-					    struct net_if **ret)
-{
-	struct net_if_addr *ifaddr = NULL;
-
-	STRUCT_SECTION_FOREACH(net_if, iface) {
-		struct net_if_ipv6 *ipv6;
-
-		net_if_lock(iface);
-
-		ipv6 = iface->config.ip.ipv6;
-		if (!ipv6) {
-			net_if_unlock(iface);
-			continue;
-		}
-
-		ARRAY_FOR_EACH(ipv6->unicast, i) {
-			if (!ipv6->unicast[i].is_used ||
-			    ipv6->unicast[i].address.family != AF_INET6) {
-				continue;
-			}
-
-			if (net_ipv6_is_prefix(
-				    addr->s6_addr,
-				    ipv6->unicast[i].address.in6_addr.s6_addr,
-				    128)) {
-
-				if (ret) {
-					*ret = iface;
-				}
-
-				ifaddr = &ipv6->unicast[i];
-				net_if_unlock(iface);
-				goto out;
-			}
-		}
-
-		net_if_unlock(iface);
-	}
-
-out:
-	return ifaddr;
-}
-
-struct net_if_addr *net_if_ipv6_addr_lookup_by_iface(struct net_if *iface,
-						     struct in6_addr *addr)
-{
-	struct net_if_addr *ifaddr = NULL;
-	struct net_if_ipv6 *ipv6;
-
-	net_if_lock(iface);
-
-	ipv6 = iface->config.ip.ipv6;
-	if (!ipv6) {
-		goto out;
-	}
-
-	ARRAY_FOR_EACH(ipv6->unicast, i) {
-		if (!ipv6->unicast[i].is_used ||
-		    ipv6->unicast[i].address.family != AF_INET6) {
-			continue;
-		}
-
-		if (net_ipv6_is_prefix(
-			    addr->s6_addr,
-			    ipv6->unicast[i].address.in6_addr.s6_addr,
-			    128)) {
-			ifaddr = &ipv6->unicast[i];
-			goto out;
-		}
-	}
-
-out:
-	net_if_unlock(iface);
-
-	return ifaddr;
-}
-
-int z_impl_net_if_ipv6_addr_lookup_by_index(const struct in6_addr *addr)
-{
-	struct net_if *iface = NULL;
-	struct net_if_addr *if_addr;
-
-	if_addr = net_if_ipv6_addr_lookup(addr, &iface);
-	if (!if_addr) {
-		return 0;
-	}
-
-	return net_if_get_by_iface(iface);
-}
-
-#ifdef CONFIG_USERSPACE
-static inline int z_vrfy_net_if_ipv6_addr_lookup_by_index(
-					  const struct in6_addr *addr)
-{
-	struct in6_addr addr_v6;
-
-	K_OOPS(k_usermode_from_copy(&addr_v6, (void *)addr, sizeof(addr_v6)));
-
-	return z_impl_net_if_ipv6_addr_lookup_by_index(&addr_v6);
-}
-#include <zephyr/syscalls/net_if_ipv6_addr_lookup_by_index_mrsh.c>
-#endif
-
 /* To be called when interface comes up so that all the non-joined multicast
  * groups are joined.
  */
@@ -1684,7 +1621,7 @@ static void rejoin_ipv6_mcast_groups(struct net_if *iface)
 		int ret;
 
 		if (!ipv6->mcast[i].is_used ||
-		    net_if_ipv4_maddr_is_joined(&ipv6->mcast[i])) {
+		    net_if_ipv6_maddr_is_joined(&ipv6->mcast[i])) {
 			continue;
 		}
 
@@ -1693,6 +1630,10 @@ static void rejoin_ipv6_mcast_groups(struct net_if *iface)
 			NET_ERR("Cannot join mcast address %s for %d (%d)",
 				net_sprint_ipv6_addr(&ipv6->mcast[i].address.in6_addr),
 				net_if_get_by_iface(iface), ret);
+		} else {
+			NET_DBG("Rejoined mcast address %s for %d",
+				net_sprint_ipv6_addr(&ipv6->mcast[i].address.in6_addr),
+				net_if_get_by_iface(iface));
 		}
 	}
 
@@ -1810,6 +1751,119 @@ static void address_start_timer(struct net_if_addr *ifaddr, uint32_t vlifetime)
 	net_timeout_set(&ifaddr->lifetime, vlifetime, k_uptime_get_32());
 	k_work_reschedule(&address_lifetime_timer, K_NO_WAIT);
 }
+#else /* CONFIG_NET_NATIVE_IPV6 */
+#define address_start_timer(...)
+static inline void net_if_ipv6_start_dad(struct net_if *iface,
+					 struct net_if_addr *ifaddr)
+{
+	ifaddr->addr_state = NET_ADDR_PREFERRED;
+}
+#define join_mcast_nodes(...)
+#endif /* CONFIG_NET_NATIVE_IPV6 */
+
+struct net_if_addr *net_if_ipv6_addr_lookup(const struct in6_addr *addr,
+					    struct net_if **ret)
+{
+	struct net_if_addr *ifaddr = NULL;
+
+	STRUCT_SECTION_FOREACH(net_if, iface) {
+		struct net_if_ipv6 *ipv6;
+
+		net_if_lock(iface);
+
+		ipv6 = iface->config.ip.ipv6;
+		if (!ipv6) {
+			net_if_unlock(iface);
+			continue;
+		}
+
+		ARRAY_FOR_EACH(ipv6->unicast, i) {
+			if (!ipv6->unicast[i].is_used ||
+			    ipv6->unicast[i].address.family != AF_INET6) {
+				continue;
+			}
+
+			if (net_ipv6_is_prefix(
+				    addr->s6_addr,
+				    ipv6->unicast[i].address.in6_addr.s6_addr,
+				    128)) {
+
+				if (ret) {
+					*ret = iface;
+				}
+
+				ifaddr = &ipv6->unicast[i];
+				net_if_unlock(iface);
+				goto out;
+			}
+		}
+
+		net_if_unlock(iface);
+	}
+
+out:
+	return ifaddr;
+}
+
+struct net_if_addr *net_if_ipv6_addr_lookup_by_iface(struct net_if *iface,
+						     struct in6_addr *addr)
+{
+	struct net_if_addr *ifaddr = NULL;
+	struct net_if_ipv6 *ipv6;
+
+	net_if_lock(iface);
+
+	ipv6 = iface->config.ip.ipv6;
+	if (!ipv6) {
+		goto out;
+	}
+
+	ARRAY_FOR_EACH(ipv6->unicast, i) {
+		if (!ipv6->unicast[i].is_used ||
+		    ipv6->unicast[i].address.family != AF_INET6) {
+			continue;
+		}
+
+		if (net_ipv6_is_prefix(
+			    addr->s6_addr,
+			    ipv6->unicast[i].address.in6_addr.s6_addr,
+			    128)) {
+			ifaddr = &ipv6->unicast[i];
+			goto out;
+		}
+	}
+
+out:
+	net_if_unlock(iface);
+
+	return ifaddr;
+}
+
+int z_impl_net_if_ipv6_addr_lookup_by_index(const struct in6_addr *addr)
+{
+	struct net_if *iface = NULL;
+	struct net_if_addr *if_addr;
+
+	if_addr = net_if_ipv6_addr_lookup(addr, &iface);
+	if (!if_addr) {
+		return 0;
+	}
+
+	return net_if_get_by_iface(iface);
+}
+
+#ifdef CONFIG_USERSPACE
+static inline int z_vrfy_net_if_ipv6_addr_lookup_by_index(
+					  const struct in6_addr *addr)
+{
+	struct in6_addr addr_v6;
+
+	K_OOPS(k_usermode_from_copy(&addr_v6, (void *)addr, sizeof(addr_v6)));
+
+	return z_impl_net_if_ipv6_addr_lookup_by_index(&addr_v6);
+}
+#include <zephyr/syscalls/net_if_ipv6_addr_lookup_by_index_mrsh.c>
+#endif
 
 void net_if_ipv6_addr_update_lifetime(struct net_if_addr *ifaddr,
 				      uint32_t vlifetime)
@@ -1949,27 +2003,34 @@ out:
 bool net_if_ipv6_addr_rm(struct net_if *iface, const struct in6_addr *addr)
 {
 	struct net_if_ipv6 *ipv6;
+	bool result = true;
 	int ret;
 
 	NET_ASSERT(addr);
 
+	net_if_lock(iface);
+
 	ipv6 = iface->config.ip.ipv6;
 	if (!ipv6) {
-		return false;
+		result = false;
+		goto out;
 	}
 
 	ret = net_if_addr_unref(iface, AF_INET6, addr);
 	if (ret > 0) {
 		NET_DBG("Address %s still in use (ref %d)",
 			net_sprint_ipv6_addr(addr), ret);
-		return false;
-
+		result = false;
+		goto out;
 	} else if (ret < 0) {
 		NET_DBG("Address %s not found (%d)",
 			net_sprint_ipv6_addr(addr), ret);
 	}
 
-	return true;
+out:
+	net_if_unlock(iface);
+
+	return result;
 }
 
 bool z_impl_net_if_ipv6_addr_add_by_index(int index,
@@ -2095,7 +2156,7 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_add(struct net_if *iface,
 	}
 
 	if (net_if_ipv6_maddr_lookup(addr, &iface)) {
-		NET_WARN("Multicast address %s is is already registered.",
+		NET_WARN("Multicast address %s is already registered.",
 			net_sprint_ipv6_addr(addr));
 		goto out;
 	}
@@ -2265,6 +2326,118 @@ void net_if_ipv6_maddr_join(struct net_if *iface, struct net_if_mcast_addr *addr
 	net_if_unlock(iface);
 }
 
+struct in6_addr *net_if_ipv6_get_ll(struct net_if *iface,
+				    enum net_addr_state addr_state)
+{
+	struct in6_addr *addr = NULL;
+	struct net_if_ipv6 *ipv6;
+
+	net_if_lock(iface);
+
+	ipv6 = iface->config.ip.ipv6;
+	if (!ipv6) {
+		goto out;
+	}
+
+	ARRAY_FOR_EACH(ipv6->unicast, i) {
+		if (!ipv6->unicast[i].is_used ||
+		    (addr_state != NET_ADDR_ANY_STATE &&
+		     ipv6->unicast[i].addr_state != addr_state) ||
+		    ipv6->unicast[i].address.family != AF_INET6) {
+			continue;
+		}
+
+		if (net_ipv6_is_ll_addr(&ipv6->unicast[i].address.in6_addr)) {
+			addr = &ipv6->unicast[i].address.in6_addr;
+			goto out;
+		}
+	}
+
+out:
+	net_if_unlock(iface);
+
+	return addr;
+}
+
+struct in6_addr *net_if_ipv6_get_ll_addr(enum net_addr_state state,
+					 struct net_if **iface)
+{
+	struct in6_addr *addr = NULL;
+
+	STRUCT_SECTION_FOREACH(net_if, tmp) {
+		net_if_lock(tmp);
+
+		addr = net_if_ipv6_get_ll(tmp, state);
+		if (addr) {
+			if (iface) {
+				*iface = tmp;
+			}
+
+			net_if_unlock(tmp);
+			goto out;
+		}
+
+		net_if_unlock(tmp);
+	}
+
+out:
+	return addr;
+}
+
+static inline struct in6_addr *check_global_addr(struct net_if *iface,
+						 enum net_addr_state state)
+{
+	struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
+
+	if (!ipv6) {
+		return NULL;
+	}
+
+	ARRAY_FOR_EACH(ipv6->unicast, i) {
+		if (!ipv6->unicast[i].is_used ||
+		    (ipv6->unicast[i].addr_state != state) ||
+		    ipv6->unicast[i].address.family != AF_INET6) {
+			continue;
+		}
+
+		if (!net_ipv6_is_ll_addr(&ipv6->unicast[i].address.in6_addr)) {
+			return &ipv6->unicast[i].address.in6_addr;
+		}
+	}
+
+	return NULL;
+}
+
+struct in6_addr *net_if_ipv6_get_global_addr(enum net_addr_state state,
+					     struct net_if **iface)
+{
+	struct in6_addr *addr = NULL;
+
+	STRUCT_SECTION_FOREACH(net_if, tmp) {
+		if (iface && *iface && tmp != *iface) {
+			continue;
+		}
+
+		net_if_lock(tmp);
+		addr = check_global_addr(tmp, state);
+		if (addr) {
+			if (iface) {
+				*iface = tmp;
+			}
+
+			net_if_unlock(tmp);
+			goto out;
+		}
+
+		net_if_unlock(tmp);
+	}
+
+out:
+
+	return addr;
+}
+
+#if defined(CONFIG_NET_NATIVE_IPV6)
 static void remove_prefix_addresses(struct net_if *iface,
 				    struct net_if_ipv6 *ipv6,
 				    struct in6_addr *addr,
@@ -2810,116 +2983,7 @@ out:
 	net_if_unlock(iface);
 }
 
-struct in6_addr *net_if_ipv6_get_ll(struct net_if *iface,
-				    enum net_addr_state addr_state)
-{
-	struct in6_addr *addr = NULL;
-	struct net_if_ipv6 *ipv6;
-
-	net_if_lock(iface);
-
-	ipv6 = iface->config.ip.ipv6;
-	if (!ipv6) {
-		goto out;
-	}
-
-	ARRAY_FOR_EACH(ipv6->unicast, i) {
-		if (!ipv6->unicast[i].is_used ||
-		    (addr_state != NET_ADDR_ANY_STATE &&
-		     ipv6->unicast[i].addr_state != addr_state) ||
-		    ipv6->unicast[i].address.family != AF_INET6) {
-			continue;
-		}
-
-		if (net_ipv6_is_ll_addr(&ipv6->unicast[i].address.in6_addr)) {
-			addr = &ipv6->unicast[i].address.in6_addr;
-			goto out;
-		}
-	}
-
-out:
-	net_if_unlock(iface);
-
-	return addr;
-}
-
-struct in6_addr *net_if_ipv6_get_ll_addr(enum net_addr_state state,
-					 struct net_if **iface)
-{
-	struct in6_addr *addr = NULL;
-
-	STRUCT_SECTION_FOREACH(net_if, tmp) {
-		net_if_lock(tmp);
-
-		addr = net_if_ipv6_get_ll(tmp, state);
-		if (addr) {
-			if (iface) {
-				*iface = tmp;
-			}
-
-			net_if_unlock(tmp);
-			goto out;
-		}
-
-		net_if_unlock(tmp);
-	}
-
-out:
-	return addr;
-}
-
-static inline struct in6_addr *check_global_addr(struct net_if *iface,
-						 enum net_addr_state state)
-{
-	struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
-
-	if (!ipv6) {
-		return NULL;
-	}
-
-	ARRAY_FOR_EACH(ipv6->unicast, i) {
-		if (!ipv6->unicast[i].is_used ||
-		    (ipv6->unicast[i].addr_state != state) ||
-		    ipv6->unicast[i].address.family != AF_INET6) {
-			continue;
-		}
-
-		if (!net_ipv6_is_ll_addr(&ipv6->unicast[i].address.in6_addr)) {
-			return &ipv6->unicast[i].address.in6_addr;
-		}
-	}
-
-	return NULL;
-}
-
-struct in6_addr *net_if_ipv6_get_global_addr(enum net_addr_state state,
-					     struct net_if **iface)
-{
-	struct in6_addr *addr = NULL;
-
-	STRUCT_SECTION_FOREACH(net_if, tmp) {
-		if (iface && *iface && tmp != *iface) {
-			continue;
-		}
-
-		net_if_lock(tmp);
-		addr = check_global_addr(tmp, state);
-		if (addr) {
-			if (iface) {
-				*iface = tmp;
-			}
-
-			net_if_unlock(tmp);
-			goto out;
-		}
-
-		net_if_unlock(tmp);
-	}
-
-out:
-
-	return addr;
-}
+#endif /* CONFIG_NET_NATIVE_IPV6 */
 
 static uint8_t get_diff_ipv6(const struct in6_addr *src,
 			  const struct in6_addr *dst)
@@ -3146,6 +3210,8 @@ struct net_if *net_if_ipv6_select_src_iface(const struct in6_addr *dst)
 	return iface;
 }
 
+#if defined(CONFIG_NET_NATIVE_IPV6)
+
 uint32_t net_if_ipv6_calc_reachable_time(struct net_if_ipv6 *ipv6)
 {
 	uint32_t min_reachable, max_reachable;
@@ -3222,17 +3288,8 @@ static void iface_ipv6_init(int if_count)
 		net_if_ipv6_set_reachable_time(&ipv6_addresses[i].ipv6);
 	}
 }
-
-#else /* CONFIG_NET_NATIVE_IPV6 */
-#define join_mcast_allnodes(...)
-#define join_mcast_solicit_node(...)
-#define leave_mcast_all(...)
-#define clear_joined_ipv6_mcast_groups(...)
-#define join_mcast_nodes(...)
-#define iface_ipv6_start(...)
-#define iface_ipv6_stop(...)
-#define iface_ipv6_init(...)
-
+#endif /* CONFIG_NET_NATIVE_IPV6 */
+#else /* CONFIG_NET_IPV6 */
 struct net_if_mcast_addr *net_if_ipv6_maddr_lookup(const struct in6_addr *addr,
 						   struct net_if **iface)
 {
@@ -3259,9 +3316,18 @@ struct in6_addr *net_if_ipv6_get_global_addr(enum net_addr_state state,
 
 	return NULL;
 }
-#endif /* CONFIG_NET_NATIVE_IPV6 */
+#endif /* CONFIG_NET_IPV6 */
 
-#if defined(CONFIG_NET_NATIVE_IPV4)
+#if !defined(CONFIG_NET_NATIVE_IPV6)
+#define join_mcast_allnodes(...)
+#define leave_mcast_all(...)
+#define clear_joined_ipv6_mcast_groups(...)
+#define iface_ipv6_start(...)
+#define iface_ipv6_stop(...)
+#define iface_ipv6_init(...)
+#endif /* !CONFIG_NET_NATIVE_IPV4 */
+
+#if defined(CONFIG_NET_IPV4)
 int net_if_config_ipv4_get(struct net_if *iface, struct net_if_ipv4 **ipv4)
 {
 	int ret = 0;
@@ -3345,107 +3411,6 @@ out:
 	net_if_unlock(iface);
 
 	return ret;
-}
-
-uint8_t net_if_ipv4_get_ttl(struct net_if *iface)
-{
-	int ret = 0;
-
-	net_if_lock(iface);
-
-	if (net_if_config_ipv4_get(iface, NULL) < 0) {
-		goto out;
-	}
-
-	if (!iface->config.ip.ipv4) {
-		goto out;
-	}
-
-	ret = iface->config.ip.ipv4->ttl;
-out:
-	net_if_unlock(iface);
-
-	return ret;
-}
-
-void net_if_ipv4_set_ttl(struct net_if *iface, uint8_t ttl)
-{
-	net_if_lock(iface);
-
-	if (net_if_config_ipv4_get(iface, NULL) < 0) {
-		goto out;
-	}
-
-	if (!iface->config.ip.ipv4) {
-		goto out;
-	}
-
-	iface->config.ip.ipv4->ttl = ttl;
-out:
-	net_if_unlock(iface);
-}
-
-uint8_t net_if_ipv4_get_mcast_ttl(struct net_if *iface)
-{
-	int ret = 0;
-
-	net_if_lock(iface);
-
-	if (net_if_config_ipv4_get(iface, NULL) < 0) {
-		goto out;
-	}
-
-	if (!iface->config.ip.ipv4) {
-		goto out;
-	}
-
-	ret = iface->config.ip.ipv4->mcast_ttl;
-out:
-	net_if_unlock(iface);
-
-	return ret;
-}
-
-void net_if_ipv4_set_mcast_ttl(struct net_if *iface, uint8_t ttl)
-{
-	net_if_lock(iface);
-
-	if (net_if_config_ipv4_get(iface, NULL) < 0) {
-		goto out;
-	}
-
-	if (!iface->config.ip.ipv4) {
-		goto out;
-	}
-
-	iface->config.ip.ipv4->mcast_ttl = ttl;
-out:
-	net_if_unlock(iface);
-}
-
-struct net_if_router *net_if_ipv4_router_lookup(struct net_if *iface,
-						struct in_addr *addr)
-{
-	return iface_router_lookup(iface, AF_INET, addr);
-}
-
-struct net_if_router *net_if_ipv4_router_find_default(struct net_if *iface,
-						      struct in_addr *addr)
-{
-	return iface_router_find_default(iface, AF_INET, addr);
-}
-
-struct net_if_router *net_if_ipv4_router_add(struct net_if *iface,
-					     struct in_addr *addr,
-					     bool is_default,
-					     uint16_t lifetime)
-{
-	return iface_router_add(iface, AF_INET, addr, is_default, lifetime);
-}
-
-bool net_if_ipv4_router_rm(struct net_if_router *router)
-{
-	return iface_router_rm(router);
 }
 
 bool net_if_ipv4_addr_mask_cmp(struct net_if *iface,
@@ -4042,6 +4007,27 @@ bool z_vrfy_net_if_ipv4_set_netmask_by_addr_by_index(int index,
 #include <zephyr/syscalls/net_if_ipv4_set_netmask_by_addr_by_index_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
+struct in_addr net_if_ipv4_get_gw(struct net_if *iface)
+{
+	struct in_addr gw = { 0 };
+
+	net_if_lock(iface);
+
+	if (net_if_config_ipv4_get(iface, NULL) < 0) {
+		goto out;
+	}
+
+	if (!iface->config.ip.ipv4) {
+		goto out;
+	}
+
+	gw = iface->config.ip.ipv4->gw;
+out:
+	net_if_unlock(iface);
+
+	return gw;
+}
+
 void net_if_ipv4_set_gw(struct net_if *iface, const struct in_addr *gw)
 {
 	net_if_lock(iface);
@@ -4310,27 +4296,34 @@ out:
 bool net_if_ipv4_addr_rm(struct net_if *iface, const struct in_addr *addr)
 {
 	struct net_if_ipv4 *ipv4;
+	bool result = true;
 	int ret;
 
 	NET_ASSERT(addr);
 
+	net_if_lock(iface);
+
 	ipv4 = iface->config.ip.ipv4;
 	if (!ipv4) {
-		return false;
+		result = false;
+		goto out;
 	}
 
 	ret = net_if_addr_unref(iface, AF_INET, addr);
 	if (ret > 0) {
 		NET_DBG("Address %s still in use (ref %d)",
 			net_sprint_ipv4_addr(addr), ret);
-		return false;
-
+		result = false;
+		goto out;
 	} else if (ret < 0) {
 		NET_DBG("Address %s not found (%d)",
 			net_sprint_ipv4_addr(addr), ret);
 	}
 
-	return true;
+out:
+	net_if_unlock(iface);
+
+	return result;
 }
 
 bool z_impl_net_if_ipv4_addr_add_by_index(int index,
@@ -4609,6 +4602,109 @@ void net_if_ipv4_maddr_join(struct net_if *iface, struct net_if_mcast_addr *addr
 	net_if_unlock(iface);
 }
 
+#if defined(CONFIG_NET_NATIVE_IPV4)
+uint8_t net_if_ipv4_get_ttl(struct net_if *iface)
+{
+	int ret = 0;
+
+	net_if_lock(iface);
+
+	if (net_if_config_ipv4_get(iface, NULL) < 0) {
+		goto out;
+	}
+
+	if (!iface->config.ip.ipv4) {
+		goto out;
+	}
+
+	ret = iface->config.ip.ipv4->ttl;
+out:
+	net_if_unlock(iface);
+
+	return ret;
+}
+
+void net_if_ipv4_set_ttl(struct net_if *iface, uint8_t ttl)
+{
+	net_if_lock(iface);
+
+	if (net_if_config_ipv4_get(iface, NULL) < 0) {
+		goto out;
+	}
+
+	if (!iface->config.ip.ipv4) {
+		goto out;
+	}
+
+	iface->config.ip.ipv4->ttl = ttl;
+out:
+	net_if_unlock(iface);
+}
+
+uint8_t net_if_ipv4_get_mcast_ttl(struct net_if *iface)
+{
+	int ret = 0;
+
+	net_if_lock(iface);
+
+	if (net_if_config_ipv4_get(iface, NULL) < 0) {
+		goto out;
+	}
+
+	if (!iface->config.ip.ipv4) {
+		goto out;
+	}
+
+	ret = iface->config.ip.ipv4->mcast_ttl;
+out:
+	net_if_unlock(iface);
+
+	return ret;
+}
+
+void net_if_ipv4_set_mcast_ttl(struct net_if *iface, uint8_t ttl)
+{
+	net_if_lock(iface);
+
+	if (net_if_config_ipv4_get(iface, NULL) < 0) {
+		goto out;
+	}
+
+	if (!iface->config.ip.ipv4) {
+		goto out;
+	}
+
+	iface->config.ip.ipv4->mcast_ttl = ttl;
+out:
+	net_if_unlock(iface);
+}
+
+struct net_if_router *net_if_ipv4_router_lookup(struct net_if *iface,
+						struct in_addr *addr)
+{
+	return iface_router_lookup(iface, AF_INET, addr);
+}
+
+struct net_if_router *net_if_ipv4_router_find_default(struct net_if *iface,
+						      struct in_addr *addr)
+{
+	return iface_router_find_default(iface, AF_INET, addr);
+}
+
+struct net_if_router *net_if_ipv4_router_add(struct net_if *iface,
+					     struct in_addr *addr,
+					     bool is_default,
+					     uint16_t lifetime)
+{
+	return iface_router_add(iface, AF_INET, addr, is_default, lifetime);
+}
+
+bool net_if_ipv4_router_rm(struct net_if_router *router)
+{
+	return iface_router_rm(router);
+}
+
+
 static void iface_ipv4_init(int if_count)
 {
 	int i;
@@ -4655,13 +4751,8 @@ static void iface_ipv4_start(struct net_if *iface)
 		net_if_start_acd(iface);
 	}
 }
-
-
-#else /* CONFIG_NET_NATIVE_IPV4 */
-#define leave_ipv4_mcast_all(...)
-#define iface_ipv4_init(...)
-#define iface_ipv4_start(...)
-
+#endif /* CONFIG_NET_NATIVE_IPV4 */
+#else  /* CONFIG_NET_IPV4 */
 struct net_if_mcast_addr *net_if_ipv4_maddr_lookup(const struct in_addr *addr,
 						   struct net_if **iface)
 {
@@ -4688,7 +4779,13 @@ struct in_addr *net_if_ipv4_get_global_addr(struct net_if *iface,
 
 	return NULL;
 }
-#endif /* CONFIG_NET_NATIVE_IPV4 */
+#endif /* CONFIG_NET_IPV4 */
+
+#if !defined(CONFIG_NET_NATIVE_IPV4)
+#define leave_ipv4_mcast_all(...)
+#define iface_ipv4_init(...)
+#define iface_ipv4_start(...)
+#endif /* !CONFIG_NET_NATIVE_IPV4 */
 
 struct net_if *net_if_select_src_iface(const struct sockaddr *dst)
 {
@@ -4727,11 +4824,14 @@ static struct net_if_addr *get_ifaddr(struct net_if *iface,
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
 		struct net_if_ipv6 *ipv6 =
-			COND_CODE_1(CONFIG_NET_NATIVE_IPV6, (iface->config.ip.ipv6), (NULL));
-
+			COND_CODE_1(CONFIG_NET_IPV6, (iface->config.ip.ipv6), (NULL));
 		struct in6_addr maddr;
 		unsigned int maddr_count = 0;
 		int found = -1;
+
+		if (ipv6 == NULL) {
+			goto out;
+		}
 
 		net_ipv6_addr_create_solicited_node((struct in6_addr *)addr,
 						    &maddr);
@@ -4774,7 +4874,11 @@ static struct net_if_addr *get_ifaddr(struct net_if *iface,
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
 		struct net_if_ipv4 *ipv4 =
-			COND_CODE_1(CONFIG_NET_NATIVE_IPV4, (iface->config.ip.ipv4), (NULL));
+			COND_CODE_1(CONFIG_NET_IPV4, (iface->config.ip.ipv4), (NULL));
+
+		if (ipv4 == NULL) {
+			goto out;
+		}
 
 		ARRAY_FOR_EACH(ipv4->unicast, i) {
 			if (!ipv4->unicast[i].ipv4.is_used) {
@@ -4806,7 +4910,7 @@ static void remove_ipv6_ifaddr(struct net_if *iface,
 
 	net_if_lock(iface);
 
-	ipv6 = COND_CODE_1(CONFIG_NET_NATIVE_IPV6, (iface->config.ip.ipv6), (NULL));
+	ipv6 = COND_CODE_1(CONFIG_NET_IPV6, (iface->config.ip.ipv6), (NULL));
 	if (!ipv6) {
 		goto out;
 	}
@@ -4864,7 +4968,7 @@ static void remove_ipv4_ifaddr(struct net_if *iface,
 
 	net_if_lock(iface);
 
-	ipv4 = COND_CODE_1(CONFIG_NET_NATIVE_IPV4, (iface->config.ip.ipv4), (NULL));
+	ipv4 = COND_CODE_1(CONFIG_NET_IPV4, (iface->config.ip.ipv4), (NULL));
 	if (!ipv4) {
 		goto out;
 	}
@@ -5078,7 +5182,19 @@ static bool need_calc_checksum(struct net_if *iface, enum ethernet_hw_caps caps,
 	enum ethernet_config_type config_type;
 
 	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
-		return true;
+		/* For VLANs, figure out the main Ethernet interface and
+		 * get the offloading capabilities from it.
+		 */
+		if (IS_ENABLED(CONFIG_NET_VLAN) && net_eth_is_vlan_interface(iface)) {
+			iface = net_eth_get_vlan_main(iface);
+			if (iface == NULL) {
+				return true;
+			}
+
+			NET_ASSERT(net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET));
+		} else {
+			return true;
+		}
 	}
 
 	if (!(net_eth_get_hw_capabilities(iface) & caps)) {
@@ -5156,13 +5272,11 @@ static void notify_iface_up(struct net_if *iface)
 	/* In many places it's assumed that link address was set with
 	 * net_if_set_link_addr(). Better check that now.
 	 */
-#if defined(CONFIG_NET_L2_CANBUS_RAW)
-	if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
+	if (IS_ENABLED(CONFIG_NET_L2_CANBUS_RAW) &&
+	    IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
 	    (net_if_l2(iface) == &NET_L2_GET_NAME(CANBUS_RAW)))	{
 		/* CAN does not require link address. */
-	} else
-#endif	/* CONFIG_NET_L2_CANBUS_RAW */
-	{
+	} else {
 		if (!net_if_is_offloaded(iface)) {
 			NET_ASSERT(net_if_get_link_addr(iface)->addr != NULL);
 		}
@@ -5667,10 +5781,12 @@ bool net_if_is_wifi(struct net_if *iface)
 	if (net_if_is_offloaded(iface)) {
 		return net_off_is_wifi_offloaded(iface);
 	}
-#if defined(CONFIG_NET_L2_ETHERNET)
-	return net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET) &&
-		net_eth_type_is_wifi(iface);
-#endif
+
+	if (IS_ENABLED(CONFIG_NET_L2_ETHERNET)) {
+		return net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET) &&
+			net_eth_type_is_wifi(iface);
+	}
+
 	return false;
 }
 
@@ -5686,36 +5802,34 @@ struct net_if *net_if_get_first_wifi(void)
 
 struct net_if *net_if_get_wifi_sta(void)
 {
-	struct ethernet_context *eth_ctx = NULL;
-
 	STRUCT_SECTION_FOREACH(net_if, iface) {
-		eth_ctx = net_if_l2_data(iface);
 		if (net_if_is_wifi(iface)
 #ifdef CONFIG_WIFI_NM
-			&& (wifi_nm_get_type_iface(iface) == (1 << WIFI_TYPE_STA))
+			&& wifi_nm_iface_is_sta(iface)
 #endif
 			) {
 			return iface;
 		}
 	}
-	return NULL;
+
+	/* If no STA interface is found, return the first WiFi interface */
+	return net_if_get_first_wifi();
 }
 
 struct net_if *net_if_get_wifi_sap(void)
 {
-	struct ethernet_context *eth_ctx = NULL;
-
 	STRUCT_SECTION_FOREACH(net_if, iface) {
-		eth_ctx = net_if_l2_data(iface);
 		if (net_if_is_wifi(iface)
 #ifdef CONFIG_WIFI_NM
-			&& (wifi_nm_get_type_iface(iface) == (1 << WIFI_TYPE_SAP))
+			&& wifi_nm_iface_is_sap(iface)
 #endif
 			) {
 			return iface;
 		}
 	}
-	return NULL;
+
+	/* If no STA interface is found, return the first WiFi interface */
+	return net_if_get_first_wifi();
 }
 
 int net_if_get_name(struct net_if *iface, char *buf, int len)
@@ -5798,68 +5912,48 @@ int net_if_get_by_name(const char *name)
 #if defined(CONFIG_NET_INTERFACE_NAME)
 static void set_default_name(struct net_if *iface)
 {
-	char name[CONFIG_NET_INTERFACE_NAME_LEN + 1] = { 0 };
+	char name[CONFIG_NET_INTERFACE_NAME_LEN + 1];
 	int ret;
 
 	if (net_if_is_wifi(iface)) {
 		static int count;
 
-		snprintk(name, sizeof(name) - 1, "wlan%d", count++);
+		snprintk(name, sizeof(name), "wlan%d", count++);
 
-	} else if (IS_ENABLED(CONFIG_NET_L2_ETHERNET)) {
-#if defined(CONFIG_NET_L2_ETHERNET)
-		if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
-			static int count;
-
-			snprintk(name, sizeof(name) - 1, "eth%d", count++);
-		}
-#endif /* CONFIG_NET_L2_ETHERNET */
-	}
-
-	if (IS_ENABLED(CONFIG_NET_L2_IEEE802154)) {
-#if defined(CONFIG_NET_L2_IEEE802154)
-		if (net_if_l2(iface) == &NET_L2_GET_NAME(IEEE802154)) {
-			static int count;
-
-			snprintk(name, sizeof(name) - 1, "ieee%d", count++);
-		}
-#endif /* CONFIG_NET_L2_IEEE802154 */
-	}
-
-	if (IS_ENABLED(CONFIG_NET_L2_DUMMY)) {
-#if defined(CONFIG_NET_L2_DUMMY)
-		if (net_if_l2(iface) == &NET_L2_GET_NAME(DUMMY)) {
-			static int count;
-
-			snprintk(name, sizeof(name) - 1, "dummy%d", count++);
-		}
-#endif /* CONFIG_NET_L2_DUMMY */
-	}
-
-	if (IS_ENABLED(CONFIG_NET_L2_CANBUS_RAW)) {
-#if defined(CONFIG_NET_L2_CANBUS_RAW)
-		if (net_if_l2(iface) == &NET_L2_GET_NAME(CANBUS_RAW)) {
-			static int count;
-
-			snprintk(name, sizeof(name) - 1, "can%d", count++);
-		}
-#endif /* CONFIG_NET_L2_CANBUS_RAW */
-	}
-
-	if (IS_ENABLED(CONFIG_NET_L2_PPP)) {
-#if defined(CONFIG_NET_L2_PPP)
-		if (net_if_l2(iface) == &NET_L2_GET_NAME(PPP)) {
-			static int count;
-
-			snprintk(name, sizeof(name) - 1, "ppp%d", count++);
-		}
-#endif /* CONFIG_NET_L2_PPP */
-	}
-
-	if (name[0] == '\0') {
+	} else if (IS_ENABLED(CONFIG_NET_L2_ETHERNET) &&
+		   (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET))) {
 		static int count;
 
-		snprintk(name, sizeof(name) - 1, "net%d", count++);
+		snprintk(name, sizeof(name), "eth%d", count++);
+	} else if (IS_ENABLED(CONFIG_NET_L2_IEEE802154) &&
+		   (net_if_l2(iface) == &NET_L2_GET_NAME(IEEE802154))) {
+		static int count;
+
+		snprintk(name, sizeof(name), "ieee%d", count++);
+	} else if (IS_ENABLED(CONFIG_NET_L2_DUMMY) &&
+		   (net_if_l2(iface) == &NET_L2_GET_NAME(DUMMY))) {
+		static int count;
+
+		snprintk(name, sizeof(name), "dummy%d", count++);
+	} else if (IS_ENABLED(CONFIG_NET_L2_CANBUS_RAW) &&
+		   (net_if_l2(iface) == &NET_L2_GET_NAME(CANBUS_RAW))) {
+		static int count;
+
+		snprintk(name, sizeof(name), "can%d", count++);
+	} else if (IS_ENABLED(CONFIG_NET_L2_PPP) &&
+		   (net_if_l2(iface) == &NET_L2_GET_NAME(PPP))) {
+		static int count;
+
+		snprintk(name, sizeof(name) - 1, "ppp%d", count++);
+	} else if (IS_ENABLED(CONFIG_NET_L2_OPENTHREAD) &&
+		   (net_if_l2(iface) == &NET_L2_GET_NAME(OPENTHREAD))) {
+		static int count;
+
+		snprintk(name, sizeof(name), "thread%d", count++);
+	} else {
+		static int count;
+
+		snprintk(name, sizeof(name), "net%d", count++);
 	}
 
 	ret = net_if_set_name(iface, name);

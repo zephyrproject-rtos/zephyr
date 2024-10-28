@@ -124,7 +124,7 @@ int pthread_condattr_init(pthread_condattr_t *att);
 int pthread_condattr_destroy(pthread_condattr_t *att);
 
 /**
- * @brief POSIX threading comatibility API
+ * @brief POSIX threading compatibility API
  *
  * See IEEE 1003.1
  *
@@ -183,6 +183,8 @@ int pthread_condattr_setclock(pthread_condattr_t *att, clockid_t clock_id);
  *  FIXME: Only PRIO_NONE is supported. Implement other protocols.
  */
 #define PTHREAD_PRIO_NONE           0
+#define PTHREAD_PRIO_INHERIT        1
+#define PTHREAD_PRIO_PROTECT        2
 
 /**
  * @brief POSIX threading compatibility API
@@ -348,15 +350,21 @@ int pthread_barrierattr_getpshared(const pthread_barrierattr_t *ZRESTRICT attr,
 int pthread_condattr_getpshared(const pthread_condattr_t * int *);
 int pthread_condattr_setpshared(pthread_condattr_t *, int);
 int pthread_mutex_consistent(pthread_mutex_t *);
-int pthread_mutex_getprioceiling(const pthread_mutex_t * int *);
-int pthread_mutex_setprioceiling(pthread_mutex_t *, int int *);
-int pthread_mutexattr_getprioceiling(const pthread_mutexattr_t *, int *);
 int pthread_mutexattr_getpshared(const pthread_mutexattr_t * int *);
 int pthread_mutexattr_getrobust(const pthread_mutexattr_t * int *);
-int pthread_mutexattr_setprioceiling(pthread_mutexattr_t *, int);
 int pthread_mutexattr_setpshared(pthread_mutexattr_t *, int);
 int pthread_mutexattr_setrobust(pthread_mutexattr_t *, int);
 */
+
+#ifdef CONFIG_POSIX_THREAD_PRIO_PROTECT
+int pthread_mutex_getprioceiling(const pthread_mutex_t *ZRESTRICT mutex,
+				 int *ZRESTRICT prioceiling);
+int pthread_mutex_setprioceiling(pthread_mutex_t *ZRESTRICT mutex, int prioceiling,
+				 int *ZRESTRICT old_ceiling);
+int pthread_mutexattr_getprioceiling(const pthread_mutexattr_t *ZRESTRICT attr,
+				     int *ZRESTRICT prioceiling);
+int pthread_mutexattr_setprioceiling(pthread_mutexattr_t *attr, int prioceiling);
+#endif /* CONFIG_POSIX_THREAD_PRIO_PROTECT */
 
 /* Base Pthread related APIs */
 

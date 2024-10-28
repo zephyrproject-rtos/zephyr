@@ -62,7 +62,7 @@ extern "C" {
  * @return The index (>= 0) of the currently active multiplexed device on success
  * @retval -EINVAL If @p dev is invalid
  */
-__syscall ssize_t devmux_select_get(const struct device *dev);
+__syscall int devmux_select_get(const struct device *dev);
 
 /**
  * @brief Set the selection of a devmux device.

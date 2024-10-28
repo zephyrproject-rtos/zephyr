@@ -11,3 +11,14 @@ tests:
       - gpio
       - i2c
       - spi
+
+  drivers.eeprom.emul.build:
+    min_ram: 32
+    platform_exclude: serpente
+    depends_on:
+      - gpio
+      - i2c
+      - spi
+    extra_configs:
+      - CONFIG_EMUL=y
+      - CONFIG_EEPROM_AT2X_EMUL=y

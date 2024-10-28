@@ -1,6 +1,12 @@
 name: Compliance Checks
 
-on: pull_request
+on:
+  pull_request:
+    types:
+    - edited
+    - opened
+    - reopened
+    - synchronize
 
 jobs:
   check_compliance:
@@ -32,7 +38,7 @@ jobs:
       run: |
         pip3 install setuptools
         pip3 install wheel
-        pip3 install python-magic lxml junitparser gitlint pylint pykwalify yamllint
+        pip3 install python-magic lxml junitparser gitlint pylint pykwalify yamllint clang-format unidiff sphinx-lint
         pip3 install west
 
     - name: west setup
@@ -46,11 +52,20 @@ jobs:
         [[ "$(git rev-list --merges --count origin/${BASE_REF}..)" == "0" ]] || \
         (echo "::error ::Merge commits not allowed, rebase instead";false)
         git rebase origin/${BASE_REF}
+        git clean -f -d
         # debug
         git log  --pretty=oneline | head -n 10
         west init -l . || true
         west config manifest.group-filter -- +ci,-optional
         west update -o=--depth=1 -n 2>&1 1> west.update.log || west update -o=--depth=1 -n 2>&1 1> west.update2.log
+
+    - name: Check for PR description
+      if: ${{ github.event.pull_request.body == '' }}
+      continue-on-error: true
+      id: pr_description
+      run: |
+        echo "Pull request description cannot be empty."
+        exit 1
 
     - name: Run Compliance Tests
       continue-on-error: true
@@ -80,19 +95,33 @@ jobs:
           exit 1;
         fi
 
+        warns=("ClangFormat")
         files=($(./scripts/ci/check_compliance.py -l))
+
         for file in "${files[@]}"; do
           f="${file}.txt"
           if [[ -s $f ]]; then
-            errors=$(cat $f)
-            errors="${errors//'%'/'%25'}"
-            errors="${errors//$'\n'/'%0A'}"
-            errors="${errors//$'\r'/'%0D'}"
-            echo "::error file=${f}::$errors"
-            exit=1
+            results=$(cat $f)
+            results="${results//'%'/'%25'}"
+            results="${results//$'\n'/'%0A'}"
+            results="${results//$'\r'/'%0D'}"
+
+            if [[ "${warns[@]}" =~ "${file}" ]]; then
+              echo "::warning file=${f}::$results"
+            else
+              echo "::error file=${f}::$results"
+              exit=1
+            fi
           fi
         done
 
         if [ "${exit}" == "1" ]; then
+          echo "Compliance error, check for error messages in the \"Run Compliance Tests\" step"
+          echo "You can run this step locally with the ./scripts/ci/check_compliance.py script."
+          exit 1;
+        fi
+
+        if [ "${{ steps.pr_description.outcome }}" == "failure" ]; then
+          echo "PR description cannot be empty"
           exit 1;
         fi

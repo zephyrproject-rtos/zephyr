@@ -987,7 +987,7 @@ static int stm32_ospi_set_memorymap(const struct device *dev)
 	HAL_StatusTypeDef ret;
 	const struct flash_stm32_ospi_config *dev_cfg = dev->config;
 	struct flash_stm32_ospi_data *dev_data = dev->data;
-	OSPI_RegularCmdTypeDef s_command;
+	OSPI_RegularCmdTypeDef s_command = ospi_prepare_cmd(dev_cfg->data_mode, dev_cfg->data_rate);
 	OSPI_MemoryMappedTypeDef s_MemMappedCfg;
 
 	/* Configure octoflash in MemoryMapped mode */
@@ -995,87 +995,108 @@ static int stm32_ospi_set_memorymap(const struct device *dev)
 		(stm32_ospi_hal_address_size(dev) == HAL_OSPI_ADDRESS_24_BITS)) {
 		/* OPI mode and 3-bytes address size not supported by memory */
 		LOG_ERR("OSPI_SPI_MODE in 3Bytes addressing is not supported");
-		return -EIO;
+		return -ENOTSUP;
 	}
 
 	/* Initialize the read command */
 	s_command.OperationType = HAL_OSPI_OPTYPE_READ_CFG;
-	s_command.FlashId = HAL_OSPI_FLASH_ID_1;
-	s_command.InstructionMode = (dev_cfg->data_rate == OSPI_STR_TRANSFER)
-				? ((dev_cfg->data_mode == OSPI_SPI_MODE)
-					? HAL_OSPI_INSTRUCTION_1_LINE
-					: HAL_OSPI_INSTRUCTION_8_LINES)
-				: HAL_OSPI_INSTRUCTION_8_LINES;
-	s_command.InstructionDtrMode = (dev_cfg->data_rate == OSPI_STR_TRANSFER)
-				? HAL_OSPI_INSTRUCTION_DTR_DISABLE
-				: HAL_OSPI_INSTRUCTION_DTR_ENABLE;
-	s_command.InstructionSize = (dev_cfg->data_rate == OSPI_STR_TRANSFER)
-				? ((dev_cfg->data_mode == OSPI_SPI_MODE)
-					? HAL_OSPI_INSTRUCTION_8_BITS
-					: HAL_OSPI_INSTRUCTION_16_BITS)
-				: HAL_OSPI_INSTRUCTION_16_BITS;
-	s_command.Instruction = (dev_cfg->data_rate == OSPI_STR_TRANSFER)
-				? ((dev_cfg->data_mode == OSPI_SPI_MODE)
-					? ((stm32_ospi_hal_address_size(dev) ==
-					HAL_OSPI_ADDRESS_24_BITS)
-						? SPI_NOR_CMD_READ_FAST
-						: SPI_NOR_CMD_READ_FAST_4B)
-					: dev_data->read_opcode)
-				: SPI_NOR_OCMD_DTR_RD;
-	s_command.AddressMode = (dev_cfg->data_rate == OSPI_STR_TRANSFER)
-				? ((dev_cfg->data_mode == OSPI_SPI_MODE)
-					? HAL_OSPI_ADDRESS_1_LINE
-					: HAL_OSPI_ADDRESS_8_LINES)
-				: HAL_OSPI_ADDRESS_8_LINES;
-	s_command.AddressDtrMode = (dev_cfg->data_rate == OSPI_STR_TRANSFER)
-				? HAL_OSPI_ADDRESS_DTR_DISABLE
-				: HAL_OSPI_ADDRESS_DTR_ENABLE;
 	s_command.AddressSize = (dev_cfg->data_rate == OSPI_STR_TRANSFER)
 				? stm32_ospi_hal_address_size(dev)
 				: HAL_OSPI_ADDRESS_32_BITS;
-	s_command.AlternateBytesMode = HAL_OSPI_ALTERNATE_BYTES_NONE;
-	s_command.DataMode = (dev_cfg->data_rate == OSPI_STR_TRANSFER)
-				? ((dev_cfg->data_mode == OSPI_SPI_MODE)
-					? HAL_OSPI_DATA_1_LINE
-					: HAL_OSPI_DATA_8_LINES)
-				: HAL_OSPI_DATA_8_LINES;
-	s_command.DataDtrMode = (dev_cfg->data_rate == OSPI_STR_TRANSFER)
-				? HAL_OSPI_DATA_DTR_DISABLE
-				: HAL_OSPI_DATA_DTR_ENABLE;
-	s_command.DummyCycles = (dev_cfg->data_rate == OSPI_STR_TRANSFER)
-				? ((dev_cfg->data_mode == OSPI_SPI_MODE)
-					? SPI_NOR_DUMMY_RD
-					: SPI_NOR_DUMMY_RD_OCTAL)
-				: SPI_NOR_DUMMY_RD_OCTAL_DTR;
-	s_command.DQSMode = (dev_cfg->data_rate == OSPI_STR_TRANSFER)
-				? HAL_OSPI_DQS_DISABLE
-				: HAL_OSPI_DQS_ENABLE;
-
-	s_command.SIOOMode = HAL_OSPI_SIOO_INST_EVERY_CMD;
+	/* Adapt lines based on read_mode */
+	if (dev_cfg->data_mode != OSPI_OPI_MODE) {
+		switch (dev_data->read_mode) {
+		case JESD216_MODE_112:
+			s_command.InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE;
+			s_command.AddressMode = HAL_OSPI_ADDRESS_1_LINE;
+			s_command.DataMode = HAL_OSPI_DATA_2_LINES;
+			break;
+		case JESD216_MODE_122:
+			s_command.InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE;
+			s_command.AddressMode = HAL_OSPI_ADDRESS_2_LINES;
+			s_command.DataMode = HAL_OSPI_DATA_2_LINES;
+			break;
+		case JESD216_MODE_114:
+			s_command.InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE;
+			s_command.AddressMode = HAL_OSPI_ADDRESS_1_LINE;
+			s_command.DataMode = HAL_OSPI_DATA_4_LINES;
+			break;
+		case JESD216_MODE_144:
+			s_command.InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE;
+			s_command.AddressMode = HAL_OSPI_ADDRESS_4_LINES;
+			s_command.DataMode = HAL_OSPI_DATA_4_LINES;
+			break;
+		default:
+			/* Use lines based on data_mode set in ospi_prepare_cmd */
+			break;
+		}
+	}
+	/* Set instruction and dummy cycles parameters */
+	if (dev_cfg->data_rate == OSPI_DTR_TRANSFER) {
+		/* DTR transfer rate (==> Octal mode) */
+		s_command.Instruction = SPI_NOR_OCMD_DTR_RD;
+		s_command.DummyCycles = SPI_NOR_DUMMY_RD_OCTAL_DTR;
+	} else {
+		/* STR transfer rate */
+		if (dev_cfg->data_mode == OSPI_OPI_MODE) {
+			/* OPI and STR */
+			s_command.Instruction = SPI_NOR_OCMD_RD;
+			s_command.DummyCycles = SPI_NOR_DUMMY_RD_OCTAL;
+		} else {
+			/* use SFDP:BFP read instruction */
+			s_command.Instruction = dev_data->read_opcode;
+			s_command.DummyCycles = dev_data->read_dummy;
+		}
+	}
 
 	ret = HAL_OSPI_Command(&dev_data->hospi, &s_command, HAL_OSPI_TIMEOUT_DEFAULT_VALUE);
 	if (ret != HAL_OK) {
-		LOG_ERR("%d: Failed to set memory map", ret);
+		LOG_ERR("%d: Failed to set memory map read cmd", ret);
 		return -EIO;
 	}
 
 	/* Initialize the program command */
 	s_command.OperationType = HAL_OSPI_OPTYPE_WRITE_CFG;
-	if (dev_cfg->data_rate == OSPI_STR_TRANSFER) {
-		s_command.Instruction = (dev_cfg->data_mode == OSPI_SPI_MODE)
-					? ((stm32_ospi_hal_address_size(dev) ==
-					HAL_OSPI_ADDRESS_24_BITS)
-						? SPI_NOR_CMD_PP
-						: SPI_NOR_CMD_PP_4B)
-					: SPI_NOR_OCMD_PAGE_PRG;
-	} else {
-		s_command.Instruction = SPI_NOR_OCMD_PAGE_PRG;
-	}
 	s_command.DQSMode = HAL_OSPI_DQS_DISABLE;
+
+	s_command.Instruction = dev_data->write_opcode;
+	s_command.DummyCycles = 0U;
+	/* Adapt lines based on write opcode */
+	switch (s_command.Instruction) {
+	case SPI_NOR_CMD_PP_4B:
+		__fallthrough;
+	case SPI_NOR_CMD_PP:
+		s_command.InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE;
+		s_command.AddressMode = HAL_OSPI_ADDRESS_1_LINE;
+		s_command.DataMode = HAL_OSPI_DATA_1_LINE;
+		break;
+	case SPI_NOR_CMD_PP_1_1_2:
+		s_command.InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE;
+		s_command.AddressMode = HAL_OSPI_ADDRESS_1_LINE;
+		s_command.DataMode = HAL_OSPI_DATA_2_LINES;
+		break;
+	case SPI_NOR_CMD_PP_1_1_4_4B:
+		__fallthrough;
+	case SPI_NOR_CMD_PP_1_1_4:
+		s_command.InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE;
+		s_command.AddressMode = HAL_OSPI_ADDRESS_1_LINE;
+		s_command.DataMode = HAL_OSPI_DATA_4_LINES;
+		break;
+	case SPI_NOR_CMD_PP_1_4_4_4B:
+		__fallthrough;
+	case SPI_NOR_CMD_PP_1_4_4:
+		s_command.InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE;
+		s_command.AddressMode = HAL_OSPI_ADDRESS_4_LINES;
+		s_command.DataMode = HAL_OSPI_DATA_4_LINES;
+		break;
+	default:
+		/* Use lines based on data_mode set in ospi_prepare_cmd */
+		break;
+	}
 
 	ret = HAL_OSPI_Command(&dev_data->hospi, &s_command, HAL_OSPI_TIMEOUT_DEFAULT_VALUE);
 	if (ret != HAL_OK) {
-		LOG_ERR("%d: Failed to set memory mapped", ret);
+		LOG_ERR("%d: Failed to set memory map write cmd", ret);
 		return -EIO;
 	}
 
@@ -1084,11 +1105,11 @@ static int stm32_ospi_set_memorymap(const struct device *dev)
 
 	ret = HAL_OSPI_MemoryMapped(&dev_data->hospi, &s_MemMappedCfg);
 	if (ret != HAL_OK) {
-		LOG_ERR("%d: Failed to set memory mapped", ret);
+		LOG_ERR("%d: Failed to enable memory map", ret);
 		return -EIO;
 	}
 
-	LOG_INF("MemoryMap mode enabled");
+	LOG_DBG("MemoryMap mode enabled");
 	return 0;
 }
 
@@ -1442,36 +1463,37 @@ static int flash_stm32_ospi_write(const struct device *dev, off_t addr,
 	/* using 32bits address also in SPI/STR mode */
 	cmd_pp.Instruction = dev_data->write_opcode;
 
-	if (dev_cfg->data_mode != OSPI_OPI_MODE) {
-		switch (cmd_pp.Instruction) {
-		case SPI_NOR_CMD_PP_4B:
-			__fallthrough;
-		case SPI_NOR_CMD_PP: {
-			cmd_pp.InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE;
-			cmd_pp.AddressMode = HAL_OSPI_ADDRESS_1_LINE;
-			cmd_pp.DataMode = HAL_OSPI_DATA_1_LINE;
-			break;
-		}
-		case SPI_NOR_CMD_PP_1_1_4_4B:
-			__fallthrough;
-		case SPI_NOR_CMD_PP_1_1_4: {
-			cmd_pp.InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE;
-			cmd_pp.AddressMode = HAL_OSPI_ADDRESS_1_LINE;
-			cmd_pp.DataMode = HAL_OSPI_DATA_4_LINES;
-			break;
-		}
-		case SPI_NOR_CMD_PP_1_4_4_4B:
-			__fallthrough;
-		case SPI_NOR_CMD_PP_1_4_4: {
-			cmd_pp.InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE;
-			cmd_pp.AddressMode = HAL_OSPI_ADDRESS_4_LINES;
-			cmd_pp.DataMode = HAL_OSPI_DATA_4_LINES;
-			break;
-		}
-		default:
-			/* use the mode from ospi_prepare_cmd */
-			break;
-		}
+	/* Adapt lines based on write_opcode */
+	switch (cmd_pp.Instruction) {
+	case SPI_NOR_CMD_PP_4B:
+		__fallthrough;
+	case SPI_NOR_CMD_PP:
+		cmd_pp.InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE;
+		cmd_pp.AddressMode = HAL_OSPI_ADDRESS_1_LINE;
+		cmd_pp.DataMode = HAL_OSPI_DATA_1_LINE;
+		break;
+	case SPI_NOR_CMD_PP_1_1_2:
+		cmd_pp.InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE;
+		cmd_pp.AddressMode = HAL_OSPI_ADDRESS_1_LINE;
+		cmd_pp.DataMode = HAL_OSPI_DATA_2_LINES;
+		break;
+	case SPI_NOR_CMD_PP_1_1_4_4B:
+		__fallthrough;
+	case SPI_NOR_CMD_PP_1_1_4:
+		cmd_pp.InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE;
+		cmd_pp.AddressMode = HAL_OSPI_ADDRESS_1_LINE;
+		cmd_pp.DataMode = HAL_OSPI_DATA_4_LINES;
+		break;
+	case SPI_NOR_CMD_PP_1_4_4_4B:
+		__fallthrough;
+	case SPI_NOR_CMD_PP_1_4_4:
+		cmd_pp.InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE;
+		cmd_pp.AddressMode = HAL_OSPI_ADDRESS_4_LINES;
+		cmd_pp.DataMode = HAL_OSPI_DATA_4_LINES;
+		break;
+	default:
+		/* Use lines based on data mode set in ospi_prepare_cmd */
+		break;
 	}
 
 	cmd_pp.Address = addr;

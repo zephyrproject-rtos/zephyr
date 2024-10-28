@@ -58,6 +58,9 @@
 #define LPC11U6X_UARTX_CFG_STOP_1BIT             (0x0 << 6)
 #define LPC11U6X_UARTX_CFG_STOP_2BIT             (0x1 << 6)
 
+#define LPC11U6X_UARTX_CFG_RXPOL(x)              (((x) & 0x1) << 22)
+#define LPC11U6X_UARTX_CFG_TXPOL(x)              (((x) & 0x1) << 23)
+
 #define LPC11U6X_UARTX_CFG_MASK                  (0x00FCDAFD)
 
 #define LPC11U6X_UARTX_STAT_RXRDY                (1 << 0)
@@ -170,6 +173,8 @@ struct lpc11u6x_uartx_config {
 	const struct device *clock_dev;
 	uint32_t baudrate;
 	uint32_t clkid;
+	bool rx_invert;
+	bool tx_invert;
 	const struct pinctrl_dev_config *pincfg;
 };
 
@@ -194,20 +199,20 @@ struct lpc11u6x_uartx_shared_irq {
 };
 
 #if CONFIG_UART_INTERRUPT_DRIVEN &&				\
-	(DT_NODE_HAS_STATUS(DT_NODELABEL(uart1), okay) ||	\
-	 DT_NODE_HAS_STATUS(DT_NODELABEL(uart4), okay))
+	(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart1)) ||	\
+	 DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart4)))
 static void lpc11u6x_uartx_isr_config_1(const struct device *dev);
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN &&
-	* (DT_NODE_HAS_STATUS(DT_NODELABEL(uart2), okay) ||
-	* DT_NODE_HAS_STATUS(DT_NODELABEL(uart3), okay))
+	* (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart2)) ||
+	* DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart3)))
 	*/
 
 #if CONFIG_UART_INTERRUPT_DRIVEN &&				\
-	(DT_NODE_HAS_STATUS(DT_NODELABEL(uart2), okay) ||	\
-	 DT_NODE_HAS_STATUS(DT_NODELABEL(uart3), okay))
+	(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart2)) ||	\
+	 DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart3)))
 static void lpc11u6x_uartx_isr_config_2(const struct device *dev);
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN &&
-	* (DT_NODE_HAS_STATUS(DT_NODELABEL(uart2), okay) ||
-	* DT_NODE_HAS_STATUS(DT_NODELABEL(uart3), okay))
+	* (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart2)) ||
+	* DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart3)))
 	*/
 #endif /* ZEPHYR_DRIVERS_SERIAL_UART_LPC11U6X_H_ */

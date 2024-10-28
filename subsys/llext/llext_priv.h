@@ -10,13 +10,19 @@
 #include <zephyr/kernel.h>
 #include <zephyr/llext/llext.h>
 
+struct llext_elf_sect_map {
+	enum llext_mem mem_idx;
+	size_t offset;
+};
+
 /*
  * Memory management (llext_mem.c)
  */
 
 int llext_copy_strings(struct llext_loader *ldr, struct llext *ext);
-int llext_copy_sections(struct llext_loader *ldr, struct llext *ext);
-void llext_free_sections(struct llext *ext);
+int llext_copy_regions(struct llext_loader *ldr, struct llext *ext);
+void llext_free_regions(struct llext *ext);
+void llext_adjust_mmu_permissions(struct llext *ext);
 
 static inline void *llext_alloc(size_t bytes)
 {
@@ -44,9 +50,7 @@ static inline void llext_free(void *ptr)
  */
 
 int do_llext_load(struct llext_loader *ldr, struct llext *ext,
-		  struct llext_load_param *ldr_parm);
-
-elf_shdr_t *llext_section_by_name(struct llext_loader *ldr, const char *search_name);
+		  const struct llext_load_param *ldr_parm);
 
 static inline const char *llext_string(struct llext_loader *ldr, struct llext *ext,
 				       enum llext_mem mem_idx, unsigned int idx)
@@ -58,6 +62,8 @@ static inline const char *llext_string(struct llext_loader *ldr, struct llext *e
  * Relocation (llext_link.c)
  */
 
-int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local);
+int llext_link(struct llext_loader *ldr, struct llext *ext,
+	       const struct llext_load_param *ldr_parm);
+void llext_dependency_remove_all(struct llext *ext);
 
 #endif /* ZEPHYR_SUBSYS_LLEXT_PRIV_H_ */

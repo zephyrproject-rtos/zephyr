@@ -23,13 +23,13 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(flash_nrf);
 
-#if DT_NODE_HAS_STATUS(DT_INST(0, nordic_nrf51_flash_controller), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_INST(0, nordic_nrf51_flash_controller))
 #define DT_DRV_COMPAT nordic_nrf51_flash_controller
-#elif DT_NODE_HAS_STATUS(DT_INST(0, nordic_nrf52_flash_controller), okay)
+#elif DT_NODE_HAS_STATUS_OKAY(DT_INST(0, nordic_nrf52_flash_controller))
 #define DT_DRV_COMPAT nordic_nrf52_flash_controller
-#elif DT_NODE_HAS_STATUS(DT_INST(0, nordic_nrf53_flash_controller), okay)
+#elif DT_NODE_HAS_STATUS_OKAY(DT_INST(0, nordic_nrf53_flash_controller))
 #define DT_DRV_COMPAT nordic_nrf53_flash_controller
-#elif DT_NODE_HAS_STATUS(DT_INST(0, nordic_nrf91_flash_controller), okay)
+#elif DT_NODE_HAS_STATUS_OKAY(DT_INST(0, nordic_nrf91_flash_controller))
 #define DT_DRV_COMPAT nordic_nrf91_flash_controller
 #else
 #error No matching compatible for soc_flash_nrf.c
@@ -184,7 +184,7 @@ static int flash_nrf_write(const struct device *dev, off_t addr,
 		return -EINVAL;
 	}
 
-#if !IS_ENABLED(CONFIG_SOC_FLASH_NRF_EMULATE_ONE_BYTE_WRITE_ACCESS)
+#if !defined(CONFIG_SOC_FLASH_NRF_EMULATE_ONE_BYTE_WRITE_ACCESS)
 	if (!is_aligned_32(addr) || (len % sizeof(uint32_t))) {
 		LOG_ERR("not word-aligned: 0x%08lx:%zu",
 				(unsigned long)addr, len);

@@ -20,12 +20,13 @@ too much resource requirements. The security is not top-notch (AES-128) but it
 is reasonable enough, given that the alternative is no security at all.
 
 OSDP Supports the control of the following components on a PD:
-   - LED
-   - Buzzer
-   - Keypad
-   - Output (GPIOs)
-   - Input Control (GPIOs)
-   - Displays
-   - Device status (tamper, power, etc.,)
-   - Card Reader
-   - Fingerprint Reader
+
+- LED
+- Buzzer
+- Keypad
+- Output (GPIOs)
+- Input Control (GPIOs)
+- Displays
+- Device status (tamper, power, etc.,)
+- Card Reader
+- Fingerprint Reader

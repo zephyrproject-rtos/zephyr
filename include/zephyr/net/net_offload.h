@@ -15,11 +15,13 @@
 /**
  * @brief Network offloading interface
  * @defgroup net_offload Network Offloading Interface
+ * @since 1.7
+ * @version 0.8.0
  * @ingroup networking
  * @{
  */
 
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_context.h>
 

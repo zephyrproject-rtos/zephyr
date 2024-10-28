@@ -6,6 +6,7 @@
 
 #include <zephyr/ztest.h>
 #include <zephyr/sys/util.h>
+#include <stdio.h>
 #include <string.h>
 
 ZTEST(util, test_u8_to_dec) {
@@ -811,6 +812,105 @@ ZTEST(util, test_SIZEOF_FIELD)
 	BUILD_ASSERT(SIZEOF_FIELD(struct test_t, b) == 1, "The b member is 1-byte wide.");
 	BUILD_ASSERT(SIZEOF_FIELD(struct test_t, c) == 17, "The c member is 17-byte wide.");
 	BUILD_ASSERT(SIZEOF_FIELD(struct test_t, d) == 2, "The d member is 2-byte wide.");
+}
+
+ZTEST(util, test_utf8_trunc_truncated)
+{
+	char test_str[] = "€€€";
+	char expected_result[] = "€€";
+
+	/* Remove last byte from truncated_test_str and verify that it first is incorrectly
+	 * truncated, followed by a proper truncation and verification
+	 */
+	test_str[strlen(test_str) - 1] = '\0';
+	zassert(strcmp(test_str, "€€€") != 0, "Failed to do invalid truncation");
+	zassert(strcmp(test_str, expected_result) != 0, "Failed to do invalid truncation");
+
+	utf8_trunc(test_str);
+
+	zassert_str_equal(test_str, expected_result, "Failed to truncate");
+}
+
+ZTEST(util, test_utf8_trunc_not_truncated)
+{
+	/* Attempt to truncate a valid UTF8 string and verify no changed */
+	char test_str[] = "€€€";
+	char expected_result[] = "€€€";
+
+	utf8_trunc(test_str);
+
+	zassert_str_equal(test_str, expected_result, "Failed to truncate");
+}
+
+ZTEST(util, test_utf8_trunc_zero_length)
+{
+	/* Attempt to truncate a valid UTF8 string and verify no changed */
+	char test_str[] = "";
+	char expected_result[] = "";
+
+	utf8_trunc(test_str);
+
+	zassert_str_equal(test_str, expected_result, "Failed to truncate");
+}
+
+ZTEST(util, test_utf8_lcpy_truncated)
+{
+	/* dest_str size is based on storing 2 * € plus the null terminator plus an extra space to
+	 * verify that it's truncated properly
+	 */
+	char dest_str[strlen("€") * 2 + 1 + 1];
+	char test_str[] = "€€€";
+	char expected_result[] = "€€";
+
+	utf8_lcpy(dest_str, test_str, sizeof((dest_str)));
+
+	zassert_str_equal(dest_str, expected_result, "Failed to copy");
+}
+
+ZTEST(util, test_utf8_lcpy_not_truncated)
+{
+	/* dest_str size is based on storing 3 * € plus the null terminator  */
+	char dest_str[strlen("€") * 3 + 1];
+	char test_str[] = "€€€";
+	char expected_result[] = "€€€";
+
+	utf8_lcpy(dest_str, test_str, sizeof((dest_str)));
+
+	zassert_str_equal(dest_str, expected_result, "Failed to truncate");
+}
+
+ZTEST(util, test_utf8_lcpy_zero_length_copy)
+{
+	/* dest_str size is based on the null terminator */
+	char dest_str[1];
+	char test_str[] = "";
+	char expected_result[] = "";
+
+	utf8_lcpy(dest_str, test_str, sizeof((dest_str)));
+
+	zassert_str_equal(dest_str, expected_result, "Failed to truncate");
+}
+
+ZTEST(util, test_utf8_lcpy_zero_length_dest)
+{
+	char dest_str[] = "A";
+	char test_str[] = "";
+	char expected_result[] = "A"; /* expect no changes to dest_str */
+
+	utf8_lcpy(dest_str, test_str, 0);
+
+	zassert_str_equal(dest_str, expected_result, "Failed to truncate");
+}
+
+ZTEST(util, test_utf8_lcpy_null_termination)
+{
+	char dest_str[] = "DEADBEEF";
+	char test_str[] = "DEAD";
+	char expected_result[] = "DEAD";
+
+	utf8_lcpy(dest_str, test_str, sizeof(dest_str));
+
+	zassert_str_equal(dest_str, expected_result, "Failed to truncate");
 }
 
 ZTEST_SUITE(util, NULL, NULL, NULL, NULL, NULL);

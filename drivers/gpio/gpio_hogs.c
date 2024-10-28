@@ -38,7 +38,7 @@ struct gpio_hogs {
 #define GPIO_HOGS_NODE_IS_GPIO_CTLR(node_id)			\
 	DT_PROP_OR(node_id, gpio_controller, 0)
 
-/* Expands to to 1 if node_id is a GPIO hog, empty otherwise */
+/* Expands to 1 if node_id is a GPIO hog, empty otherwise */
 #define GPIO_HOGS_NODE_IS_GPIO_HOG(node_id)			\
 	IF_ENABLED(DT_PROP_OR(node_id, gpio_hog, 0), 1)
 

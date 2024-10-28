@@ -5,6 +5,6 @@
  */
 
 &clk_lse {
-    clock-frequency = <32768>;
-    status = "okay";
+	clock-frequency = <32768>;
+	status = "okay";
 };

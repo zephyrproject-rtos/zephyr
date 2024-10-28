@@ -19,6 +19,9 @@
 #include <fsl_inputmux.h>
 #include <fsl_mipi_dsi.h>
 #include <fsl_clock.h>
+#ifdef CONFIG_MIPI_DSI_MCUX_2L_SMARTDMA
+#include <fsl_smartdma.h>
+#endif
 
 #include <soc.h>
 
@@ -47,6 +50,8 @@ struct mcux_mipi_dsi_data {
 	dsi_handle_t mipi_handle;
 	struct k_sem transfer_sem;
 #ifdef CONFIG_MIPI_DSI_MCUX_2L_SMARTDMA
+	smartdma_dsi_param_t smartdma_params __aligned(4);
+	uint32_t smartdma_stack[32];
 	uint8_t dma_slot;
 #endif
 };
@@ -86,7 +91,7 @@ static int dsi_mcux_tx_color(const struct device *dev, uint8_t channel,
 	 * Color streams are a special case for this DSI peripheral, because
 	 * the SMARTDMA peripheral (if enabled) can be used to accelerate
 	 * the transfer of data to the DSI. The SMARTDMA has the additional
-	 * advantage over traditional DMA of being able to to automatically
+	 * advantage over traditional DMA of being able to automatically
 	 * byte swap color data. This is advantageous, as most graphical
 	 * frameworks store RGB data in little endian format, but many
 	 * MIPI displays expect color data in big endian format.
@@ -94,7 +99,6 @@ static int dsi_mcux_tx_color(const struct device *dev, uint8_t channel,
 	const struct mcux_mipi_dsi_config *config = dev->config;
 	struct mcux_mipi_dsi_data *data = dev->data;
 	struct dma_config dma_cfg = {0};
-	struct dma_block_config block = {0};
 	int ret;
 
 	if (channel != 0) {
@@ -102,12 +106,12 @@ static int dsi_mcux_tx_color(const struct device *dev, uint8_t channel,
 	}
 
 	/* Configure smartDMA device, and run transfer */
-	block.source_address = (uint32_t)msg->tx_buf;
-	block.block_size = msg->tx_len;
+	data->smartdma_params.p_buffer = msg->tx_buf;
+	data->smartdma_params.buffersize = msg->tx_len;
 
 	dma_cfg.dma_callback = dsi_mcux_dma_cb;
 	dma_cfg.user_data = (struct device *)dev;
-	dma_cfg.head_block = &block;
+	dma_cfg.head_block = (struct dma_block_config *)&data->smartdma_params;
 	dma_cfg.block_count = 1;
 	dma_cfg.dma_slot = data->dma_slot;
 	dma_cfg.channel_direction = MEMORY_TO_PERIPHERAL;
@@ -250,13 +254,15 @@ static int dsi_mcux_attach(const struct device *dev,
 
 	switch (mdev->pixfmt) {
 	case MIPI_DSI_PIXFMT_RGB888:
-		data->dma_slot = DMA_SMARTDMA_MIPI_RGB888_DMA;
+		data->dma_slot = kSMARTDMA_MIPI_RGB888_DMA;
+		data->smartdma_params.disablePixelByteSwap = true;
 		break;
 	case MIPI_DSI_PIXFMT_RGB565:
+		data->dma_slot = kSMARTDMA_MIPI_RGB565_DMA;
 		if (IS_ENABLED(CONFIG_MIPI_DSI_MCUX_2L_SWAP16)) {
-			data->dma_slot = DMA_SMARTDMA_MIPI_RGB565_DMA_SWAP;
+			data->smartdma_params.disablePixelByteSwap = false;
 		} else {
-			data->dma_slot = DMA_SMARTDMA_MIPI_RGB565_DMA;
+			data->smartdma_params.disablePixelByteSwap = true;
 		}
 		break;
 	default:
@@ -264,6 +270,12 @@ static int dsi_mcux_attach(const struct device *dev,
 			mdev->pixfmt);
 		return -ENODEV;
 	}
+
+	data->smartdma_params.smartdma_stack = data->smartdma_stack;
+
+	dma_smartdma_install_fw(config->smart_dma,
+				(uint8_t *)s_smartdmaDisplayFirmware,
+				s_smartdmaDisplayFirmwareSize);
 #else
 	struct mcux_mipi_dsi_data *data = dev->data;
 

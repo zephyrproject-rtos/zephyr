@@ -30,7 +30,7 @@ class HardwareAdapter(DeviceAdapter):
 
     def __init__(self, device_config: DeviceConfig) -> None:
         super().__init__(device_config)
-        self._flashing_timeout: float = self.base_timeout
+        self._flashing_timeout: float = device_config.flash_timeout
         self._serial_connection: serial.Serial | None = None
         self._serial_pty_proc: subprocess.Popen | None = None
         self._serial_buffer: bytearray = bytearray()
@@ -86,9 +86,12 @@ class HardwareAdapter(DeviceAdapter):
                 extra_args.append("--cmd-pre-init")
                 extra_args.append(f'adapter serial {board_id}')
             elif runner == 'jlink':
-                base_args.append(f'--tool-opt=-SelectEmuBySN {board_id}')
+                base_args.append('--dev-id')
+                base_args.append(board_id)
             elif runner == 'stm32cubeprogrammer':
                 base_args.append(f'--tool-opt=sn={board_id}')
+            elif runner == 'linkserver':
+                base_args.append(f'--probe={board_id}')
         return base_args, extra_args
 
     def _flash_and_run(self) -> None:

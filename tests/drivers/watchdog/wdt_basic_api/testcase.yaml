@@ -80,7 +80,7 @@ tests:
   drivers.watchdog.counter_watchdog:
     platform_allow: nrf52840dk/nrf52840
     extra_args:
-      - OVERLAY_CONFIG="boards/nrf52840dk_nrf52840_counter.conf"
+      - EXTRA_CONF_FILE="boards/nrf52840dk_nrf52840_counter.conf"
       - DTC_OVERLAY_FILE="boards/nrf52840dk_nrf52840_counter.overlay"
   drivers.watchdog.gd32fwdgt:
     filter: dt_compat_enabled("gd,gd32-fwdgt")

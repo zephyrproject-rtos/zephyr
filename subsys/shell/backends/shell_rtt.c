@@ -15,7 +15,7 @@
 #define RTT_UNLOCK() \
 	COND_CODE_0(CONFIG_SHELL_BACKEND_RTT_BUFFER, (SEGGER_RTT_UNLOCK()), ())
 
-#if IS_ENABLED(CONFIG_LOG_BACKEND_RTT)
+#if defined(CONFIG_LOG_BACKEND_RTT)
 BUILD_ASSERT(!(CONFIG_SHELL_BACKEND_RTT_BUFFER == CONFIG_LOG_BACKEND_RTT_BUFFER),
 	     "Conflicting log RTT backend enabled on the same channel");
 #endif
@@ -85,6 +85,9 @@ static int enable(const struct shell_transport *transport, bool blocking)
 	struct shell_rtt *sh_rtt = (struct shell_rtt *)transport->ctx;
 
 	if (blocking) {
+		if (IS_ENABLED(CONFIG_LOG_MODE_DEFERRED) && IS_ENABLED(CONFIG_SHELL_LOG_BACKEND)) {
+			panic_mode = true;
+		}
 		k_timer_stop(&sh_rtt->timer);
 	}
 

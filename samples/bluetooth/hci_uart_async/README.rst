@@ -1,9 +1,13 @@
-.. _bluetooth-hci-uart-async-sample:
+.. zephyr:code-sample:: bluetooth_hci_uart_async
+   :name: HCI UART async
+   :relevant-api: hci_raw bluetooth uart_interface
 
-Bluetooth: HCI UART based on ASYNC UART
-#######################################
+   Expose a Bluetooth controller to another device or CPU over asynchronous UART.
 
-Expose a Zephyr Bluetooth Controller over a standard Bluetooth HCI UART interface.
+Overview
+*********
+
+Expose Bluetooth Controller support over a standard Bluetooth HCI UART interface.
 
 This sample performs the same basic function as the HCI UART sample, but it uses the UART_ASYNC_API
 instead of UART_INTERRUPT_DRIVEN API. Not all boards implement both UART APIs, so the board support
@@ -12,7 +16,7 @@ of the HCI UART sample may be different.
 Requirements
 ************
 
-* A board with BLE support
+* A board with Bluetooth LE support
 
 Default UART settings
 *********************
@@ -121,7 +125,7 @@ Using the controller with the Zephyr host
 This describes how to hook up a board running this sample to a board running
 an application that uses the Zephyr host.
 
-On the controller side, the `zephyr,bt-c2h-uart` DTS property (in the `chosen`
+On the controller side, the ``zephyr,bt-c2h-uart`` DTS property (in the ``chosen``
 block) is used to select which uart device to use. For example if we want to
 keep the console logs, we can keep console on uart0 and the HCI on uart1 like
 so:
@@ -139,12 +143,12 @@ so:
 On the host application, some config options need to be used to select the H4
 driver instead of the built-in controller:
 
-.. code-block:: kconfig
+.. code-block:: cfg
 
    CONFIG_BT_HCI=y
    CONFIG_BT_CTLR=n
 
-Similarly, the `zephyr,bt-hci` DTS property selects which HCI instance to use.
+Similarly, the ``zephyr,bt-hci`` DTS property selects which HCI instance to use.
 The UART needs to have as its child node a HCI UART node:
 
 .. code-block:: dts

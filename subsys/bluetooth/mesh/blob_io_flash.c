@@ -117,8 +117,7 @@ static int wr_chunk(const struct bt_mesh_blob_io *io,
 					chunk->data, chunk->size);
 	}
 
-	uint8_t buf[ROUND_UP(BLOB_CHUNK_SIZE_MAX(BT_MESH_RX_SDU_MAX),
-			  WRITE_BLOCK_SIZE)];
+	uint8_t buf[ROUND_UP(BLOB_RX_CHUNK_SIZE, WRITE_BLOCK_SIZE)];
 	off_t area_offset = flash->offset + block->offset + chunk->offset;
 	int i = 0;
 

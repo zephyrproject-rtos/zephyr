@@ -1,0 +1,16 @@
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+CONFIG_SRAM_VECTOR_TABLE=y
+
+# General Kernel Options
+CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=96000000
+CONFIG_XIP=y
+
+# UART Driver
+CONFIG_SERIAL=n
+
+# Console Driver
+CONFIG_CONSOLE=n
+CONFIG_UART_CONSOLE=n

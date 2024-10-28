@@ -38,15 +38,15 @@ socket is assigned the ``mikrobus_header`` node label.
 Programming
 ***********
 
-Include ``-DSHIELD=arduino_uno_click`` when you invoke ``west build`` with
+Include ``--shield arduino_uno_click`` when you invoke ``west build`` with
 other mikroBUS shields. For example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/sockets/echo_server
    :host-os: unix
    :board: sam_v71_xult/samv71q21
-   :gen-args: -DOVERLAY_CONFIG=overlay-802154.conf
-   :shield: "arduino_uno_click atmel_rf2xx_mikrobus"
+   :gen-args: -DEXTRA_CONF_FILE=overlay-802154.conf
+   :shield: arduino_uno_click,atmel_rf2xx_mikrobus
    :goals: build
 
 References

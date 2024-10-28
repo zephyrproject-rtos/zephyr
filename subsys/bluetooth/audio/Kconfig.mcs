@@ -12,8 +12,7 @@ config BT_MCS
 	bool "Media Control Service Support"
 	depends on MCTL_LOCAL_PLAYER_REMOTE_CONTROL
 	depends on UTF8
-	select BT_CCID
-	select BT_GATT_DYNAMIC_DB
+	depends on BT_GATT_DYNAMIC_DB
 	help
 	  This option enables support for the Media Control Service.
 
@@ -31,7 +30,7 @@ if BT_MCC
 config BT_MCC_MEDIA_PLAYER_NAME_MAX
 	int "Max length of media player name"
 	default 20
-	range 1 255
+	range 1 $(UINT8_MAX)
 	help
 	  Sets the maximum number of bytes (including the null termination) of
 	  the name of the media player. If the name is longer, the media
@@ -40,7 +39,7 @@ config BT_MCC_MEDIA_PLAYER_NAME_MAX
 config BT_MCC_ICON_URL_MAX
 	int "Max length of media player icon URL"
 	default 40
-	range 1 255
+	range 1 $(UINT8_MAX)
 	help
 	  Sets the maximum number of bytes (including the null termination) of
 	  the media player icon URL. If the URL is longer, the media control
@@ -49,7 +48,7 @@ config BT_MCC_ICON_URL_MAX
 config BT_MCC_TRACK_TITLE_MAX
 	int "Max length of the title of a track"
 	default 40
-	range 1 255
+	range 1 $(UINT8_MAX)
 	help
 	  Sets the maximum number of bytes (including the null termination) of
 	  the title of any track in the media player. If the title is longer,
@@ -58,9 +57,9 @@ config BT_MCC_TRACK_TITLE_MAX
 config BT_MCC_SEGMENT_NAME_MAX
 	int "Max length of the name of a track segment"
 	default 25
-	range 1 255
+	range 1 $(UINT8_MAX)
 	help
-	  Sets the the maximum number of bytes (including the null termination)
+	  Sets the maximum number of bytes (including the null termination)
 	  of the name of any track segment in the media player. If the name is
 	  longer, the media control client will truncate the name when reading
 	  it.

@@ -51,6 +51,8 @@ _rom_store_table = 0;
 PROVIDE(_memmap_vecbase_reset = 0x40000450);
 PROVIDE(_memmap_reset_vector = 0x40000400);
 
+_heap_sentry = 0x3ffe3f20;
+
 SECTIONS
 {
 #include <zephyr/linker/rel-sections.ld>
@@ -209,7 +211,7 @@ SECTIONS
     . = ALIGN(4);
   } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_DATA_REGION)
 
-  #include <zephyr/linker/common-rom/common-rom-cpp.ld>
+  #include <zephyr/linker/common-rom/common-rom-init.ld>
   #include <zephyr/linker/common-rom/common-rom-kernel-devices.ld>
   #include <zephyr/linker/common-rom/common-rom-ztest.ld>
   #include <zephyr/linker/common-rom/common-rom-net.ld>
@@ -285,9 +287,10 @@ SECTIONS
   .dram0.end :
   {
     . = ALIGN(4);
+
     #include <snippets-rwdata.ld>
+
     . = ALIGN(4);
-    _end = ABSOLUTE(.);
     __data_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_DATA_REGION)
 
@@ -322,8 +325,12 @@ SECTIONS
     *(COMMON)
     . = ALIGN (8);
     __bss_end = ABSOLUTE(.);
-    _end = ABSOLUTE(.);
   } GROUP_LINK_IN(RAMABLE_REGION)
+
+  /* Provide total SRAM usage, including IRAM and DRAM */
+  _image_ram_start = __rodata_region_start;
+  #include <zephyr/linker/ram-end.ld>
+  _image_ram_size += _iram_end - _iram_start;
 
   ASSERT(((__bss_end - ORIGIN(dram0_0_seg)) <= LENGTH(dram0_0_seg)),
           "DRAM segment data does not fit.")
@@ -357,7 +364,6 @@ SECTIONS
     _flash_cache_start = ABSOLUTE(0);
   } GROUP_DATA_LINK_IN(FLASH_CODE_REGION, ROMABLE_REGION)
 
-_heap_sentry = 0x3ffe3f20;
 
 #include <zephyr/linker/debug-sections.ld>
 

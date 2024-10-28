@@ -520,13 +520,26 @@ enum ieee802154_hw_caps {
 	/** RxOnWhenIdle handling supported */
 	IEEE802154_RX_ON_WHEN_IDLE = BIT(12),
 
+	/** Support for timed transmissions on selective channel.
+	 *
+	 *  This capability informs that transmissions with modes
+	 *  @ref IEEE802154_TX_MODE_TXTIME and @ref IEEE802154_TX_MODE_TXTIME_CCA support
+	 *  scheduling of timed transmissions on selective tx channel.
+	 *  The driver MAY have this capability only if the Kconfig option
+	 *  `CONFIG_IEEE802154_SELECTIVE_TXCHANNEL` is set, otherwise the driver MUST
+	 *  NOT have this capability.
+	 *
+	 *  Please refer to the `ieee802154_radio_api::tx` documentation for details.
+	 */
+	IEEE802154_HW_SELECTIVE_TXCHANNEL = BIT(13),
+
 	/* Note: Update also IEEE802154_HW_CAPS_BITS_COMMON_COUNT when changing
 	 * the ieee802154_hw_caps type.
 	 */
 };
 
 /** @brief Number of bits used by ieee802154_hw_caps type. */
-#define IEEE802154_HW_CAPS_BITS_COMMON_COUNT (13)
+#define IEEE802154_HW_CAPS_BITS_COMMON_COUNT (14)
 
 /** @brief This and higher values are specific to the protocol- or driver-specific extensions. */
 #define IEEE802154_HW_CAPS_BITS_PRIV_START IEEE802154_HW_CAPS_BITS_COMMON_COUNT
@@ -625,6 +638,8 @@ enum ieee802154_tx_mode {
 	 * Transmit packet in the future, at the specified time, no CCA.
 	 *
 	 * @note requires IEEE802154_HW_TXTIME capability.
+	 *
+	 * @note capability IEEE802154_HW_SELECTIVE_TXCHANNEL may apply.
 	 */
 	IEEE802154_TX_MODE_TXTIME,
 
@@ -635,6 +650,8 @@ enum ieee802154_tx_mode {
 	 *
 	 * @note Required for Thread 1.2 Coordinated Sampled Listening feature
 	 * (see Thread specification 1.2.0, ch. 3.2.6.3).
+	 *
+	 * @note capability IEEE802154_HW_SELECTIVE_TXCHANNEL may apply.
 	 */
 	IEEE802154_TX_MODE_TXTIME_CCA,
 
@@ -970,7 +987,7 @@ enum ieee802154_config_type {
 	 * beacons of a single PAN, periodic ranging "blinks"), a single
 	 * timestamp at any time in the past or in the future may be given from
 	 * which other expected timestamps can be derived by adding or
-	 * substracting multiples of the RX period. See e.g. the CSL
+	 * subtracting multiples of the RX period. See e.g. the CSL
 	 * documentation in this API.
 	 *
 	 * Additionally this parameter MAY be used by drivers to discipline
@@ -1053,7 +1070,7 @@ enum ieee802154_config_type {
 	 *
 	 * L2 SHALL minimize the space required to keep IE configuration inside
 	 * the driver by consolidating address filters and by removing
-	 * configuation that is no longer required.
+	 * configuration that is no longer required.
 	 *
 	 * @note requires @ref IEEE802154_HW_RX_TX_ACK capability and is
 	 * available in any interface operational state. Currently we only
@@ -1657,6 +1674,23 @@ struct ieee802154_radio_api {
 	 * considerable idle waiting time. SHALL return `-ENETDOWN` unless the
 	 * interface is "UP".
 	 *
+	 * @note The transmission occurs on the radio channel set by the call to
+	 * `set_channel()`. However, if the `CONFIG_IEEE802154_SELECTIVE_TXCHANNEL`
+	 * is set and the driver has the capability `IEEE802154_HW_SELECTIVE_TXCHANNEL`
+	 * then the transmissions requested with `mode` IEEE802154_TX_MODE_TXTIME
+	 * or `IEEE802154_TX_MODE_TXTIME_CCA` SHALL use the radio channel
+	 * returned by `net_pkt_ieee802154_txchannel()` to transmit the packet
+	 * and receive an ACK on that channel if the frame requested it. After
+	 * the operation the driver should return to the channel set previously by
+	 * `set_channel()` call.
+	 * It is responsibility of an upper layer to set the required radio channel
+	 * for the packet by a call to `net_pkt_set_ieee802154_txchannel()`.
+	 * This feature allows CSL transmissions as stated in IEEE 802.15.4-2020
+	 * chapter 6.12.2.7 CSL over multiple channels. This feature allows to perform
+	 * a switch of the radio channel as late as possible before transmission without
+	 * interrupting possible reception that could occur if separate `set_channel()`
+	 * was called.
+	 *
 	 * @param dev pointer to IEEE 802.15.4 driver device
 	 * @param mode the transmission mode, some of which require specific
 	 * offloading capabilities.
@@ -1665,7 +1699,7 @@ struct ieee802154_radio_api {
 	 * with the frame data to be transmitted
 	 *
 	 * @retval 0 The frame was successfully sent or scheduled. If the driver
-	 * supports ACK offloading and the frame requested acknowlegment (AR bit
+	 * supports ACK offloading and the frame requested acknowledgment (AR bit
 	 * set), this means that the packet was successfully acknowledged by its
 	 * peer.
 	 * @retval -EINVAL Invalid packet (e.g. an expected IE is missing or the

@@ -1,0 +1,20 @@
+compatible: "silabs,series2-hfrcoem23"
+
+include: fixed-clock.yaml
+
+description: |
+  Silicon Labs HFRCOEM23 peripheral (high-frequency RC oscillator with energy mode 2 and 3
+  capability). `clock-frequency` represents the HFRCO band to use.
+
+properties:
+  clock-frequency:
+    enum:
+      - 1000000
+      - 2000000
+      - 4000000
+      - 13000000
+      - 16000000
+      - 19000000
+      - 26000000
+      - 32000000
+      - 40000000

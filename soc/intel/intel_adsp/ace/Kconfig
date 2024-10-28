@@ -8,7 +8,7 @@ config SOC_SERIES_INTEL_ADSP_ACE
 	select ATOMIC_OPERATIONS_BUILTIN if "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "xcc"
 	select ARCH_HAS_COHERENCE
 	select SCHED_IPI_SUPPORTED
-	select ARCH_CPU_IDLE_CUSTOM
+	select ARCH_HAS_CUSTOM_CPU_IDLE
 	select DW_ICTL_ACE
 	select SOC_HAS_RUNTIME_NUM_CPUS
 	select HAS_PM
@@ -23,3 +23,11 @@ config SOC_INTEL_COMM_WIDGET
 	help
 	  Select this to enable Intel Communication Widget driver.
 	  DSP Communication Widget is a device for generic sideband message transmit/receive.
+
+config SRAM_RETENTION_MODE
+	bool "SRAM retention mode during initialization"
+	default y
+	help
+	  When this option is enabled, the SRAM retention mode will be
+	  activated during the firmware boot-up process. If disabled,
+	  the retention mode will not be activated.

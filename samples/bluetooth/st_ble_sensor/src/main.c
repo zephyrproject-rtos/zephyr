@@ -142,7 +142,7 @@ static void bt_ready(int err)
 	}
 	LOG_INF("Bluetooth initialized");
 	/* Start advertising */
-	err = bt_le_adv_start(BT_LE_ADV_CONN_ONE_TIME, ad, ARRAY_SIZE(ad), NULL, 0);
+	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err) {
 		LOG_ERR("Advertising failed to start (err %d)", err);
 		return;
@@ -170,7 +170,7 @@ static void disconnected(struct bt_conn *disconn, uint8_t reason)
 		ble_conn = NULL;
 	}
 
-	LOG_INF("Disconnected (reason %u)", reason);
+	LOG_INF("Disconnected, reason %u %s", reason, bt_hci_err_to_str(reason));
 }
 
 BT_CONN_CB_DEFINE(conn_callbacks) = {

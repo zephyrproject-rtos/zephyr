@@ -54,16 +54,25 @@ config I2C_CALLBACK
 	help
 	  API and implementations of i2c_transfer_cb.
 
-config HAS_I2C_RTIO
-	bool
+config I2C_ALLOW_NO_STOP_TRANSACTIONS
+	bool "Allows I2C transfers with no STOP on the last transaction [DEPRECATED]"
+	depends on !I2C_NRFX_TWI
+	depends on !I2C_NRFX_TWIM
+	depends on !I2C_STM32
+	depends on !I2C_GD32
+	depends on !I2C_ESP32
+	depends on !I2C_DW
+	select DEPRECATED
 	help
-	  This option must be selected by I2C controller drivers that optionally implement the RTIO
-	  interface.
+	  Allow I2C transactions with no STOP on the last message. This is
+	  unsupported and can leave the bus in an unexpected state. The option
+	  will be removed in Zephyr 4.1.
 
 config I2C_RTIO
 	bool "I2C RTIO API"
-	depends on HAS_I2C_RTIO
+	select EXPERIMENTAL
 	select RTIO
+	select RTIO_WORKQ
 	help
 	  API and implementations of I2C for RTIO
 
@@ -87,6 +96,20 @@ config I2C_RTIO_CQ_SIZE
 	  structs that may be in the array given to i2c_transfer. A sensible default
 	  is going to be 4 given the device address, register address, and a value
 	  to be read or written.
+
+config I2C_RTIO_FALLBACK_MSGS
+	int "Number of available i2c_msg structs for the default handler to use"
+	default 4
+	help
+		When RTIO is used with a driver that does not yet implement the submit API
+		natively the submissions are converted back to struct i2c_msg values that
+		are given to i2c_transfer. This requires some number of msgs be available to convert
+		the submissions into on the stack. MISRA rules dictate we must know this in
+		advance.
+
+		In all likelihood 4 is going to work for everyone, but in case you do end up with
+		an issue where you are using RTIO, your driver does not implement submit natively,
+		and get an error relating to not enough i2c msgs this is the Kconfig to manipulate.
 
 endif # I2C_RTIO
 
@@ -114,6 +137,7 @@ source "drivers/i2c/Kconfig.lpc11u6x"
 source "drivers/i2c/Kconfig.npcx"
 source "drivers/i2c/Kconfig.test"
 source "drivers/i2c/Kconfig.rcar"
+source "drivers/i2c/Kconfig.renesas_ra"
 source "drivers/i2c/Kconfig.tca954x"
 source "drivers/i2c/Kconfig.gd32"
 source "drivers/i2c/Kconfig.ifx_cat1"
@@ -176,7 +200,6 @@ config I2C_MCUX_LPI2C
 	default y
 	depends on DT_HAS_NXP_IMX_LPI2C_ENABLED
 	depends on CLOCK_CONTROL
-	select HAS_I2C_RTIO
 	select PINCTRL
 	help
 	  Enable the mcux LPI2C driver.
@@ -192,6 +215,7 @@ config I2C_IMX
 	bool "i.MX I2C driver"
 	default y
 	depends on DT_HAS_FSL_IMX21_I2C_ENABLED
+	select PINCTRL
 	help
 	  Enable the i.MX I2C driver.
 

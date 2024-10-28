@@ -6,11 +6,12 @@
 
 if(CONFIG_WIFI_NM_WPA_SUPPLICANT)
 
-zephyr_library()
+zephyr_interface_library_named(hostap)
 
 set(HOSTAP_BASE ${ZEPHYR_HOSTAP_MODULE_DIR})
 set(WIFI_NM_WPA_SUPPLICANT_BASE ${HOSTAP_BASE}/wpa_supplicant)
 set(HOSTAP_SRC_BASE ${HOSTAP_BASE}/src)
+set(WIFI_NM_HOSTAPD_BASE ${HOSTAP_BASE}/hostapd)
 
 set(CMAKE_EXE_LINKER_FLAGS "--specs=nosys.specs -lnosys")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DMISSING_SYSCALL_NAMES")
@@ -20,7 +21,6 @@ zephyr_include_directories(
 	${HOSTAP_BASE}/
 	${WIFI_NM_WPA_SUPPLICANT_BASE}/
 	${HOSTAP_SRC_BASE}/
-	${HOSTAP_SRC_BASE}/utils/
 	${HOSTAP_SRC_BASE}/common/
 	${HOSTAP_SRC_BASE}/eap_common
 	${HOSTAP_SRC_BASE}/eap_server
@@ -29,6 +29,10 @@ zephyr_include_directories(
 	${HOSTAP_SRC_BASE}/ap/
 	${HOSTAP_SRC_BASE}/drivers/
 	${HOSTAP_SRC_BASE}/rsn_supp
+)
+
+target_include_directories(hostap INTERFACE
+	${HOSTAP_SRC_BASE}/utils/
 )
 
 zephyr_library_compile_definitions(
@@ -42,6 +46,7 @@ zephyr_library_compile_definitions(
 	CONFIG_SHA512
 	CONFIG_CTRL_IFACE_ZEPHYR
 	CONFIG_SUITEB192
+	CONFIG_SUITEB
 )
 
 
@@ -156,6 +161,11 @@ zephyr_library_sources_ifdef(CONFIG_WPA_CLI
 	src/wpa_cli.c
 )
 
+zephyr_library_sources_ifdef(CONFIG_IEEE80211R
+	${HOSTAP_SRC_BASE}/rsn_supp/wpa_ft.c
+	${HOSTAP_SRC_BASE}/ap/wpa_auth_ft.c
+)
+
 zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_AP
 	${WIFI_NM_WPA_SUPPLICANT_BASE}/ap.c
 	${HOSTAP_SRC_BASE}/ap/ap_config.c
@@ -201,6 +211,7 @@ zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_AP
 	${HOSTAP_SRC_BASE}/ap/mbo_ap.c
 	${HOSTAP_SRC_BASE}/ap/ctrl_iface_ap.c
 	${HOSTAP_SRC_BASE}/utils/crc32.c
+	${HOSTAP_SRC_BASE}/utils/ip_addr.c
 )
 
 zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_AP
@@ -209,15 +220,57 @@ zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_AP
 	CONFIG_NO_VLAN
 	CONFIG_NO_ACCOUNTING
 	NEED_AP_MLME
+	CONFIG_IEEE80211AC
 	CONFIG_IEEE80211AX
 	CONFIG_EAP_SERVER
 	CONFIG_EAP_SERVER_IDENTITY
 )
 
+zephyr_include_directories_ifdef(CONFIG_WIFI_NM_HOSTAPD_AP
+	${WIFI_NM_HOSTAPD_BASE}/
+)
+
+zephyr_library_sources_ifdef(CONFIG_WIFI_NM_HOSTAPD_AP
+	${HOSTAP_SRC_BASE}/ap/acs.c
+	${WIFI_NM_HOSTAPD_BASE}/config_file.c
+	${WIFI_NM_HOSTAPD_BASE}/ctrl_iface.c
+	${WIFI_NM_HOSTAPD_BASE}/ctrl_iface_zephyr.c
+	${WIFI_NM_HOSTAPD_BASE}/eap_register.c
+	${WIFI_NM_HOSTAPD_BASE}/hostapd_cli_cmds.c
+	${WIFI_NM_HOSTAPD_BASE}/hostapd_cli_zephyr.c
+)
+
+zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_HOSTAPD_AP
+	HOSTAPD
+	CONFIG_ACS
+)
 
 zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
 	${HOSTAP_SRC_BASE}/crypto/crypto_none.c
 	${HOSTAP_SRC_BASE}/crypto/tls_none.c
+
+	# FIXME: why do we need these when crypto is not selected?
+	${HOSTAP_SRC_BASE}/crypto/aes-wrap.c
+	${HOSTAP_SRC_BASE}/crypto/aes-unwrap.c
+	${HOSTAP_SRC_BASE}/crypto/aes-internal.c
+	${HOSTAP_SRC_BASE}/crypto/aes-internal-enc.c
+	${HOSTAP_SRC_BASE}/crypto/aes-internal-dec.c
+	${HOSTAP_SRC_BASE}/crypto/aes-omac1.c
+	${HOSTAP_SRC_BASE}/crypto/md5.c
+	${HOSTAP_SRC_BASE}/crypto/md5-internal.c
+	${HOSTAP_SRC_BASE}/crypto/sha1.c
+	${HOSTAP_SRC_BASE}/crypto/sha1-internal.c
+	${HOSTAP_SRC_BASE}/crypto/sha1-pbkdf2.c
+	${HOSTAP_SRC_BASE}/crypto/sha1-prf.c
+	${HOSTAP_SRC_BASE}/crypto/sha256.c
+	${HOSTAP_SRC_BASE}/crypto/sha256-internal.c
+	${HOSTAP_SRC_BASE}/crypto/sha256-prf.c
+	${HOSTAP_SRC_BASE}/crypto/sha384.c
+	${HOSTAP_SRC_BASE}/crypto/sha384-internal.c
+	${HOSTAP_SRC_BASE}/crypto/sha384-prf.c
+	${HOSTAP_SRC_BASE}/crypto/sha512.c
+	${HOSTAP_SRC_BASE}/crypto/sha512-internal.c
+	${HOSTAP_SRC_BASE}/crypto/rc4.c
 )
 
 zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
@@ -285,8 +338,15 @@ zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_WPS
 	${HOSTAP_SRC_BASE}/wps/wps_enrollee.c
 	${HOSTAP_SRC_BASE}/wps/wps_registrar.c
 	${HOSTAP_SRC_BASE}/crypto/dh_groups.c
+)
+
+if(NOT CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ALT)
+# dh_group5 is only needed if we are not using mbedtls, as mbedtls provides
+# its own definition
+zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_WPS
 	${HOSTAP_SRC_BASE}/crypto/dh_group5.c
 )
+endif()
 
 zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
 	CONFIG_P2P
@@ -300,68 +360,176 @@ zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_WPS
 )
 
 zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+	${HOSTAP_SRC_BASE}/eap_common/eap_common.c
+)
+
+zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+	IEEE8021X_EAPOL
+	EAP_IKEv2
+)
+
+zephyr_library_sources_ifdef(CONFIG_EAP_TLS
 	${HOSTAP_SRC_BASE}/eap_peer/eap_tls.c
 	${HOSTAP_SRC_BASE}/eap_peer/eap_tls_common.c
-	${HOSTAP_SRC_BASE}/eap_common/eap_common.c
+)
 
+zephyr_library_compile_definitions_ifdef(CONFIG_EAP_TLS
+	EAP_TLS
+)
+
+zephyr_library_sources_ifdef(CONFIG_EAP_TTLS
+	${HOSTAP_SRC_BASE}/eap_peer/eap_ttls.c
+)
+
+zephyr_library_compile_definitions_ifdef(CONFIG_EAP_TTLS
+        EAP_TTLS
+)
+
+zephyr_library_sources_ifdef(CONFIG_EAP_PEAP
 	${HOSTAP_SRC_BASE}/eap_peer/eap_peap.c
 	${HOSTAP_SRC_BASE}/eap_common/eap_peap_common.c
-	${HOSTAP_SRC_BASE}/eap_peer/eap_ttls.c
-	${HOSTAP_SRC_BASE}/eap_peer/eap_md5.c
-	${HOSTAP_SRC_BASE}/eap_peer/eap_mschapv2.c
-	${HOSTAP_SRC_BASE}/eap_common/chap.c
-	${HOSTAP_SRC_BASE}/eap_peer/mschapv2.c
-	${HOSTAP_SRC_BASE}/eap_peer/eap_leap.c
+)
 
+zephyr_library_compile_definitions_ifdef(CONFIG_EAP_PEAP
+        EAP_PEAP
+)
+
+zephyr_library_sources_ifdef(CONFIG_EAP_MD5
+	${HOSTAP_SRC_BASE}/eap_peer/eap_md5.c
+)
+
+zephyr_library_compile_definitions_ifdef(CONFIG_EAP_MD5
+        EAP_MD5
+)
+
+zephyr_library_sources_ifdef(CONFIG_EAP_GTC
+	${HOSTAP_SRC_BASE}/eap_peer/eap_gtc.c
+)
+
+zephyr_library_compile_definitions_ifdef(CONFIG_EAP_GTC
+        EAP_GTC
+)
+
+zephyr_library_sources_ifdef(CONFIG_EAP_MSCHAPV2
+	${HOSTAP_SRC_BASE}/eap_peer/eap_mschapv2.c
+	${HOSTAP_SRC_BASE}/eap_peer/mschapv2.c
+	${HOSTAP_SRC_BASE}/eap_common/chap.c
+)
+
+zephyr_library_compile_definitions_ifdef(CONFIG_EAP_MSCHAPV2
+        EAP_MSCHAPv2
+)
+
+zephyr_library_sources_ifdef(CONFIG_EAP_LEAP
+	${HOSTAP_SRC_BASE}/eap_peer/eap_leap.c
+)
+
+zephyr_library_compile_definitions_ifdef(CONFIG_EAP_LEAP
+        EAP_LEAP
+)
+
+zephyr_library_sources_ifdef(CONFIG_EAP_PSK
 	${HOSTAP_SRC_BASE}/eap_peer/eap_psk.c
 	${HOSTAP_SRC_BASE}/eap_common/eap_psk_common.c
+)
 
-	${HOSTAP_SRC_BASE}/eap_peer/eap_fast.c
-	${HOSTAP_SRC_BASE}/eap_peer/eap_fast_pac.c
-	${HOSTAP_SRC_BASE}/eap_common/eap_fast_common.c
+zephyr_library_compile_definitions_ifdef(CONFIG_EAP_PSK
+        EAP_PSK
+)
 
+zephyr_library_sources_ifdef(CONFIG_EAP_PAX
 	${HOSTAP_SRC_BASE}/eap_peer/eap_pax.c
 	${HOSTAP_SRC_BASE}/eap_common/eap_pax_common.c
+)
 
+zephyr_library_compile_definitions_ifdef(CONFIG_EAP_PAX
+        EAP_PAX
+)
+
+zephyr_library_sources_ifdef(CONFIG_EAP_SAKE
 	${HOSTAP_SRC_BASE}/eap_peer/eap_sake.c
 	${HOSTAP_SRC_BASE}/eap_common/eap_sake_common.c
+)
 
+zephyr_library_compile_definitions_ifdef(CONFIG_EAP_SAKE
+        EAP_SAKE
+)
+
+zephyr_library_sources_ifdef(CONFIG_EAP_GPSK
 	${HOSTAP_SRC_BASE}/eap_peer/eap_gpsk.c
 	${HOSTAP_SRC_BASE}/eap_common/eap_gpsk_common.c
+)
 
+zephyr_library_compile_definitions_ifdef(CONFIG_EAP_GPSK
+        EAP_GPSK
+)
+
+zephyr_library_sources_ifdef(CONFIG_EAP_PWD
 	${HOSTAP_SRC_BASE}/eap_peer/eap_pwd.c
 	${HOSTAP_SRC_BASE}/eap_common/eap_pwd_common.c
+)
 
+zephyr_library_compile_definitions_ifdef(CONFIG_EAP_PWD
+        EAP_PWD
+)
+
+zephyr_library_sources_ifdef(CONFIG_EAP_EKE
 	${HOSTAP_SRC_BASE}/eap_peer/eap_eke.c
 	${HOSTAP_SRC_BASE}/eap_common/eap_eke_common.c
+)
 
+zephyr_library_compile_definitions_ifdef(CONFIG_EAP_EKE
+        EAP_EKE
+)
+
+zephyr_library_sources_ifdef(CONFIG_EAP_IKEV2
 	${HOSTAP_SRC_BASE}/eap_peer/eap_ikev2.c
 	${HOSTAP_SRC_BASE}/eap_peer/ikev2.c
 	${HOSTAP_SRC_BASE}/eap_common/eap_ikev2_common.c
 	${HOSTAP_SRC_BASE}/eap_common/ikev2_common.c
+)
 
+zephyr_library_compile_definitions_ifdef(CONFIG_EAP_IKEV2
+        EAP_IKEV2
+)
+
+zephyr_library_sources_ifdef(CONFIG_EAP_SIM
 	${HOSTAP_SRC_BASE}/eap_peer/eap_sim.c
 	${HOSTAP_SRC_BASE}/eap_common/eap_sim_common.c
+)
 
+zephyr_library_compile_definitions_ifdef(CONFIG_EAP_SIM
+        EAP_SIM
+)
+
+zephyr_library_sources_ifdef(CONFIG_EAP_AKA
 	${HOSTAP_SRC_BASE}/eap_peer/eap_aka.c
 )
 
-zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
-	EAP_TLS
-	IEEE8021X_EAPOL
-	EAP_PEAP
-	EAP_TTLS
-	EAP_MD5
-	EAP_MSCHAPv2
-	EAP_LEAP
-	EAP_PSK
-	EAP_FAST
-	EAP_PAX
-	EAP_SAKE
-	EAP_GPSK
-	EAP_PWD
-	EAP_EKE
-	EAP_IKEv2
+zephyr_library_compile_definitions_ifdef(CONFIG_EAP_AKA
+        EAP_AKA
+)
+
+# Needs TLS1.3 and SESSION_TICKETS
+zephyr_library_sources_ifdef(CONFIG_EAP_FAST
+  ${HOSTAP_SRC_BASE}/eap_peer/eap_fast.c
+  ${HOSTAP_SRC_BASE}/eap_peer/eap_fast_pac.c
+  ${HOSTAP_SRC_BASE}/eap_common/eap_fast_common.c
+)
+
+zephyr_library_compile_definitions_ifdef(CONFIG_EAP_FAST
+  EAP_FAST
+)
+
+# Needs TLS1.3 and SESSION_TICKETS
+zephyr_library_sources_ifdef(CONFIG_EAP_FAST
+  ${HOSTAP_SRC_BASE}/eap_peer/eap_fast.c
+  ${HOSTAP_SRC_BASE}/eap_peer/eap_fast_pac.c
+  ${HOSTAP_SRC_BASE}/eap_common/eap_fast_common.c
+)
+
+zephyr_library_compile_definitions_ifdef(CONFIG_EAP_FAST
+  EAP_FAST
 )
 
 zephyr_library_compile_definitions_ifndef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
@@ -417,7 +585,6 @@ zephyr_library_sources(
 	${HOSTAP_SRC_BASE}/crypto/crypto_mbedtls-bignum.c
 	${HOSTAP_SRC_BASE}/crypto/crypto_mbedtls-ec.c
 	${HOSTAP_SRC_BASE}/crypto/crypto_mbedtls.c
-	${HOSTAP_SRC_BASE}/crypto/tls_mbedtls.c
 	${HOSTAP_SRC_BASE}/crypto/aes-internal.c
 	${HOSTAP_SRC_BASE}/crypto/aes-wrap.c
 	${HOSTAP_SRC_BASE}/crypto/aes-unwrap.c
@@ -439,6 +606,10 @@ zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3
 	${HOSTAP_SRC_BASE}/crypto/sha256-kdf.c
 )
 
+zephyr_library_sources_ifndef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+	${HOSTAP_SRC_BASE}/crypto/tls_none.c
+)
+
 zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 	# common
 	${HOSTAP_SRC_BASE}/crypto/sha384-tlsprf.c
@@ -450,6 +621,7 @@ zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 	# MD4 removed from MbedTLS
 	${HOSTAP_SRC_BASE}/crypto/md4-internal.c
 	${HOSTAP_SRC_BASE}/crypto/aes-encblock.c
+	${HOSTAP_SRC_BASE}/crypto/tls_mbedtls.c
 )
 endif()
 
@@ -472,12 +644,26 @@ zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 	${HOSTAP_SRC_BASE}/crypto/ms_funcs.c
 	${HOSTAP_SRC_BASE}/crypto/aes-eax.c
 	${HOSTAP_SRC_BASE}/crypto/md4-internal.c
+	${HOSTAP_SRC_BASE}/crypto/sha1-internal.c
 	${HOSTAP_SRC_BASE}/crypto/fips_prf_internal.c
 	${HOSTAP_SRC_BASE}/crypto/milenage.c
+)
+
+zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_TEST
+	${HOSTAP_SRC_BASE}/crypto/crypto_module_tests.c
+	${HOSTAP_SRC_BASE}/crypto/fips_prf_internal.c
+	${HOSTAP_SRC_BASE}/crypto/sha1-internal.c
+	${HOSTAP_SRC_BASE}/crypto/sha1-tlsprf.c
 )
 endif()
 
 zephyr_library_link_libraries_ifndef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
 	mbedTLS)
+
+if(CONFIG_SAE_PWE_EARLY_EXIT)
+	message(WARNING "CONFIG_SAE_PWE_EARLY_EXIT is enabled, "
+	"this is not secure and is a workaround for low resource systems, "
+	"please use it carefully and do not use it production.")
+endif()
 
 endif()

@@ -49,8 +49,9 @@
 /*
  * Number of bits needed to store a page frame index. Rounded up to a byte
  * boundary for best compromize between code performance and space saving.
+ * The extra entry is used to store head and tail indexes.
  */
-#define PF_IDX_BITS ROUND_UP(LOG2CEIL(K_MEM_NUM_PAGE_FRAMES), 8)
+#define PF_IDX_BITS ROUND_UP(LOG2CEIL(K_MEM_NUM_PAGE_FRAMES + 1), 8)
 
 /* For each page frame, track the previous and next page frame in the queue. */
 struct lru_pf_idx {
@@ -58,12 +59,22 @@ struct lru_pf_idx {
 	uint32_t prev : PF_IDX_BITS;
 } __packed;
 
-static struct lru_pf_idx lru_pf_queue[K_MEM_NUM_PAGE_FRAMES];
+static struct lru_pf_idx lru_pf_queue[K_MEM_NUM_PAGE_FRAMES + 1];
 static struct k_spinlock lru_lock;
 
-/* Slot 0 is for head and tail indexes (assuming actual PF #0 won't be used) */
+/* Slot 0 is for head and tail indexes (actual indexes are offset by 1) */
 #define LRU_PF_HEAD lru_pf_queue[0].next
 #define LRU_PF_TAIL lru_pf_queue[0].prev
+
+static inline uint32_t pf_to_idx(struct k_mem_page_frame *pf)
+{
+	return (pf - k_mem_page_frames) + 1;
+}
+
+static inline struct k_mem_page_frame *idx_to_pf(uint32_t idx)
+{
+	return &k_mem_page_frames[idx - 1];
+}
 
 static inline void lru_pf_append(uint32_t pf_idx)
 {
@@ -100,9 +111,11 @@ static void lru_pf_remove(uint32_t pf_idx)
 
 	lru_pf_unlink(pf_idx);
 
-	if (was_head && (LRU_PF_HEAD != 0)) {
-		/* make new head PF unaccessible */
-		struct k_mem_page_frame *pf = &k_mem_page_frames[LRU_PF_HEAD];
+	/* make new head PF unaccessible if it exists and it is not alone */
+	if (was_head &&
+	    (LRU_PF_HEAD != 0) &&
+	    (lru_pf_queue[LRU_PF_HEAD].next != 0)) {
+		struct k_mem_page_frame *pf = idx_to_pf(LRU_PF_HEAD);
 		uintptr_t flags = arch_page_info_get(k_mem_page_frame_to_virt(pf), NULL, true);
 
 		/* clearing the accessed flag expected only on loaded pages */
@@ -113,11 +126,10 @@ static void lru_pf_remove(uint32_t pf_idx)
 
 void k_mem_paging_eviction_add(struct k_mem_page_frame *pf)
 {
-	uint32_t pf_idx = pf - k_mem_page_frames;
+	uint32_t pf_idx = pf_to_idx(pf);
 	k_spinlock_key_t key = k_spin_lock(&lru_lock);
 
 	__ASSERT(k_mem_page_frame_is_evictable(pf), "");
-	__ASSERT(pf_idx != 0, "page frame 0 not expected to be used here");
 	__ASSERT(!lru_pf_in_queue(pf_idx), "");
 	lru_pf_append(pf_idx);
 	k_spin_unlock(&lru_lock, key);
@@ -125,10 +137,9 @@ void k_mem_paging_eviction_add(struct k_mem_page_frame *pf)
 
 void k_mem_paging_eviction_remove(struct k_mem_page_frame *pf)
 {
-	uint32_t pf_idx = pf - k_mem_page_frames;
+	uint32_t pf_idx = pf_to_idx(pf);
 	k_spinlock_key_t key = k_spin_lock(&lru_lock);
 
-	__ASSERT(pf_idx != 0, "page frame 0 not expected to be used here");
 	__ASSERT(lru_pf_in_queue(pf_idx), "");
 	lru_pf_remove(pf_idx);
 	k_spin_unlock(&lru_lock, key);
@@ -137,10 +148,10 @@ void k_mem_paging_eviction_remove(struct k_mem_page_frame *pf)
 void k_mem_paging_eviction_accessed(uintptr_t phys)
 {
 	struct k_mem_page_frame *pf = k_mem_phys_to_page_frame(phys);
-	uint32_t pf_idx = pf - k_mem_page_frames;
+	uint32_t pf_idx = pf_to_idx(pf);
 	k_spinlock_key_t key = k_spin_lock(&lru_lock);
 
-	if (pf_idx != 0 && lru_pf_in_queue(pf_idx)) {
+	if (lru_pf_in_queue(pf_idx)) {
 		lru_pf_remove(pf_idx);
 		lru_pf_append(pf_idx);
 	}
@@ -155,7 +166,7 @@ struct k_mem_page_frame *k_mem_paging_eviction_select(bool *dirty_ptr)
 		return NULL;
 	}
 
-	struct k_mem_page_frame *pf = &k_mem_page_frames[head_pf_idx];
+	struct k_mem_page_frame *pf = idx_to_pf(head_pf_idx);
 	uintptr_t flags = arch_page_info_get(k_mem_page_frame_to_virt(pf), NULL, false);
 
 	__ASSERT(k_mem_page_frame_is_evictable(pf), "");

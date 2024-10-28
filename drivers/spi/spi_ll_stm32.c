@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 #include <stm32_ll_spi.h>
 #include <errno.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi/rtio.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/pm/policy.h>
@@ -822,13 +823,6 @@ static int transceive(const struct device *dev,
 
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_fifo)
-	/* Flush RX buffer */
-	while (ll_func_rx_is_not_empty(spi)) {
-		(void) LL_SPI_ReceiveData8(spi);
-	}
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_fifo) */
-
 	LL_SPI_Enable(spi);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
@@ -1157,6 +1151,9 @@ static const struct spi_driver_api api_funcs = {
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_stm32_transceive_async,
 #endif
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
+#endif
 	.release = spi_stm32_release,
 };
 
@@ -1399,7 +1396,7 @@ static struct spi_stm32_data spi_stm32_dev_data_##id = {		\
 									\
 PM_DEVICE_DT_INST_DEFINE(id, spi_stm32_pm_action);			\
 									\
-DEVICE_DT_INST_DEFINE(id, &spi_stm32_init, PM_DEVICE_DT_INST_GET(id),	\
+DEVICE_DT_INST_DEFINE(id, spi_stm32_init, PM_DEVICE_DT_INST_GET(id),	\
 		    &spi_stm32_dev_data_##id, &spi_stm32_cfg_##id,	\
 		    POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,		\
 		    &api_funcs);					\

@@ -8,19 +8,17 @@
 
 config BT_BAP_UNICAST
 	bool
-	depends on BT_CONN
-	select BT_SMP
-	select BT_ISO_UNICAST
 
 config BT_BAP_UNICAST_SERVER
 	bool "Bluetooth Unicast Audio Server Support"
 	select BT_BAP_UNICAST
-	select BT_GATT_DYNAMIC_DB
-	select BT_GATT_CACHING
+	depends on BT_GATT_DYNAMIC_DB
+	depends on BT_GATT_CACHING
 	depends on BT_PERIPHERAL
 	depends on BT_ISO_PERIPHERAL
 	depends on BT_ASCS
 	depends on BT_PACS
+	depends on BT_BONDABLE
 	help
 	  This option enables support for Bluetooth Unicast Audio Server
 	  using Isochronous channels.
@@ -28,11 +26,12 @@ config BT_BAP_UNICAST_SERVER
 config BT_BAP_UNICAST_CLIENT
 	bool "Bluetooth Unicast Audio Client Support"
 	select BT_BAP_UNICAST
-	select BT_ISO_CENTRAL
-	select BT_CENTRAL
 	select BT_GATT_CLIENT
 	select BT_GATT_AUTO_DISCOVER_CCC
 	select BT_GATT_AUTO_UPDATE_MTU
+	depends on BT_CENTRAL
+	depends on BT_ISO_CENTRAL
+	depends on BT_BONDABLE
 	help
 	  This option enables support for Bluetooth Unicast Audio Client
 	  using Isochronous channels.
@@ -40,7 +39,7 @@ config BT_BAP_UNICAST_CLIENT
 config BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE
 	int "Codec Specific Configuration Data Size"
 	default 19
-	range 0 255
+	range 0 $(UINT8_MAX)
 	help
 	  Number of octets to support for Codec Specific Configuration data.
 	  The default value 19 matches the required fields for the LC3 codec.
@@ -48,7 +47,7 @@ config BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE
 config BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE
 	int "Codec Specific Configuration Metadata Size"
 	default 4
-	range 0 255
+	range 0 $(UINT8_MAX)
 	help
 	  Number of octets to support for Codec Specific Configuration metadata.
 
@@ -65,7 +64,7 @@ config BT_BAP_BASS_MAX_SUBGROUPS
 config BT_AUDIO_CODEC_CAP_MAX_DATA_SIZE
 	int "Codec Capabilities Data Size"
 	default 19
-	range 0 255
+	range 0 $(UINT8_MAX)
 	help
 	  Number of octets to support for Codec Specific Capabilities data.
 	  The default value 19 matches the required fields for the LC3 codec.
@@ -73,7 +72,7 @@ config BT_AUDIO_CODEC_CAP_MAX_DATA_SIZE
 config BT_AUDIO_CODEC_CAP_MAX_METADATA_SIZE
 	int "Codec Capabilities Metadata Size"
 	default 4
-	range 0 255
+	range 0 $(UINT8_MAX)
 	help
 	  Number of octets to support for Codec Specific Capabilities metadata.
 
@@ -101,7 +100,7 @@ config BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT
 config BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT
 	int "Basic Audio Profile ASE Sink count"
 	default 2
-	range 0 255
+	range 0 $(UINT8_MAX)
 	help
 	  This option enables caching a number of Audio Stream Endpoint Sink
 	  instances for Basic Audio Profile on a per connection basis.
@@ -109,7 +108,7 @@ config BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT
 config BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT
 	int "Basic Audio Profile ASE Source count"
 	default 2
-	range 0 255
+	range 0 $(UINT8_MAX)
 	help
 	  This option enables caching a number of Audio Stream Endpoint Source
 	  instances for Basic Audio Profile on a per connection basis.
@@ -208,10 +207,12 @@ endif # BT_BAP_BROADCAST_SINK
 
 config BT_BAP_SCAN_DELEGATOR
 	bool "Basic Audio Profile Scan Delegator role support"
-	select BT_OBSERVER
 	select BT_EXT_ADV
 	select BT_PER_ADV_SYNC
 	select BT_ISO_SYNC_RECEIVER
+	depends on BT_OBSERVER
+	depends on BT_GATT_DYNAMIC_DB
+	depends on BT_BONDABLE
 	help
 	  This option enables support for the Scan Delegator role and the
 	  Broadcast Audio Scan Service (BASS).
@@ -240,13 +241,14 @@ endif # BT_BAP_SCAN_DELEGATOR
 
 config BT_BAP_BROADCAST_ASSISTANT
 	bool "Basic Audio Profile Broadcast Assistant role support"
-	select BT_OBSERVER
 	select BT_EXT_ADV
 	select BT_PER_ADV_SYNC
 	select BT_ISO_SYNC_RECEIVER
 	select BT_GATT_CLIENT
 	select BT_GATT_AUTO_DISCOVER_CCC
 	select BT_GATT_AUTO_UPDATE_MTU
+	depends on BT_OBSERVER
+	depends on BT_BONDABLE
 	help
 	  This option enables support for the Broadcast Assistant role.
 
@@ -255,7 +257,7 @@ if BT_BAP_BROADCAST_ASSISTANT
 config BT_BAP_BROADCAST_ASSISTANT_RECV_STATE_COUNT
 	int "Broadcast Assistant Max Receive State Count"
 	default 1
-	range 1 255
+	range 1 $(UINT8_MAX)
 	help
 	  Sets the number of maximum receive stat characteristics that will be
 	  discovered and ready to use. Each characteristic may hold information

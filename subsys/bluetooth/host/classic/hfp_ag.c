@@ -473,7 +473,7 @@ static int bt_hfp_ag_bac_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 	}
 	hfp_ag_unlock(ag);
 
-	while (err == 0) {
+	while (buf->len > 0) {
 		err = get_number(buf, &codec);
 		if (err != 0) {
 			return -ENOTSUP;
@@ -2036,7 +2036,7 @@ int bt_hfp_ag_terminate(struct bt_hfp_ag *ag)
 		return -ENOTCONN;
 	}
 
-	if ((ag->call_state != BT_HFP_CALL_ACTIVE) || (ag->call_state != BT_HFP_CALL_HOLD)) {
+	if ((ag->call_state != BT_HFP_CALL_ACTIVE) && (ag->call_state != BT_HFP_CALL_HOLD)) {
 		hfp_ag_unlock(ag);
 		return -EINVAL;
 	}
@@ -2241,7 +2241,7 @@ int bt_hfp_ag_remote_terminate(struct bt_hfp_ag *ag)
 		return -ENOTCONN;
 	}
 
-	if ((ag->call_state != BT_HFP_CALL_ACTIVE) || (ag->call_state != BT_HFP_CALL_HOLD)) {
+	if ((ag->call_state != BT_HFP_CALL_ACTIVE) && (ag->call_state != BT_HFP_CALL_HOLD)) {
 		hfp_ag_unlock(ag);
 		return -EINVAL;
 	}

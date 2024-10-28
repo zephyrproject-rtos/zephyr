@@ -77,6 +77,68 @@ int bt_audio_data_parse(const uint8_t ltv[], size_t size,
 	return 0;
 }
 
+struct search_type_param {
+	bool found;
+	uint8_t type;
+	uint8_t data_len;
+	const uint8_t **data;
+};
+
+static bool parse_cb(struct bt_data *data, void *user_data)
+{
+	struct search_type_param *param = (struct search_type_param *)user_data;
+
+	if (param->type == data->type) {
+		param->found = true;
+		param->data_len = data->data_len;
+		*param->data = data->data;
+
+		return false;
+	}
+
+	return true;
+}
+
+int bt_audio_data_get_val(const uint8_t ltv_data[], size_t size, uint8_t type, const uint8_t **data)
+{
+	struct search_type_param param = {
+		.found = false,
+		.type = type,
+		.data_len = 0U,
+		.data = data,
+	};
+	int err;
+
+	CHECKIF(ltv_data == NULL) {
+		LOG_DBG("ltv_data is NULL");
+		return -EINVAL;
+	}
+
+	CHECKIF(data == NULL) {
+		LOG_DBG("data is NULL");
+		return -EINVAL;
+	}
+
+	*data = NULL;
+
+	/* If the size is 0 we can terminate early */
+	if (size == 0U) {
+		return -ENODATA;
+	}
+
+	err = bt_audio_data_parse(ltv_data, size, parse_cb, &param);
+	if (err != 0 && err != -ECANCELED) {
+		LOG_DBG("Could not parse the data: %d", err);
+		return err;
+	}
+
+	if (!param.found) {
+		return -ENODATA;
+	}
+
+	return param.data_len;
+}
+
 uint8_t bt_audio_get_chan_count(enum bt_audio_location chan_allocation)
 {
 	if (chan_allocation == BT_AUDIO_LOCATION_MONO_AUDIO) {
@@ -95,6 +157,17 @@ uint8_t bt_audio_get_chan_count(enum bt_audio_location chan_allocation)
 
 	return cnt;
 #endif
+}
+
+static bool valid_ltv_cb(struct bt_data *data, void *user_data)
+{
+	/* just return true to continue parsing as bt_data_parse will validate for us */
+	return true;
+}
+
+bool bt_audio_valid_ltv(const uint8_t *data, uint8_t data_len)
+{
+	return bt_audio_data_parse(data, data_len, valid_ltv_cb, NULL) == 0;
 }
 
 #if defined(CONFIG_BT_CONN)

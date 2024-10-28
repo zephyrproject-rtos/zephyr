@@ -88,6 +88,7 @@ config CSPRNG_ENABLED
 choice CSPRNG_GENERATOR_CHOICE
 	prompt "Cryptographically secure random generator"
 	default HARDWARE_DEVICE_CS_GENERATOR
+	default TEST_CSPRNG_GENERATOR
 	help
 	  Platform dependent cryptographically secure random number support.
 
@@ -113,8 +114,15 @@ config CTR_DRBG_CSPRNG_GENERATOR
 	help
 	  Enables the CTR-DRBG pseudo-random number generator. This CSPRNG
 	  shall use the entropy API for an initialization seed. The CTR-DRBG
-	  is a a FIPS140-2 recommended cryptographically secure random number
+	  is a FIPS140-2 recommended cryptographically secure random number
 	  generator.
+
+config TEST_CSPRNG_GENERATOR
+	bool "Use insecure CSPRNG for testing purposes"
+	depends on TEST_RANDOM_GENERATOR
+	help
+	  Route calls to `sys_csrand_get` through `sys_rand_get` to enable
+	  libraries that use the former to be tested with ZTEST.
 
 endchoice # CSPRNG_GENERATOR_CHOICE
 

@@ -49,11 +49,11 @@ ip link add link ${IFACE} name ${VLAN_NAME_PREFIX}.200 type vlan id 200
 ip link set ${VLAN_NAME_PREFIX}.100 up
 ip link set ${VLAN_NAME_PREFIX}.200 up
 
-ip -6 addr add ${PREFIX_1_IPV6}::2 dev ${VLAN_NAME_PREFIX}.100
+ip -6 addr add ${PREFIX_1_IPV6}::2/${PREFIXLEN_1_IPV6} dev ${VLAN_NAME_PREFIX}.100
 ip -6 route add ${PREFIX_1_IPV6}::/${PREFIXLEN_1_IPV6} \
    dev ${VLAN_NAME_PREFIX}.100
 
-ip -6 addr add ${PREFIX_2_IPV6}::2 dev ${VLAN_NAME_PREFIX}.200
+ip -6 addr add ${PREFIX_2_IPV6}::2/${PREFIXLEN_2_IPV6} dev ${VLAN_NAME_PREFIX}.200
 ip -6 route add ${PREFIX_2_IPV6}::/${PREFIXLEN_2_IPV6} \
    dev ${VLAN_NAME_PREFIX}.200
 

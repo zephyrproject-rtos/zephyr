@@ -30,6 +30,13 @@ Here are the choices regarding memory dump:
   walking the stack in the debugger. Use this only if absolute minimum of data
   dump is desired.
 
+* ``DEBUG_COREDUMP_MEMORY_DUMP_THREADS``: Dumps the thread struct and stack of all
+  threads and all data required to debug threads.
+
+* ``DEBUG_COREDUMP_MEMORY_DUMP_LINKER_RAM``: Dumps the memory region between
+  _image_ram_start[] and _image_ram_end[]. This includes at least data, noinit,
+  and BSS sections. This is the default.
+
 Additional memory can be included in a dump (even with the "DEBUG_COREDUMP_MEMORY_DUMP_MIN"
 config selected) through one or more :ref:`coredump devices <coredump_device_api>`
 
@@ -83,7 +90,7 @@ Example
 -------
 
 This example uses the log module backend tied to serial console.
-This was done on :ref:`qemu_x86` where a null pointer was dereferenced.
+This was done on :zephyr:board:`qemu_x86` where a null pointer was dereferenced.
 
 This is the core dump log from the serial console, and is stored
 in :file:`coredump.log`:
@@ -244,7 +251,8 @@ File Format
 ***********
 
 The core dump binary file consists of one file header, one
-architecture-specific block, and multiple memory blocks. All numbers in
+architecture-specific block, zero or one threads metadata block(s),
+and multiple memory blocks. All numbers in
 the headers below are little endian.
 
 File Header
@@ -314,6 +322,36 @@ to the target architecture (e.g. CPU registers)
    * - Register byte stream
      - ``uint8_t[]``
      - Contains target architecture specific data.
+
+Threads Metadata Block
+---------------------------
+
+The threads metadata block contains the byte stream of data necessary
+for debugging threads.
+
+.. list-table:: Threads Metadata Block
+   :widths: 2 1 7
+   :header-rows: 1
+
+   * - Field
+     - Data Type
+     - Description
+   * - ID
+     - ``char``
+     - ``T`` to indicate this is a threads metadata block.
+   * - Header version
+     - ``uint16_t``
+     - Identify the version of the header. This needs to be incremented
+       whenever the header struct is modified. This allows parser to
+       reject older header versions so it will not incorrectly parse
+       the header.
+   * - Number of bytes
+     - ``uint16_t``
+     - Number of bytes following the header which contains the byte stream
+       for target data.
+   * - Byte stream
+     - ``uint8_t[]``
+     - Contains data necessary for debugging threads.
 
 Memory Block
 ------------

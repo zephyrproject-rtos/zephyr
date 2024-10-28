@@ -135,7 +135,7 @@ config LOG_IMMEDIATE_CLEAN_OUTPUT
 config LOG_BACKEND_SHOW_COLOR
 	bool "Colors in the backend"
 	depends on LOG_BACKEND_UART || LOG_BACKEND_NATIVE_POSIX || LOG_BACKEND_RTT \
-	           || LOG_BACKEND_SWO || LOG_BACKEND_XTENSA_SIM
+	           || LOG_BACKEND_SWO || LOG_BACKEND_XTENSA_SIM || SHELL_LOG_BACKEND
 	default y
 	help
 	  When enabled selected backend prints errors in red and warning in yellow.
@@ -144,6 +144,9 @@ if LOG_BACKEND_SHOW_COLOR
 
 config LOG_INFO_COLOR_GREEN
 	bool "Use green color for info level logs"
+
+config LOG_DBG_COLOR_BLUE
+	bool "Use blue color for debug level logs"
 
 endif # LOG_BACKEND_SHOW_COLOR
 
@@ -172,7 +175,27 @@ config LOG_BACKEND_FORMAT_TIMESTAMP
 	depends on LOG_BACKEND_SUPPORTS_FORMAT_TIMESTAMP
 	default y
 	help
-	  When enabled timestamp is formatted to hh:mm:ss:ms,us.
+	  When enabled timestamp is formatted.
+
+choice LOG_BACKEND_FORMAT_TIMESTAMP_MODE
+	prompt "Timestamp format mode"
+	default LOG_OUTPUT_FORMAT_DATE_TIMESTAMP if LOG_TIMESTAMP_USE_REALTIME
+	default LOG_OUTPUT_FORMAT_TIME_TIMESTAMP
+
+config LOG_OUTPUT_FORMAT_TIME_TIMESTAMP
+	bool "Format timestamp in time format"
+	help
+	  When enabled timestamp is formatted to hh:mm:ss.ms,us.
+
+config LOG_OUTPUT_FORMAT_DATE_TIMESTAMP
+	bool "Format timestamp in date format"
+	help
+	  When enabled timestamp is formatted to YYYY-MM-DD hh:mm:ss.ms,us.
+
+config LOG_OUTPUT_FORMAT_ISO8601_TIMESTAMP
+	bool "Format timestamp in ISO 8601 format"
+	help
+	  When enabled timestamp is formatted to YYYY-MM-DDThh:mm:ss,ffffffZ.
 
 config LOG_OUTPUT_FORMAT_LINUX_TIMESTAMP
 	bool "Format timestamp in Linux format"
@@ -186,6 +209,8 @@ config LOG_OUTPUT_FORMAT_CUSTOM_TIMESTAMP
 	bool "Custom timestamp format support"
 	help
 	  Enable support for custom formatter for the timestamp.
-	  It will be applied to all backends.
+	  It will be applied to all backends except the syslog net backend.
+
+endchoice
 
 endmenu

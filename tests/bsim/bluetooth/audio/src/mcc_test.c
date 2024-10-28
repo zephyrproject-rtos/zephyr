@@ -17,7 +17,7 @@
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/services/ots.h>
 #include <zephyr/kernel.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/printk.h>
 
 #include "bstests.h"
@@ -729,7 +729,7 @@ static void test_invalid_send_cmd(void)
 	}
 }
 
-/* Helper function to write commands to to the control point, including the
+/* Helper function to write commands to the control point, including the
  * flag handling.
  * Will FAIL on error to send the command.
  * Will WAIT for the required flags before returning.

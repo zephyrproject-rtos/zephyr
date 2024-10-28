@@ -9,11 +9,9 @@ toolchain:
   - gnuarmemb
   - xtools
 supported:
+  - bluetooth
   - counter
   - gpio
   - uart
-testing:
-  ignore_tags:
-    - net
-    - bluetooth
+  - clock_control
 vendor: silabs

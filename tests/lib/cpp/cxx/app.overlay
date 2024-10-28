@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2024 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Application overlay for creating a fake device instance we can use to
+ * test. Subset of tests/kernel/device/app.overlay and other app.overlay
+ * files.
+ */
+
+/ {
+	test_dev0_boot: dev0 {
+		compatible = "fake-cpp-driver";
+		status = "okay";
+	};
+
+	test_dev1_dfr: dev1 {
+		compatible = "fake-cpp-driver";
+		status = "okay";
+
+		zephyr,deferred-init;
+	};
+};

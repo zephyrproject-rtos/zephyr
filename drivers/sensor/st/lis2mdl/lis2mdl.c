@@ -12,7 +12,6 @@
 
 #include <zephyr/init.h>
 #include <zephyr/sys/__assert.h>
-#include <zephyr/sys/byteorder.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/pm/device.h>
 #include <string.h>
@@ -74,7 +73,7 @@ static int lis2mdl_set_hard_iron(const struct device *dev,
 	int16_t offset[3];
 
 	for (i = 0U; i < 3; i++) {
-		offset[i] = sys_cpu_to_le16(val->val1);
+		offset[i] = val->val1;
 		val++;
 	}
 
@@ -229,9 +228,9 @@ static int lis2mdl_sample_fetch_mag(const struct device *dev)
 			LOG_ERR("Failed to read raw data");
 			return rc;
 		}
-		lis2mdl->mag[0] = sys_le16_to_cpu(raw_mag[0]);
-		lis2mdl->mag[1] = sys_le16_to_cpu(raw_mag[1]);
-		lis2mdl->mag[2] = sys_le16_to_cpu(raw_mag[2]);
+		lis2mdl->mag[0] = raw_mag[0];
+		lis2mdl->mag[1] = raw_mag[1];
+		lis2mdl->mag[2] = raw_mag[2];
 
 		if (cfg->cancel_offset) {
 			/* The second measurement is needed when offset
@@ -247,9 +246,9 @@ static int lis2mdl_sample_fetch_mag(const struct device *dev)
 				LOG_ERR("Failed to read raw data");
 				return rc;
 			}
-			lis2mdl->mag[0] += sys_le16_to_cpu(raw_mag[0]);
-			lis2mdl->mag[1] += sys_le16_to_cpu(raw_mag[1]);
-			lis2mdl->mag[2] += sys_le16_to_cpu(raw_mag[2]);
+			lis2mdl->mag[0] += raw_mag[0];
+			lis2mdl->mag[1] += raw_mag[1];
+			lis2mdl->mag[2] += raw_mag[2];
 			lis2mdl->mag[0] /= 2;
 			lis2mdl->mag[1] /= 2;
 			lis2mdl->mag[2] /= 2;
@@ -262,9 +261,9 @@ static int lis2mdl_sample_fetch_mag(const struct device *dev)
 			LOG_ERR("Failed to read sample");
 			return rc;
 		}
-		lis2mdl->mag[0] = sys_le16_to_cpu(raw_mag[0]);
-		lis2mdl->mag[1] = sys_le16_to_cpu(raw_mag[1]);
-		lis2mdl->mag[2] = sys_le16_to_cpu(raw_mag[2]);
+		lis2mdl->mag[0] = raw_mag[0];
+		lis2mdl->mag[1] = raw_mag[1];
+		lis2mdl->mag[2] = raw_mag[2];
 	}
 	return 0;
 }
@@ -282,7 +281,7 @@ static int lis2mdl_sample_fetch_temp(const struct device *dev)
 		return -EIO;
 	}
 
-	lis2mdl->temp_sample = (sys_le16_to_cpu(raw_temp));
+	lis2mdl->temp_sample = raw_temp;
 
 	return 0;
 }
@@ -528,10 +527,11 @@ static int lis2mdl_pm_action(const struct device *dev,
 		STMEMSC_CTX_SPI(&lis2mdl_config_##inst.stmemsc_cfg),	\
 		.stmemsc_cfg = {					\
 			.spi = SPI_DT_SPEC_INST_GET(inst,		\
-					   LIS2MDL_SPI_OPERATION,	\
-					   0),				\
+						LIS2MDL_SPI_OPERATION,	\
+						0),			\
 		},							\
-		.spi_4wires = DT_INST_PROP(inst, spi_full_duplex),	\
+		.spi_4wires = DT_INST_PROP(inst, duplex) ==		\
+						SPI_FULL_DUPLEX,	\
 		LIS2MDL_CONFIG_COMMON(inst)				\
 	}
 

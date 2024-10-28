@@ -125,7 +125,7 @@ static int mcux_scg_get_rate(const struct device *dev,
 
 static int mcux_scg_init(const struct device *dev)
 {
-#if DT_NODE_HAS_STATUS(MCUX_SCG_CLOCK_NODE(clkout_clk), okay)
+#if DT_NODE_HAS_STATUS_OKAY(MCUX_SCG_CLOCK_NODE(clkout_clk))
 #if DT_SAME_NODE(DT_CLOCKS_CTLR(MCUX_SCG_CLOCK_NODE(clkout_clk)), MCUX_SCG_CLOCK_NODE(slow_clk))
 	CLOCK_SetClkOutSel(kClockClkoutSelScgSlow);
 #elif DT_SAME_NODE(DT_CLOCKS_CTLR(MCUX_SCG_CLOCK_NODE(clkout_clk)), MCUX_SCG_CLOCK_NODE(sosc_clk))
@@ -139,7 +139,7 @@ static int mcux_scg_init(const struct device *dev)
 #else
 #error Unsupported SCG clkout clock source
 #endif
-#endif /* DT_NODE_HAS_STATUS(MCUX_SCG_CLOCK_NODE(clkout_clk), okay) */
+#endif /* DT_NODE_HAS_STATUS_OKAY(MCUX_SCG_CLOCK_NODE(clkout_clk)) */
 
 	return 0;
 }
@@ -151,7 +151,7 @@ static const struct clock_control_driver_api mcux_scg_driver_api = {
 };
 
 DEVICE_DT_INST_DEFINE(0,
-		    &mcux_scg_init,
+		    mcux_scg_init,
 		    NULL,
 		    NULL, NULL,
 		    PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,

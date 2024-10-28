@@ -191,7 +191,6 @@
 	lis2mdl: lis2mdl@0 {
 		compatible = "st,lis2mdl";
 		spi-max-frequency = <1000000>;
-		spi-full-duplex;
 		reg = <0>;
 	};
 };

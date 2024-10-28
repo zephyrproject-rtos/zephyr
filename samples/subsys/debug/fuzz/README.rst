@@ -1,11 +1,13 @@
-Fuzzing Example
-###############
+.. zephyr:code-sample:: fuzzing
+   :name: Fuzzing
+
+   Integrate fuzz testing with Zephyr apps.
 
 Overview
 ********
 
 This is a simple example of fuzz test integration with Zephyr apps
-that displays LLVM libfuzzer's most important feature: it's ability to
+that displays LLVM libfuzzer's most important feature: its ability to
 detect and explore deep and complicated call trees by exploiting
 coverage information gleaned from instrumented binaries.
 

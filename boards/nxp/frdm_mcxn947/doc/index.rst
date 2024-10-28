@@ -1,7 +1,4 @@
-.. _frdm_mcxn947:
-
-NXP FRDM-MCXN947
-################
+.. zephyr:board:: frdm_mcxn947
 
 Overview
 ********
@@ -12,10 +9,6 @@ MCUs I/Os, integrated open-standard serial interfaces, external flash memory and
 an on-board MCU-Link debugger. MCX N Series are high-performance, low-power
 microcontrollers with intelligent peripherals and accelerators providing multi-tasking
 capabilities and performance efficiency.
-
-.. image:: frdm_mcxn947.webp
-   :align: center
-   :alt: FRDM-MCXN947
 
 Hardware
 ********
@@ -66,6 +59,8 @@ The FRDM-MCXN947 board configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
+| I3C       | on-chip    | i3c                                 |
++-----------+------------+-------------------------------------+
 | CLOCK     | on-chip    | clock_control                       |
 +-----------+------------+-------------------------------------+
 | FLASH     | on-chip    | soc flash                           |
@@ -84,7 +79,7 @@ The FRDM-MCXN947 board configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | USDHC     | on-chip    | sdhc                                |
 +-----------+------------+-------------------------------------+
-| VREF      | on-chip    | REGULATOR                           |
+| VREF      | on-chip    | regulator                           |
 +-----------+------------+-------------------------------------+
 | ADC       | on-chip    | adc                                 |
 +-----------+------------+-------------------------------------+
@@ -100,6 +95,8 @@ The FRDM-MCXN947 board configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | DISPLAY   | on-chip    | flexio; MIPI-DBI. Tested with       |
 |           |            | :ref:`lcd_par_s035`                 |
++-----------+------------+-------------------------------------+
+| MRT       | on-chip    | counter                             |
 +-----------+------------+-------------------------------------+
 
 Targets available
@@ -190,7 +187,7 @@ Connect a USB cable from your PC to J17, and use the serial terminal of your cho
 Flashing
 ========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -205,10 +202,47 @@ see the following message in the terminal:
    *** Booting Zephyr OS build v3.6.0-479-g91faa20c6741 ***
    Hello World! frdm_mcxn947/mcxn947/cpu0
 
+Flashing to QSPI
+================
+
+Here is an example for the :zephyr:code-sample:`hello_world` application.
+
+.. zephyr-app-commands::
+   :app: zephyr/samples/hello_world
+   :board: frdm_mcxn947/mcxn947/cpu0/qspi
+   :gen-args: -DCONFIG_MCUBOOT_SIGNATURE_KEY_FILE=\"bootloader/mcuboot/root-rsa-2048.pem\" -DCONFIG_BOOTLOADER_MCUBOOT=y
+   :goals: flash
+
+
+In order to load Zephyr application from QSPI you should program a bootloader like
+MCUboot bootloader to internal flash. Here are the steps.
+
+.. zephyr-app-commands::
+   :app: bootloader/mcuboot/boot/zephyr
+   :board: frdm_mcxn947/mcxn947/cpu0/qspi
+   :goals: flash
+
+Open a serial terminal, reset the board (press the RESET button), and you should
+see the following message in the terminal:
+
+.. code-block:: console
+
+  *** Booting MCUboot v2.1.0-rc1-2-g9f034729d99a ***
+  *** Using Zephyr OS build v3.6.0-4046-gf279a03af8ab ***
+  I: Starting bootloader
+  I: Primary image: magic=unset, swap_type=0x1, copy_done=0x3, image_ok=0x3
+  I: Secondary image: magic=unset, swap_type=0x1, copy_done=0x3, image_ok=0x3
+  I: Boot source: none
+  I: Image index: 0, Swap type: none
+  I: Bootloader chainload address offset: 0x0
+  I: Jumping to the first image slot
+  *** Booting Zephyr OS build v3.6.0-4046-gf279a03af8ab ***
+  Hello World! frdm_mcxn947/mcxn947/cpu0/qspi
+
 Debugging
 =========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

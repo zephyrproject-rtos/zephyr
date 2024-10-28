@@ -17,6 +17,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/net_buf.h>
 
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/bluetooth.h>
@@ -261,7 +262,7 @@ void bt_l2cap_chan_del(struct bt_l2cap_chan *chan)
 	 * `l2cap_chan_destroy()` as it is not called for fixed channels.
 	 */
 	while (chan_has_data(le_chan)) {
-		struct net_buf *buf = net_buf_get(&le_chan->tx_queue, K_NO_WAIT);
+		struct net_buf *buf = k_fifo_get(&le_chan->tx_queue, K_NO_WAIT);
 
 		net_buf_unref(buf);
 	}
@@ -312,7 +313,7 @@ static void l2cap_rx_process(struct k_work *work)
 	struct bt_l2cap_le_chan *ch = CHAN_RX(work);
 	struct net_buf *buf;
 
-	while ((buf = net_buf_get(&ch->rx_queue, K_NO_WAIT))) {
+	while ((buf = k_fifo_get(&ch->rx_queue, K_NO_WAIT))) {
 		LOG_DBG("ch %p buf %p", ch, buf);
 		l2cap_chan_le_recv(ch, buf);
 		net_buf_unref(buf);
@@ -329,6 +330,23 @@ void bt_l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 	chan->destroy = destroy;
 
 	LOG_DBG("conn %p chan %p", conn, chan);
+}
+
+static void init_le_chan_private(struct bt_l2cap_le_chan *le_chan)
+{
+	/* Initialize private members of the struct. We can't "just memset" as
+	 * some members are used as application parameters.
+	 */
+#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
+	le_chan->_sdu = NULL;
+	le_chan->_sdu_len = 0;
+#if defined(CONFIG_BT_L2CAP_SEG_RECV)
+	le_chan->_sdu_len_done = 0;
+#endif /* CONFIG_BT_L2CAP_SEG_RECV */
+#endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
+	memset(&le_chan->_pdu_ready, 0, sizeof(le_chan->_pdu_ready));
+	le_chan->_pdu_ready_lock = 0;
+	le_chan->_pdu_remaining = 0;
 }
 
 static bool l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
@@ -348,6 +366,7 @@ static bool l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 	}
 
 	atomic_clear(chan->status);
+	init_le_chan_private(le_chan);
 
 	bt_l2cap_chan_add(conn, chan, destroy);
 
@@ -699,6 +718,10 @@ static void cancel_data_ready(struct bt_l2cap_le_chan *le_chan)
 int bt_l2cap_send_pdu(struct bt_l2cap_le_chan *le_chan, struct net_buf *pdu,
 		      bt_conn_tx_cb_t cb, void *user_data)
 {
+	if (!le_chan->chan.conn || le_chan->chan.conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
+	}
+
 	if (pdu->ref != 1) {
 		/* The host may alter the buf contents when fragmenting. Higher
 		 * layers cannot expect the buf contents to stay intact. Extra
@@ -720,7 +743,7 @@ int bt_l2cap_send_pdu(struct bt_l2cap_le_chan *le_chan, struct net_buf *pdu,
 	make_closure(pdu->user_data, cb, user_data);
 	LOG_DBG("push: pdu %p len %d cb %p userdata %p", pdu, pdu->len, cb, user_data);
 
-	net_buf_put(&le_chan->tx_queue, pdu);
+	k_fifo_put(&le_chan->tx_queue, pdu);
 
 	raise_data_ready(le_chan); /* tis just a flag */
 
@@ -885,11 +908,15 @@ struct net_buf *l2cap_data_pull(struct bt_conn *conn,
 	 */
 	struct net_buf *pdu = k_fifo_peek_head(&lechan->tx_queue);
 
+	/* We don't have anything to send for the current channel. We could
+	 * however have something to send on another channel that is attached to
+	 * the same ACL connection. Re-trigger the TX processor: it will call us
+	 * again and this time we will select another channel to pull data from.
+	 */
 	if (!pdu) {
 		bt_tx_irq_raise();
 		return NULL;
 	}
-	/* __ASSERT(pdu, "signaled ready but no PDUs in the TX queue"); */
 
 	if (bt_buf_has_view(pdu)) {
 		LOG_ERR("already have view on %p", pdu);
@@ -911,7 +938,7 @@ struct net_buf *l2cap_data_pull(struct bt_conn *conn,
 		struct bt_l2cap_hdr *hdr;
 		uint16_t pdu_len = get_pdu_len(lechan, pdu);
 
-		LOG_DBG("Adding L2CAP PDU header: buf %p chan %p len %zu / %zu",
+		LOG_DBG("Adding L2CAP PDU header: buf %p chan %p len %u / %u",
 			pdu, lechan, pdu_len, pdu->len);
 
 		LOG_HEXDUMP_DBG(pdu->data, pdu->len, "PDU payload");
@@ -938,14 +965,16 @@ struct net_buf *l2cap_data_pull(struct bt_conn *conn,
 		__maybe_unused struct net_buf *b = k_fifo_get(&lechan->tx_queue, K_NO_WAIT);
 
 		__ASSERT_NO_MSG(b == pdu);
+	}
 
-		if (L2CAP_LE_CID_IS_DYN(lechan->tx.cid)) {
-			LOG_DBG("adding `sdu_sent` callback");
-			/* No user callbacks for SDUs */
-			make_closure(pdu->user_data,
-				     l2cap_chan_sdu_sent,
-				     UINT_TO_POINTER(lechan->tx.cid));
-		}
+	if (last_frag && L2CAP_LE_CID_IS_DYN(lechan->tx.cid)) {
+		bool sdu_end = last_frag && last_seg;
+
+		LOG_DBG("adding %s callback", sdu_end ? "`sdu_sent`" : "NULL");
+		/* No user callbacks for SDUs */
+		make_closure(pdu->user_data,
+			     sdu_end ? l2cap_chan_sdu_sent : NULL,
+			     sdu_end ? UINT_TO_POINTER(lechan->tx.cid) : NULL);
 	}
 
 	if (last_frag) {
@@ -1279,7 +1308,7 @@ static void l2cap_chan_destroy(struct bt_l2cap_chan *chan)
 	}
 
 	/* Remove buffers on the SDU RX queue */
-	while ((buf = net_buf_get(&le_chan->rx_queue, K_NO_WAIT))) {
+	while ((buf = k_fifo_get(&le_chan->rx_queue, K_NO_WAIT))) {
 		net_buf_unref(buf);
 	}
 
@@ -1302,7 +1331,7 @@ static uint16_t le_err_to_result(int err)
 		return BT_L2CAP_LE_ERR_KEY_SIZE;
 	case -ENOTSUP:
 		/* This handle the cases where a fixed channel is registered but
-		 * for some reason (e.g. controller not suporting a feature)
+		 * for some reason (e.g. controller not supporting a feature)
 		 * cannot be used.
 		 */
 		return BT_L2CAP_LE_ERR_PSM_NOT_SUPP;
@@ -2239,12 +2268,12 @@ static void l2cap_chan_shutdown(struct bt_l2cap_chan *chan)
 	}
 
 	/* Remove buffers on the TX queue */
-	while ((buf = net_buf_get(&le_chan->tx_queue, K_NO_WAIT))) {
+	while ((buf = k_fifo_get(&le_chan->tx_queue, K_NO_WAIT))) {
 		l2cap_tx_buf_destroy(chan->conn, buf, -ESHUTDOWN);
 	}
 
 	/* Remove buffers on the RX queue */
-	while ((buf = net_buf_get(&le_chan->rx_queue, K_NO_WAIT))) {
+	while ((buf = k_fifo_get(&le_chan->rx_queue, K_NO_WAIT))) {
 		net_buf_unref(buf);
 	}
 
@@ -2538,6 +2567,7 @@ static void l2cap_chan_le_recv_seg_direct(struct bt_l2cap_le_chan *chan, struct 
 static void l2cap_chan_le_recv(struct bt_l2cap_le_chan *chan,
 			       struct net_buf *buf)
 {
+	struct net_buf *owned_ref;
 	uint16_t sdu_len;
 	int err;
 
@@ -2611,7 +2641,13 @@ static void l2cap_chan_le_recv(struct bt_l2cap_le_chan *chan,
 		return;
 	}
 
-	err = chan->chan.ops->recv(&chan->chan, buf);
+	owned_ref = net_buf_ref(buf);
+	err = chan->chan.ops->recv(&chan->chan, owned_ref);
+	if (err != -EINPROGRESS) {
+		net_buf_unref(owned_ref);
+		owned_ref = NULL;
+	}
+
 	if (err < 0) {
 		if (err != -EINPROGRESS) {
 			LOG_ERR("err %d", err);
@@ -2649,7 +2685,7 @@ static void l2cap_chan_recv_queue(struct bt_l2cap_le_chan *chan,
 		return;
 	}
 
-	net_buf_put(&chan->rx_queue, buf);
+	k_fifo_put(&chan->rx_queue, buf);
 	k_work_submit(&chan->rx_work);
 }
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
@@ -3068,6 +3104,20 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan)
 	return 0;
 }
 
+__maybe_unused static bool user_data_not_empty(const struct net_buf *buf)
+{
+	size_t ud_len = sizeof(struct closure);
+	const uint8_t *ud = net_buf_user_data(buf);
+
+	for (size_t i = 0; i < ud_len; i++) {
+		if (ud[i] != 0) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 static int bt_l2cap_dyn_chan_send(struct bt_l2cap_le_chan *le_chan, struct net_buf *buf)
 {
 	uint16_t sdu_len = buf->len;
@@ -3097,8 +3147,13 @@ static int bt_l2cap_dyn_chan_send(struct bt_l2cap_le_chan *le_chan, struct net_b
 		/* Call `net_buf_reserve(buf, BT_L2CAP_SDU_CHAN_SEND_RESERVE)`
 		 * when allocating buffers intended for bt_l2cap_chan_send().
 		 */
-		LOG_DBG("Not enough headroom in buf %p", buf);
+		LOG_ERR("Not enough headroom in buf %p", buf);
 		return -EINVAL;
+	}
+
+	if (user_data_not_empty(buf)) {
+		/* There may be issues if user_data is not empty. */
+		LOG_WRN("user_data is not empty");
 	}
 
 	/* Prepend SDU length.
@@ -3123,7 +3178,7 @@ static int bt_l2cap_dyn_chan_send(struct bt_l2cap_le_chan *le_chan, struct net_b
 	net_buf_push_le16(buf, sdu_len);
 
 	/* Put buffer on TX queue */
-	net_buf_put(&le_chan->tx_queue, buf);
+	k_fifo_put(&le_chan->tx_queue, buf);
 
 	/* Always process the queue in the same context */
 	raise_data_ready(le_chan);
@@ -3140,7 +3195,7 @@ int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	LOG_DBG("chan %p buf %p len %zu", chan, buf, buf->len);
 
 	if (buf->ref != 1) {
-		LOG_DBG("Expecting 1 ref, got %d", buf->ref);
+		LOG_WRN("Expecting 1 ref, got %d", buf->ref);
 		return -EINVAL;
 	}
 

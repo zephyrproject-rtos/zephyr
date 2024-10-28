@@ -179,7 +179,7 @@ static int reg_test_bit(uint8_t bit, mm_reg_t addr, uint32_t off)
 /* Common registers settings, bits etc... */
 
 /* CTRLR0 settings */
-#if !IS_ENABLED(CONFIG_SPI_DW_HSSI)
+#if !defined(CONFIG_SPI_DW_HSSI)
 #define DW_SPI_CTRLR0_SCPH_BIT		(6)
 #define DW_SPI_CTRLR0_SCPOL_BIT		(7)
 #define DW_SPI_CTRLR0_TMOD_SHIFT	(8)

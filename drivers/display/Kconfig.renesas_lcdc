@@ -7,6 +7,7 @@ config DISPLAY_RENESAS_LCDC
 	bool "Smartbond display controller driver"
 	depends on DT_HAS_RENESAS_SMARTBOND_DISPLAY_ENABLED
 	select DMA
+	select PINCTRL
 	default y
 	help
 	  Enable Smartbond display controller.

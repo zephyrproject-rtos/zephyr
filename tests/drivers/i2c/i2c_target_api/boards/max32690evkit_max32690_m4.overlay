@@ -5,13 +5,10 @@
  */
 
 &i2c0 {
-	status = "okay";
-	pinctrl-0 = <&i2c0a_scl_p2_8 &i2c0a_sda_p2_7>;
-	pinctrl-names = "default";
-
 	eeprom0: eeprom@54 {
 		compatible = "zephyr,i2c-target-eeprom";
 		reg = <0x54>;
+		address-width = <16>;
 		size = <1024>;
 	};
 };
@@ -21,9 +18,13 @@
 	pinctrl-0 = <&i2c2c_scl_p1_8 &i2c2c_sda_p1_7>;
 	pinctrl-names = "default";
 
+	dmas = <&dma0 1 MAX32_DMA_SLOT_I2C2_TX>, <&dma0 2 MAX32_DMA_SLOT_I2C2_RX>;
+	dma-names = "tx", "rx";
+
 	eeprom1: eeprom@56 {
 		compatible = "zephyr,i2c-target-eeprom";
 		reg = <0x56>;
+		address-width = <16>;
 		size = <1024>;
 	};
 };

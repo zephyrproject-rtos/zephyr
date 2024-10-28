@@ -147,8 +147,9 @@ bool z_arm_fault_undef_instruction_fp(void)
 	 * the FP was already enabled then this was an actual undefined
 	 * instruction.
 	 */
-	if (__get_FPEXC() & FPEXC_EN)
+	if (__get_FPEXC() & FPEXC_EN) {
 		return true;
+	}
 
 	__set_FPEXC(FPEXC_EN);
 
@@ -162,8 +163,9 @@ bool z_arm_fault_undef_instruction_fp(void)
 		struct __fpu_sf *spill_esf =
 			(struct __fpu_sf *)_current_cpu->fp_ctx;
 
-		if (spill_esf == NULL)
+		if (spill_esf == NULL) {
 			return false;
+		}
 
 		_current_cpu->fp_ctx = NULL;
 

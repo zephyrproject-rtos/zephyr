@@ -25,6 +25,7 @@
 		zephyr,canbus = &can_loopback0;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,bt-hci = &bt_hci_userchan;
+		zephyr,touch = &input_sdl_touch;
 	};
 
 	aliases {
@@ -114,6 +115,7 @@
 		clock-frequency = <I2C_BITRATE_STANDARD>;
 		#address-cells = <1>;
 		#size-cells = <0>;
+		#forward-cells = <1>;
 		reg = <0x100 4>;
 	};
 

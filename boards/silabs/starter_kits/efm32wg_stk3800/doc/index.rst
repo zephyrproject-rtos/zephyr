@@ -1,7 +1,4 @@
-.. _efm32wg_stk3800:
-
-EFM32 Wonder Gecko (EFM32WG-STK3800)
-####################################
+.. zephyr:board:: efm32wg_stk3800
 
 Overview
 ********
@@ -9,13 +6,6 @@ Overview
 The EFM32 Wonder Gecko Starter Kit EFM32WG-STK3800 contains a MCU from the
 EFM32WG family built on ARM® Cortex®-M4F processor with excellent low
 power capabilities.
-
-.. figure:: efm32wg_stk3800.jpg
-   :align: center
-   :alt: EFM32WG-STK3800
-
-   EFM32WG-STK3800 (image courtesy of Silicon Labs)
-
 
 Hardware
 ********
@@ -125,7 +115,7 @@ board. The adaptor provides:
 Flashing an application to EFM32-STK3800
 ----------------------------------------
 
-The sample application :ref:`hello_world` is used for this example.
+The sample application :zephyr:code-sample:`hello_world` is used for this example.
 Build the Zephyr kernel and application:
 
 .. zephyr-app-commands::

@@ -2,8 +2,8 @@
 
 .. _migration_3.7:
 
-Migration guide to Zephyr v3.7.0 (Working Draft)
-################################################
+Migration guide to Zephyr v3.7.0
+################################
 
 This document describes the changes required when migrating your application from Zephyr v3.6.0 to
 Zephyr v3.7.0.
@@ -64,13 +64,17 @@ Kernel
 
 * The named struct ``z_arch_esf_t`` is now deprecated. Use ``struct arch_esf`` instead. (:github:`73593`)
 
+* The header file :zephyr_file:`include/zephyr/arch/arch_interface.h` has been moved from
+  ``include/zephyr/sys/`` into ``include/zephyr/arch/``. Out-of-tree source files will need to
+  update the include path. (:github:`64987`)
+
 Boards
 ******
 
-* Reordered D1 and D0 in the `pro_micro` connector gpio-map for SparkFun Pro Micro RP2040 to match
+* Reordered D1 and D0 in the ``pro_micro`` connector gpio-map for SparkFun Pro Micro RP2040 to match
   original Pro Micro definition. Out-of-tree shields must be updated to reflect this change. (:github:`69994`)
 * ITE: Rename all SoC variant Kconfig options, e.g., ``CONFIG_SOC_IT82202_AX`` is renamed to
-  ``CONFIG_SOC_IT82202AX``.
+  :kconfig:option:`CONFIG_SOC_IT82202AX`.
   All symbols are renamed as follows: ``SOC_IT81202BX``, ``SOC_IT81202CX``, ``SOC_IT81302BX``,
   ``SOC_IT81302CX``, ``SOC_IT82002AW``, ``SOC_IT82202AX``, ``SOC_IT82302AX``.
   And, rename the ``SOC_SERIES_ITE_IT8XXX2`` to ``SOC_SERIES_IT8XXX2``. (:github:`71680`)
@@ -81,7 +85,7 @@ Boards
 * LiteX: Renamed the ``compatible`` of the LiteX VexRiscV interrupt controller node from
   ``vexriscv-intc0`` to :dtcompatible:`litex,vexriscv-intc0`. (:github:`73211`)
 
-* `lairdconnect` boards are now `ezurio` boards. Laird Connectivity has rebranded to `Ezurio <https://www.ezurio.com/laird-connectivity>`_.
+* ``lairdconnect`` boards are now ``ezurio`` boards. Laird Connectivity has rebranded to `Ezurio <https://www.ezurio.com/laird-connectivity>`_.
 
 Modules
 *******
@@ -113,24 +117,26 @@ Mbed TLS
   as there is any PSA crypto provider available in the system
   (i.e. :kconfig:option:`CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT` is set). (:github:`72243`)
 
-MCUboot
-=======
-
 Trusted Firmware-M
 ==================
 
 * The default MCUboot signature type has been changed from RSA-3072 to EC-P256.
   This affects builds that have MCUboot enabled in TF-M (:kconfig:option:`CONFIG_TFM_BL2`).
   If you wish to keep using RSA-3072, you need to set :kconfig:option:`CONFIG_TFM_MCUBOOT_SIGNATURE_TYPE`
-  to `"RSA-3072"`. Otherwise, make sure to have your own signing keys of the signature type in use.
+  to ``"RSA-3072"``. Otherwise, make sure to have your own signing keys of the signature type in use.
 
-zcbor
-=====
+LVGL
+====
+
+* :kconfig:option:`CONFIG_LV_Z_POINTER_KSCAN` was removed, you need to convert your kscan based
+  driver to the input subsystem and use a :dtcompatible:`zephyr,lvgl-pointer-input` in your
+  devicetree instead. (:github:`73800`)
+
 
 Device Drivers and Devicetree
 *****************************
 
-* The :dtcompatible:`nxp,kinetis-pit` pit driver has changed it's compatible
+* The :dtcompatible:`nxp,kinetis-pit` pit driver has changed its compatible
   to :dtcompatible:`nxp,pit` and has been updated to support multiple channels.
   To configure the individual channels, you must add a child node with the
   compatible :dtcompatible:`nxp,pit-channel` and configure as below.
@@ -230,35 +236,39 @@ Device Drivers and Devicetree
         };
     };
 
-Analog-to-Digital Converter (ADC)
-=================================
+* The driver for :dtcompatible:`invensense,icm42688` now correctly supports device
+  tree configuration(:github:`74267`). Prior devicetrees may have tried to use
+  the bindings to set sample rate and scale for the accel/gyro without any
+  effect. The devicetree usage should now use the provided defines and include
+  file along with new bindings which take these values.
 
-Bluetooth HCI
-=============
+  For example:
 
- * A new HCI driver API was introduced (:github:`72323`) and the old one deprecated. The new API
-   follows the normal Zephyr driver model, with devicetree nodes, etc. The host now
-   selects which driver instance to use as the controller by looking for a ``zephyr,bt-hci``
-   chosen property. The devicetree bindings for all HCI drivers derive from a common
-   ``bt-hci.yaml`` base binding.
+  .. code-block:: devicetree
 
-   * As part of the new HCI driver API, the ``zephyr,bt-uart`` chosen property is no longer used,
-      rather the UART HCI drivers select their UART by looking for the parent devicetree node of the
-      HCI driver instance node.
-   * As part of the new HCI driver API, the ``zephyr,bt-hci-ipc`` chosen property is only used for
-      the controller side, whereas the HCI driver now relies on nodes with the compatible string
-      ``zephyr,bt-hci-ipc``.
-   * The ``BT_NO_DRIVER`` Kconfig option was removed. HCI drivers are no-longer behind a Kconfig
-      choice, rather they can now be enabled and disabled independently, mostly based on their
-      respective devicetree node being enabled or not.
-   * The ``BT_HCI_VS_EXT`` Kconfig option was deleted and the feature is now included in the
-      :kconfig:option:`BT_HCI_VS` Kconfig option.
-   * The ``BT_HCI_VS_EVT`` Kconfig option was removed, since vendor event support is implicit if
-      the :kconfig:option:`BT_HCI_VS` option is enabled.
-   * The bt_read_static_addr() API was removed. This wasn't really a completely public API, but
-      since it was exposed by the public hci_driver.h header file the removal is mentioned here.
-      Enable the :kconfig:option:`BT_HCI_VS` Kconfig option instead, and use vendor specific HCI
-      commands API to get the Controller's Bluetooth static address when available.
+    #include <zephyr/dt-bindings/sensor/icm42688.h>
+
+    icm42688: icm42688@0 {
+        accel-pwr-mode = <ICM42688_ACCEL_LN>;
+        accel-fs = <ICM42688_ACCEL_FS_16G>;
+        accel-odr = <ICM42688_ACCEL_ODR_2000>;
+        gyro-pwr-mode= <ICM42688_GYRO_LN>;
+        gyro-fs = <ICM42688_GYRO_FS_2000>;
+        gyro-odr = <ICM42688_GYRO_ODR_2000>;
+    };
+
+* :dtcompatible:`st,lis2mdl` property ``spi-full-duplex`` changed to ``duplex =
+  SPI_FULL_DUPLEX``. Full duplex is now the default.
+
+* The DT property ``nxp,reference-supply`` of :dtcompatible:`nxp,lpc-lpadc` driver has
+  been removed, users should remove this property from their devicetree if it is present.
+  Added new phandle-array type DT property ``nxp,references``, the user can use this
+  property to specify the reference voltage and reference voltage value to be used by
+  the lpadc. (:github:`75005`)
+
+ * The DT properties ``mc,interface-type``, ``mc,reset-gpio``, and ``mc,interrupt-gpio`` of
+   the :dtcompatible:`microchip,ksz8081` phy binding have changed to
+   ``microchip,interface-type``, ``reset-gpios``, and ``int-gpios``, respectively (:github:`73725`)
 
 Charger
 =======
@@ -274,17 +284,18 @@ Controller Area Network (CAN)
 
 * Removed the following deprecated CAN controller devicetree properties. Out-of-tree boards using
   these properties can switch to using the ``bitrate``, ``sample-point``, ``bitrate-data``, and
-  ``sample-point-data`` devicetree properties (or rely on :kconfig:option:`CAN_DEFAULT_BITRATE` and
-  :kconfig:option:`CAN_DEFAULT_BITRATE_DATA`) for specifying the initial CAN bitrate:
+  ``sample-point-data`` devicetree properties (or rely on
+  :kconfig:option:`CONFIG_CAN_DEFAULT_BITRATE` and
+  :kconfig:option:`CONFIG_CAN_DEFAULT_BITRATE_DATA`) for specifying the initial CAN bitrate:
 
   * ``sjw``
   * ``prop-seg``
   * ``phase-seg1``
-  * ``phase-seg1``
+  * ``phase-seg2``
   * ``sjw-data``
   * ``prop-seg-data``
   * ``phase-seg1-data``
-  * ``phase-seg1-data``
+  * ``phase-seg2-data``
 
   The ``bus-speed`` and ``bus-speed-data`` CAN controller devicetree properties have been
   deprecated.
@@ -308,6 +319,11 @@ Controller Area Network (CAN)
     furthermore allows CAN controller drivers not supporting manual recovery mode to fail early in
     :c:func:`can_set_mode` during application startup instead of failing when :c:func:`can_recover`
     is called at a later point in time.
+
+Crypto
+======
+
+* The CSS driver has been deprecated on NXP lpc55s36 (:github:`71173`).
 
 Display
 =======
@@ -358,9 +374,9 @@ Display
 
 * ST7735R based displays now use the MIPI DBI driver class. These displays
   must now be declared within a MIPI DBI driver wrapper device, which will
-  manage interfacing with the display. Note that the `cmd-data-gpios` pin has
+  manage interfacing with the display. Note that the ``cmd-data-gpios`` pin has
   changed polarity with this update, to align better with the new
-  `dc-gpios` name. For an example, see below:
+  ``dc-gpios`` name. For an example, see below:
 
   .. code-block:: devicetree
 
@@ -539,14 +555,8 @@ Enhanced Serial Peripheral Interface (eSPI)
   ``ESPI_VWIRE_SIGNAL_TARGET_BOOT_STS``, ``ESPI_VWIRE_SIGNAL_TARGET_BOOT_DONE`` and
   ``ESPI_VWIRE_SIGNAL_TARGET_GPIO_<NUMBER>`` respectively to reflect the new terminology
   in eSPI 1.5 specification. (:github:`68492`)
-  The KConfig ``CONFIG_ESPI_SLAVE`` was renamed to ``CONFIG_ESPI_TARGET``, similarly
-  ``CONFIG_ESPI_SAF`` was renamed as ``CONFIG_ESPI_TAF`` (:github:`73887`)
-
-Flash
-=====
-
-General Purpose I/O (GPIO)
-==========================
+  The Kconfig ``CONFIG_ESPI_SLAVE`` was renamed to  :kconfig:option:`CONFIG_ESPI_TARGET`, similarly
+  ``CONFIG_ESPI_SAF`` was renamed as :kconfig:option:`CONFIG_ESPI_TAF` (:github:`73887`)
 
 GNSS
 ====
@@ -600,6 +610,18 @@ LED Strip
 
 * Made ``update_channels`` function optional and removed unimplemented functions.
 
+* The ``CONFIG_WS2812_STRIP_DRIVER`` kconfig option has been removed.
+  Previously, when using :kconfig:option:`CONFIG_WS2812_STRIP_SPI`,
+  :kconfig:option:`CONFIG_WS2812_STRIP_I2S`, :kconfig:option:`CONFIG_WS2812_STRIP_GPIO`,
+  or :kconfig:option:`CONFIG_WS2812_STRIP_RPI_PICO_PIO`, one of them had to be selected with
+  ``CONFIG_WS2812_STRIP_DRIVER``, but this is no longer necessary. Please set each option directly.
+
+MDIO
+====
+
+* :kconfig:option:`CONFIG_MDIO_NXP_ENET_TIMEOUT` is now in units of
+  microseconds instead of milliseconds. (:github:`75625`)
+
 Sensors
 =======
 
@@ -623,16 +645,23 @@ Sensors
 Serial
 ======
 
-Timer
-=====
+* The Raspberry Pi UART driver ``uart_rpi_pico`` has been removed.
+  Use ``uart_pl011`` (:dtcompatible:`arm,pl011`) instead. (:github:`71074`)
 
-regulator
+Regulator
 =========
 
 * The :dtcompatible:`nxp,vref` driver no longer supports the ground selection function,
   as this setting should not be modified by the user. The DT property ``nxp,ground-select``
   has been removed, users should remove this property from their devicetree if it is present.
   (:github:`70642`)
+
+W1
+==
+
+* The :dtcompatible:`zephyr,w1-gpio` 1-Wire master driver no longer defaults to enabling the
+  internal pull-up resistor of the GPIO pin. The configuration is now taken from the pin's
+  configuration flags specified in devicetree. (:github:`71789`)
 
 Watchdog
 ========
@@ -646,6 +675,33 @@ Watchdog
 
 Bluetooth
 *********
+
+Bluetooth HCI
+=============
+
+ * A new HCI driver API was introduced (:github:`72323`) and the old one deprecated. The new API
+   follows the normal Zephyr driver model, with devicetree nodes, etc. The host now
+   selects which driver instance to use as the controller by looking for a ``zephyr,bt-hci``
+   chosen property. The devicetree bindings for all HCI drivers derive from a common
+   ``bt-hci.yaml`` base binding.
+
+  * As part of the new HCI driver API, the ``zephyr,bt-uart`` chosen property is no longer used,
+    rather the UART HCI drivers select their UART by looking for the parent devicetree node of the
+    HCI driver instance node.
+  * As part of the new HCI driver API, the ``zephyr,bt-hci-ipc`` chosen property is only used for
+    the controller side, whereas the HCI driver now relies on nodes with the compatible string
+    ``zephyr,bt-hci-ipc``.
+  * The ``BT_NO_DRIVER`` Kconfig option was removed. HCI drivers are no-longer behind a Kconfig
+    choice, rather they can now be enabled and disabled independently, mostly based on their
+    respective devicetree node being enabled or not.
+  * The ``BT_HCI_VS_EXT`` Kconfig option was deleted and the feature is now included in the
+    :kconfig:option:`CONFIG_BT_HCI_VS` Kconfig option.
+  * The ``BT_HCI_VS_EVT`` Kconfig option was removed, since vendor event support is implicit if
+    the :kconfig:option:`CONFIG_BT_HCI_VS` option is enabled.
+  * The bt_read_static_addr() API was removed. This wasn't really a completely public API, but
+    since it was exposed by the public hci_driver.h header file the removal is mentioned here.
+    Enable the :kconfig:option:`CONFIG_BT_HCI_VS` Kconfig option instead, and use vendor specific
+    HCI commands API to get the Controller's Bluetooth static address when available.
 
 Bluetooth Mesh
 ==============
@@ -745,6 +801,28 @@ Bluetooth Host
   longer used in Zephyr 3.4.0 and later. Any references to this field should be removed. No further
   action is needed.
 
+* :c:macro:`BT_LE_ADV_PARAM` now returns a :code:`const` pointer.
+  Any place where the result is stored in a local variable such as
+  :code:`struct bt_le_adv_param *param = BT_LE_ADV_CONN;` will need to
+  be updated to :code:`const struct bt_le_adv_param *param = BT_LE_ADV_CONN;` or use it for
+  initialization like :code:`struct bt_le_adv_param param = *BT_LE_ADV_CONN;`
+
+  The change to :c:macro:`BT_LE_ADV_PARAM` also affects all of its derivatives, including but not
+  limited to:
+
+  * :c:macro:`BT_LE_ADV_CONN`
+  * :c:macro:`BT_LE_ADV_NCONN`
+  * :c:macro:`BT_LE_EXT_ADV_SCAN`
+  * :c:macro:`BT_LE_EXT_ADV_CODED_NCONN_NAME`
+
+  (:github:`75065`)
+
+* :kconfig:option:`CONFIG_BT_BUF_ACL_RX_COUNT` now needs to be larger than
+  :kconfig:option:`CONFIG_BT_MAX_CONN`. This was always the case due to the design of the HCI
+  interface. It is now being enforced through a build-time assertion.
+
+  (:github:`75592`)
+
 Bluetooth Crypto
 ================
 
@@ -779,14 +857,14 @@ Networking
   one IPv4 address / network interface, the netmask must be specified
   for each IPv4 address separately. (:github:`68419`)
 
-* Virtual network interface API no longer has the `input` callback. The input callback was
+* Virtual network interface API no longer has the ``input`` callback. The input callback was
   used to read the inner IPv4/IPv6 packets in an IP tunnel. This incoming tunnel read is now
-  implemented in `recv` callback. (:github:`70549`)
+  implemented in the ``recv`` callback. (:github:`70549`)
 
 * Virtual LAN (VLAN) implementation is changed to use the Virtual network interfaces.
-  There are no API changes, but the type of a VLAN network interface is changed from `ETHERNET`
-  to `VIRTUAL`. This could require changes to the code that sets the VLAN tags to a network
-  interface. For example in the `net_eth_is_vlan_enabled()` API, the 2nd interface parameter
+  There are no API changes, but the type of a VLAN network interface is changed from ``ETHERNET``
+  to ``VIRTUAL``. This could require changes to the code that sets the VLAN tags to a network
+  interface. For example in the :c:func:`net_eth_is_vlan_enabled()` API, the 2nd interface parameter
   must point to the main Ethernet interface, and not to the VLAN interface. (:github:`70345`)
 
 * Modified the ``wifi connect`` command to use key-value format for the arguments. In the
@@ -797,11 +875,11 @@ Networking
   ``wifi -h`` will give more information about the usage of connect command.
   (:github:`70024`)
 
-* The Kconfig ``CONFIG_NET_TCP_ACK_TIMEOUT`` has been deprecated. Its usage was
+* The Kconfig :kconfig:option:`CONFIG_NET_TCP_ACK_TIMEOUT` has been deprecated. Its usage was
   limited to TCP handshake only, and in such case the total timeout should depend
   on the total retransmission timeout (as in other cases) making the config
-  redundant and confusing. Use ``CONFIG_NET_TCP_INIT_RETRANSMISSION_TIMEOUT`` and
-  ``CONFIG_NET_TCP_RETRY_COUNT`` instead to control the total timeout at the
+  redundant and confusing. Use :kconfig:option:`CONFIG_NET_TCP_INIT_RETRANSMISSION_TIMEOUT` and
+  :kconfig:option:`CONFIG_NET_TCP_RETRY_COUNT` instead to control the total timeout at the
   TCP level. (:github:`70731`)
 
 * In LwM2M API, the callback type :c:type:`lwm2m_engine_set_data_cb_t` has now an additional
@@ -848,9 +926,6 @@ hawkBit
   :kconfig:option:`CONFIG_SETTINGS` needs to be enabled to use hawkBit, as it now uses the
   settings subsystem to store the hawkBit configuration. (:github:`68806`)
 
-LoRaWAN
-=======
-
 MCUmgr
 ======
 
@@ -879,9 +954,6 @@ POSIX API
 
     $ python ${ZEPHYR_BASE}/scripts/utils/migrate_posix_kconfigs.py -r root_path
 
-Shell
-=====
-
 State Machine Framework
 =======================
 
@@ -907,12 +979,6 @@ UpdateHub
   It still defaults to using Mbed TLS (with a smaller footprint than previously) unless the
   board is built with TF-M or :kconfig:option:`CONFIG_MBEDTLS_PSA_CRYPTO_C` is enabled. (:github:`73511`)
 
-ZBus
-====
-
-Userspace
-*********
-
 Architectures
 *************
 
@@ -932,6 +998,3 @@ Architectures
   * LLVM fuzzing support has been refactored. A test application now needs to provide its own
     ``LLVMFuzzerTestOneInput()`` hook instead of relying on a board provided one. Check
     ``samples/subsys/debug/fuzz/`` for an example. (:github:`71378`)
-
-Xtensa
-======

@@ -18,7 +18,7 @@
 #   from. It should simply be the INTERFACE_INCLUDE_DIRECTORIES property of the
 #   zephyr_interface target.
 # - llext_edk_file: Output file name for the tarball.
-# - llext_cflags: Additional flags to be added to the generated flags.
+# - llext_edk_cflags: Flags to be used for source compile commands.
 # - ZEPHYR_BASE: Path to the zephyr base directory.
 # - WEST_TOPDIR: Path to the west top directory.
 # - APPLICATION_SOURCE_DIR: Path to the application source directory.
@@ -93,10 +93,10 @@ string(REGEX REPLACE "[^a-zA-Z0-9]" "_" llext_edk_name_sane ${llext_edk_name})
 string(TOUPPER ${llext_edk_name_sane} llext_edk_name_sane)
 set(install_dir_var "${llext_edk_name_sane}_INSTALL_DIR")
 
-separate_arguments(llext_cflags NATIVE_COMMAND ${llext_cflags})
+separate_arguments(llext_edk_cflags NATIVE_COMMAND ${llext_edk_cflags})
 
 set(make_relative FALSE)
-foreach(flag ${llext_cflags})
+foreach(flag ${llext_edk_cflags})
     if (flag STREQUAL "-imacros")
         set(make_relative TRUE)
     elseif (make_relative)
@@ -116,11 +116,10 @@ foreach(flag ${llext_cflags})
         list(APPEND new_cflags ${flag})
     endif()
 endforeach()
-set(llext_cflags ${new_cflags})
+set(llext_edk_cflags ${new_cflags})
 
-
-list(APPEND base_flags_make ${llext_cflags} ${imacros_make})
-list(APPEND base_flags_cmake ${llext_cflags} ${imacros_cmake})
+list(APPEND base_flags_make ${llext_edk_cflags} ${imacros_make})
+list(APPEND base_flags_cmake ${llext_edk_cflags} ${imacros_cmake})
 
 separate_arguments(include_dirs NATIVE_COMMAND ${INTERFACE_INCLUDE_DIRECTORIES})
 file(MAKE_DIRECTORY ${llext_edk_inc})

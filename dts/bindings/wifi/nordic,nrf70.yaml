@@ -1,0 +1,21 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# GPIO lines for controlling the nRF70 Series Wi-Fi chip.
+include: nordic,nrf70-coex.yaml
+
+properties:
+  iovdd-ctrl-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO of the SoC controlling IO_VDD Control pin of the nRF70
+
+  bucken-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO of the SoC controlling BUCK_EN pin of the nRF70
+
+  host-irq-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO of the SoC controlling the HOST_IRQ pin of the nRF70

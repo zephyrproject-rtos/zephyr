@@ -25,11 +25,11 @@ over time. It provides the following functionalities:
   customer applications. The APIs is described in
   :zephyr_file:`include/zephyr/usb/usb_device.h`
 
-The device stack and :ref:`usb_dc_api` have some limitations, such as not being
-able to support more than one controller instance at runtime and only supporting
-one USB device configuration. We are actively working on new USB support, which
-means we will continue to maintain the device stack described here until all
-supported USB classes are ported, but do not expect any new features or enhancements.
+.. note::
+   It is planned to deprecate all APIs listed in :ref:`usb_api` and the
+   functions that depend on them between Zephyr v3.7.0 and v4.0.0, and remove
+   them in v4.2.0. The new USB device support, represented by the APIs in
+   :ref:`usb_device_next_api`, will become the default in Zephyr v4.0.0.
 
 Supported USB classes
 *********************
@@ -64,7 +64,7 @@ the next interface, preventing other composite functions from working.
 Because of this problem, HCI USB should not be used in a composite configuration.
 This problem is fixed in the implementation for new USB support.
 
-See :ref:`bluetooth-hci-usb-sample` sample for reference.
+See :zephyr:code-sample:`bluetooth_hci_usb` sample for reference.
 
 .. _usb_device_cdc_acm:
 
@@ -168,7 +168,7 @@ List of few Zephyr specific chosen properties which can be used to select
 CDC ACM UART as backend for a subsystem or application:
 
 * ``zephyr,bt-c2h-uart`` used in Bluetooth,
-  for example see :ref:`bluetooth-hci-uart-sample`
+  for example see :zephyr:code-sample:`bluetooth_hci_uart`
 * ``zephyr,ot-uart`` used in OpenThread,
   for example see :zephyr:code-sample:`coprocessor`
 * ``zephyr,shell-uart`` used by shell for serial backend,
@@ -311,7 +311,7 @@ The disadvantage of this is that Kconfig options such as
 :kconfig:option:`CONFIG_HID_INTERRUPT_EP_MPS` apply to all instances. This design
 issue will be fixed in the HID class implementation for the new USB support.
 
-See :zephyr:code-sample:`usb-hid` or :zephyr:code-sample:`usb-hid-mouse` sample for reference.
+See :zephyr:code-sample:`usb-hid-mouse` sample for reference.
 
 Mass Storage Class
 ==================
@@ -452,7 +452,7 @@ Interface number and endpoint address assignment
 
 In USB terminology, a ``function`` is a device that provides a capability to the
 host, such as a HID class device that implements a keyboard. A function
-constains a collection of ``interfaces``; at least one interface is required. An
+contains a collection of ``interfaces``; at least one interface is required. An
 interface may contain device ``endpoints``; for example, at least one input
 endpoint is required to implement a HID class device, and no endpoints are
 required to implement a USB DFU class. A USB device that combines functions is
@@ -474,7 +474,7 @@ Also, one controller may be able to have IN/OUT endpoints on the same endpoint
 number, interrupt IN endpoint 0x81 and bulk OUT endpoint 0x01, while the other
 may only be able to handle one endpoint per endpoint number. Information about
 the number of interfaces, interface associations, endpoint types, and addresses
-is provided to the host by the interface, interface specifiec, and endpoint
+is provided to the host by the interface, interface specific, and endpoint
 descriptors.
 
 Host driver for specific function, uses interface and endpoint descriptor to
@@ -565,7 +565,7 @@ The USB Vendor ID for the Zephyr project is ``0x2FE3``.
 This USB Vendor ID must not be used when a vendor
 integrates Zephyr USB device support into its own product.
 
-Each USB :ref:`sample<usb-samples>` has its own unique Product ID.
+Each USB :zephyr:code-sample-category:`sample<usb>` has its own unique Product ID.
 The USB maintainer, if one is assigned, or otherwise the Zephyr Technical
 Steering Committee, may allocate other USB Product IDs based on well-motivated
 and documented requests.
@@ -577,7 +577,7 @@ The following Product IDs are currently used:
 +====================================================+========+
 | :zephyr:code-sample:`usb-cdc-acm`                  | 0x0001 |
 +----------------------------------------------------+--------+
-| :zephyr:code-sample:`usb-cdc-acm-composite`        | 0x0002 |
+| Reserved (previously: usb-cdc-acm-composite)       | 0x0002 |
 +----------------------------------------------------+--------+
 | Reserved (previously: usb-hid-cdc)                 | 0x0003 |
 +----------------------------------------------------+--------+
@@ -585,7 +585,7 @@ The following Product IDs are currently used:
 +----------------------------------------------------+--------+
 | :zephyr:code-sample:`usb-dfu` (Run-Time)           | 0x0005 |
 +----------------------------------------------------+--------+
-| :zephyr:code-sample:`usb-hid`                      | 0x0006 |
+| Reserved (previously: usb-hid)                     | 0x0006 |
 +----------------------------------------------------+--------+
 | :zephyr:code-sample:`usb-hid-mouse`                | 0x0007 |
 +----------------------------------------------------+--------+
@@ -595,13 +595,15 @@ The following Product IDs are currently used:
 +----------------------------------------------------+--------+
 | :zephyr:code-sample:`webusb`                       | 0x000A |
 +----------------------------------------------------+--------+
-| :ref:`bluetooth-hci-usb-sample`                    | 0x000B |
+| :zephyr:code-sample:`bluetooth_hci_usb`            | 0x000B |
 +----------------------------------------------------+--------+
-| :ref:`bluetooth-hci-usb-h4-sample`                 | 0x000C |
+| :zephyr:code-sample:`bluetooth_hci_usb_h4`         | 0x000C |
 +----------------------------------------------------+--------+
-| :zephyr:code-sample:`wpan-usb`                     | 0x000D |
+| Reserved (previously: wpan-usb)                    | 0x000D |
 +----------------------------------------------------+--------+
 | :zephyr:code-sample:`uac2-explicit-feedback`       | 0x000E |
++----------------------------------------------------+--------+
+| :zephyr:code-sample:`uac2-implicit-feedback`       | 0x000F |
 +----------------------------------------------------+--------+
 | :zephyr:code-sample:`usb-dfu` (DFU Mode)           | 0xFFFF |
 +----------------------------------------------------+--------+

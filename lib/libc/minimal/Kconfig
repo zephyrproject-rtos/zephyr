@@ -39,6 +39,9 @@ config MINIMAL_LIBC_TIME
 	bool "Time functions"
 	select COMMON_LIBC_TIME if POSIX_TIMERS
 	select COMMON_LIBC_GMTIME_R
+	select COMMON_LIBC_ASCTIME
+	select COMMON_LIBC_LOCALTIME_R_UTC
+	select COMMON_LIBC_CTIME
 	default y
 	help
 	  Enable time() and gmtime_r() for the minimal libc.

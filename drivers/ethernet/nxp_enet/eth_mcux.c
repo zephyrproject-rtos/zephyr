@@ -149,7 +149,7 @@ static const char *eth_name(ENET_Type *base)
 	switch ((int)base) {
 	case DT_INST_REG_ADDR(0):
 		return "ETH_0";
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(1))
 	case DT_INST_REG_ADDR(1):
 		return "ETH_1";
 #endif
@@ -964,10 +964,10 @@ static void eth_mcux_init(const struct device *dev)
 	context->phy_handle->ops = &phyksz8081_ops;
 
 #if defined(CONFIG_SOC_SERIES_IMXRT10XX)
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet))
 	sys_clock = CLOCK_GetFreq(kCLOCK_IpgClk);
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(enet2), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet2))
 	sys_clock = CLOCK_GetFreq(kCLOCK_EnetPll1Clk);
 #endif
 #elif defined(CONFIG_SOC_SERIES_IMXRT11XX)
@@ -1350,7 +1350,7 @@ static void eth_mcux_err_isr(const struct device *dev)
 	} while (false)
 
 #define ETH_MCUX_IRQ_PTP(n)						\
-	COND_CODE_1(DT_NODE_HAS_STATUS(PTP_INST_NODEID(n), okay),	\
+	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(PTP_INST_NODEID(n)),	\
 		    (ETH_MCUX_IRQ_PTP_INIT(n)),				\
 		    (ETH_MCUX_NONE))
 
@@ -1454,7 +1454,7 @@ static void eth_mcux_err_isr(const struct device *dev)
 #define ETH_MCUX_PINCTRL_INIT(n)
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay) && \
+#if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm)) && \
 	CONFIG_ETH_MCUX_USE_DTCM_FOR_DMA_BUFFER
 /* Use DTCM for hardware DMA buffers */
 #define _mcux_dma_desc __dtcm_bss_section

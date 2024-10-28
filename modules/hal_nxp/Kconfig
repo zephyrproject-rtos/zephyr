@@ -4,4 +4,5 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-# file is empty and kept as a place holder if/when Kconfig is needed
+config MCUX_ACMP
+	bool "Include ACMP driver from MCUX SDK"

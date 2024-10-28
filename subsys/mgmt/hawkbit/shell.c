@@ -9,18 +9,25 @@
 #include <zephyr/drivers/flash.h>
 #include <zephyr/dfu/mcuboot.h>
 #include <zephyr/dfu/flash_img.h>
-#include <zephyr/mgmt/hawkbit.h>
+#include <zephyr/mgmt/hawkbit/hawkbit.h>
+#include <zephyr/mgmt/hawkbit/config.h>
+#include <zephyr/mgmt/hawkbit/autohandler.h>
 #include "hawkbit_firmware.h"
 #include "hawkbit_device.h"
+
+LOG_MODULE_DECLARE(hawkbit, CONFIG_HAWKBIT_LOG_LEVEL);
 
 static void cmd_run(const struct shell *sh, size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-
+	LOG_INF("Run started from %s", sh->name);
 	shell_info(sh, "Starting hawkBit run...");
-	switch (hawkbit_probe()) {
+
+	hawkbit_autohandler(false);
+
+	switch (hawkbit_autohandler_wait(UINT32_MAX, K_FOREVER)) {
 	case HAWKBIT_UNCONFIRMED_IMAGE:
 		shell_error(sh, "Image is unconfirmed."
 				"Rebooting to revert back to previous confirmed image");
@@ -40,7 +47,6 @@ static void cmd_run(const struct shell *sh, size_t argc, char **argv)
 
 	case HAWKBIT_UPDATE_INSTALLED:
 		shell_info(sh, "Update installed");
-		hawkbit_reboot();
 		break;
 
 	case HAWKBIT_DOWNLOAD_ERROR:

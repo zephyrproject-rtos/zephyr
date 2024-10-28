@@ -185,10 +185,14 @@
 #define EVENT_CLOCK_JITTER_US   2
 /* Event interframe timings */
 #define EVENT_IFS_US            150
+/* Event interframe timings, default */
+#define EVENT_IFS_DEFAULT_US    EVENT_IFS_US
 /* Standard allows 2 us timing uncertainty inside the event */
 #define EVENT_IFS_MAX_US        (EVENT_IFS_US + EVENT_CLOCK_JITTER_US)
-/* Controller will layout extended adv with minimum separation */
+/* Specification defined Minimum AUX Frame Space (MAFS) */
 #define EVENT_MAFS_US           300
+/* Controller dependent MAFS minimum used to populate aux_offset */
+#define EVENT_MAFS_MIN_US       MAX(EVENT_MAFS_US, PDU_ADV_AUX_OFFSET_MIN_US)
 /* Standard allows 2 us timing uncertainty inside the event */
 #define EVENT_MAFS_MAX_US       (EVENT_MAFS_US + EVENT_CLOCK_JITTER_US)
 /* Controller defined back to back transmit MAFS for extended advertising */
@@ -612,6 +616,7 @@ enum pdu_data_llctrl_type {
 	PDU_DATA_LLCTRL_TYPE_MIN_USED_CHAN_IND = 0x19,
 	PDU_DATA_LLCTRL_TYPE_CTE_REQ = 0x1A,
 	PDU_DATA_LLCTRL_TYPE_CTE_RSP = 0x1B,
+	PDU_DATA_LLCTRL_TYPE_PERIODIC_SYNC_IND = 0x1C,
 	PDU_DATA_LLCTRL_TYPE_CLOCK_ACCURACY_REQ = 0x1D,
 	PDU_DATA_LLCTRL_TYPE_CLOCK_ACCURACY_RSP = 0x1E,
 	PDU_DATA_LLCTRL_TYPE_CIS_REQ = 0x1F,
@@ -886,6 +891,25 @@ struct pdu_data_llctrl_cis_terminate_ind {
 	uint8_t  error_code;
 } __packed;
 
+struct pdu_data_llctrl_periodic_sync_ind {
+	uint16_t id;
+	struct pdu_adv_sync_info sync_info;
+	uint16_t conn_event_count;
+	uint16_t last_pa_event_counter;
+#ifdef CONFIG_LITTLE_ENDIAN
+	uint8_t  sid:4;
+	uint8_t  addr_type:1;
+	uint8_t  sca:3;
+#else
+	uint8_t  sca:3;
+	uint8_t  addr_type:1;
+	uint8_t  sid:4;
+#endif /* CONFIG_LITTLE_ENDIAN */
+	uint8_t  phy;
+	uint8_t  adv_addr[6];
+	uint16_t sync_conn_event_count;
+} __packed;
+
 struct pdu_data_llctrl {
 	uint8_t opcode;
 	union {
@@ -923,6 +947,7 @@ struct pdu_data_llctrl {
 		struct pdu_data_llctrl_cis_rsp cis_rsp;
 		struct pdu_data_llctrl_cis_ind cis_ind;
 		struct pdu_data_llctrl_cis_terminate_ind cis_terminate_ind;
+		struct pdu_data_llctrl_periodic_sync_ind periodic_sync_ind;
 	} __packed;
 } __packed;
 
@@ -931,16 +956,20 @@ struct pdu_data_llctrl {
 
 #if defined(CONFIG_BT_CTLR_PROFILE_ISR)
 struct profile {
-	uint8_t lcur;
-	uint8_t lmin;
-	uint8_t lmax;
-	uint8_t cur;
-	uint8_t min;
-	uint8_t max;
-	uint8_t radio;
-	uint8_t lll;
-	uint8_t ull_high;
-	uint8_t ull_low;
+	uint16_t lcur;
+	uint16_t lmin;
+	uint16_t lmax;
+	uint16_t cur;
+	uint16_t min;
+	uint16_t max;
+	uint16_t radio;
+	uint16_t lll;
+	uint16_t ull_high;
+	uint16_t ull_low;
+	uint8_t  radio_ticks;
+	uint8_t  lll_ticks;
+	uint8_t  ull_high_ticks;
+	uint8_t  ull_low_ticks;
 } __packed;
 #endif /* CONFIG_BT_CTLR_PROFILE_ISR */
 

@@ -18,6 +18,8 @@ LOG_MODULE_REGISTER(uart_nus, CONFIG_UART_LOG_LEVEL);
 K_THREAD_STACK_DEFINE(nus_work_queue_stack, CONFIG_UART_BT_WORKQUEUE_STACK_SIZE);
 static struct k_work_q nus_work_queue;
 
+#define UART_BT_MTU_INVALID 0xFFFF
+
 struct uart_bt_data {
 	struct {
 		struct bt_nus_inst *inst;
@@ -78,6 +80,38 @@ static void bt_received(struct bt_conn *conn, const void *data, uint16_t len, vo
 	k_work_submit_to_queue(&nus_work_queue, &dev_data->uart.cb_work);
 }
 
+static void foreach_conn_handler_get_att_mtu(struct bt_conn *conn, void *data)
+{
+	uint16_t *min_att_mtu = (uint16_t *)data;
+	uint16_t conn_att_mtu = 0;
+	struct bt_conn_info conn_info;
+	int err;
+
+	err = bt_conn_get_info(conn, &conn_info);
+	if (!err && conn_info.state == BT_CONN_STATE_CONNECTED) {
+		conn_att_mtu = bt_gatt_get_uatt_mtu(conn);
+
+		if (conn_att_mtu > 0) {
+			*min_att_mtu = MIN(*min_att_mtu, conn_att_mtu);
+		}
+	}
+}
+
+static inline uint16_t get_max_chunk_size(void)
+{
+	uint16_t min_att_mtu = UART_BT_MTU_INVALID;
+
+	bt_conn_foreach(BT_CONN_TYPE_LE, foreach_conn_handler_get_att_mtu, &min_att_mtu);
+
+	if (min_att_mtu == UART_BT_MTU_INVALID) {
+		/** Default ATT MTU */
+		min_att_mtu = 23;
+	}
+
+	/** ATT NTF Payload overhead: opcode (1 octet) + attribute (2 octets) */
+	return (min_att_mtu - 1 - 2);
+}
+
 static void cb_work_handler(struct k_work *work)
 {
 	struct uart_bt_data *dev_data = CONTAINER_OF(work, struct uart_bt_data, uart.cb_work);
@@ -99,13 +133,13 @@ static void tx_work_handler(struct k_work *work)
 
 	__ASSERT_NO_MSG(dev_data);
 
+	uint16_t chunk_size = get_max_chunk_size();
 	do {
-		/** Using Minimum MTU at this point to guarantee all connected
-		 * peers will receive the data, without keeping track of MTU
-		 * size per-connection. This has the trade-off of limiting
-		 * throughput but allows multi-connection support.
+		/** The chunk size is based on the smallest MTU among all
+		 * peers, and the same chunk is sent to everyone. This avoids
+		 * managing separate read pointers: one per connection.
 		 */
-		len = ring_buf_get_claim(dev_data->uart.tx_ringbuf, &data, 20);
+		len = ring_buf_get_claim(dev_data->uart.tx_ringbuf, &data, chunk_size);
 		if (len > 0) {
 			err = bt_nus_inst_send(NULL, dev_data->bt.inst, data, len);
 			if (err) {
@@ -160,7 +194,7 @@ static void uart_bt_poll_out(const struct device *dev, unsigned char c)
 	/** Right now we're discarding data if ring-buf is full. */
 	while (!ring_buf_put(ringbuf, &c, 1)) {
 		if (k_is_in_isr() || !atomic_get(&dev_data->bt.enabled)) {
-			LOG_INF("Ring buffer full, discard %c", c);
+			LOG_WRN_ONCE("Ring buffer full, discard %c", c);
 			break;
 		}
 

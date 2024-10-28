@@ -216,7 +216,7 @@ static ALWAYS_INLINE int sys_test_and_clear_bit(mem_addr_t addr,
  * at build time and defined via the linker script. On Intel64, it's an array.
  */
 
-extern unsigned char _irq_to_interrupt_vector[];
+extern unsigned char _irq_to_interrupt_vector[CONFIG_MAX_IRQ_LINES];
 
 #define Z_IRQ_TO_INTERRUPT_VECTOR(irq) \
 	((unsigned int) _irq_to_interrupt_vector[(irq)])

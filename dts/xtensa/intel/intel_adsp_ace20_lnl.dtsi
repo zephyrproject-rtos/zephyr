@@ -215,7 +215,7 @@
 			dmas = <&hda_link_out 1
 				&hda_link_in 1>;
 			dma-names = "tx", "rx";
-			power-domain = <&io0_domain>;
+			power-domains = <&io0_domain>;
 			ssp-index = <0>;
 			status = "okay";
 
@@ -238,7 +238,7 @@
 			dmas = <&hda_link_out 2
 				&hda_link_in 2>;
 			dma-names = "tx", "rx";
-			power-domain = <&io0_domain>;
+			power-domains = <&io0_domain>;
 			ssp-index = <1>;
 			status = "okay";
 
@@ -261,7 +261,7 @@
 			dmas = <&hda_link_out 3
 				&hda_link_in 3>;
 			dma-names = "tx", "rx";
-			power-domain = <&io0_domain>;
+			power-domains = <&io0_domain>;
 			ssp-index = <2>;
 			status = "okay";
 
@@ -319,26 +319,32 @@
 			hub_ulp_domain: hub_ulp_domain {
 				compatible = "intel,adsp-power-domain";
 				bit-position = <15>;
+				#power-domain-cells = <0>;
 			};
 			ml0_domain: ml0_domain {
 				compatible = "intel,adsp-power-domain";
 				bit-position = <12>;
+				#power-domain-cells = <0>;
 			};
 			io1_domain: io1_domain {
 				compatible = "intel,adsp-power-domain";
 				bit-position = <9>;
+				#power-domain-cells = <0>;
 			};
 			io0_domain: io0_domain {
 				compatible = "intel,adsp-power-domain";
 				bit-position = <8>;
+				#power-domain-cells = <0>;
 			};
 			hub_hp_domain: hub_hp_domain {
 				compatible = "intel,adsp-power-domain";
 				bit-position = <6>;
+				#power-domain-cells = <0>;
 			};
 			hst_domain: hst_domain {
 				compatible = "intel,adsp-power-domain";
 				bit-position = <5>;
+				#power-domain-cells = <0>;
 			};
 		};
 

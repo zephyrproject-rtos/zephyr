@@ -10,6 +10,7 @@
 #include "testing_common_defs.h"
 
 #include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/fff.h>
 #include <zephyr/kernel.h>
 
@@ -70,18 +71,18 @@ ZTEST(bt_id_set_scan_own_addr, test_set_nrpa_scan_address_no_privacy)
 	err = bt_id_set_scan_own_addr(false, &own_addr_type);
 
 	zassert_ok(err, "Unexpected error code '%d' was returned", err);
-	zassert_true(own_addr_type == BT_ADDR_LE_RANDOM,
+	zassert_true(own_addr_type == BT_HCI_OWN_ADDR_RANDOM,
 		     "Address type reference was incorrectly set");
 }
 
 /*
  *  Test setting scan own address while 'CONFIG_BT_PRIVACY' isn't enabled.
  *  If 'CONFIG_BT_SCAN_WITH_IDENTITY' is enabled and the default identity has an RPA address of type
- * 'BT_ADDR_LE_RANDOM', set_random_address() is called and address type reference is updated upon
- *  success.
+ * 'BT_HCI_OWN_ADDR_RANDOM', set_random_address() is called and address type reference is updated
+ * upon success.
  *
  *  Constraints:
- *   - Default identity has an address with the type 'BT_ADDR_LE_RANDOM'
+ *   - Default identity has an address with the type 'BT_HCI_OWN_ADDR_RANDOM'
  *   - 'CONFIG_BT_PRIVACY' isn't enabled
  *   - 'CONFIG_BT_SCAN_WITH_IDENTITY' is enabled
  *   - set_random_address() succeeds and returns 0
@@ -106,7 +107,7 @@ ZTEST(bt_id_set_scan_own_addr, test_setting_scan_own_rpa_address_no_privacy)
 	err = bt_id_set_scan_own_addr(false, &own_addr_type);
 
 	zassert_ok(err, "Unexpected error code '%d' was returned", err);
-	zassert_true(own_addr_type == BT_ADDR_LE_RANDOM,
+	zassert_true(own_addr_type == BT_HCI_OWN_ADDR_RANDOM,
 		     "Address type reference was incorrectly set");
 }
 
@@ -123,7 +124,7 @@ ZTEST(bt_id_set_scan_own_addr, test_setting_scan_own_rpa_address_no_privacy)
  *
  *  Expected behaviour:
  *   - bt_id_set_scan_own_addr() returns 0
- *   - Address type reference is updated with the value 'BT_ADDR_LE_RANDOM'
+ *   - Address type reference is updated with the value 'BT_HCI_OWN_ADDR_RANDOM'
  */
 ZTEST(bt_id_set_scan_own_addr, test_setting_scan_own_address_privacy_enabled)
 {
@@ -138,7 +139,7 @@ ZTEST(bt_id_set_scan_own_addr, test_setting_scan_own_address_privacy_enabled)
 	err = bt_id_set_scan_own_addr(true, &own_addr_type);
 
 	zassert_ok(err, "Unexpected error code '%d' was returned", err);
-	zassert_true(own_addr_type == BT_ADDR_LE_RANDOM,
+	zassert_true(own_addr_type == BT_HCI_OWN_ADDR_RANDOM,
 		     "Address type reference was incorrectly set");
 }
 

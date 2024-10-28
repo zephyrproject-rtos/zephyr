@@ -11,7 +11,7 @@
 #ifndef ZEPHYR_SUBSYS_BLUETOOTH_HOST_BUF_VIEW_H_
 #define ZEPHYR_SUBSYS_BLUETOOTH_HOST_BUF_VIEW_H_
 
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 
 
 struct bt_buf_view_meta {
@@ -60,7 +60,7 @@ struct net_buf *bt_buf_make_view(struct net_buf *view,
 
 /** @internal
  *
- *  @brief Check if if `parent` has view.
+ *  @brief Check if `parent` has view.
  *
  *  If `parent` has been passed to @ref bt_buf_make_view() and the resulting
  *  view buffer has not been destroyed.

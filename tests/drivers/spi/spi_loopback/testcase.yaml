@@ -14,16 +14,16 @@ tests:
   drivers.spi.loopback.internal:
     filter: CONFIG_SPI_LOOPBACK_MODE_LOOP
   drivers.spi.loopback.lpspi.dma:
-    filter: CONFIG_HAS_MCUX_LPSPI and CONFIG_HAS_MCUX_EDMA
+    filter: DT_HAS_NXP_IMX_LPSPI_ENABLED and DT_HAS_NXP_MCUX_EDMA_ENABLED
     extra_configs:
       - CONFIG_SPI_MCUX_LPSPI_DMA=y
   drivers.spi.loopback.lpspi.async.unset:
-    filter: CONFIG_HAS_MCUX_LPSPI and CONFIG_HAS_MCUX_EDMA
+    filter: DT_HAS_NXP_IMX_LPSPI_ENABLED and DT_HAS_NXP_MCUX_EDMA_ENABLED
     extra_configs:
       - CONFIG_SPI_MCUX_LPSPI_DMA=n
       - CONFIG_SPI_ASYNC=n
   drivers.spi.loopback.lpspi.dma.async.unset:
-    filter: CONFIG_HAS_MCUX_LPSPI and CONFIG_HAS_MCUX_EDMA
+    filter: DT_HAS_NXP_IMX_LPSPI_ENABLED and DT_HAS_NXP_MCUX_EDMA_ENABLED
     extra_configs:
       - CONFIG_SPI_MCUX_LPSPI_DMA=y
       - CONFIG_SPI_ASYNC=n
@@ -33,15 +33,14 @@ tests:
     platform_allow:
       - robokit1
       - mimxrt1170_evk/mimxrt1176/cm7
-      - vmu_rt1170/mimxrt1176/cm7
   drivers.spi.mcux_dspi_dma.loopback:
     extra_args:
-      - OVERLAY_CONFIG="overlay-mcux-dspi-dma.conf"
+      - EXTRA_CONF_FILE="overlay-mcux-dspi-dma.conf"
       - DTC_OVERLAY_FILE="overlay-mcux-dspi-dma.overlay"
     platform_allow: frdm_k64f
   drivers.spi.sam_spi_dma.loopback:
     extra_args:
-      - OVERLAY_CONFIG="overlay-sam-spi-dma.conf"
+      - EXTRA_CONF_FILE="overlay-sam-spi-dma.conf"
       - DTC_OVERLAY_FILE="overlay-sam-spi-dma.overlay"
     platform_allow:
       - sam_e70_xplained/same70q21
@@ -51,14 +50,16 @@ tests:
       - sam_e70_xplained/same70q21
   drivers.spi.stm32_spi_16bits_frames.loopback:
     extra_args:
-      - OVERLAY_CONFIG="overlay-stm32-spi-16bits.conf"
+      - EXTRA_CONF_FILE="overlay-stm32-spi-16bits.conf"
       - DTC_OVERLAY_FILE="overlay-stm32-spi-16bits.overlay"
     filter: CONFIG_SOC_FAMILY_STM32
     platform_allow:
       - nucleo_h743zi
       - nucleo_h753zi
+      - nucleo_h745zi_q/stm32h745xx/m4
+      - nucleo_h745zi_q/stm32h745xx/m7
   drivers.spi.stm32_spi_dma.loopback:
-    extra_args: OVERLAY_CONFIG="overlay-stm32-spi-dma.conf"
+    extra_args: EXTRA_CONF_FILE="overlay-stm32-spi-dma.conf"
     filter: CONFIG_SOC_FAMILY_STM32
     platform_allow:
       - b_u585i_iot02a
@@ -72,6 +73,8 @@ tests:
       - nucleo_wl55jc
       - nucleo_h743zi
       - nucleo_h753zi
+      - nucleo_h745zi_q/stm32h745xx/m4
+      - nucleo_h745zi_q/stm32h745xx/m7
       - stm32h573i_dk
     integration_platforms:
       - nucleo_g474re
@@ -79,29 +82,35 @@ tests:
     # this test case is for when nocache memory region is defined in DT
     # using `zephyr,memory-attr = < DT_MEM_ARM_MPU_RAM_NOCACHE)>`
     extra_args:
-      - OVERLAY_CONFIG="overlay-stm32-spi-dma-dt-nocache-mem.conf"
+      - EXTRA_CONF_FILE="overlay-stm32-spi-dma-dt-nocache-mem.conf"
     filter: CONFIG_SOC_FAMILY_STM32 and CONFIG_CPU_HAS_DCACHE
     platform_allow:
       - nucleo_h743zi
       - nucleo_h753zi
+      - nucleo_h745zi_q/stm32h745xx/m4
+      - nucleo_h745zi_q/stm32h745xx/m7
   drivers.spi.stm32_spi_16bits_frames_dma.loopback:
     extra_args:
-      - OVERLAY_CONFIG="overlay-stm32-spi-16bits-dma.conf"
+      - EXTRA_CONF_FILE="overlay-stm32-spi-16bits-dma.conf"
       - DTC_OVERLAY_FILE="overlay-stm32-spi-16bits.overlay"
     filter: CONFIG_SOC_FAMILY_STM32
     platform_allow:
       - nucleo_h743zi
       - nucleo_h753zi
+      - nucleo_h745zi_q/stm32h745xx/m4
+      - nucleo_h745zi_q/stm32h745xx/m7
   drivers.spi.stm32_spi_16bits_frames_dma_dt_nocache_mem.loopback:
     extra_args:
-      - OVERLAY_CONFIG="overlay-stm32-spi-16bits-dma-dt-nocache-mem.conf"
+      - EXTRA_CONF_FILE="overlay-stm32-spi-16bits-dma-dt-nocache-mem.conf"
       - DTC_OVERLAY_FILE="overlay-stm32-spi-16bits.overlay"
     filter: CONFIG_SOC_FAMILY_STM32 and CONFIG_CPU_HAS_DCACHE
     platform_allow:
       - nucleo_h743zi
       - nucleo_h753zi
+      - nucleo_h745zi_q/stm32h745xx/m4
+      - nucleo_h745zi_q/stm32h745xx/m7
   drivers.spi.stm32_spi_interrupt.loopback:
-    extra_args: OVERLAY_CONFIG="overlay-stm32-spi-interrupt.conf"
+    extra_args: EXTRA_CONF_FILE="overlay-stm32-spi-interrupt.conf"
     filter: CONFIG_SOC_FAMILY_STM32
     platform_allow:
       - b_u585i_iot02a
@@ -112,13 +121,15 @@ tests:
       - nucleo_g474re
       - nucleo_h743zi
       - nucleo_h753zi
+      - nucleo_h745zi_q/stm32h745xx/m4
+      - nucleo_h745zi_q/stm32h745xx/m7
       - nucleo_l152re
       - nucleo_wb55rg
       - nucleo_wl55jc
       - stm32f3_disco
       - stm32h573i_dk
   drivers.spi.gd32_spi_interrupt.loopback:
-    extra_args: OVERLAY_CONFIG="overlay-gd32-spi-interrupt.conf"
+    extra_args: EXTRA_CONF_FILE="overlay-gd32-spi-interrupt.conf"
     platform_allow:
       - gd32f403z_eval
       - gd32f407v_start
@@ -131,7 +142,7 @@ tests:
       - longan_nano
       - longan_nano/gd32vf103/lite
   drivers.spi.gd32_spi_dma.loopback:
-    extra_args: OVERLAY_CONFIG="overlay-gd32-spi-dma.conf"
+    extra_args: EXTRA_CONF_FILE="overlay-gd32-spi-dma.conf"
     platform_allow:
       - gd32f403z_eval
       - gd32f407v_start
@@ -183,3 +194,25 @@ tests:
     extra_args: DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_fast.overlay"
     platform_allow:
       - nrf54h20dk/nrf54h20/cpuapp
+  drivers.spi.ke1xz_flexio_spi.loopback:
+    extra_args: DTC_OVERLAY_FILE="boards/frdm_ke1xz_flexio_spi.overlay"
+    filter: CONFIG_DT_HAS_NXP_FLEXIO_ENABLED and
+            CONFIG_DT_HAS_NXP_FLEXIO_SPI_ENABLED
+    platform_allow:
+      - frdm_ke17z
+      - frdm_ke17z512
+  drivers.spi.max32_dma.loopback:
+    extra_args: EXTRA_CONF_FILE="overlay-max32-spi-dma.conf"
+    filter: CONFIG_SOC_FAMILY_MAX32
+  drivers.spi.s32z_dspi.loopback:
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/s32z2xxdc2_s32z270_dspi.overlay
+    platform_allow:
+      - s32z2xxdc2/s32z270/rtu0
+      - s32z2xxdc2/s32z270/rtu1
+  drivers.spi.max32_spi_rtio.loopback:
+    extra_args:
+      - OVERLAY_CONFIG="overlay-max32-spi-rtio.conf"
+    filter: CONFIG_SOC_FAMILY_MAX32
+    platform_allow:
+      - apard32690/max32690/m4

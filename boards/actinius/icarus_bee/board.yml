@@ -1,5 +1,6 @@
 board:
   name: actinius_icarus_bee
+  full_name: Icarus Bee
   vendor: actinius
   socs:
   - name: nrf9160

@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2024 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pmod_spi {
+	status = "okay";
+
+	adxl345_pmod_acl: adxl345@0 {
+		compatible = "adi,adxl345";
+		reg = <0x0>;
+		spi-max-frequency = <DT_FREQ_M(1)>;
+		status = "okay";
+	};
+};

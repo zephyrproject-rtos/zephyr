@@ -16,7 +16,7 @@
 
 #include <zephyr/ipc/ipc_service.h>
 
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/l2cap.h>
 #include <zephyr/bluetooth/hci.h>
@@ -192,7 +192,7 @@ static void hci_ipc_rx(uint8_t *data, size_t len)
 	}
 
 	if (buf) {
-		net_buf_put(&tx_queue, buf);
+		k_fifo_put(&tx_queue, buf);
 
 		LOG_HEXDUMP_DBG(buf->data, buf->len, "Final net buffer:");
 	}
@@ -205,7 +205,7 @@ static void tx_thread(void *p1, void *p2, void *p3)
 		int err;
 
 		/* Wait until a buffer is available */
-		buf = net_buf_get(&tx_queue, K_FOREVER);
+		buf = k_fifo_get(&tx_queue, K_FOREVER);
 		/* Pass buffer to the stack */
 		err = bt_send(buf);
 		if (err) {
@@ -271,6 +271,14 @@ static void hci_ipc_send(struct net_buf *buf, bool is_fatal_err)
 			if (is_fatal_err) {
 				LOG_ERR("IPC service send error: %d", ret);
 			} else {
+				/* In the POSIX ARCH, code takes zero simulated time to execute,
+				 * so busy wait loops become infinite loops, unless we
+				 * force the loop to take a bit of time.
+				 *
+				 * This delay allows the IPC consumer to execute, thus making
+				 * it possible to send more data over IPC afterwards.
+				 */
+				Z_SPIN_DELAY(500);
 				k_yield();
 			}
 		}
@@ -412,7 +420,7 @@ int main(void)
 	while (1) {
 		struct net_buf *buf;
 
-		buf = net_buf_get(&rx_queue, K_FOREVER);
+		buf = k_fifo_get(&rx_queue, K_FOREVER);
 		hci_ipc_send(buf, HCI_REGULAR_MSG);
 	}
 	return 0;

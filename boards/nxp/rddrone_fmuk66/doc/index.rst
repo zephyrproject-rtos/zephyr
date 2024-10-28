@@ -1,7 +1,4 @@
-.. _rddrone_fmuk66:
-
-NXP RDDRONE-FMUK66
-##################
+.. zephyr:board:: rddrone_fmuk66
 
 Overview
 ********
@@ -10,10 +7,6 @@ The RDDRONE FMUK66 is an drone control board with commonly used peripheral
 connectors and a Kinetis K66 on board.
 
 - Comes with a J-Link Edu Mini for programming and UART console.
-
-.. image:: rddrone_fmuk66.jpg
-   :align: center
-   :alt: RDDRONE-FMUK66
 
 Hardware
 ********
@@ -144,7 +137,7 @@ etc.):
 Flashing
 ========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -162,7 +155,7 @@ see the following message in the terminal:
 Debugging
 =========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

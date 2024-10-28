@@ -22,13 +22,13 @@
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
-		cpu-power-states = <&idle &suspend>;
 
 		cpu0: cpu@0 {
 			compatible = "arm,cortex-m33f";
 			reg = <0>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			cpu-power-states = <&idle &suspend>;
 
 			mpu: mpu@e000ed90 {
 				compatible = "arm,armv8m-mpu";
@@ -73,9 +73,9 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
-	sram_data: memory@20000000 {
+	sram_data: memory@40000 {
 		compatible = "mmio-sram";
-		reg = <0x20040000 DT_SIZE_K(960)>;
+		reg = <0x40000 DT_SIZE_K(960)>;
 	};
 
 	sram_code: memory@0 {
@@ -112,6 +112,10 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
+	flexspi: spi@134000 {
+		reg = <0x134000 0x1000>, <0x18000000 DT_SIZE_M(128)>;
+	};
+
 	clkctl0: clkctl@1000 {
 		/* FIXME This chip does NOT have a syscon */
 		compatible = "nxp,lpc-syscon";
@@ -147,6 +151,16 @@
 	pmu: pmu@31000 {
 		reg = <0x31000 0x130>;
 		compatible = "nxp,rw-pmu";
+		pin0: pin0 {
+			compatible = "nxp,aon-wakeup-pin";
+			interrupts = <100 0>;
+			status = "disabled";
+		};
+		pin1: pin1 {
+			compatible = "nxp,aon-wakeup-pin";
+			interrupts = <101 0>;
+			status = "disabled";
+		};
 	};
 
 	trng: random@14000 {
@@ -275,6 +289,12 @@
 		num-inputs = <64>;
 	};
 
+	imu: nxp_wifi {
+		compatible = "nxp,wifi";
+		/* first index is the imu interrupt, the second is the wakeup done interrupt */
+		interrupts = <72 2>, <64 2>;
+	};
+
 	dma0: dma-controller@104000 {
 		compatible = "nxp,lpc-dma";
 		reg = <0x104000 0x1000>;
@@ -341,6 +361,16 @@
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
+	};
+
+	sctimer: pwm@146000 {
+		compatible = "nxp,sctimer-pwm";
+		reg = <0x146000 0x1000>;
+		interrupts = <12 0>;
+		clocks = <&clkctl1 MCUX_SCTIMER_CLK>;
+		status = "disabled";
+		prescaler = <8>;
+		#pwm-cells = <3>;
 	};
 
 	mrt0: mrt@2d000 {

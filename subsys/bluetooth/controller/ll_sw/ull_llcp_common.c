@@ -18,6 +18,7 @@
 #include "util/mem.h"
 #include "util/memq.h"
 #include "util/dbuf.h"
+#include "util/mayfly.h"
 
 #include "pdu_df.h"
 #include "lll/pdu_vendor.h"
@@ -31,12 +32,22 @@
 #include "lll/lll_df_types.h"
 #include "lll_conn.h"
 #include "lll_conn_iso.h"
+#include "lll_sync.h"
+#include "lll_sync_iso.h"
+#include "lll_scan.h"
+#include "lll/lll_adv_types.h"
+#include "lll_adv.h"
+#include "lll/lll_adv_pdu.h"
 
 #include "ull_tx_queue.h"
 
 #include "isoal.h"
 #include "ull_iso_types.h"
 #include "ull_conn_iso_types.h"
+#include "ull_sync_types.h"
+#include "ull_scan_types.h"
+#include "ull_adv_types.h"
+#include "ull_adv_internal.h"
 #include "ull_iso_internal.h"
 #include "ull_conn_iso_internal.h"
 #include "ull_peripheral_iso_internal.h"
@@ -46,6 +57,7 @@
 #include "ull_llcp.h"
 #include "ull_conn_internal.h"
 #include "ull_internal.h"
+#include "ull_sync_internal.h"
 #include "ull_llcp_features.h"
 #include "ull_llcp_internal.h"
 
@@ -417,7 +429,7 @@ static void lp_comm_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 	}
 
 	if (!piggy_back) {
-		/* Enqueue notification towards LL, unless we re-use RX node,
+		/* Enqueue notification towards LL, unless we reuse RX node,
 		 * in which case it is handled on the ull_cp_rx return path
 		 */
 		ll_rx_put_sched(ntf->hdr.link, ntf);

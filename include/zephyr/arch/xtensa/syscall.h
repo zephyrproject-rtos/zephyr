@@ -198,7 +198,7 @@ static SYSINL uintptr_t arch_syscall_invoke0(uintptr_t call_id)
 
 /*
  * There is no easy (or generic) way to figure out if a thread is runnining
- * in un-privileged mode. Reading the currrent ring (PS.CRING) is a privileged
+ * in un-privileged mode. Reading the current ring (PS.CRING) is a privileged
  * instruction and not thread local storage is not available in xcc.
  */
 static inline bool arch_is_user_context(void)
@@ -211,7 +211,7 @@ static inline bool arch_is_user_context(void)
 		: "=a" (thread)
 	);
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
-	extern __thread uint32_t is_user_mode;
+	extern Z_THREAD_LOCAL uint32_t is_user_mode;
 
 	if (!thread) {
 		return false;

@@ -180,7 +180,7 @@ void hog_init(void)
 
 void hog_button_loop(void)
 {
-#if DT_NODE_HAS_STATUS(SW0_NODE, okay)
+#if DT_NODE_HAS_STATUS_OKAY(SW0_NODE)
 	const struct gpio_dt_spec sw0 = GPIO_DT_SPEC_GET(SW0_NODE, gpios);
 
 	gpio_pin_configure_dt(&sw0, GPIO_INPUT);

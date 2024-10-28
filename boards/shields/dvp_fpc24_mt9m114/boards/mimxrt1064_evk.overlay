@@ -1,9 +1,0 @@
-/*
- * Copyright 2024 NXP
- *
- * SPDX-License-Identifier: Apache-2.0
- */
-
-&dvp_fpc24_interface {
-	source = <&mt9m114>;
-};

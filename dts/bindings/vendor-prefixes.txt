@@ -11,6 +11,7 @@
 # <vendor-prefix><TAB><Full name of vendor>
 
 # zephyr-keep-sorted-start
+01space	01Space
 96boards	96Boards
 aaeon	AAEON Technology Inc.
 abb	ABB
@@ -327,6 +328,7 @@ isentek	Isentek Inc.
 isil	Intersil
 issi	Integrated Silicon Solutions Inc.
 ist	Innovative Sensor Technology IST AG
+istech	Integrated Solutions Technology Inc.
 ite	ITE Tech. Inc.
 itead	ITEAD Intelligent Systems Co.Ltd
 ivo	InfoVision Optoelectronics Kunshan Co. Ltd.
@@ -586,6 +588,7 @@ seirobotics	Shenzhen SEI Robotics Co., Ltd
 semtech	Semtech Corporation
 sensirion	Sensirion AG
 sensortek	Sensortek Technology Corporation
+sensry	sensry.io
 sff	Small Form Factor Committee
 sgd	Solomon Goldentek Display Corporation
 sgmicro	SG Micro Corp
@@ -692,7 +695,7 @@ udoo	Udoo
 ugoos	Ugoos Industrial Co., Ltd.
 ultrachip	UltraChip Inc.
 uniwest	United Western Technologies Corp (UniWest)
-up-brige-the-gap	UP Bridge the Gap
+up-bridge-the-gap	UP Bridge the Gap
 upisemi	uPI Semiconductor Corp.
 urt	United Radiant Technology Corporation
 usi	Universal Scientific Industrial Co., Ltd.
@@ -731,6 +734,7 @@ winbond	Winbond Electronics corp.
 winsen	Zhengzhou Winsen Electronics Technology Co., Ltd.
 winstar	Winstar Display Corp.
 wits	Shenzhen Merrii Technology Co., Ltd. (WITS)
+witte	Witte Technology
 wiznet	WIZnet Co., Ltd.
 wlf	Wolfson Microelectronics
 wm	Wondermedia Technologies, Inc.

@@ -12,7 +12,6 @@
 #include <zephyr/arch/cpu.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/device.h>
-#include <zephyr/irq_multilevel.h>
 
 #include <zephyr/sw_isr_table.h>
 #include <zephyr/drivers/interrupt_controller/riscv_clic.h>
@@ -84,9 +83,6 @@ struct CLICCTRL {
 	volatile uint8_t INTCTRL;
 };
 
-/** ECLIC Mode mask for MTVT CSR Register */
-#define ECLIC_MODE_MTVEC_Msk   3U
-
 /** CLIC INTATTR: TRIG Mask */
 #define CLIC_INTATTR_TRIG_Msk  0x3U
 
@@ -95,14 +91,6 @@ struct CLICCTRL {
 #define ECLIC_MTH       (*((volatile union CLICMTH  *)(DT_REG_ADDR_BY_IDX(DT_NODELABEL(eclic), 2))))
 #define ECLIC_CTRL      ((volatile  struct CLICCTRL *)(DT_REG_ADDR_BY_IDX(DT_NODELABEL(eclic), 3)))
 #define ECLIC_CTRL_SIZE (DT_REG_SIZE_BY_IDX(DT_NODELABEL(eclic), 3))
-
-#if CONFIG_3RD_LEVEL_INTERRUPTS
-#define INTERRUPT_LEVEL 2
-#elif CONFIG_2ND_LEVEL_INTERRUPTS
-#define INTERRUPT_LEVEL 1
-#else
-#define INTERRUPT_LEVEL 0
-#endif
 
 static uint8_t nlbits;
 static uint8_t intctlbits;
@@ -150,23 +138,28 @@ int riscv_clic_irq_is_enabled(uint32_t irq)
 void riscv_clic_irq_priority_set(uint32_t irq, uint32_t pri, uint32_t flags)
 {
 	const uint8_t prio = leftalign8(MIN(pri, max_prio), intctlbits);
-	const uint8_t level =  leftalign8(MIN((irq_get_level(irq) - 1), max_level), nlbits);
+	const uint8_t level =  leftalign8(max_level, nlbits);
 	const uint8_t intctrl = (prio | level) | (~intctrl_mask);
 
 	ECLIC_CTRL[irq].INTCTRL = intctrl;
 
 	union CLICINTATTR intattr = {.w = 0};
-#if defined(CONFIG_RISCV_VECTORED_MODE) && !defined(CONFIG_LEGACY_CLIC)
-	/*
-	 * Set Selective Hardware Vectoring.
-	 * Legacy SiFive does not implement smclicshv extension and vectoring is
-	 * enabled in the mode bits of mtvec.
-	 */
-	intattr.b.shv = 1;
-#else
+
+	/* Set non-vectoring as default. */
 	intattr.b.shv = 0;
-#endif
 	intattr.b.trg = (uint8_t)(flags & CLIC_INTATTR_TRIG_Msk);
+	ECLIC_CTRL[irq].INTATTR = intattr;
+}
+
+/**
+ * @brief Set vector mode of interrupt
+ */
+void riscv_clic_irq_vector_set(uint32_t irq)
+{
+	/* Set Selective Hardware Vectoring. */
+	union CLICINTATTR intattr = ECLIC_CTRL[irq].INTATTR;
+
+	intattr.b.shv = 1;
 	ECLIC_CTRL[irq].INTATTR = intattr;
 }
 
@@ -180,17 +173,12 @@ void riscv_clic_irq_set_pending(uint32_t irq)
 
 static int nuclei_eclic_init(const struct device *dev)
 {
-	/* check hardware support required interrupt levels */
-	__ASSERT_NO_MSG(ECLIC_INFO.b.intctlbits >= INTERRUPT_LEVEL);
-
 	ECLIC_MTH.w = 0;
 	ECLIC_CFG.w = 0;
-	ECLIC_CFG.b.nlbits = INTERRUPT_LEVEL;
+	ECLIC_CFG.b.nlbits = 0;
 	for (int i = 0; i < ECLIC_CTRL_SIZE; i++) {
 		ECLIC_CTRL[i] = (struct CLICCTRL) { 0 };
 	}
-
-	csr_write(mtvec, ((csr_read(mtvec) & 0xFFFFFFC0) | ECLIC_MODE_MTVEC_Msk));
 
 	nlbits = ECLIC_CFG.b.nlbits;
 	intctlbits = ECLIC_INFO.b.intctlbits;

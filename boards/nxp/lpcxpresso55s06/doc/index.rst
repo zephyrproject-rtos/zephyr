@@ -1,7 +1,4 @@
-.. _lpcxpresso55s06:
-
-NXP LPCXpresso55S06
-###################
+.. zephyr:board:: lpcxpresso55s06
 
 Overview
 ********
@@ -12,10 +9,6 @@ architecture. Arduino® UNO compatible shield connectors are included,
 with additional expansion ports around the Arduino footprint, along
 with a PMod/host interface port and MikroElektronika Click module
 site.
-
-.. image:: lpcxpress55s06.jpg
-   :align: center
-   :alt: LPCXpresso55S06
 
 Hardware
 ********
@@ -45,7 +38,7 @@ Supported Features
 
 The lpcxpresso55s06 board configuration supports the hardware features listed
 below.  For additional features not yet supported, please also refer to the
-:ref:`lpcxpresso55s69` , which is the superset board in NXP's LPC55xx series.
+:zephyr:board:`lpcxpresso55s69` , which is the superset board in NXP's LPC55xx series.
 NXP prioritizes enabling the superset board with NXP's Full Platform Support for
 Zephyr.  Therefore, the lpcxpresso55s69 board may have additional features
 already supported, which can also be re-used on this lpcxpresso55s06 board:
@@ -156,7 +149,7 @@ settings:
 Flashing
 ========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -174,7 +167,7 @@ see the following message in the terminal:
 Debugging
 =========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

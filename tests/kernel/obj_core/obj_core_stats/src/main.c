@@ -77,7 +77,7 @@ ZTEST(obj_core_stats_system, test_obj_core_stats_system)
 
 	/*
 	 * Not much can be predicted for the raw stats aside from the
-	 * the contents of the CPU sampling to be at least as large as
+	 * contents of the CPU sampling to be at least as large as
 	 * kernel sampling. The same goes for the query stats.
 	 */
 

@@ -36,7 +36,7 @@ currently it is only MAX3421E. The example can be built as follows:
 
 It is theoretically possible to build USB support using virtual USB controllers
 for all platforms, eventually the devicetree overlay has to be adjusted slightly if
-the platform has already defined or not `zephyr_uhc0` or `zephyr_udc0` nodelabels.
+the platform has already defined or not ``zephyr_uhc0`` or ``zephyr_udc0`` nodelabels.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/usb/shell

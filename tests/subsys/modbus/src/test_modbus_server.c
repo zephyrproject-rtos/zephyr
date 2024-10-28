@@ -6,6 +6,7 @@
 
 #include "test_modbus.h"
 
+#include <zephyr/sys/util.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mbs_test, LOG_LEVEL_INF);
 
@@ -87,12 +88,11 @@ static int input_reg_rd(uint16_t addr, uint16_t *reg)
 
 static int input_reg_rd_fp(uint16_t addr, float *reg)
 {
-	if ((addr < fp_offset) ||
-	    (addr >= (ARRAY_SIZE(holding_fp) + fp_offset))) {
+	if (!IN_RANGE(addr, fp_offset, sizeof(holding_fp) / 2 + fp_offset)) {
 		return -ENOTSUP;
 	}
 
-	*reg = holding_fp[addr - fp_offset];
+	*reg = holding_fp[(addr - fp_offset) / 2];
 
 	LOG_DBG("FP input register read, addr %u", addr);
 
@@ -127,12 +127,11 @@ static int holding_reg_wr(uint16_t addr, uint16_t reg)
 
 static int holding_reg_rd_fp(uint16_t addr, float *reg)
 {
-	if ((addr < fp_offset) ||
-	    (addr >= (ARRAY_SIZE(holding_fp) + fp_offset))) {
+	if (!IN_RANGE(addr, fp_offset, sizeof(holding_fp) / 2 + fp_offset)) {
 		return -ENOTSUP;
 	}
 
-	*reg = holding_fp[addr - fp_offset];
+	*reg = holding_fp[(addr - fp_offset) / 2];
 
 	LOG_DBG("FP holding register read, addr %u", addr);
 
@@ -141,12 +140,11 @@ static int holding_reg_rd_fp(uint16_t addr, float *reg)
 
 static int holding_reg_wr_fp(uint16_t addr, float reg)
 {
-	if ((addr < fp_offset) ||
-	    (addr >= (ARRAY_SIZE(holding_fp) + fp_offset))) {
+	if (!IN_RANGE(addr, fp_offset, sizeof(holding_fp) / 2 + fp_offset)) {
 		return -ENOTSUP;
 	}
 
-	holding_fp[addr - fp_offset] = reg;
+	holding_fp[(addr - fp_offset) / 2] = reg;
 
 	LOG_DBG("FP holding register write, addr %u", addr);
 

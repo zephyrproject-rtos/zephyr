@@ -1,7 +1,4 @@
-.. _hifive1:
-
-SiFive HiFive1
-##############
+.. zephyr:board:: hifive1
 
 Overview
 ********

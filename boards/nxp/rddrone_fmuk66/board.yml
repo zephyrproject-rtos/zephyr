@@ -1,5 +1,6 @@
 board:
   name: rddrone_fmuk66
+  full_name: RDDRONE-FMUK66
   vendor: nxp
   socs:
     - name: mk66f18

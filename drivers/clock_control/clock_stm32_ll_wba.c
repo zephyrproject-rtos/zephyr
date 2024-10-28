@@ -41,10 +41,14 @@ static uint32_t get_bus_clock(uint32_t clock, uint32_t prescaler)
 }
 
 /** @brief Verifies clock is part of active clock configuration */
-__unused
-static int enabled_clock(uint32_t src_clk)
+int enabled_clock(uint32_t src_clk)
 {
 	if ((src_clk == STM32_SRC_SYSCLK) ||
+	    (src_clk == STM32_SRC_HCLK1) ||
+	    (src_clk == STM32_SRC_HCLK5) ||
+	    (src_clk == STM32_SRC_PCLK1) ||
+	    (src_clk == STM32_SRC_PCLK2) ||
+	    (src_clk == STM32_SRC_PCLK7) ||
 	    ((src_clk == STM32_SRC_HSE) && IS_ENABLED(STM32_HSE_ENABLED)) ||
 	    ((src_clk == STM32_SRC_HSI16) && IS_ENABLED(STM32_HSI_ENABLED)) ||
 	    ((src_clk == STM32_SRC_LSE) && IS_ENABLED(STM32_LSE_ENABLED)) ||
@@ -195,19 +199,24 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 	case STM32_CLOCK_BUS_AHB1:
 	case STM32_CLOCK_BUS_AHB2:
 	case STM32_CLOCK_BUS_AHB4:
+	case STM32_SRC_HCLK1:
 		*rate = ahb_clock;
 		break;
 	case STM32_CLOCK_BUS_AHB5:
+	case STM32_SRC_HCLK5:
 		*rate = ahb5_clock;
 		break;
 	case STM32_CLOCK_BUS_APB1:
 	case STM32_CLOCK_BUS_APB1_2:
+	case STM32_SRC_PCLK1:
 		*rate = apb1_clock;
 		break;
 	case STM32_CLOCK_BUS_APB2:
+	case STM32_SRC_PCLK2:
 		*rate = apb2_clock;
 		break;
 	case STM32_CLOCK_BUS_APB7:
+	case STM32_SRC_PCLK7:
 		*rate = apb7_clock;
 		break;
 	case STM32_SRC_SYSCLK:
@@ -610,7 +619,7 @@ int stm32_clock_control_init(const struct device *dev)
  * that the device init runs just after SOC init
  */
 DEVICE_DT_DEFINE(DT_NODELABEL(rcc),
-		    &stm32_clock_control_init,
+		    stm32_clock_control_init,
 		    NULL,
 		    NULL, NULL,
 		    PRE_KERNEL_1,

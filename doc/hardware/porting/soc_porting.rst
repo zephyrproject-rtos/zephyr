@@ -3,9 +3,8 @@
 SoC Porting Guide
 ###################
 
-To add Zephyr support for a new :term:`SoC`, you need a *SoC directory* with
-various files in it, and a SoC :file:`.dtsi` in
-:zephyr_file:`dts/<ARCH>/<VENDOR>` is required.
+This page describes how to add support for a new :term:`SoC` in Zephyr, be it in
+the upstream Zephyr project or locally in your own repository.
 
 SoC Definitions
 ***************
@@ -76,6 +75,7 @@ The mandatory files are:
 
 #. :file:`soc.yml`: a YAML file describing the high-level meta data of the
    SoC such as:
+
    - SoC name: the name of the SoC
    - CPU clusters: CPU clusters if the SoC contains one or more clusters
    - SoC series: the SoC series to which the SoC belong

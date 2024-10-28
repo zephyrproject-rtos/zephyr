@@ -95,7 +95,7 @@
 			status = "disabled";
 		};
 
-		uuid: flash@9fc70 {
+		uuid: flash@3fc70 {
 			compatible = "nxp,lpc-uid";
 			reg = <0x3fc70 0x10>;
 		};

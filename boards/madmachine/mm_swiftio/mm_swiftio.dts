@@ -61,7 +61,7 @@
 		compatible = "nxp,imx-flexspi-nor";
 		size = <67108864>;
 		reg = <0>;
-		spi-max-frequency = <133000000>;
+		spi-max-frequency = <104000000>;
 		status = "okay";
 		jedec-id = [9d 70 17];
 	};
@@ -115,7 +115,7 @@
 
 		port {
 			ov7725_ep_out: endpoint {
-				remote-endpoint = <&csi_ep_in>;
+				remote-endpoint-label = "csi_ep_in";
 			};
 		};
 	};
@@ -192,13 +192,12 @@
 
 &csi {
 	status = "okay";
-	source = <&ov7725>;
 	pinctrl-0 = <&pinmux_csi>;
 	pinctrl-names = "default";
 
 	port {
 		csi_ep_in: endpoint {
-			remote-endpoint = <&ov7725_ep_out>;
+			remote-endpoint-label = "ov7725_ep_out";
 		};
 	};
 };

@@ -5,6 +5,7 @@ config UART_NXP_S32_LINFLEXD
 	bool "LINFlexD UART driver for NXP S32 family processors"
 	default y
 	depends on DT_HAS_NXP_S32_LINFLEXD_ENABLED
+	select PINCTRL
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT

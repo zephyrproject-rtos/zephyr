@@ -6,6 +6,8 @@
 
 #include <arm/armv7-m.dtsi>
 #include <nordic/nrf_common.dtsi>
+#include <zephyr/dt-bindings/adc/nrf-saadc-v2.h>
+#include <zephyr/dt-bindings/regulator/nrf5x.h>
 
 / {
 	chosen {
@@ -73,6 +75,13 @@
 				reg = <0x40000520 0x1>;
 				status = "okay";
 			};
+
+			reg: regulator@40000578 {
+				compatible = "nordic,nrf5x-regulator";
+				reg = <0x40000578 0x1>;
+				regulator-name = "REG";
+				regulator-initial-mode = <NRF5X_REG_MODE_LDO>;
+			};
 		};
 
 		bprot: bprot@40000000 {
@@ -122,6 +131,7 @@
 			interrupts = <3 NRF_DEFAULT_IRQ_PRIORITY>;
 			easydma-maxcnt-bits = <14>;
 			status = "disabled";
+			zephyr,pm-device-runtime-auto;
 		};
 
 		spi0: spi@40004000 {

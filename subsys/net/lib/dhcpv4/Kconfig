@@ -41,7 +41,7 @@ config NET_DHCPV4_MAX_REQUESTED_OPTIONS
 	int "Maximum number of requested options"
 	depends on NET_DHCPV4 && NET_DHCPV4_OPTION_CALLBACKS
 	default 10
-	range 3 255
+	range 3 $(UINT8_MAX)
 	help
 	  Maximum number of requested options that can be added to the
 	  DHCPv4 request message. The options are added using the
@@ -121,7 +121,7 @@ config NET_DHCPV4_SERVER_ADDR_COUNT
 
 config NET_DHCPV4_SERVER_ADDR_LEASE_TIME
 	int "Lease time for IPv4 addresses assigned by the server (seconds)"
-	range 0 4294967295
+	range 0 $(UINT32_MAX)
 	default 86400
 	help
 	  Lease time in seconds for IPv4 addresses assigned by the server.
@@ -130,7 +130,7 @@ config NET_DHCPV4_SERVER_ADDR_LEASE_TIME
 
 config NET_DHCPV4_SERVER_ADDR_DECLINE_TIME
 	int "The time IPv4 addresses remains blocked after conflict detection (seconds)"
-	range 0 4294967295
+	range 0 $(UINT32_MAX)
 	default 86400
 	help
 	  In case IPv4 address becomes blocked (either because of receiving
@@ -141,7 +141,7 @@ config NET_DHCPV4_SERVER_ADDR_DECLINE_TIME
 	  case it runs out of free addresses to assign.
 
 config NET_DHCPV4_SERVER_ICMP_PROBE_TIMEOUT
-	int "Timeout for ICMP probes sent by the server (miliseconds)"
+	int "Timeout for ICMP probes sent by the server (milliseconds)"
 	range 0 60000
 	default 1000
 	help
@@ -161,5 +161,16 @@ config NET_DHCPV4_SERVER_NAK_UNRECOGNIZED_REQUESTS
 	  instead of staying silent for unrecognized Request messages, the server
 	  will send a NAK, informing the client it should proceed with a full
 	  procedure.
+
+config NET_DHCPV4_SERVER_OPTION_DNS_ADDRESS
+	string "DNS Server address"
+	default DNS_SERVER1 if DNS_SERVER_IP_ADDRESSES
+	default ""
+	help
+	  This configuration option specifies the DNS server address that the DHCPv4
+	  server should provide to clients when they request an IP address. The
+	  DHCPv4 server adds this DNS server address in the DHCP offer and
+	  acknowledgment messages sent to the clients, allowing them to use the
+	  specified DNS server for name resolution.
 
 endif # NET_DHCPV4_SERVER

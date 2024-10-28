@@ -10,6 +10,10 @@ config SOC_SERIES_RA4M1
 	select TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
 	select XIP
 
+if SOC_SERIES_RA4M1
+
 config SOC_OPTION_SETTING_MEMORY
 	bool "Option Setting Memory"
 	default y
+
+endif

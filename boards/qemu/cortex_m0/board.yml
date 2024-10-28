@@ -1,5 +1,6 @@
 board:
   name: qemu_cortex_m0
+  full_name: QEMU Emulation for ARM Cortex-M0
   vendor: nordic
   socs:
   - name: nrf51822

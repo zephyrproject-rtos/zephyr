@@ -23,6 +23,15 @@
 
 #if defined(STM32_PLL_ENABLED)
 
+uint32_t get_pllout_frequency(void)
+{
+	/* Stub implementation for compatibility with clock_stm32_ll_common.
+	 * The PLL domain clock is only used for MCO configuration, but the
+	 * MCO driver never queries the PLL output clock frequency.
+	 */
+	return 0;
+}
+
 /*
  * Select PLL source for STM32F1 Connectivity line devices (STM32F105xx and
  * STM32F107xx).

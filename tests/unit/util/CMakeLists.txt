@@ -2,9 +2,16 @@
 
 cmake_minimum_required(VERSION 3.20.0)
 
-project(util)
 find_package(Zephyr COMPONENTS unittest REQUIRED HINTS $ENV{ZEPHYR_BASE})
-target_sources(testbinary PRIVATE main.c ${ZEPHYR_BASE}/lib/utils/dec.c)
+
+project(util)
+
+target_sources(testbinary
+  PRIVATE
+  main.c
+  ${ZEPHYR_BASE}/lib/utils/dec.c
+  ${ZEPHYR_BASE}/lib/utils/utf8.c
+)
 
 if(CONFIG_CPP)
   # When testing for C++ force test file C++ compilation

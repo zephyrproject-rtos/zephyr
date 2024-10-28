@@ -1,0 +1,27 @@
+common:
+  ignore_faults: true
+  harness: console
+  ignore_qemu_crash: true
+  tags: kernel riscv
+  platform_allow:
+    - qemu_riscv64
+tests:
+  arch.riscv64.fatal:
+    harness_config:
+      type: multi_line
+      regex:
+        - "E:      a0: 0000000000000004    t0: 0000000000000000"
+        - "E:      a1: a1ff0000ff000b11    t1: d1ff0000ff000606"
+        - "E:      a2: a2ff0000ff000c12    t2: d2ff0000ff000707"
+        - "E:      a3: a3ff0000ff000d13    t3: d3ff0000ff001c28"
+        - "E:      a4: a4ff0000ff000e14    t4: d4ff0000ff001d29"
+        - "E:      a5: a5ff0000ff000f15    t5: d5ff0000ff001e30"
+        - "E:      a6: a6ff0000ff001016    t6: d6ff0000ff001f31"
+        - "E:      a7: a7ff0000ff001117"
+        - "E:      ra: dada0000ff000101"
+        - "E:      s0: c0ff0000ff000808    s6: c6ff0000ff001622"
+        - "E:      s1: c1ff0000ff000909    s7: c7ff0000ff001723"
+        - "E:      s2: c2ff0000ff001218    s8: c8ff0000ff001824"
+        - "E:      s3: c3ff0000ff001319    s9: c9ff0000ff001925"
+        - "E:      s4: c4ff0000ff001420   s10: c10ff000ff001a26"
+        - "E:      s5: c5ff0000ff001521   s11: c11ff000ff001b27"

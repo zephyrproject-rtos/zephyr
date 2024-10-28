@@ -12,7 +12,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/byteorder.h>
 
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/mesh.h>
@@ -767,7 +767,7 @@ int bt_mesh_auth_method_set_static(const uint8_t *static_val, uint8_t size)
 	memcpy(bt_mesh_prov_link.auth, static_val,
 	       size > PROV_AUTH_MAX_LEN ? PROV_AUTH_MAX_LEN : size);
 
-	/* Padd with zeros if the Auth is shorter the required length*/
+	/* Pad with zeros if the Auth is shorter the required length */
 	if (size < PROV_AUTH_MAX_LEN) {
 		memset(bt_mesh_prov_link.auth + size, 0, PROV_AUTH_MAX_LEN - size);
 	}

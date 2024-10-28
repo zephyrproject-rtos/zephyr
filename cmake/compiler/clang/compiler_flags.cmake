@@ -125,3 +125,5 @@ set_compiler_property(PROPERTY warning_error_coding_guideline
 )
 
 set_compiler_property(PROPERTY no_global_merge "-mno-global-merge")
+
+set_compiler_property(PROPERTY specs)

@@ -38,7 +38,7 @@
 
 #define CLKSRC_FREQ(clk) DT_PROP(DT_PATH(clocks, clk), clock_frequency)
 
-#define IS_CLKSRC_ENABLED(clk) DT_NODE_HAS_STATUS(DT_PATH(clocks, clk), okay)
+#define IS_CLKSRC_ENABLED(clk) DT_NODE_HAS_STATUS_OKAY(DT_PATH(clocks, clk))
 
 #define SCKSCR_INIT_VALUE _CONCAT(CLKSRC_, SYSCLK_SRC)
 
@@ -286,6 +286,13 @@ static int clock_control_ra_init(const struct device *dev)
 		}
 	}
 
+	SYSTEM_write8(OPCCR_OFFSET, 0);
+	while ((SYSTEM_read8(OPCCR_OFFSET) & BIT(OPCCR_OPCMTSF_POS)) != 0) {
+		;
+	}
+
+	SYSTEM_write8(MEMWAIT_OFFSET, 1);
+
 	SYSTEM_write32(SCKDIVCR_OFFSET, SCKDIVCR_INIT_VALUE);
 	SYSTEM_write8(SCKSCR_OFFSET, SCKSCR_INIT_VALUE);
 
@@ -293,16 +300,10 @@ static int clock_control_ra_init(const struct device *dev)
 	sysclk = SYSTEM_read8(SCKSCR_OFFSET);
 	z_clock_hw_cycles_per_sec = clock_freqs[sysclk];
 
-	SYSTEM_write8(OPCCR_OFFSET, 0);
-	while ((SYSTEM_read8(OPCCR_OFFSET) & BIT(OPCCR_OPCMTSF_POS)) != 0) {
-		;
-	}
-
-	SYSTEM_write8(MEMWAIT_OFFSET, 1);
 	SYSTEM_write16(PRCR_OFFSET, PRCR_KEY);
 
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0, &clock_control_ra_init, NULL, NULL, NULL, PRE_KERNEL_1,
+DEVICE_DT_INST_DEFINE(0, clock_control_ra_init, NULL, NULL, NULL, PRE_KERNEL_1,
 		      CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &ra_clock_control_driver_api);

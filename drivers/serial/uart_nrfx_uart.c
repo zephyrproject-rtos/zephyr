@@ -878,10 +878,11 @@ static int uart_nrfx_irq_tx_ready_complete(const struct device *dev)
 	 * called after the TX interrupt is requested to be disabled but before
 	 * the disabling is actually performed (in the IRQ handler).
 	 */
-	return nrf_uart_int_enable_check(uart0_addr,
-					 NRF_UART_INT_MASK_TXDRDY) &&
-	       !disable_tx_irq &&
-	       event_txdrdy_check();
+	bool ready = nrf_uart_int_enable_check(uart0_addr,
+					       NRF_UART_INT_MASK_TXDRDY) &&
+		     !disable_tx_irq &&
+		     event_txdrdy_check();
+	return ready ? 1 : 0;
 }
 
 /** Interrupt driven receiver ready function */
@@ -1086,12 +1087,9 @@ static int uart_nrfx_pm_action(const struct device *dev,
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-		if (IS_ENABLED(CONFIG_UART_0_GPIO_MANAGEMENT)) {
-			ret = pinctrl_apply_state(config->pcfg,
-						  PINCTRL_STATE_DEFAULT);
-			if (ret < 0) {
-				return ret;
-			}
+		ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+		if (ret < 0) {
+			return ret;
 		}
 
 		nrf_uart_enable(uart0_addr);
@@ -1102,13 +1100,9 @@ static int uart_nrfx_pm_action(const struct device *dev,
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
 		nrf_uart_disable(uart0_addr);
-
-		if (IS_ENABLED(CONFIG_UART_0_GPIO_MANAGEMENT)) {
-			ret = pinctrl_apply_state(config->pcfg,
-						  PINCTRL_STATE_SLEEP);
-			if (ret < 0) {
-				return ret;
-			}
+		ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
+		if (ret < 0) {
+			return ret;
 		}
 		break;
 	default:

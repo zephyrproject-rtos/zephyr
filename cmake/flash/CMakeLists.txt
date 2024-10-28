@@ -61,6 +61,8 @@ function(runners_yaml_append_config)
     runners_yaml_append("  uf2_file: ${uf2}")
   endif()
 
+  zephyr_get(OPENOCD)
+  zephyr_get(OPENOCD_DEFAULT_PATH)
   if(CMAKE_GDB OR OPENOCD OR OPENOCD_DEFAULT_PATH)
     runners_yaml_append("  # Host tools:")
   endif()
@@ -77,8 +79,7 @@ function(runners_yaml_append_config)
   runners_yaml_append("")
 endfunction()
 
-# Save runner state in a YAML file, and put that YAML file's location
-# in the cache.
+# Save runner state in a YAML file.
 function(create_runners_yaml)
   set(runners ${ARGV})
 
@@ -128,11 +129,9 @@ function(create_runners_yaml)
     endif()
   endforeach()
 
-  # Write the final contents and set its location in the cache.
+  # Write the final contents.
   file(GENERATE OUTPUT "${runners_yaml}" CONTENT
     $<TARGET_PROPERTY:runners_yaml_props_target,yaml_contents>)
-  set(ZEPHYR_RUNNERS_YAML "${runners_yaml}" CACHE INTERNAL
-    "a configuration file for the runners Python package")
 endfunction()
 
 get_property(RUNNERS GLOBAL PROPERTY ZEPHYR_RUNNERS)

@@ -1,0 +1,18 @@
+identifier: arduino_nicla_vision/stm32h747xx/m4
+name: Arduino Nicla Vision (M4)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 288
+flash: 1024
+supported:
+  - gpio
+testing:
+  ignore_tags:
+    - mpu
+    - nfc
+    - net
+vendor: arduino

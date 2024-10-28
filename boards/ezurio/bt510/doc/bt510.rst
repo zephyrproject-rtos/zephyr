@@ -1,7 +1,4 @@
-.. _bt510:
-
-Ezurio Sentrius BT510 Sensor
-############################
+.. zephyr:board:: bt510
 
 Overview
 ********
@@ -23,12 +20,6 @@ The sensor has the following features:
 * Segger RTT (RTT Console)
 * :abbr:`UART (Universal Asynchronous Receiver-Transmitter)`
 * :abbr:`WDT (Watchdog Timer)`
-
-.. figure:: img/bt510.jpg
-     :align: center
-     :alt: Sentrius BT510 Sensor, front view
-
-     Sentrius BT510 Sensor, front view
 
 .. figure:: img/bt510_back.jpg
      :align: center
@@ -187,7 +178,7 @@ Then build and flash applications as usual (see :ref:`build_an_application` and
 
    $ ninja flash
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 First, run your favorite terminal program to listen for output.
 
@@ -228,9 +219,9 @@ Testing Bluetooth on the BT510
 Many of the Bluetooth examples will work on the BT510.
 Try them out:
 
-* :ref:`ble_peripheral`
-* :ref:`bluetooth-eddystone-sample`
-* :ref:`bluetooth-ibeacon-sample`
+* :zephyr:code-sample:`ble_peripheral`
+* :zephyr:code-sample:`bluetooth_eddystone`
+* :zephyr:code-sample:`bluetooth_ibeacon`
 
 
 Testing the LEDs and buttons on the BT510

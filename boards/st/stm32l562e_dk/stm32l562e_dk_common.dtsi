@@ -8,6 +8,8 @@
 #include <st/l5/stm32l562qeixq-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/memory-controller/stm32-fmc-nor-psram.h>
+#include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
 
 / {
 	leds {
@@ -39,6 +41,76 @@
 
 	chosen {
 		zephyr,bt-hci = &hci_spi;
+	};
+};
+
+&fmc {
+	pinctrl-0 = <&fmc_a0_pf0 &fmc_nce_pd7 &fmc_nwe_pd5 &fmc_noe_pd4
+		     &fmc_d0_pd14 &fmc_d1_pd15 &fmc_d2_pd0 &fmc_d3_pd1
+		     &fmc_d4_pe7 &fmc_d5_pe8 &fmc_d6_pe9 &fmc_d7_pe10
+		     &fmc_d8_pe11 &fmc_d9_pe12 &fmc_d10_pe13 &fmc_d11_pe14
+		     &fmc_d12_pe15 &fmc_d13_pd8 &fmc_d14_pd9 &fmc_d15_pd10>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	sram {
+		compatible = "st,stm32-fmc-nor-psram";
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		bank@0 {
+			reg = <0x0>;
+			st,control = <STM32_FMC_DATA_ADDRESS_MUX_DISABLE
+				STM32_FMC_MEMORY_TYPE_SRAM
+				STM32_FMC_NORSRAM_MEM_BUS_WIDTH_16
+				STM32_FMC_BURST_ACCESS_MODE_DISABLE
+				STM32_FMC_WAIT_SIGNAL_POLARITY_LOW
+				STM32_FMC_WAIT_TIMING_BEFORE_WS
+				STM32_FMC_WRITE_OPERATION_ENABLE
+				STM32_FMC_WAIT_SIGNAL_DISABLE
+				STM32_FMC_EXTENDED_MODE_DISABLE
+				STM32_FMC_ASYNCHRONOUS_WAIT_DISABLE
+				STM32_FMC_WRITE_BURST_DISABLE
+				STM32_FMC_CONTINUOUS_CLOCK_SYNC_ONLY
+				STM32_FMC_WRITE_FIFO_DISABLE
+				STM32_FMC_PAGE_SIZE_NONE>;
+			st,timing = <1 1 32 0 2 2 STM32_FMC_ACCESS_MODE_A>;
+
+			fmc-mipi-dbi {
+				compatible = "st,stm32-fmc-mipi-dbi";
+				reset-gpios = <&gpiof 14 GPIO_ACTIVE_LOW>;
+				power-gpios = <&gpioh 0 GPIO_ACTIVE_LOW>;
+				register-select-pin = <0>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				st7789v: lcd-panel@0 {
+					compatible = "sitronix,st7789v";
+					reg = <0>;
+					mipi-mode = <MIPI_DBI_MODE_8080_BUS_16_BIT>;
+					/* A write cycle should be 68ns */
+					mipi-max-frequency = <14705882>;
+					width = <240>;
+					height = <240>;
+					x-offset = <0>;
+					y-offset = <0>;
+					vcom = <0x1F>;
+					gctrl = <0x35>;
+					vdvs = <0x20>;
+					mdac = <0x00>;
+					gamma = <0x01>;
+					colmod = <0x05>;
+					lcm = <0x2c>;
+					porch-param = [0c 0c 00 33 33];
+					cmd2en-param = [5a 69 02 00];
+					pwctrl1-param = [a4 a1];
+					pvgam-param = [D0 08 11 08 0C 15 39 33 50 36 13 14 29 2D];
+					nvgam-param = [D0 08 10 08 06 06 39 44 51 0B 16 14 2F 31];
+					ram-param = [00 F0];
+					rgb-param = [40 02 14];
+				};
+			};
+		};
 	};
 };
 
@@ -175,13 +247,13 @@ stm32_lp_tick_source: &lptim1 {
 		];
 
 		partitions {
-			   compatible = "fixed-partitions";
-			   #address-cells = <1>;
-			   #size-cells = <1>;
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
 
-			   partition@0 {
-			       reg = <0x00000000 DT_SIZE_M(64)>;
-			   };
+			partition@0 {
+				reg = <0x00000000 DT_SIZE_M(64)>;
+			};
 		};
 	};
 };

@@ -13,7 +13,6 @@
 #include <zephyr/init.h>
 #include <stdlib.h>
 #include <zephyr/sys/__assert.h>
-#include <zephyr/sys/byteorder.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/sensor.h>
 
@@ -93,6 +92,20 @@ static inline void lis2dw12_convert(struct sensor_value *val, int raw_val,
 	val->val2 = dval % 1000000LL;
 }
 
+static inline void lis2dw12_channel_get_temp(const struct device *dev, struct sensor_value *val)
+{
+	struct lis2dw12_data *lis2dw12 = dev->data;
+	int64_t dval_uc;
+
+	/* The calcul is in micro Celcius to keep it efficient */
+	dval_uc = ((lis2dw12->temp >> LIS2DW12_SHIFT_TEMP) * LIS2DW12_TEMP_SCALE_FACTOR);
+	dval_uc += 25000000;
+
+	/* switch to Celcius when we split the integer and fractional parts of the value */
+	val->val1 = dval_uc / 1000000LL;
+	val->val2 = dval_uc % 1000000LL;
+}
+
 static inline void lis2dw12_channel_get_acc(const struct device *dev,
 					     enum sensor_channel chan,
 					     struct sensor_value *val)
@@ -122,6 +135,18 @@ static inline void lis2dw12_channel_get_acc(const struct device *dev,
 	}
 }
 
+static inline void lis2dw12_channel_get_status(const struct device *dev,
+					     struct sensor_value *val)
+{
+	const struct lis2dw12_device_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+	lis2dw12_status_t status;
+
+	/* fetch manually the interrupt status reg */
+	lis2dw12_status_reg_get(ctx, &status);
+	val->val1 = (int32_t)*(uint8_t *)&status;
+}
+
 static int lis2dw12_channel_get(const struct device *dev,
 				 enum sensor_channel chan,
 				 struct sensor_value *val)
@@ -132,6 +157,12 @@ static int lis2dw12_channel_get(const struct device *dev,
 	case SENSOR_CHAN_ACCEL_Z:
 	case SENSOR_CHAN_ACCEL_XYZ:
 		lis2dw12_channel_get_acc(dev, chan, val);
+		return 0;
+	case SENSOR_CHAN_DIE_TEMP:
+		lis2dw12_channel_get_temp(dev, val);
+		return 0;
+	case SENSOR_CHAN_LIS2DW12_INT_STATUS:
+		lis2dw12_channel_get_status(dev, val);
 		return 0;
 	default:
 		LOG_DBG("Channel not supported");
@@ -171,7 +202,7 @@ static inline int32_t sensor_ms2_to_mg(const struct sensor_value *ms2)
 	}
 }
 
-#if CONFIG_LIS2DW12_THRESHOLD
+#if (CONFIG_LIS2DW12_SLEEP || CONFIG_LIS2DW12_WAKEUP)
 
 /* Converts a lis2dw12_fs_t range to its value in milli-g
  * Range can be 2/4/8/16G
@@ -274,27 +305,50 @@ static int lis2dw12_attr_set_ff_dur(const struct device *dev,
 }
 #endif
 
+#ifdef CONFIG_LIS2DW12_SLEEP
+static int lis2dw12_attr_set_act_mode(const struct device *dev,
+					enum sensor_channel chan,
+					enum sensor_attribute attr,
+					const struct sensor_value *val)
+{
+	const struct lis2dw12_device_config *cfg = dev->config;
+	struct lis2dw12_data *lis2dw12 = dev->data;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+	lis2dw12_sleep_on_t sleep_val = val->val1 & 0x03U;
+
+	/* can only be set for all directions at once */
+	if (chan != SENSOR_CHAN_ACCEL_XYZ) {
+		return -EINVAL;
+	}
+
+	return lis2dw12_act_mode_set(ctx, sleep_val);
+}
+#endif
+
 static int lis2dw12_attr_set(const struct device *dev,
 			      enum sensor_channel chan,
 			      enum sensor_attribute attr,
 			      const struct sensor_value *val)
 {
-#if CONFIG_LIS2DW12_THRESHOLD
 	switch (attr) {
+#if (CONFIG_LIS2DW12_SLEEP || CONFIG_LIS2DW12_WAKEUP)
 	case SENSOR_ATTR_UPPER_THRESH:
 	case SENSOR_ATTR_LOWER_THRESH:
 		return lis2dw12_attr_set_thresh(dev, chan, attr, val);
+#endif
+#ifdef CONFIG_LIS2DW12_FREEFALL
+	case SENSOR_ATTR_FF_DUR:
+		return lis2dw12_attr_set_ff_dur(dev, chan, attr, val);
+#endif
+#ifdef CONFIG_LIS2DW12_SLEEP
+	case SENSOR_ATTR_FEATURE_MASK:
+		return lis2dw12_attr_set_act_mode(dev, chan, attr, val);
+#endif
 	default:
 		/* Do nothing */
 		break;
 	}
-#endif
 
-#ifdef CONFIG_LIS2DW12_FREEFALL
-	if (attr == SENSOR_ATTR_FF_DUR) {
-		return lis2dw12_attr_set_ff_dur(dev, chan, attr, val);
-	}
-#endif
 
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_X:
@@ -310,8 +364,7 @@ static int lis2dw12_attr_set(const struct device *dev,
 	return -ENOTSUP;
 }
 
-static int lis2dw12_sample_fetch(const struct device *dev,
-				 enum sensor_channel chan)
+static int lis2dw12_sample_fetch_accel(const struct device *dev)
 {
 	struct lis2dw12_data *lis2dw12 = dev->data;
 	const struct lis2dw12_device_config *cfg = dev->config;
@@ -319,9 +372,9 @@ static int lis2dw12_sample_fetch(const struct device *dev,
 	uint8_t shift;
 	int16_t buf[3];
 
-	/* fetch raw data sample */
+	/* fetch acceleration raw data sample */
 	if (lis2dw12_acceleration_raw_get(ctx, buf) < 0) {
-		LOG_DBG("Failed to fetch raw data sample");
+		LOG_DBG("Failed to fetch acceleration raw data sample");
 		return -EIO;
 	}
 
@@ -332,9 +385,45 @@ static int lis2dw12_sample_fetch(const struct device *dev,
 		shift = LIS2DW12_SHIFT_PMOTHER;
 	}
 
-	lis2dw12->acc[0] = sys_le16_to_cpu(buf[0]) >> shift;
-	lis2dw12->acc[1] = sys_le16_to_cpu(buf[1]) >> shift;
-	lis2dw12->acc[2] = sys_le16_to_cpu(buf[2]) >> shift;
+	lis2dw12->acc[0] = buf[0] >> shift;
+	lis2dw12->acc[1] = buf[1] >> shift;
+	lis2dw12->acc[2] = buf[2] >> shift;
+
+	return 0;
+}
+
+static int lis2dw12_sample_fetch_temp(const struct device *dev)
+{
+	const struct lis2dw12_device_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+	struct lis2dw12_data *data = dev->data;
+
+	/* fetch temperature raw data sample */
+	if (lis2dw12_temperature_raw_get(ctx, &data->temp) < 0) {
+		LOG_DBG("Failed to fetch temperature raw data sample");
+		return -EIO;
+	}
+
+	return 0;
+}
+
+static int lis2dw12_sample_fetch(const struct device *dev,
+				 enum sensor_channel chan)
+{
+	switch (chan) {
+	case SENSOR_CHAN_ACCEL_X:
+	case SENSOR_CHAN_ACCEL_Y:
+	case SENSOR_CHAN_ACCEL_Z:
+	case SENSOR_CHAN_ACCEL_XYZ:
+		lis2dw12_sample_fetch_accel(dev);
+		break;
+	case SENSOR_CHAN_DIE_TEMP:
+		lis2dw12_sample_fetch_temp(dev);
+		break;
+	default:
+		LOG_DBG("Channel not supported");
+		return -ENOTSUP;
+	}
 
 	return 0;
 }
@@ -476,13 +565,20 @@ static int lis2dw12_init(const struct device *dev)
 		return ret;
 	}
 
-#ifdef CONFIG_LIS2DW12_THRESHOLD
+#ifdef CONFIG_LIS2DW12_WAKEUP
 	ret = lis2dw12_wkup_dur_set(ctx, cfg->wakeup_duration);
 	if (ret < 0) {
 		LOG_ERR("wakeup duration config error %d", ret);
 		return ret;
 	}
-#endif /* CONFIG_LIS2DW12_THRESHOLD */
+#endif /* CONFIG_LIS2DW12_WAKEUP */
+#ifdef CONFIG_LIS2DW12_SLEEP
+	ret = lis2dw12_act_sleep_dur_set(ctx, cfg->sleep_duration);
+	if (ret < 0) {
+		LOG_ERR("sleep duration config error %d", ret);
+		return ret;
+	}
+#endif /* CONFIG_LIS2DW12_SLEEP */
 
 	return 0;
 }
@@ -529,11 +625,18 @@ static int lis2dw12_init(const struct device *dev)
 #define LIS2DW12_CONFIG_FREEFALL(inst)
 #endif /* CONFIG_LIS2DW12_FREEFALL */
 
-#ifdef CONFIG_LIS2DW12_THRESHOLD
-#define LIS2DW12_CONFIG_THRESHOLD(inst)					\
+#ifdef CONFIG_LIS2DW12_WAKEUP
+#define LIS2DW12_CONFIG_WAKEUP(inst)					\
 	.wakeup_duration = DT_INST_PROP(inst, wakeup_duration),
 #else
-#define LIS2DW12_CONFIG_THRESHOLD(inst)
+#define LIS2DW12_CONFIG_WAKEUP(inst)
+#endif
+
+#ifdef CONFIG_LIS2DW12_SLEEP
+#define LIS2DW12_CONFIG_SLEEP(inst) \
+	.sleep_duration = DT_INST_PROP(inst, sleep_duration),
+#else
+#define LIS2DW12_CONFIG_SLEEP(inst)
 #endif
 
 #ifdef CONFIG_LIS2DW12_TRIGGER
@@ -555,7 +658,8 @@ static int lis2dw12_init(const struct device *dev)
 	.drdy_pulsed = DT_INST_PROP(inst, drdy_pulsed),			\
 	LIS2DW12_CONFIG_TAP(inst)					\
 	LIS2DW12_CONFIG_FREEFALL(inst)					\
-	LIS2DW12_CONFIG_THRESHOLD(inst)					\
+	LIS2DW12_CONFIG_WAKEUP(inst)					\
+	LIS2DW12_CONFIG_SLEEP(inst)					\
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),		\
 			(LIS2DW12_CFG_IRQ(inst)), ())
 

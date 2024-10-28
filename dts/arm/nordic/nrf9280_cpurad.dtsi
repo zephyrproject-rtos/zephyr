@@ -1,0 +1,79 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nordic/nrf9280.dtsi>
+
+cpu: &cpurad {};
+systick: &cpurad_systick {};
+nvic: &cpurad_nvic {};
+cpuppr_vevif: &cpuppr_vevif_tx {};
+cpusys_vevif: &cpusys_vevif_tx {};
+wdt010: &cpurad_wdt010 {};
+wdt011: &cpurad_wdt011 {};
+
+/delete-node/ &cpuapp;
+/delete-node/ &cpuapp_peripherals;
+/delete-node/ &cpuapp_ppb;
+/delete-node/ &cpuapp_ram0;
+/delete-node/ &cpuppr;
+
+/ {
+	soc {
+		compatible = "simple-bus";
+		interrupt-parent = <&cpurad_nvic>;
+		ranges;
+	};
+};
+
+&cpurad_ppb {
+	compatible = "simple-bus";
+	ranges;
+};
+
+&cpusec_bellboard {
+	compatible = "nordic,nrf-bellboard-tx";
+};
+
+&cpuapp_bellboard {
+	compatible = "nordic,nrf-bellboard-tx";
+};
+
+&cpurad_bellboard {
+	compatible = "nordic,nrf-bellboard-rx";
+};
+
+&gpiote130 {
+	interrupts = <105 NRF_DEFAULT_IRQ_PRIORITY>;
+};
+
+&grtc {
+	owned-channels = <7 8 9 10 11 12 13 14 15>;
+	child-owned-channels = <8 9 10 11 12>;
+	nonsecure-channels = <8 9 10 11 12>;
+	interrupts = <109 NRF_DEFAULT_IRQ_PRIORITY>,
+		     <109 NRF_DEFAULT_IRQ_PRIORITY>,
+		     <110 NRF_DEFAULT_IRQ_PRIORITY>;
+};
+
+&dppic130 {
+	owned-channels = <0>;
+	sink-channels = <0>;
+	nonsecure-channels = <0>;
+	status = "okay";
+};
+
+&dppic132 {
+	owned-channels = <0>;
+	source-channels = <0>;
+	nonsecure-channels = <0>;
+	status = "okay";
+};
+
+&ipct130 {
+	owned-channels = <0>;
+	source-channel-links = <0 3 0>;
+	status = "okay";
+};

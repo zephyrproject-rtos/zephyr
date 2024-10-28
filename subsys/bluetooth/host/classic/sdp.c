@@ -115,7 +115,7 @@ struct select_attrs_data {
 	uint16_t                        max_att_len;
 	uint16_t                        att_list_len;
 	uint8_t                         cont_state_size;
-	uint8_t                         num_filters;
+	size_t                          num_filters;
 	bool                         new_service;
 };
 
@@ -814,7 +814,7 @@ static uint8_t select_attrs(struct bt_sdp_attribute *attr, uint8_t att_idx,
 	struct select_attrs_data *sad = user_data;
 	uint16_t att_id_lower, att_id_upper, att_id_cur, space;
 	uint32_t attr_size, seq_size;
-	uint8_t idx_filter;
+	size_t idx_filter;
 
 	for (idx_filter = 0U; idx_filter < sad->num_filters; idx_filter++) {
 
@@ -939,7 +939,7 @@ static uint8_t select_attrs(struct bt_sdp_attribute *attr, uint8_t att_idx,
  *  @return len Length of the attribute list created
  */
 static uint16_t create_attr_list(struct bt_sdp *sdp, struct bt_sdp_record *record,
-			      uint32_t *filter, uint8_t num_filters,
+			      uint32_t *filter, size_t num_filters,
 			      uint16_t max_att_len, uint8_t cont_state_size,
 			      uint8_t next_att, struct search_state *state,
 			      struct net_buf *rsp_buf)
@@ -978,12 +978,13 @@ static uint16_t create_attr_list(struct bt_sdp *sdp, struct bt_sdp_record *recor
  *   IDs, the lower 2 bytes contain the ID and the upper 2 bytes are set to
  *   0xFFFF. For attribute ranges, the lower 2bytes indicate the start ID and
  *   the upper 2bytes indicate the end ID
+ *  @param max_filters Max element slots of filter to be filled in
  *  @param num_filters No. of filter elements filled in (to be returned)
  *
  *  @return 0 for success, or relevant error code
  */
 static uint16_t get_att_search_list(struct net_buf *buf, uint32_t *filter,
-				 uint8_t *num_filters)
+				 size_t max_filters, size_t *num_filters)
 {
 	struct bt_sdp_data_elem data_elem;
 	uint16_t res;
@@ -998,6 +999,11 @@ static uint16_t get_att_search_list(struct net_buf *buf, uint32_t *filter,
 	size = data_elem.data_size;
 
 	while (size) {
+		if (*num_filters >= max_filters) {
+			LOG_WRN("Exceeded maximum array length %u of %p", max_filters, filter);
+			return 0;
+		}
+
 		res = parse_data_elem(buf, &data_elem);
 		if (res) {
 			return res;
@@ -1075,7 +1081,8 @@ static uint16_t sdp_svc_att_req(struct bt_sdp *sdp, struct net_buf *buf,
 	struct net_buf *rsp_buf;
 	uint32_t svc_rec_hdl;
 	uint16_t max_att_len, res, att_list_len;
-	uint8_t num_filters, cont_state_size, next_att = 0U;
+	size_t num_filters;
+	uint8_t cont_state_size, next_att = 0U;
 
 	if (buf->len < 6) {
 		LOG_WRN("Malformed packet");
@@ -1086,7 +1093,7 @@ static uint16_t sdp_svc_att_req(struct bt_sdp *sdp, struct net_buf *buf,
 	max_att_len = net_buf_pull_be16(buf);
 
 	/* Set up the filters */
-	res = get_att_search_list(buf, filter, &num_filters);
+	res = get_att_search_list(buf, filter, ARRAY_SIZE(filter), &num_filters);
 	if (res) {
 		/* Error in parsing */
 		return res;
@@ -1191,7 +1198,8 @@ static uint16_t sdp_svc_search_att_req(struct bt_sdp *sdp, struct net_buf *buf,
 	struct bt_sdp_att_rsp *rsp;
 	struct bt_sdp_data_elem_seq *seq = NULL;
 	uint16_t max_att_len, res, att_list_len = 0U;
-	uint8_t num_filters, cont_state_size, next_svc = 0U, next_att = 0U;
+	size_t num_filters;
+	uint8_t cont_state_size, next_svc = 0U, next_att = 0U;
 	bool dry_run = false;
 
 	res = find_services(buf, matching_recs);
@@ -1207,7 +1215,7 @@ static uint16_t sdp_svc_search_att_req(struct bt_sdp *sdp, struct net_buf *buf,
 	max_att_len = net_buf_pull_be16(buf);
 
 	/* Set up the filters */
-	res = get_att_search_list(buf, filter, &num_filters);
+	res = get_att_search_list(buf, filter, ARRAY_SIZE(filter), &num_filters);
 
 	if (res) {
 		/* Error in parsing */
@@ -1613,6 +1621,10 @@ static uint16_t sdp_client_get_total(struct bt_sdp_client *session,
 			*total = net_buf_pull_be16(buf);
 			pulled += 2U;
 			break;
+		case BT_SDP_SEQ32:
+			*total = net_buf_pull_be32(buf);
+			pulled += 4U;
+			break;
 		default:
 			LOG_WRN("Sequence type 0x%02x not handled", seq);
 			*total = 0U;
@@ -1641,6 +1653,9 @@ static uint16_t get_record_len(struct net_buf *buf)
 		break;
 	case BT_SDP_SEQ16:
 		len = net_buf_pull_be16(buf);
+		break;
+	case BT_SDP_SEQ32:
+		len = net_buf_pull_be32(buf);
 		break;
 	default:
 		LOG_WRN("Sequence type 0x%02x not handled", seq);

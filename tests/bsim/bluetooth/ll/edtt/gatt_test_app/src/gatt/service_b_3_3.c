@@ -131,8 +131,9 @@ void service_b_3_3_remove(void)
  */
 void service_b_3_3_value_v6_notify(void)
 {
-	if (!value_v6_ntf_active)
+	if (!value_v6_ntf_active) {
 		return;
+	}
 
 	bt_gatt_notify(NULL, &service_b_3_3_attrs[1], &value_v6_value,
 		       sizeof(value_v6_value));
@@ -160,8 +161,9 @@ static void value_v6_indicate_cb(struct bt_conn *conn,
  */
 void service_b_3_3_value_v6_indicate(void)
 {
-	if (!value_v6_ind_active)
+	if (!value_v6_ind_active) {
 		return;
+	}
 	/*
 	 * NOTE: Zephyr doesn't automatically bump up the attribute pointer for
 	 *   indications as it does for notifications.

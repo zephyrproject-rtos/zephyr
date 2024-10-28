@@ -13,12 +13,12 @@
 	encoder-emulate {
 		compatible = "gpio-leds";
 		phase_a: phase_a {
-			/* Arduino A0 */
-			gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
-		};
-		phase_b: phase_b {
 			/* Arduino A1 */
 			gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>;
+		};
+		phase_b: phase_b {
+			/* Arduino A3 */
+			gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
 		};
 	};
 };
@@ -26,8 +26,8 @@
 &pinctrl {
 	qdec_pinctrl: qdec_pinctrl {
 		group1 {
-			psels = <NRF_PSEL(QDEC_A, 0, 26)>,   /* Ardiuno A5 */
-				<NRF_PSEL(QDEC_B, 0, 25)>;   /* Arduino A4 */
+			psels = <NRF_PSEL(QDEC_A, 0, 4)>,   /* Ardiuno A0 */
+				<NRF_PSEL(QDEC_B, 0, 6)>;   /* Arduino A2 */
 		};
 	};
 };

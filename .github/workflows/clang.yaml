@@ -12,7 +12,7 @@ jobs:
     runs-on:
       group: zephyr-runner-v2-linux-x64-4xlarge
     container:
-      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.26.13.20240601
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.27.4.20241026
       options: '--entrypoint /bin/bash'
     strategy:
       fail-fast: false
@@ -62,6 +62,7 @@ jobs:
           git config --global user.name "Zephyr Bot"
           rm -fr ".git/rebase-apply"
           git rebase origin/${BASE_REF}
+          git clean -f -d
           git log  --pretty=oneline | head -n 10
           west init -l . || true
           west config --global update.narrow true

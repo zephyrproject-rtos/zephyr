@@ -24,7 +24,9 @@ extern "C" {
 #define TEST_FCB_FLASH_AREA_ID		FIXED_PARTITION_ID(TEST_FCB_FLASH_AREA)
 
 extern struct fcb test_fcb;
+#if defined(CONFIG_FCB_ALLOW_FIXED_ENDMARKER)
 extern struct fcb test_fcb_crc_disabled;
+#endif
 
 extern struct flash_sector test_fcb_sector[];
 

@@ -15,7 +15,6 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <string.h>
-#include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/logging/log.h>
 
@@ -525,12 +524,12 @@ static inline int lsm6dso_magn_get_channel(enum sensor_channel chan,
 	}
 
 
-	sample[0] = sys_le16_to_cpu((int16_t)(data->ext_data[idx][0] |
-				    (data->ext_data[idx][1] << 8)));
-	sample[1] = sys_le16_to_cpu((int16_t)(data->ext_data[idx][2] |
-				    (data->ext_data[idx][3] << 8)));
-	sample[2] = sys_le16_to_cpu((int16_t)(data->ext_data[idx][4] |
-				    (data->ext_data[idx][5] << 8)));
+	sample[0] = (int16_t)(data->ext_data[idx][0] |
+			     (data->ext_data[idx][1] << 8));
+	sample[1] = (int16_t)(data->ext_data[idx][2] |
+			     (data->ext_data[idx][3] << 8));
+	sample[2] = (int16_t)(data->ext_data[idx][4] |
+			     (data->ext_data[idx][5] << 8));
 
 	switch (chan) {
 	case SENSOR_CHAN_MAGN_X:
@@ -568,8 +567,8 @@ static inline void lsm6dso_hum_convert(struct sensor_value *val,
 		return;
 	}
 
-	raw_val = sys_le16_to_cpu((int16_t)(data->ext_data[idx][0] |
-					  (data->ext_data[idx][1] << 8)));
+	raw_val = (int16_t)(data->ext_data[idx][0] |
+			   (data->ext_data[idx][1] << 8));
 
 	/* find relative humidty by linear interpolation */
 	rh = (ht->y1 - ht->y0) * raw_val + ht->x1 * ht->y0 - ht->x0 * ht->y1;
@@ -592,9 +591,9 @@ static inline void lsm6dso_press_convert(struct sensor_value *val,
 		return;
 	}
 
-	raw_val = sys_le32_to_cpu((int32_t)(data->ext_data[idx][0] |
-					  (data->ext_data[idx][1] << 8) |
-					  (data->ext_data[idx][2] << 16)));
+	raw_val = (int32_t)(data->ext_data[idx][0] |
+			   (data->ext_data[idx][1] << 8) |
+			   (data->ext_data[idx][2] << 16));
 
 	/* Pressure sensitivity is 4096 LSB/hPa */
 	/* Convert raw_val to val in kPa */
@@ -615,8 +614,8 @@ static inline void lsm6dso_temp_convert(struct sensor_value *val,
 		return;
 	}
 
-	raw_val = sys_le16_to_cpu((int16_t)(data->ext_data[idx][3] |
-					  (data->ext_data[idx][4] << 8)));
+	raw_val = (int16_t)(data->ext_data[idx][3] |
+			   (data->ext_data[idx][4] << 8));
 
 	/* Temperature sensitivity is 100 LSB/deg C */
 	val->val1 = raw_val / 100;

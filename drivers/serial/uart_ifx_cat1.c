@@ -233,7 +233,7 @@ static int ifx_cat1_uart_configure(const struct device *dev,
 
 	/* Enable RTS/CTS flow control */
 	if ((result == CY_RSLT_SUCCESS) && cfg->flow_ctrl) {
-		result = cyhal_uart_enable_flow_control(&data->obj, true, true);
+		Cy_SCB_UART_EnableCts(data->obj.base);
 	}
 
 	return (result == CY_RSLT_SUCCESS) ? 0 : -ENOTSUP;
@@ -437,6 +437,11 @@ static int ifx_cat1_uart_init(const struct device *dev)
 		.resource = &data->hw_resource,
 		.config = &_cyhal_uart_default_config,
 		.clock = &data->clock,
+		.gpios = {
+			.pin_tx  = NC,
+			.pin_rts = NC,
+			.pin_cts = NC,
+		},
 	};
 
 	/* Dedicate SCB HW resource */
@@ -521,7 +526,7 @@ static const struct uart_driver_api ifx_cat1_uart_driver_api = {
 	};										     \
 											     \
 	DEVICE_DT_INST_DEFINE(n,							     \
-			      &ifx_cat1_uart_init, NULL,				     \
+			      ifx_cat1_uart_init, NULL,					     \
 			      &ifx_cat1_uart##n##_data,					     \
 			      &ifx_cat1_uart##n##_cfg, PRE_KERNEL_1,			     \
 			      CONFIG_SERIAL_INIT_PRIORITY,				     \

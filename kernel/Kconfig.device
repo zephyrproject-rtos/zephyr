@@ -45,6 +45,14 @@ config KERNEL_INIT_PRIORITY_OBJECTS
 	  priority needs to be higher than minimal default initialization
 	  priority.
 
+config KERNEL_INIT_PRIORITY_LIBC
+	int "LIBC initialization priority"
+	default 35
+	help
+	  LIBC uses this priority for initialization. This
+	  priority needs to be higher than minimal default initialization
+	  priority.
+
 config KERNEL_INIT_PRIORITY_DEFAULT
 	int "Default init priority"
 	default 40

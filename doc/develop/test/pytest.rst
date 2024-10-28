@@ -14,7 +14,7 @@ Pytest is a python framework that *“makes it easy to write small, readable tes
 support complex functional testing for applications and libraries”* (`<https://docs.pytest.org/en/7.3.x/>`_).
 Python is known for its free libraries and ease of using it for scripting. In addition, pytest
 utilizes the concept of plugins and fixtures, increasing its expendability and reusability.
-A pytest plugin `pytest-twister-harness` was introduced to provide an integration between pytest
+A pytest plugin ``pytest-twister-harness`` was introduced to provide an integration between pytest
 and twister, allowing Zephyr’s community to utilize pytest functionality with keeping twister as
 the main framework.
 
@@ -28,13 +28,13 @@ developed as a part of Zephyr’s tree. To enable install-less operation, twiste
 they must add ``--allow-installed-plugin`` flag to twister’s call.
 
 Pytest-based test suites are discovered the same way as other twister tests, i.e., by a presence
-of testcase/sample.yaml. Inside, a keyword ``harness`` tells twister how to handle a given test.
+of test/sample.yaml. Inside, a keyword ``harness`` tells twister how to handle a given test.
 In the case of ``harness: pytest``, most of twister workflow (test suites discovery,
 parallelization, building and reporting) remains the same as for other harnesses. The change
 happens during the execution step. The below picture presents a simplified overview of the
 integration.
 
-.. figure:: twister_and_pytest.svg
+.. figure:: figures/twister_and_pytest.svg
    :figclass: align-center
 
 
@@ -97,6 +97,8 @@ There are two ways for passing extra arguments to the called pytest subprocess:
       -s samples/subsys/testsuite/pytest/shell/sample.pytest.shell \
       --pytest-args='-k test_shell_print_version'
 
+   The command line arguments will extend those from the .yaml file. If the same argument is
+   present in both places, the one from the command line will take precedence.
 
 Fixtures
 ********
@@ -165,6 +167,22 @@ a fixture ``mcumgr``
       # reset the device remotely
       mcumgr.reset_device()
       # continue test scenario, check version etc.
+
+
+unlaunched_dut
+==============
+
+Similar to the ``dut`` fixture, but it does not initialize the device. It can be used when a finer
+control over the build process is needed. It becomes responsibility of the test to initialize the
+device.
+
+.. code-block:: python
+
+   from twister_harness import DeviceAdapter
+
+   def test_sample(unlaunched_dut: DeviceAdapter):
+      unlaunched_dut.launch()
+      unlaunched_dut.readlines_until('Hello world')
 
 Classes
 *******

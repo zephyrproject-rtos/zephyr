@@ -12,7 +12,6 @@
 #include <zephyr/sys/util.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/hci.h>
 
 static uint8_t mfg_data[] = { 0xff, 0xff, 0x00 };
 
@@ -29,7 +28,7 @@ static void scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
 int main(void)
 {
 	struct bt_le_scan_param scan_param = {
-		.type       = BT_HCI_LE_SCAN_PASSIVE,
+		.type       = BT_LE_SCAN_TYPE_PASSIVE,
 		.options    = BT_LE_SCAN_OPT_NONE,
 		.interval   = 0x0010,
 		.window     = 0x0010,

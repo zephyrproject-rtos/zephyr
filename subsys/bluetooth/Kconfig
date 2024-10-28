@@ -147,18 +147,18 @@ config BT_PHY_UPDATE
 
 config BT_DATA_LEN_UPDATE
 	bool "Data Length Update"
-	default y
+	default y if ((BT_BUF_ACL_TX_SIZE > 27) || (BT_BUF_ACL_RX_SIZE > 27))
 	depends on !BT_CTLR || BT_CTLR_DATA_LEN_UPDATE_SUPPORT
 	help
 	  Enable support for Bluetooth v4.2 LE Data Length Update procedure.
 
 config BT_PER_ADV_SYNC_TRANSFER_RECEIVER
 	bool "Periodic Advertising Sync Transfer receiver"
-	depends on BT_PER_ADV_SYNC && (!BT_CTLR || BT_CTLR_SYNC_TRANSFER_RECEIVER_SUPPORT)
+	depends on BT_PER_ADV_SYNC && BT_CONN && (!BT_CTLR || BT_CTLR_SYNC_TRANSFER_RECEIVER_SUPPORT)
 
 config BT_PER_ADV_SYNC_TRANSFER_SENDER
 	bool "Periodic Advertising Sync Transfer sender"
-	depends on (BT_PER_ADV_SYNC || BT_PER_ADV) && (!BT_CTLR || BT_CTLR_SYNC_TRANSFER_SENDER_SUPPORT)
+	depends on (BT_PER_ADV_SYNC || BT_PER_ADV) && BT_CONN && (!BT_CTLR || BT_CTLR_SYNC_TRANSFER_SENDER_SUPPORT)
 
 config BT_SCA_UPDATE
 	bool "Sleep Clock Accuracy Update"
@@ -181,16 +181,65 @@ config BT_PATH_LOSS_MONITORING
 	  Enable support for LE Path Loss Monitoring feature that is defined in the
 	  Bluetooth Core specification, Version 5.4 | Vol 6, Part B, Section 4.6.32.
 
+config BT_SUBRATING
+	bool "LE Connection Subrating [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	depends on !BT_CTLR || BT_CTLR_SUBRATING_SUPPORT
+	help
+	  Enable support for LE Connection Subrating feature that is defined in the
+	  Bluetooth Core specification, Version 5.4 | Vol 6, Part B, Section 4.6.35.
+
+config BT_CHANNEL_SOUNDING
+	bool "Channel Sounding [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	depends on !BT_CTLR || BT_CTLR_CHANNEL_SOUNDING_SUPPORT
+	help
+	  Enable support for Bluetooth 6.0 Channel Sounding feature.
+
+config BT_CHANNEL_SOUNDING_TEST
+	bool "Channel Sounding Test [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	depends on BT_CHANNEL_SOUNDING
+	help
+	  Enable support for Channel Sounding test mode.
+
+config BT_CHANNEL_SOUNDING_REASSEMBLY_BUFFER_SIZE
+	int "Subevent result reassembly buffer size"
+	depends on BT_CHANNEL_SOUNDING
+	range 239 5600
+	default 5600
+	help
+	  When the results for a CS subevent cannot fit into a single HCI event,
+	  it will be split up into multiple events and consequently, reassembled into a
+	  full CS subevent. This config sets the size of the reassembly buffer.
+
+config BT_CHANNEL_SOUNDING_REASSEMBLY_BUFFER_CNT
+	int "Subevent result reassembly buffer count"
+	depends on BT_CHANNEL_SOUNDING
+	range 1 BT_MAX_CONN
+	default 1
+	help
+	  Controls the number of the reassembly buffers for CS subevent
+	  results. Each running CS procedure is allocated one buffer and the
+	  number of concurrent CS procedures is limited by this value.
+
 endif # BT_CONN
 
 rsource "Kconfig.iso"
 rsource "common/Kconfig"
 rsource "host/Kconfig"
 rsource "controller/Kconfig"
-rsource "shell/Kconfig"
 rsource "crypto/Kconfig"
 rsource "lib/Kconfig"
 rsource "Kconfig.logging"
+
+config BT_SHELL
+	bool "Bluetooth shell"
+	select SHELL
+	select BT_TICKER_NEXT_SLOT_GET if BT_LL_SW_SPLIT
+	help
+	  Activate shell module that provides Bluetooth commands to the
+	  console.
 
 config BT_USE_PSA_API
 	bool "Use PSA APIs instead of TinyCrypt for crypto operations"

@@ -15,8 +15,9 @@
 
 #include <zephyr/init.h>
 #include <zephyr/device.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/kernel.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/crc.h>
 #include <zephyr/sys/crc.h>
 
@@ -98,7 +99,7 @@ struct foo {
 /* Check that BUILD_ASSERT compiles. */
 BUILD_ASSERT(sizeof(foo) == sizeof(int));
 
-static struct foo foos[5];
+__maybe_unused static struct foo foos[5];
 /* Check that ARRAY_SIZE compiles. */
 BUILD_ASSERT(ARRAY_SIZE(foos) == 5, "expected 5 elements");
 
@@ -136,3 +137,19 @@ ZTEST(cxx_tests, test_new_delete)
 	delete test_foo;
 }
 ZTEST_SUITE(cxx_tests, NULL, NULL, NULL, NULL, NULL);
+
+/*
+ * Unused macros are parsed but not actually compiled. So, even with all their NULL
+ * arguments these one-liners add significant C++ coverage. For instance this actually
+ * compiles some of the macros in zephyr/device.h in C++.
+ *
+ * DEVICE_DEFINE(dev_id, name, * init_fn, pm, data, config, level, prio, api)
+ */
+DEVICE_DT_DEFINE(DT_NODELABEL(test_dev1_dfr), NULL, NULL, NULL, NULL, POST_KERNEL, 33, NULL);
+
+static int fake_pm_action(const struct device *dev,
+		enum pm_device_action pm_action) { return -1; }
+PM_DEVICE_DT_DEFINE(DT_NODELABEL(test_dev0_boot), fake_pm_action);
+
+DEVICE_DT_DEFINE(DT_NODELABEL(test_dev0_boot), NULL,
+		 PM_DEVICE_DT_GET(DT_NODELABEL(test_dev0_boot)), NULL, NULL, POST_KERNEL, 34, NULL);

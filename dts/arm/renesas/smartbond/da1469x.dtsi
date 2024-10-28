@@ -9,6 +9,7 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/adc/smartbond-adc.h>
 #include <zephyr/dt-bindings/pinctrl/smartbond-pinctrl.h>
+#include <zephyr/dt-bindings/dma/dma_smartbond.h>
 
 / {
 	chosen {
@@ -371,12 +372,15 @@
 		usbd: usb@50040000 {
 			compatible = "renesas,smartbond-usbd";
 			reg = <0x50040000 0x1B0>;
-			dma-chan-rx = <6>;
-			dma-chan-tx = <7>;
+			dmas = <&dma 0 DMA_SMARTBOND_TRIG_MUX_USB>,
+				<&dma 1 DMA_SMARTBOND_TRIG_MUX_USB>;
+			dma-names = "rx", "tx";
 			dma-min-transfer-size = <65>;
 			fifo-read-threshold = <4>;
 			ep-out-buf-size = <8 64 64 64>;
 			interrupts = <15 0>, <21 0>;
+			maximum-speed = "full-speed";
+			num-bidir-endpoints = <4>;
 			status = "disabled";
 		};
 
@@ -384,7 +388,7 @@
 			compatible = "renesas,smartbond-dma";
 			reg = <0x50040800 0x110>;
 			interrupts = <1 0>;
-			status = "disabled";
+			status = "okay";
 			dma-channels = <8>;
 			block-count = <1>;
 			#dma-cells = <2>;
@@ -395,11 +399,11 @@
 			reg = <0x34000000 0x48>;
 			status = "disabled";
 		};
+	};
 
-		bt_hci_da1469x: bt_hci_da1469x {
-			compatible = "renesas,bt-hci-da1469x";
-			status = "disabled";
-		};
+	bt_hci_da1469x: bt_hci_da1469x {
+		compatible = "renesas,bt-hci-da1469x";
+		status = "disabled";
 	};
 };
 

@@ -20,7 +20,6 @@
 #include <zephyr/sys/__assert.h>
 #include <soc.h>
 #include <zephyr/init.h>
-#include <zephyr/drivers/interrupt_controller/exti_stm32.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/pm/policy.h>
 #include <zephyr/pm/device.h>
@@ -65,6 +64,11 @@ LOG_MODULE_REGISTER(uart_stm32, CONFIG_UART_LOG_LEVEL);
 #define HAS_DRIVER_ENABLE 1
 #else
 #define HAS_DRIVER_ENABLE 0
+#endif
+
+#ifdef CONFIG_PM
+/* Placeholder value when wakeup-line DT property is not defined */
+#define STM32_WAKEUP_LINE_NONE	0xFFFFFFFF
 #endif
 
 #if HAS_LPUART
@@ -2064,7 +2068,7 @@ static int uart_stm32_registers_configure(const struct device *dev)
 #endif
 		LL_USART_EnableInStopMode(usart);
 
-		if (config->wakeup_line != STM32_EXTI_LINE_NONE) {
+		if (config->wakeup_line != STM32_WAKEUP_LINE_NONE) {
 			/* Prepare the WAKEUP with the expected EXTI line */
 			LL_EXTI_EnableIT_0_31(BIT(config->wakeup_line));
 		}
@@ -2290,7 +2294,7 @@ static void uart_stm32_irq_config_func_##index(const struct device *dev)	\
 	.wakeup_source = DT_INST_PROP(index, wakeup_source),			\
 	.wakeup_line = COND_CODE_1(DT_INST_NODE_HAS_PROP(index, wakeup_line),	\
 			(DT_INST_PROP(index, wakeup_line)),			\
-			(STM32_EXTI_LINE_NONE)),
+			(STM32_WAKEUP_LINE_NONE)),
 #else
 #define STM32_UART_PM_WAKEUP(index) /* Not used */
 #endif
@@ -2448,10 +2452,10 @@ static struct uart_stm32_data uart_stm32_data_##index = {		\
 	UART_DMA_CHANNEL(index, tx, TX, MEMORY, PERIPHERAL)		\
 };									\
 									\
-PM_DEVICE_DT_INST_DEFINE(index, uart_stm32_pm_action);		        \
+PM_DEVICE_DT_INST_DEFINE(index, uart_stm32_pm_action);			\
 									\
 DEVICE_DT_INST_DEFINE(index,						\
-		    &uart_stm32_init,					\
+		    uart_stm32_init,					\
 		    PM_DEVICE_DT_INST_GET(index),			\
 		    &uart_stm32_data_##index, &uart_stm32_cfg_##index,	\
 		    PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,		\

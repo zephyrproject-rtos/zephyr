@@ -216,8 +216,6 @@ BUILD_ASSERT(Z_IS_POW2(CBPRINTF_PACKAGE_ALIGNMENT));
  * are also checked and if determined to be read-only they are also copied.
  */
 #define CBPRINTF_PACKAGE_CONVERT_RO_STR BIT(0)
-/** @deprecated Use @ref CBPRINTF_PACKAGE_CONVERT_RO_STR instead. */
-#define CBPRINTF_PACKAGE_COPY_RO_STR CBPRINTF_PACKAGE_CONVERT_RO_STR __DEPRECATED_MACRO
 
 /** @brief Append read-write strings from source package to destination package.
  *
@@ -230,8 +228,6 @@ BUILD_ASSERT(Z_IS_POW2(CBPRINTF_PACKAGE_ALIGNMENT));
  * package if @ref CBPRINTF_PACKAGE_CONVERT_KEEP_RO_STR is set.
  */
 #define CBPRINTF_PACKAGE_CONVERT_RW_STR BIT(1)
-/** @deprecated Use @ref CBPRINTF_PACKAGE_CONVERT_RW_STR instead. */
-#define CBPRINTF_PACKAGE_COPY_RW_STR CBPRINTF_PACKAGE_CONVERT_RW_STR __DEPRECATED_MACRO
 
 /** @brief Keep read-only location indexes in the package.
  *
@@ -239,8 +235,6 @@ BUILD_ASSERT(Z_IS_POW2(CBPRINTF_PACKAGE_ALIGNMENT));
  * not set they are discarded.
  */
 #define CBPRINTF_PACKAGE_CONVERT_KEEP_RO_STR BIT(2)
-/** @deprecated Use @ref CBPRINTF_PACKAGE_CONVERT_KEEP_RO_STR instead. */
-#define CBPRINTF_PACKAGE_COPY_KEEP_RO_STR CBPRINTF_PACKAGE_CONVERT_KEEP_RO_STR __DEPRECATED_MACRO
 
 /** @brief Check format string if %p argument was treated as %s in the package.
  *
@@ -301,6 +295,12 @@ typedef int (*cbprintf_cb)(int c, void *ctx);
 #else
 typedef int (*cbprintf_cb)(/* int c, void *ctx */);
 #endif
+
+/* Create local cbprintf_cb type to make calng-based compilers happy when handles
+ * OUTC() macro (see below). With strict rules (Wincompatible-function-pointer-types-strict)
+ * it's prohibited to pass arguments with mismatched types.
+ */
+typedef int (*cbprintf_cb_local)(int c, void *ctx);
 
 /** @brief Signature for a cbprintf multibyte callback function.
  *
@@ -517,7 +517,7 @@ int cbprintf_package_convert(void *in_packaged,
 			     uint16_t *strl,
 			     size_t strl_len);
 
-/* @interal Context used for package copying. */
+/* @internal Context used for package copying. */
 struct z_cbprintf_buf_desc {
 	void *buf;
 	size_t size;

@@ -18,6 +18,8 @@
 /**
  * @brief BSD Sockets compatible API
  * @defgroup bsd_sockets BSD Sockets compatible API
+ * @since 1.9
+ * @version 1.0.0
  * @ingroup networking
  * @{
  */
@@ -93,8 +95,10 @@ extern "C" {
 /** @} */
 
 /**
- *  @defgroup secure_sockets_options Socket options for TLS
- *  @{
+ * @defgroup secure_sockets_options Socket options for TLS
+ * @since 1.13
+ * @version 0.8.0
+ * @{
  */
 /**
  * @name Socket options for TLS
@@ -192,7 +196,7 @@ extern "C" {
 #define TLS_SESSION_CACHE_PURGE 13
 /** Write-only socket option to control DTLS CID.
  *  The option accepts an integer, indicating the setting.
- *  Accepted vaules for the option are: 0, 1 and 2.
+ *  Accepted values for the option are: 0, 1 and 2.
  *  Effective when set before connecting to the socket.
  *  - 0 - DTLS CID will be disabled.
  *  - 1 - DTLS CID will be enabled, and a 0 length CID value to be sent to the
@@ -205,7 +209,7 @@ extern "C" {
 /** Read-only socket option to get DTLS CID status.
  *  The option accepts a pointer to an integer, indicating the setting upon
  *  return.
- *  Returned vaules for the option are:
+ *  Returned values for the option are:
  *  - 0 - DTLS CID is disabled.
  *  - 1 - DTLS CID is received on the downlink.
  *  - 2 - DTLS CID is sent to the uplink.
@@ -625,7 +629,10 @@ static inline int zsock_ioctl_wrapper(int sock, unsigned long request, ...)
  * it may conflict with generic POSIX ``poll()`` function).
  * @endrst
  */
-__syscall int zsock_poll(struct zsock_pollfd *fds, int nfds, int timeout);
+static inline int zsock_poll(struct zsock_pollfd *fds, int nfds, int timeout)
+{
+	return zvfs_poll(fds, nfds, timeout);
+}
 
 /**
  * @brief Get various socket options
@@ -1401,6 +1408,11 @@ struct net_socket_register {
  * We have these includes here so that we do not need
  * to change the applications that were only including
  * zephyr/net/socket.h header file.
+ *
+ * Additionally, if non-zephyr-prefixed headers are used here,
+ * native_sim pulls in those from the host rather than Zephyr's.
+ *
+ * This should be removed when CONFIG_NET_SOCKETS_POSIX_NAMES is removed.
  */
 #if defined(CONFIG_POSIX_API)
 #if !defined(ZEPHYR_INCLUDE_POSIX_ARPA_INET_H_)

@@ -7,7 +7,6 @@ tests:
       - sam_e70_xplained/same70q21
       - mps2/an521/cpu0
       - native_sim
-      - native_posix
     tags: cmsis-dsp
     min_flash: 128
     min_ram: 144
@@ -16,7 +15,7 @@ tests:
       and CONFIG_FULL_LIBC_SUPPORTED) or CONFIG_ARCH_POSIX
     integration_platforms:
       - mps2/an521/cpu1
-      - mps3/an547
+      - mps3/corstone300/an547
     tags:
       - cmsis-dsp
       - fpu

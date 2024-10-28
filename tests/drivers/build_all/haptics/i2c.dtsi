@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2024 Cirrus Logic, Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/****************************************
+ * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
+ ***************************************/
+
+drv2605@0 {
+	compatible = "ti,drv2605";
+	reg = <0x0>;
+	status = "okay";
+
+	actuator-mode = "LRA";
+};

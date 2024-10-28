@@ -1,0 +1,220 @@
+/*
+ * Copyright (c) 2024 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <renesas/ra/ra8/r7fa8m1ahecbd.dtsi>
+#include <dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/adc/adc.h>
+#include "ek_ra8m1-pinctrl.dtsi"
+
+/ {
+	model = "Renesas EK-RA8M1";
+	compatible = "renesas,ra8m1", "renesas,ra8";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash-controller = &flash1;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart9;
+		zephyr,shell-uart = &uart9;
+		zephyr,entropy = &trng;
+		zephyr,canbus = &canfd0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led1: led1 {
+			gpios = <&ioport6 0 GPIO_ACTIVE_HIGH>;
+			label = "LED1";
+		};
+		led2: led2 {
+			gpios = <&ioport4 14 GPIO_ACTIVE_HIGH>;
+			label = "LED2";
+		};
+		led3: led3 {
+			gpios = <&ioport1 7 GPIO_ACTIVE_HIGH>;
+			label = "LED3";
+		};
+	};
+
+	mikrobus_header: mikrobus-connector {
+		compatible = "mikro-bus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =	<0 0 &ioport0 4 0>,	/* AN  */
+				<1 0 &ioport5 2 0>,	/* RST */
+				<2 0 &ioport4 13 0>,	/* CS   */
+				<3 0 &ioport4 12 0>,	/* SCK  */
+				<4 0 &ioport4 10 0>,	/* MISO */
+				<5 0 &ioport4 11 0>,	/* MOSI */
+							/* +3.3V */
+							/* GND */
+				<6 0 &ioport9 7 0>,	/* PWM  */
+				<7 0 &ioport0 10 0>,	/* INT  */
+				<8 0 &ioport3 9 0>,	/* RX   */
+				<9 0 &ioport3 10 0>,	/* TX   */
+				<10 0 &ioport4 0 0>,	/* SCL  */
+				<11 0 &ioport4 1 0>;	/* SDA  */
+							/* +5V */
+							/* GND */
+	};
+
+	aliases {
+		led0 = &led1;
+	};
+
+	transceiver0: can-phy0 {
+		compatible = "nxp,tja1040t", "can-transceiver-gpio";
+		standby-gpios = <&ioport2 7 GPIO_ACTIVE_HIGH>;
+		max-bitrate = <5000000>;
+		#phy-cells = <0>;
+	};
+};
+
+&xtal {
+	clock-frequency = <DT_FREQ_M(20)>;
+	mosel = <0>;
+	#clock-cells = <0>;
+	status = "okay";
+};
+
+&subclk {
+	status = "okay";
+};
+
+&pll {
+	clocks = <&xtal>;
+	div = <2>;
+	mul = <96 0>;
+	divp = <2>;
+	freqp = <DT_FREQ_M(480)>;
+	divq = <2>;
+	freqq = <DT_FREQ_M(480)>;
+	divr = <2>;
+	freqr = <DT_FREQ_M(480)>;
+	status = "okay";
+};
+
+&sciclk {
+	clocks = <&pll>;
+	div = <4>;
+	status = "okay";
+};
+
+&canfdclk {
+	clocks = <&pll>;
+	div = <5>;
+	status = "okay";
+};
+
+&ioport0 {
+	status = "okay";
+};
+
+&ioport1 {
+	status = "okay";
+};
+
+&ioport2 {
+	status = "okay";
+};
+
+&ioport3 {
+	status = "okay";
+};
+
+&ioport4 {
+	status = "okay";
+};
+
+&ioport5 {
+	status = "okay";
+};
+
+&ioport6 {
+	status = "okay";
+};
+
+&ioport9 {
+	status = "okay";
+};
+
+&sci3 {
+	pinctrl-0 = <&sci3_default>;
+	pinctrl-names = "default";
+	status = "okay";
+	uart3: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};
+
+&sci9 {
+	pinctrl-0 = <&sci9_default>;
+	pinctrl-names = "default";
+	status = "okay";
+	uart9: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};
+
+mikrobus_serial: &uart3 {};
+
+&iic1 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <DT_FREQ_M(1)>;
+	pinctrl-0 = <&iic1_default>;
+	pinctrl-names = "default";
+};
+
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+};
+
+&trng {
+	status = "okay";
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_default>;
+};
+
+&pwm7 {
+	pinctrl-0 = <&pwm7_default>;
+	interrupts = <40 1>, <41 1>;
+	interrupt-names = "gtioca", "overflow";
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&flash1 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		storage_partition: partition@0 {
+			label = "storage";
+			reg = <0X0 DT_SIZE_K(12)>;
+		};
+	};
+};
+
+&canfd_global {
+	status = "okay";
+	canfd0 {
+		pinctrl-0 = <&canfd0_default>;
+		pinctrl-names = "default";
+		phys = <&transceiver0>;
+		rx-max-filters = <16>;
+		status = "okay";
+	};
+};

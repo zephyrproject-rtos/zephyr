@@ -1,0 +1,11 @@
+# Nordic Semiconductor nRF54L20 MCU
+
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_NRF54L20_ENGA_CPUAPP
+
+config NUM_IRQS
+	default 274
+
+endif # SOC_NRF54L20_ENGA_CPUAPP

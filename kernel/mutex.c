@@ -261,7 +261,7 @@ int z_impl_k_mutex_unlock(struct k_mutex *mutex)
 	LOG_DBG("new owner of mutex %p: %p (prio: %d)",
 		mutex, new_owner, new_owner ? new_owner->base.prio : -1000);
 
-	if (new_owner != NULL) {
+	if (unlikely(new_owner != NULL)) {
 		/*
 		 * new owner is already of higher or equal prio than first
 		 * waiter since the wait queue is priority-based: no need to

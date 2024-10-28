@@ -28,6 +28,7 @@
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
 
+#include "audio_internal.h"
 #include "bap_endpoint.h"
 #include "bap_internal.h"
 #include "cap_internal.h"
@@ -99,7 +100,7 @@ int bt_cap_commander_discover(struct bt_conn *conn)
 
 #if defined(CONFIG_BT_BAP_BROADCAST_ASSISTANT)
 static struct bt_bap_broadcast_assistant_cb broadcast_assistant_cb;
-static bool ba_cb_registered;
+static bool broadcast_assistant_cb_registered;
 
 static void
 copy_broadcast_reception_start_param(struct bt_bap_broadcast_assistant_add_src_param *add_src_param,
@@ -114,7 +115,7 @@ copy_broadcast_reception_start_param(struct bt_bap_broadcast_assistant_add_src_p
 	add_src_param->subgroups = start_param->subgroups;
 }
 
-static void cap_commander_ba_add_src_cb(struct bt_conn *conn, int err)
+static void cap_commander_broadcast_assistant_add_src_cb(struct bt_conn *conn, int err)
 {
 	struct bt_cap_common_proc *active_proc = bt_cap_common_get_active_proc();
 	struct bt_bap_broadcast_assistant_add_src_param add_src_param = {0};
@@ -169,7 +170,7 @@ static void cap_commander_ba_add_src_cb(struct bt_conn *conn, int err)
 	}
 }
 
-static int cap_commander_register_ba_cb(void)
+static int cap_commander_register_broadcast_assistant_cb(void)
 {
 	int err;
 
@@ -180,7 +181,7 @@ static int cap_commander_register_ba_cb(void)
 		return -ENOEXEC;
 	}
 
-	ba_cb_registered = true;
+	broadcast_assistant_cb_registered = true;
 
 	return 0;
 }
@@ -196,7 +197,7 @@ static bool valid_broadcast_reception_start_param(
 	}
 
 	CHECKIF(param->count == 0) {
-		LOG_DBG("Invalid param->count: %u", param->count);
+		LOG_DBG("Invalid param->count: %zu", param->count);
 		return false;
 	}
 
@@ -344,8 +345,9 @@ int bt_cap_commander_broadcast_reception_start(
 
 	bt_cap_common_start_proc(BT_CAP_COMMON_PROC_TYPE_BROADCAST_RECEPTION_START, param->count);
 
-	broadcast_assistant_cb.add_src = cap_commander_ba_add_src_cb;
-	if (!ba_cb_registered && cap_commander_register_ba_cb() != 0) {
+	broadcast_assistant_cb.add_src = cap_commander_broadcast_assistant_add_src_cb;
+	if (!broadcast_assistant_cb_registered &&
+	    cap_commander_register_broadcast_assistant_cb() != 0) {
 		LOG_DBG("Failed to register broadcast assistant callbacks");
 
 		return -ENOEXEC;
@@ -399,13 +401,277 @@ int bt_cap_commander_broadcast_reception_start(
 
 	return 0;
 }
-#endif /* CONFIG_BT_BAP_BROADCAST_ASSISTANT */
+
+static void
+copy_broadcast_reception_stop_param(struct bt_bap_broadcast_assistant_mod_src_param *mod_src_param,
+				    struct cap_broadcast_reception_stop *stop_param)
+{
+	mod_src_param->src_id = stop_param->src_id;
+	mod_src_param->pa_sync = false;
+	mod_src_param->pa_interval = BT_BAP_PA_INTERVAL_UNKNOWN;
+	mod_src_param->num_subgroups = stop_param->num_subgroups;
+
+	mod_src_param->subgroups = stop_param->subgroups;
+}
+
+static void cap_commander_broadcast_assistant_recv_state_cb(
+	struct bt_conn *conn, int err, const struct bt_bap_scan_delegator_recv_state *state)
+{
+	struct bt_cap_common_proc *active_proc = bt_cap_common_get_active_proc();
+
+	if (state == NULL) {
+		/* Empty receive state, indicating that the source has been removed
+		 */
+		return;
+	}
+
+	if (bt_cap_common_conn_in_active_proc(conn) &&
+	    active_proc->proc_type == BT_CAP_COMMON_PROC_TYPE_BROADCAST_RECEPTION_STOP) {
+
+		LOG_DBG("BASS recv state: conn %p, src_id %u", (void *)conn, state->src_id);
+
+		for (uint8_t i = 0; i < state->num_subgroups; i++) {
+			const struct bt_bap_bass_subgroup *subgroup = &state->subgroups[i];
+
+			/* if bis_sync not equals 0 we can not remove the source (yet)
+			 * and we need to wait for another notification
+			 */
+			if (subgroup->bis_sync != 0) {
+				return;
+			}
+		}
+
+		LOG_DBG("Removing source for conn %p", (void *)conn);
+		err = bt_bap_broadcast_assistant_rem_src(conn, state->src_id);
+		if (err != 0) {
+			LOG_DBG("Failed to rem_src for conn %p: %d", (void *)conn, err);
+			bt_cap_common_abort_proc(conn, err);
+			cap_commander_proc_complete();
+		}
+	}
+}
+
+static void cap_commander_broadcast_assistant_rem_src_cb(struct bt_conn *conn, int err)
+{
+	struct bt_cap_common_proc *active_proc = bt_cap_common_get_active_proc();
+	struct bt_bap_broadcast_assistant_mod_src_param mod_src_param = {0};
+
+	if (!bt_cap_common_conn_in_active_proc(conn)) {
+		/* State change happened outside of a procedure; ignore */
+		return;
+	}
+
+	if (err != 0) {
+		LOG_DBG("Failed removing source: %d", err);
+		LOG_DBG("Aborting the proc %d %d", active_proc->proc_done_cnt,
+			active_proc->proc_initiated_cnt);
+
+		bt_cap_common_abort_proc(conn, err);
+	} else {
+		active_proc->proc_done_cnt++;
+
+		LOG_DBG("Conn %p broadcast source removed (%zu/%zu streams done)", (void *)conn,
+			active_proc->proc_done_cnt, active_proc->proc_cnt);
+	}
+
+	if (bt_cap_common_proc_is_aborted()) {
+		if (bt_cap_common_proc_all_handled()) {
+			cap_commander_proc_complete();
+		}
+
+		return;
+	}
+
+	if (!bt_cap_common_proc_is_done()) {
+		struct bt_cap_commander_proc_param *proc_param;
+
+		proc_param = &active_proc->proc_param.commander[active_proc->proc_done_cnt];
+		conn = proc_param->conn;
+		copy_broadcast_reception_stop_param(&mod_src_param,
+						    &proc_param->broadcast_reception_stop);
+		active_proc->proc_initiated_cnt++;
+		err = bt_bap_broadcast_assistant_mod_src(conn, &mod_src_param);
+		if (err != 0) {
+			LOG_DBG("Failed to mod_src for conn %p: %d", (void *)conn, err);
+			bt_cap_common_abort_proc(conn, err);
+			cap_commander_proc_complete();
+		}
+	} else {
+		cap_commander_proc_complete();
+	}
+}
+
+static void cap_commander_broadcast_assistant_mod_src_cb(struct bt_conn *conn, int err)
+{
+	struct bt_cap_common_proc *active_proc = bt_cap_common_get_active_proc();
+
+	if (!bt_cap_common_conn_in_active_proc(conn)) {
+		/* State change happened outside of a procedure; ignore */
+		return;
+	}
+
+	if (err != 0) {
+		LOG_DBG("Failed modifying source: %d", err);
+		LOG_DBG("Aborting the proc %d %d", active_proc->proc_done_cnt,
+			active_proc->proc_initiated_cnt);
+
+		bt_cap_common_abort_proc(conn, err);
+	} else {
+		LOG_DBG("Conn %p broadcast source modifified (%zu/%zu streams done)", (void *)conn,
+			active_proc->proc_done_cnt, active_proc->proc_cnt);
+	}
+
+	if (bt_cap_common_proc_is_aborted()) {
+		if (bt_cap_common_proc_all_handled()) {
+			cap_commander_proc_complete();
+		}
+	}
+}
+
+static bool valid_broadcast_reception_stop_param(
+	const struct bt_cap_commander_broadcast_reception_stop_param *param)
+{
+	CHECKIF(param == NULL) {
+		LOG_DBG("param is NULL");
+		return false;
+	}
+
+	CHECKIF(param->count == 0) {
+		LOG_DBG("Invalid param->count: %zu", param->count);
+		return false;
+	}
+
+	CHECKIF(param->count > CONFIG_BT_MAX_CONN) {
+		LOG_DBG("param->count (%zu) is larger than CONFIG_BT_MAX_CONN (%d)", param->count,
+			CONFIG_BT_MAX_CONN);
+		return false;
+	}
+
+	CHECKIF(param->param == NULL) {
+		LOG_DBG("param->param is NULL");
+		return false;
+	}
+
+	for (size_t i = 0; i < param->count; i++) {
+		const struct bt_cap_commander_broadcast_reception_stop_member_param *stop_param =
+			&param->param[i];
+		const union bt_cap_set_member *member = &param->param[i].member;
+		const struct bt_conn *member_conn =
+			bt_cap_common_get_member_conn(param->type, member);
+
+		if (member == NULL) {
+			LOG_DBG("param->param[%zu].member is NULL", i);
+			return false;
+		}
+
+		if (member_conn == NULL) {
+			LOG_DBG("Invalid param->param[%zu].member", i);
+			return false;
+		}
+
+		CHECKIF(stop_param->num_subgroups == 0) {
+			LOG_DBG("param->param[%zu]->num_subgroups is 0", i);
+			return false;
+		}
+
+		CHECKIF(stop_param->num_subgroups > CONFIG_BT_BAP_BASS_MAX_SUBGROUPS) {
+			LOG_DBG("Too many subgroups %u/%u", stop_param->num_subgroups,
+				CONFIG_BT_BAP_BASS_MAX_SUBGROUPS);
+			return false;
+		}
+
+		for (size_t j = 0U; j < i; j++) {
+			const union bt_cap_set_member *other = &param->param[j].member;
+			uint8_t other_src_id = param->param[j].src_id;
+
+			if (other == member && stop_param->src_id == other_src_id) {
+				LOG_DBG("param->members[%zu], src_id %d (%p) is duplicated by "
+					"param->members[%zu], src_id %d (%p)",
+					j, other_src_id, other, i, stop_param->src_id, member);
+				return false;
+			}
+		}
+	}
+
+	return true;
+}
 
 int bt_cap_commander_broadcast_reception_stop(
 	const struct bt_cap_commander_broadcast_reception_stop_param *param)
 {
-	return -ENOSYS;
+	struct bt_bap_broadcast_assistant_mod_src_param mod_src_param = {0};
+	struct bt_cap_commander_proc_param *proc_param;
+	struct bt_cap_common_proc *active_proc;
+	struct bt_conn *conn;
+	int err;
+
+	if (bt_cap_common_proc_is_active()) {
+		LOG_DBG("A CAP procedure is already in progress");
+
+		return -EBUSY;
+	}
+
+	if (!valid_broadcast_reception_stop_param(param)) {
+		return -EINVAL;
+	}
+
+	bt_cap_common_start_proc(BT_CAP_COMMON_PROC_TYPE_BROADCAST_RECEPTION_STOP, param->count);
+
+	broadcast_assistant_cb.mod_src = cap_commander_broadcast_assistant_mod_src_cb;
+	broadcast_assistant_cb.rem_src = cap_commander_broadcast_assistant_rem_src_cb;
+	broadcast_assistant_cb.recv_state = cap_commander_broadcast_assistant_recv_state_cb;
+	if (!broadcast_assistant_cb_registered &&
+	    cap_commander_register_broadcast_assistant_cb() != 0) {
+		LOG_DBG("Failed to register broadcast assistant callbacks");
+
+		return -ENOEXEC;
+	}
+
+	active_proc = bt_cap_common_get_active_proc();
+
+	for (size_t i = 0U; i < param->count; i++) {
+		const struct bt_cap_commander_broadcast_reception_stop_member_param *member_param =
+			&param->param[i];
+		struct bt_cap_commander_proc_param *stored_param;
+		struct bt_conn *member_conn =
+			bt_cap_common_get_member_conn(param->type, &member_param->member);
+
+		if (member_conn == NULL) {
+			LOG_DBG("Invalid param->member[%zu]", i);
+
+			return -EINVAL;
+		}
+		/* Store the necessary parameters as we cannot assume that the supplied
+		 * parameters are kept valid
+		 */
+		stored_param = &active_proc->proc_param.commander[i];
+		stored_param->conn = member_conn;
+		stored_param->broadcast_reception_stop.src_id = member_param->src_id;
+		stored_param->broadcast_reception_stop.num_subgroups = member_param->num_subgroups;
+		for (size_t j = 0U; j < CONFIG_BT_BAP_BASS_MAX_SUBGROUPS; j++) {
+			stored_param->broadcast_reception_stop.subgroups[j].bis_sync = 0;
+			stored_param->broadcast_reception_stop.subgroups[j].metadata_len = 0;
+		}
+	}
+
+	proc_param = &active_proc->proc_param.commander[0];
+
+	conn = proc_param->conn;
+	copy_broadcast_reception_stop_param(&mod_src_param, &proc_param->broadcast_reception_stop);
+
+	active_proc->proc_initiated_cnt++;
+
+	err = bt_bap_broadcast_assistant_mod_src(conn, &mod_src_param);
+	if (err != 0) {
+		LOG_DBG("Failed to stop broadcast reception for conn %p: %d", (void *)conn, err);
+
+		return -ENOEXEC;
+	}
+
+	return 0;
 }
+
+#endif /* CONFIG_BT_BAP_BROADCAST_ASSISTANT */
 
 static void cap_commander_proc_complete(void)
 {
@@ -461,6 +727,11 @@ static void cap_commander_proc_complete(void)
 	case BT_CAP_COMMON_PROC_TYPE_BROADCAST_RECEPTION_START:
 		if (cap_cb->broadcast_reception_start != NULL) {
 			cap_cb->broadcast_reception_start(failed_conn, err);
+		}
+		break;
+	case BT_CAP_COMMON_PROC_TYPE_BROADCAST_RECEPTION_STOP:
+		if (cap_cb->broadcast_reception_stop != NULL) {
+			cap_cb->broadcast_reception_stop(failed_conn, err);
 		}
 		break;
 #endif /* CONFIG_BT_BAP_BROADCAST_ASSISTANT */

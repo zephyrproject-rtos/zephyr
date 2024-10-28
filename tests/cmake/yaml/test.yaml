@@ -1,0 +1,13 @@
+cmake:
+  test:
+    key-string: "Simple string"
+    key-int: 42
+    key-list-int:
+      - 4
+      - 10
+      - 2
+    key-list-string:
+      - "a"
+      - "list"
+      - "of"
+      - "strings"

@@ -1,0 +1,120 @@
+/*
+ * Copyright (c) 2024 GARDENA GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/sim3u167.dtsi>
+#include "sim3u1xx_dk-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Silicon Labs SiM3U1xx-B-DK";
+	compatible = "gardena,sim3u1xx-dk", "silabs,sim3u167","silabs,sim3u";
+
+	aliases {
+		led0 = &led_yellow;
+		led1 = &led_red;
+		sw0 = &user_button_sw2;
+		sw1 = &user_button_sw3;
+	};
+
+	chosen {
+		zephyr,console = &usart0;
+		zephyr,flash = &flash0;
+		zephyr,shell-uart = &usart0;
+		zephyr,sram = &sram0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_red: led_2_10 {
+			label = "Red LED (DS3)";
+			gpios = <&gpio2 10 GPIO_ACTIVE_HIGH>;
+		};
+		led_yellow: led_2_11 {
+			label = "Yellow LED (DS4)";
+			gpios = <&gpio2 11 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_button_sw2: button_0 {
+			label = "Push button switch (SW2)";
+			gpios = <&gpio2 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		user_button_sw3: button_1 {
+			label = "Push button switch (SW3)";
+			gpios = <&gpio2 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <76953600>;
+};
+
+&pll0 {
+	status = "okay";
+};
+
+&clk_ahb {
+	clocks = <&pll0>;
+	status = "okay";
+};
+
+&clk_apb {
+	divider = <2>;
+	status = "okay";
+};
+
+&usart0 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart0_default>;
+	pinctrl-names = "default";
+	hw-flow-control;
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&flash0 {
+	status = "okay";
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		slot0_partition: partition@0 {
+			label = "image-0";
+			reg = <0x00000000 DT_SIZE_K(192)>;
+		};
+
+		storage_partition: partition@30000 {
+			label = "storage";
+			reg = <0x00030000 DT_SIZE_K(64)>;
+		};
+	};
+};
+
+&dma {
+	status = "okay";
+	dma-channels = <8>; /* Crypto DMA channels have ID 5, 6, and 7 */
+};
+
+&crypto {
+	status = "okay";
+};

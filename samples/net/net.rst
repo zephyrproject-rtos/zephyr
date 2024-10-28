@@ -1,10 +1,6 @@
-.. _networking-samples:
+.. zephyr:code-sample-category:: net
+   :name: Networking
+   :show-listing:
+   :live-search:
 
-Networking Samples
-##################
-
-.. toctree::
-   :maxdepth: 1
-   :glob:
-
-   **/*
+   These samples demonstrate how to use the networking subsystem.

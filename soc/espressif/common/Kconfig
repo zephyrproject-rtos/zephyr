@@ -7,6 +7,57 @@ config FLASH_SIZE
 config FLASH_BASE_ADDRESS
 	hex
 
+config ESP32_USE_UNSUPPORTED_REVISION
+	bool "Use unsupported ESP32 revision (Rev 0/1)"
+	help
+	  ESP32 SoC has multiple revisions, some of which are not supported by the current
+	  implementation, as such as REV0 and REV1. In case those revisions are required,
+	  set this option to enable support for them. Note that this is not recommended and
+	  may lead to unexpected behavior.
+
+config ESP_SIMPLE_BOOT
+	bool "Simple Boot method"
+	default y if !BOOTLOADER_MCUBOOT && !MCUBOOT
+	help
+	  The Simple Boot is a booting method that doesn't need a 2nd stage bootloader.
+	  Output is a single image that should be flashed at a offset defined by used SOC.
+	  Please note that this method brings the system up with all memories set-up, but
+	  all other features, such as secure boot OTA or slots management are not available.
+
+config ESP_HEAP_RUNTIME
+	bool
+	default y
+	help
+	  Enabling this will allocate SRAM area starting by a last linked data at symbolic `_end`,
+	  ending by a last memory location that can be safely accesed (depending on a boot mode).
+	  This is a memory pool used in runtime to create a new heap memory.
+
+config ESP32_TIMER_TASK_STACK_SIZE
+	int "Stack size of the high resolution ESP Timer"
+	default 4096
+	help
+	  Set the stack size for the internal high resolution ESP Timer
+	  used in Wi-Fi and BLE peripherals.
+
+config ESP32_TIMER_TASK_PRIO
+	int "Task priority of the high resolution ESP Timer"
+	default 3
+	help
+	  Set the task priority for the internal high resolution ESP Timer
+	  used in Wi-Fi and BLE peripherals.
+
+if (BT_ESP32 || WIFI_ESP32)
+
+config ESP32_PHY_MAX_TX_POWER
+	int "Max Wi-Fi/BLE TX power (dBm)"
+	range 10 20
+	default 20
+	help
+	  Set maximum transmit power for Wi-Fi radio. Actual transmit power for high
+	  data rates may be lower than this setting.
+
+endif
+
 rsource "Kconfig.spiram"
 rsource "Kconfig.esptool"
 rsource "Kconfig.flash"

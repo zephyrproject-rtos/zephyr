@@ -1,12 +1,14 @@
-.. _bq274xx-sample:
+.. zephyr:code-sample:: bq274xx
+   :name: BQ274XX fuel gauge sensor
+   :relevant-api: sensor_interface
 
-BQ274XX Sensor Sample
-#####################
+   Get various fuel gauge parameters from a BQ274XX sensor.
 
 Overview
 ********
 
-This sample application retrieves all the fuel gauge parameters,
+This sample application retrieves all the fuel gauge parameters:
+
 - Voltage, in volts
 - Average current, in amps
 - Standby current, in amps

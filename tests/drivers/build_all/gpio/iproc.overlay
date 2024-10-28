@@ -6,7 +6,7 @@
  * Application overlay for testing iproc driver builds
  */
 
- / {
+/ {
 	test {
 		test_int_gpio {
 			#address-cells = <1>;

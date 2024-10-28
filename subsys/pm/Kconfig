@@ -19,6 +19,8 @@ config PM
 	  power management subsystem of the number of ticks until the next kernel
 	  timer is due to expire.
 
+rsource "policy/Kconfig"
+
 if PM
 
 module = PM
@@ -42,7 +44,7 @@ config PM_S2RAM_CUSTOM_MARKING
 	depends on PM_S2RAM
 	help
 	  By default a magic word in RAM is used to mark entering suspend-to-RAM. Enabling
-	  this option allows custom implementation of functions which handles the marking.
+	  this option allows custom implementation of functions which handle the marking.
 
 config PM_NEED_ALL_DEVICES_IDLE
 	bool "System Low Power Mode Needs All Devices Idle"
@@ -50,35 +52,6 @@ config PM_NEED_ALL_DEVICES_IDLE
 	help
 	  When this option is enabled, check that no devices are busy before
 	  entering into system low power mode.
-
-choice PM_POLICY
-	prompt "Idle State Power Management Policy"
-	default PM_POLICY_DEFAULT
-	help
-	  Select the idle state power management policy.
-
-config PM_POLICY_DEFAULT
-	bool "Default PM policy"
-	help
-	  This option selects the default PM policy. Default policy is based
-	  on CPU residency times and other constraints imposed by the drivers or
-	  application.
-
-config PM_POLICY_CUSTOM
-	bool "Custom PM Policy"
-	help
-	  This options allows applications to override the default policy with
-	  a custom implementation.
-
-endchoice
-
-config PM_POLICY_DEVICE_CONSTRAINTS
-	bool "Power state constraints per device"
-	help
-	  This option allows devices to have a list of power states
-	  that when the system transition to them, cause power loss in the device.
-	  This used to set and release power state constraints when
-	  it is needed by the device.
 
 endif # PM
 
@@ -131,7 +104,6 @@ config PM_DEVICE_RUNTIME
 config PM_DEVICE_RUNTIME_EXCLUSIVE
 	depends on PM_DEVICE_RUNTIME
 	bool "[DEPRECATED] Use only on Runtime Power Management on system suspend / resume"
-	default y
 	select DEPRECATED
 	help
 	  On system suspend / resume do not trigger the Device PM hooks but
@@ -146,8 +118,7 @@ config PM_DEVICE_SHELL
 
 config PM_DEVICE_SYSTEM_MANAGED
 	bool "System-Managed Device Power Management"
-	default y if !PM_DEVICE_RUNTIME_EXCLUSIVE
-	default y if !PM_DEVICE_RUNTIME
+	default y if !PM_DEVICE_RUNTIME_EXCLUSIVE && !PM_DEVICE_RUNTIME
 	help
 	  This option enables the system-managed device power
 	  management.  The power management subsystem will suspend

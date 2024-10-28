@@ -1,0 +1,48 @@
+/*
+ * Copyright (c) 2024 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	sci9_default: sci9_default {
+		group1 {
+			/* tx */
+			psels = <RA_PSEL(RA_PSEL_SCI_9, 10, 14)>;
+			drive-strength = "medium";
+		};
+		group2 {
+			/* rx */
+			psels = <RA_PSEL(RA_PSEL_SCI_9, 10, 15)>;
+		};
+	};
+
+	spi0_default: spi0_default {
+		group1 {
+			/* MISO MOSI RSPCK SSL */
+			psels = <RA_PSEL(RA_PSEL_SPI, 7, 0)>,
+			<RA_PSEL(RA_PSEL_SPI, 7, 1)>,
+			<RA_PSEL(RA_PSEL_SPI, 7, 2)>,
+			<RA_PSEL(RA_PSEL_SPI, 7, 3)>;
+		};
+	};
+
+	pwm7_default: pwm7_default {
+		group1 {
+			/* GTIOC7A */
+			psels = <RA_PSEL(RA_PSEL_GPT1, 10, 7)>;
+		};
+		group2 {
+			/* GTIOC7B */
+			psels = <RA_PSEL(RA_PSEL_GPT1, 10, 6)>;
+		};
+	};
+
+	canfd0_default: canfd0_default {
+		group1 {
+			/* CRX0 CTX0 */
+			psels = <RA_PSEL(RA_PSEL_CANFD, 4, 2)>,
+			<RA_PSEL(RA_PSEL_CANFD, 4, 1)>;
+			drive-strength = "high";
+		};
+	};
+};

@@ -23,7 +23,7 @@
 
 #include <zephyr/usb/usb_ch9.h>
 #include <zephyr/device.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/util.h>
 
 /** Audio Interface Subclass Codes.

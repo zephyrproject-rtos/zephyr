@@ -1,7 +1,7 @@
-.. _tensorflow_hello_world:
+.. zephyr:code-sample:: tflite-hello-world
+   :name: Hello World
 
-TensorFlow Lite Micro Hello World sample
-########################################
+   Replicate a sine wave using TensorFlow Lite for Microcontrollers.
 
 Overview
 ********
@@ -61,11 +61,11 @@ or as a
 that can be emulated on a host machine.
 
 Assuming that the Corstone-300 FVP has been downloaded, installed and added to
-the `PATH` variable, then building and testing can be done with following
+the :envvar:`PATH` variable, then building and testing can be done with following
 commands.
 
 ```
-$ west build -p auto -b mps3/an547 samples/modules/tflite-micro/hello_world/ -T sample.tensorflow.helloworld.cmsis_nn
+$ west build -p auto -b mps3/corstone300/an547 samples/modules/tflite-micro/hello_world/ -T sample.tensorflow.helloworld.cmsis_nn
 $ FVP_Corstone_SSE-300_Ethos-U55 build/zephyr/zephyr.elf
 ```
 
@@ -98,7 +98,7 @@ It is recommended that you copy and modify one of the two TensorFlow
 samples when creating your own TensorFlow project. To build with
 TensorFlow, you must enable the below Kconfig options in your :file:`prj.conf`:
 
-.. code-block:: kconfig
+.. code-block:: cfg
 
     CONFIG_CPP=y
     CONFIG_REQUIRES_FULL_LIBC=y
@@ -108,7 +108,7 @@ Note that the CMSIS-NN kernel sample demonstrates how to use CMSIS-NN optimized 
 TensorFlow Lite Micro, in that is sets below Kconfig option. Note also that this
 Kconfig option is only set for Arm Cortex-M cores, i.e. option CPU_CORTEX_M is set.
 
-.. code-block:: kconfig
+.. code-block:: cfg
 
     CONFIG_TENSORFLOW_LITE_MICRO_CMSIS_NN_KERNELS=y
 

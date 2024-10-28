@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 from asyncio.log import logger
+from enum import Enum
 import platform
 import re
 import os
@@ -15,9 +16,12 @@ import time
 import shutil
 import json
 
-from twisterlib.error import ConfigurationError
+from pytest import ExitCode
+from twisterlib.reports import ReportStatus
+from twisterlib.error import ConfigurationError, StatusAttributeError
 from twisterlib.environment import ZEPHYR_BASE, PYTEST_PLUGIN_INSTALLED
 from twisterlib.handlers import Handler, terminate_process, SUPPORTED_SIMS_IN_PYTEST
+from twisterlib.statuses import TwisterStatus
 from twisterlib.testinstance import TestInstance
 
 
@@ -36,16 +40,8 @@ class Harness:
     RUN_FAILED = "PROJECT EXECUTION FAILED"
     run_id_pattern = r"RunID: (?P<run_id>.*)"
 
-
-    ztest_to_status = {
-        'PASS': 'passed',
-        'SKIP': 'skipped',
-        'BLOCK': 'blocked',
-        'FAIL': 'failed'
-        }
-
     def __init__(self):
-        self.state = None
+        self._status = TwisterStatus.NONE
         self.reason = None
         self.type = None
         self.regex = []
@@ -68,6 +64,19 @@ class Harness:
         self.instance: TestInstance | None = None
         self.testcase_output = ""
         self._match = False
+
+    @property
+    def status(self) -> TwisterStatus:
+        return self._status
+
+    @status.setter
+    def status(self, value : TwisterStatus) -> None:
+        # Check for illegal assignments by value
+        try:
+            key = value.name if isinstance(value, Enum) else value
+            self._status = TwisterStatus[key]
+        except KeyError:
+            raise StatusAttributeError(self.__class__, value)
 
     def configure(self, instance):
         self.instance = instance
@@ -132,13 +141,13 @@ class Harness:
 
         if self.RUN_PASSED in line:
             if self.fault:
-                self.state = "failed"
+                self.status = TwisterStatus.FAIL
                 self.reason = "Fault detected while running test"
             else:
-                self.state = "passed"
+                self.status = TwisterStatus.PASS
 
         if self.RUN_FAILED in line:
-            self.state = "failed"
+            self.status = TwisterStatus.FAIL
             self.reason = "Testsuite failed"
 
         if self.fail_on_fault:
@@ -160,7 +169,8 @@ class Robot(Harness):
 
         config = instance.testsuite.harness_config
         if config:
-            self.path = config.get('robot_test_path', None)
+            self.path = config.get('robot_testsuite', None)
+            self.option = config.get('robot_option', None)
 
     def handle(self, line):
         ''' Test cases that make use of this harness care about results given
@@ -168,15 +178,32 @@ class Robot(Harness):
             handle is trying to give a PASS or FAIL to avoid timeout, nothing
             is writen into handler.log
         '''
-        self.instance.state = "passed"
+        self.instance.status = TwisterStatus.PASS
         tc = self.instance.get_case_or_create(self.id)
-        tc.status = "passed"
+        tc.status = TwisterStatus.PASS
 
     def run_robot_test(self, command, handler):
         start_time = time.time()
         env = os.environ.copy()
 
-        command.append(os.path.join(handler.sourcedir, self.path))
+        if self.option:
+            if isinstance(self.option, list):
+                for option in self.option:
+                    for v in str(option).split():
+                        command.append(f'{v}')
+            else:
+                for v in str(self.option).split():
+                    command.append(f'{v}')
+
+        if self.path is None:
+            raise PytestHarnessException(f'The parameter robot_testsuite is mandatory')
+
+        if isinstance(self.path, list):
+            for suite in self.path:
+                command.append(os.path.join(handler.sourcedir, suite))
+        else:
+            command.append(os.path.join(handler.sourcedir, self.path))
+
         with subprocess.Popen(command, stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT, cwd=self.instance.build_dir, env=env) as renode_test_proc:
             out, _ = renode_test_proc.communicate()
@@ -184,16 +211,16 @@ class Robot(Harness):
             self.instance.execution_time = time.time() - start_time
 
             if renode_test_proc.returncode == 0:
-                self.instance.status = "passed"
+                self.instance.status = TwisterStatus.PASS
                 # all tests in one Robot file are treated as a single test case,
                 # so its status should be set accordingly to the instance status
                 # please note that there should be only one testcase in testcases list
-                self.instance.testcases[0].status = "passed"
+                self.instance.testcases[0].status = TwisterStatus.PASS
             else:
                 logger.error("Robot test failure: %s for %s" %
                              (handler.sourcedir, self.instance.platform.name))
-                self.instance.status = "failed"
-                self.instance.testcases[0].status = "failed"
+                self.instance.status = TwisterStatus.FAIL
+                self.instance.testcases[0].status = TwisterStatus.FAIL
 
             if out:
                 with open(os.path.join(self.instance.build_dir, handler.log), "wt") as log:
@@ -218,10 +245,10 @@ class Console(Harness):
     def configure(self, instance):
         super(Console, self).configure(instance)
         if self.regex is None or len(self.regex) == 0:
-            self.state = "failed"
+            self.status = TwisterStatus.FAIL
             tc = self.instance.set_case_status_by_name(
                 self.get_testcase_name(),
-                "failed",
+                TwisterStatus.FAIL,
                 f"HARNESS:{self.__class__.__name__}:no regex patterns configured."
             )
             raise ConfigurationError(self.instance.name, tc.reason)
@@ -234,10 +261,10 @@ class Console(Harness):
                 self.patterns.append(re.compile(r))
             self.patterns_expected = len(self.patterns)
         else:
-            self.state = "failed"
+            self.status = TwisterStatus.FAIL
             tc = self.instance.set_case_status_by_name(
                 self.get_testcase_name(),
-                "failed",
+                TwisterStatus.FAIL,
                 f"HARNESS:{self.__class__.__name__}:incorrect type={self.type}"
             )
             raise ConfigurationError(self.instance.name, tc.reason)
@@ -249,7 +276,7 @@ class Console(Harness):
                 logger.debug(f"HARNESS:{self.__class__.__name__}:EXPECTED:"
                              f"'{self.pattern.pattern}'")
                 self.next_pattern += 1
-                self.state = "passed"
+                self.status = TwisterStatus.PASS
         elif self.type == "multi_line" and self.ordered:
             if (self.next_pattern < len(self.patterns) and
                 self.patterns[self.next_pattern].search(line)):
@@ -258,7 +285,7 @@ class Console(Harness):
                              f"'{self.patterns[self.next_pattern].pattern}'")
                 self.next_pattern += 1
                 if self.next_pattern >= len(self.patterns):
-                    self.state = "passed"
+                    self.status = TwisterStatus.PASS
         elif self.type == "multi_line" and not self.ordered:
             for i, pattern in enumerate(self.patterns):
                 r = self.regex[i]
@@ -268,7 +295,7 @@ class Console(Harness):
                                  f"{len(self.matches)}/{self.patterns_expected}):"
                                  f"'{pattern.pattern}'")
             if len(self.matches) == len(self.regex):
-                self.state = "passed"
+                self.status = TwisterStatus.PASS
         else:
             logger.error("Unknown harness_config type")
 
@@ -282,31 +309,35 @@ class Console(Harness):
             self.capture_coverage = False
 
         self.process_test(line)
-        # Reset the resulting test state to 'failed' when not all of the patterns were
+        # Reset the resulting test state to FAIL when not all of the patterns were
         # found in the output, but just ztest's 'PROJECT EXECUTION SUCCESSFUL'.
         # It might happen because of the pattern sequence diverged from the
         # test code, the test platform has console issues, or even some other
         # test image was executed.
         # TODO: Introduce explicit match policy type to reject
         # unexpected console output, allow missing patterns, deny duplicates.
-        if self.state == "passed" and self.ordered and self.next_pattern < self.patterns_expected:
+        if self.status == TwisterStatus.PASS and \
+           self.ordered and \
+           self.next_pattern < self.patterns_expected:
             logger.error(f"HARNESS:{self.__class__.__name__}: failed with"
                          f" {self.next_pattern} of {self.patterns_expected}"
                          f" expected ordered patterns.")
-            self.state = "failed"
+            self.status = TwisterStatus.FAIL
             self.reason = "patterns did not match (ordered)"
-        if self.state == "passed" and not self.ordered and len(self.matches) < self.patterns_expected:
+        if self.status == TwisterStatus.PASS and \
+           not self.ordered and \
+           len(self.matches) < self.patterns_expected:
             logger.error(f"HARNESS:{self.__class__.__name__}: failed with"
                          f" {len(self.matches)} of {self.patterns_expected}"
                          f" expected unordered patterns.")
-            self.state = "failed"
+            self.status = TwisterStatus.FAIL
             self.reason = "patterns did not match (unordered)"
 
         tc = self.instance.get_case_or_create(self.get_testcase_name())
-        if self.state == "passed":
-            tc.status = "passed"
+        if self.status == TwisterStatus.PASS:
+            tc.status = TwisterStatus.PASS
         else:
-            tc.status = "failed"
+            tc.status = TwisterStatus.FAIL
 
 
 class PytestHarnessException(Exception):
@@ -321,7 +352,8 @@ class Pytest(Harness):
         self.source_dir = instance.testsuite.source_dir
         self.report_file = os.path.join(self.running_dir, 'report.xml')
         self.pytest_log_file_path = os.path.join(self.running_dir, 'twister_harness.log')
-        self.reserved_serial = None
+        self.reserved_dut = None
+        self._output = []
 
     def pytest_run(self, timeout):
         try:
@@ -329,13 +361,13 @@ class Pytest(Harness):
             self.run_command(cmd, timeout)
         except PytestHarnessException as pytest_exception:
             logger.error(str(pytest_exception))
-            self.state = 'failed'
+            self.status = TwisterStatus.FAIL
             self.instance.reason = str(pytest_exception)
         finally:
-            if self.reserved_serial:
-                self.instance.handler.make_device_available(self.reserved_serial)
-        self.instance.record(self.recording)
-        self._update_test_status()
+            self.instance.record(self.recording)
+            self._update_test_status()
+            if self.reserved_dut:
+                self.instance.handler.make_dut_available(self.reserved_dut)
 
     def generate_command(self):
         config = self.instance.testsuite.harness_config
@@ -351,7 +383,8 @@ class Pytest(Harness):
             f'--junit-xml={self.report_file}',
             '--log-file-level=DEBUG',
             '--log-file-format=%(asctime)s.%(msecs)d:%(levelname)s:%(name)s: %(message)s',
-            f'--log-file={self.pytest_log_file_path}'
+            f'--log-file={self.pytest_log_file_path}',
+            f'--platform={self.instance.platform.name}'
         ]
         command.extend([os.path.normpath(os.path.join(
             self.source_dir, os.path.expanduser(os.path.expandvars(src)))) for src in pytest_root])
@@ -364,6 +397,10 @@ class Pytest(Harness):
             '--log-cli-level=DEBUG',
             '--log-cli-format=%(levelname)s: %(message)s'
         ])
+
+        # Use the test timeout as the base timeout for pytest
+        base_timeout = handler.get_test_timeout()
+        command.append(f'--base-timeout={base_timeout}')
 
         if handler.type_str == 'device':
             command.extend(
@@ -380,14 +417,10 @@ class Pytest(Harness):
             for fixture in handler.options.fixture:
                 command.append(f'--twister-fixture={fixture}')
 
+        command.extend(pytest_args_yaml)
+
         if handler.options.pytest_args:
             command.extend(handler.options.pytest_args)
-            if pytest_args_yaml:
-                logger.warning(f'The pytest_args ({handler.options.pytest_args}) specified '
-                               'in the command line will override the pytest_args defined '
-                               f'in the YAML file {pytest_args_yaml}')
-        else:
-            command.extend(pytest_args_yaml)
 
         return command
 
@@ -399,7 +432,7 @@ class Pytest(Harness):
         # update the instance with the device id to have it in the summary report
         self.instance.dut = hardware.id
 
-        self.reserved_serial = hardware.serial_pty or hardware.serial
+        self.reserved_dut = hardware
         if hardware.serial_pty:
             command.append(f'--device-serial-pty={hardware.serial_pty}')
         else:
@@ -407,6 +440,9 @@ class Pytest(Harness):
                 f'--device-serial={hardware.serial}',
                 f'--device-serial-baud={hardware.baud}'
             ])
+
+        if hardware.flash_timeout:
+            command.append(f'--flash-timeout={hardware.flash_timeout}')
 
         options = handler.options
         if runner := hardware.runner or options.west_runner:
@@ -451,7 +487,7 @@ class Pytest(Harness):
             env=env
         ) as proc:
             try:
-                reader_t = threading.Thread(target=self._output_reader, args=(proc, self), daemon=True)
+                reader_t = threading.Thread(target=self._output_reader, args=(proc,), daemon=True)
                 reader_t.start()
                 reader_t.join(timeout)
                 if reader_t.is_alive():
@@ -459,11 +495,18 @@ class Pytest(Harness):
                     logger.warning('Timeout has occurred. Can be extended in testspec file. '
                                    f'Currently set to {timeout} seconds.')
                     self.instance.reason = 'Pytest timeout'
-                    self.state = 'failed'
+                    self.status = TwisterStatus.FAIL
                 proc.wait(timeout)
             except subprocess.TimeoutExpired:
-                self.state = 'failed'
+                self.status = TwisterStatus.FAIL
                 proc.kill()
+
+        if proc.returncode in (ExitCode.INTERRUPTED, ExitCode.USAGE_ERROR, ExitCode.INTERNAL_ERROR):
+            self.status = TwisterStatus.ERROR
+            self.instance.reason = f'Pytest error - return code {proc.returncode}'
+            with open(self.pytest_log_file_path, 'w') as log_file:
+                log_file.write(shlex.join(cmd) + '\n\n')
+                log_file.write('\n'.join(self._output))
 
     @staticmethod
     def _update_command_with_env_dependencies(cmd):
@@ -487,47 +530,50 @@ class Pytest(Harness):
 
         return cmd, env
 
-    @staticmethod
-    def _output_reader(proc, harness):
+    def _output_reader(self, proc):
+        self._output = []
         while proc.stdout.readable() and proc.poll() is None:
             line = proc.stdout.readline().decode().strip()
             if not line:
                 continue
+            self._output.append(line)
             logger.debug('PYTEST: %s', line)
-            harness.parse_record(line)
+            self.parse_record(line)
         proc.communicate()
 
     def _update_test_status(self):
-        if not self.state:
+        if self.status == TwisterStatus.NONE:
             self.instance.testcases = []
             try:
                 self._parse_report_file(self.report_file)
             except Exception as e:
                 logger.error(f'Error when parsing file {self.report_file}: {e}')
-                self.state = 'failed'
+                self.status = TwisterStatus.FAIL
             finally:
                 if not self.instance.testcases:
                     self.instance.init_cases()
 
-        self.instance.status = self.state or 'failed'
-        if self.instance.status in ['error', 'failed']:
+        self.instance.status = self.status if self.status != TwisterStatus.NONE else \
+                               TwisterStatus.FAIL
+        if self.instance.status in [TwisterStatus.ERROR, TwisterStatus.FAIL]:
             self.instance.reason = self.instance.reason or 'Pytest failed'
-            self.instance.add_missing_case_status('blocked', self.instance.reason)
+            self.instance.add_missing_case_status(TwisterStatus.BLOCK, self.instance.reason)
 
     def _parse_report_file(self, report):
         tree = ET.parse(report)
         root = tree.getroot()
-        if elem_ts := root.find('testsuite'):
+
+        if (elem_ts := root.find('testsuite')) is not None:
             if elem_ts.get('failures') != '0':
-                self.state = 'failed'
+                self.status = TwisterStatus.FAIL
                 self.instance.reason = f"{elem_ts.get('failures')}/{elem_ts.get('tests')} pytest scenario(s) failed"
             elif elem_ts.get('errors') != '0':
-                self.state = 'error'
+                self.status = TwisterStatus.ERROR
                 self.instance.reason = 'Error during pytest execution'
             elif elem_ts.get('skipped') == elem_ts.get('tests'):
-                self.state = 'skipped'
+                self.status = TwisterStatus.SKIP
             else:
-                self.state = 'passed'
+                self.status = TwisterStatus.PASS
             self.instance.execution_time = float(elem_ts.get('time'))
 
             for elem_tc in elem_ts.findall('testcase'):
@@ -535,28 +581,33 @@ class Pytest(Harness):
                 tc.duration = float(elem_tc.get('time'))
                 elem = elem_tc.find('*')
                 if elem is None:
-                    tc.status = 'passed'
+                    tc.status = TwisterStatus.PASS
                 else:
-                    if elem.tag == 'skipped':
-                        tc.status = 'skipped'
-                    elif elem.tag == 'failure':
-                        tc.status = 'failed'
+                    if elem.tag == ReportStatus.SKIP:
+                        tc.status = TwisterStatus.SKIP
+                    elif elem.tag == ReportStatus.FAIL:
+                        tc.status = TwisterStatus.FAIL
                     else:
-                        tc.status = 'error'
+                        tc.status = TwisterStatus.ERROR
                     tc.reason = elem.get('message')
                     tc.output = elem.text
         else:
-            self.state = 'skipped'
+            self.status = TwisterStatus.SKIP
             self.instance.reason = 'No tests collected'
 
 
 class Gtest(Harness):
     ANSI_ESCAPE = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
-    TEST_START_PATTERN = r".*\[ RUN      \] (?P<suite_name>.*)\.(?P<test_name>.*)$"
-    TEST_PASS_PATTERN = r".*\[       OK \] (?P<suite_name>.*)\.(?P<test_name>.*)$"
-    TEST_SKIP_PATTERN = r".*\[ DISABLED \] (?P<suite_name>.*)\.(?P<test_name>.*)$"
-    TEST_FAIL_PATTERN = r".*\[  FAILED  \] (?P<suite_name>.*)\.(?P<test_name>.*)$"
-    FINISHED_PATTERN = r".*\[==========\] Done running all tests\.$"
+    _NAME_PATTERN = "[a-zA-Z_][a-zA-Z0-9_]*"
+    _SUITE_TEST_NAME_PATTERN = f"(?P<suite_name>{_NAME_PATTERN})\\.(?P<test_name>{_NAME_PATTERN})"
+    TEST_START_PATTERN = f".*\\[ RUN      \\] {_SUITE_TEST_NAME_PATTERN}"
+    TEST_PASS_PATTERN = f".*\\[       OK \\] {_SUITE_TEST_NAME_PATTERN}"
+    TEST_SKIP_PATTERN = f".*\\[ DISABLED \\] {_SUITE_TEST_NAME_PATTERN}"
+    TEST_FAIL_PATTERN = f".*\\[  FAILED  \\] {_SUITE_TEST_NAME_PATTERN}"
+    FINISHED_PATTERN = (
+        ".*(?:\\[==========\\] Done running all tests\\.|"
+        + "\\[----------\\] Global test environment tear-down)"
+    )
 
     def __init__(self):
         super().__init__()
@@ -567,7 +618,7 @@ class Gtest(Harness):
         # Strip the ANSI characters, they mess up the patterns
         non_ansi_line = self.ANSI_ESCAPE.sub('', line)
 
-        if self.state:
+        if self.status != TwisterStatus.NONE:
             return
 
         # Check if we started running a new test
@@ -593,7 +644,7 @@ class Gtest(Harness):
             # Create the test instance and set the context
             tc = self.instance.get_case_or_create(name)
             self.tc = tc
-            self.tc.status = "started"
+            self.tc.status = TwisterStatus.STARTED
             self.testcase_output += line + "\n"
             self._match = True
 
@@ -602,16 +653,16 @@ class Gtest(Harness):
         if finished_match:
             tc = self.instance.get_case_or_create(self.id)
             if self.has_failures or self.tc is not None:
-                self.state = "failed"
-                tc.status = "failed"
+                self.status = TwisterStatus.FAIL
+                tc.status = TwisterStatus.FAIL
             else:
-                self.state = "passed"
-                tc.status = "passed"
+                self.status = TwisterStatus.PASS
+                tc.status = TwisterStatus.PASS
             return
 
         # Check if the individual test finished
         state, name = self._check_result(non_ansi_line)
-        if state is None or name is None:
+        if state == TwisterStatus.NONE or name is None:
             # Nothing finished, keep processing lines
             return
 
@@ -626,7 +677,7 @@ class Gtest(Harness):
 
         # Update the status of the test
         tc.status = state
-        if tc.status == "failed":
+        if tc.status == TwisterStatus.FAIL:
             self.has_failures = True
             tc.output = self.testcase_output
         self.testcase_output = ""
@@ -635,17 +686,30 @@ class Gtest(Harness):
     def _check_result(self, line):
         test_pass_match = re.search(self.TEST_PASS_PATTERN, line)
         if test_pass_match:
-            return "passed", "{}.{}.{}".format(self.id, test_pass_match.group("suite_name"), test_pass_match.group("test_name"))
+            return TwisterStatus.PASS, \
+                   "{}.{}.{}".format(
+                        self.id, test_pass_match.group("suite_name"),
+                        test_pass_match.group("test_name")
+                    )
         test_skip_match = re.search(self.TEST_SKIP_PATTERN, line)
         if test_skip_match:
-            return "skipped", "{}.{}.{}".format(self.id, test_skip_match.group("suite_name"), test_skip_match.group("test_name"))
+            return TwisterStatus.SKIP, \
+                   "{}.{}.{}".format(
+                       self.id, test_skip_match.group("suite_name"),
+                       test_skip_match.group("test_name")
+                    )
         test_fail_match = re.search(self.TEST_FAIL_PATTERN, line)
         if test_fail_match:
-            return "failed", "{}.{}.{}".format(self.id, test_fail_match.group("suite_name"), test_fail_match.group("test_name"))
+            return TwisterStatus.FAIL, \
+                   "{}.{}.{}".format(
+                       self.id, test_fail_match.group("suite_name"),
+                       test_fail_match.group("test_name")
+                    )
         return None, None
 
 
 class Test(Harness):
+    __test__ = False  # for pytest to skip this class when collects tests
     RUN_PASSED = "PROJECT EXECUTION SUCCESSFUL"
     RUN_FAILED = "PROJECT EXECUTION FAILED"
     test_suite_start_pattern = r"Running TESTSUITE (?P<suite_name>.*)"
@@ -664,7 +728,7 @@ class Test(Harness):
             # Mark the test as started, if something happens here, it is mostly
             # due to this tests, for example timeout. This should in this case
             # be marked as failed and not blocked (not run).
-            tc.status = "started"
+            tc.status = TwisterStatus.STARTED
 
         if testcase_match or self._match:
             self.testcase_output += line + "\n"
@@ -682,11 +746,11 @@ class Test(Harness):
             matched_status = result_match.group(1)
             name = "{}.{}".format(self.id, result_match.group(3))
             tc = self.instance.get_case_or_create(name)
-            tc.status = self.ztest_to_status[matched_status]
-            if tc.status == "skipped":
+            tc.status = TwisterStatus[matched_status]
+            if tc.status == TwisterStatus.SKIP:
                 tc.reason = "ztest skip"
             tc.duration = float(result_match.group(4))
-            if tc.status == "failed":
+            if tc.status == TwisterStatus.FAIL:
                 tc.output = self.testcase_output
             self.testcase_output = ""
             self._match = False
@@ -696,11 +760,11 @@ class Test(Harness):
             self.detected_suite_names.append(summary_match.group(2))
             name = "{}.{}".format(self.id, summary_match.group(4))
             tc = self.instance.get_case_or_create(name)
-            tc.status = self.ztest_to_status[matched_status]
-            if tc.status == "skipped":
+            tc.status = TwisterStatus[matched_status]
+            if tc.status == TwisterStatus.SKIP:
                 tc.reason = "ztest skip"
             tc.duration = float(summary_match.group(5))
-            if tc.status == "failed":
+            if tc.status == TwisterStatus.FAIL:
                 tc.output = self.testcase_output
             self.testcase_output = ""
             self._match = False
@@ -708,13 +772,13 @@ class Test(Harness):
 
         self.process_test(line)
 
-        if not self.ztest and self.state:
+        if not self.ztest and self.status != TwisterStatus.NONE:
             logger.debug(f"not a ztest and no state for {self.id}")
             tc = self.instance.get_case_or_create(self.id)
-            if self.state == "passed":
-                tc.status = "passed"
+            if self.status == TwisterStatus.PASS:
+                tc.status = TwisterStatus.PASS
             else:
-                tc.status = "failed"
+                tc.status = TwisterStatus.FAIL
                 tc.reason = "Test failure"
 
 

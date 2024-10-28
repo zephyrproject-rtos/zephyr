@@ -15,6 +15,8 @@
 /**
  * @brief CoAP client API
  * @defgroup coap_client CoAP client API
+ * @since 3.4
+ * @version 0.1.0
  * @ingroup networking
  * @{
  */
@@ -107,12 +109,13 @@ struct coap_client {
 	struct sockaddr address;
 	socklen_t socklen;
 	bool response_ready;
-	struct k_mutex send_mutex;
+	struct k_mutex lock;
 	uint8_t send_buf[MAX_COAP_MSG_LEN];
 	uint8_t recv_buf[MAX_COAP_MSG_LEN];
 	struct coap_client_internal_request requests[CONFIG_COAP_CLIENT_MAX_REQUESTS];
 	struct coap_option echo_option;
 	bool send_echo;
+	int socket_error;
 };
 /** @endcond */
 
@@ -156,6 +159,28 @@ int coap_client_req(struct coap_client *client, int sock, const struct sockaddr 
  * @param client Client instance.
  */
 void coap_client_cancel_requests(struct coap_client *client);
+
+/**
+ * @brief Initialise a Block2 option to be added to a request
+ *
+ * If the application expects a request to require a blockwise transfer, it may pre-emptively
+ * suggest a maximum block size to the server - see RFC7959 Figure 3: Block-Wise GET with Early
+ * Negotiation.
+ *
+ * This helper function returns a Block2 option to send with the initial request.
+ *
+ * @return CoAP client initial Block2 option structure
+ */
+static inline struct coap_client_option coap_client_option_initial_block2(void)
+{
+	struct coap_client_option block2 = {
+		.code = COAP_OPTION_BLOCK2,
+		.len = 1,
+		.value[0] = coap_bytes_to_block_size(CONFIG_COAP_CLIENT_BLOCK_SIZE),
+	};
+
+	return block2;
+}
 
 /**
  * @}

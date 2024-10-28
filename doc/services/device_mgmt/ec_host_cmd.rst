@@ -76,7 +76,7 @@ SoCs, modify the compatible string as shown.
        ...
    };
 
-The chip that runs Zephyr is a SPI slave and the `cs-gpios` property is used to point our CS pin.
+The chip that runs Zephyr is a SPI slave and the ``cs-gpios`` property is used to point our CS pin.
 For the SPI, it is required to set the backend chosen node ``zephyr,host-cmd-spi-backend``.
 
 The supported backend and peripheral drivers:
@@ -120,10 +120,10 @@ Logging
 The host command has an embedded logging system of the ongoing communication. The are a few logging
 levels:
 
-* `LOG_INF` is used to log a command id of a new command and not success responses. Repeats of the
+* :c:macro:`LOG_INF` is used to log a command id of a new command and not success responses. Repeats of the
   same command are not logged
-* `LOG_DBG` logs every command, even repeats
-* `LOG_DBG` + :kconfig:option:`CONFIG_EC_HOST_CMD_LOG_DBG_BUFFERS` logs every command and responses
+* :c:macro:`LOG_DBG` logs every command, even repeats
+* :c:macro:`LOG_DBG` + :kconfig:option:`CONFIG_EC_HOST_CMD_LOG_DBG_BUFFERS` logs every command and responses
   with the data buffers
 
 API Reference

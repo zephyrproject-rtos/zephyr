@@ -18,7 +18,7 @@ source "subsys/net/Kconfig.template.log_config.net"
 
 menu "Protocol versions"
 
-choice
+choice LWM2M_VERSION
 	prompt "LwM2M protocol version"
 	default LWM2M_VERSION_1_0
 	help
@@ -378,7 +378,7 @@ config LWM2M_NUM_OUTPUT_BLOCK_CONTEXT
 	default 3
 	help
 	  Maximum number of CoAP block contexts needed to split messages into blocks for
-	  sending. This limits the numer of messages that need block transfer that can be
+	  sending. This limits the number of messages that need block transfer that can be
 	  handled at the same time.
 
 config LWM2M_LOG_ENCODE_BUFFER_ALLOCATIONS
@@ -494,7 +494,7 @@ endmenu # "Content format supports"
 config LWM2M_ENGINE_DEFAULT_LIFETIME
 	int "LWM2M engine default server connection lifetime"
 	default 30
-	range 15 4294967295
+	range 15 $(UINT32_MAX)
 	help
 	  Set the default lifetime (in seconds) for the LwM2M library engine.
 	  This is also a minimum lifetime that client accepts. If server sets lifetime
@@ -503,7 +503,7 @@ config LWM2M_ENGINE_DEFAULT_LIFETIME
 config LWM2M_UPDATE_PERIOD
 	int "LwM2M engine update period"
 	default 0
-	range 0 4294967295
+	range 0 $(UINT32_MAX)
 	help
 	  Time period after the previous update or registration when to send the next update message.
 	  This allows modifying lifetime without affecting the update period.
@@ -513,7 +513,7 @@ config LWM2M_UPDATE_PERIOD
 config LWM2M_SECONDS_TO_UPDATE_EARLY
 	int "LWM2M Registration Update transmission time before timeout"
 	default 10
-	range 1 4294967295
+	range 1 $(UINT32_MAX)
 	help
 	  Time in seconds before the registration timeout, when the LWM2M
 	  Registration Update is sent by the engine. In networks with large
@@ -715,13 +715,5 @@ endif # LWM2M_GATEWAY_OBJ_SUPPORT
 source "subsys/net/lib/lwm2m/Kconfig.ipso"
 
 source "subsys/net/lib/lwm2m/Kconfig.ucifi"
-
-menu "Deprecated flags"
-config LWM2M_RD_CLIENT_SUPPORT
-	bool "DEPRECATED: client bootstrap/registration state machine"
-	select DEPRECATED
-	help
-	  Deprecated flag. RD state machine is always part of engine. It cannot be disabled.
-endmenu # "Deprecated flags"
 
 endif # LWM2M

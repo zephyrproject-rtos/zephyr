@@ -26,6 +26,7 @@ config FS_FATFS_READ_ONLY
 
 config FS_FATFS_MKFS
 	bool "mkfs support for FAT FS"
+	depends on !FS_FATFS_READ_ONLY
 	default y if FILE_SYSTEM_MKFS
 	help
 	  Adds code for creating disks with FAT file system.
@@ -88,6 +89,30 @@ config FS_FATFS_NUM_DIRS
 	  at compile-time.
 	  This affects use of fs_opendir on FAT type mounted file systems.
 
+config FS_FATFS_HAS_RTC
+	bool "Timestamping support"
+	help
+	  Enable file system timestamping instead of using a hardcoded date
+	  for all operations. Requires an application supplied implementation
+	  of `get_fattime`. Format of the uint32_t bits are as follows:
+	    31:25 = Year from 1980
+	    24:21 = Month (1..12)
+	    20:16 = Day of month (1..31)
+	    15:11 = Hour (0..23)
+	    10: 5 = Minute (0..59)
+	     4: 0 = Seconds/2 (0..29)
+
+config FS_FATFS_EXTRA_NATIVE_API
+	bool "Additional native API functions"
+	help
+	  Enable the following additional native API functions that do not have
+	  an equivalent in the Zephyr VFS API:
+	   * `f_getlabel`
+	   * `f_setlabel`
+	   * `f_expand`
+	   * `f_findfirst`
+	   * `f_findnext`
+
 config FS_FATFS_LFN
 	bool "Long filenames (LFN)"
 	help
@@ -135,8 +160,8 @@ config FS_FATFS_FF_USE_LFN
 
 config FS_FATFS_MAX_LFN
 	int "Max filename length"
-	range 12 255
-	default 255
+	range 12 $(UINT8_MAX)
+	default $(UINT8_MAX)
 	help
 	  The working buffer occupies (FS_FATFS_MAX_LFN + 1) * 2 bytes and
 	  additional 608 bytes at exFAT enabled.
@@ -229,6 +254,28 @@ config FS_FATFS_REENTRANT
 	  Enable the FatFs re-entrancy (thread safe) option for file/directory
 	  access for each volume. Will create a zephyr mutex object for each
 	  FatFs volume and a FatFs system mutex.
+
+config FS_FATFS_LBA64
+	bool "Support for 64-bit LBA"
+	depends on FS_FATFS_EXFAT
+	help
+	  This option enables support for 64-bit LBA, which also
+	  enables GPT support.
+
+config FS_FATFS_MULTI_PARTITION
+	bool "Support for multiple volumes on the physical drive"
+	help
+	  When this function is enabled, each logical drive number can
+	  be bound to arbitrary physical drive and partition listed
+	  in the VolToPart[] of the fatfs module. The VolToPart[] is expected to be
+	  provided by Zephyr application.
+	  The mount points have to be numbered in this case.
+	  For example, 2 FAT partition on SD disk (3) in terms of Zephyr:
+	    {3, 1} - mount point "/0:"
+	    {3, 2} - mount point "/1:"
+	  When disabled (default), each logical drive number is bound to the same
+	  physical drive number and only an FAT volume found on the physical drive
+	  will be mounted.
 
 endmenu
 

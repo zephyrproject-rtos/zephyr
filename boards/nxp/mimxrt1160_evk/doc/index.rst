@@ -1,7 +1,4 @@
-.. _mimxrt1160_evk:
-
-NXP MIMXRT1160-EVK
-##################
+.. zephyr:board:: mimxrt1160_evk
 
 Overview
 ********
@@ -10,10 +7,6 @@ The dual core i.MX RT1160 runs on the Cortex-M7 core at 600 MHz and on the
 Cortex-M4 at 240 MHz. The i.MX RT1160 MCU offers support over a wide
 temperature range and is qualified for consumer, industrial and automotive
 markets.
-
-.. image:: mimxrt1160_evk.jpg
-   :align: center
-   :alt: MIMXRT1160-EVK
 
 Hardware
 ********
@@ -100,7 +93,7 @@ Supported Features
 
 The mimxrt1160_evk board configuration supports the hardware features listed
 below.  For additional features not yet supported, please also refer to the
-:ref:`mimxrt1170_evk` , which is the superset board in NXP's i.MX RT11xx family.
+:zephyr:board:`mimxrt1170_evk` , which is the superset board in NXP's i.MX RT11xx family.
 NXP prioritizes enabling the superset board with NXP's Full Platform Support for
 Zephyr.  Therefore, the mimxrt1170_evk board may have additional features
 already supported, which can also be re-used on this mimxrt1160_evk board:
@@ -144,6 +137,11 @@ already supported, which can also be re-used on this mimxrt1160_evk board:
 | FLEXSPI   | on-chip    | flash programming                   |
 +-----------+------------+-------------------------------------+
 | PIT       | on-chip    | pit                                 |
++-----------+------------+-------------------------------------+
+| DISPLAY   | on-chip    | eLCDIF; MIPI-DSI. Tested with       |
+|           |            | :ref:`rk055hdmipi4m`,               |
+|           |            | :ref:`rk055hdmipi4ma0`,             |
+|           |            | and :ref:`g1120b0mipi` shields      |
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
@@ -309,7 +307,7 @@ etc.):
 Flashing
 ========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 Before power on the board, make sure SW1 is set to 0001b
 
@@ -330,7 +328,7 @@ see the following message in the terminal:
 Debugging
 =========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

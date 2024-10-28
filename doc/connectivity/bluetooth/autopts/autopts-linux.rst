@@ -234,7 +234,7 @@ Clone auto-pts project:
 
 .. code-block::
 
-    git clone https://github.com/intel/auto-pts.git
+    git clone https://github.com/auto-pts/auto-pts.git
 
 
 Install socat, that is used to transfer BTP data stream from UART's tty file:
@@ -257,7 +257,7 @@ In Git Bash, clone auto-pts project repo:
 
 .. code-block::
 
-    git clone https://github.com/intel/auto-pts.git
+    git clone https://github.com/auto-pts/auto-pts.git
 
 Install required python modules:
 

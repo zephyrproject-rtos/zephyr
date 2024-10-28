@@ -9,7 +9,7 @@ config OSDP_NUM_CONNECTED_PD
 	default 1
 	range 1 126
 	help
-	  In PD mode, number of connected PDs is is always 1 and cannot
+	  In PD mode, number of connected PDs is always 1 and cannot
 	  be configured.
 
 config OSDP_PD_ADDRESS_LIST
@@ -48,7 +48,7 @@ config OSDP_MASTER_KEY
 	string "Secure Channel Master Key"
 	default "NONE"
 	help
-	  Hexadecimal string representation of the the 16 byte OSDP Secure Channel
+	  Hexadecimal string representation of the 16 byte OSDP Secure Channel
 	  master Key. This is a mandatory key when secure channel is enabled.
 
 endif # OSDP_SC_ENABLED

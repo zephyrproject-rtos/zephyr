@@ -327,11 +327,6 @@ config HAS_MCUX_OS_TIMER
 	help
 	  Set if the OS timer is used as a kernel timer on the SoC.
 
-config HAS_MCUX_ACMP
-	bool
-	help
-	  Set if the ACMP module is present on the SoC.
-
 config HAS_MCUX_PWT
 	bool
 	help
@@ -369,14 +364,26 @@ config HAS_MCUX_XBARA
 	help
 	  Set if the XBARA module is present on the SoC.
 
+config HAS_NXP_MONOLITHIC_BT
+	bool
+	help
+	  Set if the platform supports the monolithic build for BT applications.
+
 config NXP_FW_LOADER
 	bool "Include firmware loader component"
 	help
 	   The firmware loader is used to load firmwares to embedded tranceivers.
 	   It is needed to enable connectivity features.
 
+config NXP_MONOLITHIC_WIFI
+	bool "WiFi firmware monolithic build"
+	help
+	   If enabled, the WiFi firmware used by the device will be linked with the
+	   application directly.
+
 config NXP_MONOLITHIC_BT
 	bool "BT firmware monolithic build"
+	depends on HAS_NXP_MONOLITHIC_BT
 	help
 	   If enabled, the BT firmware used by the device will be linked with the
 	   application directly.

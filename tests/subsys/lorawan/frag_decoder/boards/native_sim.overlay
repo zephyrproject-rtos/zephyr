@@ -9,9 +9,9 @@
 #include <zephyr/dt-bindings/lora/sx126x.h>
 
 / {
-        chosen {
-                zephyr,code-partition = &slot0_partition;
-        };
+	chosen {
+		zephyr,code-partition = &slot0_partition;
+	};
 
 	aliases {
 		lora0 = &lora;

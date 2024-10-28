@@ -11,6 +11,7 @@ config SOC_SERIES_NIOSV
 	select RISCV_ISA_EXT_A
 	select RISCV_ISA_EXT_ZICSR
 	select RISCV_ISA_EXT_ZIFENCEI
+	imply XIP
 
 config SOC_NIOSV_M
 	help

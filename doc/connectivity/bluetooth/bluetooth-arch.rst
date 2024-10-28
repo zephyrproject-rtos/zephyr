@@ -97,9 +97,9 @@ BLE-enabled builds that can be produced from the Zephyr project codebase:
   the Link Layer and a special application. This application is different
   depending on the physical transport chosen for HCI:
 
-  * :ref:`hci_uart <bluetooth-hci-uart-sample>`
-  * :ref:`hci_usb <bluetooth-hci-usb-sample>`
-  * :ref:`hci_spi <bluetooth-hci-spi-sample>`
+  * :zephyr:code-sample:`bluetooth_hci_uart`
+  * :zephyr:code-sample:`bluetooth_hci_usb`
+  * :zephyr:code-sample:`bluetooth_hci_spi`
 
   This application acts as a bridge between the UART, SPI or USB peripherals and
   the Controller subsystem, listening for HCI commands, sending application data
@@ -160,8 +160,8 @@ must be built with different configurations, yielding two separate images that
 must be programmed into each of the chips respectively. The Host build image
 contains the application, the BLE Host and the selected HCI driver (UART or
 SPI), while the Controller build runs either the
-:ref:`hci_uart <bluetooth-hci-uart-sample>`, or the
-:ref:`hci_spi <bluetooth-hci-spi-sample>` app to provide an interface to
+:zephyr:code-sample:`bluetooth_hci_uart`, or the
+:zephyr:code-sample:`bluetooth_hci_spi` app to provide an interface to
 the BLE Controller.
 
 This configuration is not limited to using a Zephyr OS Host, as the right side
@@ -197,7 +197,7 @@ The stack is split up as follows in the source tree:
   have their own drivers.
 
 ``samples/bluetooth/``
-  :ref:`Sample Bluetooth code <bluetooth-samples>`. This is a good reference to
+  :zephyr:code-sample-category:`Sample Bluetooth code <bluetooth>`. This is a good reference to
   get started with Bluetooth application development.
 
 ``tests/bluetooth/``

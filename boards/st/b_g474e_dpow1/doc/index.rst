@@ -1,7 +1,4 @@
-.. _b_g474e_dpow1_board:
-
-ST B-G474E-DPOW1 Discovery
-##########################
+.. zephyr:board:: b_g474e_dpow1
 
 Overview
 ********
@@ -34,14 +31,11 @@ the STLINK-V3E debugger and programmer.
 - On-board STLINK-V3E debugger/programmer with USB re-enumeration capability: mass storage,
   Virtual COM port, and debug port
 
-.. image:: img/b_g474e_dpow1.jpg
-   :align: center
-   :alt: B-G474E-DPOW1
-
 More information about the board can be found at the `B-G474E-DPOW1 website`_.
 
 
 More information about STM32G474RE can be found here:
+
 - `G474RE on www.st.com`_
 - `STM32G4 reference manual`_
 
@@ -104,6 +98,8 @@ For more details please refer to `B-G474E-DPOW1 Discovery board User Manual`_.
 Programming and Debugging
 *************************
 
+The B-G474E-DPOW1 Discovery board includes an ST-LINK/V3E embedded debug tool interface.
+
 Applications for the ``b_g474e_dpow1`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -111,7 +107,8 @@ flashed in the usual way (see :ref:`build_an_application` and
 Flashing
 ========
 
-The B-G474E-DPOW1 Discovery board includes an ST-LINK/V3E embedded debug tool interface.
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
 
 .. code-block:: console
 
@@ -133,7 +130,7 @@ Debugging
 =========
 
 You can debug an application in the usual way. Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -157,3 +154,6 @@ References
 
 .. _G474RE on www.st.com:
    https://www.st.com/en/microcontrollers-microprocessors/stm32g474re.html
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

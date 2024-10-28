@@ -57,6 +57,15 @@ extern "C" {
 #	error Missing required predefined macros for BITS_PER_LONG calculation
 #endif
 
+/** Number of bits in a byte. */
+#define BITS_PER_BYTE (__CHAR_BIT__)
+
+/** Number of bits in a nibble. */
+#define BITS_PER_NIBBLE (__CHAR_BIT__ / 2)
+
+/** Number of nibbles in a byte. */
+#define NIBBLES_PER_BYTE (BITS_PER_BYTE / BITS_PER_NIBBLE)
+
 /** Number of bits in a long int. */
 #define BITS_PER_LONG	(__CHAR_BIT__ * __SIZEOF_LONG__)
 
@@ -76,22 +85,6 @@ extern "C" {
  */
 #define GENMASK64(h, l) \
 	(((~0ULL) - (1ULL << (l)) + 1) & (~0ULL >> (BITS_PER_LONG_LONG - 1 - (h))))
-
-/** @brief Extract the Least Significant Bit from @p value. */
-#define LSB_GET(value) ((value) & -(value))
-
-/**
- * @brief Extract a bitfield element from @p value corresponding to
- *	  the field mask @p mask.
- */
-#define FIELD_GET(mask, value)  (((value) & (mask)) / LSB_GET(mask))
-
-/**
- * @brief Prepare a bitfield element using @p value with @p mask representing
- *	  its field position and width. The result should be combined
- *	  with other fields using a logical OR.
- */
-#define FIELD_PREP(mask, value) (((value) * LSB_GET(mask)) & (mask))
 
 /** @brief 0 if @p cond is true-ish; causes a compile error otherwise. */
 #define ZERO_OR_COMPILE_ERROR(cond) ((int) sizeof(char[1 - 2 * !(cond)]) - 1)
@@ -128,6 +121,29 @@ extern "C" {
 	((size_t) (IS_ARRAY(array) + (sizeof(array) / sizeof((array)[0]))))
 
 #endif /* __cplusplus */
+
+/**
+ * @brief Declare a flexible array member.
+ *
+ * This macro declares a flexible array member in a struct. The member
+ * is named @p name and has type @p type.
+ *
+ * Since C99, flexible arrays are part of the C standard, but for historical
+ * reasons many places still use an older GNU extension that is declare
+ * zero length arrays.
+ *
+ * Although zero length arrays are flexible arrays, we can't blindly
+ * replace [0] with [] because of some syntax limitations. This macro
+ * workaround these limitations.
+ *
+ * It is specially useful for cases where flexible arrays are
+ * used in unions or are not the last element in the struct.
+ */
+#define FLEXIBLE_ARRAY_DECLARE(type, name) \
+	struct { \
+		struct { } __unused_##name; \
+		type name[]; \
+	}
 
 /**
  * @brief Whether @p ptr is an element of @p array
@@ -354,13 +370,6 @@ extern "C" {
 	((((n) < 0) ^ ((d) < 0)) ? ((n) - ((d) / 2)) / (d) : \
 	((n) + ((d) / 2)) / (d))
 
-/**
- * @brief Ceiling function applied to @p numerator / @p divider as a fraction.
- * @deprecated Use DIV_ROUND_UP() instead.
- */
-#define ceiling_fraction(numerator, divider) __DEPRECATED_MACRO \
-	DIV_ROUND_UP(numerator, divider)
-
 #ifndef MAX
 /**
  * @brief Obtain the maximum of two values.
@@ -504,8 +513,8 @@ static inline void bytecpy(void *dst, const void *src, size_t size)
  * Swap @a size bytes between memory regions @a a and @a b. This is
  * guaranteed to be done byte by byte.
  *
- * @param a Pointer to the the first memory region.
- * @param b Pointer to the the second memory region.
+ * @param a Pointer to the first memory region.
+ * @param b Pointer to the second memory region.
  * @param size The number of bytes to swap.
  */
 static inline void byteswp(void *a, void *b, size_t size)
@@ -722,7 +731,7 @@ char *utf8_lcpy(char *dst, const char *src, size_t n);
  * @brief Determine if a buffer exceeds highest address
  *
  * This macro determines if a buffer identified by a starting address @a addr
- * and length @a buflen spans a region of memory that goes beond the highest
+ * and length @a buflen spans a region of memory that goes beyond the highest
  * possible address (thereby resulting in a pointer overflow).
  *
  * @param addr Buffer starting address

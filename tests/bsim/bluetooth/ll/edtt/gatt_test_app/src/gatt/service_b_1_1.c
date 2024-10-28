@@ -95,10 +95,12 @@ static ssize_t write_value_v4(struct bt_conn *conn,
 {
 	uint8_t *value = attr->user_data;
 
-	if (offset >= sizeof(value_v4_value))
+	if (offset >= sizeof(value_v4_value)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
-	if (offset + len > sizeof(value_v4_value))
+	}
+	if (offset + len > sizeof(value_v4_value)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+	}
 
 	memcpy(value + offset, buf, len);
 
@@ -147,10 +149,12 @@ static ssize_t write_value_v4_1(struct bt_conn *conn,
 {
 	uint8_t *value = attr->user_data;
 
-	if (offset >= sizeof(value_v4_1_value))
+	if (offset >= sizeof(value_v4_1_value)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
-	if (offset + len > sizeof(value_v4_1_value))
+	}
+	if (offset + len > sizeof(value_v4_1_value)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+	}
 
 	memcpy(value + offset, buf, len);
 
@@ -204,10 +208,12 @@ static ssize_t write_server_cha_con(struct bt_conn *conn,
 	uint16_t *value = attr->user_data;
 	uint16_t server_cha_con_conv = sys_cpu_to_le16(*value);
 
-	if (offset >= sizeof(server_cha_con_value))
+	if (offset >= sizeof(server_cha_con_value)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
-	if (offset + len > sizeof(server_cha_con_value))
+	}
+	if (offset + len > sizeof(server_cha_con_value)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+	}
 
 	memcpy((uint8_t *)&server_cha_con_conv + offset, buf, len);
 

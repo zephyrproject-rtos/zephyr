@@ -36,8 +36,9 @@ static enum FPGA_status eos_s3_fpga_get_status(const struct device *dev)
 
 	if (PMU->FB_STATUS == FPGA_STATUS_ACTIVE) {
 		return FPGA_STATUS_ACTIVE;
-	} else
+	} else {
 		return FPGA_STATUS_INACTIVE;
+	}
 }
 
 static const char *eos_s3_fpga_get_info(const struct device *dev)

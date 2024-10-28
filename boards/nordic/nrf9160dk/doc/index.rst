@@ -214,7 +214,7 @@ found in :ref:`nordic_segger_flashing`. Then build and flash
 applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 First, run your favorite terminal program to listen for output.
 
@@ -346,7 +346,7 @@ applications as usual (see :ref:`build_an_application` and
 
 Remember to set the PROG/DEBUG switch on the DK to nRF52.
 
-See the following example for the :ref:`hello_world` application.
+See the following example for the :zephyr:code-sample:`hello_world` application.
 
 First, run your favorite terminal program to listen for output.
 

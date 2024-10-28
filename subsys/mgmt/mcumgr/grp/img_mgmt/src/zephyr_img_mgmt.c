@@ -186,7 +186,7 @@ img_mgmt_flash_area_id(int slot)
  * find any unused and non-active available (auto-select); any other positive
  * value is direct (slot + 1) to be used; if checks are positive, then area
  * ID is returned, -1 is returned otherwise.
- * Note that auto-selection is performed only between two two first slots.
+ * Note that auto-selection is performed only between the two first slots.
  */
 static int img_mgmt_get_unused_slot_area_id(int slot)
 {
@@ -570,6 +570,7 @@ int img_mgmt_upload_inspect(const struct img_mgmt_upload_req *req,
 	(defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_WITHOUT_SCRATCH) ||	\
 	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_SCRATCH) ||		\
 	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_OVERWRITE_ONLY) ||		\
+	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD) ||			\
 	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP) ||			\
 	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT)) &&	\
 	CONFIG_MCUBOOT_UPDATE_FOOTER_SIZE > 0
@@ -645,6 +646,7 @@ int img_mgmt_upload_inspect(const struct img_mgmt_upload_req *req,
 	(defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_WITHOUT_SCRATCH) ||	\
 	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_SCRATCH) ||		\
 	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_OVERWRITE_ONLY) ||		\
+	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD) ||			\
 	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP) ||			\
 	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT)) &&	\
 	CONFIG_MCUBOOT_UPDATE_FOOTER_SIZE > 0

@@ -19,8 +19,8 @@ Working Group Membership Eligibility
 - Each working group shall have a team of members who are actively involved
   in its activities and decision-making processes.
 - It is expected that WG membership shall be **open to all Zephyr project
-  Contributors**; however, working groups may impose restrictions such as the
-  number of participants from a single company.
+  :ref:`Collaborators <collaborator>`**; however, working groups may impose
+  restrictions such as the number of participants from a single company.
 - All TSC members are eligible to join a working group as members, part of
   the responsibilities being a TSC member.
 - The minimal number of members may vary depending on the complexity of the
@@ -31,7 +31,8 @@ Working Group Membership Eligibility
   designed to ensure effectiveness, productivity, and inclusivity. While the
   optimal size of a working group can vary depending on the specific context and
   scope of its activities.
-- Participation in WG meetings and discussions is open to all project contributors.
+- Participation in WG meetings and discussions is open to all project
+  :ref:`contributors <contributor>`.
 
 Working Group Chair / Co-chair
 ++++++++++++++++++++++++++++++

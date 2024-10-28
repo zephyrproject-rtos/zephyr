@@ -1,7 +1,4 @@
-.. _robokit1:
-
-TDK RoboKit 1
-#############
+.. zephyr:board:: robokit1
 
 Overview
 ********
@@ -11,10 +8,6 @@ number of small ground robotics useful sensors including chirp sensors for time 
 (e.g. ultrasonic obstacle detection).
 
 It pairs a 300MHz Cortex-M7 ATSAME70Q21 with an array of TDK sensors and pin headers useful for robotics.
-
-.. image:: img/tdk_robokit1.jpg
-     :align: center
-     :alt: TDK RoboKit1
 
 Hardware
 ********
@@ -153,7 +146,7 @@ Flashing
 
 #. Connect the TDK RoboKit1 board to your host computer using the
    USB debug port (USB1), USB2 for a serial console, and remaining micro USB for
-   power. Then build and flash the :ref:`hello_world` application.
+   power. Then build and flash the :zephyr:code-sample:`hello_world` application.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
@@ -166,7 +159,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

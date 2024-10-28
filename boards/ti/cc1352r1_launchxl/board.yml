@@ -1,5 +1,6 @@
 board:
   name: cc1352r1_launchxl
+  full_name: CC1352R1 LaunchXL
   vendor: ti
   socs:
   - name: cc1352r

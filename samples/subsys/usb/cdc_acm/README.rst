@@ -1,6 +1,6 @@
 .. zephyr:code-sample:: usb-cdc-acm
    :name: USB CDC-ACM
-   :relevant-api: usbd_api _usb_device_core_api
+   :relevant-api: usbd_api _usb_device_core_api uart_interface
 
    Use USB CDC-ACM driver to implement a serial port echo.
 

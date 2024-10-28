@@ -6,12 +6,13 @@ RaspberryPi Pico to UNO FlexyPin Adapter
 Overview
 ********
 
-Raspberry Pi Pico to Uno `FlexyPin Adapter` is a converter-PCB to Arduino UNO form-factor
-from Raspberry Pi Pico that is released in Open Source Hardware.
-This board design to use with `FlexyPin`.
+The Raspberry Pi Pico to Uno FlexyPin Adapter is an open-source hardware converter PCB that adapts
+the Raspberry Pi Pico to the Arduino UNO form factor
+This board is designed to be use with FlexyPin connector pins.
 The FlexyPin holds Pico and contacts to castellated through-hole.
-With simple soldering, it can also be used as a board to convert the RapsberryPi Pico
-o the Arduino UNO form factor.
+
+With simple soldering, it can also be used as a board to convert the Rapsberry Pi Pico
+to the Arduino UNO form factor.
 
 .. image:: img/rpi_pico_uno_flexypin.png
      :align: center
@@ -71,7 +72,7 @@ Pins Assignment of the RaspberryPi Pico to UNO FlexyPin Adapter
 Programming
 ***********
 
-Set ``-DSHIELD=rpi_pico_uno_flexypin`` when you invoke ``west build``.
+Set ``--shield rpi_pico_uno_flexypin`` when you invoke ``west build``.
 This shield is just a converter, so it is usually used with other Arduino shield.
 
 For example,
@@ -79,7 +80,7 @@ For example,
 .. zephyr-app-commands::
    :zephyr-app:  samples/net/wifi
    :board: rpi_pico
-   :shield: 'rpi_pico_uno_flexypin;esp_8266_arduino'
+   :shield: rpi_pico_uno_flexypin,esp_8266_arduino
    :goals: build
 
 References

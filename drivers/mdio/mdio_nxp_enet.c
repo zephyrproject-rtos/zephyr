@@ -21,7 +21,6 @@ struct nxp_enet_mdio_config {
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 	uint32_t mdc_freq;
-	uint16_t timeout;
 	bool disable_preamble;
 };
 
@@ -41,42 +40,23 @@ struct nxp_enet_mdio_data {
  */
 static int nxp_enet_mdio_wait_xfer(const struct device *dev)
 {
-	const struct nxp_enet_mdio_config *config = dev->config;
 	struct nxp_enet_mdio_data *data = dev->data;
-	ENET_Type *base = data->base;
-	int ret = 0;
 
 	/* This function will not make sense from IRQ context */
 	if (k_is_in_isr()) {
 		return -EWOULDBLOCK;
 	}
 
-	/* Enable the interrupt */
-	base->EIMR |= ENET_EIMR_MII_MASK;
-
-	/* Wait for operation to complete or time out */
 	if (!data->interrupt_up) {
-		/* In the case where the interrupt has not been enabled yet because
-		 * ethernet driver has not initiaized, just do a busy wait
-		 */
-		k_busy_wait(USEC_PER_MSEC * config->timeout);
-		if (base->EIR & ENET_EIR_MII_MASK) {
-			ret = 0;
-		} else {
-			ret = -ETIMEDOUT;
-		}
-	} else if (k_sem_take(&data->mdio_sem, K_MSEC(config->timeout))) {
-		/* Interrupt was enabled but did not occur in time */
-		ret = -ETIMEDOUT;
-	} else if (base->EIR & ENET_EIR_MII_MASK) {
-		/* Interrupt happened meaning mdio transaction completed */
-		ret = 0;
-	} else {
-		/* No idea what happened */
-		ret = -EIO;
+		/* If the interrupt is not available to use yet, just busy wait */
+		k_busy_wait(CONFIG_MDIO_NXP_ENET_TIMEOUT);
+		k_sem_give(&data->mdio_sem);
 	}
 
-	return ret;
+	/* Wait for the MDIO transaction to finish or time out */
+	k_sem_take(&data->mdio_sem, K_USEC(CONFIG_MDIO_NXP_ENET_TIMEOUT));
+
+	return 0;
 }
 
 /* MDIO Read API implementation */
@@ -93,7 +73,7 @@ static int nxp_enet_mdio_read(const struct device *dev,
 	 * Clear the bit (W1C) that indicates MDIO transfer is ready to
 	 * prepare to wait for it to be set once this read is done
 	 */
-	data->base->EIR |= ENET_EIR_MII_MASK;
+	data->base->EIR = ENET_EIR_MII_MASK;
 
 	/*
 	 * Write MDIO frame to MII management register which will
@@ -121,7 +101,7 @@ static int nxp_enet_mdio_read(const struct device *dev,
 	*read_data = (data->base->MMFR & ENET_MMFR_DATA_MASK) >> ENET_MMFR_DATA_SHIFT;
 
 	/* Clear the same bit as before because the event has been handled */
-	data->base->EIR |= ENET_EIR_MII_MASK;
+	data->base->EIR = ENET_EIR_MII_MASK;
 
 	/* This MDIO interaction is finished */
 	(void)k_mutex_unlock(&data->mdio_mutex);
@@ -143,7 +123,7 @@ static int nxp_enet_mdio_write(const struct device *dev,
 	 * Clear the bit (W1C) that indicates MDIO transfer is ready to
 	 * prepare to wait for it to be set once this write is done
 	 */
-	data->base->EIR |= ENET_EIR_MII_MASK;
+	data->base->EIR = ENET_EIR_MII_MASK;
 
 	/*
 	 * Write MDIO frame to MII management register which will
@@ -169,7 +149,7 @@ static int nxp_enet_mdio_write(const struct device *dev,
 	}
 
 	/* Clear the same bit as before because the event has been handled */
-	data->base->EIR |= ENET_EIR_MII_MASK;
+	data->base->EIR = ENET_EIR_MII_MASK;
 
 	/* This MDIO interaction is finished */
 	(void)k_mutex_unlock(&data->mdio_mutex);
@@ -186,11 +166,9 @@ static void nxp_enet_mdio_isr_cb(const struct device *dev)
 {
 	struct nxp_enet_mdio_data *data = dev->data;
 
-	/* Signal that operation finished */
-	k_sem_give(&data->mdio_sem);
+	data->base->EIR = ENET_EIR_MII_MASK;
 
-	/* Disable the interrupt */
-	data->base->EIMR &= ~ENET_EIMR_MII_MASK;
+	k_sem_give(&data->mdio_sem);
 }
 
 static void nxp_enet_mdio_post_module_reset_init(const struct device *dev)
@@ -226,7 +204,9 @@ void nxp_enet_mdio_callback(const struct device *dev,
 		nxp_enet_mdio_isr_cb(dev);
 		break;
 	case NXP_ENET_INTERRUPT_ENABLED:
+		/* IRQ was enabled in NVIC, now enable in enet */
 		data->interrupt_up = true;
+		data->base->EIMR |= ENET_EIMR_MII_MASK;
 		break;
 	default:
 		break;
@@ -268,7 +248,6 @@ static int nxp_enet_mdio_init(const struct device *dev)
 	static const struct nxp_enet_mdio_config nxp_enet_mdio_cfg_##inst = {		\
 		.module_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),			\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),				\
-		.timeout = CONFIG_MDIO_NXP_ENET_TIMEOUT,				\
 		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_INST_PARENT(inst))),	\
 		.clock_subsys = (void *) DT_CLOCKS_CELL_BY_IDX(				\
 							DT_INST_PARENT(inst), 0, name),	\

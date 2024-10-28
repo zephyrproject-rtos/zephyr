@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(net_core, CONFIG_NET_CORE_LOG_LEVEL);
 
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
+#include <zephyr/tracing/tracing.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/linker/sections.h>
 #include <string.h>
@@ -59,6 +60,7 @@ LOG_MODULE_REGISTER(net_core, CONFIG_NET_CORE_LOG_LEVEL);
 
 #include "net_stats.h"
 
+#if defined(CONFIG_NET_NATIVE)
 static inline enum net_verdict process_data(struct net_pkt *pkt,
 					    bool is_loopback)
 {
@@ -187,22 +189,6 @@ static void net_post_init(void)
 #endif
 }
 
-static void init_rx_queues(void)
-{
-	/* Starting TX side. The ordering is important here and the TX
-	 * can only be started when RX side is ready to receive packets.
-	 */
-	net_if_init();
-
-	net_tc_rx_init();
-
-	/* This will take the interface up and start everything. */
-	net_if_post_init();
-
-	/* Things to init after network interface is working */
-	net_post_init();
-}
-
 static inline void copy_ll_addr(struct net_pkt *pkt)
 {
 	memcpy(net_pkt_lladdr_src(pkt), net_pkt_lladdr_if(pkt),
@@ -255,12 +241,13 @@ static inline int check_ip(struct net_pkt *pkt)
 		}
 
 		/* If the destination address is our own, then route it
-		 * back to us.
+		 * back to us (if it is not already forwarded).
 		 */
-		if (net_ipv6_is_addr_loopback(
+		if ((net_ipv6_is_addr_loopback(
 				(struct in6_addr *)NET_IPV6_HDR(pkt)->dst) ||
 		    net_ipv6_is_my_addr(
-				(struct in6_addr *)NET_IPV6_HDR(pkt)->dst)) {
+				(struct in6_addr *)NET_IPV6_HDR(pkt)->dst)) &&
+		    !net_pkt_forwarding(pkt)) {
 			struct in6_addr addr;
 
 			/* Swap the addresses so that in receiving side
@@ -378,13 +365,18 @@ drop:
 int net_send_data(struct net_pkt *pkt)
 {
 	int status;
+	int ret;
+
+	SYS_PORT_TRACING_FUNC_ENTER(net, send_data, pkt);
 
 	if (!pkt || !pkt->frags) {
-		return -ENODATA;
+		ret = -ENODATA;
+		goto err;
 	}
 
 	if (!net_pkt_iface(pkt)) {
-		return -EINVAL;
+		ret = -EINVAL;
+		goto err;
 	}
 
 	net_pkt_trim_buffer(pkt);
@@ -398,7 +390,8 @@ int net_send_data(struct net_pkt *pkt)
 		 * we just silently drop the packet by returning 0.
 		 */
 		if (status == -ENOMSG) {
-			return 0;
+			ret = 0;
+			goto err;
 		}
 
 		return status;
@@ -408,11 +401,13 @@ int net_send_data(struct net_pkt *pkt)
 		 */
 		NET_DBG("Loopback pkt %p back to us", pkt);
 		processing_data(pkt, true);
-		return 0;
+		ret = 0;
+		goto err;
 	}
 
 	if (net_if_send_data(net_pkt_iface(pkt), pkt) == NET_DROP) {
-		return -EIO;
+		ret = -EIO;
+		goto err;
 	}
 
 	if (IS_ENABLED(CONFIG_NET_STATISTICS)) {
@@ -426,7 +421,12 @@ int net_send_data(struct net_pkt *pkt)
 		}
 	}
 
-	return 0;
+	ret = 0;
+
+err:
+	SYS_PORT_TRACING_FUNC_EXIT(net, send_data, pkt, ret);
+
+	return ret;
 }
 
 static void net_rx(struct net_if *iface, struct net_pkt *pkt)
@@ -488,16 +488,23 @@ static void net_queue_rx(struct net_if *iface, struct net_pkt *pkt)
 /* Called by driver when a packet has been received */
 int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 {
+	int ret;
+
+	SYS_PORT_TRACING_FUNC_ENTER(net, recv_data, iface, pkt);
+
 	if (!pkt || !iface) {
-		return -EINVAL;
+		ret = -EINVAL;
+		goto err;
 	}
 
 	if (net_pkt_is_empty(pkt)) {
-		return -ENODATA;
+		ret = -ENODATA;
+		goto err;
 	}
 
 	if (!net_if_flag_is_set(iface, NET_IF_UP)) {
-		return -ENETDOWN;
+		ret = -ENETDOWN;
+		goto err;
 	}
 
 	net_pkt_set_overwrite(pkt, true);
@@ -519,7 +526,12 @@ int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 		net_queue_rx(iface, pkt);
 	}
 
-	return 0;
+	ret = 0;
+
+err:
+	SYS_PORT_TRACING_FUNC_EXIT(net, recv_data, iface, pkt, ret);
+
+	return ret;
 }
 
 static inline void l3_init(void)
@@ -543,6 +555,39 @@ static inline void l3_init(void)
 	net_route_init();
 
 	NET_DBG("Network L3 init done");
+}
+#else /* CONFIG_NET_NATIVE */
+#define l3_init(...)
+#define net_post_init(...)
+int net_send_data(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return -ENOTSUP;
+}
+int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(pkt);
+
+	return -ENOTSUP;
+}
+#endif /* CONFIG_NET_NATIVE */
+
+static void init_rx_queues(void)
+{
+	/* Starting TX side. The ordering is important here and the TX
+	 * can only be started when RX side is ready to receive packets.
+	 */
+	net_if_init();
+
+	net_tc_rx_init();
+
+	/* This will take the interface up and start everything. */
+	net_if_post_init();
+
+	/* Things to init after network interface is working */
+	net_post_init();
 }
 
 static inline int services_init(void)

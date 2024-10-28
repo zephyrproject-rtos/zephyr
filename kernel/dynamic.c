@@ -169,7 +169,7 @@ static inline int z_vrfy_k_thread_stack_free(k_thread_stack_t *stack)
 	/* The thread stack object must not be in initialized state.
 	 *
 	 * Thread stack objects are initialized when the thread is created
-	 * and de-initialized whent the thread is destroyed. Since we can't
+	 * and de-initialized when the thread is destroyed. Since we can't
 	 * free a stack that is in use, we have to check that the caller
 	 * has access to the object but that it is not in use anymore.
 	 */

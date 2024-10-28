@@ -1,7 +1,4 @@
-.. _cy8ckit_062s4:
-
-[INFINEON PSoC 62S4 Pioneer Kit]
-################################
+.. zephyr:board:: cy8ckit_062s4
 
 Overview
 ********
@@ -15,21 +12,14 @@ programmer/debugger (KitProg3), a 512-Mbit Quad SPI NOR flash, a micro-B connect
 interface, a thermistor, an ambient light sensor, a 5-segment CapSense™ slider, two CapSense™ buttons, two
 user LEDs, and a push button. The board supports operating voltages from 1.8 V to 3.3 V for PSoC™ 6 MCU.
 
-.. figure::img/cy8ckit_062s4.png
-   :width: 800px
-   :align: center
-   :alt: Board Name
-
-   Board Name (Credit: <owner>)
-
 Hardware
 ********
 
-`CY8CKIT 062S4 Pioneer Kit Website`_
-`CY8CKIT 062S4 Pioneer Kit Guide`_
-`CY8CKIT 062S4 Pioneer Kit Schematic`_
-`CY8CKIT 062S4 Pioneer Kit Technical Reference Manual`_
-`CY8CKIT 062S4 Pioneer Kit Datasheet`_
+* `CY8CKIT 062S4 Pioneer Kit Website`_
+* `CY8CKIT 062S4 Pioneer Kit Guide`_
+* `CY8CKIT 062S4 Pioneer Kit Schematic`_
+* `CY8CKIT 062S4 Pioneer Kit Technical Reference Manual`_
+* `CY8CKIT 062S4 Pioneer Kit Datasheet`_
 
 Supported Features
 ==================
@@ -90,14 +80,18 @@ OpenOCD Installation
 To get the OpenOCD package, it is required that you
 
 1. Download the software ModusToolbox 3.1. https://softwaretools.infineon.com/tools/com.ifx.tb.tool.modustoolbox
-2. Once downloaded add the path to access the Scripts folder provided by ModusToolbox
-   export PATH=$PATH:/path/to/ModusToolbox/tools_3.1/openocd/scripts
+2. Once downloaded add the path to access the Scripts folder provided by ModusToolbox::
+
+      export PATH=$PATH:/path/to/ModusToolbox/tools_3.1/openocd/scripts
+
 3. Add the OpenOCD executable file's path to west flash/debug.
-4. Flash using: west flash --openocd path/to/infineon/openocd/bin/openocd
-5. Debug using: west debug --openocd path/to/infineon/openocd/bin/openocd
+4. Flash using: ``west flash --openocd path/to/infineon/openocd/bin/openocd``
+5. Debug using: ``west debug --openocd path/to/infineon/openocd/bin/openocd``
 
 References
 **********
+
+.. target-notes::
 
 .. _CY8CKIT 062S4 Pioneer Kit Guide:
     https://www.infineon.com/dgdl/Infineon-CY8CKIT_062S4_PSoC62S4_pioneer_kit_guide-UserManual-v01_00-EN.pdf?fileId=8ac78c8c7e7124d1017e962f98992207

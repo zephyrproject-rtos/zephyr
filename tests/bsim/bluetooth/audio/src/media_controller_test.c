@@ -595,7 +595,7 @@ static bool test_verify_media_state_wait_flags(uint8_t expected_state)
 	return true;
 }
 
-/* Helper function to write commands to to the control point, including the
+/* Helper function to write commands to the control point, including the
  * flag handling.
  * Will FAIL on error to send the command.
  * Will WAIT for the required flags before returning.
@@ -1655,7 +1655,7 @@ void test_media_controller_remote_player(void)
 	initialize_bluetooth();
 	initialize_media();
 
-	err = bt_le_adv_start(BT_LE_ADV_CONN_ONE_TIME, ad, AD_SIZE, NULL, 0);
+	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, AD_SIZE, NULL, 0);
 	if (err) {
 		FAIL("Advertising failed to start (err %d)\n", err);
 	}

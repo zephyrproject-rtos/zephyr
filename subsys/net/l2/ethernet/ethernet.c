@@ -166,10 +166,7 @@ static void ethernet_update_rx_stats(struct net_if *iface,
 
 static inline bool eth_is_vlan_tag_stripped(struct net_if *iface)
 {
-	const struct device *dev = net_if_get_device(iface);
-	const struct ethernet_api *api = dev->api;
-
-	return (api->get_capabilities(dev) & ETHERNET_HW_VLAN_TAG_STRIP);
+	return (net_eth_get_hw_capabilities(iface) & ETHERNET_HW_VLAN_TAG_STRIP);
 }
 
 /* Drop packet if it has broadcast destination MAC address but the IP
@@ -199,18 +196,20 @@ static void ethernet_mcast_monitor_cb(struct net_if *iface, const struct net_add
 			.type = ETHERNET_FILTER_TYPE_DST_MAC_ADDRESS,
 		},
 	};
-	const struct device *dev;
-	const struct ethernet_api *api;
+
+	const struct device *dev = net_if_get_device(iface);
+	const struct ethernet_api *api = dev->api;
 
 	/* Make sure we're an ethernet device */
 	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
 		return;
 	}
 
-	dev = net_if_get_device(iface);
-	api = dev->api;
+	if (!(net_eth_get_hw_capabilities(iface) & ETHERNET_HW_FILTERING)) {
+		return;
+	}
 
-	if (!(api->get_capabilities(dev) & ETHERNET_HW_FILTERING) || api->set_config == NULL) {
+	if (!api || !api->set_config) {
 		return;
 	}
 
@@ -254,16 +253,24 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 	}
 
 	if (IS_ENABLED(CONFIG_NET_ETHERNET_BRIDGE) &&
-	    net_eth_iface_is_bridged(ctx)) {
-		net_pkt_set_l2_bridged(pkt, true);
-		net_pkt_lladdr_src(pkt)->addr = hdr->src.addr;
-		net_pkt_lladdr_src(pkt)->len = sizeof(struct net_eth_addr);
-		net_pkt_lladdr_src(pkt)->type = NET_LINK_ETHERNET;
-		net_pkt_lladdr_dst(pkt)->addr = hdr->dst.addr;
-		net_pkt_lladdr_dst(pkt)->len = sizeof(struct net_eth_addr);
-		net_pkt_lladdr_dst(pkt)->type = NET_LINK_ETHERNET;
-		ethernet_update_rx_stats(iface, hdr, net_pkt_get_len(pkt));
-		return net_eth_bridge_input(ctx, pkt);
+	    net_eth_iface_is_bridged(ctx) && !net_pkt_is_l2_bridged(pkt)) {
+		struct net_if *bridge = net_eth_get_bridge(ctx);
+		struct net_pkt *out_pkt;
+
+		out_pkt = net_pkt_clone(pkt, K_NO_WAIT);
+		if (out_pkt == NULL) {
+			goto drop;
+		}
+
+		net_pkt_set_l2_bridged(out_pkt, true);
+		net_pkt_set_iface(out_pkt, bridge);
+		net_pkt_set_orig_iface(out_pkt, iface);
+
+		NET_DBG("Passing pkt %p (orig %p) to bridge %d from %d",
+			out_pkt, pkt, net_if_get_by_iface(bridge),
+			net_if_get_by_iface(iface));
+
+		(void)net_if_queue_tx(bridge, out_pkt);
 	}
 
 	type = ntohs(hdr->type);
@@ -283,6 +290,13 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 			net_pkt_set_iface(pkt,
 					  net_eth_get_vlan_iface(iface,
 						       net_pkt_vlan_tag(pkt)));
+
+			/* If we receive a packet with a VLAN tag, for that we don't
+			 * have a VLAN interface, drop the packet.
+			 */
+			if (net_if_l2(net_pkt_iface(pkt)) == NULL) {
+				goto drop;
+			}
 
 			/* We could call VLAN interface directly but then the
 			 * interface statistics would not get updated so route
@@ -614,19 +628,20 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 		goto error;
 	}
 
-	if (IS_ENABLED(CONFIG_NET_ETHERNET_BRIDGE) &&
-	    net_pkt_is_l2_bridged(pkt)) {
-		net_pkt_cursor_init(pkt);
-		ret = net_l2_send(api->send, net_if_get_device(iface), iface, pkt);
-		if (ret != 0) {
-			eth_stats_update_errors_tx(iface);
-			goto error;
-		}
-		ethernet_update_tx_stats(iface, pkt);
-		ret = net_pkt_get_len(pkt);
-		net_pkt_unref(pkt);
-		return ret;
-	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
+	if (!api->send) {
+		ret = -ENOTSUP;
+		goto error;
+	}
+
+	/* We are trying to send a packet that is from bridge interface,
+	 * so all the bits and pieces should be there (like Ethernet header etc)
+	 * so just send it.
+	 */
+	if (IS_ENABLED(CONFIG_NET_ETHERNET_BRIDGE) && net_pkt_is_l2_bridged(pkt)) {
+		goto send;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4) &&
 	    net_pkt_family(pkt) == AF_INET) {
 		struct net_pkt *tmp;
 
@@ -710,6 +725,28 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 	net_pkt_cursor_init(pkt);
 
 send:
+	if (IS_ENABLED(CONFIG_NET_ETHERNET_BRIDGE) &&
+	    net_eth_iface_is_bridged(ctx) && !net_pkt_is_l2_bridged(pkt)) {
+		struct net_if *bridge = net_eth_get_bridge(ctx);
+		struct net_pkt *out_pkt;
+
+		out_pkt = net_pkt_clone(pkt, K_NO_WAIT);
+		if (out_pkt == NULL) {
+			ret = -ENOMEM;
+			goto error;
+		}
+
+		net_pkt_set_l2_bridged(out_pkt, true);
+		net_pkt_set_iface(out_pkt, bridge);
+		net_pkt_set_orig_iface(out_pkt, iface);
+
+		NET_DBG("Passing pkt %p (orig %p) to bridge %d from %d",
+			out_pkt, pkt, net_if_get_by_iface(bridge),
+			net_if_get_by_iface(iface));
+
+		(void)net_if_queue_tx(bridge, out_pkt);
+	}
+
 	ret = net_l2_send(api->send, net_if_get_device(iface), iface, pkt);
 	if (ret != 0) {
 		eth_stats_update_errors_tx(iface);
@@ -827,6 +864,26 @@ void net_eth_carrier_off(struct net_if *iface)
 	}
 }
 
+const struct device *net_eth_get_phy(struct net_if *iface)
+{
+	const struct device *dev = net_if_get_device(iface);
+	const struct ethernet_api *api = dev->api;
+
+	if (!api) {
+		return NULL;
+	}
+
+	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
+		return NULL;
+	}
+
+	if (!api->get_phy) {
+		return NULL;
+	}
+
+	return api->get_phy(net_if_get_device(iface));
+}
+
 #if defined(CONFIG_PTP_CLOCK)
 const struct device *net_eth_get_ptp_clock(struct net_if *iface)
 {
@@ -841,7 +898,7 @@ const struct device *net_eth_get_ptp_clock(struct net_if *iface)
 		return NULL;
 	}
 
-	if (!(api->get_capabilities(dev) & ETHERNET_PTP)) {
+	if (!(net_eth_get_hw_capabilities(iface) & ETHERNET_PTP)) {
 		return NULL;
 	}
 

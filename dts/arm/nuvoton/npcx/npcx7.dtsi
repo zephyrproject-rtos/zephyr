@@ -19,6 +19,28 @@
 #include "npcx.dtsi"
 
 / {
+	cpus {
+		cpu0: cpu@0 {
+			cpu-power-states = <&suspend_to_idle0 &suspend_to_idle1>;
+		};
+
+		power-states {
+			suspend_to_idle0: suspend-to-idle0 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <0>;
+				min-residency-us = <1000>;
+			};
+
+			suspend_to_idle1: suspend-to-idle1 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <1>;
+				min-residency-us = <201000>;
+			};
+		};
+	};
+
 	def-io-conf-list {
 		pinmux = <&alt0_gpio_no_spip
 			   &alt0_gpio_no_fpip
@@ -58,6 +80,13 @@
 
 	soc {
 		compatible = "nuvoton,npcx7", "nuvoton,npcx", "simple-bus";
+
+		bbram: bb-ram@400af000 {
+			compatible = "nuvoton,npcx-bbram";
+			reg = <0x400af000 0x80
+			       0x400af100 0x1>;
+			reg-names = "memory", "status";
+		};
 
 		/* Specific soc devices in npcx7 series */
 		itims: timer@400bc000 {

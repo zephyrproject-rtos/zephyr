@@ -16,13 +16,14 @@ Commands
 
    bap --help
    Subcommands:
-      init
+      init                   : [ase_sink_count, ase_source_count]
       select_broadcast       : <stream>
       create_broadcast       : [preset <preset_name>] [enc <broadcast_code>]
       start_broadcast        :
       stop_broadcast         :
       delete_broadcast       :
       create_broadcast_sink  : 0x<broadcast_id>
+      create_sink_by_name    : <broadcast_name>
       sync_broadcast         : 0x<bis_index> [[[0x<bis_index>] 0x<bis_index>] ...]
                               [bcode <broadcast code> || bcode_str <broadcast code
                               as string>]
@@ -217,6 +218,59 @@ ID before syncing to the BIG.
    Sink 0x20019110 is ready to sync without encryption
    uart:~$ bap sync_broadcast 0x01
 
+
+Scan for and establish a broadcast sink stream by broadcast name
+----------------------------------------------------------------
+
+The command :code:`bap create_sink_by_name` will start scanning and sync to the periodic
+advertising with the provided broadcast name before syncing to the BIG.
+
+.. code-block:: console
+
+   uart:~$ bap init
+   uart:~$ bap create_sink_by_name "Test Broadcast"
+   Starting scanning for broadcast_name
+   Found matched broadcast name 'Test Broadcast' with address 03:47:95:75:C0:08 (random)
+   Found broadcaster with ID 0xEF6716 and addr 03:47:95:75:C0:08 (random) and sid 0x00
+   Attempting to PA sync to the broadcaster
+   PA synced to broadcast with broadcast ID 0xEF6716
+   Attempting to create the sink
+   Received BASE from sink 0x20019080:
+   Presentation delay: 40000
+   Subgroup count: 1
+   Subgroup 0x20024182:
+      Codec Format: 0x06
+      Company ID  : 0x0000
+      Vendor ID   : 0x0000
+      codec cfg id 0x06 cid 0x0000 vid 0x0000 count 16
+         Codec specific configuration:
+         Sampling frequency: 16000 Hz (3)
+         Frame duration: 10000 us (1)
+         Channel allocation:
+                  Front left (0x00000001)
+                  Front right (0x00000002)
+         Octets per codec frame: 40
+         Codec specific metadata:
+         Streaming audio contexts:
+            Unspecified (0x0001)
+         BIS index: 0x01
+            codec cfg id 0x06 cid 0x0000 vid 0x0000 count 6
+            Codec specific configuration:
+               Channel allocation:
+                  Front left (0x00000001)
+            Codec specific metadata:
+               None
+         BIS index: 0x02
+            codec cfg id 0x06 cid 0x0000 vid 0x0000 count 6
+            Codec specific configuration:
+               Channel allocation:
+                  Front right (0x00000002)
+            Codec specific metadata:
+               None
+   Possible indexes: 0x01 0x02
+   Sink 0x20019110 is ready to sync without encryption
+   uart:~$ bap sync_broadcast 0x01
+
 Syncing to encrypted broadcast
 ------------------------------
 
@@ -309,7 +363,7 @@ characteristics representing remote endpoints.
          Supported max codec frames per SDU: 1
       Codec capabilities metadata:
          Preferred audio contexts:
-            Converstation (0x0002)
+            Conversational (0x0002)
             Media (0x0004)
    ep 0x81754e0
    ep 0x81755d4

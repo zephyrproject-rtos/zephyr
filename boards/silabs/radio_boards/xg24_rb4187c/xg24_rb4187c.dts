@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <silabs/efr32mg24b220f1536im48.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/regulator/silabs_dcdc.h>
 #include "xg24_rb4187c-pinctrl.dtsi"
 
 / {
@@ -60,11 +61,53 @@
 };
 
 &cpu0 {
-	clock-frequency = <39000000>;
+	clock-frequency = <78000000>;
 };
 
 &pstate_em3 {
 	status = "disabled";
+};
+
+&hfxo {
+	status = "okay";
+	ctune = <95>;
+	precision = <50>;
+};
+
+&lfxo {
+	status = "okay";
+	ctune = <44>;
+	precision = <50>;
+};
+
+&hfrcodpll {
+	clock-frequency = <DT_FREQ_M(78)>;
+	clocks = <&hfxo>;
+	dpll-n = <3839>;
+	dpll-m = <1919>;
+	dpll-edge = "fall";
+	dpll-lock = "phase";
+	dpll-autorecover;
+};
+
+&em23grpaclk {
+	clocks = <&lfxo>;
+};
+
+&em4grpaclk {
+	clocks = <&lfxo>;
+};
+
+&sysrtcclk {
+	clocks = <&lfxo>;
+};
+
+&wdog0clk {
+	clocks = <&lfxo>;
+};
+
+&wdog1clk {
+	clocks = <&lfxo>;
 };
 
 &usart0 {
@@ -105,16 +148,19 @@
 	status = "okay";
 };
 
-&burtc0 {
-	status = "okay";
-};
-
-&stimer0 {
+&sysrtc0 {
 	status = "okay";
 };
 
 &se {
 	status = "okay";
+};
+
+&dcdc {
+	status = "okay";
+	regulator-boot-on;
+	regulator-initial-mode = <SILABS_DCDC_MODE_BUCK>;
+	silabs,pfmx-peak-current-milliamp = <100>;
 };
 
 &flash0 {

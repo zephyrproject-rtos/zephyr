@@ -17,5 +17,5 @@
 			ngpios = <4>;
 			status = "okay";
 		};
-    };
+	};
 };

@@ -124,8 +124,25 @@ struct input_callback {
 	/** @ref device pointer or NULL. */
 	const struct device *dev;
 	/** The callback function. */
-	void (*callback)(struct input_event *evt);
+	void (*callback)(struct input_event *evt, void *user_data);
+	/** User data pointer. */
+	void *user_data;
 };
+
+/**
+ * @brief Register a callback structure for input events with a custom name.
+ *
+ * Same as @ref INPUT_CALLBACK_DEFINE but allows specifying a custom name
+ * for the callback structure. Useful if multiple callbacks are used for the
+ * same callback function.
+ */
+#define INPUT_CALLBACK_DEFINE_NAMED(_dev, _callback, _user_data, name)         \
+	static const STRUCT_SECTION_ITERABLE(input_callback,                   \
+					     _input_callback__##name) = {      \
+		.dev = _dev,                                                   \
+		.callback = _callback,                                         \
+		.user_data = _user_data,                                       \
+	}
 
 /**
  * @brief Register a callback structure for input events.
@@ -136,13 +153,10 @@ struct input_callback {
  *
  * @param _dev @ref device pointer or NULL.
  * @param _callback The callback function.
+ * @param _user_data Pointer to user specified data.
  */
-#define INPUT_CALLBACK_DEFINE(_dev, _callback)                                 \
-	static const STRUCT_SECTION_ITERABLE(input_callback,                   \
-					     _input_callback__##_callback) = { \
-		.dev = _dev,                                                   \
-		.callback = _callback,                                         \
-	}
+#define INPUT_CALLBACK_DEFINE(_dev, _callback, _user_data)                     \
+	INPUT_CALLBACK_DEFINE_NAMED(_dev, _callback, _user_data, _callback)
 
 #ifdef __cplusplus
 }

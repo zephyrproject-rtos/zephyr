@@ -12,7 +12,7 @@ BLE Logger uses the NRF Connect SDK NUS service as UUID to make it compatible
 with already existing apps to debug BLE connections over UART.
 
 The notification size of the ble backend buffer is dependent on the
-transmission size of the mtu set with `CONFIG_BT_L2CAP_TX_MTU`. Be sure
+transmission size of the mtu set with :kconfig:option:`CONFIG_BT_L2CAP_TX_MTU`. Be sure
 to change this configuration to increase the logger throughput over BLE.
 
 Requirements

@@ -10,6 +10,7 @@
 #include <stdbool.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi/rtio.h>
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
 BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "DT need CONFIG_PCIE");
@@ -30,7 +31,7 @@ static void spi_pw_reg_write(const struct device *dev,
 			     uint32_t offset,
 			     uint32_t val)
 {
-	return sys_write32(val, DEVICE_MMIO_GET(dev) + offset);
+	sys_write32(val, DEVICE_MMIO_GET(dev) + offset);
 }
 
 static void spi_pw_ssp_reset(const struct device *dev)
@@ -739,6 +740,9 @@ static const struct spi_driver_api pw_spi_api = {
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_pw_transceive_async,
 #endif  /* CONFIG_SPI_ASYNC */
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
+#endif
 };
 
 static int spi_pw_init(const struct device *dev)

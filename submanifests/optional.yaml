@@ -16,7 +16,7 @@ manifest:
       groups:
         - optional
     - name: lz4
-      revision: 8e303c264fc21c2116dc612658003a22e933124d
+      revision: 11b8a1e22fa651b524494e55d22b69d3d9cebcfd
       path: modules/lib/lz4
       remote: upstream
       groups:
@@ -33,8 +33,14 @@ manifest:
       remote: upstream
       groups:
         - optional
+    - name: zephyr-lang-rust
+      revision: f20afb5bae9a4b64332a230a734c0244b39d4035
+      path: modules/lang/rust
+      remote: upstream
+      groups:
+        - optional
     - name: sof
-      revision: 3f1716b0da7a48358bc265586b90b2252745c14c
+      revision: 316f414b64dee8e4aefce503af6c2c2e57d266f4
       path: modules/audio/sof
       remote: upstream
       groups:
@@ -46,7 +52,7 @@ manifest:
       groups:
         - optional
     - name: tflite-micro
-      revision: 1a34dcab41e7e0e667db72d6a40999c1ec9c510c
+      revision: 48613f7ba1ffbda46ad771a77a35408f48f922e9
       path: optional/modules/lib/tflite-micro
       repo-path: tflite-micro
       remote: upstream

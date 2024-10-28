@@ -53,7 +53,7 @@
 			riscv,max-priority = <7>;
 		};
 		uart0: serial@e0001800 {
-			compatible = "litex,uart0";
+			compatible = "litex,uart";
 			interrupt-parent = <&intc0>;
 			interrupts = <2 10>;
 			reg = <0xe0001800 0x4
@@ -93,6 +93,30 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
+		spi1: spi@e000c000 {
+			compatible = "litex,spi-litespi";
+			reg = <0xe000c000 0x4>,
+				<0xe000c004 0x4>,
+				<0xe000c008 0x4>,
+				<0xe000c00c 0x4>,
+				<0xe000c010 0x4>,
+				<0xe000c800 0x4>,
+				<0x60000000 0x1000000>;
+			reg-names = "core_mmap_dummy_bits",
+				"core_master_cs",
+				"core_master_phyconfig",
+				"core_master_rxtx",
+				"core_master_status",
+				"phy_clk_divisor",
+				"flash_mmap";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			spiflash0: flash@0 {
+				compatible = "jedec,spi-nor";
+				reg = <0>;
+				spi-max-frequency = <10000000>;
+			};
+		};
 		timer0: timer@e0002800 {
 			compatible = "litex,timer0";
 			interrupt-parent = <&intc0>;
@@ -120,8 +144,42 @@
 				"uptime_cycles";
 			status = "disabled";
 		};
+		wdt0: watchdog@e000d000 {
+			compatible = "litex,watchdog";
+			interrupt-parent = <&intc0>;
+			reg = <0xe000d000 0x4>,
+				<0xe000d004 0x4>,
+				<0xe000d008 0x4>,
+				<0xe000d00c 0x4>,
+				<0xe000d010 0x4>,
+				<0xe000d014 0x4>;
+			reg-names = "control",
+				"cycles",
+				"remaining",
+				"ev_status",
+				"ev_pending",
+				"ev_enable";
+			interrupts = <8 15>;
+		};
+		mdio0: mdio@e0008000 {
+			compatible = "litex,liteeth-mdio";
+			reg = <0xe0008000 0x4>,
+				<0xe0008004 0x4>,
+				<0xe0008008 0x4>;
+			reg-names = "crg_reset",
+				"mdio_w",
+				"mdio_r";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			phy0: ethernet-phy@1 {
+				compatible = "ethernet-phy";
+				reg = <1>;
+			};
+		};
 		eth0: ethernet@e0009800 {
-			compatible = "litex,eth0";
+			compatible = "litex,liteeth";
 			interrupt-parent = <&intc0>;
 			interrupts = <3 0>;
 			reg = <0xe0009800 0x4
@@ -155,6 +213,7 @@
 				"tx_ev_pending",
 				"tx_ev_enable",
 				"buffers";
+			phy-handle = <&phy0>;
 			status = "disabled";
 		};
 		dna0: dna@e0003800 {
@@ -318,7 +377,6 @@
 			clock-output-names = "CLK_0", "CLK_1";
 			litex,lock-timeout = <10>;
 			litex,drdy-timeout = <10>;
-			litex,sys-clock-frequency = <100000000>;
 			litex,divclk-divide-min = <1>;
 			litex,divclk-divide-max = <107>;
 			litex,clkfbout-mult-min = <2>;

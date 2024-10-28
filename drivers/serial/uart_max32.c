@@ -86,8 +86,6 @@ static int api_err_check(const struct device *dev)
 	return err;
 }
 
-#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
-
 static int api_configure(const struct device *dev, const struct uart_config *uart_cfg)
 {
 	int err;
@@ -195,6 +193,8 @@ static int api_configure(const struct device *dev, const struct uart_config *uar
 	return 0;
 }
 
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+
 static int api_config_get(const struct device *dev, struct uart_config *uart_cfg)
 {
 	struct max32_uart_data *data = dev->data;
@@ -300,8 +300,10 @@ static void api_irq_tx_disable(const struct device *dev)
 static int api_irq_tx_ready(const struct device *dev)
 {
 	struct max32_uart_data *const data = dev->data;
+	const struct max32_uart_config *cfg = dev->config;
+	uint32_t inten = Wrap_MXC_UART_GetRegINTEN(cfg->regs);
 
-	return ((data->flags & (ADI_MAX32_UART_INT_TX | ADI_MAX32_UART_INT_TX_OEM)) ||
+	return ((inten & (ADI_MAX32_UART_INT_TX | ADI_MAX32_UART_INT_TX_OEM)) &&
 		!(data->status & MXC_F_UART_STATUS_TX_FULL));
 }
 
@@ -333,8 +335,10 @@ static int api_irq_tx_complete(const struct device *dev)
 static int api_irq_rx_ready(const struct device *dev)
 {
 	struct max32_uart_data *const data = dev->data;
+	const struct max32_uart_config *cfg = dev->config;
+	uint32_t inten = Wrap_MXC_UART_GetRegINTEN(cfg->regs);
 
-	return (data->flags & ADI_MAX32_UART_INT_RX);
+	return ((inten & ADI_MAX32_UART_INT_RX) && !(data->status & ADI_MAX32_UART_RX_EMPTY));
 }
 
 static void api_irq_err_enable(const struct device *dev)
@@ -420,13 +424,11 @@ static const struct uart_driver_api uart_max32_driver_api = {
 #define MAX32_UART_INIT(_num)                                                                      \
 	PINCTRL_DT_INST_DEFINE(_num);                                                              \
 	IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN,                                                   \
-		   (static void uart_max32_irq_init_##_num(const struct device *dev)               \
-		   {                                                                               \
-			   IF_ENABLED(                                                             \
-				   CONFIG_UART_INTERRUPT_DRIVEN,                                   \
-				   (IRQ_CONNECT(DT_INST_IRQN(_num), DT_INST_IRQ(_num, priority),   \
-						uart_max32_isr, DEVICE_DT_INST_GET(_num), 0);      \
-				    irq_enable(DT_INST_IRQN(_num))));                              \
+		   (static void uart_max32_irq_init_##_num(const struct device *dev) \
+		   {             \
+			   IRQ_CONNECT(DT_INST_IRQN(_num), DT_INST_IRQ(_num, priority),            \
+				       uart_max32_isr, DEVICE_DT_INST_GET(_num), 0);               \
+			   irq_enable(DT_INST_IRQN(_num));                                         \
 		   }));                                                                            \
 	static const struct max32_uart_config max32_uart_config_##_num = {                         \
 		.regs = (mxc_uart_regs_t *)DT_INST_REG_ADDR(_num),                                 \

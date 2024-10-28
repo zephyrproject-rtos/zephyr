@@ -1,7 +1,4 @@
-.. _sam_v71_xplained_ultra:
-
-SAM V71(B) Xplained Ultra
-#########################
+.. zephyr:board:: sam_v71_xult
 
 Overview
 ********
@@ -9,10 +6,6 @@ Overview
 The SAM V71 Xplained Ultra evaluation kit is a development platform to
 evaluate the Atmel SAM V71 series microcontrollers. The current version
 allows to use both IC variations ATSAMV71Q21A(B).
-
-.. image:: img/sam_v71_xult.jpg
-     :align: center
-     :alt: SAM V71 Xplained Ultra
 
 Hardware
 ********
@@ -144,7 +137,7 @@ Flashing
    - Stop bits: 1
 
 #. Connect the SAM V71 Xplained Ultra board to your host computer using the
-   USB debug port. Then build and flash the :ref:`hello_world`
+   USB debug port. Then build and flash the :zephyr:code-sample:`hello_world`
    application.
 
    .. zephyr-app-commands::
@@ -174,7 +167,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

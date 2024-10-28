@@ -267,6 +267,12 @@ int usart_gd32_irq_is_pending(const struct device *dev)
 		 usart_interrupt_flag_get(cfg->reg, USART_INT_FLAG_TC)));
 }
 
+int usart_gd32_irq_update(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+	return 1;
+}
+
 void usart_gd32_irq_callback_set(const struct device *dev,
 				 uart_irq_callback_user_data_t cb,
 				 void *user_data)
@@ -295,6 +301,7 @@ static const struct uart_driver_api usart_gd32_driver_api = {
 	.irq_err_enable = usart_gd32_irq_err_enable,
 	.irq_err_disable = usart_gd32_irq_err_disable,
 	.irq_is_pending = usart_gd32_irq_is_pending,
+	.irq_update = usart_gd32_irq_update,
 	.irq_callback_set = usart_gd32_irq_callback_set,
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
@@ -331,7 +338,7 @@ static const struct uart_driver_api usart_gd32_driver_api = {
 		.parity = DT_INST_ENUM_IDX_OR(n, parity, UART_CFG_PARITY_NONE),	\
 		 GD32_USART_IRQ_HANDLER_FUNC_INIT(n)				\
 	};									\
-	DEVICE_DT_INST_DEFINE(n, &usart_gd32_init,				\
+	DEVICE_DT_INST_DEFINE(n, usart_gd32_init,				\
 			      NULL,						\
 			      &usart_gd32_data_##n,				\
 			      &usart_gd32_config_##n, PRE_KERNEL_1,		\

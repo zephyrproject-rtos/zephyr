@@ -163,18 +163,18 @@
 
 #if defined(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)
 /* Wire the SW SWITCH PHYEND delay compensation TIMER EVENTS_COMPARE[<cc_offset>] event to software
- * switch TIMER0->CLEAR taks task.
+ * switch TIMER0->CLEAR task.
  *
- * Note: Use the same nubmer of PPIs as for PHY CODED HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI_BASE.
- *       The CTE is not allowe in PDUs sent over PHY CODED so this PPI may be re-used.
+ * Note: Use the same number of PPIs as for PHY CODED HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI_BASE.
+ *       The CTE is not allowed in PDUs sent over PHY CODED so this PPI may be re-used.
  */
 #define HAL_SW_SWITCH_RADIO_ENABLE_PHYEND_DELAY_COMPENSATION_PPI_BASE 17
 
 /* Cancel the SW switch timer running considering PHYEND delay compensation timing:
  * wire the RADIO EVENTS_CTEPRESENT event to SW_SWITCH_TIMER TASKS_CAPTURE task.
  *
- * Note: Use the same nubmer of PPIs as for PHY CODED: HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI.
- *       The CTE is not allowe in PDUs sent over PHY CODED so this PPI may be re-used.
+ * Note: Use the same number of PPIs as for PHY CODED: HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI.
+ *       The CTE is not allowed in PDUs sent over PHY CODED so this PPI may be re-used.
  */
 #define HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI 19
 #endif /* CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE */

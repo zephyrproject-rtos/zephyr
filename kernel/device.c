@@ -98,7 +98,7 @@ const struct device *z_impl_device_get_by_dt_nodelabel(const char *nodelabel)
 	STRUCT_SECTION_FOREACH(device, dev) {
 		const struct device_dt_nodelabels *nl = device_get_dt_nodelabels(dev);
 
-		if (!z_impl_device_is_ready(dev)) {
+		if (!z_impl_device_is_ready(dev) || nl == NULL) {
 			continue;
 		}
 
@@ -117,7 +117,7 @@ const struct device *z_impl_device_get_by_dt_nodelabel(const char *nodelabel)
 #ifdef CONFIG_USERSPACE
 static inline const struct device *z_vrfy_device_get_by_dt_nodelabel(const char *nodelabel)
 {
-	const char nl_copy[Z_DEVICE_MAX_NODELABEL_LEN];
+	char nl_copy[Z_DEVICE_MAX_NODELABEL_LEN];
 
 	if (k_usermode_string_copy(nl_copy, (char *)nodelabel, sizeof(nl_copy)) != 0) {
 		return NULL;
@@ -125,7 +125,7 @@ static inline const struct device *z_vrfy_device_get_by_dt_nodelabel(const char 
 
 	return z_impl_device_get_by_dt_nodelabel(nl_copy);
 }
-#include <syscalls/device_get_by_dt_nodelabel_mrsh.c>
+#include <zephyr/syscalls/device_get_by_dt_nodelabel_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 #endif /* CONFIG_DEVICE_DT_METADATA */
 

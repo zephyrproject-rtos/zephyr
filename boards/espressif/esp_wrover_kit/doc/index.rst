@@ -1,7 +1,4 @@
-.. _esp_wrover_kit:
-
-ESP-WROVER-KIT
-##############
+.. zephyr:board:: esp_wrover_kit
 
 Overview
 ********
@@ -26,6 +23,8 @@ Most of the ESP32 I/O pins are broken out to the board's pin headers for easy ac
    ESP32's GPIO16 and GPIO17 are used as chip select and clock signals for PSRAM. By default, the two
    GPIOs are not broken out to the board's pin headers in order to ensure reliable performance.
 
+For more information, check `ESP32-WROVER-E Datasheet`_ and `ESP32 Datasheet`_.
+
 Functionality Overview
 **********************
 
@@ -41,7 +40,7 @@ Functional Description
 The following two figures and the table below describe the key components, interfaces, and controls
 of the ESP-WROVER-KIT board.
 
-.. figure:: img/esp-wrover-kit-v4.1-layout-front.jpg
+.. figure:: img/esp_wrover_kit.jpg
      :align: center
      :alt: esp wrover front
 
@@ -56,7 +55,7 @@ of the ESP-WROVER-KIT board.
      ESP-WROVER-KIT board layout - back
 
 The table below provides description in the following manner:
-- Starting from the first picture’s top right corner and going clockwise
+- Starting from the first picture's top right corner and going clockwise
 - Then moving on to the second picture
 
 +------------------+-------------------------------------------------------------------------+
@@ -253,7 +252,7 @@ Legend:
   - LED - RGB LED
   - MicroSD - MicroSD Card / J4
   - LCD - LCD / U5
-  - PSRAM - ESP32-WROVER-E’s PSRAM
+  - PSRAM - ESP32-WROVER-E's PSRAM
 
 32.768 kHz Oscillator
 *********************
@@ -270,8 +269,8 @@ Legend:
 
    Since GPIO32 and GPIO33 are connected to the oscillator by default, they are not connected to
    the JP1 I/O connector to maintain signal integrity. This allocation may be changed from the
-   oscillator to JP1 by desoldering the zero-ohm resistors from positions R11 / R23 and re-
-   soldering them to positions R12 / R24.
+   oscillator to JP1 by desoldering the zero-ohm resistors from positions R11 / R23 and re-soldering
+   them to positions R12 / R24.
 
 SPI Flash / JP2
 ***************
@@ -293,10 +292,10 @@ SPI Flash / JP2
 +---+--------------+
 
 .. important::
-   The module’s flash bus is connected to the jumper block JP2 through zero-ohm resistors R140 ~
+   The module's flash bus is connected to the jumper block JP2 through zero-ohm resistors R140 ~
    R145. If the flash memory needs to operate at the frequency of 80 MHz, for reasons such as
    improving the integrity of bus signals, you can desolder these resistors to disconnect the
-   module’s flash bus from the pin header JP2.
+   module's flash bus from the pin header JP2.
 
 JTAG / JP2
 **********
@@ -516,7 +515,7 @@ MCUboot bootloader
 ==================
 
 User may choose to use MCUboot bootloader instead. In that case the bootloader
-must be build (and flash) at least once.
+must be built (and flashed) at least once.
 
 There are two options to be used when building an application:
 
@@ -527,9 +526,10 @@ There are two options to be used when building an application:
 
    User can select the MCUboot bootloader by adding the following line
    to the board default configuration file.
-   ```
-   CONFIG_BOOTLOADER_MCUBOOT=y
-   ```
+
+   .. code:: cfg
+
+      CONFIG_BOOTLOADER_MCUBOOT=y
 
 Sysbuild
 ========
@@ -541,7 +541,7 @@ To build the sample application using sysbuild use the command:
 
 .. zephyr-app-commands::
    :tool: west
-   :app: samples/hello_world
+   :zephyr-app: samples/hello_world
    :board: esp_wrover_kit
    :goals: build
    :west-args: --sysbuild
@@ -577,7 +577,7 @@ Manual build
 ============
 
 During the development cycle, it is intended to build & flash as quickly possible.
-For that reason, images can be build one at a time using traditional build.
+For that reason, images can be built one at a time using traditional build.
 
 The instructions following are relevant for both manual build and sysbuild.
 The only difference is the structure of the build directory.
@@ -595,7 +595,7 @@ Build and flash applications as usual (see :ref:`build_an_application` and
    :goals: build
 
 The usual ``flash`` target will work with the ``esp_wrover_kit`` board
-configuration. Here is an example for the :ref:`hello_world`
+configuration. Here is an example for the :zephyr:code-sample:`hello_world`
 application.
 
 .. zephyr-app-commands::
@@ -620,8 +620,7 @@ message in the monitor:
 Debugging
 *********
 
-ESP32 support on OpenOCD is available upstream as of version 0.12.0.
-Download and install OpenOCD from `OpenOCD`_.
+ESP32 support on OpenOCD is available at `OpenOCD ESP32`_.
 
 On the ESP-WROVER-KIT board, the JTAG pins are connected internally to
 a USB serial port on the same device as the console.  These boards
@@ -632,7 +631,7 @@ headers are on the right side of the board as viewed from the power
 switch, next to similar headers for SPI and UART.  See
 `ESP-WROVER-32 V3 Getting Started Guide`_ for details.
 
-Here is an example for building the :ref:`hello_world` application.
+Here is an example for building the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -640,21 +639,19 @@ Here is an example for building the :ref:`hello_world` application.
    :goals: build flash
    :gen-args: -DOPENOCD=<path/to/bin/openocd> -DOPENOCD_DEFAULT_PATH=<path/to/openocd/share/openocd/scripts>
 
-You can debug an application in the usual way. Here is an example for the :ref:`hello_world` application.
+You can debug an application in the usual way. Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: esp_wrover_kit/esp32/procpu
    :goals: debug
 
-.. _`OpenOCD`: https://github.com/openocd-org/openocd
+References
+**********
+
+.. target-notes::
+
+.. _`ESP32 Datasheet`: https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf (PDF)
+.. _`ESP32-WROVER-E Datasheet`: https://www.espressif.com/sites/default/files/documentation/esp32-wrover-e_esp32-wrover-ie_datasheet_en.pdf (PDF)
+.. _`OpenOCD ESP32`: https://github.com/espressif/openocd-esp32/releases
 .. _`ESP-WROVER-32 V3 Getting Started Guide`: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/hw-reference/esp32/get-started-wrover-kit.html
-
-Related Documents
-*****************
-
-.. _ESP-WROVER-KIT V4.1 schematics: https://dl.espressif.com/dl/schematics/ESP-WROVER-KIT_V4_1.pdf (PDF)
-.. _ESP-WROVER-KIT V4.1 layout: https://dl.espressif.com/dl/schematics/ESP-WROVER-KIT_V4.1.dxf (DXF)
-.. _ESP32 Datasheet: https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf (PDF)
-.. _ESP32-WROVER-E Datasheet: https://www.espressif.com/sites/default/files/documentation/esp32-wrover-e_esp32-wrover-ie_datasheet_en.pdf (PDF)
-.. _ESP32 Hardware Reference: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/hw-reference/index.html

@@ -12,7 +12,7 @@
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/iso.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 
 int bt_bap_unicast_client_config(struct bt_bap_stream *stream,
 				 const struct bt_audio_codec_cfg *codec_cfg);
@@ -37,7 +37,7 @@ int bt_bap_unicast_client_release(struct bt_bap_stream *stream);
 struct net_buf_simple *bt_bap_unicast_client_ep_create_pdu(struct bt_conn *conn, uint8_t op);
 
 int bt_bap_unicast_client_ep_qos(struct bt_bap_ep *ep, struct net_buf_simple *buf,
-				 struct bt_audio_codec_qos *qos);
+				 struct bt_bap_qos_cfg *qos);
 
 int bt_bap_unicast_client_ep_send(struct bt_conn *conn, struct bt_bap_ep *ep,
 				  struct net_buf_simple *buf);

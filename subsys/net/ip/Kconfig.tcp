@@ -69,7 +69,7 @@ config NET_TCP_ACK_TIMEOUT
 	int "[DEPRECATED] How long to wait for ACK (in milliseconds)"
 	depends on NET_TCP
 	default 1000
-	range 1 2147483647
+	range 1 $(INT32_MAX)
 	help
 	  Deprecated. Use CONFIG_NET_TCP_INIT_RETRANSMISSION_TIMEOUT and
 	  CONFIG_NET_TCP_RETRY_COUNT to control the total timeout at the TCP
@@ -93,7 +93,7 @@ config NET_TCP_RANDOMIZED_RTO
 	  due to a packet collision. If the transmission timeout is the same
 	  both stacks will retry at the same moment resulting in another
 	  collision. By introducing a randomized retry timeout, the chance of
-	  a second collision is reduced and it reduces furter the more
+	  a second collision is reduced and it reduces further the more
 	  retransmissions occur.
 
 config NET_TCP_RETRY_COUNT
@@ -119,7 +119,7 @@ config NET_TCP_MAX_SEND_WINDOW_SIZE
 	int "Maximum sending window size to use"
 	depends on NET_TCP
 	default 0
-	range 0 65535
+	range 0 $(UINT16_MAX)
 	help
 	  This value affects how the TCP selects the maximum sending window
 	  size. The default value 0 lets the TCP stack select the value
@@ -129,7 +129,7 @@ config NET_TCP_MAX_RECV_WINDOW_SIZE
 	int "Maximum receive window size to use"
 	depends on NET_TCP
 	default 0
-	range 0 65535
+	range 0 $(UINT16_MAX)
 	help
 	  This value defines the maximum TCP receive window size. Increasing
 	  this value can improve connection throughput, but requires more

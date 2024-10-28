@@ -5,6 +5,6 @@
  */
 
 &spi0 {
-        /delete-property/ dmas;
-        /delete-property/ dma-names;
+	/delete-property/ dmas;
+	/delete-property/ dma-names;
 };

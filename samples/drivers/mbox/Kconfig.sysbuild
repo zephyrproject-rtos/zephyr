@@ -6,7 +6,7 @@
 source "share/sysbuild/Kconfig"
 
 config REMOTE_BOARD
-string
+	string "Remote board"
 	default "nrf5340dk/nrf5340/cpunet" if $(BOARD) = "nrf5340dk"
 	default "nrf5340bsim/nrf5340/cpunet" if $(BOARD_TARGET_STRING) = "NRF5340BSIM_NRF5340_CPUAPP"
 	default "adp_xc7k/ae350" if $(BOARD) = "adp_xc7k"
@@ -14,6 +14,8 @@ string
 	default "mimxrt1170_evk/mimxrt1176/cm4" if $(BOARD) = "mimxrt1170_evk"
 	default "mimxrt1160_evk/mimxrt1166/cm4" if $(BOARD) = "mimxrt1160_evk"
 	default "lpcxpresso55s69/lpc55s69/cpu1" if $(BOARD) = "lpcxpresso55s69"
-	default "nrf54h20dk/nrf54h20/cpuppr" if $(BOARD) = "nrf54h20dk"
-	default "nrf54l15pdk/nrf54l15/cpuflpr" if $(BOARD) = "nrf54l15pdk"
+	default "nrf54h20dk/nrf54h20/cpuapp" if "$(BOARD)${BOARD_QUALIFIERS}" = "nrf54h20dk/nrf54h20/cpurad"
+	default "nrf54l15dk/nrf54l15/cpuflpr" if $(BOARD) = "nrf54l15dk"
 	default "stm32h747i_disco/stm32h747xx/m4" if $(BOARD) = "stm32h747i_disco"
+	default "esp32_devkitc_wroom/esp32/appcpu" if "$(BOARD)${BOARD_QUALIFIERS}" = "esp32_devkitc_wroom/esp32/procpu"
+	default "esp32s3_devkitm/esp32s3/appcpu" if "$(BOARD)${BOARD_QUALIFIERS}" = "esp32s3_devkitm/esp32s3/procpu"

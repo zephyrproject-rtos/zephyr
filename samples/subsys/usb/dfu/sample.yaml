@@ -18,6 +18,7 @@ common:
     - teensy41
     - b_u585i_iot02a
     - frdm_kl25z
+    - frdm_mcxc242
     - lpcxpresso55s69/lpc55s69/cpu0
     - stm32l562e_dk/stm32l562xx/ns
   depends_on: usb_device
@@ -32,4 +33,4 @@ tests:
     tags: usb
   sample.usb.dfu.permanent.download:
     tags: usb
-    extra_args: OVERLAY_CONFIG=overlay-permanent-download.conf
+    extra_args: EXTRA_CONF_FILE=overlay-permanent-download.conf

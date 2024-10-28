@@ -86,18 +86,21 @@ static int mcux_tpm_set_alarm(const struct device *dev, uint8_t chan_id,
 		return -EINVAL;
 	}
 
-	if (ticks > (top_value))
+	if (ticks > (top_value)) {
 		return -EINVAL;
-
-	if ((alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE) == 0) {
-		if (top_value - current >= ticks)
-			ticks += current;
-		else
-			ticks -= top_value - current;
 	}
 
-	if (data->alarm_callback)
+	if ((alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE) == 0) {
+		if (top_value - current >= ticks) {
+			ticks += current;
+		} else {
+			ticks -= top_value - current;
+		}
+	}
+
+	if (data->alarm_callback) {
 		return -EBUSY;
+	}
 
 	data->alarm_callback = alarm_cfg->callback;
 	data->alarm_user_data = alarm_cfg->user_data;
@@ -163,8 +166,9 @@ static int mcux_tpm_set_top_value(const struct device *dev,
 	TPM_Type *base = get_base(dev);
 	struct mcux_tpm_data *data = dev->data;
 
-	if (data->alarm_callback)
+	if (data->alarm_callback) {
 		return -EBUSY;
+	}
 
 	/* Check if timer already enabled. */
 #if defined(FSL_FEATURE_TPM_HAS_SC_CLKS) && FSL_FEATURE_TPM_HAS_SC_CLKS
@@ -173,8 +177,9 @@ static int mcux_tpm_set_top_value(const struct device *dev,
 	if (base->SC & TPM_SC_CMOD_MASK) {
 #endif
 		/* Timer already enabled, check flags before resetting */
-		if (cfg->flags & COUNTER_TOP_CFG_DONT_RESET)
+		if (cfg->flags & COUNTER_TOP_CFG_DONT_RESET) {
 			return -ENOTSUP;
+		}
 
 		TPM_StopTimer(base);
 		base->CNT = 0;

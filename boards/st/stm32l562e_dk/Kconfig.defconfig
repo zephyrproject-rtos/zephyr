@@ -7,12 +7,6 @@ if BOARD_STM32L562E_DK
 
 if BT
 
-config SPI
-	default y
-
-config BT_SPI
-	default y
-
 config BT_BLUENRG_ACI
 	default y
 
@@ -24,5 +18,16 @@ config BT_HCI_VS
 	default n
 
 endif # BT
+
+config MIPI_DBI_STM32_FMC_MEM_BARRIER
+	default n if MIPI_DBI_STM32_FMC
+
+if DISPLAY
+
+choice ST7789V_PIXEL_FORMAT
+	default ST7789V_BGR565
+endchoice
+
+endif # DISPLAY
 
 endif # BOARD_STM32L562E_DK

@@ -77,8 +77,8 @@ static void print_hex_number(const uint8_t *num, size_t len)
 #define SW1_NODE DT_ALIAS(sw1)
 #define SW2_NODE DT_ALIAS(sw2)
 #define SW3_NODE DT_ALIAS(sw3)
-#if !DT_NODE_HAS_STATUS(SW0_NODE, okay) || !DT_NODE_HAS_STATUS(SW1_NODE, okay) ||                  \
-	!DT_NODE_HAS_STATUS(SW2_NODE, okay) || !DT_NODE_HAS_STATUS(SW3_NODE, okay)
+#if !DT_NODE_HAS_STATUS_OKAY(SW0_NODE) || !DT_NODE_HAS_STATUS_OKAY(SW1_NODE) ||                    \
+	!DT_NODE_HAS_STATUS_OKAY(SW2_NODE) || !DT_NODE_HAS_STATUS_OKAY(SW3_NODE)
 #error "Unsupported board: This sample need 4 buttons to run"
 #endif
 
@@ -313,8 +313,7 @@ static int subscribe_func(void)
 	oacp_sub_params = &otc.oacp_sub_params;
 	oacp_sub_params->disc_params = &otc.oacp_sub_disc_params;
 	if (oacp_sub_params) {
-		/* With ccc_handle == 0 it will use auto discovery */
-		oacp_sub_params->ccc_handle = 0;
+		oacp_sub_params->ccc_handle = BT_GATT_AUTO_DISCOVER_CCC_HANDLE;
 		oacp_sub_params->end_handle = otc.end_handle;
 		oacp_sub_params->value = BT_GATT_CCC_INDICATE;
 		oacp_sub_params->value_handle = otc.oacp_handle;
@@ -330,8 +329,7 @@ static int subscribe_func(void)
 	olcp_sub_params = &otc.olcp_sub_params;
 	olcp_sub_params->disc_params = &otc.olcp_sub_disc_params;
 	if (olcp_sub_params) {
-		/* With ccc_handle == 0 it will use auto discovery */
-		olcp_sub_params->ccc_handle = 0;
+		olcp_sub_params->ccc_handle = BT_GATT_AUTO_DISCOVER_CCC_HANDLE;
 		olcp_sub_params->end_handle = otc.end_handle;
 		olcp_sub_params->value = BT_GATT_CCC_INDICATE;
 		olcp_sub_params->value_handle = otc.olcp_handle;
@@ -502,7 +500,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 	first_selected = false;
 	if (err != 0) {
-		printk("Failed to connect to %s (%u)\n", addr, err);
+		printk("Failed to connect to %s %u %s\n", addr, err, bt_hci_err_to_str(err));
 
 		bt_conn_unref(default_conn);
 		default_conn = NULL;
@@ -542,7 +540,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
-	printk("Disconnected: %s (reason 0x%02x)\n", addr, reason);
+	printk("Disconnected: %s, reason 0x%02x %s\n", addr, reason, bt_hci_err_to_str(reason));
 
 	bt_conn_unref(default_conn);
 	default_conn = NULL;

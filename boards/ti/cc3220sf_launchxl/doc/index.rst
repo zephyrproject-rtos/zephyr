@@ -1,7 +1,4 @@
-.. _cc3220sf_launchxl:
-
-CC3220SF LaunchXL
-#################
+.. zephyr:board:: cc3220sf_launchxl
 
 Overview
 ********
@@ -172,7 +169,7 @@ Flashing
 To build and flash an application, execute the following commands for <my_app>:
 
 .. zephyr-app-commands::
-   :zephyr-app: <my_app>
+   :app: <my_app>
    :board: cc3220sf_launchxl
    :goals: flash
 
@@ -199,7 +196,7 @@ To debug a previously flashed image, after resetting the board, use the 'debug'
 build target:
 
 .. zephyr-app-commands::
-   :zephyr-app: <my_app>
+   :app: <my_app>
    :board: cc3220sf_launchxl
    :maybe-skip-config:
    :goals: debug

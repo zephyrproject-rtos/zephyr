@@ -59,6 +59,16 @@ struct net_pkt_cb_ieee802154 {
 			 */
 			uint8_t rssi;
 		};
+		struct {
+#if defined(CONFIG_IEEE802154_SELECTIVE_TXCHANNEL)
+			/* The channel used for timed transmissions.
+			 *
+			 * Please refer to `ieee802154_radio_api::tx` documentation for
+			 * details.
+			 */
+			uint8_t txchannel;
+#endif /* CONFIG_IEEE802154_SELECTIVE_TXCHANNEL */
+		};
 	};
 
 	/* Flags */
@@ -178,6 +188,18 @@ static inline void net_pkt_set_ieee802154_rssi_dbm(struct net_pkt *pkt, int16_t 
 
 	CODE_UNREACHABLE;
 }
+
+#if defined(CONFIG_IEEE802154_SELECTIVE_TXCHANNEL)
+static inline uint8_t net_pkt_ieee802154_txchannel(struct net_pkt *pkt)
+{
+	return net_pkt_cb_ieee802154(pkt)->txchannel;
+}
+
+static inline void net_pkt_set_ieee802154_txchannel(struct net_pkt *pkt, uint8_t channel)
+{
+	net_pkt_cb_ieee802154(pkt)->txchannel = channel;
+}
+#endif /* CONFIG_IEEE802154_SELECTIVE_TXCHANNEL */
 
 static inline bool net_pkt_ieee802154_ack_fpb(struct net_pkt *pkt)
 {

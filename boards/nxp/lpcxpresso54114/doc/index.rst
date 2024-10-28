@@ -1,7 +1,4 @@
-.. _lpcxpresso54114:
-
-NXP LPCXPRESSO54114
-###################
+.. zephyr:board:: lpcxpresso54114
 
 Overview
 ********
@@ -12,10 +9,6 @@ low-cost development platform available from NXP supporting NXP's ARM-based
 microcontrollers. LPCXpresso is an end-to-end solution enabling embedded
 engineers to develop their applications from initial evaluation to final
 production.
-
-.. image:: lpcxpresso54114_m4.jpg
-   :align: center
-   :alt: LPCXPRESSO54114
 
 Hardware
 ********
@@ -74,8 +67,8 @@ features:
 
 The default configuration for each core can be found in the defconfig files:
 
-	`boards/nxp/lpcxpresso54114/lpcxpresso54114_lpc54114_m4_defconfig`
-	`boards/nxp/lpcxpresso54114/lpcxpresso54114_lpc54114_m0_defconfig`
+- :zephyr_file:`boards/nxp/lpcxpresso54114/lpcxpresso54114_lpc54114_m4_defconfig`
+- :zephyr_file:`boards/nxp/lpcxpresso54114/lpcxpresso54114_lpc54114_m0_defconfig`
 
 Other hardware features are not currently supported by the port.
 
@@ -166,7 +159,7 @@ etc.):
 Flashing
 ========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -184,7 +177,7 @@ see the following message in the terminal:
 Debugging
 =========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

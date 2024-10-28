@@ -35,34 +35,27 @@ struct i2c_smartbond_data {
 	uint32_t transmit_cnt, receive_cnt;
 	i2c_callback_t cb;
 	void *userdata;
-#if defined(CONFIG_PM_DEVICE)
-	ATOMIC_DEFINE(pm_policy_state_flag, 1);
-#endif
 #ifdef CONFIG_I2C_CALLBACK
 	k_spinlock_key_t spinlock_key;
 #endif
 };
 
 #if defined(CONFIG_PM_DEVICE)
-static inline void i2c_smartbond_pm_prevent_system_sleep(struct i2c_smartbond_data *data)
+static inline void i2c_smartbond_pm_prevent_system_sleep(void)
 {
-	if (atomic_test_and_set_bit(data->pm_policy_state_flag, 0) == 0) {
-		/*
-		 * Prevent the SoC from etering the normal sleep state as PDC does not support
-		 * waking up the application core following I2C events.
-		 */
-		pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
-	}
+	/*
+	 * Prevent the SoC from etering the normal sleep state as PDC does not support
+	 * waking up the application core following I2C events.
+	 */
+	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 }
 
-static inline void i2c_smartbond_pm_allow_system_sleep(struct i2c_smartbond_data *data)
+static inline void i2c_smartbond_pm_allow_system_sleep(void)
 {
-	if (atomic_test_and_clear_bit(data->pm_policy_state_flag, 0) == 1) {
-		/*
-		 * Allow the SoC to enter the nornmal sleep state once I2C transactions are done.
-		 */
-		pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
-	}
+	/*
+	 * Allow the SoC to enter the nornmal sleep state once I2C transactions are done.
+	 */
+	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 }
 #endif
 
@@ -72,7 +65,8 @@ static inline void i2c_smartbond_pm_policy_state_lock_get(const struct device *d
 #ifdef CONFIG_PM_DEVICE_RUNTIME
 	pm_device_runtime_get(dev);
 #else
-	i2c_smartbond_pm_prevent_system_sleep(dev->data);
+	ARG_UNUSED(dev);
+	i2c_smartbond_pm_prevent_system_sleep();
 #endif
 #endif
 }
@@ -83,7 +77,8 @@ static inline void i2c_smartbond_pm_policy_state_lock_put(const struct device *d
 #ifdef CONFIG_PM_DEVICE_RUNTIME
 	pm_device_runtime_put(dev);
 #else
-	i2c_smartbond_pm_allow_system_sleep(dev->data);
+	ARG_UNUSED(dev);
+	i2c_smartbond_pm_allow_system_sleep();
 #endif
 #endif
 }
@@ -252,8 +247,6 @@ static inline int i2c_smartbond_set_msg_flags(struct i2c_msg *msgs, uint8_t num_
 			if (current->flags & I2C_MSG_STOP) {
 				return -EINVAL;
 			}
-		} else {
-			current->flags |= I2C_MSG_STOP;
 		}
 		current++;
 	}
@@ -562,6 +555,9 @@ static const struct i2c_driver_api i2c_smartbond_driver_api = {
 #ifdef CONFIG_I2C_CALLBACK
 	.transfer_cb = i2c_smartbond_transfer_cb,
 #endif
+#ifdef CONFIG_I2C_RTIO
+	.iodev_submit = i2c_iodev_submit_fallback,
+#endif
 };
 
 static int i2c_smartbond_resume(const struct device *dev)
@@ -613,7 +609,7 @@ static int i2c_smartbond_pm_action(const struct device *dev,
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
 #ifdef CONFIG_PM_DEVICE_RUNTIME
-		i2c_smartbond_pm_prevent_system_sleep(dev->data);
+		i2c_smartbond_pm_prevent_system_sleep();
 #endif
 		/*
 		 * Although the GPIO driver should already be initialized, make sure PD_COM
@@ -630,7 +626,7 @@ static int i2c_smartbond_pm_action(const struct device *dev,
 		 */
 		da1469x_pd_release(MCU_PD_DOMAIN_COM);
 #ifdef CONFIG_PM_DEVICE_RUNTIME
-		i2c_smartbond_pm_allow_system_sleep(dev->data);
+		i2c_smartbond_pm_allow_system_sleep();
 #endif
 		break;
 	default:

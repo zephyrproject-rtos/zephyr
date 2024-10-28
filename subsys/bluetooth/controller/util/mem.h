@@ -18,7 +18,7 @@
  * @brief Round up to nearest multiple of 4, for unsigned integers
  * @details
  *   The addition of 3 forces x into the next multiple of 4. This is responsible
- *   for the rounding in the the next step, to be Up.
+ *   for the rounding in the next step, to be Up.
  *   For ANDing of ~3: We observe y & (~3) == (y>>2)<<2, and we recognize
  *   (y>>2) as a floored division, which is almost undone by the left-shift. The
  *   flooring can't be undone so have achieved a rounding.

@@ -50,20 +50,20 @@
 				label = "mcuboot";
 				reg = <0x00000000 DT_SIZE_K(128)>;
 			};
-			/* The MCUBoot swap-move algorithm uses the last 14 sectors
+			/* The MCUBoot swap-move algorithm uses the last 11 sectors
 			 * of the primary slot0 for swap status and move.
 			 */
 			slot0_partition: partition@20000 {
 				label = "image-0";
-				reg = <0x00020000 (DT_SIZE_M(3) + DT_SIZE_K(56))>;
+				reg = <0x00020000 (DT_SIZE_M(3) + DT_SIZE_K(44))>;
 			};
-			slot1_partition: partition@32E000 {
+			slot1_partition: partition@32B000 {
 				label = "image-1";
-				reg = <0x0032E000 DT_SIZE_M(3)>;
+				reg = <0x0032B000 DT_SIZE_M(3)>;
 			};
-			storage_partition: partition@62E000 {
+			storage_partition: partition@62B000 {
 				label = "storage";
-				reg = <0x0062E000 (DT_SIZE_M(58) - DT_SIZE_K(184))>;
+				reg = <0x0062B000 (DT_SIZE_M(58) - DT_SIZE_K(172))>;
 			};
 		};
 	};

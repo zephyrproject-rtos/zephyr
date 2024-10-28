@@ -1,5 +1,6 @@
 identifier: max32680evkit/max32680/m4
 name: max32680evkit m4
+vendor: adi
 type: mcu
 arch: arm
 toolchain:
@@ -9,5 +10,14 @@ toolchain:
 supported:
   - gpio
   - serial
+  - trng
+  - i2c
+  - dma
+  - watchdog
+  - spi
+  - adc
+  - counter
+  - w1
+  - flash
 ram: 128
 flash: 512

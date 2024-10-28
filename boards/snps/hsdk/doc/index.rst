@@ -1,7 +1,4 @@
-.. _hsdk:
-
-DesignWare(R) ARC(R) HS Development Kit
-########################################
+.. zephyr:board:: hsdk
 
 Overview
 ********
@@ -13,10 +10,6 @@ range of interfaces including Ethernet, WiFi, Bluetooth, USB, SDIO, I2C, SPI,
 UART, I2S, ADC, PWM and GPIO. A Vivante GPU is also contained in the ARC
 Development System SoC. This allows developers to build and debug complex
 software on a comprehensive hardware platform
-
-.. image:: hsdk.jpg
-   :align: center
-   :alt: DesignWare(R) ARC(R) HS Development Kit (synopsys.com)
 
 For details about the board, see: `ARC HS Development Kit
 (HSDK) <https://www.synopsys.com/dw/ipdir.php?ds=arc-hs-development-kit>`__
@@ -387,9 +380,9 @@ Set up Zephyr Software
 Building Sample Applications
 ==============================
 
-You can try many of the :ref:`sample applications and demos
-<samples-and-demos>`.  We'll use :ref:`hello_world`, found in
-:zephyr_file:`samples/hello_world` as an example.
+You can try many of the :zephyr:code-sample-category:`sample applications and demos <samples>`.
+We'll use :zephyr:code-sample:`hello_world`, found in :zephyr_file:`samples/hello_world` as an
+example.
 
 Configuring
 -----------
@@ -410,7 +403,7 @@ Building
 
 You can build an application in the usual way.  Refer to
 :ref:`build_an_application` for more details. Here is an example for
-:ref:`hello_world`.
+:zephyr:code-sample:`hello_world`.
 
 .. zephyr-app-commands::
    :board: hsdk
@@ -517,6 +510,8 @@ Release Notes
 
 References
 **********
+
+.. target-notes::
 
 .. _embARC website: https://www.embarc.org
 

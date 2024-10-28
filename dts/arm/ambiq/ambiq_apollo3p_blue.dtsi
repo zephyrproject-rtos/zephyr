@@ -3,6 +3,7 @@
 #include <arm/armv7-m.dtsi>
 #include <mem.h>
 #include <freq.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
@@ -22,6 +23,32 @@
 		cpu0: cpu@0 {
 			compatible = "arm,cortex-m4f";
 			reg = <0>;
+			cpu-power-states = <&idle &suspend_to_ram>;
+		};
+
+		power-states {
+			idle: idle {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				/* As Apollo3blueplus datasheet, run_to_sleep and sleep_to_run
+				 * transition time are both lower than 1us, but considering
+				 * the software overhead we set a bigger value.
+				 */
+				min-residency-us = <100>;
+				exit-latency-us = <5>;
+			};
+
+			suspend_to_ram: suspend_to_ram {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-ram";
+				/* As Apollo3blueplus datasheet, run_to_deepsleep transition time
+				 * is the software overhead 1us and deepsleep_to_run transition
+				 * time is about 25us,but considering the software overhead,
+				 * we set a bigger value.
+				 */
+				min-residency-us = <2000>;
+				exit-latency-us = <125>;
+			};
 		};
 	};
 
@@ -166,6 +193,7 @@
 			status = "disabled";
 			clocks = <&uartclk>;
 			ambiq,pwrcfg = <&pwrcfg 0x8 0x80>;
+			zephyr,pm-device-runtime-auto;
 		};
 
 		uart1: uart@4001d000 {
@@ -176,6 +204,18 @@
 			status = "disabled";
 			clocks = <&uartclk>;
 			ambiq,pwrcfg = <&pwrcfg 0x8 0x100>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		spid0: spi@50000100 {
+			compatible = "ambiq,spid";
+			reg = <0x50000100 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <4 0>;
+			status = "disabled";
+			ambiq,pwrcfg = <&pwrcfg 0x8 0>;
+			zephyr,pm-device-runtime-auto;
 		};
 
 		spi0: spi@50004000 {
@@ -185,6 +225,7 @@
 			interrupts = <6 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x8 0x2>;
+			zephyr,pm-device-runtime-auto;
 		};
 
 		spi1: spi@50005000 {
@@ -194,6 +235,7 @@
 			interrupts = <7 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x8 0x4>;
+			zephyr,pm-device-runtime-auto;
 		};
 
 		spi2: spi@50006000 {
@@ -203,6 +245,7 @@
 			interrupts = <8 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x8 0x8>;
+			zephyr,pm-device-runtime-auto;
 		};
 
 		spi3: spi@50007000 {
@@ -212,6 +255,7 @@
 			interrupts = <9 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x8 0x10>;
+			zephyr,pm-device-runtime-auto;
 		};
 
 		spi4: spi@50008000 {
@@ -221,6 +265,7 @@
 			interrupts = <10 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x8 0x20>;
+			zephyr,pm-device-runtime-auto;
 		};
 
 		spi5: spi@50009000 {
@@ -230,6 +275,7 @@
 			interrupts = <11 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x8 0x40>;
+			zephyr,pm-device-runtime-auto;
 		};
 
 		i2c0: i2c@50004000 {
@@ -239,6 +285,7 @@
 			interrupts = <6 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x8 0x2>;
+			zephyr,pm-device-runtime-auto;
 		};
 
 		i2c1: i2c@50005000 {
@@ -248,6 +295,7 @@
 			interrupts = <7 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x8 0x4>;
+			zephyr,pm-device-runtime-auto;
 		};
 
 		i2c2: i2c@50006000 {
@@ -257,6 +305,7 @@
 			interrupts = <8 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x8 0x8>;
+			zephyr,pm-device-runtime-auto;
 		};
 
 		i2c3: i2c@50007000 {
@@ -266,6 +315,7 @@
 			interrupts = <9 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x8 0x10>;
+			zephyr,pm-device-runtime-auto;
 		};
 
 		i2c4: i2c@50008000 {
@@ -275,6 +325,7 @@
 			interrupts = <10 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x8 0x20>;
+			zephyr,pm-device-runtime-auto;
 		};
 
 		i2c5: i2c@50009000 {
@@ -284,6 +335,18 @@
 			interrupts = <11 0>;
 			status = "disabled";
 			ambiq,pwrcfg = <&pwrcfg 0x8 0x40>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		adc0: adc@50010000 {
+			reg = <0x50010000 0x400>;
+			interrupts = <18 0>;
+			interrupt-names = "ADC";
+			channel-count = <10>;
+			internal-vref-mv = <1500>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+			ambiq,pwrcfg = <&pwrcfg 0x8 0x200>;
 		};
 
 		mspi0: mspi@50014000 {
@@ -319,7 +382,7 @@
 			ambiq,pwrcfg = <&pwrcfg 0x8 0x2000>;
 		};
 
-		bleif: bleif@5000c000 {
+		bleif: spi@5000c000 {
 			compatible = "ambiq,spi-bleif";
 			reg = <0x5000c000 0x414>;
 			interrupts = <12 1>;
@@ -330,6 +393,7 @@
 
 			bt_hci_apollo: bt-hci@0 {
 				compatible = "ambiq,bt-hci-spi";
+				spi-max-frequency = <DT_FREQ_M(6)>;
 				reg = <0>;
 			};
 		};

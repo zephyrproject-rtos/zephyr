@@ -65,7 +65,7 @@ static void leuart_gecko_poll_out(const struct device *dev, unsigned char c)
 	LEUART_TypeDef *base = DEV_BASE(dev);
 
 	/* LEUART_Tx function already waits for the transmit buffer being empty
-	 * and and waits for the bus to be free to transmit.
+	 * and waits for the bus to be free to transmit.
 	 */
 	LEUART_Tx(base, c);
 }
@@ -317,7 +317,7 @@ static const struct uart_driver_api leuart_gecko_driver_api = {
 #endif
 };
 
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(0))
 
 #define PIN_LEUART_0_RXD {DT_INST_PROP_BY_IDX(0, location_rx, 1), \
 		DT_INST_PROP_BY_IDX(0, location_rx, 2), gpioModeInput, 1}
@@ -368,9 +368,9 @@ static void leuart_gecko_config_func_0(const struct device *dev)
 }
 #endif
 
-#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay) */
+#endif /* DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(0)) */
 
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(1))
 
 #define PIN_LEUART_1_RXD {DT_INST_PROP_BY_IDX(1, location_rx, 1), \
 		DT_INST_PROP_BY_IDX(1, location_rx, 2), gpioModeInput, 1}
@@ -421,4 +421,4 @@ static void leuart_gecko_config_func_1(const struct device *dev)
 }
 #endif
 
-#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay) */
+#endif /* DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(1)) */

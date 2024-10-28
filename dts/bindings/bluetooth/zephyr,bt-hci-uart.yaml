@@ -10,4 +10,4 @@ properties:
   bt-hci-name:
     default: "H:4"
   bt-hci-bus:
-    default: "BT_HCI_BUS_UART"
+    default: "uart"

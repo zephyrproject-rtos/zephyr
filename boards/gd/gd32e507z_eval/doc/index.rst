@@ -1,7 +1,4 @@
-.. _gd32e507z_eval:
-
-GigaDevice GD32E507Z-EVAL
-#########################
+.. zephyr:board:: gd32e507z_eval
 
 Overview
 ********
@@ -12,10 +9,6 @@ on GD32E507ZE Cortex-M33 High Performance MCU.
 The GD32E507ZE features a single-core ARM Cortex-M33 MCU which can run up
 to 180 MHz with flash accesses zero wait states, 512kiB of Flash, 128kiB of
 SRAM and 112 GPIOs.
-
-.. image:: img/gd32e507z_eval.webp
-     :align: center
-     :alt: gd32e507z_eval
 
 Hardware
 ********
@@ -102,7 +95,7 @@ provided you install the necessary CMSIS-Pack:
 J-Link can also be used to program the board using the JTAG interface exposed in
 the JP2 header.
 
-#. Build the Zephyr kernel and the :ref:`hello_world` sample application:
+#. Build the Zephyr kernel and the :zephyr:code-sample:`hello_world` sample application:
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world

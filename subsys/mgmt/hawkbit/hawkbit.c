@@ -17,7 +17,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/logging/log_ctrl.h>
-#include <zephyr/mgmt/hawkbit.h>
+#include <zephyr/mgmt/hawkbit/hawkbit.h>
+#include <zephyr/mgmt/hawkbit/config.h>
 #include <zephyr/net/dns_resolve.h>
 #include <zephyr/net/http/client.h>
 #include <zephyr/net/net_ip.h>
@@ -43,6 +44,8 @@ LOG_MODULE_REGISTER(hawkbit, CONFIG_HAWKBIT_LOG_LEVEL);
 #define DDI_SECURITY_TOKEN_SIZE 32
 #define HAWKBIT_RECV_TIMEOUT (300 * MSEC_PER_SEC)
 #define HAWKBIT_SET_SERVER_TIMEOUT K_MSEC(300)
+
+#define HAWKBIT_JSON_URL "/default/controller/v1"
 
 #define HTTP_HEADER_CONTENT_TYPE_JSON "application/json;charset=UTF-8"
 
@@ -121,6 +124,7 @@ static struct hawkbit_context {
 	int sock;
 	int32_t action_id;
 	uint8_t *response_data;
+	size_t response_data_size;
 	int32_t json_action_id;
 	struct hawkbit_download dl;
 	struct http_request http_req;
@@ -143,8 +147,6 @@ int hawkbit_default_config_data_cb(const char *device_id, uint8_t *buffer,
 
 static hawkbit_config_device_data_cb_handler_t hawkbit_config_device_data_cb_handler =
 	hawkbit_default_config_data_cb;
-
-static struct k_work_delayable hawkbit_work_handle;
 
 K_SEM_DEFINE(probe_sem, 1, 1);
 
@@ -498,6 +500,11 @@ int hawkbit_reset_action_id(void)
 int32_t hawkbit_get_action_id(void)
 {
 	return hb_cfg.action_id;
+}
+
+uint32_t hawkbit_get_poll_interval(void)
+{
+	return poll_sleep;
 }
 
 /*
@@ -859,7 +866,6 @@ static void response_cb(struct http_response *rsp, enum http_final_call final_da
 	static size_t body_len;
 	int ret, type, downloaded;
 	uint8_t *body_data = NULL, *rsp_tmp = NULL;
-	static size_t response_buffer_size = RESPONSE_BUFFER_SIZE;
 
 	type = enum_for_http_req_string(userdata);
 
@@ -883,9 +889,12 @@ static void response_cb(struct http_response *rsp, enum http_final_call final_da
 			body_data = rsp->body_frag_start;
 			body_len = rsp->body_frag_len;
 
-			if ((hb_context.dl.downloaded_size + body_len) > response_buffer_size) {
-				response_buffer_size <<= 1;
-				rsp_tmp = realloc(hb_context.response_data, response_buffer_size);
+			if ((hb_context.dl.downloaded_size + body_len) >
+			    hb_context.response_data_size) {
+				hb_context.response_data_size =
+					hb_context.dl.downloaded_size + body_len;
+				rsp_tmp = k_realloc(hb_context.response_data,
+						    hb_context.response_data_size);
 				if (rsp_tmp == NULL) {
 					LOG_ERR("Failed to realloc memory");
 					hb_context.code_status = HAWKBIT_METADATA_ERROR;
@@ -934,9 +943,12 @@ static void response_cb(struct http_response *rsp, enum http_final_call final_da
 			body_data = rsp->body_frag_start;
 			body_len = rsp->body_frag_len;
 
-			if ((hb_context.dl.downloaded_size + body_len) > response_buffer_size) {
-				response_buffer_size <<= 1;
-				rsp_tmp = realloc(hb_context.response_data, response_buffer_size);
+			if ((hb_context.dl.downloaded_size + body_len) >
+			    hb_context.response_data_size) {
+				hb_context.response_data_size =
+					hb_context.dl.downloaded_size + body_len;
+				rsp_tmp = k_realloc(hb_context.response_data,
+						    hb_context.response_data_size);
 				if (rsp_tmp == NULL) {
 					LOG_ERR("Failed to realloc memory");
 					hb_context.code_status = HAWKBIT_METADATA_ERROR;
@@ -1251,7 +1263,14 @@ enum hawkbit_response hawkbit_probe(void)
 	}
 
 	memset(&hb_context, 0, sizeof(hb_context));
-	hb_context.response_data = malloc(RESPONSE_BUFFER_SIZE);
+
+	hb_context.response_data_size = RESPONSE_BUFFER_SIZE;
+	hb_context.response_data = k_calloc(hb_context.response_data_size, sizeof(uint8_t));
+	if (hb_context.response_data == NULL) {
+		LOG_ERR("Failed to allocate memory");
+		hb_context.code_status = HAWKBIT_METADATA_ERROR;
+		goto error;
+	}
 
 	if (!boot_is_img_confirmed()) {
 		LOG_ERR("Current image is not confirmed");
@@ -1359,7 +1378,7 @@ enum hawkbit_response hawkbit_probe(void)
 	snprintk(hb_context.url_buffer, sizeof(hb_context.url_buffer), "%s/%s-%s/%s",
 		 HAWKBIT_JSON_URL, CONFIG_BOARD, device_id, deployment_base);
 	memset(&hawkbit_results.dep, 0, sizeof(hawkbit_results.dep));
-	memset(hb_context.response_data, 0, RESPONSE_BUFFER_SIZE);
+	memset(hb_context.response_data, 0, hb_context.response_data_size);
 
 	if (!send_request(HTTP_GET, HAWKBIT_PROBE_DEPLOYMENT_BASE, HAWKBIT_STATUS_FINISHED_NONE,
 			  HAWKBIT_STATUS_EXEC_NONE)) {
@@ -1453,69 +1472,7 @@ cleanup:
 	cleanup_connection();
 
 error:
-	free(hb_context.response_data);
+	k_free(hb_context.response_data);
 	k_sem_give(&probe_sem);
 	return hb_context.code_status;
-}
-
-static void autohandler(struct k_work *work)
-{
-	switch (hawkbit_probe()) {
-	case HAWKBIT_UNCONFIRMED_IMAGE:
-		LOG_ERR("Current image is not confirmed");
-		LOG_ERR("Rebooting to previous confirmed image");
-		LOG_ERR("If this image is flashed using a hardware tool");
-		LOG_ERR("Make sure that it is a confirmed image");
-		hawkbit_reboot();
-		break;
-
-	case HAWKBIT_NO_UPDATE:
-		LOG_INF("No update found");
-		break;
-
-	case HAWKBIT_CANCEL_UPDATE:
-		LOG_INF("hawkBit update cancelled from server");
-		break;
-
-	case HAWKBIT_OK:
-		LOG_INF("Image is already updated");
-		break;
-
-	case HAWKBIT_UPDATE_INSTALLED:
-		LOG_INF("Update installed");
-		hawkbit_reboot();
-		break;
-
-	case HAWKBIT_DOWNLOAD_ERROR:
-		LOG_INF("Update failed");
-		break;
-
-	case HAWKBIT_NETWORKING_ERROR:
-		LOG_INF("Network error");
-		break;
-
-	case HAWKBIT_PERMISSION_ERROR:
-		LOG_INF("Permission error");
-		break;
-
-	case HAWKBIT_METADATA_ERROR:
-		LOG_INF("Metadata error");
-		break;
-
-	case HAWKBIT_NOT_INITIALIZED:
-		LOG_INF("hawkBit not initialized");
-		break;
-
-	case HAWKBIT_PROBE_IN_PROGRESS:
-		LOG_INF("hawkBit is already running");
-		break;
-	}
-
-	k_work_reschedule(&hawkbit_work_handle, K_SECONDS(poll_sleep));
-}
-
-void hawkbit_autohandler(void)
-{
-	k_work_init_delayable(&hawkbit_work_handle, autohandler);
-	k_work_reschedule(&hawkbit_work_handle, K_NO_WAIT);
 }

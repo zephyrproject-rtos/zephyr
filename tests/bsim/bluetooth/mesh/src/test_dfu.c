@@ -1649,7 +1649,7 @@ static const struct bst_test_instance test_dfu[] = {
 	TEST_CASE(dist, dfu_slot_reservation,
 		      "Distributor checks that the correct number of slots can be reserved"),
 	TEST_CASE(dist, dfu_slot_idempotency,
-		      "Distributor checks that the the DFU slot APIs are idempotent"),
+		      "Distributor checks that the DFU slot APIs are idempotent"),
 	TEST_CASE(cli, stop, "DFU Client stops at configured point of Firmware Distribution"),
 	TEST_CASE(cli, fail_on_persistency, "DFU Client doesn't give up DFU Transfer"),
 	TEST_CASE(cli, all_targets_lost_on_metadata,

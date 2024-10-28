@@ -1,0 +1,140 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_mcxn23x.dtsi>
+#include "frdm_mcxn236.dtsi"
+
+/ {
+	model = "NXP FRDM_N236 board";
+	compatible = "nxp,mcxn236", "nxp,mcx";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash;
+		zephyr,flash-controller = &fmu;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,uart-mcumgr = &flexcomm4_lpuart4;
+		zephyr,console = &flexcomm4_lpuart4;
+		zephyr,shell-uart = &flexcomm4_lpuart4;
+		zephyr,canbus = &flexcan1;
+	};
+
+	aliases{
+		watchdog0 = &wwdt0;
+		pwm-0 = &flexpwm1_pwm0;
+	};
+};
+
+&sram0 {
+	compatible = "mmio-sram";
+	reg = <0x20000000 DT_SIZE_K(192)>;
+};
+
+&gpio4 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&green_led {
+	status = "okay";
+};
+
+&red_led {
+	status = "okay";
+};
+
+&user_button_2 {
+	status = "okay";
+};
+
+&edma0 {
+	status = "okay";
+};
+
+&flexcomm2 {
+	status = "okay";
+};
+
+/*
+ * LPFLEXCOMM supports UART and I2C on the same instance, enable this for
+ * LFLEXCOMM2
+ */
+&flexcomm2_lpuart2 {
+	status = "okay";
+};
+
+&flexcomm2_lpi2c2 {
+	status = "okay";
+};
+
+&flexcomm3 {
+	status = "okay";
+};
+
+&flexcomm3_lpspi3 {
+	status = "okay";
+};
+
+&flexcomm4 {
+	status = "okay";
+};
+
+&flexcomm4_lpuart4 {
+	status = "okay";
+};
+
+&flexcomm5 {
+	status = "okay";
+};
+
+&flexcomm5_lpi2c5 {
+	status = "okay";
+};
+
+&wwdt0 {
+	status = "okay";
+};
+
+&flexpwm1_pwm0 {
+	status = "okay";
+};
+
+&flexcan1 {
+	status = "okay";
+};
+
+&ctimer0 {
+	status = "okay";
+};
+
+&vref {
+	status = "okay";
+};
+
+&lpadc0 {
+	status = "okay";
+};
+
+&lpcmp0 {
+	status = "okay";
+};
+
+&flexio0 {
+	status = "okay";
+};
+
+&lptmr0 {
+	status = "okay";
+};

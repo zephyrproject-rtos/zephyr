@@ -16,6 +16,7 @@
 #endif
 
 #include <xtensa_asm2_context.h>
+#include <xtensa_stack.h>
 
 static int mask, cause;
 
@@ -39,15 +40,25 @@ static inline uint32_t xtensa_cpu_process_stack_pc(uint32_t pc)
 
 static inline bool xtensa_stack_ptr_is_sane(uint32_t sp)
 {
+	bool valid;
+
 #if defined(CONFIG_SOC_SERIES_ESP32)
-	return esp_stack_ptr_is_sane(sp);
+	valid = esp_stack_ptr_is_sane(sp);
 #elif defined(CONFIG_SOC_FAMILY_INTEL_ADSP)
-	return intel_adsp_ptr_is_sane(sp);
-#elif defined(CONFIG_SOC_XTENSA_DC233C)
-	return xtensa_dc233c_stack_ptr_is_sane(sp);
+	valid = intel_adsp_ptr_is_sane(sp);
 #else
-#warning "xtensa_stack_ptr_is_sane is not defined for this platform"
+	/* Platform does not have additional requirements on
+	 * whether stack pointer is valid. So use the generic
+	 * test below.
+	 */
+	valid = true;
 #endif
+
+	if (valid) {
+		valid = !xtensa_is_outside_stack_bounds(sp, 0, UINT32_MAX);
+	}
+
+	return valid;
 }
 
 static inline bool xtensa_ptr_executable(const void *p)
@@ -65,6 +76,13 @@ static inline bool xtensa_ptr_executable(const void *p)
 
 bool xtensa_backtrace_get_next_frame(struct xtensa_backtrace_frame_t *frame)
 {
+	/* Do not continue backtrace when we encounter an invalid stack
+	 * frame pointer.
+	 */
+	if (xtensa_is_outside_stack_bounds((uintptr_t)frame->sp, 0, UINT32_MAX)) {
+		return false;
+	}
+
 	/* Use frame(i-1)'s BS area located below frame(i)'s
 	 * sp to get frame(i-1)'s sp and frame(i-2)'s pc
 	 */
@@ -96,6 +114,15 @@ int xtensa_backtrace_print(int depth, int *interrupted_stack)
 
 	_xtensa_irq_stack_frame_raw_t *frame = (void *)interrupted_stack;
 	_xtensa_irq_bsa_t *bsa;
+
+	/* Don't dump stack if the stack pointer is invalid as
+	 * any frame elements obtained via de-referencing the
+	 * frame pointer are probably also invalid. Or worse,
+	 * cause another access violation.
+	 */
+	if (!xtensa_is_frame_pointer_valid(frame)) {
+		return -1;
+	}
 
 	bsa = frame->ptr_to_bsa;
 	cause = bsa->exccause;

@@ -241,12 +241,13 @@ struct adc_channel_cfg {
 	.reference        = DT_STRING_TOKEN(node_id, zephyr_reference), \
 	.acquisition_time = DT_PROP(node_id, zephyr_acquisition_time), \
 	.channel_id       = DT_REG_ADDR(node_id), \
-IF_ENABLED(CONFIG_ADC_CONFIGURABLE_INPUTS, \
-	(.differential    = DT_NODE_HAS_PROP(node_id, zephyr_input_negative), \
-	 .input_positive  = DT_PROP_OR(node_id, zephyr_input_positive, 0), \
-	 .input_negative  = DT_PROP_OR(node_id, zephyr_input_negative, 0),)) \
-IF_ENABLED(DT_PROP(node_id, zephyr_differential), \
+IF_ENABLED(UTIL_OR(DT_PROP(node_id, zephyr_differential), \
+		   UTIL_AND(CONFIG_ADC_CONFIGURABLE_INPUTS, \
+			    DT_NODE_HAS_PROP(node_id, zephyr_input_negative))), \
 	(.differential    = true,)) \
+IF_ENABLED(CONFIG_ADC_CONFIGURABLE_INPUTS, \
+	(.input_positive  = DT_PROP_OR(node_id, zephyr_input_positive, 0), \
+	 .input_negative  = DT_PROP_OR(node_id, zephyr_input_negative, 0),)) \
 IF_ENABLED(CONFIG_ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN, \
 	(.current_source_pin_set = DT_NODE_HAS_PROP(node_id, zephyr_current_source_pin), \
 	 .current_source_pin = DT_PROP_OR(node_id, zephyr_current_source_pin, {0}),)) \
@@ -320,7 +321,7 @@ struct adc_dt_spec {
 	DT_FOREACH_CHILD_VARGS(ctlr, ADC_FOREACH_INPUT, input)
 
 #define ADC_FOREACH_INPUT(node, input) \
-	IF_ENABLED(IS_EQ(DT_REG_ADDR(node), input), (node))
+	IF_ENABLED(IS_EQ(DT_REG_ADDR_RAW(node), input), (node))
 
 #define ADC_CHANNEL_CFG_FROM_DT_NODE(node_id) \
 	IF_ENABLED(DT_NODE_EXISTS(node_id), \

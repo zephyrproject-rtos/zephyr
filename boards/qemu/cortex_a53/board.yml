@@ -1,5 +1,6 @@
 board:
   name: qemu_cortex_a53
+  full_name: QEMU Emulation for ARM Cortex-A53
   vendor: arm
   socs:
   - name: qemu_cortex_a53

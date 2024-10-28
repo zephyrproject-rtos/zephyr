@@ -1,0 +1,19 @@
+#
+# Copyright (c) 2022, Andes Technology Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+  This is a representation of AndesTech MBOX PLIC-SW node
+
+compatible: "andestech,mbox-plic-sw"
+
+include: [base.yaml, mailbox-controller.yaml]
+
+properties:
+  interrupts:
+    required: true
+
+mbox-cells:
+  - channel

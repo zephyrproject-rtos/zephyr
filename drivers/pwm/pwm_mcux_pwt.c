@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021 Vestas Wind Systems A/S
+ * Copyright 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -84,6 +85,19 @@ static int mcux_pwt_configure_capture(const struct device *dev,
 		LOG_ERR("pwm capture in progress");
 		return -EBUSY;
 	}
+
+#if defined(CONFIG_SOC_SERIES_KE1XZ)
+	if ((flags & PWM_CAPTURE_TYPE_MASK) == PWM_CAPTURE_TYPE_BOTH) {
+		LOG_ERR("Cannot capture both period and pulse width");
+		return -ENOTSUP;
+	}
+
+	if (((flags & PWM_CAPTURE_TYPE_MASK) == PWM_CAPTURE_TYPE_PERIOD) &&
+		((flags & PWM_POLARITY_MASK) == PWM_POLARITY_NORMAL)) {
+		LOG_ERR("Cannot capture period in normal polarity (active-high pulse)");
+		return -ENOTSUP;
+	}
+#endif
 
 	data->callback = cb;
 	data->user_data = user_data;

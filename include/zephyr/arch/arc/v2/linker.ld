@@ -142,12 +142,12 @@ SECTIONS {
 #include <snippets-rodata.ld>
 #include <zephyr/linker/kobject-rom.ld>
 
-#if defined(CONFIG_CPP) && !defined(CONFIG_CPP_STATIC_INIT_GNU) && defined(__MWDT_LINKER_CMD__)
+#if defined(CONFIG_CPP) && !defined(CONFIG_STATIC_INIT_GNU) && defined(__MWDT_LINKER_CMD__)
 		. = ALIGN(4);
 		_fctors = .;
 		KEEP(*(.ctors*))
 		_ectors = .;
-#endif /* CONFIG_CPP && !CONFIG_CPP_STATIC_INIT_GNU && __MWDT_LINKER_CMD__ */
+#endif /* CONFIG_CPP && !CONFIG_STATIC_INIT_GNU && __MWDT_LINKER_CMD__ */
 
 /* This extra MPU alignment of RAMABLE_REGION is only required if we put ROMABLE_REGION and
  * RAMABLE_REGION into the same (continuous) memory - otherwise we can get beginning of the
@@ -311,11 +311,11 @@ SECTIONS {
 #endif
 
 	/DISCARD/ : {
-#if defined(CONFIG_CPP) && !defined(CONFIG_CPP_STATIC_INIT_GNU) && defined(__MWDT_LINKER_CMD__)
+#if defined(CONFIG_CPP) && !defined(CONFIG_STATIC_INIT_GNU) && defined(__MWDT_LINKER_CMD__)
 		*(.dtors*)
 		*(.fini*)
 		*(.eh_frame*)
-#endif /* CONFIG_CPP && !CONFIG_CPP_STATIC_INIT_GNU && __MWDT_LINKER_CMD__ */
+#endif /* CONFIG_CPP && !CONFIG_STATIC_INIT_GNU && __MWDT_LINKER_CMD__ */
 		*(.note.GNU-stack)
 		*(.got.plt)
 		*(.igot.plt)

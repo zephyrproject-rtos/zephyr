@@ -24,3 +24,4 @@ Read more about Bluetooth Mesh on the
    mesh/cfg.rst
    mesh/statistic.rst
    mesh/shell.rst
+   mesh/brg_cfg.rst

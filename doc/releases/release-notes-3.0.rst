@@ -181,7 +181,7 @@ Deprecated in this release
   :c:func:`can_set_bitrate` and :c:func:`can_set_mode`.
 * :c:func:`can_attach_workq` is deprecated in favor of utilizing
   :c:func:`can_add_rx_filter_msgq` and :c:func:`k_work_poll_submit`.
-* :c:func:`can_attach_isr` is is deprecated and replaced by
+* :c:func:`can_attach_isr` is deprecated and replaced by
   :c:func:`can_add_rx_filter`.
 * :c:macro:`CAN_DEFINE_MSGQ` is deprecated and replaced by
   :c:macro:`CAN_MSGQ_DEFINE`.

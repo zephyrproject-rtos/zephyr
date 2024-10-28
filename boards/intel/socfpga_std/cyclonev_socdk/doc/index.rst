@@ -10,7 +10,7 @@ Overview
 The Zephyr kernel is supported on the Intel® Cyclone® V SoC Development Kit,
 using its Hard Processor System (HPS) CPU.
 
-.. figure:: img/cv_soc_board.jpg
+.. figure:: img/cyclonev_socdk.jpg
    :align: center
    :alt: Intel's Cyclone® V SoC FPGA DevKit
 
@@ -163,7 +163,7 @@ Flashing Kernel into the board
 ------------------------------
 
 The usual ``flash`` target will work with the ``cyclonev_socdk`` board
-configuration. Here is an example for the :ref:`hello_world`
+configuration. Here is an example for the :zephyr:code-sample:`hello_world`
 application.
 
 ``Important!!!`` : Before flashing the board a ``preloader`` is required,

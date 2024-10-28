@@ -13,8 +13,6 @@
 #include <esp_cpu.h>
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 
-static struct k_spinlock loglock;
-
 void smp_log(const char *msg)
 {
 	while (*msg) {

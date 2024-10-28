@@ -1,0 +1,54 @@
+# Kernel thread configuration options
+
+# Copyright (c) 2024 Meta Platforms
+# SPDX-License-Identifier: Apache-2.0
+
+config KERNEL_THREAD_SHELL
+	bool
+	help
+	  Internal helper macro to determine if the main `thread` command
+	  should be compiled.
+
+config KERNEL_THREAD_SHELL_LIST
+	bool
+	default y
+	depends on INIT_STACKS
+	depends on THREAD_MONITOR
+	depends on THREAD_STACK_INFO
+	select KERNEL_THREAD_SHELL
+	help
+	  Internal helper macro to compile the `list` subcommand
+
+config KERNEL_THREAD_SHELL_STACKS
+	bool
+	default y
+	depends on INIT_STACKS
+	depends on THREAD_MONITOR
+	depends on THREAD_STACK_INFO
+	select KERNEL_THREAD_SHELL
+	help
+	  Internal helper macro to compile the `stacks` subcommand
+
+config KERNEL_THREAD_SHELL_MASK
+	bool
+	default y
+	depends on SCHED_CPU_MASK
+	select KERNEL_THREAD_SHELL
+	help
+	  Internal helper macro to compile the `mask` subcommand
+
+config KERNEL_THREAD_SHELL_PIN
+	bool
+	default y
+	depends on SCHED_CPU_MASK
+	select KERNEL_THREAD_SHELL
+	help
+	  Internal helper macro to compile the `pin` subcommand
+
+config KERNEL_THREAD_SHELL_UNWIND
+	bool
+	default y
+	depends on ARCH_STACKWALK
+	select KERNEL_THREAD_SHELL
+	help
+	  Internal helper macro to compile the `unwind` subcommand

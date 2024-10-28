@@ -1,7 +1,4 @@
-.. _mimxrt1040_evk:
-
-NXP MIMXRT1040-EVK
-##################
+.. zephyr:board:: mimxrt1040_evk
 
 Overview
 ********
@@ -11,10 +8,6 @@ extended temperature range up to 125° C. The i.MX RT1040 MCU has a compact
 9x9 mm package, as well as the 11x11 mm package that supports implementing a
 2-layer PCB design. The i.MX RT1040 MCUs run on the Arm® Cortex®-M7 core at
 600 MHz.
-
-.. image:: mimxrt1040_evk.jpg
-   :align: center
-   :alt: MIMXRT1040-EVK
 
 Hardware
 ********
@@ -91,7 +84,7 @@ Supported Features
 
 The mimxrt1040_evk board configuration supports the hardware features listed
 below.  For additional features not yet supported, please also refer to the
-:ref:`mimxrt1064_evk` , which is the superset board in NXP's i.MX RT10xx family.
+:zephyr:board:`mimxrt1064_evk` , which is the superset board in NXP's i.MX RT10xx family.
 NXP prioritizes enabling the superset board with NXP's Full Platform Support for
 Zephyr.  Therefore, the mimxrt1064_evk board may have additional features
 already supported, which can also be re-used on this mimxrt1040_evk board:
@@ -118,9 +111,13 @@ already supported, which can also be re-used on this mimxrt1040_evk board:
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
+| GPT       | on-chip    | gpt                                 |
++-----------+------------+-------------------------------------+
 | DISPLAY   | on-chip    | eLCDIF. Tested with                 |
 |           |            | :ref:`rk043fn02h_ct`, and           |
 |           |            | :ref:`rk043fn66hs_ctg` shields      |
++-----------+------------+-------------------------------------+
+| UART      | NXP NW61x  | M.2 WIFI/BT module                  |
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in
@@ -162,6 +159,14 @@ The MIMXRT1040 SoC has five pairs of pinmux/gpio controllers.
 +---------------+-----------------+---------------------------+
 | GPIO_AD_B1_01 | LPI2C1_SDA      | I2C Data                  |
 +---------------+-----------------+---------------------------+
+| GPIO_AD_B1_06 | LPUART3_TX      | M.2 BT HCI                |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B1_07 | LPUART3_RX      | M.2 BT HCI                |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B1_04 | LPUART3_CTS_b   | M.2 BT HCI                |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B1_05 | LPUART3_RTS_b   | M.2 BT HCI                |
++---------------+-----------------+---------------------------+
 
 .. note::
         In order to use the SPI peripheral on this board, resistors R350, R346,
@@ -182,7 +187,20 @@ Serial Port
 ===========
 
 The MIMXRT1040 SoC has eight UARTs. ``LPUART1`` is configured for the console,
+``LPUART3`` for the Bluetooth Host Controller Interface (BT HCI),
 and the remaining UARTs are not used.
+
+Fetch Binary Blobs
+==================
+
+The board Bluetooth/WiFi module requires fetching some binary blob files, to do
+that run the command:
+
+.. code-block:: console
+
+   west blobs fetch hal_nxp
+
+.. note:: Only Bluetooth functionality is currently supported.
 
 Programming and Debugging
 *************************
@@ -229,7 +247,7 @@ etc.):
 Flashing
 ========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -247,7 +265,7 @@ see the following message in the terminal:
 Debugging
 =========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -303,6 +321,16 @@ steps:
 
 #. Reset by pressing SW1
 
+Bluetooth Module
+----------------
+
+For Murate 2EL M.2 Mdoule, the following hardware rework needs to be applied,
+Solder 0 ohm resistors for R96, and R93.
+Remove resistors from R497, R498, R456 and R457.
+
+And due to pin conflict issue, the PCM interface of Bluetooth module cannot be supported.
+
+For the debugger fails to connect with the following error, please refer to the next section.
 
 WiFi Module
 -----------

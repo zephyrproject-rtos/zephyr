@@ -140,7 +140,7 @@ ZTEST(net_content_link_format, test_put_begin_discovery)
 ZTEST(net_content_link_format, test_put_begin_bs_discovery)
 {
 	int ret;
-	const char *expected_payload = "lwm2m=\"1.0\"";
+	const char *expected_payload = "</>;lwm2m=\"1.0\"";
 
 	test_formatter_data.mode = LINK_FORMAT_MODE_BOOTSTRAP_DISCOVERY;
 

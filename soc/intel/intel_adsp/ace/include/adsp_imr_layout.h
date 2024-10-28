@@ -4,7 +4,7 @@
 #ifndef ZEPHYR_SOC_INTEL_ADSP_ACE_IMR_LAYOUT_H_
 #define ZEPHYR_SOC_INTEL_ADSP_ACE_IMR_LAYOUT_H_
 
-/* These structs and macros are from from the ROM code header
+/* These structs and macros are from the ROM code header
  * on cAVS platforms, please keep them immutable
  */
 

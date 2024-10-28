@@ -26,7 +26,7 @@ Building and Running
 For configuring the remote IPv6 syslog server, set the following
 variables in prj.conf file:
 
-.. code-block:: console
+.. code-block:: cfg
 
 	CONFIG_LOG_BACKEND_NET=y
 	CONFIG_LOG_BACKEND_NET_SERVER="[2001:db8::2]:514"
@@ -51,3 +51,9 @@ Build syslog_net sample application like this:
    :conf: <config file to use>
    :goals: build
    :compact:
+
+Wi-Fi
+=====
+
+The IPv4 Wi-Fi support can be enabled in the sample with
+:ref:`Wi-Fi snippet <snippet-wifi-ipv4>`.

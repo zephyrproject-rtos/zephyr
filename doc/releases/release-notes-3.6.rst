@@ -176,12 +176,17 @@ Boards & SoC Support
     ``adi_eval_adin2111ebz``.
   * Added support for NXP UCANS32K1SIC board: ``ucans32k1sic``.
 
+* Added support for this RISC-V board:
+
+  * Added Lilygo TTGO T8-C3 board: ``ttgo_t8c3``.
+
 * Added support for these Xtensa boards:
 
   * Added support for NXP iMX8ULP board: ``nxp_adsp_imx8ulp``.
   * Added Heltec Wireless Stick Lite (V3) board: ``heltec_wireless_stick_lite_v3``.
   * Added KINCONY-KC868-A32 board: ``kincony_kc868_a32``.
   * Added Lolin ESP32-S2 Mini board: ``esp32s2_lolin_mini``.
+  * Added Lilygo TTGO LoRa32 board: ``ttgo_lora32``.
   * Added M5Stack AtomS3 board: ``m5stack_atoms3``.
   * Added M5Stack AtomS3-Lite board: ``m5stack_atoms3_lite``.
   * Added M5Stack StampS3 board: ``m5stack_stamps3``.
@@ -1002,7 +1007,7 @@ Libraries / Subsystems
     MCUboot or currently running application slot.
 
   * Fixed an issue whereby messages that were too large to be sent over the UDP transport would
-    wrongly return :c:enum:`MGMT_ERR_EINVAL` instead of :c:enum:`MGMT_ERR_EMSGSIZE`.
+    wrongly return :c:enumerator:`MGMT_ERR_EINVAL` instead of :c:enumerator:`MGMT_ERR_EMSGSIZE`.
 
   * Fixed an issue where confirming an image in Direct XIP mode would always confirm the image in
     the primary slot even when executing from the secondary slot. Now the currently active image is

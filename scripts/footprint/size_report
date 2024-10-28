@@ -82,7 +82,7 @@ def get_die_mapped_address(die, parser, dwarfinfo):
         if 'DW_AT_location' in die.attributes:
             loc_attr = die.attributes['DW_AT_location']
             if parser.attribute_has_location(loc_attr, die.cu['version']):
-                loc = parser.parse_from_attribute(loc_attr, die.cu['version'])
+                loc = parser.parse_from_attribute(loc_attr, die.cu['version'], die)
                 if isinstance(loc, LocationExpr):
                     addr = describe_DWARF_expr(loc.loc_expr,
                                                dwarfinfo.structs)

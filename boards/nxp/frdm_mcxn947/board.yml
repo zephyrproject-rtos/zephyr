@@ -1,5 +1,9 @@
 board:
   name: frdm_mcxn947
+  full_name: FRDM-MCXN947
   vendor: nxp
   socs:
   - name: mcxn947
+    variants:
+    - name: qspi
+      cpucluster: 'cpu0'

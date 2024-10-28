@@ -1,7 +1,4 @@
-.. _lora_e5_dev_board:
-
-Seeed Studio LoRa-E5 Dev Board
-##############################
+.. zephyr:board:: lora_e5_dev_board
 
 Overview
 ********
@@ -12,10 +9,6 @@ The LoRa-E5-HF STM32WLE5JC Module supports multiple LPWAN protocols on the
 868/915MHz frequency bands with up to 20.8dBm output power at 3.3V.
 All GPIOs of the LoRa-E5 Module are laid out supporting
 various data protocols and interfaces including RS-485 and Grove.
-
-.. image:: img/lora_e5_dev_board.jpg
-   :align: center
-   :alt: LoRa-E5 Dev board
 
 Hardware
 ********
@@ -112,6 +105,7 @@ features:
 Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration can be found in:
+
 - :zephyr_file:`boards/seeed/lora_e5_dev_board/lora_e5_dev_board_defconfig`
 - :zephyr_file:`boards/seeed/lora_e5_dev_board/lora_e5_dev_board.dts`
 
@@ -241,7 +235,7 @@ Flashing an application to LoRa-E5 Dev board
 
 Connect the LoRa-E5 to your host computer using the external debug probe.
 Then build and flash an application. Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 Run a serial host program to connect with your board:
 Per default the console on ``usart1`` is available on the USB Type C connector

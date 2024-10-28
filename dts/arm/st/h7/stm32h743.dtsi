@@ -32,12 +32,12 @@
 		usbotg_fs: usb@40080000 {
 			compatible = "st,stm32-otgfs";
 			reg = <0x40080000 0x40000>;
-			interrupts = <101 0>, <98 0>, <99 0>;
-			interrupt-names = "otgfs", "ep1_out", "ep1_in";
+			interrupts = <98 0>, <99 0>, <100 0>, <101 0>;
+			interrupt-names = "ep1_out", "ep1_in", "wkup", "otgfs";
 			num-bidir-endpoints = <9>;
 			ram-size = <4096>;
 			maximum-speed = "full-speed";
-			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x08000000>,
+			clocks = <&rcc STM32_CLOCK(AHB1, 27U)>,
 				 <&rcc STM32_SRC_HSI48 USB_SEL(3)>;
 			phys = <&otghs_fs_phy>;
 			status = "disabled";
@@ -48,7 +48,8 @@
 			reg = <0x50001000 0x200>;
 			interrupts = <88 0>, <89 0>;
 			interrupt-names = "ltdc", "ltdc_er";
-			clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00000008>;
+			clocks = <&rcc STM32_CLOCK(APB3, 3U)>;
+			resets = <&rctl STM32_RESET(APB3, 4U)>;
 			status = "disabled";
 		};
 
@@ -99,6 +100,12 @@
 		compatible = "zephyr,memory-region", "arm,dtcm";
 		reg = <0x20000000 DT_SIZE_K(128)>;
 		zephyr,memory-region = "DTCM";
+	};
+
+	itcm: memory@0 {
+		compatible = "zephyr,memory-region", "arm,itcm";
+		reg = <0x00000000 DT_SIZE_K(64)>;
+		zephyr,memory-region = "ITCM";
 	};
 
 	otghs_fs_phy: otghs_fs_phy {

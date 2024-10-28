@@ -1,5 +1,6 @@
 board:
   name: xmc45_relax_kit
+  full_name: XMC45-RELAX-KIT
   vendor: infineon
   socs:
   - name: xmc4500

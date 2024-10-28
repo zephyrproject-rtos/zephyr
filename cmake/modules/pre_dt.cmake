@@ -11,8 +11,6 @@ include(extensions)
 # Outcome:
 # The following variables will be defined when this CMake module completes:
 #
-# - CMAKE_DTS_PREPROCESSOR: the path to the preprocessor to use
-#   for devicetree files
 # - DTS_ROOT: a deduplicated list of places where devicetree
 #   implementation files (like bindings, vendor prefixes, etc.) are
 #   found

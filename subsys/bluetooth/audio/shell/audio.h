@@ -32,13 +32,10 @@
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/sys_clock.h>
 
-#include "shell/bt.h"
+#include "host/shell/bt.h"
 
 #define SHELL_PRINT_INDENT_LEVEL_SIZE 2
 #define MAX_CODEC_FRAMES_PER_SDU      4U
-
-/* BIS sync is a 32-bit bitfield where BIT(0) is not allowed */
-#define VALID_BIS_SYNC(_bis_sync) ((bis_sync & BIT(0)) == 0U && bis_sync < UINT32_MAX)
 
 extern struct bt_csip_set_member_svc_inst *svc_inst;
 
@@ -93,7 +90,7 @@ struct named_lc3_preset {
 struct shell_stream {
 	struct bt_cap_stream stream;
 	struct bt_audio_codec_cfg codec_cfg;
-	struct bt_audio_codec_qos qos;
+	struct bt_bap_qos_cfg qos;
 	bool is_tx;
 	bool is_rx;
 
@@ -177,7 +174,7 @@ struct broadcast_source {
 		struct bt_cap_broadcast_source *cap_source;
 	};
 	struct bt_audio_codec_cfg codec_cfg;
-	struct bt_audio_codec_qos qos;
+	struct bt_bap_qos_cfg qos;
 };
 
 struct broadcast_sink {
@@ -199,7 +196,8 @@ struct broadcast_sink {
 #if defined(CONFIG_BT_BAP_UNICAST)
 
 #define UNICAST_SERVER_STREAM_COUNT                                                                \
-	COND_CODE_1(CONFIG_BT_ASCS, (CONFIG_BT_ASCS_ASE_SNK_COUNT + CONFIG_BT_ASCS_ASE_SRC_COUNT), \
+	COND_CODE_1(CONFIG_BT_ASCS,                                                                \
+		    (CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT + CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT),         \
 		    (0))
 #define UNICAST_CLIENT_STREAM_COUNT                                                                \
 	COND_CODE_1(CONFIG_BT_BAP_UNICAST_CLIENT,                                                  \
@@ -235,7 +233,7 @@ int cap_ac_unicast(const struct shell *sh, const struct bap_unicast_ac_param *pa
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 #endif /* CONFIG_BT_BAP_UNICAST */
 
-static inline void print_qos(const struct shell *sh, const struct bt_audio_codec_qos *qos)
+static inline void print_qos(const struct shell *sh, const struct bt_bap_qos_cfg *qos)
 {
 #if defined(CONFIG_BT_BAP_BROADCAST_SOURCE) || defined(CONFIG_BT_BAP_UNICAST)
 	shell_print(sh,
@@ -283,41 +281,11 @@ static void print_ltv_array(const struct shell *sh, size_t indent, const uint8_t
 		.cnt = 0U,
 		.indent = indent,
 	};
+	int err;
 
-	bt_audio_data_parse(ltv_data, ltv_data_len, print_ltv_elem, &ltv_info);
-}
-
-static inline char *context_bit_to_str(enum bt_audio_context context)
-{
-	switch (context) {
-	case BT_AUDIO_CONTEXT_TYPE_PROHIBITED:
-		return "Prohibited";
-	case BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED:
-		return "Unspecified";
-	case BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL:
-		return "Converstation";
-	case BT_AUDIO_CONTEXT_TYPE_MEDIA:
-		return "Media";
-	case BT_AUDIO_CONTEXT_TYPE_GAME:
-		return "Game";
-	case BT_AUDIO_CONTEXT_TYPE_INSTRUCTIONAL:
-		return "Instructional";
-	case BT_AUDIO_CONTEXT_TYPE_VOICE_ASSISTANTS:
-		return "Voice assistant";
-	case BT_AUDIO_CONTEXT_TYPE_LIVE:
-		return "Live";
-	case BT_AUDIO_CONTEXT_TYPE_SOUND_EFFECTS:
-		return "Sound effects";
-	case BT_AUDIO_CONTEXT_TYPE_NOTIFICATIONS:
-		return "Notifications";
-	case BT_AUDIO_CONTEXT_TYPE_RINGTONE:
-		return "Ringtone";
-	case BT_AUDIO_CONTEXT_TYPE_ALERTS:
-		return "Alerts";
-	case BT_AUDIO_CONTEXT_TYPE_EMERGENCY_ALARM:
-		return "Emergency alarm";
-	default:
-		return "Unknown context";
+	err = bt_audio_data_parse(ltv_data, ltv_data_len, print_ltv_elem, &ltv_info);
+	if (err != 0 && err != -ECANCELED) {
+		shell_error(sh, "%*sInvalid LTV data: %d", indent, "", err);
 	}
 }
 
@@ -333,8 +301,8 @@ static inline void print_codec_meta_pref_context(const struct shell *sh, size_t 
 		const uint16_t bit_val = BIT(i);
 
 		if (context & bit_val) {
-			shell_print(sh, "%*s%s (0x%04X)", indent, "", context_bit_to_str(bit_val),
-				    bit_val);
+			shell_print(sh, "%*s%s (0x%04X)", indent, "",
+				    bt_audio_context_bit_to_str(bit_val), bit_val);
 		}
 	}
 }
@@ -351,8 +319,8 @@ static inline void print_codec_meta_stream_context(const struct shell *sh, size_
 		const uint16_t bit_val = BIT(i);
 
 		if (context & bit_val) {
-			shell_print(sh, "%*s%s (0x%04X)", indent, "", context_bit_to_str(bit_val),
-				    bit_val);
+			shell_print(sh, "%*s%s (0x%04X)", indent, "",
+				    bt_audio_context_bit_to_str(bit_val), bit_val);
 		}
 	}
 }
@@ -393,51 +361,11 @@ static inline void print_codec_meta_ccid_list(const struct shell *sh, size_t ind
 	}
 }
 
-static inline char *parental_rating_to_str(enum bt_audio_parental_rating parental_rating)
-{
-	switch (parental_rating) {
-	case BT_AUDIO_PARENTAL_RATING_NO_RATING:
-		return "No rating";
-	case BT_AUDIO_PARENTAL_RATING_AGE_ANY:
-		return "Any";
-	case BT_AUDIO_PARENTAL_RATING_AGE_5_OR_ABOVE:
-		return "Age 5 or above";
-	case BT_AUDIO_PARENTAL_RATING_AGE_6_OR_ABOVE:
-		return "Age 6 or above";
-	case BT_AUDIO_PARENTAL_RATING_AGE_7_OR_ABOVE:
-		return "Age 7 or above";
-	case BT_AUDIO_PARENTAL_RATING_AGE_8_OR_ABOVE:
-		return "Age 8 or above";
-	case BT_AUDIO_PARENTAL_RATING_AGE_9_OR_ABOVE:
-		return "Age 9 or above";
-	case BT_AUDIO_PARENTAL_RATING_AGE_10_OR_ABOVE:
-		return "Age 10 or above";
-	case BT_AUDIO_PARENTAL_RATING_AGE_11_OR_ABOVE:
-		return "Age 11 or above";
-	case BT_AUDIO_PARENTAL_RATING_AGE_12_OR_ABOVE:
-		return "Age 12 or above";
-	case BT_AUDIO_PARENTAL_RATING_AGE_13_OR_ABOVE:
-		return "Age 13 or above";
-	case BT_AUDIO_PARENTAL_RATING_AGE_14_OR_ABOVE:
-		return "Age 14 or above";
-	case BT_AUDIO_PARENTAL_RATING_AGE_15_OR_ABOVE:
-		return "Age 15 or above";
-	case BT_AUDIO_PARENTAL_RATING_AGE_16_OR_ABOVE:
-		return "Age 16 or above";
-	case BT_AUDIO_PARENTAL_RATING_AGE_17_OR_ABOVE:
-		return "Age 17 or above";
-	case BT_AUDIO_PARENTAL_RATING_AGE_18_OR_ABOVE:
-		return "Age 18 or above";
-	default:
-		return "Unknown rating";
-	}
-}
-
 static inline void print_codec_meta_parental_rating(const struct shell *sh, size_t indent,
 						    enum bt_audio_parental_rating parental_rating)
 {
 	shell_print(sh, "%*sRating: %s (0x%02X)", indent, "",
-		    parental_rating_to_str(parental_rating), (uint8_t)parental_rating);
+		    bt_audio_parental_rating_to_str(parental_rating), (uint8_t)parental_rating);
 }
 
 static inline void print_codec_meta_program_info_uri(const struct shell *sh, size_t indent,
@@ -461,8 +389,7 @@ static inline void print_codec_meta_audio_active_state(const struct shell *sh, s
 						       enum bt_audio_active_state state)
 {
 	shell_print(sh, "%*sAudio active state: %s (0x%02X)", indent, "",
-		    state == BT_AUDIO_ACTIVE_STATE_ENABLED ? "enabled" : "disabled",
-		    (uint8_t)state);
+		    bt_audio_active_state_to_str(state), (uint8_t)state);
 }
 
 static inline void print_codec_meta_bcast_audio_immediate_rend_flag(const struct shell *sh,
@@ -503,40 +430,6 @@ static inline void print_codec_meta_vendor(const struct shell *sh, size_t indent
 	shell_fprintf(sh, SHELL_NORMAL, "\n");
 }
 
-static inline char *codec_cap_freq_bit_to_str(enum bt_audio_codec_cap_freq freq)
-{
-	switch (freq) {
-	case BT_AUDIO_CODEC_CAP_FREQ_8KHZ:
-		return "8000 Hz";
-	case BT_AUDIO_CODEC_CAP_FREQ_11KHZ:
-		return "11025 Hz";
-	case BT_AUDIO_CODEC_CAP_FREQ_16KHZ:
-		return "16000 Hz";
-	case BT_AUDIO_CODEC_CAP_FREQ_22KHZ:
-		return "22050 Hz";
-	case BT_AUDIO_CODEC_CAP_FREQ_24KHZ:
-		return "24000 Hz";
-	case BT_AUDIO_CODEC_CAP_FREQ_32KHZ:
-		return "32000 Hz";
-	case BT_AUDIO_CODEC_CAP_FREQ_44KHZ:
-		return "44100 Hz";
-	case BT_AUDIO_CODEC_CAP_FREQ_48KHZ:
-		return "48000 Hz";
-	case BT_AUDIO_CODEC_CAP_FREQ_88KHZ:
-		return "88200 Hz";
-	case BT_AUDIO_CODEC_CAP_FREQ_96KHZ:
-		return "96000 Hz";
-	case BT_AUDIO_CODEC_CAP_FREQ_176KHZ:
-		return "176400 Hz";
-	case BT_AUDIO_CODEC_CAP_FREQ_192KHZ:
-		return "192000 Hz";
-	case BT_AUDIO_CODEC_CAP_FREQ_384KHZ:
-		return "384000 Hz";
-	default:
-		return "Unknown supported frequency";
-	}
-}
-
 static inline void print_codec_cap_freq(const struct shell *sh, size_t indent,
 					enum bt_audio_codec_cap_freq freq)
 {
@@ -549,24 +442,8 @@ static inline void print_codec_cap_freq(const struct shell *sh, size_t indent,
 
 		if (freq & bit_val) {
 			shell_print(sh, "%*s%s (0x%04X)", indent, "",
-				    codec_cap_freq_bit_to_str(bit_val), bit_val);
+				    bt_audio_codec_cap_freq_bit_to_str(bit_val), bit_val);
 		}
-	}
-}
-
-static inline char *codec_cap_frame_dur_bit_to_str(enum bt_audio_codec_cap_frame_dur frame_dur)
-{
-	switch (frame_dur) {
-	case BT_AUDIO_CODEC_CAP_DURATION_7_5:
-		return "7.5 ms";
-	case BT_AUDIO_CODEC_CAP_DURATION_10:
-		return "10 ms";
-	case BT_AUDIO_CODEC_CAP_DURATION_PREFER_7_5:
-		return "7.5 ms preferred";
-	case BT_AUDIO_CODEC_CAP_DURATION_PREFER_10:
-		return "10 ms preferred";
-	default:
-		return "Unknown frame duration";
 	}
 }
 
@@ -582,32 +459,8 @@ static inline void print_codec_cap_frame_dur(const struct shell *sh, size_t inde
 
 		if (frame_dur & bit_val) {
 			shell_print(sh, "%*s%s (0x%02X)", indent, "",
-				    codec_cap_frame_dur_bit_to_str(bit_val), bit_val);
+				    bt_audio_codec_cap_frame_dur_bit_to_str(bit_val), bit_val);
 		}
-	}
-}
-
-static inline char *codec_cap_chan_count_bit_to_str(enum bt_audio_codec_cap_chan_count chan_count)
-{
-	switch (chan_count) {
-	case BT_AUDIO_CODEC_CAP_CHAN_COUNT_1:
-		return "1 channel";
-	case BT_AUDIO_CODEC_CAP_CHAN_COUNT_2:
-		return "2 channels";
-	case BT_AUDIO_CODEC_CAP_CHAN_COUNT_3:
-		return "3 channels";
-	case BT_AUDIO_CODEC_CAP_CHAN_COUNT_4:
-		return "4 channels";
-	case BT_AUDIO_CODEC_CAP_CHAN_COUNT_5:
-		return "5 channels";
-	case BT_AUDIO_CODEC_CAP_CHAN_COUNT_6:
-		return "6 channels";
-	case BT_AUDIO_CODEC_CAP_CHAN_COUNT_7:
-		return "7 channels";
-	case BT_AUDIO_CODEC_CAP_CHAN_COUNT_8:
-		return "8 channels";
-	default:
-		return "Unknown channel count";
 	}
 }
 
@@ -623,7 +476,7 @@ static inline void print_codec_cap_chan_count(const struct shell *sh, size_t ind
 
 		if (chan_count & bit_val) {
 			shell_print(sh, "%*s%s (0x%02X)", indent, "",
-				    codec_cap_chan_count_bit_to_str(bit_val), bit_val);
+				    bt_audio_codec_cap_chan_count_bit_to_str(bit_val), bit_val);
 		}
 	}
 }
@@ -783,72 +636,6 @@ static inline void print_codec_cfg_frame_dur(const struct shell *sh, size_t inde
 		    bt_audio_codec_cfg_frame_dur_to_frame_dur_us(frame_dur), (uint8_t)frame_dur);
 }
 
-static inline char *chan_location_bit_to_str(enum bt_audio_location chan_allocation)
-{
-	switch (chan_allocation) {
-	case BT_AUDIO_LOCATION_MONO_AUDIO:
-		return "Mono";
-	case BT_AUDIO_LOCATION_FRONT_LEFT:
-		return "Front left";
-	case BT_AUDIO_LOCATION_FRONT_RIGHT:
-		return "Front right";
-	case BT_AUDIO_LOCATION_FRONT_CENTER:
-		return "Front center";
-	case BT_AUDIO_LOCATION_LOW_FREQ_EFFECTS_1:
-		return "Low frequency effects 1";
-	case BT_AUDIO_LOCATION_BACK_LEFT:
-		return "Back left";
-	case BT_AUDIO_LOCATION_BACK_RIGHT:
-		return "Back right";
-	case BT_AUDIO_LOCATION_FRONT_LEFT_OF_CENTER:
-		return "Front left of center";
-	case BT_AUDIO_LOCATION_FRONT_RIGHT_OF_CENTER:
-		return "Front right of center";
-	case BT_AUDIO_LOCATION_BACK_CENTER:
-		return "Back center";
-	case BT_AUDIO_LOCATION_LOW_FREQ_EFFECTS_2:
-		return "Low frequency effects 2";
-	case BT_AUDIO_LOCATION_SIDE_LEFT:
-		return "Side left";
-	case BT_AUDIO_LOCATION_SIDE_RIGHT:
-		return "Side right";
-	case BT_AUDIO_LOCATION_TOP_FRONT_LEFT:
-		return "Top front left";
-	case BT_AUDIO_LOCATION_TOP_FRONT_RIGHT:
-		return "Top front right";
-	case BT_AUDIO_LOCATION_TOP_FRONT_CENTER:
-		return "Top front center";
-	case BT_AUDIO_LOCATION_TOP_CENTER:
-		return "Top center";
-	case BT_AUDIO_LOCATION_TOP_BACK_LEFT:
-		return "Top back left";
-	case BT_AUDIO_LOCATION_TOP_BACK_RIGHT:
-		return "Top back right";
-	case BT_AUDIO_LOCATION_TOP_SIDE_LEFT:
-		return "Top side left";
-	case BT_AUDIO_LOCATION_TOP_SIDE_RIGHT:
-		return "Top side right";
-	case BT_AUDIO_LOCATION_TOP_BACK_CENTER:
-		return "Top back center";
-	case BT_AUDIO_LOCATION_BOTTOM_FRONT_CENTER:
-		return "Bottom front center";
-	case BT_AUDIO_LOCATION_BOTTOM_FRONT_LEFT:
-		return "Bottom front left";
-	case BT_AUDIO_LOCATION_BOTTOM_FRONT_RIGHT:
-		return "Bottom front right";
-	case BT_AUDIO_LOCATION_FRONT_LEFT_WIDE:
-		return "Front left wide";
-	case BT_AUDIO_LOCATION_FRONT_RIGHT_WIDE:
-		return "Front right wde";
-	case BT_AUDIO_LOCATION_LEFT_SURROUND:
-		return "Left surround";
-	case BT_AUDIO_LOCATION_RIGHT_SURROUND:
-		return "Right surround";
-	default:
-		return "Unknown location";
-	}
-}
-
 static inline void print_codec_cfg_chan_allocation(const struct shell *sh, size_t indent,
 						   enum bt_audio_location chan_allocation)
 {
@@ -865,7 +652,7 @@ static inline void print_codec_cfg_chan_allocation(const struct shell *sh, size_
 
 			if (chan_allocation & bit_val) {
 				shell_print(sh, "%*s%s (0x%08X)", indent, "",
-					    chan_location_bit_to_str(bit_val), bit_val);
+					    bt_audio_location_bit_to_str(bit_val), bit_val);
 			}
 		}
 	}

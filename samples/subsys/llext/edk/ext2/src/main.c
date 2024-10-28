@@ -23,4 +23,4 @@ int start(void)
 
 	return 0;
 }
-LL_EXTENSION_SYMBOL(start);
+EXPORT_SYMBOL(start);

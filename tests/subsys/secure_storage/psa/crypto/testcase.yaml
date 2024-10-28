@@ -1,0 +1,14 @@
+common:
+  tags:
+    - psa.secure_storage
+tests:
+  secure_storage.psa.crypto.secure_storage:
+    filter: CONFIG_SECURE_STORAGE and not CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_NONE
+    extra_args: EXTRA_CONF_FILE=overlay-secure_storage.conf
+    integration_platforms:
+      - native_sim
+      - nrf54l15dk/nrf54l15/cpuapp
+  secure_storage.psa.crypto.tfm:
+    filter: CONFIG_BUILD_WITH_TFM
+    integration_platforms:
+      - nrf9151dk/nrf9151/ns

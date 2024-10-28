@@ -104,6 +104,12 @@ static int set_cycles(const struct device *dev, uint32_t channel, uint32_t perio
 		return -EIO;
 	}
 
+	if (flags & PWM_POLARITY_INVERTED) {
+		HWREG(config->gpt_base + GPT_O_CTL) |= GPT_CTL_TBPWML_INVERTED;
+	} else {
+		HWREG(config->gpt_base + GPT_O_CTL) |= GPT_CTL_TBPWML_NORMAL;
+	}
+
 	set_period_and_pulse(config, period, pulse);
 
 	return 0;
@@ -176,6 +182,8 @@ static int init_pwm(const struct device *dev)
 
 	/* Enable GPIO peripheral. */
 	PRCMPeripheralRunEnable(get_timer_peripheral(config));
+	PRCMPeripheralSleepEnable(get_timer_peripheral(config));
+	PRCMPeripheralDeepSleepEnable(get_timer_peripheral(config));
 
 	/* Load PRCM settings. */
 	PRCMLoadSet();
@@ -212,7 +220,6 @@ static int init_pwm(const struct device *dev)
 	 */
 	HWREG(config->gpt_base + GPT_O_CTL) |= GPT_CTL_TBSTALL;
 
-	/* TODO: Make PWM polarity configurable via DT PWM flag. */
 	HWREG(config->gpt_base + GPT_O_TBMR) = GPT_TBMR_TBAMS_PWM | GPT_TBMR_TBMRSU_TOUPDATE |
 					       GPT_TBMR_TBPWMIE_EN | GPT_TBMR_TBMR_PERIODIC;
 

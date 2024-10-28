@@ -114,7 +114,7 @@
 		reg = <0x6a>;
 	};
 
-	atecc608a@15 {
+	atecc608a@6a {
 		compatible = "atmel,atecc608";
 		reg = <0x6a>;
 	};

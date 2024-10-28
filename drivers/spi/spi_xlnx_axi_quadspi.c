@@ -8,6 +8,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi/rtio.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
@@ -486,6 +487,8 @@ static void xlnx_quadspi_isr(const struct device *dev)
 		 * work in the ISR, so just post the event.
 		 */
 #ifdef CONFIG_SPI_ASYNC
+		struct spi_context *ctx = &data->ctx;
+
 		if (ctx->asynchronous) {
 			xlnx_quadspi_read_fifo(dev);
 			xlnx_quadspi_start_tx(dev);
@@ -587,6 +590,9 @@ static const struct spi_driver_api xlnx_quadspi_driver_api = {
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = xlnx_quadspi_transceive_async,
 #endif /* CONFIG_SPI_ASYNC */
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
+#endif
 	.release = xlnx_quadspi_release,
 };
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(xlnx_startup_block)

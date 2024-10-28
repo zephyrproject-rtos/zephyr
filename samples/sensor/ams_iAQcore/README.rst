@@ -1,7 +1,8 @@
-.. _ams_iaqcore:
+.. zephyr:code-sample:: ams_iaqcore
+   :name: ams iAQcore indoor air quality sensor
+   :relevant-api: sensor_interface
 
-ams iAQcore Indoor air quality sensor
-#####################################
+   Get CO2 equivalent and VOC data from an ams iAQcore sensor.
 
 Overview
 ********

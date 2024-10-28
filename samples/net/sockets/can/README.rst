@@ -25,8 +25,8 @@ The source code for this sample application can be found at:
 Requirements
 ************
 
-You need a CANBUS enabled board like :ref:`nucleo_l432kc_board` or
-:ref:`stm32f072b_disco_board`.
+You need a CANBUS enabled board like :zephyr:board:`nucleo_l432kc` or
+:zephyr:board:`stm32f072b_disco`.
 
 Building and Running
 ********************

@@ -9,7 +9,7 @@
 #include <zephyr/debug/stack.h>
 #include <zephyr/sys/util.h>
 
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/conn.h>
@@ -378,8 +378,8 @@ int bt_mesh_scan_active_set(bool active)
 int bt_mesh_scan_enable(void)
 {
 	struct bt_le_scan_param scan_param = {
-		.type = active_scanning ? BT_HCI_LE_SCAN_ACTIVE :
-					  BT_HCI_LE_SCAN_PASSIVE,
+		.type = active_scanning ? BT_LE_SCAN_TYPE_ACTIVE :
+					  BT_LE_SCAN_TYPE_PASSIVE,
 		.interval = MESH_SCAN_INTERVAL,
 		.window = MESH_SCAN_WINDOW
 	};

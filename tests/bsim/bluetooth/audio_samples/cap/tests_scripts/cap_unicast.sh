@@ -2,7 +2,7 @@
 # Copyright 2023-2024 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-# Simple selfchecking test for the CAP Acceptor sample.
+# Simple selfchecking test for the CAP samples for unicast.
 # It relies on the bs_tests hooks to register a test timer callback, which after a deadline
 # will check how many audio packets the unicast client has received, and if over a threshold
 # it considers the test passed
@@ -14,10 +14,10 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 cd ${BSIM_OUT_PATH}/bin
 
-Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_samples_cap_initiator_prj_conf \
+Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_samples_cap_initiator_unicast_prj_conf \
   -v=${verbosity_level} -s=${simulation_id} -d=0 -RealEncryption=1 -testid=cap_initiator
 
-Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_samples_cap_acceptor_prj_conf \
+Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_samples_cap_acceptor_unicast_prj_conf \
   -v=${verbosity_level} -s=${simulation_id} -d=1 -RealEncryption=1 -testid=cap_acceptor
 
 Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s=${simulation_id} \

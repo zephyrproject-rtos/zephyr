@@ -29,8 +29,8 @@
 	};
 
 	ibecc: ibecc {
-	       compatible = "intel,ibecc";
-	       status = "okay";
+		compatible = "intel,ibecc";
+		status = "okay";
 	};
 
 	intc: ioapic@fec00000  {

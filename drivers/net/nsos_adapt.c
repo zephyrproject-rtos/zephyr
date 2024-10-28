@@ -421,6 +421,7 @@ int nsos_adapt_accept(int fd, struct nsos_mid_sockaddr *addr_mid, size_t *addrle
 
 	err = sockaddr_to_nsos_mid(addr, addrlen, addr_mid, addrlen_mid);
 	if (err) {
+		close(ret);
 		return err;
 	}
 
@@ -625,6 +626,7 @@ int nsos_adapt_getsockopt(int fd, int nsos_mid_level, int nsos_mid_optname,
 			return nsos_adapt_getsockopt_int(fd, SOL_SOCKET, SO_KEEPALIVE,
 							 nsos_mid_optval, nsos_mid_optlen);
 		}
+		break;
 
 	case NSOS_MID_IPPROTO_TCP:
 		switch (nsos_mid_optname) {
@@ -641,6 +643,7 @@ int nsos_adapt_getsockopt(int fd, int nsos_mid_level, int nsos_mid_optname,
 			return nsos_adapt_getsockopt_int(fd, IPPROTO_TCP, TCP_KEEPCNT,
 							 nsos_mid_optval, nsos_mid_optlen);
 		}
+		break;
 
 	case NSOS_MID_IPPROTO_IPV6:
 		switch (nsos_mid_optname) {
@@ -648,6 +651,7 @@ int nsos_adapt_getsockopt(int fd, int nsos_mid_level, int nsos_mid_optname,
 			return nsos_adapt_getsockopt_int(fd, IPPROTO_IPV6, IPV6_V6ONLY,
 							 nsos_mid_optval, nsos_mid_optlen);
 		}
+		break;
 	}
 
 	return -NSOS_MID_EOPNOTSUPP;
@@ -727,6 +731,7 @@ int nsos_adapt_setsockopt(int fd, int nsos_mid_level, int nsos_mid_optname,
 			return nsos_adapt_setsockopt_int(fd, SOL_SOCKET, SO_KEEPALIVE,
 							 nsos_mid_optval, nsos_mid_optlen);
 		}
+		break;
 
 	case NSOS_MID_IPPROTO_TCP:
 		switch (nsos_mid_optname) {
@@ -743,6 +748,7 @@ int nsos_adapt_setsockopt(int fd, int nsos_mid_level, int nsos_mid_optname,
 			return nsos_adapt_setsockopt_int(fd, IPPROTO_TCP, TCP_KEEPCNT,
 							 nsos_mid_optval, nsos_mid_optlen);
 		}
+		break;
 
 	case NSOS_MID_IPPROTO_IPV6:
 		switch (nsos_mid_optname) {
@@ -750,6 +756,7 @@ int nsos_adapt_setsockopt(int fd, int nsos_mid_level, int nsos_mid_optname,
 			return nsos_adapt_setsockopt_int(fd, IPPROTO_IPV6, IPV6_V6ONLY,
 							 nsos_mid_optval, nsos_mid_optlen);
 		}
+		break;
 	}
 
 	return -NSOS_MID_EOPNOTSUPP;

@@ -4,8 +4,19 @@
 
 menu "File Systems"
 
+config FILE_SYSTEM_LIB_LINK
+	bool "Link file system libraries into build"
+	help
+	  Link in the underlying file system libraries. This can be
+	  enabled without CONFIG_FILE_SYSTEM to enable applications
+	  to work directly with the underlying file system libraries.
+	  This can be useful to avoid linking in the entire filesystem
+	  implementation via `struct fs_file_system_t` if only a subset
+	  is used.
+
 config FILE_SYSTEM
 	bool "File system support"
+	select FILE_SYSTEM_LIB_LINK
 	help
 	  Enables support for file system.
 
@@ -76,7 +87,7 @@ config FILE_SYSTEM_SHELL_BUFFER_SIZE
 	help
 	  Size of the buffer used for file system commands, will determine the
 	  maximum size that can be used with a read/write test. Note that this
-	  is is used on the stack.
+	  is used on the stack.
 
 endif # FILE_SYSTEM_SHELL
 
@@ -99,5 +110,6 @@ endif # FILE_SYSTEM
 
 rsource "fcb/Kconfig"
 rsource "nvs/Kconfig"
+rsource "zms/Kconfig"
 
 endmenu

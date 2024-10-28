@@ -39,6 +39,7 @@ extern const char test_str[];
 extern FATFS fat_fs;
 
 int check_file_dir_exists(const char *path);
+int wipe_partition(void);
 
 void test_fat_mount(void);
 void test_fat_unmount(void);

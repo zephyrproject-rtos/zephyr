@@ -83,6 +83,7 @@
 			qspi-max-frequency = <80000000>;
 			jedec-id = [ef 40 18];
 			spi-bus-width = <4>;
+			writeoc = "PP_1_1_4";
 			status = "okay";
 	};
 };

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2019 Intel Corporation
+# Copyright (c) 2019-2024 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 import csv
@@ -53,6 +53,11 @@ def compare_with_hardened_conf(kconf, hardened_kconf_filename):
                     current = None
                 options.append(Option(name=name, current=current,
                                   recommended=recommended, symbol=symbol))
+    for node in kconf.node_iter():
+        for select in node.selects:
+            if kconf.syms["EXPERIMENTAL"] in select or kconf.syms["DEPRECATED"] in select:
+                options.append(Option(name=node.item.name, current=node.item.str_value, recommended='n', symbol=node.item))
+
     return options
 
 

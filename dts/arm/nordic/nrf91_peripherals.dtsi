@@ -107,7 +107,7 @@ pdm0: pdm@26000 {
 };
 
 regulators: regulator@4000 {
-	compatible = "nordic,nrf-regulators";
+	compatible = "nordic,nrf91x-regulators";
 	reg = <0x4000 0x1000>;
 	status = "okay";
 };
@@ -160,6 +160,7 @@ i2c0: i2c@8000 {
 	interrupts = <8 NRF_DEFAULT_IRQ_PRIORITY>;
 	easydma-maxcnt-bits = <13>;
 	status = "disabled";
+	zephyr,pm-device-runtime-auto;
 };
 
 i2c1: i2c@9000 {
@@ -176,6 +177,7 @@ i2c1: i2c@9000 {
 	interrupts = <9 NRF_DEFAULT_IRQ_PRIORITY>;
 	easydma-maxcnt-bits = <13>;
 	status = "disabled";
+	zephyr,pm-device-runtime-auto;
 };
 
 i2c2: i2c@a000 {
@@ -192,6 +194,7 @@ i2c2: i2c@a000 {
 	interrupts = <10 NRF_DEFAULT_IRQ_PRIORITY>;
 	easydma-maxcnt-bits = <13>;
 	status = "disabled";
+	zephyr,pm-device-runtime-auto;
 };
 
 i2c3: i2c@b000 {
@@ -208,6 +211,7 @@ i2c3: i2c@b000 {
 	interrupts = <11 NRF_DEFAULT_IRQ_PRIORITY>;
 	easydma-maxcnt-bits = <13>;
 	status = "disabled";
+	zephyr,pm-device-runtime-auto;
 };
 
 spi0: spi@8000 {

@@ -6,7 +6,10 @@ zephyr_library()
 
 zephyr_library_sources(i2c_common.c)
 
-zephyr_library_sources_ifdef(CONFIG_I2C_RTIO i2c_rtio.c)
+zephyr_library_sources_ifdef(CONFIG_I2C_RTIO
+	i2c_rtio.c
+	i2c_rtio_default.c
+)
 zephyr_library_sources_ifdef(CONFIG_I2C_SHELL		i2c_shell.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_BITBANG		i2c_bitbang.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_TELINK_B91		i2c_b91.c)
@@ -43,7 +46,17 @@ else()
 	)
 endif()
 
-zephyr_library_sources_ifdef(CONFIG_I2C_NRFX_TWIM	i2c_nrfx_twim.c)
+if(CONFIG_I2C_RTIO)
+	zephyr_library_sources_ifdef(CONFIG_I2C_NRFX_TWIM
+	i2c_nrfx_twim_rtio.c
+	i2c_nrfx_twim_common.c
+	)
+else()
+	zephyr_library_sources_ifdef(CONFIG_I2C_NRFX_TWIM
+	i2c_nrfx_twim.c
+	i2c_nrfx_twim_common.c
+	)
+endif()
 zephyr_library_sources_ifdef(CONFIG_I2C_SAM_TWI		i2c_sam_twi.c)
 
 if(CONFIG_I2C_RTIO)
@@ -89,6 +102,8 @@ zephyr_library_sources_ifdef(CONFIG_I2C_STM32_V2
 	i2c_ll_stm32_v2.c
 	i2c_ll_stm32.c
 	)
+
+zephyr_library_sources_ifdef(CONFIG_RENESAS_RA_I2C_IIC i2c_renesas_ra_iic.c)
 
 zephyr_library_sources_ifdef(CONFIG_I2C_TEST		i2c_test.c)
 

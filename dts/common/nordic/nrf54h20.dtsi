@@ -7,9 +7,12 @@
 #include <mem.h>
 #include <nordic/nrf_common.dtsi>
 
+#include <zephyr/dt-bindings/adc/nrf-saadc.h>
 #include <zephyr/dt-bindings/misc/nordic-nrf-ficr-nrf54h20.h>
 #include <zephyr/dt-bindings/misc/nordic-domain-id-nrf54h20.h>
 #include <zephyr/dt-bindings/misc/nordic-owner-id-nrf54h20.h>
+#include <zephyr/dt-bindings/misc/nordic-tddconf.h>
+#include <zephyr/dt-bindings/reserved-memory/nordic-owned-memory.h>
 
 /delete-node/ &sw_pwm;
 
@@ -25,13 +28,16 @@
 			compatible = "arm,cortex-m33";
 			reg = <2>;
 			device_type = "cpu";
+			clocks = <&cpuapp_hsfll>;
 			clock-frequency = <DT_FREQ_M(320)>;
+			cpu-power-states = <&idle &s2ram>;
 		};
 
 		cpurad: cpu@3 {
 			compatible = "arm,cortex-m33";
 			reg = <3>;
 			device_type = "cpu";
+			clocks = <&cpurad_hsfll>;
 			clock-frequency = <DT_FREQ_M(256)>;
 		};
 
@@ -39,6 +45,7 @@
 			compatible = "nordic,vpr";
 			reg = <13>;
 			device_type = "cpu";
+			clocks = <&fll16m>;
 			clock-frequency = <DT_FREQ_M(16)>;
 			riscv,isa = "rv32emc";
 			nordic,bus-width = <32>;
@@ -68,36 +75,122 @@
 				nordic,tasks-mask = <0xfffffff0>;
 			};
 		};
+
+		cpuflpr: cpu@e {
+			compatible = "nordic,vpr";
+			reg = <14>;
+			device_type = "cpu";
+			clock-frequency = <DT_FREQ_M(320)>;
+			riscv,isa = "rv32emc";
+			nordic,bus-width = <64>;
+
+			cpuflpr_vevif_rx: mailbox {
+				compatible = "nordic,nrf-vevif-task-rx";
+				status = "disabled";
+				interrupt-parent = <&cpuflpr_clic>;
+				interrupts = <0 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <1 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <2 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <3 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <4 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <5 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <6 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <7 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <8 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <9 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <10 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <11 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <12 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <13 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <14 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <15 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <16 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <17 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <18 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <19 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <20 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <21 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <22 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <23 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <24 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <25 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <26 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <27 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <28 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <29 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <30 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <31 NRF_DEFAULT_IRQ_PRIORITY>;
+				#mbox-cells = <1>;
+				nordic,tasks = <32>;
+				nordic,tasks-mask = <0xffff0000>;
+			};
+		};
+
+		power-states {
+			idle: idle {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				min-residency-us = <100000>;
+			};
+
+			s2ram: s2ram {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-ram";
+				min-residency-us = <800000>;
+			};
+		};
 	};
 
 	reserved-memory {
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		suit_storage_partition: memory@e1eb000 {
-			reg = <0xe1eb000 DT_SIZE_K(24)>;
-		};
-
-		cpurad_uicr_ext: memory@e1ff000 {
-			reg = <0xe1ff000 DT_SIZE_K(2)>;
-		};
-
-		cpuapp_uicr_ext: memory@e1ff800 {
-			reg = <0xe1ff800 DT_SIZE_K(2)>;
+		suit_storage_partition: memory@e1ed000 {
+			reg = <0xe1ed000 DT_SIZE_K(20)>;
 		};
 	};
 
 	clocks {
 		hfxo: hfxo {
-			compatible = "fixed-clock";
+			compatible = "nordic,nrf54h-hfxo";
+			status = "disabled";
 			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_M(32)>;
 		};
 
+		lfxo: lfxo {
+			compatible = "nordic,nrf54h-lfxo";
+			status = "disabled";
+			#clock-cells = <0>;
+			clock-frequency = <32768>;
+		};
+
 		fll16m: fll16m {
-			compatible = "fixed-clock";
+			compatible = "nordic,nrf-fll16m";
 			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_M(16)>;
+			open-loop-accuracy-ppm = <20000>;
+			closed-loop-base-accuracy-ppm = <5000>;
+			clocks = <&hfxo>, <&lfxo>;
+			clock-names = "hfxo", "lfxo";
+		};
+
+		hsfll120: hsfll120 {
+			compatible = "fixed-clock";
+			clocks = <&fll16m>;
+			#clock-cells = <0>;
+			clock-frequency = <DT_FREQ_M(320)>;
+		};
+
+		lfclk: lfclk {
+			compatible = "nordic,nrf-lfclk";
+			#clock-cells = <0>;
+			clock-frequency = <32768>;
+			status = "okay";
+			lfrc-accuracy-ppm = <500>;
+			lflprc-accuracy-ppm = <1000>;
+			clocks = <&hfxo>, <&lfxo>;
+			clock-names = "hfxo", "lfxo";
 		};
 	};
 
@@ -116,14 +209,12 @@
 			compatible = "nordic,nrf-uicr-v2";
 			reg = <0xfff8000 DT_SIZE_K(2)>;
 			domain = <2>;
-			ptr-ext-uicr = <&cpuapp_uicr_ext>;
 		};
 
 		cpurad_uicr: uicr@fffa000 {
 			compatible = "nordic,nrf-uicr-v2";
 			reg = <0xfffa000 DT_SIZE_K(2)>;
 			domain = <3>;
-			ptr-ext-uicr = <&cpurad_uicr_ext>;
 		};
 
 		ficr: ficr@fffe000 {
@@ -180,6 +271,7 @@
 				reg = <0x14000 0x1000>;
 				status = "disabled";
 				interrupts = <20 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&lfclk>;
 			};
 
 			cpuapp_wdt011: watchdog@15000 {
@@ -187,6 +279,7 @@
 				reg = <0x15000 0x1000>;
 				status = "disabled";
 				interrupts = <21 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&lfclk>;
 			};
 
 			cpuapp_resetinfo: resetinfo@1e000 {
@@ -223,6 +316,7 @@
 				reg = <0x13000 0x1000>;
 				status = "disabled";
 				interrupts = <19 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&lfclk>;
 			};
 
 			cpurad_wdt011: watchdog@14000 {
@@ -230,6 +324,7 @@
 				reg = <0x14000 0x1000>;
 				status = "disabled";
 				interrupts = <20 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&lfclk>;
 			};
 
 			cpurad_resetinfo: resetinfo@1e000 {
@@ -265,6 +360,7 @@
 				status = "disabled";
 				cc-num = <8>;
 				interrupts = <40 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&fll16m>;
 				max-bit-width = <32>;
 				max-frequency = <DT_FREQ_M(32)>;
 				prescaler = <0>;
@@ -276,6 +372,7 @@
 				status = "disabled";
 				cc-num = <8>;
 				interrupts = <41 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&fll16m>;
 				max-bit-width = <32>;
 				max-frequency = <DT_FREQ_M(32)>;
 				prescaler = <0>;
@@ -287,6 +384,7 @@
 				status = "disabled";
 				cc-num = <8>;
 				interrupts = <42 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&fll16m>;
 				max-bit-width = <32>;
 				max-frequency = <DT_FREQ_M(32)>;
 				prescaler = <0>;
@@ -299,6 +397,7 @@
 				cc-num = <4>;
 				clock-frequency = <32768>;
 				interrupts = <43 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&lfclk>;
 				prescaler = <1>;
 			};
 
@@ -308,9 +407,11 @@
 				status = "disabled";
 				ble-2mbps-supported;
 				ble-coded-phy-supported;
+				cs-supported;
 				dfe-supported;
 				ieee802154-supported;
 				interrupts = <44 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&hfxo>;
 
 				cpurad_ieee802154: ieee802154 {
 					compatible = "nordic,nrf-ieee802154";
@@ -344,6 +445,25 @@
 				reg = <0x3d000 0x1000>;
 				status = "disabled";
 				interrupts = <61 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
+		};
+
+		tdd_peripherals: peripheral@bf000000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0xbf000000 0x1000000>;
+
+			tbm: tbm@3000 {
+				compatible = "nordic,nrf-tbm";
+				reg = <0x3000 0x408>;
+				status = "disabled";
+				interrupts = <127 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
+
+			tddconf: tddconf@1000 {
+				compatible = "nordic,nrf-tddconf";
+				reg = <0x1000 0x10>;
+				status = "disabled";
 			};
 		};
 
@@ -429,6 +549,24 @@
 				global-domain-id = <12>;
 			};
 
+			cpuflpr_vpr: vpr@8d4000 {
+				compatible = "nordic,nrf-vpr-coprocessor";
+				reg = <0x8d4000 0x1000>;
+				status = "disabled";
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges = <0x0 0x8d4000 0x1000>;
+
+				cpuflpr_vevif_tx: mailbox@0 {
+					compatible = "nordic,nrf-vevif-task-tx";
+					reg = <0x0 0x1000>;
+					status = "disabled";
+					#mbox-cells = <1>;
+					nordic,tasks = <32>;
+					nordic,tasks-mask = <0xffff0000>;
+				};
+			};
+
 			can120: can@8d8000 {
 				compatible = "nordic,nrf-can";
 				reg = <0x8d8000 0x400>, <0x2fbef800 0x800>, <0x2fbe8000 0x7800>;
@@ -486,13 +624,18 @@
 				#size-cells = <0>;
 				rx-delay-supported;
 				rx-delay = <1>;
+				nordic,clockpin-enable = <NRF_FUN_SPIM_SCK>,
+							 <NRF_FUN_SPIS_SCK>;
 			};
 
 			uart120: uart@8e6000 {
 				compatible = "nordic,nrf-uarte";
 				reg = <0x8e6000 0x1000>;
 				status = "disabled";
-				interrupts = <229 NRF_DEFAULT_IRQ_PRIORITY>;
+				interrupts = <230 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&hsfll120>;
+				endtx-stoptx-supported;
+				frame-timeout-supported;
 			};
 
 			spi121: spi@8e7000 {
@@ -506,16 +649,17 @@
 				#size-cells = <0>;
 				rx-delay-supported;
 				rx-delay = <1>;
+				nordic,clockpin-enable = <NRF_FUN_SPIM_SCK>,
+							 <NRF_FUN_SPIS_SCK>;
 			};
 
 			cpuppr_vpr: vpr@908000 {
 				compatible = "nordic,nrf-vpr-coprocessor";
 				reg = <0x908000 0x1000>;
 				status = "disabled";
-				cpu = <13>;
 				#address-cells = <1>;
 				#size-cells = <1>;
-				ranges = <0x0 0x908000 0x4000>;
+				ranges = <0x0 0x908000 0x1000>;
 
 				cpuppr_vevif_tx: mailbox@0 {
 					compatible = "nordic,nrf-vevif-task-tx";
@@ -524,15 +668,6 @@
 					#mbox-cells = <1>;
 					nordic,tasks = <16>;
 					nordic,tasks-mask = <0xfffffff0>;
-				};
-
-				cpuppr_clic: interrupt-controller@1000 {
-					compatible = "nordic,nrf-clic";
-					reg = <0x1000 0x3000>;
-					status = "disabled";
-					#interrupt-cells = <2>;
-					interrupt-controller;
-					#address-cells = <1>;
 				};
 			};
 
@@ -557,6 +692,7 @@
 				cc-num = <4>;
 				clock-frequency = <32768>;
 				interrupts = <296 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&lfclk>;
 				prescaler = <1>;
 			};
 
@@ -567,6 +703,7 @@
 				cc-num = <4>;
 				clock-frequency = <32768>;
 				interrupts = <297 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&lfclk>;
 				prescaler = <1>;
 			};
 
@@ -575,6 +712,7 @@
 				reg = <0x92b000 0x1000>;
 				status = "disabled";
 				interrupts = <299 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&lfclk>;
 			};
 
 			wdt132: watchdog@92c000 {
@@ -582,6 +720,14 @@
 				reg = <0x92c000 0x1000>;
 				status = "disabled";
 				interrupts = <300 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&lfclk>;
+			};
+
+			egu130: egu@92d000 {
+				compatible = "nordic,nrf-egu";
+				reg = <0x92d000 0x1000>;
+				status = "disabled";
+				interrupts = <301 NRF_DEFAULT_IRQ_PRIORITY>;
 			};
 
 			gpiote130: gpiote@934000 {
@@ -670,11 +816,14 @@
 			};
 
 			comp: comparator@983000 {
+				/*
+				 * Use compatible "nordic,nrf-comp" to configure as COMP
+				 * Use compatible "nordic,nrf-lpcomp" to configure as LPCOMP
+				 */
 				compatible = "nordic,nrf-comp";
 				reg = <0x983000 0x1000>;
 				status = "disabled";
 				interrupts = <387 NRF_DEFAULT_IRQ_PRIORITY>;
-				#io-channel-cells = <1>;
 			};
 
 			temp: temperature-sensor@984000 {
@@ -716,6 +865,11 @@
 				reg = <0x99c000 0x1000>;
 				status = "disabled";
 				cc-num = <16>;
+				/* GRTC uses both LFCLK and FLL16M, but its accuracy and
+				 * precision are inherited from LFCLK. that's why this
+				 *  one is linked here.
+				 */
+				clocks = <&lfclk>;
 			};
 
 			dppic133: dppic@9a1000 {
@@ -730,6 +884,7 @@
 				status = "disabled";
 				cc-num = <6>;
 				interrupts = <418 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&fll16m>;
 				max-bit-width = <32>;
 				prescaler = <0>;
 			};
@@ -740,6 +895,7 @@
 				status = "disabled";
 				cc-num = <6>;
 				interrupts = <419 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&fll16m>;
 				max-bit-width = <32>;
 				prescaler = <0>;
 			};
@@ -749,6 +905,7 @@
 				reg = <0x9a4000 0x1000>;
 				status = "disabled";
 				interrupts = <420 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&fll16m>;
 				#pwm-cells = <3>;
 			};
 
@@ -757,9 +914,13 @@
 				reg = <0x9a5000 0x1000>;
 				status = "disabled";
 				interrupts = <421 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&fll16m>;
 				easydma-maxcnt-bits = <15>;
 				#address-cells = <1>;
 				#size-cells = <0>;
+				nordic,clockpin-enable = <NRF_FUN_TWIM_SDA>,
+							 <NRF_FUN_TWIM_SCL>;
+				zephyr,pm-device-runtime-auto;
 			};
 
 			spi130: spi@9a5000 {
@@ -768,11 +929,16 @@
 				status = "disabled";
 				easydma-maxcnt-bits = <15>;
 				interrupts = <421 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&fll16m>;
 				max-frequency = <DT_FREQ_M(8)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 				rx-delay-supported;
 				rx-delay = <1>;
+				nordic,clockpin-enable = <NRF_FUN_SPIM_MOSI>,
+							 <NRF_FUN_SPIM_SCK>,
+							 <NRF_FUN_SPIS_MISO>,
+							 <NRF_FUN_SPIS_SCK>;
 			};
 
 			uart130: uart@9a5000 {
@@ -780,6 +946,10 @@
 				reg = <0x9a5000 0x1000>;
 				status = "disabled";
 				interrupts = <421 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&fll16m>;
+				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
+				endtx-stoptx-supported;
+				frame-timeout-supported;
 			};
 
 			i2c131: i2c@9a6000 {
@@ -787,9 +957,13 @@
 				reg = <0x9a6000 0x1000>;
 				status = "disabled";
 				interrupts = <422 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&fll16m>;
 				easydma-maxcnt-bits = <15>;
 				#address-cells = <1>;
 				#size-cells = <0>;
+				nordic,clockpin-enable = <NRF_FUN_TWIM_SDA>,
+							 <NRF_FUN_TWIM_SCL>;
+				zephyr,pm-device-runtime-auto;
 			};
 
 			spi131: spi@9a6000 {
@@ -798,11 +972,16 @@
 				status = "disabled";
 				easydma-maxcnt-bits = <15>;
 				interrupts = <422 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&fll16m>;
 				max-frequency = <DT_FREQ_M(8)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 				rx-delay-supported;
 				rx-delay = <1>;
+				nordic,clockpin-enable = <NRF_FUN_SPIM_MOSI>,
+							 <NRF_FUN_SPIM_SCK>,
+							 <NRF_FUN_SPIS_MISO>,
+							 <NRF_FUN_SPIS_SCK>;
 			};
 
 			uart131: uart@9a6000 {
@@ -810,6 +989,10 @@
 				reg = <0x9a6000 0x1000>;
 				status = "disabled";
 				interrupts = <422 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&fll16m>;
+				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
+				endtx-stoptx-supported;
+				frame-timeout-supported;
 			};
 
 			dppic134: dppic@9b1000 {
@@ -824,6 +1007,7 @@
 				status = "disabled";
 				cc-num = <6>;
 				interrupts = <434 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&fll16m>;
 				max-bit-width = <32>;
 				prescaler = <0>;
 			};
@@ -834,6 +1018,7 @@
 				status = "disabled";
 				cc-num = <6>;
 				interrupts = <435 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&fll16m>;
 				max-bit-width = <32>;
 				prescaler = <0>;
 			};
@@ -843,6 +1028,7 @@
 				reg = <0x9b4000 0x1000>;
 				status = "disabled";
 				interrupts = <436 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&fll16m>;
 				#pwm-cells = <3>;
 			};
 
@@ -851,9 +1037,13 @@
 				reg = <0x9b5000 0x1000>;
 				status = "disabled";
 				interrupts = <437 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&fll16m>;
 				easydma-maxcnt-bits = <15>;
 				#address-cells = <1>;
 				#size-cells = <0>;
+				nordic,clockpin-enable = <NRF_FUN_TWIM_SDA>,
+							 <NRF_FUN_TWIM_SCL>;
+				zephyr,pm-device-runtime-auto;
 			};
 
 			spi132: spi@9b5000 {
@@ -862,11 +1052,16 @@
 				status = "disabled";
 				easydma-maxcnt-bits = <15>;
 				interrupts = <437 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&fll16m>;
 				max-frequency = <DT_FREQ_M(8)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 				rx-delay-supported;
 				rx-delay = <1>;
+				nordic,clockpin-enable = <NRF_FUN_SPIM_MOSI>,
+							 <NRF_FUN_SPIM_SCK>,
+							 <NRF_FUN_SPIS_MISO>,
+							 <NRF_FUN_SPIS_SCK>;
 			};
 
 			uart132: uart@9b5000 {
@@ -874,6 +1069,10 @@
 				reg = <0x9b5000 0x1000>;
 				status = "disabled";
 				interrupts = <437 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&fll16m>;
+				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
+				endtx-stoptx-supported;
+				frame-timeout-supported;
 			};
 
 			i2c133: i2c@9b6000 {
@@ -881,9 +1080,13 @@
 				reg = <0x9b6000 0x1000>;
 				status = "disabled";
 				interrupts = <438 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&fll16m>;
 				easydma-maxcnt-bits = <15>;
 				#address-cells = <1>;
 				#size-cells = <0>;
+				nordic,clockpin-enable = <NRF_FUN_TWIM_SDA>,
+							 <NRF_FUN_TWIM_SCL>;
+				zephyr,pm-device-runtime-auto;
 			};
 
 			spi133: spi@9b6000 {
@@ -892,11 +1095,16 @@
 				status = "disabled";
 				easydma-maxcnt-bits = <15>;
 				interrupts = <438 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&fll16m>;
 				max-frequency = <DT_FREQ_M(8)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 				rx-delay-supported;
 				rx-delay = <1>;
+				nordic,clockpin-enable = <NRF_FUN_SPIM_MOSI>,
+							 <NRF_FUN_SPIM_SCK>,
+							 <NRF_FUN_SPIS_MISO>,
+							 <NRF_FUN_SPIS_SCK>;
 			};
 
 			uart133: uart@9b6000 {
@@ -904,6 +1112,10 @@
 				reg = <0x9b6000 0x1000>;
 				status = "disabled";
 				interrupts = <438 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&fll16m>;
+				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
+				endtx-stoptx-supported;
+				frame-timeout-supported;
 			};
 
 			dppic135: dppic@9c1000 {
@@ -918,6 +1130,7 @@
 				status = "disabled";
 				cc-num = <6>;
 				interrupts = <450 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&fll16m>;
 				max-bit-width = <32>;
 				prescaler = <0>;
 			};
@@ -928,6 +1141,7 @@
 				status = "disabled";
 				cc-num = <6>;
 				interrupts = <451 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&fll16m>;
 				max-bit-width = <32>;
 				prescaler = <0>;
 			};
@@ -937,6 +1151,7 @@
 				reg = <0x9c4000 0x1000>;
 				status = "disabled";
 				interrupts = <452 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&fll16m>;
 				#pwm-cells = <3>;
 			};
 
@@ -945,9 +1160,13 @@
 				reg = <0x9c5000 0x1000>;
 				status = "disabled";
 				interrupts = <453 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&fll16m>;
 				easydma-maxcnt-bits = <15>;
 				#address-cells = <1>;
 				#size-cells = <0>;
+				nordic,clockpin-enable = <NRF_FUN_TWIM_SDA>,
+							 <NRF_FUN_TWIM_SCL>;
+				zephyr,pm-device-runtime-auto;
 			};
 
 			spi134: spi@9c5000 {
@@ -956,11 +1175,16 @@
 				status = "disabled";
 				easydma-maxcnt-bits = <15>;
 				interrupts = <453 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&fll16m>;
 				max-frequency = <DT_FREQ_M(8)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 				rx-delay-supported;
 				rx-delay = <1>;
+				nordic,clockpin-enable = <NRF_FUN_SPIM_MOSI>,
+							 <NRF_FUN_SPIM_SCK>,
+							 <NRF_FUN_SPIS_MISO>,
+							 <NRF_FUN_SPIS_SCK>;
 			};
 
 			uart134: uart@9c5000 {
@@ -968,6 +1192,10 @@
 				reg = <0x9c5000 0x1000>;
 				status = "disabled";
 				interrupts = <453 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&fll16m>;
+				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
+				endtx-stoptx-supported;
+				frame-timeout-supported;
 			};
 
 			i2c135: i2c@9c6000 {
@@ -975,9 +1203,13 @@
 				reg = <0x9c6000 0x1000>;
 				status = "disabled";
 				interrupts = <454 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&fll16m>;
 				easydma-maxcnt-bits = <15>;
 				#address-cells = <1>;
 				#size-cells = <0>;
+				nordic,clockpin-enable = <NRF_FUN_TWIM_SDA>,
+							 <NRF_FUN_TWIM_SCL>;
+				zephyr,pm-device-runtime-auto;
 			};
 
 			spi135: spi@9c6000 {
@@ -986,11 +1218,16 @@
 				status = "disabled";
 				easydma-maxcnt-bits = <15>;
 				interrupts = <454 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&fll16m>;
 				max-frequency = <DT_FREQ_M(8)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 				rx-delay-supported;
 				rx-delay = <1>;
+				nordic,clockpin-enable = <NRF_FUN_SPIM_MOSI>,
+							 <NRF_FUN_SPIM_SCK>,
+							 <NRF_FUN_SPIS_MISO>,
+							 <NRF_FUN_SPIS_SCK>;
 			};
 
 			uart135: uart@9c6000 {
@@ -998,6 +1235,10 @@
 				reg = <0x9c6000 0x1000>;
 				status = "disabled";
 				interrupts = <454 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&fll16m>;
+				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
+				endtx-stoptx-supported;
+				frame-timeout-supported;
 			};
 
 			dppic136: dppic@9d1000 {
@@ -1012,6 +1253,7 @@
 				status = "disabled";
 				cc-num = <6>;
 				interrupts = <466 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&fll16m>;
 				max-bit-width = <32>;
 				prescaler = <0>;
 			};
@@ -1022,6 +1264,7 @@
 				status = "disabled";
 				cc-num = <6>;
 				interrupts = <467 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&fll16m>;
 				max-bit-width = <32>;
 				prescaler = <0>;
 			};
@@ -1031,6 +1274,7 @@
 				reg = <0x9d4000 0x1000>;
 				status = "disabled";
 				interrupts = <468 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&fll16m>;
 				#pwm-cells = <3>;
 			};
 
@@ -1039,9 +1283,13 @@
 				reg = <0x9d5000 0x1000>;
 				status = "disabled";
 				interrupts = <469 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&fll16m>;
 				easydma-maxcnt-bits = <15>;
 				#address-cells = <1>;
 				#size-cells = <0>;
+				nordic,clockpin-enable = <NRF_FUN_TWIM_SDA>,
+							 <NRF_FUN_TWIM_SCL>;
+				zephyr,pm-device-runtime-auto;
 			};
 
 			spi136: spi@9d5000 {
@@ -1050,11 +1298,16 @@
 				status = "disabled";
 				easydma-maxcnt-bits = <15>;
 				interrupts = <469 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&fll16m>;
 				max-frequency = <DT_FREQ_M(8)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 				rx-delay-supported;
 				rx-delay = <1>;
+				nordic,clockpin-enable = <NRF_FUN_SPIM_MOSI>,
+							 <NRF_FUN_SPIM_SCK>,
+							 <NRF_FUN_SPIS_MISO>,
+							 <NRF_FUN_SPIS_SCK>;
 			};
 
 			uart136: uart@9d5000 {
@@ -1062,6 +1315,10 @@
 				reg = <0x9d5000 0x1000>;
 				status = "disabled";
 				interrupts = <469 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&fll16m>;
+				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
+				endtx-stoptx-supported;
+				frame-timeout-supported;
 			};
 
 			i2c137: i2c@9d6000 {
@@ -1069,9 +1326,13 @@
 				reg = <0x9d6000 0x1000>;
 				status = "disabled";
 				interrupts = <470 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&fll16m>;
 				easydma-maxcnt-bits = <15>;
 				#address-cells = <1>;
 				#size-cells = <0>;
+				nordic,clockpin-enable = <NRF_FUN_TWIM_SDA>,
+							 <NRF_FUN_TWIM_SCL>;
+				zephyr,pm-device-runtime-auto;
 			};
 
 			spi137: spi@9d6000 {
@@ -1080,11 +1341,16 @@
 				status = "disabled";
 				easydma-maxcnt-bits = <15>;
 				interrupts = <470 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&fll16m>;
 				max-frequency = <DT_FREQ_M(8)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 				rx-delay-supported;
 				rx-delay = <1>;
+				nordic,clockpin-enable = <NRF_FUN_SPIM_MOSI>,
+							 <NRF_FUN_SPIM_SCK>,
+							 <NRF_FUN_SPIS_MISO>,
+							 <NRF_FUN_SPIS_SCK>;
 			};
 
 			uart137: uart@9d6000 {
@@ -1092,6 +1358,10 @@
 				reg = <0x9d6000 0x1000>;
 				status = "disabled";
 				interrupts = <470 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&fll16m>;
+				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
+				endtx-stoptx-supported;
+				frame-timeout-supported;
 			};
 		};
 	};
@@ -1130,6 +1400,34 @@
 			compatible = "arm,v8m-nvic";
 			reg = <0xe000e100 0xc00>;
 			arm,num-irq-priority-bits = <3>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			#address-cells = <1>;
+		};
+	};
+
+	cpuppr_private: cpuppr-private-bus {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		cpuppr_clic: interrupt-controller@f0000000 {
+			compatible = "nordic,nrf-clic";
+			reg = <0xf0000000 0x3000>;
+			status = "disabled";
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			#address-cells = <1>;
+		};
+	};
+
+	cpuflpr_private: cpuflpr-private-bus {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		cpuflpr_clic: interrupt-controller@f0000000 {
+			compatible = "nordic,nrf-clic";
+			reg = <0xf0000000 0x3000>;
+			status = "disabled";
 			#interrupt-cells = <2>;
 			interrupt-controller;
 			#address-cells = <1>;

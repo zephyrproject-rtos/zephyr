@@ -15,6 +15,7 @@ with 2MBytes of Flash memory, 1MB RAM, 480 MHz CPU, Art Accelerator, L1 cache, e
 large set of peripherals, SMPS, and MIPI-DSI.
 
 Additionally, the board features:
+
 - USB OTG FS
 - 3 color user LEDs
 
@@ -113,7 +114,7 @@ First, connect the Arduino Portenta H7 board to your host computer using
 the USB port to prepare it for flashing. Double tap the button to put the board
 into the Arduino Bootloader mode. Then build and flash your application.
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

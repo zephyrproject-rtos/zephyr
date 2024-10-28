@@ -72,6 +72,7 @@ config SEGGER_RTT_MEMCPY_USE_BYTELOOP
 
 choice SEGGER_RTT_SECTION
 	prompt "Choose RTT data linker section"
+	default SEGGER_RTT_SECTION_CUSTOM
 
 config SEGGER_RTT_SECTION_NONE
 	bool "Place RTT data in the default linker section"
@@ -81,6 +82,43 @@ config SEGGER_RTT_SECTION_DTCM
 
 config SEGGER_RTT_SECTION_CCM
 	bool "Place RTT data in the CCM linker section"
+
+if CPU_CORTEX_M
+
+config SEGGER_RTT_SECTION_CUSTOM
+	bool "Place RTT data in custom linker section at RAM start"
+
+config SEGGER_RTT_SECTION_CUSTOM_DTS_REGION
+	bool "Place RTT data in custom linker section defined by a memory region in DTS"
+
+endif
+
+endchoice
+
+if SEGGER_RTT_SECTION_CUSTOM || SEGGER_RTT_SECTION_CUSTOM_DTS_REGION
+
+config SEGGER_RTT_SECTION_CUSTOM_NAME
+	string "Name of RTT data custom linker section"
+	default ".rtt_buff_data"
+
+endif
+
+choice SEGGER_RTT_INIT_MODE
+	prompt "RTT Initialization mode"
+	help
+		RTT inizialization function can avoid re-init of Cntrol Block
+		if another program (e.g. bootloader) has already initialized it.
+	default SEGGER_RTT_INIT_MODE_STRONG_CHECK if SEGGER_RTT_SECTION_CUSTOM
+	default SEGGER_RTT_INIT_MODE_STRONG_CHECK
+
+config SEGGER_RTT_INIT_MODE_ALWAYS
+	bool "RTT Initialization done without conditions"
+
+config SEGGER_RTT_INIT_MODE_STRONG_CHECK
+	bool "RTT Initialization done if full check on Control Block ID fails"
+
+config SEGGER_RTT_INIT_MODE_WEAK_CHECK
+	bool "RTT Initialization done if partial check on Control Block ID fails"
 
 endchoice
 

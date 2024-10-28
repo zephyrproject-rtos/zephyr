@@ -27,6 +27,7 @@ config FULL_LIBC_SUPPORTED
 
 config MINIMAL_LIBC_SUPPORTED
 	bool
+	depends on !NATIVE_APPLICATION
 	default y
 	help
 	  Selected when the target has support for the minimal C library
@@ -35,6 +36,7 @@ config NEWLIB_LIBC_SUPPORTED
 	bool
 	default y
 	depends on "$(TOOLCHAIN_HAS_NEWLIB)" = "y"
+	depends on !NATIVE_APPLICATION
 	select FULL_LIBC_SUPPORTED
 	help
 	  Selected when the target has support for the newlib C library
@@ -43,7 +45,7 @@ config NEWLIB_LIBC_SUPPORTED
 config PICOLIBC_SUPPORTED
 	bool
 	depends on !NATIVE_APPLICATION
-	depends on !REQUIRES_FULL_LIBCPP || ("$(TOOLCHAIN_HAS_PICOLIBC)" = "y")
+	depends on ("$(TOOLCHAIN_HAS_PICOLIBC)" = "y") || (ZEPHYR_PICOLIBC_MODULE && !REQUIRES_FULL_LIBCPP)
 	default y
 	select FULL_LIBC_SUPPORTED
 	help
@@ -66,7 +68,6 @@ choice LIBC_IMPLEMENTATION
 
 config MINIMAL_LIBC
 	bool "Minimal C library"
-	depends on !NATIVE_APPLICATION
 	depends on !REQUIRES_FULL_LIBC
 	depends on MINIMAL_LIBC_SUPPORTED
 	imply COMPILER_FREESTANDING
@@ -84,8 +85,8 @@ config PICOLIBC
 	imply THREAD_LOCAL_STORAGE if ARCH_HAS_THREAD_LOCAL_STORAGE && TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
 	select LIBC_ERRNO if THREAD_LOCAL_STORAGE
 	select NEED_LIBC_MEM_PARTITION
+	select TC_PROVIDES_POSIX_C_LANG_SUPPORT_R
 	imply COMMON_LIBC_MALLOC
-	depends on !NATIVE_APPLICATION
 	depends on PICOLIBC_SUPPORTED
 	help
 	  Build with picolibc library. The picolibc library is built as
@@ -95,7 +96,6 @@ config PICOLIBC
 config NEWLIB_LIBC
 	bool "Newlib C library"
 	select COMMON_LIBC_ABORT
-	depends on !NATIVE_APPLICATION
 	depends on NEWLIB_LIBC_SUPPORTED
 	select NEED_LIBC_MEM_PARTITION
 	imply POSIX_DEVICE_IO_ALIAS_CLOSE
@@ -105,6 +105,7 @@ config NEWLIB_LIBC
 	imply POSIX_FD_MGMT_ALIAS_LSEEK
 	imply POSIX_FILE_SYSTEM_ALIAS_FSTAT
 	imply POSIX_MULTI_PROCESS_ALIAS_GETPID
+	imply POSIX_SIGNALS_ALIAS_KILL
 	help
 	  Build with newlib library. The newlib library is expected to be
 	  part of the SDK in this case.

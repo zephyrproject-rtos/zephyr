@@ -743,7 +743,7 @@ static inline bool z_arm_is_pc_valid(uintptr_t pc)
 		return true;
 	}
 
-#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_itcm), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_itcm))
 	/* Is it in the ITCM */
 	if ((((uintptr_t)&__itcm_start) <= pc) && (pc < ((uintptr_t)&__itcm_end))) {
 		return true;
@@ -1192,5 +1192,7 @@ void z_arm_fault_init(void)
 #endif /* CONFIG_BUILTIN_STACK_GUARD */
 #ifdef CONFIG_TRAP_UNALIGNED_ACCESS
 	SCB->CCR |= SCB_CCR_UNALIGN_TRP_Msk;
+#else
+	SCB->CCR &= ~SCB_CCR_UNALIGN_TRP_Msk;
 #endif /* CONFIG_TRAP_UNALIGNED_ACCESS */
 }

@@ -1,11 +1,21 @@
 sample:
   name: Counter RTC Driver Sample
+common:
+  tags:
+    - drivers
+    - counter
+  harness: console
+  harness_config:
+    type: multi_line
+    ordered: true
+    regex:
+      - "Counter alarm sample"
+      - "Set alarm in 2 sec"
+      - "!!! Alarm !!!"
+      - "Now: [2|3]"
+  depends_on: counter
 tests:
   sample.drivers.counter.alarm:
-    tags:
-      - drivers
-      - counter
-    harness: console
     platform_allow:
       - nucleo_f746zg
       - nrf51dk/nrf51822
@@ -26,14 +36,20 @@ tests:
       - stm32h735g_disco
       - stm32h573i_dk
       - rpi_pico
+      - mr_canhubk3
+      - s32z2xxdc2/s32z270/rtu0
+      - s32z2xxdc2/s32z270/rtu1
+      - s32z2xxdc2@D/s32z270/rtu0
+      - s32z2xxdc2@D/s32z270/rtu1
     integration_platforms:
       - nucleo_f746zg
-    harness_config:
-      type: multi_line
-      ordered: true
-      regex:
-        - "Counter alarm sample"
-        - "Set alarm in 2 sec"
-        - "!!! Alarm !!!"
-        - "Now: [2|3]"
-    depends_on: counter
+  sample.drivers.counter.alarm.stm32_rtc:
+    # This test case is needed because when Timer Counter is available,
+    # RTC Counter will never be selected in the test.
+    # CONFIG_COUNTER_RTC_STM32 flag is enabled by default when RTC is enabled.
+    filter: CONFIG_SOC_FAMILY_STM32 and CONFIG_COUNTER_RTC_STM32
+    extra_configs:
+      # Timer Counter flag needs to be disabled for RTC node to be selected
+      - CONFIG_COUNTER_TIMER_STM32=n
+    tags:
+      - rtc

@@ -13,6 +13,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/reset.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi/rtio.h>
 #ifdef CONFIG_SPI_GD32_DMA
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/dma/dma_gd32.h>
@@ -414,11 +415,13 @@ static int spi_gd32_transceive_impl(const struct device *dev,
 
 #ifdef CONFIG_SPI_GD32_DMA
 dma_error:
+	SPI_CTL1(cfg->reg) &=
+		~(SPI_CTL1_DMATEN | SPI_CTL1_DMAREN);
 #endif
 	spi_context_cs_control(&data->ctx, false);
 
 	SPI_CTL0(cfg->reg) &=
-		~(SPI_CTL0_SPIEN | SPI_CTL1_DMATEN | SPI_CTL1_DMAREN);
+		~(SPI_CTL0_SPIEN);
 
 error:
 	spi_context_release(&data->ctx, ret);
@@ -572,6 +575,9 @@ static const struct spi_driver_api spi_gd32_driver_api = {
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_gd32_transceive_async,
 #endif
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
+#endif
 	.release = spi_gd32_release
 };
 
@@ -677,7 +683,7 @@ int spi_gd32_init(const struct device *dev)
 		IF_ENABLED(CONFIG_SPI_GD32_DMA, (.dma = DMAS_DECL(idx),))      \
 		IF_ENABLED(CONFIG_SPI_GD32_INTERRUPT,			       \
 			   (.irq_configure = spi_gd32_irq_configure_##idx)) }; \
-	DEVICE_DT_INST_DEFINE(idx, &spi_gd32_init, NULL,		       \
+	DEVICE_DT_INST_DEFINE(idx, spi_gd32_init, NULL,			       \
 			      &spi_gd32_data_##idx, &spi_gd32_config_##idx,    \
 			      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,	       \
 			      &spi_gd32_driver_api);

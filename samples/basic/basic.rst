@@ -1,10 +1,5 @@
-.. _basic-sample:
+.. zephyr:code-sample-category:: basic
+   :name: Basic
+   :show-listing:
 
-Basic Samples
-#############
-
-.. toctree::
-   :maxdepth: 1
-   :glob:
-
-   **/*
+   These samples demonstrate basic functionality of the Zephyr kernel.

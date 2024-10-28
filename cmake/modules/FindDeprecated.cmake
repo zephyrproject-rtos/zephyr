@@ -99,6 +99,54 @@ if("PYTHON_PREFER" IN_LIST Deprecated_FIND_COMPONENTS)
   endif()
 endif()
 
+if("toolchain_ld_base" IN_LIST Deprecated_FIND_COMPONENTS)
+  # This code was deprecated after Zephyr v4.0.0
+  list(REMOVE_ITEM Deprecated_FIND_COMPONENTS toolchain_ld_base)
+
+  if(COMMAND toolchain_ld_base)
+    message(DEPRECATION
+        "The macro/function 'toolchain_ld_base' is deprecated. "
+        "Please use '${LINKER}/linker_flags.cmake' and define the appropriate "
+        "linker flags as properties instead. "
+        "See '${ZEPHYR_BASE}/cmake/linker/linker_flags_template.cmake' for "
+        "known linker properties."
+    )
+    toolchain_ld_base()
+  endif()
+endif()
+
+if("toolchain_ld_baremetal" IN_LIST Deprecated_FIND_COMPONENTS)
+  # This code was deprecated after Zephyr v4.0.0
+  list(REMOVE_ITEM Deprecated_FIND_COMPONENTS toolchain_ld_baremetal)
+
+  if(COMMAND toolchain_ld_baremetal)
+    message(DEPRECATION
+        "The macro/function 'toolchain_ld_baremetal' is deprecated. "
+        "Please use '${LINKER}/linker_flags.cmake' and define the appropriate "
+        "linker flags as properties instead. "
+        "See '${ZEPHYR_BASE}/cmake/linker/linker_flags_template.cmake' for "
+        "known linker properties."
+    )
+    toolchain_ld_baremetal()
+  endif()
+endif()
+
+if("toolchain_ld_cpp" IN_LIST Deprecated_FIND_COMPONENTS)
+  # This code was deprecated after Zephyr v4.0.0
+  list(REMOVE_ITEM Deprecated_FIND_COMPONENTS toolchain_ld_cpp)
+
+  if(COMMAND toolchain_ld_cpp)
+    message(DEPRECATION
+        "The macro/function 'toolchain_ld_cpp' is deprecated. "
+        "Please use '${LINKER}/linker_flags.cmake' and define the appropriate "
+        "linker flags as properties instead. "
+        "See '${ZEPHYR_BASE}/cmake/linker/linker_flags_template.cmake' for "
+        "known linker properties."
+    )
+    toolchain_ld_cpp()
+  endif()
+endif()
+
 if(NOT "${Deprecated_FIND_COMPONENTS}" STREQUAL "")
   message(STATUS "The following deprecated component(s) could not be found: "
                  "${Deprecated_FIND_COMPONENTS}")

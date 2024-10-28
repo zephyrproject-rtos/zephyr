@@ -32,6 +32,9 @@
 #define CONN_MGR_IF_READY_IPV4		BIT(14)
 #define CONN_MGR_IF_READY_IPV6		BIT(15)
 
+/* Special value indicating invalid state. */
+#define CONN_MGR_IF_STATE_INVALID	0xFFFF
+
 /* NET_MGMT event masks */
 #define CONN_MGR_IFACE_EVENTS_MASK	(NET_EVENT_IF_DOWN		| \
 					 NET_EVENT_IF_UP)
@@ -59,5 +62,8 @@ void conn_mgr_init_events_handler(void);
 
 /* Cause conn_mgr_connectivity to Initialize all connectivity implementation bindings */
 void conn_mgr_conn_init(void);
+
+/* Internal helper function to allow the shell net cm command to safely read conn_mgr state. */
+uint16_t conn_mgr_if_state(struct net_if *iface);
 
 #endif /* __CONN_MGR_PRV_H__ */

@@ -26,6 +26,7 @@
 #define INPUT_EV_REL 0x02               /**< Relative coordinate event */
 #define INPUT_EV_ABS 0x03               /**< Absolute coordinate event */
 #define INPUT_EV_MSC 0x04               /**< Miscellaneous event */
+#define INPUT_EV_DEVICE 0xef            /**< Device specific input event */
 #define INPUT_EV_VENDOR_START 0xf0      /**< Vendor specific event start */
 #define INPUT_EV_VENDOR_STOP 0xff       /**< Vendor specific event stop */
 /** @} */
@@ -196,12 +197,15 @@
 #define INPUT_BTN_9 0x109               /**< 9 button */
 #define INPUT_BTN_A BTN_SOUTH           /**< A button */
 #define INPUT_BTN_B BTN_EAST            /**< B button */
+#define INPUT_BTN_BACK 0x116		/**< Back button */
 #define INPUT_BTN_C 0x132               /**< C button */
 #define INPUT_BTN_DPAD_DOWN 0x221       /**< Directional pad Down */
 #define INPUT_BTN_DPAD_LEFT 0x222       /**< Directional pad Left */
 #define INPUT_BTN_DPAD_RIGHT 0x223      /**< Directional pad Right */
 #define INPUT_BTN_DPAD_UP 0x220         /**< Directional pad Up */
 #define INPUT_BTN_EAST 0x131            /**< East button */
+#define INPUT_BTN_EXTRA 0x114		/**< Extra button */
+#define INPUT_BTN_FORWARD 0x115		/**< Forward button */
 #define INPUT_BTN_GEAR_DOWN 0x150       /**< Gear Up button */
 #define INPUT_BTN_GEAR_UP 0x151         /**< Gear Down button */
 #define INPUT_BTN_LEFT 0x110            /**< Left button */
@@ -210,8 +214,10 @@
 #define INPUT_BTN_NORTH 0x133           /**< North button */
 #define INPUT_BTN_RIGHT 0x111           /**< Right button */
 #define INPUT_BTN_SELECT 0x13a          /**< Select button */
+#define INPUT_BTN_SIDE 0x113		/**< Side button */
 #define INPUT_BTN_SOUTH 0x130           /**< South button */
 #define INPUT_BTN_START 0x13b           /**< Start button */
+#define INPUT_BTN_TASK 0x117		/**< Task button */
 #define INPUT_BTN_THUMBL 0x13d          /**< Left thumbstick button */
 #define INPUT_BTN_THUMBR 0x13e          /**< Right thumbstick button */
 #define INPUT_BTN_TL 0x136              /**< Left trigger (L1) */

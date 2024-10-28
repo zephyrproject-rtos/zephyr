@@ -43,7 +43,7 @@ static K_THREAD_STACK_DEFINE(pwr_thread_stack, 512);
 static const int8_t txpower[DEVICE_BEACON_TXPOWER_NUM] = {4, 0, -3, -8,
 							  -15, -18, -23, -30};
 static const struct bt_le_adv_param *param =
-	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_ONE_TIME, 0x0020, 0x0020, NULL);
+	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONN, 0x0020, 0x0020, NULL);
 
 static void read_conn_rssi(uint16_t handle, int8_t *rssi)
 {
@@ -64,9 +64,7 @@ static void read_conn_rssi(uint16_t handle, int8_t *rssi)
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_RSSI, buf, &rsp);
 	if (err) {
-		uint8_t reason = rsp ?
-			((struct bt_hci_rp_read_rssi *)rsp->data)->status : 0;
-		printk("Read RSSI err: %d reason 0x%02x\n", err, reason);
+		printk("Read RSSI err: %d\n", err);
 		return;
 	}
 
@@ -99,10 +97,7 @@ static void set_tx_power(uint8_t handle_type, uint16_t handle, int8_t tx_pwr_lvl
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_VS_WRITE_TX_POWER_LEVEL,
 				   buf, &rsp);
 	if (err) {
-		uint8_t reason = rsp ?
-			((struct bt_hci_rp_vs_write_tx_power_level *)
-			  rsp->data)->status : 0;
-		printk("Set Tx power err: %d reason 0x%02x\n", err, reason);
+		printk("Set Tx power err: %d\n", err);
 		return;
 	}
 
@@ -134,10 +129,7 @@ static void get_tx_power(uint8_t handle_type, uint16_t handle, int8_t *tx_pwr_lv
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_VS_READ_TX_POWER_LEVEL,
 				   buf, &rsp);
 	if (err) {
-		uint8_t reason = rsp ?
-			((struct bt_hci_rp_vs_read_tx_power_level *)
-			  rsp->data)->status : 0;
-		printk("Read Tx power err: %d reason 0x%02x\n", err, reason);
+		printk("Read Tx power err: %d\n", err);
 		return;
 	}
 
@@ -154,7 +146,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	int ret;
 
 	if (err) {
-		printk("Connection failed (err 0x%02x)\n", err);
+		printk("Connection failed, err 0x%02x %s\n", err, bt_hci_err_to_str(err));
 	} else {
 		default_conn = bt_conn_ref(conn);
 		ret = bt_hci_get_conn_handle(default_conn,
@@ -185,7 +177,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	printk("Disconnected (reason 0x%02x)\n", reason);
+	printk("Disconnected, reason 0x%02x %s\n", reason, bt_hci_err_to_str(reason));
 
 	if (default_conn) {
 		bt_conn_unref(default_conn);

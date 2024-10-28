@@ -23,13 +23,14 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 #include "btp_bap_audio_stream.h"
 #include "btp_bap_broadcast.h"
 
+static K_SEM_DEFINE(sem_stream_stopped, 0U, CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT);
+
 static struct btp_bap_broadcast_remote_source remote_broadcast_sources[1];
 static struct btp_bap_broadcast_local_source local_source;
 /* Only one PA sync supported for now. */
 static struct btp_bap_broadcast_remote_source *broadcast_source_to_sync;
 /* A mask for the maximum BIS we can sync to. +1 since the BIS indexes start from 1. */
 static const uint32_t bis_index_mask = BIT_MASK(CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT + 1);
-#define INVALID_BROADCAST_ID      (BT_AUDIO_BROADCAST_ID_MAX + 1)
 #define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 20 /* Set the timeout relative to interval */
 #define PA_SYNC_SKIP              5
 static struct bt_bap_bass_subgroup
@@ -60,7 +61,7 @@ static struct btp_bap_broadcast_remote_source *remote_broadcaster_alloc(void)
 	for (size_t i = 0; i < ARRAY_SIZE(remote_broadcast_sources); i++) {
 		struct btp_bap_broadcast_remote_source *broadcaster = &remote_broadcast_sources[i];
 
-		if (broadcaster->broadcast_id == INVALID_BROADCAST_ID) {
+		if (broadcaster->broadcast_id == BT_BAP_INVALID_BROADCAST_ID) {
 			return broadcaster;
 		}
 	}
@@ -132,8 +133,9 @@ static void stream_stopped(struct bt_bap_stream *stream, uint8_t reason)
 	LOG_DBG("Stopped stream %p with reason 0x%02X", stream, reason);
 
 	btp_bap_audio_stream_stopped(&b_stream->audio_stream);
-
 	b_stream->bis_synced = false;
+
+	k_sem_give(&sem_stream_stopped);
 }
 
 static void send_bis_stream_received_ev(const bt_addr_le_t *address, uint32_t broadcast_id,
@@ -211,7 +213,7 @@ static void remote_broadcaster_free(struct btp_bap_broadcast_remote_source *broa
 {
 	(void)memset(broadcaster, 0, sizeof(*broadcaster));
 
-	broadcaster->broadcast_id = INVALID_BROADCAST_ID;
+	broadcaster->broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
 
 	for (size_t i = 0U; i < ARRAY_SIZE(broadcaster->sink_streams); i++) {
 		broadcaster->sink_streams[i] = stream_broadcast_to_bap(&broadcaster->streams[i]);
@@ -295,7 +297,8 @@ uint8_t btp_bap_broadcast_source_setup(const void *cmd, uint16_t cmd_len,
 	struct bt_audio_codec_cfg codec_cfg;
 	const struct btp_bap_broadcast_source_setup_cmd *cp = cmd;
 	struct btp_bap_broadcast_source_setup_rp *rp = rsp;
-	struct bt_le_adv_param *param = BT_LE_EXT_ADV_NCONN;
+	struct bt_le_adv_param param = *BT_LE_EXT_ADV_NCONN;
+	uint32_t broadcast_id;
 
 	/* Only one local source/BIG supported for now */
 	struct btp_bap_broadcast_local_source *source = &local_source;
@@ -319,13 +322,15 @@ uint8_t btp_bap_broadcast_source_setup(const void *cmd, uint16_t cmd_len,
 	codec_cfg.data_len = cp->cc_ltvs_len;
 	memcpy(codec_cfg.data, cp->cc_ltvs, cp->cc_ltvs_len);
 
-	source->qos.phy = BT_AUDIO_CODEC_QOS_2M;
+	source->qos.phy = BT_BAP_QOS_CFG_2M;
 	source->qos.framing = cp->framing;
 	source->qos.rtn = cp->retransmission_num;
 	source->qos.latency = sys_le16_to_cpu(cp->max_transport_latency);
 	source->qos.interval = sys_get_le24(cp->sdu_interval);
 	source->qos.pd = sys_get_le24(cp->presentation_delay);
 	source->qos.sdu = sys_le16_to_cpu(cp->max_sdu);
+
+	source->stream_count = cp->subgroups * cp->streams_per_subgroup;
 
 	err = setup_broadcast_source(cp->streams_per_subgroup, cp->subgroups, source, &codec_cfg);
 	if (err != 0) {
@@ -334,24 +339,24 @@ uint8_t btp_bap_broadcast_source_setup(const void *cmd, uint16_t cmd_len,
 		return BTP_STATUS_FAILED;
 	}
 
-	err = bt_bap_broadcast_source_get_id(source->bap_broadcast, &source->broadcast_id);
-	if (err != 0) {
-		LOG_DBG("Unable to get broadcast ID: %d", err);
+	err = bt_rand(&broadcast_id, BT_AUDIO_BROADCAST_ID_SIZE);
+	if (err) {
+		LOG_DBG("Unable to generate broadcast ID: %d\n", err);
 
 		return BTP_STATUS_FAILED;
 	}
 
 	/* Setup extended advertising data */
 	net_buf_simple_add_le16(&ad_buf, BT_UUID_BROADCAST_AUDIO_VAL);
-	net_buf_simple_add_le24(&ad_buf, source->broadcast_id);
+	net_buf_simple_add_le24(&ad_buf, broadcast_id);
 	base_ad[0].type = BT_DATA_SVC_DATA16;
 	base_ad[0].data_len = ad_buf.len;
 	base_ad[0].data = ad_buf.data;
 	base_ad[1].type = BT_DATA_NAME_COMPLETE;
 	base_ad[1].data_len = sizeof(CONFIG_BT_DEVICE_NAME) - 1;
 	base_ad[1].data = CONFIG_BT_DEVICE_NAME;
-	err = tester_gap_create_adv_instance(param, BTP_GAP_ADDR_TYPE_IDENTITY, base_ad, 2,
-					     NULL, 0, &gap_settings);
+	err = tester_gap_create_adv_instance(&param, BTP_GAP_ADDR_TYPE_IDENTITY, base_ad, 2, NULL,
+					     0, &gap_settings);
 	if (err != 0) {
 		LOG_DBG("Failed to create extended advertising instance: %d", err);
 
@@ -383,7 +388,7 @@ uint8_t btp_bap_broadcast_source_setup(const void *cmd, uint16_t cmd_len,
 	}
 
 	rp->gap_settings = gap_settings;
-	sys_put_le24(source->broadcast_id, rp->broadcast_id);
+	sys_put_le24(broadcast_id, rp->broadcast_id);
 	*rsp_len = sizeof(*rp) + 1;
 
 	return BTP_STATUS_SUCCESS;
@@ -484,11 +489,22 @@ uint8_t btp_bap_broadcast_source_stop(const void *cmd, uint16_t cmd_len,
 
 	LOG_DBG("");
 
+	k_sem_reset(&sem_stream_stopped);
+
 	err = bt_bap_broadcast_source_stop(source->bap_broadcast);
 	if (err != 0) {
 		LOG_DBG("Unable to stop broadcast source: %d", err);
 
 		return BTP_STATUS_FAILED;
+	}
+
+	for (int i = 0; i < source->stream_count; i++) {
+		err = k_sem_take(&sem_stream_stopped, K_MSEC(1000));
+		if (err != 0) {
+			LOG_DBG("Timed out waiting for stream nr %d to stop", i);
+
+			return BTP_STATUS_FAILED;
+		}
 	}
 
 	return BTP_STATUS_SUCCESS;
@@ -609,7 +625,7 @@ static bool base_subgroup_bis_cb(const struct bt_bap_base_subgroup_bis *bis, voi
 	struct bt_audio_codec_cfg *codec_cfg = &parse_data->codec_cfg;
 	struct btp_bap_broadcast_remote_source *broadcaster = parse_data->broadcaster;
 
-	parse_data->bis_bitfield |= BIT(bis->index);
+	parse_data->bis_bitfield |= BT_ISO_BIS_INDEX_BIT(bis->index);
 
 	if (parse_data->stream_cnt < ARRAY_SIZE(broadcaster->streams)) {
 		struct btp_bap_broadcast_stream *stream =
@@ -923,7 +939,7 @@ static int pa_sync_term_req_cb(struct bt_conn *conn,
 
 static void broadcast_code_cb(struct bt_conn *conn,
 			      const struct bt_bap_scan_delegator_recv_state *recv_state,
-			      const uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE])
+			      const uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE])
 {
 	int err;
 	uint32_t index_bitfield;
@@ -939,8 +955,7 @@ static void broadcast_code_cb(struct bt_conn *conn,
 	}
 
 	broadcaster->sink_recv_state = recv_state;
-	(void)memcpy(broadcaster->sink_broadcast_code, broadcast_code,
-		     BT_AUDIO_BROADCAST_CODE_SIZE);
+	(void)memcpy(broadcaster->sink_broadcast_code, broadcast_code, BT_ISO_BROADCAST_CODE_SIZE);
 
 	if (!broadcaster->requested_bis_sync) {
 		return;
@@ -1033,7 +1048,10 @@ uint8_t btp_bap_broadcast_sink_setup(const void *cmd, uint16_t cmd_len,
 	}
 
 	/* For Scan Delegator role */
-	bt_bap_scan_delegator_register_cb(&scan_delegator_cbs);
+	err = bt_bap_scan_delegator_register(&scan_delegator_cbs);
+	if (err != 0) {
+		return BTP_STATUS_FAILED;
+	}
 
 	/* For Broadcast Sink role */
 	bt_bap_broadcast_sink_register_cb(&broadcast_sink_cbs);
@@ -1208,14 +1226,7 @@ uint8_t btp_bap_broadcast_sink_bis_sync(const void *cmd, uint16_t cmd_len,
 		return BTP_STATUS_FAILED;
 	}
 
-	if (cp->requested_bis_sync == BT_BAP_BIS_SYNC_NO_PREF) {
-		broadcaster->requested_bis_sync = sys_le32_to_cpu(cp->requested_bis_sync);
-	} else {
-		/* For semantic purposes Zephyr API uses BIS Index bitfield
-		 * where BIT(1) means BIS Index 1
-		 */
-		broadcaster->requested_bis_sync = sys_le32_to_cpu(cp->requested_bis_sync) << 1;
-	}
+	broadcaster->requested_bis_sync = sys_le32_to_cpu(cp->requested_bis_sync);
 
 	err = bt_bap_broadcast_sink_sync(broadcaster->sink, broadcaster->requested_bis_sync,
 					 broadcaster->sink_streams,

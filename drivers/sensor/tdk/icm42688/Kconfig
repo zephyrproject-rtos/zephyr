@@ -1,6 +1,7 @@
 # ICM42688-P Six-Axis Motion Tracking device configuration options
 #
 # Copyright (c) 2022 Intel Corporation
+# Copyright (c) 2024 Croxel Inc.
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -9,6 +10,7 @@ menuconfig ICM42688
 	default y
 	depends on DT_HAS_INVENSENSE_ICM42688_ENABLED
 	select SPI
+	select RTIO_WORKQ if SENSOR_ASYNC_API
 	help
 	  Enable driver for ICM42688 SPI-based six-axis motion tracking device.
 
@@ -42,10 +44,14 @@ config ICM42688_TRIGGER_NONE
 
 config ICM42688_TRIGGER_GLOBAL_THREAD
 	bool "Use global thread"
+	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM42688),int-gpios)
 	select ICM42688_TRIGGER
 
 config ICM42688_TRIGGER_OWN_THREAD
 	bool "Use own thread"
+	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM42688),int-gpios)
 	select ICM42688_TRIGGER
 
 endchoice

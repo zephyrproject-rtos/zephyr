@@ -95,15 +95,15 @@ the :term:`SoC series` and :term:`SoC family` levels are not always used.
    +============================================+==========================+=============+====================+====================+================+======================+
    | :ref:`nrf52dk <nrf52dk_nrf52832>`          | nrf52832                 | nRF52832    | nRF52              | Nordic nRF         | Arm Cortex-M4  | ARMv7-M              |
    +--------------------------------------------+--------------------------+-------------+--------------------+--------------------+----------------+----------------------+
-   | :ref:`frdm_k64f <frdm_k64f>`               | mk64f12                  | MK64F12     | Kinetis K6x        | NXP Kinetis        | Arm Cortex-M4  | ARMv7-M              |
+   | :zephyr:board:`frdm_k64f <frdm_k64f>`      | mk64f12                  | MK64F12     | Kinetis K6x        | NXP Kinetis        | Arm Cortex-M4  | ARMv7-M              |
    +--------------------------------------------+--------------------------+-------------+--------------------+--------------------+----------------+----------------------+
-   | :ref:`rv32m1_vega <rv32m1_vega>`           | openisa_rv32m1/ri5cy     | RV32M1      | (Not used)         | (Not used)         | RI5CY          | RISC-V RV32          |
+   | :zephyr:board:`rv32m1_vega <rv32m1_vega>`  | openisa_rv32m1/ri5cy     | RV32M1      | (Not used)         | (Not used)         | RI5CY          | RISC-V RV32          |
    +--------------------------------------------+--------------------------+-------------+--------------------+--------------------+----------------+----------------------+
    | :ref:`nrf5340dk <nrf5340dk_nrf5340>`       | nrf5340/cpuapp           | nRF5340     | nRF53              | Nordic nRF         | Arm Cortex-M33 | ARMv8-M              |
    |                                            +--------------------------+-------------+--------------------+--------------------+----------------+----------------------+
    |                                            | nrf5340/cpunet           | nRF5340     | nRF53              | Nordic nRF         | Arm Cortex-M33 | ARMv8-M              |
    +--------------------------------------------+--------------------------+-------------+--------------------+--------------------+----------------+----------------------+
-   | :ref:`mimx8mp_evk <imx8mp_evk>`            | mimx8ml8/a53             | i.MX8M Plus | i.MX8M             | NXP i.MX           | Arm Cortex-A53 | ARMv8-A              |
+   | :zephyr:board:`mimx8mp_evk <imx8mp_evk>`   | mimx8ml8/a53             | i.MX8M Plus | i.MX8M             | NXP i.MX           | Arm Cortex-A53 | ARMv8-A              |
    |                                            +--------------------------+-------------+--------------------+--------------------+----------------+----------------------+
    |                                            | mimx8ml8/m7              | i.MX8M Plus | i.MX8M             | NXP i.MX           | Arm Cortex-M7  | ARMv7-M              |
    |                                            +--------------------------+-------------+--------------------+--------------------+----------------+----------------------+
@@ -123,7 +123,7 @@ This section focuses on the terminology used around hardware support, and in
 particular when defining and working with boards and SoCs.
 
 The overall set of terms used around the concept of board in Zephyr is depicted
-in the image below, which uses the :ref:`bl5340_dvk` board as reference.
+in the image below, which uses the :zephyr:board:`bl5340_dvk` board as reference.
 
 .. figure:: board/board-terminology.svg
    :width: 500px
@@ -152,7 +152,7 @@ qualifiers, the board name can be used as a board target. Conversely, if
 board qualifiers are part of the board definition, then the SoC can be omitted
 by leaving it out but including the corresponding forward-slashes: ``//``.
 
-Continuing with the example above, The board :ref:`bl5340_dvk` is a single SoC
+Continuing with the example above, The board :zephyr:board:`bl5340_dvk` is a single SoC
 board where the SoC defines two CPU clusters: ``cpuapp`` and ``cpunet``. One of
 the CPU clusters, ``cpuapp``, additionally defines a non-secure board variant,
 ``ns``.
@@ -265,11 +265,9 @@ Your board directory should look like this:
    │   └── index.rst
    ├── Kconfig.plank
    ├── Kconfig.defconfig
-   ├── plank_defconfig
    ├── plank_<qualifiers>_defconfig
-   ├── plank.dts
    ├── plank_<qualifiers>.dts
-   └── plank.yaml
+   └── plank_<qualifiers>.yaml
 
 Replace ``plank`` with your board's name, of course.
 
@@ -280,7 +278,7 @@ The mandatory files are:
    CPU clusters for multi-core SoCs are not described in this file as they are
    inherited from the SoC's YAML description.
 
-#. :file:`plank.dts` or :file:`plank_<qualifiers>.dts`: a hardware description
+#. :file:`plank_<qualifiers>.dts`: a hardware description
    in :ref:`devicetree <dt-guide>` format. This declares your SoC, connectors,
    and any other hardware components such as LEDs, buttons, sensors, or
    communication peripherals (USB, BLE controller, etc).
@@ -304,8 +302,8 @@ The optional files are:
 - :file:`doc/index.rst`, :file:`doc/plank.png`: documentation for and a picture
   of your board. You only need this if you're :ref:`contributing-your-board` to
   Zephyr.
-- :file:`plank.yaml`: a YAML file with miscellaneous metadata used by the
-  :ref:`twister_script`.
+- :file:`plank_<qualifiers>.yaml`: a YAML file with miscellaneous metadata used
+  by the :ref:`twister_script`.
 
 Board qualifiers of the form ``<soc>/<cpucluster>/<variant>`` are normalized so
 that ``/`` is replaced with ``_`` when used for filenames, for example:
@@ -536,8 +534,8 @@ files for a board named ``plank``:
      config BOARD_PLANK
              select SOC_SOC1
 
-  The Kconfig symbols :kconfig:option:`BOARD_<board>` and
-  :kconfig:option:`BOARD_<normalized_board_target>` are constructed by the build
+  The Kconfig symbols :samp:`BOARD_{board}` and
+  :samp:`BOARD_{normalized_board_target}` are constructed by the build
   system, therefore no type shall be defined in above code snippet.
 
 :file:`Kconfig`
@@ -570,13 +568,6 @@ files for a board named ``plank``:
   .. code-block:: kconfig
 
      if BOARD_PLANK
-
-     # Always set CONFIG_BOARD here. This isn't meant to be customized,
-     # but is set as a "default" due to Kconfig language restrictions.
-     config BOARD
-             default "plank"
-
-     # Other options you want enabled by default go next. Examples:
 
      config FOO
              default y
@@ -919,8 +910,66 @@ There are some extra things you'll need to do:
 #. Prepare a pull request adding your board which follows the
    :ref:`contribute_guidelines`.
 
+.. _extend-board:
+
 Board extensions
 ****************
+
+The board hardware model in Zephyr allows you to extend an existing board with
+new board variants. Such board extensions can be done in your custom repository
+and thus outside of the Zephyr repository.
+
+Extending an existing board with an extra variant allows you to adjust an
+existing board and thereby during build to select building for the existing,
+unmodified board, or the new variant.
+
+To extend an existing board, first create a :file:`board.yml` in your extended
+board. Make sure to use the directory structure described in
+:ref:`create-your-board-directory`.
+
+The skeleton of the board YAML file for extending a board is:
+
+.. code-block:: yaml
+
+   board:
+     extend: <existing-board-name>
+      variants:
+       - name: <new-variant>
+         qualifier: <existing-qualifier>
+
+When extending a board, your board directory should look like:
+
+.. code-block:: none
+
+   boards/<VENDOR>/plank
+   ├── board.yml
+   ├── plank_<new-qualifiers>_defconfig
+   └── plank_<new-qualifiers>.dts
+
+Replace ``plank`` with the real name of the board you extend.
+
+In some cases you might want to also adjust additional settings, like the
+:file:`Kconfig.defconfig` or :file:`Kconfig.{board}`.
+Therefore it is also possible to provide the following in addition when
+extending a board.
+
+.. code-block:: none
+
+   boards/<VENDOR>/plank
+   ├── board.cmake
+   ├── Kconfig
+   ├── Kconfig.plank
+   ├── Kconfig.defconfig
+   └── plank_<new-qualifiers>.yaml
+
+Board extensions (Old hardware model)
+*************************************
+
+.. note::
+
+  This extension mechanism is intended for boards in old hardware description
+  format. For boards described in new hardware model format, use the extension
+  feature described in :ref:`extend-board`.
 
 Boards already supported by Zephyr can be extended by downstream users, such as
 ``example-application`` or vendor SDKs. In some situations, certain hardware

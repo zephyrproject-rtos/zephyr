@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, NXP
+ * Copyright 2022,2024 NXP
  * SPDX-License-Identifier: Apache-2.0
  *
  */
@@ -81,6 +81,52 @@
 			slew-rate = "fast";
 			drive-strength = "x5";
 		};
+	};
+
+	flexcan2_default: flexcan2_default {
+		group0 {
+			pinmux = <&iomuxc1_gpio_io25_can_tx_can2_tx>,
+					 <&iomuxc1_gpio_io27_can_rx_can2_rx>;
+			slew-rate = "slightly_fast";
+			drive-strength = "x5";
+		};
+	};
+
+	pinmux_mdio: pinmux_mdio {
+		group0 {
+			pinmux = <&iomuxc1_enet2_mdc_enet_mdc_enet1_mdc>,
+				<&iomuxc1_enet2_mdio_enet_mdio_enet1_mdio>;
+			bias-pull-down;
+			slew-rate = "slightly_fast";
+			drive-strength = "x6";
+		};
+	};
+
+	pinmux_enet: pinmux_enet {
+		group0 {
+			pinmux = <&iomuxc1_enet2_rd0_enet_rgmii_rd_enet1_rgmii_rd0>,
+				<&iomuxc1_enet2_rd1_enet_rgmii_rd_enet1_rgmii_rd1>,
+				<&iomuxc1_enet2_rd2_enet_rgmii_rd_enet1_rgmii_rd2>,
+				<&iomuxc1_enet2_rd3_enet_rgmii_rd_enet1_rgmii_rd3>,
+				<&iomuxc1_enet2_rx_ctl_enet_rgmii_rx_ctl_enet1_rgmii_rx_ctl>,
+				<&iomuxc1_enet2_td0_enet_rgmii_td_enet1_rgmii_td0>,
+				<&iomuxc1_enet2_td1_enet_rgmii_td_enet1_rgmii_td1>,
+				<&iomuxc1_enet2_td2_enet_rgmii_td_enet1_rgmii_td2>,
+				<&iomuxc1_enet2_td3_enet_rgmii_td_enet1_rgmii_td3>,
+				<&iomuxc1_enet2_tx_ctl_enet_rgmii_tx_ctl_enet1_rgmii_tx_ctl>;
+			bias-pull-down;
+			slew-rate = "slightly_fast";
+			drive-strength = "x6";
+		};
+
+		group1 {
+			pinmux = <&iomuxc1_enet2_rxc_enet_rgmii_rxc_enet1_rgmii_rxc>,
+				<&iomuxc1_enet2_txc_enet_rgmii_txc_enet1_rgmii_txc>;
+			bias-pull-down;
+			slew-rate = "fast";
+			drive-strength = "x6";
+		};
+
 	};
 
 };

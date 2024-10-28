@@ -29,13 +29,14 @@ LOG_MODULE_REGISTER(net_dns_resolve, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 #include "dns_pack.h"
 #include "dns_internal.h"
 #include "dns_cache.h"
+#include "../../ip/net_stats.h"
 
 #define DNS_SERVER_COUNT CONFIG_DNS_RESOLVER_MAX_SERVERS
 #define SERVER_COUNT     (DNS_SERVER_COUNT + DNS_MAX_MCAST_SERVERS)
 
-extern void dns_dispatcher_svc_handler(struct k_work *work);
+extern void dns_dispatcher_svc_handler(struct net_socket_service_event *pev);
 
-NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(resolve_svc, NULL, dns_dispatcher_svc_handler,
+NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(resolve_svc, dns_dispatcher_svc_handler,
 				      DNS_RESOLVER_MAX_POLL);
 
 #define MDNS_IPV4_ADDR "224.0.0.251:5353"
@@ -275,10 +276,6 @@ quit:
 	release_query(&ctx->queries[i]);
 
 free_buf:
-	if (dns_data) {
-		net_buf_unref(dns_data);
-	}
-
 	if (dns_cname) {
 		net_buf_unref(dns_cname);
 	}
@@ -436,7 +433,8 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 		ret = zsock_socket(ctx->servers[i].dns_server.sa_family,
 				   SOCK_DGRAM, IPPROTO_UDP);
 		if (ret < 0) {
-			NET_DBG("Cannot get socket (%d)", ret);
+			ret = -errno;
+			NET_ERR("Cannot get socket (%d)", ret);
 			goto fail;
 		}
 
@@ -1044,6 +1042,20 @@ static int dns_write(struct dns_resolve_context *ctx,
 	if (ret < 0) {
 		NET_DBG("Cannot send query (%d)", -errno);
 		return ret;
+	} else {
+		if (IS_ENABLED(CONFIG_NET_STATISTICS_DNS)) {
+			struct net_if *iface = NULL;
+
+			if (IS_ENABLED(CONFIG_NET_IPV6) && server->sa_family == AF_INET6) {
+				iface = net_if_ipv6_select_src_iface(&net_sin6(server)->sin6_addr);
+			} else if (IS_ENABLED(CONFIG_NET_IPV4) && server->sa_family == AF_INET) {
+				iface = net_if_ipv4_select_src_iface(&net_sin(server)->sin_addr);
+			}
+
+			if (iface != NULL) {
+				net_stats_update_dns_sent(iface);
+			}
+		}
 	}
 
 	return 0;
@@ -1288,7 +1300,7 @@ int dns_resolve_name(struct dns_resolve_context *ctx,
 
 try_resolve:
 #ifdef CONFIG_DNS_RESOLVER_CACHE
-	ret = dns_cache_find(&dns_cache, query, cached_info, sizeof(cached_info));
+	ret = dns_cache_find(&dns_cache, query, cached_info, ARRAY_SIZE(cached_info));
 	if (ret > 0) {
 		/* The query was cached, no
 		 * need to continue further.

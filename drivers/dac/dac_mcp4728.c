@@ -45,6 +45,10 @@ static int mcp4728_channel_setup(const struct device *dev,
 		return -ENOTSUP;
 	}
 
+	if (channel_cfg->internal) {
+		return -ENOTSUP;
+	}
+
 	return 0;
 }
 

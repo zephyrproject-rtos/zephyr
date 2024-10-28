@@ -1,7 +1,4 @@
-.. _rd_rw612_bga:
-
-NXP RD-RW612-BGA
-################
+.. zephyr:board:: rd_rw612_bga
 
 Overview
 ********
@@ -59,6 +56,8 @@ Supported Features
 +-----------+------------+-----------------------------------+
 | CTIMER    | on-chip    | counter                           |
 +-----------+------------+-----------------------------------+
+| SCTIMER   | on-chip    | pwm                               |
++-----------+------------+-----------------------------------+
 | MRT       | on-chip    | counter                           |
 +-----------+------------+-----------------------------------+
 | OS_TIMER  | on-chip    | os timer                          |
@@ -68,12 +67,71 @@ Supported Features
 +-----------+------------+-----------------------------------+
 | BLE       | on-chip    | Bluetooth                         |
 +-----------+------------+-----------------------------------+
+| ADC       | on-chip    | adc                               |
++-----------+------------+-----------------------------------+
+| DAC       | on-chip    | dac                               |
++-----------+------------+-----------------------------------+
+| ENET      | on-chip    | ethernet                          |
++-----------+------------+-----------------------------------+
 
 The default configuration can be found in the defconfig file:
 
    :zephyr_file:`boards/nxp/rd_rw612_bga/rd_rw612_bga_defconfig/`
 
 Other hardware features are not currently supported
+
+
+Display Support
+***************
+
+The rd_rw612_bga board supports several in-tree display modules. Setup for
+each module is described below:
+
+GoWorld 16880 LCM
+=================
+
+This module does not connect directly to the board, and must be connected
+via an adapter board and jumper wires. Connections are described in
+:zephyr_file:`boards/nxp/rd_rw612_bga/dts/goworld_16880_lcm.overlay`. The
+display sample can be built for this board like so:
+
+.. zephyr-app-commands::
+   :board: rd_rw612_bga
+   :gen-args: -DDTC_OVERLAY_FILE=goworld_16880_lcm.overlay
+   :zephyr-app: samples/drivers/display
+   :goals: build
+   :compact:
+
+Adafruit 2.8 TFT
+================
+
+The :ref:`adafruit_2_8_tft_touch_v2` connects to the board's Arduino headers
+directly, but some modifications are required (see
+:zephyr_file:`boards/shields/adafruit_2_8_tft_touch_v2/boards/rd_rw612_bga.overlay`
+for a list). The display sample can be built for this module like so:
+
+.. zephyr-app-commands::
+   :board: rd_rw612_bga
+   :shield: adafruit_2_8_tft_touch_v2
+   :zephyr-app: samples/drivers/display
+   :goals: build
+   :compact:
+
+NXP LCD_PAR_S035
+================
+
+The :ref:`lcd_par_s035` does not connect directly to the board, and must be
+connected via jumper wires. Connections and required board changes are
+described in
+:zephyr_file:`boards/shields/lcd_par_s035/boards/rd_rw612_bga.overlay`. The
+display sample can be built for the module like so:
+
+.. zephyr-app-commands::
+   :board: rd_rw612_bga
+   :shield: lcd_par_s035_8080
+   :zephyr-app: samples/drivers/display
+   :goals: build
+   :compact:
 
 Fetch Binary Blobs
 ******************
@@ -111,7 +169,7 @@ Connect a USB cable from your PC to J7, and use the serial terminal of your choi
 Flashing
 ========
 
-Here is an example for the :ref:`hello_world` application. This example uses the
+Here is an example for the :zephyr:code-sample:`hello_world` application. This example uses the
 :ref:`jlink-debug-host-tools` as default.
 
 .. zephyr-app-commands::
@@ -130,7 +188,7 @@ see the following message in the terminal:
 Debugging
 =========
 
-Here is an example for the :ref:`hello_world` application. This example uses the
+Here is an example for the :zephyr:code-sample:`hello_world` application. This example uses the
 :ref:`jlink-debug-host-tools` as default.
 
 .. zephyr-app-commands::
@@ -152,20 +210,9 @@ Bluetooth
 BLE functionality requires to fetch binary blobs, so make sure to follow
 the ``Fetch Binary Blobs`` section first.
 
-Those binary blobs can be used in two different ways, depending if :kconfig:option:`CONFIG_NXP_MONOLITHIC_BT`
-is enabled or not:
-
-- :kconfig:option:`CONFIG_NXP_MONOLITHIC_BT` is enabled (default):
-
-The required binary blob will be linked with the application image directly, forming
-one single monolithic image.
-The user has nothing else to do other than flashing the application to the board.
-
-- :kconfig:option:`CONFIG_NXP_MONOLITHIC_BT` is disabled:
-
-In this case, the BLE blob won't be linked with the application, so the user needs to manually
-flash the BLE binary blob to the board at the address ``0x18540000``.
-The binary blob will be located here: ``<zephyr workspace>/modules/hal/nxp/zephyr/blobs/rw61x/rw61x_sb_ble_a2.bin``
+rd_rw612_bga platform supports the monolithic feature. The required binary blob
+``<zephyr workspace>/modules/hal/nxp/zephyr/blobs/rw61x_sb_ble_a2.bin`` will be linked
+with the application image directly, forming one single monolithic image.
 
 Board variants
 **************
@@ -177,6 +224,7 @@ To use ethernet on the RD_RW612_BGA board, you first need to make the following
 modifications to the board hardware:
 
 Add resistors:
+
 - R485
 - R486
 - R487
@@ -184,7 +232,9 @@ Add resistors:
 - R489
 - R491
 - R490
+
 Remove resistors:
+
 - R522
 - R521
 - R520
@@ -193,10 +243,12 @@ Remove resistors:
 - R508
 - R505
 
-Then, build for the board target `rd_rw612_bga//ethernet`.
+Then, build for the board target ``rd_rw612_bga//ethernet``.
 
 Resources
 *********
+
+.. target-notes::
 
 .. _RW612 Website:
    https://www.nxp.com/products/wireless-connectivity/wi-fi-plus-bluetooth-plus-802-15-4/wireless-mcu-with-integrated-tri-radiobr1x1-wi-fi-6-plus-bluetooth-low-energy-5-3-802-15-4:RW612

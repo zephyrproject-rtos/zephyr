@@ -51,7 +51,18 @@
 		mcuboot-button0 = &button0;
 		mcuboot-led0 = &led0;
 		watchdog0 = &wdt0;
+		dht0 = &hts221;
+		accel0 = &lis3dh;
+		prox-sensor0 = &apds9960;
 	};
+};
+
+&reg0 {
+	status = "okay";
+};
+
+&reg1 {
+	regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
 };
 
 &adc {
@@ -81,7 +92,7 @@
 	pinctrl-names = "default", "sleep";
 };
 
-arduino_i2c: &i2c0 {
+&i2c0 {
 	compatible = "nordic,nrf-twi";
 	status = "okay";
 	pinctrl-0 = <&i2c0_default>;

@@ -28,6 +28,7 @@
 		zephyr,flash-controller = &is25wp128;
 		zephyr,flash = &is25wp128;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,uart-mcumgr = &lpuart1;
 		zephyr,cpu1-region = &ocram;
 		zephyr,ipc = &mailbox_a;
 	};
@@ -148,6 +149,14 @@ nxp_mipi_i2c: &lpi2c5 {
 
 zephyr_udc0: &usb1 {
 	status = "okay";
+	phy_handle = <&usbphy1>;
+};
+
+&usbphy1 {
+	status = "okay";
+	tx-d-cal = <7>;
+	tx-cal-45-dp-ohms = <6>;
+	tx-cal-45-dm-ohms = <6>;
 };
 
 &mailbox_a {

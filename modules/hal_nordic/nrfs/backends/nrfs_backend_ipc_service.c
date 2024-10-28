@@ -24,9 +24,6 @@ K_MSGQ_DEFINE(ipc_transmit_msgq, sizeof(struct ipc_data_packet),
 
 static struct k_work backend_send_work;
 
-static struct ipc_data_packet rx_data;
-static struct ipc_data_packet tx_data;
-
 static void ipc_sysctrl_ept_bound(void *priv);
 static void ipc_sysctrl_ept_recv(const void *data, size_t size, void *priv);
 
@@ -95,13 +92,15 @@ __weak void nrfs_backend_error_handler(enum nrfs_backend_error error_id, int err
 
 static void ipc_sysctrl_ept_bound(void *priv)
 {
-	LOG_INF("Bound to sysctrl.");
+	LOG_DBG("Bound to sysctrl.");
 	k_event_post(&ipc_connected_event, IPC_INIT_DONE_EVENT);
 	atomic_set(&ipc_cpusys_channel_config.status, CONNECTED);
 }
 
 static void ipc_sysctrl_ept_recv(const void *data, size_t size, void *priv)
 {
+	struct ipc_data_packet rx_data;
+
 	__ASSERT(size <= MAX_PACKET_DATA_SIZE, "Received data is too long. Config error.");
 	if (size <= MAX_PACKET_DATA_SIZE) {
 		rx_data.channel_id = IPC_CPUSYS_CHANNEL_ID;
@@ -119,11 +118,12 @@ static void ipc_sysctrl_ept_recv(const void *data, size_t size, void *priv)
 
 static void nrfs_backend_send_work(struct k_work *item)
 {
-	static struct ipc_data_packet data_to_send;
+	struct ipc_data_packet data_to_send;
 
 	LOG_DBG("Sending data from workqueue");
 	while (k_msgq_get(&ipc_transmit_msgq, &data_to_send, K_NO_WAIT) == 0) {
-		ipc_service_send(&ipc_cpusys_channel_config.ipc_ept, &tx_data.data, tx_data.size);
+		ipc_service_send(&ipc_cpusys_channel_config.ipc_ept, &data_to_send.data,
+				 data_to_send.size);
 	}
 }
 
@@ -150,7 +150,7 @@ static int ipc_channel_init(void)
 		return ret;
 	}
 
-	LOG_INF("ipc_service_open_instance() done.");
+	LOG_DBG("ipc_service_open_instance() done.");
 
 	ret = ipc_service_register_endpoint(ch_cfg->ipc_instance,
 					    &ch_cfg->ipc_ept,
@@ -160,7 +160,7 @@ static int ipc_channel_init(void)
 		return ret;
 	}
 
-	LOG_INF("ipc_service_register_endpoint() done.");
+	LOG_DBG("ipc_service_register_endpoint() done.");
 
 	return ret;
 }
@@ -179,6 +179,7 @@ nrfs_err_t nrfs_backend_send_ex(void *message, size_t size, k_timeout_t timeout,
 
 	if (size <= MAX_PACKET_DATA_SIZE) {
 		int err;
+		struct ipc_data_packet tx_data;
 
 		tx_data.channel_id = IPC_CPUSYS_CHANNEL_ID;
 		tx_data.size	   = size;

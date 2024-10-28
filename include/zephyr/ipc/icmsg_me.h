@@ -45,7 +45,7 @@ struct icmsg_me_data_t {
 /** @brief Initialize an icmsg_me instance
  *
  *  This function is intended to be called during system initialization.
- *  It initializes the underlying icmsg instace as one of the initialization
+ *  It initializes the underlying icmsg instance as one of the initialization
  *  steps.
  *
  *  @param[in] conf Structure containing configuration parameters for the

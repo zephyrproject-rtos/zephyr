@@ -6,6 +6,7 @@
 
 #include <mem.h>
 #include "armv6-m.dtsi"
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/clock/kinetis_pcc.h>
 #include <zephyr/dt-bindings/clock/kinetis_scg.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
@@ -24,6 +25,32 @@
 			compatible = "arm,cortex-m0+";
 			clock-frequency = <48000000>;
 			reg = <0>;
+			cpu-power-states = <&idle &stop &pstop1 &pstop2>;
+		};
+
+		power-states {
+			idle: idle {
+				compatible = "zephyr,power-state";
+				power-state-name = "runtime-idle";
+			};
+
+			stop: stop {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <0>;
+			};
+
+			pstop1: pstop1 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <1>;
+			};
+
+			pstop2: pstop2 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <2>;
+			};
 		};
 	};
 
@@ -114,6 +141,17 @@
 			};
 		};
 
+		adc0: adc@4003b000 {
+			compatible = "nxp,kinetis-adc12";
+			reg = <0x4003b000 0x1000>;
+			interrupts = <15 0>;
+			clocks = <&pcc 0xec KINETIS_PCC_SRC_SIRC_ASYNC>;
+			clk-source = <0>;
+			clk-divider = <1>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+
 		lpuart0: uart@4006a000 {
 			compatible = "nxp,kinetis-lpuart";
 			reg = <0x4006a000 0x1000>;
@@ -136,6 +174,16 @@
 			interrupts = <14 0>;
 			clocks = <&pcc 0x1b0 KINETIS_PCC_SRC_FIRC_ASYNC>;
 			status = "disabled";
+		};
+
+		lptmr0: lptmr@40040000 {
+			compatible = "nxp,lptmr";
+			reg = <0x40040000 0x1000>;
+			interrupts = <29 0>;
+			clock-frequency = <128000>;
+			prescaler = <1>;
+			clk-source = <1>;
+			resolution = <16>;
 		};
 
 		porta: pinmux@40049000 {
@@ -168,6 +216,26 @@
 			clocks = <&pcc 0x134 KINETIS_PCC_SRC_NONE_OR_EXT>;
 		};
 
+		pmc: pmc@4007d000 {
+			reg = <0x4007d000 0x1000>;
+
+			lpo: lpo128k {
+				compatible = "fixed-clock";
+				clock-frequency = <128000>;
+				#clock-cells = <0>;
+			};
+		};
+
+		wdog: watchdog@40052000 {
+			compatible = "nxp,kinetis-wdog32";
+			reg = <0x40052000 0x1000>;
+			interrupts = <28 0>;
+			clocks = <&lpo>;
+			clk-source = <1>;
+			clk-divider = <256>;
+			status = "disabled";
+		};
+
 		gpios0: gpios0@400ff000 {
 			compatible = "nxp,gpio-cluster";
 			interrupts = <7 2>;
@@ -189,6 +257,24 @@
 				compatible = "nxp,kinetis-gpio";
 				status = "disabled";
 				reg = <0x100 0x40>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				nxp,kinetis-port = <&porte>;
+			};
+
+			fgpioa: gpio@f8000000 {
+				compatible = "nxp,kinetis-gpio";
+				status = "disabled";
+				reg = <0xf8000000 0x40>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				nxp,kinetis-port = <&porta>;
+			};
+
+			fgpioe: gpio@f8000100 {
+				compatible = "nxp,kinetis-gpio";
+				status = "disabled";
+				reg = <0xf8000100 0x40>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				nxp,kinetis-port = <&porte>;
@@ -229,6 +315,71 @@
 				#gpio-cells = <2>;
 				nxp,kinetis-port = <&portd>;
 			};
+
+			fgpiob: gpio@f8000040 {
+				compatible = "nxp,kinetis-gpio";
+				status = "disabled";
+				reg = <0xf8000040 0x40>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				nxp,kinetis-port = <&portb>;
+			};
+
+			fgpioc: gpio@f8000080 {
+				compatible = "nxp,kinetis-gpio";
+				status = "disabled";
+				reg = <0xf8000080 0x40>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				nxp,kinetis-port = <&portc>;
+			};
+
+			fgpiod: gpio@f80000c0 {
+				compatible = "nxp,kinetis-gpio";
+				status = "disabled";
+				reg = <0xf80000c0 0x40>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				nxp,kinetis-port = <&portd>;
+			};
+		};
+
+		ftm0: ftm@40038000 {
+			compatible = "nxp,kinetis-ftm";
+			reg = <0x40038000 0x1000>;
+			interrupts = <17 0>;
+			clocks = <&pcc 0xe0 KINETIS_PCC_SRC_FIRC_ASYNC>;
+			prescaler = <16>;
+			status = "disabled";
+		};
+
+		ftm1: ftm@40039000 {
+			compatible = "nxp,kinetis-ftm";
+			reg = <0x40039000 0x1000>;
+			interrupts = <18 0>;
+			clocks = <&pcc 0xe4 KINETIS_PCC_SRC_FIRC_ASYNC>;
+			prescaler = <16>;
+			status = "disabled";
+		};
+
+		ftm2: ftm@4003a000 {
+			compatible = "nxp,kinetis-ftm";
+			reg = <0x4003a000 0x1000>;
+			interrupts = <19 0>;
+			clocks = <&pcc 0xe8 KINETIS_PCC_SRC_FIRC_ASYNC>;
+			prescaler = <16>;
+			status = "disabled";
+		};
+
+		pwt: pwt@40056000 {
+			compatible = "nxp,kinetis-pwt";
+			reg = <0x40056000 0x1000>;
+			interrupts = <29 0>;
+			clocks = <&scg KINETIS_SCG_BUS_CLK>;
+			prescaler = <1>;
+			status = "disabled";
+
+			#pwm-cells = <3>;
 		};
 
 		lpi2c0: i2c@40066000 {
@@ -251,6 +402,64 @@
 			interrupts = <9 0>;
 			clocks = <&pcc 0x19c KINETIS_PCC_SRC_FIRC_ASYNC>;
 			status = "disabled";
+		};
+
+		rtc: rtc@4003d000 {
+			compatible = "nxp,kinetis-rtc";
+			reg = <0x4003d000 0x1000>;
+			interrupts = <20 0>;
+			clock-frequency = <32768>;
+			prescaler = <32768>;
+			status = "disabled";
+		};
+
+		cmp0: cmp@40073000 {
+			compatible = "nxp,kinetis-acmp";
+			reg = <0x40073000 0x1000>;
+			interrupts = <16 0>;
+			clocks = <&scg KINETIS_SCG_BUS_CLK>;
+			status = "disabled";
+		};
+
+		lpspi0: spi@4002c000 {
+			compatible = "nxp,imx-lpspi";
+			reg = <0x4002c000 0x1000>;
+			interrupts = <10 0>;
+			clocks = <&pcc 0xb0 KINETIS_PCC_SRC_FIRC_ASYNC>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		lpspi1: spi@4002d000 {
+			compatible = "nxp,imx-lpspi";
+			reg = <0x4002d000 0x1000>;
+			interrupts = <11 0>;
+			clocks = <&pcc 0xb4 KINETIS_PCC_SRC_FIRC_ASYNC>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		edma: dma-controller@40008000 {
+			compatible = "nxp,mcux-edma";
+			dma-channels = <8>;
+			dma-requests = <64>;
+			nxp,mem2mem;
+			reg = <0x40008000 0x1000>, <0x40021000 0x1000>;
+			interrupts = <0 0>, <1 0>, <2 0>, <3 0>,
+				     <4 0>;
+			status = "disabled";
+			#dma-cells = <2>;
+			irq-shared-offset = <4>;
+		};
+
+		flexio: flexio@4005a000 {
+			compatible = "nxp,flexio";
+			reg = <0x4005a000 0x1000>;
+			status = "disabled";
+			interrupts = <23 0>;
+			clocks = <&pcc 0x168 KINETIS_PCC_SRC_FIRC_ASYNC>;
 		};
 	};
 };

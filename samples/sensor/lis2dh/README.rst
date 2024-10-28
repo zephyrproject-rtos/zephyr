@@ -1,7 +1,8 @@
-.. _lis2dh:
+.. zephyr:code-sample:: lis2dh
+   :name: LIS2DH Motion Sensor
+   :relevant-api: sensor_interface
 
-LIS2DH: Motion Sensor Monitor
-#############################
+   Get accelerometer data from an LIS2DH sensor (polling & trigger mode).
 
 Overview
 ********
@@ -28,9 +29,9 @@ Building and Running
 The LIS2DH2 or compatible sensors are available on a variety of boards
 and shields supported by Zephyr, including:
 
-* :ref:`actinius_icarus`
+* :zephyr:board:`actinius_icarus`
 * :ref:`thingy52_nrf52832`
-* :ref:`stm32f3_disco_board`
+* :zephyr:board:`stm32f3_disco`
 * :ref:`x-nucleo-iks01a2`
 
 See the board documentation for detailed instructions on how to flash
@@ -39,7 +40,7 @@ and get access to the console where acceleration data is displayed.
 Building on actinius_icarus
 ===========================
 
-:ref:`actinius_icarus` includes an ST LIS2DH12 accelerometer which
+:zephyr:board:`actinius_icarus` includes an ST LIS2DH12 accelerometer which
 supports the LIS2DH interface.
 
 .. zephyr-app-commands::

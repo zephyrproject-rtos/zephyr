@@ -111,7 +111,7 @@ struct modem_cmux_dlci {
 };
 
 struct modem_cmux_frame {
-	uint16_t dlci_address;
+	uint8_t dlci_address;
 	bool cr;
 	bool pf;
 	uint8_t type;
@@ -138,6 +138,10 @@ struct modem_cmux {
 	/* State */
 	enum modem_cmux_state state;
 	bool flow_control_on;
+
+	/* Work lock */
+	bool attached;
+	struct k_spinlock work_lock;
 
 	/* Receive state*/
 	enum modem_cmux_receive_state receive_state;

@@ -10,6 +10,8 @@
 	uac2_headset: usb_audio2 {
 		compatible = "zephyr,uac2";
 		status = "okay";
+		full-speed;
+		high-speed;
 		audio-function = <AUDIO_FUNCTION_HEADSET>;
 
 		uac_aclk: aclk {
@@ -27,9 +29,19 @@
 			front-right;
 		};
 
+		out_feature_unit: out_feature_unit {
+			compatible = "zephyr,uac2-feature-unit";
+			data-source = <&out_terminal>;
+			mute-control = "host-programmable";
+			automatic-gain-control =
+				"host-programmable" /* Primary */,
+				"host-programmable" /* Channel 1 */,
+				"host-programmable" /* Channel 2 */;
+		};
+
 		headphones_output: headphones {
 			compatible = "zephyr,uac2-output-terminal";
-			data-source = <&out_terminal>;
+			data-source = <&out_feature_unit>;
 			clock-source = <&uac_aclk>;
 			terminal-type = <BIDIRECTIONAL_TERMINAL_HEADSET>;
 			assoc-terminal = <&mic_input>;
@@ -40,17 +52,26 @@
 			clock-source = <&uac_aclk>;
 			terminal-type = <BIDIRECTIONAL_TERMINAL_HEADSET>;
 			/* Circular reference, macros will figure it out and
-                         * provide correct associated terminal ID because the
-                         * terminals associations are always 1-to-1.
-                         *
-                         * assoc-terminal = <&headphones_output>;
-                         */
+			 * provide correct associated terminal ID because the
+			 * terminals associations are always 1-to-1.
+			 *
+			 * assoc-terminal = <&headphones_output>;
+			 */
 			front-left;
+		};
+
+		in_feature_unit: in_feature_unit {
+			compatible = "zephyr,uac2-feature-unit";
+			data-source = <&mic_input>;
+			mute-control = "host-programmable";
+			automatic-gain-control =
+				"not-present" /* Primary */,
+				"host-programmable" /* Channel 1 */;
 		};
 
 		in_terminal: in_terminal {
 			compatible = "zephyr,uac2-output-terminal";
-			data-source = <&mic_input>;
+			data-source = <&in_feature_unit>;
 			clock-source = <&uac_aclk>;
 			terminal-type = <USB_TERMINAL_STREAMING>;
 		};
@@ -69,6 +90,44 @@
 			implicit-feedback;
 			subslot-size = <2>;
 			bit-resolution = <16>;
+		};
+	};
+};
+
+/ {
+	hs_uac2_headphones: hs_usb_audio2 {
+		compatible = "zephyr,uac2";
+		status = "okay";
+		high-speed;
+		audio-function = <AUDIO_FUNCTION_OTHER>;
+
+		hs_uac_aclk: hs_aclk {
+			compatible = "zephyr,uac2-clock-source";
+			clock-type = "internal-programmable";
+			frequency-control = "host-programmable";
+			sampling-frequencies = <192000>;
+		};
+
+		hs_out_terminal: hs_out_terminal {
+			compatible = "zephyr,uac2-input-terminal";
+			clock-source = <&hs_uac_aclk>;
+			terminal-type = <USB_TERMINAL_STREAMING>;
+			front-left;
+			front-right;
+		};
+
+		hs_headphones_output: hs_headphones {
+			compatible = "zephyr,uac2-output-terminal";
+			data-source = <&hs_out_terminal>;
+			clock-source = <&hs_uac_aclk>;
+			terminal-type = <OUTPUT_TERMINAL_HEADPHONES>;
+		};
+
+		hs_as_iso_out: hs_out_interface {
+			compatible = "zephyr,uac2-audio-streaming";
+			linked-terminal = <&hs_out_terminal>;
+			subslot-size = <3>;
+			bit-resolution = <24>;
 		};
 	};
 };

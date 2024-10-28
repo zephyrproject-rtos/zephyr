@@ -48,6 +48,23 @@ to provide a device nodelabel is the form <device>_<shield>, for instance:
                 ...
         };
 
+Adding Source Code
+******************
+
+It is possible to add source code to shields, as a way to meet configuration
+requirements that are specific to the shield (e.g: initialization routines,
+timing constraints, etc), in order to enable it for proper operation with the
+different Zephyr components.
+
+.. note::
+
+   Source code in shields shall not be used for purposes other than the
+   one described above. Generic functionalities that could be reused among
+   shields (and/or targets) shall not be captured here.
+
+To effectively incorporate source code: add a :file:`CMakeLists.txt` file, as
+well as the corresponding source files (referenced in CMake similar to other
+areas of Zephyr, e.g: boards).
 
 Board compatibility
 *******************
@@ -90,12 +107,12 @@ board or board revision overriding files to a shield, as follows:
 Shield activation
 *****************
 
-Activate support for one or more shields by adding the matching -DSHIELD arg to
-CMake command
+Activate support for one or more shields by adding the matching ``--shield`` arguments
+to the west command:
 
   .. zephyr-app-commands::
-     :zephyr-app: your_app
-     :shield: "x_nucleo_idb05a1 x_nucleo_iks01a1"
+     :app: your_app
+     :shield: x_nucleo_idb05a1,x_nucleo_iks01a1
      :goals: build
 
 
@@ -122,7 +139,7 @@ possible to provide multiple version of the shields description:
 In this case, a shield-particular revision name can be used:
 
   .. zephyr-app-commands::
-     :zephyr-app: your_app
+     :app: your_app
      :shield: shield_v2
      :goals: build
 

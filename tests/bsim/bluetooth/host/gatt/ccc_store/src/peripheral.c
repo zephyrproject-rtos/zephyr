@@ -58,18 +58,8 @@ BT_GATT_SERVICE_DEFINE(dummy_svc, BT_GATT_PRIMARY_SERVICE(&dummy_service),
 static void create_adv(struct bt_le_ext_adv **adv)
 {
 	int err;
-	struct bt_le_adv_param params;
 
-	memset(&params, 0, sizeof(struct bt_le_adv_param));
-
-	params.options |= BT_LE_ADV_OPT_CONNECTABLE;
-
-	params.id = BT_ID_DEFAULT;
-	params.sid = 0;
-	params.interval_min = BT_GAP_ADV_FAST_INT_MIN_2;
-	params.interval_max = BT_GAP_ADV_FAST_INT_MAX_2;
-
-	err = bt_le_ext_adv_create(&params, NULL, adv);
+	err = bt_le_ext_adv_create(BT_LE_ADV_CONN_FAST_1, NULL, adv);
 	if (err) {
 		FAIL("Failed to create advertiser (%d)\n", err);
 	}

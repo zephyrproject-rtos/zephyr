@@ -1,7 +1,7 @@
-.. _tfm_ipc:
+.. zephyr:code-sample:: tfm_ipc
+   :name: TF-M IPC
 
-TF-M IPC
-########
+   Implement communication between the secure and non-secure images using IPC.
 
 Overview
 ********
@@ -138,7 +138,11 @@ Run them in the following order to flash the board:
       $ west flash
 
  .. note::
-      Note that ``arm-none-eabi-gcc`` should be available in the PATH variable and that ``STM32_Programmer_CLI`` is required to run ``regression.sh`` (see https://www.st.com/en/development-tools/stm32cubeprog.html). If you are still having trouble running these scripts, check the Programming and Debugging section of the :ref:`nucleo_l552ze_q_board` or :ref:`stm32l562e_dk_board` documentation.
+      Note that ``arm-none-eabi-gcc`` should be available in the PATH variable and that
+      ``STM32_Programmer_CLI`` is required to run ``regression.sh``
+      (see https://www.st.com/en/development-tools/stm32cubeprog.html). If you are still having
+      trouble running these scripts, check the Programming and Debugging section of the
+      :zephyr:board:`nucleo_l552ze_q` or :zephyr:board:`stm32l562e_dk` documentation.
 
 On LPCxpresso55S69:
 ===================
@@ -228,27 +232,30 @@ Sample Output
 .. code-block:: console
 
    [INF] Starting bootloader
-   [INF] Swap type: none
+   [INF] Beginning BL2 provisioning
+   [WRN] TFM_DUMMY_PROVISIONING is not suitable for production! This device is NOT SECURE
+   [INF] Image index: 1, Swap type: none
+   [INF] Image index: 0, Swap type: none
    [INF] Bootloader chainload address offset: 0x80000
    [INF] Jumping to the first image slot
+   [INF] Beginning TF-M provisioning
+   [WRN] TFM_DUMMY_PROVISIONING is not suitable for production! This device is NOT SECURE
+   [WRN] This device was provisioned with dummy keys. This device is NOT SECURE
    [Sec Thread] Secure image initializing!
-   TFM level is: 1 [Sec Thread] Jumping to non-secure code...
-   **** Booting Zephyr OS build zephyr-v1.14.0-2904-g89616477b115 ****
-   The version of the PSA Framework API is 256.
-   The minor version is 1.
-   Connect success!
-   TFM service support minor version is 1.
-   psa_call is successful!
-   outvec1 is: It is just for IPC call test.
-   outvec2 is: It is just for IPC call test.
-   Connect success!
-   Call IPC_INIT_BASIC_TEST service Pass Connect success!
-   Call PSA RoT access APP RoT memory test service Pass
+   Booting TF-M v2.0.0
+   Creating an empty ITS flash layout.
+   Creating an empty PS flash layout.
+   [INF][Crypto] Provisioning entropy seed... complete.
+   Timer with period zero, disabling
+   *** Booting Zephyr OS build v3.6.0 ***
    TF-M IPC on (.*)
-
+   The version of the PSA Framework API is 257.
+   The PSA Crypto service minor version is 1.
+   Generating 256 bytes of random data:
+   [...]
 
 .. _TF-M build instruction:
-   https://git.trustedfirmware.org/trusted-firmware-m.git/tree/docs/user_guides/tfm_build_instruction.rst
+   https://git.trustedfirmware.org/TF-M/trusted-firmware-m.git/+/refs/heads/main/docs/building/tfm_build_instruction.rst
 
 .. _TF-M secure boot:
-   https://git.trustedfirmware.org/trusted-firmware-m.git/tree/docs/user_guides/tfm_secure_boot.rst
+   https://git.trustedfirmware.org/TF-M/trusted-firmware-m.git/+/refs/heads/main/docs/design_docs/booting/tfm_secure_boot.rst

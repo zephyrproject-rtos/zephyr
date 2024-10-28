@@ -7,7 +7,8 @@
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
 #include <haly/nrfy_saadc.h>
-#include <zephyr/dt-bindings/adc/nrf-adc.h>
+#include <zephyr/dt-bindings/adc/nrf-saadc-v3.h>
+#include <zephyr/dt-bindings/adc/nrf-saadc-nrf54l.h>
 #include <zephyr/linker/devicetree_regions.h>
 
 #define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
@@ -19,7 +20,7 @@ LOG_MODULE_REGISTER(adc_nrfx_saadc);
 
 #if (NRF_SAADC_HAS_AIN_AS_PIN)
 
-#if defined(CONFIG_SOC_NRF54H20)
+#if defined(CONFIG_NRF_PLATFORM_HALTIUM)
 static const uint8_t saadc_psels[NRF_SAADC_AIN7 + 1] = {
 	[NRF_SAADC_AIN0] = NRF_PIN_PORT_TO_PIN_NUMBER(0U, 1),
 	[NRF_SAADC_AIN1] = NRF_PIN_PORT_TO_PIN_NUMBER(1U, 1),
@@ -31,7 +32,7 @@ static const uint8_t saadc_psels[NRF_SAADC_AIN7 + 1] = {
 	[NRF_SAADC_AIN7] = NRF_PIN_PORT_TO_PIN_NUMBER(7U, 1),
 };
 #elif defined(CONFIG_SOC_NRF54L15)
-static const uint8_t saadc_psels[NRF_SAADC_AIN7 + 1] = {
+static const uint32_t saadc_psels[NRF_SAADC_DVDD + 1] = {
 	[NRF_SAADC_AIN0] = NRF_PIN_PORT_TO_PIN_NUMBER(4U, 1),
 	[NRF_SAADC_AIN1] = NRF_PIN_PORT_TO_PIN_NUMBER(5U, 1),
 	[NRF_SAADC_AIN2] = NRF_PIN_PORT_TO_PIN_NUMBER(6U, 1),
@@ -40,6 +41,9 @@ static const uint8_t saadc_psels[NRF_SAADC_AIN7 + 1] = {
 	[NRF_SAADC_AIN5] = NRF_PIN_PORT_TO_PIN_NUMBER(12U, 1),
 	[NRF_SAADC_AIN6] = NRF_PIN_PORT_TO_PIN_NUMBER(13U, 1),
 	[NRF_SAADC_AIN7] = NRF_PIN_PORT_TO_PIN_NUMBER(14U, 1),
+	[NRF_SAADC_VDD]  = NRF_SAADC_INPUT_VDD,
+	[NRF_SAADC_AVDD] = NRF_SAADC_INPUT_AVDD,
+	[NRF_SAADC_DVDD] = NRF_SAADC_INPUT_DVDD,
 };
 #endif
 
@@ -62,9 +66,9 @@ BUILD_ASSERT((NRF_SAADC_AIN0 == NRF_SAADC_INPUT_AIN0) &&
 	     "Definitions from nrf-adc.h do not match those from nrf_saadc.h");
 #endif
 
-#ifdef CONFIG_SOC_NRF54H20
+#if defined(CONFIG_NRF_PLATFORM_HALTIUM)
 
-/* nRF54H20 always uses bounce buffers in RAM */
+/* Haltium devices always use bounce buffers in RAM */
 
 #define SAADC_MEMORY_SECTION					                     \
 	COND_CODE_1(DT_NODE_HAS_PROP(DT_NODELABEL(adc), memory_regions), \
@@ -76,12 +80,13 @@ static uint16_t adc_samples_buffer[SAADC_CH_NUM] SAADC_MEMORY_SECTION;
 
 #define ADC_BUFFER_IN_RAM
 
-#endif /* CONFIG_SOC_NRF54H20 */
+#endif /* defined(CONFIG_NRF_PLATFORM_HALTIUM) */
 
 struct driver_data {
 	struct adc_context ctx;
 
 	uint8_t positive_inputs[SAADC_CH_NUM];
+	uint8_t single_ended_channels;
 
 #if defined(ADC_BUFFER_IN_RAM)
 	void *samples_buffer;
@@ -96,8 +101,6 @@ static struct driver_data m_data = {
 	ADC_CONTEXT_INIT_SYNC(m_data, ctx),
 #if defined(ADC_BUFFER_IN_RAM)
 	.samples_buffer = adc_samples_buffer,
-	.user_buffer = NULL,
-	.active_channels = 0,
 #endif
 };
 
@@ -134,6 +137,7 @@ static int adc_convert_acq_time(uint16_t acquisition_time, nrf_saadc_acqtime_t *
 	case ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 20):
 		*p_tacq_val = NRF_SAADC_ACQTIME_20US;
 		break;
+	case ADC_ACQ_TIME_MAX:
 	case ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 40):
 		*p_tacq_val = NRF_SAADC_ACQTIME_40US;
 		break;
@@ -193,17 +197,22 @@ static int adc_nrfx_channel_setup(const struct device *dev,
 		config.gain = NRF_SAADC_GAIN1_5;
 		break;
 #endif
-#if defined(SAADC_CH_CONFIG_GAIN_Gain1_4)
+#if defined(SAADC_CH_CONFIG_GAIN_Gain1_4) || defined(SAADC_CH_CONFIG_GAIN_Gain2_8)
 	case ADC_GAIN_1_4:
 		config.gain = NRF_SAADC_GAIN1_4;
 		break;
 #endif
-#if defined(SAADC_CH_CONFIG_GAIN_Gain1_3)
+#if defined(SAADC_CH_CONFIG_GAIN_Gain1_3) || defined(SAADC_CH_CONFIG_GAIN_Gain2_6)
 	case ADC_GAIN_1_3:
 		config.gain = NRF_SAADC_GAIN1_3;
 		break;
 #endif
-#if defined(SAADC_CH_CONFIG_GAIN_Gain1_2)
+#if defined(SAADC_CH_CONFIG_GAIN_Gain2_5)
+	case ADC_GAIN_2_5:
+		config.gain = NRF_SAADC_GAIN2_5;
+		break;
+#endif
+#if defined(SAADC_CH_CONFIG_GAIN_Gain1_2) || defined(SAADC_CH_CONFIG_GAIN_Gain2_4)
 	case ADC_GAIN_1_2:
 		config.gain = NRF_SAADC_GAIN1_2;
 		break;
@@ -257,16 +266,19 @@ static int adc_nrfx_channel_setup(const struct device *dev,
 		return -EINVAL;
 	}
 
-	config.mode = (channel_cfg->differential ?
-		NRF_SAADC_MODE_DIFFERENTIAL : NRF_SAADC_MODE_SINGLE_ENDED);
-
-	/* Keep the channel disabled in hardware (set positive input to
-	 * NRF_SAADC_INPUT_DISABLED) until it is selected to be included
-	 * in a sampling sequence.
+	/* Store channel mode to allow correcting negative readings in single-ended mode
+	 * after ADC sequence ends.
 	 */
+	if (channel_cfg->differential) {
+		config.mode = NRF_SAADC_MODE_DIFFERENTIAL;
+		m_data.single_ended_channels &= ~BIT(channel_cfg->channel_id);
+	} else {
+		config.mode = NRF_SAADC_MODE_SINGLE_ENDED;
+		m_data.single_ended_channels |= BIT(channel_cfg->channel_id);
+	}
 
 #if (NRF_SAADC_HAS_AIN_AS_PIN)
-	if ((channel_cfg->input_positive > NRF_SAADC_AIN7) ||
+	if ((channel_cfg->input_positive >= ARRAY_SIZE(saadc_psels)) ||
 	    (channel_cfg->input_positive < NRF_SAADC_AIN0)) {
 		return -EINVAL;
 	}
@@ -281,17 +293,18 @@ static int adc_nrfx_channel_setup(const struct device *dev,
 	} else {
 		input_negative = NRF_SAADC_INPUT_DISABLED;
 	}
-
+#endif
 	/* Store the positive input selection in a dedicated array,
 	 * to get it later when the channel is selected for a sampling
 	 * and to mark the channel as configured (ready to be selected).
 	 */
-	m_data.positive_inputs[channel_id] = saadc_psels[channel_cfg->input_positive];
-#else
 	m_data.positive_inputs[channel_id] = channel_cfg->input_positive;
-#endif
 
 	nrf_saadc_channel_init(NRF_SAADC, channel_id, &config);
+	/* Keep the channel disabled in hardware (set positive input to
+	 * NRF_SAADC_INPUT_DISABLED) until it is selected to be included
+	 * in a sampling sequence.
+	 */
 	nrf_saadc_channel_input_set(NRF_SAADC,
 				    channel_id,
 				    NRF_SAADC_INPUT_DISABLED,
@@ -427,11 +440,37 @@ static int check_buffer_size(const struct adc_sequence *sequence,
 	return 0;
 }
 
+static bool has_single_ended(const struct adc_sequence *sequence)
+{
+	return sequence->channels & m_data.single_ended_channels;
+}
+
+static void correct_single_ended(const struct adc_sequence *sequence)
+{
+	uint16_t channel_bit = BIT(0);
+	uint8_t selected_channels = sequence->channels;
+	uint8_t single_ended_channels = m_data.single_ended_channels;
+	int16_t *sample = nrf_saadc_buffer_pointer_get(NRF_SAADC);
+
+	while (channel_bit <= single_ended_channels) {
+		if (channel_bit & selected_channels) {
+			if ((channel_bit & single_ended_channels) && (*sample < 0)) {
+				*sample = 0;
+			}
+
+			sample++;
+		}
+
+		channel_bit <<= 1;
+	}
+}
+
 static int start_read(const struct device *dev,
 		      const struct adc_sequence *sequence)
 {
 	int error;
 	uint32_t selected_channels = sequence->channels;
+	uint8_t resolution = sequence->resolution;
 	uint8_t active_channels;
 	uint8_t channel_id;
 
@@ -460,6 +499,22 @@ static int start_read(const struct device *dev,
 					    channel_id);
 				return -EINVAL;
 			}
+			/* Signal an error if the channel is configured as
+			 * single ended with a resolution which is identical
+			 * to the sample bit size. The SAADC's "single ended"
+			 * mode is really differential mode with the
+			 * negative input tied to ground. We can therefore
+			 * observe negative values if the positive input falls
+			 * below ground. If the sample bitsize is larger than
+			 * the resolution, we can detect negative values and
+			 * correct them to 0 after the sequencen has ended.
+			 */
+			if ((m_data.single_ended_channels & BIT(channel_id)) &&
+			    (NRF_SAADC_8BIT_SAMPLE_WIDTH == 8 && resolution == 8)) {
+				LOG_ERR("Channel %u invalid single ended resolution",
+					channel_id);
+				return -EINVAL;
+			}
 			/* When oversampling is used, the burst mode needs to
 			 * be activated. Unfortunately, this mode cannot be
 			 * activated permanently in the channel setup, because
@@ -476,9 +531,18 @@ static int start_read(const struct device *dev,
 			nrf_saadc_channel_pos_input_set(
 				NRF_SAADC,
 				channel_id,
-				m_data.positive_inputs[channel_id]);
+#if NRF_SAADC_HAS_AIN_AS_PIN
+				saadc_psels[m_data.positive_inputs[channel_id]]
+#else
+				m_data.positive_inputs[channel_id]
+#endif
+				);
 			++active_channels;
 		} else {
+			nrf_saadc_burst_set(
+				NRF_SAADC,
+				channel_id,
+				NRF_SAADC_BURST_DISABLED);
 			nrf_saadc_channel_pos_input_set(
 				NRF_SAADC,
 				channel_id,
@@ -516,9 +580,7 @@ static int start_read(const struct device *dev,
 
 	adc_context_start_read(&m_data.ctx, sequence);
 
-	error = adc_context_wait_for_completion(&m_data.ctx);
-
-	return error;
+	return adc_context_wait_for_completion(&m_data.ctx);
 }
 
 /* Implementation of the ADC driver API function: adc_read. */
@@ -557,6 +619,10 @@ static void saadc_irq_handler(const struct device *dev)
 
 		nrf_saadc_task_trigger(NRF_SAADC, NRF_SAADC_TASK_STOP);
 		nrf_saadc_disable(NRF_SAADC);
+
+		if (has_single_ended(&m_data.ctx.sequence)) {
+			correct_single_ended(&m_data.ctx.sequence);
+		}
 
 #if defined(ADC_BUFFER_IN_RAM)
 		memcpy(m_data.user_buffer, m_data.samples_buffer,
@@ -603,7 +669,7 @@ static const struct adc_driver_api adc_nrfx_driver_api = {
 #endif
 #if defined(CONFIG_SOC_NRF54L15)
 	.ref_internal  = 900,
-#elif defined(CONFIG_SOC_NRF54H20)
+#elif defined(CONFIG_NRF_PLATFORM_HALTIUM)
 	.ref_internal  = 1024,
 #else
 	.ref_internal  = 600,

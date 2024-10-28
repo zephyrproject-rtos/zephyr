@@ -1048,8 +1048,8 @@ int dns_sd_query_extract(const uint8_t *query, size_t query_size, struct dns_sd_
 			return -EINVAL;
 		}
 
-		if (qsize > size[i]) {
-			NET_DBG("qsize %zu > size[%zu] %zu", qsize, i, size[i]);
+		if (qsize >= size[i]) {
+			NET_DBG("qsize %zu >= size[%zu] %zu", qsize, i, size[i]);
 			return -ENOBUFS;
 		}
 

@@ -1,7 +1,4 @@
-.. _disco_l475_iot1_board:
-
-ST Disco L475 IOT01 (B-L475E-IOT01A)
-####################################
+.. zephyr:board:: disco_l475_iot1
 
 Overview
 ********
@@ -35,10 +32,6 @@ This kit provides:
 - On-board ST-LINK/V2-1 debugger/programmer with USB re-enumeration capability:
         - mass storage, virtual COM port and debug port
 
-
-.. image:: img/disco_l475_iot1.jpg
-     :align: center
-     :alt: Disco L475 IoT1
 
 More information about the board can be found at the `Disco L475 IoT1 website`_.
 
@@ -147,6 +140,8 @@ Connections and IOs
 Disco L475 IoT Board has 8 GPIO controllers. These controllers are responsible for pin muxing,
 input/output, pull-up, etc.
 
+Note that LED LD1 and SPI1 SCK use the same GPIO pin and cannot be used simultaneously.
+
 Available pins:
 ---------------
 
@@ -163,8 +158,10 @@ Default Zephyr Peripheral Mapping:
 - SPI1 NSS/SCK/MISO/MOSI : PA2/PA5/PA6/PA7 (Arduino SPI)
 - SPI3 SCK/MISO/MOSI : PC10/PC11/PC12 (BT SPI bus)
 - PWM_2_CH1 : PA15
+- PWM_15_CH1 : PB14 (LD2)
 - USER_PB : PC13
-- LD2 : PA5
+- LD1 : PA5 (same as SPI1 SCK)
+- LD2 : PB14
 - ADC12_IN5 : PA0
 - ADC123_IN3 : PC2
 - ADC123_IN4 : PC3
@@ -189,6 +186,8 @@ Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
+Disco L475 IoT board includes an ST-LINK/V2-1 embedded debug tool interface.
+
 Applications for the ``disco_l475_iot1`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -196,14 +195,21 @@ flashed in the usual way (see :ref:`build_an_application` and
 Flashing
 ========
 
-Disco L475 IoT board includes an ST-LINK/V2-1 embedded debug tool
-interface.  This interface is supported by the openocd version
-included in the Zephyr SDK since v0.9.2.
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
+
+Alternatively, OpenOCD or JLink can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner jlink
 
 Flashing an application to Disco L475 IoT
 -----------------------------------------
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 Connect the Disco L475 IoT to your host computer using the USB port, then
 run a serial host program to connect with your Nucleo board. For example:
@@ -229,7 +235,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -248,3 +254,6 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. _STM32L475 reference manual:
    https://www.st.com/resource/en/reference_manual/dm00083560.pdf
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

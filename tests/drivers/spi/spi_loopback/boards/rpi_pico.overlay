@@ -7,14 +7,14 @@
 #include <zephyr/dt-bindings/dma/rpi_pico_dma.h>
 
 &dma {
-        status = "okay";
+	status = "okay";
 };
 
 &spi0 {
 	cs-gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
 
-        dmas = <&dma 0 RPI_PICO_DMA_SLOT_SPI0_TX 0>, <&dma 1 RPI_PICO_DMA_SLOT_SPI0_RX 0>;
-        dma-names = "tx", "rx";
+	dmas = <&dma 0 RPI_PICO_DMA_SLOT_SPI0_TX 0>, <&dma 1 RPI_PICO_DMA_SLOT_SPI0_RX 0>;
+	dma-names = "tx", "rx";
 
 	slow@0 {
 		compatible = "test-spi-loopback-slow";

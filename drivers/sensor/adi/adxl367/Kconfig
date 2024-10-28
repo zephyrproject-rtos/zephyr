@@ -42,7 +42,7 @@ config ADXL367_INACTIVITY_THRESHOLD
 
 config ADXL367_ACTIVITY_TIME
 	int "Activity time"
-	range 0 255
+	range 0 $(UINT8_MAX)
 	default 100
 	help
 	  The activity timer implements a robust activity detection that
@@ -53,7 +53,7 @@ config ADXL367_ACTIVITY_TIME
 
 config ADXL367_INACTIVITY_TIME
 	int "In-activity time"
-	range 0 65535
+	range 0 $(UINT16_MAX)
 	default 100
 	help
 	  The time that all enabled axes must be lower than the inactivity
@@ -104,11 +104,13 @@ config ADXL367_TRIGGER_NONE
 config ADXL367_TRIGGER_GLOBAL_THREAD
 	bool "Use global thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ADI_ADXL367),int1-gpios)
 	select ADXL367_TRIGGER
 
 config ADXL367_TRIGGER_OWN_THREAD
 	bool "Use own thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ADI_ADXL367),int1-gpios)
 	select ADXL367_TRIGGER
 
 endchoice

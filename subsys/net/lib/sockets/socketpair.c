@@ -74,7 +74,7 @@ static inline bool sock_is_nonblock(const struct spair *spair)
 /** Determine if a @ref spair is connected */
 static inline bool sock_is_connected(const struct spair *spair)
 {
-	const struct spair *remote = z_get_fd_obj(spair->remote,
+	const struct spair *remote = zvfs_get_fd_obj(spair->remote,
 		(const struct fd_op_vtable *)&spair_fd_op_vtable, 0);
 
 	if (remote == NULL) {
@@ -99,7 +99,7 @@ static inline bool sock_is_eof(const struct spair *spair)
  */
 static inline size_t spair_write_avail(struct spair *spair)
 {
-	struct spair *const remote = z_get_fd_obj(spair->remote,
+	struct spair *const remote = zvfs_get_fd_obj(spair->remote,
 		(const struct fd_op_vtable *)&spair_fd_op_vtable, 0);
 
 	if (remote == NULL) {
@@ -169,7 +169,7 @@ static void spair_delete(struct spair *spair)
 	}
 
 	if (spair->remote != -1) {
-		remote = z_get_fd_obj(spair->remote,
+		remote = zvfs_get_fd_obj(spair->remote,
 			(const struct fd_op_vtable *)&spair_fd_op_vtable, 0);
 
 		if (remote != NULL) {
@@ -258,14 +258,14 @@ static struct spair *spair_new(void)
 	res = k_poll_signal_raise(&spair->writeable, SPAIR_SIG_DATA);
 	__ASSERT(res == 0, "k_poll_signal_raise() failed: %d", res);
 
-	spair->remote = z_reserve_fd();
+	spair->remote = zvfs_reserve_fd();
 	if (spair->remote == -1) {
 		errno = ENFILE;
 		goto cleanup;
 	}
 
-	z_finalize_typed_fd(spair->remote, spair, (const struct fd_op_vtable *)&spair_fd_op_vtable,
-			    ZVFS_MODE_IFSOCK);
+	zvfs_finalize_typed_fd(spair->remote, spair,
+			       (const struct fd_op_vtable *)&spair_fd_op_vtable, ZVFS_MODE_IFSOCK);
 
 	goto out;
 
@@ -437,7 +437,7 @@ static ssize_t spair_write(void *obj, const void *buffer, size_t count)
 
 	have_local_sem = true;
 
-	remote = z_get_fd_obj(spair->remote,
+	remote = zvfs_get_fd_obj(spair->remote,
 		(const struct fd_op_vtable *)&spair_fd_op_vtable, 0);
 
 	if (remote == NULL) {
@@ -501,7 +501,7 @@ static ssize_t spair_write(void *obj, const void *buffer, size_t count)
 				goto out;
 			}
 
-			remote = z_get_fd_obj(spair->remote,
+			remote = zvfs_get_fd_obj(spair->remote,
 				(const struct fd_op_vtable *)
 				&spair_fd_op_vtable, 0);
 
@@ -597,7 +597,7 @@ out:
  * -# @ref SPAIR_SIG_DATA - data has been written to the @em local
  *    @ref spair.pipe. Thus, allowing more data to be read.
  *
- * -# @ref SPAIR_SIG_CANCEL - read of the the @em local @spair.pipe
+ * -# @ref SPAIR_SIG_CANCEL - read of the @em local @spair.pipe
  *    must be cancelled for some reason (e.g. the file descriptor will be
  *    closed imminently). In this case, the function will return -1 and set
  *    @ref errno to @ref EINTR.
@@ -788,7 +788,7 @@ static int zsock_poll_prepare_ctx(struct spair *const spair,
 			goto out;
 		}
 
-		remote = z_get_fd_obj(spair->remote,
+		remote = zvfs_get_fd_obj(spair->remote,
 			(const struct fd_op_vtable *)
 			&spair_fd_op_vtable, 0);
 
@@ -838,7 +838,7 @@ static int zsock_poll_update_ctx(struct spair *const spair,
 			goto pollout_done;
 		}
 
-		remote = z_get_fd_obj(spair->remote,
+		remote = zvfs_get_fd_obj(spair->remote,
 			(const struct fd_op_vtable *) &spair_fd_op_vtable, 0);
 
 		__ASSERT(remote != NULL, "remote is NULL");

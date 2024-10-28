@@ -54,11 +54,18 @@ struct bt_aics_gain_control {
 	int8_t gain_setting;
 } __packed;
 
+enum bt_aics_client_flag {
+	BT_AICS_CLIENT_FLAG_BUSY,
+	BT_AICS_CLIENT_FLAG_CP_RETRIED,
+	BT_AICS_CLIENT_FLAG_DESC_WRITABLE,
+	BT_AICS_CLIENT_FLAG_ACTIVE,
+
+	BT_AICS_CLIENT_FLAG_NUM_FLAGS, /* keep as last */
+};
+
 struct bt_aics_client {
 	uint8_t change_counter;
 	uint8_t gain_mode;
-	bool desc_writable;
-	bool active;
 
 	uint16_t start_handle;
 	uint16_t end_handle;
@@ -71,15 +78,15 @@ struct bt_aics_client {
 	struct bt_gatt_subscribe_params state_sub_params;
 	struct bt_gatt_subscribe_params status_sub_params;
 	struct bt_gatt_subscribe_params desc_sub_params;
-	bool cp_retried;
 
-	bool busy;
 	struct bt_aics_gain_control cp_val;
 	struct bt_gatt_write_params write_params;
 	struct bt_gatt_read_params read_params;
 	struct bt_gatt_discover_params discover_params;
 	struct bt_aics_cb *cb;
 	struct bt_conn *conn;
+
+	ATOMIC_DEFINE(flags, BT_AICS_CLIENT_FLAG_NUM_FLAGS);
 };
 
 struct bt_aics_state {

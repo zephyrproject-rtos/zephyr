@@ -47,7 +47,7 @@
  * is not defined in platform, generate an error
  */
 
-#if defined(CONFIG_APIC_TSC_DEADLINE_TIMER)
+#if defined(CONFIG_APIC_TSC_DEADLINE_TIMER) || defined(CONFIG_APIC_TIMER_TSC)
 #define TICK_IRQ z_loapic_irq_base() /* first LVT interrupt */
 #elif defined(CONFIG_CPU_CORTEX_M)
 /*
@@ -57,7 +57,7 @@
 #elif defined(CONFIG_SPARC)
 #elif defined(CONFIG_MIPS)
 #elif defined(CONFIG_ARCH_POSIX)
-#if  defined(CONFIG_BOARD_NATIVE_POSIX)
+#if defined(CONFIG_BOARD_NATIVE_POSIX) || defined(CONFIG_BOARD_NATIVE_SIM)
 #define TICK_IRQ TIMER_TICK_IRQ
 #else
 /*

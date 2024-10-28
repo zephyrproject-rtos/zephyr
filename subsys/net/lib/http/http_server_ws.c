@@ -110,7 +110,7 @@ int handle_http1_to_websocket_upgrade(struct http_client_ctx *client)
 		ret = ws_detail->cb(ws_sock, ws_detail->user_data);
 		if (ret < 0) {
 			NET_DBG("WS connection failed (%d)", ret);
-			zsock_close(ws_sock);
+			websocket_unregister(ws_sock);
 			goto error;
 		}
 	}

@@ -144,12 +144,12 @@ config CPP_RTTI
 endif # !MINIMAL_LIBCPP
 
 config CPP_STATIC_INIT_GNU
-	# As of today only ARC MWDT toolchain doesn't support GNU-compatible
-	# initialization of CPP static objects, new toolchains can be added
-	# here if required.
-	def_bool "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "arcmwdt"
+	bool
+	select STATIC_INIT_GNU
+	select DEPRECATED
 	help
-	  GNU-compatible initialization of CPP static objects
+	  GNU-compatible initialization of CPP static objects.
+	  This option is deprecated in favour of STATIC_INIT_GNU
 
 endif # CPP
 

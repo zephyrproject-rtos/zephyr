@@ -41,13 +41,12 @@ LOG_MODULE_REGISTER(adc_esp32, CONFIG_ADC_LOG_LEVEL);
  * clip the value instead of yet another correction. The IDF implementation
  * for ESP32-S2 is doing it, so we copy that approach in Zephyr driver
  */
-#define ADC_CLIP_MVOLT_11DB	2550
+#define ADC_CLIP_MVOLT_12DB     2550
+#elif CONFIG_SOC_SERIES_ESP32S3
+#define ADC_CALI_SCHEME		ESP_ADC_CAL_VAL_EFUSE_TP_FIT
 #else
 #define ADC_CALI_SCHEME		ESP_ADC_CAL_VAL_EFUSE_TP
 #endif
-
-/* Convert resolution in bits to esp32 enum values */
-#define WIDTH_MASK(r) ((((r) - 9) < ADC_WIDTH_MAX) ? ((r) - 9) : (ADC_WIDTH_MAX - 1))
 
 /* Validate if resolution in bits is within allowed values */
 #define VALID_RESOLUTION(r) ((r) >= ADC_RESOLUTION_MIN && (r) <= ADC_RESOLUTION_MAX)
@@ -96,7 +95,7 @@ static inline int gain_to_atten(enum adc_gain gain, adc_atten_t *atten)
 		*atten = ADC_ATTEN_DB_6;
 		break;
 	case ADC_GAIN_1_4:
-		*atten = ADC_ATTEN_DB_11;
+		*atten = ADC_ATTEN_DB_12;
 		break;
 	default:
 		return -ENOTSUP;
@@ -118,7 +117,7 @@ static void atten_to_gain(adc_atten_t atten, uint32_t *val_mv)
 	case ADC_ATTEN_DB_6:
 		*val_mv = *val_mv >> 1; /* 1/ADC_GAIN_1_2 */
 		break;
-	case ADC_ATTEN_DB_11:
+	case ADC_ATTEN_DB_12:
 		*val_mv = *val_mv / 4; /* 1/ADC_GAIN_1_4 */
 		break;
 	case ADC_ATTEN_DB_0: /* 1/ADC_GAIN_1 */
@@ -128,10 +127,24 @@ static void atten_to_gain(adc_atten_t atten, uint32_t *val_mv)
 }
 #endif /* !defined(CONFIG_ADC_ESP32_DMA) */
 
+static void adc_hw_calibration(adc_unit_t unit)
+{
+#if SOC_ADC_CALIBRATION_V1_SUPPORTED
+	adc_hal_calibration_init(unit);
+	for (int j = 0; j < SOC_ADC_ATTEN_NUM; j++) {
+		adc_calc_hw_calibration_code(unit, j);
+#if SOC_ADC_CALIB_CHAN_COMPENS_SUPPORTED
+		/* Load the channel compensation from efuse */
+		for (int k = 0; k < SOC_ADC_CHANNEL_NUM(unit); k++) {
+			adc_load_hw_calibration_chan_compens(unit, k, j);
+		}
+#endif /* SOC_ADC_CALIB_CHAN_COMPENS_SUPPORTED */
+	}
+#endif /* SOC_ADC_CALIBRATION_V1_SUPPORTED */
+}
+
 static bool adc_calibration_init(const struct device *dev)
 {
-	struct adc_esp32_data *data = dev->data;
-
 	switch (esp_adc_cal_check_efuse(ADC_CALI_SCHEME)) {
 	case ESP_ERR_NOT_SUPPORTED:
 		LOG_WRN("Skip software calibration - Not supported!");
@@ -423,7 +436,7 @@ static int adc_esp32_read(const struct device *dev, const struct adc_sequence *s
 		adc1_config_width(ADC_WIDTH_BIT_DEFAULT);
 	}
 #else
-	adc_set_data_width(conf->unit, WIDTH_MASK(data->resolution[channel_id]));
+	adc_set_data_width(conf->unit, data->resolution[channel_id]);
 #endif /* CONFIG_SOC_SERIES_ESP32C3 */
 
 #if !defined(CONFIG_ADC_ESP32_DMA)
@@ -440,14 +453,14 @@ static int adc_esp32_read(const struct device *dev, const struct adc_sequence *s
 
 	/* Calibration scheme is available */
 	if (data->calibrate) {
-		data->chars[channel_id].bit_width = WIDTH_MASK(data->resolution[channel_id]);
+		data->chars[channel_id].bit_width = data->resolution[channel_id];
 		/* Get corrected voltage output */
 		cal = cal_mv = esp_adc_cal_raw_to_voltage(reading, &data->chars[channel_id]);
 
 #if CONFIG_SOC_SERIES_ESP32
-		if (data->attenuation[channel_id] == ADC_ATTEN_DB_11) {
-			if (cal > ADC_CLIP_MVOLT_11DB) {
-				cal = ADC_CLIP_MVOLT_11DB;
+		if (data->attenuation[channel_id] == ADC_ATTEN_DB_12) {
+			if (cal > ADC_CLIP_MVOLT_12DB) {
+				cal = ADC_CLIP_MVOLT_12DB;
 			}
 		}
 #endif /* CONFIG_SOC_SERIES_ESP32 */
@@ -555,7 +568,6 @@ static int adc_esp32_channel_setup(const struct device *dev, const struct adc_ch
 {
 	const struct adc_esp32_conf *conf = (const struct adc_esp32_conf *)dev->config;
 	struct adc_esp32_data *data = (struct adc_esp32_data *) dev->data;
-	int err;
 
 	if (cfg->channel_id >= conf->channel_count) {
 		LOG_ERR("Unsupported channel id '%d'", cfg->channel_id);
@@ -593,7 +605,7 @@ static int adc_esp32_channel_setup(const struct device *dev, const struct adc_ch
 	if (data->calibrate) {
 		esp_adc_cal_value_t cal = esp_adc_cal_characterize(conf->unit,
 						data->attenuation[cfg->channel_id],
-						WIDTH_MASK(data->resolution[cfg->channel_id]),
+						data->resolution[cfg->channel_id],
 						data->meas_ref_internal,
 						&data->chars[cfg->channel_id]);
 		if (cal >= ESP_ADC_CAL_VAL_NOT_SUPPORTED) {
@@ -623,7 +635,8 @@ static int adc_esp32_channel_setup(const struct device *dev, const struct adc_ch
 		.pin = io_num,
 	};
 
-	err = gpio_pin_configure_dt(&gpio, GPIO_DISCONNECTED);
+	int err = gpio_pin_configure_dt(&gpio, GPIO_DISCONNECTED);
+
 	if (err) {
 		LOG_ERR("Error disconnecting io (%d)", io_num);
 		return err;
@@ -637,10 +650,17 @@ static int adc_esp32_channel_setup(const struct device *dev, const struct adc_ch
 static int adc_esp32_init(const struct device *dev)
 {
 	struct adc_esp32_data *data = (struct adc_esp32_data *) dev->data;
+	const struct adc_esp32_conf *conf = (struct adc_esp32_conf *) dev->config;
+
+	adc_hw_calibration(conf->unit);
+
+#if CONFIG_SOC_SERIES_ESP32S2 || CONFIG_SOC_SERIES_ESP32C3
+	if (conf->unit == ADC_UNIT_2) {
+		adc2_init_code_calibration();
+	}
+#endif /* CONFIG_SOC_SERIES_ESP32S2 || CONFIG_SOC_SERIES_ESP32C3 */
 
 #if defined(CONFIG_ADC_ESP32_DMA)
-	struct adc_esp32_conf *conf = (struct adc_esp32_conf *) dev->config;
-
 	if (!device_is_ready(conf->gpio_port)) {
 		LOG_ERR("gpio0 port not ready");
 		return -ENODEV;

@@ -6,18 +6,21 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-config SPI_AMBIQ
-	bool "AMBIQ SPI driver"
+menuconfig SPI_AMBIQ_SPIC
+	bool "AMBIQ SPI Controller driver"
 	default y
 	depends on DT_HAS_AMBIQ_SPI_ENABLED
+	select GPIO
 	select AMBIQ_HAL
-	select AMBIQ_HAL_USE_SPI
+	select AMBIQ_HAL_USE_SPIC
 	help
-	  Enable driver for Ambiq SPI.
+	  Enable driver for Ambiq SPI in Controller mode.
+
+if SPI_AMBIQ_SPIC
 
 config SPI_AMBIQ_DMA
 	bool "AMBIQ APOLLO SPI DMA Support"
-	depends on SPI_AMBIQ
+	depends on SPI_AMBIQ_SPIC
 	help
 	  Enable DMA for Ambiq SPI.
 
@@ -28,14 +31,17 @@ config SPI_DMA_TCB_BUFFER_SIZE
 	help
 	  DMA Transfer Control Buffer size in words
 
-config MSPI_AMBIQ
-	bool "AMBIQ MSPI driver"
+endif # SPI_AMBIQ_SPIC
+
+config SPI_AMBIQ_SPID
+	bool "AMBIQ SPI Device driver"
 	default y
-	depends on DT_HAS_AMBIQ_MSPI_ENABLED
+	depends on DT_HAS_AMBIQ_SPID_ENABLED
+	select GPIO
 	select AMBIQ_HAL
-	select AMBIQ_HAL_USE_MSPI
+	select AMBIQ_HAL_USE_SPID
 	help
-	  Enable driver for Ambiq MSPI.
+	  Enable driver for Ambiq SPI in Device mode.
 
 config SPI_AMBIQ_BLEIF
 	bool "AMBIQ SPI-BLEIF driver"

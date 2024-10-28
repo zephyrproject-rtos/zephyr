@@ -136,7 +136,7 @@ static int numaker_scc_init(const struct device *dev)
 #endif
 
 	/*
-	 * z_arm_platform_init() will respect above configurations and
+	 * soc_reset_hook() will respect above configurations and
 	 * actually take charge of system clock control initialization.
 	 */
 
@@ -156,7 +156,7 @@ static int numaker_scc_init(const struct device *dev)
 		.core_clock = DT_INST_PROP_OR(inst, core_clock, 0),                                \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, &numaker_scc_init, NULL, NULL, &numaker_scc_config_##inst,     \
+	DEVICE_DT_INST_DEFINE(inst, numaker_scc_init, NULL, NULL, &numaker_scc_config_##inst,     \
 			      PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &numaker_scc_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NUMICRO_SCC_INIT);

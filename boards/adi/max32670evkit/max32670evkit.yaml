@@ -1,5 +1,6 @@
 identifier: max32670evkit
 name: max32670evkit
+vendor: adi
 type: mcu
 arch: arm
 toolchain:
@@ -9,5 +10,13 @@ toolchain:
 supported:
   - gpio
   - serial
+  - trng
+  - i2c
+  - dma
+  - watchdog
+  - spi
+  - counter
+  - pwm
+  - flash
 ram: 160
 flash: 384

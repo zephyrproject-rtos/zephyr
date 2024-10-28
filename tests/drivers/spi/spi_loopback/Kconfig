@@ -7,6 +7,10 @@ source "Kconfig.zephyr"
 config SPI_LOOPBACK_MODE_LOOP
 	bool "Configure the SPI in LOOP mode, so that no extra wiring is needed"
 
+config SPI_LARGE_BUFFER_SIZE
+	int "Large buffer size"
+	default 8192
+
 if SOC_SERIES_STM32H7X
 
 config SPI_LOOPBACK_16BITS_FRAMES

@@ -22,7 +22,7 @@ enabled.
 Programming
 ***********
 
-Set ``-DSHIELD=lcd_par_s035_8080`` when you invoke ``west build``. For
+Set ``--shield lcd_par_s035_8080`` when you invoke ``west build``. For
 example:
 
 .. zephyr-app-commands::

@@ -1,7 +1,4 @@
-.. _nucleo_g474re_board:
-
-ST Nucleo G474RE
-################
+.. zephyr:board:: nucleo_g474re
 
 Overview
 ********
@@ -20,10 +17,6 @@ some highlights of the Nucleo G474RE board:
 
 - Three LEDs: USB communication (LD1), power LED (LD3), user LED (LD2)
 - Two push-buttons: RESET and USER
-
-.. image:: img/nucleo_g474re.jpg
-  :align: center
-  :alt: Nucleo G474RE
 
 More information about the board can be found at the `Nucleo G474RE website`_.
 
@@ -198,6 +191,8 @@ low power mode.
 Programming and Debugging
 *************************
 
+Nucleo G474RE board includes an ST-LINK/V3E embedded debug tool interface.
+
 Applications for the ``nucleo_g474re`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -205,7 +200,16 @@ flashed in the usual way (see :ref:`build_an_application` and
 Flashing
 ========
 
-Nucleo G474RE board includes an ST-LINK/V3E embedded debug tool interface.
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
+
+Alternatively, OpenOCD or pyOCD can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner pyocd
 
 Flashing an application to Nucleo G474RE
 ----------------------------------------
@@ -218,7 +222,7 @@ then run a serial host program to connect with your Nucleo board.
    $ minicom -D /dev/ttyACM0
 
 Now build and flash an application. Here is an example for
-:ref:`hello_world`.
+:zephyr:code-sample:`hello_world`.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -236,7 +240,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -255,3 +259,6 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. _STM32G4 reference manual:
    https://www.st.com/resource/en/reference_manual/dm00355726.pdf
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

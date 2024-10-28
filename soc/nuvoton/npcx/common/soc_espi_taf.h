@@ -55,6 +55,11 @@ extern "C" {
 /* Unsuccessful Only Completion Without Data */
 #define CYC_UNSCS_CMP_WITHOUT_DATA_ONLY            0x0E
 
+/* ESPI TAF RPMC OP1 instruction */
+#define ESPI_TAF_RPMC_OP1_CMD                      0x9B
+/* ESPI TAF RPMC OP2 instruction */
+#define ESPI_TAF_RPMC_OP2_CMD                      0x96
+
 /* Timeout for checking transmit buffer available and no completion was sent */
 #define NPCX_FLASH_CHK_TIMEOUT                     10000
 

@@ -23,7 +23,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/types.h>
 
-#include "shell/bt.h"
+#include "host/shell/bt.h"
 
 static void micp_mic_dev_mute_cb(uint8_t mute)
 {

@@ -267,6 +267,12 @@ static void map_memory(const uint32_t start, const uint32_t end,
 static void xtensa_init_page_tables(void)
 {
 	volatile uint8_t entry;
+	static bool already_inited;
+
+	if (already_inited) {
+		return;
+	}
+	already_inited = true;
 
 	init_page_table(xtensa_kernel_ptables, XTENSA_L1_PAGE_TABLE_ENTRIES);
 	atomic_set_bit(l1_page_table_track, 0);
@@ -305,17 +311,16 @@ __weak void arch_xtensa_mmu_post_init(bool is_core0)
 
 void xtensa_mmu_init(void)
 {
-	if (_current_cpu->id == 0) {
-		/* This is normally done via arch_kernel_init() inside z_cstart().
-		 * However, before that is called, we go through the sys_init of
-		 * INIT_LEVEL_EARLY, which is going to result in TLB misses.
-		 * So setup whatever necessary so the exception handler can work
-		 * properly.
-		 */
-		xtensa_init_page_tables();
-	}
+	xtensa_init_page_tables();
 
 	xtensa_init_paging(xtensa_kernel_ptables);
+
+	/*
+	 * This is used to determine whether we are faulting inside double
+	 * exception if this is not zero. Sometimes SoC starts with this not
+	 * being set to zero. So clear it during boot.
+	 */
+	XTENSA_WSR(ZSR_DEPC_SAVE_STR, 0);
 
 	arch_xtensa_mmu_post_init(_current_cpu->id == 0);
 }

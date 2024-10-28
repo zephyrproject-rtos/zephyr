@@ -12,6 +12,10 @@
 #endif
 #endif /* NETWORKING */
 
+#ifdef CONFIG_ARM_SCMI
+ITERABLE_SECTION_RAM(scmi_protocol, Z_LINK_ITERABLE_SUBALIGN)
+#endif /* CONFIG_ARM_SCMI */
+
 #if defined(CONFIG_GEN_SW_ISR_TABLE) && defined(CONFIG_DYNAMIC_INTERRUPTS)
 	SECTION_DATA_PROLOGUE(sw_isr_table,,)
 	{

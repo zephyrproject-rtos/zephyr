@@ -1,0 +1,32 @@
+# Kernel service configuration options
+
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config KERNEL_SHELL
+	bool "Kernel shell"
+	default y if !SHELL_MINIMAL
+	imply INIT_STACKS
+	imply THREAD_MONITOR
+	imply THREAD_NAME
+	imply THREAD_STACK_INFO
+	help
+	  This shell provides access to basic kernel data like version, uptime
+	  and other useful information.
+
+if KERNEL_SHELL
+
+config KERNEL_SHELL_REBOOT_DELAY
+	int "Delay between reception of shell reboot command and reboot (ms)"
+	depends on REBOOT
+	default 0
+	help
+	  This delay allows time for the shell to successfully echo the reboot
+	  command input before the reboot abruptly terminates it. This can help
+	  external systems that interact with the shell and require the reboot
+	  command's echo to successfully complete to synchronise with the
+	  device.
+
+rsource "thread/Kconfig"
+
+endif # KERNEL_SHELL

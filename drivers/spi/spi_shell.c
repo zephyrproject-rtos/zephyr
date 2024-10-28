@@ -139,7 +139,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_spi_cmds,
 			       SHELL_CMD_ARG(conf, &dsub_device_name,
 					     "Configure SPI\n"
 					     "Usage: spi conf <device> <frequency> [<settings>]\n"
-					     "<settings> - any sequence of letters:"
+					     "<settings> - any sequence of letters:\n"
 					     "o - SPI_MODE_CPOL\n"
 					     "h - SPI_MODE_CPHA\n"
 					     "l - SPI_TRANSFER_LSB\n"

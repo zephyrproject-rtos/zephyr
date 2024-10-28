@@ -1,0 +1,242 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <freq.h>
+#include <arm64/armv8-a.dtsi>
+#include <zephyr/dt-bindings/clock/imx95_clock.h>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	interrupt-parent = <&gic>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a55";
+			reg = <0>;
+		};
+
+		cpu@100 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a55";
+			reg = <0x100>;
+		};
+
+		cpu@200 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a55";
+			reg = <0x200>;
+		};
+
+		cpu@300 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a55";
+			reg = <0x300>;
+		};
+
+		cpu@400 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a55";
+			reg = <0x400>;
+		};
+
+		cpu@500 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a55";
+			reg = <0x500>;
+		};
+
+	};
+
+	arch_timer: timer {
+		compatible = "arm,armv8-timer";
+		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 14 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 11 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 10 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>;
+	};
+
+	gic: interrupt-controller@48000000 {
+		compatible = "arm,gic-v3", "arm,gic";
+		reg = <0x48000000 0x10000>, /* GIC Dist */
+		      <0x48060000 0xc0000>; /* GICR (RD_base + SGI_base) */
+		interrupt-controller;
+		#interrupt-cells = <4>;
+		status = "okay";
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		scmi_shmem0: memory@445b1000 {
+			compatible = "arm,scmi-shmem";
+			reg = <0x445b1000 0x80>;
+		};
+	};
+
+	firmware {
+		scmi {
+			compatible = "arm,scmi";
+			shmem = <&scmi_shmem0>;
+			mboxes = <&mu2 0>;
+			mbox-names = "tx";
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			scmi_clk: protocol@14 {
+				compatible = "arm,scmi-clock";
+				reg = <0x14>;
+				#clock-cells = <1>;
+			};
+
+			scmi_iomuxc: protocol@19 {
+				compatible = "arm,scmi-pinctrl";
+				reg = <0x19>;
+
+				pinctrl: pinctrl {
+					compatible = "nxp,imx95-pinctrl", "nxp,imx93-pinctrl";
+				};
+			};
+		};
+	};
+
+	lpuart3: serial@42570000 {
+		compatible = "nxp,imx-lpuart", "nxp,kinetis-lpuart";
+		reg = <0x42570000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 64 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "irq_0";
+		clocks = <&scmi_clk IMX95_CLK_LPUART3>;
+		status = "disabled";
+	};
+
+	lpuart4: serial@42580000 {
+		compatible = "nxp,imx-lpuart", "nxp,kinetis-lpuart";
+		reg = <0x42580000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 65 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "irq_0";
+		clocks = <&scmi_clk IMX95_CLK_LPUART4>;
+		status = "disabled";
+	};
+
+	lpuart5: serial@42590000 {
+		compatible = "nxp,imx-lpuart", "nxp,kinetis-lpuart";
+		reg = <0x42590000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 66 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "irq_0";
+		clocks = <&scmi_clk IMX95_CLK_LPUART5>;
+		status = "disabled";
+	};
+
+	lpuart6: serial@425a0000 {
+		compatible = "nxp,imx-lpuart", "nxp,kinetis-lpuart";
+		reg = <0x425a0000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 67 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "irq_0";
+		clocks = <&scmi_clk IMX95_CLK_LPUART6>;
+		status = "disabled";
+	};
+
+	lpuart7: serial@42690000 {
+		compatible = "nxp,imx-lpuart", "nxp,kinetis-lpuart";
+		reg = <0x42690000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 68 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "irq_0";
+		clocks = <&scmi_clk IMX95_CLK_LPUART7>;
+		status = "disabled";
+	};
+
+	lpuart8: serial@426a0000 {
+		compatible = "nxp,imx-lpuart", "nxp,kinetis-lpuart";
+		reg = <0x426a0000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 69 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "irq_0";
+		clocks = <&scmi_clk IMX95_CLK_LPUART8>;
+		status = "disabled";
+	};
+
+	mu1: mbox@44220000 {
+		compatible = "nxp,mbox-imx-mu";
+		reg = <0x44220000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 224 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		rx-channels = <4>;
+		#mbox-cells = <1>;
+		status = "disabled";
+	};
+
+	lpuart1: serial@44380000 {
+		compatible = "nxp,imx-lpuart", "nxp,kinetis-lpuart";
+		reg = <0x44380000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 19 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "irq_0";
+		clocks = <&scmi_clk IMX95_CLK_LPUART1>;
+		status = "disabled";
+	};
+
+	lpuart2: serial@44390000 {
+		compatible = "nxp,imx-lpuart", "nxp,kinetis-lpuart";
+		reg = <0x44390000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 20 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "irq_0";
+		clocks = <&scmi_clk IMX95_CLK_LPUART2>;
+		status = "disabled";
+	};
+
+	mu2: mbox@445b0000 {
+		compatible = "nxp,mbox-imx-mu";
+		reg = <0x445b0000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 226 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		rx-channels = <4>;
+		#mbox-cells = <1>;
+	};
+
+	mu3: mbox@445d0000 {
+		compatible = "nxp,mbox-imx-mu";
+		reg = <0x445d0000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 228 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		rx-channels = <4>;
+		#mbox-cells = <1>;
+		status = "disabled";
+	};
+
+	mu4: mbox@445f0000 {
+		compatible = "nxp,mbox-imx-mu";
+		reg = <0x445f0000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 230 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		rx-channels = <4>;
+		#mbox-cells = <1>;
+		status = "disabled";
+	};
+
+	mu5: mbox@44610000 {
+		compatible = "nxp,mbox-imx-mu";
+		reg = <0x44610000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 205 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		rx-channels = <4>;
+		#mbox-cells = <1>;
+		status = "disabled";
+	};
+
+	mu6: mbox@44630000 {
+		compatible = "nxp,mbox-imx-mu";
+		reg = <0x44630000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 206 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		rx-channels = <4>;
+		#mbox-cells = <1>;
+		status = "disabled";
+	};
+};

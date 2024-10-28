@@ -155,8 +155,9 @@ static inline int rt1718s_reg_burst_write(const struct device *dev, uint8_t star
 static inline int rt1718s_reg_update(const struct device *dev, uint8_t reg_addr, uint8_t reg_val,
 				     uint8_t new_val)
 {
-	if (reg_val == new_val)
+	if (reg_val == new_val) {
 		return 0;
+	}
 
 	return rt1718s_reg_write_byte(dev, reg_addr, new_val);
 }

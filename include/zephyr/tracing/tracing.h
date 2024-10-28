@@ -1765,12 +1765,14 @@
 /**
  * @brief Trace System heap realloc enter
  * @param heap
+ * @param ptr
  */
 #define sys_port_trace_k_heap_sys_k_realloc_enter(heap, ptr)
 
 /**
  * @brief Trace System heap realloc exit
  * @param heap Heap object
+ * @param ptr Memory pointer
  * @param ret Return value
  */
 #define sys_port_trace_k_heap_sys_k_realloc_exit(heap, ptr, ret)
@@ -2025,6 +2027,56 @@
 #define sys_port_trace_pm_device_runtime_disable_exit(dev, ret)
 
 /** @} */ /* end of subsys_tracing_apis_pm_device_runtime */
+
+/**
+ * @brief Network Core Tracing APIs
+ * @defgroup subsys_tracing_apis_net Network Core Tracing APIs
+ * @{
+ */
+
+/**
+ * @brief Trace network data receive
+ * @param iface Network interface
+ * @param pkt Received network packet
+ */
+#define sys_port_trace_net_recv_data_enter(iface, pkt)
+
+/**
+ * @brief Trace network data receive attempt
+ * @param iface Network interface
+ * @param pkt Received network packet
+ * @param ret Return value
+ */
+#define sys_port_trace_net_recv_data_exit(iface, pkt, ret)
+
+/**
+ * @brief Trace network data send
+ * @param pkt Network packet to send
+ */
+#define sys_port_trace_net_send_data_enter(pkt)
+
+/**
+ * @brief Trace network data send attempt
+ * @param pkt Received network packet
+ * @param ret Return value
+ */
+#define sys_port_trace_net_send_data_exit(pkt, ret)
+
+/**
+ * @brief Trace network data receive time
+ * @param pkt Received network packet
+ * @param end_time When the RX processing stopped for this pkt (in ticks)
+ */
+#define sys_port_trace_net_rx_time(pkt, end_time)
+
+/**
+ * @brief Trace network data sent time
+ * @param pkt Sent network packet
+ * @param end_time When the TX processing stopped for this pkt (in ticks)
+ */
+#define sys_port_trace_net_tx_time(pkt, end_time)
+
+/** @} */ /* end of subsys_tracing_apis_net */
 
 /**
  * @brief Network Socket Tracing APIs
@@ -2323,6 +2375,24 @@
 #define sys_port_trace_socket_socketpair_exit(socket_A, socket_B, ret)
 
 /** @} */ /* end of subsys_tracing_apis_socket */
+
+/**
+ * @brief Named Tracing APIs
+ * @defgroup subsys_tracing_apis_named Named tracing APIs
+ * @{
+ */
+
+/*
+ * @brief Called by user to generate named events
+ *
+ * @param name name of event. Tracing subsystems may place a limit on
+ * the length of this string
+ * @param arg0 arbitrary user-provided data for this event
+ * @param arg1 arbitrary user-provided data for this event
+ */
+#define sys_trace_named_event(name, arg0, arg1)
+
+/** @} */ /* end of subsys_tracing_apis_named */
 
 #if defined(CONFIG_PERCEPIO_TRACERECORDER)
 #include "tracing_tracerecorder.h"

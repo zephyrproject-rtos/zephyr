@@ -1,7 +1,4 @@
-.. _nrf52_adafruit_feather:
-
-nRF52 Adafruit Feather
-######################
+.. zephyr:board:: nrf52_adafruit_feather
 
 Overview
 ********
@@ -17,12 +14,6 @@ the following devices:
 * FLASH
 * RADIO (Bluetooth Low Energy)
 * Segger RTT (RTT Console)
-
-.. figure:: img/nrf52_adafruit_feather.jpg
-     :align: center
-     :alt: nRF52 Adafruit Feather Board
-
-     nRF52 Adafruit Feather Board (Credit: Adafruit)
 
 More information about the board and its features can be found at the
 `Adafruit Feather nRF52 Bluefruit Learning Guide`_. The `Nordic Semiconductor Infocenter`_
@@ -118,10 +109,10 @@ found in :ref:`nordic_segger_flashing`. Then build and flash
 applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 
-#. Build the Zephyr kernel and the :ref:`hello_world` sample application:
+#. Build the Zephyr kernel and the :zephyr:code-sample:`hello_world` sample application:
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world

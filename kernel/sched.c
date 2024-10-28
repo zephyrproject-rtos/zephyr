@@ -35,7 +35,7 @@ struct k_spinlock _sched_spinlock;
  */
 __incoherent struct k_thread _thread_dummy;
 
-static void update_cache(int preempt_ok);
+static ALWAYS_INLINE void update_cache(int preempt_ok);
 static void halt_thread(struct k_thread *thread, uint8_t new_state);
 static void add_to_waitq_locked(struct k_thread *thread, _wait_q_t *wait_q);
 
@@ -320,7 +320,7 @@ static void update_metairq_preempt(struct k_thread *thread)
  */
 }
 
-static void update_cache(int preempt_ok)
+static ALWAYS_INLINE void update_cache(int preempt_ok)
 {
 #ifndef CONFIG_SMP
 	struct k_thread *thread = next_up();
@@ -386,13 +386,6 @@ static void ready_thread(struct k_thread *thread)
 		update_cache(0);
 
 		flag_ipi(ipi_mask_create(thread));
-	}
-}
-
-void z_ready_thread_locked(struct k_thread *thread)
-{
-	if (thread_active_elsewhere(thread) == NULL) {
-		ready_thread(thread);
 	}
 }
 
@@ -502,7 +495,7 @@ static void z_thread_halt(struct k_thread *thread, k_spinlock_key_t key,
 }
 
 
-void z_impl_k_thread_suspend(struct k_thread *thread)
+void z_impl_k_thread_suspend(k_tid_t thread)
 {
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_thread, suspend, thread);
 
@@ -524,7 +517,7 @@ void z_impl_k_thread_suspend(struct k_thread *thread)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline void z_vrfy_k_thread_suspend(struct k_thread *thread)
+static inline void z_vrfy_k_thread_suspend(k_tid_t thread)
 {
 	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
 	z_impl_k_thread_suspend(thread);
@@ -532,7 +525,7 @@ static inline void z_vrfy_k_thread_suspend(struct k_thread *thread)
 #include <zephyr/syscalls/k_thread_suspend_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-void z_impl_k_thread_resume(struct k_thread *thread)
+void z_impl_k_thread_resume(k_tid_t thread)
 {
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_thread, resume, thread);
 
@@ -553,20 +546,13 @@ void z_impl_k_thread_resume(struct k_thread *thread)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline void z_vrfy_k_thread_resume(struct k_thread *thread)
+static inline void z_vrfy_k_thread_resume(k_tid_t thread)
 {
 	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
 	z_impl_k_thread_resume(thread);
 }
 #include <zephyr/syscalls/k_thread_resume_mrsh.c>
 #endif /* CONFIG_USERSPACE */
-
-static _wait_q_t *pended_on_thread(struct k_thread *thread)
-{
-	__ASSERT_NO_MSG(thread->base.pended_on);
-
-	return thread->base.pended_on;
-}
 
 static void unready_thread(struct k_thread *thread)
 {
@@ -616,14 +602,7 @@ void z_pend_thread(struct k_thread *thread, _wait_q_t *wait_q,
 	}
 }
 
-static inline void unpend_thread_no_timeout(struct k_thread *thread)
-{
-	_priq_wait_remove(&pended_on_thread(thread)->waitq, thread);
-	z_mark_thread_as_not_pending(thread);
-	thread->base.pended_on = NULL;
-}
-
-ALWAYS_INLINE void z_unpend_thread_no_timeout(struct k_thread *thread)
+void z_unpend_thread_no_timeout(struct k_thread *thread)
 {
 	K_SPINLOCK(&_sched_spinlock) {
 		if (thread->base.pended_on != NULL) {
@@ -685,7 +664,7 @@ int z_pend_curr(struct k_spinlock *lock, k_spinlock_key_t key,
 	/* We do a "lock swap" prior to calling z_swap(), such that
 	 * the caller's lock gets released as desired.  But we ensure
 	 * that we hold the scheduler lock and leave local interrupts
-	 * masked until we reach the context swich.  z_swap() itself
+	 * masked until we reach the context switch.  z_swap() itself
 	 * has similar code; the duplication is because it's a legacy
 	 * API that doesn't expect to be called with scheduler lock
 	 * held.
@@ -705,22 +684,6 @@ struct k_thread *z_unpend1_no_timeout(_wait_q_t *wait_q)
 
 		if (thread != NULL) {
 			unpend_thread_no_timeout(thread);
-		}
-	}
-
-	return thread;
-}
-
-struct k_thread *z_unpend_first_thread(_wait_q_t *wait_q)
-{
-	struct k_thread *thread = NULL;
-
-	K_SPINLOCK(&_sched_spinlock) {
-		thread = _priq_wait_best(&wait_q->waitq);
-
-		if (thread != NULL) {
-			unpend_thread_no_timeout(thread);
-			(void)z_abort_thread_timeout(thread);
 		}
 	}
 
@@ -905,7 +868,7 @@ static inline void set_current(struct k_thread *new_thread)
  * function.
  *
  * @warning
- * The @ref _current value may have changed after this call and not refer
+ * The _current value may have changed after this call and not refer
  * to the interrupted thread anymore. It might be necessary to make a local
  * copy before calling this function.
  *
@@ -931,12 +894,15 @@ void *z_get_next_switch_handle(void *interrupted)
 		z_sched_usage_switch(new_thread);
 
 		if (old_thread != new_thread) {
+			uint8_t  cpu_id;
+
 			update_metairq_preempt(new_thread);
 			z_sched_switch_spin(new_thread);
 			arch_cohere_stacks(old_thread, interrupted, new_thread);
 
 			_current_cpu->swap_ok = 0;
-			new_thread->base.cpu = arch_curr_cpu()->id;
+			cpu_id = arch_curr_cpu()->id;
+			new_thread->base.cpu = cpu_id;
 			set_current(new_thread);
 
 #ifdef CONFIG_TIMESLICING
@@ -959,6 +925,12 @@ void *z_get_next_switch_handle(void *interrupted)
 			 * will not return into it.
 			 */
 			if (z_is_thread_queued(old_thread)) {
+#ifdef CONFIG_SCHED_IPI_CASCADE
+				if ((new_thread->base.cpu_mask != -1) &&
+				    (old_thread->base.cpu_mask != BIT(cpu_id))) {
+					flag_ipi(ipi_mask_create(old_thread));
+				}
+#endif
 				runq_add(old_thread);
 			}
 		}
@@ -1029,7 +1001,6 @@ void z_impl_k_thread_priority_set(k_tid_t thread, int prio)
 	 * keep track of it) and idle cannot change its priority.
 	 */
 	Z_ASSERT_VALID_PRIO(prio, NULL);
-	__ASSERT(!arch_is_in_isr(), "");
 
 	bool need_sched = z_thread_prio_set((struct k_thread *)thread, prio);
 
@@ -1206,7 +1177,7 @@ static inline int32_t z_vrfy_k_sleep(k_timeout_t timeout)
 #include <zephyr/syscalls/k_sleep_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-int32_t z_impl_k_usleep(int us)
+int32_t z_impl_k_usleep(int32_t us)
 {
 	int32_t ticks;
 
@@ -1223,7 +1194,7 @@ int32_t z_impl_k_usleep(int us)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline int32_t z_vrfy_k_usleep(int us)
+static inline int32_t z_vrfy_k_usleep(int32_t us)
 {
 	return z_impl_k_usleep(us);
 }
@@ -1433,7 +1404,7 @@ void z_thread_abort(struct k_thread *thread)
 }
 
 #if !defined(CONFIG_ARCH_HAS_THREAD_ABORT)
-void z_impl_k_thread_abort(struct k_thread *thread)
+void z_impl_k_thread_abort(k_tid_t thread)
 {
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_thread, abort, thread);
 
@@ -1590,4 +1561,14 @@ int z_sched_waitq_walk(_wait_q_t  *wait_q,
 	}
 
 	return status;
+}
+
+/* This routine exists for benchmarking purposes. It is not used in
+ * general production code.
+ */
+void z_unready_thread(struct k_thread *thread)
+{
+	K_SPINLOCK(&_sched_spinlock) {
+		unready_thread(thread);
+	}
 }

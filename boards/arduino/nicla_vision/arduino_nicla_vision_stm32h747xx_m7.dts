@@ -1,0 +1,266 @@
+/*
+ * Copyright 2024 Felipe Neves
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/h7/stm32h747Xi_m7.dtsi>
+#include <st/h7/stm32h747a(g-i)ix-pinctrl.dtsi>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#include "arduino_nicla_vision.dtsi"
+
+/ {
+	model = "Arduino Nicla Vision Board (M7)";
+	compatible = "arduino,nicla-vision";
+
+	chosen {
+		zephyr,console = &lpuart1;
+		zephyr,shell-uart = &lpuart1;
+		zephyr,uart-mcumgr = &lpuart1;
+		zephyr,bt-hci = &bt_hci_uart;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,camera = &dcmi;
+	};
+
+	sdram1: sdram@c0000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		device_type = "memory";
+		reg = <0xc0000000 DT_SIZE_M(8)>;
+		zephyr,memory-region = "SDRAM1";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+	};
+
+	aliases {
+		led0 = &red_led;
+		led1 = &green_led;
+	};
+
+	otghs_ulpi_phy: otghs_ulpis_phy {
+		compatible = "usb-ulpi-phy";
+		#phy-cells = <0>;
+	};
+};
+
+&clk_hse {
+	status = "okay";
+	clock-frequency = <DT_FREQ_M(25)>;
+};
+
+&clk_lse {
+	status = "okay";
+};
+
+&clk_hsi48 {
+	status = "okay";
+};
+
+&pll {
+	div-m = <5>;
+	mul-n = <192>;
+	div-p = <2>;
+	div-q = <4>;
+	div-r = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(480)>;
+};
+
+&lpuart1 {
+	status = "okay";
+	pinctrl-0 = <&lpuart1_tx_pa9 &lpuart1_rx_pa10>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_rx_pb7 &usart1_tx_pb6
+		     &usart1_rts_pa12 &usart1_cts_pa11>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+	hw-flow-control;
+
+	bt_hci_uart: bt_hci_uart {
+		compatible = "zephyr,bt-hci-uart";
+		status = "okay";
+
+		murata-1dx {
+			compatible = "infineon,cyw43xxx-bt-hci";
+			bt-reg-on-gpios = <&gpiof 14 GPIO_ACTIVE_HIGH>;
+			bt-host-wake-gpios = <&gpiod 14 GPIO_ACTIVE_HIGH>;
+			bt-dev-wake-gpios = <&gpioe 9 GPIO_ACTIVE_HIGH>;
+			fw-download-speed = <115200>;
+		};
+	};
+};
+
+&i2c1 {
+	status = "disabled";
+	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&i2c2 {
+	status = "okay";
+	pinctrl-0 = <&i2c2_scl_pf1 &i2c2_sda_pf0>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	vl53l1x: vl53l1x@52 {
+		compatible = "st,vl53l1x";
+		reg = <0x52>;
+		status = "okay";
+		xshut-gpios = <&gpiog 10 GPIO_ACTIVE_HIGH>;
+		int-gpios = <&gpiod 8 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&spi4 {
+	status = "okay";
+	pinctrl-0 = <&spi4_nss_pe11 &spi4_sck_pe12
+		     &spi4_miso_pe13 &spi4_mosi_pe14>;
+	pinctrl-names = "default";
+};
+
+&spi5 {
+	status = "okay";
+	pinctrl-0 = <&spi5_nss_pf6 &spi5_sck_pf7
+		     &spi5_miso_pf8 &spi5_mosi_pf11>;
+	pinctrl-names = "default";
+
+	lsm6dso: lsm6dso@0 {
+		compatible = "st,lsm6dso";
+		status = "okay";
+		reg = <0x0>;
+		irq-gpios = <&gpioa 1 GPIO_ACTIVE_LOW>;
+		spi-max-frequency = <4000000>;
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "bootloader";
+			reg = <0x0 0x40000>;
+			read-only;
+		};
+
+		slot0_partition: partition@40000 {
+			label = "image-0";
+			reg = <0x40000 0x000c0000>;
+		};
+	};
+};
+
+&rng {
+	status = "okay";
+};
+
+zephyr_udc0: &usbotg_hs {
+	pinctrl-0 = <&usb_otg_hs_ulpi_ck_pa5
+			&usb_otg_hs_ulpi_d0_pa3
+			&usb_otg_hs_ulpi_d1_pb0
+			&usb_otg_hs_ulpi_d2_pb1
+			&usb_otg_hs_ulpi_d3_pb10
+			&usb_otg_hs_ulpi_d4_pb11
+			&usb_otg_hs_ulpi_d5_pb12
+			&usb_otg_hs_ulpi_d6_pb13
+			&usb_otg_hs_ulpi_d7_pb5
+			&usb_otg_hs_ulpi_stp_pc0
+			&usb_otg_hs_ulpi_dir_pc2_c
+			&usb_otg_hs_ulpi_nxt_pc3_c>;
+	pinctrl-names = "default";
+	maximum-speed = "high-speed";
+	phys = <&otghs_ulpi_phy>;
+	status = "okay";
+};
+
+&i2c3 {
+	status = "okay";
+	pinctrl-0 = <&i2c3_scl_pa8 &i2c3_sda_pc9>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	gc2145: gc2145@3c {
+		compatible = "galaxycore,gc2145";
+		reg = <0x3c>;
+		status = "okay";
+
+		port {
+			gc2145_ep_out: endpoint {
+				remote-endpoint = <&dcmi_ep_in>;
+			};
+		};
+
+	};
+};
+
+&dcmi {
+	pinctrl-0 = <&dcmi_d0_pc6 &dcmi_d1_pc7 &dcmi_d2_pe0 &dcmi_d3_pe1
+		     &dcmi_d4_pe4 &dcmi_d5_pd3 &dcmi_d6_pe5 &dcmi_d7_pe6
+		     &dcmi_pixclk_pa6 &dcmi_hsync_pa4 &dcmi_vsync_pg9>;
+
+	pinctrl-names = "default";
+	status = "okay";
+
+	sensor = <&gc2145>;
+	bus-width = <8>;
+	hsync-active = <0>;
+	vsync-active = <0>;
+	pixelclk-active = <0>;
+	capture-rate = <1>;
+	dmas = <&dma1 0 38 (STM32_DMA_PERIPH_TO_MEMORY | STM32_DMA_PERIPH_NO_INC |
+		STM32_DMA_MEM_INC | STM32_DMA_PERIPH_8BITS | STM32_DMA_MEM_32BITS |
+		STM32_DMA_PRIORITY_HIGH) STM32_DMA_FIFO_1_4>;
+
+	port {
+		dcmi_ep_in: endpoint {
+			remote-endpoint = <&gc2145_ep_out>;
+		};
+	};
+};
+
+/* The Arduino nicla uses a PWM output to generate the clock for the
+ * GC2145 sensor, so we need to configure the PWM generator...
+ */
+&timers3 {
+	status = "okay";
+	st,prescaler = <0>;
+
+	cam_clock_pwm: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim3_ch2_pa7>;
+		pinctrl-names = "default";
+	};
+};
+
+&cam_clock_pwm {
+	/* ...then use the pwmclock node to start the clock generation */
+	pwmclock: pwmclock {
+		status = "okay";
+		compatible = "pwm-clock";
+		clock-frequency = <0>;
+		#clock-cells = <1>;
+		pwms = <&cam_clock_pwm 2 PWM_HZ(10000000) PWM_POLARITY_NORMAL>;
+	};
+};
+
+&dma1 {
+	status = "okay";
+};
+
+&dmamux1 {
+	status = "okay";
+};

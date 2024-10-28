@@ -252,7 +252,7 @@ void k_mem_paging_eviction_remove(struct k_mem_page_frame *pf);
  *
  * The architecture-specific memory fault handler will invoke this to tell the
  * eviction algorithm the provided physical address belongs to a page frame
- * being accessed and such page frame should become unlikely to be be
+ * being accessed and such page frame should become unlikely to be
  * considered as the next eviction candidate.
  *
  * This function is invoked with interrupts locked.
@@ -348,6 +348,22 @@ int k_mem_paging_backing_store_location_get(struct k_mem_page_frame *pf,
  * @param location Location token to free
  */
 void k_mem_paging_backing_store_location_free(uintptr_t location);
+
+/**
+ * Obtain persistent location token for on-demand content
+ *
+ * Unlike k_mem_paging_backing_store_location_get() this does not allocate
+ * any backing store space. Instead, it returns a location token corresponding
+ * to some fixed storage content to be paged in on demand. This is expected
+ * to be used in conjonction with CONFIG_LINKER_USE_ONDEMAND_SECTION and the
+ * K_MEM_MAP_UNPAGED flag to create demand mappings at boot time. This may
+ * also be used e.g. to implement file-based mmap().
+ *
+ * @param addr Virtual address to obtain a location token for
+ * @param [out] location storage location token
+ * @return 0 for success or negative error code
+ */
+int k_mem_paging_backing_store_location_query(void *addr, uintptr_t *location);
 
 /**
  * Copy a data page from K_MEM_SCRATCH_PAGE to the specified location

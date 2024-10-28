@@ -1,0 +1,17 @@
+#
+# Copyright 2024 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: imx95_evk/mimx9596/a55
+name: NXP i.MX95 EVK A55
+type: mcu
+arch: arm64
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 1024
+supported:
+  - uart
+vendor: nxp

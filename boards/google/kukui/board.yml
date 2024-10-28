@@ -1,5 +1,0 @@
-board:
-  name: google_kukui
-  vendor: google
-  socs:
-    - name: stm32f098xx

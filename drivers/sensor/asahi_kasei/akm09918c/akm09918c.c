@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023 Google LLC
+ * Copyright (c) 2024 Florian Weber <Florian.Weber@live.de>
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -21,21 +22,16 @@
 LOG_MODULE_REGISTER(AKM09918C, CONFIG_SENSOR_LOG_LEVEL);
 
 /**
- * @brief Perform the bus transaction to fetch samples
+ * @brief Perform the bus transaction to start measurement.
  *
  * @param dev Sensor device to operate on
- * @param chan Channel ID to fetch
- * @param x Location to write X channel sample.
- * @param y Location to write Y channel sample.
- * @param z Location to write Z channel sample.
+ * @param chan Channel ID for starting the measurement
  * @return int 0 if successful or error code
  */
-int akm09918c_sample_fetch_helper(const struct device *dev, enum sensor_channel chan, int16_t *x,
-				  int16_t *y, int16_t *z)
+int akm09918c_start_measurement(const struct device *dev, enum sensor_channel chan)
 {
 	struct akm09918c_data *data = dev->data;
 	const struct akm09918c_config *cfg = dev->config;
-	uint8_t buf[9] = {0};
 
 	if (chan != SENSOR_CHAN_ALL && chan != SENSOR_CHAN_MAGN_X && chan != SENSOR_CHAN_MAGN_Y &&
 	    chan != SENSOR_CHAN_MAGN_Z && chan != SENSOR_CHAN_MAGN_XYZ) {
@@ -49,11 +45,24 @@ int akm09918c_sample_fetch_helper(const struct device *dev, enum sensor_channel 
 			LOG_ERR("Failed to start measurement.");
 			return -EIO;
 		}
-
-		/* Wait for sample */
-		LOG_DBG("Waiting for sample...");
-		k_usleep(AKM09918C_MEASURE_TIME_US);
 	}
+	return 0;
+}
+
+/**
+ * @brief Perform the bus transaction to fetch samples.
+ *
+ * @param dev Sensor device to operate on
+ * @param chan Channel ID to fetch
+ * @param x Location to write X channel sample.
+ * @param y Location to write Y channel sample.
+ * @param z Location to write Z channel sample.
+ * @return int 0 if successful or error code
+ */
+int akm09918c_fetch_measurement(const struct device *dev, int16_t *x, int16_t *y, int16_t *z)
+{
+	const struct akm09918c_config *cfg = dev->config;
+	uint8_t buf[9] = {0};
 
 	/* We have to read through the TMPS register or the data_ready bit won't clear */
 	if (i2c_burst_read_dt(&cfg->i2c, AKM09918C_REG_ST1, buf, ARRAY_SIZE(buf)) != 0) {
@@ -77,8 +86,16 @@ static int akm09918c_sample_fetch(const struct device *dev, enum sensor_channel 
 {
 	struct akm09918c_data *data = dev->data;
 
-	return akm09918c_sample_fetch_helper(dev, chan, &data->x_sample, &data->y_sample,
-					     &data->z_sample);
+	int ret = akm09918c_start_measurement(dev, chan);
+
+	if (ret) {
+		return ret;
+	}
+	/* Wait for sample */
+	LOG_DBG("Waiting for sample...");
+	k_usleep(AKM09918C_MEASURE_TIME_US);
+
+	return akm09918c_fetch_measurement(dev, &data->x_sample, &data->y_sample, &data->z_sample);
 }
 
 static void akm09918c_convert(struct sensor_value *val, int16_t sample)
@@ -213,7 +230,10 @@ static int akm09918c_init(const struct device *dev)
 		return rc;
 	}
 	data->mode = AKM09918C_CNTL2_PWR_DOWN;
-
+#ifdef CONFIG_SENSOR_ASYNC_API
+	/* init work for fetching after measurement has completed */
+	k_work_init_delayable(&data->work_ctx.async_fetch_work, akm09918_async_fetch);
+#endif
 	return 0;
 }
 

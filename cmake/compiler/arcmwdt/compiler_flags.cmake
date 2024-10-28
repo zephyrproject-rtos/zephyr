@@ -116,7 +116,7 @@ set_compiler_property(PROPERTY warning_error_misra_sane -Werror=vla)
 set_compiler_property(PROPERTY cstd -std=)
 
 if (NOT CONFIG_ARCMWDT_LIBC)
-  set_compiler_property(PROPERTY nostdinc -Hno_default_include -Hnoarcexlib)
+  set_compiler_property(PROPERTY nostdinc -Hno_default_include -Hnoarcexlib -U__STDC_LIB_EXT1__)
   set_compiler_property(APPEND PROPERTY nostdinc_include ${NOSTDINC})
 endif()
 
@@ -152,14 +152,8 @@ set_property(TARGET compiler-cpp PROPERTY no_rtti "-fno-rtti")
 # do not link in supplied run-time startup files
 set_compiler_property(PROPERTY freestanding -Hnocrt)
 
-# Flag to enable debugging
-if(CONFIG_THREAD_LOCAL_STORAGE)
-  # FIXME: Temporary workaround for ARC MWDT toolchain issue - LLDAC linker produce errors on
-  # debugging information (if -g option specified) of thread-local variables.
-  set_compiler_property(PROPERTY debug)
-else()
-  set_compiler_property(PROPERTY debug -g)
-endif()
+# Flag to keep DWARF information (enable debug info)
+set_compiler_property(PROPERTY debug -g)
 
 # compile common globals like normal definitions
 set_compiler_property(PROPERTY no_common -fno-common)

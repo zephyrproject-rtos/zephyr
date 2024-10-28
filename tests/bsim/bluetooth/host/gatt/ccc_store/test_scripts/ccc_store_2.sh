@@ -13,13 +13,13 @@ cd ${BSIM_OUT_PATH}/bin
 if [ "${1}" != 'debug0' ]; then
   Execute "./${test_exe}" \
     -v=${verbosity_level} -s=${simulation_id} -d=0 -testid=central \
-    -flash="${simulation_id}_client.log.bin" -flash_rm -argstest 10
+    -flash="${simulation_id}_client.log.bin" -flash_rm -RealEncryption=1 -argstest 10
 fi
 
 if [ "${1}" != 'debug1' ]; then
   Execute "./${test_exe}" \
     -v=${verbosity_level} -s=${simulation_id} -d=1 -testid=peripheral \
-    -flash="${simulation_id}_server.log.bin" -flash_rm -argstest 10
+    -flash="${simulation_id}_server.log.bin" -flash_rm -RealEncryption=1 -argstest 10
 fi
 
 Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s=${simulation_id} \
@@ -28,13 +28,13 @@ Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s=${simulation_id} \
 if [ "${1}" == 'debug0' ]; then
   gdb --args "./${test_exe}" \
     -v=${verbosity_level} -s=${simulation_id} -d=0 -testid=central \
-    -flash="${simulation_id}_client.log.bin" -flash_rm -argstest 10
+    -flash="${simulation_id}_client.log.bin" -flash_rm -RealEncryption=1 -argstest 10
 fi
 
 if [ "${1}" == 'debug1' ]; then
   gdb --args "./${test_exe}" \
     -v=${verbosity_level} -s=${simulation_id} -d=1 -testid=peripheral \
-    -flash="${simulation_id}_server.log.bin" -flash_rm -argstest 10
+    -flash="${simulation_id}_server.log.bin" -flash_rm -RealEncryption=1 -argstest 10
 fi
 
 wait_for_background_jobs

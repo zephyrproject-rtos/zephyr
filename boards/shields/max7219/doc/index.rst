@@ -31,7 +31,7 @@ for Arduino connectors and defines a node alias for the SPI interface
 Programming
 ***********
 
-Set ``-DSHIELD=max7219_8x8`` when you invoke ``west build``. For example:
+Set ``--shield max7219_8x8`` when you invoke ``west build``. For example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/display/

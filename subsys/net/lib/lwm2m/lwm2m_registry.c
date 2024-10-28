@@ -106,7 +106,7 @@ void lwm2m_register_obj(struct lwm2m_engine_obj *obj)
 	k_mutex_lock(&registry_lock, K_FOREVER);
 #if defined(CONFIG_LWM2M_ACCESS_CONTROL_ENABLE)
 	/* If bootstrap, then bootstrap server should create the ac obj instances */
-#if !IS_ENABLED(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
+#if !defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
 	int server_obj_inst_id = lwm2m_server_short_id_to_inst(CONFIG_LWM2M_SERVER_DEFAULT_SSID);
 
 	access_control_add_obj(obj->obj_id, server_obj_inst_id);
@@ -169,7 +169,7 @@ static void engine_register_obj_inst(struct lwm2m_engine_obj_inst *obj_inst)
 {
 #if defined(CONFIG_LWM2M_ACCESS_CONTROL_ENABLE)
 	/* If bootstrap, then bootstrap server should create the ac obj instances */
-#if !IS_ENABLED(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
+#if !defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
 	int server_obj_inst_id = lwm2m_server_short_id_to_inst(CONFIG_LWM2M_SERVER_DEFAULT_SSID);
 
 	access_control_add(obj_inst->obj->obj_id, obj_inst->obj_inst_id, server_obj_inst_id);
@@ -515,6 +515,7 @@ static int lwm2m_check_buf_sizes(uint8_t data_type, uint16_t resource_length, ui
 		}
 		break;
 	case LWM2M_RES_TYPE_U32:
+	case LWM2M_RES_TYPE_U16:
 	case LWM2M_RES_TYPE_U8:
 	case LWM2M_RES_TYPE_S64:
 	case LWM2M_RES_TYPE_S32:
@@ -752,11 +753,6 @@ int lwm2m_set_u16(const struct lwm2m_obj_path *path, uint16_t value)
 int lwm2m_set_u32(const struct lwm2m_obj_path *path, uint32_t value)
 {
 	return lwm2m_engine_set(path, &value, 4);
-}
-
-int lwm2m_set_u64(const struct lwm2m_obj_path *path, uint64_t value)
-{
-	return lwm2m_engine_set(path, &value, 8);
 }
 
 int lwm2m_set_s8(const struct lwm2m_obj_path *path, int8_t value)
@@ -1028,11 +1024,6 @@ int lwm2m_get_u16(const struct lwm2m_obj_path *path, uint16_t *value)
 int lwm2m_get_u32(const struct lwm2m_obj_path *path, uint32_t *value)
 {
 	return lwm2m_engine_get(path, value, 4);
-}
-
-int lwm2m_get_u64(const struct lwm2m_obj_path *path, uint64_t *value)
-{
-	return lwm2m_engine_get(path, value, 8);
 }
 
 int lwm2m_get_s8(const struct lwm2m_obj_path *path, int8_t *value)

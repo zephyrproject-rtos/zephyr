@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018-2021 mcumgr authors
- * Copyright (c) 2022-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -56,6 +56,7 @@ extern "C" {
 #define IMG_MGMT_ID_CORELIST	3
 #define IMG_MGMT_ID_CORELOAD	4
 #define IMG_MGMT_ID_ERASE	5
+#define IMG_MGMT_ID_SLOT_INFO	6
 
 /**
  * Command result codes for image management group.
@@ -345,7 +346,7 @@ int img_mgmt_state_confirm(void);
  */
 int img_mgmt_vercmp(const struct image_version *a, const struct image_version *b);
 
-#if IS_ENABLED(CONFIG_MCUMGR_GRP_IMG_MUTEX)
+#if defined(CONFIG_MCUMGR_GRP_IMG_MUTEX)
 /*
  * @brief	Will reset the image management state back to default (no ongoing upload),
  *		requires that CONFIG_MCUMGR_GRP_IMG_MUTEX be enabled to allow for mutex

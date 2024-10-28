@@ -27,7 +27,7 @@ LOG_MODULE_REGISTER(counter_timer, CONFIG_COUNTER_LOG_LEVEL);
 
 #define COUNTER_DT_DEVICE(_idx) DEVICE_DT_GET_OR_NULL(DT_NODELABEL(timer##_idx))
 
-#define PDC_XTAL_EN (DT_NODE_HAS_STATUS(DT_NODELABEL(xtal32m), okay) ? \
+#define PDC_XTAL_EN (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(xtal32m)) ? \
 					MCU_PDC_EN_XTAL : MCU_PDC_EN_NONE)
 
 struct counter_smartbond_data {

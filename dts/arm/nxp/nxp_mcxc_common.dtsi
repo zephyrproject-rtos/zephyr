@@ -1,0 +1,326 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <arm/armv6-m.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/clock/kinetis_sim.h>
+#include <zephyr/dt-bindings/clock/kinetis_mcg.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	chosen {
+		zephyr,flash-controller = &ftfa;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m0+";
+			reg = <0>;
+		};
+	};
+
+	sram0: memory@1FFFF000 {
+		compatible = "mmio-sram";
+	};
+
+	/* Dummy pinctrl node, filled with pin mux options at board level */
+	pinctrl: pinctrl {
+		compatible = "nxp,kinetis-pinctrl";
+		status = "okay";
+	};
+
+	clocks {
+		osc: osc {
+			compatible = "nxp,mcxc-osc";
+			#clock-cells = <0>;
+			load-capacitance-picofarads = <0>;
+			mode = "external";
+		};
+	};
+
+	temp0: temp0 {
+		compatible = "nxp,kinetis-temperature";
+		io-channels = <&adc0 26>, <&adc0 27>;
+		io-channel-names = "SENSOR", "BANDGAP";
+		bandgap-voltage = <1000000>;
+		vtemp25 = <716000>;
+		sensor-slope-cold = <1620>;
+		sensor-slope-hot = <1620>;
+		status = "disabled";
+	};
+
+	soc {
+		ftfa: flash-controller@40020000 {
+			compatible = "nxp,kinetis-ftfa";
+			reg = <0x40020000 0x14>;
+			interrupts = <5 0>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			fsec = <0xff>;
+			fopt = <0x3d>;
+			config-field-offset = <0x400>;
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				erase-block-size = <1024>;
+				write-block-size = <4>;
+			};
+		};
+
+		mcg: clock-controller@40064000 {
+			compatible = "nxp,kinetis-mcg";
+			reg = <0x40064000 0xd>;
+			fcrdiv = <0>;
+			lircdiv2 = <0>;
+			#clock-cells = <1>;
+		};
+
+		sim: sim@40047000 {
+			compatible = "nxp,kinetis-sim";
+			reg = <0x40047000 0x1060>;
+			#clock-cells = <3>;
+
+			core_clk {
+				compatible = "fixed-factor-clock";
+				clocks = <&mcg KINETIS_MCG_OUT_CLK>;
+				clock-div = <1>;
+				#clock-cells = <0>;
+			};
+
+			flash_clk {
+				compatible = "fixed-factor-clock";
+				clocks = <&mcg KINETIS_MCG_OUT_CLK>;
+				clock-div = <2>;
+				#clock-cells = <0>;
+			};
+		};
+
+		porta: pinmux@40049000 {
+			compatible = "nxp,kinetis-pinmux";
+			reg = <0x40049000 0xd0>;
+			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 9>;
+		};
+
+		portb: pinmux@4004a000 {
+			compatible = "nxp,kinetis-pinmux";
+			reg = <0x4004a000 0xd0>;
+			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 10>;
+		};
+
+		portc: pinmux@4004b000 {
+			compatible = "nxp,kinetis-pinmux";
+			reg = <0x4004b000 0xd0>;
+			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 11>;
+		};
+
+		portd: pinmux@4004c000 {
+			compatible = "nxp,kinetis-pinmux";
+			reg = <0x4004c000 0xd0>;
+			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 12>;
+		};
+
+		porte: pinmux@4004d000 {
+			compatible = "nxp,kinetis-pinmux";
+			reg = <0x4004d000 0xd0>;
+			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 13>;
+		};
+
+		gpioa: gpio@400ff000 {
+			compatible = "nxp,kinetis-gpio";
+			status = "disabled";
+			reg = <0x400ff000 0x40>;
+			interrupts = <30 2>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			nxp,kinetis-port = <&porta>;
+		};
+
+		gpiob: gpio@400ff040 {
+			compatible = "nxp,kinetis-gpio";
+			status = "disabled";
+			reg = <0x400ff040 0x40>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			nxp,kinetis-port = <&portb>;
+		};
+
+		gpioc: gpio@400ff080 {
+			compatible = "nxp,kinetis-gpio";
+			status = "disabled";
+			reg = <0x400ff080 0x40>;
+			interrupts = <31 2>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			nxp,kinetis-port = <&portc>;
+		};
+
+		gpiod: gpio@400ff0c0 {
+			compatible = "nxp,kinetis-gpio";
+			status = "disabled";
+			reg = <0x400ff0c0 0x40>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			nxp,kinetis-port = <&portd>;
+		};
+
+		gpioe: gpio@400ff100 {
+			compatible = "nxp,kinetis-gpio";
+			status = "disabled";
+			reg = <0x400ff100 0x40>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			nxp,kinetis-port = <&porte>;
+		};
+
+		adc0: adc@4003b000{
+			compatible = "nxp,kinetis-adc16";
+			reg = <0x4003b000 0x70>;
+			interrupts = <15 0>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+
+		i2c0: i2c@40066000 {
+			compatible = "nxp,kinetis-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40066000 0x1000>;
+			interrupts = <8 0>;
+			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1034 6>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@40067000 {
+			compatible = "nxp,kinetis-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40067000 0x1000>;
+			interrupts = <9 0>;
+			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1034 7>;
+			status = "disabled";
+		};
+
+		usb: usbd@40072000 {
+			compatible = "nxp,kinetis-usbd";
+			reg = <0x40072000 0x1000>;
+			interrupts = <24 1>;
+			interrupt-names = "usb";
+			num-bidir-endpoints = <16>;
+			status = "disabled";
+		};
+
+		lpuart0: uart@40054000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x40054000 0x1000>;
+			interrupts = <12 0>;
+			clocks = <&sim KINETIS_SIM_MCGPCLK 0x1038 20>;
+			status = "disabled";
+		};
+
+		lpuart1: uart@40055000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x40055000 0x1000>;
+			interrupts = <13 0>;
+			clocks = <&sim KINETIS_SIM_MCGPCLK 0x1038 21>;
+			status = "disabled";
+		};
+
+		uart2: uart@4006c000 {
+			compatible = "nxp,kinetis-uart";
+			reg = <0x4006c000 0x1000>;
+			interrupts = <14 0>;
+			interrupt-names = "status";
+			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1034 12>;
+			status = "disabled";
+		};
+
+		tpm0: pwm@40038000 {
+			compatible = "nxp,kinetis-tpm";
+			reg = <0x40038000 0x88>;
+			interrupts = <17 0>;
+			clocks = <&sim KINETIS_SIM_MCGPCLK 0x103C 24>;
+			status = "disabled";
+			#pwm-cells = <3>;
+		};
+
+		tpm1: pwm@40039000 {
+			compatible = "nxp,kinetis-tpm";
+			reg = <0x40039000 0x88>;
+			interrupts = <18 0>;
+			clocks = <&sim KINETIS_SIM_MCGPCLK 0x103C 25>;
+			status = "disabled";
+			#pwm-cells = <3>;
+		};
+
+		tpm2: pwm@4003a000 {
+			compatible = "nxp,kinetis-tpm";
+			reg = <0x4003a000 0x88>;
+			interrupts = <19 0>;
+			clocks = <&sim KINETIS_SIM_MCGPCLK 0x103C 26>;
+			status = "disabled";
+			#pwm-cells = <3>;
+		};
+
+		lptmr0: lptmr@40040000 {
+			compatible = "nxp,lptmr";
+			reg = <0x40040000 0x1000>;
+			interrupts = <28 0>;
+			clock-frequency = <1000>;
+			prescaler = <1>;
+			prescale-glitch-filter = <1>;
+			clk-source = <1>;
+			resolution = <16>;
+			status = "disabled";
+		};
+
+		rtc: rtc@4003d000 {
+			compatible = "nxp,kinetis-rtc";
+			reg = <0x4003d000 0x1000>;
+			interrupts = <20 0>, <21 0>;
+			interrupt-names = "alarm", "seconds";
+			clock-frequency = <32768>;
+			prescaler = <32768>;
+			status = "disabled";
+		};
+
+		pit0: pit@40037000 {
+			compatible = "nxp,pit";
+			reg = <0x40037000 0x1000>;
+			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103c 23>;
+			interrupts = <22 0>;
+			max-load-value = <0xffffffff>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			pit0_channel0: pit0_channel@0 {
+				compatible = "nxp,pit-channel";
+				reg = <0>;
+				status = "disabled";
+			};
+
+			pit0_channel1: pit0_channel@1 {
+				compatible = "nxp,pit-channel";
+				reg = <1>;
+				status = "disabled";
+			};
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <2>;
+};

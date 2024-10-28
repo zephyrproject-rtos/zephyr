@@ -625,11 +625,11 @@ void sys_trace_k_pipe_flush_enter(struct k_pipe *pipe);
 void sys_trace_k_pipe_flush_exit(struct k_pipe *pipe);
 void sys_trace_k_pipe_buffer_flush_enter(struct k_pipe *pipe);
 void sys_trace_k_pipe_buffer_flush_exit(struct k_pipe *pipe);
-void sys_trace_k_pipe_put_enter(struct k_pipe *pipe, void *data, size_t bytes_to_write,
+void sys_trace_k_pipe_put_enter(struct k_pipe *pipe, const void *data, size_t bytes_to_write,
 				size_t *bytes_written, size_t min_xfer, k_timeout_t timeout);
-void sys_trace_k_pipe_put_blocking(struct k_pipe *pipe, void *data, size_t bytes_to_write,
+void sys_trace_k_pipe_put_blocking(struct k_pipe *pipe, const void *data, size_t bytes_to_write,
 				   size_t *bytes_written, size_t min_xfer, k_timeout_t timeout);
-void sys_trace_k_pipe_put_exit(struct k_pipe *pipe, void *data, size_t bytes_to_write,
+void sys_trace_k_pipe_put_exit(struct k_pipe *pipe, const void *data, size_t bytes_to_write,
 			       size_t *bytes_written, size_t min_xfer, k_timeout_t timeout,
 			       int ret);
 void sys_trace_k_pipe_get_enter(struct k_pipe *pipe, void *data, size_t bytes_to_read,
@@ -732,7 +732,16 @@ void sys_trace_k_event_init(struct k_event *event);
 #define sys_port_trace_socket_socketpair_enter(family, type, proto, sv)
 #define sys_port_trace_socket_socketpair_exit(sockA, sockB, ret)
 
+#define sys_port_trace_net_recv_data_enter(iface, pkt)
+#define sys_port_trace_net_recv_data_exit(iface, pkt, ret)
+#define sys_port_trace_net_send_data_enter(pkt)
+#define sys_port_trace_net_send_data_exit(pkt, ret)
+#define sys_port_trace_net_rx_time(pkt, end_time)
+#define sys_port_trace_net_tx_time(pkt, end_time)
+
 #define sys_trace_sys_init_enter(...)
 #define sys_trace_sys_init_exit(...)
+
+#define sys_trace_named_event(name, arg0, arg1)
 
 #endif /* ZEPHYR_TRACE_TEST_H */

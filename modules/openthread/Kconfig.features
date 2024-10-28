@@ -17,6 +17,8 @@ config OPENTHREAD_THREAD_VERSION_1_3
 	bool "Version 1.3"
 config OPENTHREAD_THREAD_VERSION_1_3_1
 	bool "Version 1.3.1"
+config OPENTHREAD_THREAD_VERSION_1_4
+	bool "Version 1.4"
 endchoice # OPENTHREAD_STACK_VERSION
 
 config OPENTHREAD_THREAD_VERSION
@@ -25,6 +27,7 @@ config OPENTHREAD_THREAD_VERSION
 	default "1.2" if OPENTHREAD_THREAD_VERSION_1_2
 	default "1.3" if OPENTHREAD_THREAD_VERSION_1_3
 	default "1.3.1" if OPENTHREAD_THREAD_VERSION_1_3_1
+	default "1.4" if OPENTHREAD_THREAD_VERSION_1_4
 	default "unknown"
 
 config OPENTHREAD_ANYCAST_LOCATOR
@@ -48,6 +51,9 @@ config OPENTHREAD_BORDER_AGENT
 
 config OPENTHREAD_BORDER_AGENT_EPHEMERAL_KEY_ENABLE
 	bool "Border agent ephemeral PSKc"
+
+config OPENTHREAD_BORDER_AGENT_ID
+	bool "Create and save border agent ID"
 
 config OPENTHREAD_BORDER_ROUTER
 	bool "Border Router support"
@@ -147,6 +153,9 @@ config OPENTHREAD_DNS_UPSTREAM_QUERY
 	help
 	  Enable forwarding DNS queries to platform DNS upstream API
 
+config OPENTHREAD_DNSSD_DISCOVERY_PROXY
+	bool "DNS-SD discovery proxy support"
+
 config OPENTHREAD_DNSSD_SERVER
 	bool "DNS-SD server support"
 
@@ -154,6 +163,9 @@ config OPENTHREAD_DUA
 	bool "Domain Unicast Address support"
 	help
 	  Enable Domain Unicast Address feature for Thread 1.2
+
+config OPENTHREAD_DYNAMIC_STORE_FRAME_AHEAD_COUNTER
+	bool "Dynamic store frame ahead counter"
 
 config OPENTHREAD_ECDSA
 	bool "ECDSA support"
@@ -244,6 +256,9 @@ config OPENTHREAD_NAT64_TRANSLATOR
 
 config OPENTHREAD_NETDIAG_CLIENT
 	bool "TMF network diagnostics on client"
+
+config OPENTHREAD_NETDIAG_VENDOR_INFO
+	bool "Allow setting vendor info at runtime"
 
 config OPENTHREAD_NEIGHBOR_DISCOVERY_AGENT
 	bool "Neighbor discovery agent support"
@@ -374,3 +389,6 @@ config OPENTHREAD_UPTIME
 
 config OPENTHREAD_VERHOEFF_CHECKSUM
 	bool "Verhoeff checksum"
+
+config OPENTHREAD_CLI_VENDOR_EXTENSION
+	string "Path to CMake file to define and link Openthread CLI vendor extension"

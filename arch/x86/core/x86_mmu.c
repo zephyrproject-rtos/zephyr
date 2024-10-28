@@ -1281,6 +1281,12 @@ static pentry_t flags_to_entry(uint32_t flags)
 		entry_flags |= ENTRY_XD;
 	}
 
+	if (IS_ENABLED(CONFIG_DEMAND_MAPPING) && (flags & K_MEM_MAP_UNPAGED) != 0U) {
+		/* same state as in arch_mem_page_out() */
+		entry_flags &= ~MMU_P;
+		entry_flags |= MMU_A;
+	}
+
 	return entry_flags;
 }
 

@@ -8,6 +8,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/input/input.h>
+#include <zephyr/input/input_touch.h>
 #include <zephyr/sys/byteorder.h>
 
 #include <zephyr/logging/log.h>
@@ -111,14 +112,13 @@ LOG_MODULE_REGISTER(stmpe811, CONFIG_INPUT_LOG_LEVEL);
 #define STMPE811_TSC_FRACT_XYZ_CONF 1
 
 struct stmpe811_config {
+	struct input_touchscreen_common_config common;
 	struct i2c_dt_spec bus;
 	struct gpio_dt_spec int_gpio;
 	uint8_t panel_driver_settling_time_us;
 	uint8_t touch_detect_delay_us;
 	uint8_t touch_average_control;
 	uint8_t tracking_index;
-	uint16_t screen_width;
-	uint16_t screen_height;
 	int raw_x_min;
 	int raw_y_min;
 	uint16_t raw_x_max;
@@ -132,6 +132,8 @@ struct stmpe811_data {
 	uint32_t touch_x;
 	uint32_t touch_y;
 };
+
+INPUT_TOUCH_STRUCT_CHECK(struct stmpe811_config);
 
 static int stmpe811_reset(const struct device *dev)
 {
@@ -331,22 +333,22 @@ static int stmpe811_ts_get_data(const struct device *dev)
 static void stmpe811_report_touch(const struct device *dev)
 {
 	const struct stmpe811_config *config = dev->config;
+	const struct input_touchscreen_common_config *common = &config->common;
 	struct stmpe811_data *data = dev->data;
 	int x = data->touch_x;
 	int y = data->touch_y;
 
-	if (config->screen_width > 0 && config->screen_height > 0) {
-		x = (((int)data->touch_x - config->raw_x_min) * config->screen_width) /
+	if (common->screen_width > 0 && common->screen_height > 0) {
+		x = (((int)data->touch_x - config->raw_x_min) * common->screen_width) /
 			(config->raw_x_max - config->raw_x_min);
-		y = (((int)data->touch_y - config->raw_y_min) * config->screen_height) /
+		y = (((int)data->touch_y - config->raw_y_min) * common->screen_height) /
 			(config->raw_y_max - config->raw_y_min);
 
-		x = CLAMP(x, 0, config->screen_width);
-		y = CLAMP(y, 0, config->screen_height);
+		x = CLAMP(x, 0, common->screen_width);
+		y = CLAMP(y, 0, common->screen_height);
 	}
 
-	input_report_abs(dev, INPUT_ABS_X, x, false, K_FOREVER);
-	input_report_abs(dev, INPUT_ABS_Y, y, false, K_FOREVER);
+	input_touchscreen_report_pos(dev, x, y, K_FOREVER);
 	input_report_key(dev, INPUT_BTN_TOUCH, 1, true, K_FOREVER);
 }
 
@@ -527,12 +529,11 @@ static int stmpe811_init(const struct device *dev)
 		     DT_INST_PROP_OR(index, raw_y_min, 0),                                         \
 		     "raw-y-max should be larger than raw-y-min");                                 \
 	static const struct stmpe811_config stmpe811_config_##index = {                            \
+		.common = INPUT_TOUCH_DT_INST_COMMON_CONFIG_INIT(index),                           \
 		.bus = I2C_DT_SPEC_INST_GET(index),                                                \
 		.int_gpio = GPIO_DT_SPEC_INST_GET(index, int_gpios),                               \
 		.panel_driver_settling_time_us =                                                   \
 			DT_INST_ENUM_IDX(index, panel_driver_settling_time_us),                    \
-		.screen_width = DT_INST_PROP(index, screen_width),                                 \
-		.screen_height = DT_INST_PROP(index, screen_height),                               \
 		.raw_x_min = DT_INST_PROP_OR(index, raw_x_min, 0),                                 \
 		.raw_y_min = DT_INST_PROP_OR(index, raw_y_min, 0),                                 \
 		.raw_x_max = DT_INST_PROP_OR(index, raw_x_max, 4096),                              \

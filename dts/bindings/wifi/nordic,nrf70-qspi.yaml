@@ -1,0 +1,43 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: This is a representation of the nRF70 Wi-Fi chip.
+
+include: ["nordic,nrf70.yaml", "base.yaml"]
+
+on-bus: qspi
+
+properties:
+  qspi-frequency:
+    type: int
+    required: true
+    description: |
+      Maximum clock speed (in Hz) supported by the device.
+
+  reg:
+    required: true
+
+  qspi-quad-mode:
+    type: boolean
+    description: |
+      If specified, Use QSPI in quad mode (4 IO lines) otherwise in
+      SPI mode (2 IO lines - MOSI & MISO).
+
+  qspi-rx-delay:
+    type: int
+    default: 0
+    description: |
+      Number of clock cycles from the rising edge of the SPI clock
+      until the input serial data is sampled.
+
+  qspi-cpha:
+    type: boolean
+    description: |
+      Set to indicate phase starts with asserted half-phase (CPHA=1).
+      The driver using this property must also use `cpol`.
+
+  qspi-cpol:
+    type: boolean
+    description: |
+      Set to indicate that the clock leading edge is falling (CPOL=1).
+      The driver using this property requires also use `cpha`.

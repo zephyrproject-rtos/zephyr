@@ -1,5 +1,6 @@
 board:
   name: imx8mp_evk
+  full_name: i.MX8MP EVK
   vendor: nxp
   socs:
   - name: mimx8ml8

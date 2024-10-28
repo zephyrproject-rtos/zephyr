@@ -439,7 +439,8 @@
 
 		can0: can@40030000 {
 			compatible = "atmel,sam-can";
-			reg = <0x40030000 0x100>;
+			reg = <0x40030000 0x100>, <0x40088110 0x04>;
+			reg-names = "m_can", "dma_base";
 			interrupts = <35 0>, <36 0>;
 			interrupt-names = "int0", "int1";
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 35>;
@@ -450,7 +451,8 @@
 
 		can1: can@40034000 {
 			compatible = "atmel,sam-can";
-			reg = <0x40034000 0x100>;
+			reg = <0x40034000 0x100>, <0x40088114 0x4>;
+			reg-names = "m_can", "dma_base";
 			interrupts = <37 0>, <38 0>;
 			interrupt-names = "int0", "int1";
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 37>;

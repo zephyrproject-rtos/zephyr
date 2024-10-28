@@ -61,7 +61,7 @@ static const scg_sys_clk_config_t scg_sys_clk_config = {
 #endif
 };
 
-#if DT_NODE_HAS_STATUS(SCG_CLOCK_NODE(sosc_clk), okay)
+#if DT_NODE_HAS_STATUS_OKAY(SCG_CLOCK_NODE(sosc_clk))
 /* System Oscillator (SOSC) configuration */
 ASSERT_ASYNC_CLK_DIV_VALID(SCG_CLOCK_DIV(soscdiv1_clk),
 		       "Invalid SCG SOSC divider 1 value");
@@ -155,7 +155,7 @@ static ALWAYS_INLINE void clk_init(void)
 	};
 	scg_sys_clk_config_t current;
 
-#if DT_NODE_HAS_STATUS(SCG_CLOCK_NODE(sosc_clk), okay)
+#if DT_NODE_HAS_STATUS_OKAY(SCG_CLOCK_NODE(sosc_clk))
 	/* Optionally initialize system oscillator */
 	CLOCK_InitSysOsc(&scg_sosc_config);
 	CLOCK_SetXtal0Freq(scg_sosc_config.freq);
@@ -179,65 +179,65 @@ static ALWAYS_INLINE void clk_init(void)
 		CLOCK_GetCurSysClkConfig(&current);
 	} while (current.src != scg_sys_clk_config.src);
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpuart0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart0))
 	CLOCK_SetIpSrc(kCLOCK_Lpuart0,
 		       DT_CLOCKS_CELL(DT_NODELABEL(lpuart0), ip_source));
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpuart1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart1))
 	CLOCK_SetIpSrc(kCLOCK_Lpuart1,
 		       DT_CLOCKS_CELL(DT_NODELABEL(lpuart1), ip_source));
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpuart2), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart2))
 	CLOCK_SetIpSrc(kCLOCK_Lpuart2,
 		       DT_CLOCKS_CELL(DT_NODELABEL(lpuart2), ip_source));
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpi2c0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpi2c0))
 	CLOCK_SetIpSrc(kCLOCK_Lpi2c0,
 		       DT_CLOCKS_CELL(DT_NODELABEL(lpi2c0), ip_source));
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpi2c1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpi2c1))
 	CLOCK_SetIpSrc(kCLOCK_Lpi2c1,
 		       DT_CLOCKS_CELL(DT_NODELABEL(lpi2c1), ip_source));
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpspi0))
 	CLOCK_SetIpSrc(kCLOCK_Lpspi0,
 		       DT_CLOCKS_CELL(DT_NODELABEL(lpspi0), ip_source));
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpspi1))
 	CLOCK_SetIpSrc(kCLOCK_Lpspi1,
 		       DT_CLOCKS_CELL(DT_NODELABEL(lpspi1), ip_source));
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(adc0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(adc0))
 	CLOCK_SetIpSrc(kCLOCK_Adc0,
 		       DT_CLOCKS_CELL(DT_NODELABEL(adc0), ip_source));
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(adc1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(adc1))
 	CLOCK_SetIpSrc(kCLOCK_Adc1,
 		       DT_CLOCKS_CELL(DT_NODELABEL(adc1), ip_source));
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(adc2), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(adc2))
 	CLOCK_SetIpSrc(kCLOCK_Adc2,
 		       DT_CLOCKS_CELL(DT_NODELABEL(adc2), ip_source));
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ftm0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ftm0))
 	CLOCK_SetIpSrc(kCLOCK_Ftm0,
 		       DT_CLOCKS_CELL(DT_NODELABEL(ftm0), ip_source));
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ftm1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ftm1))
 	CLOCK_SetIpSrc(kCLOCK_Ftm1,
 		       DT_CLOCKS_CELL(DT_NODELABEL(ftm1), ip_source));
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ftm2), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ftm2))
 	CLOCK_SetIpSrc(kCLOCK_Ftm2,
 		       DT_CLOCKS_CELL(DT_NODELABEL(ftm2), ip_source));
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ftm3), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ftm3))
 	CLOCK_SetIpSrc(kCLOCK_Ftm3,
 		       DT_CLOCKS_CELL(DT_NODELABEL(ftm3), ip_source));
 #endif
 }
 
-static int ke1xf_init(void)
+void soc_early_init_hook(void)
 
 {
 #if !defined(CONFIG_ARM_MPU)
@@ -264,11 +264,9 @@ static int ke1xf_init(void)
 	/* SystemInit will have enabled the code cache. Disable it here */
 	L1CACHE_DisableCodeCache();
 #endif
-
-	return 0;
 }
 
-#ifdef CONFIG_PLATFORM_SPECIFIC_INIT
+#ifdef CONFIG_SOC_RESET_HOOK
 
 #ifdef CONFIG_WDOG_INIT
 
@@ -307,12 +305,10 @@ void z_arm_watchdog_init(void)
 
 #endif /* CONFIG_WDOG_INIT */
 
-void z_arm_platform_init(void)
+void soc_reset_hook(void)
 {
 	/* SystemInit is provided by the NXP SDK */
 	SystemInit();
 }
 
-#endif /* CONFIG_PLATFORM_SPECIFIC_INIT */
-
-SYS_INIT(ke1xf_init, PRE_KERNEL_1, 0);
+#endif /* CONFIG_SOC_RESET_HOOK */

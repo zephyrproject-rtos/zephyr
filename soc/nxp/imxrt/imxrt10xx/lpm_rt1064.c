@@ -339,7 +339,7 @@ void clock_lpm_init(void)
 	XTALOSC24M->OSC_CONFIG1 = tmp_reg;
 }
 
-static int imxrt_lpm_init(void)
+void imxrt_lpm_init(void)
 {
 
 	struct clock_callbacks callbacks;
@@ -464,8 +464,4 @@ static int imxrt_lpm_init(void)
 
 	/* Install LPM callbacks */
 	imxrt_clock_pm_callbacks_register(&callbacks);
-	return 0;
 }
-
-
-SYS_INIT(imxrt_lpm_init, PRE_KERNEL_1, 0);

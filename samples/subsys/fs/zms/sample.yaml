@@ -1,0 +1,10 @@
+sample:
+  name: ZMS Sample
+
+tests:
+  sample.zms.basic:
+    tags: zms
+    depends_on: zms
+    platform_allow:
+      - qemu_x86
+      - native_posix

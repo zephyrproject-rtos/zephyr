@@ -1,5 +1,6 @@
 board:
   name: micromod
+  full_name: MicroMod board Processor
   vendor: sparkfun
   socs:
   - name: nrf52840

@@ -210,10 +210,10 @@ Developers are expected to fix issues and rework their patches and submit again.
 
 The CI infrastructure currently runs the following tests:
 
-- Run ''checkpatch'' for code style issues (can vote -1 on errors; see note)
+- Run ``checkpatch`` for code style issues (can vote -1 on errors; see note)
 - Gitlint: Git commit style based on project requirements
 - License Check: Check for conflicting licenses
-- Run ''twister'' script
+- Run ``twister`` script
 
   - Run kernel tests in QEMU (can vote -1 on errors)
   - Build various samples for different boards (can vote -1 on errors)
@@ -222,10 +222,12 @@ The CI infrastructure currently runs the following tests:
 
 .. note::
 
-   ''checkpatch'' is a Perl script that uses regular expressions to
+   ``checkpatch`` is a Perl script that uses regular expressions to
    extract information that requires a C language parser to process
    accurately.  As such it sometimes issues false positives.  Known
-   cases include constructs like::
+   cases include constructs like:
+
+    .. code-block:: c
 
       static uint8_t __aligned(PAGE_SIZE) page_pool[PAGE_SIZE * POOL_PAGES];
       IOPCTL_Type *base = config->base;
@@ -264,46 +266,43 @@ These are the labels we currently have, grouped by applicability:
 Labels applicable to issues only
 ================================
 
-* *priority: {high|medium|low}*
+.. list-table::
+   :header-rows: 1
 
-To classify the impact and importance of a bug or
-:ref:`feature <feature-tracking>`.
+   * - Label
+     - Description
 
-Note: Issue priorities are generally set or changed during the bug-triage or TSC
-meetings.
+   * - :guilabel:`priority: {high|medium|low}`
+     - To classify the impact and importance of a bug or
+       :ref:`feature <feature-tracking>`.
 
-* *Regression*
+       Note: Issue priorities are generally set or changed during the bug-triage or TSC
+       meetings.
 
-Something, which was working, but does not anymore (bug subtype).
+   * - :guilabel:`Regression`
+     - Something, which was working, but does not anymore (bug subtype).
 
-* *Enhancement*
+   * - :guilabel:`Enhancement`
+     - Changes/Updates/Additions to existing :ref:`features <feature-tracking>`.
 
-Changes/Updates/Additions to existing :ref:`features <feature-tracking>`.
+   * - :guilabel:`Feature request`
+     - A request for a new :ref:`feature <feature-tracking>`.
 
-* *Feature request*
+   * - :guilabel:`Feature`
+     - A :ref:`planned feature<feature-tracking>` with a milestone.
 
-A request for a new :ref:`feature <feature-tracking>`.
+   * - :guilabel:`Hardware Support`
+     - Covers porting an existing feature (including Zephyr itself) to new hardware.
 
-* *Feature*
+   * - :guilabel:`Duplicate`
+     - This issue is a duplicate of another issue (please specify).
 
-A :ref:`planned feature<feature-tracking>` with a milestone.
+   * - :guilabel:`Good first issue`
+     - Good for a first time contributor to take.
 
-* *Hardware Support*
-
-Covers porting an existing feature (including Zephyr itself) to new hardware.
-
-* *Duplicate*
-
-This issue is a duplicate of another issue (please specify).
-
-* *Good first issue*
-
-Good for a first time contributor to take.
-
-* *Release Notes*
-
-Issues that need to be mentioned in release notes as known issues with
-additional information.
+   * - :guilabel:`Release Notes`
+     - Issues that need to be mentioned in release notes as known issues with
+       additional information.
 
 Any issue must be classified and labeled as either *Bug*, *Enhancement*, *RFC*,
 *Feature*, *Feature Request* or *Hardware Support*. More information on how
@@ -315,36 +314,37 @@ Labels applicable to pull requests only
 
 The issue or PR describes a change to a stable API.
 
-* *Hotfix*
+.. list-table::
+   :header-rows: 1
 
-Fix for an issue blocking development.
+   * - Label
+     - Description
 
-* *Trivial*
+   * - :guilabel:`Hotfix`
+     - Fix for an issue blocking development.
 
-* *Maintainer*
+   * - :guilabel:`Trivial`
+     - Simple changes that can have shorter review time and be reviewed by anyone, i.e. typos,
+       straightforward one-liner bug fixes, etc.
 
-Maintainer review required.
+   * - :guilabel:`Maintainer`
+     - Maintainer review required.
 
-* *Security Review*
+   * - :guilabel:`Security Review`
+     - To be reviewed by a security expert.
 
-To be reviewed by a security expert.
+   * - :guilabel:`DNM`
+     - This PR should not be merged (Do Not Merge). For work in progress, GitHub
+       "draft" PRs are preferred.
 
-* *DNM*
+   * - :guilabel:`Needs review`
+     - The PR needs attention from the maintainers.
 
-This PR should not be merged (Do Not Merge). For work in progress, GitHub
-"draft" PRs are preferred.
+   * - :guilabel:`Backport`
+     - The PR is a backport or should be backported.
 
-* *Needs review*
-
-The PR needs attention from the maintainers.
-
-* *Backport*
-
-The PR is a backport or should be backported.
-
-* *Licensing*
-
-The PR has licensing issues which require a licensing expert to review it.
+   * - :guilabel:`Licensing`
+     - The PR has licensing issues which require a licensing expert to review it.
 
 .. note::
    For all labels applicable to PRs: Please note that the label, together with
@@ -355,74 +355,66 @@ The PR has licensing issues which require a licensing expert to review it.
 Labels applicable to both pull requests and issues
 ==================================================
 
-* *area: **
+.. list-table::
+   :header-rows: 1
 
-Indicates Zephyr subsystems (e.g, *area: Kernel*, *area: I2C*,
-*area: Memory Management*), project functions (e.g., *area: Debugging*,
-*area: Documentation*, *area: Process*), or other categories (e.g.,
-*area: Coding Style*, *area: MISRA-C*) affected by the bug or the pull request.
+   * - Label
+     - Description
 
-An area maintainer should be able to filter by an area label and find all issues
-and PRs which relate to that area.
+   * - :guilabel:`area: {area-name}`
+     - Indicates Zephyr subsystems (e.g, :guilabel:`area: Kernel`, :guilabel:`area: I2C`,
+       :guilabel:`area: Memory Management`), project functions (e.g., :guilabel:`area: Debugging`,
+       :guilabel:`area: Documentation`, :guilabel:`area: Process`), or other categories (e.g.,
+       :guilabel:`area: Coding Style`, :guilabel:`area: MISRA-C`) affected by the bug or the pull request.
 
-* *platform: **
+       An area maintainer should be able to filter by an area label and find all issues
+       and PRs which relate to that area.
 
-An issue or PR which affects only a particular platform.
+   * - :guilabel:`platform: {platform-name}`
+     - An issue or PR which affects only a particular platform.
 
-* *dev-review*
+   * - :guilabel:`dev-review`
+     - The issue is to be discussed in the following `dev-review`_ if time
+       permits.
 
-The issue is to be discussed in the following `dev-review`_ if time
-permits.
+       .. _`dev-review`: https://github.com/zephyrproject-rtos/zephyr/wiki/Zephyr-Committee-and-Working-Groups#zephyr-dev-meeting
 
-.. _`dev-review`: https://github.com/zephyrproject-rtos/zephyr/wiki/Zephyr-Committee-and-Working-Group-Meetings#zephyr-dev-meeting
+   * - :guilabel:`TSC`
+     - TSC stands for Technical Steering Committee. The issue is to be discussed in the
+       following `TSC meeting`_ if time permits.
 
-* *TSC*
+       .. _`TSC meeting`: https://github.com/zephyrproject-rtos/zephyr/wiki/Technical-Steering-Committee-(TSC)
 
-TSC stands for Technical Steering Committee. The issue is to be discussed in the
-following `TSC meeting`_ if time permits.
+   * - :guilabel:`Breaking API Change`
+     - The issue or PR describes a breaking change to a stable API. See additional information
+       in :ref:`breaking_api_changes`.
 
-.. _`TSC meeting`: https://github.com/zephyrproject-rtos/zephyr/wiki/Zephyr-Committee-and-Working-Group-Meetings#technical-steering-committee-tsc
+   * - :guilabel:`bug`
+     - The issue is a bug, or the PR is fixing a bug.
 
-* *Breaking API Change*
+   * - :guilabel:`Coverity`
+     - A Coverity detected issue or its fix.
 
-The issue or PR describes a breaking change to a stable API. See additional information
-in :ref:`breaking_api_changes`.
+   * - :guilabel:`Waiting for response`
+     - The Zephyr developers are waiting for the submitter to respond to a question, or
+       address an issue.
 
-* *Bug*
+   * - :guilabel:`Blocked`
+     - Blocked by another PR or issue.
 
-The issue is a bug, or the PR is fixing a bug.
+   * - :guilabel:`Stale`
+     - An issue or a PR which seems abandoned, and requires attention by the author.
 
-* *Coverity*
+   * - :guilabel:`In progress`
+     - For PRs: is work in progress and should not be merged yet. For issues: Is being
+       worked on.
 
-A Coverity detected issue or its fix.
+   * - :guilabel:`RFC`
+     - The author would like input from the community. For a PR it should be considered
+       a draft.
 
-* *Waiting for response*
+   * - :guilabel:`LTS`
+     - Long term release branch related.
 
-The Zephyr developers are waiting for the submitter to respond to a question, or
-address an issue.
-
-* *Blocked*
-
-Blocked by another PR or issue.
-
-* *Stale*
-
-An issue or a PR which seems abandoned, and requires attention by the author.
-
-* *In progress*
-
-For PRs: is work in progress and should not be merged yet. For issues: Is being
-worked on.
-
-* *RFC*
-
-The author would like input from the community. For a PR it should be considered
-a draft.
-
-* *LTS*
-
-Long term release branch related.
-
-* *EXT*
-
-Related to an external component.
+   * - :guilabel:`EXT`
+     - Related to an external component.

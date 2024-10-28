@@ -25,7 +25,7 @@ jobs:
     runs-on:
       group: zephyr-runner-v2-linux-x64-4xlarge
     container:
-      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.26.13.20240601
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.27.4.20241026
       options: '--entrypoint /bin/bash'
     outputs:
       subset: ${{ steps.output-services.outputs.subset }}
@@ -77,6 +77,7 @@ jobs:
           git config --global user.name "Zephyr Bot"
           rm -fr ".git/rebase-apply"
           git rebase origin/${BASE_REF}
+          git clean -f -d
           git log  --pretty=oneline | head -n 10
           west init -l . || true
           west config manifest.group-filter -- +ci,+optional
@@ -129,7 +130,7 @@ jobs:
     needs: twister-build-prep
     if: needs.twister-build-prep.outputs.size != 0
     container:
-      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.26.13.20240601
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.27.4.20241026
       options: '--entrypoint /bin/bash'
     strategy:
       fail-fast: false
@@ -185,9 +186,11 @@ jobs:
             git config --global user.name "Zephyr Builder"
             rm -fr ".git/rebase-apply"
             git rebase origin/${BASE_REF}
+            git clean -f -d
             git log  --pretty=oneline | head -n 10
           fi
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
           west init -l . || true
           west config manifest.group-filter -- +ci,+optional
@@ -201,6 +204,8 @@ jobs:
         run: |
           cmake --version
           gcc --version
+          cargo --version
+          rustup target list --installed
           ls -la
           echo "github.ref: ${{ github.ref }}"
           echo "github.base_ref: ${{ github.base_ref }}"
@@ -310,7 +315,7 @@ jobs:
     if: success() || failure()
 
     steps:
-      # Needed for opensearch and upload script
+      # Needed for elasticearch and upload script
       - if: github.event_name == 'push' || github.event_name == 'schedule'
         name: Checkout
         uses: actions/checkout@v4
@@ -324,7 +329,7 @@ jobs:
           path: artifacts
 
       - if: github.event_name == 'push' || github.event_name == 'schedule'
-        name: Upload to opensearch
+        name: Upload to elasticsearch
         run: |
           pip3 install elasticsearch
           # set run date on upload to get consistent and unified data across the matrix.

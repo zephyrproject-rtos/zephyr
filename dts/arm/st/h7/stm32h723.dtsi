@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Alexander Kozhinov <AlexanderKozhinov@yandex.com>
+ * Copyright (c) 2020 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
  * Copyright (c) 2022 Georgij Cernysiov <geo.cgv@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -27,7 +27,7 @@
 		uart9: serial@40011800 {
 			compatible = "st,stm32-uart";
 			reg = <0x40011800 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000040>;
+			clocks = <&rcc STM32_CLOCK(APB2, 6U)>;
 			resets = <&rctl STM32_RESET(APB2, 6U)>;
 			interrupts = <155 0>;
 			status = "disabled";
@@ -36,7 +36,7 @@
 		usart10: serial@40011c00 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40011c00 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000080>;
+			clocks = <&rcc STM32_CLOCK(APB2, 7U)>;
 			resets = <&rctl STM32_RESET(APB2, 7U)>;
 			interrupts = <156 0>;
 			status = "disabled";
@@ -76,7 +76,7 @@
 			num-bidir-endpoints = <9>;
 			ram-size = <DT_SIZE_K(4)>;
 			maximum-speed = "full-speed";
-			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x02000000>,
+			clocks = <&rcc STM32_CLOCK(AHB1, 25U)>,
 				 <&rcc STM32_SRC_HSI48 USB_SEL(3)>;
 			phys = <&otghs_fs_phy>;
 			status = "disabled";
@@ -87,7 +87,8 @@
 			reg = <0x50001000 0x200>;
 			interrupts = <88 0>, <89 0>;
 			interrupt-names = "ltdc", "ltdc_er";
-			clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00000008>;
+			clocks = <&rcc STM32_CLOCK(APB3, 3U)>;
+			resets = <&rctl STM32_RESET(APB3, 4U)>;
 			status = "disabled";
 		};
 
@@ -96,7 +97,7 @@
 			reg = <0x52005000 0x1000>;
 			interrupts = <92 0>;
 			clock-names = "ospix", "ospi-ker";
-			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x00004000>,
+			clocks = <&rcc STM32_CLOCK(AHB3, 14U)>,
 				<&rcc STM32_SRC_PLL1_Q OSPI_SEL(1)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -108,7 +109,7 @@
 			reg = <0x5200a000 0x1000>;
 			interrupts = <150 0>;
 			clock-names = "ospix", "ospi-ker";
-			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x000080000>,
+			clocks = <&rcc STM32_CLOCK(AHB3, 19U)>,
 				<&rcc STM32_SRC_PLL1_Q OSPI_SEL(1)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -119,7 +120,7 @@
 			compatible = "st,stm32h7-fdcan";
 			reg = <0x4000d400 0x400>, <0x4000ac00 0x9f0>;
 			reg-names = "m_can", "message_ram";
-			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000100>;
+			clocks = <&rcc STM32_CLOCK(APB1_2, 8U)>;
 			interrupts = <159 0>, <160 0>, <63 0>;
 			interrupt-names = "int0", "int1", "calib";
 			bosch,mram-cfg = <0x6a0 28 8 3 3 0 3 3>;
@@ -137,7 +138,7 @@
 		timers23: timers@4000e000 {
 			compatible = "st,stm32-timers";
 			reg = <0x4000e000 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x01000000>;
+			clocks = <&rcc STM32_CLOCK(APB1_2, 24U)>;
 			resets = <&rctl STM32_RESET(APB1H, 24U)>;
 			interrupts = <161 0>;
 			interrupt-names = "global";
@@ -159,7 +160,7 @@
 		timers24: timers@4000e400 {
 			compatible = "st,stm32-timers";
 			reg = <0x4000e400 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x02000000>;
+			clocks = <&rcc STM32_CLOCK(APB1_2, 25U)>;
 			resets = <&rctl STM32_RESET(APB1H, 25U)>;
 			interrupts = <162 0>;
 			interrupt-names = "global";
@@ -183,7 +184,7 @@
 			reg = <0x58006800 0x400>;
 			interrupts = <147 0>;
 			interrupt-names = "digi_temp";
-			clocks = <&rcc STM32_CLOCK_BUS_APB4 0x04000000>;
+			clocks = <&rcc STM32_CLOCK(APB4, 26U)>;
 			status = "disabled";
 		};
 	};

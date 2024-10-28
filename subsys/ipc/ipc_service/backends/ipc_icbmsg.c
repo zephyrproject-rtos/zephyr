@@ -87,6 +87,13 @@
 #include <zephyr/ipc/ipc_service_backend.h>
 #include <zephyr/cache.h>
 
+#if defined(CONFIG_ARCH_POSIX)
+#include <soc.h>
+#define MAYBE_CONST
+#else
+#define MAYBE_CONST const
+#endif
+
 LOG_MODULE_REGISTER(ipc_icbmsg,
 		    CONFIG_IPC_SERVICE_BACKEND_ICBMSG_LOG_LEVEL);
 
@@ -139,6 +146,14 @@ enum ept_bounding_state {
 	EPT_READY,		/* Bounding is done. Bound callback was called. */
 };
 
+enum ept_rebound_state {
+	EPT_NORMAL = 0,		/* No endpoint rebounding is needed. */
+	EPT_DEREGISTERED,	/* Endpoint was deregistered. */
+	EPT_REBOUNDING,		/* Rebounding was requested, waiting for work queue to
+				 * start rebounding process.
+				 */
+};
+
 struct channel_config {
 	uint8_t *blocks_ptr;	/* Address where the blocks start. */
 	size_t block_size;	/* Size of one block. */
@@ -159,17 +174,20 @@ struct icbmsg_config {
 struct ept_data {
 	const struct ipc_ept_cfg *cfg;	/* Endpoint configuration. */
 	atomic_t state;			/* Bounding state. */
+	atomic_t rebound_state;		/* Rebounding state. */
 	uint8_t addr;			/* Endpoint address. */
 };
 
 struct backend_data {
 	const struct icbmsg_config *conf;/* Backend instance config. */
 	struct icmsg_data_t control_data;/* ICMsg data. */
+#ifdef CONFIG_MULTITHREADING
 	struct k_mutex mutex;		/* Mutex to protect: ICMsg send call and
 					 * waiting_bound field.
 					 */
 	struct k_work ep_bound_work;	/* Work item for bounding processing. */
 	struct k_sem block_wait_sem;	/* Semaphore for waiting for free blocks. */
+#endif
 	struct ept_data ept[NUM_EPT];	/* Array of registered endpoints. */
 	uint8_t ept_map[NUM_EPT];	/* Array that maps endpoint address to index. */
 	uint16_t waiting_bound[NUM_EPT];/* The bound messages waiting to be registered. */
@@ -200,8 +218,10 @@ struct control_message {
 
 BUILD_ASSERT(NUM_EPT <= EPT_ADDR_INVALID, "Too many endpoints");
 
+#ifdef CONFIG_MULTITHREADING
 /* Work queue for bounding processing. */
 static struct k_work_q ep_bound_work_q;
+#endif
 
 /**
  * Calculate pointer to block from its index and channel configuration (RX or TX).
@@ -300,15 +320,16 @@ static int buffer_to_index_validate(const struct channel_config *ch_conf,
 /**
  * Allocate buffer for transmission
  *
- * @param[in,out] size	Required size of the buffer. If zero, first available block is
- *			allocated and all subsequent available blocks. Size actually
- *			allocated which is not less than requested.
- * @param[out] buffer	Allocated buffer data.
+ * @param[in,out] size	Required size of the buffer. If set to zero, the first available block will
+ *			be allocated, together with all contiguous free blocks that follow it.
+ *			On success, size will contain the actually allocated size, which will be
+ *			at least the requested size.
+ * @param[out] buffer	Pointer to the newly allocated buffer.
  * @param[in] timeout	Timeout.
  *
  * @return		Positive index of the first allocated block or negative error.
- * @retval -EINVAL	If requested size is bigger than entire allocable space.
- * @retval -ENOSPC	If timeout was K_NO_WAIT and there was not enough space.
+ * @retval -ENOMEM	If requested size is bigger than entire allocable space, or
+ *			the timeout was K_NO_WAIT and there was not enough space.
  * @retval -EAGAIN	If timeout occurred.
  */
 static int alloc_tx_buffer(struct backend_data *dev_data, uint32_t *size,
@@ -318,12 +339,15 @@ static int alloc_tx_buffer(struct backend_data *dev_data, uint32_t *size,
 	size_t total_size = *size + BLOCK_HEADER_SIZE;
 	size_t num_blocks = DIV_ROUND_UP(total_size, conf->tx.block_size);
 	struct block_content *block;
+#ifdef CONFIG_MULTITHREADING
 	bool sem_taken = false;
+#endif
 	size_t tx_block_index;
 	size_t next_bit;
 	int prev_bit_val;
 	int r;
 
+#ifdef CONFIG_MULTITHREADING
 	do {
 		/* Try to allocate specified number of blocks. */
 		r = sys_bitarray_alloc(conf->tx_usage_bitmap, num_blocks,
@@ -349,6 +373,10 @@ static int alloc_tx_buffer(struct backend_data *dev_data, uint32_t *size,
 	if (sem_taken) {
 		k_sem_give(&dev_data->block_wait_sem);
 	}
+#else
+	/* Try to allocate specified number of blocks. */
+	r = sys_bitarray_alloc(conf->tx_usage_bitmap, num_blocks, &tx_block_index);
+#endif
 
 	if (r < 0) {
 		if (r != -ENOSPC && r != -EAGAIN) {
@@ -448,8 +476,10 @@ static int release_tx_blocks(struct backend_data *dev_data, size_t tx_block_inde
 			return r;
 		}
 
+#ifdef CONFIG_MULTITHREADING
 		/* Wake up all waiting threads. */
 		k_sem_give(&dev_data->block_wait_sem);
+#endif
 	}
 
 	return tx_block_index;
@@ -497,10 +527,14 @@ static int send_control_message(struct backend_data *dev_data, enum msg_type msg
 	};
 	int r;
 
+#ifdef CONFIG_MULTITHREADING
 	k_mutex_lock(&dev_data->mutex, K_FOREVER);
+#endif
 	r = icmsg_send(&conf->control_config, &dev_data->control_data, &message,
 		       sizeof(message));
+#ifdef CONFIG_MULTITHREADING
 	k_mutex_unlock(&dev_data->mutex);
+#endif
 	if (r < sizeof(message)) {
 		LOG_ERR("Cannot send over ICMsg, err %d", r);
 	}
@@ -676,6 +710,7 @@ static int send_bound_message(struct backend_data *dev_data, struct ept_data *ep
 	return r;
 }
 
+#ifdef CONFIG_MULTITHREADING
 /**
  * Put endpoint bound processing into system workqueue.
  */
@@ -683,14 +718,21 @@ static void schedule_ept_bound_process(struct backend_data *dev_data)
 {
 	k_work_submit_to_queue(&ep_bound_work_q, &dev_data->ep_bound_work);
 }
+#endif
 
 /**
  * Work handler that is responsible to start bounding when ICMsg is bound.
  */
+#ifdef CONFIG_MULTITHREADING
 static void ept_bound_process(struct k_work *item)
+#else
+static void ept_bound_process(struct backend_data *dev_data)
+#endif
 {
+#ifdef CONFIG_MULTITHREADING
 	struct backend_data *dev_data = CONTAINER_OF(item, struct backend_data,
 						     ep_bound_work);
+#endif
 	struct ept_data *ept = NULL;
 	size_t i;
 	int r = 0;
@@ -717,13 +759,19 @@ static void ept_bound_process(struct k_work *item)
 		}
 	} else {
 		/* Walk over all waiting bound messages and match to local endpoints. */
+#ifdef CONFIG_MULTITHREADING
 		k_mutex_lock(&dev_data->mutex, K_FOREVER);
+#endif
 		for (i = 0; i < NUM_EPT; i++) {
 			if (dev_data->waiting_bound[i] != WAITING_BOUND_MSG_EMPTY) {
+#ifdef CONFIG_MULTITHREADING
 				k_mutex_unlock(&dev_data->mutex);
+#endif
 				r = match_bound_msg(dev_data,
 						    dev_data->waiting_bound[i], i);
+#ifdef CONFIG_MULTITHREADING
 				k_mutex_lock(&dev_data->mutex, K_FOREVER);
+#endif
 				if (r != 0) {
 					dev_data->waiting_bound[i] =
 						WAITING_BOUND_MSG_EMPTY;
@@ -733,7 +781,21 @@ static void ept_bound_process(struct k_work *item)
 				}
 			}
 		}
+#ifdef CONFIG_MULTITHREADING
 		k_mutex_unlock(&dev_data->mutex);
+#endif
+	}
+
+	/* Check if any endpoint is ready to rebound and call the callback if it is. */
+	for (i = 0; i < NUM_EPT; i++) {
+		ept = &dev_data->ept[i];
+		matching_state = atomic_cas(&ept->rebound_state, EPT_REBOUNDING,
+						EPT_NORMAL);
+		if (matching_state) {
+			if (ept->cfg->cb.bound != NULL) {
+				ept->cfg->cb.bound(ept->cfg->priv);
+			}
+		}
 	}
 }
 
@@ -758,7 +820,10 @@ static struct ept_data *get_ept_and_rx_validate(struct backend_data *dev_data,
 	state = atomic_get(&ept->state);
 
 	if (state == EPT_READY) {
-		/* Valid state - nothing to do. */
+		/* Ready state, ensure that it is not deregistered nor rebounding. */
+		if (atomic_get(&ept->rebound_state) != EPT_NORMAL) {
+			return NULL;
+		}
 	} else if (state == EPT_BOUNDING) {
 		/* Endpoint bound callback was not called yet - call it. */
 		atomic_set(&ept->state, EPT_READY);
@@ -853,12 +918,20 @@ static int received_bound(struct backend_data *dev_data, size_t rx_block_index,
 	}
 
 	/* Put message to waiting array. */
+#ifdef CONFIG_MULTITHREADING
 	k_mutex_lock(&dev_data->mutex, K_FOREVER);
+#endif
 	dev_data->waiting_bound[ept_addr] = rx_block_index;
+#ifdef CONFIG_MULTITHREADING
 	k_mutex_unlock(&dev_data->mutex);
+#endif
 
+#ifdef CONFIG_MULTITHREADING
 	/* Schedule processing the message. */
 	schedule_ept_bound_process(dev_data);
+#else
+	ept_bound_process(dev_data);
+#endif
 
 	return 0;
 }
@@ -934,7 +1007,11 @@ static void control_bound(void *priv)
 
 	/* Set flag that ICMsg is bounded and now, endpoint bounding may start. */
 	atomic_or(&dev_data->flags, CONTROL_BOUNDED);
+#ifdef CONFIG_MULTITHREADING
 	schedule_ept_bound_process(dev_data);
+#else
+	ept_bound_process(dev_data);
+#endif
 }
 
 /**
@@ -1008,8 +1085,27 @@ static int register_ept(const struct device *instance, void **token,
 {
 	struct backend_data *dev_data = instance->data;
 	struct ept_data *ept = NULL;
+	bool matching_state;
 	int ept_index;
 	int r = 0;
+
+	/* Try to find endpoint to rebound */
+	for (ept_index = 0; ept_index < NUM_EPT; ept_index++) {
+		ept = &dev_data->ept[ept_index];
+		if (ept->cfg == cfg) {
+			matching_state = atomic_cas(&ept->rebound_state, EPT_DEREGISTERED,
+						   EPT_REBOUNDING);
+			if (!matching_state) {
+				return -EINVAL;
+			}
+#ifdef CONFIG_MULTITHREADING
+			schedule_ept_bound_process(dev_data);
+#else
+			ept_bound_process(dev_data);
+#endif
+			return 0;
+		}
+	}
 
 	/* Reserve new endpoint index. */
 	ept_index = atomic_inc(&dev_data->flags) & FLAG_EPT_COUNT_MASK;
@@ -1031,10 +1127,31 @@ static int register_ept(const struct device *instance, void **token,
 	/* Keep endpoint address in token. */
 	*token = ept;
 
+#ifdef CONFIG_MULTITHREADING
 	/* Rest of the bounding will be done in the system workqueue. */
 	schedule_ept_bound_process(dev_data);
+#else
+	ept_bound_process(dev_data);
+#endif
 
 	return r;
+}
+
+/**
+ * Backend endpoint deregistration callback.
+ */
+static int deregister_ept(const struct device *instance, void *token)
+{
+	struct ept_data *ept = token;
+	bool matching_state;
+
+	matching_state = atomic_cas(&ept->rebound_state, EPT_NORMAL, EPT_DEREGISTERED);
+
+	if (!matching_state) {
+		return -EINVAL;
+	}
+
+	return 0;
 }
 
 /**
@@ -1129,10 +1246,16 @@ static int release_rx_buffer(const struct device *instance, void *token, void *d
  */
 static int backend_init(const struct device *instance)
 {
-	const struct icbmsg_config *conf = instance->config;
+	MAYBE_CONST struct icbmsg_config *conf = (struct icbmsg_config *)instance->config;
 	struct backend_data *dev_data = instance->data;
+#ifdef CONFIG_MULTITHREADING
 	static K_THREAD_STACK_DEFINE(ep_bound_work_q_stack, EP_BOUND_WORK_Q_STACK_SIZE);
 	static bool is_work_q_started;
+
+#if defined(CONFIG_ARCH_POSIX)
+	native_emb_addr_remap((void **)&conf->tx.blocks_ptr);
+	native_emb_addr_remap((void **)&conf->rx.blocks_ptr);
+#endif
 
 	if (!is_work_q_started) {
 		k_work_queue_init(&ep_bound_work_q);
@@ -1142,12 +1265,15 @@ static int backend_init(const struct device *instance)
 
 		is_work_q_started = true;
 	}
+#endif
 
 	dev_data->conf = conf;
 	dev_data->is_initiator = (conf->rx.blocks_ptr < conf->tx.blocks_ptr);
+#ifdef CONFIG_MULTITHREADING
 	k_mutex_init(&dev_data->mutex);
 	k_work_init(&dev_data->ep_bound_work, ept_bound_process);
 	k_sem_init(&dev_data->block_wait_sem, 0, 1);
+#endif
 	memset(&dev_data->waiting_bound, 0xFF, sizeof(dev_data->waiting_bound));
 	memset(&dev_data->ept_map, EPT_ADDR_INVALID, sizeof(dev_data->ept_map));
 	return 0;
@@ -1161,7 +1287,7 @@ const static struct ipc_service_backend backend_ops = {
 	.close_instance = NULL, /* not implemented */
 	.send = send,
 	.register_endpoint = register_ept,
-	.deregister_endpoint = NULL, /* not implemented */
+	.deregister_endpoint = deregister_ept,
 	.get_tx_buffer_size = get_tx_buffer_size,
 	.get_tx_buffer = get_tx_buffer,
 	.drop_tx_buffer = drop_tx_buffer,
@@ -1288,7 +1414,7 @@ const static struct ipc_service_backend backend_ops = {
 			.rx_pb = &rx_icbmsg_pb_##i,					\
 		}									\
 	};										\
-	static const struct icbmsg_config backend_config_##i =				\
+	static MAYBE_CONST struct icbmsg_config backend_config_##i =			\
 	{										\
 		.control_config = {							\
 			.mbox_tx = MBOX_DT_SPEC_INST_GET(i, tx),			\
@@ -1309,11 +1435,11 @@ const static struct ipc_service_backend backend_ops = {
 	};										\
 	BUILD_ASSERT(IS_POWER_OF_TWO(GET_CACHE_ALIGNMENT(i)),				\
 		     "This module supports only power of two cache alignment");		\
-	BUILD_ASSERT((GET_BLOCK_SIZE_INST(i, tx, rx) > GET_CACHE_ALIGNMENT(i)) &&	\
+	BUILD_ASSERT((GET_BLOCK_SIZE_INST(i, tx, rx) >= GET_CACHE_ALIGNMENT(i)) &&	\
 		     (GET_BLOCK_SIZE_INST(i, tx, rx) <					\
 		      GET_MEM_SIZE_INST(i, tx)),					\
 		     "TX region is too small for provided number of blocks");		\
-	BUILD_ASSERT((GET_BLOCK_SIZE_INST(i, rx, tx) > GET_CACHE_ALIGNMENT(i)) &&	\
+	BUILD_ASSERT((GET_BLOCK_SIZE_INST(i, rx, tx) >= GET_CACHE_ALIGNMENT(i)) &&	\
 		     (GET_BLOCK_SIZE_INST(i, rx, tx) <					\
 		      GET_MEM_SIZE_INST(i, rx)),					\
 		     "RX region is too small for provided number of blocks");		\

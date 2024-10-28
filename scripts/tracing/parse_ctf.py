@@ -136,6 +136,11 @@ def main():
             c = Fore.MAGENTA
             print(c + f"{dt} (+{diff_s:.6f} s): {event.name} ({event.payload_field['id']})" + Fore.RESET)
 
+        elif event.name in ['named_event']:
+            name = event.payload_field['name']
+            arg0 = event.payload_field['arg0']
+            arg1 = event.payload_field['arg1']
+            print(f"{dt} (+{diff_s:.6f} s): {event.name} (name: {name}, arg0: {arg0} arg1: {arg1})")
         else:
             print(f"{dt} (+{diff_s:.6f} s): {event.name}")
 

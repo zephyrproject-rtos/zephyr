@@ -3,7 +3,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+import functools
 import inspect
+import operator
 import os
 import pickle
 import re
@@ -736,7 +738,7 @@ def dt_compat_enabled(kconf, _, compat):
 
 def dt_compat_on_bus(kconf, _, compat, bus):
     """
-    This function takes a 'compat' and returns "y" if we find an "enabled"
+    This function takes a 'compat' and returns "y" if we find an enabled
     compatible node in the EDT which is on bus 'bus'. It returns "n" otherwise.
     """
     if doc_mode or edt is None:
@@ -749,10 +751,13 @@ def dt_compat_on_bus(kconf, _, compat, bus):
 
     return "n"
 
-def dt_compat_any_has_prop(kconf, _, compat, prop):
+def dt_compat_any_has_prop(kconf, _, compat, prop, value=None):
     """
-    This function takes a 'compat' and a 'prop' and returns "y" if any
-    node with compatible 'compat' also has a valid property 'prop'.
+    This function takes a 'compat', a 'prop', and a 'value'.
+    If value=None, the function returns "y" if any
+    enabled node with compatible 'compat' also has a valid property 'prop'.
+    If value is given, the function returns "y" if any enabled node with compatible 'compat'
+    also has a valid property 'prop' with value 'value'.
     It returns "n" otherwise.
     """
     if doc_mode or edt is None:
@@ -761,8 +766,10 @@ def dt_compat_any_has_prop(kconf, _, compat, prop):
     if compat in edt.compat2okay:
         for node in edt.compat2okay[compat]:
             if prop in node.props:
-                return "y"
-
+                if value is None:
+                    return "y"
+                elif str(node.props[prop].val) == value:
+                    return "y"
     return "n"
 
 def dt_nodelabel_has_compat(kconf, _, label, compat):
@@ -803,7 +810,7 @@ def dt_node_has_compat(kconf, _, path, compat):
 
 def dt_nodelabel_enabled_with_compat(kconf, _, label, compat):
     """
-    This function takes a 'label' and returns "y" if an "enabled" node with
+    This function takes a 'label' and returns "y" if an enabled node with
     such label can be found in the EDT and that node is compatible with the
     provided 'compat', otherwise it returns "n".
     """
@@ -917,6 +924,73 @@ def substring(kconf, _, string, start, stop=None):
     else:
         return string[int(start):]
 
+def arith(kconf, name, *args):
+    """
+    The arithmetic operations on integers.
+    If three or more arguments are given, it returns the result of performing
+    the operation on the first two arguments and operates the same operation as
+    the result and the following argument.
+    For interoperability with inc and dec,
+    if there is only one argument, it will be split with a comma and processed
+    as a sequence of numbers.
+
+    Examples in Kconfig:
+
+    $(add, 10, 3)          # -> 13
+    $(add, 10, 3, 2)       # -> 15
+    $(sub, 10, 3)          # -> 7
+    $(sub, 10, 3, 2)       # -> 5
+    $(mul, 10, 3)          # -> 30
+    $(mul, 10, 3, 2)       # -> 60
+    $(div, 10, 3)          # -> 3
+    $(div, 10, 3, 2)       # -> 1
+    $(mod, 10, 3)          # -> 1
+    $(mod, 10, 3, 2)       # -> 1
+    $(inc, 1)              # -> 2
+    $(inc, 1, 1)           # -> "2,2"
+    $(inc, $(inc, 1, 1))   # -> "3,3"
+    $(dec, 1)              # -> 0
+    $(dec, 1, 1)           # -> "0,0"
+    $(dec, $(dec, 1, 1))   # -> "-1,-1"
+    $(add, $(inc, 1, 1))   # -> 4
+    $(div, $(dec, 1, 1))   # Error (0 div 0)
+    """
+
+    intarray = map(int, args if len(args) > 1 else args[0].split(","))
+
+    if name == "add":
+        return str(int(functools.reduce(operator.add, intarray)))
+    elif name == "sub":
+        return str(int(functools.reduce(operator.sub, intarray)))
+    elif name == "mul":
+        return str(int(functools.reduce(operator.mul, intarray)))
+    elif name == "div":
+        return str(int(functools.reduce(operator.truediv, intarray)))
+    elif name == "mod":
+        return str(int(functools.reduce(operator.mod, intarray)))
+    elif name == "max":
+        return str(int(functools.reduce(max, intarray)))
+    elif name == "min":
+        return str(int(functools.reduce(min, intarray)))
+    else:
+        assert False
+
+
+def inc_dec(kconf, name, *args):
+    """
+    Calculate the increment and the decrement of integer sequence.
+    Returns a string that concatenates numbers with a comma as a separator.
+    """
+
+    intarray = map(int, args if len(args) > 1 else args[0].split(","))
+
+    if name == "inc":
+        return ",".join(map(lambda a: str(a + 1), intarray))
+    elif name == "dec":
+        return ",".join(map(lambda a: str(a - 1), intarray))
+    else:
+        assert False
+
 
 # Keys in this dict are the function names as they appear
 # in Kconfig files. The values are tuples in this form:
@@ -931,7 +1005,7 @@ functions = {
         "dt_has_compat": (dt_has_compat, 1, 1),
         "dt_compat_enabled": (dt_compat_enabled, 1, 1),
         "dt_compat_on_bus": (dt_compat_on_bus, 2, 2),
-        "dt_compat_any_has_prop": (dt_compat_any_has_prop, 2, 2),
+        "dt_compat_any_has_prop": (dt_compat_any_has_prop, 2, 3),
         "dt_chosen_label": (dt_chosen_label, 1, 1),
         "dt_chosen_enabled": (dt_chosen_enabled, 1, 1),
         "dt_chosen_path": (dt_chosen_path, 1, 1),
@@ -976,4 +1050,13 @@ functions = {
         "normalize_upper": (normalize_upper, 1, 1),
         "shields_list_contains": (shields_list_contains, 1, 1),
         "substring": (substring, 2, 3),
+        "add": (arith, 1, 255),
+        "sub": (arith, 1, 255),
+        "mul": (arith, 1, 255),
+        "div": (arith, 1, 255),
+        "mod": (arith, 1, 255),
+        "max": (arith, 1, 255),
+        "min": (arith, 1, 255),
+        "inc": (inc_dec, 1, 255),
+        "dec": (inc_dec, 1, 255),
 }

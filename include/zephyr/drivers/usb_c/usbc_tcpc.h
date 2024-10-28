@@ -356,7 +356,7 @@ static inline void tcpc_set_vconn_cb(const struct device *dev,
 	__ASSERT(api->set_vconn_cb != NULL,
 		 "Callback pointer should not be NULL");
 
-	return api->set_vconn_cb(dev, vconn_cb);
+	api->set_vconn_cb(dev, vconn_cb);
 }
 
 /**
@@ -378,7 +378,7 @@ static inline void tcpc_set_vconn_discharge_cb(const struct device *dev,
 	__ASSERT(api->set_vconn_discharge_cb != NULL,
 		 "Callback pointer should not be NULL");
 
-	return api->set_vconn_discharge_cb(dev, cb);
+	api->set_vconn_discharge_cb(dev, cb);
 }
 
 /**

@@ -1,7 +1,4 @@
-.. _odroid_go:
-
-ODROID-GO
-#########
+.. zephyr:board:: odroid_go
 
 Overview
 ********
@@ -23,12 +20,6 @@ The features include the following:
 - Input Buttons (Menu, Volume, Select, Start, A, B, Direction Pad)
 - Expansion port (I2C, GPIO, SPI)
 - Cryptographic hardware acceleration (RNG, ECC, RSA, SHA-2, AES)
-
-.. figure:: img/odroid_go.jpg
-        :align: center
-        :alt: ODROID-GO
-
-        ODROID-Go Game Kit
 
 External Connector
 ==================
@@ -98,18 +89,21 @@ below to retrieve those files.
 Building & Flashing
 *******************
 
-ESP-IDF bootloader
-==================
+Simple boot
+===========
 
-The board is using the ESP-IDF bootloader as the default 2nd stage bootloader.
-It is build as a subproject at each application build. No further attention
-is expected from the user.
+The board could be loaded using the single binary image, without 2nd stage bootloader.
+It is the default option when building the application without additional configuration.
+
+.. note::
+
+   Simple boot does not provide any security features nor OTA updates.
 
 MCUboot bootloader
 ==================
 
 User may choose to use MCUboot bootloader instead. In that case the bootloader
-must be build (and flash) at least once.
+must be built (and flashed) at least once.
 
 There are two options to be used when building an application:
 
@@ -120,9 +114,10 @@ There are two options to be used when building an application:
 
    User can select the MCUboot bootloader by adding the following line
    to the board default configuration file.
-   ```
-   CONFIG_BOOTLOADER_MCUBOOT=y
-   ```
+
+   .. code:: cfg
+
+      CONFIG_BOOTLOADER_MCUBOOT=y
 
 Sysbuild
 ========
@@ -134,7 +129,7 @@ To build the sample application using sysbuild use the command:
 
 .. zephyr-app-commands::
    :tool: west
-   :app: samples/hello_world
+   :zephyr-app: samples/hello_world
    :board: odroid_go
    :goals: build
    :west-args: --sysbuild
@@ -170,7 +165,7 @@ Manual build
 ============
 
 During the development cycle, it is intended to build & flash as quickly possible.
-For that reason, images can be build one at a time using traditional build.
+For that reason, images can be built one at a time using traditional build.
 
 The instructions following are relevant for both manual build and sysbuild.
 The only difference is the structure of the build directory.
@@ -188,7 +183,7 @@ Build and flash applications as usual (see :ref:`build_an_application` and
    :goals: build
 
 The usual ``flash`` target will work with the ``odroid_go`` board
-configuration. Here is an example for the :ref:`hello_world`
+configuration. Here is an example for the :zephyr:code-sample:`hello_world`
 application.
 
 .. zephyr-app-commands::
@@ -215,13 +210,13 @@ Debugging
 
 As with much custom hardware, the ESP32 modules require patches to
 OpenOCD that are not upstreamed yet. Espressif maintains their own fork of
-the project. The custom OpenOCD can be obtained at `OpenOCD ESP32`_
+the project. The custom OpenOCD can be obtained at `OpenOCD ESP32`_.
 
 The Zephyr SDK uses a bundled version of OpenOCD by default. You can overwrite that behavior by adding the
 ``-DOPENOCD=<path/to/bin/openocd> -DOPENOCD_DEFAULT_PATH=<path/to/openocd/share/openocd/scripts>``
 parameter when building.
 
-Here is an example for building the :ref:`hello_world` application.
+Here is an example for building the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -229,7 +224,7 @@ Here is an example for building the :ref:`hello_world` application.
    :goals: build flash
    :gen-args: -DOPENOCD=<path/to/bin/openocd> -DOPENOCD_DEFAULT_PATH=<path/to/openocd/share/openocd/scripts>
 
-You can debug an application in the usual way. Here is an example for the :ref:`hello_world` application.
+You can debug an application in the usual way. Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

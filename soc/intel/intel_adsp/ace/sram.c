@@ -13,8 +13,6 @@
 #include <cpu_init.h>
 #include "manifest.h"
 
-#define DELAY_COUNT			256
-
 __imr void hp_sram_init(uint32_t memory_size)
 {
 	ARG_UNUSED(memory_size);
@@ -24,7 +22,7 @@ __imr void hp_sram_init(uint32_t memory_size)
 
 	for (idx = 0; idx < hpsram_ebb_quantity; ++idx) {
 		HPSRAM_REGS(idx)->HSxPGCTL = 0;
-		HPSRAM_REGS(idx)->HSxRMCTL = 1;
+		HPSRAM_REGS(idx)->HSxRMCTL = IS_ENABLED(CONFIG_SRAM_RETENTION_MODE);
 	}
 	for (idx = 0; idx < hpsram_ebb_quantity; ++idx) {
 		while (HPSRAM_REGS(idx)->HSxPGISTS != 0) {
@@ -41,7 +39,7 @@ __imr void lp_sram_init(void)
 
 	for (idx = 0; idx < lpsram_ebb_quantity; ++idx) {
 		LPSRAM_REGS(idx)->USxPGCTL = 0;
-		LPSRAM_REGS(idx)->USxRMCTL = 1;
+		LPSRAM_REGS(idx)->USxRMCTL = IS_ENABLED(CONFIG_SRAM_RETENTION_MODE);
 	}
 	for (idx = 0; idx < lpsram_ebb_quantity; ++idx) {
 		while (LPSRAM_REGS(idx)->USxPGISTS != 0) {

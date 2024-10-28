@@ -60,7 +60,7 @@ config CPU_AARCH32_CORTEX_A
 	select USE_SWITCH_SUPPORTED
 	# GDBSTUB has not yet been tested on Cortex M or R SoCs
 	select ARCH_HAS_GDBSTUB
-	# GDB on ARM needs the etxra registers
+	# GDB on ARM needs the extra registers
 	select EXTRA_EXCEPTION_INFO if GDBSTUB
 	help
 	  This option signifies the use of a CPU of the Cortex-A family.
@@ -166,10 +166,13 @@ config RUNTIME_NMI
 	  needed, enable this option and attach it via z_arm_nmi_set_handler().
 
 config PLATFORM_SPECIFIC_INIT
-	bool "Platform (SOC) specific startup hook"
+	bool "Platform (SOC) specific startup hook [DEPRECATED]"
+	select DEPRECATED
 	help
 	  The platform specific initialization code (z_arm_platform_init) is
 	  executed at the beginning of the startup code (__start).
+
+	  This option is deprecated, use SOC_RESET_HOOK instead.
 
 config FAULT_DUMP
 	int "Fault dump level"

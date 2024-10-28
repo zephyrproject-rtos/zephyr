@@ -99,8 +99,9 @@ static ALWAYS_INLINE unsigned int smsc_current_bank(struct smsc_data *sc)
 static void smsc_mmu_wait(struct smsc_data *sc)
 {
 	__ASSERT((smsc_current_bank(sc) == 2), "%s called when not in bank 2", __func__);
-	while (sys_read16(sc->smsc_reg + MMUCR) & MMUCR_BUSY)
+	while (sys_read16(sc->smsc_reg + MMUCR) & MMUCR_BUSY) {
 		;
+	}
 }
 
 static ALWAYS_INLINE uint8_t smsc_read_1(struct smsc_data *sc, int offset)
@@ -522,7 +523,7 @@ static int smsc_send_pkt(struct smsc_data *sc, uint8_t *buf, uint16_t len)
 	smsc_write_2(sc, DATA0, len + PKT_CTRL_DATA_LEN);
 	smsc_write_multi_2(sc, DATA0, (uint16_t *)buf, len / 2);
 
-	/* Push out the control byte and and the odd byte if needed. */
+	/* Push out the control byte and the odd byte if needed. */
 	if (len & 1) {
 		smsc_write_2(sc, DATA0, (CTRL_ODD << 8) | buf[len - 1]);
 	} else {
@@ -663,6 +664,13 @@ static int smsc_init(struct smsc_data *sc)
 	return 0;
 }
 
+static const struct device *eth_get_phy(const struct device *dev)
+{
+	const struct eth_config *cfg = dev->config;
+
+	return cfg->phy_dev;
+}
+
 static void phy_link_state_changed(const struct device *phy_dev, struct phy_link_state *state,
 				   void *user_data)
 {
@@ -769,6 +777,7 @@ static void eth_initialize(struct net_if *iface)
 static const struct ethernet_api api_funcs = {
 	.iface_api.init   = eth_initialize,
 	.get_capabilities = eth_smsc_get_caps,
+	.get_phy          = eth_get_phy,
 	.set_config       = eth_smsc_set_config,
 	.send             = eth_tx,
 };

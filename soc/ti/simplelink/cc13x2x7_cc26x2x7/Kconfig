@@ -14,6 +14,8 @@ config SOC_SERIES_CC13X2X7_CC26X2X7
 	select HAS_TI_CCFG if !BOOTLOADER_MCUBOOT
 	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
 	select HAS_PM
+	select SOC_EARLY_INIT_HOOK
+	select PINCTRL
 
 menu "Customer Configuration (CCFG)"
 depends on SOC_SERIES_CC13X2X7_CC26X2X7
@@ -45,8 +47,8 @@ config CC13X2_CC26X2_BOOTLOADER_BACKDOOR_ENABLE
 config CC13X2_CC26X2_BOOTLOADER_BACKDOOR_PIN
 	int "ROM bootloader backdoor pin"
 	depends on CC13X2_CC26X2_BOOTLOADER_BACKDOOR_ENABLE
-	range 0 255
-	default 255
+	range 0 $(UINT8_MAX)
+	default $(UINT8_MAX)
 	help
 	  Set the pin that is level checked if the bootloader backdoor is
 	  enabled.

@@ -51,3 +51,15 @@ attaches to a single modem backend, exposing multiple modem backends,
 each representing a DLCI channel.
 
 .. doxygengroup:: modem_cmux
+
+Modem pipelink
+**************
+
+This module is used to share modem pipes globally. This module aims to
+decouple the creation and setup of modem pipes in device drivers from
+the users of said pipes. See
+:zephyr_file:`drivers/modem/modem_at_shell.c` and
+:zephyr_file:`drivers/modem/modem_cellular.c` for examples of how to
+use the modem pipelink between device driver and application.
+
+.. doxygengroup:: modem_pipelink

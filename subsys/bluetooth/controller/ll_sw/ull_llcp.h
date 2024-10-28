@@ -156,7 +156,7 @@ uint8_t ull_cp_remote_cpr_pending(struct ll_conn *conn);
 bool ull_cp_remote_cpr_apm_awaiting_reply(struct ll_conn *conn);
 
 /**
- * @brief Repsond to anchor point move of remote connection
+ * @brief Respond to anchor point move of remote connection
  *        param reg.
  */
 void ull_cp_remote_cpr_apm_reply(struct ll_conn *conn, uint16_t *offsets);
@@ -274,3 +274,25 @@ void ull_cp_cte_rsp_enable(struct ll_conn *conn, bool enable, uint8_t max_cte_le
  */
 uint8_t ull_cp_req_peer_sca(struct ll_conn *conn);
 #endif /* CONFIG_BT_CTLR_SCA_UPDATE */
+
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER)
+struct ll_adv_sync_set;
+struct ll_sync_set;
+
+/**
+ * @brief Initiate a Periodic Advertising Sync Transfer Procedure.
+ */
+uint8_t ull_cp_periodic_sync(struct ll_conn *conn, struct ll_sync_set *sync,
+			     struct ll_adv_sync_set *adv_sync, uint16_t service_data);
+
+void ull_lp_past_offset_get_calc_params(struct ll_conn *conn,
+					uint8_t *adv_sync_handle, uint16_t *sync_handle);
+void ull_lp_past_offset_calc_reply(struct ll_conn *conn, uint32_t offset_us,
+				   uint16_t pa_event_counter, uint16_t last_pa_event_counter);
+void ull_lp_past_conn_evt_done(struct ll_conn *conn, struct node_rx_event_done *done);
+#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER */
+
+/**
+ * @brief Validation of PHY, checking if exactly one bit set, and no bit set is rfu's
+ */
+bool phy_valid(uint8_t phy);

@@ -13,7 +13,7 @@
  *
  * @details This module tests that XIP performs as expected. If the first
  * task is even activated that is a good indication that XIP is
- * working. However, the test does do some some testing on
+ * working. However, the test does do some testing on
  * global variables for completeness sake.
  *
  * @{

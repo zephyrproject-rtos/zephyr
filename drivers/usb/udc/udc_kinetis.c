@@ -195,10 +195,10 @@ static int usbfsotg_xfer_continue(const struct device *dev,
 	}
 
 	if (USB_EP_DIR_IS_OUT(cfg->addr)) {
-		len = MIN(net_buf_tailroom(buf), cfg->mps);
+		len = MIN(net_buf_tailroom(buf), udc_mps_ep_size(cfg));
 		data_ptr = net_buf_tail(buf);
 	} else {
-		len = MIN(buf->len, cfg->mps);
+		len = MIN(buf->len, udc_mps_ep_size(cfg));
 		data_ptr = buf->data;
 	}
 
@@ -243,7 +243,7 @@ static inline int usbfsotg_ctrl_feed_start(const struct device *dev,
 	}
 
 	bd = usbfsotg_get_ebd(dev, cfg, false);
-	length = MIN(net_buf_tailroom(buf), cfg->mps);
+	length = MIN(net_buf_tailroom(buf), udc_mps_ep_size(cfg));
 
 	priv->out_buf[cfg->stat.odd] = buf;
 	priv->busy[cfg->stat.odd] = true;
@@ -267,7 +267,7 @@ static inline int usbfsotg_ctrl_feed_start_next(const struct device *dev,
 	}
 
 	bd = usbfsotg_get_ebd(dev, cfg, true);
-	length = MIN(net_buf_tailroom(buf), cfg->mps);
+	length = MIN(net_buf_tailroom(buf), udc_mps_ep_size(cfg));
 
 	priv->out_buf[!cfg->stat.odd] = buf;
 	priv->busy[!cfg->stat.odd] = true;
@@ -448,6 +448,8 @@ static void usbfsotg_event_submit(const struct device *dev,
 	ret = k_mem_slab_alloc(&usbfsotg_ee_slab, (void **)&ev, K_NO_WAIT);
 	if (ret) {
 		udc_submit_event(dev, UDC_EVT_ERROR, ret);
+		LOG_ERR("Failed to allocate slab");
+		return;
 	}
 
 	ev->dev = dev;
@@ -592,7 +594,8 @@ static ALWAYS_INLINE void isr_handle_xfer_done(const struct device *dev,
 		}
 
 		net_buf_add(buf, len);
-		if (net_buf_tailroom(buf) >= ep_cfg->mps && len == ep_cfg->mps) {
+		if (net_buf_tailroom(buf) >= udc_mps_ep_size(ep_cfg) &&
+		    len == udc_mps_ep_size(ep_cfg)) {
 			if (ep == USB_CONTROL_EP_OUT) {
 				usbfsotg_ctrl_feed_start(dev, buf);
 			} else {
@@ -647,6 +650,10 @@ static void usbfsotg_isr_handler(const struct device *dev)
 	if (istatus & USB_ISTAT_USBRST_MASK) {
 		base->ADDR = 0U;
 		udc_submit_event(dev, UDC_EVT_RESET, 0);
+	}
+
+	if (istatus == USB_ISTAT_SOFTOK_MASK) {
+		udc_submit_event(dev, UDC_EVT_SOF, 0);
 	}
 
 	if (istatus == USB_ISTAT_ERROR_MASK) {
@@ -969,8 +976,10 @@ static int usbfsotg_init(const struct device *dev)
 	const struct usbfsotg_config *config = dev->config;
 	USB_Type *base = config->base;
 
+#if !DT_ANY_INST_HAS_PROP_STATUS_OKAY(no_voltage_regulator)
 	/* (FIXME) Enable USB voltage regulator */
 	SIM->SOPT1 |= SIM_SOPT1_USBREGEN_MASK;
+#endif
 
 	/* Reset USB module */
 	base->USBTRC0 |= USB_USBTRC0_USBRESET_MASK;
@@ -1050,8 +1059,10 @@ static int usbfsotg_shutdown(const struct device *dev)
 	/* Disable USB module */
 	config->base->CTL = 0;
 
+#if !DT_ANY_INST_HAS_PROP_STATUS_OKAY(no_voltage_regulator)
 	/* Disable USB voltage regulator */
 	SIM->SOPT1 &= ~SIM_SOPT1_USBREGEN_MASK;
+#endif
 
 	return 0;
 }

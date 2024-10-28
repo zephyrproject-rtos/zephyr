@@ -19,10 +19,15 @@
 #include <zephyr/arch/arc/v2/mpu/arc_core_mpu.h>
 #endif
 
-#if defined(CONFIG_ARC_DSP) && defined(CONFIG_DSP_SHARING)
+#if defined(CONFIG_ARC_VPX_COOPERATIVE_SHARING) || defined(CONFIG_DSP_SHARING)
 #include <zephyr/arch/arc/v2/dsp/arc_dsp.h>
 static struct k_spinlock lock;
 #endif
+
+#if defined(CONFIG_ARC_VPX_COOPERATIVE_SHARING)
+static struct k_sem vpx_sem[CONFIG_MP_MAX_NUM_CPUS];
+#endif
+
 /*  initial stack frame */
 struct init_stack_frame {
 	uintptr_t pc;
@@ -320,3 +325,65 @@ void arc_dsp_enable(struct k_thread *thread, unsigned int options)
 	k_spin_unlock(&lock, key);
 }
 #endif /* CONFIG_ARC_DSP && CONFIG_DSP_SHARING */
+
+#if defined(CONFIG_ARC_VPX_COOPERATIVE_SHARING)
+int arc_vpx_lock(k_timeout_t timeout)
+{
+	k_spinlock_key_t key;
+	unsigned int id;
+
+	key = k_spin_lock(&lock);
+
+	id = _current_cpu->id;
+#if (CONFIG_MP_MAX_NUM_CPUS > 1) && defined(CONFIG_SCHED_CPU_MASK)
+	__ASSERT(!arch_is_in_isr() && (_current->base.cpu_mask == BIT(id)), "");
+#endif
+	k_spin_unlock(&lock, key);
+
+	/*
+	 * It is assumed that the thread is (still) pinned to
+	 * the same CPU identified by <id>.
+	 */
+
+	return k_sem_take(&vpx_sem[id], timeout);
+}
+
+void arc_vpx_unlock(void)
+{
+	k_spinlock_key_t key;
+	unsigned int id;
+
+	key = k_spin_lock(&lock);
+#if (CONFIG_MP_MAX_NUM_CPUS > 1) && defined(CONFIG_SCHED_CPU_MASK)
+	__ASSERT(!arch_is_in_isr() && (_current->base.cpu_mask == BIT(id)), "");
+#endif
+	id = _current_cpu->id;
+	k_spin_unlock(&lock, key);
+
+	/*
+	 * It is assumed that this thread is (still) pinned to
+	 * the CPU identified by <id>, and that it is the same CPU
+	 * used by arc_vpx_lock().
+	 */
+
+	k_sem_give(&vpx_sem[id]);
+}
+
+void arc_vpx_unlock_force(unsigned int id)
+{
+	__ASSERT(id < CONFIG_MP_MAX_NUM_CPUS, "");
+
+	k_sem_give(&vpx_sem[id]);
+}
+
+static int arc_vpx_sem_init(void)
+{
+	for (unsigned int i = 0; i < CONFIG_MP_MAX_NUM_CPUS; i++) {
+		k_sem_init(vpx_sem, 1, 1);
+	}
+
+	return 0;
+}
+
+SYS_INIT(arc_vpx_sem_init, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
+#endif

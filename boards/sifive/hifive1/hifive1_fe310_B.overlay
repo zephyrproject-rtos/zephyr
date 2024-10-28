@@ -14,6 +14,10 @@
 	current-speed = <115200>;
 };
 
+&spi0 {
+	reg = <0x10014000 0x1000 0x20010000 0x3c0900>;
+};
+
 &spi2 {
 	status = "okay";
 	pinctrl-0 = <&spi1_cs2_default

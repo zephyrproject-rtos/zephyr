@@ -745,7 +745,7 @@ USB
   * Separate PID for DFU mode added to avoid problems caused by the host OS
     caching the remaining descriptors when switching to DFU mode.
   * Added timer for appDETACH state and revised descriptor handling to
-    to meet specification requirements.
+    meet specification requirements.
 
 * USB HID class
 
@@ -1562,7 +1562,7 @@ release:
 * :github:`29146` - canisotp: mimxrt1064_evk: no DT_CHOSEN_ZEPHYR_CAN_PRIMARY_LABEL defined cause tests failure
 * :github:`29145` - net: frdmk64f many net related applications meet hardfault, hal driver assert
 * :github:`29139` - tests/kernel/fatal/exception failed on nsim_sem_mpu_stack_guard board
-* :github:`29120` - STM32: Few issues on on pinctrl generation script
+* :github:`29120` - STM32: Few issues on pinctrl generation script
 * :github:`29113` - Build failure with OSPD
 * :github:`29111` - Atmel SAM V71 UART_0 fail
 * :github:`29109` - HAL STM32 Missing ETH pin control configurations in DT files

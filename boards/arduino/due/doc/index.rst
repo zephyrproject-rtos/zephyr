@@ -175,7 +175,7 @@ Applications for the ``arduino_due`` board configuration can be built
 and flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
-Here is an example for the :ref:`hello_world` application. After
+Here is an example for the :zephyr:code-sample:`hello_world` application. After
 building the application, press the Reset button before running the
 flash command, so the board will boot into the SAM-BA bootloader and
 be prepared to receive the new program.
@@ -204,6 +204,8 @@ Now press the Reset button and you should see "Hello World! arduino_due" in your
 
 References
 **********
+
+.. target-notes::
 
 .. _Arduino Due website: https://www.arduino.cc/en/Main/ArduinoBoardDue
 

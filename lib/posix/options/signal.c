@@ -11,8 +11,8 @@
 #include <zephyr/posix/pthread.h>
 #include <zephyr/posix/signal.h>
 
-#define SIGNO_WORD_IDX(_signo) (signo / BITS_PER_LONG)
-#define SIGNO_WORD_BIT(_signo) (signo & BIT_MASK(LOG2(BITS_PER_LONG)))
+#define SIGNO_WORD_IDX(_signo) (_signo / BITS_PER_LONG)
+#define SIGNO_WORD_BIT(_signo) (_signo & BIT_MASK(LOG2(BITS_PER_LONG)))
 
 BUILD_ASSERT(CONFIG_POSIX_RTSIG_MAX >= 0);
 
@@ -115,6 +115,65 @@ int sigprocmask(int how, const sigset_t *ZRESTRICT set, sigset_t *ZRESTRICT oset
 	__ASSERT(false, "In multi-threaded environments, please use pthread_sigmask() instead of "
 			"%s()", __func__);
 
+	errno = ENOSYS;
+	return -1;
+}
+
+/*
+ * The functions below are provided so that conformant POSIX applications and libraries can still
+ * link.
+ */
+
+unsigned int alarm(unsigned int seconds)
+{
+	ARG_UNUSED(seconds);
+	return 0;
+}
+
+int kill(pid_t pid, int sig)
+{
+	ARG_UNUSED(pid);
+	ARG_UNUSED(sig);
+	errno = ENOSYS;
+	return -1;
+}
+#ifdef CONFIG_POSIX_SIGNALS_ALIAS_KILL
+FUNC_ALIAS(kill, _kill, int);
+#endif /* CONFIG_POSIX_SIGNALS_ALIAS_KILL */
+
+int pause(void)
+{
+	errno = ENOSYS;
+	return -1;
+}
+
+int sigaction(int sig, const struct sigaction *ZRESTRICT act, struct sigaction *ZRESTRICT oact)
+{
+	ARG_UNUSED(sig);
+	ARG_UNUSED(act);
+	ARG_UNUSED(oact);
+	errno = ENOSYS;
+	return -1;
+}
+
+int sigpending(sigset_t *set)
+{
+	ARG_UNUSED(set);
+	errno = ENOSYS;
+	return -1;
+}
+
+int sigsuspend(const sigset_t *sigmask)
+{
+	ARG_UNUSED(sigmask);
+	errno = ENOSYS;
+	return -1;
+}
+
+int sigwait(const sigset_t *ZRESTRICT set, int *ZRESTRICT sig)
+{
+	ARG_UNUSED(set);
+	ARG_UNUSED(sig);
 	errno = ENOSYS;
 	return -1;
 }

@@ -49,6 +49,10 @@ static inline int reg_read(const struct device *dev, uint16_t reg_addr,
 {
 	const struct phy_mii_dev_config *const cfg = dev->config;
 
+	/* if there is no mdio (fixed-link) it is not supported to read */
+	if (cfg->mdio == NULL) {
+		return -ENOTSUP;
+	}
 	return mdio_read(cfg->mdio, cfg->phy_addr, reg_addr, value);
 }
 
@@ -57,6 +61,10 @@ static inline int reg_write(const struct device *dev, uint16_t reg_addr,
 {
 	const struct phy_mii_dev_config *const cfg = dev->config;
 
+	/* if there is no mdio (fixed-link) it is not supported to write */
+	if (cfg->mdio == NULL) {
+		return -ENOTSUP;
+	}
 	return mdio_write(cfg->mdio, cfg->phy_addr, reg_addr, value);
 }
 
@@ -235,7 +243,7 @@ static int update_link_state(const struct device *dev)
 		data->state.speed = LINK_HALF_10BASE_T;
 	}
 
-	LOG_INF("PHY (%d) Link speed %s Mb, %s duplex\n",
+	LOG_INF("PHY (%d) Link speed %s Mb, %s duplex",
 		cfg->phy_addr,
 		PHY_LINK_IS_SPEED_1000M(data->state.speed) ? "1000" :
 		(PHY_LINK_IS_SPEED_100M(data->state.speed) ? "100" : "10"),
@@ -341,15 +349,17 @@ static int phy_mii_cfg_link(const struct device *dev,
 	}
 
 	if (data->gigabit_supported) {
-		if (adv_speeds & LINK_FULL_1000BASE_T)
+		if (adv_speeds & LINK_FULL_1000BASE_T) {
 			c1kt_reg |= MII_ADVERTISE_1000_FULL;
-		else
+		} else {
 			c1kt_reg &= ~MII_ADVERTISE_1000_FULL;
+		}
 
-		if (adv_speeds & LINK_HALF_1000BASE_T)
+		if (adv_speeds & LINK_HALF_1000BASE_T) {
 			c1kt_reg |= MII_ADVERTISE_1000_HALF;
-		else
+		} else {
 			c1kt_reg &= ~MII_ADVERTISE_1000_HALF;
+		}
 
 		if (reg_write(dev, MII_1KTCR, c1kt_reg) < 0) {
 			return -EIO;
@@ -445,7 +455,7 @@ static int phy_mii_initialize(const struct device *dev)
 				return -EINVAL;
 			}
 
-			LOG_INF("PHY (%d) ID %X\n", cfg->phy_addr, phy_id);
+			LOG_INF("PHY (%d) ID %X", cfg->phy_addr, phy_id);
 		}
 
 		data->gigabit_supported = is_gigabit_supported(dev);
@@ -480,6 +490,7 @@ static const struct ethphy_driver_api phy_mii_driver_api = {
 #define PHY_MII_CONFIG(n)						 \
 static const struct phy_mii_dev_config phy_mii_dev_config_##n = {	 \
 	.phy_addr = DT_INST_REG_ADDR(n),				 \
+	.no_reset = DT_INST_PROP(n, no_reset),				 \
 	.fixed = IS_FIXED_LINK(n),					 \
 	.fixed_speed = DT_INST_ENUM_IDX_OR(n, fixed_link, 0),		 \
 	.mdio = UTIL_AND(UTIL_NOT(IS_FIXED_LINK(n)),			 \

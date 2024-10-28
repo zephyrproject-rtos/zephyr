@@ -1,5 +1,6 @@
 identifier: max32655fthr/max32655/m4
 name: max32655fthr m4
+vendor: adi
 type: mcu
 arch: arm
 toolchain:
@@ -9,5 +10,14 @@ toolchain:
 supported:
   - gpio
   - serial
+  - trng
+  - i2c
+  - dma
+  - watchdog
+  - spi
+  - adc
+  - counter
+  - pwm
+  - flash
 ram: 128
 flash: 512

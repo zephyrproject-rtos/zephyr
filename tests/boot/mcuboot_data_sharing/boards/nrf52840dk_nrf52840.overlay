@@ -1,9 +1,9 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
 / {
-	sram@2003F000 {
+	sram@2003FC00 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x2003F000 DT_SIZE_K(1)>;
+		reg = <0x2003FC00 DT_SIZE_K(1)>;
 		zephyr,memory-region = "RetainedMem";
 		status = "okay";
 

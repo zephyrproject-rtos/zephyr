@@ -10,7 +10,7 @@
 
 / {
 	model = "Arduino Uno R4 Board";
-	compatible = "renesas,r7fa4m1aB3cfm";
+	compatible = "renesas,r7fa4m1ab3cfm";
 
 	chosen {
 		zephyr,console = &uart2;

@@ -777,6 +777,8 @@ static int cmd_mount_fat(const struct shell *sh, size_t argc, char **argv)
 	if (res != 0) {
 		shell_error(sh,
 			"Error mounting FAT fs. Error Code [%d]", res);
+		k_free((void *)fatfs_mnt.mnt_point);
+		fatfs_mnt.mnt_point = NULL;
 		return -ENOEXEC;
 	}
 
@@ -808,6 +810,8 @@ static int cmd_mount_littlefs(const struct shell *sh, size_t argc, char **argv)
 
 	if (rc != 0) {
 		shell_error(sh, "Error mounting as littlefs: %d", rc);
+		k_free((void *)littlefs_mnt.mnt_point);
+		littlefs_mnt.mnt_point = NULL;
 		return -ENOEXEC;
 	}
 

@@ -1,7 +1,9 @@
-.. _mpu6050:
+.. zephyr:code-sample:: mpu6050
+   :name: MPU6050 motion tracking device
+   :relevant-api: sensor_interface
 
-MPU6050: Invensense Motion Tracking Device
-##########################################
+   Get temperature, acceleration, and angular velocity from an MPU6050 sensor (polling & trigger
+   mode).
 
 Description
 ***********

@@ -22,3 +22,7 @@ if (CONFIG_NET_L2_ETHERNET)
     LOCATION "${CONFIG_NET_SAMPLE_CODE_RAM_NAME}_TEXT" NOKEEP)
 endif()
 endif()
+
+if (CONFIG_USB_DEVICE_STACK_NEXT)
+  include(${ZEPHYR_BASE}/samples/subsys/usb/common/common.cmake)
+endif()

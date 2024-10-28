@@ -1,7 +1,4 @@
-.. _adi_eval_adin1110ebz:
-
-ADI EVAL-ADIN1110EVB Evaluation board
-#####################################
+.. zephyr:board:: adi_eval_adin1110ebz
 
 Overview
 ********
@@ -22,12 +19,6 @@ The SPI interface provides configuration and data access to the ADIN1110.
 
 A small prototyping area and test points are provided for experimentation with alternative cable
 connection topologies including isolation transformers and/or power coupling inductors.
-
-.. figure:: img/adi_eval_adin1110ebz.webp
-   :align: center
-   :alt: ADI EVAL-ADIN1110EBZ
-
-   ADI EVAL-ADIN1110EBZ (Credit: Analog Devices, Inc.)
 
 .. important::
 
@@ -145,7 +136,7 @@ program to connect with your ADI board. For example:
    $ minicom -D /dev/serial/by-id/usb-ADI_EVAL-ADIN1110EBZ_AVAS_XXXXXX-if00-port0
 
 where XXXXXX is the serial number of the connected device.
-Then, build and flash in the usual way. Here is an example for the :ref:`hello_world` application.
+Then, build and flash in the usual way. Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -161,7 +152,7 @@ You should see the following message on the console:
 Debugging
 =========
 
-You can debug an application in the usual way.  Here is an example for the :ref:`hello_world`
+You can debug an application in the usual way.  Here is an example for the :zephyr:code-sample:`hello_world`
 application.
 
 .. zephyr-app-commands::

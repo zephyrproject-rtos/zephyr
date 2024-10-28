@@ -1,7 +1,4 @@
-.. _stm32h747i_disco_board:
-
-ST STM32H747I Discovery
-#######################
+.. zephyr:board:: stm32h747i_disco
 
 Overview
 ********
@@ -33,10 +30,6 @@ Additionally, the board features:
 - 1 user and reset push-button
 - 4-direction joystick with selection button
 - Arduino Uno V3 connectors
-
-.. image:: img/stm32h747i_disco.jpg
-     :align: center
-     :alt: STM32H747I-DISCO
 
 More information about the board can be found at the `STM32H747I-DISCO website`_.
 More information about STM32H747XIH6 can be found here:
@@ -175,11 +168,11 @@ support in Zephyr by adding the shield ``st_b_lcd40_dsi1_mb1166`` or
 .. note::
    The shield comes in different hardware revisions, the MB1166-A09
    is utilizing a NT35510 panel controller and shall specifically
-   use ``st_b_lcd40_dsi1_mb1166_a09`` as SHIELD when building
+   use ``st_b_lcd40_dsi1_mb1166_a09`` as SHIELD when building.
    Prior versions are utilizing an OTM8009a controller and shall
-   use shield name without postfix, that is: ``st_b_lcd40_dsi1_mb1166``
+   use shield name without postfix, that is: ``st_b_lcd40_dsi1_mb1166``.
    Shield version is printed on a sticker placed below the two bottom
-   mounting holes and has the format: MB1166-Axx
+   mounting holes and has the format: MB1166-Axx.
 
 Resources sharing
 =================
@@ -199,15 +192,21 @@ two cores. This is done in 3 ways:
 Programming and Debugging
 *************************
 
+STM32H747I-DISCO board includes an ST-LINK/V3 embedded debug tool interface.
+
 Applications for the ``stm32h747i_disco`` board should be built per core target,
-using either ``stm32h747i_disco/stm32h747xx/m7`` or ```stm32h747i_disco/stm32h747xx/m4`` as the target.
+using either ``stm32h747i_disco/stm32h747xx/m7`` or ``stm32h747i_disco/stm32h747xx/m4``
+as the target.
 See :ref:`build_an_application` for more information about application builds.
 
 .. note::
 
-   If using OpenOCD you will need a recent development version as the last
-   official release does not support H7 dualcore yet.
-   Also, with OpenOCD, sometimes, flashing is not working. It is necessary to
+   Check if the board's ST-LINK V3 has the newest FW version. It can be updated
+   using `STM32CubeProgrammer`_.
+
+.. note::
+
+   With OpenOCD, sometimes, flashing does not work. It is necessary to
    erase the flash (with STM32CubeProgrammer for example) to make it work again.
    Debugging with OpenOCD is currently working for this board only with Cortex M7,
    not Cortex M4.
@@ -218,9 +217,21 @@ Flashing
 
 Flashing operation will depend on the target to be flashed and the SoC
 option bytes configuration.
+
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner
+for both cores, so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
+The target core is detected automatically.
+
+Alternatively, OpenOCD or JLink can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner jlink
+
 It is advised to use `STM32CubeProgrammer`_ to check and update option bytes
-configuration and flash ``stm32h747i_disco/stm32h747xx/m7`` and
-``stm32h747i_disco/stm32h747xx/m7`` targets.
+configuration.
 
 By default:
 
@@ -236,20 +247,13 @@ automatically.
 
 Zephyr flash configuration has been set to meet these default settings.
 
-Alternatively, west `STM32CubeProgrammer`_ runner can be used, after installing
-it, to flash applications for both cores. The target core is detected automatically.
-
-.. code-block:: console
-
-   $ west flash --runner stm32cubeprogrammer
-
 Flashing an application to STM32H747I M7 Core
 ---------------------------------------------
 
 First, connect the STM32H747I Discovery kit to your host computer using
 the USB port to prepare it for flashing. Then build and flash your application.
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -285,17 +289,16 @@ Here is an example for the :zephyr:code-sample:`blinky` application on M4 core.
 Debugging
 =========
 
-You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+You can debug an application on Cortex M7 side in the usual way.  Here is an example
+for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: stm32h747i_disco/stm32h747xx/m7
    :goals: debug
 
-Debugging with west is currently not available on Cortex M4 side.
-In order to debug a Zephyr application on Cortex M4 side, you can use
-`STM32CubeIDE`_.
+Debugging a Zephyr application on Cortex M4 side with west is currently not available.
+As a workaround, you can use `STM32CubeIDE`_.
 
 .. _STM32H747I-DISCO website:
    https://www.st.com/en/evaluation-tools/stm32h747i-disco.html

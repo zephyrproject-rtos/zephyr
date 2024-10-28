@@ -50,7 +50,7 @@ extern "C" {
  * On SMP atomics *must* be used to ensure the pointers
  * are updated in the correct order.
  */
-#if IS_ENABLED(CONFIG_SMP)
+#if defined(CONFIG_SMP)
 
 typedef atomic_ptr_t mpsc_ptr_t;
 
@@ -58,7 +58,7 @@ typedef atomic_ptr_t mpsc_ptr_t;
 #define mpsc_ptr_set(ptr, val)     atomic_ptr_set(&(ptr), val)
 #define mpsc_ptr_set_get(ptr, val) atomic_ptr_set(&(ptr), val)
 
-#else /* IS_ENABLED(CONFIG_SMP) */
+#else /* defined(CONFIG_SMP) */
 
 typedef struct mpsc_node *mpsc_ptr_t;
 
@@ -71,7 +71,7 @@ typedef struct mpsc_node *mpsc_ptr_t;
 		tmp;                                                                               \
 	})
 
-#endif /* IS_ENABLED(CONFIG_SMP) */
+#endif /* defined(CONFIG_SMP) */
 
 /**
  * @brief Queue member

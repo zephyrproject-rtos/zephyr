@@ -122,8 +122,9 @@ class CoverageTool:
 
             try:
                 hexdump_val = self.merge_hexdumps(hexdumps)
+                hex_bytes = bytes.fromhex(hexdump_val)
                 with open(filename, 'wb') as fp:
-                    fp.write(bytes.fromhex(hexdump_val))
+                    fp.write(hex_bytes)
             except ValueError:
                 logger.exception("Unable to convert hex data for file: {}".format(filename))
                 gcda_created = False
@@ -191,7 +192,7 @@ class Lcov(CoverageTool):
             logger.error(f"Unable to determine lcov version: {e}")
             sys.exit(1)
         except FileNotFoundError as e:
-            logger.error(f"Unable to to find lcov tool: {e}")
+            logger.error(f"Unable to find lcov tool: {e}")
             sys.exit(1)
 
     def add_ignore_file(self, pattern):
@@ -304,7 +305,7 @@ class Gcovr(CoverageTool):
             logger.error(f"Unable to determine gcovr version: {e}")
             sys.exit(1)
         except FileNotFoundError as e:
-            logger.error(f"Unable to to find gcovr tool: {e}")
+            logger.error(f"Unable to find gcovr tool: {e}")
             sys.exit(1)
 
     def add_ignore_file(self, pattern):
@@ -330,7 +331,10 @@ class Gcovr(CoverageTool):
         ztestfile = os.path.join(outdir, "ztest.json")
 
         excludes = Gcovr._interleave_list("-e", self.ignores)
-        excludes += Gcovr._interleave_list("--exclude-branches-by-pattern", self.ignore_branch_patterns)
+        if len(self.ignore_branch_patterns) > 0:
+            # Last pattern overrides previous values, so merge all patterns together
+            merged_regex = "|".join([f"({p})" for p in self.ignore_branch_patterns])
+            excludes += ["--exclude-branches-by-pattern", merged_regex]
 
         # Different ifdef-ed implementations of the same function should not be
         # in conflict treated by GCOVR as separate objects for coverage statistics.
@@ -425,5 +429,8 @@ def run_coverage(testplan, options):
     # Ignore branch coverage on LOG_* and LOG_HEXDUMP_* macros
     # Branch misses are due to the implementation of Z_LOG2 and cannot be avoided
     coverage_tool.add_ignore_branch_pattern(r"^\s*LOG_(?:HEXDUMP_)?(?:DBG|INF|WRN|ERR)\(.*")
+    # Ignore branch coverage on __ASSERT* macros
+    # Covering the failing case is not desirable as it will immediately terminate the test.
+    coverage_tool.add_ignore_branch_pattern(r"^\s*__ASSERT(?:_EVAL|_NO_MSG|_POST_ACTION)?\(.*")
     coverage_completed = coverage_tool.generate(options.outdir)
     return coverage_completed

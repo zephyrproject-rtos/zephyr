@@ -16,7 +16,14 @@
 
 char *utf8_trunc(char *utf8_str)
 {
-	char *last_byte_p = utf8_str + strlen(utf8_str) - 1;
+	const size_t len = strlen(utf8_str);
+
+	if (len == 0U) {
+		/* no-op */
+		return utf8_str;
+	}
+
+	char *last_byte_p = utf8_str + len - 1U;
 	uint8_t bytes_truncated;
 	char seq_start_byte;
 
@@ -34,7 +41,7 @@ char *utf8_trunc(char *utf8_str)
 	}
 	bytes_truncated++; /* include the starting byte */
 
-	/* Verify if the the last character actually need to be truncated
+	/* Verify if the last character actually need to be truncated
 	 * Handles the case where the number of bytes in the last UTF8-char
 	 * matches the number of bytes we searched for the starting byte
 	 */

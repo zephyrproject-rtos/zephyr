@@ -115,6 +115,9 @@ struct rtc_stm32_config {
 #if DT_INST_NODE_HAS_PROP(0, calib_out_freq)
 	uint32_t cal_out_freq;
 #endif
+#if DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_HSE
+	uint32_t hse_prescaler;
+#endif
 };
 
 #ifdef CONFIG_RTC_ALARM
@@ -354,6 +357,10 @@ static int rtc_stm32_init(const struct device *dev)
 	LL_PWR_EnableBkUpAccess();
 #endif /* RTC_STM32_BACKUP_DOMAIN_WRITE_PROTECTION */
 
+#if DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_HSE
+	/* Must be configured before selecting the RTC clock source */
+	LL_RCC_SetRTC_HSEPrescaler(cfg->hse_prescaler);
+#endif
 	/* Enable RTC clock source */
 	if (clock_control_configure(clk, (clock_control_subsys_t)&cfg->pclken[1], NULL) != 0) {
 		LOG_ERR("clock configure failed\n");
@@ -537,7 +544,7 @@ static int rtc_stm32_get_time(const struct device *dev, struct rtc_time *timeptr
 #if HW_SUBSECOND_SUPPORT
 	uint64_t temp = ((uint64_t)(cfg->sync_prescaler - rtc_subsecond)) * 1000000000L;
 
-	timeptr->tm_nsec = DIV_ROUND_CLOSEST(temp, cfg->sync_prescaler + 1);
+	timeptr->tm_nsec = temp / (cfg->sync_prescaler + 1);
 #else
 	timeptr->tm_nsec = 0;
 #endif
@@ -1057,15 +1064,41 @@ static const struct stm32_pclken rtc_clk[] = STM32_DT_INST_CLOCKS(0);
 
 BUILD_ASSERT(DT_INST_CLOCKS_HAS_IDX(0, 1), "RTC source clock not defined in the device tree");
 
+#if DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_HSE
+#if STM32_HSE_FREQ % MHZ(1) != 0
+#error RTC clock source HSE frequency should be whole MHz
+#elif STM32_HSE_FREQ < MHZ(16) && defined(LL_RCC_RTC_HSE_DIV_16)
+#define RTC_HSE_PRESCALER LL_RCC_RTC_HSE_DIV_16
+#define RTC_HSE_FREQUENCY (STM32_HSE_FREQ / 16)
+#elif STM32_HSE_FREQ < MHZ(32) && defined(LL_RCC_RTC_HSE_DIV_32)
+#define RTC_HSE_PRESCALER LL_RCC_RTC_HSE_DIV_32
+#define RTC_HSE_FREQUENCY (STM32_HSE_FREQ / 32)
+#elif STM32_HSE_FREQ < MHZ(64) && defined(LL_RCC_RTC_HSE_DIV_64)
+#define RTC_HSE_PRESCALER LL_RCC_RTC_HSE_DIV_64
+#define RTC_HSE_FREQUENCY (STM32_HSE_FREQ / 64)
+#else
+#error RTC does not support HSE frequency
+#endif
+#define RTC_HSE_ASYNC_PRESCALER 125
+#define RTC_HSE_SYNC_PRESCALER  (RTC_HSE_FREQUENCY / RTC_HSE_ASYNC_PRESCALER)
+#endif /* DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_HSE */
+
 static const struct rtc_stm32_config rtc_config = {
 #if DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_LSI
 	/* prescaler values for LSI @ 32 KHz */
 	.async_prescaler = 0x7F,
 	.sync_prescaler = 0x00F9,
-#else /* DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_LSE */
+#elif DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_LSE
 	/* prescaler values for LSE @ 32768 Hz */
 	.async_prescaler = 0x7F,
 	.sync_prescaler = 0x00FF,
+#elif DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_HSE
+	/* prescaler values for HSE */
+	.async_prescaler = RTC_HSE_ASYNC_PRESCALER - 1,
+	.sync_prescaler = RTC_HSE_SYNC_PRESCALER - 1,
+	.hse_prescaler = RTC_HSE_PRESCALER,
+#else
+#error Invalid RTC SRC
 #endif
 	.pclken = rtc_clk,
 #if DT_INST_NODE_HAS_PROP(0, calib_out_freq)

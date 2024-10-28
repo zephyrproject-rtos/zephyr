@@ -39,6 +39,12 @@ LOG_MODULE_REGISTER(net_l2_openthread, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 
 #include "openthread_utils.h"
 
+#if defined(CONFIG_OPENTHREAD_NAT64_TRANSLATOR)
+#include <openthread/nat64.h>
+#endif  /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR */
+
+#define PKT_IS_IPv4(_p) ((NET_IPV6_HDR(_p)->vtc & 0xf0) == 0x40)
+
 #define OT_STACK_SIZE (CONFIG_OPENTHREAD_THREAD_STACK_SIZE)
 
 #if defined(CONFIG_OPENTHREAD_THREAD_PREEMPTIVE)
@@ -220,6 +226,15 @@ static void ot_state_changed_handler(uint32_t flags, void *context)
 		add_ipv6_maddr_to_zephyr(ot_context);
 	}
 
+#if defined(CONFIG_OPENTHREAD_NAT64_TRANSLATOR)
+
+	if (flags & OT_CHANGED_NAT64_TRANSLATOR_STATE) {
+		NET_DBG("Nat64 translator state changed to %x",
+			otNat64GetTranslatorState(ot_context->instance));
+	}
+
+#endif /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR */
+
 	if (state_changed_cb) {
 		state_changed_cb(flags, context);
 	}
@@ -269,10 +284,15 @@ static void ot_receive_handler(otMessage *aMessage, void *context)
 		}
 	}
 
-	NET_DBG("Injecting Ip6 packet to Zephyr net stack");
+	NET_DBG("Injecting %s packet to Zephyr net stack",
+		PKT_IS_IPv4(pkt) ? "translated IPv4" : "Ip6");
 
 	if (IS_ENABLED(CONFIG_OPENTHREAD_L2_DEBUG_DUMP_IPV6)) {
-		net_pkt_hexdump(pkt, "Received IPv6 packet");
+		if (IS_ENABLED(CONFIG_OPENTHREAD_NAT64_TRANSLATOR) && PKT_IS_IPv4(pkt)) {
+			net_pkt_hexdump(pkt, "Received NAT64 IPv4 packet");
+		} else {
+			net_pkt_hexdump(pkt, "Received IPv6 packet");
+		}
 	}
 
 	if (!pkt_list_is_full(ot_context)) {
@@ -533,6 +553,24 @@ static int openthread_init(struct net_if *iface)
 		otIp6SetReceiveFilterEnabled(ot_context->instance, true);
 		otIp6SetReceiveCallback(ot_context->instance,
 					ot_receive_handler, ot_context);
+
+#if defined(CONFIG_OPENTHREAD_NAT64_TRANSLATOR)
+
+		otIp4Cidr nat64_cidr;
+
+		if (otIp4CidrFromString(CONFIG_OPENTHREAD_NAT64_CIDR, &nat64_cidr) ==
+		    OT_ERROR_NONE) {
+			if (otNat64SetIp4Cidr(openthread_get_default_instance(), &nat64_cidr) !=
+			    OT_ERROR_NONE) {
+				NET_ERR("Incorrect NAT64 CIDR");
+			}
+		} else {
+			NET_ERR("Failed to parse NAT64 CIDR");
+		}
+		otNat64SetReceiveIp4Callback(ot_context->instance, ot_receive_handler, ot_context);
+
+#endif /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR */
+
 		sys_slist_init(&ot_context->state_change_cbs);
 		err = otSetStateChangedCallback(ot_context->instance,
 						&ot_state_changed_handler,

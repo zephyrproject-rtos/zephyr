@@ -11,9 +11,12 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
 
-BUILD_ASSERT((CONFIG_NUM_2ND_LEVEL_AGGREGATORS * CONFIG_MAX_IRQ_PER_AGGREGATOR) <=
-		     BIT(CONFIG_2ND_LEVEL_INTERRUPT_BITS),
+BUILD_ASSERT(CONFIG_MAX_IRQ_PER_AGGREGATOR < BIT(CONFIG_2ND_LEVEL_INTERRUPT_BITS),
 	     "L2 bits not enough to cover the number of L2 IRQs");
+#ifdef CONFIG_3RD_LEVEL_INTERRUPTS
+BUILD_ASSERT(CONFIG_MAX_IRQ_PER_AGGREGATOR < BIT(CONFIG_3RD_LEVEL_INTERRUPT_BITS),
+	     "L3 bits not enough to cover the number of L3 IRQs");
+#endif /* CONFIG_3RD_LEVEL_INTERRUPTS */
 
 /**
  * @brief Get the aggregator that's responsible for the given irq
@@ -85,7 +88,8 @@ unsigned int z_get_sw_isr_table_idx(unsigned int irq)
 
 	table_idx -= CONFIG_GEN_IRQ_START_VECTOR;
 
-	__ASSERT_NO_MSG(table_idx < IRQ_TABLE_SIZE);
+	__ASSERT(table_idx < IRQ_TABLE_SIZE, "table_idx(%d) < IRQ_TABLE_SIZE(%d)", table_idx,
+		 IRQ_TABLE_SIZE);
 
 	return table_idx;
 }

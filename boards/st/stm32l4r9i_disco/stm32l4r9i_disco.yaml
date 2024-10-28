@@ -20,5 +20,4 @@ supported:
   - rtc
   - spi
   - uart
-  - usb
   - usb_device

@@ -18,7 +18,7 @@
 #include <zephyr/usb/bos.h>
 #include <zephyr/usb/usb_ch9.h>
 #include <zephyr/usb/usbd_msg.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/drivers/usb/udc_buf.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/logging/log.h>
@@ -67,6 +67,7 @@ enum usbd_str_desc_utype {
 	USBD_DUT_STRING_MANUFACTURER,
 	USBD_DUT_STRING_PRODUCT,
 	USBD_DUT_STRING_SERIAL_NUMBER,
+	USBD_DUT_STRING_CONFIG,
 	USBD_DUT_STRING_INTERFACE,
 };
 
@@ -131,6 +132,8 @@ struct usbd_config_node {
 	sys_snode_t node;
 	/** Pointer to configuration descriptor */
 	void *desc;
+	/** Optional pointer to string descriptor node */
+	struct usbd_desc_node *str_desc_nd;
 	/** List of registered classes (functions) */
 	sys_slist_t class_list;
 };
@@ -388,7 +391,27 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
 	return c_data->priv;
 }
 
-#define USBD_DEVICE_DEFINE(device_name, uhc_dev, vid, pid)		\
+/**
+ * @brief Define USB device context structure
+ *
+ * Macro defines a USB device structure needed by the stack to manage its
+ * properties and runtime data. The @p vid and @p pid  parameters can also be
+ * changed using usbd_device_set_vid() and usbd_device_set_pid().
+ *
+ * Example of use:
+ *
+ * @code{.c}
+ * USBD_DEVICE_DEFINE(sample_usbd,
+ *                    DEVICE_DT_GET(DT_NODELABEL(zephyr_udc0)),
+ *                    YOUR_VID, YOUR_PID);
+ * @endcode
+ *
+ * @param device_name USB device context name
+ * @param udc_dev     Pointer to UDC device structure
+ * @param vid         Vendor ID
+ * @param pid         Product ID
+ */
+#define USBD_DEVICE_DEFINE(device_name, udc_dev, vid, pid)		\
 	static struct usb_device_descriptor				\
 	fs_desc_##device_name = {					\
 		.bLength = sizeof(struct usb_device_descriptor),	\
@@ -425,12 +448,29 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
 	};								\
 	static STRUCT_SECTION_ITERABLE(usbd_context, device_name) = {	\
 		.name = STRINGIFY(device_name),				\
-		.dev = uhc_dev,						\
+		.dev = udc_dev,						\
 		.fs_desc = &fs_desc_##device_name,			\
 		.hs_desc = &hs_desc_##device_name,			\
 	}
 
-#define USBD_CONFIGURATION_DEFINE(name, attrib, power)			\
+/**
+ * @brief Define USB device configuration
+ *
+ * USB device requires at least one configuration instance per supported speed.
+ * @p attrib is a combination of `USB_SCD_SELF_POWERED` or `USB_SCD_REMOTE_WAKEUP`,
+ * depending on which characteristic the USB device should have in this
+ * configuration.
+ *
+ * @param name   Configuration name
+ * @param attrib Configuration characteristics. Attributes can also be updated
+ *               with usbd_config_attrib_rwup() and usbd_config_attrib_self()
+ * @param power  bMaxPower value in 2 mA units. This value can also be set with
+ *               usbd_config_maxpower()
+ * @param desc_nd Address of the string descriptor node used to describe the
+ *                configuration, see USBD_DESC_CONFIG_DEFINE().
+ *                String descriptors are optional and the parameter can be NULL.
+ */
+#define USBD_CONFIGURATION_DEFINE(name, attrib, power, desc_nd)		\
 	static struct usb_cfg_descriptor				\
 	cfg_desc_##name = {						\
 		.bLength = sizeof(struct usb_cfg_descriptor),		\
@@ -445,6 +485,7 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
 	BUILD_ASSERT((power) < 256, "Too much power");			\
 	static struct usbd_config_node name = {				\
 		.desc = &cfg_desc_##name,				\
+		.str_desc_nd = desc_nd,					\
 	}
 
 /**
@@ -463,13 +504,13 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
 #define USBD_DESC_LANG_DEFINE(name)					\
 	static uint16_t langid_##name = sys_cpu_to_le16(0x0409);	\
 	static struct usbd_desc_node name = {				\
-		.bLength = sizeof(struct usb_string_descriptor),	\
-		.bDescriptorType = USB_DESC_STRING,			\
 		.str = {						\
 			.idx = 0,					\
 			.utype = USBD_DUT_STRING_LANG,			\
 		},							\
 		.ptr = &langid_##name,					\
+		.bLength = sizeof(struct usb_string_descriptor),	\
+		.bDescriptorType = USB_DESC_STRING,			\
 	}
 
 /**
@@ -490,9 +531,9 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
 			.utype = d_utype,					\
 			.ascii7 = true,						\
 		},								\
+		.ptr = &ascii_##d_name,						\
 		.bLength = USB_STRING_DESCRIPTOR_LENGTH(d_string),		\
 		.bDescriptorType = USB_DESC_STRING,				\
-		.ptr = &ascii_##d_name,					\
 	}
 
 /**
@@ -544,6 +585,18 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
 	}
 
 /**
+ * @brief Create a string descriptor node for configuration descriptor
+ *
+ * This macro defines a descriptor node whose address can be used as an
+ * argument for the USBD_CONFIGURATION_DEFINE() macro.
+ *
+ * @param d_name   String descriptor node identifier.
+ * @param d_string ASCII7 encoded configuration description string literal
+ */
+#define USBD_DESC_CONFIG_DEFINE(d_name, d_string)			\
+	USBD_DESC_STRING_DEFINE(d_name, d_string, USBD_DUT_STRING_CONFIG)
+
+/**
  * @brief Define BOS Device Capability descriptor node
  *
  * The application defines a BOS capability descriptor node for descriptors
@@ -563,6 +616,17 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
 		.bDescriptorType = USB_DESC_BOS,				\
 	}
 
+/**
+ * @brief Define USB device support class data
+ *
+ * Macro defines class (function) data, as well as corresponding node
+ * structures used internally by the stack.
+ *
+ * @param class_name   Class name
+ * @param class_api    Pointer to struct usbd_class_api
+ * @param class_priv   Class private data
+ * @param class_v_reqs Pointer to struct usbd_cctx_vendor_req
+ */
 #define USBD_DEFINE_CLASS(class_name, class_api, class_priv, class_v_reqs)	\
 	static struct usbd_class_data class_name = {				\
 		.name = STRINGIFY(class_name),					\
@@ -914,8 +978,8 @@ enum usbd_speed usbd_caps_speed(const struct usbd_context *const uds_ctx);
  *
  * @return 0 on success, other values on fail.
  */
-int usbd_device_set_bcd(struct usbd_context *const uds_ctx,
-			const enum usbd_speed speed, const uint16_t bcd);
+int usbd_device_set_bcd_usb(struct usbd_context *const uds_ctx,
+			    const enum usbd_speed speed, const uint16_t bcd);
 
 /**
  * @brief Set USB device descriptor value idVendor
@@ -938,6 +1002,17 @@ int usbd_device_set_vid(struct usbd_context *const uds_ctx,
  */
 int usbd_device_set_pid(struct usbd_context *const uds_ctx,
 			const uint16_t pid);
+
+/**
+ * @brief Set USB device descriptor value bcdDevice
+ *
+ * @param[in] uds_ctx Pointer to USB device support context
+ * @param[in] bcd     bcdDevice value
+ *
+ * @return 0 on success, other values on fail.
+ */
+int usbd_device_set_bcd_device(struct usbd_context *const uds_ctx,
+			       const uint16_t bcd);
 
 /**
  * @brief Set USB device descriptor code triple Base Class, SubClass, and Protocol

@@ -1,0 +1,16 @@
+# Copyright (c) 2024 Bjarki Arge Andreasen
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+if RTC_ALARM
+
+config TEST_RTC_ALARM_TIME_MASK
+	int "Alarm fields to set"
+	default 6
+	range 1 511
+	help
+	  Set the RTC_ALARM_TIME_MASK_ bitmask to use when setting
+	  RTC alarms during testing.
+
+endif # RTC_ALARM

@@ -4,10 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
- / {
+/ {
 	aliases {
 		sram-ext = &memc;
 	};
+};
+
+&psram {
+	status = "okay";
 };
 
 /* QSPIC settings for the APS6404L-3SQR QSPI PSRAM memory in QPI mode. */

@@ -1,0 +1,43 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Bluetooth: Common Audio Profile initiator sample"
+
+config SAMPLE_UNICAST
+	bool "Whether or not to search for CAP acceptors for unicast audio"
+	default y
+	select BT_CENTRAL
+	select BT_ISO_CENTRAL
+	select BT_SMP
+	select BT_KEYS_OVERWRITE_OLDEST
+	select BT_CSIP_SET_COORDINATOR
+	select BT_BAP_UNICAST_CLIENT
+	select BT_CTLR_CENTRAL_ISO if BT_CTLR
+	help
+	  If set to true, the sample will start advertising connectable for
+	  Broadcast Assistants.
+
+config SAMPLE_BROADCAST
+	bool "Whether or not to search for CAP acceptors for broadcast audio"
+	default y if !SAMPLE_UNICAST
+	select BT_BROADCASTER
+	select BT_BAP_BROADCAST_SOURCE
+	select BT_CTLR_ADV_ISO if BT_CTLR
+	help
+	  If set to true, the sample will start advertising syncable audio streams
+
+config STATIC_BROADCAST_ID
+	bool "Use static broadcast ID"
+	default y
+	help
+	   Enabling this option will make the application use static broadcast ID, as opposed to a
+	   randomly generated one.
+
+config BROADCAST_ID
+	hex "The static broadcast ID to use"
+	range 0x000000 0xFFFFFF
+	depends on STATIC_BROADCAST_ID
+	help
+	   This is the 3-octet broadcast ID advertised if static broadcast IDs are enabled.
+
+source "Kconfig.zephyr"

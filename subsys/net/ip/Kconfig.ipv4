@@ -11,29 +11,6 @@ menuconfig NET_IPV4
 
 if NET_IPV4
 
-config NET_INITIAL_TTL
-	int "Initial IPv4 time to live value for unicast packets"
-	default 64
-	range 0 255
-	help
-	  The value should normally be > 0. The device receiving the IPv4
-	  packet will decrement the value and will drop the packet if the TTL
-	  value is 0. When sending, the packet is dropped before transmitting
-	  to network if TTL is 0.
-
-config NET_INITIAL_MCAST_TTL
-	int "Initial IPv4 time to live value for multicast packets"
-	default 1
-	range 0 255
-	help
-	  The value should normally be > 0. The device receiving the IPv4
-	  packet will decrement the value and will drop the packet if the TTL
-	  value is 0. When sending, the packet is dropped before transmitting
-	  to network if TTL is 0.
-	  The default is 1 (same as in Linux) which means that multicast packets
-	  don't leave the local network unless the application explicitly
-	  requests it.
-
 config NET_IF_MAX_IPV4_COUNT
 	int "Max number of IPv4 network interfaces in the system"
 	default NET_VLAN_COUNT if NET_VLAN
@@ -53,6 +30,31 @@ config NET_IF_MCAST_IPV4_ADDR_COUNT
 	int "Max number of multicast IPv4 addresses per network interface"
 	default 2 if NET_IPV4_IGMP
 	default 1
+
+if NET_NATIVE_IPV4
+
+config NET_INITIAL_TTL
+	int "Initial IPv4 time to live value for unicast packets"
+	default 64
+	range 0 $(UINT8_MAX)
+	help
+	  The value should normally be > 0. The device receiving the IPv4
+	  packet will decrement the value and will drop the packet if the TTL
+	  value is 0. When sending, the packet is dropped before transmitting
+	  to network if TTL is 0.
+
+config NET_INITIAL_MCAST_TTL
+	int "Initial IPv4 time to live value for multicast packets"
+	default 1
+	range 0 $(UINT8_MAX)
+	help
+	  The value should normally be > 0. The device receiving the IPv4
+	  packet will decrement the value and will drop the packet if the TTL
+	  value is 0. When sending, the packet is dropped before transmitting
+	  to network if TTL is 0.
+	  The default is 1 (same as in Linux) which means that multicast packets
+	  don't leave the local network unless the application explicitly
+	  requests it.
 
 config NET_IF_MCAST_IPV4_SOURCE_COUNT
 	int "Max number of IPv4 sources per mcast address to be included or excluded"
@@ -177,4 +179,5 @@ module-help = Enable debug diagnostic from IPv4 autoconf client.
 source "subsys/net/Kconfig.template.log_config.net"
 endif # NET_IPV4_AUTO
 
+endif # NET_NATIVE_IPV4
 endif # NET_IPV4

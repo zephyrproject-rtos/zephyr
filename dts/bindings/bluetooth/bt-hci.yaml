@@ -10,19 +10,22 @@ properties:
     type: string
     description: Bus of the transport
     enum:
-      - "BT_HCI_BUS_VIRTUAL"
-      - "BT_HCI_BUS_USB"
-      - "BT_HCI_BUS_PCCARD"
-      - "BT_HCI_BUS_UART"
-      - "BT_HCI_BUS_RS232"
-      - "BT_HCI_BUS_PCI"
-      - "BT_HCI_BUS_SDIO"
-      - "BT_HCI_BUS_SPI"
-      - "BT_HCI_BUS_I2C"
-      - "BT_HCI_BUS_IPM"
+      - "virtual"
+      - "usb"
+      - "pccard"
+      - "uart"
+      - "rs232"
+      - "pci"
+      - "sdio"
+      - "spi"
+      - "i2c"
+      - "ipm"
   bt-hci-quirks:
     type: string-array
     description: HCI device quirks
+    enum:
+      - "no-reset"
+      - "no-auto-dle"
   bt-hci-vs-ext:
     type: boolean
     description: Zephyr HCI vendor extensions are supported

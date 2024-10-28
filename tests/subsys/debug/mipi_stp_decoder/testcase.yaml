@@ -3,4 +3,4 @@ tests:
     filter: not CONFIG_BIG_ENDIAN
     tags: stp_decoder
     integration_platforms:
-      - native_posix
+      - native_sim

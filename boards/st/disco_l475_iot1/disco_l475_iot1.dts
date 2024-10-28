@@ -50,6 +50,10 @@
 		compatible = "pwm-leds";
 		status = "disabled";
 
+		/*
+		 * green_pwm_1 is connected to CN1 pin 2 not LD1, since LD1
+		 * shares a pin with the Arduino SPI SCL line.
+		 */
 		green_pwm_1: green_led_1 {
 			pwms = <&pwm2 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 			label = "green LD1";
@@ -63,14 +67,15 @@
 	aliases {
 		led0 = &green_led_2;
 		led1 = &green_led_1;
-		pwm-led0 = &green_pwm_1;
-		pwm-led1 = &green_pwm_2;
+		pwm-led0 = &green_pwm_2;
+		pwm-led1 = &green_pwm_1;
 		sw0 = &user_button;
 		eswifi0 = &wifi0;
 		watchdog0 = &iwdg;
 		accel0 = &lsm6dsl;
 		volt-sensor0 = &vref;
 		volt-sensor1 = &vbat;
+		die-temp0 = &die_temp;
 	};
 };
 
@@ -246,7 +251,7 @@
 
 	pwm2: pwm {
 		status = "okay";
-		pinctrl-0 = <&tim2_ch1_pa15>;
+		pinctrl-0 = <&tim2_ch1_pa15>; /* CN1 pin 2 (ARD.D9-PWM) */
 		pinctrl-names = "default";
 	};
 };
@@ -257,7 +262,7 @@
 
 	pwm15: pwm {
 		status = "okay";
-		pinctrl-0 = <&tim15_ch1_pb14>; /* CN1 D10 */
+		pinctrl-0 = <&tim15_ch1_pb14>; /* LED2 */
 		pinctrl-names = "default";
 	};
 };

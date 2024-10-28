@@ -1,7 +1,4 @@
-.. _gd32vf103v_eval:
-
-GigaDevice GD32VF103V-EVAL
-##########################
+.. zephyr:board:: gd32vf103v_eval
 
 Overview
 ********
@@ -12,10 +9,6 @@ on GD32VF103VB RISC-V MCU.
 The GD32VF103VB features a single-core RISC-V 32-bit MCU which can run up
 to 108 MHz with flash accesses zero wait states, 128 KiB of Flash, 32 KiB of
 SRAM and 80 GPIOs.
-
-.. image:: img/gd32vf103v_eval.jpg
-     :align: center
-     :alt: gd32vf103v_eval
 
 Hardware
 ********
@@ -93,7 +86,7 @@ The GD32VF103V-EVAL includes an onboard programmer/debugger (GD-Link) which
 allows flash programming and debugging over USB. There is also a JTAG header
 (JP1) which can be used with tools like Segger J-Link.
 
-#. Build the Zephyr kernel and the :ref:`hello_world` sample application:
+#. Build the Zephyr kernel and the :zephyr:code-sample:`hello_world` sample application:
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world

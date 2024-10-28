@@ -11,6 +11,7 @@
 #include <zephyr/drivers/adc.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
@@ -19,6 +20,15 @@
 #include "adc_context.h"
 
 LOG_MODULE_REGISTER(ADS1X1X, CONFIG_ADC_LOG_LEVEL);
+
+#if DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(ti_ads1115, alert_rdy_gpios) || \
+	DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(ti_ads1114, alert_rdy_gpios) || \
+	DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(ti_ads1015, alert_rdy_gpios) || \
+	DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(ti_ads1014, alert_rdy_gpios)
+
+#define ADC_ADS1X1X_TRIGGER
+
+#endif
 
 #define ADS1X1X_CONFIG_OS BIT(15)
 #define ADS1X1X_CONFIG_MUX(x) ((x) << 12)
@@ -29,6 +39,7 @@ LOG_MODULE_REGISTER(ADS1X1X, CONFIG_ADC_LOG_LEVEL);
 #define ADS1X1X_CONFIG_COMP_POL BIT(3)
 #define ADS1X1X_CONFIG_COMP_LAT BIT(2)
 #define ADS1X1X_CONFIG_COMP_QUE(x) (x)
+#define ADS1X1X_THRES_POLARITY_ACTIVE BIT(15)
 
 enum ads1x1x_reg {
 	ADS1X1X_REG_CONV = 0x00,
@@ -124,6 +135,9 @@ enum {
 
 struct ads1x1x_config {
 	struct i2c_dt_spec bus;
+#ifdef ADC_ADS1X1X_TRIGGER
+	struct gpio_dt_spec alert_rdy;
+#endif
 	const uint32_t odr_delay[8];
 	uint8_t resolution;
 	bool multiplexer;
@@ -138,10 +152,47 @@ struct ads1x1x_data {
 	int16_t *buffer;
 	int16_t *repeat_buffer;
 	struct k_thread thread;
+	k_tid_t	tid;
 	bool differential;
+#ifdef ADC_ADS1X1X_TRIGGER
+	struct gpio_callback gpio_cb;
+	struct k_work work;
+#endif
 
 	K_KERNEL_STACK_MEMBER(stack, CONFIG_ADC_ADS1X1X_ACQUISITION_THREAD_STACK_SIZE);
 };
+
+#ifdef ADC_ADS1X1X_TRIGGER
+static inline int ads1x1x_setup_rdy_pin(const struct device *dev, bool enable)
+{
+	int ret;
+	const struct ads1x1x_config *config = dev->config;
+	gpio_flags_t flags = enable
+		? GPIO_INPUT | config->alert_rdy.dt_flags
+		: GPIO_DISCONNECTED;
+
+	ret = gpio_pin_configure_dt(&config->alert_rdy, flags);
+	if (ret < 0) {
+		LOG_DBG("Could not configure gpio");
+	}
+	return ret;
+}
+
+static inline int ads1x1x_setup_rdy_interrupt(const struct device *dev, bool enable)
+{
+	const struct ads1x1x_config *config = dev->config;
+	gpio_flags_t flags = enable
+		? GPIO_INT_EDGE_FALLING
+		: GPIO_INT_DISABLE;
+	int32_t ret;
+
+	ret = gpio_pin_interrupt_configure_dt(&config->alert_rdy, flags);
+	if (ret < 0) {
+		LOG_DBG("Could not configure GPIO");
+	}
+	return ret;
+}
+#endif
 
 static int ads1x1x_read_reg(const struct device *dev, enum ads1x1x_reg reg_addr, uint16_t *buf)
 {
@@ -196,6 +247,40 @@ static int ads1x1x_start_conversion(const struct device *dev)
 
 	return ret;
 }
+
+#ifdef ADC_ADS1X1X_TRIGGER
+/* The ALERT/RDY pin can also be configured as a conversion ready
+ * pin. Set the most-significant bit of the Hi_thresh register to 1
+ * and the most-significant bit of Lo_thresh register to 0 to enable
+ * the pin as a conversion ready pin
+ */
+static int ads1x1x_enable_conv_ready_signal(const struct device *dev)
+{
+	uint16_t thresh;
+	int rc;
+
+	/* set to 1 to enable conversion ALERT/RDY */
+	rc = ads1x1x_read_reg(dev, ADS1X1X_REG_HI_THRESH, &thresh);
+	if (rc) {
+		return rc;
+	}
+	thresh |= ADS1X1X_THRES_POLARITY_ACTIVE;
+	rc = ads1x1x_write_reg(dev, ADS1X1X_REG_HI_THRESH, thresh);
+	if (rc) {
+		return rc;
+	}
+
+	/* set to 0 to enable conversion ALERT/RDY */
+	rc = ads1x1x_read_reg(dev, ADS1X1X_REG_LO_THRESH, &thresh);
+	if (rc) {
+		return rc;
+	}
+	thresh &= ~ADS1X1X_THRES_POLARITY_ACTIVE;
+	rc = ads1x1x_write_reg(dev, ADS1X1X_REG_LO_THRESH, thresh);
+
+	return rc;
+}
+#endif
 
 static inline int ads1x1x_acq_time_to_dr(const struct device *dev, uint16_t acq_time)
 {
@@ -475,7 +560,11 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 		adc_context_complete(ctx, ret);
 		return;
 	}
-	k_sem_give(&data->acq_sem);
+
+	/* Give semaphore only if the thread is running */
+	if (data->tid) {
+		k_sem_give(&data->acq_sem);
+	}
 }
 
 static int ads1x1x_adc_start_read(const struct device *dev, const struct adc_sequence *sequence)
@@ -489,6 +578,23 @@ static int ads1x1x_adc_start_read(const struct device *dev, const struct adc_seq
 	}
 
 	data->buffer = sequence->buffer;
+
+#ifdef ADC_ADS1X1X_TRIGGER
+	const struct ads1x1x_config *config = dev->config;
+
+	if (config->alert_rdy.port) {
+		rc = ads1x1x_setup_rdy_pin(dev, true);
+		if (rc < 0) {
+			LOG_ERR("Could not configure GPIO Alert/RDY");
+			return rc;
+		}
+		rc = ads1x1x_setup_rdy_interrupt(dev, true);
+		if (rc < 0) {
+			LOG_ERR("Could not configure Alert/RDY interrupt");
+			return rc;
+		}
+	}
+#endif
 
 	adc_context_start_read(&data->ctx, sequence);
 
@@ -560,6 +666,86 @@ static void ads1x1x_acquisition_thread(void *p1, void *p2, void *p3)
 	}
 }
 
+#ifdef ADC_ADS1X1X_TRIGGER
+static void ads1x1x_work_fn(struct k_work *work)
+{
+	struct ads1x1x_data *data;
+	const struct device *dev;
+
+	data = CONTAINER_OF(work, struct ads1x1x_data, work);
+	dev = data->dev;
+
+	ads1x1x_adc_perform_read(dev);
+}
+
+static void ads1x1x_conv_ready_cb(const struct device *gpio_dev,
+				      struct gpio_callback *cb,
+				      uint32_t pins)
+{
+	struct ads1x1x_data *data;
+	const struct device *dev;
+	const struct ads1x1x_config *config;
+	int rc;
+
+	ARG_UNUSED(gpio_dev);
+
+	data = CONTAINER_OF(cb, struct ads1x1x_data, gpio_cb);
+	dev = data->dev;
+	config = dev->config;
+
+	if (config->alert_rdy.port) {
+		rc = ads1x1x_setup_rdy_pin(dev, false);
+		if (rc < 0) {
+			return;
+		}
+		rc = ads1x1x_setup_rdy_interrupt(dev, false);
+		if (rc < 0) {
+			return;
+		}
+	}
+
+	/* Execute outside of the ISR context */
+	k_work_submit(&data->work);
+}
+
+static int ads1x1x_init_interrupt(const struct device *dev)
+{
+	const struct ads1x1x_config *config = dev->config;
+	struct ads1x1x_data *data = dev->data;
+	int rc;
+
+	/* Disable the interrupt */
+	rc = ads1x1x_setup_rdy_pin(dev, false);
+	if (rc < 0) {
+		LOG_ERR("Could disable the alert/rdy gpio pin.");
+		return rc;
+	}
+	rc = ads1x1x_setup_rdy_interrupt(dev, false);
+	if (rc < 0) {
+		LOG_ERR("Could disable the alert/rdy interrupts.");
+		return rc;
+	}
+	gpio_init_callback(&data->gpio_cb, ads1x1x_conv_ready_cb,
+			   BIT(config->alert_rdy.pin));
+	rc = gpio_add_callback(config->alert_rdy.port, &data->gpio_cb);
+	if (rc) {
+		LOG_ERR("Could not set gpio callback.");
+		return -rc;
+	}
+
+	/* Use the interruption generated by the pin RDY */
+	k_work_init(&data->work, ads1x1x_work_fn);
+
+	rc = ads1x1x_enable_conv_ready_signal(dev);
+	if (rc) {
+		LOG_ERR("failed to configure ALERT/RDY pin (err=%d)", rc);
+		return rc;
+	}
+
+	return 0;
+}
+#endif
+
 static int ads1x1x_init(const struct device *dev)
 {
 	const struct ads1x1x_config *config = dev->config;
@@ -574,11 +760,26 @@ static int ads1x1x_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	k_tid_t tid =
-		k_thread_create(&data->thread, data->stack, K_THREAD_STACK_SIZEOF(data->stack),
-				ads1x1x_acquisition_thread, (void *)dev, NULL,
-				NULL, CONFIG_ADC_ADS1X1X_ACQUISITION_THREAD_PRIO, 0, K_NO_WAIT);
-	k_thread_name_set(tid, "adc_ads1x1x");
+#ifdef ADC_ADS1X1X_TRIGGER
+	if (config->alert_rdy.port) {
+		if (ads1x1x_init_interrupt(dev) < 0) {
+			LOG_ERR("Failed to initialize interrupt.");
+			return -EIO;
+		}
+	} else
+#endif
+	{
+		LOG_DBG("Using acquisition thread");
+
+		data->tid =
+			k_thread_create(&data->thread, data->stack,
+					K_THREAD_STACK_SIZEOF(data->stack),
+					(k_thread_entry_t)ads1x1x_acquisition_thread,
+					(void *)dev, NULL, NULL,
+					CONFIG_ADC_ADS1X1X_ACQUISITION_THREAD_PRIO,
+					0, K_NO_WAIT);
+		k_thread_name_set(data->tid, "adc_ads1x1x");
+	}
 
 	adc_context_unlock_unconditionally(&data->ctx);
 
@@ -596,6 +797,13 @@ static const struct adc_driver_api ads1x1x_api = {
 
 #define DT_INST_ADS1X1X(inst, t) DT_INST(inst, ti_ads##t)
 
+#define ADS1X1X_RDY_PROPS(n)                                                                       \
+	.alert_rdy = GPIO_DT_SPEC_INST_GET_OR(n, alert_rdy_gpios, {0}),                            \
+
+#define ADS1X1X_RDY(t, n)                                                                          \
+	IF_ENABLED(DT_NODE_HAS_PROP(DT_INST_ADS1X1X(n, t), alert_rdy_gpios),                       \
+		   (ADS1X1X_RDY_PROPS(n)))
+
 #define ADS1X1X_INIT(t, n, odr_delay_us, res, mux, pgab)                                           \
 	static const struct ads1x1x_config ads##t##_config_##n = {                                 \
 		.bus = I2C_DT_SPEC_GET(DT_INST_ADS1X1X(n, t)),                                     \
@@ -603,6 +811,7 @@ static const struct adc_driver_api ads1x1x_api = {
 		.resolution = res,                                                                 \
 		.multiplexer = mux,                                                                \
 		.pga = pgab,                                                                       \
+		IF_ENABLED(ADC_ADS1X1X_TRIGGER, (ADS1X1X_RDY(t, n)))                               \
 	};                                                                                         \
 	static struct ads1x1x_data ads##t##_data_##n = {                                           \
 		ADC_CONTEXT_INIT_LOCK(ads##t##_data_##n, ctx),                                     \
@@ -616,7 +825,7 @@ static const struct adc_driver_api ads1x1x_api = {
 /* The ADS111X provides 16 bits of data in binary two's complement format
  * A positive full-scale (+FS) input produces an output code of 7FFFh and a
  * negative full-scale (–FS) input produces an output code of 8000h. Single
- * ended signal measurements only only use the positive code range from
+ * ended signal measurements only use the positive code range from
  * 0000h to 7FFFh
  */
 #define ADS111X_RESOLUTION 16
@@ -659,7 +868,7 @@ DT_INST_FOREACH_STATUS_OKAY(ADS1113_INIT)
 /* The ADS101X provides 12 bits of data in binary two's complement format
  * A positive full-scale (+FS) input produces an output code of 7FFh and a
  * negative full-scale (–FS) input produces an output code of 800h. Single
- * ended signal measurements only only use the positive code range from
+ * ended signal measurements only use the positive code range from
  * 000h to 7FFh
  */
 #define ADS101X_RESOLUTION 12

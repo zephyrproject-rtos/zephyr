@@ -28,7 +28,7 @@
 
 #include "../media_proxy_internal.h" /* For MPL_NO_TRACK_ID - TODO: Fix */
 
-#include "shell/bt.h"
+#include "host/shell/bt.h"
 
 LOG_MODULE_REGISTER(bt_media_controller_shell, CONFIG_BT_MCS_LOG_LEVEL);
 
@@ -603,7 +603,7 @@ static int cmd_media_read_playback_speed(const struct shell *sh, size_t argc, ch
 	int err = media_proxy_ctrl_get_playback_speed(current_player);
 
 	if (err) {
-		shell_error(ctx_shell, "Playback speed get get failed (%d)", err);
+		shell_error(ctx_shell, "Playback speed get failed (%d)", err);
 	}
 
 	return err;

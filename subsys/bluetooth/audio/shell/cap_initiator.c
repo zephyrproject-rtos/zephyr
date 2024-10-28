@@ -21,7 +21,7 @@
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/uuid.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/shell/shell_string_conv.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/printk.h>
@@ -33,7 +33,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/audio/cap.h>
 
-#include "shell/bt.h"
+#include "host/shell/bt.h"
 #include "audio.h"
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
@@ -532,6 +532,7 @@ static int cmd_cap_initiator_unicast_stop(const struct shell *sh, size_t argc,
 
 	param.streams = streams;
 	param.type = BT_CAP_SET_TYPE_AD_HOC;
+	param.release = true;
 
 	err = bt_cap_initiator_unicast_audio_stop(&param);
 	if (err != 0) {
@@ -1446,9 +1447,9 @@ static ssize_t nonconnectable_ad_data_add(struct bt_data *data_array, const size
 		uint32_t broadcast_id;
 		int err;
 
-		err = bt_cap_initiator_broadcast_get_id(default_source.cap_source, &broadcast_id);
-		if (err != 0) {
-			printk("Unable to get broadcast ID: %d\n", err);
+		err = bt_rand(&broadcast_id, BT_AUDIO_BROADCAST_ID_SIZE);
+		if (err) {
+			printk("Unable to generate broadcast ID: %d\n", err);
 
 			return -1;
 		}

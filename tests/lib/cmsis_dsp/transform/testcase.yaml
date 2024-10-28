@@ -22,7 +22,7 @@ tests:
     filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU
       and CONFIG_FULL_LIBC_SUPPORTED) or CONFIG_ARCH_POSIX
     integration_platforms:
-      - mps3/an547
+      - mps3/corstone300/an547
     tags:
       - cmsis-dsp
       - fpu
@@ -50,7 +50,7 @@ tests:
     filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU
       and CONFIG_FULL_LIBC_SUPPORTED) or CONFIG_ARCH_POSIX
     integration_platforms:
-      - mps3/an547
+      - mps3/corstone300/an547
     tags:
       - cmsis-dsp
       - fpu
@@ -129,7 +129,7 @@ tests:
     filter: (CMSIS_DSP_FLOAT16 and (CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M)
       and CONFIG_CPU_HAS_FPU and CONFIG_FULL_LIBC_SUPPORTED)
     integration_platforms:
-      - mps3/an547
+      - mps3/corstone300/an547
     tags:
       - cmsis-dsp
       - fpu
@@ -156,7 +156,7 @@ tests:
     filter: (CMSIS_DSP_FLOAT16 and (CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M)
       and CONFIG_CPU_HAS_FPU and CONFIG_FULL_LIBC_SUPPORTED)
     integration_platforms:
-      - mps3/an547
+      - mps3/corstone300/an547
     tags:
       - cmsis-dsp
       - fpu
@@ -210,7 +210,7 @@ tests:
     filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU
       and CONFIG_FULL_LIBC_SUPPORTED) or CONFIG_ARCH_POSIX
     integration_platforms:
-      - mps3/an547
+      - mps3/corstone300/an547
     tags:
       - cmsis-dsp
       - fpu

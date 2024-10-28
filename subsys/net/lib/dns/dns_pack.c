@@ -5,7 +5,7 @@
  */
 
 #include <string.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 
 #include "dns_pack.h"
 
@@ -449,7 +449,8 @@ int mdns_unpack_query_header(struct dns_msg_t *msg, uint16_t *src_id)
 
 	qdcount = dns_unpack_header_qdcount(dns_header);
 	if (qdcount < 1) {
-		return -EINVAL;
+		/* Discard the message if query count is 0. RFC 6804 ch. 2 */
+		return -ENOENT;
 	}
 
 	if (src_id) {
@@ -590,7 +591,7 @@ int dns_unpack_query(struct dns_msg_t *dns_msg, struct net_buf *buf,
 	}
 
 	query_class = dns_unpack_query_qclass(end_of_label);
-	if (query_class != DNS_CLASS_IN) {
+	if ((query_class & DNS_CLASS_IN) != DNS_CLASS_IN) {
 		return -EINVAL;
 	}
 

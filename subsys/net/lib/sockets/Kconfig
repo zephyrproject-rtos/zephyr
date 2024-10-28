@@ -5,7 +5,9 @@
 
 menuconfig NET_SOCKETS
 	bool "BSD Sockets compatible API"
-	select FDTABLE
+	select ZVFS
+	select ZVFS_POLL
+	select ZVFS_SELECT
 	help
 	  Provide BSD Sockets like API on top of native Zephyr networking API.
 
@@ -46,12 +48,11 @@ config NET_SOCKETS_POSIX_NAMES
 	  with 3rd-party socket libraries.
 
 config NET_SOCKETS_POLL_MAX
-	int "Max number of supported poll() entries"
-	default 6 if WIFI_NM_WPA_SUPPLICANT
-	default 4 if SHELL_BACKEND_TELNET
-	default 3
+	int "Max number of supported poll() entries [DEPRECATED]"
+	default 0
 	help
-	  Maximum number of entries supported for poll() call.
+	  This option is deprecated.
+	  Please use CONFIG_ZVFS_POLL_MAX instead.
 
 config NET_SOCKETS_CONNECT_TIMEOUT
 	int "Timeout value in milliseconds to CONNECT"
@@ -100,14 +101,13 @@ config NET_SOCKET_MAX_SEND_WAIT
 	  returning an ENOBUFS error.
 
 config NET_SOCKETS_SERVICE
-	bool "Socket service support [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "Socket service support"
 	select EVENTFD
 	help
 	  The socket service can monitor multiple sockets and save memory
 	  by only having one thread listening socket data. If data is received
 	  in the monitored socket, a user supplied work is called.
-	  Note that you need to set CONFIG_NET_SOCKETS_POLL_MAX high enough
+	  Note that you need to set CONFIG_ZVFS_POLL_MAX high enough
 	  so that enough sockets entries can be serviced. This depends on
 	  system needs as multiple services can be activated at the same time
 	  depending on network configuration.
@@ -118,24 +118,18 @@ config NET_SOCKETS_SERVICE_THREAD_PRIO
 	depends on NET_SOCKETS_SERVICE
 	help
 	  Set the priority of the socket service dispatcher thread. This handler
-	  polls the sockets and either places the triggered socket to work queue
-	  for asynchronous handlers, or calls the user supplied callback directly
-	  for synchronous handlers.
-	  The value should be selected carefully because if this thread priority
-	  is too high, the work queue handlers might not be able to run if using
-	  asynchronous handlers that are called via a work queue.
+	  polls the sockets and calls the user supplied callback directly.
 
 	  Note that >= 0 value means preemptive thread priority, the lowest
 	  value is NUM_PREEMPT_PRIORITIES.
 	  Highest preemptive thread priority is 0.
 	  Lowest cooperative thread priority is -1.
 	  Highest cooperative thread priority is -NUM_COOP_PRIORITIES.
-	  Make sure the priority is lower than workqueue priority so that
-	  we never block the workqueue handler.
 
 config NET_SOCKETS_SERVICE_STACK_SIZE
 	int "Stack size for the thread handling socket services"
 	default 2400 if NET_DHCPV4_SERVER
+	default 1400 if MDNS_RESPONDER
 	default 1200
 	depends on NET_SOCKETS_SERVICE
 	help
@@ -215,13 +209,13 @@ config NET_SOCKETS_DTLS_MAX_FRAGMENT_LENGTH
 config NET_SOCKETS_DTLS_SENDMSG_BUF_SIZE
 	int "Intermediate buffer size for DTLS sendmsg()"
 	depends on NET_SOCKETS_ENABLE_DTLS
-	range 0 65535
+	range 0 $(UINT16_MAX)
 	default 0
 	help
 	  Size of the intermediate buffer for DTLS sendmsg() function. The
 	  intermediate buffer is needed, as sendmsg() for DGRAM is expected to
 	  send all of the data in a single datagram, therefore all data provided
-	  in msghdr strucure need to be linearized before passing to mbed TLS.
+	  in msghdr structure need to be linearized before passing to mbed TLS.
 	  The buffer size can be set to 0, in that case data linearizing for
 	  DTLS sockets is disabled. In result, sendmsg() will only accept msghdr
 	  with a single non-empty iov buffer.
@@ -377,16 +371,28 @@ config NET_SOCKETPAIR_STATIC
 
 config NET_SOCKETPAIR_HEAP
 	bool "Use heap for allocating socketpairs"
-	depends on HEAP_MEM_POOL_SIZE != 0
 
 endchoice
 
 if NET_SOCKETPAIR_STATIC
+
 config NET_SOCKETPAIR_MAX
 	int "How many socketpairs to pre-allocate"
+	default 6 if WIFI_NM_WPA_SUPPLICANT
 	default 1
-endif
-endif
+
+endif # NET_SOCKETPAIR_STATIC
+
+if NET_SOCKETPAIR_HEAP
+
+config HEAP_MEM_POOL_ADD_SIZE_SOCKETPAIR
+	int
+	default 32000 if WIFI_NM_WPA_SUPPLICANT
+	default 256
+
+endif # NET_SOCKETPAIR_HEAP
+
+endif # NET_SOCKETPAIR
 
 config NET_SOCKETS_NET_MGMT
 	bool "Network management socket support [EXPERIMENTAL]"
@@ -396,6 +402,10 @@ config NET_SOCKETS_NET_MGMT
 	help
 	  Select this if you want to use socket API to get network
 	  managements events to your application.
+	  Note, that the thread using net_mgmt sockets should have at least
+	  the same priority as the thread processing network events (see
+	  CONFIG_NET_MGMT_EVENT_WORKER), otherwise in case of event bursts some
+	  events may be lost.
 
 config NET_SOCKETS_NET_MGMT_MAX_LISTENERS
 	int "Max number of sockets to listen"

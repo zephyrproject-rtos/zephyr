@@ -46,10 +46,13 @@ Below is an example of a test suite using a predicate:
 Adding tests to a suite
 ***********************
 
-There are 4 macros used to add a test to a suite, they are:
+There are 5 macros used to add a test to a suite, they are:
 
 * :c:macro:`ZTEST` ``(suite_name, test_name)`` - Which can be used to add a test by ``test_name`` to a
   given suite by ``suite_name``.
+* :c:macro:`ZTEST_P` ``(suite_name, test_name)`` - Add a parameterized test to a given suite by specifying
+  the ``suite_name`` and ``test_name``. You can then access the passed parameter within
+  the body of the test using the ``data`` pointer.
 * :c:macro:`ZTEST_USER` ``(suite_name, test_name)`` - Which behaves the same as :c:macro:`ZTEST`, only
   that when :kconfig:option:`CONFIG_USERSPACE` is enabled, then the test will be run in a userspace
   thread.
@@ -215,24 +218,30 @@ function can be written as follows:
 Quick start - Integration testing
 *********************************
 
-A simple working base is located at :zephyr_file:`samples/subsys/testsuite/integration`.  Just
-copy the files to ``tests/`` and edit them for your needs. The test will then
-be automatically built and run by the twister script. If you are testing
-the **bar** component of **foo**, you should copy the sample folder to
-``tests/foo/bar``. It can then be tested with:
+A simple working base is located at :zephyr_file:`samples/subsys/testsuite/integration`.
+To make a test application for the **bar** component of **foo**, you should copy the
+sample folder to ``tests/foo/bar`` and edit files there adjusting for your test
+application's purposes.
 
-.. code-block:: console
-
-   ./scripts/twister -s tests/foo/bar/test-identifier
-
-In the example above ``tests/foo/bar`` signifies the path to the test and the
-``test-identifier`` references a test defined in the :file:`testcase.yaml` file.
-
-To run all tests defined in a test project, run:
+To build and execute all applicable test scenarios defined in your test application
+use the :ref:`Twister <twister_script>` tool, for example:
 
 .. code-block:: console
 
     ./scripts/twister -T tests/foo/bar/
+
+To select just one of the test scenarios, run Twister with ``--scenario`` command:
+
+.. code-block:: console
+
+   ./scripts/twister --scenario tests/foo/bar/your.test.scenario.name
+
+In the command line above ``tests/foo/bar`` is the path to your test application and
+``your.test.scenario.name`` references a test scenario defined in :file:`testcase.yaml`
+file, which is like ``sample.testing.ztest`` in the boilerplate test suite sample.
+
+See :ref:`Twister test project diagram <twister_test_project_diagram>` for more details
+on how Twister deals with Ztest application.
 
 The sample contains the following files:
 
@@ -267,13 +276,13 @@ src/main.c (see :ref:`best practices <main_c_bp>`)
 
 
 
-A test case project may consist of multiple sub-tests or smaller tests that
-either can be testing functionality or APIs. Functions implementing a test
+A test application may consist of multiple test suites that
+either can be testing functionality or APIs. Functions implementing a test case
 should follow the guidelines below:
 
-* Test cases function names should be prefix with **test_**
+* Test cases function names should be prefixed with **test_**
 * Test cases should be documented using doxygen
-* Test function names should be unique within the section or component being
+* Test case function names should be unique within the section or component being
   tested
 
 For example:
@@ -283,7 +292,7 @@ For example:
    /**
     * @brief Test Asserts
     *
-    * This test verifies the zassert_true macro.
+    * This test case verifies the zassert_true macro.
     */
    ZTEST(my_suite, test_assert)
    {
@@ -293,18 +302,18 @@ For example:
 Listing Tests
 =============
 
-Tests (test projects) in the Zephyr tree consist of many testcases that run as
+Tests (test applications) in the Zephyr tree consist of many test scenarios that run as
 part of a project and test similar functionality, for example an API or a
-feature. The ``twister`` script can parse the testcases in all
-test projects or a subset of them, and can generate reports on a granular
-level, i.e. if cases have passed or failed or if they were blocked or skipped.
+feature. The ``twister`` script can parse the test scenarios, suites and cases in all
+test applications or a subset of them, and can generate reports on a granular
+level, i.e. if test cases have passed or failed or if they were blocked or skipped.
 
 Twister parses the source files looking for test case names, so you
 can list all kernel test cases, for example, by running:
 
 .. code-block:: console
 
-   twister --list-tests -T tests/kernel
+   ./scripts/twister --list-tests -T tests/kernel
 
 Skipping Tests
 ==============
@@ -378,18 +387,18 @@ Best practices for declaring the test suite
 *******************************************
 
 *twister* and other validation tools need to obtain the list of
-subcases that a Zephyr *ztest* test image will expose.
+test cases that a Zephyr *ztest* test image will expose.
 
 .. admonition:: Rationale
 
    This all is for the purpose of traceability. It's not enough to
-   have only a semaphore test project.  We also need to show that we
+   have only a semaphore test application.  We also need to show that we
    have testpoints for all APIs and functionality, and we trace back
    to documentation of the API, and functional requirements.
 
-   The idea is that test reports show results for every sub-testcase
+   The idea is that test reports show results for every test case
    as passed, failed, blocked, or skipped.  Reporting on only the
-   high-level test project level, particularly when tests do too
+   high-level test application, particularly when tests do too
    many things, is too vague.
 
 Other questions:
@@ -399,9 +408,9 @@ Other questions:
   If C pre-processing or building fails because of any issue, then we
   won't be able to tell the subcases.
 
-- Why not declare them in the YAML testcase description?
+- Why not declare them in the YAML test configuration?
 
-  A separate testcase description file would be harder to maintain
+  A separate test case description file would be harder to maintain
   than just keeping the information in the test source files
   themselves -- only one file to update when changes are made
   eliminates duplication.
@@ -591,13 +600,17 @@ By default the tests are sorted and ran in alphanumerical order.  Test cases may
 be dependent on this sequence. Enable :kconfig:option:`CONFIG_ZTEST_SHUFFLE` to
 randomize the order. The output from the test will display the seed for failed
 tests.  For native simulator builds you can provide the seed as an argument to
-twister with `--seed`
+twister with ``--seed``.
 
-Static configuration of ZTEST_SHUFFLE contains:
 
- - :kconfig:option:`CONFIG_ZTEST_SHUFFLE_SUITE_REPEAT_COUNT` - Number of iterations the test suite will run.
- - :kconfig:option:`CONFIG_ZTEST_SHUFFLE_TEST_REPEAT_COUNT` - Number of iterations the test will run.
-
+Repeating Tests
+***********************
+By default the tests are executed once. The test cases and test suites
+may be executed multiple times. Enable :kconfig:option:`CONFIG_ZTEST_REPEAT` to
+execute the tests multiple times. By default the multiplication factors are 3, which
+means every test suite is executed 3 times and every test case is executed 3 times. This can
+be changed by the :kconfig:option:`CONFIG_ZTEST_SUITE_REPEAT_COUNT` and
+:kconfig:option:`CONFIG_ZTEST_TEST_REPEAT_COUNT` Kconfig options.
 
 Test Selection
 **************

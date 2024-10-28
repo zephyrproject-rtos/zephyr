@@ -10,6 +10,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/hci.h>
 
 extern int mtu_exchange(struct bt_conn *conn);
 extern int write_cmd(struct bt_conn *conn);
@@ -66,7 +67,7 @@ uint32_t peripheral_gatt_write(uint32_t count)
 	(void)bt_conn_auth_cb_register(&auth_callbacks);
 #endif /* CONFIG_BT_SMP */
 
-	err = bt_le_adv_start(BT_LE_ADV_CONN_ONE_TIME, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
+	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
 	if (err) {
 		printk("Advertising failed to start (err %d)\n", err);
 		return 0U;

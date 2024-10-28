@@ -22,8 +22,6 @@ GTEXT(__soc_handle_irq)
 SECTION_FUNC(exception.other, __soc_handle_irq)
 	ret
 
-#if !defined(CONFIG_RISCV_VECTORED_MODE)
-
 GTEXT(__soc_handle_all_irqs)
 
 #ifdef CONFIG_TRACING
@@ -36,7 +34,8 @@ GTEXT(sys_trace_isr_exit)
  * This function services and clears all pending interrupts for an ECLIC in non-vectored mode.
  */
 SECTION_FUNC(exception.other, __soc_handle_all_irqs)
-	mv t2, ra
+	addi sp, sp, -16
+	sw ra, 0(sp)
 
 	/* Read and clear mnxti to get highest current interrupt and enable interrupts. Will return
 	 * original interrupt if no others appear. */
@@ -49,8 +48,10 @@ irq_loop:
 	call sys_trace_isr_enter
 #endif
 
-	/* Call corresponding registered function in _sw_isr_table. a0 is offset in words, table is
-	 * 2-word wide -> shift by one */
+	/* Call corresponding registered function in _sw_isr_table. a0 is offset in pointer with
+	 * the mtvt, sw irq table is 2-pointer wide -> shift by one. */
+	csrr t0, 0x307 /* mtvt */
+	sub a0, a0, t0
 	la t0, _sw_isr_table
 	slli a0, a0, (1)
 	add t0, t0, a0
@@ -64,16 +65,15 @@ irq_loop:
 	/* Call ISR function */
 	jalr ra, t1, 0
 
-	/* Read and clear mnxti to get highest current interrupt and enable interrupts. */
-	csrrci a0, 0x345, MSTATUS_IEN
-
 #ifdef CONFIG_TRACING_ISR
 	call sys_trace_isr_exit
 #endif
 
+	/* Read and clear mnxti to get highest current interrupt and enable interrupts. */
+	csrrci a0, 0x345, MSTATUS_IEN
 	bnez a0, irq_loop
 
 irq_done:
-	mv ra, t2
+	lw ra, 0(sp)
+	addi sp, sp, 16
 	ret
-#endif

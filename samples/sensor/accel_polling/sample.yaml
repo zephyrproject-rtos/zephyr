@@ -17,6 +17,7 @@ tests:
       - lpcxpresso55s28                 # mma8652fc
       - bbc_microbit                    # mmc8653fc
       - frdm_k64f                       # fxos8700
+      - mimxrt1040_evk                  # fxls8974
       - sparkfun_thing_plus/nrf9160     # lis2dh
       - thingy52/nrf52832               # lis2dh12
       - stm32f411e_disco                # lsm303agr_accel
@@ -25,3 +26,17 @@ tests:
       - b_l4s5i_iot01a                  # lsm6dsl
       - sensortile_box                  # lis2dw12, lsm6dso, iisdhhc
       - thingy53/nrf5340/cpuapp         # adxl362, bmi270
+  sample.sensor.accel_polling.adxl362-stream:
+    harness: console
+    tags: sensors
+    harness_config:
+      type: one_line
+      regex:
+        - "^\\s*[0-9A-Za-z_,+-.]*@[0-9A-Fa-f]* \\[m\/s\\^2\\]:    \
+           \\(\\s*-?[0-9\\.]*,\\s*-?[0-9\\.]*,\\s*-?[0-9\\.]*\\)$"
+    extra_args:
+      - SHIELD=eval_adxl362_ardz
+      - EXTRA_CONF_FILE=adxl362-stream.conf
+      - SNIPPET=rtt-tracing;rtt-console
+    platform_allow:
+      - apard32690/max32690/m4

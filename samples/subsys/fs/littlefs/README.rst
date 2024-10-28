@@ -77,7 +77,7 @@ recreated.
 Block device (e.g. SD card)
 ---------------------------
 
-This example has been devised and initially tested on :ref:`Nucleo H743ZI <nucleo_h743zi_board>`
+This example has been devised and initially tested on :zephyr:board:`nucleo_h743zi`
 board. It can be also run on any other board with SD/MMC card connected to it.
 
 To build the test:
@@ -91,19 +91,19 @@ To build the test:
 
 At the moment, only two types of block devices are acceptable in this sample: SDMMC and MMC.
 
-It is possible that both the `zephyr,sdmmc-disk` and `zephyr,mmc-disk` block devices will be
+It is possible that both the ``zephyr,sdmmc-disk`` and ``zephyr,mmc-disk`` block devices will be
 present and enabled in the final board dts and configuration files simultaneously, the mount
-point name for the `littlefs` file system block device will be determined based on the
+point name for the ``littlefs`` file system block device will be determined based on the
 following logic:
 
-* if the ``CONFIG_SDMMC_VOLUME_NAME`` configuration is defined, it will be used
+* if the :kconfig:option:`CONFIG_SDMMC_VOLUME_NAME` configuration is defined, it will be used
   as the mount point name;
-* if the ``CONFIG_SDMMC_VOLUME_NAME`` configuration is not defined, but the
-  ``CONFIG_MMC_VOLUME_NAME`` configuration is defined, ``CONFIG_MMC_VOLUME_NAME`` will
-  be used as the mount point name;
-* if neither ``CONFIG_SDMMC_VOLUME_NAME`` nor ``CONFIG_MMC_VOLUME_NAME`` configurations
-  are defined, the mount point name will not be determined, and an appropriate error will
-  apear during the sample build.
+* if the :kconfig:option:`CONFIG_SDMMC_VOLUME_NAME` configuration is not defined, but the
+  :kconfig:option:`CONFIG_MMC_VOLUME_NAME` configuration is defined,
+  :kconfig:option:`CONFIG_MMC_VOLUME_NAME` will be used as the mount point name;
+* if neither :kconfig:option:`CONFIG_SDMMC_VOLUME_NAME` nor :kconfig:option:`CONFIG_MMC_VOLUME_NAME`
+  configurations are defined, the mount point name will not be determined, and an appropriate error
+  will appear during the sample build.
 
 NRF52840 Development Kit
 ========================

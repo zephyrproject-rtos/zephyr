@@ -73,6 +73,17 @@ config CPU_CORTEX_M55
 	help
 	  This option signifies the use of a Cortex-M55 CPU
 
+config CPU_CORTEX_M85
+	bool
+	select CPU_CORTEX_M
+	select ARMV8_1_M_MAINLINE
+	select ARMV8_M_SE if CPU_HAS_TEE
+	select ARMV7_M_ARMV8_M_FP if CPU_HAS_FPU
+	select CPU_HAS_DCACHE
+	select CPU_HAS_ICACHE
+	help
+	  This option signifies the use of a Cortex-M85 CPU
+
 config CPU_CORTEX_M7
 	bool
 	select CPU_CORTEX_M
@@ -319,7 +330,7 @@ config ZERO_LATENCY_IRQS
 config ZERO_LATENCY_LEVELS
 	int "Number of interrupt priority levels reserved for zero latency"
 	depends on ZERO_LATENCY_IRQS
-	range 1 255
+	range 1 $(UINT8_MAX)
 	help
 	  The amount of interrupt priority levels reserved for zero latency
 	  interrupts. Increase this value to reserve more than one priority

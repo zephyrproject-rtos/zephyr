@@ -1,0 +1,54 @@
+/*
+ * Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	i2s0_pinconf: i2s0_pinconf {
+		group1 {
+			pinmux = <I2S0_MCLK_GPIO42>,
+				 <I2S0_O_WS_GPIO41>,
+				 <I2S0_O_BCK_GPIO40>,
+				 <I2S0_O_SD_GPIO39>;
+			output-enable;
+		};
+	};
+
+	i2s1_pinconf: i2s1_pinconf {
+		group1 {
+			pinmux = <I2S1_MCLK_GPIO35>,
+				 <I2S1_I_WS_GPIO36>,
+				 <I2S1_I_BCK_GPIO37>;
+			output-enable;
+		};
+		group2 {
+			pinmux = <I2S1_I_SD_GPIO38>;
+			input-enable;
+		};
+	};
+};
+
+i2s_tx: &i2s0 {
+	status = "okay";
+
+	pinctrl-0 = <&i2s0_pinconf>;
+	pinctrl-names = "default";
+
+	dmas = <&dma 3>;
+	dma-names = "tx";
+};
+
+i2s_rx: &i2s1 {
+	status = "okay";
+
+	pinctrl-0 = <&i2s1_pinconf>;
+	pinctrl-names = "default";
+
+	dmas = <&dma 4>;
+	dma-names = "rx";
+};
+
+&dma {
+	status = "okay";
+};

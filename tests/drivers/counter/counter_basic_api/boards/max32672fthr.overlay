@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2024 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&timer0 {
+	status = "okay";
+	prescaler = <2>;
+	counter {
+		status = "okay";
+	};
+};
+
+&timer1 {
+	status = "okay";
+	prescaler = <2>;
+	counter {
+		status = "okay";
+	};
+};
+
+&timer2 {
+	status = "okay";
+	prescaler = <2>;
+	counter {
+		status = "okay";
+	};
+};
+
+&timer3 {
+	status = "okay";
+	prescaler = <2>;
+	counter {
+		status = "okay";
+	};
+};

@@ -1,11 +1,14 @@
 # Copyright 2024 NXP
 # SPDX-License-Identifier: Apache-2.0
+#
+# Do NOT select anything from the MCX family kconfig,
+# and do not make it a dependency of anything else.
+# If there is some similarity between series,
+# use if SERIES_A || SERIES_B or something of that
+# effect rather than the family config.
+# This is because MCX series is expected to be very diverse.
 
 if SOC_FAMILY_NXP_MCX
-
-config SERIAL_INIT_PRIORITY
-	default 55
-	depends on SERIAL
 
 rsource "*/Kconfig.defconfig"
 

@@ -25,11 +25,8 @@
  * @brief Perform basic hardware initialization at boot.
  *
  * This needs to be run from the very beginning.
- * So the init priority has to be 0 (zero).
- *
- * @return 0
  */
-static int stm32h7rs_init(void)
+void soc_early_init_hook(void)
 {
 	sys_cache_instr_enable();
 	sys_cache_data_enable();
@@ -72,7 +69,13 @@ static int stm32h7rs_init(void)
 	while (LL_PWR_IsActiveFlag_VOSRDY() == 0) {
 	}
 
-	return 0;
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpioo), okay) || DT_NODE_HAS_STATUS(DT_NODELABEL(gpiop), okay)
+	LL_PWR_EnableXSPIM1(); /* Required for powering GPIO O and P */
+#endif /* gpioo || gpio p */
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpion), okay)
+	LL_PWR_EnableXSPIM2(); /* Required for powering GPIO N */
+#endif /* gpio n */
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpiom), okay)
+	LL_PWR_EnableUSBVoltageDetector(); /* Required for powering GPIO M */
+#endif /* gpiom */
 }
-
-SYS_INIT(stm32h7rs_init, PRE_KERNEL_1, 0);

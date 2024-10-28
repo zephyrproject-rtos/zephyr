@@ -16,6 +16,7 @@ LOG_MODULE_DECLARE(net_coap, CONFIG_COAP_LOG_LEVEL);
 #define COAP_VERSION 1
 #define COAP_SEPARATE_TIMEOUT 6000
 #define COAP_PERIODIC_TIMEOUT 500
+#define COAP_EXCHANGE_LIFETIME_FACTOR 3
 #define BLOCK1_OPTION_SIZE 4
 #define PAYLOAD_MARKER_SIZE 1
 
@@ -86,7 +87,22 @@ static int coap_client_schedule_poll(struct coap_client *client, int sock,
 	return 0;
 }
 
-bool has_ongoing_request(struct coap_client *client)
+static bool exchange_lifetime_exceeded(struct coap_client_internal_request *internal_req)
+{
+	int64_t time_since_t0, exchange_lifetime;
+
+	if (coap_header_get_type(&internal_req->request) == COAP_TYPE_NON_CON) {
+		return true;
+	}
+
+	time_since_t0 = k_uptime_get() - internal_req->pending.t0;
+	exchange_lifetime =
+		(internal_req->pending.params.ack_timeout * COAP_EXCHANGE_LIFETIME_FACTOR);
+
+	return time_since_t0 > exchange_lifetime;
+}
+
+static bool has_ongoing_request(struct coap_client *client)
 {
 	for (int i = 0; i < CONFIG_COAP_CLIENT_MAX_REQUESTS; i++) {
 		if (client->requests[i].request_ongoing == true) {
@@ -97,10 +113,23 @@ bool has_ongoing_request(struct coap_client *client)
 	return false;
 }
 
-struct coap_client_internal_request *get_free_request(struct coap_client *client)
+static bool has_ongoing_exchange(struct coap_client *client)
 {
 	for (int i = 0; i < CONFIG_COAP_CLIENT_MAX_REQUESTS; i++) {
-		if (client->requests[i].request_ongoing == false) {
+		if (client->requests[i].request_ongoing == true ||
+		    !exchange_lifetime_exceeded(&client->requests[i])) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+static struct coap_client_internal_request *get_free_request(struct coap_client *client)
+{
+	for (int i = 0; i < CONFIG_COAP_CLIENT_MAX_REQUESTS; i++) {
+		if (client->requests[i].request_ongoing == false &&
+		    exchange_lifetime_exceeded(&client->requests[i])) {
 			return &client->requests[i];
 		}
 	}
@@ -110,13 +139,24 @@ struct coap_client_internal_request *get_free_request(struct coap_client *client
 
 static bool has_ongoing_requests(void)
 {
-	bool has_requests = false;
-
 	for (int i = 0; i < num_clients; i++) {
-		has_requests |= has_ongoing_request(clients[i]);
+		if (has_ongoing_request(clients[i])) {
+			return true;
+		}
 	}
 
-	return has_requests;
+	return false;
+}
+
+static bool has_ongoing_exchanges(void)
+{
+	for (int i = 0; i < num_clients; i++) {
+		if (has_ongoing_exchange(clients[i])) {
+			return true;
+		}
+	}
+
+	return false;
 }
 
 static enum coap_block_size coap_client_default_block_size(void)
@@ -148,6 +188,7 @@ static int coap_client_init_request(struct coap_client *client,
 {
 	int ret = 0;
 	int i;
+	bool block2 = false;
 
 	memset(client->send_buf, 0, sizeof(client->send_buf));
 
@@ -189,6 +230,7 @@ static int coap_client_init_request(struct coap_client *client,
 
 	/* Blockwise receive ongoing, request next block. */
 	if (internal_req->recv_blk_ctx.current > 0) {
+		block2 = true;
 		ret = coap_append_block2_option(&internal_req->request,
 						&internal_req->recv_blk_ctx);
 
@@ -200,6 +242,14 @@ static int coap_client_init_request(struct coap_client *client,
 
 	/* Add extra options if any */
 	for (i = 0; i < req->num_options; i++) {
+		if (COAP_OPTION_BLOCK2 == req->options[i].code && block2) {
+			/* After the first request, ignore any block2 option added by the
+			 * application, since NUM (and possibly SZX) must be updated based on the
+			 * server response.
+			 */
+			continue;
+		}
+
 		ret = coap_packet_append_option(&internal_req->request, req->options[i].code,
 						req->options[i].value, req->options[i].len);
 
@@ -286,21 +336,26 @@ int coap_client_req(struct coap_client *client, int sock, const struct sockaddr 
 		    struct coap_client_request *req, struct coap_transmission_parameters *params)
 {
 	int ret;
+	struct coap_client_internal_request *internal_req;
 
-	struct coap_client_internal_request *internal_req = get_free_request(client);
+	if (client == NULL || sock < 0 || req == NULL || req->path == NULL) {
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&client->lock, K_FOREVER);
+
+	internal_req = get_free_request(client);
 
 	if (internal_req == NULL) {
 		LOG_DBG("No more free requests");
-		return -EAGAIN;
-	}
-
-	if (sock < 0 || req == NULL || req->path == NULL) {
-		return -EINVAL;
+		ret = -EAGAIN;
+		goto out;
 	}
 
 	/* Don't allow changing to a different socket if there is already request ongoing. */
 	if (client->fd != sock && has_ongoing_request(client)) {
-		return -EALREADY;
+		ret = -EALREADY;
+		goto out;
 	}
 
 	/* Don't allow changing to a different address if there is already request ongoing. */
@@ -308,7 +363,8 @@ int coap_client_req(struct coap_client *client, int sock, const struct sockaddr 
 		if (memcmp(&client->address, addr, sizeof(*addr)) != 0) {
 			if (has_ongoing_request(client)) {
 				LOG_WRN("Can't change to a different socket, request ongoing.");
-				return -EALREADY;
+				ret = -EALREADY;
+				goto out;
 			}
 
 			memcpy(&client->address, addr, sizeof(*addr));
@@ -318,7 +374,8 @@ int coap_client_req(struct coap_client *client, int sock, const struct sockaddr 
 		if (client->socklen != 0) {
 			if (has_ongoing_request(client)) {
 				LOG_WRN("Can't change to a different socket, request ongoing.");
-				return -EALREADY;
+				ret = -EALREADY;
+				goto out;
 			}
 
 			memset(&client->address, 0, sizeof(client->address));
@@ -328,15 +385,9 @@ int coap_client_req(struct coap_client *client, int sock, const struct sockaddr 
 
 	reset_internal_request(internal_req);
 
-	if (k_mutex_lock(&client->send_mutex, K_NO_WAIT)) {
-		LOG_DBG("Could not immediately lock send_mutex");
-		return -EAGAIN;
-	}
-
 	ret = coap_client_init_request(client, req, internal_req, false);
 	if (ret < 0) {
 		LOG_ERR("Failed to initialize coap request");
-		k_mutex_unlock(&client->send_mutex);
 		goto out;
 	}
 
@@ -345,7 +396,6 @@ int coap_client_req(struct coap_client *client, int sock, const struct sockaddr 
 						client->echo_option.value, client->echo_option.len);
 		if (ret < 0) {
 			LOG_ERR("Failed to append echo option");
-			k_mutex_unlock(&client->send_mutex);
 			goto out;
 		}
 		client->send_echo = false;
@@ -354,7 +404,6 @@ int coap_client_req(struct coap_client *client, int sock, const struct sockaddr 
 	ret = coap_client_schedule_poll(client, sock, req, internal_req);
 	if (ret < 0) {
 		LOG_ERR("Failed to schedule polling");
-		k_mutex_unlock(&client->send_mutex);
 		goto out;
 	}
 
@@ -365,7 +414,6 @@ int coap_client_req(struct coap_client *client, int sock, const struct sockaddr 
 
 		if (ret < 0) {
 			LOG_ERR("Failed to initialize pending struct");
-			k_mutex_unlock(&client->send_mutex);
 			goto out;
 		}
 
@@ -375,9 +423,6 @@ int coap_client_req(struct coap_client *client, int sock, const struct sockaddr 
 
 	ret = send_request(sock, internal_req->request.data, internal_req->request.offset, 0,
 			  &client->address, client->socklen);
-
-	k_mutex_unlock(&client->send_mutex);
-
 	if (ret < 0) {
 		LOG_ERR("Transmission failed: %d", errno);
 	} else {
@@ -385,6 +430,7 @@ int coap_client_req(struct coap_client *client, int sock, const struct sockaddr 
 		ret = 0;
 	}
 out:
+	k_mutex_unlock(&client->lock);
 	return ret;
 }
 
@@ -425,7 +471,6 @@ static int resend_request(struct coap_client *client,
 		if (internal_req->send_blk_ctx.total_size > 0) {
 			internal_req->send_blk_ctx.current = internal_req->offset;
 		}
-		k_mutex_lock(&client->send_mutex, K_FOREVER);
 		ret = coap_client_init_request(client, &internal_req->coap_request,
 					       internal_req, true);
 		if (ret < 0) {
@@ -440,7 +485,6 @@ static int resend_request(struct coap_client *client,
 				LOG_ERR("Failed to resend request, %d", ret);
 			}
 		}
-		k_mutex_unlock(&client->send_mutex);
 	} else {
 		LOG_ERR("Timeout in poll, no more retries left");
 		ret = -ETIMEDOUT;
@@ -456,11 +500,15 @@ static int coap_client_resend_handler(void)
 	int ret = 0;
 
 	for (int i = 0; i < num_clients; i++) {
+		k_mutex_lock(&clients[i]->lock, K_FOREVER);
+
 		for (int j = 0; j < CONFIG_COAP_CLIENT_MAX_REQUESTS; j++) {
 			if (timeout_expired(&clients[i]->requests[j])) {
 				ret = resend_request(clients[i], &clients[i]->requests[j]);
 			}
 		}
+
+		k_mutex_unlock(&clients[i]->lock);
 	}
 
 	return ret;
@@ -502,19 +550,24 @@ static int handle_poll(void)
 
 		} else {
 			for (int i = 0; i < nfds; i++) {
+
 				if (fds[i].revents & ZSOCK_POLLERR) {
 					LOG_ERR("Error in poll for socket %d", fds[i].fd);
+					clients[i]->socket_error = -EIO;
 				}
 				if (fds[i].revents & ZSOCK_POLLHUP) {
 					LOG_ERR("Error in poll: POLLHUP for socket %d", fds[i].fd);
+					clients[i]->socket_error = -ENOTCONN;
 				}
 				if (fds[i].revents & ZSOCK_POLLNVAL) {
 					LOG_ERR("Error in poll: POLLNVAL - fd %d not open",
 						fds[i].fd);
+					clients[i]->socket_error = -EINVAL;
 				}
 				if (fds[i].revents & ZSOCK_POLLIN) {
 					clients[i]->response_ready = true;
 				}
+
 			}
 
 			return 0;
@@ -539,26 +592,38 @@ static bool token_compare(struct coap_client_internal_request *internal_req,
 	return memcmp(&internal_req->request_token, &response_token, response_tkl) == 0;
 }
 
-static int recv_response(struct coap_client *client, struct coap_packet *response)
+static int recv_response(struct coap_client *client, struct coap_packet *response, bool *truncated)
 {
-	int len;
+	int total_len;
+	int available_len;
 	int ret;
+	int flags = ZSOCK_MSG_DONTWAIT;
+
+	if (IS_ENABLED(CONFIG_COAP_CLIENT_TRUNCATE_MSGS)) {
+		flags |= ZSOCK_MSG_TRUNC;
+	}
 
 	memset(client->recv_buf, 0, sizeof(client->recv_buf));
-	len = receive(client->fd, client->recv_buf, sizeof(client->recv_buf), ZSOCK_MSG_DONTWAIT,
-		      &client->address, &client->socklen);
+	total_len = receive(client->fd, client->recv_buf, sizeof(client->recv_buf), flags,
+			    &client->address, &client->socklen);
 
-	if (len < 0) {
+	if (total_len < 0) {
 		LOG_ERR("Error reading response: %d", errno);
+		if (errno == EOPNOTSUPP) {
+			return -errno;
+		}
 		return -EINVAL;
-	} else if (len == 0) {
+	} else if (total_len == 0) {
 		LOG_ERR("Zero length recv");
 		return -EINVAL;
 	}
 
-	LOG_DBG("Received %d bytes", len);
+	available_len = MIN(total_len, sizeof(client->recv_buf));
+	*truncated = available_len < total_len;
 
-	ret = coap_packet_parse(response, client->recv_buf, len, NULL, 0);
+	LOG_DBG("Received %d bytes", available_len);
+
+	ret = coap_packet_parse(response, client->recv_buf, available_len, NULL, 0);
 	if (ret < 0) {
 		LOG_ERR("Invalid data received");
 		return ret;
@@ -588,21 +653,8 @@ static int send_ack(struct coap_client *client, const struct coap_packet *req,
 	return 0;
 }
 
-struct coap_client_internal_request *get_request_with_id(struct coap_client *client,
-							 uint16_t message_id)
-{
-	for (int i = 0; i < CONFIG_COAP_CLIENT_MAX_REQUESTS; i++) {
-		if (client->requests[i].request_ongoing == true &&
-		    client->requests[i].pending.id == message_id) {
-			return &client->requests[i];
-		}
-	}
-
-	return NULL;
-}
-
-struct coap_client_internal_request *get_request_with_token(struct coap_client *client,
-							    const struct coap_packet *resp)
+static struct coap_client_internal_request *get_request_with_token(
+	struct coap_client *client, const struct coap_packet *resp)
 {
 
 	uint8_t response_token[COAP_TOKEN_MAX_LEN];
@@ -611,7 +663,8 @@ struct coap_client_internal_request *get_request_with_token(struct coap_client *
 	response_tkl = coap_header_get_token(resp, response_token);
 
 	for (int i = 0; i < CONFIG_COAP_CLIENT_MAX_REQUESTS; i++) {
-		if (client->requests[i].request_ongoing) {
+		if (client->requests[i].request_ongoing ||
+		    !exchange_lifetime_exceeded(&client->requests[i])) {
 			if (client->requests[i].request_tkl != response_tkl) {
 				continue;
 			}
@@ -630,7 +683,8 @@ static bool find_echo_option(const struct coap_packet *response, struct coap_opt
 	return coap_find_options(response, COAP_OPTION_ECHO, option, 1);
 }
 
-static int handle_response(struct coap_client *client, const struct coap_packet *response)
+static int handle_response(struct coap_client *client, const struct coap_packet *response,
+			   bool response_truncated)
 {
 	int ret = 0;
 	int response_type;
@@ -690,14 +744,11 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 	if (find_echo_option(response, &client->echo_option)) {
 		 /* Resend request with echo option */
 		if (response_code == COAP_RESPONSE_CODE_UNAUTHORIZED) {
-			k_mutex_lock(&client->send_mutex, K_FOREVER);
-
 			ret = coap_client_init_request(client, &internal_req->coap_request,
 						       internal_req, false);
 
 			if (ret < 0) {
 				LOG_ERR("Error creating a CoAP request");
-				k_mutex_unlock(&client->send_mutex);
 				goto fail;
 			}
 
@@ -706,7 +757,6 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 							client->echo_option.len);
 			if (ret < 0) {
 				LOG_ERR("Failed to append echo option");
-				k_mutex_unlock(&client->send_mutex);
 				goto fail;
 			}
 
@@ -718,7 +768,6 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 							&params);
 				if (ret < 0) {
 					LOG_ERR("Error creating pending");
-					k_mutex_unlock(&client->send_mutex);
 					goto fail;
 				}
 
@@ -728,8 +777,6 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 			ret = send_request(client->fd, internal_req->request.data,
 					   internal_req->request.offset, 0, &client->address,
 					   client->socklen);
-			k_mutex_unlock(&client->send_mutex);
-
 			if (ret < 0) {
 				LOG_ERR("Error sending a CoAP request");
 				goto fail;
@@ -757,10 +804,10 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 
 	/* Check if block2 exists */
 	block_option = coap_get_option_int(response, COAP_OPTION_BLOCK2);
-	if (block_option > 0) {
+	if (block_option > 0 || response_truncated) {
 		blockwise_transfer = true;
-		last_block = !GET_MORE(block_option);
-		block_num = GET_BLOCK_NUM(block_option);
+		last_block = response_truncated ? false : !GET_MORE(block_option);
+		block_num = (block_option > 0) ? GET_BLOCK_NUM(block_option) : 0;
 
 		if (block_num == 0) {
 			coap_block_transfer_init(&internal_req->recv_blk_ctx,
@@ -790,6 +837,13 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 		}
 	}
 
+	/* Until the last block of a transfer, limit data size sent to the application to the block
+	 * size, to avoid data above block size being repeated when the next block is received.
+	 */
+	if (blockwise_transfer && !last_block) {
+		payload_len = MIN(payload_len, CONFIG_COAP_CLIENT_BLOCK_SIZE);
+	}
+
 	/* Call user callback */
 	if (internal_req->coap_request.cb) {
 		if (!atomic_set(&internal_req->in_callback, 1)) {
@@ -810,13 +864,11 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 
 	/* If this wasn't last block, send the next request */
 	if (blockwise_transfer && !last_block) {
-		k_mutex_lock(&client->send_mutex, K_FOREVER);
 		ret = coap_client_init_request(client, &internal_req->coap_request, internal_req,
 					       false);
 
 		if (ret < 0) {
 			LOG_ERR("Error creating a CoAP request");
-			k_mutex_unlock(&client->send_mutex);
 			goto fail;
 		}
 
@@ -825,7 +877,6 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 					&client->address, &params);
 		if (ret < 0) {
 			LOG_ERR("Error creating pending");
-			k_mutex_unlock(&client->send_mutex);
 			goto fail;
 		}
 		coap_pending_cycle(&internal_req->pending);
@@ -833,8 +884,6 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 		ret = send_request(client->fd, internal_req->request.data,
 				   internal_req->request.offset, 0, &client->address,
 				   client->socklen);
-		k_mutex_unlock(&client->send_mutex);
-
 		if (ret < 0) {
 			LOG_ERR("Error sending a CoAP request");
 			goto fail;
@@ -852,6 +901,8 @@ fail:
 
 void coap_client_cancel_requests(struct coap_client *client)
 {
+	k_mutex_lock(&client->lock, K_FOREVER);
+
 	for (int i = 0; i < ARRAY_SIZE(client->requests); i++) {
 		if (client->requests[i].request_ongoing == true) {
 			LOG_DBG("Cancelling request %d", i);
@@ -866,9 +917,27 @@ void coap_client_cancel_requests(struct coap_client *client)
 		}
 	}
 	atomic_clear(&coap_client_recv_active);
+	k_mutex_unlock(&client->lock);
 
 	/* Wait until after zsock_poll() can time out and return. */
 	k_sleep(K_MSEC(COAP_PERIODIC_TIMEOUT));
+}
+
+static void signal_socket_error(struct coap_client *cli)
+{
+	for (int i = 0; i < CONFIG_COAP_CLIENT_MAX_REQUESTS; i++) {
+		struct coap_client_internal_request *req = &cli->requests[i];
+
+		if (!req->request_ongoing) {
+			continue;
+		}
+
+		req->request_ongoing = false;
+		if (req->coap_request.cb) {
+			req->coap_request.cb(cli->socket_error, 0, NULL, 0,
+					     true, req->coap_request.user_data);
+		}
+	}
 }
 
 void coap_client_recv(void *coap_cl, void *a, void *b)
@@ -888,25 +957,40 @@ void coap_client_recv(void *coap_cl, void *a, void *b)
 		for (int i = 0; i < num_clients; i++) {
 			if (clients[i]->response_ready) {
 				struct coap_packet response;
+				bool response_truncated = false;
 
-				ret = recv_response(clients[i], &response);
+				k_mutex_lock(&clients[i]->lock, K_FOREVER);
+
+				ret = recv_response(clients[i], &response, &response_truncated);
 				if (ret < 0) {
 					LOG_ERR("Error receiving response");
 					clients[i]->response_ready = false;
+					k_mutex_unlock(&clients[i]->lock);
+					if (ret == -EOPNOTSUPP) {
+						LOG_ERR("Socket misconfigured.");
+						goto idle;
+					}
 					continue;
 				}
 
-				ret = handle_response(clients[i], &response);
+				ret = handle_response(clients[i], &response, response_truncated);
 				if (ret < 0) {
 					LOG_ERR("Error handling response");
 				}
 
 				clients[i]->response_ready = false;
+				k_mutex_unlock(&clients[i]->lock);
 			}
+
+			if (clients[i]->socket_error) {
+				signal_socket_error(clients[i]);
+				clients[i]->socket_error = 0;
+			}
+
 		}
 
 		/* There are more messages coming */
-		if (has_ongoing_requests()) {
+		if (has_ongoing_exchanges()) {
 			continue;
 		} else {
 idle:
@@ -926,7 +1010,7 @@ int coap_client_init(struct coap_client *client, const char *info)
 		return -ENOSPC;
 	}
 
-	k_mutex_init(&client->send_mutex);
+	k_mutex_init(&client->lock);
 
 	clients[num_clients] = client;
 	num_clients++;

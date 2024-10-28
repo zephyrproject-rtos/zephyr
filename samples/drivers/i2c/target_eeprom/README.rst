@@ -15,17 +15,17 @@ Requirements
 
 This sample requires an I2C peripheral which is capable of acting as a target.
 
-This sample has been tested on :ref:`lpcxpresso55s69`.
+This sample has been tested on :zephyr:board:`lpcxpresso55s69`.
 
 Building and Running
 ********************
 
-The code for this sample can be found in :zephyr_file:`samples/drivers/i2c_target`.
+The code for this sample can be found in :zephyr_file:`samples/drivers/i2c/target_eeprom`.
 
 To build and flash the application:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/i2c_target
+   :zephyr-app: samples/drivers/i2c/target_eeprom
    :board: lpcxpresso55s69/lpc55s69/cpu0
    :goals: flash
    :compact:

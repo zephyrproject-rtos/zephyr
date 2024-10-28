@@ -55,7 +55,7 @@ const struct device *get_adc_device(void)
 	return adc_channels[0].dev;
 }
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(test_counter), okay) && \
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(test_counter)) && \
 	defined(CONFIG_COUNTER)
 static void init_counter(void)
 {
@@ -90,7 +90,7 @@ static void init_adc(void)
 		m_sample_buffer[i] = INVALID_ADC_VALUE;
 	}
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(test_counter), okay) && \
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(test_counter)) && \
 	defined(CONFIG_COUNTER)
 	init_counter();
 #endif
@@ -104,7 +104,7 @@ static void check_samples(int expected_count)
 	for (i = 0; i < BUFFER_SIZE; i++) {
 		int16_t sample_value = m_sample_buffer[i];
 
-		TC_PRINT("0x%04x ", sample_value);
+		TC_PRINT("0x%04hx ", sample_value);
 		if (i < expected_count) {
 			zassert_not_equal(INVALID_ADC_VALUE, sample_value,
 				"[%u] should be filled", i);

@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdlib.h>
 #include <zephyr/ztest.h>
 
 
@@ -37,11 +38,15 @@ void z_ztest_run_all(const void *state, bool shuffle, int suite_iter, int case_i
 
 void ztest_reset_test_args(void)
 {
+	if (test_args != NULL) {
+		free((void *)test_args);
+	}
 	test_args = NULL;
 }
 
 void ztest_set_test_args(char *args)
 {
+	ztest_reset_test_args();
 	test_args = strdup(args);
 }
 
@@ -95,6 +100,7 @@ static bool z_ztest_testargs_contains(const char *suite_name, const char *test_n
 
 		suite_test_pair = strtok_r(NULL, ",", &last_suite_test_pair);
 	}
+	free((void *)test_args_local);
 	return found;
 }
 
@@ -122,6 +128,9 @@ bool z_ztest_should_suite_run(const void *state, struct ztest_suite_node *suite)
 		run_suite = suite->predicate(state);
 	}
 
+	if (test_args_local != NULL) {
+		free((void *)test_args_local);
+	}
 	return run_suite;
 }
 

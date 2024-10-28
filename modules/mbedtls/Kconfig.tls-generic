@@ -4,43 +4,41 @@
 # Copyright (c) 2018 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-menu "TLS configuration"
+menu "Mbed TLS configuration"
 	depends on MBEDTLS_BUILTIN && MBEDTLS_CFG_FILE = "config-tls-generic.h"
 
-menu "Supported TLS version"
-
-config MBEDTLS_TLS_VERSION_1_0
-	bool "Support for TLS 1.0"
-	select MBEDTLS_CIPHER
-	select MBEDTLS_MD5
-	select MBEDTLS_SHA1
-	select MBEDTLS_MD
-
-config MBEDTLS_TLS_VERSION_1_1
-	bool "Support for TLS 1.1 (DTLS 1.0)"
-	select MBEDTLS_CIPHER
-	select MBEDTLS_MD5
-	select MBEDTLS_SHA1
-	select MBEDTLS_MD
+menu "TLS"
 
 config MBEDTLS_TLS_VERSION_1_2
 	bool "Support for TLS 1.2 (DTLS 1.2)"
 	select MBEDTLS_CIPHER
 	select MBEDTLS_MD
 
+if MBEDTLS_TLS_VERSION_1_2
+
 config MBEDTLS_DTLS
 	bool "Support for DTLS"
-	depends on MBEDTLS_TLS_VERSION_1_1 || MBEDTLS_TLS_VERSION_1_2
 
-config MBEDTLS_SSL_EXPORT_KEYS
-	bool "Support for exporting SSL key block and master secret"
-	depends on MBEDTLS_TLS_VERSION_1_0 || MBEDTLS_TLS_VERSION_1_1 || MBEDTLS_TLS_VERSION_1_2
+endif # MBEDTLS_TLS_VERSION_1_2
+
+config MBEDTLS_TLS_VERSION_1_3
+	bool "Support for TLS 1.3"
+
+if MBEDTLS_TLS_VERSION_1_3
+
+config MBEDTLS_TLS_SESSION_TICKETS
+	bool "Support for RFC 5077 session tickets in TLS 1.3"
+
+endif # MBEDTLS_TLS_VERSION_1_3
+
+if MBEDTLS_TLS_VERSION_1_2 || MBEDTLS_TLS_VERSION_1_3
 
 config MBEDTLS_SSL_ALPN
 	bool "Support for setting the supported Application Layer Protocols"
-	depends on MBEDTLS_TLS_VERSION_1_0 || MBEDTLS_TLS_VERSION_1_1 || MBEDTLS_TLS_VERSION_1_2
 
-endmenu
+endif # MBEDTLS_TLS_VERSION_1_2 || MBEDTLS_TLS_VERSION_1_3
+
+endmenu # TLS
 
 menu "Ciphersuite configuration"
 
@@ -73,29 +71,21 @@ config MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED
 config MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED
 	bool "RSA-PSK based ciphersuite modes"
 
-config MBEDTLS_KEY_EXCHANGE_SOME_PSK_ENABLED
-	bool
-	default y
-	depends on \
-		MBEDTLS_KEY_EXCHANGE_PSK_ENABLED || \
-		MBEDTLS_KEY_EXCHANGE_DHE_PSK_ENABLED || \
-		MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED || \
-		MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED
-
 config MBEDTLS_PSK_MAX_LEN
 	int "Max size of TLS pre-shared keys"
 	default 32
-	depends on MBEDTLS_KEY_EXCHANGE_SOME_PSK_ENABLED
 	help
-	  Max size of TLS pre-shared keys, in bytes.
+	  Max size of TLS pre-shared keys, in bytes. It has no effect if no
+	  PSK key exchange is used.
 
 config MBEDTLS_KEY_EXCHANGE_RSA_ENABLED
 	bool "RSA-only based ciphersuite modes"
 	default y if UOSCORE || UEDHOC
 	select MBEDTLS_MD
 	select PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY if PSA_CRYPTO_CLIENT
-	select PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_BASIC if PSA_CRYPTO_CLIENT
 	select PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_IMPORT if PSA_CRYPTO_CLIENT
+	select PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_EXPORT if PSA_CRYPTO_CLIENT
+	select PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_GENERATE if PSA_CRYPTO_CLIENT
 
 config MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED
 	bool "DHE-RSA based ciphersuite modes"
@@ -106,7 +96,7 @@ config MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED
 
 config MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED
 	bool "ECDHE-ECDSA based ciphersuite modes"
-	depends on MBEDTLS_ECDH_C && MBEDTLS_ECDSA_C
+	depends on MBEDTLS_ECDH_C && MBEDTLS_ECDSA_C || (PSA_WANT_ALG_ECDH && PSA_WANT_ALG_ECDSA)
 
 config MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED
 	bool "ECDH-ECDSA based ciphersuite modes"
@@ -122,6 +112,19 @@ config MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED
 config MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED
 	bool "ECJPAKE based ciphersuite modes"
 	depends on MBEDTLS_ECJPAKE_C
+
+if MBEDTLS_TLS_VERSION_1_3
+
+config MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_PSK_ENABLED
+	bool "TLS 1.3 PSK key exchange mode"
+
+config MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_EPHEMERAL_ENABLED
+	bool "TLS 1.3 ephemeral key exchange mode"
+
+config MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_PSK_EPHEMERAL_ENABLED
+	bool "TLS 1.3 PSK ephemeral key exchange mode"
+
+endif # MBEDTLS_TLS_VERSION_1_3
 
 config MBEDTLS_HKDF_C
 	bool "HMAC-based Extract-and-Expand Key Derivation Function"
@@ -384,10 +387,24 @@ config MBEDTLS_HAVE_ASM
 	  of asymmetric cryptography, however this might have an impact on the
 	  code size.
 
-config MBEDTLS_ENTROPY_ENABLED
-	bool "MbedTLS generic entropy pool"
+config MBEDTLS_ENTROPY_C
+	bool "Mbed TLS entropy accumulator"
 	depends on MBEDTLS_SHA256 || MBEDTLS_SHA384 || MBEDTLS_SHA512
-	default y if MBEDTLS_ZEPHYR_ENTROPY
+	help
+	  This module gathers entropy data from enabled entropy sources. It's
+	  mostly used in conjunction with CTR_DRBG or HMAC_DRBG to create
+	  a deterministic random number generator.
+
+config MBEDTLS_ENTROPY_POLL_ZEPHYR
+	bool "Provide entropy data to Mbed TLS through entropy driver or random generator"
+	depends on MBEDTLS_ENTROPY_C
+	help
+	  Provide entropy data to the Mbed TLS's entropy module through either
+	  an entropy driver (if available in the system) or a generic random
+	  number generator.
+	  Warning: the latter choice is potentially non secure because it might
+	  end up using weaker/test-only sources (ex: random number generator
+	  built on system timer).
 
 config MBEDTLS_OPENTHREAD_OPTIMIZATIONS_ENABLED
 	bool "MbedTLS optimizations for OpenThread"
@@ -460,30 +477,59 @@ config MBEDTLS_SSL_EXTENDED_MASTER_SECRET
 	  which ensures that master secrets are different for every
 	  connection and every session.
 
-choice MBEDTLS_PSA_CRYPTO_RND_SOURCE
+choice MBEDTLS_PSA_CRYPTO_RNG_SOURCE
 	prompt "Select random source for built-in PSA crypto"
 	depends on MBEDTLS_PSA_CRYPTO_C
 	default MBEDTLS_PSA_CRYPTO_LEGACY_RNG
 
 config MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG
 	bool "Use a cryptographically secure driver as random source"
-	depends on CSPRNG_ENABLED
 	help
-	  Use cryptographically secure random generator to provide random data
-	  instead of legacy MbedTLS modules (ENTROPY + CTR_DRBG/HMAC_DRBG).
+	  Use a cryptographically secure random generator to provide random data
+	  instead of legacy Mbed TLS modules. This has a smaller footprint
+	  than its legacy counterpart MBEDTLS_PSA_CRYPTO_LEGACY_RNG, but it
+	  requires a cryptographically secure random number generator (CSPRNG)
+	  to be available in the system. If no CSPRNG is available:
+	  - there is no fallback to weak entropy random generators.
+	  - the initialization of PSA crypto will fail and none of its API
+	    will be available.
 
 config MBEDTLS_PSA_CRYPTO_LEGACY_RNG
 	bool "Use legacy modules to generate random data"
-	select MBEDTLS_ENTROPY_ENABLED
+	select MBEDTLS_ENTROPY_C
 	select MBEDTLS_HMAC_DRBG_ENABLED if !MBEDTLS_CTR_DRBG_ENABLED
 	help
-	  Use legacy MbedTLS modules (ENTROPY + CTR_DRBG/HMAC_DRBG) as random
-	  source generators.
+	  Use legacy Mbed TLS modules to generate random data. In this
+	  configuration the entropy module is used to gather some data and then
+	  either ctr_drbg or hmac_drbg are applied on top of it to improve
+	  the randomness.
+	  Security level in this case really depends on the type of entropy
+	  sources which are enabled in the system: if weak entropy sources are
+	  used, then the generated data will only be pseudo random. Strong
+	  entropy sources are strongly recommended (if possible) to have real
+	  random data.
+	  Another difference betwen this implementation and the
+	  MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG counterpart is the memory footprint:
+	  this implementation brings in legacy modules which are not required
+	  in the "external" version, so the footprint is larger.
 
 endchoice
 
+config MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG_ALLOW_NON_CSPRNG
+	bool "Allow non cryptographically secure random sources (for test only!)"
+	depends on MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG
+	help
+	  MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG is by default limited to rely only
+	  on cryptographically secure random number generators. However, only
+	  for test purposes, it might be useful to enable external random
+	  number generation, but have it using weak random sources (non
+	  cryptographically secure).
+	  Warning: this is meant to be enabled only for tests, not in production
+	  as the generated values are not cryptographically secure!
+
 config MBEDTLS_PSA_CRYPTO_C
 	bool "Platform Security Architecture cryptography API"
+	depends on !BUILD_WITH_TFM
 	default y if UOSCORE || UEDHOC
 
 config MBEDTLS_USE_PSA_CRYPTO
@@ -511,17 +557,15 @@ config MBEDTLS_PSA_P256M_DRIVER_ENABLED
 	imply PSA_WANT_ALG_SHA_256
 	help
 	  Enable support for the optimized sofware implementation of the secp256r1
-	  curve through the standard PSA API interface.
+	  curve through the standard PSA API.
 
 config MBEDTLS_PSA_P256M_DRIVER_RAW
 	bool "Access p256-m driver directly (without PSA interface)"
-	select MBEDTLS_PSA_P256M_DRIVER_ENABLED
+	depends on MBEDTLS_PSA_P256M_DRIVER_ENABLED
 	help
-	  Allow access to p256-m driver directly without using the PSA interface.
-	  Warning: usage of this kconfig is prohibited in Zephyr's code base. Users
-			   can make optionally enable it in case very memory constrained
-			   devices, but please be aware that the p256-m interface is
-			   absolutely not guaranted to remain stable over time.
+	  Allow direct access to the p256-m driver interface.
+	  Warning: Usage of this Kconfig option is prohibited in Zephyr's codebase.
+	           Users can enable it in case of very memory-constrained devices, but be aware that the p256-m interface is absolutely not guaranted to remain stable over time.
 
 config MBEDTLS_SSL_DTLS_CONNECTION_ID
 	bool "DTLS Connection ID extension"
@@ -546,17 +590,21 @@ config MBEDTLS_DHM_C
 	  DHE-RSA, DHE-PSK
 
 config MBEDTLS_X509_CRL_PARSE_C
-	bool "X509 CRL parsing"
+	bool "X.509 CRL parsing"
 	help
-	  Used by X509 CRL parsing
+	  Used by X.509 CRL parsing
 
 config MBEDTLS_X509_CSR_WRITE_C
-	bool "X509 Certificate Signing Requests writing"
+	bool "X.509 Certificate Signing Requests writing"
 	help
 	  For X.509 certificate request writing.
 
 config MBEDTLS_X509_CSR_PARSE_C
-	bool "X509 Certificate Signing Request parsing"
+	bool "X.509 Certificate Signing Request parsing"
 	help
 	  For reading X.509 certificate request.
+
+config MBEDTLS_X509_CRT_WRITE_C
+	bool "X.509 certificate creation"
+
 endmenu

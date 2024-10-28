@@ -18,6 +18,7 @@
 #include "util/mem.h"
 #include "util/memq.h"
 #include "util/dbuf.h"
+#include "util/mayfly.h"
 
 #include "pdu_df.h"
 #include "lll/pdu_vendor.h"
@@ -32,11 +33,21 @@
 #include "lll/lll_df_types.h"
 #include "lll_conn.h"
 #include "lll_conn_iso.h"
+#include "lll_sync.h"
+#include "lll_sync_iso.h"
+#include "lll_scan.h"
+#include "lll/lll_adv_types.h"
+#include "lll_adv.h"
+#include "lll/lll_adv_pdu.h"
 
 #include "ull_tx_queue.h"
 
 #include "isoal.h"
 #include "ull_iso_types.h"
+#include "ull_sync_types.h"
+#include "ull_scan_types.h"
+#include "ull_adv_types.h"
+#include "ull_adv_internal.h"
 #include "ull_conn_iso_types.h"
 #include "ull_conn_iso_internal.h"
 #include "ull_central_iso_internal.h"
@@ -48,6 +59,9 @@
 #include "ull_llcp_features.h"
 #include "ull_llcp_internal.h"
 #include "ull_peripheral_internal.h"
+#include "ull_sync_internal.h"
+
+#include "ull_filter.h"
 
 #include <soc.h>
 #include "hal/debug.h"
@@ -56,6 +70,7 @@
 #define PROC_CTX_BUF_SIZE WB_UP(sizeof(struct proc_ctx))
 #define TX_CTRL_BUF_SIZE WB_UP(offsetof(struct node_tx, pdu) + LLCTRL_PDU_SIZE)
 #define NTF_BUF_SIZE WB_UP(offsetof(struct node_rx_pdu, pdu) + LLCTRL_PDU_SIZE)
+#define OFFSET_BASE_MAX_VALUE 0x1FFF
 
 /* LLCP Allocations */
 #if defined(LLCP_TX_CTRL_BUF_QUEUE_ENABLE)
@@ -1019,6 +1034,114 @@ uint8_t ull_cp_conn_update(struct ll_conn *conn, uint16_t interval_min, uint16_t
 	return BT_HCI_ERR_SUCCESS;
 }
 
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER)
+uint8_t ull_cp_periodic_sync(struct ll_conn *conn, struct ll_sync_set *sync,
+			     struct ll_adv_sync_set *adv_sync, uint16_t service_data)
+{
+	struct pdu_adv_sync_info *si;
+	struct proc_ctx *ctx;
+	uint8_t *access_addr;
+	const uint8_t *adva;
+	uint16_t interval;
+	uint8_t *chan_map;
+	uint8_t *crc_init;
+	uint8_t addr_type;
+	uint8_t si_sca;
+	uint8_t sid;
+	uint8_t phy;
+
+	/* Exactly one of the sync and adv_sync pointers should be non-null */
+	LL_ASSERT((!adv_sync && sync) || (adv_sync && !sync));
+
+	if (!feature_peer_periodic_sync_recv(conn)) {
+		return BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
+	}
+
+	ctx = llcp_create_local_procedure(PROC_PERIODIC_SYNC);
+	if (!ctx) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	if (sync) {
+		chan_map = sync->lll.chm[sync->lll.chm_first].data_chan_map;
+		si_sca = sync->lll.sca;
+		access_addr = sync->lll.access_addr;
+		crc_init = sync->lll.crc_init;
+		sid = sync->sid;
+		phy = sync->lll.phy;
+		interval = sync->interval;
+
+		addr_type = sync->peer_id_addr_type;
+		if (IS_ENABLED(CONFIG_BT_CTLR_PRIVACY) && sync->peer_addr_resolved) {
+			uint8_t rl_idx;
+
+			/* peer_id_addr contains the identity address; Get the peers RPA */
+
+			rl_idx = ull_filter_rl_find(addr_type, sync->peer_id_addr, NULL);
+
+			/* A resolved address must be present in the resolve list */
+			LL_ASSERT(rl_idx < ll_rl_size_get());
+
+			/* Generate RPAs if required */
+			ull_filter_rpa_update(false);
+
+			/* Note: Since we need the peers RPA, use tgta_get */
+			adva = ull_filter_tgta_get(rl_idx);
+		} else {
+			adva = sync->peer_id_addr;
+		}
+	} else {
+		struct ll_adv_set *adv;
+		struct pdu_adv *adv_pdu;
+
+		chan_map = adv_sync->lll.chm[adv_sync->lll.chm_first].data_chan_map;
+		si_sca = lll_clock_sca_local_get();
+		access_addr = adv_sync->lll.access_addr;
+		crc_init = adv_sync->lll.crc_init;
+		phy = adv_sync->lll.adv->phy_s;
+		interval = adv_sync->interval;
+
+		adv = HDR_LLL2ULL(adv_sync->lll.adv);
+		sid = adv->sid;
+
+		/* Pull AdvA from pdu */
+		adv_pdu = lll_adv_sync_data_curr_get(&adv_sync->lll);
+		addr_type = adv_pdu->tx_addr;
+		/* Note: AdvA is mandatory for AUX_SYNC_IND and at the start of the ext. header */
+		adva = adv_pdu->adv_ext_ind.ext_hdr.data;
+	}
+
+	/* Store parameters in corresponding procedure context */
+	ctx->data.periodic_sync.sync_handle = sync ? ull_sync_handle_get(sync) :
+							BT_HCI_SYNC_HANDLE_INVALID;
+	ctx->data.periodic_sync.adv_handle = adv_sync ? ull_adv_sync_handle_get(adv_sync) :
+							BT_HCI_ADV_HANDLE_INVALID;
+	ctx->data.periodic_sync.id = service_data;
+	ctx->data.periodic_sync.sca = lll_clock_sca_local_get();
+
+	si = &ctx->data.periodic_sync.sync_info;
+	si->interval = sys_cpu_to_le16(interval);
+	(void)memcpy(si->sca_chm, chan_map, sizeof(ctx->data.periodic_sync.sync_info.sca_chm));
+	si->sca_chm[PDU_SYNC_INFO_SCA_CHM_SCA_BYTE_OFFSET] &= ~PDU_SYNC_INFO_SCA_CHM_SCA_BIT_MASK;
+	si->sca_chm[PDU_SYNC_INFO_SCA_CHM_SCA_BYTE_OFFSET] |= ((si_sca <<
+							      PDU_SYNC_INFO_SCA_CHM_SCA_BIT_POS) &
+							      PDU_SYNC_INFO_SCA_CHM_SCA_BIT_MASK);
+	(void)memcpy(si->aa, access_addr, sizeof(si->aa));
+	(void)memcpy(si->crc_init, crc_init, sizeof(si->crc_init));
+
+	ctx->data.periodic_sync.addr_type = addr_type;
+	(void)memcpy(ctx->data.periodic_sync.adv_addr, adva, BDADDR_SIZE);
+	ctx->data.periodic_sync.sid = sid;
+	ctx->data.periodic_sync.phy = phy;
+
+	/* All timing sensitive parameters will be determined and filled when Tx PDU is enqueued. */
+
+	llcp_lr_enqueue(conn, ctx);
+
+	return BT_HCI_ERR_SUCCESS;
+}
+#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER */
+
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 uint8_t ull_cp_remote_dle_pending(struct ll_conn *conn)
 {
@@ -1169,6 +1292,7 @@ void ull_cp_cte_req_set_disable(struct ll_conn *conn)
 }
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
 
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
 void ull_cp_cc_offset_calc_reply(struct ll_conn *conn, uint32_t cis_offset_min,
 				 uint32_t cis_offset_max)
 {
@@ -1182,6 +1306,7 @@ void ull_cp_cc_offset_calc_reply(struct ll_conn *conn, uint32_t cis_offset_min,
 		llcp_lp_cc_offset_calc_reply(conn, ctx);
 	}
 }
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO */
 
 #if defined(CONFIG_BT_PERIPHERAL) && defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
 bool ull_cp_cc_awaiting_reply(struct ll_conn *conn)
@@ -1321,6 +1446,93 @@ bool ull_lp_cc_is_enqueued(struct ll_conn *conn)
 	return (ctx != NULL);
 }
 #endif /* defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_CTLR_CENTRAL_ISO) */
+
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER)
+void ull_lp_past_offset_get_calc_params(struct ll_conn *conn,
+					uint8_t *adv_sync_handle, uint16_t *sync_handle)
+{
+	const struct proc_ctx *ctx;
+
+	ctx = llcp_lr_peek_proc(conn, PROC_PERIODIC_SYNC);
+
+	if (ctx) {
+		*adv_sync_handle = ctx->data.periodic_sync.adv_handle;
+		*sync_handle = ctx->data.periodic_sync.sync_handle;
+	} else {
+		*adv_sync_handle = BT_HCI_ADV_HANDLE_INVALID;
+		*sync_handle = BT_HCI_SYNC_HANDLE_INVALID;
+	}
+}
+
+void ull_lp_past_offset_calc_reply(struct ll_conn *conn, uint32_t offset_us,
+				   uint16_t pa_event_counter, uint16_t last_pa_event_counter)
+{
+	struct proc_ctx *ctx;
+	uint16_t conn_event_offset = 0;
+
+	ctx = llcp_lr_peek_proc(conn, PROC_PERIODIC_SYNC);
+
+	if (ctx) {
+		/* Check if the offset_us will fit within the sync_info offset fields */
+		uint32_t max_offset = OFFS_ADJUST_US + OFFSET_BASE_MAX_VALUE * OFFS_UNIT_300_US;
+
+		if (offset_us > max_offset) {
+			/* The offset_us is larger than what the sync_info offset fields can hold,
+			 * therefore it needs to be compensated with a change in the
+			 * connection event count - conn_event_count
+			 */
+			uint32_t conn_interval_us = conn->lll.interval * CONN_INT_UNIT_US;
+
+			conn_event_offset = DIV_ROUND_UP(offset_us - max_offset, conn_interval_us);
+
+			/* Update offset_us */
+			offset_us = offset_us - (conn_event_offset * conn_interval_us);
+
+			ctx->data.periodic_sync.conn_event_count = ull_conn_event_counter(conn) +
+								   conn_event_offset;
+		}
+
+		llcp_pdu_fill_sync_info_offset(&ctx->data.periodic_sync.sync_info, offset_us);
+#if defined(CONFIG_BT_PERIPHERAL)
+		/* Save the result for later use */
+		ctx->data.periodic_sync.offset_us = offset_us;
+#endif /* CONFIG_BT_PERIPHERAL */
+
+		ctx->data.periodic_sync.sync_conn_event_count = ull_conn_event_counter(conn);
+		ctx->data.periodic_sync.conn_event_count = ull_conn_event_counter(conn) +
+							   conn_event_offset;
+
+		ctx->data.periodic_sync.sync_info.evt_cntr = pa_event_counter;
+
+		ctx->data.periodic_sync.last_pa_event_counter = last_pa_event_counter;
+
+		llcp_lp_past_offset_calc_reply(conn, ctx);
+	}
+}
+
+void ull_lp_past_conn_evt_done(struct ll_conn *conn, struct node_rx_event_done *done)
+{
+	struct proc_ctx *ctx;
+
+	ctx = llcp_lr_peek_proc(conn, PROC_PERIODIC_SYNC);
+	if (ctx) {
+#if defined(CONFIG_BT_PERIPHERAL)
+		if (conn->lll.role == BT_HCI_ROLE_PERIPHERAL && done->extra.trx_cnt) {
+			uint32_t start_to_actual_us;
+
+			start_to_actual_us = ull_get_wrapped_time_us(
+						done->extra.drift.start_to_address_actual_us,
+						(-done->extra.drift.preamble_to_addr_us));
+
+			ctx->data.periodic_sync.conn_start_to_actual_us = start_to_actual_us;
+		}
+#endif /* CONFIG_BT_PERIPHERAL */
+
+		ctx->data.periodic_sync.conn_evt_trx = done->extra.trx_cnt;
+		llcp_lp_past_conn_evt_done(conn, ctx);
+	}
+}
+#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER */
 
 static bool pdu_is_expected(struct pdu_data *pdu, struct proc_ctx *ctx)
 {
@@ -1543,6 +1755,13 @@ static bool pdu_validate_clock_accuracy_rsp(struct pdu_data *pdu)
 	return VALIDATE_PDU_LEN(pdu, clock_accuracy_rsp);
 }
 
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER)
+static bool pdu_validate_periodic_sync_ind(struct pdu_data *pdu)
+{
+	return VALIDATE_PDU_LEN(pdu, periodic_sync_ind);
+}
+#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER */
+
 typedef bool (*pdu_param_validate_t)(struct pdu_data *pdu);
 
 struct pdu_validate {
@@ -1615,6 +1834,9 @@ static const struct pdu_validate pdu_validate[] = {
 	[PDU_DATA_LLCTRL_TYPE_CLOCK_ACCURACY_REQ] = { pdu_validate_clock_accuracy_req },
 #endif /* CONFIG_BT_CTLR_SCA_UPDATE */
 	[PDU_DATA_LLCTRL_TYPE_CLOCK_ACCURACY_RSP] = { pdu_validate_clock_accuracy_rsp },
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER)
+	[PDU_DATA_LLCTRL_TYPE_PERIODIC_SYNC_IND] = { pdu_validate_periodic_sync_ind },
+#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER */
 };
 
 static bool pdu_is_valid(struct pdu_data *pdu)
@@ -1635,7 +1857,7 @@ static bool pdu_is_valid(struct pdu_data *pdu)
 		}
 	}
 
-	/* consider unsupported and unknows PDUs as valid */
+	/* consider unsupported and unknown PDUs as valid */
 	return true;
 }
 
@@ -1840,3 +2062,11 @@ struct proc_ctx *llcp_create_procedure(enum llcp_proc proc)
 	return create_procedure(proc, &mem_local_ctx);
 }
 #endif
+
+bool phy_valid(uint8_t phy)
+{
+	/* This is equivalent to:
+	 * exactly one bit set, and no bit set is rfu's
+	 */
+	return (phy == PHY_1M || phy == PHY_2M || phy == PHY_CODED);
+}

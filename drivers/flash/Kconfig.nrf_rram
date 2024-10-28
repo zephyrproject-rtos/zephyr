@@ -8,7 +8,7 @@ menuconfig SOC_FLASH_NRF_RRAM
 	bool "Nordic Semiconductor flash driver for nRF RRAM"
 	default y
 	depends on DT_HAS_NORDIC_RRAM_CONTROLLER_ENABLED
-	select NRFX_RRAMC
+	select NRFX_RRAMC if !BUILD_WITH_TFM
 	select FLASH_HAS_DRIVER_ENABLED
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_NO_EXPLICIT_ERASE
@@ -61,7 +61,7 @@ endchoice
 config SOC_FLASH_NRF_TIMEOUT_MULTIPLIER
 	int "Multiplier for flash operation timeouts [x0.1]"
 	depends on !SOC_FLASH_NRF_RADIO_SYNC_NONE
-	default 1
+	default 15
 	help
 	  This is a multiplier that will be divided by 10 that is applied
 	  to the flash erase and write operations timeout. The base for

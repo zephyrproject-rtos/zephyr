@@ -25,6 +25,7 @@ config LM75_TRIGGER_NONE
 
 config LM75_TRIGGER_GLOBAL_THREAD
 	bool "Use global thread"
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_LM75),int-gpios)
 	depends on GPIO
 	select LM75_TRIGGER
 

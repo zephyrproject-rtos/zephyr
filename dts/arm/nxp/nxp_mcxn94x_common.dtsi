@@ -6,6 +6,7 @@
 
 #include <mem.h>
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
+#include <zephyr/dt-bindings/reset/nxp_syscon_reset_common.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <arm/armv8-m.dtsi>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
@@ -72,6 +73,10 @@
 		compatible = "nxp,lpc-syscon";
 		reg = <0x0 0x4000>;
 		#clock-cells = <1>;
+		reset: reset {
+			compatible = "nxp,lpc-syscon-reset";
+			#reset-cells = <1>;
+		};
 	};
 
 	porta: pinmux@116000 {
@@ -187,7 +192,7 @@
 			clocks = <&syscon MCUX_FLEXCOMM0_CLK>;
 			status = "disabled";
 		};
-		flexcomm0_lpspi0: lpspi@92000 {
+		flexcomm0_lpspi0: spi@92000 {
 			compatible = "nxp,imx-lpspi";
 			reg = <0x92000 0x1000>;
 			clocks = <&syscon MCUX_FLEXCOMM0_CLK>;
@@ -224,7 +229,7 @@
 			dma-names = "rx", "tx";
 			status = "disabled";
 		};
-		flexcomm1_lpspi1: lpspi@93000 {
+		flexcomm1_lpspi1: spi@93000 {
 			compatible = "nxp,imx-lpspi";
 			reg = <0x93000 0x1000>;
 			clocks = <&syscon MCUX_FLEXCOMM1_CLK>;
@@ -264,7 +269,7 @@
 			dma-names = "rx", "tx";
 			status = "disabled";
 		};
-		flexcomm2_lpspi2: lpspi@94000 {
+		flexcomm2_lpspi2: spi@94000 {
 			compatible = "nxp,imx-lpspi";
 			reg = <0x94000 0x1000>;
 			clocks = <&syscon MCUX_FLEXCOMM2_CLK>;
@@ -301,7 +306,7 @@
 			clocks = <&syscon MCUX_FLEXCOMM3_CLK>;
 			status = "disabled";
 		};
-		flexcomm3_lpspi3: lpspi@95000 {
+		flexcomm3_lpspi3: spi@95000 {
 			compatible = "nxp,imx-lpspi";
 			reg = <0x95000 0x1000>;
 			clocks = <&syscon MCUX_FLEXCOMM3_CLK>;
@@ -338,7 +343,7 @@
 			dma-names = "rx", "tx";
 			status = "disabled";
 		};
-		flexcomm4_lpspi4: lpspi@b4000 {
+		flexcomm4_lpspi4: spi@b4000 {
 			compatible = "nxp,imx-lpspi";
 			reg = <0xb4000 0x1000>;
 			clocks = <&syscon MCUX_FLEXCOMM4_CLK>;
@@ -375,7 +380,7 @@
 			clocks = <&syscon MCUX_FLEXCOMM5_CLK>;
 			status = "disabled";
 		};
-		flexcomm5_lpspi5: lpspi@b5000 {
+		flexcomm5_lpspi5: spi@b5000 {
 			compatible = "nxp,imx-lpspi";
 			reg = <0xb5000 0x1000>;
 			clocks = <&syscon MCUX_FLEXCOMM5_CLK>;
@@ -409,7 +414,7 @@
 			clocks = <&syscon MCUX_FLEXCOMM6_CLK>;
 			status = "disabled";
 		};
-		flexcomm6_lpspi6: lpspi@b6000 {
+		flexcomm6_lpspi6: spi@b6000 {
 			compatible = "nxp,imx-lpspi";
 			reg = <0xb6000 0x1000>;
 			clocks = <&syscon MCUX_FLEXCOMM6_CLK>;
@@ -443,7 +448,7 @@
 			clocks = <&syscon MCUX_FLEXCOMM7_CLK>;
 			status = "disabled";
 		};
-		flexcomm7_lpspi7: lpspi@b7000 {
+		flexcomm7_lpspi7: spi@b7000 {
 			compatible = "nxp,imx-lpspi";
 			reg = <0xb7000 0x1000>;
 			clocks = <&syscon MCUX_FLEXCOMM7_CLK>;
@@ -477,7 +482,7 @@
 			clocks = <&syscon MCUX_FLEXCOMM8_CLK>;
 			status = "disabled";
 		};
-		flexcomm8_lpspi8: lpspi@b8000 {
+		flexcomm8_lpspi8: spi@b8000 {
 			compatible = "nxp,imx-lpspi";
 			reg = <0xb8000 0x1000>;
 			clocks = <&syscon MCUX_FLEXCOMM8_CLK>;
@@ -511,7 +516,7 @@
 			clocks = <&syscon MCUX_FLEXCOMM9_CLK>;
 			status = "disabled";
 		};
-		flexcomm9_lpspi9: lpspi@b9000 {
+		flexcomm9_lpspi9: spi@b9000 {
 			compatible = "nxp,imx-lpspi";
 			reg = <0xb9000 0x1000>;
 			clocks = <&syscon MCUX_FLEXCOMM9_CLK>;
@@ -560,7 +565,7 @@
 	};
 
 	fmu: flash-controller@43000 {
-		compatible = "nxp,iap-msf1";
+		compatible = "nxp,msf1";
 		reg = <0x43000 0x1000>;
 		interrupts = <138 0>;
 		status = "disabled";
@@ -788,6 +793,15 @@
 		prescale = <0>;
 	};
 
+	smartdma: smartdma@33000 {
+		compatible = "nxp,smartdma";
+		reg = <0x33000 0x1000>;
+		status = "disabled";
+		interrupts = <53 0>;
+		program-mem = <0x4000000>;
+		#dma-cells = <0>;
+	};
+
 	usdhc0: usdhc@109000 {
 		compatible = "nxp,imx-usdhc";
 		reg = <0x109000 0x1000>;
@@ -803,19 +817,19 @@
 		regulator-name = "mcxn94x-vref";
 		reg = <0x111000 0x14>;
 		status = "disabled";
+		#nxp,reference-cells = <1>;
 		nxp,buffer-startup-delay-us = <400>;
 		nxp,bandgap-startup-time-us = <20>;
 		regulator-min-microvolt = <1000000>;
 		regulator-max-microvolt = <2100000>;
+
 	};
 
-	lpadc0: lpadc@10d000 {
+	lpadc0: adc@10d000 {
 		compatible = "nxp,lpc-lpadc";
 		reg = <0x10d000 0x1000>;
 		interrupts = <45 0>;
 		status = "disabled";
-		clk-divider = <1>;
-		clk-source = <0>;
 		voltage-ref= <1>;
 		calibration-average = <128>;
 		power-level = <0>;
@@ -823,16 +837,14 @@
 		offset-value-b = <0>;
 		#io-channel-cells = <1>;
 		clocks = <&syscon MCUX_LPADC1_CLK>;
-		nxp,reference-supply = <&vref>;
+		nxp,references = <&vref 1800>;
 	};
 
-	lpadc1: lpadc@10e000 {
+	lpadc1: adc@10e000 {
 		compatible = "nxp,lpc-lpadc";
 		reg = <0x10e000 0x1000>;
 		interrupts = <46 0>;
 		status = "disabled";
-		clk-divider = <1>;
-		clk-source = <0>;
 		voltage-ref= <0>;
 		calibration-average = <128>;
 		power-level = <1>;
@@ -905,6 +917,42 @@
 		resolution = <32>;
 	};
 
+	lptmr1: lptmr@4b000 {
+		compatible = "nxp,lptmr";
+		reg = <0x4b000 0x1000>;
+		interrupts = <144 0>;
+		clock-frequency = <16000>;
+		prescaler = <1>;
+		clk-source = <1>;
+		resolution = <32>;
+	};
+
+	i3c0: i3c@21000 {
+		compatible = "nxp,mcux-i3c";
+		reg = <0x21000 0x1000>;
+		interrupts = <95 0>;
+		clocks = <&syscon MCUX_I3C_CLK>;
+		clk-divider = <6>;
+		clk-divider-slow = <1>;
+		clk-divider-tc = <1>;
+		status = "disabled";
+		#address-cells = <3>;
+		#size-cells = <0>;
+	};
+
+	i3c1: i3c@22000 {
+		compatible = "nxp,mcux-i3c";
+		reg = <0x22000 0x1000>;
+		interrupts = <96 0>;
+		clocks = <&syscon MCUX_I3C2_CLK>;
+		clk-divider = <6>;
+		clk-divider-slow = <1>;
+		clk-divider-tc = <1>;
+		status = "disabled";
+		#address-cells = <3>;
+		#size-cells = <0>;
+	};
+
 	flexio0: flexio@105000 {
 		compatible = "nxp,flexio";
 		reg = <0x105000 0x1000>;
@@ -915,6 +963,50 @@
 			compatible = "nxp,mipi-dbi-flexio-lcdif";
 			status = "disabled";
 		};
+	};
+
+	mrt0: mrt@13000 {
+		compatible = "nxp,mrt";
+		reg = <0x13000 0x1000>;
+		interrupts = <30 0>;
+		num-channels = <4>;
+		num-bits = <24>;
+		clocks = <&syscon MCUX_MRT_CLK>;
+		resets = <&reset NXP_SYSCON_RESET(1, 0)>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		mrt0_channel0: mrt0_channel@0 {
+			compatible = "nxp,mrt-channel";
+			reg = <0>;
+			status = "disabled";
+		};
+		mrt0_channel1: mrt0_channel@1 {
+			compatible = "nxp,mrt-channel";
+			reg = <1>;
+			status = "disabled";
+		};
+		mrt0_channel2: mrt0_channel@2 {
+			compatible = "nxp,mrt-channel";
+			reg = <2>;
+			status = "disabled";
+		};
+		mrt0_channel3: mrt0_channel@3 {
+			compatible = "nxp,mrt-channel";
+			reg = <3>;
+			status = "disabled";
+		};
+	};
+
+	rtc: rtc@4c000 {
+		compatible = "nxp,irtc";
+		reg = <0x4c000 0x1000>;
+		status = "disabled";
+		interrupts = <52 0>;
+		prescaler = <1>;
+		clock-frequency = <16384>;
+		clock-src = <0>;
+		alarms-count = <1>;
 	};
 };
 

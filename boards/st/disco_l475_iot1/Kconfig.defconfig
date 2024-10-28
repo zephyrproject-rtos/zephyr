@@ -24,12 +24,6 @@ endchoice
 
 if BT
 
-config SPI
-	default y
-
-config BT_SPI
-	default y
-
 config BT_BLUENRG_ACI
 	default y
 # Disable Flow control

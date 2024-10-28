@@ -231,6 +231,10 @@ API Reference
 
 .. doxygengroup:: heap_apis
 
+.. doxygengroup:: low_level_heap_allocator
+
+.. doxygengroup:: multi_heap_wrapper
+
 Heap listener
 *************
 

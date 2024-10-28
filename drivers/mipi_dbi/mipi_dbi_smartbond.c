@@ -77,7 +77,7 @@ struct mipi_dbi_smartbond_config {
 	lcdc_smartbond_bgcolor_cfg bgcolor_cfg;
 };
 
-/* Mark the device is is progress and so it's not allowed to enter the sleep state. */
+/* Mark the device is progress and so it's not allowed to enter the sleep state. */
 static inline void mipi_dbi_smartbond_pm_policy_state_lock_get(void)
 {
 	/*
@@ -123,7 +123,7 @@ static void mipi_dbi_smartbond_send_single_frame(const struct device *dev)
 }
 
 #if MIPI_DBI_SMARTBOND_IS_RESET_AVAILABLE
-static int mipi_dbi_smartbond_reset(const struct device *dev, uint32_t delay)
+static int mipi_dbi_smartbond_reset(const struct device *dev, k_timeout_t delay)
 {
 	const struct mipi_dbi_smartbond_config *config = dev->config;
 	int ret;
@@ -138,7 +138,7 @@ static int mipi_dbi_smartbond_reset(const struct device *dev, uint32_t delay)
 		LOG_ERR("Cannot drive reset signal");
 		return ret;
 	}
-	k_msleep(delay);
+	k_sleep(delay);
 
 	return gpio_pin_set_dt(&config->reset, 0);
 }
@@ -509,7 +509,7 @@ static int mipi_dbi_smartbond_pm_action(const struct device *dev, enum pm_device
 
 static int mipi_dbi_smartbond_init(const struct device *dev)
 {
-	const struct mipi_dbi_smartbond_config *config = dev->config;
+	__unused const struct mipi_dbi_smartbond_config *config = dev->config;
 	struct mipi_dbi_smartbond_data *data = dev->data;
 	int ret;
 
@@ -536,7 +536,7 @@ static int mipi_dbi_smartbond_init(const struct device *dev)
 	return ret;
 }
 
-static struct mipi_dbi_driver_api mipi_dbi_smartbond_driver_api = {
+static const struct mipi_dbi_driver_api mipi_dbi_smartbond_driver_api = {
 #if MIPI_DBI_SMARTBOND_IS_RESET_AVAILABLE
 	.reset = mipi_dbi_smartbond_reset,
 #endif

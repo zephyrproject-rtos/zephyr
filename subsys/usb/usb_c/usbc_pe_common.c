@@ -381,7 +381,7 @@ bool pe_is_explicit_contract(const struct device *dev)
 }
 
 /**
- * @brief Return true if the PE is is within an atomic messaging sequence
+ * @brief Return true if the PE is within an atomic messaging sequence
  *	  that it initiated with a SOP* port partner.
  */
 bool pe_dpm_initiated_ams(const struct device *dev)

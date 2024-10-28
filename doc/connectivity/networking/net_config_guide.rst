@@ -83,7 +83,7 @@ Connection Options
 Socket Options
 **************
 
-:kconfig:option:`CONFIG_NET_SOCKETS_POLL_MAX`
+:kconfig:option:`CONFIG_ZVFS_POLL_MAX`
   Maximum number of supported poll() entries. One needs to select proper value here depending
   on how many BSD sockets are polled in the system.
 
@@ -174,7 +174,7 @@ TCP Options
 :kconfig:option:`CONFIG_NET_TCP_RETRY_COUNT`
   Maximum number of TCP segment retransmissions.
   The following formula can be used to determine the time (in ms)
-  that a segment will be be buffered awaiting retransmission:
+  that a segment will be buffered awaiting retransmission:
 
   .. math::
 

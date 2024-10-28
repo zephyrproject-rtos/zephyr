@@ -37,4 +37,10 @@ bq25180@2 {
 	compatible = "ti,bq25180";
 	reg = <0x2>;
 	constant-charge-current-max-microamp = <500000>;
+	constant-charge-voltage-max-microvolt = <4200000>;
+};
+
+sbs-charger@3 {
+	compatible = "sbs,sbs-charger";
+	reg = <0x3>;
 };

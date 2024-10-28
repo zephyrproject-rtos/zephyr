@@ -1,7 +1,17 @@
 # Copyright (c) 2024 GARDENA GmbH
-#
 # SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_SILABS_S2
 
 config SOC_FAMILY_SILABS_S2
 	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
 	select BUILD_OUTPUT_HEX
+	select SOC_PREP_HOOK
+	select SOC_EARLY_INIT_HOOK
+
+rsource "*/Kconfig"
+
+config ARM_SECURE_FIRMWARE
+	default y
+
+endif

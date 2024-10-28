@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/video/video-interfaces.h>
+
 /{
 	chosen {
 		zephyr,camera = &nxp_csi;
@@ -11,38 +13,39 @@
 };
 
 &nxp_cam_i2c {
-    status = "okay";
+	status = "okay";
 
-    ov5640: ov5640@3c {
-        compatible = "ovti,ov5640";
-        reg = <0x3c>;
-        reset-gpios = <&nxp_cam_connector 9 GPIO_ACTIVE_LOW>;
-        powerdown-gpios = <&nxp_cam_connector 17 GPIO_ACTIVE_HIGH>;
+	ov5640: ov5640@3c {
+		compatible = "ovti,ov5640";
+		reg = <0x3c>;
+		reset-gpios = <&nxp_cam_connector 9 GPIO_ACTIVE_LOW>;
+		powerdown-gpios = <&nxp_cam_connector 17 GPIO_ACTIVE_HIGH>;
 
-        port {
-            ov5640_ep_out: endpoint {
-                remote-endpoint = <&mipi_csi2rx_ep_in>;
-            };
-        };
-    };
+		port {
+			ov5640_ep_out: endpoint {
+				remote-endpoint-label = "mipi_csi2rx_ep_in";
+				bus-type = <VIDEO_BUS_TYPE_CSI2_DPHY>;
+				data-lanes = <1 2>;
+			};
+		};
+	};
 };
 
 &nxp_mipi_csi {
-    status = "okay";
+	status = "okay";
 
-    sensor = <&ov5640>;
+	ports {
+		port@1 {
+			reg = <1>;
 
-    ports {
-        port@1 {
-            reg = <1>;
-
-            mipi_csi2rx_ep_in: endpoint {
-                remote-endpoint = <&ov5640_ep_out>;
-            };
-        };
-    };
+			mipi_csi2rx_ep_in: endpoint {
+				remote-endpoint-label = "ov5640_ep_out";
+				data-lanes = <1 2>;
+			};
+		};
+	};
 };
 
 &nxp_csi {
-    status = "okay";
+	status = "okay";
 };

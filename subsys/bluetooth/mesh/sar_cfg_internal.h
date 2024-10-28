@@ -11,9 +11,9 @@
 #ifndef ZEPHYR_SUBSYS_BLUETOOTH_MESH_SAR_CFG_INTERNAL_H__
 #define ZEPHYR_SUBSYS_BLUETOOTH_MESH_SAR_CFG_INTERNAL_H__
 
-/** SAR Transmitter Configuraion state encoded length */
+/** SAR Transmitter state encoded length */
 #define BT_MESH_SAR_TX_LEN 4
-/** SAR Receiver Configuraion state encoded length */
+/** SAR Receiver state encoded length */
 #define BT_MESH_SAR_RX_LEN 3
 
 /** SAR Transmitter Configuration state initializer */

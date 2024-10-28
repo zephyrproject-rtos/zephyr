@@ -639,7 +639,7 @@ static int lmp90xxx_adc_read_channel(const struct device *dev,
 		if (buf[3] != crc) {
 			LOG_ERR("CRC mismatch (0x%02x vs. 0x%02x)", buf[3],
 				crc);
-			return err;
+			return -EIO;
 		}
 	}
 

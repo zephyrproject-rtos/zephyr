@@ -60,7 +60,7 @@ Glossary of Terms
       See :ref:`board_terminology` for additional details.
 
    board qualifiers
-      The set of additional tokens, separated by a forward slash (`/`) that
+      The set of additional tokens, separated by a forward slash (``/``) that
       follow the :term:`board name` (and optionally :term:`board revision`) to
       form the :term:`board target`. The currently accepted qualifiers are
       :term:`SoC`, :term:`CPU cluster` and :term:`variant`.
@@ -173,15 +173,30 @@ Glossary of Terms
       :term:`west manifest`. Its location is given by the :ref:`manifest.path
       configuration option <west-config-index>`. See :ref:`west-basics`.
 
+   west project
+      Each of the entries in a :term:`west manifest`, which describe a Git
+      repository that will be cloned and managed by west when working with the
+      corresponding :term:`west manifest repository`. Note that a west project
+      is different from a :term:`zephyr module`, although many projects are also
+      modules. See :ref:`west-manifests-projects` for additional information.
+
    west workspace
-      A directory on your system with a :file:`.west` subdirectory and
-      a :term:`west manifest repository`. You clone the Zephyr source
-      code onto your system by creating a west workspace using the
-      ``west init`` command. See :ref:`west-basics`.
+      A folder on your system with a :file:`.west` subdirectory and a
+      :term:`west manifest repository` in it. You clone the Zephyr source code,
+      as well as that of its :term:`west projects <west project>` onto your
+      system by creating a west workspace using the ``west init`` command. See
+      :ref:`west-basics`.
 
    XIP
       (eXecute In Place) a method of executing programs directly from long
       term storage rather than copying it into RAM, saving writable memory for
       dynamic data and not the static program code.
+
+   zephyr module
+      A Git repository containing a :file:`zephyr/module.yml` file, used by the
+      Zephyr build system to integrate the source code and configuration files
+      of the module into a regular Zephyr build. Zephyr modules may be west
+      projects, but they do not have to. See :ref:`modules` for additional
+      details.
 
 .. _System on a chip: https://en.wikipedia.org/wiki/System_on_a_chip

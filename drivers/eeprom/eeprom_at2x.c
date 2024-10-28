@@ -313,7 +313,7 @@ static int eeprom_at24_write(const struct device *dev, off_t offset,
 	bus_addr = eeprom_at24_translate_offset(dev, &offset);
 
 	/*
-	 * Not all I2C EEPROMs support repeated start so the the
+	 * Not all I2C EEPROMs support repeated start so the
 	 * address (offset) and data (buf) must be provided in one
 	 * write transaction (block).
 	 */

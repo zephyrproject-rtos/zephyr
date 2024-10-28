@@ -1,12 +1,12 @@
 .. _xiao_esp32s3:
 
-XIAO ESP32S3
-############
+XIAO ESP32S3/XIAO ESP32S3 Sense
+###############################
 
 Overview
 ********
 
-Seeed Studio XIAO ESP32S3 is an IoT mini development board based on the
+Seeed Studio XIAO ESP32S3 and XIAO ESP32S3 Sense are IoT mini development boards based on the
 Espressif ESP32-S3 WiFi/Bluetooth dual-mode chip.
 
 For more details see the `Seeed Studio XIAO ESP32S3`_ wiki page.
@@ -16,6 +16,12 @@ For more details see the `Seeed Studio XIAO ESP32S3`_ wiki page.
    :alt: XIAO ESP32S3
 
    XIAO ESP32S3
+
+.. figure:: img/xiao-esp32s3-sense.png
+   :align: center
+   :alt: XIAO ESP32S3 Sense
+
+   XIAO ESP32S3 Sense
 
 Hardware
 ********
@@ -29,6 +35,8 @@ ESP32-S3 is a low-power MCU-based system on a chip (SoC) with integrated 2.4 GHz
 and Bluetooth® Low Energy (Bluetooth LE). It consists of high-performance dual-core microprocessor
 (Xtensa® 32-bit LX7), a low power coprocessor, a Wi-Fi baseband, a Bluetooth LE baseband,
 RF module, and numerous peripherals.
+
+Additionally, Sense variant integrates a OV2640 camera sensor, microphone and sdcard slot.
 
 Supported Features
 ==================
@@ -66,6 +74,8 @@ Current Zephyr's XIAO ESP32S3 board supports the following features:
 +------------+------------+-------------------------------------+
 | GDMA       | on-chip    | dma                                 |
 +------------+------------+-------------------------------------+
+| LCD_CAM    | on-chip    | lcd_cam                             |
++------------+------------+-------------------------------------+
 
 Connections and IOs
 ===================
@@ -76,7 +86,7 @@ The board uses a standard XIAO pinout, the default pin mapping is the following:
    :align: center
    :alt: XIAO ESP32S3 Pinout
 
-   XIAO ESP32S3 Pinout
+   XIAO ESP32S3 and XIAO ESP32S3 Sense Pinout
 
 Prerequisites
 -------------
@@ -109,7 +119,7 @@ MCUboot bootloader
 ==================
 
 User may choose to use MCUboot bootloader instead. In that case the bootloader
-must be build (and flash) at least once.
+must be built (and flashed) at least once.
 
 There are two options to be used when building an application:
 
@@ -120,9 +130,10 @@ There are two options to be used when building an application:
 
    User can select the MCUboot bootloader by adding the following line
    to the board default configuration file.
-   ```
-   CONFIG_BOOTLOADER_MCUBOOT=y
-   ```
+
+   .. code:: cfg
+
+      CONFIG_BOOTLOADER_MCUBOOT=y
 
 Sysbuild
 ========
@@ -134,7 +145,7 @@ To build the sample application using sysbuild use the command:
 
 .. zephyr-app-commands::
    :tool: west
-   :app: samples/hello_world
+   :zephyr-app: samples/hello_world
    :board: xiao_esp32s3
    :goals: build
    :west-args: --sysbuild
@@ -170,7 +181,7 @@ Manual build
 ============
 
 During the development cycle, it is intended to build & flash as quickly possible.
-For that reason, images can be build one at a time using traditional build.
+For that reason, images can be built one at a time using traditional build.
 
 The instructions following are relevant for both manual build and sysbuild.
 The only difference is the structure of the build directory.
@@ -182,19 +193,41 @@ The only difference is the structure of the build directory.
 Build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: xiao_esp32s3/esp32s3/procpu
-   :goals: build
+.. tabs::
+
+   .. group-tab:: XIAO ESP32S3
+
+      .. zephyr-app-commands::
+         :zephyr-app: samples/hello_world
+         :board: xiao_esp32s3/esp32/procpu
+         :goals: build
+
+   .. group-tab:: XIAO ESP32S3 Sense
+
+      .. zephyr-app-commands::
+         :zephyr-app: samples/hello_world
+         :board: xiao_esp32s3/esp32/procpu/sense
+         :goals: build
 
 The usual ``flash`` target will work with the ``xiao_esp32s3`` board
-configuration. Here is an example for the :ref:`hello_world`
+configuration. Here is an example for the :zephyr:code-sample:`hello_world`
 application.
 
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: xiao_esp32s3/esp32s3/procpu
-   :goals: flash
+.. tabs::
+
+   .. group-tab:: XIAO ESP32S3
+
+      .. zephyr-app-commands::
+         :zephyr-app: samples/hello_world
+         :board: xiao_esp32s3/esp32/procpu
+         :goals: flash
+
+   .. group-tab:: XIAO ESP32S3 Sense
+
+      .. zephyr-app-commands::
+         :zephyr-app: samples/hello_world
+         :board: xiao_esp32s3/esp32/procpu/sense
+         :goals: flash
 
 Open the serial monitor using the following command:
 
@@ -213,29 +246,47 @@ message in the monitor:
 Debugging
 *********
 
-ESP32-S3 support on OpenOCD is available upstream as of version 0.12.0.
-Download and install OpenOCD from `OpenOCD`_.
+ESP32-S3 support on OpenOCD is available at `OpenOCD ESP32`_.
 
 ESP32-S3 has a built-in JTAG circuitry and can be debugged without any additional chip. Only an USB cable connected to the D+/D- pins is necessary.
 
-Further documentation can be obtained from the SoC vendor in `JTAG debugging
-for ESP32-S3`_.
+Further documentation can be obtained from the SoC vendor in `JTAG debugging for ESP32-S3`_.
 
-Here is an example for building the :ref:`hello_world` application.
+Here is an example for building the :zephyr:code-sample:`hello_world` application.
 
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: xiao_esp32s3/esp32/procpu
-   :goals: build flash
+.. tabs::
 
-You can debug an application in the usual way. Here is an example for the :ref:`hello_world` application.
+   .. group-tab:: XIAO ESP32S3
 
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: xiao_esp32s3/esp32/procpu
-   :goals: debug
-.. _`JTAG debugging for ESP32-S3`: https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/api-guides/jtag-debugging/
-.. _`OpenOCD`: https://github.com/openocd-org/openocd
+      .. zephyr-app-commands::
+         :zephyr-app: samples/hello_world
+         :board: xiao_esp32s3/esp32/procpu
+         :goals: debug
+
+   .. group-tab:: XIAO ESP32S3 Sense
+
+      .. zephyr-app-commands::
+         :zephyr-app: samples/hello_world
+         :board: xiao_esp32s3/esp32/procpu/sense
+         :goals: debug
+
+You can debug an application in the usual way. Here is an example for the :zephyr:code-sample:`hello_world` application.
+
+.. tabs::
+
+   .. group-tab:: XIAO ESP32S3
+
+      .. zephyr-app-commands::
+         :zephyr-app: samples/hello_world
+         :board: xiao_esp32s3/esp32/procpu
+         :goals: debug
+
+   .. group-tab:: XIAO ESP32S3 Sense
+
+      .. zephyr-app-commands::
+         :zephyr-app: samples/hello_world
+         :board: xiao_esp32s3/esp32/procpu/sense
+         :goals: debug
 
 References
 **********
@@ -243,3 +294,5 @@ References
 .. target-notes::
 
 .. _`Seeed Studio XIAO ESP32S3`: https://wiki.seeedstudio.com/xiao_esp32s3_getting_started/
+.. _`JTAG debugging for ESP32-S3`: https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/api-guides/jtag-debugging/
+.. _`OpenOCD ESP32`: https://github.com/espressif/openocd-esp32/releases

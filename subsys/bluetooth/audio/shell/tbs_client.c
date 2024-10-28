@@ -26,7 +26,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/types.h>
 
-#include "shell/bt.h"
+#include "host/shell/bt.h"
 
 static int cmd_tbs_client_discover(const struct shell *sh, size_t argc,
 				   char *argv[])

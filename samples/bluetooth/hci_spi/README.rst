@@ -1,12 +1,13 @@
-.. _bluetooth-hci-spi-sample:
+.. zephyr:code-sample:: bluetooth_hci_spi
+   :name: HCI SPI
+   :relevant-api: hci_raw bluetooth spi_interface
 
-Bluetooth: HCI SPI
-##################
+   Expose a Bluetooth controller to another device or CPU over SPI.
 
 Overview
 ********
 
-Expose Zephyr Bluetooth Controller support over SPI to another device/CPU using
+Expose Bluetooth Controller support over SPI to another device/CPU using
 the Zephyr SPI HCI transport protocol (similar to BlueNRG).
 
 Requirements
@@ -35,6 +36,6 @@ application is compatible with the HCI SPI master driver provided by
 Zephyr's Bluetooth HCI driver core; see the help associated with the
 :kconfig:option:`CONFIG_BT_SPI` configuration option for more information.
 
-Refer to :ref:`bluetooth-samples` for general Bluetooth information, and
+Refer to :zephyr:code-sample-category:`bluetooth` for general Bluetooth information, and
 to :ref:`96b_carbon_nrf51_bluetooth` for instructions specific to the
 96Boards Carbon board.

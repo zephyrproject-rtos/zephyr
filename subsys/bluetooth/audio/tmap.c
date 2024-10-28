@@ -63,7 +63,7 @@ uint8_t tmap_char_read(struct bt_conn *conn, uint8_t err,
 		return BT_GATT_ITER_STOP;
 	}
 
-	/* Extract the TMAP role of the peer and inform application fo the value found */
+	/* Extract the TMAP role of the peer and inform application of the value found */
 	peer_role = sys_get_le16(data);
 
 	if ((peer_role > 0U) && (peer_role <= TMAP_ALL_ROLES)) {

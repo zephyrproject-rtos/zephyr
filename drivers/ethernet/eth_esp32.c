@@ -18,6 +18,8 @@
 #include <hal/emac_hal.h>
 #include <hal/emac_ll.h>
 #include <soc/rtc.h>
+#include <soc/io_mux_reg.h>
+#include <clk_ctrl_os.h>
 
 #include "eth.h"
 
@@ -111,14 +113,14 @@ static struct net_pkt *eth_esp32_rx(
 	struct net_pkt *pkt = net_pkt_rx_alloc_with_buffer(
 		dev_data->iface, receive_len, AF_UNSPEC, 0, K_MSEC(100));
 	if (pkt == NULL) {
-		eth_stats_update_errors_rx(ctx->iface);
+		eth_stats_update_errors_rx(dev_data->iface);
 		LOG_ERR("Could not allocate rx buffer");
 		return NULL;
 	}
 
 	if (net_pkt_write(pkt, dev_data->rxb, receive_len) != 0) {
 		LOG_ERR("Unable to write frame into the pkt");
-		eth_stats_update_errors_rx(ctx->iface);
+		eth_stats_update_errors_rx(dev_data->iface);
 		net_pkt_unref(pkt);
 		return NULL;
 	}
@@ -200,6 +202,35 @@ static void phy_link_state_changed(const struct device *phy_dev,
 	}
 }
 
+#if DT_INST_NODE_HAS_PROP(0, ref_clk_output_gpios)
+static int emac_config_apll_clock(void)
+{
+	uint32_t expt_freq = MHZ(50);
+	uint32_t real_freq = 0;
+	esp_err_t ret = periph_rtc_apll_freq_set(expt_freq, &real_freq);
+
+	if (ret == ESP_ERR_INVALID_ARG) {
+		LOG_ERR("Set APLL clock coefficients failed");
+		return -EIO;
+	}
+
+	if (ret == ESP_ERR_INVALID_STATE) {
+		LOG_INF("APLL is occupied already, it is working at %d Hz", real_freq);
+	}
+
+	/* If the difference of real APLL frequency
+	 * is not within 50 ppm, i.e. 2500 Hz,
+	 * the APLL is unavailable
+	 */
+	if (abs((int)real_freq - (int)expt_freq) > 2500) {
+		LOG_ERR("The APLL is working at an unusable frequency");
+		return -EIO;
+	}
+
+	return 0;
+}
+#endif /* DT_INST_NODE_HAS_PROP(0, ref_clk_output_gpios) */
+
 int eth_esp32_initialize(const struct device *dev)
 {
 	struct eth_esp32_dev_data *const dev_data = dev->data;
@@ -212,8 +243,9 @@ int eth_esp32_initialize(const struct device *dev)
 	clock_control_subsys_t clock_subsys =
 		(clock_control_subsys_t)DT_CLOCKS_CELL(DT_NODELABEL(eth), offset);
 
+	/* clock is shared, so do not bail out if already enabled */
 	res = clock_control_on(clock_dev, clock_subsys);
-	if (res != 0) {
+	if (res < 0 && res != -EALREADY) {
 		goto err;
 	}
 
@@ -229,11 +261,13 @@ int eth_esp32_initialize(const struct device *dev)
 		      dev_data->dma_rx_buf, dev_data->dma_tx_buf);
 
 	/* Configure ISR */
-	res = esp_intr_alloc(DT_IRQN(DT_NODELABEL(eth)),
-		       ESP_INTR_FLAG_IRAM,
-		       eth_esp32_isr,
-		       (void *)dev,
-		       NULL);
+	res = esp_intr_alloc(DT_IRQ_BY_IDX(DT_NODELABEL(eth), 0, irq),
+			ESP_PRIO_TO_FLAGS(DT_IRQ_BY_IDX(DT_NODELABEL(eth), 0, priority)) |
+			ESP_INT_FLAGS_CHECK(DT_IRQ_BY_IDX(DT_NODELABEL(eth), 0, flags)) |
+				ESP_INTR_FLAG_IRAM,
+			eth_esp32_isr,
+			(void *)dev,
+			NULL);
 	if (res != 0) {
 		goto err;
 	}
@@ -252,10 +286,14 @@ int eth_esp32_initialize(const struct device *dev)
 			DT_INST_GPIO_PIN(0, ref_clk_output_gpios) == 17,
 			"Only GPIO16/17 are allowed as a GPIO REF_CLK source!");
 		int ref_clk_gpio = DT_INST_GPIO_PIN(0, ref_clk_output_gpios);
-
 		emac_hal_iomux_rmii_clk_output(ref_clk_gpio);
 		emac_ll_clock_enable_rmii_output(dev_data->hal.ext_regs);
-		rtc_clk_apll_enable(true, 0, 0, 6, 2);
+		periph_rtc_apll_acquire();
+		res = emac_config_apll_clock();
+		if (res != 0) {
+			goto err;
+		}
+		rtc_clk_apll_enable(true);
 #else
 		emac_hal_iomux_rmii_clk_input();
 		emac_ll_clock_enable_rmii_input(dev_data->hal.ext_regs);
@@ -317,6 +355,12 @@ err:
 	return res;
 }
 
+static const struct device *eth_esp32_phy_get(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+	return eth_esp32_phy_dev;
+}
+
 static void eth_esp32_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
@@ -345,6 +389,7 @@ static const struct ethernet_api eth_esp32_api = {
 	.iface_api.init		= eth_esp32_iface_init,
 	.get_capabilities	= eth_esp32_caps,
 	.set_config		= eth_esp32_set_config,
+	.get_phy		= eth_esp32_phy_get,
 	.send			= eth_esp32_send,
 };
 

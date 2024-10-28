@@ -22,41 +22,41 @@ static struct fd_op_vtable fd_vtable = { 0 };
 K_THREAD_STACK_DEFINE(fd_thread_stack, CONFIG_ZTEST_STACK_SIZE +
 		      CONFIG_TEST_EXTRA_STACK_SIZE);
 
-ZTEST(fdtable, test_z_reserve_fd)
+ZTEST(fdtable, test_zvfs_reserve_fd)
 {
-	int fd = z_reserve_fd(); /* function being tested */
+	int fd = zvfs_reserve_fd(); /* function being tested */
 
 	zassert_true(fd >= 0, "fd < 0");
 
-	z_free_fd(fd);
+	zvfs_free_fd(fd);
 }
 
-ZTEST(fdtable, test_z_get_fd_obj_and_vtable)
+ZTEST(fdtable, test_zvfs_get_fd_obj_and_vtable)
 {
 	const struct fd_op_vtable *vtable;
 
-	int fd = z_reserve_fd();
+	int fd = zvfs_reserve_fd();
 	zassert_true(fd >= 0, "fd < 0");
 
 	int *obj;
-	obj = z_get_fd_obj_and_vtable(fd, &vtable,
+	obj = zvfs_get_fd_obj_and_vtable(fd, &vtable,
 				      NULL); /* function being tested */
 
 	zassert_is_null(obj, "obj is not NULL");
 
-	z_free_fd(fd);
+	zvfs_free_fd(fd);
 }
 
-ZTEST(fdtable, test_z_get_fd_obj)
+ZTEST(fdtable, test_zvfs_get_fd_obj)
 {
-	int fd = z_reserve_fd();
+	int fd = zvfs_reserve_fd();
 	zassert_true(fd >= 0, "fd < 0");
 
 	int err = -1;
 	const struct fd_op_vtable *vtable = 0;
 	const struct fd_op_vtable *vtable2 = vtable+1;
 
-	int *obj = z_get_fd_obj(fd, vtable, err); /* function being tested */
+	int *obj = zvfs_get_fd_obj(fd, vtable, err); /* function being tested */
 
 	/* take branch -- if (_check_fd(fd) < 0) */
 	zassert_is_null(obj, "obj not is NULL");
@@ -65,70 +65,70 @@ ZTEST(fdtable, test_z_get_fd_obj)
 	vtable = NULL;
 
 	/* This will set obj and vtable properly */
-	z_finalize_fd(fd, obj, vtable);
+	zvfs_finalize_fd(fd, obj, vtable);
 
-	obj = z_get_fd_obj(-1, vtable, err); /* function being tested */
+	obj = zvfs_get_fd_obj(-1, vtable, err); /* function being tested */
 
 	zassert_equal_ptr(obj, NULL, "obj is not NULL when fd < 0");
 	zassert_equal(errno, EBADF, "fd: out of bounds error");
 
 	/* take branch -- if (vtable != NULL && fd_entry->vtable != vtable) */
-	obj = z_get_fd_obj(fd, vtable2, err); /* function being tested */
+	obj = zvfs_get_fd_obj(fd, vtable2, err); /* function being tested */
 
 	zassert_equal_ptr(obj, NULL, "obj is not NULL - vtable doesn't match");
 	zassert_equal(errno, err, "vtable matches");
 
-	z_free_fd(fd);
+	zvfs_free_fd(fd);
 }
 
-ZTEST(fdtable, test_z_finalize_fd)
+ZTEST(fdtable, test_zvfs_finalize_fd)
 {
 	const struct fd_op_vtable *vtable;
 
-	int fd = z_reserve_fd();
+	int fd = zvfs_reserve_fd();
 	zassert_true(fd >= 0);
 
-	int *obj = z_get_fd_obj_and_vtable(fd, &vtable, NULL);
+	int *obj = zvfs_get_fd_obj_and_vtable(fd, &vtable, NULL);
 
 	const struct fd_op_vtable *original_vtable = vtable;
 	int *original_obj = obj;
 
-	z_finalize_fd(fd, obj, vtable); /* function being tested */
+	zvfs_finalize_fd(fd, obj, vtable); /* function being tested */
 
-	obj = z_get_fd_obj_and_vtable(fd, &vtable, NULL);
+	obj = zvfs_get_fd_obj_and_vtable(fd, &vtable, NULL);
 
 	zassert_equal_ptr(obj, original_obj, "obj is different after finalizing");
 	zassert_equal_ptr(vtable, original_vtable, "vtable is different after finalizing");
 
-	z_free_fd(fd);
+	zvfs_free_fd(fd);
 }
 
-ZTEST(fdtable, test_z_alloc_fd)
+ZTEST(fdtable, test_zvfs_alloc_fd)
 {
 	const struct fd_op_vtable *vtable = NULL;
 	int *obj = NULL;
 
-	int fd = z_alloc_fd(obj, vtable); /* function being tested */
+	int fd = zvfs_alloc_fd(obj, vtable); /* function being tested */
 	zassert_true(fd >= 0);
 
-	obj = z_get_fd_obj_and_vtable(fd, &vtable, NULL);
+	obj = zvfs_get_fd_obj_and_vtable(fd, &vtable, NULL);
 
 	zassert_equal_ptr(obj, NULL, "obj is different after allocating");
 	zassert_equal_ptr(vtable, NULL, "vtable is different after allocating");
 
-	z_free_fd(fd);
+	zvfs_free_fd(fd);
 }
 
-ZTEST(fdtable, test_z_free_fd)
+ZTEST(fdtable, test_zvfs_free_fd)
 {
 	const struct fd_op_vtable *vtable = NULL;
 
-	int fd = z_reserve_fd();
+	int fd = zvfs_reserve_fd();
 	zassert_true(fd >= 0);
 
-	z_free_fd(fd); /* function being tested */
+	zvfs_free_fd(fd); /* function being tested */
 
-	int *obj = z_get_fd_obj_and_vtable(fd, &vtable, NULL);
+	int *obj = zvfs_get_fd_obj_and_vtable(fd, &vtable, NULL);
 
 	zassert_equal_ptr(obj, NULL, "obj is not NULL after freeing");
 }
@@ -142,14 +142,14 @@ static void test_cb(void *p1, void *p2, void *p3)
 	const struct fd_op_vtable *vtable;
 	int *obj;
 
-	obj = z_get_fd_obj_and_vtable(fd, &vtable, NULL);
+	obj = zvfs_get_fd_obj_and_vtable(fd, &vtable, NULL);
 
 	zassert_not_null(obj, "obj is null");
 	zassert_not_null(vtable, "vtable is null");
 
-	z_free_fd(fd);
+	zvfs_free_fd(fd);
 
-	obj = z_get_fd_obj_and_vtable(fd, &vtable, NULL);
+	obj = zvfs_get_fd_obj_and_vtable(fd, &vtable, NULL);
 	zassert_is_null(obj, "obj is still there");
 	zassert_equal(errno, EBADF, "fd was found");
 }
@@ -159,10 +159,10 @@ ZTEST(fdtable, test_z_fd_multiple_access)
 	const struct fd_op_vtable *vtable = VTABLE_INIT;
 	void *obj = (void *)vtable;
 
-	shared_fd = z_reserve_fd();
+	shared_fd = zvfs_reserve_fd();
 	zassert_true(shared_fd >= 0, "fd < 0");
 
-	z_finalize_fd(shared_fd, obj, vtable);
+	zvfs_finalize_fd(shared_fd, obj, vtable);
 
 	k_thread_create(&fd_thread, fd_thread_stack,
 			K_THREAD_STACK_SIZEOF(fd_thread_stack),
@@ -173,7 +173,7 @@ ZTEST(fdtable, test_z_fd_multiple_access)
 	k_thread_join(&fd_thread, K_FOREVER);
 
 	/* should be null since freed in the other thread */
-	obj = z_get_fd_obj_and_vtable(shared_fd, &vtable, NULL);
+	obj = zvfs_get_fd_obj_and_vtable(shared_fd, &vtable, NULL);
 	zassert_is_null(obj, "obj is still there");
 	zassert_equal(errno, EBADF, "fd was found");
 }

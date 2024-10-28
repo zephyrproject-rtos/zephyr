@@ -89,6 +89,7 @@ static uint32_t read(const struct device *dev)
 
 	nrf_timer_task_trigger(timer,
 			       nrf_timer_capture_task_get(COUNTER_READ_CC));
+	nrf_barrier_w();
 
 	return nrf_timer_cc_get(timer, COUNTER_READ_CC);
 }
@@ -160,6 +161,7 @@ static int set_cc(const struct device *dev, uint8_t id, uint32_t val,
 	 */
 	now = read(dev);
 	prev_val = nrf_timer_cc_get(reg, chan);
+	nrf_barrier_r();
 	nrf_timer_cc_set(reg, chan, now);
 	nrf_timer_event_clear(reg, evt);
 

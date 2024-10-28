@@ -21,19 +21,22 @@
 #include "usbd_msg.h"
 
 #include <zephyr/logging/log.h>
-#if DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_console), zephyr_cdc_acm_uart) \
-	&& defined(CONFIG_USBD_CDC_ACM_LOG_LEVEL) \
-	&& CONFIG_USBD_CDC_ACM_LOG_LEVEL != LOG_LEVEL_NONE
 /* Prevent endless recursive logging loop and warn user about it */
-#warning "USB_CDC_ACM_LOG_LEVEL forced to LOG_LEVEL_NONE"
+#if defined(CONFIG_USBD_CDC_ACM_LOG_LEVEL) && CONFIG_USBD_CDC_ACM_LOG_LEVEL != LOG_LEVEL_NONE
+#define CHOSEN_CONSOLE DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_console), zephyr_cdc_acm_uart)
+#define CHOSEN_SHELL   DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_shell_uart), zephyr_cdc_acm_uart)
+#if (CHOSEN_CONSOLE && defined(CONFIG_LOG_BACKEND_UART)) || \
+	(CHOSEN_SHELL && defined(CONFIG_SHELL_LOG_BACKEND))
+#warning "USBD_CDC_ACM_LOG_LEVEL forced to LOG_LEVEL_NONE"
 #undef CONFIG_USBD_CDC_ACM_LOG_LEVEL
 #define CONFIG_USBD_CDC_ACM_LOG_LEVEL LOG_LEVEL_NONE
 #endif
+#endif
 LOG_MODULE_REGISTER(usbd_cdc_acm, CONFIG_USBD_CDC_ACM_LOG_LEVEL);
 
-NET_BUF_POOL_FIXED_DEFINE(cdc_acm_ep_pool,
-			  DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) * 2,
-			  512, sizeof(struct udc_buf_info), NULL);
+UDC_BUF_POOL_DEFINE(cdc_acm_ep_pool,
+		    DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) * 2,
+		    512, sizeof(struct udc_buf_info), NULL);
 
 #define CDC_ACM_DEFAULT_LINECODING	{sys_cpu_to_le32(115200), 0, 0, 8}
 #define CDC_ACM_DEFAULT_INT_EP_MPS	16
@@ -46,7 +49,7 @@ NET_BUF_POOL_FIXED_DEFINE(cdc_acm_ep_pool,
 #define CDC_ACM_IRQ_RX_ENABLED		2
 #define CDC_ACM_IRQ_TX_ENABLED		3
 #define CDC_ACM_RX_FIFO_BUSY		4
-#define CDC_ACM_LOCK			5
+#define CDC_ACM_TX_FIFO_BUSY		5
 
 static struct k_work_q cdc_acm_work_q;
 static K_KERNEL_STACK_DEFINE(cdc_acm_stack,
@@ -104,8 +107,12 @@ struct cdc_acm_uart_data {
 	struct k_work irq_cb_work;
 	struct cdc_acm_uart_fifo rx_fifo;
 	struct cdc_acm_uart_fifo tx_fifo;
+	/* When flow_ctrl is set, poll out is blocked when the buffer is full,
+	 * roughly emulating flow control.
+	 */
+	bool flow_ctrl;
 	/* USBD CDC ACM TX fifo work */
-	struct k_work tx_fifo_work;
+	struct k_work_delayable tx_fifo_work;
 	/* USBD CDC ACM RX fifo work */
 	struct k_work rx_fifo_work;
 	atomic_t state;
@@ -134,6 +141,12 @@ struct net_buf *cdc_acm_buf_alloc(const uint8_t ep)
 static ALWAYS_INLINE int cdc_acm_work_submit(struct k_work *work)
 {
 	return k_work_submit_to_queue(&cdc_acm_work_q, work);
+}
+
+static ALWAYS_INLINE int cdc_acm_work_schedule(struct k_work_delayable *work,
+					       k_timeout_t delay)
+{
+	return k_work_schedule_for_queue(&cdc_acm_work_q, work, delay);
 }
 
 static ALWAYS_INLINE bool check_wq_ctx(const struct device *dev)
@@ -216,6 +229,10 @@ static int usbd_cdc_acm_request(struct usbd_class_data *const c_data,
 			atomic_clear_bit(&data->state, CDC_ACM_RX_FIFO_BUSY);
 		}
 
+		if (bi->ep == cdc_acm_get_bulk_in(c_data)) {
+			atomic_clear_bit(&data->state, CDC_ACM_TX_FIFO_BUSY);
+		}
+
 		goto ep_request_error;
 	}
 
@@ -238,6 +255,14 @@ static int usbd_cdc_acm_request(struct usbd_class_data *const c_data,
 		if (data->cb) {
 			cdc_acm_work_submit(&data->irq_cb_work);
 		}
+
+		atomic_clear_bit(&data->state, CDC_ACM_TX_FIFO_BUSY);
+
+		if (!ring_buf_is_empty(data->tx_fifo.rb)) {
+			/* Queue pending TX data on IN endpoint */
+			cdc_acm_work_schedule(&data->tx_fifo_work, K_NO_WAIT);
+		}
+
 	}
 
 	if (bi->ep == cdc_acm_get_int_in(c_data)) {
@@ -268,12 +293,12 @@ static void usbd_cdc_acm_enable(struct usbd_class_data *const c_data)
 	}
 
 	if (atomic_test_bit(&data->state, CDC_ACM_IRQ_TX_ENABLED)) {
-		if (ring_buf_is_empty(data->tx_fifo.rb)) {
+		if (ring_buf_space_get(data->tx_fifo.rb)) {
 			/* Raise TX ready interrupt */
 			cdc_acm_work_submit(&data->irq_cb_work);
 		} else {
 			/* Queue pending TX data on IN endpoint */
-			cdc_acm_work_submit(&data->tx_fifo_work);
+			cdc_acm_work_schedule(&data->tx_fifo_work, K_NO_WAIT);
 		}
 	}
 }
@@ -372,7 +397,8 @@ static void cdc_acm_update_uart_cfg(struct cdc_acm_uart_data *const data)
 		break;
 	};
 
-	cfg->flow_ctrl = UART_CFG_FLOW_CTRL_NONE;
+	cfg->flow_ctrl = data->flow_ctrl ? UART_CFG_FLOW_CTRL_RTS_CTS :
+					   UART_CFG_FLOW_CTRL_NONE;
 }
 
 static void cdc_acm_update_linestate(struct cdc_acm_uart_data *const data)
@@ -515,13 +541,14 @@ static int cdc_acm_send_notification(const struct device *dev,
  */
 static void cdc_acm_tx_fifo_handler(struct k_work *work)
 {
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct cdc_acm_uart_data *data;
 	struct usbd_class_data *c_data;
 	struct net_buf *buf;
 	size_t len;
 	int ret;
 
-	data = CONTAINER_OF(work, struct cdc_acm_uart_data, tx_fifo_work);
+	data = CONTAINER_OF(dwork, struct cdc_acm_uart_data, tx_fifo_work);
 	c_data = data->c_data;
 
 	if (!atomic_test_bit(&data->state, CDC_ACM_CLASS_ENABLED)) {
@@ -534,15 +561,16 @@ static void cdc_acm_tx_fifo_handler(struct k_work *work)
 		return;
 	}
 
-	if (atomic_test_and_set_bit(&data->state, CDC_ACM_LOCK)) {
-		cdc_acm_work_submit(&data->tx_fifo_work);
+	if (atomic_test_and_set_bit(&data->state, CDC_ACM_TX_FIFO_BUSY)) {
+		LOG_DBG("TX transfer already in progress");
 		return;
 	}
 
 	buf = cdc_acm_buf_alloc(cdc_acm_get_bulk_in(c_data));
 	if (buf == NULL) {
-		cdc_acm_work_submit(&data->tx_fifo_work);
-		goto tx_fifo_handler_exit;
+		atomic_clear_bit(&data->state, CDC_ACM_TX_FIFO_BUSY);
+		cdc_acm_work_schedule(&data->tx_fifo_work, K_MSEC(1));
+		return;
 	}
 
 	len = ring_buf_get(data->tx_fifo.rb, buf->data, buf->size);
@@ -552,10 +580,8 @@ static void cdc_acm_tx_fifo_handler(struct k_work *work)
 	if (ret) {
 		LOG_ERR("Failed to enqueue");
 		net_buf_unref(buf);
+		atomic_clear_bit(&data->state, CDC_ACM_TX_FIFO_BUSY);
 	}
-
-tx_fifo_handler_exit:
-	atomic_clear_bit(&data->state, CDC_ACM_LOCK);
 }
 
 /*
@@ -599,6 +625,9 @@ static void cdc_acm_rx_fifo_handler(struct k_work *work)
 		return;
 	}
 
+	/* Shrink the buffer size if operating on a full speed bus */
+	buf->size = MIN(cdc_acm_get_bulk_mps(c_data), buf->size);
+
 	ret = usbd_ep_enqueue(c_data, buf);
 	if (ret) {
 		LOG_ERR("Failed to enqueue net_buf for 0x%02x", ep);
@@ -612,7 +641,7 @@ static void cdc_acm_irq_tx_enable(const struct device *dev)
 
 	atomic_set_bit(&data->state, CDC_ACM_IRQ_TX_ENABLED);
 
-	if (ring_buf_is_empty(data->tx_fifo.rb)) {
+	if (ring_buf_space_get(data->tx_fifo.rb)) {
 		LOG_INF("tx_en: trigger irq_cb_work");
 		cdc_acm_work_submit(&data->irq_cb_work);
 	}
@@ -706,8 +735,8 @@ static int cdc_acm_irq_tx_ready(const struct device *dev)
 	struct cdc_acm_uart_data *const data = dev->data;
 
 	if (check_wq_ctx(dev)) {
-		if (ring_buf_space_get(data->tx_fifo.rb)) {
-			return 1;
+		if (data->tx_fifo.irq) {
+			return ring_buf_space_get(data->tx_fifo.rb);
 		}
 	} else {
 		LOG_WRN("Invoked by inappropriate context");
@@ -722,7 +751,7 @@ static int cdc_acm_irq_rx_ready(const struct device *dev)
 	struct cdc_acm_uart_data *const data = dev->data;
 
 	if (check_wq_ctx(dev)) {
-		if (!ring_buf_is_empty(data->rx_fifo.rb)) {
+		if (data->rx_fifo.irq) {
 			return 1;
 		}
 	} else {
@@ -768,7 +797,7 @@ static int cdc_acm_irq_update(const struct device *dev)
 	}
 
 	if (atomic_test_bit(&data->state, CDC_ACM_IRQ_TX_ENABLED) &&
-	    ring_buf_is_empty(data->tx_fifo.rb)) {
+	    ring_buf_space_get(data->tx_fifo.rb)) {
 		data->tx_fifo.irq = true;
 	} else {
 		data->tx_fifo.irq = false;
@@ -802,12 +831,6 @@ static void cdc_acm_irq_cb_handler(struct k_work *work)
 		return;
 	}
 
-	if (atomic_test_and_set_bit(&data->state, CDC_ACM_LOCK)) {
-		LOG_ERR("Polling is in progress");
-		cdc_acm_work_submit(&data->irq_cb_work);
-		return;
-	}
-
 	data->tx_fifo.altered = false;
 	data->rx_fifo.altered = false;
 	data->rx_fifo.irq = false;
@@ -825,7 +848,9 @@ static void cdc_acm_irq_cb_handler(struct k_work *work)
 
 	if (data->tx_fifo.altered) {
 		LOG_DBG("tx fifo altered, submit work");
-		cdc_acm_work_submit(&data->tx_fifo_work);
+		if (!atomic_test_bit(&data->state, CDC_ACM_TX_FIFO_BUSY)) {
+			cdc_acm_work_schedule(&data->tx_fifo_work, K_NO_WAIT);
+		}
 	}
 
 	if (atomic_test_bit(&data->state, CDC_ACM_IRQ_RX_ENABLED) &&
@@ -835,12 +860,10 @@ static void cdc_acm_irq_cb_handler(struct k_work *work)
 	}
 
 	if (atomic_test_bit(&data->state, CDC_ACM_IRQ_TX_ENABLED) &&
-	    ring_buf_is_empty(data->tx_fifo.rb)) {
+	    ring_buf_space_get(data->tx_fifo.rb)) {
 		LOG_DBG("tx irq pending, submit irq_cb_work");
 		cdc_acm_work_submit(&data->irq_cb_work);
 	}
-
-	atomic_clear_bit(&data->state, CDC_ACM_LOCK);
 }
 
 static void cdc_acm_irq_callback_set(const struct device *dev,
@@ -859,13 +882,8 @@ static int cdc_acm_poll_in(const struct device *dev, unsigned char *const c)
 	uint32_t len;
 	int ret = -1;
 
-	if (atomic_test_and_set_bit(&data->state, CDC_ACM_LOCK)) {
-		LOG_ERR("IRQ callback is used");
-		return -1;
-	}
-
 	if (ring_buf_is_empty(data->rx_fifo.rb)) {
-		goto poll_in_exit;
+		return ret;
 	}
 
 	len = ring_buf_get(data->rx_fifo.rb, c, 1);
@@ -874,35 +892,37 @@ static int cdc_acm_poll_in(const struct device *dev, unsigned char *const c)
 		ret = 0;
 	}
 
-poll_in_exit:
-	atomic_clear_bit(&data->state, CDC_ACM_LOCK);
-
 	return ret;
 }
 
 static void cdc_acm_poll_out(const struct device *dev, const unsigned char c)
 {
 	struct cdc_acm_uart_data *const data = dev->data;
+	unsigned int lock;
+	uint32_t wrote;
 
-	if (atomic_test_and_set_bit(&data->state, CDC_ACM_LOCK)) {
-		LOG_ERR("IRQ callback is used");
-		return;
+	while (true) {
+		lock = irq_lock();
+		wrote = ring_buf_put(data->tx_fifo.rb, &c, 1);
+		irq_unlock(lock);
+
+		if (wrote == 1) {
+			break;
+		}
+
+		if (k_is_in_isr() || !data->flow_ctrl) {
+			LOG_WRN_ONCE("Ring buffer full, discard data");
+			break;
+		}
+
+		k_msleep(1);
 	}
 
-	if (ring_buf_put(data->tx_fifo.rb, &c, 1)) {
-		goto poll_out_exit;
-	}
-
-	LOG_DBG("Ring buffer full, drain buffer");
-	if (!ring_buf_get(data->tx_fifo.rb, NULL, 1) ||
-	    !ring_buf_put(data->tx_fifo.rb, &c, 1)) {
-		LOG_ERR("Failed to drain buffer");
-		__ASSERT_NO_MSG(false);
-	}
-
-poll_out_exit:
-	atomic_clear_bit(&data->state, CDC_ACM_LOCK);
-	cdc_acm_work_submit(&data->tx_fifo_work);
+	/* Schedule with minimal timeout to make it possible to send more than
+	 * one byte per USB transfer. The latency increase is negligible while
+	 * the increased throughput and reduced CPU usage is easily observable.
+	 */
+	cdc_acm_work_schedule(&data->tx_fifo_work, K_MSEC(1));
 }
 
 #ifdef CONFIG_UART_LINE_CTRL
@@ -975,17 +995,18 @@ static int cdc_acm_line_ctrl_get(const struct device *dev,
 static int cdc_acm_configure(const struct device *dev,
 			     const struct uart_config *const cfg)
 {
-	ARG_UNUSED(dev);
-	ARG_UNUSED(cfg);
-	/*
-	 * We cannot implement configure API because there is
-	 * no notification of configuration changes provided
-	 * for the Abstract Control Model and the UART controller
-	 * is only emulated.
-	 * However, it allows us to use CDC ACM UART together with
-	 * subsystems like Modbus which require configure API for
-	 * real controllers.
-	 */
+	struct cdc_acm_uart_data *const data = dev->data;
+
+	switch (cfg->flow_ctrl) {
+	case UART_CFG_FLOW_CTRL_NONE:
+		data->flow_ctrl = false;
+		break;
+	case UART_CFG_FLOW_CTRL_RTS_CTS:
+		data->flow_ctrl = true;
+		break;
+	default:
+		return -ENOTSUP;
+	}
 
 	return 0;
 }
@@ -1020,7 +1041,7 @@ static int usbd_cdc_acm_preinit(const struct device *dev)
 
 	k_thread_name_set(&cdc_acm_work_q.thread, "cdc_acm_work_q");
 
-	k_work_init(&data->tx_fifo_work, cdc_acm_tx_fifo_handler);
+	k_work_init_delayable(&data->tx_fifo_work, cdc_acm_tx_fifo_handler);
 	k_work_init(&data->rx_fifo_work, cdc_acm_rx_fifo_handler);
 	k_work_init(&data->irq_cb_work, cdc_acm_irq_cb_handler);
 
@@ -1231,7 +1252,7 @@ const static struct usb_desc_header *cdc_acm_hs_desc_##n[] = {			\
 			  &usbd_cdc_acm_api,					\
 			  (void *)DEVICE_DT_GET(DT_DRV_INST(n)), NULL);		\
 										\
-	RING_BUF_DECLARE(cdc_acm_rb_rx_##n, DT_INST_PROP(n, tx_fifo_size));	\
+	RING_BUF_DECLARE(cdc_acm_rb_rx_##n, DT_INST_PROP(n, rx_fifo_size));	\
 	RING_BUF_DECLARE(cdc_acm_rb_tx_##n, DT_INST_PROP(n, tx_fifo_size));	\
 										\
 	static struct cdc_acm_uart_data uart_data_##n = {			\
@@ -1239,6 +1260,7 @@ const static struct usb_desc_header *cdc_acm_hs_desc_##n[] = {			\
 		.c_data = &cdc_acm_##n,						\
 		.rx_fifo.rb = &cdc_acm_rb_rx_##n,				\
 		.tx_fifo.rb = &cdc_acm_rb_tx_##n,				\
+		.flow_ctrl = DT_INST_PROP(n, hw_flow_control),			\
 		.notif_sem = Z_SEM_INITIALIZER(uart_data_##n.notif_sem, 0, 1),	\
 		.desc = &cdc_acm_desc_##n,					\
 		.fs_desc = cdc_acm_fs_desc_##n,					\
