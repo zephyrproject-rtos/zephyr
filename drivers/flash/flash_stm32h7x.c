@@ -702,8 +702,10 @@ void flash_stm32_page_layout(const struct device *dev,
 
 static struct flash_stm32_priv flash_data = {
 	.regs = (FLASH_TypeDef *) DT_INST_REG_ADDR(0),
+#if DT_NODE_HAS_PROP(DT_INST(0, st_stm32h7_flash_controller), clocks)
 	.pclken = { .bus = DT_INST_CLOCKS_CELL(0, bus),
 		    .enr = DT_INST_CLOCKS_CELL(0, bits)},
+#endif
 };
 
 static const struct flash_driver_api flash_stm32h7_api = {
@@ -718,6 +720,8 @@ static const struct flash_driver_api flash_stm32h7_api = {
 
 static int stm32h7_flash_init(const struct device *dev)
 {
+#if DT_NODE_HAS_PROP(DT_INST(0, st_stm32h7_flash_controller), clocks)
+	/* Only stm32h7 dual core devices have the clocks property */
 	struct flash_stm32_priv *p = FLASH_STM32_PRIV(dev);
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
@@ -726,12 +730,12 @@ static int stm32h7_flash_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	/* enable clock */
+	/* enable clock : enable the RCC_AHB3ENR_FLASHEN bit */
 	if (clock_control_on(clk, (clock_control_subsys_t)&p->pclken) != 0) {
 		LOG_ERR("Failed to enable clock");
 		return -EIO;
 	}
-
+#endif
 	flash_stm32_sem_init(dev);
 
 	LOG_DBG("Flash initialized. BS: %zu",
