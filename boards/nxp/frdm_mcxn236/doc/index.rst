@@ -76,6 +76,8 @@ The FRDM-MCXN236 board configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | LPTMR     | on-chip    | counter                             |
 +-----------+------------+-------------------------------------+
+| MRT       | on-chip    | counter                             |
++-----------+------------+-------------------------------------+
 
 Targets available
 ==================
