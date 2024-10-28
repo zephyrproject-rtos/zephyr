@@ -614,44 +614,6 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 		}
 	}
 
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
-	if (params->suiteb_type == WIFI_SUITEB) {
-		cipher_capa = WPA_CAPA_ENC_GCMP;
-		gropu_mgmt_cipher_capa = WPA_CAPA_ENC_BIP_GMAC_128;
-	} else if (params->suiteb_type == WIFI_SUITEB_192) {
-		cipher_capa = WPA_CAPA_ENC_GCMP_256;
-		gropu_mgmt_cipher_capa = WPA_CAPA_ENC_BIP_GMAC_256;
-	} else {
-		cipher_capa = WPA_CAPA_ENC_CCMP;
-		gropu_mgmt_cipher_capa = WPA_CAPA_ENC_BIP;
-	}
-
-	for (index = 0; index < ARRAY_SIZE(ciphers); index++) {
-		if (cipher_capa == ciphers[index].capa) {
-			group_ciphers = ciphers[index].name;
-			pairwise_cipher = ciphers[index].name;
-			break;
-		}
-	}
-
-	if (index == ARRAY_SIZE(ciphers)) {
-		wpa_printf(MSG_ERROR, "Get ciphers error");
-		goto out;
-	}
-
-	for (index = 0; index < ARRAY_SIZE(ciphers_group_mgmt); index++) {
-		if (gropu_mgmt_cipher_capa == ciphers_group_mgmt[index].capa) {
-			group_mgmt_cipher = ciphers_group_mgmt[index].name;
-			break;
-		}
-	}
-
-	if (index == ARRAY_SIZE(ciphers_group_mgmt)) {
-		wpa_printf(MSG_ERROR, "Get group mgmt ciphers error");
-		goto out;
-	}
-#endif
-
 	if (params->security != WIFI_SECURITY_TYPE_NONE) {
 		if (params->psk) {
 			if ((params->psk_length < WIFI_PSK_MIN_LEN) ||
