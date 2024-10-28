@@ -20,8 +20,8 @@ struct scu_pd_data {
 	sc_rsrc_t rsrc;
 };
 
-static int scu_pd_pm_action(const struct device *dev,
-			    enum pm_device_action action)
+__maybe_unused static int scu_pd_pm_action(const struct device *dev,
+					   enum pm_device_action action)
 {
 	int ret;
 	sc_pm_power_mode_t mode;
