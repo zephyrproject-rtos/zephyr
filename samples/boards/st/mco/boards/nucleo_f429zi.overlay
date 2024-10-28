@@ -1,0 +1,31 @@
+/* The clock that is output must be enabled. */
+&clk_hse {
+	status = "okay";
+};
+
+/* See reference manual (RM0090):
+ *   0b010: HSE clock selected
+ */
+#define MCO_SEL_HSE 2
+
+/* See reference manual (RM0090):
+ *   0b100: MCO divided by 2
+ */
+#define MCO_PRE_DIV_2 4
+
+&mco1 {
+	status = "okay";
+	clocks = <&rcc STM32_SRC_HSE MCO1_SEL(MCO_SEL_HSE)>;
+	prescaler = <MCO1_PRE(MCO_PRE_DIV_2)>;
+	pinctrl-0 = <&rcc_mco_1_pa8>;
+	pinctrl-names = "default";
+};
+
+
+&mco2 {
+	status = "okay";
+	clocks = <&rcc STM32_SRC_HSE MCO2_SEL(MCO_SEL_HSE)>;
+	prescaler = <MCO2_PRE(MCO_PRE_DIV_2)>;
+	pinctrl-0 = <&rcc_mco_2_pc9>;
+	pinctrl-names = "default";
+};
