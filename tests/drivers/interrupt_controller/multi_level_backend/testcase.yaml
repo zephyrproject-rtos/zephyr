@@ -6,9 +6,13 @@ common:
     - drivers
     - interrupt
   filter: CONFIG_MULTI_LEVEL_INTERRUPTS and not CONFIG_LEGACY_MULTI_LEVEL_TABLE_GENERATION
-  arch_allow:
-    - riscv
-    - xtensa
+  platform_allow:
+    - m2gl025_miv/miv
+    - qemu_riscv32/qemu_virt_riscv32
+    - qemu_riscv32/qemu_virt_riscv32/smp
+    - qemu_riscv64/qemu_virt_riscv64
+    - qemu_riscv64/qemu_virt_riscv64/smp
+    - qemu_riscv32e/qemu_virt_riscv32e
 tests:
   interrupt_controller.intc_multi_level_backend.default: {}
   interrupt_controller.intc_multi_level_backend.no_assert:
