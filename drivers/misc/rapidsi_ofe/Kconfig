@@ -1,0 +1,19 @@
+# Copyright (c) 2023, Meta
+# SPDX-License-Identifier: Apache-2.0
+
+config RAPIDSI_OFE
+	bool "Rapid Silicon One Flow Engine"
+	depends on DT_HAS_RAPIDSI_OFE_ENABLED
+	help
+		Rapid Silicon One Flow Engine is used to set get the status of the FPGA.	
+
+if RAPIDSI_OFE
+
+	module = RAPIDSI_OFE
+	module-str = rapidsi_ofe
+	source "subsys/logging/Kconfig.template.log_config"
+
+	config RAPIDSI_OFE_INIT_PRIORITY
+		int "Provide initialization priority for one flow engine"
+		default 60
+endif

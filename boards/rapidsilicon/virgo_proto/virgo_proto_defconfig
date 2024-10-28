@@ -64,6 +64,9 @@ CONFIG_COUNTER_ANDES_ATCPIT100=y
 CONFIG_SENSOR=y
 CONFIG_DTI_PVT=y
 
+# Enable Rapid Silicon Specific IPs
+CONFIG_RAPIDSI_OFE=y
+
 # Enable FPGA Bitstream loading functionality
 CONFIG_FPGA=y
 CONFIG_RS_FPGA=y

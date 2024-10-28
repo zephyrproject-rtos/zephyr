@@ -69,10 +69,15 @@ __subsystem struct fpga_driver_api {
 
 struct fpga_ctx {
 	// In case some sort of secure transfer is required to be done.
-	struct cipher_ctx *CipherCtx;
+	struct cipher_ctx *fpga_cipher_ctx;
 	// In case a custom bitstream load function is to be executed
 	// inside the fpga_load api.
 	bitstream_load_hndlr bitstr_load_hndlr;
+	// User Data to be Preprocessed at the time of session begin.
+	// This can be a metadata or anything.
+	void *user_data;
+	// The length of user data
+	size_t user_data_len;
 };
 
 /**

@@ -1,19 +1,9 @@
-/****************************************************************************************
- * File Name: 		inout_config_block.h
- * Author: 			  Muhammad Junaid Aslam
- * Organization:	Rapid Silicon
- * Repository: 		EmbeddedCommon-Dev
- * Branch:			  config_controllers
+/*
+ * Copyright (c) 2024 Rapid Silicon
  *
- * @brief: This file contains defines and declarations for the registers
- * and related data declarations for input output configuration block.
+ * SPDX-License-Identifier: Apache-2.0
  *
- * @copyright:  	<Not Available>
- *
- * History:
- * 11-10-2022: junaidaslamRS Created this file for FPGA ICB Configuration Block
- *Programming
- ****************************************************************************************/
+ */
 
 #ifndef RS_RS_INOUT_CONFIG_BLOCK_H_
 #define RS_RS_INOUT_CONFIG_BLOCK_H_

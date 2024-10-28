@@ -12,16 +12,16 @@
 #include <zephyr/kernel.h>
 #include <zephyr/types.h>
 
-#define LOG_LEVEL CONFIG_CRYPTO_LOG_LEVEL
+#define LOG_LEVEL CONFIG_FPGA_LOG_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(crypto_rs_fpga_fcb);
+LOG_MODULE_REGISTER(rs_fpga_fcb);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(rapidsi_fcb)
   #define DT_DRV_COMPAT rigel_fcb
   static volatile struct rigel_fcb_registers *s_Rigel_FCB_Registers = NULL;
   static uint32_t wordline_read_count = 0;
 #else
-  #error Rigel FCB IP is not enabled in the Device Tree
+  #error Rapid Silicon FCB IP is not enabled in the Device Tree
 #endif
 
 enum FPGA_status fcb_get_status(const struct device *dev)
@@ -53,17 +53,30 @@ int fcb_reset(const struct device *dev)
 
 int fcb_on(const struct device *dev)
 {
-  return xCB_SUCCESS;
+  return -ENOSYS;
 }
 
 int fcb_off(const struct device *dev)
 {
-  return xCB_SUCCESS;
+  return -ENOSYS;
 }
 
 const char *fcb_get_info(const struct device *dev)
 {
-  return xCB_SUCCESS;
+  static struct fpga_transfer_param lvFCBTransferParam = {0};
+  struct rigel_fcb_bitstream_header *lvFCBBitstrHeader = \
+    (struct rigel_fcb_bitstream_header *)((struct fcb_data*)(dev->data));
+
+  if(lvFCBBitstrHeader != NULL) {
+    lvFCBTransferParam.FPGA_Transfer_Type = \
+      lvFCBBitstrHeader->readback ? FPGA_TRANSFER_TYPE_RX : FPGA_TRANSFER_TYPE_TX;
+    lvFCBTransferParam.FCB_Transfer_Block_Size = lvFCBBitstrHeader->bitline_reg_width;
+    lvFCBTransferParam.FCB_Bitstream_Size = lvFCBBitstrHeader->generic_hdr.payload_size;
+  } else {
+    return NULL;
+  }
+
+  return (char*)&lvFCBTransferParam;
 }
 
 static struct fpga_driver_api rigel_fcb_api = {
@@ -89,6 +102,10 @@ static struct fcb_config s_fcb_config = {
 static int fcb_init(const struct device *dev)
 {
   s_Rigel_FCB_Registers = ((struct rigel_fcb_registers *)((struct fcb_config*)dev->config));
+  struct fcb_data *lvData = (struct fcb_data*)dev->data;
+  if(s_Rigel_FCB_Registers != NULL) {
+    lvData->fpgaStatus = FPGA_STATUS_ACTIVE;
+  }  
   return xCB_SUCCESS;
 }
 

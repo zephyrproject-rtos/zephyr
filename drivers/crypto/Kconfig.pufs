@@ -12,7 +12,8 @@ menuconfig PUFCC_SECURITY
 	if PUFCC_SECURITY
 
 		config RS_RTOS_PORT
-			bool
+			bool "Enable Zephyr Specific Code changes."
+			default n
 
 		config CRYPTO_PUF_SECURITY
 			bool "PUF security Cryptographic Accelerator driver"

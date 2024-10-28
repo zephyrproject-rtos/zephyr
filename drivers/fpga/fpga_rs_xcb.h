@@ -8,6 +8,8 @@
 #ifndef ZEPHYR_DRIVERS_FPGA_RS_XCB_H_
 #define ZEPHYR_DRIVERS_FPGA_RS_XCB_H_
 
+#include "rs_fpga_config_block.h"
+
 #include <zephyr/drivers/fpga.h>
 
 #define RS_PCB_BITSTR_HEADER_SIZE 7  // words
@@ -72,22 +74,13 @@ enum TRANSFER_TYPE {
   TRANSFER_TYPE_UNDEFINED = FPGA_TRANSFER_TYPE_UNDEFINED
 };
 
-#if CONFIG_RS_RTOS_PORT
-  struct rs_action_header {
-    uint16_t action_enum;
-    uint16_t action_size;
-    uint32_t payload_size;  // This will be size of compressed data if compression
-                            // is on, otherwise uncompressed data
-    // Action specific optional data goes here
-  };
-#endif
-
 struct fcb_config {
   uint32_t base;
 };
 
 struct fcb_data {
   struct fpga_ctx *ctx;  
+  struct rigel_fcb_bitstream_header fcb_header;
   enum FPGA_status fpgaStatus;
 };
 

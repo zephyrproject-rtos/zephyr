@@ -11,6 +11,7 @@
 #include <zephyr/drivers/dma.h>
 #include <zephyr/crypto/crypto_otp_mem.h>
 #include <zephyr/crypto/crypto.h>
+#include <zephyr/drivers/misc/rapidsi/rapidsi_ofe.h>
 
 #include <scu.h>
 
@@ -898,6 +899,26 @@ void pufs_ecdsa256_verify_test(const struct device *pufs)
 }
 #endif
 
+#if CONFIG_RAPIDSI_OFE
+void ofe_test(const struct device *ofe)
+{
+	if(ofe_reset(ofe, OFE_RESET_SUBSYS_FCB, true) == 0) {
+		printf("%s Success with basic register read/write test of ofe FCB reset\
+		%s\n", ATTR_INF, ATTR_RST);
+	} else {
+		printf("%s Failure with basic register read/write test of ofe FCB reset\
+		%s\n", ATTR_ERR, ATTR_RST);
+	}
+	if(ofe_set_config_status(ofe, OFE_CFG_STATUS_DONE, true) == 0) {
+		printf("%s Success with basic register read/write test of ofe config status\
+		%s\n", ATTR_INF, ATTR_RST);
+	} else {
+		printf("%s Failure with basic register read/write test of ofe config status\
+		%s\n", ATTR_ERR, ATTR_RST);
+	}
+}
+#endif
+
 int main(void)
 {
 	int Cnt = 0;
@@ -914,6 +935,9 @@ int main(void)
 
 	int errorcode = 0;
 	struct sensor_value lvTemp = {0}, lvVolt = {0};
+	#if CONFIG_RAPIDSI_OFE
+		const struct device *ofe = DEVICE_DT_GET(DT_NODELABEL(ofe));
+	#endif
 	#if CONFIG_DTI_PVT
 		const struct device *pvt = DEVICE_DT_GET(DT_NODELABEL(pvt0));
 	#endif
@@ -932,6 +956,10 @@ int main(void)
 	#endif
 	#if CONFIG_CRYPTO_PUF_SECURITY_OTP
 		const struct device *pufs_otp = DEVICE_DT_GET(DT_NODELABEL(pufs_otp));
+	#endif
+
+	#if CONFIG_RAPIDSI_OFE
+		ofe_test(ofe);
 	#endif
 
 	#if CONFIG_CRYPTO_PUF_SECURITY

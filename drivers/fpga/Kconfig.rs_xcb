@@ -11,14 +11,14 @@ menuconfig RS_FPGA
 
 	if RS_FPGA
 
+		config RS_RTOS_PORT
+			bool "Enable Zephyr Specific Code changes."
+			default n
+			
 		config RS_XCB_INIT_PRIORITY
 			int "Provide initialization priority of FCB, ICB and PCB Drivers"
 			default 60
 			
-		config RS_RTOS_PORT
-			bool "Enable Zephyr Specific Code changes."
-			default n
-
 		config RS_FPGA_FCB
 			bool "FPGA Configuration Block"
 			default n

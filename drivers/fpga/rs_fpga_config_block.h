@@ -1,18 +1,9 @@
-/****************************************************************************************
- * File Name: 		rigel_fpga_config_block.h
- * Author: 			  Muhammad Junaid Aslam
- * Organization:	Rapid Silicon
- * Repository: 		EmbeddedCommon-Dev
+/*
+ * Copyright (c) 2024 Rapid Silicon
  *
- * @brief: This file contains defines and declarations for the registers
- * and related data declarations for eFPGA configuration block.
+ * SPDX-License-Identifier: Apache-2.0
  *
- * @copyright:  	<Not Available>
- *
- * History:
- * 23-05-2023: junaidaslamRS Created this file for FPGA RIGEL_FCB Configuration
- *Block Programming.
- ****************************************************************************************/
+ */
 
 #ifndef RS_RIGEL_FPGA_CONFIG_BLOCK_H_
 #define RS_RIGEL_FPGA_CONFIG_BLOCK_H_
@@ -195,6 +186,16 @@ __attribute__((packed)) struct rigel_fcb_registers {
 #define RIGEL_FCB_HDR_BITLINE_REG_WIDTH_OFFSET 0
 #define RIGEL_FCB_HDR_READBACK_OFFSET 16
 
+#if CONFIG_RS_RTOS_PORT
+  struct rs_action_header {
+    uint16_t action_enum;
+    uint16_t action_size;
+    uint32_t payload_size;  // This will be size of compressed data if compression
+                            // is on, otherwise uncompressed data
+    // Action specific optional data goes here
+  };
+#endif
+
 __attribute__((packed)) struct rigel_fcb_bitstream_header {
   // First two words
   struct rs_action_header generic_hdr;
@@ -209,92 +210,92 @@ __attribute__((packed)) struct rigel_fcb_bitstream_header {
  * End of Bitstream Header information for programming the RIGEL_FCB
  ******************************************************************/
 
-/* ******************************************
- * @brief: Rigel_FCB_Init interface sets the
- * required parameters to work on specific
- * platform.
- *
- * @param [in]: uint32_t inBaseAddr.
- *
- * @return: xCB_ERROR_CODE
- * ******************************************/
-enum xCB_ERROR_CODE Rigel_FCB_Init(uint32_t inBaseAddr);
+// /* ******************************************
+//  * @brief: Rigel_FCB_Init interface sets the
+//  * required parameters to work on specific
+//  * platform.
+//  *
+//  * @param [in]: uint32_t inBaseAddr.
+//  *
+//  * @return: xCB_ERROR_CODE
+//  * ******************************************/
+// enum xCB_ERROR_CODE Rigel_FCB_Init(uint32_t inBaseAddr);
 
-/* ******************************************
- * @brief: Rigel_FCB_Transfer_Param returns the
- * parameters of payload transfer for the use
- * of higher level applications.
- *
- * @param [in]: void *inHeader
- * @param [out]: bool *outTransferType
- * @param [out]: uint16_t *outBlockSize (in Words)
- * @param [out]: uint32_t *outBitStr_Size
- *
- * @return: xCB_ERROR_CODE
- *
- * @note if outBlockSize = 0, entire
- * bitstream can be transferred at once. But,
- * it will still be possible to transfer the
- * bitstream in blocks of user defined size.
- * ******************************************/
-enum xCB_ERROR_CODE Rigel_FCB_Get_Transfer_Param(
-    void *inHeader, enum TRANSFER_TYPE *outTransferType, uint16_t *outBlockSize,
-    uint32_t *outBitStr_Size);
+// /* ******************************************
+//  * @brief: Rigel_FCB_Transfer_Param returns the
+//  * parameters of payload transfer for the use
+//  * of higher level applications.
+//  *
+//  * @param [in]: void *inHeader
+//  * @param [out]: bool *outTransferType
+//  * @param [out]: uint16_t *outBlockSize (in Words)
+//  * @param [out]: uint32_t *outBitStr_Size
+//  *
+//  * @return: xCB_ERROR_CODE
+//  *
+//  * @note if outBlockSize = 0, entire
+//  * bitstream can be transferred at once. But,
+//  * it will still be possible to transfer the
+//  * bitstream in blocks of user defined size.
+//  * ******************************************/
+// enum xCB_ERROR_CODE Rigel_FCB_Get_Transfer_Param(
+//     void *inHeader, enum TRANSFER_TYPE *outTransferType, uint16_t *outBlockSize,
+//     uint32_t *outBitStr_Size);
 
-/* ******************************************
- * @brief: Rigel_FCB_Config_Begin interface
- * is used to perform FCB registers settings
- * before kicking off the payload transfer.
- *
- * @param [in]: fcb_bitstream_header
- * @param [in]: rs_secure_transfer_info
- *
- * @return: xCB_ERROR_CODE
- * ******************************************/
-enum xCB_ERROR_CODE Rigel_FCB_Config_Begin(
-    struct rigel_fcb_bitstream_header *inHeader,
-    struct rs_secure_transfer_info *rs_sec_tfr_ptr);
+// /* ******************************************
+//  * @brief: Rigel_FCB_Config_Begin interface
+//  * is used to perform FCB registers settings
+//  * before kicking off the payload transfer.
+//  *
+//  * @param [in]: fcb_bitstream_header
+//  * @param [in]: rs_secure_transfer_info
+//  *
+//  * @return: xCB_ERROR_CODE
+//  * ******************************************/
+// enum xCB_ERROR_CODE Rigel_FCB_Config_Begin(
+//     struct rigel_fcb_bitstream_header *inHeader,
+//     struct rs_secure_transfer_info *rs_sec_tfr_ptr);
 
-/* ******************************************
- * @brief: Rigel_FCB_Config_End interface
- * is used to perform FCB registers settings
- * after the payload transfer.
- *
- * @param [in]: fcb_bitstream_header
- * @param [in]: rs_secure_transfer_info
- *
- * @return: xCB_ERROR_CODE
- * ******************************************/
-enum xCB_ERROR_CODE Rigel_FCB_Config_End(
-    struct rigel_fcb_bitstream_header *inHeader);
+// /* ******************************************
+//  * @brief: Rigel_FCB_Config_End interface
+//  * is used to perform FCB registers settings
+//  * after the payload transfer.
+//  *
+//  * @param [in]: fcb_bitstream_header
+//  * @param [in]: rs_secure_transfer_info
+//  *
+//  * @return: xCB_ERROR_CODE
+//  * ******************************************/
+// enum xCB_ERROR_CODE Rigel_FCB_Config_End(
+//     struct rigel_fcb_bitstream_header *inHeader);
 
-/* ******************************************
- * @brief: Rigel_FCB_Payload_kickoff interface is
- * used to transfer the bitstreams to/from
- * Rigel_FCB configuration controller.
- *
- * @param [in]: Rigel_FCB_bitstream_header
- * @param [in]: rs_secure_transfer_info
- *
- * @return: xCB_ERROR_CODE
- * ******************************************/
-enum xCB_ERROR_CODE Rigel_FCB_Payload_kickoff(
-    struct rigel_fcb_bitstream_header *inHeader,
-    struct rs_secure_transfer_info *rs_sec_tfr_ptr);
+// /* ******************************************
+//  * @brief: Rigel_FCB_Payload_kickoff interface is
+//  * used to transfer the bitstreams to/from
+//  * Rigel_FCB configuration controller.
+//  *
+//  * @param [in]: Rigel_FCB_bitstream_header
+//  * @param [in]: rs_secure_transfer_info
+//  *
+//  * @return: xCB_ERROR_CODE
+//  * ******************************************/
+// enum xCB_ERROR_CODE Rigel_FCB_Payload_kickoff(
+//     struct rigel_fcb_bitstream_header *inHeader,
+//     struct rs_secure_transfer_info *rs_sec_tfr_ptr);
 
-/* ******************************************
- * @brief: Rigel_FCB_Bitstream_Header_Parser interface
- * will parse the header of Rigel_FCB config
- * controller type.
- *
- * @param [in]: inBitStream is a pointer to
- * bitstream.
- * @param [out]: outHeader contains the
- * parsed header information.
- *
- * @return: xCB_ERROR_CODE
- * ******************************************/
-enum xCB_ERROR_CODE Rigel_FCB_Bitstream_Header_Parser(void *inBitStream,
-                                                      void *outHeader);
+// /* ******************************************
+//  * @brief: Rigel_FCB_Bitstream_Header_Parser interface
+//  * will parse the header of Rigel_FCB config
+//  * controller type.
+//  *
+//  * @param [in]: inBitStream is a pointer to
+//  * bitstream.
+//  * @param [out]: outHeader contains the
+//  * parsed header information.
+//  *
+//  * @return: xCB_ERROR_CODE
+//  * ******************************************/
+// enum xCB_ERROR_CODE Rigel_FCB_Bitstream_Header_Parser(void *inBitStream,
+//                                                       void *outHeader);
 
 #endif /* RS_FPGA_CONFIG_BLOCK_H_ */

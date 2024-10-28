@@ -1,18 +1,9 @@
-/****************************************************************************************
- * File Name: 		rs_preload_config_block.h
- * Author:        Muhammad Junaid Aslam
- * Organization:	Rapid Silicon
- * Repository: 		EmbeddedCommon-Dev
+/*
+ * Copyright (c) 2024 Rapid Silicon
  *
- * @brief: This file contains defines and declarations for the registers
- * and related data declarations for preload configuration block for BRAM.
+ * SPDX-License-Identifier: Apache-2.0
  *
- * @copyright:  	<Not Available>
- *
- * History:
- * 11-10-2022: junaidaslamRS Created this file for FPGA PCB Configuration Block
- *Programming
- ****************************************************************************************/
+ */
 
 #ifndef RS_RS_PRELOAD_CONFIG_BLOCK_H_
 #define RS_RS_PRELOAD_CONFIG_BLOCK_H_
