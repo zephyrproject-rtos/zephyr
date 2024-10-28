@@ -171,7 +171,7 @@ Stand-alone logging
 ===================
 
 Frontend is writing to STMESP registers. Message format is aligned with the on chip decoder
-in :zephyr_file:`subsys/logging/frontend/log_frontend_stmesp_demux.c`.
+in :zephyr_file:`subsys/logging/frontends/log_frontend_stmesp_demux.c`.
 
 ``Proxy`` is using Nordic specific peripheral (TBM) to get ETR buffer busyness and read and
 decode data and send human-readable data over UART. Nordic specific driver for ETR buffer is

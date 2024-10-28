@@ -76,7 +76,7 @@ The Zephyr stm32f103_mini board configuration supports the following hardware fe
 Other hardware features are not yet supported in this Zephyr port.
 
 The default configuration can be found in
-:zephyr_file:`boards/st/stm32f103_mini/stm32f103_mini_defconfig`
+:zephyr_file:`boards/others/stm32f103_mini/stm32f103_mini_defconfig`
 
 Connections and IOs
 ===================

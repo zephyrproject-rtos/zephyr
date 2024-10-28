@@ -51,7 +51,7 @@ The efm32hg_slstk3400 board configuration supports the following hardware featur
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in
-:zephyr_file:`boards/silabs/starter_kit/slstk3400a/slstk3400a_defconfig`
+:zephyr_file:`boards/silabs/starter_kits/slstk3400a/slstk3400a_defconfig`
 
 Other hardware features are currently not supported by the port.
 
