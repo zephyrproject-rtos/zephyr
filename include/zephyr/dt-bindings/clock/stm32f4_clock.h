@@ -28,8 +28,10 @@
 /* defined in stm32_common_clocks.h */
 /** Fixed clocks */
 /* Low speed clocks defined in stm32_common_clocks.h */
+#define STM32_SRC_HSI      (STM32_SRC_LSI + 1)
+#define STM32_SRC_HSE      (STM32_SRC_HSI + 1)
 /** PLL clock outputs */
-#define STM32_SRC_PLL_P		(STM32_SRC_LSI + 1)
+#define STM32_SRC_PLL_P		(STM32_SRC_HSE + 1)
 #define STM32_SRC_PLL_Q		(STM32_SRC_PLL_P + 1)
 #define STM32_SRC_PLL_R		(STM32_SRC_PLL_Q + 1)
 /** I2S sources */
