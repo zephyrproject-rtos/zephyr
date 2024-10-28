@@ -56,6 +56,16 @@ static const char client_cert2_test[] = {
 static const char client_key2_test[] = {
 	#include <wifi_enterprise_test_certs/client-key2.pem.inc>
 	'\0'};
+
+static const char server_cert_test[] = {
+	#include <wifi_enterprise_test_certs/server.pem.inc>
+	'\0'
+};
+
+static const char server_key_test[] = {
+	#include <wifi_enterprise_test_certs/server-key.pem.inc>
+	'\0'
+};
 #endif
 
 #define WIFI_SHELL_MODULE "wifi"
@@ -104,7 +114,8 @@ struct wifi_ap_sta_node {
 static struct wifi_ap_sta_node sta_list[CONFIG_WIFI_SHELL_MAX_AP_STA];
 
 
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+#if defined CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE || \
+	defined CONFIG_WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE
 static int cmd_wifi_set_enterprise_creds(const struct shell *sh, struct net_if *iface)
 {
 	struct wifi_enterprise_creds_params params = {0};
@@ -121,6 +132,10 @@ static int cmd_wifi_set_enterprise_creds(const struct shell *sh, struct net_if *
 	params.client_cert2_len = ARRAY_SIZE(client_cert2_test);
 	params.client_key2 = (uint8_t *)client_key2_test;
 	params.client_key2_len = ARRAY_SIZE(client_key2_test);
+	params.server_cert = (uint8_t *)server_cert_test;
+	params.server_cert_len = ARRAY_SIZE(server_cert_test);
+	params.server_key = (uint8_t *)server_key_test;
+	params.server_key_len = ARRAY_SIZE(server_key_test);
 
 	if (net_mgmt(NET_REQUEST_WIFI_ENTERPRISE_CREDS, iface, &params, sizeof(params))) {
 		PR_WARNING("Set enterprise credentials failed\n");
@@ -755,8 +770,17 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			}
 			break;
 		case 'I':
+			if (params->nusers >= WIFI_ENT_IDENTITY_MAX_USERS) {
+				PR_WARNING("too many eap identities (max %d identities)\n",
+					    WIFI_ENT_IDENTITY_MAX_USERS);
+				return -EINVAL;
+			}
+
 			params->eap_identity = optarg;
 			params->eap_id_length = strlen(params->eap_identity);
+
+			params->identities[params->nusers] = optarg;
+			params->nusers++;
 			if (params->eap_id_length > WIFI_ENT_IDENTITY_MAX_LEN) {
 				PR_WARNING("eap identity too long (max %d characters)\n",
 					    WIFI_ENT_IDENTITY_MAX_LEN);
@@ -764,8 +788,17 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			}
 			break;
 		case 'P':
+			if (params->passwds >= WIFI_ENT_IDENTITY_MAX_USERS) {
+				PR_WARNING("too many eap passwds (max %d passwds)\n",
+					    WIFI_ENT_IDENTITY_MAX_USERS);
+				return -EINVAL;
+			}
+
 			params->eap_password = optarg;
 			params->eap_passwd_length = strlen(params->eap_password);
+
+			params->passwords[params->passwds] = optarg;
+			params->passwds++;
 			if (params->eap_passwd_length > WIFI_ENT_PSWD_MAX_LEN) {
 				PR_WARNING("eap password length too long (max %d characters)\n",
 					    WIFI_ENT_PSWD_MAX_LEN);
@@ -1666,6 +1699,18 @@ static int cmd_wifi_ap_enable(const struct shell *sh, size_t argc,
 		shell_help(sh);
 		return -ENOEXEC;
 	}
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+	/* Load the enterprise credentials if needed */
+	if (cnx_params.security == WIFI_SECURITY_TYPE_EAP_TLS ||
+	    cnx_params.security == WIFI_SECURITY_TYPE_EAP_PEAP_MSCHAPV2 ||
+	    cnx_params.security == WIFI_SECURITY_TYPE_EAP_PEAP_GTC ||
+	    cnx_params.security == WIFI_SECURITY_TYPE_EAP_TTLS_MSCHAPV2 ||
+	    cnx_params.security == WIFI_SECURITY_TYPE_EAP_PEAP_TLS ||
+	    cnx_params.security == WIFI_SECURITY_TYPE_EAP_TLS_SHA256) {
+		cmd_wifi_set_enterprise_creds(sh, iface);
+	}
+#endif
 
 	k_mutex_init(&wifi_ap_sta_list_lock);
 
@@ -3035,14 +3080,23 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "-c --channel=<channel number>\n"
 		      "-p --passphrase=<PSK> (valid only for secure SSIDs)\n"
 		      "-k --key-mgmt=<Security type> (valid only for secure SSIDs)\n"
-		      "0:None, 1:WPA2-PSK, 2:WPA2-PSK-256, 3:SAE, 4:WAPI, 5:EAP-TLS, 6:WEP\n"
-		      "7: WPA-PSK, 11: DPP\n"
+		      "0:None, 1:WPA2-PSK, 2:WPA2-PSK-256, 3:SAE-HNP, 4:SAE-H2E, 5:SAE-AUTO, 6:WAPI,"
+		      "7:EAP-TLS, 8:WEP, 9: WPA-PSK, 10: WPA-Auto-Personal, 11: DPP\n"
+		      "12: EAP-PEAP-MSCHAPv2, 13: EAP-PEAP-GTC, 14: EAP-TTLS-MSCHAPv2,\n"
+		      "15: EAP-PEAP-TLS, 16:EAP_TLS_SHA256\n"
 		      "-w --ieee-80211w=<MFP> (optional: needs security type to be specified)\n"
 		      "0:Disable, 1:Optional, 2:Required\n"
 		      "-b --band=<band> (2 -2.6GHz, 5 - 5Ghz, 6 - 6GHz)\n"
 		      "-m --bssid=<BSSID>\n"
+		      "[-K, --key1-pwd for eap phase1 or --key2-pwd for eap phase2]:\n"
+		      "Private key passwd for enterprise mode. Default no password for private key.\n"
+		      "[-S, --suiteb-type]: 1:suiteb, 2:suiteb-192. Default 0: not suiteb mode.\n"
+		      "[-V, --eap-version]: 0 or 1. Default 1: eap version 1.\n"
+		      "[-I, --eap-id1...--eap-id8]: Client Identity. Default no eap identity.\n"
+		      "[-P, --eap-pwd1...--eap-pwd8]: Client Password.\n"
+		      "Default no password for eap user.\n"
 		      "-h --help (prints help)",
-		      cmd_wifi_ap_enable, 2, 13),
+		      cmd_wifi_ap_enable, 2, 45),
 	SHELL_CMD_ARG(stations, NULL, "List stations connected to the AP", cmd_wifi_ap_stations, 1,
 		      0),
 	SHELL_CMD_ARG(disconnect, NULL,
@@ -3224,7 +3278,8 @@ SHELL_SUBCMD_ADD((wifi), connect, &wifi_commands,
 		  "[-k, --key-mgmt]: Key Management type (valid only for secure SSIDs)\n"
 		  "0:None, 1:WPA2-PSK, 2:WPA2-PSK-256, 3:SAE-HNP, 4:SAE-H2E, 5:SAE-AUTO, 6:WAPI,"
 		  "7:EAP-TLS, 8:WEP, 9: WPA-PSK, 10: WPA-Auto-Personal, 11: DPP\n"
-		  "12: EAP-PEAP-MSCHAPv2, 13: EAP-PEAP-GTC, 14: EAP-TTLS-MSCHAPv2, 15: EAP-PEAP-TLS\n"
+		  "12: EAP-PEAP-MSCHAPv2, 13: EAP-PEAP-GTC, 14: EAP-TTLS-MSCHAPv2,\n"
+		  "15: EAP-PEAP-TLS, 16:EAP_TLS_SHA256\n"
 		  "[-w, --ieee-80211w]: MFP (optional: needs security type to be specified)\n"
 		  ": 0:Disable, 1:Optional, 2:Required.\n"
 		  "[-m, --bssid]: MAC address of the AP (BSSID).\n"
