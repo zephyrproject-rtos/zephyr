@@ -24,7 +24,7 @@ TYPE_SECTION_START_EXTERN(const struct device *, pm_device_slots);
 /* Number of devices successfully suspended. */
 static size_t num_susp;
 
-bool pm_suspend_devices(bool turn_on_off_flag)
+bool pm_suspend_devices(void)
 {
 	const struct device *devs;
 	size_t devc;
@@ -58,22 +58,6 @@ bool pm_suspend_devices(bool turn_on_off_flag)
 			return false;
 		}
 
-		/* If the turn_on_off_flag is enabled, then issue PM_DEVICE_ACTION_TURN_OFF
-		 * action to the device.
-		 */
-		if (turn_on_off_flag) {
-			ret = pm_device_action_run(dev, PM_DEVICE_ACTION_TURN_OFF);
-			/* ignore devices not supporting or already at the given state */
-			if ((ret == -ENOSYS) || (ret == -ENOTSUP) || (ret == -EALREADY)) {
-				continue;
-			} else if (ret < 0) {
-				LOG_ERR("Device %s did not enter %s state (%d)",
-					dev->name,
-					pm_device_state_str(PM_DEVICE_STATE_OFF),
-					ret);
-				return false;
-			}
-		}
 		TYPE_SECTION_START(pm_device_slots)[num_susp] = dev;
 		num_susp++;
 	}
@@ -81,19 +65,11 @@ bool pm_suspend_devices(bool turn_on_off_flag)
 	return true;
 }
 
-void pm_resume_devices(bool turn_on_off_flag)
+void pm_resume_devices(void)
 {
 	for (int i = (num_susp - 1); i >= 0; i--) {
-		const struct device *dev = TYPE_SECTION_START(pm_device_slots)[i];
-
-		/* If the turn_on_off_flag is enabled, then issue PM_DEVICE_ACTION_TURN_ON
-		 * action to the device.
-		 */
-		if (turn_on_off_flag) {
-			pm_device_action_run(dev, PM_DEVICE_ACTION_TURN_ON);
-		}
-
-		pm_device_action_run(dev, PM_DEVICE_ACTION_RESUME);
+		pm_device_action_run(TYPE_SECTION_START(pm_device_slots)[i],
+				    PM_DEVICE_ACTION_RESUME);
 	}
 
 	num_susp = 0;
@@ -101,11 +77,11 @@ void pm_resume_devices(bool turn_on_off_flag)
 
 #else /* !DT_PM_DEVICE_NEEDED */
 
-void pm_resume_devices(bool turn_on_off_flag)
+void pm_resume_devices(void)
 {
 }
 
-bool pm_suspend_devices(bool turn_on_off_flag)
+bool pm_suspend_devices(void)
 {
 	return true;
 }
