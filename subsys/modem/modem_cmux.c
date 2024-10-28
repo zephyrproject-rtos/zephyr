@@ -817,7 +817,7 @@ static void modem_cmux_process_received_byte(struct modem_cmux *cmux, uint8_t by
 		cmux->frame.data_len |= ((uint16_t)byte) << 7;
 
 		if (cmux->frame.data_len > cmux->receive_buf_size) {
-			LOG_ERR("Frame data length %u exceeds receive buffer size %u",
+			LOG_ERR("Indicated frame data length %u exceeds receive buffer size %u",
 				cmux->frame.data_len, cmux->receive_buf_size);
 
 			cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_DROP;
