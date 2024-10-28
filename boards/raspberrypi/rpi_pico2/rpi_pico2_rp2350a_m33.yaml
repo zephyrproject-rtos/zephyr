@@ -1,5 +1,5 @@
-identifier: rpi_pico2
-name: Raspberry Pi Pico 2
+identifier: rpi_pico2/rp2350a/m33
+name: Raspberry Pi Pico 2 (Cortex-M33)
 type: mcu
 arch: arm
 flash: 4096

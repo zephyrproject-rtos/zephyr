@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2024 Andrew Featherstone
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv8-m.dtsi>
+
+/* Model in the device tree a Cortex-M33 core being 'plugged' into each
+ * 'socket' within the SoC. Within the datasheet these are core 0 and core 1.
+ */
+&cpu0 {
+	compatible = "arm,cortex-m33";
+};
+
+&cpu1 {
+	compatible = "arm,cortex-m33";
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <4>;
+};
