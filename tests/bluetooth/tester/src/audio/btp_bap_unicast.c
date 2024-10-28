@@ -1140,6 +1140,7 @@ int btp_bap_unicast_group_create(uint8_t cig_id,
 	}
 
 	cigs[cig_id].in_use = true;
+	cigs[cig_id].cig_id = cig_id;
 	*out_unicast_group = &cigs[cig_id];
 
 	return 0;
