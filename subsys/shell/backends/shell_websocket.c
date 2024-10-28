@@ -24,9 +24,9 @@ LOG_MODULE_REGISTER(shell_websocket, CONFIG_SHELL_WEBSOCKET_INIT_LOG_LEVEL);
 #define WEBSOCKET_MIN_COMMAND_LEN 2
 #define WEBSOCKET_WILL_DO_COMMAND_LEN 3
 
-static void ws_server_cb(struct k_work *work);
+static void ws_server_cb(struct net_socket_service_event *evt);
 
-NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(websocket_server, NULL, ws_server_cb,
+NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(websocket_server, ws_server_cb,
 				      SHELL_WEBSOCKET_SERVICE_COUNT);
 
 static void ws_end_client_connection(struct shell_websocket *ws)
@@ -157,10 +157,8 @@ error:
 	ws_end_client_connection(ws);
 }
 
-static void ws_server_cb(struct k_work *work)
+static void ws_server_cb(struct net_socket_service_event *evt)
 {
-	struct net_socket_service_event *evt =
-		CONTAINER_OF(work, struct net_socket_service_event, work);
 	socklen_t optlen = sizeof(int);
 	struct shell_websocket *ws;
 	int sock_error;

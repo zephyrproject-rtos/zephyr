@@ -133,11 +133,15 @@ static int setup_extended_adv_data(struct bt_cap_broadcast_source *source,
 	uint32_t broadcast_id;
 	int err;
 
-	err = bt_cap_initiator_broadcast_get_id(source, &broadcast_id);
-	if (err != 0) {
-		LOG_ERR("Unable to get broadcast ID: %d", err);
+#if defined(CONFIG_STATIC_BROADCAST_ID)
+	broadcast_id = CONFIG_BROADCAST_ID;
+#else
+	err = bt_rand(&broadcast_id, BT_AUDIO_BROADCAST_ID_SIZE);
+	if (err) {
+		printk("Unable to generate broadcast ID: %d\n", err);
 		return err;
 	}
+#endif /* CONFIG_STATIC_BROADCAST_ID */
 
 	/* Setup extended advertising data */
 	net_buf_simple_add_le16(&ad_buf, BT_UUID_BROADCAST_AUDIO_VAL);

@@ -33,10 +33,14 @@ config BQ274XX_TRIGGER_NONE
 
 config BQ274XX_TRIGGER_GLOBAL_THREAD
 	bool "Use global thread"
+	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_TI_BQ274XX),int-gpios)
 	select BQ274XX_TRIGGER
 
 config BQ274XX_TRIGGER_OWN_THREAD
 	bool "Use own thread"
+	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_TI_BQ274XX),int-gpios)
 	select BQ274XX_TRIGGER
 
 endchoice # BQ274XX_TRIGGER_MODE

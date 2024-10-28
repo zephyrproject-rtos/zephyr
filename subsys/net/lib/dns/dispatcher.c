@@ -140,9 +140,12 @@ static int recv_data(struct net_socket_service_event *pev)
 	    (pev->event.revents & ZSOCK_POLLNVAL)) {
 		(void)zsock_getsockopt(pev->event.fd, SOL_SOCKET,
 				       SO_ERROR, &sock_error, &optlen);
-		NET_ERR("Receiver IPv%d socket error (%d)",
-			family == AF_INET ? 4 : 6, sock_error);
-		ret = DNS_EAI_SYSTEM;
+		if (sock_error > 0) {
+			NET_ERR("Receiver IPv%d socket error (%d)",
+				family == AF_INET ? 4 : 6, sock_error);
+			ret = DNS_EAI_SYSTEM;
+		}
+
 		goto unlock;
 	}
 
@@ -181,10 +184,8 @@ unlock:
 	return ret;
 }
 
-void dns_dispatcher_svc_handler(struct k_work *work)
+void dns_dispatcher_svc_handler(struct net_socket_service_event *pev)
 {
-	struct net_socket_service_event *pev =
-		CONTAINER_OF(work, struct net_socket_service_event, work);
 	int ret;
 
 	ret = recv_data(pev);
@@ -213,7 +214,8 @@ int dns_dispatcher_register(struct dns_socket_dispatcher *ctx)
 		 * already registered.
 		 */
 		if (ctx->type == entry->type &&
-		    ctx->local_addr.sa_family == entry->local_addr.sa_family) {
+		    ctx->local_addr.sa_family == entry->local_addr.sa_family &&
+		    ctx->ifindex == entry->ifindex) {
 			if (net_sin(&entry->local_addr)->sin_port ==
 			    net_sin(&ctx->local_addr)->sin_port) {
 				dup = true;

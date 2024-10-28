@@ -1,7 +1,4 @@
-.. _bl654_dvk:
-
-Ezurio BL654 DVK
-################
+.. zephyr:board:: bl654_dvk
 
 Overview
 ********
@@ -31,12 +28,6 @@ This development kit has the following features:
 * :abbr:`UART (Universal asynchronous receiver-transmitter)`
 * :abbr:`USB (Universal Serial Bus)`
 * :abbr:`WDT (Watchdog Timer)`
-
-.. figure:: img/bl654_dvk.jpg
-     :align: center
-     :alt: BL654 Development Kit
-
-     BL654 Development Kit Board
 
 .. figure:: img/455-00001_BoxContents.jpg
      :align: center

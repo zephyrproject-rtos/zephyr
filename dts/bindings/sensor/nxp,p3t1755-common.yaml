@@ -1,0 +1,12 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    NXP P3T1755 digital temperature sensor.
+
+properties:
+  oneshot-mode:
+    type: boolean
+    description: |
+      Oneshot sampling mode, this reduces power consumption. By default the sensor
+      is in a continuous conversion state.

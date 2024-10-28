@@ -291,7 +291,7 @@ class TestPrintOuts:
         capfd.readouterr()
 
         p = os.path.relpath(path, ZEPHYR_BASE)
-        prev_path = os.path.join(out_path, 'qemu_x86', p,
+        prev_path = os.path.join(out_path, 'qemu_x86_atom', p,
                                  'sample.basic.helloworld', 'zephyr', 'zephyr.elf')
         args = ['--size', prev_path]
 

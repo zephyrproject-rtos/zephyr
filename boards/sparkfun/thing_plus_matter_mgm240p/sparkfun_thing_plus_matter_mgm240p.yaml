@@ -14,6 +14,7 @@ supported:
   - uart
   - spi
   - watchdog
+  - clock_control
 testing:
   ignore_tags:
     - net

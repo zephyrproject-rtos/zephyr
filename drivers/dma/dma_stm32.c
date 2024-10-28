@@ -725,6 +725,7 @@ DEVICE_DT_INST_DEFINE(index,						\
 
 #define DMA_STM32_DEFINE_IRQ_HANDLER(dma, chan) /* nothing */
 
+/** Connect and enable IRQ @p chan of DMA instance @p dma */
 #define DMA_STM32_IRQ_CONNECT(dma, chan)				\
 	do {								\
 		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(dma, chan, irq),		\
@@ -743,8 +744,12 @@ static void dma_stm32_irq_##dma##_##chan(const struct device *dev)	\
 	dma_stm32_irq_handler(dev, chan);				\
 }
 
-
-#define DMA_STM32_IRQ_CONNECT(dma, chan)				\
+/**
+ * Connect and enable IRQ @p chan of DMA instance @p dma
+ *
+ * @note Arguments order is reversed for compatibility with LISTIFY!
+ */
+#define DMA_STM32_IRQ_CONNECT(chan, dma)				\
 	do {								\
 		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(dma, chan, irq),		\
 			    DT_INST_IRQ_BY_IDX(dma, chan, priority),	\
@@ -779,27 +784,37 @@ static void dma_stm32_config_irq_0(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
+#if !defined(CONFIG_DMA_STM32_SHARED_IRQS)
+	/* No shared IRQs: call IRQ_CONNECT for each IRQn in DTS */
+	LISTIFY(
+		DT_INST_NUM_IRQS(0),
+		DMA_STM32_IRQ_CONNECT,
+		(;), /* instance: */ 0
+	);
+#else
+	/* All DMAs have at least one IRQ line */
 	DMA_STM32_IRQ_CONNECT(0, 0);
+
+	/* On STM32WB0 series, there is a single IRQ line for all channels */
+#if !defined(CONFIG_SOC_SERIES_STM32WB0X)
+	/* On other series, the sharing follows a pattern:
+	 *	IRQn (X+0) is not shared (assigned to DMA1 channel 1)
+	 *	IRQn (X+1) is shared by DMA1 channels 2 and 3
+	 *	IRQn (X+2) is shared by DMA1 channels >= 4
+	 *
+	 * If present, DMA2 channels may also share IRQn (X+1) and (X+2);
+	 * this works fine because shared ISR checks all channels of all DMAs.
+	 */
+
+	/* Connect IRQ line shared by CH2 and CH3 */
 	DMA_STM32_IRQ_CONNECT(0, 1);
-#ifndef CONFIG_DMA_STM32_SHARED_IRQS
-	DMA_STM32_IRQ_CONNECT(0, 2);
-#endif /* CONFIG_DMA_STM32_SHARED_IRQS */
+
+	/* If DMA has more than 3 channels, connect IRQ line shared by CH4+ */
 #if DT_INST_IRQ_HAS_IDX(0, 3)
 	DMA_STM32_IRQ_CONNECT(0, 3);
-#ifndef CONFIG_DMA_STM32_SHARED_IRQS
-	DMA_STM32_IRQ_CONNECT(0, 4);
-#if DT_INST_IRQ_HAS_IDX(0, 5)
-	DMA_STM32_IRQ_CONNECT(0, 5);
-#if DT_INST_IRQ_HAS_IDX(0, 6)
-	DMA_STM32_IRQ_CONNECT(0, 6);
-#if DT_INST_IRQ_HAS_IDX(0, 7)
-	DMA_STM32_IRQ_CONNECT(0, 7);
 #endif /* DT_INST_IRQ_HAS_IDX(0, 3) */
-#endif /* DT_INST_IRQ_HAS_IDX(0, 5) */
-#endif /* DT_INST_IRQ_HAS_IDX(0, 6) */
-#endif /* DT_INST_IRQ_HAS_IDX(0, 7) */
-#endif /* CONFIG_DMA_STM32_SHARED_IRQS */
-/* Either 3 or 5 or 6 or 7 or 8 channels for DMA across all stm32 series. */
+#endif /* !CONFIG_SOC_SERIES_STM32WB0X */
+#endif /* !CONFIG_DMA_STM32_SHARED_IRQS */
 }
 
 DMA_STM32_INIT_DEV(0);
@@ -831,27 +846,19 @@ static void dma_stm32_config_irq_1(const struct device *dev)
 	ARG_UNUSED(dev);
 
 #ifndef CONFIG_DMA_STM32_SHARED_IRQS
-	DMA_STM32_IRQ_CONNECT(1, 0);
-	DMA_STM32_IRQ_CONNECT(1, 1);
-	DMA_STM32_IRQ_CONNECT(1, 2);
-	DMA_STM32_IRQ_CONNECT(1, 3);
-#if DT_INST_IRQ_HAS_IDX(1, 4)
-	DMA_STM32_IRQ_CONNECT(1, 4);
-#if DT_INST_IRQ_HAS_IDX(1, 5)
-	DMA_STM32_IRQ_CONNECT(1, 5);
-#if DT_INST_IRQ_HAS_IDX(1, 6)
-	DMA_STM32_IRQ_CONNECT(1, 6);
-#if DT_INST_IRQ_HAS_IDX(1, 7)
-	DMA_STM32_IRQ_CONNECT(1, 7);
-#endif /* DT_INST_IRQ_HAS_IDX(1, 4) */
-#endif /* DT_INST_IRQ_HAS_IDX(1, 5) */
-#endif /* DT_INST_IRQ_HAS_IDX(1, 6) */
-#endif /* DT_INST_IRQ_HAS_IDX(1, 7) */
-#endif /* CONFIG_DMA_STM32_SHARED_IRQS */
-/*
- * Either 5 or 6 or 7 or 8 channels for DMA across all stm32 series.
- * STM32F0 and STM32G0: if dma2 exits, the channel interrupts overlap with dma1
- */
+	/* No shared IRQs: call IRQ_CONNECT for each IRQn in DTS */
+	LISTIFY(
+		DT_INST_NUM_IRQS(1),
+		DMA_STM32_IRQ_CONNECT,
+		(;), /* instance: */ 1
+	);
+#else
+	/**
+	 * Series with 2 DMAs and SHARED_IRQS are STM32F0 and STM32G0.
+	 * On both of these series, the DMA2 interrupt lines are shared with DMA1,
+	 * so they have already been IRQ_CONNECT()'ed and there's nothing to do here.
+	 */
+#endif /* !CONFIG_DMA_STM32_SHARED_IRQS */
 }
 
 DMA_STM32_INIT_DEV(1);

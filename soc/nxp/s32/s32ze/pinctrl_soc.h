@@ -53,7 +53,10 @@
 		       SIUL2_MSCR_PUS(DT_PROP(group, bias_pull_up)) |                              \
 		       SIUL2_MSCR_SRE(DT_PROP(group, slew_rate)) |                                 \
 		       SIUL2_MSCR_ODE(DT_PROP(group, drive_open_drain) &&                          \
-				      DT_PROP(group, output_enable))                               \
+				      DT_PROP(group, output_enable)) |                             \
+		       SIUL2_MSCR_TRC(DT_PROP(group, nxp_termination_resistor)) |                  \
+		       SIUL2_MSCR_CREF(DT_PROP(group, nxp_current_reference_control)) |            \
+		       SIUL2_MSCR_RXCB(DT_PROP(group, nxp_rx_current_boost))                       \
 	},                                                                                         \
 	.imcr = {                                                                                  \
 		.inst = NXP_S32_PINMUX_GET_IMCR_SIUL2_IDX(value),                                  \

@@ -4,9 +4,6 @@
 
 if BOARD_W5500_EVB_PICO
 
-config RP2_FLASH_W25Q080
-	default y
-
 if NETWORKING
 
 config NET_L2_ETHERNET

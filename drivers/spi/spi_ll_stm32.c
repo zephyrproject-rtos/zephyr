@@ -823,13 +823,6 @@ static int transceive(const struct device *dev,
 
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_fifo)
-	/* Flush RX buffer */
-	while (ll_func_rx_is_not_empty(spi)) {
-		(void) LL_SPI_ReceiveData8(spi);
-	}
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_fifo) */
-
 	LL_SPI_Enable(spi);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)

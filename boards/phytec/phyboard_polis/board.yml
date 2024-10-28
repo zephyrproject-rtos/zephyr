@@ -1,0 +1,6 @@
+board:
+  name: phyboard_polis
+  full_name: phyBOARD-Polis i.MX8M Mini
+  vendor: phytec
+  socs:
+    - name: mimx8mm6

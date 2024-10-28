@@ -1,4 +1,4 @@
-# Copyright 2022 NXP
+# Copyright 2022, 2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
@@ -57,13 +57,13 @@ description: |
     - internal pull not enabled
     - open drain disabled
     - slew rate 4 (see description in property below).
+    - termination resistor disabled (affect LVDS pads only).
+    - current reference control disabled (affect LVDS pads only).
+    - Rx current boost disabled  (affect LVDS pads only).
 
-  Additionally, Safe Mode is always disabled (reset value) and configuration that
-  only applies to LVDS pads, which are not supported, default to reset values:
-    - termination resistor disabled
-    - receiver single ended
-    - current reference control disabled
-    - Rx current boost disabled.
+  Additionally:
+  - Safe Mode is always kept as reset value (disabled).
+  - Receiver Select is always kept as reset value (enables the differential vref based receiver).
 
 compatible: "nxp,s32ze-pinctrl"
 
@@ -116,3 +116,26 @@ child-binding:
             5: FMAX_33 = 50 MHz
             6: FMAX_33 = 50 MHz
             7: FMAX_33 = 1 MHz
+
+      nxp,current-reference-control:
+        type: boolean
+        description: |
+          This configuration applies the current reference control to
+          the associated pin. It is only applicable to LVDS pads and
+          has no effect on other types of pads
+
+      nxp,termination-resistor:
+        type: boolean
+        description: |
+          This configuration applies the termination resistor to
+          the associated pin. It is only applicable to LVDS pads and
+          has no effect on other types of pads
+
+      nxp,rx-current-boost:
+        type: boolean
+        description: |
+          RX LVDS Current Boost
+          Boosts RX IO current. It is only applicable to LVDS pads and
+          has no effect on other types of pads
+          0: Current reference is 200 μA; supports data rate up to 320 Mbaud
+          1: Current reference is 1 mA; supports data rate up to 420 Mbaud

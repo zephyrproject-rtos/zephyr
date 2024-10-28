@@ -888,11 +888,10 @@
 			reg = <0x40800000 0x4000>;
 			interrupts = <56 1>;
 			status = "disabled";
-			source = <&mipi_csi2rx>;
 
 			port {
 				csi_ep_in: endpoint {
-					remote-endpoint = <&mipi_csi2rx_ep_out>;
+					remote-endpoint-label = "mipi_csi2rx_ep_out";
 				};
 			};
 		};
@@ -901,6 +900,9 @@
 			compatible = "nxp,mipi-csi2rx";
 			reg = <0x40810000 0x200>;
 			status = "disabled";
+			clocks = <&ccm IMX_CCM_MIPI_CSI2RX_ROOT_CLK 0 0>,
+			<&ccm IMX_CCM_MIPI_CSI2RX_UI_CLK 0 0>,
+			<&ccm IMX_CCM_MIPI_CSI2RX_ESC_CLK 0 0>;
 
 			ports {
 				#address-cells = <1>;
@@ -909,7 +911,7 @@
 				port@0 {
 					reg = <0>;
 					mipi_csi2rx_ep_out: endpoint {
-						remote-endpoint = <&csi_ep_in>;
+						remote-endpoint-label = "csi_ep_in";
 					};
 				};
 
@@ -974,13 +976,11 @@
 			reg = <0x202c0000 DT_SIZE_K(512)>;
 		};
 
-		lpadc0: lpadc@40050000 {
+		lpadc0: adc@40050000 {
 			compatible = "nxp,lpc-lpadc";
 			reg = <0x40050000 0x304>;
 			interrupts = <88 0>;
 			status = "disabled";
-			clk-divider = <8>;
-			clk-source = <0>;
 			voltage-ref= <1>;
 			calibration-average = <128>;
 			power-level = <0>;
@@ -990,7 +990,7 @@
 			clocks = <&ccm IMX_CCM_LPADC1_CLK 0 0>;
 		};
 
-		lpadc1: lpadc@40054000 {
+		lpadc1: adc@40054000 {
 			compatible = "nxp,lpc-lpadc";
 			reg = <0x40054000 0x304>;
 			interrupts = <89 0>;

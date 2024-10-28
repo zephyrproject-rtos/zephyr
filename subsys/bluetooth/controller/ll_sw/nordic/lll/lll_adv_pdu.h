@@ -195,6 +195,11 @@ lll_adv_sync_data_latest_peek(const struct lll_adv_sync *const lll)
 	return lll_adv_pdu_latest_peek(&lll->data);
 }
 
+static inline struct pdu_adv *lll_adv_sync_data_curr_get(struct lll_adv_sync *lll)
+{
+	return (void *)lll->data.pdu[lll->data.first];
+}
+
 #if defined(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
 static inline void *lll_adv_sync_extra_data_peek(struct lll_adv_sync *lll)
 {

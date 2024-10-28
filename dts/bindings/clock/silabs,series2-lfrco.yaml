@@ -1,0 +1,13 @@
+compatible: "silabs,series2-lfrco"
+
+description: |
+  Silicon Labs LFRCO peripheral (low-frequency RC oscillator).
+
+include: fixed-clock.yaml
+
+properties:
+  precision-mode:
+    type: boolean
+    description: |
+      Enable precision mode. In precision mode, the LFRCO is
+      periodically recalibrated against the HFXO.

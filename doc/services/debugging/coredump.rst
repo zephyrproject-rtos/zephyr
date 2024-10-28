@@ -90,7 +90,7 @@ Example
 -------
 
 This example uses the log module backend tied to serial console.
-This was done on :ref:`qemu_x86` where a null pointer was dereferenced.
+This was done on :zephyr:board:`qemu_x86` where a null pointer was dereferenced.
 
 This is the core dump log from the serial console, and is stored
 in :file:`coredump.log`:

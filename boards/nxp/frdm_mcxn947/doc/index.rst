@@ -1,7 +1,4 @@
-.. _frdm_mcxn947:
-
-NXP FRDM-MCXN947
-################
+.. zephyr:board:: frdm_mcxn947
 
 Overview
 ********
@@ -12,10 +9,6 @@ MCUs I/Os, integrated open-standard serial interfaces, external flash memory and
 an on-board MCU-Link debugger. MCX N Series are high-performance, low-power
 microcontrollers with intelligent peripherals and accelerators providing multi-tasking
 capabilities and performance efficiency.
-
-.. image:: frdm_mcxn947.webp
-   :align: center
-   :alt: FRDM-MCXN947
 
 Hardware
 ********
@@ -66,6 +59,8 @@ The FRDM-MCXN947 board configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
+| I3C       | on-chip    | i3c                                 |
++-----------+------------+-------------------------------------+
 | CLOCK     | on-chip    | clock_control                       |
 +-----------+------------+-------------------------------------+
 | FLASH     | on-chip    | soc flash                           |
@@ -100,6 +95,8 @@ The FRDM-MCXN947 board configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | DISPLAY   | on-chip    | flexio; MIPI-DBI. Tested with       |
 |           |            | :ref:`lcd_par_s035`                 |
++-----------+------------+-------------------------------------+
+| MRT       | on-chip    | counter                             |
 +-----------+------------+-------------------------------------+
 
 Targets available

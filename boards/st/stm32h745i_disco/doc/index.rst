@@ -1,7 +1,4 @@
-.. _stm32h745i_disco_board:
-
-ST STM32H745I Discovery
-#######################
+.. zephyr:board:: stm32h745i_disco
 
 Overview
 ********
@@ -52,10 +49,6 @@ Key Features
  - 5 V delivered by ARDUINO |reg| or external connector
  - USB charger
  - USB power
-
-.. image:: img/stm32h745i-disco.jpg
-   :align: center
-   :alt: STM32H745I-DISCO
 
 More information about the board can be found at the `STM32H745I-DISCO website`_.
 More information about STM32H747XIH6 can be found here:

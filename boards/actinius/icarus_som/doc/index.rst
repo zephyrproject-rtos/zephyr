@@ -1,16 +1,7 @@
-.. _actinius_icarus_som:
-
-Actinius Icarus SoM
-###################
+.. zephyr:board:: actinius_icarus_som
 
 Overview
 ********
-
-.. figure:: img/icarus-som.jpg
-     :align: center
-     :alt: Icarus SoM
-
-     Icarus SoM (nRF9160)
 
 The Icarus SoM is a coin-sized, easy-to-solder cellular IoT Module
 built around Nordic Semi's nRF9160 modem and combines

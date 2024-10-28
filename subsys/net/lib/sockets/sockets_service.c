@@ -119,14 +119,12 @@ static struct net_socket_service_desc *find_svc_and_event(
  * round will not notice it and call the callback again while we are
  * servicing the callback.
  */
-void net_socket_service_callback(struct k_work *work)
+void net_socket_service_callback(struct net_socket_service_event *pev)
 {
-	struct net_socket_service_event *pev =
-		CONTAINER_OF(work, struct net_socket_service_event, work);
 	struct net_socket_service_desc *svc = pev->svc;
 	struct net_socket_service_event ev = *pev;
 
-	ev.callback(&ev.work);
+	ev.callback(&ev);
 
 	/* Copy back the socket fd to the global array because we marked
 	 * it as -1 when triggering the work.
@@ -136,7 +134,7 @@ void net_socket_service_callback(struct k_work *work)
 	}
 }
 
-static int call_work(struct zsock_pollfd *pev, struct k_work *work)
+static int call_work(struct zsock_pollfd *pev, struct net_socket_service_event *event)
 {
 	int ret = 0;
 
@@ -146,7 +144,7 @@ static int call_work(struct zsock_pollfd *pev, struct k_work *work)
 	pev->fd = -1;
 
 	/* Synchronous call */
-	net_socket_service_callback(work);
+	net_socket_service_callback(event);
 
 	return ret;
 
@@ -169,7 +167,7 @@ static int trigger_work(struct zsock_pollfd *pev)
 	 */
 	event->event = *pev;
 
-	return call_work(pev, &event->work);
+	return call_work(pev, event);
 }
 
 static void socket_service_thread(void)

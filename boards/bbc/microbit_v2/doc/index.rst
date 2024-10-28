@@ -1,7 +1,4 @@
-.. _bbc_microbit_v2:
-
-BBC MicroBit V2
-#################
+.. zephyr:board:: bbc_microbit_v2
 
 Overview
 ********
@@ -15,12 +12,6 @@ magnetometer sensors, Bluetooth and USB connectivity, a display consisting of
 25 LEDs, a microphone, two programmable buttons, and can be powered by either
 USB or an external battery pack. The device inputs and outputs are through five
 ring connectors that are part of the 23-pin edge connector.
-
-.. figure:: img/bbc_microbit2.jpg
-     :align: center
-     :alt: BBC Micro Bit V2
-
-     BBC Micro Bit V2 (Credit: http://microbit.org/)
 
 More information about the board can be found at the `microbit website`_.
 

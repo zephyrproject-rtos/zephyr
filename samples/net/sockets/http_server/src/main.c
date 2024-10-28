@@ -76,13 +76,13 @@ static int echo_handler(struct http_client_ctx *client, enum http_data_status st
 	enum http_method method = client->method;
 	static size_t processed;
 
-	__ASSERT_NO_MSG(buffer != NULL);
-
 	if (status == HTTP_SERVER_DATA_ABORTED) {
 		LOG_DBG("Transaction aborted after %zd bytes.", processed);
 		processed = 0;
 		return 0;
 	}
+
+	__ASSERT_NO_MSG(buffer != NULL);
 
 	processed += len;
 

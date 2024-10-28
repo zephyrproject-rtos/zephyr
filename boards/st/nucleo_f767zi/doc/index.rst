@@ -1,7 +1,4 @@
-.. _nucleo_f767zi_board:
-
-ST Nucleo F767ZI
-################
+.. zephyr:board:: nucleo_f767zi
 
 Overview
 ********
@@ -43,10 +40,6 @@ Key Features
 - Comprehensive free software libraries and examples available with the
   STM32Cube MCU package.
 - Arm* Mbed Enabled* compliant (only for some Nucleo part numbers)
-
-.. image:: img/nucleo_f767zi.jpg
-   :align: center
-   :alt: Nucleo F767ZI
 
 More information about the board can be found at the `Nucleo F767ZI website`_.
 

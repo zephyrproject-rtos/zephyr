@@ -534,6 +534,7 @@ static int cap_broadcast_source_adv_setup(struct btp_bap_broadcast_local_source 
 {
 	int err;
 	struct bt_le_adv_param param = *BT_LE_EXT_ADV_NCONN;
+	uint32_t broadcast_id;
 
 	NET_BUF_SIMPLE_DEFINE(ad_buf, BT_UUID_SIZE_16 + BT_AUDIO_BROADCAST_ID_SIZE);
 	NET_BUF_SIMPLE_DEFINE(base_buf, 128);
@@ -542,9 +543,9 @@ static int cap_broadcast_source_adv_setup(struct btp_bap_broadcast_local_source 
 	struct bt_data base_ad[2];
 	struct bt_data per_ad;
 
-	err = bt_cap_initiator_broadcast_get_id(source->cap_broadcast, &source->broadcast_id);
-	if (err != 0) {
-		LOG_DBG("Unable to get broadcast ID: %d", err);
+	err = bt_rand(&broadcast_id, BT_AUDIO_BROADCAST_ID_SIZE);
+	if (err) {
+		printk("Unable to generate broadcast ID: %d\n", err);
 
 		return -EINVAL;
 	}

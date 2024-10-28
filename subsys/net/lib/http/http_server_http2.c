@@ -12,6 +12,8 @@
 #include <string.h>
 #include <strings.h>
 
+#include <zephyr/fs/fs.h>
+#include <zephyr/fs/fs_interface.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/net/http/service.h>

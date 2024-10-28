@@ -306,7 +306,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	radio_isr_set(isr_tx, cis_lll);
 
-	radio_tmr_tifs_set(EVENT_IFS_US);
+	radio_tmr_tifs_set(cis_lll->tifs_us);
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	radio_switch_complete_and_rx(cis_lll->rx.phy);
@@ -501,7 +501,7 @@ static void isr_tx(void *param)
 	LL_ASSERT(!radio_is_ready());
 
 	/* +/- 2us active clock jitter, +1 us PPI to timer start compensation */
-	hcto = radio_tmr_tifs_base_get() + EVENT_IFS_US +
+	hcto = radio_tmr_tifs_base_get() + cis_lll->tifs_us +
 	       (EVENT_CLOCK_JITTER_US << 1) + RANGE_DELAY_US +
 	       HAL_RADIO_TMR_START_DELAY_US;
 
@@ -527,13 +527,13 @@ static void isr_tx(void *param)
 	radio_gpio_lna_setup();
 
 #if defined(CONFIG_BT_CTLR_PHY)
-	radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() + EVENT_IFS_US -
+	radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() + cis_lll->tifs_us -
 				 (EVENT_CLOCK_JITTER_US << 1) -
 				 radio_tx_chain_delay_get(cis_lll->tx.phy,
 							  cis_lll->tx.phy_flags) -
 				 HAL_RADIO_GPIO_LNA_OFFSET);
 #else /* !CONFIG_BT_CTLR_PHY */
-	radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() + EVENT_IFS_US -
+	radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() + cis_lll->tifs_us -
 				 (EVENT_CLOCK_JITTER_US << 1) -
 				 radio_tx_chain_delay_get(0U, 0U) -
 				 HAL_RADIO_GPIO_LNA_OFFSET);
@@ -1044,7 +1044,7 @@ static void isr_prepare_subevent(void *param)
 	radio_tmr_rx_disable();
 	radio_tmr_tx_enable();
 
-	radio_tmr_tifs_set(EVENT_IFS_US);
+	radio_tmr_tifs_set(cis_lll->tifs_us);
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	radio_switch_complete_and_rx(cis_lll->rx.phy);

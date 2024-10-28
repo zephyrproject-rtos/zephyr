@@ -223,6 +223,9 @@ int npm1300_charger_channel_get(const struct device *dev, enum sensor_channel ch
 		valp->val2 = (tmp % 1000) * 1000;
 		break;
 	case SENSOR_CHAN_GAUGE_TEMP:
+		if (config->thermistor_idx == 0) {
+			return -ENOTSUP;
+		}
 		calc_temp(config, data->temp, valp);
 		break;
 	case SENSOR_CHAN_GAUGE_AVG_CURRENT:
@@ -456,6 +459,7 @@ int npm1300_charger_init(const struct device *dev)
 {
 	const struct npm1300_charger_config *const config = dev->config;
 	uint16_t idx;
+	uint8_t byte = 0U;
 	int ret;
 
 	if (!device_is_ready(config->mfd)) {
@@ -464,7 +468,7 @@ int npm1300_charger_init(const struct device *dev)
 
 	/* Configure temperature thresholds */
 	ret = mfd_npm1300_reg_write(config->mfd, ADC_BASE, ADC_OFFSET_NTCR_SEL,
-				    config->thermistor_idx + 1U);
+				    config->thermistor_idx);
 	if (ret != 0) {
 		return ret;
 	}
@@ -590,10 +594,17 @@ int npm1300_charger_init(const struct device *dev)
 
 	/* Disable automatic recharging if configured */
 	if (config->disable_recharge) {
-		ret = mfd_npm1300_reg_write(config->mfd, CHGR_BASE, CHGR_OFFSET_DIS_SET, 1U);
-		if (ret != 0) {
-			return ret;
-		}
+		WRITE_BIT(byte, 0U, true);
+	}
+
+	/* Disable NTC if configured */
+	if (config->thermistor_idx == 0U) {
+		WRITE_BIT(byte, 1U, true);
+	}
+
+	ret = mfd_npm1300_reg_write(config->mfd, CHGR_BASE, CHGR_OFFSET_DIS_SET, byte);
+	if (ret != 0) {
+		return ret;
 	}
 
 	/* Enable charging if configured */

@@ -1,7 +1,4 @@
-.. _az3166_iotdevkit:
-
-AZ3166 MXChip IoT DevKit
-########################
+.. zephyr:board:: az3166_iotdevkit
 
 Overview
 ********
@@ -10,12 +7,6 @@ The AZ3166 IoT DevKit from MXChip is a development board designed for IoT (Inter
 projects. It's an all-in-one board powered by an Arm Cortex-M4 processor. On-board peripherals
 include an OLED screen, headphone output, stereo microphone and abundant sensors like humidity &
 temperature, pressure, motion (accelerometer & gyroscope) and magnetometer.
-
-.. figure:: img/az3166-iotdevkit.webp
-     :align: center
-     :alt: AZ3166 MXChip IoT DevKit
-
-     AZ3166 MXChip IoT DevKit (Credit: MXChip)
 
 More information about the board can be found at the `MXChip AZ3166 website`_.
 

@@ -94,11 +94,13 @@ config ISL29035_TRIGGER_NONE
 config ISL29035_TRIGGER_GLOBAL_THREAD
 	bool "Use global thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ISIL_ISL29035),int-gpios)
 	select ISL29035_TRIGGER
 
 config ISL29035_TRIGGER_OWN_THREAD
 	bool "Use own thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ISIL_ISL29035),int-gpios)
 	select ISL29035_TRIGGER
 
 endchoice

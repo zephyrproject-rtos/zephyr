@@ -1,7 +1,4 @@
-.. _nrf52_blenano2:
-
-Redbear Labs Nano v2
-####################
+.. zephyr:board:: nrf52_blenano2
 
 Overview
 ********

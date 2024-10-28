@@ -40,12 +40,12 @@ for corresponding connectors, for example:
 
 - :ref:`adafruit_2_8_tft_touch_v2` and :ref:`nrf52840dk_nrf52840`
 - :ref:`buydisplay_2_8_tft_touch_arduino` and :ref:`nrf52840dk_nrf52840`
-- :ref:`ssd1306_128_shield` and :ref:`frdm_k64f`
-- :ref:`seeed_xiao_round_display` and :ref:`xiao_ble`
+- :ref:`ssd1306_128_shield` and :zephyr:board:`frdm_k64f`
+- :ref:`seeed_xiao_round_display` and :zephyr:board:`xiao_ble`
 
 or a board with an integrated display:
 
-- :ref:`esp_wrover_kit`
+- :zephyr:board:`esp_wrover_kit`
 
 or a simulated display environment in a :ref:`native_sim <native_sim>` application:
 
@@ -54,12 +54,12 @@ or a simulated display environment in a :ref:`native_sim <native_sim>` applicati
 
 or
 
-- :ref:`mimxrt1050_evk`
+- :zephyr:board:`mimxrt1050_evk`
 - `RK043FN02H-CT`_
 
 or
 
-- :ref:`mimxrt1060_evk`
+- :zephyr:board:`mimxrt1060_evk`
 - `RK043FN02H-CT`_
 
 Building and Running

@@ -185,7 +185,7 @@ static void execute_callback(const struct device *dev, const enum stepper_event 
 		LOG_WRN_ONCE("No callback registered");
 		return;
 	}
-	data->callback(dev, event);
+	data->callback(dev, event, data->event_cb_user_data);
 }
 
 static void rampstat_work_handler(struct k_work *work)

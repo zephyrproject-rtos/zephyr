@@ -882,6 +882,8 @@ test_i2c_vishay_vcnl36825t: vcnl36825t@81 {
 	multi-pulse = <8>;
 
 	low-power;
+
+	int-gpios = <&test_gpio 0 0>;
 };
 
 test_i2c_tmag5273: tmag5273@82 {
@@ -1088,11 +1090,38 @@ test_i2c_tmp1075: tmp1075@98 {
 	interrupt-mode;
 };
 
-apds_9306: apds9306@92 {
+test_i2c_bmp390: bmp390@99 {
+	compatible = "bosch,bmp390";
+	reg = <0x99>;
+	int-gpios = <&test_gpio 0 0>;
+	osr-press = <0x01>;
+	odr = "12.5";
+	osr-press = <8>;
+	osr-temp = <1>;
+	iir-filter = <3>;
+};
+
+apds_9306: apds9306@9a {
 	compatible = "avago,apds9306";
-	reg = <0x92>;
+	reg = <0x9a>;
 	status = "okay";
 	gain = <1>;
 	resolution = <13>;
 	frequency = <2000>;
+};
+
+test_i2c_wsen_hids_2525020210002: wsen_hids_2525020210002@9b {
+	compatible = "we,wsen-hids-2525020210002";
+	reg = <0x9b>;
+	precision = "high";
+};
+
+test_i2c_ilps22qs: ilps22qs@9c {
+	compatible = "st,ilps22qs";
+	reg = <0x9c>;
+	status = "okay";
+	odr = <LPS2xDF_DT_ODR_10HZ>;
+	lpf = <LPS2xDF_DT_LP_FILTER_ODR_4>;
+	avg = <LPS2xDF_DT_AVG_128_SAMPLES>;
+	fs = <ILPS22QS_DT_FS_MODE_1_1260>;
 };

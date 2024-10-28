@@ -12,13 +12,8 @@
 #include <hal/nrf_vpr_csr.h>
 #include <hal/nrf_vpr_csr_vevif.h>
 
-#if defined(CONFIG_SOC_NRF54L15_ENGA_CPUFLPR)
-#define TASKS_IDX_MIN 11U
-#define TASKS_IDX_MAX 17U
-#else
 #define TASKS_IDX_MIN NRF_VPR_TASKS_TRIGGER_MIN
 #define TASKS_IDX_MAX NRF_VPR_TASKS_TRIGGER_MAX
-#endif
 
 #define VEVIF_TASKS_NUM  DT_INST_PROP(0, nordic_tasks)
 #define VEVIF_TASKS_MASK DT_INST_PROP(0, nordic_tasks_mask)

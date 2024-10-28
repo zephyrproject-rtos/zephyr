@@ -1,17 +1,7 @@
-.. _actinius_icarus_som_dk:
-
-Actinius Icarus SoM DK
-######################
+.. zephyr:board:: actinius_icarus_som_dk
 
 Overview
 ********
-
-.. figure:: img/icarus_som_dk.jpg
-     :width: 450px
-     :align: center
-     :alt: Icarus SoM DK
-
-     Icarus SoM Development Kit (nRF9160)
 
 The Icarus SoM DK is a single board development kit for
 evaluation and development on the Icarus SoM (`Icarus SoM Docs`_).

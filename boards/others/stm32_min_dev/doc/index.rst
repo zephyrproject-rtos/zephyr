@@ -1,7 +1,4 @@
-.. _stm32_min_dev:
-
-STM32 Minimum Development Board
-###############################
+.. zephyr:board:: stm32_min_dev
 
 Overview
 ********
@@ -15,12 +12,6 @@ are two variants of the board:
 
 Zephyr applications can use the stm32_min_dev@blue or stm32_min_dev@black board
 configuration to use these boards.
-
-.. figure:: img/stm32_min_dev.jpg
-     :align: center
-     :alt: STM32 Minimum Development Board
-
-     STM32 Minimum Development Board
 
 As the name suggests, these boards have the bare minimum components required to
 power on the CPU. For practical use, you'll need to add additional components

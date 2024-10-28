@@ -123,6 +123,8 @@ int nrf_wifi_supp_get_conn_info(void *if_priv, struct wpa_conn_info *info);
 void nrf_wifi_supp_event_proc_get_conn_info(void *os_vif_ctx,
 					    struct nrf_wifi_umac_event_conn_info *info,
 					    unsigned int event_len);
+int nrf_wifi_supp_set_country(void *if_priv, const char *alpha2);
+int nrf_wifi_supp_get_country(void *if_priv, char *alpha2);
 
 #endif /* CONFIG_NRF70_STA_MODE */
 #ifdef CONFIG_NRF70_AP_MODE

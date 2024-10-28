@@ -1,7 +1,4 @@
-.. _nucleo_l452re_board:
-
-ST Nucleo L452RE
-################
+.. zephyr:board:: nucleo_l452re
 
 Overview
 ********
@@ -24,10 +21,6 @@ Here some highlights of these boards:
 
 - Three LEDs: USB communication (LD1), user LED (LD2), power LED (LD3)
 - One push-button: RESET
-
-.. image:: img/nucleo_l452re_p.jpg
-  :align: center
-  :alt: Nucleo L452RE-P
 
 The main difference between the ST Nucleo L452RE and the L452RE-P (note the missing
 "-P" at the end) lays in the External Switched Mode Power Supply (SMPS) included in

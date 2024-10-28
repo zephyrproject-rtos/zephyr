@@ -96,6 +96,8 @@ Refer to the detailed overview about :ref:`application_debugging`.
 References
 **********
 
+.. target-notes::
+
 .. [1] https://developer.arm.com/tools-and-software/simulation-models/fixed-virtual-platforms/arm-ecosystem-models
 .. [2] Arm Architecture Reference Manual Supplement - Armv8, for Armv8-R AArch32 architecture profile
        https://developer.arm.com/documentation/ddi0568/latest

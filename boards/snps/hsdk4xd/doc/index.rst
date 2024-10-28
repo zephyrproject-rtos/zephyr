@@ -1,19 +1,12 @@
-.. _hsdk4xd:
-
-DesignWare(R) ARC(R) HS4x/HS4xD Development Kit
-###############################################
+.. zephyr:board:: hsdk4xd
 
 Overview
 ********
 
-The ARC HS4x/HS4xD Development Kit is the next revision of :ref:`Synopsys HSDK board <hsdk>`.
+The ARC HS4x/HS4xD Development Kit is the next revision of :zephyr:board:`Synopsys HSDK board <hsdk>`.
 It includes a multicore ARC HS4xD-based chip that integrates a wide range of interfaces
 including Ethernet, HDMI, WiFi, Bluetooth, USB, SDIO, I2C, SPI, UART, I2S, ADC, PWM and GPIO,
 as well as a Think Silicon GPU.
-
-.. image:: hsdk4xd.jpg
-   :align: center
-   :alt: DesignWare(R) ARC(R) HS4x/HS4xD Development Kit (synopsys.com)
 
 For details about the board, see: `ARC HS4x/HS4xD Development Kit
 (HSDK4xD) <https://www.synopsys.com/dw/ipdir.php?ds=arc-hs-development-kit>`__
@@ -546,6 +539,8 @@ The following list indicates the state of HS4x/HS4xD Development Kit peripherals
 
 References
 **********
+
+.. target-notes::
 
 .. _embARC website: https://www.embarc.org
 

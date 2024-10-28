@@ -1,7 +1,4 @@
-.. _raytac_mdbt50q_db_33_nrf52833:
-
-Raytac MDBT50Q-DB-33
-####################
+.. zephyr:board:: raytac_mdbt50q_db_33
 
 Overview
 ********
@@ -24,11 +21,6 @@ Nordic Semiconductor nRF52833 ARM Cortex-M4F CPU and the following devices:
 * :abbr:`UART (Universal asynchronous receiver-transmitter)`
 * :abbr:`USB (Universal Serial Bus)`
 * :abbr:`WDT (Watchdog Timer)`
-
-.. figure:: img/mdbt50q_db_33.jpg
-     :width: 442px
-     :align: center
-     :alt: MDBT50Q-DB-33
 
 More information about the board can be found at the `MDBT50Q-DB-33 website`_.
 The `MDBT50Q-DB-33 Specification`_ contains the demo board's datasheet.

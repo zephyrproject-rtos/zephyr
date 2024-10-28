@@ -1,0 +1,21 @@
+# Copyright (c) 2024 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+rsource "*/Kconfig.defconfig"
+
+if SOC_FAMILY_SILABS_S2
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if CORTEX_M_SYSTICK
+	default 32768
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 1024 if SILABS_SLEEPTIMER_TIMER || GECKO_BURTC_TIMER
+
+config SILABS_SLEEPTIMER_TIMER
+	default y
+
+config CORTEX_M_SYSTICK
+	default n if SILABS_SLEEPTIMER_TIMER || GECKO_BURTC_TIMER
+
+endif

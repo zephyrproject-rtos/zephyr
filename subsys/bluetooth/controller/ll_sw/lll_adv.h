@@ -117,6 +117,11 @@ struct lll_adv_sync {
 	struct lll_adv_pdu data;
 
 #if defined(CONFIG_BT_CTLR_ADV_PDU_LINK)
+	/* Implementation defined radio event counter to calculate chain
+	 * PDU channel index.
+	 */
+	uint16_t data_chan_counter;
+
 	struct pdu_adv *last_pdu;
 #endif /* CONFIG_BT_CTLR_ADV_PDU_LINK */
 

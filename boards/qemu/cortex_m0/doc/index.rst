@@ -1,7 +1,4 @@
-.. _qemu_cortex_m0:
-
-ARM Cortex-M0 Emulation (QEMU)
-##############################
+.. zephyr:board:: qemu_cortex_m0
 
 Overview
 ********

@@ -373,6 +373,7 @@ TESTDATA_2_2 = [
       '-B' + os.path.join('build', 'dir'), '-DTC_RUNID=1', '-DTC_NAME=testcase',
       '-DSB_CONFIG_COMPILER_WARNINGS_AS_ERRORS=y',
       '-DEXTRA_GEN_EDT_ARGS=--edtlib-Werror', '-Gdummy_generator',
+      f'-DPython3_EXECUTABLE={pathlib.Path(sys.executable).as_posix()}',
       '-S' + os.path.join('source', 'dir'),
       'arg1', 'arg2',
       '-DBOARD=<platform name>',
@@ -387,6 +388,7 @@ TESTDATA_2_2 = [
       '-B' + os.path.join('build', 'dir'), '-DTC_RUNID=1', '-DTC_NAME=testcase',
       '-DSB_CONFIG_COMPILER_WARNINGS_AS_ERRORS=n',
       '-DEXTRA_GEN_EDT_ARGS=', '-Gdummy_generator',
+      f'-DPython3_EXECUTABLE={pathlib.Path(sys.executable).as_posix()}',
       '-Szephyr_base/share/sysbuild',
       '-DAPP_DIR=' + os.path.join('source', 'dir'),
       'arg1', 'arg2',
@@ -2049,6 +2051,7 @@ def test_projectbuilder_report_out(
 
     assert all([log in trim_actual_log for log in expected_logs])
 
+    print(trim_actual_log)
     if expected_out:
         out, err = capfd.readouterr()
         sys.stdout.write(out)

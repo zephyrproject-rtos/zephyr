@@ -28,7 +28,7 @@ tests:
       - mimxrt1064_evk
     integration_platforms:
       - nrf52840dk/nrf52840
-    extra_args: CONF_FILE="prj_sysview.conf"
+    extra_args: SNIPPET="rtt-tracing"
   sample.tracing.osawareness.openocd:
     arch_exclude:
       - posix

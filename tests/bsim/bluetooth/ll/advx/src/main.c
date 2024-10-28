@@ -14,6 +14,7 @@
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
 
 #include "ll.h"
 
@@ -28,8 +29,8 @@
 #define EVT_PROP_TXP    BIT(6)
 #define ADV_INTERVAL    0x20   /* 20 ms advertising interval */
 #define ADV_WAIT_MS     10     /* 10 ms wait loop */
-#define OWN_ADDR_TYPE   BT_ADDR_LE_RANDOM_ID
-#define PEER_ADDR_TYPE  BT_ADDR_LE_RANDOM_ID
+#define OWN_ADDR_TYPE   BT_HCI_OWN_ADDR_RANDOM
+#define PEER_ADDR_TYPE  BT_HCI_OWN_ADDR_RANDOM
 #define PEER_ADDR       peer_addr
 #define ADV_CHAN_MAP    0x07
 #define FILTER_POLICY   0x00

@@ -1,7 +1,4 @@
-.. _mikroe_mini_m4_for_stm32:
-
-Mikroe MINI-M4 for STM32
-########################
+.. zephyr:board:: mikroe_mini_m4_for_stm32
 
 Overview
 ********
@@ -14,10 +11,6 @@ a 32.768KHz crystal which can be used for the internal RTCC module.
 It has a reset button and three signal LEDs.
 It operates on a 3.3V power supply. An on-board voltage regulator allows
 the board to be powered directly from a USB cable.
-
-.. image:: img/mikroe_mini_m4_for_stm32.jpg
-   :align: center
-   :alt: MINI-M4 for STM32
 
 Pin Mapping
 ===========

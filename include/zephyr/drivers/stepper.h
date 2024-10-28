@@ -14,8 +14,8 @@
 #define ZEPHYR_INCLUDE_DRIVERS_STEPPER_H_
 
 /**
- * @brief Stepper Motor Controller Interface
- * @defgroup stepper_interface Stepper Motor Controller Interface
+ * @brief Stepper Controller Interface
+ * @defgroup stepper_interface Stepper Controller Interface
  * @ingroup io_interfaces
  * @{
  */
@@ -174,7 +174,8 @@ typedef int (*stepper_enable_constant_velocity_mode_t)(const struct device *dev,
 /**
  * @brief Callback function for stepper events
  */
-typedef void (*stepper_event_callback_t)(const struct device *dev, const enum stepper_event event);
+typedef void (*stepper_event_callback_t)(const struct device *dev, const enum stepper_event event,
+					 void *user_data);
 
 /**
  * @brief Set the callback function to be called when a stepper event occurs

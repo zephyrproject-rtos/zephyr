@@ -533,7 +533,7 @@ static int get_enabled_reg(const struct device *dev, uint8_t base, uint8_t offse
 
 	int ret = mfd_npm1300_reg_read(config->mfd, base, offset, &data);
 
-	if (ret != 0) {
+	if (ret < 0) {
 		return ret;
 	}
 

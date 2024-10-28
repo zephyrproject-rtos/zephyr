@@ -25,6 +25,9 @@ zephyr_library_sources_ifdef(CONFIG_MCUMGR_TRANSPORT_UART
 zephyr_library_sources_ifdef(CONFIG_MCUMGR_TRANSPORT_UDP
   src/smp_udp.c
 )
+zephyr_library_sources_ifdef(CONFIG_MCUMGR_TRANSPORT_LORAWAN
+  src/smp_lorawan.c
+)
 zephyr_library_sources_ifdef(CONFIG_MCUMGR_TRANSPORT_DUMMY
   src/smp_dummy.c
 )

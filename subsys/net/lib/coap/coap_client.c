@@ -550,19 +550,24 @@ static int handle_poll(void)
 
 		} else {
 			for (int i = 0; i < nfds; i++) {
+
 				if (fds[i].revents & ZSOCK_POLLERR) {
 					LOG_ERR("Error in poll for socket %d", fds[i].fd);
+					clients[i]->socket_error = -EIO;
 				}
 				if (fds[i].revents & ZSOCK_POLLHUP) {
 					LOG_ERR("Error in poll: POLLHUP for socket %d", fds[i].fd);
+					clients[i]->socket_error = -ENOTCONN;
 				}
 				if (fds[i].revents & ZSOCK_POLLNVAL) {
 					LOG_ERR("Error in poll: POLLNVAL - fd %d not open",
 						fds[i].fd);
+					clients[i]->socket_error = -EINVAL;
 				}
 				if (fds[i].revents & ZSOCK_POLLIN) {
 					clients[i]->response_ready = true;
 				}
+
 			}
 
 			return 0;
@@ -918,7 +923,24 @@ void coap_client_cancel_requests(struct coap_client *client)
 	k_sleep(K_MSEC(COAP_PERIODIC_TIMEOUT));
 }
 
-static void coap_client_recv(void *coap_cl, void *a, void *b)
+static void signal_socket_error(struct coap_client *cli)
+{
+	for (int i = 0; i < CONFIG_COAP_CLIENT_MAX_REQUESTS; i++) {
+		struct coap_client_internal_request *req = &cli->requests[i];
+
+		if (!req->request_ongoing) {
+			continue;
+		}
+
+		req->request_ongoing = false;
+		if (req->coap_request.cb) {
+			req->coap_request.cb(cli->socket_error, 0, NULL, 0,
+					     true, req->coap_request.user_data);
+		}
+	}
+}
+
+void coap_client_recv(void *coap_cl, void *a, void *b)
 {
 	int ret;
 
@@ -959,6 +981,12 @@ static void coap_client_recv(void *coap_cl, void *a, void *b)
 				clients[i]->response_ready = false;
 				k_mutex_unlock(&clients[i]->lock);
 			}
+
+			if (clients[i]->socket_error) {
+				signal_socket_error(clients[i]);
+				clients[i]->socket_error = 0;
+			}
+
 		}
 
 		/* There are more messages coming */

@@ -283,6 +283,8 @@ UART_RTS with UART_CTS from KitProg2.
 References
 **********
 
+.. target-notes::
+
 .. _PSoC 63 BLE MCU SoC Website:
 	https://www.cypress.com/products/32-bit-arm-cortex-m4-cortex-m0-psoc-63-connectivity-line
 

@@ -1,7 +1,4 @@
-.. _slwrb4321a:
-
-WGM160P Wi-Fi Module (SLWRB4321A)
-#################################
+.. zephyr:board:: slwrb4321a
 
 Overview
 ********
@@ -9,12 +6,6 @@ Overview
 The WGM160P Starter Kit SLWSTK6121A comes with the BRD4321A radio board.
 This radio boards contains a WGM160P module, which combines the WF200 Wi-Fi
 transceiver with an EFM32GG11 microcontroller.
-
-.. figure:: wgm160p-starter-kit.jpg
-   :align: center
-   :alt: SLWSTK6121A
-
-   SLWSTK6121A (image courtesy of Silicon Labs)
 
 Hardware
 ********

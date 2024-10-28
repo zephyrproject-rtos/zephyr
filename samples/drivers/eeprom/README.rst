@@ -35,7 +35,7 @@ as follows:
    :shield: x_nucleo_eeprma2
    :compact:
 
-For :ref:`gd32f450i_eval` board. First bridge the JP5 to USART with the jumper cap,
+For :zephyr:board:`gd32f450i_eval` board. First bridge the JP5 to USART with the jumper cap,
 Then the sample can be built and executed for the  as follows:
 
 .. zephyr-app-commands::

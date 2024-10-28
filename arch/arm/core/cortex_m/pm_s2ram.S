@@ -70,7 +70,9 @@ SECTION_FUNC(TEXT, arch_pm_s2ram_suspend)
 	/*
 	 * Mark entering suspend to RAM.
 	 */
-	bl pm_s2ram_mark_set
+	mov 	r1, lr
+	bl 	pm_s2ram_mark_set
+	mov	lr, r1
 
 	/*
 	 * Call the system_off function passed as parameter. This should never
@@ -86,7 +88,9 @@ SECTION_FUNC(TEXT, arch_pm_s2ram_suspend)
 	/*
 	 * Reset the marking of suspend to RAM, return is ignored.
 	 */
-	bl pm_s2ram_mark_check_and_clear
+	mov 	r1, lr
+	bl	pm_s2ram_mark_check_and_clear
+	mov 	lr, r1
 
 	/* Move system_off back to r0 as return value */
 	mov	r0, r4
@@ -99,16 +103,13 @@ GTEXT(arch_pm_s2ram_resume)
 SECTION_FUNC(TEXT, arch_pm_s2ram_resume)
 	/*
 	 * Check if reset occurred after suspending to RAM.
-	 * Store LR to ensure we can continue boot when we are not suspended
-	 * to RAM. In addition to LR, R0 is pushed too, to ensure "SP mod 8 = 0",
-	 * as stated by ARM rule 6.2.1.2 for AAPCS32.
 	 */
-	push    {r0, lr}
-	bl      pm_s2ram_mark_check_and_clear
-	cmp	r0, #0x1
-	pop     {r0, lr}
-	beq	resume
-	bx	lr
+	mov 	r1, lr
+	bl 	pm_s2ram_mark_check_and_clear
+	mov 	lr, r1
+	cmp     r0, #0x1
+	beq     resume
+	bx      lr
 
 resume:
 	/*

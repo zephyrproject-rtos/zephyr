@@ -1,7 +1,4 @@
-.. _generic_leon3:
-
-Generic LEON3
-#############
+.. zephyr:board:: generic_leon3
 
 Overview
 ********

@@ -74,14 +74,6 @@
 	reserved-memory {
 		#address-cells = <1>;
 		#size-cells = <1>;
-
-		cpurad_uicr_ext: memory@e401000 {
-			reg = <0xe401000 DT_SIZE_K(2)>;
-		};
-
-		cpuapp_uicr_ext: memory@e401800 {
-			reg = <0xe401800 DT_SIZE_K(2)>;
-		};
 	};
 
 	clocks {
@@ -113,14 +105,12 @@
 			compatible = "nordic,nrf-uicr-v2";
 			reg = <0xfff8000 DT_SIZE_K(2)>;
 			domain = <2>;
-			ptr-ext-uicr = <&cpuapp_uicr_ext>;
 		};
 
 		cpurad_uicr: uicr@fffa000 {
 			compatible = "nordic,nrf-uicr-v2";
 			reg = <0xfffa000 DT_SIZE_K(2)>;
 			domain = <3>;
-			ptr-ext-uicr = <&cpurad_uicr_ext>;
 		};
 
 		ficr: ficr@fffe000 {

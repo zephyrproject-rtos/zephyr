@@ -1,7 +1,4 @@
-.. _stm32f723e_disco_board:
-
-ST STM32F723E Discovery
-#######################
+.. zephyr:board:: stm32f723e_disco
 
 Overview
 ********
@@ -22,10 +19,6 @@ and high-speed connectivity features. Important board features include:
 - 8-Mbit external PSRAM
 - USB OTG HS with Micro-AB connectors
 - USB OTG FS with Micro-AB connectors
-
-.. image:: img/stm32f723e_disco.jpg
-     :align: center
-     :alt: STM32F723E-DISCO
 
 More information about the board can be found at the `32F723E-DISCO website`_.
 

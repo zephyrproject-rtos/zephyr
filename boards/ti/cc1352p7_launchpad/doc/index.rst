@@ -1,7 +1,4 @@
-.. _cc1352p7_lp:
-
-CC1352P7 LaunchPad
-##################
+.. zephyr:board:: cc1352p7_lp
 
 Overview
 ********
@@ -11,12 +8,6 @@ development kit for the SimpleLink |trade| multi-Standard CC1352P7 wireless MCU.
 
 See the `TI CC1352P7 LaunchPad Product Page`_ for details.
 
-.. figure:: img/lp-cc1352p7-top.jpg
-   :width: 400px
-   :align: center
-   :alt: TI CC1352P7 LaunchPad
-
-   Texas Instruments CC1352P7 LaunchPad |trade|
 
 Hardware
 ********

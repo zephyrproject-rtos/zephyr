@@ -1,7 +1,4 @@
-.. _esp32_devkitc_wrover:
-
-ESP32-DevKitC-WROVER
-####################
+.. zephyr:board:: esp32_devkitc_wrover
 
 Overview
 ********
@@ -40,12 +37,6 @@ The features include the following:
 
 - Cryptographic hardware acceleration (RNG, ECC, RSA, SHA-2, AES)
 - 5uA deep sleep current
-
-.. figure:: img/esp32_devkitc_wrover.jpg
-    :align: center
-    :alt: ESP32-DevKitC-WROVER
-
-    ESP32-DevKitC-WROVER-IE
 
 For more information, check the datasheet at `ESP32 Datasheet`_ or the technical reference
 manual at `ESP32 Technical Reference Manual`_.
@@ -291,6 +282,8 @@ GDB stub is enabled on ESP32.
 
 References
 **********
+
+.. target-notes::
 
 .. _`ESP32-DevKitC-WROVER`: https://docs.espressif.com/projects/esp-idf/en/stable/esp32/hw-reference/esp32/get-started-devkitc.html#
 .. _`ESP32 Datasheet`: https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf

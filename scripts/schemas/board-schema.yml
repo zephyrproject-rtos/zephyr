@@ -23,17 +23,33 @@ schema;variant-schema:
           required: false
           include: variant-schema
 
+schema;extend-variant-schema:
+  required: false
+  type: seq
+  sequence:
+    - type: map
+      mapping:
+        name:
+          required: true
+          type: str
+        qualifier:
+          required: true
+          type: str
+
 schema;board-schema:
   type: map
   mapping:
     name:
-      required: true
+      required: false # Note: either name or extend is required, but that is handled in python
       type: str
       desc: Name of the board
     full_name:
       required: false
       type: str
       desc: Full name of the board. Typically set to the commercial name of the board.
+    extend:
+      required: false # Note: either name or extend is required, but that is handled in python
+      type: str
     vendor:
       required: false
       type: str
@@ -63,7 +79,7 @@ schema;board-schema:
                   required: true
                   type: str
     socs:
-      required: true
+      required: false # Required for name:, but not for extend.
       type: seq
       sequence:
         - type: map
@@ -73,6 +89,8 @@ schema;board-schema:
               type: str
             variants:
               include: variant-schema
+    variants:
+      include: extend-variant-schema
 
 type: map
 mapping:
@@ -85,6 +103,11 @@ mapping:
   runners:
     type: map
     mapping:
+      priority:
+        type: int
+        desc: |
+              Priority of this flash run once configuration. The highest value data will be used
+              instead of any with lower priorities. If omitted, will default to 10.
       run_once:
         type: map
         desc: |

@@ -1,7 +1,4 @@
-.. _stamp_c3:
-
-M5Stack STAMP-C3
-##################
+.. zephyr:board:: stamp_c3
 
 Overview
 ********

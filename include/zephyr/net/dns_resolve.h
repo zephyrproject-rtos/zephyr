@@ -202,6 +202,8 @@ struct dns_socket_dispatcher {
 	int fds_len;
 	/** Local socket to dispatch */
 	int sock;
+	/** Interface we are bound to */
+	int ifindex;
 	/** There can be two contexts to dispatch. This points to the other
 	 * context if sharing the socket between resolver / responder.
 	 */

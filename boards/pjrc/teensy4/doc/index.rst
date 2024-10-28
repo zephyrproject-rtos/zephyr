@@ -225,6 +225,8 @@ etc.):
 References
 **********
 
+.. target-notes::
+
 .. _Teensy 4.0 Website:
    https://www.pjrc.com/store/teensy40.html
 

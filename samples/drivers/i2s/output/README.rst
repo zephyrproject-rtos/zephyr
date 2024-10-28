@@ -20,7 +20,7 @@ Requirements
 The I2S device to be used by the sample is specified by defining
 a devicetree alias named ``i2s_tx``
 
-This sample has been tested on :ref:`mimxrt1060_evk` (mimxrt1060_evkb)
+This sample has been tested on :zephyr:board:`mimxrt1060_evk` (mimxrt1060_evkb)
 
 Building and Running
 ********************

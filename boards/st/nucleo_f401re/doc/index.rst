@@ -1,7 +1,4 @@
-.. _nucleo_f401re_board:
-
-ST Nucleo F401RE
-################
+.. zephyr:board:: nucleo_f401re
 
 Overview
 ********
@@ -24,10 +21,6 @@ some highlights of the Nucleo F401RE board:
 
 - Three LEDs: USB communication (LD1), user LED (LD2), power LED (LD3)
 - Two push-buttons: USER and RESET
-
-.. image:: img/nucleo_f401re.jpg
-   :align: center
-   :alt: Nucleo F401RE
 
 More information about the board can be found at the `Nucleo F401RE website`_.
 

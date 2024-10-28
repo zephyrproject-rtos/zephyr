@@ -217,7 +217,7 @@ In addition, TLS_SNI_HOSTNAME in main.c should be defined to match the
 Common Name (CN) in the certificate file in order for the TLS domain
 name verification to succeed.
 
-See the note on Provisioning and Fast Connect in :ref:`cc3220sf_launchxl`.
+See the note on Provisioning and Fast Connect in :zephyr:board:`cc3220sf_launchxl`.
 
 The Secure Socket Offload section has information on programming the
 certificate to flash.

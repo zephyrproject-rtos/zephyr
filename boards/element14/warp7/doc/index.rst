@@ -1,7 +1,4 @@
-.. _warp7:
-
-WaRP7 - Next Generation IoT and Wearable Development Platform
-#############################################################
+.. zephyr:board:: warp7
 
 Overview
 ********
@@ -10,11 +7,6 @@ The i.MX7S SoC is a Hybrid multi-core processor composed of Single Cortex A7
 core and Single Cortex M4 core.
 Zephyr was ported to run on the M4 core. In a later release, it will also
 communicate with the A7 core (running Linux) via RPmsg.
-
-
-.. image:: warp7.jpg
-   :align: center
-   :alt: WaRP7-iMX7S
 
 Hardware
 ********

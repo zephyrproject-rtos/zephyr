@@ -1,7 +1,4 @@
-.. _stm32f411e_disco_board:
-
-ST STM32F411E Discovery
-#######################
+.. zephyr:board:: stm32f411e_disco
 
 Overview
 ********
@@ -28,10 +25,6 @@ Here are some highlights of the STM32F411E-DISCO board:
 - Two pushbuttons (user and reset)
 - USB OTG with micro-AB connector
 - Extension header for LQFP100 I/Os for a quick connection to the prototyping board and an easy probing
-
-.. image:: img/stm32f411e_disco.jpg
-     :align: center
-     :alt: STM32F411E-DISCO
 
 More information about the board can be found at the `32F411EDISCOVERY website`_.
 

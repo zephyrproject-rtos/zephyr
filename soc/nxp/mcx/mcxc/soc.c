@@ -15,6 +15,8 @@
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
+#define IRC48M_CLK_FREQ (48000000UL)
+
 #define MCG_NODE DT_NODELABEL(mcg)
 #define OSC_NODE DT_NODELABEL(osc)
 
@@ -105,10 +107,18 @@ static void clock_init(void)
 	 */
 	CLOCK_SetTpmClock(TPM_CLOCK_SEL(DT_COMPAT_GET_ANY_STATUS_OKAY(nxp_kinetis_tpm)));
 #endif
+#if CONFIG_USB_KINETIS || CONFIG_UDC_KINETIS
+	CLOCK_EnableUsbfs0Clock(kCLOCK_UsbSrcIrc48M, IRC48M_CLK_FREQ);
+#endif
 }
 
 void soc_early_init_hook(void)
 {
+#ifdef CONFIG_TEMP_KINETIS
+	/* enable bandgap buffer */
+	PMC->REGSC |= PMC_REGSC_BGBE_MASK;
+#endif /* CONFIG_TEMP_KINETIS */
+
 	clock_init();
 }
 

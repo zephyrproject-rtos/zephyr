@@ -1036,6 +1036,19 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 
 #endif /* CONFIG_BT_CTLR_DF */
 
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER)
+	/* LE Periodic Advertising Sync Transfer */
+	rp->commands[40] |= BIT(6);
+	/* LE Periodic Advertising Set Info Transfer */
+	rp->commands[40] |= BIT(7);
+#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER */
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER)
+	/* LE Set Periodic Advertising Sync Transfer Parameters */
+	rp->commands[41] |= BIT(0);
+	/* LE Set Default Periodic Advertising Sync Transfer Parameters */
+	rp->commands[41] |= BIT(1);
+#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER */
+
 #if defined(CONFIG_BT_HCI_RAW) && defined(CONFIG_BT_TINYCRYPT_ECC)
 	bt_hci_ecc_supported_commands(rp->commands);
 #endif /* CONFIG_BT_HCI_RAW && CONFIG_BT_TINYCRYPT_ECC */
@@ -4081,6 +4094,110 @@ static void le_read_pal_size(struct net_buf *buf, struct net_buf **evt)
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 #endif /* CONFIG_BT_OBSERVER */
 
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER)
+static void le_per_adv_sync_transfer(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_per_adv_sync_transfer *cmd = (void *)buf->data;
+	struct bt_hci_rp_le_per_adv_sync_transfer *rp;
+	uint16_t conn_handle, conn_handle_le16;
+	uint16_t service_data;
+	uint16_t sync_handle;
+	uint8_t status;
+
+	conn_handle_le16 = cmd->conn_handle;
+
+	conn_handle = sys_le16_to_cpu(cmd->conn_handle);
+	service_data = sys_le16_to_cpu(cmd->service_data);
+	sync_handle = sys_le16_to_cpu(cmd->sync_handle);
+
+	status = ll_sync_transfer(conn_handle, service_data, sync_handle);
+
+	rp = hci_cmd_complete(evt, sizeof(*rp));
+	rp->conn_handle = conn_handle_le16;
+	rp->status = status;
+}
+
+static void le_per_adv_set_info_transfer(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_per_adv_set_info_transfer *cmd = (void *)buf->data;
+	struct bt_hci_rp_le_per_adv_set_info_transfer *rp;
+	uint16_t conn_handle, conn_handle_le16;
+	uint16_t service_data;
+	uint8_t adv_handle;
+	uint8_t status;
+
+	conn_handle_le16 = cmd->conn_handle;
+
+	conn_handle = sys_le16_to_cpu(cmd->conn_handle);
+	service_data = sys_le16_to_cpu(cmd->service_data);
+	adv_handle = cmd->adv_handle;
+
+	status = ll_adv_sync_set_info_transfer(conn_handle, service_data, adv_handle);
+
+	rp = hci_cmd_complete(evt, sizeof(*rp));
+	rp->conn_handle = conn_handle_le16;
+	rp->status = status;
+}
+#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER */
+
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER)
+static void le_past_param(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_past_param *cmd = (void *)buf->data;
+	struct bt_hci_rp_le_past_param *rp;
+	uint16_t conn_handle_le16;
+	uint16_t conn_handle;
+	uint16_t timeout;
+	uint8_t cte_type;
+	uint8_t status;
+	uint16_t skip;
+	uint8_t mode;
+
+	if (adv_cmds_ext_check(evt)) {
+		return;
+	}
+
+	conn_handle_le16 = cmd->conn_handle;
+
+	conn_handle = sys_le16_to_cpu(cmd->conn_handle);
+	mode = cmd->mode;
+	skip = sys_le16_to_cpu(cmd->skip);
+	timeout = sys_le16_to_cpu(cmd->timeout);
+	cte_type = cmd->cte_type;
+
+	status = ll_past_param(conn_handle, mode, skip, timeout, cte_type);
+
+	rp = hci_cmd_complete(evt, sizeof(*rp));
+	rp->conn_handle = conn_handle_le16;
+	rp->status = status;
+}
+
+static void le_default_past_param(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_default_past_param *cmd = (void *)buf->data;
+	struct bt_hci_rp_le_default_past_param *rp;
+	uint16_t timeout;
+	uint8_t cte_type;
+	uint8_t status;
+	uint16_t skip;
+	uint8_t mode;
+
+	if (adv_cmds_ext_check(evt)) {
+		return;
+	}
+
+	mode = cmd->mode;
+	skip = sys_le16_to_cpu(cmd->skip);
+	timeout = sys_le16_to_cpu(cmd->timeout);
+	cte_type = cmd->cte_type;
+
+	status = ll_default_past_param(mode, skip, timeout, cte_type);
+
+	rp = hci_cmd_complete(evt, sizeof(*rp));
+	rp->status = status;
+}
+#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER */
+
 #if defined(CONFIG_BT_CENTRAL)
 static void le_ext_create_connection(struct net_buf *buf, struct net_buf **evt)
 {
@@ -4296,6 +4413,51 @@ static void le_cis_established(struct pdu_data *pdu_data,
 #endif /* CONFIG_BT_CTLR_CENTRAL_ISO */
 }
 #endif /* CONFIG_BT_CTLR_CONN_ISO */
+
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER)
+static void le_per_adv_sync_transfer_received(struct pdu_data *pdu_data_rx,
+					      struct node_rx_pdu *node_rx, struct net_buf *buf)
+{
+	struct bt_hci_evt_le_past_received *sep;
+	struct node_rx_past_received *se;
+	struct ll_sync_set *sync;
+	void *node;
+
+	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
+	    !(le_event_mask & BT_EVT_MASK_LE_PAST_RECEIVED)) {
+		return;
+	}
+
+	sep = meta_evt(buf, BT_HCI_EVT_LE_PAST_RECEIVED, sizeof(*sep));
+
+	/* Check for pdu field being aligned before accessing PAST received
+	 * event.
+	 */
+	node = pdu_data_rx;
+	LL_ASSERT(IS_PTR_ALIGNED(node, struct node_rx_past_received));
+
+	se = node;
+	sep->status = se->rx_sync.status;
+
+	sync = node_rx->rx_ftr.param;
+
+	/* Resolved address, if private, has been populated in ULL */
+	sep->addr.type = sync->peer_id_addr_type;
+	if (sync->peer_addr_resolved) {
+		/* Mark it as identity address from RPA (0x02, 0x03) */
+		MARK_AS_IDENTITY_ADDR(sep->addr.type);
+	}
+	(void)memcpy(sep->addr.a.val, sync->peer_id_addr, BDADDR_SIZE);
+
+	sep->adv_sid = sync->sid;
+	sep->phy = find_lsb_set(se->rx_sync.phy);
+	sep->interval = sys_cpu_to_le16(se->rx_sync.interval);
+	sep->clock_accuracy = se->rx_sync.sca;
+	sep->conn_handle = sys_cpu_to_le16(se->conn_handle);
+	sep->service_data = sys_cpu_to_le16(se->service_data);
+	sep->sync_handle = sys_cpu_to_le16(node_rx->hdr.handle);
+}
+#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER */
 
 static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 				 struct net_buf **evt, void **node_rx)
@@ -4670,6 +4832,26 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_ADV_LIST */
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 #endif /* CONFIG_BT_OBSERVER */
+
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER)
+	case BT_OCF(BT_HCI_OP_LE_PER_ADV_SYNC_TRANSFER):
+		le_per_adv_sync_transfer(cmd, evt);
+		break;
+
+	case BT_OCF(BT_HCI_OP_LE_PER_ADV_SET_INFO_TRANSFER):
+		le_per_adv_set_info_transfer(cmd, evt);
+		break;
+#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER */
+
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER)
+	case BT_OCF(BT_HCI_OP_LE_PAST_PARAM):
+		le_past_param(cmd, evt);
+		break;
+
+	case BT_OCF(BT_HCI_OP_LE_DEFAULT_PAST_PARAM):
+		le_default_past_param(cmd, evt);
+		break;
+#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER */
 
 #if defined(CONFIG_BT_CONN)
 #if defined(CONFIG_BT_CENTRAL)
@@ -6306,7 +6488,7 @@ static inline void le_dir_adv_report(struct pdu_adv *adv, struct net_buf *buf,
 		ll_rl_id_addr_get(rl_idx, &dir_info->addr.type,
 				  &dir_info->addr.a.val[0]);
 		/* Mark it as identity address from RPA (0x02, 0x03) */
-		dir_info->addr.type += 2U;
+		MARK_AS_IDENTITY_ADDR(dir_info->addr.type);
 	} else {
 #else
 	if (1) {
@@ -6466,7 +6648,7 @@ static void le_advertising_report(struct pdu_data *pdu_data,
 		ll_rl_id_addr_get(rl_idx, &adv_info->addr.type,
 				  &adv_info->addr.a.val[0]);
 		/* Mark it as identity address from RPA (0x02, 0x03) */
-		adv_info->addr.type += 2U;
+		MARK_AS_IDENTITY_ADDR(adv_info->addr.type);
 	} else {
 #else
 	if (1) {
@@ -6571,7 +6753,7 @@ static void le_ext_adv_legacy_report(struct pdu_data *pdu_data,
 		ll_rl_id_addr_get(rl_idx, &adv_info->addr.type,
 				  &adv_info->addr.a.val[0]);
 		/* Mark it as identity address from RPA (0x02, 0x03) */
-		adv_info->addr.type += 2U;
+		MARK_AS_IDENTITY_ADDR(adv_info->addr.type);
 	} else
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 	{
@@ -6763,7 +6945,7 @@ static void ext_adv_info_fill(uint8_t evt_type, uint8_t phy, uint8_t sec_phy,
 		ll_rl_id_addr_get(rl_idx, &adv_info->addr.type,
 				  adv_info->addr.a.val);
 		/* Mark it as identity address from RPA (0x02, 0x03) */
-		adv_info->addr.type += 2U;
+		MARK_AS_IDENTITY_ADDR(adv_info->addr.type);
 #else /* !CONFIG_BT_CTLR_PRIVACY */
 		ARG_UNUSED(rl_idx);
 #endif /* !CONFIG_BT_CTLR_PRIVACY */
@@ -7438,7 +7620,7 @@ static void le_per_adv_sync_established(struct pdu_data *pdu_data,
 					struct net_buf *buf)
 {
 	struct bt_hci_evt_le_per_adv_sync_established *sep;
-	struct ll_scan_set *scan;
+	struct ll_sync_set *sync;
 	struct node_rx_sync *se;
 	void *node;
 
@@ -7463,13 +7645,11 @@ static void le_per_adv_sync_established(struct pdu_data *pdu_data,
 		return;
 	}
 
-	scan = node_rx->rx_ftr.param;
+	sync = node_rx->rx_ftr.param;
 
 #if (CONFIG_BT_CTLR_DUP_FILTER_LEN > 0) && \
 	defined(CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT)
-	dup_periodic_adv_reset(scan->periodic.adv_addr_type,
-			       scan->periodic.adv_addr,
-			       scan->periodic.sid);
+	dup_periodic_adv_reset(sync->peer_id_addr_type, sync->peer_id_addr, sync->sid);
 #endif /* CONFIG_BT_CTLR_DUP_FILTER_LEN > 0 &&
 	* CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT
 	*/
@@ -7477,10 +7657,14 @@ static void le_per_adv_sync_established(struct pdu_data *pdu_data,
 	sep->handle = sys_cpu_to_le16(node_rx->hdr.handle);
 
 	/* Resolved address, if private, has been populated in ULL */
-	sep->adv_addr.type = scan->periodic.adv_addr_type;
-	(void)memcpy(sep->adv_addr.a.val, scan->periodic.adv_addr, BDADDR_SIZE);
+	sep->adv_addr.type = sync->peer_id_addr_type;
+	if (sync->peer_addr_resolved) {
+		/* Mark it as identity address from RPA (0x02, 0x03) */
+		MARK_AS_IDENTITY_ADDR(sep->adv_addr.type);
+	}
+	(void)memcpy(sep->adv_addr.a.val, sync->peer_id_addr, BDADDR_SIZE);
 
-	sep->sid = scan->periodic.sid;
+	sep->sid = sync->sid;
 	sep->phy = find_lsb_set(se->phy);
 	sep->interval = sys_cpu_to_le16(se->interval);
 	sep->clock_accuracy = se->sca;
@@ -8077,7 +8261,7 @@ static void le_scan_req_received(struct pdu_data *pdu_data,
 		ll_rl_id_addr_get(rl_idx, &sep->addr.type,
 				  &sep->addr.a.val[0]);
 		/* Mark it as identity address from RPA (0x02, 0x03) */
-		sep->addr.type += 2U;
+		MARK_AS_IDENTITY_ADDR(sep->addr.type);
 	} else {
 #else
 	if (1) {
@@ -8117,7 +8301,7 @@ static void le_vs_scan_req_received(struct pdu_data *pdu,
 		ll_rl_id_addr_get(rl_idx, &sep->addr.type,
 				  &sep->addr.a.val[0]);
 		/* Mark it as identity address from RPA (0x02, 0x03) */
-		sep->addr.type += 2U;
+		MARK_AS_IDENTITY_ADDR(sep->addr.type);
 	} else {
 #else
 	if (1) {
@@ -8464,6 +8648,12 @@ static void encode_control(struct node_rx_pdu *node_rx,
 	case NODE_RX_TYPE_SYNC_LOST:
 		le_per_adv_sync_lost(pdu_data, node_rx, buf);
 		break;
+
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER)
+	case NODE_RX_TYPE_SYNC_TRANSFER_RECEIVED:
+		le_per_adv_sync_transfer_received(pdu_data, node_rx, buf);
+		return;
+#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER */
 
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
 	case NODE_RX_TYPE_SYNC_IQ_SAMPLE_REPORT:
@@ -9008,6 +9198,10 @@ uint8_t hci_get_class(struct node_rx_pdu *node_rx)
 		case NODE_RX_TYPE_SYNC:
 		case NODE_RX_TYPE_SYNC_REPORT:
 		case NODE_RX_TYPE_SYNC_LOST:
+
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER)
+		case NODE_RX_TYPE_SYNC_TRANSFER_RECEIVED:
+#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER */
 
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
 		case NODE_RX_TYPE_SYNC_IQ_SAMPLE_REPORT:

@@ -518,6 +518,7 @@ int z_soc_irq_is_enabled(unsigned int irq)
 	}
 
 	parent_irq = irq_parent_level_2(irq);
+	enabled = false;
 
 	/* find dispatcher responsible for this interrupt */
 	for (i = 0; i < ARRAY_SIZE(dispatchers); i++) {

@@ -1,7 +1,4 @@
-.. _stm32f0_disco_board:
-
-ST STM32F0 Discovery
-####################
+.. zephyr:board:: stm32f0_disco
 
 Overview
 ********
@@ -10,10 +7,6 @@ The STM32F0 Discovery development board uses an STM32F051R8T6 MCU and
 integrates the ST-LINK/V2-1 debugger and programmer.  It also comes with a
 comprehensive STM32 software HAL library and various packaged software
 examples.
-
-.. image:: img/stm32f0_disco.jpg
-     :align: center
-     :alt: STM32F0DISCOVERY
 
 More information about the board can be found at the `STM32F0DISCOVERY website`_.
 

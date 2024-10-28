@@ -8,8 +8,42 @@
 #include <dt-bindings/clock/silabs/xg27-clock.h>
 #include <mem.h>
 
+/ {
+	clocks {
+		hfxort: hfxort {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clocks = <&hfxo>;
+		};
+		hfrcodpllrt: hfrcodpllrt {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clocks = <&hfrcodpll>;
+		};
+		eusart0clk: eusart0clk {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clocks = <&em01grpaclk>;
+		};
+	};
+
+	soc {
+		clkin0: clkin0@5003c460 {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			reg = <0x5003c460 0x4>;
+			clock-frequency = <DT_FREQ_M(38)>;
+		};
+	};
+};
+
 &cmu {
 	interrupts = <52 0>;
+};
+
+&hfxo {
+	interrupts = <50 0>;
+	interrupt-names = "hfxo";
 };
 
 &msc {
@@ -55,12 +89,17 @@
 	clocks = <&cmu CLOCK_BURTC CLOCK_BRANCH_EM4GRPACLK>;
 };
 
-&stimer0 {
+&rtcc0 {
 	interrupts = <15 0>;
+	interrupt-names = "rtcc";
 	clocks = <&cmu CLOCK_RTCC CLOCK_BRANCH_RTCCCLK>;
 };
 
 &adc0 {
 	interrupts = <54 0>;
 	clocks = <&cmu CLOCK_IADC0 CLOCK_BRANCH_IADCCLK>;
+};
+
+&dcdc {
+	interrupts = <8 0>;
 };

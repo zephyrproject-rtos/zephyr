@@ -128,8 +128,8 @@ BUILD_ASSERT(CONFIG_NET_BUF_DATA_SIZE >= 96);
 #error "Minimum value for CONFIG_NET_BUF_TX_COUNT is 1"
 #endif
 
-K_MEM_SLAB_DEFINE(rx_pkts, sizeof(struct net_pkt), CONFIG_NET_PKT_RX_COUNT, 4);
-K_MEM_SLAB_DEFINE(tx_pkts, sizeof(struct net_pkt), CONFIG_NET_PKT_TX_COUNT, 4);
+NET_PKT_SLAB_DEFINE(rx_pkts, CONFIG_NET_PKT_RX_COUNT);
+NET_PKT_SLAB_DEFINE(tx_pkts, CONFIG_NET_PKT_TX_COUNT);
 
 #if defined(CONFIG_NET_BUF_FIXED_DATA_SIZE)
 
@@ -866,17 +866,79 @@ void net_pkt_print(void)
 
 /* New allocator and API starts here */
 
+#if defined(CONFIG_NET_PKT_ALLOC_STATS)
+static struct net_pkt_alloc_stats_slab *find_alloc_stats(struct k_mem_slab *slab)
+{
+	STRUCT_SECTION_FOREACH(net_pkt_alloc_stats_slab, tmp) {
+		if (tmp->slab == slab) {
+			return tmp;
+		}
+	}
+
+	NET_ASSERT("slab not found");
+
+	/* This will force a crash which is intended in this case as the
+	 * slab should always have a valid value.
+	 */
+	return NULL;
+}
+
+#define NET_PKT_ALLOC_STATS_UPDATE(pkt, alloc_size, start) ({		\
+	if (pkt->alloc_stats == NULL) {					\
+		pkt->alloc_stats = find_alloc_stats(pkt->slab);		\
+	}								\
+	pkt->alloc_stats->ok.count++;					\
+	if (pkt->alloc_stats->ok.count == 0) {				\
+		pkt->alloc_stats->ok.alloc_sum = 0ULL;			\
+		pkt->alloc_stats->ok.time_sum = 0ULL;			\
+	} else {							\
+		pkt->alloc_stats->ok.alloc_sum += (uint64_t)alloc_size;	\
+		pkt->alloc_stats->ok.time_sum += (uint64_t)(k_cycle_get_32() - start); \
+	}								\
+									\
+	pkt->alloc_stats->ok.count;					\
+})
+
+#define NET_PKT_ALLOC_STATS_FAIL(pkt, alloc_size, start) ({		\
+	if (pkt->alloc_stats == NULL) {					\
+		pkt->alloc_stats = find_alloc_stats(pkt->slab);		\
+	}								\
+	pkt->alloc_stats->fail.count++;					\
+	if (pkt->alloc_stats->fail.count == 0) {			\
+		pkt->alloc_stats->fail.alloc_sum = 0ULL;		\
+		pkt->alloc_stats->fail.time_sum = 0ULL;			\
+	} else {							\
+		pkt->alloc_stats->fail.alloc_sum += (uint64_t)alloc_size;\
+		pkt->alloc_stats->fail.time_sum += (uint64_t)(k_cycle_get_32() - start); \
+	}								\
+									\
+	pkt->alloc_stats->fail.count;					\
+})
+#else
+#define NET_PKT_ALLOC_STATS_UPDATE(pkt, alloc_size, start) ({ 0; })
+#define NET_PKT_ALLOC_STATS_FAIL(pkt, alloc_size, start) ({ 0; })
+#endif /* CONFIG_NET_PKT_ALLOC_STATS */
+
 #if defined(CONFIG_NET_BUF_FIXED_DATA_SIZE)
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
-static struct net_buf *pkt_alloc_buffer(struct net_buf_pool *pool,
+static struct net_buf *pkt_alloc_buffer(struct net_pkt *pkt,
+					struct net_buf_pool *pool,
 					size_t size, k_timeout_t timeout,
 					const char *caller, int line)
 #else
-static struct net_buf *pkt_alloc_buffer(struct net_buf_pool *pool,
+static struct net_buf *pkt_alloc_buffer(struct net_pkt *pkt,
+					struct net_buf_pool *pool,
 					size_t size, k_timeout_t timeout)
 #endif
 {
+#if defined(CONFIG_NET_PKT_ALLOC_STATS)
+	uint32_t start_time = k_cycle_get_32();
+	size_t total_size = size;
+#else
+	ARG_UNUSED(pkt);
+#endif
+
 	k_timepoint_t end = sys_timepoint_calc(timeout);
 	struct net_buf *first = NULL;
 	struct net_buf *current = NULL;
@@ -915,11 +977,23 @@ static struct net_buf *pkt_alloc_buffer(struct net_buf_pool *pool,
 #endif
 	} while (size);
 
+#if defined(CONFIG_NET_PKT_ALLOC_STATS)
+	if (NET_PKT_ALLOC_STATS_UPDATE(pkt, total_size, start_time) == 0) {
+		NET_DBG("pkt %p %s stats rollover", pkt, "ok");
+	}
+#endif
+
 	return first;
 error:
 	if (first) {
 		net_buf_unref(first);
 	}
+
+#if defined(CONFIG_NET_PKT_ALLOC_STATS)
+	if (NET_PKT_ALLOC_STATS_FAIL(pkt, total_size, start_time) == 0) {
+		NET_DBG("pkt %p %s stats rollover", pkt, "fail");
+	}
+#endif
 
 	return NULL;
 }
@@ -927,15 +1001,24 @@ error:
 #else /* !CONFIG_NET_BUF_FIXED_DATA_SIZE */
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
-static struct net_buf *pkt_alloc_buffer(struct net_buf_pool *pool,
+static struct net_buf *pkt_alloc_buffer(struct net_pkt *pkt,
+					struct net_buf_pool *pool,
 					size_t size, k_timeout_t timeout,
 					const char *caller, int line)
 #else
-static struct net_buf *pkt_alloc_buffer(struct net_buf_pool *pool,
+static struct net_buf *pkt_alloc_buffer(struct net_pkt *pkt,
+					struct net_buf_pool *pool,
 					size_t size, k_timeout_t timeout)
 #endif
 {
 	struct net_buf *buf;
+
+#if defined(CONFIG_NET_PKT_ALLOC_STATS)
+	uint32_t start_time = k_cycle_get_32();
+	size_t total_size = size;
+#else
+	ARG_UNUSED(pkt);
+#endif
 
 	buf = net_buf_alloc_len(pool, size, timeout);
 
@@ -948,6 +1031,18 @@ static struct net_buf *pkt_alloc_buffer(struct net_buf_pool *pool,
 		pool2str(pool), get_name(pool), get_frees(pool),
 		buf, buf->ref, caller, line);
 #endif
+
+#if defined(CONFIG_NET_PKT_ALLOC_STATS)
+	if (buf) {
+		if (NET_PKT_ALLOC_STATS_UPDATE(pkt, total_size, start_time) == 0) {
+			NET_DBG("pkt %p %s stats rollover", pkt, "ok");
+		}
+	} else {
+		if (NET_PKT_ALLOC_STATS_FAIL(pkt, total_size, start_time) == 0) {
+			NET_DBG("pkt %p %s stats rollover", pkt, "fail");
+		}
+	}
+#endif /* CONFIG_NET_PKT_ALLOC_STATS */
 
 	return buf;
 }
@@ -1188,9 +1283,9 @@ int net_pkt_alloc_buffer(struct net_pkt *pkt,
 	}
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
-	buf = pkt_alloc_buffer(pool, alloc_len, timeout, caller, line);
+	buf = pkt_alloc_buffer(pkt, pool, alloc_len, timeout, caller, line);
 #else
-	buf = pkt_alloc_buffer(pool, alloc_len, timeout);
+	buf = pkt_alloc_buffer(pkt, pool, alloc_len, timeout);
 #endif
 
 	if (!buf) {
@@ -1240,9 +1335,9 @@ int net_pkt_alloc_buffer_raw(struct net_pkt *pkt, size_t size,
 	}
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
-	buf = pkt_alloc_buffer(pool, size, timeout, caller, line);
+	buf = pkt_alloc_buffer(pkt, pool, size, timeout, caller, line);
 #else
-	buf = pkt_alloc_buffer(pool, size, timeout);
+	buf = pkt_alloc_buffer(pkt, pool, size, timeout);
 #endif
 
 	if (!buf) {

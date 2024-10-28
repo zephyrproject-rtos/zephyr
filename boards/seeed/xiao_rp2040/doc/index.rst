@@ -1,7 +1,4 @@
-.. _xiao_rp2040:
-
-XIAO RP2040
-###########
+.. zephyr:board:: xiao_rp2040
 
 Overview
 ********
@@ -12,12 +9,6 @@ LED, and USB connector. The USB bootloader allows it
 to be flashed without any adapter, in a drag-and-drop manner.
 
 For more details see the `Seeed Studio XIAO RP2040`_ wiki page.
-
-.. figure:: img/xiao_rp2040.webp
-   :align: center
-   :alt: XIAO RP2040
-
-   XIAO RP2040
 
 Hardware
 ********

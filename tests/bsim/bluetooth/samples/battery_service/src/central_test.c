@@ -43,6 +43,7 @@ static struct bt_gatt_discover_params discover_params;
 
 static struct bt_gatt_subscribe_params battery_level_notify_params;
 static struct bt_gatt_subscribe_params battery_level_status_sub_params;
+static struct bt_gatt_subscribe_params battery_critical_status_sub_params;
 
 /*
  * Battery Service  test:
@@ -58,6 +59,56 @@ static struct bt_gatt_subscribe_params battery_level_status_sub_params;
 
 static DEFINE_FLAG(notification_count_reached);
 static DEFINE_FLAG(indication_count_reached);
+static DEFINE_FLAG(bcs_char_read);
+
+/* Callback for handling Battery Critical Status Read Response */
+static uint8_t battery_critical_status_read_cb(struct bt_conn *conn, uint8_t err,
+					       struct bt_gatt_read_params *params, const void *data,
+					       uint16_t length)
+{
+	TEST_ASSERT(err == 0, "Failed to read Battery critical status (err %d)", err);
+	TEST_ASSERT(length > 0, "No data is sent");
+
+	if (data) {
+		uint8_t status_byte = *(uint8_t *)data;
+
+		printk("[READ]  BAS Critical Status:\n");
+		printk("Battery state: %s\n",
+		       (status_byte & BT_BAS_BCS_BATTERY_CRITICAL_STATE) ? "Critical" : "Normal");
+		printk("Immediate service: %s\n",
+		       (status_byte & BT_BAS_BCS_IMMEDIATE_SERVICE_REQUIRED) ? "Required"
+									     : "Not Required");
+	}
+	SET_FLAG(bcs_char_read);
+	return BT_GATT_ITER_STOP;
+}
+
+static struct bt_gatt_read_params read_bcs_params = {
+	.func = battery_critical_status_read_cb,
+	.by_uuid.uuid = BT_UUID_BAS_BATTERY_CRIT_STATUS,
+	.by_uuid.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE,
+	.by_uuid.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE,
+};
+
+/* Callback for handling Battery Level Read Response */
+static uint8_t battery_level_read_cb(struct bt_conn *conn, uint8_t err,
+				     struct bt_gatt_read_params *params, const void *data,
+				     uint16_t length)
+{
+	TEST_ASSERT(err == 0, "Failed to read Battery Level (err %d)", err);
+	if (data) {
+		LOG_DBG("[READ] BAS Battery Level: %d%%\n", *(const uint8_t *)data);
+	}
+
+	return BT_GATT_ITER_STOP;
+}
+
+static struct bt_gatt_read_params read_blvl_params = {
+	.func = battery_level_read_cb,
+	.by_uuid.uuid = BT_UUID_BAS_BATTERY_LEVEL_STATUS,
+	.by_uuid.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE,
+	.by_uuid.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE,
+};
 
 extern enum bst_result_t bst_result;
 
@@ -89,19 +140,6 @@ static uint8_t battery_level_notify_cb(struct bt_conn *conn,
 		LOG_INF("Battery Level Notifications disabled");
 	}
 	return BT_GATT_ITER_CONTINUE;
-}
-
-/* Callback for handling Battery Level Read Response */
-static uint8_t battery_level_read_cb(struct bt_conn *conn, uint8_t err,
-				     struct bt_gatt_read_params *params, const void *data,
-				     uint16_t length)
-{
-	TEST_ASSERT(err == 0, "Failed to read Battery Level (err %d)", err);
-	if (data) {
-		LOG_DBG("[READ] BAS Battery Level: %d%%\n", *(const uint8_t *)data);
-	}
-
-	return BT_GATT_ITER_STOP;
 }
 
 static bool parse_battery_level_status(const uint8_t *data, uint16_t length)
@@ -311,6 +349,25 @@ static bool parse_battery_level_status(const uint8_t *data, uint16_t length)
 	return true;
 }
 
+static unsigned char battery_critical_status_indicate_cb(struct bt_conn *conn,
+							 struct bt_gatt_subscribe_params *params,
+							 const void *data, uint16_t length)
+{
+	if (!data) {
+		LOG_INF("BAS critical status indication disabled\n");
+	} else {
+		uint8_t status_byte = ((uint8_t *)data)[0];
+
+		printk("[INDICATION]  BAS Critical Status:\n");
+		printk("Battery state: %s\n",
+		       (status_byte & BT_BAS_BCS_BATTERY_CRITICAL_STATE) ? "Critical" : "Normal");
+		printk("Immediate service: %s\n",
+		       (status_byte & BT_BAS_BCS_IMMEDIATE_SERVICE_REQUIRED) ? "Required"
+									     : "Not Required");
+	}
+	return BT_GATT_ITER_CONTINUE;
+}
+
 static unsigned char battery_level_status_indicate_cb(struct bt_conn *conn,
 						      struct bt_gatt_subscribe_params *params,
 						      const void *data, uint16_t length)
@@ -367,27 +424,13 @@ static uint8_t battery_level_status_notify_cb(struct bt_conn *conn,
 	return BT_GATT_ITER_CONTINUE;
 }
 
-static void read_battery_level(const struct bt_gatt_attr *attr)
-{
-	/* Read the battery level after subscribing */
-	static struct bt_gatt_read_params read_params;
-
-	read_params.func = battery_level_read_cb;
-	read_params.handle_count = 1;
-	read_params.single.handle = bt_gatt_attr_get_handle(attr);
-	read_params.single.offset = 0;
-	bt_gatt_read(default_conn, &read_params);
-}
-
 static void subscribe_battery_level(const struct bt_gatt_attr *attr)
 {
 	int err;
+	struct bt_gatt_attr *ccc_attr = bt_gatt_find_by_uuid(attr, 0, BT_UUID_GATT_CCC);
 
 	battery_level_notify_params = (struct bt_gatt_subscribe_params){
-		/* In Zephyr, it is common practice for the CCC handle
-		 * to be positioned two handles after the characteristic handle.
-		 */
-		.ccc_handle = bt_gatt_attr_get_handle(attr) + 2,
+		.ccc_handle = bt_gatt_attr_get_handle(ccc_attr),
 		.value_handle = bt_gatt_attr_value_handle(attr),
 		.value = BT_GATT_CCC_NOTIFY,
 		.notify = battery_level_notify_cb,
@@ -399,26 +442,53 @@ static void subscribe_battery_level(const struct bt_gatt_attr *attr)
 	} else {
 		LOG_DBG("Battery level [SUBSCRIBED]\n");
 	}
-	read_battery_level(attr);
+
+	err = bt_gatt_read(default_conn, &read_blvl_params);
+	if (err != 0) {
+		TEST_FAIL("Battery Level Read failed (err %d)\n", err);
+	}
+}
+
+static void subscribe_battery_critical_status(const struct bt_gatt_attr *attr)
+{
+	int err;
+	struct bt_gatt_attr *ccc_attr = bt_gatt_find_by_uuid(attr, 0, BT_UUID_GATT_CCC);
+
+	battery_critical_status_sub_params = (struct bt_gatt_subscribe_params){
+		.ccc_handle = bt_gatt_attr_get_handle(ccc_attr),
+		.value_handle = bt_gatt_attr_value_handle(attr),
+		.value = BT_GATT_CCC_INDICATE,
+		.notify = battery_critical_status_indicate_cb,
+	};
+
+	err = bt_gatt_subscribe(default_conn, &battery_critical_status_sub_params);
+	if (err && err != -EALREADY) {
+		TEST_FAIL("Subscribe failed (err %d)\n", err);
+	} else {
+		LOG_DBG("Battery critical status [SUBSCRIBED]\n");
+	}
+
+	err = bt_gatt_read(default_conn, &read_bcs_params);
+	if (err != 0) {
+		TEST_FAIL("Battery Critical Status Read failed (err %d)\n", err);
+	}
 }
 
 static void subscribe_battery_level_status(const struct bt_gatt_attr *attr)
 {
 	int err;
+	struct bt_gatt_attr *ccc_attr = bt_gatt_find_by_uuid(attr, 0, BT_UUID_GATT_CCC);
 
 	if (get_device_nbr() == 1) { /* One device for Indication */
 		battery_level_status_sub_params = (struct bt_gatt_subscribe_params){
-			/* In Zephyr, it is common practice for the CCC handle
-			 * to be positioned two handles after the characteristic handle.
-			 */
-			.ccc_handle = bt_gatt_attr_get_handle(attr) + 2,
+			.ccc_handle = bt_gatt_attr_get_handle(ccc_attr),
 			.value_handle = bt_gatt_attr_value_handle(attr),
 			.value = BT_GATT_CCC_INDICATE,
 			.notify = battery_level_status_indicate_cb,
 		};
 	} else { /* Other device for Notification */
 		battery_level_status_sub_params = (struct bt_gatt_subscribe_params){
-			.ccc_handle = bt_gatt_attr_get_handle(attr) + 2,
+			.ccc_handle = bt_gatt_attr_get_handle(ccc_attr),
 			.value_handle = bt_gatt_attr_value_handle(attr),
 			.value = BT_GATT_CCC_NOTIFY,
 			.notify = battery_level_status_notify_cb,
@@ -474,6 +544,19 @@ static uint8_t discover_func(struct bt_conn *conn, const struct bt_gatt_attr *at
 	} else if (!bt_uuid_cmp(discover_params.uuid, BT_UUID_BAS_BATTERY_LEVEL_STATUS)) {
 		LOG_DBG("Subscribe Batterry Level Status Char\n");
 		subscribe_battery_level_status(attr);
+
+		memcpy(&uuid, BT_UUID_BAS_BATTERY_CRIT_STATUS, sizeof(uuid));
+		discover_params.uuid = &uuid.uuid;
+		discover_params.start_handle = attr->handle + 1;
+		discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
+
+		err = bt_gatt_discover(conn, &discover_params);
+		if (err) {
+			TEST_FAIL("Discover failed (err %d)\n", err);
+		}
+	} else if (!bt_uuid_cmp(discover_params.uuid, BT_UUID_BAS_BATTERY_CRIT_STATUS)) {
+		LOG_DBG("Subscribe Batterry Critical Status Char\n");
+		subscribe_battery_critical_status(attr);
 	}
 	return BT_GATT_ITER_STOP;
 }
@@ -531,8 +614,22 @@ static void test_bas_central_main(void)
 		WAIT_FOR_FLAG(notification_count_reached);
 		LOG_INF("Notification Count Reached!");
 	}
-
 	/* bk_sync_send only works between two devices in a simulation, with IDs 0 and 1. */
+	if (get_device_nbr() == 1) {
+		bk_sync_send();
+	}
+
+	printk("Read BCS once peripheral sets BLS Addl Status Service Required Flag to false\n");
+
+	UNSET_FLAG(bcs_char_read);
+
+	err = bt_gatt_read(default_conn, &read_bcs_params);
+	if (err != 0) {
+		TEST_FAIL("Battery Critical Status Read failed (err %d)\n", err);
+	}
+
+	WAIT_FOR_FLAG(bcs_char_read);
+
 	if (get_device_nbr() == 1) {
 		bk_sync_send();
 	}

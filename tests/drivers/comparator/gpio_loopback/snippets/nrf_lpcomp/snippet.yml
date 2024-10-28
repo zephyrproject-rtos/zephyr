@@ -1,0 +1,15 @@
+# Copyright 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+name: gpio_loopback_nrf_lpcomp
+
+boards:
+  nrf54h20dk/nrf54h20/cpuapp:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: boards/nrf54h20dk_nrf54h20_cpuapp.overlay
+  nrf54l15dk/nrf54l15/cpuapp:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: boards/nrf54l15dk_nrf54l15_cpuapp.overlay
+  nrf5340dk/nrf5340/cpuapp:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: boards/nrf5340dk_nrf5340_cpuapp.overlay

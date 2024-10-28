@@ -1,7 +1,4 @@
-.. _stm32f469i_disco_board:
-
-ST STM32F469I Discovery
-#######################
+.. zephyr:board:: stm32f469i_disco
 
 Overview
 ********
@@ -30,10 +27,6 @@ some highlights of the STM32F469I-DISCO board:
 - 4Mx32bit SDRAM
 - 128-Mbit Quad-SPI NOR Flash
 - Expansion connectors and Arduino UNO V3 connectors
-
-.. image:: img/stm32f469i_disco.jpg
-     :align: center
-     :alt: STM32F469I-DISCO
 
 More information about the board can be found at the `32F469IDISCOVERY website`_.
 

@@ -1,17 +1,9 @@
-.. _gardena_sgrm:
-
-GARDENA Smart Garden Radio Module
-#################################
+.. zephyr:board:: sgrm
 
 Overview
 ********
 
 This is a SoM that is used as a radio module by the GARDENA smart gateway (manual_, `FOSS parts`_).
-
-.. figure:: sgrm.webp
-   :align: center
-   :alt: GARDENA smart Gateway with radio module
-
 
 .. _manual: https://www.gardena.com/tdrdownload//pub000070911/doc000120830
 .. _FOSS parts: https://github.com/husqvarnagroup/smart-garden-gateway-public

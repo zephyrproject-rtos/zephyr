@@ -68,32 +68,40 @@ def test_check_build_or_run(
     testsuite.slow = slow
 
     testinstance = TestInstance(testsuite, platform, class_testplan.env.outdir)
-    run = testinstance.check_runnable(slow, device_testing, fixture)
+    env = mock.Mock(
+        options=mock.Mock(
+            device_testing=False,
+            enable_slow=slow,
+            fixtures=fixture,
+            filter=""
+        )
+    )
+    run = testinstance.check_runnable(env.options)
     _, r = expected
     assert run == r
 
     with mock.patch('os.name', 'nt'):
         # path to QEMU binary is not in QEMU_BIN_PATH environment variable
-        run = testinstance.check_runnable()
+        run = testinstance.check_runnable(env.options)
         assert not run
 
         # mock path to QEMU binary in QEMU_BIN_PATH environment variable
         with mock.patch('os.environ', {'QEMU_BIN_PATH': ''}):
-            run = testinstance.check_runnable()
+            run = testinstance.check_runnable(env.options)
             _, r = expected
             assert run == r
 
 
 TESTDATA_PART_2 = [
-    (True, True, True, ["demo_board_2"], "native",
+    (True, True, True, ["demo_board_2/unit_testing"], "native",
      None, '\nCONFIG_COVERAGE=y\nCONFIG_COVERAGE_DUMP=y\nCONFIG_ASAN=y\nCONFIG_UBSAN=y'),
-    (True, False, True, ["demo_board_2"], "native",
+    (True, False, True, ["demo_board_2/unit_testing"], "native",
      None, '\nCONFIG_COVERAGE=y\nCONFIG_COVERAGE_DUMP=y\nCONFIG_ASAN=y'),
-    (False, False, True, ["demo_board_2"], 'native',
+    (False, False, True, ["demo_board_2/unit_testing"], 'native',
      None, '\nCONFIG_COVERAGE=y\nCONFIG_COVERAGE_DUMP=y'),
-    (True, False, True, ["demo_board_2"], 'mcu',
+    (True, False, True, ["demo_board_2/unit_testing"], 'mcu',
      None, '\nCONFIG_COVERAGE=y\nCONFIG_COVERAGE_DUMP=y'),
-    (False, False, False, ["demo_board_2"], 'native', None, ''),
+    (False, False, False, ["demo_board_2/unit_testing"], 'native', None, ''),
     (False, False, True, ['demo_board_1'], 'native', None, ''),
     (True, False, False, ["demo_board_2"], 'native', None, '\nCONFIG_ASAN=y'),
     (False, True, False, ["demo_board_2"], 'native', None, '\nCONFIG_UBSAN=y'),
@@ -104,7 +112,7 @@ TESTDATA_PART_2 = [
     (False, False, False, ["demo_board_2"], 'native',
      ["arch:arm:CONFIG_LOG=y"], ''),
     (False, False, False, ["demo_board_2"], 'native',
-     ["platform:demo_board_2:CONFIG_LOG=y"], 'CONFIG_LOG=y'),
+     ["platform:demo_board_2/unit_testing:CONFIG_LOG=y"], 'CONFIG_LOG=y'),
     (False, False, False, ["demo_board_2"], 'native',
      ["platform:demo_board_1:CONFIG_LOG=y"], ''),
 ]
@@ -216,15 +224,14 @@ def test_testinstance_init(all_testsuites_dict, class_testplan, platforms_list, 
     testsuite = class_testplan.testsuites.get(testsuite_path)
     testsuite.detailed_test_id = detailed_test_id
     class_testplan.platforms = platforms_list
-    print(class_testplan.platforms)
-    platform = class_testplan.get_platform("demo_board_2")
+    platform = class_testplan.get_platform("demo_board_2/unit_testing")
 
     testinstance = TestInstance(testsuite, platform, class_testplan.env.outdir)
 
     if detailed_test_id:
-        assert testinstance.build_dir == os.path.join(class_testplan.env.outdir, platform.name, testsuite_path)
+        assert testinstance.build_dir == os.path.join(class_testplan.env.outdir, platform.normalized_name, testsuite_path)
     else:
-        assert testinstance.build_dir == os.path.join(class_testplan.env.outdir, platform.name, testsuite.source_dir_rel, testsuite.name)
+        assert testinstance.build_dir == os.path.join(class_testplan.env.outdir, platform.normalized_name, testsuite.source_dir_rel, testsuite.name)
 
 
 @pytest.mark.parametrize('testinstance', [{'testsuite_kind': 'sample'}], indirect=True)
@@ -350,7 +357,7 @@ def test_testinstance_dunders(all_testsuites_dict, class_testplan, platforms_lis
     assert not testinstance < testinstance_copy
     assert not testinstance_copy < testinstance
 
-    assert testinstance.__repr__() == f'<TestSuite {testsuite_path} on demo_board_2>'
+    assert testinstance.__repr__() == f'<TestSuite {testsuite_path} on demo_board_2/unit_testing>'
 
 
 @pytest.mark.parametrize('testinstance', [{'testsuite_kind': 'tests'}], indirect=True)
@@ -545,9 +552,17 @@ def test_testinstance_check_runnable(
     testinstance.testsuite.slow = testsuite_slow
     testinstance.testsuite.harness = testsuite_harness
 
+    env = mock.Mock(
+        options=mock.Mock(
+            device_testing=False,
+            enable_slow=enable_slow,
+            fixtures=fixtures,
+            filter=filter
+        )
+    )
     with mock.patch('os.name', os_name), \
          mock.patch('shutil.which', return_value=exec_exists):
-        res = testinstance.check_runnable(enable_slow, filter, fixtures, hardware_map)
+        res = testinstance.check_runnable(env.options, hardware_map)
 
     assert res == expected
 

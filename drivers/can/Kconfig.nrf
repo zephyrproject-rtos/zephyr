@@ -7,5 +7,6 @@ config CAN_NRF
 	depends on DT_HAS_NORDIC_NRF_CAN_ENABLED
 	select CAN_MCAN
 	select CLOCK_CONTROL
+	select PINCTRL
 	help
 	  Driver for nRF CAN.

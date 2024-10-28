@@ -129,7 +129,7 @@ config QEMU_EXTRA_FLAGS
 	  GDBstub over serial with `-serial tcp:127.0.0.1:5678,server`
 
 # There might not be any board options, hence the optional source
-osource "$(BOARD_DIR)/Kconfig"
+osource "$(KCONFIG_BOARD_DIR)/Kconfig"
 endmenu
 
 config BOARD_HAS_TIMING_FUNCTIONS

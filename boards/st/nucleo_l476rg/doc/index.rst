@@ -1,7 +1,4 @@
-.. _nucleo_l476rg_board:
-
-ST Nucleo L476RG
-################
+.. zephyr:board:: nucleo_l476rg
 
 Overview
 ********
@@ -25,10 +22,6 @@ some highlights of the Nucleo L476RG board:
 
 - Three LEDs: USB communication (LD1), user LED (LD2), power LED (LD3)
 - Two push-buttons: USER and RESET
-
-.. image:: img/nucleo_l476rg.jpg
-   :align: center
-   :alt: Nucleo L476RG
 
 More information about the board can be found at the `Nucleo L476RG website`_.
 

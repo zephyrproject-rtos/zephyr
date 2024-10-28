@@ -34,3 +34,5 @@
 			   <21 0 &gpiod 12 0>;	/* D15 */
 	};
 };
+
+arduino_serial: &usart1 {};

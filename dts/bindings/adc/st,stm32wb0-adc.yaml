@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32WB0 series Analog-to-Digital Converter
+
+compatible: "st,stm32wb0-adc"
+
+include: [adc-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  interrupts:
+    required: true
+
+  "#io-channel-cells":
+    const: 1
+
+  io-booster:
+    type: boolean
+    description: |
+      When set, the I/O Booster block is enabled during ADC usage. Otherwise, the
+      I/O Booster block is always disabled. This property MUST be set if VBAT voltage
+      may reach a value below 2.7V to guarantee that the ADC behavior remains correct.
+
+io-channel-cells:
+  - input

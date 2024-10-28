@@ -26,6 +26,7 @@
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
 		zephyr,uart-pipe = &lpuart0;
+		zephyr,canbus = &flexcan0;
 	};
 
 	user_led {
@@ -49,6 +50,10 @@
 	};
 };
 
+&vref {
+	status = "okay";
+};
+
 &gpioc {
 	status = "okay";
 };
@@ -70,6 +75,12 @@
 &lpi2c1 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_lpi2c1>;
+	pinctrl-names = "default";
+};
+
+&lpspi1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpspi1>;
 	pinctrl-names = "default";
 };
 
@@ -108,5 +119,21 @@
 };
 
 &lptmr0 {
+	status = "okay";
+};
+
+&flexcan0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexcan>;
+	pinctrl-names = "default";
+
+	can-transceiver {
+		max-bitrate = <5000000>;
+	};
+};
+
+&adc0 {
+	pinctrl-0 = <&pinmux_lpadc0>;
+	pinctrl-names = "default";
 	status = "okay";
 };

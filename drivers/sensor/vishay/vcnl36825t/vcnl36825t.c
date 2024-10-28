@@ -11,14 +11,16 @@
 #include <stdlib.h>
 
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/sensor.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
 
 LOG_MODULE_REGISTER(VCNL36825T, CONFIG_SENSOR_LOG_LEVEL);
 
-static int vcnl36825t_read(const struct i2c_dt_spec *spec, uint8_t reg_addr, uint16_t *value)
+int vcnl36825t_read(const struct i2c_dt_spec *spec, uint8_t reg_addr, uint16_t *value)
 {
 	uint8_t rx_buf[2];
 	int rc;
@@ -33,7 +35,7 @@ static int vcnl36825t_read(const struct i2c_dt_spec *spec, uint8_t reg_addr, uin
 	return 0;
 }
 
-static int vcnl36825t_write(const struct i2c_dt_spec *spec, uint8_t reg_addr, uint16_t value)
+int vcnl36825t_write(const struct i2c_dt_spec *spec, uint8_t reg_addr, uint16_t value)
 {
 	uint8_t tx_buf[3] = {reg_addr};
 
@@ -41,8 +43,8 @@ static int vcnl36825t_write(const struct i2c_dt_spec *spec, uint8_t reg_addr, ui
 	return i2c_write_dt(spec, tx_buf, sizeof(tx_buf));
 }
 
-static int vcnl36825t_update(const struct i2c_dt_spec *spec, uint8_t reg_addr, uint16_t mask,
-			     uint16_t value)
+int vcnl36825t_update(const struct i2c_dt_spec *spec, uint8_t reg_addr, uint16_t mask,
+		      uint16_t value)
 {
 	int rc;
 	uint16_t old_value, new_value;
@@ -205,6 +207,36 @@ static int vcnl36825t_channel_get(const struct device *dev, enum sensor_channel 
 		break;
 	default:
 		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
+static int vcnl36825t_attr_set(const struct device *dev, enum sensor_channel chan,
+			       enum sensor_attribute attr, const struct sensor_value *val)
+{
+	CHECKIF(dev == NULL) {
+		LOG_ERR("dev: NULL");
+		return -EINVAL;
+	}
+
+	CHECKIF(val == NULL) {
+		LOG_ERR("val: NULL");
+		return -EINVAL;
+	}
+
+	int __maybe_unused rc;
+
+	switch (attr) {
+	default:
+#if CONFIG_VCNL36825T_TRIGGER
+		rc = vcnl36825t_trigger_attr_set(dev, chan, attr, val);
+		if (rc < 0) {
+			return rc;
+		}
+#else
+		return -ENOTSUP;
+#endif
 	}
 
 	return 0;
@@ -485,6 +517,12 @@ static int vcnl36825t_init(const struct device *dev)
 		return rc;
 	}
 
+#if CONFIG_VCNL36825T_TRIGGER
+	rc = vcnl36825t_trigger_init(dev);
+	if (rc < 0) {
+		return rc;
+	}
+#endif
 	rc = vcnl36825t_update(&config->i2c, VCNL36825T_REG_PS_CONF2, VCNL36825T_PS_ST_MSK,
 			       VCNL36825T_PS_ST_START);
 	if (rc < 0) {
@@ -498,6 +536,10 @@ static int vcnl36825t_init(const struct device *dev)
 static const struct sensor_driver_api vcnl36825t_driver_api = {
 	.sample_fetch = vcnl36825t_sample_fetch,
 	.channel_get = vcnl36825t_channel_get,
+	.attr_set = vcnl36825t_attr_set,
+#if CONFIG_VCNL36825T_TRIGGER
+	.trigger_set = vcnl36825t_trigger_set,
+#endif
 };
 
 #define VCNL36825T_DEFINE(inst)                                                                    \
@@ -524,7 +566,11 @@ static const struct sensor_driver_api vcnl36825t_driver_api = {
 		.laser_current = DT_INST_ENUM_IDX(inst, laser_current),                            \
 		.high_dynamic_output = DT_INST_PROP(inst, high_dynamic_output),                    \
 		.sunlight_cancellation = DT_INST_PROP(inst, sunlight_cancellation),                \
-	};                                                                                         \
+		IF_ENABLED(CONFIG_VCNL36825T_TRIGGER,                                              \
+			   (.int_gpio = GPIO_DT_SPEC_INST_GET(inst, int_gpios),                    \
+			    .int_mode = DT_INST_ENUM_IDX(inst, int_mode),                          \
+			    .int_proximity_count = DT_INST_PROP(inst, int_proximity_count),        \
+			    .int_smart_persistence = DT_INST_PROP(inst, int_smart_persistence)))}; \
 	IF_ENABLED(CONFIG_PM_DEVICE, (PM_DEVICE_DT_INST_DEFINE(inst, vcnl36825t_pm_action)));      \
 	SENSOR_DEVICE_DT_INST_DEFINE(                                                              \
 		inst, vcnl36825t_init,                                                             \

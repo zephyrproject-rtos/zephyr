@@ -21,6 +21,7 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
 #include <zephyr/shell/shell.h>
@@ -45,7 +46,7 @@ static struct sync_state {
 	struct bt_conn *conn;
 	struct bt_le_per_adv_sync *pa_sync;
 	const struct bt_bap_scan_delegator_recv_state *recv_state;
-	uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE];
+	uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE];
 } sync_states[CONFIG_BT_BAP_SCAN_DELEGATOR_RECV_STATE_COUNT];
 
 static bool past_preference = true;
@@ -335,12 +336,12 @@ static int pa_sync_term_req_cb(struct bt_conn *conn,
 
 static void broadcast_code_cb(struct bt_conn *conn,
 			      const struct bt_bap_scan_delegator_recv_state *recv_state,
-			      const uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE])
+			      const uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE])
 {
 	struct sync_state *state;
 
 	shell_info(ctx_shell, "Broadcast code received for %p", recv_state);
-	shell_hexdump(ctx_shell, broadcast_code, BT_AUDIO_BROADCAST_CODE_SIZE);
+	shell_hexdump(ctx_shell, broadcast_code, BT_ISO_BROADCAST_CODE_SIZE);
 
 	state = sync_state_get(recv_state);
 	if (state == NULL) {
@@ -349,7 +350,7 @@ static void broadcast_code_cb(struct bt_conn *conn,
 		return;
 	}
 
-	(void)memcpy(state->broadcast_code, broadcast_code, BT_AUDIO_BROADCAST_CODE_SIZE);
+	(void)memcpy(state->broadcast_code, broadcast_code, BT_ISO_BROADCAST_CODE_SIZE);
 }
 
 static int bis_sync_req_cb(struct bt_conn *conn,

@@ -1,7 +1,4 @@
-.. _bl652_dvk:
-
-Ezurio BL652 DVK
-################
+.. zephyr:board:: bl652_dvk
 
 Overview
 ********
@@ -30,12 +27,6 @@ Available BL652 DVK part numbers:
 
 * DVK-BL652-SA
 * DVK-BL652-SC
-
-.. figure:: img/bl652_dvk.jpg
-     :align: center
-     :alt: BL652 DVK
-
-     BL652 DVK Board
 
 .. figure:: img/BL652-SA_DVK_BoxContents.jpg
      :align: center

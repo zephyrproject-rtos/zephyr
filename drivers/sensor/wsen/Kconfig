@@ -1,5 +1,7 @@
 # Copyright (c) 2024 Analog Devices, Inc.
+# Copyright (c) 2024 Würth Elektronik eiSos GmbH & Co. KG
 # SPDX-License-Identifier: Apache-2.0
 
 # zephyr-keep-sorted-start
+source "drivers/sensor/wsen/wsen_hids_2525020210002/Kconfig"
 # zephyr-keep-sorted-stop

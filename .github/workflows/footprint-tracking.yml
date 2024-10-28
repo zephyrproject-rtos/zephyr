@@ -26,8 +26,11 @@ jobs:
       group: zephyr-runner-v2-linux-x64-4xlarge
     if: github.repository_owner == 'zephyrproject-rtos'
     container:
-      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.26.14.20240823
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.27.4.20241026
       options: '--entrypoint /bin/bash'
+    defaults:
+      run:
+        shell: bash
     strategy:
       fail-fast: false
     env:
@@ -101,7 +104,7 @@ jobs:
           python3 ./scripts/footprint/pack_as_twister.py -vvv \
             --plan ./scripts/footprint/plan.txt \
             --test-name='name.feature' \
-            ./footprint_data/*/footprints/*/*/
+            ./footprint_data/**/
 
       - name: Upload to ElasticSearch
         env:
@@ -109,6 +112,7 @@ jobs:
           ELASTICSEARCH_SERVER: "https://elasticsearch.zephyrproject.io:443"
           ELASTICSEARCH_INDEX: ${{ vars.FOOTPRINT_TRACKING_INDEX }}
         run: |
+          shopt -s globstar
           pip3 install -U elasticsearch
           run_date=`date --iso-8601=minutes`
           python3 ./scripts/ci/upload_test_results_es.py -r ${run_date} \

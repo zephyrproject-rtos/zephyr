@@ -1,7 +1,4 @@
-.. _bl653_dvk:
-
-Ezurio BL653 DVK
-################
+.. zephyr:board:: bl653_dvk
 
 Overview
 ********
@@ -26,12 +23,6 @@ This development kit has the following features:
 * :abbr:`UART (Universal Asynchronous Receiver-Transmitter)`
 * :abbr:`USB (Universal Serial Bus)`
 * :abbr:`WDT (Watchdog Timer)`
-
-.. figure:: img/bl653_dvk.jpg
-     :align: center
-     :alt: BL653 Development Kit
-
-     BL653 Development Kit Board
 
 More information about the board can be found at the
 `BL653 website`_.

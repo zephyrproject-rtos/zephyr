@@ -1,7 +1,4 @@
-.. _nucleo_wba55cg_board:
-
-ST Nucleo WBA55CG
-#################
+.. zephyr:board:: nucleo_wba55cg
 
 Overview
 ********
@@ -36,10 +33,6 @@ platform with a wide choice of specialized shields.
 - Flexible power-supply options: ST-LINK USB VBUS or external sources
 - On-board STLINK-V3MODS debugger/programmer with USB re-enumeration capability:
   mass storage, Virtual COM port, and debug port
-
-.. image:: img/nucleowba55cg.jpg
-   :align: center
-   :alt: Nucleo WBA55CG
 
 Hardware
 ********

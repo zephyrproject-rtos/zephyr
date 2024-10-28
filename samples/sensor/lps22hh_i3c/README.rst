@@ -15,7 +15,7 @@ Requirements
 
 This sample uses the LPS22HH sensor controlled using the I3C interface.
 It has been tested using the LPS22HH on the evaluation board
-STEVALMKI192-V1 connected to the I3C header on :ref:`mimxrt685_evk`.
+STEVALMKI192-V1 connected to the I3C header on :zephyr:board:`mimxrt685_evk`.
 
 References
 **********
@@ -55,7 +55,7 @@ Board Preparations
 mimxrt685_evk
 ------------------
 
-On the board :ref:`mimxrt685_evk`, the I3C pins are exposed on the J18
+On the board :zephyr:board:`mimxrt685_evk`, the I3C pins are exposed on the J18
 header, where:
 
   * SCL is on pin 1

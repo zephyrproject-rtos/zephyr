@@ -21,9 +21,13 @@ config ISR_STACK_SIZE
 config ATOMIC_OPERATIONS_C
 	default y
 
+config XTAL_FREQ_HZ
+	int
+	default $(dt_node_int_prop_int,/cpus/cpu@0,xtal-freq)
+
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 12000000 if SOC_SERIES_ESP32C2
-	default 16000000 if SOC_SERIES_ESP32C3 || SOC_SERIES_ESP32C6
+	default 10400000 if XTAL_FREQ_HZ = 26000000
+	default 16000000 if XTAL_FREQ_HZ = 40000000
 
 config SYS_CLOCK_TICKS_PER_SEC
 	default 1000

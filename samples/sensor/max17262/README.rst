@@ -53,6 +53,8 @@ This example uses ``picocom`` on the serial port ``/dev/ttyUSB0``:
         V: 3.626406 V; I: -3.437500 mA; T: 28.011718 °C
 
 References
-***********
+**********
+
+.. target-notes::
 
 .. _max17262 datasheet: https://datasheets.maximintegrated.com/en/ds/MAX17262.pdf

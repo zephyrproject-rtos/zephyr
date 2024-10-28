@@ -1,7 +1,4 @@
-.. _adi_eval_adin1110ebz:
-
-ADI EVAL-ADIN1110EVB Evaluation board
-#####################################
+.. zephyr:board:: adi_eval_adin1110ebz
 
 Overview
 ********
@@ -22,12 +19,6 @@ The SPI interface provides configuration and data access to the ADIN1110.
 
 A small prototyping area and test points are provided for experimentation with alternative cable
 connection topologies including isolation transformers and/or power coupling inductors.
-
-.. figure:: img/adi_eval_adin1110ebz.webp
-   :align: center
-   :alt: ADI EVAL-ADIN1110EBZ
-
-   ADI EVAL-ADIN1110EBZ (Credit: Analog Devices, Inc.)
 
 .. important::
 

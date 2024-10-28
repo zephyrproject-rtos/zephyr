@@ -22,4 +22,5 @@ supported:
   - mipi_dbi
   - display
   - memc
+  - usbd
 vendor: renesas

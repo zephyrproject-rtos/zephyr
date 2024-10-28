@@ -1,7 +1,4 @@
-.. _stm32h735g_disco_board:
-
-ST STM32H735G Discovery
-#######################
+.. zephyr:board:: stm32h735g_disco
 
 Overview
 ********
@@ -26,10 +23,6 @@ STLINK-V3E is integrated into the board, as the embedded in-circuit debugger and
 programmer for the STM32 MCU and USB Virtual COM port bridge. STM32H735G-DK board
 comes with the STM32CubeH7 MCU Package, which provides an STM32 comprehensive
 software HAL library as well as various software examples.
-
-.. image:: img/stm32h735g_disco.jpg
-     :align: center
-     :alt: STM32H735G-DISCO
 
 More information about the board can be found at the `STM32H735G-DISCO website`_.
 More information about STM32H735 can be found here:

@@ -1,7 +1,4 @@
-.. _lpcxpresso55s69:
-
-NXP LPCXPRESSO55S69
-###################
+.. zephyr:board:: lpcxpresso55s69
 
 Overview
 ********
@@ -11,10 +8,6 @@ of and development with the LPC55S6x MCU based on the Arm® Cortex®-M33
 architecture. The board includes a high performance onboard debug probe, audio
 subsystem, and accelerometer, with several options for adding off-the-shelf
 add-on boards for networking, sensors, displays, and other interfaces.
-
-.. image:: lpcxpresso55s69.jpg
-   :align: center
-   :alt: LPCXPRESSO55S69
 
 Hardware
 ********

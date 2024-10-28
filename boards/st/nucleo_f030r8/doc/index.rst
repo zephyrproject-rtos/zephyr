@@ -1,7 +1,4 @@
-.. _nucleo_f030r8_board:
-
-ST Nucleo F030R8
-################
+.. zephyr:board:: nucleo_f030r8
 
 Overview
 ********
@@ -19,10 +16,6 @@ The STM32 Nucleo board integrates the ST-LINK/V2-1 debugger and programmer.
 
 The STM32 Nucleo board comes with the STM32 comprehensive software HAL library together
 with various packaged software examples.
-
-.. image:: img/nucleo_f030r8.jpg
-   :align: center
-   :alt: Nucleo F030R8
 
 More information about the board can be found at the `Nucleo F030R8 website`_.
 

@@ -1,7 +1,4 @@
-.. _max32655_fthr:
-
-MAX32655FTHR
-############
+.. zephyr:board:: max32655fthr
 
 Overview
 ********
@@ -115,6 +112,8 @@ Below are the interfaces supported by Zephyr on MAX32655FTHR.
 | Timer     | on-chip    | counter                             |
 +-----------+------------+-------------------------------------+
 | PWM       | on-chip    | pwm                                 |
++-----------+------------+-------------------------------------+
+| Flash     | on-chip    | flash                               |
 +-----------+------------+-------------------------------------+
 
 Push Buttons

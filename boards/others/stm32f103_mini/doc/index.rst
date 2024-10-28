@@ -1,7 +1,4 @@
-.. _stm32f103_mini_board:
-
-STM32F103 Mini
-################
+.. zephyr:board:: stm32f103_mini
 
 Overview
 ********

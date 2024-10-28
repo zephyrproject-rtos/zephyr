@@ -1,7 +1,4 @@
-.. _max32655_evkit:
-
-MAX32655EVKIT
-#############
+.. zephyr:board:: max32655evkit
 
 Overview
 ********
@@ -102,6 +99,10 @@ Below are the interfaces supported by Zephyr on MAX32655EVKIT.
 | Timer     | on-chip    | counter                             |
 +-----------+------------+-------------------------------------+
 | PWM       | on-chip    | pwm                                 |
++-----------+------------+-------------------------------------+
+| W1        | on-chip    | one wire master                     |
++-----------+------------+-------------------------------------+
+| Flash     | on-chip    | flash                               |
 +-----------+------------+-------------------------------------+
 
 Connections and IOs

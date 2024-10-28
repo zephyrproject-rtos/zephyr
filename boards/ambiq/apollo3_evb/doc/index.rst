@@ -1,13 +1,6 @@
-.. _apollo3_evb:
-
-Ambiq Apollo3 Blue EVB
-######################
+.. zephyr:board:: apollo3_evb
 
 Apollo3 Blue EVB is a board by Ambiq featuring their ultra-low power Apollo3 Blue SoC.
-
-.. image:: ./apollo3-blue-soc-eval-board.jpg
-   :align: center
-   :alt: Apollo3 Blue EVB
 
 Hardware
 ********

@@ -128,7 +128,7 @@ static int bytes_from_str(uint8_t *buf, int buf_len, const char *src)
 }
 #endif /* CONFIG_WIFI_FIXED_MAC_ADDRESS_ENABLED */
 
-int nrf70_off_raw_tx_init(uint8_t *mac_addr)
+int nrf70_off_raw_tx_init(uint8_t *mac_addr, unsigned char *country_code)
 {
 	enum nrf_wifi_status status = NRF_WIFI_STATUS_FAIL;
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
@@ -206,7 +206,8 @@ int nrf70_off_raw_tx_init(uint8_t *mac_addr)
 						   IS_ENABLED(CONFIG_NRF_WIFI_BEAMFORMING),
 						   &ctrl_params,
 						   &ceil_params,
-						   &board_params);
+						   &board_params,
+						   country_code);
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
 		LOG_ERR("%s: nRF70 firmware initialization failed", __func__);
 		goto err;

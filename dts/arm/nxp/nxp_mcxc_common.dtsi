@@ -48,6 +48,17 @@
 		};
 	};
 
+	temp0: temp0 {
+		compatible = "nxp,kinetis-temperature";
+		io-channels = <&adc0 26>, <&adc0 27>;
+		io-channel-names = "SENSOR", "BANDGAP";
+		bandgap-voltage = <1000000>;
+		vtemp25 = <716000>;
+		sensor-slope-cold = <1620>;
+		sensor-slope-hot = <1620>;
+		status = "disabled";
+	};
+
 	soc {
 		ftfa: flash-controller@40020000 {
 			compatible = "nxp,kinetis-ftfa";
@@ -199,6 +210,15 @@
 			reg = <0x40067000 0x1000>;
 			interrupts = <9 0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1034 7>;
+			status = "disabled";
+		};
+
+		usb: usbd@40072000 {
+			compatible = "nxp,kinetis-usbd";
+			reg = <0x40072000 0x1000>;
+			interrupts = <24 1>;
+			interrupt-names = "usb";
+			num-bidir-endpoints = <16>;
 			status = "disabled";
 		};
 

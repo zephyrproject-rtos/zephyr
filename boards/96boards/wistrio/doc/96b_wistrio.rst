@@ -189,6 +189,8 @@ GDB instance. To reattach, just follow the same steps above, till
 References
 **********
 
+.. target-notes::
+
 .. _AN2606:
    https://www.st.com/resource/en/application_note/cd00167594.pdf
 

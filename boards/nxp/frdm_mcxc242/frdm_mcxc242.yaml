@@ -18,6 +18,8 @@ supported:
   - gpio
   - uart
   - i2c
+  - usb_device
+  - usbd
   - pwm
   - adc
   - counter

@@ -21,6 +21,7 @@
 		zephyr,flash = &w25q128jw;
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
+		zephyr,canbus = &flexcan3;
 	};
 
 	hyperram0: memory@14000000 {
@@ -64,5 +65,9 @@
 };
 
 &gpt2 {
+	status = "okay";
+};
+
+&flexcan3 {
 	status = "okay";
 };

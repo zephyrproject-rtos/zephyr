@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/*
+ * P0.05 looped back to P0.04
+ */
+
+/ {
+	aliases {
+		test-comp = &comp;
+	};
+
+	zephyr,user {
+		test-gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&gpio0{
+	status = "okay";
+};

@@ -1,7 +1,4 @@
-.. _gd32f407v_start:
-
-GigaDevice GD32F407V-START
-##########################
+.. zephyr:board:: gd32f407v_start
 
 Overview
 ********
@@ -12,10 +9,6 @@ on GD32F407VE Cortex-M4 High Performance MCU.
 The GD32F407VE features a single-core ARM Cortex-M4 MCU which can run up
 to 168 MHz with flash accesses zero wait states, 3072kiB of Flash, 192kiB of
 SRAM and 82 GPIOs.
-
-.. image:: img/gd32f407v_start.webp
-     :align: center
-     :alt: gd32f407v_start
 
 Hardware
 ********

@@ -1,7 +1,4 @@
-.. _max32662_evkit:
-
-MAX32662EVKIT
-#############
+.. zephyr:board:: max32662evkit
 
 Overview
 ********
@@ -11,10 +8,6 @@ ultra-low power, highly integrated 32-bit microcontroller designed
 for battery-powered edge devices.
 
 The Zephyr port is running on the MAX32662 MCU.
-
-.. image:: img/max32662evkit.webp
-   :align: center
-   :alt: MAX32662EVKIT
 
 Hardware
 ********
@@ -112,6 +105,8 @@ Below interfaces are supported by Zephyr on MAX32662EVKIT.
 | Timer     | on-chip    | counter                             |
 +-----------+------------+-------------------------------------+
 | PWM       | on-chip    | pwm                                 |
++-----------+------------+-------------------------------------+
+| Flash     | on-chip    | flash                               |
 +-----------+------------+-------------------------------------+
 
 Connections and IOs

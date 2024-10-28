@@ -1,7 +1,4 @@
-.. _gd32vf103v_eval:
-
-GigaDevice GD32VF103V-EVAL
-##########################
+.. zephyr:board:: gd32vf103v_eval
 
 Overview
 ********
@@ -12,10 +9,6 @@ on GD32VF103VB RISC-V MCU.
 The GD32VF103VB features a single-core RISC-V 32-bit MCU which can run up
 to 108 MHz with flash accesses zero wait states, 128 KiB of Flash, 32 KiB of
 SRAM and 80 GPIOs.
-
-.. image:: img/gd32vf103v_eval.jpg
-     :align: center
-     :alt: gd32vf103v_eval
 
 Hardware
 ********

@@ -82,7 +82,7 @@ tests:
     integration_platforms:
       - nrf52833dk/nrf52833
     extra_args:
-      - OVERLAY_CONFIG=overlay-all-bt_ll_sw_split.conf
+      - EXTRA_CONF_FILE=overlay-all-bt_ll_sw_split.conf
       - DTC_OVERLAY_FILE=./boards/nrf52833dk_nrf52833_df.overlay
     tags:
       - uart
@@ -93,19 +93,8 @@ tests:
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
     extra_args:
-      - OVERLAY_CONFIG=overlay-all-bt_ll_sw_split.conf
+      - EXTRA_CONF_FILE=overlay-all-bt_ll_sw_split.conf
       - DTC_OVERLAY_FILE=./boards/nrf54l15dk_nrf54l15_cpuapp_df.overlay
-    tags:
-      - uart
-      - bluetooth
-  sample.bluetooth.hci_uart.nrf54l15pdk.all:
-    harness: bluetooth
-    platform_allow: nrf54l15pdk/nrf54l15/cpuapp
-    integration_platforms:
-      - nrf54l15pdk/nrf54l15/cpuapp
-    extra_args:
-      - OVERLAY_CONFIG=overlay-all-bt_ll_sw_split.conf
-      - DTC_OVERLAY_FILE=./boards/nrf54l15pdk_nrf54l15_cpuapp_df.overlay
     tags:
       - uart
       - bluetooth

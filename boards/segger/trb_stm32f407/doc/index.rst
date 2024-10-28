@@ -1,7 +1,4 @@
-.. _segger_trb_stm32f407:
-
-Cortex-M Trace Reference Board V1.2
-###################################
+.. zephyr:board:: segger_trb_stm32f407
 
 Overview
 ********
@@ -11,12 +8,6 @@ board is a reference board, based on the ST Microelectronics STM32F407VE
 ARM Cortex-M4 CPU, to test hardware tracing with the SEGGER Trace-Pro
 debuggers. It is not meant for general prototype development because
 it is extremely limited when it comes to IO, and only has 3 LEDs.
-
-.. figure:: img/segger_trb_stm32f407.jpg
-     :align: center
-     :alt: SEGGER-TRB-STM32F407
-
-     SEGGER-TRB-STM32F407
 
 Hardware
 ********

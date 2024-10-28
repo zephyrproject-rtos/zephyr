@@ -30,7 +30,9 @@ Handlers
 ********
 
 Settings handlers for subtree implement a set of handler functions.
-These are registered using a call to :c:func:`settings_register()`.
+These are registered using a call to :c:func:`settings_register()` for
+dynamic handlers or defined using a call to :c:macro:`SETTINGS_STATIC_HANDLER_DEFINE()`
+for static handlers.
 
 **h_get**
     This gets called when asking for a settings element value by its name using
@@ -51,6 +53,16 @@ These are registered using a call to :c:func:`settings_register()`.
     This gets called to write all current settings. This happens
     when :c:func:`settings_save()` tries to save the settings or transfer to any
     user-implemented back-end.
+
+Settings handlers also have a commit priority ``cprio`` that allows to prioritize
+the ``h_commit`` calls. This can be advantageous when e.g. a subsystem initializes
+a service that other ``h_commit`` calls depend on.
+
+Settings handlers ``h_commit`` routines are by default initialized with ``cprio = 0``,
+initializing a settings handler with a different priority is done using a call to
+:c:func:`settings_register_with_cprio()` for dynamic handlers or using a call to
+:c:macro:`SETTINGS_STATIC_HANDLER_DEFINE_WITH_CPRIO()` for static handlers. The
+specified ``cprio`` value is an integer where lower values mean higher priority.
 
 Backends
 ********

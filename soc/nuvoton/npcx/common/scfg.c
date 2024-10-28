@@ -131,6 +131,21 @@ void npcx_host_interface_sel(enum npcx_hif_type hif_type)
 	SET_FIELD(inst_scfg->DEVCNT, NPCX_DEVCNT_HIF_TYP_SEL_FIELD, hif_type);
 }
 
+void npcx_i3c_target_sel(uint8_t module_id, bool enable)
+{
+#if defined(CONFIG_SOC_SERIES_NPCX4)
+	struct scfg_reg *inst_scfg = HAL_SFCG_INST();
+
+	if (enable == true) {
+		inst_scfg->DEV_CTL3 |= NPCX_DEV_CTL3_I3C_MODE_BIT(module_id);
+	} else {
+		inst_scfg->DEV_CTL3 &= ~NPCX_DEV_CTL3_I3C_MODE_BIT(module_id);
+	}
+#else
+	LOG_ERR("%s: i3c target select not supported yet", __func__);
+#endif
+}
+
 void npcx_dbg_freeze_enable(bool enable)
 {
 	const uintptr_t dbg_base = npcx_scfg_cfg.base_dbg;

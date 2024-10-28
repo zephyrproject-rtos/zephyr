@@ -32,6 +32,7 @@ file(MAKE_DIRECTORY ${gen_dir})
 # convert .pem files to array data at build time
 zephyr_include_directories(${gen_inc_dir})
 
+if (CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE)
 generate_inc_file_for_target(
     app
     ${ZEPHYR_BASE}/samples/net/wifi/test_certs/client.pem
@@ -67,3 +68,9 @@ generate_inc_file_for_target(
     ${ZEPHYR_BASE}/samples/net/wifi/test_certs/ca2.pem
     ${gen_dir}/ca2.pem.inc
     )
+
+# Add explicit dependency on app target for ZEPHYR_CURRENT_LIBRARY, so these
+# headers are generated at the correct point in the build
+add_dependencies(${ZEPHYR_CURRENT_LIBRARY} app)
+
+endif() # CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE

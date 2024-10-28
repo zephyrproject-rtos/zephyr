@@ -1,7 +1,4 @@
-.. _nucleo_f429zi_board:
-
-ST Nucleo F429ZI
-################
+.. zephyr:board:: nucleo_f429zi
 
 Overview
 ********
@@ -30,10 +27,6 @@ some highlights of the Nucleo F429ZI board:
 
 - Three user LEDs
 - Two push-buttons: USER and RESET
-
-.. image:: img/nucleo_f429zi.jpg
-   :align: center
-   :alt: Nucleo F429ZI
 
 More information about the board can be found at the `Nucleo F429ZI website`_.
 

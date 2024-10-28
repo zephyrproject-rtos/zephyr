@@ -2,7 +2,7 @@
 
 set(flag_for_ram_report ram)
 set(flag_for_rom_report rom)
-set(flag_for_footprint all -q)
+set(flag_for_footprint all)
 set(report_depth 99)
 
 if(DEFINED ZEPHYR_WORKSPACE)

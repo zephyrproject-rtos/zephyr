@@ -23,7 +23,7 @@ set_compiler_property(PROPERTY optimization_size  -Os)
 set_compiler_property(PROPERTY optimization_size_aggressive -Oz)
 
 if(CMAKE_C_COMPILER_VERSION GREATER_EQUAL "4.5.0")
-  set_compiler_property(PROPERTY optimization_lto -flto)
+  set_compiler_property(PROPERTY optimization_lto -flto=auto)
   set_compiler_property(PROPERTY prohibit_lto -fno-lto)
 endif()
 

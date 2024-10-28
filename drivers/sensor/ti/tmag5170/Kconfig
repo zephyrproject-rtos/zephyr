@@ -24,16 +24,19 @@ config TMAG5170_TRIGGER_NONE
 config TMAG5170_TRIGGER_GLOBAL_THREAD
 	bool "Use global thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_TI_TMAG5170),int-gpios)
 	select TMAG5170_TRIGGER
 
 config TMAG5170_TRIGGER_OWN_THREAD
 	bool "Use own thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_TI_TMAG5170),int-gpios)
 	select TMAG5170_TRIGGER
 
 config TMAG5170_TRIGGER_DIRECT
 	bool "Process trigger within interrupt context"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_TI_TMAG5170),int-gpios)
 	select TMAG5170_TRIGGER
 
 endchoice

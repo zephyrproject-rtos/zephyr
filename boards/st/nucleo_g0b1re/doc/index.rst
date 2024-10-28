@@ -1,7 +1,4 @@
-.. _nucleo_g0b1re_board:
-
-ST Nucleo G0B1RE
-################
+.. zephyr:board:: nucleo_g0b1re
 
 Overview
 ********
@@ -27,10 +24,6 @@ some highlights of the Nucleo G0B1RE board:
 - Three LEDs: USB communication (LD1), user LED (LD4), power LED (LD3)
 - Two push-buttons: USER and RESET
 - 32.768 kHz crystal oscillator
-
-.. image:: img/nucleo_g0b1re.jpg
-   :align: center
-   :alt: Nucleo G0B1RE
 
 More information about the board can be found at the `Nucleo G0B1RE website`_.
 

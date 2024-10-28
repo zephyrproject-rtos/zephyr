@@ -552,6 +552,8 @@ your board.
 References
 **********
 
+.. target-notes::
+
 .. _reel board Website:
    https://www.phytec.de/reelboard/
 

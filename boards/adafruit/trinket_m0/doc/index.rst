@@ -1,7 +1,4 @@
-.. _adafruit_trinket_m0:
-
-Adafruit Trinket M0
-###################
+.. zephyr:board:: adafruit_trinket_m0
 
 Overview
 ********
@@ -9,10 +6,6 @@ Overview
 The Adafruit Trinket M0 is a tiny (27 mm x 15 mm) ARM development
 board with an onboard RGB LED, USB port, and range of I/O broken out
 onto 5 pins.
-
-.. image:: img/adafruit_trinket_m0.jpg
-     :align: center
-     :alt: Adafruit Trinket M0
 
 Hardware
 ********

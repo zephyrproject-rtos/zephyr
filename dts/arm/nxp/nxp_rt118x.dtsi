@@ -323,13 +323,11 @@
 		status = "disabled";
 	};
 
-	lpadc1: lpadc@2600000 {
+	lpadc1: adc@2600000 {
 		compatible = "nxp,lpc-lpadc";
 		reg = <0x2600000 0x304>;
 		interrupts = <93 0>;
 		status = "disabled";
-		clk-divider = <7>;
-		clk-source = <1>;
 		voltage-ref= <1>;
 		calibration-average = <128>;
 		no-power-level;
@@ -339,7 +337,7 @@
 		clocks = <&ccm IMX_CCM_LPADC1_CLK 0 0>;
 	};
 
-	lpadc2: lpadc@2e00000 {
+	lpadc2: adc@2e00000 {
 		compatible = "nxp,lpc-lpadc";
 		reg = <0x2e00000 0x304>;
 		interrupts = <189 0>;
@@ -601,6 +599,36 @@
 			#size-cells = <0>;
 			status = "disabled";
 		};
+	};
+
+	flexcan1: can@43a0000 {
+		compatible = "nxp,flexcan-fd", "nxp,flexcan";
+		reg = <0x43a0000 0x1000>;
+		interrupts = <8 0>, <9 0>;
+		interrupt-names = "common", "error";
+		clocks = <&ccm IMX_CCM_CAN1_CLK 0x68 14>;
+		clk-source = <0>;
+		status = "disabled";
+	};
+
+	flexcan2: can@25b0000 {
+		compatible = "nxp,flexcan-fd", "nxp,flexcan";
+		reg = <0x25b0000 0x1000>;
+		interrupts = <51 0>, <52 0>;
+		interrupt-names = "common", "error";
+		clocks = <&ccm IMX_CCM_CAN2_CLK 0x68 18>;
+		clk-source = <0>;
+		status = "disabled";
+	};
+
+	flexcan3: can@45b0000 {
+		compatible = "nxp,flexcan-fd", "nxp,flexcan";
+		reg = <0x45b0000 0x1000>;
+		interrupts = <191 0>, <192 0>;
+		interrupt-names = "common", "error";
+		clocks = <&ccm IMX_CCM_CAN3_CLK 0x84 6>;
+		clk-source = <0>;
+		status = "disabled";
 	};
 };
 

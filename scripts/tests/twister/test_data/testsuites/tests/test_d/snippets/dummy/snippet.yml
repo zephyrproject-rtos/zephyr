@@ -1,5 +1,5 @@
 name: dummy
 boards:
-  demo_board_2:
+  demo_board_2/unit_testing:
     append:
       EXTRA_CONF_FILE: dummy.conf

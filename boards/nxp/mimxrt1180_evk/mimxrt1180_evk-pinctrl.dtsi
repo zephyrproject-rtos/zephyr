@@ -105,4 +105,14 @@
 			slew-rate = "fast";
 		};
 	};
+
+	/* Need to weld pin header on J35 */
+	pinmux_flexcan3: pinmux_flexcan3 {
+		group0 {
+			pinmux = <&iomuxc_aon_gpio_aon_03_flexcan3_rx>,
+				<&iomuxc_aon_gpio_aon_18_flexcan3_tx>;
+			drive-strength = "high";
+			slew-rate = "fast";
+		};
+	};
 };

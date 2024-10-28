@@ -1,7 +1,4 @@
-.. _s32z2xxdc2:
-
-NXP X-S32Z27X-DC (DC2)
-######################
+.. zephyr:board:: s32z2xxdc2
 
 Overview
 ********
@@ -58,6 +55,10 @@ The boards support the following hardware features:
 | SAR_ADC   | on-chip    | adc                                 |
 +-----------+------------+-------------------------------------+
 | LPI2C     | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
+| EDMA      | on-chip    | dma                                 |
++-----------+------------+-------------------------------------+
+| DSPI      | on-chip    | spi                                 |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are not currently supported by the port.
@@ -162,6 +163,12 @@ ADC is provided through ADC SAR controller with 2 instances. Each ADC SAR instan
 
 .. note::
    All channels of an instance only run on 1 group channel at the same time.
+
+EDMA
+====
+
+The EDMA modules feature four EDMA3 instances: Instance 0 with 32 channels,
+and instances 1, 4, and 5, each with 16 channels.
 
 Programming and Debugging
 *************************

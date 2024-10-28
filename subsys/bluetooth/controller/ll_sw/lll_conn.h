@@ -43,10 +43,15 @@ struct lll_conn {
 	uint8_t access_addr[4];
 	uint8_t crc_init[3];
 
+	uint16_t tifs_tx_us;
+	uint16_t tifs_rx_us;
+	uint16_t tifs_hcto_us;
+	uint16_t tifs_cis_us;
+
 	uint16_t handle;
 	uint16_t interval;
-	uint16_t latency;
 
+	uint16_t latency;
 	uint16_t latency_prepare;
 	uint16_t lazy_prepare;
 	uint16_t latency_event;
@@ -170,7 +175,10 @@ int lll_conn_reset(void);
 void lll_conn_flush(uint16_t handle, struct lll_conn *lll);
 
 void lll_conn_prepare_reset(void);
-int lll_conn_is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb);
+int lll_conn_central_is_abort_cb(void *next, void *curr,
+				 lll_prepare_cb_t *resume_cb);
+int lll_conn_peripheral_is_abort_cb(void *next, void *curr,
+				    lll_prepare_cb_t *resume_cb);
 void lll_conn_abort_cb(struct lll_prepare_param *prepare_param, void *param);
 void lll_conn_isr_rx(void *param);
 void lll_conn_isr_tx(void *param);

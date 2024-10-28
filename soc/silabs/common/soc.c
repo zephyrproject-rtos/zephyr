@@ -19,18 +19,6 @@
 #include <soc.h>
 #include <cmsis_core.h>
 
-#ifdef CONFIG_SOC_GECKO_DEV_INIT
-#include <sl_device_init_dcdc.h>
-#include <sl_device_init_dpll.h>
-#include <sl_device_init_hfxo.h>
-
-#ifdef CONFIG_PM
-#include <sl_hfxo_manager.h>
-#include <sl_power_manager.h>
-#endif
-
-#endif
-
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
 #ifdef CONFIG_CMU_HFCLK_HFXO
@@ -213,18 +201,6 @@ void soc_early_init_hook(void)
 	init_lfxo();
 #endif
 
-#ifdef CONFIG_SOC_GECKO_DEV_INIT
-	sl_device_init_dcdc();
-	sl_device_init_hfxo();
-	sl_device_init_dpll();
-
-#ifdef CONFIG_PM
-	sl_power_manager_init();
-	sl_hfxo_manager_init();
-#endif
-
-#else /* !CONFIG_SOC_GECKO_DEV_INIT */
-
 #ifdef CONFIG_SOC_GECKO_EMU_DCDC
 	dcdc_init();
 #endif
@@ -236,5 +212,4 @@ void soc_early_init_hook(void)
 	/* Configure SWO debug output */
 	swo_init();
 #endif
-#endif /* !CONFIG_SOC_GECKO_DEV_INIT */
 }

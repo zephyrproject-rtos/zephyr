@@ -5,6 +5,7 @@ common:
   integration_platforms:
     - qemu_x86
     - qemu_cortex_a53
+  timeout: 120
   harness: console
   harness_config:
     type: one_line

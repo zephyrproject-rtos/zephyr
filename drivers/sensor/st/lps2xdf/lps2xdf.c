@@ -6,6 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * Datasheet:
+ * https://www.st.com/resource/en/datasheet/ilps22qs.pdf
  * https://www.st.com/resource/en/datasheet/lps22df.pdf
  * https://www.st.com/resource/en/datasheet/lps28df.pdf
  */
@@ -19,6 +20,10 @@
 #include <zephyr/logging/log.h>
 
 #include "lps2xdf.h"
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_ilps22qs)
+#include "ilps22qs.h"
+#endif
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_lps22df)
 #include "lps22df.h"
@@ -159,7 +164,7 @@ static const struct sensor_driver_api lps2xdf_driver_api = {
 	.lpf = DT_INST_PROP(inst, lpf),                                        \
 	.avg = DT_INST_PROP(inst, avg),                                        \
 	.chip_api = &name##_chip_api,                                          \
-	IF_ENABLED(DT_INST_NODE_HAS_COMPAT(inst, st_lps28dfw),                 \
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, fs),                            \
 		   (.fs = DT_INST_PROP(inst, fs),))                            \
 	IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),                    \
 		   (LPS2XDF_CFG_IRQ(inst)))
@@ -213,6 +218,10 @@ static const struct sensor_driver_api lps2xdf_driver_api = {
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, name##_init, NULL, &lps2xdf_data_##name##_##inst, \
 				     &lps2xdf_config_##name##_##inst, POST_KERNEL,           \
 				     CONFIG_SENSOR_INIT_PRIORITY, &lps2xdf_driver_api);
+
+#define DT_DRV_COMPAT st_ilps22qs
+DT_INST_FOREACH_STATUS_OKAY_VARGS(LPS2XDF_DEFINE, DT_DRV_COMPAT)
+#undef DT_DRV_COMPAT
 
 #define DT_DRV_COMPAT st_lps22df
 DT_INST_FOREACH_STATUS_OKAY_VARGS(LPS2XDF_DEFINE, DT_DRV_COMPAT)

@@ -21,10 +21,10 @@ Building and Running
 ********************
 
 These are instructions for how to use this sample application running
-on a :ref:`frdm_k64f` board to configure a link local IPv4 address and
+on a :zephyr:board:`frdm_k64f` board to configure a link local IPv4 address and
 connect to a Linux host.
 
-Connect ethernet cable from a :ref:`Freedom-K64F board <frdm_k64f>` to a Linux
+Connect ethernet cable from a :zephyr:board:`Freedom-K64F board <frdm_k64f>` to a Linux
 host machine and check for new interfaces.
 
 Running Avahi client in Linux Host

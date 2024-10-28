@@ -1,7 +1,4 @@
-.. _mikroe_clicker_ra4m1:
-
-Mikroe Clicker RA4M1
-####################
+.. zephyr:board:: mikroe_clicker_ra4m1
 
 Overview
 ********
@@ -9,12 +6,6 @@ Overview
 The Mikroe Clicker RA4M1 development board contains a Renesas Cortex-M4 based
 R7FA4M1AB3CFM Microcontroller operating at up to 48 MHz with 256 KB of Flash
 memory and 32 KB of SRAM.
-
-.. figure:: img/mikroe_clicker_ra4m1.jpg
-   :align: center
-   :alt: Clicker RA4M1
-
-   Clicker RA4M1 (Credit: MikroElektronika d.o.o.)
 
 Hardware
 ********

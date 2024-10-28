@@ -67,7 +67,7 @@ static struct net_mgmt_event_callback mgmt_cb;
 /* Socket polling for each server connection */
 static struct zsock_pollfd fds[LLMNR_MAX_POLL];
 
-static void svc_handler(struct k_work *work);
+static void svc_handler(struct net_socket_service_event *pev);
 NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(svc_llmnr, svc_handler, LLMNR_MAX_POLL);
 
 NET_BUF_POOL_DEFINE(llmnr_msg_pool, DNS_RESOLVER_BUF_CTR,
@@ -564,10 +564,8 @@ quit:
 	return ret;
 }
 
-static void svc_handler(struct k_work *work)
+static void svc_handler(struct net_socket_service_event *pev)
 {
-	struct net_socket_service_event *pev =
-		CONTAINER_OF(work, struct net_socket_service_event, work);
 	int ret;
 
 	ret = recv_data(pev);

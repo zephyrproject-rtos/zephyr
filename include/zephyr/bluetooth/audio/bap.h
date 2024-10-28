@@ -260,7 +260,11 @@ struct bt_bap_qos_cfg_pref {
 	 */
 	uint8_t phy;
 
-	/** Preferred Retransmission Number */
+	/**
+	 * @brief Preferred Retransmission Number
+	 *
+	 * @ref BT_AUDIO_RTN_PREF_NONE indicates no preference.
+	 */
 	uint8_t rtn;
 
 	/**
@@ -568,7 +572,7 @@ struct bt_bap_scan_delegator_recv_state {
 	 *
 	 * Only valid if encrypt_state is @ref BT_BAP_BIG_ENC_STATE_BCODE_REQ
 	 */
-	uint8_t bad_code[BT_AUDIO_BROADCAST_CODE_SIZE];
+	uint8_t bad_code[BT_ISO_BROADCAST_CODE_SIZE];
 
 	/** Number of subgroups */
 	uint8_t num_subgroups;
@@ -648,7 +652,7 @@ struct bt_bap_scan_delegator_cb {
 	 */
 	void (*broadcast_code)(struct bt_conn *conn,
 			       const struct bt_bap_scan_delegator_recv_state *recv_state,
-			       const uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE]);
+			       const uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE]);
 	/**
 	 * @brief Broadcast Isochronous Stream synchronize request
 	 *
@@ -1090,6 +1094,16 @@ int bt_bap_stream_start(struct bt_bap_stream *stream);
  *
  * @param stream Stream object
  *
+ * @retval 0 Success
+ * @retval -EINVAL The @p stream does not have an endpoint or a connection, of the stream's
+ *                 connection's role is not @p BT_HCI_ROLE_CENTRAL
+ * @retval -EBADMSG The state of the @p stream endpoint is not @ref BT_BAP_EP_STATE_DISABLING
+ * @retval -EALREADY The CIS state of the @p is not in a connected state, and thus is already
+ *                   stopping
+ * @retval -EBUSY The @p stream is busy with another operation
+ * @retval -ENOTCONN The @p stream ACL connection is not connected
+ * @retval -ENOMEM No memory to send request
+ * @retval -ENOEXEC The request was rejected by GATT
  * @return 0 in case of success or negative value in case of error.
  */
 int bt_bap_stream_stop(struct bt_bap_stream *stream);
@@ -2044,7 +2058,7 @@ struct bt_bap_broadcast_source_param {
 	 *   The string "Broadcast Code" shall be
 	 *   [42 72 6F 61 64 63 61 73 74 20 43 6F 64 65 00 00]
 	 */
-	uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE];
+	uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE];
 
 #if defined(CONFIG_BT_ISO_TEST_PARAMS) || defined(__DOXYGEN__)
 	/**
@@ -2171,22 +2185,6 @@ int bt_bap_broadcast_source_stop(struct bt_bap_broadcast_source *source);
 int bt_bap_broadcast_source_delete(struct bt_bap_broadcast_source *source);
 
 /**
- * @brief Get the broadcast ID of a broadcast source
- *
- * This will return the 3-octet broadcast ID that should be advertised in the
- * extended advertising data with @ref BT_UUID_BROADCAST_AUDIO_VAL as @ref BT_DATA_SVC_DATA16.
- *
- * See table 3.14 in the Basic Audio Profile v1.0.1 for the structure.
- *
- * @param[in]  source        Pointer to the broadcast source.
- * @param[out] broadcast_id  Pointer to the 3-octet broadcast ID.
- *
- * @return Zero on success or (negative) error code otherwise.
- */
-int bt_bap_broadcast_source_get_id(struct bt_bap_broadcast_source *source,
-				   uint32_t *const broadcast_id);
-
-/**
  * @brief Get the Broadcast Audio Stream Endpoint of a broadcast source
  *
  * This will encode the BASE of a broadcast source into a buffer, that can be used for
@@ -2300,7 +2298,8 @@ int bt_bap_broadcast_sink_create(struct bt_le_per_adv_sync *pa_sync, uint32_t br
  * @return 0 in case of success or negative value in case of error.
  */
 int bt_bap_broadcast_sink_sync(struct bt_bap_broadcast_sink *sink, uint32_t indexes_bitfield,
-			       struct bt_bap_stream *streams[], const uint8_t broadcast_code[16]);
+			       struct bt_bap_stream *streams[],
+			       const uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE]);
 
 /**
  * @brief Stop audio broadcast sink.
@@ -2801,7 +2800,7 @@ int bt_bap_broadcast_assistant_mod_src(
  */
 int bt_bap_broadcast_assistant_set_broadcast_code(
 	struct bt_conn *conn, uint8_t src_id,
-	const uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE]);
+	const uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE]);
 
 /**
  * @brief Remove a source from the server.

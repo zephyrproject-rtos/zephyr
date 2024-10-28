@@ -1,7 +1,4 @@
-.. _imx8mp_evk:
-
-NXP i.MX8MP EVK
-###############
+.. zephyr:board:: imx8mp_evk
 
 Overview
 ********

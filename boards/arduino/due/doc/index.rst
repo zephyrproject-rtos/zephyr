@@ -205,6 +205,8 @@ Now press the Reset button and you should see "Hello World! arduino_due" in your
 References
 **********
 
+.. target-notes::
+
 .. _Arduino Due website: https://www.arduino.cc/en/Main/ArduinoBoardDue
 
 .. _Atmel SAM3X8E Datasheet: http://ww1.microchip.com/downloads/en/DeviceDoc/Atmel-11057-32-bit-Cortex-M3-Microcontroller-SAM3X-SAM3A_Datasheet.pdf

@@ -1,7 +1,4 @@
-.. _mg100:
-
-Ezurio Sentrius™ MG100 Gateway
-##############################
+.. zephyr:board:: mg100
 
 Overview
 ********
@@ -45,12 +42,6 @@ and the following devices:
 * :abbr:`LIS3DH (ST Micro 3-axis MEMS accelerometer)`
 * :abbr:`HL7800 (Sierra Wireless HL7800 LTE-M1/NB-IoT modem)`
 * :abbr:`SD Card`
-
-.. figure:: img/mg100.jpg
-     :align: center
-     :alt: MG100
-
-     MG100 (450-00054-K1)
 
 Hardware
 ********

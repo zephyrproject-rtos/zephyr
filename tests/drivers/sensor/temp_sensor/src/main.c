@@ -34,6 +34,9 @@ ZTEST(temp_sensor, test_polling)
 		TC_PRINT("Temperature: %d.%02u\n",
 			temp_val/100, abs(temp_val) % 100);
 
+		zassert_true(val.val1 > 10, "Too cold");
+		zassert_true(val.val1 < 35, "Too hot");
+
 		++cnt;
 		if (cnt >= 5) {
 			break;

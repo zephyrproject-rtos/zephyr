@@ -81,7 +81,7 @@ class TestPlatform:
         ids=['dummy in additional board root', 'no additional board root, crash']
     )
     def test_board_root(self, out_path, board_root, expected_returncode):
-        test_platforms = ['qemu_x86', 'dummy_board/dummy_soc']
+        test_platforms = ['qemu_x86', 'dummy/unit_testing']
         board_root_path = os.path.join(TEST_DATA, 'boards')
         path = os.path.join(TEST_DATA, 'tests', 'dummy')
         args = ['-i', '--outdir', out_path, '-T', path, '-y'] + \
@@ -98,7 +98,7 @@ class TestPlatform:
         # but we need to differentiate crashes.
         with open(os.path.join(out_path, 'twister.log')) as f:
             log = f.read()
-            error_regex = r'ERROR.*platform_filter\s+-\s+unrecognized\s+platform\s+-\s+dummy_board/dummy_soc$'
+            error_regex = r'ERROR.*platform_filter\s+-\s+unrecognized\s+platform\s+-\s+dummy/unit_testing$'
             board_error = re.search(error_regex, log)
             assert board_error if not board_root else not board_error
 
@@ -148,7 +148,7 @@ class TestPlatform:
 
         assert str(sys_exit.value) == '0'
 
-        assert all([platform == 'qemu_x86' for platform, _, _ in filtered_j])
+        assert all([platform == 'qemu_x86/atom' for platform, _, _ in filtered_j])
 
     @pytest.mark.parametrize(
         'test_path, test_platforms',

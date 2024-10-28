@@ -1,7 +1,4 @@
-.. _esp32s2_lolin_mini:
-
-ESP32-S2 Lolin Mini
-###################
+.. zephyr:board:: esp32s2_lolin_mini
 
 Overview
 ********
@@ -29,10 +26,6 @@ The features include the following:
   - ADC
   - DAC
   - LED PWM with up to 8 channels
-
-.. figure:: img/esp32_s2_lolin_mini.jpg
-        :align: center
-        :alt: ESP32-S2 LOLIN MINI
 
 System requirements
 *******************
@@ -90,6 +83,8 @@ message in the monitor:
 
 References
 **********
+
+.. target-notes::
 
 .. [1] https://www.espressif.com/en/products/socs/esp32-s2
 .. _`ESP32S2 Technical Reference Manual`: https://espressif.com/sites/default/files/documentation/esp32-s2_technical_reference_manual_en.pdf

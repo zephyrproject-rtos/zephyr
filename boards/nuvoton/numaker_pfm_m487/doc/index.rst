@@ -1,7 +1,4 @@
-.. _nuvoton_pfm_m487:
-
-NUVOTON NUMAKER PFM M487
-########################
+.. zephyr:board:: numaker_pfm_m487
 
 Overview
 ********
@@ -9,10 +6,6 @@ Overview
 The NuMaker PFM M487 is an Internet of Things (IoT) application focused platform
 specially developed by Nuvoton. The PFM-M487 is based on the NuMicro® M487
 Ethernet series MCU with ARM® -Cortex®-M4F core.
-
-.. image:: pfm_m487.jpg
-   :align: center
-   :alt: PFM-M487
 
 Features:
 =========
@@ -91,6 +84,8 @@ Step through the application in your debugger.
 
 References
 **********
+
+.. target-notes::
 
 .. _PFM M487 User Manual:
    https://www.nuvoton.com/export/resource-files/UM_NuMaker-PFM-M487_User_Manual_EN_Rev1.01.pdf

@@ -341,6 +341,31 @@ static ALWAYS_INLINE void clock_init(void)
 		BLK_CTRL_WAKEUPMIX_NETC_PORT_MISC_CFG_TMR_EXT_CLK_SEL_MASK;
 #endif
 
+#ifdef CONFIG_CAN_MCUX_FLEXCAN
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcan1), okay)
+	/* Configure CAN1 using MuxSysPll3Out */
+	rootCfg.mux = kCLOCK_CAN1_ClockRoot_MuxSysPll3Out;
+	rootCfg.div = 6;
+	CLOCK_SetRootClock(kCLOCK_Root_Can1, &rootCfg);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcan2), okay)
+	/* Configure CAN2 using MuxSysPll3Out */
+	rootCfg.mux = kCLOCK_CAN2_ClockRoot_MuxSysPll3Out;
+	rootCfg.div = 6;
+	CLOCK_SetRootClock(kCLOCK_Root_Can2, &rootCfg);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcan3), okay)
+	/* Configure CAN3 using MuxSysPll3Out */
+	rootCfg.mux = kCLOCK_CAN3_ClockRoot_MuxSysPll3Out;
+	rootCfg.div = 6;
+	CLOCK_SetRootClock(kCLOCK_Root_Can3, &rootCfg);
+#endif
+
+#endif /* CONFIG_CAN_MCUX_FLEXCAN */
+
 	/* Keep core clock ungated during WFI */
 	CCM->LPCG[1].LPM0 = 0x33333333;
 	CCM->LPCG[1].LPM1 = 0x33333333;

@@ -4,5 +4,9 @@ board:
   vendor: others
   revision:
     format: custom
+    default: "blue"
+    revisions:
+      - name: "blue"
+      - name: "black"
   socs:
     - name: stm32f103xb

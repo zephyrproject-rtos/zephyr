@@ -1,7 +1,4 @@
-.. _neorv32:
-
-NEORV32
-#######
+.. zephyr:board:: neorv32
 
 Overview
 ********

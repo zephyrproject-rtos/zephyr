@@ -1,0 +1,8 @@
+# Copyright (c) 2023 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: MAX32XXX flash controller
+
+compatible: "adi,max32-flash-controller"
+
+include: flash-controller.yaml

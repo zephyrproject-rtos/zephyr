@@ -141,6 +141,14 @@ static int dma_si32_config(const struct device *dev, uint32_t channel, struct dm
 		return -EINVAL;
 	}
 
+	/* Prevent messing up (potentially) ongoing DMA operations and their settings. This behavior
+	 * is required by the Zephyr DMA API.
+	 */
+	if (SI32_DMACTRL_A_is_channel_enabled(SI32_DMACTRL_0, channel)) {
+		LOG_ERR("DMA channel is currently in use");
+		return -EBUSY;
+	}
+
 	channel_descriptor = &channel_descriptors[channel];
 
 	if (cfg == NULL) {
@@ -333,8 +341,6 @@ static int dma_si32_config(const struct device *dev, uint32_t channel, struct dm
 		return -EINVAL;
 	}
 
-	SI32_DMACTRL_A_enable_channel(SI32_DMACTRL_0, channel);
-
 	return 0;
 }
 
@@ -365,7 +371,6 @@ static int dma_si32_start(const struct device *dev, const uint32_t channel)
 	__ASSERT(SI32_DMACTRL_A_is_primary_selected(SI32_DMACTRL_0, channel),
 		 "Primary descriptors must be used for basic and auto-request operations.");
 	__ASSERT(SI32_SCONFIG_0->CONFIG.FDMAEN, "Fast mode is recommened to be enabled.");
-	__ASSERT(SI32_DMACTRL_0->CHENSET.U32 & BIT(channel), "Channel must be enabled.");
 	__ASSERT(SI32_DMACTRL_0->CHSTATUS.U32 & BIT(channel),
 		 "Channel must be waiting for request");
 
@@ -376,6 +381,8 @@ static int dma_si32_start(const struct device *dev, const uint32_t channel)
 
 	/* Enable interrupt for this DMA channels. */
 	irq_enable(DMACH0_IRQn + channel);
+
+	SI32_DMACTRL_A_enable_channel(SI32_DMACTRL_0, channel);
 
 	/* memory-to-memory transfers have to be started by this driver. When peripherals are
 	 * involved, the caller has to enable the peripheral to start the transfer.
@@ -404,6 +411,8 @@ static int dma_si32_stop(const struct device *dev, const uint32_t channel)
 	irq_disable(DMACH0_IRQn + channel);
 
 	channel_descriptors[channel].CONFIG.TMD = 0; /* Stop the DMA channel. */
+
+	SI32_DMACTRL_A_disable_channel(SI32_DMACTRL_0, channel);
 
 	return 0;
 }

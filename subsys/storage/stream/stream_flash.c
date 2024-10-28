@@ -79,6 +79,12 @@ int stream_flash_erase_page(struct stream_flash_ctx *ctx, off_t off)
 #if defined(CONFIG_FLASH_HAS_EXPLICIT_ERASE)
 	int rc;
 	struct flash_pages_info page;
+
+	if (off < ctx->offset || (off - ctx->offset) >= ctx->available) {
+		LOG_ERR("Offset out of designated range");
+		return -ERANGE;
+	}
+
 #if defined(CONFIG_FLASH_HAS_NO_EXPLICIT_ERASE)
 	/* There are both types of devices */
 	const struct flash_parameters *fparams = flash_get_parameters(ctx->fdev);
@@ -231,7 +237,7 @@ int stream_flash_buffered_write(struct stream_flash_ctx *ctx, const uint8_t *dat
 	return rc;
 }
 
-size_t stream_flash_bytes_written(struct stream_flash_ctx *ctx)
+size_t stream_flash_bytes_written(const struct stream_flash_ctx *ctx)
 {
 	return ctx->bytes_written;
 }
@@ -342,7 +348,7 @@ int stream_flash_progress_load(struct stream_flash_ctx *ctx,
 	return rc;
 }
 
-int stream_flash_progress_save(struct stream_flash_ctx *ctx,
+int stream_flash_progress_save(const struct stream_flash_ctx *ctx,
 			       const char *settings_key)
 {
 	if (!ctx || !settings_key) {
@@ -361,7 +367,7 @@ int stream_flash_progress_save(struct stream_flash_ctx *ctx,
 	return rc;
 }
 
-int stream_flash_progress_clear(struct stream_flash_ctx *ctx,
+int stream_flash_progress_clear(const struct stream_flash_ctx *ctx,
 				const char *settings_key)
 {
 	if (!ctx || !settings_key) {

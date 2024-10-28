@@ -1,8 +1,4 @@
-.. _gd32f403z_eval:
-
-GigaDevice GD32F403Z-EVAL
-#########################
-
+.. zephyr:board:: gd32f403z_eval
 
 Overview
 ********
@@ -13,11 +9,6 @@ of the GigaDevice F403 Cortex-M4F High Performance MCU.
 The GD32F403ZE features a single-core ARM Cortex-M4F MCU which can run up
 to 168-MHz with flash accesses zero wait states, 512kiB of Flash, 96kiB of
 SRAM and 112 GPIOs.
-
-.. image:: img/gd32f403z_eval.jpg
-     :align: center
-     :alt: gd32f403z_eval
-
 
 Hardware
 ********

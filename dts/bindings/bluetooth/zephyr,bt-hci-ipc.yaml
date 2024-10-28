@@ -8,9 +8,9 @@ properties:
   bt-hci-name:
     default: "IPC"
   bt-hci-bus:
-    default: "BT_HCI_BUS_IPM"
+    default: "ipm"
   bt-hci-quirks:
-    default: ["BT_HCI_QUIRK_NO_AUTO_DLE"]
+    default: ["no-auto-dle"]
   bt-hci-ipc-name:
     type: string
     default: "nrf_bt_hci"

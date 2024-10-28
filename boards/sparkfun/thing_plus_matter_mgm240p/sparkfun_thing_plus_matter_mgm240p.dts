@@ -9,6 +9,7 @@
 #include <silabs/efr32mg24b020f1536im40.dtsi>
 #include "sparkfun_thing_plus_matter_mgm240p-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/regulator/silabs_dcdc.h>
 
 / {
 	 model = "Sparkfun MGM240P (Sparkfun Thing Plus Matter)";
@@ -25,6 +26,7 @@
 
 	aliases {
 		led0 = &blue_led;
+		spi0 = &eusart1;
 		watchdog0 = &wdog0;
 	};
 
@@ -47,12 +49,40 @@
 	clock-frequency = <78000000>;
 };
 
+&hfxo {
+	status = "okay";
+	ctune = <140>;
+	precision = <50>;
+};
+
+&hfrcodpll {
+	clock-frequency = <DT_FREQ_M(78)>;
+	clocks = <&hfxo>;
+	dpll-n = <3839>;
+	dpll-m = <1919>;
+	dpll-edge = "fall";
+	dpll-lock = "phase";
+	dpll-autorecover;
+};
+
 &usart0 {
 	current-speed = <115200>;
 	pinctrl-0 = <&usart0_default>;
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+&eusart1 {
+	compatible = "silabs,gecko-spi-eusart";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&eusart1_default>;
+	pinctrl-names = "default";
+
+	status = "okay";
+};
+
 &i2c0 {
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
@@ -86,6 +116,13 @@
 
 &se {
 	status = "okay";
+};
+
+&dcdc {
+	status = "okay";
+	regulator-boot-on;
+	regulator-initial-mode = <SILABS_DCDC_MODE_BUCK>;
+	silabs,pfmx-peak-current-milliamp = <50>;
 };
 
 &flash0 {

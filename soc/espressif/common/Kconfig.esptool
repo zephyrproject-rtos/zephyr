@@ -114,7 +114,7 @@ endchoice # ESPTOOLPY_FLASHFREQ
 
 config ESPTOOLPY_FLASHFREQ_80M_DEFAULT
 	bool
-	default y if SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32S3 || SOC_SERIES_ESP32C3
+	default y if SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32S3 || SOC_SERIES_ESP32C3 || SOC_SERIES_ESP32C6
 	help
 	  This is an invisible item, used to define the targets that defaults to use 80MHz Flash SPI speed.
 

@@ -10,21 +10,21 @@ The following are some of the boards that can be used with TF-M:
      - NSPE board name
    * - :ref:`mps2_an521_board`
      - ``mps2_an521_ns`` (qemu supported)
-   * - :ref:`mps3_an547_board`
-     - ``mps3_an547_ns`` (qemu supported)
-   * - :ref:`bl5340_dvk`
+   * - :ref:`mps3_board`
+     - ``mps3/corstone300/an547/ns`` (qemu supported)
+   * - :zephyr:board:`bl5340_dvk`
      - ``bl5340_dvk/nrf5340/cpuapp/ns``
-   * - :ref:`lpcxpresso55s69`
+   * - :zephyr:board:`lpcxpresso55s69`
      - ``lpcxpresso55s69_ns``
    * - :ref:`nrf9160dk_nrf9160`
      - ``nrf9160dk/nrf9160/ns``
    * - :ref:`nrf5340dk_nrf5340`
      - ``nrf5340dk/nrf5340/cpuapp/ns``
-   * - :ref:`b_u585i_iot02a_board`
+   * - :zephyr:board:`b_u585i_iot02a`
      - ``b_u585i_iot02a/stm32u585xx/ns``
-   * - :ref:`nucleo_l552ze_q_board`
+   * - :zephyr:board:`nucleo_l552ze_q`
      - ``nucleo_l552ze_q/stm32l552xx/ns``
-   * - :ref:`stm32l562e_dk_board`
+   * - :zephyr:board:`stm32l562e_dk`
      - ``stm32l562e_dk/stm32l562xx/ns``
    * - :ref:`v2m_musca_b1_board`
      - ``v2m_musca_b1_ns``

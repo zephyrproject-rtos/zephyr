@@ -15,7 +15,6 @@ tests:
   storage.stream_flash.no_explicit_erase:
     platform_allow:
       - nrf54l15dk/nrf54l15/cpuapp
-      - nrf54l15pdk/nrf54l15/cpuapp
   storage.stream_flash.dword_wbs:
     extra_args: DTC_OVERLAY_FILE=unaligned_flush.overlay
     tags: stream_flash

@@ -150,6 +150,15 @@
 				prechargep = <0>;
 				remap-value = <0>;
 			};
+
+			test_mipi_dbi_ssd1322: ssd1322@9 {
+				compatible = "solomon,ssd1322";
+				reg = <9>;
+				mipi-max-frequency = <16000000>;
+				width =	<128>;
+				height = <64>;
+				column-offset =	<28>;
+			};
 		};
 
 		test_mipi_dsi {
@@ -233,7 +242,8 @@
 			 */
 			cs-gpios = <&test_gpio 0 0 &test_gpio 0 1 &test_gpio 0 2
 				&test_gpio 0 3 &test_gpio 0 4 &test_gpio 0 5
-				&test_gpio 0 6 &test_gpio 0 7 &test_gpio 0 8>;
+				&test_gpio 0 6 &test_gpio 0 7 &test_gpio 0 8
+				&test_gpio 0 9>;
 
 			test_led_strip_0: lpd8806@0 {
 				compatible = "greeled,lpd8806";

@@ -8,6 +8,7 @@ menuconfig ADXL362
 	default y
 	depends on DT_HAS_ADI_ADXL362_ENABLED
 	select SPI
+	select RTIO_WORKQ if SENSOR_ASYNC_API
 	help
 	  Enable driver for ADXL362 Three-Axis Digital Accelerometers.
 
@@ -70,14 +71,25 @@ config ADXL362_TRIGGER_NONE
 config ADXL362_TRIGGER_GLOBAL_THREAD
 	bool "Use global thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ADI_ADXL362),int1-gpios)
 	select ADXL362_TRIGGER
 
 config ADXL362_TRIGGER_OWN_THREAD
 	bool "Use own thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ADI_ADXL362),int1-gpios)
 	select ADXL362_TRIGGER
 
 endchoice
+
+config ADXL362_STREAM
+	bool "Use FIFO to stream data"
+	select ADXL362_TRIGGER
+	default y
+	depends on SPI_RTIO
+	depends on SENSOR_ASYNC_API
+	help
+	  Use this configuration option to enable streaming sensor data via RTIO.
 
 config ADXL362_TRIGGER
 	bool

@@ -241,6 +241,7 @@ SECTIONS
     _app_smem_rom_start = LOADADDR(_APP_SMEM_SECTION_NAME);
 #endif  /* CONFIG_USERSPACE */
 
+    __kernel_ram_start = .;
     __data_region_start = .;
 
     SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
@@ -273,7 +274,6 @@ SECTIONS
     {
         . = ALIGN(8);
         __bss_start = .;
-        __kernel_ram_start = .;
 
         *(.bss)
         *(".bss.*")

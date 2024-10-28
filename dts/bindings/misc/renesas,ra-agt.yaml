@@ -1,0 +1,51 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA AGT
+
+compatible: "renesas,ra-agt"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  channel:
+    type: int
+    required: true
+
+  renesas,count-source:
+    description: AGT clock source.
+    type: string
+    required: true
+    enum:
+      - "AGT_CLOCK_PCLKB"
+      - "AGT_CLOCK_LOCO"
+
+  renesas,prescaler:
+    description: |
+      AGT clock divider for LOCO and SUBCLOCK. timer clock = (clock-source / (1 << prescaler))
+      For LOCO and SUBCLOCK, prescler could be in range [0 .. 7].
+      For PCLKB, prescler could be in 0, 1, and 3.
+    type: int
+    required: true
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+
+  renesas,resolution:
+    type: int
+    required: true
+
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true

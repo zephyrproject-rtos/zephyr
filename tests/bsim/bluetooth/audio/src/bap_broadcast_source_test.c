@@ -321,18 +321,6 @@ static int setup_broadcast_source(struct bt_bap_broadcast_source **source, bool 
 	return 0;
 }
 
-static void test_broadcast_source_get_id(struct bt_bap_broadcast_source *source,
-					 uint32_t *broadcast_id_out)
-{
-	int err;
-
-	err = bt_bap_broadcast_source_get_id(source, broadcast_id_out);
-	if (err != 0) {
-		FAIL("Unable to get broadcast ID: %d\n", err);
-		return;
-	}
-}
-
 static void test_broadcast_source_get_base(struct bt_bap_broadcast_source *source,
 					   struct net_buf_simple *base_buf)
 {
@@ -373,7 +361,11 @@ static int setup_extended_adv(struct bt_bap_broadcast_source *source, struct bt_
 		return err;
 	}
 
-	test_broadcast_source_get_id(source, &broadcast_id);
+	err = bt_rand(&broadcast_id, BT_AUDIO_BROADCAST_ID_SIZE);
+	if (err) {
+		printk("Unable to generate broadcast ID: %d\n", err);
+		return err;
+	}
 
 	/* Setup extended advertising data */
 	net_buf_simple_add_le16(&ad_buf, BT_UUID_BROADCAST_AUDIO_VAL);

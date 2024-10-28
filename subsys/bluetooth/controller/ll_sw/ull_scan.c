@@ -247,9 +247,8 @@ uint8_t ll_scan_enable(uint8_t enable)
 	lll->rl_idx = FILTER_IDX_NONE;
 	lll->rpa_gen = 0;
 
-	if ((lll->type & 0x1) &&
-	    (own_addr_type == BT_ADDR_LE_PUBLIC_ID ||
-	     own_addr_type == BT_ADDR_LE_RANDOM_ID)) {
+	if ((lll->type & 0x1) && (own_addr_type == BT_HCI_OWN_ADDR_RPA_OR_PUBLIC ||
+				  own_addr_type == BT_HCI_OWN_ADDR_RPA_OR_RANDOM)) {
 		/* Generate RPAs if required */
 		ull_filter_rpa_update(false);
 		lll->rpa_gen = 1;
@@ -666,6 +665,13 @@ uint8_t ull_scan_disable(uint8_t handle, struct ll_scan_set *scan)
 	}
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
+#if defined(CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS)
+	/* Stop associated auxiliary scan contexts */
+	err = ull_scan_aux_stop(&scan->lll);
+	if (err && (err != -EALREADY)) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+#else /* !CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS */
 	/* Find and stop associated auxiliary scan contexts */
 	for (uint8_t aux_handle = 0; aux_handle < CONFIG_BT_CTLR_SCAN_AUX_SET;
 	     aux_handle++) {
@@ -698,6 +704,7 @@ uint8_t ull_scan_disable(uint8_t handle, struct ll_scan_set *scan)
 			LL_ASSERT(!parent || (parent != aux_scan_lll));
 		}
 	}
+#endif /* !CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 	return 0;

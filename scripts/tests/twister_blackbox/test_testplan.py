@@ -31,7 +31,7 @@ class TestTestPlan:
     ]
     TESTDATA_2 = [
         ('buildable', 6),
-        ('runnable', 5),
+        ('runnable', 4),
     ]
     TESTDATA_3 = [
         (True, 1),
@@ -101,14 +101,16 @@ class TestTestPlan:
             self.loader.exec_module(self.twister_module)
 
         assert str(exc.value) == '0'
-
+        import pprint
         with open(os.path.join(out_path, 'testplan.json')) as f:
             j = json.load(f)
+            pprint.pprint(j)
         filtered_j = [
             (ts['platform'], ts['name'], tc['identifier']) \
                 for ts in j['testsuites'] \
                 for tc in ts['testcases'] if 'reason' not in tc
         ]
+        pprint.pprint(filtered_j)
 
         assert expected_count == len(filtered_j)
 

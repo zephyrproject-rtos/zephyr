@@ -63,4 +63,14 @@ config GIC_V3_ITS
 	  that ITS uses dynamic memory, so HEAP_MEM_POOL_SIZE should be
 	  enough to allocate ITS tables (size is probed at runtime).
 
+config GIC_SAFE_CONFIG
+	bool "GIC Distributor Safe Configuration"
+	depends on GIC_V3
+	default n
+	help
+	  In case of multiple OSes running on different CPU Cores which share the
+	  same GIC controller, need to avoid the distributor re-configured to avoid
+	  crash the OS has already been started. With this enabled, it will bypass
+	  GIC distributor configuration if it has been configured by other OS.
+
 endif # CPU_CORTEX

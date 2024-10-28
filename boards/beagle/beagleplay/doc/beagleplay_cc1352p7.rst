@@ -1,7 +1,4 @@
-.. _beagleplay_cc1352p7:
-
-BeaglePlay (CC1352)
-###################
+.. zephyr:board:: beagleplay
 
 Overview
 ********
@@ -9,14 +6,6 @@ Overview
 BeagleBoard.org BeaglePlay is an open hardware single board computer based on a TI Sitara AM6254
 quad-core ARM Cortex-A53 SoC with an external TI SimpleLink multi-standard CC1352P7 wireless MCU
 providing long-range, low-power connectivity.
-
-
-.. figure:: img/beagle_play.webp
-   :align: center
-   :width: 500px
-   :alt: BeagleBoard.org BeaglePlay
-
-   BeagleBoard.org BeaglePlay
 
 Hardware
 ********

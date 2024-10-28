@@ -10,6 +10,7 @@
 #include <zephyr/input/input.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 
 #include <esp_err.h>
 #include <soc/soc_pins.h>
@@ -80,7 +81,6 @@ struct esp32_touch_sensor_data {
 static void esp32_touch_sensor_interrupt_cb(void *arg)
 {
 	const struct device *dev = arg;
-	struct esp32_touch_sensor_data *dev_data = dev->data;
 	const struct esp32_touch_sensor_config *dev_cfg = dev->config;
 	const struct esp32_touch_sensor_channel_config *channel_cfg;
 	const int num_channels = dev_cfg->num_channels;

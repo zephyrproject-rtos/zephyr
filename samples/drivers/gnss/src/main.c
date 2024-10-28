@@ -15,8 +15,16 @@ LOG_MODULE_REGISTER(gnss_sample, CONFIG_GNSS_LOG_LEVEL);
 
 static void gnss_data_cb(const struct device *dev, const struct gnss_data *data)
 {
+	uint64_t timepulse_ns;
+	k_ticks_t timepulse;
+
 	if (data->info.fix_status != GNSS_FIX_STATUS_NO_FIX) {
-		printf("Got a fix!\n");
+		if (gnss_get_latest_timepulse(dev, &timepulse) == 0) {
+			timepulse_ns = k_ticks_to_ns_near64(timepulse);
+			printf("Got a fix @ %lld ns\n", timepulse_ns);
+		} else {
+			printf("Got a fix!\n");
+		}
 	}
 }
 GNSS_DATA_CALLBACK_DEFINE(GNSS_MODEM, gnss_data_cb);

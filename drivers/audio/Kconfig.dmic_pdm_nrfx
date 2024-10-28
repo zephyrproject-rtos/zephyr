@@ -6,6 +6,8 @@ config AUDIO_DMIC_NRFX_PDM
 	default y
 	depends on DT_HAS_NORDIC_NRF_PDM_ENABLED
 	select NRFX_PDM0 if HAS_HW_NRF_PDM0
+	select NRFX_PDM20 if HAS_HW_NRF_PDM20
+	select NRFX_PDM21 if HAS_HW_NRF_PDM21
 	select PINCTRL
 	help
 	  Enable support for nrfx PDM driver for nRF MCU series.

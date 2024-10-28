@@ -1,7 +1,4 @@
-.. _qemu_riscv64:
-
-RISCV64 Emulation (QEMU)
-########################
+.. zephyr:board:: qemu_riscv64
 
 Overview
 ********

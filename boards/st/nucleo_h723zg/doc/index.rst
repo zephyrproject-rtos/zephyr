@@ -1,7 +1,4 @@
-.. _nucleo_h723zg_board:
-
-ST Nucleo H723ZG
-################
+.. zephyr:board:: nucleo_h723zg
 
 Overview
 ********
@@ -41,10 +38,6 @@ Key Features
 - On-board ST-LINK/V3 debugger/programmer with USB re-enumeration
 - capability: mass storage, virtual COM port and debug port
 - USB OTG full speed or device only
-
-.. image:: img/nucleo_h723zg.jpg
-   :align: center
-   :alt: Nucleo H723ZG
 
 More information about the board can be found at the `Nucleo H723ZG website`_.
 

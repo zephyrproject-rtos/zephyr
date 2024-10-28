@@ -261,7 +261,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	radio_isr_set(isr_rx, cis_lll);
 
-	radio_tmr_tifs_set(EVENT_IFS_US);
+	radio_tmr_tifs_set(cis_lll->tifs_us);
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	radio_switch_complete_and_tx(cis_lll->rx.phy, 0U, cis_lll->tx.phy,
@@ -743,7 +743,7 @@ static void isr_rx(void *param)
 
 	radio_gpio_pa_setup();
 
-	pa_lna_enable_us = radio_tmr_tifs_base_get() + EVENT_IFS_US -
+	pa_lna_enable_us = radio_tmr_tifs_base_get() + cis_lll->tifs_us -
 			   HAL_RADIO_GPIO_PA_OFFSET;
 #if defined(CONFIG_BT_CTLR_PHY)
 	pa_lna_enable_us -= radio_rx_chain_delay_get(cis_lll->rx.phy,
@@ -897,7 +897,7 @@ static void isr_tx(void *param)
 	radio_tmr_tx_disable();
 	radio_tmr_rx_enable();
 
-	radio_tmr_tifs_set(EVENT_IFS_US);
+	radio_tmr_tifs_set(cis_lll->tifs_us);
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	radio_switch_complete_and_tx(cis_lll->rx.phy, 0U, cis_lll->tx.phy,
@@ -1114,7 +1114,7 @@ static void isr_prepare_subevent_common(void *param)
 	radio_tmr_tx_disable();
 	radio_tmr_rx_enable();
 
-	radio_tmr_tifs_set(EVENT_IFS_US);
+	radio_tmr_tifs_set(cis_lll->tifs_us);
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	radio_switch_complete_and_tx(cis_lll->rx.phy, 0U, cis_lll->tx.phy,

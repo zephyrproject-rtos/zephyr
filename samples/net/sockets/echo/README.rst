@@ -76,7 +76,7 @@ version.
 Running on cc3220sf_launchxl
 ============================
 
-See the note on Provisioning and Fast Connect in :ref:`cc3220sf_launchxl`.
+See the note on Provisioning and Fast Connect in :zephyr:board:`cc3220sf_launchxl`.
 
 After having connected to an Access Point using the sample Wi-Fi shell,
 the IP address will be printed to the console upon running this echo

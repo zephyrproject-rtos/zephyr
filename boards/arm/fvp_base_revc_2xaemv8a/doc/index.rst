@@ -117,6 +117,8 @@ Networking
 References
 **********
 
+.. target-notes::
+
 1. (ID070919) Arm® Architecture Reference Manual - Armv8, for Armv8-A architecture profile
 2. AArch64 Exception and Interrupt Handling
 3. https://developer.arm.com/tools-and-software/simulation-models/fixed-virtual-platforms

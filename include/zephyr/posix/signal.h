@@ -6,7 +6,8 @@
 #ifndef ZEPHYR_INCLUDE_POSIX_SIGNAL_H_
 #define ZEPHYR_INCLUDE_POSIX_SIGNAL_H_
 
-#include "posix_types.h"
+/* include posix_types.h before posix_features.h (here) to avoid build errors against newlib */
+#include <zephyr/posix/posix_types.h>
 #include "posix_features.h"
 
 #ifdef __cplusplus

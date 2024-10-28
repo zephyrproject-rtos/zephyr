@@ -806,6 +806,7 @@ static int cmd_big_sync(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
+	err = 0;
 	bis_bitfield = shell_strtoul(argv[1], 0, &err);
 	if (err != 0) {
 		shell_error(sh, "Could not parse bis_bitfield: %d", err);
@@ -820,6 +821,7 @@ static int cmd_big_sync(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	bis_iso_qos.tx = NULL;
+	bis_iso_qos.rx = &iso_rx_qos;
 
 	param.bis_channels = bis_channels;
 	param.num_bis = BIS_ISO_CHAN_COUNT;
@@ -845,9 +847,8 @@ static int cmd_big_sync(const struct shell *sh, size_t argc, char *argv[])
 				return -ENOEXEC;
 			}
 
-			if (!IN_RANGE(mse,
-				      BT_ISO_SYNC_MSE_MIN,
-				      BT_ISO_SYNC_MSE_MAX)) {
+			if (mse != BT_ISO_SYNC_MSE_ANY &&
+			    !IN_RANGE(mse, BT_ISO_SYNC_MSE_MIN, BT_ISO_SYNC_MSE_MAX)) {
 				shell_error(sh, "Invalid mse %lu", mse);
 
 				return -ENOEXEC;
@@ -873,8 +874,8 @@ static int cmd_big_sync(const struct shell *sh, size_t argc, char *argv[])
 			}
 
 			if (!IN_RANGE(sync_timeout,
-				      BT_ISO_SYNC_MSE_MIN,
-				      BT_ISO_SYNC_MSE_MAX)) {
+				      BT_ISO_SYNC_TIMEOUT_MIN,
+				      BT_ISO_SYNC_TIMEOUT_MAX)) {
 				shell_error(sh, "Invalid sync_timeout %lu",
 					    sync_timeout);
 

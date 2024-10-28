@@ -6,27 +6,34 @@ common:
     - test_framework
   # test has dependencies on host libc
   platform_allow:
+    - unit_testing
     - native_sim
     - native_sim/native/64
   integration_platforms:
     - native_sim
 tests:
   testing.fail.unit.assert_after:
+    type: unit
     extra_configs:
       - CONFIG_ZTEST_FAIL_TEST_ASSERT_AFTER=y
   testing.fail.unit.assert_teardown:
+    type: unit
     extra_configs:
       - CONFIG_ZTEST_FAIL_TEST_ASSERT_TEARDOWN=y
   testing.fail.unit.assume_after:
+    type: unit
     extra_configs:
       - CONFIG_ZTEST_FAIL_TEST_ASSUME_AFTER=y
   testing.fail.unit.assume_teardown:
+    type: unit
     extra_configs:
       - CONFIG_ZTEST_FAIL_TEST_ASSUME_TEARDOWN=y
   testing.fail.unit.pass_after:
+    type: unit
     extra_configs:
       - CONFIG_ZTEST_FAIL_TEST_PASS_AFTER=y
   testing.fail.unit.pass_teardown:
+    type: unit
     extra_configs:
       - CONFIG_ZTEST_FAIL_TEST_PASS_TEARDOWN=y
   testing.fail.zephyr.assert_after:

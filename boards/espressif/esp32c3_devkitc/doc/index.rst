@@ -1,7 +1,4 @@
-.. _esp32c3_devkitc:
-
-ESP32-C3-DevKitC
-################
+.. zephyr:board:: esp32c3_devkitc
 
 Overview
 ********
@@ -245,6 +242,8 @@ You can debug an application in the usual way. Here is an example for the :zephy
 
 References
 **********
+
+.. target-notes::
 
 .. _`ESP32-C3-DevKitC`: https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32c3/esp32-c3-devkitc-02/index.html
 .. _`ESP32-C3 Datasheet`: https://www.espressif.com/sites/default/files/documentation/esp32-c3_datasheet_en.pdf

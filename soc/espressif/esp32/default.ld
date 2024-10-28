@@ -285,16 +285,16 @@ SECTIONS
     *libc.a:*(.literal .text .literal.* .text.*)
     *libphy.a:( .phyiram .phyiram.*)
     *libgcov.a:(.literal .text .literal.* .text.*)
-    *libzephyr.a:spi_flash_rom_patch.*(.literal .text .literal.* .text.*)
 
     /* [mapping:esp_psram] */
     *libzephyr.a:mmu_psram_flash.*(.literal .literal.* .text .text.*)
     *libzephyr.a:esp_psram_impl_quad.*(.literal .literal.* .text .text.*)
-    *libzephyr.a:esp_psram_impl_octal.*(.literal .literal.* .text .text.*)
 
     /* [mapping:hal] */
     *libzephyr.a:mmu_hal.*(.literal .literal.* .text .text.*)
-    *libzephyr.a:cache_hal.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:cache_utils.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:cache_esp32.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:cache_hal_esp32.*(.literal .text .literal.* .text.*)
     *libzephyr.a:ledc_hal_iram.*(.literal .literal.* .text .text.*)
     *libzephyr.a:i2c_hal_iram.*(.literal .literal.* .text .text.*)
     *libzephyr.a:wdt_hal_iram.*(.literal .literal.* .text .text.*)
@@ -325,7 +325,7 @@ SECTIONS
     *libzephyr.a:flash_brownout_hook.*(.literal .literal.* .text .text.*)
     *libzephyr.a:spi_flash_wrap.*(.literal .literal.* .text .text.*)
     *libzephyr.a:spi_flash_hpm_enable.*(.literal .literal.* .text .text.*)
-    *libzephyr.a:spi_flash_oct_flash_init*(.literal .literal.* .text .text.*)
+    *libzephyr.a:flash_ops.*(.literal .literal.* .text .text.*)
 
     /* [mapping:esp_system] */
     *libzephyr.a:esp_err.*(.literal .literal.* .text .text.*)
@@ -366,6 +366,7 @@ SECTIONS
     *libzephyr.a:esp_rom_spiflash.*(.literal .literal.* .text .text.*)
     *libzephyr.a:esp_rom_systimer.*(.literal .literal.* .text .text.*)
     *libzephyr.a:esp_rom_wdt.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:esp_rom_efuse.*(.literal .literal.* .text .text.*)
 
     /* [mapping:esp_mm] */
     *libzephyr.a:esp_cache.*(.literal .literal.* .text .text.*)
@@ -376,8 +377,8 @@ SECTIONS
     *libzephyr.a:bootloader_random*.*(.literal.bootloader_random_enable .text.bootloader_random_enable)
 
 #if defined(CONFIG_ESP32_WIFI_IRAM_OPT)
-    *libnet80211.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.*)
-    *libpp.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.* .wifiorslpiram .wifiorslpiram.*)
+    *libnet80211.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.* .wifiextrairam .wifiextrairam.*)
+    *libpp.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.* .wifiorslpiram .wifiorslpiram.* .wifiextrairam .wifiextrairam.*)
 
     /* [mapping:esp_wifi] */
     *(.literal.wifi_clock_enable_wrapper .text.wifi_clock_enable_wrapper)
@@ -520,20 +521,20 @@ SECTIONS
     *libzephyr.a:log_output.*(.rodata .rodata.*)
     *libzephyr.a:loader.*(.rodata .rodata.*)
     *libdrivers__flash.a:flash_esp32.*(.rodata .rodata.*)
-    *libzephyr.a:spi_flash_rom_patch.*(.rodata .rodata.*)
     *libdrivers__serial.a:uart_esp32.*(.rodata .rodata.*)
     *libzephyr.a:esp_memory_utils.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
 
     /* [mapping:esp_psram] */
     *libzephyr.a:mmu_psram_flash.*(.rodata .rodata.*)
-    *libzephyr.a:esp_psram_impl_octal.*(.rodata .rodata.*)
     *libzephyr.a:esp_psram_impl_quad.*(.rodata .rodata.*)
 
     /* [mapping:hal] */
     *libzephyr.a:mmu_hal.*(.rodata .rodata.*)
     *libzephyr.a:spi_flash_hal_iram.*(.rodata .rodata.*)
     *libzephyr.a:spi_flash_encrypt_hal_iram.*(.rodata .rodata.*)
-    *libzephyr.a:cache_hal.*(.rodata .rodata.*)
+    *libzephyr.a:cache_utils.*(.rodata .rodata.*)
+    *libzephyr.a:cache_esp32.*(.rodata .rodata.*)
+    *libzephyr.a:cache_hal_esp32.*(.rodata .rodata.*)
     *libzephyr.a:ledc_hal_iram.*(.rodata .rodata.*)
     *libzephyr.a:i2c_hal_iram.*(.rodata .rodata.*)
     *libzephyr.a:wdt_hal_iram.*(.rodata .rodata.*)
@@ -564,7 +565,7 @@ SECTIONS
     *libzephyr.a:flash_brownout_hook.*(.rodata .rodata.*)
     *libzephyr.a:spi_flash_wrap.*(.rodata .rodata.*)
     *libzephyr.a:spi_flash_hpm_enable.*(.rodata .rodata.*)
-    *libzephyr.a:spi_flash_oct_flash_init.*(.rodata .rodata.*)
+    *libzephyr.a:flash_ops.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
 
     /* [mapping:esp_mm] */
     *libzephyr.a:esp_cache.*(.rodata .rodata.*)
@@ -609,6 +610,7 @@ SECTIONS
     *libzephyr.a:esp_rom_spiflash.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
     *libzephyr.a:esp_rom_systimer.*(.rodata .rodata.*)
     *libzephyr.a:esp_rom_wdt.*(.rodata .rodata.*)
+    *libzephyr.a:esp_rom_efuse.*(.rodata .rodata.*)
 
     KEEP(*(.jcr))
     *(.dram1 .dram1.*)
@@ -855,8 +857,8 @@ SECTIONS
     __rom_region_start = ABSOLUTE(.);
 
 #ifndef CONFIG_ESP32_WIFI_IRAM_OPT
-    *libnet80211.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.*)
-    *libpp.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.* .wifiorslpiram .wifiorslpiram.*)
+    *libnet80211.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.* .wifiextrairam .wifiextrairam.*)
+    *libpp.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.* .wifiorslpiram .wifiorslpiram.* .wifiextrairam .wifiextrairam.*)
 #endif
 
 #ifndef CONFIG_ESP32_WIFI_RX_IRAM_OPT

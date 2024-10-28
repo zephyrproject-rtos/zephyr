@@ -7,8 +7,8 @@ tests:
     extra_args: EXTRA_CONF_FILE=overlay-secure_storage.conf
     integration_platforms:
       - native_sim
-      - nrf9151dk/nrf9151
+      - nrf54l15dk/nrf54l15/cpuapp
   secure_storage.psa.crypto.tfm:
     filter: CONFIG_BUILD_WITH_TFM
     integration_platforms:
-      - nrf5340dk/nrf5340/cpuapp/ns
+      - nrf9151dk/nrf9151/ns

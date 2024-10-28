@@ -1,7 +1,4 @@
-.. _msp_exp432p401r_launchxl:
-
-MSP-EXP432P401R LaunchXL
-########################
+.. zephyr:board:: msp_exp432p401r_launchxl
 
 Overview
 ********
@@ -10,10 +7,6 @@ The SimpleLink MSP‐EXP432P401R LaunchPad development kit is an easy-to-use eva
 module for the SimpleLink MSP432P401R microcontroller. It contains everything needed to start
 developing on the SimpleLink MSP432 low-power + performance ARM |reg| 32-bit Cortex |reg|-M4F
 microcontroller (MCU).
-
-.. figure:: img/msp_exp432p401r_launchxl.jpg
-     :align: center
-     :alt: MSP-EXP432P401R LaunchXL development board
 
 Features:
 =========
@@ -132,6 +125,8 @@ build target:
 
 References
 **********
+
+.. target-notes::
 
 TI MSP432 Wiki:
    https://en.wikipedia.org/wiki/TI_MSP432

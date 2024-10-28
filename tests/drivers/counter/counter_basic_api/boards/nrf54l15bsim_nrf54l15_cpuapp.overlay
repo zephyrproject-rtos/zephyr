@@ -1,1 +1,1 @@
-#include "nrf54l15pdk_nrf54l15_cpuapp.overlay"
+#include "nrf54l15dk_nrf54l15_cpuapp.overlay"

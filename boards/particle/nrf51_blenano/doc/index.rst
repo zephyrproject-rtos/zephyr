@@ -1,7 +1,4 @@
-.. _nrf51_blenano:
-
-Redbear Labs Nano
-#################
+.. zephyr:board:: nrf51_blenano
 
 Overview
 ********

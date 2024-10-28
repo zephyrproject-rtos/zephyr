@@ -177,11 +177,8 @@ config SOC_NRF53_CPUNET_MGMT
 
 config SOC_NRF53_CPUNET_ENABLE
 	bool "NRF53 Network MCU is enabled at boot time"
-	depends on !BT
 	default y if NRF_802154_SER_HOST
 	select SOC_NRF53_CPUNET_MGMT
-	select SOC_NRF_GPIO_FORWARDER_FOR_NRF5340 if \
-		$(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_GPIO_FORWARDER))
 	help
 	  This option enables releasing the Network 'force off' signal, which
 	  as a consequence will power up the Network MCU during system boot.
@@ -197,7 +194,6 @@ config BOARD_ENABLE_CPUNET
 	bool "[DEPRECATED] NRF53 Network MCU is enabled at boot time"
 	select SOC_NRF53_CPUNET_ENABLE
 	select DEPRECATED
-	depends on !BT
 	help
 	  Use SOC_NRF53_CPUNET_ENABLE instead.
 

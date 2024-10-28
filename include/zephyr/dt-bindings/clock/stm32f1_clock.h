@@ -49,7 +49,7 @@
  * @param mask Mask for the RCC_CFGRx field.
  * @param val Clock value (0, 1, ... 7).
  */
-#define STM32_CLOCK(val, mask, shift, reg)					\
+#define STM32_DOMAIN_CLOCK(val, mask, shift, reg)					\
 	((((reg) & STM32_CLOCK_REG_MASK) << STM32_CLOCK_REG_SHIFT) |		\
 	 (((shift) & STM32_CLOCK_SHIFT_MASK) << STM32_CLOCK_SHIFT_SHIFT) |	\
 	 (((mask) & STM32_CLOCK_MASK_MASK) << STM32_CLOCK_MASK_SHIFT) |		\
@@ -64,10 +64,10 @@
 
 /** @brief Device domain clocks selection helpers */
 /** CFGR2 devices */
-#define I2S2_SEL(val)		STM32_CLOCK(val, 1, 17, CFGR2_REG)
-#define I2S3_SEL(val)		STM32_CLOCK(val, 1, 18, CFGR2_REG)
+#define I2S2_SEL(val)		STM32_DOMAIN_CLOCK(val, 1, 17, CFGR2_REG)
+#define I2S3_SEL(val)		STM32_DOMAIN_CLOCK(val, 1, 18, CFGR2_REG)
 /** BDCR devices */
-#define RTC_SEL(val)		STM32_CLOCK(val, 3, 8, BDCR_REG)
+#define RTC_SEL(val)		STM32_DOMAIN_CLOCK(val, 3, 8, BDCR_REG)
 
 /** CFGR1 devices */
 #define MCO1_SEL(val)           STM32_MCO_CFGR(val, 0x7, 24, CFGR1_REG)

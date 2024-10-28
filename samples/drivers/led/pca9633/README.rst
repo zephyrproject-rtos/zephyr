@@ -20,7 +20,7 @@ following pattern:
 Building and Running
 ********************
 
-Build the application for the :ref:`nucleo_f334r8_board` board, and connect
+Build the application for the :zephyr:board:`nucleo_f334r8` board, and connect
 a PCA9633 LED driver on the bus I2C Arduino.
 
 .. zephyr-app-commands::
@@ -30,7 +30,7 @@ a PCA9633 LED driver on the bus I2C Arduino.
    :compact:
 
 For flashing the application, refer to the Flashing section of the
-:ref:`nucleo_f334r8_board` board documentation.
+:zephyr:board:`nucleo_f334r8` board documentation.
 
 References
 **********

@@ -20,3 +20,10 @@ config NET_SAMPLE_CODE_RAM_NAME
 	  Region to relocate networking code to
 
 endif # NET_SAMPLE_CODE_RELOCATE
+
+if USB_DEVICE_STACK_NEXT
+# Source common USB sample options used to initialize new experimental USB
+# device stack. The scope of these options is limited to USB samples in project
+# tree, you cannot use them in your own application.
+	source "samples/subsys/usb/common/Kconfig.sample_usbd"
+endif

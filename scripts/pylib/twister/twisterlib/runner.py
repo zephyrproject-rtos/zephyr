@@ -20,6 +20,7 @@ from multiprocessing import Lock, Process, Value
 from multiprocessing.managers import BaseManager
 from typing import List
 from packaging import version
+import pathlib
 
 from colorama import Fore
 from domains import Domains
@@ -363,7 +364,8 @@ class CMake:
             f'-DTC_NAME={self.instance.testsuite.name}',
             f'-D{warning_command}={warnings_as_errors}',
             f'-DEXTRA_GEN_EDT_ARGS={gen_edt_args}',
-            f'-G{self.env.generator}'
+            f'-G{self.env.generator}',
+            f'-DPython3_EXECUTABLE={pathlib.Path(sys.executable).as_posix()}'
         ]
 
         # If needed, run CMake using the package_helper script first, to only run

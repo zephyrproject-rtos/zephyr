@@ -21,6 +21,7 @@
 		zephyr,uart-mcumgr = &flexcomm4_lpuart4;
 		zephyr,console = &flexcomm4_lpuart4;
 		zephyr,shell-uart = &flexcomm4_lpuart4;
+		zephyr,canbus = &flexcan1;
 	};
 
 	aliases{
@@ -110,6 +111,10 @@
 	status = "okay";
 };
 
+&flexcan1 {
+	status = "okay";
+};
+
 &ctimer0 {
 	status = "okay";
 };
@@ -119,5 +124,17 @@
 };
 
 &lpadc0 {
+	status = "okay";
+};
+
+&lpcmp0 {
+	status = "okay";
+};
+
+&flexio0 {
+	status = "okay";
+};
+
+&lptmr0 {
 	status = "okay";
 };

@@ -21,6 +21,7 @@
 		zephyr,shell-uart = &uart9;
 		zephyr,entropy = &trng;
 		zephyr,flash-controller = &flash1;
+		zephyr,canbus = &canfd0;
 	};
 
 	leds {
@@ -71,6 +72,12 @@
 &sciclk {
 	clocks = <&pll>;
 	div = <4>;
+	status = "okay";
+};
+
+&canfdclk {
+	clocks = <&pll>;
+	div = <5>;
 	status = "okay";
 };
 
@@ -131,4 +138,14 @@
 	interrupt-names = "gtioca", "overflow";
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+&canfd_global {
+	status = "okay";
+	canfd0 {
+		pinctrl-0 = <&canfd0_default>;
+		pinctrl-names = "default";
+		rx-max-filters = <16>;
+		status = "okay";
+	};
 };

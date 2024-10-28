@@ -8,8 +8,32 @@
 #include <dt-bindings/clock/silabs/xg22-clock.h>
 #include <mem.h>
 
+/ {
+	clocks {
+		euart0clk: euart0clk {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clocks = <&em01grpaclk>;
+		};
+	};
+
+	soc {
+		clkin0: clkin0@5003c454 {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			reg = <0x5003c454 0x4>;
+			clock-frequency = <DT_FREQ_M(38)>;
+		};
+	};
+};
+
 &cmu {
 	interrupts = <46 0>;
+};
+
+&hfxo {
+	interrupts = <44 0>;
+	interrupt-names = "hfxo";
 };
 
 &msc {
@@ -55,7 +79,12 @@
 	clocks = <&cmu CLOCK_BURTC CLOCK_BRANCH_EM4GRPACLK>;
 };
 
-&stimer0 {
+&rtcc0 {
 	interrupts = <12 0>;
+	interrupt-names = "rtcc";
 	clocks = <&cmu CLOCK_RTCC CLOCK_BRANCH_RTCCCLK>;
+};
+
+&dcdc {
+	interrupts = <61 0>;
 };

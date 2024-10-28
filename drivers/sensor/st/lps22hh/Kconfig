@@ -31,11 +31,13 @@ config LPS22HH_TRIGGER_NONE
 config LPS22HH_TRIGGER_GLOBAL_THREAD
 	bool "Use global thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LPS22HH),drdy-gpios)
 	select LPS22HH_TRIGGER
 
 config LPS22HH_TRIGGER_OWN_THREAD
 	bool "Use own thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LPS22HH),drdy-gpios)
 	select LPS22HH_TRIGGER
 
 endchoice # LPS22HH_TRIGGER_MODE

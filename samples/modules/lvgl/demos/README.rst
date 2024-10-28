@@ -31,7 +31,7 @@ Note that other input devices types are not demonstrated in these demos, namely 
 Building and Running
 ********************
 
-Example building for :ref:`mimxrt1060_evk`:
+Example building for :zephyr:board:`mimxrt1060_evk`:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/modules/lvgl/demos
@@ -77,5 +77,7 @@ board argument may also be replaced by ``native_sim/native/64``.
 
 References
 **********
+
+.. target-notes::
 
 .. _LVGL demos Readme: https://github.com/zephyrproject-rtos/lvgl/blob/zephyr/demos/README.md

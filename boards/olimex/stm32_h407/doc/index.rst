@@ -1,7 +1,4 @@
-.. _olimex_stm32_h407:
-
-OLIMEX-STM32-H407
-#################
+.. zephyr:board:: olimex_stm32_h407
 
 Overview
 ********

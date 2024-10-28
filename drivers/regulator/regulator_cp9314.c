@@ -85,6 +85,7 @@ LOG_MODULE_REGISTER(CP9314, CONFIG_REGULATOR_LOG_LEVEL);
 #define CP9314_REG_LION_CFG_3        0x34
 #define CP9314_LB_MIN_FREQ_SEL_0     GENMASK(7, 6)
 #define CP9314_MODE_CTRL_UPDATE_BW_1 GENMASK(5, 3)
+#define CP9314_ALLOW_HW_I2C_LOCK     BIT(0)
 
 #define CP9314_REG_LB_CTRL       0x38
 #define CP9314_LB1_DELTA_CFG_1   GENMASK(6, 3)
@@ -118,7 +119,7 @@ LOG_MODULE_REGISTER(CP9314, CONFIG_REGULATOR_LOG_LEVEL);
 
 #define CP9314_REG_BC_STS_C  0x62
 #define CP9314_CHIP_REV_MASK GENMASK(7, 4)
-#define CP9314_CHIP_REV_B0   0x10
+#define CP9314_CHIP_REV_B1   0x3
 
 #define CP9314_REG_FORCE_SC_MISC 0x69
 #define CP9314_FORCE_CSI_EN      BIT(0)
@@ -150,6 +151,8 @@ LOG_MODULE_REGISTER(CP9314, CONFIG_REGULATOR_LOG_LEVEL);
 #define CP9314_PTE_2_MASK    GENMASK(7, 5)
 #define CP9314_PTE_2_OTP_1   0x0
 #define CP9314_PTE_2_OTP_2   0x1
+
+#define CP9314_REG_BACKDOOR_CTRL 0x8C
 
 #define CP9314_FAULT1_STS 0x9A
 #define CP9314_VIN_OV_STS BIT(4)
@@ -191,48 +194,31 @@ enum cp9314_sync_roles {
 	CP9314_ROLE_STANDALONE,
 };
 
+enum cp9314_backdoor_keys {
+	CP9314_BACKDOOR_LOCKED_KEY = 0x0,
+	CP9314_BACKDOOR_PUBLIC_KEY = 0x0F,
+};
+
 struct regulator_cp9314_config {
 	struct regulator_common_config common;
 	struct i2c_dt_spec i2c;
 	struct gpio_dt_spec en_pin;
 	struct gpio_dt_spec pgood_pin;
 	uint8_t initial_op_mode_idx;
+	bool hw_i2c_lock;
 };
 
 struct regulator_cp9314_data {
 	struct regulator_common_data data;
 	enum cp9314_sync_roles sync_role;
+	uint8_t backdoor_key;
+	bool allow_hw_i2c_lock;
 };
 
 struct cp9314_reg_patch {
 	uint8_t reg_addr;
 	uint8_t mask;
 	uint8_t value;
-};
-
-/*
- * HW errata patch for B0 silicon. Intended to correct POR configuration values for protection
- * comparators, disable OCP comparators, and enable the output undervoltage comparator.
- */
-static struct cp9314_reg_patch b0_reg_patch[18] = {
-	{CP9314_REG_CRUS_CTRL, GENMASK(7, 0), CP9314_CRUS_KEY_UNLOCK},
-	{CP9314_REG_LION_COMP_CTRL_3, CP9314_VIN_OV_CFG, 0x1B},
-	{CP9314_REG_LION_COMP_CTRL_1, CP9314_VOUT_OV_CFG_0, 0x30},
-	{CP9314_REG_LION_COMP_CTRL_2, CP9314_VOUT_OV_CFG_1, 0xC},
-	{CP9314_REG_VIN2OUT_OVP, CP9314_VIN2OUT_OVP, 0x2},
-	{CP9314_REG_VIN2OUT_UVP, CP9314_VIN2OUT_UVP, 0x1},
-	{CP9314_REG_VOUT_UVP, CP9314_VOUT_UVP_DIS, 0},
-	{CP9314_REG_VOUT_UVP, CP9314_VOUT_UVP, 0},
-	{CP9314_REG_LION_COMP_CTRL_1, CP9314_VIN_SWITCH_OK_DIS_0, 0},
-	{CP9314_REG_LION_COMP_CTRL_4, CP9314_VIN_SWITCH_OK_DIS_1, 0},
-	{CP9314_REG_LION_COMP_CTRL_1, CP9314_VIN_SWITCH_OK_CFG, 0},
-	{CP9314_REG_LION_CFG_3, CP9314_LB_MIN_FREQ_SEL_0, 0x80},
-	{CP9314_REG_LB_CTRL, CP9314_LB_MIN_FREQ_SEL_1, 0x4},
-	{CP9314_REG_TRIM_8, CP9314_MODE_CTRL_UPDATE_BW_0, 0x2},
-	{CP9314_REG_LION_CFG_3, CP9314_MODE_CTRL_UPDATE_BW_1, 0x2},
-	{CP9314_REG_IIN_OCP, CP9314_IIN_OCP_DIS, CP9314_IIN_OCP_DIS},
-	{CP9314_REG_IIN_PEAK_OCP, CP9314_IIN_PEAK_OCP_DIS, CP9314_IIN_PEAK_OCP_DIS},
-	{CP9314_REG_CRUS_CTRL, GENMASK(7, 0), CP9314_CRUS_KEY_LOCK},
 };
 
 /* OTP memory errata patch for OTP v1. Corrects trim errata. */
@@ -283,12 +269,73 @@ static int regulator_cp9314_get_error_flags(const struct device *dev,
 	return 0;
 }
 
+static int regulator_cp9314_write_lock(const struct device *dev,
+				       const enum cp9314_backdoor_keys key)
+{
+	const struct regulator_cp9314_config *config = dev->config;
+	struct regulator_cp9314_data *data = dev->data;
+	int ret;
+
+	if (data->allow_hw_i2c_lock == 0U) {
+		ret = i2c_reg_update_byte_dt(&config->i2c, CP9314_REG_LION_CFG_3,
+					     CP9314_ALLOW_HW_I2C_LOCK, CP9314_ALLOW_HW_I2C_LOCK);
+		if (ret < 0) {
+			return ret;
+		}
+
+		data->allow_hw_i2c_lock = true;
+	}
+
+	if ((uint8_t)key == data->backdoor_key) {
+		return 0;
+	} else {
+		return i2c_reg_write_byte_dt(&config->i2c, CP9314_REG_BACKDOOR_CTRL, (uint8_t)key);
+	}
+}
+
+static int regulator_cp9314_write_lock_init(const struct device *dev)
+{
+	const struct regulator_cp9314_config *config = dev->config;
+	struct regulator_cp9314_data *data = dev->data;
+	uint8_t value;
+	int ret;
+
+	ret = i2c_reg_read_byte_dt(&config->i2c, CP9314_REG_LION_CFG_3, &value);
+	if (ret < 0) {
+		return ret;
+	}
+
+	data->allow_hw_i2c_lock = FIELD_GET(CP9314_ALLOW_HW_I2C_LOCK, value);
+
+	ret = i2c_reg_read_byte_dt(&config->i2c, CP9314_REG_BACKDOOR_CTRL, &data->backdoor_key);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return 0;
+}
+
 static int regulator_cp9314_disable(const struct device *dev)
 {
 	const struct regulator_cp9314_config *config = dev->config;
+	int ret;
 
 	if (config->en_pin.port != NULL) {
 		return gpio_pin_set_dt(&config->en_pin, 0);
+	}
+
+	if (config->hw_i2c_lock != 0U) {
+		ret = regulator_cp9314_write_lock(dev, CP9314_BACKDOOR_PUBLIC_KEY);
+		if (ret < 0) {
+			return ret;
+		}
+
+		ret = i2c_reg_update_byte_dt(&config->i2c, CP9314_REG_CTRL1, CP9314_CP_EN, 0);
+		if (ret < 0) {
+			return ret;
+		}
+
+		return regulator_cp9314_write_lock(dev, CP9314_BACKDOOR_LOCKED_KEY);
 	}
 
 	return i2c_reg_update_byte_dt(&config->i2c, CP9314_REG_CTRL1, CP9314_CP_EN, 0);
@@ -299,6 +346,13 @@ static int regulator_cp9314_enable(const struct device *dev)
 	const struct regulator_cp9314_config *config = dev->config;
 	uint8_t value;
 	int ret;
+
+	if (config->hw_i2c_lock != 0U) {
+		ret = regulator_cp9314_write_lock(dev, CP9314_BACKDOOR_PUBLIC_KEY);
+		if (ret < 0) {
+			return ret;
+		}
+	}
 
 	ret = i2c_reg_read_byte_dt(&config->i2c, CP9314_REG_CONVERTER, &value);
 	if (ret < 0) {
@@ -352,6 +406,13 @@ static int regulator_cp9314_enable(const struct device *dev)
 		}
 	}
 
+	if (config->hw_i2c_lock != 0U) {
+		ret = regulator_cp9314_write_lock(dev, CP9314_BACKDOOR_LOCKED_KEY);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
 	return 0;
 }
 
@@ -381,26 +442,23 @@ static int cp9314_cfg_sync(const struct device *dev)
 				      CP9314_FRC_SYNC_MODE);
 }
 
-static int regulator_cp9314_b0_init(const struct device *dev)
-{
-	const struct regulator_cp9314_config *config = dev->config;
-	int ret;
-
-	for (size_t i = 0U; i < ARRAY_SIZE(b0_reg_patch); i++) {
-		ret = i2c_reg_update_byte_dt(&config->i2c, b0_reg_patch[i].reg_addr,
-					     b0_reg_patch[i].mask, b0_reg_patch[i].value);
-		if (ret < 0) {
-			return ret;
-		}
-	}
-
-	return 0;
-}
-
 static int cp9314_do_soft_reset(const struct device *dev)
 {
 	const struct regulator_cp9314_config *config = dev->config;
 	int ret;
+
+	if (config->hw_i2c_lock != 0U) {
+		ret = regulator_cp9314_write_lock(dev, CP9314_BACKDOOR_PUBLIC_KEY);
+		if (ret < 0) {
+			return ret;
+		}
+
+		ret = i2c_reg_update_byte_dt(&config->i2c, CP9314_REG_LION_CFG_3,
+					     CP9314_ALLOW_HW_I2C_LOCK, 0);
+		if (ret < 0) {
+			return ret;
+		}
+	}
 
 	ret = i2c_reg_write_byte_dt(&config->i2c, CP9314_REG_CRUS_CTRL, CP9314_CRUS_KEY_SOFT_RESET);
 	if (ret < 0) {
@@ -414,6 +472,13 @@ static int cp9314_do_soft_reset(const struct device *dev)
 	}
 
 	k_msleep(CP9314_SOFT_RESET_DELAY_MSEC);
+
+	if (config->hw_i2c_lock != 0U) {
+		ret = regulator_cp9314_write_lock_init(dev);
+		if (ret < 0) {
+			return ret;
+		}
+	}
 
 	return 0;
 }
@@ -506,9 +571,28 @@ static int regulator_cp9314_init(const struct device *dev)
 		k_usleep(CP9314_EN_DEBOUNCE_USEC);
 	}
 
+	if (config->hw_i2c_lock != 0U) {
+		ret = regulator_cp9314_write_lock_init(dev);
+		if (ret < 0) {
+			return ret;
+		}
+	} else {
+		data->allow_hw_i2c_lock = 0;
+	}
+
 	ret = cp9314_do_soft_reset(dev);
 	if (ret < 0) {
 		return ret;
+	}
+
+	if (data->allow_hw_i2c_lock != 0U) {
+		ret = i2c_reg_update_byte_dt(&config->i2c, CP9314_REG_LION_CFG_3,
+					     CP9314_ALLOW_HW_I2C_LOCK, 0x0);
+		if (ret < 0) {
+			return ret;
+		}
+
+		data->allow_hw_i2c_lock = false;
 	}
 
 	ret = i2c_reg_read_byte_dt(&config->i2c, CP9314_REG_BC_STS_C, &value);
@@ -516,20 +600,17 @@ static int regulator_cp9314_init(const struct device *dev)
 		return ret;
 	}
 
-	value &= CP9314_CHIP_REV_MASK;
+	value = FIELD_GET(CP9314_CHIP_REV_MASK, value);
 
 	switch (value) {
-	case CP9314_CHIP_REV_B0:
-		LOG_INF("Found CP9314 REV:0x%x\n", value);
-		ret = regulator_cp9314_b0_init(dev);
-		if (ret < 0) {
-			return ret;
-		}
+	case CP9314_CHIP_REV_B1:
 		break;
 	default:
 		LOG_ERR("Invalid CP9314 REV:0x%x\n", value);
 		return -ENOTSUP;
 	}
+
+	LOG_DBG("Found CP9314 REV:0x%x\n", value);
 
 	ret = regulator_cp9314_otp_init(dev);
 	if (ret < 0) {
@@ -593,6 +674,13 @@ static int regulator_cp9314_init(const struct device *dev)
 		}
 	}
 
+	if (config->hw_i2c_lock != 0U) {
+		ret = regulator_cp9314_write_lock(dev, CP9314_BACKDOOR_LOCKED_KEY);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
 	regulator_common_data_init(dev);
 
 	return regulator_common_init(dev, false);
@@ -614,6 +702,7 @@ static const struct regulator_driver_api api = {
 		.pgood_pin = GPIO_DT_SPEC_INST_GET_OR(inst, cirrus_pgood_gpios, {}),               \
 		.initial_op_mode_idx =                                                             \
 			DT_INST_ENUM_IDX_OR(inst, cirrus_initial_switched_capacitor_mode, -1) + 1, \
+		.hw_i2c_lock = DT_INST_PROP(inst, cirrus_hw_i2c_lock),                             \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, regulator_cp9314_init, NULL, &data_##inst, &config_##inst,     \

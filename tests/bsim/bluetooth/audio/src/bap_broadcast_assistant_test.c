@@ -116,7 +116,7 @@ static void bap_broadcast_assistant_recv_state_cb(
 	const struct bt_bap_scan_delegator_recv_state *state)
 {
 	char le_addr[BT_ADDR_LE_STR_LEN];
-	char bad_code[BT_AUDIO_BROADCAST_CODE_SIZE * 2 + 1];
+	char bad_code[BT_ISO_BROADCAST_CODE_SIZE * 2 + 1];
 
 	if (err != 0) {
 		FAIL("BASS recv state read failed (%d)\n", err);
@@ -131,8 +131,7 @@ static void bap_broadcast_assistant_recv_state_cb(
 	}
 
 	bt_addr_le_to_str(&state->addr, le_addr, sizeof(le_addr));
-	(void)bin2hex(state->bad_code, BT_AUDIO_BROADCAST_CODE_SIZE, bad_code,
-		      sizeof(bad_code));
+	(void)bin2hex(state->bad_code, BT_ISO_BROADCAST_CODE_SIZE, bad_code, sizeof(bad_code));
 	printk("BASS recv state: src_id %u, addr %s, sid %u, sync_state %u, encrypt_state %u%s%s\n",
 	       state->src_id, le_addr, state->adv_sid, state->pa_sync_state, state->encrypt_state,
 	       state->encrypt_state == BT_BAP_BIG_ENC_STATE_BAD_CODE ? ", bad code: " : "",
@@ -142,8 +141,8 @@ static void bap_broadcast_assistant_recv_state_cb(
 		SET_FLAG(flag_broadcast_code_requested);
 	} else if (state->encrypt_state == BT_BAP_BIG_ENC_STATE_BAD_CODE) {
 		SET_FLAG(flag_incorrect_broadcast_code);
-		if (memcmp(state->bad_code, INCORRECT_BROADCAST_CODE,
-			   BT_AUDIO_BROADCAST_CODE_SIZE) != 0) {
+		if (memcmp(state->bad_code, INCORRECT_BROADCAST_CODE, BT_ISO_BROADCAST_CODE_SIZE) !=
+		    0) {
 			FAIL("Bad code is not what we sent");
 			return;
 		}
@@ -518,7 +517,7 @@ static void test_bass_mod_source_long_meta(void)
 	printk("Server PA synced\n");
 }
 
-static void test_bass_broadcast_code(const uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE])
+static void test_bass_broadcast_code(const uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE])
 {
 	int err;
 

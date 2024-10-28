@@ -1,19 +1,9 @@
-.. heltec_wireless_stick_lite_v3:
-
-HelTec Wireless Stick Lite (V3)
-###############################
+.. zephyr:board:: heltec_wireless_stick_lite_v3
 
 Overview
 ********
 
 HelTec Wireless Stick Lite (V3) is a development board with Wi-Fi, Bluetooth and LoRa support. It is designed and produced by HelTec Automation(TM). [1]_
-
-.. figure:: heltec_wireless_stick_lite_v3.webp
-   :width: 400px
-   :align: center
-   :alt: HelTec Wireless Stick Lite (V3)
-
-   HelTec Wireless Stick Lite (V3) (Credit: Chengdu HelTec Automation Technology Co., Ltd.)
 
 Hardware
 ********

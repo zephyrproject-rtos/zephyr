@@ -26,3 +26,17 @@ tests:
       - b_l4s5i_iot01a                  # lsm6dsl
       - sensortile_box                  # lis2dw12, lsm6dso, iisdhhc
       - thingy53/nrf5340/cpuapp         # adxl362, bmi270
+  sample.sensor.accel_polling.adxl362-stream:
+    harness: console
+    tags: sensors
+    harness_config:
+      type: one_line
+      regex:
+        - "^\\s*[0-9A-Za-z_,+-.]*@[0-9A-Fa-f]* \\[m\/s\\^2\\]:    \
+           \\(\\s*-?[0-9\\.]*,\\s*-?[0-9\\.]*,\\s*-?[0-9\\.]*\\)$"
+    extra_args:
+      - SHIELD=eval_adxl362_ardz
+      - EXTRA_CONF_FILE=adxl362-stream.conf
+      - SNIPPET=rtt-tracing;rtt-console
+    platform_allow:
+      - apard32690/max32690/m4

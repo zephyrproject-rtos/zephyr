@@ -31,7 +31,7 @@ output, based on the sample in samples/drivers/display. The state machine update
 the output text label after every call to :c:func:`smf_run_state`.
 
 :kconfig:option:`CONFIG_LV_Z_VDB_SIZE` has been reduced to 14% to allow it to run
-on RAM-constrained boards like the :ref:`disco_l475_iot1_board`.
+on RAM-constrained boards like the :zephyr:board:`disco_l475_iot1`.
 
 Requirements
 ************
@@ -48,10 +48,10 @@ List of Arduino-based touchscreen shields:
 
 The demo should also work on STM32 Discovery Kits with built-in touchscreens e.g.
 
-- :ref:`stm32f412g_disco_board`
-- :ref:`st25dv_mb1283_disco_board`
-- :ref:`stm32f7508_dk_board`
-- :ref:`stm32f769i_disco_board`
+- :zephyr:board:`stm32f412g_disco`
+- :zephyr:board:`st25dv_mb1283_disco`
+- :zephyr:board:`stm32f7508_dk`
+- :zephyr:board:`stm32f769i_disco`
 
 etc. These will not need a shield defined as the touchscreen is built-in.
 
@@ -59,7 +59,7 @@ etc. These will not need a shield defined as the touchscreen is built-in.
 Building and Running
 ********************
 
-Below is an example on how to build for a :ref:`disco_l475_iot1_board` board with
+Below is an example on how to build for a :zephyr:board:`disco_l475_iot1` board with
 a :ref:`adafruit_2_8_tft_touch_v2`.
 
 .. zephyr-app-commands::
@@ -87,7 +87,7 @@ The ``key <key>`` command sends a keypress to the state machine. Valid keys are
 ``0`` through ``9`` for numbers, ``.``, ``+``, ``-``, ``*``, ``/`` and ``=`` to
 perform the expected function, ``C`` for Cancel, and ``E`` for Cancel Entry.
 
-GUI update speed on the :ref:`disco_l475_iot1_board` with :ref:`adafruit_2_8_tft_touch_v2`
+GUI update speed on the :zephyr:board:`disco_l475_iot1` with :ref:`adafruit_2_8_tft_touch_v2`
 touchscreen is of the order of 0.8s due to button matrices invalidating the entire
 matrix area when pressed, rather than just the button that was selected. This could
 be sped up by using 18 individual buttons rather than a single matrix, but is sufficient

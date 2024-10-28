@@ -17,7 +17,7 @@ LOG_MODULE_DECLARE(clock_control_nrf2, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 	     "multiple instances not supported");
 
-#ifdef CONFIG_NRFS_HAS_DVFS_SERVICE
+#ifdef CONFIG_NRFS_DVFS_LOCAL_DOMAIN
 #include <ld_dvfs_handler.h>
 
 #define FLAG_FREQ_CHANGE_CB_EXPECTED BIT(FLAGS_COMMON_BITS)
@@ -131,13 +131,13 @@ static struct onoff_manager *hsfll_find_mgr(const struct device *dev,
 	LOG_ERR("invalid frequency");
 	return NULL;
 }
-#endif /* CONFIG_NRFS_HAS_DVFS_SERVICE */
+#endif /* CONFIG_NRFS_DVFS_LOCAL_DOMAIN */
 
 static int api_request_hsfll(const struct device *dev,
 			     const struct nrf_clock_spec *spec,
 			     struct onoff_client *cli)
 {
-#ifdef CONFIG_NRFS_HAS_DVFS_SERVICE
+#ifdef CONFIG_NRFS_DVFS_LOCAL_DOMAIN
 	struct onoff_manager *mgr = hsfll_find_mgr(dev, spec);
 
 	if (mgr) {
@@ -153,7 +153,7 @@ static int api_request_hsfll(const struct device *dev,
 static int api_release_hsfll(const struct device *dev,
 			     const struct nrf_clock_spec *spec)
 {
-#ifdef CONFIG_NRFS_HAS_DVFS_SERVICE
+#ifdef CONFIG_NRFS_DVFS_LOCAL_DOMAIN
 	struct onoff_manager *mgr = hsfll_find_mgr(dev, spec);
 
 	if (mgr) {
@@ -170,7 +170,7 @@ static int api_cancel_or_release_hsfll(const struct device *dev,
 				       const struct nrf_clock_spec *spec,
 				       struct onoff_client *cli)
 {
-#ifdef CONFIG_NRFS_HAS_DVFS_SERVICE
+#ifdef CONFIG_NRFS_DVFS_LOCAL_DOMAIN
 	struct onoff_manager *mgr = hsfll_find_mgr(dev, spec);
 
 	if (mgr) {
@@ -197,7 +197,7 @@ static int api_get_rate_hsfll(const struct device *dev,
 
 static int hsfll_init(const struct device *dev)
 {
-#ifdef CONFIG_NRFS_HAS_DVFS_SERVICE
+#ifdef CONFIG_NRFS_DVFS_LOCAL_DOMAIN
 	struct hsfll_dev_data *dev_data = dev->data;
 	int rc;
 
@@ -228,12 +228,12 @@ static struct nrf_clock_control_driver_api hsfll_drv_api = {
 	.cancel_or_release = api_cancel_or_release_hsfll,
 };
 
-#ifdef CONFIG_NRFS_HAS_DVFS_SERVICE
+#ifdef CONFIG_NRFS_DVFS_LOCAL_DOMAIN
 static struct hsfll_dev_data hsfll_data;
 #endif
 
 DEVICE_DT_INST_DEFINE(0, hsfll_init, NULL,
-		      COND_CODE_1(CONFIG_NRFS_HAS_DVFS_SERVICE,
+		      COND_CODE_1(CONFIG_NRFS_DVFS_LOCAL_DOMAIN,
 				  (&hsfll_data),
 				  (NULL)),
 		      NULL,

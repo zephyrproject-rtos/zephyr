@@ -16,6 +16,7 @@
 #include <esp_private/esp_mmu_map_private.h>
 #include <esp_private/mspi_timing_tuning.h>
 #include <esp_flash_internal.h>
+#include <esp_private/cache_utils.h>
 #include <sdkconfig.h>
 
 #if CONFIG_ESP_SPIRAM

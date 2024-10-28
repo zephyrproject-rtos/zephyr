@@ -29,6 +29,7 @@ config CAN_XMC4XXX_RX_FIFO_ITEMS
 
 config CAN_XMC4XXX_INTERNAL_BUS_MODE
 	bool "Internal bus mode"
+	select PINCTRL
 	help
 	  Connects all XMC4XXX CAN devices to an internal bus. Enables
 	  message exchange between MCU CAN devices without any external connectors.

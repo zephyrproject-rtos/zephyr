@@ -152,7 +152,7 @@ config OPENTHREAD_PARENT_SEARCH_RSS_THRESHOLD
 
 config OPENTHREAD_CLI_MAX_LINE_LENGTH
 	int "The maximum size of the CLI line in bytes"
-	range 16 1024
+	range 16 $(UINT16_MAX)
 	default 384
 
 config OPENTHREAD_IP6_MAX_EXT_UCAST_ADDRS

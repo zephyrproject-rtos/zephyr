@@ -1,7 +1,4 @@
-.. _qemu_kvm_arm64:
-
-ARM AArch64 Virt KVM Emulation (QEMU)
-#####################################
+.. zephyr:board:: qemu_kvm_arm64
 
 Overview
 ********

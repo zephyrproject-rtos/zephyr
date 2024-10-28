@@ -56,7 +56,10 @@
 #define VCNL36825T_PS_MPS_POS		12
 #define VCNL36825T_PS_IT_POS		14
 
-#define VCNL36825T_PS_ST_MSK	GENMASK(0, 0)
+#define VCNL36825T_PS_ST_MSK		GENMASK(0, 0)
+#define VCNL36825T_PS_SMART_PERS_MSK	GENMASK(1, 1)
+#define VCNL36825T_PS_INT_MSK		GENMASK(3, 2)
+#define VCNL36825T_PS_PERS_MSK		GENMASK(5, 4)
 
 #define VCNL36825T_PS_ST_START	(0 << VCNL36825T_PS_ST_POS)
 #define VCNL36825T_PS_ST_STOP	(1 << VCNL36825T_PS_ST_POS)
@@ -65,9 +68,9 @@
 #define VCNL36825T_PS_SMART_PERS_ENABLED	(1 << VCNL36825T_PS_PS_SMART_PERS_POS)
 
 #define VCNL36825T_PS_INT_DISABLE		(0 << VCNL36825T_PS_INT_POS)
-#define VCNL36825T_PS_INT_THDH_PERS_LATCHED	(1 << VCNL36825T_PS_INT_POS)
-#define VCNL36825T_PS_INT_THDH_FIRST_LATCHED	(2 << VCNL36825T_PS_INT_POS)
-#define VCNL36825T_PS_INT_ENABLED		(3 << VCNL36825T_PS_INT_POS)
+#define VCNL36825T_PS_INT_MODE_LOGIC_HIGH_LOW	(1 << VCNL36825T_PS_INT_POS)
+#define VCNL36825T_PS_INT_MODE_FIRST_HIGH	(2 << VCNL36825T_PS_INT_POS)
+#define VCNL36825T_PS_INT_MODE_NORMAL		(3 << VCNL36825T_PS_INT_POS)
 
 #define VCNL36825T_PS_PERS_1	(0 << VCNL36825T_PS_PERS_POS)
 #define VCNL36825T_PS_PERS_2	(1 << VCNL36825T_PS_PERS_POS)
@@ -281,6 +284,12 @@ enum vcnl38625t_laser_current {
 	VCNL36825T_LASER_CURRENT_20MS,
 };
 
+enum vcnl36825t_int_mode {
+	VCNL36825T_INT_MODE_NORMAL,
+	VCNL36825T_INT_MODE_FIRST_HIGH,
+	VCNL36825T_INT_MODE_LOGIC_HIGH_LOW,
+};
+
 struct vcnl36825t_config {
 	struct i2c_dt_spec i2c;
 
@@ -297,6 +306,13 @@ struct vcnl36825t_config {
 	enum vcnl38625t_laser_current laser_current;
 	bool high_dynamic_output;
 	bool sunlight_cancellation;
+
+#if CONFIG_VCNL36825T_TRIGGER
+	struct gpio_dt_spec int_gpio;
+	enum vcnl36825t_int_mode int_mode;
+	uint8_t int_proximity_count;
+	bool int_smart_persistence;
+#endif
 };
 
 struct vcnl36825t_data {
@@ -308,6 +324,42 @@ struct vcnl36825t_data {
 	unsigned int meas_timeout_running_us;
 	unsigned int meas_timeout_wakeup_us;
 #endif
+
+#if CONFIG_VCNL36825T_TRIGGER
+	const struct device *dev;
+	const struct gpio_dt_spec *int_gpio;
+
+	const struct sensor_trigger *int_trigger;
+	sensor_trigger_handler_t int_handler;
+
+	struct gpio_callback int_gpio_handler;
+
+#if CONFIG_VCNL36825T_TRIGGER_OWN_THREAD
+	K_KERNEL_STACK_MEMBER(int_thread_stack, CONFIG_VCNL36825T_THREAD_STACK_SIZE);
+	struct k_thread int_thread;
+	struct k_sem int_gpio_sem;
+#elif CONFIG_VCNL36825T_TRIGGER_GLOBAL_THREAD
+	struct k_work int_work;
+#endif
+#endif
 };
+
+int vcnl36825t_read(const struct i2c_dt_spec *spec, uint8_t reg_addr, uint16_t *value);
+
+int vcnl36825t_write(const struct i2c_dt_spec *spec, uint8_t reg_addr, uint16_t value);
+
+int vcnl36825t_update(const struct i2c_dt_spec *spec, uint8_t reg_addr, uint16_t mask,
+		      uint16_t value);
+
+#if CONFIG_VCNL36825T_TRIGGER
+int vcnl36825t_trigger_init(const struct device *dev);
+
+int vcnl36825t_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
+			   sensor_trigger_handler_t handler);
+
+int vcnl36825t_trigger_attr_set(const struct device *dev, enum sensor_channel chan,
+				enum sensor_attribute attr, const struct sensor_value *val);
+
+#endif
 
 #endif

@@ -1,0 +1,10 @@
+# Copyright (c) 2024 Lukasz Hawrylko
+# SPDX-License-Identifier: Apache-2.0
+
+config SSD1322
+	bool "SSD1322 display driver"
+	default y
+	depends on DT_HAS_SOLOMON_SSD1322_ENABLED
+	select MIPI_DBI
+	help
+	  Enable driver for SSD1322 display driver.

@@ -15,7 +15,7 @@ Requirements
 
 This sample requires an I2C peripheral which is capable of acting as a target.
 
-This sample has been tested on :ref:`lpcxpresso55s69`.
+This sample has been tested on :zephyr:board:`lpcxpresso55s69`.
 
 Building and Running
 ********************

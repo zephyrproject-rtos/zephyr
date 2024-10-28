@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-23 NXP
+ * Copyright 2020-2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,11 +43,13 @@ struct dma_mcux_edma_config {
 #endif
 	uint8_t channels_per_mux;
 	uint8_t dmamux_reg_offset;
+	int dma_requests;
 	int dma_channels; /* number of channels */
 #if DMA_MCUX_HAS_CHANNEL_GAP
 	uint32_t channel_gap[2];
 #endif
 	void (*irq_config_func)(const struct device *dev);
+	edma_tcd_t (*tcdpool)[CONFIG_DMA_TCD_QUEUE_SIZE];
 };
 
 
@@ -82,9 +84,6 @@ struct dma_mcux_edma_config {
 
 #endif /* CONFIG_HAS_MCUX_CACHE */
 
-static __aligned(32) EDMA_TCDPOOL_CACHE_ATTR edma_tcd_t
-tcdpool[DT_INST_PROP(0, dma_channels)][CONFIG_DMA_TCD_QUEUE_SIZE];
-
 struct dma_mcux_channel_transfer_edma_settings {
 	uint32_t source_data_size;
 	uint32_t dest_data_size;
@@ -108,8 +107,8 @@ struct call_back {
 
 struct dma_mcux_edma_data {
 	struct dma_context dma_ctx;
-	struct call_back data_cb[DT_INST_PROP(0, dma_channels)];
-	ATOMIC_DEFINE(channels_atomic, DT_INST_PROP(0, dma_channels));
+	struct call_back *data_cb;
+	atomic_t *channels_atomic;
 };
 
 #define DEV_CFG(dev) \
@@ -256,12 +255,12 @@ static int dma_mcux_edma_configure(const struct device *dev, uint32_t channel,
 	unsigned int key;
 	int ret = 0;
 
-	if (slot >= DT_INST_PROP(0, dma_requests)) {
+	if (slot >= DEV_CFG(dev)->dma_requests) {
 		LOG_ERR("source number is out of scope %d", slot);
 		return -ENOTSUP;
 	}
 
-	if (channel >= DT_INST_PROP(0, dma_channels)) {
+	if (channel >= DEV_CFG(dev)->dma_channels) {
 		LOG_ERR("out of DMA channel %d", channel);
 		return -EINVAL;
 	}
@@ -359,7 +358,8 @@ static int dma_mcux_edma_configure(const struct device *dev, uint32_t channel,
 	EDMA_EnableChannelInterrupts(DEV_BASE(dev), hw_channel, kEDMA_ErrorInterruptEnable);
 
 	if (block_config->source_gather_en || block_config->dest_scatter_en) {
-		EDMA_InstallTCDMemory(p_handle, tcdpool[channel], CONFIG_DMA_TCD_QUEUE_SIZE);
+		EDMA_InstallTCDMemory(p_handle, DEV_CFG(dev)->tcdpool[channel],
+				      CONFIG_DMA_TCD_QUEUE_SIZE);
 		while (block_config != NULL) {
 			EDMA_PrepareTransfer(
 				&(data->transferConfig),
@@ -627,8 +627,6 @@ static int dma_mcux_edma_init(const struct device *dev)
 	EDMA_EnableAllChannelLink(DEV_BASE(dev), true);
 #endif
 	config->irq_config_func(dev);
-	memset(dev->data, 0, sizeof(struct dma_mcux_edma_data));
-	memset(tcdpool, 0, sizeof(tcdpool));
 	data->dma_ctx.magic = DMA_MAGIC;
 	data->dma_ctx.dma_channels = config->dma_channels;
 	data->dma_ctx.atomic = data->channels_atomic;
@@ -675,9 +673,9 @@ static int dma_mcux_edma_init(const struct device *dev)
 		LISTIFY(NUM_IRQS_WITHOUT_ERROR_IRQ(n),				\
 			DMA_MCUX_EDMA_IRQ_CONFIG, (;), n)			\
 										\
-		IF_ENABLED(UTIL_NOT(DT_INST_NODE_HAS_PROP(n, no_error_irq)),	\
-			   (IRQ_CONFIG(n, NUM_IRQS_WITHOUT_ERROR_IRQ(n),	\
-			    dma_mcux_edma_error_irq_handler)))			\
+		COND_CODE_1(DT_INST_PROP(n, no_error_irq), (),			\
+			(IRQ_CONFIG(n, NUM_IRQS_WITHOUT_ERROR_IRQ(n),		\
+			dma_mcux_edma_error_irq_handler)))			\
 										\
 		LOG_DBG("install irq done");					\
 	}
@@ -716,17 +714,28 @@ static int dma_mcux_edma_init(const struct device *dev)
 #define DMA_INIT(n)								\
 	DMAMUX_BASE_INIT_DEFINE(n)						\
 	static void dma_imx_config_func_##n(const struct device *dev);		\
+	static __aligned(32) EDMA_TCDPOOL_CACHE_ATTR edma_tcd_t			\
+	dma_tcdpool##n[DT_INST_PROP(n, dma_channels)][CONFIG_DMA_TCD_QUEUE_SIZE];\
 	static const struct dma_mcux_edma_config dma_config_##n = {		\
 		.base = (DMA_Type *)DT_INST_REG_ADDR(n),			\
 		DMAMUX_BASE_INIT(n)						\
+		.dma_requests = DT_INST_PROP(n, dma_requests),			\
 		.dma_channels = DT_INST_PROP(n, dma_channels),			\
 		CHANNELS_PER_MUX(n)						\
 		.irq_config_func = dma_imx_config_func_##n,			\
 		.dmamux_reg_offset = DT_INST_PROP(n, dmamux_reg_offset),	\
 		DMA_MCUX_EDMA_CHANNEL_GAP(n)					\
+		.tcdpool = dma_tcdpool##n,					\
 	};									\
 										\
-	struct dma_mcux_edma_data dma_data_##n;					\
+	static struct call_back							\
+		dma_data_callback_##n[DT_INST_PROP(n, dma_channels)];		\
+	static ATOMIC_DEFINE(							\
+		dma_channels_atomic_##n, DT_INST_PROP(n, dma_channels));	\
+	static struct dma_mcux_edma_data dma_data_##n = {			\
+		.data_cb = dma_data_callback_##n,				\
+		.channels_atomic = dma_channels_atomic_##n,			\
+	};									\
 										\
 	DEVICE_DT_INST_DEFINE(n,						\
 			      &dma_mcux_edma_init, NULL,			\

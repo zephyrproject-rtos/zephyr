@@ -1,7 +1,4 @@
-.. _cc3220sf_launchxl:
-
-CC3220SF LaunchXL
-#################
+.. zephyr:board:: cc3220sf_launchxl
 
 Overview
 ********

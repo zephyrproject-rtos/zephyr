@@ -1,6 +1,11 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2024 Jilay Sandeep Pandya
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 / {
 	uln2003_motor: uln2003_1 {
-		compatible = "gpio-steppers";
+		compatible = "zephyr,gpio-steppers";
 		status = "okay";
 		motor_1: motor_1 {
 			micro-step-res = <1>;

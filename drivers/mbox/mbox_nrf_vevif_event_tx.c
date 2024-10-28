@@ -12,11 +12,7 @@
 #include <hal/nrf_vpr_csr.h>
 #include <hal/nrf_vpr_csr_vevif.h>
 
-#if defined(CONFIG_SOC_NRF54L15_ENGA_CPUFLPR)
-#define EVENTS_IDX_MAX 17U
-#else
 #define EVENTS_IDX_MAX NRF_VPR_EVENTS_TRIGGERED_MAX
-#endif
 
 #define VEVIF_EVENTS_NUM  DT_INST_PROP(0, nordic_events)
 #define VEVIF_EVENTS_MASK DT_INST_PROP(0, nordic_events_mask)

@@ -8,6 +8,7 @@ toolchain:
   - gnuarmemb
   - xtools
 supported:
+  - arduino_gpio
   - arduino_serial
   - arduino_spi
   - pmod_spi
@@ -16,5 +17,6 @@ supported:
   - spi
   - trng
   - counter
+  - w1
 ram: 1024
 flash: 3072

@@ -1,0 +1,6 @@
+board:
+  name: usb2canfdv1
+  full_name: USB2CANFDV1
+  vendor: weact
+  socs:
+    - name: stm32g0b1xx

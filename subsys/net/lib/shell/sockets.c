@@ -123,10 +123,7 @@ static void walk_socket_services(const struct net_socket_service_desc *svc,
 	snprintk(owner, sizeof(owner), "<unknown>");
 #endif
 
-	PR("%32s  %-6s  %-5d %s\n",
-	   owner,
-	   svc->pev->work.handler == NULL ? "SYNC" : "ASYNC",
-	   svc->pev_len, pev_output);
+	PR("%32s  %-5d %s\n", owner, svc->pev_len, pev_output);
 
 	(*count)++;
 }
@@ -183,8 +180,7 @@ static int cmd_net_sockets(const struct shell *sh, size_t argc, char *argv[])
 	svc_user_data.user_data = &svc_count;
 
 	PR("Services:\n");
-	PR("%32s  %-6s  %-5s %s\n",
-	   "Owner", "Mode", "Count", "FDs");
+	PR("%32s  %-5s %s\n", "Owner", "Count", "FDs");
 	PR("\n");
 
 	net_socket_service_foreach(walk_socket_services, (void *)&svc_user_data);

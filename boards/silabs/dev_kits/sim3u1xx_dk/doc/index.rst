@@ -1,15 +1,9 @@
-.. _sim3u1xx_dk:
-
-Silicon Labs SiM3U1xx 32-bit MCU USB Development Kit
-####################################################
+.. zephyr:board:: sim3u1xx_dk
 
 Overview
 ********
 
 This is a `development kit`_ that is used to develop software for the SiM3U1xx MCUs.
-
-.. figure:: sim3u1xx_dk.webp
-   :align: center
 
 Hardware
 ********
@@ -54,6 +48,8 @@ The board configuration supports the following hardware features:
 | NVIC      | on-chip    | nested vector interrupt controller  |
 +-----------+------------+-------------------------------------+
 | SYSTICK   | on-chip    | systick                             |
++-----------+------------+-------------------------------------+
+| AES       | on-chip    | crypto                              |
 +-----------+------------+-------------------------------------+
 | DMA       | on-chip    | dma                                 |
 +-----------+------------+-------------------------------------+

@@ -1,7 +1,4 @@
-.. _esp32s3_eye:
-
-ESP32-S3-EYE
-############
+.. zephyr:board:: esp32s3_eye
 
 Overview
 ********
@@ -19,10 +16,6 @@ The ESP32-S3-EYE board consists of two parts: the main board (ESP32-S3-EYE-MB) t
 ESP32-S3-WROOM-1 module, camera, SD card slot, digital microphone, USB port, and function buttons;
 and the sub board (ESP32-S3-EYE-SUB) that contains an LCD display.
 The main board and sub board are connected through pin headers.
-
-.. figure:: img/ESP32-S3-EYE-isometric.webp
-    :align: center
-    :alt: ESP32-S3-EYE
 
 Block Diagram
 -------------

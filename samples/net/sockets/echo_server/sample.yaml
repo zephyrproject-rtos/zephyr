@@ -145,3 +145,9 @@ tests:
   sample.net.sockets.echo_server.802154.subg:
     extra_args: EXTRA_CONF_FILE="overlay-802154-subg.conf"
     platform_allow: beagleconnect_freedom
+  sample.net.sockets.echo_server.ws_console:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    extra_args:
+      - EXTRA_CONF_FILE="overlay-ws-console.conf"

@@ -1,7 +1,4 @@
-.. _google_twinkie_v2_board:
-
-Google Twinkie V2
-#################
+.. zephyr:board:: google_twinkie_v2
 
 Overview
 ********

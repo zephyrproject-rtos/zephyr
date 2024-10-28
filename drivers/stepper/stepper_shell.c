@@ -40,23 +40,26 @@ struct stepper_direction_map {
 		.microstep = _microstep,                                                           \
 	}
 
-static void print_callback(const struct device *dev, const enum stepper_event event)
+static void print_callback(const struct device *dev, const enum stepper_event event,
+			   void *user_data)
 {
+	const struct shell *sh = user_data;
+
 	switch (event) {
 	case STEPPER_EVENT_STEPS_COMPLETED:
-		LOG_INF("%s: Steps completed.", dev->name);
+		shell_info(sh, "%s: Steps completed.", dev->name);
 		break;
 	case STEPPER_EVENT_STALL_DETECTED:
-		LOG_INF("%s: Stall detected.", dev->name);
+		shell_info(sh, "%s: Stall detected.", dev->name);
 		break;
 	case STEPPER_EVENT_LEFT_END_STOP_DETECTED:
-		LOG_INF("%s: Left limit switch pressed.", dev->name);
+		shell_info(sh, "%s: Left limit switch pressed.", dev->name);
 		break;
 	case STEPPER_EVENT_RIGHT_END_STOP_DETECTED:
-		LOG_INF("%s: Right limit switch pressed.", dev->name);
+		shell_info(sh, "%s: Right limit switch pressed.", dev->name);
 		break;
 	default:
-		LOG_INF("%s: Unknown signal received.", dev->name);
+		shell_info(sh, "%s: Unknown signal received.", dev->name);
 		break;
 	}
 }
@@ -200,7 +203,7 @@ static int cmd_stepper_move(const struct shell *sh, size_t argc, char **argv)
 		return err;
 	}
 
-	err = stepper_set_callback(dev, print_callback, NULL);
+	err = stepper_set_callback(dev, print_callback, (void *)sh);
 	if (err != 0) {
 		shell_error(sh, "Failed to set callback: %d", err);
 	}

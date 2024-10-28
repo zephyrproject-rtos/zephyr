@@ -1,7 +1,4 @@
-.. _frdm_mcxc444:
-
-NXP FRDM-MCXC444
-################
+.. zephyr:board:: frdm_mcxc444
 
 Overview
 ********
@@ -12,11 +9,6 @@ for easy access to the MCU's I/Os, integrated open-standard serial
 interfaces and on-board MCU-Link debugger.
 The MCXC is a general purpose ultra-low-power MCU family,
 providing additional memory, communications and analog peripheral.
-
-
-.. image:: frdm_mcxc444.webp
-   :align: center
-   :alt: FRDM-MCXC444
 
 Hardware
 ********

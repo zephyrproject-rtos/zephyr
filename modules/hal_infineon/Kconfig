@@ -66,8 +66,7 @@ config USE_INFINEON_UART
 config USE_INFINEON_PWM
 	bool
 	help
-	  Enable Pulse Width Modulator (PWM) HAL module
-	  driver for Infineon devices
+	  Enable Pulse Width Modulator (PWM) HAL module driver for Infineon devices
 
 config USE_INFINEON_WDT
 	bool

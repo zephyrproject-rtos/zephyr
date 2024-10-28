@@ -9,6 +9,7 @@
 #define INA230_EMUL_H_
 
 #define INA230_REGISTER_COUNT 8
+#define INA236_REGISTER_COUNT 2
 
 int ina230_mock_set_register(void *data_ptr, int reg, uint32_t value);
 int ina230_mock_get_register(void *data_ptr, int reg, uint32_t *value_ptr);

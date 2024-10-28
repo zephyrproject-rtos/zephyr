@@ -1,7 +1,4 @@
-.. _adi_sdp_k1:
-
-ADI SDP-K1
-##########
+.. zephyr:board:: adi_sdp_k1
 
 Overview
 ********
@@ -23,12 +20,6 @@ ADI components.
 - One push-buttons: RESET
 - 16MB SDRAM
 - Arduino UNO and 120-pin SDP connectors
-
-.. figure:: img/adi_sdp_k1.webp
-   :align: center
-   :alt: ADI SDP-K1
-
-   ADI SDP-K1 (Credit: Analog Devices, Inc.)
 
 More information about the board can be found on the `ADI SDP-K1 website`_.
 

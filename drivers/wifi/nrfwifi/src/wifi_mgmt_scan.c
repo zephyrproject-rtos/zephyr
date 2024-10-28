@@ -206,6 +206,10 @@ int nrf_wifi_disp_scan_zep(const struct device *dev, struct wifi_scan_params *pa
 
 	vif_ctx_zep->scan_res_cnt = 0;
 
+#ifdef CONFIG_NRF70_PASSIVE_SCAN_ONLY
+	scan_info->scan_params.passive_scan = 1;
+#endif /* CONFIG_NRF70_PASSIVE_SCAN_ONLY */
+
 	status = nrf_wifi_fmac_scan(rpu_ctx_zep->rpu_ctx, vif_ctx_zep->vif_idx, scan_info);
 
 	if (status != NRF_WIFI_STATUS_SUCCESS) {

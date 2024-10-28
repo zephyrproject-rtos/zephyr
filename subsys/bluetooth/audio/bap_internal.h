@@ -78,7 +78,7 @@ struct bt_bap_bass_cp_mod_src {
 struct bt_bap_bass_cp_broadcase_code {
 	uint8_t opcode;
 	uint8_t src_id;
-	uint8_t broadcast_code[16];
+	uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE];
 } __packed;
 
 struct bt_bap_bass_cp_rem_src {

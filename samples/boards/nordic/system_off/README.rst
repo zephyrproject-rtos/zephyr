@@ -22,7 +22,7 @@ RAM is configured to keep the containing section powered while in system-off mod
 Requirements
 ************
 
-This application uses nRF51 DK, nRF52 DK or nRF54L15 PDK board for the demo.
+This application uses nRF51 DK, nRF52 DK or nRF54L15 DK board for the demo.
 
 Sample Output
 =============

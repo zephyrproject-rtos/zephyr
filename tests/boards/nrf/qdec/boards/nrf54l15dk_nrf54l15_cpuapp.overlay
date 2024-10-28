@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "nrf54l15pdk_nrf54l15_common.dtsi"
+#include "nrf54l15dk_nrf54l15_common.dtsi"
 
 /* To prevent enabling console receiver. */
 &uart20 {

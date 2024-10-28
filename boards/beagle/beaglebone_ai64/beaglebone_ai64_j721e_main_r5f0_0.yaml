@@ -1,0 +1,17 @@
+# Copyright (C) 2023 BeagleBoard.org Foundation
+# Copyright (C) 2023 S Prashanth
+#
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: beaglebone_ai64/j721e/main_r5f0_0
+name: BeagleBone-AI64 R5
+type: mcu
+arch: arm
+ram: 32
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - uart
+vendor: beagle

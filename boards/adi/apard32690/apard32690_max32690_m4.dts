@@ -53,6 +53,35 @@
 		led2 = &green_led;
 		sw0 = &usr_btn;
 	};
+
+	arduino_header: connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio3 0 0>,	/* A0 */
+			   <1 0 &gpio3 1 0>,	/* A1 */
+			   <2 0 &gpio3 2 0>,	/* A2 */
+			   <3 0 &gpio3 3 0>,	/* A3 */
+			   <4 0 &gpio3 4 0>,	/* A4 */
+			   <5 0 &gpio3 5 0>,	/* A5 */
+			   <6 0 &gpio2 14 0>,	/* D0 */
+			   <7 0 &gpio2 16 0>,	/* D1 */
+			   <8 0 &gpio2 13 0>,	/* D2 */
+			   <9 0 &gpio2 15 0>,	/* D3 */
+			   <10 0 &gpio0 8 0>,	/* D4 */
+			   <11 0 &gpio0 7 0>,	/* D5 */
+			   <12 0 &gpio1 24 0>,	/* D6 */
+			   <13 0 &gpio1 25 0>,	/* D7 */
+			   <14 0 &gpio1 31 0>,	/* D8 */
+			   <15 0 &gpio1 30 0>,	/* D9 */
+			   <16 0 &gpio1 23 0>,	/* D10 */
+			   <17 0 &gpio1 29 0>,	/* D11 */
+			   <18 0 &gpio1 28 0>,	/* D12 */
+			   <19 0 &gpio1 26 0>,	/* D13 */
+			   <20 0 &gpio2 17 0>,	/* D14 */
+			   <21 0 &gpio2 18 0>;	/* D15 */
+	};
 };
 
 &clk_ipo {
@@ -102,6 +131,22 @@ arduino_serial: &uart1 {
 	pinctrl-0 = <&uart1a_tx_p2_16 &uart1a_rx_p2_14>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
+};
+
+&spi1a_miso_p1_28 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&spi1a_mosi_p1_29 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&spi1a_sck_p1_26 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&spi1a_ss0_p1_23 {
+	power-source = <MAX32_VSEL_VDDIOH>;
 };
 
 arduino_spi: &spi1 {
@@ -176,4 +221,9 @@ pmod_spi: &spi4 {
 			};
 		};
 	};
+};
+
+&w1 {
+	pinctrl-0 = <&owm_io_p0_8 &owm_pe_p0_7>;
+	pinctrl-names = "default";
 };

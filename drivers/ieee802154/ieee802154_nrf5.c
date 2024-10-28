@@ -256,6 +256,9 @@ static void nrf5_get_capabilities_at_boot(void)
 #if defined(CONFIG_IEEE802154_NRF5_MULTIPLE_CCA)
 		| IEEE802154_OPENTHREAD_HW_MULTIPLE_CCA
 #endif
+#if defined(CONFIG_IEEE802154_SELECTIVE_TXCHANNEL)
+		| IEEE802154_HW_SELECTIVE_TXCHANNEL
+#endif
 		;
 }
 
@@ -540,7 +543,11 @@ static bool nrf5_tx_at(struct nrf5_802154_data *nrf5_radio, struct net_pkt *pkt,
 			.dynamic_data_is_set = net_pkt_ieee802154_mac_hdr_rdy(pkt),
 		},
 		.cca = cca,
+#if defined(CONFIG_IEEE802154_SELECTIVE_TXCHANNEL)
+		.channel = net_pkt_ieee802154_txchannel(pkt),
+#else
 		.channel = nrf_802154_channel_get(),
+#endif
 		.tx_power = {
 			.use_metadata_value = true,
 			.power = nrf5_data.txpwr,

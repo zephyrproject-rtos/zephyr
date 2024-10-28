@@ -43,26 +43,78 @@ BUILD_ASSERT((CONFIG_IMG_BLOCK_BUF_SIZE % FLASH_WRITE_BLOCK_SIZE == 0),
 	     "FLASH_WRITE_BLOCK_SIZE");
 #endif
 
+static int scramble_mcuboot_trailer(struct flash_img_context *ctx)
+{
+	int rc = 0;
+
+#ifdef CONFIG_IMG_ERASE_PROGRESSIVELY
+	if (stream_flash_bytes_written(&ctx->stream) == 0) {
+		off_t toff = boot_get_trailer_status_offset(ctx->flash_area->fa_size);
+		off_t offset;
+		size_t size;
+		const struct flash_parameters *fparams =
+			flash_get_parameters(flash_area_get_device(ctx->flash_area));
+#ifdef CONFIG_STREAM_FLASH_ERASE
+		/* for erasable devices prgressive-erase works only along with
+		 * CONFIG_STREAM_FLASH_ERASE option.
+		 */
+		if (flash_params_get_erase_cap(fparams) & FLASH_ERASE_C_EXPLICIT) {
+			/* On devices with explicit erase we are aligning to page
+			 * layout.
+			 */
+			struct flash_pages_info info;
+
+			rc = flash_get_page_info_by_offs(flash_area_get_device(ctx->flash_area),
+							 toff, &info);
+			if (rc != 0) {
+				return rc;
+			}
+			offset = info.start_offset;
+			size = info.size;
+
+		} else
+#endif
+		{
+			/* On devices with no erase, we are aligning to write block
+			 * size.
+			 */
+			offset = (toff + fparams->write_block_size - 1) &
+				 ~(fparams->write_block_size - 1);
+			/* No alignment correction needed here, offset is corrected already
+			 * and, size should be aligned.
+			 */
+			size = ctx->flash_area->fa_size - offset;
+		}
+
+		rc = flash_area_flatten(ctx->flash_area, offset, size);
+	}
+#endif
+
+	return rc;
+}
+
+
 int flash_img_buffered_write(struct flash_img_context *ctx, const uint8_t *data,
 			     size_t len, bool flush)
 {
 	int rc;
 
+	/* If there is a need to erase the trailer, that should happen before any
+	 * write is done to partition.
+	 */
+	rc = scramble_mcuboot_trailer(ctx);
+	if (rc != 0) {
+		return rc;
+	}
+
+
+	/* if CONFIG_IMG_ERASE_PROGRESSIVELY is enabled the enabled CONFIG_STREAM_FLASH_ERASE
+	 * ensures that stream_flash erases flash progresively.
+	 */
 	rc = stream_flash_buffered_write(&ctx->stream, data, len, flush);
 	if (!flush) {
 		return rc;
 	}
-
-#ifdef CONFIG_IMG_ERASE_PROGRESSIVELY
-	ssize_t status_offset = boot_get_trailer_status_offset(
-		ctx->flash_area->fa_size);
-	rc = stream_flash_erase_page(&ctx->stream,
-				ctx->flash_area->fa_off +
-				status_offset);
-	if (rc) {
-		return rc;
-	}
-#endif
 
 	flash_area_close(ctx->flash_area);
 	ctx->flash_area = NULL;

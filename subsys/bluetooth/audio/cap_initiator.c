@@ -186,9 +186,9 @@ static void cap_initiator_broadcast_to_bap_broadcast_param(
 	bap_param->encryption = cap_param->encryption;
 	if (bap_param->encryption) {
 		memcpy(bap_param->broadcast_code, cap_param->broadcast_code,
-		       BT_AUDIO_BROADCAST_CODE_SIZE);
+		       BT_ISO_BROADCAST_CODE_SIZE);
 	} else {
-		memset(bap_param->broadcast_code, 0, BT_AUDIO_BROADCAST_CODE_SIZE);
+		memset(bap_param->broadcast_code, 0, BT_ISO_BROADCAST_CODE_SIZE);
 	}
 
 	for (size_t i = 0U; i < bap_param->params_count; i++) {
@@ -322,17 +322,6 @@ int bt_cap_initiator_broadcast_audio_delete(struct bt_cap_broadcast_source *broa
 	return err;
 }
 
-int bt_cap_initiator_broadcast_get_id(const struct bt_cap_broadcast_source *broadcast_source,
-				      uint32_t *const broadcast_id)
-{
-	CHECKIF(broadcast_source == NULL) {
-		LOG_DBG("broadcast_source is NULL");
-		return -EINVAL;
-	}
-
-	return bt_bap_broadcast_source_get_id(broadcast_source->bap_broadcast, broadcast_id);
-}
-
 int bt_cap_initiator_broadcast_get_base(struct bt_cap_broadcast_source *broadcast_source,
 					struct net_buf_simple *base_buf)
 {
@@ -352,6 +341,10 @@ static enum bt_bap_ep_state stream_get_state(const struct bt_bap_stream *bap_str
 {
 	struct bt_bap_ep_info ep_info;
 	int err;
+
+	if (bap_stream->ep == NULL) {
+		return BT_BAP_EP_STATE_IDLE;
+	}
 
 	err = bt_bap_ep_get_info(bap_stream->ep, &ep_info);
 	if (err != 0) {
@@ -391,24 +384,48 @@ static bool stream_is_dir(const struct bt_bap_stream *bap_stream, enum bt_audio_
 	return ep_info.dir == dir;
 }
 
-static bool iso_is_in_state(const struct bt_cap_stream *cap_stream, enum bt_iso_state state)
+static enum bt_iso_state bap_stream_get_iso_state(const struct bt_bap_stream *bap_stream)
 {
-	const struct bt_bap_stream *bap_stream = &cap_stream->bap_stream;
 	struct bt_bap_ep_info ep_info;
 	int err;
+
+	if (bap_stream->ep == NULL) {
+		return BT_ISO_STATE_DISCONNECTED;
+	}
 
 	err = bt_bap_ep_get_info(bap_stream->ep, &ep_info);
 	if (err != 0) {
 		LOG_DBG("Failed to get endpoint info %p: %d", bap_stream, err);
 
-		return false;
+		return BT_ISO_STATE_DISCONNECTED;
 	}
 
 	if (ep_info.iso_chan == NULL) {
-		return state == BT_ISO_STATE_DISCONNECTED;
+		return BT_ISO_STATE_DISCONNECTED;
 	}
 
-	return state == ep_info.iso_chan->state;
+	return ep_info.iso_chan->state;
+}
+
+static bool iso_is_in_state(const struct bt_cap_stream *cap_stream, enum bt_iso_state state)
+{
+	const struct bt_bap_stream *bap_stream = &cap_stream->bap_stream;
+
+	return bap_stream_get_iso_state(bap_stream) == state;
+}
+
+static void set_cap_stream_in_progress(struct bt_cap_stream *cap_stream, bool value)
+{
+	struct bt_cap_common_proc *active_proc = bt_cap_common_get_active_proc();
+
+	for (size_t i = 0U; i < active_proc->proc_cnt; i++) {
+		if (cap_stream == active_proc->proc_param.initiator[i].stream) {
+			active_proc->proc_param.initiator[i].in_progress = value;
+			return;
+		}
+	}
+
+	__ASSERT(false, "CAP stream %p not in active_proc", cap_stream);
 }
 
 /**
@@ -441,7 +458,7 @@ static void update_proc_done_cnt(struct bt_cap_common_proc *active_proc)
 		 * the states to determine how far we are.
 		 */
 		for (size_t i = 0U; i < active_proc->proc_cnt; i++) {
-			const struct bt_cap_initiator_proc_param *proc_param;
+			struct bt_cap_initiator_proc_param *proc_param;
 			struct bt_cap_stream *cap_stream;
 			struct bt_bap_stream *bap_stream;
 			enum bt_bap_ep_state state;
@@ -502,7 +519,7 @@ static void update_proc_done_cnt(struct bt_cap_common_proc *active_proc)
 		 * the states to determine how far we are.
 		 */
 		for (size_t i = 0U; i < active_proc->proc_cnt; i++) {
-			const struct bt_cap_initiator_proc_param *proc_param;
+			struct bt_cap_initiator_proc_param *proc_param;
 			struct bt_cap_stream *cap_stream;
 			struct bt_bap_stream *bap_stream;
 			enum bt_bap_ep_state state;
@@ -540,7 +557,7 @@ static void update_proc_done_cnt(struct bt_cap_common_proc *active_proc)
 		/* For metadata we cannot check the states for all streams, as it does not trigger a
 		 * state change
 		 */
-		const struct bt_cap_initiator_proc_param *proc_param;
+		struct bt_cap_initiator_proc_param *proc_param;
 		struct bt_cap_stream *cap_stream;
 		struct bt_bap_stream *bap_stream;
 		enum bt_bap_ep_state state;
@@ -589,6 +606,11 @@ get_next_proc_param(struct bt_cap_common_proc *active_proc)
 		enum bt_bap_ep_state state;
 
 		proc_param = &active_proc->proc_param.initiator[i];
+
+		if (proc_param->in_progress) {
+			continue;
+		}
+
 		cap_stream = proc_param->stream;
 		bap_stream = &cap_stream->bap_stream;
 		state = stream_get_state(bap_stream);
@@ -814,6 +836,43 @@ static void cap_initiator_unicast_audio_proc_complete(void)
 	}
 }
 
+void bt_cap_initiator_cp_cb(struct bt_cap_stream *cap_stream, enum bt_bap_ascs_rsp_code rsp_code,
+			    enum bt_bap_ascs_reason reason)
+{
+	if (!bt_cap_common_stream_in_active_proc(cap_stream)) {
+		/* State change happened outside of a procedure; ignore */
+		return;
+	}
+
+	LOG_DBG("cap_stream %p", cap_stream);
+
+	set_cap_stream_in_progress(cap_stream, false);
+
+	if (rsp_code != BT_BAP_ASCS_RSP_CODE_SUCCESS) {
+		struct bt_cap_common_proc *active_proc = bt_cap_common_get_active_proc();
+
+		/* In the case that the control point write is rejected, we will not get a ASE state
+		 * change notification. This is considered an error that shall abort the current
+		 * procedure.
+		 */
+		active_proc->proc_done_cnt++;
+
+		LOG_DBG("Control point operation on stream %p failed with %d and reason %d",
+			cap_stream, rsp_code, reason);
+
+		/* Unexpected callback - Abort */
+		bt_cap_common_abort_proc(cap_stream->bap_stream.conn, -EBADMSG);
+
+		if (bt_cap_common_proc_is_aborted()) {
+			if (bt_cap_common_proc_all_handled()) {
+				cap_initiator_unicast_audio_proc_complete();
+			}
+
+			return;
+		}
+	}
+}
+
 static int cap_initiator_unicast_audio_configure(
 	const struct bt_cap_unicast_audio_start_param *param)
 {
@@ -869,6 +928,7 @@ static int cap_initiator_unicast_audio_configure(
 	conn = proc_param->start.conn;
 	ep = proc_param->start.ep;
 	active_proc->proc_initiated_cnt++;
+	proc_param->in_progress = true;
 
 	/* Since BAP operations may require a write long or a read long on the notification,
 	 * we cannot assume that we can do multiple streams at once, thus do it one at a time.
@@ -971,6 +1031,7 @@ void bt_cap_initiator_codec_configured(struct bt_cap_stream *cap_stream)
 		codec_cfg = proc_param->start.codec_cfg;
 		next_bap_stream = &next_cap_stream->bap_stream;
 		active_proc->proc_initiated_cnt++;
+		proc_param->in_progress = true;
 
 		err = bt_bap_stream_config(conn, next_bap_stream, ep, codec_cfg);
 		if (err != 0) {
@@ -1038,7 +1099,16 @@ void bt_cap_initiator_codec_configured(struct bt_cap_stream *cap_stream)
 			break;
 		}
 
-		active_proc->proc_initiated_cnt++;
+		for (size_t j = 0U; j < active_proc->proc_cnt; j++) {
+			proc_param = &active_proc->proc_param.initiator[j];
+			if (proc_param->stream->bap_stream.conn == conns[i]) {
+				active_proc->proc_initiated_cnt++;
+				proc_param->in_progress = false;
+				break;
+			}
+		}
+
+		proc_param->in_progress = true;
 
 		err = bt_bap_stream_qos(conns[i], unicast_group);
 		if (err != 0) {
@@ -1115,6 +1185,7 @@ void bt_cap_initiator_qos_configured(struct bt_cap_stream *cap_stream)
 		next_cap_stream = proc_param->stream;
 		bap_stream = &next_cap_stream->bap_stream;
 		active_proc->proc_initiated_cnt++;
+		proc_param->in_progress = true;
 
 		err = bt_bap_stream_enable(bap_stream, bap_stream->codec_cfg->meta,
 					   bap_stream->codec_cfg->meta_len);
@@ -1136,6 +1207,7 @@ void bt_cap_initiator_qos_configured(struct bt_cap_stream *cap_stream)
 		next_cap_stream = proc_param->stream;
 		next_bap_stream = &next_cap_stream->bap_stream;
 		active_proc->proc_initiated_cnt++;
+		proc_param->in_progress = true;
 
 		err = bt_bap_stream_release(next_bap_stream);
 		if (err != 0) {
@@ -1189,6 +1261,7 @@ void bt_cap_initiator_enabled(struct bt_cap_stream *cap_stream)
 		next_bap_stream = &next_cap_stream->bap_stream;
 
 		active_proc->proc_initiated_cnt++;
+		proc_param->in_progress = true;
 
 		err = bt_bap_stream_enable(next_bap_stream, next_bap_stream->codec_cfg->meta,
 					   next_bap_stream->codec_cfg->meta_len);
@@ -1213,6 +1286,7 @@ void bt_cap_initiator_enabled(struct bt_cap_stream *cap_stream)
 	}
 
 	bap_stream = &proc_param->stream->bap_stream;
+	proc_param->in_progress = true;
 
 	err = bt_bap_stream_connect(bap_stream);
 	if (err == -EALREADY) {
@@ -1220,6 +1294,7 @@ void bt_cap_initiator_enabled(struct bt_cap_stream *cap_stream)
 		 * NOTE: It's important that we do not do any additional functionality after
 		 * calling this
 		 */
+		proc_param->in_progress = false;
 		bt_cap_initiator_connected(proc_param->stream);
 	} else if (err != 0) {
 		LOG_DBG("Failed to connect stream %p: %d", proc_param->stream, err);
@@ -1246,6 +1321,8 @@ void bt_cap_initiator_connected(struct bt_cap_stream *cap_stream)
 	}
 
 	LOG_DBG("cap_stream %p", cap_stream);
+
+	set_cap_stream_in_progress(cap_stream, false);
 
 	if (!bt_cap_common_subproc_is_type(BT_CAP_COMMON_SUBPROC_TYPE_CONNECT)) {
 		/* Unexpected callback - Abort */
@@ -1277,21 +1354,26 @@ void bt_cap_initiator_connected(struct bt_cap_stream *cap_stream)
 		struct bt_bap_stream *next_bap_stream;
 
 		proc_param = get_next_proc_param(active_proc);
-		__ASSERT(proc_param != NULL, "proc is not done, but could not get next proc_param");
-		next_cap_stream = proc_param->stream;
-		next_bap_stream = &next_cap_stream->bap_stream;
+		if (proc_param != NULL) {
+			next_cap_stream = proc_param->stream;
+			next_bap_stream = &next_cap_stream->bap_stream;
 
-		active_proc->proc_initiated_cnt++;
+			active_proc->proc_initiated_cnt++;
+			proc_param->in_progress = true;
 
-		err = bt_bap_stream_connect(next_bap_stream);
-		if (err == 0 || err == -EALREADY) {
-			/* Pending connected - wait for connected callback */
-		} else if (err != 0) {
-			LOG_DBG("Failed to connect stream %p: %d", next_cap_stream, err);
+			err = bt_bap_stream_connect(next_bap_stream);
+			if (err == 0 || err == -EALREADY) {
+				if (err == -EALREADY) {
+					proc_param->in_progress = false;
+				}
+				/* Pending connected - wait for connected callback */
+			} else if (err != 0) {
+				LOG_DBG("Failed to connect stream %p: %d", next_cap_stream, err);
 
-			bt_cap_common_abort_proc(next_bap_stream->conn, err);
-			cap_initiator_unicast_audio_proc_complete();
-		}
+				bt_cap_common_abort_proc(next_bap_stream->conn, err);
+				cap_initiator_unicast_audio_proc_complete();
+			}
+		} /* else pending connection - wait for connected callback */
 
 		return;
 	}
@@ -1312,6 +1394,8 @@ void bt_cap_initiator_connected(struct bt_cap_stream *cap_stream)
 
 	bap_stream = &proc_param->stream->bap_stream;
 	if (stream_is_dir(bap_stream, BT_AUDIO_DIR_SOURCE)) {
+		proc_param->in_progress = true;
+
 		err = bt_bap_stream_start(bap_stream);
 		if (err != 0) {
 			LOG_DBG("Failed to start stream %p: %d", proc_param->stream, err);
@@ -1336,8 +1420,12 @@ void bt_cap_initiator_started(struct bt_cap_stream *cap_stream)
 	}
 
 	/* Streams may go into the streaming state while we are connecting or starting them */
-	if (!bt_cap_common_subproc_is_type(BT_CAP_COMMON_SUBPROC_TYPE_START) &&
-	    !bt_cap_common_subproc_is_type(BT_CAP_COMMON_SUBPROC_TYPE_CONNECT)) {
+	if (bt_cap_common_subproc_is_type(BT_CAP_COMMON_SUBPROC_TYPE_CONNECT)) {
+		/* If we are still connecting the streams, we terminate early as to not perform any
+		 * start operations until all streams are connected
+		 */
+		return;
+	} else if (!bt_cap_common_subproc_is_type(BT_CAP_COMMON_SUBPROC_TYPE_START)) {
 		/* Unexpected callback - Abort */
 		bt_cap_common_abort_proc(cap_stream->bap_stream.conn, -EBADMSG);
 	} else {
@@ -1353,25 +1441,29 @@ void bt_cap_initiator_started(struct bt_cap_stream *cap_stream)
 		struct bt_bap_stream *next_bap_stream;
 
 		proc_param = get_next_proc_param(active_proc);
-		__ASSERT(proc_param != NULL, "proc is not done, but could not get next proc_param");
-		next_cap_stream = proc_param->stream;
-		next_bap_stream = &next_cap_stream->bap_stream;
+		if (proc_param != NULL) {
+			next_cap_stream = proc_param->stream;
+			next_bap_stream = &next_cap_stream->bap_stream;
 
-		if (stream_is_dir(next_bap_stream, BT_AUDIO_DIR_SOURCE)) {
-			int err;
+			if (stream_is_dir(next_bap_stream, BT_AUDIO_DIR_SOURCE)) {
+				int err;
 
-			err = bt_bap_stream_start(next_bap_stream);
-			if (err != 0) {
-				LOG_DBG("Failed to start stream %p: %d", next_cap_stream, err);
+				proc_param->in_progress = true;
 
-				/* End and mark procedure as aborted.
-				 * If we have sent any requests over air, we will abort
-				 * once all sent requests has completed
-				 */
-				bt_cap_common_abort_proc(next_bap_stream->conn, err);
-				cap_initiator_unicast_audio_proc_complete();
+				err = bt_bap_stream_start(next_bap_stream);
+				if (err != 0) {
+					LOG_DBG("Failed to start stream %p: %d", next_cap_stream,
+						err);
 
-				return;
+					/* End and mark procedure as aborted.
+					 * If we have sent any requests over air, we will abort
+					 * once all sent requests has completed
+					 */
+					bt_cap_common_abort_proc(next_bap_stream->conn, err);
+					cap_initiator_unicast_audio_proc_complete();
+
+					return;
+				}
 			}
 		} /* else await notifications from server */
 
@@ -1521,6 +1613,7 @@ int bt_cap_initiator_unicast_audio_update(const struct bt_cap_unicast_audio_upda
 	meta_len = proc_param->meta_update.meta_len;
 	meta = proc_param->meta_update.meta;
 	active_proc->proc_initiated_cnt++;
+	proc_param->in_progress = true;
 
 	err = bt_bap_stream_metadata(bap_stream, meta, meta_len);
 	if (err != 0) {
@@ -1588,6 +1681,7 @@ void bt_cap_initiator_metadata_updated(struct bt_cap_stream *cap_stream)
 		next_cap_stream = proc_param->stream;
 		bap_stream = &next_cap_stream->bap_stream;
 		active_proc->proc_initiated_cnt++;
+		proc_param->in_progress = true;
 
 		err = bt_bap_stream_metadata(bap_stream, meta, meta_len);
 		if (err != 0) {
@@ -1636,7 +1730,18 @@ static bool can_disable_stream(const struct bt_bap_stream *bap_stream)
 
 static bool can_stop_stream(const struct bt_bap_stream *bap_stream)
 {
+	enum bt_iso_state iso_state;
+
 	if (bap_stream->conn == NULL) {
+		return false;
+	}
+
+	if (stream_is_dir(bap_stream, BT_AUDIO_DIR_SINK)) {
+		return false;
+	}
+
+	iso_state = bap_stream_get_iso_state(bap_stream);
+	if (iso_state != BT_ISO_STATE_CONNECTED && iso_state != BT_ISO_STATE_CONNECTING) {
 		return false;
 	}
 
@@ -1794,6 +1899,7 @@ int bt_cap_initiator_unicast_audio_stop(const struct bt_cap_unicast_audio_stop_p
 			 "proc is not started, but could not get next proc_param");
 		bap_stream = &proc_param->stream->bap_stream;
 		active_proc->proc_initiated_cnt++;
+		proc_param->in_progress = true;
 
 		err = bt_bap_stream_disable(bap_stream);
 		if (err != 0) {
@@ -1812,6 +1918,7 @@ int bt_cap_initiator_unicast_audio_stop(const struct bt_cap_unicast_audio_stop_p
 			 "proc is not started, but could not get next proc_param");
 		bap_stream = &proc_param->stream->bap_stream;
 		active_proc->proc_initiated_cnt++;
+		proc_param->in_progress = true;
 
 		err = bt_bap_stream_stop(bap_stream);
 		if (err != 0) {
@@ -1830,6 +1937,7 @@ int bt_cap_initiator_unicast_audio_stop(const struct bt_cap_unicast_audio_stop_p
 			 "proc is not started, but could not get next proc_param");
 		bap_stream = &proc_param->stream->bap_stream;
 		active_proc->proc_initiated_cnt++;
+		proc_param->in_progress = true;
 
 		err = bt_bap_stream_release(bap_stream);
 		if (err != 0) {
@@ -1880,6 +1988,7 @@ void bt_cap_initiator_disabled(struct bt_cap_stream *cap_stream)
 		next_cap_stream = proc_param->stream;
 		next_bap_stream = &next_cap_stream->bap_stream;
 		active_proc->proc_initiated_cnt++;
+		proc_param->in_progress = true;
 
 		err = bt_bap_stream_disable(next_bap_stream);
 		if (err != 0) {
@@ -1909,14 +2018,17 @@ void bt_cap_initiator_disabled(struct bt_cap_stream *cap_stream)
 		next_cap_stream = proc_param->stream;
 		next_bap_stream = &next_cap_stream->bap_stream;
 		active_proc->proc_initiated_cnt++;
+		proc_param->in_progress = true;
 
 		err = bt_bap_stream_stop(next_bap_stream);
-		if (err != 0) {
+		if (err != 0 && err != -EALREADY) {
 			LOG_DBG("Failed to stop stream %p: %d", next_cap_stream, err);
 
 			bt_cap_common_abort_proc(next_bap_stream->conn, err);
 			cap_initiator_unicast_audio_proc_complete();
-		}
+		} else if (err == -EALREADY) {
+			proc_param->in_progress = false;
+		} /* else wait for server notification*/
 	}
 }
 
@@ -1961,19 +2073,23 @@ void bt_cap_initiator_stopped(struct bt_cap_stream *cap_stream)
 		int err;
 
 		proc_param = get_next_proc_param(active_proc);
-		__ASSERT(proc_param != NULL, "proc is not done, but could not get next proc_param");
-		next_cap_stream = proc_param->stream;
-		next_bap_stream = &next_cap_stream->bap_stream;
+		if (proc_param != NULL) {
+			next_cap_stream = proc_param->stream;
+			next_bap_stream = &next_cap_stream->bap_stream;
 
-		active_proc->proc_initiated_cnt++;
+			active_proc->proc_initiated_cnt++;
+			proc_param->in_progress = true;
 
-		err = bt_bap_stream_stop(next_bap_stream);
-		if (err != 0) {
-			LOG_DBG("Failed to stop stream %p: %d", next_cap_stream, err);
+			err = bt_bap_stream_stop(next_bap_stream);
+			if (err != 0 && err != -EALREADY) {
+				LOG_DBG("Failed to stop stream %p: %d", next_cap_stream, err);
 
-			bt_cap_common_abort_proc(next_bap_stream->conn, err);
-			cap_initiator_unicast_audio_proc_complete();
-		}
+				bt_cap_common_abort_proc(next_bap_stream->conn, err);
+				cap_initiator_unicast_audio_proc_complete();
+			} else if (err == -EALREADY) {
+				proc_param->in_progress = false;
+			}
+		} /* else await notification from server */
 	} else {
 		/* We are done stopping streams now - We mark the next subproc. If
 		 * get_next_proc_param returns a NULL value it means that we are complete done. If
@@ -2040,6 +2156,7 @@ void bt_cap_initiator_released(struct bt_cap_stream *cap_stream)
 		next_cap_stream = proc_param->stream;
 		next_bap_stream = &next_cap_stream->bap_stream;
 		active_proc->proc_initiated_cnt++;
+		proc_param->in_progress = true;
 
 		err = bt_bap_stream_release(next_bap_stream);
 		if (err != 0) {

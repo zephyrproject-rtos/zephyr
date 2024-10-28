@@ -83,6 +83,29 @@
 		watchdog0 = &iwdg;
 		sdhc0 = &sdmmc1;
 	};
+
+	dcmi_camera_connector: connector_dcmi_camera {
+		compatible = "weact,dcmi-camera-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+
+		gpio-map = <3  0 &gpiob 9  0>,  /* DVP_SDA (I2C1_SDA) */
+			   <5  0 &gpiob 8  0>,  /* DVP_SCL (I2C1_SCL) */
+			   <7  0 &gpiob 7  0>,  /* DVP_VSYNC */
+			   <8  0 &gpioa 7  0>,  /* DVP_PWDN */
+			   <9  0 &gpioa 4  0>,  /* DVP_HSYNC */
+			   <12 0 &gpioe 6  0>,  /* DVP_D7 */
+			   <13 0 &gpioa 8  0>,  /* DVP_XCLK (RCC_MCO1) */
+			   <14 0 &gpioe 5  0>,  /* DVP_D6 */
+			   <16 0 &gpiod 3  0>,  /* DVP_D5 */
+			   <17 0 &gpioa 6  0>,  /* DVP_PCLK */
+			   <18 0 &gpioe 4  0>,  /* DVP_D4 */
+			   <19 0 &gpioc 6  0>,  /* DVP_D0 */
+			   <20 0 &gpioe 1  0>,  /* DVP_D3 */
+			   <21 0 &gpioc 7  0>,  /* DVP_D1 */
+			   <22 0 &gpioe 0  0>;  /* DVP_D2 */
+	};
 };
 
 &clk_lsi {
@@ -148,7 +171,7 @@ zephyr_udc0: &usbotg_fs {
 
 	w25q64_qspi: qspi-nor-flash@90000000 {
 		compatible = "st,stm32-qspi-nor";
-		reg = <0x90000000 DT_SIZE_M(64)>; /* 64 Mbits */
+		reg = <0x90000000 DT_SIZE_M(8)>; /* 64 Mbits */
 		qspi-max-frequency = <40000000>;
 		status = "okay";
 		spi-bus-width = <4>;
@@ -159,7 +182,7 @@ zephyr_udc0: &usbotg_fs {
 			#address-cells = <1>;
 			#size-cells = <1>;
 			slot0_partition: partition@0 {
-				reg = <0x00000000 DT_SIZE_M(64)>;
+				reg = <0x00000000 DT_SIZE_M(8)>;
 			};
 		};
 	};
@@ -186,7 +209,7 @@ zephyr_udc0: &usbotg_fs {
 			#size-cells = <1>;
 			storage_partition: partition@0 {
 				label = "storage";
-				reg = <0x00000000 DT_SIZE_M(64)>;
+				reg = <0x00000000 DT_SIZE_M(8)>;
 			};
 		};
 	};
@@ -219,4 +242,16 @@ zephyr_udc0: &usbotg_fs {
 
 &iwdg1 {
 	status = "okay";
+};
+
+zephyr_camera_i2c: &i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
+	pinctrl-names = "default";
+};
+
+zephyr_camera_dvp: &dcmi {
+	pinctrl-0 = <&dcmi_hsync_pa4 &dcmi_pixclk_pa6 &dcmi_vsync_pb7
+		     &dcmi_d0_pc6 &dcmi_d1_pc7 &dcmi_d2_pe0 &dcmi_d3_pe1
+		     &dcmi_d4_pe4 &dcmi_d5_pd3 &dcmi_d6_pe5 &dcmi_d7_pe6>;
+	pinctrl-names = "default";
 };

@@ -64,7 +64,7 @@ static int ws_console_out(struct log_backend_ws_ctx *ctx, int c)
 	static int max_cnt = CONFIG_LOG_BACKEND_WS_TX_RETRY_CNT;
 	bool printnow = false;
 	unsigned int cnt = 0;
-	int ret;
+	int ret = 0;
 
 	if (pos >= (sizeof(output_buf) - 1)) {
 		printnow = true;

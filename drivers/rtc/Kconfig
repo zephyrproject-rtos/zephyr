@@ -58,5 +58,6 @@ source "drivers/rtc/Kconfig.stm32"
 source "drivers/rtc/Kconfig.numaker"
 source "drivers/rtc/Kconfig.rv8263"
 source "drivers/rtc/Kconfig.xmc4xxx"
+source "drivers/rtc/Kconfig.nxp_irtc"
 
 endif # RTC

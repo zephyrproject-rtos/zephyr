@@ -1,7 +1,4 @@
-.. _serpente:
-
-Arturo182 Serpente
-##################
+.. zephyr:board:: serpente
 
 Overview
 ********
@@ -10,10 +7,6 @@ The Serpente is a very small low-cost development and prototyping
 board equipped with 4MiB flash storage, a PWM enabled RGB led and 6 I/O pins.
 The board comes with 3 different USB connector options: USB Type-C plug,
 USB Type-C socket and USB Type-A plug.
-
-.. image:: img/serpente.jpg
-     :align: center
-     :alt: Serpente Boards
 
 Hardware
 ********

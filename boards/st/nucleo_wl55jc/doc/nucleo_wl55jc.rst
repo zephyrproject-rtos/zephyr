@@ -1,7 +1,4 @@
-.. _nucleo_wl55jc_board:
-
-ST Nucleo WL55JC
-################
+.. zephyr:board:: nucleo_wl55jc
 
 Overview
 ********
@@ -42,10 +39,6 @@ power consumption, and features.
   and many other proprietary protocols
 - Fully open hardware platform
 
-
-.. image:: img/nucleo_wl55jc.jpg
-   :align: center
-   :alt: Nucleo WL55JC
 
 More information about the board can be found at the `Nucleo WL55JC website`_.
 

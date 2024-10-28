@@ -1,7 +1,4 @@
-.. _frdm_rw612:
-
-NXP FRDM_RW612
-##############
+.. zephyr:board:: frdm_rw612
 
 Overview
 ********
@@ -54,6 +51,8 @@ Supported Features
 | USBOTG    | on-chip    | usb                               |
 +-----------+------------+-----------------------------------+
 | CTIMER    | on-chip    | counter                           |
++-----------+------------+-----------------------------------+
+| SCTIMER   | on-chip    | pwm                               |
 +-----------+------------+-----------------------------------+
 | MRT       | on-chip    | counter                           |
 +-----------+------------+-----------------------------------+
@@ -154,20 +153,9 @@ Bluetooth
 BLE functionality requires to fetch binary blobs, so make sure to follow
 the ``Fetch Binary Blobs`` section first.
 
-Those binary blobs can be used in two different ways, depending if :kconfig:option:`CONFIG_NXP_MONOLITHIC_BT`
-is enabled or not:
-
-- :kconfig:option:`CONFIG_NXP_MONOLITHIC_BT` is enabled (default):
-
-The required binary blob will be linked with the application image directly, forming
-one single monolithic image.
-The user has nothing else to do other than flashing the application to the board.
-
-- :kconfig:option:`CONFIG_NXP_MONOLITHIC_BT` is disabled:
-
-In this case, the BLE blob won't be linked with the application, so the user needs to manually
-flash the BLE binary blob to the board at the address ``0x18540000``.
-The binary blob will be located here: ``<zephyr workspace>/modules/hal/nxp/zephyr/blobs/rw61x/rw61x_sb_ble_a2.bin``
+frdm_rw612 platform supports the monolithic feature. The required binary blob
+``<zephyr workspace>/modules/hal/nxp/zephyr/blobs/rw61x_sb_ble_a2.bin`` will be linked
+with the application image directly, forming one single monolithic image.
 
 Resources
 =========

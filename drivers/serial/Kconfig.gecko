@@ -12,5 +12,6 @@ config UART_GECKO
 	select SOC_GECKO_USART
 	select PINCTRL if SOC_FAMILY_SILABS_S1
 	select CLOCK_CONTROL if SOC_FAMILY_SILABS_S2
+	select PM_DEVICE if PM && SOC_FAMILY_SILABS_S2
 	help
 	  Enable the Gecko uart driver.

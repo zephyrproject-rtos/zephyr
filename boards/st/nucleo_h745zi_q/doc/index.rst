@@ -1,7 +1,4 @@
-.. _nucleo_h745zi_q_board:
-
-ST Nucleo H745ZI-Q
-###################
+.. zephyr:board:: nucleo_h745zi_q
 
 Overview
 ********
@@ -44,10 +41,6 @@ Key Features
 - Comprehensive free software libraries and examples available with the
   STM32Cube MCU package.
 - Arm* Mbed Enabled* compliant (only for some Nucleo part numbers)
-
-.. image:: img/nucleo_h745zi_q.jpg
-   :align: center
-   :alt: Nucleo H745ZI-Q
 
 More information about the board can be found at the `Nucleo H745ZI-Q website`_.
 

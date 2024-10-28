@@ -17,3 +17,6 @@ properties:
       read_address (PWRSTS) to set power active or confirm power active
       for a desired domain.
       Same for write and read addresses
+
+  "#power-domain-cells":
+    const: 0

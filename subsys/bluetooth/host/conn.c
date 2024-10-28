@@ -3402,6 +3402,41 @@ void notify_cs_config_removed(struct bt_conn *conn, uint8_t config_id)
 	}
 }
 
+void notify_cs_security_enable_available(struct bt_conn *conn)
+{
+	struct bt_conn_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+		if (callback->le_cs_security_enabled) {
+			callback->le_cs_security_enabled(conn);
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
+		if (cb->le_cs_security_enabled) {
+			cb->le_cs_security_enabled(conn);
+		}
+	}
+}
+
+void notify_cs_procedure_enable_available(struct bt_conn *conn,
+					  struct bt_conn_le_cs_procedure_enable_complete *params)
+{
+	struct bt_conn_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+		if (callback->le_cs_procedure_enabled) {
+			callback->le_cs_procedure_enabled(conn, params);
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
+		if (cb->le_cs_procedure_enabled) {
+			cb->le_cs_procedure_enabled(conn, params);
+		}
+	}
+}
+
 void notify_cs_subevent_result(struct bt_conn *conn, struct bt_conn_le_cs_subevent_result *result)
 {
 	struct bt_conn_cb *callback;
@@ -3685,6 +3720,23 @@ int bt_conn_le_create(const bt_addr_le_t *peer, const struct bt_conn_le_create_p
 	struct bt_conn *conn;
 	int err;
 
+	CHECKIF(ret_conn == NULL) {
+		return -EINVAL;
+	}
+
+	CHECKIF(*ret_conn != NULL) {
+		/* This rule helps application developers prevent leaks of connection references. If
+		 * a bt_conn variable is not null, it presumably holds a reference and must not be
+		 * overwritten. To avoid this warning, initialize the variables to null, and set
+		 * them to null when moving the reference.
+		 */
+		LOG_WRN("*conn should be unreferenced and initialized to NULL");
+
+		if (IS_ENABLED(CONFIG_BT_CONN_CHECK_NULL_BEFORE_CREATE)) {
+			return -EINVAL;
+		}
+	}
+
 	err = conn_le_create_common_checks(peer, conn_param);
 	if (err) {
 		return err;
@@ -3743,6 +3795,23 @@ int bt_conn_le_create_synced(const struct bt_le_ext_adv *adv,
 {
 	struct bt_conn *conn;
 	int err;
+
+	CHECKIF(ret_conn == NULL) {
+		return -EINVAL;
+	}
+
+	CHECKIF(*ret_conn != NULL) {
+		/* This rule helps application developers prevent leaks of connection references. If
+		 * a bt_conn variable is not null, it presumably holds a reference and must not be
+		 * overwritten. To avoid this warning, initialize the variables to null, and set
+		 * them to null when moving the reference.
+		 */
+		LOG_WRN("*conn should be unreferenced and initialized to NULL");
+
+		if (IS_ENABLED(CONFIG_BT_CONN_CHECK_NULL_BEFORE_CREATE)) {
+			return -EINVAL;
+		}
+	}
 
 	err = conn_le_create_common_checks(synced_param->peer, conn_param);
 	if (err) {

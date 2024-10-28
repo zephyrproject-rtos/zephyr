@@ -133,6 +133,7 @@ int adt7310_init_interrupt(const struct device *dev)
 			adt7310_thread, drv_data,
 			NULL, NULL, K_PRIO_COOP(CONFIG_ADT7310_THREAD_PRIORITY),
 			0, K_NO_WAIT);
+	k_thread_name_set(&drv_data->thread, dev->name);
 #elif defined(CONFIG_ADT7310_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = adt7310_work_cb;
 #endif

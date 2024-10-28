@@ -101,5 +101,7 @@ Also, see the instructions specific to the debug server that you use.
 References
 **********
 
+.. target-notes::
+
 .. EK-RA2A1 Web site:
    https://www.renesas.com/us/en/products/microcontrollers-microprocessors/ra-cortex-m-mcus/ek-ra2a1-evaluation-kit-ra2a1-mcu-group

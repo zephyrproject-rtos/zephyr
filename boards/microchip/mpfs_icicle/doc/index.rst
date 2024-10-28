@@ -1,7 +1,4 @@
-.. _mpfs_icicle:
-
-Microchip mpfs_icicle
-#####################
+.. zephyr:board:: mpfs_icicle
 
 Overview
 ********

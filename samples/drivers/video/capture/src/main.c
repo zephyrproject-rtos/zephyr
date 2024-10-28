@@ -10,9 +10,18 @@
 #include <zephyr/drivers/display.h>
 #include <zephyr/drivers/video.h>
 
-#define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(main);
+
+#ifdef CONFIG_TEST
+#include <zephyr/drivers/video-controls.h>
+
+#include "check_test_pattern.h"
+
+#define LOG_LEVEL LOG_LEVEL_DBG
+#else
+#define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
+#endif
 
 #define VIDEO_DEV_SW "VIDEO_SW_GENERATOR"
 
@@ -170,6 +179,10 @@ int main(void)
 		fie.index++;
 	}
 
+#ifdef CONFIG_TEST
+	video_set_ctrl(video_dev, VIDEO_CID_CAMERA_TEST_PATTERN, (void *)1);
+#endif
+
 #if DT_HAS_CHOSEN(zephyr_display)
 	const struct device *const display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 
@@ -225,6 +238,12 @@ int main(void)
 
 		LOG_DBG("Got frame %u! size: %u; timestamp %u ms", frame++, vbuf->bytesused,
 		       vbuf->timestamp);
+
+#ifdef CONFIG_TEST
+		if (is_colorbar_ok(vbuf->buffer, fmt)) {
+			LOG_DBG("Pattern OK!\n");
+		}
+#endif
 
 #if DT_HAS_CHOSEN(zephyr_display)
 		video_display_frame(display_dev, vbuf, fmt);

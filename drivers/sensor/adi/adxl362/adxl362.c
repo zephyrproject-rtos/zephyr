@@ -23,7 +23,7 @@
 
 LOG_MODULE_REGISTER(ADXL362, CONFIG_SENSOR_LOG_LEVEL);
 
-static int adxl362_reg_access(const struct device *dev, uint8_t cmd,
+int adxl362_reg_access(const struct device *dev, uint8_t cmd,
 			      uint8_t reg_addr, void *data, size_t length)
 {
 	const struct adxl362_config *cfg = dev->config;
@@ -226,6 +226,7 @@ static int adxl362_set_output_rate(const struct device *dev, uint8_t out_rate)
 	int ret;
 	uint8_t old_filter_ctl;
 	uint8_t new_filter_ctl;
+	struct adxl362_data *adxl362_data = dev->data;
 
 	ret = adxl362_get_reg(dev, &old_filter_ctl, ADXL362_REG_FILTER_CTL, 1);
 	if (ret) {
@@ -234,6 +235,7 @@ static int adxl362_set_output_rate(const struct device *dev, uint8_t out_rate)
 
 	new_filter_ctl = old_filter_ctl & ~ADXL362_FILTER_CTL_ODR(0x7);
 	new_filter_ctl = new_filter_ctl | ADXL362_FILTER_CTL_ODR(out_rate);
+	adxl362_data->accel_odr = out_rate;
 	return adxl362_set_reg(dev, new_filter_ctl, ADXL362_REG_FILTER_CTL, 1);
 }
 
@@ -348,15 +350,31 @@ static int adxl362_attr_set(const struct device *dev,
 	return 0;
 }
 
+#ifdef CONFIG_ADXL362_STREAM
+int adxl362_fifo_setup(const struct device *dev, uint8_t mode,
+			      uint16_t water_mark_lvl, uint8_t en_temp_read)
+#else
 static int adxl362_fifo_setup(const struct device *dev, uint8_t mode,
 			      uint16_t water_mark_lvl, uint8_t en_temp_read)
+#endif /* CONFIG_ADXL362_STREAM */
 {
 	uint8_t write_val;
 	int ret;
+#ifdef CONFIG_ADXL362_STREAM
+	struct adxl362_data *data = (struct adxl362_data *)dev->data;
+
+	data->fifo_mode = mode;
+	data->water_mark_lvl = water_mark_lvl;
+	data->en_temp_read = en_temp_read;
+#endif /* CONFIG_ADXL362_STREAM */
 
 	write_val = ADXL362_FIFO_CTL_FIFO_MODE(mode) |
-		   (en_temp_read * ADXL362_FIFO_CTL_FIFO_TEMP) |
-		   ADXL362_FIFO_CTL_AH;
+		   (en_temp_read * ADXL362_FIFO_CTL_FIFO_TEMP);
+
+	if (water_mark_lvl & 0x100) {
+		write_val |= ADXL362_FIFO_CTL_AH;
+	}
+
 	ret = adxl362_set_reg(dev, write_val, ADXL362_REG_FIFO_CTL, 1);
 	if (ret) {
 		return ret;
@@ -531,6 +549,34 @@ static int adxl362_sample_fetch(const struct device *dev,
 	return 0;
 }
 
+#ifdef CONFIG_SENSOR_ASYNC_API
+int adxl362_rtio_fetch(const struct device *dev,
+				struct adxl362_sample_data *sample_data)
+{
+	struct adxl362_data *data = dev->data;
+	int16_t buf[4];
+	int ret;
+
+	ret = adxl362_get_reg(dev, (uint8_t *)buf, ADXL362_REG_XDATA_L,
+			      sizeof(buf));
+	if (ret) {
+		return ret;
+	}
+
+#ifdef CONFIG_ADXL362_STREAM
+	sample_data->is_fifo = 0;
+#endif /*CONFIG_ADXL362_STREAM*/
+
+	sample_data->acc_x = sys_le16_to_cpu(buf[0]);
+	sample_data->acc_y = sys_le16_to_cpu(buf[1]);
+	sample_data->acc_z = sys_le16_to_cpu(buf[2]);
+	sample_data->temp = sys_le16_to_cpu(buf[3]);
+	sample_data->selected_range = data->selected_range;
+
+	return 0;
+}
+#endif /*CONFIG_SENSOR_ASYNC_API*/
+
 static inline int adxl362_range_to_scale(int range)
 {
 	/* See table 1 in specifications section of datasheet */
@@ -546,8 +592,13 @@ static inline int adxl362_range_to_scale(int range)
 	}
 }
 
+#ifdef CONFIG_SENSOR_ASYNC_API
+void adxl362_accel_convert(struct sensor_value *val, int accel,
+				  int range)
+#else
 static void adxl362_accel_convert(struct sensor_value *val, int accel,
 				  int range)
+#endif /*CONFIG_SENSOR_ASYNC_API*/
 {
 	int scale = adxl362_range_to_scale(range);
 	long micro_ms2 = accel * SENSOR_G / scale;
@@ -558,7 +609,11 @@ static void adxl362_accel_convert(struct sensor_value *val, int accel,
 	val->val2 = micro_ms2 % 1000000;
 }
 
+#ifdef CONFIG_SENSOR_ASYNC_API
+void adxl362_temp_convert(struct sensor_value *val, int temp)
+#else
 static void adxl362_temp_convert(struct sensor_value *val, int temp)
+#endif /*CONFIG_SENSOR_ASYNC_API*/
 {
 	/* See sensitivity and bias specifications in table 1 of datasheet */
 	int milli_c = (temp - ADXL362_TEMP_BIAS_LSB) * ADXL362_TEMP_MC_PER_LSB +
@@ -606,6 +661,10 @@ static const struct sensor_driver_api adxl362_api_funcs = {
 #ifdef CONFIG_ADXL362_TRIGGER
 	.trigger_set = adxl362_trigger_set,
 #endif
+#ifdef CONFIG_SENSOR_ASYNC_API
+	.submit = adxl362_submit,
+	.get_decoder = adxl362_get_decoder,
+#endif /* CONFIG_SENSOR_ASYNC_API */
 };
 
 static int adxl362_chip_init(const struct device *dev)
@@ -755,11 +814,21 @@ static int adxl362_init(const struct device *dev)
 	return 0;
 }
 
-#define ADXL362_DEFINE(inst)									\
-	static struct adxl362_data adxl362_data_##inst;						\
-												\
+#define ADXL362_SPI_CFG SPI_WORD_SET(8) | SPI_TRANSFER_MSB
+
+#define ADXL362_RTIO_DEFINE(inst)                                    \
+	SPI_DT_IODEV_DEFINE(adxl362_iodev_##inst, DT_DRV_INST(inst),     \
+						ADXL362_SPI_CFG, 0U);                        \
+	RTIO_DEFINE(adxl362_rtio_ctx_##inst, 8, 8);
+
+#define ADXL362_DEFINE(inst)					\
+	IF_ENABLED(CONFIG_ADXL362_STREAM, (ADXL362_RTIO_DEFINE(inst)));                          \
+	static struct adxl362_data adxl362_data_##inst = {			\
+	IF_ENABLED(CONFIG_ADXL362_STREAM, (.rtio_ctx = &adxl362_rtio_ctx_##inst,                  \
+				.iodev = &adxl362_iodev_##inst,)) \
+	};											\
 	static const struct adxl362_config adxl362_config_##inst = {				\
-		.bus = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8) | SPI_TRANSFER_MSB, 0),	\
+		.bus = SPI_DT_SPEC_INST_GET(inst, ADXL362_SPI_CFG, 0),	\
 		.power_ctl = ADXL362_POWER_CTL_MEASURE(ADXL362_MEASURE_ON) |			\
 			(DT_INST_PROP(inst, wakeup_mode) * ADXL362_POWER_CTL_WAKEUP) |		\
 			(DT_INST_PROP(inst, autosleep) * ADXL362_POWER_CTL_AUTOSLEEP),		\

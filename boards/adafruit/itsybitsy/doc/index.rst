@@ -1,7 +1,4 @@
-.. _adafruit_itsybitsy_nrf52840:
-
-Adafruit ItsyBitsy nRF52840
-###########################
+.. zephyr:board:: adafruit_itsybitsy
 
 Overview
 ********
@@ -28,10 +25,6 @@ This development kit has the following features:
 * :abbr:`UARTE (Universal asynchronous receiver-transmitter)`
 * :abbr:`USB (Universal Serial Bus)`
 * :abbr:`WDT (Watchdog Timer)`
-
-.. image:: img/adafruit_itsybitsy_nrf52840.jpeg
-     :align: center
-     :alt: Adafruit ItsyBitsy nRF52840 Express
 
 Hardware
 ********

@@ -152,6 +152,11 @@ void btp_bap_audio_stream_stopped(struct btp_bap_audio_stream *a_stream)
 	k_work_cancel_delayable(&a_stream->audio_send_work);
 }
 
+uint8_t btp_bap_audio_stream_send_data(const uint8_t *data, uint8_t data_len)
+{
+	return ring_buf_put(&audio_ring_buf, data, data_len);
+}
+
 uint8_t btp_bap_audio_stream_send(const void *cmd, uint16_t cmd_len,
 				  void *rsp, uint16_t *rsp_len)
 {
@@ -159,10 +164,10 @@ uint8_t btp_bap_audio_stream_send(const void *cmd, uint16_t cmd_len,
 	const struct btp_bap_send_cmd *cp = cmd;
 	uint32_t ret;
 
-	ret = ring_buf_put(&audio_ring_buf, cp->data, cp->data_len);
+	ret = btp_bap_audio_stream_send_data(cp->data, cp->data_len);
 
 	rp->data_len = ret;
-	*rsp_len = sizeof(*rp) + 1;
+	*rsp_len = sizeof(*rp);
 
 	return BTP_STATUS_SUCCESS;
 }

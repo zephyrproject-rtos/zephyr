@@ -26,11 +26,13 @@ config BMA280_TRIGGER_NONE
 config BMA280_TRIGGER_GLOBAL_THREAD
 	bool "Use global thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_BOSCH_BMA280),int1-gpios)
 	select BMA280_TRIGGER
 
 config BMA280_TRIGGER_OWN_THREAD
 	bool "Use own thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_BOSCH_BMA280),int1-gpios)
 	select BMA280_TRIGGER
 
 endchoice

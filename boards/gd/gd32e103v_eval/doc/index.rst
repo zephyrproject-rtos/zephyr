@@ -1,8 +1,4 @@
-.. _gd32e103v_eval:
-
-GigaDevice GD32E103V-EVAL
-#########################
-
+.. zephyr:board:: gd32e103v_eval
 
 Overview
 ********
@@ -13,11 +9,6 @@ of the GigaDevice E103 Cortex-M4F High Performance MCU.
 The GD32E103VB features a single-core ARM Cortex-M4F MCU which can run up
 to 120-MHz with flash accesses zero wait states, 128kiB of Flash, 32kiB of
 SRAM and 80 GPIOs.
-
-.. image:: img/gd32e103v_eval.jpg
-     :align: center
-     :alt: gd32e103v_eval
-
 
 Hardware
 ********

@@ -68,11 +68,14 @@ config UART_$(nrfx_uart_num)_NRF_ASYNC_LOW_POWER
 	depends on HAS_HW_NRF_UARTE$(nrfx_uart_num)
 	depends on UART_ASYNC_API
 	depends on UART_NRFX_UARTE_LEGACY_SHIM
-	default y
+	default y if !PM_DEVICE
 	help
 	  When enabled, UARTE is enabled before each TX or RX usage and disabled
 	  when not used. Disabling UARTE while in idle allows to achieve lowest
 	  power consumption. It is only feasible if receiver is not always on.
+	  This option is irrelevant when device power management (PM) is enabled
+	  because then device state is controlled by the PM actions.
+
 
 config UART_$(nrfx_uart_num)_NRF_HW_ASYNC_TIMER
 	int "Timer instance"

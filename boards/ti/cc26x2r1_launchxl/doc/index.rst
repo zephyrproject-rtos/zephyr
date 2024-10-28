@@ -1,7 +1,4 @@
-.. _cc26x2r1_launchxl:
-
-CC26x2R1 LaunchXL
-#################
+.. zephyr:board:: cc26x2r1_launchxl
 
 Overview
 ********
@@ -10,12 +7,6 @@ The Texas Instruments CC26x2R LaunchPad |trade| (LAUNCHXL-CC26X2R1) is a
 development kit for the SimpleLink |trade| multi-Standard CC2652R wireless MCU.
 
 See the `TI CC26x2R LaunchPad Product Page`_ for details.
-
-.. figure:: img/cc26x2r1_launchxl.jpg
-   :align: center
-   :alt: TI CC26x2R LaunchPad
-
-   Texas Instruments CC26x2R LaunchPad |trade|
 
 Hardware
 ********

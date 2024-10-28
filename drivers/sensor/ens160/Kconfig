@@ -24,11 +24,13 @@ config ENS160_TRIGGER_NONE
 config ENS160_TRIGGER_GLOBAL_THREAD
 	bool "Use global thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_SCIOSENSE_ENS160),int-gpios)
 	select ENS160_TRIGGER
 
 config ENS160_TRIGGER_OWN_THREAD
 	bool "Use own thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_SCIOSENSE_ENS160),int-gpios)
 	select ENS160_TRIGGER
 
 endchoice # Trigger Mode
