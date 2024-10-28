@@ -798,7 +798,8 @@ class ProjectBuilder(FilterBuilder):
                     if self.options.prep_artifacts_for_testing:
                         next_op = 'cleanup'
                         additionals = {"mode": "device"}
-                    elif self.options.runtime_artifact_cleanup == "pass" and self.instance.status == TwisterStatus.PASS:
+                    elif self.options.runtime_artifact_cleanup == "pass" and \
+                        self.instance.status in [TwisterStatus.PASS, TwisterStatus.NOTRUN]:
                         next_op = 'cleanup'
                         additionals = {"mode": "passed"}
                     elif self.options.runtime_artifact_cleanup == "all":
