@@ -18,7 +18,7 @@ from runners.core import ZephyrBinaryRunner, RunnerCaps
 
 DEFAULT_LINKSERVER_EXE = 'Linkserver.exe' if sys.platform == 'win32' else 'LinkServer'
 DEFAULT_LINKSERVER_GDB_PORT =  3333
-DEFAULT_LINKSERVER_SEMIHOST_PORT = 3334
+DEFAULT_LINKSERVER_SEMIHOST_PORT = 8888
 
 class LinkServerBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for NXP Linkserver'''
@@ -95,6 +95,7 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
     @classmethod
     def do_create(cls, cfg, args):
 
+        print("RUNNER - gdb_port = " + str(args.gdb_port) + ", semih port = " + str(args.semihost_port))
         return LinkServerBinaryRunner(cfg, args.device, args.core,
                                  linkserver=args.linkserver,
                                  dt_flash=args.dt_flash,
