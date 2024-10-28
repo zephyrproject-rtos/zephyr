@@ -15,6 +15,11 @@ config USE_RA_FSP_SCI_B_UART
 	help
 	  Enable RA FSP SCI-B UART driver
 
+config USE_RA_FSP_SPI
+	bool
+	help
+	  Enable RA FSP SPI driver
+
 config USE_RA_FSP_DTC
 	bool
 	help
