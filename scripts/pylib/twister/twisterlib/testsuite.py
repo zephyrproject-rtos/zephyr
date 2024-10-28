@@ -9,13 +9,12 @@ import logging
 import mmap
 import os
 import re
-from enum import Enum
 from pathlib import Path
 
 from twisterlib.environment import canonical_zephyr_base
 from twisterlib.error import StatusAttributeError, TwisterException, TwisterRuntimeError
 from twisterlib.mixins import DisablePyTestCollectionMixin
-from twisterlib.statuses import TwisterStatus
+from twisterlib.statuses import TwisterStatus, TwisterStatusMachineCase, TwisterStatusMachineSuite
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -385,18 +384,22 @@ class TestCase(DisablePyTestCollectionMixin):
         self.testsuite = testsuite
         self.output = ""
         self.freeform = False
+        self.case_status_machine = TwisterStatusMachineCase()
 
     @property
     def status(self) -> TwisterStatus:
-        return self._status
+        if self._status != str(self.case_status_machine.current_state):
+            logger.warning(f"exp {self._status} but \
+                {str(self.case_status_machine.current_state)}")
+        return str(self.case_status_machine.current_state)
 
     @status.setter
     def status(self, value : TwisterStatus) -> None:
         # Check for illegal assignments by value
         try:
-            key = value.name if isinstance(value, Enum) else value
-            self._status = TwisterStatus[key]
-        except KeyError as err:
+            self._status = TwisterStatus(value)
+            self.case_status_machine.trigger(value)
+        except ValueError as err:
             raise StatusAttributeError(self.__class__, value) from err
 
     def __lt__(self, other):
@@ -450,21 +453,24 @@ class TestSuite(DisablePyTestCollectionMixin):
         self.ztest_suite_names = []
 
         self._status = TwisterStatus.NONE
+        self.suite_status_machine = TwisterStatusMachineSuite()
 
         if data:
             self.load(data)
 
     @property
     def status(self) -> TwisterStatus:
-        return self._status
+        if self._status != str(self.suite_status_machine.current_state):
+            logger.warning(f"exp {self._status} but {str(self.suite_status_machine.current_state)}")
+        return str(self.suite_status_machine.current_state)
 
     @status.setter
     def status(self, value : TwisterStatus) -> None:
         # Check for illegal assignments by value
         try:
-            key = value.name if isinstance(value, Enum) else value
-            self._status = TwisterStatus[key]
-        except KeyError as err:
+            self._status = TwisterStatus(value)
+            self.suite_status_machine.trigger(value)
+        except ValueError as err:
             raise StatusAttributeError(self.__class__, value) from err
 
     def load(self, data):

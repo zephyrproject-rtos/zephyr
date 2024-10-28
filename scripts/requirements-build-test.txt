@@ -19,3 +19,10 @@ mypy
 
 # used for mocking functions in pytest
 mock>=4.0.1
+
+# used for twister statemachine
+python-statemachine>=2.3.6
+
+# to view the twister statemachine
+pydot
+graphviz

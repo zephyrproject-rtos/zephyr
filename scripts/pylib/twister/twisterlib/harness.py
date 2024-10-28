@@ -14,7 +14,6 @@ import threading
 import time
 import xml.etree.ElementTree as ET
 from collections import OrderedDict
-from enum import Enum
 
 from pytest import ExitCode
 from twisterlib.constants import SUPPORTED_SIMS_IN_PYTEST
@@ -22,7 +21,7 @@ from twisterlib.environment import PYTEST_PLUGIN_INSTALLED, ZEPHYR_BASE
 from twisterlib.error import ConfigurationError, StatusAttributeError
 from twisterlib.handlers import Handler, terminate_process
 from twisterlib.reports import ReportStatus
-from twisterlib.statuses import TwisterStatus
+from twisterlib.statuses import TwisterStatus, TwisterStatusMachineHarness
 from twisterlib.testinstance import TestInstance
 
 logger = logging.getLogger('twister')
@@ -65,6 +64,7 @@ class Harness:
         self.instance: TestInstance | None = None
         self.testcase_output = ""
         self._match = False
+        self.harness_status_machine = TwisterStatusMachineHarness()
 
 
     @property
@@ -79,9 +79,9 @@ class Harness:
     def status(self, value : TwisterStatus) -> None:
         # Check for illegal assignments by value
         try:
-            key = value.name if isinstance(value, Enum) else value
-            self._status = TwisterStatus[key]
-        except KeyError as err:
+            self._status = TwisterStatus(value)
+            self.harness_status_machine.trigger(value)
+        except ValueError as err:
             raise StatusAttributeError(self.__class__, value) from err
 
     def configure(self, instance):
@@ -344,7 +344,7 @@ class Console(Harness):
         if self.status == TwisterStatus.PASS:
             tc.status = TwisterStatus.PASS
         else:
-            tc.status = TwisterStatus.FAIL
+            tc.status = self.status
 
 
 class PytestHarnessException(Exception):

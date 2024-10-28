@@ -1205,7 +1205,7 @@ class TestPlan:
         for filtered_instance in filtered_instances:
             change_skip_to_error_if_integration(self.options, filtered_instance)
 
-            filtered_instance.add_missing_case_status(filtered_instance.status)
+            filtered_instance.add_missing_case_status(TwisterStatus.FILTER)
 
     def add_instances(self, instance_list):
         for instance in instance_list:
