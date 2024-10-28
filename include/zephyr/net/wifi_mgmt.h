@@ -110,8 +110,6 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_RTS_THRESHOLD_CONFIG,
 	/** WPS config */
 	NET_REQUEST_WIFI_CMD_WPS_CONFIG,
-	/** AP WPS config */
-	NET_REQUEST_WIFI_CMD_AP_WPS_CONFIG,
 	/** @cond INTERNAL_HIDDEN */
 	NET_REQUEST_WIFI_CMD_MAX
 /** @endcond */
