@@ -57,7 +57,7 @@ Note about thingy52
 The thingy52 has integrated NMOS transistors, that can be used instead of a level shifter.
 The I2S driver supports inverting the output to suit this scheme, using the ``out-active-low`` dts
 property. See the overlay file
-:zephyr_file:`samples/drivers/led_strip/boards/thingy52_nrf52832.overlay` for more detail.
+:zephyr_file:`samples/drivers/led/led_strip/boards/thingy52_nrf52832.overlay` for more detail.
 
 Building and Running
 ********************
