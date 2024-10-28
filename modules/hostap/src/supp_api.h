@@ -276,7 +276,7 @@ int supplicant_legacy_roam(const struct device *dev);
  *
  * @return 1 if support, 0 if not support
  */
-int supplicant_bss_ext_capab(const struct device *dev, int capab);
+int supplicant_bss_ext_capab(const struct device *dev, enum wifi_ext_capab capab);
 
 /** Get Wi-Fi connection parameters recently used
  *
