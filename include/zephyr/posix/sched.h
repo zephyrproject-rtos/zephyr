@@ -7,7 +7,8 @@
 #define ZEPHYR_INCLUDE_POSIX_SCHED_H_
 
 #include <zephyr/kernel.h>
-#include <zephyr/posix/posix_types.h>
+
+#include "posix_types.h"
 
 #include <time.h>
 
