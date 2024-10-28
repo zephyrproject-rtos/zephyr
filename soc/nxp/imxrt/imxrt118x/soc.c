@@ -449,6 +449,24 @@ static ALWAYS_INLINE void clock_init(void)
 
 #endif /* CONFIG_HAS_MCUX_TPM */
 
+#ifdef CONFIG_DT_HAS_NXP_MCUX_I3C_ENABLED
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(i3c1), okay)
+	/* Configure I3C1 using SYS_PLL3_DIV2_CLK */
+	rootCfg.mux = kCLOCK_I3C1_ClockRoot_MuxSysPll3Div2;
+	rootCfg.div = 10;
+	CLOCK_SetRootClock(kCLOCK_Root_I3c1, &rootCfg);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(i3c2), okay)
+	/* Configure I3C2 using SYS_PLL3_DIV2_CLK */
+	rootCfg.mux = kCLOCK_I3C2_ClockRoot_MuxSysPll3Div2;
+	rootCfg.div = 10;
+	CLOCK_SetRootClock(kCLOCK_Root_I3c2, &rootCfg);
+#endif
+
+#endif /* CONFIG_DT_HAS_NXP_MCUX_I3C_ENABLED */
+
 	/* Keep core clock ungated during WFI */
 	CCM->LPCG[1].LPM0 = 0x33333333;
 	CCM->LPCG[1].LPM1 = 0x33333333;
