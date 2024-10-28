@@ -6,11 +6,13 @@
  */
 
 #include "fpga_rs_xcb.h"
+#include <rapidsi_scu.h>
 
 #include <string.h>
 
 #include <zephyr/kernel.h>
 #include <zephyr/types.h>
+#include <zephyr/drivers/misc/rapidsi/rapidsi_ofe.h>
 
 #define LOG_LEVEL CONFIG_FPGA_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -64,8 +66,7 @@ int fcb_off(const struct device *dev)
 const char *fcb_get_info(const struct device *dev)
 {
   static struct fpga_transfer_param lvFCBTransferParam = {0};
-  struct rigel_fcb_bitstream_header *lvFCBBitstrHeader = \
-    (struct rigel_fcb_bitstream_header *)((struct fcb_data*)(dev->data));
+  struct rigel_fcb_bitstream_header *lvFCBBitstrHeader = &((struct fcb_data*)(dev->data))->fcb_header;
 
   if(lvFCBBitstrHeader != NULL) {
     lvFCBTransferParam.FPGA_Transfer_Type = \
@@ -101,12 +102,50 @@ static struct fcb_config s_fcb_config = {
 
 static int fcb_init(const struct device *dev)
 {
+  int error = xCB_SUCCESS;
+
   s_Rigel_FCB_Registers = ((struct rigel_fcb_registers *)((struct fcb_config*)dev->config));
+
+  #if CONFIG_RAPIDSI_OFE
+    const struct device *ofe = DEVICE_DT_GET(DT_NODELABEL(ofe));
+    if(ofe == NULL) {
+      LOG_ERR("%s(%d) Error with OFE initialization\r\n", __func__, __LINE__);
+      error = -ENOSYS;
+    }
+  #else
+    #error "Enable OFE from the device tree to enable global fpga reset."
+  #endif
+  
   struct fcb_data *lvData = (struct fcb_data*)dev->data;
-  if(s_Rigel_FCB_Registers != NULL) {
-    lvData->fpgaStatus = FPGA_STATUS_ACTIVE;
-  }  
-  return xCB_SUCCESS;
+  
+  if(error == 0) {
+    if(s_Rigel_FCB_Registers != NULL) {
+      lvData->fpgaStatus = FPGA_STATUS_ACTIVE;
+    } else {
+      LOG_ERR("%s(%d) FCB Register Cluster Initialized to NULL\r\n", __func__, __LINE__);
+      error = -ENOSYS;
+    }
+  }
+
+  if(error == 0) {
+     // Setting the isolation bit to allow writing the fabric.
+    scu_set_isolation_ctrl(ISOLATION_CTRL_FCB_OFFSET, 0x1);
+  }
+
+  // Sending the reset pulse to global fpga reset.
+  if(error == 0) {
+    if(
+        (ofe_reset(ofe, OFE_RESET_SUBSYS_FCB, 0x0) != 0)
+        ||
+        (ofe_reset(ofe, OFE_RESET_SUBSYS_FCB, 0x1) != 0)
+      ) 
+    {
+      LOG_ERR("%s(%d) OFE global fpga reset error\r\n", __func__, __LINE__);
+      error = -EIO; 
+    }
+  }
+
+  return error;
 }
 
 

@@ -13,7 +13,7 @@
 #include <zephyr/crypto/crypto.h>
 #include <zephyr/drivers/misc/rapidsi/rapidsi_ofe.h>
 
-#include <scu.h>
+#include <rapidsi_scu.h>
 
 #define ATTR_INF "\x1b[32;1m" // ANSI_COLOR_GREEN
 #define ATTR_ERR "\x1b[31;1m" // ANSI_COLOR_RED

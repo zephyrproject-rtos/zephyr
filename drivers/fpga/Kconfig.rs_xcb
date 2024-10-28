@@ -24,6 +24,7 @@ menuconfig RS_FPGA
 			default n
 			depends on DT_HAS_RAPIDSI_FCB_ENABLED
 			select RS_RTOS_PORT
+			select RAPIDSI_OFE
 			help
 				Enable FCB Driver.
 			if RS_FPGA_FCB
@@ -40,6 +41,7 @@ menuconfig RS_FPGA
 			default n
 			depends on DT_HAS_RAPIDSI_ICB_ENABLED
 			select RS_RTOS_PORT
+			select RAPIDSI_OFE
 			help
 				Enable ICB Driver.
 			if RS_FPGA_ICB
@@ -57,6 +59,7 @@ menuconfig RS_FPGA
 			default n
 			depends on DT_HAS_RAPIDSI_PCB_ENABLED
 			select RS_RTOS_PORT
+			select RAPIDSI_OFE
 			help
 				Enable PCB Driver.
 			if RS_FPGA_PCB

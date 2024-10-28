@@ -23,6 +23,19 @@
 #define SCU_IRQ_MAP_TO_FPGA   0x4
 #define SCU_IRQ_MAP_MASK      0x7
 
+#define ISOLATION_CTRL_ELEM_WIDTH 1
+
+// Isolation control
+enum isolation_ctrl_offsets {
+  ISOLATION_CTRL_AXI_0_OFFSET = 0,
+  ISOLATION_CTRL_AXI_1_OFFSET = 1,
+  ISOLATION_CTRL_AHB_OFFSET = 2,
+  ISOLATION_CTRL_FPGA_GPIO_OFFSET = 3,
+  ISOLATION_CTRL_FCB_OFFSET = 8,
+  ISOLATION_CTRL_IRQ_OFFSET = 16,
+  ISOLATION_CTRL_DMA_OFFSET = 24
+};
+
 /// Software reset control
 enum virgo_scu_sw_rst_ctrl_msk {
   VIRGO_SCU_SW_RST_CTRL_MSK_SYSTEM = (0x1UL << 0),
@@ -77,12 +90,48 @@ enum map_mask_control_irq_id {
   IRQ_ID_FPGAGEN15 = 31  
 };
 
+/**
+ * @brief Map the IRQ to subsystem (BCPU, ACPU or FPGA etc)
+ *
+ * @param IRQn IRQ Number
+ * @param SubSystem It can be BCPU, ACPU or FPGA
+ */
 void scu_irq_map(enum map_mask_control_irq_id IRQn, uint8_t SubSystem);
+
+/**
+ * @brief UnMap the IRQ.
+ *
+ * @param IRQn IRQ Number
+ */
 void scu_irq_unmap(enum map_mask_control_irq_id IRQn);
+
+/**
+ * @brief Enable the IRQ.
+ *
+ * @param IRQn IRQ Number
+ */
 void scu_irq_enable(enum map_mask_control_irq_id IRQn);
+
+/**
+ * @brief Disable the IRQ.
+ *
+ * @param IRQn IRQ Number
+ */
 void scu_irq_disable(enum map_mask_control_irq_id IRQn);
+
+/**
+ * @brief Get the IRQ Register Value.
+ *
+ * @param IRQn IRQ Number
+ *
+ * @retval register value.
+ */
 uint32_t scu_get_irq_reg_val(enum map_mask_control_irq_id IRQn);
 
+/**
+ * @brief Assert resets to all subsystems.
+ *
+ */
 void scu_assert_reset(void);
 
 #define SCU_CHIP_ID_OFFSET      16
@@ -91,4 +140,29 @@ void scu_assert_reset(void);
 #define SCU_VENDOR_ID_OFFSET    24
 #define SCU_VENDOR_ID_MASK      0xFF000000
 
+/**
+ * @brief Get the IRQ Register Value.
+ *
+ * @param chip_id output chip id
+ * @param vendor_id output vendor id.
+ */
 void soc_get_id(uint8_t *chip_id, uint8_t *vendor_id);
+
+/**
+ * @brief Sets the Isolation Control bit
+ *
+ * @param inOffset Offset to subsystem. Can be referenced from @isolation_ctrl_offsets
+ * @param inBit Value to set.
+ */
+void scu_set_isolation_ctrl(enum isolation_ctrl_offsets inOffset, bool inBit);
+
+/**
+ * @brief Writes the register at a particular offset
+ *
+ * @param reg Register to modify
+ * @param offset Starting location of register to modify
+ * @param width Number of bits to modify
+ * @param value Value to write to the specified bits.
+ */
+void write_reg_val(volatile uint32_t *reg, uint32_t offset, uint32_t width,
+                        uint32_t value);

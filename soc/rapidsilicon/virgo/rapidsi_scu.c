@@ -4,13 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "scu.h"
+#include "rapidsi_scu.h"
 
 typedef struct {
     volatile uint32_t idrev;             /* 0x00 */
     volatile uint32_t sw_rst_control;    /* 0x04 */
     volatile uint32_t reserved[9];       /* 0x08 - 0x28 */
-    volatile uint32_t irq_map_mask[32];  /* 0x2C - 0xA8 */    
+    volatile uint32_t irq_map_mask[32];  /* 0x2C - 0xA8 */   
+    volatile uint32_t isolation_control; /* 0xAC */
 } scu_registers_t;
 
 #if DT_HAS_COMPAT_STATUS_OKAY(rapidsi_scu)
@@ -19,6 +20,15 @@ typedef struct {
     #warning "Turn the rapidsi,scu status to okay in DTS else *s_scu_regs = NULL;"
     static volatile scu_registers_t *s_scu_regs = NULL;
 #endif
+
+void write_reg_val(volatile uint32_t *reg, uint32_t offset, uint32_t width,
+                        uint32_t value) {
+  uint32_t mask;
+
+  mask = (width == 32) ? 0xffffffff : (1U << width) - 1U;
+
+  *reg = (*reg & ~(mask << offset)) | ((value & mask) << offset);
+}
 
 void scu_assert_reset(void)
 {
@@ -61,4 +71,10 @@ void scu_irq_disable(enum map_mask_control_irq_id IRQn)
 uint32_t scu_get_irq_reg_val(enum map_mask_control_irq_id IRQn)
 {
     return s_scu_regs->irq_map_mask[IRQn];
+}
+
+void scu_set_isolation_ctrl(enum isolation_ctrl_offsets inOffset, bool inBit)
+{
+    write_reg_val(&s_scu_regs->isolation_control, inOffset,
+                ISOLATION_CTRL_ELEM_WIDTH, inBit);
 }
