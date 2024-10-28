@@ -23,9 +23,9 @@ for the HCI SPI slave device with compatible
 :dtcompatible:`zephyr,bt-hci-spi-slave`. This node sets an interrupt line to
 the host and associates the application with a SPI bus to use.
 
-See :zephyr_file:`boards/nrf51dk_nrf51422.overlay
-<samples/bluetooth/hci_spi/boards/nrf51dk_nrf51422.overlay>` in this sample
-directory for an example overlay for the :ref:`nrf51dk_nrf51422` board.
+See :zephyr_file:`boards/nrf51dk_nrf51822.overlay
+<samples/bluetooth/hci_spi/boards/nrf51dk_nrf51822.overlay>` in this sample
+directory for an example overlay for the :ref:`nrf51dk_nrf51822` board.
 
 You can then build this application and flash it onto your board in
 the usual way; see :ref:`boards` for board-specific building and
