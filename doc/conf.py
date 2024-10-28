@@ -258,6 +258,9 @@ html_redirect_pages = redirects.REDIRECTS
 # -- Options for zephyr.link-roles ----------------------------------------
 
 link_roles_manifest_project = "zephyr"
+link_roles_manifest_project_broken_links_ignore_globs = [
+    "releases/release-notes-[123].*.rst",
+]
 link_roles_manifest_baseurl = "https://github.com/zephyrproject-rtos/zephyr"
 
 # -- Options for notfound.extension ---------------------------------------
