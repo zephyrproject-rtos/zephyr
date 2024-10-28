@@ -209,8 +209,8 @@ static void do_test_using(void (*sample_collection_fn)(void), const char *mechan
 	variance_cyc = variance_cyc / (double)(CONFIG_TIMER_TEST_SAMPLES - periodic_rollovers);
 
 	/* A measure of timer precision, ideal is 0 */
-	double stddev_us = sqrtf(variance_us);
-	double stddev_cyc = sqrtf(variance_cyc);
+	double stddev_us = sqrt(variance_us);
+	double stddev_cyc = sqrt(variance_cyc);
 
 	/* Use double precision math here as integer overflows are possible in doing all the
 	 * conversions otherwise
