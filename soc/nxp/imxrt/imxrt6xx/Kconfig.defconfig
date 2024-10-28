@@ -5,6 +5,10 @@
 
 if SOC_SERIES_IMXRT6XX
 
+config CMSIS_CORE_HAS_SYSTEM_CORE_CLOCK
+	bool
+	default y
+
 # alias for hal
 config SOC_SERIES_IMX_RT6XX
 	bool
