@@ -69,6 +69,17 @@ generate_inc_file_for_target(
     ${gen_dir}/ca2.pem.inc
     )
 
+generate_inc_file_for_target(
+    app
+    ${ZEPHYR_BASE}/samples/net/wifi/test_certs/server.pem
+    ${gen_dir}/server.pem.inc
+    )
+
+generate_inc_file_for_target(
+    app
+    ${ZEPHYR_BASE}/samples/net/wifi/test_certs/server-key.pem
+    ${gen_dir}/server-key.pem.inc
+    )
 # Add explicit dependency on app target for ZEPHYR_CURRENT_LIBRARY, so these
 # headers are generated at the correct point in the build
 add_dependencies(${ZEPHYR_CURRENT_LIBRARY} app)
