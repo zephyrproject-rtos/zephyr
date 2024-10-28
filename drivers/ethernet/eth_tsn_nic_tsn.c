@@ -473,7 +473,7 @@ static void spend_qav_credit(struct tsn_config *tsn_config, net_time_t at, uint8
 		qav->credit = qav->lo_credit;
 	}
 
-	/* Calulate next available time */
+	/* Calculate next available time */
 	send_end = at + sending_duration;
 	qav->last_update = send_end;
 	if (qav->credit < 0) {
