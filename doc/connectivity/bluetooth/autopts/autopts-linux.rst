@@ -95,7 +95,7 @@ Setup static IP
 
 If you cannot or do not want to use NAT it is possible to configure a static IP.
 
-WMWare Works
+VMWare Works
 ------------
 
 On Linux, open Virtual Network Editor app and create network:
