@@ -174,7 +174,8 @@ The Zephyr nucleo_h563zi board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | USB       | on-chip    | USB full-speed host/device bus      |
 +-----------+------------+-------------------------------------+
-
+| ETHERNET  | on-chip    | ethernet                            |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
