@@ -16,6 +16,7 @@ config SOC_SERIES_STM32U5X
 	select CPU_CORTEX_M_HAS_DWT
 	select HAS_STM32CUBE
 	select HAS_PM
+	select HAS_SWO
 	select HAS_POWEROFF
 	select SOC_EARLY_INIT_HOOK
 
