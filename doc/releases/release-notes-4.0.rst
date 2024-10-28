@@ -164,6 +164,8 @@ Boards & SoC Support
 
   * :ref:`native_posix<native_posix>` has been deprecated in favour of
     :ref:`native_sim<native_sim>`.
+  * The nrf54l15bsim target now includes models of the AAR, CCM and ECB peripherals, and many
+    other improvements.
   * Support for Google Kukui EC board (``google_kukui``) has been dropped.
   * STM32: Deprecated MCO configuration via Kconfig in favour of setting it through devicetree.
     See ``samples/boards/stm32/mco`` sample.
@@ -573,6 +575,10 @@ zcbor
 
 Tests and Samples
 *****************
+
+* Together with the deprecation of :ref:`native_posix<native_posix>`, many tests which were
+  explicitly run in native_posix now run in :ref:`native_sim<native_sim>` instead.
+  native_posix as a platform remains tested though.
 
 Issue Related Items
 *******************
