@@ -21,26 +21,3 @@ properties:
     description: |
         This is an array of strings defining the names of the PAD lines
         going out of the PAD controller
-
-# Below Bindings refer to rapidsi fpga drivers for basic properties.
-compatible: "rapidsi,rigel"
-
-include: [base.yaml]
-
-# Below Bindings refer to rapidsi fpga / fabric configuration block 
-# drivers for basic properties.
-compatible: "rapidsi,fcb"
-
-include: [base.yaml]
-
-# Below Bindings refer to rapidsi input / output configuration block 
-# drivers for basic properties.
-compatible: "rapidsi,icb"
-
-include: [base.yaml]
-
-# Below Bindings refer to rapidsi preload configuration block 
-# drivers for basic properties.
-compatible: "rapidsi,pcb"
-
-include: [base.yaml]

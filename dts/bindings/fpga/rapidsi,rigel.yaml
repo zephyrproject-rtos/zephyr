@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Rapid Silicon
+# SPDX-License-Identifier: Apache-2.0
+
+description: Rapid Silicon FPGA driver bindings
+
+# Below Bindings refer to rapidsi fpga drivers for basic properties.
+compatible: "rapidsi,rigel"
+
+include: [base.yaml]

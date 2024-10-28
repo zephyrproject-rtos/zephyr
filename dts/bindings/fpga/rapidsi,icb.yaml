@@ -1,0 +1,10 @@
+# Copyright (c) 2024 Rapid Silicon
+# SPDX-License-Identifier: Apache-2.0
+
+description: Rapid Silicon FPGA driver bindings
+
+# Below Bindings refer to rapidsi input / output configuration block 
+# drivers for basic properties.
+compatible: "rapidsi,icb"
+
+include: [base.yaml]

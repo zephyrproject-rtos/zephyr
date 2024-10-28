@@ -1,0 +1,71 @@
+# FPGA Rapid Silicon FCB, ICB, PCB driver configuration options
+
+# Copyright (c) 2024 Rapid Silicon
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig RS_FPGA
+	bool "RS_xCB Drivers"
+	depends on DT_HAS_RAPIDSI_RIGEL_ENABLED
+	help
+		Select Rapid Silicon FCB, ICB or PCB Driver 
+
+	if RS_FPGA
+
+		config RS_XCB_INIT_PRIORITY
+			int "Provide initialization priority of FCB, ICB and PCB Drivers"
+			default 60
+			
+		config RS_RTOS_PORT
+			bool "Enable Zephyr Specific Code changes."
+			default n
+
+		config RS_FPGA_FCB
+			bool "FPGA Configuration Block"
+			default n
+			depends on DT_HAS_RAPIDSI_FCB_ENABLED
+			select RS_RTOS_PORT
+			help
+				Enable FCB Driver.
+			if RS_FPGA_FCB
+				config RS_FPGA_FCB_METADATA_SIZE
+					int "Enter the FCB Configuration Meta Data / Header Size in bytes for FCB Driver"
+					default 16
+					help
+					  This is the size of the metadat used by FCB driver to process user configuration.
+					  User should look at the layout of the metadata in the user manual of the FCB.
+			endif
+
+		config RS_FPGA_ICB
+			bool "Input / Output Configuration Block"
+			default n
+			depends on DT_HAS_RAPIDSI_ICB_ENABLED
+			select RS_RTOS_PORT
+			help
+				Enable ICB Driver.
+			if RS_FPGA_ICB
+				config RS_FPGA_ICB_METADATA_SIZE
+					int "Enter the ICB Configuration Meta Data / Header Size in bytes for ICB Driver"
+					default 20
+					help
+					  This is the size of the metadat used by ICB driver to process user configuration.
+					  User should look at the layout of the metadata in the user manual of the ICB.
+			endif
+
+
+		config RS_FPGA_PCB
+			bool "BRAM Preload Configuration Block"
+			default n
+			depends on DT_HAS_RAPIDSI_PCB_ENABLED
+			select RS_RTOS_PORT
+			help
+				Enable PCB Driver.
+			if RS_FPGA_PCB
+				config RS_FPGA_PCB_METADATA_SIZE
+					int "Enter the PCB Configuration Meta Data / Header Size in bytes for PCB Driver"
+					default 28
+					help
+					  This is the size of the metadat used by PCB driver to process user configuration.
+					  User should look at the layout of the metadata in the user manual of the PCB.
+			endif
+
+	endif

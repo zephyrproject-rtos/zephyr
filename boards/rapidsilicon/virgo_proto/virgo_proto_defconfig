@@ -63,3 +63,10 @@ CONFIG_COUNTER_ANDES_ATCPIT100=y
 # Enabling the Sensor Peripheral
 CONFIG_SENSOR=y
 CONFIG_DTI_PVT=y
+
+# Enable FPGA Bitstream loading functionality
+CONFIG_FPGA=y
+CONFIG_RS_FPGA=y
+CONFIG_RS_FPGA_FCB=y
+CONFIG_RS_FPGA_ICB=y
+CONFIG_RS_FPGA_PCB=y

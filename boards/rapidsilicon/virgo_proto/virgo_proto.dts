@@ -77,3 +77,22 @@
 	};
  };
  
+ &fpga_cfg {
+	status = "okay";
+ };
+
+ &ofe {
+	status = "okay";
+ };
+
+ &fcb {
+	status = "okay";
+ };
+
+ &icb {
+	status = "okay";
+ };
+
+ &pcb {
+	status = "okay";
+ };

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021 Antmicro <www.antmicro.com>
+ *				 2024 Rapid Silicon
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +13,7 @@
 #include <zephyr/types.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/device.h>
+#include <zephyr/crypto/cipher.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,7 +30,25 @@ enum FPGA_status {
 	FPGA_STATUS_ACTIVE
 };
 
+enum FPGA_TRANSFER_TYPE {
+	FPGA_TRANSFER_TYPE_TX = 0,
+	FPGA_TRANSFER_TYPE_RX = 1,
+	FPGA_TRANSFER_TYPE_UNDEFINED
+};
+
+struct fpga_transfer_param {
+  enum FPGA_TRANSFER_TYPE FPGA_Transfer_Type;
+  uint32_t FCB_Bitstream_Size;       // bytes
+  uint16_t FCB_Transfer_Block_Size;  // bytes
+};
+
+struct fpga_ctx;
+
+typedef int (*bitstream_load_hndlr)(void *args); // Custom bitstream load function
+
 typedef enum FPGA_status (*fpga_api_get_status)(const struct device *dev);
+typedef int (*fpga_api_session_start)(const struct device *dev, struct fpga_ctx *ctx);
+typedef int (*fpga_api_session_free)(const struct device *dev);				 
 typedef int (*fpga_api_load)(const struct device *dev, uint32_t *image_ptr,
 			     uint32_t img_size);
 typedef int (*fpga_api_reset)(const struct device *dev);
@@ -43,6 +63,16 @@ __subsystem struct fpga_driver_api {
 	fpga_api_on on;
 	fpga_api_off off;
 	fpga_api_get_info get_info;
+	fpga_api_session_start session_start;
+	fpga_api_session_free session_free;
+};
+
+struct fpga_ctx {
+	// In case some sort of secure transfer is required to be done.
+	struct cipher_ctx *CipherCtx;
+	// In case a custom bitstream load function is to be executed
+	// inside the fpga_load api.
+	bitstream_load_hndlr bitstr_load_hndlr;
 };
 
 /**
@@ -149,6 +179,50 @@ static inline int fpga_off(const struct device *dev)
 	}
 
 	return api->off(dev);
+}
+
+/**
+ * @brief Sets up the session to load the bistream.
+ * 		  The setup can include fpga configuration
+ * 		  block settings passed in the form of 
+ * 		  user configuration data.
+ *
+ * @param dev FPGA device structure.
+ * @param user_config the user configuration data specific to the driver
+ *
+ * @retval 0 if successful.
+ * @retval negative errno code on failure.
+ */
+static inline int fpga_session_start(const struct device *dev, struct fpga_ctx *ctx)
+{
+	const struct fpga_driver_api *api =
+		(const struct fpga_driver_api *)dev->api;
+
+	if (api->session_start == NULL) {
+		return -ENOTSUP;
+	}
+
+	return api->session_start(dev, ctx); 
+}
+
+/**
+ * @brief Frees up the session.
+ *
+ * @param dev FPGA device structure.
+ *
+ * @retval 0 if successful.
+ * @retval negative errno code on failure.
+ */
+static inline int fpga_session_free(const struct device *dev)
+{
+	const struct fpga_driver_api *api =
+		(const struct fpga_driver_api *)dev->api;
+
+	if (api->session_free == NULL) {
+		return -ENOTSUP;
+	}
+
+	return api->session_free(dev);
 }
 
 #ifdef __cplusplus
