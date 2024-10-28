@@ -343,6 +343,9 @@ static void log_exception(uintptr_t vector, uintptr_t code)
 	case IV_VIRT_EXCEPTION:
 		LOG_ERR("Virtualization exception");
 		break;
+	case IV_CTRL_PROTECTION_EXCEPTION:
+		LOG_ERR("Control protection exception (code 0x%lx)", code);
+		break;
 	case IV_SECURITY_EXCEPTION:
 		LOG_ERR("Security exception");
 		break;
