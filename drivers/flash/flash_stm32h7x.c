@@ -26,15 +26,14 @@
 #include "stm32_hsem.h"
 
 #define LOG_DOMAIN flash_stm32h7
-#define LOG_LEVEL CONFIG_FLASH_LOG_LEVEL
+#define LOG_LEVEL  CONFIG_FLASH_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_DOMAIN);
 
 /* Let's wait for double the max erase time to be sure that the operation is
  * completed.
  */
-#define STM32H7_FLASH_TIMEOUT	\
-	(2 * DT_PROP(DT_INST(0, st_stm32_nv_flash), max_erase_time))
+#define STM32H7_FLASH_TIMEOUT (2 * DT_PROP(DT_INST(0, st_stm32_nv_flash), max_erase_time))
 
 #define STM32H7_M4_FLASH_SIZE DT_PROP_OR(DT_INST(0, st_stm32_nv_flash), bank2_flash_size, 0)
 #ifdef CONFIG_CPU_CORTEX_M4
@@ -46,14 +45,14 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #else
 #define REAL_FLASH_SIZE_KB KB(LL_GetFlashSize())
 #endif
-#define SECTOR_PER_BANK		((REAL_FLASH_SIZE_KB / FLASH_SECTOR_SIZE) / 2)
+#define SECTOR_PER_BANK ((REAL_FLASH_SIZE_KB / FLASH_SECTOR_SIZE) / 2)
 #if defined(DUAL_BANK)
-#define STM32H7_SERIES_MAX_FLASH_KB	KB(2048)
-#define BANK2_OFFSET	(STM32H7_SERIES_MAX_FLASH_KB / 2)
+#define STM32H7_SERIES_MAX_FLASH_KB KB(2048)
+#define BANK2_OFFSET                (STM32H7_SERIES_MAX_FLASH_KB / 2)
 /* When flash is dual bank and flash size is smaller than Max flash size of
  * the serie, there is a discontinuty between bank1 and bank2.
  */
-#define DISCONTINUOUS_BANKS (REAL_FLASH_SIZE_KB < STM32H7_SERIES_MAX_FLASH_KB)
+#define DISCONTINUOUS_BANKS         (REAL_FLASH_SIZE_KB < STM32H7_SERIES_MAX_FLASH_KB)
 #endif
 
 struct flash_stm32_sector_t {
@@ -90,9 +89,7 @@ static inline void _flash_stm32_sem_give(const struct device *dev)
 #define flash_stm32_sem_give(dev)
 #endif
 
-bool flash_stm32_valid_range(const struct device *dev, off_t offset,
-			     uint32_t len,
-			     bool write)
+bool flash_stm32_valid_range(const struct device *dev, off_t offset, uint32_t len, bool write)
 {
 #if defined(DUAL_BANK)
 	if (DISCONTINUOUS_BANKS) {
@@ -101,8 +98,7 @@ bool flash_stm32_valid_range(const struct device *dev, off_t offset,
 		 * start before bank2 and end beyond bank1 at the same time.
 		 * Locations beyond bank2 are caught by flash_stm32_range_exists
 		 */
-		if ((offset < BANK2_OFFSET)
-		    && (offset + len > REAL_FLASH_SIZE_KB / 2)) {
+		if ((offset < BANK2_OFFSET) && (offset + len > REAL_FLASH_SIZE_KB / 2)) {
 			LOG_ERR("Range ovelaps flash bank discontinuity");
 			return false;
 		}
@@ -113,7 +109,7 @@ bool flash_stm32_valid_range(const struct device *dev, off_t offset,
 		if ((offset % (FLASH_NB_32BITWORD_IN_FLASHWORD * 4)) != 0) {
 			LOG_ERR("Write offset not aligned on flashword length. "
 				"Offset: 0x%lx, flashword length: %d",
-				(unsigned long) offset, FLASH_NB_32BITWORD_IN_FLASHWORD * 4);
+				(unsigned long)offset, FLASH_NB_32BITWORD_IN_FLASHWORD * 4);
 			return false;
 		}
 	}
@@ -128,16 +124,13 @@ static int flash_stm32_check_status(const struct device *dev)
 	 * errors, so in this case we just log a warning.
 	 */
 #ifdef DUAL_BANK
-	uint32_t const error_bank2 = (FLASH_FLAG_ALL_ERRORS_BANK2
-				      & ~FLASH_FLAG_SNECCERR_BANK2);
+	uint32_t const error_bank2 = (FLASH_FLAG_ALL_ERRORS_BANK2 & ~FLASH_FLAG_SNECCERR_BANK2);
 #endif
 	uint32_t sr;
 
 #if defined(CONFIG_SOC_SERIES_STM32H7RSX)
-	uint32_t const error_bank = (FLASH_FLAG_ECC_ERRORS
-				      & ~FLASH_FLAG_SNECCERR
-				      & ~FLASH_FLAG_DBECCERR);
-
+	uint32_t const error_bank =
+		(FLASH_FLAG_ECC_ERRORS & ~FLASH_FLAG_SNECCERR & ~FLASH_FLAG_DBECCERR);
 
 	/* Read the Interrupt status flags. */
 	sr = regs->ISR;
@@ -159,12 +152,11 @@ static int flash_stm32_check_status(const struct device *dev)
 	regs->ICR = FLASH_FLAG_ECC_ERRORS;
 	if (sr & error_bank) {
 #else
-	uint32_t const error_bank1 = (FLASH_FLAG_ALL_ERRORS_BANK1
-				      & ~FLASH_FLAG_SNECCERR_BANK1);
+	uint32_t const error_bank1 = (FLASH_FLAG_ALL_ERRORS_BANK1 & ~FLASH_FLAG_SNECCERR_BANK1);
 
 	/* Read the status flags. */
 	sr = regs->SR1;
-	if (sr & (FLASH_FLAG_SNECCERR_BANK1|FLASH_FLAG_DBECCERR_BANK1)) {
+	if (sr & (FLASH_FLAG_SNECCERR_BANK1 | FLASH_FLAG_DBECCERR_BANK1)) {
 		uint32_t word = regs->ECC_FA1 & FLASH_ECC_FA_FAIL_ECC_ADDR;
 
 		LOG_WRN("Bank%d ECC error at 0x%08x", 1,
@@ -181,7 +173,7 @@ static int flash_stm32_check_status(const struct device *dev)
 
 #ifdef DUAL_BANK
 	sr = regs->SR2;
-	if (sr & (FLASH_FLAG_SNECCERR_BANK1|FLASH_FLAG_DBECCERR_BANK1)) {
+	if (sr & (FLASH_FLAG_SNECCERR_BANK1 | FLASH_FLAG_DBECCERR_BANK1)) {
 		uint32_t word = regs->ECC_FA2 & FLASH_ECC_FA_FAIL_ECC_ADDR;
 
 		LOG_WRN("Bank%d ECC error at 0x%08x", 2,
@@ -209,7 +201,6 @@ static int flash_stm32_check_status(const struct device *dev)
 	return 0;
 }
 
-
 int flash_stm32_wait_flash_idle(const struct device *dev)
 {
 	int64_t timeout_time = k_uptime_get() + STM32H7_FLASH_TIMEOUT;
@@ -220,8 +211,8 @@ int flash_stm32_wait_flash_idle(const struct device *dev)
 		return -EIO;
 	}
 #ifdef DUAL_BANK
-	while ((FLASH_STM32_REGS(dev)->SR1 & FLASH_SR_QW)
-	       || (FLASH_STM32_REGS(dev)->SR2 & FLASH_SR_QW))
+	while ((FLASH_STM32_REGS(dev)->SR1 & FLASH_SR_QW) ||
+	       (FLASH_STM32_REGS(dev)->SR2 & FLASH_SR_QW))
 #else
 	while (FLASH_STM32_REGS(dev)->SR1 & FLASH_SR_QW)
 #endif
@@ -235,8 +226,7 @@ int flash_stm32_wait_flash_idle(const struct device *dev)
 	return 0;
 }
 
-static struct flash_stm32_sector_t get_sector(const struct device *dev,
-					      off_t offset)
+static struct flash_stm32_sector_t get_sector(const struct device *dev, off_t offset)
 {
 	struct flash_stm32_sector_t sector;
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
@@ -246,8 +236,7 @@ static struct flash_stm32_sector_t get_sector(const struct device *dev,
 
 	bool bank_swap;
 	/* Check whether bank1/2 are swapped */
-	bank_swap = (READ_BIT(FLASH->OPTCR, FLASH_OPTCR_SWAP_BANK)
-			== FLASH_OPTCR_SWAP_BANK);
+	bank_swap = (READ_BIT(FLASH->OPTCR, FLASH_OPTCR_SWAP_BANK) == FLASH_OPTCR_SWAP_BANK);
 	sector.sector_index = offset / FLASH_SECTOR_SIZE;
 	if ((temp_offset < (REAL_FLASH_SIZE_KB / 2)) && !bank_swap) {
 		sector.bank = 1;
@@ -297,7 +286,7 @@ static int erase_sector(const struct device *dev, int offset)
 
 	if (sector.bank == 0) {
 
-		LOG_ERR("Offset %ld does not exist", (long) offset);
+		LOG_ERR("Offset %ld does not exist", (long)offset);
 		return -EINVAL;
 	}
 
@@ -312,8 +301,7 @@ static int erase_sector(const struct device *dev, int offset)
 	}
 
 	*(sector.cr) &= ~FLASH_CR_SNB;
-	*(sector.cr) |= (FLASH_CR_SER
-		| ((sector.sector_index << FLASH_CR_SNB_Pos) & FLASH_CR_SNB));
+	*(sector.cr) |= (FLASH_CR_SER | ((sector.sector_index << FLASH_CR_SNB_Pos) & FLASH_CR_SNB));
 	*(sector.cr) |= FLASH_CR_START;
 	/* flush the register write */
 	barrier_dsync_fence_full();
@@ -324,15 +312,12 @@ static int erase_sector(const struct device *dev, int offset)
 	return rc;
 }
 
-
-int flash_stm32_block_erase_loop(const struct device *dev,
-				 unsigned int offset,
-				 unsigned int len)
+int flash_stm32_block_erase_loop(const struct device *dev, unsigned int offset, unsigned int len)
 {
 	unsigned int address = offset;
 	int rc = 0;
 
-	for (; address <= offset + len - 1 ; address += FLASH_SECTOR_SIZE) {
+	for (; address <= offset + len - 1; address += FLASH_SECTOR_SIZE) {
 		rc = erase_sector(dev, address);
 		if (rc < 0) {
 			break;
@@ -355,18 +340,15 @@ static int wait_write_queue(const struct flash_stm32_sector_t *sector)
 	return 0;
 }
 
-static int write_ndwords(const struct device *dev,
-			 off_t offset, const uint64_t *data,
-			 uint8_t n)
+static int write_ndwords(const struct device *dev, off_t offset, const uint64_t *data, uint8_t n)
 {
-	volatile uint64_t *flash = (uint64_t *)(offset
-						+ FLASH_STM32_BASE_ADDRESS);
+	volatile uint64_t *flash = (uint64_t *)(offset + FLASH_STM32_BASE_ADDRESS);
 	int rc;
 	int i;
 	struct flash_stm32_sector_t sector = get_sector(dev, offset);
 
 	if (sector.bank == 0) {
-		LOG_ERR("Offset %ld does not exist", (long) offset);
+		LOG_ERR("Offset %ld does not exist", (long)offset);
 		return -EINVAL;
 	}
 
@@ -414,8 +396,8 @@ static int write_ndwords(const struct device *dev,
 	return rc;
 }
 
-int flash_stm32_write_range(const struct device *dev, unsigned int offset,
-			    const void *data, unsigned int len)
+int flash_stm32_write_range(const struct device *dev, unsigned int offset, const void *data,
+			    unsigned int len)
 {
 	int rc = 0;
 	int i, j;
@@ -424,9 +406,7 @@ int flash_stm32_write_range(const struct device *dev, unsigned int offset,
 	uint8_t unaligned_datas[nbytes];
 
 	for (i = 0; i < len && i + nbytes <= len; i += nbytes, offset += nbytes) {
-		rc = write_ndwords(dev, offset,
-				   (const uint64_t *) data + (i >> 3),
-				   ndwords);
+		rc = write_ndwords(dev, offset, (const uint64_t *)data + (i >> 3), ndwords);
 		if (rc < 0) {
 			return rc;
 		}
@@ -440,9 +420,7 @@ int flash_stm32_write_range(const struct device *dev, unsigned int offset,
 		for (j = 0; j < len - i; ++j) {
 			unaligned_datas[j] = ((uint8_t *)data)[i + j];
 		}
-		rc = write_ndwords(dev, offset,
-				   (const uint64_t *)unaligned_datas,
-				   ndwords);
+		rc = write_ndwords(dev, offset, (const uint64_t *)unaligned_datas, ndwords);
 		if (rc < 0) {
 			return rc;
 		}
@@ -495,8 +473,7 @@ static int flash_stm32h7_write_protection(const struct device *dev, bool enable)
 }
 
 #ifdef CONFIG_CPU_CORTEX_M7
-static void flash_stm32h7_flush_caches(const struct device *dev,
-				       off_t offset, size_t len)
+static void flash_stm32h7_flush_caches(const struct device *dev, off_t offset, size_t len)
 {
 	ARG_UNUSED(dev);
 
@@ -504,26 +481,22 @@ static void flash_stm32h7_flush_caches(const struct device *dev,
 		return; /* Cache not enabled */
 	}
 
-	SCB_InvalidateDCache_by_Addr((uint32_t *)(FLASH_STM32_BASE_ADDRESS
-						  + offset), len);
+	SCB_InvalidateDCache_by_Addr((uint32_t *)(FLASH_STM32_BASE_ADDRESS + offset), len);
 }
 #endif /* CONFIG_CPU_CORTEX_M7 */
 
-static int flash_stm32h7_erase(const struct device *dev, off_t offset,
-			       size_t len)
+static int flash_stm32h7_erase(const struct device *dev, off_t offset, size_t len)
 {
 	int rc, rc2;
 
 #ifdef CONFIG_CPU_CORTEX_M7
 	/* Flush whole sectors */
 	off_t flush_offset = ROUND_DOWN(offset, FLASH_SECTOR_SIZE);
-	size_t flush_len = ROUND_UP(offset + len - 1, FLASH_SECTOR_SIZE)
-		 - flush_offset;
+	size_t flush_len = ROUND_UP(offset + len - 1, FLASH_SECTOR_SIZE) - flush_offset;
 #endif /* CONFIG_CPU_CORTEX_M7 */
 
 	if (!flash_stm32_valid_range(dev, offset, len, true)) {
-		LOG_ERR("Erase range invalid. Offset: %ld, len: %zu",
-			(long) offset, len);
+		LOG_ERR("Erase range invalid. Offset: %ld, len: %zu", (long)offset, len);
 		return -EINVAL;
 	}
 
@@ -533,7 +506,7 @@ static int flash_stm32h7_erase(const struct device *dev, off_t offset,
 
 	flash_stm32_sem_take(dev);
 
-	LOG_DBG("Erase offset: %ld, len: %zu", (long) offset, len);
+	LOG_DBG("Erase offset: %ld, len: %zu", (long)offset, len);
 
 	rc = flash_stm32h7_write_protection(dev, false);
 	if (rc) {
@@ -546,8 +519,7 @@ static int flash_stm32h7_erase(const struct device *dev, off_t offset,
 	/* Flush cache on all sectors affected by the erase */
 	flash_stm32h7_flush_caches(dev, flush_offset, flush_len);
 #elif CONFIG_CPU_CORTEX_M4
-	if (LL_AHB1_GRP1_IsEnabledClock(LL_AHB1_GRP1_PERIPH_ART)
-		&& LL_ART_IsEnabled()) {
+	if (LL_AHB1_GRP1_IsEnabledClock(LL_AHB1_GRP1_PERIPH_ART) && LL_ART_IsEnabled()) {
 		LOG_ERR("Cortex M4: ART enabled not supported by flash driver");
 	}
 #endif /* CONFIG_CPU_CORTEX_M7 */
@@ -563,15 +535,12 @@ done:
 	return rc;
 }
 
-
-static int flash_stm32h7_write(const struct device *dev, off_t offset,
-			       const void *data, size_t len)
+static int flash_stm32h7_write(const struct device *dev, off_t offset, const void *data, size_t len)
 {
 	int rc;
 
 	if (!flash_stm32_valid_range(dev, offset, len, true)) {
-		LOG_ERR("Write range invalid. Offset: %ld, len: %zu",
-			(long) offset, len);
+		LOG_ERR("Write range invalid. Offset: %ld, len: %zu", (long)offset, len);
 		return -EINVAL;
 	}
 
@@ -581,7 +550,7 @@ static int flash_stm32h7_write(const struct device *dev, off_t offset,
 
 	flash_stm32_sem_take(dev);
 
-	LOG_DBG("Write offset: %ld, len: %zu", (long) offset, len);
+	LOG_DBG("Write offset: %ld, len: %zu", (long)offset, len);
 
 	rc = flash_stm32h7_write_protection(dev, false);
 	if (!rc) {
@@ -599,13 +568,10 @@ static int flash_stm32h7_write(const struct device *dev, off_t offset,
 	return rc;
 }
 
-static int flash_stm32h7_read(const struct device *dev, off_t offset,
-			      void *data,
-			      size_t len)
+static int flash_stm32h7_read(const struct device *dev, off_t offset, void *data, size_t len)
 {
 	if (!flash_stm32_valid_range(dev, offset, len, false)) {
-		LOG_ERR("Read range invalid. Offset: %ld, len: %zu",
-			(long) offset, len);
+		LOG_ERR("Read range invalid. Offset: %ld, len: %zu", (long)offset, len);
 		return -EINVAL;
 	}
 
@@ -613,7 +579,7 @@ static int flash_stm32h7_read(const struct device *dev, off_t offset,
 		return 0;
 	}
 
-	LOG_DBG("Read offset: %ld, len: %zu", (long) offset, len);
+	LOG_DBG("Read offset: %ld, len: %zu", (long)offset, len);
 
 	/* During the read we mask bus errors and only allow NMI.
 	 *
@@ -627,7 +593,7 @@ static int flash_stm32h7_read(const struct device *dev, off_t offset,
 	barrier_dsync_fence_full();
 	barrier_isync_fence_full();
 
-	memcpy(data, (uint8_t *) FLASH_STM32_BASE_ADDRESS + offset, len);
+	memcpy(data, (uint8_t *)FLASH_STM32_BASE_ADDRESS + offset, len);
 
 	__set_FAULTMASK(0);
 	SCB->CCR &= ~SCB_CCR_BFHFNMIGN_Msk;
@@ -638,23 +604,19 @@ static int flash_stm32h7_read(const struct device *dev, off_t offset,
 	return flash_stm32_check_status(dev);
 }
 
-
 static const struct flash_parameters flash_stm32h7_parameters = {
 	.write_block_size = FLASH_STM32_WRITE_BLOCK_SIZE,
 	.erase_value = 0xff,
 };
 
-static const struct flash_parameters *
-flash_stm32h7_get_parameters(const struct device *dev)
+static const struct flash_parameters *flash_stm32h7_get_parameters(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
 	return &flash_stm32h7_parameters;
 }
 
-
-void flash_stm32_page_layout(const struct device *dev,
-			     const struct flash_pages_layout **layout,
+void flash_stm32_page_layout(const struct device *dev, const struct flash_pages_layout **layout,
 			     size_t *layout_size)
 {
 	ARG_UNUSED(dev);
@@ -672,8 +634,8 @@ void flash_stm32_page_layout(const struct device *dev,
 			 * between bank1/2
 			 */
 			stm32h7_flash_layout[1].pages_count = 1;
-			stm32h7_flash_layout[1].pages_size = BANK2_OFFSET
-					- (SECTOR_PER_BANK * FLASH_SECTOR_SIZE);
+			stm32h7_flash_layout[1].pages_size =
+				BANK2_OFFSET - (SECTOR_PER_BANK * FLASH_SECTOR_SIZE);
 			/* Bank2 */
 			stm32h7_flash_layout[2].pages_count = SECTOR_PER_BANK;
 			stm32h7_flash_layout[2].pages_size = FLASH_SECTOR_SIZE;
@@ -691,8 +653,7 @@ void flash_stm32_page_layout(const struct device *dev,
 	static struct flash_pages_layout stm32h7_flash_layout[1];
 
 	if (stm32h7_flash_layout[0].pages_count == 0) {
-		stm32h7_flash_layout[0].pages_count =
-				REAL_FLASH_SIZE_KB / FLASH_SECTOR_SIZE;
+		stm32h7_flash_layout[0].pages_count = REAL_FLASH_SIZE_KB / FLASH_SECTOR_SIZE;
 		stm32h7_flash_layout[0].pages_size = FLASH_SECTOR_SIZE;
 	}
 	*layout_size = ARRAY_SIZE(stm32h7_flash_layout);
@@ -701,10 +662,9 @@ void flash_stm32_page_layout(const struct device *dev,
 }
 
 static struct flash_stm32_priv flash_data = {
-	.regs = (FLASH_TypeDef *) DT_INST_REG_ADDR(0),
+	.regs = (FLASH_TypeDef *)DT_INST_REG_ADDR(0),
 #if DT_NODE_HAS_PROP(DT_INST(0, st_stm32h7_flash_controller), clocks)
-	.pclken = { .bus = DT_INST_CLOCKS_CELL(0, bus),
-		    .enr = DT_INST_CLOCKS_CELL(0, bits)},
+	.pclken = {.bus = DT_INST_CLOCKS_CELL(0, bus), .enr = DT_INST_CLOCKS_CELL(0, bits)},
 #endif
 };
 
@@ -738,8 +698,7 @@ static int stm32h7_flash_init(const struct device *dev)
 #endif
 	flash_stm32_sem_init(dev);
 
-	LOG_DBG("Flash initialized. BS: %zu",
-		flash_stm32h7_parameters.write_block_size);
+	LOG_DBG("Flash initialized. BS: %zu", flash_stm32h7_parameters.write_block_size);
 
 #if ((CONFIG_FLASH_LOG_LEVEL >= LOG_LEVEL_DBG) && CONFIG_FLASH_PAGE_LAYOUT)
 	const struct flash_pages_layout *layout;
@@ -747,15 +706,13 @@ static int stm32h7_flash_init(const struct device *dev)
 
 	flash_stm32_page_layout(dev, &layout, &layout_size);
 	for (size_t i = 0; i < layout_size; i++) {
-		LOG_DBG("Block %zu: bs: %zu count: %zu", i,
-			layout[i].pages_size, layout[i].pages_count);
+		LOG_DBG("Block %zu: bs: %zu count: %zu", i, layout[i].pages_size,
+			layout[i].pages_count);
 	}
 #endif
 
 	return flash_stm32h7_write_protection(dev, false);
 }
 
-
-DEVICE_DT_INST_DEFINE(0, stm32h7_flash_init, NULL,
-		    &flash_data, NULL, POST_KERNEL,
-		    CONFIG_FLASH_INIT_PRIORITY, &flash_stm32h7_api);
+DEVICE_DT_INST_DEFINE(0, stm32h7_flash_init, NULL, &flash_data, NULL, POST_KERNEL,
+		      CONFIG_FLASH_INIT_PRIORITY, &flash_stm32h7_api);
