@@ -183,7 +183,8 @@ int supplicant_reg_domain(const struct device *dev, struct wifi_reg_domain *reg_
  */
 int supplicant_mode(const struct device *dev, struct wifi_mode_info *mode);
 
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+#if defined CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE || \
+	defined CONFIG_WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE
 /** Set Wi-Fi enterprise mode CA/client Cert and key
  *
  * @param dev Pointer to the device structure for the driver instance
