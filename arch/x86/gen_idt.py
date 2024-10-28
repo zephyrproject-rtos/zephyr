@@ -44,7 +44,7 @@ if version.parse(elftools.__version__) < version.parse('0.24'):
 KERNEL_CODE_SEG = 0x08
 
 # These exception vectors push an error code onto the stack.
-ERR_CODE_VECTORS = [8, 10, 11, 12, 13, 14, 17]
+ERR_CODE_VECTORS = [8, 10, 11, 12, 13, 14, 17, 21]
 
 
 def debug(text):
