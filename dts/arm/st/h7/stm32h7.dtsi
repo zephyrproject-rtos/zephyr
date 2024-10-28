@@ -144,7 +144,6 @@
 			compatible = "st,stm32-flash-controller", "st,stm32h7-flash-controller";
 			reg = <0x52002000 0x400>;
 			interrupts = <4 0>;
-			clocks = <&rcc STM32_CLOCK(AHB3, 8U)>;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
