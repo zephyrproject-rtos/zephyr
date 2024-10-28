@@ -332,6 +332,8 @@ static int edma_config(const struct device *dev, uint32_t chan_id,
 				      EDMA_TCD_CSR_INTHALF_MASK, 0);
 	}
 
+	irq_enable(chan->irq);
+
 	/* dump register status - for debugging purposes */
 	edma_dump_channel_registers(data, chan_id);
 
@@ -510,8 +512,6 @@ static int edma_start(const struct device *dev, uint32_t chan_id)
 	}
 
 	LOG_DBG("starting channel %u", chan_id);
-
-	irq_enable(chan->irq);
 
 	/* enable HW requests */
 	EDMA_ChannelRegUpdate(data->hal_cfg, chan_id,
