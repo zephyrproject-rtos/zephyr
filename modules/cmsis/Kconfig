@@ -28,4 +28,9 @@ config CMSIS_M_CHECK_DEVICE_DEFINES
 	help
 	  This options enables the validation of CMSIS configuration flags.
 
+config CMSIS_CORE_HAS_SYSTEM_CORE_CLOCK
+	bool
+	help
+	  Enable this option if CMSIS SystemCoreClock symbols is available.
+
 endif
