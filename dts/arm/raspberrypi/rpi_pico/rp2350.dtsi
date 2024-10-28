@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <arm/armv8-m.dtsi>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/clock/rpi_pico_rp2350_clock.h>
@@ -26,13 +25,16 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
+		/* There are two CPU sockets in the RP2350-series SoCs.
+		 * Represent the sockets in the device tree as these two
+		 * partially-defined CPU instances. Use a separate DTSI file to
+		 * define what kind of CPU cores they are.
+		 */
 		cpu0: cpu@0 {
-			compatible = "arm,cortex-m33";
 			reg = <0>;
 		};
 
 		cpu1: cpu@1 {
-			compatible = "arm,cortex-m33";
 			reg = <1>;
 		};
 	};
@@ -433,8 +435,4 @@
 		compatible = "raspberrypi,pico-temp";
 		status = "disabled";
 	};
-};
-
-&nvic {
-	arm,num-irq-priority-bits = <4>;
 };

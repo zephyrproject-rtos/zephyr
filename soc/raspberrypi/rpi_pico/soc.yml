@@ -7,3 +7,5 @@ family:
   - name: rp2350
     socs:
     - name: rp2350a
+      cpuclusters:
+      - name: m33

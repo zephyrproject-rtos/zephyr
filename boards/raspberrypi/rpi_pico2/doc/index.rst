@@ -6,6 +6,10 @@ Overview
 The Raspberry Pi Pico 2 is the second-generation product in the Raspberry Pi
 Pico family. From the `Raspberry Pi website <https://www.raspberrypi.com/documentation/microcontrollers/pico-series.html>`_ is referred to as Pico 2.
 
+There are many limitations of the board currently. Including but not limited to:
+- The Zephyr build only supports configuring the RP2350A with the Cortex-M33 cores.
+- As with the Pico 1, there's no support for running any code on the second core.
+
 Hardware
 ********
 
@@ -26,7 +30,7 @@ Hardware
 Supported Features
 ==================
 
-The ``rpi_pico2`` board target supports the following
+The ``rpi_pico2/rp2350a/m33`` board target supports the following
 hardware features:
 
 .. list-table::
