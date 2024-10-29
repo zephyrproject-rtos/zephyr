@@ -12,6 +12,7 @@
 #include <zephyr/spinlock.h>
 #include <zephyr/sys/util.h>
 
+#include <hal/nrf_gpio.h>
 #include <nrf/gpd.h>
 #include <nrfs_gdpwr.h>
 #include <nrfs_backend_ipc_service.h>
@@ -205,6 +206,34 @@ int nrf_gpd_release(uint8_t id)
 	}
 
 	return onoff_release(&gpd_mgr->mgr);
+}
+
+int nrf_gpd_retain_pins_set(const struct pinctrl_dev_config *pcfg, bool retain)
+{
+	const struct pinctrl_state *state;
+	int ret;
+
+	ret = pinctrl_lookup_state(pcfg, PINCTRL_STATE_DEFAULT, &state);
+	if (ret < 0) {
+		return ret;
+	}
+
+	for (uint8_t i = 0U; i < state->pin_cnt; i++) {
+		uint32_t pin = NRF_GET_PIN(state->pins[i]);
+		NRF_GPIO_Type *reg = nrf_gpio_pin_port_decode(&pin);
+
+		if (pin == NRF_PIN_DISCONNECTED) {
+			continue;
+		}
+
+		if (retain) {
+			reg->RETAINSET = BIT(pin);
+		} else {
+			reg->RETAINCLR = BIT(pin);
+		}
+	}
+
+	return 0;
 }
 
 static int nrf_gpd_pre_init(void)
