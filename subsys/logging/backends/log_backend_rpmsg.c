@@ -10,7 +10,7 @@
 #include <zephyr/logging/log_core.h>
 #include <zephyr/logging/log_output.h>
 #include <zephyr/logging/log_backend_std.h>
-#include <zephyr/drivers/remoteproc/vdev.h>
+#include <zephyr/drivers/remoteproc/rpmsg_virtio_device.h>
 #include <openamp/open_amp.h>
 
 #define EPT_NODE DT_CHOSEN(zephyr_log_rpmsg)
@@ -114,7 +114,7 @@ static int lb_rpmsg_format_set(const struct log_backend *backend, uint32_t log_t
 
 static void lb_rpmsg_init(const struct log_backend *backend)
 {
-	struct rpmsg_device *rdev = vdev_get_rpmsg_device(vdev);
+	struct rpmsg_device *rdev = openamp_get_rpmsg_device(vdev);
 	uint32_t dest_addr = RPMSG_ADDR_ANY;
 	int ret;
 
