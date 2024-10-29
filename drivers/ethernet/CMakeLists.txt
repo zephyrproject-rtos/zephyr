@@ -41,6 +41,7 @@ zephyr_library_sources_ifdef(CONFIG_ETH_ADIN2111	eth_adin2111.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_LAN865X	        eth_lan865x.c oa_tc6.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_XMC4XXX		eth_xmc4xxx.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_TEST		eth_test.c)
+zephyr_library_sources_ifdef(CONFIG_ETH_RENESAS_RA     eth_renesas_ra.c)
 
 if(CONFIG_ETH_NXP_S32_NETC)
   zephyr_library_sources(eth_nxp_s32_netc.c)
