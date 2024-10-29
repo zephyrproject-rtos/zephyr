@@ -55,23 +55,7 @@ LOG_MODULE_REGISTER(openamp_remoteproc, CONFIG_REMOTEPROC_LOG_LEVEL);
 #define RESOURCE_TABLE_ATTR	\
 __attribute__((__section__(DT_PROP(VDEV_NODE, resource_table)))))
 
-
-#ifdef CONFIG_RAM_CONSOLE_BUFFER_SECTION
-#if DT_HAS_CHOSEN(zephyr_ram_console)
-
-static const uint32_t ram_console_buf = DT_REG_ADDR(DT_CHOSEN(zephyr_ram_console));
-
-#else
-#error "Lack of chosen property zephyr,ram_console!"
-#endif
-
-#else
-extern char ram_console_buf[];
-#endif
-
 #define __resource Z_GENERIC_SECTION(.resource_table)
-
-
 
 #define CARVEOUT_OFFSET(node_id, prop, idx) offsetof(struct fw_resource_table, carveouts[idx]),
 #define VDEV_OFFSET(node_id) offsetof(struct fw_resource_table, vdevs[DT_NODE_CHILD_IDX(node_id)]),
@@ -147,6 +131,8 @@ struct fw_resource_table {
 	struct fw_rsc_trace cm_trace;
 #endif
 } METAL_PACKED_END __aligned(8);
+
+extern char ram_console_buf[];
 
 
 struct fw_resource_table __resource resource_table = {
