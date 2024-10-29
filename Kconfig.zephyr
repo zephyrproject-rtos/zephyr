@@ -1021,32 +1021,6 @@ config IS_BOOTLOADER
 	  This option indicates that Zephyr will act as a bootloader to execute
 	  a separate Zephyr image payload.
 
-config BOOTLOADER_SRAM_SIZE
-	int "SRAM reserved for bootloader [DEPRECATED]"
-	default 0
-	depends on !XIP || IS_BOOTLOADER
-	depends on ARM || XTENSA
-	help
-	  This option specifies the amount of SRAM (measure in kB) reserved for
-	  a bootloader image, when either:
-	  - the Zephyr image itself is to act as the bootloader, or
-	  - Zephyr is a !XIP image, which implicitly assumes existence of a
-	  bootloader that loads the Zephyr !XIP image onto SRAM.
-
-	  This option is deprecated, users should transition to using DTS to set this, if needed.
-	  To be removed after Zephyr 3.7 release.
-
-config BOOTLOADER_SRAM_SIZE_DEPRECATED
-	bool
-	default y
-	select DEPRECATED
-	depends on BOOTLOADER_SRAM_SIZE != 0
-	depends on !XIP || IS_BOOTLOADER
-	depends on ARM || XTENSA
-	help
-	  Non-prompt symbol to indicate that the deprecated BOOTLOADER_SRAM_SIZE Kconfig has a
-	  non-0 value. Please transition to using devicetree.
-
 config BOOTLOADER_BOSSA
 	bool "BOSSA bootloader support"
 	select USE_DT_CODE_PARTITION
