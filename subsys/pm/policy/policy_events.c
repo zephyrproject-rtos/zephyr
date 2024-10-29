@@ -68,14 +68,13 @@ int32_t pm_policy_next_event_ticks(void)
 	return -1;
 }
 
-void pm_policy_event_register(struct pm_policy_event *evt, uint32_t time_us)
+void pm_policy_event_register(struct pm_policy_event *evt, uint32_t cycle)
 {
 	k_spinlock_key_t key = k_spin_lock(&events_lock);
-	uint32_t cyc = k_cycle_get_32();
 
-	evt->value_cyc = cyc + k_us_to_cyc_ceil32(time_us);
+	evt->value_cyc = cycle;
 	sys_slist_append(&events_list, &evt->node);
-	update_next_event(cyc);
+	update_next_event(k_cycle_get_32());
 
 	k_spin_unlock(&events_lock, key);
 }
