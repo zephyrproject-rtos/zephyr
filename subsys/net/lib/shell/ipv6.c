@@ -188,6 +188,9 @@ static int cmd_net_ipv6(const struct shell *sh, size_t argc, char *argv[])
 
 	PR("Privacy extension support                 : %s\n",
 	   IS_ENABLED(CONFIG_NET_IPV6_PE) ? "enabled" : "disabled");
+	PR("SLAAC IID generation method               : %s\n",
+	   IS_ENABLED(CONFIG_NET_IPV6_IID_STABLE) ?
+	   "stable (RFC 7217)" : "EUI-64 (RFC 4862)");
 
 #if defined(CONFIG_NET_IPV6_PE)
 	PR("Max number of IPv6 privacy extension filters "
