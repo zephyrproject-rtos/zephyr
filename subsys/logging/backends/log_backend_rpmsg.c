@@ -14,14 +14,14 @@
 #include <openamp/open_amp.h>
 
 #define EPT_NODE DT_CHOSEN(zephyr_log_rpmsg)
-#define VDEV_NODE DT_BUS(EPT_NODE)
+#define RVDEV_NODE DT_BUS(EPT_NODE)
 
 static volatile bool ept_ready;
 static volatile bool in_panic;
 static uint32_t log_format_current;
 static uint8_t rpmsg_output_buf[128];
 static struct rpmsg_endpoint ept_log;
-static const struct device *vdev = DEVICE_DT_GET(VDEV_NODE);
+static const struct device *rvdev = DEVICE_DT_GET(RVDEV_NODE);
 
 static int rpmsg_log_callback(struct rpmsg_endpoint *ept, void *data,
 							  size_t len, uint32_t src, void *priv)
@@ -114,7 +114,7 @@ static int lb_rpmsg_format_set(const struct log_backend *backend, uint32_t log_t
 
 static void lb_rpmsg_init(const struct log_backend *backend)
 {
-	struct rpmsg_device *rdev = openamp_get_rpmsg_device(vdev);
+	struct rpmsg_device *rdev = openamp_get_rpmsg_device(rvdev);
 	uint32_t dest_addr = RPMSG_ADDR_ANY;
 	int ret;
 
