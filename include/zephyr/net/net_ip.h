@@ -65,6 +65,7 @@ enum net_ip_protocol {
 	IPPROTO_IP = 0,            /**< IP protocol (pseudo-val for setsockopt() */
 	IPPROTO_ICMP = 1,          /**< ICMP protocol   */
 	IPPROTO_IGMP = 2,          /**< IGMP protocol   */
+	IPPROTO_ETH_P_ALL = 3,     /**< Every packet. from linux if_ether.h   */
 	IPPROTO_IPIP = 4,          /**< IPIP tunnels    */
 	IPPROTO_TCP = 6,           /**< TCP protocol    */
 	IPPROTO_UDP = 17,          /**< UDP protocol    */

@@ -17,6 +17,8 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
+#include <netinet/if_ether.h>
+#include <netpacket/packet.h>
 #include <poll.h>
 #include <stdlib.h>
 #include <string.h>
@@ -72,6 +74,9 @@ static int socket_family_from_nsos_mid(int family_mid, int *family)
 	case NSOS_MID_AF_UNIX:
 		*family = AF_UNIX;
 		break;
+	case NSOS_MID_AF_PACKET:
+		*family = AF_PACKET;
+		break;
 	default:
 		nsi_print_warning("%s: socket family %d not supported\n", __func__, family_mid);
 		return -NSOS_MID_EAFNOSUPPORT;
@@ -94,6 +99,9 @@ static int socket_family_to_nsos_mid(int family, int *family_mid)
 		break;
 	case AF_UNIX:
 		*family_mid = NSOS_MID_AF_UNIX;
+		break;
+	case AF_PACKET:
+		*family_mid = NSOS_MID_AF_PACKET;
 		break;
 	default:
 		nsi_print_warning("%s: socket family %d not supported\n", __func__, family);
@@ -130,6 +138,9 @@ static int socket_proto_from_nsos_mid(int proto_mid, int *proto)
 	case NSOS_MID_IPPROTO_RAW:
 		*proto = IPPROTO_RAW;
 		break;
+	case NSOS_MID_IPPROTO_ETH_P_ALL:
+		*proto = htons(ETH_P_ALL);
+		break;
 	default:
 		nsi_print_warning("%s: socket protocol %d not supported\n", __func__, proto_mid);
 		return -NSOS_MID_EPROTONOSUPPORT;
@@ -164,6 +175,9 @@ static int socket_proto_to_nsos_mid(int proto, int *proto_mid)
 		break;
 	case IPPROTO_RAW:
 		*proto_mid = NSOS_MID_IPPROTO_RAW;
+		break;
+	case ETH_P_ALL:
+		*proto_mid = htons(NSOS_MID_IPPROTO_ETH_P_ALL);
 		break;
 	default:
 		nsi_print_warning("%s: socket protocol %d not supported\n", __func__, proto);
@@ -316,6 +330,24 @@ static int sockaddr_from_nsos_mid(struct sockaddr **addr, socklen_t *addrlen,
 
 		return 0;
 	}
+	case NSOS_MID_AF_PACKET: {
+		const struct nsos_mid_sockaddr_ll *addr_ll_mid =
+			(const struct nsos_mid_sockaddr_ll *)addr_mid;
+		struct sockaddr_ll *addr_ll = (struct sockaddr_ll *)*addr;
+
+		addr_ll->sll_family = NSOS_MID_AF_PACKET;
+		addr_ll->sll_protocol = addr_ll_mid->sll_protocol;
+		addr_ll->sll_ifindex = addr_ll_mid->sll_ifindex;
+		addr_ll->sll_hatype = addr_ll_mid->sll_hatype;
+		addr_ll->sll_pkttype = addr_ll_mid->sll_pkttype;
+		addr_ll->sll_halen = addr_ll_mid->sll_halen;
+		memcpy(addr_ll->sll_addr, addr_ll_mid->sll_addr,
+		       sizeof(addr_ll->sll_addr));
+
+		*addrlen = sizeof(*addr_ll);
+
+		return 0;
+	}
 	}
 
 	return -NSOS_MID_EINVAL;
@@ -380,6 +412,23 @@ static int sockaddr_to_nsos_mid(const struct sockaddr *addr, socklen_t addrlen,
 
 		if (addrlen_mid) {
 			*addrlen_mid = sizeof(*addr_un);
+		}
+
+		return 0;
+	}
+	case AF_PACKET: {
+		struct nsos_mid_sockaddr_ll *addr_ll_mid =
+			(struct nsos_mid_sockaddr_ll *)addr_mid;
+		const struct sockaddr_ll *addr_ll = (const struct sockaddr_ll *)addr;
+
+		if (addr_ll_mid) {
+			addr_ll_mid->sll_family = NSOS_MID_AF_PACKET;
+			addr_ll_mid->sll_protocol = addr_ll->sll_protocol;
+			addr_ll_mid->sll_ifindex = addr_ll->sll_ifindex;
+		}
+
+		if (addrlen_mid) {
+			*addrlen_mid = sizeof(*addr_ll);
 		}
 
 		return 0;
