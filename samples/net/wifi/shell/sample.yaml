@@ -14,6 +14,7 @@ tests:
       - reel_board
       - siwx917_rb4338a
       - rd_rw612_bga
+      - frdm_rw612
     integration_platforms:
       - cc3220sf_launchxl
   sample.net.wifi.mikroe_wifi_bt_click:
