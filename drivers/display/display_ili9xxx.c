@@ -163,6 +163,7 @@ static int ili9xxx_write(const struct device *dev, const uint16_t x,
 	mipi_desc.width = desc->width;
 	/* Per MIPI API, pitch must always match width */
 	mipi_desc.pitch = desc->width;
+	mipi_desc.frame_incomplete = desc->frame_incomplete;
 
 	r = ili9xxx_transmit(dev, ILI9XXX_RAMWR, NULL, 0);
 	if (r < 0) {
