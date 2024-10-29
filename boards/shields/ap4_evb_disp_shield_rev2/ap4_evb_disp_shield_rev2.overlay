@@ -27,7 +27,7 @@
 	cmdq-buffer-location = ".mspi_buff";
 	cmdq-buffer-size = <256>;
 
-	ambiq,rx-config = <2 0 10 0 1 0 0 0 0 1>;
+	ambiq,rx-config = <2 0 1 0 1 0 0 0 0 10>;
 
 	dqs-support;
 
