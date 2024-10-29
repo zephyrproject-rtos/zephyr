@@ -313,6 +313,14 @@
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x10000>;
 		};
 
+		rtc0: rtc@40004800 {
+			compatible = "ambiq,rtc";
+			reg = <0x40004800 0x210>;
+			interrupts = <2 0>;
+			alarms-count = <1>;
+			status = "disabled";
+		};
+
 		pinctrl: pin-controller@40010000 {
 			compatible = "ambiq,apollo4-pinctrl";
 			reg = <0x40010000 0x800>;
