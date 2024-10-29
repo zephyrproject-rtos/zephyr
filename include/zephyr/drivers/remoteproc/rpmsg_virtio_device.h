@@ -21,7 +21,7 @@ extern "C" {
 
 struct rpmsg_device;
 
-struct rpmsg_device *vdev_get_rpmsg_device(const struct device *dev);
+struct rpmsg_device *openamp_get_rpmsg_device(const struct device *dev);
 
 
 

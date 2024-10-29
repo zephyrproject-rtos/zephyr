@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT	openamp_vdev
+#define DT_DRV_COMPAT	openamp_rpmsg_virtio_device
 
 #include <stdio.h>
 
@@ -14,7 +14,7 @@
 
 #include <zephyr/drivers/mbox.h>
 #include <zephyr/drivers/remoteproc.h>
-#include <zephyr/drivers/remoteproc/vdev.h>
+#include <zephyr/drivers/remoteproc/rpmsg_virtio_device.h>
 
 #include <openamp/virtio.h>
 #include <openamp/remoteproc.h>
@@ -25,9 +25,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(openamp_remoteproc, CONFIG_REMOTEPROC_LOG_LEVEL);
 
-#define DT_DRV_COMPAT openamp_vdev
 
-struct vdev_config {
+struct rvdev_config {
 	struct mbox_dt_spec mbox_tx;
 	struct mbox_dt_spec mbox_rx;
 	const char *vring0_name;
@@ -36,7 +35,7 @@ struct vdev_config {
 	unsigned int idx;
 };
 
-struct vdev_data {
+struct rvdev_data {
 	struct virtio_device *vdev;
 	struct rpmsg_virtio_device rvdev;
 	struct k_thread thread;
@@ -46,16 +45,16 @@ struct vdev_data {
 
 };
 
-static int rpvdev_notify(void *priv, uint32_t id)
+static int rvdev_notify(void *priv, uint32_t id)
 {
 	const struct device *dev = priv;
-	const struct vdev_config *config = dev->config;
+	const struct rvdev_config *config = dev->config;
 
 	return mbox_send_dt(&config->mbox_tx, NULL);
 }
 
 
-static void vdev_reset_callback(struct virtio_device *vdev)
+static void rvdev_reset_callback(struct virtio_device *vdev)
 {
 	LOG_INF("vdev_reset_callback");
 }
@@ -78,10 +77,10 @@ static void mbox_callback(const struct device *dev, uint32_t channel,
 	k_sem_give(sem);
 }
 
-static void vdev_rx_thread(void *dev_ptr, void *p2, void *p3)
+static void rvdev_rx_thread(void *dev_ptr, void *p2, void *p3)
 {
 	const struct device *dev = dev_ptr;
-	struct vdev_data *data = dev->data;
+	struct rvdev_data *data = dev->data;
 
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
@@ -99,10 +98,10 @@ static void dump_io_region(const char *name, const struct metal_io_region *regio
 		  *region->physmap,  region->size, region->page_shift);
 }
 
-static int vdev_init(const struct device *dev)
+static int rvdev_init(const struct device *dev)
 {
-	const struct vdev_config *config = dev->config;
-	struct vdev_data *data = dev->data;
+	const struct rvdev_config *config = dev->config;
+	struct rvdev_data *data = dev->data;
 	struct fw_rsc_vdev *fw_vdev0 = remoteproc_get_vdev(config->idx);
 	struct fw_rsc_vdev_vring *fw_vring0 = remoteproc_get_vring(config->idx, 0);
 	struct fw_rsc_vdev_vring *fw_vring1 = remoteproc_get_vring(config->idx, 1);
@@ -185,8 +184,8 @@ static int vdev_init(const struct device *dev)
 	data->vdev = rproc_virtio_create_vdev(VIRTIO_DEV_DEVICE,
 								  VDEV_ID, fw_vdev0,
 								  rsc_table_io, (void *)dev,
-								  rpvdev_notify,
-								  vdev_reset_callback);
+								  rvdev_notify,
+								  rvdev_reset_callback);
 
 	if (!data->vdev) {
 		LOG_ERR("rproc_virtio_create_vdev failed");
@@ -220,24 +219,24 @@ static int vdev_init(const struct device *dev)
 
 	tid = k_thread_create(&data->thread, data->stack,
 						  K_THREAD_STACK_SIZEOF(data->stack),
-						  vdev_rx_thread, (void *)dev, NULL,
+						  rvdev_rx_thread, (void *)dev, NULL,
 						  NULL, CONFIG_REMOTEPROC_THREAD_PRIORITY,
 						  0, K_NO_WAIT);
 
-	k_thread_name_set(tid, "vdev");
+	k_thread_name_set(tid, "rvdev");
 
 	return 0;
 }
 
-struct rpmsg_device *vdev_get_rpmsg_device(const struct device *dev)
+struct rpmsg_device *openamp_get_rpmsg_device(const struct device *dev)
 {
-	struct vdev_data *data = dev->data;
+	struct rvdev_data *data = dev->data;
 
 	return rpmsg_virtio_get_rpmsg_device(&data->rvdev);
 }
 
-#define DEFINE_VIRTIO_DEVICE(i)  \
-static const struct vdev_config vdev_config_##i = {  \
+#define DEFINE_RPMSG_VIRTIO_DEVICE(i)  \
+static const struct rvdev_config rvdev_config_##i = {  \
 	.mbox_tx = MBOX_DT_SPEC_INST_GET(i, tx),  \
 	.mbox_rx = MBOX_DT_SPEC_INST_GET(i, rx),  \
 	.vring0_name = DT_INST_PROP_BY_PHANDLE(i, vring0_io, zephyr_memory_region),  \
@@ -245,14 +244,14 @@ static const struct vdev_config vdev_config_##i = {  \
 	.buffer_name = DT_INST_PROP_BY_PHANDLE(i, buffer_io, zephyr_memory_region),  \
 	.idx = i,  \
 	};  \
-	static struct vdev_data vdev_data_##i = { };  \
+	static struct rvdev_data rvdev_data_##i = { };  \
 	DEVICE_DT_INST_DEFINE(i,  \
-	&vdev_init,  \
+	&rvdev_init,  \
 	NULL,  \
-	&vdev_data_##i,  \
-	&vdev_config_##i,  \
+	&rvdev_data_##i,  \
+	&rvdev_config_##i,  \
 	POST_KERNEL,  \
 	CONFIG_REMOTEPROC_INIT_PRIORITY,  \
 	NULL);
 
-DT_INST_FOREACH_STATUS_OKAY(DEFINE_VIRTIO_DEVICE)
+DT_INST_FOREACH_STATUS_OKAY(DEFINE_RPMSG_VIRTIO_DEVICE)
