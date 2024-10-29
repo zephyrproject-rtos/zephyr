@@ -481,6 +481,7 @@ onion	Onion Corporation
 onnn	ON Semiconductor Corp.
 ontat	On Tat Industrial Company
 opalkelly	Opal Kelly Incorporated
+openamp	OpenAMP
 opencores	OpenCores.org
 openisa	open-isa.org
 openrisc	OpenRISC.io

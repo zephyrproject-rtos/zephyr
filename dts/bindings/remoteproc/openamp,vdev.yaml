@@ -1,0 +1,60 @@
+# Copyright (c) 2024 Maurer Systems GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: OpenAMP RemoteProc vdev
+
+compatible: "openamp,vdev"
+
+include: base.yaml
+
+bus: rpmsg
+
+properties:
+
+  vring0-io:
+    type: phandle
+    required: true
+    description: I/O region for the vring0, usually a carvout region
+
+  vring1-io:
+    type: phandle
+    required: true
+    description: I/O region for the vring1, usually a carvout region
+
+  buffer-io:
+    type: phandle
+    required: true
+    description: I/O region for the RPMSG buffer, usually a carvout region
+
+  num-tx-buffers:
+    type: int
+    required: true
+    description: Timer width in bits of IP version
+
+  num-rx-buffers:
+    type: int
+    required: true
+    description: Timer width in bits of IP version
+
+  mboxes:
+    description: phandle to the MBOX controller (TX and RX are required)
+    required: true
+
+  mbox-names:
+    description: MBOX channel names (must be called "tx" and "rx")
+    required: true
+
+  zephyr,priority:
+    type: array
+    description: |
+      WQ priority for the instance. This property is an array composed by the
+      priority level and the type of priority (PRIO_COOP for cooperative or
+      PRIO_PREEMPT for preemptive).
+
+      For example for a thread priority K_PRIO_COOP(1) in DT we have
+        priority = <1 PRIO_COOP>;
+      or for K_PRIO_PREEMPT(2)
+        priority = <2 PRIO_PREEMPT>;
+
+      When this property is missing a default priority of <0 PRIO_PREEMPT> is
+      assumed.

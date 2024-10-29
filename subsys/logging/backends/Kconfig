@@ -11,12 +11,12 @@ rsource "Kconfig.fs"
 rsource "Kconfig.native_posix"
 rsource "Kconfig.net"
 rsource "Kconfig.ws"
+rsource "Kconfig.rpmsg"
 rsource "Kconfig.rtt"
 rsource "Kconfig.spinel"
 rsource "Kconfig.swo"
 rsource "Kconfig.uart"
 rsource "Kconfig.xtensa_sim"
 rsource "Kconfig.multidomain"
-rsource "Kconfig.semihost"
 
 endmenu

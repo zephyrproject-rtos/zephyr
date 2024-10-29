@@ -1,0 +1,33 @@
+# Copyright (c) 2024 Maurer Systems GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config REMOTEPROC
+	bool "Support for Remote Processor Target"
+	depends on OPENAMP
+
+if REMOTEPROC
+
+module = REMOTEPROC
+module-str = REMOTEPROC
+source "subsys/logging/Kconfig.template.log_config"
+
+config REMOTEPROC_INIT_PRIORITY
+	int "RemoteProc initialization priority"
+	default 70
+	help
+	  Set the priority for RemoteProc init
+
+config REMOTEPROC_THREAD_PRIORITY
+	int "Thread priority"
+	default 10
+	help
+	  Priority of the RemoteProc |
+	  vdev thread used to process vrings.
+
+config REMOTEPROC_THREAD_STACK_SIZE
+	int "Thread stack size"
+	default 1024
+	help
+	  Stack size of RemoteProc vdev thread.
+
+endif # REMOTEPROC
