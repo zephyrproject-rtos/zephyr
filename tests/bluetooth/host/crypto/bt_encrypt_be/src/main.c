@@ -28,8 +28,8 @@ ZTEST_SUITE(bt_encrypt_be, NULL, NULL, NULL, NULL, NULL);
  *  Test bt_encrypt_be() succeeds
  *
  *  Constraints:
- *   - tc_aes128_set_encrypt_key() succeeds and returns 'TC_CRYPTO_SUCCESS'.
- *   - tc_aes_encrypt() succeeds and returns 'TC_CRYPTO_SUCCESS'.
+ *   - psa_import_key() succeeds and returns 'PSA_SUCCESS'.
+ *   - psa_cipher_encrypt() succeeds and returns 'PSA_SUCCESS'.
  *
  *  Expected behaviour:
  *   - bt_encrypt_be() returns 0 (success)
@@ -41,12 +41,12 @@ ZTEST(bt_encrypt_be, test_bt_encrypt_be_succeeds)
 	const uint8_t plaintext[16] = {0};
 	uint8_t enc_data[16] = {0};
 
-	tc_aes128_set_encrypt_key_fake.return_val = TC_CRYPTO_SUCCESS;
-	tc_aes_encrypt_fake.return_val = TC_CRYPTO_SUCCESS;
+	psa_import_key_fake.return_val = PSA_SUCCESS;
+	psa_cipher_encrypt_fake.return_val = PSA_SUCCESS;
 
 	err = bt_encrypt_be(key, plaintext, enc_data);
 
-	expect_single_call_tc_aes_encrypt(enc_data);
+	expect_single_call_psa_cipher_encrypt(enc_data);
 
 	zassert_ok(err, "Unexpected error code '%d' was returned", err);
 }
