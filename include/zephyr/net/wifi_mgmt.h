@@ -571,7 +571,6 @@ struct wifi_connect_req_params {
 	uint8_t eap_passwd_length;
 	/** Fast BSS Transition used */
 	bool ft_used;
-	int ft_used;
 	/** Number of EAP users */
 	uint8_t nusers;
 	/** Number of EAP passwds */
