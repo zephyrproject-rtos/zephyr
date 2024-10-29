@@ -3475,10 +3475,24 @@ bool bt_gatt_is_subscribed(struct bt_conn *conn,
 
 	/* Check if attribute is a characteristic declaration */
 	if (!bt_uuid_cmp(attr->uuid, BT_UUID_GATT_CHRC)) {
-		struct bt_gatt_chrc *chrc = attr->user_data;
+		uint8_t properties;
+		ssize_t len;
 
-		if (!(chrc->properties &
-			(BT_GATT_CHRC_NOTIFY | BT_GATT_CHRC_INDICATE))) {
+		CHECKIF(!attr->read) {
+			LOG_ERR("Read method not set");
+			return false;
+		}
+		/* The charactestic properties is the first byte of the attribute value */
+		len = attr->read(NULL, attr, &properties, 1, 0);
+		if (len < 0) {
+			LOG_ERR("Failed to read attribute (err %zd)", len);
+			return false;
+		} else if (len != 1) {
+			LOG_ERR("Invalid read length: %zd", len);
+			return false;
+		}
+
+		if (!(properties & (BT_GATT_CHRC_NOTIFY | BT_GATT_CHRC_INDICATE))) {
 			/* Characteristic doesn't support subscription */
 			return false;
 		}
