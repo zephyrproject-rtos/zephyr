@@ -22,7 +22,7 @@ manifest:
       groups:
         - optional
     - name: nanopb
-      revision: 4474bd35bd39de067f0532a1b19ce3aed9ed9807
+      revision: 98bf4db69897b53434f3d0ba72e0a3ab1a902824
       path: modules/lib/nanopb
       remote: upstream
       groups:
