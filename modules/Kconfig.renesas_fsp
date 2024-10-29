@@ -86,4 +86,9 @@ config USE_RA_FSP_ETHER_PHY
 	help
 	  Enable RA FSP Ethernet phy driver
 
+config USE_RA_FSP_ETHER
+	bool
+	help
+	  Enable RA FSP Ethernet driver
+
 endif # HAS_RENESAS_RA_FSP
