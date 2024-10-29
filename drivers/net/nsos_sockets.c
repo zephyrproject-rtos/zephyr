@@ -72,6 +72,9 @@ static int socket_family_to_nsos_mid(int family, int *family_mid)
 	case AF_INET6:
 		*family_mid = NSOS_MID_AF_INET6;
 		break;
+	case AF_UNIX:
+		*family_mid = NSOS_MID_AF_UNIX;
+		break;
 	default:
 		return -NSOS_MID_EAFNOSUPPORT;
 	}
@@ -445,6 +448,24 @@ static int sockaddr_to_nsos_mid(const struct sockaddr *addr, socklen_t addrlen,
 		addr_in_mid->sin6_scope_id = addr_in->sin6_scope_id;
 
 		*addrlen_mid = sizeof(*addr_in_mid);
+
+		return 0;
+	}
+	case AF_UNIX: {
+		const struct sockaddr_un *addr_un =
+			(const struct sockaddr_un *)addr;
+		struct nsos_mid_sockaddr_un *addr_un_mid =
+			(struct nsos_mid_sockaddr_un *)*addr_mid;
+
+		if (addrlen < sizeof(*addr_un)) {
+			return -NSOS_MID_EINVAL;
+		}
+
+		addr_un_mid->sun_family = NSOS_MID_AF_UNIX;
+		memcpy(addr_un_mid->sun_path, addr_un->sun_path,
+		       sizeof(addr_un_mid->sun_path));
+
+		*addrlen_mid = sizeof(*addr_un_mid);
 
 		return 0;
 	}
@@ -945,6 +966,9 @@ static int socket_family_from_nsos_mid(int family_mid, int *family)
 		break;
 	case NSOS_MID_AF_INET6:
 		*family = AF_INET6;
+		break;
+	case NSOS_MID_AF_UNIX:
+		*family = AF_UNIX;
 		break;
 	default:
 		return -NSOS_MID_EAFNOSUPPORT;
