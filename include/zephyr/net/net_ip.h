@@ -231,6 +231,12 @@ struct sockaddr_ll_ptr {
 	uint8_t     *sll_addr;    /**< Physical-layer address, big endian */
 };
 
+/** Socket address struct for unix socket where address is a pointer */
+struct sockaddr_un_ptr {
+	sa_family_t sun_family;    /**< Always AF_UNIX */
+	char        *sun_path;     /**< pathname */
+};
+
 struct sockaddr_can_ptr {
 	sa_family_t can_family;
 	int         can_ifindex;
@@ -373,11 +379,24 @@ struct cmsghdr {
 #endif
 #endif
 
+#if defined(CONFIG_NET_NATIVE_OFFLOADED_SOCKETS)
+#define UNIX_PATH_MAX 108
+#undef NET_SOCKADDR_MAX_SIZE
+/* Define NET_SOCKADDR_MAX_SIZE to be struct of sa_family_t + char[UNIX_PATH_MAX] */
+#define NET_SOCKADDR_MAX_SIZE (UNIX_PATH_MAX+sizeof(sa_family_t))
+#if !defined(CONFIG_NET_SOCKETS_PACKET)
+#undef NET_SOCKADDR_PTR_MAX_SIZE
+#define NET_SOCKADDR_PTR_MAX_SIZE (sizeof(struct sockaddr_un_ptr))
+#endif
+#endif
+
 #if !defined(CONFIG_NET_IPV4)
 #if !defined(CONFIG_NET_IPV6)
 #if !defined(CONFIG_NET_SOCKETS_PACKET)
+#if !defined(CONFIG_NET_NATIVE_OFFLOADED_SOCKETS)
 #define NET_SOCKADDR_MAX_SIZE (sizeof(struct sockaddr_in6))
 #define NET_SOCKADDR_PTR_MAX_SIZE (sizeof(struct sockaddr_in6_ptr))
+#endif
 #endif
 #endif
 #endif

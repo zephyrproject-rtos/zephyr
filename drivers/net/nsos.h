@@ -14,11 +14,13 @@
 #define NSOS_MID_PF_UNSPEC       0          /**< Unspecified protocol family.  */
 #define NSOS_MID_PF_INET         1          /**< IP protocol family version 4. */
 #define NSOS_MID_PF_INET6        2          /**< IP protocol family version 6. */
+#define NSOS_MID_PF_UNIX         6          /**< Unix protocol.                */
 
 /* Address families. */
 #define NSOS_MID_AF_UNSPEC      NSOS_MID_PF_UNSPEC   /**< Unspecified address family.   */
 #define NSOS_MID_AF_INET        NSOS_MID_PF_INET     /**< IP protocol family version 4. */
 #define NSOS_MID_AF_INET6       NSOS_MID_PF_INET6    /**< IP protocol family version 6. */
+#define NSOS_MID_AF_UNIX        NSOS_MID_PF_UNIX     /**< Unix protocol.                */
 
 /** Protocol numbers from IANA/BSD */
 enum nsos_mid_net_ip_protocol {
@@ -63,10 +65,18 @@ struct nsos_mid_sockaddr_in6 {
 	uint32_t sin6_scope_id;  /* Set of interfaces for a scope */
 };
 
+#define UNIX_PATH_MAX 108
+struct nsos_mid_sockaddr_un {
+	sa_family_t sun_family;              /* AF_UNIX */
+	char        sun_path[UNIX_PATH_MAX]; /* pathname */
+};
+
+
 struct nsos_mid_sockaddr_storage {
 	union {
 		struct nsos_mid_sockaddr_in sockaddr_in;
 		struct nsos_mid_sockaddr_in6 sockaddr_in6;
+		struct nsos_mid_sockaddr_un sockaddr_un;
 	};
 };
 

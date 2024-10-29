@@ -23,6 +23,7 @@
 #include <sys/epoll.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
+#include <sys/un.h>
 #include <unistd.h>
 
 #include "nsos.h"
@@ -68,6 +69,9 @@ static int socket_family_from_nsos_mid(int family_mid, int *family)
 	case NSOS_MID_AF_INET6:
 		*family = AF_INET6;
 		break;
+	case NSOS_MID_AF_UNIX:
+		*family = AF_UNIX;
+		break;
 	default:
 		nsi_print_warning("%s: socket family %d not supported\n", __func__, family_mid);
 		return -NSOS_MID_EAFNOSUPPORT;
@@ -87,6 +91,9 @@ static int socket_family_to_nsos_mid(int family, int *family_mid)
 		break;
 	case AF_INET6:
 		*family_mid = NSOS_MID_AF_INET6;
+		break;
+	case AF_UNIX:
+		*family_mid = NSOS_MID_AF_UNIX;
 		break;
 	default:
 		nsi_print_warning("%s: socket family %d not supported\n", __func__, family);
@@ -296,6 +303,19 @@ static int sockaddr_from_nsos_mid(struct sockaddr **addr, socklen_t *addrlen,
 
 		return 0;
 	}
+	case NSOS_MID_AF_UNIX: {
+		const struct nsos_mid_sockaddr_un *addr_un_mid =
+			(const struct nsos_mid_sockaddr_un *)addr_mid;
+		struct sockaddr_un *addr_un = (struct sockaddr_un *)*addr;
+
+		addr_un->sun_family = AF_UNIX;
+		memcpy(addr_un->sun_path, addr_un_mid->sun_path,
+		       sizeof(addr_un->sun_path));
+
+		*addrlen = sizeof(*addr_un);
+
+		return 0;
+	}
 	}
 
 	return -NSOS_MID_EINVAL;
@@ -343,6 +363,23 @@ static int sockaddr_to_nsos_mid(const struct sockaddr *addr, socklen_t addrlen,
 
 		if (addrlen_mid) {
 			*addrlen_mid = sizeof(*addr_in);
+		}
+
+		return 0;
+	}
+	case AF_UNIX: {
+		struct nsos_mid_sockaddr_un *addr_un_mid =
+			(struct nsos_mid_sockaddr_un *)addr_mid;
+		const struct sockaddr_un *addr_un = (const struct sockaddr_un *)addr;
+
+		if (addr_un_mid) {
+			addr_un_mid->sun_family = NSOS_MID_AF_UNIX;
+			memcpy(addr_un_mid->sun_path, addr_un->sun_path,
+			       sizeof(addr_un_mid->sun_path));
+		}
+
+		if (addrlen_mid) {
+			*addrlen_mid = sizeof(*addr_un);
 		}
 
 		return 0;
