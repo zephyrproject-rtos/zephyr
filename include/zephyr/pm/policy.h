@@ -67,7 +67,7 @@ struct pm_policy_latency_request {
 struct pm_policy_event {
 	/** @cond INTERNAL_HIDDEN */
 	sys_snode_t node;
-	uint32_t value_cyc;
+	int64_t uptime_ticks;
 	/** @endcond */
 };
 
@@ -137,7 +137,6 @@ void pm_policy_state_lock_put(enum pm_state state, uint8_t substate_id);
  */
 bool pm_policy_state_lock_is_active(enum pm_state state, uint8_t substate_id);
 
-
 /**
  * @brief Register an event.
  *
@@ -145,30 +144,31 @@ bool pm_policy_state_lock_is_active(enum pm_state state, uint8_t substate_id);
  * will wake up the system at a known time in the future. By registering such
  * event, the policy manager will be able to decide whether certain power states
  * are worth entering or not.
- * CPU is woken up before the time passed in cycle to prevent the event handling
- * latency
  *
- * @note It is mandatory to unregister events once they have happened by using
- * pm_policy_event_unregister(). Not doing so is an API contract violation,
- * because the system would continue to consider them as valid events in the
- * *far* future, that is, after the cycle counter rollover.
+ * CPU is woken up before the time passed in cycle to minimize event handling
+ * latency. Once woken up, the CPU will be kept awake until the event has been
+ * handled, which is signaled by pm_policy_event_unregister() or moving event
+ * into the future using pm_policy_event_update().
  *
  * @param evt Event.
- * @param cycle When the event will occur, in absolute time (cycles).
+ * @param uptime_ticks When the event will occur, in uptime ticks.
  *
- * @see pm_policy_event_unregister
+ * @see pm_policy_event_unregister()
  */
-void pm_policy_event_register(struct pm_policy_event *evt, uint32_t cycle);
+void pm_policy_event_register(struct pm_policy_event *evt, int64_t uptime_ticks);
 
 /**
  * @brief Update an event.
  *
+ * This shortcut allows for moving the time an event will occur without the
+ * need for an unregister + register cycle.
+ *
  * @param evt Event.
- * @param cycle When the event will occur, in absolute time (cycles).
+ * @param uptime_ticks When the event will occur, in uptime ticks.
  *
  * @see pm_policy_event_register
  */
-void pm_policy_event_update(struct pm_policy_event *evt, uint32_t cycle);
+void pm_policy_event_update(struct pm_policy_event *evt, int64_t uptime_ticks);
 
 /**
  * @brief Unregister an event.
@@ -208,10 +208,14 @@ void pm_policy_device_power_lock_put(const struct device *dev);
 /**
  * @brief Returns the ticks until the next event
  *
- * If an event is registred, it will return the number of ticks until the next event as
- * a positive or zero value. Otherwise it returns -1
+ * If an event is registred, it will return the number of ticks until the next event, if the
+ * "next"/"oldest" registered event is in the past, it will return 0. Otherwise it returns -1.
+ *
+ * @retval >0 If next registered event is in the future
+ * @retval 0 If next registered event is now or in the past
+ * @retval -1 Otherwise
  */
-int32_t pm_policy_next_event_ticks(void);
+int64_t pm_policy_next_event_ticks(void);
 
 #else
 static inline void pm_policy_state_lock_get(enum pm_state state, uint8_t substate_id)
@@ -261,7 +265,7 @@ static inline void pm_policy_device_power_lock_put(const struct device *dev)
 	ARG_UNUSED(dev);
 }
 
-static inline int32_t pm_policy_next_event_ticks(void)
+static inline int64_t pm_policy_next_event_ticks(void)
 {
 	return -1;
 }
