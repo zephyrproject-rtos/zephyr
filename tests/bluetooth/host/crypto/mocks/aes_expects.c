@@ -8,17 +8,19 @@
 #include "mocks/aes.h"
 #include "mocks/aes_expects.h"
 
-void expect_single_call_tc_aes_encrypt(uint8_t *out)
+void expect_single_call_psa_cipher_encrypt(uint8_t *out)
 {
-	const char *func_name = "tc_aes_encrypt";
+	const char *func_name = "psa_cipher_encrypt";
 
-	zassert_equal(tc_aes_encrypt_fake.call_count, 1, "'%s()' was called more than once",
+	zassert_equal(psa_cipher_encrypt_fake.call_count, 1, "'%s()' was called more than once",
 		      func_name);
 
-	zassert_equal_ptr(tc_aes_encrypt_fake.arg0_val, out,
-		      "'%s()' was called with incorrect '%s' value", func_name, "out");
-	zassert_not_null(tc_aes_encrypt_fake.arg1_val,
-			 "'%s()' was called with incorrect '%s' value", func_name, "in");
-	zassert_not_null(tc_aes_encrypt_fake.arg2_val,
-			 "'%s()' was called with incorrect '%s' value", func_name, "s");
+	zassert_not_equal(psa_cipher_encrypt_fake.arg1_val, 0,
+			 "'%s()' was called with incorrect '%s' value", func_name, "arg1");
+	zassert_not_equal(psa_cipher_encrypt_fake.arg3_val, 0,
+			 "'%s()' was called with incorrect '%s' value", func_name, "arg3");
+	zassert_equal_ptr(psa_cipher_encrypt_fake.arg4_val, out,
+			 "'%s()' was called with incorrect '%s' value", func_name, "arg4");
+	zassert_not_equal(psa_cipher_encrypt_fake.arg5_val, 0,
+			 "'%s()' was called with incorrect '%s' value", func_name, "arg5");
 }
