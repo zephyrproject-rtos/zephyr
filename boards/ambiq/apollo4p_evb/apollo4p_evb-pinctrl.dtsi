@@ -153,7 +153,6 @@
 		group2 {
 			pinmux = <NCE57_P57>;
 			drive-strength = "0.5";
-			ambiq,iom-num = <1>;
 			ambiq,iom-nce-module = <32>;
 		};
 	};
@@ -174,7 +173,6 @@
 			pinmux = <NCE89_P89>;
 			drive-push-pull;
 			drive-strength = "0.5";
-			ambiq,iom-num = <1>;
 			ambiq,iom-nce-module = <34>;
 		};
 	};

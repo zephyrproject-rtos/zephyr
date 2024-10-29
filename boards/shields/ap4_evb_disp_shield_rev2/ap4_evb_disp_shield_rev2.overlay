@@ -27,13 +27,13 @@
 	cmdq-buffer-location = ".mspi_buff";
 	cmdq-buffer-size = <256>;
 
-	ambiq,rx-config = <2 0 0 0 1 0 0 0 0 0>;
+	ambiq,rx-config = <2 0 10 0 1 0 0 0 0 1>;
 
 	dqs-support;
 
 	aps256n: aps256n@0 {
 		compatible = "ambiq,mspi-device", "mspi-aps256n";
-		size = <DT_SIZE_M(256/8)>;
+		size = <DT_SIZE_M(256)>;
 		reg = <0>;
 		status = "okay";
 		mspi-max-frequency = <48000000>;
@@ -110,7 +110,6 @@
 		group3 {
 			pinmux = <MSPI1_8_P45>;
 			drive-strength = "1.0";
-			ambiq,interrupt-direction = <0x2>;
 		};
 	};
 };

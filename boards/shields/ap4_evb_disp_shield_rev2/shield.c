@@ -23,5 +23,6 @@ static int ap4p_ap4_evb_disp_shield_rev2_init(void)
 }
 
 /* needs to be done after GPIO driver init and device tree available but prior to MSPI peripherals
- * on shield*/
+ * on shield
+ */
 SYS_INIT(ap4p_ap4_evb_disp_shield_rev2_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);

@@ -172,7 +172,7 @@ static int memc_mspi_aps256n_reset(const struct device *psram)
 	int ret;
 	uint32_t pio_buffer = 0;
 
-	LOG_DBG("Return to SPI mode");
+	LOG_DBG("Return to default mode");
 	ret = memc_mspi_aps256n_command_write(psram, MSPI_PSRAM_DDR_GLOBAL_RESET, 0, 4, 0, 0,
 					      (uint8_t *)&pio_buffer, 2);
 

@@ -782,11 +782,6 @@ static int mspi_ambiq_dev_config(const struct device *controller, const struct m
 			goto e_return;
 		}
 
-		if (hal_dev_cfg.bEmulateDDR == true) {
-			data->hal_rx_cfg.ui8Sfturn = 10;
-			data->hal_rx_cfg.bTaForth = 1;
-		}
-
 		ret = am_hal_mspi_control(data->mspiHandle, AM_HAL_MSPI_REQ_RXCFG,
 					  &data->hal_rx_cfg);
 		if (ret) {
@@ -895,12 +890,6 @@ static int mspi_ambiq_scramble_config(const struct device *controller,
 		eRequest = AM_HAL_MSPI_REQ_SCRAMB_DIS;
 	}
 
-	ret = am_hal_mspi_disable(data->mspiHandle);
-	if (ret) {
-		LOG_INST_ERR(cfg->log, "%u, fail to disable MSPI, code:%d.", __LINE__, ret);
-		return -EHOSTDOWN;
-	}
-
 	ret = am_hal_mspi_control(data->mspiHandle, eRequest, NULL);
 	if (ret) {
 		LOG_INST_ERR(cfg->log, "%u,Unable to complete scramble config:%d.", __LINE__,
@@ -914,12 +903,6 @@ static int mspi_ambiq_scramble_config(const struct device *controller,
 	ret = am_hal_mspi_control(data->mspiHandle, AM_HAL_MSPI_REQ_XIP_CONFIG, &hal_xip_cfg);
 	if (ret) {
 		LOG_INST_ERR(cfg->log, "%u, fail to configure XIP, code:%d.", __LINE__, ret);
-		return -EHOSTDOWN;
-	}
-
-	ret = am_hal_mspi_enable(data->mspiHandle);
-	if (ret) {
-		LOG_INST_ERR(cfg->log, "%u, fail to enable MSPI, code:%d.", __LINE__, ret);
 		return -EHOSTDOWN;
 	}
 
