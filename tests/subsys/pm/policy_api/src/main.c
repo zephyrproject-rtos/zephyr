@@ -304,68 +304,36 @@ ZTEST(policy_api, test_pm_policy_next_state_custom)
 }
 #endif /* CONFIG_PM_POLICY_CUSTOM */
 
-#ifdef CONFIG_PM_POLICY_DEFAULT
-/* note: we can't easily mock k_cycle_get_32(), so test is not ideal */
 ZTEST(policy_api, test_pm_policy_events)
 {
-	struct pm_policy_event evt1, evt2;
-	const struct pm_state_info *next;
-	uint32_t now;
+	struct pm_policy_event evt1;
+	struct pm_policy_event evt2;
+	uint32_t now_cycle;
+	uint32_t evt1_1_cycle;
+	uint32_t evt1_2_cycle;
+	uint32_t evt2_cycle;
 
-	now = k_cyc_to_ticks_ceil32(k_cycle_get_32());
+	now_cycle = k_cycle_get_32();
+	evt1_1_cycle = now_cycle + k_ticks_to_cyc_floor32(100);
+	evt1_2_cycle = now_cycle + k_ticks_to_cyc_floor32(200);
+	evt2_cycle = now_cycle + k_ticks_to_cyc_floor32(2000);
 
-	/* events:
-	 *   - 10ms from now (time < runtime idle latency)
-	 *   - 200ms from now (time > runtime idle, < suspend to ram latencies)
-	 *
-	 * system wakeup:
-	 *   - 2s from now (time > suspend to ram latency)
-	 *
-	 * first event wins, so we must stay active
-	 */
-	pm_policy_event_register(&evt1, k_ms_to_cyc_floor32(10) + k_cycle_get_32());
-	pm_policy_event_register(&evt2, k_ms_to_cyc_floor32(200) + k_cycle_get_32());
-	next = pm_policy_next_state(0U, now + k_sec_to_ticks_floor32(2));
-	zassert_is_null(next);
-
-	/* remove first event so second event now wins, meaning we can now enter
-	 * runtime idle
-	 */
+	zassert_equal(pm_policy_next_event_ticks(), -1);
+	pm_policy_event_register(&evt1, evt1_1_cycle);
+	pm_policy_event_register(&evt2, evt2_cycle);
+	zassert_within(pm_policy_next_event_ticks(), 100, 50);
 	pm_policy_event_unregister(&evt1);
-	next = pm_policy_next_state(0U, now + k_sec_to_ticks_floor32(2));
-	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE);
-
-	/* remove second event, now we can enter deepest state */
+	zassert_within(pm_policy_next_event_ticks(), 2000, 50);
 	pm_policy_event_unregister(&evt2);
-	next = pm_policy_next_state(0U, now + k_sec_to_ticks_floor32(2));
-	zassert_equal(next->state, PM_STATE_SUSPEND_TO_RAM);
-
-	/* events:
-	 *   - 2s from now (time > suspend to ram latency)
-	 *
-	 * system wakeup:
-	 *   - 200ms from now (time > runtime idle, < suspend to ram latencies)
-	 *
-	 * system wakeup wins, so we can go up to runtime idle.
-	 */
-	pm_policy_event_register(&evt1, k_sec_to_cyc_floor32(2) + k_cycle_get_32());
-	next = pm_policy_next_state(0U, now + k_ms_to_ticks_floor32(200));
-	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE);
-
-	/* modify event to occur in 10ms, so it now wins system wakeup and
-	 * requires to stay awake
-	 */
-	pm_policy_event_update(&evt1, k_ms_to_cyc_floor32(10) + k_cycle_get_32());
-	next = pm_policy_next_state(0U, now + k_ms_to_ticks_floor32(200));
-	zassert_is_null(next);
-
+	zassert_equal(pm_policy_next_event_ticks(), -1);
+	pm_policy_event_register(&evt2, evt2_cycle);
+	zassert_within(pm_policy_next_event_ticks(), 2000, 50);
+	pm_policy_event_register(&evt1, evt1_1_cycle);
+	zassert_within(pm_policy_next_event_ticks(), 100, 50);
+	pm_policy_event_update(&evt1, evt1_2_cycle);
+	zassert_within(pm_policy_next_event_ticks(), 200, 50);
 	pm_policy_event_unregister(&evt1);
+	pm_policy_event_unregister(&evt2);
 }
-#else
-ZTEST(policy_api, test_pm_policy_events)
-{
-	ztest_test_skip();
-}
-#endif /* CONFIG_PM_POLICY_CUSTOM */
 
 ZTEST_SUITE(policy_api, NULL, NULL, NULL, NULL, NULL);
