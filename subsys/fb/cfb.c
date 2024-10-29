@@ -460,17 +460,18 @@ int cfb_framebuffer_finalize(const struct device *dev)
 {
 	const struct display_driver_api *api = dev->api;
 	const struct char_framebuffer *fb = &char_fb;
-	struct display_buffer_descriptor desc;
 	int err;
 
 	if (!fb || !fb->buf) {
 		return -ENODEV;
 	}
 
-	desc.buf_size = fb->size;
-	desc.width = fb->x_res;
-	desc.height = fb->y_res;
-	desc.pitch = fb->x_res;
+	struct display_buffer_descriptor desc = {
+		.buf_size = fb->size,
+		.width = fb->x_res,
+		.height = fb->y_res,
+		.pitch = fb->x_res,
+	};
 
 	if (!(fb->pixel_format & PIXEL_FORMAT_MONO10) != !(fb->inverted)) {
 		cfb_invert(fb);
