@@ -287,3 +287,21 @@ pmod2_serial: &uart2 {};
 
 pmod_serial: &pmod1_serial {};
 pmod_header: &pmod1_header {};
+
+&eth {
+	local-mac-address = [74 90 50 B0 6D 5A];
+	status = "okay";
+	phy-handle = <&phy>;
+};
+
+&mdio {
+	pinctrl-0 = <&ether_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	phy: ethernet-phy@5 {
+		compatible = "ethernet-phy";
+		reg = <5>;
+		status = "okay";
+	};
+};
