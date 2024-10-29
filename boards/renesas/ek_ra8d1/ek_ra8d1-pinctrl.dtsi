@@ -19,10 +19,10 @@
 	spi0_default: spi0_default {
 		group1 {
 			/* MISO MOSI RSPCK SSL */
-			psels = <RA_PSEL(RA_PSEL_SPI, 7, 0)>,
-			<RA_PSEL(RA_PSEL_SPI, 7, 1)>,
-			<RA_PSEL(RA_PSEL_SPI, 7, 2)>,
-			<RA_PSEL(RA_PSEL_SPI, 7, 3)>;
+			psels = <RA_PSEL(RA_PSEL_SPI, 4, 10)>,
+			<RA_PSEL(RA_PSEL_SPI, 4, 11)>,
+			<RA_PSEL(RA_PSEL_SPI, 4, 12)>,
+			<RA_PSEL(RA_PSEL_SPI, 4, 13)>;
 		};
 	};
 
@@ -51,6 +51,23 @@
 			/* SCL1 SDA1*/
 			psels = <RA_PSEL(RA_PSEL_I2C, 5, 12)>,<RA_PSEL(RA_PSEL_I2C, 5, 11)>;
 			drive-strength = "medium";
+		};
+	};
+
+	ether_default: ether_default {
+		group1 {
+			psels = <RA_PSEL(RA_PSEL_ETH_RMII, 4, 1)>, /* ET0_MDC */
+					<RA_PSEL(RA_PSEL_ETH_RMII, 4, 2)>, /* ET0_MDIO */
+					<RA_PSEL(RA_PSEL_ETH_RMII, 4, 3)>, /* ET0_LINKSTA */
+					<RA_PSEL(RA_PSEL_ETH_RMII, 4, 5)>, /* RMII0_TXD_EN_B */
+					<RA_PSEL(RA_PSEL_ETH_RMII, 4, 6)>, /* RMII0_TXD1_BR */
+					<RA_PSEL(RA_PSEL_ETH_RMII, 7, 0)>, /* RMII0_TXD0_B */
+					<RA_PSEL(RA_PSEL_ETH_RMII, 7, 1)>, /* REF50CK0_B */
+					<RA_PSEL(RA_PSEL_ETH_RMII, 7, 2)>, /* RMII0_RXD0_B */
+					<RA_PSEL(RA_PSEL_ETH_RMII, 7, 3)>, /* RMII0_RXD1_B */
+					<RA_PSEL(RA_PSEL_ETH_RMII, 7, 4)>, /* RMII0_RX_ER_B */
+					<RA_PSEL(RA_PSEL_ETH_RMII, 7, 5)>; /* RMII0_CRS_DV_B */
+			drive-strength = "high";
 		};
 	};
 };
