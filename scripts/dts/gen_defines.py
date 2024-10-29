@@ -672,14 +672,6 @@ def enum_macros(prop: edtlib.Property, macro: str):
         ret[macro + f"_IDX_{i}_EXISTS"] = 1
         # DT_N_<node-id>_P_<prop-id>_IDX_<i>_ENUM_VAL_<val>_EXISTS 1
         ret[macro + f"_IDX_{i}_ENUM_VAL_{subval}_EXISTS"] = 1
-        if not spec.enum_tokenizable:
-            continue
-
-        # DT_N_<node-id>_P_<prop-id>_IDX_<i>_ENUM_TOKEN
-        ret[macro + f"_IDX_{i}_ENUM_TOKEN"] = subval
-        if spec.enum_upper_tokenizable:
-            # DT_N_<node-id>_P_<prop-id>_IDX_<i>_ENUM_UPPER_TOKEN
-            ret[macro + f"_IDX_{i}_ENUM_UPPER_TOKEN"] = subval.upper()
 
     return ret
 
