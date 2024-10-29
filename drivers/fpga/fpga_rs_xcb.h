@@ -8,7 +8,7 @@
 #ifndef ZEPHYR_DRIVERS_FPGA_RS_XCB_H_
 #define ZEPHYR_DRIVERS_FPGA_RS_XCB_H_
 
-#include "rs_fpga_config_block.h"
+#include "rs_fcb_config_block.h"
 
 #include <zephyr/drivers/fpga.h>
 
@@ -87,7 +87,7 @@ struct fcb_data {
 /* *********************************************
  *              Error Printing Macro
  * ********************************************/
-#define PRINT_ERROR(lvErrorCode) \
-  LOG_ERR("%s(%d) Error:%d\r\n\n", __func__, __LINE__, lvErrorCode);
+#define PRINT_ERROR(ErrorCode) \
+  LOG_ERR("%s(%d) Error:%d\r\n", __func__, __LINE__, ErrorCode);
 
 #endif

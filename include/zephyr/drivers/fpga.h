@@ -74,7 +74,7 @@ struct fpga_ctx {
 	// inside the fpga_load api.
 	bitstream_load_hndlr bitstr_load_hndlr;
 	// User Data to be Preprocessed at the time of session begin.
-	// This can be a metadata or anything.
+	// This can be a metadata or anything else.
 	void *user_data;
 	// The length of user data
 	size_t user_data_len;

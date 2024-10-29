@@ -166,3 +166,25 @@ void scu_set_isolation_ctrl(enum isolation_ctrl_offsets inOffset, bool inBit);
  */
 void write_reg_val(volatile uint32_t *reg, uint32_t offset, uint32_t width,
                         uint32_t value);
+
+/**
+ * @brief Reads the register at a particular offset
+ *
+ * @param reg Register to read
+ * @param offset Starting location of register to read
+ * @param width Number of bits to read
+ * 
+ * @return value of reg at offset with number of bits equal to width
+ */
+uint32_t read_reg_val(const volatile uint32_t *reg, uint32_t offset,
+                      uint32_t width);
+
+/**
+ * @brief Reads a particular register bit
+ *
+ * @param reg Register to read
+ * @param bit bit number
+ * 
+ * @return value of reg bit
+ */
+uint32_t read_reg_bit(const volatile uint32_t *reg, uint32_t bit);                      

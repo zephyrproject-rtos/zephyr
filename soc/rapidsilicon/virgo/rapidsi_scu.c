@@ -30,6 +30,20 @@ void write_reg_val(volatile uint32_t *reg, uint32_t offset, uint32_t width,
   *reg = (*reg & ~(mask << offset)) | ((value & mask) << offset);
 }
 
+uint32_t read_reg_val(const volatile uint32_t *reg, uint32_t offset,
+                      uint32_t width) {
+  uint32_t mask;
+
+  mask = (width == 32) ? 0xffffffff : (1U << width) - 1U;
+
+  return (*reg >> offset) & (mask);
+}
+
+uint32_t read_reg_bit(const volatile uint32_t *reg, uint32_t bit)
+{
+    return read_reg_val(reg, bit, 1U);
+}
+
 void scu_assert_reset(void)
 {
   uint32_t reset_flags =
