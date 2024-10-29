@@ -41,12 +41,12 @@ ZTEST(bt_encrypt_le, test_bt_encrypt_le_succeeds)
 	const uint8_t plaintext[16] = {0};
 	uint8_t enc_data[16] = {0};
 
-	tc_aes128_set_encrypt_key_fake.return_val = TC_CRYPTO_SUCCESS;
-	tc_aes_encrypt_fake.return_val = TC_CRYPTO_SUCCESS;
+	psa_import_key_fake.return_val = PSA_SUCCESS;
+	psa_cipher_encrypt_fake.return_val = PSA_SUCCESS;
 
 	err = bt_encrypt_le(key, plaintext, enc_data);
 
-	expect_single_call_tc_aes_encrypt(enc_data);
+	expect_single_call_psa_cipher_encrypt(enc_data);
 
 	zassert_ok(err, "Unexpected error code '%d' was returned", err);
 }
