@@ -904,6 +904,8 @@ static void handle_socket_msg_accept(struct socket_data *sd, void *pvMsg)
 		/** The iface is reset when getting a new context. */
 		a_sd->context->iface = sd->context->iface;
 
+		net_context_set_state(a_sd->context, NET_CONTEXT_CONNECTED);
+
 		/** Setup remote */
 		a_sd->context->remote.sa_family = AF_INET;
 		net_sin(&a_sd->context->remote)->sin_port =
