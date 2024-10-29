@@ -70,12 +70,12 @@ static inline void video_display_frame(const struct device *const display_dev,
 				       const struct video_buffer *const vbuf,
 				       const struct video_format fmt)
 {
-	struct display_buffer_descriptor buf_desc;
-
-	buf_desc.buf_size = vbuf->bytesused;
-	buf_desc.width = fmt.width;
-	buf_desc.pitch = buf_desc.width;
-	buf_desc.height = vbuf->bytesused / fmt.pitch;
+	struct display_buffer_descriptor buf_desc = {
+		.buf_size = vbuf->bytesused,
+		.width = fmt.width,
+		.pitch = buf_desc.width,
+		.height = vbuf->bytesused / fmt.pitch,
+	};
 
 	display_write(display_dev, 0, vbuf->line_offset, &buf_desc, vbuf->buffer);
 }

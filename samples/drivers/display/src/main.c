@@ -297,6 +297,14 @@ int main(void)
 	buf_desc.width = capabilities.x_resolution;
 	buf_desc.height = h_step;
 
+	/*
+	 * The following writes will only render parts of the image,
+	 * so turn this option on.
+	 * This allows double-buffered displays to hold the pixels
+	 * back until the image is complete.
+	 */
+	buf_desc.frame_incomplete = true;
+
 	for (int idx = 0; idx < capabilities.y_resolution; idx += h_step) {
 		/*
 		 * Tweaking the height value not to draw outside of the display.
@@ -322,6 +330,13 @@ int main(void)
 	x = capabilities.x_resolution - rect_w;
 	y = 0;
 	display_write(display_dev, x, y, &buf_desc, buf);
+
+	/*
+	 * This is the last write of the frame, so turn this off.
+	 * Double-buffered displays will now present the new image
+	 * to the user.
+	 */
+	buf_desc.frame_incomplete = false;
 
 	fill_buffer_fnc(BOTTOM_RIGHT, 0, buf, buf_size);
 	x = capabilities.x_resolution - rect_w;
