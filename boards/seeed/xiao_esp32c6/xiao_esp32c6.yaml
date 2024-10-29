@@ -1,0 +1,19 @@
+identifier: xiao_esp32c6
+name: XIAO ESP32C6
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - watchdog
+  - uart
+  - dma
+  - spi
+  - entropy
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+    - tracing
+vendor: seeed
