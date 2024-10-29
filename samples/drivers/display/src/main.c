@@ -328,6 +328,14 @@ int main(void)
 	y = capabilities.y_resolution - rect_h;
 	display_write(display_dev, x, y, &buf_desc, buf);
 
+	if (capabilities.screen_info & SCREEN_INFO_REQUIRES_SHOW) {
+		/*
+		 * If the screen implements some kind of pixel buffering,
+		 * tell it that we are done with rendering and it should
+		 * now show the updated image.
+		 */
+		display_show(display_dev);
+	}
 	display_blanking_off(display_dev);
 
 	grey_count = 0;
@@ -336,9 +344,14 @@ int main(void)
 
 	while (1) {
 		fill_buffer_fnc(BOTTOM_LEFT, grey_count, buf, buf_size);
+
 		display_write(display_dev, x, y, &buf_desc, buf);
-		++grey_count;
+		if (capabilities.screen_info & SCREEN_INFO_REQUIRES_SHOW) {
+			display_show(display_dev);
+		}
 		k_msleep(grey_scale_sleep);
+
+		++grey_count;
 #if CONFIG_TEST
 		if (grey_count >= 1024) {
 			break;
