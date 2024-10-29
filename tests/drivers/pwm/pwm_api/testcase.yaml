@@ -8,6 +8,16 @@ tests:
       or dt_alias_exists("pwm-3") or dt_compat_enabled("st,stm32-pwm")
       or dt_compat_enabled("intel,blinky-pwm") or dt_compat_enabled("nordic,nrf-pwm")
     depends_on: pwm
+  drivers.pwm.timing_check:
+    tags:
+      - drivers
+      - pwm
+      - userspace
+    filter: dt_alias_exists("pwm-0") and dt_compat_enabled("espressif,esp32-ledc")
+    extra_args:
+      - CONFIG_ENABLE_TIMING_CHECK=y
+      - CONFIG_TEST_DELAY=0
+    depends_on: pwm
   drivers.pwm.ke1xz_pwm_flexio:
     tags:
       - drivers

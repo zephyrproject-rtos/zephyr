@@ -1,0 +1,18 @@
+#
+# Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+    This binding provides resources required to build and run the test
+    tests/drivers/pwm/pwm_api when CONFIG_ENABLE_TIMING_CHECK is enabled.
+
+compatible: "test-pwm-api"
+
+properties:
+  in-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO to be used as input to check and validate PWM timing.
