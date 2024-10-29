@@ -29,7 +29,7 @@
 #include <zephyr/kernel.h>
 #include <resource_table.h>
 
-extern char ram_console[];
+extern char ram_console_buf[];
 
 #define __resource Z_GENERIC_SECTION(.resource_table)
 
@@ -68,7 +68,7 @@ static struct fw_resource_table __resource resource_table = {
 #if defined(CONFIG_RAM_CONSOLE)
 	.cm_trace = {
 		RSC_TRACE,
-		(uint32_t)ram_console, CONFIG_RAM_CONSOLE_BUFFER_SIZE, 0,
+		(uint32_t)ram_console_buf, CONFIG_RAM_CONSOLE_BUFFER_SIZE, 0,
 		"Zephyr_log",
 	},
 #endif
