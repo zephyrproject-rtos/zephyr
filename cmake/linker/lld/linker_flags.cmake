@@ -11,11 +11,6 @@ if(NOT CONFIG_NATIVE_LIBRARY AND NOT CONFIG_EXTERNAL_MODULE_LIBCPP)
   set_property(TARGET linker PROPERTY cpp_base ${LINKERFLAGPREFIX},-z,norelro)
 endif()
 
-# Force LLVM to use built-in lld linker
-if(NOT CONFIG_LLVM_USE_LD)
-  check_set_linker_property(TARGET linker APPEND PROPERTY baremetal -fuse-ld=lld)
-endif()
-
 set_property(TARGET linker PROPERTY no_position_independent "${LINKERFLAGPREFIX},--no-pie")
 
 set_property(TARGET linker PROPERTY lto_arguments)
