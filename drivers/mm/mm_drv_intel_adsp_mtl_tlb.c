@@ -187,8 +187,6 @@ int sys_mm_drv_map_page(void *virt, uintptr_t phys, uint32_t flags)
 	uintptr_t pa = POINTER_TO_UINT(sys_cache_cached_ptr_get(UINT_TO_POINTER(phys)));
 	uintptr_t va = POINTER_TO_UINT(sys_cache_cached_ptr_get(virt));
 
-	ARG_UNUSED(flags);
-
 	/* Make sure VA is page-aligned */
 	CHECKIF(!sys_mm_drv_is_addr_aligned(va)) {
 		ret = -EINVAL;
