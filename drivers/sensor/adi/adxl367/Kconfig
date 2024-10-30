@@ -115,6 +115,15 @@ config ADXL367_TRIGGER_OWN_THREAD
 
 endchoice
 
+config ADXL367_STREAM
+	bool "Use FIFO to stream data"
+	select ADXL367_TRIGGER
+	default y
+	depends on SPI_RTIO
+	depends on SENSOR_ASYNC_API
+	help
+	  Use this configuration option to enable streaming sensor data via RTIO.
+
 config ADXL367_TRIGGER
 	bool
 
