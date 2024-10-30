@@ -5,10 +5,17 @@
  */
 
 #include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/espressif-esp32-gpio.h>
 
 / {
 	aliases {
 		pwm-0 = &ledc0;
+	};
+
+	resources {
+		compatible = "test-pwm-api";
+		in-gpios = <&gpio0 2 ESP32_GPIO_PIN_OUT_EN>;
 	};
 };
 
@@ -16,7 +23,7 @@
 	ledc0_default: ledc0_default {
 		group1 {
 			pinmux = <LEDC_CH0_GPIO2>;
-			output-enable;
+			input-enable;
 		};
 	};
 };
