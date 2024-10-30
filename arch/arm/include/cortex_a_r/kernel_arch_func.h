@@ -20,6 +20,8 @@
 #ifndef ZEPHYR_ARCH_ARM_INCLUDE_CORTEX_A_R_KERNEL_ARCH_FUNC_H_
 #define ZEPHYR_ARCH_ARM_INCLUDE_CORTEX_A_R_KERNEL_ARCH_FUNC_H_
 
+#include <zephyr/platform/hooks.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -28,6 +30,9 @@ extern "C" {
 
 static ALWAYS_INLINE void arch_kernel_init(void)
 {
+#ifdef CONFIG_SOC_PER_CORE_INIT_HOOK
+	soc_per_core_init_hook();
+#endif /* CONFIG_SOC_PER_CORE_INIT_HOOK */
 }
 
 #ifndef CONFIG_USE_SWITCH
