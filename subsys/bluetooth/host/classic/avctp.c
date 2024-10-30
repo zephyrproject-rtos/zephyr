@@ -93,8 +93,8 @@ static int avctp_l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	default:
 		LOG_ERR("unsupported AVCTP PID received: 0x%04x", sys_be16_to_cpu(hdr->pid));
 		if (hdr->cr == BT_AVCTP_CMD) {
-			rsp = bt_avctp_create_pdu(session, BT_AVCTP_RESPONSE,
-				BT_AVCTP_IPID_INVALID, &hdr->tid, hdr->pid);
+			rsp = bt_avctp_create_pdu(session, BT_AVCTP_RESPONSE, BT_AVCTP_IPID_INVALID,
+						  &hdr->tid, hdr->pid);
 			if (!rsp) {
 				return -ENOMEM;
 			}
