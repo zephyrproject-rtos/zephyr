@@ -313,7 +313,7 @@ static int uart_stellaris_fifo_fill(const struct device *dev,
 				    int len)
 {
 	const struct uart_stellaris_config *config = dev->config;
-	uint8_t num_tx = 0U;
+	int num_tx = 0U;
 
 	while ((len - num_tx > 0) && ((config->uart->fr & UARTFR_TXFF) == 0U)) {
 		config->uart->dr = (uint32_t)tx_data[num_tx++];
@@ -336,7 +336,7 @@ static int uart_stellaris_fifo_read(const struct device *dev,
 				    const int size)
 {
 	const struct uart_stellaris_config *config = dev->config;
-	uint8_t num_rx = 0U;
+	int num_rx = 0U;
 
 	while ((size - num_rx > 0) && ((config->uart->fr & UARTFR_RXFE) == 0U)) {
 		rx_data[num_rx++] = (uint8_t)config->uart->dr;

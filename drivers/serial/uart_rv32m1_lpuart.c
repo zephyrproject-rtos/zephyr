@@ -93,7 +93,7 @@ static int rv32m1_lpuart_fifo_fill(const struct device *dev,
 				   int len)
 {
 	const struct rv32m1_lpuart_config *config = dev->config;
-	uint8_t num_tx = 0U;
+	int num_tx = 0U;
 
 	while ((len - num_tx > 0) &&
 	       (LPUART_GetStatusFlags(config->base)
@@ -109,7 +109,7 @@ static int rv32m1_lpuart_fifo_read(const struct device *dev, uint8_t *rx_data,
 				   const int len)
 {
 	const struct rv32m1_lpuart_config *config = dev->config;
-	uint8_t num_rx = 0U;
+	int num_rx = 0U;
 
 	while ((len - num_rx > 0) &&
 	       (LPUART_GetStatusFlags(config->base)
