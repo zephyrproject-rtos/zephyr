@@ -5242,5 +5242,6 @@
 #include <zephyr/devicetree/can.h>
 #include <zephyr/devicetree/reset.h>
 #include <zephyr/devicetree/mbox.h>
+#include <zephyr/devicetree/port-endpoint.h>
 
 #endif /* ZEPHYR_INCLUDE_DEVICETREE_H_ */
