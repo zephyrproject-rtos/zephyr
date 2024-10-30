@@ -50,10 +50,11 @@ tests:
       - CONFIG_LLEXT_STORAGE_WRITABLE=n
   llext.simple.readonly_mmu:
     arch_allow: arm64 arm riscv
-    filter: CONFIG_ARM_MMU
+    filter: CONFIG_MMU or CONFIG_RISCV_PMP
     integration_platforms:
       - qemu_cortex_a53         # ARM Cortex-A53 (ARMv8-A ISA)
     extra_configs:
+      - CONFIG_LLEXT_HEAP_SIZE=128 # qemu_cortex_a9 requires larger heap
       - CONFIG_LLEXT_STORAGE_WRITABLE=n
   llext.simple.writable:
     arch_allow: arm xtensa riscv
