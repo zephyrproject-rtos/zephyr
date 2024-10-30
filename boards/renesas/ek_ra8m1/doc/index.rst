@@ -110,6 +110,8 @@ The below features are currently supported on Zephyr OS for EK-RA8M1 board:
 +-----------+------------+----------------------+
 | COUNTER   | on-chip    | counter              |
 +-----------+------------+----------------------+
+| CAN       | on-chip    | canfd                |
++-----------+------------+----------------------+
 
 Other hardware features are currently not supported by the port.
 
