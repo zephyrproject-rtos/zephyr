@@ -179,5 +179,6 @@ void c_boot(void)
 	/* Default console, a driver can override this later */
 	__stdout_hook_install(arch_printk_char_out);
 
+	void z_prep_c(void);
 	z_prep_c();
 }
