@@ -42,9 +42,16 @@ static void avrcp_disconnected(struct bt_avrcp *avrcp)
 	shell_print(ctx_shell, "AVRCP disconnected");
 }
 
+static void avrcp_unit_info_rsp(struct bt_avrcp *avrcp, struct bt_avrcp_unit_info_rsp *rsp)
+{
+	shell_print(ctx_shell, "AVRCP unit info received, unit type = 0x%02x, company_id = 0x%06x",
+		    rsp->unit_type, rsp->company_id);
+}
+
 static struct bt_avrcp_cb avrcp_cb = {
 	.connected = avrcp_connected,
 	.disconnected = avrcp_disconnected,
+	.unit_info_rsp = avrcp_unit_info_rsp,
 };
 
 static int register_cb(const struct shell *sh)

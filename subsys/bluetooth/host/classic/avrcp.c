@@ -38,7 +38,10 @@ struct bt_avrcp {
 	uint8_t local_tid;
 };
 
-static struct bt_avrcp_cb *avrcp_cb;
+struct avrcp_handler {
+	bt_avrcp_opcode_t opcode;
+	void (*func)(struct bt_avrcp *avrcp, struct net_buf *buf, bt_avctp_cr_t cr);
+};
 
 #define AVRCP_TIMEOUT       K_SECONDS(3) /* Shell be greater than TMTP (1000ms) */
 #define AVRCP_AVCTP(_avctp) CONTAINER_OF(_avctp, struct bt_avrcp, session)
@@ -240,13 +243,56 @@ static void avrcp_disconnected(struct bt_avctp *session)
 	}
 }
 
+static void avrcp_vendor_dependent_handler(struct bt_avrcp *avrcp, struct net_buf *buf,
+					   bt_avctp_cr_t cr)
+{
+	/* ToDo */
+}
+
+static void avrcp_unit_info_handler(struct bt_avrcp *avrcp, struct net_buf *buf, bt_avctp_cr_t cr)
+{
+	struct bt_avrcp_header *avrcp_hdr;
+	struct bt_avrcp_unit_info_rsp rsp;
+
+	if (cr == BT_AVCTP_CMD) {
+		/* ToDo */
+	} else { /* BT_AVCTP_RESPONSE */
+		if ((avrcp_cb != NULL) && (avrcp_cb->unit_info_rsp != NULL)) {
+			net_buf_pull(buf, sizeof(*avrcp_hdr));
+			net_buf_pull_u8(buf); /* Always 0x07 */
+			rsp.unit_type = (net_buf_pull_u8(buf) >> 3); /* Bit [8:4] Shall be 0x09 */
+			rsp.company_id = net_buf_pull_be24(buf);
+			avrcp_cb->unit_info_rsp(avrcp, &rsp);
+		}
+	}
+}
+
+static void avrcp_subunit_info_handler(struct bt_avrcp *avrcp, struct net_buf *buf,
+					   bt_avctp_cr_t cr)
+{
+	/* ToDo */
+}
+
+static void avrcp_pass_through_handler(struct bt_avrcp *avrcp, struct net_buf *buf,
+					   bt_avctp_cr_t cr)
+{
+	/* ToDo */
+}
+
+static const struct avrcp_handler handler[] = {
+	{ BT_AVRCP_OPC_VENDOR_DEPENDENT, avrcp_vendor_dependent_handler },
+	{ BT_AVRCP_OPC_UNIT_INFO, avrcp_unit_info_handler },
+	{ BT_AVRCP_OPC_SUBUNIT_INFO, avrcp_subunit_info_handler },
+	{ BT_AVRCP_OPC_PASS_THROUGH, avrcp_pass_through_handler },
+};
+
 /* An AVRCP message received */
 static int avrcp_recv(struct bt_avctp *session, struct net_buf *buf)
 {
 	struct bt_avrcp *avrcp = AVRCP_AVCTP(session);
 	struct bt_avctp_header *avctp_hdr;
 	struct bt_avrcp_header *avrcp_hdr;
-	uint8_t tid;
+	uint8_t tid, i;
 	bt_avctp_cr_t cr;
 	bt_avrcp_ctype_t ctype;
 	bt_avrcp_subunit_id_t subunit_id;
@@ -284,7 +330,12 @@ static int avrcp_recv(struct bt_avctp *session, struct net_buf *buf)
 		}
 	}
 
-	/* TODO: add handlers */
+	for (i = 0U; i < ARRAY_SIZE(handler); i++) {
+		if (avrcp_hdr->opcode == handler[i].opcode) {
+			handler[i].func(avrcp, buf, cr);
+			return 0;
+		}
+	}
 
 	return 0;
 }
