@@ -33,9 +33,18 @@ LOG_MODULE_REGISTER(bt_avrcp);
 
 struct bt_avrcp {
 	struct bt_avctp session;
+	struct bt_avrcp_req req;
+	struct k_work_delayable timeout_work;
+	uint8_t local_tid;
 };
 
+static struct bt_avrcp_cb *avrcp_cb;
+
+#define AVRCP_TIMEOUT       K_SECONDS(3) /* Shell be greater than TMTP (1000ms) */
 #define AVRCP_AVCTP(_avctp) CONTAINER_OF(_avctp, struct bt_avrcp, session)
+#define AVRCP_KWORK(_work)                                                                         \
+	CONTAINER_OF(CONTAINER_OF(_work, struct k_work_delayable, work), struct bt_avrcp,          \
+		     timeout_work)
 
 static const struct bt_avrcp_cb *avrcp_cb;
 static struct bt_avrcp avrcp_connection[CONFIG_BT_MAX_CONN];
@@ -202,6 +211,13 @@ static struct bt_avrcp *get_new_connection(struct bt_conn *conn)
 	return avrcp;
 }
 
+static void avrcp_timeout(struct k_work *work)
+{
+	struct bt_avrcp *avrcp = AVRCP_KWORK(work);
+
+	LOG_WRN("Timeout: tid 0x%X, opc 0x%02X", avrcp->req.tid, avrcp->req.opcode);
+}
+
 /* The AVCTP L2CAP channel established */
 static void avrcp_connected(struct bt_avctp *session)
 {
@@ -210,6 +226,8 @@ static void avrcp_connected(struct bt_avctp *session)
 	if ((avrcp_cb != NULL) && (avrcp_cb->connected != NULL)) {
 		avrcp_cb->connected(avrcp);
 	}
+
+	k_work_init_delayable(&avrcp->timeout_work, avrcp_timeout);
 }
 
 /* The AVCTP L2CAP channel released */
@@ -306,6 +324,81 @@ int bt_avrcp_disconnect(struct bt_avrcp *avrcp)
 	}
 
 	return err;
+}
+
+static struct net_buf *avrcp_create_pdu(struct bt_avrcp *avrcp, bt_avctp_cr_t cr)
+{
+	struct net_buf *buf;
+
+	buf = bt_avctp_create_pdu(&(avrcp->session), cr, BT_AVCTP_IPID_NONE, &avrcp->local_tid,
+				  sys_cpu_to_be16(BT_SDP_AV_REMOTE_SVCLASS));
+
+	return buf;
+}
+
+static struct net_buf *avrcp_create_unit_pdu(struct bt_avrcp *avrcp, bt_avctp_cr_t cr)
+{
+	struct net_buf *buf;
+	struct bt_avrcp_unit_info_cmd *cmd;
+
+	buf = avrcp_create_pdu(avrcp, cr);
+	if (!buf) {
+		return buf;
+	}
+
+	cmd = net_buf_add(buf, sizeof(*cmd));
+	memset(cmd, 0, sizeof(*cmd));
+	cmd->hdr.ctype =
+		(cr == BT_AVCTP_CMD) ? BT_AVRCP_CTYPE_STATUS : BT_AVRCP_CTYPE_IMPLEMENTED_STABLE;
+	cmd->hdr.subunit_id = BT_AVRCP_SUBUNIT_ID_IGNORE;
+	cmd->hdr.subunit_type = BT_AVRCP_SUBUNIT_TYPE_UNIT;
+	cmd->hdr.opcode = BT_AVRCP_OPC_UNIT_INFO;
+
+	return buf;
+}
+
+static int avrcp_send(struct bt_avrcp *avrcp, struct net_buf *buf)
+{
+	int err;
+	struct bt_avctp_header avctp_hdr;
+	struct bt_avrcp_header avrcp_hdr;
+
+	memcpy(&avctp_hdr, buf->data, sizeof(avctp_hdr));
+	memcpy(&avrcp_hdr, buf->data + sizeof(avctp_hdr), sizeof(avrcp_hdr));
+
+	LOG_DBG("AVRCP send cr:0x%X, tid:0x%X, ctype: 0x%X, opc:0x%02X\n", avctp_hdr.cr,
+		avctp_hdr.tid, avrcp_hdr.ctype, avrcp_hdr.opcode);
+	err = bt_avctp_send(&(avrcp->session), buf);
+	if (err < 0) {
+		return err;
+	}
+
+	if (avctp_hdr.cr == BT_AVCTP_CMD && avrcp_hdr.opcode != BT_AVRCP_OPC_PASS_THROUGH) {
+		avrcp->req.tid = avctp_hdr.tid;
+		avrcp->req.subunit = avrcp_hdr.subunit_id;
+		avrcp->req.opcode = avrcp_hdr.opcode;
+
+		k_work_reschedule(&avrcp->timeout_work, AVRCP_TIMEOUT);
+		/* TODO: k_work_cancel_delayable(&avrcp->timeout_work); when response received */
+	}
+
+	return 0;
+}
+
+int bt_avrcp_get_unit_info(struct bt_avrcp *avrcp)
+{
+	struct net_buf *buf;
+	uint8_t param[5];
+
+	buf = avrcp_create_unit_pdu(avrcp, BT_AVCTP_CMD);
+	if (!buf) {
+		return -ENOMEM;
+	}
+
+	memset(param, 0xFF, ARRAY_SIZE(param));
+	net_buf_add_mem(buf, param, sizeof(param));
+
+	return avrcp_send(avrcp, buf);
 }
 
 int bt_avrcp_register_cb(const struct bt_avrcp_cb *cb)
