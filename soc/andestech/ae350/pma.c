@@ -216,7 +216,7 @@ void soc_early_init_hook(void)
 		LOG_ERR("CPU doesn't support PMA. "
 			"Please disable CONFIG_SOC_ANDES_V5_PMA");
 #endif
-		return -ENODEV;
+		return;
 	}
 
 	pma_init_per_core();
