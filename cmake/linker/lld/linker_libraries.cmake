@@ -8,7 +8,6 @@ set_linker_property(NO_CREATE TARGET linker PROPERTY rt_library "")
 set_linker_property(TARGET linker PROPERTY c++_library "-lc++;-lc++abi")
 
 if(CONFIG_CPP
-   AND NOT CONFIG_MINIMAL_LIBCPP
    AND NOT CONFIG_NATIVE_LIBRARY
    # When new link principle is fully introduced, then the below condition can
    # be removed, and instead the external module c++ should use:
