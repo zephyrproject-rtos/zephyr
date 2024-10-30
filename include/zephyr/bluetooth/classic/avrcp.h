@@ -71,6 +71,16 @@ int bt_avrcp_disconnect(struct bt_avrcp *avrcp);
  */
 int bt_avrcp_register_cb(const struct bt_avrcp_cb *cb);
 
+/** @brief Get AVRCP Unit Info.
+ *
+ *  This function obtains information that pertains to the unit as a whole.
+ *
+ *  @param avrcp The AVRCP instance.
+ *
+ *  @return 0 in case of success or error code in case of error.
+ */
+int bt_avrcp_get_unit_info(struct bt_avrcp *avrcp);
+
 #ifdef __cplusplus
 }
 #endif
