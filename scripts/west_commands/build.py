@@ -265,7 +265,7 @@ class Build(Forceable):
                 with open(build_info_file, "w") as f:
                     yaml.dump(build_command, f, default_flow_style=False)
             except Exception as e:
-                log.wrn(f'Failed to create info file: {build_info_file},', e)
+                self.wrn(f'Failed to create info file: {build_info_file},', e)
 
         board, origin = self._find_board()
         self._run_cmake(board, origin, self.args.cmake_opts)
