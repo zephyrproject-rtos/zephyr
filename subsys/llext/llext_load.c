@@ -103,29 +103,29 @@ static int llext_load_elf_data(struct llext_loader *ldr, struct llext *ext)
 		return -ENOEXEC;
 	}
 
-	ldr->sect_cnt = ldr->hdr.e_shnum;
+	ext->sect_cnt = ldr->hdr.e_shnum;
 
-	size_t sect_map_sz = ldr->sect_cnt * sizeof(ldr->sect_map[0]);
+	size_t sect_map_sz = ext->sect_cnt * sizeof(ldr->sect_map[0]);
 
 	ldr->sect_map = llext_alloc(sect_map_sz);
 	if (!ldr->sect_map) {
 		LOG_ERR("Failed to allocate section map, size %zu", sect_map_sz);
 		return -ENOMEM;
 	}
-	for (int i = 0; i < ldr->sect_cnt; i++) {
+	for (int i = 0; i < ext->sect_cnt; i++) {
 		ldr->sect_map[i].mem_idx = LLEXT_MEM_COUNT;
 		ldr->sect_map[i].offset = 0;
 	}
 
-	ldr->sect_hdrs = (elf_shdr_t *) llext_peek(ldr, ldr->hdr.e_shoff);
-	if (ldr->sect_hdrs) {
-		ldr->sect_hdrs_on_heap = false;
+	ext->sect_hdrs = (elf_shdr_t *)llext_peek(ldr, ldr->hdr.e_shoff);
+	if (ext->sect_hdrs) {
+		ext->sect_hdrs_on_heap = false;
 	} else {
-		size_t sect_hdrs_sz = ldr->sect_cnt * sizeof(ldr->sect_hdrs[0]);
+		size_t sect_hdrs_sz = ext->sect_cnt * sizeof(ext->sect_hdrs[0]);
 
-		ldr->sect_hdrs_on_heap = true;
-		ldr->sect_hdrs = llext_alloc(sect_hdrs_sz);
-		if (!ldr->sect_hdrs) {
+		ext->sect_hdrs_on_heap = true;
+		ext->sect_hdrs = llext_alloc(sect_hdrs_sz);
+		if (!ext->sect_hdrs) {
 			LOG_ERR("Failed to allocate section headers, size %zu", sect_hdrs_sz);
 			return -ENOMEM;
 		}
@@ -136,7 +136,7 @@ static int llext_load_elf_data(struct llext_loader *ldr, struct llext *ext)
 			return ret;
 		}
 
-		ret = llext_read(ldr, ldr->sect_hdrs, sect_hdrs_sz);
+		ret = llext_read(ldr, ext->sect_hdrs, sect_hdrs_sz);
 		if (ret != 0) {
 			LOG_ERR("Failed to read section headers");
 			return ret;
@@ -149,15 +149,15 @@ static int llext_load_elf_data(struct llext_loader *ldr, struct llext *ext)
 /*
  * Find all relevant string and symbol tables
  */
-static int llext_find_tables(struct llext_loader *ldr)
+static int llext_find_tables(struct llext_loader *ldr, struct llext *ext)
 {
 	int table_cnt, i;
 
 	memset(ldr->sects, 0, sizeof(ldr->sects));
 
 	/* Find symbol and string tables */
-	for (i = 0, table_cnt = 0; i < ldr->sect_cnt && table_cnt < 3; ++i) {
-		elf_shdr_t *shdr = ldr->sect_hdrs + i;
+	for (i = 0, table_cnt = 0; i < ext->sect_cnt && table_cnt < 3; ++i) {
+		elf_shdr_t *shdr = ext->sect_hdrs + i;
 
 		LOG_DBG("section %d at 0x%zx: name %d, type %d, flags 0x%zx, "
 			"addr 0x%zx, size %zd, link %d, info %d",
@@ -216,8 +216,8 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 	int i, j;
 	const char *name;
 
-	for (i = 0; i < ldr->sect_cnt; ++i) {
-		elf_shdr_t *shdr = ldr->sect_hdrs + i;
+	for (i = 0; i < ext->sect_cnt; ++i) {
+		elf_shdr_t *shdr = ext->sect_hdrs + i;
 
 		name = llext_string(ldr, ext, LLEXT_MEM_SHSTRTAB, shdr->sh_name);
 
@@ -437,8 +437,8 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 	 * Calculate each ELF section's offset inside its memory region. This
 	 * is done as a separate pass so the final regions are already defined.
 	 */
-	for (i = 0; i < ldr->sect_cnt; ++i) {
-		elf_shdr_t *shdr = ldr->sect_hdrs + i;
+	for (i = 0; i < ext->sect_cnt; ++i) {
+		elf_shdr_t *shdr = ext->sect_hdrs + i;
 		enum llext_mem mem_idx = ldr->sect_map[i].mem_idx;
 
 		if (mem_idx != LLEXT_MEM_COUNT) {
@@ -585,7 +585,7 @@ static int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext,
 
 			sym_tab->syms[j].name = name;
 
-			elf_shdr_t *shdr = ldr->sect_hdrs + shndx;
+			elf_shdr_t *shdr = ext->sect_hdrs + shndx;
 			uintptr_t section_addr = shdr->sh_addr;
 
 			if (ldr_parm->pre_located &&
@@ -664,7 +664,7 @@ int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 #endif
 
 	LOG_DBG("Finding ELF tables...");
-	ret = llext_find_tables(ldr);
+	ret = llext_find_tables(ldr, ext);
 	if (ret != 0) {
 		LOG_ERR("Failed to find important ELF tables, ret %d", ret);
 		goto out;
@@ -735,11 +735,6 @@ out:
 
 	llext_free(ldr->sect_map);
 	ldr->sect_map = NULL;
-
-	if (ldr->sect_hdrs_on_heap) {
-		llext_free(ldr->sect_hdrs);
-	}
-	ldr->sect_hdrs = NULL;
 
 	/* Until proper inter-llext linking is implemented, the symbol table is
 	 * not useful outside of the loading process; keep it only if debugging
