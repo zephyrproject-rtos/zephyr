@@ -68,6 +68,7 @@
 		status = "okay";
 		#power-domain-cells = <0>;
 		power-domains = <&fakedomain_2>;
+		#power-domain-cells = <0>;
 	};
 
 	fakedomain_1: fakedomain_1 {
