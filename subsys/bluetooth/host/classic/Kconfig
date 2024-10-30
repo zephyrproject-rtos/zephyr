@@ -184,6 +184,27 @@ config BT_AVCTP
 	help
 	  This option enables Bluetooth AVCTP support
 
+config BT_AVRCP
+	bool "Bluetooth AVRCP Profile [EXPERIMENTAL]"
+	select BT_AVCTP
+	select EXPERIMENTAL
+	help
+	  This option enables the AVRCP profile
+
+if BT_AVRCP
+
+config BT_AVRCP_TARGET
+	bool "Bluetooth AVRCP Profile Target Function"
+	help
+	  This option enables the AVRCP profile target function
+
+config BT_AVRCP_CONTROLLER
+	bool "Bluetooth AVRCP Profile Controller Function"
+	help
+	  This option enables the AVRCP profile controller function
+
+endif # BT_AVRCP
+
 config BT_PAGE_TIMEOUT
 	hex "Bluetooth Page Timeout"
 	default 0x2000
