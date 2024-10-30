@@ -19,6 +19,11 @@ extern "C" {
 /** @brief AVRCP structure */
 struct bt_avrcp;
 
+struct bt_avrcp_unit_info_rsp {
+	uint8_t unit_type;
+	uint32_t company_id;
+};
+
 struct bt_avrcp_cb {
 	/** @brief An AVRCP connection has been established.
 	 *
@@ -36,6 +41,14 @@ struct bt_avrcp_cb {
 	 *  @param avrcp AVRCP connection object.
 	 */
 	void (*disconnected)(struct bt_avrcp *avrcp);
+	/** @brief Callback function for bt_avrcp_get_unit_info()
+	 *
+	 *  Called when the get unit info process is completed.
+	 *
+	 *  @param avrcp AVRCP connection object.
+	 *  @param rsp The response for UNIT INFO command.
+	 */
+	void (*unit_info_rsp)(struct bt_avrcp *avrcp, struct bt_avrcp_unit_info_rsp *rsp);
 };
 
 /** @brief Connect AVRCP.
