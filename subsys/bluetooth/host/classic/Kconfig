@@ -178,6 +178,12 @@ config BT_A2DP_SINK
 
 endif # BT_A2DP
 
+config BT_AVCTP
+	bool "Bluetooth AVCTP protocol support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This option enables Bluetooth AVCTP support
+
 config BT_PAGE_TIMEOUT
 	hex "Bluetooth Page Timeout"
 	default 0x2000
