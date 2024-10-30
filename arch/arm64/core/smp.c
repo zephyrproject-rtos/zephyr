@@ -23,6 +23,7 @@
 #include <zephyr/drivers/interrupt_controller/gic.h>
 #include <zephyr/drivers/pm_cpu_ops.h>
 #include <zephyr/arch/arch_interface.h>
+#include <zephyr/platform/hooks.h>
 #include <zephyr/sys/barrier.h>
 #include <zephyr/irq.h>
 #include "boot.h"
@@ -162,6 +163,10 @@ void arch_secondary_cpu_init(int cpu_num)
 	irq_enable(SGI_FPU_IPI);
 #endif
 #endif
+
+#ifdef CONFIG_SOC_PER_CORE_INIT_HOOK
+	soc_per_core_init_hook();
+#endif /* CONFIG_SOC_PER_CORE_INIT_HOOK */
 
 	fn = arm64_cpu_boot_params.fn;
 	arg = arm64_cpu_boot_params.arg;

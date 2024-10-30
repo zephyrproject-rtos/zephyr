@@ -11,6 +11,7 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/arch/riscv/irq.h>
 #include <zephyr/drivers/pm_cpu_ops.h>
+#include <zephyr/platform/hooks.h>
 
 volatile struct {
 	arch_cpustart_t fn;
@@ -78,5 +79,8 @@ void arch_secondary_cpu_init(int hartid)
 	/* Enable on secondary cores so that they can respond to PLIC */
 	irq_enable(RISCV_IRQ_MEXT);
 #endif /* CONFIG_PLIC_IRQ_AFFINITY */
+#ifdef CONFIG_SOC_PER_CORE_INIT_HOOK
+	soc_per_core_init_hook();
+#endif /* CONFIG_SOC_PER_CORE_INIT_HOOK */
 	riscv_cpu_init[cpu_num].fn(riscv_cpu_init[cpu_num].arg);
 }

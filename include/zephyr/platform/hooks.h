@@ -53,6 +53,14 @@ void soc_early_init_hook(void);
  */
 void soc_late_init_hook(void);
 
+/**
+ * @brief SoC per-core initialization
+ *
+ * This hook is implemented by the SoC and can be used to perform any
+ * SoC-specific per-core initialization
+ */
+void soc_per_core_init_hook(void);
+
 /*
  * @brief Board hook executed before the kernel starts.
  *
