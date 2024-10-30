@@ -4,6 +4,10 @@
 
 if BOARD_APOLLO4P_BLUE_KXR_EVB
 
+config LOG_BACKEND_SWO_FREQ_HZ
+	default 1000000
+	depends on LOG_BACKEND_SWO
+
 if BT
 
 config MAIN_STACK_SIZE

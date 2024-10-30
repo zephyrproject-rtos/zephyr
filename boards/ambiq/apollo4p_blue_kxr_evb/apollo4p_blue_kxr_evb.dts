@@ -69,6 +69,12 @@
 	status = "okay";
 };
 
+&itm {
+	pinctrl-0 = <&itm_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &counter0 {
 	status = "okay";
 };
