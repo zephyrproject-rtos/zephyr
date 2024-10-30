@@ -30,8 +30,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define PHY_MC_KSZ8081_CTRL2_REG		0x1F
 #define PHY_MC_KSZ8081_CTRL2_REF_CLK_SEL	BIT(7)
 
-#define PHY_MC_KSZ8081_RESET_HOLD_TIME
-
 enum ksz8081_interface {
 	KSZ8081_MII,
 	KSZ8081_RMII,
@@ -289,11 +287,15 @@ static int phy_mc_ksz8081_reset(const struct device *dev)
 		goto done;
 	}
 
-	/* Wait for 500 ms as specified by datasheet */
-	k_busy_wait(USEC_PER_MSEC * 500);
+	/* Wait for at least 500 us as specified by datasheet */
+	k_busy_wait(1000);
 
 	/* Reset over */
 	ret = gpio_pin_set_dt(&config->reset_gpio, 1);
+
+	/* After deasserting reset, must wait at least 100 us to use programming interface */
+	k_busy_wait(200);
+
 	goto done;
 skip_reset_gpio:
 #endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios) */
@@ -301,8 +303,11 @@ skip_reset_gpio:
 	if (ret) {
 		goto done;
 	}
-	/* Wait for 500 ms as specified by datasheet */
-	k_busy_wait(USEC_PER_MSEC * 500);
+
+	/* According to IEEE 802.3, Section 2, Subsection 22.2.4.1.1,
+	 * a PHY reset may take up to 0.5 s.
+	 */
+	k_busy_wait(500 * USEC_PER_MSEC);
 
 done:
 	/* Unlock mutex */
