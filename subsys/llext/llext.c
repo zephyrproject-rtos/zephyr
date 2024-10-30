@@ -25,10 +25,6 @@ static struct k_mutex llext_lock = Z_MUTEX_INITIALIZER(llext_lock);
 
 ssize_t llext_find_section(struct llext_loader *ldr, const char *search_name)
 {
-	/* Note that this API is used after llext_load(), so the ldr->sect_hdrs
-	 * cache is already freed. A direct search covers all situations.
-	 */
-
 	elf_shdr_t *shdr;
 	unsigned int i;
 	size_t pos;
@@ -252,6 +248,10 @@ int llext_unload(struct llext **ext)
 
 	*ext = NULL;
 	k_mutex_unlock(&llext_lock);
+
+	if (tmp->sect_hdrs_on_heap) {
+		llext_free(tmp->sect_hdrs);
+	}
 
 	llext_free_regions(tmp);
 	llext_free(tmp->sym_tab.syms);
