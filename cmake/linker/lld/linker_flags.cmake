@@ -7,7 +7,7 @@
 # and adjust for lld specifics afterwards.
 include(${ZEPHYR_BASE}/cmake/linker/ld/linker_flags.cmake OPTIONAL)
 
-if(NOT CONFIG_MINIMAL_LIBCPP AND NOT CONFIG_NATIVE_LIBRARY AND NOT CONFIG_EXTERNAL_MODULE_LIBCPP)
+if(NOT CONFIG_NATIVE_LIBRARY AND NOT CONFIG_EXTERNAL_MODULE_LIBCPP)
   set_property(TARGET linker PROPERTY cpp_base ${LINKERFLAGPREFIX},-z,norelro)
 endif()
 

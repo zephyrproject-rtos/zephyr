@@ -16,7 +16,6 @@ if(NOT CONFIG_NATIVE_BUILD)
 endif()
 
 if(CONFIG_CPP
-   AND NOT CONFIG_MINIMAL_LIBCPP
    AND NOT CONFIG_NATIVE_LIBRARY
    # When new link principle is fully introduced, then the below condition can
    # be removed, and instead the external module c++ should use:
