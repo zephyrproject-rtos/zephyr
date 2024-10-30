@@ -151,11 +151,13 @@ static int lsm6dsv16x_gyro_set_fs_raw(const struct device *dev, uint8_t fs)
 {
 	const struct lsm6dsv16x_config *cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+	struct lsm6dsv16x_data *data = dev->data;
 
 	if (lsm6dsv16x_gy_full_scale_set(ctx, fs) < 0) {
 		return -EIO;
 	}
 
+	data->gyro_fs = fs;
 	return 0;
 }
 
