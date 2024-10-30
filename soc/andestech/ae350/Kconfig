@@ -92,6 +92,7 @@ config SOC_ANDES_V5_PMA
 	bool "Andes V5 Physical Memory Attribute (PMA)"
 	select ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 	select SOC_EARLY_INIT_HOOK
+	select SOC_PER_CORE_INIT_HOOK
 	help
 		This option enables the Andes V5 PMA, in order to support SW to
 		configure physical memory attribute by PMA CSRs. The address
