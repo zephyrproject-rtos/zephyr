@@ -296,8 +296,12 @@ static int lan865x_config_plca(const struct device *dev, uint8_t node_id,
 	/* Collision Detection */
 	oa_tc6_reg_write(ctx->tc6, 0x00040087, 0x0083u); /* COL_DET_CTRL0 */
 
-	/* T1S Phy Node Id and Max Node Count */
-	val = ((uint32_t)node_cnt << 8) | node_id;
+	/* T1S Phy Node ID and Max Node Count */
+	if (node_id == 0) {
+		val = (uint32_t)node_cnt << 8;
+	} else {
+		val = (uint32_t)node_id;
+	}
 	oa_tc6_reg_write(ctx->tc6, 0x0004CA02, val); /* PLCA_CONTROL_1_REGISTER */
 
 	/* PLCA Burst Count and Burst Timer */
