@@ -38,6 +38,7 @@ struct bt_avctp;
 struct bt_avctp_ops_cb {
 	void (*connected)(struct bt_avctp *session);
 	void (*disconnected)(struct bt_avctp *session);
+	int (*recv)(struct bt_avctp *session, struct net_buf *buf);
 };
 
 struct bt_avctp {
