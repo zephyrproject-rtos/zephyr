@@ -70,7 +70,8 @@ static struct k_thread drv_stack_data;
 
 static struct udc_ep_config ep_cfg_out[CFG_EPOUT_CNT + CFG_EP_ISOOUT_CNT + 1];
 static struct udc_ep_config ep_cfg_in[CFG_EPIN_CNT + CFG_EP_ISOIN_CNT + 1];
-static bool udc_nrf_setup_rcvd;
+static bool udc_nrf_setup_rcvd, udc_nrf_setup_set_addr, udc_nrf_fake_setup;
+static uint8_t udc_nrf_address;
 const static struct device *udc_nrf_dev;
 
 struct udc_nrf_config {
@@ -143,7 +144,9 @@ static void udc_event_xfer_ctrl_in(const struct device *dev,
 	/* Update to next stage of control transfer */
 	udc_ctrl_update_stage(dev, buf);
 
-	nrf_usbd_common_setup_clear();
+	if (!udc_nrf_setup_set_addr) {
+		nrf_usbd_common_setup_clear();
+	}
 }
 
 static void udc_event_fake_status_in(const struct device *dev)
@@ -317,6 +320,7 @@ static int usbd_ctrl_feed_dout(const struct device *dev,
 
 static int udc_event_xfer_setup(const struct device *dev)
 {
+	nrf_usbd_common_setup_t *setup;
 	struct net_buf *buf;
 	int err;
 
@@ -328,7 +332,77 @@ static int udc_event_xfer_setup(const struct device *dev)
 	}
 
 	udc_ep_buf_set_setup(buf);
-	nrf_usbd_common_setup_get((nrf_usbd_common_setup_t *)buf->data);
+	setup = (nrf_usbd_common_setup_t *)buf->data;
+	nrf_usbd_common_setup_get(setup);
+
+	/* USBD peripheral automatically handles Set Address in slightly
+	 * different manner than the USB stack.
+	 *
+	 * USBD peripheral doesn't care about wLength, but the peripheral
+	 * switches to new address only after status stage. The device won't
+	 * automatically accept Data Stage packets.
+	 *
+	 * However, in the case the host:
+	 *   * sends SETUP Set Address with non-zero wLength
+	 *   * does not send corresponding OUT DATA packets (to match wLength)
+	 *     or sends the packets but disregards NAK
+	 *     or sends the packets that device ACKs
+	 *   * sends IN token (either incorrectly proceeds to status stage, or
+	 *     manages to send IN before SW sets STALL)
+	 * then the USBD peripheral will accept the address and USB stack won't.
+	 * This will lead to state mismatch between the stack and peripheral.
+	 *
+	 * In cases where the USB stack would like to STALL the request there is
+	 * a race condition between host issuing Set Address status stage (IN
+	 * token) and SW setting STALL bit. If host wins the race, the device
+	 * ACKs status stage and use new address. If device wins the race, the
+	 * device STALLs status stage and address remains unchanged.
+	 */
+	udc_nrf_setup_set_addr =
+		setup->bmRequestType == 0 &&
+		setup->bRequest == USB_SREQ_SET_ADDRESS;
+	if (udc_nrf_setup_set_addr) {
+		if (setup->wLength) {
+			/* Currently USB stack only STALLs OUT Data Stage when
+			 * buffer allocation fails. To prevent the device from
+			 * ACKing the Data Stage, simply ignore the request
+			 * completely.
+			 *
+			 * If host incorrectly proceeds to status stage there
+			 * will be address mismatch (unless the new address is
+			 * equal to current device address). If host does not
+			 * issue IN token then the mismatch will be avoided.
+			 */
+			net_buf_unref(buf);
+			return 0;
+		}
+
+		/* nRF52/nRF53 USBD doesn't care about wValue bits 8..15 and
+		 * wIndex value but USB device stack does.
+		 *
+		 * Just clear the bits so stack will handle the request in the
+		 * same way as USBD peripheral does, avoiding the mismatch.
+		 */
+		setup->wValue &= 0x7F;
+		setup->wIndex = 0;
+	}
+
+	if (!udc_nrf_setup_set_addr && udc_nrf_address != NRF_USBD->USBADDR) {
+		/* Address mismatch detected. Fake Set Address handling to
+		 * correct the situation, then repeat handling.
+		 */
+		udc_nrf_fake_setup = true;
+		udc_nrf_setup_set_addr = true;
+
+		setup->bmRequestType = 0;
+		setup->bRequest = USB_SREQ_SET_ADDRESS;
+		setup->wValue = NRF_USBD->USBADDR;
+		setup->wIndex = 0;
+		setup->wLength = 0;
+	} else {
+		udc_nrf_fake_setup = false;
+	}
+
 	net_buf_add(buf, sizeof(nrf_usbd_common_setup_t));
 	udc_nrf_setup_rcvd = true;
 
@@ -494,7 +568,8 @@ static bool udc_nrf_fake_status_in(const struct device *dev)
 		.ep = USB_CONTROL_EP_IN,
 	};
 
-	if (nrf_usbd_common_last_setup_dir_get() == USB_CONTROL_EP_OUT) {
+	if (nrf_usbd_common_last_setup_dir_get() == USB_CONTROL_EP_OUT ||
+	    udc_nrf_fake_setup) {
 		/* Let controller perform status IN stage */
 		k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
 		return true;
@@ -612,12 +687,38 @@ static int udc_nrf_ep_clear_halt(const struct device *dev,
 
 static int udc_nrf_set_address(const struct device *dev, const uint8_t addr)
 {
-	/**
-	 * Nothing to do here. The USBD HW already takes care of initiating
-	 * STATUS stage. Just double check the address for sanity.
+	/*
+	 * If the status stage already finished (which depends entirely on when
+	 * the host sends IN token) then NRF_USBD->USBADDR will have the same
+	 * address, otherwise it won't (unless new address is unchanged).
+	 *
+	 * Store the address so the driver can detect address mismatches
+	 * between USB stack and USBD peripheral. The mismatches can occur if:
+	 *   * SW has high enough latency in SETUP handling, or
+	 *   * Host did not issue Status Stage after Set Address request
+	 *
+	 * The SETUP handling latency is a problem because the Set Address is
+	 * automatically handled by device. Because whole Set Address handling
+	 * can finish in less than 21 us, the latency required (with perfect
+	 * timing) to hit the issue is relatively short (2 ms Set Address
+	 * recovery interval + negligible Set Address handling time). If host
+	 * sends new SETUP before SW had a chance to read the Set Address one,
+	 * the Set Address one will be overwritten without a trace.
 	 */
-	if (addr != (uint8_t)NRF_USBD->USBADDR) {
-		LOG_WRN("USB Address incorrect 0x%02x", addr);
+	udc_nrf_address = addr;
+
+	if (udc_nrf_fake_setup) {
+		struct udc_nrf_evt evt = {
+			.type = UDC_NRF_EVT_HAL,
+			.hal_evt = {
+				.type = NRF_USBD_COMMON_EVT_SETUP,
+			},
+		};
+
+		/* Finished handling lost Set Address, now handle the pending
+		 * SETUP transfer.
+		 */
+		k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
 	}
 
 	return 0;
