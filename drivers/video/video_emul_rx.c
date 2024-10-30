@@ -294,33 +294,10 @@ int emul_rx_init(const struct device *dev)
 	return 0;
 }
 
-/* See #80649 */
-
-/* Handle the variability of "ports{port@0{}};" vs "port{};" while going down */
-#define DT_INST_PORT_BY_ID(inst, pid)                                                              \
-	COND_CODE_1(DT_NODE_EXISTS(DT_INST_CHILD(inst, ports)),                                    \
-		    (DT_CHILD(DT_INST_CHILD(inst, ports), port_##pid)),                            \
-		    (DT_INST_CHILD(inst, port)))
-
-/* Handle the variability of "endpoint@0{};" vs "endpoint{};" while going down */
-#define DT_INST_ENDPOINT_BY_ID(inst, pid, eid)                                                     \
-	COND_CODE_1(DT_NODE_EXISTS(DT_CHILD(DT_INST_PORT_BY_ID(inst, pid), endpoint)),             \
-		    (DT_CHILD(DT_INST_PORT_BY_ID(inst, pid), endpoint)),                           \
-		    (DT_CHILD(DT_INST_PORT_BY_ID(inst, pid), endpoint_##eid)))
-
-/* Handle the variability of "ports{port@0{}};" vs "port{};" while going up */
-#define DT_ENDPOINT_PARENT_DEVICE(node)                                                            \
-	COND_CODE_1(DT_NODE_EXISTS(DT_CHILD(DT_GPARENT(node), port)),                              \
-		    (DT_GPARENT(node)), (DT_PARENT(DT_GPARENT(node))))
-
-/* Handle the "remote-endpoint-label" */
-#define DEVICE_DT_GET_REMOTE_DEVICE(node)                                                          \
-	DEVICE_DT_GET(DT_ENDPOINT_PARENT_DEVICE(                                                   \
-		DT_NODELABEL(DT_STRING_TOKEN(node, remote_endpoint_label))))
-
 #define EMUL_RX_DEFINE(n)                                                                          \
 	static const struct emul_rx_config emul_rx_cfg_##n = {                                     \
-		.source_dev = DEVICE_DT_GET_REMOTE_DEVICE(DT_INST_ENDPOINT_BY_ID(n, 0, 0)),        \
+		.source_dev =                                                                      \
+			DEVICE_DT_GET(DT_NODE_REMOTE_DEVICE(DT_INST_ENDPOINT_BY_ID(n, 0, 0))),     \
 	};                                                                                         \
                                                                                                    \
 	static struct emul_rx_data emul_rx_data_##n = {                                            \
