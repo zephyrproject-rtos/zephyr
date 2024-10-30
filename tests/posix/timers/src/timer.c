@@ -10,11 +10,11 @@
 #include <zephyr/ztest.h>
 #include <zephyr/logging/log.h>
 
-#define SECS_TO_SLEEP 2
-#define DURATION_SECS 1
+#define SECS_TO_SLEEP  2
+#define DURATION_SECS  1
 #define DURATION_NSECS 0
-#define PERIOD_SECS 0
-#define PERIOD_NSECS 100000000
+#define PERIOD_SECS    0
+#define PERIOD_NSECS   100000000
 
 #define TEST_SIGNAL_VAL SIGTSTP
 
@@ -71,38 +71,37 @@ void test_timer(clockid_t clock_id, int sigev_notify)
 		secs_elapsed = (te.tv_sec - ts.tv_sec - 1);
 	}
 
-	uint64_t elapsed = secs_elapsed*NSEC_PER_SEC + nsecs_elapsed;
+	uint64_t elapsed = secs_elapsed * NSEC_PER_SEC + nsecs_elapsed;
 	uint64_t first_sig = value.it_value.tv_sec * NSEC_PER_SEC + value.it_value.tv_nsec;
 	uint64_t sig_interval = value.it_interval.tv_sec * NSEC_PER_SEC + value.it_interval.tv_nsec;
 	int expected_signal_count = (elapsed - first_sig) / sig_interval + 1;
 
 	/*TESTPOINT: Check if POSIX timer test passed*/
-	zassert_within(exp_count, expected_signal_count, 1,
-		       "POSIX timer test has failed %i != %i",
+	zassert_within(exp_count, expected_signal_count, 1, "POSIX timer test has failed %i != %i",
 		       exp_count, expected_signal_count);
 }
 
-ZTEST(timer, test_CLOCK_REALTIME__SIGEV_SIGNAL)
+ZTEST(posix_timers, test_CLOCK_REALTIME__SIGEV_SIGNAL)
 {
 	test_timer(CLOCK_REALTIME, SIGEV_SIGNAL);
 }
 
-ZTEST(timer, test_CLOCK_REALTIME__SIGEV_THREAD)
+ZTEST(posix_timers, test_CLOCK_REALTIME__SIGEV_THREAD)
 {
 	test_timer(CLOCK_REALTIME, SIGEV_THREAD);
 }
 
-ZTEST(timer, test_CLOCK_MONOTONIC__SIGEV_SIGNAL)
+ZTEST(posix_timers, test_CLOCK_MONOTONIC__SIGEV_SIGNAL)
 {
 	test_timer(CLOCK_MONOTONIC, SIGEV_SIGNAL);
 }
 
-ZTEST(timer, test_CLOCK_MONOTONIC__SIGEV_THREAD)
+ZTEST(posix_timers, test_CLOCK_MONOTONIC__SIGEV_THREAD)
 {
 	test_timer(CLOCK_MONOTONIC, SIGEV_THREAD);
 }
 
-ZTEST(timer, test_timer_overrun)
+ZTEST(posix_timers, test_timer_overrun)
 {
 	struct sigevent sig = {0};
 	struct itimerspec value;
@@ -122,7 +121,7 @@ ZTEST(timer, test_timer_overrun)
 	zassert_equal(timer_getoverrun(timerid), 4, "Number of overruns is incorrect");
 }
 
-ZTEST(timer, test_one_shot__SIGEV_SIGNAL)
+ZTEST(posix_timers, test_one_shot__SIGEV_SIGNAL)
 {
 	struct sigevent sig = {0};
 	struct itimerspec value;
@@ -165,4 +164,4 @@ static void before(void *arg)
 	}
 }
 
-ZTEST_SUITE(timer, NULL, NULL, before, after, NULL);
+ZTEST_SUITE(posix_timers, NULL, NULL, before, after, NULL);
