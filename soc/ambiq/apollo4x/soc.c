@@ -23,4 +23,10 @@ void soc_early_init_hook(void)
 #ifdef CONFIG_PM
 	ambiq_power_init();
 #endif
+
+#ifdef CONFIG_LOG_BACKEND_SWO
+	/* Select HFRC 48MHz for the TPIU clock source */
+	MCUCTRL->DBGCTRL_b.CM4CLKSEL = MCUCTRL_DBGCTRL_CM4CLKSEL_HFRC48;
+	MCUCTRL->DBGCTRL_b.CM4TPIUENABLE = MCUCTRL_DBGCTRL_CM4TPIUENABLE_EN;
+#endif
 }
