@@ -80,6 +80,7 @@ static int avctp_l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	struct bt_avctp *session = AVCTP_CHAN(chan);
 	struct bt_avctp_header *hdr = (void *)buf->data;
 	uint8_t tid;
+	bt_avctp_pkt_type_t pkt_type;
 	bt_avctp_cr_t cr;
 
 	if (buf->len < sizeof(*hdr)) {
@@ -88,7 +89,19 @@ static int avctp_l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	}
 
 	tid = BT_AVCTP_HDR_GET_TRANSACTION_LABLE(hdr);
+	pkt_type = BT_AVCTP_HDR_GET_PACKET_TYPE(hdr);
 	cr = BT_AVCTP_HDR_GET_CR(hdr);
+
+	switch (pkt_type) {
+	case BT_AVCTP_PKT_TYPE_SINGLE:
+		break;
+	case BT_AVCTP_PKT_TYPE_START:
+	case BT_AVCTP_PKT_TYPE_CONTINUE:
+	case BT_AVCTP_PKT_TYPE_END:
+	default:
+		LOG_ERR("fragmented AVCTP message is not supported, pkt_type = %d", pkt_type);
+		return -EINVAL;
+	}
 
 	switch (hdr->pid) {
 #if defined(CONFIG_BT_AVRCP)
