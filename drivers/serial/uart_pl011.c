@@ -317,7 +317,7 @@ static int pl011_runtime_config_get(const struct device *dev,
 static int pl011_fifo_fill(const struct device *dev,
 				    const uint8_t *tx_data, int len)
 {
-	uint8_t num_tx = 0U;
+	int num_tx = 0U;
 
 	while (!(get_uart(dev)->fr & PL011_FR_TXFF) && (len - num_tx > 0)) {
 		get_uart(dev)->dr = tx_data[num_tx++];
@@ -328,7 +328,7 @@ static int pl011_fifo_fill(const struct device *dev,
 static int pl011_fifo_read(const struct device *dev,
 				    uint8_t *rx_data, const int len)
 {
-	uint8_t num_rx = 0U;
+	int num_rx = 0U;
 
 	while ((len - num_rx > 0) && !(get_uart(dev)->fr & PL011_FR_RXFE)) {
 		rx_data[num_rx++] = get_uart(dev)->dr;
