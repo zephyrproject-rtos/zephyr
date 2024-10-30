@@ -2077,6 +2077,11 @@ Release Notes:
   status: maintained
   maintainers:
     - jilaypandya
+  collaborators:
+    - bjarki-andreasen
+    - dipakgmx
+    - fabiobaltieri
+    - faxe1008
   files:
     - drivers/stepper/
     - include/zephyr/drivers/stepper.h
