@@ -301,7 +301,7 @@ static int uart_ra_sci_fifo_fill(const struct device *dev, const uint8_t *tx_dat
 {
 	struct uart_ra_sci_data *data = dev->data;
 	const struct uart_ra_sci_config *cfg = dev->config;
-	uint8_t num_tx = 0U;
+	int num_tx = 0U;
 
 #if CONFIG_UART_RA_SCI_UART_FIFO_ENABLE
 	if (data->sci.fifo_depth != 0) {
@@ -326,7 +326,7 @@ static int uart_ra_sci_fifo_read(const struct device *dev, uint8_t *rx_data, con
 {
 	struct uart_ra_sci_data *data = dev->data;
 	const struct uart_ra_sci_config *cfg = dev->config;
-	uint8_t num_rx = 0U;
+	int num_rx = 0U;
 
 #if CONFIG_UART_RA_SCI_UART_FIFO_ENABLE
 	if (data->sci.fifo_depth != 0) {

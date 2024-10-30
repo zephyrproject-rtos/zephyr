@@ -167,7 +167,7 @@ int usart_gd32_fifo_fill(const struct device *dev, const uint8_t *tx_data,
 			 int len)
 {
 	const struct gd32_usart_config *const cfg = dev->config;
-	uint8_t num_tx = 0U;
+	int num_tx = 0U;
 
 	while ((len - num_tx > 0) &&
 	       usart_flag_get(cfg->reg, USART_FLAG_TBE)) {
@@ -181,7 +181,7 @@ int usart_gd32_fifo_read(const struct device *dev, uint8_t *rx_data,
 			 const int size)
 {
 	const struct gd32_usart_config *const cfg = dev->config;
-	uint8_t num_rx = 0U;
+	int num_rx = 0U;
 
 	while ((size - num_rx > 0) &&
 	       usart_flag_get(cfg->reg, USART_FLAG_RBNE)) {
