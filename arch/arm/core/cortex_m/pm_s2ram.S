@@ -85,6 +85,9 @@ SECTION_FUNC(TEXT, arch_pm_s2ram_suspend)
 	 * not successful (in r0 the return value).
 	 */
 
+	/* Move return value of system_off to callee-saved register. */
+	mov 	r4, r0
+
 	/*
 	 * Reset the marking of suspend to RAM, return is ignored.
 	 */
@@ -92,7 +95,9 @@ SECTION_FUNC(TEXT, arch_pm_s2ram_suspend)
 	bl	pm_s2ram_mark_check_and_clear
 	mov 	lr, r1
 
-	/* Move system_off back to r0 as return value */
+	/* Move the stored return value of system_off back to r0,
+	 * setting it as return value for this function.
+	 */
 	mov	r0, r4
 
 	pop	{r4-r12, lr}
