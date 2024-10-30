@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2024 Ambiq Micro Inc. <www.ambiq.com>
+
+if BOARD_APOLLO3P_EVB
+
+config LOG_BACKEND_SWO_FREQ_HZ
+	default 1000000
+	depends on LOG_BACKEND_SWO
+
+endif # BOARD_APOLLO3P_EVB

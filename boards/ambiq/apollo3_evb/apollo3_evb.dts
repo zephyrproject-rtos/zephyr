@@ -98,6 +98,12 @@
 	status = "okay";
 };
 
+&itm {
+	pinctrl-0 = <&itm_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &wdt0 {
 	status = "okay";
 };
