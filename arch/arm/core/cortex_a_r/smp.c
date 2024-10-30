@@ -12,6 +12,7 @@
 #include "zephyr/cache.h"
 #include "zephyr/kernel/thread_stack.h"
 #include "zephyr/toolchain/gcc.h"
+#include <zephyr/platform/hooks.h>
 
 #define INV_MPID	UINT32_MAX
 
@@ -197,6 +198,10 @@ void arch_secondary_cpu_init(void)
 	 *  \todo FPU irq
 	 */
 #endif
+
+#ifdef CONFIG_SOC_PER_CORE_INIT_HOOK
+	soc_per_core_init_hook();
+#endif /* CONFIG_SOC_PER_CORE_INIT_HOOK */
 
 	fn = arm_cpu_boot_params.fn;
 	arg = arm_cpu_boot_params.arg;
