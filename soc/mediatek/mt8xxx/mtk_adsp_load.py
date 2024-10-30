@@ -129,6 +129,39 @@ class MT818x():
         self.cfg.SW_RSTN &= 0xffffffee   # Release reset
         self.cfg.IO_CONFIG &= 0x7fffffff # Clear RUNSTALL
 
+class MT8196():
+    def __init__(self, maps):
+        cfg_base = ctypes.addressof(ctypes.c_int.from_buffer(maps["cfg"]))
+        sec_base = ctypes.addressof(ctypes.c_int.from_buffer(maps["sec"]))
+        self.cfg = Regs(cfg_base)
+        self.cfg.CFGREG_SW_RSTN = 0x0000
+        self.cfg.MBOX_IRQ_EN = 0x009c
+        self.cfg.HIFI_RUNSTALL = 0x0108
+        self.cfg.freeze()
+        self.sec = Regs(sec_base)
+        self.sec.ALTVEC_C0 = 0x04
+        self.sec.ALTVECSEL = 0x0c
+        self.sec.freeze()
+
+    def logrange(self):
+        return range(0x580000, 0x600000)
+
+    def stop(self):
+        self.cfg.HIFI_RUNSTALL |= 0x1000
+        self.cfg.CFGREG_SW_RSTN |= 0x11
+
+    def start(self, boot_vector):
+        self.sec.ALTVEC_C0 = 0
+        self.sec.ALTVECSEL = 0
+        self.sec.ALTVEC_C0 = boot_vector
+        self.sec.ALTVECSEL = 1
+        self.cfg.HIFI_RUNSTALL |= 0x1000
+        self.cfg.MBOX_IRQ_EN |= 3
+        self.cfg.CFGREG_SW_RSTN |= 0x11
+        time.sleep(0.1)
+        self.cfg.CFGREG_SW_RSTN &= ~0x11
+        self.cfg.HIFI_RUNSTALL &= ~0x1000
+
 # Temporary logging protocol: watch the 1M null-terminated log
 # stream at 0x60700000 -- the top of the linkable region of
 # existing SOF firmware, before the heap.  Nothing uses this
@@ -193,6 +226,8 @@ def main():
         dev = MT8195(maps)
     elif dsp in ("mt8186", "mt8188"):
         dev = MT818x(maps)
+    elif dsp == "mt8196":
+        dev = MT8196(maps)
 
     if sys.argv[1] == "load":
         dat = open(sys.argv[2], "rb").read()

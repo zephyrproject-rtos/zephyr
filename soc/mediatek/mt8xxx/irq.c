@@ -25,6 +25,16 @@ static const struct device *irq_dev(unsigned int *irq_inout)
 	__ASSERT_NO_MSG((*irq_inout & 0xff) == 23);
 	*irq_inout = (*irq_inout >> 8) - 1;
 	return DEVICE_DT_GET(DT_INST(1, mediatek_adsp_intc));
+#elif defined(CONFIG_SOC_SERIES_MT8196)
+	/* Two subcontrollers on core IRQs 1 and 2 */
+	uint32_t lvl1 = *irq_inout & 0xff;
+
+	*irq_inout = (*irq_inout >> 8) - 1;
+	if (lvl1 == 1) {
+		return DEVICE_DT_GET(DT_INST(0, mediatek_adsp_intc));
+	}
+	__ASSERT_NO_MSG(lvl1 == 2);
+	return DEVICE_DT_GET(DT_INST(1, mediatek_adsp_intc));
 #else
 	/* Only one on 818x */
 	return DEVICE_DT_GET(DT_INST(0, mediatek_adsp_intc));

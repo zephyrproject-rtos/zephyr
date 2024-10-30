@@ -1,0 +1,109 @@
+/* Copyright 2024 The ChromiumOS Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <mem.h>
+
+/dts-v1/;
+/ {
+
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	sram0: memory@4e100000 {
+		 device_type = "memory";
+		 compatible = "mmio-sram";
+		 reg = <0x4e100000 DT_SIZE_K(512)>;
+	};
+
+	dram0: memory@90000000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x90000000 DT_SIZE_M(6)>;
+	};
+
+	dram1: memory@90700000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x90700000 DT_SIZE_M(1)>;
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		core_intc: core_intc@0 {
+			compatible = "cdns,xtensa-core-intc";
+			reg = <0 4>;
+			interrupt-controller;
+			#interrupt-cells = <3>;
+		};
+
+		/* The 8196 interrupt controller is actually more complicated
+		 * than the driver here supports.  There are 64 total
+		 * interrupt inputs, each of which is a associated with one of
+		 * 16 "groups", each of which is wired to a separate Xtensa
+		 * architectural interrupt. (Whether the mapping of external
+		 * interrupts to groups is mutable is an open question, the
+		 * values here appear to be hardware defaults).  We represent
+		 * each group (strictly each of the high and low 32 interrupts
+		 * of each group) as a separate adsp_intc controller, pointing
+		 * at the same status and enable registers, but with disjoint
+		 * masks.  Note that this disallows configurations where a
+		 * single controller needs to manage interrupts in both the
+		 * high and low 32 bits of the set, but no current drivers
+		 * rely on such a configuration.
+		 */
+
+		intc_g1: intc_g1@1a014010 {
+			compatible = "mediatek,adsp_intc";
+			interrupt-controller;
+			#interrupt-cells = <3>;
+			reg = <0x1a014010 4>;
+			status-reg = <0x1a014008>;
+			mask = <0x00007f3f>;
+			interrupts = <1 0 0>;
+			interrupt-parent = <&core_intc>;
+		};
+
+		intc_g2: intc_g2@1a014010 {
+			compatible = "mediatek,adsp_intc";
+			interrupt-controller;
+			#interrupt-cells = <3>;
+			reg = <0x1a014010 4>;
+			status-reg = <0x1a014008>;
+			mask = <0x000000c0>;
+			interrupts = <2 0 0>;
+			interrupt-parent = <&core_intc>;
+		};
+
+		ostimer64: ostimer64@1a00b080 {
+			compatible = "mediatek,ostimer64";
+			reg = <0x1a00b080 28>;
+		};
+
+		ostimer0: ostimer@1a00b000 {
+			compatible = "mediatek,ostimer";
+			reg = <0x1a00b000 16>;
+			interrupt-parent = <&intc_g1>;
+			interrupts = <8 0 0>;
+		};
+
+		mbox0: mbox@1a360100 {
+			compatible = "mediatek,mbox";
+			reg = <0x1a360100 16>;
+			interrupt-parent = <&intc_g2>;
+			interrupts = <6 0 0>;
+		};
+
+		mbox1: mbox@1a370100 {
+			compatible = "mediatek,mbox";
+			reg = <0x1a370100 16>;
+			interrupt-parent = <&intc_g2>;
+			interrupts = <7 0 0>;
+		};
+	}; /* soc */
+
+	chosen { };
+	aliases { };
+
+};
