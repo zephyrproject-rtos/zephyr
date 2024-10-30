@@ -465,6 +465,20 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 			sys_cache_instr_invd_range(ext->mem[i], ext->mem_size[i]);
 		}
 	}
+
+	/* Detached section caches should be synchronized in place */
+	if (ldr_parm->section_detached) {
+		for (i = 0; i < ldr->sect_cnt; ++i) {
+			elf_shdr_t *shdr = ldr->sect_hdrs + i;
+
+			if (ldr_parm->section_detached(shdr)) {
+				void *base = llext_peek(ldr, shdr->sh_offset);
+
+				sys_cache_data_flush_range(base, shdr->sh_size);
+				sys_cache_instr_invd_range(base, shdr->sh_size);
+			}
+		}
+	}
 #endif
 
 	return 0;
