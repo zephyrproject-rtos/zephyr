@@ -19,14 +19,23 @@ extern char _mtk_adsp_dram_end[];
 #define DRAM_SIZE  DT_REG_SIZE(DT_NODELABEL(dram0))
 #define DRAM_END   (DRAM_START + DRAM_SIZE)
 
+#ifdef CONFIG_SOC_MT8196
+#define INIT_STACK "0x90400000"
+#define LOG_BASE   0x90580000
+#define LOG_LEN    0x80000
+#else
+#define INIT_STACK "0x60e00000"
+#define LOG_BASE   0x60700000
+#define LOG_LEN    0x100000
+#endif
+
 /* This is the true boot vector.  This device allows for direct
  * setting of the alternate reset vector, so we let it link wherever
  * it lands and extract its address in the loader.  This represents
  * the minimum amount of effort required to successfully call a C
  * function (and duplicates a few versions elsewhere in the tree:
- * really this should move to the arch layer).  Note that the stack
- * used is 15MB into the DRAM region and safe/unused by all devices.
- * But really this should be z_interrupt_stacks[0].
+ * really this should move to the arch layer).  The initial stack
+ * really should be the end of _interrupt_stacks[0]
  */
 __asm__(".align 4\n\t"
 	".global mtk_adsp_boot_entry\n\t"
@@ -38,7 +47,7 @@ __asm__(".align 4\n\t"
 	"  movi  a0, 1\n\t"
 	"  wsr   a0, WINDOWSTART\n\t"
 	"  rsync\n\t"
-	"  movi  a1, 0x60e00000\n\t"
+	"  movi  a1, " INIT_STACK "\n\t"
 	"  call4 c_boot\n\t");
 
 /* Initial MPU configuration, needed to enable caching */
@@ -109,8 +118,8 @@ static void enable_mpu(void)
  */
 int arch_printk_char_out(int c)
 {
-	char volatile * const buf = (void *)0x60700000;
-	const size_t max = 0x100000 - 4;
+	char volatile * const buf = (void *)LOG_BASE;
+	const size_t max = LOG_LEN - 4;
 	int volatile * const len = (int *)&buf[max];
 
 	if (*len < max) {
