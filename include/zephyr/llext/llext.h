@@ -339,16 +339,31 @@ int arch_elf_relocate(elf_rela_t *rel, uintptr_t loc,
 ssize_t llext_find_section(struct llext_loader *loader, const char *search_name);
 
 /**
- * @brief Architecture specific function for updating addresses via relocation table
+ * @brief Architecture specific function for local binding relocations
  *
  * @param[in] loader Extension loader data and context
  * @param[in] ext Extension to call function in
  * @param[in] rel Relocation data provided by elf
  * @param[in] sym Corresponding symbol table entry
- * @param[in] got_offset Offset within a relocation table
+ * @param[in] got_offset Offset within a relocation table or in the code
+ * @param[in] ldr_parm Loader parameters
  */
-void arch_elf_relocate_local(struct llext_loader *loader, struct llext *ext,
-			     const elf_rela_t *rel, const elf_sym_t *sym, size_t got_offset);
+void arch_elf_relocate_local(struct llext_loader *loader, struct llext *ext, const elf_rela_t *rel,
+			     const elf_sym_t *sym, size_t got_offset,
+			     const struct llext_load_param *ldr_parm);
+
+/**
+ * @brief Architecture specific function for global binding relocations
+ *
+ * @param[in] loader Extension loader data and context
+ * @param[in] ext Extension to call function in
+ * @param[in] rel Relocation data provided by elf
+ * @param[in] sym Corresponding symbol table entry
+ * @param[in] got_offset Offset within a relocation table or in the code
+ * @param[in] link_addr target address for table-based relocations
+ */
+void arch_elf_relocate_global(struct llext_loader *loader, struct llext *ext, const elf_rela_t *rel,
+			      const elf_sym_t *sym, size_t got_offset, const void *link_addr);
 
 /**
  * @}

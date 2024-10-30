@@ -33,7 +33,14 @@ __weak int arch_elf_relocate(elf_rela_t *rel, uintptr_t loc,
 }
 
 __weak void arch_elf_relocate_local(struct llext_loader *ldr, struct llext *ext,
-				    const elf_rela_t *rel, const elf_sym_t *sym, size_t got_offset)
+				    const elf_rela_t *rel, const elf_sym_t *sym, size_t got_offset,
+				    const struct llext_load_param *ldr_parm)
+{
+}
+
+__weak void arch_elf_relocate_global(struct llext_loader *ldr, struct llext *ext,
+				     const elf_rela_t *rel, const elf_sym_t *sym, size_t got_offset,
+				     const void *link_addr)
 {
 }
 
@@ -249,11 +256,12 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr
 			}
 
 			/* Resolve the symbol */
-			*(const void **)(text + got_offset) = link_addr;
+			arch_elf_relocate_global(ldr, ext, &rela, &sym, got_offset, link_addr);
 			break;
 		case STB_LOCAL:
 			if (ldr_parm->relocate_local) {
-				arch_elf_relocate_local(ldr, ext, &rela, &sym, got_offset);
+				arch_elf_relocate_local(ldr, ext, &rela, &sym, got_offset,
+							ldr_parm);
 			}
 		}
 
@@ -327,6 +335,11 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 			    strcmp(name, ".rela.dyn") == 0) {
 				tgt = NULL;
 			} else {
+				/*
+				 * Entries in .rel.X and .rela.X sections describe references in
+				 * section .X to local or global symbols. They point to entries
+				 * in the symbol table, describing respective symbols
+				 */
 				tgt = ldr->sect_hdrs + shdr->sh_info;
 			}
 
