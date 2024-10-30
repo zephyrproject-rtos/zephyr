@@ -86,8 +86,8 @@ static int sreq_set_address(struct usbd_context *const uds_ctx)
 	struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
 	struct udc_device_caps caps = udc_caps(uds_ctx->dev);
 
-	/* Not specified if wLength is non-zero, treat as error */
-	if (setup->wValue > 127 || setup->wLength) {
+	/* Not specified if wIndex or wLength is non-zero, treat as error */
+	if (setup->wValue > 127 || setup->wIndex || setup->wLength) {
 		errno = -ENOTSUP;
 		return 0;
 	}
