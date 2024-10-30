@@ -12,6 +12,16 @@
 
 LOG_MODULE_DECLARE(llext, CONFIG_LLEXT_LOG_LEVEL);
 
+/*
+ * ELF relocation tables on Xtensa contain relocations of different types. They
+ * specify how the relocation should be performed. Which relocations are used
+ * depends on the type of the ELF object (e.g. shared or partially linked
+ * object), structure of the object (single or multiple source files), compiler
+ * flags used (e.g. -fPIC), etc. Also not all relocation table entries should be
+ * acted upon. Some of them describe relocations that have already been
+ * resolved by the linker. We have to distinguish them from actionable
+ * relocations and only need to handle the latter ones.
+ */
 #define R_XTENSA_NONE           0
 #define R_XTENSA_32             1
 #define R_XTENSA_RTLD           2
@@ -19,71 +29,126 @@ LOG_MODULE_DECLARE(llext, CONFIG_LLEXT_LOG_LEVEL);
 #define R_XTENSA_JMP_SLOT       4
 #define R_XTENSA_RELATIVE       5
 #define R_XTENSA_PLT            6
+#define R_XTENSA_ASM_EXPAND	11
 #define R_XTENSA_SLOT0_OP	20
 
+static void xtensa_elf_relocate(struct llext_loader *ldr, struct llext *ext,
+				const elf_rela_t *rel, uint8_t *text, uintptr_t addr,
+				uint8_t *loc, int type, uint32_t stb)
+{
+	elf_word *got_entry = (elf_word *)loc;
+
+	switch (type) {
+	case R_XTENSA_RELATIVE:
+		/* Relocate a local symbol: Xtensa specific. Seems to only be used with PIC */
+		*got_entry += (uintptr_t)text - addr;
+		break;
+	case R_XTENSA_GLOB_DAT:
+	case R_XTENSA_JMP_SLOT:
+		if (stb == STB_GLOBAL) {
+			*got_entry = addr;
+		}
+		break;
+	case R_XTENSA_32:
+		/* Used for both LOCAL and GLOBAL bindings */
+		*got_entry += addr;
+		break;
+	case R_XTENSA_SLOT0_OP:
+		/* Apparently only actionable with LOCAL bindings */
+		;
+		elf_sym_t rsym;
+		int ret = llext_seek(ldr, ldr->sects[LLEXT_MEM_SYMTAB].sh_offset +
+				     ELF_R_SYM(rel->r_info) * sizeof(elf_sym_t));
+
+		if (!ret) {
+			ret = llext_read(ldr, &rsym, sizeof(elf_sym_t));
+		}
+		if (ret) {
+			LOG_ERR("Failed to read a symbol table entry, LLEXT linking might fail.");
+			return;
+		}
+
+		/*
+		 * So far in all observed use-cases
+		 * llext_loaded_sect_ptr(ldr, ext, rsym.st_shndx) was already
+		 * available as the "addr" argument of this function, supplied
+		 * by arch_elf_relocate_local() from its non-STT_SECTION branch.
+		 */
+		uintptr_t link_addr = (uintptr_t)llext_loaded_sect_ptr(ldr, ext, rsym.st_shndx) +
+			rsym.st_value + rel->r_addend;
+		ssize_t value = (link_addr - (((uintptr_t)got_entry + 3) & ~3)) >> 2;
+
+		/* Check the opcode */
+		if ((loc[0] & 0xf) == 1 && !loc[1] && !loc[2]) {
+			/* L32R: low nibble is 1 */
+			loc[1] = value & 0xff;
+			loc[2] = (value >> 8) & 0xff;
+		} else if ((loc[0] & 0xf) == 5 && !(loc[0] & 0xc0) && !loc[1] && !loc[2]) {
+			/* CALLn: low nibble is 5 */
+			loc[0] = (loc[0] & 0x3f) | ((value << 6) & 0xc0);
+			loc[1] = (value >> 2) & 0xff;
+			loc[2] = (value >> 10) & 0xff;
+		} else {
+			LOG_DBG("%p: unhandled OPC or no relocation %02x%02x%02x inf %#x offs %#x",
+				(void *)loc, loc[2], loc[1], loc[0],
+				rel->r_info, rel->r_offset);
+			break;
+		}
+
+		break;
+	case R_XTENSA_ASM_EXPAND:
+		/* Nothing to do */
+		break;
+	default:
+		LOG_DBG("Unsupported relocation type %u", type);
+
+		return;
+	}
+
+	LOG_DBG("Applied relocation to %#x type %u at %p",
+		*(uint32_t *)((uintptr_t)got_entry & ~3), type, (void *)got_entry);
+}
+
 /**
- * @brief Architecture specific function for relocating shared elf
- *
- * Elf files contain a series of relocations described in multiple sections.
- * These relocation instructions are architecture specific and each architecture
- * supporting modules must implement this.
+ * @brief Architecture specific function for STB_LOCAL ELF relocations
  */
-void arch_elf_relocate_local(struct llext_loader *ldr, struct llext *ext,
-			     const elf_rela_t *rel, const elf_sym_t *sym, size_t got_offset)
+void arch_elf_relocate_local(struct llext_loader *ldr, struct llext *ext, const elf_rela_t *rel,
+			     const elf_sym_t *sym, size_t got_offset,
+			     const struct llext_load_param *ldr_parm)
 {
 	uint8_t *text = ext->mem[LLEXT_MEM_TEXT];
+	uint8_t *loc = text + got_offset;
 	int type = ELF32_R_TYPE(rel->r_info);
-	elf_word *got_entry = (elf_word *)(text + got_offset);
 	uintptr_t sh_addr;
 
 	if (ELF_ST_TYPE(sym->st_info) == STT_SECTION) {
 		elf_shdr_t *shdr = llext_peek(ldr, ldr->hdr.e_shoff +
 					      sym->st_shndx * ldr->hdr.e_shentsize);
-		sh_addr = shdr->sh_addr ? : (uintptr_t)llext_peek(ldr, shdr->sh_offset);
+		sh_addr = shdr->sh_addr &&
+			(!ldr_parm->section_detached || !ldr_parm->section_detached(shdr)) ?
+			shdr->sh_addr : (uintptr_t)llext_peek(ldr, shdr->sh_offset);
 	} else {
 		sh_addr = ldr->sects[LLEXT_MEM_TEXT].sh_addr;
 	}
 
-	switch (type) {
-	case R_XTENSA_RELATIVE:
-		/* Relocate a local symbol: Xtensa specific */
-		*got_entry += (uintptr_t)text - sh_addr;
-		break;
-	case R_XTENSA_32:
-		*got_entry += sh_addr;
-		break;
-	case R_XTENSA_SLOT0_OP:
-		;
-		uint8_t *opc = (uint8_t *)got_entry;
+	xtensa_elf_relocate(ldr, ext, rel, text, sh_addr, loc, type, ELF_ST_BIND(sym->st_info));
+}
 
-		/* Check the opcode: is this an L32R? And does it have to be relocated? */
-		if ((opc[0] & 0xf) != 1 || opc[1] || opc[2])
-			break;
+/**
+ * @brief Architecture specific function for STB_GLOBAL ELF relocations
+ */
+void arch_elf_relocate_global(struct llext_loader *ldr, struct llext *ext, const elf_rela_t *rel,
+			      const elf_sym_t *sym, size_t got_offset, const void *link_addr)
+{
+	uint8_t *text = ext->mem[LLEXT_MEM_TEXT];
+	elf_word *got_entry = (elf_word *)(text + got_offset);
+	int type = ELF32_R_TYPE(rel->r_info);
 
-		elf_sym_t rsym;
-
-		int ret = llext_seek(ldr, ldr->sects[LLEXT_MEM_SYMTAB].sh_offset +
-				     ELF_R_SYM(rel->r_info) * sizeof(elf_sym_t));
-		if (!ret) {
-			ret = llext_read(ldr, &rsym, sizeof(elf_sym_t));
-		}
-		if (ret)
-			return;
-
-		uintptr_t link_addr = (uintptr_t)llext_loaded_sect_ptr(ldr, ext, rsym.st_shndx) +
-			rsym.st_value + rel->r_addend;
-
-		ssize_t value = (link_addr - (((uintptr_t)got_entry + 3) & ~3)) >> 2;
-
-		opc[1] = value & 0xff;
-		opc[2] = (value >> 8) & 0xff;
-
-		break;
-	default:
-		LOG_DBG("unsupported relocation type %u", type);
-
-		return;
+	/* For global relocations we expect the initial value for R_XTENSA_RELATIVE to be zero */
+	if (type == R_XTENSA_RELATIVE && *got_entry) {
+		LOG_WRN("global: non-zero relative value %#x", *got_entry);
 	}
 
-	LOG_DBG("relocation to %#x type %u at %p", *got_entry, type, (void *)got_entry);
+	xtensa_elf_relocate(ldr, ext, rel, text, (uintptr_t)link_addr, (uint8_t *)got_entry, type,
+			    ELF_ST_BIND(sym->st_info));
 }
