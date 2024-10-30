@@ -79,13 +79,16 @@ static int avctp_l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	struct net_buf *rsp;
 	struct bt_avctp *session = AVCTP_CHAN(chan);
 	struct bt_avctp_header *hdr = (void *)buf->data;
-	uint8_t tid = BT_AVCTP_HDR_GET_TRANSACTION_LABLE(hdr);
-	bt_avctp_cr_t cr = BT_AVCTP_HDR_GET_CR(hdr);
+	uint8_t tid;
+	bt_avctp_cr_t cr;
 
 	if (buf->len < sizeof(*hdr)) {
 		LOG_ERR("invalid AVCTP header received");
 		return -EINVAL;
 	}
+
+	tid = BT_AVCTP_HDR_GET_TRANSACTION_LABLE(hdr);
+	cr = BT_AVCTP_HDR_GET_CR(hdr);
 
 	switch (hdr->pid) {
 #if defined(CONFIG_BT_AVRCP)
