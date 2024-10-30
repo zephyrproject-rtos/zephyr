@@ -245,6 +245,9 @@ Drivers and Sensors
 
 * Flash
 
+  * Fixed SPI NOR driver issue where wp, hold and reset pins were incorrectly initialized from
+    device tee when SFDP at run-time has been enabled (:github:`80383`)
+
 * GNSS
 
 * GPIO
