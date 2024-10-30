@@ -255,7 +255,6 @@ zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_HOSTAPD_AP
 
 zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
   ${HOSTAP_SRC_BASE}/crypto/crypto_none.c
-  ${HOSTAP_SRC_BASE}/crypto/tls_none.c
 
   # FIXME: why do we need these when crypto is not selected?
   ${HOSTAP_SRC_BASE}/crypto/aes-wrap.c
@@ -288,6 +287,10 @@ zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_NO
 
 zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_WEP
   CONFIG_WEP
+)
+
+zephyr_library_sources_ifndef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+  ${HOSTAP_SRC_BASE}/crypto/tls_none.c
 )
 
 zephyr_library_sources_ifndef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
@@ -689,10 +692,6 @@ zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3
   ${HOSTAP_SRC_BASE}/crypto/sha256-kdf.c
 )
 
-zephyr_library_sources_ifndef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
-  ${HOSTAP_SRC_BASE}/crypto/tls_none.c
-)
-
 zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
   # common
   ${HOSTAP_SRC_BASE}/crypto/sha384-tlsprf.c
@@ -715,7 +714,6 @@ zephyr_include_directories(
 
 zephyr_library_sources(
   ${HOSTAP_SRC_BASE}/crypto/crypto_mbedtls_alt.c
-  ${HOSTAP_SRC_BASE}/crypto/tls_mbedtls_alt.c
   ${HOSTAP_SRC_BASE}/crypto/rc4.c
 )
 
@@ -730,6 +728,7 @@ zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
   ${HOSTAP_SRC_BASE}/crypto/sha1-internal.c
   ${HOSTAP_SRC_BASE}/crypto/fips_prf_internal.c
   ${HOSTAP_SRC_BASE}/crypto/milenage.c
+  ${HOSTAP_SRC_BASE}/crypto/tls_mbedtls_alt.c
 )
 
 zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_TEST
