@@ -98,10 +98,7 @@ struct llext_loader {
 	/** @cond ignore */
 	elf_ehdr_t hdr;
 	elf_shdr_t sects[LLEXT_MEM_COUNT];
-	elf_shdr_t *sect_hdrs;
-	bool sect_hdrs_on_heap;
 	struct llext_elf_sect_map *sect_map;
-	uint32_t sect_cnt;
 	/** @endcond */
 };
 

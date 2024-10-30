@@ -280,8 +280,8 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 	const char *name;
 	int i, ret;
 
-	for (i = 0; i < ldr->sect_cnt; ++i) {
-		elf_shdr_t *shdr = ldr->sect_hdrs + i;
+	for (i = 0; i < ext->sect_cnt; ++i) {
+		elf_shdr_t *shdr = ext->sect_hdrs + i;
 
 		/* find proper relocation sections */
 		switch (shdr->sh_type) {
@@ -308,7 +308,7 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 			continue;
 		}
 
-		if (shdr->sh_info >= ldr->sect_cnt ||
+		if (shdr->sh_info >= ext->sect_cnt ||
 		    shdr->sh_size % shdr->sh_entsize != 0) {
 			LOG_ERR("Sanity checks failed for section %d "
 				"(info %zd, size %zd, entsize %zd)", i,
@@ -340,7 +340,7 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 				 * section .X to local or global symbols. They point to entries
 				 * in the symbol table, describing respective symbols
 				 */
-				tgt = ldr->sect_hdrs + shdr->sh_info;
+				tgt = ext->sect_hdrs + shdr->sh_info;
 			}
 
 			llext_link_plt(ldr, ext, shdr, ldr_parm, tgt);
@@ -481,8 +481,8 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 
 	/* Detached section caches should be synchronized in place */
 	if (ldr_parm->section_detached) {
-		for (i = 0; i < ldr->sect_cnt; ++i) {
-			elf_shdr_t *shdr = ldr->sect_hdrs + i;
+		for (i = 0; i < ext->sect_cnt; ++i) {
+			elf_shdr_t *shdr = ext->sect_hdrs + i;
 
 			if (ldr_parm->section_detached(shdr)) {
 				void *base = llext_peek(ldr, shdr->sh_offset);

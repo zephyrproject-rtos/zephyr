@@ -120,7 +120,23 @@ struct llext {
 
 	/** Array of extensions, whose symbols this extension accesses */
 	struct llext *dependency[LLEXT_MAX_DEPENDENCIES];
+
+	/** @cond ignore */
+	unsigned int sect_cnt;
+	elf_shdr_t *sect_hdrs;
+	bool sect_hdrs_on_heap;
+	/** @endcond */
 };
+
+static inline const elf_shdr_t *llext_section_headers(const struct llext *ext)
+{
+	return ext->sect_hdrs;
+}
+
+static inline unsigned int llext_section_count(const struct llext *ext)
+{
+	return ext->sect_cnt;
+}
 
 /**
  * @brief Advanced llext_load parameters
