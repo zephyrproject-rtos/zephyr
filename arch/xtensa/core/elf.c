@@ -10,7 +10,7 @@
 #include <zephyr/llext/loader.h>
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_DECLARE(llext);
+LOG_MODULE_DECLARE(llext, CONFIG_LLEXT_LOG_LEVEL);
 
 #define R_XTENSA_NONE           0
 #define R_XTENSA_32             1
