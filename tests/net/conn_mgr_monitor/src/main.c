@@ -24,8 +24,9 @@
 #include <zephyr/logging/log.h>
 
 /* Time to wait for NET_MGMT events to finish firing */
-#define EVENT_WAIT_TIME_SHORT K_MSEC(10)
-#define EVENT_WAIT_TIME       K_MSEC(200)
+#define EVENT_WAIT_TIME_SHORT  K_MSEC(10)
+#define EVENT_WAIT_TIME_MEDIUM K_MSEC(100)
+#define EVENT_WAIT_TIME        K_MSEC(200)
 
 
 /* Time to wait for IPv6 DAD-gated events to finish.
@@ -622,7 +623,7 @@ static void cycle_iface_states(struct net_if *iface, enum ip_order ifa_ipm)
 	zassert_equal(net_if_up(iface), 0, "net_if_up should succeed.");
 
 	/* Verify that no events have been fired yet */
-	k_sleep(EVENT_WAIT_TIME_SHORT);
+	k_sleep(EVENT_WAIT_TIME_MEDIUM);
 	stats = get_reset_stats();
 	zassert_equal(stats.event_count_gen, 0,
 		"No events should be fired if connectivity availability did not change.");
@@ -652,7 +653,6 @@ static void cycle_iface_states(struct net_if *iface, enum ip_order ifa_ipm)
 			"No IPv6 events should be fired when IPv4 connectivity is gained.");
 		zassert_equal(stats.conn_iface_gen, iface, "The test iface should be blamed.");
 		zassert_equal(stats.conn_iface_ipv4, iface, "The test iface should be blamed.");
-
 
 		/* Add IPv6 */
 		net_if_ipv6_addr_add(iface, &test_ipv6_a, NET_ADDR_MANUAL, 0);
