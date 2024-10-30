@@ -86,7 +86,7 @@ static int mcux_iuart_fifo_fill(const struct device *dev,
 				int len)
 {
 	const struct mcux_iuart_config *config = dev->config;
-	uint8_t num_tx = 0U;
+	int num_tx = 0U;
 
 	while ((len - num_tx > 0) &&
 	       (UART_GetStatusFlag(config->base, kUART_TxEmptyFlag))) {
@@ -101,7 +101,7 @@ static int mcux_iuart_fifo_read(const struct device *dev, uint8_t *rx_data,
 				const int len)
 {
 	const struct mcux_iuart_config *config = dev->config;
-	uint8_t num_rx = 0U;
+	int num_rx = 0U;
 
 	while ((len - num_rx > 0) &&
 	       (UART_GetStatusFlag(config->base, kUART_RxDataReadyFlag))) {
