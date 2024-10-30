@@ -85,3 +85,11 @@ tests:
       - EXTRA_DTC_OVERLAY_FILE="multilevel_irq.overlay"
     extra_configs:
       - CONFIG_TEST_MULTILEVEL_IRQ=y
+  arch.interrupt.multilevel_l3:
+    filter: CONFIG_MULTI_LEVEL_INTERRUPTS
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="multilevel_irq.overlay"
+    extra_configs:
+      - CONFIG_TEST_MULTILEVEL_IRQ=y
+      - CONFIG_3RD_LEVEL_INTERRUPTS=y
+      - CONFIG_3RD_LEVEL_INTERRUPT_BITS=11
