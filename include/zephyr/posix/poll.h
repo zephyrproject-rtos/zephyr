@@ -12,6 +12,8 @@
 extern "C" {
 #endif
 
+typedef	unsigned int nfds_t;
+
 #define pollfd zsock_pollfd
 
 #define POLLIN ZSOCK_POLLIN
