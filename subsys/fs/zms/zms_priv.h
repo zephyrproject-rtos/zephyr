@@ -8,15 +8,11 @@
 #ifndef __ZMS_PRIV_H_
 #define __ZMS_PRIV_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /*
- * MASKS AND SHIFT FOR ADDRESSES
- * an address in zms is an uint64_t where:
- *   high 4 bytes represent the sector number
- *   low 4 bytes represent the offset in a sector
+ * MASKS AND SHIFT FOR ADDRESSES.
+ * An address in zms is an uint64_t where:
+ * - high 4 bytes represent the sector number
+ * - low 4 bytes represent the offset in a sector
  */
 #define ADDR_SECT_MASK   GENMASK64(63, 32)
 #define ADDR_SECT_SHIFT  32
@@ -44,34 +40,40 @@ extern "C" {
 #define ZMS_INVALID_SECTOR_NUM -1
 #define ZMS_DATA_IN_ATE_SIZE   8
 
+/**
+ * @ingroup zms_data_structures
+ * ZMS Allocation Table Entry (ATE) structure
+ */
 struct zms_ate {
-	uint8_t crc8;      /* crc8 check of the entry */
-	uint8_t cycle_cnt; /* cycle counter for non erasable devices */
-	uint16_t len;      /* data len within sector */
-	uint32_t id;       /* data id */
+	/** crc8 check of the entry */
+	uint8_t crc8;
+	/** cycle counter for non erasable devices */
+	uint8_t cycle_cnt;
+	/** data len within sector */
+	uint16_t len;
+	/** data id */
+	uint32_t id;
 	union {
-		uint8_t data[8]; /* used to store small size data */
+		/** data field used to store small sized data */
+		uint8_t data[8];
 		struct {
-			uint32_t offset; /* data offset within sector */
+			/** data offset within sector */
+			uint32_t offset;
 			union {
-				uint32_t data_crc; /*
-						    * crc for data: The data CRC is checked only
-						    * when the whole data of the element is read.
-						    * The data CRC is not checked for a partial
-						    * read, as it is computed for the complete
-						    * set of data.
-						    */
-				uint32_t metadata; /*
-						    * Used to store metadata information
-						    * such as storage version.
-						    */
+				/**
+				 * crc for data: The data CRC is checked only when the whole data
+				 * of the element is read.
+				 * The data CRC is not checked for a partial read, as it is computed
+				 * for the complete set of data.
+				 */
+				uint32_t data_crc;
+				/**
+				 * Used to store metadata information such as storage version.
+				 */
+				uint32_t metadata;
 			};
 		};
 	};
 } __packed;
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* __ZMS_PRIV_H_ */
