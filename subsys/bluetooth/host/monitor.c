@@ -150,7 +150,15 @@ static void poll_out(char c)
 }
 #elif defined(CONFIG_BT_DEBUG_MONITOR_UART)
 static const struct device *const monitor_dev =
+#if DT_HAS_CHOSEN(zephyr_bt_mon_uart)
 	DEVICE_DT_GET(DT_CHOSEN(zephyr_bt_mon_uart));
+#elif !defined(CONFIG_UART_CONSOLE) && DT_HAS_CHOSEN(zephyr_console)
+	/* Fall back to console UART if it's available */
+	DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
+#else
+	NULL;
+#error "BT_DEBUG_MONITOR_UART enabled but no UART specified"
+#endif
 
 static void poll_out(char c)
 {
