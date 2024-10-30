@@ -113,6 +113,49 @@ int bt_avctp_disconnect(struct bt_avctp *session)
 	return bt_l2cap_chan_disconnect(&session->br_chan.chan);
 }
 
+struct net_buf *bt_avctp_create_pdu(struct bt_avctp *session, bt_avctp_cr_t cr,
+				    bt_avctp_ipid_t ipid, uint8_t *tid, uint16_t pid)
+{
+	struct net_buf *buf;
+	struct bt_avctp_header *hdr;
+
+	LOG_DBG("");
+
+	buf = bt_l2cap_create_pdu(NULL, 0);
+	if (!buf) {
+		LOG_ERR("No buff available");
+		return buf;
+	}
+
+	hdr = net_buf_add(buf, sizeof(*hdr));
+	hdr->cr = cr;
+	hdr->ipid = ipid;
+	hdr->pkt_type = BT_AVCTP_PKT_TYPE_SINGLE;
+	hdr->tid = *tid;
+	hdr->pid = pid;
+
+	if (cr == BT_AVCTP_CMD) {
+		*tid = (*tid + 1) & 0x0F; /* Incremented by one */
+	}
+
+	LOG_DBG("cr:0x%X, tid:0x%02X", hdr->cr, hdr->tid);
+	return buf;
+}
+
+int bt_avctp_send(struct bt_avctp *session, struct net_buf *buf)
+{
+	int err;
+
+	err = bt_l2cap_chan_send(&session->br_chan.chan, buf);
+	if (err < 0) {
+		net_buf_unref(buf);
+		LOG_ERR("L2CAP send fail err = %d", err);
+		return err;
+	}
+
+	return err;
+}
+
 int bt_avctp_register(const struct bt_avctp_event_cb *cb)
 {
 	LOG_DBG("");
@@ -127,7 +170,7 @@ int bt_avctp_register(const struct bt_avctp_event_cb *cb)
 }
 
 static int avctp_l2cap_accept(struct bt_conn *conn, struct bt_l2cap_server *server,
-	struct bt_l2cap_chan **chan)
+			      struct bt_l2cap_chan **chan)
 {
 	/* TODO */
 
