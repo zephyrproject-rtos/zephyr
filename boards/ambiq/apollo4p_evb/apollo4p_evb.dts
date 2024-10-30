@@ -63,6 +63,12 @@
 	status = "okay";
 };
 
+&itm {
+	pinctrl-0 = <&itm_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &adc0 {
 compatible = "ambiq,adc";
 	pinctrl-0 = <&adc0_default>;
