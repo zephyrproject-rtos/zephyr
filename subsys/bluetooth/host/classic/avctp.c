@@ -19,6 +19,7 @@
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/l2cap.h>
+#include <zephyr/bluetooth/classic/sdp.h>
 
 #include "avctp_internal.h"
 #include "host/hci_core.h"
@@ -75,11 +76,34 @@ static void avctp_l2cap_encrypt_changed(struct bt_l2cap_chan *chan, uint8_t stat
 
 static int avctp_l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
-	LOG_DBG("");
+	struct net_buf *rsp;
+	struct bt_avctp *session = AVCTP_CHAN(chan);
+	struct bt_avctp_header *hdr = (void *)buf->data;
 
-	/* TODO */
+	if (buf->len < sizeof(*hdr)) {
+		LOG_ERR("invalid AVCTP header received");
+		return -EINVAL;
+	}
 
-	return -ENOTSUP;
+	switch (hdr->pid) {
+#if defined(CONFIG_BT_AVRCP)
+	case sys_cpu_to_be16(BT_SDP_AV_REMOTE_SVCLASS):
+		break;
+#endif
+	default:
+		LOG_ERR("unsupported AVCTP PID received: 0x%04x", sys_be16_to_cpu(hdr->pid));
+		if (hdr->cr == BT_AVCTP_CMD) {
+			rsp = bt_avctp_create_pdu(session, BT_AVCTP_RESPONSE,
+				BT_AVCTP_IPID_INVALID, &hdr->tid, hdr->pid);
+			if (!rsp) {
+				return -ENOMEM;
+			}
+			return bt_avctp_send(session, rsp);
+		}
+		return 0; /* No need to report to the upper layer */
+	}
+
+	return session->ops->recv(session, buf);
 }
 
 int bt_avctp_connect(struct bt_conn *conn, struct bt_avctp *session)
