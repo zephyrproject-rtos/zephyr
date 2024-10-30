@@ -2,8 +2,6 @@ common:
   tags: llext
   platform_exclude:
     # platforms with active issues
-    - apollo4p_evb            # See #73443
-    - apollo4p_blue_kxr_evb   # See #73443
     - numaker_pfm_m487        # See #63167
     - s32z2xxdc2/s32z270/rtu0 # See commit 18a0660
     - s32z2xxdc2/s32z270/rtu1 # See commit 18a0660
@@ -35,7 +33,7 @@ tests:
   # subsystem (storage type, ELF type, MPU/MMU etc)
   llext.simple.readonly:
     arch_allow: arm riscv # Xtensa needs writable storage
-    filter: not CONFIG_MPU and not CONFIG_MMU and not CONFIG_SOC_SERIES_S32ZE
+    filter: not CONFIG_MPU and not CONFIG_MMU
     extra_configs:
       - arch:arm:CONFIG_ARM_MPU=n
       - arch:arm:CONFIG_ARM_AARCH32_MMU=n
@@ -59,7 +57,7 @@ tests:
     arch_allow: arm xtensa riscv
     integration_platforms:
       - qemu_xtensa/dc233c      # Xtensa ISA
-    filter: not CONFIG_MPU and not CONFIG_MMU and not CONFIG_SOC_SERIES_S32ZE
+    filter: not CONFIG_MPU and not CONFIG_MMU
     extra_configs:
       - arch:arm:CONFIG_ARM_MPU=n
       - arch:arm:CONFIG_ARM_AARCH32_MMU=n
@@ -83,7 +81,7 @@ tests:
     arch_allow: arm xtensa riscv
     integration_platforms:
       - qemu_xtensa/dc233c      # Xtensa ISA
-    filter: not CONFIG_MPU and not CONFIG_MMU and not CONFIG_SOC_SERIES_S32ZE
+    filter: not CONFIG_MPU and not CONFIG_MMU
     extra_configs:
       - arch:arm:CONFIG_ARM_MPU=n
       - arch:arm:CONFIG_ARM_AARCH32_MMU=n
