@@ -24,6 +24,14 @@
 			compatible = "arm,cortex-m4f";
 			reg = <0>;
 			cpu-power-states = <&idle &suspend_to_ram>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			itm: itm@e0000000 {
+				compatible = "arm,armv7m-itm";
+				reg = <0xe0000000 0x1000>;
+				swo-ref-frequency = <DT_FREQ_M(6)>;
+			};
 		};
 
 		power-states {
