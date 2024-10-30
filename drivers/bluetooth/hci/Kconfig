@@ -146,6 +146,15 @@ config BT_PSOC6_BLESS
 	  PSOC 6 BLESS driver with BLE Controller which operates in
 	  Single CPU mode.
 
+config BT_DA1453X
+	bool "DA1453x HCI driver"
+	default y
+	depends on DT_HAS_RENESAS_BT_HCI_DA1453X_ENABLED
+	select GPIO
+	help
+	  Bluetooth HCI driver for communication with controller
+	  running on DA1453x MCU.
+
 config BT_DA1469X
 	bool
 	default y
