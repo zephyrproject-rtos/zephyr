@@ -187,13 +187,6 @@ static void configure_nocache_region(void)
 }
 #endif /* CONFIG_NOCACHE_MEMORY */
 
-/*
- * @brief Init PMA CSRs of each CPU core
- *
- * In SMP, each CPU has it's own PMA CSR and PMA CSR only affect one CPU.
- * We should configure CSRs of all CPUs to make memory attribute
- * (e.g. uncacheable) affects all CPUs.
- */
 void pma_init_per_core(void)
 {
 #ifdef CONFIG_NOCACHE_MEMORY
@@ -218,6 +211,4 @@ void soc_early_init_hook(void)
 #endif
 		return;
 	}
-
-	pma_init_per_core();
 }
