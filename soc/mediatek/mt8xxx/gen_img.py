@@ -21,9 +21,6 @@ import elftools.elf.sections
 
 FILE_MAGIC = 0xe463be95
 
-DRAM_START = 0x60000000
-DRAM_END   = 0x61100000
-
 elf_file = sys.argv[1]
 out_file = sys.argv[2]
 
@@ -31,7 +28,6 @@ ef = elftools.elf.elffile.ELFFile(open(elf_file, "rb"))
 
 sram = bytearray()
 dram = bytearray()
-
 
 # Returns the offset of a segment within the sram region, or -1 if it
 # doesn't appear to be SRAM.  SRAM is mapped differently for different
@@ -50,16 +46,24 @@ def sram_off(addr):
     assert off < 0x100000
     return off
 
+# Similar heuristics: current platforms put DRAM either at 0x60000000
+# or 0x90000000 with no more than 16M of range
+def dram_off(addr):
+    if (addr >> 28 not in [6, 9]) or (addr & 0x0f000000 != 0):
+        return -1
+    return addr & 0xffffff
+
 for seg in ef.iter_segments():
     h = seg.header
     if h.p_type == "PT_LOAD":
         soff = sram_off(h.p_paddr)
+        doff = dram_off(h.p_paddr)
         if soff >= 0:
             buf = sram
             off = soff
-        elif h.p_paddr in range(DRAM_START, DRAM_END):
+        elif doff >= 0:
             buf = dram
-            off = h.p_paddr - DRAM_START
+            off = doff
         else:
             print(f"Invalid PT_LOAD address {h.p_paddr:x}")
             sys.exit(1)
@@ -78,9 +82,6 @@ for sec in ef.iter_sections():
         for sym in sec.iter_symbols():
             if sym.name == "mtk_adsp_boot_entry":
                 boot_vector = sym.entry['st_value']
-
-assert len(dram) < DRAM_END - DRAM_START
-assert (sram_off(boot_vector) >= 0) or (DRAM_START <= boot_vector < DRAM_END)
 
 of = open(out_file, "wb")
 of.write(struct.pack("<III", FILE_MAGIC, len(sram), boot_vector))

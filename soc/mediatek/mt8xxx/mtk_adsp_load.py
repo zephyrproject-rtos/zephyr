@@ -2,6 +2,7 @@
 # Copyright 2023 The ChromiumOS Authors
 # SPDX-License-Identifier: Apache-2.0
 import ctypes
+import os
 import sys
 import mmap
 import time
@@ -61,7 +62,8 @@ def mappings():
     maps = { n : (regs[2*i], regs[2*i+1]) for i, n in enumerate(rnames) }
     for i, ph in enumerate(struct.unpack(">II", readfile(path + "memory-region"))):
         for rmem in glob("/proc/device-tree/reserved-memory/*/"):
-            if struct.unpack(">I", readfile(rmem + "phandle"))[0] == ph:
+            phf = rmem + "phandle"
+            if os.path.exists(phf) and struct.unpack(">I", readfile(phf))[0] == ph:
                 (addr, sz) = struct.unpack(">QQ", readfile(rmem + "reg"))
                 maps[f"dram{i}"] = (addr, sz)
                 break
@@ -79,6 +81,9 @@ class MT8195():
         r.EMI_MAP_ADDR  = 0x981c # == host SRAM mapping - 0x40000000 (controls MMIO map?)
         r.freeze()
         self.cfg = r
+
+    def logrange(self):
+        return range(0x700000, 0x800000)
 
     def stop(self):
         self.cfg.RESET_SW |= 8 # Set RUNSTALL: halt CPU
@@ -106,6 +111,9 @@ class MT818x():
         self.sec.ALTVECSEL = 0x0c
         self.sec.freeze()
 
+    def logrange(self):
+        return range(0x700000, 0x800000)
+
     def stop(self):
         self.cfg.IO_CONFIG |= (1<<31) # Set RUNSTALL to stop core
         time.sleep(0.1)
@@ -125,10 +133,10 @@ class MT818x():
 # stream at 0x60700000 -- the top of the linkable region of
 # existing SOF firmware, before the heap.  Nothing uses this
 # currently.  Will be replaced by winstream very soon.
-def log():
+def log(dev):
     msg = b''
     dram = maps["dram1"]
-    for i in range(0x700000, 0x800000):
+    for i in dev.logrange():
         x = dram[i]
         if x == 0:
             sys.stdout.buffer.write(msg)
@@ -210,10 +218,10 @@ def main():
         for i in range(len(dram), mmio["dram1"][1]):
             maps["dram1"][i] = 0
         dev.start(boot_vector)
-        log()
+        log(dev)
 
     elif sys.argv[1] == "log":
-        log()
+        log(dev)
 
     elif sys.argv[1] == "dump":
         sz = mmio[sys.argv[2]][1]
