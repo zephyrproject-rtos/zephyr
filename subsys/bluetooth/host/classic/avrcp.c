@@ -18,6 +18,7 @@
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/classic/avrcp.h>
+#include <zephyr/bluetooth/classic/sdp.h>
 #include <zephyr/bluetooth/l2cap.h>
 
 #include "host/hci_core.h"
@@ -38,6 +39,154 @@ struct bt_avrcp {
 
 static const struct bt_avrcp_cb *avrcp_cb;
 static struct bt_avrcp avrcp_connection[CONFIG_BT_MAX_CONN];
+
+#if defined(CONFIG_BT_AVRCP_TARGET)
+static struct bt_sdp_attribute avrcp_tg_attrs[] = {
+	BT_SDP_NEW_SERVICE,
+	BT_SDP_LIST(
+		BT_SDP_ATTR_SVCLASS_ID_LIST,
+		BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 3),
+		BT_SDP_DATA_ELEM_LIST(
+		{
+			BT_SDP_TYPE_SIZE(BT_SDP_UUID16),
+			BT_SDP_ARRAY_16(BT_SDP_AV_REMOTE_TARGET_SVCLASS)
+		},
+		)
+	),
+	BT_SDP_LIST(
+		BT_SDP_ATTR_PROTO_DESC_LIST,
+		BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 16),
+		BT_SDP_DATA_ELEM_LIST(
+		{
+			BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 6),
+			BT_SDP_DATA_ELEM_LIST({BT_SDP_TYPE_SIZE(BT_SDP_UUID16),
+			BT_SDP_ARRAY_16(BT_SDP_PROTO_L2CAP)},
+			{
+				BT_SDP_TYPE_SIZE(BT_SDP_UINT16),
+				BT_SDP_ARRAY_16(BT_UUID_AVCTP_VAL)
+			},
+			)
+		},
+		{
+			BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 6),
+			BT_SDP_DATA_ELEM_LIST(
+			{
+				BT_SDP_TYPE_SIZE(BT_SDP_UUID16),
+				BT_SDP_ARRAY_16(BT_UUID_AVCTP_VAL)
+			},
+			{
+				BT_SDP_TYPE_SIZE(BT_SDP_UINT16),
+				BT_SDP_ARRAY_16(AVCTP_VER_1_4)
+			},
+			)
+		},
+		)
+	),
+	/* C1: Browsing not supported */
+	/* C2: Cover Art not supported */
+	BT_SDP_LIST(
+		BT_SDP_ATTR_PROFILE_DESC_LIST,
+		BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 8),
+		BT_SDP_DATA_ELEM_LIST(
+		{
+			BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 6),
+			BT_SDP_DATA_ELEM_LIST(
+			{
+				BT_SDP_TYPE_SIZE(BT_SDP_UUID16),
+				BT_SDP_ARRAY_16(BT_SDP_AV_REMOTE_SVCLASS)
+			},
+			{
+				BT_SDP_TYPE_SIZE(BT_SDP_UINT16),
+				BT_SDP_ARRAY_16(AVRCP_VER_1_6)
+			},
+			)
+		},
+		)
+	),
+	BT_SDP_SUPPORTED_FEATURES(AVRCP_CAT_1 | AVRCP_CAT_2),
+	/* O: Provider Name not presented */
+	BT_SDP_SERVICE_NAME("AVRCP Target"),
+};
+
+static struct bt_sdp_record avrcp_tg_rec = BT_SDP_RECORD(avrcp_tg_attrs);
+#endif /* CONFIG_BT_AVRCP_TARGET */
+
+#if defined(CONFIG_BT_AVRCP_CONTROLLER)
+static struct bt_sdp_attribute avrcp_ct_attrs[] = {
+	BT_SDP_NEW_SERVICE,
+	BT_SDP_LIST(
+		BT_SDP_ATTR_SVCLASS_ID_LIST,
+		BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 6),
+		BT_SDP_DATA_ELEM_LIST(
+		{
+			BT_SDP_TYPE_SIZE(BT_SDP_UUID16),
+			BT_SDP_ARRAY_16(BT_SDP_AV_REMOTE_SVCLASS)
+		},
+		{
+			BT_SDP_TYPE_SIZE(BT_SDP_UUID16),
+			BT_SDP_ARRAY_16(BT_SDP_AV_REMOTE_CONTROLLER_SVCLASS)
+		},
+		)
+	),
+	BT_SDP_LIST(
+		BT_SDP_ATTR_PROTO_DESC_LIST,
+		BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 16),
+		BT_SDP_DATA_ELEM_LIST(
+		{
+			BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 6),
+			BT_SDP_DATA_ELEM_LIST(
+			{
+				BT_SDP_TYPE_SIZE(BT_SDP_UUID16),
+				BT_SDP_ARRAY_16(BT_SDP_PROTO_L2CAP)
+			},
+			{
+				BT_SDP_TYPE_SIZE(BT_SDP_UINT16),
+				BT_SDP_ARRAY_16(BT_UUID_AVCTP_VAL)
+			},
+			)
+		},
+		{
+			BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 6),
+			BT_SDP_DATA_ELEM_LIST(
+			{
+				BT_SDP_TYPE_SIZE(BT_SDP_UUID16),
+				BT_SDP_ARRAY_16(BT_UUID_AVCTP_VAL)
+			},
+			{
+				BT_SDP_TYPE_SIZE(BT_SDP_UINT16),
+				BT_SDP_ARRAY_16(AVCTP_VER_1_4)
+			},
+			)
+		},
+		)
+	),
+	/* C1: Browsing not supported */
+	BT_SDP_LIST(
+		BT_SDP_ATTR_PROFILE_DESC_LIST,
+		BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 8),
+		BT_SDP_DATA_ELEM_LIST(
+		{
+			BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 6),
+			BT_SDP_DATA_ELEM_LIST(
+			{
+				BT_SDP_TYPE_SIZE(BT_SDP_UUID16),
+				BT_SDP_ARRAY_16(BT_SDP_AV_REMOTE_SVCLASS)
+			},
+			{
+				BT_SDP_TYPE_SIZE(BT_SDP_UINT16),
+				BT_SDP_ARRAY_16(AVRCP_VER_1_6)
+			},
+			)
+		},
+		)
+	),
+	BT_SDP_SUPPORTED_FEATURES(AVRCP_CAT_1 | AVRCP_CAT_2),
+	/* O: Provider Name not presented */
+	BT_SDP_SERVICE_NAME("AVRCP Controller"),
+};
+
+static struct bt_sdp_record avrcp_ct_rec = BT_SDP_RECORD(avrcp_ct_attrs);
+#endif /* CONFIG_BT_AVRCP_CONTROLLER */
 
 static struct bt_avrcp *get_new_connection(struct bt_conn *conn)
 {
@@ -109,6 +258,14 @@ int bt_avrcp_init(void)
 		LOG_ERR("AVRCP registration failed");
 		return err;
 	}
+
+#if defined(CONFIG_BT_AVRCP_TARGET)
+	bt_sdp_register_service(&avrcp_tg_rec);
+#endif /* CONFIG_BT_AVRCP_CONTROLLER */
+
+#if defined(CONFIG_BT_AVRCP_CONTROLLER)
+	bt_sdp_register_service(&avrcp_ct_rec);
+#endif /* CONFIG_BT_AVRCP_CONTROLLER */
 
 	LOG_DBG("AVRCP Initialized successfully.");
 	return 0;
