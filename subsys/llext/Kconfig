@@ -49,6 +49,16 @@ config LLEXT_HEAP_SIZE
 	help
 	  Heap size in kilobytes available to llext for dynamic allocation
 
+config LLEXT_BUILD_PIC
+	bool "Use -fPIC when building LLEXT"
+	depends on XTENSA
+	default y if LLEXT_TYPE_ELF_SHAREDLIB
+	help
+	  By default LLEXT compilation is performed with -fno-pic -fno-pie compiler
+	  flags. Some platforms can benefit from using -fPIC instead, in which case
+	  most internal linking is performed by the linker at build time. Select "y"
+	  to make use of that advantage.
+
 config LLEXT_SHELL
 	bool "llext shell commands"
 	depends on SHELL
