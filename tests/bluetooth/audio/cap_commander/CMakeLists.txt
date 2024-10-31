@@ -19,4 +19,5 @@ target_sources(testbinary
     src/test_vcp.c
     src/test_micp.c
     src/test_broadcast_reception.c
+    src/test_distribute_broadcast_code.c
 )

@@ -671,10 +671,185 @@ int bt_cap_commander_broadcast_reception_stop(
 	return 0;
 }
 
+static void cap_commander_broadcast_assistant_set_broadcast_code_cb(struct bt_conn *conn, int err)
+{
+	struct bt_cap_common_proc *active_proc = bt_cap_common_get_active_proc();
+
+	LOG_DBG("conn %p", (void *)conn);
+
+	if (!bt_cap_common_conn_in_active_proc(conn)) {
+		/* State change happened outside of a procedure; ignore */
+		return;
+	}
+
+	if (err != 0) {
+		LOG_DBG("Failed to distribute broadcast code: %d", err);
+
+		bt_cap_common_abort_proc(conn, err);
+	} else {
+		active_proc->proc_done_cnt++;
+
+		LOG_DBG("Conn %p broadcast code set (%zu/%zu done)", (void *)conn,
+			active_proc->proc_done_cnt, active_proc->proc_cnt);
+	}
+
+	if (bt_cap_common_proc_is_aborted()) {
+		if (bt_cap_common_proc_all_handled()) {
+			cap_commander_proc_complete();
+		}
+
+		return;
+	}
+
+	if (!bt_cap_common_proc_is_done()) {
+		struct bt_cap_commander_proc_param *proc_param;
+
+		proc_param = &active_proc->proc_param.commander[active_proc->proc_done_cnt];
+		conn = proc_param->conn;
+
+		active_proc->proc_initiated_cnt++;
+		err = bt_bap_broadcast_assistant_set_broadcast_code(
+			conn, proc_param->distribute_broadcast_code.src_id,
+			proc_param->distribute_broadcast_code.broadcast_code);
+		if (err != 0) {
+			LOG_DBG("Failed to perform set broadcast code for conn %p: %d",
+				(void *)conn, err);
+			bt_cap_common_abort_proc(conn, err);
+			cap_commander_proc_complete();
+		}
+	} else {
+		cap_commander_proc_complete();
+	}
+}
+
+static bool valid_distribute_broadcast_code_param(
+	const struct bt_cap_commander_distribute_broadcast_code_param *param)
+{
+	CHECKIF(param == NULL) {
+		LOG_DBG("param is NULL");
+		return false;
+	}
+
+	CHECKIF(param->count == 0) {
+		LOG_DBG("Invalid param->count: %zu", param->count);
+		return false;
+	}
+
+	CHECKIF(param->count > CONFIG_BT_MAX_CONN) {
+		LOG_DBG("param->count (%zu) is larger than CONFIG_BT_MAX_CONN (%d)", param->count,
+			CONFIG_BT_MAX_CONN);
+		return false;
+	}
+
+	CHECKIF(param->param == NULL) {
+		LOG_DBG("param->param is NULL");
+		return false;
+	}
+
+	for (size_t i = 0; i < param->count; i++) {
+		const union bt_cap_set_member *member = &param->param[i].member;
+		const struct bt_conn *member_conn =
+			bt_cap_common_get_member_conn(param->type, member);
+
+		if (member == NULL) {
+			LOG_DBG("param->param[%zu].member is NULL", i);
+			return false;
+		}
+
+		if (member_conn == NULL) {
+			LOG_DBG("Invalid param->param[%zu].member", i);
+			return false;
+		}
+
+		for (size_t j = 0U; j < i; j++) {
+			const union bt_cap_set_member *other = &param->param[j].member;
+			const struct bt_conn *other_conn =
+				bt_cap_common_get_member_conn(param->type, other);
+
+			if (other_conn == member_conn) {
+				LOG_DBG("param->param[%zu].member.member (%p) is duplicated by "
+					"param->member[%zu].member.member (%p)",
+					j, (void *)other_conn, i, (void *)member_conn);
+				return false;
+			}
+		}
+	}
+
+	return true;
+}
+
 int bt_cap_commander_distribute_broadcast_code(
 	const struct bt_cap_commander_distribute_broadcast_code_param *param)
 {
-	return -ENOSYS;
+	struct bt_cap_commander_proc_param *proc_param;
+	struct bt_cap_common_proc *active_proc;
+	struct bt_conn *conn;
+	int err;
+
+	if (bt_cap_common_proc_is_active()) {
+		LOG_DBG("A CAP procedure is already in progress");
+
+		return -EBUSY;
+	}
+
+	if (!valid_distribute_broadcast_code_param(param)) {
+		return -EINVAL;
+	}
+
+	bt_cap_common_start_proc(BT_CAP_COMMON_PROC_TYPE_DISTRIBUTE_BROADCAST_CODE, param->count);
+
+	broadcast_assistant_cb.broadcast_code =
+		cap_commander_broadcast_assistant_set_broadcast_code_cb;
+	if (!broadcast_assistant_cb_registered &&
+	    cap_commander_register_broadcast_assistant_cb() != 0) {
+		LOG_DBG("Failed to register broadcast assistant callbacks");
+
+		return -ENOEXEC;
+	}
+
+	active_proc = bt_cap_common_get_active_proc();
+
+	for (size_t i = 0U; i < param->count; i++) {
+		const struct bt_cap_commander_distribute_broadcast_code_member_param *member_param =
+			&param->param[i];
+		struct bt_cap_commander_proc_param *stored_param;
+		struct bt_conn *member_conn =
+			bt_cap_common_get_member_conn(param->type, &member_param->member);
+
+		if (member_conn == NULL) {
+			LOG_DBG("Invalid param->member[%zu]", i);
+
+			return -EINVAL;
+		}
+
+		/* Store the necessary parameters as we cannot assume that the
+		 * supplied parameters are kept valid
+		 */
+		stored_param = &active_proc->proc_param.commander[i];
+		stored_param->conn = member_conn;
+		stored_param->distribute_broadcast_code.src_id = member_param->src_id;
+		memcpy(stored_param->distribute_broadcast_code.broadcast_code,
+		       param->broadcast_code, BT_ISO_BROADCAST_CODE_SIZE);
+	}
+
+	active_proc->proc_initiated_cnt++;
+
+	proc_param = &active_proc->proc_param.commander[0];
+
+	conn = proc_param->conn;
+
+	err = bt_bap_broadcast_assistant_set_broadcast_code(
+		conn, proc_param->distribute_broadcast_code.src_id,
+		proc_param->distribute_broadcast_code.broadcast_code);
+
+	if (err != 0) {
+		LOG_DBG("Failed to start distribute broadcast code for conn %p: %d", (void *)conn,
+			err);
+
+		return -ENOEXEC;
+	}
+
+	return 0;
 }
 
 #endif /* CONFIG_BT_BAP_BROADCAST_ASSISTANT */
@@ -738,6 +913,11 @@ static void cap_commander_proc_complete(void)
 	case BT_CAP_COMMON_PROC_TYPE_BROADCAST_RECEPTION_STOP:
 		if (cap_cb->broadcast_reception_stop != NULL) {
 			cap_cb->broadcast_reception_stop(failed_conn, err);
+		}
+		break;
+	case BT_CAP_COMMON_PROC_TYPE_DISTRIBUTE_BROADCAST_CODE:
+		if (cap_cb->distribute_broadcast_code != NULL) {
+			cap_cb->distribute_broadcast_code(failed_conn, err);
 		}
 		break;
 #endif /* CONFIG_BT_BAP_BROADCAST_ASSISTANT */

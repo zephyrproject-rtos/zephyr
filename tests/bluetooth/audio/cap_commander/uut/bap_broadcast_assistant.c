@@ -5,6 +5,7 @@
  */
 
 #include "zephyr/bluetooth/audio/bap.h"
+#include "test_common.h"
 
 static sys_slist_t broadcast_assistant_cbs = SYS_SLIST_STATIC_INIT(&broadcast_assistant_cbs);
 
@@ -171,6 +172,32 @@ int bt_bap_broadcast_assistant_rem_src(struct bt_conn *conn, uint8_t src_id)
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&broadcast_assistant_cbs, listener, next, _node) {
 		if (listener->rem_src != NULL) {
 			listener->rem_src(conn, 0);
+		}
+	}
+
+	return 0;
+}
+
+int bt_bap_broadcast_assistant_set_broadcast_code(
+	struct bt_conn *conn, uint8_t src_id,
+	const uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE])
+{
+	struct bap_broadcast_assistant_instance *inst;
+	struct bt_bap_broadcast_assistant_cb *listener, *next;
+	int err;
+
+	zassert_not_null(conn, "conn is NULL");
+
+	inst = inst_by_conn(conn);
+
+	zassert_equal(src_id, RANDOM_SRC_ID, "Invalid src_id");
+
+	err = strncmp((const char *)broadcast_code, BROADCAST_CODE, sizeof(BROADCAST_CODE));
+	zassert_equal(0, err, "Unexpected broadcast code");
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&broadcast_assistant_cbs, listener, next, _node) {
+		if (listener->broadcast_code != NULL) {
+			listener->broadcast_code(conn, 0);
 		}
 	}
 
