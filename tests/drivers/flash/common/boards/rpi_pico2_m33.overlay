@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2024 Manuel Aebischer
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &code_partition;
+
+&flash0 {
+	partitions {
+		code_partition: partition@100 {
+			label = "code-partition";
+			reg = <0x100 (DT_SIZE_M(2) - 0x100)>;
+			read-only;
+		};
+
+		storage_partition: partition@20000 {
+			label = "storage-partition";
+			reg = <0x20000 (DT_SIZE_M(2))>;
+		};
+	};
+};
