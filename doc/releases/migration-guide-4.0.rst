@@ -202,6 +202,22 @@ Controller Area Network (CAN)
 Display
 =======
 
+Disk
+====
+
+* The SDMMC subsystem driver now requires a ``disk-name`` property be supplied
+  with the definition of the disk, which is used when registering the
+  SD device with the disk subsystem. This permits multiple SD devices to be
+  registered simultaneously. If unsure, ``disk-name = "SD"`` may be used
+  as a sane default.
+
+* The MMC subsystem driver now requires a ``disk-name`` property be supplied
+  with the definition of the disk, which is used when registering the
+  MMC device with the disk subsystem. This permits multiple MMC devices to be
+  registered simultaneously. If unsure, ``disk-name = "SD2"`` may be used
+  as a sane default.
+
+
 Enhanced Serial Peripheral Interface (eSPI)
 ===========================================
 
