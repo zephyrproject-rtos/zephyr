@@ -157,7 +157,7 @@ ZTEST(video_common, test_video_vbuf)
 	zexpect_ok(video_set_format(rx_dev, VIDEO_EP_OUT, &fmt));
 
 	/* Allocate a buffer, assuming prj.conf gives enough memory for it */
-	vbuf = video_buffer_alloc(fmt.pitch * fmt.height);
+	vbuf = video_buffer_alloc(fmt.pitch * fmt.height, K_FOREVER);
 	zexpect_not_null(vbuf);
 
 	/* Start the virtual hardware */
