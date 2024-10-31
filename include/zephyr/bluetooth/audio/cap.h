@@ -948,7 +948,6 @@ int bt_cap_commander_broadcast_reception_start(
 	const struct bt_cap_commander_broadcast_reception_start_param *param);
 
 /** Parameters for stopping broadcast reception  */
-
 struct bt_cap_commander_broadcast_reception_stop_member_param {
 	/** Coordinated or ad-hoc set member. */
 	union bt_cap_set_member member;
@@ -981,6 +980,49 @@ struct bt_cap_commander_broadcast_reception_stop_param {
  */
 int bt_cap_commander_broadcast_reception_stop(
 	const struct bt_cap_commander_broadcast_reception_stop_param *param);
+
+/** Parameters for distributing broadcast code */
+struct bt_cap_commander_distribute_broadcast_code_member_param {
+	/** Coordinated or ad-hoc set member. */
+	union bt_cap_set_member member;
+
+	/** Source ID of the receive state. */
+	uint8_t src_id;
+};
+
+struct bt_cap_commander_distribute_broadcast_code_param {
+	/** The type of the set. */
+	enum bt_cap_set_type type;
+
+	/** The set of devices for this procedure */
+	struct bt_cap_commander_distribute_broadcast_code_member_param *param;
+
+	/** The number of parameters in @p param */
+	size_t count;
+
+	/**
+	 * @brief 16-octet broadcast code.
+	 *
+	 * If the value is a string or a the value is less than 16 octets,
+	 * the remaining octets shall be 0.
+	 *
+	 * Example:
+	 *   The string "Broadcast Code" shall be
+	 *   [42 72 6F 61 64 63 61 73 74 20 43 6F 64 65 00 00]
+	 */
+	uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE];
+};
+
+/**
+ * @brief Distributes the broadcast code on one or more remote Common Audio Profile
+ * Acceptors
+ *
+ * @param param The parameters for distributing the broadcast code
+ *
+ * @return 0 on success or negative error value on failure.
+ */
+int bt_cap_commander_distribute_broadcast_code(
+	const struct bt_cap_commander_distribute_broadcast_code_param *param);
 
 /** Parameters for changing absolute volume  */
 struct bt_cap_commander_change_volume_param {
