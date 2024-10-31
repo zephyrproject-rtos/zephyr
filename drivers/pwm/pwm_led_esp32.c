@@ -141,7 +141,7 @@ static int pwm_led_esp32_calculate_max_resolution(struct pwm_ledc_esp32_channel_
 #endif
 	uint32_t max_precision_n = clock_freq/channel->freq;
 
-	for (uint8_t i = 0; i <= SOC_LEDC_TIMER_BIT_WIDTH; i++) {
+	for (uint8_t i = 0; i <= SOC_LEDC_TIMER_BIT_WIDTH - 1; i++) {
 		max_precision_n /= 2;
 		if (!max_precision_n) {
 			channel->resolution =  i;
@@ -196,7 +196,7 @@ static int pwm_led_esp32_timer_config(struct pwm_ledc_esp32_channel_config *chan
 	 * so select the slow clock source (1MHz) with highest counter resolution.
 	 * this can be handled on the func 'pwm_led_esp32_timer_set' with 'prescaler'.
 	 */
-	channel->resolution = SOC_LEDC_TIMER_BIT_WIDTH;
+	channel->resolution = SOC_LEDC_TIMER_BIT_WIDTH - 1;
 	return 0;
 }
 
@@ -290,6 +290,10 @@ static int pwm_led_esp32_set_cycles(const struct device *dev, uint32_t channel_i
 		return -EINVAL;
 	}
 
+	if (flags & PWM_POLARITY_INVERTED) {
+		pulse_cycles = period_cycles - pulse_cycles;
+	}
+
 	/* Update PWM frequency according to period_cycles */
 	ret = pwm_led_esp32_get_cycles_per_sec(dev, channel_idx, &clk_freq);
 	if (ret < 0) {
@@ -323,7 +327,7 @@ static int pwm_led_esp32_set_cycles(const struct device *dev, uint32_t channel_i
 
 	double duty_cycle = (double) pulse_cycles / (double) period_cycles;
 
-	channel->duty_val = (uint32_t)((double) (1 << channel->resolution) * duty_cycle);
+	channel->duty_val = (uint32_t)((double)((1 << channel->resolution)) * duty_cycle);
 
 	pwm_led_esp32_duty_set(dev, channel);
 
