@@ -5,5 +5,6 @@ config COUNTER_SAM_TC
 	bool "Atmel SAM MCU family counter (TC) driver"
 	default y
 	depends on DT_HAS_ATMEL_SAM_TC_ENABLED
+	select PINCTRL
 	help
 	  Enable the Atmel SAM MCU family counter (TC) driver.
