@@ -5,6 +5,7 @@ config ADC_SAM0
 	bool "Atmel SAM0 series ADC Driver"
 	default y
 	depends on DT_HAS_ATMEL_SAM0_ADC_ENABLED
+	select PINCTRL
 	select ADC_CONFIGURABLE_INPUTS
 	help
 	  Enable Atmel SAM0 MCU Family Analog-to-Digital Converter (ADC) driver.

@@ -177,6 +177,7 @@ config I2C_SAM_TWIM
 	bool "Atmel SAM (TWIM) I2C driver"
 	default y
 	depends on DT_HAS_ATMEL_SAM_I2C_TWIM_ENABLED
+	select PINCTRL
 	help
 	  Enable Atmel SAM MCU Family (TWIM) I2C bus driver.
 
@@ -184,6 +185,7 @@ config I2C_SAM_TWI
 	bool "Atmel SAM (TWI) I2C driver"
 	default y
 	depends on DT_HAS_ATMEL_SAM_I2C_TWI_ENABLED
+	select PINCTRL
 	help
 	  Enable Atmel SAM MCU Family (TWI) I2C bus driver.
 
