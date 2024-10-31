@@ -34,6 +34,7 @@
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
 
+#include "bap_stream_tx.h"
 #include "bstests.h"
 #include "common.h"
 #include "bap_common.h"
@@ -64,17 +65,6 @@
 #define GMAP_UNICAST_AC_MAX_SRC      (2U * GMAP_UNICAST_AC_MAX_CONN)
 #define GMAP_UNICAST_AC_MAX_PAIR     MAX(GMAP_UNICAST_AC_MAX_SNK, GMAP_UNICAST_AC_MAX_SRC)
 #define GMAP_UNICAST_AC_MAX_STREAM   (GMAP_UNICAST_AC_MAX_SNK + GMAP_UNICAST_AC_MAX_SRC)
-
-#define MAX_ISO_CHAN_COUNT 2U
-#define ISO_ENQUEUE_COUNT 2U
-#define TOTAL_BUF_NEEDED       (ISO_ENQUEUE_COUNT * MAX_ISO_CHAN_COUNT)
-
-BUILD_ASSERT(
-	CONFIG_BT_ISO_TX_BUF_COUNT >= TOTAL_BUF_NEEDED,
-	"CONFIG_BT_ISO_TX_BUF_COUNT should be at least ISO_ENQUEUE_COUNT * MAX_ISO_CHAN_COUNT");
-
-NET_BUF_POOL_FIXED_DEFINE(tx_pool, TOTAL_BUF_NEEDED, BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
-			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 extern enum bst_result_t bst_result;
 static const struct named_lc3_preset *snk_named_preset;
@@ -178,52 +168,6 @@ const struct named_lc3_preset *gmap_get_named_preset(bool is_unicast, enum bt_au
 	return NULL;
 }
 
-static void stream_sent_cb(struct bt_bap_stream *bap_stream)
-{
-	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(bap_stream);
-	struct bt_cap_stream *cap_stream = cap_stream_from_audio_test_stream(test_stream);
-	struct net_buf *buf;
-	int ret;
-
-	if (!test_stream->tx_active) {
-		return;
-	}
-
-	if ((test_stream->tx_cnt % 100U) == 0U) {
-		printk("[%zu]: Stream %p sent with seq_num %u\n", test_stream->tx_cnt, cap_stream,
-		       test_stream->seq_num);
-	}
-
-	if (test_stream->tx_sdu_size > CONFIG_BT_ISO_TX_MTU) {
-		FAIL("Invalid SDU %u for the MTU: %d", test_stream->tx_sdu_size,
-		     CONFIG_BT_ISO_TX_MTU);
-		return;
-	}
-
-	buf = net_buf_alloc(&tx_pool, K_FOREVER);
-	if (buf == NULL) {
-		printk("Could not allocate buffer when sending on %p\n", bap_stream);
-		return;
-	}
-
-	net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
-	net_buf_add_mem(buf, mock_iso_data, test_stream->tx_sdu_size);
-	ret = bt_cap_stream_send(cap_stream, buf, test_stream->seq_num++);
-	if (ret < 0) {
-		/* This will end broadcasting on this stream. */
-		net_buf_unref(buf);
-
-		/* Only fail if tx is active (may fail if we are disabling the stream) */
-		if (test_stream->tx_active) {
-			FAIL("Unable to broadcast data on %p: %d\n", cap_stream, ret);
-		}
-
-		return;
-	}
-
-	test_stream->tx_cnt++;
-}
-
 static void stream_configured_cb(struct bt_bap_stream *stream,
 				 const struct bt_bap_qos_cfg_pref *pref)
 {
@@ -247,6 +191,17 @@ static void stream_enabled_cb(struct bt_bap_stream *stream)
 static void stream_started_cb(struct bt_bap_stream *stream)
 {
 	printk("Started stream %p\n", stream);
+
+	if (bap_stream_tx_can_send(stream)) {
+		int err;
+
+		err = bap_stream_tx_register(stream);
+		if (err != 0) {
+			FAIL("Failed to register stream %p for TX: %d\n", stream, err);
+			return;
+		}
+	}
+
 	k_sem_give(&sem_stream_started);
 }
 
@@ -263,6 +218,17 @@ static void stream_disabled_cb(struct bt_bap_stream *stream)
 static void stream_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 {
 	printk("Stream %p stopped with reason 0x%02X\n", stream, reason);
+
+	if (bap_stream_tx_can_send(stream)) {
+		int err;
+
+		err = bap_stream_tx_unregister(stream);
+		if (err != 0) {
+			FAIL("Failed to unregister stream %p for TX: %d\n", stream, err);
+			return;
+		}
+	}
+
 	k_sem_give(&sem_stream_stopped);
 }
 
@@ -280,7 +246,7 @@ static struct bt_bap_stream_ops stream_ops = {
 	.disabled = stream_disabled_cb,
 	.stopped = stream_stopped_cb,
 	.released = stream_released_cb,
-	.sent = stream_sent_cb,
+	.sent = bap_stream_tx_sent_cb,
 };
 
 static void cap_discovery_complete_cb(struct bt_conn *conn, int err,
@@ -472,6 +438,9 @@ static void init(void)
 		FAIL("Bluetooth enable failed (err %d)\n", err);
 		return;
 	}
+
+	printk("Bluetooth initialized\n");
+	bap_stream_tx_init();
 
 	bt_gatt_cb_register(&gatt_callbacks);
 
@@ -1153,10 +1122,6 @@ static void broadcast_audio_stop(struct bt_cap_broadcast_source *broadcast_sourc
 
 	printk("Stopping broadcast source\n");
 
-	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_streams); i++) {
-		broadcast_streams[i].tx_active = false;
-	}
-
 	err = bt_cap_initiator_broadcast_audio_stop(broadcast_source);
 	if (err != 0) {
 		FAIL("Failed to stop broadcast source: %d\n", err);
@@ -1255,18 +1220,6 @@ static int test_gmap_ugg_broadcast_ac(const struct gmap_broadcast_ac_param *para
 	printk("Waiting for broadcast_streams to be started\n");
 	for (size_t i = 0U; i < param->stream_cnt; i++) {
 		k_sem_take(&sem_stream_started, K_FOREVER);
-	}
-
-	/* Initialize sending */
-	printk("Starting sending\n");
-	for (size_t i = 0U; i < param->stream_cnt; i++) {
-		struct audio_test_stream *test_stream = &broadcast_streams[i];
-
-		test_stream->tx_active = true;
-
-		for (unsigned int j = 0U; j < ISO_ENQUEUE_COUNT; j++) {
-			stream_sent_cb(bap_stream_from_audio_test_stream(test_stream));
-		}
 	}
 
 	/* Wait for other devices to have received what they wanted */
