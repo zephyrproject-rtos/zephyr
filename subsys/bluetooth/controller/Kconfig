@@ -323,13 +323,29 @@ choice BT_CTLR_TX_PWR
 	  The value set here represents the actual default power level fed
 	  to the antenna.
 
+config BT_CTLR_TX_PWR_PLUS_21
+	bool "+21 dBm"
+	depends on SOC_FAMILY_ESPRESSIF_ESP32
+
+config BT_CTLR_TX_PWR_PLUS_18
+	bool "+18 dBm"
+	depends on SOC_FAMILY_ESPRESSIF_ESP32
+
+config BT_CTLR_TX_PWR_PLUS_15
+	bool "+15 dBm"
+	depends on SOC_FAMILY_ESPRESSIF_ESP32
+
+config BT_CTLR_TX_PWR_PLUS_12
+	bool "+12 dBm"
+	depends on SOC_FAMILY_ESPRESSIF_ESP32
+
 config BT_CTLR_TX_PWR_PLUS_10
 	bool "+10 dBm"
 	depends on SOC_SERIES_NRF54HX
 
 config BT_CTLR_TX_PWR_PLUS_9
 	bool "+9 dBm"
-	depends on SOC_SERIES_NRF54HX
+	depends on SOC_SERIES_NRF54HX || SOC_FAMILY_ESPRESSIF_ESP32
 
 config BT_CTLR_TX_PWR_PLUS_8
 	bool "+8 dBm"
@@ -341,7 +357,7 @@ config BT_CTLR_TX_PWR_PLUS_7
 
 config BT_CTLR_TX_PWR_PLUS_6
 	bool "+6 dBm"
-	depends on HAS_HW_NRF_RADIO_TX_PWR_HIGH || SOC_SERIES_NRF54HX || SOC_COMPATIBLE_NRF54LX
+	depends on HAS_HW_NRF_RADIO_TX_PWR_HIGH || SOC_SERIES_NRF54HX || SOC_COMPATIBLE_NRF54LX || SOC_FAMILY_ESPRESSIF_ESP32
 
 config BT_CTLR_TX_PWR_PLUS_5
 	bool "+5 dBm"
@@ -353,7 +369,7 @@ config BT_CTLR_TX_PWR_PLUS_4
 
 config BT_CTLR_TX_PWR_PLUS_3
 	bool "+3 dBm"
-	depends on SOC_COMPATIBLE_NRF52X || SOC_COMPATIBLE_NRF53X || SOC_SERIES_NRF54HX || SOC_COMPATIBLE_NRF54LX
+	depends on SOC_COMPATIBLE_NRF52X || SOC_COMPATIBLE_NRF53X || SOC_SERIES_NRF54HX || SOC_COMPATIBLE_NRF54LX || SOC_FAMILY_ESPRESSIF_ESP32
 
 config BT_CTLR_TX_PWR_PLUS_2
 	bool "+2 dBm"
@@ -376,7 +392,7 @@ config BT_CTLR_TX_PWR_MINUS_2
 
 config BT_CTLR_TX_PWR_MINUS_3
 	bool "-3 dBm"
-	depends on SOC_COMPATIBLE_NRF53X || SOC_COMPATIBLE_NRF54LX
+	depends on SOC_COMPATIBLE_NRF53X || SOC_COMPATIBLE_NRF54LX || SOC_FAMILY_ESPRESSIF_ESP32
 
 config BT_CTLR_TX_PWR_MINUS_4
 	bool "-4 dBm"
@@ -387,7 +403,7 @@ config BT_CTLR_TX_PWR_MINUS_5
 
 config BT_CTLR_TX_PWR_MINUS_6
 	bool "-6 dBm"
-	depends on SOC_COMPATIBLE_NRF53X || SOC_COMPATIBLE_NRF54LX
+	depends on SOC_COMPATIBLE_NRF53X || SOC_COMPATIBLE_NRF54LX || SOC_FAMILY_ESPRESSIF_ESP32
 
 config BT_CTLR_TX_PWR_MINUS_7
 	bool "-7 dBm"
@@ -398,7 +414,7 @@ config BT_CTLR_TX_PWR_MINUS_8
 
 config BT_CTLR_TX_PWR_MINUS_9
 	bool "-9 dBm"
-	depends on SOC_COMPATIBLE_NRF54LX
+	depends on SOC_COMPATIBLE_NRF54LX || SOC_FAMILY_ESPRESSIF_ESP32
 
 config BT_CTLR_TX_PWR_MINUS_10
 	bool "-10 dBm"
@@ -411,11 +427,27 @@ config BT_CTLR_TX_PWR_MINUS_14
 	bool "-14 dBm"
 	depends on SOC_COMPATIBLE_NRF54LX
 
+config BT_CTLR_TX_PWR_MINUS_15
+	bool "-15 dBm"
+	depends on SOC_FAMILY_ESPRESSIF_ESP32
+
 config BT_CTLR_TX_PWR_MINUS_16
 	bool "-16 dBm"
 
+config BT_CTLR_TX_PWR_MINUS_18
+	bool "-18 dBm"
+	depends on SOC_FAMILY_ESPRESSIF_ESP32
+
 config BT_CTLR_TX_PWR_MINUS_20
 	bool "-20 dBm"
+
+config BT_CTLR_TX_PWR_MINUS_21
+	bool "-21 dBm"
+	depends on SOC_FAMILY_ESPRESSIF_ESP32
+
+config BT_CTLR_TX_PWR_MINUS_24
+	bool "-24 dBm"
+	depends on SOC_FAMILY_ESPRESSIF_ESP32
 
 config BT_CTLR_TX_PWR_MINUS_26
 	bool "-26 dBm"
@@ -441,6 +473,10 @@ endchoice
 
 config BT_CTLR_TX_PWR_DBM
 	int
+	default 21 if BT_CTLR_TX_PWR_PLUS_21
+	default 18 if BT_CTLR_TX_PWR_PLUS_18
+	default 15 if BT_CTLR_TX_PWR_PLUS_15
+	default 12 if BT_CTLR_TX_PWR_PLUS_12
 	default 10 if BT_CTLR_TX_PWR_PLUS_10
 	default 9 if BT_CTLR_TX_PWR_PLUS_9
 	default 8 if BT_CTLR_TX_PWR_PLUS_8
@@ -464,8 +500,12 @@ config BT_CTLR_TX_PWR_DBM
 	default -10 if BT_CTLR_TX_PWR_MINUS_10
 	default -12 if BT_CTLR_TX_PWR_MINUS_12
 	default -14 if BT_CTLR_TX_PWR_MINUS_14
+	default -15 if BT_CTLR_TX_PWR_MINUS_15
 	default -16 if BT_CTLR_TX_PWR_MINUS_16
+	default -18 if BT_CTLR_TX_PWR_MINUS_18
 	default -20 if BT_CTLR_TX_PWR_MINUS_20
+	default -21 if BT_CTLR_TX_PWR_MINUS_21
+	default -24 if BT_CTLR_TX_PWR_MINUS_24
 	default -26 if BT_CTLR_TX_PWR_MINUS_26
 	default -30 if BT_CTLR_TX_PWR_MINUS_30
 	default -40 if BT_CTLR_TX_PWR_MINUS_40
