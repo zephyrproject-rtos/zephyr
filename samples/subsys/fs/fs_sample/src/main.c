@@ -22,7 +22,12 @@
  *  Note the fatfs library is able to mount only strings inside _VOLUME_STRS
  *  in ffconf.h
  */
+#if defined(CONFIG_DISK_DRIVER_MMC)
+#define DISK_DRIVE_NAME "SD2"
+#else
 #define DISK_DRIVE_NAME "SD"
+#endif
+
 #define DISK_MOUNT_PT "/"DISK_DRIVE_NAME":"
 
 static FATFS fat_fs;

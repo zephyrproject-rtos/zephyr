@@ -42,7 +42,7 @@ static struct fs_mount_t fatfs_mnt = {
 #if defined(CONFIG_DISK_DRIVER_SDMMC)
 #define DISK_NAME "SD"
 #elif defined(CONFIG_DISK_DRIVER_MMC)
-#define DISK_NAME CONFIG_MMC_VOLUME_NAME
+#define DISK_NAME "SD2"
 #else
 #error "No disk device defined, is your board supported?"
 #endif
