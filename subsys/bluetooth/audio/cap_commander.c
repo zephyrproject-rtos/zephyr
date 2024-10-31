@@ -671,6 +671,12 @@ int bt_cap_commander_broadcast_reception_stop(
 	return 0;
 }
 
+int bt_cap_commander_distribute_broadcast_code(
+	const struct bt_cap_commander_distribute_broadcast_code_param *param)
+{
+	return -ENOSYS;
+}
+
 #endif /* CONFIG_BT_BAP_BROADCAST_ASSISTANT */
 
 static void cap_commander_proc_complete(void)
