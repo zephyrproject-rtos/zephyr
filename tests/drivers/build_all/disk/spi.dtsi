@@ -17,6 +17,7 @@ sdhc@0 {
 
 	mmc {
 		compatible = "zephyr,mmc-disk";
+		disk-name = "SD2";
 		status = "okay";
 	};
 };
