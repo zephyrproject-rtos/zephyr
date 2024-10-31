@@ -8,5 +8,6 @@ config ADC_RENESAS_RA
 	default y
 	depends on DT_HAS_RENESAS_RA_ADC_ENABLED
 	select USE_RA_FSP_ADC
+	select PINCTRL
 	help
 	  Enable Renesas RA ADC Driver.
