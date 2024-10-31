@@ -71,6 +71,7 @@ config USB_DC_SAM0
 	bool "SAM0 series USB Device Controller driver"
 	default y
 	depends on DT_HAS_ATMEL_SAM0_USB_ENABLED
+	select PINCTRL
 	help
 	  SAM0 family USB device controller Driver.
 
@@ -88,6 +89,7 @@ config USB_DC_SAM_USBC
 	bool "SAM4L USBC Device Controller driver"
 	default y
 	depends on DT_HAS_ATMEL_SAM_USBC_ENABLED
+	select PINCTRL
 	help
 	  SAM4L family USBC device controller Driver.
 
