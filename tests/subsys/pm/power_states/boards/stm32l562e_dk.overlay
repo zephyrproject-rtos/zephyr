@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2025 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/ {
+	zephyr,user {
+		k_idle_state_min_residency_time = <400000>;
+	};
+};
+
+&stop0{
+	compatible = "zephyr,power-state";
+	power-state-name = "suspend-to-idle";
+	substate-id = <1>;
+	min-residency-us = <500000>;
+};
+&stop1{
+	compatible = "zephyr,power-state";
+	power-state-name = "suspend-to-idle";
+	substate-id = <2>;
+	min-residency-us = <1000000>;
+};
+&stop2{
+	compatible = "zephyr,power-state";
+	power-state-name = "suspend-to-idle";
+	substate-id = <3>;
+	min-residency-us = <1500000>;
+};
