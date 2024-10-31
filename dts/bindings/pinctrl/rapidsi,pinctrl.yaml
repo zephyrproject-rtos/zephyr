@@ -48,28 +48,44 @@ description: |
   alternate functionality where pull resistors are disabled. In case the
   pull resistors are disabled the PIN_PULL_DIR... argument is ignored.
 
-  In the light of the above example, the ofe node related yaml file will 
-  need to include the pins (type:phandle-array) and pin-names (type:string-array) 
-  properties. And the correct arguments from 2 to 5 can be extracted 
-  using DT_PHA_BY_NAME Macro.
-
 compatible: "rapidsi,pinctrl"
 
 include: [base.yaml]
 
+child-binding:
+  description: |
+    rapidsi pin controller pin configuration state nodes.
+    
+  child-binding:
+    description: |
+      rapidsi pin controller pin configuration group.
+
+    properties:
+
+      pinmaps:
+        type: phandle-array
+        description: |
+          This property describes the details about the pad to be configured
+          for the purpose of driving a corresponding Pad in a specific
+          mode.
+
+      pinmap-names:
+        type: string-array
+        description: |
+            This is an array of strings defining the names of the PAD lines
+            going out of the PAD controller
+          
 properties:
-  reg:
-    required: true
 
   npins:
     type: int
     required: true
 
-  "#pin-cells":
+  "#pinmap-cells":
     type: int
     const: 4
 
-pin-cells:
+pinmap-cells:
   - pin_num
   - pin_mode
   - pin_pull_state

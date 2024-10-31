@@ -13,9 +13,8 @@
 #define ZEPHYR_SOC_RISCV_VIRGO_PINCTRL_SOC_H_
 
 #include <zephyr/devicetree.h>
-#include <zephyr/types.h>
-
 #include <zephyr/dt-bindings/pinctrl/rapidsi_virgo_pinctrl.h>
+#include <zephyr/types.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,7 +26,7 @@ extern "C" {
 typedef struct pinctrl_soc_pin {
 	/** Pin number. */
 	uint32_t pin_num;
-	/* Pin configuration Contains the 
+	/* Pin configuration Contains the
 	 * Pin Mode as listed:
 	 * 	PIN_FN_MAIN
 	 * 	PIN_FN_FPGA
@@ -36,8 +35,8 @@ typedef struct pinctrl_soc_pin {
 	 * Pin Pull Resistor Enable or Disabled
 	 * Pin Pull Direction (Up or Down)
 	 */
-	/* 
-	*/
+	/*
+	 */
 	uint32_t pin_cfg;
 } pinctrl_soc_pin_t;
 
@@ -48,23 +47,26 @@ typedef struct pinctrl_soc_pin {
  * @param prop property name.
  * @param idx property entry index.
  */
-#define Z_PINCTRL_STATE_PIN_INIT(node_id, prop, idx)	   		\
-	{ .pin_num = DT_PHA_BY_IDX(node_id, prop, idx, pin_num)	  	\
-	  .pin_cfg = ((PIN_ENABLE << PIN_ENABLE_OFFSET) & PIN_ENABLE_MASK) | \
-	  			 ((DT_PHA_BY_IDX(node_id, prop, idx, pin_mode) << PIN_MODE_OFFSET) & (PIN_MODE_MASK)) | 	\
-	  			 ((DT_PHA_BY_IDX(node_id, prop, idx, pin_pull_state) << PIN_PULL_STATE_OFFSET) & (PIN_PULL_STATE_MASK)) | \
-				 ((DT_PHA_BY_IDX(node_id, prop, idx, pin_pull_dir) << PIN_PULL_DIR_OFFSET) & (PIN_PULL_DIR_MASK)) 	\
-	},
+#define Z_PINCTRL_STATE_PIN_INIT(node_id, prop, idx)                                       \
+	{.pin_num = DT_PHA_BY_IDX(node_id, prop, idx, pin_num),                                \
+	 .pin_cfg =                                                                            \
+		 (((PIN_ENABLE << PIN_ENABLE_OFFSET) & PIN_ENABLE_MASK) |                          \
+		 ((DT_PHA_BY_IDX(node_id, prop, idx, pin_mode) << PIN_MODE_OFFSET) &               \
+		  (PIN_MODE_MASK)) |                                                               \
+		 ((DT_PHA_BY_IDX(node_id, prop, idx, pin_pull_state) << PIN_PULL_STATE_OFFSET) &   \
+		  (PIN_PULL_STATE_MASK)) |                                                         \
+		 ((DT_PHA_BY_IDX(node_id, prop, idx, pin_pull_dir) << PIN_PULL_DIR_OFFSET) &       \
+		  (PIN_PULL_DIR_MASK)))},
 
 /**
  * @brief Utility macro to initialize state pins contained in a given property.
  *
  * @param node_id Node identifier.
- * @param prop Property name describing state pins. (pinctrl-N)
+ * @param prop Property name describing state pins.
  */
-#define Z_PINCTRL_STATE_PINS_INIT(node_id, prop)   			   \
-			{DT_FOREACH_CHILD_VARGS(DT_PHANDLE(node_id, prop), \
-				DT_FOREACH_PROP_ELEM, pins,		       		   \
+#define Z_PINCTRL_STATE_PINS_INIT(node_id, prop)			       \
+	{DT_FOREACH_CHILD_VARGS(DT_PHANDLE(node_id, prop),		       \
+				DT_FOREACH_PROP_ELEM, pinmaps,		       \
 				Z_PINCTRL_STATE_PIN_INIT)}
 
 /** @endcond */

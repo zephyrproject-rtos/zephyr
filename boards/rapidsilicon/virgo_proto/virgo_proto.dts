@@ -77,12 +77,26 @@
 	};
  };
  
+ &pinctrl {
+	status = "okay";
+
+	ofe_default_pinmux: ofe_default_pinmux {
+		group1 {
+			pinmaps = <&pinctrl 0 PIN_FN_ALT PIN_PULL_STATUS_DIS PIN_PULL_DIR_DOWN>, 
+			<&pinctrl 1 PIN_FN_ALT PIN_PULL_STATUS_DIS PIN_PULL_DIR_DOWN>;
+			pinmap-names = "CONFIG_DONE", "CONFIG_ERROR";
+		};
+	};
+ };
+
  &fpga_cfg {
 	status = "okay";
  };
 
  &ofe {
 	status = "okay";
+	pinctrl-0 = <&ofe_default_pinmux>;
+	pinctrl-names = "default";
  };
 
  &fcb {

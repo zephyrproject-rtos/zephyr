@@ -7,17 +7,3 @@ compatible: "rapidsi,ofe"
 
 include: [base.yaml, pinctrl-device.yaml]
 
-properties:
-
-  pins:
-    type: phandle-array
-    description: |
-      This property describes the details about the pad to be configured
-      for the purpose of driving a corresponding Pad in a specific
-      mode.
-
-  pin-names:
-    type: string-array
-    description: |
-        This is an array of strings defining the names of the PAD lines
-        going out of the PAD controller

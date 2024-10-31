@@ -6,6 +6,8 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/misc/rapidsi/rapidsi_ofe.h>
+#include <zephyr/drivers/pinctrl.h>
+
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/sys_io.h>
@@ -23,6 +25,7 @@ LOG_MODULE_REGISTER(rapidsi_ofe);
 
 struct ofe_config {
 	uint32_t base;
+	const struct pinctrl_dev_config *pcfg;
 };
 
 int get_xcb_config_status(
@@ -131,14 +134,13 @@ int reset(
 
 static int ofe_init(const struct device *dev)
 {
-	struct ofe_config *lvConfig = (struct ofe_config*)dev->config;
+	int error = 0;
+	const struct ofe_config *lvConfig = (struct ofe_config*)dev->config;
 	s_OFE_Cfg_Status = ((struct ofe_cfg_status *)(lvConfig->base));
-	return 0;
+	// Initialize the pad controller pins for Config Done and Error Status
+	error = pinctrl_apply_state(lvConfig->pcfg, PINCTRL_STATE_DEFAULT);
+	return error;
 }
-
-static const struct ofe_config s_ofe_config = {
-	.base = DT_REG_ADDR(DT_NODELABEL(ofe))
-};
 
 static const struct ofe_driver_api s_ofe_api = {
 	.get_xcb_config_status = get_xcb_config_status,
@@ -146,13 +148,23 @@ static const struct ofe_driver_api s_ofe_api = {
 	.set_config_status = set_config_status
 };
 
-DEVICE_DT_DEFINE(
-					DT_NODELABEL(ofe), 
-					ofe_init, 
-					NULL, 
-					NULL, 
-					&s_ofe_config, 
-					POST_KERNEL, 
-					CONFIG_RAPIDSI_OFE_INIT_PRIORITY, 
-					&s_ofe_api
-				)
+#define OFE_DEVICE_DT_DEFINE(node_id)						\
+	PINCTRL_DT_DEFINE(node_id);								\
+															\
+	static const struct ofe_config s_ofe_config = {			\
+		.base = DT_REG_ADDR(DT_NODELABEL(ofe)),				\
+		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(node_id)			\
+	};														\
+															\
+	DEVICE_DT_DEFINE(										\
+						node_id,		 					\
+						ofe_init, 							\
+						NULL, 								\
+						NULL, 								\
+						&s_ofe_config, 						\
+						POST_KERNEL, 						\
+						CONFIG_RAPIDSI_OFE_INIT_PRIORITY, 	\
+						&s_ofe_api							\
+					)										\
+
+DT_FOREACH_STATUS_OKAY(DT_DRV_COMPAT, OFE_DEVICE_DT_DEFINE)

@@ -561,8 +561,7 @@ static /* ******************************************
  * is used to perform FCB registers settings
  * after the payload transfer.
  *
- * @param [in]: fcb_bitstream_header
- * @param [in]: rs_secure_transfer_info
+ * @param [in]: rigel_fcb_bitstream_header
  *
  * @return: xCB_ERROR_CODE
  *
@@ -570,7 +569,7 @@ static /* ******************************************
  * If ok Set CONFIG_DONE
  * Clear BL_PRECHECKSUM_EN
  * ******************************************/
-static enum xCB_ERROR_CODE Rigel_FCB_Config_End()
+static enum xCB_ERROR_CODE Rigel_FCB_Config_End(struct rigel_fcb_bitstream_header *inHeader)
 {
   enum xCB_ERROR_CODE lvErrorCode = xCB_SUCCESS;
 
@@ -639,7 +638,7 @@ static enum xCB_ERROR_CODE Rigel_FCB_Config_End()
 int fcb_load(const struct device *dev, uint32_t *image_ptr, uint32_t img_size)
 {
   enum xCB_ERROR_CODE lvErrorCode = xCB_SUCCESS;
-
+/*
   if (inHeader->bitline_reg_width != (rs_sec_tfr_ptr->transfer_addr.len)) {
     lvErrorCode = xCB_ERROR_INVALID_DATA_LENGTH;
   } else if (inHeader->readback) {
@@ -728,7 +727,7 @@ int fcb_load(const struct device *dev, uint32_t *image_ptr, uint32_t img_size)
     RS_LOG_ERROR("FCB", "%s(%d):%s\r\n", __func__, __LINE__,
                  Err_to_Str(lvErrorCode));
   }
-
+*/
   return lvErrorCode;
 }
 
@@ -778,7 +777,7 @@ int fcb_session_free(const struct device *dev)
 
   struct fcb_data *lvData = (struct fcb_data *)dev->data;
 
-  error = Rigel_FCB_Config_End();
+  error = Rigel_FCB_Config_End(&lvData->fcb_header);
 
   s_Rigel_FCB_Registers = NULL;
 

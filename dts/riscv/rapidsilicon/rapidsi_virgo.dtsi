@@ -44,7 +44,6 @@
 		compatible = "rapidsi,ocm";
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		dlm: memory@A0300000 {
 			compatible = "rapidsi,dlm";
@@ -65,7 +64,6 @@
 		 compatible = "rapidsi,virgo";
 		 #address-cells = <1>;
 		 #size-cells = <1>;
-		 ranges;
  
 		 mtimer: timer@e6000000 {
 			 compatible = "andestech,machine-timer";
@@ -91,19 +89,8 @@
 			compatible = "rapidsi,pinctrl";
 			reg = <0xA0111000 0xFF>;
 			npins = <16>;
-			#pin-cells = <4>;
+			#pinmap-cells = <4>;
 			status = "disabled";
-
-			ofe_default_pinmux: ofe_default_pinmux {
-				group1 { 
-					pins = <&pinctrl 0 PIN_FN_ALT PIN_PULL_STATUS_DIS PIN_PULL_DIR_DOWN>;
-					pin-names = "CONFIG_DONE";
-				};
-				group2 {
-					pins = <&pinctrl 1 PIN_FN_ALT PIN_PULL_STATUS_DIS PIN_PULL_DIR_DOWN>;
-					pin-names = "CONFIG_ERROR";
-				};
-			};
 		 };
  
 		 uart0: serial@a0420020 {
@@ -204,8 +191,6 @@
 			 ofe: ofe@A0710000 {
 				 compatible = "rapidsi,ofe";
 				 reg = <0xA0710000>;
-				 pinctrl-0 = <&ofe_default_pinmux>;
-				 pinctrl-names = "default";
 				 status = "disabled";
 			 };
  

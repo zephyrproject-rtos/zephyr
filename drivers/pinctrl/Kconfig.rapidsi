@@ -3,7 +3,7 @@
 
 config PINCTRL_RAPIDSI
 	bool "Rapid Silicon pin controller driver"
-	default y
+	default n
 	depends on DT_HAS_RAPIDSI_PINCTRL_ENABLED
 	depends on PINCTRL
 	help

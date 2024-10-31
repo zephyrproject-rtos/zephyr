@@ -67,6 +67,10 @@ CONFIG_DTI_PVT=y
 # Enable Rapid Silicon Specific IPs
 CONFIG_RAPIDSI_OFE=y
 
+# Enable Rapid Silicon Pin Controller
+CONFIG_PINCTRL=y
+CONFIG_PINCTRL_RAPIDSI=y
+
 # Enable FPGA Bitstream loading functionality
 CONFIG_FPGA=y
 CONFIG_RS_FPGA=y
