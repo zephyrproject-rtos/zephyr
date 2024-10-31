@@ -147,7 +147,8 @@ class HardwareMap:
         'FTDI',
         'Digilent',
         'Microsoft',
-        'Nuvoton'
+        'Nuvoton',
+        'Espressif',
     ]
 
     runner_mapping = {
