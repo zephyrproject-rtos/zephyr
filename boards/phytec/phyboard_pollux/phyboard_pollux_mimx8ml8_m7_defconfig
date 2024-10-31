@@ -16,5 +16,3 @@ CONFIG_CODE_ITCM=y
 
 # y for DDR memory space
 CONFIG_CODE_DDR=n
-
-CONFIG_PINCTRL=y
