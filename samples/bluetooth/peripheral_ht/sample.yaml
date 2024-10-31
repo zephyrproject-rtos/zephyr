@@ -30,5 +30,6 @@ tests:
     platform_allow:
       - rd_rw612_bga
       - frdm_rw612
+      - frdm_mcxw71
     extra_configs:
       - CONFIG_NXP_MONOLITHIC_BT=n
