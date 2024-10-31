@@ -1171,7 +1171,7 @@ int bt_le_cs_write_cached_remote_supported_capabilities(
 				    NULL);
 }
 
-int bt_le_cs_write_cached_remote_fae_table(struct bt_conn *conn, uint8_t remote_fae_table[72])
+int bt_le_cs_write_cached_remote_fae_table(struct bt_conn *conn, int8_t remote_fae_table[72])
 {
 	struct bt_hci_cp_le_write_cached_remote_fae_table *cp;
 	struct net_buf *buf;
