@@ -1054,14 +1054,15 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 			break;
 		}
 #if defined(CONFIG_DNS_RESOLVER)
+#define MAX_DNS_SERVERS CONFIG_DNS_RESOLVER_MAX_SERVERS
 		case DHCPV4_OPTIONS_DNS_SERVER: {
 			struct dns_resolve_context *ctx;
-			struct sockaddr_in dnses[CONFIG_DNS_RESOLVER_MAX_SERVERS] = { 0 };
-			const struct sockaddr *dns_servers[CONFIG_DNS_RESOLVER_MAX_SERVERS];
+			struct sockaddr_in dnses[MAX_DNS_SERVERS] = { 0 };
+			const struct sockaddr *dns_servers[MAX_DNS_SERVERS + 1] = { 0 };
 			const uint8_t addr_size = 4U;
 			int status;
 
-			for (uint8_t i = 0; i < CONFIG_DNS_RESOLVER_MAX_SERVERS; i++) {
+			for (uint8_t i = 0; i < MAX_DNS_SERVERS; i++) {
 				dns_servers[i] = (struct sockaddr *)&dnses[i];
 			}
 
@@ -1079,12 +1080,11 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 			const uint8_t provided_servers_cnt = length / addr_size;
 			uint8_t dns_servers_cnt = 0;
 
-			if (provided_servers_cnt > CONFIG_DNS_RESOLVER_MAX_SERVERS) {
+			if (provided_servers_cnt > MAX_DNS_SERVERS) {
 				NET_WARN("DHCP server provided more DNS servers than can be saved");
-				dns_servers_cnt = CONFIG_DNS_RESOLVER_MAX_SERVERS;
+				dns_servers_cnt = MAX_DNS_SERVERS;
 			} else {
-				for (uint8_t i = provided_servers_cnt;
-					 i < CONFIG_DNS_RESOLVER_MAX_SERVERS; i++) {
+				for (uint8_t i = provided_servers_cnt; i < MAX_DNS_SERVERS; i++) {
 					dns_servers[i] = NULL;
 				}
 
