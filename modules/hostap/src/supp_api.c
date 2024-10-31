@@ -1387,6 +1387,15 @@ out:
 		wifi_mgmt_raise_disconnect_complete_event(iface, ret);
 	}
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+	wpa_config_remove_blob(wpa_s->conf, "ca_cert");
+	wpa_config_remove_blob(wpa_s->conf, "client_cert");
+	wpa_config_remove_blob(wpa_s->conf, "private_key");
+	wpa_config_remove_blob(wpa_s->conf, "ca_cert2");
+	wpa_config_remove_blob(wpa_s->conf, "client_cert2");
+	wpa_config_remove_blob(wpa_s->conf, "private_key2");
+#endif
+
 	if (!wpa_cli_cmd_v("remove_network all")) {
 		wpa_printf(MSG_ERROR, "Failed to remove all networks");
 	}
