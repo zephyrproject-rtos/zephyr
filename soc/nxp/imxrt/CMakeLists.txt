@@ -16,7 +16,7 @@ if(CONFIG_SOC_SERIES_IMXRT10XX OR CONFIG_SOC_SERIES_IMXRT11XX)
   if(CONFIG_EXTERNAL_MEM_CONFIG_DATA)
     set(boot_hdr_xmcd_data_section ".boot_hdr.xmcd_data")
   endif()
-  zephyr_sources(mpu_regions.c)
+  zephyr_sources_ifdef(CONFIG_ARM_MPU mpu_regions.c)
   zephyr_linker_section_configure(
     SECTION .rom_start
     INPUT ".boot_hdr.conf"
