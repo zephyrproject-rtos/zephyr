@@ -234,6 +234,7 @@ class HardwareMap:
             flash_with_test = dut.get('flash_with_test')
             if flash_with_test is None:
                 flash_with_test = self.options.device_flash_with_test
+            serial_pty = dut.get('serial_pty')
             flash_before = dut.get('flash_before')
             if flash_before is None:
                 flash_before = self.options.flash_before and (not (flash_with_test or serial_pty))
@@ -241,7 +242,6 @@ class HardwareMap:
             id = dut.get('id')
             runner = dut.get('runner')
             runner_params = dut.get('runner_params')
-            serial_pty = dut.get('serial_pty')
             serial = dut.get('serial')
             baud = dut.get('baud', None)
             product = dut.get('product')
