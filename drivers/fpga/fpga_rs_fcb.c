@@ -454,7 +454,6 @@ static /* ******************************************
 	* before kicking off the payload transfer.
 	*
 	* @param [in]: fcb_bitstream_header
-	* @param [in]: rs_secure_transfer_info
 	*
 	* @return: xCB_ERROR_CODE
 	*
@@ -621,7 +620,8 @@ static enum xCB_ERROR_CODE Rigel_FCB_Config_End(struct rigel_fcb_bitstream_heade
  *
  * @param [in]: dev device structure
  * @param [in]: image_ptr to bitstream
- * @param [in]: img_size is size of image_ptr
+ * @param [in]: img_size is size of the data
+ * pointed to by image_ptr
  *
  * @return: error
  *
@@ -638,14 +638,13 @@ static enum xCB_ERROR_CODE Rigel_FCB_Config_End(struct rigel_fcb_bitstream_heade
 int fcb_load(const struct device *dev, uint32_t *image_ptr, uint32_t img_size)
 {
   enum xCB_ERROR_CODE lvErrorCode = xCB_SUCCESS;
-/*
-  if (inHeader->bitline_reg_width != (rs_sec_tfr_ptr->transfer_addr.len)) {
-    lvErrorCode = xCB_ERROR_INVALID_DATA_LENGTH;
-  } else if (inHeader->readback) {
-    rs_sec_tfr_ptr->transfer_addr.tfr_type = RS_SECURE_RX;
-    rs_sec_tfr_ptr->transfer_addr.read_addr =
-        (uint32_t)&s_Rigel_FCB_Registers->bl_rdata;
 
+  struct fcb_data *lvData = (struct fcb_data *)dev->data;
+
+  if (lvData->fcb_header.bitline_reg_width != img_size) {
+    lvErrorCode = xCB_ERROR_INVALID_DATA_LENGTH;
+  } else if (lvData->fcb_header.readback) {
+	lvData->ctx->src_addr = (uint8_t*)&s_Rigel_FCB_Registers->bl_rdata;
     // Set BL_Status->sel_bl_source to load bl_data_in in readback register,
     // then clear it
     write_reg_val(&s_Rigel_FCB_Registers->bl_status,
@@ -655,34 +654,37 @@ int fcb_load(const struct device *dev, uint32_t *image_ptr, uint32_t img_size)
                   RIGEL_FCB_BL_STATUS_SEL_BL_SRC_OFFSET,
                   RIGEL_FCB_BL_STATUS_SEL_BL_SRC_WIDTH, xCB_RESET);
   } else {
-    rs_sec_tfr_ptr->transfer_addr.write_addr =
-        (uint32_t)&s_Rigel_FCB_Registers->bl_wdata;
-    rs_sec_tfr_ptr->transfer_addr.tfr_type = RS_SECURE_TX;
+	lvData->ctx->dest_addr = (uint8_t*)&s_Rigel_FCB_Registers->bl_wdata;
   }
 
-  if (inHeader->readback) {  // For Readback Make BL_Gating 1
-    s_Rigel_FCB_Registers->op_reg |= (1 << RIGEL_FCB_OP_REG_BL_GATING_OFFSET);
-  } else {  // For Configuration Make BL_Gating 0
-    s_Rigel_FCB_Registers->op_reg &= ~(1 << RIGEL_FCB_OP_REG_BL_GATING_OFFSET);
+  if(lvErrorCode == xCB_SUCCESS)
+  {
+	if (lvData->fcb_header.readback) {  // For Readback Make BL_Gating 1
+		s_Rigel_FCB_Registers->op_reg |= (1 << RIGEL_FCB_OP_REG_BL_GATING_OFFSET);
+	} else {  // For Configuration Make BL_Gating 0
+		s_Rigel_FCB_Registers->op_reg &= ~(1 << RIGEL_FCB_OP_REG_BL_GATING_OFFSET);
+	}
   }
 
   // Perform the data transfer (FILL or READBACK)
   if ((lvErrorCode == xCB_SUCCESS) &&
-      (rs_sec_tfr_ptr->rs_secure_transfer((void *)rs_sec_tfr_ptr) !=
-       CRYPTO_SUCCESS)) {
+	  (lvData->ctx->bitstr_load_hndlr(lvData->ctx) != xCB_SUCCESS)) {
     lvErrorCode = xCB_ERROR;
   }
 
-  if (inHeader->readback) {  // For Readback Make BL_Gating 0
-    s_Rigel_FCB_Registers->op_reg &= ~(1 << RIGEL_FCB_OP_REG_BL_GATING_OFFSET);
-  } else {  // For Configuration Make BL_Gating 1
-    s_Rigel_FCB_Registers->op_reg |= (1 << RIGEL_FCB_OP_REG_BL_GATING_OFFSET);
+  if(lvErrorCode == xCB_SUCCESS)
+  {
+	if (lvData->fcb_header.readback) {  // For Readback Make BL_Gating 0
+		s_Rigel_FCB_Registers->op_reg &= ~(1 << RIGEL_FCB_OP_REG_BL_GATING_OFFSET);
+	} else {  // For Configuration Make BL_Gating 1
+		s_Rigel_FCB_Registers->op_reg |= (1 << RIGEL_FCB_OP_REG_BL_GATING_OFFSET);
+	}
   }
 
   if (lvErrorCode == xCB_SUCCESS) {
     // Perform operations depending on whether it's a data configuration and
     // readback
-    if (inHeader->readback) {
+    if (lvData->fcb_header.readback) {
       // ADVANCE 1
       lvErrorCode = rigel_fcb_advance(1);
 
@@ -707,13 +709,13 @@ int fcb_load(const struct device *dev, uint32_t *image_ptr, uint32_t img_size)
     }
   }
 
-  if ((lvErrorCode == xCB_SUCCESS) && (!inHeader->readback)) {
+  if ((lvErrorCode == xCB_SUCCESS) && (!lvData->fcb_header.readback)) {
     uint32_t write_count = read_reg_val(&s_Rigel_FCB_Registers->bl_status,
                                         RIGEL_FCB_BL_STATUS_BL_WR_CNT_OFFSET,
                                         RIGEL_FCB_BL_STATUS_BL_WR_CNT_WIDTH);
 
     if (write_count !=
-        (rs_sec_tfr_ptr->transfer_addr.len * xCB_BITS_IN_A_BYTE)) {
+        (lvData->fcb_header.bitline_reg_width * xCB_BITS_IN_A_BYTE)) {
       lvErrorCode = xCB_ERROR_DATA_CORRUPTED;
     }
 
@@ -724,10 +726,9 @@ int fcb_load(const struct device *dev, uint32_t *image_ptr, uint32_t img_size)
   }
 
   if (lvErrorCode != xCB_SUCCESS) {
-    RS_LOG_ERROR("FCB", "%s(%d):%s\r\n", __func__, __LINE__,
-                 Err_to_Str(lvErrorCode));
+    LOG_ERR("%s(%d) Error Code:%d\r\n", __func__, __LINE__, lvErrorCode);
   }
-*/
+
   return lvErrorCode;
 }
 
@@ -745,28 +746,31 @@ int fcb_session_start(const struct device *dev, struct fpga_ctx *ctx)
 
 	lvData->ctx = ctx; // pointing to the fpga context for later operations.
 
-  if(s_Rigel_FCB_Registers == NULL) {
-    error = xCB_ERROR_NULL_POINTER;
-  }
+	lvData->ctx->device = dev;
 
-  if(error == xCB_SUCCESS)
-  {    
-    if (lvData->ctx->user_data == NULL) { // FCB Meta Data is Expected
-      error = xCB_ERROR_NULL_POINTER;
-    } else {
-      error = Rigel_FCB_Bitstream_Header_Parser(lvData->ctx->user_data,
-                  (void *)&lvData->fcb_header);
-    }
-  }
-
-	if (error == xCB_SUCCESS) {
-    error = Rigel_FCB_Config_Begin(&lvData->fcb_header);
+	if(s_Rigel_FCB_Registers == NULL) {
+		error = xCB_ERROR_NULL_POINTER;
 	}
 
-  if(error != xCB_SUCCESS) {
-    PRINT_ERROR(error);
-    error = -ECANCELED;
-  }
+	if(error == xCB_SUCCESS)
+	{    
+		if (lvData->ctx->meta_data == NULL) { // FCB Meta Data is Expected
+			error = xCB_ERROR_NULL_POINTER;
+		} else {
+			error = Rigel_FCB_Bitstream_Header_Parser(lvData->ctx->meta_data,
+						(void *)&lvData->fcb_header);
+		}
+		lvData->ctx->meta_data_per_block = false;
+	}
+
+	if (error == xCB_SUCCESS) {
+		error = Rigel_FCB_Config_Begin(&lvData->fcb_header);  
+	}
+
+	if(error != xCB_SUCCESS) {
+		PRINT_ERROR(error);
+		error = -ECANCELED;
+	}
 
 	return error;
 }
@@ -785,11 +789,13 @@ int fcb_session_free(const struct device *dev)
 
   lvData->ctx = NULL;  
 
+  lvData->ctx->device = NULL;
+
   if(error != xCB_SUCCESS) {
     error = -ECANCELED;
   }
 
-	return error;
+  return error;
 }
 
 int fcb_reset(const struct device *dev)

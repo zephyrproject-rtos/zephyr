@@ -79,7 +79,7 @@ struct fcb_config {
 };
 
 struct fcb_data {
-  struct fpga_ctx *ctx;  
+  struct fpga_ctx *ctx;
   struct rigel_fcb_bitstream_header fcb_header;
   enum FPGA_status fpgaStatus;
 };

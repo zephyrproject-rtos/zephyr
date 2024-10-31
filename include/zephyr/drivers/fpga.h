@@ -44,7 +44,7 @@ struct fpga_transfer_param {
 
 struct fpga_ctx;
 
-typedef int (*bitstream_load_hndlr)(void *args); // Custom bitstream load function
+typedef int (*bitstream_load_hndlr)(struct fpga_ctx *ctx); // Custom bitstream load function
 
 typedef enum FPGA_status (*fpga_api_get_status)(const struct device *dev);
 typedef int (*fpga_api_session_start)(const struct device *dev, struct fpga_ctx *ctx);
@@ -68,16 +68,24 @@ __subsystem struct fpga_driver_api {
 };
 
 struct fpga_ctx {
-	// In case some sort of secure transfer is required to be done.
-	struct cipher_ctx *fpga_cipher_ctx;
 	// In case a custom bitstream load function is to be executed
-	// inside the fpga_load api.
-	bitstream_load_hndlr bitstr_load_hndlr;
+	// by the application. The register configurations should still be 
+	// handled by the fpga_load API.
+	bitstream_load_hndlr bitstr_load_hndlr;	
+	// The device driver instance this context relates to. Will be
+	// populated by the session_start() API.
+	const struct device *device;
 	// User Data to be Preprocessed at the time of session begin.
 	// This can be a metadata or anything else.
-	void *user_data;
+	void *meta_data;
 	// The length of user data
-	size_t user_data_len;
+	size_t meta_data_len;
+	// whether meta_data is per block or the entire bitstream
+	bool meta_data_per_block;
+	// dest_addr to be filled in by driver if bitstream is to be written otherwise applicatoin
+	uint8_t *dest_addr;
+	// src_addr to be filled in by driver if bitstream is to be read otherwise applicatoin
+	uint8_t *src_addr;
 };
 
 /**
