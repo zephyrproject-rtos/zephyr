@@ -54,18 +54,6 @@ config MCUX_ELCDIF_PXP
 	  display_write is called with a framebuffer equal in size to the
 	  display.
 
-config MCUX_ELCDIF_LP
-	bool "ELCDIF low power"
-	help
-	  This option, when enabled, will enable CUR_FRAME_DONE_IRQ at the display
-	  write function and disable it at the interruption handler for each new frame.
-	  Disabling the interrupt when no new frame needs to be sent gives the CPU the
-	  possibility to enter low-power mode, thus saving energy.
-	  This option, when disabled, CUR_FRAME_DONE_IRQ will be enabled only
-	  once at initialization. This option should be disabled when the application's
-	  frame rate is close to the display's refresh rate to avoid introducing
-	  additional latency caused by frequently enabling and disabling CUR_FRAME_DONE_IRQ.
-
 if MCUX_ELCDIF_PXP
 
 choice MCUX_ELCDIF_PXP_ROTATE_DIRECTION
