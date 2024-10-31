@@ -99,9 +99,9 @@ following logic:
 * if the :kconfig:option:`CONFIG_DISK_DRIVER_SDMMC` configuration is defined, ``"SD"``
   will be used as the mount point name;
 * if the :kconfig:option:`CONFIG_DISK_DRIVER_SDMMC` configuration is not defined, but the
-  :kconfig:option:`CONFIG_MMC_VOLUME_NAME` configuration is defined,
-  :kconfig:option:`CONFIG_MMC_VOLUME_NAME` will be used as the mount point name;
-* if neither :kconfig:option:`CONFIG_SDMMC_VOLUME_NAME` nor :kconfig:option:`CONFIG_MMC_VOLUME_NAME`
+  :kconfig:option:`CONFIG_DISK_DRIVER_MMC` configuration is defined, ``"SD2"`` will
+  be used as the mount point name;
+* if neither :kconfig:option:`CONFIG_DISK_DRIVER_SDMMC` nor :kconfig:option:`CONFIG_DISK_DRIVER_MMC`
   configurations are defined, the mount point name will not be determined, and an appropriate error
   will appear during the sample build.
 

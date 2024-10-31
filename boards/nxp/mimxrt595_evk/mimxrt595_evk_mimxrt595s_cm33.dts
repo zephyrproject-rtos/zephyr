@@ -371,6 +371,7 @@ zephyr_udc0: &usbhs {
 	cd-gpios = <&gpio2 9 GPIO_ACTIVE_LOW>;
 	mmc {
 		compatible = "zephyr,mmc-disk";
+		disk-name = "SD2";
 		status = "okay";
 	};
 	pinctrl-0 = <&pinmux_usdhc>;
