@@ -335,7 +335,6 @@ class Reporting:
             if available_rom:
                 suite["available_rom"] = available_rom
             if instance.status in [TwisterStatus.ERROR, TwisterStatus.FAIL]:
-                suite['status'] = instance.status
                 suite["reason"] = instance.reason
                 # FIXME
                 if os.path.exists(pytest_log):
@@ -347,12 +346,8 @@ class Reporting:
                 else:
                     suite["log"] = self.process_log(build_log)
             elif instance.status == TwisterStatus.FILTER:
-                suite["status"] = TwisterStatus.FILTER
                 suite["reason"] = instance.reason
-            elif instance.status == TwisterStatus.PASS:
-                suite["status"] = TwisterStatus.PASS
             elif instance.status == TwisterStatus.SKIP:
-                suite["status"] = TwisterStatus.SKIP
                 suite["reason"] = instance.reason
             elif instance.status == TwisterStatus.NOTRUN:
                 suite["status"] = TwisterStatus.NOTRUN
@@ -362,6 +357,7 @@ class Reporting:
                 suite["reason"] = 'Unknown Instance status.'
 
             if instance.status != TwisterStatus.NONE:
+                suite["status"] = instance.status
                 suite["execution_time"] =  f"{float(handler_time):.2f}"
             suite["build_time"] =  f"{float(instance.build_time):.2f}"
 
