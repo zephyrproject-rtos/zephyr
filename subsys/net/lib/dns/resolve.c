@@ -19,6 +19,7 @@ LOG_MODULE_REGISTER(net_dns_resolve, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <ctype.h>
 
 #include <zephyr/sys/crc.h>
 #include <zephyr/net/net_ip.h>
@@ -653,7 +654,7 @@ int dns_validate_msg(struct dns_resolve_context *ctx,
 	struct dns_addrinfo info = { 0 };
 	uint32_t ttl; /* RR ttl, so far it is not passed to caller */
 	uint8_t *src, *addr;
-	const char *query_name;
+	char *query_name;
 	int address_size;
 	/* index that points to the current answer being analyzed */
 	int answer_ptr;
@@ -742,6 +743,13 @@ int dns_validate_msg(struct dns_resolve_context *ctx,
 			}
 
 			query_name = dns_msg->msg + dns_msg->query_offset;
+
+			/* Convert the query name to small case so that our
+			 * hash checker can find it.
+			 */
+			for (size_t i = 0, n = strlen(query_name); i < n; i++) {
+				query_name[i] = tolower(query_name[i]);
+			}
 
 			/* Add \0 and query type (A or AAAA) to the hash */
 			*query_hash = crc16_ansi(query_name,
@@ -955,6 +963,7 @@ static int dns_write(struct dns_resolve_context *ctx,
 	int server_addr_len;
 	uint16_t dns_id, len;
 	int ret, sock, family;
+	char *query_name;
 
 	sock = ctx->servers[server_idx].sock;
 	family = ctx->servers[server_idx].dns_server.sa_family;
@@ -971,11 +980,20 @@ static int dns_write(struct dns_resolve_context *ctx,
 		return -EINVAL;
 	}
 
+	query_name = buf + DNS_MSG_HEADER_SIZE;
+
+	/* Convert the query name to small case so that our
+	 * hash checker can find it later when we get the answer.
+	 */
+	for (int i = 0; i < dns_qname->len; i++) {
+		query_name[i] = tolower(query_name[i]);
+	}
+
 	/* Add \0 and query type (A or AAAA) to the hash. Note that
 	 * the dns_qname->len contains the length of \0
 	 */
 	ctx->queries[query_idx].query_hash =
-		crc16_ansi(buf + DNS_MSG_HEADER_SIZE, dns_qname->len + 2);
+		crc16_ansi(query_name, dns_qname->len + 2);
 
 	if (hop_limit > 0) {
 		if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
