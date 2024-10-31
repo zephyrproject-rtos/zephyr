@@ -1412,6 +1412,7 @@ config BT_MESH_USES_TINYCRYPT
 	select TINYCRYPT_SHA256
 	select TINYCRYPT_SHA256_HMAC
 	select BT_HOST_CCM
+	select DEPRECATED
 	help
 	  Use TinyCrypt library to perform crypto operations.
 

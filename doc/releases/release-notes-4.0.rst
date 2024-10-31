@@ -146,6 +146,13 @@ Bluetooth
 
 * HCI Drivers
 
+* Mesh
+
+  * The :kconfig:option:`CONFIG_BT_MESH_USES_TINYCRYPT` Kconfig option is marked as deprecated. The
+    reason is that the TinyCrypt library is deprecated and will be removed in a future release.
+    The :kconfig:option:`CONFIG_BT_MESH_USES_MBEDTLS_PSA` option should be used from now on.
+    Changing this option requires devices to be unprovisioned as the keys will not be restored.
+
 Boards & SoC Support
 ********************
 
