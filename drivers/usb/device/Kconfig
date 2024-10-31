@@ -37,6 +37,7 @@ config USB_DC_RPI_PICO
 	bool "USB device controller driver for Raspberry Pi Pico devices"
 	default y
 	depends on DT_HAS_RASPBERRYPI_PICO_USBD_ENABLED
+	select PINCTRL
 	help
 	  Enable USB support on the RP2 family of processors.
 
