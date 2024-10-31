@@ -732,19 +732,21 @@ static inline int video_set_signal(const struct device *dev, enum video_endpoint
  *
  * @param size Size of the video buffer (in bytes).
  * @param align Alignment of the requested memory, must be a power of two.
+ * @param timeout Timeout duration or K_NO_WAIT
  *
  * @retval pointer to allocated video buffer
  */
-struct video_buffer *video_buffer_aligned_alloc(size_t size, size_t align);
+struct video_buffer *video_buffer_aligned_alloc(size_t size, size_t align, k_timeout_t timeout);
 
 /**
  * @brief Allocate video buffer.
  *
  * @param size Size of the video buffer (in bytes).
+ * @param timeout Timeout duration or K_NO_WAIT
  *
  * @retval pointer to allocated video buffer
  */
-struct video_buffer *video_buffer_alloc(size_t size);
+struct video_buffer *video_buffer_alloc(size_t size, k_timeout_t timeout);
 
 /**
  * @brief Release a video buffer.
