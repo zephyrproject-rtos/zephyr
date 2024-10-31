@@ -31,7 +31,7 @@ struct mem_block {
 
 static struct mem_block video_block[CONFIG_VIDEO_BUFFER_POOL_NUM_MAX];
 
-struct video_buffer *video_buffer_aligned_alloc(size_t size, size_t align)
+struct video_buffer *video_buffer_aligned_alloc(size_t size, size_t align, k_timeout_t timeout)
 {
 	struct video_buffer *vbuf = NULL;
 	struct mem_block *block;
@@ -51,7 +51,7 @@ struct video_buffer *video_buffer_aligned_alloc(size_t size, size_t align)
 	}
 
 	/* Alloc buffer memory */
-	block->data = VIDEO_COMMON_HEAP_ALLOC(align, size, K_FOREVER);
+	block->data = VIDEO_COMMON_HEAP_ALLOC(align, size, timeout);
 	if (block->data == NULL) {
 		return NULL;
 	}
@@ -63,9 +63,9 @@ struct video_buffer *video_buffer_aligned_alloc(size_t size, size_t align)
 	return vbuf;
 }
 
-struct video_buffer *video_buffer_alloc(size_t size)
+struct video_buffer *video_buffer_alloc(size_t size, k_timeout_t timeout)
 {
-	return video_buffer_aligned_alloc(size, sizeof(void *));
+	return video_buffer_aligned_alloc(size, sizeof(void *), timeout);
 }
 
 void video_buffer_release(struct video_buffer *vbuf)
