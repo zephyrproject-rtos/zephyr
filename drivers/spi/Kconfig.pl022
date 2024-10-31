@@ -4,6 +4,7 @@
 config SPI_PL022
 	default y
 	depends on DT_HAS_ARM_PL022_ENABLED
+	select PINCTRL if DT_HAS_RASPBERRYPI_PICO_SPI_ENABLED
 	bool "ARM PL022 SPI driver"
 
 if SPI_PL022
