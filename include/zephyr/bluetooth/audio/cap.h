@@ -820,6 +820,17 @@ struct bt_cap_commander_cb {
 	 *			by bt_cap_commander_cancel().
 	 */
 	void (*broadcast_reception_stop)(struct bt_conn *conn, int err);
+	/**
+	 * @brief Callback for bt_cap_commander_distribute_broadcast_code().
+	 *
+	 * @param conn		Pointer to the connection where the error
+	 *			occurred. NULL if @p err is 0 or if cancelled by
+	 *			bt_cap_commander_cancel()
+	 * @param err		0 on success, BT_GATT_ERR() with a
+	 *			specific ATT (BT_ATT_ERR_*) error code or -ECANCELED if cancelled
+	 *			by bt_cap_commander_cancel().
+	 */
+	void (*distribute_broadcast_code)(struct bt_conn *conn, int err);
 #endif /* CONFIG_BT_BAP_BROADCAST_ASSISTANT */
 };
 
