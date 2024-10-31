@@ -419,7 +419,6 @@ static int eeprom_at25_read(const struct device *dev, off_t offset, void *buf,
 			    size_t len)
 {
 	const struct eeprom_at2x_config *config = dev->config;
-	struct eeprom_at2x_data *data = dev->data;
 	size_t cmd_len = 1 + config->addr_width / 8;
 	uint8_t cmd[4] = { EEPROM_AT25_READ, 0, 0, 0 };
 	uint8_t *paddr;
@@ -474,7 +473,6 @@ static int eeprom_at25_read(const struct device *dev, off_t offset, void *buf,
 	err = eeprom_at25_wait_for_idle(dev);
 	if (err) {
 		LOG_ERR("EEPROM idle wait failed (err %d)", err);
-		k_mutex_unlock(&data->lock);
 		return err;
 	}
 
