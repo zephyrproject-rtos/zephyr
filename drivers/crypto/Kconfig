@@ -29,7 +29,7 @@ config CRYPTO_TINYCRYPT_SHIM
 	select TINYCRYPT_AES_CTR
 	select TINYCRYPT_AES_CCM
 	select TINYCRYPT_AES_CMAC
-	select EXPERIMENTAL
+	select DEPRECATED
 	help
 	  Enable TinyCrypt shim layer compliant with crypto APIs.
 
