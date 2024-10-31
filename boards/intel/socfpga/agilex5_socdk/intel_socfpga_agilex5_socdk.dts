@@ -26,6 +26,7 @@
 	mmc {
 		/*SD Disk Access */
 		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
 		status = "okay";
 	};
 };

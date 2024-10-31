@@ -71,6 +71,7 @@
 	pinctrl-names = "default", "slow", "med", "fast";
 	mmc {
 		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
 		status = "okay";
 	};
 };

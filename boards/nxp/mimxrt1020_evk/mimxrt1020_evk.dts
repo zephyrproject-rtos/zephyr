@@ -206,6 +206,7 @@ zephyr_udc0: &usb1 {
 	pwr-gpios = <&gpio3 24 GPIO_ACTIVE_HIGH>;
 	sdmmc {
 		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
 		status = "okay";
 	};
 };

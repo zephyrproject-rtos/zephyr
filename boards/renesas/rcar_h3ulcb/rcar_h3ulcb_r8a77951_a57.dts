@@ -66,6 +66,7 @@
 	pinctrl-names = "default", "uhs";
 	disk {
 		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
 		status = "okay";
 	};
 
