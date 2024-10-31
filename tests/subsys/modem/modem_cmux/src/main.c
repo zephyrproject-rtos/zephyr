@@ -149,6 +149,14 @@ static uint8_t cmux_frame_dlci2_at_newline[] = {0xF9, 0x0B, 0xEF, 0x05, 0x0D, 0x
 static uint8_t cmux_frame_data_dlci2_at_newline[] = {0x0D, 0x0A};
 
 /*************************************************************************************************/
+/*                                     DLCI2 AT CMUX error frames				 */
+/*************************************************************************************************/
+static uint8_t cmux_frame_dlci2_at_cgdcont_invalid_length[] = {
+	0xF9, 0x0B, 0xEF, 0xFE, 0x41, 0x54, 0x2B, 0x43, 0x47, 0x44, 0x43, 0x4F, 0x4E,
+	0x54, 0x3D, 0x31, 0x2C, 0x22, 0x49, 0x50, 0x22, 0x2C, 0x22, 0x74, 0x72, 0x61,
+	0x63, 0x6B, 0x75, 0x6E, 0x69, 0x74, 0x2E, 0x6D, 0x32, 0x6D, 0x22, 0x23, 0xF9};
+
+/*************************************************************************************************/
 /*                                    DLCI1 AT CMUX frames                                       */
 /*************************************************************************************************/
 static uint8_t cmux_frame_dlci1_at_at[] = {0xF9, 0x07, 0xEF, 0x05, 0x41, 0x54, 0x30, 0xF9};
@@ -812,6 +820,48 @@ ZTEST(modem_cmux, test_modem_cmux_prevent_work_while_released)
 	zassert_ok(modem_pipe_open(dlci1_pipe, K_SECONDS(10)));
 	modem_backend_mock_prime(&bus_mock, &transaction_dlci2_sabm);
 	zassert_ok(modem_pipe_open(dlci2_pipe, K_SECONDS(10)));
+}
+
+ZTEST(modem_cmux, test_modem_drop_frames_with_invalid_length)
+{
+	int ret;
+	uint32_t events;
+
+	modem_backend_mock_put(&bus_mock, cmux_frame_dlci2_at_cgdcont_invalid_length,
+			       sizeof(cmux_frame_dlci2_at_cgdcont_invalid_length));
+
+	k_msleep(100);
+
+	events = k_event_test(&cmux_event, EVENT_CMUX_DLCI2_RECEIVE_READY);
+
+	zassert_false(events & EVENT_CMUX_DLCI2_RECEIVE_READY,
+		      "Receive event should not have been received for DLCI2 pipe");
+
+	modem_backend_mock_put(&bus_mock, cmux_frame_dlci2_at_cgdcont,
+			       sizeof(cmux_frame_dlci2_at_cgdcont));
+
+	modem_backend_mock_put(&bus_mock, cmux_frame_dlci2_at_newline,
+			       sizeof(cmux_frame_dlci2_at_newline));
+
+	k_msleep(100);
+
+	events = k_event_test(&cmux_event, EVENT_CMUX_DLCI2_RECEIVE_READY);
+	zassert_equal(events, EVENT_CMUX_DLCI2_RECEIVE_READY,
+		      "Receive ready event not received for DLCI2 pipe");
+
+	ret = modem_pipe_receive(dlci2_pipe, buffer2, sizeof(buffer2));
+	zassert_true(ret == (sizeof(cmux_frame_data_dlci2_at_cgdcont) +
+			     sizeof(cmux_frame_data_dlci2_at_newline)),
+		     "Incorrect number of bytes received");
+
+	zassert_true(memcmp(buffer2, cmux_frame_data_dlci2_at_cgdcont,
+			    sizeof(cmux_frame_data_dlci2_at_cgdcont)) == 0,
+		     "Incorrect data received");
+
+	zassert_true(memcmp(&buffer2[sizeof(cmux_frame_data_dlci2_at_cgdcont)],
+			    cmux_frame_data_dlci2_at_newline,
+			    sizeof(cmux_frame_data_dlci2_at_newline)) == 0,
+		     "Incorrect data received");
 }
 
 ZTEST_SUITE(modem_cmux, NULL, test_modem_cmux_setup, test_modem_cmux_before, NULL, NULL);
