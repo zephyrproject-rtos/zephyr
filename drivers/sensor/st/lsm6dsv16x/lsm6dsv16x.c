@@ -373,6 +373,149 @@ static int lsm6dsv16x_attr_set(const struct device *dev,
 	return 0;
 }
 
+static int lsm6dsv16x_accel_get_config(const struct device *dev,
+				       enum sensor_channel chan,
+				       enum sensor_attribute attr,
+				       struct sensor_value *val)
+{
+	const struct lsm6dsv16x_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+	struct lsm6dsv16x_data *data = dev->data;
+
+	switch (attr) {
+	case SENSOR_ATTR_FULL_SCALE:
+		sensor_degrees_to_rad(lsm6dsv16x_accel_fs_map[data->accel_fs], val);
+		break;
+	case SENSOR_ATTR_SAMPLING_FREQUENCY: {
+		lsm6dsv16x_data_rate_t odr;
+		int8_t mode;
+
+		if (lsm6dsv16x_gy_data_rate_get(ctx, &odr) < 0) {
+			return -EINVAL;
+		}
+
+		mode = (odr >> 4) & 0xf;
+
+		val->val1 = lsm6dsv16x_odr_map[mode][data->accel_freq];
+		break;
+	}
+	case SENSOR_ATTR_CONFIGURATION: {
+		lsm6dsv16x_xl_mode_t mode;
+
+		lsm6dsv16x_xl_mode_get(ctx, &mode);
+
+		switch (mode) {
+		case LSM6DSV16X_XL_HIGH_PERFORMANCE_MD:
+			val->val1 = 0;
+			break;
+		case LSM6DSV16X_XL_HIGH_ACCURACY_ODR_MD:
+			val->val1 = 1;
+			break;
+		case LSM6DSV16X_XL_ODR_TRIGGERED_MD:
+			val->val1 = 3;
+			break;
+		case LSM6DSV16X_XL_LOW_POWER_2_AVG_MD:
+			val->val1 = 4;
+			break;
+		case LSM6DSV16X_XL_LOW_POWER_4_AVG_MD:
+			val->val1 = 5;
+			break;
+		case LSM6DSV16X_XL_LOW_POWER_8_AVG_MD:
+			val->val1 = 6;
+			break;
+		case LSM6DSV16X_XL_NORMAL_MD:
+			val->val1 = 7;
+			break;
+		default:
+			return -EIO;
+		}
+
+		break;
+	}
+	default:
+		LOG_DBG("Attr attribute not supported.");
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
+static int lsm6dsv16x_gyro_get_config(const struct device *dev,
+				      enum sensor_channel chan,
+				      enum sensor_attribute attr,
+				      struct sensor_value *val)
+{
+	const struct lsm6dsv16x_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+	struct lsm6dsv16x_data *data = dev->data;
+
+	switch (attr) {
+	case SENSOR_ATTR_FULL_SCALE:
+		sensor_degrees_to_rad(lsm6dsv16x_gyro_fs_map[data->gyro_fs], val);
+		break;
+	case SENSOR_ATTR_SAMPLING_FREQUENCY: {
+		lsm6dsv16x_data_rate_t odr;
+		int8_t mode;
+
+		if (lsm6dsv16x_gy_data_rate_get(ctx, &odr) < 0) {
+			return -EINVAL;
+		}
+
+		mode = (odr >> 4) & 0xf;
+
+		val->val1 = lsm6dsv16x_odr_map[mode][data->gyro_freq];
+		break;
+	}
+	case SENSOR_ATTR_CONFIGURATION: {
+		lsm6dsv16x_gy_mode_t mode;
+
+		lsm6dsv16x_gy_mode_get(ctx, &mode);
+
+		switch (mode) {
+		case LSM6DSV16X_GY_HIGH_PERFORMANCE_MD:
+			val->val1 = 0;
+			break;
+		case LSM6DSV16X_GY_HIGH_ACCURACY_ODR_MD:
+			val->val1 = 1;
+			break;
+		case LSM6DSV16X_GY_SLEEP_MD:
+			val->val1 = 4;
+			break;
+		case LSM6DSV16X_GY_LOW_POWER_MD:
+			val->val1 = 5;
+			break;
+		default:
+			return -EIO;
+		}
+
+		break;
+	}
+	default:
+		LOG_DBG("Gyro attribute not supported.");
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
+static int lsm6dsv16x_attr_get(const struct device *dev,
+			       enum sensor_channel chan,
+			       enum sensor_attribute attr,
+			       struct sensor_value *val)
+{
+	switch (chan) {
+	case SENSOR_CHAN_ACCEL_XYZ:
+		return lsm6dsv16x_accel_get_config(dev, chan, attr, val);
+	case SENSOR_CHAN_GYRO_XYZ:
+		return lsm6dsv16x_gyro_get_config(dev, chan, attr, val);
+	default:
+		LOG_WRN("attr_get() not supported on this channel.");
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
 static int lsm6dsv16x_sample_fetch_accel(const struct device *dev)
 {
 	const struct lsm6dsv16x_config *cfg = dev->config;
@@ -775,6 +918,7 @@ static int lsm6dsv16x_channel_get(const struct device *dev,
 
 static const struct sensor_driver_api lsm6dsv16x_driver_api = {
 	.attr_set = lsm6dsv16x_attr_set,
+	.attr_get = lsm6dsv16x_attr_get,
 #if CONFIG_LSM6DSV16X_TRIGGER
 	.trigger_set = lsm6dsv16x_trigger_set,
 #endif
