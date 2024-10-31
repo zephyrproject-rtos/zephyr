@@ -71,48 +71,35 @@ static bool schedule_send(struct bt_mesh_ext_adv *ext_adv);
 
 static struct bt_mesh_ext_adv advs[] = {
 	[0] = {
-		.tags = (
-#if !defined(CONFIG_BT_MESH_ADV_EXT_FRIEND_SEPARATE)
-			BT_MESH_ADV_TAG_BIT_FRIEND |
-#endif
-#if !defined(CONFIG_BT_MESH_ADV_EXT_GATT_SEPARATE)
-			BT_MESH_ADV_TAG_BIT_PROXY |
-#endif /* !CONFIG_BT_MESH_ADV_EXT_GATT_SEPARATE */
-#if defined(CONFIG_BT_MESH_ADV_EXT_RELAY_USING_MAIN_ADV_SET)
-			BT_MESH_ADV_TAG_BIT_RELAY |
-#endif /* CONFIG_BT_MESH_ADV_EXT_RELAY_USING_MAIN_ADV_SET */
-#if defined(CONFIG_BT_MESH_PB_ADV)
-			BT_MESH_ADV_TAG_BIT_PROV |
-#endif /* CONFIG_BT_MESH_PB_ADV */
-			BT_MESH_ADV_TAG_BIT_LOCAL
-		),
+		.tags = (BT_MESH_ADV_TAG_BIT_LOCAL |
+				 (IS_ENABLED(CONFIG_BT_MESH_ADV_EXT_FRIEND_SEPARATE)
+					  ? 0 : BT_MESH_ADV_TAG_BIT_FRIEND) |
+				 (IS_ENABLED(CONFIG_BT_MESH_ADV_EXT_GATT_SEPARATE)
+					  ? 0 : BT_MESH_ADV_TAG_BIT_PROXY) |
+				 (IS_ENABLED(CONFIG_BT_MESH_ADV_EXT_RELAY_USING_MAIN_ADV_SET)
+					  ? BT_MESH_ADV_TAG_BIT_RELAY : 0) |
+				 (IS_ENABLED(CONFIG_BT_MESH_PB_ADV)
+					  ? BT_MESH_ADV_TAG_BIT_PROV : 0)),
 		.work = Z_WORK_INITIALIZER(send_pending_adv),
 	},
-#if CONFIG_BT_MESH_RELAY_ADV_SETS
-	[1 ... CONFIG_BT_MESH_RELAY_ADV_SETS] = {
-		.tags = (
-#if defined(CONFIG_BT_MESH_RELAY)
-			BT_MESH_ADV_TAG_BIT_RELAY |
-#endif /* CONFIG_BT_MESH_RELAY */
-#if defined(CONFIG_BT_MESH_PB_ADV_USE_RELAY_SETS)
-			BT_MESH_ADV_TAG_BIT_PROV |
-#endif /* CONFIG_BT_MESH_PB_ADV_USE_RELAY_SETS */
-		0),
-		.work = Z_WORK_INITIALIZER(send_pending_adv),
-	},
-#endif /* CONFIG_BT_MESH_RELAY_ADV_SETS */
-#if defined(CONFIG_BT_MESH_ADV_EXT_FRIEND_SEPARATE)
-	{
-		.tags = BT_MESH_ADV_TAG_BIT_FRIEND,
-		.work = Z_WORK_INITIALIZER(send_pending_adv),
-	},
-#endif /* CONFIG_BT_MESH_ADV_EXT_FRIEND_SEPARATE */
-#if defined(CONFIG_BT_MESH_ADV_EXT_GATT_SEPARATE)
-	{
-		.tags = BT_MESH_ADV_TAG_BIT_PROXY,
-		.work = Z_WORK_INITIALIZER(send_pending_adv),
-	},
-#endif /* CONFIG_BT_MESH_ADV_EXT_GATT_SEPARATE */
+	COND_CODE_0(CONFIG_BT_MESH_RELAY_ADV_SETS,
+		(), ([1 ... CONFIG_BT_MESH_RELAY_ADV_SETS] = {
+			.tags = (
+			  (IS_ENABLED(CONFIG_BT_MESH_RELAY) ?
+				BT_MESH_ADV_TAG_BIT_RELAY : 0) |
+			  (IS_ENABLED(CONFIG_BT_MESH_PB_ADV_USE_RELAY_SETS) ?
+				BT_MESH_ADV_TAG_BIT_PROV : 0)
+			),
+			.work = Z_WORK_INITIALIZER(send_pending_adv),
+		    }))
+	COND_CODE_1(IS_ENABLED(CONFIG_BT_MESH_ADV_EXT_FRIEND_SEPARATE),
+		({  .tags = BT_MESH_ADV_TAG_BIT_FRIEND,
+		    .work = Z_WORK_INITIALIZER(send_pending_adv),
+		 }), ())
+	COND_CODE_1(IS_ENABLED(CONFIG_BT_MESH_ADV_EXT_GATT_SEPARATE),
+		({  .tags = BT_MESH_ADV_TAG_BIT_PROXY,
+		    .work = Z_WORK_INITIALIZER(send_pending_adv),
+		 }), ())
 };
 
 BUILD_ASSERT(ARRAY_SIZE(advs) <= CONFIG_BT_EXT_ADV_MAX_ADV_SET,
@@ -120,20 +107,13 @@ BUILD_ASSERT(ARRAY_SIZE(advs) <= CONFIG_BT_EXT_ADV_MAX_ADV_SET,
 
 static inline struct bt_mesh_ext_adv *relay_adv_get(void)
 {
-	if (!!(CONFIG_BT_MESH_RELAY_ADV_SETS)) {
-		return &advs[1];
-	} else {
-		return &advs[0];
-	}
+	return !!(CONFIG_BT_MESH_RELAY_ADV_SETS) ? &advs[1] : &advs[0];
 }
 
 static inline struct bt_mesh_ext_adv *gatt_adv_get(void)
 {
-	if (IS_ENABLED(CONFIG_BT_MESH_ADV_EXT_GATT_SEPARATE)) {
-		return &advs[ARRAY_SIZE(advs) - 1];
-	} else {
-		return &advs[0];
-	}
+	return IS_ENABLED(CONFIG_BT_MESH_ADV_EXT_GATT_SEPARATE) ?
+			&advs[ARRAY_SIZE(advs) - 1] : &advs[0];
 }
 
 static int adv_start(struct bt_mesh_ext_adv *ext_adv,
@@ -233,14 +213,6 @@ static int adv_send(struct bt_mesh_ext_adv *ext_adv, struct bt_mesh_adv *adv)
 	return err;
 }
 
-static const char * const adv_tag_to_str[] = {
-	[BT_MESH_ADV_TAG_LOCAL]  = "local adv",
-	[BT_MESH_ADV_TAG_RELAY]  = "relay adv",
-	[BT_MESH_ADV_TAG_PROXY]  = "proxy adv",
-	[BT_MESH_ADV_TAG_FRIEND] = "friend adv",
-	[BT_MESH_ADV_TAG_PROV]   = "prov adv",
-};
-
 static bool schedule_send_with_mask(struct bt_mesh_ext_adv *ext_adv, int ignore_mask)
 {
 	if (atomic_test_and_clear_bit(ext_adv->flags, ADV_FLAG_PROXY)) {
@@ -265,6 +237,13 @@ static bool schedule_send_with_mask(struct bt_mesh_ext_adv *ext_adv, int ignore_
 
 static void send_pending_adv(struct k_work *work)
 {
+	static const char * const adv_tag_to_str[] = {
+		[BT_MESH_ADV_TAG_LOCAL]  = "local",
+		[BT_MESH_ADV_TAG_RELAY]  = "relay",
+		[BT_MESH_ADV_TAG_PROXY]  = "proxy",
+		[BT_MESH_ADV_TAG_FRIEND] = "friend",
+		[BT_MESH_ADV_TAG_PROV]   = "prov",
+	};
 	struct bt_mesh_ext_adv *ext_adv;
 	struct bt_mesh_adv *adv;
 	int err;
@@ -277,7 +256,7 @@ static void send_pending_adv(struct k_work *work)
 	}
 
 	if (atomic_test_and_clear_bit(ext_adv->flags, ADV_FLAG_SENT)) {
-		LOG_DBG("Advertising stopped after %u ms for %s",
+		LOG_DBG("Advertising stopped after %u ms for %s adv",
 			k_uptime_get_32() - ext_adv->timestamp,
 			ext_adv->adv ? adv_tag_to_str[ext_adv->adv->ctx.tag]
 				     : adv_tag_to_str[BT_MESH_ADV_TAG_PROXY]);
