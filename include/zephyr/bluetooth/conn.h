@@ -410,7 +410,7 @@ struct bt_conn_le_cs_capabilities {
 
 /** Remote FAE Table for LE connections supporting CS */
 struct bt_conn_le_cs_fae_table {
-	uint8_t *remote_fae_table;
+	int8_t *remote_fae_table;
 };
 
 /** Channel sounding main mode */

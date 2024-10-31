@@ -886,7 +886,7 @@ int bt_le_cs_write_cached_remote_supported_capabilities(
  *
  * @return Zero on success or (negative) error code on failure.
  */
-int bt_le_cs_write_cached_remote_fae_table(struct bt_conn *conn, uint8_t remote_fae_table[72]);
+int bt_le_cs_write_cached_remote_fae_table(struct bt_conn *conn, int8_t remote_fae_table[72]);
 
 #ifdef __cplusplus
 }

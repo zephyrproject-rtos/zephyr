@@ -2500,7 +2500,7 @@ struct bt_hci_cp_le_read_remote_fae_table {
 
 struct bt_hci_cp_le_write_cached_remote_fae_table {
 	uint16_t handle;
-	uint8_t remote_fae_table[72];
+	int8_t remote_fae_table[72];
 } __packed;
 
 #define BT_HCI_OP_LE_CS_SET_CHANNEL_CLASSIFICATION BT_OP(BT_OGF_LE, 0x0092) /* 0x2092 */
@@ -3547,7 +3547,7 @@ struct bt_hci_evt_le_cs_read_remote_supported_capabilities_complete {
 struct bt_hci_evt_le_cs_read_remote_fae_table_complete {
 	uint8_t status;
 	uint16_t conn_handle;
-	uint8_t remote_fae_table[72];
+	int8_t remote_fae_table[72];
 } __packed;
 
 #define BT_HCI_LE_CS_CONFIG_ACTION_REMOVED 0x00
