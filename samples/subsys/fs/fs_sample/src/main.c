@@ -36,7 +36,7 @@ static struct fs_mount_t mp = {
 
 #include <zephyr/fs/ext2.h>
 
-#define DISK_DRIVE_NAME "SDMMC"
+#define DISK_DRIVE_NAME "SD"
 #define DISK_MOUNT_PT "/ext"
 
 static struct fs_mount_t mp = {

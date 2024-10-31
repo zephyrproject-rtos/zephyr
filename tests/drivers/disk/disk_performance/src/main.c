@@ -13,7 +13,7 @@
 #include <zephyr/random/random.h>
 
 #if defined(CONFIG_DISK_DRIVER_SDMMC)
-#define DISK_NAME CONFIG_SDMMC_VOLUME_NAME
+#define DISK_NAME "SD"
 #elif defined(CONFIG_DISK_DRIVER_MMC)
 #define DISK_NAME CONFIG_MMC_VOLUME_NAME
 #elif defined(CONFIG_NVME)

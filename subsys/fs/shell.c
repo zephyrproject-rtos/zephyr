@@ -40,7 +40,7 @@ static struct fs_mount_t fatfs_mnt = {
 #ifdef CONFIG_FS_LITTLEFS_BLK_DEV
 
 #if defined(CONFIG_DISK_DRIVER_SDMMC)
-#define DISK_NAME CONFIG_SDMMC_VOLUME_NAME
+#define DISK_NAME "SD"
 #elif defined(CONFIG_DISK_DRIVER_MMC)
 #define DISK_NAME CONFIG_MMC_VOLUME_NAME
 #else
