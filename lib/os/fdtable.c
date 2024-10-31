@@ -25,6 +25,10 @@
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/sys/atomic.h>
 
+/* File flag bits */
+#define ZVFS_FLAG_EOF BIT(0)
+#define ZVFS_FLAG_ERR BIT(1)
+
 struct stat;
 
 struct fd_entry {
@@ -35,6 +39,7 @@ struct fd_entry {
 	struct k_condvar cond;
 	size_t offset;
 	uint32_t mode;
+	uint8_t flags;
 };
 
 #if defined(CONFIG_POSIX_DEVICE_IO)
@@ -522,6 +527,16 @@ int zvfs_ioctl(int fd, unsigned long request, va_list args)
 	return fdtable[fd].vtable->ioctl(fdtable[fd].obj, request, args);
 }
 
+int zvfs_feof(FILE *file)
+{
+	struct fd_entry *entry = (struct fd_entry *)file;
+
+	if (!IS_ARRAY_ELEMENT(fdtable, entry)) {
+		return -1;
+	}
+
+	return ((entry->flags & ZVFS_FLAG_EOF) != 0) ? 1 : 0;
+}
 
 #if defined(CONFIG_POSIX_DEVICE_IO)
 /*
