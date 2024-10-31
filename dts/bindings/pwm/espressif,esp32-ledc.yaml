@@ -130,6 +130,30 @@ child-binding:
         For maximum flexibility, the high-speed as well as the low-speed channels can be driven from
         one of four high-speed/low-speed timers.
 
+    max_res:
+      type: int
+      enum:
+      - 10
+      - 11
+      - 12
+      - 13
+      - 14
+      - 15
+      - 16
+      - 17
+      - 18
+      - 19
+      - 20
+      description: |
+        Timer maximum resolution.
+        This value is optional, as if it is not defined the PWM driver will find the best
+        resolution value. However, if resolution is set to maximum value (either by the
+        driver or this setting), a duty cycle of 100% is often not reachable for certain
+        devices, and they will display a low output level instead. In this case, it can
+        be useful to set the maximum resolution to one bit less than the timer bit width
+        (e.g 13 or 19 depending on the device). If property is not declared, the driver
+        will default to (timer width - 1).
+
 pwm-cells:
 - channel
 - period

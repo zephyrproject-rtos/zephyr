@@ -31,6 +31,7 @@ struct pwm_ledc_esp32_channel_config {
 	const uint8_t idx;
 	const uint8_t channel_num;
 	const uint8_t timer_num;
+	const uint8_t max_res;
 	uint32_t freq;
 	const ledc_mode_t speed_mode;
 	uint8_t resolution;
@@ -130,15 +131,15 @@ static int pwm_led_esp32_calculate_max_resolution(struct pwm_ledc_esp32_channel_
 #endif
 	uint32_t max_precision_n = clock_freq/channel->freq;
 
-	for (uint8_t i = 0; i <= SOC_LEDC_TIMER_BIT_WIDTH; i++) {
+	for (uint8_t i = 0; i <= channel->max_res; i++) {
 		max_precision_n /= 2;
 		if (!max_precision_n) {
-			channel->resolution =  i;
+			channel->resolution = i;
 			return 0;
 		}
 	}
-	return -EINVAL;
 
+	return -EINVAL;
 }
 
 static int pwm_led_esp32_timer_config(struct pwm_ledc_esp32_channel_config *channel)
@@ -185,7 +186,7 @@ static int pwm_led_esp32_timer_config(struct pwm_ledc_esp32_channel_config *chan
 	 * so select the slow clock source (1MHz) with highest counter resolution.
 	 * this can be handled on the func 'pwm_led_esp32_timer_set' with 'prescaler'.
 	 */
-	channel->resolution = SOC_LEDC_TIMER_BIT_WIDTH;
+	channel->resolution = channel->max_res;
 	return 0;
 }
 
@@ -356,15 +357,15 @@ PINCTRL_DT_INST_DEFINE(0);
 	#define CLOCK_SOURCE	LEDC_SCLK
 #endif
 
-#define CHANNEL_CONFIG(node_id)                                                \
-	{                                                                      \
-		.idx = DT_REG_ADDR(node_id),                                   \
-		.channel_num = DT_REG_ADDR(node_id) % 8,                       \
-		.timer_num = DT_PROP(node_id, timer),                          \
-		.speed_mode = DT_REG_ADDR(node_id) < SOC_LEDC_CHANNEL_NUM      \
-				      ? LEDC_LOW_SPEED_MODE                    \
-				      : !LEDC_LOW_SPEED_MODE,                  \
-		.clock_src = CLOCK_SOURCE,                                     \
+#define CHANNEL_CONFIG(node_id)                                                                    \
+	{                                                                                          \
+		.idx = DT_REG_ADDR(node_id),                                                       \
+		.channel_num = DT_REG_ADDR(node_id) % 8,                                           \
+		.timer_num = DT_PROP(node_id, timer),                                              \
+		.max_res = DT_PROP_OR(node_id, max_res, SOC_LEDC_TIMER_BIT_WIDTH - 1),             \
+		.speed_mode = DT_REG_ADDR(node_id) < SOC_LEDC_CHANNEL_NUM ? LEDC_LOW_SPEED_MODE    \
+									  : !LEDC_LOW_SPEED_MODE,  \
+		.clock_src = CLOCK_SOURCE,                                                         \
 	},
 
 static struct pwm_ledc_esp32_channel_config channel_config[] = {
@@ -392,3 +393,9 @@ DEVICE_DT_INST_DEFINE(0, &pwm_led_esp32_init, NULL,
 			POST_KERNEL,
 			CONFIG_PWM_INIT_PRIORITY,
 			&pwm_led_esp32_api);
+
+#define CHECK_CHANNEL_CONFIG(node_id) \
+	BUILD_ASSERT(DT_PROP_OR(node_id, max_res, 0) <= SOC_LEDC_TIMER_BIT_WIDTH, \
+	     "Invalid resolution is set for the channel");
+
+DT_INST_FOREACH_CHILD(0, CHECK_CHANNEL_CONFIG);
