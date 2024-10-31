@@ -75,6 +75,19 @@ int uart_cdns_poll_in(const struct device *dev, unsigned char *p_char)
 }
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static void uart_cdns_irq_handler(const struct device *dev)
+{
+	struct uart_cdns_regs *uart_regs = DEV_UART(dev);
+	struct uart_cdns_data *data = dev->data;
+
+	if (data->callback) {
+		data->callback(dev, data->cb_data);
+	}
+
+	/* clear events by reading the status */
+	(void)uart_regs->channel_intr_status;
+}
+
 static int uart_cdns_fill_fifo(const struct device *dev, const uint8_t *tx_data, int len)
 {
 	struct uart_cdns_regs *uart_regs = DEV_UART(dev);
@@ -105,21 +118,27 @@ static int uart_cdns_read_fifo(const struct device *dev, uint8_t *rx_data, const
 void uart_cdns_enable_tx_irq(const struct device *dev)
 {
 	struct uart_cdns_regs *uart_regs = DEV_UART(dev);
-
+	struct uart_cdns_data *data = dev->data;
+	unsigned int key;
 	/*
 	 * TX empty interrupt only triggered when TX removes the last byte from the
-	 * TX FIFO. We need another way generate the first interrupt. This is why
-	 * we have the timer involved here
+	 * TX FIFO. We need another way generate the first interrupt. If the TX FIFO
+	 * is already empty, we need to trigger the callback manually.
 	 */
-	uart_regs->rx_timeout = DEFAULT_RTO_PERIODS_FACTOR;
-	uart_regs->intr_enable = CSR_TEMPTY_MASK | CSR_TOUT_MASK;
+	uart_regs->intr_enable = CSR_TEMPTY_MASK;
+	key = irq_lock();
+	if (data->callback) {
+		data->callback(dev, data->cb_data);
+	}
+	irq_unlock(key);
+
 }
 
 void uart_cdns_disable_tx_irq(const struct device *dev)
 {
 	struct uart_cdns_regs *uart_regs = DEV_UART(dev);
 
-	uart_regs->intr_disable = CSR_TEMPTY_MASK | CSR_TOUT_MASK;
+	uart_regs->intr_disable = CSR_TEMPTY_MASK;
 }
 
 static int uart_cdns_irq_tx_ready(const struct device *dev)
@@ -158,7 +177,7 @@ static void uart_cdns_enable_irq_err(const struct device *dev)
 	struct uart_cdns_regs *uart_regs = DEV_UART(dev);
 
 	uart_regs->intr_enable |=
-		(CSR_TOVR_MASK | CSR_TOUT_MASK | CSR_PARE_MASK | CSR_FRAME_MASK | CSR_ROVR_MASK);
+		(CSR_TOVR_MASK | CSR_PARE_MASK | CSR_FRAME_MASK | CSR_ROVR_MASK);
 }
 
 static void uart_cdns_disable_irq_err(const struct device *dev)
@@ -166,7 +185,7 @@ static void uart_cdns_disable_irq_err(const struct device *dev)
 	struct uart_cdns_regs *uart_regs = DEV_UART(dev);
 
 	uart_regs->intr_disable |=
-		(CSR_TOVR_MASK | CSR_TOUT_MASK | CSR_PARE_MASK | CSR_FRAME_MASK | CSR_ROVR_MASK);
+		(CSR_TOVR_MASK | CSR_PARE_MASK | CSR_FRAME_MASK | CSR_ROVR_MASK);
 }
 
 static int uart_cdns_is_irq_pending(const struct device *dev)
@@ -192,29 +211,6 @@ void uart_cdns_set_irq_callback(const struct device *dev, uart_irq_callback_user
 	data->callback = cb;
 	data->cb_data = cb_data;
 }
-
-static void uart_cdns_irq_handler(const struct device *dev)
-{
-	struct uart_cdns_regs *uart_regs = DEV_UART(dev);
-	uint32_t key = irq_lock();
-	uint32_t isr_status;
-	struct uart_cdns_data *data = dev->data;
-
-	if (data->callback) {
-		data->callback(dev, data->cb_data);
-	}
-
-	/* clear events */
-	/* need to make local copy of the status */
-	isr_status = uart_regs->channel_intr_status;
-
-	if (isr_status & CSR_TOUT_MASK) {
-		uart_regs->intr_disable = CSR_TOUT_MASK;
-	}
-
-	irq_unlock(key);
-}
-
 #endif
 
 static const struct uart_driver_api uart_cdns_driver_api = {
