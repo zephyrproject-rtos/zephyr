@@ -6,7 +6,4 @@ if SOC_SERIES_RA4M2
 config NUM_IRQS
 	default 96
 
-config PINCTRL
-	default y
-
 endif # SOC_SERIES_RA4M2
