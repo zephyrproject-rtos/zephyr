@@ -96,15 +96,11 @@ uintptr_t z_arm_pendsv_c(uintptr_t exc_ret)
 
 	/* restore mode */
 	IF_ENABLED(CONFIG_USERSPACE, ({
-			CONTROL_Type ctrl = {.w = __get_CONTROL()};
-			/* exit privileged state when returning to thread mode. */
-			ctrl.b.nPRIV = 0;
-			/* __set_CONTROL inserts an ISB which is may not be necessary here
-			 * (stack pointer may not be touched), but it's recommended to avoid
-			 * executing pre-fetched instructions with the previous privilege.
-			 */
-			__set_CONTROL(ctrl.w | current->arch.mode);
-		}));
+			   CONTROL_Type ctrl = {.w = __get_CONTROL()};
+			   /* exit privileged state when returing to thread mode. */
+			   ctrl.b.nPRIV = 0;
+			   __set_CONTROL(ctrl.w | current->arch.mode);
+		   }));
 
 	return exc_ret;
 }
