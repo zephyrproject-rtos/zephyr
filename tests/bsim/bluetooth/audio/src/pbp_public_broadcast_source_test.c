@@ -24,6 +24,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/toolchain.h>
 
+#include "bap_stream_tx.h"
 #include "bstests.h"
 #include "common.h"
 
@@ -55,7 +56,7 @@ static uint8_t bis_codec_data[] = {
 	BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CFG_FREQ,
 			BT_BYTES_LIST_LE16(BT_AUDIO_CODEC_CFG_FREQ_48KHZ))};
 
-static struct bt_cap_stream broadcast_source_stream;
+static struct audio_test_stream broadcast_source_stream;
 static struct bt_cap_stream *broadcast_stream;
 
 static struct bt_cap_initiator_broadcast_stream_param stream_params;
@@ -74,52 +75,32 @@ static struct bt_le_ext_adv *adv;
 
 static void started_cb(struct bt_bap_stream *stream)
 {
+	int err;
+
 	printk("Stream %p started\n", stream);
+
+	err = stream_tx_register(stream);
+	if (err != 0) {
+		FAIL("Failed to register stream %p for TX: %d\n", stream, err);
+		return;
+	}
+
 	k_sem_give(&sem_started);
 }
 
 static void stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 {
+	int err;
+
 	printk("Stream %p stopped with reason 0x%02X\n", stream, reason);
+
+	err = stream_tx_unregister(stream);
+	if (err != 0) {
+		FAIL("Failed to unregister stream %p for TX: %d\n", stream, err);
+		return;
+	}
+
 	k_sem_give(&sem_stopped);
-}
-
-static void sent_cb(struct bt_bap_stream *stream)
-{
-	static uint8_t mock_data[CONFIG_BT_ISO_TX_MTU];
-	static bool mock_data_initialized;
-	static uint32_t seq_num;
-	struct net_buf *buf;
-	int ret;
-
-	if (broadcast_preset_48_2_1.qos.sdu > CONFIG_BT_ISO_TX_MTU) {
-		printk("Invalid SDU %u for the MTU: %d",
-			broadcast_preset_48_2_1.qos.sdu, CONFIG_BT_ISO_TX_MTU);
-		return;
-	}
-
-	if (!mock_data_initialized) {
-		for (size_t i = 0U; i < ARRAY_SIZE(mock_data); i++) {
-			/* Initialize mock data */
-			mock_data[i] = (uint8_t)i;
-		}
-		mock_data_initialized = true;
-	}
-
-	buf = net_buf_alloc(&tx_pool, K_FOREVER);
-	if (buf == NULL) {
-		printk("Could not allocate buffer when sending on %p\n", stream);
-		return;
-	}
-
-	net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
-	net_buf_add_mem(buf, mock_data, broadcast_preset_48_2_1.qos.sdu);
-	ret = bt_bap_stream_send(stream, buf, seq_num++);
-	if (ret < 0) {
-		/* This will end broadcasting on this stream. */
-		net_buf_unref(buf);
-		return;
-	}
 }
 
 static int setup_extended_adv_data(struct bt_cap_broadcast_source *source,
@@ -278,7 +259,7 @@ static int stop_extended_adv(struct bt_le_ext_adv *adv)
 static struct bt_bap_stream_ops broadcast_stream_ops = {
 	.started = started_cb,
 	.stopped = stopped_cb,
-	.sent = sent_cb
+	.sent = stream_tx_sent_cb,
 };
 
 static void test_main(void)
@@ -293,10 +274,13 @@ static void test_main(void)
 		return;
 	}
 
-	broadcast_stream = &broadcast_source_stream;
+	printk("Bluetooth initialized\n");
+	stream_tx_init();
+
+	broadcast_stream = &broadcast_source_stream.stream;
 	bt_bap_stream_cb_register(&broadcast_stream->bap_stream, &broadcast_stream_ops);
 
-	stream_params.stream = &broadcast_source_stream;
+	stream_params.stream = broadcast_stream;
 	stream_params.data_len = ARRAY_SIZE(bis_codec_data);
 	stream_params.data = bis_codec_data;
 
@@ -345,11 +329,6 @@ static void test_main(void)
 		}
 
 		k_sem_take(&sem_started, SEM_TIMEOUT);
-
-		/* Initialize sending */
-		for (unsigned int j = 0U; j < BROADCAST_ENQUEUE_COUNT; j++) {
-			sent_cb(&broadcast_stream->bap_stream);
-		}
 
 		/* Wait for other devices to let us know when we can stop the source */
 		printk("Waiting for signal from receiver to stop\n"); backchannel_sync_wait_any();
