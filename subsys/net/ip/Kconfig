@@ -48,6 +48,19 @@ config NET_NATIVE_IPV4
 	depends on NET_NATIVE
 	default y if NET_IPV4
 
+config NET_PMTU
+	bool
+	default y
+	depends on NET_IPV6_PMTU || NET_IPV4_PMTU
+
+if NET_PMTU
+module = NET_PMTU
+module-dep = NET_LOG
+module-str = Log level for PMTU
+module-help = Enables PMTU to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+endif # NET_PMTU
+
 config NET_NATIVE_TCP
 	bool
 	depends on NET_NATIVE
