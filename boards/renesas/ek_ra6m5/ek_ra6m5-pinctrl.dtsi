@@ -30,4 +30,11 @@
 			<RA_PSEL(RA_PSEL_SPI, 2, 5)>;
 		};
 	};
+
+	usbhs_default: usbhs_default {
+		group1 {
+			psels = <RA_PSEL(RA_PSEL_USBHS, 11, 1)>; /* USBHS-VBUS */
+			drive-strength = "high";
+		};
+	};
 };
