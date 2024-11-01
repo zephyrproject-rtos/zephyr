@@ -25,7 +25,7 @@ The following CVEs are addressed by this release:
 More detailed information can be found in:
 https://docs.zephyrproject.org/latest/security/vulnerabilities.html
 
-* CVE-2024-8798: Under embargo until 2024-11-22
+* :cve:`2024-8798`: Under embargo until 2024-11-22
 
 API Changes
 ***********
