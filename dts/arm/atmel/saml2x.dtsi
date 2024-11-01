@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2021 Argentum Systems Ltd.
- * Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
+ * Copyright (c) 2024-2025 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,6 +25,8 @@
 		sercom-3 = &sercom3;
 		sercom-4 = &sercom4;
 		sercom-5 = &sercom5;
+
+		rtc = &rtc;
 
 		tc-4 = &tc4;
 
@@ -203,6 +205,9 @@
 			atmel,assigned-clocks = <&osc32kctrl 0>;
 			atmel,assigned-clock-names = "OSC32KCTRL";
 			status = "disabled";
+
+			alarms-count = <1>;
+			cal-constant = <(8192 * 128)>;
 		};
 
 		adc: adc@43000c00 {
