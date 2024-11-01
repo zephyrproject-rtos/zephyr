@@ -35,6 +35,8 @@ extern "C" {
 
 #define BT_VS_CMD_SUP_FEAT(cmd)                 BT_LE_FEAT_TEST(cmd, \
 						BT_VS_CMD_BIT_SUP_FEAT)
+#define BT_VS_CMD_SUP_BUILD_INFO(cmd)           BT_LE_FEAT_TEST(cmd, \
+						BT_VS_CMD_BIT_READ_BUILD_INFO)
 #define BT_VS_CMD_READ_STATIC_ADDRS(cmd)        BT_LE_FEAT_TEST(cmd, \
 						BT_VS_CMD_BIT_READ_STATIC_ADDRS)
 #define BT_VS_CMD_READ_KEY_ROOTS(cmd)           BT_LE_FEAT_TEST(cmd, \

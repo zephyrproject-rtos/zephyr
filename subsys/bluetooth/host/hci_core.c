@@ -3886,8 +3886,8 @@ static const char *vs_hw_variant(uint16_t platform, uint16_t variant)
 static const char *vs_fw_variant(uint8_t variant)
 {
 	static const char * const var_str[] = {
-		"Standard Bluetooth controller",
-		"Vendor specific controller",
+		"Zephyr(R) Bluetooth Controller",
+		"Vendor specific Controller",
 		"Firmware loader",
 		"Rescue image",
 	};
@@ -3903,6 +3903,7 @@ static void hci_vs_init(void)
 {
 	union {
 		struct bt_hci_rp_vs_read_version_info *info;
+		struct bt_hci_rp_vs_read_build_info *build;
 		struct bt_hci_rp_vs_read_supported_commands *cmds;
 		struct bt_hci_rp_vs_read_supported_features *feat;
 	} rp;
@@ -3967,6 +3968,26 @@ static void hci_vs_init(void)
 	rp.cmds = (void *)rsp->data;
 	memcpy(bt_dev.vs_commands, rp.cmds->commands, BT_DEV_VS_CMDS_MAX);
 	net_buf_unref(rsp);
+
+	if (BT_VS_CMD_SUP_BUILD_INFO(bt_dev.vs_commands)) {
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_VS_READ_BUILD_INFO, NULL, &rsp);
+		if (err) {
+			LOG_WRN("Failed to read build information");
+			return;
+		}
+
+		if (IS_ENABLED(CONFIG_BT_HCI_VS_EXT_DETECT) &&
+		    rsp->len != sizeof(struct bt_hci_rp_vs_read_build_info)) {
+			LOG_WRN("Invalid Vendor HCI extensions");
+			net_buf_unref(rsp);
+			return;
+		}
+
+		rp.build = (void *)rsp->data;
+		LOG_INF("Build Information: %s", rp.build->info);
+
+		net_buf_unref(rsp);
+	}
 
 	if (BT_VS_CMD_SUP_FEAT(bt_dev.vs_commands)) {
 		err = bt_hci_cmd_send_sync(BT_HCI_OP_VS_READ_SUPPORTED_FEATURES,

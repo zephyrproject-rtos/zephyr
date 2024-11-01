@@ -213,8 +213,8 @@ additional counter for incremental builds.
 	+--------------------+--------------------------------------+
 	| Value              | Parameter Description                |
 	+--------------------+--------------------------------------+
-	| 0x00               | Standard Bluetooth controller        |
-	| 0x01               | Vendor specific controller           |
+	| 0x00               | Zephyr(R) Bluetooth Controller       |
+	| 0x01               | Vendor specific Controller           |
 	| 0x02               | Firmware loader                      |
 	| 0x03               | Rescue image                         |
 	| All other values   | Reserved for future use              |
