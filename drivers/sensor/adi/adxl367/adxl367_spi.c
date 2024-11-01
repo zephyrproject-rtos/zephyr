@@ -32,13 +32,12 @@ static int adxl367_bus_access(const struct device *dev, uint8_t reg,
 
 	addr_reg = ADXL367_TO_REG(reg);
 
-	const struct spi_buf buf[3] = {
+	uint8_t access[2] = {rw_reg, addr_reg};
+
+	const struct spi_buf buf[2] = {
 		{
-			.buf = &rw_reg,
-			.len = 1
-		}, {
-			.buf = &addr_reg,
-			.len = 1
+			.buf = access,
+			.len = 2
 		}, {
 			.buf = data,
 			.len = length
@@ -52,15 +51,15 @@ static int adxl367_bus_access(const struct device *dev, uint8_t reg,
 	if ((reg & ADXL367_READ) != 0) {
 		const struct spi_buf_set rx = {
 			.buffers = buf,
-			.count = 3
+			.count = 2
 		};
 
-		tx.count = 2;
+		tx.count = 1;
 
 		return spi_transceive_dt(&config->spi, &tx, &rx);
 	}
 
-	tx.count = 3;
+	tx.count = 2;
 
 	return spi_write_dt(&config->spi, &tx);
 }
