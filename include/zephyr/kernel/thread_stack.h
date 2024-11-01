@@ -89,9 +89,9 @@ static inline char *z_stack_ptr_align(char *ptr)
 	(type *)((ptr) - sizeof(type))
 
 #ifdef ARCH_KERNEL_STACK_RESERVED
-#define K_KERNEL_STACK_RESERVED	((size_t)ARCH_KERNEL_STACK_RESERVED)
+#define K_KERNEL_STACK_RESERVED ARCH_KERNEL_STACK_RESERVED
 #else
-#define K_KERNEL_STACK_RESERVED	((size_t)0)
+#define K_KERNEL_STACK_RESERVED 0
 #endif /* ARCH_KERNEL_STACK_RESERVED */
 
 #define Z_KERNEL_STACK_SIZE_ADJUST(size) (ROUND_UP(size, \
