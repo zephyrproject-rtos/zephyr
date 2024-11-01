@@ -3,6 +3,8 @@ common:
     - test_framework
   platform_type:
     - qemu
+  platform_key:
+    - arch
 tests:
   testing.ztest.ztress:
     # FIXME: qemu_cortex_r5 is excluded due to a run-time failure, see #49494
