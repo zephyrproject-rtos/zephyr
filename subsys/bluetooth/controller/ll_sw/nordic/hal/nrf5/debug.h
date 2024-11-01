@@ -9,16 +9,16 @@
 	defined(CONFIG_BT_CTLR_DEBUG_PINS_CPUAPP)
 #if defined(CONFIG_BOARD_NRF54L15DK_NRF54L15_CPUAPP)
 #define DEBUG_PORT       NRF_P1 /* Pin header/connector labeled "PORT P1" or "P1" on DK */
-#define DEBUG_PIN0       BIT(4) /* overlaps TXD1 but disabled by default in DTS for DK, ok to use */
-#define DEBUG_PIN1       BIT(5) /* overlaps RXD1 but disabled by default in DTS for DK, ok to use */
-#define DEBUG_PIN2       BIT(6) /* overlaps RTS1 but disabled by default in DTS for DK, ok to use */
-#define DEBUG_PIN3       BIT(7) /* overlaps CTS1 but disabled by default in DTS for DK, ok to use */
-#define DEBUG_PIN4       BIT(8)
-#define DEBUG_PIN5       BIT(9)
-#define DEBUG_PIN6       BIT(10)
-#define DEBUG_PIN7       BIT(11)
-#define DEBUG_PIN8       BIT(12)
-#define DEBUG_PIN9       BIT(13)
+#define DEBUG_PIN0       BIT(7) /* overlaps CTS1, FIXME */
+#define DEBUG_PIN1       BIT(8)
+#define DEBUG_PIN2       BIT(9)
+#define DEBUG_PIN3       BIT(10)
+#define DEBUG_PIN4       BIT(10)
+#define DEBUG_PIN5       BIT(11)
+#define DEBUG_PIN6       BIT(11)
+#define DEBUG_PIN7       BIT(12)
+#define DEBUG_PIN8       BIT(13)
+#define DEBUG_PIN9       BIT(14)
 #elif defined(CONFIG_BOARD_NRF5340DK_NRF5340_CPUAPP) || \
 	defined(CONFIG_BOARD_NRF5340DK_NRF5340_CPUAPP_NS) || \
 	defined(CONFIG_BOARD_NRF5340DK_NRF5340_CPUNET)
