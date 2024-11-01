@@ -553,7 +553,9 @@ static inline int z_impl_dma_resume(const struct device *dev, uint32_t channel)
  * request DMA channel resources
  * return -EINVAL if there is no valid channel available.
  *
- * @funcprops \isr_ok
+ * @note It is safe to use this function in contexts where blocking
+ * is not allowed, e.g. ISR, provided the implementation of the filter
+ * function does not block.
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param filter_param filter function parameter
@@ -598,7 +600,9 @@ static inline int z_impl_dma_request_channel(const struct device *dev,
  *
  * release DMA channel resources
  *
- * @funcprops \isr_ok
+ * @note It is safe to use this function in contexts where blocking
+ * is not allowed, e.g. ISR, provided the implementation of the release
+ * function does not block.
  *
  * @param dev  Pointer to the device structure for the driver instance.
  * @param channel  channel number
