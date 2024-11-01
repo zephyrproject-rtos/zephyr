@@ -1004,7 +1004,7 @@ static uint8_t connect(const void *cmd, uint16_t cmd_len,
 	int err;
 
 	if (!bt_addr_le_eq(&cp->address, BT_ADDR_LE_ANY)) {
-		struct bt_conn *conn;
+		struct bt_conn *conn = NULL;
 
 		err = bt_conn_le_create(&cp->address, BT_CONN_LE_CREATE_CONN, conn_param, &conn);
 		if (err) {
