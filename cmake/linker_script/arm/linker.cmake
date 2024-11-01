@@ -144,6 +144,7 @@ endif()
 
 include(${COMMON_ZEPHYR_LINKER_DIR}/ram-end.cmake)
 
+zephyr_linker_symbol(SYMBOL __ramfunc_region_start EXPR "ADDR(.ramfunc)")
 zephyr_linker_symbol(SYMBOL __kernel_ram_start EXPR "(@__bss_start@)")
 zephyr_linker_symbol(SYMBOL __kernel_ram_end  EXPR "(${RAM_ADDR} + ${RAM_SIZE})")
 zephyr_linker_symbol(SYMBOL __kernel_ram_size EXPR "(@__kernel_ram_end@ - @__bss_start@)")
