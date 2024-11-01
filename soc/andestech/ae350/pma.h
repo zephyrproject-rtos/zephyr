@@ -13,3 +13,6 @@
  * (e.g. uncacheable) affects all CPUs.
  */
 void pma_init_per_core(void);
+
+/* Initialize PMA */
+void pma_init(void);
