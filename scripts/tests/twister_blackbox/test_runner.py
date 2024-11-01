@@ -591,7 +591,7 @@ class TestRunner:
         sys.stderr.write(err)
 
         for line in expected:
-            assert re.search(line, err)
+            assert re.search(line, err), f"no expected:'{line}' in '{err}'"
 
         assert str(sys_exit.value) == '0'
 

@@ -33,20 +33,21 @@ class TestShuffle:
     @pytest.mark.parametrize(
         'seed, ratio, expected_order',
         [
-            ('123', '1/2', ['dummy.agnostic.group1.subgroup1', 'dummy.agnostic.group1.subgroup2']),
-            ('123', '2/2', ['dummy.agnostic.group2', 'dummy.device.group']),
-            ('321', '1/2', ['dummy.agnostic.group1.subgroup1', 'dummy.agnostic.group2']),
-            ('321', '2/2', ['dummy.device.group', 'dummy.agnostic.group1.subgroup2']),
-            ('123', '1/3', ['dummy.agnostic.group1.subgroup1', 'dummy.agnostic.group1.subgroup2']),
+            ('123', '1/2', ['dummy.device.group', 'dummy.agnostic.group1.subgroup2']),
+            ('123', '2/2', ['dummy.agnostic.group2', 'dummy.agnostic.group1.subgroup1']),
+            ('321', '1/2', ['dummy.agnostic.group2', 'dummy.agnostic.group1.subgroup2']),
+            ('321', '2/2', ['dummy.device.group', 'dummy.agnostic.group1.subgroup1']),
+            ('123', '1/3', ['dummy.device.group', 'dummy.agnostic.group1.subgroup2']),
             ('123', '2/3', ['dummy.agnostic.group2']),
-            ('123', '3/3', ['dummy.device.group']),
-            ('321', '1/3', ['dummy.agnostic.group1.subgroup1', 'dummy.agnostic.group2']),
+            ('123', '3/3', ['dummy.agnostic.group1.subgroup1']),
+            ('321', '1/3', ['dummy.agnostic.group2', 'dummy.agnostic.group1.subgroup2']),
             ('321', '2/3', ['dummy.device.group']),
-            ('321', '3/3', ['dummy.agnostic.group1.subgroup2'])
+            ('321', '3/3', ['dummy.agnostic.group1.subgroup1'])
         ],
         ids=['first half, 123', 'second half, 123', 'first half, 321', 'second half, 321',
              'first third, 123', 'middle third, 123', 'last third, 123',
-             'first third, 321', 'middle third, 321', 'last third, 321']
+             'first third, 321', 'middle third, 321', 'last third, 321'
+]
     )
     @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
     def test_shuffle_tests(self, out_path, seed, ratio, expected_order):
