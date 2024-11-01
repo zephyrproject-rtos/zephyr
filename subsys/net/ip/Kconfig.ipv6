@@ -46,6 +46,18 @@ config NET_IPV6_MTU
 	  The value should normally be 1280 which is the minimum IPv6 packet
 	  size that implementations need to support without fragmentation.
 
+config NET_IPV6_PMTU
+	bool "IPv6 Path MTU Discovery"
+	help
+	  Enables IPv6 Path MTU Discovery (see RFC 8201)
+
+config NET_IPV6_PMTU_DESTINATION_CACHE_ENTRIES
+	int "Number of IPv6 PMTU destination cache entries"
+	default 3
+	depends on NET_IPV6_PMTU
+	help
+	  How many PMTU entries we can track for each destination address.
+
 config NET_INITIAL_HOP_LIMIT
 	int "Initial IPv6 hop limit value for unicast packets"
 	default 64

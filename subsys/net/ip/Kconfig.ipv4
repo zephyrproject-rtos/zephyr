@@ -151,6 +151,18 @@ config NET_IPV4_FRAGMENT_TIMEOUT
 	  How long to wait for IPv4 fragment to arrive before the reassembly
 	  will timeout. This value is in seconds.
 
+config NET_IPV4_PMTU
+	bool "IPv4 Path MTU Discovery"
+	help
+	  Enables IPv4 Path MTU Discovery (see RFC 1191)
+
+config NET_IPV4_PMTU_DESTINATION_CACHE_ENTRIES
+	int "Number of IPv4 PMTU destination cache entries"
+	default 3
+	depends on NET_IPV4_PMTU
+	help
+	  How many PMTU entries we can track for each destination address.
+
 module = NET_IPV4
 module-dep = NET_LOG
 module-str = Log level for core IPv4
