@@ -429,7 +429,9 @@ _stack_frame_endif:
 #endif
 
     /* exception return is done in z_arm_int_exit() */
-    b z_arm_int_exit
+    ldr r0, =z_arm_int_exit
+    bx r0
+
 #endif
 
 _oops:
