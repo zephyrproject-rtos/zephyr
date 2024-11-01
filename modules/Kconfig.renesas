@@ -119,6 +119,11 @@ config USE_RA_FSP_FLASH_HP
 	help
 	  Enable RA FSP FLASH HP driver
 
+config USE_RA_FSP_FLASH_LP
+	bool
+	help
+	  Enable RA FSP FLASH LP driver
+
 config USE_RA_FSP_GPT
 	bool
 	help
