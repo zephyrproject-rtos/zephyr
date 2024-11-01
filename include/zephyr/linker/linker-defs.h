@@ -231,6 +231,7 @@ extern char _nocache_ram_size[];
  * section, stored in RAM instead of FLASH.
  */
 #ifdef CONFIG_ARCH_HAS_RAMFUNC_SUPPORT
+extern char __ramfunc_region_start[];
 extern char __ramfunc_start[];
 extern char __ramfunc_end[];
 extern char __ramfunc_size[];
