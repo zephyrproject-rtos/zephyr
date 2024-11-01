@@ -890,7 +890,7 @@ static void adxl367_accel_convert(struct sensor_value *val, int16_t value,
 				enum adxl367_range range)
 #endif /*CONFIG_SENSOR_ASYNC_API*/
 {
-	int64_t micro_ms2 = value * (SENSOR_G * 250 / 10000 *
+	int64_t micro_ms2 = value * (SENSOR_G * 250 / 1000 *
 			  adxl367_scale_mul[range] / 1000);
 
 	val->val1 = micro_ms2 / 1000000;
