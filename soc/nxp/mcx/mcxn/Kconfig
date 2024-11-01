@@ -27,7 +27,6 @@ config SOC_MCXN236
 	select CPU_HAS_FPU
 	select ARMV8_M_DSP
 	select ARM_TRUSTZONE_M
-	select HAS_MCUX_CACHE
 
 if SOC_SERIES_MCXN
 
