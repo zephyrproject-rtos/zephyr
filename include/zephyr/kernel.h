@@ -3321,12 +3321,12 @@ static inline unsigned int z_impl_k_sem_count_get(struct k_sem *sem)
  * @param initial_count Initial semaphore count.
  * @param count_limit Maximum permitted semaphore count.
  */
-#define K_SEM_DEFINE(name, initial_count, count_limit) \
-	STRUCT_SECTION_ITERABLE(k_sem, name) = \
-		Z_SEM_INITIALIZER(name, initial_count, count_limit); \
-	BUILD_ASSERT(((count_limit) != 0) && \
-		     ((initial_count) <= (count_limit)) && \
-			 ((count_limit) <= K_SEM_MAX_LIMIT));
+#define K_SEM_DEFINE(name, initial_count, count_limit)                                             \
+	STRUCT_SECTION_ITERABLE(k_sem, name) =                                                     \
+		Z_SEM_INITIALIZER(name, initial_count, count_limit);                               \
+	BUILD_ASSERT(((count_limit) != 0) &&                                                       \
+		     (((initial_count) < (count_limit)) || ((initial_count) == (count_limit))) &&  \
+		     ((count_limit) <= K_SEM_MAX_LIMIT));
 
 /** @} */
 
