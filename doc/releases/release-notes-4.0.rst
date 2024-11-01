@@ -243,6 +243,15 @@ Boards & SoC Support
 
 * Added support for the following shields:
 
+  * :ref:`ADI EVAL-ADXL362-ARDZ <eval_adxl362_ardz>`
+  * :ref:`ADI EVAL-ADXL372-ARDZ <eval_adxl372_ardz>`
+  * :ref:`Digilent Pmod ACL <pmod_acl>`
+  * :ref:`MikroElektronika BLE TINY Click <mikroe_ble_tiny_click_shield>`
+  * :ref:`Nordic SemiConductor nRF7002 EB <nrf7002eb>`
+  * :ref:`Nordic SemiConductor nRF7002 EK <nrf7002ek>`
+  * :ref:`ST X-NUCLEO-WB05KN1: BLE expansion board <x-nucleo-wb05kn1>`
+  * :ref:`WeAct Studio MiniSTM32H7xx OV2640 Camera Sensor <weact_ov2640_cam_module>`
+
 Build system and Infrastructure
 *******************************
 

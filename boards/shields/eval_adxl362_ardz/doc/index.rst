@@ -1,4 +1,4 @@
-.. eval_adxl362_ardz:
+.. _eval_adxl362_ardz:
 
 EVAL-ADXL362-ARDZ
 #################
