@@ -8,6 +8,7 @@ config ESPI_NPCX
 	default y
 	depends on SOC_FAMILY_NPCX
 	depends on DT_HAS_NUVOTON_NPCX_ESPI_ENABLED
+	select PINCTRL
 	help
 	  This option enables the Intel Enhanced Serial Peripheral Interface
 	  (eSPI) for NPCX family of processors.
