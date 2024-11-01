@@ -46,7 +46,7 @@ struct symtab_info {
  *
  * @return Pointer to the symbol table.
  */
-const struct symtab_info *const symtab_get(void);
+const struct symtab_info *symtab_get(void);
 
 /**
  * @brief Find the symbol name with a binary search
@@ -57,7 +57,7 @@ const struct symtab_info *const symtab_get(void);
  *
  * @return Name of the nearest symbol if found, otherwise "?" is returned.
  */
-const char *const symtab_find_symbol_name(uintptr_t addr, uint32_t *offset);
+const char *symtab_find_symbol_name(uintptr_t addr, uint32_t *offset);
 
 /**
  * @}
