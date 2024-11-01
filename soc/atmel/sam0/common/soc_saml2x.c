@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2021 Argentum Systems Ltd.
- * Copyright (c) 2023 Gerson Fernando Budke <nandojve@gmail.com>
+ * Copyright (c) 2023-2025 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +16,8 @@
 #include <soc.h>
 #include <cmsis_core.h>
 
+/* clang-format off */
+
 /* the SAML21 currently operates only in Performance Level 2... sleep
  * and low-power operation are not currently supported by the BSP
  *
@@ -27,6 +29,7 @@
  * GCLK Gen 1 -> DFLL48M (variable)
  * GCLK Gen 2 -> USB @ 48 MHz
  * GCLK Gen 3 -> ADC @ 24 MHz (further /2 in the ADC peripheral)
+ * GCLK Gen 4 -> RTC @ reserved
  */
 
 static inline void gclk_reset(void)
@@ -57,6 +60,7 @@ static inline void osc32k_init(void)
 		| !OSC32KCTRL_OSC32K_ONDEMAND
 		|  OSC32KCTRL_OSC32K_RUNSTDBY
 		|  OSC32KCTRL_OSC32K_EN32K
+		|  OSC32KCTRL_OSC32K_EN1K
 		|  OSC32KCTRL_OSC32K_ENABLE;
 
 	/* wait for ready */
@@ -75,6 +79,7 @@ static inline void xosc32k_init(void)
 		| !OSC32KCTRL_XOSC32K_ONDEMAND
 		|  OSC32KCTRL_XOSC32K_RUNSTDBY
 		|  OSC32KCTRL_XOSC32K_EN32K
+		|  OSC32KCTRL_XOSC32K_EN1K
 #if CONFIG_SOC_ATMEL_SAML_XOSC32K_CRYSTAL
 		|  OSC32KCTRL_XOSC32K_XTALEN
 #endif
@@ -266,3 +271,5 @@ void soc_reset_hook(void)
 	gclk_usb_configure();
 	gclk_adc_configure();
 }
+
+/* clang-format on */
