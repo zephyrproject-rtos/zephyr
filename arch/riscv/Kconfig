@@ -28,6 +28,16 @@ config RISCV_GP
 	  global pointer at program start or earlier than any instruction
 	  using GP relative addressing.
 
+config RISCV_CURRENT_VIA_GP
+	bool "Store current thread into the global pointer (GP) register"
+	depends on !RISCV_GP && !USERSPACE
+	depends on MP_MAX_NUM_CPUS > 1
+	select ARCH_HAS_CUSTOM_CURRENT_IMPL
+	help
+	  Store the current thread's pointer into the global pointer (GP) register.
+	  When is enabled, calls to `_current` & `k_sched_current_thread_query()` will
+	  be reduced to a single register read.
+
 config RISCV_ALWAYS_SWITCH_THROUGH_ECALL
 	bool "Do not use mret outside a trap handler context"
 	depends on MULTITHREADING

@@ -49,6 +49,9 @@ Architectures
 
 * RISC-V
 
+  * Implements :c:func:`arch_current_thread_set` & :c:func:`arch_current_thread`, which can be enabled
+    by :kconfig:option:`CONFIG_RISCV_CURRENT_VIA_GP` (:github:`80716`).
+
 * Xtensa
 
 * native/POSIX
