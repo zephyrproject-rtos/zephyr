@@ -362,7 +362,7 @@ static bool get_timestamps(struct timestamps *timestamps, const struct tsn_confi
 		timestamps->from = from;
 		timestamps->to = TSN_ALWAYS_OPEN(timestamps->from);
 		/* delay_* is pointless. Just set it to be right next to the frame */
-		timestamps->delay_from = timestamps->from;
+		timestamps->delay_from = timestamps->to + 1;
 		timestamps->delay_to = TSN_ALWAYS_OPEN(timestamps->delay_from);
 		return true;
 	}
@@ -384,7 +384,7 @@ static bool get_timestamps(struct timestamps *timestamps, const struct tsn_confi
 		timestamps->from = from;
 		timestamps->to = TSN_ALWAYS_OPEN(timestamps->from);
 		if (consider_delay) {
-			timestamps->delay_from = timestamps->from;
+			timestamps->delay_from = timestamps->to + 1;
 			timestamps->delay_to = TSN_ALWAYS_OPEN(timestamps->delay_from);
 		}
 		return true;
