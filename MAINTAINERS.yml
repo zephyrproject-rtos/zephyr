@@ -5304,6 +5304,15 @@ West:
   labels:
     - "area: Audio"
 
+"West project: libstdcxx":
+  status: maintained
+  maintainers:
+    - Keith Packard
+  files:
+    - modules/Kconfig.libstdc++
+  labels:
+    - "area: C++"
+
 "West project: littlefs":
   status: odd fixes
   files:

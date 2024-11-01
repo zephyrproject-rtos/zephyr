@@ -118,6 +118,25 @@ config GLIBCXX_LIBCPP
 	  Build with GNU C++ Standard Library (libstdc++) provided by the GNU
 	  Compiler Collection (GCC)-based toolchain.
 
+choice GLIBCXX_LIBCPP_SOURCE
+	prompt "Source of libstdc++"
+	depends on GLIBCXX_LIBCPP
+	default GLIBCXX_LIBCPP_USE_TOOLCHAIN
+
+config GLIBCXX_LIBCPP_USE_MODULE
+	bool "libstdc++ from module"
+	depends on ZEPHYR_LIBSTDCXX_MODULE
+	help
+	  Use libstdc++ module instead of libstdc++ included with toolchain.
+
+config GLIBCXX_LIBCPP_USE_TOOLCHAIN
+	bool "libstdc++ from toolchain"
+	depends on NEWLIB_LIBC || PICOLIBC_USE_TOOLCHAIN
+	help
+	  Use libstdc++ included with toolchain.
+
+endchoice
+
 config LIBCXX_LIBCPP
 	bool "LLVM C++ Standard Library"
 	depends on !NATIVE_APPLICATION
