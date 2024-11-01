@@ -2,6 +2,7 @@ sample:
   description: Simple Management Protocol sample
   name: smp svr
 common:
+  sysbuild: true
   harness: bluetooth
   tags: bluetooth
 tests:
@@ -159,14 +160,12 @@ tests:
     integration_platforms:
       - nrf52840dk/nrf52840
   sample.mcumgr.smp_svr.ram_load:
-    sysbuild: true
     extra_args: FILE_SUFFIX="ram_load"
     platform_allow:
       - nrf52840dk/nrf52840
     integration_platforms:
       - nrf52840dk/nrf52840
   sample.mcumgr.smp_svr.ram_load.serial:
-    sysbuild: true
     extra_args: FILE_SUFFIX="ram_load"
                 EXTRA_CONF_FILE="overlay-serial.conf"
     platform_allow:
@@ -174,7 +173,6 @@ tests:
     integration_platforms:
       - nrf52840dk/nrf52840
   sample.mcumgr.smp_svr.ram_load.serial.fs.shell:
-    sysbuild: true
     extra_args: FILE_SUFFIX="ram_load"
                 EXTRA_CONF_FILE="overlay-serial.conf;overlay-fs.conf;overlay-shell.conf"
     platform_allow:
