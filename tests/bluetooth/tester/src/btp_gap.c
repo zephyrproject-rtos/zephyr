@@ -5,6 +5,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <stdint.h>
 
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/gap.h>
@@ -997,9 +998,13 @@ static uint8_t stop_discovery(const void *cmd, uint16_t cmd_len,
 static uint8_t connect(const void *cmd, uint16_t cmd_len,
 		       void *rsp, uint16_t *rsp_len)
 {
+	/* The conn interval is set to 60ms (0x30). This is to better support test cases where we
+	 * need to connect to multiple peripherals (up to 3). The connection interval should also be
+	 * a multiple of 30ms, as that is ideal to support both 7.5ms and 10ms ISO intervals
+	 */
+	const uint16_t interval = BT_GAP_MS_TO_CONN_INTERVAL(60U);
 	const struct bt_le_conn_param *conn_param =
-		BT_LE_CONN_PARAM(BT_GAP_INIT_CONN_INT_MIN, BT_GAP_INIT_CONN_INT_MIN, 0,
-				 BT_GAP_MS_TO_CONN_TIMEOUT(4000));
+		BT_LE_CONN_PARAM(interval, interval, 0U, BT_GAP_MS_TO_CONN_TIMEOUT(4000U));
 	const struct btp_gap_connect_cmd *cp = cmd;
 	int err;
 
