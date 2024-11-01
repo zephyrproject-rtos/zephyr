@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2017 Google LLC.
  * Copyright (c) 2023 Ionut Catalin Pavel <iocapa@iocapa.com>
- * Copyright (c) 2023 Gerson Fernando Budke <nandojve@gmail.com>
+ * Copyright (c) 2023-2025 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,7 @@
  * GCLK Gen 1 -> DFLL48M (variable)
  * GCLK Gen 2 -> WDT @ 32768 Hz
  * GCLK Gen 3 -> ADC @ 8 MHz
+ * GCLK Gen 4 -> RTC @ xtal 32768 Hz
  */
 
 #include <zephyr/device.h>
@@ -29,6 +30,8 @@
 #include <soc.h>
 #include <cmsis_core.h>
 
+/* clang-format off */
+
 /**
  * Fix different naming conventions for SAMD20
  */
@@ -37,6 +40,23 @@
 #define FUSES_OSC32K_CAL_Pos		FUSES_OSC32KCAL_Pos
 #define FUSES_OSC32K_CAL_Msk		FUSES_OSC32KCAL_Msk
 #endif
+
+static void gclk_connect(uint8_t gclk, uint32_t src, uint32_t div, uint32_t flags)
+{
+	GCLK->GENDIV.reg = GCLK_GENDIV_ID(gclk)
+			 | GCLK_GENDIV_DIV(div);
+
+	while (GCLK->STATUS.bit.SYNCBUSY) {
+	}
+
+	GCLK->GENCTRL.reg = GCLK_GENCTRL_ID(gclk)
+			  | GCLK_GENCTRL_GENEN
+			  | src
+			  | flags;
+
+	while (GCLK->STATUS.bit.SYNCBUSY) {
+	}
+}
 
 static inline void osc8m_init(void)
 {
@@ -57,19 +77,7 @@ static inline void osc8m_init(void)
 	/* Use 8Mhz clock as gclk_main to allow switching between clocks
 	 * when using bootloaders
 	 */
-	GCLK->GENDIV.reg = GCLK_GENDIV_ID(0)
-			 | GCLK_GENDIV_DIV(0);
-
-	while (GCLK->STATUS.bit.SYNCBUSY) {
-	}
-
-	GCLK->GENCTRL.reg = GCLK_GENCTRL_ID(0)
-			  | GCLK_GENCTRL_SRC_OSC8M
-			  | GCLK_GENCTRL_IDC
-			  | GCLK_GENCTRL_GENEN;
-
-	while (GCLK->STATUS.bit.SYNCBUSY) {
-	}
+	gclk_connect(0, GCLK_GENCTRL_SRC_OSC8M, 0, 0);
 }
 
 #if !CONFIG_SOC_ATMEL_SAMD_OSC32K || CONFIG_SOC_ATMEL_SAMD_DEFAULT_AS_MAIN
@@ -149,28 +157,17 @@ static inline void dfll48m_init(void)
 {
 	uint32_t fcal, ccal;
 
-	GCLK->GENCTRL.reg = GCLK_GENCTRL_ID(1)
+	gclk_connect(1,
 #if CONFIG_SOC_ATMEL_SAMD_OSC32K_AS_MAIN
-			  | GCLK_GENCTRL_SRC_OSC32K
+			  GCLK_GENCTRL_SRC_OSC32K,
 #elif CONFIG_SOC_ATMEL_SAMD_XOSC32K_AS_MAIN
-			  | GCLK_GENCTRL_SRC_XOSC32K
+			  GCLK_GENCTRL_SRC_XOSC32K,
 #elif CONFIG_SOC_ATMEL_SAMD_OSC8M_AS_MAIN
-			  | GCLK_GENCTRL_SRC_OSC8M
+			  GCLK_GENCTRL_SRC_OSC8M,
 #elif CONFIG_SOC_ATMEL_SAMD_XOSC_AS_MAIN
-			  | GCLK_GENCTRL_SRC_XOSC
+			  GCLK_GENCTRL_SRC_XOSC,
 #endif
-			  | GCLK_GENCTRL_IDC
-			  | GCLK_GENCTRL_RUNSTDBY
-			  | GCLK_GENCTRL_GENEN;
-
-	while (GCLK->STATUS.bit.SYNCBUSY) {
-	}
-
-	GCLK->GENDIV.reg = GCLK_GENDIV_ID(1)
-			 | GCLK_GENDIV_DIV(SOC_ATMEL_SAM0_GCLK1_DIV);
-
-	while (GCLK->STATUS.bit.SYNCBUSY) {
-	}
+		SOC_ATMEL_SAM0_GCLK1_DIV, GCLK_GENCTRL_RUNSTDBY);
 
 	/* Route multiplexer 0 to DFLL48M */
 	GCLK->CLKCTRL.reg = GCLK_CLKCTRL_ID(0)
@@ -222,19 +219,7 @@ static inline void flash_waitstates_init(void)
 #else
 static inline void gclk_main_configure(void)
 {
-	GCLK->GENDIV.reg = GCLK_GENDIV_ID(0)
-			 | GCLK_GENDIV_DIV(SOC_ATMEL_SAM0_GCLK0_DIV);
-
-	while (GCLK->STATUS.bit.SYNCBUSY) {
-	}
-
-	GCLK->GENCTRL.reg = GCLK_GENCTRL_ID(0)
-			  | GCLK_GENCTRL_SRC_DFLL48M
-			  | GCLK_GENCTRL_IDC
-			  | GCLK_GENCTRL_GENEN;
-
-	while (GCLK->STATUS.bit.SYNCBUSY) {
-	}
+	gclk_connect(0, GCLK_GENCTRL_SRC_DFLL48M, SOC_ATMEL_SAM0_GCLK0_DIV, 0);
 }
 #endif
 
@@ -243,19 +228,16 @@ static inline void gclk_main_configure(void)
 #else
 static inline void gclk_adc_configure(void)
 {
-	GCLK->GENDIV.reg = GCLK_GENDIV_ID(3)
-			 | GCLK_GENDIV_DIV(SOC_ATMEL_SAM0_GCLK3_DIV);
+	gclk_connect(3, GCLK_GENCTRL_SRC_DFLL48M, SOC_ATMEL_SAM0_GCLK3_DIV, 0);
+}
+#endif
 
-	while (GCLK->STATUS.bit.SYNCBUSY) {
-	}
-
-	GCLK->GENCTRL.reg = GCLK_GENCTRL_ID(3)
-			  | GCLK_GENCTRL_SRC_DFLL48M
-			  | GCLK_GENCTRL_IDC
-			  | GCLK_GENCTRL_GENEN;
-
-	while (GCLK->STATUS.bit.SYNCBUSY) {
-	}
+#if !CONFIG_RTC_ATMEL_SAM0 || CONFIG_SOC_ATMEL_SAMD_DEFAULT_AS_MAIN
+#define gclk_rtc_configure()
+#else
+static inline void gclk_rtc_configure(void)
+{
+	gclk_connect(4, GCLK_GENCTRL_SRC_XOSC32K, CONFIG_SOC_ATMEL_SAMD_XOSC32K_PRESCALER, 0);
 }
 #endif
 
@@ -264,16 +246,7 @@ static inline void gclk_adc_configure(void)
 #else
 static inline void gclk_wdt_configure(void)
 {
-	GCLK->GENDIV.reg = GCLK_GENDIV_ID(2)
-			 | GCLK_GENDIV_DIV(4);
-
-	GCLK->GENCTRL.reg = GCLK_GENCTRL_ID(2)
-			  | GCLK_GENCTRL_GENEN
-			  | GCLK_GENCTRL_SRC_OSCULP32K
-			  | GCLK_GENCTRL_DIVSEL;
-
-	while (GCLK->STATUS.bit.SYNCBUSY) {
-	}
+	gclk_connect(2, GCLK_GENCTRL_SRC_OSCULP32K, 4, GCLK_GENCTRL_DIVSEL);
 }
 #endif
 
@@ -296,6 +269,9 @@ void soc_reset_hook(void)
 	flash_waitstates_init();
 	gclk_main_configure();
 	gclk_adc_configure();
+	gclk_rtc_configure();
 	gclk_wdt_configure();
 	osc8m_disable();
 }
+
+/* clang-format on */
