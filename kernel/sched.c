@@ -842,7 +842,7 @@ struct k_thread *z_swap_next_thread(void)
 static inline void set_current(struct k_thread *new_thread)
 {
 	z_thread_mark_switched_out();
-	_current_cpu->current = new_thread;
+	arch_set_curr_thread(new_thread);
 }
 
 /**
@@ -1230,20 +1230,7 @@ static inline void z_vrfy_k_wakeup(k_tid_t thread)
 
 k_tid_t z_impl_k_sched_current_thread_query(void)
 {
-#ifdef CONFIG_SMP
-	/* In SMP, _current is a field read from _current_cpu, which
-	 * can race with preemption before it is read.  We must lock
-	 * local interrupts when reading it.
-	 */
-	unsigned int k = arch_irq_lock();
-#endif /* CONFIG_SMP */
-
-	k_tid_t ret = _current_cpu->current;
-
-#ifdef CONFIG_SMP
-	arch_irq_unlock(k);
-#endif /* CONFIG_SMP */
-	return ret;
+	return arch_curr_thread();
 }
 
 #ifdef CONFIG_USERSPACE

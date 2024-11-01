@@ -651,6 +651,12 @@ endmenu
 # Architecture Capabilities
 #
 
+config ARCH_HAS_CUSTOM_CURRENT_IMPL
+	bool
+	help
+	  Select when architecture implements arch_curr_thread() &
+	  arch_set_curr_thread().
+
 config ARCH_HAS_SINGLE_THREAD_SUPPORT
 	bool
 
