@@ -1674,7 +1674,7 @@ static bool do_page_fault(void *addr, bool pin)
 #endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
 
 	key = k_spin_lock(&z_mm_lock);
-	faulting_thread = _current_cpu->current;
+	faulting_thread = _current;
 
 	status = arch_page_location_get(addr, &page_in_location);
 	if (status == ARCH_PAGE_LOCATION_BAD) {
