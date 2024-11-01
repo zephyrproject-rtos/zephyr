@@ -467,6 +467,12 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 	   GET_STAT(iface, ipv6_nd.sent),
 	   GET_STAT(iface, ipv6_nd.drop));
 #endif /* CONFIG_NET_STATISTICS_IPV6_ND */
+#if defined(CONFIG_NET_STATISTICS_IPV6_PMTU)
+	PR("IPv6 PMTU recv %d\tsent\t%d\tdrop\t%d\n",
+	   GET_STAT(iface, ipv6_pmtu.recv),
+	   GET_STAT(iface, ipv6_pmtu.sent),
+	   GET_STAT(iface, ipv6_pmtu.drop));
+#endif /* CONFIG_NET_STATISTICS_IPV6_PMTU */
 #if defined(CONFIG_NET_STATISTICS_MLD)
 	PR("IPv6 MLD recv  %d\tsent\t%d\tdrop\t%d\n",
 	   GET_STAT(iface, ipv6_mld.recv),
