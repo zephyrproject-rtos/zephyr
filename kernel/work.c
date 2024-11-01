@@ -625,7 +625,7 @@ static void work_queue_main(void *workq_ptr, void *p2, void *p3)
 		struct k_work *work = NULL;
 		k_work_handler_t handler = NULL;
 		k_spinlock_key_t key = k_spin_lock(&lock);
-		bool yield;
+		bool yield, block;
 
 		/* Check for and prepare any new work. */
 		node = sys_slist_get(&queue->pending);
@@ -684,8 +684,19 @@ static void work_queue_main(void *workq_ptr, void *p2, void *p3)
 
 		k_spin_unlock(&lock, key);
 
+		block = !flag_test(&queue->flags, K_WORK_QUEUE_NO_BLOCK_BIT);
+		if (!block) {
+			atomic_set_bit(&(k_work_queue_thread_get(queue)->flags),
+				       Z_THREAD_NO_BLOCK);
+		}
+
 		__ASSERT_NO_MSG(handler != NULL);
 		handler(work);
+
+		if (!block) {
+			atomic_clear_bit(&(k_work_queue_thread_get(queue)->flags),
+					 Z_THREAD_NO_BLOCK);
+		}
 
 		/* Mark the work item as no longer running and deal
 		 * with any cancellation and flushing issued while it
@@ -745,6 +756,10 @@ void k_work_queue_start(struct k_work_q *queue,
 
 	if ((cfg != NULL) && cfg->no_yield) {
 		flags |= K_WORK_QUEUE_NO_YIELD;
+	}
+
+	if ((cfg != NULL) && cfg->no_block) {
+		flags |= K_WORK_QUEUE_NO_BLOCK;
 	}
 
 	/* It hasn't actually been started yet, but all the state is in place

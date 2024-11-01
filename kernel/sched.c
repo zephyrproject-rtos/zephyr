@@ -661,6 +661,10 @@ int z_pend_curr(struct k_spinlock *lock, k_spinlock_key_t key,
 #endif /* CONFIG_TIMESLICING && CONFIG_SWAP_NONATOMIC */
 	__ASSERT_NO_MSG(sizeof(_sched_spinlock) == 0 || lock != &_sched_spinlock);
 
+	if (atomic_test_bit(&(_current->flags), Z_THREAD_NO_BLOCK)) {
+		return -ECANCELED;
+	}
+
 	/* We do a "lock swap" prior to calling z_swap(), such that
 	 * the caller's lock gets released as desired.  But we ensure
 	 * that we hold the scheduler lock and leave local interrupts

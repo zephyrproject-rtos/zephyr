@@ -3913,6 +3913,8 @@ enum {
 	/* Static work queue flags */
 	K_WORK_QUEUE_NO_YIELD_BIT = 8,
 	K_WORK_QUEUE_NO_YIELD = BIT(K_WORK_QUEUE_NO_YIELD_BIT),
+	K_WORK_QUEUE_NO_BLOCK_BIT = 9,
+	K_WORK_QUEUE_NO_BLOCK = BIT(K_WORK_QUEUE_NO_BLOCK_BIT),
 
 /**
  * INTERNAL_HIDDEN @endcond
@@ -4103,6 +4105,9 @@ struct k_work_queue_config {
 	 * essential thread.
 	 */
 	bool essential;
+
+	/** No Block by handler */
+	bool no_block;
 };
 
 /** @brief A structure used to hold work until it can be processed. */
