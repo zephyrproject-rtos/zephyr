@@ -1,12 +1,14 @@
 # Copyright (c) 2014-2015 Wind River Systems, Inc.
 # Copyright (c) 2016 Cadence Design Systems, Inc.
 # Copyright (c) 2019 Intel Corp.
+# Copyright (c) 2024-2025 Gerson Fernando Budke <nandojve@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
 config SAM0_RTC_TIMER
 	bool "Atmel SAM0 series RTC timer"
 	default y
-	depends on DT_HAS_ATMEL_SAM0_RTC_ENABLED
+	depends on DT_HAS_ATMEL_SAM0_RTC_ENABLED \
+		&& $(dt_nodelabel_bool_prop,rtc,systimer)
 	select PINCTRL
 	select TICKLESS_CAPABLE
 	help
