@@ -106,7 +106,7 @@ static int can_sam_init(const struct device *dev)
 	uint32_t mrba = sam_cfg->mram & 0xFFFF0000;
 
 	/* keep lower 16bit; update DMA Base Register */
-	sys_write32(sam_cfg->dma_base, (sys_read32(sam_cfg->dma_base) & 0x0000FFFF) | mrba);
+	sys_write32((sys_read32(sam_cfg->dma_base) & 0x0000FFFF) | mrba, sam_cfg->dma_base);
 
 	ret = can_mcan_configure_mram(dev, mrba, sam_cfg->mram);
 	if (ret != 0) {
