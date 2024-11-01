@@ -56,6 +56,7 @@ def mocked_instance(tmp_path):
 def mocked_env():
     env = mock.Mock()
     options = mock.Mock()
+    options.verbose = 2
     env.options = options
     return env
 
@@ -1572,6 +1573,24 @@ TESTDATA_7 = [
         ]
     ),
     (
+        [
+            'z_ztest_unit_test__dummy_suite2_name__test_dummy_name2',
+            'z_ztest_unit_test__bad_suite3_name_no_test',
+            '_ZN12_GLOBAL__N_1L54z_ztest_unit_test__dummy_suite3_name__test_dummy_name4E',
+            '_ZN12_GLOBAL__N_1L54z_ztest_unit_test__dummy_suite3_name__test_bad_name1E',
+            '_ZN12_GLOBAL__N_1L51z_ztest_unit_test_dummy_suite3_name__test_bad_name2E',
+            '_ZN12_GLOBAL__N_1L54z_ztest_unit_test__dummy_suite3_name__test_dummy_name5E',
+            '_ZN15foobarnamespaceL54z_ztest_unit_test__dummy_suite3_name__test_dummy_name6E',
+        ],
+        [
+         ('dummy_id.dummy_suite2_name.dummy_name2'),
+         ('dummy_id.dummy_suite3_name.dummy_name4'),
+         ('dummy_id.dummy_suite3_name.bad_name1E'),
+         ('dummy_id.dummy_suite3_name.dummy_name5'),
+         ('dummy_id.dummy_suite3_name.dummy_name6'),
+        ]
+    ),
+    (
         ['no match'],
         []
     ),
@@ -1580,10 +1599,11 @@ TESTDATA_7 = [
 @pytest.mark.parametrize(
     'symbols_names, added_tcs',
     TESTDATA_7,
-    ids=['two hits, one miss', 'nothing']
+    ids=['two hits, one miss', 'demangle', 'nothing']
 )
 def test_projectbuilder_determine_testcases(
     mocked_jobserver,
+    mocked_env,
     symbols_names,
     added_tcs
 ):
@@ -1603,9 +1623,8 @@ def test_projectbuilder_determine_testcases(
     instance_mock.testcases = []
     instance_mock.testsuite.id = 'dummy_id'
     instance_mock.testsuite.ztest_suite_names = []
-    env_mock = mock.Mock()
 
-    pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
+    pb = ProjectBuilder(instance_mock, mocked_env, mocked_jobserver)
 
     with mock.patch('twisterlib.runner.ELFFile', elf_mock), \
          mock.patch('builtins.open', mock.mock_open()):
