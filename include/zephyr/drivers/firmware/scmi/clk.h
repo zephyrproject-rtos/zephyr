@@ -20,6 +20,11 @@
 
 #define SCMI_CLK_ATTRIBUTES_CLK_NUM(x) ((x) & GENMASK(15, 0))
 
+#define SCMI_CLK_RATE_SET_FLAGS_ASYNC                BIT(0)
+#define SCMI_CLK_RATE_SET_FLAGS_IGNORE_DELEAYED_RESP BIT(1)
+#define SCMI_CLK_RATE_SET_FLAGS_ROUNDS_UP_DOWN       BIT(2)
+#define SCMI_CLK_RATE_SET_FLAGS_ROUNDS_AUTO          BIT(3)
+
 /**
  * @struct scmi_clock_config
  *
@@ -30,6 +35,18 @@ struct scmi_clock_config {
 	uint32_t clk_id;
 	uint32_t attributes;
 	uint32_t extended_cfg_val;
+};
+
+/**
+ * @struct scmi_clock_rate_config
+ *
+ * @brief Describes the parameters for the CLOCK_RATE_SET
+ * command
+ */
+struct scmi_clock_rate_config {
+	uint32_t flags;
+	uint32_t clk_id;
+	uint32_t rate[2];
 };
 
 /**
@@ -92,5 +109,42 @@ int scmi_clock_config_set(struct scmi_protocol *proto,
  */
 int scmi_clock_rate_get(struct scmi_protocol *proto,
 			uint32_t clk_id, uint32_t *rate);
+
+/**
+ * @brief Send the CLOCK_RATE_SET command and get its reply
+ *
+ * @param proto pointer to SCMI clock protocol data
+ * @param cfg pointer to structure containing configuration
+ * to be set
+ *
+ * @retval 0 if successful
+ * @retval negative errno if failure
+ */
+int scmi_clock_rate_set(struct scmi_protocol *proto, struct scmi_clock_rate_config *cfg);
+
+/**
+ * @brief Query the parent of a clock
+ *
+ * @param proto pointer to SCMI clock protocol data
+ * @param clk_id ID of the clock for which the query is done
+ * @param parent_id pointer to be set via this command
+ *
+ * @retval 0 if successful
+ * @retval negative errno if failure
+ */
+int scmi_clock_parent_get(struct scmi_protocol *proto, uint32_t clk_id, uint32_t *parent_id);
+
+/**
+ * @brief Send the CLOCK_PARENT_SET command and get its reply
+ *
+ * @param proto pointer to SCMI clock protocol data
+ * @param clk_id ID of the clock for which the query is done
+ * @param parent_id to be set via this command
+ * to be set
+ *
+ * @retval 0 if successful
+ * @retval negative errno if failure
+ */
+int scmi_clock_parent_set(struct scmi_protocol *proto, uint32_t clk_id, uint32_t parent_id);
 
 #endif /* _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_CLK_H_ */
