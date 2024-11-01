@@ -509,7 +509,13 @@ SECTIONS
     . = ALIGN(4) + 16;
   } GROUP_LINK_IN(RAMABLE_REGION)
 
+
+//#ifdef CONFIG_BOOTLOADER_MCUBOOT
+#ifdef CONFIG_MCUBOOT
+  .dram1.data :
+#else
   .dram0.data :
+#endif
   {
     . = ALIGN (8);
     _data_start = ABSOLUTE(.);

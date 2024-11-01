@@ -351,6 +351,7 @@ SECTIONS
     *libzephyr.a:mspi_timing_config.*(.literal .literal.* .text .text.*)
     *libzephyr.a:mspi_timing_tuning.*(.literal .literal.* .text .text.*)
     *libzephyr.a:periph_ctrl.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:regi2c_ctrl.*(.literal .text .literal.* .text.*)
     *(.literal.sar_periph_ctrl_power_enable .text.sar_periph_ctrl_power_enable)
 
     *libzephyr.a:esp_system_chip.*(.literal.esp_system_abort .text.esp_system_abort)
@@ -644,6 +645,7 @@ SECTIONS
     *libzephyr.a:cpu_region_protect.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
 
     *libzephyr.a:periph_ctrl.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *libzephyr.a:regi2c_ctrl.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
 
     *libzephyr.a:esp_flash_api.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
     *libzephyr.a:esp_flash_spi_init.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
