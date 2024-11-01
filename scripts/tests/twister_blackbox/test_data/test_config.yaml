@@ -6,9 +6,10 @@ levels:
     description: >
       A plan to be used verifying basic features
     adds:
-      - dummy.agnostic.*
+      - dummy.agnostic\..*
   - name: acceptance
     description: >
       More coverage
     adds:
-      - dummy.*
+      - dummy.agnostic\..*
+      - dummy.device\..*

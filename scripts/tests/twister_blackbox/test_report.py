@@ -355,7 +355,7 @@ class TestReport:
             (
                 os.path.join(TEST_DATA, 'tests', 'dummy'),
                 ['--detailed-skipped-report', '--report-filtered'],
-                {'qemu_x86/atom': 7, 'intel_adl_crb/alder_lake': 7}
+                {'qemu_x86/atom': 13, 'intel_adl_crb/alder_lake': 13}
             ),
         ],
         ids=['dummy tests', 'dummy tests with filtered']
@@ -392,7 +392,7 @@ class TestReport:
         'test_path, report_filtered, expected_filtered_count',
         [
             (os.path.join(TEST_DATA, 'tests', 'dummy'), False, 0),
-            (os.path.join(TEST_DATA, 'tests', 'dummy'), True, 4),
+            (os.path.join(TEST_DATA, 'tests', 'dummy'), True, 10),
         ],
         ids=['no filtered', 'with filtered']
     )
