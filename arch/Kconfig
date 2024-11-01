@@ -1148,3 +1148,9 @@ config ARCH_HAS_CUSTOM_BUSY_WAIT
 	  It's possible that an architecture port cannot or does not want to use
 	  the provided k_busy_wait(), but instead must do something custom. It must
 	  enable this option in that case.
+
+config ARCH_HAS_CUSTOM_CURRENT_IMPL
+	bool
+	help
+	  Select when architecture implements arch_current_thread() &
+	  arch_current_thread_set().
