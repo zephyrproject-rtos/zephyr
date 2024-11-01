@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(net_wifi_mgmt, CONFIG_NET_L2_WIFI_MGMT_LOG_LEVEL);
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING
 #define MAX_NEIGHBOR_AP_LIMIT 6U
-#define MAX_EVENT_STR_LEN 32U
+#define MAX_EVENT_STR_LEN 32
 
 struct wifi_rrm_neighbor_ap_t {
 	char ssid[WIFI_SSID_MAX_LEN + 1];
@@ -502,16 +502,21 @@ NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_NEIGHBOR_REP_COMPLETE,
 void wifi_mgmt_raise_neighbor_rep_recv_event(struct net_if *iface, char *inbuf, size_t buf_len)
 {
 	const uint8_t *buf = inbuf;
-	char event[MAX_EVENT_STR_LEN] = {0};
-	char bssid[WIFI_SSID_MAX_LEN] = {0};
-	char bssid_info[WIFI_SSID_MAX_LEN]  = {0};
+	char event[MAX_EVENT_STR_LEN + 1] = {0};
+	char bssid[WIFI_SSID_MAX_LEN + 1] = {0};
+	char bssid_info[WIFI_SSID_MAX_LEN + 1]  = {0};
 	int op_class, channel, phy_type;
 	int idx = roaming_params.neighbor_rep.neighbor_cnt;
 
 	if (!buf || buf[0] == '\0') {
 		return;
 	}
-	if (sscanf(buf, "%s bssid=%s info=%s op_class=%d chan=%d phy_type=%d",
+
+	if (sscanf(buf,
+		   "%" STRINGIFY(MAX_EVENT_STR_LEN) "s "
+		   "bssid=%" STRINGIFY(WIFI_SSID_MAX_LEN) "s "
+		   "info=%" STRINGIFY(WIFI_SSID_MAX_LEN) "s "
+		   "op_class=%d chan=%d phy_type=%d",
 		   event, bssid, bssid_info, &op_class, &channel, &phy_type) == 6) {
 		int i;
 		int match  = 0;
