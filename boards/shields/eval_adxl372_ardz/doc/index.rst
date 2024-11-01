@@ -1,4 +1,4 @@
-.. eval_adxl372_ardz:
+.. _eval_adxl372_ardz:
 
 EVAL-ADXL372-ARDZ
 #################

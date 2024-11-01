@@ -1,4 +1,4 @@
-.. pmod_acl:
+.. _pmod_acl:
 
 Digilent Pmod ACL
 #################
