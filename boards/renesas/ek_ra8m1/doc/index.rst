@@ -112,6 +112,8 @@ The below features are currently supported on Zephyr OS for EK-RA8M1 board:
 +-----------+------------+----------------------+
 | CAN       | on-chip    | canfd                |
 +-----------+------------+----------------------+
+| USBHS     | on-chip    | udc                  |
++-----------+------------+----------------------+
 | ETHERNET  | on-chip    | ethernet             |
 +-----------+------------+----------------------+
 
