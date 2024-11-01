@@ -194,7 +194,7 @@ void pma_init_per_core(void)
 #endif /* CONFIG_NOCACHE_MEMORY */
 }
 
-void soc_early_init_hook(void)
+void pma_init(void)
 {
 	unsigned long mmsc_cfg;
 
