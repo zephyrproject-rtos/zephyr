@@ -535,14 +535,15 @@ void wifi_mgmt_raise_neighbor_rep_recv_event(struct net_if *iface, char *inbuf, 
 			}
 		}
 		if (!match && (roaming_params.neighbor_rep.neighbor_cnt < MAX_NEIGHBOR_AP_LIMIT)) {
-			strncpy((char *)roaming_params.neighbor_rep.neighbor_ap[idx].bssid,
-				bssid, sizeof(roaming_params.neighbor_rep.neighbor_ap[idx].bssid));
+			memcpy((char *)roaming_params.neighbor_rep.neighbor_ap[idx].bssid,
+			       bssid,
+			       sizeof(roaming_params.neighbor_rep.neighbor_ap[idx].bssid));
 			len = strnlen(bssid, sizeof(bssid) - 1);
 			roaming_params.neighbor_rep.neighbor_ap[idx].bssid[len] = (uint8_t)'\0';
 
-			strncpy((char *)roaming_params.neighbor_rep.neighbor_ap[idx].bssid_info,
-				(bssid_info),
-				sizeof(roaming_params.neighbor_rep.neighbor_ap->bssid_info));
+			memcpy((char *)roaming_params.neighbor_rep.neighbor_ap[idx].bssid_info,
+			       bssid_info,
+			       sizeof(roaming_params.neighbor_rep.neighbor_ap[idx].bssid_info));
 			len = strnlen(bssid_info, sizeof(bssid_info) - 1);
 			roaming_params.neighbor_rep.neighbor_ap[idx].bssid_info[len] =
 				(uint8_t)'\0';
