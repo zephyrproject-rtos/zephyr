@@ -11,6 +11,7 @@
 
 #include <zephyr/kernel_structs.h>
 #include "csr.h"
+#include "reg.h"
 
 static ALWAYS_INLINE uint32_t arch_proc_id(void)
 {
@@ -25,6 +26,17 @@ static ALWAYS_INLINE _cpu_t *arch_curr_cpu(void)
 	return &_kernel.cpus[0];
 #endif
 }
+
+#ifdef CONFIG_RISCV_CURRENT_VIA_GP
+register struct k_thread *__arch_curr_thread __asm__("gp");
+
+#define arch_curr_thread() __arch_curr_thread
+#define arch_set_curr_thread(thread)                                                               \
+	{                                                                                          \
+		_current_cpu->current = thread;                                                    \
+		__arch_curr_thread = (thread);                                                     \
+	}
+#endif /* CONFIG_RISCV_CURRENT_VIA_GP */
 
 static ALWAYS_INLINE unsigned int arch_num_cpus(void)
 {
