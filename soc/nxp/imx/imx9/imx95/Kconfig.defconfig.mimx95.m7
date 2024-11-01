@@ -48,4 +48,7 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config CACHE_MANAGEMENT
 	default y
 
+config ETH_NXP_IMX_MSGINTR
+	default 2
+
 endif # SOC_MIMX9596_M7
