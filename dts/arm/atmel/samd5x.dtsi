@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2019 ML!PA Consulting GmbH
- * Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
+ * Copyright (c) 2024-2025 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,8 @@
 		port-b = &portb;
 		port-c = &portc;
 		port-d = &portd;
+
+		rtc = &rtc;
 
 		sercom-0 = &sercom0;
 		sercom-1 = &sercom1;
@@ -45,6 +47,7 @@
 	};
 
 	chosen {
+		zephyr,flash-controller = &nvmctrl;
 		zephyr,entropy = &trng;
 		zephyr,flash-controller = &nvmctrl;
 	};
@@ -331,6 +334,9 @@
 			atmel,assigned-clocks = <&osc32kctrl 0>;
 			atmel,assigned-clock-names = "OSC32KCTRL";
 			status = "disabled";
+
+			alarms-count = <2>;
+			cal-constant = <(8192 * 128)>;
 		};
 
 		adc0: adc@43001c00 {
