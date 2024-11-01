@@ -348,7 +348,7 @@ int sensor_natively_supported_channel_size_info(struct sensor_chan_spec channel,
 	__ASSERT_NO_MSG(base_size != NULL);
 	__ASSERT_NO_MSG(frame_size != NULL);
 
-	if (((int)channel.chan_type < 0) || channel.chan_type >= (SENSOR_CHAN_ALL)) {
+	if (channel.chan_type >= SENSOR_CHAN_ALL) {
 		return -ENOTSUP;
 	}
 
@@ -474,7 +474,7 @@ static int decode(const uint8_t *buffer, struct sensor_chan_spec chan_spec,
 		return -EINVAL;
 	}
 
-	if (((int)chan_spec.chan_type < 0) || chan_spec.chan_type >= (SENSOR_CHAN_ALL)) {
+	if (chan_spec.chan_type >= SENSOR_CHAN_ALL) {
 		return 0;
 	}
 
