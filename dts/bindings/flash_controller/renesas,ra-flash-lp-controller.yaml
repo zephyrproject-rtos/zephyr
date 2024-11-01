@@ -1,0 +1,38 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA family flash low-power controller
+
+compatible: "renesas,ra-flash-lp-controller"
+
+include: flash-controller.yaml
+
+properties:
+  interrupts:
+    description: |
+      IRQ number and priority to use for Flash controller.
+      Note: If the config FLASH_RENESAS_RA_LP_BGO is not set,
+            no need to define interrupt for flash controller.
+
+  interrupt-names:
+    enum:
+      - "frdyi"
+    description: |
+      Interrupts must be given corresponding names so that the driver can recognize them.
+
+  flash-hardware-version:
+    type: int
+    required: true
+    enum:
+      - 3
+    description: |
+      Version of the Flash peripheral/hardware.
+
+  "#erase-block-cells":
+    type: int
+    const: 2
+    description: Number of items to expect in a flash layout.
+
+erase-block-cells:
+  - pages_count
+  - pages_size
