@@ -1,0 +1,87 @@
+/*
+ * Copyright (c) 2024 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/g4/stm32g431X8.dtsi>
+#include <st/g4/stm32g431c(6-8-b)tx-pinctrl.dtsi>
+
+/ {
+	model = "Makerbase MKS CANable V2.0";
+	compatible = "makerbase,mks-canable-v20";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,canbus = &fdcan1;
+	};
+
+	aliases {
+		led0 = &blue_led;
+		led1 = &green_led;
+	};
+
+	leds: leds {
+		compatible = "gpio-leds";
+		blue_led: led_2 {
+			gpios = <&gpioa 15 GPIO_ACTIVE_LOW>;
+			label = "blue-status D2";
+		};
+		green_led: led_3 {
+			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
+			label = "green-word D3";
+		};
+	};
+};
+
+&clk_hsi {
+	/* Internal 16 MHz clock used to drive PLL */
+	status = "okay";
+};
+
+&clk_hsi48 {
+	/* Internal 48 MHz clock used to drive USB */
+	status = "okay";
+};
+
+/* Adjust the pll for a SYSTEM Clock of 160 MHz  */
+&pll {
+	div-m = <4>;
+	mul-n = <80>;
+	div-p = <2>;
+	div-q = <4>;
+	div-r = <2>;
+	clocks = <&clk_hsi>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(160)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+};
+
+stm32_lp_tick_source: &lptim1 {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>,
+		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
+	status = "okay";
+};
+
+zephyr_udc0: &usb {
+	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
+	pinctrl-names = "default";
+	clocks = <&rcc STM32_CLOCK(APB1, 23U)>,
+		 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
+	status = "okay";
+};
+
+&fdcan1 {
+	pinctrl-0 = <&fdcan1_rx_pb8 &fdcan1_tx_pb9>;
+	pinctrl-names = "default";
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00001000>,
+		 <&rcc STM32_SRC_PLL_Q FDCAN_SEL(1)>;
+	status = "okay";
+};
