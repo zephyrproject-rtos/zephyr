@@ -13,4 +13,5 @@ supported:
   - spi
   - watchdog
   - hwinfo
+  - netif:openthread
 vendor: ti
