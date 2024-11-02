@@ -15,6 +15,6 @@ tests:
   sample.net.sockets.echo_async.wifi.nrf70dk:
     extra_args:
       - SNIPPET=wifi-ipv4
-      - CONFIG_NRF_WIFI_BUILD_ONLY_MODE=y
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
     platform_allow:
       - nrf7002dk/nrf5340/cpuapp

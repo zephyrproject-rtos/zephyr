@@ -4,7 +4,7 @@ menuconfig WIFI_ESP32
 	bool "ESP32 SoC WiFi support"
 	default y
 	depends on DT_HAS_ESPRESSIF_ESP32_WIFI_ENABLED
-	depends on ZEPHYR_HAL_ESPRESSIF_MODULE_BLOBS
+	depends on ZEPHYR_HAL_ESPRESSIF_MODULE_BLOBS || BUILD_ONLY_NO_BLOBS
 	depends on !SMP
 	select THREAD_CUSTOM_DATA
 	select NET_L2_WIFI_MGMT
