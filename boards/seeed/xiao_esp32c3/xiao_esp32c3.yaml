@@ -13,6 +13,5 @@ supported:
   - can
 testing:
   ignore_tags:
-    - net
     - bluetooth
 vendor: seeed

@@ -6,6 +6,5 @@ toolchain:
   - zephyr
 testing:
   ignore_tags:
-    - net
     - bluetooth
 vendor: espressif
