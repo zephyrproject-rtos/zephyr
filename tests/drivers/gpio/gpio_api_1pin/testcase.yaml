@@ -11,3 +11,18 @@ tests:
       - mps2/an521/cpu0
       - neorv32
     filter: dt_enabled_alias_with_parent_compat("led0", "gpio-leds")
+  drivers.gpio.1pin.aw9523b:
+    tags:
+      - drivers
+      - gpio
+    depends_on:
+      - gpio
+      - arduino_gpio
+      - i2c
+    min_flash: 48
+    harness_config:
+      fixture: aw9523b_on_arduino_header
+    filter: dt_enabled_alias_with_parent_compat("led0", "gpio-leds") and
+            dt_compat_enabled("arduino-header-r3")
+    extra_dtc_overlay_files:
+      - "boards/aw9523b_on_arduino_header.overlay"
