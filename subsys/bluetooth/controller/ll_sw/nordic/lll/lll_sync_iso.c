@@ -427,6 +427,7 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	LL_ASSERT(e);
 
 	e->type = EVENT_DONE_EXTRA_TYPE_SYNC_ISO;
+	e->estab_failed = 0U;
 	e->trx_cnt = 0U;
 	e->crc_valid = 0U;
 
@@ -1281,6 +1282,7 @@ static void isr_rx_done(void *param)
 
 	/* Calculate and place the drift information in done event */
 	e->type = EVENT_DONE_EXTRA_TYPE_SYNC_ISO;
+	e->estab_failed = 0U;
 	e->trx_cnt = trx_cnt;
 	e->crc_valid = crc_ok_anchor;
 
