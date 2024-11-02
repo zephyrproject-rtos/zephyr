@@ -17,6 +17,5 @@ supported:
   - display
 testing:
   ignore_tags:
-    - net
     - bluetooth
 vendor: waveshare

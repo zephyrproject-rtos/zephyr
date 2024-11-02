@@ -17,6 +17,5 @@ supported:
   - entropy
 testing:
   ignore_tags:
-    - net
     - bluetooth
 vendor: espressif
