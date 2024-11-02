@@ -15,6 +15,5 @@ supported:
   - watchdog
 testing:
   ignore_tags:
-    - net
     - bluetooth
 vendor: olimex
