@@ -17,6 +17,5 @@ supported:
   - sdhc
 testing:
   ignore_tags:
-    - net
     - bluetooth
 vendor: lilygo
