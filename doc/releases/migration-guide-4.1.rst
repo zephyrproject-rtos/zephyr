@@ -172,6 +172,14 @@ Video
   The new ``video-controls.h`` source now contains description of each control ID to help
   disambiguating.
 
+Wi-Fi
+=====
+
+* The config options :kconfig:option:`CONFIG_NXP_WIFI_BUILD_ONLY_MODE` and
+  :kconfig:option:`CONFIG_NRF_WIFI_BUILD_ONLY_MODE` are now unified under
+  :kconfig:option:`CONFIG_BUILD_ONLY_NO_BLOBS` making it a common entry point
+  for any vendor to enable builds without blobs.
+
 Bluetooth
 *********
 
