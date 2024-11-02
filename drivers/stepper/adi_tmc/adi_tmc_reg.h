@@ -137,6 +137,122 @@ extern "C" {
 
 #endif
 
+#ifdef CONFIG_STEPPER_ADI_TMC5160
+
+/**
+ * @name TMC5160 module registers
+ * @anchor TMC5160_REGISTERS
+ *
+ * @{
+ */
+
+#define TMC5160_GCONF_TEST_MODE_SHIFT 17
+#define TMC5160_GCONF_SHAFT_SHIFT 4
+
+#define TMC5160_DRV_STATUS_STST_BIT        BIT(31)
+
+#define TMC5160_WRITE_BIT		0x80U
+#define TMC5160_ADDRESS_MASK 	0x7FU
+
+#define TMC5160_GCONF          	0x00
+#define TMC5160_GSTAT          	0x01
+#define TMC5160_IFCNT          	0x02
+#define TMC5160_SLAVECONF      	0x03
+#define TMC5160_INP_OUT        	0x04
+#define TMC5160_X_COMPARE      	0x05
+#define TMC5160_OTP_PROG       	0x06
+#define TMC5160_OTP_READ       	0x07
+#define TMC5160_FACTORY_CONF   	0x08
+#define TMC5160_SHORT_CONF     	0x09
+#define TMC5160_DRV_CONF       	0x0A
+#define TMC5160_GLOBAL_SCALER  	0x0B
+#define TMC5160_OFFSET_READ    	0x0C
+#define TMC5160_IHOLD_IRUN     	0x10
+#define TMC5160_TPOWERDOWN     	0x11
+#define TMC5160_TSTEP          	0x12
+#define TMC5160_TPWMTHRS       	0x13
+#define TMC5160_TCOOLTHRS      	0x14
+#define TMC5160_THIGH          	0x15
+
+#define TMC5160_RAMPMODE       	0x20
+#define TMC5160_XACTUAL        	0x21
+#define TMC5160_VACTUAL        	0x22
+#define TMC5160_VSTART         	0x23
+#define TMC5160_A1             	0x24
+#define TMC5160_V1             	0x25
+#define TMC5160_AMAX           	0x26
+#define TMC5160_VMAX           	0x27
+#define TMC5160_DMAX           	0x28
+#define TMC5160_D1             	0x2A
+#define TMC5160_VSTOP          	0x2B
+#define TMC5160_TZEROWAIT      	0x2C
+#define TMC5160_XTARGET        	0x2D
+
+#define TMC5160_VDCMIN         	0x33
+#define TMC5160_SWMODE         	0x34
+#define TMC5160_RAMPSTAT       	0x35
+#define TMC5160_XLATCH         	0x36
+#define TMC5160_ENCMODE        	0x38
+#define TMC5160_XENC           	0x39
+#define TMC5160_ENC_CONST      	0x3A
+#define TMC5160_ENC_STATUS     	0x3B
+#define TMC5160_ENC_LATCH      	0x3C
+#define TMC5160_ENC_DEVIATION  	0x3D
+
+#define TMC5160_MSLUT0         	0x60
+#define TMC5160_MSLUT1         	0x61
+#define TMC5160_MSLUT2         	0x62
+#define TMC5160_MSLUT3         	0x63
+#define TMC5160_MSLUT4         	0x64
+#define TMC5160_MSLUT5         	0x65
+#define TMC5160_MSLUT6         	0x66
+#define TMC5160_MSLUT7         	0x67
+#define TMC5160_MSLUTSEL       	0x68
+#define TMC5160_MSLUTSTART     	0x69
+#define TMC5160_MSCNT          	0x6A
+#define TMC5160_MSCURACT       	0x6B
+#define TMC5160_CHOPCONF       	0x6C
+#define TMC5160_COOLCONF       	0x6D
+#define TMC5160_DCCTRL         	0x6E
+#define TMC5160_DRVSTATUS     	0x6F
+#define TMC5160_PWMCONF        	0x70
+#define TMC5160_PWMSCALE       	0x71
+#define TMC5160_PWM_AUTO       	0x72
+#define TMC5160_LOST_STEPS     	0x73
+
+
+#define TMC5160_RAMPMODE_POSITIONING_MODE       0
+#define TMC5160_RAMPMODE_POSITIVE_VELOCITY_MODE 1
+#define TMC5160_RAMPMODE_NEGATIVE_VELOCITY_MODE 2
+#define TMC5160_RAMPMODE_HOLD_MODE              3
+
+#define TMC5160_SW_MODE_SG_STOP_ENABLE BIT(10)
+
+#define TMC5160_SG_MIN_VALUE -64
+#define TMC5160_SG_MAX_VALUE 63
+
+#define TMC5160_COOLCONF_SG2_THRESHOLD_VALUE_SHIFT 16
+
+#define TMC5160_IHOLD_MASK  GENMASK(4, 0)
+#define TMC5160_IHOLD_SHIFT 0
+#define TMC5160_IHOLD(n)    (((n) << TMC5160_IHOLD_SHIFT) & TMC5160_IHOLD_MASK)
+
+#define TMC5160_IRUN_MASK  GENMASK(12, 8)
+#define TMC5160_IRUN_SHIFT 8
+#define TMC5160_IRUN(n)    (((n) << TMC5160_IRUN_SHIFT) & TMC5160_IRUN_MASK)
+
+#define TMC5160_IHOLDDELAY_MASK  GENMASK(19, 16)
+#define TMC5160_IHOLDDELAY_SHIFT 16
+#define TMC5160_IHOLDDELAY(n)    (((n) << TMC5160_IHOLDDELAY_SHIFT) & TMC5160_IHOLDDELAY_MASK)
+
+#define TMC5160_CHOPCONF_DRV_ENABLE_MASK GENMASK(3, 0)
+#define TMC5160_CHOPCONF_MRES_MASK       GENMASK(27, 24)
+#define TMC5160_CHOPCONF_MRES_SHIFT      24
+
+#define TMC5160_CLOCK_FREQ_SHIFT 24
+
+#endif
+
 /**
  * @}
  */

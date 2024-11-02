@@ -52,4 +52,12 @@ config STEPPER_ADI_TMC5041_RAMPSTAT_POLL_INTERVAL_IN_MSEC
 	help
 	  The interval in ms to poll the ramp status on TMC5041.
 
+config STEPPER_ADI_TMC5160
+	bool "Activate trinamic tmc5160 stepper driver"
+	depends on DT_HAS_ADI_TMC5160_ENABLED && STEPPER_ADI_TMC
+	select STEPPER_ADI_TMC_SPI
+	default y
+	help
+	  Stepper driver for TMC5160.
+
 endif # STEPPER_ADI_TMC

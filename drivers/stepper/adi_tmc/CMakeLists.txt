@@ -6,3 +6,4 @@ zephyr_library_property(ALLOW_EMPTY TRUE)
 
 zephyr_library_sources_ifdef(CONFIG_STEPPER_ADI_TMC_SPI adi_tmc_spi.c)
 zephyr_library_sources_ifdef(CONFIG_STEPPER_ADI_TMC5041 adi_tmc5041_stepper_controller.c)
+zephyr_library_sources_ifdef(CONFIG_STEPPER_ADI_TMC5160 adi_tmc5160_stepper_controller.c)
