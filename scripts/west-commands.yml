@@ -84,3 +84,8 @@ west-commands:
       - name: sdk
         class: Sdk
         help: manage Zephyr SDK
+  - file: scripts/west_commands/packages.py
+    commands:
+      - name: packages
+        class: Packages
+        help: manage packages for Zephyr
