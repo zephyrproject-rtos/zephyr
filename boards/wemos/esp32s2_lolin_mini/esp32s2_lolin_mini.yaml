@@ -10,6 +10,5 @@ supported:
   - uart
 testing:
   ignore_tags:
-    - net
     - bluetooth
 vendor: wemos
