@@ -126,14 +126,8 @@ config NRF_WIFI_IF_AUTO_START
 
 choice NRF_WIFI_FW_BLOB_HANDLING
 	prompt "nRF70 Firmware blob handling"
+	depends on !BUILD_ONLY_NO_BLOBS
 	default NRF_WIFI_PATCHES_BUILTIN
-
-config NRF_WIFI_BUILD_ONLY_MODE
-	bool "Build only mode"
-	help
-	  Enable this option to build the driver without firmware loading, removes
-	  dependency on firmware binary and patches.
-	  This is useful to check the build and link errors.
 
 config NRF_WIFI_PATCHES_BUILTIN
 	bool "Store nRF70 FW patches as part of the driver"
