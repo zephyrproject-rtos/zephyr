@@ -211,8 +211,16 @@ Video
 
 Watchdog
 ========
+Wi-Fi
+=====
+
 
 * Renamed the ``compatible`` from ``nxp,kinetis-wdog32`` to :dtcompatible:`nxp,wdog32`.
+
+* The config options :kconfig:option:`CONFIG_NXP_BUILD_ONLY_NO_BLOBS` and
+  :kconfig:option:`CONFIG_NRF_BUILD_ONLY_NO_BLOBS` are now unified under
+  :kconfig:option:`CONFIG_BUILD_ONLY_NO_BLOBS` making it a common entry point
+  for any vendor to enable builds without blobs.
 
 Bluetooth
 *********
