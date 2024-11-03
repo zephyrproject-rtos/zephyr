@@ -15,17 +15,20 @@
 	aliases {
 	};
 
-	soc {
-		sram1: memory@80000000 {
+	beaglev {
+		#address-cells = <2>;
+		#size-cells = <1>;
+
+		ddr_cached_high: memory@1000000000 {
 			compatible = "mmio-sram";
-			reg = <0x80000000 0x77F80000>; /* Size = 2GB - 0x80000 */
+			reg = <0x10 0x00000000 0x80000000>; /* 2GB */
 		};
 	};
 
 	chosen {
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
-		zephyr,sram = &sram1;
+		zephyr,sram = &ddr_cached_high;
 	};
 };
 
