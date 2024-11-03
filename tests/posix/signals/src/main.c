@@ -12,7 +12,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
 
-ZTEST(signal, test_sigemptyset)
+ZTEST(posix_signals, test_sigemptyset)
 {
 	sigset_t set;
 
@@ -27,7 +27,7 @@ ZTEST(signal, test_sigemptyset)
 	}
 }
 
-ZTEST(signal, test_sigfillset)
+ZTEST(posix_signals, test_sigfillset)
 {
 	sigset_t set = (sigset_t){0};
 
@@ -38,7 +38,7 @@ ZTEST(signal, test_sigfillset)
 	}
 }
 
-ZTEST(signal, test_sigaddset_oor)
+ZTEST(posix_signals, test_sigaddset_oor)
 {
 	sigset_t set = (sigset_t){0};
 
@@ -52,7 +52,7 @@ ZTEST(signal, test_sigaddset_oor)
 	zassert_equal(errno, EINVAL, "errno should be %s", "EINVAL");
 }
 
-ZTEST(signal, test_sigaddset)
+ZTEST(posix_signals, test_sigaddset)
 {
 	int signo;
 	sigset_t set = (sigset_t){0};
@@ -99,7 +99,7 @@ ZTEST(signal, test_sigaddset)
 	}
 }
 
-ZTEST(signal, test_sigdelset_oor)
+ZTEST(posix_signals, test_sigdelset_oor)
 {
 	sigset_t set = (sigset_t){0};
 
@@ -113,7 +113,7 @@ ZTEST(signal, test_sigdelset_oor)
 	zassert_equal(errno, EINVAL, "errno should be %s", "EINVAL");
 }
 
-ZTEST(signal, test_sigdelset)
+ZTEST(posix_signals, test_sigdelset)
 {
 	int signo;
 	sigset_t set = (sigset_t){0};
@@ -160,7 +160,7 @@ ZTEST(signal, test_sigdelset)
 	}
 }
 
-ZTEST(signal, test_sigismember_oor)
+ZTEST(posix_signals, test_sigismember_oor)
 {
 	sigset_t set = {0};
 
@@ -174,7 +174,7 @@ ZTEST(signal, test_sigismember_oor)
 	zassert_equal(errno, EINVAL, "errno should be %s", "EINVAL");
 }
 
-ZTEST(signal, test_sigismember)
+ZTEST(posix_signals, test_sigismember)
 {
 	sigset_t set = (sigset_t){0};
 
@@ -195,7 +195,7 @@ ZTEST(signal, test_sigismember)
 	zassert_equal(sigismember(&set, SIGTERM), 0, "%s not expected to be member", "SIGTERM");
 }
 
-ZTEST(signal, test_signal_strsignal)
+ZTEST(posix_signals, test_signal_strsignal)
 {
 	/* Using -INT_MAX here because compiler resolves INT_MIN to (-2147483647 - 1) */
 	char buf[sizeof("RT signal -" STRINGIFY(INT_MAX))] = {0};
@@ -297,7 +297,7 @@ static void *test_sigmask_entry(void *arg)
 	return NULL;
 }
 
-ZTEST(signal, test_pthread_sigmask)
+ZTEST(posix_signals, test_pthread_sigmask)
 {
 	pthread_t th;
 
@@ -305,7 +305,7 @@ ZTEST(signal, test_pthread_sigmask)
 	zassert_ok(pthread_join(th, NULL));
 }
 
-ZTEST(signal, test_sigprocmask)
+ZTEST(posix_signals, test_sigprocmask)
 {
 	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
 		if (!IS_ENABLED(CONFIG_ASSERT)) {
@@ -330,4 +330,4 @@ static void before(void *arg)
 	}
 }
 
-ZTEST_SUITE(signal, NULL, NULL, before, NULL, NULL);
+ZTEST_SUITE(posix_signals, NULL, NULL, before, NULL, NULL);
