@@ -17,6 +17,13 @@
 extern "C" {
 #endif
 
+/** Common Registers for TMC5041 and TMC51XX */
+#if defined(CONFIG_STEPPER_ADI_TMC5041)
+
+#define TMC5XXX_CLOCK_FREQ_SHIFT 24
+
+#endif
+
 #ifdef CONFIG_STEPPER_ADI_TMC5041
 
 #define TMC5041_MOTOR_ADDR(m)     (0x20 << (m))
@@ -132,8 +139,6 @@ extern "C" {
 #define TMC5041_CHOPCONF_DRV_ENABLE_MASK GENMASK(3, 0)
 #define TMC5041_CHOPCONF_MRES_MASK       GENMASK(27, 24)
 #define TMC5041_CHOPCONF_MRES_SHIFT      24
-
-#define TMC5041_CLOCK_FREQ_SHIFT 24
 
 #endif
 
