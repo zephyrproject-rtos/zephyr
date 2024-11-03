@@ -298,7 +298,7 @@ static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 
 	printk("Found broadcaster with ID 0x%06X and addr %s and sid 0x%02X\n", broadcast_id,
 	       le_addr, info->sid);
-	printk("Adv type %02X interval %u", info->adv_type, info->interval);
+	printk("Adv type %02X interval %u\n", info->adv_type, info->interval);
 
 	SET_FLAG(flag_broadcaster_found);
 
