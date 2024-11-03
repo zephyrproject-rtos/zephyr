@@ -39,6 +39,15 @@
 #include "bap_common.h"
 
 #if defined(CONFIG_BT_CAP_ACCEPTOR)
+/* Zephyr Controller works best while Extended Advertising interval to be a multiple
+ * of the ISO Interval minus 10 ms (max. advertising random delay). This is
+ * required to place the AUX_ADV_IND PDUs in a non-overlapping interval with the
+ * Broadcast ISO radio events.
+ */
+#define BT_LE_EXT_ADV_CONN_CUSTOM \
+		BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV | BT_LE_ADV_OPT_CONN, \
+				0x00e0, 0x00e0, NULL)
+
 extern enum bst_result_t bst_result;
 
 #define SINK_CONTEXT                                                                               \
@@ -654,7 +663,7 @@ void test_start_adv(void)
 	struct bt_le_ext_adv *ext_adv;
 
 	/* Create a connectable non-scannable advertising set */
-	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN, NULL, &ext_adv);
+	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN_CUSTOM, NULL, &ext_adv);
 	if (err != 0) {
 		FAIL("Failed to create advertising set (err %d)\n", err);
 
