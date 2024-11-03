@@ -47,7 +47,7 @@ config TASK_WDT_HW_FALLBACK_DELAY
 	int "Additional delay for hardware watchdog (ms)"
 	depends on TASK_WDT_HW_FALLBACK
 	default 20
-	range 1 1000
+	range 1 10000
 	help
 	  The timeout of the hardware watchdog fallback will be increased by
 	  this value to provide sufficient time for corrective actions in the
