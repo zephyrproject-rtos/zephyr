@@ -73,7 +73,7 @@ class TestRunner:
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
             ['qemu_x86', 'qemu_x86_64'],
             {
-                'passed_configurations': 6,
+                'passed_configurations': 0,
                 'selected_test_instances': 6,
                 'executed_on_platform': 0,
                 'only_built': 6,
