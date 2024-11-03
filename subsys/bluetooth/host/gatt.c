@@ -655,7 +655,7 @@ static bool cf_set_value(struct gatt_cf_cfg *cfg, const uint8_t *value, uint16_t
 	/* Set the bits for each octet */
 	for (i = 0U; i < len && i < CF_NUM_BYTES; i++) {
 		if (i == (CF_NUM_BYTES - 1)) {
-			cfg->data[i] |= value[i] & BIT_MASK(CF_NUM_BITS % 8);
+			cfg->data[i] |= value[i] & BIT_MASK(CF_NUM_BITS % BITS_PER_BYTE);
 		} else {
 			cfg->data[i] |= value[i];
 		}

@@ -9,6 +9,7 @@
 #include <zephyr/device.h>
 #include <zephyr/input/input.h>
 #include <zephyr/drivers/display.h>
+#include <zephyr/sys/util.h>
 
 LOG_MODULE_REGISTER(sample, LOG_LEVEL_INF);
 
@@ -25,7 +26,7 @@ LOG_MODULE_REGISTER(sample, LOG_LEVEL_INF);
 #define CROSS_DIM (WIDTH / CONFIG_SCREEN_WIDTH_TO_CROSS_DIM)
 
 #define PIXEL_FORMAT (DT_PROP_OR(DT_CHOSEN(zephyr_display), pixel_format, PIXEL_FORMAT_ARGB_8888))
-#define BPP          ((DISPLAY_BITS_PER_PIXEL(PIXEL_FORMAT)) / 8)
+#define BPP          ((DISPLAY_BITS_PER_PIXEL(PIXEL_FORMAT)) / BITS_PER_BYTE)
 
 #define BUFFER_SIZE  (CROSS_DIM * CROSS_DIM * BPP)
 #define REFRESH_RATE 100
