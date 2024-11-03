@@ -76,13 +76,12 @@ int snprintk(char *str, size_t size, const char *fmt, ...)
  * FIXME: move to sys_io.h once the argument signature for bitmap has
  * been fixed to void* or similar GH-2825
  */
-#define BITS_PER_UL                 (8 * sizeof(unsigned long))
-#define DEFINE_BITFIELD(name, bits) unsigned long(name)[DIV_ROUND_UP(bits, BITS_PER_UL)]
+#define DEFINE_BITFIELD(name, bits) unsigned long(name)[DIV_ROUND_UP(bits, BITS_PER_LONG)]
 
 static inline int sys_bitfield_find_first_clear(const unsigned long *bitmap,
 						const unsigned int bits)
 {
-	const size_t words = DIV_ROUND_UP(bits, BITS_PER_UL);
+	const size_t words = DIV_ROUND_UP(bits, BITS_PER_LONG);
 	size_t cnt;
 	unsigned int long neg_bitmap;
 
@@ -97,10 +96,10 @@ static inline int sys_bitfield_find_first_clear(const unsigned long *bitmap,
 			continue;
 		} else if (neg_bitmap == ~0UL) {
 			/* First bit is free */
-			return cnt * BITS_PER_UL;
+			return cnt * BITS_PER_LONG;
 		} else {
 			const unsigned int bit =
-				(cnt * BITS_PER_UL) + __builtin_ffsl(neg_bitmap) - 1;
+				(cnt * BITS_PER_LONG) + __builtin_ffsl(neg_bitmap) - 1;
 			/* Ensure first free bit is within total bits count */
 			if (bit < bits) {
 				return bit;

@@ -44,8 +44,8 @@ LOG_MODULE_REGISTER(smartbond_display, CONFIG_DISPLAY_LOG_LEVEL);
 	(((_val) << LCDC_LCDC_LAYER0_OFFSETX_REG_ ## _field ## _Pos) &	\
 	LCDC_LCDC_LAYER0_OFFSETX_REG_ ## _field ## _Msk)
 
-#define DISPLAY_SMARTBOND_PIXEL_SIZE(inst)	\
-	(DISPLAY_BITS_PER_PIXEL(DT_INST_PROP(inst, pixel_format)) / 8)
+#define DISPLAY_SMARTBOND_PIXEL_SIZE(inst)                                                         \
+	(DISPLAY_BITS_PER_PIXEL(DT_INST_PROP(inst, pixel_format)) / BITS_PER_BYTE)
 
 #if CONFIG_DISPLAY_RENESAS_LCDC_BUFFER_PSRAM
 #define DISPLAY_BUFFER_LINKER_SECTION \

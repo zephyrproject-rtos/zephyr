@@ -256,8 +256,8 @@ static const struct display_driver_api mcux_dcnano_lcdif_api = {
 	.get_framebuffer = mcux_dcnano_lcdif_get_framebuffer,
 };
 
-#define MCUX_DCNANO_LCDIF_PIXEL_BYTES(n)					\
-	(DISPLAY_BITS_PER_PIXEL(DT_INST_PROP(n, pixel_format)) / 8)
+#define MCUX_DCNANO_LCDIF_PIXEL_BYTES(n)                                                           \
+	(DISPLAY_BITS_PER_PIXEL(DT_INST_PROP(n, pixel_format)) / BITS_PER_BYTE)
 #define MCUX_DCNANO_LCDIF_FB_SIZE(n) DT_INST_PROP(n, width) *			\
 	DT_INST_PROP(n, height) * MCUX_DCNANO_LCDIF_PIXEL_BYTES(n)
 
