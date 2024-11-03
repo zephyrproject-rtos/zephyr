@@ -1,5 +1,6 @@
 /*
  * SPDX-FileCopyrightText: Copyright (c) 2024 Carl Zeiss Meditec AG
+ * SPDX-FileCopyrightText: Copyright (c) 2024 Jilay Sandeep Pandya
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -10,8 +11,8 @@
 #include <zephyr/drivers/stepper.h>
 #include <zephyr/drivers/stepper/stepper_trinamic.h>
 
-#include "adi_tmc_reg.h"
 #include "adi_tmc_spi.h"
+#include "adi_tmc5xxx_common.h"
 
 #include <zephyr/logging/log.h>
 
@@ -91,17 +92,6 @@ static int tmc5041_read(const struct device *dev, const uint8_t reg_addr, uint32
 		return err;
 	}
 	return 0;
-}
-
-static void calculate_velocity_from_hz_to_fclk(const struct device *dev, const uint32_t velocity_hz,
-					       uint32_t *const velocity_fclk)
-{
-	const struct tmc5041_config *config = dev->config;
-
-	*velocity_fclk =
-		((uint64_t)(velocity_hz) << TMC5041_CLOCK_FREQ_SHIFT) / config->clock_frequency;
-	LOG_DBG("Stepper motor controller %s velocity: %d Hz, velocity_fclk: %d", dev->name,
-		velocity_hz, *velocity_fclk);
 }
 
 static int tmc5041_stepper_set_event_callback(const struct device *dev,
@@ -356,10 +346,13 @@ static int tmc5041_stepper_move(const struct device *dev, const int32_t steps)
 static int tmc5041_stepper_set_max_velocity(const struct device *dev, uint32_t velocity)
 {
 	const struct tmc5041_stepper_config *config = dev->config;
+	const struct tmc5041_config *tmc5041_config = config->controller->config;
+	const uint32_t clock_frequency = tmc5041_config->clock_frequency;
 	uint32_t velocity_fclk;
 	int err;
 
-	calculate_velocity_from_hz_to_fclk(config->controller, velocity, &velocity_fclk);
+	velocity_fclk = tmc5xxx_calculate_velocity_from_hz_to_fclk(velocity, clock_frequency);
+
 	err = tmc5041_write(config->controller, TMC5041_VMAX(config->index), velocity_fclk);
 	if (err != 0) {
 		LOG_ERR("%s: Failed to set max velocity", dev->name);
@@ -482,11 +475,13 @@ static int tmc5041_stepper_enable_constant_velocity_mode(const struct device *de
 {
 	LOG_DBG("Stepper motor controller %s enable constant velocity mode", dev->name);
 	const struct tmc5041_stepper_config *config = dev->config;
+	const struct tmc5041_config *tmc5041_config = config->controller->config;
 	struct tmc5041_stepper_data *data = dev->data;
+	const uint32_t clock_frequency = tmc5041_config->clock_frequency;
 	uint32_t velocity_fclk;
 	int err;
 
-	calculate_velocity_from_hz_to_fclk(config->controller, velocity, &velocity_fclk);
+	velocity_fclk = tmc5xxx_calculate_velocity_from_hz_to_fclk(velocity, clock_frequency);
 
 	if (config->is_sg_enabled) {
 		err = stallguard_enable(dev, false);
