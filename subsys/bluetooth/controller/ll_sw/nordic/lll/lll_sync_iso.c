@@ -46,6 +46,7 @@ static void prepare_bh(void *param);
 static int create_prepare_cb(struct lll_prepare_param *p);
 static int prepare_cb(struct lll_prepare_param *p);
 static int prepare_cb_common(struct lll_prepare_param *p);
+static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb);
 static void abort_cb(struct lll_prepare_param *prepare_param, void *param);
 static void isr_rx_estab(void *param);
 static void isr_rx(void *param);
@@ -147,7 +148,7 @@ static void create_prepare_bh(void *param)
 	int err;
 
 	/* Invoke common pipeline handling of prepare */
-	err = lll_prepare(lll_is_abort_cb, abort_cb, create_prepare_cb, 0U,
+	err = lll_prepare(is_abort_cb, abort_cb, create_prepare_cb, 0U,
 			  param);
 	LL_ASSERT(!err || err == -EINPROGRESS);
 }
@@ -157,7 +158,7 @@ static void prepare_bh(void *param)
 	int err;
 
 	/* Invoke common pipeline handling of prepare */
-	err = lll_prepare(lll_is_abort_cb, abort_cb, prepare_cb, 0U, param);
+	err = lll_prepare(is_abort_cb, abort_cb, prepare_cb, 0U, param);
 	LL_ASSERT(!err || err == -EINPROGRESS);
 }
 
@@ -403,6 +404,20 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	next_chan_calc(lll, event_counter, data_chan_id);
 
 	return 0;
+}
+
+static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
+{
+	if (next != curr) {
+		struct lll_sync_iso *lll;
+
+		lll = curr;
+		if (lll->bn_curr <= lll->bn) {
+			return 0;
+		}
+	}
+
+	return -ECANCELED;
 }
 
 static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
