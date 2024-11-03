@@ -73,7 +73,7 @@ extern "C" {
  * @cond INTERNAL_HIDDEN
  */
 
-#define ATOMIC_BITS (sizeof(atomic_val_t) * 8)
+#define ATOMIC_BITS            (sizeof(atomic_val_t) * BITS_PER_BYTE)
 #define ATOMIC_MASK(bit) BIT((unsigned long)(bit) & (ATOMIC_BITS - 1U))
 #define ATOMIC_ELEM(addr, bit) ((addr) + ((bit) / ATOMIC_BITS))
 

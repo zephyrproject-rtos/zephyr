@@ -247,7 +247,7 @@ static int mcux_elcdif_set_pixel_format(const struct device *dev,
 	}
 
 	dev_data->pixel_format = pixel_format;
-	dev_data->pixel_bytes = DISPLAY_BITS_PER_PIXEL(pixel_format) / 8;
+	dev_data->pixel_bytes = DISPLAY_BITS_PER_PIXEL(pixel_format) / BITS_PER_BYTE;
 	dev_data->fb_bytes =
 		config->rgb_mode.panelWidth * config->rgb_mode.panelHeight * dev_data->pixel_bytes;
 
