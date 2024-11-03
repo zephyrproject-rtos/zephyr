@@ -23,8 +23,6 @@
 
 #include "udc_common.h"
 
-#include "stm32_hsem.h"
-
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(udc_stm32, CONFIG_UDC_DRIVER_LOG_LEVEL);
 
@@ -50,6 +48,8 @@ struct udc_stm32_data  {
 	void (*pcd_prepare)(const struct device *dev);
 	int (*clk_enable)(void);
 	int (*clk_disable)(void);
+	struct k_thread thread_data;
+	struct k_msgq msgq_data;
 };
 
 struct udc_stm32_config {
@@ -58,6 +58,18 @@ struct udc_stm32_config {
 	uint32_t dram_size;
 	uint16_t ep0_mps;
 	uint16_t ep_mps;
+};
+
+enum udc_stm32_msg_type {
+	UDC_STM32_MSG_SETUP,
+	UDC_STM32_MSG_DATA_OUT,
+	UDC_STM32_MSG_DATA_IN,
+};
+
+struct udc_stm32_msg {
+	uint8_t type;
+	uint8_t ep;
+	uint16_t rx_count;
 };
 
 static int udc_stm32_lock(const struct device *dev)
@@ -125,6 +137,26 @@ void HAL_PCD_ResumeCallback(PCD_HandleTypeDef *hpcd)
 	udc_submit_event(priv->dev, UDC_EVT_RESUME, 0);
 }
 
+void HAL_PCD_SetupStageCallback(PCD_HandleTypeDef *hpcd)
+{
+	struct udc_stm32_data *priv = hpcd2data(hpcd);
+	struct udc_stm32_msg msg = {.type = UDC_STM32_MSG_SETUP};
+	int err;
+
+	err = k_msgq_put(&priv->msgq_data, &msg, K_NO_WAIT);
+
+	if (err < 0) {
+		LOG_ERR("UDC Message queue overrun");
+	}
+}
+
+void HAL_PCD_SOFCallback(PCD_HandleTypeDef *hpcd)
+{
+	struct udc_stm32_data *priv = hpcd2data(hpcd);
+
+	udc_submit_event(priv->dev, UDC_EVT_SOF, 0);
+}
+
 static int usbd_ctrl_feed_dout(const struct device *dev, const size_t length)
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
@@ -141,57 +173,6 @@ static int usbd_ctrl_feed_dout(const struct device *dev, const size_t length)
 	HAL_PCD_EP_Receive(&priv->pcd, cfg->addr, buf->data, buf->size);
 
 	return 0;
-}
-
-void HAL_PCD_SetupStageCallback(PCD_HandleTypeDef *hpcd)
-{
-	struct udc_stm32_data *priv = hpcd2data(hpcd);
-	struct usb_setup_packet *setup = (void *)priv->pcd.Setup;
-	const struct device *dev = priv->dev;
-	struct net_buf *buf;
-	int err;
-
-	buf = udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT,
-			     sizeof(struct usb_setup_packet));
-	if (buf == NULL) {
-		LOG_ERR("Failed to allocate for setup");
-		return;
-	}
-
-	udc_ep_buf_set_setup(buf);
-	memcpy(buf->data, setup, 8);
-	net_buf_add(buf, 8);
-
-	udc_ctrl_update_stage(dev, buf);
-
-	if (!buf->len) {
-		return;
-	}
-
-	if ((setup->bmRequestType == 0) &&
-	    (setup->bRequest == USB_SREQ_SET_ADDRESS)) {
-		/* HAL requires we set the address before submitting status */
-		HAL_PCD_SetAddress(&priv->pcd, setup->wValue);
-	}
-
-	if (udc_ctrl_stage_is_data_out(dev)) {
-		/*  Allocate and feed buffer for data OUT stage */
-		err = usbd_ctrl_feed_dout(dev, udc_data_stage_length(buf));
-		if (err == -ENOMEM) {
-			udc_submit_ep_event(dev, buf, err);
-		}
-	} else if (udc_ctrl_stage_is_data_in(dev)) {
-		udc_ctrl_submit_s_in_status(dev);
-	} else {
-		udc_ctrl_submit_s_status(dev);
-	}
-}
-
-void HAL_PCD_SOFCallback(PCD_HandleTypeDef *hpcd)
-{
-	struct udc_stm32_data *priv = hpcd2data(hpcd);
-
-	udc_submit_event(priv->dev, UDC_EVT_SOF, 0);
 }
 
 static void udc_stm32_flush_tx_fifo(const struct device *dev)
@@ -275,6 +256,36 @@ void HAL_PCD_DataOutStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
 {
 	uint32_t rx_count = HAL_PCD_EP_GetRxCount(hpcd, epnum);
 	struct udc_stm32_data *priv = hpcd2data(hpcd);
+	struct udc_stm32_msg msg = {
+		.type = UDC_STM32_MSG_DATA_OUT,
+		.ep = epnum,
+		.rx_count = rx_count,
+	};
+	int err;
+
+	err = k_msgq_put(&priv->msgq_data, &msg, K_NO_WAIT);
+	if (err != 0) {
+		LOG_ERR("UDC Message queue overrun");
+	}
+}
+
+void HAL_PCD_DataInStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
+{
+	struct udc_stm32_data *priv = hpcd2data(hpcd);
+	struct udc_stm32_msg msg = {
+		.type = UDC_STM32_MSG_DATA_IN,
+		.ep = epnum,
+	};
+	int err;
+
+	err = k_msgq_put(&priv->msgq_data, &msg, K_NO_WAIT);
+	if (err != 0) {
+		LOG_ERR("UDC Message queue overrun");
+	}
+}
+
+static void handle_msg_data_out(struct udc_stm32_data *priv, uint8_t epnum, uint16_t rx_count)
+{
 	const struct device *dev = priv->dev;
 	uint8_t ep = epnum | USB_EP_DIR_OUT;
 	struct net_buf *buf;
@@ -312,9 +323,8 @@ void HAL_PCD_DataOutStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
 	}
 }
 
-void HAL_PCD_DataInStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
+static void handle_msg_data_in(struct udc_stm32_data *priv, uint8_t epnum)
 {
-	struct udc_stm32_data *priv = hpcd2data(hpcd);
 	const struct device *dev = priv->dev;
 	uint8_t ep = epnum | USB_EP_DIR_IN;
 	struct net_buf *buf;
@@ -375,6 +385,69 @@ void HAL_PCD_DataInStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
 	buf = udc_buf_peek(dev, ep);
 	if (buf) {
 		udc_stm32_tx(dev, ep, buf);
+	}
+}
+
+static void handle_msg_setup(struct udc_stm32_data *priv)
+{
+	struct usb_setup_packet *setup = (void *)priv->pcd.Setup;
+	const struct device *dev = priv->dev;
+	struct net_buf *buf;
+	int err;
+
+	buf = udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT, sizeof(struct usb_setup_packet));
+	if (buf == NULL) {
+		LOG_ERR("Failed to allocate for setup");
+		return;
+	}
+
+	udc_ep_buf_set_setup(buf);
+	memcpy(buf->data, setup, 8);
+	net_buf_add(buf, 8);
+
+	udc_ctrl_update_stage(dev, buf);
+
+	if (!buf->len) {
+		return;
+	}
+
+	if ((setup->bmRequestType == 0) && (setup->bRequest == USB_SREQ_SET_ADDRESS)) {
+		/* HAL requires we set the address before submitting status */
+		HAL_PCD_SetAddress(&priv->pcd, setup->wValue);
+	}
+
+	if (udc_ctrl_stage_is_data_out(dev)) {
+		/*  Allocate and feed buffer for data OUT stage */
+		err = usbd_ctrl_feed_dout(dev, udc_data_stage_length(buf));
+		if (err == -ENOMEM) {
+			udc_submit_ep_event(dev, buf, err);
+		}
+	} else if (udc_ctrl_stage_is_data_in(dev)) {
+		udc_ctrl_submit_s_in_status(dev);
+	} else {
+		udc_ctrl_submit_s_status(dev);
+	}
+}
+
+static void udc_stm32_thread_handler(void *arg1, void *arg2, void *arg3)
+{
+	const struct device *dev = arg1;
+	struct udc_stm32_data *priv = udc_get_private(dev);
+	struct udc_stm32_msg msg;
+
+	while (true) {
+		k_msgq_get(&priv->msgq_data, &msg, K_FOREVER);
+		switch (msg.type) {
+		case UDC_STM32_MSG_SETUP:
+			handle_msg_setup(priv);
+			break;
+		case UDC_STM32_MSG_DATA_IN:
+			handle_msg_data_in(priv, msg.ep);
+			break;
+		case UDC_STM32_MSG_DATA_OUT:
+			handle_msg_data_out(priv, msg.ep, msg.rx_count);
+			break;
+		}
 	}
 }
 
@@ -1128,6 +1201,10 @@ static const struct gpio_dt_spec ulpi_reset =
 	GPIO_DT_SPEC_GET_OR(DT_PHANDLE(DT_INST(0, st_stm32_otghs), phys), reset_gpios, {0});
 #endif
 
+static char udc_msgq_buf_0[CONFIG_UDC_STM32_MAX_QMESSAGES * sizeof(struct udc_stm32_msg)];
+
+K_THREAD_STACK_DEFINE(udc_stm32_stack_0, CONFIG_UDC_STM32_STACK_SIZE);
+
 static int udc_stm32_driver_init0(const struct device *dev)
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
@@ -1184,6 +1261,15 @@ static int udc_stm32_driver_init0(const struct device *dev)
 	priv->clk_enable = priv_clock_enable;
 	priv->clk_disable = priv_clock_disable;
 	priv->pcd_prepare = priv_pcd_prepare;
+
+	k_msgq_init(&priv->msgq_data, udc_msgq_buf_0, sizeof(struct udc_stm32_msg),
+		    CONFIG_UDC_STM32_MAX_QMESSAGES);
+
+	k_thread_create(&priv->thread_data, udc_stm32_stack_0,
+			K_THREAD_STACK_SIZEOF(udc_stm32_stack_0), udc_stm32_thread_handler,
+			(void *)dev, NULL, NULL, K_PRIO_COOP(CONFIG_UDC_STM32_THREAD_PRIORITY),
+			K_ESSENTIAL, K_NO_WAIT);
+	k_thread_name_set(&priv->thread_data, dev->name);
 
 	IRQ_CONNECT(UDC_STM32_IRQ, UDC_STM32_IRQ_PRI, udc_stm32_irq,
 		    DEVICE_DT_INST_GET(0), 0);

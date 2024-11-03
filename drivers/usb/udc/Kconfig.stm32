@@ -13,3 +13,26 @@ config UDC_STM32
 	default y
 	help
 	  STM32 USB device controller driver.
+
+if UDC_STM32
+
+config UDC_STM32_STACK_SIZE
+	int "UDC controller driver internal thread stack size"
+	default 512
+	help
+	  STM32 USB device controller driver internal thread stack size.
+
+config UDC_STM32_THREAD_PRIORITY
+	int "STM32 USB controller driver thread priority"
+	default 8
+	help
+	  STM32 USB device controller driver thread priority.
+
+config UDC_STM32_MAX_QMESSAGES
+	int "STM32 UDC driver maximum number of ISR event messages"
+	range 4 64
+	default 8
+	help
+	  Maximum number of messages for handling of STM32 USBD ISR events.
+
+endif
