@@ -215,6 +215,11 @@ static const struct gc9x01x_default_init_regs default_init_regs[] = {
 		.len = 2U,
 		.data = {0x3EU, 0x07U},
 	},
+	{
+		.cmd = 0x21U,
+		.len = 1U,
+		.data = {0x00U},
+	},
 };
 
 static int gc9x01x_transmit(const struct device *dev, uint8_t cmd, const void *tx_data,
