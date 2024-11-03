@@ -56,7 +56,8 @@ static void next_chan_calc(struct lll_sync_iso *lll, uint16_t event_counter,
 static void isr_rx_iso_data_valid(const struct lll_sync_iso *const lll,
 				  uint16_t handle, struct node_rx_pdu *node_rx);
 static void isr_rx_iso_data_invalid(const struct lll_sync_iso *const lll,
-				    uint8_t bn, uint16_t handle,
+				    uint16_t latency, uint8_t bn,
+				    uint16_t handle,
 				    struct node_rx_pdu *node_rx);
 static void isr_rx_ctrl_recv(struct lll_sync_iso *lll, struct pdu_bis *pdu);
 
@@ -1217,7 +1218,8 @@ static void isr_rx_done(void *param)
 						pdu->len = 0U;
 
 						handle = LL_BIS_SYNC_HANDLE_FROM_IDX(stream_handle);
-						isr_rx_iso_data_invalid(lll, bn, handle, node_rx);
+						isr_rx_iso_data_invalid(lll, latency_event, bn,
+									handle, node_rx);
 
 						iso_rx_put(node_rx->hdr.link, node_rx);
 					}
@@ -1381,7 +1383,8 @@ static void isr_rx_iso_data_valid(const struct lll_sync_iso *const lll,
 }
 
 static void isr_rx_iso_data_invalid(const struct lll_sync_iso *const lll,
-				    uint8_t bn, uint16_t handle,
+				    uint16_t latency, uint8_t bn,
+				    uint16_t handle,
 				    struct node_rx_pdu *node_rx)
 {
 	struct lll_sync_iso_stream *stream;
@@ -1391,7 +1394,7 @@ static void isr_rx_iso_data_invalid(const struct lll_sync_iso *const lll,
 	node_rx->hdr.handle = handle;
 
 	iso_meta = &node_rx->rx_iso_meta;
-	iso_meta->payload_number = lll->payload_count - bn - 1U;
+	iso_meta->payload_number = lll->payload_count - lll->bn - bn - 1U;
 
 	stream = ull_sync_iso_lll_stream_get(lll->stream_handle[0]);
 	iso_meta->timestamp = HAL_TICKER_TICKS_TO_US(radio_tmr_start_get()) +
@@ -1399,6 +1402,8 @@ static void isr_rx_iso_data_invalid(const struct lll_sync_iso *const lll,
 			      ((stream->bis_index - 1U) *
 			       lll->sub_interval * ((lll->irc * lll->bn) +
 						    lll->ptc));
+	iso_meta->timestamp -= (latency * lll->iso_interval *
+				PERIODIC_INT_UNIT_US);
 	iso_meta->timestamp %=
 		HAL_TICKER_TICKS_TO_US_64BIT(BIT64(HAL_TICKER_CNTR_MSBIT + 1U));
 	iso_meta->status = 1U;
