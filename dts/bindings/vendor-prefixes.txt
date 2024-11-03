@@ -248,6 +248,7 @@ fsl	Freescale Semiconductor
 ftdi	Future Technology Devices International Ltd.
 fujitsu	Fujitsu Ltd.
 futaba	Futaba Corporation
+fysetc	Shenzhen Fuyuansheng Electronic Technology Co., Ltd.
 gaisler	Gaisler
 galaxycore	Galaxycore, Inc.
 gardena	GARDENA GmbH
