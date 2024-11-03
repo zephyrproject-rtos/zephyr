@@ -63,6 +63,13 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
+	anatop: anatop@4480000 {
+		compatible = "nxp,imx-anatop";
+		reg = <0x4480000 0x4000>;
+		#clock-cells = <4>;
+		#pll-clock-cells = <3>;
+	};
+
 	/*
 	 * Note that the offsets here are relative to the base address
 	 * defined in either nxp_rt118x_cm33_ns.dtsi, nxp_rt118x_cm33.dtsi
@@ -83,6 +90,20 @@
 		compatible = "nxp,mcux-rt-pinctrl";
 		reg = <0x43C0000 0x4000>;
 		status = "okay";
+	};
+
+	blkctrl_ns_aon: blkctrl_ns_aon@4210000 {
+		compatible = "nxp,imx-blkctrl-ns-aon";
+		reg = <0x4210000 0x4000>;
+		status = "okay";
+		#pinmux-cells = <2>;
+	};
+
+	blkctrl_wakeup: blkctrl_wakeup@2420000 {
+		compatible = "nxp,imx-blkctrl-wakeup";
+		reg = <0x2420000 0x4000>;
+		status = "okay";
+		#pinmux-cells = <2>;
 	};
 
 	ccm: clock-controller@4450000 {
@@ -1446,6 +1467,114 @@
 		reg = <0x4484580 0x24>;
 		interrupts = <83 0>;
 		compatible = "nxp,tmpsns";
+		status = "disabled";
+	};
+
+	sai1: sai@43b0000 {
+		compatible = "nxp,mcux-i2s";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		#pinmux-cells = <2>;
+		reg = <0x43b0000 0x4000>;
+		clocks = <&ccm IMX_CCM_SAI1_CLK 0x2004 4>;
+		/* Source from audio PLL */
+		clock-mux = <2>;
+		pre-div = <0>;
+		podf = <12>;
+		pll-clocks = <&anatop 0 0 0>,
+				<&anatop 0 0 32>,
+				<&anatop 0 0 1>,
+				<&anatop 0 0 768>,
+				<&anatop 0 0 1000>;
+		pll-clock-names = "src", "lp", "pd", "num", "den";
+		pinmuxes = <&blkctrl_ns_aon 0x20 0x100>;
+		interrupts = <45 0>;
+		nxp,tx-channel = <1>;
+		dmas = <&edma3 0 22>, <&edma3 0 21>;
+		dma-names = "rx", "tx";
+		nxp,tx-dma-channel = <0>;
+		nxp,rx-dma-channel = <1>;
+		status = "disabled";
+	};
+
+	sai2: sai@2bb0000 {
+		compatible = "nxp,mcux-i2s";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		#pinmux-cells = <2>;
+		reg = <0x2bb0000 0x4000>;
+		clocks = <&ccm IMX_CCM_SAI2_CLK 0x2084 4>;
+		/* Source from audio PLL */
+		clock-mux = <2>;
+		pre-div = <0>;
+		podf = <12>;
+		pll-clocks = <&anatop 0 0 0>,
+				<&anatop 0 0 32>,
+				<&anatop 0 0 1>,
+				<&anatop 0 0 768>,
+				<&anatop 0 0 1000>;
+		pll-clock-names = "src", "lp", "pd", "num", "den";
+		pinmuxes = <&blkctrl_wakeup 0x38 0x100>;
+		interrupts = <198 0>;
+		nxp,tx-channel = <1>;
+		dmas = <&edma4 0 181>, <&edma4 0 180>;
+		dma-names = "rx", "tx";
+		nxp,tx-dma-channel = <3>;
+		nxp,rx-dma-channel = <4>;
+		status = "disabled";
+	};
+
+	sai3: sai@2bc0000 {
+		compatible = "nxp,mcux-i2s";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		#pinmux-cells = <2>;
+		reg = <0x2bc0000 0x4000>;
+		clocks = <&ccm IMX_CCM_SAI3_CLK 0x2104 4>;
+		/* Source from audio PLL */
+		clock-mux = <2>;
+		pre-div = <0>;
+		podf = <12>;
+		pll-clocks = <&anatop 0 0 0>,
+				<&anatop 0 0 32>,
+				<&anatop 0 0 1>,
+				<&anatop 0 0 768>,
+				<&anatop 0 0 1000>;
+		pll-clock-names = "src", "lp", "pd", "num", "den";
+		pinmuxes = <&blkctrl_wakeup 0x3c 0x100>;
+		interrupts = <199 0>;
+		nxp,tx-channel = <1>;
+		dmas = <&edma4 0 183>, <&edma4 0 182>;
+		dma-names = "rx", "tx";
+		nxp,tx-dma-channel = <5>;
+		nxp,rx-dma-channel = <6>;
+		status = "disabled";
+	};
+
+	sai4: sai@2bd0000 {
+		compatible = "nxp,mcux-i2s";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		#pinmux-cells = <2>;
+		reg = <0x2bd0000 0x4000>;
+		clocks = <&ccm IMX_CCM_SAI4_CLK 0x2184 6>;
+		/* Source from audio PLL */
+		clock-mux = <2>;
+		pre-div = <0>;
+		podf = <12>;
+		pll-clocks = <&anatop 0 0 0>,
+				<&anatop 0 0 32>,
+				<&anatop 0 0 1>,
+				<&anatop 0 0 768>,
+				<&anatop 0 0 1000>;
+		pll-clock-names = "src", "lp", "pd", "num", "den";
+		pinmuxes = <&blkctrl_wakeup 0x40 0x100>;
+		interrupts = <154 0>;
+		nxp,tx-channel = <1>;
+		dmas = <&edma4 0 185>, <&edma4 0 184>;
+		dma-names = "rx", "tx";
+		nxp,tx-dma-channel = <0>;
+		nxp,rx-dma-channel = <8>;
 		status = "disabled";
 	};
 };
