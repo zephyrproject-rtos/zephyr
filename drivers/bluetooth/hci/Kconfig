@@ -153,7 +153,7 @@ config BT_ESP32
 	bool
 	default y
 	depends on DT_HAS_ESPRESSIF_ESP32_BT_HCI_ENABLED
-	depends on ZEPHYR_HAL_ESPRESSIF_MODULE_BLOBS
+	depends on ZEPHYR_HAL_ESPRESSIF_MODULE_BLOBS || BUILD_ONLY_NO_BLOBS
 	help
 	  Espressif HCI bluetooth interface
 
