@@ -93,12 +93,12 @@ When using the PolarFire `Hart Software Services <https://github.com/polarfire-s
 
   # Define the entry point address for each hart (U54 cores)
   hart-entry-points:
-    u54_1: '0x80000000'
+    u54_1: '0x1000000000'
 
   # Define the payloads (ELF binaries or raw blobs)
   payloads:
     <path_to_zephyr.elf>:
-      exec-addr: '0x80000000'  # Where Zephyr should be loaded
+      exec-addr: '0x1000000000'  # Where Zephyr should be loaded
       owner-hart: u54_1  # Primary hart that runs Zephyr
       priv-mode: prv_m  # Start in Machine mode
       skip-opensbi: true  # Boot directly without OpenSBI
