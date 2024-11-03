@@ -17,15 +17,15 @@ Building
 
 There are three board configurations provided for the BeagleV-Fire:
 
-* ``beaglev_fire_polarfire_e51``: Uses only the E51 core
-* ``beaglev_fire_polarfire_u54``: Uses the U54 cores
-* ``beaglev_fire_polarfire_u54_smp``: Uses the U54 cores with CONFIG_SMP=y
+* ``beaglev_fire/polarfire/e51``: Uses only the E51 core
+* ``beaglev_fire/polarfire/u54``: Uses the U54 cores
+* ``beaglev_fire/polarfire/u54/smp``: Uses the U54 cores with CONFIG_SMP=y
 
 Applications for the ``beaglev_fire`` board configuration can be built as usual:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: beaglev_fire_polarfire_u54
+   :board: beaglev_fire/polarfire/u54
    :goals: build
 
 Debugging
