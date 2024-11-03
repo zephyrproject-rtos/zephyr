@@ -46,3 +46,35 @@ List of Arduino-based display shields
 - :ref:`ssd1306_128_shield`
 - :ref:`st7789v_generic`
 - :ref:`waveshare_epaper`
+
+Changes for ls0xx Display
+*************************
+
+To run the sample on an Adafruit Sharp memory display 2.7 inch (ls0xx) on a STM32H7B0 board, ensure the following:
+
+1. Modify the device tree snippet to match the display configuration.
+2. Ensure the `buf_desc.width` is set to 400 in the sample code.
+3. Check the return value of `display_get_capabilities()` in the sample code.
+
+Example device tree snippet:
+
+.. code-block:: dts
+
+   &spi2 {
+   	pinctrl-0 = <&spi2_sck_pb10 &spi2_miso_pc2_c &spi2_mosi_pc1>;
+   	cs-gpios = <&gpioc 0 GPIO_ACTIVE_HIGH>;
+   	pinctrl-names = "default";
+   	status = "okay";
+
+   	ls0xx_ls027b7dh01: ls0xx@0 {
+   		compatible = "sharp,ls0xx";
+   		spi-max-frequency = <2000000>;
+   		reg = <0>;
+   		width = <400>;
+   		height = <240>;
+   		extcomin-gpios = <&gpioc 3 GPIO_ACTIVE_HIGH>;
+   		extcomin-frequency = <60>; /* required if extcomin-gpios is defined */
+   		disp-en-gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
+   	};
+
+   };

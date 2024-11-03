@@ -199,8 +199,15 @@ int main(void)
 #endif
 	}
 
-	LOG_INF("Display sample for %s", display_dev->name);
-	display_get_capabilities(display_dev, &capabilities);
+LOG_INF("Display sample for %s", display_dev->name);
+	if (display_get_capabilities(display_dev, &capabilities) != 0) {
+		LOG_ERR("Failed to get display capabilities. Aborting sample.");
+#ifdef CONFIG_ARCH_POSIX
+		posix_exit_main(1);
+#else
+		return 0;
+#endif
+	}
 
 	if (capabilities.screen_info & SCREEN_INFO_MONO_VTILED) {
 		rect_w = 16;
@@ -296,6 +303,10 @@ int main(void)
 	buf_desc.pitch = capabilities.x_resolution;
 	buf_desc.width = capabilities.x_resolution;
 	buf_desc.height = h_step;
+
+	if (strcmp(display_dev->name, "ls0xx") == 0) {
+		buf_desc.width = 400;
+	}
 
 	for (int idx = 0; idx < capabilities.y_resolution; idx += h_step) {
 		/*
