@@ -487,8 +487,75 @@ static struct bt_bap_broadcast_assistant_cb ba_cbs = {
 	.add_src = bap_broadcast_assistant_add_src_cb,
 };
 
+static bool check_audio_support_and_connect_cb(struct bt_data *data, void *user_data)
+{
+	char addr_str[BT_ADDR_LE_STR_LEN];
+	bt_addr_le_t *addr = user_data;
+	const struct bt_uuid *uuid;
+	uint16_t uuid_val;
+	int err;
+
+	printk("data->type %u\n", data->type);
+
+	if (data->type != BT_DATA_SVC_DATA16) {
+		return true; /* Continue parsing to next AD data type */
+	}
+
+	if (data->data_len < sizeof(uuid_val)) {
+		return true; /* Continue parsing to next AD data type */
+	}
+
+	/* We are looking for the CAS service data */
+	uuid_val = sys_get_le16(data->data);
+	uuid = BT_UUID_DECLARE_16(uuid_val);
+	if (bt_uuid_cmp(uuid, BT_UUID_CAS) != 0) {
+		return true; /* Continue parsing to next AD data type */
+	}
+
+	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
+	printk("Device found: %s\n", addr_str);
+
+	printk("Stopping scan\n");
+	if (bt_le_scan_stop()) {
+		FAIL("Could not stop scan");
+		return false;
+	}
+
+	err = bt_conn_le_create(
+		addr, BT_CONN_LE_CREATE_CONN,
+		BT_LE_CONN_PARAM(BT_GAP_INIT_CONN_INT_MIN, BT_GAP_INIT_CONN_INT_MIN, 0, 400),
+		&connected_conns[connected_conn_cnt]);
+	if (err != 0) {
+		FAIL("Could not connect to peer: %d", err);
+	}
+
+	return false; /* Stop parsing */
+}
+
+static void scan_recv_cb(const struct bt_le_scan_recv_info *info, struct net_buf_simple *buf)
+{
+	struct bt_conn *conn;
+
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, info->addr);
+	if (conn != NULL) {
+		/* Already connected to this device */
+		bt_conn_unref(conn);
+		return;
+	}
+
+	/* Check for connectable, extended advertising */
+	if (((info->adv_props & BT_GAP_ADV_PROP_EXT_ADV) != 0) &&
+	    ((info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE)) != 0) {
+		/* Check for TMAS support in advertising data */
+		bt_data_parse(buf, check_audio_support_and_connect_cb, (void *)info->addr);
+	}
+}
+
 static void init(size_t acceptor_cnt)
 {
+	static struct bt_le_scan_cb scan_callbacks = {
+		.recv = scan_recv_cb,
+	};
 	static struct bt_conn_cb conn_cb = {
 		.disconnected = cap_disconnected_cb,
 	};
@@ -501,6 +568,12 @@ static void init(size_t acceptor_cnt)
 	}
 
 	bt_gatt_cb_register(&gatt_callbacks);
+	err = bt_le_scan_cb_register(&scan_callbacks);
+	if (err != 0) {
+		FAIL("Failed to register scan callbacks (err %d)\n", err);
+		return;
+	}
+
 	bt_conn_cb_register(&conn_cb);
 
 	err = bt_cap_commander_register_cb(&cap_cb);
@@ -552,56 +625,13 @@ static void init(size_t acceptor_cnt)
 	UNSET_FLAG(flag_syncable);
 }
 
-static void cap_device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
-			     struct net_buf_simple *ad)
-{
-	char addr_str[BT_ADDR_LE_STR_LEN];
-	struct bt_conn *conn;
-	int err;
-
-	/* We're only interested in connectable events */
-	if (type != BT_HCI_ADV_IND && type != BT_HCI_ADV_DIRECT_IND) {
-		return;
-	}
-
-	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, addr);
-	if (conn != NULL) {
-		/* Already connected to this device */
-		bt_conn_unref(conn);
-		return;
-	}
-
-	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
-	printk("Device found: %s (RSSI %d)\n", addr_str, rssi);
-
-	/* connect only to devices in close proximity */
-	if (rssi < -70) {
-		FAIL("RSSI too low");
-		return;
-	}
-
-	printk("Stopping scan\n");
-	if (bt_le_scan_stop()) {
-		FAIL("Could not stop scan");
-		return;
-	}
-
-	err = bt_conn_le_create(
-		addr, BT_CONN_LE_CREATE_CONN,
-		BT_LE_CONN_PARAM(BT_GAP_INIT_CONN_INT_MIN, BT_GAP_INIT_CONN_INT_MIN, 0, 400),
-		&connected_conns[connected_conn_cnt]);
-	if (err) {
-		FAIL("Could not connect to peer: %d", err);
-	}
-}
-
 static void scan_and_connect(void)
 {
 	int err;
 
 	UNSET_FLAG(flag_connected);
 
-	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, cap_device_found);
+	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL);
 	if (err != 0) {
 		FAIL("Scanning failed to start (err %d)\n", err);
 		return;
