@@ -80,4 +80,6 @@ source "drivers/clock_control/Kconfig.wch_rcc"
 source "drivers/clock_control/Kconfig.xec"
 # zephyr-keep-sorted-stop
 
+source "drivers/clock_control/Kconfig.rts5817"
+
 endif # CLOCK_CONTROL
