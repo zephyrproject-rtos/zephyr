@@ -1,0 +1,23 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_RENESAS_RZ_SCIF
+	bool "Renesas RZ SCIF UART"
+	default y
+	depends on DT_HAS_RENESAS_RZ_SCIF_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select USE_RZ_FSP_SCIF_UART
+	select PINCTRL
+	help
+	  Enable Renesas RZ SCIF UART Driver.
+
+if UART_RENESAS_RZ_SCIF
+
+config UART_RENESAS_RZG_INIT_DELAY_MS
+	int "UART initialization delay in milliseconds"
+	default 8000
+	help
+	  This option is to make a delay to wait for the A55 to complete its setting first
+	  before UART initialization of M33.
+
+endif
