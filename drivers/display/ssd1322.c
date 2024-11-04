@@ -40,6 +40,9 @@ LOG_MODULE_REGISTER(ssd1322, CONFIG_DISPLAY_LOG_LEVEL);
 #define SSD1322_SET_MUX_RATIO        0xCA
 #define SSD1322_COMMAND_LOCK         0xFD
 
+#define BITS_PER_SEGMENT  4
+#define SEGMENTS_PER_BYTE (8 / BITS_PER_SEGMENT)
+
 struct ssd1322_config {
 	const struct device *mipi_dev;
 	struct mipi_dbi_config dbi_config;
@@ -57,7 +60,7 @@ struct ssd1322_config {
 	bool remap_com_dual;
 	uint8_t segments_per_pixel;
 	uint8_t *conversion_buf;
-	uint16_t conversion_buf_size;
+	size_t conversion_buf_size;
 };
 
 static inline int ssd1322_write_command(const struct device *dev, uint8_t cmd, const uint8_t *buf,
@@ -96,19 +99,28 @@ static int ssd1322_conv_mono01_grayscale(const uint8_t **buf_in, uint32_t *pixel
 	/* Output buffer size gets rounded down to avoid splitting chunks in the middle of input
 	 * bytes
 	 */
-	uint16_t pixels_in_chunk = MIN(*pixel_count, ROUND_DOWN(buf_out_size / 2, 8));
+	uint16_t pixels_in_chunk =
+		MIN(*pixel_count,
+		    ROUND_DOWN((buf_out_size * SEGMENTS_PER_BYTE) / segments_per_pixel, 8));
 
 	for (uint16_t in_idx = 0; in_idx < pixels_in_chunk; in_idx++) {
-		uint16_t seg_idx = in_idx * segments_per_pixel;
 		uint8_t color = ((*buf_in)[in_idx / 8] & BIT(in_idx % 8)) ? 0xF : 0;
 
-		buf_out[seg_idx / 2] =
-			(seg_idx % 2 == 0) ? color : ((color << 4) | buf_out[seg_idx / 2]);
+		for (size_t i = 0; i < segments_per_pixel; i++) {
+			size_t seg_idx = in_idx * segments_per_pixel + i;
+			size_t shift = BITS_PER_SEGMENT * (seg_idx % SEGMENTS_PER_BYTE);
+
+			if (shift == 0) {
+				buf_out[seg_idx / SEGMENTS_PER_BYTE] = color;
+			} else {
+				buf_out[seg_idx / SEGMENTS_PER_BYTE] |= color << shift;
+			}
+		}
 	}
 
 	buf_in += pixels_in_chunk / 8;
 	*pixel_count -= pixels_in_chunk;
-	return pixels_in_chunk * segments_per_pixel / 2;
+	return pixels_in_chunk * segments_per_pixel / SEGMENTS_PER_BYTE;
 }
 
 static int ssd1322_write_pixels(const struct device *dev, const uint8_t *buf, uint32_t pixel_count)
