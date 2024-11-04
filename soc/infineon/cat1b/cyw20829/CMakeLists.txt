@@ -149,3 +149,9 @@ set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
 	  -o ${ZEPHYR_BINARY_DIR}/${KERNEL_NAME}.hex
 	  ${app_temp_path}.hex ${ZEPHYR_BINARY_DIR}/app_header.hex
 	)
+
+# Use custom mcuboot cmake for sign/encrypt by using cysecuretools
+if (CONFIG_BOOTLOADER_MCUBOOT)
+  set_target_properties(zephyr_property_target PROPERTIES SIGNING_SCRIPT
+						${CMAKE_CURRENT_LIST_DIR}/mcuboot.cmake)
+endif()
