@@ -71,7 +71,7 @@ static int llext_copy_region(struct llext_loader *ldr, struct llext *ext,
 	}
 	ext->mem_size[mem_idx] = region_alloc;
 
-	if (IS_ENABLED(CONFIG_LLEXT_STORAGE_WRITABLE)) {
+	if (ldr->storage == LLEXT_STORAGE_WRITABLE) {
 		/*
 		 * Try to reuse data areas from the ELF buffer, if possible.
 		 * If any of the following tests fail, a normal allocation
