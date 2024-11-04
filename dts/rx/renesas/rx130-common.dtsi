@@ -10,6 +10,7 @@
 
 #include <mem.h>
 #include <zephyr/dt-bindings/clock/rx_clock.h>
+#include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-rx.h>
 
 / {
 	#address-cells = <1>;
