@@ -36,7 +36,7 @@ PROMETHEUS_COLLECTOR_DEFINE(test_custom_collector);
 ZTEST(test_formatter, test_prometheus_formatter_simple)
 {
 	int ret;
-	char formatted[MAX_BUFFER_SIZE];
+	char formatted[MAX_BUFFER_SIZE] = { 0 };
 	struct prometheus_counter *counter;
 	char exposed[] = "# HELP test_counter Test counter\n"
 			 "# TYPE test_counter counter\n"
