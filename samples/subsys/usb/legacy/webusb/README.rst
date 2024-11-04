@@ -1,5 +1,5 @@
-.. zephyr:code-sample:: webusb
-   :name: WebUSB
+.. zephyr:code-sample:: legacy-webusb
+   :name: Legacy WebUSB
    :relevant-api: _usb_device_core_api
 
    Receive and echo data from a web page using WebUSB API.
@@ -18,8 +18,11 @@ This application receives the data and echoes back to the WebUSB
 based web application (web page) running in the browser at host.
 This application is intended for testing purposes only. For running
 real usecase, implement applications based on the WebUSB API.
-This sample can be found under :zephyr_file:`samples/subsys/usb/webusb` in the
+This sample can be found under :zephyr_file:`samples/subsys/usb/legacy/webusb` in the
 Zephyr project tree.
+
+.. note::
+   This samples demonstrate deprecated :ref:`usb_device_stack`.
 
 Requirements
 ************
@@ -33,7 +36,7 @@ Building and Running
 Build and flash webusb sample with:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/subsys/usb/webusb
+   :zephyr-app: samples/subsys/usb/legacy/webusb
    :board: <board to use>
    :goals: flash
    :compact:
@@ -57,7 +60,7 @@ Follow these steps to run the demo on your host system:
    it on localhost.
 
    The sample can be found in the webusb sample directory:
-   :zephyr_file:`samples/subsys/usb/webusb/index.html`.
+   :zephyr_file:`samples/subsys/usb/legacy/webusb/index.html`.
 
    This sample web page demonstrates how to create and use a WebUSB
    interface, as well as demonstrate the communication between browser

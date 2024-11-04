@@ -1,5 +1,5 @@
 .. zephyr:code-sample:: usb-audio-headset
-   :name: USB Audio headset
+   :name: Legacy USB Audio headset
    :relevant-api: _usb_device_core_api
 
    Implement a USB Audio headset device with audio IN/OUT loopback.
@@ -10,6 +10,9 @@ Overview
 This sample app demonstrates use of a USB Audio driver by the Zephyr
 project. This very simple sample that performs loopback over IN/OUT
 ISO endpoints. The device will show up as single audio device.
+
+.. note::
+   This samples demonstrate deprecated :ref:`usb_device_stack`.
 
 Building and Running
 ********************
@@ -35,4 +38,4 @@ Steps to test the sample:
 - Verify the recorded audio stream.
 
 This sample can be found under
-:zephyr_file:`samples/subsys/usb/audio/headset` in the Zephyr project tree.
+:zephyr_file:`samples/subsys/usb/legacy/audio/headset` in the Zephyr project tree.
