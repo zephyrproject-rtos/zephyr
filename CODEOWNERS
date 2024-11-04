@@ -340,7 +340,7 @@
 /drivers/serial/uart_xlnx_uartlite.c      @henrikbrixandersen
 /drivers/serial/*xmc4xxx*                 @parthitce
 /drivers/serial/*numicro*                 @ssekar15
-/drivers/serial/*apbuart*                 @julius-barendt
+/drivers/serial/*apbuart*                 @tbr-tt
 /drivers/serial/*rcar*                    @aaillet
 /drivers/serial/Kconfig.xen               @lorc @firscity
 /drivers/serial/uart_hvc_xen.c            @lorc @firscity
@@ -365,7 +365,7 @@
 /drivers/timer/*xlnx_psttc*               @wjliang @stephanosio
 /drivers/timer/*cc13xx_cc26xx_rtc*        @vanti
 /drivers/timer/*cavs*                     @dcpleung
-/drivers/timer/*leon_gptimer*             @julius-barendt
+/drivers/timer/*leon_gptimer*             @tbr-tt
 /drivers/timer/*mips_cp0*                 @frantony
 /drivers/timer/*rcar_cmt*                 @aaillet
 /drivers/timer/*esp32_sys*                @uLipe
