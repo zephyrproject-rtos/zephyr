@@ -10,6 +10,7 @@
 
 #include <mem.h>
 #include <zephyr/dt-bindings/clock/rx_clock.h>
+#include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-rx.h>
 
 / {
 	#address-cells = <1>;
@@ -58,9 +59,19 @@
 			status = "disabled";
 		};
 
-		sci0: sci0@8a005 {
+		sci0: sci0@8a000 {
 			compatible = "renesas,rx-sci";
-			reg = <0x0008A005 0x100>;
+			reg = <0x0008A000 0x20>;
+			status = "disabled";
+			uart {
+				compatible = "renesas,rx-uart-sci";
+				status = "disabled";
+			};
+		};
+
+		sci1: sci1@8a020 {
+			compatible = "renesas,rx-sci";
+			reg = <0x0008A020 0x20>;
 			status = "disabled";
 			uart {
 				compatible = "renesas,rx-uart-sci";
