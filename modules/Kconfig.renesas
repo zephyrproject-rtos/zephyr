@@ -259,4 +259,9 @@ config USE_RX_RDP_GPIO
 	help
 	  Enable RX RDP MPC driver
 
+config USE_RX_RDP_SCI_UART
+	bool
+	help
+	  Enable RX RDP SCI UART driver
+
 endif # HAS_RENESAS_RX_RDP
