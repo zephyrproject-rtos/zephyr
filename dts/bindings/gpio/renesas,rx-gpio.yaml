@@ -1,0 +1,30 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RX series GPIO
+
+compatible: "renesas,rx-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  port:
+    type: int
+    required: true
+
+  "#gpio-cells":
+    const: 2
+
+  pinmux:
+    required: true
+    type: phandle
+    description: |
+      A phandle reference to the device tree node that contains the pinmux
+      port associated with this GPIO controller.
+
+gpio-cells:
+  - pin
+  - flags
