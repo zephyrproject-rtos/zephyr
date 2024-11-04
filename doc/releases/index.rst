@@ -81,7 +81,6 @@ needs to be changed are to be detailed in the release's migration guide.
    :glob:
    :reversed:
 
-   eol_releases
    release-notes-2.7
    release-notes-3.[6-7]
    release-notes-4.0
@@ -115,7 +114,20 @@ to be able to understand the context of the change.
    :glob:
    :reversed:
 
-   migration-guide-*
+   migration-guide-3.[6-7]
+   migration-guide-4.[0]
+
+End-of-life Releases
+********************
+
+.. toctree::
+   :hidden:
+   :maxdepth: 1
+
+   eol_releases
+
+Release notes and migration guides for end-of-life releases of Zephyr RTOS can be accessed
+:ref:`here <eol_releases>`.
 
 .. _`GitHub repository`: https://github.com/zephyrproject-rtos/zephyr
 .. _`GitHub tagged releases`: https://github.com/zephyrproject-rtos/zephyr/tags
