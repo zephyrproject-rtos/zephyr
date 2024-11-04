@@ -39,6 +39,15 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 		compatible = "simple-bus";
+
+		clks: clks@40100300 {
+			compatible = "realtek,rts5817-clock";
+			reg = <0x40100300 0x100>,
+			      <0x40150000 0x10>,
+			      <0x40000018 0x4>;
+			#clock-cells = <1>;
+			status = "disabled";
+		};
 	};
 };
 
