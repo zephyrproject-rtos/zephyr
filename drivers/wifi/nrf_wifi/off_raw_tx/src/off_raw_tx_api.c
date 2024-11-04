@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/drivers/wifi/nrfwifi/off_raw_tx/off_raw_tx_api.h>
+#include <zephyr/drivers/wifi/nrf_wifi/off_raw_tx/off_raw_tx_api.h>
 #include <off_raw_tx.h>
 #include <fmac_api.h>
 
