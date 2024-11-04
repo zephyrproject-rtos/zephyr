@@ -980,10 +980,23 @@ int nrf_wifi_if_get_config_zep(const struct device *dev,
 		goto unlock;
 	}
 
+	memset(config, 0, sizeof(struct ethernet_config));
+
 	if (type == ETHERNET_CONFIG_TYPE_TXINJECTION_MODE) {
 		config->txinjection_mode =
 			def_dev_ctx->vif_ctx[vif_ctx_zep->vif_idx]->txinjection_mode;
 	}
+#ifdef CONFIG_NRF70_TCP_IP_CHECKSUM_OFFLOAD
+	if (type  == ETHERNET_CONFIG_TYPE_TX_CHECKSUM_SUPPORT ||
+	    type == ETHERNET_CONFIG_TYPE_RX_CHECKSUM_SUPPORT) {
+		config->chksum_support = ETHERNET_CHECKSUM_SUPPORT_IPV4_HEADER |
+					 ETHERNET_CHECKSUM_SUPPORT_IPV4_ICMP |
+					 ETHERNET_CHECKSUM_SUPPORT_IPV6_HEADER |
+					 ETHERNET_CHECKSUM_SUPPORT_IPV6_ICMP |
+					 ETHERNET_CHECKSUM_SUPPORT_TCP |
+					 ETHERNET_CHECKSUM_SUPPORT_UDP;
+	}
+#endif
 	ret = 0;
 unlock:
 	k_mutex_unlock(&vif_ctx_zep->vif_lock);
