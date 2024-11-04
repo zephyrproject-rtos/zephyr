@@ -397,6 +397,19 @@
 				};
 			};
 
+			test_i2c_aw9523b: aw9523b@16 {
+				status = "okay";
+				reg = <0x16>;
+				compatible = "awinic,aw9523b";
+
+				aw9523_gpio: gpio {
+					compatible = "awinic,aw9523b-gpio";
+					gpio-controller;
+					#gpio-cells = <2>;
+					int-gpios = <&test_gpio 0 0>;
+					reset-gpios = <&test_gpio 0 0>;
+				};
+			};
 		};
 
 		nct3807_alert_1 {
