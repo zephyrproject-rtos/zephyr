@@ -41,6 +41,7 @@ rsource "Kconfig.numaker"
 rsource "Kconfig.nxp_mrcc"
 rsource "Kconfig.nxp_rstctl"
 rsource "Kconfig.rpi_pico"
+rsource "Kconfig.rts5817"
 rsource "Kconfig.sf32lb"
 rsource "Kconfig.stm32"
 # zephyr-keep-sorted-stop

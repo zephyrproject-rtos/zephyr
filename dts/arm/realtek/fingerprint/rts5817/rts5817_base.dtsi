@@ -48,6 +48,13 @@
 			#clock-cells = <1>;
 			status = "disabled";
 		};
+
+		reset: reset@40100200 {
+			compatible = "realtek,rts5817-reset";
+			reg = <0x40100200 0x100>;
+			#reset-cells = <1>;
+			status = "disabled";
+		};
 	};
 };
 
