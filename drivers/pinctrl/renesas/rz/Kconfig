@@ -1,4 +1,5 @@
 # Copyright (c) 2023 Antmicro <www.antmicro.com>
+# Copyright (c) 2024 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 config PINCTRL_RZT2M
@@ -7,3 +8,11 @@ config PINCTRL_RZT2M
 	depends on DT_HAS_RENESAS_RZT2M_PINCTRL_ENABLED
 	help
 	  Renesas RZ/T2M pinctrl driver
+
+config PINCTRL_RENESAS_RZ
+	bool "Renesas RZ pin controller driver"
+	default y
+	depends on DT_HAS_RENESAS_RZG_PINCTRL_ENABLED
+	select USE_RZ_FSP_IOPORT
+	help
+	  Enable Renesas RZ pinctrl driver.
