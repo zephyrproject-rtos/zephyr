@@ -196,9 +196,6 @@ Clock control
            load-capacitance-femtofarad = <...>;
      };
 
-Controller Area Network (CAN)
-=============================
-
 Crypto
 ======
 
