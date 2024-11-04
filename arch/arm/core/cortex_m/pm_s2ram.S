@@ -46,15 +46,6 @@ SECTION_FUNC(TEXT, arch_pm_s2ram_suspend)
 	mrs	r2, psplim
 	str	r2, [r1, #___cpu_context_t_psplim_OFFSET]
 
-	mrs	r2, apsr
-	str	r2, [r1, #___cpu_context_t_apsr_OFFSET]
-
-	mrs	r2, ipsr
-	str	r2, [r1, #___cpu_context_t_ipsr_OFFSET]
-
-	mrs	r2, epsr
-	str	r2, [r1, #___cpu_context_t_epsr_OFFSET]
-
 	mrs	r2, primask
 	str	r2, [r1, #___cpu_context_t_primask_OFFSET]
 
@@ -128,15 +119,6 @@ resume:
 
 	ldr	r1, [r0, #___cpu_context_t_psplim_OFFSET]
 	msr	psplim, r1
-
-	ldr	r1, [r0, #___cpu_context_t_apsr_OFFSET]
-	msr	apsr_nzcvq, r1
-
-	ldr	r1, [r0, #___cpu_context_t_ipsr_OFFSET]
-	msr	ipsr, r1
-
-	ldr	r1, [r0, #___cpu_context_t_epsr_OFFSET]
-	msr	epsr, r1
 
 	ldr	r1, [r0, #___cpu_context_t_primask_OFFSET]
 	msr	primask, r1
