@@ -73,7 +73,7 @@ tests:
       - platform:mimxrt685_evk/mimxrt685/cm33:SHIELD=waveshare_epaper_gdeh0213b1
       - platform:nucleo_l433rc_p:SHIELD=waveshare_epaper_gdew042t2
       - platform:nrf52dk/nrf52832:SHIELD=st7789v_tl019fqv01
-      - platform:lpcxpresso54114/lpc54114/m4:SHIELD=st7789v_waveshare_240x240
+      - platform:mimxrt1010_evk/mimxrt1011:SHIELD=st7789v_waveshare_240x240
       - platform:frdm_k22f:SHIELD=ls013b7dh03
       - platform:nrf52833dk/nrf52833:SHIELD=st7735r_ada_160x128
       - platform:mimxrt1170_evk@B/mimxrt1176/cm7:SHIELD=rk055hdmipi4m
