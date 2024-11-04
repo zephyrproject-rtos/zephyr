@@ -1,0 +1,13 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RZ SCIF UART controller
+
+compatible: "renesas,rz-scif-uart"
+
+include: [uart-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  channel:
+    type: int
+    required: true
