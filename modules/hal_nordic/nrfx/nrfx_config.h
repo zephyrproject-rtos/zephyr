@@ -1056,10 +1056,12 @@
     #include <nrfx_config_nrf54h20_ppr.h>
 #elif defined(NRF54H20_XXAA) && defined(NRF_FLPR)
     #include <nrfx_config_nrf54h20_flpr.h>
-#elif defined(NRF54L15_XXAA) && defined(NRF_APPLICATION)
-    #include <nrfx_config_nrf54l15_application.h>
-#elif defined(NRF54L15_XXAA) && defined(NRF_FLPR)
-    #include <nrfx_config_nrf54l15_flpr.h>
+#elif (defined(NRF54L05_XXAA) || defined(NRF54L10_XXAA) || defined(NRF54L15_XXAA)) \
+	&& defined(NRF_APPLICATION)
+    #include <nrfx_config_nrf54l_05_10_15_application.h>
+#elif (defined(NRF54L05_XXAA) || defined(NRF54L10_XXAA) || defined(NRF54L15_XXAA)) \
+	&& defined(NRF_FLPR)
+    #include <nrfx_config_nrf54l_05_10_15_flpr.h>
 #elif (defined(NRF54L20_XXAA) || defined(NRF54L20_ENGA_XXAA)) && defined(NRF_APPLICATION)
     #include <nrfx_config_nrf54l20_enga_application.h>
 #elif defined(NRF9120_XXAA) || defined(NRF9160_XXAA)
