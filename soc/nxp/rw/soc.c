@@ -20,7 +20,6 @@
 #include "soc.h"
 #include "flexspi_clock_setup.h"
 #include "fsl_ocotp.h"
-#include "mcuxClEls.h"
 #ifdef CONFIG_NXP_RW6XX_BOOT_HEADER
 extern char z_main_stack[];
 extern char _flash_used[];
@@ -72,112 +71,6 @@ const clock_avpll_config_t avpll_config = {
 	.enableCali = true
 };
 
-#if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
-static bool load_gdet_cfg(power_gdet_data_t *data)
-{
-	bool retval = true;
-
-	/* If T3 256M clock is disabled, GDET cannot work. */
-	if ((SYSCTL2->SOURCE_CLK_GATE & SYSCTL2_SOURCE_CLK_GATE_T3PLL_MCI_256M_CG_MASK) != 0U) {
-		retval = false;
-	} else {
-		/* GDET clock has been characterzed to 64MHz */
-		CLKCTL0->ELS_GDET_CLK_SEL = CLKCTL0_ELS_GDET_CLK_SEL_SEL(2);
-	}
-
-	if (retval) {
-		/* LOAD command */
-		MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(result, token,
-				mcuxClEls_GlitchDetector_LoadConfig_Async((uint8_t *)data));
-		if ((token !=
-		     MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClEls_GlitchDetector_LoadConfig_Async)) ||
-		    (result != MCUXCLELS_STATUS_OK_WAIT)) {
-			retval = false;
-		}
-		MCUX_CSSL_FP_FUNCTION_CALL_END();
-	}
-
-	if (retval) {
-		/* Wait for the mcuxClEls_GlitchDetector_LoadConfig_Async operation to complete. */
-		MCUX_CSSL_FP_FUNCTION_CALL_BEGIN(result, token,
-				mcuxClEls_WaitForOperation(MCUXCLELS_ERROR_FLAGS_CLEAR));
-		if ((token != MCUX_CSSL_FP_FUNCTION_CALLED(mcuxClEls_WaitForOperation)) ||
-		    (result != MCUXCLELS_STATUS_OK)) {
-			retval = false;
-		}
-		MCUX_CSSL_FP_FUNCTION_CALL_END();
-	}
-
-	return retval;
-}
-
-/* Configure voltage sensor and glitch detect blocks.
- * The configuration values are read from the OCOTP block
- */
-static void config_svc_sensor(void)
-{
-	uint64_t svc;
-	uint32_t pack;
-	status_t status;
-	power_gdet_data_t gdet_data = { 0 };
-	uint32_t rev = SOCCTRL->CHIP_INFO & SOCCIU_CHIP_INFO_REV_NUM_MASK;
-
-	OCOTP_OtpInit();
-
-	status = OCOTP_ReadSVC(&svc);
-
-	if (status == kStatus_Success) {
-		/* CES */
-		status = OCOTP_ReadPackage(&pack);
-		if (status == kStatus_Success) {
-			/*
-			 * A2 CES: Use SVC voltage.
-			 * A1 CES: Keep boot voltage 1.11V.
-			 */
-			POWER_InitVoltage((rev == 2U) ? ((uint32_t)svc >> 16) : 0U, pack);
-		}
-
-		/* SVC GDET config */
-		status = (status == kStatus_Success) ? OCOTP_OtpFuseRead(149, &gdet_data.CFG[0]) :
-			  status;
-		status = (status == kStatus_Success) ? OCOTP_OtpFuseRead(150, &gdet_data.CFG[1]) :
-			  status;
-		status = (status == kStatus_Success) ? OCOTP_OtpFuseRead(151, &gdet_data.CFG[2]) :
-			  status;
-		/* A2 CES load fuse 155 for trim calculation. A1 CES directly use the default
-		 * trim value in fuse 152.
-		 */
-		status = (status == kStatus_Success) ?
-			  OCOTP_OtpFuseRead((rev == 2U) ? 155 : 152, &gdet_data.CFG[3]) :
-			  status;
-		status = (status == kStatus_Success) ? OCOTP_OtpFuseRead(153, &gdet_data.CFG[4]) :
-			  status;
-		status = (status == kStatus_Success) ? OCOTP_OtpFuseRead(154, &gdet_data.CFG[5]) :
-			  status;
-
-		if (status == kStatus_Success) {
-			/* Must configure GDET load function for POWER_EnableGDetVSensors(). */
-			Power_InitLoadGdetCfg(load_gdet_cfg, &gdet_data, pack);
-		}
-	} else {
-		/* A1/A2 non-CES */
-		SystemCoreClockUpdate();
-
-		/* LPBG trim */
-		BUCK11->BUCK_CTRL_EIGHTEEN_REG = 0x6U;
-		/* Change buck level */
-		PMU->PMIP_BUCK_LVL = PMU_PMIP_BUCK_LVL_SLEEP_BUCK18_SEL(0x60U) |
-			PMU_PMIP_BUCK_LVL_SLEEP_BUCK11_SEL(0x22U) |
-			PMU_PMIP_BUCK_LVL_NORMAL_BUCK18_SEL(0x60U) |
-			PMU_PMIP_BUCK_LVL_NORMAL_BUCK11_SEL(0x54U);
-		/* Delay 600us */
-		SDK_DelayAtLeastUs(600, SystemCoreClock);
-	}
-
-	OCOTP_OtpDeinit();
-}
-#endif
-
 /**
  * @brief Initialize the system clocks and peripheral clocks
  *
@@ -205,9 +98,6 @@ __ramfunc void clock_init(void)
 	CLOCK_EnableClock(kCLOCK_T3PllMciIrcClk);
 	/* Enable T3 256M clock and SFRO */
 	CLOCK_EnableClock(kCLOCK_T3PllMci256mClk);
-
-	/* Configure the SVC sensor */
-	config_svc_sensor();
 
 	/* Move FLEXSPI clock source to T3 256m / 4 to avoid instruction/data fetch issue in XIP
 	 * when updating PLL and main clock.
