@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Realtek Semiconductor, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_RTS5817
+	bool "RTS5817 clock control"
+	depends on DT_HAS_REALTEK_RTS5817_CLOCK_ENABLED
+	default y
+	help
+	  Enable driver for RTS5817 Clock Control.
