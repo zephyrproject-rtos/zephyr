@@ -1,5 +1,5 @@
-.. zephyr:code-sample:: usb-dfu
-   :name: USB DFU (Device Firmware Upgrade)
+.. zephyr:code-sample:: legacy-usb-dfu
+   :name: Legacy USB DFU (Device Firmware Upgrade)
    :relevant-api: _usb_device_core_api
 
    Implement device firmware upgrade using the USB DFU class driver.
@@ -9,6 +9,9 @@ Overview
 
 This sample app demonstrates use of a USB DFU Class driver provided
 by the Zephyr project.
+
+.. note::
+   This samples demonstrate deprecated :ref:`usb_device_stack`.
 
 Requirements
 ************
@@ -39,7 +42,7 @@ For example:
 
 .. code-block:: console
 
-   west build -b nrf52840dk/nrf52840 zephyr/samples/subsys/usb/dfu -d build-dfu -- \
+   west build -b nrf52840dk/nrf52840 zephyr/samples/subsys/usb/legacy/dfu -d build-dfu -- \
    -DCONFIG_MCUBOOT_SIGNATURE_KEY_FILE=\"bootloader/mcuboot/root-rsa-2048.pem\"
 
 Build and flash MCUboot bootloader for Zephyr project as it is described in
@@ -128,7 +131,7 @@ Both symbols can be enabled with the :file:`overlay-permanent-download.conf` ove
 
 .. code-block:: console
 
-   west build -b nrf52840dk/nrf52840 zephyr/samples/subsys/usb/dfu -d build-dfu -- \
+   west build -b nrf52840dk/nrf52840 zephyr/samples/subsys/usb/legacy/dfu -d build-dfu -- \
    -DCONFIG_BOOTLOADER_MCUBOOT=y '-DCONFIG_MCUBOOT_SIGNATURE_KEY_FILE="bootloader/mcuboot/root-rsa-2048.pem"' \
    -DEXTRA_CONF_FILE=overlay-permanent-download.conf
 
