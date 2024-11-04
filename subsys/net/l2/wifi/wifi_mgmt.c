@@ -723,7 +723,9 @@ static int wifi_11k_cfg(uint32_t mgmt_request, struct net_if *iface,
 	}
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING
-	roaming_params.is_11k_enabled = params->enable_11k;
+	if (params->oper == WIFI_MGMT_SET) {
+		roaming_params.is_11k_enabled = params->enable_11k;
+	}
 #endif
 
 	return wifi_mgmt_api->cfg_11k(dev, params);
