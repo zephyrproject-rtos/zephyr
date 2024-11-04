@@ -56,6 +56,9 @@ void *llext_buf_peek(struct llext_loader *ldr, size_t pos);
 				.seek = llext_buf_seek,                                            \
 				.peek = llext_buf_peek,                                            \
 				.finalize = NULL,                                                  \
+				.storage = IS_ENABLED(CONFIG_LLEXT_STORAGE_WRITABLE) ?             \
+			                        LLEXT_STORAGE_WRITABLE :                           \
+				                LLEXT_STORAGE_PERSISTENT,                          \
 			},                                                                         \
 		.buf = (_buf),                                                                     \
 		.len = (_buf_len),                                                                 \
