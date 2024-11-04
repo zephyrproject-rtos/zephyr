@@ -285,9 +285,24 @@ Build system and Infrastructure
 Documentation
 *************
 
- * Added two new build commands, ``make html-live`` and ``make html-live-fast``, that automatically locally
-   host the generated documentation. They also automatically rebuild and rehost the documentation when changes
-   to the input ``.rst`` files are detected on the filesystem.
+* Added a new :ref:`interactive board catalog <boards>` enabling users to search boards by criteria
+  such as name, architecture, vendor, or SoC.
+* Added a new :zephyr:code-sample-category:`interactive code sample catalog <samples>` for quickly
+  finding code samples based on name and description.
+* Added :rst:dir:`zephyr:board` directive and :rst:role:`zephyr:board` role to mark Sphinx pages as
+  board documentation and reference them from other pages. Most existing board documentation pages
+  have been updated to use this directive, with full migration planned for the next release.
+* Added :rst:dir:`zephyr:code-sample-category` directive to describe and group code samples in the
+  documentation.
+* Added a link to the source code of the driver matching a binding's compatible string (when one can
+  be found in the Zephyr tree) to the :ref:`dt-bindings` documentation.
+* Added a button to all code sample README pages allowing to directly browse the sample's source
+  code on GitHub.
+* Moved Zephyr C API documentation out of main documentation. API references now feature a rich
+  tooltip and link to the dedicated Doxygen site.
+* Added two new build commands, ``make html-live`` and ``make html-live-fast``, that automatically
+  locally host the generated documentation. They also automatically rebuild and rehost the
+  documentation when changes to the input ``.rst`` files are detected on the filesystem.
 
 Drivers and Sensors
 *******************
