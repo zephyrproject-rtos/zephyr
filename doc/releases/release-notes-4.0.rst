@@ -323,6 +323,11 @@ Drivers and Sensors
 
 * Display
 
+* EEPROM
+
+  * Added support for using the EEPROM simulator with embedded C standard libraries
+    (:dtcompatible:`zephyr,sim-eeprom`).
+
 * Ethernet
 
   * LiteX: Renamed the ``compatible`` from ``litex,eth0`` to :dtcompatible:`litex,liteeth`.
