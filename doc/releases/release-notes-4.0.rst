@@ -316,6 +316,20 @@ Drivers and Sensors
   * Fixed SPI NOR driver issue where wp, hold and reset pins were incorrectly initialized from
     device tee when SFDP at run-time has been enabled (:github:`80383`)
 
+  * Added :kconfig:option:`CONFIG_SPI_NOR_ACTIVE_DWELL_MS`, to the SPI NOR driver configuration,
+    which allows setting the time during which the driver will wait before triggering Deep Power Down (DPD).
+    This option replaces ``CONFIG_SPI_NOR_IDLE_IN_DPD``, aiming at reducing unnecessary power
+    state changes and SPI transfers between other operations, specifically when burst type
+    access to an SPI NOR device occurs.
+
+  * Added :kconfig:option:`CONFIG_SPI_NOR_INIT_PRIORITY` to allow selecting the SPI NOR driver initialization priority.
+
+  * The flash API has been extended with the :c:func:`flash_copy` utility function which allows performing
+    direct data copies between two Flash API devices.
+
+  * Fixed a Flash Simulator issue where offsets were assumed to be absolute instead of relative
+    to the device base address (:github:`79082`).
+
 * GNSS
 
 * GPIO
@@ -592,6 +606,36 @@ Libraries / Subsystems
     from version 2.8.1, the last module update, up to and including
     the released version 2.9.3.
 
+  * LittleFS: Fixed an issue where the DTS option for configuring block cycles for LittleFS instances
+    was ignored (:github:`79072`).
+
+  * LittleFS: Fixed issue with lookahead buffer size mismatch to actual allocated buffer size
+    (:github:`77917`).
+
+  * FAT FS: Added :kconfig:option:`CONFIG_FILE_SYSTEM_LIB_LINK` to allow linking file system
+    support libraries without enabling the File System subsystem. This option can be used
+    when a user wants to directly use file system libraries, bypassing the File System
+    subsystem.
+
+  * FAT FS: Added :kconfig:option:`CONFIG_FS_FATFS_LBA64` to enable support for the 64-bit LBA
+    and GPT in FAT file system driver.
+
+  * FAT FS: Added :kconfig:option:`CONFIG_FS_FATFS_MULTI_PARTITION` that enables support for
+    devices partitioned with GPT or MBR.
+
+  * FAT FS: Added :kconfig:option:`CONFIG_FS_FATFS_HAS_RTC` that enables RTC usage for time-stamping
+    files on FAT file systems.
+
+  * FAT FS: Added :kconfig:option:`CONFIG_FS_FATFS_EXTRA_NATIVE_API` that enables additional FAT
+    file system driver functions, which are not exposed via Zephyr File System subsystem,
+    for users that intend to directly call them in their code.
+
+  * Stream Flash: Fixed an issue where :c:func:`stream_flash_erase_page` did not properly check
+    the requested erase range and possibly allowed erasing any page on a device (:github:`79800`).
+
+  * Shell: Fixed an issue were a failed file system mount attempt using the shell would make it
+    impossible to ever succeed in mounting that file system again until the device was reset (:github:`80024`).
+
 * Task Watchdog
 
 * POSIX API
@@ -658,3 +702,6 @@ Issue Related Items
 
 Known Issues
 ============
+
+- :github:`71042` stream_flash: stream_flash_init() size parameter allows to ignore partition layout
+- :github:`67407` stream_flash: stream_flash_erase_page allows to accidentally erase stream
