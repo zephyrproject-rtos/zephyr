@@ -1,0 +1,214 @@
+/*
+ * Copyright (c) 2025 Realtek Semiconductor, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef ZEPHYR_DRIVERS_CLOCK_CONTROL_RTS5817_CONTROL_REG_H_
+#define ZEPHYR_DRIVERS_CLOCK_CONTROL_RTS5817_CONTROL_REG_H_
+
+#define R_SYS_CLK_CHANGE            0x00
+#define R_SYS_BUS_CLK_CFG_REG       0x04
+#define R_SYS_SPI_CACHE_CLK_CFG_REG 0x08
+#define R_SYS_SPI_SSOR_CLK_CFG_REG  0x0C
+#define R_SYS_SPI_SSI_M_CLK_CFG_REG 0x10
+#define R_SYS_SPI_SSI_S_CLK_CFG_REG 0x14
+#define R_SYS_SHA_CLK_CFG_REG       0x18
+#define R_SYS_AES_CLK_CFG_REG       0x1C
+#define R_SYS_PKE_CLK_CFG_REG       0x20
+#define R_SYS_I2C_CLK_CFG_REG       0x24
+#define R_SYS_CK60_CFG_REG          0x28
+#define R_SYS_UART0_CLK_CFG_REG     0x2C
+#define R_SYS_UART1_CLK_CFG_REG     0x30
+#define R_SYS_SIE_CLK_CFG_REG       0x34
+#define R_SYS_PUF_CLK_CFG_REG       0x38
+
+/* Bits of R_SYS_CLK_CHANGE (0X0300) */
+
+#define CHANGE_BUS_CLK_PRE_OFFSET 0
+#define CHANGE_BUS_CLK_PRE_BITS   1
+#define CHANGE_BUS_CLK_PRE_MASK   BIT(0)
+#define CHANGE_BUS_CLK_PRE        (CHANGE_BUS_CLK_PRE_MASK)
+
+#define CHANGE_SPI_CACHE_CLK_OFFSET 1
+#define CHANGE_SPI_CACHE_CLK_BITS   1
+#define CHANGE_SPI_CACHE_CLK_MASK   BIT(1)
+#define CHANGE_SPI_CACHE_CLK        (CHANGE_SPI_CACHE_CLK_MASK)
+
+#define CHANGE_SPI_SSOR_CLK_OFFSET 2
+#define CHANGE_SPI_SSOR_CLK_BITS   1
+#define CHANGE_SPI_SSOR_CLK_MASK   BIT(2)
+#define CHANGE_SPI_SSOR_CLK        (CHANGE_SPI_SSOR_CLK_MASK)
+
+#define CHANGE_SPI_SSI_M_CLK_OFFSET 3
+#define CHANGE_SPI_SSI_M_CLK_BITS   1
+#define CHANGE_SPI_SSI_M_CLK_MASK   BIT(3)
+#define CHANGE_SPI_SSI_M_CLK        (CHANGE_SPI_SSI_M_CLK_MASK)
+
+#define CHANGE_SPI_SSI_S_CLK_OFFSET 4
+#define CHANGE_SPI_SSI_S_CLK_BITS   1
+#define CHANGE_SPI_SSI_S_CLK_MASK   BIT(4)
+#define CHANGE_SPI_SSI_S_CLK        (CHANGE_SPI_SSI_S_CLK_MASK)
+
+#define CHANGE_SHA_CLK_OFFSET 5
+#define CHANGE_SHA_CLK_BITS   1
+#define CHANGE_SHA_CLK_MASK   BIT(5)
+#define CHANGE_SHA_CLK        (CHANGE_SHA_CLK_MASK)
+
+#define CHANGE_AES_CLK_OFFSET 6
+#define CHANGE_AES_CLK_BITS   1
+#define CHANGE_AES_CLK_MASK   BIT(6)
+#define CHANGE_AES_CLK        (CHANGE_AES_CLK_MASK)
+
+#define CHANGE_UART0_CLK_OFFSET 7
+#define CHANGE_UART0_CLK_BITS   1
+#define CHANGE_UART0_CLK_MASK   BIT(7)
+#define CHANGE_UART0_CLK        (CHANGE_UART0_CLK_MASK)
+
+#define CHANGE_UART1_CLK_OFFSET 8
+#define CHANGE_UART1_CLK_BITS   1
+#define CHANGE_UART1_CLK_MASK   BIT(8)
+#define CHANGE_UART1_CLK        (CHANGE_UART1_CLK_MASK)
+
+/* Common bits of R_SYS_XXX_CLK_CFG_REG (0x0304 ~ 0x338) */
+
+#define COMMON_CLK_SRC_SEL_OFFSET 0
+#define COMMON_CLK_SRC_SEL_MASK   GENMASK(1, 0)
+
+#define COMMON_CLK_DIV_OFFSET 2
+#define COMMON_CLK_DIV_MASK   GENMASK(5, 2)
+
+#define COMMON_CLK_EN_OFFSET 24
+#define COMMON_CLK_EN_MASK   BIT(24)
+
+/* Bits of R_SYS_BUS_CLK_CFG_REG (0X0304) */
+
+#define GE_CLK_EN_OFFSET 25
+#define GE_CLK_EN_MASK   BIT(25)
+
+/* Bits of R_SYS_I2C_CLK_CFG_REG (0X0324) */
+
+#define I2C_CLK_EN_OFFSET 24
+#define I2C_CLK_EN_MASK   BIT(24)
+
+#define I2C0_CLK_EN_OFFSET 25
+#define I2C0_CLK_EN_MASK   BIT(25)
+
+#define I2C1_CLK_EN_OFFSET 26
+#define I2C1_CLK_EN_MASK   BIT(26)
+
+/* Bits of R_SYS_CK60_CFG_REG (0X0328) */
+
+#define I2C_S_CLK_EN_OFFSET 24
+#define I2C_S_CLK_EN_MASK   BIT(24)
+
+#define TRNG_CLK_EN_OFFSET 25
+#define TRNG_CLK_EN_MASK   BIT(25)
+
+/* Parameters definition */
+
+/* Parameters of R_SYS_BUS_CLK_CFG_REG (0x0304) */
+#define BUS_CLK_240M  0x0
+#define BUS_CLK_160M  0x1
+#define BUS_CLK_96M   0x2
+#define BUS_CLK_GPLL0 0x3
+
+#define BUS_CLK_DIV_1 0x0
+#define BUS_CLK_DIV_2 0x1
+#define BUS_CLK_DIV_4 0x2
+#define BUS_CLK_DIV_6 0x3
+
+/* Parameters of R_SYS_SPI_CACHE_CLK_CFG_REG (0X0308)*/
+#define SPI_CACHE_CLK_240M  0x0
+#define SPI_CACHE_CLK_160M  0x1
+#define SPI_CACHE_CLK_96M   0x2
+#define SPI_CACHE_CLK_GPLL0 0x3
+
+#define SPI_CACHE_CLK_DIV_1 0x0
+#define SPI_CACHE_CLK_DIV_2 0x1
+#define SPI_CACHE_CLK_DIV_4 0x2
+#define SPI_CACHE_CLK_DIV_6 0x3
+
+/* Parameters of R_SYS_SPI_SSOR_CLK_CFG_REG (0X030C) */
+#define SPI_SSOR_CLK_240M  0x0
+#define SPI_SSOR_CLK_96M   0x1
+#define SPI_SSOR_CLK_80M   0x2
+#define SPI_SSOR_CLK_GPLL0 0x3
+
+#define SPI_SSOR_CLK_DIV_1 0x0
+#define SPI_SSOR_CLK_DIV_2 0x1
+#define SPI_SSOR_CLK_DIV_4 0x2
+#define SPI_SSOR_CLK_DIV_6 0x3
+
+/* Parameters of R_SYS_SPI_SSI_M_CLK_CFG_REG (0X0310) */
+#define SPI_SSI_MST_CLK_240M  0x0
+#define SPI_SSI_MST_CLK_96M   0x1
+#define SPI_SSI_MST_CLK_80M   0x2
+#define SPI_SSI_MST_CLK_GPLL0 0x3
+
+#define SPI_SSI_MST_CLK_DIV_1 0x0
+#define SPI_SSI_MST_CLK_DIV_2 0x1
+#define SPI_SSI_MST_CLK_DIV_4 0x2
+#define SPI_SSI_MST_CLK_DIV_6 0x3
+
+/* Parameters of R_SYS_SPI_SSI_S_CLK_CFG_REG (0X0314) */
+#define SPI_SSI_SLV_CLK_240M  0x0
+#define SPI_SSI_SLV_CLK_96M   0x1
+#define SPI_SSI_SLV_CLK_80M   0x2
+#define SPI_SSI_SLV_CLK_GPLL0 0x3
+
+#define SPI_SSI_SLV_CLK_DIV_1 0x0
+#define SPI_SSI_SLV_CLK_DIV_2 0x1
+#define SPI_SSI_SLV_CLK_DIV_4 0x2
+#define SPI_SSI_SLV_CLK_DIV_6 0x3
+
+/* Parameters of R_SYS_SHA_CLK_CFG_REG (0X0318) */
+#define SHA_CLK_240M  0x0
+#define SHA_CLK_160M  0x1
+#define SHA_CLK_96M   0x2
+#define SHA_CLK_GPLL0 0x3
+
+#define SHA_CLK_DIV_1 0x0
+#define SHA_CLK_DIV_2 0x1
+#define SHA_CLK_DIV_4 0x2
+#define SHA_CLK_DIV_6 0x3
+
+/* Parameters of R_SYS_AES_CLK_CFG_REG (0X031C) */
+#define AES_CLK_240M  0x0
+#define AES_CLK_160M  0x1
+#define AES_CLK_96M   0x2
+#define AES_CLK_GPLL0 0x3
+
+#define AES_CLK_DIV_1 0x0
+#define AES_CLK_DIV_2 0x1
+#define AES_CLK_DIV_4 0x2
+#define AES_CLK_DIV_6 0x3
+
+/* Parameters of R_SYS_I2C_CLK_CFG_REG (0X0324) */
+#define I2C_CLK_DIV_1 0x0
+#define I2C_CLK_DIV_2 0x1
+#define I2C_CLK_DIV_4 0x2
+#define I2C_CLK_DIV_6 0x3
+
+/* Parameters of R_SYS_UARTx_CLK_CFG_REG (0X032C 0X330) */
+#define UART_CLK_96M   0x0
+#define UART_CLK_120M  0x1
+#define UART_CLK_GPLL0 0x3
+
+#define UART_CLK_DIV_1 0x0
+#define UART_CLK_DIV_2 0x1
+#define UART_CLK_DIV_4 0x2
+#define UART_CLK_DIV_6 0x3
+
+/***********************Definition created by FW**********************/
+#define SENSOR_SPI_CLK_SEL_240M   0x00
+#define SENSOR_SPI_CLK_SEL_96M    0x01
+#define SENSOR_SPI_CLK_SEL_80M    0x02
+#define SENSOR_SPI_CLK_SEL_SYSPLL 0x03
+
+#define SSI_SPI_MST_CLK_SEL_240M   0x00
+#define SSI_SPI_MST_CLK_SEL_96M    0x01
+#define SSI_SPI_MST_CLK_SEL_80M    0x02
+#define SSI_SPI_MST_CLK_SEL_SYSPLL 0x03
+
+#endif /* ZEPHYR_DRIVERS_CLOCK_CONTROL_RTS5817_CONTROL_REG_H_ */
