@@ -32,7 +32,6 @@
 			/delete-node/ vpr@4c000;
 			/delete-node/ mailbox@0;
 			/delete-node/ interrupt-controller@f0000000;
-			/delete-node/ gpio@50400;
 			/delete-node/ i2c@c6000;
 			/delete-node/ spi@c6000;
 			/delete-node/ uart@c6000;
@@ -47,8 +46,6 @@
 			/delete-node/ pwm@d4000;
 			/delete-node/ adc@d5000;
 			/delete-node/ nfct@d6000;
-			/delete-node/ gpio@d8200;
-			/delete-node/ gpiote@da000;
 			/delete-node/ i2s@dd000;
 			/delete-node/ qdec@e0000;
 			/delete-node/ qdec@e1000;
@@ -57,8 +54,6 @@
 			/delete-node/ uart@104000;
 			/delete-node/ watchdog@108000;
 			/delete-node/ watchdog@109000;
-			/delete-node/ gpio@10a000;
-			/delete-node/ gpiote@10c000;
 		};
 	};
 
@@ -89,6 +84,27 @@
 			reg = <0x0 DT_SIZE_K(500)>;
 		};
 	};
+};
+
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpiote20 {
+	status = "okay";
+};
+
+&gpiote30 {
+	status = "okay";
 };
 
 &temp {
