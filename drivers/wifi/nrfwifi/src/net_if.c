@@ -877,7 +877,7 @@ int nrf_wifi_if_stop_zep(const struct device *dev)
 	}
 
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
-	if (!rpu_ctx_zep) {
+	if (!rpu_ctx_zep || !rpu_ctx_zep->rpu_ctx) {
 		LOG_ERR("%s: rpu_ctx_zep is NULL",
 			__func__);
 		goto unlock;
