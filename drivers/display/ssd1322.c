@@ -358,7 +358,9 @@ static struct display_driver_api ssd1322_driver_api = {
 };
 
 #define SSD1322_CONV_BUFFER_SIZE(node_id)                                                          \
-	(DT_PROP(node_id, width) * DT_PROP(node_id, segments_per_pixel) * 4)
+	DIV_ROUND_UP(DT_PROP(node_id, width) * DT_PROP(node_id, height) *                          \
+			     DT_PROP(node_id, segments_per_pixel),                                 \
+		     SEGMENTS_PER_BYTE)
 
 #define SSD1322_DEFINE(node_id)                                                                    \
 	static uint8_t conversion_buf##node_id[SSD1322_CONV_BUFFER_SIZE(node_id)];                 \
