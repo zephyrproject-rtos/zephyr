@@ -86,9 +86,6 @@ GEN_OFFSET_SYM(_cpu_context_t, msp);
 GEN_OFFSET_SYM(_cpu_context_t, msplim);
 GEN_OFFSET_SYM(_cpu_context_t, psp);
 GEN_OFFSET_SYM(_cpu_context_t, psplim);
-GEN_OFFSET_SYM(_cpu_context_t, apsr);
-GEN_OFFSET_SYM(_cpu_context_t, ipsr);
-GEN_OFFSET_SYM(_cpu_context_t, epsr);
 
 GEN_OFFSET_SYM(_cpu_context_t, primask);
 GEN_OFFSET_SYM(_cpu_context_t, faultmask);

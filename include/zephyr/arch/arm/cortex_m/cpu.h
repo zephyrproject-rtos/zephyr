@@ -57,9 +57,6 @@ struct __cpu_context {
 	uint32_t msplim;
 	uint32_t psp;
 	uint32_t psplim;
-	uint32_t apsr;
-	uint32_t ipsr;
-	uint32_t epsr;
 	uint32_t primask;
 	uint32_t faultmask;
 	uint32_t basepri;
