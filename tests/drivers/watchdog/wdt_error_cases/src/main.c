@@ -42,7 +42,8 @@
 #define DEFAULT_WINDOW_MIN (0U)
 
 /* Align tests to the specific target: */
-#if defined(CONFIG_SOC_NRF54L15) || defined(CONFIG_SOC_NRF54H20) || defined(CONFIG_SOC_NRF9280)
+#if defined(CONFIG_SOC_NRF54L05) || defined(CONFIG_SOC_NRF54L10) || \
+	defined(CONFIG_SOC_NRF54L15) || defined(CONFIG_SOC_NRF54H20) || defined(CONFIG_SOC_NRF9280)
 #define WDT_TEST_FLAGS                                                                             \
 	(WDT_DISABLE_SUPPORTED | WDT_FLAG_RESET_SOC_SUPPORTED |                                    \
 	 WDT_FLAG_ONLY_ONE_TIMEOUT_VALUE_SUPPORTED | WDT_OPT_PAUSE_IN_SLEEP_SUPPORTED |            \

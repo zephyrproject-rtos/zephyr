@@ -1,9 +1,9 @@
-# Nordic Semiconductor nRF54L15 MCU
+# Nordic Semiconductor nRF54 L05, L10 and L15 MCUs
 
 # Copyright (c) 2024 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_NRF54L15_CPUFLPR
+if SOC_NRF54L05_CPUFLPR || SOC_NRF54L10_CPUFLPR || SOC_NRF54L15_CPUFLPR
 
 config NUM_IRQS
 	default 287
@@ -12,4 +12,4 @@ config NUM_IRQS
 config ASSERT
 	default n
 
-endif # SOC_NRF54L15_CPUFLPR
+endif # SOC_NRF54L05_CPUFLPR || SOC_NRF54L10_CPUFLPR || SOC_NRF54L15_CPUFLPR
