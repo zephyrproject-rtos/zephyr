@@ -1,13 +1,13 @@
-.. zephyr:code-sample:: esp32-wifi-ap-sta-mode
+.. zephyr:code-sample:: wifi-ap-sta-mode
    :name: Wi-Fi AP-STA mode
    :relevant-api: wifi_mgmt dhcpv4_server
 
-   Setup ESP32 to function as both an Access Point (AP) and a Station (STA) simultaneously.
+   Configure a Wi-Fi board to operate as both an Access Point (AP) and a Station (STA).
 
 Overview
 ********
 
-The Wi-Fi AP-STA mode of the ESP32 allows it to function as both
+The Wi-Fi AP-STA mode of a Wi-Fi board allows it to function as both
 an Access Point (AP) and a Station (STA) simultaneously.
 This sample demonstrates how to configure and utilize AP-STA mode.
 
@@ -21,7 +21,7 @@ In this demo, AP-STA mode is enabled using :kconfig:option:`CONFIG_ESP32_WIFI_AP
 An additional Wi-Fi node is added in the ``.overlay`` file. The ``net_if``.
 In the sample code, initially, the AP mode is enabled, followed by enabling the STA mode.
 The driver checks if AP mode was previously enabled. If so, it transitions
-the ESP32 into AP-STA mode to support both modes and attempts to connect to the
+the board into AP-STA mode to support both modes and attempts to connect to the
 AP specified by the provided SSID and PSK.
 
 Requirements

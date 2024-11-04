@@ -12,7 +12,7 @@ Shield porting and configuration
 ********************************
 
 Shield configuration files are available in the board directory
-under :zephyr_file:`/boards/shields`:
+under :zephyr_file:`boards/shields`:
 
 .. code-block:: none
 

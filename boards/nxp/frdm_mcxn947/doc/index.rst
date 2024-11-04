@@ -257,6 +257,12 @@ should see the following message in the terminal:
    *** Booting Zephyr OS build v3.6.0-479-g91faa20c6741 ***
    Hello World! frdm_mcxn947/mcxn947/cpu0
 
+Troubleshooting
+===============
+
+.. include:: ../../common/segger-ecc-systemview.rst
+   :start-after: segger-ecc-systemview
+
 .. _MCX-N947 SoC Website:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-microcontrollers/general-purpose-mcus/mcx-arm-cortex-m/mcx-n-series-microcontrollers/mcx-n94x-54x-highly-integrated-multicore-mcus-with-on-chip-accelerators-intelligent-peripherals-and-advanced-security:MCX-N94X-N54X
 

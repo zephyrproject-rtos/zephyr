@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef SHELL_TELNET_H__
-#define SHELL_TELNET_H__
+#ifndef ZEPHYR_INCLUDE_SHELL_TELNET_H_
+#define ZEPHYR_INCLUDE_SHELL_TELNET_H_
 
 #include <zephyr/net/socket.h>
 #include <zephyr/shell/shell.h>
@@ -85,4 +85,4 @@ const struct shell *shell_backend_telnet_get_ptr(void);
 }
 #endif
 
-#endif /* SHELL_TELNET_H__ */
+#endif /* ZEPHYR_INCLUDE_SHELL_TELNET_H_ */

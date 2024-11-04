@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_MCXN
-	select HAS_SEGGER_RTT
+	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
 	select CLOCK_CONTROL
 	select ARM
 	select HAS_MCUX

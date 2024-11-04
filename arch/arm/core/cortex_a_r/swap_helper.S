@@ -126,7 +126,7 @@ out_fp_inactive:
      * TPIDRURW is used as a base pointer to all
      * thread variables with offsets added by toolchain.
      */
-    mcr 15, 0, r0, c13, c0, 2
+    mcr p15, 0, r0, c13, c0, 2
 #endif
 
 #if defined(CONFIG_ARM_STORE_EXC_RETURN)

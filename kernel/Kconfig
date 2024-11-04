@@ -450,7 +450,6 @@ config BOOT_BANNER
 config BOOT_BANNER_STRING
 	string "Boot banner string"
 	depends on BOOT_BANNER
-	default "Booting Zephyr OS build (tainted)" if TAINT
 	default "Booting Zephyr OS build"
 	help
 	  Use this option to set the boot banner.

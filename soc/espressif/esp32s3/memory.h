@@ -10,6 +10,7 @@
 #define SRAM0_IRAM_START    0x40370000
 #define SRAM0_SIZE          0x8000
 #define SRAM1_DRAM_START    0x3fc88000
+
 /* IRAM equivalent address where DRAM actually start */
 #define SRAM1_IRAM_START    (SRAM0_IRAM_START + SRAM0_SIZE)
 #define SRAM2_DRAM_START    0x3fcf0000
@@ -49,7 +50,7 @@
 
 /* For safety margin between bootloader data section and startup stacks */
 #define BOOTLOADER_STACK_OVERHEAD      0x0
-#define BOOTLOADER_DRAM_SEG_LEN        0x9000
+#define BOOTLOADER_DRAM_SEG_LEN        0x15000
 #define BOOTLOADER_IRAM_LOADER_SEG_LEN 0x1a00
 #define BOOTLOADER_IRAM_SEG_LEN        0xc000
 

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef SHELL_LOG_BACKEND_H__
-#define SHELL_LOG_BACKEND_H__
+#ifndef ZEPHYR_INCLUDE_SHELL_LOG_BACKEND_H_
+#define ZEPHYR_INCLUDE_SHELL_LOG_BACKEND_H_
 
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log_backend.h>
@@ -124,4 +124,4 @@ bool z_shell_log_backend_process(const struct shell_log_backend *backend);
 }
 #endif
 
-#endif /* SHELL_LOG_BACKEND_H__ */
+#endif /* ZEPHYR_INCLUDE_SHELL_LOG_BACKEND_H_ */

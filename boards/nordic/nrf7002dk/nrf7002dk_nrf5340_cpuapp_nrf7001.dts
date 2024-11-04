@@ -32,6 +32,5 @@
 		qspi-quad-mode;
 
 		#include "nrf70_common.dtsi"
-		#include "nrf70_common_coex.dtsi"
 	};
 };

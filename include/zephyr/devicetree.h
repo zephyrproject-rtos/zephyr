@@ -47,10 +47,6 @@
  *
  * _ENUM_IDX: property's value as an index into bindings enum
  * _ENUM_VAL_<val>_EXISTS property's value as a token exists
- * _ENUM_TOKEN: property's value as a token into bindings enum (string
- *              enum values are identifiers) [deprecated, use _STRING_TOKEN]
- * _ENUM_UPPER_TOKEN: like _ENUM_TOKEN, but uppercased [deprecated, use
- *		      _STRING_UPPER_TOKEN]
  * _EXISTS: property is defined
  * _FOREACH_PROP_ELEM: helper for "iterating" over values in the property
  * _FOREACH_PROP_ELEM_VARGS: foreach functions with variable number of arguments

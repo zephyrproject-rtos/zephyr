@@ -104,13 +104,13 @@ static void unicast_start_complete_cb(int err, struct bt_conn *conn)
 
 	if (err != 0) {
 		LOG_DBG("Failed to unicast-start, err %d", err);
-		btp_send_cap_unicast_start_completed_ev(u_group->cig->index,
+		btp_send_cap_unicast_start_completed_ev(u_group->cig_id,
 							BTP_CAP_UNICAST_START_STATUS_FAILED);
 
 		return;
 	}
 
-	btp_send_cap_unicast_start_completed_ev(u_group->cig->index,
+	btp_send_cap_unicast_start_completed_ev(u_group->cig_id,
 						BTP_CAP_UNICAST_START_STATUS_SUCCESS);
 }
 
@@ -129,13 +129,13 @@ static void unicast_stop_complete_cb(int err, struct bt_conn *conn)
 
 	if (err != 0) {
 		LOG_DBG("Failed to unicast-stop, err %d", err);
-		btp_send_cap_unicast_stop_completed_ev(u_group->cig->index,
+		btp_send_cap_unicast_stop_completed_ev(u_group->cig_id,
 						       BTP_CAP_UNICAST_START_STATUS_FAILED);
 
 		return;
 	}
 
-	btp_send_cap_unicast_stop_completed_ev(u_group->cig->index,
+	btp_send_cap_unicast_stop_completed_ev(u_group->cig_id,
 					       BTP_CAP_UNICAST_START_STATUS_SUCCESS);
 }
 

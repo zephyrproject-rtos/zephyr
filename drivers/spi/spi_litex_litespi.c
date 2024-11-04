@@ -152,6 +152,13 @@ static int spi_litex_xfer(const struct device *dev, const struct spi_config *con
 
 	litex_write32(BIT(config->slave), dev_config->core_master_cs_addr);
 
+	/* Flush RX buffer */
+	while ((litex_read8(dev_config->core_master_status_addr) &
+		BIT(SPIFLASH_CORE_MASTER_STATUS_RX_READY_OFFSET))) {
+		rxd = litex_read32(dev_config->core_master_rxtx_addr);
+		LOG_DBG("flushed rxd: 0x%x", rxd);
+	}
+
 	do {
 		len = MIN(spi_context_max_continuous_chunk(ctx), dev_config->core_master_rxtx_size);
 		if (len != old_len) {

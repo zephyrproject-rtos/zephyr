@@ -19,7 +19,7 @@ See also this URL for details about the board:
 The latest version of EM Starter Kit is 2.3, developer can upgrade from
 2.0/2.1/2.2 to 2.3 using latest firmware.
 The default configuration for EM Starter Kit boards can be found in
-:zephyr_file:`boards/snps/em_starterkit/em_starterkit_defconfig`.
+:zephyr_file:`boards/snps/em_starterkit/`.
 
 The default SoC for this board supported in Zephyr is the EM9D.
 This configuration is a Harvard Architecture, with a separate

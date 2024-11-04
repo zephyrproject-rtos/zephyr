@@ -17,9 +17,23 @@ variants:
       - xt-clang
   intel_adsp/ace30:
     twister: false
+  intel_adsp/ace20_lnl/sim:
+    type: sim
+    simulation: custom
+    testing:
+      timeout_multiplier: 4
+  intel_adsp/ace15_mtpm/sim:
+    type: sim
+    simulation: custom
+    testing:
+      timeout_multiplier: 4
   intel_adsp/ace30/ptl/sim:
+    type: sim
+    simulation: custom
     toolchain:
       - xt-clang
+    testing:
+      timeout_multiplier: 8
   intel_adsp/cavs25:
     toolchain:
       - xcc

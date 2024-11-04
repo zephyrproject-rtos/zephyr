@@ -980,13 +980,13 @@ class TwisterEnv:
         for module in modules:
             soc_root = module.meta.get("build", {}).get("settings", {}).get("soc_root")
             if soc_root:
-                self.soc_roots.append(os.path.join(module.project, soc_root))
+                self.soc_roots.append(Path(module.project) / Path(soc_root))
             dts_root = module.meta.get("build", {}).get("settings", {}).get("dts_root")
             if dts_root:
-                self.dts_roots.append(os.path.join(module.project, dts_root))
+                self.dts_roots.append(Path(module.project) / Path(dts_root))
             arch_root = module.meta.get("build", {}).get("settings", {}).get("arch_root")
             if arch_root:
-                self.arch_roots.append(os.path.join(module.project, arch_root))
+                self.arch_roots.append(Path(module.project) / Path(arch_root))
 
         self.hwm = None
 
@@ -1075,7 +1075,7 @@ class TwisterEnv:
             results = {"returncode": p.returncode, "msg": msg, "stdout": out}
 
         else:
-            logger.error("Cmake script failure: %s" % (args[0]))
+            logger.error("CMake script failure: %s" % (args[0]))
             results = {"returncode": p.returncode, "returnmsg": out}
 
         return results

@@ -36,17 +36,15 @@ typedef struct zvfs_fd_set zsock_fd_set;
  * @brief Legacy function to poll multiple sockets for events
  *
  * @details
- * @rst
- * See `POSIX.1-2017 article
- * <http://pubs.opengroup.org/onlinepubs/9699919799/functions/select.html>`__
+ * See POSIX.1-2017 article
+ * http://pubs.opengroup.org/onlinepubs/9699919799/functions/select.html
  * for normative description. This function is provided to ease porting of
  * existing code and not recommended for usage due to its inefficiency,
  * use zsock_poll() instead. In Zephyr this function works only with
  * sockets, not arbitrary file descriptors.
- * This function is also exposed as ``select()``
- * if :kconfig:option:`CONFIG_POSIX_API` is defined (in which case
- * it may conflict with generic POSIX ``select()`` function).
- * @endrst
+ * This function is also exposed as `select()`
+ * if @kconfig{CONFIG_POSIX_API} is defined (in which case
+ * it may conflict with generic POSIX `select()` function).
  */
 static inline int zsock_select(int nfds, zsock_fd_set *readfds, zsock_fd_set *writefds,
 			       zsock_fd_set *exceptfds, struct zsock_timeval *timeout)
@@ -66,13 +64,11 @@ static inline int zsock_select(int nfds, zsock_fd_set *readfds, zsock_fd_set *wr
  * @brief Initialize (clear) fd_set
  *
  * @details
- * @rst
- * See `POSIX.1-2017 article
- * <http://pubs.opengroup.org/onlinepubs/9699919799/functions/select.html>`__
+ * See POSIX.1-2017 article
+ * http://pubs.opengroup.org/onlinepubs/9699919799/functions/select.html
  * for normative description.
- * This function is also exposed as ``FD_ZERO()``
- * if :kconfig:option:`CONFIG_POSIX_API` is defined.
- * @endrst
+ * This function is also exposed as `FD_ZERO()`
+ * if @kconfig{CONFIG_POSIX_API} is defined.
  */
 static inline void ZSOCK_FD_ZERO(zsock_fd_set *set)
 {
@@ -83,13 +79,11 @@ static inline void ZSOCK_FD_ZERO(zsock_fd_set *set)
  * @brief Check whether socket is a member of fd_set
  *
  * @details
- * @rst
- * See `POSIX.1-2017 article
- * <http://pubs.opengroup.org/onlinepubs/9699919799/functions/select.html>`__
+ * See POSIX.1-2017 article
+ * http://pubs.opengroup.org/onlinepubs/9699919799/functions/select.html
  * for normative description.
- * This function is also exposed as ``FD_ISSET()``
- * if :kconfig:option:`CONFIG_POSIX_API` is defined.
- * @endrst
+ * This function is also exposed as `FD_ISSET()`
+ * if @kconfig{CONFIG_POSIX_API} is defined.
  */
 static inline int ZSOCK_FD_ISSET(int fd, zsock_fd_set *set)
 {
@@ -100,13 +94,11 @@ static inline int ZSOCK_FD_ISSET(int fd, zsock_fd_set *set)
  * @brief Remove socket from fd_set
  *
  * @details
- * @rst
- * See `POSIX.1-2017 article
- * <http://pubs.opengroup.org/onlinepubs/9699919799/functions/select.html>`__
+ * See POSIX.1-2017 article
+ * http://pubs.opengroup.org/onlinepubs/9699919799/functions/select.html
  * for normative description.
- * This function is also exposed as ``FD_CLR()``
- * if :kconfig:option:`CONFIG_POSIX_API` is defined.
- * @endrst
+ * This function is also exposed as `FD_CLR()`
+ * if @kconfig{CONFIG_POSIX_API} is defined.
  */
 static inline void ZSOCK_FD_CLR(int fd, zsock_fd_set *set)
 {
@@ -117,13 +109,11 @@ static inline void ZSOCK_FD_CLR(int fd, zsock_fd_set *set)
  * @brief Add socket to fd_set
  *
  * @details
- * @rst
- * See `POSIX.1-2017 article
- * <http://pubs.opengroup.org/onlinepubs/9699919799/functions/select.html>`__
+ * See POSIX.1-2017 article
+ * http://pubs.opengroup.org/onlinepubs/9699919799/functions/select.html
  * for normative description.
- * This function is also exposed as ``FD_SET()``
- * if :kconfig:option:`CONFIG_POSIX_API` is defined.
- * @endrst
+ * This function is also exposed as `FD_SET()`
+ * if @kconfig{CONFIG_POSIX_API} is defined.
  */
 static inline void ZSOCK_FD_SET(int fd, zsock_fd_set *set)
 {

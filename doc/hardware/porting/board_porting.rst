@@ -261,7 +261,7 @@ Your board directory should look like this:
    ├── board.cmake
    ├── CMakeLists.txt
    ├── doc
-   │   ├── plank.png
+   │   ├── plank.webp
    │   └── index.rst
    ├── Kconfig.plank
    ├── Kconfig.defconfig
@@ -299,7 +299,7 @@ The optional files are:
 - :file:`board.cmake`: used for :ref:`flash-and-debug-support`
 - :file:`CMakeLists.txt`: if you need to add additional source files to
   your build.
-- :file:`doc/index.rst`, :file:`doc/plank.png`: documentation for and a picture
+- :file:`doc/index.rst`, :file:`doc/plank.webp`: documentation for and a picture
   of your board. You only need this if you're :ref:`contributing-your-board` to
   Zephyr.
 - :file:`plank_<qualifiers>.yaml`: a YAML file with miscellaneous metadata used

@@ -47,6 +47,8 @@ Removed APIs in this release
 * Macro ``K_THREAD_STACK_MEMBER``, deprecated since v3.5.0, has been removed.
   Use :c:macro:`K_KERNEL_STACK_MEMBER` instead.
 * ``CBPRINTF_PACKAGE_COPY_*`` macros, deprecated since Zephyr 3.5.0, have been removed.
+* ``_ENUM_TOKEN`` and ``_ENUM_UPPER_TOKEN`` macros, deprecated since Zephyr 2.7.0,
+  are no longer generated.
 
 Deprecated in this release
 ==========================
@@ -138,6 +140,12 @@ Bluetooth
     :c:func:`bt_conn_le_create` and :c:func:`bt_conn_le_create_synced` return an error if the
     connection pointer passed as an argument is not NULL.
 
+* Controller
+
+  * Added Periodic Advertising Sync Transfer (PAST) support with support for both sending and receiving roles.
+    The option can be enabled by :kconfig:option:`CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER` and
+    :kconfig:option:`CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER`.
+
 * HCI Drivers
 
 Boards & SoC Support
@@ -152,10 +160,14 @@ Boards & SoC Support
 
 * Added support for these boards:
 
+  * Added support for :ref:`PHYTEC phyBOARD-Nash <phyboard_nash>`: ``phyboard_nash``.
+
 * Made these board changes:
 
   * :ref:`native_posix<native_posix>` has been deprecated in favour of
     :ref:`native_sim<native_sim>`.
+  * The nrf54l15bsim target now includes models of the AAR, CCM and ECB peripherals, and many
+    other improvements.
   * Support for Google Kukui EC board (``google_kukui``) has been dropped.
   * STM32: Deprecated MCO configuration via Kconfig in favour of setting it through devicetree.
     See ``samples/boards/stm32/mco`` sample.
@@ -232,6 +244,9 @@ Drivers and Sensors
   * LiteX: Renamed the ``compatible`` from ``litex,eth0`` to :dtcompatible:`litex,liteeth`.
 
 * Flash
+
+  * Fixed SPI NOR driver issue where wp, hold and reset pins were incorrectly initialized from
+    device tee when SFDP at run-time has been enabled (:github:`80383`)
 
 * GNSS
 
@@ -565,6 +580,10 @@ zcbor
 
 Tests and Samples
 *****************
+
+* Together with the deprecation of :ref:`native_posix<native_posix>`, many tests which were
+  explicitly run in native_posix now run in :ref:`native_sim<native_sim>` instead.
+  native_posix as a platform remains tested though.
 
 Issue Related Items
 *******************

@@ -215,7 +215,7 @@ Usage:
 
 Set :kconfig:option:`CONFIG_WIFI_SIMPLELINK` and :kconfig:option:`CONFIG_WIFI` to ``y``
 to enable Wi-Fi.
-See :zephyr_file:`samples/net/wifi/boards/cc3235sf_launchxl.conf`.
+See :zephyr_file:`samples/net/wifi/shell/boards/cc3235sf_launchxl.conf`.
 
 Provisioning:
 =============

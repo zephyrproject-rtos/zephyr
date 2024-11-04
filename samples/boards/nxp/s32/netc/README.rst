@@ -20,7 +20,7 @@ controls PSI) to allow users visualize the networking settings. Telnet shell
 and backend is also enabled.
 
 The source code for this sample application can be found at:
-:zephyr_file:`samples/boards/nxp_s32/netc`.
+:zephyr_file:`samples/boards/nxp/s32/netc`.
 
 Requirements
 ************

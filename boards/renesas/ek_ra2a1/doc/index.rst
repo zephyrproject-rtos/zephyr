@@ -31,8 +31,25 @@ Renesas RA2A1 Microcontroller Group has following features
 - Watchdog Timer
 - 49 Input/Output pins
 
+.. figure:: ek_ra2a1.webp
+	:align: center
+	:alt: RA2A1 Evaluation Kit
+
+	EK-RA2A1 Board Functional Area Definitions (Credit: Renesas Electronics Corporation)
+
 Hardware
 ********
+
+Detail Hardware feature for the RA2A1 MCU group can be found at `RA2A1 Group User's Manual Hardware`_
+
+.. figure:: ra2a1_block_diagram.webp
+	:width: 442px
+	:align: center
+	:alt: RA2A1 MCU group feature
+
+	RA2A1 Block diagram (Credit: Renesas Electronics Corporation)
+
+Detail Hardware feature for the EK-RA2A1 MCU can be found at `EK-RA2A1 - User's Manual`_
 
 EK-RA2A1 has following features.
 
@@ -74,7 +91,7 @@ Building & Flashing
 
 You can build and flash an application with onboard J-Link debug adapter.
 :ref:`build_an_application` and
-:ref:`application_run` for more details).
+:ref:`application_run` for more details.
 
 Here is an example for building and flashing the :zephyr:code-sample:`blinky` application.
 
@@ -105,3 +122,9 @@ References
 
 .. EK-RA2A1 Web site:
    https://www.renesas.com/us/en/products/microcontrollers-microprocessors/ra-cortex-m-mcus/ek-ra2a1-evaluation-kit-ra2a1-mcu-group
+
+.. _RA2A1 Group User's Manual Hardware:
+   https://www.renesas.com/en/document/mah/renesas-ra2a1-group-users-manual-hardware
+
+.. _EK-RA2A1 - User's Manual:
+   https://www.renesas.com/en/document/mah/renesas-ra2a1-group-users-manual-hardware

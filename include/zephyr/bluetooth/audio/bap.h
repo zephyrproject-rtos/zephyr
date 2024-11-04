@@ -925,13 +925,13 @@ struct bt_bap_unicast_server_register_param {
 	/**
 	 * @brief Sink Count to register.
 	 *
-	 * Should be in range [0, @kconfig{CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT}]
+	 * Should be in range 0 to @kconfig{CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT}
 	 */
 	uint8_t snk_cnt;
 
 	/** @brief Source Count to register.
 	 *
-	 * Should be in range [0, @kconfig{CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT}]
+	 * Should be in range 0 to @kconfig{CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT}
 	 */
 	uint8_t src_cnt;
 };

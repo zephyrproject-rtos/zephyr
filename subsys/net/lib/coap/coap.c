@@ -232,6 +232,19 @@ int coap_ack_init(struct coap_packet *cpkt, const struct coap_packet *req,
 				token, code, id);
 }
 
+int coap_rst_init(struct coap_packet *cpkt, const struct coap_packet *req,
+		  uint8_t *data, uint16_t max_len)
+{
+	uint16_t id;
+	uint8_t ver;
+
+	ver = coap_header_get_version(req);
+	id = coap_header_get_id(req);
+
+	return coap_packet_init(cpkt, data, max_len, ver, COAP_TYPE_RESET, 0,
+				NULL, 0, id);
+}
+
 static void option_header_set_delta(uint8_t *opt, uint8_t delta)
 {
 	*opt = (delta & 0xF) << 4;

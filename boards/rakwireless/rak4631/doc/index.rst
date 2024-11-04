@@ -71,7 +71,7 @@ The ``rak4631/nrf52840`` board configuration supports the following hardware fea
 +-----------+------------+----------------------+
 
 The default board configuration can be found in
-:zephyr_file:`boards/rak/rak4631/rak4631_nrf52840_defconfig`
+:zephyr_file:`boards/rakwireless/rak4631/rak4631_nrf52840_defconfig`
 
 Connections and IOs
 ===================

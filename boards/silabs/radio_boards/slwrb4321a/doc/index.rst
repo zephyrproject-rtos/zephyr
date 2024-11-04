@@ -60,7 +60,7 @@ features:
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in
-:zephyr_file:`boards/silabs/slwrb4321a/slwrb4321a_defconfig`
+:zephyr_file:`boards/silabs/radio_boards/slwrb4321a/slwrb4321a_defconfig`
 
 Other hardware features, including the WF200 WiFi transceiver, are
 currently not supported by the port.

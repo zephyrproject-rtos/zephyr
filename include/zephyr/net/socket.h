@@ -332,13 +332,11 @@ __syscall void *zsock_get_context_object(int sock);
  * @brief Create a network socket
  *
  * @details
- * @rst
- * See `POSIX.1-2017 article
- * <http://pubs.opengroup.org/onlinepubs/9699919799/functions/socket.html>`__
+ * See POSIX.1-2017 article
+ * http://pubs.opengroup.org/onlinepubs/9699919799/functions/socket.html
  * for normative description.
- * This function is also exposed as ``socket()``
- * if :kconfig:option:`CONFIG_POSIX_API` is defined.
- * @endrst
+ * This function is also exposed as `socket()`
+ * if @kconfig{CONFIG_POSIX_API} is defined.
  *
  * If CONFIG_USERSPACE is enabled, the caller will be granted access to the
  * context object associated with the returned file descriptor.
@@ -351,13 +349,11 @@ __syscall int zsock_socket(int family, int type, int proto);
  * @brief Create an unnamed pair of connected sockets
  *
  * @details
- * @rst
- * See `POSIX.1-2017 article
- * <https://pubs.opengroup.org/onlinepubs/009695399/functions/socketpair.html>`__
+ * See POSIX.1-2017 article
+ * https://pubs.opengroup.org/onlinepubs/009695399/functions/socketpair.html
  * for normative description.
- * This function is also exposed as ``socketpair()``
- * if :kconfig:option:`CONFIG_POSIX_API` is defined.
- * @endrst
+ * This function is also exposed as `socketpair()`
+ * if @kconfig{CONFIG_POSIX_API} is defined.
  */
 __syscall int zsock_socketpair(int family, int type, int proto, int *sv);
 
@@ -365,12 +361,10 @@ __syscall int zsock_socketpair(int family, int type, int proto, int *sv);
  * @brief Close a network socket
  *
  * @details
- * @rst
  * Close a network socket.
- * This function is also exposed as ``close()``
- * if :kconfig:option:`CONFIG_POSIX_API` is defined (in which case it
- * may conflict with generic POSIX ``close()`` function).
- * @endrst
+ * This function is also exposed as `close()`
+ * if @kconfig{CONFIG_POSIX_API} is defined (in which case it
+ * may conflict with generic POSIX `close()` function).
  */
 __syscall int zsock_close(int sock);
 
@@ -378,14 +372,12 @@ __syscall int zsock_close(int sock);
  * @brief Shutdown socket send/receive operations
  *
  * @details
- * @rst
- * See `POSIX.1-2017 article
- * <http://pubs.opengroup.org/onlinepubs/9699919799/functions/shutdown.html>`__
+ * See POSIX.1-2017 article
+ * http://pubs.opengroup.org/onlinepubs/9699919799/functions/shutdown.html
  * for normative description, but currently this function has no effect in
  * Zephyr and provided solely for compatibility with existing code.
- * This function is also exposed as ``shutdown()``
- * if :kconfig:option:`CONFIG_POSIX_API` is defined.
- * @endrst
+ * This function is also exposed as `shutdown()`
+ * if @kconfig{CONFIG_POSIX_API} is defined.
  */
 __syscall int zsock_shutdown(int sock, int how);
 
@@ -393,13 +385,11 @@ __syscall int zsock_shutdown(int sock, int how);
  * @brief Bind a socket to a local network address
  *
  * @details
- * @rst
- * See `POSIX.1-2017 article
- * <http://pubs.opengroup.org/onlinepubs/9699919799/functions/bind.html>`__
+ * See POSIX.1-2017 article
+ * http://pubs.opengroup.org/onlinepubs/9699919799/functions/bind.html
  * for normative description.
- * This function is also exposed as ``bind()``
- * if :kconfig:option:`CONFIG_POSIX_API` is defined.
- * @endrst
+ * This function is also exposed as `bind()`
+ * if @kconfig{CONFIG_POSIX_API} is defined.
  */
 __syscall int zsock_bind(int sock, const struct sockaddr *addr,
 			 socklen_t addrlen);
@@ -408,13 +398,11 @@ __syscall int zsock_bind(int sock, const struct sockaddr *addr,
  * @brief Connect a socket to a peer network address
  *
  * @details
- * @rst
- * See `POSIX.1-2017 article
- * <http://pubs.opengroup.org/onlinepubs/9699919799/functions/connect.html>`__
+ * See POSIX.1-2017 article
+ * http://pubs.opengroup.org/onlinepubs/9699919799/functions/connect.html
  * for normative description.
- * This function is also exposed as ``connect()``
- * if :kconfig:option:`CONFIG_POSIX_API` is defined.
- * @endrst
+ * This function is also exposed as `connect()`
+ * if @kconfig{CONFIG_POSIX_API} is defined.
  */
 __syscall int zsock_connect(int sock, const struct sockaddr *addr,
 			    socklen_t addrlen);
@@ -423,13 +411,11 @@ __syscall int zsock_connect(int sock, const struct sockaddr *addr,
  * @brief Set up a STREAM socket to accept peer connections
  *
  * @details
- * @rst
- * See `POSIX.1-2017 article
- * <http://pubs.opengroup.org/onlinepubs/9699919799/functions/listen.html>`__
+ * See POSIX.1-2017 article
+ * http://pubs.opengroup.org/onlinepubs/9699919799/functions/listen.html
  * for normative description.
- * This function is also exposed as ``listen()``
- * if :kconfig:option:`CONFIG_POSIX_API` is defined.
- * @endrst
+ * This function is also exposed as `listen()`
+ * if @kconfig{CONFIG_POSIX_API} is defined.
  */
 __syscall int zsock_listen(int sock, int backlog);
 
@@ -437,13 +423,11 @@ __syscall int zsock_listen(int sock, int backlog);
  * @brief Accept a connection on listening socket
  *
  * @details
- * @rst
- * See `POSIX.1-2017 article
- * <http://pubs.opengroup.org/onlinepubs/9699919799/functions/accept.html>`__
+ * See POSIX.1-2017 article
+ * http://pubs.opengroup.org/onlinepubs/9699919799/functions/accept.html
  * for normative description.
- * This function is also exposed as ``accept()``
- * if :kconfig:option:`CONFIG_POSIX_API` is defined.
- * @endrst
+ * This function is also exposed as `accept()`
+ * if @kconfig{CONFIG_POSIX_API} is defined.
  */
 __syscall int zsock_accept(int sock, struct sockaddr *addr, socklen_t *addrlen);
 
@@ -451,13 +435,11 @@ __syscall int zsock_accept(int sock, struct sockaddr *addr, socklen_t *addrlen);
  * @brief Send data to an arbitrary network address
  *
  * @details
- * @rst
- * See `POSIX.1-2017 article
- * <http://pubs.opengroup.org/onlinepubs/9699919799/functions/sendto.html>`__
+ * See POSIX.1-2017 article
+ * http://pubs.opengroup.org/onlinepubs/9699919799/functions/sendto.html
  * for normative description.
- * This function is also exposed as ``sendto()``
- * if :kconfig:option:`CONFIG_POSIX_API` is defined.
- * @endrst
+ * This function is also exposed as `sendto()`
+ * if @kconfig{CONFIG_POSIX_API} is defined.
  */
 __syscall ssize_t zsock_sendto(int sock, const void *buf, size_t len,
 			       int flags, const struct sockaddr *dest_addr,
@@ -467,13 +449,11 @@ __syscall ssize_t zsock_sendto(int sock, const void *buf, size_t len,
  * @brief Send data to a connected peer
  *
  * @details
- * @rst
- * See `POSIX.1-2017 article
- * <http://pubs.opengroup.org/onlinepubs/9699919799/functions/send.html>`__
+ * See POSIX.1-2017 article
+ * http://pubs.opengroup.org/onlinepubs/9699919799/functions/send.html
  * for normative description.
- * This function is also exposed as ``send()``
- * if :kconfig:option:`CONFIG_POSIX_API` is defined.
- * @endrst
+ * This function is also exposed as `send()`
+ * if @kconfig{CONFIG_POSIX_API} is defined.
  */
 static inline ssize_t zsock_send(int sock, const void *buf, size_t len,
 				 int flags)
@@ -485,13 +465,11 @@ static inline ssize_t zsock_send(int sock, const void *buf, size_t len,
  * @brief Send data to an arbitrary network address
  *
  * @details
- * @rst
- * See `POSIX.1-2017 article
- * <http://pubs.opengroup.org/onlinepubs/9699919799/functions/sendmsg.html>`__
+ * See POSIX.1-2017 article
+ * http://pubs.opengroup.org/onlinepubs/9699919799/functions/sendmsg.html
  * for normative description.
- * This function is also exposed as ``sendmsg()``
- * if :kconfig:option:`CONFIG_POSIX_API` is defined.
- * @endrst
+ * This function is also exposed as `sendmsg()`
+ * if @kconfig{CONFIG_POSIX_API} is defined.
  */
 __syscall ssize_t zsock_sendmsg(int sock, const struct msghdr *msg,
 				int flags);
@@ -500,13 +478,11 @@ __syscall ssize_t zsock_sendmsg(int sock, const struct msghdr *msg,
  * @brief Receive data from an arbitrary network address
  *
  * @details
- * @rst
- * See `POSIX.1-2017 article
- * <http://pubs.opengroup.org/onlinepubs/9699919799/functions/recvfrom.html>`__
+ * See POSIX.1-2017 article
+ * http://pubs.opengroup.org/onlinepubs/9699919799/functions/recvfrom.html
  * for normative description.
- * This function is also exposed as ``recvfrom()``
- * if :kconfig:option:`CONFIG_POSIX_API` is defined.
- * @endrst
+ * This function is also exposed as `recvfrom()`
+ * if @kconfig{CONFIG_POSIX_API} is defined.
  */
 __syscall ssize_t zsock_recvfrom(int sock, void *buf, size_t max_len,
 				 int flags, struct sockaddr *src_addr,
@@ -516,13 +492,11 @@ __syscall ssize_t zsock_recvfrom(int sock, void *buf, size_t max_len,
  * @brief Receive a message from an arbitrary network address
  *
  * @details
- * @rst
- * See `POSIX.1-2017 article
- * <http://pubs.opengroup.org/onlinepubs/9699919799/functions/recvmsg.html>`__
+ * See POSIX.1-2017 article
+ * http://pubs.opengroup.org/onlinepubs/9699919799/functions/recvmsg.html
  * for normative description.
- * This function is also exposed as ``recvmsg()``
- * if :kconfig:option:`CONFIG_POSIX_API` is defined.
- * @endrst
+ * This function is also exposed as `recvmsg()`
+ * if @kconfig{CONFIG_POSIX_API} is defined.
  */
 __syscall ssize_t zsock_recvmsg(int sock, struct msghdr *msg, int flags);
 
@@ -530,13 +504,11 @@ __syscall ssize_t zsock_recvmsg(int sock, struct msghdr *msg, int flags);
  * @brief Receive data from a connected peer
  *
  * @details
- * @rst
- * See `POSIX.1-2017 article
- * <http://pubs.opengroup.org/onlinepubs/9699919799/functions/recv.html>`__
+ * See POSIX.1-2017 article
+ * http://pubs.opengroup.org/onlinepubs/9699919799/functions/recv.html
  * for normative description.
- * This function is also exposed as ``recv()``
- * if :kconfig:option:`CONFIG_POSIX_API` is defined.
- * @endrst
+ * This function is also exposed as `recv()`
+ * if @kconfig{CONFIG_POSIX_API} is defined.
  */
 static inline ssize_t zsock_recv(int sock, void *buf, size_t max_len,
 				 int flags)
@@ -548,13 +520,11 @@ static inline ssize_t zsock_recv(int sock, void *buf, size_t max_len,
  * @brief Control blocking/non-blocking mode of a socket
  *
  * @details
- * @rst
  * This functions allow to (only) configure a socket for blocking or
  * non-blocking operation (O_NONBLOCK).
- * This function is also exposed as ``fcntl()``
- * if :kconfig:option:`CONFIG_POSIX_API` is defined (in which case
- * it may conflict with generic POSIX ``fcntl()`` function).
- * @endrst
+ * This function is also exposed as `fcntl()`
+ * if @kconfig{CONFIG_POSIX_API} is defined (in which case
+ * it may conflict with generic POSIX `fcntl()` function).
  */
 __syscall int zsock_fcntl_impl(int sock, int cmd, int flags);
 
@@ -583,18 +553,16 @@ static inline int zsock_fcntl_wrapper(int sock, int cmd, ...)
  * @brief Control underlying socket parameters
  *
  * @details
- * @rst
- * See `POSIX.1-2017 article
- * <https://pubs.opengroup.org/onlinepubs/9699919799/functions/ioctl.html>`__
+ * See POSIX.1-2017 article
+ * https://pubs.opengroup.org/onlinepubs/9699919799/functions/ioctl.html
  * for normative description.
  * This function enables querying or manipulating underlying socket parameters.
- * Currently supported @p request values include ``ZFD_IOCTL_FIONBIO``, and
- * ``ZFD_IOCTL_FIONREAD``, to set non-blocking mode, and query the number of
+ * Currently supported @p request values include `ZFD_IOCTL_FIONBIO`, and
+ * `ZFD_IOCTL_FIONREAD`, to set non-blocking mode, and query the number of
  * bytes available to read, respectively.
- * This function is also exposed as ``ioctl()``
- * if :kconfig:option:`CONFIG_POSIX_API` is defined (in which case
- * it may conflict with generic POSIX ``ioctl()`` function).
- * @endrst
+ * This function is also exposed as `ioctl()`
+ * if @kconfig{CONFIG_POSIX_API} is defined (in which case
+ * it may conflict with generic POSIX `ioctl()` function).
  */
 __syscall int zsock_ioctl_impl(int sock, unsigned long request, va_list ap);
 
@@ -620,14 +588,12 @@ static inline int zsock_ioctl_wrapper(int sock, unsigned long request, ...)
  * @brief Efficiently poll multiple sockets for events
  *
  * @details
- * @rst
- * See `POSIX.1-2017 article
- * <http://pubs.opengroup.org/onlinepubs/9699919799/functions/poll.html>`__
+ * See POSIX.1-2017 article
+ * http://pubs.opengroup.org/onlinepubs/9699919799/functions/poll.html
  * for normative description.
- * This function is also exposed as ``poll()``
- * if :kconfig:option:`CONFIG_POSIX_API` is defined (in which case
- * it may conflict with generic POSIX ``poll()`` function).
- * @endrst
+ * This function is also exposed as `poll()`
+ * if @kconfig{CONFIG_POSIX_API} is defined (in which case
+ * it may conflict with generic POSIX `poll()` function).
  */
 static inline int zsock_poll(struct zsock_pollfd *fds, int nfds, int timeout)
 {
@@ -638,16 +604,14 @@ static inline int zsock_poll(struct zsock_pollfd *fds, int nfds, int timeout)
  * @brief Get various socket options
  *
  * @details
- * @rst
- * See `POSIX.1-2017 article
- * <http://pubs.opengroup.org/onlinepubs/9699919799/functions/getsockopt.html>`__
+ * See POSIX.1-2017 article
+ * http://pubs.opengroup.org/onlinepubs/9699919799/functions/getsockopt.html
  * for normative description. In Zephyr this function supports a subset of
  * socket options described by POSIX, but also some additional options
  * available in Linux (some options are dummy and provided to ease porting
  * of existing code).
- * This function is also exposed as ``getsockopt()``
- * if :kconfig:option:`CONFIG_POSIX_API` is defined.
- * @endrst
+ * This function is also exposed as `getsockopt()`
+ * if @kconfig{CONFIG_POSIX_API} is defined.
  */
 __syscall int zsock_getsockopt(int sock, int level, int optname,
 			       void *optval, socklen_t *optlen);
@@ -656,16 +620,14 @@ __syscall int zsock_getsockopt(int sock, int level, int optname,
  * @brief Set various socket options
  *
  * @details
- * @rst
- * See `POSIX.1-2017 article
- * <http://pubs.opengroup.org/onlinepubs/9699919799/functions/setsockopt.html>`__
+ * See POSIX.1-2017 article
+ * http://pubs.opengroup.org/onlinepubs/9699919799/functions/setsockopt.html
  * for normative description. In Zephyr this function supports a subset of
  * socket options described by POSIX, but also some additional options
  * available in Linux (some options are dummy and provided to ease porting
  * of existing code).
- * This function is also exposed as ``setsockopt()``
- * if :kconfig:option:`CONFIG_POSIX_API` is defined.
- * @endrst
+ * This function is also exposed as `setsockopt()`
+ * if @kconfig{CONFIG_POSIX_API} is defined.
  */
 __syscall int zsock_setsockopt(int sock, int level, int optname,
 			       const void *optval, socklen_t optlen);
@@ -674,13 +636,11 @@ __syscall int zsock_setsockopt(int sock, int level, int optname,
  * @brief Get peer name
  *
  * @details
- * @rst
- * See `POSIX.1-2017 article
- * <http://pubs.opengroup.org/onlinepubs/9699919799/functions/getpeername.html>`__
+ * See POSIX.1-2017 article
+ * http://pubs.opengroup.org/onlinepubs/9699919799/functions/getpeername.html
  * for normative description.
- * This function is also exposed as ``getpeername()``
- * if :kconfig:option:`CONFIG_POSIX_API` is defined.
- * @endrst
+ * This function is also exposed as `getpeername()`
+ * if @kconfig{CONFIG_POSIX_API} is defined.
  */
 __syscall int zsock_getpeername(int sock, struct sockaddr *addr,
 				socklen_t *addrlen);
@@ -689,13 +649,11 @@ __syscall int zsock_getpeername(int sock, struct sockaddr *addr,
  * @brief Get socket name
  *
  * @details
- * @rst
- * See `POSIX.1-2017 article
- * <http://pubs.opengroup.org/onlinepubs/9699919799/functions/getsockname.html>`__
+ * See POSIX.1-2017 article
+ * http://pubs.opengroup.org/onlinepubs/9699919799/functions/getsockname.html
  * for normative description.
- * This function is also exposed as ``getsockname()``
- * if :kconfig:option:`CONFIG_POSIX_API` is defined.
- * @endrst
+ * This function is also exposed as `getsockname()`
+ * if @kconfig{CONFIG_POSIX_API} is defined.
  */
 __syscall int zsock_getsockname(int sock, struct sockaddr *addr,
 				socklen_t *addrlen);
@@ -704,13 +662,11 @@ __syscall int zsock_getsockname(int sock, struct sockaddr *addr,
  * @brief Get local host name
  *
  * @details
- * @rst
- * See `POSIX.1-2017 article
- * <http://pubs.opengroup.org/onlinepubs/9699919799/functions/gethostname.html>`__
+ * See POSIX.1-2017 article
+ * http://pubs.opengroup.org/onlinepubs/9699919799/functions/gethostname.html
  * for normative description.
- * This function is also exposed as ``gethostname()``
- * if :kconfig:option:`CONFIG_POSIX_API` is defined.
- * @endrst
+ * This function is also exposed as `gethostname()`
+ * if @kconfig{CONFIG_POSIX_API} is defined.
  */
 __syscall int zsock_gethostname(char *buf, size_t len);
 
@@ -718,13 +674,11 @@ __syscall int zsock_gethostname(char *buf, size_t len);
  * @brief Convert network address from internal to numeric ASCII form
  *
  * @details
- * @rst
- * See `POSIX.1-2017 article
- * <http://pubs.opengroup.org/onlinepubs/9699919799/functions/inet_ntop.html>`__
+ * See POSIX.1-2017 article
+ * http://pubs.opengroup.org/onlinepubs/9699919799/functions/inet_ntop.html
  * for normative description.
- * This function is also exposed as ``inet_ntop()``
- * if :kconfig:option:`CONFIG_POSIX_API` is defined.
- * @endrst
+ * This function is also exposed as `inet_ntop()`
+ * if @kconfig{CONFIG_POSIX_API} is defined.
  */
 static inline char *zsock_inet_ntop(sa_family_t family, const void *src,
 				    char *dst, size_t size)
@@ -736,13 +690,11 @@ static inline char *zsock_inet_ntop(sa_family_t family, const void *src,
  * @brief Convert network address from numeric ASCII form to internal representation
  *
  * @details
- * @rst
- * See `POSIX.1-2017 article
- * <http://pubs.opengroup.org/onlinepubs/9699919799/functions/inet_pton.html>`__
+ * See POSIX.1-2017 article
+ * http://pubs.opengroup.org/onlinepubs/9699919799/functions/inet_pton.html
  * for normative description.
- * This function is also exposed as ``inet_pton()``
- * if :kconfig:option:`CONFIG_POSIX_API` is defined.
- * @endrst
+ * This function is also exposed as `inet_pton()`
+ * if @kconfig{CONFIG_POSIX_API} is defined.
  */
 __syscall int zsock_inet_pton(sa_family_t family, const char *src, void *dst);
 
@@ -781,13 +733,11 @@ __syscall int z_zsock_getaddrinfo_internal(const char *host,
  * @brief Resolve a domain name to one or more network addresses
  *
  * @details
- * @rst
- * See `POSIX.1-2017 article
- * <http://pubs.opengroup.org/onlinepubs/9699919799/functions/getaddrinfo.html>`__
+ * See POSIX.1-2017 article
+ * http://pubs.opengroup.org/onlinepubs/9699919799/functions/getaddrinfo.html
  * for normative description.
- * This function is also exposed as ``getaddrinfo()``
- * if :kconfig:option:`CONFIG_POSIX_API` is defined.
- * @endrst
+ * This function is also exposed as `getaddrinfo()`
+ * if @kconfig{CONFIG_POSIX_API} is defined.
  */
 int zsock_getaddrinfo(const char *host, const char *service,
 		      const struct zsock_addrinfo *hints,
@@ -797,13 +747,11 @@ int zsock_getaddrinfo(const char *host, const char *service,
  * @brief Free results returned by zsock_getaddrinfo()
  *
  * @details
- * @rst
- * See `POSIX.1-2017 article
- * <http://pubs.opengroup.org/onlinepubs/9699919799/functions/freeaddrinfo.html>`__
+ * See POSIX.1-2017 article
+ * http://pubs.opengroup.org/onlinepubs/9699919799/functions/freeaddrinfo.html
  * for normative description.
- * This function is also exposed as ``freeaddrinfo()``
- * if :kconfig:option:`CONFIG_POSIX_API` is defined.
- * @endrst
+ * This function is also exposed as `freeaddrinfo()`
+ * if @kconfig{CONFIG_POSIX_API} is defined.
  */
 void zsock_freeaddrinfo(struct zsock_addrinfo *ai);
 
@@ -811,13 +759,11 @@ void zsock_freeaddrinfo(struct zsock_addrinfo *ai);
  * @brief Convert zsock_getaddrinfo() error code to textual message
  *
  * @details
- * @rst
- * See `POSIX.1-2017 article
- * <http://pubs.opengroup.org/onlinepubs/9699919799/functions/gai_strerror.html>`__
+ * See POSIX.1-2017 article
+ * http://pubs.opengroup.org/onlinepubs/9699919799/functions/gai_strerror.html
  * for normative description.
- * This function is also exposed as ``gai_strerror()``
- * if :kconfig:option:`CONFIG_POSIX_API` is defined.
- * @endrst
+ * This function is also exposed as `gai_strerror()`
+ * if @kconfig{CONFIG_POSIX_API} is defined.
  */
 const char *zsock_gai_strerror(int errcode);
 
@@ -848,13 +794,11 @@ const char *zsock_gai_strerror(int errcode);
  * @brief Resolve a network address to a domain name or ASCII address
  *
  * @details
- * @rst
- * See `POSIX.1-2017 article
- * <http://pubs.opengroup.org/onlinepubs/9699919799/functions/getnameinfo.html>`__
+ * See POSIX.1-2017 article
+ * http://pubs.opengroup.org/onlinepubs/9699919799/functions/getnameinfo.html
  * for normative description.
- * This function is also exposed as ``getnameinfo()``
- * if :kconfig:option:`CONFIG_POSIX_API` is defined.
- * @endrst
+ * This function is also exposed as `getnameinfo()`
+ * if @kconfig{CONFIG_POSIX_API} is defined.
  */
 int zsock_getnameinfo(const struct sockaddr *addr, socklen_t addrlen,
 		      char *host, socklen_t hostlen,

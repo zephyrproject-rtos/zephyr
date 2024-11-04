@@ -285,12 +285,20 @@ static enum wifi_link_mode get_sta_link_mode(struct wpa_supplicant *wpa_s, struc
 #ifdef CONFIG_WIFI_NM_HOSTAPD_AP
 static bool is_twt_capable(struct hostapd_iface *iface, struct sta_info *sta)
 {
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_11AX
 	return hostapd_get_he_twt_responder(iface->bss[0], IEEE80211_MODE_AP);
+#else
+	return false;
+#endif
 }
 #else
 static bool is_twt_capable(struct wpa_supplicant *wpa_s, struct sta_info *sta)
 {
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_11AX
 	return hostapd_get_he_twt_responder(wpa_s->ap_iface->bss[0], IEEE80211_MODE_AP);
+#else
+	return false;
+#endif
 }
 #endif
 

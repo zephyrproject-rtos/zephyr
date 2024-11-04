@@ -1148,7 +1148,7 @@ calculate_string_length:
 	for (unsigned int i = 0; i < scpy_cnt; i++) {
 		uint8_t loc = cpy_str_pos[i];
 		const char *str = *(const char **)&buf32[loc];
-		uint16_t str_len = strl ? strl[i] : 0;
+		uint16_t str_len = (strl && (i < strl_len)) ? strl[i] : 0;
 
 		rv = cb(&loc, 1, ctx);
 		if (rv < 0) {

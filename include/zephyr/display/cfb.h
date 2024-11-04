@@ -9,8 +9,8 @@
  * @brief Public Monochrome Character Framebuffer API
  */
 
-#ifndef __CFB_H__
-#define __CFB_H__
+#ifndef ZEPHYR_INCLUDE_DISPLAY_CFB_H_
+#define ZEPHYR_INCLUDE_DISPLAY_CFB_H_
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/display.h>
@@ -256,4 +256,4 @@ void cfb_framebuffer_deinit(const struct device *dev);
  * @}
  */
 
-#endif /* __CFB_H__ */
+#endif /* ZEPHYR_INCLUDE_DISPLAY_CFB_H_ */

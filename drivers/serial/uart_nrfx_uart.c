@@ -287,7 +287,7 @@ static void uart_nrfx_poll_out(const struct device *dev, unsigned char c)
 	/* Wait until the transmitter is ready, i.e. the character is sent. */
 	bool res;
 
-	NRFX_WAIT_FOR(event_txdrdy_check(), 1000, 1, res);
+	NRFX_WAIT_FOR(event_txdrdy_check(), 10000, 1, res);
 
 	/* Deactivate the transmitter so that it does not needlessly
 	 * consume power.

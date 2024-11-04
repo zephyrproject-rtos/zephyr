@@ -14,8 +14,8 @@
  * threads. It can be used together with a hardware watchdog as a fallback.
  */
 
-#ifndef TASK_WDT_H_
-#define TASK_WDT_H_
+#ifndef ZEPHYR_INCLUDE_TASK_WDT_H_
+#define ZEPHYR_INCLUDE_TASK_WDT_H_
 
 #include <zephyr/types.h>
 #include <zephyr/kernel.h>
@@ -110,4 +110,4 @@ int task_wdt_feed(int channel_id);
  * @}
  */
 
-#endif /* TASK_WDT_H_ */
+#endif /* ZEPHYR_INCLUDE_TASK_WDT_H_ */

@@ -8,3 +8,4 @@ io_rw_32
 \b[a-zA-Z_][a-zA-Z0-9_]*TypeDef
 Pwm
 FILE
+NRF_GPIO_Type

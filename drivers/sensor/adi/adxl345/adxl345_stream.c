@@ -157,6 +157,8 @@ static void adxl345_process_fifo_samples_cb(struct rtio *r, const struct rtio_sq
 	hdr->is_fifo = 1;
 	hdr->timestamp = data->timestamp;
 	hdr->int_status = data->status1;
+	hdr->is_full_res = data->is_full_res;
+	hdr->selected_range = data->selected_range;
 	hdr->accel_odr = cfg->odr;
 	hdr->sample_set_size = sample_set_size;
 

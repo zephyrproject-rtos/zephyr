@@ -26,11 +26,11 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define PHY_MC_KSZ8081_OMSO_REG			0x16
 #define PHY_MC_KSZ8081_OMSO_FACTORY_MODE_MASK	BIT(15)
 #define PHY_MC_KSZ8081_OMSO_NAND_TREE_MASK	BIT(5)
+#define PHY_MC_KSZ8081_OMSO_RMII_OVERRIDE_MASK	BIT(1)
+#define PHY_MC_KSZ8081_OMSO_MII_OVERRIDE_MASK	BIT(0)
 
 #define PHY_MC_KSZ8081_CTRL2_REG		0x1F
 #define PHY_MC_KSZ8081_CTRL2_REF_CLK_SEL	BIT(7)
-
-#define PHY_MC_KSZ8081_RESET_HOLD_TIME
 
 enum ksz8081_interface {
 	KSZ8081_MII,
@@ -237,6 +237,10 @@ static int phy_mc_ksz8081_static_cfg(const struct device *dev)
 
 	omso &= ~PHY_MC_KSZ8081_OMSO_FACTORY_MODE_MASK &
 		~PHY_MC_KSZ8081_OMSO_NAND_TREE_MASK;
+	if (config->phy_iface == KSZ8081_RMII) {
+		omso &= ~PHY_MC_KSZ8081_OMSO_MII_OVERRIDE_MASK;
+		omso |= PHY_MC_KSZ8081_OMSO_RMII_OVERRIDE_MASK;
+	}
 
 	ret = phy_mc_ksz8081_write(dev, PHY_MC_KSZ8081_OMSO_REG, (uint32_t)omso);
 	if (ret) {
@@ -289,11 +293,15 @@ static int phy_mc_ksz8081_reset(const struct device *dev)
 		goto done;
 	}
 
-	/* Wait for 500 ms as specified by datasheet */
-	k_busy_wait(USEC_PER_MSEC * 500);
+	/* Wait for at least 500 us as specified by datasheet */
+	k_busy_wait(1000);
 
 	/* Reset over */
 	ret = gpio_pin_set_dt(&config->reset_gpio, 1);
+
+	/* After deasserting reset, must wait at least 100 us to use programming interface */
+	k_busy_wait(200);
+
 	goto done;
 skip_reset_gpio:
 #endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios) */
@@ -301,8 +309,11 @@ skip_reset_gpio:
 	if (ret) {
 		goto done;
 	}
-	/* Wait for 500 ms as specified by datasheet */
-	k_busy_wait(USEC_PER_MSEC * 500);
+
+	/* According to IEEE 802.3, Section 2, Subsection 22.2.4.1.1,
+	 * a PHY reset may take up to 0.5 s.
+	 */
+	k_busy_wait(500 * USEC_PER_MSEC);
 
 done:
 	/* Unlock mutex */

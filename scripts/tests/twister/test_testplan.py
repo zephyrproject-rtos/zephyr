@@ -766,6 +766,7 @@ def test_testplan_load(
     testplan.apply_filters = mock.Mock()
 
     with mock.patch('twisterlib.testinstance.TestInstance.create_overlay', mock.Mock()), \
+         mock.patch('twisterlib.testinstance.TestInstance.check_runnable', return_value=True), \
          pytest.raises(exception) if exception else nullcontext():
         testplan.load()
 
@@ -1600,7 +1601,7 @@ def test_testplan_load_from_file(caplog, device_testing, expected_tfilter):
             'testcases': {
                 'TS1.tc1': {
                     'status': TwisterStatus.PASS,
-                    'reason': None,
+                    'reason': 'passed',
                     'duration': 60.0,
                     'output': ''
                 }

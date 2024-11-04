@@ -66,17 +66,20 @@
 	fakedomain_0: fakedomain_0 {
 		compatible = "fakedomain";
 		status = "okay";
+		#power-domain-cells = <0>;
 		power-domains = <&fakedomain_2>;
 	};
 
 	fakedomain_1: fakedomain_1 {
 		compatible = "fakedomain";
 		status = "okay";
+		#power-domain-cells = <0>;
 		power-domains = <&fakedomain_0>;
 	};
 
 	fakedomain_2: fakedomain_2 {
 		compatible = "fakedomain";
 		status = "okay";
+		#power-domain-cells = <0>;
 	};
 };

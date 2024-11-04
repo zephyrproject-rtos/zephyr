@@ -9,3 +9,6 @@ config SHIELD_NRF7002EK_NRF7001
 
 config SHIELD_NRF7002EK_NRF7000
 	def_bool $(shields_list_contains,nrf7002ek_nrf7000)
+
+config SHIELD_NRF7002EK_COEX
+	def_bool $(shields_list_contains,nrf7002ek_coex)

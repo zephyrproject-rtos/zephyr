@@ -48,7 +48,7 @@ The key features of the FPB-RA6E1 board are categorized in three groups as follo
 
 .. figure:: fpb_ra6e1.webp
 	:align: center
-	:alt: RA6E1 Evaluation Kit
+	:alt: RA6E1 Fast Prototyping Board
 
 	FPB-RA6E1 Board Functional Area Definitions (Credit: Renesas Electronics Corporation)
 
@@ -56,7 +56,7 @@ Hardware
 ********
 Detailed hardware feature for the RA6E1 MCU group can be found at `RA6E1 Group User's Manual Hardware`_
 
-.. figure:: ra6e1-block-diagram.webp
+.. figure:: ra6e1_block_diagram.webp
 	:width: 442px
 	:align: center
 	:alt: RA6E1 MCU group feature

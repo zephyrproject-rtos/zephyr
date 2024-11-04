@@ -463,6 +463,7 @@ Bluetooth Audio:
     - pin-zephyr
     - niym-ot
     - jthm-ot
+    - babrsn
   files:
     - subsys/bluetooth/audio/
     - include/zephyr/bluetooth/audio/
@@ -1396,6 +1397,8 @@ Release Notes:
   status: maintained
   maintainers:
     - de-nordic
+  collaborators:
+    - rghaddab
   files:
     - drivers/flash/
     - dts/bindings/flash_controller/
@@ -2298,18 +2301,6 @@ Filesystems:
     - "area: File System"
   tests:
     - filesystem
-
-"Filesystems: FatFs reentrant support":
-  status: maintained
-  maintainers:
-    - ox11
-  files:
-    - modules/fatfs/zfs_ffsystem.c
-    - tests/subsys/fs/fat_fs_api/src/test_fat_file_reentrant.c
-  labels:
-    - "area: File System"
-  tests:
-    - filesystem.fat
 
 Formatted Output:
   status: maintained
@@ -4189,6 +4180,17 @@ Storage:
     - "area: Storage"
   tests:
     - storage
+
+Storage ZMS:
+  status: maintained
+  maintainers:
+    - rghaddab
+  files:
+    - subsys/fs/zms/
+    - include/zephyr/fs/zms.h
+    - samples/subsys/fs/zms/
+    - tests/subsys/fs/zms/
+    - doc/services/storage/zms/zms.rst
 
 Sysbuild:
   status: maintained

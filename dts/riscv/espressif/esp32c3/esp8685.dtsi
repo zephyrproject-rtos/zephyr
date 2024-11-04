@@ -4,6 +4,4 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&wifi {
-	status = "okay";
-};
+#include "esp32c3_common.dtsi"

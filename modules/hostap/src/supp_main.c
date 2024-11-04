@@ -909,6 +909,7 @@ struct hostapd_config *hostapd_config_read2(const char *fname)
 	conf->ieee80211ac       = 1;
 	conf->vht_oper_chwidth  = CHANWIDTH_USE_HT;
 	conf->vht_capab |= VHT_CAP_MAX_A_MPDU_LENGTH_EXPONENT_MAX;
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_11AX
 	conf->ieee80211ax       = 1;
 	conf->he_oper_chwidth   = CHANWIDTH_USE_HT;
 	conf->he_phy_capab.he_su_beamformer = 0;
@@ -918,6 +919,7 @@ struct hostapd_config *hostapd_config_read2(const char *fname)
 	conf->he_op.he_default_pe_duration  = 0;
 	/* Set default basic MCS/NSS set to single stream MCS 0-7 */
 	conf->he_op.he_basic_mcs_nss_set    = 0xfffc;
+#endif
 
 	for (i = 0; i < conf->num_bss; i++) {
 		hostapd_set_security_params(conf->bss[i], 1);

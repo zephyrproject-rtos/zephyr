@@ -58,7 +58,7 @@ The board configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in
-:zephyr_file:`boards/silabs/radio_boards/slwrb4255/slwrb4255_defconfig`
+:zephyr_file:`boards/silabs/radio_boards/slwrb4255a/slwrb4255a_defconfig`
 
 Connections and IOs
 ===================

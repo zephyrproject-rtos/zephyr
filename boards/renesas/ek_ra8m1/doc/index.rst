@@ -71,7 +71,7 @@ Hardware
 ********
 Detail Hardware feature for the RA8M1 MCU group can be found at `RA8M1 Group User's Manual Hardware`_
 
-.. figure:: ra8m1-block-diagram.jpg
+.. figure:: ra8m1_block_diagram.jpg
 	:width: 442px
 	:align: center
 	:alt: RA8M1 MCU group feature

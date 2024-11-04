@@ -81,7 +81,7 @@ means Pin number 2 on PORTA, as used in the board's datasheets and manuals.
 +-------+-------------+-------------------------------------+
 
 The default configuration can be found in
-:zephyr_file:`boards/silabs/sparkfun_thing_plus_matter_mgm240p/sparkfun_thing_plus_matter_mgm240p_defconfig`
+:zephyr_file:`boards/sparkfun/thing_plus_matter_mgm240p/sparkfun_thing_plus_matter_mgm240p_defconfig`
 
 System Clock
 ============
