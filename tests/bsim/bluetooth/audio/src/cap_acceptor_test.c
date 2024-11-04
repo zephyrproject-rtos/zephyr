@@ -23,6 +23,7 @@
 #include <zephyr/bluetooth/audio/micp.h>
 #include <zephyr/bluetooth/audio/vcp.h>
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/byteorder.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/uuid.h>
@@ -431,7 +432,22 @@ static struct bt_bap_scan_delegator_cb scan_delegator_cbs = {
 /* TODO: Expand with CAP service data */
 static const struct bt_data cap_acceptor_ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
-	BT_DATA_BYTES(BT_DATA_UUID16_ALL, BT_UUID_16_ENCODE(BT_UUID_CAS_VAL)),
+	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
+	BT_DATA_BYTES(BT_DATA_UUID16_SOME, BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL),
+		      BT_UUID_16_ENCODE(BT_UUID_CAS_VAL)),
+	BT_DATA_BYTES(BT_DATA_SVC_DATA16, BT_UUID_16_ENCODE(BT_UUID_CAS_VAL),
+		      BT_AUDIO_UNICAST_ANNOUNCEMENT_TARGETED),
+	IF_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER,
+		   (BT_DATA_BYTES(BT_DATA_SVC_DATA16,
+				  BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL),
+				  BT_AUDIO_UNICAST_ANNOUNCEMENT_TARGETED,
+				  BT_BYTES_LIST_LE16(SINK_CONTEXT),
+				  BT_BYTES_LIST_LE16(SOURCE_CONTEXT),
+				  0x00, /* Metadata length */),
+	))
+	IF_ENABLED(CONFIG_BT_BAP_SCAN_DELEGATOR,
+		   (BT_DATA_BYTES(BT_DATA_SVC_DATA16, BT_UUID_16_ENCODE(BT_UUID_BASS_VAL)),
+	))
 };
 
 static struct bt_csip_set_member_svc_inst *csip_set_member;
@@ -638,7 +654,7 @@ void test_start_adv(void)
 	struct bt_le_ext_adv *ext_adv;
 
 	/* Create a connectable non-scannable advertising set */
-	err = bt_le_ext_adv_create(BT_LE_ADV_CONN_FAST_1, NULL, &ext_adv);
+	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN, NULL, &ext_adv);
 	if (err != 0) {
 		FAIL("Failed to create advertising set (err %d)\n", err);
 
