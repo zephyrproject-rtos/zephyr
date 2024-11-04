@@ -19,6 +19,8 @@ properties:
       - "sdio"
       - "spi"
       - "i2c"
+      - "smd"
+      - "virtio"
       - "ipm"
   bt-hci-quirks:
     type: string-array
