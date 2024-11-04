@@ -140,6 +140,9 @@ Bluetooth
     :c:func:`bt_conn_le_create` and :c:func:`bt_conn_le_create_synced` return an error if the
     connection pointer passed as an argument is not NULL.
 
+  * Added parameter ``mps`` to :c:func:`bt_l2cap_ecred_chan_reconfigure`. See migration guide for
+    more details.
+
 * Controller
 
   * Added Periodic Advertising Sync Transfer (PAST) support with support for both sending and receiving roles.

@@ -476,6 +476,19 @@ Refer to the extended advertising sample for an example
 implementation of advertiser restarting. The same technique can
 be used for legacy advertising.
 
+:c:func:`bt_l2cap_ecred_chan_reconfigure`
+-----------------------------------------
+
+:c:func:`bt_l2cap_ecred_chan_reconfigure` now expects the ``mps`` parameter
+explicitly. To upgrade without change in behavior, perform the following
+substitution:
+
+.. code-block:: diff
+
+   -bt_l2cap_ecred_chan_reconfigure(chan, mtu);
+   +uint16_t mps = MIN(mtu + BT_L2CAP_SDU_HDR_SIZE, BT_L2CAP_RX_MTU);
+   +bt_l2cap_ecred_chan_reconfigure(chan, mtu, mps);
+
 Bluetooth Crypto
 ================
 
