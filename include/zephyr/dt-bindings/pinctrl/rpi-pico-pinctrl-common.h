@@ -11,7 +11,7 @@
 #define RP2_ALT_FUNC_POS  0
 #define RP2_ALT_FUNC_MASK 0xf
 
-#define RP2_PIN_NUM_POS  4
+#define RP2_PIN_NUM_POS  5
 #define RP2_PIN_NUM_MASK 0x1f
 
 #define RP2_GPIO_OVERRIDE_NORMAL 0
