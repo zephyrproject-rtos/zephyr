@@ -38,6 +38,63 @@
 	ldr	tmp_reg, [cpu_ctx_reg, # CPU_CTX_SR_OFFSET(sr_name)];	\
 	msr	sr_name, tmp_reg;
 
+/*
+ * The following macros could be written as assembler macros, but C is used
+ * for portability (assembler macro syntax may differ between toolchains).
+ */
+
+/*
+ * Pushes registers r4~r12 and lr on the stack.
+ * r0 is unmodified but other GPRs may be overwritten.
+ */
+#define PUSH_GPRS							\
+	push	{r4-r12, lr}
+
+/*
+ * Pops registers r4~r12 and lr from the stack
+ * r0 is unmodified but other GPRs may be overwritten.
+ */
+#define POP_GPRS							\
+	pop	{r4-r12, lr}
+
+/*
+ * Saves the CPU's special registers in the `struct __cpu_context`
+ * pointed to by the `cpu_ctx` register.
+ * The `tmp_reg` register is overwritten as part of this process.
+ */
+#define SAVE_SPECIAL_REGISTERS(cpu_ctx, tmp_reg)			\
+	SAVE_SPECIAL_REG(msp,		cpu_ctx, tmp_reg)		\
+	SAVE_SPECIAL_REG(msplim,	cpu_ctx, tmp_reg)		\
+	SAVE_SPECIAL_REG(psp,		cpu_ctx, tmp_reg)		\
+	SAVE_SPECIAL_REG(psplim,	cpu_ctx, tmp_reg)		\
+	SAVE_SPECIAL_REG(primask,	cpu_ctx, tmp_reg)		\
+	SAVE_SPECIAL_REG(faultmask,	cpu_ctx, tmp_reg)		\
+	SAVE_SPECIAL_REG(basepri,	cpu_ctx, tmp_reg)		\
+	SAVE_SPECIAL_REG(control,	cpu_ctx, tmp_reg)
+
+/*
+ * Restores the CPU's special registers from the `struct __cpu_context`
+ * pointed to by the `cpu_ctx` register.
+ * The `tmp_reg` register is overwritten as part of this process.
+ *
+ * N.B.: ISB at the end is required because "Software must use an ISB
+ * barrier instruction to ensure a write to the CONTROL register takes
+ * effect before the next instruction is executed."
+ *
+ * If this macro is modified, make sure CONTROL is always the last
+ * restored register, and that an ISB follows the MSR instruction.
+ */
+#define RESTORE_SPECIAL_REGISTERS(cpu_ctx, tmp_reg)			\
+	RESTORE_SPECIAL_REG(msp,	cpu_ctx, tmp_reg)		\
+	RESTORE_SPECIAL_REG(msplim,	cpu_ctx, tmp_reg)		\
+	RESTORE_SPECIAL_REG(psp,	cpu_ctx, tmp_reg)		\
+	RESTORE_SPECIAL_REG(psplim,	cpu_ctx, tmp_reg)		\
+	RESTORE_SPECIAL_REG(primask,	cpu_ctx, tmp_reg)		\
+	RESTORE_SPECIAL_REG(faultmask,	cpu_ctx, tmp_reg)		\
+	RESTORE_SPECIAL_REG(basepri,	cpu_ctx, tmp_reg)		\
+	RESTORE_SPECIAL_REG(control,	cpu_ctx, tmp_reg)		\
+	isb
+
 _ASM_FILE_PROLOGUE
 
 GTEXT(pm_s2ram_mark_set)
@@ -50,7 +107,7 @@ SECTION_FUNC(TEXT, arch_pm_s2ram_suspend)
 	 *
 	 * r0: address of the system_off function
 	 */
-	push	{r4-r12, lr}
+	PUSH_GPRS
 
 	/* Move system_off to protected register. */
 	mov 	r4, r0
@@ -58,21 +115,7 @@ SECTION_FUNC(TEXT, arch_pm_s2ram_suspend)
 	/* Store CPU context */
 	ldr	r1, =_cpu_context
 
-	SAVE_SPECIAL_REG(msp, r1, r2)
-
-	SAVE_SPECIAL_REG(msplim, r1, r2)
-
-	SAVE_SPECIAL_REG(psp, r1, r2)
-
-	SAVE_SPECIAL_REG(psplim, r1, r2)
-
-	SAVE_SPECIAL_REG(primask, r1, r2)
-
-	SAVE_SPECIAL_REG(faultmask, r1, r2)
-
-	SAVE_SPECIAL_REG(basepri, r1, r2)
-
-	SAVE_SPECIAL_REG(control, r1, r2)
+	SAVE_SPECIAL_REGISTERS(/* ctx: */ r1, /* tmp: */ r2)
 
 	/*
 	 * Mark entering suspend to RAM.
@@ -102,7 +145,7 @@ SECTION_FUNC(TEXT, arch_pm_s2ram_suspend)
 	/* Move system_off back to r0 as return value */
 	mov	r0, r4
 
-	pop	{r4-r12, lr}
+	POP_GPRS
 	bx	lr
 
 
@@ -124,24 +167,9 @@ resume:
 	 */
 	ldr	r0, =_cpu_context
 
-	RESTORE_SPECIAL_REG(msp, r0, r1)
+	RESTORE_SPECIAL_REGISTERS(/* ctx: */ r0, /* tmp: */ r1)
 
-	RESTORE_SPECIAL_REG(msplim, r0, r1)
-
-	RESTORE_SPECIAL_REG(psp, r0, r1)
-
-	RESTORE_SPECIAL_REG(psplim, r0, r1)
-
-	RESTORE_SPECIAL_REG(primask, r0, r1)
-
-	RESTORE_SPECIAL_REG(faultmask, r0, r1)
-
-	RESTORE_SPECIAL_REG(basepri, r0, r1)
-
-	RESTORE_SPECIAL_REG(control, r0, r1)
-	isb
-
-	pop	{r4-r12, lr}
+	POP_GPRS
 
 	/*
 	 * Set the return value and return
