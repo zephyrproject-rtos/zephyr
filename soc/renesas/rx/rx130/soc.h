@@ -11,4 +11,6 @@
 #ifndef _SOC_H_
 #define _SOC_H_
 
+#include <mcu_clocks.h>
+
 #endif /* _SOC_H_ */
