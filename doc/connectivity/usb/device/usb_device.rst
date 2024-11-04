@@ -212,7 +212,7 @@ DFU
 USB DFU class implementation is tightly coupled to :ref:`dfu` and :ref:`mcuboot_api`.
 This means that the target platform must support the :ref:`flash_img_api` API.
 
-See :zephyr:code-sample:`usb-dfu` sample for reference.
+See :zephyr:code-sample:`legacy-usb-dfu` sample for reference.
 
 USB Human Interface Devices (HID) support
 =========================================
@@ -389,7 +389,7 @@ The application should register descriptors such as Capability Descriptor
 using :c:func:`usb_bos_register_cap`. Registered descriptors are added to the root
 BOS descriptor and handled by the stack.
 
-See :zephyr:code-sample:`webusb` sample for reference.
+See :zephyr:code-sample:`legacy-webusb` sample for reference.
 
 Implementing a non-standard USB class
 *************************************
@@ -582,7 +582,7 @@ The following Product IDs are currently used:
 +----------------------------------------------------+--------+
 | :zephyr:code-sample:`usb-cdc-acm-console`          | 0x0004 |
 +----------------------------------------------------+--------+
-| :zephyr:code-sample:`usb-dfu` (Run-Time)           | 0x0005 |
+| :zephyr:code-sample:`legacy-usb-dfu` (Run-Time)    | 0x0005 |
 +----------------------------------------------------+--------+
 | Reserved (previously: usb-hid)                     | 0x0006 |
 +----------------------------------------------------+--------+
@@ -590,9 +590,9 @@ The following Product IDs are currently used:
 +----------------------------------------------------+--------+
 | :zephyr:code-sample:`usb-mass`                     | 0x0008 |
 +----------------------------------------------------+--------+
-| :zephyr:code-sample:`testusb-app`                  | 0x0009 |
+| :zephyr:code-sample:`legacy-testusb-app`           | 0x0009 |
 +----------------------------------------------------+--------+
-| :zephyr:code-sample:`webusb`                       | 0x000A |
+| :zephyr:code-sample:`legacy-webusb`                | 0x000A |
 +----------------------------------------------------+--------+
 | :zephyr:code-sample:`bluetooth_hci_usb`            | 0x000B |
 +----------------------------------------------------+--------+
@@ -604,7 +604,7 @@ The following Product IDs are currently used:
 +----------------------------------------------------+--------+
 | :zephyr:code-sample:`uac2-implicit-feedback`       | 0x000F |
 +----------------------------------------------------+--------+
-| :zephyr:code-sample:`usb-dfu` (DFU Mode)           | 0xFFFF |
+| :zephyr:code-sample:`legacy-usb-dfu` (DFU Mode)    | 0xFFFF |
 +----------------------------------------------------+--------+
 
 The USB device descriptor field ``bcdDevice`` (Device Release Number) represents
