@@ -1,8 +1,0 @@
-# Openthead HDLC RCP communication Interface configuration options
-# Copyright 2024 NXP
-# All rights reserved.
-# SPDX-License-Identifier: Apache-2.0
-
-menuconfig OPENTHREAD_HDLC_RCP
-	bool "NXP OPENTHREAD HDLC RCP interface"
-	depends on NET_L2_OPENTHREAD
