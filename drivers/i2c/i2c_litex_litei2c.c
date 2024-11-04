@@ -113,6 +113,8 @@ static int i2c_litex_transfer(const struct device *dev, struct i2c_msg *msgs, ui
 	uint32_t tx_j = 0;
 	uint32_t rx_j = 0;
 
+	uint8_t *burst_buf;
+
 	int ret = 0;
 
 	litex_write8(1, config->master_active_addr);
@@ -129,6 +131,22 @@ static int i2c_litex_transfer(const struct device *dev, struct i2c_msg *msgs, ui
 		} else {
 			len_tx_buf = msgs[i].len;
 			tx_buf_ptr = msgs[i].buf;
+			/* This is only used to be able to do burst writes */
+			if (!(msgs[i].flags & I2C_MSG_STOP) && (i + 1 < num_msgs) &&
+			    !(msgs[i + 1].flags & I2C_MSG_READ) &&
+			    !(msgs[i + 1].flags & I2C_MSG_RESTART)) {
+				burst_buf = k_malloc(msgs[i].len + msgs[i + 1].len);
+				if (burst_buf == NULL) {
+					LOG_ERR("Failed to allocate memory");
+					return -ENOMEM;
+				}
+				memcpy(burst_buf, msgs[i].buf, msgs[i].len);
+				memcpy(burst_buf + msgs[i].len, msgs[i + 1].buf, msgs[i + 1].len);
+				len_tx_buf = msgs[i].len + msgs[i + 1].len;
+				tx_buf_ptr = burst_buf;
+				i++;
+			}
+
 			if (!(msgs[i].flags & I2C_MSG_STOP) && (i + 1 < num_msgs) &&
 			    (msgs[i + 1].flags & I2C_MSG_READ) &&
 			    (msgs[i + 1].flags & I2C_MSG_RESTART)) {
@@ -250,6 +268,9 @@ static int i2c_litex_transfer(const struct device *dev, struct i2c_msg *msgs, ui
 		} while ((tx_j < len_tx_buf) || (rx_j < len_rx_buf));
 
 		LOG_HEXDUMP_DBG(rx_buf_ptr, len_rx_buf, "rx_buf");
+
+		k_free(burst_buf);
+		burst_buf = NULL;
 	}
 
 transfer_end:
