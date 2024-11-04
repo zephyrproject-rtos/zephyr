@@ -1,0 +1,21 @@
+# Copyright 2024 Fabian Blatz <fabianblatz@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config DISPLAY_BACKLIGHT
+	bool
+	help
+	  Enable library used for display backlight drivers.
+
+if DISPLAY_BACKLIGHT
+
+config DISPLAY_BACKLIGHT_CONTROL_ENABLE_GPIO
+	bool "Gpio enable pin for display backlight"
+	help
+	  Enable support for gpio enable pin.
+
+config DISPLAY_BACKLIGHT_CONTROL_PWM
+	bool "Control display brightness via PWM"
+	help
+	  Enable brightness control via external PWM.
+
+endif # DISPLAY_BACKLIGHT

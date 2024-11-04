@@ -359,7 +359,8 @@ static inline int display_blanking_off(const struct device *dev)
  * @brief Set the brightness of the display
  *
  * Set the brightness of the display in steps of 1/256, where 255 is full
- * brightness and 0 is minimal.
+ * brightness and 0 is minimal. If @ref CONFIG_DISPLAY_BACKLIGHT is enabled
+ * the brightness of the backlight is set.
  *
  * @param dev Pointer to device structure
  * @param brightness Brightness in steps of 1/256
@@ -372,6 +373,10 @@ static inline int display_set_brightness(const struct device *dev,
 {
 	struct display_driver_api *api =
 		(struct display_driver_api *)dev->api;
+
+#ifdef CONFIG_DISPLAY_BACKLIGHT
+	return display_backlight_set_brightness(dev, brightness);
+#endif /* CONFIG_DISPLAY_BACKLIGHT */
 
 	if (api->set_brightness == NULL) {
 		return -ENOSYS;

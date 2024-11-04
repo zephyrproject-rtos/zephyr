@@ -1,0 +1,22 @@
+# Copyright (c) 2024 Fabian Blatz <fabianblatz@gmail.com>
+# Common fields for display backlights
+
+include: base.yaml
+
+properties:
+  default-brightness:
+    type: int
+    description: |
+      Brightness applied on display initialization in the range 0-255.
+      If not specified, the default value is 0.
+
+  backlight-enable-gpios:
+    type: phandle-array
+    description: |
+      External GPIO handles for enabling the backlight.
+      The backlight is enabled when the GPIO is set to the active state.
+
+  backlight-pwms:
+    type: phandle-array
+    description: |
+      External PWM handles for controlling the backlight.
