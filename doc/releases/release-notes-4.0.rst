@@ -298,6 +298,11 @@ Drivers and Sensors
 
 * CAN
 
+  * Added initial support for Renesas RA CANFD (:dtcompatible:`renesas,ra-canfd-global`,
+    :dtcompatible:`renesas,ra-canfd`)
+  * Added Flexcan support for S32Z27x (:dtcompatible:`nxp,flexcan`, :dtcompatible:`nxp,flexcan-fd`)
+  * Improved NXP S32 CANXL error reporting (:dtcompatible:`nxp,s32-canxl`)
+
 * Charger
 
 * Clock control
