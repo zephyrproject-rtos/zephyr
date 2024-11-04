@@ -8,20 +8,14 @@ compatible: "lattice,ice40-fpga"
 include: spi-device.yaml
 
 properties:
-  load-mode:
-    type: int
-    required: true
+  load-mode-bitbang:
+    type: boolean
     description: |
-      Configure the method used to load the bitstream.
-      The bitstream may be loaded via 2 separate methods:
-      0 := load the FPGA via SPI transfer
-      1 := load the FPGA via bit-banged GPIO
-      Option 0 may be suitable for some high-end microcontrollers.
-      Option 1 is suitable for low-end microcontrollers. This option
-      requires clk-gpios, pico-gpios, gpios-set-reg, and gpios-clear-reg
-      to be defined.
-      Example usage:
-      load-mode = <0>;
+      Select the bitbang mode for loading the bitstream into the FPGA.
+      This is a workaround to meet the timing requirements fo the iCE40
+      on low-end microcontrollers.
+      This option requires clk-gpios, pico-gpios, gpios-set-reg, and
+      gpios-clear-reg to be defined.
   cdone-gpios:
     type: phandle-array
     required: true
