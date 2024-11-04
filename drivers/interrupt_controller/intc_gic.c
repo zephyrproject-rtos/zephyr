@@ -113,13 +113,16 @@ void arm_gic_irq_set_priority(
 	int_grp = (irq / 16) * 4;
 	int_off = (irq % 16) * 2;
 
-	val = sys_read32(GICD_ICFGRn + int_grp);
-	val &= ~(GICD_ICFGR_MASK << int_off);
-	if (flags & IRQ_TYPE_EDGE) {
-		val |= (GICD_ICFGR_TYPE << int_off);
-	}
+	/* GICD_ICFGR0 is read-only; SGIs are always edge-triggered */
+	if (int_grp != 0) {
+		val = sys_read32(GICD_ICFGRn + int_grp);
+		val &= ~(GICD_ICFGR_MASK << int_off);
+		if (flags & IRQ_TYPE_EDGE) {
+			val |= (GICD_ICFGR_TYPE << int_off);
+		}
 
-	sys_write32(val, GICD_ICFGRn + int_grp);
+		sys_write32(val, GICD_ICFGRn + int_grp);
+	}
 }
 
 unsigned int arm_gic_get_active(void)
