@@ -164,13 +164,17 @@ This interface is supported by the openocd version included in Zephyr SDK.
 Flashing an application to STM32F429I-DISC1
 -------------------------------------------
 
-The board is configured to be flashed using west OpenOCD runner.
-Alternatively, you can use `STM32CubeProgrammer`_ (after installing it) using the ``--runner``
-(or ``-r``) option:
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
+
+Alternatively, OpenOCD, JLink, or pyOCD can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
 
 .. code-block:: console
 
-   $ west flash --runner stm32cubeprogrammer
+   $ west flash --runner openocd
+   $ west flash --runner jlink
+   $ west flash --runner pyocd
 
 First, connect the STM32F429I-DISC1 Discovery kit to your host computer using
 the USB port to prepare it for flashing. Then build and flash your application.
