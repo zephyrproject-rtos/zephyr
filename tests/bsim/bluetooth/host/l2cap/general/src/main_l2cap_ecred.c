@@ -426,12 +426,13 @@ static void send_sdu_concurrently(void)
 static int change_mtu_on_channels(int num_channels, int new_mtu)
 {
 	struct bt_l2cap_chan *reconf_channels[ECRED_CHAN_MAX] = { NULL };
+	uint16_t mps = MIN(new_mtu + BT_L2CAP_SDU_HDR_SIZE, BT_L2CAP_RX_MTU);
 
 	for (int i = 0; i < num_channels; i++) {
 		reconf_channels[i] = &(&channels[i])->le.chan;
 	}
 
-	return bt_l2cap_ecred_chan_reconfigure(reconf_channels, new_mtu);
+	return bt_l2cap_ecred_chan_reconfigure(reconf_channels, new_mtu, mps);
 }
 
 static void test_peripheral_main(void)

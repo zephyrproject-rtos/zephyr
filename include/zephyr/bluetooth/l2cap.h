@@ -552,10 +552,11 @@ int bt_l2cap_ecred_chan_connect(struct bt_conn *conn,
  *  @param chans Array of channel objects. Null-terminated. Elements after the
  *               first 5 are silently ignored.
  *  @param mtu Channel MTU to reconfigure to.
+ *  @param mps Channel MPS to reconfigure to.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_l2cap_ecred_chan_reconfigure(struct bt_l2cap_chan **chans, uint16_t mtu);
+int bt_l2cap_ecred_chan_reconfigure(struct bt_l2cap_chan **chans, uint16_t mtu, uint16_t mps);
 
 /** @brief Connect L2CAP channel
  *

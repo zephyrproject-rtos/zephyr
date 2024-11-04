@@ -3758,6 +3758,7 @@ int bt_eatt_reconfigure(struct bt_conn *conn, uint16_t mtu)
 	struct bt_l2cap_chan *chans[CONFIG_BT_EATT_MAX + 1] = {};
 	size_t offset = 0;
 	size_t i = 0;
+	uint16_t mps;
 	int err;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&att->chans, att_chan, node) {
@@ -3768,10 +3769,12 @@ int bt_eatt_reconfigure(struct bt_conn *conn, uint16_t mtu)
 	}
 
 	while (offset < i) {
+		mps = MIN(mtu + BT_L2CAP_SDU_HDR_SIZE, BT_L2CAP_RX_MTU);
+
 		/* bt_l2cap_ecred_chan_reconfigure() uses the first L2CAP_ECRED_CHAN_MAX_PER_REQ
 		 * elements of the array or until a null-terminator is reached.
 		 */
-		err = bt_l2cap_ecred_chan_reconfigure(&chans[offset], mtu);
+		err = bt_l2cap_ecred_chan_reconfigure(&chans[offset], mtu, mps);
 		if (err < 0) {
 			return err;
 		}

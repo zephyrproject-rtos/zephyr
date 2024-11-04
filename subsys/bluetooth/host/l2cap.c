@@ -2948,12 +2948,13 @@ static struct bt_l2cap_le_chan *l2cap_find_pending_reconf(struct bt_conn *conn)
 	return NULL;
 }
 
-int bt_l2cap_ecred_chan_reconfigure(struct bt_l2cap_chan **chans, uint16_t mtu)
+int bt_l2cap_ecred_chan_reconfigure(struct bt_l2cap_chan **chans, uint16_t mtu, uint16_t mps)
 {
 	struct bt_l2cap_ecred_reconf_req *req;
 	struct bt_conn *conn = NULL;
 	struct bt_l2cap_le_chan *ch;
 	struct net_buf *buf;
+	bool multiple_chan;
 	uint8_t ident;
 	int i;
 
@@ -2962,6 +2963,16 @@ int bt_l2cap_ecred_chan_reconfigure(struct bt_l2cap_chan **chans, uint16_t mtu)
 	if (!chans) {
 		return -EINVAL;
 	}
+
+	if (chans[0] == NULL) {
+		return -EINVAL;
+	}
+
+	if (mps > BT_L2CAP_RX_MTU) {
+		return -EINVAL;
+	}
+
+	multiple_chan = chans[1] != NULL;
 
 	for (i = 0; i < L2CAP_ECRED_CHAN_MAX_PER_REQ; i++) {
 		if (!chans[i]) {
@@ -2981,10 +2992,13 @@ int bt_l2cap_ecred_chan_reconfigure(struct bt_l2cap_chan **chans, uint16_t mtu)
 		if (mtu < BT_L2CAP_LE_CHAN(chans[i])->rx.mtu) {
 			return -EINVAL;
 		}
-	}
 
-	if (i == 0) {
-		return -EINVAL;
+		/* MPS is not allowed to decrease when reconfiguring multiple channels.
+		 * Core Specification 3.A.4.27 v6.0
+		 */
+		if (multiple_chan && mps < BT_L2CAP_LE_CHAN(chans[i])->rx.mps) {
+			return -EINVAL;
+		}
 	}
 
 	if (!conn) {
@@ -3011,12 +3025,7 @@ int bt_l2cap_ecred_chan_reconfigure(struct bt_l2cap_chan **chans, uint16_t mtu)
 
 	req = net_buf_add(buf, sizeof(*req));
 	req->mtu = sys_cpu_to_le16(mtu);
-
-	/* MPS shall not be bigger than MTU + BT_L2CAP_SDU_HDR_SIZE
-	 * as the remaining bytes cannot be used.
-	 */
-	req->mps = sys_cpu_to_le16(MIN(mtu + BT_L2CAP_SDU_HDR_SIZE,
-				       BT_L2CAP_RX_MTU));
+	req->mps = sys_cpu_to_le16(mps);
 
 	for (int j = 0; j < i; j++) {
 		ch = BT_L2CAP_LE_CHAN(chans[j]);

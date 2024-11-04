@@ -282,6 +282,7 @@ static int cmd_ecred_reconfigure(const struct shell *sh, size_t argc, char *argv
 {
 	struct bt_l2cap_chan *l2cap_ecred_chans[] = { &l2ch_chan.ch.chan, NULL };
 	uint16_t mtu;
+	uint16_t mps;
 	int err = 0;
 
 	if (!default_conn) {
@@ -301,7 +302,8 @@ static int cmd_ecred_reconfigure(const struct shell *sh, size_t argc, char *argv
 		return -ENOEXEC;
 	}
 
-	err = bt_l2cap_ecred_chan_reconfigure(l2cap_ecred_chans, mtu);
+	mps = MIN(mtu + BT_L2CAP_SDU_HDR_SIZE, BT_L2CAP_RX_MTU);
+	err = bt_l2cap_ecred_chan_reconfigure(l2cap_ecred_chans, mtu, mps);
 	if (err < 0) {
 		shell_error(sh, "Unable to reconfigure channel (err %d)", err);
 	} else {
