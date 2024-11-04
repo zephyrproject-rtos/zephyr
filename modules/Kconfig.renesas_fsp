@@ -112,4 +112,9 @@ config USE_RZ_FSP_IOPORT
 	help
 	  Enable RZ FSP IOPORT driver
 
+config USE_RZ_FSP_SCIF_UART
+	bool
+	help
+	  Enable RZ FSP SCIF UART driver
+
 endif
