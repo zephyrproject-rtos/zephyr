@@ -7,32 +7,32 @@
 #include "nrf54l_05_10_15.dtsi"
 
 &cpuapp_sram {
-	reg = <0x20000000 DT_SIZE_K(188)>;
-	ranges = <0x0 0x20000000 DT_SIZE_K(188)>;
+	reg = <0x20000000 DT_SIZE_K(72)>;
+	ranges = <0x0 0x20000000 DT_SIZE_K(72)>;
 };
 
-/* 188 + 68 = 256KB */
+/* 72 + 24 = 96KB */
 / {
 	soc {
-		cpuflpr_sram: memory@2002f000 {
+		cpuflpr_sram: memory@20012000 {
 			compatible = "mmio-sram";
-			reg = <0x2002f000 DT_SIZE_K(68)>;
+			reg = <0x20012000 DT_SIZE_K(24)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0x2002f000 DT_SIZE_K(68)>;
+			ranges = <0x0 0x20012000 DT_SIZE_K(24)>;
 		};
 	};
 };
 
 &cpuapp_rram {
-	reg = <0x0 DT_SIZE_K(1428)>;
+	reg = <0x0 DT_SIZE_K(470)>;
 };
 
-/* 1428 + 96 = 1524KB */
+/* 470 + 30 = 500KB */
 &rram_controller {
-	cpuflpr_rram: rram@165000 {
+	cpuflpr_rram: rram@75800 {
 		compatible = "soc-nv-flash";
-		reg = <0x165000 DT_SIZE_K(96)>;
+		reg = <0x75800 DT_SIZE_K(30)>;
 		erase-block-size = <4096>;
 		write-block-size = <16>;
 	};
