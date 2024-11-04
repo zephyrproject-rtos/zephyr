@@ -14,6 +14,30 @@
 #include <zephyr/arch/cpu.h>
 #include <zephyr/arch/common/pm_s2ram.h>
 
+/**
+ * Macro expanding to an integer literal equal to the offset of
+ * field `sr_name` in `struct __cpu_context`. This macro has to
+ * be implemented in C, because GEN_OFFSET_SYM provides offsets
+ * as C preprocessor definitions - there are not visible to the
+ * assembler.
+ *
+ * See also: `arch/arm/core/offsets/offsets_aarch32.c`
+ */
+#define CPU_CTX_SR_OFFSET(sr_name) \
+	___cpu_context_t_ ## sr_name ## _OFFSET
+
+/**
+ * Macros used to save / load a special register in __cpu_context.
+ * These also have to be implemented in C due to CPU_CTX_SR_OFFSET.
+ */
+#define SAVE_SPECIAL_REG(sr_name, cpu_ctx_reg, tmp_reg)	\
+	mrs	tmp_reg, sr_name;			\
+	str	tmp_reg, [cpu_ctx_reg, # CPU_CTX_SR_OFFSET(sr_name)];
+
+#define RESTORE_SPECIAL_REG(sr_name, cpu_ctx_reg, tmp_reg)		\
+	ldr	tmp_reg, [cpu_ctx_reg, # CPU_CTX_SR_OFFSET(sr_name)];	\
+	msr	sr_name, tmp_reg;
+
 _ASM_FILE_PROLOGUE
 
 GTEXT(pm_s2ram_mark_set)
@@ -34,29 +58,21 @@ SECTION_FUNC(TEXT, arch_pm_s2ram_suspend)
 	/* Store CPU context */
 	ldr	r1, =_cpu_context
 
-	mrs	r2, msp
-	str	r2, [r1, #___cpu_context_t_msp_OFFSET]
+	SAVE_SPECIAL_REG(msp, r1, r2)
 
-	mrs	r2, msplim
-	str	r2, [r1, #___cpu_context_t_msplim_OFFSET]
+	SAVE_SPECIAL_REG(msplim, r1, r2)
 
-	mrs	r2, psp
-	str	r2, [r1, #___cpu_context_t_psp_OFFSET]
+	SAVE_SPECIAL_REG(psp, r1, r2)
 
-	mrs	r2, psplim
-	str	r2, [r1, #___cpu_context_t_psplim_OFFSET]
+	SAVE_SPECIAL_REG(psplim, r1, r2)
 
-	mrs	r2, primask
-	str	r2, [r1, #___cpu_context_t_primask_OFFSET]
+	SAVE_SPECIAL_REG(primask, r1, r2)
 
-	mrs	r2, faultmask
-	str	r2, [r1, #___cpu_context_t_faultmask_OFFSET]
+	SAVE_SPECIAL_REG(faultmask, r1, r2)
 
-	mrs	r2, basepri
-	str	r2, [r1, #___cpu_context_t_basepri_OFFSET]
+	SAVE_SPECIAL_REG(basepri, r1, r2)
 
-	mrs	r2, control
-	str	r2, [r1, #___cpu_context_t_control_OFFSET]
+	SAVE_SPECIAL_REG(control, r1, r2)
 
 	/*
 	 * Mark entering suspend to RAM.
@@ -108,29 +124,21 @@ resume:
 	 */
 	ldr	r0, =_cpu_context
 
-	ldr	r1, [r0, #___cpu_context_t_msp_OFFSET]
-	msr	msp, r1
+	RESTORE_SPECIAL_REG(msp, r0, r1)
 
-	ldr	r1, [r0, #___cpu_context_t_msplim_OFFSET]
-	msr	msplim, r1
+	RESTORE_SPECIAL_REG(msplim, r0, r1)
 
-	ldr	r1, [r0, #___cpu_context_t_psp_OFFSET]
-	msr	psp, r1
+	RESTORE_SPECIAL_REG(psp, r0, r1)
 
-	ldr	r1, [r0, #___cpu_context_t_psplim_OFFSET]
-	msr	psplim, r1
+	RESTORE_SPECIAL_REG(psplim, r0, r1)
 
-	ldr	r1, [r0, #___cpu_context_t_primask_OFFSET]
-	msr	primask, r1
+	RESTORE_SPECIAL_REG(primask, r0, r1)
 
-	ldr	r1, [r0, #___cpu_context_t_faultmask_OFFSET]
-	msr	faultmask, r1
+	RESTORE_SPECIAL_REG(faultmask, r0, r1)
 
-	ldr	r1, [r0, #___cpu_context_t_basepri_OFFSET]
-	msr	basepri, r1
+	RESTORE_SPECIAL_REG(basepri, r0, r1)
 
-	ldr	r1, [r0, #___cpu_context_t_control_OFFSET]
-	msr	control, r1
+	RESTORE_SPECIAL_REG(control, r0, r1)
 	isb
 
 	pop	{r4-r12, lr}
