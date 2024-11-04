@@ -92,6 +92,8 @@ The Zephyr stm32f429i_disc1 board configuration supports the following hardware 
 +-----------+------------+-------------------------------------+
 | OTG_HS    | on-chip    | usbotg_hs                           |
 +-----------+------------+-------------------------------------+
+| LTDC      | on-chip    | display                             |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on Zephyr porting.
 
