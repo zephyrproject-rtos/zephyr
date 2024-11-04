@@ -17,6 +17,7 @@
 		zephyr,shell-uart = &usb_serial;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,rtc = &bm8563_rtc;
 		zephyr,bt-hci = &esp32_bt_hci;
 	};
 
@@ -27,6 +28,7 @@
 		i2c-0 = &i2c0;
 		i2c-1 = &i2c1;
 		watchdog0 = &wdt0;
+		rtc = &bm8563_rtc;
 	};
 };
 
@@ -68,6 +70,12 @@
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
+
+	bm8563_rtc: bm8563@51 {
+		compatible = "nxp,pcf8563";
+		reg = <0x51>;
+		status = "okay";
+	};
 };
 
 &i2c1 {
