@@ -38,5 +38,6 @@ rsource "Kconfig.lpc_syscon"
 rsource "Kconfig.nxp_rstctl"
 rsource "Kconfig.mmio"
 rsource "Kconfig.mchp_mss"
+rsource "Kconfig.rts5817"
 
 endif # RESET
