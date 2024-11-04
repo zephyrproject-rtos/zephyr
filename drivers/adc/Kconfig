@@ -78,6 +78,8 @@ source "drivers/adc/Kconfig.lmp90xxx"
 
 source "drivers/adc/Kconfig.mcp320x"
 
+source "drivers/adc/Kconfig.mcp356xr"
+
 source "drivers/adc/Kconfig.npcx"
 
 source "drivers/adc/Kconfig.cc32xx"
