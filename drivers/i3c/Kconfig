@@ -33,6 +33,11 @@ config I3C_USE_GROUP_ADDR
 
 	  Says Y if unsure.
 
+config I3C_TARGET_BUFFER_MODE
+	bool "I3C target driver for buffer mode"
+	help
+	  This is an option to enable buffer mode.
+
 menuconfig I3C_USE_IBI
 	bool "Use In-Band Interrupt (IBI)"
 	default y
