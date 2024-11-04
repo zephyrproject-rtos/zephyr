@@ -16,7 +16,7 @@ struct rpi_pinctrl_soc_pin {
 	/** Pin number 0..29 */
 	uint32_t pin_num : 5;
 	/** Alternative function (UART, SPI, etc.) */
-	uint32_t alt_func : 4;
+	uint32_t alt_func : 5;
 	/** Maximum current used by a pin, in mA */
 	uint32_t drive_strength : 4;
 	/** Slew rate, may be either false (slow) or true (fast) */
