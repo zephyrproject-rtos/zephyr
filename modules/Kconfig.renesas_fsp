@@ -66,6 +66,13 @@ config HAS_RENESAS_RA_SCE7
 	help
 	  Includes SCE7 implementation for SCE driver
 
+config HAS_RENESAS_RA_SCE5
+	bool
+	default y
+	depends on DT_HAS_RENESAS_RA_SCE5_RNG_ENABLED
+	help
+	  Includes SCE5 implementation for SCE driver
+
 endif
 
 config USE_RA_FSP_SPI_B
