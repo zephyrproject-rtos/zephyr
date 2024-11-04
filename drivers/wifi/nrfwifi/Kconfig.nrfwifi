@@ -655,6 +655,7 @@ config NRF_WIFI_AP_DEAD_DETECT_TIMEOUT
 config NRF_WIFI_RPU_RECOVERY
 	bool "RPU recovery mechanism"
 	depends on NRF_WIFI_LOW_POWER
+	default y
 	select EXPERIMENTAL
 	help
 		Enable RPU recovery mechanism to recover from RPU (nRF70) hang.
