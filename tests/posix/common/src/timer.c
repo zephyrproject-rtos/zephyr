@@ -104,7 +104,7 @@ ZTEST(timer, test_CLOCK_MONOTONIC__SIGEV_THREAD)
 
 ZTEST(timer, test_timer_overrun)
 {
-	struct sigevent sig = { 0 };
+	struct sigevent sig = {0};
 	struct itimerspec value;
 
 	sig.sigev_notify = SIGEV_NONE;
