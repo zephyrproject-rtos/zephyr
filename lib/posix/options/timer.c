@@ -43,7 +43,6 @@ static void zephyr_timer_wrapper(struct k_timer *ztimer)
 	if (timer->reload == 0U) {
 		timer->status = NOT_ACTIVE;
 		LOG_DBG("timer %p not active", timer);
-		return;
 	}
 
 	if (timer->evp.sigev_notify == SIGEV_NONE) {
