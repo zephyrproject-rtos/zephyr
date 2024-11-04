@@ -71,7 +71,9 @@ enum bt_hci_bus {
 	BT_HCI_BUS_I2C           = 8,
 	BT_HCI_BUS_SMD           = 9,
 	BT_HCI_BUS_VIRTIO        = 10,
-	BT_HCI_BUS_IPM           = 11,
+	BT_HCI_BUS_IPC           = 11,
+	/* IPM is deprecated and simply an alias for IPC */
+	BT_HCI_BUS_IPM           = BT_HCI_BUS_IPC,
 };
 
 #define BT_DT_HCI_QUIRK_OR(node_id, prop, idx) \
