@@ -104,3 +104,12 @@ config USE_RA_FSP_ETHER
 	  Enable RA FSP Ethernet driver
 
 endif # HAS_RENESAS_RA_FSP
+
+if HAS_RENESAS_RZ_FSP
+
+config USE_RZ_FSP_IOPORT
+	bool
+	help
+	  Enable RZ FSP IOPORT driver
+
+endif
