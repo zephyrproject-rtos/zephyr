@@ -9,30 +9,43 @@
 
 / {
 	clocks: clocks {
-		xtal: clock-xtal {
-			compatible = "renesas,rx-cgc-external-clock";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		xtal: clock-main-osc {
+			compatible = "renesas,rx-cgc-root-clock";
 			clock-frequency = <DT_FREQ_M(8)>;
+			mosel = <0>;
+			stabilization-time = <4>;
 			#clock-cells = <0>;
 			status = "disabled";
 		};
 
 		hoco: clock-hoco {
-			compatible = "fixed-clock";
+			compatible = "renesas,rx-cgc-root-clock";
 			clock-frequency = <DT_FREQ_M(32)>;
 			#clock-cells = <0>;
 			status = "okay";
 		};
 
 		loco: clock-loco {
-			compatible = "fixed-clock";
+			compatible = "renesas,rx-cgc-root-clock";
 			clock-frequency =  <DT_FREQ_M(4)>;
 			#clock-cells = <0>;
 			status = "okay";
 		};
 
 		subclk: clock-subclk {
-			compatible = "renesas,rx-cgc-subclk";
+			compatible = "renesas,rx-cgc-root-clock";
 			clock-frequency = <32768>;
+			drive-capacity = <0>;
+			#clock-cells = <0>;
+			status = "disabled";
+		};
+
+		iwdtlsclk: clock-iwdt-low-speed {
+			compatible = "renesas,rx-cgc-root-clock";
+			clock-frequency = <15000>;
 			#clock-cells = <0>;
 			status = "disabled";
 		};
@@ -40,46 +53,98 @@
 		pll: pll {
 			compatible = "renesas,rx-cgc-pll";
 			#clock-cells = <0>;
-
-			/* PLL */
-			source = <RX_PLL_SOURCE_MAIN_OSC>;
-			div = <RX_PLL_DIV_2>;
-			mul = <8 0>;
+			div = <2>;
+			clocks = <&xtal>;
+			mul = <RX_PLL_MUL_8>;
+			status = "disabled";
 		};
 
-		pclkblock: pclkblock {
+		pclkblock: pclkblock@80010 {
 			compatible = "renesas,rx-cgc-pclk-block";
+			reg = <0x00080010 4>, <0x00080014 4>, <0x00080018 4>,
+					<0x0008001C 4>;
+			reg-names = "MSTPA", "MSTPB", "MSTPC", "MSTPD";
 			#clock-cells = <0>;
-			sysclock-src = <RX_CLOCK_SOURCE_PLL>;
+			clocks = <&pll>;
 			status = "okay";
 
 			iclk: iclk {
 				compatible = "renesas,rx-cgc-pclk";
-				clk_div = <RX_SYS_CLOCK_DIV_2>;
+				div = <1>;
 				#clock-cells = <2>;
 				status = "okay";
 			};
 
 			fclk: fclk {
 				compatible = "renesas,rx-cgc-pclk";
-				clk_div = <RX_SYS_CLOCK_DIV_2>;
+				div = <1>;
 				#clock-cells = <2>;
 				status = "okay";
 			};
 
 			pclkb: pclkb {
 				compatible = "renesas,rx-cgc-pclk";
-				clk_div = <RX_SYS_CLOCK_DIV_8>;
+				div = <1>;
 				#clock-cells = <2>;
 				status = "okay";
 			};
 
 			pclkd: pclkd {
 				compatible = "renesas,rx-cgc-pclk";
-				clk_div = <RX_SYS_CLOCK_DIV_8>;
+				div = <1>;
 				#clock-cells = <2>;
 				status = "okay";
 			};
+		};
+
+		clkout: clkout {
+			compatible = "renesas,rx-cgc-pclk";
+			clocks = <&xtal>;
+			div = <1>;
+			#clock-cells = <2>;
+			status = "disabled";
+		};
+
+		rtcsclk: rtcsclk {
+			compatible = "renesas,rx-cgc-pclk";
+			clocks = <&subclk>;
+			#clock-cells = <2>;
+			status = "disabled";
+		};
+
+		caclclk: caclclk {
+			compatible = "renesas,rx-cgc-pclk";
+			clocks = <&loco>;
+			#clock-cells = <2>;
+			status = "disabled";
+		};
+
+		cacmclk: cacmclk {
+			compatible = "renesas,rx-cgc-pclk";
+			clocks = <&xtal>;
+			#clock-cells = <2>;
+			status = "disabled";
+		};
+
+		cachclk: cachclk {
+			compatible = "renesas,rx-cgc-pclk";
+			clocks = <&hoco>;
+			#clock-cells = <2>;
+			status = "disabled";
+		};
+
+		cacsclk: cacsclk {
+			compatible = "renesas,rx-cgc-pclk";
+			clocks = <&subclk>;
+			#clock-cells = <2>;
+			status = "disabled";
+		};
+
+		iwdtclk: iwdtclk {
+			compatible = "renesas,rx-cgc-pclk";
+			clocks = <&iwdtlsclk>;
+			#clock-cells = <2>;
+			status = "disabled";
 		};
 	};
 

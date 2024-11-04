@@ -40,6 +40,96 @@
 		reg-names = "IR", "IER", "IPR", "FIR";
 	};
 
+	clocks: clocks {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		xtal: clock-main-osc {
+			compatible = "renesas,rx-cgc-root-clock";
+			clock-frequency = <DT_FREQ_M(8)>;
+			mosel = <0>;
+			stabilization-time = <4>;
+			#clock-cells = <0>;
+			status = "disabled";
+		};
+
+		hoco: clock-hoco {
+			compatible = "renesas,rx-cgc-root-clock";
+			clock-frequency = <DT_FREQ_M(32)>;
+			#clock-cells = <0>;
+			status = "okay";
+		};
+
+		loco: clock-loco {
+			compatible = "renesas,rx-cgc-root-clock";
+			clock-frequency =  <DT_FREQ_M(4)>;
+			#clock-cells = <0>;
+			status = "okay";
+		};
+
+		subclk: clock-subclk {
+			compatible = "renesas,rx-cgc-root-clock";
+			clock-frequency = <32768>;
+			drive-capacity = <0>;
+			#clock-cells = <0>;
+			status = "disabled";
+		};
+
+		iwdtlsclk: clock-iwdt-low-speed {
+			compatible = "renesas,rx-cgc-root-clock";
+			clock-frequency = <15000>;
+			#clock-cells = <0>;
+			status = "disabled";
+		};
+
+		pll: pll {
+			compatible = "renesas,rx-cgc-pll";
+			#clock-cells = <0>;
+			div = <2>;
+			clocks = <&xtal>;
+			mul = <RX_PLL_MUL_8>;
+			status = "disabled";
+		};
+
+		pclkblock: pclkblock@80010 {
+			compatible = "renesas,rx-cgc-pclk-block";
+			reg = <0x00080010 4>, <0x00080014 4>, <0x00080018 4>,
+					<0x0008001C 4>;
+			reg-names = "MSTPA", "MSTPB", "MSTPC", "MSTPD";
+			#clock-cells = <0>;
+			clocks = <&pll>;
+			status = "okay";
+
+			iclk: iclk {
+				compatible = "renesas,rx-cgc-pclk";
+				div = <1>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			fclk: fclk {
+				compatible = "renesas,rx-cgc-pclk";
+				div = <1>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			pclkb: pclkb {
+				compatible = "renesas,rx-cgc-pclk";
+				div = <1>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			pclkd: pclkd {
+				compatible = "renesas,rx-cgc-pclk";
+				div = <1>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+		};
+	};
+
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -82,6 +172,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			reg = <0x00088000 0x02>;
+			clocks = <&pclkb MSTPA 15>;
 			reg-names = "CMSTR0";
 			status = "okay";
 
