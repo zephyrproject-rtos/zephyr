@@ -47,15 +47,77 @@
  * Pushes registers r4~r12 and lr on the stack.
  * r0 is unmodified but other GPRs may be overwritten.
  */
+#if !defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+/* `push` on ARMv6-M / ARMv8-M Baseline:
+ * only r0~r7 and lr may be pushed
+ */
+#define PUSH_GPRS							\
+	push	{r4-r7};						\
+	mov	r1, r8;							\
+	mov	r2, r9;							\
+	mov	r3, r10;						\
+	mov	r4, r11;						\
+	mov	r5, r12;						\
+	push	{r1-r5, lr}
+#else
+/* `push` on ARMv7-M and ARMv8-M Mainline: no limitation */
 #define PUSH_GPRS							\
 	push	{r4-r12, lr}
+#endif /* !CONFIG_ARMV7_M_ARMV8_M_MAINLINE */
 
 /*
  * Pops registers r4~r12 and lr from the stack
  * r0 is unmodified but other GPRs may be overwritten.
  */
+#if !defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+/* `pop` on ARMv6-M / ARMv8-M Baseline:
+ * can only pop to r0~r7 and pc (not lr!)
+ */
+#define POP_GPRS							\
+	pop	{r1-r6};						\
+	mov 	lr, r6;							\
+	mov 	r12, r5;						\
+	mov 	r11, r4;						\
+	mov 	r10, r3;						\
+	mov 	r9, r2;							\
+	mov 	r8, r1;							\
+	pop	{r4-r7}
+#else
+/* `pop` on ARMv7-M and ARMv8-M Mainline: no limitation */
 #define POP_GPRS							\
 	pop	{r4-r12, lr}
+#endif /* !CONFIG_ARMV7_M_ARMV8_M_MAINLINE */
+
+
+#if defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+/* Registers present only on ARMv7-M and ARMv8-M Mainline */
+#define SAVE_FM_BP_REGS(cpu_ctx, tmp_reg)				\
+	SAVE_SPECIAL_REG(faultmask,	cpu_ctx, tmp_reg)		\
+	SAVE_SPECIAL_REG(basepri,	cpu_ctx, tmp_reg)
+
+#define RESTORE_FM_BP_REGS(cpu_ctx, tmp_reg)				\
+	RESTORE_SPECIAL_REG(faultmask,	cpu_ctx, tmp_reg)		\
+	RESTORE_SPECIAL_REG(basepri,	cpu_ctx, tmp_reg)
+#else
+/* Registers not present: do nothing */
+#define SAVE_FM_BP_REGS(cpu_ctx, tmp_reg)
+#define RESTORE_FM_BP_REGS(cpu_ctx, tmp_reg)
+#endif /* CONFIG_ARMV7_M_ARMV8_M_MAINLINE */
+
+#if defined(CONFIG_CPU_CORTEX_M_HAS_SPLIM)
+/* Registers present only on certain ARMv8-M implementations */
+#define SAVE_SPLIM_REGS(cpu_ctx, tmp_reg)				\
+	SAVE_SPECIAL_REG(msplim,	cpu_ctx, tmp_reg)		\
+	SAVE_SPECIAL_REG(psplim,	cpu_ctx, tmp_reg)
+
+#define RESTORE_SPLIM_REGS(cpu_ctx, tmp_reg)				\
+	RESTORE_SPECIAL_REG(msplim,	cpu_ctx, tmp_reg)		\
+	RESTORE_SPECIAL_REG(psplim,	cpu_ctx, tmp_reg)
+#else
+/* Registers not present: do nothing */
+#define SAVE_SPLIM_REGS(cpu_ctx, tmp_reg)
+#define RESTORE_SPLIM_REGS(cpu_ctx, tmp_reg)
+#endif /* CONFIG_CPU_CORTEX_M_HAS_SPLIM */
 
 /*
  * Saves the CPU's special registers in the `struct __cpu_context`
@@ -64,12 +126,10 @@
  */
 #define SAVE_SPECIAL_REGISTERS(cpu_ctx, tmp_reg)			\
 	SAVE_SPECIAL_REG(msp,		cpu_ctx, tmp_reg)		\
-	SAVE_SPECIAL_REG(msplim,	cpu_ctx, tmp_reg)		\
 	SAVE_SPECIAL_REG(psp,		cpu_ctx, tmp_reg)		\
-	SAVE_SPECIAL_REG(psplim,	cpu_ctx, tmp_reg)		\
 	SAVE_SPECIAL_REG(primask,	cpu_ctx, tmp_reg)		\
-	SAVE_SPECIAL_REG(faultmask,	cpu_ctx, tmp_reg)		\
-	SAVE_SPECIAL_REG(basepri,	cpu_ctx, tmp_reg)		\
+	SAVE_SPLIM_REGS(		cpu_ctx, tmp_reg)		\
+	SAVE_FM_BP_REGS(		cpu_ctx, tmp_reg)		\
 	SAVE_SPECIAL_REG(control,	cpu_ctx, tmp_reg)
 
 /*
@@ -86,12 +146,10 @@
  */
 #define RESTORE_SPECIAL_REGISTERS(cpu_ctx, tmp_reg)			\
 	RESTORE_SPECIAL_REG(msp,	cpu_ctx, tmp_reg)		\
-	RESTORE_SPECIAL_REG(msplim,	cpu_ctx, tmp_reg)		\
 	RESTORE_SPECIAL_REG(psp,	cpu_ctx, tmp_reg)		\
-	RESTORE_SPECIAL_REG(psplim,	cpu_ctx, tmp_reg)		\
 	RESTORE_SPECIAL_REG(primask,	cpu_ctx, tmp_reg)		\
-	RESTORE_SPECIAL_REG(faultmask,	cpu_ctx, tmp_reg)		\
-	RESTORE_SPECIAL_REG(basepri,	cpu_ctx, tmp_reg)		\
+	RESTORE_SPLIM_REGS(		cpu_ctx, tmp_reg)		\
+	RESTORE_FM_BP_REGS(		cpu_ctx, tmp_reg)		\
 	RESTORE_SPECIAL_REG(control,	cpu_ctx, tmp_reg)		\
 	isb
 
@@ -174,5 +232,5 @@ resume:
 	/*
 	 * Set the return value and return
 	 */
-	mov	r0, #0
+	movs	r0, #0
 	bx	lr
