@@ -1482,10 +1482,12 @@ static int nxp_wifi_set_twt(const struct device *dev, struct wifi_twt_params *pa
 		twt_setup_conf.implicit = params->setup.implicit;
 		twt_setup_conf.announced = params->setup.announce;
 		twt_setup_conf.trigger_enabled = params->setup.trigger;
+		twt_setup_conf.twt_info_disabled = params->setup.twt_info_disable;
 		twt_setup_conf.negotiation_type = params->negotiation_type;
 		twt_setup_conf.twt_wakeup_duration = params->setup.twt_wake_interval;
 		twt_setup_conf.flow_identifier = params->flow_id;
 		twt_setup_conf.hard_constraint = 1;
+		twt_setup_conf.twt_exponent = params->setup.exponent;
 		twt_setup_conf.twt_mantissa = params->setup.twt_interval;
 		twt_setup_conf.twt_request = params->setup.responder;
 		ret = wlan_set_twt_setup_cfg(&twt_setup_conf);
@@ -1495,6 +1497,25 @@ static int nxp_wifi_set_twt(const struct device *dev, struct wifi_twt_params *pa
 		teardown_conf.teardown_all_twt = params->teardown.teardown_all;
 		ret = wlan_set_twt_teardown_cfg(&teardown_conf);
 	}
+
+	return ret;
+}
+
+static int nxp_wifi_set_btwt(const struct device *dev, struct wifi_twt_params *params)
+{
+	wlan_btwt_config_t btwt_config;
+	int ret = -1;
+
+	btwt_config.action = 1;
+	btwt_config.sub_id = params->btwt.sub_id;
+	btwt_config.nominal_wake = params->btwt.nominal_wake;
+	btwt_config.max_sta_support = params->btwt.max_sta_support;
+	btwt_config.twt_mantissa = params->btwt.twt_interval;
+	btwt_config.twt_offset = params->btwt.twt_offset;
+	btwt_config.twt_exponent = params->btwt.twt_exponent;
+	btwt_config.sp_gap = params->btwt.sp_gap;
+
+	ret = wlan_set_btwt_cfg(&btwt_config);
 
 	return ret;
 }
@@ -1891,6 +1912,7 @@ static const struct wifi_mgmt_ops nxp_wifi_uap_mgmt = {
 	.ap_bandwidth = nxp_wifi_ap_bandwidth,
 	.ap_config_params = nxp_wifi_ap_config_params,
 	.set_rts_threshold = nxp_wifi_ap_set_rts_threshold,
+	.set_btwt = nxp_wifi_set_btwt,
 };
 
 static const struct net_wifi_mgmt_offload nxp_wifi_uap_apis = {
