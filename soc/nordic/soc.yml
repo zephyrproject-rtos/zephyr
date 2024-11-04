@@ -21,6 +21,14 @@ family:
               - name: cpunet
       - name: nrf54l
         socs:
+          - name: nrf54l05
+            cpuclusters:
+              - name: cpuapp
+              - name: cpuflpr
+          - name: nrf54l10
+            cpuclusters:
+              - name: cpuapp
+              - name: cpuflpr
           - name: nrf54l15
             cpuclusters:
               - name: cpuapp
@@ -95,6 +103,12 @@ runners:
               - nrf9161
               - nrf9161/ns
           - qualifiers:
+              - nrf54l05/cpuapp
+              - nrf54l05/cpuflpr
+          - qualifiers:
+              - nrf54l10/cpuapp
+              - nrf54l10/cpuflpr
+          - qualifiers:
               - nrf54l15/cpuapp
               - nrf54l15/cpuflpr
           - qualifiers:
@@ -149,6 +163,12 @@ runners:
               - nrf9161
               - nrf9161/ns
           - qualifiers:
+              - nrf54l05/cpuapp
+              - nrf54l05/cpuflpr
+          - qualifiers:
+              - nrf54l10/cpuapp
+              - nrf54l10/cpuflpr
+          - qualifiers:
               - nrf54l15/cpuapp
               - nrf54l15/cpuflpr
           - qualifiers:
@@ -202,6 +222,12 @@ runners:
           - qualifiers:
               - nrf9161
               - nrf9161/ns
+          - qualifiers:
+              - nrf54l05/cpuapp
+              - nrf54l05/cpuflpr
+          - qualifiers:
+              - nrf54l10/cpuapp
+              - nrf54l10/cpuflpr
           - qualifiers:
               - nrf54l15/cpuapp
               - nrf54l15/cpuflpr

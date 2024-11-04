@@ -1129,6 +1129,14 @@
     #include <nrfx_config_nrf54h20_ppr.h>
 #elif defined(NRF54H20_XXAA) && defined(NRF_FLPR)
     #include <nrfx_config_nrf54h20_flpr.h>
+#elif defined(NRF54L05_XXAA) && defined(NRF_APPLICATION)
+    #include <nrfx_config_nrf54l05_application.h>
+#elif defined(NRF54L05_XXAA) && defined(NRF_FLPR)
+    #include <nrfx_config_nrf54l05_flpr.h>
+#elif defined(NRF54L10_XXAA) && defined(NRF_APPLICATION)
+    #include <nrfx_config_nrf54l10_application.h>
+#elif defined(NRF54L10_XXAA) && defined(NRF_FLPR)
+    #include <nrfx_config_nrf54l10_flpr.h>
 #elif defined(NRF54L15_XXAA) && defined(NRF_APPLICATION)
     #include <nrfx_config_nrf54l15_application.h>
 #elif defined(NRF54L15_XXAA) && defined(NRF_FLPR)

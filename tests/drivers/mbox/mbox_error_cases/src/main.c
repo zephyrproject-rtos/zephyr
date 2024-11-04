@@ -10,7 +10,8 @@
 
 int dummy_value;
 
-#if defined(CONFIG_SOC_NRF54L15) || defined(CONFIG_SOC_NRF54H20)
+#if defined(CONFIG_SOC_NRF54L05) || defined(CONFIG_SOC_NRF54L10) || \
+	defined(CONFIG_SOC_NRF54L15) || defined(CONFIG_SOC_NRF54H20)
 #define EXPECTED_MTU_VALUE				(0)
 #define DATA_TRANSFER_MODE_SUPPORTED	(0)
 #define REMOTE_BUSY_SUPPORTED			(0)
