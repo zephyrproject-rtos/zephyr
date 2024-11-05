@@ -35,7 +35,9 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_PMTU_LOG_LEVEL);
 
 #include "route.h"
 #include "icmpv6.h"
+#include "icmpv4.h"
 #include "ipv6.h"
+#include "ipv4.h"
 #include "pmtu.h"
 
 #define NET_LOG_ENABLED 1
@@ -512,6 +514,129 @@ ZTEST(net_pmtu_test_suite, test_pmtu_05_ipv6_tcp)
 #else
 	ztest_test_skip();
 #endif /* CONFIG_NET_IPV6_PMTU */
+}
+
+#if defined(CONFIG_NET_IPV4_PMTU)
+static int get_v4_send_recv_sock(int *srv_sock,
+				 struct sockaddr_in *my_saddr,
+				 struct sockaddr_in *peer_saddr)
+{
+	struct sockaddr addr;
+	socklen_t addrlen = sizeof(addr);
+	int new_sock;
+	int c_sock;
+	int s_sock;
+
+	prepare_sock_tcp_v4(PEER_IPV4_ADDR, PEER_PORT, &s_sock, peer_saddr);
+	test_bind(s_sock, (struct sockaddr *)peer_saddr, sizeof(*peer_saddr));
+	test_listen(s_sock);
+
+	prepare_sock_tcp_v4(MY_IPV4_ADDR, MY_PORT, &c_sock, my_saddr);
+	test_bind(c_sock, (struct sockaddr *)my_saddr, sizeof(*my_saddr));
+	test_connect(c_sock, (struct sockaddr *)peer_saddr, sizeof(*peer_saddr));
+
+	test_accept(s_sock, &new_sock, &addr, &addrlen);
+	zassert_equal(addrlen, sizeof(struct sockaddr_in), "wrong addrlen");
+
+	*srv_sock = new_sock;
+
+	return c_sock;
+}
+
+static int create_icmpv4_dest_unreach(struct net_if *iface,
+				      struct sockaddr_in *src,
+				      struct sockaddr_in *dst,
+				      uint32_t mtu,
+				      struct net_pkt **pkt)
+{
+	struct net_icmpv4_dest_unreach du_hdr;
+	struct net_pkt *du_pkt;
+	struct in_addr *dest4;
+	struct in_addr *src4;
+	int ret;
+
+	du_pkt = net_pkt_alloc_with_buffer(iface, sizeof(struct net_ipv4_hdr) +
+					   sizeof(struct net_icmp_hdr) +
+					   sizeof(struct net_icmpv4_dest_unreach),
+					   AF_INET, IPPROTO_ICMP,
+					   PKT_WAIT_TIME);
+	if (du_pkt == NULL) {
+		NET_DBG("No buffer");
+		return -ENOMEM;
+	}
+
+	dest4 = &dst->sin_addr;
+	src4 = &src->sin_addr;
+
+	ret = net_ipv4_create(du_pkt, src4, dest4);
+	if (ret < 0) {
+		LOG_ERR("Cannot create IPv4 pkt (%d)", ret);
+		return ret;
+	}
+
+	ret = net_icmpv4_create(du_pkt, NET_ICMPV4_DST_UNREACH, 0);
+	if (ret < 0) {
+		LOG_ERR("Cannot create ICMPv4 pkt (%d)", ret);
+		return ret;
+	}
+
+	du_hdr.mtu = htons(mtu);
+
+	ret = net_pkt_write(du_pkt, &du_hdr, sizeof(du_hdr));
+	if (ret < 0) {
+		LOG_ERR("Cannot write payload (%d)", ret);
+		return ret;
+	}
+
+	net_pkt_cursor_init(du_pkt);
+	net_ipv4_finalize(du_pkt, IPPROTO_ICMP);
+
+	net_pkt_set_iface(du_pkt, iface);
+
+	*pkt = du_pkt;
+
+	return 0;
+}
+#endif
+
+ZTEST(net_pmtu_test_suite, test_pmtu_05_ipv4_tcp)
+{
+#if defined(CONFIG_NET_IPV4_PMTU)
+	struct sockaddr_in dest_ipv4;
+	struct sockaddr_in s_saddr = { 0 };  /* peer */
+	struct sockaddr_in c_saddr = { 0 };  /* this host */
+	struct net_pkt *pkt = NULL;
+	int client_sock, server_sock;
+	uint16_t mtu;
+	int ret;
+
+	dest_ipv4.sin_family = AF_INET;
+
+	client_sock = get_v4_send_recv_sock(&server_sock, &c_saddr, &s_saddr);
+	zassert_true(client_sock >= 0, "Failed to create client socket");
+
+	/* Set initial MTU for the destination */
+	ret = net_pmtu_update_mtu((struct sockaddr *)&c_saddr, 4096);
+	zassert_true(ret >= 0, "PMTU IPv6 MTU update failed (%d)", ret);
+
+	/* Send an ICMPv4 "Destination Unreachable" message from server to client which
+	 * will update the PMTU entry.
+	 */
+	ret = create_icmpv4_dest_unreach(target_iface, &s_saddr, &c_saddr, 2048, &pkt);
+	zassert_equal(ret, 0, "Failed to create ICMPv4 Destination Unrechable message");
+
+	ret = net_send_data(pkt);
+	zassert_equal(ret, 0, "Failed to send Destination Unreachable message");
+
+	/* Check that the PMTU entry has been updated */
+	mtu = net_tcp_get_mtu((struct sockaddr *)&s_saddr);
+	zassert_equal(mtu, 2048, "PMTU IPv4 MTU is not correct (%d)", mtu);
+
+	(void)zsock_close(client_sock);
+	(void)zsock_close(server_sock);
+#else
+	ztest_test_skip();
+#endif /* CONFIG_NET_IPV4_PMTU */
 }
 
 ZTEST_SUITE(net_pmtu_test_suite, NULL, test_setup, NULL, NULL, NULL);
