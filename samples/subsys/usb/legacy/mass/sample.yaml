@@ -1,0 +1,17 @@
+sample:
+  name: Mass Storage
+tests:
+  sample.usb.mass_ram_none:
+    min_ram: 128
+    depends_on: usb_device
+    arch_exclude: posix
+    extra_configs:
+      - CONFIG_LOG_DEFAULT_LEVEL=3
+    tags:
+      - usb
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "The device is put in USB mass storage mode."
