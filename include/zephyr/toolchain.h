@@ -48,6 +48,8 @@
 #include <zephyr/toolchain/llvm.h>
 #elif defined(__GNUC__) || (defined(_LINKER) && defined(__GCC_LINKER_CMD__))
 #include <zephyr/toolchain/gcc.h>
+#elif defined(__cppcheck__)
+#include <zephyr/toolchain/cppcheck.h>
 #else
 #error "Invalid/unknown toolchain configuration"
 #endif
