@@ -717,6 +717,10 @@ Libraries / Subsystems
   * Shell: Fixed an issue were a failed file system mount attempt using the shell would make it
     impossible to ever succeed in mounting that file system again until the device was reset (:github:`80024`).
 
+  * :ref:`ZMS<zms_api>`: Introduction of a new storage system that is designed to work with all types of
+    non-volatile storage technologies. It supports classical on-chip NOR flash as well as
+    new technologies like RRAM and MRAM that do not require a separate erase operation at all.
+
 * Task Watchdog
 
 * POSIX API
