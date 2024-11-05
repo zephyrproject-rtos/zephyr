@@ -149,24 +149,6 @@ struct tmc_ramp_generator_data {
 			     TMC5041_IHOLD(DT_PROP(node, ihold)) |		\
 			     TMC5041_IHOLDDELAY(DT_PROP(node, iholddelay))),	\
 	}
-#elif CONFIG_STEPPER_ADI_TMC5160
-#define TMC_RAMP_DT_SPEC_GET(node)						\
-	{									\
-		.vstart = DT_PROP(node, vstart),				\
-		.v1 = DT_PROP(node, v1),					\
-		.vmax = DT_PROP(node, vmax),					\
-		.a1 = DT_PROP(node, a1),					\
-		.amax = DT_PROP(node, amax),					\
-		.d1 = DT_PROP(node, d1),					\
-		.dmax = DT_PROP(node, dmax),					\
-		.vstop = DT_PROP(node, vstop),					\
-		.tzerowait = DT_PROP(node, tzerowait),				\
-		.vcoolthrs = DT_PROP(node, vcoolthrs),				\
-		.vhigh = DT_PROP(node, vhigh),					\
-		.iholdrun = (TMC5160_IRUN(DT_PROP(node, irun)) |		\
-			     TMC5160_IHOLD(DT_PROP(node, ihold)) |		\
-			     TMC5160_IHOLDDELAY(DT_PROP(node, iholddelay))),	\
-	}
 #endif
 
 /**
@@ -181,9 +163,6 @@ struct tmc_ramp_generator_data {
  */
 #ifdef CONFIG_STEPPER_ADI_TMC5041
 int tmc5041_stepper_set_ramp(const struct device *dev,
-			     const struct tmc_ramp_generator_data *ramp_data);
-#elif CONFIG_STEPPER_ADI_TMC5160
-int tmc5160_stepper_set_ramp(const struct device *dev,
 			     const struct tmc_ramp_generator_data *ramp_data);
 #endif
 
