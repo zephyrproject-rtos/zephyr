@@ -25,6 +25,7 @@ LOG_MODULE_REGISTER(net_tcp, CONFIG_NET_TCP_LOG_LEVEL);
 #include "net_stats.h"
 #include "net_private.h"
 #include "tcp_internal.h"
+#include "pmtu.h"
 
 #define ACK_TIMEOUT_MS tcp_max_timeout_ms
 #define ACK_TIMEOUT K_MSEC(ACK_TIMEOUT_MS)
@@ -4392,6 +4393,32 @@ void net_tcp_foreach(net_tcp_cb_t cb, void *user_data)
 	k_mutex_unlock(&tcp_lock);
 }
 
+static uint16_t get_ipv6_destination_mtu(struct net_if *iface,
+					 const struct in6_addr *dest)
+{
+#if defined(CONFIG_NET_IPV6_PMTU)
+	int mtu = net_pmtu_get_mtu((struct sockaddr *)&(struct sockaddr_in6){
+			.sin6_family = AF_INET6,
+			.sin6_addr = *dest });
+
+	if (mtu < 0) {
+		if (iface != NULL) {
+			return net_if_get_mtu(iface);
+		}
+
+		return NET_IPV6_MTU;
+	}
+
+	return (uint16_t)mtu;
+#else
+	if (iface != NULL) {
+		return net_if_get_mtu(iface);
+	}
+
+	return NET_IPV6_MTU;
+#endif /* CONFIG_NET_IPV6_PMTU */
+}
+
 uint16_t net_tcp_get_supported_mss(const struct tcp *conn)
 {
 	sa_family_t family = net_context_get_family(conn->context);
@@ -4416,26 +4443,16 @@ uint16_t net_tcp_get_supported_mss(const struct tcp *conn)
 #else
 		return 0;
 #endif /* CONFIG_NET_IPV4 */
-	}
-#if defined(CONFIG_NET_IPV6)
-	else if (family == AF_INET6) {
+
+	} else if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
 		struct net_if *iface = net_context_get_iface(conn->context);
-		int mss = 0;
+		uint16_t dest_mtu;
 
-		if (iface && net_if_get_mtu(iface) >= NET_IPV6TCPH_LEN) {
-			/* Detect MSS based on interface MTU minus "TCP,IP
-			 * header size"
-			 */
-			mss = net_if_get_mtu(iface) - NET_IPV6TCPH_LEN;
-		}
+		dest_mtu = get_ipv6_destination_mtu(iface, &conn->dst.sin6.sin6_addr);
 
-		if (mss == 0) {
-			mss = NET_IPV6_MTU - NET_IPV6TCPH_LEN;
-		}
-
-		return mss;
+		/* Detect MSS based on interface MTU minus "TCP,IP header size" */
+		return dest_mtu - NET_IPV6TCPH_LEN;
 	}
-#endif /* CONFIG_NET_IPV6 */
 
 	return 0;
 }
