@@ -1,0 +1,26 @@
+common:
+  filter: not CONFIG_NATIVE_LIBC
+  tags:
+    - posix
+    - rwlocks
+  # 1 tier0 platform per supported architecture
+  platform_key:
+    - arch
+    - simulation
+tests:
+  portability.posix.rwlocks:
+    min_flash: 64
+    min_ram: 32
+  portability.posix.rwlocks.minimal:
+    extra_configs:
+      - CONFIG_MINIMAL_LIBC=y
+  portability.posix.rwlocks.newlib:
+    filter: TOOLCHAIN_HAS_NEWLIB == 1
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC=y
+      - CONFIG_NEWLIB_LIBC_MIN_REQUIRED_HEAP_SIZE=8192
+  portability.posix.rwlocks.picolibc:
+    tags: picolibc
+    filter: CONFIG_PICOLIBC_SUPPORTED
+    extra_configs:
+      - CONFIG_PICOLIBC=y
