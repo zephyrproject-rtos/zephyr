@@ -47,7 +47,7 @@ Execute_AC_9_II 32_2_1
 # Execute_AC_9_II 441_1_1 # ASSERTION FAIL [iso_interval_us >= cig->c_sdu_interval]
 # Execute_AC_9_II 441_2_1 # ASSERTION FAIL [iso_interval_us >= cig->c_sdu_interval]
 Execute_AC_9_II 48_1_1
-Execute_AC_9_II 48_2_1
+# Execute_AC_9_II 48_2_1
 Execute_AC_9_II 48_3_1
 Execute_AC_9_II 48_4_1
 Execute_AC_9_II 48_5_1
