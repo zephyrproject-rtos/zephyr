@@ -265,6 +265,11 @@ config NET_SHELL_PKT_ALLOC_SUPPORTED
 	default y
 	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || NET_DEBUG_NET_PKT_ALLOC
 
+config NET_SHELL_PMTU_SUPPORTED
+	bool "PMTU config"
+	default y
+	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || NET_PMTU
+
 config NET_SHELL_PPP_SUPPORTED
 	bool "PPP config"
 	default y
