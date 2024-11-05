@@ -9,11 +9,11 @@
 #include <zephyr/posix/unistd.h>
 #include <zephyr/ztest.h>
 
-#define N_PRIOS 8
+#define N_PRIOS  8
 /* avoid clashing with Zephyr's LOG_ERR() */
 #define _LOG_ERR 3
 
-ZTEST(syslog, test_syslog)
+ZTEST(xsi_system_logging, test_syslog)
 {
 	int prios[N_PRIOS] = {
 		LOG_EMERG,   LOG_ALERT,  LOG_CRIT, _LOG_ERR,
@@ -33,4 +33,4 @@ ZTEST(syslog, test_syslog)
 	usleep(100000);
 }
 
-ZTEST_SUITE(syslog, NULL, NULL, NULL, NULL, NULL);
+ZTEST_SUITE(xsi_system_logging, NULL, NULL, NULL, NULL, NULL);
