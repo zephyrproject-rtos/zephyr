@@ -607,7 +607,7 @@ int net_ipv4_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 	return 0;
 }
 
-enum net_verdict net_ipv4_prepare_for_send(struct net_pkt *pkt)
+enum net_verdict net_ipv4_prepare_for_send_fragment(struct net_pkt *pkt)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv4_access, struct net_ipv4_hdr);
 	struct net_ipv4_hdr *ip_hdr;

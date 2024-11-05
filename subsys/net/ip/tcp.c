@@ -4419,30 +4419,44 @@ static uint16_t get_ipv6_destination_mtu(struct net_if *iface,
 #endif /* CONFIG_NET_IPV6_PMTU */
 }
 
+static uint16_t get_ipv4_destination_mtu(struct net_if *iface,
+					 const struct in_addr *dest)
+{
+#if defined(CONFIG_NET_IPV4_PMTU)
+	int mtu = net_pmtu_get_mtu((struct sockaddr *)&(struct sockaddr_in){
+			.sin_family = AF_INET,
+			.sin_addr = *dest });
+
+	if (mtu < 0) {
+		if (iface != NULL) {
+			return net_if_get_mtu(iface);
+		}
+
+		return NET_IPV4_MTU;
+	}
+
+	return (uint16_t)mtu;
+#else
+	if (iface != NULL) {
+		return net_if_get_mtu(iface);
+	}
+
+	return NET_IPV4_MTU;
+#endif /* CONFIG_NET_IPV4_PMTU */
+}
+
 uint16_t net_tcp_get_supported_mss(const struct tcp *conn)
 {
 	sa_family_t family = net_context_get_family(conn->context);
 
-	if (family == AF_INET) {
-#if defined(CONFIG_NET_IPV4)
+	if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
 		struct net_if *iface = net_context_get_iface(conn->context);
-		int mss = 0;
+		uint16_t dest_mtu;
 
-		if (iface && net_if_get_mtu(iface) >= NET_IPV4TCPH_LEN) {
-			/* Detect MSS based on interface MTU minus "TCP,IP
-			 * header size"
-			 */
-			mss = net_if_get_mtu(iface) - NET_IPV4TCPH_LEN;
-		}
+		dest_mtu = get_ipv4_destination_mtu(iface, &conn->dst.sin.sin_addr);
 
-		if (mss == 0) {
-			mss = NET_IPV4_MTU - NET_IPV4TCPH_LEN;
-		}
-
-		return mss;
-#else
-		return 0;
-#endif /* CONFIG_NET_IPV4 */
+		/* Detect MSS based on interface MTU minus "TCP,IP header size" */
+		return dest_mtu - NET_IPV4TCPH_LEN;
 
 	} else if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
 		struct net_if *iface = net_context_get_iface(conn->context);
