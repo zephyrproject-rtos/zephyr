@@ -23,6 +23,32 @@ static sys_slist_t _llext_list = SYS_SLIST_STATIC_INIT(&_llext_list);
 
 static struct k_mutex llext_lock = Z_MUTEX_INITIALIZER(llext_lock);
 
+int llext_get_section_header(struct llext_loader *ldr, struct llext *ext, const char *search_name,
+			     elf_shdr_t *shdr)
+{
+	const elf_shdr_t *tmp;
+	unsigned int i;
+
+	for (i = 0, tmp = ext->sect_hdrs;
+	     i < ext->sect_cnt;
+	     i++, tmp++) {
+		const char *name = llext_peek(ldr,
+					      ldr->sects[LLEXT_MEM_SHSTRTAB].sh_offset +
+					      tmp->sh_name);
+
+		if (!name) {
+			return -ENOTSUP;
+		}
+
+		if (!strcmp(name, search_name)) {
+			*shdr = *tmp;
+			return 0;
+		}
+	}
+
+	return -ENOENT;
+}
+
 ssize_t llext_find_section(struct llext_loader *ldr, const char *search_name)
 {
 	elf_shdr_t *shdr;
