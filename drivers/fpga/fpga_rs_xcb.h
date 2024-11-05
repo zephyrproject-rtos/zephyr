@@ -9,6 +9,7 @@
 #define ZEPHYR_DRIVERS_FPGA_RS_XCB_H_
 
 #include "rs_fcb_config_block.h"
+#include "rs_icb_config_block.h"
 
 #include <zephyr/drivers/fpga.h>
 
@@ -30,6 +31,13 @@
   #define RS_ACTION_CMD_MASK 0x0FFF
   #define RS_ACTION_CHECKSUM_PRESENT_MASK (1 << RS_ACTION_CHECKSUM_PRESENT_OFFSET)
 #endif
+
+  /*
+The following macro can be used to write register values.
+REG_WRITE_32(Destination_Addr, Source_Addr)
+*/
+#define REG_WRITE_32(Destination_Addr, Source_Addr) \
+  *(uint32_t *)Destination_Addr = *(uint32_t *)Source_Addr;
 
 enum xCB_ACTIONS { xCB_DISABLE = 0, xCB_ENABLE = 1 };
 
@@ -81,6 +89,16 @@ struct fcb_config {
 struct fcb_data {
   struct fpga_ctx *ctx;
   struct rigel_fcb_bitstream_header fcb_header;
+  enum FPGA_status fpgaStatus;
+};
+
+struct icb_config {
+  uint32_t base;
+};
+
+struct icb_data {
+  struct fpga_ctx *ctx;
+  struct rs_icb_bitstream_header icb_header;
   enum FPGA_status fpgaStatus;
 };
 

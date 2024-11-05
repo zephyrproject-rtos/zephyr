@@ -416,8 +416,7 @@ enum xCB_ERROR_CODE RS_ICB_Payload_kickoff(
     lvErrorCode = xCB_ERROR;
   }
 
-  while (RS_ICB_busy())
-    ;
+  while (RS_ICB_busy());
 
   return lvErrorCode;
 }

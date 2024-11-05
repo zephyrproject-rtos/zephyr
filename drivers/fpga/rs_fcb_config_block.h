@@ -14,8 +14,6 @@
 #if !CONFIG_RS_RTOS_PORT
   #include "rs_config_controllers.h"
   #include "rs_image_mgmt.h"
-#else
-  #include "fpga_rs_xcb.h"
 #endif
 
 #define RIGEL_FCB_NR_MODE_REG 16

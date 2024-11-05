@@ -800,17 +800,17 @@ int fcb_session_free(const struct device *dev)
 
 int fcb_reset(const struct device *dev)
 {
-  int error = xCB_SUCCESS;
+	int error = xCB_SUCCESS;
 
-  #if CONFIG_RAPIDSI_OFE
-	const struct device *ofe = DEVICE_DT_GET(DT_NODELABEL(ofe));
-	if (ofe == NULL) {
-		LOG_ERR("%s(%d) Error with OFE initialization\r\n", __func__, __LINE__);
-		error = -ENOSYS;
-	}
-  #else
-    #error "Enable OFE from the device tree to to meet FCB dependency."
-  #endif
+	#if CONFIG_RAPIDSI_OFE
+		const struct device *ofe = DEVICE_DT_GET(DT_NODELABEL(ofe));
+		if (ofe == NULL) {
+			LOG_ERR("%s(%d) Error with OFE initialization\r\n", __func__, __LINE__);
+			error = -ENOSYS;
+		}
+	#else
+		#error "Enable OFE from the device tree to meet FCB dependency."
+	#endif
 
 	// Sending the reset pulse to global fpga reset.
 	if (error == 0) {
@@ -907,11 +907,11 @@ static int fcb_init(const struct device *dev)
 {
 	int error = xCB_SUCCESS;
 
-	s_Rigel_FCB_Registers = ((struct rigel_fcb_registers *)((struct fcb_config *)dev->config));
+	s_Rigel_FCB_Registers = ((struct rigel_fcb_registers *)((struct fcb_config *)dev->config).base);
 
 	struct fcb_data *lvData = (struct fcb_data *)dev->data;
 
-  error = fcb_on(dev); // By default turn on the fabric to be written with bitstreams.
+  	error = fcb_on(dev); // By default turn on the fabric to be written with bitstreams.
 
 	if (error == 0) {
 		if (s_Rigel_FCB_Registers != NULL) {
