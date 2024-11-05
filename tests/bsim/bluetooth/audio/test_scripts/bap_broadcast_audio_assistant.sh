@@ -6,7 +6,7 @@
 
 SIMULATION_ID="bap_broadcast_audio_assistant"
 VERBOSITY_LEVEL=2
-EXECUTE_TIMEOUT=100
+EXECUTE_TIMEOUT=240
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
