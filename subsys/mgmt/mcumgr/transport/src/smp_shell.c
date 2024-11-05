@@ -39,6 +39,8 @@ static struct smp_transport smp_shell_transport;
 
 static struct mcumgr_serial_rx_ctxt smp_shell_rx_ctxt;
 
+static const struct shell_uart_common *shell_uart;
+
 #ifdef CONFIG_SMP_CLIENT
 static struct smp_client_transport_entry smp_client_transport;
 #endif
@@ -210,11 +212,10 @@ static uint16_t smp_shell_get_mtu(const struct net_buf *nb)
 
 static int smp_shell_tx_raw(const void *data, int len)
 {
-	static const struct device *const sh_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_shell_uart));
 	const uint8_t *out = data;
 
 	while ((out != NULL) && (len != 0)) {
-		uart_poll_out(sh_dev, *out);
+		uart_poll_out(shell_uart->dev, *out);
 		++out;
 		--len;
 	}
@@ -226,6 +227,7 @@ static int smp_shell_tx_pkt(struct net_buf *nb)
 {
 	int rc;
 
+	shell_uart = (struct shell_uart_common *)shell_backend_uart_get_ptr()->iface->ctx;
 	rc = mcumgr_serial_tx_pkt(nb->data, nb->len, smp_shell_tx_raw);
 	smp_packet_free(nb);
 
