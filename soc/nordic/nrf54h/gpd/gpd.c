@@ -66,15 +66,18 @@ static int nrf_gpd_sync(struct gpd_onoff_manager *gpd_mgr)
 {
 	int64_t start;
 	nrfs_err_t err;
+	k_spinlock_key_t key;
 	gdpwr_request_type_t request;
 
-	K_SPINLOCK(&gpd_mgr->mgr.lock) {
-		if (gpd_mgr->mgr.refs == 0) {
-			request = GDPWR_POWER_REQUEST_CLEAR;
-		} else {
-			request = GDPWR_POWER_REQUEST_SET;
-		}
+	key = k_spin_lock(&gpd_mgr->mgr.lock);
+
+	if (gpd_mgr->mgr.refs == 0) {
+		request = GDPWR_POWER_REQUEST_CLEAR;
+	} else {
+		request = GDPWR_POWER_REQUEST_SET;
 	}
+
+	k_spin_unlock(&gpd_mgr->mgr.lock, key);
 
 	atomic_clear_bit(&gpd_service_status, GPD_SERVICE_REQ_ERR);
 	atomic_clear_bit(&gpd_service_status, GPD_SERVICE_REQ_OK);
