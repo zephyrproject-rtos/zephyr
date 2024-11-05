@@ -377,8 +377,10 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
 		if (ipv4) {
 			addr = &ipv4->gw;
 			if (net_ipv4_is_addr_unspecified(addr)) {
-				NET_ERR("Gateway not set for iface %p",
-					net_pkt_iface(pkt));
+				NET_ERR("Gateway not set for iface %d, could not "
+					"send ARP request for %s",
+					net_if_get_by_iface(net_pkt_iface(pkt)),
+					net_sprint_ipv4_addr(request_ip));
 
 				return NULL;
 			}
