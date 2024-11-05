@@ -303,7 +303,7 @@ instead of ``west flash``.
 References
 **********
 
-- `MAX32690EVKIT web page`_
+- `MAX32690EVKIT solution center`_
 
-.. _MAX32690EVKIT web page:
-   https://www.analog.com/en/design-center/evaluation-hardware-and-software/evaluation-boards-kits/MAX32690EVKIT.html
+.. _MAX32690EVKIT solution center:
+   https://developer.analog.com/solutions/max32690
