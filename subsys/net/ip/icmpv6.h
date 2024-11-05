@@ -117,6 +117,9 @@ struct net_icmpv6_mld_mcast_record {
 	uint8_t mcast_address[NET_IPV6_ADDR_SIZE];
 } __packed;
 
+struct net_icmpv6_ptb {
+	uint32_t mtu;
+} __packed;
 
 #define NET_ICMPV6_ND_O_FLAG(flag) ((flag) & 0x40)
 #define NET_ICMPV6_ND_M_FLAG(flag) ((flag) & 0x80)
