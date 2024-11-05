@@ -596,7 +596,7 @@ The following Product IDs are currently used:
 +----------------------------------------------------+--------+
 | :zephyr:code-sample:`bluetooth_hci_usb`            | 0x000B |
 +----------------------------------------------------+--------+
-| :zephyr:code-sample:`bluetooth_hci_usb_h4`         | 0x000C |
+| Reserved (previously: bluetooth_hci_usb_h4)        | 0x000C |
 +----------------------------------------------------+--------+
 | Reserved (previously: wpan-usb)                    | 0x000D |
 +----------------------------------------------------+--------+
