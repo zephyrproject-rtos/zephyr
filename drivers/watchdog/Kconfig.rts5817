@@ -1,0 +1,10 @@
+# Copyright (c) 2024 Realtek Semiconductor, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_RTS5817
+	bool "Realtek RTS5817 Watchdog driver"
+	default y
+	depends on DT_HAS_REALTEK_RTS5817_WATCHDOG_ENABLED
+	select HAS_WDT_DISABLE_AT_BOOT
+	help
+	  Realtek RTS5817 watchdog driver.
