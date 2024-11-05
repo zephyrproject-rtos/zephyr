@@ -49,8 +49,7 @@ static void semaphore_test(sem_t *sem)
 	ret = pthread_create(&thread1, NULL, child_func, sem);
 	zassert_equal(ret, 0, "Thread creation failed");
 
-	zassert_equal(clock_gettime(CLOCK_REALTIME, &abstime), 0,
-		      "clock_gettime failed");
+	zassert_equal(clock_gettime(CLOCK_REALTIME, &abstime), 0, "clock_gettime failed");
 
 	abstime.tv_sec += 5;
 
@@ -72,15 +71,15 @@ static void semaphore_test(sem_t *sem)
 	zassert_equal(sem_getvalue(sem, &val), 0);
 	zassert_equal(val, 1);
 
-	zassert_equal(sem_destroy(sem), -1, "acquired semaphore"
+	zassert_equal(sem_destroy(sem), -1,
+		      "acquired semaphore"
 		      " is destroyed");
 	zassert_equal(errno, EBUSY);
 
 	/* TESTPOINT: take semaphore which is initialized with 1 */
 	zassert_equal(sem_trywait(sem), 0);
 
-	zassert_equal(pthread_create(&thread2, NULL, child_func, sem), 0,
-		      "Thread creation failed");
+	zassert_equal(pthread_create(&thread2, NULL, child_func, sem), 0, "Thread creation failed");
 
 	/* TESTPOINT: Wait and acquire semaphore till thread2 gives */
 	zassert_equal(sem_wait(sem), 0, "sem_wait failed");
@@ -90,17 +89,19 @@ static void semaphore_test(sem_t *sem)
 	zassert_ok(pthread_join(thread2, NULL));
 }
 
-ZTEST(semaphore, test_semaphore)
+ZTEST(posix_semaphores, test_semaphore)
 {
 	sem_t sema;
 
 	/* TESTPOINT: Call sem_post with invalid kobject */
-	zassert_equal(sem_post(NULL), -1, "sem_post of"
+	zassert_equal(sem_post(NULL), -1,
+		      "sem_post of"
 		      " invalid semaphore object didn't fail");
 	zassert_equal(errno, EINVAL);
 
 	/* TESTPOINT: sem_destroy with invalid kobject */
-	zassert_equal(sem_destroy(NULL), -1, "invalid"
+	zassert_equal(sem_destroy(NULL), -1,
+		      "invalid"
 		      " semaphore is destroyed");
 	zassert_equal(errno, EINVAL);
 
@@ -141,7 +142,7 @@ static void *nsem_close_func(void *p)
 	return NULL;
 }
 
-ZTEST(semaphore, test_named_semaphore)
+ZTEST(posix_semaphores, test_named_semaphore)
 {
 	pthread_t thread1, thread2;
 	sem_t *sem1, *sem2, *different_sem1;
@@ -321,4 +322,4 @@ static void before(void *arg)
 	}
 }
 
-ZTEST_SUITE(semaphore, NULL, NULL, before, NULL, NULL);
+ZTEST_SUITE(posix_semaphores, NULL, NULL, before, NULL, NULL);
