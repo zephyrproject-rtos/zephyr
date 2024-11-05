@@ -768,6 +768,13 @@ test_i2c_tsl2540: tsl2540@71 {
 	int-gpios = <&test_gpio 0 0>;
 };
 
+test_i2c_xbr818: xrb8180@71 {
+	compatible = "phosense,xbr818";
+	reg = <0x71>;
+	int-gpios = <&test_gpio 0 0>;
+	i2c_en-gpios = <&test_gpio 0 0>;
+};
+
 test_i2c_adltc2990@72 {
 	compatible = "adi,adltc2990";
 	reg = <0x72>;
