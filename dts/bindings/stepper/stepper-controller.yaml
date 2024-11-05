@@ -3,8 +3,6 @@
 
 description: Stepper Controller
 
-include: base.yaml
-
 properties:
   invert-direction:
     type: boolean
