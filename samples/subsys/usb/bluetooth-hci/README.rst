@@ -18,7 +18,11 @@ Requirements
 
 Building and Running
 ********************
-This sample can be found under :zephyr_file:`samples/bluetooth/hci_usb` in the
+This sample can be found under :zephyr_file:`samples/subsys/usb/bluetooth-hci` in the
 Zephyr tree.
 
-See :zephyr:code-sample-category:`bluetooth` samples for details.
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/usb/bluetooth-hci
+   :board: nrf52840dk/nrf52840
+   :goals: build flash
+   :compact:
