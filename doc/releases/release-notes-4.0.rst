@@ -1123,6 +1123,18 @@ Libraries / Subsystems
     * :kconfig:option:`CONFIG_MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_PSK_EPHEMERAL_ENABLED`
       for TLS 1.3 PSK ephemeral key exchange mode.
 
+  * The Kconfig symbol :kconfig:option:`CONFIG_MBEDTLS_PSA_STATIC_KEY_SLOTS` was
+    added to allow Mbed TLS to use pre-allocated static buffers to store key material
+    in its PSA Crypto core instead of heap allocated ones. This can help reducing
+    (or removing, if no other components makes use of it) heap memory requirements
+    from the final application.
+
+  * The Kconfig symbol :kconfig:option:`CONFIG_MBEDTLS_PSA_KEY_SLOT_COUNT` was
+    added to allow selecting the number of key slots available in the Mbed TLS's
+    implementation of the PSA Crypto core. The default value is 32, the same used in
+    Mbed TLS by default. Since each slot consumes RAM memory even if unused, this
+    value can be tweaked in order to minimize RAM usage.
+
 * CMSIS-NN
 
 * FPGA
