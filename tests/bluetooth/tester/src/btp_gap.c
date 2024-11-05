@@ -6,6 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/types.h>
@@ -103,7 +104,11 @@ static uint8_t read_car_cb(struct bt_conn *conn, uint8_t err,
 static void le_connected(struct bt_conn *conn, uint8_t err)
 {
 	struct btp_gap_device_connected_ev ev;
+	char addr_str[BT_ADDR_LE_STR_LEN];
 	struct bt_conn_info info;
+
+	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr_str, sizeof(addr_str));
+	LOG_DBG("%s: 0x%02x", addr_str, err);
 
 	if (err) {
 		return;
@@ -131,6 +136,10 @@ static void le_disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	struct btp_gap_device_disconnected_ev ev;
 	const bt_addr_le_t *addr = bt_conn_get_dst(conn);
+	char addr_str[BT_ADDR_LE_STR_LEN];
+
+	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr_str, sizeof(addr_str));
+	LOG_DBG("%s: 0x%02x", addr_str, reason);
 
 	bt_addr_le_copy(&ev.address, addr);
 
