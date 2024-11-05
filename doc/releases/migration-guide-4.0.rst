@@ -76,6 +76,12 @@ Mbed TLS
   corresponding build symbol was removed in Mbed TLS 3.1.0 and is now assumed to
   be enabled. (:github:`77657`)
 
+* If a platform has a CSPRNG source available (i.e. :kconfig:option:`CONFIG_CSPRNG_ENABLED`
+  is set), then the Kconfig option :kconfig:option:`CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG`
+  is the default choice for random number source instead of
+  :kconfig:option:`CONFIG_MBEDTLS_PSA_CRYPTO_LEGACY_RNG`. This helps in reducing
+  ROM/RAM footprint of the Mbed TLS library.
+
 TinyCrypt
 =========
 

@@ -112,7 +112,6 @@ config BT_SILABS_EFR32
 	select MBEDTLS
 	select MBEDTLS_PSA_CRYPTO_C
 	select MBEDTLS_ENTROPY_C
-	select MBEDTLS_ENTROPY_POLL_ZEPHYR
 	help
 	  Use Silicon Labs binary Bluetooth library to connect to the
 	  controller.

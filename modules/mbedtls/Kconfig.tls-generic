@@ -246,6 +246,7 @@ config MBEDTLS_SOME_CIPHER_ENABLED
 
 config MBEDTLS_CIPHER_AES_ENABLED
 	bool "AES block cipher"
+	default y if PSA_WANT_KEY_TYPE_AES && MBEDTLS_PSA_CRYPTO_C
 
 if MBEDTLS_CIPHER_AES_ENABLED
 
@@ -397,6 +398,7 @@ config MBEDTLS_ENTROPY_C
 
 config MBEDTLS_ENTROPY_POLL_ZEPHYR
 	bool "Provide entropy data to Mbed TLS through entropy driver or random generator"
+	default y
 	depends on MBEDTLS_ENTROPY_C
 	help
 	  Provide entropy data to the Mbed TLS's entropy module through either
@@ -480,6 +482,7 @@ config MBEDTLS_SSL_EXTENDED_MASTER_SECRET
 choice MBEDTLS_PSA_CRYPTO_RNG_SOURCE
 	prompt "Select random source for built-in PSA crypto"
 	depends on MBEDTLS_PSA_CRYPTO_C
+	default MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG if CSPRNG_ENABLED
 	default MBEDTLS_PSA_CRYPTO_LEGACY_RNG
 
 config MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG
