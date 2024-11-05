@@ -182,7 +182,7 @@ static int setup_extended_adv_data(struct bt_cap_broadcast_source *source,
 	NET_BUF_SIMPLE_DEFINE(ad_buf,
 			      BT_UUID_SIZE_16 + BT_AUDIO_BROADCAST_ID_SIZE);
 	NET_BUF_SIMPLE_DEFINE(base_buf, 128);
-	NET_BUF_SIMPLE_DEFINE(pbp_ad_buf, BT_UUID_SIZE_16 + 1 + ARRAY_SIZE(pba_metadata));
+	NET_BUF_SIMPLE_DEFINE(pbp_ad_buf, BT_PBP_MIN_PBA_SIZE + ARRAY_SIZE(pba_metadata));
 	static enum bt_pbp_announcement_feature pba_params;
 	struct bt_data ext_ad[4];
 	struct bt_data per_ad;
@@ -211,7 +211,7 @@ static int setup_extended_adv_data(struct bt_cap_broadcast_source *source,
 	net_buf_simple_add_le16(&ad_buf, BT_UUID_BROADCAST_AUDIO_VAL);
 	net_buf_simple_add_le24(&ad_buf, broadcast_id);
 	ext_ad[2].type = BT_DATA_SVC_DATA16;
-	ext_ad[2].data_len = ad_buf.len + sizeof(ext_ad[2].type);
+	ext_ad[2].data_len = ad_buf.len;
 	ext_ad[2].data = ad_buf.data;
 
 	/**
@@ -227,8 +227,8 @@ static int setup_extended_adv_data(struct bt_cap_broadcast_source *source,
 		pba_params |= BT_PBP_ANNOUNCEMENT_FEATURE_HIGH_QUALITY;
 		printk("Starting stream with high quality!\n");
 	}
-	err = bt_pbp_get_announcement(&pba_metadata[1], ARRAY_SIZE(pba_metadata) - 1,
-				      pba_params, &pbp_ad_buf);
+	err = bt_pbp_get_announcement(pba_metadata, ARRAY_SIZE(pba_metadata), pba_params,
+				      &pbp_ad_buf);
 	if (err != 0) {
 		printk("Failed to create public broadcast announcement!: %d\n", err);
 
