@@ -33,6 +33,11 @@ properties:
     required: true
     description: ADC clock high & low time count value <1:255>
 
+  channels:
+    type: int
+    required: true
+    description: Number of ADC channels supported by SoC
+
   pinctrl-0:
     required: true
 
