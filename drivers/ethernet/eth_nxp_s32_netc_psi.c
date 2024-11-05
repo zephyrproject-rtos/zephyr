@@ -409,7 +409,7 @@ static const struct nxp_s32_eth_config nxp_s32_eth##n##_config = {			\
 		.paCtrlTxRingConfig = &nxp_s32_eth##n##_txring_cfg,			\
 	},										\
 	.si_idx = NETC_SI_NXP_S32_HW_INSTANCE(n),					\
-	.port_idx = NETC_SWITCH_PORT_IDX,						\
+	.port_idx = DT_INST_PROP(n, port_index),					\
 	.tx_ring_idx = TX_RING_IDX,							\
 	.rx_ring_idx = RX_RING_IDX,							\
 	.msix = {									\

@@ -16,6 +16,14 @@ properties:
     type: int
     description: NETC system clock frequency operation, in Hz.
 
+  port-index:
+    type: int
+    default: 0
+    enum:
+      - 0
+      - 1
+    description: Outer port of the NETC system associated with this interface.
+
   mboxes:
     required: true
 
