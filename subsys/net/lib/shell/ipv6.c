@@ -194,6 +194,10 @@ static int cmd_net_ipv6(const struct shell *sh, size_t argc, char *argv[])
 	   "                : %d\n",
 	   CONFIG_NET_IPV6_PE_FILTER_PREFIX_COUNT);
 #endif /* CONFIG_NET_IPV6_PE */
+
+	PR("Path MTU Discovery (PMTU)                 : %s\n",
+	   IS_ENABLED(CONFIG_NET_IPV6_PMTU) ? "enabled" : "disabled");
+
 #endif /* CONFIG_NET_NATIVE_IPV6 */
 
 #if defined(CONFIG_NET_IPV6)
