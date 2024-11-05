@@ -132,7 +132,10 @@ struct llext_load_param {
 	bool relocate_local;
 	/**
 	 * Use the virtual symbol addresses from the ELF, not addresses within
-	 * the memory buffer, when calculating relocation targets.
+	 * the memory buffer, when calculating relocation targets. It also
+	 * means, that the application will take care to place the extension at
+	 * those pre-defined addresses, so the LLEXT core doesn't have to do any
+	 * allocation and copying internally.
 	 */
 	bool pre_located;
 	/**

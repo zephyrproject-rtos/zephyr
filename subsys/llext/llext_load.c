@@ -684,7 +684,7 @@ int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 	}
 
 	LOG_DBG("Allocate and copy regions...");
-	ret = llext_copy_regions(ldr, ext);
+	ret = llext_copy_regions(ldr, ext, ldr_parm);
 	if (ret != 0) {
 		LOG_ERR("Failed to copy regions, ret %d", ret);
 		goto out;
