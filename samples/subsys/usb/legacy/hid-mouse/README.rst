@@ -1,6 +1,6 @@
-.. zephyr:code-sample:: usb-hid-mouse
-   :name: USB HID mouse
-   :relevant-api: usbd_api usbd_hid_device input_interface
+.. zephyr:code-sample:: legacy-usb-hid-mouse
+   :name: Legacy USB HID mouse
+   :relevant-api: _usb_device_core_api usb_hid_device_api input_interface
 
    Implement a basic HID mouse device.
 
@@ -14,8 +14,11 @@ the number of buttons on the board) a right mouse button, X-axis movement,
 and Y-axis movement.
 If the USB peripheral driver supports remote wakeup feature, wakeup request
 will be performed on every button click if the bus is in suspended state.
-This sample can be found under :zephyr_file:`samples/subsys/usb/hid-mouse` in the
+This sample can be found under :zephyr_file:`samples/subsys/usb/legacy/hid-mouse` in the
 Zephyr project tree.
+
+.. note::
+   This samples demonstrate deprecated :ref:`usb_device_stack`.
 
 Requirements
 ************
@@ -46,7 +49,7 @@ This sample can be built for multiple boards, in this example we will build it
 for the nucleo_f070rb board:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/subsys/usb/hid-mouse
+   :zephyr-app: samples/subsys/usb/legacy/hid-mouse
    :board: nucleo_f070rb
    :goals: build
    :compact:
