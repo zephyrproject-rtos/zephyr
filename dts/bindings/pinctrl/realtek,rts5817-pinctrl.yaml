@@ -1,0 +1,33 @@
+# Copyright (c) 2024 Realtek Semiconductor, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Realtek RTS5817 series pin controller
+
+compatible: "realtek,rts5817-pinctrl"
+
+include: base.yaml
+
+child-binding:
+  description: RTS5817 pin controller pin group.
+  child-binding:
+    description: RTS5817 pin controller pin mux and configuration.
+
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - bias-disable
+          - bias-pull-down
+          - bias-pull-up
+          - input-enable
+          - output-enable
+          - drive-strength
+          - power-source
+
+    properties:
+      pinmux:
+        required: true
+        type: array
+        description: |
+          An array of pins sharing the same group properties. Must
+          encode all the pin muxing information in a 32-bit value.
