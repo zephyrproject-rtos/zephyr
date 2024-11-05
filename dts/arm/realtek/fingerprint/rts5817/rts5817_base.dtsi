@@ -55,6 +55,16 @@
 			#reset-cells = <1>;
 			status = "disabled";
 		};
+
+		pinctrl: pinctrl@40110000 {
+			compatible = "realtek,rts5817-pinctrl";
+			reg = <0x40110000 0x800>,
+			      <0x401E2074 0x4>,
+			      <0x401E2080 0xC>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "okay";
+		};
 	};
 };
 
