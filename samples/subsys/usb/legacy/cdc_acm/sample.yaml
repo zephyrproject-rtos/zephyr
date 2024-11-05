@@ -1,0 +1,7 @@
+sample:
+  name: CDC ACM USB
+tests:
+  sample.usb.legacy.cdc-acm:
+    depends_on: usb_device
+    tags: usb
+    build_only: true
