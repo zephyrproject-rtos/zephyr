@@ -9,7 +9,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/sys/util.h>
 
-ZTEST(spinlock, test_spin_init_destroy)
+ZTEST(posix_spinlocks, test_spin_init_destroy)
 {
 	pthread_spinlock_t lock;
 
@@ -24,7 +24,7 @@ ZTEST(spinlock, test_spin_init_destroy)
 	zassert_ok(pthread_spin_destroy(&lock), "pthread_spin_destroy() failed");
 }
 
-ZTEST(spinlock, test_spin_descriptor_leak)
+ZTEST(posix_spinlocks, test_spin_descriptor_leak)
 {
 	pthread_spinlock_t lock[CONFIG_MAX_PTHREAD_SPINLOCK_COUNT];
 
@@ -47,7 +47,7 @@ ZTEST(spinlock, test_spin_descriptor_leak)
 	}
 }
 
-ZTEST(spinlock, test_spin_lock_unlock)
+ZTEST(posix_spinlocks, test_spin_lock_unlock)
 {
 	pthread_spinlock_t lock;
 
@@ -70,4 +70,4 @@ ZTEST(spinlock, test_spin_lock_unlock)
 	zassert_equal(pthread_spin_destroy(&lock), EINVAL, "pthread_spin_unlock() did not fail");
 }
 
-ZTEST_SUITE(spinlock, NULL, NULL, NULL, NULL, NULL);
+ZTEST_SUITE(posix_spinlocks, NULL, NULL, NULL, NULL, NULL);
