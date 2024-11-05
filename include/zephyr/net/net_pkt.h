@@ -342,6 +342,11 @@ struct net_pkt {
 	uint8_t cooked_mode_pkt : 1;
 #endif /* CONFIG_NET_CAPTURE_COOKED_MODE */
 
+#if defined(CONFIG_NET_IPV4_PMTU)
+	/* Path MTU needed for this destination address */
+	uint8_t ipv4_pmtu : 1;
+#endif /* CONFIG_NET_IPV4_PMTU */
+
 	/* @endcond */
 };
 
@@ -782,6 +787,31 @@ static inline uint16_t net_pkt_ip_opts_len(struct net_pkt *pkt)
 	return 0;
 #endif
 }
+
+#if defined(CONFIG_NET_IPV4_PMTU)
+static inline bool net_pkt_ipv4_pmtu(struct net_pkt *pkt)
+{
+	return !!pkt->ipv4_pmtu;
+}
+
+static inline void net_pkt_set_ipv4_pmtu(struct net_pkt *pkt, bool value)
+{
+	pkt->ipv4_pmtu = value;
+}
+#else
+static inline bool net_pkt_ipv4_pmtu(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return false;
+}
+
+static inline void net_pkt_set_ipv4_pmtu(struct net_pkt *pkt, bool value)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(value);
+}
+#endif /* CONFIG_NET_IPV4_PMTU */
 
 #if defined(CONFIG_NET_IPV4_FRAGMENT)
 static inline uint16_t net_pkt_ipv4_fragment_offset(struct net_pkt *pkt)
