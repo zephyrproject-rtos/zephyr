@@ -68,17 +68,17 @@
 	soc {
 		compatible = "ambiq,apollo3-blue", "ambiq,apollo3x", "simple-bus";
 
-		flash: flash-controller@c000 {
+		flash: flash-controller@0 {
 			compatible = "ambiq,flash-controller";
-			reg = <0x0000c000 0xf4000>;
+			reg = <0x00000000 0x100000>;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
 
 			/* Flash region */
-			flash0: flash@c000 {
+			flash0: flash@0 {
 				compatible = "soc-nv-flash";
-				reg = <0x0000c000 0xf4000>;
+				reg = <0x00000000 0x100000>;
 			};
 		};
 
