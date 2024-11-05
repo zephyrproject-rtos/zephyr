@@ -7,6 +7,7 @@
 
 #include <espressif/esp32s3/esp32s3_appcpu.dtsi>
 #include <espressif/partitions_0x0_amp.dtsi>
+#include "esp32s3_devkitm-pinctrl.dtsi"
 
 / {
 	model = "Espressif ESP32S3-DevkitM APPCPU";
@@ -16,6 +17,8 @@
 		zephyr,sram = &sram0;
 		zephyr,ipc_shm = &shm0;
 		zephyr,ipc = &ipm0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_appcpu_partition;
 	};
 };
 
