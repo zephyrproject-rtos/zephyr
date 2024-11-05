@@ -6,22 +6,13 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
-#include <zephyr/usb/usbd.h>
-
-#include <sample_usbd.h>
+#include <zephyr/usb/usb_device.h>
 
 int main(void)
 {
-	struct usbd_context *sample_usbd;
 	int ret;
 
-	sample_usbd = sample_usbd_init_device(NULL);
-	if (sample_usbd == NULL) {
-		printk("Failed to initialize USB device");
-		return -ENODEV;
-	}
-
-	ret = usbd_enable(sample_usbd);
+	ret = usb_enable(NULL);
 	if (ret != 0) {
 		printk("Failed to enable USB");
 		return 0;
