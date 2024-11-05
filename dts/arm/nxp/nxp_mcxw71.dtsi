@@ -57,7 +57,8 @@
 
 			stcm0: system_memory@0 {
 				compatible = "mmio-sram";
-				reg = <0x0 DT_SIZE_K(64)>;
+				/* With only the first 64KB having ECC */
+				reg = <0x0 DT_SIZE_K(104)>;
 			};
 
 			stcm1: system_memory@1a000 {
