@@ -37,6 +37,7 @@ LOG_MODULE_REGISTER(net_ctx, CONFIG_NET_CONTEXT_LOG_LEVEL);
 #include "udp_internal.h"
 #include "tcp_internal.h"
 #include "net_stats.h"
+#include "pmtu.h"
 
 #if defined(CONFIG_NET_TCP)
 #include "tcp.h"
@@ -1138,6 +1139,22 @@ int net_context_create_ipv4_new(struct net_context *context,
 			net_ipv4_get_dscp(context->options.dscp_ecn)));
 	}
 #endif
+
+	if (IS_ENABLED(CONFIG_NET_IPV4_PMTU)) {
+		struct net_pmtu_entry *entry;
+		struct sockaddr_in dst_addr = {
+			.sin_family = AF_INET,
+			.sin_addr = *dst,
+		};
+
+		entry = net_pmtu_get_entry((struct sockaddr *)&dst_addr);
+		if (entry == NULL) {
+			/* Try to figure out the MTU of the path */
+			net_pkt_set_ipv4_pmtu(pkt, true);
+		} else {
+			net_pkt_set_ipv4_pmtu(pkt, false);
+		}
+	}
 
 	return net_ipv4_create(pkt, src, dst);
 }
