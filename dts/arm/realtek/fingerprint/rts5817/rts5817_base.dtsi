@@ -65,6 +65,12 @@
 			#size-cells = <1>;
 			status = "okay";
 		};
+
+		watchdog: watchdog@40100048 {
+			compatible = "realtek,rts5817-watchdog";
+			reg = <0x40100048 0x4>;
+			status = "disabled";
+		};
 	};
 };
 
