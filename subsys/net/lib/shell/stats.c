@@ -498,6 +498,13 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 	   GET_STAT(iface, ip_errors.chkerr),
 	   GET_STAT(iface, ip_errors.protoerr));
 
+#if defined(CONFIG_NET_STATISTICS_IPV4_PMTU)
+	PR("IPv4 PMTU recv %d\tsent\t%d\tdrop\t%d\n",
+	   GET_STAT(iface, ipv4_pmtu.recv),
+	   GET_STAT(iface, ipv4_pmtu.sent),
+	   GET_STAT(iface, ipv4_pmtu.drop));
+#endif /* CONFIG_NET_STATISTICS_IPV4_PMTU */
+
 #if defined(CONFIG_NET_STATISTICS_ICMP) && defined(CONFIG_NET_NATIVE_IPV4)
 	PR("ICMP recv      %d\tsent\t%d\tdrop\t%d\n",
 	   GET_STAT(iface, icmp.recv),

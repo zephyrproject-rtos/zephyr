@@ -74,6 +74,13 @@ static void print_stats(struct net_if *iface, struct net_stats *data)
 	       GET_STAT(iface, ip_errors.chkerr),
 	       GET_STAT(iface, ip_errors.protoerr));
 
+#if defined(CONFIG_NET_IPV4_PMTU)
+	printk("IPv4 PMTU recv %d\tsent\t%d\tdrop\t%d\n",
+	       GET_STAT(iface, ipv4_pmtu.recv),
+	       GET_STAT(iface, ipv4_pmtu.sent),
+	       GET_STAT(iface, ipv4_pmtu.drop));
+#endif /* CONFIG_NET_IPV4_PMTU */
+
 	printk("ICMP recv      %d\tsent\t%d\tdrop\t%d\n",
 	       GET_STAT(iface, icmp.recv),
 	       GET_STAT(iface, icmp.sent),
