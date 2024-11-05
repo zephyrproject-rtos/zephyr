@@ -196,14 +196,14 @@ Build and flash applications as usual (see :ref:`build_an_application` and
 
       .. zephyr-app-commands::
          :zephyr-app: samples/hello_world
-         :board: xiao_esp32s3/esp32/procpu
+         :board: xiao_esp32s3/esp32s3/procpu
          :goals: build
 
    .. group-tab:: XIAO ESP32S3 Sense
 
       .. zephyr-app-commands::
          :zephyr-app: samples/hello_world
-         :board: xiao_esp32s3/esp32/procpu/sense
+         :board: xiao_esp32s3/esp32s3/procpu/sense
          :goals: build
 
 The usual ``flash`` target will work with the ``xiao_esp32s3`` board
@@ -216,14 +216,14 @@ application.
 
       .. zephyr-app-commands::
          :zephyr-app: samples/hello_world
-         :board: xiao_esp32s3/esp32/procpu
+         :board: xiao_esp32s3/esp32s3/procpu
          :goals: flash
 
    .. group-tab:: XIAO ESP32S3 Sense
 
       .. zephyr-app-commands::
          :zephyr-app: samples/hello_world
-         :board: xiao_esp32s3/esp32/procpu/sense
+         :board: xiao_esp32s3/esp32s3/procpu/sense
          :goals: flash
 
 Open the serial monitor using the following command:
@@ -257,14 +257,14 @@ Here is an example for building the :zephyr:code-sample:`hello_world` applicatio
 
       .. zephyr-app-commands::
          :zephyr-app: samples/hello_world
-         :board: xiao_esp32s3/esp32/procpu
+         :board: xiao_esp32s3/esp32s3/procpu
          :goals: debug
 
    .. group-tab:: XIAO ESP32S3 Sense
 
       .. zephyr-app-commands::
          :zephyr-app: samples/hello_world
-         :board: xiao_esp32s3/esp32/procpu/sense
+         :board: xiao_esp32s3/esp32s3/procpu/sense
          :goals: debug
 
 You can debug an application in the usual way. Here is an example for the :zephyr:code-sample:`hello_world` application.
@@ -275,14 +275,14 @@ You can debug an application in the usual way. Here is an example for the :zephy
 
       .. zephyr-app-commands::
          :zephyr-app: samples/hello_world
-         :board: xiao_esp32s3/esp32/procpu
+         :board: xiao_esp32s3/esp32s3/procpu
          :goals: debug
 
    .. group-tab:: XIAO ESP32S3 Sense
 
       .. zephyr-app-commands::
          :zephyr-app: samples/hello_world
-         :board: xiao_esp32s3/esp32/procpu/sense
+         :board: xiao_esp32s3/esp32s3/procpu/sense
          :goals: debug
 
 References
