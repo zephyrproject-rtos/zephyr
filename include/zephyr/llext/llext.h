@@ -355,6 +355,22 @@ int arch_elf_relocate(elf_rela_t *rel, uintptr_t loc,
 ssize_t llext_find_section(struct llext_loader *loader, const char *search_name);
 
 /**
+ * @brief Extract ELF section header by name.
+ *
+ * Searches for a section by name in the ELF file and retrieves its full header.
+ *
+ * @param[in] loader Extension loader data and context
+ * @param[in] ext Extension to be searched
+ * @param[in] search_name Section name to search for
+ * @param[out] shdr Buffer for the section header
+ * @retval 0 Success
+ * @retval -ENOTSUP "peek" method not supported
+ * @retval -ENOENT section not found
+ */
+int llext_get_section_header(struct llext_loader *loader, struct llext *ext,
+			     const char *search_name, elf_shdr_t *shdr);
+
+/**
  * @brief Architecture specific function for local binding relocations
  *
  * @param[in] loader Extension loader data and context
