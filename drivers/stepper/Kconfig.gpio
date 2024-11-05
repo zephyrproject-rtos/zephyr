@@ -6,7 +6,7 @@ menu "GPIO stepper driver"
 
 config GPIO_STEPPER
 	bool "Activate driver for gpio stepper control"
-	depends on DT_HAS_ZEPHYR_GPIO_STEPPERS_ENABLED
+	depends on DT_HAS_ZEPHYR_GPIO_STEPPER_ENABLED
 	default y
 	help
 	  GPIO Stepper driver for stepper motor control with darlington arrays or dual H-bridge.
