@@ -160,10 +160,13 @@ Boards & SoC Support
 
 * Added support for these SoC series:
 
+  * Added ESP32-C2 and ESP8684 SoC support.
+
 * Made these changes in other SoC series:
 
   * NXP S32Z270: Added support for the new silicon cut version 2.0. Note that the previous
     versions (1.0 and 1.1) are no longer supported.
+  * Added ESP32 WROVER-E-N16R4 variant.
 
 * Added support for these boards:
 
@@ -211,6 +214,7 @@ Boards & SoC Support
    * :ref:`Renesas RA6E2 Fast Prototyping Board <fpb_ra6e2>` (``fpb_ra6e2``)
    * :ref:`Renesas RA8T1 Evaluation Kit <mcb_ra8t1>` (``mck_ra8t1``)
    * :zephyr:board:`Renode Cortex-R8 Virtual <cortex_r8_virtual>` (``cortex_r8_virtual``)
+   * :zephyr:board:`Seeed XIAO ESP32-S3 Sense Variant <xiao_esp32s3>`: ``xiao_esp32s3``.
    * :ref:`sensry.io Ganymed Break-Out-Board (BOB) <ganymed_bob>` (``ganymed_bob``)
    * :zephyr:board:`SiLabs SiM3U1xx 32-bit MCU USB Development Kit <sim3u1xx_dk>` (``sim3u1xx_dk``)
    * :ref:`SparkFun Thing Plus Matter <sparkfun_thing_plus_mgm240p>` (``sparkfun_thing_plus_matter_mgm240p``)
@@ -311,6 +315,9 @@ Drivers and Sensors
 
 * ADC
 
+  * Added proper ADC2 calibration entries in ESP32.
+  * Fixed calibration scheme in ESP32-S3.
+
 * Battery
 
 * CAN
@@ -353,6 +360,7 @@ Drivers and Sensors
 
   * Fixed SPI NOR driver issue where wp, hold and reset pins were incorrectly initialized from
     device tee when SFDP at run-time has been enabled (:github:`80383`)
+  * Updated all Espressif's SoC driver initialization to allow new chipsets and octal flash support.
 
   * Added :kconfig:option:`CONFIG_SPI_NOR_ACTIVE_DWELL_MS`, to the SPI NOR driver configuration,
     which allows setting the time during which the driver will wait before triggering Deep Power Down (DPD).
@@ -381,9 +389,17 @@ Drivers and Sensors
 
 * I2S
 
+  * Added ESP32-S3 and ESP32-C3 driver support.
+
 * I3C
 
 * Input
+
+  * Fixed broken ESP32 input touch sensor driver.
+
+* Interrupt
+
+  * Updated ESP32 family interrupt allocator with proper IRQ flags and priorities.
 
 * LED
 
@@ -402,6 +418,8 @@ Drivers and Sensors
 * LoRa
 
 * Mailbox
+
+  * Added driver support for ESP32 and ESP32-S3 SoCs.
 
 * MDIO
 
@@ -431,6 +449,8 @@ Drivers and Sensors
 * RTIO
 
 * SDHC
+
+  * Added ESP32-S3 driver support.
 
 * Sensors
 
@@ -485,6 +505,10 @@ Drivers and Sensors
 * Watchdog
 
 * Wi-Fi
+
+  * Added ESP32-C2 Wi-Fi support.
+  * Added ESP32 driver APSTA support.
+  * Updated ESP32 Wi-Fi driver to reflect actual negotiated PHY mode.
 
 Networking
 **********
@@ -605,6 +629,8 @@ Libraries / Subsystems
 
 * Power management
 
+  * Added initial ESP32-C6 power management interface to allow light and deep-sleep features.
+
 * Crypto
 
   * Mbed TLS was updated to version 3.6.2 (from 3.6.0). The release notes can be found at:
@@ -720,6 +746,9 @@ HALs
 * ADI
 
 * Espressif
+
+  * Synced HAL to version v5.1.4 to update SoCs low level files, RF libraries and
+    overall driver support.
 
 MCUboot
 *******
