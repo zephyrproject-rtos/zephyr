@@ -125,7 +125,10 @@ BUILD_ASSERT(QSPI_IF_DEVICE_FREQUENCY >= (NRF_QSPI_BASE_CLOCK_FREQ / 16),
  * starts. It was measured with a logic analyzer (unfortunately, the nRF5340
  * specification does not provide any numbers in this regard).
  */
-#define BASE_CLOCK_SWITCH_DELAY_US 7
+/* FIXME: This has adverse impact on performance, ~3Mbps, so, for now, it is
+ * disabled till further investigation.
+ */
+#define BASE_CLOCK_SWITCH_DELAY_US 0
 
 #else
 /*
