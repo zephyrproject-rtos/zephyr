@@ -221,7 +221,9 @@ static int flash_mcux_read(const struct device *dev, off_t offset,
 		/* Check id the ECC issue is due to the Flash being erased
 		 * ("addr" and "len" must be word-aligned for this call).
 		 */
-		rc = FLASH_VerifyErase(&priv->config, ((addr + 0x3) & ~0x3),  ((len + 0x3) & ~0x3));
+		rc = FLASH_VerifyErase(&priv->config,
+				       ROUND_DOWN(addr, 4),
+				       ROUND_DOWN(addr + len + 3, 4) - ROUND_DOWN(addr, 4));
 		if (rc == kStatus_FLASH_Success) {
 			rc = -ENODATA;
 		} else {
