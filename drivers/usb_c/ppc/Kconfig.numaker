@@ -7,5 +7,6 @@ config USBC_PPC_NUMAKER
 	bool "Nuvoton NuMaker USB-C PPC"
 	default y
 	depends on DT_HAS_NUVOTON_NUMAKER_PPC_ENABLED && USBC_TCPC_NUMAKER
+	select PINCTRL
 	help
 	  Enable USB-C PPC support for Nuvoton NuMaker chip with UTCPD.

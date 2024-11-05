@@ -7,6 +7,7 @@ config PWM_NUMAKER
 	bool "Nuvoton NuMaker MCU PWM driver"
 	default y
 	select HAS_NUMAKER_PWM
+	select PINCTRL
 	depends on DT_HAS_NUVOTON_NUMAKER_PWM_ENABLED
 	help
 	  This option enables the PWM driver for Nuvoton NuMaker family of
