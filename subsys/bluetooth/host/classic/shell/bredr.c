@@ -38,7 +38,9 @@ static struct bt_conn *pairing_conn;
 
 #define DATA_BREDR_MTU		48
 
-NET_BUF_POOL_FIXED_DEFINE(data_pool, 1, DATA_BREDR_MTU, 8, NULL);
+NET_BUF_POOL_FIXED_DEFINE(data_tx_pool, 1, BT_L2CAP_SDU_BUF_SIZE(DATA_BREDR_MTU),
+			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
+NET_BUF_POOL_FIXED_DEFINE(data_rx_pool, 1, DATA_BREDR_MTU, 8, NULL);
 
 #define SDP_CLIENT_USER_BUF_LEN		512
 NET_BUF_POOL_FIXED_DEFINE(sdp_client_pool, CONFIG_BT_MAX_CONN,
@@ -221,6 +223,10 @@ static int l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	shell_print(ctx_shell, "Incoming data channel %p len %u", chan,
 		    buf->len);
 
+	if (buf->len) {
+		shell_hexdump(ctx_shell, buf->data, buf->len);
+	}
+
 	return 0;
 }
 
@@ -238,7 +244,7 @@ static struct net_buf *l2cap_alloc_buf(struct bt_l2cap_chan *chan)
 {
 	shell_print(ctx_shell, "Channel %p requires buffer", chan);
 
-	return net_buf_alloc(&data_pool, K_FOREVER);
+	return net_buf_alloc(&data_rx_pool, K_NO_WAIT);
 }
 
 static const struct bt_l2cap_chan_ops l2cap_ops = {
@@ -251,7 +257,7 @@ static const struct bt_l2cap_chan_ops l2cap_ops = {
 static struct bt_l2cap_br_chan l2cap_chan = {
 	.chan.ops	= &l2cap_ops,
 	 /* Set for now min. MTU */
-	.rx.mtu		= 48,
+	.rx.mtu		= DATA_BREDR_MTU,
 };
 
 static int l2cap_accept(struct bt_conn *conn, struct bt_l2cap_server *server,
@@ -273,8 +279,7 @@ static struct bt_l2cap_server br_server = {
 	.accept = l2cap_accept,
 };
 
-static int cmd_l2cap_register(const struct shell *sh,
-			      size_t argc, char *argv[])
+static int cmd_l2cap_register(const struct shell *sh, size_t argc, char *argv[])
 {
 	if (br_server.psm) {
 		shell_print(sh, "Already registered");
@@ -290,6 +295,100 @@ static int cmd_l2cap_register(const struct shell *sh,
 	}
 
 	shell_print(sh, "L2CAP psm %u registered", br_server.psm);
+
+	return 0;
+}
+
+static int cmd_l2cap_connect(const struct shell *sh, size_t argc, char *argv[])
+{
+	uint16_t psm;
+	struct bt_conn_info info;
+	int err;
+
+	if (!default_conn) {
+		shell_error(sh, "Not connected");
+		return -ENOEXEC;
+	}
+
+	if (l2cap_chan.chan.conn) {
+		shell_error(ctx_shell, "No channels available");
+		return -ENOMEM;
+	}
+
+	err = bt_conn_get_info(default_conn, &info);
+	if ((err < 0) || (info.type != BT_CONN_TYPE_BR)) {
+		shell_error(sh, "Invalid conn type");
+		return -ENOEXEC;
+	}
+
+	psm = strtoul(argv[1], NULL, 16);
+
+	err = bt_l2cap_chan_connect(default_conn, &l2cap_chan.chan, psm);
+	if (err < 0) {
+		shell_error(sh, "Unable to connect to psm %u (err %d)", psm,
+			    err);
+	} else {
+		shell_print(sh, "L2CAP connection pending");
+	}
+
+	return err;
+}
+
+static int cmd_l2cap_disconnect(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err;
+
+	err = bt_l2cap_chan_disconnect(&l2cap_chan.chan);
+	if (err) {
+		shell_error(sh, "Unable to disconnect: %u", -err);
+	}
+
+	return err;
+}
+
+static int cmd_l2cap_send(const struct shell *sh, size_t argc, char *argv[])
+{
+	static uint8_t buf_data[DATA_BREDR_MTU] = { [0 ... (DATA_BREDR_MTU - 1)] = 0xff };
+	int err, len = DATA_BREDR_MTU, count = 1;
+	struct net_buf *buf;
+
+	if (argc > 1) {
+		count = strtoul(argv[1], NULL, 10);
+	}
+
+	if (argc > 2) {
+		len = strtoul(argv[2], NULL, 10);
+		if (len > DATA_BREDR_MTU) {
+			shell_error(sh, "Length exceeds TX MTU for the channel");
+			return -ENOEXEC;
+		}
+	}
+
+	len = MIN(l2cap_chan.tx.mtu, len);
+
+	while (count--) {
+		shell_print(sh, "Rem %d", count);
+		buf = net_buf_alloc(&data_tx_pool, K_SECONDS(2));
+		if (!buf) {
+			if (l2cap_chan.state != BT_L2CAP_CONNECTED) {
+				shell_error(sh, "Channel disconnected, stopping TX");
+
+				return -EAGAIN;
+			}
+			shell_error(sh, "Allocation timeout, stopping TX");
+
+			return -EAGAIN;
+		}
+		net_buf_reserve(buf, BT_L2CAP_CHAN_SEND_RESERVE);
+
+		net_buf_add_mem(buf, buf_data, len);
+		err = bt_l2cap_chan_send(&l2cap_chan.chan, buf);
+		if (err < 0) {
+			shell_error(sh, "Unable to send: %d", -err);
+			net_buf_unref(buf);
+			return -ENOEXEC;
+		}
+	}
 
 	return 0;
 }
@@ -542,24 +641,7 @@ static int cmd_sdp_find_record(const struct shell *sh,
 	return 0;
 }
 
-#define HELP_NONE "[none]"
-#define HELP_ADDR_LE "<address: XX:XX:XX:XX:XX:XX> <type: (public|random)>"
-
-SHELL_STATIC_SUBCMD_SET_CREATE(br_cmds,
-	SHELL_CMD_ARG(auth-pincode, NULL, "<pincode>", cmd_auth_pincode, 2, 0),
-	SHELL_CMD_ARG(connect, NULL, "<address>", cmd_connect, 2, 0),
-	SHELL_CMD_ARG(discovery, NULL,
-		      "<value: on, off> [length: 1-48] [mode: limited]",
-		      cmd_discovery, 2, 2),
-	SHELL_CMD_ARG(iscan, NULL, "<value: on, off>", cmd_discoverable, 2, 0),
-	SHELL_CMD_ARG(l2cap-register, NULL, "<psm>", cmd_l2cap_register, 2, 0),
-	SHELL_CMD_ARG(oob, NULL, NULL, cmd_oob, 1, 0),
-	SHELL_CMD_ARG(pscan, NULL, "<value: on, off>", cmd_connectable, 2, 0),
-	SHELL_CMD_ARG(sdp-find, NULL, "<HFPAG>", cmd_sdp_find_record, 2, 0),
-	SHELL_SUBCMD_SET_END
-);
-
-static int cmd_br(const struct shell *sh, size_t argc, char **argv)
+static int cmd_default_handler(const struct shell *sh, size_t argc, char **argv)
 {
 	if (argc == 1) {
 		shell_help(sh);
@@ -568,8 +650,34 @@ static int cmd_br(const struct shell *sh, size_t argc, char **argv)
 
 	shell_error(sh, "%s unknown parameter: %s", argv[0], argv[1]);
 
-	return -ENOEXEC;
+	return -EINVAL;
 }
 
-SHELL_CMD_ARG_REGISTER(br, &br_cmds, "Bluetooth BR/EDR shell commands", cmd_br,
-		       1, 1);
+#define HELP_NONE "[none]"
+#define HELP_ADDR_LE "<address: XX:XX:XX:XX:XX:XX> <type: (public|random)>"
+
+SHELL_STATIC_SUBCMD_SET_CREATE(l2cap_cmds,
+	SHELL_CMD_ARG(register, NULL, "<psm>", cmd_l2cap_register, 2, 0),
+	SHELL_CMD_ARG(connect, NULL, "<psm>", cmd_l2cap_connect, 2, 0),
+	SHELL_CMD_ARG(disconnect, NULL, HELP_NONE, cmd_l2cap_disconnect, 1, 0),
+	SHELL_CMD_ARG(send, NULL, "[number of packets] [length of packet(s)]",
+		      cmd_l2cap_send, 1, 2),
+	SHELL_SUBCMD_SET_END
+);
+
+SHELL_STATIC_SUBCMD_SET_CREATE(br_cmds,
+	SHELL_CMD_ARG(auth-pincode, NULL, "<pincode>", cmd_auth_pincode, 2, 0),
+	SHELL_CMD_ARG(connect, NULL, "<address>", cmd_connect, 2, 0),
+	SHELL_CMD_ARG(discovery, NULL,
+		      "<value: on, off> [length: 1-48] [mode: limited]",
+		      cmd_discovery, 2, 2),
+	SHELL_CMD_ARG(iscan, NULL, "<value: on, off>", cmd_discoverable, 2, 0),
+	SHELL_CMD(l2cap, &l2cap_cmds, HELP_NONE, cmd_default_handler),
+	SHELL_CMD_ARG(oob, NULL, NULL, cmd_oob, 1, 0),
+	SHELL_CMD_ARG(pscan, NULL, "<value: on, off>", cmd_connectable, 2, 0),
+	SHELL_CMD_ARG(sdp-find, NULL, "<HFPAG>", cmd_sdp_find_record, 2, 0),
+	SHELL_SUBCMD_SET_END
+);
+
+SHELL_CMD_ARG_REGISTER(br, &br_cmds, "Bluetooth BR/EDR shell commands",
+		       cmd_default_handler, 1, 1);
