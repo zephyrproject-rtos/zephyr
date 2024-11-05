@@ -44,6 +44,9 @@ static void print_callback(const struct device *dev, const enum stepper_event ev
 			   void *user_data)
 {
 	const struct shell *sh = user_data;
+	if (!sh) {
+		return;
+	}
 
 	switch (event) {
 	case STEPPER_EVENT_STEPS_COMPLETED:
