@@ -136,6 +136,29 @@ static inline void net_stats_update_ipv6_pmtu_drop(struct net_if *iface)
 #define net_stats_update_ipv6_pmtu_drop(iface)
 #endif /* CONFIG_NET_STATISTICS_IPV6_PMTU */
 
+#if defined(CONFIG_NET_STATISTICS_IPV4_PMTU) && defined(CONFIG_NET_NATIVE_IPV4)
+/* IPv4 Path MTU Discovery stats */
+
+static inline void net_stats_update_ipv4_pmtu_sent(struct net_if *iface)
+{
+	UPDATE_STAT(iface, stats.ipv4_pmtu.sent++);
+}
+
+static inline void net_stats_update_ipv4_pmtu_recv(struct net_if *iface)
+{
+	UPDATE_STAT(iface, stats.ipv4_pmtu.recv++);
+}
+
+static inline void net_stats_update_ipv4_pmtu_drop(struct net_if *iface)
+{
+	UPDATE_STAT(iface, stats.ipv4_pmtu.drop++);
+}
+#else
+#define net_stats_update_ipv4_pmtu_sent(iface)
+#define net_stats_update_ipv4_pmtu_recv(iface)
+#define net_stats_update_ipv4_pmtu_drop(iface)
+#endif /* CONFIG_NET_STATISTICS_IPV4_PMTU */
+
 #if defined(CONFIG_NET_STATISTICS_IPV4) && defined(CONFIG_NET_NATIVE_IPV4)
 /* IPv4 stats */
 
