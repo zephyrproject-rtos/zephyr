@@ -6,12 +6,6 @@ common:
   depends_on:
     - gpio
 tests:
-  sample.usb.hid-mouse:
-    depends_on:
-      - usb_device
-    platform_exclude:
-      - frdm_mcxn947/mcxn947/cpu0
-    tags: usb
   sample.usb_device_next.hid-mouse:
     depends_on:
       - usbd
@@ -23,7 +17,4 @@ tests:
       - nucleo_f413zh
       - mimxrt1060_evk/mimxrt1062/qspi
       - max32690evkit/max32690/m4
-    extra_args:
-      - CONF_FILE="usbd_next_prj.conf"
-      - EXTRA_DTC_OVERLAY_FILE="usbd_next.overlay"
     tags: usb
