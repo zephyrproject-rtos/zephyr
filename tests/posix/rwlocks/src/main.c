@@ -47,7 +47,7 @@ static void *thread_top(void *p1)
 	return NULL;
 }
 
-ZTEST(rwlock, test_rw_lock)
+ZTEST(posix_rw_locks, test_rw_lock)
 {
 	int ret;
 	pthread_t newthread[N_THR];
@@ -133,12 +133,12 @@ static void test_pthread_rwlockattr_pshared_common(bool set, int pshared)
 	zassert_ok(pthread_rwlockattr_destroy(&attr));
 }
 
-ZTEST(rwlock, test_pthread_rwlockattr_getpshared)
+ZTEST(posix_rw_locks, test_pthread_rwlockattr_getpshared)
 {
 	test_pthread_rwlockattr_pshared_common(false, 0);
 }
 
-ZTEST(rwlock, test_pthread_rwlockattr_setpshared)
+ZTEST(posix_rw_locks, test_pthread_rwlockattr_setpshared)
 {
 	test_pthread_rwlockattr_pshared_common(true, PTHREAD_PROCESS_PRIVATE);
 	test_pthread_rwlockattr_pshared_common(true, PTHREAD_PROCESS_SHARED);
@@ -154,4 +154,4 @@ static void before(void *arg)
 	}
 }
 
-ZTEST_SUITE(rwlock, NULL, NULL, before, NULL, NULL);
+ZTEST_SUITE(posix_rw_locks, NULL, NULL, before, NULL, NULL);
