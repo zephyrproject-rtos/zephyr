@@ -120,6 +120,16 @@
 			reg = <0x35780000 DT_SIZE_M(1)>;
 		};
 
+		sram_code0: memory@32100000 {
+			compatible = "mmio-sram";
+			reg = <0x32100000 DT_SIZE_M(7)>;
+		};
+
+		sram_code1: memory@36100000 {
+			compatible = "mmio-sram";
+			reg = <0x36100000 DT_SIZE_M(7)>;
+		};
+
 		uart0: uart@40170000 {
 			compatible = "nxp,s32-linflexd";
 			reg = <0x40170000 0x1000>;

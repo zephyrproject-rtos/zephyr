@@ -14,6 +14,7 @@
 
 	chosen {
 		zephyr,sram = &sram0;
+		zephyr,flash = &sram_code0;
 		zephyr,canbus = &canxl0;
 	};
 
