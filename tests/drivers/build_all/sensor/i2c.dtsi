@@ -1238,3 +1238,10 @@ test_i2c_tmp435: tmp435@a9 {
 	resistance-correction;
 	beta-compensation = <0x0f>;
 };
+
+test_i2c_xbr818: xbr818@aa {
+	compatible = "phosense,xbr818";
+	reg = <0xaa>;
+	int-gpios = <&test_gpio 0 0>;
+	i2c-en-gpios = <&test_gpio 0 0>;
+};
