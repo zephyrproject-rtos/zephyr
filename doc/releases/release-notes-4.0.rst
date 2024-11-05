@@ -470,6 +470,18 @@ Drivers and Sensors
 
 * Video
 
+  * Introduced API to control frame rate
+  * Introduced API for partial frames transfer with the video buffer field ``line_offset``
+  * Introduced API for :ref:`multi-heap<memory_management_shared_multi_heap>` video buffer allocation with
+    :kconfig:option:`CONFIG_VIDEO_BUFFER_USE_SHARED_MULTI_HEAP`
+  * Introduced bindings for common video link properties in ``video-interfaces.yaml``
+  * Introduced missing :kconfig:option:`CONFIG_VIDEO_LOG_LEVEL`
+  * Added support for GalaxyCore GC2145 image sensor (:dtcompatible:`gc,gc2145`)
+  * Added support for ESP32-S3 LCD-CAM interface (:dtcompatible:`espressif,esp32-lcd-cam`)
+  * Added support for NXP MCUX SMARTDMA interface (:dtcompatible:`nxp,smartdma`)
+  * Added support for more OmniVision OV2640 controls (:dtcompatible:`ovti,ov2640`)
+  * Added support for more OmniVision OV5640 controls (:dtcompatible:`ovti,ov5640`)
+
 * Watchdog
 
 * Wi-Fi
