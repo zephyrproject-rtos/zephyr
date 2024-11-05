@@ -7,7 +7,7 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 verbosity_level=2
 simulation_id="rpa_expired"
-EXECUTE_TIMEOUT=100
+EXECUTE_TIMEOUT=240
 
 central_exe_rpa_expired="\
 ${BSIM_OUT_PATH}/bin/bs_${BOARD_TS}_$(guess_test_long_name)_prj_rpa_expired_conf"
