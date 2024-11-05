@@ -4457,6 +4457,44 @@ uint16_t net_tcp_get_supported_mss(const struct tcp *conn)
 	return 0;
 }
 
+#if defined(CONFIG_NET_TEST)
+struct testing_user_data {
+	struct sockaddr remote;
+	uint16_t mtu;
+};
+
+static void testing_find_conn(struct tcp *conn, void *user_data)
+{
+	struct testing_user_data *data = user_data;
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) && data->remote.sa_family == AF_INET6 &&
+	    net_ipv6_addr_cmp(&conn->dst.sin6.sin6_addr,
+			      &net_sin6(&data->remote)->sin6_addr)) {
+		if (data->mtu > 0) {
+			/* Set it only once */
+			return;
+		}
+
+		NET_DBG("Found connection %p mtu %u", conn,
+			net_tcp_get_supported_mss(conn) + NET_IPV6TCPH_LEN);
+		data->mtu = net_tcp_get_supported_mss(conn) + NET_IPV6TCPH_LEN;
+		return;
+	}
+}
+
+uint16_t net_tcp_get_mtu(struct sockaddr *dst)
+{
+	struct testing_user_data data = {
+		.remote = *dst,
+		.mtu = 0,
+	};
+
+	net_tcp_foreach(testing_find_conn, &data);
+
+	return data.mtu;
+}
+#endif /* CONFIG_NET_TEST */
+
 int net_tcp_set_option(struct net_context *context,
 		       enum tcp_conn_option option,
 		       const void *value, size_t len)

@@ -23,12 +23,19 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_PMTU_LOG_LEVEL);
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/ethernet.h>
+#include <zephyr/net/dummy.h>
+#include <zephyr/net/loopback.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/net_event.h>
 #include <zephyr/net/socket.h>
 
 #include <zephyr/random/random.h>
 
+#include "../../socket/socket_helpers.h"
+
+#include "route.h"
+#include "icmpv6.h"
+#include "ipv6.h"
 #include "pmtu.h"
 
 #define NET_LOG_ENABLED 1
@@ -40,20 +47,22 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_PMTU_LOG_LEVEL);
 #define DBG(fmt, ...)
 #endif
 
+/* This is a helper function to get the MTU value for the given destination.
+ * It is implemented in tcp.c file.
+ */
+extern uint16_t net_tcp_get_mtu(struct sockaddr *dst);
+
 /* Small sleep between tests makes sure that the PMTU destination
  * cache entries are separated from each other.
  */
 #define SMALL_SLEEP K_MSEC(5)
 
-static struct in_addr my_ipv4_addr = { { { 192, 0, 2, 1 } } };
 static struct in_addr dest_ipv4_addr1 = { { { 198, 51, 100, 1 } } };
 static struct in_addr dest_ipv4_addr2 = { { { 198, 51, 100, 2 } } };
 static struct in_addr dest_ipv4_addr3 = { { { 198, 51, 100, 3 } } };
 static struct in_addr dest_ipv4_addr4 = { { { 198, 51, 100, 4 } } };
-static struct in_addr any_ipv4_addr = INADDR_ANY_INIT;
+static struct in_addr dest_ipv4_addr_not_found = { { { 1, 2, 3, 4 } } };
 
-static struct in6_addr my_ipv6_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
-					0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 static struct in6_addr dest_ipv6_addr1 = { { { 0x20, 0x01, 0x0d, 0xb8, 0x01, 0, 0, 0,
 					0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 static struct in6_addr dest_ipv6_addr2 = { { { 0x20, 0x01, 0x0d, 0xb8, 0x01, 0, 0, 0,
@@ -62,75 +71,61 @@ static struct in6_addr dest_ipv6_addr3 = { { { 0x20, 0x01, 0x0d, 0xb8, 0x01, 0, 
 					0, 0, 0, 0, 0, 0, 0, 0x3 } } };
 static struct in6_addr dest_ipv6_addr4 = { { { 0x20, 0x01, 0x0d, 0xb8, 0x01, 0, 0, 0,
 					0, 0, 0, 0, 0, 0, 0, 0x4 } } };
-static struct in6_addr any_ipv6_addr = IN6ADDR_ANY_INIT;
+static struct in6_addr dest_ipv6_addr_not_found = { { { 0x20, 0x01, 0x0d, 0xb8, 0xde,
+			0xad, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x4 } } };
+
+static struct net_if *target_iface;
+static char target_iface_name[CONFIG_NET_INTERFACE_NAME_LEN + 1];
 
 K_SEM_DEFINE(wait_data, 0, UINT_MAX);
 
+#define PKT_WAIT_TIME K_MSEC(500)
 #define WAIT_TIME 500
 #define WAIT_TIME_LONG MSEC_PER_SEC
 #define MY_PORT 1969
-#define PEER_PORT 13856
+#define PEER_PORT 2024
+#define PEER_IPV6_ADDR "::1"
+#define MY_IPV6_ADDR "::1"
+#define MY_IPV4_ADDR "127.0.0.1"
+#define PEER_IPV4_ADDR "127.0.0.1"
 
-struct net_test_pmtu {
-	uint8_t mac_addr[sizeof(struct net_eth_addr)];
-	struct net_linkaddr ll_addr;
-};
+#define THREAD_SLEEP 50 /* ms */
 
-int net_test_dev_init(const struct device *dev)
+static const char *iface2str(struct net_if *iface)
 {
-	return 0;
-}
-
-static uint8_t *net_test_get_mac(const struct device *dev)
-{
-	struct net_test_pmtu *context = dev->data;
-
-	if (context->mac_addr[2] == 0x00) {
-		/* 00-00-5E-00-53-xx Documentation RFC 7042 */
-		context->mac_addr[0] = 0x00;
-		context->mac_addr[1] = 0x00;
-		context->mac_addr[2] = 0x5E;
-		context->mac_addr[3] = 0x00;
-		context->mac_addr[4] = 0x53;
-		context->mac_addr[5] = sys_rand8_get();
+	if (net_if_l2(iface) == &NET_L2_GET_NAME(DUMMY)) {
+		return "No L2";
 	}
 
-	return context->mac_addr;
+	return "<unknown type>";
 }
 
-static void net_test_iface_init(struct net_if *iface)
+static void iface_cb(struct net_if *iface, void *user_data)
 {
-	uint8_t *mac = net_test_get_mac(net_if_get_device(iface));
+	static int if_count;
 
-	net_if_set_link_addr(iface, mac, sizeof(struct net_eth_addr),
-			     NET_LINK_ETHERNET);
-}
+	NET_DBG("Interface %p (%s) [%d]", iface, iface2str(iface),
+		net_if_get_by_iface(iface));
 
-static int tester_send(const struct device *dev, struct net_pkt *pkt)
-{
-	if (!pkt->buffer) {
-		TC_ERROR("No data to send!\n");
-		return -ENODATA;
+	switch (if_count) {
+	case 0:
+		target_iface = iface;
+		(void)net_if_get_name(iface, target_iface_name,
+				      CONFIG_NET_INTERFACE_NAME_LEN);
+		break;
 	}
 
-	return 0;
+	if_count++;
 }
 
-struct net_test_pmtu net_test_data;
+static void *test_setup(void)
+{
+	net_if_foreach(iface_cb, NULL);
 
-static struct ethernet_api net_test_if_api = {
-	.iface_api.init = net_test_iface_init,
-	.send = tester_send,
-};
+	zassert_not_null(target_iface, "Interface is NULL");
 
-#define _ETH_L2_LAYER ETHERNET_L2
-#define _ETH_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(ETHERNET_L2)
-
-NET_DEVICE_INIT(net_test_pmtu, "net_test_pmtu",
-		net_test_dev_init, NULL, &net_test_data, NULL,
-		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		&net_test_if_api, _ETH_L2_LAYER, _ETH_L2_CTX_TYPE,
-		127);
+	return NULL;
+}
 
 ZTEST(net_pmtu_test_suite, test_pmtu_01_ipv4_get_entry)
 {
@@ -209,6 +204,7 @@ ZTEST(net_pmtu_test_suite, test_pmtu_03_ipv4_create_more_entries)
 #if defined(CONFIG_NET_IPV4_PMTU)
 	struct sockaddr_in dest_ipv4;
 	struct net_pmtu_entry *entry;
+	uint16_t mtu;
 	int ret;
 
 	dest_ipv4.sin_family = AF_INET;
@@ -225,10 +221,8 @@ ZTEST(net_pmtu_test_suite, test_pmtu_03_ipv4_create_more_entries)
 	net_ipaddr_copy(&dest_ipv4.sin_addr, &dest_ipv4_addr2);
 	ret = net_pmtu_update_mtu((struct sockaddr *)&dest_ipv4, 1400);
 	zassert_equal(ret, 0, "PMTU IPv4 MTU update failed (%d)", ret);
-	entry = net_pmtu_get_entry((struct sockaddr *)&dest_ipv4);
-	zassert_equal(entry->mtu, 1400, "PMTU IPv4 MTU is not correct (%d)",
-		      entry->mtu);
-
+	mtu = net_pmtu_get_mtu((struct sockaddr *)&dest_ipv4);
+	zassert_equal(mtu, 1400, "PMTU IPv4 MTU is not correct (%d)", mtu);
 
 	k_sleep(SMALL_SLEEP);
 
@@ -238,6 +232,12 @@ ZTEST(net_pmtu_test_suite, test_pmtu_03_ipv4_create_more_entries)
 	entry = net_pmtu_get_entry((struct sockaddr *)&dest_ipv4);
 	zassert_equal(entry->mtu, 1500, "PMTU IPv4 MTU is not correct (%d)",
 		      entry->mtu);
+
+	net_ipaddr_copy(&dest_ipv4.sin_addr, &dest_ipv4_addr_not_found);
+	ret = net_pmtu_get_mtu((struct sockaddr *)&dest_ipv4);
+	zassert_equal(ret, -ENOENT, "PMTU IPv4 MTU update succeed (%d)", ret);
+	entry = net_pmtu_get_entry((struct sockaddr *)&dest_ipv4);
+	zassert_equal(entry, NULL, "PMTU IPv4 MTU update succeed");
 #else
 	ztest_test_skip();
 #endif
@@ -248,6 +248,7 @@ ZTEST(net_pmtu_test_suite, test_pmtu_03_ipv6_create_more_entries)
 #if defined(CONFIG_NET_IPV6_PMTU)
 	struct sockaddr_in6 dest_ipv6;
 	struct net_pmtu_entry *entry;
+	uint16_t mtu;
 	int ret;
 
 	dest_ipv6.sin6_family = AF_INET6;
@@ -264,9 +265,8 @@ ZTEST(net_pmtu_test_suite, test_pmtu_03_ipv6_create_more_entries)
 	net_ipaddr_copy(&dest_ipv6.sin6_addr, &dest_ipv6_addr2);
 	ret = net_pmtu_update_mtu((struct sockaddr *)&dest_ipv6, 1700);
 	zassert_equal(ret, 0, "PMTU IPv6 MTU update failed (%d)", ret);
-	entry = net_pmtu_get_entry((struct sockaddr *)&dest_ipv6);
-	zassert_equal(entry->mtu, 1700, "PMTU IPv6 MTU is not correct (%d)",
-		      entry->mtu);
+	mtu = net_pmtu_get_mtu((struct sockaddr *)&dest_ipv6);
+	zassert_equal(mtu, 1700, "PMTU IPv6 MTU is not correct (%d)", mtu);
 
 	k_sleep(SMALL_SLEEP);
 
@@ -276,6 +276,12 @@ ZTEST(net_pmtu_test_suite, test_pmtu_03_ipv6_create_more_entries)
 	entry = net_pmtu_get_entry((struct sockaddr *)&dest_ipv6);
 	zassert_equal(entry->mtu, 1800, "PMTU IPv6 MTU is not correct (%d)",
 		      entry->mtu);
+
+	net_ipaddr_copy(&dest_ipv6.sin6_addr, &dest_ipv6_addr_not_found);
+	ret = net_pmtu_get_mtu((struct sockaddr *)&dest_ipv6);
+	zassert_equal(ret, -ENOENT, "PMTU IPv6 MTU update succeed (%d)", ret);
+	entry = net_pmtu_get_entry((struct sockaddr *)&dest_ipv6);
+	zassert_equal(entry, NULL, "PMTU IPv6 MTU update succeed");
 #else
 	ztest_test_skip();
 #endif
@@ -349,4 +355,163 @@ ZTEST(net_pmtu_test_suite, test_pmtu_04_ipv6_overflow)
 #endif
 }
 
-ZTEST_SUITE(net_pmtu_test_suite, NULL, NULL, NULL, NULL, NULL);
+static void test_bind(int sock, struct sockaddr *addr, socklen_t addrlen)
+{
+	int ret;
+
+	ret = zsock_bind(sock, addr, addrlen);
+	zassert_equal(ret, 0, "bind failed with error %d", errno);
+}
+
+static void test_listen(int sock)
+{
+	zassert_equal(zsock_listen(sock, 1),
+		      0,
+		      "listen failed with error %d", errno);
+}
+
+static void test_connect(int sock, struct sockaddr *addr, socklen_t addrlen)
+{
+	zassert_equal(zsock_connect(sock, addr, addrlen),
+		      0,
+		      "connect failed with error %d", errno);
+
+	if (IS_ENABLED(CONFIG_NET_TC_THREAD_PREEMPTIVE)) {
+		/* Let the connection proceed */
+		k_msleep(THREAD_SLEEP);
+	}
+}
+
+static void test_accept(int sock, int *new_sock, struct sockaddr *addr,
+			socklen_t *addrlen)
+{
+	zassert_not_null(new_sock, "null newsock");
+
+	*new_sock = zsock_accept(sock, addr, addrlen);
+	zassert_true(*new_sock >= 0, "accept failed");
+}
+
+#if defined(CONFIG_NET_IPV6_PMTU)
+static int get_v6_send_recv_sock(int *srv_sock,
+				 struct sockaddr_in6 *my_saddr,
+				 struct sockaddr_in6 *peer_saddr)
+{
+	struct sockaddr addr;
+	socklen_t addrlen = sizeof(addr);
+	int new_sock;
+	int c_sock;
+	int s_sock;
+
+	prepare_sock_tcp_v6(PEER_IPV6_ADDR, PEER_PORT, &s_sock, peer_saddr);
+	test_bind(s_sock, (struct sockaddr *)peer_saddr, sizeof(*peer_saddr));
+	test_listen(s_sock);
+
+	prepare_sock_tcp_v6(MY_IPV6_ADDR, MY_PORT, &c_sock, my_saddr);
+	test_bind(c_sock, (struct sockaddr *)my_saddr, sizeof(*my_saddr));
+	test_connect(c_sock, (struct sockaddr *)peer_saddr, sizeof(*peer_saddr));
+
+	test_accept(s_sock, &new_sock, &addr, &addrlen);
+	zassert_equal(addrlen, sizeof(struct sockaddr_in6), "wrong addrlen");
+
+	*srv_sock = new_sock;
+
+	return c_sock;
+}
+
+static int create_icmpv6_ptb(struct net_if *iface,
+			     struct sockaddr_in6 *src,
+			     struct sockaddr_in6 *dst,
+			     uint32_t mtu,
+			     struct net_pkt **pkt)
+{
+	struct net_icmpv6_ptb ptb_hdr;
+	struct net_pkt *ptb_pkt;
+	struct in6_addr *dest6;
+	struct in6_addr *src6;
+	int ret;
+
+	ptb_pkt = net_pkt_alloc_with_buffer(iface, sizeof(struct net_ipv6_hdr) +
+					    sizeof(struct net_icmp_hdr) +
+					    sizeof(struct net_icmpv6_ptb),
+					    AF_INET6, IPPROTO_ICMPV6,
+					    PKT_WAIT_TIME);
+	if (ptb_pkt == NULL) {
+		NET_DBG("No buffer");
+		return -ENOMEM;
+	}
+
+	dest6 = &dst->sin6_addr;
+	src6 = &src->sin6_addr;
+
+	ret = net_ipv6_create(ptb_pkt, src6, dest6);
+	if (ret < 0) {
+		LOG_ERR("Cannot create IPv6 pkt (%d)", ret);
+		return ret;
+	}
+
+	ret = net_icmpv6_create(ptb_pkt, NET_ICMPV6_PACKET_TOO_BIG, 0);
+	if (ret < 0) {
+		LOG_ERR("Cannot create ICMPv6 pkt (%d)", ret);
+		return ret;
+	}
+
+	ptb_hdr.mtu = htonl(mtu);
+
+	ret = net_pkt_write(ptb_pkt, &ptb_hdr, sizeof(ptb_hdr));
+	if (ret < 0) {
+		LOG_ERR("Cannot write payload (%d)", ret);
+		return ret;
+	}
+
+	net_pkt_cursor_init(ptb_pkt);
+	net_ipv6_finalize(ptb_pkt, IPPROTO_ICMPV6);
+
+	net_pkt_set_iface(ptb_pkt, iface);
+
+	*pkt = ptb_pkt;
+
+	return 0;
+}
+#endif
+
+ZTEST(net_pmtu_test_suite, test_pmtu_05_ipv6_tcp)
+{
+#if defined(CONFIG_NET_IPV6_PMTU)
+	struct sockaddr_in6 dest_ipv6;
+	struct sockaddr_in6 s_saddr = { 0 };  /* peer */
+	struct sockaddr_in6 c_saddr = { 0 };  /* this host */
+	struct net_pkt *pkt = NULL;
+	int client_sock, server_sock;
+	uint16_t mtu;
+	int ret;
+
+	dest_ipv6.sin6_family = AF_INET6;
+
+	client_sock = get_v6_send_recv_sock(&server_sock, &c_saddr, &s_saddr);
+	zassert_true(client_sock >= 0, "Failed to create client socket");
+
+	/* Set initial MTU for the destination */
+	ret = net_pmtu_update_mtu((struct sockaddr *)&c_saddr, 4096);
+	zassert_true(ret >= 0, "PMTU IPv6 MTU update failed (%d)", ret);
+
+	/* Send an ICMPv6 "Packet too big" message from server to client which
+	 * will update the PMTU entry.
+	 */
+	ret = create_icmpv6_ptb(target_iface, &s_saddr, &c_saddr, 2048, &pkt);
+	zassert_equal(ret, 0, "Failed to create ICMPv6 PTB message");
+
+	ret = net_send_data(pkt);
+	zassert_equal(ret, 0, "Failed to send PTB message");
+
+	/* Check that the PMTU entry has been updated */
+	mtu = net_tcp_get_mtu((struct sockaddr *)&s_saddr);
+	zassert_equal(mtu, 2048, "PMTU IPv6 MTU is not correct (%d)", mtu);
+
+	(void)zsock_close(client_sock);
+	(void)zsock_close(server_sock);
+#else
+	ztest_test_skip();
+#endif /* CONFIG_NET_IPV6_PMTU */
+}
+
+ZTEST_SUITE(net_pmtu_test_suite, NULL, test_setup, NULL, NULL, NULL);
