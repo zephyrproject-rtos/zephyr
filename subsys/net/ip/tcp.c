@@ -4494,6 +4494,20 @@ static void testing_find_conn(struct tcp *conn, void *user_data)
 		data->mtu = net_tcp_get_supported_mss(conn) + NET_IPV6TCPH_LEN;
 		return;
 	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4) && data->remote.sa_family == AF_INET &&
+	    net_ipv4_addr_cmp(&conn->dst.sin.sin_addr,
+			      &net_sin(&data->remote)->sin_addr)) {
+		if (data->mtu > 0) {
+			/* Set it only once */
+			return;
+		}
+
+		NET_DBG("Found connection %p mtu %u", conn,
+			net_tcp_get_supported_mss(conn) + NET_IPV4TCPH_LEN);
+		data->mtu = net_tcp_get_supported_mss(conn) + NET_IPV4TCPH_LEN;
+		return;
+	}
 }
 
 uint16_t net_tcp_get_mtu(struct sockaddr *dst)
