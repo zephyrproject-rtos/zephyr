@@ -1113,7 +1113,7 @@ static void csip_set_coordinator_write_lock_cb(struct bt_conn *conn,
 
 			active.members_restored = 0;
 
-			member = active.members[active.members_handled - active.members_restored];
+			member = active.members[active.members_handled - 1];
 			client->cur_inst = lookup_instance_by_set_info(member, &active.info);
 			if (client->cur_inst == NULL) {
 				LOG_DBG("Failed to lookup instance by set_info");
@@ -1130,9 +1130,9 @@ static void csip_set_coordinator_write_lock_cb(struct bt_conn *conn,
 				active_members_reset();
 				return;
 			}
+		} else {
+			lock_set_complete(err);
 		}
-
-		lock_set_complete(err);
 
 		return;
 	}
