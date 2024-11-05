@@ -650,6 +650,7 @@ adc0: adc@40007c00 {
 	status = "disabled";
 	#io-channel-cells = <1>;
 	clktime = <32>;
+	channels = <16>;
 };
 kbd0: kbd@40009c00 {
 	compatible = "microchip,xec-kbd";
