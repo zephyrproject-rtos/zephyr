@@ -3,6 +3,8 @@ board:
   full_name: nRF54L15 DK
   vendor: nordic
   socs:
+  - name: nrf54l05
+  - name: nrf54l10
   - name: nrf54l15
     variants:
     - name: xip
