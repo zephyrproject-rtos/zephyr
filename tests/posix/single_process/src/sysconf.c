@@ -8,7 +8,7 @@
 #include <zephyr/ztest.h>
 #include <unistd.h>
 
-ZTEST(posix_apis, test_posix_sysconf)
+ZTEST(posix_single_process, test_posix_sysconf)
 {
 	long ret;
 
@@ -23,10 +23,7 @@ ZTEST(posix_apis, test_posix_sysconf)
 	/* SC that value depends on target's configuration */
 	ret = sysconf(_SC_SEMAPHORES);
 	if (IS_ENABLED(CONFIG_POSIX_THREADS)) {
-		zassert_equal(ret,
-			      _POSIX_VERSION,
-			      "sysconf returned unexpected value %d",
-			      ret);
+		zassert_equal(ret, _POSIX_VERSION, "sysconf returned unexpected value %d", ret);
 	} else {
 		zassert_equal(ret, -1L, "sysconf returned unexpected value %d", ret);
 	}
