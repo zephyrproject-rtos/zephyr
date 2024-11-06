@@ -24,7 +24,7 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
-		zephyr,bt-uart = &uart0;
+		zephyr,bt_hci = &ti_bt_hci;
 		zephyr,bt-c2h-uart = &uart0;
 		zephyr,uart-mcumgr = &uart0;
 	};
@@ -97,38 +97,39 @@
 };
 
 /delete-node/ &slot0_partition;
+
 &flash0 {
-    partitions {
-        compatible = "fixed-partitions";
-        #address-cells = <1>;
-        #size-cells = <1>;
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
 
-        /* 40 KiB (0xa000) for MCUboot */
-        boot_partition: partition@0 {
-            label = "mcuboot";
-            reg = <0x00000000 0x0000a000>;
-        };
+		/* 40 KiB (0xa000) for MCUboot */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x0000a000>;
+		};
 
-        /* 233472 Bytes (0x39000) per slot for application */
-        slot0_partition: partition@a000 {
-            label = "image-0";
-            reg = <0x0000a000 0x00039000>;
-        };
+		/* 233472 Bytes (0x39000) per slot for application */
+		slot0_partition: partition@a000 {
+			label = "image-0";
+			reg = <0x0000a000 0x00039000>;
+		};
 
-        slot1_partition: partition@43000 {
-            label = "image-1";
-            reg = <0x00043000 0x00039000>;
-        };
+		slot1_partition: partition@43000 {
+			label = "image-1";
+			reg = <0x00043000 0x00039000>;
+		};
 
-        /*
-         * Storage partition will be used by NVS
-         * if enabled.
-         */
-        storage_partition: partition@7c000 {
-            label = "storage";
-            reg = <0x0007c000 0x00004000>;
-        };
-    };
+		/*
+		 * Storage partition will be used by NVS
+		 * if enabled.
+		 */
+		storage_partition: partition@7c000 {
+			label = "storage";
+			reg = <0x0007c000 0x00004000>;
+		};
+	};
 };
 
 &cpu0 {
@@ -166,6 +167,7 @@
 		     &spi0_cs_sleep>;
 	pinctrl-names = "default", "sleep";
 	cs-gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+
 	mx25r80: mx25r8035f@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
@@ -175,12 +177,10 @@
 		has-dpd;
 		dpd-wakeup-sequence = <30000 20 35000>;
 		t-enter-dpd = <10000>;
-		sfdp-bfp = [
-			 e5 20 f1 ff  ff ff 7f 00  44 eb 08 6b  08 3b 04 bb
-			 ee ff ff ff  ff ff 00 ff  ff ff 00 ff  0c 20 0f 52
-			 10 d8 00 ff  23 72 f5 00  82 ed 04 b7  44 83 38 44
-			 30 b0 30 b0  f7 c4 d5 5c  00 be 29 ff  f0 d0 ff ff
-		];
+		sfdp-bfp = [e5 20 f1 ff ff ff 7f 00 44 eb 08 6b 08 3b 04 bb
+			    ee ff ff ff ff ff 00 ff ff ff 00 ff 0c 20 0f 52
+			    10 d8 00 ff 23 72 f5 00 82 ed 04 b7 44 83 38 44
+			    30 b0 30 b0 f7 c4 d5 5c 00 be 29 ff f0 d0 ff ff];
 	};
 };
 

@@ -392,3 +392,9 @@ config BT_SF32LB
 	select USE_SIFLI_HAL
 	help
 	  Bluetooth HCI over ipc mailbox in SiFli SF32LB chipsets.
+config BT_HCI_TI
+  bool "TI Bluetooth HCI driver"
+  default y
+  depends on DT_HAS_TI_BT_HCI_ENABLED
+  help
+    TI HCI bluetooth interface

@@ -25,7 +25,16 @@
 
 		slot0_partition: partition@0 {
 			label = "image-0";
-			reg = <0x0 DT_SIZE_K(512)>;
+			reg = <0x00000000 0x0007c000>;
+		};
+
+		/*
+		 * Storage partition will be used by NVS
+		 * if enabled.
+		 */
+		storage_partition: partition@7c000 {
+			label = "storage";
+			reg = <0x0007c000 0x00004000>;
 		};
 	};
 };
