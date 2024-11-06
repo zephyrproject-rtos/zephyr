@@ -127,6 +127,8 @@ ZTEST(devicetree_api, test_path_props)
 
 ZTEST(devicetree_api, test_alias_props)
 {
+	zassert_equal(DT_HAS_ALIAS(test_alias), 1, "");
+	zassert_equal(DT_HAS_ALIAS(test_alias_none), 0, "");
 	zassert_equal(DT_NUM_REGS(TEST_ALIAS), 1, "");
 	zassert_equal(DT_REG_ADDR(TEST_ALIAS), 0xdeadbeef, "");
 	zassert_equal(DT_REG_SIZE(TEST_ALIAS), 0x1000, "");
