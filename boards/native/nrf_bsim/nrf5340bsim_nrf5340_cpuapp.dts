@@ -35,9 +35,6 @@
 		/delete-property/ i2s-0;
 		/delete-property/ qdec-0;
 		/delete-property/ qdec-1;
-		/delete-property/ gpio-0;
-		/delete-property/ gpio-1;
-		/delete-property/ gpiote-0;
 	};
 
 	chosen {
@@ -82,11 +79,8 @@
 			/delete-node/ regulator@37000;
 			/delete-node/ kmu@39000;
 			/delete-node/ vmc@81000;
-			/delete-node/ gpio@842500;
-			/delete-node/ gpio@842800;
 		};
 		/delete-node/ spu@50003000;
-		/delete-node/ gpiote@5000d000;
 		/delete-node/ crypto@50844000;
 	};
 
@@ -110,6 +104,19 @@
 			reg = <0x00000000 DT_SIZE_K(1024)>;
 		};
 	};
+};
+
+
+&gpiote {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
 };
 
 /* We re-use the IPC shared buffer definition from the real HW. But note the start address of the
