@@ -436,7 +436,7 @@ int cfb_framebuffer_clear(const struct device *dev, bool clear_display)
 {
 	const struct char_framebuffer *fb = &char_fb;
 
-	if (!fb || !fb->buf) {
+	if (!fb->buf) {
 		return -ENODEV;
 	}
 
@@ -464,7 +464,7 @@ int cfb_framebuffer_finalize(const struct device *dev)
 	const struct char_framebuffer *fb = &char_fb;
 	int err;
 
-	if (!fb || !fb->buf) {
+	if (!fb->buf) {
 		return -ENODEV;
 	}
 
@@ -575,7 +575,6 @@ int cfb_framebuffer_init(const struct device *dev)
 	fb->ppt = 8U;
 	fb->pixel_format = cfg.current_pixel_format;
 	fb->screen_info = cfg.screen_info;
-	fb->buf = NULL;
 	fb->kerning = 0;
 	fb->inverted = false;
 
