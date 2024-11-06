@@ -356,6 +356,7 @@ kontron	Kontron S&T AG
 kosagi	Sutajio Ko-Usagi PTE Ltd.
 kvaser	Kvaser
 kvg	Kverneland Group
+kws	KWS Computersysteme Gmbh
 kyo	Kyocera Corporation
 lacie	LaCie
 laird	Laird PLC
