@@ -849,8 +849,6 @@ static int fcb_init(const struct device *dev)
 
 	struct fcb_data *lvData = (struct fcb_data *)dev->data;
 
-  	error = fcb_on(dev); // By default turn on the fabric to be written with bitstreams.
-
 	if (error == 0) {
 		if (s_Rigel_FCB_Registers != NULL) {
 			lvData->fpgaStatus = FPGA_STATUS_ACTIVE;

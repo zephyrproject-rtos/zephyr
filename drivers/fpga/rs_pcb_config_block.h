@@ -11,8 +11,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "rs_config_controllers.h"
-#include "rs_image_mgmt.h"
+#if !CONFIG_RS_RTOS_PORT
+  #include "rs_config_controllers.h"
+  #include "rs_image_mgmt.h"
+#endif
 
 #define RS_PCB_WAIT_STATE_CALIB_TIME 1  // in microseconds
 #define RS_PCB_PL_EXTRA_PARITY_MASK 0x0000000F

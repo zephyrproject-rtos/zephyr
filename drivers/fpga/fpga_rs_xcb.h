@@ -10,6 +10,7 @@
 
 #include "rs_fcb_config_block.h"
 #include "rs_icb_config_block.h"
+#include "rs_pcb_config_block.h"
 
 #include <zephyr/drivers/fpga.h>
 
@@ -99,6 +100,16 @@ struct icb_config {
 struct icb_data {
   struct fpga_ctx *ctx;
   struct rs_icb_bitstream_header icb_header;
+  enum FPGA_status fpgaStatus;
+};
+
+struct pcb_config {
+  uint32_t base;
+};
+
+struct pcb_data {
+  struct fpga_ctx *ctx;
+  struct rs_pcb_bitstream_header icb_header;
   enum FPGA_status fpgaStatus;
 };
 

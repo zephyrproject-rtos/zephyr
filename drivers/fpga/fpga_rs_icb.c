@@ -567,11 +567,9 @@ static int icb_init(const struct device *dev)
 	int error = xCB_SUCCESS;
 
 	s_ICB_Registers = ((struct rs_icb_registers *)((struct icb_config *)dev->config)->base);
-    s_ICB_Chain_Lengths = ((struct rs_icb_chain_lengths *)(((struct icb_config *)dev->config)->base + 0x30));
+  s_ICB_Chain_Lengths = ((struct rs_icb_chain_lengths *)(((struct icb_config *)dev->config)->base + 0x30));
 
 	struct icb_data *lvData = (struct icb_data *)dev->data;
-
-    error = icb_on(dev); // By default turn on the fabric to be written with bitstreams.
 
 	if (error == 0) {
 		if ((s_ICB_Registers != NULL) && (s_ICB_Chain_Lengths != NULL)) {
