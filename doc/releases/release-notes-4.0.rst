@@ -395,6 +395,18 @@ Drivers and Sensors
 
 * Input
 
+  * New feature: :dtcompatible:`zephyr,input-double-tap`.
+
+  * New driver: :dtcompatible:`ilitek,ili2132a`.
+
+  * Added power management support to all keyboard matrix drivers, added a
+    ``no-disconnect`` property to :dtcompatible:`gpio-keys` so it can be used
+    with power management on GPIO drivers that do not support pin
+    disconnection.
+
+  * Added a new framework for touchscreen common properties and features
+    (screen size, inversion, xy swap).
+
   * Fixed broken ESP32 input touch sensor driver.
 
 * Interrupt
