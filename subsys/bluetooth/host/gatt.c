@@ -2195,8 +2195,17 @@ static void gatt_ccc_changed(const struct bt_gatt_attr *attr,
 	uint16_t value = 0x0000;
 
 	for (i = 0; i < ARRAY_SIZE(ccc->cfg); i++) {
-		if (ccc->cfg[i].value > value) {
-			value = ccc->cfg[i].value;
+		/* `ccc->value` shall be a summary of connected peers' CCC values, but
+		 * `ccc->cfg` can contain entries for bonded but not connected peers.
+		 */
+		struct bt_conn *conn = bt_conn_lookup_addr_le(ccc->cfg[i].id, &ccc->cfg[i].peer);
+
+		if (conn) {
+			if (ccc->cfg[i].value > value) {
+				value = ccc->cfg[i].value;
+			}
+
+			bt_conn_unref(conn);
 		}
 	}
 
