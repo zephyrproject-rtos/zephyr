@@ -10,3 +10,4 @@ pylint>=3
 unidiff
 yamllint
 sphinx-lint
+ruff
