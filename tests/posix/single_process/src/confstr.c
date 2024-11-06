@@ -10,7 +10,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/sys/util.h>
 
-ZTEST(confstr, test_confstr)
+ZTEST(posix_single_process, test_confstr)
 {
 	char buf[1];
 
@@ -63,5 +63,3 @@ ZTEST(confstr, test_confstr)
 	zassert_true(confstr(_CS_PATH, buf, sizeof(buf) > 0));
 	zassert_equal(buf[0], '\0');
 }
-
-ZTEST_SUITE(confstr, NULL, NULL, NULL, NULL, NULL);
