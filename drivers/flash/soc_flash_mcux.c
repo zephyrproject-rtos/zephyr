@@ -125,6 +125,32 @@ static status_t is_area_readable(uint32_t addr, size_t len)
 }
 #endif /* CONFIG_CHECK_BEFORE_READING && ! CONFIG_SOC_LPC55S36 */
 
+#define SOC_FLASH_NEED_CLEAR_CACHES 1
+#ifdef CONFIG_SOC_SERIES_MCXW
+static void clear_flash_caches(void)
+{
+	volatile uint32_t *const smscm_ocmdr0 = (volatile uint32_t *)0x40015400;
+	/* this bit clears the flash cache */
+	*smscm_ocmdr0 |= BIT(8);
+	volatile uint32_t *mcm_cpcr2 = (volatile uint32_t *)0xe0080034;
+	/* this bit clears the code cache */
+	*mcm_cpcr2 |= BIT(0);
+}
+#elif CONFIG_SOC_SERIES_MCXN
+static void clear_flash_caches(void)
+{
+	volatile uint32_t *const nvm_ctrl = (volatile uint32_t *)0x40000400;
+	/* this bit clears the flash cache */
+	*nvm_ctrl |= BIT(5);
+	volatile uint32_t *const lpcac_ctrl = (volatile uint32_t *)0x40000824;
+	/* this bit clears the code cache */
+	*lpcac_ctrl |= BIT(1);
+}
+#else
+#undef SOC_FLASH_NEED_CLEAR_CACHES
+#define clear_flash_caches(...)
+#endif
+
 struct flash_priv {
 	flash_config_t config;
 	/*
@@ -172,6 +198,11 @@ static int flash_mcux_erase(const struct device *dev, off_t offset,
 			(FMU_Type *) DT_INST_REG_ADDR(0),
 #endif
 			addr, len, kFLASH_ApiEraseKey);
+
+	if (IS_ENABLED(SOC_FLASH_NEED_CLEAR_CACHES)) {
+		clear_flash_caches();
+	}
+
 	irq_unlock(key);
 
 	k_sem_give(&priv->write_lock);
@@ -257,6 +288,11 @@ static int flash_mcux_write(const struct device *dev, off_t offset,
 			(FMU_Type *) DT_INST_REG_ADDR(0),
 #endif
 			addr, (uint8_t *) data, len);
+
+	if (IS_ENABLED(SOC_FLASH_NEED_CLEAR_CACHES)) {
+		clear_flash_caches();
+	}
+
 	irq_unlock(key);
 
 	k_sem_give(&priv->write_lock);
