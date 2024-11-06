@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "nrf54l15dk_nrf54l15-pinctrl.dtsi"
+#include "nrf54l15dk_nrf54l_05_10_15-pinctrl.dtsi"
 
 / {
 	leds {
