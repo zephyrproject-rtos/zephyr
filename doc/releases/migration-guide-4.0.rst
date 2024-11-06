@@ -297,6 +297,8 @@ Serial
    can accept data bytes, instead of ``ret == 1``. The function now returns a lower bound on the
    number of bytes that can be provided to :c:func:`uart_fifo_fill` without truncation.
 
+ * LiteX: ``CONFIG_UART_LITEUART`` has been renamed to :kconfig:option:`CONFIG_UART_LITEX`.
+
 Regulator
 =========
 
