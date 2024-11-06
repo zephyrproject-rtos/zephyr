@@ -47,6 +47,7 @@ struct pwm_ledc_esp32_channel_config {
 	uint8_t resolution;
 	ledc_clk_src_t clock_src;
 	uint32_t duty_val;
+	bool inverted;
 };
 
 struct pwm_ledc_esp32_config {
@@ -56,6 +57,9 @@ struct pwm_ledc_esp32_config {
 	struct pwm_ledc_esp32_channel_config *channel_config;
 	const int channel_len;
 };
+
+static int pwm_led_esp32_get_cycles_per_sec(const struct device *dev, uint32_t channel_idx,
+					    uint64_t *cycles);
 
 static struct pwm_ledc_esp32_channel_config *get_channel_config(const struct device *dev,
 	int channel_id)
@@ -105,19 +109,6 @@ static void pwm_led_esp32_duty_set(const struct device *dev,
 	pwm_led_esp32_update_duty(dev, channel->speed_mode, channel->channel_num);
 }
 
-static int pwm_led_esp32_configure_pinctrl(const struct device *dev)
-{
-	int ret;
-	struct pwm_ledc_esp32_config *config = (struct pwm_ledc_esp32_config *) dev->config;
-
-	ret = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
-	if (ret < 0) {
-		LOG_ERR("PWM pinctrl setup failed (%d)", ret);
-		return ret;
-	}
-	return 0;
-}
-
 static void pwm_led_esp32_bind_channel_timer(const struct device *dev,
 	struct pwm_ledc_esp32_channel_config *channel)
 {
@@ -149,7 +140,25 @@ static int pwm_led_esp32_calculate_max_resolution(struct pwm_ledc_esp32_channel_
 		}
 	}
 	return -EINVAL;
+}
 
+static int pwm_led_esp32_channel_update_frequency(const struct device *dev,
+						  struct pwm_ledc_esp32_channel_config *channel)
+{
+	uint64_t clk_freq;
+	int ret;
+
+	ret = pwm_led_esp32_get_cycles_per_sec(dev, channel->idx, &clk_freq);
+	if (ret < 0) {
+		return ret;
+	}
+
+	channel->freq = (uint32_t)(clk_freq / 1000);
+	if (!channel->freq) {
+		channel->freq = 1;
+	}
+
+	return 0;
 }
 
 static int pwm_led_esp32_timer_config(struct pwm_ledc_esp32_channel_config *channel)
@@ -257,8 +266,8 @@ static int pwm_led_esp32_timer_set(const struct device *dev,
 	return 0;
 }
 
-static int pwm_led_esp32_get_cycles_per_sec(const struct device *dev,
-					    uint32_t channel_idx, uint64_t *cycles)
+static int pwm_led_esp32_get_cycles_per_sec(const struct device *dev, uint32_t channel_idx,
+					    uint64_t *cycles)
 {
 	struct pwm_ledc_esp32_channel_config *channel = get_channel_config(dev, channel_idx);
 
@@ -280,8 +289,6 @@ static int pwm_led_esp32_set_cycles(const struct device *dev, uint32_t channel_i
 				    uint32_t period_cycles,
 				    uint32_t pulse_cycles, pwm_flags_t flags)
 {
-	int ret;
-	uint64_t clk_freq;
 	struct pwm_ledc_esp32_data *data = (struct pwm_ledc_esp32_data *const)(dev)->data;
 	struct pwm_ledc_esp32_channel_config *channel = get_channel_config(dev, channel_idx);
 
@@ -294,58 +301,28 @@ static int pwm_led_esp32_set_cycles(const struct device *dev, uint32_t channel_i
 		pulse_cycles = period_cycles - pulse_cycles;
 	}
 
-	/* Update PWM frequency according to period_cycles */
-	ret = pwm_led_esp32_get_cycles_per_sec(dev, channel_idx, &clk_freq);
-	if (ret < 0) {
-		return ret;
-	}
-
-	channel->freq = (uint32_t) (clk_freq/period_cycles);
-	if (!channel->freq) {
-		channel->freq = 1;
-	}
-
 	k_sem_take(&data->cmd_sem, K_FOREVER);
-
-	ledc_hal_init(&data->hal, channel->speed_mode);
-
-	ret = pwm_led_esp32_timer_config(channel);
-	if (ret < 0) {
-		k_sem_give(&data->cmd_sem);
-		return ret;
-	}
-
-	ret = pwm_led_esp32_timer_set(dev, channel);
-	if (ret < 0) {
-		k_sem_give(&data->cmd_sem);
-		return ret;
-	}
-
-	pwm_led_esp32_bind_channel_timer(dev, channel);
 
 	/* Update PWM duty  */
 
 	double duty_cycle = (double) pulse_cycles / (double) period_cycles;
 
-	channel->duty_val = (uint32_t)((double)((1 << channel->resolution)) * duty_cycle);
+	channel->duty_val = (uint32_t)((double)(1 << channel->resolution) * duty_cycle);
 
 	pwm_led_esp32_duty_set(dev, channel);
 
-	ret = pwm_led_esp32_configure_pinctrl(dev);
-	if (ret < 0) {
-		k_sem_give(&data->cmd_sem);
-		return ret;
-	}
-
 	k_sem_give(&data->cmd_sem);
 
-	return ret;
+	return 0;
 }
 
 
 int pwm_led_esp32_init(const struct device *dev)
 {
 	const struct pwm_ledc_esp32_config *config = dev->config;
+	struct pwm_ledc_esp32_data *data = dev->data;
+	struct pwm_ledc_esp32_channel_config *channel;
+	int ret = 0;
 
 	if (!device_is_ready(config->clock_dev)) {
 		LOG_ERR("clock control device not ready");
@@ -354,6 +331,32 @@ int pwm_led_esp32_init(const struct device *dev)
 
 	/* Enable peripheral */
 	clock_control_on(config->clock_dev, config->clock_subsys);
+
+	ledc_hal_init(&data->hal, config->channel_config[0].speed_mode);
+
+	for (int i = 0; i < config->channel_len; ++i) {
+		channel = &config->channel_config[i];
+
+		ret = pwm_led_esp32_channel_update_frequency(dev, channel);
+		if (ret < 0) {
+			LOG_ERR("Error setting frequency for channel %d", channel->idx);
+			return ret;
+		}
+		pwm_led_esp32_timer_config(channel);
+		ret = pwm_led_esp32_timer_set(dev, channel);
+		if (ret < 0) {
+			LOG_ERR("Error setting timer for channel %d", channel->idx);
+			return ret;
+		}
+		pwm_led_esp32_bind_channel_timer(dev, channel);
+		ledc_hal_set_idle_level(&data->hal, channel->channel_num, channel->inverted);
+	}
+
+	ret = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		LOG_ERR("PWM pinctrl setup failed (%d)", ret);
+		return ret;
+	}
 
 	return 0;
 }
@@ -365,15 +368,21 @@ static DEVICE_API(pwm, pwm_led_esp32_api) = {
 
 PINCTRL_DT_INST_DEFINE(0);
 
-#define CHANNEL_CONFIG(node_id)                                                \
-	{                                                                      \
-		.idx = DT_REG_ADDR(node_id),                                   \
-		.channel_num = DT_REG_ADDR(node_id) % 8,                       \
-		.timer_num = DT_PROP(node_id, timer),                          \
-		.speed_mode = DT_REG_ADDR(node_id) < SOC_LEDC_CHANNEL_NUM      \
-				      ? LEDC_LOW_SPEED_MODE                    \
-				      : !LEDC_LOW_SPEED_MODE,                  \
-		.clock_src = CLOCK_SOURCE,                                     \
+#if SOC_LEDC_SUPPORT_APB_CLOCK
+#define CLOCK_SOURCE LEDC_APB_CLK
+#elif SOC_LEDC_SUPPORT_PLL_DIV_CLOCK
+#define CLOCK_SOURCE LEDC_SCLK
+#endif
+
+#define CHANNEL_CONFIG(node_id)                                                                    \
+	{                                                                                          \
+		.idx = DT_REG_ADDR(node_id),                                                       \
+		.channel_num = DT_REG_ADDR(node_id) % 8,                                           \
+		.timer_num = DT_PROP(node_id, timer),                                              \
+		.speed_mode = DT_REG_ADDR(node_id) < SOC_LEDC_CHANNEL_NUM ? LEDC_LOW_SPEED_MODE    \
+									  : !LEDC_LOW_SPEED_MODE,  \
+		.clock_src = CLOCK_SOURCE,                                                         \
+		.inverted = DT_PWMS_FLAGS(node_id),                                                \
 	},
 
 static struct pwm_ledc_esp32_channel_config channel_config[] = {
