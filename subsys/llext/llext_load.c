@@ -846,8 +846,8 @@ out:
 		ext->exp_tab.sym_cnt = 0;
 		ext->exp_tab.syms = NULL;
 	} else {
-		LOG_DBG("loaded module, .text at %p, .rodata at %p", ext->mem[LLEXT_MEM_TEXT],
-			ext->mem[LLEXT_MEM_RODATA]);
+		LOG_DBG("Loaded llext: %zu bytes in heap, .text at %p, .rodata at %p",
+			ext->alloc_size, ext->mem[LLEXT_MEM_TEXT], ext->mem[LLEXT_MEM_RODATA]);
 	}
 
 	llext_finalize(ldr);
