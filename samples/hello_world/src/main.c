@@ -930,7 +930,8 @@ int main(void)
 			scu_get_irq_reg_val(IRQ_ID_SYSTEM_DMA));
 
 		soc_get_id(&chip_id, &vendor_id);
-		scu_assert_reset();
+		scu_reset();
+		printf("%s to perform xCB reset\r\n",scu_xcb_reset()==0?"Success":"Failure");
 	#endif
 
 	int errorcode = 0;

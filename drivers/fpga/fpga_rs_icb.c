@@ -19,11 +19,11 @@
 LOG_MODULE_REGISTER(rs_fpga_icb);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(rapidsi_icb)
-#define DT_DRV_COMPAT rigel_icb
-static volatile struct rs_icb_registers *s_ICB_Registers = NULL;
-static volatile struct rs_icb_chain_lengths *s_ICB_Chain_Lengths = NULL;
+  #define DT_DRV_COMPAT rigel_icb
+  static volatile struct rs_icb_registers *s_ICB_Registers = NULL;
+  static volatile struct rs_icb_chain_lengths *s_ICB_Chain_Lengths = NULL;
 #else
-#error Rapid Silicon ICB IP is not enabled in the Device Tree
+  #error Rapid Silicon ICB IP is not enabled in the Device Tree
 #endif
 
 /* ******************************************
@@ -94,9 +94,9 @@ enum xCB_ERROR_CODE ICB_Bitstream_Header_Parser(void *inBitStream,
   }
 
   LOG_DBG(
-            "\n------ ICB_HDR ------ \r\nChksum:0x%x \r\ncapture:%lu "
-            "\r\ncfg_cmd:%lu \r\nchksum_prsnt:%lu "
-            "\r\ncmd_data:%lu \r\npayload_len:%lu (words) \r\nupdate:%lu\r\n",
+            "\n------ ICB_HDR ------ \r\nChksum:0x%x \r\ncapture:%d "
+            "\r\ncfg_cmd:%d \r\nchksum_prsnt:%u "
+            "\r\ncmd_data:%d \r\npayload_len:%u (words) \r\nupdate:%d\r\n",
             lvBitStream_Header->bitstream_checksum, lvBitStream_Header->capture,
             lvBitStream_Header->cfg_cmd,
             (lvBitStream_Header->generic_hdr.action_enum &
@@ -142,7 +142,7 @@ static enum xCB_ERROR_CODE rs_icb_soft_reset(void) {
  * @brief: This function returns Shift Status of ICB Payload
  * return: ICB_SHIFT_STATUS
  ********************************************************************************/
-static enum RS_ICB_SHIFT_STATUS RS_ICB_busy(void) {
+static enum RS_ICB_SHIFT_STATUS ICB_busy(void) {
   return s_ICB_Registers->Shift_Status.fsm_state;
 }
 
@@ -155,7 +155,7 @@ static enum RS_ICB_SHIFT_STATUS RS_ICB_busy(void) {
  *		▪ Write the lengths of configuration chain in (CHAIN_LENGTH_0)
  * 4 - Set CFG_KICKOFF to one. The controller is ready to work
  *
- * @Param [in]: RS_ICB_Bitstream_Header.
+ * @Param [in]: rs_icb_bitstream_header.
  * @return: xCB_ERROR_CODE
  ********************************************************************************/
 static enum xCB_ERROR_CODE RS_ICB_Config_Registers(
@@ -307,7 +307,7 @@ enum xCB_ERROR_CODE ICB_Config_Begin(struct rs_icb_bitstream_header *inHeader) {
 }
 
 /* ******************************************
- * @brief: RS_ICB_Config_End interface
+ * @brief: ICB_Config_End interface
  * is used to perform ICB registers settings
  * after the payload transfer.
  *
@@ -316,7 +316,7 @@ enum xCB_ERROR_CODE ICB_Config_Begin(struct rs_icb_bitstream_header *inHeader) {
  *
  * @return: xCB_ERROR_CODE
  * ******************************************/
-enum xCB_ERROR_CODE RS_ICB_Config_End(
+enum xCB_ERROR_CODE ICB_Config_End(
     struct rs_icb_bitstream_header *inHeader) {
   enum xCB_ERROR_CODE lvErrorCode = xCB_SUCCESS;
   struct rs_icb_cmd_control lv_Cmd_Control = {0};
@@ -364,7 +364,7 @@ enum xCB_ERROR_CODE RS_ICB_Config_End(
       if (s_ICB_Registers->Cmd_Control.capture_control != xCB_SET) {
         lvErrorCode = xCB_ERROR_WRITE_ERROR;
       } else {
-        delay_us(RS_ICB_CAP_UPD_PULSE_DELAY);
+        k_usleep(RS_ICB_CAP_UPD_PULSE_DELAY);
         lv_Cmd_Control.capture_control = xCB_RESET;
         lv_Cmd_Control.cmd_data = xCB_RESET;
         REG_WRITE_32((void *)&s_ICB_Registers->Cmd_Control,
@@ -391,7 +391,7 @@ enum xCB_ERROR_CODE RS_ICB_Config_End(
       if (s_ICB_Registers->Cmd_Control.update_control != xCB_SET) {
         lvErrorCode = xCB_ERROR_WRITE_ERROR;
       } else {
-        delay_us(RS_ICB_CAP_UPD_PULSE_DELAY);
+        k_usleep(RS_ICB_CAP_UPD_PULSE_DELAY);
         lv_Cmd_Control.update_control = xCB_RESET;
         lv_Cmd_Control.cmd_data = xCB_RESET;
         REG_WRITE_32((void *)&s_ICB_Registers->Cmd_Control,
@@ -426,27 +426,29 @@ enum xCB_ERROR_CODE RS_ICB_Config_End(
  * ********************************************/
 int icb_load(const struct device *dev, uint32_t *image_ptr, uint32_t img_size)
 {
-  if (inHeader->cfg_cmd < RS_ICB_CNF_READ_POSTCHKSUM_MODE) {
-    rs_sec_tfr_ptr->transfer_addr.write_addr =
-        (uint32_t)&s_ICB_Registers->Bitstream_wData;
-    rs_sec_tfr_ptr->transfer_addr.tfr_type = RS_SECURE_TX;
-    LOG_DBG("Starting RS_SECURE_TX\r\n");
+  int error = 0;
+
+  struct icb_data *lvData = (struct icb_data *)dev->data;
+
+  if (lvData->icb_header.cfg_cmd < RS_ICB_CNF_READ_POSTCHKSUM_MODE) {
+    lvData->ctx->dest_addr = (uint8_t*)&s_ICB_Registers->Bitstream_wData;
+    LOG_DBG("Starting ICB_TX\r\n");
   } else {
-    rs_sec_tfr_ptr->transfer_addr.read_addr =
-        (uint32_t)&s_ICB_Registers->Bitstream_rData;
-    rs_sec_tfr_ptr->transfer_addr.tfr_type = RS_SECURE_RX;
-    LOG_DBG("Starting RS_SECURE_RX\r\n");
+    lvData->ctx->src_addr = (uint8_t*)&s_ICB_Registers->Bitstream_rData;
+    LOG_DBG("Starting ICB_RX\r\n");
   }
 
-  if ((rs_sec_tfr_ptr->rs_secure_transfer((void *)rs_sec_tfr_ptr)) !=
-      CRYPTO_SUCCESS) {
-    lvErrorCode = xCB_ERROR;
+  // Perform the data transfer (FILL or READBACK)
+  error = lvData->ctx->bitstr_load_hndlr(lvData->ctx);
+
+  if (error != xCB_SUCCESS) {
+    PRINT_ERROR(error);
+    error = -ECANCELED;
+  } else {
+    while (ICB_busy());
   }
 
-  while (RS_ICB_busy())
-    ;
-
-  return lvErrorCode;
+  return error;
 }
 
 enum FPGA_status icb_get_status(const struct device *dev)
@@ -509,6 +511,7 @@ int icb_session_free(const struct device *dev)
   lvData->ctx->device = NULL;
 
   if(error != xCB_SUCCESS) {
+    PRINT_ERROR(error);
     error = -ECANCELED;
   }
 
@@ -517,79 +520,17 @@ int icb_session_free(const struct device *dev)
 
 int icb_reset(const struct device *dev)
 {
-  int error = xCB_SUCCESS;
-
-  #if CONFIG_RAPIDSI_OFE
-	const struct device *ofe = DEVICE_DT_GET(DT_NODELABEL(ofe));
-	if (ofe == NULL) {
-		LOG_ERR("%s(%d) Error with OFE initialization\r\n", __func__, __LINE__);
-		error = -ENOSYS;
-	}
-  #else
-    #error "Enable OFE from the device tree to to meet ICB dependency."
-  #endif
-
-	// Sending the reset pulse to global fpga reset.
-	if (error == 0) {
-		if ((ofe_reset(ofe, OFE_RESET_SUBSYS_ICB, 0x0) != 0) || /* RESET */
-		    (ofe_reset(ofe, OFE_RESET_SUBSYS_ICB, 0x1) != 0)) { /* SET */
-			LOG_ERR("%s(%d) global fpga reset error\r\n", __func__, __LINE__);
-			error = -EIO;
-		}
-	}
-
-	return error;
-}
-
-static int icb_engine_on(bool value)
-{
-    int error = xCB_SUCCESS;
-
-    #if CONFIG_RAPIDSI_OFE
-        const struct device *ofe = DEVICE_DT_GET(DT_NODELABEL(ofe));
-        if (ofe == NULL) {
-            LOG_ERR("%s(%d) Error with OFE initialization\r\n", __func__, __LINE__);
-            error = -ENOSYS;
-        }
-    #else
-        #error "Enable OFE from the device tree to meet ICB dependency."
-    #endif
-
-	if (error == 0) {
-		// Setting the isolation bit to allow / prohibit writing the fabric.
-        // 1 to alow writing and 0 to prohibit writing to fabric.
-		scu_set_isolation_ctrl(ISOLATION_CTRL_ICB_OFFSET, value);
-	}
-
-	// Sending the reset pulse to global fpga reset.
-	if (error == 0) {
-        if(value) {
-            if ((ofe_reset(ofe, OFE_RESET_SUBSYS_ICB, 0x0) != 0) || /* RESET */
-                (ofe_reset(ofe, OFE_RESET_SUBSYS_ICB, 0x1) != 0)) { /* SET to Release Reset */
-                LOG_ERR("%s(%d) global fpga reset release error\r\n", __func__, __LINE__);
-                error = -EIO;
-            }
-        } else {
-            if(ofe_reset(ofe, OFE_RESET_SUBSYS_ICB, 0x0) != 0) { /* Held in RESET */
-                LOG_ERR("%s(%d) global fpga reset held error\r\n", __func__, __LINE__);
-                error = -EIO;
-            }
-        }
-	}
-
-  return error;
+	return -ENOSYS;
 }
 
 int icb_on(const struct device *dev)
 {
-  int error = icb_engine_on(true);
-  return error;
+  return -ENOSYS;
 }
 
 int icb_off(const struct device *dev)
 {
-  int error = icb_engine_on(false);
-  return error;
+  return -ENOSYS;
 }
 
 const char *icb_get_info(const struct device *dev)
@@ -600,11 +541,11 @@ const char *icb_get_info(const struct device *dev)
 
 	if (lvICBBitstrHeader != NULL) {
 		lvICBTransferParam.FPGA_Transfer_Type = \
-            lvBitStream_Header->cfg_cmd < RS_ICB_CFG_MODE_READBACK_AND_POST_CHKSUM \
+            lvICBBitstrHeader->cfg_cmd < RS_ICB_CFG_MODE_READBACK_AND_POST_CHKSUM \
             ? FPGA_TRANSFER_TYPE_TX \
             : FPGA_TRANSFER_TYPE_RX;
-		lvICBTransferParam.ICB_Transfer_Block_Size = lvBitStream_Header->bitstream_size;
-		lvICBTransferParam.ICB_Bitstream_Size = lvBitStream_Header->bitstream_size;
+		lvICBTransferParam.Transfer_Block_Size = lvICBBitstrHeader->bitstream_size;
+		lvICBTransferParam.Bitstream_Size = lvICBBitstrHeader->bitstream_size;
 	} else {
 		return NULL;
 	}
@@ -612,7 +553,7 @@ const char *icb_get_info(const struct device *dev)
 	return (char *)&lvICBTransferParam;
 }
 
-static struct fpga_driver_api rigel_icb_api = {.get_status = icb_get_status,
+static struct fpga_driver_api s_icb_api = {.get_status = icb_get_status,
 					       .get_info = icb_get_info,
 					       .load = icb_load,
 					       .off = icb_off,
@@ -654,5 +595,5 @@ DEVICE_DT_DEFINE(DT_NODELABEL(icb), icb_init, /*Put Init func here*/
 		 &s_icb_data,                 // Data structure
 		 &s_icb_config,               // Configuration Structure
 		 POST_KERNEL, CONFIG_RS_XCB_INIT_PRIORITY,
-		 &rigel_icb_api // Driver API
+		 &s_icb_api // Driver API
 )

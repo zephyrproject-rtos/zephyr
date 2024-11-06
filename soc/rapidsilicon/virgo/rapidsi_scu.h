@@ -132,7 +132,13 @@ uint32_t scu_get_irq_reg_val(enum map_mask_control_irq_id IRQn);
  * @brief Assert resets to all subsystems.
  *
  */
-void scu_assert_reset(void);
+void scu_reset(void);
+
+/**
+ * @brief Assert resets to FCB, ICB and PCB.
+ *
+ */
+int scu_xcb_reset(void);
 
 #define SCU_CHIP_ID_OFFSET      16
 #define SCU_CHIP_ID_MASK        0x00FF0000

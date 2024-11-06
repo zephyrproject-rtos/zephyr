@@ -139,7 +139,7 @@ static inline int ofe_set_config_status(
  * @param [in]: dev device structure
  * @param [in]: bool to set or reset pcb
  *
- * @return: enum xCB_ERROR_CODE
+ * @return: error code
  * ******************************************/
 static inline int ofe_reset(
                                 const struct device *dev, 

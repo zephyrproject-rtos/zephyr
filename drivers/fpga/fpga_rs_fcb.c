@@ -12,7 +12,6 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/types.h>
-#include <zephyr/drivers/misc/rapidsi/rapidsi_ofe.h>
 
 #define LOG_LEVEL CONFIG_FPGA_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -792,6 +791,7 @@ int fcb_session_free(const struct device *dev)
   lvData->ctx->device = NULL;
 
   if(error != xCB_SUCCESS) {
+	PRINT_ERROR(error);
     error = -ECANCELED;
   }
 
@@ -800,80 +800,17 @@ int fcb_session_free(const struct device *dev)
 
 int fcb_reset(const struct device *dev)
 {
-	int error = xCB_SUCCESS;
-
-	#if CONFIG_RAPIDSI_OFE
-		const struct device *ofe = DEVICE_DT_GET(DT_NODELABEL(ofe));
-		if (ofe == NULL) {
-			LOG_ERR("%s(%d) Error with OFE initialization\r\n", __func__, __LINE__);
-			error = -ENOSYS;
-		}
-	#else
-		#error "Enable OFE from the device tree to meet FCB dependency."
-	#endif
-
-	// Sending the reset pulse to global fpga reset.
-	if (error == 0) {
-		if ((ofe_reset(ofe, OFE_RESET_SUBSYS_FCB, 0x0) != 0) || /* RESET */
-		    (ofe_reset(ofe, OFE_RESET_SUBSYS_FCB, 0x1) != 0)) { /* SET */
-			LOG_ERR("%s(%d) global fpga reset error\r\n", __func__, __LINE__);
-			error = -EIO;
-		}
-	}
-
-	return error;
-}
-
-static int fcb_engine_on(bool value)
-{
-  int error = xCB_SUCCESS;
-
-  #if CONFIG_RAPIDSI_OFE
-    const struct device *ofe = DEVICE_DT_GET(DT_NODELABEL(ofe));
-    if (ofe == NULL) {
-      LOG_ERR("%s(%d) Error with OFE initialization\r\n", __func__, __LINE__);
-      error = -ENOSYS;
-    }
-  #else
-    #error "Enable OFE from the device tree to to meet FCB dependency."
-  #endif
-
-	if (error == 0) {
-		// Setting the isolation bit to allow / prohibit writing the fabric.
-    // 1 to alow writing and 0 to prohibit writing to fabric.
-		scu_set_isolation_ctrl(ISOLATION_CTRL_FCB_OFFSET, value);
-	}
-
-	// Sending the reset pulse to global fpga reset.
-	if (error == 0) {
-    if(value) {
-      if ((ofe_reset(ofe, OFE_RESET_SUBSYS_FCB, 0x0) != 0) || /* RESET */
-          (ofe_reset(ofe, OFE_RESET_SUBSYS_FCB, 0x1) != 0)) { /* SET to Release Reset */
-        LOG_ERR("%s(%d) global fpga reset release error\r\n", __func__, __LINE__);
-        error = -EIO;
-      }
-    }
-    else {
-      if(ofe_reset(ofe, OFE_RESET_SUBSYS_FCB, 0x0) != 0) { /* Held in RESET */
-        LOG_ERR("%s(%d) global fpga reset held error\r\n", __func__, __LINE__);
-        error = -EIO;
-      }
-    }
-	}
-
-  return error;
+	return -ENOSYS;
 }
 
 int fcb_on(const struct device *dev)
 {
-  int error = fcb_engine_on(true);
-  return error;
+	return -ENOSYS;
 }
 
 int fcb_off(const struct device *dev)
 {
-  int error = fcb_engine_on(false);
-  return error;
+	return -ENOSYS;
 }
 
 const char *fcb_get_info(const struct device *dev)
@@ -885,9 +822,10 @@ const char *fcb_get_info(const struct device *dev)
 	if (lvFCBBitstrHeader != NULL) {
 		lvFCBTransferParam.FPGA_Transfer_Type =
 			lvFCBBitstrHeader->readback ? FPGA_TRANSFER_TYPE_RX : FPGA_TRANSFER_TYPE_TX;
-		lvFCBTransferParam.FCB_Transfer_Block_Size = lvFCBBitstrHeader->bitline_reg_width;
-		lvFCBTransferParam.FCB_Bitstream_Size = lvFCBBitstrHeader->generic_hdr.payload_size;
+		lvFCBTransferParam.Transfer_Block_Size = lvFCBBitstrHeader->bitline_reg_width;
+		lvFCBTransferParam.Bitstream_Size = lvFCBBitstrHeader->generic_hdr.payload_size;
 	} else {
+		LOG_ERR("%s(%d) Null Pointer\r\n", __func__, __LINE__);
 		return NULL;
 	}
 
@@ -907,7 +845,7 @@ static int fcb_init(const struct device *dev)
 {
 	int error = xCB_SUCCESS;
 
-	s_Rigel_FCB_Registers = ((struct rigel_fcb_registers *)((struct fcb_config *)dev->config).base);
+	s_Rigel_FCB_Registers = ((struct rigel_fcb_registers *)((struct fcb_config *)dev->config)->base);
 
 	struct fcb_data *lvData = (struct fcb_data *)dev->data;
 

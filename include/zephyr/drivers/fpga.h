@@ -38,8 +38,8 @@ enum FPGA_TRANSFER_TYPE {
 
 struct fpga_transfer_param {
   enum FPGA_TRANSFER_TYPE FPGA_Transfer_Type;
-  uint32_t FCB_Bitstream_Size;       // bytes
-  uint16_t FCB_Transfer_Block_Size;  // bytes
+  uint32_t Bitstream_Size;       // bytes
+  uint16_t Transfer_Block_Size;  // bytes
 };
 
 struct fpga_ctx;

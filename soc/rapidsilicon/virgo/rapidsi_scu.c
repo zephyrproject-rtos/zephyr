@@ -5,6 +5,7 @@
  */
 
 #include "rapidsi_scu.h"
+#include <zephyr/drivers/misc/rapidsi/rapidsi_ofe.h>
 
 typedef struct {
     volatile uint32_t idrev;             /* 0x00 */
@@ -44,7 +45,49 @@ uint32_t read_reg_bit(const volatile uint32_t *reg, uint32_t bit)
     return read_reg_val(reg, bit, 1U);
 }
 
-void scu_assert_reset(void)
+/**
+ * @brief Assert resets to FCB, ICB and PCB.
+ * 
+ * return error code
+ */
+int scu_xcb_reset(void)
+{
+  int error = 0;
+
+  #if CONFIG_RAPIDSI_OFE
+    const struct device *ofe = DEVICE_DT_GET(DT_NODELABEL(ofe));
+    if (ofe == NULL) {
+      error = -ENOSYS;
+    }
+  #else
+    #error "Enable OFE from the device tree to to meet FCB dependency."
+  #endif
+
+    if(error == 0)
+    {
+        if ((ofe_reset(ofe, OFE_RESET_SUBSYS_FCB, 0x0) != 0) || /* RESET */
+            (ofe_reset(ofe, OFE_RESET_SUBSYS_FCB, 0x1) != 0)) { /* SET to Release Reset */
+            error = -EIO;
+        }
+    }
+
+    if(error == 0)
+    {
+        if ((ofe_reset(ofe, OFE_RESET_SUBSYS_PCB, 0x0) != 0) || /* RESET */
+            (ofe_reset(ofe, OFE_RESET_SUBSYS_PCB, 0x1) != 0)) { /* SET to Release Reset */
+            error = -EIO;
+        }
+    }
+
+    if (error == 0) {
+        // 1 to alow writing and 0 to prohibit writing to fabric.
+        scu_set_isolation_ctrl(ISOLATION_CTRL_FCB_OFFSET, 0x1);
+    }
+
+    return error;
+}
+
+void scu_reset(void)
 {
   uint32_t reset_flags =
       (VIRGO_SCU_SW_RST_CTRL_MSK_BUS | VIRGO_SCU_SW_RST_CTRL_MSK_PER |
