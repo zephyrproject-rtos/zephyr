@@ -262,7 +262,7 @@ static inline int queue_submit_locked(struct k_work_q *queue,
 	}
 
 	int ret;
-	bool chained = (_current == &queue->thread) && !k_is_in_isr();
+	bool chained = (_current == queue->thread_id) && !k_is_in_isr();
 	bool draining = flag_test(&queue->flags, K_WORK_QUEUE_DRAIN_BIT);
 	bool plugged = flag_test(&queue->flags, K_WORK_QUEUE_PLUGGED_BIT);
 
@@ -722,6 +722,28 @@ void k_work_queue_init(struct k_work_q *queue)
 	SYS_PORT_TRACING_OBJ_INIT(k_work_queue, queue);
 }
 
+void k_work_queue_run(struct k_work_q *queue, const struct k_work_queue_config *cfg)
+{
+	__ASSERT_NO_MSG(!flag_test(&queue->flags, K_WORK_QUEUE_STARTED_BIT));
+
+	uint32_t flags = K_WORK_QUEUE_STARTED;
+
+	if ((cfg != NULL) && cfg->no_yield) {
+		flags |= K_WORK_QUEUE_NO_YIELD;
+	}
+
+	if ((cfg != NULL) && (cfg->name != NULL)) {
+		k_thread_name_set(_current, cfg->name);
+	}
+
+	sys_slist_init(&queue->pending);
+	z_waitq_init(&queue->notifyq);
+	z_waitq_init(&queue->drainq);
+	queue->thread_id = _current;
+	flags_set(&queue->flags, flags);
+	work_queue_main(queue, NULL, NULL);
+}
+
 void k_work_queue_start(struct k_work_q *queue,
 			k_thread_stack_t *stack,
 			size_t stack_size,
@@ -731,6 +753,7 @@ void k_work_queue_start(struct k_work_q *queue,
 	__ASSERT_NO_MSG(queue);
 	__ASSERT_NO_MSG(stack);
 	__ASSERT_NO_MSG(!flag_test(&queue->flags, K_WORK_QUEUE_STARTED_BIT));
+
 	uint32_t flags = K_WORK_QUEUE_STARTED;
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_work_queue, start, queue);
@@ -762,6 +785,7 @@ void k_work_queue_start(struct k_work_q *queue,
 	}
 
 	k_thread_start(&queue->thread);
+	queue->thread_id = &queue->thread;
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_work_queue, start, queue);
 }
@@ -841,7 +865,7 @@ int k_work_queue_stop(struct k_work_q *queue, k_timeout_t timeout)
 	notify_queue_locked(queue);
 	k_spin_unlock(&lock, key);
 	SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_work_queue, stop, queue, timeout);
-	if (k_thread_join(&queue->thread, timeout)) {
+	if (k_thread_join(queue->thread_id, timeout)) {
 		key = k_spin_lock(&lock);
 		flag_clear(&queue->flags, K_WORK_QUEUE_STOP_BIT);
 		k_spin_unlock(&lock, key);
