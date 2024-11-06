@@ -1,7 +1,4 @@
-.. _xiao_esp32s3:
-
-XIAO ESP32S3/XIAO ESP32S3 Sense
-###############################
+.. zephyr:board:: xiao_esp32s3
 
 Overview
 ********
