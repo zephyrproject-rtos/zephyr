@@ -3348,6 +3348,13 @@ struct bt_hci_evt_le_cis_req {
 	uint8_t  cis_id;
 } __packed;
 
+#define BT_HCI_LE_BIG_HANDLE_MIN            0x00U
+#define BT_HCI_LE_BIG_HANDLE_MAX            0xEFU
+#define BT_HCI_LE_BIG_SYNC_DELAY_MIN        0x000030U
+#define BT_HCI_LE_BIG_SYNC_DELAY_MAX        0x7FFFFFU
+#define BT_HCI_LE_TRANSPORT_LATENCY_BIG_MIN 0x000030U
+#define BT_HCI_LE_TRANSPORT_LATENCY_BIG_MAX 0x7FFFFFU
+
 #define BT_HCI_EVT_LE_BIG_COMPLETE              0x1b
 struct bt_hci_evt_le_big_complete {
 	uint8_t  status;

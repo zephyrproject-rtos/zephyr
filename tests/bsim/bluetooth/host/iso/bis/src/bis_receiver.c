@@ -7,8 +7,10 @@
 #include "common.h"
 
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/util.h>
 
 #include "babblekit/flags.h"
 #include "babblekit/sync.h"
@@ -241,6 +243,36 @@ static void sync_big(struct bt_le_per_adv_sync *sync, uint8_t cnt, struct bt_iso
 	TEST_ASSERT(err == 0, "Failed to create BIG sync: %d");
 
 	WAIT_FOR_FLAG(flag_iso_connected);
+
+	for (size_t i = 0; i < cnt; i++) {
+		struct bt_iso_info info;
+
+		err = bt_iso_chan_get_info(bis_channels[i], &info);
+		TEST_ASSERT(err == 0, "Failed to get BIS info: %d", err);
+
+		TEST_ASSERT(info.can_recv);
+		TEST_ASSERT(!info.can_send);
+		TEST_ASSERT(info.type == BT_ISO_CHAN_TYPE_SYNC_RECEIVER);
+		TEST_ASSERT(IN_RANGE(info.iso_interval, BT_ISO_ISO_INTERVAL_MIN,
+				     BT_ISO_ISO_INTERVAL_MAX),
+			    "Invalid ISO interval 0x%04x", info.iso_interval);
+		TEST_ASSERT(IN_RANGE(info.max_subevent, BT_ISO_NSE_MIN, BT_ISO_NSE_MAX),
+			    "Invalid subevent number 0x%02x", info.max_subevent);
+		TEST_ASSERT(IN_RANGE(info.sync_receiver.latency,
+				     BT_HCI_LE_TRANSPORT_LATENCY_BIG_MIN,
+				     BT_HCI_LE_TRANSPORT_LATENCY_BIG_MAX),
+			    "Invalid transport latency 0x%06x", info.sync_receiver.latency);
+		TEST_ASSERT((info.sync_receiver.pto % info.iso_interval) == 0U,
+			    "PTO in ms %u shall be a multiple of the ISO interval %u",
+			    info.sync_receiver.pto, info.iso_interval);
+		TEST_ASSERT(IN_RANGE((info.sync_receiver.pto / info.iso_interval), BT_ISO_PTO_MIN,
+				     BT_ISO_PTO_MAX),
+			    "Invalid PTO 0x%x", (info.sync_receiver.pto / info.iso_interval));
+		TEST_ASSERT(IN_RANGE(info.sync_receiver.bn, BT_ISO_BN_MIN, BT_ISO_BN_MAX),
+			    "Invalid BN 0x%02x", info.sync_receiver.bn);
+		TEST_ASSERT(IN_RANGE(info.sync_receiver.irc, BT_ISO_IRC_MIN, BT_ISO_IRC_MAX),
+			    "Invalid IRC 0x%02x", info.sync_receiver.irc);
+	}
 }
 
 static void test_main(void)
