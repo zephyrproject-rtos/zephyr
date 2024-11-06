@@ -21,6 +21,8 @@ extern "C" {
 #define ADDR_SECT_SHIFT 16
 #define ADDR_OFFS_MASK 0x0000FFFF
 
+#define NVS_MAX_SECTOR_SIZE KB(64)
+
 /*
  * Status return values
  */
