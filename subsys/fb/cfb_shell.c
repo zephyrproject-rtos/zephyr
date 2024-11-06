@@ -340,8 +340,7 @@ static int cmd_set_font(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_set_kerning(const struct shell *sh, size_t argc, char *argv[])
 {
-	int err;
-	char *ep = NULL;
+	int err = 0;
 	long kerning;
 
 	if (!dev) {
@@ -349,9 +348,8 @@ static int cmd_set_kerning(const struct shell *sh, size_t argc, char *argv[])
 		return -ENODEV;
 	}
 
-	errno = 0;
-	kerning = strtol(argv[1], &ep, 10);
-	if (errno || ep == argv[1]) {
+	kerning = shell_strtol(argv[1], 10, &err);
+	if (err) {
 		shell_error(sh, HELP_INIT);
 		return -EINVAL;
 	}
