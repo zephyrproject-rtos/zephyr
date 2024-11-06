@@ -262,7 +262,7 @@ static void eth_nxp_enet_iface_init(struct net_if *iface)
 #endif
 
 	ethernet_init(iface);
-	net_eth_carrier_off(data->iface);
+	net_if_carrier_off(data->iface);
 
 	config->irq_config_func();
 
