@@ -15,13 +15,15 @@
 struct apa102_config {
 	struct spi_dt_spec bus;
 	size_t length;
+	uint8_t *const end_frame;
+	const size_t end_frame_size;
 };
 
 static int apa102_update(const struct device *dev, void *buf, size_t size)
 {
 	const struct apa102_config *config = dev->config;
 	static const uint8_t zeros[] = { 0, 0, 0, 0 };
-	static const uint8_t ones[] = { 0xFF, 0xFF, 0xFF, 0xFF };
+
 	const struct spi_buf tx_bufs[] = {
 		{
 			/* Start frame: at least 32 zeros */
@@ -38,8 +40,8 @@ static int apa102_update(const struct device *dev, void *buf, size_t size)
 			 * remaining bits to the LEDs at the end of
 			 * the strip.
 			 */
-			.buf = (uint8_t *)ones,
-			.len = sizeof(ones),
+			.buf = (uint8_t *)config->end_frame,
+			.len = config->end_frame_size,
 		},
 	};
 	const struct spi_buf_set tx = {
@@ -89,6 +91,8 @@ static int apa102_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+	memset(config->end_frame, 0xFF, config->end_frame_size);
+
 	return 0;
 }
 
@@ -97,13 +101,26 @@ static DEVICE_API(led_strip, apa102_api) = {
 	.length = apa102_length,
 };
 
+/*
+ * The "End frame" is statically allocated, as a sequence of 0xFF bytes
+ * The only function of the “End frame” is to supply more clock pulses
+ * to the string until the data has permeated to the last LED. The
+ * number of clock pulses required is exactly half the total number
+ * of LEDs in the string. See below `end_frame`.
+ */
 #define APA102_DEVICE(idx)						 \
+	static uint8_t apa102_end_frame_##idx				 \
+		[(DT_INST_PROP(idx, chain_length) /			 \
+			sizeof(struct led_rgb) / 2) + 1];		 \
 	static const struct apa102_config apa102_##idx##_config = {	 \
 		.bus = SPI_DT_SPEC_INST_GET(				 \
 			idx,						 \
 			SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8), \
 			0),						 \
 		.length = DT_INST_PROP(idx, chain_length),		 \
+		.end_frame = apa102_end_frame_##idx,			 \
+		.end_frame_size = (DT_INST_PROP(idx, chain_length) /	 \
+				sizeof(struct led_rgb) / 2) + 1,	 \
 	};								 \
 									 \
 	DEVICE_DT_INST_DEFINE(idx,					 \
