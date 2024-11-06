@@ -544,8 +544,10 @@ static int dma_mcux_edma_get_status(const struct device *dev, uint32_t channel,
 
 	if (DEV_CHANNEL_DATA(dev, channel)->busy) {
 		status->busy = true;
+		/* Be aware that here we need multiply NBYTES for each minor loops */
 		status->pending_length =
-			EDMA_GetRemainingMajorLoopCount(DEV_BASE(dev), hw_channel);
+			EDMA_GetRemainingMajorLoopCount(DEV_BASE(dev), hw_channel) *
+			DEV_CHANNEL_DATA(dev, channel)->transfer_settings.source_data_size;
 	} else {
 		status->busy = false;
 		status->pending_length = 0;
