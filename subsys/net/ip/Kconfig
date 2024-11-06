@@ -50,6 +50,9 @@ config NET_NATIVE_IPV4
 
 config NET_PMTU
 	bool
+	select NET_MGMT
+	select NET_MGMT_EVENT
+	select NET_MGMT_EVENT_INFO
 	default y
 	depends on NET_IPV6_PMTU || NET_IPV4_PMTU
 
