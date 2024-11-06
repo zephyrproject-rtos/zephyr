@@ -1521,7 +1521,7 @@ static void rxto_isr(const struct device *dev)
 			async_rx->total_user_byte_cnt += rx_flush(dev);
 		}
 #endif
-	} else {
+	} else if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME) || LOW_POWER_ENABLED(config)) {
 		async_rx->flush_cnt = rx_flush(dev);
 	}
 
