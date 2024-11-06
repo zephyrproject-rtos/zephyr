@@ -410,6 +410,9 @@ Drivers and Sensors
   * LiteX: Renamed the ``compatible`` from ``litex,uart0`` to :dtcompatible:`litex,uart`.
   * Nordic: Removed ``CONFIG_UART_n_GPIO_MANAGEMENT`` Kconfig options (where n is an instance
     index) which had no use after pinctrl driver was introduced.
+  * NS16550: Added support for Synopsys Designware 8250 UART.
+  * Renesas: Added support for SCI UART.
+  * Sensry: Added UART support for Ganymed SY1XX.
 
 * SPI
 
