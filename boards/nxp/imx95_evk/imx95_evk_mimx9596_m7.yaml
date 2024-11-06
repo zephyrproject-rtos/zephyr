@@ -18,4 +18,5 @@ supported:
   - uart
   - i2c
   - pwm
+  - netif:eth
 vendor: nxp
