@@ -5250,7 +5250,6 @@ Xtensa arch:
     - boards/qemu/xtensa/
     - boards/cdns/xt-sim/
     - soc/cdns/dc233c/
-    - soc/cdns/dc233c/
     - soc/cdns/xtensa_sample_controller/
     - tests/arch/xtensa/
   labels:
