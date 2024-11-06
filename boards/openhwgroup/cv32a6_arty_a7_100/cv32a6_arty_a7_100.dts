@@ -1,0 +1,67 @@
+/*
+ * Copyright (c) 2024 CISPA Helmholtz Center for Information Security gGmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/dts-v1/;
+
+#include <openhwgroup/cv32a6.dtsi>
+
+/ {
+	model = "Openhardwaregroup CV32A6 on Arty A7 100";
+	compatible = "ariane,cv32a6_arty_a7_100";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &memory0;
+	};
+};
+
+&uart0 {
+	status = "okay";
+	clock-frequency = <25000000>;
+
+	current-speed = <57600>;
+
+	// different interrupt than the CISPA version of the SoC
+	interrupts = <1 4>;
+};
+
+&spi0 {
+	status = "okay";
+	// different interrupt than the CISPA version of the SoC
+	interrupts = <2 2>;
+};
+
+&clint{
+	status = "okay";
+};
+
+&dma0 {
+	status = "disabled";
+};
+
+
+&mdio0{
+	status = "disabled";
+};
+
+&eth0 {
+	status = "disabled";
+};
+
+// Arty only has 256 MiB of memory
+&memory0 {
+	reg = <0x80000000 0x10000000>;
+};
+
+// Arty can only run at 25 Mhz
+&cpus_0 {
+	timebase-frequency = <12500000>;
+};
+
+&cpu_0 {
+	clock-frequency = <25000000>;
+};
+
