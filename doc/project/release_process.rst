@@ -453,10 +453,20 @@ steps:
         #. Post a PR with the updated :zephyr_file:`VERSION` file using
            ``release: Zephyr 1.11.0-rc1`` as the commit subject. Merge
            the PR after successful CI.
+
         #. Tag and push the version, using an annotated tag::
 
             $ git pull
             $ git tag -s -m "Zephyr 1.11.0-rc1" v1.11.0-rc1
+
+        #. Verify that the tag has been signed correctly, ``git show`` for the
+           tag must contain a signature (look for the ``BEGIN PGP SIGNATURE``
+           or ``BEGIN SSH SIGNATURE`` marker in the output)::
+
+            $ git show v1.11.0-rc1
+
+        #. Push the tag::
+
             $ git push git@github.com:zephyrproject-rtos/zephyr.git v1.11.0-rc1
 
         #. Send an email to the mailing lists (``announce`` and ``devel``)
@@ -486,6 +496,15 @@ steps:
 
             $ git pull
             $ git tag -s -m "Zephyr 1.11.0" v1.11.0
+
+        #. Verify that the tag has been signed correctly, ``git show`` for the
+           tag must contain a signature (look for the ``BEGIN PGP SIGNATURE``
+           or ``BEGIN SSH SIGNATURE`` marker in the output)::
+
+            $ git show v1.11.0
+
+        #. Push the tag::
+
             $ git push git@github.com:zephyrproject-rtos/zephyr.git v1.11.0
 
         #. Find the new ``v1.11.0`` tag at the top of the releases page and
