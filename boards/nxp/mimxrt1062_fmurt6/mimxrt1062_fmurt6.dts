@@ -385,12 +385,17 @@
 	nxp,prescaler = <64>;
 };
 
+&enet2 {
+	status = "okay";
+};
+
 &enet2_mac {
 	pinctrl-0 = <&pinmux_enet>;
 	pinctrl-names = "default";
 	zephyr,random-mac-address;
 	phy-connection-type = "rmii";
 	phy-handle = <&phy>;
+	status = "okay";
 };
 
 &enet2_mdio {
