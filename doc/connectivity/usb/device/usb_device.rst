@@ -373,9 +373,7 @@ Ethernet connection between the remote (USB host) and Zephyr network support.
 * CDC EEM class, enabled with :kconfig:option:`CONFIG_USB_DEVICE_NETWORK_EEM`
 * RNDIS support, enabled with :kconfig:option:`CONFIG_USB_DEVICE_NETWORK_RNDIS`
 
-See :zephyr:code-sample:`zperf` or :zephyr:code-sample:`socket-dumb-http-server` for reference.
-Typically, users will need to add a configuration file overlay to the build,
-such as :zephyr_file:`samples/net/zperf/overlay-netusb.conf`.
+See :zephyr:code-sample:`legacy-netusb` sample for reference.
 
 Applications using RNDIS support should enable :kconfig:option:`CONFIG_USB_DEVICE_OS_DESC`
 for a better user experience on a host running Microsoft Windows OS.
