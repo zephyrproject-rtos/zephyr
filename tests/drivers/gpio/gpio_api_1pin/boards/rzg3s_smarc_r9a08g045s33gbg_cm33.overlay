@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2024 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		led0 = &led_0;
+	};
+
+	gpio-led {
+		compatible = "gpio-leds";
+		led_0: led_0 {
+			gpios = <&gpio13 1 0>;
+		};
+	};
+};
+
+&gpio{
+	status = "okay";
+};
+
+&gpio13 {
+	irqs = <1 1>;
+	status = "okay";
+};
