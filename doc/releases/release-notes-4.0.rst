@@ -79,6 +79,8 @@ Architectures
 
   * Added initial support for :c:func:`arch_stack_walk` that supports unwinding via esf only
 
+  * Added support for demand paging.
+
 * RISC-V
 
   * The stack traces upon fatal exception now prints the address of stack pointer (sp) or frame
@@ -501,6 +503,8 @@ Libraries / Subsystems
 * Debug
 
 * Demand Paging
+
+  * Added LRU (Least Recently Used) eviction algorithm.
 
 * Formatted output
 
