@@ -306,40 +306,31 @@ int app_config_req(struct bt_a2dp *a2dp, struct bt_a2dp_ep *ep,
 		struct bt_a2dp_codec_cfg *codec_cfg, struct bt_a2dp_stream **stream,
 		uint8_t *rsp_err_code)
 {
+	uint32_t sample_rate;
+
 	bt_a2dp_stream_cb_register(&sbc_stream, &stream_ops);
 	*stream = &sbc_stream;
 	*rsp_err_code = 0;
 
 	shell_print(ctx_shell, "receive requesting config and accept");
-	if (*rsp_err_code == 0) {
-		uint32_t sample_rate;
+	sample_rate = bt_a2dp_sbc_get_sampling_frequency(
+		(struct bt_a2dp_codec_sbc_params *)&codec_cfg->codec_config->codec_ie[0]);
+	shell_print(ctx_shell, "sample rate %dHz", sample_rate);
 
-		shell_print(ctx_shell, "SBC configure success");
-		sample_rate  = bt_a2dp_sbc_get_sampling_frequency(
-			(struct bt_a2dp_codec_sbc_params *)&codec_cfg->codec_config->codec_ie[0]);
-		shell_print(ctx_shell, "sample rate %dHz", sample_rate);
-	} else {
-		shell_print(ctx_shell, "configure err");
-	}
 	return 0;
 }
 
 int app_reconfig_req(struct bt_a2dp_stream *stream,
 	struct bt_a2dp_codec_cfg *codec_cfg, uint8_t *rsp_err_code)
 {
+	uint32_t sample_rate;
+
 	*rsp_err_code = 0;
-
 	shell_print(ctx_shell, "receive requesting reconfig and accept");
-	if (*rsp_err_code == 0) {
-		uint32_t sample_rate;
+	sample_rate = bt_a2dp_sbc_get_sampling_frequency(
+		(struct bt_a2dp_codec_sbc_params *)&codec_cfg->codec_config->codec_ie[0]);
+	shell_print(ctx_shell, "sample rate %dHz", sample_rate);
 
-		shell_print(ctx_shell, "SBC configure success");
-		sample_rate  = bt_a2dp_sbc_get_sampling_frequency(
-			(struct bt_a2dp_codec_sbc_params *)&codec_cfg->codec_config->codec_ie[0]);
-		shell_print(ctx_shell, "sample rate %dHz", sample_rate);
-	} else {
-		shell_print(ctx_shell, "configure err");
-	}
 	return 0;
 }
 
@@ -479,7 +470,7 @@ struct bt_a2dp_cb a2dp_cb = {
 	.start_req = app_start_req,
 	.start_rsp = app_start_rsp,
 	.suspend_req = app_suspend_req,
-	.suspend_rsp = app_release_rsp,
+	.suspend_rsp = app_suspend_rsp,
 	.reconfig_req = app_reconfig_req,
 };
 

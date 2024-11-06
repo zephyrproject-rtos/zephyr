@@ -460,6 +460,8 @@ Here is a example connecting two devices:
  * Source or Sink establish the stream. using :code:`a2dp establish`.
  * Source or Sink start the media. using :code:`a2dp start`.
  * Source test the media sending. using :code:`a2dp send_media` to send one test packet data.
+ * Source or Sink suspend the media. using :code:`a2dp suspend`.
+ * Source or Sink release the media. using :code:`a2dp release`.
 
 .. tabs::
 
@@ -504,6 +506,12 @@ Here is a example connecting two devices:
                         uart:~$ a2dp send_media
                         frames num: 1, data length: 160
                         data: 1, 2, 3, 4, 5, 6 ......
+                        uart:~$ a2dp suspend
+                        success to suspend
+                        stream suspended
+                        uart:~$ a2dp release
+                        success to release
+                        stream released
 
         .. group-tab:: Device B (Audio Sink Side)
 
@@ -520,7 +528,6 @@ Here is a example connecting two devices:
                         a2dp connected
                         <after a2dp configure of source side>
                         receive requesting config and accept
-                        SBC configure success
                         sample rate 44100Hz
                         stream configured
                         <after a2dp establish of source side>
@@ -532,6 +539,12 @@ Here is a example connecting two devices:
                         <after a2dp send_media of source side>
                         received, num of frames: 1, data length: 160
                         data: 1, 2, 3, 4, 5, 6 ......
+                        <after a2dp suspend of source side>
+                        receive requesting suspend and accept
+                        stream suspended
+                        <after a2dp release of source side>
+                        receive requesting release and accept
+                        stream released
                         ...
 
 Logging
