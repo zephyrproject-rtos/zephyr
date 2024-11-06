@@ -2,6 +2,9 @@ manifest:
   remotes:
     - name: upstream
       url-base: https://github.com/zephyrproject-rtos
+    - name: nrfconnect
+      url-base: https://github.com/nrfconnect
+
   projects:
     - name: canopennode
       revision: dec12fa3f0d790cafa8414a4c2930ea71ab72ffd
@@ -25,6 +28,12 @@ manifest:
       revision: 4474bd35bd39de067f0532a1b19ce3aed9ed9807
       path: modules/lib/nanopb
       remote: upstream
+      groups:
+        - optional
+    - name: nrf_wifi
+      revision: 1c85b3c927897c752c155560e263d4947ddcc6e4
+      path: modules/lib/nrf_wifi
+      remote: nrfconnect
       groups:
         - optional
     - name: psa-arch-tests
