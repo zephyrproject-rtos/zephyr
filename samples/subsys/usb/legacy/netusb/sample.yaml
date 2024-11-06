@@ -1,0 +1,26 @@
+common:
+  tags:
+    - net
+    - zperf
+    - usb
+  min_ram: 192
+  depends_on: usb_device
+  platform_exclude:
+    - native_sim
+    - native_sim/native/64
+sample:
+  description: Network performance measurement tool for legacy netusb
+  name: zperf
+tests:
+  sample.net.zperf.netusb_ecm:
+    harness: net
+  sample.net.zperf.netusb_eem:
+    harness: net
+    extra_configs:
+      - CONFIG_USB_DEVICE_NETWORK_ECM=n
+      - CONFIG_USB_DEVICE_NETWORK_EEM=y
+  sample.net.zperf.netusb_rndis:
+    harness: net
+    extra_configs:
+      - CONFIG_USB_DEVICE_NETWORK_ECM=n
+      - CONFIG_USB_DEVICE_NETWORK_RNDIS=y
