@@ -95,6 +95,7 @@ static inline int coophi_counter(void)
 }
 
 static K_THREAD_STACK_DEFINE(cooplo_stack, STACK_SIZE);
+static struct k_thread cooplo_thread;
 static struct k_work_q cooplo_queue;
 static atomic_t cooplo_ctr;
 static inline int cooplo_counter(void)
@@ -141,13 +142,13 @@ static inline void reset_counters(void)
 static void counter_handler(struct k_work *work)
 {
 	last_handle_ms = k_uptime_get_32();
-	if (k_current_get() == &coophi_queue.thread) {
+	if (k_current_get() == coophi_queue.thread_id) {
 		atomic_inc(&coophi_ctr);
-	} else if (k_current_get() == &k_sys_work_q.thread) {
+	} else if (k_current_get() == k_sys_work_q.thread_id) {
 		atomic_inc(&system_ctr);
-	} else if (k_current_get() == &cooplo_queue.thread) {
+	} else if (k_current_get() == cooplo_queue.thread_id) {
 		atomic_inc(&cooplo_ctr);
-	} else if (k_current_get() == &preempt_queue.thread) {
+	} else if (k_current_get() == preempt_queue.thread_id) {
 		atomic_inc(&preempt_ctr);
 	}
 	if (atomic_dec(&resubmits_left) > 0) {
@@ -221,6 +222,21 @@ ZTEST(work, test_unstarted)
 	zassert_equal(rc, -ENODEV);
 }
 
+static void cooplo_main(void *workq_ptr, void *p2, void *p3)
+{
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct k_work_q *queue = (struct k_work_q *)workq_ptr;
+
+	struct k_work_queue_config cfg = {
+		.name = "wq.cooplo",
+		.no_yield = true,
+	};
+
+	k_work_queue_run(queue, &cfg);
+}
+
 static void test_queue_start(void)
 {
 	struct k_work_queue_config cfg = {
@@ -261,10 +277,14 @@ static void test_queue_start(void)
 	zassert_equal(coophi_queue.flags,
 		      K_WORK_QUEUE_STARTED | K_WORK_QUEUE_NO_YIELD, NULL);
 
-	cfg.name = "wq.cooplo";
-	cfg.no_yield = true;
-	k_work_queue_start(&cooplo_queue, cooplo_stack, STACK_SIZE,
-			    COOPLO_PRIORITY, &cfg);
+	(void)k_thread_create(&cooplo_thread, cooplo_stack, STACK_SIZE, cooplo_main, &cooplo_queue,
+			      NULL, NULL, COOPLO_PRIORITY, 0, K_FOREVER);
+
+	k_thread_start(&cooplo_thread);
+
+	/* Be sure the cooplo_thread has a chance to start running */
+	k_msleep(1);
+
 	zassert_equal(cooplo_queue.flags,
 		      K_WORK_QUEUE_STARTED | K_WORK_QUEUE_NO_YIELD, NULL);
 }
