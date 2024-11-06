@@ -12,7 +12,9 @@
 LOG_MODULE_REGISTER(net_pmtu, CONFIG_NET_PMTU_LOG_LEVEL);
 
 #include <zephyr/kernel.h>
-
+#include <zephyr/net/net_event.h>
+#include <zephyr/net/net_mgmt.h>
+#include <zephyr/net/net_if.h>
 #include "pmtu.h"
 
 #if defined(CONFIG_NET_IPV4_PMTU)
@@ -104,8 +106,45 @@ out:
 
 static void update_pmtu_entry(struct net_pmtu_entry *entry, uint16_t mtu)
 {
-	entry->mtu = mtu;
+	bool changed = false;
+
+	if (entry->mtu != mtu) {
+		changed = true;
+		entry->mtu = mtu;
+	}
+
 	entry->last_update = k_uptime_get_32();
+
+	if (changed) {
+		struct net_if *iface;
+
+		if (IS_ENABLED(CONFIG_NET_IPV4_PMTU) && entry->dst.family == AF_INET) {
+			struct net_event_ipv4_pmtu_info info;
+
+			net_ipaddr_copy(&info.dst, &entry->dst.in_addr);
+			info.mtu = mtu;
+
+			iface = net_if_ipv4_select_src_iface(&info.dst);
+
+			net_mgmt_event_notify_with_info(NET_EVENT_IPV4_PMTU_CHANGED,
+							iface,
+							(const void *)&info,
+							sizeof(struct net_event_ipv4_pmtu_info));
+
+		} else if (IS_ENABLED(CONFIG_NET_IPV6_PMTU) && entry->dst.family == AF_INET6) {
+			struct net_event_ipv6_pmtu_info info;
+
+			net_ipaddr_copy(&info.dst, &entry->dst.in6_addr);
+			info.mtu = mtu;
+
+			iface = net_if_ipv6_select_src_iface(&info.dst);
+
+			net_mgmt_event_notify_with_info(NET_EVENT_IPV6_PMTU_CHANGED,
+							iface,
+							(const void *)&info,
+							sizeof(struct net_event_ipv6_pmtu_info));
+		}
+	}
 }
 
 struct net_pmtu_entry *net_pmtu_get_entry(const struct sockaddr *dst)
