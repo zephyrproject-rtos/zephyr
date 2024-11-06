@@ -278,7 +278,9 @@ static int draw_text(const struct device *dev, const char *const str, int16_t x,
 	}
 
 	if ((fb->screen_info & SCREEN_INFO_MONO_VTILED)) {
-		for (size_t i = 0; i < strlen(str); i++) {
+		const size_t len = strlen(str);
+
+		for (size_t i = 0; i < len; i++) {
 			if ((x + fptr->width > fb->x_res) && wrap) {
 				x = 0U;
 				y += fptr->height;
