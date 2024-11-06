@@ -10,9 +10,13 @@ set -ue
 source ${ZEPHYR_BASE}/tests/bsim/compile.source
 
 if [ "${BOARD_TS}" == "nrf5340bsim_nrf5340_cpuapp" ]; then
-  app=samples/bluetooth/bap_broadcast_source sysbuild=1 compile
+  app=samples/bluetooth/bap_broadcast_source sysbuild=1 \
+  conf_overlay=${ZEPHYR_BASE}/samples/bluetooth/bap_broadcast_source/boards/${BOARD_TS}.conf \
+  exe_name=bs_${BOARD_TS}_${app}_prj_conf \
+  compile
   app=tests/bsim/bluetooth/audio_samples/bap_broadcast_sink sysbuild=1 \
     conf_file=${ZEPHYR_BASE}/samples/bluetooth/bap_broadcast_sink/prj.conf \
+    conf_overlay=${ZEPHYR_BASE}/samples/bluetooth/bap_broadcast_sink/boards/${BOARD_TS}.conf \
     exe_name=bs_${BOARD_TS}_${app}_prj_conf sysbuild=1 compile
 else
   app=samples/bluetooth/bap_broadcast_source conf_overlay=overlay-bt_ll_sw_split.conf \
