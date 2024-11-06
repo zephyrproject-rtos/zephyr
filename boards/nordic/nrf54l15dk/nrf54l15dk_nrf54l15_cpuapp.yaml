@@ -9,6 +9,7 @@ toolchain:
   - gnuarmemb
   - xtools
   - zephyr-gnu
+  - zephyr-llvm
 sysbuild: true
 ram: 188
 flash: 324
