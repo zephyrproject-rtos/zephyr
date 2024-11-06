@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2024 Nordic Semiconductor ASA
  * Copyright (c) 2015 Runtime Inc
  * Copyright (c) 2023 Sensorfy B.V.
  *
@@ -43,3 +43,21 @@ const struct flash_area default_flash_map[] = {
 
 const int flash_map_entries = ARRAY_SIZE(default_flash_map);
 const struct flash_area *flash_map = default_flash_map;
+
+/* Generate objects representing each partition in system. In the end only
+ * objects referenced by code will be included into build.
+ */
+#define DEFINE_PARTITION(part) DEFINE_PARTITION_1(part, DT_DEP_ORD(part))
+#define DEFINE_PARTITION_1(part, ord)								\
+	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(DT_MTD_FROM_FIXED_PARTITION(part)),			\
+		(DEFINE_PARTITION_0(part, ord)), ())
+#define DEFINE_PARTITION_0(part, ord)								\
+	const struct flash_area DT_CAT(global_fixed_partition_ORD_, ord) = {			\
+		.fa_id = DT_FIXED_PARTITION_ID(part),						\
+		.fa_off = DT_REG_ADDR(part),							\
+		.fa_dev = DEVICE_DT_GET(DT_MTD_FROM_FIXED_PARTITION(part)),			\
+		.fa_size = DT_REG_SIZE(part),							\
+	};
+
+#define FOR_EACH_PARTITION_TABLE(table) DT_FOREACH_CHILD(table, DEFINE_PARTITION)
+DT_FOREACH_STATUS_OKAY(fixed_partitions, FOR_EACH_PARTITION_TABLE)
