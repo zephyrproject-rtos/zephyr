@@ -536,7 +536,7 @@ static ALWAYS_INLINE void clock_init(void)
 		kCLOCK_Usb480M, DT_PROP_BY_PHANDLE(DT_NODELABEL(usb2), clocks, clock_frequency));
 	CLOCK_EnableUsbhs1Clock(kCLOCK_Usb480M,
 				DT_PROP_BY_PHANDLE(DT_NODELABEL(usb2), clocks, clock_frequency));
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb1)) && CONFIG_USB_DC_NXP_EHCI
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb2)) && CONFIG_USB_DC_NXP_EHCI
 	USB_EhciPhyInit(kUSB_ControllerEhci1, CPU_XTAL_CLK_HZ, &usbPhyConfig);
 #endif
 #endif
