@@ -134,6 +134,28 @@ int flash_area_open(uint8_t id, const struct flash_area **fa);
 void flash_area_close(const struct flash_area *fa);
 
 /**
+ * @brief Verify that a device assigned to flash area is ready for use.
+ *
+ * Indicates whether the provided flash area has a device known to be
+ * in a state where it can be used with Flash Map API.
+ *
+ * This can be used with struct flash_area pointers captured from
+ * FIXED_PARTITION().
+ * At minimum this means that the device has been successfully initialized.
+ *
+ * @param[in] fa pointer to flash_area object to check.
+ *
+ * @retval true If the device is ready for use.
+ * @retval false If the device is not ready for use or if a NULL pointer is
+ * passed as flash area pointer or device pointer within flash area object
+ * is NULL.
+ */
+static ALWAYS_INLINE bool flash_area_device_is_ready(const struct flash_area *fa)
+{
+	return (fa != NULL && device_is_ready(fa->fa_dev));
+}
+
+/**
  * @brief Read flash area data
  *
  * Read data from flash area. Area readout boundaries are asserted before read
@@ -375,6 +397,31 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
  */
 #define FIXED_PARTITION_NODE_DEVICE(node) \
 	DEVICE_DT_GET(DT_MTD_FROM_FIXED_PARTITION(node))
+
+/**
+ * Get pointer to flash_area object by partition label
+ *
+ * @param label DTS node label of a partition
+ *
+ * @return Pointer to flash_area type object representing partition
+ */
+#define FIXED_PARTITION(label)	FIXED_PARTITION_1(DT_NODELABEL(label))
+#define FIXED_PARTITION_1(node)	FIXED_PARTITION_0(DT_DEP_ORD(node))
+#define FIXED_PARTITION_0(ord) (const struct flash_area *)&DT_CAT(global_fixed_partition_ORD_, part)
+
+/** @cond INTERNAL_HIDDEN */
+#define DECLARE_PARTITION(part) DECLARE_PARTITION_0(DT_DEP_ORD(part))
+#define DECLARE_PARTITION_0(part)						\
+	extern const struct flash_area DT_CAT(global_fixed_partition_ORD_, part);
+#define FOR_EACH_PARTITION_TABLE(table) DT_FOREACH_CHILD(table, DECLARE_PARTITION)
+
+/* Generate declarations */
+DT_FOREACH_STATUS_OKAY(fixed_partitions, FOR_EACH_PARTITION_TABLE)
+
+#undef DECLARE_PARTITION
+#undef DECLARE_PARTITION_0
+#undef FOR_EACH_PARTITION_TABLE
+/** @endcond */
 
 #ifdef __cplusplus
 }
