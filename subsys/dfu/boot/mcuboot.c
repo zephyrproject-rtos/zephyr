@@ -44,7 +44,6 @@ LOG_MODULE_REGISTER(mcuboot_dfu, LOG_LEVEL_DBG);
 
 #if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD)
 /* For RAM LOAD mode, the active image must be fetched from the bootloader */
-static uint8_t boot_fetch_active_slot(void);
 #define ACTIVE_SLOT_FLASH_AREA_ID boot_fetch_active_slot()
 #define INVALID_SLOT_ID 255
 #else
@@ -76,7 +75,7 @@ struct mcuboot_v1_raw_header {
  */
 
 #if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD)
-static uint8_t boot_fetch_active_slot(void)
+uint8_t boot_fetch_active_slot(void)
 {
 	int rc;
 	uint8_t slot;
@@ -93,7 +92,12 @@ static uint8_t boot_fetch_active_slot(void)
 
 	return slot;
 }
-#endif
+#else  /* CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD */
+uint8_t boot_fetch_active_slot(void)
+{
+	return ACTIVE_SLOT_FLASH_AREA_ID;
+}
+#endif /* CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD */
 
 static int boot_read_v1_header(uint8_t area_id,
 			       struct mcuboot_v1_raw_header *v1_raw)
