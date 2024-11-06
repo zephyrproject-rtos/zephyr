@@ -3757,6 +3757,27 @@ struct bt_hci_evt_le_past_received {
 	uint8_t      clock_accuracy;
 } __packed;
 
+/** Minimum sync delay for CIGs as defined by 7.7.65.25 LE CIS Established event */
+#define BT_HCI_LE_CIG_SYNC_DELAY_MIN           0x0000F2U
+/** Maximum sync delay for CIGs as defined by 7.7.65.25 LE CIS Established event */
+#define BT_HCI_LE_CIG_SYNC_DELAY_MAX           0x7FFFFFU
+/** Minimum sync delay for CISs as defined by 7.7.65.25 LE CIS Established event */
+#define BT_HCI_LE_CIS_SYNC_DELAY_MIN           0x0000F2U
+/** Maximum sync delay for CISs as defined by 7.7.65.25 LE CIS Established event */
+#define BT_HCI_LE_CIS_SYNC_DELAY_MAX           0x7FFFFFU
+/** Minimum transport latency central to peripheral as defined by 7.7.65.25 LE CIS Established event
+ */
+#define BT_HCI_LE_TRANSPORT_LATENCY_C_TO_P_MIN 0x0000F2U
+/** Maximum transport latency central to peripheral as defined by 7.7.65.25 LE CIS Established event
+ */
+#define BT_HCI_LE_TRANSPORT_LATENCY_C_TO_P_MAX 0x7FFFFFU
+/** Minimum transport latency peripheral to central as defined by 7.7.65.25 LE CIS Established event
+ */
+#define BT_HCI_LE_TRANSPORT_LATENCY_P_TO_C_MIN 0x0000F2U
+/** Maximum transport latency peripheral to central as defined by 7.7.65.25 LE CIS Established event
+ */
+#define BT_HCI_LE_TRANSPORT_LATENCY_P_TO_C_MAX 0x7FFFFFU
+
 #define BT_HCI_EVT_LE_CIS_ESTABLISHED           0x19
 struct bt_hci_evt_le_cis_established {
 	uint8_t  status;
