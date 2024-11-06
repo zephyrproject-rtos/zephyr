@@ -34,7 +34,7 @@ jobs:
       CCACHE_REMOTE_STORAGE: "redis://cache-*.keydb-cache.svc.cluster.local|shards=1,2,3"
       CCACHE_REMOTE_ONLY: "true"
       # `--specs` is ignored because ccache is unable to resovle the toolchain specs file path.
-      CCACHE_IGNOREOPTIONS: '--specs=*'
+      CCACHE_IGNOREOPTIONS: '-specs=* --specs=*'
     steps:
       - name: Apply container owner mismatch workaround
         run: |
