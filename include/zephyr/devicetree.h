@@ -240,6 +240,13 @@
 #define DT_ALIAS(alias) DT_CAT(DT_N_ALIAS_, alias)
 
 /**
+ * @brief Test if the devicetree has a given alias
+ * @param alias_name lowercase-and-underscores devicetree alias name
+ * @return 1 if the alias exists and refers to a node, 0 otherwise
+ */
+#define DT_HAS_ALIAS(alias_name) DT_NODE_EXISTS(DT_ALIAS(alias_name))
+
+/**
  * @brief Get a node identifier for an instance of a compatible
  *
  * All nodes with a particular compatible property value are assigned

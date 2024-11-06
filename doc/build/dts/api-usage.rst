@@ -50,6 +50,8 @@ By alias
    :zephyr:code-sample:`blinky`, which uses the ``led0`` alias) that need to
    refer to *some* device of a particular type ("the board's user LED") but
    don't care which one is used.
+   You may also use :c:macro:`DT_HAS_ALIAS()` to verify whether an alias
+   node exists.
 
 By instance number
    This is done primarily by device drivers, as instance numbers are a way to
