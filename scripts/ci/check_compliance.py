@@ -1639,6 +1639,54 @@ class KeepSorted(ComplianceTest):
                 self.check_file(file, fp)
 
 
+class Ruff(ComplianceTest):
+    """
+    Ruff
+    """
+    name = "Ruff"
+    doc = "Check python files with ruff."
+    path_hint = "<git-top>"
+
+    def run(self):
+        for file in get_files(filter="d"):
+            if not file.endswith(".py"):
+                continue
+
+            try:
+                subprocess.run(
+                    f"ruff check --force-exclude --output-format=json {file}",
+                    check=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    shell=True,
+                    cwd=GIT_TOP,
+                )
+            except subprocess.CalledProcessError as ex:
+                output = ex.output.decode("utf-8")
+                messages = json.loads(output)
+                for m in messages:
+                    self.fmtd_failure(
+                        "error",
+                        f'Python lint error ({m.get("code")}) see {m.get("url")}',
+                        file,
+                        line=m.get("location", {}).get("row"),
+                        col=m.get("location", {}).get("column"),
+                        end_line=m.get("end_location", {}).get("row"),
+                        end_col=m.get("end_location", {}).get("column"),
+                        desc=m.get("message"),
+                    )
+            try:
+                subprocess.run(
+                    f"ruff format --force-exclude --diff {file}",
+                    check=True,
+                    shell=True,
+                    cwd=GIT_TOP,
+                )
+            except subprocess.CalledProcessError:
+                desc = f"Run 'ruff format {file}'"
+                self.fmtd_failure("error", "Python format error", file, desc=desc)
+
+
 class TextEncoding(ComplianceTest):
     """
     Check that any text file is encoded in ascii or utf-8.

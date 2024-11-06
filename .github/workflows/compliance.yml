@@ -38,7 +38,7 @@ jobs:
       run: |
         pip3 install setuptools
         pip3 install wheel
-        pip3 install python-magic lxml junitparser gitlint pylint pykwalify yamllint clang-format unidiff sphinx-lint
+        pip3 install python-magic lxml junitparser gitlint pylint pykwalify yamllint clang-format unidiff sphinx-lint ruff
         pip3 install west
 
     - name: west setup
