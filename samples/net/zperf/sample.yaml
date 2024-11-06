@@ -41,23 +41,11 @@ tests:
     extra_configs:
       - CONFIG_ZPERF_SESSION_PER_THREAD=y
     platform_allow: qemu_x86
-  sample.net.zperf.netusb_ecm:
-    harness: net
-    extra_args: EXTRA_CONF_FILE="overlay-netusb.conf"
-    tags:
-      - usb
-      - net
-      - zperf
-    depends_on: usb_device
-    # native_sim usb driver does not work with CONFIG_POSIX_API
-    platform_exclude:
-      - native_sim
-      - native_sim/native/64
-  sample.net.zperf.device_next_ecm:
+  sample.net.zperf.usbd_cdc_ecm:
     harness: net
     extra_args:
-      - EXTRA_CONF_FILE="overlay-usbd_next.conf"
-      - DTC_OVERLAY_FILE="usbd_next_ecm.overlay"
+      - EXTRA_CONF_FILE="overlay-usbd.conf"
+      - DTC_OVERLAY_FILE="usbd_cdc_ecm.overlay"
     platform_allow:
       - nrf52840dk/nrf52840
       - frdm_k64f
@@ -65,12 +53,12 @@ tests:
       - usb
       - net
       - zperf
-    depends_on: usb_device
-  sample.net.zperf.device_next_ncm:
+    depends_on: usbd
+  sample.net.zperf.usbd_cdc_ncm:
     harness: net
     extra_args:
-      - EXTRA_CONF_FILE="overlay-usbd_next.conf"
-      - DTC_OVERLAY_FILE="usbd_next_ncm.overlay"
+      - EXTRA_CONF_FILE="overlay-usbd.conf"
+      - DTC_OVERLAY_FILE="usbd_cdc_ncm.overlay"
     platform_allow:
       - nrf52840dk/nrf52840
       - frdm_k64f
@@ -78,37 +66,7 @@ tests:
       - usb
       - net
       - zperf
-    depends_on: usb_device
-  sample.net.zperf.netusb_eem:
-    harness: net
-    extra_args: EXTRA_CONF_FILE="overlay-netusb.conf"
-    extra_configs:
-      - CONFIG_USB_DEVICE_NETWORK_ECM=n
-      - CONFIG_USB_DEVICE_NETWORK_EEM=y
-    tags:
-      - usb
-      - net
-      - zperf
-    depends_on: usb_device
-    # native_sim usb driver does not work with CONFIG_POSIX_API
-    platform_exclude:
-      - native_sim
-      - native_sim/native/64
-  sample.net.zperf.netusb_rndis:
-    harness: net
-    extra_args: EXTRA_CONF_FILE="overlay-netusb.conf"
-    extra_configs:
-      - CONFIG_USB_DEVICE_NETWORK_ECM=n
-      - CONFIG_USB_DEVICE_NETWORK_RNDIS=y
-    tags:
-      - usb
-      - net
-      - zperf
-    depends_on: usb_device
-    # native_sim usb driver does not work with CONFIG_POSIX_API
-    platform_exclude:
-      - native_sim
-      - native_sim/native/64
+    depends_on: usbd
   sample.net.zperf.shield:
     harness: net
     platform_allow: reel_board
