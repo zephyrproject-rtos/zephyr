@@ -167,4 +167,10 @@ zephyr_library_sources_ifdef(CONFIG_NRF70_STA_MODE
   ${NRF_WIFI_DIR}/fw_if/umac_if/src/fmac_util.c
 )
 
+zephyr_library_sources(
+  shim.c
+  timer.c
+  work.c
+)
+
 target_link_libraries(zephyr_interface INTERFACE nrf-wifi-interface)

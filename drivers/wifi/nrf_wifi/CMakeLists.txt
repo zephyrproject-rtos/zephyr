@@ -25,9 +25,6 @@ zephyr_library_sources_ifdef(CONFIG_NRF70_SR_COEX
 )
 
 zephyr_library_sources(
-  src/shim.c
-  src/work.c
-  src/timer.c
   src/qspi/src/device.c
   src/qspi/src/rpu_hw_if.c
   src/qspi/src/ficr_prog.c
