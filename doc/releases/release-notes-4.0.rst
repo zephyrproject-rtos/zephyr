@@ -596,6 +596,10 @@ Libraries / Subsystems
 
   * Added LRU (Least Recently Used) eviction algorithm.
 
+  * Added on-demand memory mapping support (:kconfig:option:`CONFIG_DEMAND_MAPPING`).
+
+  * Made demand paging SMP compatible.
+
 * Formatted output
 
 * Management
