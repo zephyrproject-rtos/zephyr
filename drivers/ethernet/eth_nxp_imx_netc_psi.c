@@ -182,6 +182,7 @@ static const struct ethernet_api netc_eth_api = {.iface_api.init = netc_eth_ifac
 		.generate_mac = netc_eth##n##_generate_mac,                                        \
 		.bdr_init = netc_eth##n##_bdr_init,                                                \
 		.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(n, phy_handle)),                          \
+		.phy_mode = NETC_PHY_MODE(DT_DRV_INST(n)),                                         \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
 		.si_idx = (DT_INST_PROP(n, mac_index) << 8) | DT_INST_PROP(n, si_index),           \
 		.tx_intr_msg_data = NETC_TX_INTR_MSG_DATA_START + n,                               \
