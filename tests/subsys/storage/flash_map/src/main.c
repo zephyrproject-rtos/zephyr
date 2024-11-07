@@ -15,6 +15,7 @@
 #define SLOT1_PARTITION_ID	FIXED_PARTITION_ID(SLOT1_PARTITION)
 #define SLOT1_PARTITION_DEV	FIXED_PARTITION_DEVICE(SLOT1_PARTITION)
 #define SLOT1_PARTITION_NODE	DT_NODELABEL(SLOT1_PARTITION)
+#define SLOT1_PARTITION_OFFSET	FIXED_PARTITION_OFFSET(SLOT1_PARTITION)
 
 extern int flash_map_entries;
 struct flash_sector fs_sectors[1024];
@@ -41,8 +42,6 @@ ZTEST(flash_map, test_flash_area_get_sectors)
 	int i;
 	int rc;
 	off_t off;
-	uint8_t wd[512];
-	uint8_t rd[512];
 	const struct device *flash_dev;
 	const struct device *flash_dev_a = SLOT1_PARTITION_DEV;
 
@@ -55,59 +54,26 @@ ZTEST(flash_map, test_flash_area_get_sectors)
 	/* Device obtained by label should match the one from fa object */
 	zassert_equal(flash_dev, flash_dev_a, "Device for slot1_partition do not match");
 
-	rc = flash_erase(flash_dev, fa->fa_off, fa->fa_size);
-	zassert_true(rc == 0, "flash area erase fail");
-
-	(void)memset(wd, 0xa5, sizeof(wd));
-
 	sec_cnt = ARRAY_SIZE(fs_sectors);
 	rc = flash_area_get_sectors(SLOT1_PARTITION_ID, &sec_cnt, fs_sectors);
 	zassert_true(rc == 0, "flash_area_get_sectors failed");
 
-	/* write stuff to beginning of every sector */
 	off = 0;
-	for (i = 0; i < sec_cnt; i++) {
-		rc = flash_area_write(fa, off, wd, sizeof(wd));
-		zassert_true(rc == 0, "flash_area_write() fail");
 
-		/* read it back via hal_flash_Read() */
-		rc = flash_read(flash_dev, fa->fa_off + off, rd, sizeof(rd));
-		zassert_true(rc == 0, "hal_flash_read() fail");
+	/* For each reported sector, check if it corresponds to real page on device */
+	for (i = 0; i < sec_cnt; ++i) {
+		struct flash_pages_info fpi;
 
-		rc = memcmp(wd, rd, sizeof(wd));
-		zassert_true(rc == 0, "read data != write data");
-
-		/* write stuff to end of area */
-		rc = flash_write(flash_dev, fa->fa_off + off +
-					    fs_sectors[i].fs_size - sizeof(wd),
-				 wd, sizeof(wd));
-		zassert_true(rc == 0, "hal_flash_write() fail");
-
-		/* and read it back */
-		(void)memset(rd, 0, sizeof(rd));
-		rc = flash_area_read(fa, off + fs_sectors[i].fs_size -
-					 sizeof(rd),
-				     rd, sizeof(rd));
-		zassert_true(rc == 0, "hal_flash_read() fail");
-
-		rc = memcmp(wd, rd, sizeof(rd));
-		zassert_true(rc == 0, "read data != write data");
-
+		zassert_ok(flash_get_page_info_by_offs(flash_dev,
+						       SLOT1_PARTITION_OFFSET + off,
+						       &fpi));
+		/* Offset of page taken directly from device corresponds to offset
+		 * within flash area
+		 */
+		zassert_equal(fpi.start_offset,
+			      fs_sectors[i].fs_off + SLOT1_PARTITION_OFFSET);
+		zassert_equal(fpi.size, fs_sectors[i].fs_size);
 		off += fs_sectors[i].fs_size;
-	}
-
-	/* erase it */
-	rc = flash_area_erase(fa, 0, fa->fa_size);
-	zassert_true(rc == 0, "read data != write data");
-
-	/* should read back ff all throughout*/
-	(void)memset(wd, 0xff, sizeof(wd));
-	for (off = 0; off < fa->fa_size; off += sizeof(rd)) {
-		rc = flash_area_read(fa, off, rd, sizeof(rd));
-		zassert_true(rc == 0, "hal_flash_read() fail");
-
-		rc = memcmp(wd, rd, sizeof(rd));
-		zassert_true(rc == 0, "area not erased");
 	}
 
 	flash_area_close(fa);
