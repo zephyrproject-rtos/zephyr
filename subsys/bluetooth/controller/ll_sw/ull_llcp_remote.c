@@ -682,11 +682,11 @@ static void rr_st_idle(struct ll_conn *conn, uint8_t evt, void *param)
 				    (ctx_local->proc == PROC_CONN_UPDATE &&
 				     ctx->proc == PROC_CONN_PARAM_REQ)) {
 					/* Central collision
-					* => Send reject
-					*
-					* Local central shall reject the PDU received from the 
-					* peripheral by issuing a reject, continues unaffected.
-					*/
+					 * => Send reject
+					 *
+					 * Local central shall reject the PDU received from the 
+					 * peripheral by issuing a reject, continues unaffected.
+					 */
 
 					/* Send reject */
 					struct node_rx_pdu *rx = (struct node_rx_pdu *)param;
