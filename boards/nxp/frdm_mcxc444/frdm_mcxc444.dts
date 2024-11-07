@@ -17,7 +17,7 @@
 	aliases {
 		led0 = &red_led;
 		led1 = &green_led;
-		led2 = &red_led;
+		led2 = &blue_led;
 		sw0 = &user_button_2;
 		sw1 = &user_button_3;
 		accel0 = &fxls8974;
@@ -37,7 +37,7 @@
 			label = "Red LED";
 		};
 		green_led: led_1 {
-			gpios = <&gpiob 5 GPIO_ACTIVE_LOW>;
+			gpios = <&gpiod 5 GPIO_ACTIVE_LOW>;
 			label = "Green LED";
 		};
 		blue_led: led_2 {
@@ -84,6 +84,10 @@
 };
 
 &gpioc {
+	status = "okay";
+};
+
+&gpiod {
 	status = "okay";
 };
 
