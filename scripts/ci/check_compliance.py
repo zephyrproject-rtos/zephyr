@@ -82,20 +82,25 @@ def get_files(filter=None, paths=None):
     return files
 
 class FmtdFailure(Failure):
-
-    def __init__(self, severity, title, file, line=None, col=None, desc=""):
+    def __init__(
+        self, severity, title, file, line=None, col=None, desc="", end_line=None, end_col=None
+    ):
         self.severity = severity
         self.title = title
         self.file = file
         self.line = line
         self.col = col
+        self.end_line = end_line
+        self.end_col = end_col
         self.desc = desc
         description = f':{desc}' if desc else ''
         msg_body = desc or title
 
         txt = f'\n{title}{description}\nFile:{file}' + \
               (f'\nLine:{line}' if line else '') + \
-              (f'\nColumn:{col}' if col else '')
+              (f'\nColumn:{col}' if col else '') + \
+              (f'\nEndLine:{end_line}' if end_line else '') + \
+              (f'\nEndColumn:{end_col}' if end_col else '')
         msg = f'{file}' + (f':{line}' if line else '') + f' {msg_body}'
         typ = severity.lower()
 
@@ -172,13 +177,15 @@ class ComplianceTest:
         fail = Failure(msg or f'{type(self).name} issues', type_)
         self._result(fail, text)
 
-    def fmtd_failure(self, severity, title, file, line=None, col=None, desc=""):
+    def fmtd_failure(
+        self, severity, title, file, line=None, col=None, desc="", end_line=None, end_col=None
+    ):
         """
         Signals that the test failed, and store the information in a formatted
         standardized manner. Can be called many times within the same test to
         report multiple failures.
         """
-        fail = FmtdFailure(severity, title, file, line, col, desc)
+        fail = FmtdFailure(severity, title, file, line, col, desc, end_line, end_col)
         self._result(fail, fail.text)
         self.fmtd_failures.append(fail)
 
@@ -1696,6 +1703,8 @@ def annotate(res):
     notice = f'::{res.severity} file={res.file}' + \
              (f',line={res.line}' if res.line else '') + \
              (f',col={res.col}' if res.col else '') + \
+             (f',endLine={res.end_line}' if res.end_line else '') + \
+             (f',endColumn={res.end_col}' if res.end_col else '') + \
              f',title={res.title}::{msg}'
     print(notice)
 
