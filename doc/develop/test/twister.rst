@@ -415,11 +415,11 @@ levels: <list of levels>
     test will be selectable using the command line option ``--level <level name>``
 
 min_ram: <integer>
-    minimum amount of RAM in KB needed for this test to build and run. This is
+    estimated minimum amount of RAM in KB needed for this test to build and run. This is
     compared with information provided by the board metadata.
 
 min_flash: <integer>
-    minimum amount of ROM in KB needed for this test to build and run. This is
+    estimated minimum amount of ROM in KB needed for this test to build and run. This is
     compared with information provided by the board metadata.
 
 .. _twister_test_case_timeout:
