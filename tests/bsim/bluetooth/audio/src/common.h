@@ -119,6 +119,7 @@ extern atomic_t flag_audio_received;
 extern volatile bt_security_t security_level;
 
 void disconnected(struct bt_conn *conn, uint8_t reason);
+void setup_broadcast_adv(struct bt_le_ext_adv **adv);
 void test_tick(bs_time_t HW_device_time);
 void test_init(void);
 uint16_t get_dev_cnt(void);
