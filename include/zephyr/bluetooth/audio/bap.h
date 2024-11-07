@@ -41,6 +41,12 @@
 extern "C" {
 #endif
 
+#if defined(CONFIG_BT_BAP_BASS_MAX_SUBGROUPS)
+#define BT_BAP_BASS_MAX_SUBGROUPS CONFIG_BT_BAP_BASS_MAX_SUBGROUPS
+#else
+#define BT_BAP_BASS_MAX_SUBGROUPS 0
+#endif /* CONFIG_BT_BAP_BASS_MAX_SUBGROUPS*/
+
 /** An invalid Broadcast ID */
 #define BT_BAP_INVALID_BROADCAST_ID 0xFFFFFFFFU
 
@@ -582,7 +588,7 @@ struct bt_bap_scan_delegator_recv_state {
 	 * If the @ref bt_bap_bass_subgroup.bis_sync value is @ref BT_BAP_BIS_SYNC_FAILED then it
 	 * indicates that the BIG sync failed.
 	 */
-	struct bt_bap_bass_subgroup subgroups[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS];
+	struct bt_bap_bass_subgroup subgroups[BT_BAP_BASS_MAX_SUBGROUPS];
 };
 
 /**
@@ -676,7 +682,7 @@ struct bt_bap_scan_delegator_cb {
 	 */
 	int (*bis_sync_req)(struct bt_conn *conn,
 			    const struct bt_bap_scan_delegator_recv_state *recv_state,
-			    const uint32_t bis_sync_req[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS]);
+			    const uint32_t bis_sync_req[BT_BAP_BASS_MAX_SUBGROUPS]);
 	/**
 	 * @brief Broadcast Assistant scanning state callback
 	 *
@@ -2377,9 +2383,8 @@ int bt_bap_scan_delegator_set_pa_state(uint8_t src_id,
  *                       subgroup.
  * @return int           Error value. 0 on success, ERRNO on fail.
  */
-int bt_bap_scan_delegator_set_bis_sync_state(
-	uint8_t src_id,
-	uint32_t bis_synced[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS]);
+int bt_bap_scan_delegator_set_bis_sync_state(uint8_t src_id,
+					     uint32_t bis_synced[BT_BAP_BASS_MAX_SUBGROUPS]);
 
 /** Parameters for bt_bap_scan_delegator_add_src() */
 struct bt_bap_scan_delegator_add_src_param {
@@ -2399,7 +2404,7 @@ struct bt_bap_scan_delegator_add_src_param {
 	uint8_t num_subgroups;
 
 	/** Subgroup specific information */
-	struct bt_bap_bass_subgroup subgroups[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS];
+	struct bt_bap_bass_subgroup subgroups[BT_BAP_BASS_MAX_SUBGROUPS];
 };
 
 /**
@@ -2437,7 +2442,7 @@ struct bt_bap_scan_delegator_mod_src_param {
 	 * If a subgroup's metadata_len is set to 0, the existing metadata
 	 * for the subgroup will remain unchanged
 	 */
-	struct bt_bap_bass_subgroup subgroups[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS];
+	struct bt_bap_bass_subgroup subgroups[BT_BAP_BASS_MAX_SUBGROUPS];
 };
 
 /**
