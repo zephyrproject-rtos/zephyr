@@ -6,6 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/bluetooth/gap.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/byteorder.h>
@@ -14,6 +15,8 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/hci.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys_clock.h>
 
 #include "bs_types.h"
 #include "bs_tracing.h"
@@ -52,19 +55,20 @@ static bt_addr_le_t peer_addr;
 #define ISO_LATENCY_MS       DIV_ROUND_UP(ISO_INTERVAL_US, USEC_PER_MSEC)
 #define ISO_LATENCY_FT_MS    20U
 
-#define BT_CONN_US_TO_INTERVAL(t) ((uint16_t)((t) * 4U / 5U / USEC_PER_MSEC))
-
 #if (CONFIG_BT_CTLR_CENTRAL_SPACING == 0)
-#define CONN_INTERVAL_MIN    BT_CONN_US_TO_INTERVAL(ISO_INTERVAL_US)
+#define CONN_INTERVAL_MIN_US ISO_INTERVAL_US
 #else /* CONFIG_BT_CTLR_CENTRAL_SPACING > 0 */
-#define CONN_INTERVAL_MIN    BT_CONN_US_TO_INTERVAL(ISO_INTERVAL_US * CONFIG_BT_MAX_CONN)
+#define CONN_INTERVAL_MIN_US (ISO_INTERVAL_US * CONFIG_BT_MAX_CONN)
 #endif /* CONFIG_BT_CTLR_CENTRAL_SPACING > 0 */
+#define CONN_INTERVAL_MAX_US CONN_INTERVAL_MIN_US
 
-#define CONN_INTERVAL_MAX    CONN_INTERVAL_MIN
-#define CONN_TIMEOUT         MAX((BT_CONN_INTERVAL_TO_MS(CONN_INTERVAL_MAX) * 6U / 10U), 10U)
+#define CONN_INTERVAL_MIN BT_GAP_US_TO_CONN_INTERVAL(CONN_INTERVAL_MIN_US)
+#define CONN_INTERVAL_MAX BT_GAP_US_TO_CONN_INTERVAL(CONN_INTERVAL_MAX_US)
+#define CONN_TIMEOUT                                                                               \
+	MAX(BT_GAP_US_TO_CONN_TIMEOUT(CONN_INTERVAL_MAX_US * 6U), BT_GAP_MS_TO_CONN_TIMEOUT(100U))
 
-#define ADV_INTERVAL_MIN     0x0020
-#define ADV_INTERVAL_MAX     0x0020
+#define ADV_INTERVAL_MIN BT_GAP_MS_TO_ADV_INTERVAL(20)
+#define ADV_INTERVAL_MAX BT_GAP_MS_TO_ADV_INTERVAL(20)
 
 #define BT_CONN_LE_CREATE_CONN_CUSTOM  \
 	BT_CONN_LE_CREATE_PARAM(BT_CONN_LE_OPT_NONE, \

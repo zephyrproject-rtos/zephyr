@@ -586,10 +586,10 @@ static void cap_device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type
 		return;
 	}
 
-	err = bt_conn_le_create(
-		addr, BT_CONN_LE_CREATE_CONN,
-		BT_LE_CONN_PARAM(BT_GAP_INIT_CONN_INT_MIN, BT_GAP_INIT_CONN_INT_MIN, 0, 400),
-		&connected_conns[connected_conn_cnt]);
+	err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN,
+				BT_LE_CONN_PARAM(BT_GAP_INIT_CONN_INT_MIN, BT_GAP_INIT_CONN_INT_MIN,
+						 0, BT_GAP_MS_TO_CONN_TIMEOUT(4000)),
+				&connected_conns[connected_conn_cnt]);
 	if (err) {
 		FAIL("Could not connect to peer: %d", err);
 	}

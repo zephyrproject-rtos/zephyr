@@ -1,20 +1,23 @@
 /*
- * Copyright (c) 2020 Nordic Semiconductor ASA
+ * Copyright (c) 2020-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <stdint.h>
 
+#include <zephyr/bluetooth/gap.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/sys/util.h>
 
 #define TIMEOUT_SYNC_CREATE K_SECONDS(10)
 #define NAME_LEN            30
 
 static bool         per_adv_found;
 static bt_addr_le_t per_addr;
-static uint32_t     per_adv_interval_ms;
+static uint16_t per_adv_sync_timeout;
 static uint8_t      per_sid;
 
 static K_SEM_DEFINE(sem_per_adv, 0, 1);
@@ -97,8 +100,22 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 	       info->interval, info->interval * 5 / 4, info->sid);
 
 	if (!per_adv_found && info->interval) {
+		uint32_t interval_us;
+		uint32_t timeout;
+
 		per_adv_found = true;
-		per_adv_interval_ms = BT_GAP_PER_ADV_INTERVAL_TO_MS(info->interval);
+
+		/* Add retries and convert to unit in 10's of ms */
+		interval_us = BT_GAP_PER_ADV_INTERVAL_TO_US(info->interval);
+
+		timeout = BT_GAP_US_TO_PER_ADV_SYNC_TIMEOUT(interval_us);
+
+		/* 10 attempts */
+		timeout *= 10;
+
+		/* Enforce restraints */
+		per_adv_sync_timeout =
+			CLAMP(timeout, BT_GAP_PER_ADV_MIN_TIMEOUT, BT_GAP_PER_ADV_MAX_TIMEOUT);
 
 		per_sid = info->sid;
 		bt_addr_le_copy(&per_addr, info->addr);
@@ -235,7 +252,7 @@ int main(void)
 		sync_create_param.options = 0;
 		sync_create_param.sid = per_sid;
 		sync_create_param.skip = 0;
-		sync_create_param.timeout = per_adv_interval_ms * 10 / 10; /* 10 attempts */
+		sync_create_param.timeout = per_adv_sync_timeout;
 		err = bt_le_per_adv_sync_create(&sync_create_param, &sync);
 		if (err) {
 			printk("failed (err %d)\n", err);
