@@ -40,17 +40,6 @@
 #include "bap_common.h"
 
 #if defined(CONFIG_BT_CAP_ACCEPTOR)
-/* Zephyr Controller works best while Extended Advertising interval to be a multiple
- * of the ISO Interval minus 10 ms (max. advertising random delay). This is
- * required to place the AUX_ADV_IND PDUs in a non-overlapping interval with the
- * Broadcast ISO radio events.
- */
-#define BT_LE_EXT_ADV_CONN_CUSTOM \
-		BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV | BT_LE_ADV_OPT_CONN, \
-				BT_GAP_MS_TO_ADV_INTERVAL(140), \
-				BT_GAP_MS_TO_ADV_INTERVAL(140), \
-				NULL)
-
 extern enum bst_result_t bst_result;
 
 CREATE_FLAG(flag_broadcaster_found);
