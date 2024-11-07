@@ -19,6 +19,8 @@
 #include <zephyr/logging/log.h>
 
 #include "lsm6dsv16x.h"
+#include "lsm6dsv16x_decoder.h"
+#include "lsm6dsv16x_rtio.h"
 
 LOG_MODULE_REGISTER(LSM6DSV16X, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -85,6 +87,16 @@ static int lsm6dsv16x_accel_range_to_fs_val(int32_t range)
 static const uint16_t lsm6dsv16x_gyro_fs_map[] = {125, 250, 500, 1000, 2000, 0,   0,
 						  0,   0,   0,   0,    0,    4000};
 static const uint16_t lsm6dsv16x_gyro_fs_sens[] = {1, 2, 4, 8, 16, 0, 0, 0, 0, 0, 0, 0, 32};
+
+int lsm6dsv16x_calc_accel_gain(uint8_t fs)
+{
+	return lsm6dsv16x_accel_fs_map[fs] * GAIN_UNIT_XL / 2;
+}
+
+int lsm6dsv16x_calc_gyro_gain(uint8_t fs)
+{
+	return lsm6dsv16x_gyro_fs_sens[fs] * GAIN_UNIT_G;
+}
 
 static int lsm6dsv16x_gyro_range_to_fs_val(int32_t range)
 {
@@ -205,7 +217,7 @@ static int lsm6dsv16x_accel_range_set(const struct device *dev, int32_t range)
 		return -EIO;
 	}
 
-	data->acc_gain = lsm6dsv16x_accel_fs_map[fs] * GAIN_UNIT_XL / 2;
+	data->acc_gain = lsm6dsv16x_calc_accel_gain(fs);
 	return 0;
 }
 
@@ -295,7 +307,7 @@ static int lsm6dsv16x_gyro_range_set(const struct device *dev, int32_t range)
 		return -EIO;
 	}
 
-	data->gyro_gain = (lsm6dsv16x_gyro_fs_sens[fs] * GAIN_UNIT_G);
+	data->gyro_gain = lsm6dsv16x_calc_gyro_gain(fs);
 	return 0;
 }
 
@@ -924,6 +936,10 @@ static const struct sensor_driver_api lsm6dsv16x_driver_api = {
 #endif
 	.sample_fetch = lsm6dsv16x_sample_fetch,
 	.channel_get = lsm6dsv16x_channel_get,
+#ifdef CONFIG_SENSOR_ASYNC_API
+	.get_decoder = lsm6dsv16x_get_decoder,
+	.submit = lsm6dsv16x_submit,
+#endif
 };
 
 static int lsm6dsv16x_init_chip(const struct device *dev)
@@ -970,7 +986,7 @@ static int lsm6dsv16x_init_chip(const struct device *dev)
 		LOG_ERR("failed to set accelerometer range %d", fs);
 		return -EIO;
 	}
-	lsm6dsv16x->acc_gain = lsm6dsv16x_accel_fs_map[fs] * GAIN_UNIT_XL / 2;
+	lsm6dsv16x->acc_gain = lsm6dsv16x_calc_accel_gain(fs);
 
 	odr = cfg->accel_odr;
 	LOG_DBG("accel odr is %d", odr);
@@ -985,7 +1001,7 @@ static int lsm6dsv16x_init_chip(const struct device *dev)
 		LOG_ERR("failed to set gyroscope range %d", fs);
 		return -EIO;
 	}
-	lsm6dsv16x->gyro_gain = (lsm6dsv16x_gyro_fs_sens[fs] * GAIN_UNIT_G);
+	lsm6dsv16x->gyro_gain = lsm6dsv16x_calc_gyro_gain(fs);
 
 	odr = cfg->gyro_odr;
 	LOG_DBG("gyro odr is %d", odr);
@@ -1057,10 +1073,6 @@ static int lsm6dsv16x_init(const struct device *dev)
 			    CONFIG_SENSOR_INIT_PRIORITY,		\
 			    &lsm6dsv16x_driver_api);
 
-/*
- * Instantiation macros used when a device is on a SPI bus.
- */
-
 #ifdef CONFIG_LSM6DSV16X_TRIGGER
 #define LSM6DSV16X_CFG_IRQ(inst)					\
 	.trig_enabled = true,						\
@@ -1072,19 +1084,33 @@ static int lsm6dsv16x_init(const struct device *dev)
 #define LSM6DSV16X_CFG_IRQ(inst)
 #endif /* CONFIG_LSM6DSV16X_TRIGGER */
 
+#define LSM6DSV16X_CONFIG_COMMON(inst)						\
+	.accel_odr = DT_INST_PROP(inst, accel_odr),				\
+	.accel_range = DT_INST_PROP(inst, accel_range),				\
+	.gyro_odr = DT_INST_PROP(inst, gyro_odr),				\
+	.gyro_range = DT_INST_PROP(inst, gyro_range),				\
+	IF_ENABLED(CONFIG_LSM6DSV16X_STREAM,					\
+		   (.fifo_wtm = DT_INST_PROP(inst, fifo_watermark),		\
+		    .accel_batch  = DT_INST_PROP(inst, accel_fifo_batch_rate),	\
+		    .gyro_batch  = DT_INST_PROP(inst, gyro_fifo_batch_rate),	\
+		    .temp_batch  = DT_INST_PROP(inst, temp_fifo_batch_rate),))	\
+	IF_ENABLED(UTIL_OR(DT_INST_NODE_HAS_PROP(inst, int1_gpios),		\
+			   DT_INST_NODE_HAS_PROP(inst, int2_gpios)),		\
+		   (LSM6DSV16X_CFG_IRQ(inst)))
+
+/*
+ * Instantiation macros used when a device is on a SPI bus.
+ */
+
 #define LSM6DSV16X_SPI_OP  (SPI_WORD_SET(8) |				\
 			 SPI_OP_MODE_MASTER |				\
 			 SPI_MODE_CPOL |				\
 			 SPI_MODE_CPHA)					\
 
-#define LSM6DSV16X_CONFIG_COMMON(inst)					\
-	.accel_odr = DT_INST_PROP(inst, accel_odr),			\
-	.accel_range = DT_INST_PROP(inst, accel_range),			\
-	.gyro_odr = DT_INST_PROP(inst, gyro_odr),			\
-	.gyro_range = DT_INST_PROP(inst, gyro_range),			\
-	IF_ENABLED(UTIL_OR(DT_INST_NODE_HAS_PROP(inst, int1_gpios),	\
-			   DT_INST_NODE_HAS_PROP(inst, int2_gpios)),	\
-		   (LSM6DSV16X_CFG_IRQ(inst)))
+#define LSM6DSV16X_SPI_RTIO_DEFINE(inst)				\
+	SPI_DT_IODEV_DEFINE(lsm6dsv16x_iodev_##inst,			\
+		DT_DRV_INST(inst), LSM6DSV16X_SPI_OP, 0U);		\
+	RTIO_DEFINE(lsm6dsv16x_rtio_ctx_##inst, 4, 4);
 
 #define LSM6DSV16X_CONFIG_SPI(inst)					\
 	{								\
@@ -1097,9 +1123,24 @@ static int lsm6dsv16x_init(const struct device *dev)
 		LSM6DSV16X_CONFIG_COMMON(inst)				\
 	}
 
+#define LSM6DSV16X_DEFINE_SPI(inst)					\
+	IF_ENABLED(CONFIG_LSM6DSV16X_STREAM, (LSM6DSV16X_SPI_RTIO_DEFINE(inst))); \
+	static struct lsm6dsv16x_data lsm6dsv16x_data_##inst =	{	\
+		IF_ENABLED(CONFIG_LSM6DSV16X_STREAM,			\
+			(.rtio_ctx = &lsm6dsv16x_rtio_ctx_##inst,	\
+			 .iodev = &lsm6dsv16x_iodev_##inst,		\
+			 .bus_type = BUS_SPI,))				\
+	};								\
+	static const struct lsm6dsv16x_config lsm6dsv16x_config_##inst = \
+		LSM6DSV16X_CONFIG_SPI(inst);				\
+
 /*
  * Instantiation macros used when a device is on an I2C bus.
  */
+
+#define LSM6DSV16X_I2C_RTIO_DEFINE(inst)				\
+	I2C_DT_IODEV_DEFINE(lsm6dsv16x_iodev_##inst, DT_DRV_INST(inst));\
+	RTIO_DEFINE(lsm6dsv16x_rtio_ctx_##inst, 4, 4);
 
 #define LSM6DSV16X_CONFIG_I2C(inst)					\
 	{								\
@@ -1110,17 +1151,27 @@ static int lsm6dsv16x_init(const struct device *dev)
 		LSM6DSV16X_CONFIG_COMMON(inst)				\
 	}
 
+
+#define LSM6DSV16X_DEFINE_I2C(inst)					\
+	IF_ENABLED(CONFIG_LSM6DSV16X_STREAM, (LSM6DSV16X_I2C_RTIO_DEFINE(inst))); \
+	static struct lsm6dsv16x_data lsm6dsv16x_data_##inst =	{	\
+		IF_ENABLED(CONFIG_LSM6DSV16X_STREAM,			\
+			(.rtio_ctx = &lsm6dsv16x_rtio_ctx_##inst,	\
+			 .iodev = &lsm6dsv16x_iodev_##inst,		\
+			 .bus_type = BUS_I2C,))				\
+	};								\
+	static const struct lsm6dsv16x_config lsm6dsv16x_config_##inst = \
+		LSM6DSV16X_CONFIG_I2C(inst);				\
+
 /*
  * Main instantiation macro. Use of COND_CODE_1() selects the right
  * bus-specific macro at preprocessor time.
  */
 
 #define LSM6DSV16X_DEFINE(inst)						\
-	static struct lsm6dsv16x_data lsm6dsv16x_data_##inst;			\
-	static const struct lsm6dsv16x_config lsm6dsv16x_config_##inst =	\
 		COND_CODE_1(DT_INST_ON_BUS(inst, spi),			\
-			(LSM6DSV16X_CONFIG_SPI(inst)),			\
-			(LSM6DSV16X_CONFIG_I2C(inst)));			\
-	LSM6DSV16X_DEVICE_INIT(inst)
+			(LSM6DSV16X_DEFINE_SPI(inst)),			\
+			(LSM6DSV16X_DEFINE_I2C(inst)));			\
+		LSM6DSV16X_DEVICE_INIT(inst)
 
 DT_INST_FOREACH_STATUS_OKAY(LSM6DSV16X_DEFINE)
