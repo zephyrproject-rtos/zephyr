@@ -8,6 +8,7 @@ common:
     - nrf54l15dk/nrf54l15/cpuapp
     - nrf54h20dk/nrf54h20/cpuapp
     - nrf52_bsim
+    - nrf5340bsim/nrf5340/cpuapp
   harness_config:
     fixture: gpio_loopback
   depends_on: gpio
