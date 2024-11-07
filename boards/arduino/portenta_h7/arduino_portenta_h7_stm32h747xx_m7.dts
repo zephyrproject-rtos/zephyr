@@ -8,6 +8,7 @@
 #include <st/h7/stm32h747Xi_m7.dtsi>
 #include <st/h7/stm32h747xihx-pinctrl.dtsi>
 #include "arduino_portenta_h7-common.dtsi"
+#include <../boards/common/usb/cdc_acm_serial.dtsi>
 
 / {
 	model = "Arduino Portenta H7 board";
@@ -15,9 +16,6 @@
 
 	/* HW resources are split between CM7 and CM4 */
 	chosen {
-		zephyr,console = &cdc_acm_uart0;
-		zephyr,shell-uart = &cdc_acm_uart0;
-		zephyr,cdc-acm-uart0 = &cdc_acm_uart0;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
@@ -95,10 +93,6 @@
 };
 
 &usbotg_hs {
-	status = "okay";
-};
-
-&cdc_acm_uart0 {
 	status = "okay";
 };
 
