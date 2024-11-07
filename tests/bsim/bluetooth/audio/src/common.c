@@ -107,7 +107,7 @@ static void device_found(const struct bt_le_scan_recv_info *info, struct net_buf
 		return;
 	}
 
-	err = bt_conn_le_create(info->addr, BT_CONN_LE_CREATE_CONN, BT_LE_CONN_PARAM_DEFAULT,
+	err = bt_conn_le_create(info->addr, BT_CONN_LE_CREATE_CONN, BT_BAP_CONN_PARAM_RELAXED,
 				&default_conn);
 	if (err) {
 		FAIL("Could not connect to peer: %d", err);
@@ -186,12 +186,13 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.security_changed = security_changed_cb,
 };
 
+
 void setup_connectable_adv(struct bt_le_ext_adv **ext_adv)
 {
 	int err;
 
 	/* Create a non-connectable advertising set */
-	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN, NULL, ext_adv);
+	err = bt_le_ext_adv_create(BT_BAP_ADV_PARAM_CONN_QUICK, NULL, ext_adv);
 	if (err != 0) {
 		FAIL("Unable to create extended advertising set: %d\n", err);
 		return;
@@ -216,6 +217,34 @@ void setup_connectable_adv(struct bt_le_ext_adv **ext_adv)
 	}
 
 	printk("Advertising started\n");
+}
+
+void setup_broadcast_adv(struct bt_le_ext_adv **adv)
+{
+	struct bt_le_adv_param ext_adv_param = *BT_BAP_ADV_PARAM_BROADCAST_SLOW;
+	int err;
+
+	/* Zephyr Controller works best while Extended Advertising interval is a multiple
+	 * of the ISO Interval minus 10 ms (max. advertising random delay). This is
+	 * required to place the AUX_ADV_IND PDUs in a non-overlapping interval with the
+	 * Broadcast ISO radio events.
+	 */
+	ext_adv_param.interval_min -= BT_GAP_MS_TO_ADV_INTERVAL(10U);
+	ext_adv_param.interval_max -= BT_GAP_MS_TO_ADV_INTERVAL(10U);
+
+	/* Create a non-connectable advertising set */
+	err = bt_le_ext_adv_create(&ext_adv_param, NULL, adv);
+	if (err != 0) {
+		FAIL("Unable to create extended advertising set: %d\n", err);
+		return;
+	}
+
+	/* Set periodic advertising parameters */
+	err = bt_le_per_adv_set_param(*adv, BT_BAP_PER_ADV_PARAM_BROADCAST_SLOW);
+	if (err) {
+		FAIL("Failed to set periodic advertising parameters: %d\n", err);
+		return;
+	}
 }
 
 void test_tick(bs_time_t HW_device_time)
