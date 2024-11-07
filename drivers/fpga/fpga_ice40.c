@@ -317,6 +317,15 @@ static int fpga_ice40_load_spi(const struct device *dev, uint32_t *image_ptr, ui
 	struct fpga_ice40_data *data = dev->data;
 	uint8_t clock_buf[(UINT8_MAX + 1) / BITS_PER_BYTE];
 	const struct fpga_ice40_config *config = dev->config;
+	struct spi_dt_spec bus;
+
+	memcpy(&bus, &config->bus, sizeof(bus));
+	/*
+	 * Disable the automatism for chip select within the SPI driver,
+	 * as the configuration sequence requires this signal to be inactive
+	 * during the leading and trailing clock phase.
+	 */
+	bus.config.cs.gpio.port = NULL;
 
 	/* crc check */
 	crc = crc32_ieee((uint8_t *)image_ptr, img_size);
@@ -381,7 +390,7 @@ static int fpga_ice40_load_spi(const struct device *dev, uint32_t *image_ptr, ui
 	LOG_DBG("Send %u clocks", config->leading_clocks);
 	tx_buf.buf = clock_buf;
 	tx_buf.len = DIV_ROUND_UP(config->leading_clocks, BITS_PER_BYTE);
-	ret = spi_write_dt(&config->bus, &tx_bufs);
+	ret = spi_write_dt(&bus, &tx_bufs);
 	if (ret < 0) {
 		LOG_ERR("Failed to send leading %u clocks: %d", config->leading_clocks, ret);
 		goto unlock;
@@ -397,7 +406,7 @@ static int fpga_ice40_load_spi(const struct device *dev, uint32_t *image_ptr, ui
 	LOG_DBG("Send bin file");
 	tx_buf.buf = image_ptr;
 	tx_buf.len = img_size;
-	ret = spi_write_dt(&config->bus, &tx_bufs);
+	ret = spi_write_dt(&bus, &tx_bufs);
 	if (ret < 0) {
 		LOG_ERR("Failed to send bin file: %d", ret);
 		goto unlock;
@@ -413,7 +422,7 @@ static int fpga_ice40_load_spi(const struct device *dev, uint32_t *image_ptr, ui
 	LOG_DBG("Send %u clocks", config->trailing_clocks);
 	tx_buf.buf = clock_buf;
 	tx_buf.len = DIV_ROUND_UP(config->trailing_clocks, BITS_PER_BYTE);
-	ret = spi_write_dt(&config->bus, &tx_bufs);
+	ret = spi_write_dt(&bus, &tx_bufs);
 	if (ret < 0) {
 		LOG_ERR("Failed to send trailing %u clocks: %d", config->trailing_clocks, ret);
 		goto unlock;
@@ -596,7 +605,10 @@ static int fpga_ice40_init(const struct device *dev)
 	static struct fpga_ice40_data fpga_ice40_data_##inst;                                      \
                                                                                                    \
 	static const struct fpga_ice40_config fpga_ice40_config_##inst = {                         \
-		.bus = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8) | SPI_TRANSFER_MSB, 0),          \
+		.bus = SPI_DT_SPEC_INST_GET(inst,                                                  \
+					    SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA |   \
+						    SPI_WORD_SET(8) | SPI_TRANSFER_MSB,            \
+					    0),                                                    \
 		.creset = GPIO_DT_SPEC_INST_GET(inst, creset_gpios),                               \
 		.cdone = GPIO_DT_SPEC_INST_GET(inst, cdone_gpios),                                 \
 		.clk = GPIO_DT_SPEC_INST_GET_OR(inst, clk_gpios, {0}),                             \
