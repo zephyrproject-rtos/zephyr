@@ -11,11 +11,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#if !CONFIG_RS_RTOS_PORT
-  #include "rs_config_controllers.h"
-  #include "rs_image_mgmt.h"
-#endif
-
 #define RS_ICB_NR_OF_CHAIN_LEN_REGISTERS 1
 #define RS_ICB_CAP_UPD_PULSE_DELAY 10  // microseconds
 #define RS_ICB_CNF_WRITE_MODE 0
@@ -226,88 +221,8 @@ __attribute__((packed)) struct rs_icb_bitstream_header {
   uint32_t capture : 1;
   uint32_t reserved : 25;
 };
-
 /******************************************************************
  * End of Bitstream Header information for programming the ICB
  ******************************************************************/
-
-// /* ******************************************
-//  * @brief: ICB_Bitstream_Header_Parser
-//  * interface will parse the header of ICB
-//  * config controller type.
-//  *
-//  * @param [in]: inBitStream is a pointer to
-//  * bitstream.
-//  * @param [out]: outHeader contains the
-//  * parsed header information.
-//  *
-//  * @return: xCB_ERROR_CODE
-//  * ******************************************/
-// enum xCB_ERROR_CODE RS_ICB_Bitstream_Header_Parser(void *inBitStream,
-//                                                    void *outHeader);
-
-// /********************************************************************************
-//  * @brief: This function Kicks off the payload transfer
-//  *
-//  * @Param [in]: rs_icb_bitstream_header.
-//  * @Param [in]: rs_secure_transfer_info.
-//  *
-//  * @return: xCB_ERROR_CODE
-//  ********************************************************************************/
-// enum xCB_ERROR_CODE RS_ICB_Payload_kickoff(
-//     struct rs_icb_bitstream_header *inHeader,
-//     struct rs_secure_transfer_info *rs_sec_tfr_ptr);
-
-// /* ******************************************
-//  * @brief: RS_ICB_Config_Begin interface
-//  * is used to perform ICB registers settings
-//  * before kicking off the payload transfer.
-//  *
-//  * @param [in]: rs_icb_bitstream_header
-//  * @param [in]: rs_secure_transfer_info
-//  *
-//  * @return: xCB_ERROR_CODE
-//  * ******************************************/
-// enum xCB_ERROR_CODE RS_ICB_Config_Begin(
-//     struct rs_icb_bitstream_header *inHeader,
-//     struct rs_secure_transfer_info *rs_sec_tfr_ptr);
-
-// /* ******************************************
-//  * @brief: RS_ICB_Config_End interface
-//  * is used to perform ICB registers settings
-//  * after the payload transfer.
-//  *
-//  * @param [in]: rs_icb_bitstream_header
-//  * @param [in]: rs_secure_transfer_info
-//  *
-//  * @return: xCB_ERROR_CODE
-//  * ******************************************/
-// enum xCB_ERROR_CODE RS_ICB_Config_End(struct rs_icb_bitstream_header *inHeader);
-
-// /* ******************************************
-//  * @brief: RS_ICB_Init interface sets the
-//  * required parameters to work on specific
-//  * platform.
-//  *
-//  * @param [in]: uint32_t inBaseAddr.
-//  *
-//  * @return: xCB_ERROR_CODE
-//  * ******************************************/
-// enum xCB_ERROR_CODE RS_ICB_Init(uint32_t inBaseAddr);
-
-// /* ******************************************
-//  * @brief: RS_ICB_Get_Transfer_Param returns the
-//  * parameters of payload transfer for the use
-//  * of higher level applications.
-//  *
-//  * @param [in]: void *inHeader
-//  * @param [out]: bool *outTransferType
-//  * @param [out]: uint32_t *payload_length
-//  *
-//  * @return: xCB_ERROR_CODE
-//  * ******************************************/
-// enum xCB_ERROR_CODE RS_ICB_Get_Transfer_Param(
-//     void *inHeader, enum TRANSFER_TYPE *outTransferType,
-//     uint32_t *payload_length);
 
 #endif /* RS_INOUT_CONFIG_BLOCK_H_ */

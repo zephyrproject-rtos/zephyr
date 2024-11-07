@@ -586,7 +586,7 @@ static int icb_init(const struct device *dev)
 
 static struct icb_data s_icb_data = {.ctx = NULL, .fpgaStatus = FPGA_STATUS_INACTIVE};
 
-static struct icb_config s_icb_config = {.base = DT_REG_ADDR(DT_NODELABEL(icb))};
+static const struct icb_config s_icb_config = {.base = DT_REG_ADDR(DT_NODELABEL(icb))};
 
 DEVICE_DT_DEFINE(DT_NODELABEL(icb), icb_init, /*Put Init func here*/
 		 NULL,                        // Power Management

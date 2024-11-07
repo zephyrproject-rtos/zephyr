@@ -11,6 +11,7 @@
 #include <zephyr/drivers/dma.h>
 #include <zephyr/crypto/crypto_otp_mem.h>
 #include <zephyr/crypto/crypto.h>
+#include <zephyr/drivers/fpga.h>
 #include <zephyr/drivers/misc/rapidsi/rapidsi_ofe.h>
 
 #include <rapidsi_scu.h>
@@ -936,6 +937,19 @@ int main(void)
 
 	int errorcode = 0;
 	struct sensor_value lvTemp = {0}, lvVolt = {0};
+
+	#if CONFIG_RS_FPGA_FCB
+		const struct device *fcb = DEVICE_DT_GET(DT_NODELABEL(fcb));	
+	#endif
+
+	#if CONFIG_RS_FPGA_ICB
+		const struct device *icb = DEVICE_DT_GET(DT_NODELABEL(icb));
+	#endif
+
+	#if CONFIG_RS_FPGA_PCB
+		const struct device *pcb = DEVICE_DT_GET(DT_NODELABEL(pcb));
+	#endif
+
 	#if CONFIG_RAPIDSI_OFE
 		const struct device *ofe = DEVICE_DT_GET(DT_NODELABEL(ofe));
 	#endif

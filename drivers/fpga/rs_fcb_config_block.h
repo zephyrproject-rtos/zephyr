@@ -11,11 +11,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#if !CONFIG_RS_RTOS_PORT
-  #include "rs_config_controllers.h"
-  #include "rs_image_mgmt.h"
-#endif
-
 #define RIGEL_FCB_NR_MODE_REG 16
 
 /*** RIGEL_FCB Checksum Status Bits ***/
@@ -183,16 +178,6 @@ __attribute__((packed)) struct rigel_fcb_registers {
 #define RIGEL_FCB_HDR_READBACK_MASK 0x00010000
 #define RIGEL_FCB_HDR_BITLINE_REG_WIDTH_OFFSET 0
 #define RIGEL_FCB_HDR_READBACK_OFFSET 16
-
-#if CONFIG_RS_RTOS_PORT
-  struct rs_action_header {
-    uint16_t action_enum;
-    uint16_t action_size;
-    uint32_t payload_size;  // This will be size of compressed data if compression
-                            // is on, otherwise uncompressed data
-    // Action specific optional data goes here
-  };
-#endif
 
 __attribute__((packed)) struct rigel_fcb_bitstream_header {
   // First two words

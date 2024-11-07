@@ -864,7 +864,7 @@ static int fcb_init(const struct device *dev)
 
 static struct fcb_data s_fcb_data = {.ctx = NULL, .fpgaStatus = FPGA_STATUS_INACTIVE};
 
-static struct fcb_config s_fcb_config = {.base = DT_REG_ADDR(DT_NODELABEL(fcb))};
+static const struct fcb_config s_fcb_config = {.base = DT_REG_ADDR(DT_NODELABEL(fcb))};
 
 DEVICE_DT_DEFINE(DT_NODELABEL(fcb), fcb_init, /*Put Init func here*/
 		 NULL,                        // Power Management

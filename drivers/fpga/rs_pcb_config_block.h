@@ -11,11 +11,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#if !CONFIG_RS_RTOS_PORT
-  #include "rs_config_controllers.h"
-  #include "rs_image_mgmt.h"
-#endif
-
 #define RS_PCB_WAIT_STATE_CALIB_TIME 1  // in microseconds
 #define RS_PCB_PL_EXTRA_PARITY_MASK 0x0000000F
 
@@ -222,110 +217,5 @@ __attribute__((packed)) struct rs_pcb_bitstream_header {
 /******************************************************************
  * End of Bitstream Header information for programming the PCB
  ******************************************************************/
-
-/* ******************************************
- * @brief: RS_PCB_Init interface sets the
- * required parameters to work on specific
- * platform.
- *
- * @param [in]: uint32_t inBaseAddr.
- *
- * @return: xCB_ERROR_CODE
- * ******************************************/
-enum xCB_ERROR_CODE RS_PCB_Init(uint32_t inBaseAddr);
-
-/* ******************************************
- * @brief: RS_PCB_Get_Transfer_Param returns the
- * parameters of payload transfer for the use
- * of higher level applications.
- *
- * @param [in]: void *inHeader
- * @param [out]: uint32_t *outBitStr_Size
- *
- * @return: xCB_ERROR_CODE
- * ******************************************/
-enum xCB_ERROR_CODE RS_PCB_Get_Transfer_Param(void *inHeader,
-                                              uint32_t *outBitStr_Size);
-
-/* ******************************************
- * @brief: RS_PCB_Config_Begin interface
- * is used to perform PCB registers settings
- * before kicking off the payload transfer.
- *
- * @param [in]: rs_pcb_bitstream_header
- * @param [in]: rs_secure_transfer_info
- *
- * @return: xCB_ERROR_CODE
- * ******************************************/
-enum xCB_ERROR_CODE RS_PCB_Config_Begin(
-    struct rs_pcb_bitstream_header *inHeader,
-    struct rs_secure_transfer_info *rs_sec_tfr_ptr);
-
-/* ******************************************
- * @brief: RS_PCB_Config_End interface
- * is used to perform PCB registers settings
- * after the payload transfer.
- *
- * @param [in]: rs_pcb_bitstream_header
- * @param [in]: rs_secure_transfer_info
- *
- * @return: xCB_ERROR_CODE
- * ******************************************/
-enum xCB_ERROR_CODE RS_PCB_Config_End(struct rs_pcb_bitstream_header *inHeader);
-
-/* ******************************************
- * @brief: RS_PCB_bitstream_Tx_kickoff_Data
- * interface is used to write the bitstreams
- * to PCB configuration controller.
- *
- * @param [in]: rs_pcb_bitstream_header
- * @param [in]: rs_secure_transfer_info
- *
- * @return: xCB_ERROR_CODE
- * ******************************************/
-enum xCB_ERROR_CODE RS_PCB_bitstream_Tx_kickoff_Data(
-    struct rs_secure_transfer_info *rs_sec_tfr_ptr);
-
-/* ******************************************
- * @brief: RS_PCB_bitstream_Tx_kickoff_ParityData
- * interface is used to write the bitstreams
- * to PCB configuration controller.
- *
- * @param [in]: rs_pcb_bitstream_header
- * @param [in]: rs_secure_transfer_info
- *
- * @return: xCB_ERROR_CODE
- * ******************************************/
-enum xCB_ERROR_CODE RS_PCB_bitstream_Tx_kickoff_ParityData(
-    struct rs_secure_transfer_info *rs_sec_tfr_ptr);
-
-/* ******************************************
- * @brief: PCB_bitstream_Rx_kickoff interface
- * is used to read the bitstreams from PCB
- * configuration controller.
- *
- * @param [in]: rs_pcb_bitstream_header
- * @param [in]: rs_secure_transfer_info
- *
- * @return: xCB_ERROR_CODE
- * ******************************************/
-enum xCB_ERROR_CODE RS_PCB_bitstream_Rx_kickoff(
-    struct rs_pcb_bitstream_header *inHeader,
-    struct rs_secure_transfer_info *rs_sec_tfr_ptr);
-
-/* ******************************************
- * @brief: RS_PCB_Bitstream_Header_Parser
- * interface will parse the header of PCB
- * config controller type.
- *
- * @param [in]: inBitStream is a pointer to
- * bitstream.
- * @param [out]: outHeader contains the
- * parsed header information.
- *
- * @return: xCB_ERROR_CODE
- * ******************************************/
-enum xCB_ERROR_CODE RS_PCB_Bitstream_Header_Parser(void *inBitStream,
-                                                   void *outHeader);
 
 #endif /* RS_PRELOAD_CONFIG_BLOCK_H_ */
