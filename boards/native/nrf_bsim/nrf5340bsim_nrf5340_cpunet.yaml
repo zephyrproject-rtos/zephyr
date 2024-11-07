@@ -10,7 +10,6 @@ toolchain:
 testing:
   ignore_tags:
     - modem
-    - uart
     - bsim_skip_CI
 supported:
   - gpio
