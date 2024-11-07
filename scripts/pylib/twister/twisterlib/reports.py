@@ -615,12 +615,11 @@ class Reporting:
                 f'{", " + str(results.none_cases) + " without a status" if results.none_cases else ""}'
                 f' on {len(self.filtered_platforms)} out of total {total_platforms} platforms ({platform_rate:02.2f}%).'
             )
-            if results.skipped_cases or results.filtered_cases or results.notrun_cases:
+            if results.skipped_cases or results.notrun_cases:
                 logger.info(
-                    f'{results.skipped_cases + results.filtered_cases} selected test cases not executed:' \
+                    f'{results.skipped_cases} selected test cases not executed:' \
                     f'{" " + str(results.skipped_cases) + " skipped" if results.skipped_cases else ""}' \
-                    f'{(", " if results.skipped_cases else " ") + str(results.filtered_cases) + " filtered" if results.filtered_cases else ""}' \
-                    f'{(", " if results.skipped_cases or results.filtered_cases else " ") + str(results.notrun_cases) + " not run (built only)" if results.notrun_cases else ""}' \
+                    f'{(", " if results.skipped_cases else " ") + str(results.notrun_cases) + " not run (built only)" if results.notrun_cases else ""}' \
                     f'.'
                 )
 
