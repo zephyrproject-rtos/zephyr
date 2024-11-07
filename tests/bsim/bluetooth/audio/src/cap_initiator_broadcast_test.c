@@ -36,19 +36,6 @@
 #if defined(CONFIG_BT_CAP_INITIATOR) && defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
 CREATE_FLAG(flag_source_started);
 
-/* Zephyr Controller works best while Extended Advertising interval to be a multiple
- * of the ISO Interval minus 10 ms (max. advertising random delay). This is
- * required to place the AUX_ADV_IND PDUs in a non-overlapping interval with the
- * Broadcast ISO radio events.
- */
-#define BT_LE_EXT_ADV_CUSTOM                                                                       \
-	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV, BT_GAP_MS_TO_ADV_INTERVAL(140),                     \
-			BT_GAP_MS_TO_ADV_INTERVAL(140), NULL)
-
-#define BT_LE_PER_ADV_CUSTOM                                                                       \
-	BT_LE_PER_ADV_PARAM(BT_GAP_MS_TO_PER_ADV_INTERVAL(150),                                    \
-			    BT_GAP_MS_TO_PER_ADV_INTERVAL(150), BT_LE_PER_ADV_OPT_NONE)
-
 #define BROADCAST_STREMT_CNT    CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT
 #define CAP_AC_MAX_STREAM       2
 #define LOCATION                (BT_AUDIO_LOCATION_FRONT_LEFT | BT_AUDIO_LOCATION_FRONT_RIGHT)
@@ -210,25 +197,6 @@ static void init(void)
 	err = bt_cap_initiator_register_cb(&broadcast_cbs);
 	if (err != 0) {
 		FAIL("Failed to register broadcast callbacks: %d\n", err);
-		return;
-	}
-}
-
-static void setup_extended_adv(struct bt_le_ext_adv **adv)
-{
-	int err;
-
-	/* Create a non-connectable advertising set */
-	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CUSTOM, NULL, adv);
-	if (err != 0) {
-		FAIL("Unable to create extended advertising set: %d\n", err);
-		return;
-	}
-
-	/* Set periodic advertising parameters */
-	err = bt_le_per_adv_set_param(*adv, BT_LE_PER_ADV_CUSTOM);
-	if (err) {
-		FAIL("Failed to set periodic advertising parameters: %d\n", err);
 		return;
 	}
 }
@@ -653,7 +621,7 @@ static void test_main_cap_initiator_broadcast(void)
 
 	init();
 
-	setup_extended_adv(&adv);
+	setup_broadcast_adv(&adv);
 
 	test_broadcast_audio_create_inval();
 	test_broadcast_audio_create(&broadcast_source);
@@ -743,7 +711,7 @@ static int test_cap_initiator_ac(const struct cap_initiator_ac_param *param)
 	create_param.qos = &qos;
 
 	init();
-	setup_extended_adv(&adv);
+	setup_broadcast_adv(&adv);
 
 	err = bt_cap_initiator_broadcast_audio_create(&create_param, &broadcast_source);
 	if (err != 0) {
