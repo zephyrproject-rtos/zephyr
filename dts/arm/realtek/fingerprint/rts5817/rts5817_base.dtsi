@@ -10,6 +10,7 @@
 #include <zephyr/dt-bindings/pinctrl/rts5817_pinctrl.h>
 #include <zephyr/dt-bindings/reset/rts5817_reset.h>
 #include <zephyr/dt-bindings/clock/rts5817_clock.h>
+#include <zephyr/dt-bindings/gpio/realtek-rts5817-gpio.h>
 
 / {
 	chosen {
@@ -64,6 +65,19 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			status = "okay";
+
+			gpio: gpio@40110180 {
+				compatible = "realtek,rts5817-gpio";
+				reg = <0x40110180 0x600>,
+				      <0x401e2070 0x1c>,
+				      <0x401e2024 0x8>;
+				interrupts = <IRQ_NUM_GPIO 0 IRQ_NUM_SP_GPIO 0>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <32>;
+				gpio-reserved-ranges = <1 3>;
+				status = "disabled";
+			};
 		};
 
 		watchdog: watchdog@40100048 {
