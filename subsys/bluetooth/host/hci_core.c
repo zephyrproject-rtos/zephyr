@@ -605,6 +605,19 @@ static void hci_num_completed_packets(struct net_buf *buf)
 			node = sys_slist_get(&conn->tx_pending);
 
 			if (!node) {
+				/* The datapath on CIS links is not torn down on disconnects.
+				 * This means that there might be completed packets events
+				 * from the controller after the diesconnect.
+				 * Ignore them as the buffers are freed already.
+				 */
+				if (conn->type == BT_CONN_TYPE_ISO &&
+				    conn->state == BT_CONN_DISCONNECT_COMPLETE) {
+					LOG_DBG("received num_complete on disconnected ISO channel "
+						"%u",
+						handle);
+					continue;
+				}
+
 				LOG_ERR("packets count mismatch");
 				__ASSERT_NO_MSG(0);
 				break;
