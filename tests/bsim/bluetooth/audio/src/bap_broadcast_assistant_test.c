@@ -1,9 +1,10 @@
 /*
- * Copyright (c) 2021-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
@@ -27,6 +28,7 @@
 #include "common.h"
 #include "bap_common.h"
 #include "bstests.h"
+#include "syscalls/kernel.h"
 
 #ifdef CONFIG_BT_BAP_BROADCAST_ASSISTANT
 
@@ -523,11 +525,17 @@ static void test_bass_broadcast_code(const uint8_t broadcast_code[BT_ISO_BROADCA
 
 	printk("Adding broadcast code\n");
 	UNSET_FLAG(flag_write_complete);
-	err = bt_bap_broadcast_assistant_set_broadcast_code(default_conn, g_src_id, broadcast_code);
-	if (err != 0) {
-		FAIL("Could not add broadcast code (err %d)\n", err);
-		return;
-	}
+
+	do {
+		err = bt_bap_broadcast_assistant_set_broadcast_code(default_conn, g_src_id,
+								    broadcast_code);
+		if (err == -EBUSY) {
+			k_sleep(BAP_RETRY_WAIT);
+		} else if (err != 0) {
+			FAIL("Could not add broadcast code (err %d)\n", err);
+			return;
+		}
+	} while (err == -EBUSY);
 
 	WAIT_FOR_FLAG(flag_write_complete);
 	printk("Broadcast code added\n");
