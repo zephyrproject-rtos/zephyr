@@ -17,11 +17,5 @@ CONFIG_UART_CONSOLE=y
 CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC=y
 CONFIG_CLOCK_CONTROL_NRF_K32SRC_500PPM=y
 
-# Logger cannot use itself to log
-CONFIG_USB_CDC_ACM_LOG_LEVEL_OFF=y
-
-# Enable USB
-CONFIG_USB_DEVICE_STACK=y
-
 # Build UF2 by default, supported by the Adafruit nRF52 Bootloader
 CONFIG_BUILD_OUTPUT_UF2=y

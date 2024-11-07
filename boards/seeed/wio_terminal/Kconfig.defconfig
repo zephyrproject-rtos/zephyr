@@ -5,3 +5,5 @@
 
 configdefault LV_COLOR_16_SWAP
 	default y if LVGL
+
+source "boards/common/usb/Kconfig.cdc_acm_serial.defconfig"

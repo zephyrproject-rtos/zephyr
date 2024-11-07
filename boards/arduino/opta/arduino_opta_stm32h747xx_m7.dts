@@ -16,9 +16,6 @@
 	compatible = "arduino,opta-m7";
 
 	chosen {
-		zephyr,console = &cdc_acm_uart0;
-		zephyr,shell-uart = &cdc_acm_uart0;
-		zephyr,cdc-acm-uart0 = &cdc_acm_uart0;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
@@ -29,11 +26,9 @@ zephyr_udc0: &usbotg_fs {
 	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
 	pinctrl-names = "default";
 	status = "okay";
-
-	cdc_acm_uart0: cdc_acm_uart0 {
-		compatible = "zephyr,cdc-acm-uart";
-	};
 };
+
+#include <../boards/common/usb/cdc_acm_serial.dtsi>
 
 &clk_hse {
 	clock-frequency = <DT_FREQ_M(25)>;
@@ -125,9 +120,4 @@ zephyr_udc0: &usbotg_fs {
 		reg = <0x00>;
 		status = "okay";
 	};
-};
-
-/* Assign USB serial (ACM) to M7 to have a working console out of the box */
-&cdc_acm_uart0 {
-	status = "okay";
 };
