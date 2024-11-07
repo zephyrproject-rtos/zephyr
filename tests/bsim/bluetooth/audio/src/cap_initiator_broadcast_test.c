@@ -38,14 +38,13 @@
  * required to place the AUX_ADV_IND PDUs in a non-overlapping interval with the
  * Broadcast ISO radio events.
  */
-#define BT_LE_EXT_ADV_CUSTOM \
-		BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV, \
-				0x0080, 0x0080, NULL)
+#define BT_LE_EXT_ADV_CUSTOM                                                                       \
+	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV, BT_GAP_MS_TO_ADV_INTERVAL(80),                      \
+			BT_GAP_MS_TO_ADV_INTERVAL(80), NULL)
 
-#define BT_LE_PER_ADV_CUSTOM \
-		BT_LE_PER_ADV_PARAM(0x0048, \
-				    0x0048, \
-				    BT_LE_PER_ADV_OPT_NONE)
+#define BT_LE_PER_ADV_CUSTOM                                                                       \
+	BT_LE_PER_ADV_PARAM(BT_GAP_MS_TO_PER_ADV_INTERVAL(90), BT_GAP_MS_TO_PER_ADV_INTERVAL(90),  \
+			    BT_LE_PER_ADV_OPT_NONE)
 
 #define BROADCAST_STREMT_CNT    CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT
 #define BROADCAST_ENQUEUE_COUNT 2U
