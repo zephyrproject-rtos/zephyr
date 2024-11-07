@@ -102,6 +102,8 @@ Architectures
 Kernel
 ******
 
+* Devicetree devices are now exported to :ref:`llext`.
+
 Bluetooth
 *********
 
