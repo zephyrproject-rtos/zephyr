@@ -30,6 +30,8 @@
 #define SLEEP_TIME_US 1000
 #define TEST_BUFFER_LEN 10
 
+#define UART_BAUDRATE DT_PROP_OR(UART_NODE, current_speed, 115200)
+
 static const struct device *const uart_dev = DEVICE_DT_GET(UART_NODE);
 
 const uint8_t test_pattern[TEST_BUFFER_LEN] = { 0x11, 0x12, 0x13, 0x14, 0x15,
@@ -135,7 +137,7 @@ ZTEST(uart_elementary, test_uart_proper_configuration)
 
 	int err;
 	struct uart_config test_expected_uart_config;
-	struct uart_config test_uart_config = { .baudrate = 115200,
+	struct uart_config test_uart_config = { .baudrate = UART_BAUDRATE,
 						.parity = UART_CFG_PARITY_NONE,
 						.stop_bits = UART_CFG_STOP_BITS_1,
 						.data_bits = UART_CFG_DATA_BITS_8,
@@ -176,7 +178,7 @@ ZTEST(uart_elementary, test_uart_improper_configuration)
 	Z_TEST_SKIP_IFDEF(CONFIG_DUAL_UART_TEST);
 
 	int err;
-	struct uart_config test_uart_config = { .baudrate = 115200,
+	struct uart_config test_uart_config = { .baudrate = UART_BAUDRATE,
 						.parity = 7,
 						.stop_bits = UART_CFG_STOP_BITS_1,
 						.data_bits = UART_CFG_DATA_BITS_8,
@@ -196,7 +198,7 @@ ZTEST(uart_elementary, test_uart_improper_configuration)
 ZTEST(uart_elementary, test_uart_basic_transmission)
 {
 	int err;
-	struct uart_config test_uart_config = { .baudrate = 115200,
+	struct uart_config test_uart_config = { .baudrate = UART_BAUDRATE,
 						.parity = UART_CFG_PARITY_ODD,
 						.stop_bits = UART_CFG_STOP_BITS_1,
 						.data_bits = UART_CFG_DATA_BITS_8,
@@ -233,14 +235,14 @@ ZTEST(uart_elementary, test_uart_basic_transmission)
 ZTEST(uart_elementary, test_uart_dual_port_transmission)
 {
 	int err;
-	struct uart_config test_uart_config = { .baudrate = 115200,
+	struct uart_config test_uart_config = { .baudrate = UART_BAUDRATE,
 						.parity = UART_CFG_PARITY_EVEN,
 						.stop_bits = UART_CFG_STOP_BITS_2,
 						.data_bits = UART_CFG_DATA_BITS_8,
 						.flow_ctrl = UART_CFG_FLOW_CTRL_NONE };
 
 #if defined(CONFIG_SETUP_MISMATCH_TEST)
-	struct uart_config test_uart_config_aux = { .baudrate = 9600,
+	struct uart_config test_uart_config_aux = { .baudrate = CONFIG_UART_BAUDRATE_MISMATCH,
 						    .parity = UART_CFG_PARITY_EVEN,
 						    .stop_bits = UART_CFG_STOP_BITS_2,
 						    .data_bits = UART_CFG_DATA_BITS_8,
