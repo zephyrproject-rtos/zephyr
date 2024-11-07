@@ -226,7 +226,7 @@ static void *thread_top_term(void *p1)
 /* Test the internal priority conversion functions */
 int zephyr_to_posix_priority(int z_prio, int *policy);
 int posix_to_zephyr_priority(int priority, int policy);
-ZTEST(pthread, test_pthread_priority_conversion)
+ZTEST(posix_threads_base, test_pthread_priority_conversion)
 {
 	/*
 	 *    ZEPHYR [-CONFIG_NUM_COOP_PRIORITIES, -1]
@@ -256,7 +256,7 @@ ZTEST(pthread, test_pthread_priority_conversion)
 	}
 }
 
-ZTEST(pthread, test_pthread_execution)
+ZTEST(posix_threads_base, test_pthread_execution)
 {
 	int i, ret;
 	pthread_t newthread[N_THR_E];
@@ -346,7 +346,7 @@ ZTEST(pthread, test_pthread_execution)
 	printk("Barrier test OK\n");
 }
 
-ZTEST(pthread, test_pthread_termination)
+ZTEST(posix_threads_base, test_pthread_termination)
 {
 	int32_t i, ret;
 	pthread_t newthread[N_THR_T] = {0};
@@ -376,7 +376,7 @@ ZTEST(pthread, test_pthread_termination)
 	zassert_equal(ret, ESRCH, "cancelled a terminated thread!");
 }
 
-ZTEST(pthread, test_pthread_tryjoin)
+ZTEST(posix_threads_base, test_pthread_tryjoin)
 {
 	pthread_t th = {0};
 	int sleep_duration_ms = 200;
@@ -396,7 +396,7 @@ ZTEST(pthread, test_pthread_tryjoin)
 	zassert_ok(pthread_tryjoin_np(th, &retval));
 }
 
-ZTEST(pthread, test_pthread_timedjoin)
+ZTEST(posix_threads_base, test_pthread_timedjoin)
 {
 	pthread_t th = {0};
 	int sleep_duration_ms = 200;
@@ -444,7 +444,7 @@ static void *create_thread1(void *p1)
 	return NULL;
 }
 
-ZTEST(pthread, test_pthread_descriptor_leak)
+ZTEST(posix_threads_base, test_pthread_descriptor_leak)
 {
 	pthread_t pthread1;
 
@@ -456,7 +456,7 @@ ZTEST(pthread, test_pthread_descriptor_leak)
 	}
 }
 
-ZTEST(pthread, test_pthread_equal)
+ZTEST(posix_threads_base, test_pthread_equal)
 {
 	zassert_true(pthread_equal(pthread_self(), pthread_self()));
 	zassert_false(pthread_equal(pthread_self(), (pthread_t)4242));
@@ -484,7 +484,7 @@ static void *test_pthread_cleanup_entry(void *arg)
 	return NULL;
 }
 
-ZTEST(pthread, test_pthread_cleanup)
+ZTEST(posix_threads_base, test_pthread_cleanup)
 {
 	pthread_t th;
 
@@ -522,7 +522,7 @@ static void *test_pthread_cancel_fn(void *arg)
 	return NULL;
 }
 
-ZTEST(pthread, test_pthread_testcancel)
+ZTEST(posix_threads_base, test_pthread_testcancel)
 {
 	pthread_t th;
 
@@ -550,22 +550,10 @@ static void *test_pthread_setschedprio_fn(void *arg)
 	return NULL;
 }
 
-ZTEST(pthread, test_pthread_setschedprio)
+ZTEST(posix_threads_base, test_pthread_setschedprio)
 {
 	pthread_t th;
 
 	zassert_ok(pthread_create(&th, NULL, test_pthread_setschedprio_fn, NULL));
 	zassert_ok(pthread_join(th, NULL));
 }
-
-static void before(void *arg)
-{
-	ARG_UNUSED(arg);
-
-	if (!IS_ENABLED(CONFIG_DYNAMIC_THREAD)) {
-		/* skip redundant testing if there is no thread pool / heap allocation */
-		ztest_test_skip();
-	}
-}
-
-ZTEST_SUITE(pthread, NULL, NULL, before, NULL, NULL);
