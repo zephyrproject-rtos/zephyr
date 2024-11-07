@@ -268,6 +268,16 @@
 			status = "disabled";
 		};
 	};
+
+	spi0: spi@46000 {
+		compatible = "adi,max32-spi";
+		reg = <0x46000 0x1000>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		clocks = <&gcr ADI_MAX32_CLOCK_BUS0 6>;
+		interrupts = <12 0>;
+		status = "disabled";
+	};
 };
 
 &nvic {
