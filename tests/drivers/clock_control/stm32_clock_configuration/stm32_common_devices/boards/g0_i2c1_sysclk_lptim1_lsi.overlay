@@ -77,6 +77,6 @@
 };
 
 &adc1 {
-	/* Basic test only. Don't configure domain clock. */
+	/* Basic test only. ADC1 domain clock is set by the board DTS : SYSCLK */
 	status = "okay";
 };
