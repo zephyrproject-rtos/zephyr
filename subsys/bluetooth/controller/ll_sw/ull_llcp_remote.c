@@ -681,8 +681,19 @@ static void rr_st_idle(struct ll_conn *conn, uint8_t evt, void *param)
 				if (ctx_local->proc == ctx->proc ||
 				    (ctx_local->proc == PROC_CONN_UPDATE &&
 				     ctx->proc == PROC_CONN_PARAM_REQ)) {
-					conn->llcp_terminate.reason_final =
-						BT_HCI_ERR_LL_PROC_COLLISION;
+					/* Central collision
+					* => Send reject
+					*
+					* Local central shall reject the PDU received from the 
+					* peripheral by issuing a reject, continues unaffected.
+					*/
+
+					/* Send reject */
+					struct node_rx_pdu *rx = (struct node_rx_pdu *)param;
+					struct pdu_data *pdu = (struct pdu_data *)rx->pdu;
+
+					conn->llcp.remote.reject_opcode = pdu->llctrl.opcode;
+					rr_act_reject(conn);
 				} else {
 					conn->llcp_terminate.reason_final =
 						BT_HCI_ERR_DIFF_TRANS_COLLISION;
