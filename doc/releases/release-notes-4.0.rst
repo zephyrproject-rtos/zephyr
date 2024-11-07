@@ -448,6 +448,11 @@ Drivers and Sensors
 
 * Pin control
 
+  * Added support for Microchip MEC5
+  * Added SCMI-based driver for NXP i.MX
+  * Added support for i.MX93 M33 core
+  * Added support for ESP32C2
+
 * PWM
 
   * rpi_pico: The driver now configures the divide ratio adaptively.
