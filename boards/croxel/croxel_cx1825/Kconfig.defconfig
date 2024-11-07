@@ -3,13 +3,6 @@
 
 if BOARD_CROXEL_CX1825
 
-if LOG
-
-# Logger cannot use itself to log
-choice USB_CDC_ACM_LOG_LEVEL_CHOICE
-	default USB_CDC_ACM_LOG_LEVEL_OFF
-endchoice
-
-endif # LOG
+source "boards/common/usb/Kconfig.cdc_acm_serial.defconfig"
 
 endif # BOARD_CROXEL_CX1825
