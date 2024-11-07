@@ -53,10 +53,6 @@ const char *wifi_security_txt(enum wifi_security_type security)
 	switch (security) {
 	case WIFI_SECURITY_TYPE_NONE:
 		return "OPEN";
-	case WIFI_SECURITY_TYPE_WEP:
-		return "WEP";
-	case WIFI_SECURITY_TYPE_WPA_PSK:
-		return "WPA-PSK";
 	case WIFI_SECURITY_TYPE_PSK:
 		return "WPA2-PSK";
 	case WIFI_SECURITY_TYPE_PSK_SHA256:
@@ -70,9 +66,25 @@ const char *wifi_security_txt(enum wifi_security_type security)
 	case WIFI_SECURITY_TYPE_WAPI:
 		return "WAPI";
 	case WIFI_SECURITY_TYPE_EAP_TLS:
-		return "EAP";
+		return "EAP-TLS";
+	case WIFI_SECURITY_TYPE_WEP:
+		return "WEP";
+	case WIFI_SECURITY_TYPE_WPA_PSK:
+		return "WPA-PSK";
 	case WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL:
 		return "WPA/WPA2/WPA3 PSK";
+	case WIFI_SECURITY_TYPE_DPP:
+		return "DPP";
+	case WIFI_SECURITY_TYPE_EAP_PEAP_MSCHAPV2:
+		return "EAP-PEAP-MSCHAPV2";
+	case WIFI_SECURITY_TYPE_EAP_PEAP_GTC:
+		return "EAP-PEAP-GTC";
+	case WIFI_SECURITY_TYPE_EAP_TTLS_MSCHAPV2:
+		return "EAP-TTLS-MSCHAPV2";
+	case WIFI_SECURITY_TYPE_EAP_PEAP_TLS:
+		return "EAP-PEAP-TLS";
+	case WIFI_SECURITY_TYPE_EAP_TLS_SHA256:
+		return "EAP-TLS-SHA256";
 	case WIFI_SECURITY_TYPE_FT_PSK:
 		return "FT-PSK";
 	case WIFI_SECURITY_TYPE_FT_SAE:
