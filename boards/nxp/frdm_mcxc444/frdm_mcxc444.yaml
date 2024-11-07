@@ -16,6 +16,7 @@ toolchain:
   - xtools
 supported:
   - gpio
+  - counter
 testing:
   ignore_tags:
     - net
