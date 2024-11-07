@@ -4,7 +4,6 @@
 if SOC_SERIES_EFR32MG21
 
 config NUM_IRQS
-	int
 	# must be >= the highest interrupt number used
 	default 61
 

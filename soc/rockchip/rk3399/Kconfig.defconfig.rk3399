@@ -7,7 +7,6 @@
 if SOC_RK3399
 
 config NUM_IRQS
-	int
 	default 240
 
 config FLASH_SIZE

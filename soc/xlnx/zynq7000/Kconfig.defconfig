@@ -8,7 +8,6 @@ if SOC_FAMILY_XILINX_ZYNQ7000
 rsource "*/Kconfig.defconfig"
 
 config NUM_IRQS
-	int
 	# must be >= the highest interrupt number used
 	default 96
 

@@ -7,7 +7,6 @@ config SPARC_NWIN
 	default 31
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	int
 	default 50000000
 
 if FLASH
