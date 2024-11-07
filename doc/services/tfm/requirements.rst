@@ -9,7 +9,7 @@ The following are some of the boards that can be used with TF-M:
    * - Board
      - NSPE board name
    * - :ref:`mps2_an521_board`
-     - ``mps2_an521_ns`` (qemu supported)
+     - ``mps2/an521/cpu0/ns`` (qemu supported)
    * - :ref:`mps3_board`
      - ``mps3/corstone300/an547/ns`` (qemu supported)
    * - :zephyr:board:`bl5340_dvk`
@@ -27,12 +27,11 @@ The following are some of the boards that can be used with TF-M:
    * - :zephyr:board:`stm32l562e_dk`
      - ``stm32l562e_dk/stm32l562xx/ns``
    * - :ref:`v2m_musca_b1_board`
-     - ``v2m_musca_b1_ns``
+     - ``v2m_musca_b1/musca_b1/ns``
    * - :ref:`v2m_musca_s1_board`
-     - ``v2m_musca_s1_ns``
+     - ``v2m_musca_s1/musca_s1/ns``
 
-You can run ``west boards -n _ns$`` to search for non-secure variants
-of different board targets. To make sure TF-M is supported for a board
+To make sure TF-M is supported for a board
 in its output, check that :kconfig:option:`CONFIG_TRUSTED_EXECUTION_NONSECURE`
 is set to ``y`` in that board's default configuration.
 
