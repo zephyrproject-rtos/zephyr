@@ -81,6 +81,8 @@ Architectures
 
   * Added support for demand paging.
 
+  * Added support for Linkable Loadable Extensions (LLEXT).
+
 * RISC-V
 
   * The stack traces upon fatal exception now prints the address of stack pointer (sp) or frame
