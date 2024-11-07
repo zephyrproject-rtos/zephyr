@@ -42,6 +42,17 @@
 /* Timeout for various operations */
 #define NETC_TIMEOUT K_MSEC(20)
 
+#define NETC_PHY_MODE(node_id)                                                                     \
+	(DT_ENUM_HAS_VALUE(node_id, phy_connection_type, mii)                                      \
+		 ? kNETC_MiiMode                                                                   \
+		 : (DT_ENUM_HAS_VALUE(node_id, phy_connection_type, rmii)                          \
+			    ? kNETC_RmiiMode                                                       \
+			    : (DT_ENUM_HAS_VALUE(node_id, phy_connection_type, rgmii)              \
+				       ? kNETC_RgmiiMode                                           \
+				       : (DT_ENUM_HAS_VALUE(node_id, phy_connection_type, gmii)    \
+						  ? kNETC_GmiiMode                                 \
+						  : kNETC_RmiiMode))))
+
 /* Helper macros to convert from Zephyr PHY speed to NETC speed/duplex types */
 #define PHY_TO_NETC_SPEED(x)                                                                       \
 	(PHY_LINK_IS_SPEED_1000M(x)                                                                \
@@ -85,6 +96,7 @@
 struct netc_eth_config {
 	uint16_t si_idx;
 	const struct device *phy_dev;
+	netc_hw_mii_mode_t phy_mode;
 	void (*generate_mac)(uint8_t *mac_addr);
 	void (*bdr_init)(netc_bdr_config_t *bdr_config, netc_rx_bdr_config_t *rx_bdr_config,
 			 netc_tx_bdr_config_t *tx_bdr_config);
