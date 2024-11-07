@@ -87,6 +87,16 @@ void hci_iso(struct net_buf *buf);
 /* Allocates RX buffer */
 struct net_buf *bt_iso_get_rx(k_timeout_t timeout);
 
+/** A callback used to notify about freed buffer in the iso rx pool. */
+typedef void (*bt_iso_buf_rx_freed_cb_t)(void);
+
+/** Set a callback to notify about freed buffer in the iso rx pool.
+ *
+ * @param cb Callback to notify about freed buffer in the iso rx pool. If NULL, the callback is
+ *           disabled.
+ */
+void bt_iso_buf_rx_freed_cb_set(bt_iso_buf_rx_freed_cb_t cb);
+
 /* Process CIS Established event */
 void hci_le_cis_established(struct net_buf *buf);
 
