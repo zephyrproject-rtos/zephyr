@@ -16,13 +16,11 @@ config FLASH_BASE_ADDRESS
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
 
 config NUM_IRQS
-	int
 	default 64 if SOC_SERIES_AM6X_M4
 	default 280 if SOC_SERIES_AM6X_A53
 	default 512 if SOC_SERIES_AM6X_R5
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	int
 	default 400000000 if SOC_SERIES_AM6X_M4
 	default 200000000 if SOC_SERIES_AM6X_A53
 	default 19200000 if SOC_SERIES_AM6X_R5

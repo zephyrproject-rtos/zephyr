@@ -4,11 +4,9 @@
 if SOC_CYCLONEV
 
 config NUM_IRQS
-	int
 	default 211
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	int
 	default 231250000
 
 endif

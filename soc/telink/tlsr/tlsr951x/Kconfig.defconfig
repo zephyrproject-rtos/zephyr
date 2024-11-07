@@ -4,38 +4,30 @@
 if SOC_SERIES_TLSR951X
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	int
 	default 32000
 
 config RISCV_SOC_INTERRUPT_INIT
-	bool
 	default y
 
 config RISCV_GP
-	bool
 	default y
 
 config NUM_IRQS
-	int
 	default 64
 
 config PINCTRL
 	default y
 
 config XIP
-	bool
 	default n
 
 config MAIN_STACK_SIZE
-	int
 	default 2048
 
 config IDLE_STACK_SIZE
-	int
 	default 1536
 
 config TEST_EXTRA_STACK_SIZE
-	int
 	default 1024
 
 config 2ND_LVL_INTR_00_OFFSET
