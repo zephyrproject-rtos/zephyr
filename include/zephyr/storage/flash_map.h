@@ -139,11 +139,10 @@ void flash_area_close(const struct flash_area *fa);
  * Indicates whether the provided flash area has a device known to be
  * in a state where it can be used with Flash Map API.
  *
- * This can be used with struct flash_area pointers captured from
- * FIXED_PARTITION().
+ * This can be used with struct flash_area pointers captured from FIXED_PARTITION().
  * At minimum this means that the device has been successfully initialized.
  *
- * @param dev pointer to flash_area object to check.
+ * @param fa pointer to flash_area object to check.
  *
  * @retval true If the device is ready for use.
  * @retval false If the device is not ready for use or if a NULL pointer is
@@ -253,6 +252,20 @@ uint32_t flash_area_align(const struct flash_area *fa);
  */
 int flash_area_get_sectors(int fa_id, uint32_t *count,
 			   struct flash_sector *sectors);
+
+/**
+ * Retrieve info about sectors within the area.
+ *
+ * @param[in]  fa       pointer to flash area object.
+ * @param[out] sectors  buffer for sectors data
+ * @param[in,out] count On input Capacity of @p sectors, on output number of
+ * sectors retrieved.
+ *
+ * @return  0 on success, negative errno code on fail. Especially returns
+ * -ENOMEM if There are too many flash pages on the flash_area to fit in the
+ * array.
+ */
+int flash_area_sectors(const struct flash_area *fa, uint32_t *count, struct flash_sector *sectors);
 
 /**
  * Flash map iteration callback
@@ -407,12 +420,13 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
  */
 #define FIXED_PARTITION(label)	FIXED_PARTITION_1(DT_NODELABEL(label))
 #define FIXED_PARTITION_1(node)	FIXED_PARTITION_0(DT_DEP_ORD(node))
-#define FIXED_PARTITION_0(ord) (const struct flash_area *)&DT_CAT(global_fixed_partition_ORD_, part)
+#define FIXED_PARTITION_0(ord)							\
+	((const struct flash_area *)&DT_CAT(global_fixed_partition_ORD_, ord))
 
 /** @cond INTERNAL_HIDDEN */
-#define DECLARE_PARTITION(part) DECLARE_PARTITION_0(DT_DEP_ORD(part))
-#define DECLARE_PARTITION_0(part)						\
-	extern const struct flash_area DT_CAT(global_fixed_partition_ORD_, part);
+#define DECLARE_PARTITION(node) DECLARE_PARTITION_0(DT_DEP_ORD(node))
+#define DECLARE_PARTITION_0(ord)						\
+	extern const struct flash_area DT_CAT(global_fixed_partition_ORD_, ord);
 #define FOR_EACH_PARTITION_TABLE(table) DT_FOREACH_CHILD(table, DECLARE_PARTITION)
 
 /* Generate declarations */
