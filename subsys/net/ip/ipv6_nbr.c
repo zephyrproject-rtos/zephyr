@@ -818,15 +818,7 @@ enum net_verdict net_ipv6_prepare_for_send(struct net_pkt *pkt)
 							   pkt, pkt_len);
 			if (ret < 0) {
 				NET_DBG("Cannot fragment IPv6 pkt (%d)", ret);
-
-				if (ret == -ENOMEM) {
-					/* Try to send the packet if we could
-					 * not allocate enough network packets
-					 * and hope the original large packet
-					 * can be sent ok.
-					 */
-					goto ignore_frag_error;
-				}
+				return NET_DROP;
 			}
 
 			/* We need to unref here because we simulate the packet
@@ -841,7 +833,6 @@ enum net_verdict net_ipv6_prepare_for_send(struct net_pkt *pkt)
 			return NET_CONTINUE;
 		}
 	}
-ignore_frag_error:
 #endif /* CONFIG_NET_IPV6_FRAGMENT */
 
 	/* If the IPv6 destination address is not link local, then try to get
