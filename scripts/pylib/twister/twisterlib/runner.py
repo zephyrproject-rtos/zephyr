@@ -877,8 +877,8 @@ class ProjectBuilder(FilterBuilder):
                         logger.debug("filtering %s" % self.instance.name)
                         self.instance.status = TwisterStatus.FILTER
                         self.instance.reason = "runtime filter"
-                        results.skipped_runtime_increment()
-                        self.instance.add_missing_case_status(TwisterStatus.SKIP)
+                        results.filtered_cases_increment()
+                        self.instance.add_missing_case_status(TwisterStatus.FILTER)
                         next_op = 'report'
                     else:
                         next_op = 'cmake'
@@ -911,7 +911,7 @@ class ProjectBuilder(FilterBuilder):
                         self.instance.status = TwisterStatus.FILTER
                         self.instance.reason = "runtime filter"
                         results.skipped_runtime_increment()
-                        self.instance.add_missing_case_status(TwisterStatus.SKIP)
+                        self.instance.add_missing_case_status(TwisterStatus.FILTER)
                         next_op = 'report'
                     else:
                         next_op = 'build'
