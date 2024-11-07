@@ -51,8 +51,20 @@ LOG_MODULE_REGISTER(bt_iso, CONFIG_BT_ISO_LOG_LEVEL);
 #define iso_chan(_iso) ((_iso)->iso.chan);
 
 #if defined(CONFIG_BT_ISO_RX)
+static bt_iso_buf_rx_freed_cb_t buf_rx_freed_cb;
+
+static void iso_rx_buf_destroy(struct net_buf *buf)
+{
+	net_buf_destroy(buf);
+
+	if (buf_rx_freed_cb) {
+		buf_rx_freed_cb();
+	}
+}
+
 NET_BUF_POOL_FIXED_DEFINE(iso_rx_pool, CONFIG_BT_ISO_RX_BUF_COUNT,
-			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_RX_MTU), sizeof(struct iso_data), NULL);
+			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_RX_MTU), sizeof(struct iso_data),
+			  iso_rx_buf_destroy);
 
 static struct bt_iso_recv_info iso_info_data[CONFIG_BT_ISO_RX_BUF_COUNT];
 #define iso_info(buf) (&iso_info_data[net_buf_id(buf)])
@@ -551,6 +563,11 @@ struct net_buf *bt_iso_get_rx(k_timeout_t timeout)
 	}
 
 	return buf;
+}
+
+void bt_iso_buf_rx_freed_cb_set(bt_iso_buf_rx_freed_cb_t cb)
+{
+	buf_rx_freed_cb = cb;
 }
 
 void bt_iso_recv(struct bt_conn *iso, struct net_buf *buf, uint8_t flags)
