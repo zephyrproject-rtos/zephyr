@@ -221,24 +221,11 @@ Console
 
 There are two possible options for Zephyr console output:
 
-- through USB as USB CDC/ACM class. This is the default case present in the board dts file
-  and is enabled by :kconfig:option:`CONFIG_BOARD_SERIAL_BACKEND_CDC_ACM`.
+- through CDC ACM UART implementation provided by :ref:`snippet-cdc-acm-console`.
 
-.. code-block:: dts
-   :caption: boards/st/sensortile_box_pro/sensortile_box_pro.dts
+.. code-block:: console
 
-   / {
-       chosen {
-          zephyr,console = &cdc_acm_uart0;
-        };
-     };
-
-     &zephyr_udc0 {
-        cdc_acm_uart0: cdc_acm_uart0 {
-                compatible = "zephyr,cdc-acm-uart";
-        };
-     };
-
+   west build -S cdc-acm-console [...]
 
 - through UART4 which is available on SWD connector (JP2). In this case a JTAG adapter
   can be used to connect SensorTile.box PRO and have both SWD and console lines available.

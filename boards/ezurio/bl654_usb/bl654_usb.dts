@@ -16,9 +16,6 @@
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
-		zephyr,console = &bl654_cdc_acm_uart;
-		zephyr,shell-uart = &bl654_cdc_acm_uart;
-		zephyr,bt-c2h-uart = &bl654_cdc_acm_uart;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,ieee802154 = &ieee802154;
 	};
@@ -118,8 +115,4 @@
 zephyr_udc0: &usbd {
 	compatible = "nordic,nrf-usbd";
 	status = "okay";
-
-	bl654_cdc_acm_uart: bl654_cdc_acm_uart {
-		compatible = "zephyr,cdc-acm-uart";
-	};
 };

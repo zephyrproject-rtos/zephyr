@@ -14,9 +14,6 @@
 	compatible = "st,sensortile-box-pro";
 
 	chosen {
-		zephyr,console = &cdc_acm_uart0;
-		zephyr,shell-uart = &cdc_acm_uart0;
-		zephyr,bt-c2h-uart = &cdc_acm_uart0;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
@@ -269,10 +266,6 @@ zephyr_udc0: &usbotg_fs {
 	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
 	pinctrl-names = "default";
 	status = "okay";
-
-	cdc_acm_uart0: cdc_acm_uart0 {
-		compatible = "zephyr,cdc-acm-uart";
-	};
 };
 
 &adc1 {

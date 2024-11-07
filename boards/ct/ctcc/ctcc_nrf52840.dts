@@ -12,11 +12,6 @@
 	compatible = "ct,ctcc-nrf52840";
 
 	chosen {
-		zephyr,console = &cdc_acm_uart;
-		zephyr,shell-uart = &cdc_acm_uart;
-		zephyr,uart-mcumgr = &cdc_acm_uart;
-		zephyr,bt-mon-uart = &cdc_acm_uart;
-		zephyr,bt-c2h-uart = &cdc_acm_uart;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
@@ -88,8 +83,4 @@
 zephyr_udc0: &usbd {
 	compatible = "nordic,nrf-usbd";
 	status = "okay";
-
-	cdc_acm_uart: cdc_acm_uart {
-		compatible = "zephyr,cdc-acm-uart";
-	};
 };

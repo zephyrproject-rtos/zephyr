@@ -243,7 +243,4 @@ zephyr_udc0: &usbotg_hs {
 		 <&rcc STM32_SRC_HSI48 USB_SEL(3)>;
 	num-bidir-endpoints = < 4 >;
 	status = "okay";
-	cdc_acm_uart0: cdc_acm_uart0 {
-		compatible = "zephyr,cdc-acm-uart";
-	};
 };

@@ -79,61 +79,6 @@ config REGULATOR
 
 endif # !TRUSTED_EXECUTION_SECURE
 
-if BOARD_SERIAL_BACKEND_CDC_ACM
-
-config USB_DEVICE_PRODUCT
-	default "Thingy:53 Application"
-
-config USB_DEVICE_VID
-	default 0x1915
-
-config USB_DEVICE_PID
-	default 0x530C
-
-config USB_DEVICE_STACK
-	default y
-
-config USB_CDC_ACM
-	default y
-
-config UART_CONSOLE
-	default CONSOLE
-
-config USB_DEVICE_INITIALIZE_AT_BOOT
-	default y if !MCUBOOT
-
-config SHELL_BACKEND_SERIAL_CHECK_DTR
-	default SHELL
-	depends on UART_LINE_CTRL
-
-config UART_LINE_CTRL
-	default SHELL
-
-config USB_DEVICE_REMOTE_WAKEUP
-	default n
-
-if LOG
-
-# Logger cannot use itself to log
-choice USB_CDC_ACM_LOG_LEVEL_CHOICE
-	default USB_CDC_ACM_LOG_LEVEL_OFF
-endchoice
-
-# Set USB log level to error only
-choice USB_DEVICE_LOG_LEVEL_CHOICE
-	default USB_DEVICE_LOG_LEVEL_ERR
-endchoice
-
-# Wait 4000ms at startup for logging
-config LOG_PROCESS_THREAD_STARTUP_DELAY_MS
-	default 4000
-
-endif # LOG
-
-endif # BOARD_SERIAL_BACKEND_CDC_ACM
-
-endif # BOARD_THINGY53_NRF5340_CPUAPP || BOARD_THINGY53_NRF5340_CPUAPP_NS
-
 if BOARD_THINGY53_NRF5340_CPUNET
 
 config BT_CTLR

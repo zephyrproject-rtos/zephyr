@@ -12,23 +12,9 @@
 	model = "Adafruit Feather nRF52840 Express";
 	compatible = "adafruit,feather-nrf52840-uf2";
 
-	chosen {
-		zephyr,console = &cdc_acm_uart0;
-		zephyr,shell-uart = &cdc_acm_uart0;
-		zephyr,uart-mcumgr = &cdc_acm_uart0;
-		zephyr,bt-mon-uart = &cdc_acm_uart0;
-		zephyr,bt-c2h-uart = &cdc_acm_uart0;
-	};
-
 	leds {
 		led0: led_0 {
 			gpios = <&gpio1 15 0>;
 		};
-	};
-};
-
-zephyr_udc0: &usbd {
-	cdc_acm_uart0: cdc_acm_uart0 {
-		compatible = "zephyr,cdc-acm-uart";
 	};
 };

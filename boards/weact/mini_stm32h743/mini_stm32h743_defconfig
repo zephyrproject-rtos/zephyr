@@ -15,9 +15,3 @@ CONFIG_CONSOLE=y
 
 # Enable GPIO
 CONFIG_GPIO=y
-
-# Logger cannot use itself to log
-CONFIG_USB_CDC_ACM_LOG_LEVEL_OFF=y
-
-# Enable USB
-CONFIG_USB_DEVICE_STACK=y

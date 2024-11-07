@@ -22,14 +22,4 @@ endif # LVGL
 
 endif # DISPLAY
 
-if USB_DEVICE_STACK
-
-config UART_CONSOLE
-	default CONSOLE
-
-config USB_DEVICE_INITIALIZE_AT_BOOT
-	default y
-
-endif # USB_DEVICE_STACK
-
 endif # BOARD_MINI_STM32H743

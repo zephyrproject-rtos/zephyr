@@ -12,8 +12,4 @@ config BOARD_HAS_NRF5_BOOTLOADER
 	  If selected, applications are linked so that they can be loaded by Nordic
 	  nRF5 bootloader.
 
-config BOARD_SERIAL_BACKEND_CDC_ACM
-	bool "USB CDC"
-	default y
-
 endif # BOARD_NRF52840DONGLE
