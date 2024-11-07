@@ -3,22 +3,6 @@
 
 if BOARD_MIKROE_STM32_M4_CLICKER
 
-if USB_DEVICE_STACK
-
-config UART_CONSOLE
-	default CONSOLE
-
-config USB_DEVICE_INITIALIZE_AT_BOOT
-	default y
-
-endif # USB_DEVICE_STACK
-
-if LOG
-
-# Logger cannot use itself to log
-config USB_CDC_ACM_LOG_LEVEL
-	default 0
-
-endif # LOG
+source "boards/common/usb/Kconfig.cdc_acm_serial.defconfig"
 
 endif # BOARD_MIKROE_STM32_M4_CLICKER
