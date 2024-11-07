@@ -27,6 +27,7 @@ LOG_MODULE_REGISTER(net_dns_resolve, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/dns_resolve.h>
 #include <zephyr/net/socket_service.h>
+#include "../../ip/net_private.h"
 #include "dns_pack.h"
 #include "dns_internal.h"
 #include "dns_cache.h"
@@ -319,6 +320,31 @@ static int register_dispatcher(struct dns_resolve_context *ctx,
 	return dns_dispatcher_register(&server->dispatcher);
 }
 
+static int bind_to_iface(int sock, const struct sockaddr *addr, int if_index)
+{
+	struct ifreq ifreq = { 0 };
+	int ret;
+
+	ret = net_if_get_name(net_if_get_by_index(if_index), ifreq.ifr_name,
+			      sizeof(ifreq.ifr_name));
+	if (ret < 0) {
+		LOG_DBG("Cannot get interface name for %d (%d)", if_index, ret);
+		return ret;
+	}
+
+	ret = zsock_setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE,
+			       &ifreq, sizeof(ifreq));
+	if (ret < 0) {
+		ret = -errno;
+
+		NET_DBG("Cannot bind %s to %d (%d)",
+			net_sprint_addr(addr->sa_family, &net_sin(addr)->sin_addr),
+			if_index, ret);
+	}
+
+	return ret;
+}
+
 /* Must be invoked with context lock held */
 static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 				   const char *servers[],
@@ -363,24 +389,56 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 
 	if (servers) {
 		for (i = 0; idx < SERVER_COUNT && servers[i]; i++) {
+			const char *iface_str;
+			size_t server_len;
+
 			struct sockaddr *addr = &ctx->servers[idx].dns_server;
+
+			iface_str = strstr(servers[i], "%");
+			if (iface_str) {
+				server_len = iface_str - servers[i];
+				iface_str++;
+
+				if (server_len == 0) {
+					NET_DBG("Empty server name");
+					continue;
+				}
+
+				/* Skip empty interface name */
+				if (iface_str[0] == '\0') {
+					ctx->servers[idx].if_index = 0;
+					iface_str = NULL;
+				} else {
+					ctx->servers[idx].if_index =
+						net_if_get_by_name(iface_str);
+				}
+
+			} else {
+				server_len = strlen(servers[i]);
+				ctx->servers[idx].if_index = 0;
+			}
 
 			(void)memset(addr, 0, sizeof(*addr));
 
-			ret = net_ipaddr_parse(servers[i], strlen(servers[i]),
-					       addr);
+			ret = net_ipaddr_parse(servers[i], server_len, addr);
 			if (!ret) {
+				if (servers[i] != NULL && servers[i][0] != '\0') {
+					NET_DBG("Invalid server address %.*s",
+						server_len, servers[i]);
+				}
+
 				continue;
 			}
 
 			dns_postprocess_server(ctx, idx);
 
-			NET_DBG("[%d] %s%s%s", i, servers[i],
+			NET_DBG("[%d] %.*s%s%s%s%s", i, server_len, servers[i],
 				IS_ENABLED(CONFIG_MDNS_RESOLVER) ?
 				(ctx->servers[i].is_mdns ? " mDNS" : "") : "",
 				IS_ENABLED(CONFIG_LLMNR_RESOLVER) ?
-				(ctx->servers[i].is_llmnr ?
-							 " LLMNR" : "") : "");
+				(ctx->servers[i].is_llmnr ? " LLMNR" : "") : "",
+				iface_str != NULL ? " via " : "",
+				iface_str != NULL ? iface_str : "");
 			idx++;
 		}
 	}
@@ -441,14 +499,40 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 
 		ctx->servers[i].sock = ret;
 
+		/* Try to bind to the interface if it is set */
+		if (ctx->servers[i].if_index > 0) {
+			ret = bind_to_iface(ctx->servers[i].sock,
+					    &ctx->servers[i].dns_server,
+					    ctx->servers[i].if_index);
+			if (ret < 0) {
+				zsock_close(ctx->servers[i].sock);
+				ctx->servers[i].sock = -1;
+				continue;
+			}
+
+			iface = net_if_get_by_index(ctx->servers[i].if_index);
+			NET_DBG("Binding %s to %d",
+				net_sprint_addr(ctx->servers[i].dns_server.sa_family,
+						&net_sin(&ctx->servers[i].dns_server)->sin_addr),
+				ctx->servers[i].if_index);
+		} else {
+			iface = NULL;
+		}
+
 		if (ctx->servers[i].dns_server.sa_family == AF_INET6) {
-			iface = net_if_ipv6_select_src_iface(
+			if (iface == NULL) {
+				iface = net_if_ipv6_select_src_iface(
 					&net_sin6(&ctx->servers[i].dns_server)->sin6_addr);
+			}
+
 			addr6 = net_if_ipv6_select_src_addr(iface,
 					&net_sin6(&ctx->servers[i].dns_server)->sin6_addr);
 		} else {
-			iface = net_if_ipv4_select_src_iface(
+			if (iface == NULL) {
+				iface = net_if_ipv4_select_src_iface(
 					&net_sin(&ctx->servers[i].dns_server)->sin_addr);
+			}
+
 			addr4 = net_if_ipv4_select_src_addr(iface,
 					&net_sin(&ctx->servers[i].dns_server)->sin_addr);
 		}
