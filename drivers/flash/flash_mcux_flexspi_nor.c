@@ -978,6 +978,13 @@ static int flash_flexspi_nor_check_jedec(struct flash_flexspi_nor_data *data,
 		/* Still return an error- we want the JEDEC configuration to run */
 		return -ENOTSUP;
 	case 0x40ef:
+		if ((vendor_id & 0xFFFFFF) != 0x2040ef) {
+			/*
+			 * This is not the correct flash chip, and will not
+			 * support the LUT table. Return here
+			 */
+			return -ENOTSUP;
+		}
 		/* W25Q512JV flash, use 4 byte read/write */
 		flexspi_lut[READ][0] = FLEXSPI_LUT_SEQ(
 				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_4READ_4B,
