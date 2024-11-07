@@ -617,7 +617,7 @@ class Reporting:
             )
             if results.skipped_cases or results.notrun_cases:
                 logger.info(
-                    f'{results.skipped_cases} selected test cases not executed:' \
+                    f'{results.skipped_cases + results.notrun_cases} selected test cases not executed:' \
                     f'{" " + str(results.skipped_cases) + " skipped" if results.skipped_cases else ""}' \
                     f'{(", " if results.skipped_cases else " ") + str(results.notrun_cases) + " not run (built only)" if results.notrun_cases else ""}' \
                     f'.'
