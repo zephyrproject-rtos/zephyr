@@ -15,16 +15,3 @@ properties:
     type: int
     description: Clock accuracy in parts per million
     required: true
-
-  startup-time-us:
-    type: int
-    description: Clock startup time in micro seconds
-    required: true
-
-  mode:
-    type: string
-    description: HFXO operational mode
-    required: true
-    enum:
-      - "crystal"
-      - "external-square"
