@@ -65,6 +65,18 @@ New APIs and options
 
 * Bluetooth
 
+  * Audio
+
+    * :c:macro:`BT_BAP_ADV_PARAM_CONN_QUICK`
+    * :c:macro:`BT_BAP_ADV_PARAM_CONN_REDUCED`
+    * :c:macro:`BT_BAP_CONN_PARAM_SHORT_7_5`
+    * :c:macro:`BT_BAP_CONN_PARAM_SHORT_10`
+    * :c:macro:`BT_BAP_CONN_PARAM_RELAXED`
+    * :c:macro:`BT_BAP_ADV_PARAM_BROADCAST_FAST`
+    * :c:macro:`BT_BAP_ADV_PARAM_BROADCAST_SLOW`
+    * :c:macro:`BT_BAP_PER_ADV_PARAM_BROADCAST_FAST`
+    * :c:macro:`BT_BAP_PER_ADV_PARAM_BROADCAST_SLOW`
+
   * Host
 
     * :c:func:`bt_le_get_local_features`
