@@ -87,6 +87,12 @@ config DNS_SERVER1
 	  192.0.2.1:5353
 	  2001:db8::1
 	  [2001:db8::1]:5353
+	  It is possible to bind the DNS connection via a certain network
+	  interface by appending "%" and network interface name to the server
+	  address. For example: 192.0.2.1%eth1 would bind the connection socket
+	  to the network interface eth1. This is optional and by default the
+	  resolver connects to server by selecting the output network interface
+	  using normal IP routing.
 	  It is not mandatory to use this Kconfig option at all.
 	  The one calling dns_resolve_init() can use this option or not
 	  to populate the server list. If the DNS server addresses are

@@ -344,6 +344,11 @@ struct dns_resolve_context {
 		/** Connection to the DNS server */
 		int sock;
 
+		/** Network interface index if the DNS resolving should be done
+		 * via this interface. Value 0 indicates any interface can be used.
+		 */
+		int if_index;
+
 		/** Is this server mDNS one */
 		uint8_t is_mdns : 1;
 
