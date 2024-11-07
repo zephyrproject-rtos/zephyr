@@ -16,6 +16,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/ring_buffer.h>
 #include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/gap.h>
 
 #include "bap_endpoint.h"
@@ -368,17 +369,8 @@ static int setup_broadcast_source(uint8_t streams_per_subgroup,	uint8_t subgroup
 uint8_t btp_bap_broadcast_source_setup(const void *cmd, uint16_t cmd_len,
 				       void *rsp, uint16_t *rsp_len)
 {
-	struct bt_le_per_adv_param per_adv_param =
-		*BT_LE_PER_ADV_PARAM(BT_GAP_MS_TO_PER_ADV_INTERVAL(150),
-				     BT_GAP_MS_TO_PER_ADV_INTERVAL(150), BT_LE_PER_ADV_OPT_NONE);
-	/* Zephyr Controller works best while Extended Advertising interval is a multiple
-	 * of the ISO Interval minus 10 ms (max. advertising random delay). This is
-	 * required to place the AUX_ADV_IND PDUs in a non-overlapping interval with the
-	 * Broadcast ISO radio events.
-	 */
-	struct bt_le_adv_param ext_adv_param =
-		*BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV, BT_GAP_MS_TO_ADV_INTERVAL(140),
-				 BT_GAP_MS_TO_ADV_INTERVAL(140), NULL);
+	struct bt_le_per_adv_param per_adv_param = *BT_BAP_PER_ADV_PARAM_BROADCAST_SLOW;
+	struct bt_le_adv_param ext_adv_param = *BT_BAP_ADV_PARAM_BROADCAST_SLOW;
 	int err;
 	struct bt_audio_codec_cfg codec_cfg;
 	const struct btp_bap_broadcast_source_setup_cmd *cp = cmd;
@@ -404,6 +396,14 @@ uint8_t btp_bap_broadcast_source_setup(const void *cmd, uint16_t cmd_len,
 	struct bt_data *per_ad;
 
 	LOG_DBG("");
+
+	/* Zephyr Controller works best while Extended Advertising interval is a multiple
+	 * of the ISO Interval minus 10 ms (max. advertising random delay). This is
+	 * required to place the AUX_ADV_IND PDUs in a non-overlapping interval with the
+	 * Broadcast ISO radio events.
+	 */
+	ext_adv_param.interval_min -= BT_GAP_MS_TO_ADV_INTERVAL(10U);
+	ext_adv_param.interval_max -= BT_GAP_MS_TO_ADV_INTERVAL(10U);
 
 	memset(&codec_cfg, 0, sizeof(codec_cfg));
 	codec_cfg.id = cp->coding_format;

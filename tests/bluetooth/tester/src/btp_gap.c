@@ -7,9 +7,11 @@
  */
 #include <stdint.h>
 
+#include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/sys/util_macro.h>
 #include <zephyr/types.h>
 #include <string.h>
 
@@ -1060,20 +1062,21 @@ static uint8_t stop_discovery(const void *cmd, uint16_t cmd_len,
 static uint8_t connect(const void *cmd, uint16_t cmd_len,
 		       void *rsp, uint16_t *rsp_len)
 {
-	/* The conn interval is set to 60ms (0x30). This is to better support test cases where we
-	 * need to connect to multiple peripherals (up to 3). The connection interval should also be
-	 * a multiple of 30ms, as that is ideal to support both 7.5ms and 10ms ISO intervals
-	 */
-	const uint16_t interval = BT_GAP_MS_TO_CONN_INTERVAL(60U);
-	const struct bt_le_conn_param *conn_param =
-		BT_LE_CONN_PARAM(interval, interval, 0U, BT_GAP_MS_TO_CONN_TIMEOUT(4000U));
+	struct bt_le_conn_param conn_param;
+
+	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST) || IS_ENABLED(CONFIG_BT_BAP_BROADCAST_ASSISTANT)) {
+		conn_param = *BT_BAP_CONN_PARAM_RELAXED;
+	} else {
+		conn_param = *BT_LE_CONN_PARAM_DEFAULT;
+	}
+
 	const struct btp_gap_connect_cmd *cp = cmd;
 	int err;
 
 	if (!bt_addr_le_eq(&cp->address, BT_ADDR_LE_ANY)) {
 		struct bt_conn *conn = NULL;
 
-		err = bt_conn_le_create(&cp->address, BT_CONN_LE_CREATE_CONN, conn_param, &conn);
+		err = bt_conn_le_create(&cp->address, BT_CONN_LE_CREATE_CONN, &conn_param, &conn);
 		if (err) {
 			LOG_ERR("Failed to create connection (%d)", err);
 			return BTP_STATUS_FAILED;
@@ -1081,7 +1084,7 @@ static uint8_t connect(const void *cmd, uint16_t cmd_len,
 
 		bt_conn_unref(conn);
 	} else {
-		err = bt_conn_le_create_auto(BT_CONN_LE_CREATE_CONN, conn_param);
+		err = bt_conn_le_create_auto(BT_CONN_LE_CREATE_CONN, &conn_param);
 		if (err) {
 			LOG_ERR("Failed to create auto connection (%d)", err);
 			return BTP_STATUS_FAILED;
