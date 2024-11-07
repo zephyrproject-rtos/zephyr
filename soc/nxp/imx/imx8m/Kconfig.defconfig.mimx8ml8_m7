@@ -6,10 +6,6 @@
 
 if SOC_MIMX8ML8_M7
 
-config SOC
-	string
-	default "mimx8ml8"
-
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int
 	default 800000000
