@@ -187,7 +187,7 @@ int netc_eth_init_common(const struct device *dev)
 	ep_config.reclaimCallback = netc_eth_reclaim_callback;
 	ep_config.msixEntry = &msix_entry[0];
 	ep_config.entryNum = NETC_MSIX_ENTRY_NUM;
-	ep_config.port.ethMac.miiMode = kNETC_RmiiMode;
+	ep_config.port.ethMac.miiMode = config->phy_mode;
 	ep_config.port.ethMac.miiSpeed = kNETC_MiiSpeed100M;
 	ep_config.port.ethMac.miiDuplex = kNETC_MiiFullDuplex;
 	ep_config.rxCacheMaintain = true;
