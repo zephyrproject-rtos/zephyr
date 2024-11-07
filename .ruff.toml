@@ -1,0 +1,31 @@
+# Copyright (c) 2024 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+extend = ".ruff-excludes.toml"
+
+line-length = 100
+target-version = "py310"
+
+[lint]
+select = [
+    # zephyr-keep-sorted-start
+    "B",      # flake8-bugbear
+    "E",      # pycodestyle
+    "F",      # pyflakes
+    "I",      # isort
+    "SIM",    # flake8-simplify
+    "UP",     # pyupgrade
+    "W",      # pycodestyle warnings
+    # zephyr-keep-sorted-stop
+]
+
+ignore = [
+    # zephyr-keep-sorted-start
+    "SIM108", # Allow if-else blocks instead of forcing ternary operator
+    "UP027",  # deprecated pyupgrade rule
+    # zephyr-keep-sorted-stop
+]
+
+[format]
+quote-style = "preserve"
+line-ending = "lf"
