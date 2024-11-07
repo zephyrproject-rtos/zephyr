@@ -8,6 +8,7 @@
 
 #include <mem.h>
 #include <arm/nordic/nrf5340_cpuapp.dtsi>
+#include <../boards/nordic/nrf5340dk/nrf5340_cpuapp_common-pinctrl.dtsi>
 
 / {
 	model = "Nordic NRF5340 BSIM NRF5340 Application";
@@ -117,6 +118,14 @@
 
 &gpio1 {
 	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 /* We re-use the IPC shared buffer definition from the real HW. But note the start address of the
