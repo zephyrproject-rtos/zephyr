@@ -1,0 +1,146 @@
+#
+# Copyright (c) 2022 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+#
+
+config REBOOT
+	default y
+
+config MAIN_THREAD_PRIORITY
+	default 10
+
+config MAIN_STACK_SIZE
+	default 1800
+
+config SYSTEM_WORKQUEUE_STACK_SIZE
+	default 1200
+
+# As long as thread names are used, config must be set to "y"
+config THREAD_NAME
+	default y
+
+config NCS_INCLUDE_RPMSG_CHILD_IMAGE
+	default !BT_LL_ACS_NRF53
+
+# Workaround to not use fatal_error.c in NCS. Note that the system may still
+# reset on error depending on the build configuraion
+config RESET_ON_FATAL_ERROR
+	default n
+
+# Default Config for Debug and Release build
+config HW_CODEC_CIRRUS_LOGIC
+	default y
+
+config BT
+	default y
+
+config BOARD_ENABLE_DCDC_APP
+	default y
+
+config BOARD_ENABLE_DCDC_NET
+	default y
+
+config BOARD_ENABLE_CPUNET
+	default y
+
+config ZBUS
+	default y
+
+config ZBUS_RUNTIME_OBSERVERS
+	default y
+
+config ZBUS_MSG_SUBSCRIBER
+	default y
+
+config SENSOR
+	default y
+
+config REGULATOR
+	default y
+
+config CONTIN_ARRAY
+	default y
+
+config NRFX_I2S0
+	default y
+
+config PCM_MIX
+	default y
+
+config PSCM
+	default y
+
+config DATA_FIFO
+	default y
+
+# Enable NRFX_CLOCK for ACLK control
+config NRFX_CLOCK
+	default y
+
+config I2C
+	default y
+
+choice LIBC_IMPLEMENTATION
+	# NOTE: Since we are not using minimal libc, error codes from
+	#       minimal libc are not used
+	default NEWLIB_LIBC
+endchoice
+
+# Audio codec LC3 related defines
+# FPU_SHARING enables preservation of the hardware floating point registers
+# across context switches to allow multiple threads to perform concurrent
+# floating point operations.
+config FPU
+	default y
+
+config FPU_SHARING
+	default y
+
+# Enable SDHC interface
+config DISK_DRIVERS
+	default y
+
+config DISK_DRIVER_SDMMC
+	default y
+
+# Enable SPI interface
+config SPI
+	default y
+
+# Enable ADC for board version readback
+config ADC
+	default y
+
+# Allocate buffer on RAM for transferring chunck of data
+# from Flash to SPI
+config SPI_NRFX_RAM_BUFFER_SIZE
+	default 8
+
+# Config the file system
+config FILE_SYSTEM
+	default y
+
+config FAT_FILESYSTEM_ELM
+	default y
+
+config FS_FATFS_LFN
+	default y
+choice FS_FATFS_LFN_MODE
+	# Using stack for LFN work queue
+	default FS_FATFS_LFN_MODE_STACK
+endchoice
+
+# exFAT enabled to support longer file names and higher transfer speed
+config FS_FATFS_EXFAT
+	default y
+
+# Set the maximum file name length to 255
+config FS_FATFS_MAX_LFN
+	default 255
+
+config WATCHDOG
+	default y
+
+config TASK_WDT
+	default y

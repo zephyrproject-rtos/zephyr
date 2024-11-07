@@ -1,0 +1,13 @@
+sample:
+  name: nRF5340 Audio echo example
+  description: LE Audio implementation converted into echo example
+common:
+  integration_platforms:
+    - nrf5340_audio_dk_nrf5340_cpuapp
+tests:
+  sample.boards.nordic.nrf5340_audio.echo:
+    build_only: true
+    platform_allow: nrf5340_audio_dk_nrf5340_cpuapp
+    platform_exclude: nrf5340_audio_dk_nrf5340_cpuapp_ns
+    tags: ci_build
+    extra_args: CONF_FILE="prj.conf"

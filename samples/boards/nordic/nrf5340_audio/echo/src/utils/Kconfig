@@ -1,0 +1,63 @@
+#
+# Copyright (c) 2022 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+#
+
+
+menu "Utils"
+
+menu "FIFO"
+
+config FIFO_FRAME_SPLIT_NUM
+	int "Number of blocks to make up one frame of audio data"
+	default 10
+	help
+	  Easy DMA in I2S requires two buffers to be filled before I2S
+	  transmission will begin. In order to reduce latency, an audio
+	  frame can be split into multiple blocks with this parameter. USB
+	  sends data in 1 ms blocks, so we need the split to match that.
+	  Since we set frame size to 10 ms for USB, 10 is selected as
+	  FRAME_SPLIT_NUM
+
+config FIFO_TX_FRAME_COUNT
+	int "Max number of audio frames in TX slab"
+	default 3
+	help
+	  FIFO_TX is the buffer that holds decoded audio data before it
+	  is sent to I2S
+
+config FIFO_RX_FRAME_COUNT
+	int "Max number of audio frames in RX slab"
+	default 1
+	help
+	  FIFO_RX is the buffer that holds uncompressed audio data coming
+	  from  I2S
+
+endmenu # FIFO
+
+#----------------------------------------------------------------------------#
+menu "Log levels"
+
+module = BOARD_VERSION
+module-str = board-version
+source "subsys/logging/Kconfig.template.log_config"
+
+module = ERROR_HANDLER
+module-str = error-handler
+source "subsys/logging/Kconfig.template.log_config"
+
+module = FW_INFO
+module-str = fw-info
+source "subsys/logging/Kconfig.template.log_config"
+
+module = I2S_HANDLER
+module-str = i2s-handler
+source "subsys/logging/Kconfig.template.log_config"
+
+module = CUSTOM_BTN_HANDLER
+module-str = custom-btn-handler
+source "subsys/logging/Kconfig.template.log_config"
+
+endmenu # Log levels
+endmenu # Utils

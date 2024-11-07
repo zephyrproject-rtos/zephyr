@@ -1,0 +1,49 @@
+#
+# Copyright (c) 2018 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+#
+
+menuconfig NRF5340_AUDIO
+	 bool "nRF5340 Audio [EXPERIMENTAL]"
+	 select EXPERIMENTAL
+
+if NRF5340_AUDIO
+
+rsource "Kconfig.defaults"
+rsource "Kconfig.audio"
+rsource "Kconfig.audio.defaults"
+rsource "src/drivers/Kconfig"
+rsource "src/modules/Kconfig"
+rsource "src/utils/Kconfig"
+
+config ONBOARD_MIC
+	bool "Build with the onboard microphone"
+	default y
+	help
+	 Use the onboard microphone, if no then the line in will be used
+
+
+#----------------------------------------------------------------------------#
+
+menu "Logging"
+
+module = MAIN
+module-str = main
+source "subsys/logging/Kconfig.template.log_config"
+
+module = NRF5340_AUDIO_COMMON
+module-str = nrf5340_audio_common
+source "subsys/logging/Kconfig.template.log_config"
+
+config PRINT_STACK_USAGE_MS
+	depends on THREAD_ANALYZER && INIT_STACKS
+	int "Print stack usage every x milliseconds"
+	default 5000
+
+endmenu # Log levels
+
+#----------------------------------------------------------------------------#
+endif # NRF5340_AUDIO
+
+source "Kconfig.zephyr"

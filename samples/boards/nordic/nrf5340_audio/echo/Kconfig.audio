@@ -1,0 +1,139 @@
+#
+# Copyright (c) 2022 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+#
+
+rsource "Kconfig.defaults"
+
+menu "Audio"
+
+config AUDIO_FRAME_DURATION_US
+	int
+	default 10000
+	help
+	  Audio frame duration in µs.
+
+choice AUDIO_SYSTEM_SAMPLE_RATE
+	prompt "System audio sample rate"
+	default AUDIO_SAMPLE_RATE_48000_HZ
+	help
+	  This configuration reflects the system sample rate, but the audio data may be resampled to
+	  another sample rate before encoding, and after decoding.
+
+config AUDIO_SAMPLE_RATE_16000_HZ
+	bool "16 kHz"
+	help
+	  Sample rate of 16kHz is currently only valid for I2S/line-in.
+
+config AUDIO_SAMPLE_RATE_24000_HZ
+	bool "24 kHz"
+	help
+	  Sample rate of 24kHz is currently only valid for I2S/line-in.
+
+config AUDIO_SAMPLE_RATE_48000_HZ
+	bool "48 kHz"
+	help
+	  Sample rate of 48kHz is valid for both I2S/line-in and USB.
+endchoice
+
+config AUDIO_SAMPLE_RATE_HZ
+	int
+	default 16000 if AUDIO_SAMPLE_RATE_16000_HZ
+	default 24000 if AUDIO_SAMPLE_RATE_24000_HZ
+	default 48000 if AUDIO_SAMPLE_RATE_48000_HZ
+	help
+	  I2S supports 16, 24, and 48 kHz sample rates for both input and output.
+	  USB supports only 48 kHz for input.
+
+choice AUDIO_BIT_DEPTH
+	prompt "Audio bit depth"
+	default AUDIO_BIT_DEPTH_16
+	help
+	  Select the bit depth for audio.
+
+config AUDIO_BIT_DEPTH_16
+	bool "16 bit audio"
+
+config AUDIO_BIT_DEPTH_32
+	bool "32 bit audio"
+endchoice
+
+config AUDIO_BIT_DEPTH_BITS
+	int
+	default 16 if AUDIO_BIT_DEPTH_16
+	default 32 if AUDIO_BIT_DEPTH_32
+	help
+	  Bit depth of one sample in storage.
+
+config AUDIO_BIT_DEPTH_OCTETS
+	int
+	default 2 if AUDIO_BIT_DEPTH_16
+	default 4 if AUDIO_BIT_DEPTH_32
+	help
+	  Bit depth of one sample in storage given in octets.
+
+
+config AUDIO_MAX_PRES_DLY_US
+	int "The maximum presentation delay"
+	default 60000
+	help
+	  The maximum allowable presentation delay in microseconds.
+	  Increasing this will also increase the FIFO buffers to allow buffering.
+
+#----------------------------------------------------------------------------#
+menu "Log levels"
+
+module = AUDIO_SYNC_TIMER
+module-str = audio-sync-timer
+source "subsys/logging/Kconfig.template.log_config"
+
+
+endmenu # Log levels
+
+#----------------------------------------------------------------------------#
+menu "Thread priorities"
+
+config BUTTON_MSG_SUB_THREAD_PRIO
+	int "Thread priority for button subscriber"
+	default 5
+	help
+	  This is a preemptible thread.
+	  This thread will subscribe to button events from zbus.
+
+config CONTENT_CONTROL_MSG_SUB_THREAD_PRIO
+	int "Thread priority for content control subscriber"
+	default 5
+	help
+	  This is a preemptible thread.
+	  This thread will subscribe to content control events from zbus.
+
+endmenu # Thread priorities
+
+#----------------------------------------------------------------------------#
+menu "Stack sizes"
+
+
+config BUTTON_MSG_SUB_STACK_SIZE
+	int "Stack size for button subscriber"
+	default 2048
+
+config CONTENT_CONTROL_MSG_SUB_STACK_SIZE
+	int "Stack size for content control subscriber"
+	default 1024
+
+endmenu # Stack sizes
+
+#----------------------------------------------------------------------------#
+menu "Zbus"
+
+config BUTTON_MSG_SUB_QUEUE_SIZE
+	int "Queue size for button subscriber"
+	default 4
+
+config CONTENT_CONTROL_MSG_SUB_QUEUE_SIZE
+	int "Queue size for content control subscriber"
+	default 4
+
+endmenu # Zbus
+endmenu # Audio
