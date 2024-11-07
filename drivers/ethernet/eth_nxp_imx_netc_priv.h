@@ -7,6 +7,8 @@
 #ifndef ZEPHYR_DRIVERS_ETHERNET_ETH_NXP_IMX_NETC_PRIV_H_
 #define ZEPHYR_DRIVERS_ETHERNET_ETH_NXP_IMX_NETC_PRIV_H_
 
+#include <soc.h>
+
 #include "fsl_netc_endpoint.h"
 #include "fsl_msgintr.h"
 
@@ -30,13 +32,20 @@
 #define NETC_MSGINTR_CHANNEL 0
 
 #if (CONFIG_ETH_NXP_IMX_MSGINTR == 1)
-#define NETC_MSGINTR     MSGINTR1
-#define NETC_MSGINTR_IRQ MSGINTR1_IRQn
+#define NETC_MSGINTR MSGINTR1
 #elif (CONFIG_ETH_NXP_IMX_MSGINTR == 2)
-#define NETC_MSGINTR     MSGINTR2
-#define NETC_MSGINTR_IRQ MSGINTR2_IRQn
+#define NETC_MSGINTR MSGINTR2
 #else
 #error "Current CONFIG_ETH_NXP_IMX_MSGINTR not support"
+#endif
+
+/* Allow soc to define NETC_MSGINTR_IRQ in case of IRQSTEER used */
+#ifndef NETC_MSGINTR_IRQ
+#if (CONFIG_ETH_NXP_IMX_MSGINTR == 1)
+#define NETC_MSGINTR_IRQ MSGINTR1_IRQn
+#elif (CONFIG_ETH_NXP_IMX_MSGINTR == 2)
+#define NETC_MSGINTR_IRQ MSGINTR2_IRQn
+#endif
 #endif
 
 /* Timeout for various operations */
