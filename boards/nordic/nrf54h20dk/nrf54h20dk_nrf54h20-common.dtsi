@@ -15,7 +15,4 @@
 
 &lfxo {
 	status = "okay";
-	accuracy-ppm = <20>;
-	startup-time-us = <600000>;
-	mode = "crystal";
 };
