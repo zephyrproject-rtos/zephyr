@@ -5,9 +5,6 @@ orsource "*/Kconfig.defconfig"
 
 if SOC_FAMILY_MTK_ADSP
 
-config SOC_FAMILY
-	default "mtk_adsp"
-
 config INTC_MTK_ADSP
 	default y
 
