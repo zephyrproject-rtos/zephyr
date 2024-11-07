@@ -15,7 +15,6 @@ config I2C_STM32_V1
 	bool
 	default y
 	depends on DT_HAS_ST_STM32_I2C_V1_ENABLED
-	select USE_STM32_LL_I2C
 	select I2C_STM32_INTERRUPT if I2C_TARGET
 	help
 	  Driver variant matching `st,stm32-i2c-v1` compatible.
@@ -24,8 +23,6 @@ config I2C_STM32_V2
 	bool
 	default y
 	depends on DT_HAS_ST_STM32_I2C_V2_ENABLED
-	select USE_STM32_LL_I2C
-	select USE_STM32_LL_RCC if SOC_SERIES_STM32F0X || SOC_SERIES_STM32F3X
 	select I2C_STM32_INTERRUPT if I2C_TARGET
 	help
 	  Driver variant matching `st,stm32-i2c-v2` compatible.
