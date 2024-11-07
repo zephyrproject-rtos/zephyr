@@ -155,12 +155,16 @@ Boards & SoC Support
 * Added support for these SoC series:
 
   * Added ESP32-C2 and ESP8684 SoC support.
+  * Added STM32U0 series with GPIO, Serial, I2C, DAC, ADC, flash, PWM and counter driver support.
+  * Added STM32WB0 series with GPIO, Serial, I2C, SPI, ADC, DMA and flash driver support.
+  * Added STM32U545xx SoC variant.
 
 * Made these changes in other SoC series:
 
   * NXP S32Z270: Added support for the new silicon cut version 2.0. Note that the previous
     versions (1.0 and 1.1) are no longer supported.
   * Added ESP32 WROVER-E-N16R4 variant.
+  * STM32H5: Added support for OpenOCD through STMicroelectronics OpenOCD fork.
 
 * Added support for these boards:
 
@@ -235,6 +239,7 @@ Boards & SoC Support
   * Support for Google Kukui EC board (``google_kukui``) has been dropped.
   * STM32: Deprecated MCO configuration via Kconfig in favour of setting it through devicetree.
     See ``samples/boards/stm32/mco`` sample.
+  * STM32: STM32CubeProgrammer is now the default runner on all STMicroelectronics STM32 boards.
   * Removed the ``nrf54l15pdk`` board, use :ref:`nrf54l15dk_nrf54l15` instead.
   * PHYTEC: ``mimx8mp_phyboard_pollux`` has been renamed to :ref:`phyboard_pollux<phyboard_pollux>`,
     with the old name marked as deprecated.
@@ -311,6 +316,7 @@ Drivers and Sensors
 
   * Added proper ADC2 calibration entries in ESP32.
   * Fixed calibration scheme in ESP32-S3.
+  * STM32H7: Added support for higher sampling frequencies thanks to boost mode implementation.
 
 * Battery
 
@@ -325,6 +331,12 @@ Drivers and Sensors
 
 * Clock control
 
+  * STM32 MCO (Microcontroller Clock Output) is now available on STM32U5 series.
+  * STM32 MCO can and should now be configured with device tree.
+  * STM32: :kconfig:option:`CONFIG_CLOCK_CONTROL` is now enabled by default at family level and doesn't need
+    to be enabled at board level anymore.
+  * STM32H7: PLL FRACN can now be configured (see :dtcompatible:`st,stm32h7-pll-clock`)
+
 * Comparator
 
   * Introduced comparator device driver subsystem selected with :kconfig:option:`CONFIG_COMPARATOR`
@@ -335,9 +347,18 @@ Drivers and Sensors
 
 * Counter
 
+* Crypto
+
+  * Added support for STM32L4 AES.
+
 * DAC
 
+  * DAC API now supports specifying channel path as internal. Support has been added in STM32 drivers.
+
 * Disk
+
+  * STM32F7 SDMMC driver now supports usage of DMA.
+  * STM32 mem controller driver now supports FMC for STM32H5.
 
 * Display
 
@@ -349,26 +370,28 @@ Drivers and Sensors
 * Ethernet
 
   * LiteX: Renamed the ``compatible`` from ``litex,eth0`` to :dtcompatible:`litex,liteeth`.
+  * STM32: Driver can now be configured to use a preemptive RX thread priority, which could be useful
+    in case of high network traffic load (reduces jitter).
 
 * Flash
 
   * Fixed SPI NOR driver issue where wp, hold and reset pins were incorrectly initialized from
     device tee when SFDP at run-time has been enabled (:github:`80383`)
   * Updated all Espressif's SoC driver initialization to allow new chipsets and octal flash support.
-
   * Added :kconfig:option:`CONFIG_SPI_NOR_ACTIVE_DWELL_MS`, to the SPI NOR driver configuration,
     which allows setting the time during which the driver will wait before triggering Deep Power Down (DPD).
     This option replaces ``CONFIG_SPI_NOR_IDLE_IN_DPD``, aiming at reducing unnecessary power
     state changes and SPI transfers between other operations, specifically when burst type
     access to an SPI NOR device occurs.
-
   * Added :kconfig:option:`CONFIG_SPI_NOR_INIT_PRIORITY` to allow selecting the SPI NOR driver initialization priority.
-
   * The flash API has been extended with the :c:func:`flash_copy` utility function which allows performing
     direct data copies between two Flash API devices.
-
   * Fixed a Flash Simulator issue where offsets were assumed to be absolute instead of relative
     to the device base address (:github:`79082`).
+  * Extended STM32 OSPI drivers to support QUAL, DUAL and SPI modes. Additionally, added support
+    for custom write and SFDP:BFP opcodes.
+  * Added possibility to run STM32H7 flash driver from Cortex-M4 core.
+  * Implemented readout protection handling (RDP levels) for STM32F7 SoCs.
 
 * GNSS
 
@@ -446,6 +469,8 @@ Drivers and Sensors
   * Added SCMI-based driver for NXP i.MX
   * Added support for i.MX93 M33 core
   * Added support for ESP32C2
+  * STM32: :kconfig:option:`CONFIG_PINCTRL` is now selected by drivers requiring it and
+    shouldn't be enabled at board level anymore.
 
 * PWM
 
@@ -459,6 +484,8 @@ Drivers and Sensors
 * Reset
 
 * RTC
+
+  * STM32: HSE can now be used as domain clock.
 
 * RTIO
 
@@ -502,6 +529,8 @@ Drivers and Sensors
 
 * USB
 
+  * Added support for USB HS on STM32U59x/STM32U5Ax SoC variants.
+
 * Video
 
   * Introduced API to control frame rate
@@ -515,6 +544,7 @@ Drivers and Sensors
   * Added support for NXP MCUX SMARTDMA interface (:dtcompatible:`nxp,smartdma`)
   * Added support for more OmniVision OV2640 controls (:dtcompatible:`ovti,ov2640`)
   * Added support for more OmniVision OV5640 controls (:dtcompatible:`ovti,ov5640`)
+  * STM32: Implemented :c:func:`video_get_ctrl` and :c:func:`video_set_ctrl` APIs.
 
 * W1
 
@@ -785,6 +815,8 @@ Libraries / Subsystems
 
 * Debug
 
+    * Added west runner for probe-rs, a Rust-based embedded toolkit.
+
 * Demand Paging
 
   * Added LRU (Least Recently Used) eviction algorithm.
@@ -955,6 +987,20 @@ HALs
 * Nordic
 
 * STM32
+
+  * Updated STM32C0 to cube version V1.2.0.
+  * Updated STM32F1 to cube version V1.8.6.
+  * Updated STM32F2 to cube version V1.9.5.
+  * Updated STM32F4 to cube version V1.28.1.
+  * Updated STM32G4 to cube version V1.6.0.
+  * Updated STM32H5 to cube version V1.3.0.
+  * Updated STM32H7 to cube version V1.11.2.
+  * Updated STM32H7RS to cube version V1.1.0.
+  * Added STM32U0 Cube package (1.1.0)
+  * Updated STM32U5 to cube version V1.6.0.
+  * Updated STM32WB to cube version V1.20.0.
+  * Added STM32WB0 Cube package (1.0.0)
+  * Updated STM32WBA to cube version V1.4.1.
 
 * ADI
 
