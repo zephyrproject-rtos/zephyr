@@ -4,3 +4,5 @@ board:
   vendor: nordic
   socs:
   - name: nrf52840
+    variants:
+    - name: 'cdc_acm_serial'
