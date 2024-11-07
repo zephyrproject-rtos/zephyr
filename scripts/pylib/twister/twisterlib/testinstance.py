@@ -277,7 +277,7 @@ class TestInstance:
         if self.testsuite.harness == 'pytest':
             target_ready = bool(filter == 'runnable' or self.platform.simulation in SUPPORTED_SIMS_IN_PYTEST)
 
-        SUPPORTED_SIMS_WITH_EXEC = ['nsim', 'mdb-nsim', 'renode', 'tsim', 'native', 'simics']
+        SUPPORTED_SIMS_WITH_EXEC = ['nsim', 'mdb-nsim', 'renode', 'tsim', 'native', 'simics', 'custom']
         if filter != 'runnable' and \
                 self.platform.simulation in SUPPORTED_SIMS_WITH_EXEC and \
                 self.platform.simulation_exec:
