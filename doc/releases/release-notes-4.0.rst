@@ -454,6 +454,9 @@ Drivers and Sensors
 
 * Regulators
 
+  * Upgraded CP9314 driver to B1 silicon revision
+  * Added basic driver for MPS MPM54304
+
 * Reset
 
 * RTC
