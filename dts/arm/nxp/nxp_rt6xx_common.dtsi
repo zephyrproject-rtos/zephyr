@@ -110,11 +110,12 @@
 		#clock-cells = <1>;
 	};
 
-	iocon: iocon@4000 {
-		compatible = "nxp,lpc-iocon";
+	iopctl0: iopctl@4000 {
+		compatible = "nxp,iopctl";
 		reg = <0x4000 0x1000>;
+		status = "okay";
 		pinctrl: pinctrl {
-			compatible = "nxp,rt-iocon-pinctrl";
+			compatible = "nxp,rt-iopctl-pinctrl";
 		};
 	};
 

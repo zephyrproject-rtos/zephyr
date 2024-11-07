@@ -1,5 +1,5 @@
 /*
- * Copyright 2022, NXP
+ * Copyright 2022,2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,11 +30,6 @@ typedef uint32_t pinctrl_soc_pin_t;
 	IOPCTL_PIO_FULLDRIVE(DT_ENUM_IDX(node_id, drive_strength)) | /* drive strength */ \
 	IOPCTL_PIO_IIENA(DT_PROP(node_id, nxp_invert)) | /* invert input */	\
 	IOPCTL_PIO_AMENA(DT_PROP(node_id, nxp_analog_mode))) /* analog multiplexor */
-
-/* MCUX RT parts only have one pin type */
-#define Z_PINCTRL_IOCON_D_PIN_MASK (0xFFF)
-#define Z_PINCTRL_IOCON_A_PIN_MASK (0)
-#define Z_PINCTRL_IOCON_I_PIN_MASK (0)
 
 #define Z_PINCTRL_STATE_PIN_INIT(group, pin_prop, idx)		\
 	DT_PROP_BY_IDX(group, pin_prop, idx) | Z_PINCTRL_IOPCTL_PINCFG(group),
