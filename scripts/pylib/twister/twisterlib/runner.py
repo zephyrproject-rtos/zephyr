@@ -1696,7 +1696,7 @@ class TwisterRunner:
                 self.results.error_increment()
 
     def show_brief(self):
-        logger.info("%d test scenarios (%d test instances) selected, "
+        logger.info("%d test scenarios (%d configurations) selected, "
                     "%d configurations filtered (%d by static filter, %d at runtime)." %
                     (len(self.suites), len(self.instances),
                     self.results.skipped_configs,
