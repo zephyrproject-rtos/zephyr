@@ -36,6 +36,15 @@
 static K_THREAD_STACK_DEFINE(partner_stack, 1024);
 static struct k_thread partner_thread;
 
+#if (CONFIG_MP_MAX_NUM_CPUS > 1)
+static struct k_thread busy_thread[CONFIG_MP_MAX_NUM_CPUS - 1];
+
+#define BUSY_THREAD_STACK_SIZE  (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
+
+static K_THREAD_STACK_ARRAY_DEFINE(busy_thread_stack, CONFIG_MP_MAX_NUM_CPUS - 1,
+				   BUSY_THREAD_STACK_SIZE);
+#endif /* (CONFIG_MP_MAX_NUM_CPUS > 1) */
+
 _wait_q_t waitq;
 
 enum {
@@ -88,8 +97,26 @@ static void partner_fn(void *arg1, void *arg2, void *arg3)
 	}
 }
 
+#if (CONFIG_MP_MAX_NUM_CPUS > 1)
+static void busy_thread_entry(void *arg1, void *arg2, void *arg3)
+{
+	while (true) {
+	}
+}
+#endif /* (CONFIG_MP_MAX_NUM_CPUS > 1) */
+
 int main(void)
 {
+#if (CONFIG_MP_MAX_NUM_CPUS > 1)
+	/* Spawn busy threads that will execute on the other cores */
+	for (uint32_t i = 0; i < CONFIG_MP_MAX_NUM_CPUS - 1; i++) {
+		k_thread_create(&busy_thread[i], busy_thread_stack[i],
+				BUSY_THREAD_STACK_SIZE, busy_thread_entry,
+				NULL, NULL, NULL,
+				K_HIGHEST_THREAD_PRIO, 0, K_NO_WAIT);
+	}
+#endif /* (CONFIG_MP_MAX_NUM_CPUS > 1) */
+
 	z_waitq_init(&waitq);
 
 	int main_prio = k_thread_priority_get(k_current_get());
