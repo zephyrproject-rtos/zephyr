@@ -40,153 +40,82 @@ struct i2c_cc13xx_cc26xx_config {
 	const struct pinctrl_dev_config *pcfg;
 };
 
-static int i2c_cc13xx_cc26xx_transmit(const struct device *dev,
-				      const uint8_t *buf,
-				      uint32_t len, uint16_t addr)
+static int i2c_cc13xx_cc26xx_transmit(const struct device *dev, const struct i2c_msg *msg,
+				      const uint8_t addr)
 {
 	const struct i2c_cc13xx_cc26xx_config *config = dev->config;
 	const uint32_t base = config->base;
 	struct i2c_cc13xx_cc26xx_data *data = dev->data;
-
-	/* Sending address without data is not supported */
-	if (len == 0) {
-		return -EIO;
-	}
 
 	I2CMasterSlaveAddrSet(base, addr, false);
 
-	/* The following assumes a single master. Use I2CMasterBusBusy() if
-	 * wanting to implement multiple master support.
-	 */
+	for (int i = 0; i < msg->len; i++) {
+		uint32_t command = I2C_MCTRL_RUN;
 
-	/* Single transmission */
-	if (len == 1) {
-		I2CMasterDataPut(base, *buf);
+		if (i == 0 && msg->flags & I2C_MSG_RESTART) {
+			command |= I2C_MCTRL_START;
+		}
 
-		I2CMasterControl(base, I2C_MASTER_CMD_SINGLE_SEND);
+		if (i == msg->len - 1 && msg->flags & I2C_MSG_STOP) {
+			command |= I2C_MCTRL_STOP;
+		}
 
-		k_sem_take(&data->complete, K_FOREVER);
-
-		return data->error == I2C_MASTER_ERR_NONE ? 0 : -EIO;
-	}
-
-	/* Burst transmission */
-	I2CMasterDataPut(base, buf[0]);
-
-	I2CMasterControl(base, I2C_MASTER_CMD_BURST_SEND_START);
-
-	k_sem_take(&data->complete, K_FOREVER);
-
-	if (data->error != I2C_MASTER_ERR_NONE) {
-		goto send_error_stop;
-	}
-
-	for (int i = 1; i < len - 1; i++) {
-		I2CMasterDataPut(base, buf[i]);
-
-		I2CMasterControl(base, I2C_MASTER_CMD_BURST_SEND_CONT);
-
+		I2CMasterDataPut(base, msg->buf[i]);
+		I2CMasterControl(base, command);
 		k_sem_take(&data->complete, K_FOREVER);
 
 		if (data->error != I2C_MASTER_ERR_NONE) {
-			goto send_error_stop;
+			if ((command & I2C_MCTRL_STOP) == 0) {
+				I2CMasterControl(base, I2C_MCTRL_STOP);
+			}
+			return -EIO;
 		}
 	}
 
-	I2CMasterDataPut(base, buf[len - 1]);
-
-	I2CMasterControl(base, I2C_MASTER_CMD_BURST_SEND_FINISH);
-
-	k_sem_take(&data->complete, K_FOREVER);
-
-	if (data->error != I2C_MASTER_ERR_NONE) {
-		return -EIO;
-	}
-
 	return 0;
-
-send_error_stop:
-	I2CMasterControl(base, I2C_MASTER_CMD_BURST_SEND_ERROR_STOP);
-	return -EIO;
 }
 
-static int i2c_cc13xx_cc26xx_receive(const struct device *dev, uint8_t *buf,
-				     uint32_t len,
-				     uint16_t addr)
+static int i2c_cc13xx_cc26xx_receive(const struct device *dev, const struct i2c_msg *msg,
+				     const uint8_t addr)
 {
+	struct i2c_cc13xx_cc26xx_data *data = dev->data;
 	const struct i2c_cc13xx_cc26xx_config *config = dev->config;
 	const uint32_t base = config->base;
-	struct i2c_cc13xx_cc26xx_data *data = dev->data;
-
-	/* Sending address without data is not supported */
-	if (len == 0) {
-		return -EIO;
-	}
 
 	I2CMasterSlaveAddrSet(base, addr, true);
 
-	/* The following assumes a single master. Use I2CMasterBusBusy() if
-	 * wanting to implement multiple master support.
-	 */
+	for (int i = 0; i < msg->len; i++) {
+		uint32_t command = I2C_MCTRL_RUN;
 
-	/* Single receive */
-	if (len == 1) {
-		I2CMasterControl(base, I2C_MASTER_CMD_SINGLE_RECEIVE);
+		if (i == 0 && msg->flags & I2C_MSG_RESTART) {
+			command |= I2C_MCTRL_START;
+		}
+
+		if (i == msg->len - 1 && msg->flags & I2C_MSG_STOP) {
+			command |= I2C_MCTRL_STOP;
+		} else if (i < msg->len - 1) {
+			command |= I2C_MCTRL_ACK;
+		}
+
+		I2CMasterControl(base, command);
 
 		k_sem_take(&data->complete, K_FOREVER);
 
 		if (data->error != I2C_MASTER_ERR_NONE) {
+			if ((command & I2C_MCTRL_STOP) == 0) {
+				I2CMasterControl(base, I2C_MCTRL_STOP);
+			}
 			return -EIO;
 		}
 
-		*buf = I2CMasterDataGet(base);
-
-		return 0;
+		msg->buf[i] = I2CMasterDataGet(base);
 	}
-
-	/* Burst receive */
-	I2CMasterControl(base, I2C_MASTER_CMD_BURST_RECEIVE_START);
-
-	k_sem_take(&data->complete, K_FOREVER);
-
-	if (data->error != I2C_MASTER_ERR_NONE) {
-		goto recv_error_stop;
-	}
-
-	buf[0] = I2CMasterDataGet(base);
-
-	for (int i = 1; i < len - 1; i++) {
-		I2CMasterControl(base, I2C_MASTER_CMD_BURST_RECEIVE_CONT);
-
-		k_sem_take(&data->complete, K_FOREVER);
-
-		if (data->error != I2C_MASTER_ERR_NONE) {
-			goto recv_error_stop;
-		}
-
-		buf[i] = I2CMasterDataGet(base);
-	}
-
-	I2CMasterControl(base, I2C_MASTER_CMD_BURST_RECEIVE_FINISH);
-
-	k_sem_take(&data->complete, K_FOREVER);
-
-	if (data->error != I2C_MASTER_ERR_NONE) {
-		return -EIO;
-	}
-
-	buf[len - 1] = I2CMasterDataGet(base);
 
 	return 0;
-
-recv_error_stop:
-	I2CMasterControl(base, I2C_MASTER_CMD_BURST_RECEIVE_ERROR_STOP);
-	return -EIO;
 }
 
-static int i2c_cc13xx_cc26xx_transfer(const struct device *dev,
-				      struct i2c_msg *msgs,
-				      uint8_t num_msgs, uint16_t addr)
+static int i2c_cc13xx_cc26xx_transfer(const struct device *dev, struct i2c_msg *msgs,
+				      const uint8_t num_msgs, const uint16_t addr)
 {
 	struct i2c_cc13xx_cc26xx_data *data = dev->data;
 	int ret = 0;
@@ -194,6 +123,9 @@ static int i2c_cc13xx_cc26xx_transfer(const struct device *dev,
 	if (num_msgs == 0) {
 		return 0;
 	}
+
+	/* Always a start condition in the first message */
+	msgs[0].flags |= I2C_MSG_RESTART;
 
 	k_sem_take(&data->lock, K_FOREVER);
 
@@ -206,12 +138,16 @@ static int i2c_cc13xx_cc26xx_transfer(const struct device *dev,
 			break;
 		}
 
+		/* Sending address without data is not supported */
+		if (msgs[i].len == 0) {
+			ret = -EIO;
+			break;
+		}
+
 		if ((msgs[i].flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
-			ret = i2c_cc13xx_cc26xx_transmit(dev, msgs[i].buf,
-							 msgs[i].len, addr);
+			ret = i2c_cc13xx_cc26xx_transmit(dev, &msgs[i], addr);
 		} else {
-			ret = i2c_cc13xx_cc26xx_receive(dev, msgs[i].buf,
-							msgs[i].len, addr);
+			ret = i2c_cc13xx_cc26xx_receive(dev, &msgs[i], addr);
 		}
 
 		if (ret) {
