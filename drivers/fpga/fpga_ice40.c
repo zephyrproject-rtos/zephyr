@@ -262,7 +262,11 @@ static int fpga_ice40_load_gpio(const struct device *dev, uint32_t *image_ptr, u
 	LOG_DBG("Delay %u us", config->creset_delay_us);
 	fpga_ice40_delay(2 * config->mhz_delay_count * config->creset_delay_us);
 
-	__ASSERT(gpio_pin_get_dt(&config->cdone) == 0, "CDONE was not high");
+	if (gpio_pin_get_dt(&config->cdone) != 0) {
+		LOG_ERR("CDONE should be low after the reset");
+		ret = -EIO;
+		goto unlock;
+	}
 
 	LOG_DBG("Set CRESET high");
 	*config->set |= creset;
@@ -368,7 +372,11 @@ static int fpga_ice40_load_spi(const struct device *dev, uint32_t *image_ptr, ui
 	LOG_DBG("Delay %u us", config->creset_delay_us);
 	k_usleep(config->creset_delay_us);
 
-	__ASSERT(gpio_pin_get_dt(&config->cdone) == 0, "CDONE was not high");
+	if (gpio_pin_get_dt(&config->cdone) != 0) {
+		LOG_ERR("CDONE should be low after the reset");
+		ret = -EIO;
+		goto unlock;
+	}
 
 	LOG_DBG("Set CRESET high");
 	ret = gpio_pin_configure_dt(&config->creset, GPIO_OUTPUT_HIGH);
