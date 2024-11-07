@@ -554,6 +554,13 @@ static inline void z_vrfy_k_thread_resume(k_tid_t thread)
 #include <zephyr/syscalls/k_thread_resume_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
+static _wait_q_t *pended_on_thread(struct k_thread *thread)
+{
+	__ASSERT_NO_MSG(thread->base.pended_on);
+
+	return thread->base.pended_on;
+}
+
 static void unready_thread(struct k_thread *thread)
 {
 	if (z_is_thread_queued(thread)) {
@@ -600,6 +607,13 @@ void z_pend_thread(struct k_thread *thread, _wait_q_t *wait_q,
 	K_SPINLOCK(&_sched_spinlock) {
 		pend_locked(thread, wait_q, timeout);
 	}
+}
+
+static inline void unpend_thread_no_timeout(struct k_thread *thread)
+{
+	_priq_wait_remove(&pended_on_thread(thread)->waitq, thread);
+	z_mark_thread_as_not_pending(thread);
+	thread->base.pended_on = NULL;
 }
 
 void z_unpend_thread_no_timeout(struct k_thread *thread)
@@ -684,6 +698,22 @@ struct k_thread *z_unpend1_no_timeout(_wait_q_t *wait_q)
 
 		if (thread != NULL) {
 			unpend_thread_no_timeout(thread);
+		}
+	}
+
+	return thread;
+}
+
+struct k_thread *z_unpend_first_thread(_wait_q_t *wait_q)
+{
+	struct k_thread *thread = NULL;
+
+	K_SPINLOCK(&_sched_spinlock) {
+		thread = _priq_wait_best(&wait_q->waitq);
+
+		if (unlikely(thread != NULL)) {
+			unpend_thread_no_timeout(thread);
+			(void)z_abort_thread_timeout(thread);
 		}
 	}
 

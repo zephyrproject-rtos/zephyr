@@ -13,7 +13,6 @@
 #include <kthread.h>
 #include <zephyr/tracing/tracing.h>
 #include <stdbool.h>
-#include <priority_q.h>
 
 BUILD_ASSERT(K_LOWEST_APPLICATION_THREAD_PRIO
 	     >= K_HIGHEST_APPLICATION_THREAD_PRIO);
@@ -38,8 +37,6 @@ BUILD_ASSERT(K_LOWEST_APPLICATION_THREAD_PRIO
 #define Z_ASSERT_VALID_PRIO(prio, entry_point) __ASSERT((prio) == -1, "")
 #endif /* CONFIG_MULTITHREADING */
 
-extern struct k_spinlock _sched_spinlock;
-
 extern struct k_thread _thread_dummy;
 
 void z_sched_init(void);
@@ -52,6 +49,7 @@ void z_pend_thread(struct k_thread *thread, _wait_q_t *wait_q,
 		   k_timeout_t timeout);
 void z_reschedule(struct k_spinlock *lock, k_spinlock_key_t key);
 void z_reschedule_irqlock(uint32_t key);
+struct k_thread *z_unpend_first_thread(_wait_q_t *wait_q);
 void z_unpend_thread(struct k_thread *thread);
 int z_unpend_all(_wait_q_t *wait_q);
 bool z_thread_prio_set(struct k_thread *thread, int prio);
@@ -142,36 +140,6 @@ static inline void z_sched_lock(void)
 	--_current->base.sched_locked;
 
 	compiler_barrier();
-}
-
-static ALWAYS_INLINE _wait_q_t *pended_on_thread(struct k_thread *thread)
-{
-	__ASSERT_NO_MSG(thread->base.pended_on);
-
-	return thread->base.pended_on;
-}
-
-
-static inline void unpend_thread_no_timeout(struct k_thread *thread)
-{
-	_priq_wait_remove(&pended_on_thread(thread)->waitq, thread);
-	z_mark_thread_as_not_pending(thread);
-	thread->base.pended_on = NULL;
-}
-
-static ALWAYS_INLINE struct k_thread *z_unpend_first_thread(_wait_q_t *wait_q)
-{
-	struct k_thread *thread = NULL;
-
-	K_SPINLOCK(&_sched_spinlock) {
-		thread = _priq_wait_best(&wait_q->waitq);
-		if (unlikely(thread != NULL)) {
-			unpend_thread_no_timeout(thread);
-			(void)z_abort_thread_timeout(thread);
-		}
-	}
-
-	return thread;
 }
 
 /*
