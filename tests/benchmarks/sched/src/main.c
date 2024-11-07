@@ -106,10 +106,7 @@ int main(void)
 	uint64_t tot = 0U;
 	uint32_t runs = 0U;
 
-	int key;
-
 	for (int i = 0; i < N_RUNS + N_SETTLE; i++) {
-		key = arch_irq_lock();
 		stamp(UNPENDING);
 		z_unpend_first_thread(&waitq);
 		stamp(UNPENDED_READYING);
@@ -124,7 +121,6 @@ int main(void)
 		 */
 		k_yield();
 		stamp(YIELDED);
-		arch_irq_unlock(key);
 
 		uint32_t avg, whole = stamps[4] - stamps[0];
 

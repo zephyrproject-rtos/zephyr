@@ -38,12 +38,6 @@ BUILD_ASSERT(K_LOWEST_APPLICATION_THREAD_PRIO
 #define Z_ASSERT_VALID_PRIO(prio, entry_point) __ASSERT((prio) == -1, "")
 #endif /* CONFIG_MULTITHREADING */
 
-#if (CONFIG_MP_MAX_NUM_CPUS == 1)
-#define LOCK_SCHED_SPINLOCK
-#else
-#define LOCK_SCHED_SPINLOCK   K_SPINLOCK(&_sched_spinlock)
-#endif
-
 extern struct k_spinlock _sched_spinlock;
 
 extern struct k_thread _thread_dummy;
@@ -165,20 +159,11 @@ static inline void unpend_thread_no_timeout(struct k_thread *thread)
 	thread->base.pended_on = NULL;
 }
 
-/*
- * In a multiprocessor system, z_unpend_first_thread() must lock the scheduler
- * spinlock _sched_spinlock. However, in a uniprocessor system, that is not
- * necessary as the caller has already taken precautions (in the form of
- * locking interrupts).
- */
 static ALWAYS_INLINE struct k_thread *z_unpend_first_thread(_wait_q_t *wait_q)
 {
 	struct k_thread *thread = NULL;
 
-	__ASSERT_EVAL(, int key = arch_irq_lock(); arch_irq_unlock(key),
-		      !arch_irq_unlocked(key), "");
-
-	LOCK_SCHED_SPINLOCK {
+	K_SPINLOCK(&_sched_spinlock) {
 		thread = _priq_wait_best(&wait_q->waitq);
 		if (unlikely(thread != NULL)) {
 			unpend_thread_no_timeout(thread);
