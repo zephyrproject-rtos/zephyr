@@ -255,6 +255,20 @@ int flash_area_get_sectors(int fa_id, uint32_t *count,
 			   struct flash_sector *sectors);
 
 /**
+ * Retrieve info about sectors within the area.
+ *
+ * @param[in]  fa       pointer to flash area object.
+ * @param[out] sectors  buffer for sectors data
+ * @param[in,out] count On input Capacity of @p sectors, on output number of
+ * sectors Retrieved.
+ *
+ * @return  0 on success, negative errno code on fail. Especially returns
+ * -ENOMEM if There are too many flash pages on the flash_area to fit in the
+ * array.
+ */
+int flash_area_sectors(const struct flash_area *fa, uint32_t *count, struct flash_sector *sectors);
+
+/**
  * Flash map iteration callback
  *
  * @param fa flash area
