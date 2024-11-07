@@ -39,7 +39,9 @@ BUILD_ASSERT(strlen(CONFIG_BROADCAST_CODE) <= BT_ISO_BROADCAST_CODE_SIZE, "Inval
  * And, for 10 ms ISO interval, can use 90 ms minus 10 ms ==> 80 ms advertising
  * interval.
  */
-#define BT_LE_EXT_ADV_CUSTOM BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV, 0x0080, 0x0080, NULL)
+#define BT_LE_EXT_ADV_CUSTOM                                                                       \
+	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV, BT_GAP_MS_TO_ADV_INTERVAL(80),                      \
+			BT_GAP_MS_TO_ADV_INTERVAL(80), NULL)
 
 /* When BROADCAST_ENQUEUE_COUNT > 1 we can enqueue enough buffers to ensure that
  * the controller is never idle

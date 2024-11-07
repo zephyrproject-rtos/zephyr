@@ -989,7 +989,8 @@ static uint8_t connect(const void *cmd, uint16_t cmd_len,
 		       void *rsp, uint16_t *rsp_len)
 {
 	const struct bt_le_conn_param *conn_param =
-		BT_LE_CONN_PARAM(BT_GAP_INIT_CONN_INT_MIN, BT_GAP_INIT_CONN_INT_MIN, 0, 400);
+		BT_LE_CONN_PARAM(BT_GAP_INIT_CONN_INT_MIN, BT_GAP_INIT_CONN_INT_MIN, 0,
+				 BT_GAP_MS_TO_CONN_TIMEOUT(4000));
 	const struct btp_gap_connect_cmd *cp = cmd;
 	int err;
 

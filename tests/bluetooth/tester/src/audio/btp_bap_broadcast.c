@@ -13,6 +13,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/ring_buffer.h>
 #include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/gap.h>
 
 #include "bap_endpoint.h"
 #include <zephyr/logging/log.h>
@@ -1261,8 +1262,9 @@ static void bap_broadcast_assistant_scan_cb(const struct bt_le_scan_recv_info *i
 	char le_addr[BT_ADDR_LE_STR_LEN];
 
 	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
-	LOG_DBG("[DEVICE]: %s, broadcast_id 0x%06X, interval (ms) %u), SID 0x%x, RSSI %i", le_addr,
-		broadcast_id, BT_GAP_PER_ADV_INTERVAL_TO_MS(info->interval), info->sid, info->rssi);
+	LOG_DBG("[DEVICE]: %s, broadcast_id 0x%06X, interval (ms) %u (0x%04x)), SID 0x%x, RSSI %i",
+		le_addr, broadcast_id, BT_GAP_PER_ADV_INTERVAL_TO_MS(info->interval),
+		info->interval, info->sid, info->rssi);
 }
 
 static void bap_broadcast_assistant_recv_state_cb(struct bt_conn *conn, int err,
