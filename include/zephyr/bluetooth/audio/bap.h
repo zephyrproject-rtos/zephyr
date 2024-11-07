@@ -142,7 +142,8 @@ extern "C" {
  * and power consumption over lower time to synchronize.
  */
 #define BT_BAP_PER_ADV_PARAM_BROADCAST_SLOW                                                        \
-	BT_LE_PER_ADV_PARAM(BT_GAP_MS_TO_PER_ADV_INTERVAL(150), BT_GAP_MS_TO_ADV_INTERVAL(150),    \
+	BT_LE_PER_ADV_PARAM(BT_GAP_MS_TO_PER_ADV_INTERVAL(150),                                    \
+			    BT_GAP_MS_TO_PER_ADV_INTERVAL(150),                                    \
 			    BT_LE_PER_ADV_OPT_NONE)
 
 /**
