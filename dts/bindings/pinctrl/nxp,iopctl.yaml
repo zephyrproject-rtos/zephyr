@@ -1,0 +1,12 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: IO PAD Controller (IOPCTL)
+
+compatible: "nxp,iopctl"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

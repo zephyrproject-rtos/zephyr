@@ -1,8 +1,8 @@
-# Copyright 2022, NXP
+# Copyright 2022,2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  RT600/RT500 pin control node. This node defines pin configurations in pin
+  RT700/RT600/RT500 pin control node. This node defines pin configurations in pin
   groups, and has the 'pinctrl' node identifier in the SOC's devicetree. Each
   group within the pin configuration defines a peripheral's pin configuration.
   Each numbered subgroup represents pins with shared configuration for that
@@ -21,31 +21,31 @@ description: |
 
   If only the required properties are supplied, the ICON_PIO register will
   be assigned the following values:
-  IOCON_FUNC=<pin mux selection>,
-  IOCON_PUPDENA = 0,
-  IOCON_PUPDSEL = 0,
-  IOCON_IBENA = 0,
-  IOCON_SLEWRATE = <slew-rate selection>,
-  IOCON_FULLDRIVE = <drive-strength selection>,
-  IOCON_AMENA = 0,
-  IOCON_ODENA = 0,
-  IOCON_IIENA = 0,
+  IOPCTL_FUNC=<pin mux selection>,
+  IOPCTL_PUPDENA = 0,
+  IOPCTL_PUPDSEL = 0,
+  IOPCTL_IBENA = 0,
+  IOPCTL_SLEWRATE = <slew-rate selection>,
+  IOPCTL_FULLDRIVE = <drive-strength selection>,
+  IOPCTL_AMENA = 0,
+  IOPCTL_ODENA = 0,
+  IOPCTL_IIENA = 0,
 
   Note the inherited pinctrl properties defined below have the following effects:
-  drive-open-drain: IOCON_ODENA=1
-  bias-pull-up: IOCON_PUPDENA=1, IOCON_PUPSEL=1
-  bias-pull-down: IOCON_PUPDENA=1, IOCON_PUPSEL=0
-  input-enable: IOCON_IBENA=1
+  drive-open-drain: IOPCTL_ODENA=1
+  bias-pull-up: IOPCTL_PUPDENA=1, IOPCTL_PUPSEL=1
+  bias-pull-down: IOPCTL_PUPDENA=1, IOPCTL_PUPSEL=0
+  input-enable: IOPCTL_IBENA=1
 
-compatible: "nxp,rt-iocon-pinctrl"
+compatible: "nxp,rt-iopctl-pinctrl"
 
 include: base.yaml
 
 child-binding:
-  description: iMX RT IOCON pin controller pin group
+  description: iMX RT IOPCTL pin controller pin group
   child-binding:
     description: |
-      iMX RT IOCON pin controller pin configuration node
+      iMX RT IOPCTL pin controller pin configuration node
 
     include:
       - name: pincfg-node.yaml
@@ -69,7 +69,7 @@ child-binding:
           - "normal"
           - "slow"
         description: |
-          Pin output slew rate. Sets the SLEWRATE field in the IOCON register.
+          Pin output slew rate. Sets the SLEWRATE field in the IOPCTL register.
           0 SLEWRATE_0- normal mode, output slew rate is standard
           1 SLEWRATE_1- slow mode, output slew rate is slower
       drive-strength:
@@ -80,7 +80,7 @@ child-binding:
           - "high"
         description: |
           Pin output drive strength. Sets the FULLDRIVE field in the
-          IOCON register.
+          IOPCTL register.
           0 FULLDRIVE_0- Normal output drive mode
           1 FULLDRIVE_1- Full output drive mode, output strength is twice
           the drive strength of normal drive mode.

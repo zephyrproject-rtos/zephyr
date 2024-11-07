@@ -39,6 +39,27 @@ LVGL
 Device Drivers and Devicetree
 *****************************
 
+* The :dtcompatible: ``nxp,lpc-iocon`` and ``nxp,rt-iocon-pinctrl`` driver won't be used
+  for RT 3 digital platforms.
+  New :dtcompatible:`nxp,iopctl` and :dtcompatible:`nxp,rt-iopctl-pinctrl` have been created
+  for iopctl IP on RT 3 digital platforms. Change iocon node to iopctl0 node on RT500/600
+  platforms. New pinctrl model add instance index parameter in pin header files, however,
+  for the application layer, the pin macro name will not change. So it means application
+  layer won't be affected by changes in the driver layer.(:github:`81086`)
+  example:
+
+  .. code-block:: devicetree
+
+    / {
+        iopctl0: iopctl@4000 {
+            compatible = "nxp,iopctl";
+            reg = <0x4000 0x1000>;
+            status = "okay";
+            pinctrl: pinctrl {
+                compatible = "nxp,rt-iopctl-pinctrl";
+            };
+    };
+
 Controller Area Network (CAN)
 =============================
 

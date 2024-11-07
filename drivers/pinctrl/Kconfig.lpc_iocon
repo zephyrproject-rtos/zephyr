@@ -1,11 +1,10 @@
-# Copyright 2022, NXP
+# Copyright 2022,2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config PINCTRL_NXP_IOCON
 	bool "IOCON Pin controller driver for NXP LPC MCUs"
 	default y
 	depends on DT_HAS_NXP_LPC_IOCON_PINCTRL_ENABLED || \
-		   DT_HAS_NXP_LPC11U6X_PINCTRL_ENABLED || \
-		   DT_HAS_NXP_RT_IOCON_PINCTRL_ENABLED
+		   DT_HAS_NXP_LPC11U6X_PINCTRL_ENABLED
 	help
 	  Enable pin controller driver for NXP LPC MCUs
