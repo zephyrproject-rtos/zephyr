@@ -126,4 +126,12 @@ config TICKET_SPINLOCKS
 	  which resolves such unfairness issue at the cost of slightly
 	  increased memory footprint.
 
+config CURRENT_CPU_VALIDATE
+	bool "Validate usage of _current_cpu"
+	depends on SMP && ASSERT
+	default y if MP_MAX_NUM_CPUS > 1
+	help
+	  The `_current_cpu` pointer should only ever be used in non-preemptible
+	  contexts. When assertions are enabled in SMP systems, this option guarantees
+	  correct `_current_cpu` usage with runtime checks.
 endmenu
