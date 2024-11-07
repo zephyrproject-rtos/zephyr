@@ -7,6 +7,7 @@
 """
 
 import argparse
+import functools
 import os
 import platform
 import shlex
@@ -33,6 +34,7 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
         port: str,
         frequency: int | None,
         reset_mode: str | None,
+        start_address: int | None,
         conn_modifiers: str | None,
         cli: Path | None,
         use_elf: bool,
@@ -44,6 +46,7 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
 
         self._port = port
         self._frequency = frequency
+        self._start_address = start_address
         self._reset_mode = reset_mode
         self._conn_modifiers = conn_modifiers
         self._cli = (
@@ -147,6 +150,15 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
             help="Reset mode",
         )
         parser.add_argument(
+            "--start-address",
+            # To accept arguments in hex format, a wrapper lambda around int() must be used.
+            # Wrapping the lambda with functools.wraps() makes it so that 'invalid int value'
+            # is displayed when an invalid value is provided for this argument.
+            type=functools.wraps(int)(lambda s: int(s, base=0)),
+            required=False,
+            help="Address where execution should begin after flashing"
+        )
+        parser.add_argument(
             "--conn-modifiers",
             type=str,
             required=False,
@@ -182,6 +194,7 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
             port=args.port,
             frequency=args.frequency,
             reset_mode=args.reset_mode,
+            start_address=args.start_address,
             conn_modifiers=args.conn_modifiers,
             cli=args.cli,
             use_elf=args.use_elf,
@@ -225,4 +238,14 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
             raise RuntimeError('cannot flash; no download file was specified')
         elif not os.path.isfile(dl_file):
             raise RuntimeError(f'download file {dl_file} does not exist')
-        self.check_call(cmd + ["--download", dl_file, "--start"])
+
+        flash_and_run_args = ["--download", dl_file]
+
+        # '--start' is needed to start execution after flash.
+        # The default start address is the beggining of the flash,
+        # but another value can be explicitly specified if desired.
+        flash_and_run_args.append("--start")
+        if self._start_address is not None:
+            flash_and_run_args.append(f"0x{self._start_address:X}")
+
+        self.check_call(cmd + flash_and_run_args)
