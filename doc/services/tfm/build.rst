@@ -11,7 +11,7 @@ steps required:
 
    .. code-block:: bash
 
-     $ west build -p auto -b mps2_an521_ns samples/tfm_integration/psa_protected_storage/ -t run
+     $ west build -p auto -b mps2/an521/cpu0/ns samples/tfm_integration/psa_protected_storage/ -t run
 
 The outputs and certain key steps in this build process are described here,
 however, since you will need to understand and interact with the outputs, and
@@ -146,7 +146,7 @@ Use the ``tfm_ram_report`` to get the RAM report for TF-M secure firmware (tfm_s
 .. zephyr-app-commands::
     :tool: all
     :zephyr-app: samples/hello_world
-    :board: mps2_an521_ns
+    :board: mps2/an521/cpu0/ns
     :goals: tfm_ram_report
 
 Use the ``tfm_rom_report`` to get the ROM report for TF-M secure firmware (tfm_s).
@@ -154,7 +154,7 @@ Use the ``tfm_rom_report`` to get the ROM report for TF-M secure firmware (tfm_s
 .. zephyr-app-commands::
     :tool: all
     :zephyr-app: samples/hello_world
-    :board: mps2_an521_ns
+    :board: mps2/an521/cpu0/ns
     :goals: tfm_rom_report
 
 Use the ``bl2_ram_report`` to get the RAM report for TF-M MCUboot, if enabled.
@@ -162,7 +162,7 @@ Use the ``bl2_ram_report`` to get the RAM report for TF-M MCUboot, if enabled.
 .. zephyr-app-commands::
     :tool: all
     :zephyr-app: samples/hello_world
-    :board: mps2_an521_ns
+    :board: mps2/an521/cpu0/ns
     :goals: bl2_ram_report
 
 Use the ``bl2_rom_report`` to get the ROM report for TF-M MCUboot, if enabled.
@@ -170,5 +170,5 @@ Use the ``bl2_rom_report`` to get the ROM report for TF-M MCUboot, if enabled.
 .. zephyr-app-commands::
     :tool: all
     :zephyr-app: samples/hello_world
-    :board: mps2_an521_ns
+    :board: mps2/an521/cpu0/ns
     :goals: bl2_rom_report

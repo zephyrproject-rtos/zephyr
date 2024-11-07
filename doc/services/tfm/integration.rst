@@ -23,13 +23,13 @@ processing environment. :kconfig:option:`CONFIG_TFM_BOARD` must also be set via
 to the board name that TF-M expects for this target, so that it knows which
 target to build for the secure processing environment.
 
-Example: ``mps2_an521_ns``
-==========================
+Example: ``mps2/an521/cpu0/ns``
+===============================
 
-The ``mps2_an521`` target is a dual-core Arm Cortex-M33 evaluation board that,
-when using the default board variant, would generate a secure Zephyr binary.
+The ``mps2/an521/cpu0`` board target is a dual-core Arm Cortex-M33 evaluation board that generates
+a secure Zephyr binary.
 
-The optional ``mps2_an521_ns`` target, however, sets these additional
+The optional ``mps2/an521/cpu0/ns`` board target, however, sets these additional
 kconfig flags that indicate that Zephyr should be built as a
 non-secure image, linked with TF-M as an external project, and optionally the
 secure bootloader:
@@ -37,8 +37,9 @@ secure bootloader:
 * :kconfig:option:`CONFIG_TRUSTED_EXECUTION_NONSECURE` ``y``
 * :kconfig:option:`CONFIG_ARM_TRUSTZONE_M` ``y``
 
-Comparing the ``mps2_an521.dts`` and ``mps2_an521_ns.dts`` files, we can see
-that the ``_ns`` version defines offsets in flash and SRAM memory, which leave
+Comparing the :zephyr_file:`boards/arm/mps2/mps2_an521_cpu0.dts` and
+:zephyr_file:`boards/arm/mps2/mps2_an521_cpu0_ns.dts` files,
+we can see that the ``ns`` version defines offsets in flash and SRAM memory, which leave
 the required space for TF-M and the secure bootloader:
 
 ::
