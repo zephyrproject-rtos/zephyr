@@ -684,7 +684,7 @@ static void rr_st_idle(struct ll_conn *conn, uint8_t evt, void *param)
 					/* Central collision
 					 * => Send reject
 					 *
-					 * Local central shall reject the PDU received from the 
+					 * Local central shall reject the PDU received from the
 					 * peripheral by issuing a reject, continues unaffected.
 					 */
 
