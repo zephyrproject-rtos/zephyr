@@ -62,10 +62,8 @@ ZTEST(posix_headers, test_netinet_in_h)
 	struct in6_addr mcg6 = { { { 0xff, 0x0e, 0, 0, 0, 0, 0, 0,
 				0, 0, 0, 0, 0, 0, 0, 0x01 } } };
 
-	/* not implemented */
-	/* zassert_not_equal(-1, offsetof(struct ipv6_mreq, ipv6mr_multiaddr)); */
-	/* not implemented */
-	/* zassert_not_equal(-1, offsetof(struct ipv6_mreq, ipv6mr_interface)); */
+	zassert_not_equal(-1, offsetof(struct ipv6_mreq, ipv6mr_multiaddr));
+	zassert_not_equal(-1, offsetof(struct ipv6_mreq, ipv6mr_ifindex));
 
 	zassert_not_equal(-1, IPPROTO_IP);
 	zassert_not_equal(-1, IPPROTO_IPV6);
