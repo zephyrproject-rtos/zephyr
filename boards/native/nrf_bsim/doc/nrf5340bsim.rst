@@ -34,6 +34,7 @@ These boards include models of some of the nRF5340 SOC peripherals:
 * DPPI (Distributed Programmable Peripheral Interconnect)
 * EGU (Event Generator Unit)
 * FICR (Factory Information Configuration Registers)
+* GPIO & GPIOTE
 * IPC (Interprocessor communication)
 * MUTEX (Mutual exclusive peripheral)
 * NVMC (Non-Volatile Memory Controller / Flash)
