@@ -556,6 +556,12 @@ OSDP
 Trusted Firmware-M
 ******************
 
+Nanopb
+******
+
+* Updated the nanopb module to version 0.4.9.
+  Full release notes at https://github.com/nanopb/nanopb/blob/0.4.9/CHANGELOG.txt
+
 LVGL
 ****
 
