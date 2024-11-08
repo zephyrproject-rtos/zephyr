@@ -40,6 +40,7 @@ ZTEST(posix_headers, test_netinet_in_h)
 	zassert_not_equal(-1, offsetof(struct sockaddr_in6, sin6_addr));
 	zassert_not_equal(-1, offsetof(struct sockaddr_in6, sin6_scope_id));
 
+	zassert_not_null(&in6addr_any);
 	zassert_not_null(&in6addr_loopback);
 	struct in6_addr any6 = IN6ADDR_ANY_INIT;
 	struct in6_addr lo6 = IN6ADDR_LOOPBACK_INIT;
