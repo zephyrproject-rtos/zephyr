@@ -129,6 +129,7 @@ class ExecutionCounter(object):
         self._none_cases = Value('i', 0)
         self._started_cases = Value('i', 0)
 
+        self._warnings = Value('i', 0)
 
         self.lock = Lock()
 
@@ -185,6 +186,20 @@ class ExecutionCounter(object):
         if self.started_cases:
             print(f"   └─ {'Test cases only started: ':<25}{self.started_cases:>{executed_cases_n_length}}")
         print("--------------------------------------------------")
+
+    @property
+    def warnings(self):
+        with self._warnings.get_lock():
+            return self._warnings.value
+
+    @warnings.setter
+    def warnings(self, value):
+        with self._warnings.get_lock():
+            self._warnings.value = value
+
+    def warnings_increment(self, value=1):
+        with self._warnings.get_lock():
+            self._warnings.value += value
 
     @property
     def cases(self):
@@ -1324,15 +1339,18 @@ class ProjectBuilder(FilterBuilder):
                 # but having those statuses in this part of processing is an error.
                 case TwisterStatus.NONE:
                     results.none_cases_increment(increment_value)
-                    logger.error(f'A None status detected in instance {instance.name},'
+                    logger.warning(f'A None status detected in instance {instance.name},'
                                  f' test case {tc.name}.')
+                    results.warnings_increment(1)
                 case TwisterStatus.STARTED:
                     results.started_cases_increment(increment_value)
-                    logger.error(f'A started status detected in instance {instance.name},'
+                    logger.warning(f'A started status detected in instance {instance.name},'
                                  f' test case {tc.name}.')
+                    results.warnings_increment(1)
                 case _:
-                    logger.error(f'An unknown status "{tc.status}" detected in instance {instance.name},'
+                    logger.warning(f'An unknown status "{tc.status}" detected in instance {instance.name},'
                                  f' test case {tc.name}.')
+                    results.warnings_increment(1)
 
 
     def report_out(self, results):
