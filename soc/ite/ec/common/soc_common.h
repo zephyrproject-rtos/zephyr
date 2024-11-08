@@ -43,11 +43,10 @@ uint32_t chip_get_pll_freq(void);
 void chip_pll_ctrl(enum chip_pll_mode mode);
 void riscv_idle(enum chip_pll_mode mode, unsigned int key);
 
-#ifdef CONFIG_SOC_IT8XXX2_CPU_IDLE_GATING
+/* Functions for managing the CPU idle state */
 void chip_permit_idle(void);
 void chip_block_idle(void);
 bool cpu_idle_not_allowed(void);
-#endif
 
 #endif /* !_ASMLANGUAGE */
 

@@ -15,3 +15,8 @@ family:
           - name: it82302ax
           - name: it82202bw
           - name: it82302bw
+  - name: ite_ec
+    series:
+      - name: it51xxx
+        socs:
+          - name: it51526aw
