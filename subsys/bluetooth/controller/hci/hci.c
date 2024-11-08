@@ -5917,7 +5917,6 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 	struct bt_hci_iso_sdu_hdr *iso_sdu_hdr;
 	struct isoal_sdu_tx sdu_frag_tx;
 	struct bt_hci_iso_hdr *iso_hdr;
-	uint32_t *time_stamp;
 	uint16_t handle;
 	uint8_t pb_flag;
 	uint8_t ts_flag;
@@ -5965,9 +5964,8 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 	sdu_frag_tx.cntr_time_stamp = HAL_TICKER_TICKS_TO_US(ticker_ticks_now_get());
 	if (ts_flag) {
 		/* Use HCI provided time stamp */
-		time_stamp = net_buf_pull_mem(buf, sizeof(*time_stamp));
-		len -= sizeof(*time_stamp);
-		sdu_frag_tx.time_stamp = sys_le32_to_cpu(*time_stamp);
+		sdu_frag_tx.time_stamp = net_buf_pull_le32(buf);
+		len -= sizeof(uint32_t);
 	} else {
 		/* Use controller's capture time */
 		sdu_frag_tx.time_stamp = sdu_frag_tx.cntr_time_stamp;
