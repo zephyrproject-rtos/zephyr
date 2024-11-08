@@ -526,6 +526,10 @@ Drivers and Sensors
   * Added support for more OmniVision OV2640 controls (:dtcompatible:`ovti,ov2640`)
   * Added support for more OmniVision OV5640 controls (:dtcompatible:`ovti,ov5640`)
 
+* W1
+
+  * Added 1-Wire master driver for Analog Devices MAX32 SoC series (:dtcompatible:`adi,max32-w1`)
+
 * Watchdog
 
 * Wi-Fi
