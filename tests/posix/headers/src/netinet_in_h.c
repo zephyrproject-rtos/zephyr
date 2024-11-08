@@ -65,10 +65,10 @@ ZTEST(posix_headers, test_netinet_in_h)
 
 	zassert_equal(IPV6_ADD_MEMBERSHIP, IPV6_JOIN_GROUP);
 	zassert_equal(IPV6_DROP_MEMBERSHIP, IPV6_LEAVE_GROUP);
-	/* zassert_not_equal(-1, IPV6_MULTICAST_HOPS); */ /* not implemented */
+	zassert_not_equal(-1, IPV6_MULTICAST_HOPS);
 	/* zassert_not_equal(-1, IPV6_MULTICAST_IF); */ /* not implemented */
 	/* zassert_not_equal(-1, IPV6_MULTICAST_LOOP); */ /* not implemented */
-	/* zassert_not_equal(-1, IPV6_UNICAST_HOPS); */ /* not implemented */
+	zassert_not_equal(-1, IPV6_UNICAST_HOPS);
 	zassert_not_equal(-1, IPV6_V6ONLY);
 
 	/* IN6_IS_ADDR_UNSPECIFIED(&any6); */ /* not implemented */
