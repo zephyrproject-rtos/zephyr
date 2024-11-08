@@ -52,7 +52,7 @@ In Zephyr this API is split into the following layers.
      includes a 8-bit `1-Wire Family Code`_ and a 8-bit CRC.
    * In order to find slaves on the bus, the standard specifies an search
      algorithm which successively detects all slaves on the bus.
-     This algorithm is described in detail by `Maxim's Applicationnote 187`_.
+     This algorithm is described in the `1-Wire Search Algorithm Application Note`_.
 
 * Transport layer and Presentation layer functions are not implemented in the
   generic 1-Wire driver and therefore must be handled in individual slave drivers.
@@ -91,10 +91,10 @@ Functions that are not directly related to any of the networking layers.
 
 
 .. _BOOK OF IBUTTON STANDARDS:
-   https://www.maximintegrated.com/en/design/technical-documents/app-notes/9/937.html
+   https://www.analog.com/en/resources/technical-articles/book-of-ibuttonreg-standards.html
 
 .. _1-Wire Family Code:
-   https://www.maximintegrated.com/en/design/technical-documents/app-notes/1/155.html
+   https://www.analog.com/en/resources/technical-articles/1wire-software-resource-guide-device-description.html
 
-.. _Maxim's Applicationnote 187:
-   https://www.maximintegrated.com/en/design/technical-documents/app-notes/1/187.html
+.. _1-Wire Search Algorithm Application Note:
+   https://www.analog.com/en/resources/app-notes/1wire-search-algorithm.html
