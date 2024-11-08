@@ -1,0 +1,14 @@
+identifier: it515xx_evb
+name: ITE IT51XXX EVB
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+ram: 128
+supported:
+  - flash
+  - gpio
+  - pinctrl
+  - pm
+  - uart
+vendor: ite
