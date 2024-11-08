@@ -1225,6 +1225,12 @@ struct ip_mreqn {
 /** Leave IPv6 multicast group. */
 #define IPV6_DROP_MEMBERSHIP 21
 
+/** Join IPv6 multicast group. */
+#define IPV6_JOIN_GROUP IPV6_ADD_MEMBERSHIP
+
+/** Leave IPv6 multicast group. */
+#define IPV6_LEAVE_GROUP IPV6_DROP_MEMBERSHIP
+
 /**
  * @brief Struct used when joining or leaving a IPv6 multicast group.
  */
