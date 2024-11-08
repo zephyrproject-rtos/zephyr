@@ -1,0 +1,22 @@
+# Copyright (c) 2025 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_IT51XXX
+	bool
+	select SOC_FAMILY_ITE_EC
+	help
+	  Enable support for ITE IT51XXX
+
+config SOC_IT51XXX
+	bool
+	select SOC_SERIES_IT51XXX
+
+config SOC_IT51526AW
+	bool
+	select SOC_IT51XXX
+
+config SOC_SERIES
+	default "it51xxx" if SOC_SERIES_IT51XXX
+
+config SOC
+	default "it51526aw" if SOC_IT51526AW
