@@ -173,7 +173,7 @@ class ExecutionCounter(object):
         print(f"{'Total test cases: ':<18}{self.cases}")
         print(f"├─ {'Filtered test cases: ':<21}{self.filtered_cases:>{total_cases_n_length}}")
         print(f"├─ {'Skipped test cases: ':<21}{self.skipped_cases:>{total_cases_n_length}}")
-        print(f"└─ {'Executed test cases: ':<21}{executed_cases:>{total_cases_n_length}}")
+        print(f"└─ {'Selected test cases: ':<21}{executed_cases:>{total_cases_n_length}}")
         print(f"   ├─ {'Passed test cases: ':<25}{self.passed_cases:>{executed_cases_n_length}}")
         print(f"   ├─ {'Built only test cases: ':<25}{self.notrun_cases:>{executed_cases_n_length}}")
         print(f"   ├─ {'Blocked test cases: ':<25}{self.blocked_cases:>{executed_cases_n_length}}")
