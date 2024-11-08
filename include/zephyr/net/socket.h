@@ -1295,6 +1295,46 @@ struct in6_pktinfo {
 #define SOMAXCONN 128
 /** @} */
 
+/**
+ * @name Macros for checking special IPv6 addresses.
+ * @{
+ */
+/** Check unspecified IPv6 address. */
+#define IN6_IS_ADDR_UNSPECIFIED(addr) \
+	net_ipv6_addr_cmp(net_ipv6_unspecified_address(), addr)
+
+/** Check loopback IPv6 address. */
+#define IN6_IS_ADDR_LOOPBACK(addr) net_ipv6_is_addr_loopback(addr)
+
+/** Check IPv6 multicast address */
+#define IN6_IS_ADDR_MULTICAST(addr) net_ipv6_is_addr_mcast(addr)
+
+/** Check IPv6 link local address */
+#define IN6_IS_ADDR_LINKLOCAL(addr) net_ipv6_is_ll_addr(addr)
+
+/** Check IPv6 site local address */
+#define IN6_IS_ADDR_SITELOCAL(addr) net_ipv6_is_sl_addr(addr)
+
+/** Check IPv6 v4 mapped address */
+#define IN6_IS_ADDR_V4MAPPED(addr) net_ipv6_addr_is_v4_mapped(addr)
+
+/** Check IPv6 multicast global address */
+#define IN6_IS_ADDR_MC_GLOBAL(addr) net_ipv6_is_addr_mcast_global(addr)
+
+/** Check IPv6 multicast node local address */
+#define IN6_IS_ADDR_MC_NODELOCAL(addr) net_ipv6_is_addr_mcast_iface(addr)
+
+/** Check IPv6 multicast link local address */
+#define IN6_IS_ADDR_MC_LINKLOCAL(addr) net_ipv6_is_addr_mcast_link(addr)
+
+/** Check IPv6 multicast site local address */
+#define IN6_IS_ADDR_MC_SITELOCAL(addr) net_ipv6_is_addr_mcast_site(addr)
+
+/** Check IPv6 multicast organization local address */
+#define IN6_IS_ADDR_MC_ORGLOCAL(addr) net_ipv6_is_addr_mcast_org(addr)
+
+/** @} */
+
 /** @cond INTERNAL_HIDDEN */
 /**
  * @brief Registration information for a given BSD socket family.

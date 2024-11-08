@@ -45,6 +45,23 @@ ZTEST(posix_headers, test_netinet_in_h)
 	struct in6_addr any6 = IN6ADDR_ANY_INIT;
 	struct in6_addr lo6 = IN6ADDR_LOOPBACK_INIT;
 
+	struct in6_addr mcast6 = { { { 0xff, 0 } } };
+	struct in6_addr ll6 = { { { 0xfe, 0x80, 0x01, 0x02,
+				0, 0, 0, 0, 0, 0x01 } } };
+	struct in6_addr sl6  = { { { 0xfe, 0xc0, 0, 0x01, 0x02 } } };
+	struct in6_addr v4mapped = { { { 0, 0, 0, 0, 0, 0, 0, 0,
+				0xff, 0xff, 0xff, 0xff, 0xc0, 0, 0x02, 0x01 } } };
+	struct in6_addr mcnl6 = { { { 0xff, 0x01, 0, 0, 0, 0, 0, 0,
+				0, 0, 0, 0, 0, 0, 0, 0x01 } } };
+	struct in6_addr mcll6 = { { { 0xff, 0x02, 0, 0, 0, 0, 0, 0,
+				0, 0, 0, 0, 0, 0, 0, 0x01 } } };
+	struct in6_addr mcsl6 = { { { 0xff, 0x05, 0, 0, 0, 0, 0, 0,
+				0, 0, 0, 0, 0, 0, 0, 0x01 } } };
+	struct in6_addr mcol6 = { { { 0xff, 0x08, 0, 0, 0, 0, 0, 0,
+				0, 0, 0, 0, 0, 0, 0, 0x01 } } };
+	struct in6_addr mcg6 = { { { 0xff, 0x0e, 0, 0, 0, 0, 0, 0,
+				0, 0, 0, 0, 0, 0, 0, 0x01 } } };
+
 	/* not implemented */
 	/* zassert_not_equal(-1, offsetof(struct ipv6_mreq, ipv6mr_multiaddr)); */
 	/* not implemented */
@@ -71,18 +88,18 @@ ZTEST(posix_headers, test_netinet_in_h)
 	zassert_not_equal(-1, IPV6_UNICAST_HOPS);
 	zassert_not_equal(-1, IPV6_V6ONLY);
 
-	/* IN6_IS_ADDR_UNSPECIFIED(&any6); */ /* not implemented */
-	/* IN6_IS_ADDR_LOOPBACK(&lo6); */ /* not implemented */
+	zassert_true(IN6_IS_ADDR_UNSPECIFIED(&any6));
+	zassert_true(IN6_IS_ADDR_LOOPBACK(&lo6));
 
-	/* IN6_IS_ADDR_MULTICAST(&lo6); */ /* not implemented */
-	/* IN6_IS_ADDR_LINKLOCAL(&lo6); */ /* not implemented */
-	/* IN6_IS_ADDR_SITELOCAL(&lo6); */ /* not implemented */
-	/* IN6_IS_ADDR_V4MAPPED(&lo6); */ /* not implemented */
+	zassert_true(IN6_IS_ADDR_MULTICAST(&mcast6));
+	zassert_true(IN6_IS_ADDR_LINKLOCAL(&ll6));
+	zassert_true(IN6_IS_ADDR_SITELOCAL(&sl6));
+	zassert_true(IN6_IS_ADDR_V4MAPPED(&v4mapped));
 	/* IN6_IS_ADDR_V4COMPAT(&lo6); */ /* not implemented */
-	/* IN6_IS_ADDR_MC_NODELOCAL(&lo6); */ /* not implemented */
-	/* IN6_IS_ADDR_MC_LINKLOCAL(&lo6); */ /* not implemented */
-	/* IN6_IS_ADDR_MC_SITELOCAL(&lo6); */ /* not implemented */
-	/* IN6_IS_ADDR_MC_ORGLOCAL(&lo6); */ /* not implemented */
-	/* IN6_IS_ADDR_MC_GLOBAL(&lo6); */ /* not implemented */
+	zassert_true(IN6_IS_ADDR_MC_NODELOCAL(&mcnl6));
+	zassert_true(IN6_IS_ADDR_MC_LINKLOCAL(&mcll6));
+	zassert_true(IN6_IS_ADDR_MC_SITELOCAL(&mcsl6));
+	zassert_true(IN6_IS_ADDR_MC_ORGLOCAL(&mcol6));
+	zassert_true(IN6_IS_ADDR_MC_GLOBAL(&mcg6));
 }
 #pragma GCC diagnostic pop
