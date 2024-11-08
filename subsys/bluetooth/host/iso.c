@@ -910,7 +910,7 @@ int bt_iso_chan_send_ts(struct bt_iso_chan *chan, struct net_buf *buf, uint16_t 
 	BT_ISO_DATA_DBG("chan %p len %zu", chan, net_buf_frags_len(buf));
 
 	hdr = net_buf_push(buf, sizeof(*hdr));
-	hdr->ts = ts;
+	hdr->ts = sys_cpu_to_le32(ts);
 	hdr->sdu.sn = sys_cpu_to_le16(seq_num);
 	hdr->sdu.slen = sys_cpu_to_le16(
 		bt_iso_pkt_len_pack(net_buf_frags_len(buf) - sizeof(*hdr), BT_ISO_DATA_VALID));
