@@ -1071,6 +1071,12 @@ Trusted Firmware-M (TF-M)
 * TF-M was updated to version 2.1.1 (from 2.1.0).
   The release notes can be found at: https://trustedfirmware-m.readthedocs.io/en/tf-mv2.1.1/releases/2.1.1.html
 
+Nanopb
+******
+
+* Updated the nanopb module to version 0.4.9.
+  Full release notes at https://github.com/nanopb/nanopb/blob/0.4.9/CHANGELOG.txt
+
 LVGL
 ****
 
