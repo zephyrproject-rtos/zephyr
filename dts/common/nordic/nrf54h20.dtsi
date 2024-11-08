@@ -224,7 +224,15 @@
 		cpuapp_uicr: uicr@fff8000 {
 			compatible = "nordic,nrf-uicr-v2";
 			reg = <0xfff8000 DT_SIZE_K(2)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0xfff8000 DT_SIZE_K(2)>;
 			domain = <2>;
+
+			bicr: bicr@7b0 {
+				compatible = "nordic,nrf-bicr";
+				reg = <0x7b0 48>;
+			};
 		};
 
 		cpurad_uicr: uicr@fffa000 {
