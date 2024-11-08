@@ -42,6 +42,7 @@ This boards include models of some of the nRF54L15 SOC peripherals:
 * ECB (AES electronic codebook mode encryption)
 * EGU (Event Generator Unit)
 * FICR (Factory Information Configuration Registers)
+* GPIO & GPIOTE
 * GRTC (Global Real-time Counter)
 * PPIB (PPI Bridge)
 * RADIO
