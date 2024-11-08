@@ -459,6 +459,7 @@ void intel_adsp_hda_dma_isr(void)
 	bool triggered_interrupts = false;
 	int i, j;
 	int expected_interrupts = 0;
+	atomic_val_t enabled_chs;
 	const struct device *host_dev[] = {
 #if CONFIG_DMA_INTEL_ADSP_HDA_HOST_OUT
 		DT_FOREACH_STATUS_OKAY(intel_adsp_hda_host_out, DEVICE_DT_GET_AND_COMMA)
@@ -479,10 +480,12 @@ void intel_adsp_hda_dma_isr(void)
 	for (i = 0; i < ARRAY_SIZE(host_dev); i++) {
 		dma_ctx = (struct dma_context *)host_dev[i]->data;
 		cfg = host_dev[i]->config;
-
-		for (j = 0; j < dma_ctx->dma_channels; j++) {
-			if (!atomic_test_bit(dma_ctx->atomic, j))
+		enabled_chs = atomic_get(dma_ctx->atomic);
+		for (j = 0; enabled_chs && j < dma_ctx->dma_channels; j++) {
+			if (!(enabled_chs & BIT(j))) {
 				continue;
+			}
+			enabled_chs &= ~(BIT(j));
 
 			if (!intel_adsp_hda_is_buffer_interrupt_enabled(cfg->base,
 									cfg->regblock_size, j))
