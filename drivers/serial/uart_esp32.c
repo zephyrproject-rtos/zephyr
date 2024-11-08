@@ -170,6 +170,29 @@ static int uart_esp32_err_check(const struct device *dev)
 }
 
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+
+static uint32_t uart_esp32_get_standard_baud(uint32_t calc_baud)
+{
+	const uint32_t standard_bauds[] = {9600,  14400,  19200,  38400,  57600,
+					   74880, 115200, 230400, 460800, 921600};
+	int num_bauds = ARRAY_SIZE(standard_bauds);
+	uint32_t baud = calc_baud;
+
+	/* Find the standard baudrate within 0.1% range. If no close
+	 * value is found, input is returned.
+	 */
+	for (int i = 0; i < num_bauds; i++) {
+		float range = (float)abs(calc_baud - standard_bauds[i]) / standard_bauds[i];
+
+		if (range < 0.001f) {
+			baud = standard_bauds[i];
+			break;
+		}
+	}
+
+	return baud;
+}
+
 static int uart_esp32_config_get(const struct device *dev, struct uart_config *cfg)
 {
 	struct uart_esp32_data *data = dev->data;
@@ -179,11 +202,14 @@ static int uart_esp32_config_get(const struct device *dev, struct uart_config *c
 	uart_hw_flowcontrol_t hw_flow;
 	uart_sclk_t src_clk;
 	uint32_t sclk_freq;
+	uint32_t calc_baud;
 
 	uart_hal_get_sclk(&data->hal, &src_clk);
 	esp_clk_tree_src_get_freq_hz((soc_module_clk_t)src_clk,
 		ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sclk_freq);
-	uart_hal_get_baudrate(&data->hal, &cfg->baudrate, sclk_freq);
+
+	uart_hal_get_baudrate(&data->hal, &calc_baud, sclk_freq);
+	cfg->baudrate = uart_esp32_get_standard_baud(calc_baud);
 
 	uart_hal_get_parity(&data->hal, &parity);
 	switch (parity) {
