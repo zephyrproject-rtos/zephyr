@@ -10,9 +10,6 @@
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/sys/dlist.h>
 
-extern int32_t z_sched_prio_cmp(struct k_thread *thread_1,
-	struct k_thread *thread_2);
-
 bool z_priq_rb_lessthan(struct rbnode *a, struct rbnode *b);
 
 /* Dumb Scheduling */
@@ -62,6 +59,47 @@ bool z_priq_rb_lessthan(struct rbnode *a, struct rbnode *b);
 static ALWAYS_INLINE void z_priq_dumb_init(sys_dlist_t *pq)
 {
 	sys_dlist_init(pq);
+}
+
+/*
+ * Return value same as e.g. memcmp
+ * > 0 -> thread 1 priority  > thread 2 priority
+ * = 0 -> thread 1 priority == thread 2 priority
+ * < 0 -> thread 1 priority  < thread 2 priority
+ * Do not rely on the actual value returned aside from the above.
+ * (Again, like memcmp.)
+ */
+static ALWAYS_INLINE int32_t z_sched_prio_cmp(struct k_thread *thread_1, struct k_thread *thread_2)
+{
+	/* `prio` is <32b, so the below cannot overflow. */
+	int32_t b1 = thread_1->base.prio;
+	int32_t b2 = thread_2->base.prio;
+
+	if (b1 != b2) {
+		return b2 - b1;
+	}
+
+#ifdef CONFIG_SCHED_DEADLINE
+	/* If we assume all deadlines live within the same "half" of
+	 * the 32 bit modulus space (this is a documented API rule),
+	 * then the latest deadline in the queue minus the earliest is
+	 * guaranteed to be (2's complement) non-negative.  We can
+	 * leverage that to compare the values without having to check
+	 * the current time.
+	 */
+	uint32_t d1 = thread_1->base.prio_deadline;
+	uint32_t d2 = thread_2->base.prio_deadline;
+
+	if (d1 != d2) {
+		/* Sooner deadline means higher effective priority.
+		 * Doing the calculation with unsigned types and casting
+		 * to signed isn't perfect, but at least reduces this
+		 * from UB on overflow to impdef.
+		 */
+		return (int32_t)(d2 - d1);
+	}
+#endif /* CONFIG_SCHED_DEADLINE */
+	return 0;
 }
 
 static ALWAYS_INLINE void z_priq_dumb_add(sys_dlist_t *pq, struct k_thread *thread)
