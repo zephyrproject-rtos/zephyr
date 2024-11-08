@@ -5,12 +5,10 @@
  */
 
 /**
- * Driver for DS18B20 1-Wire temperature sensors
- * A datasheet is available at:
- * https://datasheets.maximintegrated.com/en/ds/DS18B20.pdf
- *
- * Driver also support the older DS18S20 1-Wire temperature sensors.
- * https://www.analog.com/media/en/technical-documentation/data-sheets/ds18b20.pdf
+ * Driver for DS18B20 and DS18S20 1-Wire temperature sensors
+ * Datasheets for the compatible sensors are available at:
+ * - https://www.analog.com/media/en/technical-documentation/data-sheets/ds18b20.pdf
+ * - https://www.analog.com/media/en/technical-documentation/data-sheets/ds18s20.pdf
  *
  * Parasite power configuration is not supported by the driver.
  */
