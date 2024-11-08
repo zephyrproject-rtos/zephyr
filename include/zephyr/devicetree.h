@@ -13,8 +13,8 @@
  * API for accessing the current application's devicetree macros.
  */
 
-#ifndef DEVICETREE_H
-#define DEVICETREE_H
+#ifndef ZEPHYR_INCLUDE_DEVICETREE_H_
+#define ZEPHYR_INCLUDE_DEVICETREE_H_
 
 #include <zephyr/devicetree_generated.h>
 #include <zephyr/irq_multilevel.h>
@@ -5157,4 +5157,4 @@
 #include <zephyr/devicetree/reset.h>
 #include <zephyr/devicetree/mbox.h>
 
-#endif /* DEVICETREE_H */
+#endif /* ZEPHYR_INCLUDE_DEVICETREE_H_ */
