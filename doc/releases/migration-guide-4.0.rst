@@ -75,6 +75,12 @@ Mbed TLS
   corresponding build symbol was removed in Mbed TLS 3.1.0 and is now assumed to
   be enabled. (:github:`77657`)
 
+TinyCrypt
+=========
+
+Albeit the formal deprecation of TinyCrypt is not started yet, its removal from
+the Zephyr codebase is. Formal deprecation will happen in the next release.
+
 Trusted Firmware-M
 ==================
 
