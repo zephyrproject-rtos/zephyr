@@ -58,7 +58,7 @@ ZTEST(posix_headers, test_netinet_in_h)
 	zassert_not_equal(-1, IPPROTO_UDP);
 
 	zassert_not_equal(-1, INADDR_ANY);
-	/* zassert_not_equal(-1, INADDR_BROADCAST); */ /* not implemented */
+	zassert_equal(0xffffffff, INADDR_BROADCAST);
 
 	zassert_equal(INET_ADDRSTRLEN, 16);
 	zassert_equal(INET6_ADDRSTRLEN, 46);
