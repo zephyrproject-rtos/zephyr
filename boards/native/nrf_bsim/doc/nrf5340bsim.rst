@@ -43,6 +43,7 @@ These boards include models of some of the nRF5340 SOC peripherals:
 * RTC (Real Time Counter)
 * TEMP (Temperature sensor)
 * TIMER
+* UARTE (UART with Easy DMA)
 * UICR (User Information Configuration Registers)
 
 and will use the same drivers as the nrf5340dk targets for these.
