@@ -1,0 +1,70 @@
+/*
+ * Copyright (c) 2025 ITE Corporation. All Rights Reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <zephyr/dt-bindings/dt-util.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "ite,riscv-ite", "riscv";
+			riscv,isa = "rv32imcb_zifencei";
+			device_type = "cpu";
+			reg = <0>;
+			clock-frequency = <32768>;
+			cpu-power-states = <&standby>;
+		};
+
+		power-states {
+			standby: standby {
+				compatible = "zephyr,power-state";
+				power-state-name = "standby";
+				min-residency-us = <500>;
+			};
+		};
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		flashctrl: flash-controller@f01000 {
+			compatible = "ite,it51xxx-flash-controller";
+			reg = <0x00f01000 0x100>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				reg = <0 DT_SIZE_M(1)>;
+				erase-block-size = <4096>;
+				write-block-size = <4>;
+			};
+		};
+
+		sram0: memory@800000 {
+			compatible = "mmio-sram";
+			reg = <0x800000 DT_SIZE_K(128)>;
+		};
+
+		gpiogcr: gpio-gcr@f01600 {
+			compatible = "ite,it51xxx-gpiogcr";
+			reg = <0x00f01600 0x100>;
+		};
+
+		gctrl: general-control@f02000 {
+			compatible = "ite,it51xxx-gctrl";
+			reg = <0x00f02000 0x100>;
+		};
+	};
+};
