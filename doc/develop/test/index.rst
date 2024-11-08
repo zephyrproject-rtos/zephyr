@@ -12,4 +12,3 @@ Testing
    pytest
    coverage
    BabbleSim<bsim>
-   ztest_deprecated
