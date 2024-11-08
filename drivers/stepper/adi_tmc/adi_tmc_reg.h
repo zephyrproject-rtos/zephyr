@@ -97,7 +97,7 @@ extern "C" {
 	(TMC5041_RAMPSTAT_POS_REACHED_EVENT_MASK >> TMC5041_RAMPSTAT_INT_SHIFT)
 
 #define TMC5041_RAMPSTAT_STOP_SG_EVENT_MASK BIT(6)
-#define TMC5041_STOP_SG_EVENT	(TMC5041_RAMPSTAT_STOP_SG_EVENT_MASK >> TMC5041_RAMPSTAT_INT_SHIFT)
+#define TMC5041_STOP_SG_EVENT               (TMC5041_RAMPSTAT_STOP_SG_EVENT_MASK >> TMC5041_RAMPSTAT_INT_SHIFT)
 
 #define TMC5041_RAMPSTAT_STOP_RIGHT_EVENT_MASK BIT(5)
 #define TMC5041_STOP_RIGHT_EVENT                                                                   \
@@ -147,79 +147,78 @@ extern "C" {
  */
 
 #define TMC51XX_GCONF_TEST_MODE_SHIFT 17
-#define TMC51XX_GCONF_SHAFT_SHIFT 4
+#define TMC51XX_GCONF_SHAFT_SHIFT     4
 
-#define TMC51XX_DRV_STATUS_STST_BIT        BIT(31)
+#define TMC51XX_DRV_STATUS_STST_BIT BIT(31)
 
-#define TMC51XX_WRITE_BIT       0x80U
-#define TMC51XX_ADDRESS_MASK    0x7FU
+#define TMC51XX_WRITE_BIT    0x80U
+#define TMC51XX_ADDRESS_MASK 0x7FU
 
-#define TMC51XX_GCONF			0x00
-#define TMC51XX_GSTAT			0x01
-#define TMC51XX_IFCNT			0x02
-#define TMC51XX_SLAVECONF      	0x03
-#define TMC51XX_INP_OUT        	0x04
-#define TMC51XX_X_COMPARE      	0x05
-#define TMC51XX_OTP_PROG       	0x06
-#define TMC51XX_OTP_READ       	0x07
-#define TMC51XX_FACTORY_CONF   	0x08
-#define TMC51XX_SHORT_CONF     	0x09
-#define TMC51XX_DRV_CONF       	0x0A
-#define TMC51XX_GLOBAL_SCALER  	0x0B
-#define TMC51XX_OFFSET_READ    	0x0C
-#define TMC51XX_IHOLD_IRUN     	0x10
-#define TMC51XX_TPOWERDOWN     	0x11
-#define TMC51XX_TSTEP          	0x12
-#define TMC51XX_TPWMTHRS       	0x13
-#define TMC51XX_TCOOLTHRS      	0x14
-#define TMC51XX_THIGH          	0x15
+#define TMC51XX_GCONF         0x00
+#define TMC51XX_GSTAT         0x01
+#define TMC51XX_IFCNT         0x02
+#define TMC51XX_SLAVECONF     0x03
+#define TMC51XX_INP_OUT       0x04
+#define TMC51XX_X_COMPARE     0x05
+#define TMC51XX_OTP_PROG      0x06
+#define TMC51XX_OTP_READ      0x07
+#define TMC51XX_FACTORY_CONF  0x08
+#define TMC51XX_SHORT_CONF    0x09
+#define TMC51XX_DRV_CONF      0x0A
+#define TMC51XX_GLOBAL_SCALER 0x0B
+#define TMC51XX_OFFSET_READ   0x0C
+#define TMC51XX_IHOLD_IRUN    0x10
+#define TMC51XX_TPOWERDOWN    0x11
+#define TMC51XX_TSTEP         0x12
+#define TMC51XX_TPWMTHRS      0x13
+#define TMC51XX_TCOOLTHRS     0x14
+#define TMC51XX_THIGH         0x15
 
-#define TMC51XX_RAMPMODE       	0x20
-#define TMC51XX_XACTUAL        	0x21
-#define TMC51XX_VACTUAL        	0x22
-#define TMC51XX_VSTART         	0x23
-#define TMC51XX_A1             	0x24
-#define TMC51XX_V1             	0x25
-#define TMC51XX_AMAX           	0x26
-#define TMC51XX_VMAX           	0x27
-#define TMC51XX_DMAX           	0x28
-#define TMC51XX_D1             	0x2A
-#define TMC51XX_VSTOP          	0x2B
-#define TMC51XX_TZEROWAIT      	0x2C
-#define TMC51XX_XTARGET        	0x2D
+#define TMC51XX_RAMPMODE  0x20
+#define TMC51XX_XACTUAL   0x21
+#define TMC51XX_VACTUAL   0x22
+#define TMC51XX_VSTART    0x23
+#define TMC51XX_A1        0x24
+#define TMC51XX_V1        0x25
+#define TMC51XX_AMAX      0x26
+#define TMC51XX_VMAX      0x27
+#define TMC51XX_DMAX      0x28
+#define TMC51XX_D1        0x2A
+#define TMC51XX_VSTOP     0x2B
+#define TMC51XX_TZEROWAIT 0x2C
+#define TMC51XX_XTARGET   0x2D
 
-#define TMC51XX_VDCMIN         	0x33
-#define TMC51XX_SWMODE         	0x34
-#define TMC51XX_RAMPSTAT       	0x35
-#define TMC51XX_XLATCH         	0x36
-#define TMC51XX_ENCMODE        	0x38
-#define TMC51XX_XENC           	0x39
-#define TMC51XX_ENC_CONST      	0x3A
-#define TMC51XX_ENC_STATUS     	0x3B
-#define TMC51XX_ENC_LATCH      	0x3C
-#define TMC51XX_ENC_DEVIATION  	0x3D
+#define TMC51XX_VDCMIN        0x33
+#define TMC51XX_SWMODE        0x34
+#define TMC51XX_RAMPSTAT      0x35
+#define TMC51XX_XLATCH        0x36
+#define TMC51XX_ENCMODE       0x38
+#define TMC51XX_XENC          0x39
+#define TMC51XX_ENC_CONST     0x3A
+#define TMC51XX_ENC_STATUS    0x3B
+#define TMC51XX_ENC_LATCH     0x3C
+#define TMC51XX_ENC_DEVIATION 0x3D
 
-#define TMC51XX_MSLUT0         	0x60
-#define TMC51XX_MSLUT1         	0x61
-#define TMC51XX_MSLUT2         	0x62
-#define TMC51XX_MSLUT3         	0x63
-#define TMC51XX_MSLUT4         	0x64
-#define TMC51XX_MSLUT5         	0x65
-#define TMC51XX_MSLUT6         	0x66
-#define TMC51XX_MSLUT7         	0x67
-#define TMC51XX_MSLUTSEL       	0x68
-#define TMC51XX_MSLUTSTART     	0x69
-#define TMC51XX_MSCNT          	0x6A
-#define TMC51XX_MSCURACT       	0x6B
-#define TMC51XX_CHOPCONF       	0x6C
-#define TMC51XX_COOLCONF       	0x6D
-#define TMC51XX_DCCTRL         	0x6E
-#define TMC51XX_DRVSTATUS     	0x6F
-#define TMC51XX_PWMCONF        	0x70
-#define TMC51XX_PWMSCALE       	0x71
-#define TMC51XX_PWM_AUTO       	0x72
-#define TMC51XX_LOST_STEPS     	0x73
-
+#define TMC51XX_MSLUT0     0x60
+#define TMC51XX_MSLUT1     0x61
+#define TMC51XX_MSLUT2     0x62
+#define TMC51XX_MSLUT3     0x63
+#define TMC51XX_MSLUT4     0x64
+#define TMC51XX_MSLUT5     0x65
+#define TMC51XX_MSLUT6     0x66
+#define TMC51XX_MSLUT7     0x67
+#define TMC51XX_MSLUTSEL   0x68
+#define TMC51XX_MSLUTSTART 0x69
+#define TMC51XX_MSCNT      0x6A
+#define TMC51XX_MSCURACT   0x6B
+#define TMC51XX_CHOPCONF   0x6C
+#define TMC51XX_COOLCONF   0x6D
+#define TMC51XX_DCCTRL     0x6E
+#define TMC51XX_DRVSTATUS  0x6F
+#define TMC51XX_PWMCONF    0x70
+#define TMC51XX_PWMSCALE   0x71
+#define TMC51XX_PWM_AUTO   0x72
+#define TMC51XX_LOST_STEPS 0x73
 
 #define TMC51XX_RAMPMODE_POSITIONING_MODE       0
 #define TMC51XX_RAMPMODE_POSITIVE_VELOCITY_MODE 1
@@ -236,7 +235,7 @@ extern "C" {
 	(TMC51XX_RAMPSTAT_POS_REACHED_EVENT_MASK >> TMC51XX_RAMPSTAT_INT_SHIFT)
 
 #define TMC51XX_RAMPSTAT_STOP_SG_EVENT_MASK BIT(6)
-#define TMC51XX_STOP_SG_EVENT	(TMC51XX_RAMPSTAT_STOP_SG_EVENT_MASK >> TMC51XX_RAMPSTAT_INT_SHIFT)
+#define TMC51XX_STOP_SG_EVENT               (TMC51XX_RAMPSTAT_STOP_SG_EVENT_MASK >> TMC51XX_RAMPSTAT_INT_SHIFT)
 
 #define TMC51XX_RAMPSTAT_STOP_RIGHT_EVENT_MASK BIT(5)
 #define TMC51XX_STOP_RIGHT_EVENT                                                                   \

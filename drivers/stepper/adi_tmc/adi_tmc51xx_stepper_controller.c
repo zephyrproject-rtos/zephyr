@@ -14,7 +14,6 @@
 #include "adi_tmc_spi.h"
 
 #include <zephyr/logging/log.h>
-
 LOG_MODULE_REGISTER(tmc51xx, CONFIG_STEPPER_LOG_LEVEL);
 
 struct tmc51xx_data {
@@ -35,17 +34,16 @@ struct tmc51xx_config {
 	struct spi_dt_spec spi;
 	const uint32_t clock_frequency;
 	const uint16_t default_micro_step_res;
-	// StallGuard
+	/* StallGuard */
 	const int8_t sg_threshold;
 	const bool is_sg_enabled;
 	const uint32_t sg_velocity_check_interval_ms;
 	const uint32_t sg_threshold_velocity;
-	// Ramp
+	/* Ramp */
 #ifdef CONFIG_STEPPER_ADI_TMC_RAMP_GEN
 	const struct tmc_ramp_generator_data default_ramp_config;
 #endif
 };
-
 
 static int tmc51xx_write(const struct device *dev, const uint8_t reg_addr, const uint32_t reg_val)
 {
@@ -125,8 +123,7 @@ static int stallguard_enable(const struct device *dev, const bool enable)
 
 		int32_t actual_velocity;
 
-		err = tmc51xx_read(dev, TMC51XX_VACTUAL,
-				   &actual_velocity);
+		err = tmc51xx_read(dev, TMC51XX_VACTUAL, &actual_velocity);
 		if (err) {
 			LOG_ERR("Failed to read VACTUAL register");
 			return -EIO;
@@ -255,7 +252,6 @@ static void rampstat_work_handler(struct k_work *work)
 
 #endif
 
-
 static int tmc51xx_stepper_enable(const struct device *dev, const bool enable)
 {
 	LOG_DBG("Stepper motor controller %s %s", dev->name, enable ? "enabled" : "disabled");
@@ -318,8 +314,7 @@ static int tmc51xx_stepper_move(const struct device *dev, const int32_t steps)
 	}
 	int32_t target_position = position + steps;
 
-	err = tmc51xx_write(dev, TMC51XX_RAMPMODE,
-			    TMC51XX_RAMPMODE_POSITIONING_MODE);
+	err = tmc51xx_write(dev, TMC51XX_RAMPMODE, TMC51XX_RAMPMODE_POSITIONING_MODE);
 	if (err != 0) {
 		return -EIO;
 	}
@@ -335,11 +330,11 @@ static int tmc51xx_stepper_move(const struct device *dev, const int32_t steps)
 				  K_MSEC(config->sg_velocity_check_interval_ms));
 	}
 #ifdef CONFIG_STEPPER_ADI_TMC51XX_RAMPSTAT_POLL
-	//if (data->callback) {
+	if (data->callback) {
 		k_work_reschedule(
 			&data->rampstat_callback_dwork,
 			K_MSEC(CONFIG_STEPPER_ADI_TMC51XX_RAMPSTAT_POLL_INTERVAL_IN_MSEC));
-	//}
+	}
 #endif
 	return 0;
 }
@@ -404,8 +399,7 @@ static int tmc51xx_stepper_set_actual_position(const struct device *dev, const i
 {
 	int err;
 
-	err = tmc51xx_write(dev, TMC51XX_RAMPMODE,
-			    TMC51XX_RAMPMODE_HOLD_MODE);
+	err = tmc51xx_write(dev, TMC51XX_RAMPMODE, TMC51XX_RAMPMODE_HOLD_MODE);
 	if (err != 0) {
 		return -EIO;
 	}
@@ -441,8 +435,7 @@ static int tmc51xx_stepper_set_target_position(const struct device *dev, const i
 		stallguard_enable(dev, false);
 	}
 
-	err = tmc51xx_write(dev, TMC51XX_RAMPMODE,
-			    TMC51XX_RAMPMODE_POSITIONING_MODE);
+	err = tmc51xx_write(dev, TMC51XX_RAMPMODE, TMC51XX_RAMPMODE_POSITIONING_MODE);
 	if (err != 0) {
 		return -EIO;
 	}
@@ -483,8 +476,7 @@ static int tmc51xx_stepper_enable_constant_velocity_mode(const struct device *de
 
 	switch (direction) {
 	case STEPPER_DIRECTION_POSITIVE:
-		err = tmc51xx_write(dev, TMC51XX_RAMPMODE,
-				    TMC51XX_RAMPMODE_POSITIVE_VELOCITY_MODE);
+		err = tmc51xx_write(dev, TMC51XX_RAMPMODE, TMC51XX_RAMPMODE_POSITIVE_VELOCITY_MODE);
 		if (err != 0) {
 			return -EIO;
 		}
@@ -495,8 +487,7 @@ static int tmc51xx_stepper_enable_constant_velocity_mode(const struct device *de
 		break;
 
 	case STEPPER_DIRECTION_NEGATIVE:
-		err = tmc51xx_write(dev, TMC51XX_RAMPMODE,
-				    TMC51XX_RAMPMODE_NEGATIVE_VELOCITY_MODE);
+		err = tmc51xx_write(dev, TMC51XX_RAMPMODE, TMC51XX_RAMPMODE_NEGATIVE_VELOCITY_MODE);
 		if (err != 0) {
 			return -EIO;
 		}
@@ -631,7 +622,8 @@ static int tmc51xx_init(const struct device *dev)
 		int32_t stall_guard_threshold = (int32_t)config->sg_threshold;
 
 		err = tmc51xx_write(dev, TMC51XX_COOLCONF,
-			stall_guard_threshold << TMC51XX_COOLCONF_SG2_THRESHOLD_VALUE_SHIFT);
+				    stall_guard_threshold
+					    << TMC51XX_COOLCONF_SG2_THRESHOLD_VALUE_SHIFT);
 		if (err != 0) {
 			return -EIO;
 		}
@@ -661,67 +653,63 @@ static int tmc51xx_init(const struct device *dev)
 	return 0;
 }
 
-#define TMC_RAMP_DT_SPEC_GET(inst)						\
-	{									\
-		.vstart = DT_INST_PROP(inst, vstart),				\
-		.v1 = DT_INST_PROP(inst, v1),					\
-		.vmax = DT_INST_PROP(inst, vmax),					\
-		.a1 = DT_INST_PROP(inst, a1),					\
-		.amax = DT_INST_PROP(inst, amax),					\
-		.d1 = DT_INST_PROP(inst, d1),					\
-		.dmax = DT_INST_PROP(inst, dmax),					\
-		.vstop = DT_INST_PROP(inst, vstop),					\
-		.tzerowait = DT_INST_PROP(inst, tzerowait),				\
-		.vcoolthrs = DT_INST_PROP(inst, vcoolthrs),				\
-		.vhigh = DT_INST_PROP(inst, vhigh),					\
-		.iholdrun = (TMC51XX_IRUN(DT_INST_PROP(inst, irun)) |		\
-			     TMC51XX_IHOLD(DT_INST_PROP(inst, ihold)) |		\
-			     TMC51XX_IHOLDDELAY(DT_INST_PROP(inst, iholddelay))),	\
+#define TMC_RAMP_DT_SPEC_GET(inst)                                                                 \
+	{                                                                                          \
+		.vstart = DT_INST_PROP(inst, vstart), .v1 = DT_INST_PROP(inst, v1),                \
+		.vmax = DT_INST_PROP(inst, vmax), .a1 = DT_INST_PROP(inst, a1),                    \
+		.amax = DT_INST_PROP(inst, amax), .d1 = DT_INST_PROP(inst, d1),                    \
+		.dmax = DT_INST_PROP(inst, dmax), .vstop = DT_INST_PROP(inst, vstop),              \
+		.tzerowait = DT_INST_PROP(inst, tzerowait),                                        \
+		.vcoolthrs = DT_INST_PROP(inst, vcoolthrs), .vhigh = DT_INST_PROP(inst, vhigh),    \
+		.iholdrun = (TMC51XX_IRUN(DT_INST_PROP(inst, irun)) |                              \
+			     TMC51XX_IHOLD(DT_INST_PROP(inst, ihold)) |                            \
+			     TMC51XX_IHOLDDELAY(DT_INST_PROP(inst, iholddelay))),                  \
 	}
 
-#define TMC51XX_STEPPER_API_DEFINE(inst)							\
-	static const struct stepper_driver_api tmc51xx_api_##inst = {			\
-		.enable = tmc51xx_stepper_enable,						\
-		.is_moving = tmc51xx_stepper_is_moving,						\
-		.move = tmc51xx_stepper_move,							\
-		.set_max_velocity = tmc51xx_stepper_set_max_velocity,				\
-		.set_micro_step_res = tmc51xx_stepper_set_micro_step_res,			\
-		.get_micro_step_res = tmc51xx_stepper_get_micro_step_res,			\
-		.set_actual_position = tmc51xx_stepper_set_actual_position,			\
-		.get_actual_position = tmc51xx_stepper_get_actual_position,			\
-		.set_target_position = tmc51xx_stepper_set_target_position,			\
-		.enable_constant_velocity_mode = tmc51xx_stepper_enable_constant_velocity_mode,	\
-		.set_event_callback = tmc51xx_stepper_set_event_callback, 	\
+#define TMC51XX_STEPPER_API_DEFINE(inst)                                                           \
+	static const struct stepper_driver_api tmc51xx_api_##inst = {                              \
+		.enable = tmc51xx_stepper_enable,                                                  \
+		.is_moving = tmc51xx_stepper_is_moving,                                            \
+		.move = tmc51xx_stepper_move,                                                      \
+		.set_max_velocity = tmc51xx_stepper_set_max_velocity,                              \
+		.set_micro_step_res = tmc51xx_stepper_set_micro_step_res,                          \
+		.get_micro_step_res = tmc51xx_stepper_get_micro_step_res,                          \
+		.set_actual_position = tmc51xx_stepper_set_actual_position,                        \
+		.get_actual_position = tmc51xx_stepper_get_actual_position,                        \
+		.set_target_position = tmc51xx_stepper_set_target_position,                        \
+		.enable_constant_velocity_mode = tmc51xx_stepper_enable_constant_velocity_mode,    \
+		.set_event_callback = tmc51xx_stepper_set_event_callback,                          \
 	};
 
-#define TMC51XX_DEFINE(inst)									\
-	BUILD_ASSERT((DT_INST_PROP(inst, clock_frequency) > 0),					\
-		     "clock frequency must be non-zero positive value");			\
-	COND_CODE_1(DT_INST_PROP_EXISTS(inst, stallguard_threshold_velocity),			\
-	BUILD_ASSERT(DT_INST_PROP(inst, stallguard_threshold_velocity),				\
-			"stallguard threshold velocity must be a positive value"), ());		\
-	IF_ENABLED(CONFIG_STEPPER_ADI_TMC_RAMP_GEN, (CHECK_RAMP_DT_DATA(inst)));		\
-	static struct tmc51xx_data tmc51xx_data_##inst = {	\
-		.stepper = DEVICE_DT_INST_GET(inst), };				\
-	static const struct tmc51xx_config tmc51xx_config_##inst = {				\
-		.gconf = (									\
-		(DT_INST_PROP(inst, invert_direction) << TMC51XX_GCONF_SHAFT_SHIFT) | 	\
-		(DT_INST_PROP(inst, test_mode) << TMC51XX_GCONF_TEST_MODE_SHIFT)), \
-		.default_micro_step_res = DT_INST_PROP(inst, micro_step_res),		\
-		.spi = SPI_DT_SPEC_INST_GET(inst, (SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB |	\
-					SPI_MODE_CPOL | SPI_MODE_CPHA |	SPI_WORD_SET(8)), 0),	\
-		.clock_frequency = DT_INST_PROP(inst, clock_frequency), 	\
-		.is_sg_enabled = DT_INST_PROP(inst, activate_stallguard2),	\
-		COND_CODE_1(DT_INST_PROP(inst, activate_stallguard2),(			\
-			.sg_threshold = DT_INST_PROP(inst, stallguard2_threshold),				\
-			.sg_threshold_velocity = DT_INST_PROP(inst, stallguard_threshold_velocity),		\
-			.sg_velocity_check_interval_ms = DT_INST_PROP(inst,					\
-						stallguard_velocity_check_interval_ms), ), ())		\
-		IF_ENABLED(CONFIG_STEPPER_ADI_TMC_RAMP_GEN,					\
-		(.default_ramp_config = TMC_RAMP_DT_SPEC_GET(inst))) };		\
-	TMC51XX_STEPPER_API_DEFINE(inst) \
-	DEVICE_DT_INST_DEFINE(inst, tmc51xx_init, NULL, &tmc51xx_data_##inst,			\
-			      &tmc51xx_config_##inst, POST_KERNEL, CONFIG_STEPPER_INIT_PRIORITY,\
+#define TMC51XX_DEFINE(inst)                                                                       \
+	BUILD_ASSERT((DT_INST_PROP(inst, clock_frequency) > 0),                                    \
+		     "clock frequency must be non-zero positive value");                           \
+	COND_CODE_1(DT_INST_PROP_EXISTS(inst, stallguard_threshold_velocity), \
+	BUILD_ASSERT(DT_INST_PROP(inst, stallguard_threshold_velocity),	\
+			"stallguard threshold velocity must be a positive value"), ());                                                                  \
+	IF_ENABLED(CONFIG_STEPPER_ADI_TMC_RAMP_GEN, (CHECK_RAMP_DT_DATA(inst)));                    \
+	static struct tmc51xx_data tmc51xx_data_##inst = {                                         \
+		.stepper = DEVICE_DT_INST_GET(inst),                                               \
+	};                                                                                         \
+	static const struct tmc51xx_config tmc51xx_config_##inst = {                               \
+		.gconf = ((DT_INST_PROP(inst, invert_direction) << TMC51XX_GCONF_SHAFT_SHIFT) |    \
+			  (DT_INST_PROP(inst, test_mode) << TMC51XX_GCONF_TEST_MODE_SHIFT)),       \
+		.default_micro_step_res = DT_INST_PROP(inst, micro_step_res),                      \
+		.spi = SPI_DT_SPEC_INST_GET(inst,                                                  \
+					    (SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB |               \
+					     SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_WORD_SET(8)),     \
+					    0),                                                    \
+		.clock_frequency = DT_INST_PROP(inst, clock_frequency),                            \
+		.is_sg_enabled = DT_INST_PROP(inst, activate_stallguard2),                         \
+		COND_CODE_1(DT_INST_PROP(inst, activate_stallguard2), ( \
+			.sg_threshold = DT_INST_PROP(inst, stallguard2_threshold), \
+			.sg_threshold_velocity = DT_INST_PROP(inst, stallguard_threshold_velocity), \
+			.sg_velocity_check_interval_ms = DT_INST_PROP(inst, \
+						stallguard_velocity_check_interval_ms),), ()) IF_ENABLED(CONFIG_STEPPER_ADI_TMC_RAMP_GEN,	\
+		(.default_ramp_config = TMC_RAMP_DT_SPEC_GET(inst))) };   \
+	TMC51XX_STEPPER_API_DEFINE(inst)                                                           \
+	DEVICE_DT_INST_DEFINE(inst, tmc51xx_init, NULL, &tmc51xx_data_##inst,                      \
+			      &tmc51xx_config_##inst, POST_KERNEL, CONFIG_STEPPER_INIT_PRIORITY,   \
 			      &tmc51xx_api_##inst);
 
 DT_INST_FOREACH_STATUS_OKAY(TMC51XX_DEFINE)

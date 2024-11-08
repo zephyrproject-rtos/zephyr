@@ -19,7 +19,7 @@ static void parse_tmc_spi_status(const uint8_t status_byte)
 		LOG_WRN("spi dataframe: reset_flag detected");
 	}
 	if ((status_byte & BIT_MASK(1)) != 0) {
-		LOG_WRN("spi dataframe: driver_error/driver_error(1) detected");
+		LOG_WRN("spi dataframe: driver_error detected");
 	}
 #ifdef CONFIG_STEPPER_ADI_TMC5041
 	if ((status_byte & BIT_MASK(2)) != 0) {

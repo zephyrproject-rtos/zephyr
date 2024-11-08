@@ -285,7 +285,7 @@ class ClangFormatCheck(ComplianceTest):
     path_hint = "<git-top>"
 
     def run(self):
-        exe = f"clang-format-diff.{'exe' if platform.system() == 'Windows' else 'py'}"
+        exe = f"clang-format-diff{'exe' if platform.system() == 'Windows' else ''}"
 
         for file in get_files():
             if Path(file).suffix not in ['.c', '.h']:
