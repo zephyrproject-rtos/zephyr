@@ -730,11 +730,15 @@ static int espi_it8xxx2_receive_vwire(const struct device *dev,
 		return -EIO;
 	}
 
-	if (vw_reg->VW_INDEX[vw_index] & valid_mask) {
-		*level = !!(vw_reg->VW_INDEX[vw_index] & level_mask);
+	if (IS_ENABLED(CONFIG_ESPI_VWIRE_VALID_BIT_CHECK)) {
+		if (vw_reg->VW_INDEX[vw_index] & valid_mask) {
+			*level = !!(vw_reg->VW_INDEX[vw_index] & level_mask);
+		} else {
+			/* Not valid */
+			*level = 0;
+		}
 	} else {
-		/* Not valid */
-		*level = 0;
+		*level = !!(vw_reg->VW_INDEX[vw_index] & level_mask);
 	}
 
 	return 0;
