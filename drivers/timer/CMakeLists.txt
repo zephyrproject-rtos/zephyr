@@ -2,6 +2,7 @@
 
 zephyr_library()
 zephyr_library_sources(sys_clock_init.c)
+zephyr_library_sources_ifdef(CONFIG_LLEXT export.c)
 zephyr_library_sources_ifdef(CONFIG_ALTERA_AVALON_TIMER altera_avalon_timer_hal.c)
 zephyr_library_sources_ifdef(CONFIG_AMBIQ_STIMER_TIMER ambiq_stimer.c)
 zephyr_library_sources_ifdef(CONFIG_APIC_TIMER apic_timer.c)
