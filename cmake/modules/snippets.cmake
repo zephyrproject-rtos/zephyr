@@ -100,6 +100,11 @@ function(zephyr_process_snippets)
     OUTPUT_VARIABLE snippets_target_cmd)
   add_custom_target(snippets ${snippets_target_cmd} USES_TERMINAL)
 
+  # Generate snippets Kconfig file.
+  if (kconfig_snippets)
+    kconfig_gen("snippets" "Kconfig" "${kconfig_snippets}" "Zephyr snippets Kconfig files")
+  endif()
+
   # If snippets were requested, print messages for each one.
   if(SNIPPET_AS_LIST)
     # Print the requested snippets.

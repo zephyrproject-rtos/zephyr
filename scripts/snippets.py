@@ -52,13 +52,25 @@ class Snippet:
         '''Process the data in a snippet.yml file, after it is loaded into a
         python object and validated by pykwalify.'''
         def append_value(variable, value):
-            if variable in ('EXTRA_DTC_OVERLAY_FILE', 'EXTRA_CONF_FILE'):
+            if variable in ('EXTRA_DTC_OVERLAY_FILE', 'EXTRA_CONF_FILE', 'kconfig'):
                 path = pathobj.parent / value
                 if not path.is_file():
                     _err(f'snippet file {pathobj}: {variable}: file not found: {path}')
+                if variable == 'kconfig':
+                    basename = os.path.basename(path)
+                    dirname = os.path.dirname(path)
+                    if basename != 'Kconfig':
+                        _err(f'snippet file {pathobj} is not a Kconfig')
+                    return f'"{path.parent.as_posix()}"'
                 return f'"{path.as_posix()}"'
             if variable in ('DTS_EXTRA_CPPFLAGS'):
                 return f'"{value}"'
+            if variable in ('cmake'):
+                cmake_file = os.path.join(pathobj.parent, value, "CMakeLists.txt")
+                if not os.path.isfile(cmake_file):
+                    _err(f'snippet file {pathobj} file not found: {cmake_file}')
+                cmake_path = os.path.join(pathobj.parent, value)
+                return Path(cmake_path).resolve().as_posix()
             _err(f'unknown append variable: {variable}')
 
         for variable, value in snippet_data.get('append', {}).items():
@@ -170,9 +182,15 @@ if("${{BOARD}}${{BOARD_QUALIFIERS}}" STREQUAL "{board}")''')
     def print_appends(self, appends: Appends, indent: int):
         space = '  ' * indent
         for name, values in appends.items():
-            for value in values:
-                self.print(f'{space}zephyr_set({name} {value} SCOPE snippets APPEND)')
-
+            if name in ('kconfig'):
+                for value in values:
+                    self.print(f'list(APPEND kconfig_snippets {value})')
+            elif name in ('cmake'):
+                for value in values:
+                    self.print(f'#Fixme: {value})')
+            else:
+                for value in values:
+                    self.print(f'{space}zephyr_set({name} {value} SCOPE snippets APPEND)')
     def print(self, *args, **kwargs):
         kwargs['file'] = self.out_file
         print(*args, **kwargs)

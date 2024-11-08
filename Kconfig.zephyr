@@ -28,6 +28,9 @@ osource "$(KCONFIG_BOARD_DIR)/Kconfig.defconfig"
 # This loads Zephyr specific SoC root defconfigs
 source "$(KCONFIG_BINARY_DIR)/soc/Kconfig.defconfig"
 
+# This loads snippets Kconfigs
+osource "$(KCONFIG_BINARY_DIR)/snippets/Kconfig"
+
 # This loads the toolchain defconfigs
 osource "$(TOOLCHAIN_KCONFIG_DIR)/Kconfig.defconfig"
 # This loads the testsuite defconfig
