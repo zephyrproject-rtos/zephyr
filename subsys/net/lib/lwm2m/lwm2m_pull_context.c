@@ -446,11 +446,15 @@ int lwm2m_pull_context_start_transfer(char *uri, struct requesting_object req, k
 	context.result_cb = req.result_cb;
 	context.write_cb = req.write_cb;
 
-	(void)memset(&context.firmware_ctx, 0, sizeof(struct lwm2m_ctx));
 	(void)memset(&context.block_ctx, 0, sizeof(struct coap_block_context));
 	context.firmware_ctx.sock_fd = -1;
 
 	firmware_transfer();
 
 	return 0;
+}
+
+void lwm2m_pull_context_set_sockopt_callback(lwm2m_set_sockopt_cb_t set_sockopt_cb)
+{
+	context.firmware_ctx.set_socketoptions = set_sockopt_cb;
 }
