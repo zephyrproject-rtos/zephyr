@@ -1538,7 +1538,7 @@ int supplicant_status(const struct device *dev, struct wifi_iface_status *status
 			ret = z_wpa_ctrl_signal_poll(&signal_poll);
 			if (!ret) {
 				status->rssi = signal_poll.rssi;
-				status->current_phy_rate = signal_poll.current_txrate;
+				status->current_phy_tx_rate = signal_poll.current_txrate;
 			} else {
 				wpa_printf(MSG_WARNING, "%s: Failed to read signal poll info",
 						   __func__);
