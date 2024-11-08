@@ -219,25 +219,94 @@ static int cmd_discovery(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+struct bt_l2cap_br_server {
+	struct bt_l2cap_server server;
+#if defined(CONFIG_BT_L2CAP_RET_FC)
+	uint8_t options;
+#endif /* CONFIG_BT_L2CAP_RET_FC */
+};
+
+struct l2cap_br_chan {
+	struct bt_l2cap_br_chan chan;
+#if defined(CONFIG_BT_L2CAP_RET_FC)
+	struct k_fifo l2cap_recv_fifo;
+	bool hold_credit;
+#endif /* CONFIG_BT_L2CAP_RET_FC */
+};
+
 static int l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
+	struct l2cap_br_chan *br_chan = CONTAINER_OF(chan, struct l2cap_br_chan, chan.chan);
+
 	bt_shell_print("Incoming data channel %p len %u", chan, buf->len);
 
 	if (buf->len) {
-		shell_hexdump(ctx_shell, buf->data, buf->len);
+		bt_shell_hexdump(buf->data, buf->len);
 	}
+
+#if defined(CONFIG_BT_L2CAP_RET_FC)
+	if (br_chan->hold_credit) {
+		k_fifo_put(&br_chan->l2cap_recv_fifo, buf);
+		return -EINPROGRESS;
+	}
+#endif /* CONFIG_BT_L2CAP_RET_FC */
+	(void)br_chan;
 
 	return 0;
 }
 
 static void l2cap_connected(struct bt_l2cap_chan *chan)
 {
+	struct l2cap_br_chan *br_chan = CONTAINER_OF(chan, struct l2cap_br_chan, chan.chan);
+
 	bt_shell_print("Channel %p connected", chan);
+
+#if defined(CONFIG_BT_L2CAP_RET_FC)
+	switch (br_chan->chan.rx.mode) {
+	case BT_L2CAP_BR_LINK_MODE_BASIC:
+		bt_shell_print("It is basic mode");
+		if (br_chan->hold_credit) {
+			br_chan->hold_credit = false;
+			bt_shell_warn("hold_credit is unsupported in basic mode");
+		}
+		break;
+	case BT_L2CAP_BR_LINK_MODE_RET:
+		bt_shell_print("It is retransmission mode");
+		break;
+	case BT_L2CAP_BR_LINK_MODE_FC:
+		bt_shell_print("It is flow control mode");
+		break;
+	case BT_L2CAP_BR_LINK_MODE_ERET:
+		bt_shell_print("It is enhance retransmission mode");
+		break;
+	case BT_L2CAP_BR_LINK_MODE_STREAM:
+		bt_shell_print("It is streaming mode");
+		break;
+	default:
+		bt_shell_error("It is unknown mode");
+		break;
+	}
+#endif /* CONFIG_BT_L2CAP_RET_FC */
+	(void)br_chan;
 }
 
 static void l2cap_disconnected(struct bt_l2cap_chan *chan)
 {
+#if defined(CONFIG_BT_L2CAP_RET_FC)
+	struct net_buf *buf;
+	struct l2cap_br_chan *br_chan = CONTAINER_OF(chan, struct l2cap_br_chan, chan.chan);
+#endif /* CONFIG_BT_L2CAP_RET_FC */
+
 	bt_shell_print("Channel %p disconnected", chan);
+
+#if defined(CONFIG_BT_L2CAP_RET_FC)
+	do {
+		buf = k_fifo_get(&br_chan->l2cap_recv_fifo, K_NO_WAIT);
+		if (buf != NULL) {
+			net_buf_unref(buf);
+		}
+	} while (buf != NULL);
+#endif /* CONFIG_BT_L2CAP_RET_FC */
 }
 
 static struct net_buf *l2cap_alloc_buf(struct bt_l2cap_chan *chan)
@@ -254,47 +323,148 @@ static const struct bt_l2cap_chan_ops l2cap_ops = {
 	.disconnected	= l2cap_disconnected,
 };
 
-static struct bt_l2cap_br_chan l2cap_chan = {
-	.chan.ops	= &l2cap_ops,
-	 /* Set for now min. MTU */
-	.rx.mtu		= DATA_BREDR_MTU,
+#define BT_L2CAP_BR_SERVER_OPT_RET           BIT(0)
+#define BT_L2CAP_BR_SERVER_OPT_FC            BIT(1)
+#define BT_L2CAP_BR_SERVER_OPT_ERET          BIT(2)
+#define BT_L2CAP_BR_SERVER_OPT_STREAM        BIT(3)
+#define BT_L2CAP_BR_SERVER_OPT_MODE_OPTIONAL BIT(4)
+#define BT_L2CAP_BR_SERVER_OPT_EXT_WIN_SIZE  BIT(5)
+#define BT_L2CAP_BR_SERVER_OPT_HOLD_CREDIT   BIT(6)
+
+static struct l2cap_br_chan l2cap_chan = {
+	.chan = {
+		.chan.ops = &l2cap_ops,
+		/* Set for now min. MTU */
+		.rx.mtu = DATA_BREDR_MTU,
+	},
+#if defined(CONFIG_BT_L2CAP_RET_FC)
+	.l2cap_recv_fifo = Z_FIFO_INITIALIZER(l2cap_chan.l2cap_recv_fifo),
+#endif /* CONFIG_BT_L2CAP_RET_FC */
 };
 
 static int l2cap_accept(struct bt_conn *conn, struct bt_l2cap_server *server,
 			struct bt_l2cap_chan **chan)
 {
+	struct bt_l2cap_br_server *br_server;
+
+	br_server = CONTAINER_OF(server, struct bt_l2cap_br_server, server);
+
 	bt_shell_print("Incoming BR/EDR conn %p", conn);
 
-	if (l2cap_chan.chan.conn) {
+	if (l2cap_chan.chan.chan.conn) {
 		bt_shell_error("No channels available");
 		return -ENOMEM;
 	}
 
-	*chan = &l2cap_chan.chan;
+	*chan = &l2cap_chan.chan.chan;
 
+#if defined(CONFIG_BT_L2CAP_RET_FC)
+	if (br_server->options & BT_L2CAP_BR_SERVER_OPT_HOLD_CREDIT) {
+		l2cap_chan.hold_credit = true;
+	} else {
+		l2cap_chan.hold_credit = false;
+	}
+
+	if (br_server->options & BT_L2CAP_BR_SERVER_OPT_EXT_WIN_SIZE) {
+		l2cap_chan.chan.rx.extended_control = true;
+	} else {
+		l2cap_chan.chan.rx.extended_control = false;
+	}
+
+	if (br_server->options & BT_L2CAP_BR_SERVER_OPT_MODE_OPTIONAL) {
+		l2cap_chan.chan.rx.optional = true;
+	} else {
+		l2cap_chan.chan.rx.optional = false;
+	}
+
+	l2cap_chan.chan.rx.fcs = BT_L2CAP_BR_FCS_16BIT;
+
+	if (br_server->options & BT_L2CAP_BR_SERVER_OPT_STREAM) {
+		l2cap_chan.chan.rx.mode = BT_L2CAP_BR_LINK_MODE_STREAM;
+		l2cap_chan.chan.rx.max_window = CONFIG_BT_L2CAP_MAX_WINDOW_SIZE;
+		l2cap_chan.chan.rx.max_transmit = 0;
+	} else if (br_server->options & BT_L2CAP_BR_SERVER_OPT_ERET) {
+		l2cap_chan.chan.rx.mode = BT_L2CAP_BR_LINK_MODE_ERET;
+		l2cap_chan.chan.rx.max_window = CONFIG_BT_L2CAP_MAX_WINDOW_SIZE;
+		l2cap_chan.chan.rx.max_transmit = 3;
+	} else if (br_server->options & BT_L2CAP_BR_SERVER_OPT_FC) {
+		l2cap_chan.chan.rx.mode = BT_L2CAP_BR_LINK_MODE_FC;
+		l2cap_chan.chan.rx.max_window = CONFIG_BT_L2CAP_MAX_WINDOW_SIZE;
+		l2cap_chan.chan.rx.max_transmit = 3;
+	} else if (br_server->options & BT_L2CAP_BR_SERVER_OPT_RET) {
+		l2cap_chan.chan.rx.mode = BT_L2CAP_BR_LINK_MODE_RET;
+		l2cap_chan.chan.rx.max_window = CONFIG_BT_L2CAP_MAX_WINDOW_SIZE;
+		l2cap_chan.chan.rx.max_transmit = 3;
+	}
+#endif /* CONFIG_BT_L2CAP_RET_FC */
+	(void)br_server;
 	return 0;
 }
 
-static struct bt_l2cap_server br_server = {
-	.accept = l2cap_accept,
+static struct bt_l2cap_br_server l2cap_server = {
+	.server = {
+		.accept = l2cap_accept,
+	},
 };
 
 static int cmd_l2cap_register(const struct shell *sh, size_t argc, char *argv[])
 {
-	if (br_server.psm) {
+	if (l2cap_server.server.psm) {
 		shell_print(sh, "Already registered");
 		return -ENOEXEC;
 	}
 
-	br_server.psm = strtoul(argv[1], NULL, 16);
+	l2cap_server.server.psm = strtoul(argv[1], NULL, 16);
 
-	if (bt_l2cap_br_server_register(&br_server) < 0) {
+#if defined(CONFIG_BT_L2CAP_RET_FC)
+	l2cap_server.options = 0;
+
+	if (!strcmp(argv[2], "none")) {
+		/* Support mode: None */
+	} else if (!strcmp(argv[2], "ret")) {
+		l2cap_server.options |= BT_L2CAP_BR_SERVER_OPT_RET;
+	} else if (!strcmp(argv[2], "fc")) {
+		l2cap_server.options |= BT_L2CAP_BR_SERVER_OPT_FC;
+	} else if (!strcmp(argv[2], "eret")) {
+		l2cap_server.options |= BT_L2CAP_BR_SERVER_OPT_ERET;
+	} else if (!strcmp(argv[2], "stream")) {
+		l2cap_server.options |= BT_L2CAP_BR_SERVER_OPT_STREAM;
+	} else {
+		l2cap_server.server.psm = 0;
+		shell_help(sh);
+		return SHELL_CMD_HELP_PRINTED;
+	}
+
+	for (size_t index = 3; index < argc; index++) {
+		if (!strcmp(argv[index], "hold_credit")) {
+			l2cap_server.options |= BT_L2CAP_BR_SERVER_OPT_HOLD_CREDIT;
+		} else if (!strcmp(argv[index], "mode_optional")) {
+			l2cap_server.options |= BT_L2CAP_BR_SERVER_OPT_MODE_OPTIONAL;
+		} else if (!strcmp(argv[index], "extended_control")) {
+			l2cap_server.options |= BT_L2CAP_BR_SERVER_OPT_EXT_WIN_SIZE;
+		} else {
+			l2cap_server.server.psm = 0;
+			shell_help(sh);
+			return SHELL_CMD_HELP_PRINTED;
+		}
+	}
+
+	if ((l2cap_server.options & BT_L2CAP_BR_SERVER_OPT_EXT_WIN_SIZE) &&
+	    (!(l2cap_server.options & (BT_L2CAP_BR_SERVER_OPT_ERET |
+	    BT_L2CAP_BR_SERVER_OPT_STREAM)))) {
+		shell_error(sh, "[extended_control] only supports mode eret and stream");
+		l2cap_server.server.psm = 0U;
+		return -ENOEXEC;
+	}
+#endif /* CONFIG_BT_L2CAP_RET_FC */
+
+	if (bt_l2cap_br_server_register(&l2cap_server.server) < 0) {
 		shell_error(sh, "Unable to register psm");
-		br_server.psm = 0U;
+		l2cap_server.server.psm = 0U;
 		return -ENOEXEC;
 	}
 
-	shell_print(sh, "L2CAP psm %u registered", br_server.psm);
+	shell_print(sh, "L2CAP psm %u registered", l2cap_server.server.psm);
 
 	return 0;
 }
@@ -310,8 +480,8 @@ static int cmd_l2cap_connect(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	if (l2cap_chan.chan.conn) {
-		shell_error(ctx_shell, "No channels available");
+	if (l2cap_chan.chan.chan.conn) {
+		bt_shell_error("No channels available");
 		return -ENOMEM;
 	}
 
@@ -323,7 +493,59 @@ static int cmd_l2cap_connect(const struct shell *sh, size_t argc, char *argv[])
 
 	psm = strtoul(argv[1], NULL, 16);
 
-	err = bt_l2cap_chan_connect(default_conn, &l2cap_chan.chan, psm);
+#if defined(CONFIG_BT_L2CAP_RET_FC)
+	if (!strcmp(argv[2], "none")) {
+		l2cap_chan.chan.rx.mode = BT_L2CAP_BR_LINK_MODE_BASIC;
+	} else if (!strcmp(argv[2], "ret")) {
+		l2cap_chan.chan.rx.mode = BT_L2CAP_BR_LINK_MODE_RET;
+		l2cap_chan.chan.rx.max_transmit = 3;
+	} else if (!strcmp(argv[2], "fc")) {
+		l2cap_chan.chan.rx.mode = BT_L2CAP_BR_LINK_MODE_FC;
+		l2cap_chan.chan.rx.max_transmit = 3;
+	} else if (!strcmp(argv[2], "eret")) {
+		l2cap_chan.chan.rx.mode = BT_L2CAP_BR_LINK_MODE_ERET;
+		l2cap_chan.chan.rx.max_transmit = 3;
+	} else if (!strcmp(argv[2], "stream")) {
+		l2cap_chan.chan.rx.mode = BT_L2CAP_BR_LINK_MODE_STREAM;
+		l2cap_chan.chan.rx.max_transmit = 0;
+	} else {
+		shell_help(sh);
+		return SHELL_CMD_HELP_PRINTED;
+	}
+
+	l2cap_chan.hold_credit = false;
+	l2cap_chan.chan.rx.optional = false;
+	l2cap_chan.chan.rx.extended_control = false;
+
+	for (size_t index = 3; index < argc; index++) {
+		if (!strcmp(argv[index], "hold_credit")) {
+			l2cap_chan.hold_credit = true;
+		} else if (!strcmp(argv[index], "mode_optional")) {
+			l2cap_chan.chan.rx.optional = true;
+		} else if (!strcmp(argv[index], "extended_control")) {
+			l2cap_chan.chan.rx.extended_control = true;
+		} else {
+			shell_help(sh);
+			return SHELL_CMD_HELP_PRINTED;
+		}
+	}
+
+	if ((l2cap_chan.chan.rx.extended_control) &&
+	    ((l2cap_chan.chan.rx.mode != BT_L2CAP_BR_LINK_MODE_ERET) &&
+	    (l2cap_chan.chan.rx.mode != BT_L2CAP_BR_LINK_MODE_STREAM))) {
+		shell_error(sh, "[extended_control] only supports mode eret and stream");
+		return -ENOEXEC;
+	}
+
+	if (l2cap_chan.hold_credit && (l2cap_chan.chan.rx.mode == BT_L2CAP_BR_LINK_MODE_BASIC)) {
+		shell_error(sh, "[hold_credit] cannot support basic mode");
+		return -ENOEXEC;
+	}
+
+	l2cap_chan.chan.rx.max_window = CONFIG_BT_L2CAP_MAX_WINDOW_SIZE;
+#endif /* CONFIG_BT_L2CAP_RET_FC */
+
+	err = bt_l2cap_chan_connect(default_conn, &l2cap_chan.chan.chan, psm);
 	if (err < 0) {
 		shell_error(sh, "Unable to connect to psm %u (err %d)", psm,
 			    err);
@@ -338,7 +560,7 @@ static int cmd_l2cap_disconnect(const struct shell *sh, size_t argc, char *argv[
 {
 	int err;
 
-	err = bt_l2cap_chan_disconnect(&l2cap_chan.chan);
+	err = bt_l2cap_chan_disconnect(&l2cap_chan.chan.chan);
 	if (err) {
 		shell_error(sh, "Unable to disconnect: %u", -err);
 	}
@@ -348,7 +570,7 @@ static int cmd_l2cap_disconnect(const struct shell *sh, size_t argc, char *argv[
 
 static int cmd_l2cap_send(const struct shell *sh, size_t argc, char *argv[])
 {
-	static uint8_t buf_data[DATA_BREDR_MTU] = { [0 ... (DATA_BREDR_MTU - 1)] = 0xff };
+	static uint8_t buf_data[DATA_BREDR_MTU];
 	int err, len = DATA_BREDR_MTU, count = 1;
 	struct net_buf *buf;
 
@@ -364,13 +586,13 @@ static int cmd_l2cap_send(const struct shell *sh, size_t argc, char *argv[])
 		}
 	}
 
-	len = MIN(l2cap_chan.tx.mtu, len);
+	len = MIN(l2cap_chan.chan.tx.mtu, len);
 
 	while (count--) {
 		shell_print(sh, "Rem %d", count);
 		buf = net_buf_alloc(&data_tx_pool, K_SECONDS(2));
 		if (!buf) {
-			if (l2cap_chan.state != BT_L2CAP_CONNECTED) {
+			if (l2cap_chan.chan.state != BT_L2CAP_CONNECTED) {
 				shell_error(sh, "Channel disconnected, stopping TX");
 
 				return -EAGAIN;
@@ -380,9 +602,10 @@ static int cmd_l2cap_send(const struct shell *sh, size_t argc, char *argv[])
 			return -EAGAIN;
 		}
 		net_buf_reserve(buf, BT_L2CAP_CHAN_SEND_RESERVE);
+		memset(buf_data, count, sizeof(buf_data));
 
 		net_buf_add_mem(buf, buf_data, len);
-		err = bt_l2cap_chan_send(&l2cap_chan.chan, buf);
+		err = bt_l2cap_chan_send(&l2cap_chan.chan.chan, buf);
 		if (err < 0) {
 			shell_error(sh, "Unable to send: %d", -err);
 			net_buf_unref(buf);
@@ -392,6 +615,26 @@ static int cmd_l2cap_send(const struct shell *sh, size_t argc, char *argv[])
 
 	return 0;
 }
+
+#if defined(CONFIG_BT_L2CAP_RET_FC)
+static int cmd_l2cap_credits(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err;
+	struct net_buf *buf;
+
+	buf = k_fifo_get(&l2cap_chan.l2cap_recv_fifo, K_NO_WAIT);
+	if (buf != NULL) {
+		err = bt_l2cap_chan_recv_complete(&l2cap_chan.chan.chan, buf);
+		if (err < 0) {
+			shell_error(sh, "Unable to set recv_complete: %d", -err);
+		}
+	} else {
+		shell_warn(sh, "No pending recv buffer");
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BT_L2CAP_RET_FC */
 
 static int cmd_discoverable(const struct shell *sh,
 			    size_t argc, char *argv[])
@@ -649,13 +892,28 @@ static int cmd_default_handler(const struct shell *sh, size_t argc, char **argv)
 
 #define HELP_NONE "[none]"
 #define HELP_ADDR_LE "<address: XX:XX:XX:XX:XX:XX> <type: (public|random)>"
+#define HELP_REG                                                      \
+	"<psm> <mode: none, ret, fc, eret, stream> [hold_credit] "    \
+	"[mode_optional] [extended_control]"
+
+#define HELP_CONN                                                     \
+	"<psm> <mode: none, ret, fc, eret, stream> [hold_credit] "    \
+	"[mode_optional] [extended_control]"
 
 SHELL_STATIC_SUBCMD_SET_CREATE(l2cap_cmds,
+#if defined(CONFIG_BT_L2CAP_RET_FC)
+	SHELL_CMD_ARG(register, NULL, HELP_REG, cmd_l2cap_register, 3, 3),
+	SHELL_CMD_ARG(connect, NULL, HELP_CONN, cmd_l2cap_connect, 3, 3),
+#else
 	SHELL_CMD_ARG(register, NULL, "<psm>", cmd_l2cap_register, 2, 0),
 	SHELL_CMD_ARG(connect, NULL, "<psm>", cmd_l2cap_connect, 2, 0),
+#endif /* CONFIG_BT_L2CAP_RET_FC */
 	SHELL_CMD_ARG(disconnect, NULL, HELP_NONE, cmd_l2cap_disconnect, 1, 0),
 	SHELL_CMD_ARG(send, NULL, "[number of packets] [length of packet(s)]",
 		      cmd_l2cap_send, 1, 2),
+#if defined(CONFIG_BT_L2CAP_RET_FC)
+	SHELL_CMD_ARG(credits, NULL, HELP_NONE, cmd_l2cap_credits, 1, 0),
+#endif /* CONFIG_BT_L2CAP_RET_FC */
 	SHELL_SUBCMD_SET_END
 );
 
