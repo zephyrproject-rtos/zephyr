@@ -38,8 +38,7 @@ ZTEST(posix_headers, test_netinet_in_h)
 	/* not implemented */
 	/* zassert_not_equal(-1, offsetof(struct sockaddr_in6, sin6_flowinfo)); */
 	zassert_not_equal(-1, offsetof(struct sockaddr_in6, sin6_addr));
-	/* not implemented */
-	/* zassert_not_equal(-1, offsetof(struct sockaddr_in6, scope_id)); */
+	zassert_not_equal(-1, offsetof(struct sockaddr_in6, sin6_scope_id));
 
 	zassert_not_null(&in6addr_loopback);
 	struct in6_addr any6 = IN6ADDR_ANY_INIT;
