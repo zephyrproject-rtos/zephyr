@@ -2,3 +2,4 @@ name: cdc-acm-console
 append:
   EXTRA_CONF_FILE: cdc-acm-console.conf
   EXTRA_DTC_OVERLAY_FILE: cdc-acm-console.overlay
+  kconfig: Kconfig

@@ -8,6 +8,7 @@
 	chosen {
 		zephyr,console = &snippet_cdc_acm_console_uart;
 		zephyr,shell-uart = &snippet_cdc_acm_console_uart;
+		zephyr,uart-mcumgr = &snippet_cdc_acm_console_uart;
 	};
 };
 

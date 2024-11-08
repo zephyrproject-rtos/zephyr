@@ -1,0 +1,32 @@
+# Copyright (c) 2023-2024 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SHELL_BACKEND_SERIAL_CHECK_DTR
+	default SHELL
+	depends on UART_LINE_CTRL
+
+config UART_LINE_CTRL
+	default SHELL
+
+config USB_DEVICE_INITIALIZE_AT_BOOT
+	default y if !MCUBOOT
+
+config USB_DEVICE_REMOTE_WAKEUP
+	default n
+
+if LOG
+
+choice USB_CDC_ACM_LOG_LEVEL_CHOICE
+	default USB_CDC_ACM_LOG_LEVEL_OFF
+endchoice
+
+choice USB_DEVICE_LOG_LEVEL_CHOICE
+	default USB_DEVICE_LOG_LEVEL_OFF
+endchoice
+
+# Wait 4000ms at startup for logging
+config LOG_PROCESS_THREAD_STARTUP_DELAY_MS
+	default 4000
+
+endif # LOG
