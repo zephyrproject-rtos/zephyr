@@ -58,6 +58,7 @@ STM32
 * On all official STM32 boards, ``west flash`` selects STM32CubeProgrammer as the default west runner.
   If you want to enforce the selection of another runner like OpenOCD or pyOCD for flashing, you should
   specify it using the west ``--runner`` or ``-r`` option. (:github:`75284`)
+* ADC: Domain clock needs to be explicitly defined if property st,adc-clock-source = <ASYNC> is used.
 
 Modules
 *******
