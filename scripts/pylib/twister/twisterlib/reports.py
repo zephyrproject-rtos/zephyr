@@ -596,7 +596,7 @@ class Reporting:
             f" {f'{TwisterStatus.get_color(TwisterStatus.NOTRUN)}{results.notrun}{Fore.RESET}' if results.notrun else f'{results.notrun}'} built (not run),"
             f" {f'{TwisterStatus.get_color(TwisterStatus.FAIL)}{results.failed}{Fore.RESET}' if results.failed else f'{results.failed}'} failed,"
             f" {f'{TwisterStatus.get_color(TwisterStatus.ERROR)}{results.error}{Fore.RESET}' if results.error else f'{results.error}'} errored,"
-            f" with {f'{Fore.YELLOW}{self.plan.warnings}{Fore.RESET}' if self.plan.warnings else 'no'} warnings"
+            f" with {f'{Fore.YELLOW}{self.plan.warnings + results.warnings}{Fore.RESET}' if (self.plan.warnings + results.warnings) else 'no'} warnings"
             f" in {duration:.2f} seconds."
         )
 
