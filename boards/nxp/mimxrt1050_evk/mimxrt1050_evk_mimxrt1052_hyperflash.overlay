@@ -48,22 +48,22 @@
 			#size-cells = <1>;
 			boot_partition: partition@0 {
 				label = "mcuboot";
-				reg = <0x00000000 DT_SIZE_K(128)>;
+				reg = <0x00000000 DT_SIZE_M(1)>;
 			};
 			/* The MCUBoot swap-move algorithm uses the last 11 sectors
 			 * of the primary slot0 for swap status and move.
 			 */
-			slot0_partition: partition@20000 {
+			slot0_partition: partition@100000 {
 				label = "image-0";
-				reg = <0x00020000 (DT_SIZE_M(3) + DT_SIZE_K(44))>;
+				reg = <0x00100000 DT_SIZE_M(3)>;
 			};
-			slot1_partition: partition@32B000 {
+			slot1_partition: partition@400000 {
 				label = "image-1";
-				reg = <0x0032B000 DT_SIZE_M(3)>;
+				reg = <0x00400000 DT_SIZE_M(3)>;
 			};
-			storage_partition: partition@62B000 {
+			storage_partition: partition@700000 {
 				label = "storage";
-				reg = <0x0062B000 (DT_SIZE_M(58) - DT_SIZE_K(172))>;
+				reg = <0x00700000 DT_SIZE_M(58)>;
 			};
 		};
 	};
