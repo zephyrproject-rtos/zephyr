@@ -1081,6 +1081,8 @@ class TwisterEnv:
         return results
 
     def get_toolchain(self):
+        logger.info(os.environ["ZEPHYR_TOOLCHAIN_VARIANT"])
+        logger.info(os.environ["ZEPHYR_SDK_INSTALL_DIR"])
         toolchain_script = Path(ZEPHYR_BASE) / Path('cmake/verify-toolchain.cmake')
         result = self.run_cmake_script([toolchain_script, "FORMAT=json"])
 
