@@ -438,6 +438,9 @@ extern const struct in6_addr in6addr_loopback;
 /** IPv4 any address */
 #define INADDR_ANY 0
 
+/** IPv4 broadcast address */
+#define INADDR_BROADCAST 0xffffffff
+
 /** IPv4 address initializer */
 #define INADDR_ANY_INIT { { { INADDR_ANY } } }
 
