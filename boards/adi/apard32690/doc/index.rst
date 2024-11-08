@@ -209,7 +209,7 @@ instead of ``west flash``.
 References
 **********
 
-- `AD-APARD32690-SL web page`_
+- `AD-APARD32690-SL solution center`_
 
-.. _AD-APARD32690-SL web page:
-   https://www.analog.com/en/resources/evaluation-hardware-and-software/evaluation-boards-kits/ad-apard32690-sl.html
+.. _AD-APARD32690-SL solution center:
+   https://developer.analog.com/solutions/max32690
