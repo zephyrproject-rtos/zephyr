@@ -652,9 +652,9 @@ static int uart_stm32_poll_in_visitor(const struct device *dev, void *in, poll_i
 }
 
 typedef void (*poll_out_fn)(
-	USART_TypeDef *usart, void *out);
+	USART_TypeDef *usart, uint16_t out);
 
-static void uart_stm32_poll_out_visitor(const struct device *dev, void *out, poll_out_fn set_fn)
+static void uart_stm32_poll_out_visitor(const struct device *dev, uint16_t out, poll_out_fn set_fn)
 {
 	const struct uart_stm32_config *config = dev->config;
 	USART_TypeDef *usart = config->usart;
@@ -707,9 +707,9 @@ static void poll_in_u8(USART_TypeDef *usart, void *in)
 	*((unsigned char *)in) = (unsigned char)LL_USART_ReceiveData8(usart);
 }
 
-static void poll_out_u8(USART_TypeDef *usart, void *out)
+static void poll_out_u8(USART_TypeDef *usart, uint16_t out)
 {
-	LL_USART_TransmitData8(usart, *((uint8_t *)out));
+	LL_USART_TransmitData8(usart, (uint8_t)out);
 }
 
 static int uart_stm32_poll_in(const struct device *dev, unsigned char *c)
@@ -719,14 +719,14 @@ static int uart_stm32_poll_in(const struct device *dev, unsigned char *c)
 
 static void uart_stm32_poll_out(const struct device *dev, unsigned char c)
 {
-	uart_stm32_poll_out_visitor(dev, (void *)&c, poll_out_u8);
+	uart_stm32_poll_out_visitor(dev, c, poll_out_u8);
 }
 
 #ifdef CONFIG_UART_WIDE_DATA
 
-static void poll_out_u9(USART_TypeDef *usart, void *out)
+static void poll_out_u9(USART_TypeDef *usart, uint16_t out)
 {
-	LL_USART_TransmitData9(usart, *((uint16_t *)out));
+	LL_USART_TransmitData9(usart, out);
 }
 
 static void poll_in_u9(USART_TypeDef *usart, void *in)
@@ -741,7 +741,7 @@ static int uart_stm32_poll_in_u16(const struct device *dev, uint16_t *in_u16)
 
 static void uart_stm32_poll_out_u16(const struct device *dev, uint16_t out_u16)
 {
-	uart_stm32_poll_out_visitor(dev, (void *)&out_u16, poll_out_u9);
+	uart_stm32_poll_out_visitor(dev, out_u16, poll_out_u9);
 }
 
 #endif
