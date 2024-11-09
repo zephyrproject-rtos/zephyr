@@ -161,7 +161,8 @@ static void tsic_xx6_get_value(const struct tsic_xx6_config *config, struct tsic
 	int64_t tmp;
 
 	/* Apply the datasheet formula scaled to micro celcius */
-	tmp = data_bits * (config->higher_temperature_limit - config->lower_temperature_limit);
+	tmp = (int64_t)data_bits *
+	      (config->higher_temperature_limit - config->lower_temperature_limit);
 	tmp = tmp * 1000000 / (BIT(config->data_bits) - 1);
 	tmp += (int64_t)config->lower_temperature_limit * 1000000;
 
