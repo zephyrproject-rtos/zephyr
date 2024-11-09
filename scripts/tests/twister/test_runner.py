@@ -224,7 +224,7 @@ def test_executioncounter(capfd):
         'Total test cases: 25\n'
         '├─ Filtered test cases:  0\n'
         '├─ Skipped test cases:   6\n'
-        '└─ Executed test cases: 19\n'
+        '└─ Selected test cases: 19\n'
         '   ├─ Passed test cases:        0\n'
         '   ├─ Built only test cases:    0\n'
         '   ├─ Blocked test cases:       0\n'
@@ -914,8 +914,8 @@ TESTDATA_6 = [
         {'op': 'report', 'test': mock.ANY},
         TwisterStatus.FILTER,
         'runtime filter',
-        1,
-        (TwisterStatus.SKIP,)
+        0,
+        (TwisterStatus.FILTER,)
     ),
     (
         {'op': 'filter'},
@@ -1025,7 +1025,7 @@ TESTDATA_6 = [
         TwisterStatus.FILTER,
         'runtime filter',
         1,
-        (TwisterStatus.SKIP,)
+        (TwisterStatus.FILTER,) # this is a tuple
     ),
     (
         {'op': 'cmake'},
@@ -2627,7 +2627,7 @@ def test_twisterrunner_show_brief(caplog):
 
     tr.show_brief()
 
-    log = '2 test scenarios (5 test instances) selected,' \
+    log = '2 test scenarios (5 configurations) selected,' \
           ' 4 configurations filtered (3 by static filter, 1 at runtime).'
 
     assert log in caplog.text
