@@ -235,9 +235,10 @@ static void fcx_mldx5_uart_send(const struct device *dev, enum fcx_mldx5_cmd cmd
 
 	buf[FCX_MLDX5_STX_INDEX] = FCX_MLDX5_STX;
 	memcpy(&buf[FCX_MLDX5_CMD_INDEX], fcx_mldx5_cmds[cmd], FCX_MLDX5_CMD_LEN);
-	if (cmd_data_len != 0) {
+	if (cmd_data_len != 0 && cmd_data_len == fcx_mldx5_cmds_data_len[cmd]) {
 		memcpy(&buf[FCX_MLDX5_DATA_INDEX], cmd_data, strlen(cmd_data));
 	}
+
 	checksum = fcx_mldx5_calculate_checksum(&buf[FCX_MLDX5_CMD_INDEX],
 						FCX_MLDX5_CMD_LEN + cmd_data_len);
 	bin2hex(&checksum, 1, &buf[FCX_MLDX5_CHECKSUM_INDEX(frame_len)],
