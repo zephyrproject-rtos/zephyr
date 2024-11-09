@@ -36,7 +36,7 @@ struct k_spinlock _sched_spinlock;
 __incoherent struct k_thread _thread_dummy;
 
 static ALWAYS_INLINE void update_cache(int preempt_ok);
-static void halt_thread(struct k_thread *thread, uint8_t new_state);
+static ALWAYS_INLINE void halt_thread(struct k_thread *thread, uint8_t new_state);
 static void add_to_waitq_locked(struct k_thread *thread, _wait_q_t *wait_q);
 
 
@@ -397,8 +397,8 @@ static void thread_halt_spin(struct k_thread *thread, k_spinlock_key_t key)
  * (aborting arch_current_thread() will not return, obviously), which may be after
  * a context switch.
  */
-static void z_thread_halt(struct k_thread *thread, k_spinlock_key_t key,
-			  bool terminate)
+static ALWAYS_INLINE void z_thread_halt(struct k_thread *thread, k_spinlock_key_t key,
+					bool terminate)
 {
 	_wait_q_t *wq = &thread->join_queue;
 #ifdef CONFIG_SMP
@@ -1230,7 +1230,7 @@ extern void thread_abort_hook(struct k_thread *thread);
  * @param thread Identify the thread to halt
  * @param new_state New thread state (_THREAD_DEAD or _THREAD_SUSPENDED)
  */
-static void halt_thread(struct k_thread *thread, uint8_t new_state)
+static ALWAYS_INLINE void halt_thread(struct k_thread *thread, uint8_t new_state)
 {
 	bool dummify = false;
 
