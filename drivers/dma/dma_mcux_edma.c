@@ -146,7 +146,12 @@ struct dma_mcux_edma_data {
 #define EDMA_TCD_CITER(tcd, flag)     ((tcd)->CITER)
 #define EDMA_TCD_CSR(tcd, flag)       ((tcd)->CSR)
 #define EDMA_TCD_DLAST_SGA(tcd, flag) ((tcd)->DLAST_SGA)
+#if defined(CONFIG_DMA_MCUX_EDMA_V3)
+#define DMA_CSR_DREQ                  DMA_TCD_CSR_DREQ
+#define EDMA_HW_TCD_CH_ACTIVE_MASK    (DMA_CH_CSR_ACTIVE_MASK)
+#else
 #define EDMA_HW_TCD_CH_ACTIVE_MASK    (DMA_CSR_ACTIVE_MASK)
+#endif /* CONFIG_DMA_MCUX_EDMA_V3 */
 #elif defined(CONFIG_DMA_MCUX_EDMA_V4)
 /* Above macros have been defined in fsl_edma_core.h */
 #define EDMA_HW_TCD_CH_ACTIVE_MASK (DMA_CH_CSR_ACTIVE_MASK)
