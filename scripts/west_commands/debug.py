@@ -85,7 +85,7 @@ class Rtt(WestCommand):
             'open an rtt shell',
             "",
             accepts_unknown_args=True)
-        self.runner_key = 'rtt-runner'  # in runners.yaml
+        self.runner_key = 'debug-runner'  # in runners.yaml
 
     def do_add_parser(self, parser_adder):
         return add_parser_common(self, parser_adder)
