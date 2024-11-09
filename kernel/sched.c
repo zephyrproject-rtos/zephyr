@@ -1238,38 +1238,42 @@ static ALWAYS_INLINE void halt_thread(struct k_thread *thread, uint8_t new_state
 	/* We hold the lock, and the thread is known not to be running
 	 * anywhere.
 	 */
-	if ((thread->base.thread_state & new_state) == 0U) {
+	if (likely((thread->base.thread_state & new_state) == 0U)) {
 		thread->base.thread_state |= new_state;
 		if (z_is_thread_queued(thread)) {
 			dequeue_thread(thread);
 		}
 
-		if (new_state == _THREAD_DEAD) {
-			if (thread->base.pended_on != NULL) {
-				unpend_thread_no_timeout(thread);
-			}
-			z_abort_thread_timeout(thread);
-			unpend_all(&thread->join_queue);
-
-			/* Edge case: aborting _current from within an
-			 * ISR that preempted it requires clearing the
-			 * _current pointer so the upcoming context
-			 * switch doesn't clobber the now-freed
-			 * memory
-			 */
-			if (thread == _current && arch_is_in_isr()) {
-				dummify = true;
-			}
+		if (likely(new_state == _THREAD_SUSPENDED)) {
+#ifdef CONFIG_SMP
+			unpend_all(&thread->halt_queue);
+#endif /* CONFIG_SMP */
+			update_cache(1);
+			clear_halting(thread);
+			return;
 		}
+
+		__ASSERT(new_state == _THREAD_DEAD, "");
+
+		if (thread->base.pended_on != NULL) {
+			unpend_thread_no_timeout(thread);
+		}
+		z_abort_thread_timeout(thread);
+		unpend_all(&thread->join_queue);
+
+		/* Edge case: aborting _current from within an
+		 * an ISR that preempted it requires clearing the
+		 * _current pointer so the upcoming context
+		 * switch doesn't clobber the now-freed memory
+		 */
+		if ((thread == _current) && arch_is_in_isr()) {
+			dummify = true;
+		}
+
 #ifdef CONFIG_SMP
 		unpend_all(&thread->halt_queue);
 #endif /* CONFIG_SMP */
 		update_cache(1);
-
-		if (new_state == _THREAD_SUSPENDED) {
-			clear_halting(thread);
-			return;
-		}
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 		arch_float_disable(thread);
