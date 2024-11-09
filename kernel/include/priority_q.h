@@ -262,11 +262,29 @@ static ALWAYS_INLINE struct prio_info get_prio_info(int8_t old_prio)
 	return ret;
 }
 
+static ALWAYS_INLINE unsigned int z_priq_mq_best_queue_index(struct _priq_mq *pq)
+{
+	unsigned int i = 0;
+
+	do {
+		if (likely(pq->bitmask[i])) {
+			return i * NBITS + TRAILING_ZEROS(pq->bitmask[i]);
+		}
+		i++;
+	} while (i < PRIQ_BITMAP_SIZE);
+
+	return K_NUM_THREAD_PRIO - 1;
+}
+
 static ALWAYS_INLINE void z_priq_mq_init(struct _priq_mq *q)
 {
 	for (int i = 0; i < ARRAY_SIZE(q->queues); i++) {
 		sys_dlist_init(&q->queues[i]);
 	}
+
+#ifndef CONFIG_SMP
+	q->cached_queue_index = K_NUM_THREAD_PRIO - 1;
+#endif
 }
 
 static ALWAYS_INLINE void z_priq_mq_add(struct _priq_mq *pq,
@@ -276,6 +294,12 @@ static ALWAYS_INLINE void z_priq_mq_add(struct _priq_mq *pq,
 
 	sys_dlist_append(&pq->queues[pos.offset_prio], &thread->base.qnode_dlist);
 	pq->bitmask[pos.idx] |= BIT(pos.bit);
+
+#ifndef CONFIG_SMP
+	if (pos.offset_prio < pq->cached_queue_index) {
+		pq->cached_queue_index = pos.offset_prio;
+	}
+#endif
 }
 
 static ALWAYS_INLINE void z_priq_mq_remove(struct _priq_mq *pq,
@@ -286,6 +310,9 @@ static ALWAYS_INLINE void z_priq_mq_remove(struct _priq_mq *pq,
 	sys_dlist_dequeue(&thread->base.qnode_dlist);
 	if (unlikely(sys_dlist_is_empty(&pq->queues[pos.offset_prio]))) {
 		pq->bitmask[pos.idx] &= ~BIT(pos.bit);
+#ifndef CONFIG_SMP
+		pq->cached_queue_index = z_priq_mq_best_queue_index(pq);
+#endif
 	}
 }
 
@@ -302,23 +329,19 @@ static ALWAYS_INLINE void z_priq_mq_yield(struct _priq_mq *pq)
 
 static ALWAYS_INLINE struct k_thread *z_priq_mq_best(struct _priq_mq *pq)
 {
-	struct k_thread *thread = NULL;
+#ifdef CONFIG_SMP
+	unsigned int index = z_priq_mq_best_queue_index(pq);
+#else
+	unsigned int index = pq->cached_queue_index;
+#endif
 
-	for (int i = 0; i < PRIQ_BITMAP_SIZE; ++i) {
-		if (!pq->bitmask[i]) {
-			continue;
-		}
+	sys_dnode_t *n = sys_dlist_peek_head(&pq->queues[index]);
 
-		sys_dlist_t *l = &pq->queues[i * NBITS + TRAILING_ZEROS(pq->bitmask[i])];
-		sys_dnode_t *n = sys_dlist_peek_head(l);
-
-		if (n != NULL) {
-			thread = CONTAINER_OF(n, struct k_thread, base.qnode_dlist);
-			break;
-		}
+	if (likely(n != NULL)) {
+		return CONTAINER_OF(n, struct k_thread, base.qnode_dlist);
 	}
 
-	return thread;
+	return NULL;
 }
 
 #endif /* ZEPHYR_KERNEL_INCLUDE_PRIORITY_Q_H_ */
