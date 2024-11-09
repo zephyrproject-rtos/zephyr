@@ -892,7 +892,6 @@ class ProjectBuilder(FilterBuilder):
                         logger.debug("filtering %s" % self.instance.name)
                         self.instance.status = TwisterStatus.FILTER
                         self.instance.reason = "runtime filter"
-                        results.filtered_cases_increment()
                         self.instance.add_missing_case_status(TwisterStatus.FILTER)
                         next_op = 'report'
                     else:
@@ -1387,15 +1386,8 @@ class ProjectBuilder(FilterBuilder):
             results.skipped_configs_increment()
         elif instance.status == TwisterStatus.PASS:
             results.passed_increment()
-            for case in instance.testcases:
-                # test cases skipped at the test case level
-                if case.status == TwisterStatus.SKIP:
-                    results.skipped_cases_increment()
         elif instance.status == TwisterStatus.NOTRUN:
             results.notrun_increment()
-            for case in instance.testcases:
-                if case.status == TwisterStatus.SKIP:
-                    results.skipped_cases_increment()
         else:
             logger.debug(f"Unknown status = {instance.status}")
             status = Fore.YELLOW + "UNKNOWN" + Fore.RESET
