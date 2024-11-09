@@ -465,7 +465,7 @@ void z_impl_k_thread_suspend(k_tid_t thread)
 
 	k_spinlock_key_t  key = k_spin_lock(&_sched_spinlock);
 
-	if ((thread->base.thread_state & _THREAD_SUSPENDED) != 0U) {
+	if (unlikely(z_is_thread_suspended(thread))) {
 
 		/* The target thread is already suspended. Nothing to do. */
 
@@ -494,7 +494,7 @@ void z_impl_k_thread_resume(k_tid_t thread)
 	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
 
 	/* Do not try to resume a thread that was not suspended */
-	if (!z_is_thread_suspended(thread)) {
+	if (unlikely(!z_is_thread_suspended(thread))) {
 		k_spin_unlock(&_sched_spinlock, key);
 		return;
 	}
