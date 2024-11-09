@@ -10,6 +10,8 @@ toolchain:
 ram: 272
 flash: 512
 supported:
+  - arduino_gpio
+  - arduino_serial
   - gpio
   - watchdog
   - pwm
