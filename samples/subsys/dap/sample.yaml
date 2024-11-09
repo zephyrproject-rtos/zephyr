@@ -8,9 +8,3 @@ tests:
       - nrf52840dk/nrf52840
       - frdm_k64f
     tags: dap
-  sample.dap.bulk.nrf:
-    build_only: true
-    depends_on: gpio usb_device
-    platform_allow:
-      - nrf52840dk/nrf52840
-    tags: dap
