@@ -158,8 +158,10 @@ static inline bool is_halting(struct k_thread *thread)
 /* Clear the halting bits (_THREAD_ABORTING and _THREAD_SUSPENDING) */
 static inline void clear_halting(struct k_thread *thread)
 {
-	barrier_dmem_fence_full(); /* Other cpus spin on this locklessly! */
-	thread->base.thread_state &= ~(_THREAD_ABORTING | _THREAD_SUSPENDING);
+	if (IS_ENABLED(CONFIG_SMP) && (CONFIG_MP_MAX_NUM_CPUS > 1)) {
+		barrier_dmem_fence_full(); /* Other cpus spin on this locklessly! */
+		thread->base.thread_state &= ~(_THREAD_ABORTING | _THREAD_SUSPENDING);
+	}
 }
 
 static ALWAYS_INLINE struct k_thread *next_up(void)
