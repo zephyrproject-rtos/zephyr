@@ -96,6 +96,7 @@ if (CONFIG_NRF_WIFI_BUILD_ONLY_MODE)
   ------------------------------------------------------------------------
   ")
 elseif(CONFIG_NRF_WIFI_PATCHES_BUILTIN)
+  zephyr_blobs_verify(MODULE nrf_wifi REQUIRED)
   # RPU FW patch binaries based on the selected configuration
   if(CONFIG_NRF70_SYSTEM_MODE)
     set(NRF70_PATCH ${FW_BINS_BASE}/default/nrf70.bin)
@@ -110,15 +111,6 @@ elseif(CONFIG_NRF_WIFI_PATCHES_BUILTIN)
   else()
     # Error
     message(FATAL_ERROR "Unsupported nRF70 patch configuration")
-  endif()
-
-  if(NOT EXISTS ${NRF70_PATCH})
-    message(FATAL_ERROR "
-      ------------------------------------------------------------------------
-      Missing blobs for nRF70 device driver, please install by running:
-          $ west update
-          $ west blobs fetch hal_nordic
-      ------------------------------------------------------------------------")
   endif()
 
   set(gen_inc_dir ${ZEPHYR_BINARY_DIR}/misc/generated)
