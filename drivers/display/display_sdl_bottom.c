@@ -15,7 +15,9 @@
 
 int sdl_display_init_bottom(uint16_t height, uint16_t width, uint16_t zoom_pct,
 			    bool use_accelerator, void **window, void **renderer, void **mutex,
-			    void **texture, void **read_texture)
+			    void **texture, void **read_texture, void **background_texture,
+			    uint32_t transparency_grid_color1, uint32_t transparency_grid_color2,
+			    uint16_t transparency_grid_cell_size)
 {
 	*window = SDL_CreateWindow("Zephyr Display", SDL_WINDOWPOS_UNDEFINED,
 				   SDL_WINDOWPOS_UNDEFINED, width * zoom_pct / 100,
@@ -51,6 +53,7 @@ int sdl_display_init_bottom(uint16_t height, uint16_t width, uint16_t zoom_pct,
 		nsi_print_warning("Failed to create SDL texture: %s", SDL_GetError());
 		return -1;
 	}
+	SDL_SetTextureBlendMode(*texture, SDL_BLENDMODE_BLEND);
 
 	*read_texture = SDL_CreateTexture(*renderer, SDL_PIXELFORMAT_ARGB8888,
 					  SDL_TEXTUREACCESS_TARGET, width, height);
@@ -59,8 +62,41 @@ int sdl_display_init_bottom(uint16_t height, uint16_t width, uint16_t zoom_pct,
 		return -1;
 	}
 
+	*background_texture = SDL_CreateTexture(*renderer, SDL_PIXELFORMAT_ARGB8888,
+						SDL_TEXTUREACCESS_STREAMING, width, height);
+	if (*background_texture == NULL) {
+		nsi_print_warning("Failed to create SDL texture: %s", SDL_GetError());
+		return -1;
+	}
+
+	void *background_data;
+	int background_pitch;
+	int err;
+
+	err = SDL_LockTexture(*background_texture, NULL, &background_data, &background_pitch);
+	if (err != 0) {
+		nsi_print_warning("Failed to lock background texture: %d", err);
+		return -1;
+	}
+	for (int y = 0; y < height; y++) {
+		uint32_t *row = (uint32_t *)((uint8_t *)background_data + background_pitch * y);
+
+		for (int x = 0; x < width; x++) {
+			bool x_cell_even = ((x / transparency_grid_cell_size) % 2) == 0;
+			bool y_cell_even = ((y / transparency_grid_cell_size) % 2) == 0;
+
+			if (x_cell_even == y_cell_even) {
+				row[x] = transparency_grid_color1 | 0xff000000;
+			} else {
+				row[x] = transparency_grid_color2 | 0xff000000;
+			}
+		}
+	}
+	SDL_UnlockTexture(*background_texture);
+
 	SDL_SetRenderDrawColor(*renderer, 0, 0, 0, 0xFF);
 	SDL_RenderClear(*renderer);
+	SDL_RenderCopy(*renderer, *background_texture, NULL, NULL);
 	SDL_RenderPresent(*renderer);
 
 	return 0;
@@ -68,7 +104,8 @@ int sdl_display_init_bottom(uint16_t height, uint16_t width, uint16_t zoom_pct,
 
 void sdl_display_write_bottom(const uint16_t height, const uint16_t width, const uint16_t x,
 			      const uint16_t y, void *renderer, void *mutex, void *texture,
-			      uint8_t *buf, bool display_on, bool frame_incomplete)
+			      void *background_texture, uint8_t *buf, bool display_on,
+			      bool frame_incomplete)
 {
 	SDL_Rect rect;
 	int err;
@@ -88,6 +125,7 @@ void sdl_display_write_bottom(const uint16_t height, const uint16_t width, const
 
 	if (display_on && !frame_incomplete) {
 		SDL_RenderClear(renderer);
+		SDL_RenderCopy(renderer, background_texture, NULL, NULL);
 		SDL_RenderCopy(renderer, texture, NULL, NULL);
 		SDL_RenderPresent(renderer);
 	}
@@ -127,9 +165,10 @@ int sdl_display_read_bottom(const uint16_t height, const uint16_t width,
 	return err;
 }
 
-void sdl_display_blanking_off_bottom(void *renderer, void *texture)
+void sdl_display_blanking_off_bottom(void *renderer, void *texture, void *background_texture)
 {
 	SDL_RenderClear(renderer);
+	SDL_RenderCopy(renderer, background_texture, NULL, NULL);
 	SDL_RenderCopy(renderer, texture, NULL, NULL);
 	SDL_RenderPresent(renderer);
 }
@@ -141,8 +180,13 @@ void sdl_display_blanking_on_bottom(void *renderer)
 }
 
 void sdl_display_cleanup_bottom(void **window, void **renderer, void **mutex, void **texture,
-				void **read_texture)
+				void **read_texture, void **background_texture)
 {
+	if (*background_texture != NULL) {
+		SDL_DestroyTexture(*background_texture);
+		*background_texture = NULL;
+	}
+
 	if (*read_texture != NULL) {
 		SDL_DestroyTexture(*read_texture);
 		*read_texture = NULL;
