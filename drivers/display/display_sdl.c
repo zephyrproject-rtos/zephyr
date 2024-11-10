@@ -123,7 +123,7 @@ static void sdl_display_write_rgb888(uint8_t *disp_buf,
 			pixel = *byte_ptr << 16;
 			pixel |= *(byte_ptr + 1) << 8;
 			pixel |= *(byte_ptr + 2);
-			*((uint32_t *)disp_buf) = pixel;
+			*((uint32_t *)disp_buf) = pixel | 0xFF000000;
 			disp_buf += 4;
 		}
 	}
@@ -149,7 +149,7 @@ static void sdl_display_write_rgb565(uint8_t *disp_buf,
 			pixel = (((rgb565 >> 11) & 0x1F) * 255 / 31) << 16;
 			pixel |= (((rgb565 >> 5) & 0x3F) * 255 / 63) << 8;
 			pixel |= (rgb565 & 0x1F) * 255 / 31;
-			*((uint32_t *)disp_buf) = pixel;
+			*((uint32_t *)disp_buf) = pixel | 0xFF000000;
 			disp_buf += 4;
 		}
 	}
@@ -173,7 +173,7 @@ static void sdl_display_write_bgr565(uint8_t *disp_buf,
 			pixel = (((*pix_ptr >> 11) & 0x1F) * 255 / 31) << 16;
 			pixel |= (((*pix_ptr >> 5) & 0x3F) * 255 / 63) << 8;
 			pixel |= (*pix_ptr & 0x1F) * 255 / 31;
-			*((uint32_t *)disp_buf) = pixel;
+			*((uint32_t *)disp_buf) = pixel | 0xFF000000;
 			disp_buf += 4;
 		}
 	}
@@ -211,9 +211,9 @@ static void sdl_display_write_mono(uint8_t *disp_buf,
 				if ((*byte_ptr & mono_pixel_order(h_idx)) != 0U)  {
 					pixel = one_color;
 				} else {
-					pixel = (~one_color) & 0x00FFFFFF;
+					pixel = ~one_color;
 				}
-				*((uint32_t *)disp_buf) = pixel;
+				*((uint32_t *)disp_buf) = pixel | 0xFF000000;
 				disp_buf += (desc->width * 4U);
 			}
 			disp_buf = disp_buf_start;
