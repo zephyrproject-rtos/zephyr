@@ -24,7 +24,8 @@
 #include <zephyr/bluetooth/cs.h>
 #include <errno.h>
 
-#include "bt.h"
+#include "host/shell/bt.h"
+#include "host/shell/bt_shell_private.h"
 
 static int check_cs_sync_antenna_selection_input(uint16_t input)
 {
@@ -138,21 +139,21 @@ static int cmd_read_remote_fae_table(const struct shell *sh, size_t argc, char *
 
 static bool process_step_data(struct bt_le_cs_subevent_step *step, void *user_data)
 {
-	shell_print(ctx_shell, "Subevent results contained step data: ");
-	shell_print(ctx_shell, "- Step mode %d\n"
+	bt_shell_print("Subevent results contained step data: ");
+	bt_shell_print("- Step mode %d\n"
 		"- Step channel %d\n"
 		"- Step data hexdump:",
 		step->mode,
 		step->channel);
-	shell_hexdump(ctx_shell, step->data, step->data_len);
+	bt_shell_hexdump(step->data, step->data_len);
 
 	return true;
 }
 
 static void cs_test_subevent_data_cb(struct bt_conn_le_cs_subevent_result *result)
 {
-	shell_print(ctx_shell, "Received subevent results.");
-	shell_print(ctx_shell, "Subevent Header:\n"
+	bt_shell_print("Received subevent results.");
+	bt_shell_print("Subevent Header:\n"
 		"- Procedure Counter: %d\n"
 		"- Frequency Compensation: 0x%04x\n"
 		"- Reference Power Level: %d\n"
@@ -179,7 +180,7 @@ static void cs_test_subevent_data_cb(struct bt_conn_le_cs_subevent_result *resul
 
 static void cs_test_end_complete_cb(void)
 {
-	shell_print(ctx_shell, "CS Test End Complete.");
+	bt_shell_print("CS Test End Complete.");
 }
 
 static int cmd_cs_test_simple(const struct shell *sh, size_t argc, char *argv[])

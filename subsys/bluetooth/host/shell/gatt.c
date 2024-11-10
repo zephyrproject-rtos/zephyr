@@ -27,6 +27,7 @@
 #include <zephyr/shell/shell.h>
 
 #include "host/shell/bt.h"
+#include "host/shell/bt_shell_private.h"
 
 #if defined(CONFIG_BT_GATT_CLIENT) || defined(CONFIG_BT_GATT_DYNAMIC_DB)
 extern uint8_t selected_id;
@@ -75,8 +76,8 @@ static void update_write_stats(uint16_t len)
 
 static void print_write_stats(void)
 {
-	shell_print(ctx_shell, "Write #%u: %u bytes (%u bps)",
-		    write_stats.count, write_stats.total, write_stats.rate);
+	bt_shell_print("Write #%u: %u bytes (%u bps)",
+		       write_stats.count, write_stats.total, write_stats.rate);
 }
 #endif /* CONFIG_BT_GATT_CLIENT || CONFIG_BT_GATT_DYNAMIC_DB */
 
@@ -94,8 +95,8 @@ static struct bt_gatt_exchange_params exchange_params;
 static void exchange_func(struct bt_conn *conn, uint8_t err,
 			  struct bt_gatt_exchange_params *params)
 {
-	shell_print(ctx_shell, "Exchange %s", err == 0U ? "successful" :
-		    "failed");
+	bt_shell_print("Exchange %s", err == 0U ? "successful" :
+		       "failed");
 
 	/* Release global `exchange_params`. */
 	__ASSERT_NO_MSG(params == &exchange_params);
@@ -139,43 +140,43 @@ static int cmd_exchange_mtu(const struct shell *sh,
 static struct bt_gatt_discover_params discover_params;
 static struct bt_uuid_16 uuid = BT_UUID_INIT_16(0);
 
-static void print_chrc_props(const struct shell *sh, uint8_t properties)
+static void print_chrc_props(uint8_t properties)
 {
-	shell_print(sh, "Properties: ");
+	bt_shell_print("Properties: ");
 
 	if (properties & BT_GATT_CHRC_BROADCAST) {
-		shell_print(sh, "[bcast]");
+		bt_shell_print("[bcast]");
 	}
 
 	if (properties & BT_GATT_CHRC_READ) {
-		shell_print(sh, "[read]");
+		bt_shell_print("[read]");
 	}
 
 	if (properties & BT_GATT_CHRC_WRITE) {
-		shell_print(sh, "[write]");
+		bt_shell_print("[write]");
 	}
 
 	if (properties & BT_GATT_CHRC_WRITE_WITHOUT_RESP) {
-		shell_print(sh, "[write w/w rsp]");
+		bt_shell_print("[write w/w rsp]");
 	}
 
 	if (properties & BT_GATT_CHRC_NOTIFY) {
-		shell_print(sh, "[notify]");
+		bt_shell_print("[notify]");
 	}
 
 	if (properties & BT_GATT_CHRC_INDICATE) {
-		shell_print(sh, "[indicate]");
+		bt_shell_print("[indicate]");
 	}
 
 	if (properties & BT_GATT_CHRC_AUTH) {
-		shell_print(sh, "[auth]");
+		bt_shell_print("[auth]");
 	}
 
 	if (properties & BT_GATT_CHRC_EXT_PROP) {
-		shell_print(sh, "[ext prop]");
+		bt_shell_print("[ext prop]");
 	}
 
-	shell_print(sh, "");
+	bt_shell_print("");
 }
 
 static uint8_t discover_func(struct bt_conn *conn,
@@ -188,7 +189,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 	char str[BT_UUID_STR_LEN];
 
 	if (!attr) {
-		shell_print(ctx_shell, "Discover complete");
+		bt_shell_print("Discover complete");
 		(void)memset(params, 0, sizeof(*params));
 		return BT_GATT_ITER_STOP;
 	}
@@ -198,29 +199,29 @@ static uint8_t discover_func(struct bt_conn *conn,
 	case BT_GATT_DISCOVER_PRIMARY:
 		gatt_service = attr->user_data;
 		bt_uuid_to_str(gatt_service->uuid, str, sizeof(str));
-		shell_print(ctx_shell, "Service %s found: start handle %x, "
-			    "end_handle %x", str, attr->handle,
-			    gatt_service->end_handle);
+		bt_shell_print("Service %s found: start handle %x, "
+			       "end_handle %x", str, attr->handle,
+			       gatt_service->end_handle);
 		break;
 	case BT_GATT_DISCOVER_CHARACTERISTIC:
 		gatt_chrc = attr->user_data;
 		bt_uuid_to_str(gatt_chrc->uuid, str, sizeof(str));
-		shell_print(ctx_shell, "Characteristic %s found: handle %x",
-			    str, attr->handle);
-		print_chrc_props(ctx_shell, gatt_chrc->properties);
+		bt_shell_print("Characteristic %s found: handle %x",
+			       str, attr->handle);
+		print_chrc_props(gatt_chrc->properties);
 		break;
 	case BT_GATT_DISCOVER_INCLUDE:
 		gatt_include = attr->user_data;
 		bt_uuid_to_str(gatt_include->uuid, str, sizeof(str));
-		shell_print(ctx_shell, "Include %s found: handle %x, start %x, "
-			    "end %x", str, attr->handle,
-			    gatt_include->start_handle,
-			    gatt_include->end_handle);
+		bt_shell_print("Include %s found: handle %x, start %x, "
+			       "end %x", str, attr->handle,
+			       gatt_include->start_handle,
+			       gatt_include->end_handle);
 		break;
 	default:
 		bt_uuid_to_str(attr->uuid, str, sizeof(str));
-		shell_print(ctx_shell, "Descriptor %s found: handle %x", str,
-			    attr->handle);
+		bt_shell_print("Descriptor %s found: handle %x", str,
+			       attr->handle);
 		break;
 	}
 
@@ -291,13 +292,13 @@ static uint8_t read_func(struct bt_conn *conn, uint8_t err,
 			 struct bt_gatt_read_params *params,
 			 const void *data, uint16_t length)
 {
-	shell_print(ctx_shell, "Read complete: err 0x%02x length %u", err, length);
+	bt_shell_print("Read complete: err 0x%02x length %u", err, length);
 
 	if (!data) {
 		(void)memset(params, 0, sizeof(*params));
 		return BT_GATT_ITER_STOP;
 	} else {
-		shell_hexdump(ctx_shell, data, length);
+		bt_shell_hexdump(data, length);
 	}
 
 	return BT_GATT_ITER_CONTINUE;
@@ -429,7 +430,7 @@ static uint8_t gatt_write_buf[BT_ATT_MAX_ATTRIBUTE_LEN];
 static void write_func(struct bt_conn *conn, uint8_t err,
 		       struct bt_gatt_write_params *params)
 {
-	shell_print(ctx_shell, "Write complete: err 0x%02x", err);
+	bt_shell_print("Write complete: err 0x%02x", err);
 
 	(void)memset(&write_params, 0, sizeof(write_params));
 }
@@ -557,14 +558,14 @@ static uint8_t notify_func(struct bt_conn *conn,
 			const void *data, uint16_t length)
 {
 	if (!data) {
-		shell_print(ctx_shell, "Unsubscribed");
+		bt_shell_print("Unsubscribed");
 		params->value_handle = 0U;
 		return BT_GATT_ITER_STOP;
 	}
 
-	shell_print(ctx_shell, "Notification: value_handle %u, length %u",
-		    params->value_handle, length);
-	shell_hexdump(ctx_shell, data, length);
+	bt_shell_print("Notification: value_handle %u, length %u",
+		       params->value_handle, length);
+	bt_shell_hexdump(data, length);
 
 	return BT_GATT_ITER_CONTINUE;
 }
@@ -793,7 +794,7 @@ static ssize_t write_vnd1(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			  uint8_t flags)
 {
 	if (echo_enabled) {
-		shell_print(ctx_shell, "Echo attr len %u", len);
+		bt_shell_print("Echo attr len %u", len);
 		bt_gatt_notify(conn, attr, buf, len);
 	}
 
