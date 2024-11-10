@@ -32,8 +32,7 @@ static void key_press(struct input_event *evt, void *user_data)
 	uint8_t note = evt->code;
 	uint8_t velocity = 100;
 
-	struct midi_ump ump = UMP_MIDI1_CHANNEL_VOICE(0, command, channel,
-						      note, velocity);
+	struct midi_ump ump = UMP_MIDI1_CHANNEL_VOICE(0, command, channel, note, velocity);
 	usbd_midi_send(midi, ump);
 }
 INPUT_CALLBACK_DEFINE(NULL, key_press, NULL);
