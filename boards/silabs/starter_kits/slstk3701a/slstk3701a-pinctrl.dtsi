@@ -43,4 +43,13 @@
 				<GECKO_LOC(I2C_SCL, 0)>;
 		};
 	};
+
+	i2c2_default: i2c2_default {
+		group1 {
+			psels = <GECKO_PSEL(I2C_SDA, I, 4)>,
+				<GECKO_PSEL(I2C_SCL, I, 5)>,
+				<GECKO_LOC(I2C_SDA, 7)>,
+				<GECKO_LOC(I2C_SCL, 7)>;
+		};
+	};
 };
