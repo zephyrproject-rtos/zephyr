@@ -260,9 +260,9 @@ static int sdl_display_write(const struct device *dev, const uint16_t x,
 		sdl_display_write_bgr565(disp_data->buf, desc, buf);
 	}
 
-	sdl_display_write_bottom(desc->height, desc->width, x, y,
-				 disp_data->renderer, disp_data->mutex, disp_data->texture,
-				 disp_data->buf, disp_data->display_on);
+	sdl_display_write_bottom(desc->height, desc->width, x, y, disp_data->renderer,
+				 disp_data->mutex, disp_data->texture, disp_data->buf,
+				 disp_data->display_on, desc->frame_incomplete);
 
 	return 0;
 }
