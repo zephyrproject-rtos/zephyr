@@ -23,6 +23,7 @@
 #include <zephyr/bluetooth/iso.h>
 
 #include "host/shell/bt.h"
+#include "host/shell/bt_shell_private.h"
 
 #if defined(CONFIG_BT_ISO_TX)
 #define DEFAULT_IO_QOS                                                                             \
@@ -75,8 +76,8 @@ static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *in
 		struct net_buf *buf)
 {
 	if (info->flags & BT_ISO_FLAGS_VALID) {
-		shell_print(ctx_shell, "Incoming data channel %p len %u, seq: %d, ts: %d",
-			    chan, buf->len, info->seq_num, info->ts);
+		bt_shell_print("Incoming data channel %p len %u, seq: %d, ts: %d",
+			       chan, buf->len, info->seq_num, info->ts);
 	}
 }
 #endif /* CONFIG_BT_ISO_RX */
@@ -86,7 +87,7 @@ static void iso_connected(struct bt_iso_chan *chan)
 	struct bt_iso_info iso_info;
 	int err;
 
-	shell_print(ctx_shell, "ISO Channel %p connected", chan);
+	bt_shell_print("ISO Channel %p connected", chan);
 
 
 	err = bt_iso_chan_get_info(chan, &iso_info);
@@ -108,8 +109,8 @@ static void iso_connected(struct bt_iso_chan *chan)
 
 static void iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 {
-	shell_print(ctx_shell, "ISO Channel %p disconnected with reason 0x%02x",
-		    chan, reason);
+	bt_shell_print("ISO Channel %p disconnected with reason 0x%02x",
+		       chan, reason);
 }
 
 static struct bt_iso_chan_ops iso_ops = {
@@ -474,11 +475,11 @@ static int cmd_connect(const struct shell *sh, size_t argc, char *argv[])
 static int iso_accept(const struct bt_iso_accept_info *info,
 		      struct bt_iso_chan **chan)
 {
-	shell_print(ctx_shell, "Incoming request from %p with CIG ID 0x%02X and CIS ID 0x%02X",
-		    info->acl, info->cig_id, info->cis_id);
+	bt_shell_print("Incoming request from %p with CIG ID 0x%02X and CIS ID 0x%02X",
+		       info->acl, info->cig_id, info->cis_id);
 
 	if (iso_chan.iso) {
-		shell_print(ctx_shell, "No channels available");
+		bt_shell_print("No channels available");
 		return -ENOMEM;
 	}
 
