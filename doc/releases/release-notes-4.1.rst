@@ -95,6 +95,8 @@ Drivers and Sensors
   * Added flag ``frame_incomplete`` to ``display_write`` that indicates whether a write is the last
     write of the frame, allowing display drivers to implement double buffering / tearing enable
     signal handling (:github:`81250`)
+  * Added ``frame_incomplete`` handling to SDL display driver (:dtcompatible:`zephyr,sdl-dc`)
+    (:github:`81250`)
 
 * Ethernet
 
