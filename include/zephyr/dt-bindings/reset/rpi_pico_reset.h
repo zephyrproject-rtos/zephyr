@@ -4,10 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef RPI_PICO_DEFAULT_IRQ_PRIORITY
-#define RPI_PICO_DEFAULT_IRQ_PRIORITY 3
-#endif
-
 #define RPI_PICO_RESETS_RESET_ADC		0
 #define RPI_PICO_RESETS_RESET_BUSCTRL		1
 #define RPI_PICO_RESETS_RESET_DMA		2
