@@ -18,5 +18,31 @@
 				erase-block-size = <DT_SIZE_K(2)>;
 			};
 		};
+
+		i2s2: i2s@40003800 {
+			compatible = "st,stm32-i2s";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40003800 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 14U)>;
+			interrupts = <36 5>;
+			dmas = <&dma1 5 (STM32_DMA_PERIPH_TX | STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)
+				&dma1 4 (STM32_DMA_PERIPH_RX | STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+			dma-names = "tx", "rx";
+			status = "disabled";
+		};
+
+		i2s3: i2s@40003c00 {
+			compatible = "st,stm32-i2s";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40003c00 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 15U)>;
+			interrupts = <51 5>;
+			dmas = <&dma2 2 (STM32_DMA_PERIPH_TX | STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)
+				&dma2 1 (STM32_DMA_PERIPH_RX | STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+			dma-names = "tx", "rx";
+			status = "disabled";
+		};
 	};
 };
