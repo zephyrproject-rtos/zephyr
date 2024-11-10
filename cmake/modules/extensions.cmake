@@ -1954,6 +1954,25 @@ function(import_kconfig prefix kconfig_fragment)
   endif()
 endfunction()
 
+# kconfig_gen(<binary_directory> <kconfig_file_name> <kconfig_directories> <comment>)
+#
+# Helper function for creation of Kconfig files
+#
+# <bin_dir>    : Binary directory, such as: arch, soc, boards, snippets
+# <file>       : Kconfig file name, sich as: Kconfig, Kconfig.defconfig, Kconfig.sysbuild
+# <dirs>       : Kconfig directories
+# <comment >   : Comment
+function(kconfig_gen bin_dir file dirs comment)
+  set(kconfig_header "# Load ${comment} descriptions.\n")
+  set(kconfig_file ${KCONFIG_BINARY_DIR}/${bin_dir}/${file})
+  file(WRITE ${kconfig_file} "${kconfig_header}")
+
+  foreach(dir ${dirs})
+    cmake_path(CONVERT "${dir}" TO_CMAKE_PATH_LIST dir)
+    file(APPEND ${kconfig_file} "osource \"${dir}/${file}\"\n")
+  endforeach()
+endfunction()
+
 ########################################################
 # 3. CMake-generic extensions
 ########################################################

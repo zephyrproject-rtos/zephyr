@@ -23,18 +23,6 @@ if(NOT HWMv2)
   return()
 endif()
 
-# Internal helper function for creation of Kconfig files.
-function(kconfig_gen bin_dir file dirs comment)
-  set(kconfig_header "# Load ${comment} descriptions.\n")
-  set(kconfig_file ${KCONFIG_BINARY_DIR}/${bin_dir}/${file})
-  file(WRITE ${kconfig_file} "${kconfig_header}")
-
-  foreach(dir ${dirs})
-    cmake_path(CONVERT "${dir}" TO_CMAKE_PATH_LIST dir)
-    file(APPEND ${kconfig_file} "osource \"${dir}/${file}\"\n")
-  endforeach()
-endfunction()
-
 # 'SOC_ROOT' and 'ARCH_ROOT' are prioritized lists of directories where their
 # implementations may be found. It always includes ${ZEPHYR_BASE}/[arch|soc]
 # at the lowest priority.
