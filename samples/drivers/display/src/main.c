@@ -50,16 +50,16 @@ static void fill_buffer_argb8888(enum corner corner, uint8_t grey, uint8_t *buf,
 
 	switch (corner) {
 	case TOP_LEFT:
-		color = 0x00FF0000u;
+		color = 0xFFFF0000u;
 		break;
 	case TOP_RIGHT:
-		color = 0x0000FF00u;
+		color = 0xFF00FF00u;
 		break;
 	case BOTTOM_RIGHT:
-		color = 0x000000FFu;
+		color = 0xFF0000FFu;
 		break;
 	case BOTTOM_LEFT:
-		color = grey << 16 | grey << 8 | grey;
+		color = 0xFF000000u | grey << 16 | grey << 8 | grey;
 		break;
 	}
 
@@ -239,7 +239,7 @@ int main(void)
 
 	switch (capabilities.current_pixel_format) {
 	case PIXEL_FORMAT_ARGB_8888:
-		bg_color = 0xFFu;
+		bg_color = 0x00u;
 		fill_buffer_fnc = fill_buffer_argb8888;
 		buf_size *= 4;
 		break;
