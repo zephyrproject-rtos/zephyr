@@ -517,6 +517,10 @@ New Drivers
    * :dtcompatible:`renesas,ra-wdt`
    * :dtcompatible:`silabs,siwx91x-wdt`
 
+* zbus
+
+   * :c:macro:`ZBUS_GLOBAL_ADD_OBS`
+
 New Samples
 ***********
 
