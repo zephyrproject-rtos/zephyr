@@ -146,7 +146,7 @@ struct dma_mcux_edma_data {
 #define EDMA_TCD_CITER(tcd, flag)     ((tcd)->CITER)
 #define EDMA_TCD_CSR(tcd, flag)       ((tcd)->CSR)
 #define EDMA_TCD_DLAST_SGA(tcd, flag) ((tcd)->DLAST_SGA)
-#define EDMA_HW_TCD_CH_ACTIVE_MASK    (DMA_CSR_ACTIVE_MASK)
+#define EDMA_HW_TCD_CH_ACTIVE_MASK    (DMA_CH_CSR_ACTIVE_MASK)
 #elif defined(CONFIG_DMA_MCUX_EDMA_V4)
 /* Above macros have been defined in fsl_edma_core.h */
 #define EDMA_HW_TCD_CH_ACTIVE_MASK (DMA_CH_CSR_ACTIVE_MASK)
@@ -442,9 +442,9 @@ static int dma_mcux_edma_configure(const struct device *dev, uint32_t channel,
 					block_config->block_size / config->source_data_size;
 				/*Enable auto stop for last transfer.*/
 				if (block_config->next_block == NULL) {
-					EDMA_TCD_CSR(tcd, kEDMA_EDMA4Flag) |= DMA_CSR_DREQ(1U);
+					EDMA_TCD_CSR(tcd, kEDMA_EDMA4Flag) |= DMA_TCD_CSR_DREQ(1U);
 				} else {
-					EDMA_TCD_CSR(tcd, kEDMA_EDMA4Flag) &= ~DMA_CSR_DREQ(1U);
+					EDMA_TCD_CSR(tcd, kEDMA_EDMA4Flag) &= ~DMA_TCD_CSR_DREQ(1U);
 				}
 
 				data->transfer_settings.write_idx =
@@ -604,7 +604,7 @@ static void dma_mcux_edma_update_hw_tcd(const struct device *dev, uint32_t chann
 	EDMA_HW_TCD_DADDR(dev, channel) = dst;
 	EDMA_HW_TCD_BITER(dev, channel) = size;
 	EDMA_HW_TCD_CITER(dev, channel) = size;
-	EDMA_HW_TCD_CSR(dev, channel) |= DMA_CSR_DREQ(1U);
+	EDMA_HW_TCD_CSR(dev, channel) |= DMA_TCD_CSR_DREQ(1U);
 }
 
 static int dma_mcux_edma_reload(const struct device *dev, uint32_t channel,
@@ -645,7 +645,7 @@ static int dma_mcux_edma_reload(const struct device *dev, uint32_t channel,
 		EDMA_TCD_BITER(tcd, kEDMA_EDMA4Flag) = size;
 		EDMA_TCD_CITER(tcd, kEDMA_EDMA4Flag) = size;
 		/* Enable automatically stop */
-		EDMA_TCD_CSR(tcd, kEDMA_EDMA4Flag) |= DMA_CSR_DREQ(1U);
+		EDMA_TCD_CSR(tcd, kEDMA_EDMA4Flag) |= DMA_TCD_CSR_DREQ(1U);
 		sw_id = EDMA_TCD_DLAST_SGA(tcd, kEDMA_EDMA4Flag);
 
 		/* Block the peripheral's hardware request trigger to prevent
@@ -677,7 +677,7 @@ static int dma_mcux_edma_reload(const struct device *dev, uint32_t channel,
 			/* Previous TCD can automatically start this TCD.
 			 * Enable the peripheral DMA request in the previous TCD
 			 */
-			EDMA_TCD_CSR(pre_tcd, kEDMA_EDMA4Flag) &= ~DMA_CSR_DREQ(1U);
+			EDMA_TCD_CSR(pre_tcd, kEDMA_EDMA4Flag) &= ~DMA_TCD_CSR_DREQ(1U);
 
 			if (data->transfer_settings.empty_tcds == CONFIG_DMA_TCD_QUEUE_SIZE - 1 ||
 			    hw_id == (uint32_t)tcd) {
