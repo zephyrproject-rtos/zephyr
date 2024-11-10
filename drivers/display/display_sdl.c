@@ -260,9 +260,20 @@ static int sdl_display_write(const struct device *dev, const uint16_t x,
 		sdl_display_write_bgr565(disp_data->buf, desc, buf);
 	}
 
-	sdl_display_write_bottom(desc->height, desc->width, x, y,
-				 disp_data->renderer, disp_data->mutex, disp_data->texture,
-				 disp_data->buf, disp_data->display_on);
+	sdl_display_write_bottom(desc->height, desc->width, x, y, disp_data->renderer,
+				 disp_data->mutex, disp_data->texture, disp_data->buf);
+
+	return 0;
+}
+
+static int sdl_display_show(const struct device *dev)
+{
+	struct sdl_display_data *disp_data = dev->data;
+
+	LOG_DBG("Displaying frame buffer content");
+
+	sdl_display_show_bottom(disp_data->renderer, disp_data->texture, disp_data->mutex,
+				disp_data->display_on);
 
 	return 0;
 }
@@ -431,7 +442,7 @@ static int sdl_display_blanking_off(const struct device *dev)
 
 	disp_data->display_on = true;
 
-	sdl_display_blanking_off_bottom(disp_data->renderer, disp_data->texture);
+	sdl_display_blanking_off_bottom(disp_data->renderer, disp_data->texture, disp_data->mutex);
 
 	return 0;
 }
@@ -444,7 +455,7 @@ static int sdl_display_blanking_on(const struct device *dev)
 
 	disp_data->display_on = false;
 
-	sdl_display_blanking_on_bottom(disp_data->renderer);
+	sdl_display_blanking_on_bottom(disp_data->renderer, disp_data->mutex);
 	return 0;
 }
 
@@ -464,8 +475,10 @@ static void sdl_display_get_capabilities(
 		PIXEL_FORMAT_RGB_565 |
 		PIXEL_FORMAT_BGR_565;
 	capabilities->current_pixel_format = disp_data->current_pixel_format;
-	capabilities->screen_info = SCREEN_INFO_MONO_VTILED |
-		(IS_ENABLED(CONFIG_SDL_DISPLAY_MONO_MSB_FIRST) ? SCREEN_INFO_MONO_MSB_FIRST : 0);
+	capabilities->screen_info =
+		SCREEN_INFO_MONO_VTILED |
+		(IS_ENABLED(CONFIG_SDL_DISPLAY_MONO_MSB_FIRST) ? SCREEN_INFO_MONO_MSB_FIRST : 0) |
+		SCREEN_INFO_REQUIRES_SHOW;
 }
 
 static int sdl_display_set_pixel_format(const struct device *dev,
@@ -499,6 +512,7 @@ static const struct display_driver_api sdl_display_api = {
 	.blanking_off = sdl_display_blanking_off,
 	.write = sdl_display_write,
 	.read = sdl_display_read,
+	.show = sdl_display_show,
 	.get_capabilities = sdl_display_get_capabilities,
 	.set_pixel_format = sdl_display_set_pixel_format,
 };

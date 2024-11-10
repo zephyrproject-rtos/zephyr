@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "display_sdl_bottom.h"
+
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
@@ -64,10 +66,9 @@ int sdl_display_init_bottom(uint16_t height, uint16_t width, uint16_t zoom_pct,
 	return 0;
 }
 
-void sdl_display_write_bottom(const uint16_t height, const uint16_t width,
-			      const uint16_t x, const uint16_t y,
-			      void *renderer, void *mutex, void *texture,
-			      uint8_t *buf, bool display_on)
+void sdl_display_write_bottom(const uint16_t height, const uint16_t width, const uint16_t x,
+			      const uint16_t y, void *renderer, void *mutex, void *texture,
+			      uint8_t *buf)
 {
 	SDL_Rect rect;
 	int err;
@@ -84,12 +85,6 @@ void sdl_display_write_bottom(const uint16_t height, const uint16_t width,
 	}
 
 	SDL_UpdateTexture(texture, &rect, buf, 4 * rect.w);
-
-	if (display_on) {
-		SDL_RenderClear(renderer);
-		SDL_RenderCopy(renderer, texture, NULL, NULL);
-		SDL_RenderPresent(renderer);
-	}
 
 	SDL_UnlockMutex(mutex);
 }
@@ -126,17 +121,44 @@ int sdl_display_read_bottom(const uint16_t height, const uint16_t width,
 	return err;
 }
 
-void sdl_display_blanking_off_bottom(void *renderer, void *texture)
+void sdl_display_show_bottom(void *renderer, void *texture, void *mutex, bool display_on)
 {
-	SDL_RenderClear(renderer);
-	SDL_RenderCopy(renderer, texture, NULL, NULL);
-	SDL_RenderPresent(renderer);
+	int err = 0;
+
+	if (display_on) {
+		err = SDL_TryLockMutex(mutex);
+		if (err) {
+			nsi_print_warning("Failed to lock SDL mutex: %s", SDL_GetError());
+			return;
+		}
+
+		SDL_RenderClear(renderer);
+		SDL_RenderCopy(renderer, texture, NULL, NULL);
+		SDL_RenderPresent(renderer);
+
+		SDL_UnlockMutex(mutex);
+	}
 }
 
-void sdl_display_blanking_on_bottom(void *renderer)
+void sdl_display_blanking_off_bottom(void *renderer, void *texture, void *mutex)
 {
+	sdl_display_show_bottom(renderer, texture, mutex, true);
+}
+
+void sdl_display_blanking_on_bottom(void *renderer, void *mutex)
+{
+	int err;
+
+	err = SDL_TryLockMutex(mutex);
+	if (err) {
+		nsi_print_warning("Failed to lock SDL mutex: %s", SDL_GetError());
+		return;
+	}
+
 	SDL_RenderClear(renderer);
 	SDL_RenderPresent(renderer);
+
+	SDL_UnlockMutex(mutex);
 }
 
 void sdl_display_cleanup_bottom(void **window, void **renderer, void **mutex, void **texture,
