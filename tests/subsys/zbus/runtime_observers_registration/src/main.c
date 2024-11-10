@@ -14,29 +14,29 @@ struct sensor_data_msg {
 	int b;
 };
 
-ZBUS_CHAN_DEFINE(chan1,			 /* Name */
+ZBUS_CHAN_DEFINE(chan1,                  /* Name */
 		 struct sensor_data_msg, /* Message type */
 
-		 NULL,		       /* Validator */
-		 NULL,		       /* User data */
+		 NULL,                 /* Validator */
+		 NULL,                 /* User data */
 		 ZBUS_OBSERVERS_EMPTY, /* observers */
 		 ZBUS_MSG_INIT(0)      /* Initial value major 0, minor 1, build 1023 */
 );
 
-ZBUS_CHAN_DEFINE(chan2,			 /* Name */
+ZBUS_CHAN_DEFINE(chan2,                  /* Name */
 		 struct sensor_data_msg, /* Message type */
 
-		 NULL,		       /* Validator */
-		 NULL,		       /* User data */
+		 NULL,                 /* Validator */
+		 NULL,                 /* User data */
 		 ZBUS_OBSERVERS(lis2), /* observers */
 		 ZBUS_MSG_INIT(0)      /* Initial value major 0, minor 1, build 1023 */
 );
 
-ZBUS_CHAN_DEFINE(chan3,			 /* Name */
+ZBUS_CHAN_DEFINE(chan3,                  /* Name */
 		 struct sensor_data_msg, /* Message type */
 
-		 NULL,		       /* Validator */
-		 NULL,		       /* User data */
+		 NULL,                 /* Validator */
+		 NULL,                 /* User data */
 		 ZBUS_OBSERVERS_EMPTY, /* observers */
 		 ZBUS_MSG_INIT(0)      /* Initial value major 0, minor 1, build 1023 */
 );
@@ -156,16 +156,20 @@ ZBUS_CHAN_DEFINE(chan4,                  /* Name */
 
 		 NULL,                                 /* Validator */
 		 NULL,                                 /* User data */
-		 ZBUS_OBSERVERS(prio_lis6, prio_lis5), /* observers */
+		 ZBUS_OBSERVERS(prio_lis8, prio_lis7), /* observers */
 		 ZBUS_MSG_INIT(0) /* Initial value major 0, minor 1, build 1023 */
 );
 
+static bool execution_sequence_running;
 static int execution_sequence_idx;
-static uint8_t execution_sequence[6] = {0};
+static uint8_t execution_sequence[8] = {0};
 
 #define CALLBACK_DEF(_lis, _idx)                                                                   \
 	static void _CONCAT(prio_cb, _idx)(const struct zbus_channel *chan)                        \
 	{                                                                                          \
+		if (!execution_sequence_running) {                                                 \
+			return;                                                                    \
+		}                                                                                  \
 		execution_sequence[execution_sequence_idx] = _idx;                                 \
 		++execution_sequence_idx;                                                          \
 	}                                                                                          \
@@ -177,11 +181,16 @@ CALLBACK_DEF(prio_lis3, 3);
 CALLBACK_DEF(prio_lis4, 4);
 CALLBACK_DEF(prio_lis5, 5);
 CALLBACK_DEF(prio_lis6, 6);
+CALLBACK_DEF(prio_lis7, 7);
+CALLBACK_DEF(prio_lis8, 8);
 
-ZBUS_CHAN_ADD_OBS(chan4, prio_lis3, 3);
-ZBUS_CHAN_ADD_OBS(chan4, prio_lis4, 2);
+ZBUS_CHAN_ADD_OBS(chan4, prio_lis5, 3);
+ZBUS_CHAN_ADD_OBS(chan4, prio_lis6, 2);
 
-/* Checking the ZBUS_CHAN_ADD_OBS. The execution sequence must be: 6, 5, 4, 3, 2, 1. */
+ZBUS_GLOBAL_ADD_OBS(prio_lis1, 6);
+ZBUS_GLOBAL_ADD_OBS(prio_lis2, 5);
+
+/* Checking the ZBUS_CHAN_ADD_OBS. The execution sequence must be: 8, 7, 6, 5, 4, 3, 2, 1. */
 
 ZTEST(basic, test_specification_based__zbus_obs_priority)
 {
@@ -189,18 +198,23 @@ ZTEST(basic, test_specification_based__zbus_obs_priority)
 	static struct zbus_observer_node n1, n2;
 
 	execution_sequence_idx = 0;
+	execution_sequence_running = true;
 
-	zassert_equal(0, zbus_chan_add_obs(&chan4, &prio_lis2, &n1, K_MSEC(200)), NULL);
-	zassert_equal(0, zbus_chan_add_obs(&chan4, &prio_lis1, &n2, K_MSEC(200)), NULL);
+	zassert_equal(0, zbus_chan_add_obs(&chan4, &prio_lis4, &n1, K_MSEC(200)), NULL);
+	zassert_equal(0, zbus_chan_add_obs(&chan4, &prio_lis3, &n2, K_MSEC(200)), NULL);
 
 	zassert_equal(0, zbus_chan_pub(&chan4, &sd, K_MSEC(500)), NULL);
 
-	zassert_equal(execution_sequence[0], 6, NULL);
-	zassert_equal(execution_sequence[1], 5, NULL);
-	zassert_equal(execution_sequence[2], 4, NULL);
-	zassert_equal(execution_sequence[3], 3, NULL);
-	zassert_equal(execution_sequence[4], 2, NULL);
-	zassert_equal(execution_sequence[5], 1, NULL);
+	zassert_equal(execution_sequence[0], 8, NULL);
+	zassert_equal(execution_sequence[1], 7, NULL);
+	zassert_equal(execution_sequence[2], 6, NULL);
+	zassert_equal(execution_sequence[3], 5, NULL);
+	zassert_equal(execution_sequence[4], 4, NULL);
+	zassert_equal(execution_sequence[5], 3, NULL);
+	zassert_equal(execution_sequence[6], 2, NULL);
+	zassert_equal(execution_sequence[7], 1, NULL);
+
+	execution_sequence_running = false;
 }
 
 ZTEST_SUITE(basic, NULL, NULL, NULL, NULL, NULL);
