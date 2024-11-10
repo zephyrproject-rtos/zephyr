@@ -1,0 +1,135 @@
+# Copyright (c) 2024 Arif Balik <arifbalik@outlook.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 Tocuh Sensing Controller (TSC) driver
+
+compatible: "st,stm32-tsc"
+
+include: [base.yaml, pinctrl-device.yaml, reset-device.yaml]
+
+properties:
+  reg:
+    required: true
+  clocks:
+    required: true
+  resets:
+    required: true
+  interrupts:
+    required: true
+  pinctrl-0:
+    required: true
+  pinctrl-names:
+    required: true
+
+  pulse-generator-prescaler:
+    type: string
+    default: "TSC_PG_PRESC_DIV2"
+    description: |
+      Prescaler for the pulse generator clock (t_pgclk=f_hclk/prescaler).
+      The prescaler is used to generate the charge transfer pulse.
+    enum:
+      - "TSC_PG_PRESC_DIV1"
+      - "TSC_PG_PRESC_DIV2"
+      - "TSC_PG_PRESC_DIV4"
+      - "TSC_PG_PRESC_DIV8"
+      - "TSC_PG_PRESC_DIV16"
+      - "TSC_PG_PRESC_DIV32"
+      - "TSC_PG_PRESC_DIV64"
+      - "TSC_PG_PRESC_DIV128"
+
+  ctph:
+    type: int
+    default: 2
+    description: |
+      Number of cycles for the high state of the
+      charge transfer pulse (1 to 16 cycles of t_pgclk).
+    enum: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+
+  ctpl:
+    type: int
+    default: 2
+    description: |
+      Number of cycles for the low state of the
+      charge transfer pulse (1 to 16 cycles of t_pgclk).
+    enum: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+
+  spread-spectrum:
+    type: boolean
+    description: Spread spectrum enable
+
+  spread-spectrum-prescaler:
+    type: int
+    default: 1
+    description: Spread spectrum clock prescaler (t_ssclk)
+    enum:
+      - 1
+      - 2
+
+  spread-spectrum-deviation:
+    type: int
+    default: 1
+    description: Spread spectrum deviation (1 to 128 cycles of t_ssclk)
+
+  max-count-value:
+    type: string
+    default: "TSC_MCV_8191"
+    description: |
+      Max number of charge transfer pulses before max count error is generated.
+    enum:
+      - "TSC_MCV_255"
+      - "TSC_MCV_511"
+      - "TSC_MCV_1023"
+      - "TSC_MCV_2047"
+      - "TSC_MCV_4095"
+      - "TSC_MCV_8191"
+      - "TSC_MCV_16383"
+      - "TSC_MCV_32767"
+
+  synced-acquisition:
+    type: boolean
+    description: |
+      Synchronized acquisition enable.
+      Acquisition starts when START bit and signal on sync pin.
+      You have to provide a pinctrl for the sync pin.
+
+  syncpol-rising:
+    type: boolean
+    description: Rising synchronization pin polarity, instead of falling
+
+  iodef-float:
+    type: boolean
+    description: |
+      Set default state (not acqusition) of all channel I/Os to floating.
+      push-pull down by default.
+
+child-binding:
+  description: STM32 TSC group configuration
+  properties:
+    group:
+      type: int
+      required: true
+      description: Group number (0 to 7)
+      enum: [0, 1, 2, 3, 4, 5, 6, 7]
+
+    channel-ios:
+      type: int
+      default: 1
+      description: Channel I/Os to be enabled
+      enum: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+
+    sampling-io:
+      type: int
+      required: true
+      description: Channel to be selected for sampling
+      enum:
+        - 1
+        - 2
+        - 4
+        - 8
+
+    use-as-shield:
+      type: boolean
+      description: |
+        Use channel as shield. This configures group but
+        does not enable it for acqusition. channel-io is used
+        as shield pin and can only have values 1, 2, 4 or 8.
