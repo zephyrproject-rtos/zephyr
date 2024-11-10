@@ -20,3 +20,5 @@ add_subdirectory(utils)
 add_subdirectory_ifdef(CONFIG_SMF smf)
 add_subdirectory_ifdef(CONFIG_OPENAMP              open-amp)
 add_subdirectory_ifdef(CONFIG_ACPI acpi)
+add_subdirectory_ifdef(CONFIG_NRF70_BUSLIB  nrf70_bus)
+

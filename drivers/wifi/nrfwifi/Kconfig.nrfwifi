@@ -20,29 +20,6 @@ menuconfig WIFI_NRF70
 	  Nordic Wi-Fi Driver
 
 if WIFI_NRF70
-# Hidden symbols for internal use
-config WIFI_NRF7002
-	bool
-	default y if DT_HAS_NORDIC_NRF7002_SPI_ENABLED || DT_HAS_NORDIC_NRF7002_QSPI_ENABLED
-
-config WIFI_NRF7001
-	bool
-	default y if DT_HAS_NORDIC_NRF7001_SPI_ENABLED || DT_HAS_NORDIC_NRF7001_QSPI_ENABLED
-
-config WIFI_NRF7000
-	bool
-	default y if DT_HAS_NORDIC_NRF7000_SPI_ENABLED || DT_HAS_NORDIC_NRF7000_QSPI_ENABLED
-
-
-module = WIFI_NRF70_BUS
-module-dep = LOG
-module-str = Log level for Wi-Fi nRF70 bus layers
-module-help = Sets log level for Wi-Fi nRF70 bus layers
-source "subsys/net/Kconfig.template.log_config.net"
-
-config WIFI_NRF70_BUS_LOG_LEVEL
-	# Enable error by default
-	default 1
 
 choice NRF70_OPER_MODES
 	bool "nRF70 operating modes"

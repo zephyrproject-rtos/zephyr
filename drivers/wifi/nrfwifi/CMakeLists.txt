@@ -18,7 +18,6 @@ zephyr_include_directories(
   ${OS_AGNOSTIC_BASE}/fw_if/umac_if/inc
   ${OS_AGNOSTIC_BASE}/fw_load/mips/fw/inc
   ${OS_AGNOSTIC_BASE}/hw_if/hal/inc
-  src/qspi/inc
   # for net_sprint_ll_addr
   ${ZEPHYR_BASE}/subsys/net/ip
   ${OS_AGNOSTIC_BASE}/hw_if/hal/inc/fw
@@ -62,9 +61,7 @@ zephyr_library_sources(
   src/shim.c
   src/work.c
   src/timer.c
-  src/qspi/src/device.c
-  src/qspi/src/rpu_hw_if.c
-  src/qspi/src/ficr_prog.c
+  src/ficr_prog.c
 )
 
 zephyr_library_sources_ifndef(CONFIG_NRF70_OFFLOADED_RAW_TX
@@ -130,14 +127,6 @@ zephyr_library_sources_ifdef(CONFIG_NRF70_STA_MODE
 
 zephyr_library_sources_ifdef(CONFIG_NRF70_PROMISC_DATA_RX
   ${OS_AGNOSTIC_BASE}/fw_if/umac_if/src/fmac_promisc.c
-)
-
-zephyr_library_sources_ifdef(CONFIG_NRF70_ON_QSPI
-  src/qspi/src/qspi_if.c
-)
-
-zephyr_library_sources_ifdef(CONFIG_NRF70_ON_SPI
-  src/qspi/src/spi_if.c
 )
 
 zephyr_library_sources_ifdef(CONFIG_NRF70_UTIL
@@ -349,3 +338,6 @@ zephyr_compile_definitions(
   -DNRF_WIFI_PS_INT_PS=${CONFIG_NRF_WIFI_PS_INT_PS}
   -DNRF_WIFI_RPU_RECOVERY_PS_ACTIVE_TIMEOUT_MS=${CONFIG_NRF_WIFI_RPU_RECOVERY_PS_ACTIVE_TIMEOUT_MS}
 )
+
+target_link_libraries(nrfwifi PRIVATE nrf70-buslib)
+
