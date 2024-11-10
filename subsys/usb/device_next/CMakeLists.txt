@@ -72,6 +72,11 @@ zephyr_library_sources_ifdef(
 )
 
 zephyr_library_sources_ifdef(
+  CONFIG_USBD_MIDI2_CLASS
+  class/usbd_midi2.c
+)
+
+zephyr_library_sources_ifdef(
 	CONFIG_USBD_HID_SUPPORT
 	class/usbd_hid.c
 	class/usbd_hid_api.c
