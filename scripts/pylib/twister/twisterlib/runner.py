@@ -144,7 +144,7 @@ class ExecutionCounter(object):
         return length
 
     def summary(self):
-        executed_cases = self.cases - self.skipped_cases - self.filtered_cases
+        selected_cases = self.cases - self.filtered_cases
         completed_configs = self.done - self.skipped_filter
 
         # Find alignment length for aesthetic printing
@@ -153,7 +153,7 @@ class ExecutionCounter(object):
         completed_suites_n_length = self._find_number_length(completed_configs)
         skipped_suites_n_length = self._find_number_length(self.skipped_configs)
         total_cases_n_length = self._find_number_length(self.cases)
-        executed_cases_n_length = self._find_number_length(executed_cases)
+        selected_cases_n_length = self._find_number_length(selected_cases)
 
         print("--------------------------------------------------")
         print(f"{'Total test suites: ':<23}{self.total:>{suites_n_length}}") # actually test instances
@@ -172,19 +172,19 @@ class ExecutionCounter(object):
         print("----------------------      ----------------------")
         print(f"{'Total test cases: ':<18}{self.cases}")
         print(f"├─ {'Filtered test cases: ':<21}{self.filtered_cases:>{total_cases_n_length}}")
-        print(f"├─ {'Skipped test cases: ':<21}{self.skipped_cases:>{total_cases_n_length}}")
-        print(f"└─ {'Selected test cases: ':<21}{executed_cases:>{total_cases_n_length}}")
-        print(f"   ├─ {'Passed test cases: ':<25}{self.passed_cases:>{executed_cases_n_length}}")
-        print(f"   ├─ {'Built only test cases: ':<25}{self.notrun_cases:>{executed_cases_n_length}}")
-        print(f"   ├─ {'Blocked test cases: ':<25}{self.blocked_cases:>{executed_cases_n_length}}")
-        print(f"   ├─ {'Failed test cases: ':<25}{self.failed_cases:>{executed_cases_n_length}}")
-        print(f"   {'├' if self.none_cases or self.started_cases else '└'}─ {'Errors in test cases: ':<25}{self.error_cases:>{executed_cases_n_length}}")
+        print(f"└─ {'Selected test cases: ':<21}{selected_cases:>{total_cases_n_length}}")
+        print(f"   ├─ {'Passed test cases: ':<25}{self.passed_cases:>{selected_cases_n_length}}")
+        print(f"   ├─ {'Skipped test cases: ':<25}{self.skipped_cases:>{total_cases_n_length}}")
+        print(f"   ├─ {'Built only test cases: ':<25}{self.notrun_cases:>{selected_cases_n_length}}")
+        print(f"   ├─ {'Blocked test cases: ':<25}{self.blocked_cases:>{selected_cases_n_length}}")
+        print(f"   ├─ {'Failed test cases: ':<25}{self.failed_cases:>{selected_cases_n_length}}")
+        print(f"   {'├' if self.none_cases or self.started_cases else '└'}─ {'Errors in test cases: ':<25}{self.error_cases:>{selected_cases_n_length}}")
         if self.none_cases or self.started_cases:
             print(f"   ├──── The following test case statuses should not appear in a proper execution ───")
         if self.none_cases:
-            print(f"   {'├' if self.started_cases else '└'}─ {'Statusless test cases: ':<25}{self.none_cases:>{executed_cases_n_length}}")
+            print(f"   {'├' if self.started_cases else '└'}─ {'Statusless test cases: ':<25}{self.none_cases:>{selected_cases_n_length}}")
         if self.started_cases:
-            print(f"   └─ {'Test cases only started: ':<25}{self.started_cases:>{executed_cases_n_length}}")
+            print(f"   └─ {'Test cases only started: ':<25}{self.started_cases:>{selected_cases_n_length}}")
         print("--------------------------------------------------")
 
     @property
