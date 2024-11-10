@@ -379,9 +379,8 @@ static int fxls8974_channel_get(const struct device *dev,
 
 			val += FXLS8974_MAX_ACCEL_CHANNELS;
 
-			if (fxls8974_get_temp_data(dev, val)) {
-				return -EIO;
-			}
+			return fxls8974_get_temp_data(dev, val);
+
 			break;
 		case SENSOR_CHAN_ACCEL_XYZ:
 			return fxls8974_get_accel_data(dev, val, SENSOR_CHAN_ACCEL_XYZ);
