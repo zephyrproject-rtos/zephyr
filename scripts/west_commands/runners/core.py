@@ -923,7 +923,8 @@ class ZephyrBinaryRunner(abc.ABC):
         # CONFIG_SHELL_VT100_COMMANDS etc.
         if shutil.which('nc') is not None:
             client_cmd = ['nc', host, str(port)]
-            self.run_client(client_cmd)
+            # Note: netcat (nc) does not handle sigint, so cannot use run_client()
+            self.check_call(client_cmd)
             return
 
         # Otherwise, use a pure python implementation. This will work well for logging,
