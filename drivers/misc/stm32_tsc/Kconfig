@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Arif Balik <arifbalik@outlook.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config STM32_TSC
+	bool "STM32 TSC driver"
+	default y
+	depends on DT_HAS_ST_STM32_TSC_ENABLED
+	help
+	  Enable driver for STM32 TSC peripheral.
