@@ -24,6 +24,9 @@ if (NOT CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_NO_INSECURE_KEY_WARNING)
   endif()
 endif()
 
+zephyr_library_sources_ifdef(CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_ZMS
+  store/zms.c
+)
 zephyr_library_sources_ifdef(CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_SETTINGS
-  store_settings.c
+  store/settings.c
 )
