@@ -47,7 +47,7 @@ static const char test_str_all_tx_bufs[] =
 #define MY_IPV4_ADDR "127.0.0.1"
 #define MY_IPV6_ADDR "::1"
 #define MY_MCAST_IPV4_ADDR "224.0.0.1"
-#define MY_MCAST_IPV6_ADDR "ff00::1"
+#define MY_MCAST_IPV6_ADDR "ff01::1"
 
 #define ANY_PORT 0
 #define SERVER_PORT 4242
@@ -947,6 +947,8 @@ static struct in6_addr my_addr1 = { { { 0x20, 0x01, 0x0d, 0xb8, 1, 0, 0, 0,
 static struct in_addr my_addr2 = { { { 192, 0, 2, 2 } } };
 static struct in6_addr my_addr3 = { { { 0x20, 0x01, 0x0d, 0xb8, 1, 0, 0, 0,
 					0, 0, 0, 0, 0, 0, 0, 0x3 } } };
+static struct in6_addr my_mcast_addr1 = { { { 0xff, 0x01, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 static uint8_t server_lladdr[] = { 0x01, 0x02, 0x03, 0xff, 0xfe,
 				0x04, 0x05, 0x06 };
 static struct net_linkaddr server_link_addr = {
@@ -957,6 +959,7 @@ static struct net_linkaddr server_link_addr = {
 #define PEER_IPV6_ADDR_ETH "2001:db8:100::2"
 #define TEST_TXTIME INT64_MAX
 #define WAIT_TIME K_MSEC(250)
+#define WAIT_TIME_LONG K_MSEC(1000)
 
 static void eth_fake_iface_init(struct net_if *iface)
 {
@@ -1015,6 +1018,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 
 	if (net_if_l2(iface) == &NET_L2_GET_NAME(DUMMY)) {
 		lo0 = iface;
+		net_if_set_default(iface);
 	}
 }
 
@@ -2529,6 +2533,142 @@ ZTEST(net_socket_udp, test_37_ipv6_src_addr_select)
 				       &my_addr1, &dest);
 	check_ipv6_address_preferences(NULL, IPV6_PREFER_SRC_TMP,
 				       &my_addr3, &dest);
+}
+
+ZTEST(net_socket_udp, test_38_ipv6_multicast_ifindex)
+{
+	struct sockaddr_in6 saddr6 = {
+		.sin6_family = AF_INET6,
+		.sin6_port = htons(SERVER_PORT),
+		.sin6_addr = my_mcast_addr1,
+	};
+	struct net_if_mcast_addr *ifmaddr;
+	struct net_if_addr *ifaddr;
+	int server_sock;
+	size_t addrlen;
+	size_t optlen;
+	int ifindex;
+	int optval;
+	int sock;
+	int ret;
+	int err;
+
+	net_if_foreach(iface_cb, &eth_iface);
+	zassert_not_null(eth_iface, "No ethernet interface found");
+
+	ifmaddr = net_if_ipv6_maddr_add(eth_iface, &my_mcast_addr1);
+	if (!ifmaddr) {
+		DBG("Cannot add IPv6 multicast address %s\n",
+		       net_sprint_ipv6_addr(&my_mcast_addr1));
+		zassert_not_null(ifmaddr, "mcast_addr1");
+	}
+
+	ifaddr = net_if_ipv6_addr_add(eth_iface, &my_addr3,
+				      NET_ADDR_AUTOCONF, 0);
+	if (!ifaddr) {
+		DBG("Cannot add IPv6 address %s\n",
+		       net_sprint_ipv6_addr(&my_addr3));
+		zassert_not_null(ifaddr, "addr1");
+	}
+
+	net_if_up(eth_iface);
+
+	/* Check that we get the default interface */
+	sock = zsock_socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
+	zassert_true(sock >= 0, "Cannot create socket (%d)", -errno);
+
+	optval = 0; optlen = 0U;
+	ret = zsock_getsockopt(sock, IPPROTO_IPV6, IPV6_MULTICAST_IF,
+			       &optval, &optlen);
+	zexpect_equal(ret, 0, "setsockopt failed (%d)", errno);
+	zexpect_equal(optlen, sizeof(optval), "invalid optlen %d vs %d",
+		      optlen, sizeof(optval));
+	ifindex = net_if_get_by_iface(net_if_get_default());
+	zexpect_equal(optval, ifindex,
+		      "getsockopt multicast ifindex (expected %d got %d)",
+		      ifindex, optval);
+
+	ret = zsock_close(sock);
+	zassert_equal(sock, 0, "Cannot close socket (%d)", -errno);
+
+	/* Check failure for IPv4 socket */
+	sock = zsock_socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	zassert_true(sock >= 0, "Cannot create socket (%d)", -errno);
+
+	optval = 0; optlen = 0U;
+	ret = zsock_getsockopt(sock, IPPROTO_IPV6, IPV6_MULTICAST_IF,
+			       &optval, &optlen);
+	err = -errno;
+	zexpect_equal(ret, -1, "setsockopt failed (%d)", errno);
+	zexpect_equal(err, -EAFNOSUPPORT, "setsockopt failed (%d)", errno);
+	zexpect_equal(optlen, 0U, "setsockopt optlen (%d)", optlen);
+
+	ret = zsock_close(sock);
+	zassert_equal(sock, 0, "Cannot close socket (%d)", -errno);
+
+	/* Check that we can set the interface */
+	sock = zsock_socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
+	zassert_true(sock >= 0, "Cannot create socket (%d)", -errno);
+
+	/* Clear any existing interface value by setting it to 0 */
+	optval = 0; optlen = sizeof(int);
+	ret = zsock_setsockopt(sock, IPPROTO_IPV6, IPV6_MULTICAST_IF,
+			       &optval, optlen);
+	err = -errno;
+	zexpect_equal(ret, 0, "setsockopt failed (%d)", err);
+	zexpect_equal(optlen, sizeof(optval), "invalid optlen %d vs %d",
+		      optlen, sizeof(optval));
+
+	/* Set the output multicast packet interface to the default interface */
+	optval = net_if_get_by_iface(net_if_get_default()); optlen = sizeof(int);
+	ret = zsock_setsockopt(sock, IPPROTO_IPV6, IPV6_MULTICAST_IF,
+			       &optval, optlen);
+	zexpect_equal(ret, 0, "setsockopt failed (%d)", errno);
+	zexpect_equal(optlen, sizeof(optval), "invalid optlen %d vs %d",
+		      optlen, sizeof(optval));
+
+	optval = 0; optlen = 0U;
+	ret = zsock_getsockopt(sock, IPPROTO_IPV6, IPV6_MULTICAST_IF,
+			       &optval, &optlen);
+	err = -errno;
+	zexpect_equal(ret, 0, "setsockopt failed (%d)", err);
+	zexpect_equal(optlen, sizeof(int), "setsockopt optlen (%d)", optlen);
+	zexpect_equal(optval, net_if_get_by_iface(net_if_get_default()),
+		      "getsockopt multicast ifindex (expected %d got %d)",
+		      net_if_get_by_iface(net_if_get_default()), optval);
+
+	server_sock = prepare_listen_sock_udp_v6(&saddr6);
+	zassert_not_equal(server_sock, -1, "Cannot create server socket (%d)", -errno);
+
+	test_started = true;
+	loopback_enable_address_swap(false);
+
+	ret = zsock_sendto(sock, TEST_STR_SMALL, sizeof(TEST_STR_SMALL) - 1, 0,
+			   (struct sockaddr *)&saddr6, sizeof(saddr6));
+	zexpect_equal(ret, STRLEN(TEST_STR_SMALL),
+		      "invalid send len (was %d expected %d) (%d)",
+		      ret, STRLEN(TEST_STR_SMALL), -errno);
+
+	/* Test that the sent data is received from default interface and
+	 * not the Ethernet one.
+	 */
+	addrlen = sizeof(saddr6);
+	ret = zsock_recvfrom(server_sock, rx_buf, sizeof(rx_buf),
+			     0, (struct sockaddr *)&saddr6, &addrlen);
+	zexpect_true(ret >= 0, "recvfrom fail");
+	zexpect_equal(ret, strlen(TEST_STR_SMALL),
+		      "unexpected received bytes");
+	zexpect_mem_equal(rx_buf, TEST_STR_SMALL, sizeof(TEST_STR_SMALL) - 1,
+			  "wrong data");
+
+	ret = zsock_close(sock);
+	zassert_equal(ret, 0, "Cannot close socket (%d)", -errno);
+
+	ret = zsock_close(server_sock);
+	zassert_equal(ret, 0, "Cannot close socket (%d)", -errno);
+
+	test_started = false;
+	loopback_enable_address_swap(true);
 }
 
 static void after(void *arg)
