@@ -9,8 +9,24 @@
         /* Located in generated directory. This file is populated by calling
          * zephyr_linker_sources(ROM_START ...). This typically contains the vector
          * table and debug information.
+         * #include <snippets-rom-start.ld>
          */
-        #include <snippets-rom-start.ld>
+        HIDDEN(__rom_start_address = .);
+        FILL(0x00);
+        . += 0x0 - (. - __rom_start_address);
+        . = ALIGN(4);
+        . = ALIGN( 1 << LOG2CEIL(4 * 32) );
+        . = ALIGN( 1 << LOG2CEIL(4 * (16 + 70)) );
+        _vector_start = .;
+        KEEP(*(.exc_vector_table))
+        KEEP(*(".exc_vector_table.*"))
+        KEEP(*(.vectors))
+        _vector_end = .;
+        . = ALIGN(4);
+        KEEP(*(.gnu.linkonce.irq_vector_table*))
+        _vector_end = .;
+        #include "../subsys/bindesc/bindesc.ld"
+        #include "../arch/arm/core/cortex_m/relay_vector_table.ld"
 
         /* startup code */
         *(.text._reset_section)
