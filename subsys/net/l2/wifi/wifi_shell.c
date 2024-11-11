@@ -3547,8 +3547,6 @@ SHELL_SUBCMD_ADD((wifi), connect, &wifi_commands,
 		  "7:EAP-TLS, 8:WEP, 9: WPA-PSK, 10: WPA-Auto-Personal, 11: DPP\n"
 		  "12: EAP-PEAP-MSCHAPv2, 13: EAP-PEAP-GTC, 14: EAP-TTLS-MSCHAPv2,\n"
 		  "15: EAP-PEAP-TLS, 16:EAP_TLS_SHA256\n"
-		  "17: FT_PSK, 18: FT_SAE, 19: FT_EAP, 20: FT_EAP_SHA384\n"
-		  "21: WPA-Auto-Personal-H2E, 22: WPA-Auto-Personal-AUTO\n"
 		  "[-w, --ieee-80211w]: MFP (optional: needs security type to be specified)\n"
 		  ": 0:Disable, 1:Optional, 2:Required.\n"
 		  "[-m, --bssid]: MAC address of the AP (BSSID).\n"
@@ -3561,6 +3559,7 @@ SHELL_SUBCMD_ADD((wifi), connect, &wifi_commands,
 		  "[-V, --eap-version]: 0 or 1. Default 1: eap version 1.\n"
 		  "[-I, --eap-id1]: Client Identity. Default no eap identity.\n"
 		  "[-P, --eap-pwd1]: Client Password.\n"
+		  "[-R, --fast-BSS-transition]: Fast BSS Transition used.\n"
 		  "Default no password for eap user.\n"
 		  "[-R, --ieee-80211r]: Use IEEE80211R fast BSS transition connect."
 		  "[-h, --help]: Print out the help for the connect command.\n",
