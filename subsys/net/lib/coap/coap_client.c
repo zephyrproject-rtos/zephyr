@@ -950,7 +950,10 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 		}
 	}
 fail:
-	if (ret < 0 || !internal_req->is_observe) {
+	if (ret < 0) {
+		report_callback_error(internal_req, ret);
+	}
+	if (!internal_req->is_observe) {
 		release_internal_request(internal_req);
 	}
 	return ret;
