@@ -361,6 +361,12 @@ __net_socket struct net_context {
 		 * see RFC 5014 for details.
 		 */
 		uint16_t addr_preferences;
+
+		/**
+		 * IPv6 multicast output network interface for this context/socket.
+		 * Only allowed for SOCK_DGRAM or SOCK_RAW type sockets.
+		 */
+		uint8_t ipv6_mcast_ifindex;
 #endif
 #if defined(CONFIG_NET_CONTEXT_TIMESTAMPING)
 		/** Enable RX, TX or both timestamps of packets send through sockets. */
@@ -1292,6 +1298,7 @@ enum net_context_option {
 	NET_OPT_TTL               = 16, /**< IPv4 unicast TTL */
 	NET_OPT_ADDR_PREFERENCES  = 17, /**< IPv6 address preference */
 	NET_OPT_TIMESTAMPING      = 18, /**< Packet timestamping */
+	NET_OPT_MCAST_IFINDEX     = 19, /**< IPv6 multicast output network interface index */
 	NET_OPT_MTU               = 20, /**< IPv4 socket path MTU */
 };
 
