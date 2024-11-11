@@ -195,8 +195,8 @@ def test_executioncounter(capfd):
     ec.done = 9
     ec.passed = 6
     ec.filtered_configs = 3
-    ec.skipped_runtime = 1
-    ec.skipped_filter = 2
+    ec.filtered_runtime = 1
+    ec.filtered_static = 2
     ec.failed = 1
 
     ec.summary()
@@ -240,8 +240,8 @@ def test_executioncounter(capfd):
     assert ec.done == 9
     assert ec.passed == 6
     assert ec.filtered_configs == 3
-    assert ec.skipped_runtime == 1
-    assert ec.skipped_filter == 2
+    assert ec.filtered_runtime == 1
+    assert ec.filtered_static == 2
     assert ec.failed == 1
 
 
@@ -1547,7 +1547,7 @@ def test_projectbuilder_process(
         __exit__=mock.Mock(return_value=None)
     )
     results_mock = mock.Mock()
-    results_mock.skipped_runtime = 0
+    results_mock.filtered_runtime = 0
 
     pb.process(pipeline_mock, done_mock, message, lock_mock, results_mock)
 
@@ -1558,7 +1558,7 @@ def test_projectbuilder_process(
 
     assert pb.instance.status == expected_status
     assert pb.instance.reason == expected_reason
-    assert results_mock.skipped_runtime_increment.call_args_list == [mock.call()] * expected_skipped
+    assert results_mock.filtered_runtime_increment.call_args_list == [mock.call()] * expected_skipped
 
     if expected_missing:
         pb.instance.add_missing_case_status.assert_called_with(*expected_missing)
@@ -2044,8 +2044,8 @@ def test_projectbuilder_report_out(
         notrun = 0,
         failed = 2,
         filtered_configs = 3,
-        skipped_runtime = 0,
-        skipped_filter = 0,
+        filtered_runtime = 0,
+        filtered_static = 0,
         error = 1,
         cases = 0,
         filtered_cases = 0,
@@ -2064,12 +2064,12 @@ def test_projectbuilder_report_out(
     def filtered_configs_increment(value=1, decrement=False):
         results_mock.filtered_configs += value * (-1 if decrement else 1)
     results_mock.filtered_configs_increment = filtered_configs_increment
-    def skipped_filter_increment(value=1, decrement=False):
-        results_mock.skipped_filter += value * (-1 if decrement else 1)
-    results_mock.skipped_filter_increment = skipped_filter_increment
-    def skipped_runtime_increment(value=1, decrement=False):
-        results_mock.skipped_runtime += value * (-1 if decrement else 1)
-    results_mock.skipped_runtime_increment = skipped_runtime_increment
+    def filtered_static_increment(value=1, decrement=False):
+        results_mock.filtered_static += value * (-1 if decrement else 1)
+    results_mock.filtered_static_increment = filtered_static_increment
+    def filtered_runtime_increment(value=1, decrement=False):
+        results_mock.filtered_runtime += value * (-1 if decrement else 1)
+    results_mock.filtered_runtime_increment = filtered_runtime_increment
     def failed_increment(value=1, decrement=False):
         results_mock.failed += value * (-1 if decrement else 1)
     results_mock.failed_increment = failed_increment
@@ -2567,8 +2567,8 @@ def test_twisterrunner_update_counting_before_pipeline():
         passed = 0,
         failed = 0,
         filtered_configs = 0,
-        skipped_runtime = 0,
-        skipped_filter = 0,
+        filtered_runtime = 0,
+        filtered_static = 0,
         error = 0,
         cases = 0,
         filtered_cases = 0,
@@ -2583,9 +2583,9 @@ def test_twisterrunner_update_counting_before_pipeline():
     def filtered_configs_increment(value=1, decrement=False):
         tr.results.filtered_configs += value * (-1 if decrement else 1)
     tr.results.filtered_configs_increment = filtered_configs_increment
-    def skipped_filter_increment(value=1, decrement=False):
-        tr.results.skipped_filter += value * (-1 if decrement else 1)
-    tr.results.skipped_filter_increment = skipped_filter_increment
+    def filtered_static_increment(value=1, decrement=False):
+        tr.results.filtered_static += value * (-1 if decrement else 1)
+    tr.results.filtered_static_increment = filtered_static_increment
     def error_increment(value=1, decrement=False):
         tr.results.error += value * (-1 if decrement else 1)
     tr.results.error_increment = error_increment
@@ -2598,7 +2598,7 @@ def test_twisterrunner_update_counting_before_pipeline():
 
     tr.update_counting_before_pipeline()
 
-    assert tr.results.skipped_filter == 1
+    assert tr.results.filtered_static == 1
     assert tr.results.filtered_configs == 1
     assert tr.results.filtered_cases == 4
     assert tr.results.cases == 4
@@ -2618,7 +2618,7 @@ def test_twisterrunner_show_brief(caplog):
 
     tr = TwisterRunner(instances, suites, env=env_mock)
     tr.results = mock.Mock(
-        skipped_filter = 3,
+        filtered_static = 3,
         filtered_configs = 4,
         skipped_cases = 0,
         cases = 0,
