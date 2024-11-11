@@ -46,6 +46,8 @@ struct st7796s_config {
 	uint8_t pgc[14]; /* Positive gamma control */
 	uint8_t ngc[14]; /* Negative gamma control */
 	uint8_t madctl; /* Memory data access control */
+	uint8_t te_mode; /* Tearing enable mode */
+	uint32_t te_delay; /* Tearing enable delay */
 	bool rgb_is_inverted;
 };
 
@@ -155,7 +157,7 @@ static int st7796s_write(const struct device *dev,
 {
 	const struct st7796s_config *config = dev->config;
 	int ret;
-	struct display_buffer_descriptor mipi_desc;
+	struct display_buffer_descriptor mipi_desc = {0};
 	enum display_pixel_format pixfmt;
 
 	ret = st7796s_set_cursor(dev, x, y, desc->width, desc->height);
@@ -164,6 +166,7 @@ static int st7796s_write(const struct device *dev,
 	}
 
 	mipi_desc.buf_size = desc->width * desc->height * ST7796S_PIXEL_SIZE;
+	mipi_desc.frame_incomplete = desc->frame_incomplete;
 
 	ret =  mipi_dbi_command_write(config->mipi_dbi,
 				      &config->dbi_config, ST7796S_CMD_RAMWR,
@@ -282,6 +285,18 @@ static int st7796s_lcd_config(const struct device *dev)
 		return ret;
 	}
 
+	/* Attempt to enable TE signal */
+	ret = mipi_dbi_configure_te(config->mipi_dbi, config->te_mode,
+				    config->te_delay);
+	if (ret == 0) {
+		/* TE was enabled- send TEON, and enable vblank only */
+		param = 0x0; /* Set TMEM bit to 0 */
+		ret = st7796s_send_cmd(dev, ST7796S_CMD_TEON, &param, sizeof(param));
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
 	/* Lock display configuration */
 	param = ST7796S_LOCK_1;
 	ret = st7796s_send_cmd(dev, ST7796S_CMD_CSCON, &param, sizeof(param));
@@ -385,6 +400,8 @@ static DEVICE_API(display, st7796s_api) = {
 		.ngc = DT_INST_PROP(n, ngc),					\
 		.madctl = DT_INST_PROP(n, madctl),				\
 		.rgb_is_inverted = DT_INST_PROP(n, rgb_is_inverted),		\
+		.te_mode = MIPI_DBI_TE_MODE_DT_INST(n, te_mode),                \
+		.te_delay = DT_INST_PROP(n, te_delay),                          \
 	};									\
 										\
 	DEVICE_DT_INST_DEFINE(n, st7796s_init,					\
