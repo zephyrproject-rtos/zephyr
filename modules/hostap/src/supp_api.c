@@ -471,7 +471,6 @@ static struct wifi_eap_config eap_config[] = {
 	 "auth=TLS"},
 	{WIFI_SECURITY_TYPE_EAP_TLS_SHA256, WIFI_EAP_TYPE_TLS, WIFI_EAP_TYPE_NONE, "TLS", NULL},
 };
-#endif
 
 int process_cipher_config(struct wifi_connect_req_params *params,
 			  struct wifi_eap_cipher_config *cipher_config)
