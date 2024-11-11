@@ -38,6 +38,8 @@ enum lcdic_cmd_type {
 #define LCDIC_MAX_XFER 0x40000
 /* Max reset width (in terms of Timer0_Period, see RST_CTRL register) */
 #define LCDIC_MAX_RST_WIDTH 0x3F
+/* Max reset pulse count */
+#define LCDIC_MAX_RST_PULSE_COUNT 0x7
 
 /* Descriptor for LCDIC command */
 union lcdic_trx_cmd {
@@ -580,7 +582,7 @@ static int mipi_dbi_lcdic_reset(const struct device *dev, k_timeout_t delay)
 	LCDIC_Type *base = config->base;
 	uint32_t lcdic_freq;
 	uint32_t delay_ms = k_ticks_to_ms_ceil32(delay.ticks);
-	uint8_t rst_width, pulse_cnt;
+	uint32_t rst_width, pulse_cnt;
 
 	/* Calculate delay based off timer0 ratio. Formula given
 	 * by RM is as follows:
@@ -597,6 +599,12 @@ static int mipi_dbi_lcdic_reset(const struct device *dev, k_timeout_t delay)
 	 */
 	pulse_cnt = ((rst_width + (LCDIC_MAX_RST_WIDTH - 1)) / LCDIC_MAX_RST_WIDTH);
 	rst_width = MIN(LCDIC_MAX_RST_WIDTH, rst_width);
+
+	if ((pulse_cnt - 1) > LCDIC_MAX_RST_PULSE_COUNT) {
+		/* Still issue reset pulse, but warn user */
+		LOG_WRN("Reset pulse is too long for configured timer0 ratio");
+		pulse_cnt = LCDIC_MAX_RST_PULSE_COUNT + 1;
+	}
 
 	/* Start the reset signal */
 	base->RST_CTRL = LCDIC_RST_CTRL_RST_WIDTH(rst_width - 1) |
