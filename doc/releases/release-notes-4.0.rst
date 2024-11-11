@@ -1080,6 +1080,9 @@ Nanopb
 LVGL
 ****
 
+* Added definition of ``LV_ATTRIBUTE_MEM_ALIGN`` so library internal data structures can be aligned
+  to a specific boundary.
+
 zcbor
 *****
 
@@ -1100,6 +1103,9 @@ Tests and Samples
 * Together with the deprecation of :ref:`native_posix<native_posix>`, many tests which were
   explicitly run in native_posix now run in :ref:`native_sim<native_sim>` instead.
   native_posix as a platform remains tested though.
+
+* Added :zephyr:code-sample:`smf_calculator` sample demonstrating the usage of the State Machine framework
+  in combination with LVGL to create a simple calculator application.
 
 Issue Related Items
 *******************
