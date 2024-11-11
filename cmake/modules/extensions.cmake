@@ -1526,9 +1526,9 @@ function(zephyr_code_relocate)
   # each directive can embed multiple CMake lists, representing flags and files,
   # the latter of which can come from generator expressions.
   get_property(code_rel_str TARGET code_data_relocation_target
-    PROPERTY COMPILE_DEFINITIONS)
+    PROPERTY INTERFACE_SOURCES)
   set_property(TARGET code_data_relocation_target
-    PROPERTY COMPILE_DEFINITIONS
+    PROPERTY INTERFACE_SOURCES
     "${code_rel_str}|${CODE_REL_LOCATION}:${flag_list}:${file_list}")
 endfunction()
 
