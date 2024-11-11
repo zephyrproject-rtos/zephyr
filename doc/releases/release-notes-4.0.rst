@@ -317,6 +317,7 @@ Drivers and Sensors
   * Added proper ADC2 calibration entries in ESP32.
   * Fixed calibration scheme in ESP32-S3.
   * STM32H7: Added support for higher sampling frequencies thanks to boost mode implementation.
+  * Added initial support for Renesas RA8 ADC driver (:dtcompatible:`renesas,ra-adc`)
 
 * Battery
 
@@ -336,6 +337,10 @@ Drivers and Sensors
   * STM32: :kconfig:option:`CONFIG_CLOCK_CONTROL` is now enabled by default at family level and doesn't need
     to be enabled at board level anymore.
   * STM32H7: PLL FRACN can now be configured (see :dtcompatible:`st,stm32h7-pll-clock`)
+  * Added initial support for Renesas RA clock control driver (:dtcompatible:`renesas,ra-cgc-pclk`,
+    :dtcompatible:`renesas,ra-cgc-pclk-block`, :dtcompatible:`renesas,ra-cgc-pll`,
+    :dtcompatible:`renesas,ra-cgc-external-clock`, :dtcompatible:`renesas,ra-cgc-subclk`,
+    :dtcompatible:`renesas,ra-cgc-pll-out`)
 
 * Comparator
 
@@ -346,6 +351,8 @@ Drivers and Sensors
   * Added support for NXP Kinetis ACMP (:dtcompatible:`nxp,kinetis-acmp`)
 
 * Counter
+
+  * Added initial support for Renesas RA8 AGT counter driver (:dtcompatible:`renesas,ra-agt`)
 
 * Crypto
 
@@ -366,6 +373,10 @@ Drivers and Sensors
 
   * Added support for using the EEPROM simulator with embedded C standard libraries
     (:dtcompatible:`zephyr,sim-eeprom`).
+
+* Entropy
+
+  * Added initial support for Renesas RA8 Entropy driver (:dtcompatible:`renesas,ra-rsip-e51a-trng`)
 
 * Ethernet
 
@@ -392,6 +403,7 @@ Drivers and Sensors
     for custom write and SFDP:BFP opcodes.
   * Added possibility to run STM32H7 flash driver from Cortex-M4 core.
   * Implemented readout protection handling (RDP levels) for STM32F7 SoCs.
+  * Added initial support for Renesas RA8 Flash controller driver (:dtcompatible:`renesas,ra-flash-hp-controller`)
 
 * GNSS
 
@@ -403,6 +415,8 @@ Drivers and Sensors
 * Hardware info
 
 * I2C
+
+  * Added initial support for Renesas RA8 I2C driver (:dtcompatible:`renesas,ra-iic`)
 
 * I2S
 
@@ -475,6 +489,7 @@ Drivers and Sensors
 * PWM
 
   * rpi_pico: The driver now configures the divide ratio adaptively.
+  * Added initial support for Renesas RA8 PWM driver (:dtcompatible:`renesas,ra8-pwm`)
 
 * Regulators
 
@@ -515,6 +530,8 @@ Drivers and Sensors
   * Sensry: Added UART support for Ganymed SY1XX.
 
 * SPI
+
+  * Added initial support for Renesas RA8 SPI driver (:dtcompatible:`renesas,ra8-spi-b`)
 
 * Steppers
 
