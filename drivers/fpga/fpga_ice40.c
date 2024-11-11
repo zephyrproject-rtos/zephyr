@@ -549,17 +549,13 @@ static int fpga_ice40_init(const struct device *dev)
 
 #define FPGA_ICE40_BUS_FREQ(inst) DT_INST_PROP(inst, spi_max_frequency)
 
-#define FPGA_ICE40_CONFIG_DELAY_US(inst)                                                           \
-	DT_INST_PROP_OR(inst, config_delay_us, FPGA_ICE40_CONFIG_DELAY_US_MIN)
+#define FPGA_ICE40_CONFIG_DELAY_US(inst) DT_INST_PROP(inst, config_delay_us)
 
-#define FPGA_ICE40_CRESET_DELAY_US(inst)                                                           \
-	DT_INST_PROP_OR(inst, creset_delay_us, FPGA_ICE40_CRESET_DELAY_US_MIN)
+#define FPGA_ICE40_CRESET_DELAY_US(inst) DT_INST_PROP(inst, creset_delay_us)
 
-#define FPGA_ICE40_LEADING_CLOCKS(inst)                                                            \
-	DT_INST_PROP_OR(inst, leading_clocks, FPGA_ICE40_LEADING_CLOCKS_MIN)
+#define FPGA_ICE40_LEADING_CLOCKS(inst) DT_INST_PROP(inst, leading_clocks)
 
-#define FPGA_ICE40_TRAILING_CLOCKS(inst)                                                           \
-	DT_INST_PROP_OR(inst, trailing_clocks, FPGA_ICE40_TRAILING_CLOCKS_MIN)
+#define FPGA_ICE40_TRAILING_CLOCKS(inst) DT_INST_PROP(inst, trailing_clocks)
 
 #define FPGA_ICE40_MHZ_DELAY_COUNT(inst) DT_INST_PROP_OR(inst, mhz_delay_count, 0)
 
