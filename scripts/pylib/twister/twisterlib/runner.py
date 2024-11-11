@@ -104,6 +104,7 @@ class ExecutionCounter(object):
         # updated by report_out() in pipeline
         self._error = Value('i', 0)
         self._failed = Value('i', 0)
+        self._skipped = Value('i', 0)
 
         # initialized to number of test instances
         self._total = Value('i', total)
@@ -145,30 +146,27 @@ class ExecutionCounter(object):
 
     def summary(self):
         selected_cases = self.cases - self.filtered_cases
-        completed_configs = self.done - self.filtered_static
+        completed_configs = self.done - self.filtered_static - self.filtered_runtime
 
         # Find alignment length for aesthetic printing
         suites_n_length = self._find_number_length(self.total if self.total > self.done else self.done)
-        processed_suites_n_length = self._find_number_length(self.done)
         completed_suites_n_length = self._find_number_length(completed_configs)
-        skipped_suites_n_length = self._find_number_length(self.filtered_configs)
+        filtered_suites_n_length = self._find_number_length(self.filtered_configs)
         total_cases_n_length = self._find_number_length(self.cases)
         selected_cases_n_length = self._find_number_length(selected_cases)
 
         print("--------------------------------------------------")
         print(f"{'Total test suites: ':<23}{self.total:>{suites_n_length}}") # actually test instances
         print(f"{'Processed test suites: ':<23}{self.done:>{suites_n_length}}")
-        print(f"├─ {'Filtered test suites (static): ':<37}{self.filtered_static:>{processed_suites_n_length}}")
-        print(f"└─ {'Selected test suites: ':<37}{completed_configs:>{processed_suites_n_length}}")
-        print(f"   ├─ {'Skipped test suites: ':<37}{self.filtered_runtime:>{completed_suites_n_length}}")
+        print(f"└─{'Filtered test suites: ':<21}{self.filtered_configs}")
+        print(f"  ├─ {'Filtered test suites (static): ':<37}{self.filtered_static:>{filtered_suites_n_length}}")
+        print(f"  └─ {'Filtered test suites (at runtime): ':<37}{self.filtered_runtime:>{filtered_suites_n_length}}")
+        print(f"└─ {'Selected test suites: ':<37}{completed_configs:>{completed_suites_n_length}}")
+        print(f"   ├─ {'Skipped test suites: ':<37}{self.skipped:>{completed_suites_n_length}}")
         print(f"   ├─ {'Passed test suites: ':<37}{self.passed:>{completed_suites_n_length}}")
         print(f"   ├─ {'Built only test suites: ':<37}{self.notrun:>{completed_suites_n_length}}")
         print(f"   ├─ {'Failed test suites: ':<37}{self.failed:>{completed_suites_n_length}}")
         print(f"   └─ {'Errors in test suites: ':<37}{self.error:>{completed_suites_n_length}}")
-        print(f"")
-        print(f"{'Filtered test suites: ':<21}{self.filtered_configs}")
-        print(f"├─ {'Filtered test suites (static): ':<37}{self.filtered_static:>{skipped_suites_n_length}}")
-        print(f"└─ {'Filtered test suites (at runtime): ':<37}{self.filtered_runtime:>{skipped_suites_n_length}}")
         print("----------------------      ----------------------")
         print(f"{'Total test cases: ':<18}{self.cases}")
         print(f"├─ {'Filtered test cases: ':<21}{self.filtered_cases:>{total_cases_n_length}}")
@@ -340,6 +338,20 @@ class ExecutionCounter(object):
     def started_cases_increment(self, value=1):
         with self._started_cases.get_lock():
             self._started_cases.value += value
+
+    @property
+    def skipped(self):
+        with self._skipped.get_lock():
+            return self._skipped.value
+
+    @skipped.setter
+    def skipped(self, value):
+        with self._skipped.get_lock():
+            self._skipped.value = value
+
+    def skipped_increment(self, value=1):
+        with self._skipped.get_lock():
+            self._skipped.value += value
 
     @property
     def error(self):
@@ -892,6 +904,7 @@ class ProjectBuilder(FilterBuilder):
                         logger.debug("filtering %s" % self.instance.name)
                         self.instance.status = TwisterStatus.FILTER
                         self.instance.reason = "runtime filter"
+                        results.filtered_runtime_increment()
                         self.instance.add_missing_case_status(TwisterStatus.FILTER)
                         next_op = 'report'
                     else:
@@ -951,7 +964,7 @@ class ProjectBuilder(FilterBuilder):
                     # Count skipped cases during build, for example
                     # due to ram/rom overflow.
                     if  self.instance.status == TwisterStatus.SKIP:
-                        results.filtered_runtime_increment()
+                        results.skipped_increment()
                         self.instance.add_missing_case_status(TwisterStatus.SKIP, self.instance.reason)
 
                     if ret.get('returncode', 1) > 0:
@@ -1381,7 +1394,7 @@ class ProjectBuilder(FilterBuilder):
             if not self.options.verbose:
                 self.log_info_file(self.options.inline_logs)
         elif instance.status == TwisterStatus.SKIP:
-            results.filtered_configs_increment()
+            results.skipped_increment()
         elif instance.status == TwisterStatus.FILTER:
             results.filtered_configs_increment()
         elif instance.status == TwisterStatus.PASS:
