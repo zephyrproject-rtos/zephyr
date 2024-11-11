@@ -209,17 +209,15 @@ def test_executioncounter(capfd):
         '--------------------------------------------------\n'
         'Total test suites:     12\n'
         'Processed test suites:  9\n'
-        '├─ Filtered test suites (static):       2\n'
-        '└─ Completed test suites:               7\n'
-        '   ├─ Filtered test suites (at runtime):   1\n'
+        '└─Filtered test suites: 3\n'
+        '  ├─ Filtered test suites (static):       2\n'
+        '  └─ Filtered test suites (at runtime):   1\n'
+        '└─ Selected test suites:                6\n'
+        '   ├─ Skipped test suites:                 0\n'
         '   ├─ Passed test suites:                  6\n'
         '   ├─ Built only test suites:              0\n'
         '   ├─ Failed test suites:                  1\n'
         '   └─ Errors in test suites:               2\n'
-        '\n'
-        'Filtered test suites: 3\n'
-        '├─ Filtered test suites (static):       2\n'
-        '└─ Filtered test suites (at runtime):   1\n'
         '----------------------      ----------------------\n'
         'Total test cases: 25\n'
         '├─ Filtered test cases:  0\n'
@@ -914,7 +912,7 @@ TESTDATA_6 = [
         {'op': 'report', 'test': mock.ANY},
         TwisterStatus.FILTER,
         'runtime filter',
-        0,
+        1,
         (TwisterStatus.FILTER,)
     ),
     (
@@ -1091,7 +1089,7 @@ TESTDATA_6 = [
         {'op': 'gather_metrics', 'test': mock.ANY},
         mock.ANY,
         mock.ANY,
-        1,
+        0,
         (TwisterStatus.SKIP, mock.ANY)
     ),
     (
