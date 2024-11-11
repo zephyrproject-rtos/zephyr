@@ -312,7 +312,11 @@ static inline int16_t get_source_id(const void *source)
 
 static void packet_end(STMESP_Type *stm_esp)
 {
-	STM_FLAG(stm_esp);
+	if (IS_ENABLED(CONFIG_LOG_FRONTEND_STMESP_MSG_END_TIMESTAMP)) {
+		STM_D8(stm_esp, 0, true, true);
+	} else {
+		STM_FLAG(stm_esp);
+	}
 	atomic_set(&new_data, 1);
 }
 
@@ -363,7 +367,11 @@ void log_frontend_msg(const void *source, const struct log_msg_desc desc, uint8_
 			return;
 		}
 
-		STM_D32(stm_esp, hdr.raw, use_timestamp, true);
+		if (IS_ENABLED(CONFIG_LOG_FRONTEND_STMESP_MSG_END_TIMESTAMP)) {
+			STM_D32(stm_esp, hdr.raw, false, false);
+		} else {
+			STM_D32(stm_esp, hdr.raw, use_timestamp, true);
+		}
 		(void)cbprintf_package_convert(package, desc.package_len, package_cb, stm_esp,
 					       flags, strl, ARRAY_SIZE(strl));
 		write_data(sname, sname_len, stm_esp);
@@ -412,7 +420,11 @@ void log_frontend_msg(const void *source, const struct log_msg_desc desc, uint8_
 			return;
 		}
 
-		STM_D32(stm_esp, dict_desc.raw, true, true);
+		if (IS_ENABLED(CONFIG_LOG_FRONTEND_STMESP_MSG_END_TIMESTAMP)) {
+			STM_D32(stm_esp, dict_desc.raw, false, false);
+		} else {
+			STM_D32(stm_esp, dict_desc.raw, true, true);
+		}
 		(void)cbprintf_package_convert(package, desc.package_len, package_cb, stm_esp,
 					       flags, NULL, 0);
 		if (data) {
@@ -460,7 +472,11 @@ static inline void msg_start(STMESP_Type *stm_esp, uint32_t level, const void *s
 {
 	union stm_log_dict_hdr dict_desc = DICT_HDR_INITIALIZER(level, get_source_id(source), 0);
 
-	STM_D32(stm_esp, dict_desc.raw, true, true);
+	if (IS_ENABLED(CONFIG_LOG_FRONTEND_STMESP_MSG_END_TIMESTAMP)) {
+		STM_D32(stm_esp, dict_desc.raw, false, false);
+	} else {
+		STM_D32(stm_esp, dict_desc.raw, true, true);
+	}
 	STM_D32(stm_esp, package_hdr, false, false);
 	STM_D32(stm_esp, (uint32_t)fmt, false, false);
 }
@@ -609,8 +625,12 @@ int log_frontend_stmesp_etr_ready(void)
 	early_buf_read_mode();
 
 	while ((len = early_buf_get_data((void **)&buf)) > 0) {
-		/* Write first word with Marked and timestamp. */
-		STM_D32(stm_esp, *buf, true, true);
+		if (IS_ENABLED(CONFIG_LOG_FRONTEND_STMESP_MSG_END_TIMESTAMP)) {
+			STM_D32(stm_esp, *buf, false, false);
+		} else {
+			/* Write first word with Marked and timestamp. */
+			STM_D32(stm_esp, *buf, true, true);
+		}
 		buf++;
 		len -= sizeof(uint32_t);
 
