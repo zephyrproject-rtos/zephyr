@@ -1,0 +1,41 @@
+# Copyright (c) 2026 Realtek Semiconductor, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config UDC_RTS5817
+	bool "RTS5817 UDC driver"
+	default y
+	depends on DT_HAS_REALTEK_RTS5817_USBD_ENABLED
+	select UDC_DRIVER_HAS_HIGH_SPEED_SUPPORT
+	help
+	  Enable driver for RTS5817 USB.
+
+if UDC_RTS5817
+
+config UDC_RTS5817_THREAD_PRIORITY
+	int "rts5817 usb controller driver thread priority"
+	depends on UDC_RTS5817
+	default 8
+	help
+	  RTS5817 device controller driver thread priority.
+
+config UDC_RTS_MAX_QMESSAGES
+	int "UDC RTS maximum number of ISR event messages"
+	range 4 64
+	default 8
+	help
+	  RTS maximum number of ISR event messages.
+
+config UDC_RTS5817_STACK_SIZE
+	int "UDC driver internal thread stack size"
+	depends on UDC_RTS5817
+	default 1024
+	help
+	  RTS UDC driver internal thread stack size.
+
+config NET_BUF_ALIGNMENT
+	int "Network buffer alignment restriction"
+	default 32
+	help
+	  RTS5817 UDC driver requires DMA alignment for bulk out buffer.
+
+endif	# UDC_RTS5817
