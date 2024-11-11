@@ -167,6 +167,9 @@ Boards & SoC Support
   * Added ESP32 WROVER-E-N16R4 variant.
   * STM32H5: Added support for OpenOCD through STMicroelectronics OpenOCD fork.
   * MAX32: Enabled Segger RTT and SystemView support.
+  * Silabs Series 2: Use oscillator, clock and DCDC configuration from device tree during init.
+  * Silabs Series 2: Added initialization for SMU (Security Management Unit).
+  * Silabs Series 2: Use sleeptimer as the default OS timer instead of systick.
 
 * Added support for these boards:
 
@@ -344,6 +347,7 @@ Drivers and Sensors
     :dtcompatible:`renesas,ra-cgc-pclk-block`, :dtcompatible:`renesas,ra-cgc-pll`,
     :dtcompatible:`renesas,ra-cgc-external-clock`, :dtcompatible:`renesas,ra-cgc-subclk`,
     :dtcompatible:`renesas,ra-cgc-pll-out`)
+  * Silabs: Added support for Series 2+ Clock Management Unit (see :dtcompatible:`silabs,series-clock`)
 
 * Comparator
 
@@ -672,6 +676,7 @@ Drivers and Sensors
 
   * Added initial support for Renesas RA8 SPI driver (:dtcompatible:`renesas,ra8-spi-b`)
   * Added RTIO support to the Analog Devices MAX32 driver.
+  * Silabs: Added support for EUSART (:dtcompatible:`silabs,gecko-spi-eusart`)
 
 * Steppers
 
@@ -683,6 +688,10 @@ Drivers and Sensors
   * Added support for gpio-stepper-controller (:dtcompatible:`gpio-stepper-controller`)
   * Added stepper api test-suite
   * Added stepper shell test-suite
+
+* Timer
+
+  * Silabs: Added support for Sleeptimer (:dtcompatible:`silabs,gecko-stimer`)
 
 * USB
 
@@ -1193,6 +1202,10 @@ HALs
 
   * Synced HAL to version v5.1.4 to update SoCs low level files, RF libraries and
     overall driver support.
+
+* Silabs
+
+  * Updated Series 2 to Simplicity SDK 2024.6, while Series 0/1 continue to use Gecko SDK 4.4.
 
 MCUboot
 *******
