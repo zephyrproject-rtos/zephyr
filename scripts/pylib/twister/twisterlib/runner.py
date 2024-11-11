@@ -67,11 +67,11 @@ class ExecutionCounter(object):
 
         total = yaml test scenarios * applicable platforms
         done := instances that reached report_out stage of the pipeline
-        done = skipped_configs + passed + failed + error
+        done = filtered_configs + passed + failed + error
         completed = done - skipped_filter
-        skipped_configs = skipped_runtime + skipped_filter
+        filtered_configs = skipped_runtime + skipped_filter
 
-        pass rate = passed / (total - skipped_configs)
+        pass rate = passed / (total - filtered_configs)
         case pass rate = passed_cases / (cases - filtered_cases - skipped_cases)
         '''
         # instances that go through the pipeline
@@ -91,7 +91,7 @@ class ExecutionCounter(object):
 
         # static filter + runtime filter + build skipped
         # updated by update_counting_before_pipeline() and report_out()
-        self._skipped_configs = Value('i', 0)
+        self._filtered_configs = Value('i', 0)
 
         # cmake filter + build skipped
         # updated by report_out()
@@ -151,7 +151,7 @@ class ExecutionCounter(object):
         suites_n_length = self._find_number_length(self.total if self.total > self.done else self.done)
         processed_suites_n_length = self._find_number_length(self.done)
         completed_suites_n_length = self._find_number_length(completed_configs)
-        skipped_suites_n_length = self._find_number_length(self.skipped_configs)
+        skipped_suites_n_length = self._find_number_length(self.filtered_configs)
         total_cases_n_length = self._find_number_length(self.cases)
         selected_cases_n_length = self._find_number_length(selected_cases)
 
@@ -159,14 +159,14 @@ class ExecutionCounter(object):
         print(f"{'Total test suites: ':<23}{self.total:>{suites_n_length}}") # actually test instances
         print(f"{'Processed test suites: ':<23}{self.done:>{suites_n_length}}")
         print(f"├─ {'Filtered test suites (static): ':<37}{self.skipped_filter:>{processed_suites_n_length}}")
-        print(f"└─ {'Completed test suites: ':<37}{completed_configs:>{processed_suites_n_length}}")
-        print(f"   ├─ {'Filtered test suites (at runtime): ':<37}{self.skipped_runtime:>{completed_suites_n_length}}")
+        print(f"└─ {'Selected test suites: ':<37}{completed_configs:>{processed_suites_n_length}}")
+        print(f"   ├─ {'Skipped test suites: ':<37}{self.skipped_runtime:>{completed_suites_n_length}}")
         print(f"   ├─ {'Passed test suites: ':<37}{self.passed:>{completed_suites_n_length}}")
         print(f"   ├─ {'Built only test suites: ':<37}{self.notrun:>{completed_suites_n_length}}")
         print(f"   ├─ {'Failed test suites: ':<37}{self.failed:>{completed_suites_n_length}}")
         print(f"   └─ {'Errors in test suites: ':<37}{self.error:>{completed_suites_n_length}}")
         print(f"")
-        print(f"{'Filtered test suites: ':<21}{self.skipped_configs}")
+        print(f"{'Filtered test suites: ':<21}{self.filtered_configs}")
         print(f"├─ {'Filtered test suites (static): ':<37}{self.skipped_filter:>{skipped_suites_n_length}}")
         print(f"└─ {'Filtered test suites (at runtime): ':<37}{self.skipped_runtime:>{skipped_suites_n_length}}")
         print("----------------------      ----------------------")
@@ -412,18 +412,18 @@ class ExecutionCounter(object):
             self._notrun.value += value
 
     @property
-    def skipped_configs(self):
-        with self._skipped_configs.get_lock():
-            return self._skipped_configs.value
+    def filtered_configs(self):
+        with self._filtered_configs.get_lock():
+            return self._filtered_configs.value
 
-    @skipped_configs.setter
-    def skipped_configs(self, value):
-        with self._skipped_configs.get_lock():
-            self._skipped_configs.value = value
+    @filtered_configs.setter
+    def filtered_configs(self, value):
+        with self._filtered_configs.get_lock():
+            self._filtered_configs.value = value
 
-    def skipped_configs_increment(self, value=1):
-        with self._skipped_configs.get_lock():
-            self._skipped_configs.value += value
+    def filtered_configs_increment(self, value=1):
+        with self._filtered_configs.get_lock():
+            self._filtered_configs.value += value
 
     @property
     def skipped_filter(self):
@@ -1381,9 +1381,9 @@ class ProjectBuilder(FilterBuilder):
             if not self.options.verbose:
                 self.log_info_file(self.options.inline_logs)
         elif instance.status == TwisterStatus.SKIP:
-            results.skipped_configs_increment()
+            results.filtered_configs_increment()
         elif instance.status == TwisterStatus.FILTER:
-            results.skipped_configs_increment()
+            results.filtered_configs_increment()
         elif instance.status == TwisterStatus.PASS:
             results.passed_increment()
         elif instance.status == TwisterStatus.NOTRUN:
@@ -1439,8 +1439,8 @@ class ProjectBuilder(FilterBuilder):
                 TwisterStatus.get_color(TwisterStatus.NOTRUN),
                 results.notrun,
                 Fore.RESET,
-                TwisterStatus.get_color(TwisterStatus.SKIP) if results.skipped_configs > 0 else Fore.RESET,
-                results.skipped_configs,
+                TwisterStatus.get_color(TwisterStatus.SKIP) if results.filtered_configs > 0 else Fore.RESET,
+                results.filtered_configs,
                 Fore.RESET,
                 TwisterStatus.get_color(TwisterStatus.FAIL) if results.failed > 0 else Fore.RESET,
                 results.failed,
@@ -1699,7 +1699,7 @@ class TwisterRunner:
         for instance in self.instances.values():
             if instance.status == TwisterStatus.FILTER and not instance.reason == 'runtime filter':
                 self.results.skipped_filter_increment()
-                self.results.skipped_configs_increment()
+                self.results.filtered_configs_increment()
                 self.results.filtered_cases_increment(len(instance.testsuite.testcases))
                 self.results.cases_increment(len(instance.testsuite.testcases))
             elif instance.status == TwisterStatus.ERROR:
@@ -1709,9 +1709,9 @@ class TwisterRunner:
         logger.info("%d test scenarios (%d configurations) selected, "
                     "%d configurations filtered (%d by static filter, %d at runtime)." %
                     (len(self.suites), len(self.instances),
-                    self.results.skipped_configs,
+                    self.results.filtered_configs,
                     self.results.skipped_filter,
-                    self.results.skipped_configs - self.results.skipped_filter))
+                    self.results.filtered_configs - self.results.skipped_filter))
 
     def add_tasks_to_queue(self, pipeline, build_only=False, test_only=False, retry_build_errors=False):
         for instance in self.instances.values():
