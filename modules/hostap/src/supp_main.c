@@ -116,9 +116,6 @@ static const struct wifi_mgmt_ops mgmt_ap_ops = {
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
 	.ap_bandwidth = supplicant_ap_bandwidth,
 	.ap_config_params = supplicant_ap_config_params,
-#if defined CONFIG_WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE
-	.enterprise_creds = supplicant_add_enterprise_creds,
-#endif
 };
 
 DEFINE_WIFI_NM_INSTANCE(hostapd, &mgmt_ap_ops);
