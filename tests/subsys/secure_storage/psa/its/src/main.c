@@ -114,7 +114,7 @@ ZTEST(secure_storage_psa_its, test_write_once_flag)
 {
 	psa_status_t ret;
 	/* Use a UID that isn't used in the other tests for the write-once entry. */
-	const psa_storage_uid_t uid = ~UID;
+	const psa_storage_uid_t uid = 1 << 16;
 	const uint8_t data[MAX_DATA_SIZE] = {};
 	struct psa_storage_info_t info;
 

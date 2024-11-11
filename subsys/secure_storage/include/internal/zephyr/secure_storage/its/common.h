@@ -19,6 +19,7 @@ typedef enum {
 	SECURE_STORAGE_ITS_CALLER_PSA_ITS,
 	SECURE_STORAGE_ITS_CALLER_PSA_PS,
 	SECURE_STORAGE_ITS_CALLER_MBEDTLS,
+	SECURE_STORAGE_ITS_CALLER_COUNT
 } secure_storage_its_caller_id_t;
 
 /** The UID (caller + entry IDs) of an ITS entry. */
