@@ -1297,7 +1297,7 @@ static int cmd_wifi_11k(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (params.oper == WIFI_MGMT_GET) {
-		PR("11k is %s\n", params.enable_11k ? "enabled" : "disabled");
+		PR("11k is %s\n", params.enable_11k ? "disabled" : "enabled");
 	} else {
 		PR("%s %s requested\n", argv[0], argv[1]);
 	}
