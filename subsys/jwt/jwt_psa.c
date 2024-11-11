@@ -24,15 +24,15 @@ int jwt_sign_impl(struct jwt_builder *builder, const unsigned char *der_key, siz
 	psa_algorithm_t alg;
 	int ret;
 
-#if defined(CONFIG_JWT_SIGN_ECDSA)
+#if defined(CONFIG_JWT_SIGN_ECDSA_PSA)
 	psa_set_key_type(&attr, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
 	psa_set_key_algorithm(&attr, PSA_ALG_ECDSA(PSA_ALG_SHA_256));
 	alg = PSA_ALG_ECDSA(PSA_ALG_SHA_256);
-#else  /* CONFIG_JWT_SIGN_RSA */
+#else
 	psa_set_key_type(&attr, PSA_KEY_TYPE_RSA_KEY_PAIR);
 	psa_set_key_algorithm(&attr, PSA_ALG_RSA_PKCS1V15_SIGN(PSA_ALG_SHA_256));
 	alg = PSA_ALG_RSA_PKCS1V15_SIGN(PSA_ALG_SHA_256);
-#endif /* CONFIG_JWT_SIGN_ECDSA || CONFIG_JWT_SIGN_RSA */
+#endif
 	psa_set_key_usage_flags(&attr, PSA_KEY_USAGE_SIGN_MESSAGE);
 
 	status = psa_import_key(&attr, der_key, der_key_len, &key_id);

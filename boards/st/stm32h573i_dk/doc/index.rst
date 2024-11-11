@@ -192,7 +192,8 @@ hardware features:
 +-----------+------------+-------------------------------------+
 | RTC       | on-chip    | rtc                                 |
 +-----------+------------+-------------------------------------+
-
+| ETHERNET  | on-chip    | ethernet                            |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 

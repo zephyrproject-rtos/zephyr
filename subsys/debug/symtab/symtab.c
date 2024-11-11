@@ -10,14 +10,14 @@
 #include <zephyr/debug/symtab.h>
 #include <zephyr/shell/shell.h>
 
-const struct symtab_info *const symtab_get(void)
+const struct symtab_info *symtab_get(void)
 {
 	extern const struct symtab_info z_symtab;
 
 	return &z_symtab;
 }
 
-const char *const symtab_find_symbol_name(uintptr_t addr, uint32_t *offset)
+const char *symtab_find_symbol_name(uintptr_t addr, uint32_t *offset)
 {
 	const struct symtab_info *const symtab = symtab_get();
 	const uint32_t symbol_offset = addr - symtab->first_addr;

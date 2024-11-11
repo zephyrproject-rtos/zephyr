@@ -10,7 +10,7 @@
 /**
  * @brief Comparator Interface
  * @defgroup comparator_interface Comparator Interface
- * @since 3.7
+ * @since 4.0
  * @version 0.1.0
  * @ingroup io_interfaces
  * @{

@@ -13,5 +13,6 @@ config SOC_SERIES_STM32L5X
 	select ARMV8_M_DSP
 	select CPU_CORTEX_M_HAS_DWT
 	select HAS_STM32CUBE
+	select HAS_SWO
 	select HAS_PM
 	select SOC_EARLY_INIT_HOOK

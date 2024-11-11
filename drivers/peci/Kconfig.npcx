@@ -8,5 +8,6 @@ config PECI_NPCX
 	default y
 	depends on DT_HAS_NUVOTON_NPCX_PECI_ENABLED
 	select PECI_INTERRUPT_DRIVEN
+	select PINCTRL
 	help
 	  Enable the NPCX PECI IO driver.

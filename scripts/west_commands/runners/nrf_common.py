@@ -35,9 +35,17 @@ UICR_RANGES = {
         'NRFDL_DEVICE_CORE_APPLICATION': (0x00FF8000, 0x00FF8800),
         'NRFDL_DEVICE_CORE_NETWORK': (0x01FF8000, 0x01FF8800),
     },
+    'NRF54H_FAMILY': {
+        'NRFDL_DEVICE_CORE_APPLICATION': (0x0FFF8000, 0x0FFF8800),
+        'NRFDL_DEVICE_CORE_NETWORK': (0x0FFFA000, 0x0FFFA800),
+    },
     'NRF91_FAMILY': {
         'NRFDL_DEVICE_CORE_APPLICATION': (0x00FF8000, 0x00FF8800),
-    }
+    },
+    'NRF92_FAMILY': {
+        'NRFDL_DEVICE_CORE_APPLICATION': (0x0FFF8000, 0x0FFF8800),
+        'NRFDL_DEVICE_CORE_NETWORK': (0x0FFFA000, 0x0FFFA800),
+    },
 }
 
 # Relative to the root of the hal_nordic module
@@ -307,6 +315,19 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
                 self.build_conf.getboolean('CONFIG_SOC_NRF54H20_ENGB_CPURAD') or
                 self.build_conf.getboolean('CONFIG_SOC_NRF9280_CPURAD')
             )
+            generated_uicr = self.build_conf.getboolean('CONFIG_NRF_REGTOOL_GENERATE_UICR')
+
+            if cpuapp:
+                core = 'NRFDL_DEVICE_CORE_APPLICATION'
+            elif cpurad:
+                core = 'NRFDL_DEVICE_CORE_NETWORK'
+
+            if generated_uicr and not self.hex_get_uicrs().get(core):
+                raise RuntimeError(
+                    f"Expected a UICR to be contained in: {self.hex_}\n"
+                    "Please ensure that the correct version of nrf-regtool is "
+                    "installed, then run 'west build --cmake' to try again."
+                )
 
             if self.erase:
                 self.exec_op('erase', core='NRFDL_DEVICE_CORE_APPLICATION')
@@ -335,18 +356,9 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
                         mpi_hex_dir / 'suit_installed_envelopes_application_merged.hex')
                     self.op_program(app_root_envelope_hex_file, 'ERASE_NONE', None, defer=True, core='NRFDL_DEVICE_CORE_APPLICATION')
 
-            if cpuapp:
-                if not self.erase and self.build_conf.getboolean('CONFIG_NRF_REGTOOL_GENERATE_UICR'):
-                    self.exec_op('erase', core='NRFDL_DEVICE_CORE_APPLICATION',
-                                 option={'chip_erase_mode': 'ERASE_UICR',
-                                         'qspi_erase_mode': 'ERASE_NONE'})
-                core = 'NRFDL_DEVICE_CORE_APPLICATION'
-            elif cpurad:
-                if not self.erase and self.build_conf.getboolean('CONFIG_NRF_REGTOOL_GENERATE_UICR'):
-                    self.exec_op('erase', core='NRFDL_DEVICE_CORE_NETWORK',
-                                 option={'chip_erase_mode': 'ERASE_UICR',
-                                         'qspi_erase_mode': 'ERASE_NONE'})
-                core = 'NRFDL_DEVICE_CORE_NETWORK'
+            if not self.erase and generated_uicr:
+                self.exec_op('erase', core=core, option={'chip_erase_mode': 'ERASE_UICR',
+                                                         'qspi_erase_mode': 'ERASE_NONE'})
         else:
             if self.erase:
                 erase_arg = 'ERASE_ALL'

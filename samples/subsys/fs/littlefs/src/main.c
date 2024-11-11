@@ -311,9 +311,9 @@ static int littlefs_mount(struct fs_mount_t *mp)
 #ifdef CONFIG_APP_LITTLEFS_STORAGE_BLK_SDMMC
 
 #if defined(CONFIG_DISK_DRIVER_SDMMC)
-#define DISK_NAME CONFIG_SDMMC_VOLUME_NAME
+#define DISK_NAME "SD"
 #elif defined(CONFIG_DISK_DRIVER_MMC)
-#define DISK_NAME CONFIG_MMC_VOLUME_NAME
+#define DISK_NAME "SD2"
 #else
 #error "No disk device defined, is your board supported?"
 #endif

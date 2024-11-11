@@ -58,6 +58,7 @@ static int spim_xfer_rx(unsigned int addr, void *data, unsigned int len, unsigne
 		addr & 0xFF,
 		0 /* dummy byte */
 	};
+	uint8_t discard[sizeof(hdr) + 2 * 4];
 
 	const struct spi_buf tx_buf[] = {
 		{.buf = hdr,  .len = sizeof(hdr) },
@@ -67,11 +68,16 @@ static int spim_xfer_rx(unsigned int addr, void *data, unsigned int len, unsigne
 	const struct spi_buf_set tx = { .buffers = tx_buf, .count = 2 };
 
 	const struct spi_buf rx_buf[] = {
-		{.buf = NULL,  .len = sizeof(hdr) + discard_bytes},
+		{.buf = discard,  .len = sizeof(hdr) + discard_bytes},
 		{.buf = data, .len = len },
 	};
 
 	const struct spi_buf_set rx = { .buffers = rx_buf, .count = 2 };
+
+	if (rx_buf[0].len > sizeof(discard)) {
+		LOG_ERR("Discard bytes too large, please adjust buf size");
+		return -EINVAL;
+	}
 
 	return spi_transceive_dt(&spi_spec, &tx, &rx);
 }

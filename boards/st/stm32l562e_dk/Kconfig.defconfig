@@ -30,4 +30,16 @@ endchoice
 
 endif # DISPLAY
 
+if BUILD_WITH_TFM
+
+# Not defining LIBC malloc arena has the effect of declaring all available RAM
+# as available for malloc.
+# This currently conflicts with TF-M MPU setting, resulting in a hard fault.
+# Define a specific size to avoid this situation.
+
+config COMMON_LIBC_MALLOC_ARENA_SIZE
+	default 2048
+
+endif # BUILD_WITH_TFM
+
 endif # BOARD_STM32L562E_DK

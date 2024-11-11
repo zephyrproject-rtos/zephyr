@@ -7,6 +7,7 @@ menuconfig SPI_NPCX_SPIP
 	bool "Nuvoton NPCX embedded controller (EC) SPI driver"
 	default y
 	depends on DT_HAS_NUVOTON_NPCX_SPIP_ENABLED
+	select PINCTRL
 	help
 	  Enable the SPI peripherals on NPCX MCU.
 

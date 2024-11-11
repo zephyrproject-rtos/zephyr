@@ -8,5 +8,6 @@ config RENESAS_RA_I2C_IIC
 	default y
 	depends on DT_HAS_RENESAS_RA_IIC_ENABLED
 	select USE_RA_FSP_I2C_IIC
+	select PINCTRL
 	help
 	  Enable Renesas RA I2C IIC Driver.

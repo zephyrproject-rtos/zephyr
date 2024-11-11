@@ -487,7 +487,7 @@ static void udc_nrf_power_handler(nrfx_power_usb_evt_t pwr_evt)
 	}
 }
 
-static void udc_nrf_fake_status_in(const struct device *dev)
+static bool udc_nrf_fake_status_in(const struct device *dev)
 {
 	struct udc_nrf_evt evt = {
 		.type = UDC_NRF_EVT_STATUS_IN,
@@ -497,7 +497,10 @@ static void udc_nrf_fake_status_in(const struct device *dev)
 	if (nrf_usbd_common_last_setup_dir_get() == USB_CONTROL_EP_OUT) {
 		/* Let controller perform status IN stage */
 		k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
+		return true;
 	}
+
+	return false;
 }
 
 static int udc_nrf_ep_enqueue(const struct device *dev,
@@ -512,8 +515,9 @@ static int udc_nrf_ep_enqueue(const struct device *dev,
 	udc_buf_put(cfg, buf);
 
 	if (cfg->addr == USB_CONTROL_EP_IN && buf->len == 0) {
-		udc_nrf_fake_status_in(dev);
-		return 0;
+		if (udc_nrf_fake_status_in(dev)) {
+			return 0;
+		}
 	}
 
 	k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);

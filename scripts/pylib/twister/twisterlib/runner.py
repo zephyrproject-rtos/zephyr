@@ -900,7 +900,9 @@ class ProjectBuilder(FilterBuilder):
                     next_op = 'report'
                 elif self.options.cmake_only:
                     if self.instance.status == TwisterStatus.NONE:
-                        self.instance.status = TwisterStatus.PASS
+                        logger.debug("CMake only: PASS %s" % self.instance.name)
+                        self.instance.status = TwisterStatus.NOTRUN
+                        self.instance.add_missing_case_status(TwisterStatus.NOTRUN, 'CMake only')
                     next_op = 'report'
                 else:
                     # Here we check the runtime filter results coming from running cmake
@@ -974,6 +976,10 @@ class ProjectBuilder(FilterBuilder):
                 elif self.instance.run and self.instance.handler.ready:
                     next_op = 'run'
                 else:
+                    if self.instance.status == TwisterStatus.NOTRUN:
+                        run_conditions =  f"(run:{self.instance.run}, handler.ready:{self.instance.handler.ready})"
+                        logger.debug(f"Instance {self.instance.name} can't run {run_conditions}")
+                        self.instance.add_missing_case_status(TwisterStatus.NOTRUN, f"Nowhere to run")
                     next_op = 'report'
             except StatusAttributeError as sae:
                 logger.error(str(sae))

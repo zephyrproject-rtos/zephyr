@@ -8,11 +8,11 @@
 	spim2_loopback: spim2_loopback {
 		group1 {
 			pinmux = <SPIM2_MISO_GPIO2>;
-			output-enable; /* Connect GPIO2 and GPIO3 externally for testing */
+			output-enable; /* Enable internal loopback */
 		};
 		group2 {
-			pinmux = <SPIM2_MOSI_GPIO3>;
-			input-enable; /* Connect GPIO2 and GPIO3 externally for testing */
+			pinmux = <SPIM2_MOSI_GPIO2>;
+			input-enable; /* Enable internal loopback */
 		};
 		group3 {
 			pinmux = <SPIM2_SCLK_GPIO6>,

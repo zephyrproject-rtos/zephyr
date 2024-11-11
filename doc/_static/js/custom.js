@@ -16,7 +16,7 @@ const registerOnScrollEvent = (function(){
         // Configuration.
 
         // The number of pixels the user must scroll by before the logo is completely hidden.
-        const scrollTopPixels = 156;
+        const scrollTopPixels = 137;
         // The target margin to be applied to the navigation bar when the logo is hidden.
         const menuTopMargin = 54;
         // The max-height offset when the logo is completely visible.

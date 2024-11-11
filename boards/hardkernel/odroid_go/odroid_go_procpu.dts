@@ -144,6 +144,7 @@
 		status = "okay";
 		mmc {
 			compatible = "zephyr,sdmmc-disk";
+			disk-name = "SD";
 			status = "okay";
 		};
 		spi-max-frequency = <20000000>;

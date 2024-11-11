@@ -295,6 +295,9 @@ static void dut_pub_common(bool disable_bt)
 		ASSERT_OK_MSG(k_sem_take(&publish_sem, K_SECONDS(30)), "Pub timed out");
 	}
 
+	/* Allow publishing to finish before suspending. */
+	k_sleep(K_MSEC(100));
+
 	ASSERT_OK_MSG(bt_mesh_suspend(), "Failed to suspend Mesh.");
 
 	if (disable_bt) {
@@ -318,8 +321,29 @@ static void dut_pub_common(bool disable_bt)
 	ASSERT_OK(bt_mesh_suspend());
 }
 
+static void send_start(uint16_t duration, int err, void *cb_data)
+{
+	if (err) {
+		FAIL("Failed to send message (err %d)", err);
+	}
+}
+
+static void send_end(int err, void *cb_data)
+{
+	k_sem_give((struct k_sem *)cb_data);
+}
+
 static void dut_gatt_common(bool disable_bt)
 {
+	struct k_sem send_sem;
+
+	k_sem_init(&send_sem, 0, 1);
+
+	const struct bt_mesh_send_cb send_cb = {
+		.start = send_start,
+		.end = send_end,
+	};
+
 	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
 	bt_mesh_device_setup(&prov, &comp);
 	ASSERT_OK_MSG(bt_mesh_prov_enable(BT_MESH_PROV_GATT), "Failed to enable GATT provisioner");
@@ -336,8 +360,9 @@ static void dut_gatt_common(bool disable_bt)
 
 	/* Send a mesh message to notify Tester that DUT is about to be suspended. */
 	dut_status = DUT_SUSPENDED;
-	bt_mesh_test_send_over_adv(&dut_status, sizeof(enum dut_mesh_status));
-	k_sleep(K_MSEC(150));
+	bt_mesh_test_send_over_adv_cb(&dut_status, sizeof(enum dut_mesh_status), &send_cb,
+				      &send_sem);
+	ASSERT_OK(k_sem_take(&send_sem, K_MSEC(200)));
 
 	ASSERT_OK_MSG(bt_mesh_suspend(), "Failed to suspend Mesh.");
 

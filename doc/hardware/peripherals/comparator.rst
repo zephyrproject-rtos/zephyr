@@ -43,6 +43,7 @@ The ``comp`` shell command provides the following subcommands:
 * ``get_output`` See :c:func:`comparator_get_output`
 * ``set_trigger`` See :c:func:`comparator_set_trigger`
 * ``await_trigger`` Awaits trigger using the following flow:
+
   * Set trigger callback using :c:func:`comparator_set_trigger_callback`
   * Await callback or time out after default or optionally provided timeout
   * Clear trigger callback using :c:func:`comparator_set_trigger_callback`

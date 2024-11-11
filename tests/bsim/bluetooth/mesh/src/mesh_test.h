@@ -204,6 +204,8 @@ void bt_mesh_test_ra_cb_setup(void (*cb)(uint8_t *, size_t));
 uint16_t bt_mesh_test_own_addr_get(uint16_t start_addr);
 
 void bt_mesh_test_send_over_adv(void *data, size_t len);
+void bt_mesh_test_send_over_adv_cb(void *data, size_t len, const struct bt_mesh_send_cb *cb,
+				   void *cb_data);
 /* Wait for a packet (i. e. an advertisement or a GATT frame) sent by a device.
  * `scan_cb` is triggered if the packet is received, and must release `observer_sem` when finished.
  */

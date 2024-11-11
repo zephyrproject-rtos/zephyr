@@ -978,7 +978,7 @@ TESTDATA_6 = [
         mock.ANY,
         [],
         {'op': 'report', 'test': mock.ANY},
-        TwisterStatus.PASS,
+        TwisterStatus.NOTRUN,
         mock.ANY,
         0,
         None

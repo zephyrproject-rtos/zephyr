@@ -38,7 +38,11 @@ LOG_MODULE_REGISTER(bt_mesh_adv_legacy);
 static struct k_thread adv_thread_data;
 static K_KERNEL_STACK_DEFINE(adv_thread_stack, CONFIG_BT_MESH_ADV_STACK_SIZE);
 static int32_t adv_timeout;
-static bool enabled;
+
+static bool is_mesh_suspended(void)
+{
+	return atomic_test_bit(bt_mesh.flags, BT_MESH_SUSPENDED);
+}
 
 static int bt_data_send(uint8_t num_events, uint16_t adv_int,
 			const struct bt_data *ad, size_t ad_len,
@@ -104,7 +108,7 @@ static int bt_data_send(uint8_t num_events, uint16_t adv_int,
 		bt_mesh_adv_send_start(duration, err, ctx);
 	}
 
-	if (enabled) {
+	if (!is_mesh_suspended()) {
 		k_sleep(K_MSEC(duration));
 	}
 
@@ -148,7 +152,7 @@ static void adv_thread(void *p1, void *p2, void *p3)
 	LOG_DBG("started");
 	struct bt_mesh_adv *adv;
 
-	while (enabled) {
+	while (!is_mesh_suspended()) {
 		if (IS_ENABLED(CONFIG_BT_MESH_GATT_SERVER)) {
 			adv = bt_mesh_adv_get(K_NO_WAIT);
 			if (IS_ENABLED(CONFIG_BT_MESH_PROXY_SOLICITATION) && !adv) {
@@ -234,7 +238,13 @@ void bt_mesh_adv_init(void)
 
 int bt_mesh_adv_enable(void)
 {
-	enabled = true;
+	/* The advertiser thread relies on BT_MESH_SUSPENDED flag. No point in starting the
+	 * advertiser thread if the flag is not set.
+	 */
+	if (is_mesh_suspended()) {
+		return -EINVAL;
+	}
+
 	k_thread_start(&adv_thread_data);
 	return 0;
 }
@@ -243,12 +253,21 @@ int bt_mesh_adv_disable(void)
 {
 	int err;
 
-	enabled = false;
+	/* k_thread_join will sleep forever if BT_MESH_SUSPENDED flag is not set. The advertiser
+	 * thread will exit once the flag is set. The flag is set by the higher layer function. Here
+	 * we need to check that the flag is dropped and ensure that the thread is stopped.
+	 */
+	if (!is_mesh_suspended()) {
+		return -EINVAL;
+	}
 
 	err = k_thread_join(&adv_thread_data, K_FOREVER);
 	LOG_DBG("Advertising disabled: %d", err);
 
-	return 0;
+	/* Since the thread will immediately stop after this function call and won’t perform any
+	 * further operations, it’s safe to ignore the deadlock error (EDEADLK).
+	 */
+	return err == -EDEADLK ? 0 : err;
 }
 
 int bt_mesh_adv_gatt_start(const struct bt_le_adv_param *param, int32_t duration,
@@ -257,4 +276,9 @@ int bt_mesh_adv_gatt_start(const struct bt_le_adv_param *param, int32_t duration
 {
 	adv_timeout = duration;
 	return bt_le_adv_start(param, ad, ad_len, sd, sd_len);
+}
+
+int bt_mesh_wq_submit(struct k_work *work)
+{
+	return k_work_submit(work);
 }

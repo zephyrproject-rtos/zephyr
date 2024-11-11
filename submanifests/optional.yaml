@@ -22,7 +22,7 @@ manifest:
       groups:
         - optional
     - name: nanopb
-      revision: 4474bd35bd39de067f0532a1b19ce3aed9ed9807
+      revision: 98bf4db69897b53434f3d0ba72e0a3ab1a902824
       path: modules/lib/nanopb
       remote: upstream
       groups:
@@ -46,7 +46,7 @@ manifest:
       groups:
         - optional
     - name: tf-m-tests
-      revision: d552e4f18b92032bd335d5e3aa312f6acd82a83b
+      revision: 502ea90105ee18f20c78f710e2ba2ded0fc0756e
       path: modules/tee/tf-m/tf-m-tests
       remote: upstream
       groups:

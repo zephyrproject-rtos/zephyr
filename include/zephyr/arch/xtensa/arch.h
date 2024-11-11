@@ -63,7 +63,7 @@ extern "C" {
 
 struct arch_mem_domain {
 #ifdef CONFIG_XTENSA_MMU
-	uint32_t *ptables __aligned(CONFIG_MMU_PAGE_SIZE);
+	uint32_t *ptables;
 	uint8_t asid;
 	bool dirty;
 #endif

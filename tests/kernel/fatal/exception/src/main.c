@@ -108,16 +108,16 @@ void entry_cpu_exception_extend(void *p1, void *p2, void *p3)
 #if defined(CONFIG_ARM64)
 	__asm__ volatile ("svc 0");
 #elif defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
-	__asm__ volatile ("BKPT");
+	__asm__ volatile ("udf #0");
 #elif defined(CONFIG_CPU_CORTEX_M)
-	__asm__ volatile ("swi 0");
+	__asm__ volatile ("udf #0");
 #elif defined(CONFIG_NIOS2)
 	__asm__ volatile ("trap");
 #elif defined(CONFIG_RISCV)
 	/* In riscv architecture, use an undefined
 	 * instruction to trigger illegal instruction on RISCV.
 	 */
-	__asm__ volatile (".word 0x77777777");
+	__asm__ volatile ("unimp");
 	/* In arc architecture, SWI instruction is used
 	 * to trigger soft interrupt.
 	 */

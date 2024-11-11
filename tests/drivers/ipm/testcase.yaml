@@ -8,3 +8,22 @@ tests:
       - ipc
     integration_platforms:
       - qemu_x86
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "Running TESTSUITE test_ipm"
+        - "ipm_console: 'everything is awesome'"
+        - "ipm_console: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, \
+           sed do eiusmod tempor '"
+        - "ipm_console: 'incididunt ut labore et dolore magna aliqua. Ut enim ad \
+           minim veniam, quis nost'"
+        - "ipm_console: 'rud exercitation ullamco laboris nisi ut aliquip ex ea commodo \
+           consequat. Duis '"
+        - "ipm_console: 'aute irure dolor in reprehenderit in voluptate velit esse cillum \
+           dolore eu fugi'"
+        - "ipm_console: 'at nulla pariatur. Excepteur sint occaecat cupidatat non proident, \
+           sunt in culp'"
+        - "ipm_console: 'a qui officia deserunt mollit anim id est laborum.'"
+        - "TESTSUITE test_ipm succeeded"

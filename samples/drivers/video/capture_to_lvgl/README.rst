@@ -32,7 +32,7 @@ For :zephyr:board:`mini_stm32h743`, build this sample application with the follo
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/video/capture_to_lvgl/
    :board: mini_stm32h743
-   :shield: weact_ministm32h7xx_ov2640
+   :shield: weact_ov2640_cam_module
    :goals: build flash
    :gen-args: -DCONFIG_BOOT_DELAY=2000
    :compact:

@@ -16,13 +16,6 @@ config SD_INIT_PRIORITY
 	help
 	  MMC controller driver initialization priority.
 
-config MMC_VOLUME_NAME
-	string "MMC Disk mount point or drive name"
-	default "SD" if FAT_FILESYSTEM_ELM
-	default "MMC"
-	help
-	  Disk name as per file system naming guidelines.
-
 config MMC_SUBSYS
 	bool "MMC access via SD subsystem"
 	select MMC_STACK

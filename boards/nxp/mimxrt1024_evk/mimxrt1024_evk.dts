@@ -241,6 +241,7 @@ zephyr_udc0: &usb1 {
 	no-1-8-v;
 	sdmmc {
 		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
 		status = "okay";
 	};
 };

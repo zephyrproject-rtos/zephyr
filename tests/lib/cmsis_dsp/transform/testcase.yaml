@@ -70,7 +70,7 @@ tests:
       - native_sim
     tags: cmsis-dsp
     min_flash: 1024
-    min_ram: 64
+    min_ram: 80
     extra_args: CONF_FILE=prj_base.conf
     extra_configs:
       - CONFIG_CMSIS_DSP_TEST_TRANSFORM_CQ31=y
@@ -81,7 +81,7 @@ tests:
       - cmsis-dsp
       - fpu
     min_flash: 1024
-    min_ram: 64
+    min_ram: 80
     extra_args: CONF_FILE=prj_base.conf
     extra_configs:
       - CONFIG_CMSIS_DSP_TEST_TRANSFORM_CQ31=y
@@ -256,7 +256,7 @@ tests:
       - native_sim
     tags: cmsis-dsp
     min_flash: 1024
-    min_ram: 64
+    min_ram: 80
     extra_args: CONF_FILE=prj_base.conf
     extra_configs:
       - CONFIG_CMSIS_DSP_TEST_TRANSFORM_RF64=y
@@ -267,7 +267,7 @@ tests:
       - cmsis-dsp
       - fpu
     min_flash: 1024
-    min_ram: 64
+    min_ram: 80
     extra_args: CONF_FILE=prj_base.conf
     extra_configs:
       - CONFIG_CMSIS_DSP_TEST_TRANSFORM_RF64=y

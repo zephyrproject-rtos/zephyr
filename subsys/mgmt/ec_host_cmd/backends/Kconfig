@@ -55,6 +55,7 @@ config EC_HOST_CMD_BACKEND_SHI_NPCX
 	bool "SHI by Nuvoton"
 	depends on DT_HAS_NUVOTON_NPCX_SHI_ENABLED || \
 		   DT_HAS_NUVOTON_NPCX_SHI_ENHANCED_ENABLED
+	select PINCTRL
 	help
 	  This option enables the driver for SHI backend in the
 	  Nuvoton NPCX chip.

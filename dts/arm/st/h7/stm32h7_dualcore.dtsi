@@ -25,3 +25,7 @@
 		};
 	};
 };
+
+&flash {
+	clocks = <&rcc STM32_CLOCK(AHB3, 8U)>;
+};

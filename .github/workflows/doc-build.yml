@@ -42,6 +42,7 @@ jobs:
       with:
         files: |
           doc/
+          boards/**/doc/
           **.rst
           include/
           kernel/include/kernel_arch_interface.h

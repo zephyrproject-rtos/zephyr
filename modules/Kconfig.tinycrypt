@@ -9,7 +9,6 @@ config ZEPHYR_TINYCRYPT_MODULE
 config TINYCRYPT
 	bool "TinyCrypt Support"
 	depends on ZEPHYR_TINYCRYPT_MODULE
-	select DEPRECATED
 	help
 	  This option enables the TinyCrypt cryptography library.
 

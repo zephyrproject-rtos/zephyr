@@ -10,24 +10,26 @@
 #include <zephyr/device.h>
 #include <string.h>
 
-static const char fake_request[] = {"PRO_CPU: Fake request to APP_CPU"};
+static const char request[] = {"PRO_CPU: request to APP_CPU"};
 
 static const struct device *ipm_dev;
 static char received_string[64];
 static struct k_sem sync;
 
-static void ipm_receive_callback(const struct device *ipmdev, void *user_data,
-			       uint32_t id, volatile void *data)
+static void ipm_receive_callback(const struct device *ipmdev, void *user_data, uint32_t id,
+				 volatile void *data)
 {
 	ARG_UNUSED(ipmdev);
 	ARG_UNUSED(user_data);
 
-	strcpy(received_string, (const char *)data);
+	strncpy(received_string, (const char *)data, sizeof(received_string));
 	k_sem_give(&sync);
 }
 
 int main(void)
 {
+	int ret;
+
 	k_sem_init(&sync, 0, 1);
 
 	ipm_dev = DEVICE_DT_GET(DT_NODELABEL(ipm0));
@@ -38,15 +40,23 @@ int main(void)
 
 	ipm_register_callback(ipm_dev, ipm_receive_callback, NULL);
 
+	/* Workaround to catch up with APPCPU */
+	k_sleep(K_MSEC(50));
+
 	while (1) {
-		printk("PRO_CPU is sending a fake request, waiting remote response...\n\r");
+		printk("PRO_CPU is sending a request, waiting remote response...\n\r");
 
-		ipm_send(ipm_dev, -1, sizeof(fake_request), &fake_request, sizeof(fake_request));
-		k_sem_take(&sync, K_FOREVER);
+		ipm_send(ipm_dev, -1, sizeof(request), &request, sizeof(request));
 
-		printk("PRO_CPU received a message from APP_CPU : %s\n\r", received_string);
+		ret = k_sem_take(&sync, K_MSEC(5000));
 
-		k_sleep(K_MSEC(200));
+		if (ret) {
+			printk("No response from APP_CPU - trying again.\r\n");
+		} else {
+			printk("PRO_CPU received a message from APP_CPU : %s\n\r", received_string);
+		}
+
+		k_sleep(K_MSEC(1000));
 	}
 	return 0;
 }

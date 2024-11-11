@@ -34,11 +34,7 @@ config NUM_IRQS
 config ZTEST_NO_YIELD
 	default y if (ZTEST && PM)
 
-#
-# MBEDTLS is larger but much faster than TinyCrypt so choose wisely
-#
 config MBEDTLS
-#config TINYCRYPT
 	default y if CSPRNG_ENABLED
 	depends on ENTROPY_GENERATOR
 

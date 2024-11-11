@@ -207,6 +207,26 @@ static int fpga_ice40_load_gpio(const struct device *dev, uint32_t *image_ptr, u
 	struct fpga_ice40_data *data = dev->data;
 	const struct fpga_ice40_config *config = dev->config;
 
+	if (!device_is_ready(config->clk.port)) {
+		LOG_ERR("%s: GPIO for clk is not ready", dev->name);
+		return -ENODEV;
+	}
+
+	if (!device_is_ready(config->pico.port)) {
+		LOG_ERR("%s: GPIO for pico is not ready", dev->name);
+		return -ENODEV;
+	}
+
+	if (config->set == NULL) {
+		LOG_ERR("%s: set register was not specified", dev->name);
+		return -EFAULT;
+	}
+
+	if (config->clear == NULL) {
+		LOG_ERR("%s: clear register was not specified", dev->name);
+		return -EFAULT;
+	}
+
 	/* prepare masks */
 	cs = BIT(config->bus.config.cs.gpio.pin);
 	clk = BIT(config->clk.pin);
@@ -501,6 +521,16 @@ static int fpga_ice40_init(const struct device *dev)
 {
 	int ret;
 	const struct fpga_ice40_config *config = dev->config;
+
+	if (!device_is_ready(config->creset.port)) {
+		LOG_ERR("%s: GPIO for creset is not ready", dev->name);
+		return -ENODEV;
+	}
+
+	if (!device_is_ready(config->cdone.port)) {
+		LOG_ERR("%s: GPIO for cdone is not ready", dev->name);
+		return -ENODEV;
+	}
 
 	ret = gpio_pin_configure_dt(&config->creset, GPIO_OUTPUT_HIGH);
 	if (ret < 0) {

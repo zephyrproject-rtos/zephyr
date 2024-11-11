@@ -1,0 +1,20 @@
+# STM32L552ZE-Q Nucleo board configuration
+
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NUCLEO_L552ZE_Q
+
+if BUILD_WITH_TFM
+
+# Not defining LIBC malloc arena has the effect of declaring all available RAM
+# as available for malloc.
+# This currently conflicts with TF-M MPU setting, resulting in a hard fault.
+# Define a specific size to avoid this situation.
+
+config COMMON_LIBC_MALLOC_ARENA_SIZE
+	default 2048
+
+endif # BUILD_WITH_TFM
+
+endif # BOARD_NUCLEO_L552ZE_Q

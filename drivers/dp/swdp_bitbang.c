@@ -601,9 +601,11 @@ static int sw_port_on(const struct device *dev)
 		return ret;
 	}
 
-	ret = gpio_pin_configure_dt(&config->reset, GPIO_OUTPUT_ACTIVE);
-	if (ret) {
-		return ret;
+	if (config->reset.port) {
+		ret = gpio_pin_configure_dt(&config->reset, GPIO_OUTPUT_ACTIVE);
+		if (ret) {
+			return ret;
+		}
 	}
 
 	return 0;

@@ -9,5 +9,6 @@ config QDEC_SAM
 	default y
 	depends on DT_HAS_ATMEL_SAM_TC_QDEC_ENABLED
 	depends on SOC_FAMILY_ATMEL_SAM
+	select PINCTRL
 	help
 	  Atmel SAM MCU family Quadrature Decoder (TC) driver.

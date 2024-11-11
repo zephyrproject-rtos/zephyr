@@ -57,20 +57,23 @@
 };
 
 &pll {
-	clocks = <&xtal>;
-	div = <2>;
-	mul = <96 0>;
-	divp = <2>;
-	freqp = <DT_FREQ_M(480)>;
-	divq = <2>;
-	freqq = <DT_FREQ_M(480)>;
-	divr = <2>;
-	freqr = <DT_FREQ_M(480)>;
 	status = "okay";
+	pllp {
+		status = "okay";
+	};
+
+	pllq {
+		status = "okay";
+	};
+
+	pllr {
+		status = "okay";
+	};
 };
 
+
 &sciclk {
-	clocks = <&pll>;
+	clocks = <&pllp>;
 	div = <4>;
 	status = "okay";
 };

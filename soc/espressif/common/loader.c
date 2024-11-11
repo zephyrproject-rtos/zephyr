@@ -84,7 +84,6 @@ void map_rom_segments(uint32_t app_drom_start, uint32_t app_drom_vaddr,
 	unsigned int segments = 0;
 	unsigned int ram_segments = 0;
 
-	/* Using already fetched bootloader image header from bootloader_init */
 	offset += sizeof(esp_image_header_t);
 
 	while (segments++ < 16) {
@@ -223,7 +222,6 @@ void map_rom_segments(uint32_t app_drom_start, uint32_t app_drom_vaddr,
 			"IROM",
 			app_irom_start_aligned, app_irom_vaddr_aligned,
 			app_irom_size, app_irom_size);
-	ets_printf("\n\r");
 	esp_rom_uart_tx_wait_idle(0);
 }
 
@@ -248,7 +246,7 @@ void __start(void)
 	}
 #endif
 
-#ifndef CONFIG_MCUBOOT
+#if !defined(CONFIG_MCUBOOT) && !defined(CONFIG_SOC_ESP32S3_APPCPU)
 	map_rom_segments(_app_drom_start, _app_drom_vaddr, _app_drom_size,
 			 _app_irom_start, _app_irom_vaddr, _app_irom_size);
 #endif

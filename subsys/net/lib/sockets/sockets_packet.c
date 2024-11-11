@@ -462,16 +462,16 @@ static int packet_sock_setsockopt_vmeth(void *obj, int level, int optname,
 	return zpacket_setsockopt_ctx(obj, level, optname, optval, optlen);
 }
 
-static int packet_sock_close_vmeth(void *obj)
+static int packet_sock_close2_vmeth(void *obj, int fd)
 {
-	return zsock_close_ctx(obj);
+	return zsock_close_ctx(obj, fd);
 }
 
 static const struct socket_op_vtable packet_sock_fd_op_vtable = {
 	.fd_vtable = {
 		.read = packet_sock_read_vmeth,
 		.write = packet_sock_write_vmeth,
-		.close = packet_sock_close_vmeth,
+		.close2 = packet_sock_close2_vmeth,
 		.ioctl = packet_sock_ioctl_vmeth,
 	},
 	.bind = packet_sock_bind_vmeth,

@@ -70,6 +70,7 @@ GTEXT(_Fault)
 
 GTEXT(_k_neg_eagain)
 GTEXT(z_thread_mark_switched_in)
+GTEXT(z_thread_mark_switched_out)
 
 /* exports */
 GTEXT(__isr_vec)
@@ -209,6 +210,9 @@ on_thread_stack:
 #endif /* CONFIG_PREEMPT_ENABLED */
 
 reschedule:
+#ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
+	jal z_thread_mark_switched_out
+#endif
 	/*
 	 * Check if the current thread is the same as the thread on the ready Q. If
 	 * so, do not reschedule.

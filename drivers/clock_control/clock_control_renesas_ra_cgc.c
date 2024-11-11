@@ -58,7 +58,7 @@ static int clock_control_renesas_ra_get_rate(const struct device *dev, clock_con
 	}
 
 	clk_src_rate = R_BSP_SourceClockHzGet(config->clk_src);
-	clk_div_val = R_FSP_ClockDividerGet(config->clk_div);
+	clk_div_val = config->clk_div;
 	*rate = clk_src_rate / clk_div_val;
 	return 0;
 }
@@ -94,7 +94,7 @@ static const struct clock_control_driver_api clock_control_reneas_ra_api = {
 				     DT_NODE_HAS_PROP(node_id, clocks),                            \
 				     (RA_CGC_CLK_SRC(DT_CLOCKS_CTLR(node_id))),                    \
 				     (RA_CGC_CLK_SRC(DT_CLOCKS_CTLR(DT_PARENT(node_id))))),        \
-			     .clk_div = RA_CGC_CLK_DIV(node_id, div, 1)};                          \
+			     .clk_div = DT_PROP(node_id, div)};                          \
 		    DEVICE_DT_DEFINE(node_id, &clock_control_ra_init_pclk, NULL, NULL,             \
 				     &node_id##_cfg, PRE_KERNEL_1,                                 \
 				     CONFIG_KERNEL_INIT_PRIORITY_OBJECTS,                          \

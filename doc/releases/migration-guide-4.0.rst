@@ -58,6 +58,7 @@ STM32
 * On all official STM32 boards, ``west flash`` selects STM32CubeProgrammer as the default west runner.
   If you want to enforce the selection of another runner like OpenOCD or pyOCD for flashing, you should
   specify it using the west ``--runner`` or ``-r`` option. (:github:`75284`)
+* ADC: Domain clock needs to be explicitly defined if property st,adc-clock-source = <ASYNC> is used.
 
 Modules
 *******
@@ -78,15 +79,8 @@ Mbed TLS
 TinyCrypt
 =========
 
-* Starting from this release the library is marked as deprecated (:github:`79566`).
-  The reasons for this are (:github:`43712``):
-
-  * the upstream version of this library is unmaintained.
-
-  * to reduce the number of crypto libraries available in Zephyr (currently there are
-    3 different implementations: TinyCrypt, MbedTLS and PSA Crypto APIs).
-
-  The PSA Crypto API is now the de-facto standard to perform crypto operations.
+Albeit the formal deprecation of TinyCrypt is not started yet, its removal from
+the Zephyr codebase is. Formal deprecation will happen in the next release.
 
 Trusted Firmware-M
 ==================
@@ -196,11 +190,30 @@ Clock control
            load-capacitance-femtofarad = <...>;
      };
 
-Controller Area Network (CAN)
-=============================
+Crypto
+======
+
+* Following the deprecation of the TinyCrypt library (:github:`79566`), the
+  TinyCrypt-based shim driver was marked as deprecated (:github:`79653`).
 
 Display
 =======
+
+Disk
+====
+
+* The SDMMC subsystem driver now requires a ``disk-name`` property be supplied
+  with the definition of the disk, which is used when registering the
+  SD device with the disk subsystem. This permits multiple SD devices to be
+  registered simultaneously. If unsure, ``disk-name = "SD"`` may be used
+  as a sane default.
+
+* The MMC subsystem driver now requires a ``disk-name`` property be supplied
+  with the definition of the disk, which is used when registering the
+  MMC device with the disk subsystem. This permits multiple MMC devices to be
+  registered simultaneously. If unsure, ``disk-name = "SD2"`` may be used
+  as a sane default.
+
 
 Enhanced Serial Peripheral Interface (eSPI)
 ===========================================
@@ -277,6 +290,8 @@ Serial
  * Users of :c:func:`uart_irq_tx_ready` now need to check for ``ret > 0`` to ensure that the FIFO
    can accept data bytes, instead of ``ret == 1``. The function now returns a lower bound on the
    number of bytes that can be provided to :c:func:`uart_fifo_fill` without truncation.
+
+ * LiteX: ``CONFIG_UART_LITEUART`` has been renamed to :kconfig:option:`CONFIG_UART_LITEX`.
 
 Regulator
 =========
@@ -553,6 +568,14 @@ MCUmgr
 Modem
 =====
 
+Random
+======
+
+* Following the deprecation of the TinyCrypt library (:github:`79566`), usage
+  of TinyCrypt in the CTR-DRBG random number generator was removed. From now on
+  Mbed TLS is required to enable :kconfig:option:`CONFIG_CTR_DRBG_CSPRNG_GENERATOR`.
+  (:github:`79653`)
+
 Shell
 =====
 
@@ -562,11 +585,21 @@ Shell
 JWT (JSON Web Token)
 ====================
 
-* By default, the signature is now computed through PSA Crypto API for both RSA and ECDSA.
-  The newly-added :kconfig:option:`CONFIG_JWT_USE_LEGACY` can be used to switch
-  back to previous libraries (TinyCrypt for ECDSA and Mbed TLS for RSA).
-  The conversion to the PSA Crypto API is being done in preparation for the
-  deprecation of TinyCrypt. (:github:`78243` and :github:`43712`)
+* By default, the signature is now computed using the PSA Crypto API for both RSA and ECDSA
+  (:github:`78243`). The conversion to the PSA Crypto API is part of the adoption
+  of a standard interface for crypto operations (:github:`43712`). Moreover,
+  following the deprecation of the TinyCrypt library (:github:`79566`), usage
+  of TinyCrypt was removed from the JWT subsystem (:github:`79653`).
+
+* The following new symbols were added to allow specifying both the signature
+  algorithm and crypto library:
+
+  * :kconfig:option:`CONFIG_JWT_SIGN_RSA_PSA` (default) RSA signature using the PSA Crypto API;
+  * :kconfig:option:`CONFIG_JWT_SIGN_RSA_LEGACY` RSA signature using Mbed TLS;
+  * :kconfig:option:`CONFIG_JWT_SIGN_ECDSA_PSA` ECDSA signature using the PSA Crypto API.
+
+  They replace the previously-existing Kconfigs ``CONFIG_JWT_SIGN_RSA`` and
+  ``CONFIG_JWT_SIGN_ECDSA``. (:github:`79653`)
 
 Architectures
 *************

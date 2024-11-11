@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <errno.h>
+#include <stdbool.h>
 
 #include <zephyr/net/sntp.h>
 #include <zephyr/net/socketutils.h>
@@ -15,6 +16,7 @@ static int sntp_simple_helper(struct sockaddr *addr, socklen_t addr_len, uint32_
 	struct sntp_ctx sntp_ctx;
 	uint64_t deadline;
 	uint32_t iter_timeout;
+	bool first_iter;
 
 	res = sntp_init(&sntp_ctx, addr, addr_len);
 	if (res < 0) {
@@ -29,17 +31,38 @@ static int sntp_simple_helper(struct sockaddr *addr, socklen_t addr_len, uint32_
 
 	/* Timeout for current iteration */
 	iter_timeout = 100;
+	first_iter = true;
 
 	while (k_uptime_get() < deadline) {
 		res = sntp_query(&sntp_ctx, iter_timeout, ts);
 
 		if (res != -ETIMEDOUT) {
-			break;
+			if (false == first_iter && -ERANGE == res) {
+				while (-ERANGE == res) {
+					/* Possible out of order packet received.
+					 * Retry recv with current iteration timeout
+					 * until an error or timeout (flushing the socket
+					 * of old iteration responses until we timeout or
+					 * receive our iteration's response)
+					 */
+					res = sntp_recv_response(&sntp_ctx, iter_timeout, ts);
+				}
+
+				if (res != ETIMEDOUT) {
+					break;
+				}
+			} else {
+				break;
+			}
 		}
 
 		/* Exponential backoff with limit */
 		if (iter_timeout < 1000) {
 			iter_timeout *= 2;
+		}
+
+		if (first_iter) {
+			first_iter = false;
 		}
 	}
 

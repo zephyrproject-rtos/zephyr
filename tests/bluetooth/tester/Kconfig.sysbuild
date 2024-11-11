@@ -1,0 +1,14 @@
+# Copyright 2023-2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+source "share/sysbuild/Kconfig"
+
+config NET_CORE_BOARD
+	string
+	default "nrf5340dk/nrf5340/cpunet" if "$(BOARD)" = "nrf5340dk"
+	default "nrf5340_audio_dk/nrf5340/cpunet" if "$(BOARD)" = "nrf5340_audio_dk"
+
+config NET_CORE_IMAGE_HCI_IPC
+	bool "HCI IPC image on network core"
+	default y
+	depends on NET_CORE_BOARD != ""

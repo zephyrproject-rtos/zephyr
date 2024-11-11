@@ -1,5 +1,5 @@
 /*
- * Copyright 2021,2023 NXP Semiconductor INC.
+ * Copyright 2021,2023-2024 NXP Semiconductor INC.
  * All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -299,7 +299,6 @@ static void i2s_dma_tx_callback(const struct device *dma_dev, void *arg, uint32_
 			strm->state = I2S_STATE_ERROR;
 			goto disabled_exit_no_drop;
 		}
-		dma_start(dev_data->dev_dma, strm->dma_channel);
 
 		if (blocks_queued || (strm->free_tx_dma_blocks < MAX_TX_DMA_BLOCKS)) {
 			goto enabled_exit;
@@ -389,7 +388,6 @@ static void i2s_dma_rx_callback(const struct device *dma_dev, void *arg, uint32_
 						ret);
 				}
 
-				dma_start(dev_data->dev_dma, strm->dma_channel);
 			}
 		} else {
 			i2s_rx_stream_disable(dev, true, false);
@@ -1213,6 +1211,7 @@ static const struct i2s_driver_api i2s_mcux_driver_api = {
 						.channel_direction = MEMORY_TO_PERIPHERAL,         \
 						.dma_slot = DT_INST_DMAS_CELL_BY_NAME(i2s_id, tx,  \
 										      source),     \
+						.cyclic = 1,                                       \
 					},                                                         \
 			},                                                                         \
 		.rx =                                                                              \
@@ -1230,6 +1229,7 @@ static const struct i2s_driver_api i2s_mcux_driver_api = {
 						.channel_direction = PERIPHERAL_TO_MEMORY,         \
 						.dma_slot = DT_INST_DMAS_CELL_BY_NAME(i2s_id, rx,  \
 										      source),     \
+						.cyclic = 1,                                       \
 					},                                                         \
 			},                                                                         \
 	};                                                                                         \

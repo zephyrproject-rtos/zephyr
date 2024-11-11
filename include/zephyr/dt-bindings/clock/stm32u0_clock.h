@@ -9,12 +9,12 @@
 #include "stm32_common_clocks.h"
 
 /** Bus gatting clocks */
-#define STM32_CLOCK_BUS_IOP     0x4C
 #define STM32_CLOCK_BUS_AHB1    0x48
+#define STM32_CLOCK_BUS_IOP     0x4C
 #define STM32_CLOCK_BUS_APB1    0x58
 #define STM32_CLOCK_BUS_APB1_2  0x60
 
-#define STM32_PERIPH_BUS_MIN	STM32_CLOCK_BUS_IOP
+#define STM32_PERIPH_BUS_MIN	STM32_CLOCK_BUS_AHB1
 #define STM32_PERIPH_BUS_MAX	STM32_CLOCK_BUS_APB1_2
 
 /** Domain clocks */

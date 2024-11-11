@@ -4,7 +4,7 @@
  */
 
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_REGULATOR_NRF5X_H_
-#define ZEPHYR_INCLUDE_DT_BINDINGS_REGULATOR_NRF_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_REGULATOR_NRF5X_H_
 
 /**
  * @defgroup regulator_nrf5x nRF5X regulator devicetree helpers.

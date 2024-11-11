@@ -8,6 +8,7 @@ config SPI_RENESAS_RA8
 	default y
 	depends on DT_HAS_RENESAS_RA8_SPI_B_ENABLED
 	select USE_RA_FSP_SPI_B
+	select PINCTRL
 	help
 	  Enable Renesas RA RA SPI B Driver.
 

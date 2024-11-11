@@ -27,7 +27,7 @@ struct mmc_config {
 struct mmc_data {
 	struct sd_card card;
 	enum sd_status status;
-	char *name;
+	struct disk_info *disk_info;
 };
 
 
@@ -107,10 +107,6 @@ static const struct disk_operations mmc_disk_ops = {
 	.ioctl = disk_mmc_access_ioctl,
 };
 
-static struct disk_info mmc_disk = {
-	.ops = &mmc_disk_ops,
-};
-
 static int disk_mmc_init(const struct device *dev)
 {
 	struct mmc_data *data = dev->data;
@@ -118,10 +114,8 @@ static int disk_mmc_init(const struct device *dev)
 
 	data->status = SD_UNINIT;
 	data->card.bus_width = config->bus_width;
-	mmc_disk.dev = dev;
-	mmc_disk.name = data->name;
 
-	return disk_access_register(&mmc_disk);
+	return disk_access_register(data->disk_info);
 }
 
 #define DISK_ACCESS_MMC_INIT(n)						\
@@ -130,8 +124,14 @@ static int disk_mmc_init(const struct device *dev)
 		.bus_width = DT_INST_PROP(n, bus_width),			\
 	};									\
 										\
+	static struct disk_info mmc_disk_##n = {				\
+		.name = DT_INST_PROP(n, disk_name),				\
+		.ops = &mmc_disk_ops,						\
+		.dev = DEVICE_DT_INST_GET(n),					\
+	};									\
+										\
 	static struct mmc_data mmc_data_##n = {				\
-		.name = CONFIG_MMC_VOLUME_NAME,				\
+		.disk_info = &mmc_disk_##n,					\
 	};									\
 										\
 	DEVICE_DT_INST_DEFINE(n,						\

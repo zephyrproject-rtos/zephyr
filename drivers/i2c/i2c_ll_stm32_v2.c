@@ -254,8 +254,11 @@ static void stm32_i2c_slave_event(const struct device *dev)
 	if (LL_I2C_IsActiveFlag_TXIS(i2c)) {
 		uint8_t val;
 
-		slave_cb->read_processed(slave_cfg, &val);
-		LL_I2C_TransmitData8(i2c, val);
+		if (slave_cb->read_processed(slave_cfg, &val) < 0) {
+			LOG_ERR("Error continuing reading");
+		} else {
+			LL_I2C_TransmitData8(i2c, val);
+		}
 		return;
 	}
 
@@ -293,14 +296,20 @@ static void stm32_i2c_slave_event(const struct device *dev)
 
 		dir = LL_I2C_GetTransferDirection(i2c);
 		if (dir == LL_I2C_DIRECTION_WRITE) {
-			slave_cb->write_requested(slave_cfg);
-			LL_I2C_EnableIT_RX(i2c);
+			if (slave_cb->write_requested(slave_cfg) < 0) {
+				LOG_ERR("Error initiating writing");
+			} else {
+				LL_I2C_EnableIT_RX(i2c);
+			}
 		} else {
 			uint8_t val;
 
-			slave_cb->read_requested(slave_cfg, &val);
-			LL_I2C_TransmitData8(i2c, val);
-			LL_I2C_EnableIT_TX(i2c);
+			if (slave_cb->read_requested(slave_cfg, &val) < 0) {
+				LOG_ERR("Error initiating reading");
+			} else {
+				LL_I2C_TransmitData8(i2c, val);
+				LL_I2C_EnableIT_TX(i2c);
+			}
 		}
 
 		stm32_i2c_enable_transfer_interrupts(dev);

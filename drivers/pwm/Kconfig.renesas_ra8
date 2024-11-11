@@ -6,5 +6,6 @@ config PWM_RENESAS_RA8
 	default y
 	depends on DT_HAS_RENESAS_RA8_PWM_ENABLED
 	select USE_RA_FSP_GPT
+	select PINCTRL
 	help
 	  Enable Renesas RA8 PWM Driver.

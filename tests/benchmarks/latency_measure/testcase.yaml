@@ -54,3 +54,25 @@ tests:
         regex: "(?P<metric>.*) - (?P<description>.*):(?P<cycles>.*) cycles ,(?P<nanoseconds>.*) ns"
       regex:
         - "PROJECT EXECUTION SUCCESSFUL"
+
+  benchmark.kernel.latency.objcore:
+    # FIXME: no DWT and no RTC_TIMER for qemu_cortex_m0
+    platform_exclude:
+      - qemu_cortex_m0
+      - m2gl025_miv
+    filter: CONFIG_PRINTK and not CONFIG_SOC_FAMILY_STM32
+    timeout: 300
+    extra_configs:
+      - CONFIG_OBJ_CORE=y
+      - CONFIG_OBJ_CORE_STATS=y
+    harness: console
+    integration_platforms:
+      - qemu_x86
+      - qemu_arc/qemu_arc_em
+      - qemu_riscv64/qemu_virt_riscv64/smp
+    harness_config:
+      type: one_line
+      record:
+        regex: "(?P<metric>.*) - (?P<description>.*):(?P<cycles>.*) cycles ,(?P<nanoseconds>.*) ns"
+      regex:
+        - "PROJECT EXECUTION SUCCESSFUL"

@@ -7,6 +7,7 @@ config SAM0_RTC_TIMER
 	bool "Atmel SAM0 series RTC timer"
 	default y
 	depends on DT_HAS_ATMEL_SAM0_RTC_ENABLED
+	select PINCTRL
 	select TICKLESS_CAPABLE
 	help
 	  This module implements a kernel device driver for the Atmel SAM0

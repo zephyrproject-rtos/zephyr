@@ -389,7 +389,14 @@ int zvfs_close(int fd)
 	(void)k_mutex_lock(&fdtable[fd].lock, K_FOREVER);
 	if (fdtable[fd].vtable->close != NULL) {
 		/* close() is optional - e.g. stdinout_fd_op_vtable */
-		res = fdtable[fd].vtable->close(fdtable[fd].obj);
+		if (fdtable[fd].mode & ZVFS_MODE_IFSOCK) {
+			/* Network socket needs to know socket number so pass
+			 * it via close2() call.
+			 */
+			res = fdtable[fd].vtable->close2(fdtable[fd].obj, fd);
+		} else {
+			res = fdtable[fd].vtable->close(fdtable[fd].obj);
+		}
 	}
 	k_mutex_unlock(&fdtable[fd].lock);
 

@@ -12,69 +12,34 @@ if JWT
 
 choice
 	prompt "JWT signature algorithm"
-	default JWT_SIGN_RSA
+	default JWT_SIGN_RSA_PSA
 	help
 	  Select which algorithm to use for signing JWT tokens.
 
-config JWT_SIGN_RSA
-	bool "Use RSA signature (RS-256)"
-
-config JWT_SIGN_ECDSA
-	bool "Use ECDSA signature (ES-256)"
-
-endchoice
-
-choice
-	default JWT_USE_PSA
-	prompt "Select crypto library to be used"
-
-config JWT_USE_PSA
-	bool "PSA crypto API library"
-	select MBEDTLS if !BUILD_WITH_TFM
-	select MBEDTLS_PSA_CRYPTO_C if !BUILD_WITH_TFM
-
-config JWT_USE_LEGACY
-	bool "Legacy library: TinyCrypt for ECDSA, Mbed TLS for RSA"
-
-endchoice
-
-# Prompless Kconfigs to effectively select which algorithm and library will be used
-# to sign the JWT. User's selections on the above choices will determine which
-# element will be picked here.
-config JWT_SIGN_ECDSA_PSA
-	bool
-	default y
-	depends on JWT_SIGN_ECDSA && JWT_USE_PSA
-	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT
-	select PSA_WANT_ALG_ECDSA
-	select PSA_WANT_ECC_SECP_R1_256
-	select PSA_WANT_ALG_SHA_256
-
-config JWT_SIGN_ECDSA_LEGACY
-	bool
-	default y
-	depends on JWT_SIGN_ECDSA && JWT_USE_LEGACY
-	select TINYCRYPT
-	select TINYCRYPT_SHA256
-	select TINYCRYPT_ECC_DSA
-	select TINYCRYPT_CTR_PRNG
-	select TINYCRYPT_AES
+config JWT_SIGN_RSA_LEGACY
+	bool "Use RSA signature (RS-256). Use Mbed TLS as crypto library."
+	depends on CSPRNG_ENABLED
+	select MBEDTLS
+	select MBEDTLS_KEY_EXCHANGE_RSA_ENABLED
 
 config JWT_SIGN_RSA_PSA
-	bool
-	default y
-	depends on JWT_SIGN_RSA && JWT_USE_PSA
+	bool "Use RSA signature (RS-256). Use PSA Crypto API."
+	select MBEDTLS if !BUILD_WITH_TFM
+	select MBEDTLS_PSA_CRYPTO_C if !BUILD_WITH_TFM
 	select PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY
 	select PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_IMPORT
 	select PSA_WANT_ALG_RSA_PKCS1V15_SIGN
 	select PSA_WANT_ALG_SHA_256
 
-config JWT_SIGN_RSA_LEGACY
-	bool
-	default y
-	depends on JWT_SIGN_RSA && JWT_USE_LEGACY
-	depends on CSPRNG_ENABLED
-	select MBEDTLS
-	select MBEDTLS_KEY_EXCHANGE_RSA_ENABLED
+config JWT_SIGN_ECDSA_PSA
+	bool "Use ECDSA signature (ES-256). Use PSA Crypto API."
+	select MBEDTLS if !BUILD_WITH_TFM
+	select MBEDTLS_PSA_CRYPTO_C if !BUILD_WITH_TFM
+	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT
+	select PSA_WANT_ALG_ECDSA
+	select PSA_WANT_ECC_SECP_R1_256
+	select PSA_WANT_ALG_SHA_256
+
+endchoice
 
 endif # JWT

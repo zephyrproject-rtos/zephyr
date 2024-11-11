@@ -32,8 +32,7 @@ config ESP32_APPCPU_DRAM
 config SOC_ENABLE_APPCPU
 	bool
 	default y
-	depends on IPM && SOC_ESP32_PROCPU
-	depends on MBOX && SOC_ESP32_PROCPU
+	depends on (IPM || MBOX) && SOC_ESP32_PROCPU
 	help
 	  This hidden configuration lets PROCPU core to map and start APPCPU whenever IPM is enabled.
 

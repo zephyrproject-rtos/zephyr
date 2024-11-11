@@ -112,6 +112,7 @@ int main(void)
 		key = arch_irq_lock();
 		stamp(UNPENDING);
 		z_unpend_first_thread(&waitq);
+		arch_irq_unlock(key);
 		stamp(UNPENDED_READYING);
 		z_ready_thread(th);
 		stamp(READIED_YIELDING);
@@ -124,7 +125,6 @@ int main(void)
 		 */
 		k_yield();
 		stamp(YIELDED);
-		arch_irq_unlock(key);
 
 		uint32_t avg, whole = stamps[4] - stamps[0];
 

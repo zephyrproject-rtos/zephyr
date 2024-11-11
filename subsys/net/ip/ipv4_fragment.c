@@ -635,16 +635,15 @@ enum net_verdict net_ipv4_prepare_for_send(struct net_pkt *pkt)
 			if (ret < 0) {
 				LOG_DBG("Cannot fragment IPv4 pkt (%d)", ret);
 
-				if (ret == -ENOMEM || ret == -ENOBUFS || ret == -EPERM) {
-					/* Try to send the packet if we could not allocate enough
-					 * network packets or if the don't fragment flag is set
+				if (ret == -EPERM) {
+					/* Try to send the packet if the don't fragment flag is set
 					 * and hope the original large packet can be sent OK.
 					 */
 					goto ignore_frag_error;
-				} else {
-					/* Other error, drop the packet */
-					return NET_DROP;
 				}
+
+				/* Other error, drop the packet */
+				return NET_DROP;
 			}
 
 			/* We need to unref here because we simulate the packet being sent. */

@@ -72,7 +72,9 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map = <8 0 &gpio0 5 0>,	/* P8, P0.05/AIN1 */
+		gpio-map = <5 0 &gpio1 1 0>,    /* P5, P1.01/GRANT */
+			   <6 0 &gpio1 0 0>,    /* P6, P1.00/REQ */
+			   <8 0 &gpio0 5 0>,	/* P8, P0.05/AIN1 */
 			   <9 0 &gpio0 4 0>,	/* P9, P0.04/AIN0 */
 			   <15 0 &gpio0 8 0>,	/* P15, P0.08/TRACEDATA3 */
 			   <16 0 &gpio0 9 0>,	/* P16, P0.09/TRACEDATA2 */

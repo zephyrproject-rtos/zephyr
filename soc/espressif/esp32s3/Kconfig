@@ -14,28 +14,6 @@ config SOC_SERIES_ESP32S3
 
 if SOC_SERIES_ESP32S3
 
-config ESP32S3_APPCPU_IRAM
-	hex "ESP32S3 APPCPU IRAM size"
-	depends on SOC_ESP32S3_PROCPU || SOC_ESP32S3_APPCPU
-	default 0x20000
-	help
-	  Defines APPCPU IRAM area in bytes.
-
-config ESP32S3_APPCPU_DRAM
-	hex "ESP32S3 APPCPU DRAM size"
-	depends on SOC_ESP32S3_PROCPU || SOC_ESP32S3_APPCPU
-	default 0x10000
-	help
-	  Defines APPCPU DRAM area in bytes.
-
-config SOC_ENABLE_APPCPU
-	bool
-	default y
-	depends on IPM && SOC_ESP32S3_PROCPU
-	depends on MBOX && SOC_ESP32S3_PROCPU
-	help
-	  This hidden configuration lets PROCPU core to map and start APPCPU whenever IPM is enabled.
-
 menu "Cache config"
 
 choice ESP32S3_INSTRUCTION_CACHE_SIZE
@@ -177,5 +155,7 @@ config MAC_BB_PD
 	  by a small amount but increases RAM use by approximat
 
 endmenu  # Cache config
+
+rsource "Kconfig.amp"
 
 endif # SOC_SERIES_ESP32S3

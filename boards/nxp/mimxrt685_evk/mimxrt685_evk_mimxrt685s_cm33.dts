@@ -344,6 +344,7 @@ i2s1: &flexcomm3 {
 	cd-gpios = <&gpio2 9 GPIO_ACTIVE_LOW>;
 	sdmmc {
 		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
 		status = "okay";
 	};
 	pinctrl-0 = <&pinmux_usdhc>;

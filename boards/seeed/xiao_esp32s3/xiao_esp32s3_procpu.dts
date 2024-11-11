@@ -5,7 +5,9 @@
  */
 
 /dts-v1/;
+
 #include "xiao_esp32s3_procpu_common.dtsi"
+#include <espressif/partitions_0x0_amp.dtsi>
 
 / {
 	model = "Seeed Xiao ESP32S3 PROCPU";

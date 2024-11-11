@@ -28,8 +28,8 @@ void z_data_copy(void)
 	z_early_memcpy(&__data_region_start, &__data_region_load_start,
 		       __data_region_end - __data_region_start);
 #ifdef CONFIG_ARCH_HAS_RAMFUNC_SUPPORT
-	z_early_memcpy(&__ramfunc_start, &__ramfunc_load_start,
-		       (uintptr_t) &__ramfunc_size);
+	z_early_memcpy(&__ramfunc_region_start, &__ramfunc_load_start,
+		       __ramfunc_end - __ramfunc_region_start);
 #endif /* CONFIG_ARCH_HAS_RAMFUNC_SUPPORT */
 #if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_ccm))
 	z_early_memcpy(&__ccm_data_start, &__ccm_data_rom_start,

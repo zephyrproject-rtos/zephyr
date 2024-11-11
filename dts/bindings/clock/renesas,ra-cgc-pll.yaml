@@ -16,18 +16,6 @@ properties:
   mul:
     required: true
     type: array
-  divp:
-    type: int
-  freqp:
-    type: int
-  divq:
-    type: int
-  freqq:
-    type: int
-  divr:
-    type: int
-  freqr:
-    type: int
 
   "#clock-cells":
     const: 0

@@ -203,12 +203,15 @@ if not ZEPHYR_BASE:
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister/"))
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/build_helpers"))
 
-from twisterlib.environment import add_parse_arguments, parse_arguments
+from twisterlib.environment import add_parse_arguments, parse_arguments, python_version_guard
 from twisterlib.twister_main import main
+
 
 if __name__ == "__main__":
     ret = 0
     try:
+        python_version_guard()
+
         parser = add_parse_arguments()
         options = parse_arguments(parser, sys.argv[1:])
         default_options = parse_arguments(parser, [], on_init=False)

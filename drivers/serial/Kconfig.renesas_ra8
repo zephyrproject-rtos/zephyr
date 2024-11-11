@@ -10,6 +10,7 @@ config UART_RA8_SCI_B
 	select SERIAL_SUPPORT_ASYNC
 	select USE_RA_FSP_SCI_B_UART
 	select USE_RA_FSP_DTC if UART_ASYNC_API
+	select PINCTRL
 	help
 	  Enable Renesas RA SCI_B UART Driver.
 
