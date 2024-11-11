@@ -361,6 +361,7 @@ Drivers and Sensors
 * Crypto
 
   * Added support for STM32L4 AES.
+  * Deprecated the TinyCrypt shim driver ``CONFIG_CRYPTO_TINYCRYPT_SHIM``.
 
 * DAC
 
