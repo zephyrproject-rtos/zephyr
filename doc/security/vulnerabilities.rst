@@ -1789,3 +1789,8 @@ This has been fixed in main for v3.7.0
 ----------------
 
 Under embargo until 2024-11-22
+
+:cve:`2024-10395`
+-----------------
+
+Under embargo until 2025-01-23
