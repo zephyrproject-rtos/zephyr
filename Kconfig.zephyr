@@ -470,9 +470,11 @@ config NATIVE_APPLICATION
 	default y if ARCH_POSIX
 	depends on !NATIVE_LIBRARY
 	select NATIVE_BUILD
+	select DEPRECATED
 	help
 	  Build as a native application that can run on the host and using
-	  resources and libraries provided by the host.
+	  resources and libraries provided by the host. This option is deprecated
+	  and will be removed in Zephyr v4.3
 
 config NATIVE_LIBRARY
 	bool
