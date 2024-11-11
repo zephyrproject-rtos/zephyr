@@ -584,14 +584,14 @@ class Reporting:
             if float(handler_time) > 0:
                 run += 1
 
-        if results.total and results.total != results.skipped_configs:
-            pass_rate = (float(results.passed) / float(results.total - results.skipped_configs))
+        if results.total and results.total != results.filtered_configs:
+            pass_rate = (float(results.passed) / float(results.total - results.filtered_configs))
         else:
             pass_rate = 0
 
         logger.info(
             f"{TwisterStatus.get_color(TwisterStatus.FAIL) if failed else TwisterStatus.get_color(TwisterStatus.PASS)}{results.passed}"
-            f" of {results.total - results.skipped_configs}{Fore.RESET}"
+            f" of {results.total - results.filtered_configs}{Fore.RESET}"
             f" executed test configurations passed ({pass_rate:.2%}),"
             f" {f'{TwisterStatus.get_color(TwisterStatus.NOTRUN)}{results.notrun}{Fore.RESET}' if results.notrun else f'{results.notrun}'} built (not run),"
             f" {f'{TwisterStatus.get_color(TwisterStatus.FAIL)}{results.failed}{Fore.RESET}' if results.failed else f'{results.failed}'} failed,"
@@ -623,7 +623,7 @@ class Reporting:
                     f'.'
                 )
 
-        built_only = results.total - run - results.skipped_configs
+        built_only = results.total - run - results.filtered_configs
         logger.info(f"{Fore.GREEN}{run}{Fore.RESET} test configurations executed on platforms, \
 {TwisterStatus.get_color(TwisterStatus.NOTRUN)}{built_only}{Fore.RESET} test configurations were only built.")
 
