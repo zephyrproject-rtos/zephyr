@@ -61,16 +61,24 @@ static int receive(int sock, void *buf, size_t max_len, int flags,
 	return err;
 }
 
+/** Reset all fields to zero.
+ * Use when a new request is filled in.
+ */
 static void reset_internal_request(struct coap_client_internal_request *request)
 {
-	request->offset = 0;
-	request->last_id = 0;
-	request->last_response_id = -1;
+	*request = (struct coap_client_internal_request){
+		.last_response_id = -1,
+	};
+}
+
+/** Release a request structure.
+ * Use when a request is no longer needed, but we might still receive
+ * responses for it, which must be handled.
+ */
+static void release_internal_request(struct coap_client_internal_request *request)
+{
 	request->request_ongoing = false;
-	request->is_observe = false;
 	request->pending.timeout = 0;
-	request->recv_blk_ctx = (struct coap_block_context){ 0 };
-	request->send_blk_ctx = (struct coap_block_context){ 0 };
 }
 
 static int coap_client_schedule_poll(struct coap_client *client, int sock,
@@ -417,6 +425,7 @@ int coap_client_req(struct coap_client *client, int sock, const struct sockaddr 
 
 		coap_pending_cycle(&internal_req->pending);
 		internal_req->is_observe = coap_request_is_observe(&internal_req->request);
+		LOG_DBG("Request is_observe %d", internal_req->is_observe);
 	}
 
 	ret = send_request(sock, internal_req->request.data, internal_req->request.offset, 0,
@@ -513,7 +522,7 @@ static void coap_client_resend_handler(struct coap_client *client)
 			ret = resend_request(client, &client->requests[i]);
 			if (ret < 0) {
 				report_callback_error(&client->requests[i], ret);
-				reset_internal_request(&client->requests[i]);
+				release_internal_request(&client->requests[i]);
 			}
 		}
 	}
@@ -745,7 +754,7 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 			return 0;
 		}
 		report_callback_error(internal_req, -ECONNRESET);
-		reset_internal_request(internal_req);
+		release_internal_request(internal_req);
 		return 0;
 	}
 
@@ -931,7 +940,7 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 	}
 fail:
 	if (ret < 0 || !internal_req->is_observe) {
-		reset_internal_request(internal_req);
+		release_internal_request(internal_req);
 	}
 	return ret;
 }
@@ -949,7 +958,7 @@ static void cancel_requests_with(struct coap_client *client, int error)
 			 * request was cancelled anyway.
 			 */
 			report_callback_error(&client->requests[i], error);
-			reset_internal_request(&client->requests[i]);
+			release_internal_request(&client->requests[i]);
 		}
 	}
 	k_mutex_unlock(&client->lock);
