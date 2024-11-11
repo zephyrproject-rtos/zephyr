@@ -259,10 +259,7 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr
 			arch_elf_relocate_global(ldr, ext, &rela, &sym, got_offset, link_addr);
 			break;
 		case STB_LOCAL:
-			if (ldr_parm->relocate_local) {
-				arch_elf_relocate_local(ldr, ext, &rela, &sym, got_offset,
-							ldr_parm);
-			}
+			arch_elf_relocate_local(ldr, ext, &rela, &sym, got_offset, ldr_parm);
 		}
 
 		LOG_DBG("symbol %s offset %#zx r-offset %#zx .text offset %#zx stb %u",
