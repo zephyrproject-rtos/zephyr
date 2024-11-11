@@ -74,6 +74,14 @@ config LOG_FRONTEND_STMESP_GUARANTEED_ACCESS
 	  When enabled, accessing STMESP registers will stall if write cannot be
 	  performed (e.g. ETR buffer is full).
 
+config LOG_FRONTEND_STMESP_MSG_END_TIMESTAMP
+	bool "Generate timestamp and marker at message end"
+	help
+	  Generate a zero data byte with timestamp and marker at message end,
+	  instead of generating a timestamp and marker at message start and
+	  a flag at end. This can be used to maintain compatibility with
+	  certain decoders.
+
 endif # LOG_FRONTEND_STMESP
 
 config LOG_FRONTEND_STMESP_DEMUX
