@@ -166,6 +166,14 @@ config WIFI_NM_WPA_SUPPLICANT_CRYPTO_ALT
 config WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
 	bool "No Crypto support for WiFi"
 
+config WIFI_NM_WPA_SUPPLICANT_CRYPTO_EXT
+	bool "External Crypto support for hostap"
+	help
+	  Use external crypto implementation for hostp, this is useful for
+	  platforms where the crypto implementation is provided by the platform
+	  and not by Zephyr. The external crypto implementation should provide
+	  the required APIs and any other dependencies required by hostap.
+
 endchoice
 
 config WIFI_NM_WPA_SUPPLICANT_CRYPTO_MBEDTLS_PSA
