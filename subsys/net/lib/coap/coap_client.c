@@ -687,6 +687,9 @@ static struct coap_client_internal_request *get_request_with_token(
 	for (int i = 0; i < CONFIG_COAP_CLIENT_MAX_REQUESTS; i++) {
 		if (client->requests[i].request_ongoing ||
 		    !exchange_lifetime_exceeded(&client->requests[i])) {
+			if (client->requests[i].request_tkl == 0) {
+				continue;
+			}
 			if (client->requests[i].request_tkl != response_tkl) {
 				continue;
 			}
