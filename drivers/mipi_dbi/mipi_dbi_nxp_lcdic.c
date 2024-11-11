@@ -34,6 +34,12 @@ enum lcdic_cmd_type {
 	LCDIC_TX = 1,
 };
 
+enum lcdic_cmd_te {
+	LCDIC_TE_NO_SYNC = 0,
+	LCDIC_TE_RISING_EDGE = 1,
+	LCDIC_TE_FALLING_EDGE = 2,
+};
+
 /* Limit imposed by size of data length field in LCDIC command */
 #define LCDIC_MAX_XFER 0x40000
 /* Max reset width (in terms of Timer0_Period, see RST_CTRL register) */
@@ -102,6 +108,10 @@ struct mipi_dbi_lcdic_data {
 	uint32_t unaligned_word __aligned(4);
 	/* Tracks lcdic_data_fmt value we should use for pixel data */
 	uint8_t pixel_fmt;
+	/* Tracks TE edge setting we should use for pixel data */
+	uint8_t te_edge;
+	/* Are we starting a new display frame */
+	bool new_frame;
 	const struct mipi_dbi_config *active_cfg;
 	struct k_sem xfer_sem;
 	struct k_sem lock;
@@ -376,6 +386,7 @@ static void mipi_dbi_lcdic_set_cmd(LCDIC_Type *base,
 				   enum lcdic_cmd_type dir,
 				   enum lcdic_cmd_dc dc,
 				   enum lcdic_data_fmt data_fmt,
+				   enum lcdic_cmd_te te_sync,
 				   uint32_t buf_len)
 {
 	union lcdic_trx_cmd cmd = {0};
@@ -387,6 +398,7 @@ static void mipi_dbi_lcdic_set_cmd(LCDIC_Type *base,
 	cmd.bits.trx = dir;
 	cmd.bits.cmd_done_int = true;
 	cmd.bits.data_format = data_fmt;
+	cmd.bits.te_sync_mode = te_sync;
 	/* Write command */
 	base->TFIFO_WDATA = cmd.u32;
 }
@@ -401,6 +413,7 @@ static int mipi_dbi_lcdic_write_display(const struct device *dev,
 	struct mipi_dbi_lcdic_data *dev_data = dev->data;
 	LCDIC_Type *base = config->base;
 	int ret;
+	enum lcdic_cmd_te te_sync = LCDIC_TE_NO_SYNC;
 	uint32_t interrupts = 0U;
 
 	ret = k_sem_take(&dev_data->lock, K_FOREVER);
@@ -411,6 +424,26 @@ static int mipi_dbi_lcdic_write_display(const struct device *dev,
 	ret = mipi_dbi_lcdic_configure(dev, dbi_config);
 	if (ret) {
 		goto out;
+	}
+
+	if (dev_data->new_frame) {
+		switch (dev_data->te_edge) {
+		case MIPI_DBI_TE_RISING_EDGE:
+			te_sync = LCDIC_TE_RISING_EDGE;
+			break;
+		case MIPI_DBI_TE_FALLING_EDGE:
+			te_sync = LCDIC_TE_FALLING_EDGE;
+			break;
+		default:
+			te_sync = LCDIC_TE_NO_SYNC;
+			break;
+		}
+		dev_data->new_frame = false;
+	}
+
+	if (!desc->frame_incomplete) {
+		/* Next frame will be a new one */
+		dev_data->new_frame = true;
 	}
 
 	/* State reset is required before transfer */
@@ -448,6 +481,7 @@ static int mipi_dbi_lcdic_write_display(const struct device *dev,
 		 */
 		mipi_dbi_lcdic_set_cmd(base, LCDIC_TX, LCDIC_DATA,
 				       dev_data->pixel_fmt,
+				       te_sync,
 				       dev_data->cmd_bytes);
 #ifdef CONFIG_MIPI_DBI_NXP_LCDIC_DMA
 		/* Enable command complete interrupt */
@@ -506,7 +540,7 @@ static int mipi_dbi_lcdic_write_cmd(const struct device *dev,
 
 	/* Write command */
 	mipi_dbi_lcdic_set_cmd(base, LCDIC_TX, LCDIC_COMMAND,
-			       LCDIC_DATA_FMT_BYTE, 1);
+			       LCDIC_DATA_FMT_BYTE, LCDIC_TE_NO_SYNC, 1);
 	/* Use standard byte writes */
 	dev_data->pixel_fmt = LCDIC_DATA_FMT_BYTE;
 	base->TFIFO_WDATA = cmd;
@@ -530,18 +564,10 @@ static int mipi_dbi_lcdic_write_cmd(const struct device *dev,
 							dev_data->xfer_buf,
 							dev_data->cmd_bytes);
 		}
-		if (cmd == MIPI_DCS_WRITE_MEMORY_START) {
-			/* Use pixel format data width, so we can byte swap
-			 * if needed
-			 */
-			mipi_dbi_lcdic_set_cmd(base, LCDIC_TX, LCDIC_DATA,
-					       dev_data->pixel_fmt,
-					       dev_data->cmd_bytes);
-		} else {
-			mipi_dbi_lcdic_set_cmd(base, LCDIC_TX, LCDIC_DATA,
-					       LCDIC_DATA_FMT_BYTE,
-					       dev_data->cmd_bytes);
-		}
+		mipi_dbi_lcdic_set_cmd(base, LCDIC_TX, LCDIC_DATA,
+				       LCDIC_DATA_FMT_BYTE,
+				       LCDIC_TE_NO_SYNC,
+				       dev_data->cmd_bytes);
 #ifdef CONFIG_MIPI_DBI_NXP_LCDIC_DMA
 		if (((((uint32_t)dev_data->xfer_buf) & 0x3) == 0) ||
 		    (dev_data->cmd_bytes < 4)) {
@@ -618,6 +644,50 @@ static int mipi_dbi_lcdic_reset(const struct device *dev, k_timeout_t delay)
 	return 0;
 }
 
+static int mipi_dbi_lcdic_configure_te(const struct device *dev,
+				       uint8_t edge,
+				       k_timeout_t delay)
+{
+	const struct mipi_dbi_lcdic_config *config = dev->config;
+	LCDIC_Type *base = config->base;
+	struct mipi_dbi_lcdic_data *data = dev->data;
+	uint32_t lcdic_freq, ttew, reg;
+	uint32_t delay_us = k_ticks_to_us_ceil32(delay.ticks);
+
+	/* Calculate delay based off timer0 ratio. Formula given
+	 * by RM is as follows:
+	 * TE delay = Timer1_Period * ttew
+	 * Timer1_Period = 2^(TIMER_RATIO1) * Timer0_Period
+	 * Timer0_Period = 2^(TIMER_RATIO0) / LCDIC_Clock_Freq
+	 */
+	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
+				   &lcdic_freq)) {
+		return -EIO;
+	}
+
+	/*
+	 * Calculate TTEW. Done in multiple steps to avoid overflowing
+	 * the uint32_t type. Full formula is:
+	 * (lcdic_freq * delay_us) /
+	 *     ((2 ^ (TIMER_RATIO1 + TIMER_RATIO0)) * USEC_PER_SEC)
+	 */
+	ttew = lcdic_freq / (1 << config->timer0_ratio);
+	ttew *= delay_us;
+	ttew /= (1 << config->timer1_ratio);
+	ttew /= USEC_PER_SEC;
+
+	/* Check to see if the delay is shorter than we can support */
+	if ((ttew == 0)  && (delay_us != 0)) {
+		LOG_ERR("Timer ratios too large to support this TE delay");
+		return -ENOTSUP;
+	}
+	reg = base->TE_CTRL;
+	reg &= ~LCDIC_TE_CTRL_TTEW_MASK;
+	reg |= LCDIC_TE_CTRL_TTEW(ttew);
+	base->TE_CTRL = reg;
+	data->te_edge = edge;
+	return 0;
+}
 
 
 /* Initializes LCDIC peripheral */
@@ -671,6 +741,8 @@ static int mipi_dbi_lcdic_init(const struct device *dev)
 	base->TIMER_CTRL = LCDIC_TIMER_CTRL_TIMER_RATIO1(config->timer1_ratio) |
 			LCDIC_TIMER_CTRL_TIMER_RATIO0(config->timer0_ratio);
 
+	data->te_edge = MIPI_DBI_TE_NO_EDGE;
+
 #ifdef CONFIG_MIPI_DBI_NXP_LCDIC_DMA
 	/* Attach the LCDIC DMA request signal to the DMA channel we will
 	 * use with hardware triggering.
@@ -687,6 +759,7 @@ static int mipi_dbi_lcdic_init(const struct device *dev)
 static DEVICE_API(mipi_dbi, mipi_dbi_lcdic_driver_api) = {
 	.command_write = mipi_dbi_lcdic_write_cmd,
 	.write_display = mipi_dbi_lcdic_write_display,
+	.configure_te = mipi_dbi_lcdic_configure_te,
 	.reset = mipi_dbi_lcdic_reset,
 };
 
@@ -718,7 +791,8 @@ static void mipi_dbi_lcdic_isr(const struct device *dev)
 			/* Command done. Queue next command */
 			data->cmd_bytes = MIN(data->xfer_bytes, LCDIC_MAX_XFER);
 			mipi_dbi_lcdic_set_cmd(base, LCDIC_TX, LCDIC_DATA,
-					       LCDIC_DATA_FMT_BYTE,
+					       data->pixel_fmt,
+					       LCDIC_TE_NO_SYNC,
 					       data->cmd_bytes);
 			if (data->cmd_bytes & 0x3) {
 				/* Save unaligned portion of transfer into
