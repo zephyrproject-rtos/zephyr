@@ -60,6 +60,7 @@ struct cache_config {
 	uint32_t data_line_size;
 	uint32_t l2_cache_size;
 	uint32_t l2_cache_inclusive;
+	bool is_cctl_supported;
 };
 
 static struct cache_config cache_cfg;
@@ -285,6 +286,10 @@ int cache_data_invd_all(void)
 {
 	unsigned long ret = 0;
 
+	if (!cache_cfg.is_cctl_supported) {
+		return -ENOTSUP;
+	}
+
 	K_SPINLOCK(&lock) {
 		if (cache_cfg.l2_cache_inclusive) {
 			ret |= nds_l2_cache_all(K_CACHE_WB);
@@ -304,6 +309,10 @@ int cache_data_invd_range(void *addr, size_t size)
 {
 	unsigned long ret = 0;
 
+	if (!cache_cfg.is_cctl_supported) {
+		return -ENOTSUP;
+	}
+
 	K_SPINLOCK(&lock) {
 		if (cache_cfg.l2_cache_inclusive) {
 			ret |= nds_l2_cache_range(addr, size, K_CACHE_INVD);
@@ -319,6 +328,10 @@ int cache_data_invd_range(void *addr, size_t size)
 int cache_instr_invd_all(void)
 {
 	unsigned long ret = 0;
+
+	if (!cache_cfg.is_cctl_supported) {
+		return -ENOTSUP;
+	}
 
 	if (IS_ENABLED(CONFIG_SMP) && (CONFIG_MP_MAX_NUM_CPUS > 1)) {
 		return -ENOTSUP;
@@ -353,6 +366,10 @@ int cache_instr_invd_range(void *addr, size_t size)
 {
 	unsigned long ret = 0;
 
+	if (!cache_cfg.is_cctl_supported) {
+		return -ENOTSUP;
+	}
+
 	if (IS_ENABLED(CONFIG_SMP) && (CONFIG_MP_MAX_NUM_CPUS > 1)) {
 		ARG_UNUSED(addr);
 		ARG_UNUSED(size);
@@ -371,6 +388,10 @@ int cache_data_flush_all(void)
 {
 	unsigned long ret = 0;
 
+	if (!cache_cfg.is_cctl_supported) {
+		return -ENOTSUP;
+	}
+
 	K_SPINLOCK(&lock) {
 		if (cache_cfg.l2_cache_inclusive) {
 			ret |= nds_l2_cache_all(K_CACHE_WB);
@@ -387,6 +408,10 @@ int cache_data_flush_range(void *addr, size_t size)
 {
 	unsigned long ret = 0;
 
+	if (!cache_cfg.is_cctl_supported) {
+		return -ENOTSUP;
+	}
+
 	K_SPINLOCK(&lock) {
 		if (cache_cfg.l2_cache_inclusive) {
 			ret |= nds_l2_cache_range(addr, size, K_CACHE_WB);
@@ -402,6 +427,10 @@ int cache_data_flush_range(void *addr, size_t size)
 int cache_data_flush_and_invd_all(void)
 {
 	unsigned long ret = 0;
+
+	if (!cache_cfg.is_cctl_supported) {
+		return -ENOTSUP;
+	}
 
 	K_SPINLOCK(&lock) {
 		if (cache_cfg.l2_cache_size) {
@@ -423,6 +452,10 @@ int cache_data_flush_and_invd_all(void)
 int cache_data_flush_and_invd_range(void *addr, size_t size)
 {
 	unsigned long ret = 0;
+
+	if (!cache_cfg.is_cctl_supported) {
+		return -ENOTSUP;
+	}
 
 	K_SPINLOCK(&lock) {
 		if (cache_cfg.l2_cache_size) {
@@ -534,8 +567,8 @@ static int andes_cache_init(void)
 #endif /* defined(CONFIG_DCACHE_LINE_SIZE_DETECT) */
 	}
 
-	if (!(csr_read(NDS_MMSC_CFG) & MMSC_CFG_CCTLCSR)) {
-		LOG_ERR("Platform doesn't support I/D cache operation");
+	if (csr_read(NDS_MMSC_CFG) & MMSC_CFG_CCTLCSR) {
+		cache_cfg.is_cctl_supported = true;
 	}
 
 	if (csr_read(NDS_MMSC_CFG) & MMSC_CFG_VCCTL_2) {
