@@ -37,6 +37,30 @@ config RISCV_ALWAYS_SWITCH_THROUGH_ECALL
 	  and most people should say n here to minimize context switching
 	  overhead.
 
+choice RISCV_SMP_IPI_IMPL
+	prompt "RISC-V SMP IPI implementation"
+	depends on SMP
+	default RISCV_SMP_IPI_CLINT if DT_HAS_SIFIVE_CLINT0_ENABLED
+	default RISCV_SMP_IPI_CUSTOM
+
+config RISCV_SMP_IPI_CLINT
+	bool "CLINT-based IPI"
+	depends on DT_HAS_SIFIVE_CLINT0_ENABLED
+	help
+	  Use CLINT-based IPI implementation.
+
+config RISCV_SMP_IPI_CUSTOM
+	bool "Custom IPI implementation"
+	help
+	  Allow custom IPI implementation.
+
+	  When this is selected, the following functions must be provided:
+	   - z_riscv_ipi_send()
+	   - z_riscv_ipi_clear()
+	   - arch_smp_init()
+
+endchoice # RISCV_SMP_IPI_IMPL
+
 menu "RISCV Processor Options"
 
 config INCLUDE_RESET_VECTOR

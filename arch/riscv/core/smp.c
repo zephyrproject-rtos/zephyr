@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "ipi_impl.h"
+
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <ksched.h>
@@ -88,9 +90,6 @@ void arch_secondary_cpu_init(int hartid)
 
 #ifdef CONFIG_SMP
 
-#define MSIP_BASE 0x2000000UL
-#define MSIP(hartid) ((volatile uint32_t *)MSIP_BASE)[hartid]
-
 static atomic_val_t cpu_pending_ipi[CONFIG_MP_MAX_NUM_CPUS];
 #define IPI_SCHED	0
 #define IPI_FPU_FLUSH	1
@@ -105,7 +104,7 @@ void arch_sched_directed_ipi(uint32_t cpu_bitmap)
 		if ((i != id) && _kernel.cpus[i].arch.online &&
 		    ((cpu_bitmap & BIT(i)) != 0)) {
 			atomic_set_bit(&cpu_pending_ipi[i], IPI_SCHED);
-			MSIP(_kernel.cpus[i].arch.hartid) = 1;
+			z_riscv_ipi_send(i);
 		}
 	}
 
@@ -121,17 +120,15 @@ void arch_sched_broadcast_ipi(void)
 void arch_flush_fpu_ipi(unsigned int cpu)
 {
 	atomic_set_bit(&cpu_pending_ipi[cpu], IPI_FPU_FLUSH);
-	MSIP(_kernel.cpus[cpu].arch.hartid) = 1;
+	z_riscv_ipi_send(cpu);
 }
 #endif
 
-static void sched_ipi_handler(const void *unused)
+void z_riscv_sched_ipi_handler(unsigned int cpu_id)
 {
-	ARG_UNUSED(unused);
+	z_riscv_ipi_clear(cpu_id);
 
-	MSIP(csr_read(mhartid)) = 0;
-
-	atomic_val_t pending_ipi = atomic_clear(&cpu_pending_ipi[_current_cpu->id]);
+	atomic_val_t pending_ipi = atomic_clear(&cpu_pending_ipi[cpu_id]);
 
 	if (pending_ipi & ATOMIC_MASK(IPI_SCHED)) {
 		z_sched_ipi();
@@ -172,12 +169,4 @@ void arch_spin_relax(void)
 }
 #endif
 
-int arch_smp_init(void)
-{
-
-	IRQ_CONNECT(RISCV_IRQ_MSOFT, 0, sched_ipi_handler, NULL, 0);
-	irq_enable(RISCV_IRQ_MSOFT);
-
-	return 0;
-}
 #endif /* CONFIG_SMP */
