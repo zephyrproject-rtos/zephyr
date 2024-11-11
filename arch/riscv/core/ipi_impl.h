@@ -11,6 +11,8 @@ void z_riscv_sched_ipi_handler(unsigned int cpu_id);
 
 #ifdef CONFIG_RISCV_SMP_IPI_CLINT
 #include "ipi_clint.h"
+#elif defined(CONFIG_RISCV_SMP_IPI_PLIC)
+#include "ipi_plic.h"
 #else /* CONFIG_RISCV_SMP_IPI_CUSTOM */
 inline void z_riscv_ipi_send(unsigned int cpu);
 inline void z_riscv_ipi_clear(unsigned int cpu);

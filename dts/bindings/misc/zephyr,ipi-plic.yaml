@@ -1,0 +1,15 @@
+# Copyright (c) 2024 Meta Platforms
+# SPDX-License-Identifier: Apache-2.0
+
+description: IPI PLIC pseudo device
+
+compatible: "zephyr,ipi-plic"
+
+include: [base.yaml]
+
+properties:
+  interrupt-parent:
+    required: true
+
+  interrupts:
+    required: true
