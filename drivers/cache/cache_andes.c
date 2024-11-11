@@ -544,7 +544,7 @@ static int andes_cache_init(void)
 		}
 	}
 
-	cache_cfg.l2_cache_size = nds_l2_cache_init();
+	cache_cfg.l2_cache_size = nds_l2_cache_init(cache_cfg.data_line_size);
 	cache_cfg.l2_cache_inclusive = nds_l2_cache_is_inclusive();
 
 	return 0;
