@@ -224,6 +224,15 @@ Disk
 Enhanced Serial Peripheral Interface (eSPI)
 ===========================================
 
+Entropy
+=======
+
+* BT HCI based entropy driver now directly sends the HCI command to parse random
+  data instead of waiting for BT connection to be ready. This is helpful on
+  platforms where the BT controller owns the HW random generator and the application
+  processor needs to get random data before BT is fully enabled.
+  (:github:`79931`)
+
 GNSS
 ====
 
