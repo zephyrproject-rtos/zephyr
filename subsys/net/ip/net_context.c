@@ -767,6 +767,17 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 		if (net_ipv6_is_addr_mcast(&addr6->sin6_addr)) {
 			struct net_if_mcast_addr *maddr;
 
+			if (IS_ENABLED(CONFIG_NET_UDP) &&
+			    net_context_get_type(context) == SOCK_DGRAM) {
+				if (COND_CODE_1(CONFIG_NET_IPV6,
+						(context->options.ipv6_mcast_ifindex > 0),
+						(false))) {
+					IF_ENABLED(CONFIG_NET_IPV6,
+						   (iface = net_if_get_by_index(
+							   context->options.ipv6_mcast_ifindex)));
+				}
+			}
+
 			maddr = net_if_ipv6_maddr_lookup(&addr6->sin6_addr,
 							 &iface);
 			if (!maddr) {
@@ -1830,6 +1841,55 @@ out:
 	return 0;
 }
 
+static int get_context_mcast_ifindex(struct net_context *context,
+				     void *value, size_t *len)
+{
+#if defined(CONFIG_NET_IPV6)
+	if (net_context_get_family(context) != AF_INET6) {
+		return -EAFNOSUPPORT;
+	}
+
+	/* If user has not set the ifindex, then get the interface
+	 * that this socket is bound to.
+	 */
+	if (context->options.ipv6_mcast_ifindex == 0) {
+		struct net_if *iface;
+		int ifindex;
+
+		if (net_context_is_bound_to_iface(context)) {
+			iface = net_context_get_iface(context);
+		} else {
+			iface = net_if_get_default();
+		}
+
+		if (!net_if_flag_is_set(iface, NET_IF_IPV6)) {
+			return -EPROTOTYPE;
+		}
+
+		ifindex = net_if_get_by_iface(iface);
+		if (ifindex < 1) {
+			return -ENOENT;
+		}
+
+		*((int *)value) = ifindex;
+	} else {
+		*((int *)value) = context->options.ipv6_mcast_ifindex;
+	}
+
+	if (len) {
+		*len = sizeof(int);
+	}
+
+	return 0;
+#else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
+	return -ENOTSUP;
+#endif
+}
+
 /* If buf is not NULL, then use it. Otherwise read the data to be written
  * to net_pkt from msghdr.
  */
@@ -2007,7 +2067,7 @@ static int context_sendto(struct net_context *context,
 			  bool sendto)
 {
 	const struct msghdr *msghdr = NULL;
-	struct net_if *iface;
+	struct net_if *iface = NULL;
 	struct net_pkt *pkt = NULL;
 	sa_family_t family;
 	size_t tmp_len;
@@ -2067,6 +2127,17 @@ static int context_sendto(struct net_context *context,
 			return -EDESTADDRREQ;
 		}
 
+		if (IS_ENABLED(CONFIG_NET_UDP) &&
+		    net_context_get_type(context) == SOCK_DGRAM) {
+			if (net_ipv6_is_addr_mcast(&addr6->sin6_addr) &&
+			    COND_CODE_1(CONFIG_NET_IPV6,
+					(context->options.ipv6_mcast_ifindex > 0), (false))) {
+				IF_ENABLED(CONFIG_NET_IPV6,
+					   (iface = net_if_get_by_index(
+						   context->options.ipv6_mcast_ifindex)));
+			}
+		}
+
 		/* If application has not yet set the destination address
 		 * i.e., by not calling connect(), then set the interface
 		 * here so that the packet gets sent to the correct network
@@ -2074,11 +2145,13 @@ static int context_sendto(struct net_context *context,
 		 * network interfaces and we are trying to send data to
 		 * second or later network interface.
 		 */
-		if (net_ipv6_is_addr_unspecified(
-				&net_sin6(&context->remote)->sin6_addr) &&
-		    !net_context_is_bound_to_iface(context)) {
-			iface = net_if_ipv6_select_src_iface(&addr6->sin6_addr);
-			net_context_set_iface(context, iface);
+		if (iface == NULL) {
+			if (net_ipv6_is_addr_unspecified(
+				    &net_sin6(&context->remote)->sin6_addr) &&
+			    !net_context_is_bound_to_iface(context)) {
+				iface = net_if_ipv6_select_src_iface(&addr6->sin6_addr);
+				net_context_set_iface(context, iface);
+			}
 		}
 
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
@@ -3211,6 +3284,58 @@ static int set_context_timestamping(struct net_context *context,
 #endif
 }
 
+static int set_context_mcast_ifindex(struct net_context *context,
+				     const void *value, size_t len)
+{
+#if defined(CONFIG_NET_IPV6)
+	int mcast_ifindex = *((int *)value);
+	enum net_sock_type type;
+	struct net_if *iface;
+
+	if (net_context_get_family(context) != AF_INET6) {
+		return -EAFNOSUPPORT;
+	}
+
+	if (len != sizeof(int)) {
+		return -EINVAL;
+	}
+
+	type = net_context_get_type(context);
+	if (type != SOCK_DGRAM && type != SOCK_RAW) {
+		return -EINVAL;
+	}
+
+	/* optlen equal to 0 then remove the binding */
+	if (mcast_ifindex == 0) {
+		context->options.ipv6_mcast_ifindex = 0;
+		return 0;
+	}
+
+	if (mcast_ifindex < 1 || mcast_ifindex > 255) {
+		return -EINVAL;
+	}
+
+	iface = net_if_get_by_index(mcast_ifindex);
+	if (iface == NULL) {
+		return -ENOENT;
+	}
+
+	if (!net_if_flag_is_set(iface, NET_IF_IPV6)) {
+		return -EPROTOTYPE;
+	}
+
+	context->options.ipv6_mcast_ifindex = mcast_ifindex;
+
+	return 0;
+#else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
+	return -ENOTSUP;
+#endif
+}
+
 int net_context_set_option(struct net_context *context,
 			   enum net_context_option option,
 			   const void *value, size_t len)
@@ -3291,6 +3416,9 @@ int net_context_set_option(struct net_context *context,
 		}
 
 		break;
+	case NET_OPT_MCAST_IFINDEX:
+		ret = set_context_mcast_ifindex(context, value, len);
+		break;
 	}
 
 	k_mutex_unlock(&context->lock);
@@ -3369,6 +3497,9 @@ int net_context_get_option(struct net_context *context,
 		break;
 	case NET_OPT_MTU:
 		ret = get_context_mtu(context, value, len);
+		break;
+	case NET_OPT_MCAST_IFINDEX:
+		ret = get_context_mcast_ifindex(context, value, len);
 		break;
 	}
 
