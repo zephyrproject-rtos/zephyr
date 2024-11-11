@@ -85,6 +85,14 @@ config GPIO_HOGS_INIT_PRIORITY
 	  GPIO hogs initialization priority. GPIO hogs must be initialized after the
 	  GPIO controller drivers.
 
+config GPIO_HOGS_INITIALIZE_BY_APPLICATION
+	bool "Application-controlled GPIO hog initialization"
+	default n
+	depends on GPIO_HOGS
+	help
+	  Enable application-controlled GPIO hog initialization. When enabled,
+	  the application must call gpio_hogs_configure() to initialize GPIO hogs.
+
 config GPIO_ENABLE_DISABLE_INTERRUPT
 	bool "Support for enable/disable interrupt without re-config [EXPERIMENTAL]"
 	select EXPERIMENTAL
