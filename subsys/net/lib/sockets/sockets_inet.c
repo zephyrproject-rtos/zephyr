@@ -1931,6 +1931,17 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 
 			return 0;
 
+		case IPV6_MULTICAST_IF:
+			ret = net_context_get_option(ctx,
+						     NET_OPT_MCAST_IFINDEX,
+						     optval, optlen);
+			if (ret < 0) {
+				errno  = -ret;
+				return -1;
+			}
+
+			return 0;
+
 		case IPV6_MULTICAST_HOPS:
 			ret = net_context_get_option(ctx,
 						     NET_OPT_MCAST_HOP_LIMIT,
@@ -2516,6 +2527,17 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 		case IPV6_UNICAST_HOPS:
 			ret = net_context_set_option(ctx,
 						     NET_OPT_UNICAST_HOP_LIMIT,
+						     optval, optlen);
+			if (ret < 0) {
+				errno  = -ret;
+				return -1;
+			}
+
+			return 0;
+
+		case IPV6_MULTICAST_IF:
+			ret = net_context_set_option(ctx,
+						     NET_OPT_MCAST_IFINDEX,
 						     optval, optlen);
 			if (ret < 0) {
 				errno  = -ret;

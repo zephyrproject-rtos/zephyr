@@ -1222,6 +1222,9 @@ struct ip_mreqn {
 /** Set the unicast hop limit for the socket. */
 #define IPV6_UNICAST_HOPS	16
 
+/** Set multicast output network interface index for the socket. */
+#define IPV6_MULTICAST_IF       17
+
 /** Set the multicast hop limit for the socket. */
 #define IPV6_MULTICAST_HOPS 18
 
