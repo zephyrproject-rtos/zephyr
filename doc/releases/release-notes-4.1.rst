@@ -118,6 +118,8 @@ Drivers and Sensors
 
 * LED
 
+  * Added a new set of devicetree based LED APIs, see :c:struct:`led_dt_spec`.
+
 * LED Strip
 
 * LoRa
