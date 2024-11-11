@@ -369,9 +369,67 @@ Drivers and Sensors
 
 * Ethernet
 
-  * LiteX: Renamed the ``compatible`` from ``litex,eth0`` to :dtcompatible:`litex,liteeth`.
-  * STM32: Driver can now be configured to use a preemptive RX thread priority, which could be useful
-    in case of high network traffic load (reduces jitter).
+  * Added a :c:func:`get_phy` function to the ethernet driver api, which returns the phy device
+    associated to a network interface.
+  * Added 2.5G and 5G link speeds to the ethernet hardware capabilities api.
+  * Added check for null api pointer in :c:func:`net_eth_get_hw_capabilities`, fixing netusb crash.
+  * Added synopsis dwc_xgmac ethernet driver.
+  * Added NXP iMX NETC driver.
+  * Adin2111
+
+    * Fixed bug that resulted in double RX buffer read when generic spi protocol is used.
+    * Fixed essential thread termination on OA read failure.
+    * Skip checks for port 2 on the adin1110 since it doesn't apply, as there is no port 2.
+  * ENC28J60
+
+    * Added support for the ``zephyr,random-mac-address`` property.
+    * Fixed race condition between interrupt service and L2 init affecting carrier status in init.
+  * ENC424j600: Added ability to change mac address at runtime with net management api.
+  * ESP32: Added configuration of interrupts from DT.
+  * Lan865x
+
+    * Enable all multicast MAC address for IPv6. All multicast mac address can now be
+      received and allows for correct handling of the IPv6 neighbor discovery protocol.
+    * Fixed transmission stopping when setting mac address or promiscuous mode.
+  * LiteX
+
+    * Renamed the ``compatible`` from ``litex,eth0`` to :dtcompatible:`litex,liteeth`.
+    * Added support for multiple instances of the liteX ethernet driver.
+    * Added support for VLAN to the liteX ethernet driver.
+    * Added phy support.
+  * Native_posix
+
+    * Implemented getting the interface name from the command line.
+    * Now prints error number in error message when creating an interface.
+  * NXP ENET_QOS: Fixed check for ``zephyr,random-mac-address`` property.
+  * NXP ENET:
+
+    * Fixed fused MAC address initialization code.
+    * Fixed code path for handling tx errors with timestamped frames.
+    * Fixed network carrier status race condition during init.
+  * NXP S32: Added configs to enable VLAN promiscuous and untagged, and enable SI message interrupt.
+  * STM32
+
+    * Driver can now be configured to use a preemptive RX thread priority, which could be useful
+      in case of high network traffic load (reduces jitter).
+    * Added support for DT-defined mdio.
+    * Fixed bus error after network disconnection that happened in some cases.
+  * TC6: Combine read chunks into continuous net buffer. This fixes IPv6 neighbor discovery protocol
+    because 64 bytes was not enough for all headers.
+  * PHY driver changes
+
+    * Added Qualcomm AR8031 phy driver.
+    * Added DP83825 phy driver.
+    * PHY_MII
+
+      * Fixed generic phy_mii driver not using the value of the ``no-reset`` property from devicetree.
+      * Removed excess newlines from log output of phy_mii driver.
+    * KSZ8081
+
+      * Fixed reset times during init that were unnecessarily long.
+      * Removed unnecessary reset on every link configuration that blocked system workqueue
+      * Fixed issue relating to strap-in override bits.
+
 
 * Flash
 
@@ -451,6 +509,12 @@ Drivers and Sensors
   * Added driver support for ESP32 and ESP32-S3 SoCs.
 
 * MDIO
+
+  * Added litex MDIO driver.
+  * Added support for mdio shell to stm32 mdio.
+  * Added mdio driver for dwc_xgmac synopsis ethernet.
+  * Added NXP IMX NETC mdio driver.
+  * NXP ENET MDIO: Fixed inconsistent behavior by keeping the mdio interrupt enabled all the time.
 
 * MFD
 
