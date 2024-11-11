@@ -84,6 +84,8 @@
 	 * software
 	 */
 	rgb-is-inverted;
+	/* Enable TE synchronization, using the rising edge */
+	te-mode = "MIPI_DBI_TE_RISING_EDGE";
 };
 
 &lcdic {
@@ -94,4 +96,6 @@
 	nxp,write-inactive-cycles = <1>;
 	/* Raise the timer0 ratio to enable longer reset delay */
 	nxp,timer0-ratio = <15>;
+	/* Lower timer1 ratio to enable shorter TE delay */
+	nxp,timer1-ratio = <0>;
 };
