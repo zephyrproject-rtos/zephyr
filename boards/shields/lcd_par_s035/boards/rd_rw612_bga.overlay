@@ -92,4 +92,6 @@
 	/* Set pulse width for write active and write inactive to min value */
 	nxp,write-active-cycles = <1>;
 	nxp,write-inactive-cycles = <1>;
+	/* Raise the timer0 ratio to enable longer reset delay */
+	nxp,timer0-ratio = <15>;
 };

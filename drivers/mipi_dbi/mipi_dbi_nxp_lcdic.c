@@ -74,6 +74,8 @@ struct mipi_dbi_lcdic_config {
 	bool swap_bytes;
 	uint8_t write_active_min;
 	uint8_t write_inactive_min;
+	uint8_t timer0_ratio;
+	uint8_t timer1_ratio;
 };
 
 #ifdef CONFIG_MIPI_DBI_NXP_LCDIC_DMA
@@ -124,12 +126,6 @@ struct mipi_dbi_lcdic_data {
 #define LCDIC_RX_FIFO_THRESH 0x0
 #define LCDIC_TX_FIFO_THRESH 0x3
 #endif
-
-/* Timer0 and Timer1 bases. We choose a longer timer0 base to enable
- * long reset periods
- */
-#define LCDIC_TIMER0_RATIO 0xF
-#define LCDIC_TIMER1_RATIO 0x9
 
 /* After LCDIC is enabled or disabled, there should be a wait longer than
  * 5x the module clock before other registers are read
@@ -595,7 +591,7 @@ static int mipi_dbi_lcdic_reset(const struct device *dev, k_timeout_t delay)
 				   &lcdic_freq)) {
 		return -EIO;
 	}
-	rst_width = (delay_ms * (lcdic_freq)) / ((1 << LCDIC_TIMER0_RATIO) * MSEC_PER_SEC);
+	rst_width = (delay_ms * (lcdic_freq)) / ((1 << config->timer0_ratio) * MSEC_PER_SEC);
 	/* If rst_width is larger than max value supported by hardware,
 	 * increase the pulse count (rounding up)
 	 */
@@ -664,8 +660,8 @@ static int mipi_dbi_lcdic_init(const struct device *dev)
 			LCDIC_TO_CTRL_CMD_SHORT_TO_MASK);
 
 	/* Ensure LCDIC timer ratios are at reset values */
-	base->TIMER_CTRL = LCDIC_TIMER_CTRL_TIMER_RATIO1(LCDIC_TIMER1_RATIO) |
-			LCDIC_TIMER_CTRL_TIMER_RATIO0(LCDIC_TIMER0_RATIO);
+	base->TIMER_CTRL = LCDIC_TIMER_CTRL_TIMER_RATIO1(config->timer1_ratio) |
+			LCDIC_TIMER_CTRL_TIMER_RATIO0(config->timer0_ratio);
 
 #ifdef CONFIG_MIPI_DBI_NXP_LCDIC_DMA
 	/* Attach the LCDIC DMA request signal to the DMA channel we will
@@ -807,6 +803,8 @@ static void mipi_dbi_lcdic_isr(const struct device *dev)
 		    DT_INST_PROP(n, nxp_write_active_cycles),		\
 		.write_inactive_min =					\
 		    DT_INST_PROP(n, nxp_write_inactive_cycles),		\
+		.timer0_ratio = DT_INST_PROP(n, nxp_timer0_ratio),      \
+		.timer1_ratio = DT_INST_PROP(n, nxp_timer1_ratio),      \
 	};								\
 	static struct mipi_dbi_lcdic_data mipi_dbi_lcdic_data_##n = {	\
 		LCDIC_DMA_CHANNELS(n)					\
