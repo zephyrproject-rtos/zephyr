@@ -16,18 +16,22 @@
 #define FLASH_AREA_FOO(part)							\
 	{.fa_id = DT_FIXED_PARTITION_ID(part),					\
 	 .fa_off = DT_REG_ADDR(part),						\
-	 .fa_dev = DEVICE_DT_GET_OR_NULL(DT_MTD_FROM_FIXED_PARTITION(part)),	\
+	 .fa_dev = DEVICE_DT_GET(DT_MTD_FROM_FIXED_PARTITION(part)),	        \
 	 .fa_size = DT_REG_SIZE(part),						\
 	 .fa_label = DT_PROP_OR(part, label, NULL),	},
 #else
 #define FLASH_AREA_FOO(part)							\
 	{.fa_id = DT_FIXED_PARTITION_ID(part),					\
 	 .fa_off = DT_REG_ADDR(part),						\
-	 .fa_dev = DEVICE_DT_GET_OR_NULL(DT_MTD_FROM_FIXED_PARTITION(part)),	\
+	 .fa_dev = DEVICE_DT_GET(DT_MTD_FROM_FIXED_PARTITION(part)),	        \
 	 .fa_size = DT_REG_SIZE(part), },
 #endif
 
-#define FOREACH_PARTITION(n) DT_FOREACH_CHILD(DT_DRV_INST(n), FLASH_AREA_FOO)
+#define FLASH_AREA_FOOO(part)	\
+	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(DT_MTD_FROM_FIXED_PARTITION(part)), \
+		(FLASH_AREA_FOO(part)), ())
+
+#define FOREACH_PARTITION(n) DT_FOREACH_CHILD(DT_DRV_INST(n), FLASH_AREA_FOOO)
 
 /* We iterate over all compatible 'fixed-partitions' nodes and
  * use DT_FOREACH_CHILD to iterate over all the partitions for that
