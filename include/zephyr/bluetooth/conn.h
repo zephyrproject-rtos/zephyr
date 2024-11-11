@@ -1418,23 +1418,6 @@ int bt_conn_le_create_auto(const struct bt_conn_le_create_param *create_param,
  */
 int bt_conn_create_auto_stop(void);
 
-/** @brief Automatically connect to remote device if it's in range.
- *
- *  This function enables/disables automatic connection initiation.
- *  Every time the device loses the connection with peer, this connection
- *  will be re-established if connectable advertisement from peer is received.
- *
- *  @note Auto connect is disabled during explicit scanning.
- *
- *  @param addr Remote Bluetooth address.
- *  @param param If non-NULL, auto connect is enabled with the given
- *  parameters. If NULL, auto connect is disabled.
- *
- *  @return Zero on success or error code otherwise.
- */
-int bt_le_set_auto_conn(const bt_addr_le_t *addr,
-			const struct bt_le_conn_param *param);
-
 /** @brief Set security level for a connection.
  *
  *  This function enable security (encryption) for a connection. If the device

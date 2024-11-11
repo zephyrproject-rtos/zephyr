@@ -3320,33 +3320,6 @@ static int cmd_connect_le(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
-#if !defined(CONFIG_BT_FILTER_ACCEPT_LIST)
-static int cmd_auto_conn(const struct shell *sh, size_t argc, char *argv[])
-{
-	bt_addr_le_t addr;
-	int err;
-
-	err = bt_addr_le_from_str(argv[1], argv[2], &addr);
-	if (err) {
-		shell_error(sh, "Invalid peer address (err %d)", err);
-		return err;
-	}
-
-	if (argc < 4) {
-		return bt_le_set_auto_conn(&addr, BT_LE_CONN_PARAM_DEFAULT);
-	} else if (!strcmp(argv[3], "on")) {
-		return bt_le_set_auto_conn(&addr, BT_LE_CONN_PARAM_DEFAULT);
-	} else if (!strcmp(argv[3], "off")) {
-		return bt_le_set_auto_conn(&addr, NULL);
-	} else {
-		shell_help(sh);
-		return SHELL_CMD_HELP_PRINTED;
-	}
-
-	return 0;
-}
-#endif /* !defined(CONFIG_BT_FILTER_ACCEPT_LIST) */
-
 static int cmd_connect_le_name(const struct shell *sh, size_t argc, char *argv[])
 {
 	const struct bt_le_scan_param param = {
@@ -5075,9 +5048,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 #if defined(CONFIG_BT_CENTRAL)
 	SHELL_CMD_ARG(connect, NULL, HELP_ADDR_LE EXT_ADV_SCAN_OPT,
 		      cmd_connect_le, 1, 3),
-#if !defined(CONFIG_BT_FILTER_ACCEPT_LIST)
-	SHELL_CMD_ARG(auto-conn, NULL, HELP_ADDR_LE, cmd_auto_conn, 3, 0),
-#endif /* !defined(CONFIG_BT_FILTER_ACCEPT_LIST) */
 	SHELL_CMD_ARG(connect-name, NULL, "<name filter>",
 		      cmd_connect_le_name, 2, 0),
 #endif /* CONFIG_BT_CENTRAL */
