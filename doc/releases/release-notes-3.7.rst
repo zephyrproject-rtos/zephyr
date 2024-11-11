@@ -14,6 +14,121 @@ Issues fixed
 
 These GitHub issues were addressed since the previous 3.7.0 tagged release:
 
+* :github:`42227` - Teensy41 support SDHC - Storage init Error
+* :github:`66800` - [Coverity CID: 338107] Division or modulo by zero in subsys/shell/backends/shell_uart.c
+* :github:`70498` - cellular_modem: Pinnacle 100 does not work with CONFIG_UART_INTERRUPT_DRIVEN
+* :github:`71397` - Espressif HAL5.1 - Core panic'ed on EPS32S3 with hello_world sample
+* :github:`71916` - Bump minimum Python version (3.10?) ahead of LTSv3 release
+* :github:`74291` - Multiple USB contexts for same device lead to bus faults
+* :github:`74750` - [Coverity CID: 353644] Unintended sign extension in drivers/sensor/ams/tsl2591/tsl2591.c
+* :github:`74752` - [Coverity CID: 353654] Unintended sign extension in drivers/sensor/ams/tsl2591/tsl2591.c
+* :github:`75256` - [Coverity CID: 394233] Division or modulo by zero in drivers/sensor/tdk/icm42688/icm42688.h
+* :github:`75257` - [Coverity CID: 394232] Division or modulo by zero in drivers/sensor/tdk/icm42688/icm42688.h
+* :github:`75265` - display: stm32-ltdc: incorrect return value for blanking on/off calls when panel controller is not passed in DT
+* :github:`75318` - Zephyr 3.7 RC2 BLE on STM32 Nucleo WB55 does not work
+* :github:`75319` - `fatal error: sys/_timespec.h: No such file or directory` with v3.7.0-rc2
+* :github:`75427` - `CONFIG_MBEDTLS_PEM_CERTIFICATE_FORMAT` is misleading as it only enables PEM parsing
+* :github:`75676` - tests: dma: chan_blen_transfer: test breakage on Nucleo-H743ZI
+* :github:`75686` - ST LIS2DUX12 driver: temperature is not converted to Celsius and raw values are returned
+* :github:`75736` - Logging stops on all backend when overloaded for a time
+* :github:`75758` - ST LIS2DUX12 driver: will not correctly read values on big-endian HW
+* :github:`75834` - xtensa: mpu: adding or removing partitions from memory domain of current running thread has no effect
+* :github:`75853` - C++: Boot fails with global STL objects
+* :github:`75909` - CONFIG_NET_NATIVE_OFFLOADED_SOCKETS fails after DTLS handshake
+* :github:`75912` - RAM retention not working on NXP S32K3
+* :github:`75967` - bl5340_dvk LCD does not work
+* :github:`76000` - coap: block_number in coap_get_block1_option() is too small
+* :github:`76090` - TF-M: builds download source from external git repository
+* :github:`76185` - scripts: 'west blobs fetch' does not verify digests after downloading
+* :github:`76254` - linker: section_tags: missing include
+* :github:`76268` - Bluetooth: PAwR Sync does not compile without PAST receiver compiled in
+* :github:`76325` - ESP32S3: Zephyr freezes during OTA Update over UDP and BLE
+* :github:`76360` - Crash if enabling v4-mapping-to-v6 and DHCPv4
+* :github:`76397` - gdbstub: compilation error on ARM
+* :github:`76398` - arch: riscv: stacktrace: user thread stack bound check is wrong
+* :github:`76403` - net: wifi: NM type check is incorrect
+* :github:`76427` - CONFIG_BT_CTLR_OPTIMIZE_FOR_SPEED not selected by default in zephyr 3.7
+* :github:`76446` - drivers: mdio: mdio_nxp_enet: Link goes up and down sporadically
+* :github:`76447` - Odroid Go Boot Failure
+* :github:`76471` - TCP Delay ACK in case no PSH flag is present causing extremly low download throughput for some clients
+* :github:`76519` - Get I3C basic device fails for devices that do not support GETCAP
+* :github:`76549` - Bug in STM32 Disco L475 Arduino I2C header
+* :github:`76551` - Bluetooth: USB Audio Starvation in BAP Broadcast Sink Sample
+* :github:`76603` - sensortile_box_pro board does not support hts221 sensor
+* :github:`76607` - Fixes an uninitialized value in lis2dux12
+* :github:`76625` - drivers: usb: stm32 udc driver get the global otg interrupt
+* :github:`76655` - RT11xx device tree build warnings
+* :github:`76717` - Check L2 send properly for offloaded ifaces
+* :github:`76718` - PTP - incorrect clock offset calculation
+* :github:`76737` - Bluetooth L2CAP TX fragmentation state not cleared upon disconnect
+* :github:`76738` - Sending Bluetooth L2CAP messages after reconnecting sometimes leads to crashes due to uninitalized net_buf callback
+* :github:`76747` - CONFIG_DEVICE_DT_METADATA=y not tested with usespace enabled
+* :github:`76762` - arch: riscv: stacktrace: trace is incomplete when unwinding from function without callee
+* :github:`76776` - http1 dynamic post request response doesn't send header a second time
+* :github:`76912` - drivers/bluetooth/hci/userchan.c build waring w gcc13
+* :github:`76932` - Compilation error on Ubuntu 24.04 when CONFIG_FUSE_FS_ACCESS=y
+* :github:`77006` - Bluetooth: Host: ISO buffer not unreffed
+* :github:`77007` - Bluetooth: Host: ISO not clearing TX context on disconnect
+* :github:`77078` - manifest: update percepio
+* :github:`77089` - nxp: lpc55sxx: sram node address error
+* :github:`77096` - nxp lpc55xx will crash when trying to use a nxp,ctimer-pwm DTS node
+* :github:`77126` - RTC RV3028 clock output disabled by enabling alarm/update callback
+* :github:`77129` - NXP's IMX RT1010 triggers assert on SPI Loopback test when EDMA enabled
+* :github:`77175` - SCSI Read Capacity reports wrong capacity when used with USB Mass storage device
+* :github:`77188` - Unaligned 32-bit reads following casts on dns_socket_dispatcher::local_addr (Cortex-M0)
+* :github:`77221` - Websocket compile issue if Posix API is not set
+* :github:`77241` - bluetooth: Behavior change in host causing MESH to fail on sending messages
+* :github:`77269` - da1469x: entropy and gpio drivers throw assertions
+* :github:`77303` - net: socket: recvmsg() doesn't update msg_controllen accordingly
+* :github:`77371` - RT11xx bus clocks set incorrectly
+* :github:`77396` - doc: Documentation scrolling does not work with arrow keys
+* :github:`77424` - IMXRT11xx secondary core improperly deinit the ENET PLL
+* :github:`77545` - modules: percepio: Fix python executable name in CMakeLists.txt
+* :github:`77557` - drivers: ethernet: nxp_enet: Fused MAC address handling is wrong
+* :github:`77594` - Bluetooth: Failures in unit tests
+* :github:`77633` - drivers: dai: nxp: sai: RTOS crashes on TX/RX underrun/overrun
+* :github:`77658` - backported PRs maintain fail status after issues are added to the PR description
+* :github:`77669` - BLE EDTT GATT tests fail with python >= 3.11
+* :github:`77784` - STM32 I2S Driver Clock Configuration
+* :github:`77824` - llext samples fail with BUS ERROR (zephyr-3.7 stable)
+* :github:`77952` - ESP32: Interrupts with ISRs in flash are not disabled during flash operations
+* :github:`78037` - [Backport v3.7-branch] Failed to backport #77874
+* :github:`78138` - riscv: plic: IRQs may not be enabled in non-zero HART
+* :github:`78146` - mDNS reponder might fail to serve if mDNS resolver is enabled
+* :github:`78244` - arch: riscv: IRQ stacks of secondary cores are not initialized to `0xAA` when `CONFIG_INIT_STACKS=y`
+* :github:`78263` - building samples/cpp/hello_world reports "undefined reference to `_impure_ptr` error
+* :github:`78268` - LPC55xx USB not working with SPEED_OPTIMIZATIONS=y
+* :github:`78490` - net: l2: ieee802154: IEEE-802.15.4 packets dropped when CONFIG_NET_L2_IEEE802154_SECURITY is enabled
+* :github:`78494` - subsys: net: socket_tls: Connection vanishes -> Caller blocked forever
+* :github:`78495` - net: l2: ieee802154: ctx_lock taken but not given
+* :github:`78608` - Bluetooth: classic: avdtp: missing buffer length check
+* :github:`78622` - Wrong package for bz2
+* :github:`78651` - drivers: PHY Microchip KSZ8081 will block system work queue for 500/1000ms
+* :github:`78724` - net: checksum offloading not working for virtual network interfaces used for Virtual LAN (VLAN)
+* :github:`78769` - backport: v3.7: dts: arm: st: stm32h5: fix spi 1-3 clocks
+* :github:`78927` - doc: mcumgr: Wrong license for mcumgr-client
+* :github:`79208` - sysbuild: ExternalZephyrProject_Add() cannot cope with hwmv2 board and revision
+* :github:`79288` - driver: clock-control: imx-ccm-rev2: get_rate(FLEXSPI2) returns FLEXSPI1 clock rate
+* :github:`79298` - arch: riscv: the `s0` dumped during a fatal error is not correct
+* :github:`79301` - arch: irq: multilevel: the value return from `irq_parent_level_3()` is wrong
+* :github:`79518` - Temporary Modbus Client "Soft Lock"
+* :github:`79576` - Dependencies for `SOC_FLASH_MCUX` are incorrect on LPC55xxx platforms
+* :github:`79788` - net: ip: igmp: IGMPv2 does not work when IGMPv3 is enabled
+* :github:`79800` - stream_flash: stream_flash_erase_page does not check whether requested offset is in range of stream flash owned area
+* :github:`79947` - ESP32 touch_sensor not working
+* :github:`80005` - doc: Documentation issue in 'contribute/documentation/guidelines'
+* :github:`80134` - up_squared: tests/arch/x86/info/arch.x86.info.userspace [timeout]
+* :github:`80200` - CMake: Find package with version ranges are ignored for Zephyr SDK
+* :github:`80383` - drivers: flash: spi_nor: values vom DT not correctly used, when `CONFIG_SPI_NOR_SFDP_RUNTIME=y`
+* :github:`80429` - Bug in ACD implementation RFC5227
+* :github:`80476` - mgmt: mcumgr: stat_mgmt: stat_mgmt_list always send legacy behavior
+* :github:`80541` - Incorrect part number LPC55S69 in Konfig.soc
+* :github:`80593` - Not possible to write beyond 16MB using flash sample on FRDM_RW612
+* :github:`80701` - Changes to cortex_m swap code have major impact on kernel context switching times.
+* :github:`80723` - testsuite: coverage: application unable to include `coverage.h`
+* :github:`80750` - drivers: can: sam: wrong MRBA configuration
+* :github:`80810` - samples: subsys: mgmt: mcumgr: smp_svr: UDP overlay missing random selection
+* :github:`80818` - shell: shell_help: terminal offset of subcommands' help text isn't aligned
 
 Mbed TLS
 ********
