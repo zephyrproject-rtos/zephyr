@@ -844,6 +844,15 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 		}
 	}
 
+	if (!internal_req->request_ongoing) {
+		if (internal_req->is_observe) {
+			(void) send_rst(client, response);
+			return 0;
+		}
+		LOG_DBG("Drop request, already handled");
+		goto fail;
+	}
+
 	if (internal_req->pending.timeout != 0) {
 		coap_pending_clear(&internal_req->pending);
 	}
