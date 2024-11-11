@@ -105,14 +105,14 @@ static int l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	if (metrics) {
 		return l2cap_recv_metrics(chan, buf);
 	}
-#if !defined(CONFIG_BT_L2CAP_RECEIVER_REDUCE_LOG_PRINT)
+
 	shell_print(ctx_shell, "Incoming data channel %p len %u", chan,
 		    buf->len);
 
 	if (buf->len) {
 		shell_hexdump(ctx_shell, buf->data, buf->len);
 	}
-#endif
+
 	if (l2cap_recv_delay_ms > 0) {
 		/* Submit work only if queue is empty */
 		if (k_fifo_is_empty(&l2cap_recv_fifo)) {
@@ -155,12 +155,11 @@ static void l2cap_disconnected(struct bt_l2cap_chan *chan)
 
 static struct net_buf *l2cap_alloc_buf(struct bt_l2cap_chan *chan)
 {
-#if !defined(CONFIG_BT_L2CAP_RECEIVER_REDUCE_LOG_PRINT)
 	/* print if metrics is disabled */
 	if (!metrics) {
 		shell_print(ctx_shell, "Channel %p requires buffer", chan);
 	}
-#endif
+
 	return net_buf_alloc(&data_rx_pool, K_FOREVER);
 }
 
