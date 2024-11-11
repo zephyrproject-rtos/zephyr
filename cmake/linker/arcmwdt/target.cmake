@@ -155,7 +155,7 @@ macro(toolchain_ld_relocation)
     ${ZEPHYR_BASE}/scripts/build/gen_relocate_app.py
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
     -d ${APPLICATION_BINARY_DIR}
-    -i \"$<TARGET_PROPERTY:code_data_relocation_target,COMPILE_DEFINITIONS>\"
+    -i \"$<TARGET_PROPERTY:code_data_relocation_target,INTERFACE_SOURCES>\"
     -o ${MEM_RELOCATION_LD}
     -s ${MEM_RELOCATION_SRAM_DATA_LD}
     -b ${MEM_RELOCATION_SRAM_BSS_LD}
