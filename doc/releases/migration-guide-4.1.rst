@@ -115,3 +115,12 @@ Modem
 
 Architectures
 *************
+
+* native/POSIX
+
+  * :kconfig:option:`CONFIG_NATIVE_APPLICATION` has been deprecated. Out-of-tree boards using this
+    option should migrate to the native_simulator runner (:github:`81232`).
+    For an example of how this was done with a board in-tree check :github:`61481`.
+  * For the native_sim target :kconfig:option:`CONFIG_NATIVE_SIM_NATIVE_POSIX_COMPAT` has been
+    switched to ``n`` by default, and this option has been deprecated. Ensure your code does not
+    use the :kconfig:option:`CONFIG_BOARD_NATIVE_POSIX` option anymore (:github:`81232`).

@@ -43,6 +43,12 @@ Architectures
 
 * Xtensa
 
+* native/POSIX
+
+  * :kconfig:option:`CONFIG_NATIVE_APPLICATION` has been deprecated.
+  * For the native_sim target :kconfig:option:`CONFIG_NATIVE_SIM_NATIVE_POSIX_COMPAT` has been
+    switched to ``n`` by default, and this option has been deprecated.
+
 Kernel
 ******
 
