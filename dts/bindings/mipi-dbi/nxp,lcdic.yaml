@@ -46,3 +46,21 @@ properties:
       Set minimum count of write active cycles, as a multiple of the module
       clock frequency. This controls the length of the active period of the
       WRX signal. Default is IP reset value. Only valid in 8080 mode.
+
+  nxp,timer0-ratio:
+    type: int
+    default: 8
+    description: |
+      Ratio for timer0, used for setting timer0 period (which is used for reset
+      and TX/RX short command timeout). Formula is:
+      timer0_period = (2 ^ timer0_ratio) / lcdic_freq
+      Default is IP reset value
+
+  nxp,timer1-ratio:
+    type: int
+    default: 9
+    description: |
+      Ratio for timer1, used for setting timer1 period (which is used for TE
+      wait time, timeout, and long command timeout). Formula is:
+      timer1_period = (2 ^ timer1_ratio) * timer0_period
+      Default is IP reset value

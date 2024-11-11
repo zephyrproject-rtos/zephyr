@@ -17,6 +17,8 @@
 &lcdic {
 	status = "okay";
 	nxp,swap-bytes;
+	/* Raise the timer0 ratio to enable longer reset delay */
+	nxp,timer0-ratio = <15>;
 	/*
 	 * Settings to connect this display:
 	 * Populate the following resistors:

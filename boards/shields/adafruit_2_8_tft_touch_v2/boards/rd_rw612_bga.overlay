@@ -22,6 +22,8 @@
 &lcdic {
 	/* Byte swapping not supported for this display */
 	/delete-property/ nxp,swap-bytes;
+	/* Set timer0 ratio to enable longer resets */
+	nxp,timer0-ratio = <15>;
 
 	/*
 	 * Settings to connect this display:
