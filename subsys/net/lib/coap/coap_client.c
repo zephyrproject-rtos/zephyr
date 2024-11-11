@@ -781,14 +781,6 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 		return 0;
 	}
 
-	/* MID-based deduplication */
-	if (response_id == internal_req->last_response_id) {
-		LOG_WRN("Duplicate MID, dropping");
-		goto fail;
-	}
-
-	internal_req->last_response_id = response_id;
-
 	/* Received echo option */
 	if (find_echo_option(response, &client->echo_option)) {
 		 /* Resend request with echo option */
@@ -847,13 +839,21 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 		}
 	}
 
+	/* MID-based deduplication */
+	if (response_id == internal_req->last_response_id) {
+		LOG_WRN("Duplicate MID, dropping");
+		return 0;
+	}
+
+	internal_req->last_response_id = response_id;
+
 	if (!internal_req->request_ongoing) {
 		if (internal_req->is_observe) {
 			(void) send_rst(client, response);
 			return 0;
 		}
 		LOG_DBG("Drop request, already handled");
-		goto fail;
+		return 0;
 	}
 
 	if (internal_req->pending.timeout != 0) {
