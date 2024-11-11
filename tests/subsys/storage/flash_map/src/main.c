@@ -27,9 +27,9 @@ ZTEST(flash_map, test_flash_area_disabled_device)
 
 	/* Test that attempting to open a disabled flash area fails */
 	rc = flash_area_open(FIXED_PARTITION_ID(disabled_a), &fa);
-	zassert_equal(rc, -ENODEV, "Open did not fail");
+	zassert_equal(rc, -ENOENT, "Open did not fail");
 	rc = flash_area_open(FIXED_PARTITION_ID(disabled_b), &fa);
-	zassert_equal(rc, -ENODEV, "Open did not fail");
+	zassert_equal(rc, -ENOENT, "Open did not fail");
 }
 
 /**
