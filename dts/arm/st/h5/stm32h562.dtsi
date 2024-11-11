@@ -8,6 +8,7 @@
 #include <zephyr/dt-bindings/flash_controller/ospi.h>
 /* keep both header files for compatibility */
 #include <zephyr/dt-bindings/flash_controller/xspi.h>
+#include <mem.h>
 
 / {
 	clocks {
