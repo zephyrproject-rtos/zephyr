@@ -636,9 +636,31 @@ Drivers and Sensors
 
 * Wi-Fi
 
-  * Added ESP32-C2 Wi-Fi support.
-  * Added ESP32 driver APSTA support.
+  * Add Wi-Fi Easy Connect (DPP) support.
+  * Add support for Wi-Fi credentials library.
+  * Add enterprise support for station.
+  * Add Wi-Fi snippet support for networking samples.
+  * Add build testing for various Wi-Fi config combinations.
+  * Add regulatory domain support to Wi-Fi shell.
+  * Add WPS support to Wi-Fi shell.
+  * Add 802.11r connect command usage in Wi-Fi shell.
+  * Add current PHY rate to hostap status message.
+  * Allow user to reset Wi-Fi statistics in Wi-Fi shell.
+  * Display RTS threshold in Wi-Fi shell.
+  * Fix SSID array length size in scanning results.
+  * Fix the "wifi ap config" command using the STA interface instead of SAP interface.
+  * Fix memory leak in hostap when doing a disconnect.
+  * Fix setting of frequency band both in AP and STA mode in Wi-Fi shell.
+  * Fix correct channel scan range in Wi-Fi 6GHz.
+  * Fix scan results printing in Wi-Fi shell.
+  * Increase main and shell stack sizes for Wi-Fi shell sample.
+  * Increase the maximum count of connected STA to 8 in Wi-Fi shell.
+  * Relocate AP and STA Wi-Fi sample to samples/net/wifi directory.
+  * Run Wi-Fi tests together with network tests.
   * Updated ESP32 Wi-Fi driver to reflect actual negotiated PHY mode.
+  * Add ESP32-C2 Wi-Fi support.
+  * Add ESP32 driver APSTA support.
+  * Add NXP RW612 driver support.
 
 Networking
 **********
