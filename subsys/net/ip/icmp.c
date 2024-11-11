@@ -48,8 +48,6 @@ static sys_slist_t handlers = SYS_SLIST_STATIC_INIT(&handlers);
 static sys_slist_t offload_handlers = SYS_SLIST_STATIC_INIT(&offload_handlers);
 #endif
 
-#define PKT_WAIT_TIME K_SECONDS(1)
-
 int net_icmp_init_ctx(struct net_icmp_ctx *ctx, uint8_t type, uint8_t code,
 		      net_icmp_handler_t handler)
 {
@@ -140,7 +138,7 @@ static int send_icmpv4_echo_request(struct net_icmp_ctx *ctx,
 					sizeof(struct net_icmpv4_echo_req)
 					+ params->data_size,
 					AF_INET, IPPROTO_ICMP,
-					PKT_WAIT_TIME);
+					K_NO_WAIT);
 	if (!pkt) {
 		return -ENOMEM;
 	}
@@ -261,7 +259,7 @@ static int send_icmpv6_echo_request(struct net_icmp_ctx *ctx,
 					sizeof(struct net_icmpv6_echo_req)
 					+ params->data_size,
 					AF_INET6, IPPROTO_ICMPV6,
-					PKT_WAIT_TIME);
+					K_NO_WAIT);
 	if (!pkt) {
 		return -ENOMEM;
 	}
