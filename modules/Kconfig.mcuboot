@@ -287,6 +287,11 @@ config MCUBOOT_BOOTLOADER_NO_DOWNGRADE
 	  MCUBOOT_DOWNGRADE_PREVENTION option enabled.
 endif
 
+config MCUBOOT_BOOTLOADER_USES_SHA512
+	bool "MCUboot uses SHA512 for image hash"
+	help
+	  MCUboot has been compiled to verify images using SHA512.
+
 config MCUBOOT_APPLICATION_FIRMWARE_UPDATER
 	bool "Application is firmware updater image"
 	depends on MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER
