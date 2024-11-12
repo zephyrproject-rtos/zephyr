@@ -240,6 +240,9 @@ struct uarte_nrfx_data {
 /* If enabled then UARTE peripheral is using memory which is cacheable. */
 #define UARTE_CFG_FLAG_CACHEABLE BIT(3)
 
+/* If enabled then pins must be retained when UARTE is disabled. */
+#define UARTE_CFG_FLAG_RETAIN_PINS BIT(4)
+
 /* Macro for converting numerical baudrate to register value. It is convenient
  * to use this approach because for constant input it can calculate nrf setting
  * at compile time.
@@ -593,7 +596,9 @@ static void uarte_periph_enable(const struct device *dev)
 	(void)data;
 	nrf_uarte_enable(uarte);
 #ifdef CONFIG_SOC_NRF54H20_GPD
-	nrf_gpd_retain_pins_set(config->pcfg, false);
+	if (config->flags & UARTE_CFG_FLAG_RETAIN_PINS) {
+		nrf_gpd_retain_pins_set(config->pcfg, false);
+	}
 #endif
 #if UARTE_BAUDRATE_RETENTION_WORKAROUND
 	nrf_uarte_baudrate_set(uarte,
@@ -710,7 +715,9 @@ static void uarte_disable_locked(const struct device *dev, uint32_t dis_mask)
 #ifdef CONFIG_SOC_NRF54H20_GPD
 	const struct uarte_nrfx_config *cfg = dev->config;
 
-	nrf_gpd_retain_pins_set(cfg->pcfg, true);
+	if (cfg->flags & UARTE_CFG_FLAG_RETAIN_PINS) {
+		nrf_gpd_retain_pins_set(cfg->pcfg, true);
+	}
 #endif
 	nrf_uarte_disable(get_uarte_instance(dev));
 }
@@ -2181,7 +2188,9 @@ static void uarte_pm_suspend(const struct device *dev)
 	}
 
 #ifdef CONFIG_SOC_NRF54H20_GPD
-	nrf_gpd_retain_pins_set(cfg->pcfg, true);
+	if (cfg->flags & UARTE_CFG_FLAG_RETAIN_PINS) {
+		nrf_gpd_retain_pins_set(cfg->pcfg, true);
+	}
 #endif
 
 	nrf_uarte_disable(uarte);
@@ -2395,6 +2404,8 @@ static int uarte_instance_init(const struct device *dev,
 			(!IS_ENABLED(CONFIG_HAS_NORDIC_DMM) ? 0 :	       \
 			  (UARTE_IS_CACHEABLE(idx) ?			       \
 				UARTE_CFG_FLAG_CACHEABLE : 0)) |	       \
+			(UARTE_PROP(idx, pin_retention) ?		       \
+				UARTE_CFG_FLAG_RETAIN_PINS : 0) |	       \
 			USE_LOW_POWER(idx),				       \
 		UARTE_DISABLE_RX_INIT(UARTE(idx)),			       \
 		.poll_out_byte = &uarte##idx##_poll_out_byte,		       \
