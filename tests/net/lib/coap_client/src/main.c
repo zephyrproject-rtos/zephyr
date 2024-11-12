@@ -220,6 +220,22 @@ static ssize_t z_impl_zsock_sendto_custom_fake_echo_next_req(int sock, void *buf
 	return 1;
 }
 
+static ssize_t z_impl_zsock_sendto_custom_fake_block(int sock, void *buf, size_t len, int flags,
+						     const struct sockaddr *dest_addr,
+						     socklen_t addrlen)
+{
+	errno = EAGAIN;
+	return -1;
+}
+
+static ssize_t z_impl_zsock_sendto_custom_fake_err(int sock, void *buf, size_t len, int flags,
+						   const struct sockaddr *dest_addr,
+						   socklen_t addrlen)
+{
+	errno = ENETDOWN;
+	return -1;
+}
+
 static ssize_t z_impl_zsock_recvfrom_custom_fake_response(int sock, void *buf, size_t max_len,
 							  int flags, struct sockaddr *src_addr,
 							  socklen_t *addrlen)
@@ -452,6 +468,30 @@ ZTEST(coap_client, test_get_request)
 	LOG_INF("Test done");
 }
 
+ZTEST(coap_client, test_request_block)
+{
+	int ret = 0;
+	struct sockaddr address = {0};
+	struct coap_client_request client_request = {
+		.method = COAP_METHOD_GET,
+		.confirmable = true,
+		.path = test_path,
+		.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN,
+		.cb = coap_callback,
+		.payload = short_payload,
+		.len = strlen(short_payload),
+	};
+
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_block;
+
+	k_sleep(K_MSEC(1));
+
+	LOG_INF("Send request");
+	ret = coap_client_req(&client, 0, &address, &client_request, NULL);
+	zassert_equal(ret, -EAGAIN, "");
+}
+
+
 ZTEST(coap_client, test_resend_request)
 {
 	int ret = 0;
@@ -462,14 +502,18 @@ ZTEST(coap_client, test_resend_request)
 		.path = test_path,
 		.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN,
 		.cb = coap_callback,
-		.payload = NULL,
-		.len = 0
+		.payload = short_payload,
+		.len = strlen(short_payload),
 	};
 
-	client_request.payload = short_payload;
-	client_request.len = strlen(short_payload);
+	int (*sendto_fakes[])(int, void *, size_t, int, const struct sockaddr *, socklen_t) = {
+		z_impl_zsock_sendto_custom_fake_no_reply,
+		z_impl_zsock_sendto_custom_fake_block,
+		z_impl_zsock_sendto_custom_fake,
+	};
 
-	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_no_reply;
+	SET_CUSTOM_FAKE_SEQ(z_impl_zsock_sendto, sendto_fakes, ARRAY_SIZE(sendto_fakes));
+	set_socket_events(client.fd, ZSOCK_POLLOUT);
 
 	k_sleep(K_MSEC(1));
 
@@ -477,11 +521,10 @@ ZTEST(coap_client, test_resend_request)
 	ret = coap_client_req(&client, 0, &address, &client_request, NULL);
 	zassert_true(ret >= 0, "Sending request failed, %d", ret);
 	k_sleep(K_MSEC(MORE_THAN_ACK_TIMEOUT_MS));
-	set_socket_events(client.fd, ZSOCK_POLLIN | ZSOCK_POLLOUT);
 
 	k_sleep(K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS));
 	zassert_equal(last_response_code, COAP_RESPONSE_CODE_OK, "Unexpected response");
-	zassert_equal(z_impl_zsock_sendto_fake.call_count, 2);
+	zassert_equal(z_impl_zsock_sendto_fake.call_count, 3);
 	LOG_INF("Test done");
 }
 
