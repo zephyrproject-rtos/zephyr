@@ -19,9 +19,12 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 /* Support: Microchip Phys:
  * lan8650/1 Rev.B0/B1 Internal PHYs
+ * lan8670/1/2 Rev.C1/C2 PHYs
  */
 /* Both Rev.B0 and B1 clause 22 PHYID's are same due to B1 chip limitation */
-#define PHY_ID_LAN865X_REVB 0x0007C1B3
+#define PHY_ID_LAN865X_REVB  0x0007C1B3
+#define PHY_ID_LAN867X_REVC1 0x0007C164
+#define PHY_ID_LAN867X_REVC2 0x0007C165
 
 /* Configuration param registers */
 #define LAN865X_REG_CFGPARAM_ADDR    0x00D8
@@ -48,6 +51,14 @@ typedef struct {
  * Revision F (DS60001760G - June 2024)
  * Addresses 0x0084, 0x008A, 0x00AD, 0x00AE and 0x00AF will be updated with cfgparam1, cfgparam2,
  * cfgparam3, cfgparam4 and cfgparam5 respectively.
+ *
+ * LAN867x Rev.C1/C2 configuration settings described in AN1699 are equal to
+ * the first 11 configuration settings and all the sqi fixup settings from
+ * LAN865x Rev.B0/B1. So the same fixup registers and values from LAN865x
+ * Rev.B0/B1 are used for LAN867x Rev.C1/C2 to avoid duplication.
+ * Refer the below link for the AN1699,
+ * https://www.microchip.com/en-us/application-notes/an1699
+ * Revision E (DS60001699F - June 2024)
  */
 static lan865x_config lan865x_revb_config[] = {
 	{.address = 0x00D0, .value = 0x3F31}, {.address = 0x00E0, .value = 0xC000},
@@ -347,6 +358,44 @@ static int phy_mc_lan865x_revb_config_init(const struct device *dev)
 	return 0;
 }
 
+/* LAN867x Rev.C1/C2 configuration settings are equal to the first 11 configuration settings and all
+ * the sqi fixup settings from LAN865x Rev.B0/B1. So the same fixup registers and values from
+ * LAN865x Rev.B0/B1 are used for LAN867x Rev.C1/C2 to avoid duplication.
+ * Refer the below links for the comparison.
+ * https://www.microchip.com/en-us/application-notes/an1760
+ * Revision F (DS60001760G - June 2024)
+ * https://www.microchip.com/en-us/application-notes/an1699
+ * Revision E (DS60001699F - June 2024)
+ */
+static int phy_mc_lan867x_revc_config_init(const struct device *dev)
+{
+	int ret;
+
+	ret = lan865x_calculate_update_cfgparams(dev);
+	if (ret) {
+		return ret;
+	}
+
+	for (int i = 0; i < ARRAY_SIZE(lan865x_revb_config); i++) {
+		ret = phy_mc_t1s_c45_write(dev, MDIO_MMD_VENDOR_SPECIFIC2,
+					   lan865x_revb_config[i].address,
+					   lan865x_revb_config[i].value);
+		if (ret) {
+			return ret;
+		}
+
+		/* LAN867x Rev.C1/C2 configuration settings are equal to the first 11 configuration
+		 * settings and all the sqi fixup settings from LAN865x Rev.B0/B1. So the 8
+		 * inbetween configuration settings are skipped.
+		 */
+		if (i == 10) {
+			i += 8;
+		}
+	}
+
+	return 0;
+}
+
 static int lan86xx_config_collision_detection(const struct device *dev, bool plca_enable)
 {
 	uint16_t val;
@@ -450,13 +499,23 @@ static int phy_mc_t1s_init(const struct device *dev)
 		return ret;
 	}
 
-	if (phy_id == PHY_ID_LAN865X_REVB) {
+	switch (phy_id) {
+	case PHY_ID_LAN867X_REVC1:
+	case PHY_ID_LAN867X_REVC2:
+		ret = phy_mc_lan867x_revc_config_init(dev);
+		if (ret) {
+			LOG_ERR("PHY initial configuration error: %d\n", ret);
+			return ret;
+		}
+		break;
+	case PHY_ID_LAN865X_REVB:
 		ret = phy_mc_lan865x_revb_config_init(dev);
 		if (ret) {
 			LOG_ERR("PHY initial configuration error: %d\n", ret);
 			return ret;
 		}
-	} else {
+		break;
+	default:
 		LOG_ERR("Unsupported PHY ID: %x\n", phy_id);
 		return -ENODEV;
 	}
