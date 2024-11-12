@@ -279,6 +279,25 @@ static ssize_t z_impl_zsock_recvfrom_custom_fake_empty_ack(int sock, void *buf, 
 	return sizeof(ack_data);
 }
 
+static ssize_t z_impl_zsock_recvfrom_custom_fake_rst(int sock, void *buf, size_t max_len, int flags,
+						     struct sockaddr *src_addr, socklen_t *addrlen)
+{
+	uint16_t last_message_id = 0;
+
+	static uint8_t rst_data[] = {0x70, 0x00, 0x00, 0x00, 0x00, 0x00,
+				     0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+
+	last_message_id = get_next_pending_message_id();
+
+	rst_data[2] = (uint8_t)(last_message_id >> 8);
+	rst_data[3] = (uint8_t)last_message_id;
+
+	memcpy(buf, rst_data, sizeof(rst_data));
+	clear_socket_events(sock, ZSOCK_POLLIN);
+
+	return sizeof(rst_data);
+}
+
 static ssize_t z_impl_zsock_recvfrom_custom_fake_only_ack(int sock, void *buf, size_t max_len,
 							  int flags, struct sockaddr *src_addr,
 							  socklen_t *addrlen)
@@ -1097,4 +1116,29 @@ ZTEST(coap_client, test_observe)
 	zassert_equal(last_response_code, -ECANCELED, "");
 
 	zassert_not_ok(k_sem_take(&sem, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+}
+
+ZTEST(coap_client, test_request_rst)
+{
+	struct k_sem sem;
+	struct sockaddr address = {0};
+	struct coap_client_request client_request = {
+		.method = COAP_METHOD_GET,
+		.confirmable = true,
+		.path = test_path,
+		.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN,
+		.cb = coap_callback,
+		.payload = short_payload,
+		.len = strlen(short_payload),
+		.user_data = &sem,
+	};
+
+	zassert_ok(k_sem_init(&sem, 0, 1));
+	k_sleep(K_MSEC(1));
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_rst;
+
+	zassert_ok(coap_client_req(&client, 0, &address, &client_request, NULL));
+
+	zassert_ok(k_sem_take(&sem, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, -ECONNRESET, "");
 }
