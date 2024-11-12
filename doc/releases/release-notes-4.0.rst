@@ -575,10 +575,55 @@ Drivers and Sensors
 
 * Sensors
 
-  * The existing driver for the Microchip MCP9808 temperature sensor transformed and renamed
-    to support all JEDEC JC 42.4 compatible temperature sensors. It now uses the
-    :dtcompatible:`jedec,jc-42.4-temp` compatible string instead to the ``microchip,mcp9808``
-    string.
+  * General
+
+    * The existing driver for the Microchip MCP9808 temperature sensor transformed and renamed to
+      support all JEDEC JC 42.4 compatible temperature sensors. It now uses the
+      :dtcompatible:`jedec,jc-42.4-temp` compatible string instead to the ``microchip,mcp9808``
+      string.
+    * Added support for VDD based ADC reference to the NTC thermistor driver.
+    * Added Avago APDS9253 (:dtcompatible:`avago,apds9253`) and APDS9306
+      (:dtcompatible:`avago,apds9306`) ambient light sensor drivers.
+    * Added gain and resolution attributes (:c:enum:`SENSOR_ATTR_GAIN` and
+      :c:enum:`SENSOR_ATTR_RESOLUTION`).
+
+  * ADI
+
+    * Add RTIO streaming support to ADXL345, ADXL362, and ADXL372 accelerometer drivers.
+
+  * Bosch
+
+    * Merged BMP390 into BMP388.
+    * Added support for power domains to BMM150 and BME680 drivers.
+    * Added BMP180 pressure sensor driver (:dtcompatible:`bosch,bmp180`).
+
+  * Memsic
+
+    * Added MMC56X3 magnetometer and temperature sensor driver (:dtcompatible:`memsic,mmc56x3`).
+
+  * NXP
+
+    * Added P3T1755 digital temperature sensor driver (:dtcompatible:`nxp,p3t1755`).
+    * Added FXLS8974 accelerometer driver (:dtcompatible:`nxp,fxls8974`).
+
+  * ST
+
+    * Aligned drivers to stmemsc HAL i/f v2.6.
+    * Added LSM9DS1 accelerometer/gyroscope/magnetometer sensor driver (:dtcompatible:`st,lsm9ds1`).
+
+  * TDK
+
+    * Added I2C bus support to ICM42670.
+
+  * TI
+
+    * Added support for INA236 to the existing INA230 driver.
+    * Added support for TMAG3001 to the existing TMAG5273 driver.
+    * Added TMP1075 temperature sensor driver (:dtcompatible:`ti,tmp1075`).
+
+  * Vishay
+
+    * Added trigger capability to VCNL36825T driver.
 
   * WE
 
