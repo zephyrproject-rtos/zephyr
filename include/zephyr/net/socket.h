@@ -1190,6 +1190,12 @@ struct in_pktinfo {
 	struct in_addr ipi_addr;     /**< Header Destination address */
 };
 
+/** Retrieve the current known path MTU of the current socket. Returns an
+ *  integer. IP_MTU is valid only for getsockopt and can be employed only when
+ *  the socket has been connected.
+ */
+#define IP_MTU 14
+
 /** Set IPv4 multicast TTL value. */
 #define IP_MULTICAST_TTL 33
 /** Join IPv4 multicast group. */
