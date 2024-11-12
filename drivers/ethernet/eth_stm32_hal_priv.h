@@ -22,6 +22,8 @@
 #define ST_OUI_B1 0x80
 #define ST_OUI_B2 0xE1
 
+#define ETH_STM32_HAL_FRAME_SIZE_MAX (NET_ETH_MTU + 18)
+
 /* Device constant configuration parameters */
 struct eth_stm32_hal_dev_cfg {
 	void (*config_func)(void);
