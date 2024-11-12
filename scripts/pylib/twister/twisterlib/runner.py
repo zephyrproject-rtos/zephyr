@@ -57,6 +57,7 @@ except ImportError:
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
 import expr_parser
+from anytree import Node, RenderTree
 
 
 class ExecutionCounter(object):
@@ -146,44 +147,42 @@ class ExecutionCounter(object):
 
     def summary(self):
         selected_cases = self.cases - self.filtered_cases
-        completed_configs = self.done - self.filtered_static - self.filtered_runtime
+        selected_configs = self.done - self.filtered_static - self.filtered_runtime
 
-        # Find alignment length for aesthetic printing
-        suites_n_length = self._find_number_length(self.total if self.total > self.done else self.done)
-        completed_suites_n_length = self._find_number_length(completed_configs)
-        filtered_suites_n_length = self._find_number_length(self.filtered_configs)
-        total_cases_n_length = self._find_number_length(self.cases)
-        selected_cases_n_length = self._find_number_length(selected_cases)
 
-        print("--------------------------------------------------")
-        print(f"{'Total test suites: ':<23}{self.total:>{suites_n_length}}") # actually test instances
-        print(f"{'Processed test suites: ':<23}{self.done:>{suites_n_length}}")
-        print(f"└─{'Filtered test suites: ':<21}{self.filtered_configs}")
-        print(f"  ├─ {'Filtered test suites (static): ':<37}{self.filtered_static:>{filtered_suites_n_length}}")
-        print(f"  └─ {'Filtered test suites (at runtime): ':<37}{self.filtered_runtime:>{filtered_suites_n_length}}")
-        print(f"└─ {'Selected test suites: ':<37}{completed_configs:>{completed_suites_n_length}}")
-        print(f"   ├─ {'Skipped test suites: ':<37}{self.skipped:>{completed_suites_n_length}}")
-        print(f"   ├─ {'Passed test suites: ':<37}{self.passed:>{completed_suites_n_length}}")
-        print(f"   ├─ {'Built only test suites: ':<37}{self.notrun:>{completed_suites_n_length}}")
-        print(f"   ├─ {'Failed test suites: ':<37}{self.failed:>{completed_suites_n_length}}")
-        print(f"   └─ {'Errors in test suites: ':<37}{self.error:>{completed_suites_n_length}}")
-        print("----------------------      ----------------------")
-        print(f"{'Total test cases: ':<18}{self.cases}")
-        print(f"├─ {'Filtered test cases: ':<21}{self.filtered_cases:>{total_cases_n_length}}")
-        print(f"└─ {'Selected test cases: ':<21}{selected_cases:>{total_cases_n_length}}")
-        print(f"   ├─ {'Passed test cases: ':<25}{self.passed_cases:>{selected_cases_n_length}}")
-        print(f"   ├─ {'Skipped test cases: ':<25}{self.skipped_cases:>{total_cases_n_length}}")
-        print(f"   ├─ {'Built only test cases: ':<25}{self.notrun_cases:>{selected_cases_n_length}}")
-        print(f"   ├─ {'Blocked test cases: ':<25}{self.blocked_cases:>{selected_cases_n_length}}")
-        print(f"   ├─ {'Failed test cases: ':<25}{self.failed_cases:>{selected_cases_n_length}}")
-        print(f"   {'├' if self.none_cases or self.started_cases else '└'}─ {'Errors in test cases: ':<25}{self.error_cases:>{selected_cases_n_length}}")
+        root = Node("Summary")
+
+        Node(f"Total test suites: {self.total}", parent=root)
+        processed_suites = Node(f"Processed test suites: {self.done}", parent=root)
+        filtered_suites = Node(f"Filtered test suites: {self.filtered_configs}", parent=processed_suites)
+        Node(f"Filtered test suites (static): {self.filtered_static}", parent=filtered_suites)
+        Node(f"Filtered test suites (at runtime): {self.filtered_runtime}", parent=filtered_suites)
+        selected_suites = Node(f"Selected test suites: {selected_configs}", parent=processed_suites)
+        Node(f"Skipped test suites: {self.skipped}", parent=selected_suites)
+        Node(f"Passed test suites: {self.passed}", parent=selected_suites)
+        Node(f"Built only test suites: {self.notrun}", parent=selected_suites)
+        Node(f"Failed test suites: {self.failed}", parent=selected_suites)
+        Node(f"Errors in test suites: {self.error}", parent=selected_suites)
+
+        total_cases = Node(f"Total test cases: {self.cases}", parent=root)
+        Node(f"Filtered test cases: {self.filtered_cases}", parent=total_cases)
+        selected_cases_node = Node(f"Selected test cases: {selected_cases}", parent=total_cases)
+        Node(f"Passed test cases: {self.passed_cases}", parent=selected_cases_node)
+        Node(f"Skipped test cases: {self.skipped_cases}", parent=selected_cases_node)
+        Node(f"Built only test cases: {self.notrun_cases}", parent=selected_cases_node)
+        Node(f"Blocked test cases: {self.blocked_cases}", parent=selected_cases_node)
+        Node(f"Failed test cases: {self.failed_cases}", parent=selected_cases_node)
+        error_cases_node = Node(f"Errors in test cases: {self.error_cases}", parent=selected_cases_node)
+
         if self.none_cases or self.started_cases:
-            print(f"   ├──── The following test case statuses should not appear in a proper execution ───")
+            Node("The following test case statuses should not appear in a proper execution", parent=error_cases_node)
         if self.none_cases:
-            print(f"   {'├' if self.started_cases else '└'}─ {'Statusless test cases: ':<25}{self.none_cases:>{selected_cases_n_length}}")
+            Node(f"Statusless test cases: {self.none_cases}", parent=error_cases_node)
         if self.started_cases:
-            print(f"   └─ {'Test cases only started: ':<25}{self.started_cases:>{selected_cases_n_length}}")
-        print("--------------------------------------------------")
+            Node(f"Test cases only started: {self.started_cases}", parent=error_cases_node)
+
+        for pre, _, node in RenderTree(root):
+            print("%s%s" % (pre, node.name))
 
     @property
     def warnings(self):
