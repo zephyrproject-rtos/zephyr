@@ -556,7 +556,7 @@ static int map_anon_page(void *addr, uint32_t flags)
 	}
 	frame_mapped_set(pf, addr);
 #ifdef CONFIG_DEMAND_PAGING
-	if (!lock) {
+	if (IS_ENABLED(CONFIG_EVICTION_TRACKING) && (!lock)) {
 		k_mem_paging_eviction_add(pf);
 	}
 #endif
@@ -784,7 +784,8 @@ void k_mem_unmap_phys_guard(void *addr, size_t size, bool is_anon)
 
 			arch_mem_unmap(pos, CONFIG_MMU_PAGE_SIZE);
 #ifdef CONFIG_DEMAND_PAGING
-			if (!k_mem_page_frame_is_pinned(pf)) {
+			if (IS_ENABLED(CONFIG_EVICTION_TRACKING) &&
+			    (!k_mem_page_frame_is_pinned(pf))) {
 				k_mem_paging_eviction_remove(pf);
 			}
 #endif
@@ -1041,7 +1042,8 @@ static void mark_linker_section_pinned(void *start_addr, void *end_addr,
 		} else {
 			k_mem_page_frame_clear(pf, K_MEM_PAGE_FRAME_PINNED);
 #ifdef CONFIG_DEMAND_PAGING
-			if (k_mem_page_frame_is_evictable(pf)) {
+			if (IS_ENABLED(CONFIG_EVICTION_TRACKING) &&
+			    k_mem_page_frame_is_evictable(pf)) {
 				k_mem_paging_eviction_add(pf);
 			}
 #endif
@@ -1147,10 +1149,13 @@ void z_mem_manage_init(void)
 #endif /* CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM */
 	k_mem_paging_backing_store_init();
 	k_mem_paging_eviction_init();
-	/* start tracking evictable page installed above if any */
-	K_MEM_PAGE_FRAME_FOREACH(phys, pf) {
-		if (k_mem_page_frame_is_evictable(pf)) {
-			k_mem_paging_eviction_add(pf);
+
+	if (IS_ENABLED(CONFIG_EVICTION_TRACKING)) {
+		/* start tracking evictable page installed above if any */
+		K_MEM_PAGE_FRAME_FOREACH(phys, pf) {
+			if (k_mem_page_frame_is_evictable(pf)) {
+				k_mem_paging_eviction_add(pf);
+			}
 		}
 	}
 #endif /* CONFIG_DEMAND_PAGING */
@@ -1347,7 +1352,10 @@ static int page_frame_prepare_locked(struct k_mem_page_frame *pf, bool *dirty_pt
 			return -ENOMEM;
 		}
 		arch_mem_page_out(k_mem_page_frame_to_virt(pf), *location_ptr);
-		k_mem_paging_eviction_remove(pf);
+
+		if (IS_ENABLED(CONFIG_EVICTION_TRACKING)) {
+			k_mem_paging_eviction_remove(pf);
+		}
 	} else {
 		/* Shouldn't happen unless this function is mis-used */
 		__ASSERT(!dirty, "un-mapped page determined to be dirty");
@@ -1683,7 +1691,9 @@ static bool do_page_fault(void *addr, bool pin)
 
 			pf = k_mem_phys_to_page_frame(phys);
 			if (!k_mem_page_frame_is_pinned(pf)) {
-				k_mem_paging_eviction_remove(pf);
+				if (IS_ENABLED(CONFIG_EVICTION_TRACKING)) {
+					k_mem_paging_eviction_remove(pf);
+				}
 				k_mem_page_frame_set(pf, K_MEM_PAGE_FRAME_PINNED);
 			}
 		}
@@ -1738,7 +1748,7 @@ static bool do_page_fault(void *addr, bool pin)
 
 	arch_mem_page_in(addr, k_mem_page_frame_to_phys(pf));
 	k_mem_paging_backing_store_page_finalize(pf, page_in_location);
-	if (!pin) {
+	if (IS_ENABLED(CONFIG_EVICTION_TRACKING) && (!pin)) {
 		k_mem_paging_eviction_add(pf);
 	}
 out:
@@ -1807,7 +1817,10 @@ static void do_mem_unpin(void *addr)
 		pf = k_mem_phys_to_page_frame(phys);
 		if (k_mem_page_frame_is_pinned(pf)) {
 			k_mem_page_frame_clear(pf, K_MEM_PAGE_FRAME_PINNED);
-			k_mem_paging_eviction_add(pf);
+
+			if (IS_ENABLED(CONFIG_EVICTION_TRACKING)) {
+				k_mem_paging_eviction_add(pf);
+			}
 		}
 	}
 	k_spin_unlock(&z_mm_lock, key);
