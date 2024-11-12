@@ -166,6 +166,7 @@ Boards & SoC Support
     versions (1.0 and 1.1) are no longer supported.
   * Added ESP32 WROVER-E-N16R4 variant.
   * STM32H5: Added support for OpenOCD through STMicroelectronics OpenOCD fork.
+  * MAX32: Enabled Segger RTT and SystemView support.
 
 * Added support for these boards:
 
@@ -319,6 +320,7 @@ Drivers and Sensors
   * Fixed calibration scheme in ESP32-S3.
   * STM32H7: Added support for higher sampling frequencies thanks to boost mode implementation.
   * Added initial support for Renesas RA8 ADC driver (:dtcompatible:`renesas,ra-adc`)
+  * Added driver for Analog Devices MAX32 SoC series (:dtcompatible:`adi,max32-adc`).
 
 * Battery
 
@@ -354,6 +356,7 @@ Drivers and Sensors
 * Counter
 
   * Added initial support for Renesas RA8 AGT counter driver (:dtcompatible:`renesas,ra-agt`)
+  * Added driver for Analog Devices MAX32 SoC series (:dtcompatible:`adi,max32-counter`).
 
 * Crypto
 
@@ -370,6 +373,10 @@ Drivers and Sensors
 
 * Display
 
+* DMA
+
+  * Added driver for Analog Devices MAX32 SoC series (:dtcompatible:`adi,max32-dma`).
+
 * EEPROM
 
   * Added support for using the EEPROM simulator with embedded C standard libraries
@@ -378,6 +385,7 @@ Drivers and Sensors
 * Entropy
 
   * Added initial support for Renesas RA8 Entropy driver (:dtcompatible:`renesas,ra-rsip-e51a-trng`)
+  * Added driver for Analog Devices MAX32 SoC series (:dtcompatible:`adi,max32-trng`).
 
 * Ethernet
 
@@ -463,6 +471,7 @@ Drivers and Sensors
   * Added possibility to run STM32H7 flash driver from Cortex-M4 core.
   * Implemented readout protection handling (RDP levels) for STM32F7 SoCs.
   * Added initial support for Renesas RA8 Flash controller driver (:dtcompatible:`renesas,ra-flash-hp-controller`)
+  * Added driver for Analog Devices MAX32 SoC series (:dtcompatible:`adi,max32-flash-controller`).
 
 * GNSS
 
@@ -555,6 +564,7 @@ Drivers and Sensors
 
   * rpi_pico: The driver now configures the divide ratio adaptively.
   * Added initial support for Renesas RA8 PWM driver (:dtcompatible:`renesas,ra8-pwm`)
+  * Added driver for Analog Devices MAX32 SoC series (:dtcompatible:`adi,max32-pwm`).
 
 * Regulators
 
@@ -642,6 +652,7 @@ Drivers and Sensors
 * SPI
 
   * Added initial support for Renesas RA8 SPI driver (:dtcompatible:`renesas,ra8-spi-b`)
+  * Added RTIO support to the Analog Devices MAX32 driver.
 
 * Steppers
 
@@ -678,6 +689,8 @@ Drivers and Sensors
   * Added 1-Wire master driver for Analog Devices MAX32 SoC series (:dtcompatible:`adi,max32-w1`)
 
 * Watchdog
+
+  * Added driver for Analog Devices MAX32 SoC series (:dtcompatible:`adi,max32-watchdog`).
 
 * Wi-Fi
 
