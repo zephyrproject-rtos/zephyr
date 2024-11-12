@@ -134,8 +134,6 @@ struct bt_l2cap_ecred_conn_rsp {
 	uint16_t dcid[0];
 } __packed;
 
-#define L2CAP_ECRED_CHAN_MAX_PER_REQ 5
-
 #define BT_L2CAP_ECRED_RECONF_REQ       0x19
 struct bt_l2cap_ecred_reconf_req {
 	uint16_t mtu;
