@@ -18,6 +18,7 @@
  * @{
  */
 
+#include <stdint.h>
 #include <sys/types.h>
 
 #include <zephyr/sys/atomic.h>
@@ -82,6 +83,42 @@ extern "C" {
  *  @return Needed buffer size to match the requested L2CAP SDU MTU.
  */
 #define BT_L2CAP_SDU_BUF_SIZE(mtu) BT_L2CAP_BUF_SIZE(BT_L2CAP_SDU_HDR_SIZE + (mtu))
+
+/** @brief L2CAP ECRED minimum MTU
+ *
+ *  The minimum MTU for an L2CAP Enhanced Credit Based Connection.
+ *
+ *  This requirement is inferred from text in Core 3.A.4.25 v6.0:
+ *
+ *      L2CAP implementations shall support a minimum MTU size of 64
+ *      octets for these channels.
+ */
+#define BT_L2CAP_ECRED_MIN_MTU 64
+
+/** @brief L2CAP ECRED minimum MPS
+ *
+ *  The minimum MPS for an L2CAP Enhanced Credit Based Connection.
+ *
+ *  This requirement is inferred from text in Core 3.A.4.25 v6.0:
+ *
+ *      L2CAP implementations shall support a minimum MPS of 64 and may
+ *      support an MPS up to 65533 octets for these channels.
+ */
+#define BT_L2CAP_ECRED_MIN_MPS 64
+
+/** @brief The maximum number of channels in ECRED L2CAP signaling PDUs
+ *
+ *  Currently, this is the maximum number of channels referred to in the
+ *  following PDUs:
+ *   - L2CAP_CREDIT_BASED_CONNECTION_REQ
+ *   - L2CAP_CREDIT_BASED_RECONFIGURE_REQ
+ *
+ *  @warning The commonality is inferred between the PDUs. The Bluetooth
+ *  specification treats these as separate numbers and does now
+ *  guarantee the same limit for potential future ECRED L2CAP signaling
+ *  PDUs.
+ */
+#define BT_L2CAP_ECRED_CHAN_MAX_PER_REQ 5
 
 struct bt_l2cap_chan;
 
@@ -556,6 +593,52 @@ int bt_l2cap_ecred_chan_connect(struct bt_conn *conn,
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_l2cap_ecred_chan_reconfigure(struct bt_l2cap_chan **chans, uint16_t mtu);
+
+/** @brief Reconfigure Enhanced Credit Based L2CAP channels
+ *
+ *  Experimental API to reconfigure L2CAP ECRED channels with explicit MPS and
+ *  MTU values.
+ *
+ *  Pend a L2CAP ECRED reconfiguration for up to 5 channels. All provided
+ *  channels must share the same @ref bt_conn.
+ *
+ *  This API cannot decrease the MTU of any channel, and it cannot decrease the
+ *  MPS of any channel when more than one channel is provided.
+ *
+ *  There is no dedicated callback for this operation, but whenever a peer
+ *  responds to a reconfiguration request, each affected channel's
+ *  reconfigured() callback is invoked.
+ *
+ *  This function may block.
+ *
+ *  @warning Known issue: The implementation returns -EBUSY if there already is
+ *  an ongoing reconfigure operation on the same connection. The caller may try
+ *  again later. There is no event signaling when the existing operation
+ *  finishes.
+ *
+ *  @warning Known issue: The implementation returns -ENOMEM when unable to
+ *  allocate. The caller may try again later. There is no event signaling the
+ *  availability of buffers.
+ *
+ *  @kconfig_dep{CONFIG_BT_L2CAP_RECONFIGURE_EXPLICIT}
+ *
+ *  @param chans       Array of channels to reconfigure. Must be non-empty and
+ *                     contain at most 5 (@ref BT_L2CAP_ECRED_CHAN_MAX_PER_REQ)
+ *                     elements.
+ *  @param chan_count  Number of channels in the array.
+ *  @param mtu         Desired MTU. Must be at least @ref BT_L2CAP_ECRED_MIN_MTU.
+ *  @param mps         Desired MPS. Must be in range @ref BT_L2CAP_ECRED_MIN_MPS
+ *                     to @ref BT_L2CAP_RX_MTU.
+ *
+ *  @retval 0          Successfully pended operation.
+ *  @retval -EINVAL    Bad arguments. See above requirements.
+ *  @retval -ENOTCONN  Connection object is not in connected state.
+ *  @retval -EBUSY     Another outgoing reconfiguration is pending on the same
+ *                     connection.
+ *  @retval -ENOMEM    Host is out of buffers.
+ */
+int bt_l2cap_ecred_chan_reconfigure_explicit(struct bt_l2cap_chan **chans, size_t chan_count,
+					     uint16_t mtu, uint16_t mps);
 
 /** @brief Connect L2CAP channel
  *
