@@ -371,6 +371,8 @@ Drivers and Sensors
 
   * STM32F7 SDMMC driver now supports usage of DMA.
   * STM32 mem controller driver now supports FMC for STM32H5.
+  * SDMMC subsystem driver will now power down the SD card when the disk is
+    deinitialized
 
 * Display
 
