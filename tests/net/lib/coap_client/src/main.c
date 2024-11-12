@@ -390,6 +390,18 @@ static ssize_t z_impl_zsock_recvfrom_custom_fake_duplicate_response(int sock, vo
 	return ret;
 }
 
+static ssize_t z_impl_zsock_recvfrom_custom_fake_observe(int sock, void *buf, size_t max_len,
+							 int flags, struct sockaddr *src_addr,
+							 socklen_t *addrlen)
+{
+	int ret = z_impl_zsock_recvfrom_custom_fake_duplicate_response(sock, buf, max_len, flags,
+								       src_addr, addrlen);
+
+	set_next_pending_message_id(get_next_pending_message_id() + 1);
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_observe;
+	return ret;
+}
+
 extern void net_coap_init(void);
 
 static void *suite_setup(void)
@@ -1045,4 +1057,44 @@ ZTEST(coap_client, test_duplicate_response)
 	zassert_equal(last_response_code, COAP_RESPONSE_CODE_OK, "Unexpected response");
 
 	zassert_equal(k_sem_take(&sem, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)), -EAGAIN, "");
+}
+
+ZTEST(coap_client, test_observe)
+{
+	struct k_sem sem;
+	struct sockaddr address = {0};
+	struct coap_client_option options = {
+		.code = COAP_OPTION_OBSERVE,
+		.value[0] = 0,
+		.len = 1,
+	};
+	struct coap_client_request client_request = {
+		.method = COAP_METHOD_GET,
+		.confirmable = true,
+		.path = test_path,
+		.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN,
+		.cb = coap_callback,
+		.payload = short_payload,
+		.len = strlen(short_payload),
+		.options = &options,
+		.num_options = 1,
+		.user_data = &sem,
+	};
+
+	zassert_ok(k_sem_init(&sem, 0, 1));
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_observe;
+
+	k_sleep(K_MSEC(1));
+
+	zassert_ok(coap_client_req(&client, 0, &address, &client_request, NULL));
+
+	zassert_ok(k_sem_take(&sem, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_ok(k_sem_take(&sem, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_ok(k_sem_take(&sem, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+
+	coap_client_cancel_requests(&client);
+	zassert_ok(k_sem_take(&sem, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, -ECANCELED, "");
+
+	zassert_not_ok(k_sem_take(&sem, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
 }
