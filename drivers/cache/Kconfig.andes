@@ -7,8 +7,6 @@ bool "ANDES external cache driver"
 	default y
 	depends on SOC_FAMILY_ANDES_V5
 	select CACHE_HAS_DRIVER
-	imply DCACHE_LINE_SIZE_DETECT
-	imply ICACHE_LINE_SIZE_DETECT
 	help
 	  This option enables the CACHE driver for ANDES V5 series SOC.
 
