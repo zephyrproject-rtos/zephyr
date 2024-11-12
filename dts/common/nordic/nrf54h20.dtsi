@@ -661,6 +661,7 @@
 				power-domains = <&gpd NRF_GPD_FAST_ACTIVE1>;
 				endtx-stoptx-supported;
 				frame-timeout-supported;
+				pin-retention;
 			};
 
 			spi121: spi@8e7000 {

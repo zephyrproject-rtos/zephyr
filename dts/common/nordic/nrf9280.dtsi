@@ -508,6 +508,7 @@
 				interrupts = <230 NRF_DEFAULT_IRQ_PRIORITY>;
 				endtx-stoptx-supported;
 				frame-timeout-supported;
+				pin-retention;
 			};
 
 			spi121: spi@8e7000 {
