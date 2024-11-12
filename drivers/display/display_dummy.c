@@ -24,10 +24,6 @@ struct dummy_display_data {
 
 static int dummy_display_init(const struct device *dev)
 {
-	struct dummy_display_data *disp_data = dev->data;
-
-	disp_data->current_pixel_format = PIXEL_FORMAT_ARGB_8888;
-
 	return 0;
 }
 
@@ -122,7 +118,9 @@ static const struct display_driver_api dummy_display_api = {
 		.width = DT_INST_PROP(n, width),			\
 	};								\
 									\
-	static struct dummy_display_data dd_data_##n;			\
+	static struct dummy_display_data dd_data_##n = {		\
+		.current_pixel_format = DT_INST_PROP(n, pixel_format),	\
+	};								\
 									\
 	DEVICE_DT_INST_DEFINE(n, &dummy_display_init, NULL,		\
 			      &dd_data_##n,				\

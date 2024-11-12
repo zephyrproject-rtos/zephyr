@@ -6,3 +6,18 @@ description: Dummy display controller
 compatible: "zephyr,dummy-dc"
 
 include: display-controller.yaml
+
+properties:
+  pixel-format:
+    type: int
+    default: 1
+    enum:
+      - 1  # PIXEL_FORMAT_RGB_888
+      - 2  # PIXEL_FORMAT_MONO01
+      - 4  # PIXEL_FORMAT_MONO10
+      - 8  # PIXEL_FORMAT_ARGB_8888
+      - 16 # PIXEL_FORMAT_RGB_565
+      - 32 # PIXEL_FORMAT_BGR_565
+    description:
+      Display pixel format. Defaults to RGB888 since its the most common
+      format of any native application.
