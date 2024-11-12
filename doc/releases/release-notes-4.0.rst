@@ -374,6 +374,16 @@ Drivers and Sensors
 
 * Display
 
+  * NXP ELCDIF driver now supports flipping the image along the horizontal
+    or vertical axis using the PXP. Use
+    :kconfig:option:`CONFIG_MCUX_ELCDIF_PXP_FLIP_DIRECTION` to set the desired
+    flip.
+  * ST7789V driver now supports BGR565, enabled with
+    :kconfig:option:`CONFIG_ST7789V_BGR565`.
+  * Added driver for SSD1327 OLED display controller (:dtcompatible:`solomon,ssd1327fb`).
+  * Added driver for SSD1322 OLED display controller (:dtcompatible:`solomon,ssd1322`).
+  * Added driver for IST3931 monochrome display controller (:dtcompatible:`istech,ist3931`).
+
 * DMA
 
   * Added driver for Analog Devices MAX32 SoC series (:dtcompatible:`adi,max32-dma`).
