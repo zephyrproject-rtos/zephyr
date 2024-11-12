@@ -747,6 +747,41 @@ ZTEST(coap_client, test_separate_response_lost)
 	zassert_equal(last_response_code, -ETIMEDOUT, "");
 }
 
+ZTEST(coap_client, test_separate_response_ack_fail)
+{
+	int ret = 0;
+	struct k_sem sem;
+	struct sockaddr address = {0};
+	struct coap_client_request client_request = {
+		.method = COAP_METHOD_GET,
+		.confirmable = true,
+		.path = test_path,
+		.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN,
+		.cb = coap_callback,
+		.payload = short_payload,
+		.len = strlen(short_payload),
+		.user_data = &sem,
+	};
+	zassert_ok(k_sem_init(&sem, 0, 1));
+
+	int (*sendto_fakes[])(int, void *, size_t, int, const struct sockaddr *, socklen_t) = {
+		z_impl_zsock_sendto_custom_fake,
+		z_impl_zsock_sendto_custom_fake_err,
+	};
+
+	SET_CUSTOM_FAKE_SEQ(z_impl_zsock_sendto, sendto_fakes, ARRAY_SIZE(sendto_fakes));
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_empty_ack;
+
+	k_sleep(K_MSEC(1));
+
+	LOG_INF("Send request");
+	ret = coap_client_req(&client, 0, &address, &client_request, NULL);
+	zassert_true(ret >= 0, "Sending request failed, %d", ret);
+
+	zassert_ok(k_sem_take(&sem, K_MSEC(COAP_SEPARATE_TIMEOUT)));
+	zassert_equal(last_response_code, -ENETDOWN, "");
+}
+
 ZTEST(coap_client, test_multiple_requests)
 {
 	int ret = 0;
