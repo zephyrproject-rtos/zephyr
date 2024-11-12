@@ -9,6 +9,9 @@
 
 #include_next "sys/types.h"
 
+#define _CLOCK_T_DECLARED
+#define _CLOCKID_T_DECLARED
+
 #define _DEV_T_DECLARED
 #define _INO_T_DECLARED
 #define _NLINK_T_DECLARED
