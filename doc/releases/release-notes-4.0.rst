@@ -1088,6 +1088,8 @@ Libraries / Subsystems
 
 * SD
 
+  * No significant changes in this release
+
 * Settings
 
   * Settings has been extended to allow prioritizing the commit handlers using
