@@ -206,29 +206,26 @@ def test_executioncounter(capfd):
     sys.stderr.write(err)
 
     assert (
-        '--------------------------------------------------\n'
-        'Total test suites:     12\n'
-        'Processed test suites:  9\n'
-        '└─Filtered test suites: 3\n'
-        '  ├─ Filtered test suites (static):       2\n'
-        '  └─ Filtered test suites (at runtime):   1\n'
-        '└─ Selected test suites:                6\n'
-        '   ├─ Skipped test suites:                 0\n'
-        '   ├─ Passed test suites:                  6\n'
-        '   ├─ Built only test suites:              0\n'
-        '   ├─ Failed test suites:                  1\n'
-        '   └─ Errors in test suites:               2\n'
-        '----------------------      ----------------------\n'
-        'Total test cases: 25\n'
-        '├─ Filtered test cases:  0\n'
-        '└─ Selected test cases: 25\n'
-        '   ├─ Passed test cases:        0\n'
-        '   ├─ Skipped test cases:       6\n'
-        '   ├─ Built only test cases:    0\n'
-        '   ├─ Blocked test cases:       0\n'
-        '   ├─ Failed test cases:        0\n'
-        '   └─ Errors in test cases:     0\n'
-        '--------------------------------------------------\n'
+"├── Total test suites: 12\n"
+"├── Processed test suites: 9\n"
+"│   ├── Filtered test suites: 3\n"
+"│   │   ├── Filtered test suites (static): 2\n"
+"│   │   └── Filtered test suites (at runtime): 1\n"
+"│   └── Selected test suites: 6\n"
+"│       ├── Skipped test suites: 0\n"
+"│       ├── Passed test suites: 6\n"
+"│       ├── Built only test suites: 0\n"
+"│       ├── Failed test suites: 1\n"
+"│       └── Errors in test suites: 2\n"
+"└── Total test cases: 25\n"
+"    ├── Filtered test cases: 0\n"
+"    └── Selected test cases: 25\n"
+"        ├── Passed test cases: 0\n"
+"        ├── Skipped test cases: 6\n"
+"        ├── Built only test cases: 0\n"
+"        ├── Blocked test cases: 0\n"
+"        ├── Failed test cases: 0\n"
+"        └── Errors in test cases: 0\n"
     ) in out
 
     assert ec.cases == 25
