@@ -1292,6 +1292,7 @@ enum net_context_option {
 	NET_OPT_TTL               = 16, /**< IPv4 unicast TTL */
 	NET_OPT_ADDR_PREFERENCES  = 17, /**< IPv6 address preference */
 	NET_OPT_TIMESTAMPING      = 18, /**< Packet timestamping */
+	NET_OPT_MTU               = 20, /**< IPv4 socket path MTU */
 };
 
 /**
