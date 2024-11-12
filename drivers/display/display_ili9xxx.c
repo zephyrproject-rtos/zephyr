@@ -521,7 +521,8 @@ static const struct ili9xxx_quirks ili9488_quirks = {
 		.quirks = &ili##t##_quirks,                                    \
 		.mipi_dev = DEVICE_DT_GET(DT_PARENT(INST_DT_ILI9XXX(n, t))),   \
 		.dbi_config = {                                                \
-			.mode = DT_PROP_OR(INST_DT_ILI9XXX(n, t),              \
+			.mode = DT_STRING_UPPER_TOKEN_OR(                      \
+				INST_DT_ILI9XXX(n, t),                         \
 				mipi_mode, MIPI_DBI_MODE_SPI_4WIRE),           \
 			.config = MIPI_DBI_SPI_CONFIG_DT(                      \
 						INST_DT_ILI9XXX(n, t),         \

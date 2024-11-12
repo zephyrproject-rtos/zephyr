@@ -96,7 +96,7 @@ extern "C" {
  */
 #define MIPI_DBI_CONFIG_DT(node_id, operation_, delay_)			\
 	{								\
-		.mode = DT_PROP(node_id, mipi_mode),			\
+		.mode = DT_STRING_UPPER_TOKEN(node_id, mipi_mode),	\
 		.config = MIPI_DBI_SPI_CONFIG_DT(node_id, operation_, delay_), \
 	}
 

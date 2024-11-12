@@ -87,7 +87,7 @@
 				st7789v: lcd-panel@0 {
 					compatible = "sitronix,st7789v";
 					reg = <0>;
-					mipi-mode = <MIPI_DBI_MODE_8080_BUS_16_BIT>;
+					mipi-mode = "MIPI_DBI_MODE_8080_BUS_16_BIT";
 					/* A write cycle should be 68ns */
 					mipi-max-frequency = <14705882>;
 					width = <240>;

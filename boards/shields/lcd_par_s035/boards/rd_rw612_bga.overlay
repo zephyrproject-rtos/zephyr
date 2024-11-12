@@ -64,7 +64,7 @@
 };
 
 &st7796s {
-	mipi-mode = <MIPI_DBI_MODE_8080_BUS_8_BIT>;
+	mipi-mode = "MIPI_DBI_MODE_8080_BUS_8_BIT";
 	/*
 	 * Display supports minimum write cycle time of 66ns. This
 	 * means we can clock the LCDIC module at 30MHz, as
