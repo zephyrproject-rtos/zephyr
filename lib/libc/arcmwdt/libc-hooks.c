@@ -71,6 +71,13 @@ int _write(int fd, const char *buf, unsigned int nbytes)
 }
 #endif
 
+#ifndef CONFIG_POSIX_DEVICE_IO
+__weak int fileno(FILE *file)
+{
+	return _fileno(file);
+}
+#endif
+
 /*
  * It's require to implement _isatty to have STDIN/STDOUT/STDERR buffered
  * properly.
