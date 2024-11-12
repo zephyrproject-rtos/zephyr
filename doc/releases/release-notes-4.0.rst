@@ -600,6 +600,7 @@ Drivers and Sensors
 * SDHC
 
   * Added ESP32-S3 driver support.
+  * SPI SDHC driver now handles SPI devices with runtime PM support correctly
 
 * Sensors
 
