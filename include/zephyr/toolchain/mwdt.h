@@ -114,16 +114,6 @@
 
 #else /* defined(_ASMLANGUAGE) */
 
-/* MWDT toolchain misses ssize_t definition which is used by Zephyr */
-#ifndef _SSIZE_T_DEFINED
-#define _SSIZE_T_DEFINED
-#ifdef CONFIG_64BIT
-	typedef long ssize_t;
-#else
-	typedef int ssize_t;
-#endif
-#endif /* _SSIZE_T_DEFINED */
-
 #ifdef CONFIG_NEWLIB_LIBC
   #error "ARC MWDT doesn't support building with CONFIG_NEWLIB_LIBC as it doesn't have newlib"
 #endif /* CONFIG_NEWLIB_LIBC */

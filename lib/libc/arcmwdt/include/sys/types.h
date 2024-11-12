@@ -15,4 +15,13 @@
 #define _UID_T_DECLARED
 #define _GID_T_DECLARED
 
+#ifndef _SSIZE_T_DEFINED
+#define _SSIZE_T_DEFINED
+#ifdef CONFIG_64BIT
+typedef long ssize_t;
+#else  /* CONFIG_64BIT */
+typedef int ssize_t;
+#endif /* CONFIG_64BIT */
+#endif /* _SSIZE_T_DEFINED */
+
 #endif /* LIB_LIBC_ARCMWDT_INCLUDE_SYS_TYPES_H_ */
