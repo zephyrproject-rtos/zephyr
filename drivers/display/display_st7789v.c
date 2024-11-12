@@ -370,7 +370,7 @@ static const struct display_driver_api st7789v_api = {
 };
 
 #define ST7789V_WORD_SIZE(inst)								\
-	((DT_INST_PROP(inst, mipi_mode) == MIPI_DBI_MODE_SPI_4WIRE) ?                   \
+	((DT_INST_STRING_UPPER_TOKEN(inst, mipi_mode) == MIPI_DBI_MODE_SPI_4WIRE) ?     \
 	SPI_WORD_SET(8) : SPI_WORD_SET(9))
 #define ST7789V_INIT(inst)								\
 	static const struct st7789v_config st7789v_config_ ## inst = {			\

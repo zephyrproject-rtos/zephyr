@@ -494,7 +494,7 @@ static const struct display_driver_api st7735r_api = {
 		.mipi_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),		\
 		.dbi_config = MIPI_DBI_CONFIG_DT_INST(inst,			\
 				SPI_OP_MODE_MASTER |				\
-				((DT_INST_PROP(inst, mipi_mode) ==		\
+				((DT_INST_STRING_UPPER_TOKEN(inst, mipi_mode) == \
 				 MIPI_DBI_MODE_SPI_4WIRE) ? SPI_WORD_SET(8) :	\
 				 SPI_WORD_SET(9)) |				\
 				SPI_HOLD_ON_CS | SPI_LOCK_ON, 0),		\

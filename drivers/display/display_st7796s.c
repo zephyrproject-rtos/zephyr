@@ -364,7 +364,7 @@ static const struct display_driver_api st7796s_api = {
 						SPI_OP_MODE_MASTER |		\
 						SPI_WORD_SET(8),		\
 						0),				\
-			.mode = DT_INST_PROP_OR(n, mipi_mode,			\
+			.mode = DT_INST_STRING_UPPER_TOKEN_OR(n, mipi_mode,     \
 						MIPI_DBI_MODE_SPI_4WIRE),	\
 		},								\
 		.width = DT_INST_PROP(n, width),				\

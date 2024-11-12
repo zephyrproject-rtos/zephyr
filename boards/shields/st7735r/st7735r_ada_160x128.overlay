@@ -22,7 +22,7 @@
 		st7735r_st7735r_ada_160x128: st7735r@0 {
 			compatible = "sitronix,st7735r";
 			mipi-max-frequency = <20000000>;
-			mipi-mode = <MIPI_DBI_MODE_SPI_4WIRE>;
+			mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
 			reg = <0>;
 			width = <160>;
 			height = <128>;
