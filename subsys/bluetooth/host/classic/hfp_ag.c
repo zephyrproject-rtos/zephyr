@@ -156,7 +156,7 @@ static enum at_cme bt_hfp_ag_get_cme_err(int err)
 	enum at_cme cme_err;
 
 	switch (err) {
-	case -EOPNOTSUPP:
+	case -ENOEXEC:
 		cme_err = CME_ERROR_OPERATION_NOT_SUPPORTED;
 		break;
 	case -EFAULT:
@@ -961,7 +961,7 @@ static int bt_hfp_ag_bac_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 	if (!(ag->hf_features & BT_HFP_HF_FEATURE_CODEC_NEG) ||
 	    !(ag->ag_features & BT_HFP_AG_FEATURE_CODEC_NEG)) {
 		hfp_ag_unlock(ag);
-		return -EOPNOTSUPP;
+		return -ENOEXEC;
 	}
 	hfp_ag_unlock(ag);
 
@@ -983,7 +983,7 @@ static int bt_hfp_ag_bac_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 	}
 
 	if (!(codec_ids & BIT(BT_HFP_AG_CODEC_CVSD))) {
-		return -EOPNOTSUPP;
+		return -ENOEXEC;
 	}
 
 	hfp_ag_lock(ag);
@@ -1380,7 +1380,7 @@ static int chld_drop_conversation(struct bt_hfp_ag *ag)
 	}
 
 	if (!bt_ag || !bt_ag->explicit_call_transfer) {
-		return -EOPNOTSUPP;
+		return -ENOEXEC;
 	}
 
 	bt_ag->explicit_call_transfer(ag);
@@ -1495,13 +1495,13 @@ static int chld_other(struct bt_hfp_ag *ag, uint32_t value)
 	command = value / 10;
 
 	if (!index) {
-		return -EOPNOTSUPP;
+		return -ENOEXEC;
 	}
 
 	index = index - 1;
 
 	if (index >= ARRAY_SIZE(ag->calls)) {
-		return -EOPNOTSUPP;
+		return -ENOEXEC;
 	}
 
 	switch (command) {
@@ -1511,7 +1511,7 @@ static int chld_other(struct bt_hfp_ag *ag, uint32_t value)
 		return chld_held_other_calls(ag, index);
 	}
 
-	return -EOPNOTSUPP;
+	return -ENOEXEC;
 }
 #endif /* CONFIG_BT_HFP_AG_3WAY_CALL */
 
@@ -1526,7 +1526,7 @@ static int bt_hfp_ag_chld_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 	if (!((ag->ag_features & BT_HFP_AG_FEATURE_3WAY_CALL) &&
 	      (ag->hf_features & BT_HFP_HF_FEATURE_3WAY_CALL))) {
 		hfp_ag_unlock(ag);
-		return -EOPNOTSUPP;
+		return -ENOEXEC;
 	}
 	hfp_ag_unlock(ag);
 
@@ -1568,7 +1568,7 @@ static int bt_hfp_ag_chld_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 
 	return chld_other(ag, value);
 #else
-	return -EOPNOTSUPP;
+	return -ENOEXEC;
 #endif /* CONFIG_BT_HFP_AG_3WAY_CALL */
 }
 
@@ -1585,7 +1585,7 @@ static int bt_hfp_ag_bind_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 	if (!((ag->ag_features & BT_HFP_AG_FEATURE_HF_IND) &&
 	      (ag->hf_features & BT_HFP_HF_FEATURE_HF_IND))) {
 		hfp_ag_unlock(ag);
-		return -EOPNOTSUPP;
+		return -ENOEXEC;
 	}
 	hfp_ag_unlock(ag);
 
@@ -2550,7 +2550,7 @@ static int bt_hfp_ag_outgoing_call(struct bt_hfp_ag *ag, const char *number, uin
 #if defined(CONFIG_BT_HFP_AG_3WAY_CALL)
 		if (!((ag->ag_features & BT_HFP_AG_FEATURE_3WAY_CALL) &&
 		      (ag->hf_features & BT_HFP_HF_FEATURE_3WAY_CALL))) {
-			return -EOPNOTSUPP;
+			return -ENOEXEC;
 		}
 
 		if (!get_active_held_calls(ag)) {
@@ -2908,7 +2908,7 @@ static int bt_hfp_ag_ccwa_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 	if (!((ag->ag_features & BT_HFP_AG_FEATURE_3WAY_CALL) &&
 	      (ag->hf_features & BT_HFP_HF_FEATURE_3WAY_CALL))) {
 		hfp_ag_unlock(ag);
-		return -EOPNOTSUPP;
+		return -ENOEXEC;
 	}
 	hfp_ag_unlock(ag);
 
@@ -2990,7 +2990,7 @@ static int bt_hfp_ag_bvra_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 	if (!((ag->ag_features & BT_HFP_AG_FEATURE_VOICE_RECG) &&
 	      (ag->hf_features & BT_HFP_HF_FEATURE_VOICE_RECG))) {
 		hfp_ag_unlock(ag);
-		return -EOPNOTSUPP;
+		return -ENOEXEC;
 	}
 	hfp_ag_unlock(ag);
 
@@ -3029,7 +3029,7 @@ static int bt_hfp_ag_bvra_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 		      (ag->hf_features & BT_HFP_HF_FEATURE_ENH_VOICE_RECG))) {
 			hfp_ag_unlock(ag);
 			LOG_WRN("Enhance voice recognition is not supported");
-			return -EOPNOTSUPP;
+			return -ENOEXEC;
 		}
 		hfp_ag_unlock(ag);
 		if (!atomic_test_bit(ag->flags, BT_HFP_AG_VRE_ACTIVATE)) {
@@ -3056,7 +3056,7 @@ static int bt_hfp_ag_binp_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 	hfp_ag_lock(ag);
 	if (!(ag->ag_features & BT_HFP_AG_FEATURE_VOICE_TAG)) {
 		hfp_ag_unlock(ag);
-		return -EOPNOTSUPP;
+		return -ENOEXEC;
 	}
 	hfp_ag_unlock(ag);
 
@@ -3284,7 +3284,7 @@ static void hfp_ag_recv(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 	uint8_t *data = buf->data;
 	uint16_t len = buf->len;
 	enum at_cme cme_err;
-	int err = -EOPNOTSUPP;
+	int err = -ENOEXEC;
 
 	LOG_HEXDUMP_DBG(data, len, "Received:");
 
@@ -3868,7 +3868,7 @@ int bt_hfp_ag_remote_incoming(struct bt_hfp_ag *ag, const char *number)
 		if (!((ag->ag_features & BT_HFP_AG_FEATURE_3WAY_CALL) &&
 		      (ag->hf_features & BT_HFP_HF_FEATURE_3WAY_CALL))) {
 			LOG_WRN("3 Way call feature is not supported on both sides");
-			return -EOPNOTSUPP;
+			return -ENOEXEC;
 		}
 
 		if (!atomic_test_bit(ag->flags, BT_HFP_AG_CCWA_ENABLE)) {
