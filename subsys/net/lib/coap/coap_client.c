@@ -532,6 +532,17 @@ static void coap_client_resend_handler(struct coap_client *client)
 	k_mutex_unlock(&client->lock);
 }
 
+static struct coap_client *get_client(int sock)
+{
+	for (int i = 0; i < num_clients; i++) {
+		if (clients[i]->fd == sock) {
+			return clients[i];
+		}
+	}
+
+	return NULL;
+}
+
 static int handle_poll(void)
 {
 	int ret = 0;
@@ -541,10 +552,16 @@ static int handle_poll(void)
 
 	/* Use periodic timeouts */
 	for (int i = 0; i < num_clients; i++) {
-		fds[i].fd = clients[i]->fd;
-		fds[i].events = (has_ongoing_exchange(clients[i]) ? ZSOCK_POLLIN : 0) |
-				(has_timeout_expired(clients[i]) ? ZSOCK_POLLOUT : 0);
-		fds[i].revents = 0;
+		short events = (has_ongoing_exchange(clients[i]) ? ZSOCK_POLLIN : 0) |
+			       (has_timeout_expired(clients[i]) ? ZSOCK_POLLOUT : 0);
+
+		if (events == 0) {
+			/* Skip this socket */
+			continue;
+		}
+		fds[nfds].fd = clients[i]->fd;
+		fds[nfds].events = events;
+		fds[nfds].revents = 0;
 		nfds++;
 	}
 
@@ -559,42 +576,49 @@ static int handle_poll(void)
 	}
 
 	for (int i = 0; i < nfds; i++) {
+		struct coap_client *client = get_client(fds[i].fd);
+
+		if (!client) {
+			LOG_ERR("No client found for socket %d", fds[i].fd);
+			continue;
+		}
+
 		if (fds[i].revents & ZSOCK_POLLOUT) {
-			coap_client_resend_handler(clients[i]);
+			coap_client_resend_handler(client);
 		}
 		if (fds[i].revents & ZSOCK_POLLIN) {
 			struct coap_packet response;
 			bool response_truncated = false;
 
-			ret = recv_response(clients[i], &response, &response_truncated);
+			ret = recv_response(client, &response, &response_truncated);
 			if (ret < 0) {
 				if (ret == -EAGAIN) {
 					continue;
 				}
 				LOG_ERR("Error receiving response");
-				cancel_requests_with(clients[i], -EIO);
+				cancel_requests_with(client, -EIO);
 				continue;
 			}
 
-			k_mutex_lock(&clients[i]->lock, K_FOREVER);
-			ret = handle_response(clients[i], &response, response_truncated);
+			k_mutex_lock(&client->lock, K_FOREVER);
+			ret = handle_response(client, &response, response_truncated);
 			if (ret < 0) {
 				LOG_ERR("Error handling response");
 			}
 
-			k_mutex_unlock(&clients[i]->lock);
+			k_mutex_unlock(&client->lock);
 		}
 		if (fds[i].revents & ZSOCK_POLLERR) {
 			LOG_ERR("Error in poll for socket %d", fds[i].fd);
-			cancel_requests_with(clients[i], -EIO);
+			cancel_requests_with(client, -EIO);
 		}
 		if (fds[i].revents & ZSOCK_POLLHUP) {
 			LOG_ERR("Error in poll: POLLHUP for socket %d", fds[i].fd);
-			cancel_requests_with(clients[i], -EIO);
+			cancel_requests_with(client, -EIO);
 		}
 		if (fds[i].revents & ZSOCK_POLLNVAL) {
 			LOG_ERR("Error in poll: POLLNVAL - fd %d not open", fds[i].fd);
-			cancel_requests_with(clients[i], -EIO);
+			cancel_requests_with(client, -EIO);
 		}
 	}
 
@@ -973,6 +997,12 @@ static void cancel_requests_with(struct coap_client *client, int error)
 			 */
 			report_callback_error(&client->requests[i], error);
 			release_internal_request(&client->requests[i]);
+		}
+		/* If our socket has failed, clear all requests, even completed ones,
+		 * so that our handle_poll() does not poll() anymore for this socket.
+		 */
+		if (error == -EIO) {
+			reset_internal_request(&client->requests[i]);
 		}
 	}
 	k_mutex_unlock(&client->lock);
