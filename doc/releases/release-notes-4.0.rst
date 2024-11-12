@@ -550,6 +550,11 @@ Drivers and Sensors
 
 * MIPI-DBI
 
+  * Added bitbang MIPI-DBI driver, supporting 8080 and 6800 mode
+    (:dtcompatible:`zephyr,mipi-dbi-bitbang`).
+  * Added support for STM32 FMC memory controller (:dtcompatible:`st,stm32-fmc-mipi-dbi`).
+  * Added support for 8080 mode to NXP LCDIC controller.
+
 * MSPI
 
 * Pin control
