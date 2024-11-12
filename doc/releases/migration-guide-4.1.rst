@@ -55,6 +55,29 @@ Controller Area Network (CAN)
 Display
 =======
 
+* Displays using the MIPI DBI driver which set their MIPI DBI mode via the
+  ``mipi-mode`` property in devicetree should now use a string property of
+  the same name, like so:
+
+  .. code-block:: devicetree
+
+    /* Legacy display definition */
+
+    st7735r: st7735r@0 {
+        ...
+        mipi-mode = <MIPI_DBI_MODE_SPI_4WIRE>;
+        ...
+    };
+
+    /* New display definition */
+
+    st7735r: st7735r@0 {
+        ...
+        mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+        ...
+    };
+
+
 Enhanced Serial Peripheral Interface (eSPI)
 ===========================================
 
