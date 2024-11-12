@@ -21,6 +21,7 @@ if (CONFIG_SMP)
   zephyr_library_sources(ipi.c)
 
   zephyr_library_sources_ifdef(CONFIG_RISCV_SMP_IPI_CLINT ipi_clint.c)
+  zephyr_library_sources_ifdef(CONFIG_RISCV_SMP_IPI_PLIC ipi_plic.c)
 endif()
 
 zephyr_library_sources_ifdef(CONFIG_FPU_SHARING fpu.c fpu.S)

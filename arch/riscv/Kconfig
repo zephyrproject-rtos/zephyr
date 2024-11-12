@@ -41,6 +41,7 @@ choice RISCV_SMP_IPI_IMPL
 	prompt "RISC-V SMP IPI implementation"
 	depends on SMP
 	default RISCV_SMP_IPI_CLINT if DT_HAS_SIFIVE_CLINT0_ENABLED
+	default RISCV_SMP_IPI_PLIC if PLIC_SUPPORTS_SOFT_INTERRUPT && PLIC_IRQ_AFFINITY
 	default RISCV_SMP_IPI_CUSTOM
 
 config RISCV_SMP_IPI_CLINT
@@ -48,6 +49,14 @@ config RISCV_SMP_IPI_CLINT
 	depends on DT_HAS_SIFIVE_CLINT0_ENABLED
 	help
 	  Use CLINT-based IPI implementation.
+
+config RISCV_SMP_IPI_PLIC
+	bool "PLIC-based IPI"
+	depends on PLIC_SUPPORTS_SOFT_INTERRUPT
+	depends on PLIC_IRQ_AFFINITY
+	depends on !FPU_SHARING # not supported for now
+	help
+	  Use PLIC-based IPI implementation.
 
 config RISCV_SMP_IPI_CUSTOM
 	bool "Custom IPI implementation"

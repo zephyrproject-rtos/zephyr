@@ -140,6 +140,35 @@
 			zephyr,code = <INPUT_KEY_6>;
 		};
 	};
+
+	sched_ipi: sched_ipi {
+		compatible = "zephyr,ipi-plic";
+		interrupt-parent = <&plic_sw>;
+		interrupts =
+			/* sched IPI IRQs */
+			<32 1>,  /* CPU 0 */
+			<33 1>,  /* CPU 1 */
+			<34 1>,  /* CPU 2 */
+			<35 1>,  /* CPU 3 */
+			<36 1>,  /* CPU 4 */
+			<37 1>,  /* CPU 5 */
+			<38 1>,  /* CPU 6 */
+			<39 1>;  /* CPU 7 */
+	};
+
+	fpu_ipi: fpu_ipi {
+		compatible = "zephyr,ipi-plic";
+		interrupt-parent = <&plic_sw>;
+		interrupts =
+			<40 1>,  /* CPU 0 */
+			<41 1>,  /* CPU 1 */
+			<42 1>,  /* CPU 2 */
+			<43 1>,  /* CPU 3 */
+			<44 1>,  /* CPU 4 */
+			<45 1>,  /* CPU 5 */
+			<46 1>,  /* CPU 6 */
+			<47 1>;  /* CPU 7 */
+	};
 };
 
 &l2_cache {
