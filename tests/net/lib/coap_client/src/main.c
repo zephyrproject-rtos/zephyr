@@ -395,7 +395,8 @@ extern void net_coap_init(void);
 static void *suite_setup(void)
 {
 	net_coap_init();
-	coap_client_init(&client, NULL);
+	zassert_ok(coap_client_init(&client, NULL));
+	zassert_ok(coap_client_init(&client2, NULL));
 
 	return NULL;
 }
@@ -891,8 +892,6 @@ ZTEST(coap_client, test_multiple_clients)
 	zassert_ok(k_sem_init(&sem1, 0, 1));
 	zassert_ok(k_sem_init(&sem2, 0, 1));
 
-	zassert_ok(coap_client_init(&client2, NULL));
-
 	k_sleep(K_MSEC(1));
 
 	LOG_INF("Sending requests");
@@ -975,6 +974,46 @@ ZTEST(coap_client, test_poll_err_after_response)
 
 	set_socket_events(client.fd, ZSOCK_POLLERR);
 	zassert_not_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+}
+
+ZTEST(coap_client, test_poll_err_on_another_sock)
+{
+	int ret = 0;
+	struct k_sem sem1, sem2;
+	struct sockaddr address = {0};
+	struct coap_client_request client_request = {
+		.method = COAP_METHOD_GET,
+		.confirmable = true,
+		.path = test_path,
+		.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN,
+		.cb = coap_callback,
+		.payload = short_payload,
+		.len = strlen(short_payload),
+		.user_data = &sem1
+	};
+	struct coap_client_request request2 = client_request;
+
+	request2.user_data = &sem2;
+
+	zassert_ok(k_sem_init(&sem1, 0, 1));
+	zassert_ok(k_sem_init(&sem2, 0, 1));
+
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_no_reply;
+	set_socket_events(client.fd, ZSOCK_POLLERR);
+
+	k_sleep(K_MSEC(1));
+
+	ret = coap_client_req(&client2, client2.fd, &address, &request2, NULL);
+	zassert_true(ret >= 0, "Sending request failed, %d", ret);
+	ret = coap_client_req(&client, client.fd, &address, &client_request, NULL);
+	zassert_true(ret >= 0, "Sending request failed, %d", ret);
+
+	set_socket_events(client2.fd, ZSOCK_POLLIN);
+
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, -EIO, "");
+	zassert_ok(k_sem_take(&sem2, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_OK, "");
 }
 
 ZTEST(coap_client, test_duplicate_response)
