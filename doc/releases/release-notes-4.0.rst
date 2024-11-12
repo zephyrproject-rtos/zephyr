@@ -509,6 +509,24 @@ Drivers and Sensors
 
 * I3C
 
+  * Added support for SETAASA optmization during initialization. Added a
+    ``supports-setaasa`` property to ``i3c-devices.yaml``.
+  * Added sending DEFTGTS if any devices that support functioning as a secondary
+    controller on the bus.
+  * Added retrieving GETMXDS within :c:func:`i3c_device_basic_info_get` if BCR mxds
+    bit is set.
+  * Added helper functions for sending CCCs for ENTTM, VENDOR, DEFTGTS, SETAASA,
+    GETMXDS, SETBUSCON, RSTACT DC, ENTAS0, ENTAS1, ENTAS2, and ENTAS3.
+  * Added shell commands for sending CCCs for ENTTM, VENDOR, DEFTGTS, SETAASA,
+    GETMXDS, SETBUSCON, RSTACT DC, ENTAS0, ENTAS1, ENTAS2, and ENTAS3.
+  * Added shell commands for setting the I3C speed, sending HDR-DDR, raising IBIs,
+    enabling IBIs, disabling IBIs, and scanning I2C addresses.
+  * :c:func:`i3c_ccc_do_setdasa` has been modified to now require specifying the assigned
+    dynamic address rather than having the dynamic address be determined within the function.
+  * :c:func:`i3c_determine_default_addr` has been removed
+  * ``attach_i3c_device`` now no longer requires the attached address as an argument. It is now
+    up to the driver to determine the attached address from the ``i3c_device_desc``.
+
 * Input
 
   * New feature: :dtcompatible:`zephyr,input-double-tap`.
