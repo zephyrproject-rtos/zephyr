@@ -419,8 +419,8 @@ static bool img_mgmt_state_encode_slot(struct smp_streamer *ctxt, uint32_t slot,
 	zcbor_state_t *zse = ctxt->writer->zs;
 	uint32_t flags;
 	char vers_str[IMG_MGMT_VER_MAX_STR_LEN];
-	uint8_t hash[IMAGE_HASH_LEN]; /* SHA256 hash */
-	struct zcbor_string zhash = { .value = hash, .len = IMAGE_HASH_LEN };
+	uint8_t hash[IMAGE_SHA_LEN];
+	struct zcbor_string zhash = { .value = hash, .len = IMAGE_SHA_LEN};
 	struct image_version ver;
 	bool ok;
 	int rc = img_mgmt_read_info(slot, &ver, hash, &flags);
@@ -726,14 +726,14 @@ img_mgmt_state_write(struct smp_streamer *ctxt)
 					     IMG_MGMT_ERR_INVALID_HASH);
 			goto end;
 		}
-	} else if (zhash.len != IMAGE_HASH_LEN) {
+	} else if (zhash.len != IMAGE_SHA_LEN) {
 		/* The img_mgmt_find_by_hash does exact length compare
 		 * so just fail here.
 		 */
 		ok = smp_add_cmd_err(zse, MGMT_GROUP_ID_IMAGE, IMG_MGMT_ERR_INVALID_HASH);
 		goto end;
 	} else {
-		uint8_t hash[IMAGE_HASH_LEN];
+		uint8_t hash[IMAGE_SHA_LEN];
 
 		memcpy(hash, zhash.value, zhash.len);
 
