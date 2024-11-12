@@ -13,8 +13,6 @@ tests:
       - CONFIG_MINIMAL_LIBC=y
       - CONFIG_MINIMAL_LIBC_NON_REENTRANT_FUNCTIONS=y
       - CONFIG_MINIMAL_LIBC_RAND=y
-      - CONFIG_COMMON_LIBC_ASCTIME_R=y
-      - CONFIG_COMMON_LIBC_CTIME_R=y
   libraries.libc.common.newlib:
     filter: CONFIG_NEWLIB_LIBC_SUPPORTED
     min_ram: 32
