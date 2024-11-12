@@ -42,6 +42,9 @@ API Changes
 * Deprecated ``EARLY``, ``APPLICATION`` and ``SMP`` init levels can no longer be
   used for devices.
 
+* Removed deprecated header file
+  ``include/zephyr/random/rand32.h``. ``random.h`` needs to be included now.
+
 Removed APIs in this release
 ============================
 
