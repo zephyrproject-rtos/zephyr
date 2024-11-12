@@ -590,6 +590,9 @@ static void uarte_periph_enable(const struct device *dev)
 
 	(void)data;
 	nrf_uarte_enable(uarte);
+#ifdef CONFIG_SOC_NRF54H20_GPD
+	nrf_gpd_retain_pins_set(config->pcfg, false);
+#endif
 #if UARTE_BAUDRATE_RETENTION_WORKAROUND
 	nrf_uarte_baudrate_set(uarte,
 		COND_CODE_1(CONFIG_UART_USE_RUNTIME_CONFIGURE,
@@ -702,6 +705,11 @@ static void uarte_disable_locked(const struct device *dev, uint32_t dis_mask)
 	}
 #endif
 
+#ifdef CONFIG_SOC_NRF54H20_GPD
+	const struct uarte_nrfx_config *cfg = dev->config;
+
+	nrf_gpd_retain_pins_set(cfg->pcfg, true);
+#endif
 	nrf_uarte_disable(get_uarte_instance(dev));
 }
 
@@ -2103,9 +2111,6 @@ static void uarte_pm_resume(const struct device *dev)
 
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME) || !LOW_POWER_ENABLED(cfg)) {
 		uarte_periph_enable(dev);
-#ifdef CONFIG_SOC_NRF54H20_GPD
-		nrf_gpd_retain_pins_set(cfg->pcfg, false);
-#endif
 	}
 }
 
