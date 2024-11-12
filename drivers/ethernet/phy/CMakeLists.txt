@@ -8,3 +8,4 @@ zephyr_library_sources_ifdef(CONFIG_PHY_MICROCHIP_KSZ8081	phy_microchip_ksz8081.
 zephyr_library_sources_ifdef(CONFIG_PHY_TI_DP83825  phy_ti_dp83825.c)
 zephyr_library_sources_ifdef(CONFIG_PHY_REALTEK_RTL8211F phy_realtek_rtl8211f.c)
 zephyr_library_sources_ifdef(CONFIG_PHY_QUALCOMM_AR8031 phy_qualcomm_ar8031.c)
+zephyr_library_sources_ifdef(CONFIG_PHY_OA_TC14_PLCA_LIB phy_oa_tc14_plca.c)
