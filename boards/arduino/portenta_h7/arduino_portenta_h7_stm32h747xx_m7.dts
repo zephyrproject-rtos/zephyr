@@ -80,9 +80,9 @@
 	clock-frequency = <DT_FREQ_M(400)>;
 };
 
-
+/* USART1 is enabled on M4 by default */
 &usart1 {
-	status = "okay";
+	status = "disabled";
 };
 
 &i2c1 {
