@@ -55,6 +55,8 @@ config ARM64
 	select ARCH_HAS_DIRECTED_IPIS
 	select ARCH_HAS_DEMAND_PAGING
 	select ARCH_HAS_DEMAND_MAPPING
+	select ARCH_SUPPORTS_EVICTION_TRACKING
+	select EVICTION_TRACKING if DEMAND_PAGING
 	help
 	  ARM64 (AArch64) architecture
 
@@ -693,6 +695,12 @@ config ARCH_SUPPORTS_ROM_START
 
 config ARCH_SUPPORTS_EMPTY_IRQ_SPURIOUS
 	bool
+
+config ARCH_SUPPORTS_EVICTION_TRACKING
+	bool
+	help
+	  Architecture code supports page tracking for eviction algorithms
+	  when demand paging is enabled.
 
 config ARCH_HAS_EXTRA_EXCEPTION_INFO
 	bool
