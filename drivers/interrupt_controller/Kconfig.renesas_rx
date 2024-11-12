@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config RENESAS_RX_ICU
+	bool "Renesas RX series interrupt controller unit"
+	default y
+	depends on DT_HAS_RENESAS_RX_ICU_ENABLED
+	help
+	  Renesas RX series interrupt controller unit
