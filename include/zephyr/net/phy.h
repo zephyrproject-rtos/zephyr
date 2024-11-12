@@ -83,6 +83,63 @@ struct phy_link_state {
 	bool is_up;
 };
 
+/** @brief PLCA (Physical Layer Collision Avoidance) Reconciliation Sublayer configurations */
+struct phy_plca_cfg {
+	/** PLCA register map version */
+	uint8_t version;
+	/** PLCA configured mode (enable/disable) */
+	bool enable;
+	/** PLCA local node identifier */
+	uint8_t node_id;
+	/** PLCA node count */
+	uint8_t node_count;
+	/** Additional frames a node is allowed to send in single transmit opportunity (TO) */
+	uint8_t burst_count;
+	/** Wait time for the MAC to send a new frame before interrupting the burst */
+	uint8_t burst_timer;
+	/** PLCA to_timer in bit-times, which determines the PLCA transmit opportunity */
+	uint8_t to_timer;
+};
+
+/**
+ * @brief      Write PHY PLCA configuration
+ *
+ * This routine provides a generic interface to configure PHY PLCA settings.
+ *
+ * @param[in]  dev       PHY device structure
+ * @param[in]  plca_cfg  Pointer to plca configuration structure
+ *
+ * @retval 0 If successful.
+ * @retval -EIO If communication with PHY failed.
+ */
+int genphy_get_plca_cfg(const struct device *dev, struct phy_plca_cfg *plca_cfg);
+
+/**
+ * @brief      Read PHY PLCA configuration
+ *
+ * This routine provides a generic interface to get PHY PLCA settings.
+ *
+ * @param[in]  dev       PHY device structure
+ * @param      plca_cfg  Pointer to plca configuration structure
+ *
+ * @retval 0 If successful.
+ * @retval -EIO If communication with PHY failed.
+ */
+int genphy_set_plca_cfg(const struct device *dev, struct phy_plca_cfg *plca_cfg);
+
+/**
+ * @brief      Read PHY PLCA status
+ *
+ * This routine provides a generic interface to get PHY PLCA status.
+ *
+ * @param[in]  dev          PHY device structure
+ * @param      plca_status  Pointer to plca status
+ *
+ * @retval 0 If successful.
+ * @retval -EIO If communication with PHY failed.
+ */
+int genphy_get_plca_sts(const struct device *dev, bool *plca_status);
+
 /**
  * @typedef phy_callback_t
  * @brief Define the callback function signature for
@@ -122,6 +179,15 @@ __subsystem struct ethphy_driver_api {
 
 	/** Write PHY C45 register */
 	int (*write_c45)(const struct device *dev, uint8_t devad, uint16_t regad, uint16_t data);
+
+	/* Set PLCA settings */
+	int (*set_plca_cfg)(const struct device *dev, struct phy_plca_cfg *plca_cfg);
+
+	/* Get PLCA settings */
+	int (*get_plca_cfg)(const struct device *dev, struct phy_plca_cfg *plca_cfg);
+
+	/* Get PLCA status */
+	int (*get_plca_sts)(const struct device *dev, bool *plca_sts);
 };
 /**
  * @endcond
@@ -266,6 +332,60 @@ static inline int phy_write_c45(const struct device *dev, uint8_t devad, uint16_
 	const struct ethphy_driver_api *api = (const struct ethphy_driver_api *)dev->api;
 
 	return api->write_c45(dev, devad, regad, data);
+}
+
+/**
+ * @brief      Write PHY PLCA configuration
+ *
+ * This routine provides a generic interface to configure PHY PLCA settings.
+ *
+ * @param[in]  dev       PHY device structure
+ * @param[in]  plca_cfg  Pointer to plca configuration structure
+ *
+ * @retval 0 If successful.
+ * @retval -EIO If communication with PHY failed.
+ */
+static inline int phy_set_plca_cfg(const struct device *dev, struct phy_plca_cfg *plca_cfg)
+{
+	const struct ethphy_driver_api *api = (const struct ethphy_driver_api *)dev->api;
+
+	return api->set_plca_cfg(dev, plca_cfg);
+}
+
+/**
+ * @brief      Read PHY PLCA configuration
+ *
+ * This routine provides a generic interface to get PHY PLCA settings.
+ *
+ * @param[in]  dev       PHY device structure
+ * @param      plca_cfg  Pointer to plca configuration structure
+ *
+ * @retval 0 If successful.
+ * @retval -EIO If communication with PHY failed.
+ */
+static inline int phy_get_plca_cfg(const struct device *dev, struct phy_plca_cfg *plca_cfg)
+{
+	const struct ethphy_driver_api *api = (const struct ethphy_driver_api *)dev->api;
+
+	return api->get_plca_cfg(dev, plca_cfg);
+}
+
+/**
+ * @brief      Read PHY PLCA status
+ *
+ * This routine provides a generic interface to get PHY PLCA status.
+ *
+ * @param[in]  dev          PHY device structure
+ * @param      plca_status  Pointer to plca status
+ *
+ * @retval 0 If successful.
+ * @retval -EIO If communication with PHY failed.
+ */
+static inline int phy_get_plca_sts(const struct device *dev, bool *plca_status)
+{
+	const struct ethphy_driver_api *api = (const struct ethphy_driver_api *)dev->api;
+
+	return api->get_plca_sts(dev, plca_status);
 }
 
 #ifdef __cplusplus

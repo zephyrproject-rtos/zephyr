@@ -92,4 +92,9 @@ config PHY_MONITOR_PERIOD
 	  periodically executed to detect and report any changes in the
 	  PHY link status to the operating system.
 
+config PHY_OA_TC14_PLCA_LIB
+	bool "Open Alliance TC14 PLCA generic lib"
+	help
+	  Enable Open Alliance TC14 PLCA generic lib.
+
 endif # "Ethernet PHY Drivers"
