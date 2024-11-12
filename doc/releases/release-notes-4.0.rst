@@ -1017,6 +1017,19 @@ USB
 Devicetree
 **********
 
+* Added support for string-array and array type properties to be enums.
+  Many new macros added for this, for example :c:macro:`DT_ENUM_IDX_BY_IDX`.
+* Added :c:macro:`DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY`.
+* Added :c:macro:`DT_NODE_HAS_STATUS_OKAY`.
+* Added :c:macro:`DT_INST_NUM_IRQS`.
+* Added macros :c:macro:`DT_NODE_FULL_NAME_UNQUOTED`, :c:macro:`DT_NODE_FULL_NAME_TOKEN`,
+  and :c:macro:`DT_NODE_FULL_NAME_UPPER_TOKEN`.
+* ``DT_*_REG_ADDR`` now returns an explicit unsigned value with C's ``U`` suffix.
+* Fixed escaping of double quotes, backslashes, and new line characters from DTS
+  so that they can be used in string properties.
+* Renamed ``power-domain`` base property to ``power-domains``,
+  and introduced ``power-domain-names`` property. ``#power-domain-cells`` is now required as well.
+
 Kconfig
 *******
 
