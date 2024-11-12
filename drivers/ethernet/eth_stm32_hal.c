@@ -911,8 +911,6 @@ static int eth_initialize(const struct device *dev)
 {
 	struct eth_stm32_hal_dev_data *dev_data;
 	const struct eth_stm32_hal_dev_cfg *cfg;
-	ETH_HandleTypeDef *heth;
-	HAL_StatusTypeDef hal_ret = HAL_OK;
 	int ret = 0;
 
 	__ASSERT_NO_MSG(dev != NULL);
@@ -953,6 +951,15 @@ static int eth_initialize(const struct device *dev)
 		LOG_ERR("Could not configure ethernet pins");
 		return ret;
 	}
+	return 0;
+}
+
+static int eth_configure(void)
+{
+	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(mac));
+	struct eth_stm32_hal_dev_data *dev_data = dev->data;
+	ETH_HandleTypeDef *heth = &dev_data->heth;
+	HAL_StatusTypeDef hal_ret = HAL_OK;
 
 	heth = &dev_data->heth;
 
@@ -1048,7 +1055,6 @@ static int eth_initialize(const struct device *dev)
 	}
 
 	setup_mac_filter(heth);
-
 
 	LOG_DBG("MAC %02x:%02x:%02x:%02x:%02x:%02x",
 		dev_data->mac_addr[0], dev_data->mac_addr[1],
@@ -1639,3 +1645,5 @@ DEVICE_DEFINE(stm32_ptp_clock_0, PTP_CLOCK_NAME, ptp_stm32_init,
 		CONFIG_ETH_STM32_HAL_PTP_CLOCK_INIT_PRIO, &api);
 
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
+
+SYS_INIT(eth_configure, POST_KERNEL, CONFIG_ETH_STM32_HAL_ETH_POST_INIT_PRIO);
