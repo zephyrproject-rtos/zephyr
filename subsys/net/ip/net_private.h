@@ -142,6 +142,10 @@ extern void mdns_init_responder(void);
 static inline void mdns_init_responder(void) { }
 #endif /* CONFIG_MDNS_RESPONDER */
 
+#if defined(CONFIG_NET_TEST)
+extern void loopback_enable_address_swap(bool swap_addresses);
+#endif /* CONFIG_NET_TEST */
+
 #if defined(CONFIG_NET_NATIVE)
 enum net_verdict net_ipv4_input(struct net_pkt *pkt, bool is_loopback);
 enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback);
