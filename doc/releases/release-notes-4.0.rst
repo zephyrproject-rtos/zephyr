@@ -677,6 +677,8 @@ Drivers and Sensors
     :kconfig:option:`CONFIG_VIDEO_BUFFER_USE_SHARED_MULTI_HEAP`
   * Introduced bindings for common video link properties in ``video-interfaces.yaml``
   * Introduced missing :kconfig:option:`CONFIG_VIDEO_LOG_LEVEL`
+  * Added a sample for capturing video and displaying it with LVGL
+    (:zephyr:code-sample:`video-capture-to-lvgl`)
   * Added support for GalaxyCore GC2145 image sensor (:dtcompatible:`gc,gc2145`)
   * Added support for ESP32-S3 LCD-CAM interface (:dtcompatible:`espressif,esp32-lcd-cam`)
   * Added support for NXP MCUX SMARTDMA interface (:dtcompatible:`nxp,smartdma`)
