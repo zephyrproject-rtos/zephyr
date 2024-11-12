@@ -1788,6 +1788,48 @@ static int get_context_timestamping(struct net_context *context,
 #endif
 }
 
+static int get_context_mtu(struct net_context *context,
+			   void *value, size_t *len)
+{
+	sa_family_t family = net_context_get_family(context);
+	struct net_if *iface = NULL;
+	int mtu;
+
+	if (IS_ENABLED(CONFIG_NET_PMTU)) {
+		mtu = net_pmtu_get_mtu(&context->remote);
+		if (mtu > 0) {
+			goto out;
+		}
+	}
+
+	if (net_context_is_bound_to_iface(context)) {
+		iface = net_context_get_iface(context);
+
+		mtu = net_if_get_mtu(iface);
+	} else {
+		if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
+			iface = net_if_ipv6_select_src_iface(
+				&net_sin6(&context->remote)->sin6_addr);
+		} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
+			iface = net_if_ipv4_select_src_iface(
+				&net_sin(&context->remote)->sin_addr);
+		} else {
+			return -EAFNOSUPPORT;
+		}
+
+		mtu = net_if_get_mtu(iface);
+	}
+
+out:
+	*((int *)value) = mtu;
+
+	if (len) {
+		*len = sizeof(int);
+	}
+
+	return 0;
+}
+
 /* If buf is not NULL, then use it. Otherwise read the data to be written
  * to net_pkt from msghdr.
  */
@@ -3189,6 +3231,14 @@ int net_context_set_option(struct net_context *context,
 	case NET_OPT_TIMESTAMPING:
 		ret = set_context_timestamping(context, value, len);
 		break;
+	case NET_OPT_MTU:
+		/* IPv4 only supports getting the MTU */
+		if (IS_ENABLED(CONFIG_NET_IPV4) &&
+		    net_context_get_family(context) == AF_INET) {
+			ret = -EOPNOTSUPP;
+		}
+
+		break;
 	}
 
 	k_mutex_unlock(&context->lock);
@@ -3264,6 +3314,9 @@ int net_context_get_option(struct net_context *context,
 		break;
 	case NET_OPT_TIMESTAMPING:
 		ret = get_context_timestamping(context, value, len);
+		break;
+	case NET_OPT_MTU:
+		ret = get_context_mtu(context, value, len);
 		break;
 	}
 
