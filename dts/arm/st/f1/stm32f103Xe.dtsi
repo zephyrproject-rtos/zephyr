@@ -44,5 +44,13 @@
 			dma-names = "tx", "rx";
 			status = "disabled";
 		};
+
+		sdmmc1: sdmmc@40018000 {
+			compatible = "st,stm32f1-sdmmc", "st,stm32-sdmmc";
+			reg = <0x40018000 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 10U)>;
+			interrupts = <49 0>;
+			status = "disabled";
+		};
 	};
 };
