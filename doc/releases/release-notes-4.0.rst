@@ -735,6 +735,8 @@ Drivers and Sensors
   * Added support for more OmniVision OV2640 controls (:dtcompatible:`ovti,ov2640`)
   * Added support for more OmniVision OV5640 controls (:dtcompatible:`ovti,ov5640`)
   * STM32: Implemented :c:func:`video_get_ctrl` and :c:func:`video_set_ctrl` APIs.
+  * Removed an init order circular dependency for the camera pipeline on NXP RT10xx platforms
+    (:github:`80304`)
 
 * W1
 
