@@ -137,6 +137,26 @@
 			};
 		};
 
+		spi0: spi@4011a000 {
+			compatible = "renesas,ra-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			channel = <0>;
+			interrupts = <28 1>, <29 1>, <30 1>, <31 1>;
+			interrupt-names = "rxi", "txi", "tei", "eri";
+			reg = <0x4011a000 0x100>;
+			status = "disabled";
+		};
+
+		spi1: spi@4011a100 {
+			compatible = "renesas,ra-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			channel = <1>;
+			reg = <0x4011a100 0x100>;
+			status = "disabled";
+		};
+
 		option_setting_ofs: option_setting_ofs@100a100 {
 			compatible = "zephyr,memory-region";
 			reg = <0x0100a100 0x18>;
