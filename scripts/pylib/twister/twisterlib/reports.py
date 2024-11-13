@@ -46,12 +46,12 @@ class Reporting:
         self.instances = plan.instances
         self.platforms = plan.platforms
         self.selected_platforms = plan.selected_platforms
-        self.filtered_platforms = plan.filtered_platforms
         self.env = env
         self.timestamp = datetime.now().isoformat()
         self.outdir = os.path.abspath(env.options.outdir)
         self.instance_fail_count = plan.instance_fail_count
         self.footprint = None
+
 
     @staticmethod
     def process_log(log_file):
@@ -601,19 +601,21 @@ class Reporting:
         )
 
         total_platforms = len(self.platforms)
+        filtered_platforms = set(instance.platform.name for instance in self.instances.values()
+                                  if instance.status not in[TwisterStatus.FILTER, TwisterStatus.NOTRUN, TwisterStatus.SKIP])
         # if we are only building, do not report about tests being executed.
         if self.platforms and not self.env.options.build_only:
             executed_cases = results.cases - results.filtered_cases - results.skipped_cases - results.notrun_cases
             pass_rate = 100 * (float(results.passed_cases) / float(executed_cases)) \
                 if executed_cases != 0 else 0
-            platform_rate = (100 * len(self.filtered_platforms) / len(self.platforms))
+            platform_rate = (100 * len(filtered_platforms) / len(self.platforms))
             logger.info(
                 f'{results.passed_cases} of {executed_cases} executed test cases passed ({pass_rate:02.2f}%)'
                 f'{", " + str(results.blocked_cases) + " blocked" if results.blocked_cases else ""}'
                 f'{", " + str(results.failed_cases) + " failed" if results.failed_cases else ""}'
                 f'{", " + str(results.error_cases) + " errored" if results.error_cases else ""}'
                 f'{", " + str(results.none_cases) + " without a status" if results.none_cases else ""}'
-                f' on {len(self.filtered_platforms)} out of total {total_platforms} platforms ({platform_rate:02.2f}%).'
+                f' on {len(filtered_platforms)} out of total {total_platforms} platforms ({platform_rate:02.2f}%).'
             )
             if results.skipped_cases or results.notrun_cases:
                 logger.info(
