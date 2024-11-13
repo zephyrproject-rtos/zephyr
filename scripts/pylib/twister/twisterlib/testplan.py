@@ -106,7 +106,6 @@ class TestPlan:
         self.platforms = []
         self.platform_names = []
         self.selected_platforms = []
-        self.filtered_platforms = []
         self.default_platforms = []
         self.load_errors = 0
         self.instances = dict()
@@ -1078,9 +1077,6 @@ class TestPlan:
             change_skip_to_error_if_integration(self.options, filtered_instance)
 
             filtered_instance.add_missing_case_status(filtered_instance.status)
-
-        self.filtered_platforms = set(p.platform.name for p in self.instances.values()
-                                      if p.status != TwisterStatus.SKIP )
 
     def add_instances(self, instance_list):
         for instance in instance_list:
