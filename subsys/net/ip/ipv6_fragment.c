@@ -686,7 +686,7 @@ fail:
 }
 
 int net_ipv6_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
-				 uint16_t pkt_len)
+				 uint16_t pkt_len, uint16_t mtu)
 {
 	uint16_t next_hdr_off;
 	uint16_t last_hdr_off;
@@ -713,12 +713,12 @@ int net_ipv6_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 	/* The Maximum payload can fit into each packet after IPv6 header,
 	 * Extension headers and Fragmentation header.
 	 */
-	fit_len = NET_IPV6_MTU - NET_IPV6_FRAGH_LEN -
+	fit_len = (int)mtu - NET_IPV6_FRAGH_LEN -
 		(net_pkt_ip_hdr_len(pkt) + net_pkt_ipv6_ext_len(pkt));
 	if (fit_len <= 0) {
 		/* Must be invalid extension headers length */
 		NET_DBG("No room for IPv6 payload MTU %d hdrs_len %d",
-			NET_IPV6_MTU, NET_IPV6_FRAGH_LEN +
+			mtu, NET_IPV6_FRAGH_LEN +
 			net_pkt_ip_hdr_len(pkt) + net_pkt_ipv6_ext_len(pkt));
 		return -EINVAL;
 	}
