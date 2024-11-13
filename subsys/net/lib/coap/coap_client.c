@@ -1016,6 +1016,41 @@ void coap_client_cancel_requests(struct coap_client *client)
 	k_sleep(K_MSEC(COAP_PERIODIC_TIMEOUT));
 }
 
+static bool requests_match(struct coap_client_request *a, struct coap_client_request *b)
+{
+	/* enum coap_method does not have value for zero, so differentiate valid values */
+	if (a->method && b->method && a->method != b->method) {
+		return false;
+	}
+	if (a->path && b->path && strcmp(a->path, b->path) != 0) {
+		return false;
+	}
+	if (a->cb && b->cb && a->cb != b->cb) {
+		return false;
+	}
+	if (a->user_data && b->user_data && a->user_data != b->user_data) {
+		return false;
+	}
+	/* It is intentional that (struct coap_client_request){0} matches all */
+	return true;
+}
+
+void coap_client_cancel_request(struct coap_client *client, struct coap_client_request *req)
+{
+	k_mutex_lock(&client->lock, K_FOREVER);
+
+	for (int i = 0; i < CONFIG_COAP_CLIENT_MAX_REQUESTS; i++) {
+		if (client->requests[i].request_ongoing &&
+		    requests_match(&client->requests[i].coap_request, req)) {
+			LOG_DBG("Cancelling request %d", i);
+			report_callback_error(&client->requests[i], -ECANCELED);
+			release_internal_request(&client->requests[i]);
+		}
+	}
+
+	k_mutex_unlock(&client->lock);
+}
+
 void coap_client_recv(void *coap_cl, void *a, void *b)
 {
 	int ret;

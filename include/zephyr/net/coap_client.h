@@ -159,6 +159,21 @@ int coap_client_req(struct coap_client *client, int sock, const struct sockaddr 
 void coap_client_cancel_requests(struct coap_client *client);
 
 /**
+ * @brief Cancel matching requests.
+ *
+ * This function cancels all CoAP client request that matches the given request.
+ * The request is matched based on the method, path, callback and user_data, if provided.
+ * Any field set to NULL is considered a wildcard.
+ *
+ * (struct coap_client_request){0} cancels all requests.
+ * (struct coap_client_request){.method = COAP_METHOD_GET} cancels all GET requests.
+ *
+ * @param client Pointer to the CoAP client instance.
+ * @param req Pointer to the CoAP client request to be canceled.
+ */
+void coap_client_cancel_request(struct coap_client *client, struct coap_client_request *req);
+
+/**
  * @brief Initialise a Block2 option to be added to a request
  *
  * If the application expects a request to require a blockwise transfer, it may pre-emptively
