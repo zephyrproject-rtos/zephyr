@@ -64,13 +64,13 @@ struct npcm_periph {
  */
 struct npcm_dev_ctl {
 	/** Related register offset for device configuration. */
-	uint16_t offest: 5;
+	uint32_t offest: 8;
 	/** Related register field offset for device control. */
-	uint16_t field_offset: 3;
+	uint32_t field_offset: 6;
 	/** Related register field size for device control. */
-	uint16_t field_size: 3;
+	uint32_t field_size: 6;
 	/** field value */
-	uint16_t field_value: 5;
+	uint32_t field_value: 12;
 } __packed;
 
 /**
