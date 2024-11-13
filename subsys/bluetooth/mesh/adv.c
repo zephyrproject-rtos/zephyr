@@ -233,6 +233,11 @@ struct bt_mesh_adv *bt_mesh_adv_get_by_tag(enum bt_mesh_adv_tag_bit tags, k_time
 		return k_fifo_get(&bt_mesh_relay_queue, timeout);
 	}
 
+	if (IS_ENABLED(CONFIG_BT_MESH_ADV_EXT_GATT_SEPARATE) &&
+	    tags & BT_MESH_ADV_TAG_BIT_PROXY) {
+		return NULL;
+	}
+
 	return bt_mesh_adv_get(timeout);
 }
 
