@@ -1209,6 +1209,14 @@ Libraries / Subsystems
 
     (:github:`79653`)
 
+* Firmware
+
+  * Introduced basic support for ARM's System Control and Management Interface, which includes:
+
+    * Subset of clock management protocol commands
+    * Subset of pin control protocol commands
+    * Shared memory and mailbox-based transport
+
 HALs
 ****
 
