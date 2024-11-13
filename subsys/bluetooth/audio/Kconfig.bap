@@ -158,7 +158,7 @@ endif # BT_BAP_BROADCAST_SOURCE
 
 config BT_BAP_BROADCAST_SINK
 	bool "Bluetooth Broadcast Sink Audio Support"
-	select BT_ISO_SYNC_RECEIVER
+	depends on BT_ISO_SYNC_RECEIVER
 	select BT_PAC_SNK
 	depends on BT_PERIPHERAL
 	depends on BT_BAP_SCAN_DELEGATOR
@@ -202,7 +202,7 @@ config BT_BAP_SCAN_DELEGATOR
 	bool "Basic Audio Profile Scan Delegator role support"
 	select BT_EXT_ADV
 	select BT_PER_ADV_SYNC
-	select BT_ISO_SYNC_RECEIVER
+	depends on BT_ISO_SYNC_RECEIVER
 	depends on BT_OBSERVER
 	depends on BT_GATT_DYNAMIC_DB
 	depends on BT_BONDABLE
@@ -236,7 +236,7 @@ config BT_BAP_BROADCAST_ASSISTANT
 	bool "Basic Audio Profile Broadcast Assistant role support"
 	select BT_EXT_ADV
 	select BT_PER_ADV_SYNC
-	select BT_ISO_SYNC_RECEIVER
+	depends on BT_ISO_SYNC_RECEIVER
 	depends on BT_GATT_CLIENT
 	depends on BT_GATT_AUTO_DISCOVER_CCC
 	depends on BT_GATT_AUTO_UPDATE_MTU
