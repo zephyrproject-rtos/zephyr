@@ -1142,3 +1142,111 @@ ZTEST(coap_client, test_request_rst)
 	zassert_ok(k_sem_take(&sem, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
 	zassert_equal(last_response_code, -ECONNRESET, "");
 }
+
+ZTEST(coap_client, test_cancel)
+{
+	struct k_sem sem1, sem2;
+	struct sockaddr address = {0};
+	struct coap_client_request req1 = {
+		.method = COAP_METHOD_GET,
+		.confirmable = true,
+		.path = test_path,
+		.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN,
+		.cb = coap_callback,
+		.payload = short_payload,
+		.len = strlen(short_payload),
+		.user_data = &sem1
+	};
+	struct coap_client_request req2 = req1;
+
+	req2.user_data = &sem2;
+
+	k_sem_init(&sem1, 0, 1);
+	k_sem_init(&sem2, 0, 1);
+
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_no_reply;
+
+	k_sleep(K_MSEC(1));
+
+	zassert_ok(coap_client_req(&client, 0, &address, &req1, NULL));
+	zassert_ok(coap_client_req(&client, 0, &address, &req2, NULL));
+
+	k_sleep(K_SECONDS(1));
+
+	coap_client_cancel_request(&client, &req1);
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_not_ok(k_sem_take(&sem2, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, -ECANCELED, "");
+
+	set_socket_events(client.fd, ZSOCK_POLLIN); /* First response is the cancelled one */
+	zassert_not_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	set_socket_events(client.fd, ZSOCK_POLLIN);
+	zassert_ok(k_sem_take(&sem2, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_OK, "");
+}
+
+ZTEST(coap_client, test_cancel_match)
+{
+	struct k_sem sem1, sem2;
+	struct sockaddr address = {0};
+	struct coap_client_request req1 = {
+		.method = COAP_METHOD_GET,
+		.confirmable = true,
+		.path = test_path,
+		.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN,
+		.cb = coap_callback,
+		.payload = short_payload,
+		.len = strlen(short_payload),
+		.user_data = &sem1
+	};
+	struct coap_client_request req2 = req1;
+
+	req2.user_data = &sem2;
+	req2.path = "another";
+
+	k_sem_init(&sem1, 0, 1);
+	k_sem_init(&sem2, 0, 1);
+
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_no_reply;
+
+	k_sleep(K_MSEC(1));
+
+	zassert_ok(coap_client_req(&client, 0, &address, &req1, NULL));
+	zassert_ok(coap_client_req(&client, 0, &address, &req2, NULL));
+
+	k_sleep(K_SECONDS(1));
+
+	/* match only one */
+	coap_client_cancel_request(&client, &(struct coap_client_request) {
+		.path = test_path
+	});
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_not_ok(k_sem_take(&sem2, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, -ECANCELED, "");
+
+	zassert_ok(coap_client_req(&client, 0, &address, &req1, NULL));
+
+	/* should not match */
+	coap_client_cancel_request(&client, &(struct coap_client_request) {
+		.path = test_path,
+		.user_data = &sem2,
+	});
+	zassert_not_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_not_ok(k_sem_take(&sem2, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+
+	/* match both (all GET queries) */
+	coap_client_cancel_request(&client, &(struct coap_client_request) {
+		.method = COAP_METHOD_GET,
+	});
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_ok(k_sem_take(&sem2, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+
+	zassert_ok(coap_client_req(&client, 0, &address, &req1, NULL));
+	zassert_ok(coap_client_req(&client, 0, &address, &req2, NULL));
+
+	/* match both (wildcard)*/
+	coap_client_cancel_request(&client, &(struct coap_client_request) {0});
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_ok(k_sem_take(&sem2, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+
+}
