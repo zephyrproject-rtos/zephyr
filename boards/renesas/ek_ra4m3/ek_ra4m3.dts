@@ -7,6 +7,7 @@
 
 #include <renesas/ra/ra4/r7fa4m3af3cfb.dtsi>
 #include <dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include "ek_ra4m3-pinctrl.dtsi"
 
 / {
@@ -77,4 +78,10 @@
 	pinctrl-0 = <&spi0_default>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
 };
