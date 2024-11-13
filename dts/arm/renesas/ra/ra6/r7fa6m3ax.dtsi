@@ -102,6 +102,16 @@
 			reg = <0x40053200 0x100>;
 			status = "disabled";
 		};
+
+		adc@4005c000 {
+			channel-count = <13>;
+			channel-available-mask = <0x1f00ff>;
+		};
+
+		adc@4005c200 {
+			channel-count = <11>;
+			channel-available-mask = <0xf00ef>;
+		};
 	};
 
 	clocks: clocks {

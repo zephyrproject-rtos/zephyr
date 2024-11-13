@@ -210,6 +210,24 @@
 			};
 		};
 
+		adc0: adc@4005c000 {
+			compatible = "renesas,ra-adc";
+			interrupt-names = "scanend";
+			reg = <0x4005c000 0x100>;
+			#io-channel-cells = <1>;
+			vref-mv = <3300>;
+			status = "disabled";
+		};
+
+		adc1: adc@4005c200 {
+			compatible = "renesas,ra-adc";
+			interrupt-names = "scanend";
+			reg = <0x4005c200 0x100>;
+			#io-channel-cells = <1>;
+			vref-mv = <3300>;
+			status = "disabled";
+		};
+
 		id_code: id_code@1010018 {
 			compatible = "zephyr,memory-region";
 			reg = <0x01010018 0x20>;
