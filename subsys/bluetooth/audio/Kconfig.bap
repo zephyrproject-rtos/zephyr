@@ -120,7 +120,7 @@ endif # BT_BAP_UNICAST_CLIENT
 
 config BT_BAP_BROADCAST_SOURCE
 	bool "Bluetooth Broadcast Source Audio Support"
-	select BT_ISO_BROADCASTER
+	depends on BT_ISO_BROADCASTER
 	help
 	  This option enables support for Bluetooth Broadcast Source Audio using
 	  Isochronous channels.
