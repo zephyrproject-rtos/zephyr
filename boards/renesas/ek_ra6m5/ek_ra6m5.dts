@@ -7,6 +7,7 @@
 
 #include <renesas/ra/ra6/r7fa6m5bh3cfc.dtsi>
 #include <dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 
 #include "ek_ra6m5-pinctrl.dtsi"
 
@@ -103,4 +104,10 @@
 
 &usbhs_phy {
 	phys-clock-src = "xtal";
+};
+
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
 };
