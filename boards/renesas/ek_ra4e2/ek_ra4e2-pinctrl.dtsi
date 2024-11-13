@@ -21,4 +21,13 @@
 			<RA_PSEL(RA_PSEL_SPI, 3, 1)>;
 		};
 	};
+
+	canfd0_default: canfd0_default {
+		group1 {
+			/* CRX0 CTX0 */
+			psels = <RA_PSEL(RA_PSEL_CANFD, 4, 2)>,
+			<RA_PSEL(RA_PSEL_CANFD, 4, 1)>;
+			drive-strength = "high";
+		};
+	};
 };
