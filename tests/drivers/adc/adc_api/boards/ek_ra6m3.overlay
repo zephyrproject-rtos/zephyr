@@ -1,0 +1,48 @@
+/*
+ * Copyright (c) 2024 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+
+/ {
+	zephyr,user {
+		io-channels = <&adc1 0>, <&adc1 2>;
+	};
+};
+
+&pinctrl {
+	adc1_default: adc1_default {
+		group1 {
+			/* input */
+			psels = <RA_PSEL(RA_PSEL_ADC, 0, 0)>;
+			renesas,analog-enable;
+		};
+	};
+};
+
+&adc1 {
+	pinctrl-0 = <&adc1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,resolution = <12>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,vref-mv = <3300>;
+	};
+
+	channel@2 {
+		reg = <2>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,resolution = <12>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,vref-mv = <3300>;
+	};
+};
