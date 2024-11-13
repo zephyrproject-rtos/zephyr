@@ -5,9 +5,14 @@
 #
 common:
   depends_on: netif
+  tags:
+    - net
+    - ipv4
+    - fragment
 tests:
   net.ipv4.fragment:
-    tags:
-      - net
-      - ipv4
-      - fragment
+    extra_configs:
+      - CONFIG_NET_IPV4_PMTU=n
+  net.ipv4.fragment.with_pmtu:
+    extra_configs:
+      - CONFIG_NET_IPV4_PMTU=y
