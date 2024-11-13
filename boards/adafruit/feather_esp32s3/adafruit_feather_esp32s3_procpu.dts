@@ -1,0 +1,206 @@
+/*
+ * Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2024 Leon Rinkel <leon@rinkel.me>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/dts-v1/;
+
+#include <espressif/esp32s3/esp32s3_wroom_n8.dtsi>
+#include <espressif/partitions_0x0_amp.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/input/esp32-touch-sensor-input.h>
+#include <zephyr/dt-bindings/led/led.h>
+#include "feather_connector.dtsi"
+#include "adafruit_feather_esp32s3-pinctrl.dtsi"
+
+/ {
+	model = "Adafruit Feather ESP32S3 PROCPU";
+	compatible = "adafruit,feather_esp32s3", "espressif,esp32s3";
+
+	aliases {
+		i2c-0 = &i2c0;
+		watchdog0 = &wdt0;
+	};
+
+	chosen {
+		zephyr,sram = &sram1;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &esp32_bt_hci;
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		uart-0 = &uart0;
+		sw0 = &button0;
+		led0 = &led0;
+		led-strip = &led_strip;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button0: button_0 {
+			gpios = <&gpio0 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "BOOT Button";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	/*
+	 * The neopixel on this board has its positive side hooked up to a GPIO
+	 * pin rather than a positive voltage rail to save on power.
+	 */
+	neopixel_pwr: neopixel_pwr {
+		compatible = "power-domain-gpio";
+		#power-domain-cells = <0>;
+		enable-gpios = <&gpio0 21 GPIO_ACTIVE_HIGH>;
+	};
+
+	/*
+	 * On-board regulator powers I2C pull-ups and external devices connected
+	 * via the STEMMA QT connector.
+	 */
+	i2c_reg: i2c_reg {
+		compatible = "power-domain-gpio";
+		#power-domain-cells = <0>;
+		enable-gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&usb_serial {
+	status = "disabled";
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};
+
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&touch {
+	debounce-interval-ms = <30>;
+	href-microvolt = <2700000>;
+	lref-microvolt = <500000>;
+	href-atten-microvolt = <1000000>;
+	filter-mode = <ESP32_TOUCH_FILTER_MODE_IIR_16>;
+	filter-debounce-cnt = <1>;
+	filter-noise-thr = <ESP32_TOUCH_FILTER_NOISE_THR_4_8TH>;
+	filter-jitter-step = <4>;
+	filter-smooth-level = <ESP32_TOUCH_FILTER_SMOOTH_MODE_IIR_2>;
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+
+	max17048: max17048@36 {
+		compatible = "maxim,max17048";
+		status = "okay";
+		reg = <0x36>;
+
+		/*
+		 * The MAX17048 itself is directly powered by the battery, not
+		 * through the on-board regulator. However using this device
+		 * requires I2C pull-ups powered by the regulator.
+		 */
+		power-domains = <&i2c_reg>;
+	};
+};
+
+&spi2 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	pinctrl-0 = <&spim2_default>;
+	pinctrl-names = "default";
+};
+
+&spi3 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	pinctrl-0 = <&spim3_default>;
+	pinctrl-names = "default";
+
+	/* Workaround to support WS2812 driver */
+	line-idle-low;
+
+	led_strip: ws2812@0 {
+		compatible = "worldsemi,ws2812-spi";
+		power-domains = <&neopixel_pwr>;
+
+		/* SPI */
+		reg = <0>; /* ignored, but necessary for SPI bindings */
+		spi-max-frequency = <6400000>;
+
+		/* WS2812 */
+		chain-length = <1>;
+		spi-cpha;
+		spi-one-frame = <0xf0>;  /* 625 ns high and 625 ns low */
+		spi-zero-frame = <0xc0>; /* 312.5 ns high and 937.5 ns low */
+		color-mapping = <LED_COLOR_ID_GREEN
+				 LED_COLOR_ID_RED
+				 LED_COLOR_ID_BLUE>;
+	};
+};
+
+&twai {
+	pinctrl-0 = <&twai_default>;
+	pinctrl-names = "default";
+};
+
+&timer0 {
+	status = "disabled";
+};
+
+&timer1 {
+	status = "disabled";
+};
+
+&timer2 {
+	status = "disabled";
+};
+
+&timer3 {
+	status = "disabled";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&esp32_bt_hci {
+	status = "okay";
+};
