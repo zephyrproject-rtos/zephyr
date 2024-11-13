@@ -275,14 +275,12 @@ static struct bt_hfp_ag_call *get_new_call(struct bt_hfp_ag *ag, const char *num
 		call = &ag->calls[index];
 
 		if (!atomic_test_and_set_bit(call->flags, BT_HFP_AG_CALL_IN_USING)) {
-			hfp_ag_lock(ag);
 			/* Copy number to ag->number including null-character */
 			strcpy(call->number, number);
 			call->type = type;
 			call->ag = ag;
 			k_work_init_delayable(&call->deferred_work, bt_ag_deferred_work);
 			k_work_init_delayable(&call->ringing_work, bt_ag_ringing_work);
-			hfp_ag_unlock(ag);
 			return call;
 		}
 	}
@@ -940,9 +938,7 @@ static int bt_hfp_ag_brsf_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 		return -ENOTSUP;
 	}
 
-	hfp_ag_lock(ag);
 	ag->hf_features = hf_features;
-	hfp_ag_unlock(ag);
 
 	return hfp_ag_send_data(ag, NULL, NULL, "\r\n+BRSF:%d\r\n", ag->ag_features);
 }
@@ -957,13 +953,10 @@ static int bt_hfp_ag_bac_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 		return -ENOTSUP;
 	}
 
-	hfp_ag_lock(ag);
 	if (!(ag->hf_features & BT_HFP_HF_FEATURE_CODEC_NEG) ||
 	    !(ag->ag_features & BT_HFP_AG_FEATURE_CODEC_NEG)) {
-		hfp_ag_unlock(ag);
 		return -ENOEXEC;
 	}
-	hfp_ag_unlock(ag);
 
 	while (buf->len > 0) {
 		err = get_number(buf, &codec);
@@ -1064,9 +1057,7 @@ static void bt_hfp_ag_set_in_band_ring(struct bt_hfp_ag *ag, void *user_data)
 {
 	bool is_inband_ringtone;
 
-	hfp_ag_lock(ag);
 	is_inband_ringtone = (ag->ag_features & BT_HFP_AG_FEATURE_INBAND_RINGTONE) ? true : false;
-	hfp_ag_unlock(ag);
 
 	if (is_inband_ringtone && !atomic_test_bit(ag->flags, BT_HFP_AG_INBAND_RING)) {
 		int err = hfp_ag_send_data(ag, NULL, NULL, "\r\n+BSIR:1\r\n");
@@ -1522,13 +1513,10 @@ static int bt_hfp_ag_chld_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 	int err;
 	char *response;
 
-	hfp_ag_lock(ag);
 	if (!((ag->ag_features & BT_HFP_AG_FEATURE_3WAY_CALL) &&
 	      (ag->hf_features & BT_HFP_HF_FEATURE_3WAY_CALL))) {
-		hfp_ag_unlock(ag);
 		return -ENOEXEC;
 	}
-	hfp_ag_unlock(ag);
 
 	if (!is_char(buf, '=')) {
 		return -ENOTSUP;
@@ -1581,23 +1569,18 @@ static int bt_hfp_ag_bind_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 	char *data;
 	uint32_t len;
 
-	hfp_ag_lock(ag);
 	if (!((ag->ag_features & BT_HFP_AG_FEATURE_HF_IND) &&
 	      (ag->hf_features & BT_HFP_HF_FEATURE_HF_IND))) {
-		hfp_ag_unlock(ag);
 		return -ENOEXEC;
 	}
-	hfp_ag_unlock(ag);
 
 	if (is_char(buf, '?')) {
 		if (!is_char(buf, '\r')) {
 			return -ENOTSUP;
 		}
 
-		hfp_ag_lock(ag);
 		hf_indicators = ag->hf_indicators;
 		supported_indicators = ag->hf_indicators_of_ag & ag->hf_indicators_of_hf;
-		hfp_ag_unlock(ag);
 		len = MIN(NUM_BITS(sizeof(supported_indicators)), HFP_HF_IND_MAX);
 		for (int i = 1; i < len; i++) {
 			bool enabled;
@@ -1634,9 +1617,7 @@ static int bt_hfp_ag_bind_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 		data = &ag->buffer[0];
 		*data = '(';
 		data++;
-		hfp_ag_lock(ag);
 		hf_indicators = ag->hf_indicators_of_ag;
-		hfp_ag_unlock(ag);
 		len = MIN(NUM_BITS(sizeof(hf_indicators)), HFP_HF_IND_MAX);
 		for (int i = 1; (i < len) && (hf_indicators != 0); i++) {
 			if (BIT(i) & hf_indicators) {
@@ -1677,9 +1658,7 @@ static int bt_hfp_ag_bind_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 		}
 	}
 
-	hfp_ag_lock(ag);
 	ag->hf_indicators_of_hf = hf_indicators;
-	hfp_ag_unlock(ag);
 
 	return 0;
 }
@@ -2904,13 +2883,10 @@ static int bt_hfp_ag_ccwa_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 	int err;
 	uint32_t value;
 
-	hfp_ag_lock(ag);
 	if (!((ag->ag_features & BT_HFP_AG_FEATURE_3WAY_CALL) &&
 	      (ag->hf_features & BT_HFP_HF_FEATURE_3WAY_CALL))) {
-		hfp_ag_unlock(ag);
 		return -ENOEXEC;
 	}
-	hfp_ag_unlock(ag);
 
 	if (!is_char(buf, '=')) {
 		return -ENOTSUP;
@@ -2937,10 +2913,8 @@ static void bt_hfp_ag_vr_activate(struct bt_hfp_ag *ag, void *user_data)
 {
 	bool feature;
 
-	hfp_ag_lock(ag);
 	feature = (ag->ag_features & BT_HFP_AG_FEATURE_ENH_VOICE_RECG) &&
 		  (ag->hf_features & BT_HFP_HF_FEATURE_ENH_VOICE_RECG);
-	hfp_ag_unlock(ag);
 
 #if defined(CONFIG_BT_HFP_AG_VOICE_RECG)
 	if (bt_ag && bt_ag->voice_recognition) {
@@ -2986,13 +2960,10 @@ static int bt_hfp_ag_bvra_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 	int err;
 	uint32_t value;
 
-	hfp_ag_lock(ag);
 	if (!((ag->ag_features & BT_HFP_AG_FEATURE_VOICE_RECG) &&
 	      (ag->hf_features & BT_HFP_HF_FEATURE_VOICE_RECG))) {
-		hfp_ag_unlock(ag);
 		return -ENOEXEC;
 	}
-	hfp_ag_unlock(ag);
 
 	if (!is_char(buf, '=')) {
 		return -ENOTSUP;
@@ -3024,14 +2995,11 @@ static int bt_hfp_ag_bvra_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 		err = hfp_ag_next_step(ag, bt_hfp_ag_vr_activate, NULL);
 		break;
 	case BT_HFP_BVRA_READY_TO_ACCEPT:
-		hfp_ag_lock(ag);
 		if (!((ag->ag_features & BT_HFP_AG_FEATURE_ENH_VOICE_RECG) &&
 		      (ag->hf_features & BT_HFP_HF_FEATURE_ENH_VOICE_RECG))) {
-			hfp_ag_unlock(ag);
 			LOG_WRN("Enhance voice recognition is not supported");
 			return -ENOEXEC;
 		}
-		hfp_ag_unlock(ag);
 		if (!atomic_test_bit(ag->flags, BT_HFP_AG_VRE_ACTIVATE)) {
 			LOG_WRN("Voice recognition is not activated");
 			return -ENOTSUP;
@@ -3053,12 +3021,9 @@ static int bt_hfp_ag_binp_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 	char *number = NULL;
 #endif /* CONFIG_BT_HFP_AG_VOICE_TAG */
 
-	hfp_ag_lock(ag);
 	if (!(ag->ag_features & BT_HFP_AG_FEATURE_VOICE_TAG)) {
-		hfp_ag_unlock(ag);
 		return -ENOEXEC;
 	}
-	hfp_ag_unlock(ag);
 
 	if (!is_char(buf, '=')) {
 		return -ENOTSUP;
@@ -3966,7 +3931,6 @@ int bt_hfp_ag_reject(struct bt_hfp_ag_call *call)
 	int err = 0;
 	struct bt_hfp_ag *ag;
 	bt_hfp_call_state_t call_state;
-	uint32_t ag_features;
 
 	LOG_DBG("");
 
@@ -3987,14 +3951,13 @@ int bt_hfp_ag_reject(struct bt_hfp_ag_call *call)
 	}
 
 	call_state = call->call_state;
-	ag_features = ag->ag_features;
 	hfp_ag_unlock(ag);
 
 	if (!atomic_test_bit(call->flags, BT_HFP_AG_CALL_INCOMING)) {
 		return -EINVAL;
 	}
 
-	if (!(ag_features & BT_HFP_AG_FEATURE_REJECT_CALL)) {
+	if (!(ag->ag_features & BT_HFP_AG_FEATURE_REJECT_CALL)) {
 		LOG_ERR("AG has not ability to reject call");
 		return -ENOTSUP;
 	}
@@ -4599,13 +4562,12 @@ int bt_hfp_ag_vgm(struct bt_hfp_ag *ag, uint8_t vgm)
 		hfp_ag_unlock(ag);
 		return -ENOTCONN;
 	}
+	hfp_ag_unlock(ag);
 
 	if (!(ag->hf_features & BT_HFP_HF_FEATURE_VOLUME)) {
-		hfp_ag_unlock(ag);
 		LOG_ERR("Remote Audio Volume Control is unsupported");
 		return -ENOTSUP;
 	}
-	hfp_ag_unlock(ag);
 
 	err = hfp_ag_send_data(ag, NULL, NULL, "\r\n+VGM=%d\r\n", vgm);
 	if (err) {
@@ -4635,13 +4597,12 @@ int bt_hfp_ag_vgs(struct bt_hfp_ag *ag, uint8_t vgs)
 		hfp_ag_unlock(ag);
 		return -ENOTCONN;
 	}
+	hfp_ag_unlock(ag);
 
 	if (!(ag->hf_features & BT_HFP_HF_FEATURE_VOLUME)) {
-		hfp_ag_unlock(ag);
 		LOG_ERR("Remote Audio Volume Control is unsupported");
 		return -ENOTSUP;
 	}
-	hfp_ag_unlock(ag);
 
 	err = hfp_ag_send_data(ag, NULL, NULL, "\r\n+VGS=%d\r\n", vgs);
 	if (err) {
@@ -4706,11 +4667,8 @@ int bt_hfp_ag_voice_recognition(struct bt_hfp_ag *ag, bool activate)
 		return -ENOTSUP;
 	}
 
-	hfp_ag_lock(ag);
 	feature = (ag->ag_features & BT_HFP_AG_FEATURE_ENH_VOICE_RECG) &&
 		  (ag->hf_features & BT_HFP_HF_FEATURE_ENH_VOICE_RECG);
-	hfp_ag_unlock(ag);
-
 	if (!feature) {
 		bvra = "";
 	} else {
@@ -4755,10 +4713,8 @@ int bt_hfp_ag_vre_state(struct bt_hfp_ag *ag, uint8_t state)
 		return -EINVAL;
 	}
 
-	hfp_ag_lock(ag);
 	feature = (ag->ag_features & BT_HFP_AG_FEATURE_ENH_VOICE_RECG) &&
 		  (ag->hf_features & BT_HFP_HF_FEATURE_ENH_VOICE_RECG);
-	hfp_ag_unlock(ag);
 	if (!feature) {
 		return -ENOTSUP;
 	}
@@ -4806,18 +4762,14 @@ int bt_hfp_ag_vre_textual_representation(struct bt_hfp_ag *ag, uint8_t state, co
 		return -EINVAL;
 	}
 
-	hfp_ag_lock(ag);
 	feature = (ag->ag_features & BT_HFP_AG_FEATURE_ENH_VOICE_RECG) &&
 		  (ag->hf_features & BT_HFP_HF_FEATURE_ENH_VOICE_RECG);
-	hfp_ag_unlock(ag);
 	if (!feature) {
 		return -ENOTSUP;
 	}
 
-	hfp_ag_lock(ag);
 	feature = (ag->ag_features & BT_HFP_AG_FEATURE_VOICE_RECG_TEXT) &&
 		  (ag->hf_features & BT_HFP_HF_FEATURE_VOICE_RECG_TEXT);
-	hfp_ag_unlock(ag);
 	if (!feature) {
 		return -ENOTSUP;
 	}
