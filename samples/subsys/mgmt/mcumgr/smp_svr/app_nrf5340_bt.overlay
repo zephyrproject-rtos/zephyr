@@ -1,0 +1,5 @@
+/ {
+	chosen {
+		nordic,pm-ext-flash = &mx25r64;
+	};
+};
