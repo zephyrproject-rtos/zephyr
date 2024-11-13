@@ -56,7 +56,7 @@ class TestRunner:
                 'errored_configurations': 0,
                 'executed_test_cases': 8,
                 'skipped_test_cases': 0,
-                'platform_count': 0,
+                'platform_count': 2,
                 'executed_on_platform': 4,
                 'only_built': 0
             }
