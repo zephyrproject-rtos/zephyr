@@ -738,7 +738,8 @@ Drivers and Sensors
   * Introduced API for partial frames transfer with the video buffer field ``line_offset``
   * Introduced API for :ref:`multi-heap<memory_management_shared_multi_heap>` video buffer allocation with
     :kconfig:option:`CONFIG_VIDEO_BUFFER_USE_SHARED_MULTI_HEAP`
-  * Introduced bindings for common video link properties in ``video-interfaces.yaml``
+  * Introduced bindings for common video link properties in ``video-interfaces.yaml``. Migration to the
+    new bindings is tracked in :github:`80514`
   * Introduced missing :kconfig:option:`CONFIG_VIDEO_LOG_LEVEL`
   * Added a sample for capturing video and displaying it with LVGL
     (:zephyr:code-sample:`video-capture-to-lvgl`)
