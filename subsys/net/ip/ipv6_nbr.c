@@ -810,13 +810,31 @@ enum net_verdict net_ipv6_prepare_for_send(struct net_pkt *pkt)
 	 * contain a proper value and we can skip other checks.
 	 */
 	if (net_pkt_ipv6_fragment_id(pkt) == 0U) {
-		uint16_t mtu = net_if_get_mtu(net_pkt_iface(pkt));
 		size_t pkt_len = net_pkt_get_len(pkt);
+		uint16_t mtu;
 
-		mtu = MAX(NET_IPV6_MTU, mtu);
+		if (IS_ENABLED(CONFIG_NET_IPV6_PMTU)) {
+			struct sockaddr_in6 dst = {
+				.sin6_family = AF_INET6,
+			};
+
+			net_ipv6_addr_copy_raw((uint8_t *)&dst.sin6_addr, ip_hdr->dst);
+
+			ret = net_pmtu_get_mtu((struct sockaddr *)&dst);
+			if (ret <= 0) {
+				goto use_interface_mtu;
+			}
+
+			mtu = ret;
+		} else {
+use_interface_mtu:
+			mtu = net_if_get_mtu(net_pkt_iface(pkt));
+			mtu = MAX(NET_IPV6_MTU, mtu);
+		}
+
 		if (mtu < pkt_len) {
 			ret = net_ipv6_send_fragmented_pkt(net_pkt_iface(pkt),
-							   pkt, pkt_len);
+							   pkt, pkt_len, mtu);
 			if (ret < 0) {
 				NET_DBG("Cannot fragment IPv6 pkt (%d)", ret);
 				return NET_DROP;
