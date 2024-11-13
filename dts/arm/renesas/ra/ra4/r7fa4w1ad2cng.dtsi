@@ -40,6 +40,11 @@
 			interrupts = <28 1>, <29 1>, <30 1>, <31 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
 		};
+
+		trng: trng {
+			compatible = "renesas,ra-sce5-rng";
+			status = "disabled";
+		};
 	};
 
 	clocks: clocks {
