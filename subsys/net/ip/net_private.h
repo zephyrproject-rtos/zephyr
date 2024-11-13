@@ -245,7 +245,7 @@ int net_ipv4_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 
 #if defined(CONFIG_NET_IPV6_FRAGMENT)
 int net_ipv6_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
-				 uint16_t pkt_len);
+				 uint16_t pkt_len, uint16_t mtu);
 #endif
 
 extern const char *net_verdict2str(enum net_verdict verdict);
