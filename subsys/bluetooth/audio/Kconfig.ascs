@@ -31,12 +31,10 @@ config BT_ASCS_MAX_ASE_SRC_COUNT
 config BT_ASCS_ASE_SNK
 	def_bool BT_ASCS_MAX_ASE_SNK_COUNT > 0
 	select BT_PAC_SNK
-	select BT_AUDIO_RX
 
 config BT_ASCS_ASE_SRC
 	def_bool BT_ASCS_MAX_ASE_SRC_COUNT > 0
 	select BT_PAC_SRC
-	select BT_AUDIO_TX
 
 config BT_ASCS_MAX_ACTIVE_ASES
 	int "Number of simultaneously supported ASE sessions"
