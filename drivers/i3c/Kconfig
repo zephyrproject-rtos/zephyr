@@ -1,3 +1,4 @@
+
 # I3C configuration options
 #
 # Copyright (c) 2022 Intel Corporation
@@ -110,6 +111,7 @@ comment "Device Drivers"
 rsource "Kconfig.nxp"
 rsource "Kconfig.cdns"
 rsource "Kconfig.npcx"
+rsource "Kconfig.npcm"
 rsource "Kconfig.test"
 
 endif # I3C

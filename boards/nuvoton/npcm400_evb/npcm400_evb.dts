@@ -229,3 +229,59 @@
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+&i3c1 {
+	i3c-scl-hz = <12500000>;
+	i3c-od-scl-hz = <4170000>;
+	i2c-scl-hz = <1000000>;
+	pinctrl-0 = <&i3c1_scl_sda_gp21_22>;
+	pinctrl-names = "default";
+	status = "disabled";
+};
+
+&i3c2 {
+	i3c-scl-hz = <12500000>;
+	i3c-od-scl-hz = <4170000>;
+	i2c-scl-hz = <1000000>;
+	pinctrl-0 = <&i3c2_scl_sda_gp23_24>;
+	pinctrl-names = "default";
+	status = "disabled";
+};
+
+&i3c3 {
+	i3c-scl-hz = <12500000>;
+	i3c-od-scl-hz = <4170000>;
+	i2c-scl-hz = <1000000>;
+	pinctrl-0 = <&i3c3_scl_lv_gp26 &i3c3_sda_lv_gp25
+			&i3c3_scl_sda_gp26_25>;
+	pinctrl-names = "default";
+	status = "disabled";
+};
+
+&i3c4 {
+	i3c-scl-hz = <12500000>;
+	i3c-od-scl-hz = <4170000>;
+	i2c-scl-hz = <1000000>;
+	pinctrl-0 = <&i3c4_scl_sda_gpd0_d1>;
+	pinctrl-names = "default";
+	status = "disabled";
+};
+
+&i3c5 {
+	i3c-scl-hz = <12500000>;
+	i3c-od-scl-hz = <4170000>;
+	i2c-scl-hz = <1000000>;
+	pinctrl-0 = <&i3c5_scl_sda_gp82_83>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i3c6 {
+	i3c-scl-hz = <12500000>;
+	i3c-od-scl-hz = <4170000>;
+	i2c-scl-hz = <1000000>;
+	pinctrl-0 = <&tri_state_gp96 &tri_state_gp97
+			&i3c6_scl_sda_gp96_97>;
+	pinctrl-names = "default";
+	status = "okay";
+};

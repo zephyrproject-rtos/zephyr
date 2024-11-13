@@ -1,0 +1,21 @@
+# NPCM I3C driver configuration options
+
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config I3C_NPCM
+	bool "Nuvoton NPCM enhance super I/O (eSIO) I3C driver"
+	depends on DT_HAS_NUVOTON_NPCM_I3C_ENABLED
+	select I3C_IBI_WORKQUEUE if I3C_USE_IBI
+	default y
+	help
+	  This option enables the I3C driver for NPCM family of
+	  processors.
+	  Say y if you wish to use I3C channels on NPCM MCU.
+
+config I3C_NPCM_DMA
+	bool "Nuvoton NPCM enhance super I/O (eSIO) I3C driver DMA support"
+	depends on I3C_NPCM
+	default y
+	help
+	  Enable DMA support for npcm I3C.
