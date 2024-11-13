@@ -449,7 +449,10 @@ struct smbus_device_state {
 		stats_init(&state->stats.s_hdr, STATS_SIZE_32, 4,	\
 			   STATS_NAME_INIT_PARMS(smbus));		\
 		stats_register(dev->name, &(state->stats.s_hdr));	\
-		return init_fn(dev);					\
+		if (!is_null_no_warn(init_fn)) {			\
+			return init_fn(dev);				\
+		}							\
+		return 0;						\
 	}
 
 /** @endcond */
