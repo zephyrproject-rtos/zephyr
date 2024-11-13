@@ -7,11 +7,10 @@
 #
 
 config BT_BAP_UNICAST
-	bool
+	def_bool BT_BAP_UNICAST_SERVER || BT_BAP_UNICAST_CLIENT
 
 config BT_BAP_UNICAST_SERVER
 	bool "Bluetooth Unicast Audio Server Support"
-	select BT_BAP_UNICAST
 	depends on BT_GATT_DYNAMIC_DB
 	depends on BT_GATT_CACHING
 	depends on BT_PERIPHERAL
@@ -25,7 +24,6 @@ config BT_BAP_UNICAST_SERVER
 
 config BT_BAP_UNICAST_CLIENT
 	bool "Bluetooth Unicast Audio Client Support"
-	select BT_BAP_UNICAST
 	select BT_GATT_CLIENT
 	select BT_GATT_AUTO_DISCOVER_CCC
 	select BT_GATT_AUTO_UPDATE_MTU
@@ -79,7 +77,6 @@ config BT_AUDIO_CODEC_CAP_MAX_METADATA_SIZE
 if BT_BAP_UNICAST_CLIENT
 config BT_BAP_UNICAST_CLIENT_GROUP_COUNT
 	int "Basic Audio Unicast Group count"
-	depends on BT_BAP_UNICAST
 	default BT_ISO_MAX_CIG
 	range 1 BT_ISO_MAX_CIG
 	help
