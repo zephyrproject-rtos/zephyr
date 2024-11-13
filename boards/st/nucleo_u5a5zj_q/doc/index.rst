@@ -236,7 +236,7 @@ Default Zephyr Peripheral Mapping:
 - LD3 : PG2
 - LPUART_1_TX : PG7
 - LPUART_1_RX : PG8
-- SPI_1_NSS : PA4
+- SPI_1 nCS (GPIO) : PD14
 - SPI_1_SCK : PA5
 - SPI_1_MISO : PA6
 - SPI_1_MOSI : PA7
