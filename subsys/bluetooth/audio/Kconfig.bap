@@ -24,9 +24,9 @@ config BT_BAP_UNICAST_SERVER
 
 config BT_BAP_UNICAST_CLIENT
 	bool "Bluetooth Unicast Audio Client Support"
-	select BT_GATT_CLIENT
-	select BT_GATT_AUTO_DISCOVER_CCC
-	select BT_GATT_AUTO_UPDATE_MTU
+	depends on BT_GATT_CLIENT
+	depends on BT_GATT_AUTO_DISCOVER_CCC
+	depends on BT_GATT_AUTO_UPDATE_MTU
 	depends on BT_CENTRAL
 	depends on BT_ISO_CENTRAL
 	depends on BT_BONDABLE
@@ -241,9 +241,9 @@ config BT_BAP_BROADCAST_ASSISTANT
 	select BT_EXT_ADV
 	select BT_PER_ADV_SYNC
 	select BT_ISO_SYNC_RECEIVER
-	select BT_GATT_CLIENT
-	select BT_GATT_AUTO_DISCOVER_CCC
-	select BT_GATT_AUTO_UPDATE_MTU
+	depends on BT_GATT_CLIENT
+	depends on BT_GATT_AUTO_DISCOVER_CCC
+	depends on BT_GATT_AUTO_UPDATE_MTU
 	depends on BT_OBSERVER
 	depends on BT_BONDABLE
 	help

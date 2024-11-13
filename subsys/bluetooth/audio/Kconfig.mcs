@@ -20,8 +20,8 @@ config BT_MCS
 
 config BT_MCC
 	bool "Media Control Client Support"
-	select BT_GATT_CLIENT
-	select BT_GATT_AUTO_DISCOVER_CCC
+	depends on BT_GATT_CLIENT
+	depends on BT_GATT_AUTO_DISCOVER_CCC
 	help
 	  This option enables support for the Media Control Client.
 
