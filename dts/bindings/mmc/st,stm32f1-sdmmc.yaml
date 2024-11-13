@@ -1,0 +1,15 @@
+# Copyright (c) 2024 Benjamin Björnsson benjamin.bjornsson@gmail.com
+
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+        ST STM32F1 family SDIO
+        Remove the resets property since there's no reset register
+        for AHB peripherals on F1 series.
+
+compatible: "st,stm32f1-sdmmc"
+
+include:
+  - name: st,stm32-sdmmc.yaml
+    property-blocklist:
+      - resets

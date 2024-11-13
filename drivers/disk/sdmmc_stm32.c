@@ -21,6 +21,7 @@
 LOG_MODULE_REGISTER(stm32_sdmmc, CONFIG_SDMMC_LOG_LEVEL);
 
 #define STM32_SDMMC_USE_DMA DT_NODE_HAS_PROP(DT_DRV_INST(0), dmas)
+#define STM32_SDMMC_USE_RESET !DT_NODE_HAS_COMPAT(DT_DRV_INST(0), st_stm32f1_sdmmc)
 
 #if STM32_SDMMC_USE_DMA
 #include <zephyr/drivers/dma.h>
@@ -84,7 +85,9 @@ struct stm32_sdmmc_priv {
 	struct gpio_dt_spec pe;
 	struct stm32_pclken *pclken;
 	const struct pinctrl_dev_config *pcfg;
+#if STM32_SDMMC_USE_RESET
 	const struct reset_dt_spec reset;
+#endif
 
 #if STM32_SDMMC_USE_DMA
 	struct sdmmc_dma_stream dma_rx;
@@ -302,11 +305,13 @@ static int stm32_sdmmc_access_init(struct disk_info *disk)
 		return err;
 	}
 
+#if STM32_SDMMC_USE_RESET
 	err = reset_line_toggle_dt(&priv->reset);
 	if (err) {
 		LOG_ERR("failed to reset peripheral");
 		return err;
 	}
+#endif
 
 #ifdef CONFIG_SDMMC_STM32_EMMC
 	err = HAL_MMC_Init(&priv->hsd);
@@ -690,10 +695,12 @@ static int disk_stm32_sdmmc_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+#if STM32_SDMMC_USE_RESET
 	if (!device_is_ready(priv->reset.dev)) {
 		LOG_ERR("reset control device not ready");
 		return -ENODEV;
 	}
+#endif
 
 	/* Configure dt provided device signals when available */
 	err = pinctrl_apply_state(priv->pcfg, PINCTRL_STATE_DEFAULT);
@@ -812,7 +819,9 @@ static struct stm32_sdmmc_priv stm32_sdmmc_priv_1 = {
 #endif
 	.pclken = pclken_sdmmc,
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
+#if STM32_SDMMC_USE_RESET
 	.reset = RESET_DT_SPEC_INST_GET(0),
+#endif
 	SDMMC_DMA_CHANNEL(rx, RX)
 	SDMMC_DMA_CHANNEL(tx, TX)
 };
