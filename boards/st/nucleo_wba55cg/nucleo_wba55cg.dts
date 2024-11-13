@@ -20,6 +20,7 @@
 
 	chosen {
 		zephyr,bt-c2h-uart = &usart1;
+		zephyr,uart-pipe = &usart1;
 		zephyr,console = &usart1;
 		zephyr,shell-uart = &usart1;
 		zephyr,sram = &sram0;
