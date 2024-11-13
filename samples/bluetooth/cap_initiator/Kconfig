@@ -24,6 +24,7 @@ config SAMPLE_BROADCAST
 	bool "Whether or not to search for CAP acceptors for broadcast audio"
 	default y if !SAMPLE_UNICAST
 	select BT_BROADCASTER
+	select BT_ISO_BROADCASTER
 	select BT_BAP_BROADCAST_SOURCE
 	select BT_CTLR_ADV_ISO if BT_CTLR
 	help
