@@ -9,6 +9,8 @@
 
 /delete-node/ &spi1;
 
+/delete-node/ &adc1;
+
 / {
 	soc {
 		sram0: memory@20000000 {
@@ -90,6 +92,11 @@
 				channel = <4>;
 				status = "disabled";
 			};
+		};
+
+		adc@40170000 {
+			channel-count = <13>;
+			channel-available-mask = <0x139ff>;
 		};
 	};
 
