@@ -19,6 +19,7 @@
 		zephyr,console = &uart8;
 		zephyr,shell-uart = &uart8;
 		zephyr,flash = &flash0;
+		zephyr,entropy = &trng;
 	};
 
 	leds {
@@ -93,4 +94,8 @@
 	div = <2>;
 	mul = <20 0>;
 	status = "okay";
+};
+
+&trng {
+	status ="okay";
 };
