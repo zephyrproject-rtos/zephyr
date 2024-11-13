@@ -10,7 +10,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
 
-ZTEST(barrier, test_barrier)
+ZTEST(posix_barriers, test_barrier)
 {
 	int ret, pshared;
 	pthread_barrierattr_t attr;
@@ -38,4 +38,4 @@ ZTEST(barrier, test_barrier)
 	zassert_equal(ret, 0, "pthread_barrierattr_destroy failed");
 }
 
-ZTEST_SUITE(barrier, NULL, NULL, NULL, NULL, NULL);
+ZTEST_SUITE(posix_barriers, NULL, NULL, NULL, NULL, NULL);
