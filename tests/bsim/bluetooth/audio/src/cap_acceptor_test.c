@@ -399,6 +399,11 @@ static void broadcast_code_cb(struct bt_conn *conn,
 {
 	printk("Broadcast code received for %p\n", recv_state);
 
+	if (memcmp(broadcast_code, BROADCAST_CODE, sizeof(BROADCAST_CODE)) != 0) {
+		FAIL("Failed to receive correct broadcast code\n");
+		return;
+	}
+
 	SET_FLAG(flag_broadcast_code);
 }
 
@@ -984,6 +989,12 @@ static void base_wait_for_metadata_update(void)
 	backchannel_sync_send_all(); /* let others know we have received a metadata update */
 }
 
+static void wait_for_broadcast_code(void)
+{
+	printk("Waiting for broadcast code\n");
+	WAIT_FOR_FLAG(flag_broadcast_code);
+}
+
 static void wait_for_streams_stop(int stream_count)
 {
 	/* The order of PA sync lost and BIG Sync lost is irrelevant
@@ -1032,6 +1043,7 @@ static void test_cap_acceptor_broadcast_reception(void)
 
 	create_and_sync_sink(bap_streams, &stream_count);
 
+	wait_for_broadcast_code();
 	sink_wait_for_data();
 
 	/* Since we are re-using the BAP broadcast source test
