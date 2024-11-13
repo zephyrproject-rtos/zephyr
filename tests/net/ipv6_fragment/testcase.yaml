@@ -1,8 +1,13 @@
 common:
   depends_on: netif
+  tags:
+    - net
+    - ipv6
+    - fragment
 tests:
   net.ipv6.fragment:
-    tags:
-      - net
-      - ipv6
-      - fragment
+    extra_configs:
+      - CONFIG_NET_IPV6_PMTU=n
+  net.ipv6.fragment.with_pmtu:
+    extra_configs:
+      - CONFIG_NET_IPV6_PMTU=y
