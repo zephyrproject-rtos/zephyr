@@ -90,26 +90,56 @@
 	/* I3C peripheral interfaces  */
 	/omit-if-no-ref/ i3c1_scl_sda_gp21_22: periph-i3c1 {
 		pinmux = <&alt10_i3c1_sl>;
+		periph-pupd = <0x01 2>;
+		bias-pull-up;
 	};
 
 	/omit-if-no-ref/ i3c2_scl_sda_gp23_24: periph-i3c2 {
 		pinmux = <&alt10_i3c2_sl>;
+		periph-pupd = <0x03 0>;
+		bias-pull-up;
 	};
 
 	/omit-if-no-ref/ i3c3_scl_sda_gp26_25: periph-i3c3 {
 		pinmux = <&alt10_i3c3_sl>;
+		periph-pupd = <0x03 1>;
+		bias-pull-up;
+	};
+
+	/omit-if-no-ref/ i3c3_scl_lv_gp26: periph-i3c3-scl-lv {
+		/* low-voltage setting */
+		dev-ctl = <0x2b 4 1 0x00>;
+	};
+
+	/omit-if-no-ref/ i3c3_sda_lv_gp25: periph-i3c3-sda-lv {
+		/* low-voltage setting */
+		dev-ctl = <0x2a 4 1 0x00>;
 	};
 
 	/omit-if-no-ref/ i3c4_scl_sda_gpd0_d1: periph-i3c4 {
 		pinmux = <&alt10_i3c4_sl>;
+		periph-pupd = <0x03 2>;
+		bias-pull-up;
 	};
 
 	/omit-if-no-ref/ i3c5_scl_sda_gp82_83: periph-i3c5 {
 		pinmux = <&alta_i3c5_sl>;
+		periph-pupd = <0x03 3>;
+		bias-pull-up;
 	};
 
 	/omit-if-no-ref/ i3c6_scl_sda_gp96_97: periph-i3c6 {
 		pinmux = <&alt7_i3c6_sl>;
+		periph-pupd = <0x03 4>;
+		bias-pull-up;
+	};
+
+	/omit-if-no-ref/ tri_state_gp96: periph-tri-state-gp96 {
+		pinmux = <&alt7_no_gp96>;
+	};
+
+	/omit-if-no-ref/ tri_state_gp97: periph-tri-state-gp97 {
+		pinmux = <&alt7_no_gp97>;
 	};
 
 	/* UART peripheral interfaces */
