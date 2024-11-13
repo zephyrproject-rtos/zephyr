@@ -94,6 +94,8 @@ The below features are currently supported on Zephyr OS for EK-RA4W1 board:
 +-----------+------------+----------------------+
 | COUNTER   | on-chip    | counter              |
 +-----------+------------+----------------------+
+| ENTROPY   | on-chip    | entropy              |
++-----------+------------+----------------------+
 
 Other hardware features are currently not supported by the port.
 
