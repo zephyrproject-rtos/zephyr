@@ -817,4 +817,50 @@ ZTEST(net_pmtu_test_suite, test_pmtu_07_socket_api_ipv4)
 #endif /* CONFIG_NET_IPV4_PMTU */
 }
 
+ZTEST(net_pmtu_test_suite, test_pmtu_08_socket_api_ipv6)
+{
+#if defined(CONFIG_NET_IPV6_PMTU)
+	struct sockaddr_in6 s_saddr = { 0 };  /* peer */
+	struct sockaddr_in6 c_saddr = { 0 };  /* this host */
+	int ret, client_sock, server_sock;
+	size_t optlen;
+	int optval;
+	int err;
+
+	client_sock = get_v6_send_recv_sock(&server_sock, &c_saddr, &s_saddr,
+					    MY_PORT + 2, PEER_PORT + 2);
+	zassert_true(client_sock >= 0, "Failed to create client socket");
+
+	/* Set initial MTU for the destination */
+	ret = net_pmtu_update_mtu((struct sockaddr *)&c_saddr, 2048);
+	zassert_true(ret >= 0, "PMTU IPv6 MTU update failed (%d)", ret);
+
+	optval = 0; optlen = sizeof(int);
+	ret = zsock_getsockopt(client_sock, IPPROTO_IPV6, IPV6_MTU, &optval, &optlen);
+	err = -errno;
+	zexpect_equal(ret, 0, "getsockopt failed (%d)", err);
+	zexpect_equal(optlen, sizeof(int), "getsockopt optlen (%d)", optlen);
+	zexpect_equal(optval, 2048, "getsockopt mtu (%d)", optval);
+
+	optval = 1500; optlen = sizeof(int);
+	ret = zsock_setsockopt(client_sock, IPPROTO_IPV6, IPV6_MTU, &optval, optlen);
+	err = -errno;
+	zexpect_equal(ret, 0, "setsockopt failed (%d)", err);
+	zexpect_equal(optlen, sizeof(int), "setsockopt optlen (%d)", optlen);
+	zexpect_equal(optval, 1500, "setsockopt mtu (%d)", optval);
+
+	optval = 0; optlen = sizeof(int);
+	ret = zsock_getsockopt(client_sock, IPPROTO_IPV6, IPV6_MTU, &optval, &optlen);
+	err = -errno;
+	zexpect_equal(ret, 0, "getsockopt failed (%d)", err);
+	zexpect_equal(optlen, sizeof(int), "getsockopt optlen (%d)", optlen);
+	zexpect_equal(optval, 1500, "getsockopt mtu (%d)", optval);
+
+	(void)zsock_close(client_sock);
+	(void)zsock_close(server_sock);
+#else
+	ztest_test_skip();
+#endif /* CONFIG_NET_IPV6_PMTU */
+}
+
 ZTEST_SUITE(net_pmtu_test_suite, NULL, test_setup, NULL, NULL, NULL);
