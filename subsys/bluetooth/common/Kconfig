@@ -49,7 +49,9 @@ config BT_BUF_ACL_TX_COUNT
 	  command response.
 
 config BT_BUF_ACL_RX_SIZE
-	int "Maximum supported ACL size for incoming data"
+	int "Maximum supported ACL size for incoming data" if BT_CLASSIC ||\
+							      !BT_CTLR || \
+							      BT_CTLR_DATA_LEN_UPDATE_SUPPORT
 	default 200 if BT_CLASSIC
 	default 70 if BT_EATT
 	default 69 if BT_SMP
