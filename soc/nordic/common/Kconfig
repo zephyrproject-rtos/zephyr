@@ -8,4 +8,24 @@ config NRF_SYS_EVENT
 	bool "nRF system event support"
 	select NRFX_POWER if !NRF_PLATFORM_HALTIUM
 
+config MRAM_LATENCY
+	bool "MRAM latency manager"
+	depends on NRFS_HAS_MRAM_SERVICE
+	select ONOFF
+	select NRFS_MRAM_SERVICE_ENABLED
+
+if MRAM_LATENCY
+
+config MRAM_LATENCY_SYNC_TIMEOUT
+	int "Timeout in synchronous request"
+	default 1000
+	help
+	  Timeout is given in milliseconds.
+
+module = MRAM_LATENCY
+module-str = mram_latency
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # MRAM_LATENCY
+
 rsource "vpr/Kconfig"
