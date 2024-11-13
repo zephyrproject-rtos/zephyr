@@ -7,7 +7,7 @@
 
 #include <renesas/ra/ra8/r7fa8d1bhecbd.dtsi>
 #include <dt-bindings/gpio/gpio.h>
-
+#include <zephyr/dt-bindings/adc/adc.h>
 #include "ek_ra8d1-pinctrl.dtsi"
 
 / {
@@ -191,4 +191,10 @@
 
 &usbhs_phy {
 	phys-clock-src = "xtal";
+};
+
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
 };

@@ -100,6 +100,8 @@ The below features are currently supported on Zephyr OS for EK-RA6E2 board:
 +-----------+------------+----------------------+
 | SPI       | on-chip    | spi                  |
 +-----------+------------+----------------------+
+| ADC       | on-chip    | adc                  |
++-----------+------------+----------------------+
 
 Other hardware features are currently not supported by the port.
 
