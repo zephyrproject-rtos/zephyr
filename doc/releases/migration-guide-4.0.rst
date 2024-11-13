@@ -368,7 +368,7 @@ Bluetooth Audio
   :kconfig:option:`CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT` to reflect that they now serve as a
   compile-time maximum configuration of ASEs to be used.
   :c:func:`bt_bap_unicast_server_register` needs to be called once before using the Unicast Server,
-  and more specfically prior to calling :c:func:`bt_bap_unicast_server_register_cb` for the first
+  and more specifically prior to calling :c:func:`bt_bap_unicast_server_register_cb` for the first
   time. It does not need to be called again until the new function
   :c:func:`bt_bap_unicast_server_unregister` has been called.
   (:github:`76632`)

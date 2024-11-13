@@ -367,7 +367,7 @@ Version1
 - Supports 32-bit IDs to store ID/Value pairs
 - Small sized data ( <= 8 bytes) are stored in the ATE itself
 - Built-in Data CRC32 (included in the ATE)
-- Versionning of ZMS (to handle future evolution)
+- Versioning of ZMS (to handle future evolution)
 - Supports large write-block-size (Only for platforms that need this)
 
 Future features

@@ -142,9 +142,9 @@ Currently, Zephyr has support for the following standard protocols:
 Clock management protocol
 *************************
 
-This protocol is used to perfrom clock management operations. This is done
+This protocol is used to perform clock management operations. This is done
 via a driver (:file:`drivers/clock_control/clock_control_arm_scmi.c`), which
-implements the Zephyr clock control subsytem API. As such, from the user's
+implements the Zephyr clock control subsystem API. As such, from the user's
 perspective, using this driver is no different than using any other clock
 management driver.
 
