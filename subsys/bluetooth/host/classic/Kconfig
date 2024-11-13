@@ -132,10 +132,30 @@ config BT_HFP_AG_ECNR
 	help
 	  This option enables EC and/or NR function for HFP AG
 
+config BT_HFP_AG_3WAY_CALL
+	bool "Three-way calling for HFP AG [EXPERIMENTAL]"
+	help
+	  This option enables Three-way calling for HFP AG
+
+config BT_HFP_AG_MAX_CALLS
+	int "Maximum supported calls for HFP AG [EXPERIMENTAL]"
+	default 2 if BT_HFP_AG_3WAY_CALL
+	default 1
+	range 1 2
+	help
+	  This option sets maximum supported calls for HFP AG
+
 config BT_HFP_AG_ECS
 	bool "Enhanced call status for HFP AG [EXPERIMENTAL]"
+	default y if BT_HFP_AG_3WAY_CALL
 	help
 	  This option enables Enhanced call status for HFP AG
+
+config BT_HFP_AG_ECC
+	bool "Enhanced call control for HFP AG [EXPERIMENTAL]"
+	default y if BT_HFP_AG_3WAY_CALL
+	help
+	  This option enables Enhanced call control for HFP AG
 
 config BT_HFP_AG_TX_BUF_COUNT
 	int "Maximum number of TX buffers for HFP AG [EXPERIMENTAL]"

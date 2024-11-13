@@ -182,3 +182,35 @@ enum hfp_hf_ag_indicators {
 #define BT_HFP_BTRH_ON_HOLD  0
 #define BT_HFP_BTRH_ACCEPTED 1
 #define BT_HFP_BTRH_REJECTED 2
+
+/* HFP Call held status */
+/* No calls held */
+#define BT_HFP_CALL_HELD_NONE        0
+/* Call is placed on hold or active/held calls swapped
+ * The AG has both an active AND a held call
+ */
+#define BT_HFP_CALL_HELD_ACTIVE_HELD 1
+/* Call on hold, no active call */
+#define BT_HFP_CALL_HELD_HELD        2
+
+/* HFP AT+CHLD command value */
+/* Releases all held calls or sets User Determined User Busy
+ * (UDUB) for a waiting call
+ */
+#define BT_HFP_CHLD_RELEASE_ALL                 0
+/* Releases all active calls (if any exist) and accepts the
+ * other (held or waiting) call.
+ */
+#define BT_HFP_CHLD_RELEASE_ACTIVE_ACCEPT_OTHER 1
+/* Places all active calls (if any exist) on hold and accepts
+ * the other (held or waiting) call
+ */
+#define BT_HFP_CALL_HOLD_ACTIVE_ACCEPT_OTHER    2
+/* Adds a held call to the conversation */
+#define BT_HFP_CALL_ACTIVE_HELD                 3
+/* Connects the two calls and disconnects the subscriber from
+ * both calls (Explicit Call Transfer).
+ * Support for this value and its associated functionality is
+ * optional for the HF.
+ */
+#define BT_HFP_CALL_QUITE	                    4
