@@ -7,5 +7,11 @@ boards:
   - name: intel_rpl_s_crb
     full_name: Raptor Lake S CRB
     vendor: intel
+    revision:
+      format: number
+      default: "600"
+      revisions:
+        - name: "600"
+        - name: "700"
     socs:
       - name: raptor_lake
