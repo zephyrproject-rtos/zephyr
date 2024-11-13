@@ -1,0 +1,23 @@
+identifier: adafruit_feather_esp32s3_tft/esp32s3/procpu
+name: Adafruit Feather ESP32-S3 TFT PROCPU
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - uart
+  - i2c
+  - spi
+  - can
+  - counter
+  - watchdog
+  - entropy
+  - pwm
+  - dma
+  - input
+  - feather_serial
+  - feather_i2c
+  - feather_spi
+  - display
+vendor: adafruit
