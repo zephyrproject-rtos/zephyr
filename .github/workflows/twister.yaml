@@ -148,7 +148,7 @@ jobs:
       TWISTER_COMMON: ' --force-color --inline-logs -v -N -M --retry-failed 3 --timeout-multiplier 2 '
       DAILY_OPTIONS: ' -M --build-only --all --show-footprint'
       PR_OPTIONS: ' --clobber-output --integration'
-      PUSH_OPTIONS: ' --clobber-output -M --show-footprint'
+      PUSH_OPTIONS: ' --clobber-output -M --show-footprint --report-filtered'
       COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
       BASE_REF: ${{ github.base_ref }}
     steps:
