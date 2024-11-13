@@ -509,7 +509,7 @@ Drivers and Sensors
 
 * I3C
 
-  * Added support for SETAASA optmization during initialization. Added a
+  * Added support for SETAASA optimization during initialization. Added a
     ``supports-setaasa`` property to ``i3c-devices.yaml``.
   * Added sending DEFTGTS if any devices that support functioning as a secondary
     controller on the bus.
@@ -1057,7 +1057,7 @@ Libraries / Subsystems
 
     * :c:func:`hawkbit_autohandler` now takes one argument. If the argument is set to true, the
       autohandler will reshedule itself after running. If the argument is set to false, the
-      autohandler will not reshedule itself. Both variants are sheduled independent of each other.
+      autohandler will not reshedule itself. Both variants are scheduled independent of each other.
       The autohandler always runs in the system workqueue.
 
     * Use the :c:func:`hawkbit_autohandler_wait` function to wait for the autohandler to finish.
@@ -1258,7 +1258,7 @@ MCUboot
   * Added zephyr prefix to generated header path.
   * Added optional img mgmt slot info feature.
   * Added bootutil support for maximum image size details for additional images.
-  * Added support for automatically calculcating max sectors.
+  * Added support for automatically calculating max sectors.
   * Added missing ``boot_enc_init()`` function.
   * Added support for keeping image encrypted in scratch area in bootutil.
   * Fixed serial recovery for NXP IMX.RT, LPC55x and MCXNx platforms

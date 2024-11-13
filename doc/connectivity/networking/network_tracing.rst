@@ -9,7 +9,7 @@ Network Tracing
 
 User can enable network core stack and socket API calls tracing.
 
-The :kconfig:option:`CONFIG_TRACING_NET_CORE` option contols the core network
+The :kconfig:option:`CONFIG_TRACING_NET_CORE` option controls the core network
 stack tracing. This option is enabled by default if tracing and networking
 are enabled. The system will start to collect the receiving and sending call
 verdicts i.e., whether the network packet was successfully sent or received.
