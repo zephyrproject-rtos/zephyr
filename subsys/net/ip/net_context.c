@@ -3102,6 +3102,55 @@ static int set_context_reuseport(struct net_context *context,
 #endif
 }
 
+static int set_context_ipv6_mtu(struct net_context *context,
+				const void *value, size_t len)
+{
+#if defined(CONFIG_NET_IPV6)
+	struct net_if *iface;
+	uint16_t mtu;
+
+	if (len != sizeof(int)) {
+		return -EINVAL;
+	}
+
+	mtu = *((int *)value);
+
+	if (IS_ENABLED(CONFIG_NET_IPV6_PMTU)) {
+		int ret;
+
+		ret = net_pmtu_update_mtu(&context->remote, mtu);
+		if (ret < 0) {
+			return ret;
+		}
+
+		return 0;
+	}
+
+	if (net_context_is_bound_to_iface(context)) {
+		iface = net_context_get_iface(context);
+	} else {
+		sa_family_t family = net_context_get_family(context);
+
+		if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
+			iface = net_if_ipv6_select_src_iface(
+				&net_sin6(&context->remote)->sin6_addr);
+		} else {
+			return -EAFNOSUPPORT;
+		}
+	}
+
+	net_if_set_mtu(iface, (uint16_t)mtu);
+
+	return 0;
+#else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
+	return -ENOTSUP;
+#endif
+}
+
 static int set_context_ipv6_v6only(struct net_context *context,
 				   const void *value, size_t len)
 {
@@ -3236,6 +3285,9 @@ int net_context_set_option(struct net_context *context,
 		if (IS_ENABLED(CONFIG_NET_IPV4) &&
 		    net_context_get_family(context) == AF_INET) {
 			ret = -EOPNOTSUPP;
+		} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
+			   net_context_get_family(context) == AF_INET6) {
+			ret = set_context_ipv6_mtu(context, value, len);
 		}
 
 		break;
