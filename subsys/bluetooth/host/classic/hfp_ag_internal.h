@@ -46,18 +46,33 @@
 #define BT_HFP_AG_FEATURE_ECS_ENABLE 0
 #endif /* CONFIG_BT_HFP_AG_ECS*/
 
+#if defined(CONFIG_BT_HFP_AG_3WAY_CALL)
+#define BT_HFP_AG_FEATURE_3WAY_CALL_ENABLE BT_HFP_AG_FEATURE_3WAY_CALL
+#define BT_HFP_AG_SDP_FEATURE_3WAY_CALL_ENABLE BT_HFP_AG_SDP_FEATURE_3WAY_CALL
+#else
+#define BT_HFP_AG_FEATURE_3WAY_CALL_ENABLE 0
+#define BT_HFP_AG_SDP_FEATURE_3WAY_CALL_ENABLE 0
+#endif /* CONFIG_BT_HFP_AG_3WAY_CALL */
+
+#if defined(CONFIG_BT_HFP_AG_ECC)
+#define BT_HFP_AG_FEATURE_ECC_ENABLE BT_HFP_AG_FEATURE_ECC
+#else
+#define BT_HFP_AG_FEATURE_ECC_ENABLE 0
+#endif /* CONFIG_BT_HFP_AG_ECC */
+
 /* HFP AG Supported features */
 #define BT_HFP_AG_SUPPORTED_FEATURES (\
-	BT_HFP_AG_FEATURE_3WAY_CALL | \
+	BT_HFP_AG_FEATURE_3WAY_CALL_ENABLE | \
 	BT_HFP_AG_FEATURE_INBAND_RINGTONE | \
 	BT_HFP_AG_FEATURE_EXT_ERR_ENABLE | \
 	BT_HFP_AG_FEATURE_CODEC_NEG_ENABLE | \
 	BT_HFP_AG_FEATURE_ECNR_ENABLE | \
-	BT_HFP_AG_FEATURE_ECS_ENABLE)
+	BT_HFP_AG_FEATURE_ECS_ENABLE | \
+	BT_HFP_AG_FEATURE_ECC_ENABLE)
 
 /* HFP AG Supported features in SDP */
 #define BT_HFP_AG_SDP_SUPPORTED_FEATURES (\
-	BT_HFP_AG_SDP_FEATURE_3WAY_CALL | \
+	BT_HFP_AG_SDP_FEATURE_3WAY_CALL_ENABLE | \
 	BT_HFP_AG_SDP_FEATURE_INBAND_RINGTONE | \
 	BT_HFP_AG_SDP_FEATURE_ECNR_ENABLE)
 
@@ -69,8 +84,6 @@ enum {
 	BT_HFP_AG_CCWA_ENABLE,   /* Call Waiting notification */
 	BT_HFP_AG_INBAND_RING,   /* In-band ring */
 	BT_HFP_AG_COPS_SET,      /* Query Operator selection */
-	BT_HFP_AG_INCOMING_CALL, /* Incoming call */
-	BT_HFP_AG_INCOMING_HELD, /* Incoming call held */
 	BT_HFP_AG_AUDIO_CONN,    /* Audio connection */
 	BT_HFP_AG_CODEC_CONN,    /* Codec connection is ongoing */
 	BT_HFP_AG_CODEC_CHANGED, /* Codec Id Changed */
@@ -79,6 +92,19 @@ enum {
 
 	/* Total number of flags - must be at the end of the enum */
 	BT_HFP_AG_NUM_FLAGS,
+};
+
+/* bt_hfp_ag_call flags: the flags defined here represent HFP AG parameters */
+enum {
+	BT_HFP_AG_CALL_IN_USING,      /* Object is in using */
+	BT_HFP_AG_CALL_INCOMING,      /* Incoming call */
+	BT_HFP_AG_CALL_INCOMING_HELD, /* Incoming call held */
+	BT_HFP_AG_CALL_OPEN_SCO,      /* Open SCO */
+	BT_HFP_AG_CALL_OUTGOING_3WAY, /* Outgoing 3 way call */
+	BT_HFP_AG_CALL_INCOMING_3WAY, /* Incoming 3 way call */
+
+	/* Total number of flags - must be at the end of the enum */
+	BT_HFP_AG_CALL_NUM_FLAGS,
 };
 
 /* HFP HF Indicators */
@@ -103,20 +129,37 @@ typedef enum __packed {
 
 typedef enum __packed {
 	/** Call terminate */
-	BT_HFP_CALL_TERMINATE,
+	BT_HFP_CALL_TERMINATE = 1,
 	/** Call outgoing */
-	BT_HFP_CALL_OUTGOING,
+	BT_HFP_CALL_OUTGOING = 2,
 	/** Call incoming */
-	BT_HFP_CALL_INCOMING,
+	BT_HFP_CALL_INCOMING = 4,
 	/** Call alerting */
-	BT_HFP_CALL_ALERTING,
+	BT_HFP_CALL_ALERTING = 8,
 	/** Call active */
-	BT_HFP_CALL_ACTIVE,
+	BT_HFP_CALL_ACTIVE = 16,
 	/** Call hold */
-	BT_HFP_CALL_HOLD,
+	BT_HFP_CALL_HOLD = 32,
 } bt_hfp_call_state_t;
 
 #define AT_COPS_OPERATOR_MAX_LEN 16
+
+struct bt_hfp_ag_call {
+	struct bt_hfp_ag *ag;
+
+	char number[CONFIG_BT_HFP_AG_PHONE_NUMBER_MAX_LEN + 1];
+	uint8_t type;
+
+	ATOMIC_DEFINE(flags, BT_HFP_AG_CALL_NUM_FLAGS);
+
+	/* HFP Call state */
+	bt_hfp_call_state_t call_state;
+
+	/* Calling Line Identification notification */
+	struct k_work_delayable ringing_work;
+
+	struct k_work_delayable deferred_work;
+};
 
 struct bt_hfp_ag {
 	struct bt_rfcomm_dlc rfcomm_dlc;
@@ -136,14 +179,6 @@ struct bt_hfp_ag {
 	/* HFP Connection state */
 	bt_hfp_state_t state;
 
-	/* HFP Call state */
-	bt_hfp_call_state_t call_state;
-
-	/* Delayed work deferred tasks:
-	 * - call status cleanup.
-	 */
-	struct k_work_delayable deferred_work;
-
 	/* AG Indicators */
 	uint8_t indicator_value[BT_HFP_AG_IND_MAX];
 	uint32_t indicator;
@@ -157,16 +192,17 @@ struct bt_hfp_ag {
 	uint8_t mode;
 	char operator[AT_COPS_OPERATOR_MAX_LEN + 1];
 
+	/* calls */
+	struct bt_hfp_ag_call calls[CONFIG_BT_HFP_AG_MAX_CALLS];
+
+	/* last dialing number and type */
+	char last_number[CONFIG_BT_HFP_AG_PHONE_NUMBER_MAX_LEN + 1];
+	uint8_t type;
+
 	/* SCO Connection Object */
 	struct bt_sco_chan sco_chan;
 	/* HFP TX pending */
 	sys_slist_t tx_pending;
-
-	/* Dial number or incoming number */
-	char number[CONFIG_BT_HFP_AG_PHONE_NUMBER_MAX_LEN + 1];
-
-	/* Calling Line Identification notification */
-	struct k_work_delayable ringing_work;
 
 	/* Critical locker */
 	struct k_sem lock;
