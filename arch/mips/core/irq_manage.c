@@ -62,7 +62,7 @@ int arch_irq_is_enabled(unsigned int irq)
 
 void z_mips_enter_irq(uint32_t ipending)
 {
-	_current_cpu->nested++;
+	arch_curr_cpu()->nested++;
 
 #ifdef CONFIG_IRQ_OFFLOAD
 	z_irq_do_offload();
@@ -88,7 +88,7 @@ void z_mips_enter_irq(uint32_t ipending)
 		}
 	}
 
-	_current_cpu->nested--;
+	arch_curr_cpu()->nested--;
 
 	if (IS_ENABLED(CONFIG_STACK_SENTINEL)) {
 		z_check_stack_sentinel();

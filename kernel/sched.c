@@ -152,7 +152,7 @@ static ALWAYS_INLINE void queue_thread(struct k_thread *thread)
 #ifdef CONFIG_SMP
 	if (thread == _current) {
 		/* add current to end of queue means "yield" */
-		_current_cpu->swap_ok = true;
+		arch_curr_cpu()->swap_ok = true;
 	}
 #endif /* CONFIG_SMP */
 }
@@ -217,13 +217,13 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 	 * to be highest priority now. The cooperative thread was
 	 * promised it wouldn't be preempted (by non-metairq threads)!
 	 */
-	struct k_thread *mirqp = _current_cpu->metairq_preempted;
+	struct k_thread *mirqp = arch_curr_cpu()->metairq_preempted;
 
 	if (mirqp != NULL && (thread == NULL || !thread_is_metairq(thread))) {
 		if (!z_is_thread_prevented_from_running(mirqp)) {
 			thread = mirqp;
 		} else {
-			_current_cpu->metairq_preempted = NULL;
+			arch_curr_cpu()->metairq_preempted = NULL;
 		}
 	}
 #endif
@@ -238,7 +238,7 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 	 * responsible for putting it back in z_swap and ISR return!),
 	 * which makes this choice simple.
 	 */
-	return (thread != NULL) ? thread : _current_cpu->idle_thread;
+	return (thread != NULL) ? thread : arch_curr_cpu()->idle_thread;
 #else
 	/* Under SMP, the "cache" mechanism for selecting the next
 	 * thread doesn't work, so we have more work to do to test
@@ -255,18 +255,18 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 	bool active = !z_is_thread_prevented_from_running(_current);
 
 	if (thread == NULL) {
-		thread = _current_cpu->idle_thread;
+		thread = arch_curr_cpu()->idle_thread;
 	}
 
 	if (active) {
 		int32_t cmp = z_sched_prio_cmp(_current, thread);
 
 		/* Ties only switch if state says we yielded */
-		if ((cmp > 0) || ((cmp == 0) && !_current_cpu->swap_ok)) {
+		if ((cmp > 0) || ((cmp == 0) && !arch_curr_cpu()->swap_ok)) {
 			thread = _current;
 		}
 
-		if (!should_preempt(thread, _current_cpu->swap_ok)) {
+		if (!should_preempt(thread, arch_curr_cpu()->swap_ok)) {
 			thread = _current;
 		}
 	}
@@ -282,7 +282,7 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 		dequeue_thread(thread);
 	}
 
-	_current_cpu->swap_ok = false;
+	arch_curr_cpu()->swap_ok = false;
 	return thread;
 #endif /* CONFIG_SMP */
 }
@@ -307,10 +307,10 @@ static void update_metairq_preempt(struct k_thread *thread)
 	if (thread_is_metairq(thread) && !thread_is_metairq(_current) &&
 	    !thread_is_preemptible(_current)) {
 		/* Record new preemption */
-		_current_cpu->metairq_preempted = _current;
+		arch_curr_cpu()->metairq_preempted = _current;
 	} else if (!thread_is_metairq(thread) && !z_is_idle_thread_object(thread)) {
 		/* Returning from existing preemption */
-		_current_cpu->metairq_preempted = NULL;
+		arch_curr_cpu()->metairq_preempted = NULL;
 	}
 #else
 	ARG_UNUSED(thread);
@@ -344,7 +344,7 @@ static ALWAYS_INLINE void update_cache(int preempt_ok)
 	 * thread because if the thread gets preempted for whatever
 	 * reason the scheduler will make the same decision anyway.
 	 */
-	_current_cpu->swap_ok = preempt_ok;
+	arch_curr_cpu()->swap_ok = preempt_ok;
 #endif /* CONFIG_SMP */
 }
 
@@ -355,7 +355,7 @@ static struct _cpu *thread_active_elsewhere(struct k_thread *thread)
 	 * question in constant time, but this is fine for now.
 	 */
 #ifdef CONFIG_SMP
-	int currcpu = _current_cpu->id;
+	int currcpu = arch_curr_cpu()->id;
 
 	unsigned int num_cpus = arch_num_cpus();
 
@@ -748,7 +748,7 @@ bool z_thread_prio_set(struct k_thread *thread, int prio)
 static inline bool resched(uint32_t key)
 {
 #ifdef CONFIG_SMP
-	_current_cpu->swap_ok = 0;
+	arch_curr_cpu()->swap_ok = 0;
 #endif /* CONFIG_SMP */
 
 	return arch_irq_unlocked(key) && !arch_is_in_isr();
@@ -842,7 +842,7 @@ struct k_thread *z_swap_next_thread(void)
 static inline void set_current(struct k_thread *new_thread)
 {
 	z_thread_mark_switched_out();
-	_current_cpu->current = new_thread;
+	arch_curr_cpu()->current = new_thread;
 }
 
 /**
@@ -900,7 +900,7 @@ void *z_get_next_switch_handle(void *interrupted)
 			z_sched_switch_spin(new_thread);
 			arch_cohere_stacks(old_thread, interrupted, new_thread);
 
-			_current_cpu->swap_ok = 0;
+			arch_curr_cpu()->swap_ok = 0;
 			cpu_id = arch_curr_cpu()->id;
 			new_thread->base.cpu = cpu_id;
 			set_current(new_thread);
@@ -1243,14 +1243,14 @@ static inline void z_vrfy_k_wakeup(k_tid_t thread)
 k_tid_t z_impl_k_sched_current_thread_query(void)
 {
 #ifdef CONFIG_SMP
-	/* In SMP, _current is a field read from _current_cpu, which
+	/* In SMP, _current is a field read from arch_curr_cpu(), which
 	 * can race with preemption before it is read.  We must lock
 	 * local interrupts when reading it.
 	 */
 	unsigned int k = arch_irq_lock();
 #endif /* CONFIG_SMP */
 
-	k_tid_t ret = _current_cpu->current;
+	k_tid_t ret = arch_curr_cpu()->current;
 
 #ifdef CONFIG_SMP
 	arch_irq_unlock(k);

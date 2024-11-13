@@ -946,8 +946,8 @@ void z_thread_mark_switched_out(void)
 #ifdef CONFIG_TRACING
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
 	/* Dummy thread won't have TLS set up to run arbitrary code */
-	if (!_current_cpu->current ||
-	    (_current_cpu->current->base.thread_state & _THREAD_DUMMY) != 0)
+	if (!arch_curr_cpu()->current ||
+	    (arch_curr_cpu()->current->base.thread_state & _THREAD_DUMMY) != 0)
 		return;
 #endif /* CONFIG_THREAD_LOCAL_STORAGE */
 	SYS_PORT_TRACING_FUNC(k_thread, switched_out);

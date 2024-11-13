@@ -322,7 +322,7 @@ void xtensa_mmu_init(void)
 	 */
 	XTENSA_WSR(ZSR_DEPC_SAVE_STR, 0);
 
-	arch_xtensa_mmu_post_init(_current_cpu->id == 0);
+	arch_xtensa_mmu_post_init(arch_curr_cpu()->id == 0);
 }
 
 void xtensa_mmu_reinit(void)
@@ -331,7 +331,7 @@ void xtensa_mmu_reinit(void)
 	xtensa_init_paging(xtensa_kernel_ptables);
 
 #ifdef CONFIG_USERSPACE
-	struct k_thread *thread = _current_cpu->current;
+	struct k_thread *thread = arch_curr_cpu()->current;
 	struct arch_mem_domain *domain =
 			&(thread->mem_domain_info.mem_domain->arch);
 
@@ -340,7 +340,7 @@ void xtensa_mmu_reinit(void)
 	xtensa_set_paging(domain->asid, domain->ptables);
 #endif /* CONFIG_USERSPACE */
 
-	arch_xtensa_mmu_post_init(_current_cpu->id == 0);
+	arch_xtensa_mmu_post_init(arch_curr_cpu()->id == 0);
 }
 
 #ifdef CONFIG_ARCH_HAS_RESERVED_PAGE_FRAMES
@@ -678,7 +678,7 @@ void xtensa_mmu_tlb_shootdown(void)
 	}
 
 #ifdef CONFIG_USERSPACE
-	struct k_thread *thread = _current_cpu->current;
+	struct k_thread *thread = arch_curr_cpu()->current;
 
 	/* If current thread is a user thread, we need to see if it has
 	 * been migrated to another memory domain as the L1 page table
@@ -994,7 +994,7 @@ int arch_mem_domain_thread_add(struct k_thread *thread)
 	/* Need to switch to new page tables if this is
 	 * the current thread running.
 	 */
-	if (thread == _current_cpu->current) {
+	if (thread == arch_curr_cpu()->current) {
 		xtensa_set_paging(domain->arch.asid, thread->arch.ptables);
 	}
 
@@ -1005,7 +1005,7 @@ int arch_mem_domain_thread_add(struct k_thread *thread)
 	 * Note that there is no need to send TLB IPI if this is
 	 * migration as it was sent above during reset_region().
 	 */
-	if ((thread != _current_cpu->current) && !is_migration) {
+	if ((thread != arch_curr_cpu()->current) && !is_migration) {
 		xtensa_mmu_tlb_ipi();
 	}
 #endif

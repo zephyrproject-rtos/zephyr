@@ -78,7 +78,7 @@ void z_sched_usage_start(struct k_thread *thread)
 
 	key = k_spin_lock(&usage_lock);
 
-	_current_cpu->usage0 = usage_now();   /* Always update */
+	arch_curr_cpu()->usage0 = usage_now();   /* Always update */
 
 	if (thread->base.usage.track_usage) {
 		thread->base.usage.num_windows++;
@@ -92,7 +92,7 @@ void z_sched_usage_start(struct k_thread *thread)
 	 * (we can't race with _stop() by design).
 	 */
 
-	_current_cpu->usage0 = usage_now();
+	arch_curr_cpu()->usage0 = usage_now();
 #endif /* CONFIG_SCHED_THREAD_USAGE_ANALYSIS */
 }
 
@@ -100,7 +100,7 @@ void z_sched_usage_stop(void)
 {
 	k_spinlock_key_t k   = k_spin_lock(&usage_lock);
 
-	struct _cpu     *cpu = _current_cpu;
+	struct _cpu     *cpu = arch_curr_cpu();
 
 	uint32_t u0 = cpu->usage0;
 
@@ -125,7 +125,7 @@ void z_sched_cpu_usage(uint8_t cpu_id, struct k_thread_runtime_stats *stats)
 	struct _cpu *cpu;
 
 	key = k_spin_lock(&usage_lock);
-	cpu = _current_cpu;
+	cpu = arch_curr_cpu();
 
 
 	if (&_kernel.cpus[cpu_id] == cpu) {
@@ -177,7 +177,7 @@ void z_sched_thread_usage(struct k_thread *thread,
 	k_spinlock_key_t  key;
 
 	key = k_spin_lock(&usage_lock);
-	cpu = _current_cpu;
+	cpu = arch_curr_cpu();
 
 
 	if (thread == cpu->current) {
@@ -255,7 +255,7 @@ int k_thread_runtime_stats_disable(k_tid_t  thread)
 	}
 
 	key = k_spin_lock(&usage_lock);
-	struct _cpu *cpu = _current_cpu;
+	struct _cpu *cpu = arch_curr_cpu();
 
 	if (thread->base.usage.track_usage) {
 		thread->base.usage.track_usage = false;
@@ -281,7 +281,7 @@ void k_sys_runtime_stats_enable(void)
 
 	key = k_spin_lock(&usage_lock);
 
-	if (_current_cpu->usage->track_usage) {
+	if (arch_curr_cpu()->usage->track_usage) {
 
 		/*
 		 * Usage tracking is already enabled on the current CPU
@@ -315,7 +315,7 @@ void k_sys_runtime_stats_disable(void)
 
 	key = k_spin_lock(&usage_lock);
 
-	if (!_current_cpu->usage->track_usage) {
+	if (!arch_curr_cpu()->usage->track_usage) {
 
 		/*
 		 * Usage tracking is already disabled on the current CPU
@@ -383,7 +383,7 @@ int z_thread_stats_reset(struct k_obj_core *obj_core)
 	stats->num_windows = (thread->base.usage.track_usage) ?  1U : 0U;
 #endif /* CONFIG_SCHED_THREAD_USAGE_ANALYSIS */
 
-	if (thread != _current_cpu->current) {
+	if (thread != arch_curr_cpu()->current) {
 
 		/*
 		 * If the thread is not running, there is nothing else to do.
@@ -401,11 +401,11 @@ int z_thread_stats_reset(struct k_obj_core *obj_core)
 	/* Update the current CPU stats. */
 
 	uint32_t now = usage_now();
-	uint32_t cycles = now - _current_cpu->usage0;
+	uint32_t cycles = now - arch_curr_cpu()->usage0;
 
-	sched_cpu_update_usage(_current_cpu, cycles);
+	sched_cpu_update_usage(arch_curr_cpu(), cycles);
 
-	_current_cpu->usage0 = now;
+	arch_curr_cpu()->usage0 = now;
 
 	k_spin_unlock(&usage_lock, key);
 

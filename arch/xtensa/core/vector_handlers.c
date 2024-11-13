@@ -272,7 +272,7 @@ static ALWAYS_INLINE void usage_stop(void)
 static inline void *return_to(void *interrupted)
 {
 #ifdef CONFIG_MULTITHREADING
-	return _current_cpu->nested <= 1 ?
+	return arch_curr_cpu()->nested <= 1 ?
 		z_get_next_switch_handle(interrupted) : interrupted;
 #else
 	return interrupted;
@@ -464,7 +464,7 @@ skip_checks:
 	if (is_dblexc || is_fatal_error) {
 		uint32_t ignore;
 
-		/* We are going to manipulate _current_cpu->nested manually.
+		/* We are going to manipulate arch_curr_cpu()->nested manually.
 		 * Since the error is fatal, for recoverable errors, code
 		 * execution must not return back to the current thread as
 		 * it is being terminated (via above xtensa_fatal_error()).
@@ -487,7 +487,7 @@ skip_checks:
 		__asm__ volatile("rsil %0, %1"
 				: "=r" (ignore) : "i"(XCHAL_EXCM_LEVEL));
 
-		_current_cpu->nested = 1;
+		arch_curr_cpu()->nested = 1;
 	}
 
 #if defined(CONFIG_XTENSA_MMU)

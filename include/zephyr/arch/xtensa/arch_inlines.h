@@ -62,11 +62,19 @@
 /** Implementation of @ref arch_curr_cpu. */
 static ALWAYS_INLINE _cpu_t *arch_curr_cpu(void)
 {
+#ifdef CONFIG_VALIDATE_ARCH_CURR_CPU
+	__ASSERT_NO_MSG(!z_smp_cpu_mobile());
+#endif /* CONFIG_VALIDATE_ARCH_CURR_CPU */
+
+#ifdef CONFIG_SMP
 	_cpu_t *cpu;
 
 	cpu = (_cpu_t *)XTENSA_RSR(ZSR_CPU_STR);
 
 	return cpu;
+#else
+	return &_kernel.cpus[0];
+#endif /* CONFIG_SMP */
 }
 
 /** Implementation of @ref arch_proc_id. */

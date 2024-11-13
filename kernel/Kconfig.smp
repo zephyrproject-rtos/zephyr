@@ -126,4 +126,15 @@ config TICKET_SPINLOCKS
 	  which resolves such unfairness issue at the cost of slightly
 	  increased memory footprint.
 
+config VALIDATE_ARCH_CURR_CPU
+	bool "Validate usage of arch_curr_cpu"
+	depends on ASSERT
+	depends on SMP && MP_MAX_NUM_CPUS > 1
+	default y
+	help
+	  The `arch_curr_cpu()` should only ever be used in non-preemptible
+	  contexts when there's more than one CPU enabled in the system.
+
+	  This option guarantees correct usage with runtime checks.
+
 endmenu

@@ -846,7 +846,7 @@ int arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 	 * Need to update hardware MPU regions if we are removing
 	 * partition from the domain of the current running thread.
 	 */
-	cur_thread = _current_cpu->current;
+	cur_thread = arch_curr_cpu()->current;
 	if (cur_thread->mem_domain_info.mem_domain == domain) {
 		xtensa_mpu_map_write(cur_thread);
 	}
@@ -882,7 +882,7 @@ int arch_mem_domain_partition_add(struct k_mem_domain *domain,
 	 * at boot so we need to avoid writing MPU regions to
 	 * hardware.
 	 */
-	cur_thread = _current_cpu->current;
+	cur_thread = arch_curr_cpu()->current;
 	if (((cur_thread->base.thread_state & _THREAD_DUMMY) != _THREAD_DUMMY) &&
 	    (cur_thread->mem_domain_info.mem_domain == domain)) {
 		xtensa_mpu_map_write(cur_thread);
@@ -956,7 +956,7 @@ int arch_mem_domain_thread_add(struct k_thread *thread)
 	 * Need to switch to new MPU map if this is the current
 	 * running thread.
 	 */
-	if (thread == _current_cpu->current) {
+	if (thread == arch_curr_cpu()->current) {
 		xtensa_mpu_map_write(thread);
 	}
 

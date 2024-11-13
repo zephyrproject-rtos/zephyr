@@ -17,7 +17,15 @@
 /* Note: keep in sync with `get_cpu` in arch/arm64/core/macro_priv.inc */
 static ALWAYS_INLINE _cpu_t *arch_curr_cpu(void)
 {
+#ifdef CONFIG_VALIDATE_ARCH_CURR_CPU
+	__ASSERT_NO_MSG(!z_smp_cpu_mobile());
+#endif /* CONFIG_VALIDATE_ARCH_CURR_CPU */
+
+#ifdef CONFIG_SMP
 	return (_cpu_t *)(read_tpidrro_el0() & TPIDRROEL0_CURR_CPU);
+#else
+	return &_kernel.cpus[0];
+#endif /* CONFIG_SMP */
 }
 
 static ALWAYS_INLINE int arch_exception_depth(void)

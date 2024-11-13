@@ -16,6 +16,10 @@
 
 static ALWAYS_INLINE _cpu_t *arch_curr_cpu(void)
 {
+#ifdef CONFIG_VALIDATE_ARCH_CURR_CPU
+	__ASSERT_NO_MSG(!z_smp_cpu_mobile());
+#endif /* CONFIG_VALIDATE_ARCH_CURR_CPU */
+
 #ifdef CONFIG_SMP
 	uint32_t core;
 

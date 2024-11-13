@@ -85,7 +85,7 @@ static struct k_spinlock lock;
 #ifdef CONFIG_STM32_LPTIM_STDBY_TIMER
 
 #define CURRENT_CPU \
-	(COND_CODE_1(CONFIG_SMP, (arch_curr_cpu()->id), (_current_cpu->id)))
+	(COND_CODE_1(CONFIG_SMP, (arch_curr_cpu()->id), (arch_curr_cpu()->id)))
 
 #define cycle_t uint32_t
 

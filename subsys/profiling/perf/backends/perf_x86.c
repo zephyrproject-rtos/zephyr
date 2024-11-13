@@ -43,12 +43,12 @@ size_t arch_perf_current_stack_trace(uintptr_t *buf, size_t size)
 	size_t idx = 0;
 
 	const struct isf * const isf =
-		*((struct isf **)(((void **)_current_cpu->irq_stack)-1));
+		*((struct isf **)(((void **)arch_curr_cpu()->irq_stack)-1));
 	/*
 	 * In x86 (arch/x86/core/ia32/intstub.S) %eip and %ebp
 	 * are saved at the beginning of _interrupt_enter in order, that described
 	 * in struct esf. Core switch %esp to
-	 * _current_cpu->irq_stack and push %esp on irq stack
+	 * arch_curr_cpu()->irq_stack and push %esp on irq stack
 	 *
 	 * The following lines lines do the reverse things to get %eip and %ebp
 	 * from thread stack

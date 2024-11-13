@@ -19,6 +19,11 @@
 
 static inline struct _cpu *arch_curr_cpu(void)
 {
+#ifdef CONFIG_VALIDATE_ARCH_CURR_CPU
+	__ASSERT_NO_MSG(!z_smp_cpu_mobile());
+#endif /* CONFIG_VALIDATE_ARCH_CURR_CPU */
+
+#ifdef CONFIG_SMP
 	struct _cpu *cpu;
 
 	__asm__ volatile("movq %%gs:(%c1), %0"
@@ -26,6 +31,9 @@ static inline struct _cpu *arch_curr_cpu(void)
 			 : "i" (offsetof(x86_tss64_t, cpu)));
 
 	return cpu;
+#else
+	return &_kernel.cpus[0];
+#endif /* CONFIG_SMP */
 }
 
 static ALWAYS_INLINE uint32_t arch_proc_id(void)

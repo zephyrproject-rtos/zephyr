@@ -34,7 +34,7 @@ static int current_cpu_id_get(void)
 	int id;
 
 	key = arch_irq_lock();
-	id = _current_cpu->id;
+	id = arch_curr_cpu()->id;
 	arch_irq_unlock(key);
 
 	return id;

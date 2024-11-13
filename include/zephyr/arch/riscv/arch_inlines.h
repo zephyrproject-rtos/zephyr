@@ -19,11 +19,15 @@ static ALWAYS_INLINE uint32_t arch_proc_id(void)
 
 static ALWAYS_INLINE _cpu_t *arch_curr_cpu(void)
 {
+#ifdef CONFIG_VALIDATE_ARCH_CURR_CPU
+	__ASSERT_NO_MSG(!z_smp_cpu_mobile());
+#endif /* CONFIG_VALIDATE_ARCH_CURR_CPU */
+
 #if defined(CONFIG_SMP) || defined(CONFIG_USERSPACE)
 	return (_cpu_t *)csr_read(mscratch);
 #else
 	return &_kernel.cpus[0];
-#endif
+#endif /* defined(CONFIG_SMP) || defined(CONFIG_USERSPACE) */
 }
 
 static ALWAYS_INLINE unsigned int arch_num_cpus(void)

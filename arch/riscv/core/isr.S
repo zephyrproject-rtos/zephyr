@@ -137,7 +137,7 @@ SECTION_FUNC(exception.entry, _isr_wrapper)
 .balign CONFIG_RISCV_TRAP_HANDLER_ALIGNMENT
 
 #ifdef CONFIG_USERSPACE
-	/* retrieve address of _current_cpu preserving s0 */
+	/* retrieve address of arch_curr_cpu() preserving s0 */
 	csrrw s0, mscratch, s0
 
 	/* preserve t0 and t1 temporarily */
@@ -172,7 +172,7 @@ SECTION_FUNC(exception.entry, _isr_wrapper)
 	lr t0, _curr_cpu_arch_user_exc_tmp0(s0)
 	lr t1, _curr_cpu_arch_user_exc_tmp1(s0)
 
-	/* retrieve original s0 and restore _current_cpu in mscratch */
+	/* retrieve original s0 and restore arch_curr_cpu() in mscratch */
 	csrrw s0, mscratch, s0
 #endif
 
@@ -184,7 +184,7 @@ SECTION_FUNC(exception.entry, _isr_wrapper)
 	DO_CALLER_SAVED(sr)		;
 #endif /* CONFIG_RISCV_SOC_HAS_ISR_STACKING */
 
-	/* Save s0 in the esf and load it with &_current_cpu. */
+	/* Save s0 in the esf and load it with &arch_curr_cpu(). */
 	sr s0, __struct_arch_esf_s0_OFFSET(sp)
 	get_current_cpu s0
 
@@ -476,7 +476,7 @@ do_irq_offload:
 	lr a1, __struct_arch_esf_a0_OFFSET(sp)
 	lr a0, __struct_arch_esf_a1_OFFSET(sp)
 
-	/* Increment _current_cpu->nested */
+	/* Increment arch_curr_cpu()->nested */
 	lw t1, ___cpu_t_nested_OFFSET(s0)
 	addi t2, t1, 1
 	sw t2, ___cpu_t_nested_OFFSET(s0)
@@ -592,7 +592,7 @@ is_interrupt:
 2:
 #endif
 
-	/* Increment _current_cpu->nested */
+	/* Increment arch_curr_cpu()->nested */
 	lw t1, ___cpu_t_nested_OFFSET(s0)
 	addi t2, t1, 1
 	sw t2, ___cpu_t_nested_OFFSET(s0)
@@ -654,7 +654,7 @@ on_irq_stack:
 #endif
 
 irq_done:
-	/* Decrement _current_cpu->nested */
+	/* Decrement arch_curr_cpu()->nested */
 	lw t2, ___cpu_t_nested_OFFSET(s0)
 	addi t2, t2, -1
 	sw t2, ___cpu_t_nested_OFFSET(s0)
@@ -698,7 +698,7 @@ reschedule:
 
 z_riscv_thread_start:
 might_have_rescheduled:
-	/* reload s0 with &_current_cpu as it might have changed or be unset */
+	/* reload s0 with &arch_curr_cpu() as it might have changed or be unset */
 	get_current_cpu s0
 
 #endif /* CONFIG_MULTITHREADING */

@@ -334,7 +334,7 @@ int arc_vpx_lock(k_timeout_t timeout)
 
 	key = k_spin_lock(&lock);
 
-	id = _current_cpu->id;
+	id = arch_curr_cpu()->id;
 #if (CONFIG_MP_MAX_NUM_CPUS > 1) && defined(CONFIG_SCHED_CPU_MASK)
 	__ASSERT(!arch_is_in_isr() && (_current->base.cpu_mask == BIT(id)), "");
 #endif
@@ -357,7 +357,7 @@ void arc_vpx_unlock(void)
 #if (CONFIG_MP_MAX_NUM_CPUS > 1) && defined(CONFIG_SCHED_CPU_MASK)
 	__ASSERT(!arch_is_in_isr() && (_current->base.cpu_mask == BIT(id)), "");
 #endif
-	id = _current_cpu->id;
+	id = arch_curr_cpu()->id;
 	k_spin_unlock(&lock, key);
 
 	/*

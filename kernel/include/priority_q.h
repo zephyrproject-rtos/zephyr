@@ -195,7 +195,7 @@ static ALWAYS_INLINE struct k_thread *z_priq_dumb_mask_best(sys_dlist_t *pq)
 	struct k_thread *thread;
 
 	SYS_DLIST_FOR_EACH_CONTAINER(pq, thread, base.qnode_dlist) {
-		if ((thread->base.cpu_mask & BIT(_current_cpu->id)) != 0) {
+		if ((thread->base.cpu_mask & BIT(arch_curr_cpu()->id)) != 0) {
 			return thread;
 		}
 	}

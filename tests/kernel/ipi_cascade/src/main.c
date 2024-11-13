@@ -107,7 +107,7 @@ void thread3_entry(void *p1, void *p2, void *p3)
 	int  key;
 
 	key = arch_irq_lock();
-	id = _current_cpu->id;
+	id = arch_curr_cpu()->id;
 	arch_irq_unlock(key);
 
 	 /* 2.1 - Block on my_event */

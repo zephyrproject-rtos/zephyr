@@ -283,7 +283,7 @@ void arch_spin_relax(void)
 		 * We may not be in IRQ context here hence cannot use
 		 * arch_flush_local_fpu() directly.
 		 */
-		arch_float_disable(_current_cpu->arch.fpu_owner);
+		arch_float_disable(arch_curr_cpu()->arch.fpu_owner);
 	}
 }
 #endif

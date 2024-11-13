@@ -60,14 +60,14 @@ static void slice_timeout(struct _timeout *timeout)
 	/* We need an IPI if we just handled a timeslice expiration
 	 * for a different CPU.
 	 */
-	if (cpu != _current_cpu->id) {
+	if (cpu != arch_curr_cpu()->id) {
 		flag_ipi(IPI_CPU_MASK(cpu));
 	}
 }
 
 void z_reset_time_slice(struct k_thread *thread)
 {
-	int cpu = _current_cpu->id;
+	int cpu = arch_curr_cpu()->id;
 
 	z_abort_timeout(&slice_timeouts[cpu]);
 	slice_expired[cpu] = false;
@@ -114,7 +114,7 @@ void z_time_slice(void)
 	pending_current = NULL;
 #endif
 
-	if (slice_expired[_current_cpu->id] && thread_is_sliceable(curr)) {
+	if (slice_expired[arch_curr_cpu()->id] && thread_is_sliceable(curr)) {
 #ifdef CONFIG_TIMESLICE_PER_THREAD
 		if (curr->base.slice_expired) {
 			k_spin_unlock(&_sched_spinlock, key);

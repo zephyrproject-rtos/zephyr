@@ -235,7 +235,7 @@ static void cpu_hold(void *arg1, void *arg2, void *arg3)
 	 * the FPU preemptively here to prevent any other CPU waiting after
 	 * this CPU forever and deadlock the system.
 	 */
-	k_float_disable(_current_cpu->arch.fpu_owner);
+	k_float_disable(arch_curr_cpu()->arch.fpu_owner);
 #endif
 
 	while (cpuhold_active) {

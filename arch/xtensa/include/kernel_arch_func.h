@@ -40,7 +40,7 @@ static ALWAYS_INLINE void arch_cohere_stacks(struct k_thread *old_thread,
 					     void *old_switch_handle,
 					     struct k_thread *new_thread)
 {
-	int32_t curr_cpu = _current_cpu->id;
+	int32_t curr_cpu = arch_curr_cpu()->id;
 
 	size_t ostack = old_thread->stack_info.start;
 	size_t osz    = old_thread->stack_info.size;

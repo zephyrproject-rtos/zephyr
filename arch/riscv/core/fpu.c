@@ -35,7 +35,7 @@ static void DBG(char *msg, struct k_thread *th)
 	unsigned int v;
 
 	strcpy(buf, "CPU# exc# ");
-	buf[3] = '0' + _current_cpu->id;
+	buf[3] = '0' + arch_curr_cpu()->id;
 	buf[8] = '0' + _current->arch.exception_depth;
 	strcat(buf, _current->name);
 	strcat(buf, ": ");
@@ -70,7 +70,7 @@ static void z_riscv_fpu_disable(void)
 		csr_clear(mstatus, MSTATUS_FS);
 
 		/* remember its clean/dirty state */
-		_current_cpu->arch.fpu_state = (status & MSTATUS_FS);
+		arch_curr_cpu()->arch.fpu_state = (status & MSTATUS_FS);
 	}
 }
 
@@ -82,7 +82,7 @@ static void z_riscv_fpu_load(void)
 		 "must be called with FPU access disabled");
 
 	/* become new owner */
-	atomic_ptr_set(&_current_cpu->arch.fpu_owner, _current);
+	atomic_ptr_set(&arch_curr_cpu()->arch.fpu_owner, _current);
 
 	/* restore our content */
 	csr_set(mstatus, MSTATUS_FS_INIT);
@@ -105,10 +105,10 @@ void arch_flush_local_fpu(void)
 	__ASSERT((csr_read(mstatus) & MSTATUS_FS) == 0,
 		 "must be called with FPU access disabled");
 
-	struct k_thread *owner = atomic_ptr_get(&_current_cpu->arch.fpu_owner);
+	struct k_thread *owner = atomic_ptr_get(&arch_curr_cpu()->arch.fpu_owner);
 
 	if (owner != NULL) {
-		bool dirty = (_current_cpu->arch.fpu_state == MSTATUS_FS_DIRTY);
+		bool dirty = (arch_curr_cpu()->arch.fpu_state == MSTATUS_FS_DIRTY);
 
 		if (dirty) {
 			/* turn on FPU access */
@@ -124,7 +124,7 @@ void arch_flush_local_fpu(void)
 		csr_clear(mstatus, MSTATUS_FS);
 
 		/* release ownership */
-		atomic_ptr_clear(&_current_cpu->arch.fpu_owner);
+		atomic_ptr_clear(&arch_curr_cpu()->arch.fpu_owner);
 		DBG("disable", owner);
 	}
 }
@@ -147,7 +147,7 @@ static void flush_owned_fpu(struct k_thread *thread)
 			continue;
 		}
 		/* we found it live on CPU i */
-		if (i == _current_cpu->id) {
+		if (i == arch_curr_cpu()->id) {
 			z_riscv_fpu_disable();
 			arch_flush_local_fpu();
 			break;
@@ -258,7 +258,7 @@ static bool fpu_access_allowed(unsigned int exc_update_level)
 
 	if (_current->arch.exception_depth == exc_update_level) {
 		/* We're about to execute non-exception code */
-		if (_current_cpu->arch.fpu_owner == _current) {
+		if (arch_curr_cpu()->arch.fpu_owner == _current) {
 			/* everything is already in place */
 			return true;
 		}
@@ -276,7 +276,7 @@ static bool fpu_access_allowed(unsigned int exc_update_level)
 			flush_owned_fpu(_current);
 #endif
 			z_riscv_fpu_load();
-			_current_cpu->arch.fpu_state = MSTATUS_FS_CLEAN;
+			arch_curr_cpu()->arch.fpu_state = MSTATUS_FS_CLEAN;
 			return true;
 		}
 		return false;
@@ -297,7 +297,7 @@ void z_riscv_fpu_exit_exc(struct arch_esf *esf)
 {
 	if (fpu_access_allowed(1)) {
 		esf->mstatus &= ~MSTATUS_FS;
-		esf->mstatus |= _current_cpu->arch.fpu_state;
+		esf->mstatus |= arch_curr_cpu()->arch.fpu_state;
 	} else {
 		esf->mstatus &= ~MSTATUS_FS;
 	}
@@ -313,7 +313,7 @@ void z_riscv_fpu_thread_context_switch(void)
 {
 	if (fpu_access_allowed(0)) {
 		csr_clear(mstatus, MSTATUS_FS);
-		csr_set(mstatus, _current_cpu->arch.fpu_state);
+		csr_set(mstatus, arch_curr_cpu()->arch.fpu_state);
 	} else {
 		z_riscv_fpu_disable();
 	}
@@ -327,7 +327,7 @@ int arch_float_disable(struct k_thread *thread)
 #ifdef CONFIG_SMP
 		flush_owned_fpu(thread);
 #else
-		if (thread == _current_cpu->arch.fpu_owner) {
+		if (thread == arch_curr_cpu()->arch.fpu_owner) {
 			z_riscv_fpu_disable();
 			arch_flush_local_fpu();
 		}

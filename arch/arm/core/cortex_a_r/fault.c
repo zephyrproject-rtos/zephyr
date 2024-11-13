@@ -153,7 +153,7 @@ bool z_arm_fault_undef_instruction_fp(void)
 
 	__set_FPEXC(FPEXC_EN);
 
-	if (_current_cpu->nested > 1) {
+	if (arch_curr_cpu()->nested > 1) {
 		/*
 		 * If the nested count is greater than 1, the undefined
 		 * instruction exception came from an irq/svc context.  (The
@@ -161,13 +161,13 @@ bool z_arm_fault_undef_instruction_fp(void)
 		 * the undef exception would increment it to 2).
 		 */
 		struct __fpu_sf *spill_esf =
-			(struct __fpu_sf *)_current_cpu->fp_ctx;
+			(struct __fpu_sf *)arch_curr_cpu()->fp_ctx;
 
 		if (spill_esf == NULL) {
 			return false;
 		}
 
-		_current_cpu->fp_ctx = NULL;
+		arch_curr_cpu()->fp_ctx = NULL;
 
 		/*
 		 * If the nested count is 2 and the current thread has used the
@@ -177,9 +177,9 @@ bool z_arm_fault_undef_instruction_fp(void)
 		 * saved exception stack frame, then save the floating point
 		 * context because it is about to be overwritten.
 		 */
-		if (((_current_cpu->nested == 2)
+		if (((arch_curr_cpu()->nested == 2)
 				&& (_current->base.user_options & K_FP_REGS))
-			|| ((_current_cpu->nested > 2)
+			|| ((arch_curr_cpu()->nested > 2)
 				&& (spill_esf->undefined & FPEXC_EN))) {
 			/*
 			 * Spill VFP registers to specified exception stack

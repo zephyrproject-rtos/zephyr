@@ -34,7 +34,7 @@ static void DBG(char *msg, struct k_thread *th)
 	unsigned int v;
 
 	strcpy(buf, "CPU# exc# ");
-	buf[3] = '0' + _current_cpu->id;
+	buf[3] = '0' + arch_curr_cpu()->id;
 	buf[8] = '0' + arch_exception_depth();
 	strcat(buf, _current->name);
 	strcat(buf, ": ");
@@ -68,7 +68,7 @@ void arch_flush_local_fpu(void)
 {
 	__ASSERT(read_daif() & DAIF_IRQ_BIT, "must be called with IRQs disabled");
 
-	struct k_thread *owner = atomic_ptr_get(&_current_cpu->arch.fpu_owner);
+	struct k_thread *owner = atomic_ptr_get(&arch_curr_cpu()->arch.fpu_owner);
 
 	if (owner != NULL) {
 		uint64_t cpacr = read_cpacr_el1();
@@ -82,7 +82,7 @@ void arch_flush_local_fpu(void)
 		/* make sure content made it to memory before releasing */
 		barrier_dsync_fence_full();
 		/* release ownership */
-		atomic_ptr_clear(&_current_cpu->arch.fpu_owner);
+		atomic_ptr_clear(&arch_curr_cpu()->arch.fpu_owner);
 		DBG("disable", owner);
 
 		/* disable FPU access */
@@ -106,7 +106,7 @@ static void flush_owned_fpu(struct k_thread *thread)
 			continue;
 		}
 		/* we found it live on CPU i */
-		if (i == _current_cpu->id) {
+		if (i == arch_curr_cpu()->id) {
 			arch_flush_local_fpu();
 		} else {
 			/* the FPU context is live on another CPU */
@@ -235,12 +235,12 @@ void z_arm64_fpu_trap(struct arch_esf *esf)
 	barrier_isync_fence_full();
 
 	/* save current owner's content  if any */
-	struct k_thread *owner = atomic_ptr_get(&_current_cpu->arch.fpu_owner);
+	struct k_thread *owner = atomic_ptr_get(&arch_curr_cpu()->arch.fpu_owner);
 
 	if (owner) {
 		z_arm64_fpu_save(&owner->arch.saved_fp_context);
 		barrier_dsync_fence_full();
-		atomic_ptr_clear(&_current_cpu->arch.fpu_owner);
+		atomic_ptr_clear(&arch_curr_cpu()->arch.fpu_owner);
 		DBG("save", owner);
 	}
 
@@ -264,7 +264,7 @@ void z_arm64_fpu_trap(struct arch_esf *esf)
 #endif
 
 	/* become new owner */
-	atomic_ptr_set(&_current_cpu->arch.fpu_owner, _current);
+	atomic_ptr_set(&arch_curr_cpu()->arch.fpu_owner, _current);
 
 	/* restore our content */
 	z_arm64_fpu_restore(&_current->arch.saved_fp_context);
@@ -287,7 +287,7 @@ static void fpu_access_update(unsigned int exc_update_level)
 
 	if (arch_exception_depth() == exc_update_level) {
 		/* We're about to execute non-exception code */
-		if (atomic_ptr_get(&_current_cpu->arch.fpu_owner) == _current) {
+		if (atomic_ptr_get(&arch_curr_cpu()->arch.fpu_owner) == _current) {
 			/* turn on FPU access */
 			write_cpacr_el1(cpacr | CPACR_EL1_FPEN_NOTRAP);
 		} else {
@@ -333,7 +333,7 @@ int arch_float_disable(struct k_thread *thread)
 #ifdef CONFIG_SMP
 		flush_owned_fpu(thread);
 #else
-		if (thread == atomic_ptr_get(&_current_cpu->arch.fpu_owner)) {
+		if (thread == atomic_ptr_get(&arch_curr_cpu()->arch.fpu_owner)) {
 			arch_flush_local_fpu();
 		}
 #endif

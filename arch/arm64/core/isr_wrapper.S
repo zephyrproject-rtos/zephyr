@@ -32,7 +32,7 @@ GDATA(_sw_isr_table)
 GTEXT(_isr_wrapper)
 SECTION_FUNC(TEXT, _isr_wrapper)
 
-	/* ++_current_cpu->nested to be checked by arch_is_in_isr() */
+	/* ++arch_curr_cpu()->nested to be checked by arch_is_in_isr() */
 	get_cpu	x0
 	ldr	w1, [x0, #___cpu_t_nested_OFFSET]
 	add	w2, w1, #1
@@ -113,7 +113,7 @@ spurious_continue:
 
 GTEXT(z_arm64_irq_done)
 z_arm64_irq_done:
-	/* if (--_current_cpu->nested != 0) exit */
+	/* if (--arch_curr_cpu()->nested != 0) exit */
 	get_cpu	x0
 	ldr	w1, [x0, #___cpu_t_nested_OFFSET]
 	subs	w1, w1, #1

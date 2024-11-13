@@ -37,7 +37,7 @@ void z_trace_sched_ipi(void)
 	k_spinlock_key_t  key;
 
 	key = k_spin_lock(&ipilock);
-	ipi_count[_current_cpu->id]++;
+	ipi_count[arch_curr_cpu()->id]++;
 	k_spin_unlock(&ipilock, key);
 }
 
@@ -65,7 +65,7 @@ static void busy_thread_entry(void *p1, void *p2, void *p3)
 	uint32_t id;
 
 	key = arch_irq_lock();
-	id = _current_cpu->id;
+	id = arch_curr_cpu()->id;
 	arch_irq_unlock(key);
 
 	atomic_or(&busy_started, BIT(id));
@@ -138,7 +138,7 @@ uint32_t busy_threads_create(int priority)
 
 	k_sleep(K_TICKS(1));
 	key = arch_irq_lock();
-	id = _current_cpu->id;
+	id = arch_curr_cpu()->id;
 	arch_irq_unlock(key);
 
 	/*

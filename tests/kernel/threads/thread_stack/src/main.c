@@ -501,11 +501,11 @@ ZTEST(userspace_thread_stack, test_idle_stack)
 	int ret;
 #ifdef CONFIG_SMP
 	/* 1cpu test case, so all other CPUs are spinning with co-op
-	 * threads blocking them. _current_cpu triggers an assertion.
+	 * threads blocking them. arch_curr_cpu() triggers an assertion.
 	 */
 	struct k_thread *idle = arch_curr_cpu()->idle_thread;
 #else
-	struct k_thread *idle = _current_cpu->idle_thread;
+	struct k_thread *idle = arch_curr_cpu()->idle_thread;
 #endif
 	size_t unused_bytes;
 

@@ -23,7 +23,7 @@ static const void *irq_offload_args[CONFIG_MP_MAX_NUM_CPUS];
 
 static void dispatcher(const void *arg)
 {
-	uint8_t cpu_id = _current_cpu->id;
+	uint8_t cpu_id = arch_curr_cpu()->id;
 
 	if (irq_offload_funcs[cpu_id] != NULL) {
 		irq_offload_funcs[cpu_id](irq_offload_args[cpu_id]);
@@ -33,7 +33,7 @@ static void dispatcher(const void *arg)
 void arch_irq_offload(irq_offload_routine_t routine, const void *parameter)
 {
 	int key = arch_irq_lock();
-	uint8_t cpu_id = _current_cpu->id;
+	uint8_t cpu_id = arch_curr_cpu()->id;
 
 	irq_offload_funcs[cpu_id] = routine;
 	irq_offload_args[cpu_id] = parameter;

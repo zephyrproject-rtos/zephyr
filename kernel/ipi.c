@@ -31,7 +31,7 @@ atomic_val_t ipi_mask_create(struct k_thread *thread)
 
 	uint32_t  ipi_mask = 0;
 	uint32_t  num_cpus = (uint32_t)arch_num_cpus();
-	uint32_t  id = _current_cpu->id;
+	uint32_t  id = arch_curr_cpu()->id;
 	struct k_thread *cpu_thread;
 	bool   executable_on_cpu = true;
 

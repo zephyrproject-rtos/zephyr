@@ -14,7 +14,15 @@
 
 static ALWAYS_INLINE _cpu_t *arch_curr_cpu(void)
 {
+#ifdef CONFIG_VALIDATE_ARCH_CURR_CPU
+	__ASSERT_NO_MSG(!z_smp_cpu_mobile());
+#endif /* CONFIG_VALIDATE_ARCH_CURR_CPU */
+
+#ifdef CONFIG_SMP
 	return (_cpu_t *)(read_tpidruro() & TPIDRURO_CURR_CPU);
+#else
+	return &_kernel.cpus[0];
+#endif /* CONFIG_SMP */
 }
 #else
 

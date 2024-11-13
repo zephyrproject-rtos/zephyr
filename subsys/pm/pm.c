@@ -62,7 +62,7 @@ static inline void pm_state_notify(bool entering_state)
 		}
 
 		if (callback) {
-			callback(z_cpus_pm_state[_current_cpu->id].state);
+			callback(z_cpus_pm_state[arch_curr_cpu()->id].state);
 		}
 	}
 	k_spin_unlock(&pm_notifier_lock, pm_notifier_key);
@@ -93,7 +93,7 @@ static inline int32_t ticks_expiring_sooner(int32_t ticks1, int32_t ticks2)
 
 void pm_system_resume(void)
 {
-	uint8_t id = _current_cpu->id;
+	uint8_t id = arch_curr_cpu()->id;
 
 	/*
 	 * This notification is called from the ISR of the event
@@ -142,7 +142,7 @@ bool pm_state_force(uint8_t cpu, const struct pm_state_info *info)
 
 bool pm_system_suspend(int32_t kernel_ticks)
 {
-	uint8_t id = _current_cpu->id;
+	uint8_t id = arch_curr_cpu()->id;
 	k_spinlock_key_t key;
 	int32_t ticks, events_ticks;
 

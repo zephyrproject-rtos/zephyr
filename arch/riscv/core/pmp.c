@@ -376,7 +376,7 @@ void z_riscv_pmp_init(void)
 	 * and lock it too.
 	 */
 	set_pmp_entry(&index, PMP_NONE | PMP_L,
-		      (uintptr_t)z_interrupt_stacks[_current_cpu->id],
+		      (uintptr_t)z_interrupt_stacks[arch_curr_cpu()->id],
 		      Z_RISCV_STACK_GUARD_SIZE,
 		      pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
 

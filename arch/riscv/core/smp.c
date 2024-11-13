@@ -94,7 +94,7 @@ static atomic_val_t cpu_pending_ipi[CONFIG_MP_MAX_NUM_CPUS];
 void arch_sched_directed_ipi(uint32_t cpu_bitmap)
 {
 	unsigned int key = arch_irq_lock();
-	unsigned int id = _current_cpu->id;
+	unsigned int id = arch_curr_cpu()->id;
 	unsigned int num_cpus = arch_num_cpus();
 
 	for (unsigned int i = 0; i < num_cpus; i++) {
@@ -127,7 +127,7 @@ static void sched_ipi_handler(const void *unused)
 
 	MSIP(csr_read(mhartid)) = 0;
 
-	atomic_val_t pending_ipi = atomic_clear(&cpu_pending_ipi[_current_cpu->id]);
+	atomic_val_t pending_ipi = atomic_clear(&cpu_pending_ipi[arch_curr_cpu()->id]);
 
 	if (pending_ipi & ATOMIC_MASK(IPI_SCHED)) {
 		z_sched_ipi();
@@ -156,14 +156,14 @@ static void sched_ipi_handler(const void *unused)
  */
 void arch_spin_relax(void)
 {
-	atomic_val_t *pending_ipi = &cpu_pending_ipi[_current_cpu->id];
+	atomic_val_t *pending_ipi = &cpu_pending_ipi[arch_curr_cpu()->id];
 
 	if (atomic_test_and_clear_bit(pending_ipi, IPI_FPU_FLUSH)) {
 		/*
 		 * We may not be in IRQ context here hence cannot use
 		 * arch_flush_local_fpu() directly.
 		 */
-		arch_float_disable(_current_cpu->arch.fpu_owner);
+		arch_float_disable(arch_curr_cpu()->arch.fpu_owner);
 	}
 }
 #endif

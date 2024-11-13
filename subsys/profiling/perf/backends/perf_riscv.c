@@ -36,13 +36,13 @@ size_t arch_perf_current_stack_trace(uintptr_t *buf, size_t size)
 	 * In riscv (arch/riscv/core/isr.S) ra, ip($mepc) and fp($s0) are saved
 	 * at the beginning of _isr_wrapper in order, specified by z_arch_esf_t.
 	 * Then, before calling interruption handler, core switch $sp to
-	 * _current_cpu->irq_stack and save $sp with offset -16 on irq stack
+	 * arch_curr_cpu()->irq_stack and save $sp with offset -16 on irq stack
 	 *
 	 * The following lines lines do the reverse things to get ra, ip anf fp
 	 * from thread stack
 	 */
 	const struct arch_esf * const esf =
-		*((struct arch_esf **)(((uintptr_t)_current_cpu->irq_stack) - 16));
+		*((struct arch_esf **)(((uintptr_t)arch_curr_cpu()->irq_stack) - 16));
 
 	/*
 	 * $s0 is used as frame pointer.

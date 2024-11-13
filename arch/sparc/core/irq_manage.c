@@ -28,7 +28,7 @@ void z_sparc_enter_irq(uint32_t irl)
 {
 	struct _isr_table_entry *ite;
 
-	_current_cpu->nested++;
+	arch_curr_cpu()->nested++;
 
 #ifdef CONFIG_IRQ_OFFLOAD
 	if (irl != 141U) {
@@ -45,7 +45,7 @@ void z_sparc_enter_irq(uint32_t irl)
 	ite->isr(ite->arg);
 #endif
 
-	_current_cpu->nested--;
+	arch_curr_cpu()->nested--;
 #ifdef CONFIG_STACK_SENTINEL
 	z_check_stack_sentinel();
 #endif

@@ -47,7 +47,7 @@ FUNC_NORETURN void z_sparc_fatal_error(unsigned int reason,
 
 static inline bool arch_is_in_isr(void)
 {
-	return _current_cpu->nested != 0U;
+	return arch_curr_cpu()->nested != 0U;
 }
 
 #ifdef CONFIG_IRQ_OFFLOAD
