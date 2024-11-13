@@ -21,6 +21,7 @@
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,canbus = &canfd0;
+		zephyr,entropy = &trng;
 	};
 
 	leds {
@@ -160,5 +161,9 @@
 	interrupts = <63 1>, <64 1>;
 	interrupt-names = "gtioca", "overflow";
 	divider = <RA_PWM_SOURCE_DIV_256>;
+	status = "okay";
+};
+
+&trng {
 	status = "okay";
 };
