@@ -25,6 +25,11 @@
 			interrupts = <16 1>, <17 1>, <18 1>, <19 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
 		};
+
+		trng: trng {
+			compatible = "renesas,ra-trng";
+			status = "disabled";
+		};
 	};
 
 	clocks: clocks {

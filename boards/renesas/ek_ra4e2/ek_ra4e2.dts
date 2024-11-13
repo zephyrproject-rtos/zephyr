@@ -20,6 +20,7 @@
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,canbus = &canfd0;
+		zephyr,entropy = &trng;
 	};
 
 	leds {
@@ -117,4 +118,8 @@
 	status = "okay";
 	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
+};
+
+&trng {
+	status = "okay";
 };
