@@ -171,7 +171,6 @@ static enum at_cme bt_hfp_ag_get_cme_err(int err)
 		cme_err = CME_ERROR_MEMORY_FAILURE;
 		break;
 	case -ENOMEM:
-		__fallthrough;
 	case -ENOBUFS:
 		cme_err = CME_ERROR_MEMORY_FULL;
 		break;
@@ -3405,11 +3404,8 @@ static void bt_ag_deferred_work_cb(struct bt_hfp_ag *ag, void *user_data)
 	case BT_HFP_CALL_HOLD:
 		break;
 	case BT_HFP_CALL_OUTGOING:
-		__fallthrough;
 	case BT_HFP_CALL_INCOMING:
-		__fallthrough;
 	case BT_HFP_CALL_ALERTING:
-		__fallthrough;
 	default:
 		LOG_WRN("Call timeout, status %s", bt_ag_get_call_state_string(call_state));
 
@@ -4439,22 +4435,16 @@ int bt_hfp_ag_set_indicator(struct bt_hfp_ag *ag, enum bt_hfp_ag_indicator index
 
 	switch (index) {
 	case BT_HFP_AG_SERVICE_IND:
-		__fallthrough;
 	case BT_HFP_AG_SIGNAL_IND:
-		__fallthrough;
 	case BT_HFP_AG_ROAM_IND:
-		__fallthrough;
 	case BT_HFP_AG_BATTERY_IND:
 		if ((ag_ind[(uint8_t)index].min > value) || (ag_ind[(uint8_t)index].max < value)) {
 			return -EINVAL;
 		}
 		break;
 	case BT_HFP_AG_CALL_IND:
-		__fallthrough;
 	case BT_HFP_AG_CALL_SETUP_IND:
-		__fallthrough;
 	case BT_HFP_AG_CALL_HELD_IND:
-		__fallthrough;
 	default:
 		return -EINVAL;
 	}
