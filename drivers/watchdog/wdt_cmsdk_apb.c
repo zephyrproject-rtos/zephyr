@@ -88,6 +88,10 @@ static int wdog_cmsdk_apb_setup(const struct device *dev, uint8_t options)
 	ARG_UNUSED(dev);
 	ARG_UNUSED(options);
 
+	/* Reset pending interrupts before starting */
+	wdog->intclr = CMSDK_APB_WDOG_INTCLR;
+	wdog->load = reload_cycles;
+
 	/* Start the watchdog counter with INTEN bit */
 	wdog->ctrl = (CMSDK_APB_WDOG_CTRL_RESEN | CMSDK_APB_WDOG_CTRL_INTEN);
 
