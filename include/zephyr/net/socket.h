@@ -1242,6 +1242,13 @@ struct ipv6_mreq {
 	int ipv6mr_ifindex;
 };
 
+/** For getsockopt(), retrieve the current known IPv6 path MTU of the given socket.
+ * Valid only when the socket has been connected.
+ * For setsockopt(), set the MTU to be used for the socket. The MTU is limited by
+ * the device MTU or the path MTU when path MTU discovery is enabled.
+ */
+#define IPV6_MTU 24
+
 /** Don't support IPv4 access */
 #define IPV6_V6ONLY 26
 

@@ -1858,6 +1858,20 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 
 	case IPPROTO_IPV6:
 		switch (optname) {
+		case IPV6_MTU:
+			if (IS_ENABLED(CONFIG_NET_IPV6)) {
+				ret = net_context_get_option(ctx, NET_OPT_MTU,
+							     optval, optlen);
+				if (ret < 0) {
+					errno  = -ret;
+					return -1;
+				}
+
+				return 0;
+			}
+
+			break;
+
 		case IPV6_V6ONLY:
 			if (IS_ENABLED(CONFIG_NET_IPV4_MAPPING_TO_IPV6)) {
 				ret = net_context_get_option(ctx,
@@ -2422,6 +2436,20 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 
 	case IPPROTO_IPV6:
 		switch (optname) {
+		case IPV6_MTU:
+			if (IS_ENABLED(CONFIG_NET_IPV6)) {
+				ret = net_context_set_option(ctx, NET_OPT_MTU,
+							     optval, optlen);
+				if (ret < 0) {
+					errno  = -ret;
+					return -1;
+				}
+
+				return 0;
+			}
+
+			break;
+
 		case IPV6_V6ONLY:
 			if (IS_ENABLED(CONFIG_NET_IPV4_MAPPING_TO_IPV6)) {
 				ret = net_context_set_option(ctx,
