@@ -382,7 +382,8 @@ static void mss_i2c_irq_handler(const struct device *dev)
 		.clock_freq = DT_INST_PROP(n, clock_frequency),                                    \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, mss_i2c_init_##n, NULL, &mss_i2c_data_##n, &mss_i2c_config_##n,   \
-			      PRE_KERNEL_1, CONFIG_I2C_INIT_PRIORITY, &mss_i2c_driver_api);
+	I2C_DEVICE_DT_INST_DEFINE(n, mss_i2c_init_##n, NULL, &mss_i2c_data_##n,                    \
+			&mss_i2c_config_##n, PRE_KERNEL_1, CONFIG_I2C_INIT_PRIORITY,               \
+			&mss_i2c_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MSS_I2C_INIT)
