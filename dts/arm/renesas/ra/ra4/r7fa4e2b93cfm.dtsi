@@ -14,6 +14,8 @@
 /delete-node/ &agt4;
 /delete-node/ &agt5;
 
+/delete-node/ &adc1;
+
 / {
 	soc {
 		sram0: memory@20000000 {
@@ -39,6 +41,11 @@
 				compatible = "soc-nv-flash";
 				reg = <0x0 DT_SIZE_K(128)>;
 			};
+		};
+
+		adc@40170000 {
+			channel-count = <12>;
+			channel-available-mask = <0x139f7>;
 		};
 
 		id_code: id_code@100a120 {
