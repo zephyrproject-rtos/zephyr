@@ -448,6 +448,7 @@ config CODING_GUIDELINE_CHECK
 config NATIVE_LIBC
 	bool
 	select FULL_LIBC_SUPPORTED
+	select TC_PROVIDES_POSIX_C_LANG_SUPPORT_R
 	help
 	  Zephyr will use the host system C library.
 
