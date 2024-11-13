@@ -455,7 +455,7 @@ class LeshanEventsIterator:
                     for line in self._it:
                         if not line.startswith('data: '):
                             continue
-                        data = json.loads(line.lstrip('data: '))
+                        data = json.loads(line.removeprefix('data: '))
                         if event == 'SEND' or (event == 'NOTIFICATION' and data['kind'] == 'composite'):
                             return Leshan.parse_composite(data['val'])
                         if event == 'NOTIFICATION':
