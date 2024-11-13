@@ -42,6 +42,7 @@ enum bt_hfp_ag_indicator {
 #define BT_HFP_AG_CODEC_LC3_SWB 0x03
 
 struct bt_hfp_ag;
+struct bt_hfp_ag_call;
 
 /** @brief HFP profile AG application callback */
 struct bt_hfp_ag_cb {
@@ -117,9 +118,10 @@ struct bt_hfp_ag_cb {
 	 *  new call is outgoing.
 	 *
 	 *  @param ag HFP AG object.
+	 *  @param call HFP AG call object.
 	 *  @param number Dailing number
 	 */
-	void (*outgoing)(struct bt_hfp_ag *ag, const char *number);
+	void (*outgoing)(struct bt_hfp_ag *ag, struct bt_hfp_ag_call *call, const char *number);
 
 	/** HF incoming Callback
 	 *
@@ -127,55 +129,74 @@ struct bt_hfp_ag_cb {
 	 *  new call is incoming.
 	 *
 	 *  @param ag HFP AG object.
+	 *  @param call HFP AG call object.
 	 *  @param number Incoming number
 	 */
-	void (*incoming)(struct bt_hfp_ag *ag, const char *number);
+	void (*incoming)(struct bt_hfp_ag *ag, struct bt_hfp_ag_call *call, const char *number);
 
 	/** HF incoming call is held Callback
 	 *
 	 *  If this callback is provided it will be called whenever the
 	 *  incoming call is held but not accepted.
 	 *
-	 *  @param ag HFP AG object.
+	 *  @param call HFP AG call object.
 	 */
-	void (*incoming_held)(struct bt_hfp_ag *ag);
+	void (*incoming_held)(struct bt_hfp_ag_call *call);
 
 	/** HF ringing Callback
 	 *
 	 *  If this callback is provided it will be called whenever the
 	 *  call is in the ringing
 	 *
-	 *  @param ag HFP AG object.
+	 *  @param call HFP AG call object.
 	 *  @param in_bond true - in-bond ringing, false - No in-bond ringing
 	 */
-	void (*ringing)(struct bt_hfp_ag *ag, bool in_band);
+	void (*ringing)(struct bt_hfp_ag_call *call, bool in_band);
 
 	/** HF call accept Callback
 	 *
 	 *  If this callback is provided it will be called whenever the
 	 *  call is accepted.
 	 *
-	 *  @param ag HFP AG object.
+	 *  @param call HFP AG call object.
 	 */
-	void (*accept)(struct bt_hfp_ag *ag);
+	void (*accept)(struct bt_hfp_ag_call *call);
+
+	/** HF call held Callback
+	 *
+	 *  If this callback is provided it will be called whenever the
+	 *  call is held.
+	 *
+	 *  @param call HFP AG call object.
+	 */
+	void (*held)(struct bt_hfp_ag_call *call);
+
+	/** HF call retrieve Callback
+	 *
+	 *  If this callback is provided it will be called whenever the
+	 *  call is retrieved.
+	 *
+	 *  @param call HFP AG call object.
+	 */
+	void (*retrieve)(struct bt_hfp_ag_call *call);
 
 	/** HF call reject Callback
 	 *
 	 *  If this callback is provided it will be called whenever the
 	 *  call is rejected.
 	 *
-	 *  @param ag HFP AG object.
+	 *  @param call HFP AG call object.
 	 */
-	void (*reject)(struct bt_hfp_ag *ag);
+	void (*reject)(struct bt_hfp_ag_call *call);
 
 	/** HF call terminate Callback
 	 *
 	 *  If this callback is provided it will be called whenever the
 	 *  call is terminated.
 	 *
-	 *  @param ag HFP AG object.
+	 *  @param call HFP AG call object.
 	 */
-	void (*terminate)(struct bt_hfp_ag *ag);
+	void (*terminate)(struct bt_hfp_ag_call *call);
 
 	/** Supported codec Ids callback
 	 *
@@ -244,6 +265,23 @@ struct bt_hfp_ag_cb {
 	 *  @param ag HFP AG object.
 	 */
 	void (*ecnr_turn_off)(struct bt_hfp_ag *ag);
+
+	/** HF explicit call transfer callback
+	 *
+	 *  If this callback is provided it will be called whenever the
+	 *  AT+CHLD=4 is sent from HF.
+	 *  When the callback is notified, the application should connect
+	 *  the two calls and disconnects the subscriber from both calls
+	 *  (Explicit Call Transfer).
+	 *  After the callback returned, the call objects will be invalid.
+	 *  If the callback is NULL, the response result code of AT command
+	 *  will be an AT ERROR.
+	 *  If @kconfig{CONFIG_BT_HFP_AG_3WAY_CALL} is not enabled, the
+	 *  callback will not be notified.
+	 *
+	 *  @param ag HFP AG object.
+	 */
+	void (*explicit_call_transfer)(struct bt_hfp_ag *ag);
 };
 
 /** @brief Register HFP AG profile
@@ -294,41 +332,61 @@ int bt_hfp_ag_remote_incoming(struct bt_hfp_ag *ag, const char *number);
  *
  *  Put the incoming call on hold.
  *
- *  @param ag HFP AG object.
+ *  @param call HFP AG call object.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_hfp_ag_hold_incoming(struct bt_hfp_ag *ag);
+int bt_hfp_ag_hold_incoming(struct bt_hfp_ag_call *call);
 
 /** @brief Reject the incoming call
  *
  *  Reject the incoming call.
  *
- *  @param ag HFP AG object.
+ *  @param call HFP AG call object.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_hfp_ag_reject(struct bt_hfp_ag *ag);
+int bt_hfp_ag_reject(struct bt_hfp_ag_call *call);
 
 /** @brief Accept the incoming call
  *
  *  Accept the incoming call.
  *
- *  @param ag HFP AG object.
+ *  @param call HFP AG call object.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_hfp_ag_accept(struct bt_hfp_ag *ag);
+int bt_hfp_ag_accept(struct bt_hfp_ag_call *call);
 
 /** @brief Terminate the active/hold call
  *
  *  Terminate the active/hold call.
  *
- *  @param ag HFP AG object.
+ *  @param call HFP AG call object.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_hfp_ag_terminate(struct bt_hfp_ag *ag);
+int bt_hfp_ag_terminate(struct bt_hfp_ag_call *call);
+
+/** @brief Retrieve the held call
+ *
+ *  Retrieve the held call.
+ *
+ *  @param call HFP AG call object.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_ag_retrieve(struct bt_hfp_ag_call *call);
+
+/** @brief Hold the active call
+ *
+ *  Hold the active call.
+ *
+ *  @param call HFP AG call object.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_ag_hold(struct bt_hfp_ag_call *call);
 
 /** @brief Dial a call
  *
@@ -345,41 +403,54 @@ int bt_hfp_ag_outgoing(struct bt_hfp_ag *ag, const char *number);
  *
  *  Notify HFP Unit that the remote starts ringing.
  *
- *  @param ag HFP AG object.
+ *  @param call HFP AG call object.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_hfp_ag_remote_ringing(struct bt_hfp_ag *ag);
+int bt_hfp_ag_remote_ringing(struct bt_hfp_ag_call *call);
 
 /** @brief Notify HFP Unit that the remote rejects the call
  *
  *  Notify HFP Unit that the remote rejects the call.
  *
- *  @param ag HFP AG object.
+ *  @param call HFP AG call object.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_hfp_ag_remote_reject(struct bt_hfp_ag *ag);
+int bt_hfp_ag_remote_reject(struct bt_hfp_ag_call *call);
 
 /** @brief Notify HFP Unit that the remote accepts the call
  *
  *  Notify HFP Unit that the remote accepts the call.
  *
- *  @param ag HFP AG object.
+ *  @param call HFP AG call object.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_hfp_ag_remote_accept(struct bt_hfp_ag *ag);
+int bt_hfp_ag_remote_accept(struct bt_hfp_ag_call *call);
 
 /** @brief Notify HFP Unit that the remote terminates the active/hold call
  *
  *  Notify HFP Unit that the remote terminates the active/hold call.
  *
+ *  @param call HFP AG call object.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_ag_remote_terminate(struct bt_hfp_ag_call *call);
+
+/** @brief explicit call transfer
+ *
+ *  Connects the two calls and disconnects the subscriber from
+ *  both calls (Explicit Call Transfer).
+ *  If @kconfig{CONFIG_BT_HFP_AG_3WAY_CALL} is not enabled, the error
+ *  `-ENOTSUP` will be returned if the function called.
+ *
  *  @param ag HFP AG object.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_hfp_ag_remote_terminate(struct bt_hfp_ag *ag);
+int bt_hfp_ag_explicit_call_transfer(struct bt_hfp_ag *ag);
 
 /** @brief Set the HF microphone gain
  *
