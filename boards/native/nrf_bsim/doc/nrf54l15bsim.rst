@@ -29,10 +29,6 @@ on the simulated nRF54L15 SOC.
 
    This simulated target does **not** yet support targeting the cpuflpr core.
 
-.. warning::
-
-   This target is experimental.
-
 This boards include models of some of the nRF54L15 SOC peripherals:
 
 * AAR (Accelerated Address Resolver)
