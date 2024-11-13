@@ -425,6 +425,84 @@
 			status = "disabled";
 		};
 
+                i3c1: i3c@40004000 {
+			compatible = "nuvoton,npcm-i3c";
+			reg-names = "i3c1", "pdma0", "pdma1";
+			reg = <0x40004000 0x2000
+			       0x40015000 0x10
+			       0x40015010 0x10>;
+			clocks = <&pcc NPCM_CLOCK_BUS_APB3 NPCM_PWDWN_CTL0 2>;
+			interrupts = <64 3>;
+			status = "disabled";
+			#address-cells = <3>;
+			#size-cells = <0>;
+		};
+
+		i3c2: i3c@40004200 {
+			compatible = "nuvoton,npcm-i3c";
+			reg-names = "i3c2", "pdma2", "pdma3";
+			reg = <0x40004200 0x2000
+			       0x40015020 0x10
+			       0x40015030 0x10>;
+			clocks = <&pcc NPCM_CLOCK_BUS_APB3 NPCM_PWDWN_CTL8 0>;
+			interrupts = <65 3>;
+			status = "disabled";
+			#address-cells = <3>;
+			#size-cells = <0>;
+		};
+
+		i3c3: i3c@40004400 {
+			compatible = "nuvoton,npcm-i3c";
+			reg-names = "i3c3", "pdma4", "pdma5";
+			reg = <0x40004400 0x2000
+			       0x40015040 0x10
+			       0x40015050 0x10>;
+			clocks = <&pcc NPCM_CLOCK_BUS_APB3 NPCM_PWDWN_CTL8 1>;
+			interrupts = <66 3>;
+			status = "disabled";
+			#address-cells = <3>;
+			#size-cells = <0>;
+		};
+
+		i3c4: i3c@40004600 {
+			compatible = "nuvoton,npcm-i3c";
+			reg-names = "i3c4", "pdma6", "pdma7";
+			reg = <0x40004600 0x2000
+			       0x40015060 0x10
+			       0x40015070 0x10>;
+			clocks = <&pcc NPCM_CLOCK_BUS_APB3 NPCM_PWDWN_CTL8 2>;
+			interrupts = <67 3>;
+			status = "disabled";
+			#address-cells = <3>;
+			#size-cells = <0>;
+		};
+
+		i3c5: i3c@40004800 {
+			compatible = "nuvoton,npcm-i3c";
+			reg-names = "i3c5", "pdma8", "pdma9";
+			reg = <0x40004800 0x2000
+			       0x40015080 0x10
+			       0x40015090 0x10>;
+			clocks = <&pcc NPCM_CLOCK_BUS_APB3 NPCM_PWDWN_CTL8 3>;
+			interrupts = <68 3>;
+			status = "disabled";
+			#address-cells = <3>;
+			#size-cells = <0>;
+		};
+
+		i3c6: i3c@40004a00 {
+			compatible = "nuvoton,npcm-i3c";
+			reg-names = "i3c6", "pdma10", "pdma11";
+			reg = <0x40004a00 0x2000
+			       0x400150a0 0x10
+			       0x400150b0 0x10>;
+			clocks = <&pcc NPCM_CLOCK_BUS_APB3 NPCM_PWDWN_CTL8 4>;
+			interrupts = <69 3>;
+			status = "disabled";
+			#address-cells = <3>;
+			#size-cells = <0>;
+		};
+
 		timer1: timer@400b0000 {
 			compatible = "nuvoton,npcm-itim32";
 			#address-cells = <1>;
