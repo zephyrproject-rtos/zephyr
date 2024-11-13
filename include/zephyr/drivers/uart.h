@@ -380,10 +380,11 @@ __syscall int uart_poll_in_u16(const struct device *dev, uint16_t *p_u16);
 /**
  * @brief Write a character to the device for output.
  *
- * This routine checks if the transmitter is full.  When the
+ * This routine checks if the transmitter is full. When the
  * transmitter is not full, it writes a character to the data
- * register. It waits and blocks the calling thread, otherwise. This
- * function is a blocking call.
+ * register. It waits and blocks the calling thread otherwise. This
+ * function is a blocking call. It blocks the calling thread until the
+ * character is sent.
  *
  * To send a character when hardware flow control is enabled, the handshake
  * signal CTS must be asserted.
