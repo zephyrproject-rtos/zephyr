@@ -13,6 +13,12 @@ Major enhancements with this release include:
   PSA Secure Storage API and of persistent keys in the PSA Crypto API on all board targets. It
   is now the standard way to provide device-specific protection to data at rest. (:github:`76222`)
 
+* The introduction of the :ref:`comparator<comparator_api>` device driver subsystem for analog
+  comparators, complete with shell support. It supports initial configuration through devicetree
+  and runtime configuration through vendor specific APIs. Initially the
+  :dtcompatible:`nordic,nrf-comp`, :dtcompatible:`nordic,nrf-lpcomp` and
+  :dtcompatible:`nxp,kinetis-acmp` are supported.
+
 An overview of the changes required or recommended when migrating your application from Zephyr
 v3.7.0 to Zephyr v4.0.0 can be found in the separate :ref:`migration guide<migration_4.0>`.
 
