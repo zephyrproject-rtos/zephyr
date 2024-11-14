@@ -19,6 +19,11 @@ Major enhancements with this release include:
   :dtcompatible:`nordic,nrf-comp`, :dtcompatible:`nordic,nrf-lpcomp` and
   :dtcompatible:`nxp,kinetis-acmp` are supported.
 
+* The introduction of the :ref:`stepper<stepper_api>` device driver subsystem for stepper motors,
+  complete with shell support. Initially implemented drivers include a simple
+  :dtcompatible:`zephyr,gpio-stepper` and a complex sensor-less stall-detection capable with
+  integrated ramp-controller :dtcompatible:`adi,tmc5041`.
+
 An overview of the changes required or recommended when migrating your application from Zephyr
 v3.7.0 to Zephyr v4.0.0 can be found in the separate :ref:`migration guide<migration_4.0>`.
 
