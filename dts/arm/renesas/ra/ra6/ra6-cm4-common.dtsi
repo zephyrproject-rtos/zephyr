@@ -257,6 +257,36 @@
 			status = "disabled";
 		};
 
+		agt0: agt@40084000  {
+			compatible = "renesas,ra-agt";
+			channel = <0>;
+			reg = <0x40084000 0x100>;
+			renesas,count-source = "AGT_CLOCK_LOCO";
+			renesas,prescaler = <0>;
+			renesas,resolution = <16>;
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,ra-agt-counter";
+				status = "disabled";
+			};
+		};
+
+		agt1: agt@40084100 {
+			compatible = "renesas,ra-agt";
+			channel = <1>;
+			reg = <0x40084100 0x100>;
+			renesas,count-source = "AGT_CLOCK_LOCO";
+			renesas,prescaler = <0>;
+			renesas,resolution = <16>;
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,ra-agt-counter";
+				status = "disabled";
+			};
+		};
+
 		id_code: id_code@100a150 {
 			compatible = "zephyr,memory-region";
 			reg = <0x0100a150 0x10>;
