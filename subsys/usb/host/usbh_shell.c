@@ -23,7 +23,6 @@ LOG_MODULE_REGISTER(usbh_shell, CONFIG_USBH_LOG_LEVEL);
 
 USBH_CONTROLLER_DEFINE(uhs_ctx, DEVICE_DT_GET(DT_NODELABEL(zephyr_uhc0)));
 static struct usb_device *udev;
-const static struct shell *ctx_shell;
 static uint8_t vreq_test_buf[1024];
 
 static void print_dev_desc(const struct shell *sh,
@@ -195,7 +194,7 @@ static int cmd_desc_string(const struct shell *sh,
 	if (err) {
 		shell_print(sh, "host: Failed to request configuration descriptor");
 	} else {
-		shell_hexdump(ctx_shell, buf->data, buf->len);
+		shell_hexdump(sh, buf->data, buf->len);
 	}
 
 	usbh_xfer_buf_free(udev, buf);
@@ -426,7 +425,6 @@ static int cmd_usbh_init(const struct shell *sh,
 {
 	int err;
 
-	ctx_shell = sh;
 	udev = usbh_device_get_any(&uhs_ctx);
 
 	err = usbh_init(&uhs_ctx);
