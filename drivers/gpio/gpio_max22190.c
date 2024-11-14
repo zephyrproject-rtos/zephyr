@@ -11,13 +11,14 @@
 #include <zephyr/drivers/spi.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
-
+#include <zephyr/sys/util.h>
 #define LOG_LEVEL CONFIG_GPIO_LOG_LEVEL
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(gpio_max22190);
 
 #include <zephyr/drivers/gpio/gpio_utils.h>
+#include <zephyr/drivers/gpio/gpio_diag.h>
 
 #if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 0
 #warning "GPIO MAX22190 driver enabled without any devices"
@@ -63,10 +64,12 @@ LOG_MODULE_REGISTER(gpio_max22190);
 #define MAX22190_CFG_CLRF_MASK  BIT(3)
 #define MAX22190_CFG_24VF_MASK  BIT(4)
 
+#ifndef CONFIG_GPIO_DIAGNOSTICS
 #define PRINT_ERR_BIT(bit1, bit2)                                                                  \
 	if (bit1 & bit2) {                                                                         \
 		LOG_ERR("[%s] %d", #bit1, bit1);                                                   \
 	}
+#endif
 
 #define MAX22190_CLEAN_POR(dev)                                                                    \
 	max22190_reg_update(dev, MAX22190_FAULT1_REG, MAX22190_POR_MASK,                           \
@@ -195,6 +198,11 @@ struct max22190_data {
 	union max22190_fault1_en fault1_en;
 	union max22190_fault2 fault2;
 	union max22190_fault2_en fault2_en;
+#ifdef CONFIG_GPIO_DIAGNOSTICS
+	sys_slist_t diag_callbacks;
+	struct gpio_callback diag_cb_data;
+	const struct device *dev;
+#endif
 };
 
 /*
@@ -372,9 +380,10 @@ static int max22190_reg_update(const struct device *dev, uint8_t addr, uint8_t m
  *
  * @param dev - MAX22190 device
  */
-static void max22190_fault_check(const struct device *dev)
+int max22190_diag_fetch(const struct device *dev)
 {
 	struct max22190_data *data = dev->data;
+	int ret = 0;
 
 	/* FAULT1 */
 	data->fault1.reg_raw = max22190_reg_read(dev, MAX22190_FAULT1_REG);
@@ -382,7 +391,7 @@ static void max22190_fault_check(const struct device *dev)
 	if (data->fault1.reg_raw) {
 		/* FAULT1_EN */
 		data->fault1_en.reg_raw = max22190_reg_read(dev, MAX22190_FAULT1_EN_REG);
-
+#ifdef CONFIG_GPIO_DIAGNOSTICS
 		PRINT_ERR_BIT(data->fault1.reg_bits.max22190_CRC,
 			      data->fault1_en.reg_bits.max22190_CRCE);
 		PRINT_ERR_BIT(data->fault1.reg_bits.max22190_POR,
@@ -399,11 +408,13 @@ static void max22190_fault_check(const struct device *dev)
 			      data->fault1_en.reg_bits.max22190_24VME);
 		PRINT_ERR_BIT(data->fault1.reg_bits.max22190_WBG,
 			      data->fault1_en.reg_bits.max22190_WBGE);
+#endif
 
 		if (data->fault1.reg_bits.max22190_WBG & data->fault1_en.reg_bits.max22190_WBGE) {
 			uint8_t wb_val = max22190_reg_read(dev, MAX22190_WB_REG);
 
 			max22190_update_wb_stat(dev, (uint8_t)wb_val);
+			ret = -1;
 		}
 
 		if (data->fault1.reg_bits.max22190_FAULT2) {
@@ -412,7 +423,7 @@ static void max22190_fault_check(const struct device *dev)
 
 			/* FAULT2_EN */
 			data->fault2_en.reg_raw = max22190_reg_read(dev, MAX22190_FAULT2_EN_REG);
-
+#ifdef CONFIG_GPIO_DIAGNOSTICS
 			PRINT_ERR_BIT(data->fault2.reg_bits.max22190_RFWBS,
 				      data->fault2_en.reg_bits.max22190_RFWBSE);
 			PRINT_ERR_BIT(data->fault2.reg_bits.max22190_RFWBO,
@@ -425,18 +436,23 @@ static void max22190_fault_check(const struct device *dev)
 				      data->fault2_en.reg_bits.max22190_OTSHDNE);
 			PRINT_ERR_BIT(data->fault2.reg_bits.max22190_FAULT8CK,
 				      data->fault2_en.reg_bits.max22190_FAULT8CKE);
+#endif
+			ret = -1;
 		}
 	}
+
+	return ret;
 }
 
-static void max22190_state_get(const struct device *dev)
+void max22190_state_get(const struct device *dev)
 {
+#ifdef CONFIG_GPIO_DIAGNOSTICS
 	const struct max22190_config *config = dev->config;
 
 	if (gpio_pin_get_dt(&config->fault_gpio)) {
-		max22190_fault_check(dev);
+		max22190_diag_fetch(dev);
 	}
-
+#endif
 	/* We are reading WB reg because on first byte will be clocked out DI reg
 	 * on second byte we will ge WB value.
 	 */
@@ -532,6 +548,119 @@ static int gpio_max22190_port_get_raw(const struct device *dev, gpio_port_value_
 	return 0;
 }
 
+#ifdef CONFIG_GPIO_DIAGNOSTICS
+static void max22190_fault_diag(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
+{
+	struct max22190_data *data = CONTAINER_OF(cb, struct max22190_data, diag_cb_data);
+
+	gpio_fire_callbacks(&data->diag_callbacks, data->dev, 0x1);
+}
+
+static int gpio_max22190_manage_diag_callback(const struct device *dev, struct gpio_callback *cb,
+					      bool set)
+{
+	struct max22190_data *data = dev->data;
+
+	int ret =  gpio_manage_callback(&data->diag_callbacks, cb, set);
+
+	return ret;
+}
+
+/*
+ * This function return depending on bit state
+ */
+int max22190_diag_channel_get(const struct device *dev, int chan)
+{
+	int ret = -ENXIO;
+
+	struct max22190_data *data = dev->data;
+
+	switch (chan) {
+	case GPIO_DIAG_WIRE_BREAK:
+		ret = data->fault1.reg_bits.max22190_WBG &
+		      data->fault1_en.reg_bits.max22190_WBGE;
+		break;
+	case GPIO_DIAG_TEMP_ALRM:
+		ret = (data->fault1.reg_bits.max22190_ALRMT2 &
+		       data->fault1_en.reg_bits.max22190_ALRMT2E) ||
+		      (data->fault1.reg_bits.max22190_ALRMT1 &
+		       data->fault1_en.reg_bits.max22190_ALRMT1E);
+		break;
+	case GPIO_DIAG_ABOVE_VDD:
+		ret = (data->fault1.reg_bits.max22190_24VL &
+		      data->fault1_en.reg_bits.max22190_24VLE);
+		break;
+	case GPIO_DIAG_LOSS_VDD:
+		ret = (data->fault1.reg_bits.max22190_24VM &
+		      data->fault1_en.reg_bits.max22190_24VME);
+		break;
+	case GPIO_DIAG_CRC_ERR:
+		ret = data->fault1.reg_bits.max22190_CRC &
+		      data->fault1_en.reg_bits.max22190_CRCE;
+		break;
+	case GPIO_DIAG_POR:
+		ret = data->fault1.reg_bits.max22190_POR &
+		      data->fault1_en.reg_bits.max22190_PORE;
+		break;
+	case GPIO_DIAG_MAX22190_FAULT2:
+		ret = data->fault1.reg_bits.max22190_FAULT2 &
+		      data->fault1_en.reg_bits.max22190_FAULT2E;
+		break;
+	case GPIO_DIAG_MAX22190_RFWBS:
+		ret = data->fault2.reg_bits.max22190_RFWBS &
+		      data->fault2_en.reg_bits.max22190_RFWBSE;
+		break;
+	case GPIO_DIAG_MAX22190_RFWBO:
+		ret = data->fault2.reg_bits.max22190_RFWBO &
+		      data->fault2_en.reg_bits.max22190_RFWBOE;
+		break;
+	case GPIO_DIAG_MAX22190_RFDIS:
+		ret = data->fault2.reg_bits.max22190_RFDIS &
+		      data->fault2_en.reg_bits.max22190_RFDISE;
+		break;
+	case GPIO_DIAG_MAX22190_RFDIO:
+		ret = data->fault2.reg_bits.max22190_RFDIO &
+		      data->fault2_en.reg_bits.max22190_RFDIOE;
+		break;
+	case GPIO_DIAG_OVER_TEMP:
+		ret = data->fault2.reg_bits.max22190_OTSHDN &
+		      data->fault2_en.reg_bits.max22190_OTSHDNE;
+		break;
+	case GPIO_DIAG_MAX22190_FAULT8CK:
+		ret = data->fault2.reg_bits.max22190_FAULT8CK &
+		      data->fault2_en.reg_bits.max22190_FAULT8CKE;
+		break;
+	}
+
+	return ret;
+}
+
+static int max22190_chan_diag_get(const struct device *dev, int chan, gpio_pin_t pin)
+{
+	struct max22190_data *data = dev->data;
+
+	int ret = -ENXIO;
+
+	if (0 >= pin && pin <= 8) {
+		switch (chan) {
+		case GPIO_DIAG_WIRE_BREAK:
+			ret = data->wb[pin];
+		break;
+		}
+	}
+
+	return ret;
+}
+
+int gpio_max22190_port_diag_get(const struct device *dev, int chan, uint8_t *data)
+{
+	*data = max22190_diag_channel_get(dev, chan);
+
+	return 0;
+}
+#endif
+
+
 static int gpio_max22190_init(const struct device *dev)
 {
 	const struct max22190_config *config = dev->config;
@@ -558,6 +687,20 @@ static int gpio_max22190_init(const struct device *dev)
 		return err;
 	}
 
+#ifdef CONFIG_GPIO_DIAGNOSTICS
+	data->dev = dev;
+
+	err = gpio_pin_interrupt_configure_dt(&config->fault_gpio, GPIO_INT_EDGE_TO_INACTIVE);
+	if (err != 0) {
+		printk("Error %d: failed to configure interrupt on %s pin %d\n",
+			err, config->fault_gpio.port->name, config->fault_gpio.pin);
+	} else {
+		/* Setup call back in case interrupt config success */
+		gpio_init_callback(&data->diag_cb_data, max22190_fault_diag,
+				  BIT(config->fault_gpio.pin));
+		gpio_add_callback(config->fault_gpio.port, &data->diag_cb_data);
+	}
+#else
 	/* setup FAULT gpio - normal high */
 	if (!gpio_is_ready_dt(&config->fault_gpio)) {
 		LOG_ERR("FAULT GPIO device not ready");
@@ -569,6 +712,7 @@ static int gpio_max22190_init(const struct device *dev)
 		LOG_ERR("Failed to configure DC GPIO");
 		return err;
 	}
+#endif
 
 	/* setup LATCH gpio - normal high */
 	if (!gpio_is_ready_dt(&config->latch_gpio)) {
@@ -612,6 +756,12 @@ static int gpio_max22190_init(const struct device *dev)
 static DEVICE_API(gpio, gpio_max22190_api) = {
 	.pin_configure = gpio_max22190_config,
 	.port_get_raw = gpio_max22190_port_get_raw,
+#ifdef CONFIG_GPIO_DIAGNOSTICS
+	.manage_diag_callback = gpio_max22190_manage_diag_callback,
+	.port_diag_get = gpio_max22190_port_diag_get,
+	.port_diag_fetch = max22190_diag_fetch,
+	.pin_diag_get = max22190_chan_diag_get,
+#endif
 };
 
 /* Assign appropriate value for FILTER delay*/
