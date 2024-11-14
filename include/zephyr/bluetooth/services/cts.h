@@ -16,7 +16,6 @@
  */
 
 #include <stdint.h>
-#include <zephyr/posix/time.h>
 
 #ifdef __cplusplus
 extern "C" {
