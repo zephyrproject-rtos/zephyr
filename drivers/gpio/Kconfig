@@ -93,6 +93,14 @@ config GPIO_ENABLE_DISABLE_INTERRUPT
 	  on/off the interrupt signal without changing other registers, such as
 	  pending register, etc. The driver must implement it to work.
 
+config GPIO_DIAGNOSTICS
+	bool "Enable advanced diagnostic functionality"
+	help
+	  This option enables diagnostic support for Maxim industrial input/output
+	  chips which have advance functionality for wire break, short circuit,
+	  over/under voltage and other. In mater diagnostic to work it should be
+	  in driver in self on per IC bases.
+
 # zephyr-keep-sorted-start
 source "drivers/gpio/Kconfig.ad559x"
 source "drivers/gpio/Kconfig.adp5585"
