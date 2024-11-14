@@ -508,6 +508,12 @@ Drivers and Sensors
 
 * Hardware info
 
+* Haptics
+
+  * Introduced a haptics device driver subsystem selected with :kconfig:option:`CONFIG_HAPTICS`
+  * Added support for TI DRV2605 haptic driver IC (:dtcompatible:`ti,drv2605`)
+  * Added a sample for the DRV2605 haptic driver to trigger ROM events (:zephyr:code-sample:`drv2605`)
+
 * I2C
 
   * Added initial support for Renesas RA8 I2C driver (:dtcompatible:`renesas,ra-iic`)
