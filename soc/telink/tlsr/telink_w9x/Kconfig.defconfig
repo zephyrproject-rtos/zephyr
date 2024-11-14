@@ -59,6 +59,10 @@ config IDLE_STACK_SIZE
 	int
 	default 1536
 
+config SYSTEM_WORKQUEUE_STACK_SIZE
+	int
+	default 2048
+
 config TEST_EXTRA_STACK_SIZE
 	int
 	default 1024

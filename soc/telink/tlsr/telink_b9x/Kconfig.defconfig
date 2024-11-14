@@ -46,6 +46,10 @@ config MAIN_STACK_SIZE
 config IDLE_STACK_SIZE
 	default 1536
 
+config SYSTEM_WORKQUEUE_STACK_SIZE
+	int
+	default 2048
+
 config OPENTHREAD_RADIO_WORKQUEUE_STACK_SIZE
 	default 2048
 
