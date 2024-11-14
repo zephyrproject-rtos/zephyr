@@ -14,8 +14,8 @@
 	compatible = "fsl,mimx8mp";
 
 	chosen {
-		zephyr,console = &uart4;
-		zephyr,shell-uart = &uart4;
+		zephyr,console = &uart2;
+		zephyr,shell-uart = &uart2;
 		zephyr,sram = &sram0;
 	};
 
@@ -61,10 +61,10 @@
 	};
 };
 
-&uart4 {
+&uart2 {
 	status = "okay";
 	current-speed = <115200>;
-	clocks = <&ccm IMX_CCM_UART4_CLK 0x6c 24>;
-	pinctrl-0 = <&uart4_default>;
+	clocks = <&ccm IMX_CCM_UART2_CLK 0x6c 24>;
+	pinctrl-0 = <&uart2_default>;
 	pinctrl-names = "default";
 };
