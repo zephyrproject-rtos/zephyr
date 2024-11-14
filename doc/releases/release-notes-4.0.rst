@@ -717,6 +717,8 @@ Drivers and Sensors
 * USB
 
   * Added support for USB HS on STM32U59x/STM32U5Ax SoC variants.
+  * Enhanced DWC2 UDC driver
+  * Added UDC drivers for Smartbond, NuMaker USBD and RP2040 device controllers
 
 * Video
 
@@ -1016,6 +1018,13 @@ Networking
 
 USB
 ***
+
+* New USB device stack:
+
+  * Added USB CDC Network Control Model implementation
+  * Enhanced USB Audio class 2 implementation
+  * Made USB device stack high-bandwidth aware
+  * Enhanced CDC ACM and HID class implementations
 
 Devicetree
 **********
