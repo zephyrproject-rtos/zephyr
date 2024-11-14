@@ -23,6 +23,13 @@
 			reg = <0>;
 		};
 
+		cpu@1 {
+			device_type = "cpu";
+			compatible = "intel,alder-lake";
+			d-cache-line-size = <64>;
+			reg = <1>;
+		};
+
 	};
 
 	dram0: memory@0 {
