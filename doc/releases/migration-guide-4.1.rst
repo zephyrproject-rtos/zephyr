@@ -96,6 +96,19 @@ Bluetooth Mesh
 Bluetooth Audio
 ===============
 
+* The following Kconfig options are not longer automatically enabled by the LE Audio Kconfig
+  options and may need to be enabled manually (:github:`81328`):
+
+    * :kconfig:option:`CONFIG_BT_GATT_CLIENT`
+    * :kconfig:option:`CONFIG_BT_GATT_AUTO_DISCOVER_CCC`
+    * :kconfig:option:`CONFIG_BT_GATT_AUTO_UPDATE_MTU`
+    * :kconfig:option:`CONFIG_BT_EXT_ADV`
+    * :kconfig:option:`CONFIG_BT_PER_ADV_SYNC`
+    * :kconfig:option:`CONFIG_BT_ISO_BROADCASTER`
+    * :kconfig:option:`CONFIG_BT_ISO_SYNC_RECEIVER`
+    * :kconfig:option:`CONFIG_BT_PAC_SNK`
+    * :kconfig:option:`CONFIG_BT_PAC_SRC`
+
 Bluetooth Classic
 =================
 
