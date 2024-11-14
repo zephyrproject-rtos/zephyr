@@ -201,8 +201,8 @@ endif # BT_BAP_BROADCAST_SINK
 
 config BT_BAP_SCAN_DELEGATOR
 	bool "Basic Audio Profile Scan Delegator role support"
-	select BT_EXT_ADV
-	select BT_PER_ADV_SYNC
+	depends on BT_EXT_ADV
+	depends on BT_PER_ADV_SYNC
 	depends on BT_ISO_SYNC_RECEIVER
 	depends on BT_OBSERVER
 	depends on BT_GATT_DYNAMIC_DB
@@ -235,8 +235,8 @@ endif # BT_BAP_SCAN_DELEGATOR
 
 config BT_BAP_BROADCAST_ASSISTANT
 	bool "Basic Audio Profile Broadcast Assistant role support"
-	select BT_EXT_ADV
-	select BT_PER_ADV_SYNC
+	depends on BT_EXT_ADV
+	depends on BT_PER_ADV_SYNC
 	depends on BT_ISO_SYNC_RECEIVER
 	depends on BT_GATT_CLIENT
 	depends on BT_GATT_AUTO_DISCOVER_CCC
