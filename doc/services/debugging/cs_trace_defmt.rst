@@ -11,7 +11,7 @@ decoded offline by the host but deformatter can be used on-chip to decode the da
 application runtime.
 
 Usage
-#####
+*****
 
 Deformatter is initialized with a user callback. Data is decoded using
 :c:func:`cs_trace_defmt_process` in 16 bytes chunks. Callback is called whenever stream changes or
