@@ -85,3 +85,11 @@
 	interrupts = <29 3>;
 	status = "okay";
 };
+
+&pwm0 {
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-names = "default";
+	interrupts = <28 1>, <31 1>;
+	interrupt-names = "gtioca", "overflow";
+	status = "okay";
+};

@@ -102,6 +102,8 @@ The below features are currently supported on Zephyr OS for EK-RA6M1 board:
 +-----------+------------+----------------------+
 | ADC       | on-chip    | adc                  |
 +-----------+------------+----------------------+
+| PWM       | on-chip    | pwm                  |
++-----------+------------+----------------------+
 
 Other hardware features are currently not supported by the port.
 

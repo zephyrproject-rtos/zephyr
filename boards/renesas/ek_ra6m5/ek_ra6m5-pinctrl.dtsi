@@ -45,4 +45,12 @@
 			renesas,analog-enable;
 		};
 	};
+
+	pwm1_default: pwm1_default {
+		group1 {
+			/* GTIOC1A GTIOC1B */
+			psels = <RA_PSEL(RA_PSEL_GPT1, 4, 5)>,
+				<RA_PSEL(RA_PSEL_GPT1, 4, 6)>;
+		};
+	};
 };
