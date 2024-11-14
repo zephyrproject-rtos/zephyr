@@ -24,7 +24,7 @@
 	};
 
 	chosen {
-		zephyr,sram = &sram0;
+		zephyr,sram = &sram1;
 		zephyr,console = &usb_serial;
 		zephyr,shell-uart = &usb_serial;
 		zephyr,flash = &flash0;
