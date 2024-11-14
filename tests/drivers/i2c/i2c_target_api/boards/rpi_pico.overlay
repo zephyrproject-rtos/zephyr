@@ -4,6 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+ /*
+  * Short Pin P4 to PA14, and P5 to P15, for the test to pass.
+  */
+
 &pinctrl {
 	i2c1_default: i2c1_default {
 		group1 {
@@ -19,6 +23,13 @@
 		compatible = "zephyr,i2c-target-eeprom";
 		reg = <0x54>;
 		size = <256>;
+	};
+	eeprom2: eeprom@58 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x58>;
+		size = <4096>;
+		address-width = <16>;
+		read-only;
 	};
 };
 

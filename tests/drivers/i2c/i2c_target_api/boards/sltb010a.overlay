@@ -11,4 +11,11 @@
 		reg = <0x56>;
 		size = <256>;
 	};
+	eeprom2: eeprom@58 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x58>;
+		size = <4096>;
+		address-width = <16>;
+		read-only;
+	};
 };

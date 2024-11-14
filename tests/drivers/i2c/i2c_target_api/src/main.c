@@ -21,10 +21,13 @@
 
 #define NODE_EP0 DT_NODELABEL(eeprom0)
 #define NODE_EP1 DT_NODELABEL(eeprom1)
+#define NODE_EP2 DT_NODELABEL(eeprom2)
 
 #define TEST_DATA_SIZE	20
 static const uint8_t eeprom_0_data[TEST_DATA_SIZE] = "0123456789abcdefghij";
 static const uint8_t eeprom_1_data[TEST_DATA_SIZE] = "jihgfedcba9876543210";
+static const uint8_t eeprom_2_data[TEST_DATA_SIZE] = "read_only_test_data_";
+static const uint8_t write_attempt_data[TEST_DATA_SIZE] = {0};
 static uint8_t i2c_buffer[TEST_DATA_SIZE];
 
 /*
@@ -271,6 +274,49 @@ ZTEST(i2c_eeprom_target, test_eeprom_target)
 		ret = i2c_target_driver_unregister(eeprom_1);
 		zassert_equal(ret, 0, "Failed to unregister EEPROM 1");
 	}
+}
+
+ZTEST(i2c_eeprom_target, test_eeprom_2_read_only)
+{
+	const struct device *const eeprom_2 = DEVICE_DT_GET(NODE_EP2);
+	const struct device *const i2c_1 = DEVICE_DT_GET(DT_BUS(NODE_EP1));
+	int addr_2 = DT_REG_ADDR(NODE_EP2);
+	uint8_t addr_2_width = DT_PROP_OR(NODE_EP2, address_width, 8);
+	int ret;
+
+	/* Ensure the device and bus are ready */
+	zassert_not_null(i2c_1, "EEPROM 2 - I2C bus (i2c_1) not found");
+	zassert_not_null(eeprom_2, "EEPROM 2 device not found");
+	zassert_true(device_is_ready(i2c_1), "EEPROM 2 - I2C bus (i2c_1) not ready");
+
+	TC_PRINT("Found EEPROM 2 on I2C bus device %s at addr %02x\n", i2c_1->name, addr_2);
+
+	/* Step 1: Program EEPROM 2 with test data */
+	ret = eeprom_target_program(eeprom_2, eeprom_2_data, TEST_DATA_SIZE);
+	zassert_equal(ret, 0, "Failed to program EEPROM 2 with test data");
+
+	/* Step 2: Attach EEPROM 2 to its bus as a target device */
+	ret = i2c_target_driver_register(eeprom_2);
+	zassert_equal(ret, 0, "Failed to register EEPROM 2 as a target device");
+
+	/* Step 3: Verify EEPROM 2 data via I2C read */
+	ret = run_full_read(i2c_1, addr_2, addr_2_width, eeprom_2_data);
+	zassert_equal(ret, 0, "EEPROM 2 data verification via I2C read failed");
+
+	/* Step 4: Attempt to write to EEPROM 2 and expect a NACK or failure */
+	ret = i2c_write(i2c_1, write_attempt_data, TEST_DATA_SIZE, addr_2);
+
+	/* I2C_DW (and maybe others?) don't generate the NACK as expected */
+#ifndef CONFIG_I2C_DW
+	zassert_not_equal(ret, 0, "Write attempt to read-only EEPROM 2 succeeded unexpectedly");
+#endif
+	/* Step 5: Re-verify EEPROM 2 data to ensure it has not changed */
+	ret = run_full_read(i2c_1, addr_2, addr_2_width, eeprom_2_data);
+	zassert_equal(ret, 0, "EEPROM 2 data was unexpectedly modified after write attempt");
+
+	/* Step 6: Detach EEPROM 2 from its bus */
+	ret = i2c_target_driver_unregister(eeprom_2);
+	zassert_equal(ret, 0, "Failed to unregister EEPROM 2 from the bus");
 }
 
 ZTEST_SUITE(i2c_eeprom_target, NULL, NULL, NULL, NULL, NULL);
