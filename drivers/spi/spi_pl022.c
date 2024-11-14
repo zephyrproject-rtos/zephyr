@@ -1031,7 +1031,7 @@ static int spi_pl022_init(const struct device *dev)
 				(.dma_enabled = false,))                                           \
 		IF_ENABLED(CONFIG_SPI_PL022_INTERRUPT,                                             \
 					   (.irq_config = spi_pl022_irq_config_##idx,))};          \
-	DEVICE_DT_INST_DEFINE(idx, spi_pl022_init, NULL, &spi_pl022_data_##idx,                    \
+	SPI_DEVICE_DT_INST_DEFINE(idx, spi_pl022_init, NULL, &spi_pl022_data_##idx,                \
 			      &spi_pl022_cfg_##idx, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,         \
 			      &spi_pl022_api);
 

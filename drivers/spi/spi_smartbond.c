@@ -1328,7 +1328,7 @@ static int spi_smartbond_init(const struct device *dev)
 		SPI_CONTEXT_INIT_SYNC(spi_smartbond_##id##_data, ctx),                             \
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(id), ctx)};                            \
 	PM_DEVICE_DT_INST_DEFINE(id, spi_smartbond_pm_action);                                     \
-	DEVICE_DT_INST_DEFINE(id,                                                                  \
+	SPI_DEVICE_DT_INST_DEFINE(id,                                                              \
 			      spi_smartbond_init,                                                  \
 			      PM_DEVICE_DT_INST_GET(id),                                           \
 			      &spi_smartbond_##id##_data,                                          \

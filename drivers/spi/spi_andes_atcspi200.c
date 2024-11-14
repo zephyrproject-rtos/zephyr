@@ -957,7 +957,7 @@ static void spi_atcspi200_irq_handler(void *arg)
 		.xip = SPI_ROM_CFG_XIP(DT_DRV_INST(n)),			\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(n,					\
+	SPI_DEVICE_DT_INST_DEFINE(n,					\
 		spi_atcspi200_init,					\
 		NULL,							\
 		&spi_atcspi200_dev_data_##n,				\

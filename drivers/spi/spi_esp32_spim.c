@@ -559,7 +559,7 @@ static DEVICE_API(spi, spi_api) = {
 		.clock_source = SPI_CLK_SRC_DEFAULT,	\
 	};	\
 		\
-	DEVICE_DT_INST_DEFINE(idx, spi_esp32_init,	\
+	SPI_DEVICE_DT_INST_DEFINE(idx, spi_esp32_init,	\
 			      NULL, &spi_data_##idx,	\
 			      &spi_config_##idx, POST_KERNEL,	\
 			      CONFIG_SPI_INIT_PRIORITY, &spi_api);

@@ -271,7 +271,7 @@ static DEVICE_API(spi, spi_litex_api) = {
 		.phy_clk_divisor_addr = DT_INST_REG_ADDR_BY_NAME_OR(n, phy_clk_divisor, 0)         \
                                                                                                    \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n, NULL, NULL, &spi_litex_data_##n, &spi_litex_cfg_##n, POST_KERNEL, \
-			      CONFIG_SPI_INIT_PRIORITY, &spi_litex_api);
+	SPI_DEVICE_DT_INST_DEFINE(n, NULL, NULL, &spi_litex_data_##n, &spi_litex_cfg_##n,          \
+				  POST_KERNEL, CONFIG_SPI_INIT_PRIORITY, &spi_litex_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_INIT)
