@@ -439,7 +439,7 @@ static DEVICE_API(spi, spi_mcux_driver_api) = {
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)	\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(n, spi_mcux_init, NULL,			\
+	SPI_DEVICE_DT_INST_DEFINE(n, spi_mcux_init, NULL,		\
 				&spi_mcux_flexio_data_##n,		\
 				&spi_mcux_flexio_config_##n, POST_KERNEL, \
 				CONFIG_SPI_INIT_PRIORITY,		\

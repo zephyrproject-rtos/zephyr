@@ -443,7 +443,7 @@ static DEVICE_API(spi, spi_gecko_api) = {
 	    GET_GECKO_USART_CLOCK(n) \
 	    .clock_frequency = DT_INST_PROP_OR(n, clock_frequency, 1000000) \
 	}; \
-	DEVICE_DT_INST_DEFINE(n, \
+	SPI_DEVICE_DT_INST_DEFINE(n, \
 			spi_gecko_init, \
 			NULL, \
 			&spi_gecko_data_##n, \
@@ -476,7 +476,7 @@ static DEVICE_API(spi, spi_gecko_api) = {
 	    .loc_tx = DT_INST_PROP_BY_IDX(n, location_tx, 0), \
 	    .loc_clk = DT_INST_PROP_BY_IDX(n, location_clk, 0), \
 	}; \
-	DEVICE_DT_INST_DEFINE(n, \
+	SPI_DEVICE_DT_INST_DEFINE(n, \
 			spi_gecko_init, \
 			NULL, \
 			&spi_gecko_data_##n, \
