@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2024 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&agt0 {
+	status = "okay";
+	interrupts = <21 1>, <22 1>;
+	interrupt-names = "agti", "agtcmai";
+	renesas,prescaler = <4>;
+	counter0: counter {
+		status = "okay";
+	};
+};
