@@ -30,3 +30,9 @@ zephyr_library_sources_ifdef(CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_ZMS
 zephyr_library_sources_ifdef(CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_SETTINGS
   store/settings.c
 )
+if (CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_NONE)
+  message(ERROR "
+    The secure storage ITS module is enabled but has no implementation.
+    (CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_NONE)
+    ")
+endif()
