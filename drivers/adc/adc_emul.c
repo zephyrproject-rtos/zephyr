@@ -406,7 +406,7 @@ static int adc_emul_get_chan_value(struct adc_emul_data *data,
 {
 	struct adc_emul_chan_cfg *chan_cfg = &data->chan_cfg[chan];
 	uint32_t input_mV;
-	uint32_t ref_v;
+	uint64_t ref_v;
 	uint64_t temp; /* Temporary 64 bit value prevent overflows */
 	int err = 0;
 

@@ -71,7 +71,7 @@ enum adc_gain {
  * @retval -EINVAL if the gain could not be interpreted
  */
 int adc_gain_invert(enum adc_gain gain,
-		    int32_t *value);
+		    int64_t *value);
 
 /** @brief ADC references. */
 enum adc_reference {
@@ -880,11 +880,11 @@ static inline int adc_raw_to_millivolts(int32_t ref_mv,
 					uint8_t resolution,
 					int32_t *valp)
 {
-	int32_t adc_mv = *valp * ref_mv;
+	int64_t adc_mv = ((uint64_t) *valp) * ref_mv;
 	int ret = adc_gain_invert(gain, &adc_mv);
 
 	if (ret == 0) {
-		*valp = (adc_mv >> resolution);
+		*valp = (uint32_t) (adc_mv >> resolution);
 	}
 
 	return ret;
