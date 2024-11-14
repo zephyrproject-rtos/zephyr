@@ -104,6 +104,9 @@ does not apply to macros which take cell names as arguments.
 For-each macros
 ===============
 
+The :c:macro:`DT_FOREACH_CHILD` macro allows iterating over the ancestor node
+of a devicetree node.
+
 There is currently only one "generic" for-each macro,
 :c:func:`DT_FOREACH_CHILD`, which allows iterating over the children of a
 devicetree node.
