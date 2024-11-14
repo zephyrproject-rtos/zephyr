@@ -30,6 +30,7 @@ Zephyr OS is ported to run on the Cortex®-A53 core.
   - LEDs:
 
     - 1x Power status LED
+    - 1x User LED (yellow)
     - 1x UART LED
   - Debug
 
@@ -79,6 +80,9 @@ features:
 +-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
++-----------+------------+-------------------------------------+
+| GPIO      | on-chip    | GPIO input;                         |
+|           |            | GPIO output                         |
 +-----------+------------+-------------------------------------+
 
 Devices

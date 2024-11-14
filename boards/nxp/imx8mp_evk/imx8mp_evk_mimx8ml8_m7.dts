@@ -6,6 +6,7 @@
 
 /dts-v1/;
 
+#include <zephyr/dt-bindings/gpio/gpio.h>
 #include <nxp/nxp_imx8ml_m7.dtsi>
 #include "imx8mp_evk-pinctrl.dtsi"
 
@@ -20,6 +21,18 @@
 
 		zephyr,console = &uart4;
 		zephyr,shell-uart = &uart4;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		yellow_led: led_0 {
+			gpios = <&gpio3 16 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	aliases {
+		led0 = &yellow_led;
 	};
 };
 
