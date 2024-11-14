@@ -28,6 +28,7 @@ config FULL_LIBC_SUPPORTED
 config MINIMAL_LIBC_SUPPORTED
 	bool
 	depends on !NATIVE_APPLICATION
+	depends on !REQUIRES_FULL_LIBC
 	default y
 	help
 	  Selected when the target has support for the minimal C library
@@ -68,7 +69,6 @@ choice LIBC_IMPLEMENTATION
 
 config MINIMAL_LIBC
 	bool "Minimal C library"
-	depends on !REQUIRES_FULL_LIBC
 	depends on MINIMAL_LIBC_SUPPORTED
 	imply COMPILER_FREESTANDING
 	select COMMON_LIBC_ABORT
