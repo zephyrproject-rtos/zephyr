@@ -118,3 +118,12 @@
 	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
 };
+
+&pwm1 {
+	pinctrl-0 = <&pwm1_default>;
+	pinctrl-names = "default";
+	interrupts = <40 1>, <41 1>;
+	interrupt-names = "gtioca", "overflow";
+	divider = <RA_PWM_SOURCE_DIV_256>;
+	status = "okay";
+};
