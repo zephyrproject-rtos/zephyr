@@ -117,10 +117,18 @@ struct adc_results_t {
 #define DIETEMP_MSB_SHIFT 2U
 #define DIETEMP_LSB_MASK  0x03U
 
-/* VBUS masks */
+/* VBUS detect masks */
 #define DETECT_HI_MASK    0x0AU
 #define DETECT_HI_CURRENT 1500000
 #define DETECT_LO_CURRENT 500000
+
+/* VBUS status masks */
+#define STATUS_PRESENT_MASK      0x01U
+#define STATUS_CUR_LIMIT_MASK    0x02U
+#define STATUS_OVERVLT_PROT_MASK 0x04U
+#define STATUS_UNDERVLT_MASK     0x08U
+#define STATUS_SUSPENDED_MASK    0x10U
+#define STATUS_BUSOUT_MASK       0x20U
 
 /* Dietemp calculation constants */
 #define DIETEMP_OFFSET_MDEGC 394670
@@ -249,6 +257,10 @@ int npm1300_charger_channel_get(const struct device *dev, enum sensor_channel ch
 		break;
 	case SENSOR_CHAN_DIE_TEMP:
 		calc_dietemp(config, data->dietemp, valp);
+		break;
+	case SENSOR_CHAN_NPM1300_CHARGER_VBUS_STATUS:
+		valp->val1 = data->vbus_stat;
+		valp->val2 = 0;
 		break;
 	default:
 		return -ENOTSUP;
@@ -397,6 +409,37 @@ static int npm1300_charger_attr_get(const struct device *dev, enum sensor_channe
 			val->val2 = DETECT_LO_CURRENT % 1000000;
 		}
 
+		return 0;
+
+	case SENSOR_CHAN_NPM1300_CHARGER_VBUS_STATUS:
+		ret = mfd_npm1300_reg_read(config->mfd, VBUS_BASE, VBUS_OFFSET_STATUS, &data);
+		if (ret < 0) {
+			return ret;
+		}
+
+		switch ((enum sensor_attribute_npm1300_charger)attr) {
+		case SENSOR_ATTR_NPM1300_CHARGER_VBUS_PRESENT:
+			val->val1 = (data & STATUS_PRESENT_MASK) != 0;
+			break;
+		case SENSOR_ATTR_NPM1300_CHARGER_VBUS_CUR_LIMIT:
+			val->val1 = (data & STATUS_CUR_LIMIT_MASK) != 0;
+			break;
+		case SENSOR_ATTR_NPM1300_CHARGER_VBUS_OVERVLT_PROT:
+			val->val1 = (data & STATUS_OVERVLT_PROT_MASK) != 0;
+			break;
+		case SENSOR_ATTR_NPM1300_CHARGER_VBUS_UNDERVLT:
+			val->val1 = (data & STATUS_UNDERVLT_MASK) != 0;
+			break;
+		case SENSOR_ATTR_NPM1300_CHARGER_VBUS_SUSPENDED:
+			val->val1 = (data & STATUS_SUSPENDED_MASK) != 0;
+			break;
+		case SENSOR_ATTR_NPM1300_CHARGER_VBUS_BUSOUT:
+			val->val1 = (data & STATUS_BUSOUT_MASK) != 0;
+			break;
+		default:
+			return -ENOTSUP;
+		}
+		val->val2 = 0;
 		return 0;
 
 	default:
