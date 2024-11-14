@@ -5,13 +5,15 @@ choice SECURE_STORAGE_ITS_STORE_IMPLEMENTATION
 	prompt "ITS store module implementation"
 
 DT_ITS_PARTITION := $(dt_chosen_path,secure_storage_its_partition)
+DT_CHOSEN_Z_SETTINGS_PARTITION := zephyr,settings-partition
+DT_SETTINGS_PARTITIION := $(dt_chosen_path,$(DT_CHOSEN_Z_SETTINGS_PARTITION))
 DT_STORAGE_PARTITION := $(dt_nodelabel_path,storage_partition)
 
 config SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_ZMS
 	bool "ITS store module implementation using ZMS for storage"
 	depends on FLASH_HAS_DRIVER_ENABLED \
-		&& $(dt_path_enabled,$(DT_ITS_PARTITION)) \
-		&& $(dt_node_has_compat,$(dt_node_parent,$(DT_ITS_PARTITION)),fixed-partitions)
+	 && $(dt_path_enabled,$(DT_ITS_PARTITION)) \
+	 && $(dt_node_has_compat,$(dt_node_parent,$(DT_ITS_PARTITION)),fixed-partitions)
 	select ZMS
 	help
 	  This implementation of the ITS store module makes direct use of ZMS for storage.
@@ -25,8 +27,10 @@ config SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_ZMS
 config SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_SETTINGS
 	bool "ITS store module implementation using the settings subsystem for storage"
 	depends on FLASH_HAS_DRIVER_ENABLED \
-		&& $(dt_path_enabled,$(DT_STORAGE_PARTITION)) \
-		&& $(dt_node_has_compat,$(dt_node_parent,$(DT_STORAGE_PARTITION)),fixed-partitions)
+	 && (($(dt_path_enabled,$(DT_SETTINGS_PARTITIION)) \
+	     && $(dt_node_has_compat,$(dt_node_parent,$(DT_SETTINGS_PARTITIION)),fixed-partitions))\
+	  || ($(dt_path_enabled,$(DT_STORAGE_PARTITION)) \
+	      && $(dt_node_has_compat,$(dt_node_parent,$(DT_STORAGE_PARTITION)),fixed-partitions)))
 	imply FLASH_MAP
 	imply NVS
 	select SETTINGS
