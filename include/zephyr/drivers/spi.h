@@ -628,6 +628,17 @@ static inline void spi_transceive_stats(const struct device *dev, int error,
 #endif /*CONFIG_SPI_STATS*/
 
 /**
+ * @brief Like SPI_DEVICE_DT_DEFINE(), but uses an instance of a `DT_DRV_COMPAT`
+ * compatible instead of a node identifier.
+ *
+ * @param inst Instance number. The `node_id` argument to SPI_DEVICE_DT_DEFINE() is
+ * set to `DT_DRV_INST(inst)`.
+ * @param ... Other parameters as expected by SPI_DEVICE_DT_DEFINE().
+ */
+#define SPI_DEVICE_DT_INST_DEFINE(inst, ...)                                       \
+	SPI_DEVICE_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
+
+/**
  * @typedef spi_api_io
  * @brief Callback API for I/O
  * See spi_transceive() for argument descriptions

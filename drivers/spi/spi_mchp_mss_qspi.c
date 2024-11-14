@@ -580,33 +580,29 @@ static DEVICE_API(spi, mss_qspi_driver_api) = {
 	.release = mss_qspi_release,
 };
 
-#define MSS_QSPI_INIT(n)						\
-	static void mss_qspi_config_func_##n(const struct device *dev);	\
-									\
-	static const struct mss_qspi_config mss_qspi_config_##n = { \
-		.base = DT_INST_REG_ADDR(n),				\
-		.irq_config_func = mss_qspi_config_func_##n,	\
-		.clock_freq = DT_INST_PROP(n, clock_frequency),	\
-	};								\
-									\
-	static struct mss_qspi_data mss_qspi_data_##n = {	\
-		SPI_CONTEXT_INIT_LOCK(mss_qspi_data_##n, ctx),	\
-		SPI_CONTEXT_INIT_SYNC(mss_qspi_data_##n, ctx),	\
-	};								\
-									\
-	DEVICE_DT_INST_DEFINE(n, mss_qspi_init,				\
-			    NULL,					\
-			    &mss_qspi_data_##n,			\
-			    &mss_qspi_config_##n, POST_KERNEL,	\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
-			    &mss_qspi_driver_api);			\
-									\
-	static void mss_qspi_config_func_##n(const struct device *dev)	\
-	{								\
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),	\
-			    mss_qspi_interrupt,				\
-			    DEVICE_DT_INST_GET(n), 0);			\
-		irq_enable(DT_INST_IRQN(n));				\
+#define MSS_QSPI_INIT(n)                                                                           \
+	static void mss_qspi_config_func_##n(const struct device *dev);                            \
+                                                                                                   \
+	static const struct mss_qspi_config mss_qspi_config_##n = {                                \
+		.base = DT_INST_REG_ADDR(n),                                                       \
+		.irq_config_func = mss_qspi_config_func_##n,                                       \
+		.clock_freq = DT_INST_PROP(n, clock_frequency),                                    \
+	};                                                                                         \
+                                                                                                   \
+	static struct mss_qspi_data mss_qspi_data_##n = {                                          \
+		SPI_CONTEXT_INIT_LOCK(mss_qspi_data_##n, ctx),                                     \
+		SPI_CONTEXT_INIT_SYNC(mss_qspi_data_##n, ctx),                                     \
+	};                                                                                         \
+                                                                                                   \
+	SPI_DEVICE_DT_INST_DEFINE(n, mss_qspi_init, NULL, &mss_qspi_data_##n,                      \
+				  &mss_qspi_config_##n, POST_KERNEL,                               \
+				  CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &mss_qspi_driver_api);       \
+                                                                                                   \
+	static void mss_qspi_config_func_##n(const struct device *dev)                             \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mss_qspi_interrupt,         \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+		irq_enable(DT_INST_IRQN(n));                                                       \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(MSS_QSPI_INIT)

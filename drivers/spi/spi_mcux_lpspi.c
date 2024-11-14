@@ -850,7 +850,7 @@ static int spi_mcux_init(const struct device *dev)
 			IF_ENABLED(CONFIG_SPI_RTIO, (.rtio_ctx = &spi_mcux_rtio_##n,))             \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, spi_mcux_init, NULL, &spi_mcux_data_##n, &spi_mcux_config_##n,    \
+	SPI_DEVICE_DT_INST_DEFINE(n, spi_mcux_init, NULL, &spi_mcux_data_##n, &spi_mcux_config_##n,\
 			      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY, &spi_mcux_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_MCUX_LPSPI_INIT)
