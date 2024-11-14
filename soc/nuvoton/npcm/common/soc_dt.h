@@ -415,4 +415,12 @@
  */
 #define NPCM_GLUE_REG_ADDR DT_REG_ADDR_BY_NAME(DT_NODELABEL(scfg), glue)
 
+/**
+ * @brief Helper macro to get address of system pmc module which is
+ * used by serval peripheral device drivers in npcm series.
+ *
+ * @return base address of system glue module.
+ */
+#define NPCM_PMC_REG_ADDR DT_REG_ADDR_BY_NAME(DT_NODELABEL(pcc), pmc)
+
 #endif /* _NUVOTON_NPCM_SOC_DT_H_ */
