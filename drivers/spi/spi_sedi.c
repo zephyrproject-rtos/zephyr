@@ -407,7 +407,7 @@ static int spi_sedi_device_ctrl(const struct device *dev,
 		.spi_device = num, .irq_config = spi_##num##_irq_init,         \
 	};								       \
 	PM_DEVICE_DEFINE(spi_##num, spi_sedi_device_ctrl);		       \
-	DEVICE_DT_INST_DEFINE(num,					       \
+	SPI_DEVICE_DT_INST_DEFINE(num,					       \
 			      spi_sedi_init,				       \
 			      PM_DEVICE_GET(spi_##num),		               \
 			      &spi_##num##_data,			       \
