@@ -715,6 +715,10 @@ int net_ipv6_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 	 */
 	fit_len = (int)mtu - NET_IPV6_FRAGH_LEN -
 		(net_pkt_ip_hdr_len(pkt) + net_pkt_ipv6_ext_len(pkt));
+
+	/* The data we want to sent in one fragment must be multiple of 8 */
+	fit_len = ROUND_DOWN(fit_len, 8);
+
 	if (fit_len <= 0) {
 		/* Must be invalid extension headers length */
 		NET_DBG("No room for IPv6 payload MTU %d hdrs_len %d",
