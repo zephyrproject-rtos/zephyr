@@ -388,7 +388,7 @@ void riscv_plic_irq_set_pending(uint32_t irq)
  */
 unsigned int riscv_plic_get_irq(void)
 {
-	return save_irq[arch_proc_id()];
+	return save_irq[arch_curr_cpu()->id];
 }
 
 /**
@@ -400,7 +400,7 @@ unsigned int riscv_plic_get_irq(void)
  */
 const struct device *riscv_plic_get_dev(void)
 {
-	return save_dev[arch_proc_id()];
+	return save_dev[arch_curr_cpu()->id];
 }
 
 #ifdef CONFIG_PLIC_IRQ_AFFINITY
@@ -485,7 +485,7 @@ static void plic_irq_handler(const struct device *dev)
 	const struct plic_config *config = dev->config;
 	mem_addr_t claim_complete_addr = get_claim_complete_addr(dev);
 	struct _isr_table_entry *ite;
-	uint32_t cpu_id = arch_proc_id();
+	uint32_t cpu_id = arch_curr_cpu()->id;
 	/* Get the IRQ number generating the interrupt */
 	const uint32_t local_irq = sys_read32(claim_complete_addr);
 
