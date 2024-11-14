@@ -12,8 +12,8 @@ include(hwm_v2)
 include(configuration_files)
 
 include(kconfig)
-include(arch_v2)
-include(soc_v2)
+include(arch)
+include(soc)
 
 find_package(TargetTools)
 
