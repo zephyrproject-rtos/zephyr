@@ -425,16 +425,12 @@ Drivers and Sensors
   * Added driver for Analog Devices MAX32 SoC series (:dtcompatible:`adi,max32-adc`).
   * Added support for NXP S32 SAR_ADC (:dtcompatible:`nxp,s32-adc-sar`)
 
-* Battery
-
 * CAN
 
   * Added initial support for Renesas RA CANFD (:dtcompatible:`renesas,ra-canfd-global`,
     :dtcompatible:`renesas,ra-canfd`)
   * Added Flexcan support for S32Z27x (:dtcompatible:`nxp,flexcan`, :dtcompatible:`nxp,flexcan-fd`)
   * Improved NXP S32 CANXL error reporting (:dtcompatible:`nxp,s32-canxl`)
-
-* Charger
 
 * Clock control
 
@@ -604,16 +600,12 @@ Drivers and Sensors
   * Added support for W25Q512JV and W25Q512NW-IQ/IN to NXP's MCUX Flexspi driver
   * Renamed the binding :dtcompatible:`nxp,iap-msf1` to :dtcompatible:`nxp,msf1` for accuracy
 
-* GNSS
-
 * GPIO
 
   * tle9104: Add support for the parallel output mode via setting the properties ``parallel-out12`` and
     ``parallel-out34``.
   * Converted the NXP S32 SIUL2 drivers to native Zephyr code
   * Converted the NXP wake-up drivers to native Zephyr code
-
-* Hardware info
 
 * Haptics
 
@@ -691,8 +683,6 @@ Drivers and Sensors
 
   * Updated ws2812 GPIO driver to support dynamic bus timings
 
-* LoRa
-
 * Mailbox
 
   * Added driver support for ESP32 and ESP32-S3 SoCs.
@@ -728,8 +718,6 @@ Drivers and Sensors
 
   * Improve NXP CSI and MIPI_CSI2Rx drivers to support varibale frame rates
 
-* MSPI
-
 * Pin control
 
   * Added support for Microchip MEC5
@@ -750,8 +738,6 @@ Drivers and Sensors
 
   * Upgraded CP9314 driver to B1 silicon revision
   * Added basic driver for MPS MPM54304
-
-* Reset
 
 * RTC
 
