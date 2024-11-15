@@ -326,7 +326,7 @@ Boards & SoC Support
   * The nrf54l15bsim target now includes models of the AAR, CCM and ECB peripherals, and many
     other improvements.
   * Support for Google Kukui EC board (``google_kukui``) has been dropped.
-  * STM32: Deprecated MCO configuration via Kconfig in favour of setting it through devicetree.
+  * STM32: Deprecated MCO configuration via Kconfig in favour of setting it through Devicetree.
     See ``samples/boards/stm32/mco`` sample.
   * STM32: STM32CubeProgrammer is now the default runner on all STMicroelectronics STM32 boards.
   * Removed the ``nrf54l15pdk`` board, use :ref:`nrf54l15dk_nrf54l15` instead.
@@ -571,7 +571,7 @@ Drivers and Sensors
     * Added DP83825 phy driver.
     * PHY_MII
 
-      * Fixed generic phy_mii driver not using the value of the ``no-reset`` property from devicetree.
+      * Fixed generic phy_mii driver not using the value of the ``no-reset`` property from Devicetree.
       * Removed excess newlines from log output of phy_mii driver.
     * KSZ8081
 
