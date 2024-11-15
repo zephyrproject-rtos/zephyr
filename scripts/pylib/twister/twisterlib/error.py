@@ -11,9 +11,7 @@ logger.setLevel(logging.DEBUG)
 class TwisterException(Exception):
     def __init__(self, message="TwisterException"):
         super().__init__(message)
-        for line in traceback.format_stack():
-            logger.info(line.strip())
-        logger.warning("======call stack dump end============")
+        logger.error(''.join(["Twister call stack dump:\n"] + traceback.format_stack()[:-1]))
 
 class TwisterRuntimeError(TwisterException):
     pass

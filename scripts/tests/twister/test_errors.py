@@ -28,8 +28,8 @@ def test_configurationerror():
 def test_status_value_error():
     harness = Test()
 
-    expected_err = 'Test assigned status None,' \
+    expected_err = 'Test assigned status OK,' \
                    ' which could not be cast to a TwisterStatus.'
 
     with pytest.raises(StatusAttributeError, match=expected_err):
-        harness.status = None
+        harness.status = "OK"
