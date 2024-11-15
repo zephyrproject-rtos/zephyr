@@ -1,0 +1,35 @@
+common:
+  filter: not CONFIG_NATIVE_LIBC
+  tags:
+    - posix
+    - xsi_realtime
+  # 1 tier0 platform per supported architecture
+  platform_key:
+    - arch
+    - simulation
+  min_flash: 64
+  min_ram: 32
+  timeout: 240
+  platform_exclude:
+    # linker_zephyr_pre0.cmd:140: syntax error (??)
+    - qemu_xtensa/dc233c
+    # CONFIG_MMU=y but no arch_mem_map() or arch_mem_unmap()
+    - intel_ish_5_4_1
+    - intel_ish_5_6_0
+    - intel_ish_5_8_0
+    - native_sim
+    - native_sim/native/64
+tests:
+  portability.posix.xsi_realtime: {}
+  portability.posix.xsi_realtime.minimal:
+    extra_configs:
+      - CONFIG_MINIMAL_LIBC=y
+  portability.posix.xsi_realtime.newlib:
+    filter: TOOLCHAIN_HAS_NEWLIB == 1
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC=y
+  portability.posix.xsi_realtime.picolibc:
+    tags: picolibc
+    filter: CONFIG_PICOLIBC_SUPPORTED
+    extra_configs:
+      - CONFIG_PICOLIBC=y
