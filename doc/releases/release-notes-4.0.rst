@@ -9,20 +9,51 @@ We are pleased to announce the release of Zephyr version 4.0.0.
 
 Major enhancements with this release include:
 
-* The introduction of the :ref:`secure storage<secure_storage>` subsystem. It allows the use of the
-  PSA Secure Storage API and of persistent keys in the PSA Crypto API on all board targets. It
+* **Secure Storage Subsystem**:
+  A newly introduced :ref:`secure storage<secure_storage>` subsystem allows the use of the
+  PSA Secure Storage API and of persistent keys in the PSA Crypto API on *all* board targets. It
   is now the standard way to provide device-specific protection to data at rest. (:github:`76222`)
 
-* The introduction of the :ref:`comparator<comparator_api>` device driver subsystem for analog
-  comparators, complete with shell support. It supports initial configuration through devicetree
-  and runtime configuration through vendor specific APIs. Initially the
-  :dtcompatible:`nordic,nrf-comp`, :dtcompatible:`nordic,nrf-lpcomp` and
-  :dtcompatible:`nxp,kinetis-acmp` are supported.
+* **ZMS (Zephyr Memory Storage) Subsystem**:
+  :ref:`ZMS <zms_api>` is a new key-value storage subsystem compatible with all non-volatile storage
+  types, including traditional NOR flash and advanced technologies like RRAM and MRAM that support
+  write without erasure.
 
-* The introduction of the :ref:`stepper<stepper_api>` device driver subsystem for stepper motors,
-  complete with shell support. Initially implemented drivers include a simple
-  :dtcompatible:`zephyr,gpio-stepper` and a complex sensor-less stall-detection capable with
-  integrated ramp-controller :dtcompatible:`adi,tmc5041`.
+* **Analog Comparators**:
+  A new :ref:`comparator<comparator_api>` device driver subsystem for analog comparators has been
+  added, complete with shell support. It supports initial configuration through Devicetree and
+  runtime configuration through vendor specific APIs. Initially the :dtcompatible:`nordic,nrf-comp`,
+  :dtcompatible:`nordic,nrf-lpcomp` and :dtcompatible:`nxp,kinetis-acmp` are supported.
+
+* **Stepper Motors**:
+  It is now possible to interact with stepper motors using a standard API thanks to the new
+  :ref:`stepper<stepper_api>` device driver subsystem, which also comes with shell support.
+  Initially implemented drivers include a simple :dtcompatible:`zephyr,gpio-steppers` and a complex
+  sensor-less stall-detection capable with integrated ramp-controller :dtcompatible:`adi,tmc5041`.
+
+* **Haptics**:
+  A new :ref:`haptics_api` device driver subsystem allows unified access to haptic controllers,
+  enabling users to add haptic feedback to their applications.
+
+* **Multimedia Capabilities**
+  Zephyr's audio and video capabilities have been expanded with support for new image sensors, video
+  interfaces, audio interfaces, and codecs being supported.
+
+* **Prometheus Library**:
+  A `Prometheus`_ metrics library has been added to the networking stack. It provides a way to
+  expose metrics to Prometheus clients over HTTP, facilitating the consolidated remote monitoring of
+  Zephyr devices alongside other systems typically monitored using Prometheus.
+
+* **Documentation Improvements**:
+  Several enhancements were made to the online documentation to improve content discovery and
+  navigation. These include a new :ref:`interactive board catalog <boards>` and an interactive
+  directory for :zephyr:code-sample-category:`code samples <samples>`.
+
+* **Expanded Board Support**:
+  Over 60 :ref:`new boards <boards_added_in_zephyr_4_0>` and
+  :ref:`shields <shields_added_in_zephyr_4_0>` are supported in Zephyr 4.0.
+
+.. _`Prometheus`: https://prometheus.io/
 
 An overview of the changes required or recommended when migrating your application from Zephyr
 v3.7.0 to Zephyr v4.0.0 can be found in the separate :ref:`migration guide<migration_4.0>`.
@@ -221,6 +252,8 @@ Boards & SoC Support
   * NXP mimxrt685: fixed clocks to enable DMIC
   * NXP MCX N Series: Fixed NXP LPSPI native chip select when using synchronous API with DMA bug
 
+.. _boards_added_in_zephyr_4_0:
+
 * Added support for these boards:
 
    * :zephyr:board:`01space ESP32C3 0.42 OLED <esp32c3_042_oled>` (``esp32c3_042_oled``)
@@ -317,6 +350,9 @@ Boards & SoC Support
   * Enabled DSPI and EDMA3 on NXP ``s32z270dc2``
   * Enabled ENET ethernet on NXP ``imx8mm`` and ``imx8mn``
   * Added support for the NXP ``imx8qm`` and ``imx8qxp`` DSP core to enable the openAMP sample
+
+
+.. _shields_added_in_zephyr_4_0:
 
 * Added support for the following shields:
 
