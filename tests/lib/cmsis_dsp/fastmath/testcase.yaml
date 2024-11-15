@@ -1,3 +1,7 @@
+common:
+  arch_allow:
+    - arm
+    - posix
 tests:
   libraries.cmsis_dsp.fastmath:
     filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_FULL_LIBC_SUPPORTED
