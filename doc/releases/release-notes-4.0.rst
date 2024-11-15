@@ -255,6 +255,7 @@ Boards & SoC Support
   * NXP IMXRT116x: Fixed bus clocking to align with the settings of the MCUXpresso SDK
   * NXP mimxrt685: fixed clocks to enable DMIC
   * NXP MCX N Series: Fixed NXP LPSPI native chip select when using synchronous API with DMA bug
+  * Nordic nRF54H: Added support for the FLPR (Fast Lightweight Processor) RISC-V CPU.
 
 .. _boards_added_in_zephyr_4_0:
 
@@ -428,6 +429,7 @@ Drivers and Sensors
   * Added initial support for Renesas RA8 ADC driver (:dtcompatible:`renesas,ra-adc`)
   * Added driver for Analog Devices MAX32 SoC series (:dtcompatible:`adi,max32-adc`).
   * Added support for NXP S32 SAR_ADC (:dtcompatible:`nxp,s32-adc-sar`)
+  * Added support for Ambiq Apollo3 series (:dtcompatible:`ambiq,adc`).
 
 * CAN
 
@@ -448,6 +450,7 @@ Drivers and Sensors
     :dtcompatible:`renesas,ra-cgc-external-clock`, :dtcompatible:`renesas,ra-cgc-subclk`,
     :dtcompatible:`renesas,ra-cgc-pll-out`)
   * Silabs: Added support for Series 2+ Clock Management Unit (see :dtcompatible:`silabs,series-clock`)
+  * Added initial support for Nordic nRF54H Series clock controllers.
 
 * Codec (Audio)
 
@@ -920,6 +923,7 @@ Drivers and Sensors
   * Add ESP32-C2 Wi-Fi support.
   * Add ESP32 driver APSTA support.
   * Add NXP RW612 driver support.
+  * Added nRF70 Wi-Fi driver.
 
 Networking
 **********
@@ -1405,6 +1409,9 @@ HALs
 ****
 
 * Nordic
+
+  * Updated nrfx to version 3.7.0.
+  * Added OS agnostic parts of the nRF70 Wi-Fi driver.
 
 * STM32
 
