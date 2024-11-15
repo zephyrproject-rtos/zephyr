@@ -13,7 +13,7 @@
 	clocks {
 		plli2s: plli2s {
 			#clock-cells = <0>;
-			compatible = "st,stm32f412-plli2s-clock";
+			compatible = "st,stm32f411-plli2s-clock";
 			status = "disabled";
 		};
 	};
