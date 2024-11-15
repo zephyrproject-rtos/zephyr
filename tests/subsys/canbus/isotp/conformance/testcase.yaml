@@ -12,6 +12,10 @@
 # CAN FD independent of CONFIG_CAN_FD_MODE configuration.
 #
 
+common:
+  platform_exclude:
+    - mimxrt1180_evk/mimxrt1189/cm33
+    - mimxrt1180_evk/mimxrt1189/cm7
 tests:
   # cases 1, 3
   canbus.isotp.conformance:
