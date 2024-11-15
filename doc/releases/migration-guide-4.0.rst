@@ -2,8 +2,8 @@
 
 .. _migration_4.0:
 
-Migration guide to Zephyr v4.0.0 (Working Draft)
-################################################
+Migration guide to Zephyr v4.0.0
+################################
 
 This document describes the changes required when migrating your application from Zephyr v3.7.0 to
 Zephyr v4.0.0.
