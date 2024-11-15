@@ -933,6 +933,8 @@ static void conn_handle_disconnected(uint16_t handle, uint8_t disconnect_reason)
 			 */
 			disconnected_handles[i] = ~BT_ACL_HANDLE_MASK | handle;
 			disconnected_handles_reason[i] = disconnect_reason;
+
+			return;
 		}
 	}
 }
