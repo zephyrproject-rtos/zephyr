@@ -95,6 +95,10 @@ static void ipc_sysctrl_ept_bound(void *priv)
 	LOG_DBG("Bound to sysctrl.");
 	k_event_post(&ipc_connected_event, IPC_INIT_DONE_EVENT);
 	atomic_set(&ipc_cpusys_channel_config.status, CONNECTED);
+
+	if (k_msgq_num_used_get(&ipc_transmit_msgq) > 0) {
+		k_work_submit(&backend_send_work);
+	}
 }
 
 static void ipc_sysctrl_ept_recv(const void *data, size_t size, void *priv)
@@ -172,11 +176,6 @@ nrfs_err_t nrfs_backend_send(void *message, size_t size)
 
 nrfs_err_t nrfs_backend_send_ex(void *message, size_t size, k_timeout_t timeout, bool high_prio)
 {
-	if (atomic_get(&ipc_cpusys_channel_config.status) != CONNECTED) {
-		LOG_WRN("Backend not yet connected to sysctrl");
-		return NRFS_ERR_INVALID_STATE;
-	}
-
 	if (size <= MAX_PACKET_DATA_SIZE) {
 		int err;
 		struct ipc_data_packet tx_data;
@@ -190,7 +189,9 @@ nrfs_err_t nrfs_backend_send_ex(void *message, size_t size, k_timeout_t timeout,
 			return NRFS_ERR_IPC;
 		}
 
-		err = k_work_submit(&backend_send_work);
+		if (nrfs_backend_connected()) {
+			err = k_work_submit(&backend_send_work);
+		}
 
 		return err >= 0 ? 0 : NRFS_ERR_IPC;
 	}
