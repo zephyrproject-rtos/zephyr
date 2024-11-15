@@ -1342,6 +1342,30 @@ Libraries / Subsystems
 
 * POSIX API
 
+  * Added support for the following Option Groups:
+
+    * :ref:`POSIX_DEVICE_IO <posix_option_group_device_io>`
+    * :ref:`POSIX_SIGNALS <posix_option_group_signals>`
+
+  * Added support for the following Options:
+
+    * :ref:`_POSIX_SYNCHRONIZED_IO <posix_option_synchronized_io>`
+    * :ref:`_POSIX_THREAD_PRIO_PROTECT <posix_option_thread_prio_protect>`
+
+  * :ref:`POSIX_FILE_SYSTEM <posix_option_group_file_system>` improvements:
+
+    * Support for :c:macro:`O_TRUNC` flag in :c:func:`open()`.
+    * Support for :c:func:`rmdir` and :c:func:`remove`.
+
+  * :ref:`_POSIX_THREAD_SAFE_FUNCTIONS <posix_option_thread_safe_functions>` improvements:
+
+    * Support for :c:func:`asctime_r`, :c:func:`ctime_r`, and :c:func:`localtime_r`.
+
+  * :ref:`POSIX_THREADS_BASE <posix_option_group_threads_base>` improvements:
+
+    * Use the :ref:`user mode semaphore API <semaphores_v2>` instead of the
+      :ref:`spinlock API <smp_arch>` for pool synchronization.
+
 * LoRa/LoRaWAN
 
 * ZBus
