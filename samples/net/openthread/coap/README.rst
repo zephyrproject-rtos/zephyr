@@ -176,3 +176,23 @@ The LED state should have changed.
 
 
 .. _OpenThread Border Router: https://openthread.io/codelabs/openthread-border-router-nat64
+
+Controlling server board's LED using shell command
+**************************************************
+
+The example also provides a shell command to control the LED on the server from the client.
+
+To toggle the LED:
+
+.. code-block::
+
+   $client:~$ ot_coap led set 0 toggle
+
+The LED state should have changed.
+
+Same as for the button, this uses the broadcast address by default.
+To control the LED of a specific server, we can use it IPv6 address:
+
+.. code-block::
+
+   $client:~$ ot_coap led set 0 toggle fd6f:cb3a:802:1:f0ec:c1e2:c1bb:744
