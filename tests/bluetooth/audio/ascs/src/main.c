@@ -65,11 +65,10 @@ static void ascs_test_suite_fixture_init(struct ascs_test_suite_fixture *fixture
 		CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT,
 		CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT
 	};
-	int err;
 
 	memset(fixture, 0, sizeof(*fixture));
 
-	err = bt_bap_unicast_server_register(&param);
+	(void)bt_bap_unicast_server_register(&param);
 
 	fixture->ase_cp = test_ase_control_point_get();
 
@@ -268,11 +267,9 @@ ZTEST_F(ascs_test_suite, test_ascs_unregister_without_register)
 
 ZTEST_F(ascs_test_suite, test_ascs_unregister_with_ases_in_config_state)
 {
-	const struct test_ase_chrc_value_hdr *hdr;
 	const struct bt_gatt_attr *ase;
 	struct bt_bap_stream *stream = &fixture->stream;
 	struct bt_conn *conn = &fixture->conn;
-	struct bt_gatt_notify_params *notify_params;
 	uint8_t ase_id;
 	int err;
 
