@@ -1568,3 +1568,4 @@ Known Issues
 
 - :github:`71042` stream_flash: stream_flash_init() size parameter allows to ignore partition layout
 - :github:`67407` stream_flash: stream_flash_erase_page allows to accidentally erase stream
+- :github:`80875` stepper_api: incorrect c-prototype stepper.h and absence of NULL check stepper_shell.c
