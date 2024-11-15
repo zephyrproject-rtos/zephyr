@@ -46,28 +46,6 @@ tests:
       and dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions"))
     integration_platforms:
       - nrf9161dk/nrf9161/ns
-  drivers.flash.common.stm32:
-    platform_allow:
-      - nucleo_f103rb
-      - nucleo_f207zg
-      - stm32f3_disco
-      - nucleo_f429zi
-      - stm32f746g_disco
-      - nucleo_f767zi
-      - nucleo_g0b1re
-      - nucleo_g474re
-      - nucleo_h743zi
-      - nucleo_l152re
-      - disco_l475_iot1
-      - nucleo_wb55rg
-      - nucleo_wl55jc
-      - stm32l562e_dk
-      - stm32l562e_dk/stm32l562xx/ns
-    integration_platforms:
-      - nucleo_f103rb
-    filter: (dt_compat_enabled("st,stm32-flash-controller") or
-             dt_compat_enabled("st,stm32h7-flash-controller")) and
-             dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
   drivers.flash.common.mx25r_high_perf:
     platform_allow: nrf52840dk/nrf52840
     extra_args:
