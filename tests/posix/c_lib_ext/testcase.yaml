@@ -3,32 +3,34 @@ common:
     not CONFIG_NATIVE_LIBC
   tags:
     - posix
-    - getentropy
+    - c_lib_ext
   # 1 tier0 platform per supported architecture
   platform_key:
     - arch
     - simulation
+  min_flash: 64
+  min_ram: 32
 tests:
-  portability.posix.getentropy:
+  portability.posix.c_lib_ext:
     extra_configs:
       - CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=256
-  portability.posix.getentropy.armclang_std_libc:
+  portability.posix.c_lib_ext.armclang_std_libc:
     toolchain_allow: armclang
     extra_configs:
       - CONFIG_ARMCLANG_STD_LIBC=y
-  portability.posix.getentropy.arcmwdtlib:
+  portability.posix.c_lib_ext.arcmwdtlib:
     toolchain_allow: arcmwdt
     extra_configs:
       - CONFIG_ARCMWDT_LIBC=y
-  portability.posix.getentropy.minimal:
+  portability.posix.c_lib_ext.minimal:
     extra_configs:
       - CONFIG_MINIMAL_LIBC=y
       - CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=256
-  portability.posix.getentropy.newlib:
+  portability.posix.c_lib_ext.newlib:
     filter: TOOLCHAIN_HAS_NEWLIB == 1
     extra_configs:
       - CONFIG_NEWLIB_LIBC=y
-  portability.posix.getentropy.picolibc:
+  portability.posix.c_lib_ext.picolibc:
     tags: picolibc
     filter: CONFIG_PICOLIBC_SUPPORTED
     extra_configs:
