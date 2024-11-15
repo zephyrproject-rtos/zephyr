@@ -482,6 +482,8 @@ Drivers and Sensors
   * Added driver for Analog Devices MAX32 SoC series (:dtcompatible:`adi,max32-counter`).
   * Updated the NXP counter_mcux_lptmr driver to support multiple instances of the lptmr
     peripheral.
+  * Converted the NXP S32 System Timer Module driver to native Zephyr code
+  * Added support for late and short relative alarms area to NXP nxp_sys_timer (:dtcompatible:`nxp,s32-sys-timer`)
 
 * Crypto
 
@@ -490,10 +492,6 @@ Drivers and Sensors
 * DAC
 
   * DAC API now supports specifying channel path as internal. Support has been added in STM32 drivers.
-  * Updated the initialization of clocks for the NXP LPTMR driver
-  * Converted the NXP S32 System Timer Module driver to native Zephyr code
-  * Converted NXP S32 Software Watchdog Timer driver to native Zephyr code
-  * Added support late and short relative alarms area to NXP nxp_sys_timer (:dtcompatible:`nxp,s32-sys-timer`)
 
 * Disk
 
@@ -904,6 +902,7 @@ Drivers and Sensors
 * Watchdog
 
   * Added driver for Analog Devices MAX32 SoC series (:dtcompatible:`adi,max32-watchdog`).
+  * Converted NXP S32 Software Watchdog Timer driver to native Zephyr code
 
 * Wi-Fi
 
