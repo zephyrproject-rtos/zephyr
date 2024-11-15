@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2024 Cypress Semiconductor Corporation.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Changed default interrupts priority for GPIO to 4 */
+&gpio_prt0 {
+	interrupts = <0 4>;
+};
+
+&gpio_prt1 {
+	interrupts = <1 4>;
+};
+
+&gpio_prt3 {
+	interrupts = <3 4>;
+};
+
+&gpio_prt5 {
+	interrupts = <5 4>;
+};
