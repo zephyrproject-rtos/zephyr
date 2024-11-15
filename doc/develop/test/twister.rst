@@ -186,6 +186,10 @@ testing:
   testing relating keywords to provide best coverage for the features of this
   board.
 
+.. _twister_default_testing_board:
+
+  binaries:
+    A list of custom binaries to be kept for device testing.
   default: [True|False]:
     This is a default board, it will tested with the highest priority and is
     covered when invoking the simplified twister without any additional
@@ -259,11 +263,11 @@ test application and has to follow basic rules:
    two sections:
 
    * Ztest tests: The individual test cases in the ztest testsuite will be
-     concatenated by dot (`.`) to the identifier in the ``testcase.yaml`` file
+     concatenated by dot (``.``) to the identifier in the ``testcase.yaml`` file
      generating unique identifiers for every test case in the suite.
 
    * Standalone tests and samples: This type of test should at least have 3
-     sections concatnated by dot (`.`) in the test scenario identifier in the
+     sections concatnated by dot (``.``) in the test scenario identifier in the
      ``testcase.yaml`` (or ``sample.yaml``) file.
      The last section of the name shall signify the test case itself.
 
@@ -316,6 +320,8 @@ identifier in the YAML files.
 Each test scenario entry in the test application configuration can define the
 following key/value pairs:
 
+..  _test_config_args:
+
 tags: <list of tags> (required)
     A set of string tags for the test scenario. Usually pertains to
     functional domains but can be anything. Command line invocations
@@ -334,6 +340,23 @@ slow: <True|False> (default False)
 extra_args: <list of extra arguments>
     Extra arguments to pass to build tool when building or running the
     test scenario.
+
+    Using namespacing, it is possible to apply extra_args only to some
+    hardware. Currently architectures/platforms/simulation are supported:
+
+    .. code-block:: yaml
+
+        common:
+          tags: drivers adc
+        tests:
+          test:
+            depends_on: adc
+          test_async:
+            extra_args:
+              - arch:x86:CONFIG_ADC_ASYNC=y
+              - platform:qemu_x86:CONFIG_DEBUG=y
+              - platform:mimxrt1060_evk:SHIELD=rk043fn66hs_ctg
+              - simulation:qemu:CONFIG_MPU=y
 
 extra_configs: <list of extra configurations>
     Extra configuration options to be merged with a main prj.conf
@@ -392,11 +415,11 @@ levels: <list of levels>
     test will be selectable using the command line option ``--level <level name>``
 
 min_ram: <integer>
-    minimum amount of RAM in KB needed for this test to build and run. This is
+    estimated minimum amount of RAM in KB needed for this test to build and run. This is
     compared with information provided by the board metadata.
 
 min_flash: <integer>
-    minimum amount of ROM in KB needed for this test to build and run. This is
+    estimated minimum amount of ROM in KB needed for this test to build and run. This is
     compared with information provided by the board metadata.
 
 .. _twister_test_case_timeout:
@@ -822,6 +845,37 @@ To load arguments from a file, add ``+`` before the file name, e.g.,
 line break instead of white spaces.
 
 Most everyday users will run with no arguments.
+
+Selecting platform scope
+************************
+
+One of the key features of Twister is its ability to decide on which platforms a given
+test scenario should run. This behavior has its roots in Twister being developed as
+a test runner for Zephyr's CI. With hundreds of available platforms and thousands of
+tests, the testing tools should be able to adapt the scope and select/filter out what
+is relevant and what is not.
+
+Twister always prepares an initial list of platforms in scope for a given test,
+based on command line arguments and the :ref:`test's configuration <test_config_args>`. Then,
+platforms that don't fulfill the conditions required in the configuration yaml
+(e.g. minimum ram) are filtered out from the scope.
+Using ``--force-platform`` allows to override filtering caused by ``platform_allow``,
+``platform_exclude``, ``arch_allow`` and ``arch_exclude`` keys in test configuration
+files.
+
+Command line arguments define the initial scope in the following way:
+
+* ``-p/--platform <platform_name>`` (can be used multiple times): only platforms
+  passed with this argument;
+* ``-l/--all``: all available platforms;
+* ``-G/--integration``: all platforms from an ``integration_platforms`` list in
+  a given test configuration file. If a test has no ``integration_platforms``
+  *"scope presumption"* will happen;
+* No scope argument: *"scope presumption"* will happen.
+
+*"Scope presumption"*: A list of Twister's :ref:`default platforms <twister_default_testing_board>`
+is used as the initial list. If nothing is left after the filtration, the ``platform_allow`` list
+is used as the initial scope.
 
 Managing tests timeouts
 ***********************
@@ -1303,7 +1357,7 @@ locally. As of now, those options are available:
   CI)
 - Option to specify your own list of default platforms overriding what
   upstream defines.
-- Ability to override `build_on_all` options used in some test scenarios.
+- Ability to override ``build_on_all`` options used in some test scenarios.
   This will treat tests or sample as any other just build for default
   platforms you specify in the configuration file or on the command line.
 - Ignore some logic in twister to expand platform coverage in cases where
@@ -1315,16 +1369,16 @@ Platform Configuration
 
 The following options control platform filtering in twister:
 
-- `override_default_platforms`: override default key a platform sets in board
+- ``override_default_platforms``: override default key a platform sets in board
   configuration and instead use the list of platforms provided in the
   configuration file as the list of default platforms. This option is set to
   False by default.
-- `increased_platform_scope`: This option is set to True by default, when
+- ``increased_platform_scope``: This option is set to True by default, when
   disabled, twister will not increase platform coverage automatically and will
   only build and run tests on the specified platforms.
-- `default_platforms`: A list of additional default platforms to add. This list
+- ``default_platforms``: A list of additional default platforms to add. This list
   can either be used to replace the existing default platforms or can extend it
-  depending on the value of `override_default_platforms`.
+  depending on the value of ``override_default_platforms``.
 
 And example platforms configuration:
 

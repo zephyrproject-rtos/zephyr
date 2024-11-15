@@ -56,7 +56,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define LWM2M_HELP_OBSERV "List observations"
 #define LWM2M_HELP_CACHE "cache PATH NUM\nEnable data cache for resource\n" \
 	"PATH is LwM2M path\n" \
-	"NUM how many elements to cache\n" \
+	"NUM how many elements to cache\n"
+#define LWM2M_HELP_LS "ls [PATH]\nList objects, instances, resources\n"
 
 static void send_cb(enum lwm2m_send_status status)
 {
@@ -712,6 +713,125 @@ static int cmd_observations(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
+static int print_object_instance(const struct shell *sh, struct lwm2m_engine_obj_inst *oi)
+{
+	struct lwm2m_engine_obj *obj;
+
+	if (!oi) {
+		return -ENOEXEC;
+	}
+
+	obj = oi->obj;
+
+	for (int i = 0; i < oi->resource_count; i++) {
+		struct lwm2m_engine_res *re = &oi->resources[i];
+
+		for (int j = 0; j < re->res_inst_count; j++) {
+			struct lwm2m_engine_res_inst *ri = &re->res_instances[j];
+
+			if (ri->data_ptr && ri->data_len > 0 &&
+			    ri->res_inst_id != RES_INSTANCE_NOT_CREATED) {
+				struct lwm2m_engine_obj_field *field =
+					lwm2m_get_engine_obj_field(obj, re->res_id);
+				char path[LWM2M_MAX_PATH_STR_SIZE];
+
+				if (re->multi_res_inst) {
+					snprintf(path, sizeof(path), "%hu/%hu/%hu/%hu", obj->obj_id,
+						 oi->obj_inst_id, re->res_id, ri->res_inst_id);
+				} else {
+					snprintf(path, sizeof(path), "%hu/%hu/%hu", obj->obj_id,
+						 oi->obj_inst_id, re->res_id);
+				}
+				switch (field->data_type) {
+				case LWM2M_RES_TYPE_STRING:
+					shell_print(sh, "%s : %s", path, (char *)ri->data_ptr);
+					break;
+				case LWM2M_RES_TYPE_U8:
+				case LWM2M_RES_TYPE_S8:
+				case LWM2M_RES_TYPE_BOOL:
+					shell_print(sh, "%s : %u", path, *(uint8_t *)ri->data_ptr);
+					break;
+				case LWM2M_RES_TYPE_U16:
+				case LWM2M_RES_TYPE_S16:
+					shell_print(sh, "%s : %u", path, *(uint16_t *)ri->data_ptr);
+					break;
+				case LWM2M_RES_TYPE_U32:
+				case LWM2M_RES_TYPE_S32:
+					shell_print(sh, "%s : %u", path, *(uint32_t *)ri->data_ptr);
+					break;
+				case LWM2M_RES_TYPE_S64:
+				case LWM2M_RES_TYPE_TIME:
+					shell_print(sh, "%s : %lld", path,
+						    *(int64_t *)ri->data_ptr);
+					break;
+				case LWM2M_RES_TYPE_FLOAT:
+					shell_print(sh, "%s : %lf", path, *(double *)ri->data_ptr);
+					break;
+				case LWM2M_RES_TYPE_OPAQUE:
+					shell_print(sh, "%s : OPAQUE(%hu/%hu)", path, ri->data_len,
+						    ri->max_data_len);
+					break;
+				}
+			}
+		}
+	}
+	return 0;
+}
+
+static int print_object(const struct shell *sh, struct lwm2m_engine_obj *obj)
+{
+	if (!obj) {
+		return -ENOEXEC;
+	}
+	struct lwm2m_engine_obj_inst *oi = next_engine_obj_inst(obj->obj_id, -1);
+
+	for (int i = 0; i < obj->instance_count; i++) {
+		print_object_instance(sh, oi);
+		oi = next_engine_obj_inst(obj->obj_id, oi->obj_inst_id);
+	}
+	return 0;
+}
+
+static int print_all_objs(const struct shell *sh)
+{
+	struct lwm2m_engine_obj *obj;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(lwm2m_engine_obj_list(), obj, node) {
+		print_object(sh, obj);
+	}
+	return 0;
+}
+
+static int cmd_ls(const struct shell *sh, size_t argc, char **argv)
+{
+	struct lwm2m_obj_path path;
+	int ret;
+
+	if (argc < 2) {
+		return print_all_objs(sh);
+	}
+
+	ret = lwm2m_string_to_path(argv[1], &path, '/');
+	if (ret < 0) {
+		return -ENOEXEC;
+	}
+
+	if (path.level == LWM2M_PATH_LEVEL_NONE) {
+		return print_all_objs(sh);
+	} else if (path.level == LWM2M_PATH_LEVEL_OBJECT) {
+		struct lwm2m_engine_obj *obj = lwm2m_engine_get_obj(&path);
+
+		return print_object(sh, obj);
+	} else if (path.level == LWM2M_PATH_LEVEL_OBJECT_INST) {
+		struct lwm2m_engine_obj_inst *oi = lwm2m_engine_get_obj_inst(&path);
+
+		return print_object_instance(sh, oi);
+	} else if (path.level == LWM2M_PATH_LEVEL_RESOURCE) {
+		return cmd_read(sh, argc, argv);
+	}
+	return -ENOEXEC;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_lwm2m,
 	SHELL_COND_CMD_ARG(CONFIG_LWM2M_VERSION_1_1, send, NULL,
@@ -730,6 +850,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(lock, NULL, LWM2M_HELP_LOCK, cmd_lock, 1, 0),
 	SHELL_CMD_ARG(unlock, NULL, LWM2M_HELP_UNLOCK, cmd_unlock, 1, 0),
 	SHELL_CMD_ARG(obs, NULL, LWM2M_HELP_OBSERV, cmd_observations, 1, 0),
+	SHELL_CMD_ARG(ls, NULL, LWM2M_HELP_LS, cmd_ls, 1, 1),
 	SHELL_SUBCMD_SET_END);
 SHELL_COND_CMD_ARG_REGISTER(CONFIG_LWM2M_SHELL, lwm2m, &sub_lwm2m,
 			    LWM2M_HELP_CMD, NULL, 1, 0);

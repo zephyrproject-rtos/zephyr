@@ -1,7 +1,4 @@
-.. _stm32f0_disco_board:
-
-ST STM32F0 Discovery
-####################
+.. zephyr:board:: stm32f0_disco
 
 Overview
 ********
@@ -10,10 +7,6 @@ The STM32F0 Discovery development board uses an STM32F051R8T6 MCU and
 integrates the ST-LINK/V2-1 debugger and programmer.  It also comes with a
 comprehensive STM32 software HAL library and various packaged software
 examples.
-
-.. image:: img/stm32f0_disco.jpg
-     :align: center
-     :alt: STM32F0DISCOVERY
 
 More information about the board can be found at the `STM32F0DISCOVERY website`_.
 
@@ -94,6 +87,8 @@ For more details please refer to `STM32F0DISCOVERY board User Manual`_.
 Programming and Debugging
 *************************
 
+STM32F0DISCOVERY board includes an ST-LINK/V2-1 embedded debug tool interface.
+
 Applications for the ``stm32f0_disco`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -101,8 +96,16 @@ flashed in the usual way (see :ref:`build_an_application` and
 Flashing
 ========
 
-STM32F0DISCOVERY board includes an ST-LINK/V2-1 embedded debug tool interface.
-This interface is supported by the openocd version included in the Zephyr SDK.
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
+
+Alternatively, OpenOCD or JLink can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner jlink
 
 Flashing an application to Nucleo F030R8
 ----------------------------------------
@@ -141,3 +144,6 @@ References
 
 .. _STM32F0DISCOVERY board User Manual:
    https://www.st.com/resource/en/user_manual/dm00050135.pdf
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

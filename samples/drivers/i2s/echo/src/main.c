@@ -30,12 +30,12 @@
 #define TIMEOUT             1000
 
 #define SW0_NODE        DT_ALIAS(sw0)
-#if DT_NODE_HAS_STATUS(SW0_NODE, okay)
+#if DT_NODE_HAS_STATUS_OKAY(SW0_NODE)
 static struct gpio_dt_spec sw0_spec = GPIO_DT_SPEC_GET(SW0_NODE, gpios);
 #endif
 
 #define SW1_NODE        DT_ALIAS(sw1)
-#if DT_NODE_HAS_STATUS(SW1_NODE, okay)
+#if DT_NODE_HAS_STATUS_OKAY(SW1_NODE)
 static struct gpio_dt_spec sw1_spec = GPIO_DT_SPEC_GET(SW1_NODE, gpios);
 #endif
 
@@ -47,7 +47,7 @@ static int16_t echo_block[SAMPLES_PER_BLOCK];
 static volatile bool echo_enabled = true;
 static K_SEM_DEFINE(toggle_transfer, 1, 1);
 
-#if DT_NODE_HAS_STATUS(SW0_NODE, okay)
+#if DT_NODE_HAS_STATUS_OKAY(SW0_NODE)
 static void sw0_handler(const struct device *dev, struct gpio_callback *cb,
 			uint32_t pins)
 {
@@ -58,7 +58,7 @@ static void sw0_handler(const struct device *dev, struct gpio_callback *cb,
 }
 #endif
 
-#if DT_NODE_HAS_STATUS(SW1_NODE, okay)
+#if DT_NODE_HAS_STATUS_OKAY(SW1_NODE)
 static void sw1_handler(const struct device *dev, struct gpio_callback *cb,
 			uint32_t pins)
 {
@@ -70,7 +70,7 @@ static bool init_buttons(void)
 {
 	int ret;
 
-#if DT_NODE_HAS_STATUS(SW0_NODE, okay)
+#if DT_NODE_HAS_STATUS_OKAY(SW0_NODE)
 	static struct gpio_callback sw0_cb_data;
 
 	if (!gpio_is_ready_dt(&sw0_spec)) {
@@ -98,7 +98,7 @@ static bool init_buttons(void)
 	printk("Press \"%s\" to toggle the echo effect\n", sw0_spec.port->name);
 #endif
 
-#if DT_NODE_HAS_STATUS(SW1_NODE, okay)
+#if DT_NODE_HAS_STATUS_OKAY(SW1_NODE)
 	static struct gpio_callback sw1_cb_data;
 
 	if (!gpio_is_ready_dt(&sw1_spec)) {

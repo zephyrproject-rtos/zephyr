@@ -6,6 +6,7 @@ import asyncio
 import cavstool
 
 if __name__ == "__main__":
+    cavstool.args_parse()
     try:
         asyncio.run(cavstool.main())
     except KeyboardInterrupt:

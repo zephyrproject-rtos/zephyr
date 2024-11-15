@@ -13,6 +13,6 @@
 };
 
 &green_led {
-	gpios = <&gpio1 8 GPIO_ACTIVE_LOW>;
+	gpios = <&gpio1 8 GPIO_ACTIVE_HIGH>;
 	label = "User LED1";
 };

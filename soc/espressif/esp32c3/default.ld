@@ -36,12 +36,21 @@ user_dram_seg_len = user_idram_size;
 #define RAMABLE_REGION     dram0_0_seg
 #define ROMABLE_REGION     FLASH
 
+#undef GROUP_DATA_LINK_IN
+#define GROUP_DATA_LINK_IN(vregion, lregion) > vregion AT > lregion
+
+#undef GROUP_NOLOAD_LINK_IN
+#define GROUP_NOLOAD_LINK_IN(vregion, lregion) > vregion
+
 /* Flash segments (rodata and text) should be mapped in the virtual address spaces.
  * Executing directly from LMA is not possible. */
 #undef GROUP_ROM_LINK_IN
 #define GROUP_ROM_LINK_IN(vregion, lregion) > RODATA_REGION AT > lregion
 
 /* Make sure new sections have consistent alignment between input and output sections */
+#undef SECTION_DATA_PROLOGUE
+#define SECTION_DATA_PROLOGUE(name, options, align) name options : ALIGN_WITH_INPUT
+
 #undef SECTION_PROLOGUE
 #define SECTION_PROLOGUE SECTION_DATA_PROLOGUE
 
@@ -83,6 +92,9 @@ ENTRY(CONFIG_KERNEL_ENTRY)
 _rom_store_table = 0;
 
 _iram_dram_offset = IRAM_DRAM_OFFSET;
+
+/* Stack sentry */
+_heap_sentry = DRAM_RESERVED_START;
 
 SECTIONS
 {
@@ -226,7 +238,6 @@ SECTIONS
     *libkernel.a:(.literal .text .literal.* .text.*)
     *libgcc.a:lib2funcs.*(.literal .text .literal.* .text.*)
     *libdrivers__flash.a:flash_esp32.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:spi_flash_rom_patch.*(.literal .text .literal.* .text.*)
     *libzephyr.a:log_noos.*(.literal .text .literal.* .text.*)
     *libdrivers__timer.a:esp32c3_sys_timer.*(.literal .text .literal.* .text.*)
     *libzephyr.a:log_core.*(.literal .text .literal.* .text.*)
@@ -281,7 +292,7 @@ SECTIONS
     *libzephyr.a:flash_brownout_hook.*(.literal .literal.* .text .text.*)
     *libzephyr.a:spi_flash_wrap.*(.literal .literal.* .text .text.*)
     *libzephyr.a:spi_flash_hpm_enable.*(.literal .literal.* .text .text.*)
-    *libzephyr.a:spi_flash_oct_flash_init*(.literal .literal.* .text .text.*)
+    *libzephyr.a:flash_ops.*(.literal .text .literal.* .text.*)
 
     /* [mapping:esp_system] */
     *libzephyr.a:esp_err.*(.literal .literal.* .text .text.*)
@@ -324,8 +335,8 @@ SECTIONS
     *libzephyr.a:bootloader_random*.*(.literal.bootloader_random_enable .text.bootloader_random_enable)
 
 #if defined(CONFIG_ESP32_WIFI_IRAM_OPT)
-    *libnet80211.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.*)
-    *libpp.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.*)
+    *libnet80211.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.* .wifiextrairam .wifiextrairam.*)
+    *libpp.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.* .wifiextrairam .wifiextrairam.*)
     *libcoexist.a:(.wifi_slp_iram .wifi_slp_iram.*)
 
     /* [mapping:esp_wifi] */
@@ -369,11 +380,10 @@ SECTIONS
     *libzephyr.a:bootloader_console.*(.literal .text .literal.* .text.*)
 
     *libzephyr.a:esp_image_format.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:flash_ops.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:flash_ops_esp32c3.*(.literal .text .literal.* .text.*)
     *libzephyr.a:flash_encrypt.*(.literal .text .literal.* .text.*)
     *libzephyr.a:flash_encryption_secure_features.*(.literal .text .literal.* .text.*)
     *libzephyr.a:flash_partitions.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:flash_qio_mode.*(.literal .text .literal.* .text.*)
     *libzephyr.a:spi_flash_hal.*(.literal .literal.* .text .text.*)
     *libzephyr.a:spi_flash_hal_common.*(.literal .literal.* .text .text.*)
     *libzephyr.a:esp_flash_api.*(.literal .text .literal.* .text.*)
@@ -468,7 +478,6 @@ SECTIONS
     *libzephyr.a:log_output.*(.rodata .rodata.* .srodata .srodata.*)
     *libdrivers__flash.a:flash_esp32.*(.rodata  .rodata.* .srodata .srodata.*)
     *libdrivers__serial.a:uart_esp32.*(.rodata .rodata.* .srodata .srodata.*)
-    *libzephyr.a:spi_flash_rom_patch.*(.rodata  .rodata.* .srodata .srodata.*)
     *libzephyr.a:periph_ctrl.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:loader.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:cache_utils.*(.rodata .rodata.* .srodata .srodata.*)
@@ -508,7 +517,8 @@ SECTIONS
     *libzephyr.a:flash_brownout_hook.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:spi_flash_wrap.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:spi_flash_hpm_enable.*(.rodata .rodata.* .srodata .srodata.*)
-    *libzephyr.a:spi_flash_oct_flash_init.*(.rodata .rodata.* .srodata .srodata.*)
+    *libzephyr.a:flash_ops.*(.rodata .rodata.* .srodata .srodata.*)
+    *libzephyr.a:flash_qio_mode.*(.rodata .rodata.* .srodata .srodata.*)
 
     /* [mapping:esp_mm] */
     *libzephyr.a:esp_cache.*(.rodata .rodata.* .srodata .srodata.*)
@@ -566,7 +576,6 @@ SECTIONS
     *libzephyr.a:esp_clk.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:flash_mmap.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:flash_ops.*(.rodata .rodata.* .srodata .srodata.*)
-    *libzephyr.a:flash_ops_esp32c3.*(.rodata .rodata.* .srodata .srodata.*)
 
     *libzephyr.a:esp_gpio_reserve.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:spi_flash_hal.*(.rodata .rodata.* .srodata .srodata.*)
@@ -642,7 +651,7 @@ SECTIONS
   _image_ram_start = _iram_start - IRAM_DRAM_OFFSET;
   #include <zephyr/linker/ram-end.ld>
 
-  ASSERT(((__bss_end - ORIGIN(dram0_0_seg)) <= LENGTH(dram0_0_seg)), "DRAM segment data does not fit.")
+  ASSERT(((_end - ORIGIN(dram0_0_seg)) <= LENGTH(dram0_0_seg)), "SRAM instruction/data does not fit.")
 
   /* --- END OF DRAM --- */
 
@@ -668,8 +677,8 @@ SECTIONS
     __rom_region_start = ABSOLUTE(.);
 
 #if !defined(CONFIG_ESP32_WIFI_IRAM_OPT)
-    *libnet80211.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.*)
-    *libpp.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.*)
+    *libnet80211.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.* .wifiextrairam .wifiextrairam.*)
+    *libpp.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.* .wifiextrairam .wifiextrairam.*)
 #endif /* CONFIG_ESP32_WIFI_IRAM_OPT */
 
 #if !defined(CONFIG_ESP32_WIFI_RX_IRAM_OPT)
@@ -793,14 +802,6 @@ SECTIONS
   .flash.rodata_end : ALIGN(0x10)
   {
     . = ALIGN(4);
-
-#ifdef CONFIG_THREAD_LOCAL_STORAGE
-     /* create explicit symbol for __tdata_start so that it is loaded
-      * into proper DROM region atributted by AT keyword below
-      */
-    __tdata_start = ADDR(tdata);
-#endif
-
     _rodata_reserved_end = ABSOLUTE(.);
     _image_rodata_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)

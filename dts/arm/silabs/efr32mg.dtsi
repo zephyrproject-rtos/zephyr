@@ -235,7 +235,7 @@
 	};
 
 	bt_hci_silabs: bt_hci_silabs {
-		compatible = "silabs,bt-hci";
+		compatible = "silabs,bt-hci-efr32";
 		status = "disabled";
 	};
 

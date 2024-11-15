@@ -1,20 +1,10 @@
-.. _altera_max10:
-
-Altera MAX10
-############
+.. zephyr:board:: altera_max10
 
 Overview
 ********
 
-
 The Zephyr kernel is supported on the Altera MAX10 Rev C development kit, using
 the Nios II Gen 2 soft CPU.
-
-.. figure:: img/altera_max10.jpg
-   :align: center
-   :alt: Altera's MAX* 10
-
-   Altera's MAX* 10  (Credit: Altera)
 
 Hardware
 ********
@@ -147,7 +137,7 @@ Flashing Kernel into UFM
 ------------------------
 
 The usual ``flash`` target will work with the ``altera_max10`` board
-configuration. Here is an example for the :ref:`hello_world`
+configuration. Here is an example for the :zephyr:code-sample:`hello_world`
 application.
 
 .. zephyr-app-commands::

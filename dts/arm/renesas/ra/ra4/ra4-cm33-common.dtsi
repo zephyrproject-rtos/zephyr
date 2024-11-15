@@ -1,0 +1,165 @@
+/*
+ * Copyright (c) 2024 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <arm/armv8-m.dtsi>
+#include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-ra.h>
+#include <freq.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m33";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv8m-mpu";
+				reg = <0xe000ed90 0x40>;
+			};
+		};
+	};
+
+	soc {
+		interrupt-parent = <&nvic>;
+
+		system: system@4001e000 {
+			compatible = "renesas,ra-system";
+			reg = <0x4001e000 0x1000>;
+			status = "okay";
+		};
+
+		flash-controller@407e0000 {
+			reg = <0x407e0000 0x10000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+
+		ioport0: gpio@40080000 {
+			compatible = "renesas,ra-gpio-ioport";
+			reg = <0x40080000 0x20>;
+			port = <0>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		ioport1: gpio@40080020 {
+			compatible = "renesas,ra-gpio-ioport";
+			reg = <0x40080020 0x20>;
+			port = <1>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		ioport2: gpio@40080040 {
+			compatible = "renesas,ra-gpio-ioport";
+			reg = <0x40080040 0x20>;
+			port = <2>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		ioport3: gpio@40080060 {
+			compatible = "renesas,ra-gpio-ioport";
+			reg = <0x40080060 0x20>;
+			port = <3>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		ioport4: gpio@40080080 {
+			compatible = "renesas,ra-gpio-ioport";
+			reg = <0x40080080 0x20>;
+			port = <4>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		ioport5: gpio@400800a0 {
+			compatible = "renesas,ra-gpio-ioport";
+			reg = <0x400800a0 0x20>;
+			port = <5>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		pinctrl: pin-controller@40080800 {
+			compatible = "renesas,ra-pinctrl-pfs";
+			reg = <0x40080800 0x3c0>;
+			status = "okay";
+		};
+
+		sci0: sci0@40118000 {
+			compatible = "renesas,ra-sci";
+			interrupts = <0 1>, <1 1>, <2 1>, <3 1>;
+			interrupt-names = "rxi", "txi", "tei", "eri";
+			reg = <0x40118000 0x100>;
+			clocks = <&pclka MSTPB 31>;
+			status = "disabled";
+			uart {
+				compatible = "renesas,ra-sci-uart";
+				channel = <0>;
+				status = "disabled";
+			};
+		};
+
+		sci9: sci9@40118900 {
+			compatible = "renesas,ra-sci";
+			interrupts = <36 1>, <37 1>, <38 1>, <39 1>;
+			interrupt-names = "rxi", "txi", "tei", "eri";
+			reg = <0x40118900 0x100>;
+			clocks = <&pclka MSTPB 22>;
+			status = "disabled";
+			uart {
+				compatible = "renesas,ra-sci-uart";
+				channel = <9>;
+				status = "disabled";
+			};
+		};
+
+		option_setting_ofs: option_setting_ofs@100a100 {
+			compatible = "zephyr,memory-region";
+			reg = <0x0100a100 0x18>;
+			zephyr,memory-region = "OPTION_SETTING_OFS";
+			status = "okay";
+		};
+
+		option_setting_sas: option_setting_sas@100a134 {
+			compatible = "zephyr,memory-region";
+			reg = <0x0100a134 0xcc>;
+			zephyr,memory-region = "OPTION_SETTING_SAS";
+			status = "okay";
+		};
+
+		option_setting_s: option_setting_s@100a200 {
+			compatible = "zephyr,memory-region";
+			reg = <0x0100a200 0x100>;
+			zephyr,memory-region = "OPTION_SETTING_S";
+			status = "okay";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <4>;
+};

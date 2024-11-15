@@ -27,4 +27,50 @@
 			psels = <RA_PSEL(RA_PSEL_SCI_9, 10, 15)>;
 		};
 	};
+
+	iic1_default: iic1_default {
+		group1 {
+			/* SCL1 SDA1*/
+			psels = <RA_PSEL(RA_PSEL_I2C, 5, 12)>,<RA_PSEL(RA_PSEL_I2C, 5, 11)>;
+			drive-strength = "medium";
+		};
+	};
+
+	adc0_default: adc0_default {
+		group1 {
+			/* input */
+			psels = <RA_PSEL(RA_PSEL_ADC, 0, 4)>;
+			renesas,analog-enable;
+		};
+	};
+
+	spi1_default: spi1_default {
+		group1 {
+			/* MISO MOSI RSPCK SSL*/
+			psels = <RA_PSEL(RA_PSEL_SPI, 4, 10)>,
+			<RA_PSEL(RA_PSEL_SPI, 4, 11)>,
+			<RA_PSEL(RA_PSEL_SPI, 4, 12)>,
+			<RA_PSEL(RA_PSEL_SPI, 4, 13)>;
+		};
+	};
+
+	pwm7_default: pwm7_default {
+		group1 {
+			/* GTIOC7A */
+			psels = <RA_PSEL(RA_PSEL_GPT1, 6, 3)>;
+		};
+		group2 {
+			/* GTIOC7B */
+			psels = <RA_PSEL(RA_PSEL_GPT1, 6, 2)>;
+		};
+	};
+
+	canfd0_default: canfd0_default {
+		group1 {
+			/* CRX0 CTX0 */
+			psels = <RA_PSEL(RA_PSEL_CANFD, 3, 11)>,
+			<RA_PSEL(RA_PSEL_CANFD, 3, 12)>;
+			drive-strength = "high";
+		};
+	};
 };

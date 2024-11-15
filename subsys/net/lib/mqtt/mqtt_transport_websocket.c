@@ -77,7 +77,7 @@ int mqtt_client_websocket_connect(struct mqtt_client *client)
 		NET_ERR("Websocket connect failed (%d)",
 			 client->transport.websocket.sock);
 
-		(void)close(transport_sock);
+		(void)zsock_close(transport_sock);
 		return client->transport.websocket.sock;
 	}
 

@@ -939,7 +939,9 @@ static void isr_window(void *param)
 	uint32_t ticks_at_start;
 
 	ticks_at_start = ticker_ticks_now_get() +
-			 HAL_TICKER_CNTR_CMP_OFFSET_MIN;
+			 HAL_TICKER_US_TO_TICKS(HAL_RADIO_ISR_LATENCY_MAX_US) +
+			 HAL_TICKER_CNTR_CMP_OFFSET_MIN +
+			 HAL_TICKER_CNTR_SET_LATENCY;
 	remainder_us = radio_tmr_start_tick(0, ticks_at_start);
 #else /* !CONFIG_BT_CENTRAL && !CONFIG_BT_CTLR_ADV_EXT */
 
@@ -1546,6 +1548,11 @@ static int isr_rx_scan_report(struct lll_scan *lll, uint8_t devmatch_ok,
 		case PDU_ADV_TYPE_EXT_IND:
 			{
 				struct node_rx_ftr *ftr;
+
+				/* Reset Scan context association with any Aux context as a new
+				 * extended advertising chain is being setup for reception here.
+				 */
+				lll->lll_aux = NULL;
 
 				ftr = &(node_rx->rx_ftr);
 				ftr->param = lll;

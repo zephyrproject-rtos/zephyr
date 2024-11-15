@@ -199,6 +199,7 @@ test_spi_icm426888: icm42688@1a {
 	compatible = "invensense,icm42688";
 	reg = <0x1a>;
 	spi-max-frequency = <24000000>;
+	int-gpios = <&test_gpio 0 0>;
 };
 
 test_spi_max31855: max31855@1b {
@@ -378,4 +379,23 @@ test_spi_tle9104: tle9104@2e {
 		status = "okay";
 		#sensor-cells = <0>;
 	};
+};
+
+test_spi_bmp390: bmp390@2f {
+	compatible = "bosch,bmp390";
+	reg = <0x2f>;
+	spi-max-frequency = <0>;
+	int-gpios = <&test_gpio 0 0>;
+	osr-press = <0x01>;
+	odr = "12.5";
+	osr-press = <8>;
+	osr-temp = <1>;
+	iir-filter = <3>;
+};
+
+test_spi_ilps22qs: ilps22qs@30 {
+	compatible = "st,ilps22qs";
+	reg = <0x30>;
+	spi-max-frequency = <0>;
+	status = "okay";
 };

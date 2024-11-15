@@ -9,6 +9,7 @@
 / {
 	chosen {
 		zephyr,display = &ili9488_buydisplay_3_5_tft_touch_arduino;
+		zephyr,touch = &ft5336_buydisplay_3_5_tft_touch_arduino;
 	};
 
 	lvgl_pointer {

@@ -1,8 +1,7 @@
 # DOC: used to generate docs
 
-breathe>=4.34
 sphinx
-sphinx_rtd_theme~=2.0
+sphinx_rtd_theme~=3.0
 sphinx-tabs
 sphinxcontrib-svg2pdfconverter
 pygments>=2.9
@@ -10,6 +9,7 @@ sphinx-notfound-page
 sphinx-copybutton
 sphinx-togglebutton
 sphinx-sitemap
+sphinx-autobuild
 
 # YAML validation. Used by zephyr_module.
 PyYAML>=6.0
@@ -21,3 +21,6 @@ pyserial
 
 # Doxygen doxmlparser
 doxmlparser
+
+# Used by the Zephyr domain to organize code samples
+anytree

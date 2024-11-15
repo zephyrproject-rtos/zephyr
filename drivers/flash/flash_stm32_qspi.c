@@ -35,7 +35,7 @@
 #define STM32_QSPI_BASE_ADDRESS DT_INST_REG_ADDR(0)
 
 #define STM32_QSPI_RESET_GPIO DT_INST_NODE_HAS_PROP(0, reset_gpios)
-#define STM32_QSPI_RESET_CMD DT_PROP(DT_NODELABEL(quadspi), set_cmd)
+#define STM32_QSPI_RESET_CMD  DT_INST_PROP(0, reset_cmd)
 
 #include <stm32_ll_dma.h>
 
@@ -187,9 +187,16 @@ static inline int qspi_prepare_quad_program(const struct device *dev,
 			dev_data->qspi_write_cmd == SPI_NOR_CMD_PP_1_4_4);
 
 	cmd->Instruction = dev_data->qspi_write_cmd;
+#if defined(CONFIG_USE_MICROCHIP_QSPI_FLASH_WITH_STM32)
+	/* Microchip qspi-NOR flash, does not follow the standard rules */
+	if (cmd->Instruction == SPI_NOR_CMD_PP_1_1_4) {
+		cmd->AddressMode = QSPI_ADDRESS_4_LINES;
+	}
+#else
 	cmd->AddressMode = ((cmd->Instruction == SPI_NOR_CMD_PP_1_1_4)
 				? QSPI_ADDRESS_1_LINE
 				: QSPI_ADDRESS_4_LINES);
+#endif /* CONFIG_USE_MICROCHIP_QSPI_FLASH_WITH_STM32 */
 	cmd->DataMode = QSPI_DATA_4_LINES;
 	cmd->DummyCycles = 0;
 
@@ -336,12 +343,35 @@ static int qspi_read_jedec_id(const struct device *dev, uint8_t *id)
 		return -EIO;
 	}
 
+	LOG_DBG("Read JESD216-ID");
+
 	dev_data->cmd_status = 0;
-	id = &data[0];
+	memcpy(id, data, JESD216_READ_ID_LEN);
 
 	return 0;
 }
 #endif /* CONFIG_FLASH_JESD216_API */
+
+static int qspi_write_unprotect(const struct device *dev)
+{
+	int ret = 0;
+	QSPI_CommandTypeDef cmd_unprotect = {
+			.Instruction = SPI_NOR_CMD_ULBPR,
+			.InstructionMode = QSPI_INSTRUCTION_1_LINE,
+	};
+
+	if (IS_ENABLED(DT_INST_PROP(0, requires_ulbpr))) {
+		ret = qspi_send_cmd(dev, &cmd_write_en);
+
+		if (ret != 0) {
+			return ret;
+		}
+
+		ret = qspi_send_cmd(dev, &cmd_unprotect);
+	}
+
+	return ret;
+}
 
 /*
  * Read Serial Flash Discovery Parameter
@@ -1270,6 +1300,9 @@ static int flash_stm32_qspi_send_reset(const struct device *dev)
 		LOG_ERR("%d: Failed to send RESET_MEM", ret);
 		return ret;
 	}
+
+	LOG_DBG("Send Reset command");
+
 	return 0;
 }
 #endif
@@ -1485,6 +1518,13 @@ static int flash_stm32_qspi_init(const struct device *dev)
 		return -ENODEV;
 	}
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
+
+	ret = qspi_write_unprotect(dev);
+	if (ret != 0) {
+		LOG_ERR("write unprotect failed: %d", ret);
+		return -ENODEV;
+	}
+	LOG_DBG("Write Un-protected");
 
 #ifdef CONFIG_STM32_MEMMAP
 #if DT_PROP(DT_NODELABEL(quadspi), dual_flash) && defined(QUADSPI_CR_DFM)

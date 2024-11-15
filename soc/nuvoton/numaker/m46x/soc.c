@@ -9,7 +9,7 @@
 /* Hardware and starter kit includes. */
 #include <NuMicro.h>
 
-void z_arm_platform_init(void)
+void soc_reset_hook(void)
 {
 	SystemInit();
 
@@ -57,14 +57,14 @@ void z_arm_platform_init(void)
 	/* Wait for LIRC clock ready */
 	CLK_WaitClockReady(CLK_STATUS_LIRCSTB_Msk);
 
-#if DT_NODE_HAS_PROP(DT_NODELABEL(scc), hirc48)
-	/* Enable/disable 48 MHz high-speed internal RC oscillator (HIRC48) */
-	if (DT_ENUM_IDX(DT_NODELABEL(scc), hirc48) == NUMAKER_SCC_CLKSW_ENABLE) {
-		CLK_EnableXtalRC(CLK_PWRCTL_HIRC48EN_Msk);
-		/* Wait for HIRC48 clock ready */
-		CLK_WaitClockReady(CLK_STATUS_HIRC48STB_Msk);
-	} else if (DT_ENUM_IDX(DT_NODELABEL(scc), hirc48) == NUMAKER_SCC_CLKSW_DISABLE) {
-		CLK_DisableXtalRC(CLK_PWRCTL_HIRC48EN_Msk);
+#if DT_NODE_HAS_PROP(DT_NODELABEL(scc), hirc48m)
+	/* Enable/disable 48 MHz high-speed internal RC oscillator (HIRC48M) */
+	if (DT_ENUM_IDX(DT_NODELABEL(scc), hirc48m) == NUMAKER_SCC_CLKSW_ENABLE) {
+		CLK_EnableXtalRC(CLK_PWRCTL_HIRC48MEN_Msk);
+		/* Wait for HIRC48M clock ready */
+		CLK_WaitClockReady(CLK_STATUS_HIRC48MSTB_Msk);
+	} else if (DT_ENUM_IDX(DT_NODELABEL(scc), hirc48m) == NUMAKER_SCC_CLKSW_DISABLE) {
+		CLK_DisableXtalRC(CLK_PWRCTL_HIRC48MEN_Msk);
 	}
 #endif
 

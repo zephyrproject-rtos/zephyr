@@ -29,7 +29,7 @@ STRUCT_SECTION_START_EXTERN(net_socket_service_desc);
 STRUCT_SECTION_END_EXTERN(net_socket_service_desc);
 
 static struct service {
-	struct zsock_pollfd events[CONFIG_NET_SOCKETS_POLL_MAX];
+	struct zsock_pollfd events[CONFIG_ZVFS_POLL_MAX];
 	int count;
 } ctx;
 
@@ -119,14 +119,12 @@ static struct net_socket_service_desc *find_svc_and_event(
  * round will not notice it and call the callback again while we are
  * servicing the callback.
  */
-void net_socket_service_callback(struct k_work *work)
+void net_socket_service_callback(struct net_socket_service_event *pev)
 {
-	struct net_socket_service_event *pev =
-		CONTAINER_OF(work, struct net_socket_service_event, work);
 	struct net_socket_service_desc *svc = pev->svc;
 	struct net_socket_service_event ev = *pev;
 
-	ev.callback(&ev.work);
+	ev.callback(&ev);
 
 	/* Copy back the socket fd to the global array because we marked
 	 * it as -1 when triggering the work.
@@ -136,8 +134,7 @@ void net_socket_service_callback(struct k_work *work)
 	}
 }
 
-static int call_work(struct zsock_pollfd *pev, struct k_work_q *work_q,
-		     struct k_work *work)
+static int call_work(struct zsock_pollfd *pev, struct net_socket_service_event *event)
 {
 	int ret = 0;
 
@@ -147,7 +144,7 @@ static int call_work(struct zsock_pollfd *pev, struct k_work_q *work_q,
 	pev->fd = -1;
 
 	/* Synchronous call */
-	net_socket_service_callback(work);
+	net_socket_service_callback(event);
 
 	return ret;
 
@@ -170,7 +167,7 @@ static int trigger_work(struct zsock_pollfd *pev)
 	 */
 	event->event = *pev;
 
-	return call_work(pev, svc->work_q, &event->work);
+	return call_work(pev, event);
 }
 
 static void socket_service_thread(void)
@@ -199,7 +196,7 @@ static void socket_service_thread(void)
 			"%zd poll entries configured.",
 			count + 1, ARRAY_SIZE(ctx.events));
 		NET_ERR("Please increase value of %s to at least %d",
-			"CONFIG_NET_SOCKETS_POLL_MAX", count + 1);
+			"CONFIG_ZVFS_POLL_MAX", count + 1);
 		goto fail;
 	}
 

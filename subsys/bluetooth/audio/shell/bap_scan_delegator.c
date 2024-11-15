@@ -21,6 +21,7 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
 #include <zephyr/shell/shell.h>
@@ -31,7 +32,7 @@
 #include <zephyr/types.h>
 
 #include <audio/bap_internal.h>
-#include "shell/bt.h"
+#include "host/shell/bt.h"
 
 #define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 20 /* Set the timeout relative to interval */
 #define PA_SYNC_SKIP              5
@@ -45,7 +46,7 @@ static struct sync_state {
 	struct bt_conn *conn;
 	struct bt_le_per_adv_sync *pa_sync;
 	const struct bt_bap_scan_delegator_recv_state *recv_state;
-	uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE];
+	uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE];
 } sync_states[CONFIG_BT_BAP_SCAN_DELEGATOR_RECV_STATE_COUNT];
 
 static bool past_preference = true;
@@ -335,12 +336,12 @@ static int pa_sync_term_req_cb(struct bt_conn *conn,
 
 static void broadcast_code_cb(struct bt_conn *conn,
 			      const struct bt_bap_scan_delegator_recv_state *recv_state,
-			      const uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE])
+			      const uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE])
 {
 	struct sync_state *state;
 
 	shell_info(ctx_shell, "Broadcast code received for %p", recv_state);
-	shell_hexdump(ctx_shell, broadcast_code, BT_AUDIO_BROADCAST_CODE_SIZE);
+	shell_hexdump(ctx_shell, broadcast_code, BT_ISO_BROADCAST_CODE_SIZE);
 
 	state = sync_state_get(recv_state);
 	if (state == NULL) {
@@ -349,7 +350,7 @@ static void broadcast_code_cb(struct bt_conn *conn,
 		return;
 	}
 
-	(void)memcpy(state->broadcast_code, broadcast_code, BT_AUDIO_BROADCAST_CODE_SIZE);
+	(void)memcpy(state->broadcast_code, broadcast_code, BT_ISO_BROADCAST_CODE_SIZE);
 }
 
 static int bis_sync_req_cb(struct bt_conn *conn,
@@ -436,8 +437,19 @@ static int cmd_bap_scan_delegator_init(const struct shell *sh, size_t argc,
 	static bool registered;
 
 	if (!registered) {
-		bt_le_per_adv_sync_cb_register(&pa_sync_cb);
-		bt_bap_scan_delegator_register_cb(&scan_delegator_cb);
+		int err;
+
+		err = bt_bap_scan_delegator_register(&scan_delegator_cb);
+		if (err) {
+			shell_error(sh, "Failed to register scan delegator (err: %d)", err);
+			return -ENOEXEC;
+		}
+
+		err = bt_le_per_adv_sync_cb_register(&pa_sync_cb);
+		if (err) {
+			shell_error(sh, "Failed to register PA sync callbacks (err: %d)", err);
+			return -ENOEXEC;
+		}
 
 		registered = true;
 	}

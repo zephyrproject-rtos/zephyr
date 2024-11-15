@@ -16,7 +16,7 @@ static int test_file_open(void)
 {
 	int res;
 
-	res = open(TEST_FILE, O_CREAT | O_RDWR);
+	res = open(TEST_FILE, O_CREAT | O_RDWR, 0660);
 	if (res < 0) {
 		TC_ERROR("Failed opening file: %d, errno=%d\n", res, errno);
 		/* FIXME: restructure tests as per #46897 */
@@ -145,8 +145,9 @@ static int test_file_fsync(void)
 {
 	int res = 0;
 
-	if (file < 0)
+	if (file < 0) {
 		return res;
+	}
 
 	res = fsync(file);
 	if (res < 0) {
@@ -164,8 +165,9 @@ static int test_file_fdatasync(void)
 {
 	int res = 0;
 
-	if (file < 0)
+	if (file < 0) {
 		return res;
+	}
 
 	res = fdatasync(file);
 	if (res < 0) {
@@ -184,8 +186,9 @@ static int test_file_truncate(void)
 	int res = 0;
 	size_t truncate_size = sizeof(test_str) - 4;
 
-	if (file < 0)
+	if (file < 0) {
 		return res;
+	}
 
 	res = ftruncate(file, truncate_size);
 	if (res) {
@@ -338,4 +341,21 @@ ZTEST(posix_fs_file_test, test_fs_fd_leak)
 			zassert_true(test_file_close() == TC_PASS);
 		}
 	}
+}
+
+ZTEST(posix_fs_file_test, test_file_open_truncate)
+{
+	struct stat buf = {0};
+
+	zassert_ok(test_file_open());
+	zassert_ok(test_file_write());
+	zassert_ok(test_file_close());
+	file = open(TEST_FILE, O_RDWR | O_TRUNC);
+	zassert_not_equal(file, -1,
+			  "File open failed for truncate mode");
+
+	zassert_ok(test_file_close());
+	zassert_ok(stat(TEST_FILE, &buf));
+	zassert_equal(buf.st_size, 0, "Error: file is not truncated");
+	zassert_ok(test_file_delete());
 }

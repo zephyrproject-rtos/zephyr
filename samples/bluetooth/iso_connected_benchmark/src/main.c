@@ -202,7 +202,7 @@ static void iso_send(struct bt_iso_chan *chan)
 	interval = (role == ROLE_CENTRAL) ?
 		   cig_create_param.c_to_p_interval : cig_create_param.p_to_c_interval;
 
-	buf = net_buf_alloc(&tx_pool, K_FOREVER);
+	buf = net_buf_alloc(&tx_pool, K_NO_WAIT);
 	if (buf == NULL) {
 		LOG_ERR("Could not allocate buffer");
 		k_work_reschedule(&chan_work->send_work, K_USEC(interval));
@@ -1279,10 +1279,7 @@ static int run_peripheral(void)
 	}
 
 	LOG_INF("Starting advertising");
-	err = bt_le_adv_start(
-		BT_LE_ADV_PARAM(BT_LE_ADV_OPT_ONE_TIME | BT_LE_ADV_OPT_CONNECTABLE,
-				BT_GAP_ADV_FAST_INT_MIN_2, BT_GAP_ADV_FAST_INT_MAX_2, NULL),
-		NULL, 0, sd, ARRAY_SIZE(sd));
+	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, NULL, 0, sd, ARRAY_SIZE(sd));
 	if (err != 0) {
 		LOG_ERR("Advertising failed to start: %d", err);
 		return err;

@@ -57,11 +57,15 @@ enum {
 	 */
 	BT_CONN_AUTO_CONNECT,
 	BT_CONN_BR_LEGACY_SECURE,             /* 16 digits legacy PIN tracker */
+	BT_CONN_BR_BONDABLE,                  /* BR connection is bondable */
 	BT_CONN_USER,                         /* user I/O when pairing */
 	BT_CONN_BR_PAIRING,                   /* BR connection in pairing context */
+	BT_CONN_BR_PAIRED,                    /* BR connection pairing is done */
 	BT_CONN_BR_NOBOND,                    /* SSP no bond pairing tracker */
+	BT_CONN_BR_GENERAL_BONDING,           /* BR general bonding */
 	BT_CONN_BR_PAIRING_INITIATOR,         /* local host starts authentication */
 	BT_CONN_CLEANUP,                      /* Disconnected, pending cleanup */
+	BT_CONN_AUTO_INIT_PROCEDURES_DONE,    /* Auto-initiated procedures have run */
 	BT_CONN_PERIPHERAL_PARAM_UPDATE,      /* If periph param update timer fired */
 	BT_CONN_PERIPHERAL_PARAM_AUTO_UPDATE, /* If periph param auto update on timer fired */
 	BT_CONN_PERIPHERAL_PARAM_SET,         /* If periph param were set from app */
@@ -71,7 +75,7 @@ enum {
 	BT_CONN_ATT_MTU_EXCHANGED,            /* If ATT MTU has been exchanged. */
 #endif /* CONFIG_BT_GATT_CLIENT */
 
-	BT_CONN_AUTO_FEATURE_EXCH,            /* Auto-initiated LE Feat done */
+	BT_CONN_LE_FEATURES_EXCHANGED,        /* bt_conn.le.features is valid */
 	BT_CONN_AUTO_VERSION_INFO,            /* Auto-initiated LE version done */
 
 	BT_CONN_CTE_RX_ENABLED,               /* CTE receive and sampling is enabled */
@@ -103,6 +107,11 @@ struct bt_conn_le {
 	uint8_t  conn_param_retry_countdown;
 #endif
 
+	/** @brief Remote LE features
+	 *
+	 * Available after `atomic_test_bit(conn->flags, BT_CONN_LE_FEATURES_EXCHANGED)`.
+	 * Signaled by bt_conn_cb.remote_info_available().
+	 */
 	uint8_t features[8];
 
 	struct bt_keys *keys;
@@ -113,6 +122,10 @@ struct bt_conn_le {
 
 #if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
 	struct bt_conn_le_data_len_info data_len;
+#endif
+
+#if defined(CONFIG_BT_SUBRATING)
+	struct bt_conn_le_subrating_info subrate;
 #endif
 };
 
@@ -329,7 +342,7 @@ struct closure {
 } __packed;
 
 #if defined(CONFIG_BT_CONN_TX_USER_DATA_SIZE)
-BUILD_ASSERT(sizeof(struct closure) < CONFIG_BT_CONN_TX_USER_DATA_SIZE);
+BUILD_ASSERT(sizeof(struct closure) <= CONFIG_BT_CONN_TX_USER_DATA_SIZE);
 #endif
 
 static inline void make_closure(void *storage, void *cb, void *data)
@@ -347,6 +360,8 @@ static inline void *closure_data(void *storage)
 {
 	return ((struct closure *)storage)->data;
 }
+
+void bt_conn_tx_notify(struct bt_conn *conn, bool wait_for_completion);
 
 void bt_conn_reset_rx_state(struct bt_conn *conn);
 
@@ -478,6 +493,26 @@ void notify_tx_power_report(struct bt_conn *conn,
 
 void notify_path_loss_threshold_report(struct bt_conn *conn,
 				       struct bt_conn_le_path_loss_threshold_report report);
+
+void notify_subrate_change(struct bt_conn *conn,
+			   struct bt_conn_le_subrate_changed params);
+
+void notify_remote_cs_capabilities(struct bt_conn *conn,
+			   struct bt_conn_le_cs_capabilities params);
+
+void notify_remote_cs_fae_table(struct bt_conn *conn,
+			   struct bt_conn_le_cs_fae_table params);
+
+void notify_cs_config_created(struct bt_conn *conn, struct bt_conn_le_cs_config *params);
+
+void notify_cs_config_removed(struct bt_conn *conn, uint8_t config_id);
+
+void notify_cs_subevent_result(struct bt_conn *conn, struct bt_conn_le_cs_subevent_result *result);
+
+void notify_cs_security_enable_available(struct bt_conn *conn);
+
+void notify_cs_procedure_enable_available(struct bt_conn *conn,
+					  struct bt_conn_le_cs_procedure_enable_complete *params);
 
 #if defined(CONFIG_BT_SMP)
 /* If role specific LTK is present */

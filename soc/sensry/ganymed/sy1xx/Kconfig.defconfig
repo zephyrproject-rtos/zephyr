@@ -1,0 +1,76 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2024 sensry.io
+
+if SOC_SERIES_SY1XX
+
+config RISCV_PMP
+	default n
+
+config RISCV_HAS_CLIC
+	default n
+
+config RISCV_VECTORED_MODE
+	default y
+
+config INCLUDE_RESET_VECTOR
+	default y
+
+config GEN_IRQ_VECTOR_TABLE
+	default y
+
+config RISCV_GENERIC_TOOLCHAIN
+	default y if "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr"
+
+config RV_BOOT_HART
+	# default cluster id 0x3e, core 0 (FC) => 0x3e0 == 992
+	default 992
+
+config RISCV_SOC_CONTEXT_SAVE
+	default n
+
+config RISCV_SOC_OFFSETS
+	default n
+
+config NUM_IRQS
+	default 32
+
+config RISCV_SOC_INTERRUPT_INIT
+	default y
+
+config RISCV_SOC_HAS_ISR_STACKING
+	default n
+
+config DYNAMIC_INTERRUPTS
+	default y
+
+config GEN_ISR_TABLES
+	default y
+
+config RISCV_MCAUSE_EXCEPTION_MASK
+	default 0x1F
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 32768
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 993
+
+config USE_DT_CODE_PARTITION
+	default y
+
+config RISCV_SOC_HAS_CUSTOM_IRQ_LOCK_OPS
+	default n
+
+config RISCV_SOC_EXCEPTION_FROM_IRQ
+	default y
+
+config INIT_STACKS
+	default y
+
+config XIP
+	default n
+
+config TIMESLICE_SIZE
+	default 10
+
+endif

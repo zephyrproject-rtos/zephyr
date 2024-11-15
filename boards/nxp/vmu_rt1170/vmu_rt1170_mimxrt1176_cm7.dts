@@ -22,6 +22,7 @@
 		sdhc0 = &usdhc1;
 		sw0 = &arming_button;
 		pwm-led0 = &buzzer0;
+		mcuboot-button0 = &arming_button;
 	};
 
 	chosen {
@@ -35,6 +36,7 @@
 		zephyr,flash-controller = &mx25um51345g;
 		zephyr,flash = &mx25um51345g;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,uart-mcumgr = &lpuart1;
 	};
 
 	/* This is the Arming Button on the included GPS module for 10 pin JST-GH */
@@ -457,6 +459,7 @@
 	cd-gpios = <&gpio3 31 (GPIO_ACTIVE_LOW | GPIO_PULL_DOWN)>;
 	sdmmc {
 		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
 		status = "okay";
 	};
 };

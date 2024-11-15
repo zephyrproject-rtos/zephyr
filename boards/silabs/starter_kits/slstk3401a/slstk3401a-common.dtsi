@@ -127,7 +127,7 @@
 		#size-cells = <1>;
 
 		/* Set 6Kb of storage at the end of the 256Kb of flash */
-		storage_partition: partition@fe800 {
+		storage_partition: partition@3e800 {
 			label = "storage";
 			reg = <0x0003e800 0x00001800>;
 		};

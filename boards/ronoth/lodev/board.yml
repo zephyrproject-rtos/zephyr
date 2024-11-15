@@ -1,5 +1,6 @@
 board:
   name: ronoth_lodev
+  full_name: LoDev
   vendor: ronoth
   socs:
     - name: stm32l073xx

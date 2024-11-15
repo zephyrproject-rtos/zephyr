@@ -1,0 +1,11 @@
+# Zephyr composite fuel-gauge device
+
+# Copyright (c) 2024 Embeint Inc
+# SPDX-License-Identifier: Apache-2.0
+
+config FUEL_GAUGE_COMPOSITE
+	bool "Zephyr composite fuel gauge"
+	default y
+	depends on DT_HAS_ZEPHYR_FUEL_GAUGE_COMPOSITE_ENABLED
+	help
+	  Enable driver for the Zephyr composite fuel gauge device.

@@ -1,7 +1,4 @@
-.. _adafruit_itsybitsy_m4_express:
-
-Adafruit ItsyBitsy M4 Express
-#############################
+.. zephyr:board:: adafruit_itsybitsy_m4_express
 
 Overview
 ********
@@ -9,10 +6,6 @@ Overview
 The Adafruit ItsyBitsy M4 express is a small (36 mm x 18 mm) ARM development
 board with an onboard RGB LED, USB port, 2 MiB of SPI flash, and range of I/O
 broken out onto 23 GPIO pins.
-
-.. image:: img/adafruit_itsybitsy_m4_express.jpg
-     :align: center
-     :alt: Adafruit ItsyBitsy M4 Express
 
 Hardware
 ********
@@ -106,7 +99,7 @@ USB Device Port
 ===============
 
 The SAMD51 MCU has a USB device port that can be used to communicate
-with a host PC.  See the :ref:`usb-samples` sample applications for
+with a host PC.  See the :zephyr:code-sample-category:`usb` sample applications for
 more, such as the :zephyr:code-sample:`usb-cdc-acm` sample which sets up a virtual
 serial port that echos characters back to the host PC.
 
@@ -122,7 +115,7 @@ will be entered automatically when you run :code:`west flash`.
 Flashing
 ========
 
-#. Build the Zephyr kernel and the :ref:`hello_world` sample application:
+#. Build the Zephyr kernel and the :zephyr:code-sample:`hello_world` sample application:
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world

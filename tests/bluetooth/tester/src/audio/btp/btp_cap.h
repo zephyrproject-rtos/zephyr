@@ -97,7 +97,7 @@ struct btp_cap_broadcast_source_setup_cmd {
 	uint16_t max_transport_latency;
 	uint8_t presentation_delay[3];
 	uint8_t flags;
-	uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE];
+	uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE];
 } __packed;
 struct btp_cap_broadcast_source_setup_rp {
 	uint8_t source_id;

@@ -1,7 +1,4 @@
-.. _stm32wb5mmg_bluetooth_module:
-
-ST STM32WB5MMG
-################
+.. zephyr:board:: stm32wb5mmg
 
 Overview
 ********
@@ -32,10 +29,6 @@ STM32WB5MMG supports the following features:
 - Ultra-low-power modes for battery longevity
 - 68 GPIOs
 - SWD, JTAG
-
-.. image:: img/STM32WB5MMG.jpg
-   :align: center
-   :alt: STM32WB5MMG
 
 More information about the board can be found at the `` `STM32WB5MMG on www.st.com`_.
 
@@ -238,14 +231,23 @@ The onboard ST-Link on the ``b_u585i_iot02a`` board can be used to flash the
 STM32WB5MMG module. To do this you should put SW4 on OFF and SW5 on ON mode.
 In this case the firmware will be uploaded on the STM32WB5MMG module.
 
+The module is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
 
-Flashing `hci_uart` application to STM32WB5MMG
-----------------------------------------------
+Alternatively, openocd can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+
+Flashing ``hci_uart`` application to STM32WB5MMG
+------------------------------------------------
 
 Connect the B-U585I-IOT02A to your host computer using the USB port. Put
 the SW4 (MCU SWD) in OFF mode and SW5 (SWD BLE) in ON mode. Then build
 and flash an application. Here is an example for the
-:ref:`hci_uart <bluetooth-hci-uart-sample>` application.
+:zephyr:code-sample:`bluetooth_hci_uart` application.
 
 Run a serial host program to connect with your B-U585I-IOT02A board:
 
@@ -287,7 +289,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hci_uart <bluetooth-hci-uart-sample>` application.
+:zephyr:code-sample:`bluetooth_hci_uart` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/bluetooth/observer
@@ -300,5 +302,9 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. _STM32WB5MMG datasheet:
    https://www.st.com/resource/en/datasheet/stm32wb5mmg.pdf
+
 .. _modules/hal/stm32/lib/stm32wb/hci/README:
   https://github.com/zephyrproject-rtos/hal_stm32/blob/main/lib/stm32wb/hci/README
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

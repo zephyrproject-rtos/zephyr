@@ -48,7 +48,7 @@ ZTEST(test_pbuf, test_rw)
 	 * order to avoid clang complains about memory_area not being constant
 	 * expression.
 	 */
-	static const struct pbuf_cfg cfg = PBUF_CFG_INIT(memory_area, MEM_AREA_SZ, 0);
+	static PBUF_MAYBE_CONST struct pbuf_cfg cfg = PBUF_CFG_INIT(memory_area, MEM_AREA_SZ, 0);
 
 	static struct pbuf pb = {
 		.cfg = &cfg,
@@ -58,7 +58,7 @@ ZTEST(test_pbuf, test_rw)
 		write_buf[i] = i+1;
 	}
 
-	zassert_equal(pbuf_init(&pb), 0);
+	zassert_equal(pbuf_tx_init(&pb), 0);
 
 	/* Write MSGA_SZ bytes packet. */
 	ret = pbuf_write(&pb, write_buf, MSGA_SZ);
@@ -115,9 +115,9 @@ ZTEST(test_pbuf, test_retcodes)
 	 * order to avoid clang complains about memory_area not being constant
 	 * expression.
 	 */
-	static const struct pbuf_cfg cfg0 = PBUF_CFG_INIT(memory_area, MEM_AREA_SZ, 32);
-	static const struct pbuf_cfg cfg1 = PBUF_CFG_INIT(memory_area, MEM_AREA_SZ, 0);
-	static const struct pbuf_cfg cfg2 = PBUF_CFG_INIT(memory_area, 20, 4);
+	static PBUF_MAYBE_CONST struct pbuf_cfg cfg0 = PBUF_CFG_INIT(memory_area, MEM_AREA_SZ, 32);
+	static PBUF_MAYBE_CONST struct pbuf_cfg cfg1 = PBUF_CFG_INIT(memory_area, MEM_AREA_SZ, 0);
+	static PBUF_MAYBE_CONST struct pbuf_cfg cfg2 = PBUF_CFG_INIT(memory_area, 20, 4);
 
 	static struct pbuf pb0 = {
 		.cfg = &cfg0,
@@ -132,9 +132,9 @@ ZTEST(test_pbuf, test_retcodes)
 	};
 
 	/* Initialize buffers. */
-	zassert_equal(pbuf_init(&pb0), 0);
-	zassert_equal(pbuf_init(&pb1), 0);
-	zassert_equal(pbuf_init(&pb2), 0);
+	zassert_equal(pbuf_tx_init(&pb0), 0);
+	zassert_equal(pbuf_tx_init(&pb1), 0);
+	zassert_equal(pbuf_tx_init(&pb2), 0);
 
 	print_pbuf_info(&pb0);
 	print_pbuf_info(&pb1);
@@ -268,13 +268,13 @@ ZTEST(test_pbuf, test_stress)
 	 * order to avoid clang complains about buffer not being constant
 	 * expression.
 	 */
-	static const struct pbuf_cfg cfg = PBUF_CFG_INIT(buffer, MEM_AREA_SZ, 4);
+	static PBUF_MAYBE_CONST struct pbuf_cfg cfg = PBUF_CFG_INIT(buffer, MEM_AREA_SZ, 4);
 
 	static struct pbuf pb = {
 		.cfg = &cfg,
 	};
 
-	zassert_equal(pbuf_init(&pb), 0);
+	zassert_equal(pbuf_tx_init(&pb), 0);
 	ctx.pbuf = &pb;
 	ctx.wr_cnt = 0;
 	ctx.rd_cnt = 0;

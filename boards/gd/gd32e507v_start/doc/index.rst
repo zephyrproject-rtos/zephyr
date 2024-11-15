@@ -1,7 +1,4 @@
-.. _gd32e507v_start:
-
-GigaDevice GD32E507V-START
-##########################
+.. zephyr:board:: gd32e507v_start
 
 Overview
 ********
@@ -12,10 +9,6 @@ on GD32E507VE Cortex-M33 High Performance MCU.
 The GD32E507VE features a single-core ARM Cortex-M33 MCU which can run up
 to 180 MHz with flash accesses zero wait states, 512kiB of Flash, 128kiB of
 SRAM and 80 GPIOs.
-
-.. image:: img/gd32e507v_start.jpg
-     :align: center
-     :alt: gd32e507v_start
 
 Hardware
 ********
@@ -94,7 +87,7 @@ provided you install the necessary CMSIS-Pack:
 J-Link can also be used to program the board using the SWD interface exposed in
 the JP1 header.
 
-#. Build the Zephyr kernel and the :ref:`hello_world` sample application:
+#. Build the Zephyr kernel and the :zephyr:code-sample:`hello_world` sample application:
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world

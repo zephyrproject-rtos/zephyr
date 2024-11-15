@@ -1,7 +1,4 @@
-.. _nsim:
-
-DesignWare ARC nSIM and HAPS FPGA boards
-########################################
+.. zephyr:board:: nsim
 
 Overview
 ********
@@ -39,7 +36,7 @@ available configurations are listed below:
 .. _board_arc_nsim_prop_args_files:
 
 It is recommended to look at precise description of a particular sub-configuration in either
-``.props`` or ``.args`` files in :zephyr_file:`boards/snps/nsim/support/` directory to understand
+``.props`` or ``.args`` files in :zephyr_file:`boards/snps/nsim/arc_classic/support/` directory to understand
 which options are configured and so will be used on invocation of the simulator.
 
 In case of single-core configurations it would be ``.props`` file which contains configuration
@@ -55,14 +52,14 @@ simulation anyway).
    nSIM & MDB don't exactly match, so care should be taken).
 
 I.e. for the single-core ``nsim/nsim_hs5x`` platform there are
-:zephyr_file:`boards/snps/nsim/support/nsim_hs5x.props` and
-:zephyr_file:`boards/snps/nsim/support/mdb_hs5x.args`.
+:zephyr_file:`boards/snps/nsim/arc_classic/support/nsim_hs5x.props` and
+:zephyr_file:`boards/snps/nsim/arc_classic/support/mdb_hs5x.args`.
 
 For the multi-core configurations there is only ``.args`` file as the multi-core configuration
 can only be instantiated with help of MDB.
 
 I.e. for the multi-core ``nsim/nsim_hs5x/smp`` platform there is only
-:zephyr_file:`boards/snps/nsim/support/mdb_hs5x_smp.args`.
+:zephyr_file:`boards/snps/nsim/arc_classic/support/mdb_hs5x_smp.args`.
 
 .. warning::
    All nSIM/MDB configurations are used for demo and testing purposes. They are not meant to
@@ -90,7 +87,7 @@ Most board sub-configurations support building with both GNU and ARC MWDT toolch
 there might be exceptions from that, especially for newly added targets. You can check supported
 toolchains for the sub-configurations in the corresponding ``.yaml`` file.
 
-I.e. for the ``nsim/nsim_hs5x`` board we can check :zephyr_file:`boards/snps/nsim/nsim_nsim_hs5x.yaml`
+I.e. for the ``nsim/nsim_hs5x`` board we can check :zephyr_file:`boards/snps/nsim/arc_classic/nsim_nsim_hs5x.yaml`
 
 The supported toolchains are listed in ``toolchain:`` array in ``.yaml`` file, where we can find:
 
@@ -316,7 +313,7 @@ GNU & MWDT toolchain compiler options
 =====================================
 
 The hardware-specific compiler options are set in corresponding SoC cmake file. For ``nsim`` board
-it is :zephyr_file:`soc/snps/nsim/CMakeLists.txt`.
+it is :zephyr_file:`soc/snps/nsim/arc_classic/CMakeLists.txt`.
 
 For the GNU toolchain the basic configuration is set via ``-mcpu`` which is defined in generic code
 and based on the selected CPU model via Kconfig. It still can be forcefully set to required value
@@ -332,6 +329,8 @@ For the MWDT toolchain all hardware-specific compiler options are set directly i
 
 References
 **********
+
+.. target-notes::
 
 .. _Designware ARC nSIM: https://www.synopsys.com/dw/ipdir.php?ds=sim_nsim
 .. _DesignWare ARC Free nSIM: https://www.synopsys.com/cgi-bin/dwarcnsim/req1.cgi

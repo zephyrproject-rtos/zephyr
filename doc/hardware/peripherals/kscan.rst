@@ -4,8 +4,12 @@
 Keyboard Scan
 #############
 
+.. note:: Kscan APIs are deprecated, any driver and applications should be
+   ported over to use :ref:`input` instead.
+
 Overview
 ********
+
 The kscan driver (keyboard scan matrix) is used for detecting a key press in a
 connected matrix keyboard or any device with buttons such as joysticks.
 Typically, matrix keyboards are implemented using a two-dimensional

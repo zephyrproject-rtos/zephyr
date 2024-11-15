@@ -8,11 +8,11 @@ tests:
   bluetooth.audio.ascs.test_snk_only:
     type: unit
     extra_configs:
-      - CONFIG_BT_ASCS_ASE_SRC_COUNT=0
+      - CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT=0
   bluetooth.audio.ascs.test_src_only:
     type: unit
     extra_configs:
-      - CONFIG_BT_ASCS_ASE_SNK_COUNT=0
+      - CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT=0
   bluetooth.audio.ascs.test_unicast_client_enabled:
     type: unit
     extra_configs:

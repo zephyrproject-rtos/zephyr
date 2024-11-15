@@ -150,134 +150,75 @@ config UART_ASYNC_TO_INT_DRIVEN_RX_TIMEOUT
 
 comment "Serial Drivers"
 
-rsource "Kconfig.b91"
-
-rsource "Kconfig.ns16550"
-
-rsource "Kconfig.mcux"
-
-rsource "Kconfig.mcux_flexcomm"
-
-rsource "Kconfig.mcux_iuart"
-
-rsource "Kconfig.mcux_lpsci"
-
-rsource "Kconfig.mcux_lpuart"
-
-rsource "Kconfig.miv"
-
-rsource "Kconfig.imx"
-
-rsource "Kconfig.it8xxx2"
-
-rsource "Kconfig.stellaris"
-
-rsource "Kconfig.native_posix"
-
-rsource "Kconfig.usart_sam"
-
-rsource "Kconfig.uart_sam"
-
-rsource "Kconfig.stm32"
-
-rsource "Kconfig.nrfx"
-
-rsource "Kconfig.altera_jtag"
-
-rsource "Kconfig.cc13xx_cc26xx"
-
-rsource "Kconfig.cc32xx"
-
-rsource "Kconfig.cmsdk_apb"
-
-rsource "Kconfig.sifive"
-
-rsource "Kconfig.esp32"
-
-rsource "Kconfig.gecko"
-
-rsource "Kconfig.leuart_gecko"
-
-rsource "Kconfig.msp432p4xx"
-
-rsource "Kconfig.numicro"
-
-rsource "Kconfig.sam0"
-
-rsource "Kconfig.psoc6"
-
-rsource "Kconfig.pl011"
-
-rsource "Kconfig.ql_usbserialport_s3b"
-
-rsource "Kconfig.rv32m1_lpuart"
-
-rsource "Kconfig.rpi_pico"
-
-rsource "Kconfig.litex"
-
-rsource "Kconfig.rtt"
-
-rsource "Kconfig.bt"
-
-rsource "Kconfig.xlnx"
-
-rsource "Kconfig.xmc4xxx"
-
-rsource "Kconfig.lpc11u6x"
-
-rsource "Kconfig.npcx"
-
-rsource "Kconfig.apbuart"
-
-rsource "Kconfig.rcar"
-
-rsource "Kconfig.xec"
-
-rsource "Kconfig.gd32"
-
-rsource "Kconfig.test"
-
-rsource "Kconfig.neorv32"
-
-rsource "Kconfig.xen"
-
-rsource "Kconfig.ifx_cat1"
-
-rsource "Kconfig.smartbond"
-
-rsource "Kconfig.nxp_s32"
-
-rsource "Kconfig.cdns"
-
-rsource "Kconfig.opentitan"
-
+# zephyr-keep-sorted-start
 rsource "Kconfig.altera"
-
-rsource "Kconfig.hostlink"
-
-rsource "Kconfig.emul"
-
-rsource "Kconfig.native_tty"
-
-rsource "Kconfig.numaker"
-
-rsource "Kconfig.efinix_sapphire"
-
-rsource "Kconfig.sedi"
-
-rsource "Kconfig.max32"
-
+rsource "Kconfig.altera_jtag"
+rsource "Kconfig.apbuart"
+rsource "Kconfig.b91"
 rsource "Kconfig.bcm2711"
-
-rsource "Kconfig.intel_lw"
-
-rsource "Kconfig.renesas_ra"
-
+rsource "Kconfig.bt"
+rsource "Kconfig.cc13xx_cc26xx"
+rsource "Kconfig.cc32xx"
+rsource "Kconfig.cdns"
+rsource "Kconfig.cmsdk_apb"
+rsource "Kconfig.efinix_sapphire"
+rsource "Kconfig.emul"
 rsource "Kconfig.ene"
-
+rsource "Kconfig.esp32"
+rsource "Kconfig.gd32"
+rsource "Kconfig.gecko"
+rsource "Kconfig.hostlink"
+rsource "Kconfig.ifx_cat1"
+rsource "Kconfig.imx"
+rsource "Kconfig.intel_lw"
+rsource "Kconfig.it8xxx2"
+rsource "Kconfig.leuart_gecko"
+rsource "Kconfig.litex"
+rsource "Kconfig.lpc11u6x"
+rsource "Kconfig.max32"
+rsource "Kconfig.mcux"
+rsource "Kconfig.mcux_flexcomm"
+rsource "Kconfig.mcux_iuart"
+rsource "Kconfig.mcux_lpsci"
+rsource "Kconfig.mcux_lpuart"
+rsource "Kconfig.miv"
+rsource "Kconfig.msp432p4xx"
+rsource "Kconfig.native_posix"
+rsource "Kconfig.native_tty"
+rsource "Kconfig.neorv32"
+rsource "Kconfig.npcx"
+rsource "Kconfig.nrfx"
+rsource "Kconfig.ns16550"
+rsource "Kconfig.numaker"
+rsource "Kconfig.numicro"
+rsource "Kconfig.nxp_s32"
+rsource "Kconfig.opentitan"
+rsource "Kconfig.pl011"
+rsource "Kconfig.psoc6"
+rsource "Kconfig.ql_usbserialport_s3b"
+rsource "Kconfig.rcar"
+rsource "Kconfig.renesas_ra"
+rsource "Kconfig.renesas_ra8"
+rsource "Kconfig.rpi_pico"
+rsource "Kconfig.rtt"
+rsource "Kconfig.rv32m1_lpuart"
 rsource "Kconfig.rzt2m"
+rsource "Kconfig.sam0"
+rsource "Kconfig.sedi"
+rsource "Kconfig.sifive"
+rsource "Kconfig.smartbond"
+rsource "Kconfig.stellaris"
+rsource "Kconfig.stm32"
+rsource "Kconfig.sy1xx"
+rsource "Kconfig.test"
+rsource "Kconfig.uart_sam"
+rsource "Kconfig.usart_sam"
+rsource "Kconfig.xec"
+rsource "Kconfig.xen"
+rsource "Kconfig.xlnx"
+rsource "Kconfig.xmc4xxx"
+# zephyr-keep-sorted-stop
 
-source "drivers/serial/Kconfig.renesas_ra8"
+source "drivers/serial/Kconfig.si32"
 
 endif # SERIAL

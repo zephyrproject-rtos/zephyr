@@ -12,8 +12,10 @@ toolchain:
   - zephyr
   - cross-compile
 ram: 1024
+supported:
+  - uart
+  - net
 testing:
   ignore_tags:
-    - net
     - bluetooth
 vendor: nxp

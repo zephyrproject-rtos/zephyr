@@ -141,5 +141,7 @@ connected in ``Debug Control`` window.
 References
 **********
 
+.. target-notes::
+
 .. [1] https://developer.arm.com/tools-and-software/embedded/arm-development-studio
 .. [2] https://developer.arm.com/tools-and-software/simulation-models/fixed-virtual-platforms/arm-ecosystem-models

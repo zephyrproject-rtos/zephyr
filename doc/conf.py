@@ -7,11 +7,8 @@ from pathlib import Path
 import re
 import textwrap
 
-from sphinx.cmd.build import get_parser
-
-args = get_parser().parse_args()
 ZEPHYR_BASE = Path(__file__).resolve().parents[1]
-ZEPHYR_BUILD = Path(args.outputdir).resolve()
+ZEPHYR_BUILD = Path(os.environ.get("OUTPUT_DIR")).resolve()
 
 # Add the '_extensions' directory to sys.path, to enable finding Sphinx
 # extensions within.
@@ -73,7 +70,6 @@ with open(ZEPHYR_BASE / "SDK_VERSION") as f:
 # -- General configuration ------------------------------------------------
 
 extensions = [
-    "breathe",
     "sphinx_rtd_theme",
     "sphinx.ext.todo",
     "sphinx.ext.extlinks",
@@ -87,8 +83,9 @@ extensions = [
     "zephyr.link-roles",
     "sphinx_tabs.tabs",
     "sphinx_sitemap",
-    "zephyr.warnings_filter",
     "zephyr.doxyrunner",
+    "zephyr.doxybridge",
+    "zephyr.doxytooltip",
     "zephyr.gh_utils",
     "zephyr.manifest_projects_table",
     "notfound.extension",
@@ -164,7 +161,8 @@ rst_epilog = f"""
 html_theme = "sphinx_rtd_theme"
 html_theme_options = {
     "logo_only": True,
-    "prev_next_buttons_location": None
+    "prev_next_buttons_location": None,
+    "navigation_depth": 5,
 }
 html_baseurl = "https://docs.zephyrproject.org/latest/"
 html_title = "Zephyr Project Documentation"
@@ -249,44 +247,20 @@ doxyrunner_fmt = True
 doxyrunner_fmt_vars = {"ZEPHYR_BASE": str(ZEPHYR_BASE), "ZEPHYR_VERSION": version}
 doxyrunner_outdir_var = "DOXY_OUT"
 
-# -- Options for Breathe plugin -------------------------------------------
+# -- Options for zephyr.doxybridge plugin ---------------------------------
 
-breathe_projects = {"Zephyr": str(doxyrunner_outdir / "xml")}
-breathe_default_project = "Zephyr"
-breathe_domain_by_extension = {
-    "h": "c",
-    "c": "c",
-}
-breathe_show_enumvalue_initializer = True
-breathe_default_members = ("members", )
-
-cpp_id_attributes = [
-    "__syscall",
-    "__syscall_always_inline",
-    "__deprecated",
-    "__may_alias",
-    "__used",
-    "__unused",
-    "__weak",
-    "__attribute_const__",
-    "__DEPRECATED_MACRO",
-    "FUNC_NORETURN",
-    "__subsystem",
-    "ALWAYS_INLINE",
-]
-c_id_attributes = cpp_id_attributes
+doxybridge_dir = doxyrunner_outdir
 
 # -- Options for html_redirect plugin -------------------------------------
 
 html_redirect_pages = redirects.REDIRECTS
 
-# -- Options for zephyr.warnings_filter -----------------------------------
-
-warnings_filter_config = str(ZEPHYR_BASE / "doc" / "known-warnings.txt")
-
 # -- Options for zephyr.link-roles ----------------------------------------
 
 link_roles_manifest_project = "zephyr"
+link_roles_manifest_project_broken_links_ignore_globs = [
+    "releases/release-notes-[123].*.rst",
+]
 link_roles_manifest_baseurl = "https://github.com/zephyrproject-rtos/zephyr"
 
 # -- Options for notfound.extension ---------------------------------------
@@ -383,4 +357,3 @@ def setup(app):
     # theme customizations
     app.add_css_file("css/custom.css")
     app.add_js_file("js/custom.js")
-    app.add_js_file("js/dark-mode-toggle.min.mjs", type="module")

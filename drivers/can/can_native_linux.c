@@ -495,9 +495,9 @@ CAN_DEVICE_DT_INST_DEFINE(inst, can_native_linux_init, NULL,			\
 
 DT_INST_FOREACH_STATUS_OKAY(CAN_NATIVE_LINUX_INIT)
 
-static void add_native_posix_options(void)
+static void add_native_options(void)
 {
-	static struct args_struct_t can_native_posix_options[] = {
+	static struct args_struct_t can_native_options[] = {
 		{
 			.is_mandatory = false,
 			.option = "can-if",
@@ -509,7 +509,7 @@ static void add_native_posix_options(void)
 		ARG_TABLE_ENDMARKER,
 	};
 
-	native_add_command_line_opts(can_native_posix_options);
+	native_add_command_line_opts(can_native_options);
 }
 
-NATIVE_TASK(add_native_posix_options, PRE_BOOT_1, 10);
+NATIVE_TASK(add_native_options, PRE_BOOT_1, 10);

@@ -93,6 +93,22 @@ extern "C" {
  */
 #define IS_BIT_MASK(m) IS_SHIFTED_BIT_MASK(m, 0)
 
+/** @brief Extract the Least Significant Bit from @p value. */
+#define LSB_GET(value) ((value) & -(value))
+
+/**
+ * @brief Extract a bitfield element from @p value corresponding to
+ *	  the field mask @p mask.
+ */
+#define FIELD_GET(mask, value)  (((value) & (mask)) / LSB_GET(mask))
+
+/**
+ * @brief Prepare a bitfield element using @p value with @p mask representing
+ *	  its field position and width. The result should be combined
+ *	  with other fields using a logical OR.
+ */
+#define FIELD_PREP(mask, value) (((value) * LSB_GET(mask)) & (mask))
+
 /**
  * @brief Check for macro definition in compiler-visible expressions
  *

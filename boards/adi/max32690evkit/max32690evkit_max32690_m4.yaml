@@ -13,5 +13,12 @@ supported:
   - spi
   - i2c
   - trng
+  - dma
+  - watchdog
+  - adc
+  - counter
+  - pwm
+  - w1
+  - flash
 ram: 1024
 flash: 3072

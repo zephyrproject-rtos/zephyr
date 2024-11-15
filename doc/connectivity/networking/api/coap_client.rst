@@ -52,10 +52,10 @@ The callback provided in the callback will be called in following cases:
 - There is a response for the request
 - The request failed for some reason
 
-The callback contains a flag `last_block`, which indicates if there is more data to come in the
-response and means that the current response is part of a blockwise transfer. When the `last_block`
-is set to true, the response is finished and the client is ready for the next request after
-returning from the callback.
+The callback contains a flag ``last_block``, which indicates if there is more data to come in the
+response and means that the current response is part of a blockwise transfer. When the
+``last_block`` is set to true, the response is finished and the client is ready for the next request
+after returning from the callback.
 
 If the server responds to the request, the library provides the response to the
 application through the response callback registered in the request structure.

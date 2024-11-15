@@ -179,7 +179,8 @@ function __zephyr_west_complete_help
                     "attach" "interactively debug a board" \
                     "zephyr-export" "export Zephyr installation as a CMake config package" \
                     "spdx" "create SPDX bill of materials" \
-                    "blobs" "work with binary blobs"
+                    "blobs" "work with binary blobs" \
+                    "sdk" "manage SDKs"
     set -l nb_ext_cmds (count $ext_cmds)
 
     if __zephyr_west_check_if_in_workspace
@@ -501,3 +502,16 @@ complete -c west -n "__zephyr_west_use_subcommand; and __zephyr_west_check_if_in
 complete -c west -n "__zephyr_west_seen_subcommand_from blobs; and not __fish_seen_subcommand_from list fetch clean" -ra "list\t'list binary blobs' fetch\t'fetch binary blobs' clean\t'clean working tree of binary blobs'"
 complete -c west -n "__zephyr_west_seen_subcommand_from blobs; and __fish_seen_subcommand_from list fetch clean" -ra "(__zephyr_west_complete_projects)"
 complete -c west -n "__zephyr_west_seen_subcommand_from blobs; and not __fish_seen_subcommand_from fetch clean" -o f -l format -r -d "format string"
+
+# sdk
+complete -c west -n "__zephyr_west_use_subcommand; and __zephyr_west_check_if_in_workspace" -ra sdk -d "manage SDKs"
+complete -c west -n "__zephyr_west_seen_subcommand_from sdk; and not __fish_seen_subcommand_from list install" -ra "list\t'list installed SDKs' install\t'install SDK'"
+complete -c west -n "__zephyr_west_seen_subcommand_from sdk; and __fish_seen_subcommand_from install" -l version -d "version of the Zephyr SDK to install"
+complete -c west -n "__zephyr_west_seen_subcommand_from sdk; and __fish_seen_subcommand_from install" -o b -l install-base -d "SDK isntall base directory"
+complete -c west -n "__zephyr_west_seen_subcommand_from sdk; and __fish_seen_subcommand_from install" -o d -l install-dir -d "SDK isntall destination directory"
+complete -c west -n "__zephyr_west_seen_subcommand_from sdk; and __fish_seen_subcommand_from install" -o i -l interactive -d "interactive"
+complete -c west -n "__zephyr_west_seen_subcommand_from sdk; and __fish_seen_subcommand_from install" -o t -l toolchains -d "toolchain(s) to install"
+complete -c west -n "__zephyr_west_seen_subcommand_from sdk; and __fish_seen_subcommand_from install" -o T -l no-toolchains -d "do not install toolchains"
+complete -c west -n "__zephyr_west_seen_subcommand_from sdk; and __fish_seen_subcommand_from install" -o H -l no-hosttools -d "do not install host-tools"
+complete -c west -n "__zephyr_west_seen_subcommand_from sdk; and __fish_seen_subcommand_from install" -l personal-access-token -d "GitHub personal access token"
+complete -c west -n "__zephyr_west_seen_subcommand_from sdk; and __fish_seen_subcommand_from install" -l api-url -d "GitHub releases API endpoint URL"

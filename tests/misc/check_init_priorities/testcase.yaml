@@ -6,7 +6,6 @@ tests:
     platform_allow:
       - native_sim
       - native_sim/native/64
-      - native_posix
     integration_platforms:
       - native_sim
-      - native_sim
+      - native_sim/native/64

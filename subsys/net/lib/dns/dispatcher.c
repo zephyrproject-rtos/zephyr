@@ -10,10 +10,12 @@ LOG_MODULE_REGISTER(net_dns_dispatcher, CONFIG_DNS_SOCKET_DISPATCHER_LOG_LEVEL);
 #include <zephyr/kernel.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/slist.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/net/net_if.h>
 #include <zephyr/net/dns_resolve.h>
 #include <zephyr/net/socket_service.h>
 
+#include "../../ip/net_stats.h"
 #include "dns_pack.h"
 
 static K_MUTEX_DEFINE(lock);
@@ -26,6 +28,10 @@ static sys_slist_t sockets;
 
 NET_BUF_POOL_DEFINE(dns_msg_pool, DNS_RESOLVER_BUF_CTR,
 		    DNS_RESOLVER_MAX_BUF_SIZE, 0, NULL);
+
+static struct socket_dispatch_table {
+	struct dns_socket_dispatcher *ctx;
+} dispatch_table[CONFIG_ZVFS_OPEN_MAX];
 
 static int dns_dispatch(struct dns_socket_dispatcher *dispatcher,
 			int sock, struct sockaddr *addr, size_t addrlen,
@@ -91,18 +97,39 @@ static int dns_dispatch(struct dns_socket_dispatcher *dispatcher,
 	}
 
 done:
+	if (IS_ENABLED(CONFIG_NET_STATISTICS_DNS)) {
+		struct net_if *iface = NULL;
+
+		if (IS_ENABLED(CONFIG_NET_IPV6) && addr->sa_family == AF_INET6) {
+			iface = net_if_ipv6_select_src_iface(&net_sin6(addr)->sin6_addr);
+		} else if (IS_ENABLED(CONFIG_NET_IPV4) && addr->sa_family == AF_INET) {
+			iface = net_if_ipv4_select_src_iface(&net_sin(addr)->sin_addr);
+		}
+
+		if (iface != NULL) {
+			if (ret < 0) {
+				net_stats_update_dns_drop(iface);
+			} else {
+				net_stats_update_dns_recv(iface);
+			}
+		}
+	}
+
 	return ret;
 }
 
 static int recv_data(struct net_socket_service_event *pev)
 {
-	struct dns_socket_dispatcher *dispatcher = pev->user_data;
+	struct socket_dispatch_table *table = pev->user_data;
+	struct dns_socket_dispatcher *dispatcher;
 	socklen_t optlen = sizeof(int);
 	struct net_buf *dns_data = NULL;
 	struct sockaddr addr;
 	size_t addrlen;
 	int family, sock_error;
 	int ret = 0, len;
+
+	dispatcher = table[pev->event.fd].ctx;
 
 	k_mutex_lock(&dispatcher->lock, K_FOREVER);
 
@@ -113,9 +140,12 @@ static int recv_data(struct net_socket_service_event *pev)
 	    (pev->event.revents & ZSOCK_POLLNVAL)) {
 		(void)zsock_getsockopt(pev->event.fd, SOL_SOCKET,
 				       SO_ERROR, &sock_error, &optlen);
-		NET_ERR("Receiver IPv%d socket error (%d)",
-			family == AF_INET ? 4 : 6, sock_error);
-		ret = DNS_EAI_SYSTEM;
+		if (sock_error > 0) {
+			NET_ERR("Receiver IPv%d socket error (%d)",
+				family == AF_INET ? 4 : 6, sock_error);
+			ret = DNS_EAI_SYSTEM;
+		}
+
 		goto unlock;
 	}
 
@@ -154,10 +184,8 @@ unlock:
 	return ret;
 }
 
-void dns_dispatcher_svc_handler(struct k_work *work)
+void dns_dispatcher_svc_handler(struct net_socket_service_event *pev)
 {
-	struct net_socket_service_event *pev =
-		CONTAINER_OF(work, struct net_socket_service_event, work);
 	int ret;
 
 	ret = recv_data(pev);
@@ -186,7 +214,8 @@ int dns_dispatcher_register(struct dns_socket_dispatcher *ctx)
 		 * already registered.
 		 */
 		if (ctx->type == entry->type &&
-		    ctx->local_addr.sa_family == entry->local_addr.sa_family) {
+		    ctx->local_addr.sa_family == entry->local_addr.sa_family &&
+		    ctx->ifindex == entry->ifindex) {
 			if (net_sin(&entry->local_addr)->sin_port ==
 			    net_sin(&ctx->local_addr)->sin_port) {
 				dup = true;
@@ -227,6 +256,21 @@ int dns_dispatcher_register(struct dns_socket_dispatcher *ctx)
 
 		entry->pair = ctx;
 
+		for (int i = 0; i < ctx->fds_len; i++) {
+			CHECKIF((int)ctx->fds[i].fd >= (int)ARRAY_SIZE(dispatch_table)) {
+				ret = -ERANGE;
+				goto out;
+			}
+
+			if (ctx->fds[i].fd < 0) {
+				continue;
+			}
+
+			if (dispatch_table[ctx->fds[i].fd].ctx == NULL) {
+				dispatch_table[ctx->fds[i].fd].ctx = ctx;
+			}
+		}
+
 		/* Basically we are now done. If there is incoming data to
 		 * the socket, the dispatcher will then pass it to the correct
 		 * recipient.
@@ -253,7 +297,22 @@ int dns_dispatcher_register(struct dns_socket_dispatcher *ctx)
 
 	ctx->pair = NULL;
 
-	ret = net_socket_service_register(ctx->svc, ctx->fds, ctx->fds_len, ctx);
+	for (int i = 0; i < ctx->fds_len; i++) {
+		if ((int)ctx->fds[i].fd >= (int)ARRAY_SIZE(dispatch_table)) {
+			ret = -ERANGE;
+			goto out;
+		}
+
+		if (ctx->fds[i].fd < 0) {
+			continue;
+		}
+
+		if (dispatch_table[ctx->fds[i].fd].ctx == NULL) {
+			dispatch_table[ctx->fds[i].fd].ctx = ctx;
+		}
+	}
+
+	ret = net_socket_service_register(ctx->svc, ctx->fds, ctx->fds_len, &dispatch_table);
 	if (ret < 0) {
 		NET_DBG("Cannot register socket service (%d)", ret);
 		goto out;
@@ -269,13 +328,25 @@ out:
 
 int dns_dispatcher_unregister(struct dns_socket_dispatcher *ctx)
 {
+	int ret = 0;
+
 	k_mutex_lock(&lock, K_FOREVER);
 
 	(void)sys_slist_find_and_remove(&sockets, &ctx->node);
 
+	for (int i = 0; i < ctx->fds_len; i++) {
+		CHECKIF((int)ctx->fds[i].fd >= (int)ARRAY_SIZE(dispatch_table)) {
+			ret = -ERANGE;
+			goto out;
+		}
+
+		dispatch_table[ctx->fds[i].fd].ctx = NULL;
+	}
+
+out:
 	k_mutex_unlock(&lock);
 
-	return 0;
+	return ret;
 }
 
 void dns_dispatcher_init(void)

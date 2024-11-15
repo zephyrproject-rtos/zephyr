@@ -370,7 +370,7 @@ int pm_device_driver_init(const struct device *dev,
 
 	/* Run power-up logic */
 	rc = action_cb(dev, PM_DEVICE_ACTION_TURN_ON);
-	if (rc != 0) {
+	if ((rc < 0) && (rc != -ENOTSUP)) {
 		return rc;
 	}
 

@@ -14,6 +14,8 @@ supported:
   - gpio
   - spi
   - i2c
+  - rtc
+  - adc
   - hwinfo
 testing:
   ignore_tags:

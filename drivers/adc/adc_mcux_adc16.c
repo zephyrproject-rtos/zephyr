@@ -124,11 +124,6 @@ static int mcux_adc16_channel_setup(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (channel_cfg->reference != ADC_REF_INTERNAL) {
-		LOG_ERR("Invalid channel reference");
-		return -EINVAL;
-	}
-
 #ifdef CONFIG_ADC_MCUX_ADC16_HW_TRIGGER
 	adc_hw_trigger_enable(dev);
 #endif

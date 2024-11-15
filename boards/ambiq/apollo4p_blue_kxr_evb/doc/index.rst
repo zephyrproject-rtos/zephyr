@@ -1,13 +1,6 @@
-.. _apollo4p_blue_kxr_evb:
-
-Ambiq Apollo4 Blue Plus KXR EVB
-###############################
+.. zephyr:board:: apollo4p_blue_kxr_evb
 
 Apollo4 Blue Plus KXR EVB is a board by Ambiq featuring their ultra-low power Apollo4 Blue Plus SoC.
-
-.. image:: ./apollo4-blue-plus-kxr-soc-eval-board.jpg
-   :align: center
-   :alt: Apollo4 Blue Plus KXR EVB
 
 Hardware
 ********
@@ -68,7 +61,7 @@ Flashing an application
 -----------------------
 
 Connect your device to your host computer using the JLINK USB port.
-The sample application :ref:`hello_world` is used for this example.
+The sample application :zephyr:code-sample:`hello_world` is used for this example.
 Build the Zephyr kernel and application, then flash it to the device:
 
 .. zephyr-app-commands::
@@ -77,7 +70,7 @@ Build the Zephyr kernel and application, then flash it to the device:
    :goals: flash
 
 .. note::
-   `west flash` requires `SEGGER J-Link software`_ and `pylink`_ Python module
+   ``west flash`` requires `SEGGER J-Link software`_ and `pylink`_ Python module
    to be installed on you host computer.
 
 Open a serial terminal (minicom, putty, etc.) with the following settings:

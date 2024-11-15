@@ -252,7 +252,7 @@ static void rx_thread(void *p1, void *p2, void *p3)
 		/* Let the ISR continue receiving new packets */
 		uart_irq_rx_enable(cfg->uart);
 
-		buf = net_buf_get(&h4->rx.fifo, K_FOREVER);
+		buf = k_fifo_get(&h4->rx.fifo, K_FOREVER);
 		do {
 			uart_irq_rx_enable(cfg->uart);
 
@@ -266,7 +266,7 @@ static void rx_thread(void *p1, void *p2, void *p3)
 			k_yield();
 
 			uart_irq_rx_disable(cfg->uart);
-			buf = net_buf_get(&h4->rx.fifo, K_NO_WAIT);
+			buf = k_fifo_get(&h4->rx.fifo, K_NO_WAIT);
 		} while (buf);
 	}
 }
@@ -352,7 +352,7 @@ static inline void read_payload(const struct device *dev)
 	reset_rx(h4);
 
 	LOG_DBG("Putting buf %p to rx fifo", buf);
-	net_buf_put(&h4->rx.fifo, buf);
+	k_fifo_put(&h4->rx.fifo, buf);
 }
 
 static inline void read_header(const struct device *dev)
@@ -398,7 +398,7 @@ static inline void process_tx(const struct device *dev)
 	int bytes;
 
 	if (!h4->tx.buf) {
-		h4->tx.buf = net_buf_get(&h4->tx.fifo, K_NO_WAIT);
+		h4->tx.buf = k_fifo_get(&h4->tx.fifo, K_NO_WAIT);
 		if (!h4->tx.buf) {
 			LOG_ERR("TX interrupt but no pending buffer!");
 			uart_irq_tx_disable(cfg->uart);
@@ -447,7 +447,7 @@ static inline void process_tx(const struct device *dev)
 done:
 	h4->tx.type = BT_HCI_H4_NONE;
 	net_buf_unref(h4->tx.buf);
-	h4->tx.buf = net_buf_get(&h4->tx.fifo, K_NO_WAIT);
+	h4->tx.buf = k_fifo_get(&h4->tx.fifo, K_NO_WAIT);
 	if (!h4->tx.buf) {
 		uart_irq_tx_disable(cfg->uart);
 	}
@@ -496,7 +496,7 @@ static int h4_send(const struct device *dev, struct net_buf *buf)
 
 	LOG_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf), buf->len);
 
-	net_buf_put(&h4->tx.fifo, buf);
+	k_fifo_put(&h4->tx.fifo, buf);
 	uart_irq_tx_enable(cfg->uart);
 
 	return 0;

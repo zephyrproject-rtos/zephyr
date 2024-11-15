@@ -1,0 +1,6 @@
+board:
+  name: beaglebone_ai64
+  full_name: BeagleBone AI-64
+  vendor: beagle
+  socs:
+  - name: j721e

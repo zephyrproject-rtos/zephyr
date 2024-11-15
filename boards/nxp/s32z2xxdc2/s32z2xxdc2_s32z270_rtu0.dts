@@ -14,7 +14,7 @@
 
 	chosen {
 		zephyr,sram = &sram0;
-		zephyr,canbus = &can0;
+		zephyr,canbus = &canxl0;
 	};
 
 	aliases {
@@ -30,4 +30,8 @@
 &enetc_psi0 {
 	mboxes = <&mru0 0>;
 	mbox-names = "rx";
+};
+
+&canxl0 {
+	status = "okay";
 };

@@ -97,6 +97,12 @@ properties:
       The clock gate offsets combine the register offset from
       ECPM_BASE and the mask within that register into one value.
 
+  transfer-timeout-ms:
+    type: int
+    default: 100
+    description: |
+      Maximum time allowed for an I2C transfer.
+
   pinctrl-0:
     required: true
 

@@ -23,6 +23,10 @@
 	};
 };
 
+&dma_fast_region {
+	status = "okay";
+};
+
 &spi120 {
 	status = "okay";
 	pinctrl-0 = <&spi120_default>;

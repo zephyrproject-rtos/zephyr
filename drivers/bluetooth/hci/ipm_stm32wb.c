@@ -565,6 +565,19 @@ static int bt_ipm_open(const struct device *dev, bt_hci_recv_t recv)
 			K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO),
 			0, K_NO_WAIT);
 
+	hci->recv = recv;
+
+	LOG_DBG("IPM Channel Open Completed");
+
+	return 0;
+}
+
+static int bt_ipm_setup(const struct device *dev, const struct bt_hci_setup_params *params)
+{
+	ARG_UNUSED(params);
+	ARG_UNUSED(dev);
+	int err;
+
 #ifdef CONFIG_BT_HCI_HOST
 	err = bt_ipm_ble_init();
 	if (err) {
@@ -572,9 +585,7 @@ static int bt_ipm_open(const struct device *dev, bt_hci_recv_t recv)
 	}
 #endif /* CONFIG_BT_HCI_HOST */
 
-	hci->recv = recv;
-
-	LOG_DBG("IPM Channel Open Completed");
+	LOG_DBG("IPM Channel Setup Completed");
 
 	return 0;
 }
@@ -613,6 +624,7 @@ static const struct bt_hci_driver_api drv = {
 	.close          = bt_ipm_close,
 #endif
 	.send           = bt_ipm_send,
+	.setup          = bt_ipm_setup,
 };
 
 static int _bt_ipm_init(const struct device *dev)

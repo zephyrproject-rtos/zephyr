@@ -118,7 +118,7 @@
 			label = "image-0";
 			reg = <0x0000c000 0x00076000>;
 		};
-		slot1_partition: partition@80000 {
+		slot1_partition: partition@82000 {
 			label = "image-1";
 			reg = <0x00082000 0x00076000>;
 		};

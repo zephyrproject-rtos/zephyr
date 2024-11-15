@@ -1,7 +1,7 @@
 .. _rk055hdmipi4m:
 
-RK055HDMIPI4M MIPI Display
-##########################
+NXP RK055HDMIPI4M MIPI Display
+##############################
 
 Overview
 ********

@@ -45,15 +45,15 @@ static struct fs_mount_t fs_mnt;
 static struct usbd_context *sample_usbd;
 
 #if CONFIG_DISK_DRIVER_RAM
-USBD_DEFINE_MSC_LUN(RAM, "Zephyr", "RAMDisk", "0.00");
+USBD_DEFINE_MSC_LUN(ram, "RAM", "Zephyr", "RAMDisk", "0.00");
 #endif
 
 #if CONFIG_DISK_DRIVER_FLASH
-USBD_DEFINE_MSC_LUN(NAND, "Zephyr", "FlashDisk", "0.00");
+USBD_DEFINE_MSC_LUN(nand, "NAND", "Zephyr", "FlashDisk", "0.00");
 #endif
 
 #if CONFIG_DISK_DRIVER_SDMMC
-USBD_DEFINE_MSC_LUN(SD, "Zephyr", "SD", "0.00");
+USBD_DEFINE_MSC_LUN(sd, "SD", "Zephyr", "SD", "0.00");
 #endif
 
 static int enable_usb_device_next(void)

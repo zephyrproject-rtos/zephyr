@@ -55,9 +55,11 @@ static uint8_t __aligned(4) expected[EXPECTED_SIZE];
 static uint8_t erase_value;
 static bool ebw_required;
 
-static void *flash_driver_setup(void)
+static void flash_driver_before(void *arg)
 {
 	int rc;
+
+	ARG_UNUSED(arg);
 
 	TC_PRINT("Test will run on device %s\n", flash_dev->name);
 	zassert_true(device_is_ready(flash_dev));
@@ -120,8 +122,6 @@ static void *flash_driver_setup(void)
 			zassert_equal(rc, 0, "Flash memory not properly erased");
 		}
 	}
-
-	return NULL;
 }
 
 ZTEST(flash_driver, test_read_unaligned_address)
@@ -253,5 +253,199 @@ ZTEST(flash_driver, test_flash_flatten)
 	zassert_equal(i, EXPECTED_SIZE, "Expected device to be filled wth 0xaa");
 }
 
+ZTEST(flash_driver, test_flash_erase)
+{
+	int rc;
+	uint8_t read_buf[EXPECTED_SIZE];
+	bool comparison_result;
+	const struct flash_parameters *fparams = flash_get_parameters(flash_dev);
 
-ZTEST_SUITE(flash_driver, NULL, flash_driver_setup, NULL, NULL, NULL);
+	erase_value = fparams->erase_value;
+
+	/* Write test data */
+	rc = flash_write(flash_dev, page_info.start_offset, expected, EXPECTED_SIZE);
+	zassert_equal(rc, 0, "Cannot write to flash");
+
+	/* Confirm write operation */
+	rc = flash_read(flash_dev, page_info.start_offset, read_buf, EXPECTED_SIZE);
+	zassert_equal(rc, 0, "Cannot read flash");
+
+	comparison_result = true;
+	for (int i = 0; i < EXPECTED_SIZE; i++) {
+		if (read_buf[i] != expected[i]) {
+			comparison_result = false;
+			TC_PRINT("i=%d:\tread_buf[i]=%d\texpected[i]=%d\n", i, read_buf[i],
+				 expected[i]);
+		}
+	}
+	zassert_true(comparison_result, "Write operation failed");
+	/* Cross check - confirm that expected data is pseudo-random */
+	zassert_not_equal(read_buf[0], expected[1], "These values shall be different");
+
+	/* Erase a nb of pages aligned to the EXPECTED_SIZE */
+	rc = flash_erase(
+		flash_dev, page_info.start_offset,
+		(page_info.size * ((EXPECTED_SIZE + page_info.size - 1) / page_info.size)));
+	zassert_equal(rc, 0, "Flash memory not properly erased");
+
+	/* Confirm erase operation */
+	rc = flash_read(flash_dev, page_info.start_offset, read_buf, EXPECTED_SIZE);
+	zassert_equal(rc, 0, "Cannot read flash");
+
+	comparison_result = true;
+	for (int i = 0; i < EXPECTED_SIZE; i++) {
+		if (read_buf[i] != erase_value) {
+			comparison_result = false;
+			TC_PRINT("i=%d:\tread_buf[i]=%d\texpected=%d\n", i, read_buf[i],
+				 erase_value);
+		}
+	}
+	zassert_true(comparison_result, "Write operation failed");
+	/* Cross check - confirm that expected data
+	 * doesn't contain erase_value
+	 */
+	zassert_not_equal(expected[0], erase_value, "These values shall be different");
+}
+
+struct test_cb_data_type {
+	uint32_t page_counter; /* used to count how many pages was iterated */
+	uint32_t exit_page;    /* terminate iteration when this page is reached */
+};
+
+static bool flash_callback(const struct flash_pages_info *info, void *data)
+{
+	struct test_cb_data_type *cb_data = (struct test_cb_data_type *)data;
+
+	cb_data->page_counter++;
+
+	if (cb_data->page_counter >= cb_data->exit_page) {
+		return false;
+	}
+
+	return true;
+}
+
+ZTEST(flash_driver, test_flash_page_layout)
+{
+	int rc;
+	struct flash_pages_info page_info_off = {0};
+	struct flash_pages_info page_info_idx = {0};
+	size_t page_count;
+	struct test_cb_data_type test_cb_data = {0};
+
+#if !defined(CONFIG_FLASH_PAGE_LAYOUT)
+	ztest_test_skip();
+#endif
+
+	/* Get page info with flash_get_page_info_by_offs() */
+	rc = flash_get_page_info_by_offs(flash_dev, TEST_AREA_OFFSET, &page_info_off);
+	zassert_true(rc == 0, "flash_get_page_info_by_offs returned %d", rc);
+	TC_PRINT("start_offset=0x%lx\tsize=%d\tindex=%d\n", page_info_off.start_offset,
+		 (int)page_info_off.size, page_info_off.index);
+	zassert_true(page_info_off.start_offset >= 0, "start_offset is %d", rc);
+	zassert_true(page_info_off.size > 0, "size is %d", rc);
+	zassert_true(page_info_off.index >= 0, "index is %d", rc);
+
+	/* Get info for the same page with flash_get_page_info_by_idx() */
+	rc = flash_get_page_info_by_idx(flash_dev, page_info_off.index, &page_info_idx);
+	zassert_true(rc == 0, "flash_get_page_info_by_offs returned %d", rc);
+	zassert_equal(page_info_off.start_offset, page_info_idx.start_offset);
+	zassert_equal(page_info_off.size, page_info_idx.size);
+	zassert_equal(page_info_off.index, page_info_idx.index);
+
+	page_count = flash_get_page_count(flash_dev);
+	TC_PRINT("page_count=%d\n", (int)page_count);
+	zassert_true(page_count > 0, "flash_get_page_count returned %d", rc);
+	zassert_true(page_count >= page_info_off.index);
+
+	/* Test that callback is executed for every page */
+	test_cb_data.exit_page = page_count + 1;
+	flash_page_foreach(flash_dev, flash_callback, &test_cb_data);
+	zassert_true(page_count == test_cb_data.page_counter,
+		     "page_count = %d not equal to pages counted with cb = %d", page_count,
+		     test_cb_data.page_counter);
+
+	/* Test that callback can cancell iteration */
+	test_cb_data.page_counter = 0;
+	test_cb_data.exit_page = page_count >> 1;
+	flash_page_foreach(flash_dev, flash_callback, &test_cb_data);
+	zassert_true(test_cb_data.exit_page == test_cb_data.page_counter,
+		     "%d pages were iterated while it shall stop on page %d",
+		     test_cb_data.page_counter, test_cb_data.exit_page);
+}
+
+static void test_flash_copy_inner(const struct device *src_dev, off_t src_offset,
+				  const struct device *dst_dev, off_t dst_offset, off_t size,
+				  uint8_t *buf, size_t buf_size, int expected_result)
+{
+	int actual_result;
+
+	if ((expected_result == 0) && (size != 0) && (src_offset != dst_offset)) {
+		/* prepare for successful copy */
+		zassert_ok(flash_flatten(flash_dev, page_info.start_offset, page_info.size));
+		zassert_ok(flash_fill(flash_dev, 0xaa, page_info.start_offset, page_info.size));
+		zassert_ok(flash_flatten(flash_dev, page_info.start_offset + page_info.size,
+					 page_info.size));
+	}
+
+	/* perform copy (if args are valid) */
+	actual_result = flash_copy(src_dev, src_offset, dst_dev, dst_offset, size, buf, buf_size);
+	zassert_equal(actual_result, expected_result,
+		      "flash_copy(%p, %lx, %p, %lx, %zu, %p, %zu) failed: expected: %d actual: %d",
+		      src_dev, src_offset, dst_dev, dst_offset, size, buf, buf_size,
+		      expected_result, actual_result);
+
+	if ((expected_result == 0) && (size != 0) && (src_offset != dst_offset)) {
+		/* verify a successful copy */
+		zassert_ok(flash_read(flash_dev, TEST_AREA_OFFSET, expected, EXPECTED_SIZE));
+		for (int i = 0; i < EXPECTED_SIZE; i++) {
+			zassert_equal(buf[i], 0xaa, "incorrect data (%02x) at %d", buf[i], i);
+		}
+	}
+}
+
+ZTEST(flash_driver, test_flash_copy)
+{
+	uint8_t buf[EXPECTED_SIZE];
+	const off_t off_max = (sizeof(off_t) == sizeof(int32_t)) ? INT32_MAX : INT64_MAX;
+
+	/*
+	 * Rather than explicitly testing 128+ permutations of input,
+	 * merge redundant cases:
+	 *  - src_dev or dst_dev are invalid
+	 *  - src_offset or dst_offset are invalid
+	 *  - src_offset + size or dst_offset + size overflow
+	 *  - buf is NULL
+	 *  - buf size is invalid
+	 */
+	test_flash_copy_inner(NULL, -1, NULL, -1, -1, NULL, 0, -EINVAL);
+	test_flash_copy_inner(NULL, -1, NULL, -1, -1, NULL, sizeof(buf), -EINVAL);
+	test_flash_copy_inner(NULL, -1, NULL, -1, -1, buf, sizeof(buf), -EINVAL);
+	test_flash_copy_inner(NULL, -1, NULL, -1, page_info.size, buf, sizeof(buf), -EINVAL);
+	test_flash_copy_inner(NULL, -1, NULL, -1, page_info.size, buf, sizeof(buf), -EINVAL);
+	test_flash_copy_inner(NULL, page_info.start_offset, NULL,
+			      page_info.start_offset + page_info.size, page_info.size, buf,
+			      sizeof(buf), -ENODEV);
+	test_flash_copy_inner(flash_dev, page_info.start_offset, flash_dev,
+			      page_info.start_offset + page_info.size, page_info.size, buf,
+			      sizeof(buf), 0);
+
+	/* zero-sized copy should succeed */
+	test_flash_copy_inner(flash_dev, page_info.start_offset, flash_dev,
+			      page_info.start_offset + page_info.size, 0, buf, sizeof(buf), 0);
+
+	/* copy with same offset should succeed */
+	test_flash_copy_inner(flash_dev, page_info.start_offset, flash_dev, page_info.start_offset,
+			      page_info.size, buf, sizeof(buf), 0);
+
+	/* copy with integer overflow should fail */
+	test_flash_copy_inner(flash_dev, off_max, flash_dev, page_info.start_offset, 42, buf,
+			      sizeof(buf), -EINVAL);
+
+	/* copy with overlapping ranges should fail */
+	test_flash_copy_inner(flash_dev, page_info.start_offset, flash_dev,
+			      page_info.start_offset + 32, page_info.size - 32, buf, sizeof(buf),
+			      -EINVAL);
+}
+
+ZTEST_SUITE(flash_driver, NULL, NULL, flash_driver_before, NULL, NULL);

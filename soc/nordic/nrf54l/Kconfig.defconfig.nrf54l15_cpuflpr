@@ -1,0 +1,15 @@
+# Nordic Semiconductor nRF54L15 MCU
+
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_NRF54L15_CPUFLPR
+
+config NUM_IRQS
+	default 287
+
+# As FLPR has limited memory most of tests does not fit with asserts enabled.
+config ASSERT
+	default n
+
+endif # SOC_NRF54L15_CPUFLPR

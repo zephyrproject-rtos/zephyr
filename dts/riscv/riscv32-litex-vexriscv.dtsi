@@ -144,6 +144,40 @@
 				"uptime_cycles";
 			status = "disabled";
 		};
+		wdt0: watchdog@e000d000 {
+			compatible = "litex,watchdog";
+			interrupt-parent = <&intc0>;
+			reg = <0xe000d000 0x4>,
+				<0xe000d004 0x4>,
+				<0xe000d008 0x4>,
+				<0xe000d00c 0x4>,
+				<0xe000d010 0x4>,
+				<0xe000d014 0x4>;
+			reg-names = "control",
+				"cycles",
+				"remaining",
+				"ev_status",
+				"ev_pending",
+				"ev_enable";
+			interrupts = <8 15>;
+		};
+		mdio0: mdio@e0008000 {
+			compatible = "litex,liteeth-mdio";
+			reg = <0xe0008000 0x4>,
+				<0xe0008004 0x4>,
+				<0xe0008008 0x4>;
+			reg-names = "crg_reset",
+				"mdio_w",
+				"mdio_r";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			phy0: ethernet-phy@1 {
+				compatible = "ethernet-phy";
+				reg = <1>;
+			};
+		};
 		eth0: ethernet@e0009800 {
 			compatible = "litex,liteeth";
 			interrupt-parent = <&intc0>;
@@ -179,6 +213,7 @@
 				"tx_ev_pending",
 				"tx_ev_enable",
 				"buffers";
+			phy-handle = <&phy0>;
 			status = "disabled";
 		};
 		dna0: dna@e0003800 {

@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2024 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/**
+ * STM32WB09 is mostly identical to STM32WB05.
+ * The only differences are RAM size, flash size and TRNG IP.
+ * Flash and RAM size are defined in the package-level DTSI.
+ */
+#include <st/wb0/stm32wb05.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32wb09", "st,stm32wb0", "simple-bus";
+	};
+};

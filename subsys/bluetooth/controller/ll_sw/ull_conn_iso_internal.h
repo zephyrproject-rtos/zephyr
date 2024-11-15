@@ -44,10 +44,6 @@ void ull_conn_iso_cis_stop(struct ll_conn_iso_stream *cis,
 			   ll_iso_stream_released_cb_t cis_released_cb,
 			   uint8_t reason);
 
-void ull_conn_iso_resume_ticker_start(struct lll_event *resume_event,
-				      uint16_t cis_handle,
-				      uint32_t ticks_anchor,
-				      uint32_t resume_timeout);
 void ull_conn_iso_transmit_test_cig_interval(uint16_t handle,
 					     uint32_t ticks_at_expire);
 

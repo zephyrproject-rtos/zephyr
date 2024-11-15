@@ -1,7 +1,4 @@
-.. _nuvoton_pfm_m487:
-
-NUVOTON NUMAKER PFM M487
-########################
+.. zephyr:board:: numaker_pfm_m487
 
 Overview
 ********
@@ -9,10 +6,6 @@ Overview
 The NuMaker PFM M487 is an Internet of Things (IoT) application focused platform
 specially developed by Nuvoton. The PFM-M487 is based on the NuMicro® M487
 Ethernet series MCU with ARM® -Cortex®-M4F core.
-
-.. image:: pfm_m487.jpg
-   :align: center
-   :alt: PFM-M487
 
 Features:
 =========
@@ -61,7 +54,7 @@ Building and Flashing
 Flashing
 ========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 On board debugger Nu-link-Me can emulate UART0 as a virtual COM port over usb,
 To enable this, set ISW1 DIP switch 1-3 (TXD RXD VOM) to ON.
@@ -80,7 +73,7 @@ run a serial host program to connect with your board. For example:
 Debugging
 =========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -91,6 +84,8 @@ Step through the application in your debugger.
 
 References
 **********
+
+.. target-notes::
 
 .. _PFM M487 User Manual:
    https://www.nuvoton.com/export/resource-files/UM_NuMaker-PFM-M487_User_Manual_EN_Rev1.01.pdf

@@ -12,7 +12,7 @@
 /* The devicetree node identifier for the "led0" alias. */
 #define LED0_NODE DT_ALIAS(led0)
 
-#if !DT_NODE_HAS_STATUS(LED0_NODE, okay)
+#if !DT_NODE_HAS_STATUS_OKAY(LED0_NODE)
 #error "BOARD does not define a debug LED"
 #endif
 

@@ -1,0 +1,142 @@
+/*
+ * Copyright (c) 2024 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <adi/max32/max32662.dtsi>
+#include <adi/max32/max32662-pinctrl.dtsi>
+#include <zephyr/dt-bindings/gpio/adi-max32-gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/dma/max32662_dma.h>
+#include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
+
+/ {
+	model = "Analog Devices MAX32662EVKIT";
+	compatible = "adi,max32662evkit";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &sram2;
+		zephyr,flash = &flash0;
+		zephyr,display = &st7735;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led1: led_1 {
+			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+			label = "Red LED";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		pb1: pb1 {
+			gpios = <&gpio0 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW
+						| MAX32_GPIO_VSEL_VDDIOH)>;
+			label = "SW3";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led1;
+		sw0 = &pb1;
+		watchdog0 = &wdt0;
+	};
+
+	mipi_dbi {
+		compatible = "zephyr,mipi-dbi-spi";
+		spi-dev = <&spi1>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		status = "okay";
+
+		st7735: st7735@0 {
+			compatible = "sitronix,st7735r";
+			mipi-max-frequency = <DT_FREQ_M(6)>;
+			mipi-mode = <MIPI_DBI_MODE_SPI_3WIRE>;
+
+			reg = <0>;
+			width = <130>;
+			height = <132>;
+			x-offset = <0>;
+			y-offset = <0>;
+			madctl = <0xc0>;
+			colmod = <0x05>;
+			vmctr1 = <0x51>;
+			pwctr1 = [02 02];
+			pwctr2 = [c5];
+			pwctr3 = [0d 00];
+			pwctr4 = [8d 1a];
+			pwctr5 = [8d ee];
+			frmctr1 = [02 35 36];
+			frmctr2 = [02 35 36];
+			frmctr3 = [02 35 36 02 35 36];
+			gamctrp1 = [0a 1c 0c 14 33 2b 24 28 27 25 2c 39 00 05 03 0d];
+			gamctrn1 = [0a 1c 0c 14 33 2b 24 28 27 25 2d 3a 00 05 03 0d];
+		};
+	};
+};
+
+&uart0 {
+	pinctrl-0 = <&uart0a_tx_p0_10 &uart0a_rx_p0_11>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	data-bits = <8>;
+	parity = "none";
+	status = "okay";
+};
+
+&clk_ipo {
+	status = "okay";
+};
+
+&dma0 {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&i2c1 {
+	status = "okay";
+	pinctrl-0 = <&i2c1a_scl_p0_6 &i2c1a_sda_p0_9>;
+	pinctrl-names = "default";
+};
+
+&trng {
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&spi0 {
+	status = "okay";
+	pinctrl-0 = <&spi0a_copi_p0_3 &spi0a_cito_p0_2 &spi0a_sck_p0_4 &spi0a_ts0_p0_5>;
+	pinctrl-names = "default";
+};
+
+&spi1a_mosi_p0_8 {
+	power-source=<MAX32_VSEL_VDDIOH>;
+};
+
+&spi1a_sck_p0_17 {
+	power-source=<MAX32_VSEL_VDDIOH>;
+};
+
+&spi1 {
+	status = "okay";
+	pinctrl-0 = <&spi1a_mosi_p0_8 &spi1a_sck_p0_17>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio0 18 (GPIO_ACTIVE_LOW | MAX32_VSEL_VDDIOH)>;
+};

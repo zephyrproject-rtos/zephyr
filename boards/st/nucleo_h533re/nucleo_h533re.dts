@@ -121,6 +121,8 @@
 };
 
 &adc1 {
+	clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000400>,
+		 <&rcc STM32_SRC_HCLK ADCDAC_SEL(0)>;
 	pinctrl-0 = <&adc1_inp0_pa0>; /* Arduino A0 */
 	pinctrl-names = "default";
 	st,adc-clock-source = <ASYNC>;
@@ -151,5 +153,15 @@
 &rtc {
 	clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00200000>,
 		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
+	status = "okay";
+};
+
+&clk_hsi48 {
+	status = "okay";
+};
+
+zephyr_udc0: &usb {
+	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
+	pinctrl-names = "default";
 	status = "okay";
 };

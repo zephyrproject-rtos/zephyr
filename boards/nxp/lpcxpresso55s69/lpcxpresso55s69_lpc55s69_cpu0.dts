@@ -31,12 +31,14 @@
 		sdhc0 = &sdhc0;
 		accel0 = &mma8652fc;
 		sdhc0 = &sdif;
+		mcuboot-button0 = &user_button_1;
 	};
 
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,uart-mcumgr = &flexcomm0;
 		zephyr,code-cpu1-partition = &slot0_ns_partition;
 		zephyr,sram-cpu1-partition = &sram3;
 		zephyr,console = &flexcomm0;
@@ -119,6 +121,7 @@
 	pinctrl-names = "default";
 	mmc {
 		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
 		status = "okay";
 	};
 };

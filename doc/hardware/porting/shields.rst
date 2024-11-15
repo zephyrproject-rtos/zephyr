@@ -12,7 +12,7 @@ Shield porting and configuration
 ********************************
 
 Shield configuration files are available in the board directory
-under :zephyr_file:`/boards/shields`:
+under :zephyr_file:`boards/shields`:
 
 .. code-block:: none
 
@@ -111,7 +111,7 @@ Activate support for one or more shields by adding the matching ``--shield`` arg
 to the west command:
 
   .. zephyr-app-commands::
-     :zephyr-app: your_app
+     :app: your_app
      :shield: x_nucleo_idb05a1,x_nucleo_iks01a1
      :goals: build
 
@@ -139,7 +139,7 @@ possible to provide multiple version of the shields description:
 In this case, a shield-particular revision name can be used:
 
   .. zephyr-app-commands::
-     :zephyr-app: your_app
+     :app: your_app
      :shield: shield_v2
      :goals: build
 

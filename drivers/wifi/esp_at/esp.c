@@ -825,13 +825,19 @@ static int cmd_ipd_parse_hdr(struct esp_data *dev,
 
 		err = esp_pull_quoted(&str, str_end, &remote_ip);
 		if (err) {
-			LOG_ERR("Failed to pull remote_ip");
+			if (err == -EAGAIN && match_len >= MAX_IPD_LEN) {
+				LOG_ERR("Failed to pull remote_ip");
+				err = -EBADMSG;
+			}
 			goto socket_unref;
 		}
 
 		err = esp_pull_long(&str, str_end, &port);
 		if (err) {
-			LOG_ERR("Failed to pull port");
+			if (err == -EAGAIN && match_len >= MAX_IPD_LEN) {
+				LOG_ERR("Failed to pull port");
+				err = -EBADMSG;
+			}
 			goto socket_unref;
 		}
 

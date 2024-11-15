@@ -5,16 +5,16 @@
  */
 
 #define DT_DRV_COMPAT ovti_ov2640
+
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
-
+#include <zephyr/logging/log.h>
 #include <zephyr/drivers/video.h>
+#include <zephyr/drivers/video-controls.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/gpio.h>
 
-#define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
-#include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(ov2640);
+LOG_MODULE_REGISTER(video_ov2640, CONFIG_VIDEO_LOG_LEVEL);
 
 /* DSP register bank FF=0x00*/
 #define QS                  0x44
@@ -108,6 +108,7 @@ LOG_MODULE_REGISTER(ov2640);
 #define REG04_DEFAULT       0x28
 #define REG04_HFLIP_IMG     0x80
 #define REG04_VFLIP_IMG     0x40
+#define REG04_VREF_EN       0x10
 #define REG04_HREF_EN       0x08
 #define REG04_SET(x)        (REG04_DEFAULT | x)
 
@@ -457,6 +458,7 @@ static const struct video_format_cap fmts[] = {
 	OV2640_VIDEO_FORMAT_CAP(160, 120, VIDEO_PIX_FMT_RGB565),   /* QQVGA */
 	OV2640_VIDEO_FORMAT_CAP(176, 144, VIDEO_PIX_FMT_RGB565),   /* QCIF  */
 	OV2640_VIDEO_FORMAT_CAP(240, 160, VIDEO_PIX_FMT_RGB565),   /* HQVGA */
+	OV2640_VIDEO_FORMAT_CAP(240, 240, VIDEO_PIX_FMT_RGB565),   /* 240x240 */
 	OV2640_VIDEO_FORMAT_CAP(320, 240, VIDEO_PIX_FMT_RGB565),   /* QVGA  */
 	OV2640_VIDEO_FORMAT_CAP(352, 288, VIDEO_PIX_FMT_RGB565),   /* CIF   */
 	OV2640_VIDEO_FORMAT_CAP(640, 480, VIDEO_PIX_FMT_RGB565),   /* VGA   */
@@ -791,9 +793,9 @@ static int ov2640_set_vertical_flip(const struct device *dev, int enable)
 	reg = ov2640_read_reg(&cfg->i2c, REG04);
 
 	if (enable) {
-		reg |= REG04_VFLIP_IMG;
+		reg |= REG04_VFLIP_IMG | REG04_VREF_EN;
 	} else {
-		reg &= ~REG04_VFLIP_IMG;
+		reg &= ~(REG04_VFLIP_IMG | REG04_VREF_EN);
 	}
 
 	ret |= ov2640_write_reg(&cfg->i2c, REG04, reg);
@@ -956,7 +958,7 @@ static int ov2640_set_ctrl(const struct device *dev,
 	case VIDEO_CID_CAMERA_CONTRAST:
 		ret |= ov2640_set_contrast(dev, (int)value);
 		break;
-	case VIDEO_CID_CAMERA_COLORBAR:
+	case VIDEO_CID_CAMERA_TEST_PATTERN:
 		ret |= ov2640_set_colorbar(dev, (int)value);
 		break;
 	case VIDEO_CID_CAMERA_QUALITY:

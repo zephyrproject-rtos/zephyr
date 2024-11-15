@@ -9,13 +9,28 @@
 
 #include <infineon/cat1a/legacy/psoc6_cm4.dtsi>
 #include "cy8ckit_062_ble_common.dtsi"
+#include "cy8ckit_062_ble_cy8c6347-pinctrl.dtsi"
 
 / {
-	model = "Cypress PSoC6 BLE Pioneer Kit";
+	model = "Cypress PSOC 6 BLE Pioneer Kit";
 	compatible = "cypress,cy8c6xx7_cm4", "cypress,psoc6";
+
+	aliases {
+		uart-6 = &uart6;
+	};
 
 	chosen {
 		zephyr,sram = &sram2;
 		zephyr,flash = &flash1;
+		zephyr,console = &uart6;
+		zephyr,shell-uart = &uart6;
 	};
+};
+
+&uart6 {
+	status = "okay";
+	current-speed = <115200>;
+
+	pinctrl-0 = <&p13_0_scb6_uart_rx &p13_1_scb6_uart_tx>;
+	pinctrl-names = "default";
 };

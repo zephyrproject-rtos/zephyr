@@ -1,0 +1,134 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: USB Audio Class 2 Feature Unit entity
+
+compatible: "zephyr,uac2-feature-unit"
+
+# string-array properties start with Primary channel 0 and follow with Logical
+# channel(s). The "not-present" value is allowed to facilitate having controls
+# that are not present on the Primary channel, but only present at the Logical
+# channel(s).
+
+properties:
+  data-source:
+    type: phandle
+    description: Unit or Terminal to which this Feature Unit is connected
+
+  mute-control:
+    type: string-array
+    description: Mute Control capabilities
+    enum:
+      - "read-only"
+      - "host-programmable"
+      - "not-present"
+
+  volume-control:
+    type: string-array
+    description: Volume Control capabilities
+    enum:
+      - "read-only"
+      - "host-programmable"
+      - "not-present"
+
+  bass-control:
+    type: string-array
+    description: Bass Control capabilities
+    enum:
+      - "read-only"
+      - "host-programmable"
+      - "not-present"
+
+  mid-control:
+    type: string-array
+    description: Mid Control capabilities
+    enum:
+      - "read-only"
+      - "host-programmable"
+      - "not-present"
+
+  treble-control:
+    type: string-array
+    description: Treble Control capabilities
+    enum:
+      - "read-only"
+      - "host-programmable"
+      - "not-present"
+
+  graphic-equalizer-control:
+    type: string-array
+    description: Graphic Equalizer capabilities
+    enum:
+      - "read-only"
+      - "host-programmable"
+      - "not-present"
+
+  automatic-gain-control:
+    type: string-array
+    description: Automatic Gain Control capabilities
+    enum:
+      - "read-only"
+      - "host-programmable"
+      - "not-present"
+
+  delay-control:
+    type: string-array
+    description: Delay Control capabilities
+    enum:
+      - "read-only"
+      - "host-programmable"
+      - "not-present"
+
+  bass-boost-control:
+    type: string-array
+    description: Bass Boost Control capabilities
+    enum:
+      - "read-only"
+      - "host-programmable"
+      - "not-present"
+
+  loundness-control:
+    type: string-array
+    description: Loundness Control capabilities
+    enum:
+      - "read-only"
+      - "host-programmable"
+      - "not-present"
+
+  input-gain-control:
+    type: string-array
+    description: Input Gain Control capabilities
+    enum:
+      - "read-only"
+      - "host-programmable"
+      - "not-present"
+
+  input-gain-pad-control:
+    type: string-array
+    description: Input Gain Pad Control capabilities
+    enum:
+      - "read-only"
+      - "host-programmable"
+      - "not-present"
+
+  phase-inverter-control:
+    type: string-array
+    description: Phase Inverter Control capabilities
+    enum:
+      - "read-only"
+      - "host-programmable"
+      - "not-present"
+
+  underflow-control:
+    type: string-array
+    description: Underflow Control capabilities
+    enum:
+      - "read-only"
+      - "not-present"
+
+  overflow-control:
+    type: string-array
+    description: Overflow Control capabilities
+    enum:
+      - "read-only"
+      - "not-present"

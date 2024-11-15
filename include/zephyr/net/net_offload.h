@@ -21,7 +21,7 @@
  * @{
  */
 
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_context.h>
 

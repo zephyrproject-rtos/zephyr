@@ -27,7 +27,7 @@ config BT_ISO_UNICAST
 config BT_ISO_PERIPHERAL
 	bool "Bluetooth Isochronous Channel Unicast Peripheral Support"
 	depends on !BT_CTLR || BT_CTLR_PERIPHERAL_ISO_SUPPORT
-	select BT_PERIPHERAL
+	depends on BT_PERIPHERAL
 	select BT_ISO_UNICAST
 	help
 	  This option enables support for Bluetooth Unicast
@@ -36,7 +36,7 @@ config BT_ISO_PERIPHERAL
 config BT_ISO_CENTRAL
 	bool "Bluetooth Isochronous Channel Unicast Central Support"
 	depends on !BT_CTLR || BT_CTLR_CENTRAL_ISO_SUPPORT
-	select BT_CENTRAL
+	depends on BT_CENTRAL
 	select BT_ISO_UNICAST
 	help
 	  This option enables support for Bluetooth Broadcast
@@ -60,9 +60,9 @@ config BT_ISO_BROADCASTER
 config BT_ISO_SYNC_RECEIVER
 	bool "Bluetooth Isochronous Synchronized Receiver Support"
 	depends on !BT_CTLR || BT_CTLR_SYNC_ISO_SUPPORT
+	depends on BT_OBSERVER
 	select BT_ISO_BROADCAST
 	select BT_ISO_RX
-	select BT_OBSERVER
 	select BT_PER_ADV_SYNC
 	help
 	  This option enables support for the Bluetooth Isochronous

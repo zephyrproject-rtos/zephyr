@@ -100,9 +100,28 @@ source "subsys/net/l2/ethernet/lldp/Kconfig"
 config NET_ETHERNET_BRIDGE
 	bool "Ethernet Bridging support"
 	select NET_PROMISCUOUS_MODE
+	select NET_L2_VIRTUAL
 	help
 	  Enables Ethernet bridging where packets can be transparently
 	  forwarded across interfaces registered to a bridge.
+
+config NET_ETHERNET_BRIDGE_COUNT
+	int "Max number of bridge interfaces"
+	default 1
+	range 1 16
+	depends on NET_ETHERNET_BRIDGE
+	help
+	  How many bridge interfaces are created. Each interface can bridge
+	  two or more Ethernet interfaces.
+
+config NET_ETHERNET_BRIDGE_ETH_INTERFACE_COUNT
+	int "Max number of Ethernet interfaces bridged together"
+	default 2
+	range 2 32
+	depends on NET_ETHERNET_BRIDGE
+	help
+	  How many Ethernet interfaces can be bridged together per each
+	  bridge interface.
 
 if NET_ETHERNET_BRIDGE
 module = NET_ETHERNET_BRIDGE
@@ -112,22 +131,19 @@ module-help = Enables Ethernet Bridge code to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
 endif # NET_ETHERNET_BRIDGE
 
+config NET_ETHERNET_BRIDGE_TXRX_DEBUG
+	bool "Debug received and sent packets in bridge"
+	depends on NET_L2_ETHERNET_LOG_LEVEL_DBG && NET_ETHERNET_BRIDGE
+	help
+	  Enables printing of received and sent network packets.
+	  This can produce lot of output so it is disabled by default.
+
 config NET_ETHERNET_BRIDGE_SHELL
 	bool "Ethernet Bridging management shell"
 	depends on NET_ETHERNET_BRIDGE
-	select SHELL
+	select NET_SHELL
 	help
 	  Enables shell utility to manage bridge configuration interactively.
-
-config NET_ETHERNET_BRIDGE_DEFAULT
-	bool "Declare one bridge instance for shell usage"
-	depends on NET_ETHERNET_BRIDGE_SHELL
-	default y
-	help
-	  If the bridge shell is the sole user of the bridge code then
-	  it needs at least one bridge instance to be useful.
-	  Say y if this is the case. If you only want to inspect
-	  existing bridge instances then say n.
 
 config NET_ETHERNET_FORWARD_UNRECOGNISED_ETHERTYPE
 	bool "Forward unrecognized EtherType frames further into net stack"

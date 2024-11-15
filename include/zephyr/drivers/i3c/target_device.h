@@ -41,7 +41,15 @@ struct i3c_config_target {
 	bool enable;
 
 	/**
-	 * I3C target address.
+	 * I3C target dynamic address.
+	 *
+	 * Used when operates as secondary controller
+	 * or as a target device.
+	 */
+	uint8_t dynamic_addr;
+
+	/**
+	 * I3C target static address.
 	 *
 	 * Used used when operates as secondary controller
 	 * or as a target device.

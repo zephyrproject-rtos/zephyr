@@ -20,6 +20,17 @@
 		};
 	};
 
+	uart1_default: uart1_default {
+		group1 {
+			pinmux = <UART1_TX_GPIO17>;
+			output-high;
+		};
+		group2 {
+			pinmux = <UART1_RX_GPIO18>;
+			bias-pull-up;
+		};
+	};
+
 	i2c0_default: i2c0_default {
 		group1 {
 			pinmux = <I2C0_SDA_GPIO1>,
@@ -37,6 +48,38 @@
 			bias-pull-up;
 			drive-open-drain;
 			output-high;
+		};
+	};
+
+	i2s0_default: i2s0_default {
+		group1 {
+			pinmux = <I2S0_MCLK_GPIO4>,
+				 <I2S0_O_WS_GPIO5>,
+				 <I2S0_O_BCK_GPIO6>,
+				 <I2S0_O_SD_GPIO7>,
+				 <I2S0_I_WS_GPIO15>,
+				 <I2S0_I_BCK_GPIO16>;
+			output-enable;
+		};
+		group2 {
+			pinmux = <I2S0_I_SD_GPIO17>;
+			input-enable;
+		};
+	};
+
+	i2s1_default: i2s1_default {
+		group1 {
+			pinmux = <I2S1_MCLK_GPIO18>,
+				 <I2S1_O_WS_GPIO8>,
+				 <I2S1_O_BCK_GPIO3>,
+				 <I2S1_O_SD_GPIO9>,
+				 <I2S1_I_WS_GPIO10>,
+				 <I2S1_I_BCK_GPIO11>;
+			output-enable;
+		};
+		group2 {
+			pinmux = <I2S1_I_SD_GPIO12>;
+			input-enable;
 		};
 	};
 

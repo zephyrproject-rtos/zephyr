@@ -9,7 +9,7 @@ config SOC_SERIES_NRF54LX
 	select HAS_NORDIC_DRIVERS
 	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
 
-config SOC_NRF54L15_ENGA_CPUAPP
+config SOC_NRF54L15_CPUAPP
 	select ARM
 	select ARMV8_M_DSP
 	select CPU_CORTEX_M33
@@ -20,7 +20,18 @@ config SOC_NRF54L15_ENGA_CPUAPP
 	select HAS_HW_NRF_RADIO_IEEE802154
 	select HAS_POWEROFF
 
-config SOC_NRF54L15_ENGA_CPUFLPR
+config SOC_NRF54L20_ENGA_CPUAPP
+	select ARM
+	select ARMV8_M_DSP
+	select CPU_CORTEX_M33
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_ICACHE
+	select CPU_HAS_ARM_SAU
+	select CPU_HAS_FPU
+	select HAS_HW_NRF_RADIO_IEEE802154
+	select HAS_POWEROFF
+
+config SOC_NRF54L15_CPUFLPR
 	depends on RISCV_CORE_NORDIC_VPR
 
 if SOC_SERIES_NRF54LX
@@ -54,19 +65,11 @@ config SOC_NRF_FORCE_CONSTLAT
 	  of base resources on while in sleep. The advantage of having a constant
 	  and predictable latency will be at the cost of having increased power consumption.
 
-config SOC_NRF54L_VREG_MAIN_DCDC
-	bool "NRF54L DC/DC converter."
-	help
-	  To enable, an inductor must be connected to the DC/DC converter pin.
-
-config SOC_NRF54L_NORMAL_VOLTAGE_MODE
-	bool "NRF54L Normal Voltage Mode."
-
 if NRF_GRTC_TIMER
 
 config ELV_GRTC_LFXO_ALLOWED
 	bool
-	depends on NRF_GRTC_SLEEP_ALLOWED
+	depends on POWEROFF
 	select EXPERIMENTAL
 	help
 	  This feature allows using ELV mode when GRTC operates with the LFXO as

@@ -21,6 +21,7 @@
  * @{
  */
 
+#include <zephyr/kernel.h>
 #include <zephyr/types.h>
 #include <zephyr/device.h>
 #include <zephyr/data/navigation.h>
@@ -47,27 +48,6 @@ typedef int (*gnss_set_fix_rate_t)(const struct device *dev, uint32_t fix_interv
 
 /** API for getting fix rate */
 typedef int (*gnss_get_fix_rate_t)(const struct device *dev, uint32_t *fix_interval_ms);
-
-/**
- * @brief GNSS periodic tracking configuration
- *
- * @note Setting either active_time or inactive_time to 0 will disable periodic
- * function.
- */
-struct gnss_periodic_config {
-	/** The time the GNSS will spend in the active state in ms */
-	uint32_t active_time_ms;
-	/** The time the GNSS will spend in the inactive state in ms */
-	uint32_t inactive_time_ms;
-};
-
-/** API for setting periodic tracking configuration */
-typedef int (*gnss_set_periodic_config_t)(const struct device *dev,
-					  const struct gnss_periodic_config *periodic_config);
-
-/** API for setting periodic tracking configuration */
-typedef int (*gnss_get_periodic_config_t)(const struct device *dev,
-					  struct gnss_periodic_config *periodic_config);
 
 /** GNSS navigation modes */
 enum gnss_navigation_mode {
@@ -120,6 +100,9 @@ typedef int (*gnss_get_enabled_systems_t)(const struct device *dev, gnss_systems
 
 /** API for getting enabled systems */
 typedef int (*gnss_get_supported_systems_t)(const struct device *dev, gnss_systems_t *systems);
+
+/** API for getting timestamp of last PPS pulse */
+typedef int (*gnss_get_latest_timepulse_t)(const struct device *dev, k_ticks_t *timestamp);
 
 /** GNSS fix status */
 enum gnss_fix_status {
@@ -183,13 +166,12 @@ struct gnss_time {
 __subsystem struct gnss_driver_api {
 	gnss_set_fix_rate_t set_fix_rate;
 	gnss_get_fix_rate_t get_fix_rate;
-	gnss_set_periodic_config_t set_periodic_config;
-	gnss_get_periodic_config_t get_periodic_config;
 	gnss_set_navigation_mode_t set_navigation_mode;
 	gnss_get_navigation_mode_t get_navigation_mode;
 	gnss_set_enabled_systems_t set_enabled_systems;
 	gnss_get_enabled_systems_t get_enabled_systems;
 	gnss_get_supported_systems_t get_supported_systems;
+	gnss_get_latest_timepulse_t get_latest_timepulse;
 };
 
 /** GNSS data structure */
@@ -284,54 +266,6 @@ static inline int z_impl_gnss_get_fix_rate(const struct device *dev, uint32_t *f
 	}
 
 	return api->get_fix_rate(dev, fix_interval_ms);
-}
-
-/**
- * @brief Set the GNSS periodic tracking configuration
- *
- * @param dev Device instance
- * @param config Periodic tracking configuration to set
- *
- * @return 0 if successful
- * @return -errno negative errno code on failure
- */
-__syscall int gnss_set_periodic_config(const struct device *dev,
-				       const struct gnss_periodic_config *config);
-
-static inline int z_impl_gnss_set_periodic_config(const struct device *dev,
-						  const struct gnss_periodic_config *config)
-{
-	const struct gnss_driver_api *api = (const struct gnss_driver_api *)dev->api;
-
-	if (api->set_periodic_config == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->set_periodic_config(dev, config);
-}
-
-/**
- * @brief Get the GNSS periodic tracking configuration
- *
- * @param dev Device instance
- * @param config Destination for periodic tracking configuration
- *
- * @return 0 if successful
- * @return -errno negative errno code on failure
- */
-__syscall int gnss_get_periodic_config(const struct device *dev,
-				       struct gnss_periodic_config *config);
-
-static inline int z_impl_gnss_get_periodic_config(const struct device *dev,
-						  struct gnss_periodic_config *config)
-{
-	const struct gnss_driver_api *api = (const struct gnss_driver_api *)dev->api;
-
-	if (api->get_periodic_config == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->get_periodic_config(dev, config);
 }
 
 /**
@@ -449,6 +383,33 @@ static inline int z_impl_gnss_get_supported_systems(const struct device *dev,
 	}
 
 	return api->get_supported_systems(dev, systems);
+}
+
+/**
+ * @brief Get the timestamp of the latest PPS timepulse
+ *
+ * @note The timestamp is considered valid when the timepulse pin is actively toggling.
+ *
+ * @param dev Device instance
+ * @param timestamp Kernel tick count at the time of the PPS pulse
+ *
+ * @retval 0 if successful
+ * @retval -ENOSYS if driver does not support API
+ * @retval -ENOTSUP if driver does not have PPS pin connected
+ * @retval -EAGAIN if PPS pulse is not considered valid
+ */
+__syscall int gnss_get_latest_timepulse(const struct device *dev, k_ticks_t *timestamp);
+
+static inline int z_impl_gnss_get_latest_timepulse(const struct device *dev,
+						    k_ticks_t *timestamp)
+{
+	const struct gnss_driver_api *api = (const struct gnss_driver_api *)dev->api;
+
+	if (api->get_latest_timepulse == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->get_latest_timepulse(dev, timestamp);
 }
 
 /**

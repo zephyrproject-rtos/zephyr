@@ -1,0 +1,17 @@
+# Copyright 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: mps3/corstone310/fvp/ns
+name: Arm MPS3-Corstone310-FVP_ns
+type: mcu
+arch: arm
+ram: 32
+flash: 32
+toolchain:
+  - gnuarmemb
+  - zephyr
+  - xtools
+testing:
+  default: true
+  only_tags:
+    - trusted-firmware-m

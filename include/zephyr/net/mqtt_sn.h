@@ -24,7 +24,7 @@
 
 #include <stddef.h>
 
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/types.h>
 
 #include <sys/types.h>

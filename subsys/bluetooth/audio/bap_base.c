@@ -20,7 +20,7 @@
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>

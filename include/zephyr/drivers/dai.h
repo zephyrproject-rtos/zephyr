@@ -477,8 +477,9 @@ static inline int dai_ts_config(const struct device *dev, struct dai_ts_cfg *cfg
 {
 	const struct dai_driver_api *api = (const struct dai_driver_api *)dev->api;
 
-	if (!api->ts_config)
+	if (!api->ts_config) {
 		return -EINVAL;
+	}
 
 	return api->ts_config(dev, cfg);
 }
@@ -496,8 +497,9 @@ static inline int dai_ts_start(const struct device *dev, struct dai_ts_cfg *cfg)
 {
 	const struct dai_driver_api *api = (const struct dai_driver_api *)dev->api;
 
-	if (!api->ts_start)
+	if (!api->ts_start) {
 		return -EINVAL;
+	}
 
 	return api->ts_start(dev, cfg);
 }
@@ -515,8 +517,9 @@ static inline int dai_ts_stop(const struct device *dev, struct dai_ts_cfg *cfg)
 {
 	const struct dai_driver_api *api = (const struct dai_driver_api *)dev->api;
 
-	if (!api->ts_stop)
+	if (!api->ts_stop) {
 		return -EINVAL;
+	}
 
 	return api->ts_stop(dev, cfg);
 }
@@ -536,8 +539,9 @@ static inline int dai_ts_get(const struct device *dev, struct dai_ts_cfg *cfg,
 {
 	const struct dai_driver_api *api = (const struct dai_driver_api *)dev->api;
 
-	if (!api->ts_get)
+	if (!api->ts_get) {
 		return -EINVAL;
+	}
 
 	return api->ts_get(dev, cfg, tsd);
 }

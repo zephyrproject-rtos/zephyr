@@ -386,10 +386,11 @@ static void litex_clk_check_DO(char *reg_name, uint8_t clk_reg_addr,
 	int ret;
 
 	ret = litex_clk_get_DO(clk_reg_addr, res);
-	if (ret != 0)
+	if (ret != 0) {
 		LOG_ERR("%s: read error: %d", reg_name, ret);
-	else
+	} else {
 		LOG_DBG("%s:  0x%x", reg_name, *res);
+	}
 }
 
 static void litex_clk_print_general_regs(void)

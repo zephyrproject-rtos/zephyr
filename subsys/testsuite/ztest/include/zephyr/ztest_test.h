@@ -342,9 +342,11 @@ void ztest_verify_all_test_suites_ran(void);
  * @param shuffle Shuffle tests
  * @param suite_iter Test suite repetitions.
  * @param case_iter Test case repetitions.
+ * @param param Parameter passing into test.
  * @return Negative value if the test suite never ran; otherwise, return the number of failures.
  */
-int z_ztest_run_test_suite(const char *name, bool shuffle, int suite_iter, int case_iter);
+int z_ztest_run_test_suite(const char *name, bool shuffle, int suite_iter,
+			int case_iter, void *param);
 
 /**
  * @brief Returns next test within suite.
@@ -403,6 +405,26 @@ void ztest_test_skip(void);
 
 
 void ztest_skip_failed_assumption(void);
+
+#define Z_TEST_P(suite, fn, t_options) \
+	struct ztest_unit_test_stats z_ztest_unit_test_stats_##suite##_##fn; \
+	static void _##suite##_##fn##_wrapper(void *data); \
+	static void suite##_##fn(void *data); \
+	static STRUCT_SECTION_ITERABLE(ztest_unit_test, z_ztest_unit_test__##suite##__##fn) = { \
+		.test_suite_name = STRINGIFY(suite), \
+		.name = STRINGIFY(fn), \
+		.test = (_##suite##_##fn##_wrapper), \
+		.thread_options = t_options, \
+		.stats = &z_ztest_unit_test_stats_##suite##_##fn \
+	}; \
+	static void _##suite##_##fn##_wrapper(void *wrapper_data) \
+	{ \
+		 suite##_##fn(wrapper_data); \
+	} \
+	static inline void suite##_##fn(void *data)
+
+
+#define ZTEST_P(suite, fn) Z_TEST_P(suite, fn, 0)
 
 #define Z_TEST(suite, fn, t_options, use_fixture)                                                  \
 	struct ztest_unit_test_stats z_ztest_unit_test_stats_##suite##_##fn;                       \
@@ -562,9 +584,10 @@ void ztest_simple_1cpu_after(void *data);
  * @param shuffle Shuffle tests
  * @param suite_iter Test suite repetitions.
  * @param case_iter Test case repetitions.
+ * @param param Test parameter
  */
-#define ztest_run_test_suite(suite, shuffle, suite_iter, case_iter) \
-	z_ztest_run_test_suite(STRINGIFY(suite), shuffle, suite_iter, case_iter)
+#define ztest_run_test_suite(suite, shuffle, suite_iter, case_iter, param) \
+	z_ztest_run_test_suite(STRINGIFY(suite), shuffle, suite_iter, case_iter, param)
 
 /**
  * @brief Structure for architecture specific APIs

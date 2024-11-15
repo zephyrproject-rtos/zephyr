@@ -10,7 +10,7 @@ common:
 tests:
   drivers.gpio.2pin:
     min_flash: 34
-    filter: dt_compat_enabled("test-gpio-basic-api")
+    filter: dt_compat_enabled("test-gpio-basic-api") and not dt_compat_enabled("arduino-header-r3")
 
   drivers.gpio.nrf_sense_edge:
     platform_allow: nrf52840dk/nrf52840 nrf52_bsim
@@ -30,3 +30,59 @@ tests:
     extra_args: "DTC_OVERLAY_FILE=boards/frdm_ke17z_fgpio.overlay"
     harness_config:
       fixture: fgpio_loopback
+
+  drivers.gpio.2pin_arduino:
+    min_flash: 34
+    depends_on:
+      - gpio
+      - arduino_gpio
+    filter: >
+      dt_compat_enabled("test-gpio-basic-api") and dt_compat_enabled("arduino-header-r3")
+      and not CONFIG_SOC_FAMILY_STM32
+    extra_args: "DTC_OVERLAY_FILE=arduino_D2D3.overlay"
+    extra_configs:
+      - CONFIG_SKIP_PULL_TEST=y
+    integration_platforms:
+      - frdm_k64f
+    platform_exclude:
+      # below boards are customized
+      - mimxrt595_evk/mimxrt595s/cm33
+      - mimxrt1020_evk
+      - mimxrt1040_evk
+      - mimxrt1060_evk
+      - mimxrt1060_evkb
+      - lpcxpresso55s69/lpc55s69/cpu0
+      - lpcxpresso55s36
+  drivers.gpio.2pin_arduino_customized:
+    min_flash: 34
+    depends_on:
+      - gpio
+      - arduino_gpio
+    filter: dt_compat_enabled("test-gpio-basic-api") and dt_compat_enabled("arduino-header-r3")
+    platform_allow:
+      - mimxrt595_evk/mimxrt595s/cm33
+      - mimxrt1020_evk
+      - mimxrt1040_evk
+      - mimxrt1060_evk
+      - mimxrt1060_evkb
+      - lpcxpresso55s69/lpc55s69/cpu0
+      - lpcxpresso55s36
+      - nucleo_wb09ke
+      - nucleo_wb05kz
+      - nucleo_wba55cg
+  drivers.gpio.st_2pin_arduino:
+    min_flash: 34
+    depends_on:
+      - gpio
+      - arduino_gpio
+    filter: >
+      dt_compat_enabled("test-gpio-basic-api") and dt_compat_enabled("arduino-header-r3")
+      and CONFIG_SOC_FAMILY_STM32
+    extra_args: "DTC_OVERLAY_FILE=arduino_D9D10.overlay"
+    integration_platforms:
+      - disco_l475_iot1
+    platform_exclude:
+      # below boards need customized
+      - nucleo_wb05kz
+      - nucleo_wb09ke
+      - nucleo_wba55cg

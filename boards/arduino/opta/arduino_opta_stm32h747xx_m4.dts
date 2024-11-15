@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023 Felipe Neves
+ * Copyright (c) 2024 DNDG srl
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +9,7 @@
 #include <st/h7/stm32h747Xi_m4.dtsi>
 #include <st/h7/stm32h747xihx-pinctrl.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include "arduino_opta-common.dtsi"
 
 / {
 	model = "Arduino OPTA M4 core Programmable Logic Controller";
@@ -17,36 +19,6 @@
 		zephyr,sram = &sram1;
 		zephyr,flash = &flash1;
 		zephyr,code-partition = &slot0_partition;
-	};
-
-	leds {
-		compatible = "gpio-leds";
-		status_led_1: led_1 {
-			gpios = <&gpioi 0 GPIO_ACTIVE_LOW>;
-		};
-		status_led_2: led_2 {
-			gpios = <&gpioi 1 GPIO_ACTIVE_LOW>;
-		};
-		status_led_3: led_3 {
-			gpios = <&gpioi 3 GPIO_ACTIVE_LOW>;
-		};
-		status_led_4: led_4 {
-			gpios = <&gpioh 15 GPIO_ACTIVE_LOW>;
-		};
-	};
-
-	gpio_keys {
-		compatible = "gpio-keys";
-
-		user_button: button {
-			gpios = <&gpioe 4 GPIO_ACTIVE_HIGH>;
-			zephyr,code = <INPUT_KEY_WAKEUP>;
-		};
-	};
-
-	aliases {
-		sw0 = &user_button;
-		led0 = &status_led_1;
 	};
 };
 
@@ -64,11 +36,5 @@
 };
 
 &rcc {
-	d1cpre = <1>;
-	hpre = <2>;
-	d1ppre = <2>;
-	d2ppre1 = <2>;
-	d2ppre2 = <2>;
-	d3ppre = <2>;
 	clock-frequency = <DT_FREQ_M(240)>;
 };

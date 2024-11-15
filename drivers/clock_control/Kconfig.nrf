@@ -172,3 +172,25 @@ config CLOCK_CONTROL_NRF_ACCURACY
 	default 20 if CLOCK_CONTROL_NRF_K32SRC_20PPM
 
 endif # CLOCK_CONTROL_NRF
+
+config CLOCK_CONTROL_NRF2
+	bool "nRF clock control support"
+	default y
+	depends on SOC_SERIES_NRF54HX && !RISCV_CORE_NORDIC_VPR
+	select ONOFF
+	select NRFS if HAS_NRFS
+	imply NRFS_LOCAL_DOMAIN_DVFS_SCALE_DOWN_AFTER_INIT if NRFS_DVFS_LOCAL_DOMAIN
+	help
+	  Support for nRF clock control devices.
+
+if CLOCK_CONTROL_NRF2
+
+config CLOCK_CONTROL_NRF2_NRFS_DVFS_TIMEOUT_MS
+	int "Timeout waiting for nrfs dvfs service callback in milliseconds"
+	default 2000
+
+config CLOCK_CONTROL_NRF2_NRFS_CLOCK_TIMEOUT_MS
+	int "Timeout waiting for nrfs clock service callback in milliseconds"
+	default 1000
+
+endif # CLOCK_CONTROL_NRF2

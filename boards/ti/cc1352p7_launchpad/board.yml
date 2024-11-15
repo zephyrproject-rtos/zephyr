@@ -1,5 +1,6 @@
 board:
   name: cc1352p7_lp
+  full_name: CC1352P7 LaunchPad
   vendor: ti
   socs:
   - name: cc1352p7

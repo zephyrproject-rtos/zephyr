@@ -1,7 +1,4 @@
-.. _adi_sdp_k1:
-
-ADI SDP-K1
-##########
+.. zephyr:board:: adi_sdp_k1
 
 Overview
 ********
@@ -23,12 +20,6 @@ ADI components.
 - One push-buttons: RESET
 - 16MB SDRAM
 - Arduino UNO and 120-pin SDP connectors
-
-.. figure:: img/adi_sdp_k1.webp
-   :align: center
-   :alt: ADI SDP-K1
-
-   ADI SDP-K1 (Credit: Analog Devices, Inc.)
 
 More information about the board can be found on the `ADI SDP-K1 website`_.
 
@@ -151,7 +142,7 @@ Run a serial host program to connect with your board:
 
    $ minicom -D /dev/serial/by-id/usb-ARM_DAPLink_CMSIS-DAP_<...>
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

@@ -44,6 +44,7 @@
 #define __imx_boot_data_section Z_GENERIC_SECTION(_IMX_BOOT_DATA_SECTION_NAME)
 #define __imx_boot_ivt_section Z_GENERIC_SECTION(_IMX_BOOT_IVT_SECTION_NAME)
 #define __imx_boot_dcd_section Z_GENERIC_SECTION(_IMX_BOOT_DCD_SECTION_NAME)
+#define __imx_boot_container_section Z_GENERIC_SECTION(_IMX_BOOT_CONTAINER_SECTION_NAME)
 #define __stm32_sdram1_section Z_GENERIC_SECTION(_STM32_SDRAM1_SECTION_NAME)
 #define __stm32_sdram2_section Z_GENERIC_SECTION(_STM32_SDRAM2_SECTION_NAME)
 #define __stm32_backup_sram_section Z_GENERIC_SECTION(_STM32_BACKUP_SRAM_SECTION_NAME)
@@ -98,6 +99,14 @@
 #define __pinned_bss
 #define __pinned_noinit	__noinit
 #endif /* CONFIG_LINKER_USE_PINNED_SECTION */
+
+#if defined(CONFIG_LINKER_USE_ONDEMAND_SECTION)
+#define __ondemand_func	Z_GENERIC_DOT_SECTION(ONDEMAND_TEXT_SECTION_NAME)
+#define __ondemand_rodata	Z_GENERIC_DOT_SECTION(ONDEMAND_RODATA_SECTION_NAME)
+#else
+#define __ondemand_func
+#define __ondemand_rodata
+#endif /* CONFIG_LINKER_USE_ONDEMAND_SECTION */
 
 #if defined(CONFIG_LINKER_USE_PINNED_SECTION)
 #define __isr		__pinned_func

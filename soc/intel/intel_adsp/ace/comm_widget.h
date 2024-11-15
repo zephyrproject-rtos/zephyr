@@ -809,10 +809,11 @@ static inline void cw_upstream_enable_sent_intr(bool enable)
 {
 	uint32_t cmd = sys_read32(CW_BASE + USCMD);
 
-	if (enable)
+	if (enable) {
 		cmd |= USCMD_IE;
-	else
+	} else {
 		cmd &= ~USCMD_IE;
+	}
 
 	sys_write32(cmd, CW_BASE + USCMD);
 }

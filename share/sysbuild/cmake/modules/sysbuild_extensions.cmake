@@ -332,7 +332,7 @@ function(ExternalZephyrProject_Add)
       menuconfig
       hardenconfig
       guiconfig
-      ${EXTRA_KCONFIG_TARGETS}
+      $CACHE{EXTRA_KCONFIG_TARGETS}
       )
 
     if(NOT ZBUILD_APP_TYPE STREQUAL "MAIN")
@@ -345,6 +345,16 @@ function(ExternalZephyrProject_Add)
       USES_TERMINAL
       )
   endforeach()
+
+  set(list_separator ",")
+  set(image_extra_kconfig_targets "-DEXTRA_KCONFIG_TARGETS=$CACHE{EXTRA_KCONFIG_TARGETS}")
+  string(REPLACE ";" "${list_separator}" image_extra_kconfig_targets "${image_extra_kconfig_targets}")
+  foreach(target $CACHE{EXTRA_KCONFIG_TARGETS})
+    list(APPEND image_extra_kconfig_targets
+         -DEXTRA_KCONFIG_TARGET_COMMAND_FOR_${target}=$CACHE{EXTRA_KCONFIG_TARGET_COMMAND_FOR_${target}}
+    )
+  endforeach()
+
   include(ExternalProject)
   set(application_binary_dir ${CMAKE_BINARY_DIR}/${ZBUILD_APPLICATION})
   ExternalProject_Add(
@@ -352,9 +362,11 @@ function(ExternalZephyrProject_Add)
     SOURCE_DIR ${ZBUILD_SOURCE_DIR}
     BINARY_DIR ${application_binary_dir}
     CONFIGURE_COMMAND ""
+    LIST_SEPARATOR "${list_separator}"
     CMAKE_ARGS -DSYSBUILD:BOOL=True
                -DSYSBUILD_CACHE:FILEPATH=${sysbuild_cache_file}
                ${shared_cmake_vars_argument}
+               ${image_extra_kconfig_targets}
     BUILD_COMMAND ${CMAKE_COMMAND} --build .
     INSTALL_COMMAND ""
     BUILD_ALWAYS True
@@ -386,7 +398,22 @@ function(ExternalZephyrProject_Add)
     # unless <image>_BOARD is defined.
     if(DEFINED ZBUILD_BOARD_REVISION)
       # Use provided board revision
-      set_target_properties(${ZBUILD_APPLICATION} PROPERTIES BOARD ${ZBUILD_BOARD}@${ZBUILD_BOARD_REVISION})
+      if(ZBUILD_BOARD MATCHES "/")
+        # HWMv2 requires adding version to the board, split elements up, attach version, then
+        # reassemble into a complete string
+        string(REPLACE "/" ";" split_board_qualifiers "${ZBUILD_BOARD}")
+        list(GET split_board_qualifiers 0 target_board)
+        set(target_board ${target_board}@${ZBUILD_BOARD_REVISION})
+        list(REMOVE_AT split_board_qualifiers 0)
+        list(PREPEND split_board_qualifiers ${target_board})
+        string(REPLACE ";" "/" board_qualifiers "${split_board_qualifiers}")
+        set_target_properties(${ZBUILD_APPLICATION} PROPERTIES BOARD ${board_qualifiers})
+        set(split_board_qualifiers)
+        set(board_qualifiers)
+      else()
+        # Legacy HWMv1 support, version goes at end
+        set_target_properties(${ZBUILD_APPLICATION} PROPERTIES BOARD ${ZBUILD_BOARD}@${ZBUILD_BOARD_REVISION})
+      endif()
     else()
       set_target_properties(${ZBUILD_APPLICATION} PROPERTIES BOARD ${ZBUILD_BOARD})
     endif()
@@ -453,7 +480,7 @@ function(ExternalZephyrProject_Cmake)
                  "   ${image_banner_header}\n"
   )
 
-  ExternalProject_Get_Property(${ZCMAKE_APPLICATION} SOURCE_DIR BINARY_DIR CMAKE_ARGS)
+  ExternalProject_Get_Property(${ZCMAKE_APPLICATION} SOURCE_DIR BINARY_DIR CMAKE_ARGS LIST_SEPARATOR)
   get_target_property(${ZCMAKE_APPLICATION}_BOARD      ${ZCMAKE_APPLICATION} BOARD)
 
   get_property(${ZCMAKE_APPLICATION}_CONF_SCRIPT TARGET ${ZCMAKE_APPLICATION}
@@ -471,6 +498,7 @@ function(ExternalZephyrProject_Cmake)
   string(CONFIGURE "${config_content}" config_content)
   file(WRITE ${dotconfigsysbuild} ${config_content})
 
+  string(REPLACE "${LIST_SEPARATOR}" "\\;" CMAKE_ARGS "${CMAKE_ARGS}")
   execute_process(
     COMMAND ${CMAKE_COMMAND}
       -G${CMAKE_GENERATOR}
@@ -631,6 +659,10 @@ endfunction()
 
 function(set_config_string image setting value)
   set_property(TARGET ${image} APPEND_STRING PROPERTY CONFIG "${setting}=\"${value}\"\n")
+endfunction()
+
+function(set_config_int image setting value)
+  set_property(TARGET ${image} APPEND_STRING PROPERTY CONFIG "${setting}=${value}\n")
 endfunction()
 
 # Usage:

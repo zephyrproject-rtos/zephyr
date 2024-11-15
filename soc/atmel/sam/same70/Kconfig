@@ -13,7 +13,8 @@ config SOC_SERIES_SAME70
 	select CPU_HAS_ICACHE
 	select CPU_HAS_DCACHE
 	select INIT_ARCH_HW_AT_BOOT
-	select PLATFORM_SPECIFIC_INIT
+	select SOC_RESET_HOOK
 	select HAS_SWO
 	select XIP
 	select HAS_POWEROFF
+	select SOC_EARLY_INIT_HOOK

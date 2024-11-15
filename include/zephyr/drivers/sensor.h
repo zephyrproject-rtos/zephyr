@@ -343,7 +343,10 @@ enum sensor_attribute {
 
 	/** Hardware batch duration in ticks */
 	SENSOR_ATTR_BATCH_DURATION,
-
+	/* Configure the gain of a sensor. */
+	SENSOR_ATTR_GAIN,
+	/* Configure the resolution of a sensor. */
+	SENSOR_ATTR_RESOLUTION,
 	/**
 	 * Number of all common sensor attributes.
 	 */
@@ -1061,7 +1064,7 @@ static inline int sensor_read(struct rtio_iodev *iodev, struct rtio *ctx, uint8_
 	struct rtio_cqe *cqe = rtio_cqe_consume_block(ctx);
 	int res = cqe->result;
 
-	__ASSERT(cqe->userdata != buf,
+	__ASSERT(cqe->userdata == buf,
 		 "consumed non-matching completion for sensor read into buffer %p\n", buf);
 
 	rtio_cqe_release(ctx, cqe);

@@ -46,5 +46,8 @@
 				write-block-size = <8>;
 			};
 		};
+
+		/* Remove rtc, it doesn't exist on KE17Z */
+		/delete-node/ rtc@4003d000;
 	};
 };

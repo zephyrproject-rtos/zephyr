@@ -295,14 +295,13 @@ static uint16_t modem_cmux_transmit_frame(struct modem_cmux *cmux,
 	}
 
 	/* Compute FCS for the header (exclude SOF) */
-	fcs = crc8(&buf[1], (buf_idx - 1), MODEM_CMUX_FCS_POLYNOMIAL, MODEM_CMUX_FCS_INIT_VALUE,
-		   true);
+	fcs = crc8_rohc(MODEM_CMUX_FCS_INIT_VALUE, &buf[1], (buf_idx - 1));
 
 	/* FCS final */
 	if (frame->type == MODEM_CMUX_FRAME_TYPE_UIH) {
 		fcs = 0xFF - fcs;
 	} else {
-		fcs = 0xFF - crc8(frame->data, data_len, MODEM_CMUX_FCS_POLYNOMIAL, fcs, true);
+		fcs = 0xFF - crc8_rohc(fcs, frame->data, data_len);
 	}
 
 	/* Frame header */
@@ -817,6 +816,14 @@ static void modem_cmux_process_received_byte(struct modem_cmux *cmux, uint8_t by
 		/* Get last 8 bits of data length */
 		cmux->frame.data_len |= ((uint16_t)byte) << 7;
 
+		if (cmux->frame.data_len > cmux->receive_buf_size) {
+			LOG_ERR("Indicated frame data length %u exceeds receive buffer size %u",
+				cmux->frame.data_len, cmux->receive_buf_size);
+
+			cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_DROP;
+			break;
+		}
+
 		/* Await data */
 		cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_DATA;
 		break;
@@ -845,16 +852,12 @@ static void modem_cmux_process_received_byte(struct modem_cmux *cmux, uint8_t by
 		}
 
 		/* Compute FCS */
+		fcs = crc8_rohc(MODEM_CMUX_FCS_INIT_VALUE, cmux->frame_header,
+				cmux->frame_header_len);
 		if (cmux->frame.type == MODEM_CMUX_FRAME_TYPE_UIH) {
-			fcs = 0xFF - crc8(cmux->frame_header, cmux->frame_header_len,
-					  MODEM_CMUX_FCS_POLYNOMIAL, MODEM_CMUX_FCS_INIT_VALUE,
-					  true);
+			fcs = 0xFF - fcs;
 		} else {
-			fcs = crc8(cmux->frame_header, cmux->frame_header_len,
-				   MODEM_CMUX_FCS_POLYNOMIAL, MODEM_CMUX_FCS_INIT_VALUE, true);
-
-			fcs = 0xFF - crc8(cmux->frame.data, cmux->frame.data_len,
-					  MODEM_CMUX_FCS_POLYNOMIAL, fcs, true);
+			fcs = 0xFF - crc8_rohc(fcs, cmux->frame.data, cmux->frame.data_len);
 		}
 
 		/* Validate FCS */

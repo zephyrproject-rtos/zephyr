@@ -53,6 +53,8 @@ config ARM64
 	select IRQ_OFFLOAD_NESTED if IRQ_OFFLOAD
 	select BARRIER_OPERATIONS_ARCH
 	select ARCH_HAS_DIRECTED_IPIS
+	select ARCH_HAS_DEMAND_PAGING
+	select ARCH_HAS_DEMAND_MAPPING
 	help
 	  ARM64 (AArch64) architecture
 
@@ -81,6 +83,7 @@ config X86
 	select ARCH_IS_SET
 	select ATOMIC_OPERATIONS_BUILTIN
 	select ARCH_SUPPORTS_COREDUMP
+	select ARCH_SUPPORTS_COREDUMP_PRIV_STACKS
 	select ARCH_SUPPORTS_ROM_START if !X86_64
 	select CPU_HAS_MMU
 	select ARCH_MEM_DOMAIN_DATA if USERSPACE && !X86_COMMON_PAGE_TABLE
@@ -89,12 +92,14 @@ config X86
 	select ARCH_HAS_TIMING_FUNCTIONS
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
 	select ARCH_HAS_DEMAND_PAGING if !X86_64
+	select ARCH_HAS_DEMAND_MAPPING if ARCH_HAS_DEMAND_PAGING
 	select IRQ_OFFLOAD_NESTED if IRQ_OFFLOAD
 	select NEED_LIBC_MEM_PARTITION if USERSPACE && TIMING_FUNCTIONS \
 					  && !BOARD_HAS_TIMING_FUNCTIONS \
 					  && !SOC_HAS_TIMING_FUNCTIONS
 	select ARCH_HAS_STACK_CANARIES_TLS
 	select ARCH_SUPPORTS_MEM_MAPPED_STACKS if X86_MMU && !DEMAND_PAGING
+	select ARCH_HAS_THREAD_PRIV_STACK_SPACE_GET if USERSPACE
 	help
 	  x86 architecture
 
@@ -111,17 +116,18 @@ config RISCV
 	bool
 	select ARCH_IS_SET
 	select ARCH_SUPPORTS_COREDUMP
+	select ARCH_SUPPORTS_COREDUMP_PRIV_STACKS
 	select ARCH_SUPPORTS_ROM_START if !SOC_FAMILY_ESPRESSIF_ESP32
+	select ARCH_SUPPORTS_EMPTY_IRQ_SPURIOUS
 	select ARCH_HAS_CODE_DATA_RELOCATION
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
-	select ARCH_HAS_STACKWALK
 	select IRQ_OFFLOAD_NESTED if IRQ_OFFLOAD
 	select USE_SWITCH_SUPPORTED
 	select USE_SWITCH
 	select SCHED_IPI_SUPPORTED if SMP
 	select ARCH_HAS_DIRECTED_IPIS
 	select BARRIER_OPERATIONS_BUILTIN
-	imply XIP
+	select ARCH_HAS_THREAD_PRIV_STACK_SPACE_GET if USERSPACE
 	help
 	  RISCV architecture
 
@@ -136,6 +142,7 @@ config XTENSA
 	select ARCH_MEM_DOMAIN_DATA if USERSPACE
 	select ARCH_HAS_DIRECTED_IPIS
 	select THREAD_STACK_INFO
+	select ARCH_HAS_THREAD_PRIV_STACK_SPACE_GET if USERSPACE
 	help
 	  Xtensa architecture
 
@@ -146,6 +153,7 @@ config ARCH_POSIX
 	select ARCH_HAS_CUSTOM_SWAP_TO_MAIN
 	select ARCH_HAS_CUSTOM_BUSY_WAIT
 	select ARCH_HAS_THREAD_ABORT
+	select ARCH_HAS_THREAD_NAME_HOOK
 	select NATIVE_BUILD
 	select HAS_COVERAGE_SUPPORT
 	select BARRIER_OPERATIONS_BUILTIN
@@ -181,8 +189,9 @@ config BIG_ENDIAN
 	  Little-endian architecture is the default and should leave this option
 	  unselected.  This option is selected by arch/$ARCH/Kconfig,
 	  soc/**/Kconfig, or boards/**/Kconfig and the user should generally avoid
-	  modifying it.  The option is used to select linker script OUTPUT_FORMAT
-	  and command line option for gen_isr_tables.py.
+	  modifying it.  The option is used to select linker script OUTPUT_FORMAT,
+	  the toolchain flags (TOOLCHAIN_C_FLAGS, TOOLCHAIN_LD_FLAGS), and command
+	  line option for gen_isr_tables.py.
 
 config LITTLE_ENDIAN
 	# Hidden Kconfig option representing the default little-endian architecture
@@ -414,10 +423,17 @@ config FRAME_POINTER
 	  Select Y here to gain precise stack traces at the expense of slightly
 	  increased size and decreased speed.
 
+config ARCH_STACKWALK
+	bool "Compile the stack walking function"
+	default y
+	depends on ARCH_HAS_STACKWALK
+	help
+	  Select Y here to compile the `arch_stack_walk()` function
+
 config ARCH_STACKWALK_MAX_FRAMES
 	int "Max depth for stack walk function"
 	default 8
-	depends on ARCH_HAS_STACKWALK
+	depends on ARCH_STACKWALK
 	help
 	  Depending on implementation, this can place a hard limit on the depths of the stack
 	  for the stack walk function to examine.
@@ -599,6 +615,14 @@ config SIMPLIFIED_EXCEPTION_CODES
 	  down to the generic K_ERR_CPU_EXCEPTION, which makes testing code
 	  much more portable.
 
+config EMPTY_IRQ_SPURIOUS
+	bool "Create empty spurious interrupt handler"
+	depends on ARCH_SUPPORTS_EMPTY_IRQ_SPURIOUS
+	help
+	  This option changes body of spurious interrupt handler. When enabled,
+	  handler contains only an infinite while loop, when disabled, handler
+	  contains the whole Zephyr fault handling procedure.
+
 endmenu # Interrupt configuration
 
 config INIT_ARCH_HW_AT_BOOT
@@ -658,10 +682,16 @@ config ARCH_SUPPORTS_COREDUMP
 config ARCH_SUPPORTS_COREDUMP_THREADS
 	bool
 
+config ARCH_SUPPORTS_COREDUMP_PRIV_STACKS
+	bool
+
 config ARCH_SUPPORTS_ARCH_HW_INIT
 	bool
 
 config ARCH_SUPPORTS_ROM_START
+	bool
+
+config ARCH_SUPPORTS_EMPTY_IRQ_SPURIOUS
 	bool
 
 config ARCH_HAS_EXTRA_EXCEPTION_INFO
@@ -669,11 +699,6 @@ config ARCH_HAS_EXTRA_EXCEPTION_INFO
 
 config ARCH_HAS_GDBSTUB
 	bool
-
-config ARCH_HAS_STACKWALK
-	bool
-	help
-	  This is selected when the architecture implemented the arch_stack_walk() API.
 
 config ARCH_HAS_COHERENCE
 	bool
@@ -697,6 +722,11 @@ config ARCH_SUPPORTS_MEM_MAPPED_STACKS
 	bool
 	help
 	  Select when the architecture supports memory mapped stacks.
+
+config ARCH_HAS_THREAD_PRIV_STACK_SPACE_GET
+	bool
+	help
+	  Select when the architecture implements arch_thread_priv_stack_space_get().
 
 #
 # Other architecture related options
@@ -763,6 +793,13 @@ config ARCH_HAS_DEMAND_PAGING
 	  This hidden configuration should be selected by the architecture if
 	  demand paging is supported.
 
+config ARCH_HAS_DEMAND_MAPPING
+	bool
+	help
+	  This hidden configuration should be selected by the architecture if
+	  demand paging is supported and arch_mem_map() supports
+	  K_MEM_MAP_UNPAGED.
+
 config ARCH_HAS_RESERVED_PAGE_FRAMES
 	bool
 	help
@@ -788,7 +825,7 @@ config CPU_CACHE_INCOHERENT
 	help
 	  This hidden configuration should be selected when the CPU has
 	  incoherent cache. This applies to intra-CPU multiprocessing
-	  incoherence and makes only sense when MP_NUM_CPUS > 1.
+	  incoherence and makes only sense when MP_MAX_NUM_CPUS > 1.
 
 config CPU_HAS_ICACHE
 	bool
@@ -994,7 +1031,7 @@ config CACHE_DOUBLEMAP
 	  point to the same cached/uncached memory at different locations.
 
 	  This applies to intra-CPU multiprocessing incoherence and makes only
-	  sense when MP_NUM_CPUS > 1.
+	  sense when MP_MAX_NUM_CPUS > 1.
 
 config CACHE_MANAGEMENT
 	bool "Cache management features"
@@ -1078,9 +1115,28 @@ config TOOLCHAIN_HAS_BUILTIN_FFS
 	help
 	  Hidden option to signal that toolchain has __builtin_ffs*().
 
-config ARCH_CPU_IDLE_CUSTOM
-	bool "Custom arch_cpu_idle implementation"
-	default n
+config ARCH_HAS_CUSTOM_CPU_IDLE
+	bool
 	help
 	  This options allows applications to override the default arch idle implementation with
 	  a custom one.
+
+config ARCH_HAS_CUSTOM_CPU_ATOMIC_IDLE
+	bool
+	help
+	  This options allows applications to override the default arch idle implementation with
+	  a custom one.
+
+config ARCH_HAS_CUSTOM_SWAP_TO_MAIN
+	bool
+	help
+	  It's possible that an architecture port cannot use _Swap() to swap to
+	  the _main() thread, but instead must do something custom. It must
+	  enable this option in that case.
+
+config ARCH_HAS_CUSTOM_BUSY_WAIT
+	bool
+	help
+	  It's possible that an architecture port cannot or does not want to use
+	  the provided k_busy_wait(), but instead must do something custom. It must
+	  enable this option in that case.

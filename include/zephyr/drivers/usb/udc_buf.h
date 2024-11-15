@@ -13,7 +13,7 @@
 #define ZEPHYR_INCLUDE_UDC_BUF_H
 
 #include <zephyr/kernel.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 
 #if defined(CONFIG_DCACHE) && !defined(CONFIG_UDC_BUF_FORCE_NOCACHE)
 /*
@@ -38,6 +38,8 @@
  * @brief Buffer macros and definitions used in USB device support
  * @defgroup udc_buf Buffer macros and definitions used in USB device support
  * @ingroup usb
+ * @since 4.0
+ * @version 0.1.0
  * @{
  */
 
@@ -132,15 +134,17 @@ extern const struct net_buf_data_cb net_buf_dma_cb;
  */
 #define UDC_BUF_POOL_DEFINE(pname, count, size, ud_size, fdestroy)		\
 	_NET_BUF_ARRAY_DEFINE(pname, count, ud_size);				\
+	BUILD_ASSERT((UDC_BUF_GRANULARITY) % (UDC_BUF_ALIGN) == 0,		\
+		     "Code assumes granurality is multiple of alignment");	\
 	static uint8_t __nocache __aligned(UDC_BUF_ALIGN)			\
-		net_buf_data_##pname[count][size];				\
+		net_buf_data_##pname[count][ROUND_UP(size, UDC_BUF_GRANULARITY)];\
 	static const struct net_buf_pool_fixed net_buf_fixed_##pname = {	\
 		.data_pool = (uint8_t *)net_buf_data_##pname,			\
 	};									\
 	static const struct net_buf_data_alloc net_buf_fixed_alloc_##pname = {	\
 		.cb = &net_buf_fixed_cb,					\
 		.alloc_data = (void *)&net_buf_fixed_##pname,			\
-		.max_alloc_size = size,						\
+		.max_alloc_size = ROUND_UP(size, UDC_BUF_GRANULARITY),		\
 	};									\
 	static STRUCT_SECTION_ITERABLE(net_buf_pool, pname) =			\
 		NET_BUF_POOL_INITIALIZER(pname, &net_buf_fixed_alloc_##pname,	\

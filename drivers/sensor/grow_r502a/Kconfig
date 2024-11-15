@@ -39,6 +39,7 @@ config GROW_R502A_TRIGGER_GLOBAL_THREAD
 config GROW_R502A_TRIGGER_OWN_THREAD
 	bool "Use own thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_HZGROW_R502A),int-gpios)
 	select GROW_R502A_TRIGGER
 
 endchoice

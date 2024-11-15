@@ -1,3 +1,4 @@
 # Search paths(s) for tests which will be run in the nrf54l15 app core
 # This file is used in CI to select which tests are run
 tests/bsim/bluetooth/ll/multiple_id/tests_scripts/multiple.sh
+tests/bsim/bluetooth/samples/central_hr_peripheral_hr/

@@ -16,7 +16,7 @@
 #define ACMP_POSITIVE 5
 #define ACMP_NEGATIVE 5
 #define ACMP_DAC_VREF 0
-#elif defined(CONFIG_BOARD_MIMXRT1170_EVK)
+#elif (defined(CONFIG_BOARD_MIMXRT1170_EVK) || defined(CONFIG_BOARD_MIMXRT1180_EVK))
 #define ACMP_NODE  DT_NODELABEL(acmp1)
 #define ACMP_POSITIVE 2
 #define ACMP_NEGATIVE 7
@@ -58,8 +58,10 @@ static const struct acmp_attr attrs[] = {
 	  .val = ACMP_DAC_VREF },
 	/* DAC value */
 	{ .attr = SENSOR_ATTR_MCUX_ACMP_DAC_VALUE, .val = ACMP_DAC_VALUE },
+#if MCUX_ACMP_HAS_HYSTCTR
 	/* Hysteresis level */
 	{ .attr = SENSOR_ATTR_MCUX_ACMP_HYSTERESIS_LEVEL, .val = 3 },
+#endif
 #if MCUX_ACMP_HAS_DISCRETE_MODE
 	/* Discrete mode */
 	{ .attr = SENSOR_ATTR_MCUX_ACMP_POSITIVE_DISCRETE_MODE, .val = 1 },

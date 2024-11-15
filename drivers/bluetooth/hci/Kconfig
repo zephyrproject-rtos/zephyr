@@ -29,15 +29,8 @@ config BT_H5
 	  Bluetooth three-wire (H:5) UART driver. Implementation of HCI
 	  Three-Wire UART Transport Layer.
 
-# Removed: Here only to give the user a warning about its removal
-# Remove after 3.7.0 is released
-config BT_RPMSG
-	bool "[REMOVED] HCI using RPMsg"
-	help
-	  Use BT_HCI_IPC instead
-
 config BT_HCI_IPC
-	bool "HCI using the IPC subsystem"
+	bool
 	default y
 	depends on DT_HAS_ZEPHYR_BT_HCI_IPC_ENABLED
 	select BT_HAS_HCI_VS
@@ -48,51 +41,85 @@ config BT_HCI_IPC
 	  using the IPC subsystem.
 
 config BT_SPI
-	bool "SPI HCI"
+	bool
 	select SPI
 	help
 	  Supports Bluetooth ICs using SPI as the communication protocol.
 	  HCI packets are sent and received as single Byte transfers,
-	  prepended after a known header.  Headers may vary per device, so
+	  prepended after a known header. Headers may vary per device, so
 	  additional platform specific knowledge may need to be added as
 	  devices are.
 
+config BT_SPI_INIT_PRIORITY
+	int "BT SPI init priority"
+	depends on BT_SPI
+	default 75
+
+config BT_SPI_ZEPHYR
+	bool
+	default y
+	depends on DT_HAS_ZEPHYR_BT_HCI_SPI_ENABLED
+	select BT_SPI
+	help
+	  Bluetooth HCI over SPI driver for communication with Bluetooth
+	  controllers running Zephyr.
+
+config BT_SPI_BLUENRG
+	bool
+	default y
+	depends on DT_HAS_ST_HCI_SPI_V1_ENABLED || DT_HAS_ST_HCI_SPI_V2_ENABLED
+	select BT_SPI
+	help
+	  Bluetooth HCI over SPI driver for communication with
+	  STMicroelectronics BlueNRG devices.
+
+config BT_BLUENRG_ACI
+	bool "ACI message with BlueNRG-based devices"
+	depends on BT_SPI_BLUENRG
+	select BT_HCI_SET_PUBLIC_ADDR
+	help
+	  Enable support for devices compatible with the BlueNRG Bluetooth
+	  Stack. Current driver supports: ST BLUENRG-MS.
+
 config BT_STM32_IPM
-	bool "IPM HCI"
+	bool
 	default y
 	depends on DT_HAS_ST_STM32WB_RF_ENABLED
 	select USE_STM32_HAL_CORTEX
 	select HAS_STM32LIB
+	select BT_HCI_SETUP
 	help
 	  TODO
 
 config BT_STM32WBA
-	bool "STM32WBA HCI driver"
+	bool
 	default y
 	depends on DT_HAS_ST_HCI_STM32WBA_ENABLED
+	depends on ZEPHYR_HAL_STM32_MODULE_BLOBS
 	select HAS_STM32LIB
 	select BT_HCI_SET_PUBLIC_ADDR
 	help
 	  ST STM32WBA HCI Bluetooth interface
 
-config BT_SILABS_HCI
-	bool "Silicon Labs Bluetooth interface"
+config BT_SILABS_EFR32
+	bool
 	default y
-	depends on DT_HAS_SILABS_BT_HCI_ENABLED
+	depends on DT_HAS_SILABS_BT_HCI_EFR32_ENABLED
+	depends on ZEPHYR_HAL_SILABS_MODULE_BLOBS
 	depends on !PM || SOC_GECKO_PM_BACKEND_PMGR
 	select SOC_GECKO_USE_RAIL
 	select ENTROPY_GENERATOR
 	select MBEDTLS
 	select MBEDTLS_PSA_CRYPTO_C
-	select MBEDTLS_ENTROPY_ENABLED
-	select MBEDTLS_ZEPHYR_ENTROPY
+	select MBEDTLS_ENTROPY_C
+	select MBEDTLS_ENTROPY_POLL_ZEPHYR
 	help
 	  Use Silicon Labs binary Bluetooth library to connect to the
 	  controller.
 
 config BT_USERCHAN
-	bool "HCI User Channel based driver"
-	depends on BOARD_NATIVE_POSIX
+	bool
+	depends on (BOARD_NATIVE_POSIX || BOARD_NATIVE_SIM)
 	default y
 	depends on DT_HAS_ZEPHYR_BT_HCI_USERCHAN_ENABLED
 	help
@@ -103,23 +130,25 @@ config BT_USERCHAN
 	  be able to use it.
 
 config BT_ESP32
-	bool "ESP32 HCI driver"
+	bool
 	default y
 	depends on DT_HAS_ESPRESSIF_ESP32_BT_HCI_ENABLED
+	depends on ZEPHYR_HAL_ESPRESSIF_MODULE_BLOBS
 	help
 	  Espressif HCI bluetooth interface
 
 config BT_PSOC6_BLESS
-	bool "PSOC6 BLESS driver"
+	bool
 	default y
 	depends on DT_HAS_INFINEON_CAT1_BLESS_HCI_ENABLED
+	depends on ZEPHYR_HAL_INFINEON_MODULE_BLOBS
 	select BT_HCI_SETUP
 	help
-	  PSOC6 BLESS driver with BLE Controller which operates in
+	  PSOC 6 BLESS driver with BLE Controller which operates in
 	  Single CPU mode.
 
 config BT_DA1469X
-	bool "DA1469x HCI driver"
+	bool
 	default y
 	depends on DT_HAS_RENESAS_BT_HCI_DA1469X_ENABLED
 	help
@@ -127,7 +156,7 @@ config BT_DA1469X
 	  on DA1469x MCU.
 
 config BT_NXP
-	bool "NXP HCI driver"
+	bool
 	default y
 	depends on DT_HAS_NXP_HCI_BLE_ENABLED
 	select BT_HCI_SETUP
@@ -135,14 +164,15 @@ config BT_NXP
 	  NXP HCI bluetooth interface
 
 config BT_CYW208XX
-	bool "CYW208XX BLE driver"
+	bool
 	default y
 	depends on DT_HAS_INFINEON_CYW208XX_HCI_ENABLED
+	select BT_HCI_SET_PUBLIC_ADDR
 	help
 	  Infineon CYW208XX HCI bluetooth interface
 
 config BT_AMBIQ_HCI
-	bool "AMBIQ BT HCI driver"
+	bool
 	default y
 	depends on DT_HAS_AMBIQ_BT_HCI_SPI_ENABLED
 	select SPI
@@ -152,22 +182,6 @@ config BT_AMBIQ_HCI
 	help
 	  Supports Ambiq Bluetooth SoC using SPI as the communication protocol.
 	  HCI packets are sent and received as single Byte transfers.
-
-
-if BT_SPI
-
-config BT_SPI_INIT_PRIORITY
-	int "BT SPI init priority"
-	default 75
-
-config BT_BLUENRG_ACI
-	bool "ACI message with BlueNRG-based devices"
-	select BT_HCI_SET_PUBLIC_ADDR
-	help
-	  Enable support for devices compatible with the BlueNRG Bluetooth
-	  Stack. Current driver supports: ST BLUENRG-MS.
-
-endif # BT_SPI
 
 config BT_HCI_INIT_PRIORITY
 	int "BT HCI init priority"
@@ -181,7 +195,7 @@ config BT_STM32_IPM_RX_STACK_SIZE
 	depends on BT_STM32_IPM
 	default 512
 
-menuconfig BT_AIROC
+config BT_AIROC
 	bool "AIROC BT connectivity"
 	default y
 	select GPIO                          if BT_H4
@@ -195,6 +209,7 @@ menuconfig BT_AIROC
 	  Infineon's AIROC™ Wi-Fi & combos portfolio integrates
 	  IEEE 802.11a/b/g/n/ac/ax Wi-Fi and Bluetooth® 5.2 in a single-chip
 	  solution to enable small-form-factor IoT designs.
+source "drivers/bluetooth/hci/Kconfig.esp32"
 source "drivers/bluetooth/hci/Kconfig.infineon"
 source "drivers/bluetooth/hci/Kconfig.nxp"
 
@@ -248,13 +263,14 @@ config BT_DRV_RX_STACK_SIZE
 	default 640 if (BT_SPI || BT_AMBIQ_HCI)
 	default BT_RX_STACK_SIZE if (BT_H4 || BT_HCI_RAW_H4)
 	default BT_STM32_IPM_RX_STACK_SIZE if BT_STM32_IPM
+	default HCI_NXP_RX_STACK_SIZE if HCI_NXP_RX_THREAD
 	default 256
 	help
 	  Stack size for the HCI driver's RX thread.
 
-config BT_SILABS_HCI_BUFFER_MEMORY
+config BT_SILABS_EFR32_BUFFER_MEMORY
 	int "Silicon Labs Bluetooth Library memory buffer size"
-	depends on BT_SILABS_HCI
+	depends on BT_SILABS_EFR32
 	default 6144
 	help
 	  Select the size of allocated memory buffer for the Silicon Labs

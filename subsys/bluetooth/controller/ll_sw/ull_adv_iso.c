@@ -444,13 +444,15 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 		return BT_HCI_ERR_INVALID_PARAM;
 	}
 
+	lll_adv_iso->ptc = ptc_calc(lll_adv_iso, event_spacing, event_spacing_max);
+
 	if (test_config) {
 		lll_adv_iso->pto = pto;
 
+		if (pto && !lll_adv_iso->ptc) {
+			return BT_HCI_ERR_INVALID_PARAM;
+		}
 	} else {
-		lll_adv_iso->ptc = ptc_calc(lll_adv_iso, event_spacing,
-						event_spacing_max);
-
 		/* Pre-Transmission Offset (PTO) */
 		if (lll_adv_iso->ptc) {
 			lll_adv_iso->pto = bn / lll_adv_iso->bn;
@@ -541,6 +543,7 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 	PDU_BIG_INFO_IRC_SET(big_info, lll_adv_iso->irc);
 
 	big_info->max_pdu = lll_adv_iso->max_pdu;
+	big_info->rfu = 0U;
 
 	(void)memcpy(&big_info->seed_access_addr, lll_adv_iso->seed_access_addr,
 		     sizeof(big_info->seed_access_addr));

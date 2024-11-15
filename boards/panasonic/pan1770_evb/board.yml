@@ -1,5 +1,6 @@
 board:
   name: pan1770_evb
+  full_name: PAN1770 Evaluation Board
   vendor: panasonic
   socs:
   - name: nrf52840

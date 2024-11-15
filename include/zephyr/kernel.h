@@ -250,6 +250,7 @@ void k_thread_foreach_unlocked_filter_by_cpu(unsigned int cpu,
  * */
 #define K_ESSENTIAL (BIT(0))
 
+#define K_FP_IDX 1
 /**
  * @brief FPU registers are managed by context switch
  *
@@ -259,7 +260,6 @@ void k_thread_foreach_unlocked_filter_by_cpu(unsigned int cpu,
  * and restore the contents of these registers when scheduling the thread.
  * No effect if @kconfig{CONFIG_FPU_SHARING} is not enabled.
  */
-#define K_FP_IDX 1
 #define K_FP_REGS (BIT(K_FP_IDX))
 
 /**
@@ -665,7 +665,7 @@ static inline k_tid_t k_current_get(void)
 #ifdef CONFIG_CURRENT_THREAD_USE_TLS
 
 	/* Thread-local cache of current thread ID, set in z_thread_entry() */
-	extern __thread k_tid_t z_tls_current;
+	extern Z_THREAD_LOCAL k_tid_t z_tls_current;
 
 	return z_tls_current;
 #else
@@ -4684,7 +4684,7 @@ __syscall int k_msgq_put(struct k_msgq *msgq, const void *data, k_timeout_t time
  *                K_FOREVER.
  *
  * @retval 0 Message received.
- * @retval -ENOMSG Returned without waiting.
+ * @retval -ENOMSG Returned without waiting or queue purged.
  * @retval -EAGAIN Waiting period timed out.
  */
 __syscall int k_msgq_get(struct k_msgq *msgq, void *data, k_timeout_t timeout);

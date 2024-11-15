@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-23 NXP
+ * Copyright 2020-2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,11 +43,13 @@ struct dma_mcux_edma_config {
 #endif
 	uint8_t channels_per_mux;
 	uint8_t dmamux_reg_offset;
+	int dma_requests;
 	int dma_channels; /* number of channels */
 #if DMA_MCUX_HAS_CHANNEL_GAP
 	uint32_t channel_gap[2];
 #endif
 	void (*irq_config_func)(const struct device *dev);
+	edma_tcd_t (*tcdpool)[CONFIG_DMA_TCD_QUEUE_SIZE];
 };
 
 
@@ -55,11 +57,11 @@ struct dma_mcux_edma_config {
 
 #ifdef CONFIG_DMA_MCUX_USE_DTCM_FOR_DMA_DESCRIPTORS
 
-#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm))
 #define EDMA_TCDPOOL_CACHE_ATTR __dtcm_noinit_section
-#else /* DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay) */
+#else /* DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm)) */
 #error Selected DTCM for MCUX DMA descriptors but no DTCM section.
-#endif /* DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay) */
+#endif /* DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm)) */
 
 #elif defined(CONFIG_NOCACHE_MEMORY)
 #define EDMA_TCDPOOL_CACHE_ATTR __nocache
@@ -82,9 +84,6 @@ struct dma_mcux_edma_config {
 
 #endif /* CONFIG_HAS_MCUX_CACHE */
 
-static __aligned(32) EDMA_TCDPOOL_CACHE_ATTR edma_tcd_t
-tcdpool[DT_INST_PROP(0, dma_channels)][CONFIG_DMA_TCD_QUEUE_SIZE];
-
 struct dma_mcux_channel_transfer_edma_settings {
 	uint32_t source_data_size;
 	uint32_t dest_data_size;
@@ -93,6 +92,14 @@ struct dma_mcux_channel_transfer_edma_settings {
 	enum dma_channel_direction direction;
 	edma_transfer_type_t transfer_type;
 	bool valid;
+	/* This var indicate it is dynamic SG mode or loop SG mode. */
+	bool cyclic;
+	/* These parameters are for cyclic mode only.
+	 * Next empty TCD idx which can be used for transfer
+	 */
+	volatile int8_t write_idx;
+	/* How many TCDs in TCD pool is emtpy(can be used to write transfer parameters) */
+	volatile uint8_t empty_tcds;
 };
 
 
@@ -108,8 +115,8 @@ struct call_back {
 
 struct dma_mcux_edma_data {
 	struct dma_context dma_ctx;
-	struct call_back data_cb[DT_INST_PROP(0, dma_channels)];
-	ATOMIC_DEFINE(channels_atomic, DT_INST_PROP(0, dma_channels));
+	struct call_back *data_cb;
+	atomic_t *channels_atomic;
 };
 
 #define DEV_CFG(dev) \
@@ -129,6 +136,40 @@ struct dma_mcux_edma_data {
 
 #define DEV_DMAMUX_CHANNEL(dev, ch) \
 	(ch % DEV_CFG(dev)->channels_per_mux) ^ (DEV_CFG(dev)->dmamux_reg_offset)
+#endif
+
+/* Definations for SW TCD fields */
+#if defined(CONFIG_DMA_MCUX_EDMA) || defined(CONFIG_DMA_MCUX_EDMA_V3)
+#define EDMA_TCD_SADDR(tcd, flag)     ((tcd)->SADDR)
+#define EDMA_TCD_DADDR(tcd, flag)     ((tcd)->DADDR)
+#define EDMA_TCD_BITER(tcd, flag)     ((tcd)->BITER)
+#define EDMA_TCD_CITER(tcd, flag)     ((tcd)->CITER)
+#define EDMA_TCD_CSR(tcd, flag)       ((tcd)->CSR)
+#define EDMA_TCD_DLAST_SGA(tcd, flag) ((tcd)->DLAST_SGA)
+#if defined(CONFIG_DMA_MCUX_EDMA_V3)
+#define DMA_CSR_DREQ                  DMA_TCD_CSR_DREQ
+#define EDMA_HW_TCD_CH_ACTIVE_MASK    (DMA_CH_CSR_ACTIVE_MASK)
+#else
+#define EDMA_HW_TCD_CH_ACTIVE_MASK    (DMA_CSR_ACTIVE_MASK)
+#endif /* CONFIG_DMA_MCUX_EDMA_V3 */
+#elif defined(CONFIG_DMA_MCUX_EDMA_V4)
+/* Above macros have been defined in fsl_edma_core.h */
+#define EDMA_HW_TCD_CH_ACTIVE_MASK (DMA_CH_CSR_ACTIVE_MASK)
+#endif
+
+/* Definations for HW TCD fields */
+#ifdef CONFIG_DMA_MCUX_EDMA
+#define EDMA_HW_TCD_SADDR(dev, ch) (DEV_BASE(dev)->TCD[ch].SADDR)
+#define EDMA_HW_TCD_DADDR(dev, ch) (DEV_BASE(dev)->TCD[ch].DADDR)
+#define EDMA_HW_TCD_BITER(dev, ch) (DEV_BASE(dev)->TCD[ch].BITER_ELINKNO)
+#define EDMA_HW_TCD_CITER(dev, ch) (DEV_BASE(dev)->TCD[ch].CITER_ELINKNO)
+#define EDMA_HW_TCD_CSR(dev, ch)   (DEV_BASE(dev)->TCD[ch].CSR)
+#elif defined(CONFIG_DMA_MCUX_EDMA_V3) || defined(CONFIG_DMA_MCUX_EDMA_V4)
+#define EDMA_HW_TCD_SADDR(dev, ch) (DEV_BASE(dev)->CH[ch].TCD_SADDR)
+#define EDMA_HW_TCD_DADDR(dev, ch) (DEV_BASE(dev)->CH[ch].TCD_DADDR)
+#define EDMA_HW_TCD_BITER(dev, ch) (DEV_BASE(dev)->CH[ch].TCD_BITER_ELINKNO)
+#define EDMA_HW_TCD_CITER(dev, ch) (DEV_BASE(dev)->CH[ch].TCD_CITER_ELINKNO)
+#define EDMA_HW_TCD_CSR(dev, ch)   (DEV_BASE(dev)->CH[ch].TCD_CSR)
 #endif
 
 /*
@@ -179,10 +220,14 @@ static void nxp_edma_callback(edma_handle_t *handle, void *param, bool transferD
 {
 	int ret = -EIO;
 	struct call_back *data = (struct call_back *)param;
-
 	uint32_t channel = dma_mcux_edma_remove_channel_gap(data->dev, handle->channel);
 
-	if (transferDone) {
+	if (data->transfer_settings.cyclic) {
+		data->transfer_settings.empty_tcds++;
+		/*In loop mode, DMA is always busy*/
+		data->busy = 1;
+		ret = DMA_STATUS_COMPLETE;
+	} else if (transferDone) {
 		/* DMA is no longer busy when there are no remaining TCDs to transfer */
 		data->busy = (handle->tcdPool != NULL) && (handle->tcdUsed > 0);
 		ret = DMA_STATUS_COMPLETE;
@@ -255,13 +300,14 @@ static int dma_mcux_edma_configure(const struct device *dev, uint32_t channel,
 	edma_transfer_type_t transfer_type;
 	unsigned int key;
 	int ret = 0;
+	edma_tcd_t *tcd = NULL;
 
-	if (slot >= DT_INST_PROP(0, dma_requests)) {
+	if (slot >= DEV_CFG(dev)->dma_requests) {
 		LOG_ERR("source number is out of scope %d", slot);
 		return -ENOTSUP;
 	}
 
-	if (channel >= DT_INST_PROP(0, dma_channels)) {
+	if (channel >= DEV_CFG(dev)->dma_channels) {
 		LOG_ERR("out of DMA channel %d", channel);
 		return -EINVAL;
 	}
@@ -317,7 +363,7 @@ static int dma_mcux_edma_configure(const struct device *dev, uint32_t channel,
 	data->transfer_settings.direction = config->channel_direction;
 	data->transfer_settings.transfer_type = transfer_type;
 	data->transfer_settings.valid = true;
-
+	data->transfer_settings.cyclic = config->cyclic;
 
 	/* Lock and page in the channel configuration */
 	key = irq_lock();
@@ -358,25 +404,93 @@ static int dma_mcux_edma_configure(const struct device *dev, uint32_t channel,
 	LOG_DBG("channel is %d", channel);
 	EDMA_EnableChannelInterrupts(DEV_BASE(dev), hw_channel, kEDMA_ErrorInterruptEnable);
 
+	/* Initialize all TCD pool as 0*/
+	for (int i = 0; i < CONFIG_DMA_TCD_QUEUE_SIZE; i++) {
+		memset(&DEV_CFG(dev)->tcdpool[channel][i], 0,
+		       sizeof(DEV_CFG(dev)->tcdpool[channel][i]));
+	}
+
 	if (block_config->source_gather_en || block_config->dest_scatter_en) {
-		EDMA_InstallTCDMemory(p_handle, tcdpool[channel], CONFIG_DMA_TCD_QUEUE_SIZE);
-		while (block_config != NULL) {
+		if (config->cyclic) {
+			/* Loop SG mode */
+			data->transfer_settings.write_idx = 0;
+			data->transfer_settings.empty_tcds = CONFIG_DMA_TCD_QUEUE_SIZE;
+
 			EDMA_PrepareTransfer(
-				&(data->transferConfig),
-				(void *)block_config->source_address,
-				config->source_data_size,
-				(void *)block_config->dest_address,
-				config->dest_data_size,
-				config->source_burst_length,
+				&data->transferConfig, (void *)block_config->source_address,
+				config->source_data_size, (void *)block_config->dest_address,
+				config->dest_data_size, config->source_burst_length,
 				block_config->block_size, transfer_type);
 
-			const status_t submit_status =
-				EDMA_SubmitTransfer(p_handle, &(data->transferConfig));
-			if (submit_status != kStatus_Success) {
-				LOG_ERR("Error submitting EDMA Transfer: 0x%x", submit_status);
-				ret = -EFAULT;
+			/* Init all TCDs with the para in transfer config and link them. */
+			for (int i = 0; i < CONFIG_DMA_TCD_QUEUE_SIZE; i++) {
+				EDMA_TcdSetTransferConfig(
+					&DEV_CFG(dev)->tcdpool[channel][i], &data->transferConfig,
+					&DEV_CFG(dev)->tcdpool[channel][(i + 1) %
+									CONFIG_DMA_TCD_QUEUE_SIZE]);
+
+				/* Enable Major loop interrupt.*/
+				EDMA_TcdEnableInterrupts(&DEV_CFG(dev)->tcdpool[channel][i],
+							 kEDMA_MajorInterruptEnable);
 			}
-			block_config = block_config->next_block;
+
+			/* Load valid transfer parameters */
+			while (block_config != NULL && data->transfer_settings.empty_tcds > 0) {
+				tcd = &(DEV_CFG(dev)->tcdpool[channel]
+							     [data->transfer_settings.write_idx]);
+
+				EDMA_TCD_SADDR(tcd, kEDMA_EDMA4Flag) = block_config->source_address;
+				EDMA_TCD_DADDR(tcd, kEDMA_EDMA4Flag) = block_config->dest_address;
+				EDMA_TCD_BITER(tcd, kEDMA_EDMA4Flag) =
+					block_config->block_size / config->source_data_size;
+				EDMA_TCD_CITER(tcd, kEDMA_EDMA4Flag) =
+					block_config->block_size / config->source_data_size;
+				/*Enable auto stop for last transfer.*/
+				if (block_config->next_block == NULL) {
+					EDMA_TCD_CSR(tcd, kEDMA_EDMA4Flag) |= DMA_CSR_DREQ(1U);
+				} else {
+					EDMA_TCD_CSR(tcd, kEDMA_EDMA4Flag) &= ~DMA_CSR_DREQ(1U);
+				}
+
+				data->transfer_settings.write_idx =
+					(data->transfer_settings.write_idx + 1) %
+					CONFIG_DMA_TCD_QUEUE_SIZE;
+				data->transfer_settings.empty_tcds--;
+				block_config = block_config->next_block;
+			}
+
+			if (block_config != NULL && data->transfer_settings.empty_tcds == 0) {
+				/* User input more blocks than TCD number, return error */
+				LOG_ERR("Too much request blocks,increase TCD buffer size!");
+				ret = -ENOBUFS;
+			}
+			/* Push the 1st TCD into HW */
+			EDMA_InstallTCD(p_handle->base, hw_channel,
+					&DEV_CFG(dev)->tcdpool[channel][0]);
+
+		} else {
+			/* Dynamic Scatter Gather mode */
+			EDMA_InstallTCDMemory(p_handle, DEV_CFG(dev)->tcdpool[channel],
+					      CONFIG_DMA_TCD_QUEUE_SIZE);
+
+			while (block_config != NULL) {
+				EDMA_PrepareTransfer(&(data->transferConfig),
+						     (void *)block_config->source_address,
+						     config->source_data_size,
+						     (void *)block_config->dest_address,
+						     config->dest_data_size,
+						     config->source_burst_length,
+						     block_config->block_size, transfer_type);
+
+				const status_t submit_status =
+					EDMA_SubmitTransfer(p_handle, &(data->transferConfig));
+				if (submit_status != kStatus_Success) {
+					LOG_ERR("Error submitting EDMA Transfer: 0x%x",
+						submit_status);
+					ret = -EFAULT;
+				}
+				block_config = block_config->next_block;
+			}
 		}
 	} else {
 		/* block_count shall be 1 */
@@ -395,11 +509,8 @@ static int dma_mcux_edma_configure(const struct device *dev, uint32_t channel,
 			LOG_ERR("Error submitting EDMA Transfer: 0x%x", submit_status);
 			ret = -EFAULT;
 		}
-#if defined(CONFIG_DMA_MCUX_EDMA_V3) || defined(CONFIG_DMA_MCUX_EDMA_V4)
-		LOG_DBG("DMA TCD_CSR 0x%x", DEV_BASE(dev)->CH[hw_channel].TCD_CSR);
-#else
-		LOG_DBG("data csr is 0x%x", DEV_BASE(dev)->TCD[hw_channel].CSR);
-#endif
+
+		LOG_DBG("DMA TCD CSR 0x%x", EDMA_HW_TCD_CSR(dev, hw_channel));
 	}
 
 	if (config->dest_chaining_en) {
@@ -491,11 +602,23 @@ static int dma_mcux_edma_resume(const struct device *dev, uint32_t channel)
 	return 0;
 }
 
+static void dma_mcux_edma_update_hw_tcd(const struct device *dev, uint32_t channel, uint32_t src,
+					uint32_t dst, size_t size)
+{
+	EDMA_HW_TCD_SADDR(dev, channel) = src;
+	EDMA_HW_TCD_DADDR(dev, channel) = dst;
+	EDMA_HW_TCD_BITER(dev, channel) = size;
+	EDMA_HW_TCD_CITER(dev, channel) = size;
+	EDMA_HW_TCD_CSR(dev, channel) |= DMA_CSR_DREQ(1U);
+}
 
 static int dma_mcux_edma_reload(const struct device *dev, uint32_t channel,
 				uint32_t src, uint32_t dst, size_t size)
 {
 	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
+	edma_tcd_t *tcd = NULL;
+	edma_tcd_t *pre_tcd = NULL;
+	uint32_t hw_id, sw_id;
 
 	/* Lock the channel configuration */
 	const unsigned int key = irq_lock();
@@ -507,29 +630,115 @@ static int dma_mcux_edma_reload(const struct device *dev, uint32_t channel,
 		goto cleanup;
 	}
 
-	/* If the tcdPool is not in use (no s/g) then only a single TCD can be active at once. */
-	if (data->busy && data->edma_handle.tcdPool == NULL) {
-		LOG_ERR("EDMA busy. Wait until the transfer completes before reloading.");
-		ret = -EBUSY;
-		goto cleanup;
-	}
+	if (data->transfer_settings.cyclic) {
+		if (data->transfer_settings.empty_tcds == 0) {
+			LOG_ERR("TCD list is full in loop mode.");
+			ret = -ENOBUFS;
+			goto cleanup;
+		}
 
-	EDMA_PrepareTransfer(
-		&(data->transferConfig),
-		(void *)src,
-		data->transfer_settings.source_data_size,
-		(void *)dst,
-		data->transfer_settings.dest_data_size,
-		data->transfer_settings.source_burst_length,
-		size,
-		data->transfer_settings.transfer_type);
+		/* Convert size into major loop count */
+		size = size / data->transfer_settings.dest_data_size;
 
-	const status_t submit_status =
-		EDMA_SubmitTransfer(DEV_EDMA_HANDLE(dev, channel), &(data->transferConfig));
+		/* Configure a TCD for the transfer */
+		tcd = &(DEV_CFG(dev)->tcdpool[channel][data->transfer_settings.write_idx]);
+		pre_tcd = &(DEV_CFG(dev)->tcdpool[channel][(data->transfer_settings.write_idx - 1) %
+							   CONFIG_DMA_TCD_QUEUE_SIZE]);
 
-	if (submit_status != kStatus_Success) {
-		LOG_ERR("Error submitting EDMA Transfer: 0x%x", submit_status);
-		ret = -EFAULT;
+		EDMA_TCD_SADDR(tcd, kEDMA_EDMA4Flag) = src;
+		EDMA_TCD_DADDR(tcd, kEDMA_EDMA4Flag) = dst;
+		EDMA_TCD_BITER(tcd, kEDMA_EDMA4Flag) = size;
+		EDMA_TCD_CITER(tcd, kEDMA_EDMA4Flag) = size;
+		/* Enable automatically stop */
+		EDMA_TCD_CSR(tcd, kEDMA_EDMA4Flag) |= DMA_CSR_DREQ(1U);
+		sw_id = EDMA_TCD_DLAST_SGA(tcd, kEDMA_EDMA4Flag);
+
+		/* Block the peripheral's hardware request trigger to prevent
+		 * starting the DMA before updating the TCDs.  Make sure the
+		 * code between EDMA_DisableChannelRequest() and
+		 * EDMA_EnableChannelRequest() is minimum.
+		 */
+		EDMA_DisableChannelRequest(DEV_BASE(dev), channel);
+
+		/* Wait for the DMA to be inactive before updating the TCDs.
+		 * The CSR[ACTIVE] bit will deassert quickly after the EDMA's
+		 * minor loop burst completes.
+		 */
+		while (EDMA_HW_TCD_CSR(dev, channel) & EDMA_HW_TCD_CH_ACTIVE_MASK) {
+			;
+		}
+
+		/* Identify the current active TCD.  Use DLAST_SGA as the HW ID */
+		hw_id = EDMA_GetNextTCDAddress(DEV_EDMA_HANDLE(dev, channel));
+		if (data->transfer_settings.empty_tcds >= CONFIG_DMA_TCD_QUEUE_SIZE ||
+		    hw_id == sw_id) {
+			/* All transfers have been done.DMA is stopped automatically,
+			 * invalid TCD has been loaded into the HW, update HW.
+			 */
+			dma_mcux_edma_update_hw_tcd(dev, channel, src, dst, size);
+			LOG_DBG("Transfer done,auto stop");
+
+		} else {
+			/* Previous TCD can automatically start this TCD.
+			 * Enable the peripheral DMA request in the previous TCD
+			 */
+			EDMA_TCD_CSR(pre_tcd, kEDMA_EDMA4Flag) &= ~DMA_CSR_DREQ(1U);
+
+			if (data->transfer_settings.empty_tcds == CONFIG_DMA_TCD_QUEUE_SIZE - 1 ||
+			    hw_id == (uint32_t)tcd) {
+				/* DMA is running on last transfer. HW has loaded the last one,
+				 * we need ensure it's DREQ is cleared.
+				 */
+				EDMA_EnableAutoStopRequest(DEV_BASE(dev), channel, false);
+				LOG_DBG("Last transfer.");
+			}
+			LOG_DBG("Manu stop");
+		}
+
+#ifdef CONFIG_DMA_MCUX_EDMA
+		/* It seems that there is HW issue which may cause ESG bit is cleared.
+		 * This is a workaround. Clear the DONE bit before setting ESG bit.
+		 */
+		EDMA_ClearChannelStatusFlags(DEV_BASE(dev), channel, kEDMA_DoneFlag);
+		EDMA_HW_TCD_CSR(dev, channel) |= DMA_CSR_ESG_MASK;
+#elif (CONFIG_DMA_MCUX_EDMA_V3 || CONFIG_DMA_MCUX_EDMA_V4)
+		/*We have not verified if this issue exist on V3/V4 HW, jut place a holder here. */
+#endif
+		/* TCDs are configured.  Resume DMA */
+		EDMA_EnableChannelRequest(DEV_BASE(dev), channel);
+
+		/* Update the write index and available TCD numbers. */
+		data->transfer_settings.write_idx =
+			(data->transfer_settings.write_idx + 1) % CONFIG_DMA_TCD_QUEUE_SIZE;
+		data->transfer_settings.empty_tcds--;
+
+		LOG_DBG("w_idx:%d no:%d(ch:%d)", data->transfer_settings.write_idx,
+			data->transfer_settings.empty_tcds, channel);
+
+	} else {
+		/* Dynamice Scatter/Gather mode:
+		 * If the tcdPool is not in use (no s/g) then only a single TCD
+		 * can be active at once.
+		 */
+		if (data->busy && data->edma_handle.tcdPool == NULL) {
+			LOG_ERR("EDMA busy. Wait until the transfer completes before reloading.");
+			ret = -EBUSY;
+			goto cleanup;
+		}
+
+		EDMA_PrepareTransfer(&(data->transferConfig), (void *)src,
+				     data->transfer_settings.source_data_size, (void *)dst,
+				     data->transfer_settings.dest_data_size,
+				     data->transfer_settings.source_burst_length, size,
+				     data->transfer_settings.transfer_type);
+
+		const status_t submit_status =
+			EDMA_SubmitTransfer(DEV_EDMA_HANDLE(dev, channel), &(data->transferConfig));
+
+		if (submit_status != kStatus_Success) {
+			LOG_ERR("Error submitting EDMA Transfer: 0x%x", submit_status);
+			ret = -EFAULT;
+		}
 	}
 
 cleanup:
@@ -544,8 +753,12 @@ static int dma_mcux_edma_get_status(const struct device *dev, uint32_t channel,
 
 	if (DEV_CHANNEL_DATA(dev, channel)->busy) {
 		status->busy = true;
+		/* pending_length is in bytes.  Multiply remaining major loop
+		 * count by NBYTES for each minor loop
+		 */
 		status->pending_length =
-			EDMA_GetRemainingMajorLoopCount(DEV_BASE(dev), hw_channel);
+			EDMA_GetRemainingMajorLoopCount(DEV_BASE(dev), hw_channel) *
+			DEV_CHANNEL_DATA(dev, channel)->transfer_settings.source_data_size;
 	} else {
 		status->busy = false;
 		status->pending_length = 0;
@@ -627,8 +840,6 @@ static int dma_mcux_edma_init(const struct device *dev)
 	EDMA_EnableAllChannelLink(DEV_BASE(dev), true);
 #endif
 	config->irq_config_func(dev);
-	memset(dev->data, 0, sizeof(struct dma_mcux_edma_data));
-	memset(tcdpool, 0, sizeof(tcdpool));
 	data->dma_ctx.magic = DMA_MAGIC;
 	data->dma_ctx.dma_channels = config->dma_channels;
 	data->dma_ctx.atomic = data->channels_atomic;
@@ -675,9 +886,9 @@ static int dma_mcux_edma_init(const struct device *dev)
 		LISTIFY(NUM_IRQS_WITHOUT_ERROR_IRQ(n),				\
 			DMA_MCUX_EDMA_IRQ_CONFIG, (;), n)			\
 										\
-		IF_ENABLED(UTIL_NOT(DT_INST_NODE_HAS_PROP(n, no_error_irq)),	\
-			   (IRQ_CONFIG(n, NUM_IRQS_WITHOUT_ERROR_IRQ(n),	\
-			    dma_mcux_edma_error_irq_handler)))			\
+		COND_CODE_1(DT_INST_PROP(n, no_error_irq), (),			\
+			(IRQ_CONFIG(n, NUM_IRQS_WITHOUT_ERROR_IRQ(n),		\
+			dma_mcux_edma_error_irq_handler)))			\
 										\
 		LOG_DBG("install irq done");					\
 	}
@@ -716,17 +927,28 @@ static int dma_mcux_edma_init(const struct device *dev)
 #define DMA_INIT(n)								\
 	DMAMUX_BASE_INIT_DEFINE(n)						\
 	static void dma_imx_config_func_##n(const struct device *dev);		\
+	static __aligned(32) EDMA_TCDPOOL_CACHE_ATTR edma_tcd_t			\
+	dma_tcdpool##n[DT_INST_PROP(n, dma_channels)][CONFIG_DMA_TCD_QUEUE_SIZE];\
 	static const struct dma_mcux_edma_config dma_config_##n = {		\
 		.base = (DMA_Type *)DT_INST_REG_ADDR(n),			\
 		DMAMUX_BASE_INIT(n)						\
+		.dma_requests = DT_INST_PROP(n, dma_requests),			\
 		.dma_channels = DT_INST_PROP(n, dma_channels),			\
 		CHANNELS_PER_MUX(n)						\
 		.irq_config_func = dma_imx_config_func_##n,			\
 		.dmamux_reg_offset = DT_INST_PROP(n, dmamux_reg_offset),	\
 		DMA_MCUX_EDMA_CHANNEL_GAP(n)					\
+		.tcdpool = dma_tcdpool##n,					\
 	};									\
 										\
-	struct dma_mcux_edma_data dma_data_##n;					\
+	static struct call_back							\
+		dma_data_callback_##n[DT_INST_PROP(n, dma_channels)];		\
+	static ATOMIC_DEFINE(							\
+		dma_channels_atomic_##n, DT_INST_PROP(n, dma_channels));	\
+	static struct dma_mcux_edma_data dma_data_##n = {			\
+		.data_cb = dma_data_callback_##n,				\
+		.channels_atomic = dma_channels_atomic_##n,			\
+	};									\
 										\
 	DEVICE_DT_INST_DEFINE(n,						\
 			      &dma_mcux_edma_init, NULL,			\

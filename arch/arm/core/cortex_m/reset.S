@@ -24,8 +24,8 @@ GDATA(z_interrupt_stacks)
 #if defined(CONFIG_DEBUG_THREAD_INFO)
 GDATA(z_sys_post_kernel)
 #endif
-#if defined(CONFIG_PLATFORM_SPECIFIC_INIT)
-GTEXT(z_arm_platform_init)
+#if defined(CONFIG_SOC_RESET_HOOK)
+GTEXT(soc_reset_hook)
 #endif
 #if defined(CONFIG_INIT_ARCH_HW_AT_BOOT)
 GTEXT(z_arm_init_arch_hw_at_boot)
@@ -93,8 +93,8 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
     bl arch_pm_s2ram_resume
 #endif /* CONFIG_PM_S2RAM */
 
-#if defined(CONFIG_PLATFORM_SPECIFIC_INIT)
-    bl z_arm_platform_init
+#if defined(CONFIG_SOC_RESET_HOOK)
+    bl soc_reset_hook
 #endif
 
 #if defined(CONFIG_INIT_ARCH_HW_AT_BOOT)

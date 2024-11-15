@@ -98,6 +98,8 @@ static void drop_add(uint16_t opcode)
 #if defined(CONFIG_BT_DEBUG_MONITOR_RTT)
 #include <SEGGER_RTT.h>
 
+static bool panic_mode;
+
 #define RTT_BUFFER_NAME CONFIG_BT_DEBUG_MONITOR_RTT_BUFFER_NAME
 #define RTT_BUF_SIZE CONFIG_BT_DEBUG_MONITOR_RTT_BUFFER_SIZE
 
@@ -124,10 +126,14 @@ static void monitor_send(const void *data, size_t len)
 	}
 
 	if (!drop) {
-		SEGGER_RTT_LOCK();
+		if (!panic_mode) {
+			SEGGER_RTT_LOCK();
+		}
 		cnt = SEGGER_RTT_WriteNoLock(CONFIG_BT_DEBUG_MONITOR_RTT_BUFFER,
 					     rtt_buf, rtt_buf_offset);
-		SEGGER_RTT_UNLOCK();
+		if (!panic_mode) {
+			SEGGER_RTT_UNLOCK();
+		}
 	}
 
 	if (!cnt) {
@@ -144,7 +150,15 @@ static void poll_out(char c)
 }
 #elif defined(CONFIG_BT_DEBUG_MONITOR_UART)
 static const struct device *const monitor_dev =
+#if DT_HAS_CHOSEN(zephyr_bt_mon_uart)
 	DEVICE_DT_GET(DT_CHOSEN(zephyr_bt_mon_uart));
+#elif !defined(CONFIG_UART_CONSOLE) && DT_HAS_CHOSEN(zephyr_console)
+	/* Fall back to console UART if it's available */
+	DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
+#else
+	NULL;
+#error "BT_DEBUG_MONITOR_UART enabled but no UART specified"
+#endif
 
 static void poll_out(char c)
 {
@@ -175,8 +189,15 @@ static void encode_drops(struct bt_monitor_hdr *hdr, uint8_t type,
 
 static uint32_t monitor_ts_get(void)
 {
-	return (k_cycle_get_32() /
-		(sys_clock_hw_cycles_per_sec() / MONITOR_TS_FREQ));
+	uint64_t cycle;
+
+	if (IS_ENABLED(CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER)) {
+		cycle = k_cycle_get_64();
+	} else {
+		cycle = k_cycle_get_32();
+	}
+
+	return (cycle / (sys_clock_hw_cycles_per_sec() / MONITOR_TS_FREQ));
 }
 
 static inline void encode_hdr(struct bt_monitor_hdr *hdr, uint32_t timestamp,
@@ -349,6 +370,9 @@ static void monitor_log_process(const struct log_backend *const backend,
 
 static void monitor_log_panic(const struct log_backend *const backend)
 {
+#if defined(CONFIG_BT_DEBUG_MONITOR_RTT)
+	panic_mode = true;
+#endif
 }
 
 static void monitor_log_init(const struct log_backend *const backend)

@@ -5,7 +5,7 @@
 config INA23X
 	bool "INA23X Current and Power Monitor"
 	default y
-	depends on DT_HAS_TI_INA230_ENABLED || DT_HAS_TI_INA237_ENABLED
+	depends on DT_HAS_TI_INA230_ENABLED || DT_HAS_TI_INA236_ENABLED || DT_HAS_TI_INA237_ENABLED
 	select I2C
 	help
 	  Enable driver for INA23X Current and Power Monitor.
@@ -15,9 +15,9 @@ if INA23X
 config INA230
 	bool "INA230"
 	default y
-	depends on DT_HAS_TI_INA230_ENABLED
+	depends on DT_HAS_TI_INA230_ENABLED || DT_HAS_TI_INA236_ENABLED
 	help
-	  Enable driver for INA230/INA231.
+	  Enable driver for INA230/INA231/INA236.
 
 config INA237
 	bool "INA237"
@@ -43,6 +43,8 @@ config INA237_VSHUNT
 config INA230_TRIGGER
 	bool "INA230 trigger mode"
 	depends on INA230
+	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_TI_INA230),alert-gpios)
 	help
 	  Set to enable trigger mode using gpio interrupt, where
 	  interrupts are configured to line ALERT PIN.

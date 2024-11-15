@@ -1056,7 +1056,7 @@ static int tls_set_psk(struct tls_context *tls,
 		       struct tls_credential *psk,
 		       struct tls_credential *psk_id)
 {
-#if defined(MBEDTLS_KEY_EXCHANGE_SOME_PSK_ENABLED)
+#if defined(MBEDTLS_SSL_HANDSHAKE_WITH_PSK_ENABLED)
 	int err = mbedtls_ssl_conf_psk(&tls->config,
 				       psk->buf, psk->len,
 				       (const unsigned char *)psk_id->buf,
@@ -1419,6 +1419,10 @@ static int tls_mbedtls_init(struct tls_context *context, bool is_server)
 					       mbedtls_ssl_cache_get,
 					       mbedtls_ssl_cache_set);
 	}
+#endif
+
+#if defined(MBEDTLS_SSL_EARLY_DATA)
+	mbedtls_ssl_conf_early_data(&context->config, MBEDTLS_SSL_EARLY_DATA_ENABLED);
 #endif
 
 	ret = mbedtls_ssl_setup(&context->ssl,
@@ -2034,7 +2038,7 @@ static int protocol_check(int family, int type, int *proto)
 		return -EAFNOSUPPORT;
 	}
 
-	if (*proto >= IPPROTO_TLS_1_0 && *proto <= IPPROTO_TLS_1_2) {
+	if (*proto >= IPPROTO_TLS_1_0 && *proto <= IPPROTO_TLS_1_3) {
 		if (type != SOCK_STREAM) {
 			return -EPROTOTYPE;
 		}
@@ -2104,7 +2108,7 @@ free_fd:
 	return -1;
 }
 
-int ztls_close_ctx(struct tls_context *ctx)
+int ztls_close_ctx(struct tls_context *ctx, int sock)
 {
 	int ret, err = 0;
 
@@ -2115,6 +2119,10 @@ int ztls_close_ctx(struct tls_context *ctx)
 
 	err = tls_release(ctx);
 	ret = zsock_close(ctx->sock);
+
+	if (ret == 0) {
+		(void)sock_obj_core_dealloc(sock);
+	}
 
 	/* In case close fails, we propagate errno value set by close.
 	 * In case close succeeds, but tls_release fails, set errno
@@ -2177,7 +2185,8 @@ int ztls_connect_ctx(struct tls_context *ctx, const struct sockaddr *addr,
 		/* TODO For simplicity, TLS handshake blocks the socket
 		 * even for non-blocking socket.
 		 */
-		ret = tls_mbedtls_handshake(ctx, K_FOREVER);
+		ret = tls_mbedtls_handshake(
+			ctx, K_MSEC(CONFIG_NET_SOCKETS_CONNECT_TIMEOUT));
 		if (ret < 0) {
 			goto error;
 		}
@@ -2234,7 +2243,8 @@ int ztls_accept_ctx(struct tls_context *parent, struct sockaddr *addr,
 	/* TODO For simplicity, TLS handshake blocks the socket even for
 	 * non-blocking socket.
 	 */
-	ret = tls_mbedtls_handshake(child, K_FOREVER);
+	ret = tls_mbedtls_handshake(
+		child, K_MSEC(CONFIG_NET_SOCKETS_CONNECT_TIMEOUT));
 	if (ret < 0) {
 		goto error;
 	}
@@ -2375,6 +2385,9 @@ static ssize_t sendto_dtls_client(struct tls_context *ctx, const void *buf,
 
 		/* TODO For simplicity, TLS handshake blocks the socket even for
 		 * non-blocking socket.
+		 * DTLS handshake timeout/retransmissions are limited by
+		 * mbed TLS, so K_FOREVER is fine here, the function will not
+		 * block indefinitely.
 		 */
 		ret = tls_mbedtls_handshake(ctx, K_FOREVER);
 		if (ret < 0) {
@@ -2600,7 +2613,8 @@ static ssize_t recv_tls(struct tls_context *ctx, void *buf,
 			if (ret == MBEDTLS_ERR_SSL_WANT_READ ||
 			    ret == MBEDTLS_ERR_SSL_WANT_WRITE ||
 			    ret == MBEDTLS_ERR_SSL_ASYNC_IN_PROGRESS ||
-			    ret ==  MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS) {
+			    ret == MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS ||
+			    ret == MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET) {
 				int timeout_ms;
 
 				if (!is_block) {
@@ -3300,7 +3314,7 @@ static bool poll_offload_dtls_client_retry(struct tls_context *ctx,
 
 static int ztls_poll_offload(struct zsock_pollfd *fds, int nfds, int timeout)
 {
-	int fd_backup[CONFIG_NET_SOCKETS_POLL_MAX];
+	int fd_backup[CONFIG_ZVFS_POLL_MAX];
 	const struct fd_op_vtable *vtable;
 	void *ctx;
 	int ret = 0;
@@ -3816,9 +3830,9 @@ static int tls_sock_setsockopt_vmeth(void *obj, int level, int optname,
 	return ztls_setsockopt_ctx(obj, level, optname, optval, optlen);
 }
 
-static int tls_sock_close_vmeth(void *obj)
+static int tls_sock_close2_vmeth(void *obj, int sock)
 {
-	return ztls_close_ctx(obj);
+	return ztls_close_ctx(obj, sock);
 }
 
 static int tls_sock_getpeername_vmeth(void *obj, struct sockaddr *addr,
@@ -3841,7 +3855,7 @@ static const struct socket_op_vtable tls_sock_fd_op_vtable = {
 	.fd_vtable = {
 		.read = tls_sock_read_vmeth,
 		.write = tls_sock_write_vmeth,
-		.close = tls_sock_close_vmeth,
+		.close2 = tls_sock_close2_vmeth,
 		.ioctl = tls_sock_ioctl_vmeth,
 	},
 	.shutdown = tls_sock_shutdown_vmeth,

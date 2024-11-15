@@ -99,8 +99,9 @@ static ALWAYS_INLINE unsigned int smsc_current_bank(struct smsc_data *sc)
 static void smsc_mmu_wait(struct smsc_data *sc)
 {
 	__ASSERT((smsc_current_bank(sc) == 2), "%s called when not in bank 2", __func__);
-	while (sys_read16(sc->smsc_reg + MMUCR) & MMUCR_BUSY)
+	while (sys_read16(sc->smsc_reg + MMUCR) & MMUCR_BUSY) {
 		;
+	}
 }
 
 static ALWAYS_INLINE uint8_t smsc_read_1(struct smsc_data *sc, int offset)

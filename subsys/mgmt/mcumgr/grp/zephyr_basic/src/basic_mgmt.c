@@ -108,6 +108,9 @@ static struct mgmt_group zephyr_basic_mgmt_group = {
 #ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
 	.mg_translate_error = zephyr_basic_group_translate_error_code,
 #endif
+#ifdef CONFIG_MCUMGR_GRP_ENUM_DETAILS_NAME
+	.mg_group_name = "zephyr basic mgmt",
+#endif
 };
 
 static void zephyr_basic_mgmt_init(void)

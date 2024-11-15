@@ -15,7 +15,16 @@ target_include_directories(app PRIVATE
   ${ZEPHYR_BASE}/arch/${ARCH}/include
 )
 
-set(ext_names hello_world logging relative_jump object syscalls threads_kernel_objects)
+set(ext_names
+	hello_world
+	logging
+	relative_jump
+	object
+	syscalls
+	threads_kernel_objects
+	export_dependent
+	export_dependency
+)
 
 if(CONFIG_ARM)
   if(NOT CONFIG_CPU_CORTEX_M0 AND NOT CONFIG_CPU_CORTEX_M0PLUS AND NOT CONFIG_CPU_CORTEX_M1)
@@ -23,12 +32,17 @@ if(CONFIG_ARM)
   endif()
 endif()
 
-if (CONFIG_LLEXT_TYPE_ELF_RELOCATABLE AND CONFIG_XTENSA)
+if (CONFIG_LLEXT_TYPE_ELF_RELOCATABLE AND NOT CONFIG_ARM)
     list(APPEND ext_names pre_located)
 endif()
 
 if (CONFIG_LLEXT_STORAGE_WRITABLE)
     list(APPEND ext_names find_section)
+endif()
+
+if (NOT CONFIG_LLEXT_TYPE_ELF_SHAREDLIB)
+    # ELF shared libraries do not support init sections
+    list(APPEND ext_names init_fini)
 endif()
 
 # generate extension targets foreach extension given by 'ext_names'
@@ -53,7 +67,7 @@ if(NOT CONFIG_LLEXT_TYPE_ELF_OBJECT)
   )
 endif()
 
-if (CONFIG_LLEXT_TYPE_ELF_RELOCATABLE AND CONFIG_XTENSA)
+if (CONFIG_LLEXT_TYPE_ELF_RELOCATABLE AND NOT CONFIG_ARM AND NOT CONFIG_RISCV)
   # Manually fix the pre_located extension's text address at a multiple of 4
   get_target_property(pre_located_target pre_located_ext lib_target)
   get_target_property(pre_located_file pre_located_ext pkg_input)

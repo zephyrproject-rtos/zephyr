@@ -23,7 +23,7 @@
 
 #include <zephyr/drivers/can.h>
 #include <zephyr/types.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 
 /*
  * Abbreviations

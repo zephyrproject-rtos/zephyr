@@ -29,11 +29,13 @@ config LSM6DSO16IS_TRIGGER_NONE
 config LSM6DSO16IS_TRIGGER_GLOBAL_THREAD
 	bool "Use global thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LSM6DSO16IS),irq-gpios)
 	select LSM6DSO16IS_TRIGGER
 
 config LSM6DSO16IS_TRIGGER_OWN_THREAD
 	bool "Use own thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LSM6DSO16IS),irq-gpios)
 	select LSM6DSO16IS_TRIGGER
 
 endchoice

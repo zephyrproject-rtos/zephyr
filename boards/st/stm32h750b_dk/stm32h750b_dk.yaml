@@ -15,4 +15,6 @@ supported:
   - flash
   - rtc
   - memc
+  - display
+  - spi
 vendor: st

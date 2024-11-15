@@ -20,6 +20,7 @@
 		zephyr,shell-uart = &uart0;
 		zephyr,sram = &sram3;
 		zephyr,flash = &flash0;
+		zephyr,display = &ssd1306;
 	};
 
 	leds {
@@ -53,6 +54,7 @@
 		led1 = &led2;
 		led2 = &led3;
 		sw0 = &pb1;
+		watchdog0 = &wdt0;
 	};
 
 	/* Used for accessing other pins */
@@ -108,4 +110,41 @@
 
 &trng {
 	status = "okay";
+};
+
+&i2c2 {
+	pinctrl-0 = <&i2c2a_scl_p0_18 &i2c2a_sda_p0_19>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
+
+	ssd1306: ssd1306@3d {
+		compatible = "solomon,ssd1306fb";
+		reg = <0x3d>;
+		width = <128>;
+		height = <32>;
+		segment-offset = <0>;
+		page-offset = <0>;
+		display-offset = <0>;
+		multiplex-ratio = <31>;
+		segment-remap;
+		com-invdir;
+		com-sequential;
+		prechargep = <0x22>;
+		inversion-on;
+	};
+};
+
+&dma0 {
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&spi1 {
+	status = "okay";
+	pinctrl-0 = <&spi1a_mosi_p0_15 &spi1a_miso_p0_14 &spi1a_sck_p0_16 &spi1a_ss0_p0_17>;
+	pinctrl-names = "default";
 };

@@ -162,4 +162,15 @@ config NET_DHCPV4_SERVER_NAK_UNRECOGNIZED_REQUESTS
 	  will send a NAK, informing the client it should proceed with a full
 	  procedure.
 
+config NET_DHCPV4_SERVER_OPTION_DNS_ADDRESS
+	string "DNS Server address"
+	default DNS_SERVER1 if DNS_SERVER_IP_ADDRESSES
+	default ""
+	help
+	  This configuration option specifies the DNS server address that the DHCPv4
+	  server should provide to clients when they request an IP address. The
+	  DHCPv4 server adds this DNS server address in the DHCP offer and
+	  acknowledgment messages sent to the clients, allowing them to use the
+	  specified DNS server for name resolution.
+
 endif # NET_DHCPV4_SERVER

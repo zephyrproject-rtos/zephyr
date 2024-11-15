@@ -9,7 +9,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
 #include <zephyr/mgmt/mcumgr/smp/smp.h>

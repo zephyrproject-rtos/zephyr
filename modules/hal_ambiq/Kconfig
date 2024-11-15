@@ -10,6 +10,11 @@ config AMBIQ_HAL
 
 if AMBIQ_HAL
 
+config AMBIQ_HAL_USE_ADC
+	bool
+	help
+	  Use the ADC driver from Ambiq HAL
+
 config AMBIQ_HAL_USE_GPIO
 	bool
 	help
@@ -35,10 +40,15 @@ config AMBIQ_HAL_USE_I2C
 	help
 	  Use the I2C driver from Ambiq HAL
 
-config AMBIQ_HAL_USE_SPI
+config AMBIQ_HAL_USE_SPIC
 	bool
 	help
-	  Use the SPI driver from Ambiq HAL
+	  Use the SPI Controller driver from Ambiq HAL
+
+config AMBIQ_HAL_USE_SPID
+	bool
+	help
+	  Use the SPI Device driver from Ambiq HAL
 
 config AMBIQ_HAL_USE_MSPI
 	bool
@@ -54,5 +64,10 @@ config AMBIQ_HAL_USE_BLEIF
 	bool
 	help
 	  Use the BLEIF driver from Ambiq HAL
+
+config AMBIQ_HAL_USE_ADC
+	bool
+	help
+	  Use the ADC driver from Ambiq HAL
 
 endif # AMBIQ_HAL

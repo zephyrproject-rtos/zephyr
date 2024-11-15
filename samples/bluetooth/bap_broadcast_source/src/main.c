@@ -1,16 +1,33 @@
 /*
- * Copyright (c) 2022-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/bluetooth/bluetooth.h>
+#include <errno.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/byteorder.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/toolchain.h>
 
-BUILD_ASSERT(strlen(CONFIG_BROADCAST_CODE) <= BT_AUDIO_BROADCAST_CODE_SIZE,
-	     "Invalid broadcast code");
+BUILD_ASSERT(strlen(CONFIG_BROADCAST_CODE) <= BT_ISO_BROADCAST_CODE_SIZE, "Invalid broadcast code");
 
 /* Zephyr Controller works best while Extended Advertising interval to be a multiple
  * of the ISO Interval minus 10 ms (max. advertising random delay). This is
@@ -500,11 +517,15 @@ int main(void)
 			return 0;
 		}
 
-		err = bt_bap_broadcast_source_get_id(broadcast_source, &broadcast_id);
-		if (err != 0) {
-			printk("Unable to get broadcast ID: %d\n", err);
-			return 0;
+#if defined(CONFIG_STATIC_BROADCAST_ID)
+		broadcast_id = CONFIG_BROADCAST_ID;
+#else
+		err = bt_rand(&broadcast_id, BT_AUDIO_BROADCAST_ID_SIZE);
+		if (err) {
+			printk("Unable to generate broadcast ID: %d\n", err);
+			return err;
 		}
+#endif /* CONFIG_STATIC_BROADCAST_ID */
 
 		/* Setup extended advertising data */
 		net_buf_simple_add_le16(&ad_buf, BT_UUID_BROADCAST_AUDIO_VAL);

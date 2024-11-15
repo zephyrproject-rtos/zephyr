@@ -1,0 +1,23 @@
+# Copyright (c) 2023 KNS Group LLC (YADRO)
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config PROFILING_PERF
+	bool "Perf support"
+	depends on !SMP
+	depends on SHELL
+	depends on PROFILING_PERF_HAS_BACKEND
+	help
+	  Enable perf shell command.
+
+if PROFILING_PERF
+
+config PROFILING_PERF_BUFFER_SIZE
+	int "Perf buffer size"
+	default 2048
+	help
+	  Size of buffer used by perf to save stack trace samples.
+
+endif
+
+rsource "backends/Kconfig"

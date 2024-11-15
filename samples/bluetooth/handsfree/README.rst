@@ -1,7 +1,8 @@
-.. _bt_handsfree:
+.. zephyr:code-sample:: bluetooth_handsfree
+   :name: Hands-free
+   :relevant-api: bt_hfp bluetooth
 
-Bluetooth: Handsfree
-####################
+   Use the Hands-Free Profile (HFP) APIs.
 
 Overview
 ********
@@ -20,4 +21,4 @@ Building and Running
 This sample can be found under :zephyr_file:`samples/bluetooth/handsfree` in
 the Zephyr tree.
 
-See :ref:`bluetooth samples section <bluetooth-samples>` for details.
+See :zephyr:code-sample-category:`bluetooth` samples for details.

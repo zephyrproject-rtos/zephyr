@@ -124,10 +124,14 @@ source "drivers/watchdog/Kconfig.ambiq"
 
 source "drivers/watchdog/Kconfig.shell"
 
+source "drivers/watchdog/Kconfig.max32"
+
 source "drivers/watchdog/Kconfig.xmc4xxx"
 
 source "drivers/watchdog/Kconfig.numaker"
 
 source "drivers/watchdog/Kconfig.ene"
+
+source "drivers/watchdog/Kconfig.litex"
 
 endif # WATCHDOG

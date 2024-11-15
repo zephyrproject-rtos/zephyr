@@ -45,6 +45,13 @@ config THREAD_ANALYZER_ISR_STACK_USAGE
 	bool "Analyze interrupt stacks usage"
 	default y
 
+config THREAD_ANALYZER_PRIV_STACK_USAGE
+	bool "Analyze privileged stacks usage"
+	depends on USERSPACE
+	depends on ARCH_HAS_THREAD_PRIV_STACK_SPACE_GET
+	help
+	  Print privileged stack usage for user threads.
+
 config THREAD_ANALYZER_RUN_UNLOCKED
 	bool "Run analysis with interrupts unlocked"
 	default y
@@ -381,31 +388,11 @@ config DEBUG_INFO
 config EXCEPTION_STACK_TRACE
 	bool "Attempt to print stack traces upon exceptions"
 	default y
-	depends on (X86_EXCEPTION_STACK_TRACE || \
-		    ARM64_EXCEPTION_STACK_TRACE || \
-		    RISCV_EXCEPTION_STACK_TRACE)
+	depends on ARCH_STACKWALK
 	help
 	  If the architecture fatal handling code supports it, attempt to
 	  print a stack trace of function memory addresses when an
 	  exception is reported.
-
-config EXCEPTION_STACK_TRACE_MAX_FRAMES
-	int "Configures the depth of stack trace"
-	default ARCH_STACKWALK_MAX_FRAMES if ARCH_HAS_STACKWALK
-	default 8
-	depends on EXCEPTION_STACK_TRACE
-	help
-	  In the event of a stack trace, this place a limit on the depths
-	  of the stack to examine.
-
-config EXCEPTION_STACK_TRACE_SYMTAB
-	bool "Print function names in the stack trace"
-	select SYMTAB
-	depends on EXCEPTION_STACK_TRACE
-	help
-	  Enable this if you want to print the function names in the
-	  stack trace output. This will generate the symtab and
-	  can consume a lot of ROM if there's a lot of functions.
 
 #
 # Miscellaneous debugging options
@@ -438,3 +425,9 @@ config MIPI_STP_DECODER
 	depends on !BIG_ENDIAN
 	help
 	  Module decodes a stream of STPv2 data.
+
+config CS_TRACE_DEFMT
+	bool "Coresight Trace Deformatter"
+	help
+	  Module is decoding data which is formatted using Coresight
+	  Trace Formatter, e.g. when data is put into ETR (Embedded Trace Router).

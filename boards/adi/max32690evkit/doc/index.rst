@@ -1,7 +1,4 @@
-.. _max32690_evkit:
-
-MAX32690EVKIT
-#############
+.. zephyr:board:: max32690evkit
 
 Overview
 ********
@@ -14,7 +11,7 @@ industrial sensors/networks, internet of things (IoT), and asset tracking.
 
 The Zephyr port is running on the MAX32690 MCU.
 
-.. image:: img/max32690evkit_img1.jpg
+.. image:: img/max32690evkit.jpg
    :align: center
    :alt: MAX32690 EVKIT Front
 
@@ -110,10 +107,24 @@ Below interfaces are supported by Zephyr on MAX32690EVKIT.
 | UART      | on-chip    | serial                              |
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | spi                                 |
-+--------------------------------------------------------------+
++-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
 | TRNG      | on-chip    | entropy                             |
++-----------+------------+-------------------------------------+
+| DMA       | on-chip    | dma controller                      |
++-----------+------------+-------------------------------------+
+| Watchdog  | on-chip    | watchdog                            |
++-----------+------------+-------------------------------------+
+| ADC       | on-chip    | adc                                 |
++-----------+------------+-------------------------------------+
+| Timer     | on-chip    | counter                             |
++-----------+------------+-------------------------------------+
+| PWM       | on-chip    | pwm                                 |
++-----------+------------+-------------------------------------+
+| W1        | on-chip    | one wire master                     |
++-----------+------------+-------------------------------------+
+| Flash     | on-chip    | flash                               |
 +-----------+------------+-------------------------------------+
 
 

@@ -5,23 +5,40 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define HAL_TICKER_CNTR_CLK_FREQ_HZ   32768U
-#define HAL_TICKER_CNTR_CLK_UNIT_FSEC 30517578125UL
-#define HAL_TICKER_FSEC_PER_USEC      1000000000UL
-#define HAL_TICKER_PSEC_PER_USEC      1000000UL
-#define HAL_TICKER_FSEC_PER_PSEC      1000UL
+#if defined(CONFIG_BT_CTLR_NRF_GRTC)
+#define HAL_TICKER_CNTR_CLK_UNIT_FSEC 1000000000UL
+
+/* Macro defines the h/w supported most significant bit */
+#define HAL_TICKER_CNTR_MSBIT 31
+
+/* Macro defining the HW supported counter bits */
+#define HAL_TICKER_CNTR_MASK 0xFFFFFFFF
 
 /* Macro defining the minimum counter compare offset */
-#define HAL_TICKER_CNTR_CMP_OFFSET_MIN 3
+#define HAL_TICKER_CNTR_CMP_OFFSET_MIN 1
 
 /* Macro defining the max. counter update latency in ticks */
-#define HAL_TICKER_CNTR_SET_LATENCY 0
+#define HAL_TICKER_CNTR_SET_LATENCY 4
+
+#else /* !CONFIG_BT_CTLR_NRF_GRTC */
+#define HAL_TICKER_CNTR_CLK_UNIT_FSEC 30517578125UL
 
 /* Macro defines the h/w supported most significant bit */
 #define HAL_TICKER_CNTR_MSBIT 23
 
 /* Macro defining the HW supported counter bits */
 #define HAL_TICKER_CNTR_MASK 0x00FFFFFF
+
+/* Macro defining the minimum counter compare offset */
+#define HAL_TICKER_CNTR_CMP_OFFSET_MIN 3
+
+/* Macro defining the max. counter update latency in ticks */
+#define HAL_TICKER_CNTR_SET_LATENCY 0
+#endif /* !CONFIG_BT_CTLR_NRF_GRTC */
+
+#define HAL_TICKER_FSEC_PER_USEC      1000000000UL
+#define HAL_TICKER_PSEC_PER_USEC      1000000UL
+#define HAL_TICKER_FSEC_PER_PSEC      1000UL
 
 /* Macro to translate microseconds to tick units.
  * NOTE: This returns the floor value.
@@ -44,11 +61,13 @@
 	)
 
 /* Macro to translate tick units to microseconds. */
-#define HAL_TICKER_TICKS_TO_US(x) \
+#define HAL_TICKER_TICKS_TO_US_64BIT(x) \
 	( \
-		((uint32_t)(((uint64_t)(x) * HAL_TICKER_CNTR_CLK_UNIT_FSEC) / \
-		 HAL_TICKER_FSEC_PER_USEC)) \
+		(((uint64_t)(x) * HAL_TICKER_CNTR_CLK_UNIT_FSEC) / \
+		 HAL_TICKER_FSEC_PER_USEC) \
 	)
+
+#define HAL_TICKER_TICKS_TO_US(x) ((uint32_t)HAL_TICKER_TICKS_TO_US_64BIT(x))
 
 /* Macro returning remainder in picoseconds (to fit in 32-bits) */
 #define HAL_TICKER_REMAINDER(x) \

@@ -39,7 +39,7 @@ tests:
       - mps2/an385
   drivers.uart.basic_api.cdc_acm:
     extra_args:
-      - OVERLAY_CONFIG="overlay-usb.conf"
+      - EXTRA_CONF_FILE="overlay-usb.conf"
       - DTC_OVERLAY_FILE="usb.overlay"
     tags:
       - drivers

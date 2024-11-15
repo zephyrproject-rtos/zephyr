@@ -2,6 +2,7 @@
 
 /*
  * Copyright (c) 2023 Codecoup
+ * Copyright (c) 2024 Demant A/S
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,8 +29,8 @@
 #define test_sink_ase_state_transition_fixture test_ase_state_transition_fixture
 #define test_source_ase_state_transition_fixture test_ase_state_transition_fixture
 
-static const struct bt_audio_codec_qos_pref qos_pref =
-	BT_AUDIO_CODEC_QOS_PREF(true, BT_GAP_LE_PHY_2M, 0x02, 10, 40000, 40000, 40000, 40000);
+static const struct bt_bap_qos_cfg_pref qos_pref =
+	BT_BAP_QOS_CFG_PREF(true, BT_GAP_LE_PHY_2M, 0x02, 10, 40000, 40000, 40000, 40000);
 
 struct test_ase_state_transition_fixture {
 	struct bt_conn conn;
@@ -47,24 +48,74 @@ static void *test_sink_ase_state_transition_setup(void)
 	fixture = malloc(sizeof(*fixture));
 	zassert_not_null(fixture);
 
-	memset(fixture, 0, sizeof(*fixture));
+	return fixture;
+}
+
+static void test_ase_snk_state_transition_before(void *f)
+{
+	struct test_ase_state_transition_fixture *fixture =
+		(struct test_ase_state_transition_fixture *) f;
+	struct bt_bap_unicast_server_register_param param = {
+		CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT,
+		CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT
+	};
+	int err;
+
+	err = bt_bap_unicast_server_register(&param);
+	zassert_equal(err, 0, "unexpected err response %d", err);
+
+	err = bt_bap_unicast_server_register_cb(&mock_bap_unicast_server_cb);
+	zassert_equal(err, 0, "unexpected err response %d", err);
+
+	memset(fixture, 0, sizeof(struct test_ase_state_transition_fixture));
 	test_conn_init(&fixture->conn);
 	test_ase_snk_get(1, &fixture->ase.attr);
 	if (fixture->ase.attr != NULL) {
 		fixture->ase.id = test_ase_id_get(fixture->ase.attr);
 	}
 
-	return fixture;
+	bt_bap_stream_cb_register(&fixture->stream, &mock_bap_stream_ops);
 }
 
-static void test_ase_state_transition_before(void *f)
+static void test_ase_src_state_transition_before(void *f)
 {
-	bt_bap_unicast_server_register_cb(&mock_bap_unicast_server_cb);
+	struct test_ase_state_transition_fixture *fixture =
+		(struct test_ase_state_transition_fixture *) f;
+	struct bt_bap_unicast_server_register_param param = {
+		CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT,
+		CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT
+	};
+	int err;
+
+	err = bt_bap_unicast_server_register(&param);
+	zassert_equal(err, 0, "unexpected err response %d", err);
+
+	err = bt_bap_unicast_server_register_cb(&mock_bap_unicast_server_cb);
+	zassert_equal(err, 0, "unexpected err response %d", err);
+
+	memset(fixture, 0, sizeof(struct test_ase_state_transition_fixture));
+	test_conn_init(&fixture->conn);
+	test_ase_src_get(CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT, &fixture->ase.attr);
+	if (fixture->ase.attr != NULL) {
+		fixture->ase.id = test_ase_id_get(fixture->ase.attr);
+	}
+
+	bt_bap_stream_cb_register(&fixture->stream, &mock_bap_stream_ops);
 }
 
 static void test_ase_state_transition_after(void *f)
 {
-	bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
+	int err;
+
+	err = bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
+	zassert_equal(err, 0, "unexpected err response %d", err);
+
+	err = bt_bap_unicast_server_unregister();
+	while (err != 0) {
+		zassert_equal(err, -EBUSY, "unexpected err response %d", err);
+		k_sleep(K_MSEC(10));
+		err = bt_bap_unicast_server_unregister();
+	}
 }
 
 static void test_ase_state_transition_teardown(void *f)
@@ -73,7 +124,7 @@ static void test_ase_state_transition_teardown(void *f)
 }
 
 ZTEST_SUITE(test_sink_ase_state_transition, NULL, test_sink_ase_state_transition_setup,
-	    test_ase_state_transition_before, test_ase_state_transition_after,
+	    test_ase_snk_state_transition_before, test_ase_state_transition_after,
 	    test_ase_state_transition_teardown);
 
 ZTEST_F(test_sink_ase_state_transition, test_client_idle_to_codec_configured)
@@ -90,7 +141,6 @@ ZTEST_F(test_sink_ase_state_transition, test_client_idle_to_codec_configured)
 	expect_bt_bap_unicast_server_cb_config_called_once(conn, EMPTY, BT_AUDIO_DIR_SINK, EMPTY);
 	expect_bt_bap_stream_ops_configured_called_once(stream, EMPTY);
 }
-
 ZTEST_F(test_sink_ase_state_transition, test_client_codec_configured_to_qos_configured)
 {
 	struct bt_bap_stream *stream = &fixture->stream;
@@ -602,7 +652,7 @@ static void *test_source_ase_state_transition_setup(void)
 
 	memset(fixture, 0, sizeof(*fixture));
 	test_conn_init(&fixture->conn);
-	test_ase_src_get(1, &fixture->ase.attr);
+	test_ase_src_get(CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT, &fixture->ase.attr);
 	if (fixture->ase.attr != NULL) {
 		fixture->ase.id = test_ase_id_get(fixture->ase.attr);
 	}
@@ -611,7 +661,7 @@ static void *test_source_ase_state_transition_setup(void)
 }
 
 ZTEST_SUITE(test_source_ase_state_transition, NULL, test_source_ase_state_transition_setup,
-	    test_ase_state_transition_before, test_ase_state_transition_after,
+	    test_ase_src_state_transition_before, test_ase_state_transition_after,
 	    test_ase_state_transition_teardown);
 
 ZTEST_F(test_source_ase_state_transition, test_client_idle_to_codec_configured)

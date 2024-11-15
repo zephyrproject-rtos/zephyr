@@ -6,17 +6,11 @@ find_program(CMAKE_LINKER ${CROSS_COMPILE}armlink PATHS ${TOOLCHAIN_HOME} NO_DEF
 
 add_custom_target(armlink)
 
-macro(toolchain_ld_base)
-endmacro()
-
 function(toolchain_ld_force_undefined_symbols)
   foreach(symbol ${ARGN})
     zephyr_link_libraries(--undefined=${symbol})
   endforeach()
 endfunction()
-
-macro(toolchain_ld_baremetal)
-endmacro()
 
 macro(configure_linker_script linker_script_gen linker_pass_define)
   set(STEERING_FILE)
@@ -114,6 +108,23 @@ function(toolchain_ld_link_elf)
   )
 endfunction(toolchain_ld_link_elf)
 
-include(${ZEPHYR_BASE}/cmake/linker/ld/target_cpp.cmake)
+# This function will generate the correct CMAKE_C_LINK_EXECUTABLE / CMAKE_CXX_LINK_EXECUTABLE
+# rule to ensure that standard c and runtime libraries are correctly placed
+# and the end of link invocation and doesn't appear in the middle of the link
+# command invocation.
+macro(toolchain_linker_finalize)
+  set(zephyr_std_libs)
+  get_property(link_order TARGET linker PROPERTY link_order_library)
+  foreach(lib ${link_order})
+    get_property(link_flag TARGET linker PROPERTY ${lib}_library)
+    set(zephyr_std_libs "${zephyr_std_libs} ${link_flag}")
+  endforeach()
+
+  set(common_link "<LINK_FLAGS> <LINK_LIBRARIES> <OBJECTS> ${zephyr_std_libs} -o <TARGET>")
+  set(CMAKE_C_LINK_EXECUTABLE "<CMAKE_LINKER> <CMAKE_C_LINK_FLAGS> ${common_link}")
+  set(CMAKE_CXX_LINK_EXECUTABLE "<CMAKE_LINKER> <CMAKE_CXX_LINK_FLAGS> ${common_link}")
+  set(CMAKE_ASM_LINK_EXECUTABLE "<CMAKE_LINKER> <CMAKE_ASM_LINK_FLAGS> ${common_link}")
+endmacro()
+
 include(${ZEPHYR_BASE}/cmake/linker/ld/target_relocation.cmake)
 include(${ZEPHYR_BASE}/cmake/linker/ld/target_configure.cmake)

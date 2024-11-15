@@ -8,14 +8,14 @@ toolchain:
   - zephyr
   - gnuarmemb
 supported:
+  - bluetooth
   - counter
   - gpio
   - uart
   - watchdog
+  - clock_control
 testing:
   ignore_tags:
-    - net
-    - bluetooth
     - pm
     - hwinfo
 vendor: silabs

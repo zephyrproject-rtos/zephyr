@@ -10,6 +10,7 @@
 #include <soc.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/bluetooth/hci_types.h>
 
 #include "hal/cpu.h"
 #include "hal/ccm.h"
@@ -99,6 +100,12 @@ void lll_sync_iso_prepare(void *param)
 {
 	prepare(param);
 	prepare_bh(param);
+}
+
+void lll_sync_iso_flush(uint8_t handle, struct lll_sync_iso *lll)
+{
+	ARG_UNUSED(handle);
+	ARG_UNUSED(lll);
 }
 
 static int init_reset(void)
@@ -420,6 +427,7 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	LL_ASSERT(e);
 
 	e->type = EVENT_DONE_EXTRA_TYPE_SYNC_ISO;
+	e->estab_failed = 0U;
 	e->trx_cnt = 0U;
 	e->crc_valid = 0U;
 
@@ -429,6 +437,7 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 static void isr_rx_estab(void *param)
 {
 	struct event_done_extra *e;
+	struct lll_sync_iso *lll;
 	uint8_t trx_done;
 	uint8_t crc_ok;
 
@@ -448,6 +457,36 @@ static void isr_rx_estab(void *param)
 	/* Clear radio rx status and events */
 	lll_isr_rx_status_reset();
 
+	/* Get reference to LLL context */
+	lll = param;
+
+	/* Check for MIC failures for encrypted Broadcast ISO streams */
+	if (IS_ENABLED(CONFIG_BT_CTLR_BROADCAST_ISO_ENC) && crc_ok && lll->enc) {
+		struct node_rx_pdu *node_rx;
+		struct pdu_bis *pdu;
+
+		/* By design, there shall always be one free node rx available when setting up radio
+		 * for new PDU reception.
+		 */
+		node_rx = ull_iso_pdu_rx_alloc_peek(1U);
+		LL_ASSERT(node_rx);
+
+		/* Get reference to received PDU and validate MIC for non-empty PDU */
+		pdu = (void *)node_rx->pdu;
+		if (pdu->len) {
+			bool mic_failure;
+			uint32_t done;
+
+			done = radio_ccm_is_done();
+			LL_ASSERT(done);
+
+			mic_failure = !radio_ccm_mic_is_valid();
+			if (mic_failure) {
+				lll->term_reason = BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL;
+			}
+		}
+	}
+
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 		lll_prof_cputime_capture();
 	}
@@ -457,14 +496,11 @@ static void isr_rx_estab(void *param)
 	LL_ASSERT(e);
 
 	e->type = EVENT_DONE_EXTRA_TYPE_SYNC_ISO_ESTAB;
-	e->estab_failed = 0U;
+	e->estab_failed = lll->term_reason ? 1U : 0U;
 	e->trx_cnt = trx_cnt;
 	e->crc_valid = crc_ok;
 
 	if (trx_cnt) {
-		struct lll_sync_iso *lll;
-
-		lll = param;
 		e->drift.preamble_to_addr_us = addr_us_get(lll->phy);
 		e->drift.start_to_address_actual_us =
 			radio_tmr_aa_get() - radio_tmr_ready_get();
@@ -486,12 +522,12 @@ static void isr_rx_estab(void *param)
 static void isr_rx(void *param)
 {
 	struct lll_sync_iso_stream *stream;
-	struct node_rx_pdu *node_rx;
 	struct lll_sync_iso *lll;
 	uint8_t access_addr[4];
 	uint16_t data_chan_id;
 	uint8_t data_chan_use;
 	uint8_t crc_init[3];
+	uint8_t stream_curr;
 	uint8_t rssi_ready;
 	uint32_t start_us;
 	uint8_t new_burst;
@@ -518,6 +554,9 @@ static void isr_rx(void *param)
 
 		/* BIS index */
 		bis_idx = lll->bis_curr - 1U;
+
+		/* Current stream */
+		stream_curr = lll->stream_curr;
 
 		goto isr_rx_done;
 	}
@@ -553,9 +592,13 @@ static void isr_rx(void *param)
 	/* BIS index */
 	bis_idx = lll->bis_curr - 1U;
 
+	/* Current stream */
+	stream_curr = lll->stream_curr;
+
 	/* Check CRC and generate ISO Data PDU */
 	if (crc_ok) {
 		struct lll_sync_iso_stream *sync_stream;
+		struct node_rx_pdu *node_rx;
 		uint32_t payload_offset;
 		uint16_t payload_index;
 		uint16_t stream_handle;
@@ -613,26 +656,30 @@ static void isr_rx(void *param)
 		}
 
 		/* Get reference to stream context */
-		stream_handle = lll->stream_handle[lll->stream_curr];
+		stream_handle = lll->stream_handle[stream_curr];
 		sync_stream = ull_sync_iso_lll_stream_get(stream_handle);
 
 		/* Store the received PDU if selected stream and not already
 		 * received (say in previous event as pre-transmitted PDU.
 		 */
 		if ((lll->bis_curr == sync_stream->bis_index) && pdu->len &&
-		    !lll->payload[bis_idx][payload_index]) {
+		    !lll->payload[stream_curr][payload_index]) {
 			uint16_t handle;
 
 			if (IS_ENABLED(CONFIG_BT_CTLR_BROADCAST_ISO_ENC) &&
 			    lll->enc) {
-				uint32_t mic_failure;
+				bool mic_failure;
 				uint32_t done;
 
 				done = radio_ccm_is_done();
 				LL_ASSERT(done);
 
 				mic_failure = !radio_ccm_mic_is_valid();
-				LL_ASSERT(!mic_failure);
+				if (mic_failure) {
+					lll->term_reason = BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL;
+
+					goto isr_rx_mic_failure;
+				}
 			}
 
 			ull_iso_pdu_rx_alloc();
@@ -640,7 +687,7 @@ static void isr_rx(void *param)
 			handle = LL_BIS_SYNC_HANDLE_FROM_IDX(stream_handle);
 			isr_rx_iso_data_valid(lll, handle, node_rx);
 
-			lll->payload[bis_idx][payload_index] = node_rx;
+			lll->payload[stream_curr][payload_index] = node_rx;
 		}
 	}
 
@@ -685,7 +732,7 @@ isr_rx_find_subevent:
 		}
 
 		/* Check if (bn_curr)th Rx PDU has been received */
-		if (!lll->payload[bis_idx][payload_index]) {
+		if (!lll->payload[stream_curr][payload_index]) {
 			/* Receive the (bn_curr)th Rx PDU of bis_curr */
 			bis = lll->bis_curr;
 
@@ -728,7 +775,7 @@ isr_rx_find_subevent:
 			/* Check if (irc_curr)th bn = 1 Rx PDU has been
 			 * received.
 			 */
-			if (!lll->payload[bis_idx][payload_index]) {
+			if (!lll->payload[stream_curr][payload_index]) {
 				/* Receive the (irc_curr)th bn = 1 Rx PDU of
 				 * bis_curr.
 				 */
@@ -777,14 +824,13 @@ isr_rx_find_subevent:
 
 	/* Next BIS */
 	if (lll->bis_curr < lll->num_bis) {
-		const uint8_t stream_curr = lll->stream_curr + 1U;
 		struct lll_sync_iso_stream *sync_stream;
 		uint16_t stream_handle;
 
 		/* Next selected stream */
-		if (stream_curr < lll->stream_count) {
-			lll->stream_curr = stream_curr;
-			stream_handle = lll->stream_handle[lll->stream_curr];
+		if ((lll->stream_curr + 1U) < lll->stream_count) {
+			stream_curr = ++lll->stream_curr;
+			stream_handle = lll->stream_handle[stream_curr];
 			sync_stream = ull_sync_iso_lll_stream_get(stream_handle);
 			if (sync_stream->bis_index <= lll->num_bis) {
 				uint32_t payload_offset;
@@ -820,7 +866,7 @@ isr_rx_find_subevent:
 				/* Check if (irc_curr)th bn = 1 Rx PDU has been
 				 * received.
 				 */
-				if (!lll->payload[bis_idx_new][payload_index]) {
+				if (!lll->payload[stream_curr][payload_index]) {
 					/* bn = 1 Rx PDU not received */
 					skipped = (bis_idx_new - bis_idx) *
 						  ((lll->bn * lll->irc) +
@@ -887,6 +933,7 @@ isr_rx_find_subevent:
 		goto isr_rx_next_subevent;
 	}
 
+isr_rx_mic_failure:
 	isr_rx_done(param);
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
@@ -966,6 +1013,8 @@ isr_rx_next_subevent:
 
 		payload_count = lll->payload_count - lll->bn;
 		if (bis) {
+			struct node_rx_pdu *node_rx;
+
 			payload_count += (lll->bn_curr - 1U) +
 					 (lll->ptc_curr * lll->pto);
 
@@ -994,6 +1043,8 @@ isr_rx_next_subevent:
 		struct pdu_bis *pdu;
 
 		if (bis) {
+			struct node_rx_pdu *node_rx;
+
 			/* By design, there shall always be one free node rx
 			 * available for setting up radio for new PDU reception.
 			 */
@@ -1040,10 +1091,7 @@ isr_rx_next_subevent:
 
 		start_us = hcto;
 		hcto = radio_tmr_start_us(0U, start_us);
-		/* FIXME: Assertion check disabled until investigation as to
-		 *        why there is high ISR latency causing assertion here.
-		 */
-		/* LL_ASSERT(hcto == (start_us + 1U)); */
+		LL_ASSERT(hcto == (start_us + 1U));
 
 		/* Add 8 us * subevents so far, as radio was setup to listen
 		 * 4 us early and subevents could have a 4 us drift each until
@@ -1124,14 +1172,16 @@ static void isr_rx_done(void *param)
 	/* Catchup with ISO event latencies */
 	latency_event = lll->latency_event;
 	do {
-		lll->stream_curr = 0U;
+		uint8_t stream_curr;
+
+		stream_curr = 0U;
 		for (bis_idx = 0U; bis_idx < lll->num_bis; bis_idx++) {
 			struct lll_sync_iso_stream *stream;
-			uint8_t payload_tail;
-			uint8_t stream_curr;
+			uint8_t stream_curr_inc;
 			uint16_t stream_handle;
+			uint8_t payload_tail;
 
-			stream_handle = lll->stream_handle[lll->stream_curr];
+			stream_handle = lll->stream_handle[stream_curr];
 			stream = ull_sync_iso_lll_stream_get(stream_handle);
 			/* Skip BIS indices not synchronized. bis_index is 0x01 to 0x1F,
 			 * where as bis_idx is 0 indexed.
@@ -1143,9 +1193,9 @@ static void isr_rx_done(void *param)
 			payload_tail = lll->payload_tail;
 			bn = lll->bn;
 			while (bn--) {
-				if (lll->payload[bis_idx][payload_tail]) {
-					node_rx = lll->payload[bis_idx][payload_tail];
-					lll->payload[bis_idx][payload_tail] = NULL;
+				if (lll->payload[stream_curr][payload_tail]) {
+					node_rx = lll->payload[stream_curr][payload_tail];
+					lll->payload[stream_curr][payload_tail] = NULL;
 
 					iso_rx_put(node_rx->hdr.link, node_rx);
 				} else {
@@ -1180,9 +1230,9 @@ static void isr_rx_done(void *param)
 				payload_tail = payload_index;
 			}
 
-			stream_curr = lll->stream_curr + 1U;
-			if (stream_curr < lll->stream_count) {
-				lll->stream_curr = stream_curr;
+			stream_curr_inc = stream_curr + 1U;
+			if (stream_curr_inc < lll->stream_count) {
+				stream_curr = stream_curr_inc;
 			}
 		}
 		lll->payload_tail = payload_index;
@@ -1232,6 +1282,7 @@ static void isr_rx_done(void *param)
 
 	/* Calculate and place the drift information in done event */
 	e->type = EVENT_DONE_EXTRA_TYPE_SYNC_ISO;
+	e->estab_failed = 0U;
 	e->trx_cnt = trx_cnt;
 	e->crc_valid = crc_ok_anchor;
 
@@ -1325,7 +1376,7 @@ static void isr_rx_iso_data_valid(const struct lll_sync_iso *const lll,
 			       lll->sub_interval * ((lll->irc * lll->bn) +
 						    lll->ptc));
 	iso_meta->timestamp %=
-		HAL_TICKER_TICKS_TO_US(BIT(HAL_TICKER_CNTR_MSBIT + 1U));
+		HAL_TICKER_TICKS_TO_US_64BIT(BIT64(HAL_TICKER_CNTR_MSBIT + 1U));
 	iso_meta->status = 0U;
 }
 
@@ -1349,7 +1400,7 @@ static void isr_rx_iso_data_invalid(const struct lll_sync_iso *const lll,
 			       lll->sub_interval * ((lll->irc * lll->bn) +
 						    lll->ptc));
 	iso_meta->timestamp %=
-		HAL_TICKER_TICKS_TO_US(BIT(HAL_TICKER_CNTR_MSBIT + 1U));
+		HAL_TICKER_TICKS_TO_US_64BIT(BIT64(HAL_TICKER_CNTR_MSBIT + 1U));
 	iso_meta->status = 1U;
 }
 

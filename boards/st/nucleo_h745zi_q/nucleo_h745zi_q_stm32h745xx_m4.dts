@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Alexander Kozhinov <AlexanderKozhinov@yandex.com>
+ * Copyright (c) 2020 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,4 +34,11 @@
 
 &rcc {
 	clock-frequency = <DT_FREQ_M(240)>;
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pb5>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpiod 14 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	status = "okay";
 };

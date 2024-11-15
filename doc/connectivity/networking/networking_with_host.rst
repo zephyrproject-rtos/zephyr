@@ -13,6 +13,7 @@ Networking with the host system
    usbnet_setup.rst
    qemu_user_setup.rst
    networking_with_multiple_instances.rst
+   eth_bridge_native_sim_setup.rst
    qemu_802154_setup.rst
    armfvp_user_networking_setup.rst
 
@@ -80,3 +81,11 @@ possible:
   * Here, two Zephyr instances are running and there is IEEE 802.15.4 link layer
     run over an UART between them.
     See :ref:`networking_with_ieee802154_qemu` for details.
+
+* Simulating Ethernet bridge network with native_sim.
+
+  * Here, one Zephyr instance is running with Ethernet bridge enabled
+    via :kconfig:option:`CONFIG_NET_ETHERNET_BRIDGE` Kconfig option. There
+    exists two host network interfaces ``zeth0`` and ``zeth1`` and the network
+    packets are bridged between those two interfaces.
+    See :ref:`networking_with_native_sim_eth_bridge` for details.

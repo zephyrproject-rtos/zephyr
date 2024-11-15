@@ -8,6 +8,7 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/clock/adi_max32_clock.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 
 #include <freq.h>
 
@@ -79,7 +80,7 @@
 		};
 
 		flc0: flash_controller@40029000 {
-			compatible = "flash-controller";
+			compatible = "adi,max32-flash-controller";
 			reg = <0x40029000 0x400>;
 
 			#address-cells = <1>;
@@ -195,6 +196,103 @@
 			reg = <0x4004d000 0x1000>;
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 2>;
 			status = "disabled";
+		};
+
+		wdt0: watchdog@40003000  {
+			compatible = "adi,max32-watchdog";
+			reg = <0x40003000 0x400>;
+			interrupts = <1 0>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 27>;
+			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
+			status = "disabled";
+		};
+
+		adc: adc@40034000 {
+			compatible = "adi,max32-adc-10b", "adi,max32-adc";
+			reg = <0x40034000 0x1000>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 23>;
+			channel-count = <17>;
+			#io-channel-cells = <1>;
+			interrupts = <20 0>;
+			resolution = <10>;
+			vref-mv = <1220>;
+			status = "disabled";
+		};
+
+		timer0: timer@40010000 {
+			compatible = "adi,max32-timer";
+			reg = <0x40010000 0x1000>;
+			interrupts = <5 0>;
+			status = "disabled";
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 15>;
+			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
+			prescaler = <1>;
+			counter {
+				compatible = "adi,max32-counter";
+				status = "disabled";
+			};
+			pwm {
+				compatible = "adi,max32-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+		};
+
+		timer1: timer@40011000 {
+			compatible = "adi,max32-timer";
+			reg = <0x40011000 0x1000>;
+			interrupts = <6 0>;
+			status = "disabled";
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 16>;
+			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
+			prescaler = <1>;
+			counter {
+				compatible = "adi,max32-counter";
+				status = "disabled";
+			};
+			pwm {
+				compatible = "adi,max32-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+		};
+
+		timer2: timer@40012000 {
+			compatible = "adi,max32-timer";
+			reg = <0x40012000 0x1000>;
+			interrupts = <7 0>;
+			status = "disabled";
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 17>;
+			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
+			prescaler = <1>;
+			counter {
+				compatible = "adi,max32-counter";
+				status = "disabled";
+			};
+			pwm {
+				compatible = "adi,max32-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+		};
+
+		timer3: timer@40013000 {
+			compatible = "adi,max32-timer";
+			reg = <0x40013000 0x1000>;
+			interrupts = <8 0>;
+			status = "disabled";
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 18>;
+			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
+			prescaler = <1>;
+			counter {
+				compatible = "adi,max32-counter";
+				status = "disabled";
+			};
+			pwm {
+				compatible = "adi,max32-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
 		};
 	};
 };

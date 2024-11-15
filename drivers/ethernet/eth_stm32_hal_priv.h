@@ -50,10 +50,9 @@ struct eth_stm32_hal_dev_data {
 	const struct device *clock;
 	struct k_mutex tx_mutex;
 	struct k_sem rx_int_sem;
-#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X) || \
-	defined(CONFIG_ETH_STM32_HAL_API_V2)
+#if defined(CONFIG_ETH_STM32_HAL_API_V2)
 	struct k_sem tx_int_sem;
-#endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32H5X || CONFIG_ETH_STM32_HAL_API_V2*/
+#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 	K_KERNEL_STACK_MEMBER(rx_thread_stack,
 		CONFIG_ETH_STM32_HAL_RX_THREAD_STACK_SIZE);
 	struct k_thread rx_thread;

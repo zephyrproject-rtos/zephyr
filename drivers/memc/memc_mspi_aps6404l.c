@@ -135,6 +135,7 @@ static int memc_mspi_aps6404l_command_read(const struct device *psram, uint8_t c
 	return ret;
 }
 
+#if CONFIG_PM_DEVICE
 static void acquire(const struct device *psram)
 {
 	const struct memc_mspi_aps6404l_config *cfg = psram->config;
@@ -144,23 +145,26 @@ static void acquire(const struct device *psram)
 
 	if (cfg->sw_multi_periph) {
 		while (mspi_dev_config(cfg->bus, &cfg->dev_id,
-				       MSPI_DEVICE_CONFIG_ALL, &data->dev_cfg))
+				       MSPI_DEVICE_CONFIG_ALL, &data->dev_cfg)) {
 			;
+		}
 	} else {
 		while (mspi_dev_config(cfg->bus, &cfg->dev_id,
-				       MSPI_DEVICE_CONFIG_NONE, NULL))
+				       MSPI_DEVICE_CONFIG_NONE, NULL)) {
 			;
-
+		}
 	}
 }
+#endif /* CONFIG_PM_DEVICE */
 
 static void release(const struct device *psram)
 {
 	const struct memc_mspi_aps6404l_config *cfg = psram->config;
 	struct memc_mspi_aps6404l_data *data = psram->data;
 
-	while (mspi_get_channel_status(cfg->bus, cfg->port))
+	while (mspi_get_channel_status(cfg->bus, cfg->port)) {
 		;
+	}
 
 	k_sem_give(&data->lock);
 }
@@ -339,13 +343,16 @@ static int memc_mspi_aps6404l_init(const struct device *psram)
 	}
 	data->dev_cfg = cfg->tar_dev_cfg;
 
+#if CONFIG_MSPI_TIMING
 	if (mspi_timing_config(cfg->bus, &cfg->dev_id, cfg->timing_cfg_mask,
 			       (void *)&cfg->tar_timing_cfg)) {
 		LOG_ERR("Failed to config mspi timing/%u", __LINE__);
 		return -EIO;
 	}
 	data->timing_cfg = cfg->tar_timing_cfg;
+#endif /* CONFIG_MSPI_TIMING */
 
+#if CONFIG_MSPI_XIP
 	if (cfg->tar_xip_cfg.enable) {
 		if (mspi_xip_config(cfg->bus, &cfg->dev_id, &cfg->tar_xip_cfg)) {
 			LOG_ERR("Failed to enable XIP/%u", __LINE__);
@@ -353,7 +360,9 @@ static int memc_mspi_aps6404l_init(const struct device *psram)
 		}
 		data->xip_cfg = cfg->tar_xip_cfg;
 	}
+#endif /* CONFIG_MSPI_XIP */
 
+#if CONFIG_MSPI_SCRAMBLE
 	if (cfg->tar_scramble_cfg.enable) {
 		if (mspi_scramble_config(cfg->bus, &cfg->dev_id, &cfg->tar_scramble_cfg)) {
 			LOG_ERR("Failed to enable scrambling/%u", __LINE__);
@@ -361,6 +370,7 @@ static int memc_mspi_aps6404l_init(const struct device *psram)
 		}
 		data->scramble_cfg = cfg->tar_scramble_cfg;
 	}
+#endif /* MSPI_SCRAMBLE */
 
 	release(psram);
 
@@ -421,15 +431,15 @@ static int memc_mspi_aps6404l_init(const struct device *psram)
 	}
 #define MSPI_TIMING_CONFIG_MASK(n) DT_INST_PROP(n, ambiq_timing_config_mask)
 #else
-#define MSPI_TIMING_CONFIG(n)
-#define MSPI_TIMING_CONFIG_MASK(n)
+#define MSPI_TIMING_CONFIG(n) {}
+#define MSPI_TIMING_CONFIG_MASK(n) MSPI_TIMING_PARAM_DUMMY
+#define MSPI_PORT(n) 0
 #endif
 
 #define MEMC_MSPI_APS6404L(n)                                                                     \
 	static const struct memc_mspi_aps6404l_config                                             \
 	memc_mspi_aps6404l_config_##n = {                                                         \
-		.port               = (DT_REG_ADDR(DT_INST_BUS(n)) - REG_MSPI_BASEADDR) /         \
-					(DT_REG_SIZE(DT_INST_BUS(n)) * 4),                        \
+		.port               = MSPI_PORT(n),                                               \
 		.mem_size           = DT_INST_PROP(n, size) / 8,                                  \
 		.bus                = DEVICE_DT_GET(DT_INST_BUS(n)),                              \
 		.dev_id             = MSPI_DEVICE_ID_DT_INST(n),                                  \

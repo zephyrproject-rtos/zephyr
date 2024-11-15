@@ -294,8 +294,9 @@ static inline int enet_qos_dma_reset(enet_qos_t *base)
 
 	if (CONFIG_ETH_NXP_ENET_QOS_DMA_RESET_WAIT_TIME == 0) {
 		/* spin and wait forever for the reset flag to clear */
-		while (ENET_QOS_REG_GET(DMA_MODE, SWR, base->DMA_MODE))
+		while (ENET_QOS_REG_GET(DMA_MODE, SWR, base->DMA_MODE)) {
 			;
+		}
 		goto done;
 	}
 
@@ -340,8 +341,9 @@ static inline void enet_qos_mtl_config_init(enet_qos_t *base)
 
 	/* Wait for flush to finish */
 	while (ENET_QOS_REG_GET(MTL_QUEUE_MTL_TXQX_OP_MODE, FTQ,
-				base->MTL_QUEUE[0].MTL_TXQX_OP_MODE))
+				base->MTL_QUEUE[0].MTL_TXQX_OP_MODE)) {
 		;
+	}
 
 	/* Enable only Transmit Queue 0 (optimization/configuration pending) with maximum size */
 	base->MTL_QUEUE[0].MTL_TXQX_OP_MODE =
@@ -577,7 +579,7 @@ static const struct ethernet_api api_funcs = {
 
 #define NXP_ENET_QOS_NODE_HAS_MAC_ADDR_CHECK(n)						\
 	BUILD_ASSERT(NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(n)) ||				\
-			DT_INST_NODE_HAS_PROP(n, zephyr_random_mac_address),		\
+			DT_INST_PROP(n, zephyr_random_mac_address),			\
 			"MAC address not specified on ENET QOS DT node");
 
 #define NXP_ENET_QOS_CONNECT_IRQS(node_id, prop, idx)					\

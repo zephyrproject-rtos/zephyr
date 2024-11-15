@@ -1,0 +1,29 @@
+compatible: "silabs,series2-lfxo"
+
+description: |
+  Silicon Labs LFXO peripheral (low-frequency crystal oscillator).
+
+include: fixed-clock.yaml
+
+properties:
+  ctune:
+    type: int
+    required: true
+    description: Load capacitance configuration
+  precision:
+    type: int
+    required: true
+    description: Precision configuration
+  timeout:
+    type: int
+    required: true
+    description: Startup timeout delay (cycles)
+    enum: [2, 256, 1024, 2048, 4096, 8192, 16384, 32768]
+  mode:
+    type: string
+    description: |
+      Mode of operation. Defaults to "xtal", expecting a 32768 Hz crystal oscillator on XI and XO
+      pins. May be set to "bufextclk" to use an external sinusoidal clock or "digextclk" to use
+      an external CMOS clock on the XI pin.
+    default: "xtal"
+    enum: ["xtal", "bufextclk", "digextclk"]

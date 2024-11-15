@@ -51,10 +51,9 @@ running ``west build`` or ``cmake``.
 
 The certificate and private key used by the sample can be found in the sample's
 :zephyr_file:`samples/net/sockets/http_client/src/` directory.
-The default certificates used by Socket HTTP Client and
-``https-server.py`` program found in the
-`net-tools <https://github.com/zephyrproject-rtos/net-tools>`_ project, enable
-establishing a secure connection between the samples.
+The default certificates used by Socket HTTP Client and ``https-server.py``
+program found in the `net-tools`_ project, enable establishing a secure
+connection between the samples.
 
 
 Running http-server in Linux Host
@@ -87,3 +86,5 @@ Exit QEMU by pressing :kbd:`CTRL+A` :kbd:`x`.
 
 You can verify TLS communication with a Linux host as well. Just use the
 ``https-server.py`` program in net-tools project.
+
+.. _`net-tools`: https://github.com/zephyrproject-rtos/net-tools

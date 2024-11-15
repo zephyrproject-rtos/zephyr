@@ -49,14 +49,10 @@ const struct ivt ivt_header __attribute__((section(".ivt_header"))) = {
 };
 #endif /* CONFIG_XIP */
 
-static int soc_init(void)
+void soc_early_init_hook(void)
 {
 	sys_cache_instr_enable();
 	sys_cache_data_enable();
 
 	OsIf_Init(NULL);
-
-	return 0;
 }
-
-SYS_INIT(soc_init, PRE_KERNEL_1, 0);

@@ -1,0 +1,9 @@
+board:
+  name: nrf54l15dk
+  full_name: nRF54L15 DK
+  vendor: nordic
+  socs:
+  - name: nrf54l15
+    variants:
+    - name: xip
+      cpucluster: cpuflpr

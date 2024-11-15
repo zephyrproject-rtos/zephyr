@@ -92,11 +92,6 @@ static int handle_http1_static_resource(
 	return 0;
 }
 
-#define RESPONSE_TEMPLATE_CHUNKED			\
-	"HTTP/1.1 200 OK\r\n"				\
-	"%s%s\r\n"					\
-	"Transfer-Encoding: chunked\r\n\r\n"
-
 #define RESPONSE_TEMPLATE_DYNAMIC			\
 	"HTTP/1.1 200 OK\r\n"				\
 	"%s%s\r\n\r\n"
@@ -117,65 +112,178 @@ static int handle_http1_static_resource(
 					  sizeof(http_response) - 1));	\
 	ret; })
 
-static int dynamic_get_req(struct http_resource_detail_dynamic *dynamic_detail,
-			   struct http_client_ctx *client)
-{
-	/* offset tells from where the GET params start */
-	int ret, remaining, offset = dynamic_detail->common.path_len;
-	char *ptr;
-	char tmp[TEMP_BUF_LEN];
+#define RESPONSE_TEMPLATE_DYNAMIC_PART1                                                            \
+	"HTTP/1.1 %d\r\n"                                                                          \
+	"Transfer-Encoding: chunked\r\n"
 
-	ret = SEND_RESPONSE(RESPONSE_TEMPLATE_CHUNKED,
-			    dynamic_detail->common.content_type);
+static int http1_send_headers(struct http_client_ctx *client, enum http_status status,
+			      const struct http_header *headers, size_t header_count,
+			      struct http_resource_detail_dynamic *dynamic_detail)
+{
+	int ret;
+	bool content_type_sent = false;
+	char http_response[MAX(sizeof(RESPONSE_TEMPLATE_DYNAMIC_PART1) + sizeof("xxx"),
+			       CONFIG_HTTP_SERVER_MAX_HEADER_LEN + 2)];
+
+	if (status < HTTP_100_CONTINUE || status > HTTP_511_NETWORK_AUTHENTICATION_REQUIRED) {
+		LOG_DBG("Invalid HTTP status code: %d", status);
+		return -EINVAL;
+	}
+
+	if (headers == NULL && header_count > 0) {
+		LOG_DBG("NULL headers, but count is > 0");
+		return -EINVAL;
+	}
+
+	/* Send response code and transfer encoding */
+	snprintk(http_response, sizeof(http_response), RESPONSE_TEMPLATE_DYNAMIC_PART1, status);
+
+	ret = http_server_sendall(client, http_response,
+				  strnlen(http_response, sizeof(http_response) - 1));
 	if (ret < 0) {
+		LOG_DBG("Failed to send HTTP headers part 1");
 		return ret;
 	}
 
-	remaining = strlen(&client->url_buffer[dynamic_detail->common.path_len]);
+	/* Send user-defined headers */
+	for (size_t i = 0; i < header_count; i++) {
+		const struct http_header *hdr = &headers[i];
 
-	/* Pass URL to the client */
-	while (1) {
-		int copy_len, send_len;
-		enum http_data_status status;
-
-		ptr = &client->url_buffer[offset];
-		copy_len = MIN(remaining, dynamic_detail->data_buffer_len);
-
-		memcpy(dynamic_detail->data_buffer, ptr, copy_len);
-
-		if (copy_len == remaining) {
-			status = HTTP_SERVER_DATA_FINAL;
-		} else {
-			status = HTTP_SERVER_DATA_MORE;
+		if (strcasecmp(hdr->name, "Transfer-Encoding") == 0) {
+			LOG_DBG("Application is not permitted to change Transfer-Encoding header");
+			return -EACCES;
 		}
 
-		send_len = dynamic_detail->cb(client, status,
-					      dynamic_detail->data_buffer,
-					      copy_len, dynamic_detail->user_data);
-		if (send_len > 0) {
-			ret = snprintk(tmp, sizeof(tmp), "%x\r\n", send_len);
-			ret = http_server_sendall(client, tmp, ret);
-			if (ret < 0) {
-				return ret;
-			}
-
-			ret = http_server_sendall(client,
-						  dynamic_detail->data_buffer,
-						  send_len);
-			if (ret < 0) {
-				return ret;
-			}
-
-			(void)http_server_sendall(client, crlf, 2);
-
-			offset += copy_len;
-			remaining -= copy_len;
-
-			continue;
+		if (strcasecmp(hdr->name, "Content-Type") == 0) {
+			content_type_sent = true;
 		}
 
-		break;
+		snprintk(http_response, sizeof(http_response), "%s: ", hdr->name);
+
+		ret = http_server_sendall(client, http_response,
+					  strnlen(http_response, sizeof(http_response) - 1));
+		if (ret < 0) {
+			LOG_DBG("Failed to send HTTP header name");
+			return ret;
+		}
+
+		ret = http_server_sendall(client, hdr->value, strlen(hdr->value));
+		if (ret < 0) {
+			LOG_DBG("Failed to send HTTP header value");
+			return ret;
+		}
+
+		ret = http_server_sendall(client, crlf, 2);
+		if (ret < 0) {
+			LOG_DBG("Failed to send CRLF");
+			return ret;
+		}
 	}
+
+	/* Send content-type header if it was not already sent */
+	if (!content_type_sent) {
+		const char *content_type = NULL;
+
+		if (dynamic_detail != NULL) {
+			content_type = dynamic_detail->common.content_type;
+		}
+
+		snprintk(http_response, sizeof(http_response), "Content-Type: %s\r\n",
+			 content_type == NULL ? "text/html" : content_type);
+
+		ret = http_server_sendall(client, http_response,
+					  strnlen(http_response, sizeof(http_response) - 1));
+		if (ret < 0) {
+			LOG_DBG("Failed to send Content-Type");
+			return ret;
+		}
+	}
+
+	/* Send final CRLF */
+	ret = http_server_sendall(client, crlf, 2);
+	if (ret < 0) {
+		LOG_DBG("Failed to send CRLF");
+		return ret;
+	}
+
+	return ret;
+}
+
+static int http1_dynamic_response(struct http_client_ctx *client, struct http_response_ctx *rsp,
+				  struct http_resource_detail_dynamic *dynamic_detail)
+{
+	int ret;
+	char tmp[TEMP_BUF_LEN];
+
+	if (client->http1_headers_sent && (rsp->header_count > 0 || rsp->status != 0)) {
+		LOG_WRN("Already sent headers, dropping new headers and/or response code");
+	}
+
+	/* Send headers and response code if not already sent */
+	if (!client->http1_headers_sent) {
+		/* Use '200 OK' status if not specified by application */
+		if (rsp->status == 0) {
+			rsp->status = 200;
+		}
+
+		ret = http1_send_headers(client, rsp->status, rsp->headers, rsp->header_count,
+					 dynamic_detail);
+		if (ret < 0) {
+			return ret;
+		}
+
+		client->http1_headers_sent = true;
+	}
+
+	/* Send body data if provided */
+	if (rsp->body != NULL && rsp->body_len > 0) {
+		ret = snprintk(tmp, sizeof(tmp), "%zx\r\n", rsp->body_len);
+		ret = http_server_sendall(client, tmp, ret);
+		if (ret < 0) {
+			return ret;
+		}
+
+		ret = http_server_sendall(client, rsp->body, rsp->body_len);
+		if (ret < 0) {
+			return ret;
+		}
+
+		(void)http_server_sendall(client, crlf, 2);
+	}
+
+	return 0;
+}
+
+static int dynamic_get_req(struct http_resource_detail_dynamic *dynamic_detail,
+			   struct http_client_ctx *client)
+{
+	int ret, len;
+	char *ptr;
+	enum http_data_status status;
+	struct http_response_ctx response_ctx;
+
+	/* Start of GET params */
+	ptr = &client->url_buffer[dynamic_detail->common.path_len];
+	len = strlen(ptr);
+	status = HTTP_SERVER_DATA_FINAL;
+
+	do {
+		memset(&response_ctx, 0, sizeof(response_ctx));
+
+		ret = dynamic_detail->cb(client, status, ptr, len, &response_ctx,
+					 dynamic_detail->user_data);
+		if (ret < 0) {
+			return ret;
+		}
+
+		ret = http1_dynamic_response(client, &response_ctx, dynamic_detail);
+		if (ret < 0) {
+			return ret;
+		}
+
+		/* URL params are passed in the first cb only */
+		len = 0;
+	} while (!http_response_is_final(&response_ctx, status));
 
 	dynamic_detail->holder = NULL;
 
@@ -191,68 +299,66 @@ static int dynamic_get_req(struct http_resource_detail_dynamic *dynamic_detail,
 static int dynamic_post_req(struct http_resource_detail_dynamic *dynamic_detail,
 			    struct http_client_ctx *client)
 {
-	/* offset tells from where the POST params start */
-	char *start = client->cursor;
-	int ret, remaining = client->data_len, offset = 0;
-	int copy_len;
-	char *ptr;
-	char tmp[TEMP_BUF_LEN];
+	int ret;
+	char *ptr = client->cursor;
+	enum http_data_status status;
+	struct http_response_ctx response_ctx;
 
-	if (start == NULL) {
+	if (ptr == NULL) {
 		return -ENOENT;
 	}
 
-	if (!client->http1_headers_sent) {
-		ret = SEND_RESPONSE(RESPONSE_TEMPLATE_CHUNKED,
-				    dynamic_detail->common.content_type);
+	if (client->parser_state == HTTP1_MESSAGE_COMPLETE_STATE) {
+		status = HTTP_SERVER_DATA_FINAL;
+	} else {
+		status = HTTP_SERVER_DATA_MORE;
+	}
+
+	memset(&response_ctx, 0, sizeof(response_ctx));
+
+	ret = dynamic_detail->cb(client, status, ptr, client->data_len, &response_ctx,
+				 dynamic_detail->user_data);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* For POST the application might not send a response until all data has been received.
+	 * Don't send a default response until the application has had a chance to respond.
+	 */
+	if (http_response_is_provided(&response_ctx)) {
+		ret = http1_dynamic_response(client, &response_ctx, dynamic_detail);
 		if (ret < 0) {
 			return ret;
 		}
-		client->http1_headers_sent = true;
 	}
 
-	copy_len = MIN(remaining, dynamic_detail->data_buffer_len);
-	while (copy_len > 0) {
-		enum http_data_status status;
-		int send_len;
+	/* Once all data is transferred to application, repeat cb until response is complete */
+	while (!http_response_is_final(&response_ctx, status) && status == HTTP_SERVER_DATA_FINAL) {
+		memset(&response_ctx, 0, sizeof(response_ctx));
 
-		ptr = &start[offset];
-
-		memcpy(dynamic_detail->data_buffer, ptr, copy_len);
-
-		if (copy_len == remaining &&
-		    client->parser_state == HTTP1_MESSAGE_COMPLETE_STATE) {
-			status = HTTP_SERVER_DATA_FINAL;
-		} else {
-			status = HTTP_SERVER_DATA_MORE;
+		ret = dynamic_detail->cb(client, status, ptr, 0, &response_ctx,
+					 dynamic_detail->user_data);
+		if (ret < 0) {
+			return ret;
 		}
 
-		send_len = dynamic_detail->cb(client, status,
-					      dynamic_detail->data_buffer,
-					      copy_len, dynamic_detail->user_data);
-		if (send_len > 0) {
-			ret = snprintk(tmp, sizeof(tmp), "%x\r\n", send_len);
-			ret = http_server_sendall(client, tmp, ret);
-			if (ret < 0) {
-				return ret;
-			}
-
-			ret = http_server_sendall(client,
-						  dynamic_detail->data_buffer,
-						  send_len);
-			if (ret < 0) {
-				return ret;
-			}
-
-			(void)http_server_sendall(client, crlf, 2);
+		ret = http1_dynamic_response(client, &response_ctx, dynamic_detail);
+		if (ret < 0) {
+			return ret;
 		}
-
-		offset += copy_len;
-		remaining -= copy_len;
-		copy_len = MIN(remaining, dynamic_detail->data_buffer_len);
 	}
 
+	/* At end of message, ensure response is sent and terminated */
 	if (client->parser_state == HTTP1_MESSAGE_COMPLETE_STATE) {
+		if (!client->http1_headers_sent) {
+			memset(&response_ctx, 0, sizeof(response_ctx));
+			response_ctx.final_chunk = true;
+			ret = http1_dynamic_response(client, &response_ctx, dynamic_detail);
+			if (ret < 0) {
+				return ret;
+			}
+		}
+
 		ret = http_server_sendall(client, final_chunk,
 					sizeof(final_chunk) - 1);
 		if (ret < 0) {
@@ -330,7 +436,7 @@ int handle_http1_static_fs_resource(struct http_resource_detail_static_fs *stati
 		}
 	}
 
-	LOG_DBG("found %s, file size: %d", fname, file_size);
+	LOG_DBG("found %s, file size: %zu", fname, file_size);
 
 	/* send HTTP header */
 	len = snprintk(http_response, sizeof(http_response), RESPONSE_TEMPLATE_STATIC_FS,
@@ -433,6 +539,43 @@ not_supported:
 	return 0;
 }
 
+#if defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)
+static void check_user_request_headers(struct http_header_capture_ctx *ctx, const char *buf)
+{
+	size_t header_len;
+	char *dest = &ctx->buffer[ctx->cursor];
+	size_t remaining = sizeof(ctx->buffer) - ctx->cursor;
+
+	ctx->store_next_value = false;
+
+	STRUCT_SECTION_FOREACH(http_header_name, header) {
+		header_len = strlen(header->name);
+
+		if (strcasecmp(buf, header->name) == 0) {
+			if (ctx->count == ARRAY_SIZE(ctx->headers)) {
+				LOG_DBG("Header '%s' dropped: not enough slots", header->name);
+				ctx->status = HTTP_HEADER_STATUS_DROPPED;
+				break;
+			}
+
+			if (remaining < header_len + 1) {
+				LOG_DBG("Header '%s' dropped: buffer too small for name",
+					header->name);
+				ctx->status = HTTP_HEADER_STATUS_DROPPED;
+				break;
+			}
+
+			strcpy(dest, header->name);
+
+			ctx->headers[ctx->count].name = dest;
+			ctx->cursor += (header_len + 1);
+			ctx->store_next_value = true;
+			break;
+		}
+	}
+}
+#endif /* defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS) */
+
 static int on_header_field(struct http_parser *parser, const char *at,
 			   size_t length)
 {
@@ -454,12 +597,13 @@ static int on_header_field(struct http_parser *parser, const char *at,
 			/* This means that the header field is fully parsed,
 			 * and we can use it directly.
 			 */
-			if (strncasecmp(ctx->header_buffer, "Upgrade",
-					sizeof("Upgrade") - 1) == 0) {
+#if defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)
+			check_user_request_headers(&ctx->header_capture_ctx, ctx->header_buffer);
+#endif /* defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS) */
+
+			if (strcasecmp(ctx->header_buffer, "Upgrade") == 0) {
 				ctx->has_upgrade_header = true;
-			} else if (strncasecmp(ctx->header_buffer,
-					       "Sec-WebSocket-Key",
-					       sizeof("Sec-WebSocket-Key") - 1) == 0) {
+			} else if (strcasecmp(ctx->header_buffer, "Sec-WebSocket-Key") == 0) {
 				ctx->websocket_sec_key_next = true;
 			}
 
@@ -471,6 +615,37 @@ static int on_header_field(struct http_parser *parser, const char *at,
 
 	return 0;
 }
+
+#if defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)
+static void populate_user_request_header(struct http_header_capture_ctx *ctx, const char *buf)
+{
+	char *dest;
+	size_t value_len;
+	size_t remaining;
+
+	if (ctx->store_next_value == false) {
+		return;
+	}
+
+	ctx->store_next_value = false;
+	value_len = strlen(buf);
+	remaining = sizeof(ctx->buffer) - ctx->cursor;
+
+	if (value_len + 1 >= remaining) {
+		LOG_DBG("Header '%s' dropped: buffer too small for value",
+			ctx->headers[ctx->count].name);
+		ctx->status = HTTP_HEADER_STATUS_DROPPED;
+		return;
+	}
+
+	dest = &ctx->buffer[ctx->cursor];
+	strcpy(dest, buf);
+	ctx->cursor += (value_len + 1);
+
+	ctx->headers[ctx->count].value = dest;
+	ctx->count++;
+}
+#endif /* defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS) */
 
 static int on_header_value(struct http_parser *parser,
 			   const char *at, size_t length)
@@ -484,19 +659,26 @@ static int on_header_value(struct http_parser *parser,
 		LOG_DBG("Header %s too long (by %zu bytes)", "value",
 			offset + length - sizeof(ctx->header_buffer) - 1U);
 		ctx->header_buffer[0] = '\0';
+#if defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)
+		if (ctx->header_capture_ctx.store_next_value) {
+			ctx->header_capture_ctx.store_next_value = false;
+			ctx->header_capture_ctx.status = HTTP_HEADER_STATUS_DROPPED;
+		}
+#endif /* defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS) */
 	} else {
 		memcpy(ctx->header_buffer + offset, at, length);
 		offset += length;
 		ctx->header_buffer[offset] = '\0';
 
 		if (parser->state == s_header_almost_done) {
+#if defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)
+			populate_user_request_header(&ctx->header_capture_ctx, ctx->header_buffer);
+#endif /* defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS) */
+
 			if (ctx->has_upgrade_header) {
-				if (strncasecmp(ctx->header_buffer, "h2c",
-						sizeof("h2c") - 1) == 0) {
+				if (strcasecmp(ctx->header_buffer, "h2c") == 0) {
 					ctx->http2_upgrade = true;
-				} else if (strncasecmp(ctx->header_buffer,
-						       "websocket",
-						       sizeof("websocket") - 1) == 0) {
+				} else if (strcasecmp(ctx->header_buffer, "websocket") == 0) {
 					ctx->websocket_upgrade = true;
 				}
 
@@ -588,6 +770,11 @@ int enter_http1_request(struct http_client_ctx *client)
 	client->parser_settings.on_body = on_body;
 	client->parser_settings.on_message_complete = on_message_complete;
 	client->parser_state = HTTP1_INIT_HEADER_STATE;
+	client->http1_headers_sent = false;
+
+#if defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)
+	client->header_capture_ctx.store_next_value = false;
+#endif /* defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS) */
 
 	memset(client->header_buffer, 0, sizeof(client->header_buffer));
 	memset(client->url_buffer, 0, sizeof(client->url_buffer));

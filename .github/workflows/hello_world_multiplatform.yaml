@@ -26,7 +26,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, macos-13, macos-14, windows-2022]
+        os: [ubuntu-22.04, ubuntu-24.04, macos-13, macos-14, windows-2022]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
@@ -46,6 +46,7 @@ jobs:
           git config --global user.email "actions@zephyrproject.org"
           git config --global user.name "Github Actions"
           git rebase origin/${BASE_REF}
+          git clean -f -d
           git log --graph --oneline HEAD...${PR_HEAD}
 
       - name: Set up Python
@@ -68,7 +69,7 @@ jobs:
           elif [ "${{ runner.os }}" = "Windows" ]; then
             EXTRA_TWISTER_FLAGS="-P native_sim --short-build-path -O/tmp/twister-out"
           fi
-          ./scripts/twister --force-color --inline-logs -T samples/hello_world -v $EXTRA_TWISTER_FLAGS
+          ./scripts/twister --force-color --inline-logs -T samples/hello_world -T samples/cpp/hello_world -v $EXTRA_TWISTER_FLAGS
 
       - name: Upload artifacts
         if: failure()
@@ -77,3 +78,4 @@ jobs:
           if-no-files-found: ignore
           path:
             zephyr/twister-out/*/samples/hello_world/sample.basic.helloworld/build.log
+            zephyr/twister-out/*/samples/cpp/hello_world/sample.cpp.helloworld/build.log

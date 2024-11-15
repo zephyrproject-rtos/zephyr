@@ -15,6 +15,7 @@ import re
 import sys
 import time
 
+# pylint: disable=no-name-in-module
 from conftest import TEST_DATA, ZEPHYR_BASE, testsuite_filename_mock, clear_log_in_test
 from twisterlib.testplan import TestPlan
 
@@ -24,7 +25,7 @@ class TestRunner:
     TESTDATA_1 = [
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86', 'qemu_x86_64', 'frdm_k64f'],
+            ['qemu_x86', 'qemu_x86_64', 'intel_adl_crb'],
             {
                 'executed_on_platform': 0,
                 'only_built': 6
@@ -32,7 +33,7 @@ class TestRunner:
         ),
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'device'),
-            ['qemu_x86', 'qemu_x86_64', 'frdm_k64f'],
+            ['qemu_x86', 'qemu_x86_64', 'intel_adl_crb'],
             {
                 'executed_on_platform': 0,
                 'only_built': 1
@@ -42,21 +43,22 @@ class TestRunner:
     TESTDATA_2 = [
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86', 'qemu_x86_64', 'frdm_k64f'],
+            ['qemu_x86/atom', 'qemu_x86_64/atom', 'intel_adl_crb/alder_lake'],
             {
                 'selected_test_scenarios': 3,
-                'selected_test_instances': 6,
+                'selected_test_instances': 4,
                 'skipped_configurations': 0,
                 'skipped_by_static_filter': 0,
                 'skipped_at_runtime': 0,
                 'passed_configurations': 4,
+                'built_configurations': 0,
                 'failed_configurations': 0,
                 'errored_configurations': 0,
                 'executed_test_cases': 8,
                 'skipped_test_cases': 0,
                 'platform_count': 0,
                 'executed_on_platform': 4,
-                'only_built': 2
+                'only_built': 0
             }
         )
     ]
@@ -71,7 +73,7 @@ class TestRunner:
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
             ['qemu_x86', 'qemu_x86_64'],
             {
-                'passed_configurations': 6,
+                'passed_configurations': 0,
                 'selected_test_instances': 6,
                 'executed_on_platform': 0,
                 'only_built': 6,
@@ -124,37 +126,38 @@ class TestRunner:
     TESTDATA_9 = [
         (
             os.path.join(TEST_DATA, 'tests', 'dummy'),
-            ['qemu_x86'],
+            ['qemu_x86/atom'],
             ['device'],
             ['dummy.agnostic.group2 SKIPPED: Command line testsuite tag filter',
              'dummy.agnostic.group1.subgroup2 SKIPPED: Command line testsuite tag filter',
              'dummy.agnostic.group1.subgroup1 SKIPPED: Command line testsuite tag filter',
-             r'0 of 4 test configurations passed \(0.00%\), 0 failed, 0 errored, 4 skipped'
+             r'0 of 0 executed test configurations passed \(0.00%\), 0 built \(not run\), 0 failed, 0 errored'
              ]
         ),
         (
             os.path.join(TEST_DATA, 'tests', 'dummy'),
-            ['qemu_x86'],
+            ['qemu_x86/atom'],
             ['subgrouped'],
             ['dummy.agnostic.group2 SKIPPED: Command line testsuite tag filter',
-             r'2 of 4 test configurations passed \(100.00%\), 0 failed, 0 errored, 2 skipped'
+             r'1 of 2 executed test configurations passed \(50.00%\), 1 built \(not run\), 0 failed, 0 errored'
              ]
         ),
         (
             os.path.join(TEST_DATA, 'tests', 'dummy'),
-            ['qemu_x86'],
+            ['qemu_x86/atom'],
             ['agnostic', 'device'],
-            [r'3 of 4 test configurations passed \(100.00%\), 0 failed, 0 errored, 1 skipped']
+            [r'2 of 3 executed test configurations passed \(66.67%\), 1 built \(not run\), 0 failed, 0 errored']
         ),
     ]
     TESTDATA_10 = [
         (
             os.path.join(TEST_DATA, 'tests', 'one_fail_one_pass'),
-            ['qemu_x86'],
+            ['qemu_x86/atom'],
             {
                 'selected_test_instances': 2,
                 'skipped_configurations': 0,
                 'passed_configurations': 0,
+                'built_configurations': 0,
                 'failed_configurations': 1,
                 'errored_configurations': 0,
             }
@@ -257,22 +260,33 @@ class TestRunner:
 
 
         select_regex = r'^INFO    - (?P<test_scenarios>[0-9]+) test scenarios' \
-                       r' \((?P<test_instances>[0-9]+) test instances\) selected,' \
-                       r' (?P<skipped_configurations>[0-9]+) configurations skipped' \
+                       r' \((?P<test_instances>[0-9]+) configurations\) selected,' \
+                       r' (?P<skipped_configurations>[0-9]+) configurations filtered' \
                        r' \((?P<skipped_by_static_filter>[0-9]+) by static filter,' \
                        r' (?P<skipped_at_runtime>[0-9]+) at runtime\)\.$'
 
         pass_regex = r'^INFO    - (?P<passed_configurations>[0-9]+) of' \
-                     r' (?P<test_instances>[0-9]+) test configurations passed' \
-                     r' \([0-9]+\.[0-9]+%\), (?P<failed_configurations>[0-9]+) failed,' \
-                     r' (?P<errored_configurations>[0-9]+) errored,' \
-                     r' (?P<skipped_configurations>[0-9]+) skipped with' \
-                     r' [0-9]+ warnings in [0-9]+\.[0-9]+ seconds$'
+                     r' (?P<test_instances>[0-9]+) executed test configurations passed' \
+                     r' \([0-9]+\.[0-9]+%\), (?P<built_configurations>[0-9]+) built \(not run\),' \
+                     r' (?P<failed_configurations>[0-9]+) failed,' \
+                     r' (?P<errored_configurations>[0-9]+) errored, with' \
+                     r' (?:[0-9]+|no) warnings in [0-9]+\.[0-9]+ seconds.$'
 
-        case_regex = r'^INFO    - In total (?P<executed_test_cases>[0-9]+)' \
-                     r' test cases were executed, (?P<skipped_test_cases>[0-9]+) skipped' \
-                     r' on (?P<platform_count>[0-9]+) out of total [0-9]+ platforms' \
-                     r' \([0-9]+\.[0-9]+%\)$'
+        case_regex = r'^INFO    - (?P<passed_cases>[0-9]+) of' \
+                     r' (?P<executed_test_cases>[0-9]+) executed test cases passed' \
+                     r' \([0-9]+\.[0-9]+%\)' \
+                     r'(?:, (?P<blocked_cases>[0-9]+) blocked)?' \
+                     r'(?:, (?P<failed_cases>[0-9]+) failed)?' \
+                     r'(?:, (?P<errored_cases>[0-9]+) errored)?' \
+                     r'(?:, (?P<none_cases>[0-9]+) without a status)?' \
+                     r' on (?P<platform_count>[0-9]+) out of total' \
+                     r' (?P<total_platform_count>[0-9]+) platforms \([0-9]+\.[0-9]+%\)'
+
+        skip_regex = r'(?P<skipped_test_cases>[0-9]+) selected test cases not executed:' \
+                     r'(?: (?P<skipped_cases>[0-9]+) skipped)?' \
+                     r'(?:, (?P<filtered_cases>[0-9]+) filtered)?' \
+                     r'.'
+
         built_regex = r'^INFO    - (?P<executed_on_platform>[0-9]+)' \
                       r' test configurations executed on platforms, (?P<only_built>[0-9]+)' \
                       r' test configurations were only built.$'
@@ -302,22 +316,26 @@ class TestRunner:
             expected['passed_configurations']
         assert int(pass_search.group('test_instances')) == \
             expected['selected_test_instances']
+        assert int(pass_search.group('built_configurations')) == \
+            expected['built_configurations']
         assert int(pass_search.group('failed_configurations')) == \
             expected['failed_configurations']
         assert int(pass_search.group('errored_configurations')) == \
             expected['errored_configurations']
-        assert int(pass_search.group('skipped_configurations')) == \
-            expected['skipped_configurations']
 
         case_search = re.search(case_regex, err, re.MULTILINE)
 
         assert case_search
         assert int(case_search.group('executed_test_cases')) == \
             expected['executed_test_cases']
-        assert int(case_search.group('skipped_test_cases')) == \
-            expected['skipped_test_cases']
         assert int(case_search.group('platform_count')) == \
             expected['platform_count']
+
+        if expected['skipped_test_cases']:
+            skip_search = re.search(skip_regex, err, re.MULTILINE)
+            assert skip_search
+            assert int(skip_search.group('skipped_test_cases')) == \
+                expected['skipped_test_cases']
 
         built_search = re.search(built_regex, err, re.MULTILINE)
 
@@ -378,7 +396,7 @@ class TestRunner:
         sys.stderr.write(err)
 
         pass_regex = r'^INFO    - (?P<passed_configurations>[0-9]+) of' \
-                     r' (?P<test_instances>[0-9]+) test configurations passed'
+                     r' (?P<test_instances>[0-9]+) executed test configurations passed'
 
         built_regex = r'^INFO    - (?P<executed_on_platform>[0-9]+)' \
                       r' test configurations executed on platforms, (?P<only_built>[0-9]+)' \
@@ -556,7 +574,7 @@ class TestRunner:
         ],
     )
     def test_tag(self, capfd, out_path, test_path, test_platforms, tags, expected):
-        args = ['--outdir', out_path, '-T', test_path, '-vv'] + \
+        args = ['--outdir', out_path, '-T', test_path, '-vv', '-ll', 'DEBUG'] + \
                [val for pair in zip(
                    ['-p'] * len(test_platforms), test_platforms
                ) for val in pair] + \
@@ -608,13 +626,18 @@ class TestRunner:
             pytest.raises(SystemExit) as sys_exit:
             self.loader.exec_module(self.twister_module)
 
+        select_regex = r'^INFO    - (?P<test_scenarios>[0-9]+) test scenarios' \
+                       r' \((?P<test_instances>[0-9]+) configurations\) selected,' \
+                       r' (?P<skipped_configurations>[0-9]+) configurations filtered' \
+                       r' \((?P<skipped_by_static_filter>[0-9]+) by static filter,' \
+                       r' (?P<skipped_at_runtime>[0-9]+) at runtime\)\.$'
 
         pass_regex = r'^INFO    - (?P<passed_configurations>[0-9]+) of' \
-                     r' (?P<test_instances>[0-9]+) test configurations passed' \
-                     r' \([0-9]+\.[0-9]+%\), (?P<failed_configurations>[0-9]+) failed,' \
-                     r' (?P<errored_configurations>[0-9]+) errored,' \
-                     r' (?P<skipped_configurations>[0-9]+) skipped with' \
-                     r' [0-9]+ warnings in [0-9]+\.[0-9]+ seconds$'
+                     r' (?P<test_instances>[0-9]+) executed test configurations passed' \
+                     r' \([0-9]+\.[0-9]+%\), (?P<built_configurations>[0-9]+) built \(not run\),' \
+                     r' (?P<failed_configurations>[0-9]+) failed,' \
+                     r' (?P<errored_configurations>[0-9]+) errored, with' \
+                     r' (?:[0-9]+|no) warnings in [0-9]+\.[0-9]+ seconds.$'
 
         out, err = capfd.readouterr()
         sys.stdout.write(out)
@@ -622,7 +645,12 @@ class TestRunner:
 
 
         assert re.search(
-            r'one_fail_one_pass.agnostic.group1.subgroup2 on qemu_x86 failed \(.*\)', err)
+            r'one_fail_one_pass.agnostic.group1.subgroup2 on qemu_x86/atom failed \(.*\)', err)
+
+
+        select_search = re.search(select_regex, err, re.MULTILINE)
+        assert int(select_search.group('skipped_configurations')) == \
+                expected['skipped_configurations']
 
         pass_search = re.search(pass_regex, err, re.MULTILINE)
 
@@ -631,12 +659,12 @@ class TestRunner:
                 expected['passed_configurations']
         assert int(pass_search.group('test_instances')) == \
                 expected['selected_test_instances']
+        assert int(pass_search.group('built_configurations')) == \
+                expected['built_configurations']
         assert int(pass_search.group('failed_configurations')) == \
                 expected['failed_configurations']
         assert int(pass_search.group('errored_configurations')) == \
                 expected['errored_configurations']
-        assert int(pass_search.group('skipped_configurations')) == \
-                expected['skipped_configurations']
 
         assert str(sys_exit.value) == '1'
 

@@ -8,6 +8,7 @@ config ESPI_NPCX
 	default y
 	depends on SOC_FAMILY_NPCX
 	depends on DT_HAS_NUVOTON_NPCX_ESPI_ENABLED
+	select PINCTRL
 	help
 	  This option enables the Intel Enhanced Serial Peripheral Interface
 	  (eSPI) for NPCX family of processors.
@@ -89,6 +90,13 @@ config ESPI_TAF_PR_NUM
 	help
 	  This size is display how many group of slave attached flash protection
 	  region.
+
+config ESPI_TAF_NPCX_RPMC_SUPPORT
+	bool "eSPI TAF RPMC support"
+	depends on ESPI_TAF_NPCX
+	select FLASH_EX_OP_ENABLED
+	help
+	  This option enable the handler for eSPI TAF RPMC request.
 
 # The default value 'y' for the existing options if ESPI_NPCX is selected.
 if ESPI_NPCX

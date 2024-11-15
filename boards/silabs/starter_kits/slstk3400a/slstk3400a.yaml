@@ -1,5 +1,5 @@
 identifier: slstk3400a
-name: EFM32 Happy Gecko Starter Kit (SLSTK3400A)
+name: EFM32 Happy Gecko Starter Kit (SLSTK3400A, BRD2012B)
 type: mcu
 arch: arm
 ram: 8

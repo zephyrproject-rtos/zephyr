@@ -3,14 +3,12 @@ sample:
 tests:
   sample.filesystem.format.littlefs:
     platform_allow:
-      - native_posix
       - native_sim
       - nrf52dk/nrf52832
     build_only: true
     tags: filesystem
   sample.filesystem.format.fat_fs:
     platform_allow:
-      - native_posix
       - native_sim
       - mimxrt1064_evk
     build_only: true

@@ -5,8 +5,10 @@ config UDC_NXP_EHCI
 	bool "NXP MCUX USB EHCI Device controller driver"
 	default y
 	depends on DT_HAS_NXP_EHCI_ENABLED
+	select PINCTRL
 	select NOCACHE_MEMORY if HAS_MCUX_CACHE && CPU_HAS_DCACHE
 	imply UDC_BUF_FORCE_NOCACHE
+	imply UDC_WORKQUEUE
 	help
 	  NXP MCUX USB Device Controller Driver for EHCI.
 
@@ -14,5 +16,15 @@ config UDC_NXP_IP3511
 	bool "NXP MCUX USB IP3511 Device controller driver"
 	default y
 	depends on DT_HAS_NXP_LPCIP3511_ENABLED
+	select PINCTRL
+	imply UDC_WORKQUEUE
 	help
-	  NXP MCUX USB Device Controller Driver for KHCI.
+	  NXP MCUX USB Device Controller Driver for IP3511.
+
+config UDC_NXP_EVENT_COUNT
+	int "Number or blocks in event slab"
+	depends on UDC_NXP_EHCI || UDC_NXP_IP3511
+	range 4 16
+	default 4
+	help
+	  Number of blocks in slab for internal controller events.

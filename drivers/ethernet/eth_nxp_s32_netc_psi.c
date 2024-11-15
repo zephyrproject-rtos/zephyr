@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 NXP
+ * Copyright 2022-2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -259,7 +259,7 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(nxp_s32_netc_psi) == 1, "Only one PSI enabl
 #define INIT_VSIS(n)	DT_INST_NODE_HAS_PROP(n, vsis)
 
 #define NETC_PSI_INSTANCE_DEFINE(n)							\
-void nxp_s32_eth_psi##n##_rx_event(uint8_t chan, const uint32_t *buf, uint8_t buf_size)	\
+void nxp_s32_eth_psi##n##_rx_event(uint8_t chan, const uint32 *buf, uint8_t buf_size)	\
 {											\
 	ARG_UNUSED(chan);								\
 	ARG_UNUSED(buf);								\
@@ -281,8 +281,8 @@ static void nxp_s32_eth##n##_rx_callback(const uint8_t unused, const uint8_t rin
 	}										\
 }											\
 											\
-static Netc_Eth_Ip_StateType nxp_s32_eth##n##_state;					\
-static Netc_Eth_Ip_MACFilterHashTableEntryType						\
+static __nocache Netc_Eth_Ip_StateType nxp_s32_eth##n##_state;				\
+static __nocache Netc_Eth_Ip_MACFilterHashTableEntryType				\
 nxp_s32_eth##n##_mac_filter_hash_table[CONFIG_ETH_NXP_S32_MAC_FILTER_TABLE_SIZE];	\
 											\
 NETC_TX_RING(n, 0, NETC_MIN_RING_LEN, NETC_MIN_RING_BUF_SIZE);				\
@@ -359,27 +359,31 @@ static const Netc_Eth_Ip_EnetcGeneralConfigType nxp_s32_eth##n##_enetc_general_c
 				NETC_VSI_RX_MSG_BUF_ARRAY, (,), n)),			\
 			(EMPTY))							\
 	},										\
+	.maskMACVLANPromiscuousEnable =	(uint16)0x3U,					\
+	.maskVLANAllowUntaggedEnable =	(uint32)0x30000U,				\
 };											\
 											\
 static const Netc_Eth_Ip_StationInterfaceConfigType nxp_s32_eth##n##_si_cfg = {		\
 	.NumberOfRxBDR = 1,								\
 	.NumberOfTxBDR = 2,								\
 	.txMruMailboxAddr = NULL,							\
-	.rxMruMailboxAddr = (uint32_t *)MRU_MBOX_ADDR(DT_DRV_INST(n), rx),		\
+	.rxMruMailboxAddr = (uint32 *)MRU_MBOX_ADDR(DT_DRV_INST(n), rx),		\
 	.siMsgMruMailboxAddr = COND_CODE_1(INIT_VSIS(n),				\
-		((uint32_t *)MRU_MBOX_ADDR(DT_DRV_INST(n), vsi_msg)), (NULL)),		\
+		((uint32 *)MRU_MBOX_ADDR(DT_DRV_INST(n), vsi_msg)), (NULL)),		\
+	.EnableSIMsgInterrupt = true,							\
 	.RxInterrupts = (uint32_t)true,							\
 	.TxInterrupts = (uint32_t)false,						\
 	.MACFilterTableMaxNumOfEntries = CONFIG_ETH_NXP_S32_MAC_FILTER_TABLE_SIZE,	\
 };											\
 											\
-static uint8_t nxp_s32_eth##n##_switch_vlandr2dei_cfg[NETC_ETHSWT_NUMBER_OF_DR];	\
+static uint8_t nxp_s32_eth##n##_switch_vlandr2dei_cfg[NETC_ETHSWT_IP_NUMBER_OF_DR];	\
 static Netc_EthSwt_Ip_PortIngressType nxp_s32_eth##n##_switch_port_ingress_cfg;		\
 static Netc_EthSwt_Ip_PortEgressType nxp_s32_eth##n##_switch_port_egress_cfg = {	\
 	.vlanDrToDei = &nxp_s32_eth##n##_switch_vlandr2dei_cfg,				\
 };											\
-static Netc_EthSwt_Ip_PortType nxp_s32_eth##n##_switch_ports_cfg[NETC_ETHSWT_NUMBER_OF_PORTS] = {\
-	LISTIFY(NETC_ETHSWT_NUMBER_OF_PORTS, NETC_SWITCH_PORT_CFG, (,), n)		\
+static Netc_EthSwt_Ip_PortType								\
+nxp_s32_eth##n##_switch_ports_cfg[NETC_ETHSWT_IP_NUMBER_OF_PORTS] = {			\
+	LISTIFY(NETC_ETHSWT_IP_NUMBER_OF_PORTS, NETC_SWITCH_PORT_CFG, (,), n)		\
 };											\
 											\
 static const Netc_EthSwt_Ip_ConfigType nxp_s32_eth##n##_switch_cfg = {			\

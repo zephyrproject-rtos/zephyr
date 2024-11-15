@@ -9,6 +9,7 @@
 #include <nxp/nxp_ke17z512.dtsi>
 #include "frdm_ke17z512-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 
 / {
 	model = "NXP Freedom KE17Z512 board";
@@ -17,16 +18,23 @@
 	chosen {
 		zephyr,sram = &sram_u;
 		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,uart-mcumgr = &lpuart2;
 		zephyr,console = &lpuart2;
 		zephyr,shell-uart = &lpuart2;
 	};
 
 	aliases {
+		watchdog0 = &wdog;
 		led0 = &red_led;
 		led1 = &green_led;
 		led2 = &blue_led;
 		sw0 = &user_button_2;
 		sw1 = &user_button_3;
+		pwm-led0 = &red_pwm_led;
+		pwm-led1 = &green_pwm_led;
+		pwm-led2 = &blue_pwm_led;
+		mcuboot-button0 = &user_button_2;
 	};
 
 	leds {
@@ -45,6 +53,22 @@
 		};
 	};
 
+	pwmleds {
+		compatible = "pwm-leds";
+		red_pwm_led: led_pwm_0 {
+			pwms = <&ftm2 0 PWM_HZ(20) PWM_POLARITY_INVERTED>;
+			label = "RED RGB PWM LED";
+		};
+		green_pwm_led: led_pwm_1 {
+			pwms = <&ftm2 3 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "GREEN RGB PWM LED";
+		};
+		blue_pwm_led: led_pwm_2 {
+			pwms = <&ftm2 2 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "BLUE RGB PWM LED";
+		};
+	};
+
 	gpio_keys {
 		compatible = "gpio-keys";
 		user_button_2: button_0 {
@@ -60,19 +84,49 @@
 	};
 };
 
+&idle {
+	min-residency-us = <1>;
+};
+
+&stop {
+	min-residency-us = <20000>;
+	exit-latency-us = <13>;
+};
+
 &lpuart2 {
+	dmas = <&edma 5 6>, <&edma 6 7>;
+	dma-names = "rx", "tx";
 	status = "okay";
 	pinctrl-0 = <&lpuart2_default>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
 };
 
+&adc0 {
+	status = "okay";
+	sample-time = <12>;
+	vref-mv = <3300>;
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+};
+
 &gpiod {
 	status = "okay";
 };
 
+&scg {
+	bus_clk {
+		clock-div = <2>;
+	};
+};
+
 &gpioe {
 	status = "okay";
+};
+
+&rtc {
+	status = "okay";
+	clock-source = "LPO";
 };
 
 &lpi2c0 {
@@ -87,6 +141,17 @@
 	pinctrl-names = "default";
 };
 
+&ftm2 {
+	status = "okay";
+	compatible = "nxp,kinetis-ftm-pwm";
+	#pwm-cells = <3>;
+	clocks = <&scg KINETIS_SCG_SIRC_CLK>;
+	prescaler = <128>;
+	pinctrl-0 = <&ftm2_default>;
+	pinctrl-names = "default";
+	clock-source = "system";
+};
+
 &flash0 {
 
 	partitions {
@@ -98,20 +163,36 @@
 			reg = <0x00000000 DT_SIZE_K(64)>;
 			read-only;
 		};
-		/* The MCUBoot swap-move algorithm uses the last 2 sectors
+		/* The MCUBoot swap-move algorithm uses the last 3 sectors
 		 * of the primary slot0 for swap status and move.
 		 */
 		slot0_partition: partition@10000 {
 			label = "image-0";
-			reg = <0x00010000 (DT_SIZE_K(202) + DT_SIZE_K(4))>;
+			reg = <0x00010000 (DT_SIZE_K(202) + DT_SIZE_K(6))>;
 		};
-		slot1_partition: partition@43800 {
+		slot1_partition: partition@44000 {
 			label = "image-1";
-			reg = <0x00043800 DT_SIZE_K(202)>;
+			reg = <0x00044000 DT_SIZE_K(202)>;
 		};
-		storage_partition: partition@76000 {
+		storage_partition: partition@76800 {
 			label = "storage";
-			reg = <0x00076000 DT_SIZE_K(40)>;
+			reg = <0x00076800 DT_SIZE_K(38)>;
 		};
 	};
+};
+
+&lpspi0 {
+	dmas = <&edma 0 14>, <&edma 1 15>;
+	dma-names = "rx", "tx";
+	status = "okay";
+	pinctrl-0 = <&lpspi0_default>;
+	pinctrl-names = "default";
+};
+
+&edma {
+	status = "okay";
+};
+
+&wdog {
+	status = "okay";
 };

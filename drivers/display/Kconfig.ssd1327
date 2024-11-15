@@ -1,0 +1,23 @@
+# SSD1327 display controller configuration options
+
+# Copyright (c) 2024 Savoir-faire Linux
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SSD1327
+	bool "SSD1327 display driver"
+	default y
+	depends on DT_HAS_SOLOMON_SSD1327FB_ENABLED
+	select MIPI_DBI
+	help
+	  Enable driver for SSD1327 display.
+
+if SSD1327
+
+config SSD1327_DEFAULT_CONTRAST
+	int "SSD1327 default contrast"
+	default 128
+	range 0 255
+	help
+	  SSD1327 default contrast.
+
+endif # SSD1327

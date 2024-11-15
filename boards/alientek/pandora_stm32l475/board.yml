@@ -1,5 +1,6 @@
 board:
   name: pandora_stm32l475
+  full_name: STM32L475 Pandora
   vendor: alientek
   socs:
     - name: stm32l475xx

@@ -1,7 +1,4 @@
-.. _max32680_evkit:
-
-MAX32680EVKIT
-#############
+.. zephyr:board:: max32680evkit
 
 Overview
 ********
@@ -16,11 +13,6 @@ the latest generation Bluetooth® 5.2 Low Energy
 (LE) radio.
 
 The Zephyr port is running on the MAX32680 MCU.
-
-.. image:: img/max32680evkit_img1.jpg
-   :align: center
-   :alt: MAX32680 EVKIT
-
 
 Hardware
 ********
@@ -113,6 +105,20 @@ Below interfaces are supported by Zephyr on MAX32680EVKIT.
 | TRNG      | on-chip    | entropy                             |
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
+| DMA       | on-chip    | dma controller                      |
++-----------+------------+-------------------------------------+
+| Watchdog  | on-chip    | watchdog                            |
++-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
+| ADC       | on-chip    | adc                                 |
++-----------+------------+-------------------------------------+
+| Timer     | on-chip    | counter                             |
++-----------+------------+-------------------------------------+
+| W1        | on-chip    | one wire master                     |
++-----------+------------+-------------------------------------+
+| Flash     | on-chip    | flash                               |
 +-----------+------------+-------------------------------------+
 
 Connections and IOs

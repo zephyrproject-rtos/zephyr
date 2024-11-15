@@ -37,8 +37,9 @@ static int ism330dhcx_enable_t_int(const struct device *dev, int enable)
 	}
 
 	/* set interrupt (TEMP DRDY interrupt is only on INT2) */
-	if (cfg->int_pin == 1)
+	if (cfg->int_pin == 1) {
 		return -EIO;
+	}
 
 	ism330dhcx_read_reg(ism330dhcx->ctx, ISM330DHCX_INT2_CTRL,
 			    (uint8_t *)&int2_route.int2_ctrl, 1);

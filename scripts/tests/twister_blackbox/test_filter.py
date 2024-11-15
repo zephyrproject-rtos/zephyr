@@ -23,56 +23,47 @@ class TestFilter:
         (
             'x86',
             [
-                r'(it8xxx2_evb).*?(SKIPPED: Command line testsuite arch filter)',
-                r'(frdm_k64f).*?(SKIPPED: Command line testsuite arch filter)',
-                r'(DEBUG\s+- adding qemu_x86)',
-                r'(DEBUG\s+- adding intel_ish_5_4_1)'
+                r'(it8xxx2_evb/it81302bx).*?(SKIPPED: Command line testsuite arch filter)',
             ],
         ),
         (
             'arm',
             [
-                r'(it8xxx2_evb).*?(SKIPPED: Command line testsuite arch filter)',
-                r'(qemu_x86).*?(SKIPPED: Command line testsuite arch filter)',
-                r'(intel_ish_5_4_1).*?(SKIPPED: Command line testsuite arch filter)',
-                r'(DEBUG\s+- adding frdm_k64f)'
+                r'(it8xxx2_evb/it81302bx).*?(SKIPPED: Command line testsuite arch filter)',
+                r'(qemu_x86/atom).*?(SKIPPED: Command line testsuite arch filter)',
+                r'(hsdk/arc_hsdk).*?(SKIPPED: Command line testsuite arch filter)',
             ]
         ),
         (
             'riscv',
             [
-                r'(qemu_x86).*?(SKIPPED: Command line testsuite arch filter)',
-                r'(frdm_k64f).*?(SKIPPED: Command line testsuite arch filter)',
-                r'(intel_ish_5_4_1).*?(SKIPPED: Command line testsuite arch filter)',
-                r'(DEBUG\s+- adding it8xxx2_evb)'
-            ]
+                r'(qemu_x86/atom).*?(SKIPPED: Command line testsuite arch filter)',
+                r'(hsdk/arc_hsdk).*?(SKIPPED: Command line testsuite arch filter)',            ]
         )
     ]
     TESTDATA_2 = [
         (
             'nxp',
             [
-                r'(it8xxx2_evb).*?(SKIPPED: Not a selected vendor platform)',
-                r'(intel_ish_5_4_1).*?(SKIPPED: Not a selected vendor platform)',
+                r'(it8xxx2_evb/it81302bx).*?(SKIPPED: Not a selected vendor platform)',
+                r'(hsdk/arc_hsdk).*?(SKIPPED: Not a selected vendor platform)',
                 r'(qemu_x86).*?(SKIPPED: Not a selected vendor platform)',
-                r'(DEBUG\s+- adding frdm_k64f)'
             ],
         ),
         (
             'intel',
             [
-                r'(it8xxx2_evb).*?(SKIPPED: Not a selected vendor platform)',
-                r'(qemu_x86).*?(SKIPPED: Not a selected vendor platform)',
-                r'(frdm_k64f).*?(SKIPPED: Not a selected vendor platform)',
-                r'(DEBUG\s+- adding intel_ish_5_4_1)'
+                r'(it8xxx2_evb/it81302bx).*?(SKIPPED: Not a selected vendor platform)',
+                r'(qemu_x86/atom).*?(SKIPPED: Not a selected vendor platform)',
+                r'(DEBUG\s+- adding intel_adl_crb)'
             ]
         ),
         (
             'ite',
             [
-                r'(qemu_x86).*?(SKIPPED: Not a selected vendor platform)',
-                r'(frdm_k64f).*?(SKIPPED: Not a selected vendor platform)',
-                r'(intel_ish_5_4_1).*?(SKIPPED: Not a selected vendor platform)',
+                r'(qemu_x86/atom).*?(SKIPPED: Not a selected vendor platform)',
+                r'(intel_adl_crb/alder_lake).*?(SKIPPED: Not a selected vendor platform)',
+                r'(hsdk/arc_hsdk).*?(SKIPPED: Not a selected vendor platform)',
                 r'(DEBUG\s+- adding it8xxx2_evb)'
             ]
         )
@@ -103,7 +94,7 @@ class TestFilter:
     )
     @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
     def test_exclude_tag(self, out_path, tag, expected_test_count):
-        test_platforms = ['qemu_x86', 'frdm_k64f']
+        test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy')
         args = ['-i', '--outdir', out_path, '-T', path, '-y'] + \
                ['--exclude-tag', tag] + \
@@ -129,7 +120,7 @@ class TestFilter:
 
     @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
     def test_enable_slow(self, out_path):
-        test_platforms = ['qemu_x86', 'frdm_k64f']
+        test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic')
         alt_config_root = os.path.join(TEST_DATA, 'alt-test-configs', 'dummy', 'agnostic')
         args = ['-i', '--outdir', out_path, '-T', path] + \
@@ -157,7 +148,7 @@ class TestFilter:
 
     @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
     def test_enable_slow_only(self, out_path):
-        test_platforms = ['qemu_x86', 'frdm_k64f']
+        test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic')
         alt_config_root = os.path.join(TEST_DATA, 'alt-test-configs', 'dummy', 'agnostic')
         args = ['-i', '--outdir', out_path, '-T', path] + \
@@ -196,8 +187,8 @@ class TestFilter:
     @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
     def test_arch(self, capfd, out_path, arch, expected):
         path = os.path.join(TEST_DATA, 'tests', 'no_filter')
-        test_platforms = ['qemu_x86', 'intel_ish_5_4_1', 'frdm_k64f', 'it8xxx2_evb']
-        args = ['--outdir', out_path, '-T', path, '-vv'] + \
+        test_platforms = ['qemu_x86', 'hsdk', 'intel_adl_crb', 'it8xxx2_evb']
+        args = ['--outdir', out_path, '-T', path, '-vv', '-ll', 'DEBUG'] + \
                ['--arch', arch] + \
                [val for pair in zip(
                    ['-p'] * len(test_platforms), test_platforms
@@ -214,6 +205,7 @@ class TestFilter:
         assert str(sys_exit.value) == '0'
 
         for line in expected:
+            print(err)
             assert re.search(line, err)
 
     @pytest.mark.parametrize(
@@ -229,8 +221,8 @@ class TestFilter:
     @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
     def test_vendor(self, capfd, out_path, vendor, expected):
         path = os.path.join(TEST_DATA, 'tests', 'no_filter')
-        test_platforms = ['qemu_x86', 'intel_ish_5_4_1', 'frdm_k64f', 'it8xxx2_evb']
-        args = ['--outdir', out_path, '-T', path, '-vv'] + \
+        test_platforms = ['qemu_x86', 'hsdk', 'intel_adl_crb', 'it8xxx2_evb']
+        args = ['--outdir', out_path, '-T', path, '-vv', '-ll', 'DEBUG'] + \
                ['--vendor', vendor] + \
                [val for pair in zip(
                    ['-p'] * len(test_platforms), test_platforms

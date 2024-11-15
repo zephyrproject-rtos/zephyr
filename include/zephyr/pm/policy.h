@@ -137,6 +137,138 @@ void pm_policy_state_lock_put(enum pm_state state, uint8_t substate_id);
  */
 bool pm_policy_state_lock_is_active(enum pm_state state, uint8_t substate_id);
 
+
+/**
+ * @brief Register an event.
+ *
+ * Events in the power-management policy context are defined as any source that
+ * will wake up the system at a known time in the future. By registering such
+ * event, the policy manager will be able to decide whether certain power states
+ * are worth entering or not.
+ * CPU is woken up before the time passed in cycle to prevent the event handling
+ * latency
+ *
+ * @note It is mandatory to unregister events once they have happened by using
+ * pm_policy_event_unregister(). Not doing so is an API contract violation,
+ * because the system would continue to consider them as valid events in the
+ * *far* future, that is, after the cycle counter rollover.
+ *
+ * @param evt Event.
+ * @param cycle When the event will occur, in absolute time (cycles).
+ *
+ * @see pm_policy_event_unregister
+ */
+void pm_policy_event_register(struct pm_policy_event *evt, uint32_t cycle);
+
+/**
+ * @brief Update an event.
+ *
+ * @param evt Event.
+ * @param cycle When the event will occur, in absolute time (cycles).
+ *
+ * @see pm_policy_event_register
+ */
+void pm_policy_event_update(struct pm_policy_event *evt, uint32_t cycle);
+
+/**
+ * @brief Unregister an event.
+ *
+ * @param evt Event.
+ *
+ * @see pm_policy_event_register
+ */
+void pm_policy_event_unregister(struct pm_policy_event *evt);
+
+/**
+ * @brief Increase power state locks.
+ *
+ * Set power state locks in all power states that disable power in the given
+ * device.
+ *
+ * @param dev Device reference.
+ *
+ * @see pm_policy_device_power_lock_put()
+ * @see pm_policy_state_lock_get()
+ */
+void pm_policy_device_power_lock_get(const struct device *dev);
+
+/**
+ * @brief Decrease power state locks.
+ *
+ * Remove power state locks in all power states that disable power in the given
+ * device.
+ *
+ * @param dev Device reference.
+ *
+ * @see pm_policy_device_power_lock_get()
+ * @see pm_policy_state_lock_put()
+ */
+void pm_policy_device_power_lock_put(const struct device *dev);
+
+/**
+ * @brief Returns the ticks until the next event
+ *
+ * If an event is registred, it will return the number of ticks until the next event as
+ * a positive or zero value. Otherwise it returns -1
+ */
+int32_t pm_policy_next_event_ticks(void);
+
+#else
+static inline void pm_policy_state_lock_get(enum pm_state state, uint8_t substate_id)
+{
+	ARG_UNUSED(state);
+	ARG_UNUSED(substate_id);
+}
+
+static inline void pm_policy_state_lock_put(enum pm_state state, uint8_t substate_id)
+{
+	ARG_UNUSED(state);
+	ARG_UNUSED(substate_id);
+}
+
+static inline bool pm_policy_state_lock_is_active(enum pm_state state, uint8_t substate_id)
+{
+	ARG_UNUSED(state);
+	ARG_UNUSED(substate_id);
+
+	return false;
+}
+
+static inline void pm_policy_event_register(struct pm_policy_event *evt, uint32_t cycle)
+{
+	ARG_UNUSED(evt);
+	ARG_UNUSED(cycle);
+}
+
+static inline void pm_policy_event_update(struct pm_policy_event *evt, uint32_t cycle)
+{
+	ARG_UNUSED(evt);
+	ARG_UNUSED(cycle);
+}
+
+static inline void pm_policy_event_unregister(struct pm_policy_event *evt)
+{
+	ARG_UNUSED(evt);
+}
+
+static inline void pm_policy_device_power_lock_get(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+}
+
+static inline void pm_policy_device_power_lock_put(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+}
+
+static inline int32_t pm_policy_next_event_ticks(void)
+{
+	return -1;
+}
+
+#endif /* CONFIG_PM */
+
+#if defined(CONFIG_PM) || defined(CONFIG_PM_POLICY_LATENCY_STANDALONE) || defined(__DOXYGEN__)
 /**
  * @brief Add a new latency requirement.
  *
@@ -180,93 +312,7 @@ void pm_policy_latency_changed_subscribe(struct pm_policy_latency_subscription *
  * @param req Subscription request.
  */
 void pm_policy_latency_changed_unsubscribe(struct pm_policy_latency_subscription *req);
-
-/**
- * @brief Register an event.
- *
- * Events in the power-management policy context are defined as any source that
- * will wake up the system at a known time in the future. By registering such
- * event, the policy manager will be able to decide whether certain power states
- * are worth entering or not.
- *
- * @note It is mandatory to unregister events once they have happened by using
- * pm_policy_event_unregister(). Not doing so is an API contract violation,
- * because the system would continue to consider them as valid events in the
- * *far* future, that is, after the cycle counter rollover.
- *
- * @param evt Event.
- * @param time_us When the event will occur, in microseconds from now.
- *
- * @see pm_policy_event_unregister
- */
-void pm_policy_event_register(struct pm_policy_event *evt, uint32_t time_us);
-
-/**
- * @brief Update an event.
- *
- * @param evt Event.
- * @param time_us When the event will occur, in microseconds from now.
- *
- * @see pm_policy_event_register
- */
-void pm_policy_event_update(struct pm_policy_event *evt, uint32_t time_us);
-
-/**
- * @brief Unregister an event.
- *
- * @param evt Event.
- *
- * @see pm_policy_event_register
- */
-void pm_policy_event_unregister(struct pm_policy_event *evt);
-
-/**
- * @brief Increase power state locks.
- *
- * Set power state locks in all power states that disable power in the given
- * device.
- *
- * @param dev Device reference.
- *
- * @see pm_policy_device_power_lock_put()
- * @see pm_policy_state_lock_get()
- */
-void pm_policy_device_power_lock_get(const struct device *dev);
-
-/**
- * @brief Decrease power state locks.
- *
- * Remove power state locks in all power states that disable power in the given
- * device.
- *
- * @param dev Device reference.
- *
- * @see pm_policy_device_power_lock_get()
- * @see pm_policy_state_lock_put()
- */
-void pm_policy_device_power_lock_put(const struct device *dev);
-
 #else
-static inline void pm_policy_state_lock_get(enum pm_state state, uint8_t substate_id)
-{
-	ARG_UNUSED(state);
-	ARG_UNUSED(substate_id);
-}
-
-static inline void pm_policy_state_lock_put(enum pm_state state, uint8_t substate_id)
-{
-	ARG_UNUSED(state);
-	ARG_UNUSED(substate_id);
-}
-
-static inline bool pm_policy_state_lock_is_active(enum pm_state state, uint8_t substate_id)
-{
-	ARG_UNUSED(state);
-	ARG_UNUSED(substate_id);
-
-	return false;
-}
-
 static inline void pm_policy_latency_request_add(
 	struct pm_policy_latency_request *req, uint32_t value_us)
 {
@@ -286,37 +332,7 @@ static inline void pm_policy_latency_request_remove(
 {
 	ARG_UNUSED(req);
 }
-
-static inline void pm_policy_event_register(struct pm_policy_event *evt,
-					    uint32_t time_us)
-{
-	ARG_UNUSED(evt);
-	ARG_UNUSED(time_us);
-}
-
-static inline void pm_policy_event_update(struct pm_policy_event *evt,
-					  uint32_t time_us)
-{
-	ARG_UNUSED(evt);
-	ARG_UNUSED(time_us);
-}
-
-static inline void pm_policy_event_unregister(struct pm_policy_event *evt)
-{
-	ARG_UNUSED(evt);
-}
-
-static inline void pm_policy_device_power_lock_get(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-}
-
-static inline void pm_policy_device_power_lock_put(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-}
-
-#endif /* CONFIG_PM */
+#endif /* CONFIG_PM CONFIG_PM_POLICY_LATENCY_STANDALONE */
 
 /**
  * @}

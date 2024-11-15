@@ -6,3 +6,4 @@ config SOC_ARC_IOT
 	select ARC
 	select CPU_HAS_MPU
 	select CPU_HAS_FPU
+	select SOC_EARLY_INIT_HOOK

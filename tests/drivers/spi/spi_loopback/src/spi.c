@@ -58,7 +58,8 @@ static struct spi_dt_spec spi_slow = SPI_DT_SPEC_GET(SPI_SLOW_DEV, SPI_OP(FRAME_
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define BUF_SIZE 18
 #define BUF2_SIZE 36
-#define BUF3_SIZE 8192
+#define BUF3_SIZE CONFIG_SPI_LARGE_BUFFER_SIZE
+
 
 #if CONFIG_NOCACHE_MEMORY
 #define __NOCACHE	__attribute__((__section__(".nocache")))
@@ -477,6 +478,11 @@ static int spi_rx_bigger_than_tx(struct spi_dt_spec *spec)
 	int ret;
 
 	if (IS_ENABLED(CONFIG_SPI_STM32_DMA)) {
+		LOG_INF("Skip rx bigger than tx");
+		return 0;
+	}
+
+	if (IS_ENABLED(CONFIG_DSPI_MCUX_EDMA)) {
 		LOG_INF("Skip rx bigger than tx");
 		return 0;
 	}

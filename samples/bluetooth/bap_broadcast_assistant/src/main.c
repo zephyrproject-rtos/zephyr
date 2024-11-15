@@ -1,26 +1,38 @@
 /*
  * Copyright (c) 2024 Demant A/S
+ * Copyright (c) 2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/types.h>
-#include <stddef.h>
-#include <strings.h>
 #include <errno.h>
-#include <zephyr/kernel.h>
-#include <zephyr/sys/printk.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+#include <strings.h>
 
-#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/types.h>
 
 #define NAME_LEN 30
 #define PA_SYNC_SKIP         5
 #define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 20 /* Set the timeout relative to interval */
 /* Broadcast IDs are 24bit, so this is out of valid range */
-#define INVALID_BROADCAST_ID 0xFFFFFFFFU
 
 static void scan_for_broadcast_sink(void);
 
@@ -284,7 +296,7 @@ static void scan_recv_cb(const struct bt_le_scan_recv_info *info,
 	if (scanning_for_broadcast_source) {
 		/* Scan for and select Broadcast Source */
 
-		sr_info.broadcast_id = INVALID_BROADCAST_ID;
+		sr_info.broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
 
 		/* We are only interested in non-connectable periodic advertisers */
 		if ((info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) != 0 ||
@@ -294,7 +306,7 @@ static void scan_recv_cb(const struct bt_le_scan_recv_info *info,
 
 		bt_data_parse(ad, device_found, (void *)&sr_info);
 
-		if (sr_info.broadcast_id != INVALID_BROADCAST_ID) {
+		if (sr_info.broadcast_id != BT_BAP_INVALID_BROADCAST_ID) {
 			printk("Broadcast Source Found:\n");
 			printk("  BT Name:        %s\n", sr_info.bt_name);
 			printk("  Broadcast Name: %s\n", sr_info.broadcast_name);
@@ -532,7 +544,7 @@ static void reset(void)
 	printk("\n\nReset...\n\n");
 
 	broadcast_sink_conn = NULL;
-	selected_broadcast_id = INVALID_BROADCAST_ID;
+	selected_broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
 	selected_sid = 0;
 	selected_pa_interval = 0;
 	(void)memset(&selected_addr, 0, sizeof(selected_addr));

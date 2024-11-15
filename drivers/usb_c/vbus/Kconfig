@@ -18,6 +18,7 @@ config USBC_VBUS_INIT_PRIORITY
 
 source "drivers/usb_c/vbus/Kconfig.usbc_vbus_adc"
 source "drivers/usb_c/vbus/Kconfig.numaker"
+source "drivers/usb_c/vbus/Kconfig.usbc_vbus_tcpci"
 
 endif # USBC_VBUS_DRIVER
 

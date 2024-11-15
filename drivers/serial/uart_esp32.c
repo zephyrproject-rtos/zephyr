@@ -21,6 +21,10 @@
 #include <esp32s3/rom/ets_sys.h>
 #include <esp32s3/rom/gpio.h>
 #include <zephyr/dt-bindings/clock/esp32s3_clock.h>
+#elif defined(CONFIG_SOC_SERIES_ESP32C2)
+#include <esp32c2/rom/ets_sys.h>
+#include <esp32c2/rom/gpio.h>
+#include <zephyr/dt-bindings/clock/esp32c2_clock.h>
 #elif defined(CONFIG_SOC_SERIES_ESP32C3)
 #include <esp32c3/rom/ets_sys.h>
 #include <esp32c3/rom/gpio.h>
@@ -47,7 +51,9 @@
 #include <soc.h>
 #include <zephyr/drivers/uart.h>
 
-#if defined(CONFIG_SOC_SERIES_ESP32C3) || defined(CONFIG_SOC_SERIES_ESP32C6)
+#if defined(CONFIG_SOC_SERIES_ESP32C2) || \
+	defined(CONFIG_SOC_SERIES_ESP32C3) || \
+	defined(CONFIG_SOC_SERIES_ESP32C6)
 #include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
 #else
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
@@ -61,7 +67,9 @@
 
 LOG_MODULE_REGISTER(uart_esp32, CONFIG_UART_LOG_LEVEL);
 
-#if defined(CONFIG_SOC_SERIES_ESP32C3) || defined(CONFIG_SOC_SERIES_ESP32C6)
+#if defined(CONFIG_SOC_SERIES_ESP32C2) || \
+	defined(CONFIG_SOC_SERIES_ESP32C3) || \
+	defined(CONFIG_SOC_SERIES_ESP32C6)
 #define ISR_HANDLER isr_handler_t
 #else
 #define ISR_HANDLER intr_handler_t
@@ -73,6 +81,7 @@ struct uart_esp32_config {
 	const clock_control_subsys_t clock_subsys;
 	int irq_source;
 	int irq_priority;
+	int irq_flags;
 	bool tx_invert;
 	bool rx_invert;
 #if CONFIG_UART_ASYNC_API
@@ -497,7 +506,6 @@ static void uart_esp32_isr(void *arg)
 	const struct device *dev = (const struct device *)arg;
 	struct uart_esp32_data *data = dev->data;
 	uint32_t uart_intr_status = uart_hal_get_intsts_mask(&data->hal);
-	const struct uart_esp32_config *config = dev->config;
 
 	if (uart_intr_status == 0) {
 		return;
@@ -529,7 +537,6 @@ static void IRAM_ATTR uart_esp32_dma_rx_done(const struct device *dma_dev, void 
 	const struct uart_esp32_config *config = uart_dev->config;
 	struct uart_esp32_data *data = uart_dev->data;
 	struct uart_event evt = {0};
-	struct dma_status dma_status = {0};
 	unsigned int key = irq_lock();
 
 	/* If the receive buffer is not complete we reload the DMA at current buffer position and
@@ -596,7 +603,6 @@ static void IRAM_ATTR uart_esp32_dma_tx_done(const struct device *dma_dev, void 
 					     uint32_t channel, int status)
 {
 	const struct device *uart_dev = user_data;
-	const struct uart_esp32_config *config = uart_dev->config;
 	struct uart_esp32_data *data = uart_dev->data;
 	struct uart_event evt = {0};
 	unsigned int key = irq_lock();
@@ -661,9 +667,7 @@ static void uart_esp32_async_rx_timeout(struct k_work *work)
 	struct uart_esp32_async_data *async =
 		CONTAINER_OF(dwork, struct uart_esp32_async_data, rx_timeout_work);
 	struct uart_esp32_data *data = CONTAINER_OF(async, struct uart_esp32_data, async);
-	const struct uart_esp32_config *config = data->uart_dev->config;
 	struct uart_event evt = {0};
-	int err = 0;
 	unsigned int key = irq_lock();
 
 	evt.type = UART_RX_RDY;
@@ -837,7 +841,6 @@ unlock:
 
 static int uart_esp32_async_rx_buf_rsp(const struct device *dev, uint8_t *buf, size_t len)
 {
-	const struct uart_esp32_config *config = dev->config;
 	struct uart_esp32_data *data = dev->data;
 
 	data->async.rx_next_buf = buf;
@@ -918,7 +921,6 @@ unlock:
 
 static int uart_esp32_init(const struct device *dev)
 {
-	const struct uart_esp32_config *config = dev->config;
 	struct uart_esp32_data *data = dev->data;
 	int ret = uart_esp32_configure(dev, &data->uart_config);
 
@@ -928,8 +930,11 @@ static int uart_esp32_init(const struct device *dev)
 	}
 
 #if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API
+	const struct uart_esp32_config *config = dev->config;
+
 	ret = esp_intr_alloc(config->irq_source,
-			config->irq_priority,
+			ESP_PRIO_TO_FLAGS(config->irq_priority) |
+			ESP_INT_FLAGS_CHECK(config->irq_flags),
 			(ISR_HANDLER)uart_esp32_isr,
 			(void *)dev,
 			NULL);
@@ -1001,12 +1006,9 @@ static const DRAM_ATTR struct uart_driver_api uart_esp32_api = {
 #define ESP_UART_UHCI_INIT(n)                                                                      \
 	.uhci_dev = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, dmas), (&UHCI0), (NULL))
 
-#define UART_IRQ_PRIORITY ESP_INTR_FLAG_LEVEL2
-
 #else
 #define ESP_UART_DMA_INIT(n)
 #define ESP_UART_UHCI_INIT(n)
-#define UART_IRQ_PRIORITY (0)
 #endif
 
 #define ESP32_UART_INIT(idx)                                                                       \
@@ -1017,8 +1019,9 @@ static const DRAM_ATTR struct uart_driver_api uart_esp32_api = {
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),                              \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),                                       \
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(idx, offset),          \
-		.irq_source = DT_INST_IRQN(idx),                                                   \
-		.irq_priority = UART_IRQ_PRIORITY,                                                 \
+		.irq_source = DT_INST_IRQ_BY_IDX(idx, 0, irq),                                     \
+		.irq_priority = DT_INST_IRQ_BY_IDX(idx, 0, priority),                              \
+		.irq_flags = DT_INST_IRQ_BY_IDX(idx, 0, flags),                                    \
 		.tx_invert = DT_INST_PROP_OR(idx, tx_invert, false),                               \
 		.rx_invert = DT_INST_PROP_OR(idx, rx_invert, false),                               \
 		ESP_UART_DMA_INIT(idx)};                                                           \

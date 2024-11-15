@@ -1,7 +1,4 @@
-.. _blackpill_f401cc:
-
-WeAct Studio Black Pill V1.2
-############################
+.. zephyr:board:: blackpill_f401cc
 
 Overview
 ********
@@ -11,10 +8,6 @@ development board featuring the STM32F401CC, see `STM32F401CC website`_.
 This is the 48-pin variant of the STM32F401x series,
 see `STM32F401x reference manual`_. More info about the board available
 `here <stm32-base-board-page_>`_ and on `WeAct Github`_.
-
-.. image:: img/blackpill-v3.jpg
-      :align: center
-      :alt: Black Pill V3.0+
 
 Hardware
 ********
@@ -44,7 +37,7 @@ hardware components:
 Supported Features
 ==================
 
-The Zephyr blackpill_f401ce board configuration supports the following
+The Zephyr blackpill_f401cc board configuration supports the following
 hardware features:
 
 +------------+------------+-------------------------------------+
@@ -72,7 +65,7 @@ hardware features:
 +------------+------------+-------------------------------------+
 
 The default configuration can be found in
-:zephyr_file:`boards/weact/blackpill_f401ce/blackpill_f401ce_defconfig`
+:zephyr_file:`boards/weact/blackpill_f401cc/blackpill_f401cc_defconfig`
 
 Pin Mapping
 ===========

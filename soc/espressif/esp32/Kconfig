@@ -8,17 +8,12 @@ config SOC_SERIES_ESP32
 	select ARCH_HAS_GDBSTUB
 	select ARCH_SUPPORTS_COREDUMP
 	select PINCTRL
-	select XIP if !MCUBOOT
 	select HAS_ESPRESSIF_HAL
 	select CPU_HAS_FPU
 	select HAS_PM
 	select HAS_POWEROFF
 
 if SOC_SERIES_ESP32
-
-config IDF_TARGET_ESP32
-	bool "ESP32 as target board"
-	default y
 
 config ESP32_APPCPU_IRAM
 	hex "ESP32 APPCPU IRAM size"
@@ -37,7 +32,7 @@ config ESP32_APPCPU_DRAM
 config SOC_ENABLE_APPCPU
 	bool
 	default y
-	depends on IPM && SOC_ESP32_PROCPU
+	depends on (IPM || MBOX) && SOC_ESP32_PROCPU
 	help
 	  This hidden configuration lets PROCPU core to map and start APPCPU whenever IPM is enabled.
 
@@ -74,18 +69,6 @@ config ESP32_DEEP_SLEEP_WAKEUP_DELAY
 
 	  If you are seeing "flash read err, 1000" message printed to the
 	  console after deep sleep reset, try increasing this value.
-
-config ESP32_PHY_MAX_WIFI_TX_POWER
-	int "Max WiFi/BLE TX power (dBm)"
-	range 10 20
-	default 20
-	help
-	  Set maximum transmit power for WiFi radio. Actual transmit power for high
-	  data rates may be lower than this setting.
-
-config ESP32_PHY_MAX_TX_POWER
-	int
-	default ESP32_PHY_MAX_WIFI_TX_POWER
 
 config ESP32_EMAC
 	bool

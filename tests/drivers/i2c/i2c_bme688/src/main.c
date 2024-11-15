@@ -201,10 +201,11 @@ static uint16_t read_adc_humidity(void)
 ZTEST(i2c_controller_to_sensor, test_i2c_basic_memory_read)
 {
 	int err;
-	uint32_t i2c_config = I2C_SPEED_SET(I2C_SPEED_FAST) | I2C_MODE_CONTROLLER;
+	uint32_t i2c_config = I2C_SPEED_SET(CONFIG_TEST_I2C_SPEED) | I2C_MODE_CONTROLLER;
 	uint8_t entire_sensor_memory[SENSOR_MEMORY_SIZE_IN_BYTES] = {0};
 
 	TC_PRINT("Device address 0x%x\n", DEVICE_ADDRESS);
+	TC_PRINT("I2C speed setting: %d\n", CONFIG_TEST_I2C_SPEED);
 
 	err = i2c_configure(i2c_device, i2c_config);
 	zassert_equal(err, 0, "i2c_configure' failed with error: %d\n", err);
@@ -250,10 +251,11 @@ ZTEST(i2c_controller_to_sensor, test_i2c_controlled_sensor_operation)
 	int16_t temperature = 0;
 	uint32_t pressure = 0;
 	uint32_t humidity = 0;
-	uint32_t i2c_config = I2C_SPEED_SET(I2C_SPEED_STANDARD) | I2C_MODE_CONTROLLER;
+	uint32_t i2c_config = I2C_SPEED_SET(CONFIG_TEST_I2C_SPEED) | I2C_MODE_CONTROLLER;
 	uint8_t measurements_left = MEASUREMENT_CYCLES + 1;
 
 	TC_PRINT("Device address 0x%x\n", DEVICE_ADDRESS);
+	TC_PRINT("I2C speed setting: %d\n", CONFIG_TEST_I2C_SPEED);
 
 	err = i2c_configure(i2c_device, i2c_config);
 	zassert_equal(err, 0, "i2c_configure' failed with error: %d\n", err);

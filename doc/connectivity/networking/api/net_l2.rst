@@ -129,8 +129,8 @@ here as well. There are two specific differences however:
   packet will often have to be split into several fragments and IP6 packet headers
   and fragments need to be compressed using a protocol like 6LoWPAN before being
   passed on to the radio driver. Additionally the IEEE 802.15.4 standard defines
-  medium access (e.g. CSMA/CA), frame retransmission, encryption and other pre-
-  processing procedures (e.g. addition of information elements) that individual
+  medium access (e.g. CSMA/CA), frame retransmission, encryption and other pre-processing
+  procedures (e.g. addition of information elements) that individual
   radio drivers should not have to care about. This is why the
   :c:struct:`ieee802154_radio_api` requires a tx function pointer which differs
   from the :c:struct:`net_if_api` send function pointer. Zephyr's native

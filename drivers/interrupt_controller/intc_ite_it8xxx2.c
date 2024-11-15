@@ -241,35 +241,43 @@ uint8_t __soc_ram_code get_irq(void *arg)
 	return intc_irq;
 }
 
-static void intc_irq0_handler(const void *arg)
-{
-	ARG_UNUSED(arg);
-
-	LOG_DBG("SOC it8xxx2 Interrupt 0 handler");
-}
-
 void soc_interrupt_init(void)
 {
-	/* Ensure interrupts of soc are disabled at default */
-	for (int i = 0; i < ARRAY_SIZE(reg_enable); i++)
-		*reg_enable[i] = 0;
-
+#ifdef CONFIG_ZTEST
 	/*
-	 * WORKAROUND: In the it8xxx2 chip, the interrupt for INT0 is reserved.
-	 * However, in some stress tests, the unhandled IRQ0 issue occurs.
-	 * To prevent the system from going directly into kernel panic, we
-	 * implemented a workaround by registering interrupt number 0 and doing
-	 * nothing in the IRQ0 handler. The side effect of this solution is
-	 * that when IRQ0 is triggered, it will take some time to execute the
-	 * routine. There is no need to worry about missing interrupts because
-	 * each IRQ's ISR is write-clear, and if the status is not cleared, it
-	 * will continue to trigger.
-	 *
-	 * NOTE: After this workaround is merged, we will then find out under
-	 * what circumstances the situation can be reproduced and fix it, and
-	 * then remove the workaround.
+	 * After flashed EC image, we needed to manually press the reset button
+	 * on it8xxx2_evb, then run the test. Now, without pressing the button,
+	 * we can disable debug mode and trigger a watchdog hard reset then
+	 * run tests.
 	 */
-	 IRQ_CONNECT(0, 0, intc_irq0_handler, 0, 0);
+	struct wdt_it8xxx2_regs *const wdt_regs = WDT_IT8XXX2_REGS_BASE;
+	struct gctrl_it8xxx2_regs *const gctrl_regs = GCTRL_IT8XXX2_REGS_BASE;
+
+	if (gctrl_regs->GCTRL_DBGROS & IT8XXX2_GCTRL_SMB_DBGR) {
+		/* Disable debug mode through i2c */
+		IT8XXX2_SMB_SLVISELR |= BIT(4);
+		/* Enable ETWD reset */
+		wdt_regs->ETWCFG = 0;
+		wdt_regs->ET1PSR = IT8XXX2_WDT_ETPS_1P024_KHZ;
+		wdt_regs->ETWCFG = (IT8XXX2_WDT_EWDKEYEN | IT8XXX2_WDT_EWDSRC);
+		/* Enable ETWD hardware reset */
+		gctrl_regs->GCTRL_ETWDUARTCR |= IT8XXX2_GCTRL_ETWD_HW_RST_EN;
+		/* Trigger ETWD reset */
+		wdt_regs->EWDKEYR = 0;
+
+		/* Spin and wait for reboot */
+		while (1)
+			;
+	} else {
+		/* Disable ETWD hardware reset */
+		gctrl_regs->GCTRL_ETWDUARTCR &= ~IT8XXX2_GCTRL_ETWD_HW_RST_EN;
+	}
+#endif
+
+	/* Ensure interrupts of soc are disabled at default */
+	for (int i = 0; i < ARRAY_SIZE(reg_enable); i++) {
+		*reg_enable[i] = 0;
+	}
 
 	/* Enable M-mode external interrupt */
 	csr_set(mie, MIP_MEIP);

@@ -5,7 +5,6 @@ config LOG_BACKEND_BLE
 	bool "Bluetooth Low Energy (BLE) backend"
 	depends on BT
 	depends on LOG_PROCESS_THREAD_STACK_SIZE>=2048
-	select LOG_OUTPUT
 	select EXPERIMENTAL
 	help
 	  Backend that sends log messages over Bluetooth LE Notifications. This

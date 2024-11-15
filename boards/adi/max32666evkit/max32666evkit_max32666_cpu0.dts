@@ -1,0 +1,112 @@
+/*
+ * Copyright (c) 2024 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <adi/max32/max32666.dtsi>
+#include <adi/max32/max32666-pinctrl.dtsi>
+#include <zephyr/dt-bindings/gpio/adi-max32-gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/dma/max32666_dma.h>
+
+/ {
+	model = "Analog Devices MAX32666EVKIT";
+	compatible = "adi,max32666evkit";
+
+	chosen {
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+		zephyr,sram = &sram4;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led1: led_1 {
+			gpios = <&gpio1 14 (GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>;
+			label = "Red LED";
+		};
+		led2: led_2 {
+			gpios = <&gpio1 15 (GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>;
+			label = "Blue LED";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		pb1: pb1 {
+			gpios = <&gpio1 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW
+								| MAX32_GPIO_VSEL_VDDIOH)>;
+			label = "SW2";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		pb2: pb2 {
+			gpios = <&gpio1 7 (GPIO_PULL_UP | GPIO_ACTIVE_LOW
+								| MAX32_GPIO_VSEL_VDDIOH)>;
+			label = "SW3";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led1;
+		led1 = &led2;
+		sw0 = &pb1;
+		sw1 = &pb2;
+		watchdog0 = &wdt0;
+	};
+};
+
+&uart1 {
+	pinctrl-0 = <&uart1_tx_p0_21 &uart1_rx_p0_20>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	data-bits = <8>;
+	parity = "none";
+	status = "okay";
+};
+
+&clk_ipo {
+	status = "okay";
+};
+
+&dma0 {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&i2c1 {
+	status = "okay";
+	pinctrl-0 = <&i2c1_scl_p0_14 &i2c1_sda_p0_15>;
+	pinctrl-names = "default";
+};
+
+&i2c2 {
+	status = "okay";
+	pinctrl-0 = <&i2c2_scl_p1_14 &i2c2_sda_p1_15>;
+	pinctrl-names = "default";
+};
+
+&trng {
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&w1 {
+	pinctrl-0 = <&owm_io_p0_4 &owm_pe_p0_5>;
+	pinctrl-names = "default";
+};

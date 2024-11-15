@@ -1,7 +1,4 @@
-.. _adafruit_feather_nrf52840:
-
-Adafruit Feather nRF52840 (Express, Sense)
-##########################################
+.. zephyr:board:: adafruit_feather_nrf52840
 
 Overview
 ********
@@ -135,11 +132,11 @@ Programming and Debugging
 Flashing
 ========
 
-Flashing Zephyr onto the ``adafruit_feather_nrf52480_express`` board is possible
-using an external programmer. The programmer is attached to the SWD header.
+Flashing Zephyr onto both the Feather nRF52840 Express and Sense is possible
+using the SWD headers. Only the Express board has an SWD connector however.
 
-The Feather nRF52840 ships with the `Adafruit nRF52 Bootloader`_ which
-supports flashing using `UF2`_. This allows easy flashing of new images,
+Both the Feather nRF52840 Express and Sense ship with the `Adafruit nRF52 Bootloader`_
+which supports flashing using `UF2`_. This allows easy flashing of new images,
 but does not support debugging the device.
 
 #. Build the Zephyr kernel and the :zephyr:code-sample:`blinky` sample application.
@@ -150,7 +147,15 @@ but does not support debugging the device.
 
       .. zephyr-app-commands::
          :zephyr-app: samples/basic/blinky
-         :board: adafruit_feather_nrf52840_express/nrf52840
+         :board: adafruit_feather_nrf52840
+         :goals: build
+         :compact:
+
+   .. group-tab:: Express UF2
+
+      .. zephyr-app-commands::
+         :zephyr-app: samples/basic/blinky
+         :board: adafruit_feather_nrf52840/nrf52840/uf2
          :goals: build
          :compact:
 
@@ -158,26 +163,59 @@ but does not support debugging the device.
 
       .. zephyr-app-commands::
          :zephyr-app: samples/basic/blinky
-         :board: adafruit_feather_nrf52840_sense/nrf52840
+         :board: adafruit_feather_nrf52840/nrf52840/sense
+         :goals: build
+         :compact:
+
+   .. group-tab:: Sense UF2
+
+      .. zephyr-app-commands::
+         :zephyr-app: samples/basic/blinky
+         :board: adafruit_feather_nrf52840/nrf52840/sense/uf2
          :goals: build
          :compact:
 
 #. If using UF2, connect the board to your host computer using USB.
 
 #. Tap the reset button twice quickly to enter bootloader mode.
-   A mass storage device named `FTHR840BOOT` for (Express) or
-   `FTHRSNSBOOT` (Sense) should appear on the host. Ensure this is
+   A mass storage device named ``FTHR840BOOT`` for (Express) or
+   ``FTHRSNSBOOT`` (Sense) should appear on the host. Ensure this is
    mounted.
 
 #. Flash the image.
 
 .. tabs::
 
+   .. group-tab:: Express
+
+      .. zephyr-app-commands::
+         :zephyr-app: samples/basic/blinky
+         :board: adafruit_feather_nrf52840
+         :goals: flash
+         :compact:
+
+   .. group-tab:: Express UF2
+
+      .. zephyr-app-commands::
+         :zephyr-app: samples/basic/blinky
+         :board: adafruit_feather_nrf52840/nrf52840/uf2
+         :goals: flash
+         :compact:
+
+
    .. group-tab:: Sense
 
       .. zephyr-app-commands::
          :zephyr-app: samples/basic/blinky
-         :board: adafruit_feather_nrf52840_sense
+         :board: adafruit_feather_nrf52840/nrf52840/sense
+         :goals: flash
+         :compact:
+
+   .. group-tab:: Sense UF2
+
+      .. zephyr-app-commands::
+         :zephyr-app: samples/basic/blinky
+         :board: adafruit_feather_nrf52840/nrf52840/sense/uf2
          :goals: flash
          :compact:
 

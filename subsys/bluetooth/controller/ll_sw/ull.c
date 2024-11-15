@@ -74,6 +74,7 @@
 #include "ull_conn_internal.h"
 #include "ull_conn_iso_types.h"
 #include "ull_central_iso_internal.h"
+#include "ull_llcp_internal.h"
 #include "ull_llcp.h"
 
 #include "ull_conn_iso_internal.h"
@@ -119,14 +120,20 @@
 #if defined(CONFIG_BT_OBSERVER)
 #define BT_SCAN_TICKER_NODES ((TICKER_ID_SCAN_LAST) - (TICKER_ID_SCAN_STOP) + 1)
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
+#if defined(CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS)
+#define BT_SCAN_AUX_TICKER_NODES 1
+#else /* !CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS */
 #define BT_SCAN_AUX_TICKER_NODES ((TICKER_ID_SCAN_AUX_LAST) - \
 				  (TICKER_ID_SCAN_AUX_BASE) + 1)
+#endif /* !CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS */
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 #define BT_SCAN_SYNC_TICKER_NODES ((TICKER_ID_SCAN_SYNC_LAST) - \
 				   (TICKER_ID_SCAN_SYNC_BASE) + 1)
 #if defined(CONFIG_BT_CTLR_SYNC_ISO)
 #define BT_SCAN_SYNC_ISO_TICKER_NODES ((TICKER_ID_SCAN_SYNC_ISO_LAST) - \
-				       (TICKER_ID_SCAN_SYNC_ISO_BASE) + 1)
+				       (TICKER_ID_SCAN_SYNC_ISO_BASE) + 1 + \
+				       (TICKER_ID_SCAN_SYNC_ISO_RESUME_LAST) - \
+				       (TICKER_ID_SCAN_SYNC_ISO_RESUME_BASE) + 1)
 #else /* !CONFIG_BT_CTLR_SYNC_ISO */
 #define BT_SCAN_SYNC_ISO_TICKER_NODES 0
 #endif /* !CONFIG_BT_CTLR_SYNC_ISO */
@@ -233,8 +240,14 @@
 #if defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_OBSERVER)
 #if defined(CONFIG_BT_CTLR_DF_PER_SCAN_CTE_NUM_MAX)
 /* Note: Need node for PDU and CTE sample */
+#if defined(CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS)
+#define BT_CTLR_ADV_EXT_RX_CNT  (MIN(CONFIG_BT_CTLR_SCAN_AUX_CHAIN_COUNT, \
+				     CONFIG_BT_PER_ADV_SYNC_MAX) * \
+				 CONFIG_BT_CTLR_DF_PER_SCAN_CTE_NUM_MAX * 2)
+#else /* !CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS */
 #define BT_CTLR_ADV_EXT_RX_CNT  (CONFIG_BT_CTLR_SCAN_AUX_SET * \
 				 CONFIG_BT_CTLR_DF_PER_SCAN_CTE_NUM_MAX * 2)
+#endif /* !CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS */
 #else /* !CONFIG_BT_CTLR_DF_PER_SCAN_CTE_NUM_MAX */
 #define BT_CTLR_ADV_EXT_RX_CNT  1
 #endif /* !CONFIG_BT_CTLR_DF_PER_SCAN_CTE_NUM_MAX */
@@ -503,6 +516,16 @@ static struct {
 static MEMQ_DECLARE(ull_rx);
 static MEMQ_DECLARE(ll_rx);
 
+#if defined(CONFIG_BT_CTLR_ISO) || \
+	defined(CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER) || \
+	defined(CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER)
+#define ULL_TIME_WRAPPING_POINT_US	(HAL_TICKER_TICKS_TO_US_64BIT(HAL_TICKER_CNTR_MASK))
+#define ULL_TIME_SPAN_FULL_US		(ULL_TIME_WRAPPING_POINT_US + 1)
+#endif /* CONFIG_BT_CTLR_ISO ||
+	* CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER ||
+	* CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER
+	*/
+
 #if defined(CONFIG_BT_CONN)
 static MFIFO_DEFINE(ll_pdu_rx_free, sizeof(void *), LL_PDU_RX_CNT);
 
@@ -511,13 +534,13 @@ static void *mark_update;
 
 #if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_CTLR_ADV_ISO)
 #if defined(CONFIG_BT_CONN)
-#define BT_BUF_ACL_TX_COUNT CONFIG_BT_BUF_ACL_TX_COUNT
+#define BT_CTLR_TX_BUFFERS (CONFIG_BT_BUF_ACL_TX_COUNT + LLCP_TX_CTRL_BUF_COUNT)
 #else
-#define BT_BUF_ACL_TX_COUNT 0
+#define BT_CTLR_TX_BUFFERS 0
 #endif /* CONFIG_BT_CONN */
 
 static MFIFO_DEFINE(tx_ack, sizeof(struct lll_tx),
-		    BT_BUF_ACL_TX_COUNT + BT_CTLR_ISO_TX_BUFFERS);
+		    BT_CTLR_TX_BUFFERS + BT_CTLR_ISO_TX_BUFFERS);
 #endif /* CONFIG_BT_CONN || CONFIG_BT_CTLR_ADV_ISO */
 
 static void *mark_disable;
@@ -1052,6 +1075,7 @@ void ll_rx_dequeue(void)
 	{
 		struct node_rx_pdu *rx_curr;
 		struct pdu_adv *adv;
+		uint8_t loop = PDU_RX_POOL_SIZE / PDU_RX_NODE_POOL_ELEMENT_SIZE;
 
 		adv = (struct pdu_adv *)rx->pdu;
 		if (adv->type != PDU_ADV_TYPE_EXT_IND) {
@@ -1061,6 +1085,9 @@ void ll_rx_dequeue(void)
 		rx_curr = rx->rx_ftr.extra;
 		while (rx_curr) {
 			memq_link_t *link_free;
+
+			LL_ASSERT(loop);
+			loop--;
 
 			link_free = rx_curr->hdr.link;
 			rx_curr = rx_curr->rx_ftr.extra;
@@ -1260,6 +1287,10 @@ void ll_rx_dequeue(void)
 		/* fall through */
 	case NODE_RX_TYPE_SYNC:
 	case NODE_RX_TYPE_SYNC_LOST:
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER)
+	/* fall through */
+	case NODE_RX_TYPE_SYNC_TRANSFER_RECEIVED:
+#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER */
 #if defined(CONFIG_BT_CTLR_SYNC_ISO)
 		/* fall through */
 	case NODE_RX_TYPE_SYNC_ISO:
@@ -1537,6 +1568,9 @@ void ll_rx_mem_release(void **node_rx)
 			break;
 
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER)
+		case NODE_RX_TYPE_SYNC_TRANSFER_RECEIVED:
+#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER */
 		case NODE_RX_TYPE_SYNC:
 		{
 			struct node_rx_sync *se =
@@ -1551,21 +1585,15 @@ void ll_rx_mem_release(void **node_rx)
 			    (status == BT_HCI_ERR_UNSUPP_REMOTE_FEATURE) ||
 			    (status == BT_HCI_ERR_CONN_FAIL_TO_ESTAB)) {
 				struct ll_sync_set *sync;
-				struct ll_scan_set *scan;
 
-				/* pick the scan context before node_rx
+				/* pick the sync context before node_rx
 				 * release.
 				 */
-				scan = (void *)rx_free->rx_ftr.param;
+				sync = (void *)rx_free->rx_ftr.param;
 
 				ll_rx_release(rx_free);
 
-				/* pick the sync context before scan context
-				 * is cleanup of sync context association.
-				 */
-				sync = scan->periodic.sync;
-
-				ull_sync_setup_reset(scan);
+				ull_sync_setup_reset(sync);
 
 				if (status != BT_HCI_ERR_SUCCESS) {
 					memq_link_t *link_sync_lost;
@@ -2805,6 +2833,14 @@ static inline void rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 		ull_sync_established_report(link, (struct node_rx_pdu *)rx);
 	}
 	break;
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER)
+	case NODE_RX_TYPE_SYNC_TRANSFER_RECEIVED:
+	{
+		(void)memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
+		ll_rx_put_sched(link, rx);
+	}
+	break;
+#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER */
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_OBSERVER */
@@ -3107,3 +3143,26 @@ void *ull_rxfifo_release(uint8_t s, uint8_t n, uint8_t f, uint8_t *l, uint8_t *m
 
 	return rx;
 }
+
+#if defined(CONFIG_BT_CTLR_ISO) || \
+	defined(CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER) || \
+	defined(CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER)
+/**
+ * @brief Wraps given time within the range of 0 to ULL_TIME_WRAPPING_POINT_US
+ * @param  time_now  Current time value
+ * @param  time_diff Time difference (signed)
+ * @return           Wrapped time after difference
+ */
+uint32_t ull_get_wrapped_time_us(uint32_t time_now_us, int32_t time_diff_us)
+{
+	LL_ASSERT(time_now_us <= ULL_TIME_WRAPPING_POINT_US);
+
+	uint32_t result = ((uint64_t)time_now_us + ULL_TIME_SPAN_FULL_US + time_diff_us) %
+				((uint64_t)ULL_TIME_SPAN_FULL_US);
+
+	return result;
+}
+#endif /* CONFIG_BT_CTLR_ISO ||
+	* CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER ||
+	* CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER
+	*/

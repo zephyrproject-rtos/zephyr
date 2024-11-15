@@ -30,6 +30,7 @@
 #include <stdbool.h>
 
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/sys/slist.h>
 #include <zephyr/sys/util_macro.h>
 
 #ifdef __cplusplus
@@ -125,6 +126,8 @@ extern "C" {
 #define BT_TBS_FEATURE_HOLD BIT(0)
 /** Join Call Control Point Opcode supported */
 #define BT_TBS_FEATURE_JOIN BIT(1)
+/** All Control Point Opcodes supported */
+#define BT_TBS_FEATURE_ALL  (BT_TBS_FEATURE_HOLD | BT_TBS_FEATURE_JOIN)
 /** @} */
 
 /**
@@ -245,8 +248,6 @@ typedef void (*bt_tbs_call_change_cb)(struct bt_conn *conn,
 
 /**
  * @brief Callback function for authorizing a client.
- *
- * Only used if BT_TBS_AUTHORIZATION is enabled.
  *
  * @param conn         The connection used.
  *
@@ -460,6 +461,98 @@ int bt_tbs_set_uri_scheme_list(uint8_t bearer_index, const char **uri_list,
  * @param cbs Pointer to the callback structure.
  */
 void bt_tbs_register_cb(struct bt_tbs_cb *cbs);
+
+struct bt_tbs_register_param {
+	/** The name of the provider, for example a cellular service provider */
+	char *provider_name;
+
+	/**
+	 * @brief The Uniform Caller Identifier of the bearer
+	 *
+	 * See the Uniform Caller Identifiers table in Bluetooth Assigned Numbers
+	 */
+	char *uci;
+
+	/**
+	 * The Uniform Resource Identifiers schemes supported by this bearer as an UTF-8 string
+	 *
+	 * See https://www.iana.org/assignments/uri-schemes/uri-schemes.xhtml for possible values.
+	 * If multiple values are used, these shall be comma separated, e.g. "tel,skype".
+	 */
+	char *uri_schemes_supported;
+
+	/**
+	 * @brief Whether this bearer shall be registered as a Generic Telephone Bearer server
+	 *
+	 * A GTBS shall be registered before any non-GTBS services. There can only be a single GTBS
+	 * registered.
+	 */
+	bool gtbs;
+
+	/**
+	 * @brief Whether the application will need to authorize changes to calls
+	 *
+	 * If set to false then the service will automatically accept write requests from clients.
+	 */
+	bool authorization_required;
+
+	/**
+	 * @brief The technology of the bearer
+	 *
+	 * See the BT_TBS_TECHNOLOGY_* values.
+	 */
+	uint8_t technology;
+
+	/**
+	 * @brief The optional supported features of the bearer
+	 *
+	 * See the BT_TBS_FEATURE_* values.
+	 */
+	uint8_t supported_features;
+};
+
+/**
+ * @brief Register a Telephone Bearer
+ *
+ * This will register a Telephone Bearer Service (TBS) (or a Generic Telephone Bearer service
+ * (GTBS)) with the provided parameters.
+ *
+ * As per the TBS specification, the GTBS shall be instantiated for the feature, and as such a GTBS
+ * shall always be registered before any TBS can be registered.
+ * Similarly, all TBS shall be unregistered before the GTBS can be unregistered with
+ * bt_tbs_unregister_bearer().
+ *
+ * @param param The parameters to initialize the bearer.
+
+ * @retval index The bearer index if return value is >= 0
+ * @retval -EINVAL @p param contains invalid data
+ * @retval -EALREADY @p param.gtbs is true and GTBS has already been registered
+ * @retval -EAGAIN @p param.gtbs is false and GTBS has not been registered
+ * @retval -ENOMEM @p param.gtbs is false and no more TBS can be registered (see
+ *         @kconfig{CONFIG_BT_TBS_BEARER_COUNT})
+ * @retval -ENOEXEC The service failed to be registered
+ */
+int bt_tbs_register_bearer(const struct bt_tbs_register_param *param);
+
+/**
+ * @brief Unregister a Telephone Bearer
+ *
+ * This will unregister a Telephone Bearer Service (TBS) (or a Generic Telephone Bearer service
+ * (GTBS)) with the provided parameters. The bearer shall be registered first by
+ * bt_tbs_register_bearer() before it can be unregistered.
+ *
+ * Similarly, all TBS shall be unregistered before the GTBS can be unregistered with.
+ *
+ * @param bearer_index The index of the bearer to unregister.
+ *
+ * @retval 0 Success
+ * @retval -EINVAL @p bearer_index is invalid
+ * @retval -EALREADY The bearer identified by @p bearer_index is not registered
+ * @retval -EAGAIN The bearer identified by @p bearer_index is GTBS and there are TBS instances
+ *                 registered.
+ * @retval -ENOEXEC The service failed to be unregistered
+ */
+int bt_tbs_unregister_bearer(uint8_t bearer_index);
 
 /** @brief Prints all calls of all services to the debug log */
 void bt_tbs_dbg_print_calls(void);
@@ -680,6 +773,9 @@ struct bt_tbs_client_cb {
 	/** Bearer friendly name has been read */
 	bt_tbs_client_read_string_cb         friendly_name;
 #endif /* defined(CONFIG_BT_TBS_CLIENT_CALL_FRIENDLY_NAME) */
+
+	/** @internal Internally used field for list handling */
+	sys_snode_t _node;
 };
 
 /**
@@ -998,8 +1094,12 @@ int bt_tbs_client_read_optional_opcodes(struct bt_conn *conn,
  * @brief Register the callbacks for CCP.
  *
  * @param cbs Pointer to the callback structure.
+ *
+ * @retval 0 Success
+ * @retval -EINVAL @p cbs is NULL
+ * @retval -EEXIST @p cbs is already registered
  */
-void bt_tbs_client_register_cb(const struct bt_tbs_client_cb *cbs);
+int bt_tbs_client_register_cb(struct bt_tbs_client_cb *cbs);
 
 /**
  * @brief Look up Telephone Bearer Service instance by CCID

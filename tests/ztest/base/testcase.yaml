@@ -7,7 +7,6 @@ tests:
   testing.ztest.base.cpp:
     extra_args: CONF_FILE=prj_cpp.conf
     platform_allow:
-      - native_posix
       - native_sim
       - native_sim/native/64
     integration_platforms:

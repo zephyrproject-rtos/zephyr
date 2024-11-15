@@ -79,6 +79,7 @@ Simply change the board/target appropriately when building.
 
    If an MCU is booted without any image, it will automatically set itself to sleep.
 
+.. _nrf5340bsim_multi_mcu_build:
 
 Assembling both MCUs images into a single executable
 ****************************************************
@@ -96,7 +97,7 @@ you can provide that image to the Zephyr build of the second image using
 You can also use :ref:`System build (sysbuild) <sysbuild>` to build your dual MCU executable.
 The best way to understand how, may be to look into how this is done in one of the examples
 in the tree. For example, for :ref:`the nrf53_sync_rtc sample <nrf53_sync_rtc_sample_build_bsim>`,
-:zephyr_file:`samples/boards/nrf/nrf53_sync_rtc/sysbuild.cmake`.
+:zephyr_file:`samples/boards/nordic/nrf53_sync_rtc/sysbuild.cmake`.
 
 
 .. note::

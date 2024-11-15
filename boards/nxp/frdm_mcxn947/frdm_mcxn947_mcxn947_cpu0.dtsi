@@ -1,0 +1,208 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Common dts file to enable supported features for CPU 0.
+ * This file is included by both the default variant
+ * which is run from internal flash and the QSPI variant.
+ */
+/dts-v1/;
+
+#include <nxp/nxp_mcxn94x.dtsi>
+#include "frdm_mcxn947.dtsi"
+
+/ {
+	cpus {
+		/delete-node/ cpu@1;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash;
+		zephyr,flash-controller = &fmu;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,uart-mcumgr = &flexcomm4_lpuart4;
+		zephyr,console = &flexcomm4_lpuart4;
+		zephyr,shell-uart = &flexcomm4_lpuart4;
+		zephyr,canbus = &flexcan0;
+	};
+
+	aliases{
+		watchdog0 = &wwdt0;
+		pwm-0 = &flexpwm1_pwm0;
+		rtc = &rtc;
+	};
+};
+
+/*
+ * Default for this board is to allocate SRAM0-5 to cpu0 but the
+ * application can have an application specific device tree to
+ * allocate the SRAM0-7 differently.
+ *
+ * For example, SRAM0-6 could be allocated to cpu0 with only SRAM7
+ * for cpu1. This would require the value of sram0 to have a DT_SIZE_K
+ * of 384. You would have to make updates to cpu1 sram settings as well.
+ */
+&sram0 {
+	compatible = "mmio-sram";
+	reg = <0x20000000 DT_SIZE_K(320)>;
+};
+
+&gpio4 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&green_led {
+	status = "okay";
+};
+
+&red_led {
+	status = "okay";
+};
+
+&user_button_2 {
+	status = "okay";
+};
+
+&edma0 {
+	status = "okay";
+};
+
+&flexcomm1 {
+	status = "okay";
+};
+
+&flexcomm1_lpspi1 {
+	status = "okay";
+};
+
+&flexcomm2 {
+	status = "okay";
+};
+
+&flexcomm2_lpi2c2 {
+	status = "okay";
+};
+
+/*
+ *LPFLEXCOMM supports UART and I2C on the same instance, enable this for
+ * LFLEXCOMM2
+ */
+&flexcomm2_lpuart2 {
+	status = "okay";
+};
+
+&flexcomm4 {
+	status = "okay";
+};
+
+&flexcomm4_lpuart4 {
+	status = "okay";
+};
+
+&flexcomm7 {
+	status = "okay";
+};
+
+&flexcomm7_lpi2c7 {
+	status = "okay";
+};
+
+&flexspi {
+	status = "okay";
+};
+
+&w25q64jvssiq {
+	status = "okay";
+};
+
+&dac0 {
+	status = "okay";
+};
+
+&enet {
+	status = "okay";
+};
+
+&enet_mac {
+	status = "okay";
+};
+
+&enet_mdio {
+	status = "okay";
+};
+
+&wwdt0 {
+	status = "okay";
+};
+
+&flexpwm1_pwm0 {
+	status = "okay";
+};
+
+&flexcan0 {
+	status = "okay";
+};
+
+&ctimer0 {
+	status = "okay";
+};
+
+&usdhc0 {
+	status = "okay";
+	sdmmc {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
+		status = "okay";
+	};
+};
+
+&vref {
+	status = "okay";
+};
+
+&lpadc0 {
+	status = "okay";
+};
+
+zephyr_udc0: &usb1 {
+	status = "okay";
+};
+
+&lpcmp0 {
+	status = "okay";
+};
+
+&lptmr0 {
+	status = "okay";
+};
+
+&i3c1 {
+	status = "okay";
+};
+
+&flexio0 {
+	status = "okay";
+};
+
+&mrt0_channel0 {
+	status = "okay";
+};
+
+&rtc {
+	status = "okay";
+};

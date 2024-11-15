@@ -1,0 +1,46 @@
+/*
+ * Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/led/led.h>
+
+/ {
+	aliases {
+		led-strip = &led_strip;
+	};
+};
+
+i2s_led: &i2s0 {
+	status = "okay";
+
+	pinctrl-0 = <&i2s0_pinconf>;
+
+	dmas = <&dma 3>;
+	dma-names = "tx";
+
+	led_strip: ws2812 {
+		compatible = "worldsemi,ws2812-i2s";
+
+		i2s-dev = <&i2s_led>;
+		chain-length = <46>;
+		color-mapping = <LED_COLOR_ID_GREEN
+				 LED_COLOR_ID_RED
+				 LED_COLOR_ID_BLUE>;
+		reset-delay = <500>;
+	};
+};
+
+&dma {
+	status = "okay";
+};
+
+&pinctrl {
+	i2s0_pinconf: i2s0_pinconf {
+		group1 {
+			pinmux = <I2S0_O_SD_GPIO39>;
+			output-enable;
+		};
+	};
+};

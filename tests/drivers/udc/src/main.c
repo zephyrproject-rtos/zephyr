@@ -6,6 +6,7 @@
 
 #include <zephyr/ztest.h>
 #include <zephyr/drivers/usb/udc.h>
+#include <zephyr/sys/byteorder.h>
 #include <zephyr/usb/usb_ch9.h>
 
 #include <zephyr/logging/log.h>
@@ -24,6 +25,7 @@ static K_KERNEL_STACK_DEFINE(test_udc_stack, 512);
 static struct k_thread test_udc_thread_data;
 static K_SEM_DEFINE(ep_queue_sem, 0, 1);
 static uint8_t last_used_ep;
+static uint8_t test_event_ctx;
 
 static int test_udc_event_handler(const struct device *dev,
 				  const struct udc_event *const event)
@@ -56,6 +58,9 @@ static void test_udc_thread(void *p1, void *p2, void *p3)
 
 	while (true) {
 		k_msgq_get(&test_msgq, &event, K_FOREVER);
+
+		zassert_equal(udc_get_event_ctx(event.dev), &test_event_ctx,
+			      "Wrong pointer to higher layer context");
 
 		switch (event.type) {
 		case UDC_EVT_VBUS_REMOVED:
@@ -91,7 +96,7 @@ static void test_udc_thread(void *p1, void *p2, void *p3)
 static void test_udc_ep_try_config(const struct device *dev,
 				   struct usb_ep_descriptor *ed)
 {
-	uint16_t mps = ed->wMaxPacketSize;
+	uint16_t mps = sys_le16_to_cpu(ed->wMaxPacketSize);
 	int err;
 
 	err = udc_ep_try_config(dev, ed->bEndpointAddress,
@@ -125,13 +130,17 @@ static void test_udc_ep_enable(const struct device *dev,
 	int err1, err2, err3, err4;
 
 	err1 = udc_ep_enable(dev, ed->bEndpointAddress, ed->bmAttributes,
-			     ed->wMaxPacketSize, ed->bInterval);
+			     sys_le16_to_cpu(ed->wMaxPacketSize),
+			     ed->bInterval);
 	err2 = udc_ep_enable(dev, ed->bEndpointAddress, ed->bmAttributes,
-			     ed->wMaxPacketSize, ed->bInterval);
+			     sys_le16_to_cpu(ed->wMaxPacketSize),
+			     ed->bInterval);
 	err3 = udc_ep_enable(dev, FALSE_EP_ADDR, ed->bmAttributes,
-			     ed->wMaxPacketSize, ed->bInterval);
+			     sys_le16_to_cpu(ed->wMaxPacketSize),
+			     ed->bInterval);
 	err4 = udc_ep_enable(dev, ctrl_ep, ed->bmAttributes,
-			     ed->wMaxPacketSize, ed->bInterval);
+			     sys_le16_to_cpu(ed->wMaxPacketSize),
+			     ed->bInterval);
 
 	if (!udc_is_initialized(dev) && !udc_is_enabled(dev)) {
 		zassert_equal(err1, -EPERM, "Not failed to enable endpoint");
@@ -188,7 +197,7 @@ static struct net_buf *test_udc_ep_buf_alloc(const struct device *dev,
 	struct net_buf *buf;
 
 	buf = udc_ep_buf_alloc(dev, ed->bEndpointAddress,
-			       ed->wMaxPacketSize);
+			       USB_MPS_TO_TPL(sys_le16_to_cpu(ed->wMaxPacketSize)));
 
 	zassert_not_null(buf, "Failed to allocate request");
 
@@ -322,13 +331,14 @@ static void test_udc_ep_api(const struct device *dev,
 
 	for (int i = 0; i < num_of_iterations; i++) {
 		err = udc_ep_enable(dev, ed->bEndpointAddress, ed->bmAttributes,
-				     ed->wMaxPacketSize, ed->bInterval);
+				    sys_le16_to_cpu(ed->wMaxPacketSize),
+				    ed->bInterval);
 		zassert_ok(err, "Failed to enable endpoint");
 
 		/* It needs a little reserve for memory management overhead. */
 		for (int n = 0; n < (CONFIG_UDC_BUF_COUNT - 4); n++) {
 			buf = udc_ep_buf_alloc(dev, ed->bEndpointAddress,
-					       ed->wMaxPacketSize);
+				USB_MPS_TO_TPL(sys_le16_to_cpu(ed->wMaxPacketSize)));
 			zassert_not_null(buf,
 					 "Failed to allocate request (%d) for 0x%02x",
 					 n, ed->bEndpointAddress);
@@ -358,7 +368,7 @@ static void test_udc_ep_mps(uint8_t type)
 		.bDescriptorType = USB_DESC_ENDPOINT,
 		.bEndpointAddress = 0x01,
 		.bmAttributes = type,
-		.wMaxPacketSize = 0,
+		.wMaxPacketSize = sys_cpu_to_le16(0),
 		.bInterval = 0,
 	};
 	const struct device *dev;
@@ -368,7 +378,7 @@ static void test_udc_ep_mps(uint8_t type)
 	dev = DEVICE_DT_GET(DT_NODELABEL(zephyr_udc0));
 	zassert_true(device_is_ready(dev), "UDC device not ready");
 
-	err = udc_init(dev, test_udc_event_handler);
+	err = udc_init(dev, test_udc_event_handler, &test_event_ctx);
 	zassert_ok(err, "Failed to initialize UDC driver");
 
 	err = udc_enable(dev);
@@ -395,7 +405,7 @@ static void test_udc_ep_mps(uint8_t type)
 			continue;
 		}
 
-		ed.wMaxPacketSize = mps[i];
+		ed.wMaxPacketSize = sys_cpu_to_le16(mps[i]);
 		test_udc_ep_api(dev, &ed);
 
 		ed.bEndpointAddress |= USB_EP_DIR_IN;
@@ -436,7 +446,7 @@ static struct usb_ep_descriptor ed_ctrl_out = {
 	.bDescriptorType = USB_DESC_ENDPOINT,
 	.bEndpointAddress = USB_CONTROL_EP_OUT,
 	.bmAttributes = USB_EP_TYPE_CONTROL,
-	.wMaxPacketSize = 64,
+	.wMaxPacketSize = sys_cpu_to_le16(64),
 	.bInterval = 0,
 };
 
@@ -445,7 +455,7 @@ static struct usb_ep_descriptor ed_ctrl_in = {
 	.bDescriptorType = USB_DESC_ENDPOINT,
 	.bEndpointAddress = USB_CONTROL_EP_IN,
 	.bmAttributes = USB_EP_TYPE_CONTROL,
-	.wMaxPacketSize = 64,
+	.wMaxPacketSize = sys_cpu_to_le16(64),
 	.bInterval = 0,
 };
 
@@ -454,7 +464,7 @@ static struct usb_ep_descriptor ed_bulk_out = {
 	.bDescriptorType = USB_DESC_ENDPOINT,
 	.bEndpointAddress = 0x01,
 	.bmAttributes = USB_EP_TYPE_BULK,
-	.wMaxPacketSize = 64,
+	.wMaxPacketSize = sys_cpu_to_le16(64),
 	.bInterval = 0,
 };
 
@@ -463,7 +473,7 @@ static struct usb_ep_descriptor ed_bulk_in = {
 	.bDescriptorType = USB_DESC_ENDPOINT,
 	.bEndpointAddress = 0x81,
 	.bmAttributes = USB_EP_TYPE_BULK,
-	.wMaxPacketSize = 64,
+	.wMaxPacketSize = sys_cpu_to_le16(64),
 	.bInterval = 0,
 };
 
@@ -476,7 +486,7 @@ ZTEST(udc_driver_test, test_udc_not_initialized)
 	dev = DEVICE_DT_GET(DT_NODELABEL(zephyr_udc0));
 	zassert_true(device_is_ready(dev), "UDC device not ready");
 
-	err = udc_init(dev, NULL);
+	err = udc_init(dev, NULL, NULL);
 	zassert_equal(err, -EINVAL, "Not failed to initialize UDC");
 
 	err = udc_shutdown(dev);
@@ -515,7 +525,7 @@ ZTEST(udc_driver_test, test_udc_initialized)
 	dev = DEVICE_DT_GET(DT_NODELABEL(zephyr_udc0));
 	zassert_true(device_is_ready(dev), "UDC device not ready");
 
-	err = udc_init(dev, test_udc_event_handler);
+	err = udc_init(dev, test_udc_event_handler, &test_event_ctx);
 	zassert_ok(err, "Failed to initialize UDC driver");
 
 	test_udc_set_address(dev, 0);
@@ -548,7 +558,7 @@ ZTEST(udc_driver_test, test_udc_enabled)
 	dev = DEVICE_DT_GET(DT_NODELABEL(zephyr_udc0));
 	zassert_true(device_is_ready(dev), "UDC device not ready");
 
-	err = udc_init(dev, test_udc_event_handler);
+	err = udc_init(dev, test_udc_event_handler, &test_event_ctx);
 	zassert_ok(err, "Failed to initialize UDC driver");
 
 	err = udc_enable(dev);

@@ -23,4 +23,4 @@ void test_entry(void)
 	LOG_INF("hello world");
 	LOG_INF("A number is %" PRIu32, number);
 }
-LL_EXTENSION_SYMBOL(test_entry);
+EXPORT_SYMBOL(test_entry);

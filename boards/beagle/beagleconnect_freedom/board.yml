@@ -1,5 +1,6 @@
 board:
   name: beagleconnect_freedom
+  full_name: BeagleConnect Freedom
   vendor: beagle
   socs:
   - name: cc1352p7

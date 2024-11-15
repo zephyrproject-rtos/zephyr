@@ -1,10 +1,5 @@
-.. _fuel_gauge-samples:
+.. zephyr:code-sample-category:: fuel_gauge
+   :name: Fuel Gauge
+   :show-listing:
 
-Fuel Gauge Samples
-##################
-
-.. toctree::
-   :maxdepth: 1
-   :glob:
-
-   **/*
+   Samples that show how to interact with :ref:`fuel_gauge_api`.

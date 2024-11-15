@@ -7,7 +7,7 @@
 
 #include <renesas/ra/ra8/r7fa8m1ahecbd.dtsi>
 #include <dt-bindings/gpio/gpio.h>
-
+#include <zephyr/dt-bindings/adc/adc.h>
 #include "ek_ra8m1-pinctrl.dtsi"
 
 / {
@@ -16,9 +16,12 @@
 
 	chosen {
 		zephyr,sram = &sram0;
+		zephyr,flash-controller = &flash1;
 		zephyr,flash = &flash0;
 		zephyr,console = &uart9;
 		zephyr,shell-uart = &uart9;
+		zephyr,entropy = &trng;
+		zephyr,canbus = &canfd0;
 	};
 
 	leds {
@@ -63,6 +66,13 @@
 	aliases {
 		led0 = &led1;
 	};
+
+	transceiver0: can-phy0 {
+		compatible = "nxp,tja1040t", "can-transceiver-gpio";
+		standby-gpios = <&ioport2 7 GPIO_ACTIVE_HIGH>;
+		max-bitrate = <5000000>;
+		#phy-cells = <0>;
+	};
 };
 
 &xtal {
@@ -77,21 +87,30 @@
 };
 
 &pll {
-	source = <RA_PLL_SOURCE_MAIN_OSC>;
-	div = <RA_PLL_DIV_2>;
-	mul = <96 0>;
-	divp = <RA_PLL_DIV_2>;
-	freqp = <DT_FREQ_M(480)>;
-	divq = <RA_PLL_DIV_2>;
-	freqq = <DT_FREQ_M(480)>;
-	divr = <RA_PLL_DIV_2>;
-	freqr = <DT_FREQ_M(480)>;
+	status = "okay";
+	pllp {
+		status = "okay";
+	};
+
+	pllq {
+		status = "okay";
+	};
+
+	pllr {
+		status = "okay";
+	};
+};
+
+
+&sciclk {
+	clocks = <&pllp>;
+	div = <4>;
 	status = "okay";
 };
 
-&sciclk {
-	clk_src = <RA_CLOCK_SOURCE_PLL1P>;
-	clk_div = <RA_SCI_CLOCK_DIV_4>;
+&canfdclk {
+	clocks = <&pll>;
+	div = <5>;
 	status = "okay";
 };
 
@@ -100,6 +119,10 @@
 };
 
 &ioport1 {
+	status = "okay";
+};
+
+&ioport2 {
 	status = "okay";
 };
 
@@ -144,3 +167,57 @@
 };
 
 mikrobus_serial: &uart3 {};
+
+&iic1 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <DT_FREQ_M(1)>;
+	pinctrl-0 = <&iic1_default>;
+	pinctrl-names = "default";
+};
+
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+};
+
+&trng {
+	status = "okay";
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_default>;
+};
+
+&pwm7 {
+	pinctrl-0 = <&pwm7_default>;
+	interrupts = <40 1>, <41 1>;
+	interrupt-names = "gtioca", "overflow";
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&flash1 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		storage_partition: partition@0 {
+			label = "storage";
+			reg = <0X0 DT_SIZE_K(12)>;
+		};
+	};
+};
+
+&canfd_global {
+	status = "okay";
+	canfd0 {
+		pinctrl-0 = <&canfd0_default>;
+		pinctrl-names = "default";
+		phys = <&transceiver0>;
+		rx-max-filters = <16>;
+		status = "okay";
+	};
+};

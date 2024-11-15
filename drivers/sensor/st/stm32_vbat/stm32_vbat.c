@@ -125,7 +125,7 @@ static int stm32_vbat_init(const struct device *dev)
 }
 
 #define ASSERT_VBAT_ADC_ENABLED(inst)	\
-	BUILD_ASSERT(DT_NODE_HAS_STATUS(DT_INST_IO_CHANNELS_CTLR(inst), okay),			\
+	BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(DT_INST_IO_CHANNELS_CTLR(inst)),			\
 		"ADC instance '" DT_NODE_FULL_NAME(DT_INST_IO_CHANNELS_CTLR(inst)) "' needed "	\
 		"by Vbat sensor '" DT_NODE_FULL_NAME(DT_DRV_INST(inst)) "' is not enabled")
 

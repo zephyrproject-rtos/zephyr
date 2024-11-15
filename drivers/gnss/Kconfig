@@ -82,7 +82,7 @@ source "subsys/logging/Kconfig.template.log_config"
 rsource "Kconfig.emul"
 rsource "Kconfig.generic"
 rsource "Kconfig.quectel_lcx6g"
-rsource "Kconfig.u_blox_m10"
+rsource "Kconfig.u_blox_m8"
 rsource "Kconfig.luatos_air530z"
 
 endif

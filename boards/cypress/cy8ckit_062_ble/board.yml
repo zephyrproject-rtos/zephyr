@@ -1,5 +1,6 @@
 board:
   name: cy8ckit_062_ble
+  full_name: PSOC 63 BLE Pioneer Kit
   vendor: cypress
   revision:
     format: "major.minor.patch"

@@ -55,7 +55,7 @@ const struct device *get_adc_device(void)
 	return adc_channels[0].dev;
 }
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(test_counter), okay) && \
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(test_counter)) && \
 	defined(CONFIG_COUNTER)
 static void init_counter(void)
 {
@@ -90,7 +90,7 @@ static void init_adc(void)
 		m_sample_buffer[i] = INVALID_ADC_VALUE;
 	}
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(test_counter), okay) && \
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(test_counter)) && \
 	defined(CONFIG_COUNTER)
 	init_counter();
 #endif

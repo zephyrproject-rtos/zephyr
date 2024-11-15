@@ -1,6 +1,0 @@
-sample:
-  name: STM32 microcontroller clock output (MCO) example
-tests:
-  sample.board.stm32.mco:
-    platform_allow: nucleo_u5a5zj_q
-    tags: board

@@ -17,9 +17,8 @@
 
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/gpio/gpio_utils.h>
+#include <zephyr/irq.h>
 
-#include <cyhal_gpio.h>
-#include <cyhal_hwmgr.h>
 #include <cy_gpio.h>
 
 #include <zephyr/logging/log.h>
@@ -29,7 +28,6 @@ LOG_MODULE_REGISTER(gpio_cat1, CONFIG_GPIO_LOG_LEVEL);
 struct gpio_cat1_config {
 	/* gpio_driver_config needs to be first */
 	struct gpio_driver_config common;
-	cyhal_gpio_callback_data_t *cb_data_ptr;
 	GPIO_PRT_Type              *regs;
 	uint8_t ngpios;
 	uint8_t intr_priority;
@@ -47,96 +45,55 @@ struct gpio_cat1_data {
 	sys_slist_t callbacks;
 };
 
-/* Get port number by calculation difference from current port address minus
- * GPIO base address divided by GPIO structure size.
- */
-#define GET_PORT_NUM(dev)				     \
-	(((uint32_t) ((const struct gpio_cat1_config *const) \
-		      (dev)->config)->regs - CY_GPIO_BASE) / GPIO_PRT_SECTION_SIZE)
-
-#define GET_DEV_OBJ_FROM_LIST(i, _) \
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpio_prt##i))
-
-/* Map port number to device object */
-static const struct device *const port_dev_obj[IOSS_GPIO_GPIO_PORT_NR] = {
-	/* the integer used as the first variable in listify is equivalent to
-	 * IOSS_GPIO_GPIO_PORT_NR for the respective categories, but using
-	 * the macro in LISTIFY causes build failures
-	 */
-	#if CONFIG_SOC_FAMILY_INFINEON_CAT1A
-		LISTIFY(15, GET_DEV_OBJ_FROM_LIST, (,))
-	#elif CONFIG_SOC_FAMILY_INFINEON_CAT1B
-		LISTIFY(6, GET_DEV_OBJ_FROM_LIST, (,))
-	#endif
-};
-
-static int gpio_cat1_configure(const struct device *dev,
-			       gpio_pin_t pin, gpio_flags_t flags)
+static int gpio_cat1_configure(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
 {
-	cy_rslt_t status;
-	cyhal_gpio_t gpio_pin = CYHAL_GET_GPIO(GET_PORT_NUM(dev), pin);
-	cyhal_gpio_drive_mode_t gpio_mode = CYHAL_GPIO_DRIVE_NONE;
-	cyhal_gpio_direction_t gpio_dir = CYHAL_GPIO_DIR_INPUT;
+	uint32_t drive_mode = CY_GPIO_DM_HIGHZ;
 	bool pin_val = false;
+	const struct gpio_cat1_config *const cfg = dev->config;
+	GPIO_PRT_Type *const base = cfg->regs;
 
-	switch (flags & (GPIO_INPUT | GPIO_OUTPUT)) {
+	switch (flags & (GPIO_INPUT | GPIO_OUTPUT | GPIO_DISCONNECTED)) {
 	case GPIO_INPUT:
-		gpio_dir = CYHAL_GPIO_DIR_INPUT;
-
 		if ((flags & GPIO_PULL_UP) && (flags & GPIO_PULL_DOWN)) {
-			gpio_mode = CYHAL_GPIO_DRIVE_PULLUPDOWN;
+			drive_mode = CY_GPIO_DM_PULLUP_DOWN;
 		} else if (flags & GPIO_PULL_UP) {
-			gpio_mode = CYHAL_GPIO_DRIVE_PULLUP;
+			drive_mode = CY_GPIO_DM_PULLUP;
 			pin_val = true;
 		} else if (flags & GPIO_PULL_DOWN) {
-			gpio_mode = CYHAL_GPIO_DRIVE_PULLDOWN;
+			drive_mode = CY_GPIO_DM_PULLDOWN;
 		} else {
-			gpio_mode = CYHAL_GPIO_DRIVE_NONE;
+			drive_mode = CY_GPIO_DM_HIGHZ;
 		}
 		break;
 
 	case GPIO_OUTPUT:
-		gpio_dir = CYHAL_GPIO_DIR_OUTPUT;
 		if (flags & GPIO_SINGLE_ENDED) {
 			if (flags & GPIO_LINE_OPEN_DRAIN) {
-				gpio_mode = CYHAL_GPIO_DRIVE_OPENDRAINDRIVESLOW;
+				drive_mode = CY_GPIO_DM_OD_DRIVESLOW;
 				pin_val = true;
 			} else {
-				gpio_mode = CYHAL_GPIO_DRIVE_OPENDRAINDRIVESHIGH;
+				drive_mode = CY_GPIO_DM_OD_DRIVESHIGH;
 				pin_val = false;
 			}
 		} else {
-			gpio_mode = CYHAL_GPIO_DRIVE_STRONG;
+			drive_mode = CY_GPIO_DM_STRONG;
 			pin_val = (flags & GPIO_OUTPUT_INIT_HIGH) ? true : false;
 		}
 		break;
 
 	case GPIO_DISCONNECTED:
-		/* Handle this after calling cyhal_gpio_init(), otherwise it will cause an assert
-		 * from HAL for freeing an uninitialized pin
-		 */
+		Cy_GPIO_SetInterruptMask(base, pin, 0);
+		drive_mode = CY_GPIO_DM_ANALOG;
+		pin_val = false;
 		break;
 
 	default:
 		return -ENOTSUP;
 	}
 
-	status = cyhal_gpio_init(gpio_pin, gpio_dir, gpio_mode, pin_val);
+	Cy_GPIO_Pin_FastInit(base, pin, drive_mode, pin_val, HSIOM_SEL_GPIO);
 
-	/* If the gpio requested resource is already in use, try to free and
-	 * initialize again
-	 */
-	if (status == CYHAL_HWMGR_RSLT_ERR_INUSE) {
-		cyhal_gpio_free(gpio_pin);
-		status = cyhal_gpio_init(gpio_pin, gpio_dir, gpio_mode, pin_val);
-	}
-
-	if (flags & GPIO_DISCONNECTED) {
-		cyhal_gpio_free(gpio_pin);
-	}
-
-	return (status == CY_RSLT_SUCCESS) ? 0 : -EIO;
-
+	return 0;
 }
 
 static int gpio_cat1_port_get_raw(const struct device *dev,
@@ -202,27 +159,30 @@ static uint32_t gpio_cat1_get_pending_int(const struct device *dev)
 	return GPIO_PRT_INTR_MASKED(base);
 }
 
-static void gpio_event_callback(void *callback_arg, cyhal_gpio_event_t event)
+static void gpio_isr_handler(const struct device *dev)
 {
-	ARG_UNUSED(event);
-	uint32_t port_num = CYHAL_GET_PORT((uint32_t) callback_arg);
-	uint32_t pin_num = CYHAL_GET_PIN((uint32_t) callback_arg);
-	const struct device *dev = port_dev_obj[port_num];
+	const struct gpio_cat1_config *const cfg = dev->config;
+	GPIO_PRT_Type *const base = cfg->regs;
+	uint32_t pins = GPIO_PRT_INTR_MASKED(base);
 
-	/* Goes through and fires callback from a callback list */
-	if (dev) {
-		gpio_fire_callbacks(&((struct gpio_cat1_data *const)(dev)->data)->callbacks,
-				    dev, 1 << pin_num);
+	for (uint8_t i = 0; i < CY_GPIO_PINS_MAX; i++) {
+		Cy_GPIO_ClearInterrupt(base, i);
 	}
-	/* NOTE: cyhal gpio handles cleaning of interrupts */
+
+	if (dev) {
+		gpio_fire_callbacks(&((struct gpio_cat1_data *const)(dev)->data)->callbacks, dev,
+				    pins);
+	}
+
+
 }
 
 static int gpio_cat1_pin_interrupt_configure(const struct device *dev, gpio_pin_t pin,
 					     enum gpio_int_mode mode, enum gpio_int_trig trig)
 {
+	uint32_t trig_pdl = CY_GPIO_INTR_DISABLE;
 	const struct gpio_cat1_config *const cfg = dev->config;
-	cyhal_gpio_callback_data_t *cb_data_ptr = cfg->cb_data_ptr;
-	cyhal_gpio_event_t event = CYHAL_GPIO_IRQ_NONE;
+	GPIO_PRT_Type *const base = cfg->regs;
 
 	/* Level interrupts (GPIO_INT_MODE_LEVEL) is not supported */
 	if (mode == GPIO_INT_MODE_LEVEL) {
@@ -231,51 +191,26 @@ static int gpio_cat1_pin_interrupt_configure(const struct device *dev, gpio_pin_
 
 	switch (trig) {
 	case GPIO_INT_TRIG_LOW:
-		event = CYHAL_GPIO_IRQ_FALL;
+		trig_pdl = CY_GPIO_INTR_FALLING;
 		break;
 
 	case GPIO_INT_TRIG_HIGH:
-		event = CYHAL_GPIO_IRQ_RISE;
+		trig_pdl = CY_GPIO_INTR_RISING;
 		break;
 
 	case GPIO_INT_TRIG_BOTH:
-		/* Trigger detection on pin rising or falling edge (GPIO_INT_TRIG_BOTH)
-		 * is not supported. Refer to SWINTEGRATION-696
-		 */
-		/* event = CYHAL_GPIO_IRQ_BOTH; */
-		return -ENOTSUP;
+		trig_pdl = CY_GPIO_INTR_BOTH;
+		break;
 
 	default:
 		return -ENOTSUP;
 	}
 
-	cyhal_gpio_t gpio_pin = CYHAL_GET_GPIO(GET_PORT_NUM(dev), pin);
+	Cy_GPIO_SetInterruptEdge(base, pin, trig_pdl);
+	Cy_GPIO_SetInterruptMask(base, pin,
+				 (uint32_t)(mode == GPIO_INT_MODE_DISABLED) ? false : true);
 
-	/* Find index of free callback data structure */
-	uint32_t index;
-
-	for (index = 0u; index < cfg->ngpios; index++) {
-		if ((cb_data_ptr[index].callback == NULL) || (cb_data_ptr[index].pin == gpio_pin)) {
-			break;
-		}
-	}
-
-	if (index != cfg->ngpios) {
-		/* Store callback data: gpio callback and gpio device driver handle */
-		cb_data_ptr[index].callback = &gpio_event_callback;
-		cb_data_ptr[index].callback_arg = (void *)(gpio_pin);
-
-		/* Register/clear a callback handler for pin events */
-		cyhal_gpio_register_callback(gpio_pin, (mode == GPIO_INT_MODE_DISABLED) ?
-					     NULL : &cb_data_ptr[index]);
-
-		/* Enable/disable the specified GPIO event */
-		cyhal_gpio_enable_event(gpio_pin, event, cfg->intr_priority,
-					(mode == GPIO_INT_MODE_DISABLED) ? false : true);
-		return 0;
-	} else {
-		return -EINVAL;
-	}
+	return 0;
 }
 
 static int gpio_cat1_manage_callback(const struct device *port,
@@ -298,26 +233,34 @@ static const struct gpio_driver_api gpio_cat1_api = {
 	.get_pending_int = gpio_cat1_get_pending_int,
 };
 
-#define GPIO_CAT1_INIT(n)							     \
-										     \
-	cyhal_gpio_callback_data_t						     \
-	_cat1_gpio##n##_cb_data[DT_INST_PROP(n, ngpios)];			     \
-										     \
-	static const struct gpio_cat1_config _cat1_gpio##n##_config = {		     \
-		.common = {							     \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n), \
-			},							     \
-		.intr_priority = DT_INST_IRQ_BY_IDX(n, 0, priority),		     \
-		.cb_data_ptr = _cat1_gpio##n##_cb_data,				     \
-		.ngpios = DT_INST_PROP(n, ngpios),				     \
-		.regs = (GPIO_PRT_Type *)DT_INST_REG_ADDR(n),			     \
-	};									     \
-										     \
-	static struct gpio_cat1_data _cat1_gpio##n##_data;			     \
-										     \
-	DEVICE_DT_INST_DEFINE(n, NULL, NULL, &_cat1_gpio##n##_data,		     \
-			      &_cat1_gpio##n##_config, POST_KERNEL,		     \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		     \
-			      &gpio_cat1_api);
+#define GPIO_CAT1_INIT_FUNC(n)                                                                     \
+	static int gpio_cat1##n##_init(const struct device *dev)                                   \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), gpio_isr_handler,           \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+		irq_enable(DT_INST_IRQN(n));                                                       \
+                                                                                                   \
+		return 0;                                                                          \
+	}
+
+#define GPIO_CAT1_INIT(n)                                                                          \
+                                                                                                   \
+	static const struct gpio_cat1_config _cat1_gpio##n##_config = {                            \
+		.common =                                                                          \
+			{                                                                          \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
+			},                                                                         \
+		.intr_priority = DT_INST_IRQ_BY_IDX(n, 0, priority),                               \
+		.ngpios = DT_INST_PROP(n, ngpios),                                                 \
+		.regs = (GPIO_PRT_Type *)DT_INST_REG_ADDR(n),                                      \
+	};                                                                                         \
+                                                                                                   \
+	static struct gpio_cat1_data _cat1_gpio##n##_data;                                         \
+                                                                                                   \
+	GPIO_CAT1_INIT_FUNC(n)                                                                     \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, gpio_cat1##n##_init, NULL, &_cat1_gpio##n##_data,                 \
+			      &_cat1_gpio##n##_config, POST_KERNEL,                                \
+			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &gpio_cat1_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_CAT1_INIT)

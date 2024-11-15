@@ -1,5 +1,6 @@
 board:
   name: qemu_cortex_m3
+  full_name: QEMU Emulation for ARM Cortex-M3
   vendor: qemu
   socs:
   - name: ti_lm3s6965

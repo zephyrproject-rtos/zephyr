@@ -159,8 +159,9 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 
 #ifdef CONFIG_ADSP_POWER_DOWN_HPSRAM
 			/* turn off all HPSRAM banks - get a full bitmap */
-			for (int i = 0; i < HPSRAM_SEGMENTS; i++)
+			for (int i = 0; i < HPSRAM_SEGMENTS; i++) {
 				hpsram_mask[i] = HPSRAM_MEMMASK(i);
+			}
 #endif /* CONFIG_ADSP_POWER_DOWN_HPSRAM */
 			/* do power down - this function won't return */
 			power_down_cavs(true, uncache_to_cache(&hpsram_mask[0]));
@@ -194,7 +195,7 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 }
 #endif /* CONFIG_PM */
 
-#ifdef CONFIG_ARCH_CPU_IDLE_CUSTOM
+#ifdef CONFIG_ARCH_HAS_CUSTOM_CPU_IDLE
 /* xt-clang removes any NOPs more than 8. So we need to set
  * no optimization to avoid those NOPs from being removed.
  *

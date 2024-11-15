@@ -1,19 +1,12 @@
-.. _hsdk4xd:
-
-DesignWare(R) ARC(R) HS4x/HS4xD Development Kit
-###############################################
+.. zephyr:board:: hsdk4xd
 
 Overview
 ********
 
-The ARC HS4x/HS4xD Development Kit is the next revision of :ref:`Synopsys HSDK board <hsdk>`.
+The ARC HS4x/HS4xD Development Kit is the next revision of :zephyr:board:`Synopsys HSDK board <hsdk>`.
 It includes a multicore ARC HS4xD-based chip that integrates a wide range of interfaces
 including Ethernet, HDMI, WiFi, Bluetooth, USB, SDIO, I2C, SPI, UART, I2S, ADC, PWM and GPIO,
 as well as a Think Silicon GPU.
-
-.. image:: hsdk4xd.jpg
-   :align: center
-   :alt: DesignWare(R) ARC(R) HS4x/HS4xD Development Kit (synopsys.com)
 
 For details about the board, see: `ARC HS4x/HS4xD Development Kit
 (HSDK4xD) <https://www.synopsys.com/dw/ipdir.php?ds=arc-hs-development-kit>`__
@@ -384,9 +377,8 @@ Set up Zephyr Software
 Building Sample Applications
 ==============================
 
-You can try many of the :ref:`sample applications and demos
-<samples-and-demos>`.  We'll use :ref:`hello_world`, found in
-:zephyr_file:`samples/hello_world` as an example.
+You can try many of the :zephyr:code-sample-category:`sample applications and demos <samples>`.
+We'll use :zephyr:code-sample:`hello_world`, found in :zephyr_file:`samples/hello_world` as an example.
 
 Configuring
 -----------
@@ -407,7 +399,7 @@ Building
 
 You can build an application in the usual way.  Refer to
 :ref:`build_an_application` for more details. Here is an example for
-:ref:`hello_world`.
+:zephyr:code-sample:`hello_world`.
 
 .. zephyr-app-commands::
    :board: hsdk4xd
@@ -547,6 +539,8 @@ The following list indicates the state of HS4x/HS4xD Development Kit peripherals
 
 References
 **********
+
+.. target-notes::
 
 .. _embARC website: https://www.embarc.org
 

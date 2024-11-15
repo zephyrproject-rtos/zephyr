@@ -1,0 +1,3 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+#include "intel_adsp_ace15_mtpm.dts"

@@ -3,6 +3,9 @@
 
 if BOARD_NATIVE_POSIX
 
+config BOARD_DEPRECATED_RELEASE
+	default "v4.2.0"
+
 config BUILD_OUTPUT_BIN
 	default n
 

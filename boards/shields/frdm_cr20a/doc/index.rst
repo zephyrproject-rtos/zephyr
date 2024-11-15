@@ -10,7 +10,7 @@ The Freedom development board platform supports the MCR20A 2.4GHZ wireless
 transceiver. The FRDM-CR20A evaluation board is a small, low-power,
 cost-effective reference design for the MCR20A transceiver in a shield form
 factor, compatible with existing Freedom development platforms, such as
-:ref:`frdm_k64f`.
+:zephyr:board:`frdm_k64f`.
 
 .. image:: frdm_cr20a.jpg
    :align: center
@@ -55,7 +55,7 @@ Programming
 Set ``--shield frdm_cr20a`` when you invoke ``west build``. For example:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/net/wpanusb
+   :zephyr-app: samples/net/wpan_serial
    :board: frdm_k64f
    :shield: frdm_cr20a
    :goals: build

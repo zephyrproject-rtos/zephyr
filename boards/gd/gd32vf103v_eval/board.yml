@@ -1,5 +1,6 @@
 board:
   name: gd32vf103v_eval
+  full_name: GD32VF103V-EVAL
   vendor: gd
   socs:
     - name: gd32vf103

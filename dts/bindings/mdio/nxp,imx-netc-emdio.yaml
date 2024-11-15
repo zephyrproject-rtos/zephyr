@@ -1,0 +1,21 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP i.MX NETC External MDIO controller
+
+compatible: "nxp,imx-netc-emdio"
+
+include: [mdio-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true

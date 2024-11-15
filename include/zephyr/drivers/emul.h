@@ -114,7 +114,7 @@ struct emul {
  * the bus its on. Intended for use in other internal macros when declaring {bus}_emul
  * structs in peripheral emulators.
  */
-#define Z_EMUL_REG_BUS_IDENTIFIER(_dev_node_id) (_CONCAT(_CONCAT(__emulreg_, _dev_node_id), _bus))
+#define Z_EMUL_REG_BUS_IDENTIFIER(_dev_node_id) _CONCAT(_CONCAT(__emulreg_, _dev_node_id), _bus)
 
 /* Conditionally places text based on what bus _dev_node_id is on. */
 #define Z_EMUL_BUS(_dev_node_id, _i2c, _espi, _spi, _mspi, _uart, _none)                           \
@@ -195,7 +195,7 @@ struct emul {
  * @return a @ref emul reference for the node identifier, which may be `NULL`.
  */
 #define EMUL_DT_GET_OR_NULL(node_id)                                                               \
-	COND_CODE_1(DT_NODE_HAS_STATUS(node_id, okay), (EMUL_DT_GET(node_id)), (NULL))
+	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(node_id), (EMUL_DT_GET(node_id)), (NULL))
 
 /**
  * @brief Set up a list of emulators

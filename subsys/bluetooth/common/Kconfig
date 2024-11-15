@@ -100,10 +100,11 @@ config BT_BUF_ACL_RX_COUNT
 
 config BT_BUF_EVT_RX_SIZE
 	int "Maximum supported HCI Event buffer length"
-	default $(UINT8_MAX) if (BT_EXT_ADV && BT_OBSERVER) || BT_PER_ADV_SYNC || BT_DF_CONNECTION_CTE_RX || BT_CLASSIC
+	default $(UINT8_MAX) if (BT_EXT_ADV && BT_OBSERVER) || BT_PER_ADV_SYNC || BT_DF_CONNECTION_CTE_RX || BT_CLASSIC || BT_CHANNEL_SOUNDING
 	# LE Read Supported Commands command complete event.
 	default 68
 	range 68 $(UINT8_MAX)
+	range 78 $(UINT8_MAX) if BT_CHANNEL_SOUNDING
 	help
 	  Maximum supported HCI event buffer size. This value does not include
 	  the HCI Event header.
@@ -208,7 +209,7 @@ config BT_HCI_VS_FATAL_ERROR
 config BT_HCI_VS_EXT_DETECT
 	bool "Use heuristics to guess HCI vendor extensions support in advance"
 	depends on BT_HCI_VS && !BT_CTLR
-	default y if BOARD_QEMU_X86 || BOARD_QEMU_CORTEX_M3 || BOARD_NATIVE_POSIX
+	default y if BOARD_QEMU_X86 || BOARD_QEMU_CORTEX_M3 || BOARD_NATIVE_POSIX || BOARD_NATIVE_SIM
 	help
 	  Use some heuristics to try to guess in advance whether the controller
 	  supports the HCI vendor extensions in advance, in order to prevent

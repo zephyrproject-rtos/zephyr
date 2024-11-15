@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define AUX_OFFSET_IS_VALID(_offset_us, _win_size_us, _pdu_us) \
+		(((_offset_us) + (_win_size_us)) >= ((_pdu_us) + (EVENT_MAFS_US)))
+
 int lll_scan_aux_init(void);
 int lll_scan_aux_reset(void);
 void lll_scan_aux_prepare(void *param);

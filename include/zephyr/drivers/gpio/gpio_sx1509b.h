@@ -10,6 +10,10 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief Configure a pin for LED intensity.
  *
@@ -41,5 +45,9 @@ int sx1509b_led_intensity_pin_configure(const struct device *dev,
  */
 int sx1509b_led_intensity_pin_set(const struct device *dev, gpio_pin_t pin,
 				  uint8_t intensity_val);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_GPIO_GPIO_SX1509B_H_ */

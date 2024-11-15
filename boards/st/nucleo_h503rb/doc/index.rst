@@ -1,7 +1,4 @@
-.. _nucleo_h503rb_board:
-
-ST Nucleo H503RB
-################
+.. zephyr:board:: nucleo_h503rb
 
 Overview
 ********
@@ -135,6 +132,8 @@ The Zephyr nucleo_h503rb board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | RNG       | on-chip    | True Random number generator        |
 +-----------+------------+-------------------------------------+
+| BKP SRAM  | on-chip    | Backup SRAM                         |
++-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
@@ -178,8 +177,18 @@ Serial Port
 Nucleo H533RE board has up to 3 U(S)ARTs. The Zephyr console output is assigned
 to USART3. Default settings are 115200 8N1.
 
+Backup SRAM
+-----------
+
+In order to test backup SRAM, you may want to disconnect VBAT from VDD_MCU.
+You can do it by removing ``SB38`` jumper on the back side of the board.
+VBAT can be provided via the left ST Morpho connector's pin 33.
+
 Programming and Debugging
 *************************
+
+Nucleo-H503RB board includes an ST-LINK/V3EC embedded debug tool interface.
+This probe allows to flash the board using various tools.
 
 Applications for the ``nucleo_h503rb`` board can be built and
 flashed in the usual way (see :ref:`build_an_application` and
@@ -206,34 +215,31 @@ including the common openocd.board.cmake file:
 Flashing
 ========
 
-Nucleo-H503RB board includes an ST-LINK/V3EC embedded debug tool interface.
-This probe allows to flash the board using various tools.
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
 
-Board is configured to be flashed using west STM32CubeProgrammer runner.
-Installation of `STM32CubeProgrammer`_ is then required to flash the board.
+Alternatively, OpencOCD or pyOCD can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
 
-Alternatively, pyocd can also be used to flash and debug the board
-if west is told to use it as runner, which can be done by
-passing ``-r pyocd``.
+.. code-block:: console
 
-For pyocd additional target information needs to be installed.
-This can be done by executing the following commands.
+   $ west flash --runner openocd
+   $ west flash --runner pyocd
+
+For pyOCD, additional target information needs to be installed
+which can be done by executing the following commands:
 
 .. code-block:: console
 
    $ pyocd pack --update
    $ pyocd pack --install stm32h5
 
-Alternatively, the openocd interface will be supported by a next openocd version.
-When available, OpenOCD could be used in the same way as other tools.
-
-
 Flashing an application to Nucleo-H503RB
-------------------------------------------
+----------------------------------------
 
 Connect the Nucleo-H503RB to your host computer using the USB port.
 Then build and flash an application. Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 Run a serial host program to connect with your Nucleo board:
 

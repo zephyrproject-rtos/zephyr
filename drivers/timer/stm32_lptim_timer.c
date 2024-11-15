@@ -162,8 +162,9 @@ static void lptim_set_autoreload(uint32_t arr)
 	/* Update autoreload register */
 	autoreload_next = arr;
 
-	if (!autoreload_ready)
+	if (!autoreload_ready) {
 		return;
+	}
 
 	/* The ARR register ready, we could set it directly */
 	if ((arr > 0) && (arr != LL_LPTIM_GetAutoReload(LPTIM))) {

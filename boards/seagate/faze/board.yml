@@ -1,5 +1,6 @@
 board:
   name: faze
+  full_name: FireCuda Gaming SSD (FaZe) board
   vendor: seagate
   socs:
     - name: lpc11u67

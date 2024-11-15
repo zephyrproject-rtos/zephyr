@@ -21,8 +21,9 @@ which is modeled in Linux as an Ethernet network interface.
 Prerequisites
 =============
 
-On the Linux Host, fetch the Zephyr ``net-tools`` project, which is located
-in a separate Git repository:
+On the Linux Host, find the Zephyr `net-tools`_ project, which can either be
+found in a Zephyr standard installation under the ``tools/net-tools`` directory
+or installed stand alone from its own git repository:
 
 .. code-block:: console
 
@@ -116,8 +117,9 @@ Build and start the ``echo_server`` sample application:
 Step 2 - run echo-client from net-tools
 =======================================
 
-On the Linux Host, fetch the Zephyr ``net-tools`` project, which is located
-in a separate Git repository:
+On the Linux Host, find the Zephyr `net-tools`_ project, which can either be
+found in a Zephyr standard installation under the ``tools/net-tools`` directory
+or installed stand alone from its own git repository:
 
 .. code-block:: console
 
@@ -156,3 +158,5 @@ troublesome.
 .. code-block:: console
 
    ./zephyr.exe --eth-if=zeth2
+
+.. _`net-tools`: https://github.com/zephyrproject-rtos/net-tools

@@ -287,7 +287,7 @@ static void uart_nrfx_poll_out(const struct device *dev, unsigned char c)
 	/* Wait until the transmitter is ready, i.e. the character is sent. */
 	bool res;
 
-	NRFX_WAIT_FOR(event_txdrdy_check(), 1000, 1, res);
+	NRFX_WAIT_FOR(event_txdrdy_check(), 10000, 1, res);
 
 	/* Deactivate the transmitter so that it does not needlessly
 	 * consume power.
@@ -786,7 +786,7 @@ static int uart_nrfx_fifo_fill(const struct device *dev,
 			       const uint8_t *tx_data,
 			       int len)
 {
-	uint8_t num_tx = 0U;
+	int num_tx = 0U;
 
 	while ((len - num_tx > 0) &&
 	       event_txdrdy_check()) {
@@ -806,7 +806,7 @@ static int uart_nrfx_fifo_read(const struct device *dev,
 			       uint8_t *rx_data,
 			       const int size)
 {
-	uint8_t num_rx = 0U;
+	int num_rx = 0U;
 
 	while ((size - num_rx > 0) &&
 	       nrf_uart_event_check(uart0_addr, NRF_UART_EVENT_RXDRDY)) {
@@ -878,10 +878,11 @@ static int uart_nrfx_irq_tx_ready_complete(const struct device *dev)
 	 * called after the TX interrupt is requested to be disabled but before
 	 * the disabling is actually performed (in the IRQ handler).
 	 */
-	return nrf_uart_int_enable_check(uart0_addr,
-					 NRF_UART_INT_MASK_TXDRDY) &&
-	       !disable_tx_irq &&
-	       event_txdrdy_check();
+	bool ready = nrf_uart_int_enable_check(uart0_addr,
+					       NRF_UART_INT_MASK_TXDRDY) &&
+		     !disable_tx_irq &&
+		     event_txdrdy_check();
+	return ready ? 1 : 0;
 }
 
 /** Interrupt driven receiver ready function */
@@ -1086,12 +1087,9 @@ static int uart_nrfx_pm_action(const struct device *dev,
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-		if (IS_ENABLED(CONFIG_UART_0_GPIO_MANAGEMENT)) {
-			ret = pinctrl_apply_state(config->pcfg,
-						  PINCTRL_STATE_DEFAULT);
-			if (ret < 0) {
-				return ret;
-			}
+		ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+		if (ret < 0) {
+			return ret;
 		}
 
 		nrf_uart_enable(uart0_addr);
@@ -1102,13 +1100,9 @@ static int uart_nrfx_pm_action(const struct device *dev,
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
 		nrf_uart_disable(uart0_addr);
-
-		if (IS_ENABLED(CONFIG_UART_0_GPIO_MANAGEMENT)) {
-			ret = pinctrl_apply_state(config->pcfg,
-						  PINCTRL_STATE_SLEEP);
-			if (ret < 0) {
-				return ret;
-			}
+		ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
+		if (ret < 0) {
+			return ret;
 		}
 		break;
 	default:

@@ -8,6 +8,8 @@ common:
     - mimxrt1170_evk/mimxrt1176/cm4
     - frdm_ke17z
     - frdm_ke17z512
+    - mimxrt1180_evk/mimxrt1189/cm33
+    - mimxrt1180_evk/mimxrt1189/cm7
   integration_platforms:
     - twr_ke18f
   tags:
@@ -25,4 +27,4 @@ tests:
   sample.sensor.mcux_acmp.no_trigger:
     build_only: true
     extra_configs:
-      - CONFIG_MCUX_ACMP_TRIGGER=n
+      - CONFIG_SENSOR_MCUX_ACMP_TRIGGER=n

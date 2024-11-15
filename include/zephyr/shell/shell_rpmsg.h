@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef SHELL_RPMSG_H__
-#define SHELL_RPMSG_H__
+#ifndef ZEPHYR_INCLUDE_SHELL_RPMSG_H_
+#define ZEPHYR_INCLUDE_SHELL_RPMSG_H_
 
 #include <zephyr/kernel.h>
 #include <zephyr/shell/shell.h>
@@ -84,4 +84,4 @@ const struct shell *shell_backend_rpmsg_get_ptr(void);
 }
 #endif
 
-#endif /* SHELL_RPMSG_H__ */
+#endif /* ZEPHYR_INCLUDE_SHELL_RPMSG_H_ */

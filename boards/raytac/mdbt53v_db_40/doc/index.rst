@@ -1,7 +1,4 @@
-.. _raytac_mdbt53v_db_40_nrf5340:
-
-Raytac MDBT53V-DB-40
-####################
+.. zephyr:board:: raytac_mdbt53v_db_40
 
 Overview
 ********
@@ -41,13 +38,6 @@ nRF5340 SoC provides support for the following devices:
 * :abbr:`SPI (Serial Peripheral Interface)`
 * :abbr:`UARTE (Universal asynchronous receiver-transmitter)`
 * :abbr:`WDT (Watchdog Timer)`
-
-.. figure:: img/MDBT53V-DB-40.jpg
-     :width: 442px
-     :align: center
-     :alt: MDBT53V-DB-40
-
-     MDBT53V-DB-40 (Credit: Raytac Corporation)
 
 More information about the board can be found at the `MDBT53V-DB-40 website`_.
 The `MDBT53V-DB-40 Specification`_ contains the demo board's datasheet.
@@ -218,7 +208,7 @@ found in :ref:`nordic_segger_flashing`. Then build and flash
 applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 Use a USB to TTL converter to connect the computer and raytac_mdbt53v_db_40_nrf5340
 J13 connector pin 8(RX), 9(TX) and GND. Then run your favorite terminal program to listen for output.
@@ -248,6 +238,8 @@ J-Link OB IF to debug.
 
 References
 **********
+
+.. target-notes::
 
 .. _IDAU:
    https://developer.arm.com/docs/100690/latest/attribution-units-sau-and-idau

@@ -17,7 +17,7 @@
 #ifndef __IEEE802154_PRIV_H__
 #define __IEEE802154_PRIV_H__
 
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_pkt.h>
 

@@ -18,3 +18,19 @@ config OPENAMP_RSC_TABLE_NUM_RPMSG_BUFF
 	help
 	  This option specifies the number of buffer used in a Vring for
 	  interprocessor communication
+
+config OPENAMP_RSC_TABLE_IPM_RX_ID
+	int "IPM RX channel ID"
+	default 0
+	depends on OPENAMP_RSC_TABLE
+	help
+	   This option specifies the IPM RX channel ID used in a VRING
+	   for interprocessor communication
+
+config OPENAMP_RSC_TABLE_IPM_TX_ID
+	int "IPM TX channel ID"
+	default 1
+	depends on OPENAMP_RSC_TABLE
+	help
+	   This option specifies the IPM TX channel ID used in a VRING
+	   for interprocessor communication

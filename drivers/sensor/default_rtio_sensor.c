@@ -265,7 +265,12 @@ static void sensor_submit_fallback(const struct device *dev, struct rtio_iodev_s
 {
 	struct rtio_work_req *req = rtio_work_req_alloc();
 
-	__ASSERT_NO_MSG(req);
+	if (req == NULL) {
+		LOG_ERR("RTIO work item allocation failed. Consider to increase "
+			"CONFIG_RTIO_WORKQ_POOL_ITEMS.");
+		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
+		return;
+	}
 
 	rtio_work_req_submit(req, iodev_sqe, sensor_submit_fallback_sync);
 }
@@ -343,7 +348,7 @@ int sensor_natively_supported_channel_size_info(struct sensor_chan_spec channel,
 	__ASSERT_NO_MSG(base_size != NULL);
 	__ASSERT_NO_MSG(frame_size != NULL);
 
-	if (((int)channel.chan_type < 0) || channel.chan_type >= (SENSOR_CHAN_ALL)) {
+	if (channel.chan_type >= SENSOR_CHAN_ALL) {
 		return -ENOTSUP;
 	}
 
@@ -469,7 +474,7 @@ static int decode(const uint8_t *buffer, struct sensor_chan_spec chan_spec,
 		return -EINVAL;
 	}
 
-	if (((int)chan_spec.chan_type < 0) || chan_spec.chan_type >= (SENSOR_CHAN_ALL)) {
+	if (chan_spec.chan_type >= SENSOR_CHAN_ALL) {
 		return 0;
 	}
 

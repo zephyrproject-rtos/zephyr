@@ -227,6 +227,20 @@ struct net_stats_ipv4_igmp {
 };
 
 /**
+ * @brief DNS statistics
+ */
+struct net_stats_dns {
+	/** Number of received DNS queries */
+	net_stats_t recv;
+
+	/** Number of sent DNS responses */
+	net_stats_t sent;
+
+	/** Number of dropped DNS packets */
+	net_stats_t drop;
+};
+
+/**
  * @brief Network packet transfer times for calculating average TX time
  */
 struct net_stats_tx_time {
@@ -373,6 +387,11 @@ struct net_stats {
 #if defined(CONFIG_NET_STATISTICS_IGMP)
 	/** IPv4 IGMP statistics */
 	struct net_stats_ipv4_igmp ipv4_igmp;
+#endif
+
+#if defined(CONFIG_NET_STATISTICS_DNS)
+	/** DNS statistics */
+	struct net_stats_dns dns;
 #endif
 
 #if NET_TC_COUNT > 1
@@ -623,6 +642,9 @@ struct net_stats_wifi {
 
 	/** Total number of unicast packets received and sent */
 	struct net_stats_pkts unicast;
+
+	/** Total number of dropped packets at received and sent*/
+	net_stats_t overrun_count;
 };
 
 #if defined(CONFIG_NET_STATISTICS_USER_API)
@@ -650,6 +672,7 @@ enum net_request_stats_cmd {
 	NET_REQUEST_STATS_CMD_GET_PPP,
 	NET_REQUEST_STATS_CMD_GET_PM,
 	NET_REQUEST_STATS_CMD_GET_WIFI,
+	NET_REQUEST_STATS_CMD_RESET_WIFI,
 };
 
 /** @endcond */
@@ -778,6 +801,14 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_PM);
 
 /** @cond INTERNAL_HIDDEN */
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_WIFI);
+/** @endcond */
+
+/** Reset Wi-Fi statistics*/
+#define NET_REQUEST_STATS_RESET_WIFI                              \
+	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_RESET_WIFI)
+
+/** @cond INTERNAL_HIDDEN */
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_RESET_WIFI);
 /** @endcond */
 #endif /* CONFIG_NET_STATISTICS_WIFI */
 

@@ -1,0 +1,50 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Bluetooth: Common Audio Profile Acceptor sample"
+
+config SAMPLE_UNICAST
+	bool "Whether or not to search for CAP acceptors for unicast audio"
+	default y
+	select BT_BAP_UNICAST_SERVER
+	select BT_GATT_CACHING
+	select BT_ISO_PERIPHERAL
+	select BT_ASCS
+	select BT_PAC_SNK
+	select BT_PAC_SNK_LOC
+	select BT_PAC_SRC
+	select BT_PAC_SRC_LOC
+	select BT_CTLR_PERIPHERAL_ISO if BT_CTLR
+	help
+	  If set to true, the sample will start advertising connectable for
+	  Broadcast Assistants.
+
+config SAMPLE_BROADCAST
+	bool "Whether or not to search for CAP acceptors for unicast audio"
+	default y if !SAMPLE_UNICAST
+	select BT_ISO_SYNC_RECEIVER
+	select BT_BAP_SCAN_DELEGATOR
+	select BT_OBSERVER
+	select BT_BAP_BROADCAST_SINK
+	select BT_PAC_SNK
+	select BT_PAC_SNK_LOC
+	select BT_PER_ADV_SYNC_TRANSFER_RECEIVER if !BT_CTLR || BT_CTLR_SYNC_TRANSFER_RECEIVER_SUPPORT
+	select BT_CTLR_SYNC_ISO if BT_CTLR
+	help
+	  If set to true, the sample will start advertising syncable audio streams
+
+config SAMPLE_SCAN_SELF
+	bool "Whether to scan for Broadcast Sources without Broadcast Assistant"
+	depends on SAMPLE_BROADCAST
+	help
+	  If set to true, the sample will start scanning for Broadcast Sources
+	  without waiting for a Broadcast Assistant to connect.
+
+config SAMPLE_TARGET_BROADCAST_NAME
+	string "Target Broadcast Device Name when self-scanning"
+	default ""
+	help
+	  Name of target broadcast device. If not empty string, sink device
+	  will only listen to the specified broadcast source. Not case sensitive.
+
+source "Kconfig.zephyr"

@@ -9,6 +9,7 @@ flash: 128
 supported:
   - arduino_gpio
   - arduino_serial
+  - backup_sram
   - gpio
   - uart
   - i2c

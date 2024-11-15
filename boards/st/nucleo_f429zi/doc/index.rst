@@ -1,7 +1,4 @@
-.. _nucleo_f429zi_board:
-
-ST Nucleo F429ZI
-################
+.. zephyr:board:: nucleo_f429zi
 
 Overview
 ********
@@ -30,10 +27,6 @@ some highlights of the Nucleo F429ZI board:
 
 - Three user LEDs
 - Two push-buttons: USER and RESET
-
-.. image:: img/nucleo_f429zi.jpg
-   :align: center
-   :alt: Nucleo F429ZI
 
 More information about the board can be found at the `Nucleo F429ZI website`_.
 
@@ -181,7 +174,20 @@ Programming and Debugging
 *************************
 
 The Nucleo F429ZI board includes an ST-LINK/V2-1 embedded debug tool interface.
-This interface is supported by the openocd version included in Zephyr SDK.
+
+Flashing
+========
+
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
+
+Alternatively, OpenOCD or JLink can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner jlink
 
 Flash partitions for MCUBoot bootloader
 ***************************************
@@ -217,3 +223,6 @@ A specific application can adjust each partition size based on its needs.
 
 .. _MCUBoot:
    https://github.com/JuulLabs-OSS/mcuboot/blob/master/README.md
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

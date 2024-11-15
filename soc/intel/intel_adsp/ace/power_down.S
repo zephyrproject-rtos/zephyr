@@ -2,7 +2,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
- #include "asm_memory_management.h"
+#include "asm_memory_management.h"
+
+	.section .cached.hpsram_mask, "w"
+	.align 64
+hpsram_mask:
+	.rept MAX_MEMORY_SEGMENTS
+		.word 0
+	.endr
+
+	.global hpsram_mask
 
 	.section .text, "ax"
 	.align 64
@@ -48,7 +57,6 @@ power_down:
 	 * effectively executes:
 	 * xthal_dcache_region_lock(&literals, 128);
 	 * xthal_icache_region_lock(&powerdown, 256);
-	 * xthal_dcache_region_lock(&pu32_hpsram_mask, 64);
 	 */
 	movi pfl_reg, power_down_literals
 	dpfl pfl_reg, 0
@@ -66,12 +74,7 @@ power_down:
 	movi u32_ipc_response_mask, 0x20000000
 
 	beqz pu32_hpsram_mask, _PD_DISABLE_LPSRAM
-	/*
-	 * This assumes a single HPSRAM segment although the code below is
-	 * generic and uses MAX_MEMORY_SEGMENTS for their number
-	 */
-	mov  pfl_reg, pu32_hpsram_mask
-	dpfl pfl_reg, 0
+	movi pu32_hpsram_mask, hpsram_mask
 
 _PD_DISABLE_LPSRAM:
 /**

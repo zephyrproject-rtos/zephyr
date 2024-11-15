@@ -25,7 +25,9 @@
 #include <zephyr/kernel.h>
 #include <zephyr/net/http/parser.h>
 #include <zephyr/net/http/hpack.h>
+#include <zephyr/net/http/status.h>
 #include <zephyr/net/socket.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,17 +40,14 @@ extern "C" {
 #define HTTP_SERVER_MAX_STREAMS          CONFIG_HTTP_SERVER_MAX_STREAMS
 #define HTTP_SERVER_MAX_CONTENT_TYPE_LEN CONFIG_HTTP_SERVER_MAX_CONTENT_TYPE_LENGTH
 #define HTTP_SERVER_MAX_URL_LENGTH       CONFIG_HTTP_SERVER_MAX_URL_LENGTH
+#define HTTP_SERVER_MAX_HEADER_LEN       CONFIG_HTTP_SERVER_MAX_HEADER_LEN
 #else
 #define HTTP_SERVER_CLIENT_BUFFER_SIZE   0
 #define HTTP_SERVER_MAX_STREAMS          0
 #define HTTP_SERVER_MAX_CONTENT_TYPE_LEN 0
 #define HTTP_SERVER_MAX_URL_LENGTH       0
+#define HTTP_SERVER_MAX_HEADER_LEN       0
 #endif
-
-/* Maximum header field name / value length. This is only used to detect Upgrade and
- * websocket header fields and values in the http1 server so the value is quite short.
- */
-#define HTTP_SERVER_MAX_HEADER_LEN 32
 
 #define HTTP2_PREFACE "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
 
@@ -163,6 +162,22 @@ enum http_data_status {
 	HTTP_SERVER_DATA_FINAL = 1,
 };
 
+/** @brief HTTP header representation */
+struct http_header {
+	const char *name;  /**< Pointer to header name NULL-terminated string. */
+	const char *value; /**< Pointer to header value NULL-terminated string. */
+};
+
+/** @brief HTTP response context */
+struct http_response_ctx {
+	enum http_status status;           /** HTTP status code to include in response */
+	const struct http_header *headers; /** Array of HTTP headers */
+	size_t header_count;               /** Length of headers array */
+	const uint8_t *body;               /** Pointer to body data */
+	size_t body_len;                   /** Length of body data */
+	bool final_chunk; /** Flag set to true when the application has no more data to send */
+};
+
 /**
  * @typedef http_resource_dynamic_cb_t
  * @brief Callback used when data is received. Data to be sent to client
@@ -172,6 +187,7 @@ enum http_data_status {
  * @param status HTTP data status, indicate whether more data is expected or not.
  * @param data_buffer Data received.
  * @param data_len Amount of data received.
+ * @param response_ctx
  * @param user_data User specified data.
  *
  * @return >0 amount of data to be sent to client, let server to call this
@@ -183,6 +199,7 @@ typedef int (*http_resource_dynamic_cb_t)(struct http_client_ctx *client,
 					  enum http_data_status status,
 					  uint8_t *data_buffer,
 					  size_t data_len,
+					  struct http_response_ctx *response_ctx,
 					  void *user_data);
 
 /**
@@ -196,14 +213,6 @@ struct http_resource_detail_dynamic {
 	 *  application.
 	 */
 	http_resource_dynamic_cb_t cb;
-
-	/** Data buffer used to exchanged data between server and the,
-	 *  application.
-	 */
-	uint8_t *data_buffer;
-
-	/** Length of the data in the data buffer. */
-	size_t data_buffer_len;
 
 	/** A pointer to the client currently processing resource, used to
 	 *  prevent concurrent access to the resource from multiple clients.
@@ -329,6 +338,40 @@ struct http2_frame {
 	uint8_t padding_len; /**< Frame padding length. */
 };
 
+#if defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)
+/** @brief Status of captured headers */
+enum http_header_status {
+	HTTP_HEADER_STATUS_OK,      /**< All available headers were successfully captured. */
+	HTTP_HEADER_STATUS_DROPPED, /**< One or more headers were dropped due to lack of space. */
+};
+
+/** @brief Context for capturing HTTP headers */
+struct http_header_capture_ctx {
+	/** Buffer for HTTP headers captured for application use */
+	unsigned char buffer[CONFIG_HTTP_SERVER_CAPTURE_HEADER_BUFFER_SIZE];
+
+	/** Descriptor of each captured HTTP header */
+	struct http_header headers[CONFIG_HTTP_SERVER_CAPTURE_HEADER_COUNT];
+
+	/** Status of captured headers */
+	enum http_header_status status;
+
+	/** Number of headers captured */
+	size_t count;
+
+	/** Current position in buffer */
+	size_t cursor;
+
+	/** The next HTTP header value should be stored */
+	bool store_next_value;
+};
+
+/** @brief HTTP header name representation */
+struct http_header_name {
+	const char *name; /**< Pointer to header name NULL-terminated string. */
+};
+#endif /* defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS) */
+
 /**
  * @brief Representation of an HTTP client connected to the server.
  */
@@ -371,6 +414,11 @@ struct http_client_ctx {
 
 	/** HTTP/1 parser context. */
 	struct http_parser parser;
+
+#if defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)
+	/** Header capture context */
+	struct http_header_capture_ctx header_capture_ctx;
+#endif /* defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS) */
 
 	/** Request URL. */
 	unsigned char url_buffer[HTTP_SERVER_MAX_URL_LENGTH];
@@ -426,6 +474,23 @@ struct http_client_ctx {
 	/** The next frame on the stream is expectd to be a continuation frame. */
 	bool expect_continuation : 1;
 };
+
+#if defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)
+/**
+ * @brief Register an HTTP request header to be captured by the server
+ *
+ * @param _id variable name for the header capture instance
+ * @param _header header to be captured, as literal string
+ */
+#define HTTP_SERVER_REGISTER_HEADER_CAPTURE(_id, _header)                                          \
+	BUILD_ASSERT(sizeof(_header) <= CONFIG_HTTP_SERVER_MAX_HEADER_LEN,                         \
+		     "Header is too long to be captured, try increasing "                          \
+		     "CONFIG_HTTP_SERVER_MAX_HEADER_LEN");                                         \
+	static const char *const _id##_str = _header;                                              \
+	static const STRUCT_SECTION_ITERABLE(http_header_name, _id) = {                            \
+		.name = _id##_str,                                                                 \
+	}
+#endif /* defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS) */
 
 /** @brief Start the HTTP2 server.
  *

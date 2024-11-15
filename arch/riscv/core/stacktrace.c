@@ -14,8 +14,9 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 uintptr_t z_riscv_get_sp_before_exc(const struct arch_esf *esf);
 
-#define MAX_STACK_FRAMES                                                                           \
-	MAX(CONFIG_EXCEPTION_STACK_TRACE_MAX_FRAMES, CONFIG_ARCH_STACKWALK_MAX_FRAMES)
+typedef bool (*riscv_stacktrace_cb)(void *cookie, unsigned long addr, unsigned long sfp);
+
+#define MAX_STACK_FRAMES CONFIG_ARCH_STACKWALK_MAX_FRAMES
 
 struct stackframe {
 	uintptr_t fp;
@@ -87,23 +88,6 @@ static bool in_stack_bound(uintptr_t addr, const struct k_thread *const thread,
 	return in_kernel_thread_stack_bound(addr, thread);
 }
 
-static bool in_fatal_stack_bound(uintptr_t addr, const struct k_thread *const thread,
-				 const struct arch_esf *esf)
-{
-	if (!IS_ALIGNED(addr, sizeof(uintptr_t))) {
-		return false;
-	}
-
-	if ((thread == NULL) || arch_is_in_isr()) {
-		/* We were servicing an interrupt */
-		uint8_t cpu_id = IS_ENABLED(CONFIG_SMP) ? arch_curr_cpu()->id : 0U;
-
-		return in_irq_stack_bound(addr, cpu_id);
-	}
-
-	return in_stack_bound(addr, thread, esf);
-}
-
 static inline bool in_text_region(uintptr_t addr)
 {
 	extern uintptr_t __text_region_start, __text_region_end;
@@ -112,7 +96,7 @@ static inline bool in_text_region(uintptr_t addr)
 }
 
 #ifdef CONFIG_FRAME_POINTER
-static void walk_stackframe(stack_trace_callback_fn cb, void *cookie, const struct k_thread *thread,
+static void walk_stackframe(riscv_stacktrace_cb cb, void *cookie, const struct k_thread *thread,
 			    const struct arch_esf *esf, stack_verify_fn vrfy,
 			    const _callee_saved_t *csf)
 {
@@ -134,27 +118,58 @@ static void walk_stackframe(stack_trace_callback_fn cb, void *cookie, const stru
 		ra = csf->ra;
 	}
 
-	for (int i = 0; (i < MAX_STACK_FRAMES) && vrfy(fp, thread, esf) && (fp > last_fp);) {
-		if (in_text_region(ra)) {
-			if (!cb(cookie, ra)) {
-				break;
-			}
-			/*
-			 * Increment the iterator only if `ra` is within the text region to get the
-			 * most out of it
-			 */
-			i++;
+	for (int i = 0; (i < MAX_STACK_FRAMES) && vrfy(fp, thread, esf) && (fp > last_fp); i++) {
+		if (in_text_region(ra) && !cb(cookie, ra, fp)) {
+			break;
 		}
 		last_fp = fp;
+
 		/* Unwind to the previous frame */
 		frame = (struct stackframe *)fp - 1;
-		ra = frame->ra;
+
+		if ((i == 0) && (esf != NULL)) {
+			/* Print `esf->ra` if we are at the top of the stack */
+			if (in_text_region(esf->ra) && !cb(cookie, esf->ra, fp)) {
+				break;
+			}
+			/**
+			 * For the first stack frame, the `ra` is not stored in the frame if the
+			 * preempted function doesn't call any other function, we can observe:
+			 *
+			 *                     .-------------.
+			 *   frame[0]->fp ---> | frame[0] fp |
+			 *                     :-------------:
+			 *   frame[0]->ra ---> | frame[1] fp |
+			 *                     | frame[1] ra |
+			 *                     :~~~~~~~~~~~~~:
+			 *                     | frame[N] fp |
+			 *
+			 * Instead of:
+			 *
+			 *                     .-------------.
+			 *   frame[0]->fp ---> | frame[0] fp |
+			 *   frame[0]->ra ---> | frame[1] ra |
+			 *                     :-------------:
+			 *                     | frame[1] fp |
+			 *                     | frame[1] ra |
+			 *                     :~~~~~~~~~~~~~:
+			 *                     | frame[N] fp |
+			 *
+			 * Check if `frame->ra` actually points to a `fp`, and adjust accordingly
+			 */
+			if (vrfy(frame->ra, thread, esf)) {
+				fp = frame->ra;
+				frame = (struct stackframe *)fp;
+			}
+		}
+
 		fp = frame->fp;
+		ra = frame->ra;
 	}
 }
 #else  /* !CONFIG_FRAME_POINTER */
 register uintptr_t current_stack_pointer __asm__("sp");
-static void walk_stackframe(stack_trace_callback_fn cb, void *cookie, const struct k_thread *thread,
+static void walk_stackframe(riscv_stacktrace_cb cb, void *cookie, const struct k_thread *thread,
 			    const struct arch_esf *esf, stack_verify_fn vrfy,
 			    const _callee_saved_t *csf)
 {
@@ -174,14 +189,13 @@ static void walk_stackframe(stack_trace_callback_fn cb, void *cookie, const stru
 		/* Unwind the provided thread */
 		sp = csf->sp;
 		ra = csf->ra;
-
 	}
 
 	ksp = (uintptr_t *)sp;
 	for (int i = 0; (i < MAX_STACK_FRAMES) && vrfy((uintptr_t)ksp, thread, esf) &&
 			((uintptr_t)ksp > last_ksp);) {
 		if (in_text_region(ra)) {
-			if (!cb(cookie, ra)) {
+			if (!cb(cookie, ra, POINTER_TO_UINT(ksp))) {
 				break;
 			}
 			/*
@@ -205,7 +219,26 @@ void arch_stack_walk(stack_trace_callback_fn callback_fn, void *cookie,
 		thread = _current;
 	}
 
-	walk_stackframe(callback_fn, cookie, thread, esf, in_stack_bound, &thread->callee_saved);
+	walk_stackframe((riscv_stacktrace_cb)callback_fn, cookie, thread, esf, in_stack_bound,
+			&thread->callee_saved);
+}
+
+#ifdef CONFIG_EXCEPTION_STACK_TRACE
+static bool in_fatal_stack_bound(uintptr_t addr, const struct k_thread *const thread,
+				 const struct arch_esf *esf)
+{
+	if (!IS_ALIGNED(addr, sizeof(uintptr_t))) {
+		return false;
+	}
+
+	if ((thread == NULL) || arch_is_in_isr()) {
+		/* We were servicing an interrupt */
+		uint8_t cpu_id = IS_ENABLED(CONFIG_SMP) ? arch_curr_cpu()->id : 0U;
+
+		return in_irq_stack_bound(addr, cpu_id);
+	}
+
+	return in_stack_bound(addr, thread, esf);
 }
 
 #if __riscv_xlen == 32
@@ -214,22 +247,30 @@ void arch_stack_walk(stack_trace_callback_fn callback_fn, void *cookie,
 #define PR_REG "%016" PRIxPTR
 #endif
 
-#ifdef CONFIG_EXCEPTION_STACK_TRACE_SYMTAB
-#define LOG_STACK_TRACE(idx, ra, name, offset)                                                     \
-	LOG_ERR("     %2d: ra: " PR_REG " [%s+0x%x]", idx, ra, name, offset)
+#ifdef CONFIG_FRAME_POINTER
+#define SFP "fp"
 #else
-#define LOG_STACK_TRACE(idx, ra, name, offset) LOG_ERR("     %2d: ra: " PR_REG, idx, ra)
-#endif /* CONFIG_EXCEPTION_STACK_TRACE_SYMTAB */
+#define SFP "sp"
+#endif /* CONFIG_FRAME_POINTER */
 
-static bool print_trace_address(void *arg, unsigned long ra)
+#ifdef CONFIG_SYMTAB
+#define LOG_STACK_TRACE(idx, sfp, ra, name, offset)                                                \
+	LOG_ERR("     %2d: " SFP ": " PR_REG " ra: " PR_REG " [%s+0x%x]", idx, sfp, ra, name,      \
+		offset)
+#else
+#define LOG_STACK_TRACE(idx, sfp, ra, name, offset)                                                \
+	LOG_ERR("     %2d: " SFP ": " PR_REG " ra: " PR_REG, idx, sfp, ra)
+#endif /* CONFIG_SYMTAB */
+
+static bool print_trace_address(void *arg, unsigned long ra, unsigned long sfp)
 {
 	int *i = arg;
-#ifdef CONFIG_EXCEPTION_STACK_TRACE_SYMTAB
+#ifdef CONFIG_SYMTAB
 	uint32_t offset = 0;
 	const char *name = symtab_find_symbol_name(ra, &offset);
-#endif
+#endif /* CONFIG_SYMTAB */
 
-	LOG_STACK_TRACE((*i)++, ra, name, offset);
+	LOG_STACK_TRACE((*i)++, sfp, ra, name, offset);
 
 	return true;
 }
@@ -242,3 +283,4 @@ void z_riscv_unwind_stack(const struct arch_esf *esf, const _callee_saved_t *csf
 	walk_stackframe(print_trace_address, &i, _current, esf, in_fatal_stack_bound, csf);
 	LOG_ERR("");
 }
+#endif /* CONFIG_EXCEPTION_STACK_TRACE */

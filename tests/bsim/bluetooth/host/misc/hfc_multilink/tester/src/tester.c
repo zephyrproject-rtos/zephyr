@@ -8,12 +8,13 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/__assert.h>
 
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/bluetooth/buf.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/hci_raw.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/gap.h>
 
 #include "common/bt_str.h"
@@ -355,7 +356,7 @@ static void rx_thread(void *p1, void *p2, void *p3)
 		struct net_buf *buf;
 
 		/* Wait until a buffer is available */
-		buf = net_buf_get(&rx_queue, K_FOREVER);
+		buf = k_fifo_get(&rx_queue, K_FOREVER);
 		recv(buf);
 	}
 }
@@ -467,7 +468,7 @@ static void start_adv(uint16_t interval, const char *name, size_t name_len)
 	set_param.channel_map = 0x07;
 	set_param.filter_policy = BT_LE_ADV_FP_NO_FILTER;
 	set_param.type = BT_HCI_ADV_IND;
-	set_param.own_addr_type = 0x01; /* random */
+	set_param.own_addr_type = BT_HCI_OWN_ADDR_RANDOM;
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_PARAM, sizeof(set_param));
 	__ASSERT_NO_MSG(buf);

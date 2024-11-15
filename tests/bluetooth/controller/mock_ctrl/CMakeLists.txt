@@ -16,12 +16,16 @@ add_library(mocks STATIC
   src/assert.c
   src/util.c
   src/ticker.c
+  src/isoal.c
   src/ull.c
   src/ull_conn_iso.c
   src/ull_peripheral.c
   src/ull_peripheral_iso.c
   src/ull_central.c
   src/ull_scan.c
+  src/ull_sync.c
+  src/ull_adv_sync.c
+  src/ull_filter.c
   src/lll_clock.c
 )
 

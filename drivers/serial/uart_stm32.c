@@ -20,7 +20,6 @@
 #include <zephyr/sys/__assert.h>
 #include <soc.h>
 #include <zephyr/init.h>
-#include <zephyr/drivers/interrupt_controller/exti_stm32.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/pm/policy.h>
 #include <zephyr/pm/device.h>
@@ -65,6 +64,11 @@ LOG_MODULE_REGISTER(uart_stm32, CONFIG_UART_LOG_LEVEL);
 #define HAS_DRIVER_ENABLE 1
 #else
 #define HAS_DRIVER_ENABLE 0
+#endif
+
+#ifdef CONFIG_PM
+/* Placeholder value when wakeup-line DT property is not defined */
+#define STM32_WAKEUP_LINE_NONE	0xFFFFFFFF
 #endif
 
 #if HAS_LPUART
@@ -812,15 +816,14 @@ static inline void __uart_stm32_get_clock(const struct device *dev)
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
-typedef void (*fifo_fill_fn)(USART_TypeDef *usart, const void *tx_data,
-			     const uint8_t offset);
+typedef void (*fifo_fill_fn)(USART_TypeDef *usart, const void *tx_data, const int offset);
 
 static int uart_stm32_fifo_fill_visitor(const struct device *dev, const void *tx_data, int size,
 					fifo_fill_fn fill_fn)
 {
 	const struct uart_stm32_config *config = dev->config;
 	USART_TypeDef *usart = config->usart;
-	uint8_t num_tx = 0U;
+	int num_tx = 0U;
 	unsigned int key;
 
 	if (!LL_USART_IsActiveFlag_TXE(usart)) {
@@ -843,8 +846,7 @@ static int uart_stm32_fifo_fill_visitor(const struct device *dev, const void *tx
 	return num_tx;
 }
 
-static void fifo_fill_with_u8(USART_TypeDef *usart,
-					 const void *tx_data, const uint8_t offset)
+static void fifo_fill_with_u8(USART_TypeDef *usart, const void *tx_data, const int offset)
 {
 	const uint8_t *data = (const uint8_t *)tx_data;
 	/* Send a character (8bit) */
@@ -861,15 +863,14 @@ static int uart_stm32_fifo_fill(const struct device *dev, const uint8_t *tx_data
 					    fifo_fill_with_u8);
 }
 
-typedef void (*fifo_read_fn)(USART_TypeDef *usart, void *rx_data,
-			     const uint8_t offset);
+typedef void (*fifo_read_fn)(USART_TypeDef *usart, void *rx_data, const int offset);
 
 static int uart_stm32_fifo_read_visitor(const struct device *dev, void *rx_data, const int size,
 					fifo_read_fn read_fn)
 {
 	const struct uart_stm32_config *config = dev->config;
 	USART_TypeDef *usart = config->usart;
-	uint8_t num_rx = 0U;
+	int num_rx = 0U;
 
 	while ((size - num_rx > 0) && LL_USART_IsActiveFlag_RXNE(usart)) {
 		/* RXNE flag will be cleared upon read from DR|RDR register */
@@ -890,8 +891,7 @@ static int uart_stm32_fifo_read_visitor(const struct device *dev, void *rx_data,
 	return num_rx;
 }
 
-static void fifo_read_with_u8(USART_TypeDef *usart, void *rx_data,
-					 const uint8_t offset)
+static void fifo_read_with_u8(USART_TypeDef *usart, void *rx_data, const int offset)
 {
 	uint8_t *data = (uint8_t *)rx_data;
 
@@ -910,8 +910,7 @@ static int uart_stm32_fifo_read(const struct device *dev, uint8_t *rx_data, cons
 
 #ifdef CONFIG_UART_WIDE_DATA
 
-static void fifo_fill_with_u16(USART_TypeDef *usart,
-					  const void *tx_data, const uint8_t offset)
+static void fifo_fill_with_u16(USART_TypeDef *usart, const void *tx_data, const int offset)
 {
 	const uint16_t *data = (const uint16_t *)tx_data;
 
@@ -929,8 +928,7 @@ static int uart_stm32_fifo_fill_u16(const struct device *dev, const uint16_t *tx
 					    fifo_fill_with_u16);
 }
 
-static void fifo_read_with_u16(USART_TypeDef *usart, void *rx_data,
-					  const uint8_t offset)
+static void fifo_read_with_u16(USART_TypeDef *usart, void *rx_data, const int offset)
 {
 	uint16_t *data = (uint16_t *)rx_data;
 
@@ -2064,7 +2062,7 @@ static int uart_stm32_registers_configure(const struct device *dev)
 #endif
 		LL_USART_EnableInStopMode(usart);
 
-		if (config->wakeup_line != STM32_EXTI_LINE_NONE) {
+		if (config->wakeup_line != STM32_WAKEUP_LINE_NONE) {
 			/* Prepare the WAKEUP with the expected EXTI line */
 			LL_EXTI_EnableIT_0_31(BIT(config->wakeup_line));
 		}
@@ -2290,7 +2288,7 @@ static void uart_stm32_irq_config_func_##index(const struct device *dev)	\
 	.wakeup_source = DT_INST_PROP(index, wakeup_source),			\
 	.wakeup_line = COND_CODE_1(DT_INST_NODE_HAS_PROP(index, wakeup_line),	\
 			(DT_INST_PROP(index, wakeup_line)),			\
-			(STM32_EXTI_LINE_NONE)),
+			(STM32_WAKEUP_LINE_NONE)),
 #else
 #define STM32_UART_PM_WAKEUP(index) /* Not used */
 #endif

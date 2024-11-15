@@ -7,6 +7,8 @@
  * Application overlay for ADC devices
  */
 
+ #include <zephyr/dt-bindings/battery/battery.h>
+
 test_adc_mcp9700a: mcp9700a {
 	status = "okay";
 	compatible = "microchip,mcp970x";
@@ -29,9 +31,19 @@ test_current: current_amp {
 	compatible = "current-sense-amplifier";
 	io-channels = <&test_adc 2>;
 	io-channel-names = "CURRENT_AMP";
-	sense-resistor-micro-ohms = <10>;
+	sense-resistor-milli-ohms = <1>;
 	sense-gain-mult = <1>;
 	sense-gain-div = <1>;
+};
+
+test_composite_fuel_gauge: composite_fuel_gauge {
+	compatible = "zephyr,fuel-gauge-composite";
+	status = "okay";
+	battery-voltage = <&test_voltage>;
+	battery-current = <&test_current>;
+	device-chemistry = "lithium-ion-polymer";
+	ocv-capacity-table-0 = <BATTERY_OCV_CURVE_LITHIUM_ION_POLYMER_DEFAULT>;
+	charge-full-design-microamp-hours = <1000000>;
 };
 
 test_adc_emul: adc-emul {
@@ -73,7 +85,7 @@ test_murata_ncp15wb473: murata-ncp15wb473 {
 
 test_tdk_ntcg163jf103ft1: tdk-ntcg163jf103ft1 {
 	compatible = "tdk,ntcg163jf103ft1";
-	io-channels = <&adc0 0>;
+	io-channels = <&test_adc 0>;
 	pullup-uv = <3300000>;
 	pullup-ohm = <0>;
 	pulldown-ohm = <10000>;
@@ -82,7 +94,7 @@ test_tdk_ntcg163jf103ft1: tdk-ntcg163jf103ft1 {
 
 test_lm35: lm35 {
 	compatible = "lm35";
-	io-channels = <&adc0 0>;
+	io-channels = <&test_adc 0>;
 	status = "okay";
 };
 
@@ -93,4 +105,24 @@ test_murata_ncp15xh103: murata-ncp15xh103 {
 	pullup-ohm = <0>;
 	pulldown-ohm = <10000>;
 	connected-positive;
+};
+
+test_seeed_grove_light: seeed-grove-light {
+	compatible = "seeed,grove-light";
+	io-channels = <&test_adc 0>;
+};
+
+test_seeed_grove_temperature: seeed-grove-temperature {
+	compatible = "seeed,grove-temperature";
+	io-channels = <&test_adc 0>;
+};
+
+test_veaa_x_3: test_veaa_x_3 {
+	status = "okay";
+	compatible = "festo,veaa-x-3";
+	io-channels = <&test_adc 3>;
+	dac = <&test_dac>;
+	dac-channel-id = <2>;
+	dac-resolution = <12>;
+	pressure-range-type = "D2";
 };

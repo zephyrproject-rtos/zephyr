@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/sys/printk.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_ip.h>

@@ -1,7 +1,4 @@
-.. _slwrb4170a:
-
-EFR32MG12 2400/868-915 MHz 19 dBm Dual Band (SLWRB4170A)
-########################################################
+.. zephyr:board:: slwrb4170a
 
 Overview
 ********
@@ -9,12 +6,6 @@ Overview
 The EFR32MG12 Mighty Gecko Radio Board contains a Wireless System-On-Chip
 from the EFR32MG12 family built on an ARM Cortex®-M4F processor with excellent
 low power capabilities.
-
-.. figure:: efr32mg12-slwrb4170a.jpg
-   :align: center
-   :alt: SLWRB4170A Mighty Gecko Radio Board
-
-   SLWRB4170A (image courtesy of Silicon Labs)
 
 The BRD4170A a.k.a. SLWRB4170A radio board plugs into the Wireless Starter Kit
 Mainboard BRD4001A and is supported as one of :ref:`silabs_radio_boards`.
@@ -122,7 +113,7 @@ Flashing
 Connect the BRD4001A board with a mounted BRD4170A radio module to your host
 computer using the USB port.
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

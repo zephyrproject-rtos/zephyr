@@ -9,5 +9,15 @@
 / {
 	soc {
 		compatible = "st,stm32l486", "st,stm32l4", "simple-bus";
+
+		aes: aes@50060000 {
+			compatible = "st,stm32l4-aes", "st,stm32-aes";
+			reg = <0x50060000 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 16U)>;
+			resets = <&rctl STM32_RESET(AHB2, 16U)>;
+			interrupts = <79 0>;
+			interrupt-names = "aes";
+			status = "disabled";
+		};
 	};
 };

@@ -8,11 +8,8 @@ tests:
       - shell
     filter: CONFIG_FLASH_HAS_DRIVER_ENABLED
     platform_exclude:
-      - nucleo_h745zi_q/stm32h745xx/m4
       - stm32h7s78_dk
       - gd32f350r_eval
-      - arduino_portenta_h7/stm32h747xx/m4
-      - arduino_giga_r1/stm32h747xx/m4
     harness: keyboard
     min_ram: 12
     integration_platforms:

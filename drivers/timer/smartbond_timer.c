@@ -199,7 +199,7 @@ static int sys_clock_driver_init(void)
 	uint8_t pdc_idx;
 	uint8_t en_xtal;
 
-	en_xtal = DT_NODE_HAS_STATUS(DT_NODELABEL(xtal32m), okay) ? MCU_PDC_EN_XTAL : 0;
+	en_xtal = DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(xtal32m)) ? MCU_PDC_EN_XTAL : 0;
 
 	/* Enable wakeup by TIMER2 */
 	pdc_idx = da1469x_pdc_add(MCU_PDC_TRIGGER_TIMER2, MCU_PDC_MASTER_M33, en_xtal);

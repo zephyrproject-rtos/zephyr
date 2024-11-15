@@ -11,6 +11,21 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_TMAP_
 #define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_TMAP_
 
+/**
+ * @brief Telephone and Media Audio Profile (TMAP)
+ *
+ * @defgroup bt_tmap Telephone and Media Audio Profile (TMAP)
+ *
+ * @since 3.4
+ * @version 0.8.0
+ *
+ * @ingroup bluetooth
+ * @{
+ *
+ * The Telephone and Media Audio Profile (TMAP) uses a collection of Bluetooth features and profiles
+ * to enable interoperability between devices for telephony and media audio.
+ */
+
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/sys/util.h>
@@ -137,5 +152,9 @@ int bt_tmap_discover(struct bt_conn *conn, const struct bt_tmap_cb *tmap_cb);
  *
  */
 void bt_tmap_set_role(enum bt_tmap_role role);
+
+/**
+ * @}
+ */
 
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_TMAP_ */

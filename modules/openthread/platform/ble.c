@@ -34,9 +34,6 @@
 
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-#define DEVICE_NAME     CONFIG_BT_DEVICE_NAME
-#define DEVICE_NAME_LEN (sizeof(DEVICE_NAME) - 1)
-
 /* BLE connection constants as defined in thread specification. */
 #define TOBLE_SERVICE_UUID 0xfffb
 #define RX_CHARACTERISTIC_UUID                                                                     \

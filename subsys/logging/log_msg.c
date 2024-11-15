@@ -337,7 +337,7 @@ static inline void z_vrfy_z_log_msg_static_create(const void *source,
 			      const struct log_msg_desc desc,
 			      uint8_t *package, const void *data)
 {
-	return z_impl_z_log_msg_static_create(source, desc, package, data);
+	z_impl_z_log_msg_static_create(source, desc, package, data);
 }
 #include <zephyr/syscalls/z_log_msg_static_create_mrsh.c>
 #endif
@@ -397,6 +397,7 @@ void z_log_msg_runtime_vcreate(uint8_t domain_id, const void *source,
 		z_log_msg_finalize(msg, source, desc, data);
 	}
 }
+EXPORT_SYMBOL(z_log_msg_runtime_vcreate);
 
 int16_t log_msg_get_source_id(struct log_msg *msg)
 {
@@ -408,9 +409,7 @@ int16_t log_msg_get_source_id(struct log_msg *msg)
 	void *source = (void *)log_msg_get_source(msg);
 
 	if (source != NULL) {
-		return IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)
-					? log_dynamic_source_id(source)
-					: log_const_source_id(source);
+		return log_source_id(source);
 	}
 
 	return -1;

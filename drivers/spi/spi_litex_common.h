@@ -6,6 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi/rtio.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys_clock.h>
 

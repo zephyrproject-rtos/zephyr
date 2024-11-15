@@ -59,6 +59,9 @@ static uint16_t message_id;
 static struct coap_transmission_parameters coap_transmission_params = {
 	.max_retransmission = CONFIG_COAP_MAX_RETRANSMIT,
 	.ack_timeout = CONFIG_COAP_INIT_ACK_TIMEOUT_MS,
+#if defined(CONFIG_COAP_RANDOMIZE_ACK_TIMEOUT)
+	.ack_random_percent = CONFIG_COAP_ACK_RANDOM_PERCENT,
+#endif /* defined(CONFIG_COAP_RANDOMIZE_ACK_TIMEOUT) */
 	.coap_backoff_percent = CONFIG_COAP_BACKOFF_PERCENT
 };
 
@@ -227,6 +230,19 @@ int coap_ack_init(struct coap_packet *cpkt, const struct coap_packet *req,
 
 	return coap_packet_init(cpkt, data, max_len, ver, COAP_TYPE_ACK, tkl,
 				token, code, id);
+}
+
+int coap_rst_init(struct coap_packet *cpkt, const struct coap_packet *req,
+		  uint8_t *data, uint16_t max_len)
+{
+	uint16_t id;
+	uint8_t ver;
+
+	ver = coap_header_get_version(req);
+	id = coap_header_get_id(req);
+
+	return coap_packet_init(cpkt, data, max_len, ver, COAP_TYPE_RESET, 0,
+				NULL, 0, id);
 }
 
 static void option_header_set_delta(uint8_t *opt, uint8_t delta)
@@ -1342,7 +1358,7 @@ int coap_get_option_int(const struct coap_packet *cpkt, uint16_t code)
 	return val;
 }
 
-int coap_get_block1_option(const struct coap_packet *cpkt, bool *has_more, uint8_t *block_number)
+int coap_get_block1_option(const struct coap_packet *cpkt, bool *has_more, uint32_t *block_number)
 {
 	int ret = coap_get_option_int(cpkt, COAP_OPTION_BLOCK1);
 
@@ -1356,7 +1372,8 @@ int coap_get_block1_option(const struct coap_packet *cpkt, bool *has_more, uint8
 	return ret;
 }
 
-int coap_get_block2_option(const struct coap_packet *cpkt, uint8_t *block_number)
+int coap_get_block2_option(const struct coap_packet *cpkt, bool *has_more,
+			   uint32_t *block_number)
 {
 	int ret = coap_get_option_int(cpkt, COAP_OPTION_BLOCK2);
 
@@ -1364,6 +1381,7 @@ int coap_get_block2_option(const struct coap_packet *cpkt, uint8_t *block_number
 		return ret;
 	}
 
+	*has_more = GET_MORE(ret);
 	*block_number = GET_NUM(ret);
 	ret = 1 << (GET_BLOCK_SIZE(ret) + 4);
 	return ret;
@@ -1704,8 +1722,9 @@ struct coap_pending *coap_pending_next_to_expire(
 static uint32_t init_ack_timeout(const struct coap_transmission_parameters *params)
 {
 #if defined(CONFIG_COAP_RANDOMIZE_ACK_TIMEOUT)
-	const uint32_t max_ack = params->ack_timeout *
-				 CONFIG_COAP_ACK_RANDOM_PERCENT / 100;
+	const uint16_t random_percent = params->ack_random_percent ? params->ack_random_percent
+								   : CONFIG_COAP_ACK_RANDOM_PERCENT;
+	const uint32_t max_ack = params->ack_timeout * random_percent / 100U;
 	const uint32_t min_ack = params->ack_timeout;
 
 	/* Randomly generated initial ACK timeout

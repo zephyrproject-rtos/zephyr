@@ -1,0 +1,11 @@
+#
+# Copyright (c) 2024 SILA Embedded Solutions GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: This is a representation of the Microchip MCP23S08 SPI GPIO Expander.
+
+compatible: "microchip,mcp23s08"
+
+include: ["microchip,mcp23xxx.yaml", spi-device.yaml]

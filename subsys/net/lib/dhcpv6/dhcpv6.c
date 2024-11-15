@@ -21,6 +21,8 @@ LOG_MODULE_REGISTER(net_dhcpv6, CONFIG_NET_DHCPV6_LOG_LEVEL);
 #include "net_private.h"
 #include "udp_internal.h"
 
+#define PKT_WAIT_TIME K_MSEC(100)
+
 /* Maximum number of options client can request. */
 #define DHCPV6_MAX_OPTION_REQUEST 2
 
@@ -582,7 +584,7 @@ static struct net_pkt *dhcpv6_create_message(struct net_if *iface,
 	msg_size = dhcpv6_calculate_message_size(options);
 
 	pkt = net_pkt_alloc_with_buffer(iface, msg_size, AF_INET6,
-					IPPROTO_UDP, K_FOREVER);
+					IPPROTO_UDP, PKT_WAIT_TIME);
 	if (pkt == NULL) {
 		return NULL;
 	}
@@ -1415,21 +1417,28 @@ static void dhcpv6_enter_state(struct net_if *iface, enum net_dhcpv6_state state
 	case NET_DHCPV6_DISABLED:
 		break;
 	case NET_DHCPV6_INIT:
-		return dhcpv6_enter_init(iface);
+		dhcpv6_enter_init(iface);
+		break;
 	case NET_DHCPV6_SOLICITING:
-		return dhcpv6_enter_soliciting(iface);
+		dhcpv6_enter_soliciting(iface);
+		break;
 	case NET_DHCPV6_REQUESTING:
-		return dhcpv6_enter_requesting(iface);
+		dhcpv6_enter_requesting(iface);
+		break;
 	case NET_DHCPV6_CONFIRMING:
-		return dhcpv6_enter_confirming(iface);
+		dhcpv6_enter_confirming(iface);
+		break;
 	case NET_DHCPV6_RENEWING:
-		return dhcpv6_enter_renewing(iface);
+		dhcpv6_enter_renewing(iface);
+		break;
 	case NET_DHCPV6_REBINDING:
-		return dhcpv6_enter_rebinding(iface);
+		dhcpv6_enter_rebinding(iface);
+		break;
 	case NET_DHCPV6_INFO_REQUESTING:
 		break;
 	case NET_DHCPV6_BOUND:
-		return dhcpv6_enter_bound(iface);
+		dhcpv6_enter_bound(iface);
+		break;
 	}
 }
 

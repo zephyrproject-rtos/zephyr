@@ -1,0 +1,472 @@
+# Copyright(c) 2024 Intel Corporation.
+# SPDX - License - Identifier : Apache - 2.0
+
+compatible: "snps,dwcxgmac"
+
+description: Synopsys DesignWareCore XGMAC
+
+include:
+  - name: reset-device.yaml
+  - name: ethernet-controller.yaml
+
+properties:
+  reg:
+    required: true
+  interrupts:
+    required: true
+  max-frame-size:
+    type: int
+    default: 1518
+    description: |
+      Maximum ethernet frame size.  The current ethernet frame sizes
+      supported by hardware are standard and jumbo (up to 16KB) frames. This
+      means that normally xgmac will reject any frame above max-frame-size
+      value.  The default value is 1518, which represents an usual
+      IEEE 802.3 ethernet frame:
+        Ethernet Frame [ 14 MAC HEADER | 1500 MTU | 4 FCS ] = 1518 bytes
+  max-speed:
+    type: int
+    enum:
+      - 10
+      - 100
+      - 1000
+      - 2500
+    default: 1000
+    description: |
+      This specifies maximum speed in Mbit/s supported by the device.  The
+      xgmac driver supports 10Mbit/s, 100Mbit/s, 1000Mbit/s, and 2500Mbit/s.  Using 1000,
+      as default value, enables driver to configure 10 and 100Mbit/s speeds.
+      2500Mbit/s speed can be used only with Soft PCS. When selected driver assumes
+      soft PCS is connected to XGMAC through GMII. make sure the phy-connection-type is
+      selected as gmii when 2500Mbit/s speed is selected.
+  tx-fifo-size:
+    type: int
+    enum:
+      - 1024
+      - 2048
+      - 4096
+      - 8192
+      - 16384
+      - 32768
+      - 65536
+      - 131072
+      - 262144
+    default: 32768
+    description: |
+      Specifies the size of the MTL Transmit FIFO
+  rx-fifo-size:
+    type: int
+    enum:
+      - 1024
+      - 2048
+      - 4096
+      - 8192
+      - 16384
+      - 32768
+      - 65536
+      - 131072
+      - 262144
+    default: 32768
+    description: |
+      Specifies the size of the MTL Receive FIFO
+  num-dma-ch:
+    type: int
+    required: true
+    description: |
+      Number of dma channels range: 1 to 8.
+  num-tx-queues:
+    type: int
+    required: true
+    description: |
+      Number of hardware TX queues range: 1 to 8.
+  num-rx-queues:
+    type: int
+    required: true
+    description: |
+      Number of hardware RX queues range: 1 to 8.
+  num-tc:
+    type: int
+    default: 1
+    description: |
+      Number of traffic classes range: 1 to 7.
+  full-duplex-mode-en:
+    type: boolean
+    required: true
+    description: |
+      MAC communication mode to full duplex mode.
+  wr-osr-lmt:
+    type: int
+    default: 31
+    description: |
+      AXI Maximum Write Outstanding Request Limit.This value
+      limits the maximum outstanding request on the AXI write
+      interface. Maximum outstanding requests = WR_OSR_LMT + 1
+  rd-osr-lmt:
+    type: int
+    default: 31
+    description: |
+      AXI Maximum Read Outstanding Request Limit.This value
+      limits the maximum outstanding request on the AXI read
+      interface. Maximum outstanding requests = WR_OSR_LMT + 1
+  pbl:
+    type: int
+    default: 32
+    description: |
+      Programmable burst length range: 4,5,16,32,64,128,256
+  edma-tdps:
+    type: int
+    default: 1
+    description: |
+      Tx Descriptor Pre-fetch threshold Size.
+      This field controls the threshold in the Descriptor cache after
+      which the DMA starts pre-fetching the TxDMA descriptors. The
+      DMA engine for all TxDMA channels initiate requests for the
+      descriptor fetches as soon as the number of descriptors in the
+      cache memory for that DMA channel, falls below or equal to
+      the programmed threshold (each descriptor is 16 bytes)
+      Range: 0,1,2,3,4,5
+  edma-rdps:
+    type: int
+    default: 1
+    description: |
+      Rx Descriptor Pre-fetch threshold Size.
+      This field controls the threshold in the Descriptor cache after
+      which the DMA starts pre-fetching the RxDMA descriptors. The
+      DMA engine for all RxDMA channels initiate requests for the
+      descriptor fetches as soon as the number of descriptors in the
+      cache memory for that DMA channel, falls below or equal to
+      the programmed threshold (each descriptor is 16 bytes)
+      Range: 0,1,2,3,4,5
+  pblx8:
+    type: boolean
+    description: |
+      8xPBL mode.
+      When this is set to true, the PBL value is multiplied eight times.
+      Therefore, the DMA transfers the data in 8, 16, 32, 64, 128, and 256
+      beats depending on the PBL value.
+  ubl:
+    type: boolean
+    description: |
+      AXI Undefined Burst Length.
+      1: The AXI master can perform burst transfers that are equal to or less
+      than the maximum allowed burst length enabled.
+      0: The AXI master performs one of the following burst transfers: Burst
+      transfers of fixed burst lengths as indicated by the BLEN256, BLEN128,
+      BLEN64, BLEN32, BLEN16, BLEN8, or BLEN4 field.
+  blen4:
+    type: boolean
+    description: |
+      AXI Burst Length 4.
+      When this enabled and the mixed_burst is disabled, the AXI master
+      can select a burst length of 4 on the AXI interface.
+      When the mixed_burst enabled, enabling this field has no effect.
+  blen8:
+    type: boolean
+    description: |
+      AXI Burst Length 8.
+      When this enabled and the mixed_burst is disabled, the AXI master
+      can select a burst length of 8 on the AXI interface.
+      When the mixed_burst enabled, enabling this field has no effect.
+  blen16:
+    type: boolean
+    description: |
+      AXI Burst Length 16.
+      When this enabled and the mixed_burst is disabled, the AXI master
+      can select a burst length of 16 on the AXI interface.
+      When the mixed_burst enabled, enabling this field has no effect.
+  blen32:
+    type: boolean
+    description: |
+      AXI Burst Length 32.
+      When this enabled and the mixed_burst is disabled, the AXI master
+      can select a burst length of 32 on the AXI interface.
+      When the mixed_burst enabled, enabling this field has no effect.
+  blen64:
+    type: boolean
+    description: |
+      AXI Burst Length 64.
+      When this enabled and the mixed_burst is disabled, the AXI master
+      can select a burst length of 64 on the AXI interface.
+      When the mixed_burst enabled, enabling this field has no effect.
+  blen128:
+    type: boolean
+    description: |
+      AXI Burst Length 128.
+      When this enabled and the mixed_burst is disabled, the AXI master
+      can select a burst length of 128 on the AXI interface.
+      When the mixed_burst enabled, enabling this field has no effect.
+  blen256:
+    type: boolean
+    description: |
+      AXI Burst Length 256.
+      When this enabled and the mixed_burst is disabled, the AXI master
+      can select a burst length of 256 on the AXI interface.
+      When the mixed_burst enabled, enabling this field has no effect.
+  aal:
+    type: boolean
+    description: |
+      Address-Aligned Beats.
+      When this is enabled, the AXI master performs address-aligned
+      burst transfers on Read and Write channels.
+  eame:
+    type: boolean
+    description: |
+      Enhanced Address Mode Enable.
+      DMA master enables the enhanced address mode (40-bit or 48-bit addressing mode).
+      In this mode, the DMA engine uses either the 40-bit or 48-bit address, depending
+      on the configuration.
+  dma-ch-mss:
+    type: int
+    default: 4096
+    description: |
+      Maximum Segment Size.
+      This field specifies the maximum segment size that must be
+      used while segmenting the Transmit packet. This field is valid
+      only if the TSE enabled.
+  dma-ch-tdrl:
+    type: int
+    default: 512
+    description: |
+      Transmit Descriptor Ring Length.
+      This field sets the maximum number of Tx descriptors in the
+      circular descriptor ring. The maximum number of descriptors is
+      limited to 16384 descriptors.
+  dma-ch-rdrl:
+    type: int
+    default: 512
+    description: |
+      Receive Descriptor Ring Length.
+      This field sets the maximum number of Rx descriptors in the
+      circular descriptor ring. The maximum number of descriptors is
+      limited to 16384 descriptors.
+  dma-ch-rbsz:
+    type: int
+    default: 16383
+    description: |
+      Receive Buffer size.
+      This field indicates the size of the Rx buffers specified in bytes
+      allocated by the software to store the packets the Rx DMA
+      transfers to the host memory. The maximum buffer size is
+      limited to 16K bytes. The buffer size is applicable to payload
+      buffers when split headers are enabled.
+  dma-ch-arbs:
+    type: int
+    default: 0
+    description: |
+      Alternate Receive Buffer Size
+      Indicates size in bytes for Buffer 1 when ARBS is set
+      to a non-zero value (when split header(SPH) feature is not enabled).
+      When split header feature is enabled, ARBS indicates the
+      buffer size for header data. The maximum alternate buffer is
+      limited to 1016 or 1008-bytes depending on the data bus
+      widths (64-bit or 128-bit respectively). When ARBS=0, Rx
+      Buffer1 and Rx Buffer2 sizes are based on RBSZ field. Width of
+      ARBS field is 7 or 6-bits depending on the data bus widths
+      (64-bit or 128-bit respectively).
+  dma-ch-rxpbl:
+    type: int
+    default: 32
+    description: |
+      Receive Programmable Burst Length.
+      These field indicate the maximum number of beats to be
+      transferred in one DMA data transfer.
+  dma-ch-txpbl:
+    type: int
+    default: 32
+    description: |
+      Transmit   Programmable Burst Length.
+      These field indicate the maximum number of beats to be
+      transferred in one DMA data transfer.
+  dma-ch-sph:
+    type: boolean
+    description: |
+      Header-Payload Split.
+      When this field is set, the DMA splits the header and payload in
+      the Receive path. The DMA writes the header to the Buffer
+      Address1. The DMA writes the payload to the buffer to which
+      the Buffer Address2 is pointing.
+      The software must ensure that the header fits into the Receive
+      buffers. If the header length exceeds the receive buffer size,
+      the DMA does not split the header and payload.
+  dma-ch-edse:
+    type: boolean
+    description: |
+      Enhanced Descriptor Enable.
+      When this field is set, the corresponding channel uses
+      enhanced Descriptors.
+  dma-ch-tse:
+    type: boolean
+    description: |
+      TCP Segmentation Enabled.
+      When this field is set, the DMA performs the TCP segmentation
+      for packets in Channel. The TCP segmentation is done only
+      for those packets for which the TSE is set in the Tx Normal
+      descriptor.
+  dma-ch-osp:
+    type: boolean
+    description: |
+      Operate on Second Packet.
+      When this field is set, it instructs the DMA to process the second
+      packet of the Transmit data even before closing the descriptor
+      of the first packet.
+  mtl-raa:
+    type: boolean
+    description: |
+      Receive Arbitration Algorithm.
+      This field is used to select the arbitration algorithm for the Rx
+      side. 0: Strict Priority (SP), 1: Weighted Strict Priority (WSP)
+  mtl-etsalg:
+    type: int
+    default: 0
+    description: |
+      ETS Algorithm.
+      This field selects the type of ETS algorithm to be applied for
+      traffic classes whose transmission selection algorithm (TSA) is
+      set to ETS:
+      0: WRR algorithm
+      1: WFQ algorithm
+      2: DWRR algorithm
+  rxq-dyn-dma-en:
+    type: int
+    default: 1
+    description: |
+      Receive Queue Enabled for Dynamic DMA Channel Selection.
+      Each bit position of this field maps to a queue. there are total 8 queues
+  rxq-dma-ch-sel:
+    type: uint8-array
+    default: [0, 1, 2, 3, 4, 5, 6, 7]
+    description: |
+      Receive Queue Mapped to DMA Channel. this field does not have
+      effect when rxQ-DynDma-En is enabled.
+      range 0 - 7
+  txq-size:
+    type: uint8-array
+    default: [127]
+    description: |
+      This field indicates the size of the allocated Transmit queues
+      in blocks of 256 bytes. = (txQ-size + 1) x 256
+      range: 0 - 7
+  map-queue-tc:
+    type: uint8-array
+    default: [0]
+    description: |
+      Queue to Traffic Class Mapping. range 0 - 7
+  tx-threshold-ctrl:
+    type: uint8-array
+    default: [0]
+    description: |
+          Transmit Threshold Control.
+          These field control the threshold level of the MTL Tx Queue.
+          Transmission starts when the packet size within the MTL Tx
+          Queue is larger than the threshold. In addition, full packets
+          with length less than the threshold are also transmitted. This
+          field us used only when Transmit Store and Forward is disabled.
+          range 0 - 7
+                0: 64
+                1: reserved
+                2: 96
+                3: 128
+                4: 192
+                5: 256
+                6: 384
+                7: 512
+  rx-threshold-ctrl:
+    type: uint8-array
+    default: [0]
+    description: |
+          The received packet is transferred to the application or DMA
+          when the packet size within the MTL Rx queue is larger than
+          the threshold. In addition, full packets with length less than the
+          threshold are automatically transferred. The value of 11 is not
+          applicable if the size of the configured Rx Queue is 128 bytes.
+          This field is valid only when the RSF bit is zero. This field is
+          ignored when the RSF field is set to 1.
+          range 0 - 3
+                0: 64
+                1: reserved
+                2: 96
+                3: 128
+  rxq-size:
+    type: uint8-array
+    default: [127]
+    description: |
+      Receive Queue Size. This field indicates the size of the allocated
+      Receive queues in blocks 256 bytes. = (rxQ-size + 1) x 256
+      Range: 0 - 127 ,
+  tx-store-fwrd-en:
+    type: int
+    default: 255
+    description: |
+      Transmit Store and Forward. When this field is set, the transmission
+      starts when a full packet resides in the MTL Tx Queue.
+      Each bit position of this field maps to a queue. there are total 8 queues
+  hfc-en:
+    type: int
+    default: 0
+    description: |
+      Enable Hardware Flow Control. When this field is set, the flow control
+      signal operation, based on the fill-level of Rx queue, is enabled.
+      Each bit position of this field maps to a queue. there are total 8 queues
+  cs-error-pkt-drop-dis:
+    type: int
+    default: 0
+    description: |
+      Disable Dropping of TCP/IP Checksum Error Packets
+      Each bit position of this field maps to a queue. there are total 8 queues
+  rx-store-fwrd-en:
+    type: int
+    default: 255
+    description: |
+      Receive Store and Forward. When this field is set, DWC_xgmac reads a
+      packet from the Rx queue only after the complete packet has been written to it.
+      Each bit position of this field maps to a queue. there are total 8 queues
+  fep-en:
+    type: int
+    default: 0
+    description: |
+      Forward Error Packets.  When this bit is set, all packets except the runt error
+      packets are forwarded to the application or DMA.
+      Each bit position of this field maps to a queue. there are total 8 queues
+  fup-en:
+    type: int
+    default: 0
+    description: |
+      Forward Undersized Good Packets. When this field is set, the Rx queue forwards
+      the undersized good packets.
+      Each bit position of this field maps to a queue. there are total 8 queues
+  priorities-map-tc:
+    type: array
+    default: [0]
+    description: |
+      Priorities Mapped to Traffic Class. This field determines if the transmit
+      queues associated with the traffic class should be blocked from transmitting
+      for the specified pause time when a PFC packet is received with priorities
+      matching the priorities programmed in this field.
+      range: 0 - 7 and max array size is 8
+      ex: <0,1,2,3,4,5,6,7>
+  tx-sel-algorithm:
+    type: uint8-array
+    default: [0]
+    description: |
+      Transmission Selection Algorithm. This field is used to assign a transmission
+      selection algorithm for this traffic class.
+      range: 0 -strict priority
+             1 - Credit based shaper
+             2 - Enhanced Transmission Selection
+  jumbo-pkt-en:
+    type: boolean
+    description: |
+      Jumbo Packet Enable.
+      When this bit is set, the MAC allows jumbo packets of 9018
+      bytes (9022 bytes for VLAN tagged packets) without reporting
+      a giant packet error in the Rx packet status
+  gaint-pkt-size-limit:
+    type: int
+    default: 9018
+    description: |
+      Giant Packet Size Limit.
+      If the received packet size is greater than the value
+      programmed in this field in units of bytes, the MAC declares
+      the received packet as Giant packet. The value programmed in
+      this field must be greater than or equal to 1518 bytes. Any
+      other programmed value is considered as 1518 bytes.

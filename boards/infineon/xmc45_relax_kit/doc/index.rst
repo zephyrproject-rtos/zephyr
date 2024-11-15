@@ -1,7 +1,4 @@
-.. _xmc45_relax_kit:
-
-INFINEON XMC45-RELAX-KIT
-########################
+.. zephyr:board:: xmc45_relax_kit
 
 Overview
 ********
@@ -9,10 +6,6 @@ Overview
 The XMC4500 Relax Kit is designed to evaluate the capabilities of the XMC4500
 Microcontroller. It is based on High performance ARM Cortex-M4F which can run
 up to 120MHz.
-
-.. image:: xmc45_relax_kit.jpg
-   :align: center
-   :alt: XMC45-RELAX-KIT
 
 Features:
 =========
@@ -63,36 +56,59 @@ The Relax Kit development board configuration supports the following hardware fe
 +-----------+------------+-----------------------+
 | PTP       | on-chip    | ethernet              |
 +-----------+------------+-----------------------+
+| RTC       | on-chip    | rtc                   |
++-----------+------------+-----------------------+
 
 More details about the supported peripherals are available in `XMC4500 TRM`_
+
+The default configuration can be found in the Kconfig
+
+:zephyr_file:`boards/infineon/xmc45_relax_kit/xmc45_relax_kit_defconfig`
+
 Other hardware features are not currently supported by the Zephyr kernel.
 
-Building and Flashing
-*********************
-Flashing
-========
-
-Here is an example for the :ref:`hello_world` application.
+Build hello world sample
+************************
+Here is an example for building the :zephyr:code-sample:`hello_world` sample application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: xmc45_relax_kit
-   :goals: flash
+   :goals: build
 
-Debugging
-=========
+Programming and Debugging
+*************************
+West Commands
+=============
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
-Here is an example for the :ref:`hello_world` application.
+   .. tabs::
+      .. group-tab:: Windows
 
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: xmc45_relax_kit
-   :goals: debug
+         .. code-block:: shell
 
-Step through the application in your debugger.
+            # Do a pristine build
+            west build -b xmc45_relax_kit -p always samples/hello_world
+
+            west flash
+            west debug
+
+      .. group-tab:: Linux
+
+         .. code-block:: shell
+
+            # Do a pristine build
+            west build -b xmc45_relax_kit -p always samples/hello_world
+
+            west flash
+            west debug
+
+Once the gdb console starts after executing the west debug command, you may now set breakpoints and perform other standard GDB debugging.
 
 References
 **********
+
+.. target-notes::
 
 .. _Relax Kit User Manual:
    https://www.infineon.com/dgdl/Board_Users_Manual_XMC4500_Relax_Kit-V1_R1.2_released.pdf?fileId=db3a30433acf32c9013adf6b97b112f9

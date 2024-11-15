@@ -201,7 +201,7 @@ typedef int (*mbox_register_callback_t)(const struct device *dev,
  *
  * @param dev MBOX device instance
  * @param channel_id Channel ID
- * @param enables Set to 0 to disable and to nonzero to enable.
+ * @param enabled Set to 0 to disable and to nonzero to enable.
  *
  * @return See return values for mbox_set_enabled()
  * @see mbox_set_enabled()

@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2024 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Device tree declarations of npcm soc family */
+#include "npcm.dtsi"
+
+/ {
+	soc {
+
+		mdc: mdc@4000c000 {
+			compatible = "syscon";
+			reg = <0x4000c000 0xa>;
+			reg-io-width = <1>;
+		};
+
+		mdc_header: mdc@4000c00a {
+			compatible = "syscon";
+			reg = <0x4000c00a 0x4>;
+			reg-io-width = <2>;
+		};
+	};
+
+	soc-if {
+	};
+};

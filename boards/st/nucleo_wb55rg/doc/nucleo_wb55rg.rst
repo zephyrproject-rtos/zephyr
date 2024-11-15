@@ -1,7 +1,4 @@
-.. _nucleo_wb55rg_board:
-
-ST Nucleo WB55RG
-################
+.. zephyr:board:: nucleo_wb55rg
 
 Overview
 ********
@@ -28,10 +25,6 @@ Low Energy (BLE) SIG specification v5.0 and with IEEE 802.15.4-2011.
 - On-board socket for CR2032 battery
 - On-board ST-LINK/V2-1 debugger/programmer with USB re- enumeration capability:
   mass storage, virtual COM port and debug port
-
-.. image:: img/nucleowb55rg.jpg
-   :align: center
-   :alt: Nucleo WB55RG
 
 More information about the board can be found at the `Nucleo WB55RG website`_.
 
@@ -241,18 +234,27 @@ Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
+Nucleo WB55RG board includes an ST-LINK/V2-1 embedded debug tool interface.
+
 Applications for the ``nucleo_wb55rg`` board configuration can be built the
 usual way (see :ref:`build_an_application`).
 
 Flashing
 ========
 
-Nucleo WB55RG board includes an ST-LINK/V2-1 embedded debug tool
-interface.  This interface is supported by the openocd version included in the
-Zephyr SDK since v0.11.0.
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
 
-If you prefer, you can use pyocd, but it requires to enable "pack" support with
-the following pyocd command:
+Alternatively, OpenOCD or pyOCD can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner pyocd
+
+If you prefer, you can use pyOCD, but it requires to enable "pack" support with
+the following pyOCD command:
 
 .. code-block:: console
 
@@ -265,7 +267,7 @@ Flashing an application to Nucleo WB55RG
 
 Connect the Nucleo WB55RG to your host computer using the USB port.
 Then build and flash an application. Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 Run a serial host program to connect with your Nucleo board:
 
@@ -309,3 +311,6 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. _STM32WB5RG reference manual:
    https://www.st.com/resource/en/reference_manual/dm00318631.pdf
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

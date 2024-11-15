@@ -37,6 +37,8 @@ logging.getLogger("pykwalify.core").setLevel(50)
 sys.path.append(os.path.join(zephyr_base, 'scripts'))
 import list_boards
 
+from pylib.twister.twisterlib.statuses import TwisterStatus
+
 
 def _get_match_fn(globs, regexes):
     # Constructs a single regex that tests for matches against the globs in
@@ -237,14 +239,14 @@ class Filters:
         # Look for boards in monitored repositories
         lb_args = argparse.Namespace(**{'arch_roots': roots, 'board_roots': roots, 'board': None, 'soc_roots':roots,
                                         'board_dir': None})
-        known_boards = list_boards.find_v2_boards(lb_args)
+        known_boards = list_boards.find_v2_boards(lb_args).values()
 
         for changed in changed_boards:
             for board in known_boards:
                 c = (zephyr_base / changed).resolve()
                 if c.is_relative_to(board.dir.resolve()):
                     for file in glob.glob(os.path.join(board.dir, f"{board.name}*.yaml")):
-                        with open(file, 'r') as f:
+                        with open(file, 'r', encoding='utf-8') as f:
                             b = yaml.load(f.read(), Loader=SafeLoader)
                             matched_boards[b['identifier']] = board
 
@@ -469,12 +471,12 @@ if __name__ == "__main__":
     dup_free_set = set()
     logging.info(f'Total tests gathered: {len(f.all_tests)}')
     for ts in f.all_tests:
-        if ts.get('status') == 'filtered':
+        if TwisterStatus(ts.get('status')) == TwisterStatus.FILTER:
             continue
         n = ts.get("name")
         a = ts.get("arch")
         p = ts.get("platform")
-        if ts.get('status') == 'error':
+        if TwisterStatus(ts.get('status')) == TwisterStatus.ERROR:
             logging.info(f"Error found: {n} on {p} ({ts.get('reason')})")
             errors += 1
         if (n, a, p,) not in dup_free_set:

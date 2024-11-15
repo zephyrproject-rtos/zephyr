@@ -50,8 +50,8 @@ The *Minimal Realtime System Profile* (PSE51) includes all of the
 
     :ref:`POSIX_C_LANG_JUMP <posix_option_group_c_lang_jump>`, yes,
     :ref:`POSIX_C_LANG_SUPPORT <posix_option_group_c_lang_support>`, yes,
-    :ref:`POSIX_DEVICE_IO <posix_option_group_device_io>`,, :kconfig:option:`CONFIG_POSIX_DEVICE_IO`
-    :ref:`POSIX_SIGNALS <posix_option_group_signals>`,, :kconfig:option:`CONFIG_POSIX_SIGNALS`
+    :ref:`POSIX_DEVICE_IO <posix_option_group_device_io>`, yes, :kconfig:option:`CONFIG_POSIX_DEVICE_IO`
+    :ref:`POSIX_SIGNALS <posix_option_group_signals>`, yes, :kconfig:option:`CONFIG_POSIX_SIGNALS` :ref:`†<posix_undefined_behaviour>`
     :ref:`POSIX_SINGLE_PROCESS <posix_option_group_single_process>`, yes, :kconfig:option:`CONFIG_POSIX_SINGLE_PROCESS`
     :ref:`XSI_THREADS_EXT <posix_option_group_xsi_threads_ext>`, yes, :kconfig:option:`CONFIG_XSI_THREADS_EXT`
 
@@ -69,7 +69,7 @@ The *Minimal Realtime System Profile* (PSE51) includes all of the
     :ref:`_POSIX_THREAD_ATTR_STACKSIZE<posix_option_thread_attr_stacksize>`, 200809L, :kconfig:option:`CONFIG_POSIX_THREAD_ATTR_STACKSIZE`
     :ref:`_POSIX_THREAD_CPUTIME <posix_option_thread_cputime>`, 200809L, :kconfig:option:`CONFIG_POSIX_CPUTIME`
     :ref:`_POSIX_THREAD_PRIO_INHERIT <posix_option_thread_prio_inherit>`, 200809L, :kconfig:option:`CONFIG_POSIX_THREAD_PRIO_INHERIT`
-    :ref:`_POSIX_THREAD_PRIO_PROTECT <posix_option_thread_prio_protect>`, -1, :kconfig:option:`CONFIG_POSIX_THREAD_PRIO_PROTECT`
+    :ref:`_POSIX_THREAD_PRIO_PROTECT <posix_option_thread_prio_protect>`, 200809L, :kconfig:option:`CONFIG_POSIX_THREAD_PRIO_PROTECT`
     :ref:`_POSIX_THREAD_PRIORITY_SCHEDULING <posix_option_thread_priority_scheduling>`, 200809L, :kconfig:option:`CONFIG_POSIX_THREAD_PRIORITY_SCHEDULING`
     _POSIX_THREAD_SPORADIC_SERVER, -1,
 

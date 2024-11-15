@@ -4,7 +4,6 @@ common:
   platform_allow:
     - frdm_k64f
     - sam_e70_xplained/same70q21
-    - native_posix
     - native_sim
   integration_platforms:
     - native_sim

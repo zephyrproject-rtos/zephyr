@@ -1,7 +1,4 @@
-.. _mikroe_clicker_2:
-
-MikroE Clicker 2 for STM32
-##########################
+.. zephyr:board:: mikroe_clicker_2
 
 Overview
 ********
@@ -11,13 +8,6 @@ two headers for general signal break out.
 The board also has battery connection and a battery management unit on board.
 It can be powered either from a battery pack, such as a LiPo or from USB.
 The board is equipped with a 25MHz crystal as well as a 32.768kHz clock crystal.
-
-
-.. figure:: img/clicker-2-stm32f4-thickbox_default-2.jpg
-   :align: center
-   :alt: Clicker 2 For STM32
-
-   Clicker 2 For STM32 (Credit: MikroElektronika d.o.o.)
 
 Hardware
 ********
@@ -91,7 +81,7 @@ Unlocking with openocd makes it possible to flash.
        -f /usr/share/openocd/scripts/target/stm32f4x.cfg -c init\
        -c "reset halt" -c "stm32f4x unlock 0" -c "reset run" -c shutdown
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -109,7 +99,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

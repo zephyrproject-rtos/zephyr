@@ -20,6 +20,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_pkt.h>
+#include <zephyr/net/phy.h>
 
 #include <zephyr/sys/printk.h>
 #include <zephyr/irq.h>
@@ -35,6 +36,7 @@ struct eth_litex_dev_data {
 };
 
 struct eth_litex_config {
+	const struct device *phy_dev;
 	void (*config_func)(const struct device *dev);
 	bool random_mac_address;
 	uint32_t rx_slot_addr;
@@ -218,9 +220,33 @@ static int eth_stop(const struct device *dev)
 	return 0;
 }
 
+static const struct device *eth_get_phy(const struct device *dev)
+{
+	const struct eth_litex_config *config = dev->config;
+
+	return config->phy_dev;
+}
+
+static void phy_link_state_changed(const struct device *phy_dev,
+				   struct phy_link_state *state,
+				   void *user_data)
+{
+	const struct device *dev = (const struct device *)user_data;
+	struct eth_litex_dev_data *context = dev->data;
+
+	ARG_UNUSED(phy_dev);
+
+	if (state->is_up) {
+		net_eth_carrier_on(context->iface);
+	} else {
+		net_eth_carrier_off(context->iface);
+	}
+}
+
 static void eth_iface_init(struct net_if *iface)
 {
 	const struct device *port = net_if_get_device(iface);
+	const struct eth_litex_config *config = port->config;
 	struct eth_litex_dev_data *context = port->data;
 
 	/* set interface */
@@ -236,6 +262,19 @@ static void eth_iface_init(struct net_if *iface)
 			     NET_LINK_ETHERNET) < 0) {
 		LOG_ERR("setting mac failed");
 		return;
+	}
+
+	if (config->phy_dev == NULL) {
+		LOG_WRN("No PHY device");
+		return;
+	}
+
+	net_if_carrier_off(iface);
+
+	if (device_is_ready(config->phy_dev)) {
+		phy_link_callback_set(config->phy_dev, phy_link_state_changed, (void *)port);
+	} else {
+		LOG_ERR("PHY device not ready");
 	}
 }
 
@@ -256,6 +295,7 @@ static const struct ethernet_api eth_api = {
 	.stop = eth_stop,
 	.get_capabilities = eth_caps,
 	.set_config = eth_set_config,
+	.get_phy = eth_get_phy,
 	.send = eth_tx
 };
 
@@ -284,6 +324,8 @@ static const struct ethernet_api eth_api = {
 		.mac_addr = DT_INST_PROP(n, local_mac_address)};                                   \
                                                                                                    \
 	static const struct eth_litex_config eth_config##n = {                                     \
+		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, phy_handle),                                   \
+			   (.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(n, phy_handle)),))            \
 		.config_func = eth_irq_config##n,                                                  \
 		.random_mac_address = DT_INST_PROP(n, zephyr_random_mac_address),                  \
 		.rx_slot_addr = DT_INST_REG_ADDR_BY_NAME(n, rx_slot),                              \

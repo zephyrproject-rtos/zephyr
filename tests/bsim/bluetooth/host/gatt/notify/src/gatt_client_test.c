@@ -227,8 +227,8 @@ static struct bt_gatt_discover_params disc_params_short;
 static struct bt_gatt_subscribe_params sub_params_short = {
 	.notify = test_notify,
 	.subscribe = test_short_subscribed,
-	.ccc_handle = 0, /* Auto-discover CCC*/
-	.disc_params = &disc_params_short, /* Auto-discover CCC */
+	.ccc_handle = BT_GATT_AUTO_DISCOVER_CCC_HANDLE,
+	.disc_params = &disc_params_short,
 	.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE,
 	.value = BT_GATT_CCC_NOTIFY,
 };
@@ -236,8 +236,8 @@ static struct bt_gatt_discover_params disc_params_long;
 static struct bt_gatt_subscribe_params sub_params_long = {
 	.notify = test_notify,
 	.subscribe = test_long_subscribed,
-	.ccc_handle = 0, /* Auto-discover CCC*/
-	.disc_params = &disc_params_long, /* Auto-discover CCC */
+	.ccc_handle = BT_GATT_AUTO_DISCOVER_CCC_HANDLE,
+	.disc_params = &disc_params_long,
 	.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE,
 	.value = BT_GATT_CCC_NOTIFY,
 };

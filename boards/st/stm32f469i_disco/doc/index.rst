@@ -1,7 +1,4 @@
-.. _stm32f469i_disco_board:
-
-ST STM32F469I Discovery
-#######################
+.. zephyr:board:: stm32f469i_disco
 
 Overview
 ********
@@ -30,10 +27,6 @@ some highlights of the STM32F469I-DISCO board:
 - 4Mx32bit SDRAM
 - 128-Mbit Quad-SPI NOR Flash
 - Expansion connectors and Arduino UNO V3 connectors
-
-.. image:: img/stm32f469i_disco.jpg
-     :align: center
-     :alt: STM32F469I-DISCO
 
 More information about the board can be found at the `32F469IDISCOVERY website`_.
 
@@ -162,7 +155,7 @@ Flashing an application to STM32F469I-DISCO
 First, connect the STM32F469I-DISCO Discovery kit to your host computer using
 the USB port to prepare it for flashing. Then build and flash your application.
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -186,7 +179,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

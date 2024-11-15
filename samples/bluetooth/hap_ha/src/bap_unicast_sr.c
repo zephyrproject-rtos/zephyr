@@ -18,7 +18,7 @@
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/pacs.h>
 
-NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_ASCS_ASE_SRC_COUNT,
+NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT,
 			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
@@ -29,15 +29,16 @@ static const struct bt_audio_codec_cap lc3_codec_cap = BT_AUDIO_CODEC_CAP_LC3(
 
 static struct bt_conn *default_conn;
 static struct k_work_delayable audio_send_work;
-static struct bt_bap_stream streams[CONFIG_BT_ASCS_ASE_SNK_COUNT + CONFIG_BT_ASCS_ASE_SRC_COUNT];
+static struct bt_bap_stream streams[CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT +
+				    CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT];
 static struct audio_source {
 	struct bt_bap_stream *stream;
 	uint16_t seq_num;
-} source_streams[CONFIG_BT_ASCS_ASE_SRC_COUNT];
+} source_streams[CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT];
 static size_t configured_source_stream_count;
 
-static const struct bt_audio_codec_qos_pref qos_pref =
-	BT_AUDIO_CODEC_QOS_PREF(true, BT_GAP_LE_PHY_2M, 0x02, 10, 20000, 40000, 20000, 40000);
+static const struct bt_bap_qos_cfg_pref qos_pref =
+	BT_BAP_QOS_CFG_PREF(true, BT_GAP_LE_PHY_2M, 0x02, 10, 20000, 40000, 20000, 40000);
 
 static uint16_t get_and_incr_seq_num(const struct bt_bap_stream *stream)
 {
@@ -110,7 +111,7 @@ static void print_codec_cfg(const struct bt_audio_codec_cfg *codec_cfg)
 	bt_audio_data_parse(codec_cfg->meta, codec_cfg->meta_len, print_cb, "meta");
 }
 
-static void print_qos(const struct bt_audio_codec_qos *qos)
+static void print_qos(const struct bt_bap_qos_cfg *qos)
 {
 	printk("QoS: interval %u framing 0x%02x phy 0x%02x sdu %u "
 	       "rtn %u latency %u pd %u\n",
@@ -156,7 +157,12 @@ static void audio_timer_timeout(struct k_work *work)
 	for (size_t i = 0; i < configured_source_stream_count; i++) {
 		struct bt_bap_stream *stream = source_streams[i].stream;
 
-		buf = net_buf_alloc(&tx_pool, K_FOREVER);
+		buf = net_buf_alloc(&tx_pool, K_NO_WAIT);
+		if (buf == NULL) {
+			printk("Failed to allocate TX buffer\n");
+			/* Break and retry later */
+			break;
+		}
 		net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
 
 		net_buf_add_mem(buf, buf_data, len_to_send);
@@ -195,7 +201,7 @@ static struct bt_bap_stream *stream_alloc(void)
 
 static int lc3_config(struct bt_conn *conn, const struct bt_bap_ep *ep, enum bt_audio_dir dir,
 		      const struct bt_audio_codec_cfg *codec_cfg, struct bt_bap_stream **stream,
-		      struct bt_audio_codec_qos_pref *const pref, struct bt_bap_ascs_rsp *rsp)
+		      struct bt_bap_qos_cfg_pref *const pref, struct bt_bap_ascs_rsp *rsp)
 {
 	printk("ASE Codec Config: conn %p ep %p dir %u\n", conn, ep, dir);
 
@@ -221,7 +227,7 @@ static int lc3_config(struct bt_conn *conn, const struct bt_bap_ep *ep, enum bt_
 
 static int lc3_reconfig(struct bt_bap_stream *stream, enum bt_audio_dir dir,
 			const struct bt_audio_codec_cfg *codec_cfg,
-			struct bt_audio_codec_qos_pref *const pref, struct bt_bap_ascs_rsp *rsp)
+			struct bt_bap_qos_cfg_pref *const pref, struct bt_bap_ascs_rsp *rsp)
 {
 	printk("ASE Codec Reconfig: stream %p\n", stream);
 
@@ -233,7 +239,7 @@ static int lc3_reconfig(struct bt_bap_stream *stream, enum bt_audio_dir dir,
 	return -ENOEXEC;
 }
 
-static int lc3_qos(struct bt_bap_stream *stream, const struct bt_audio_codec_qos *qos,
+static int lc3_qos(struct bt_bap_stream *stream, const struct bt_bap_qos_cfg *qos,
 		   struct bt_bap_ascs_rsp *rsp)
 {
 	printk("QoS: stream %p qos %p\n", stream, qos);
@@ -316,6 +322,11 @@ static int lc3_release(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp
 	return 0;
 }
 
+static struct bt_bap_unicast_server_register_param param = {
+	CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT,
+	CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT
+};
+
 static const struct bt_bap_unicast_server_cb unicast_server_cb = {
 	.config = lc3_config,
 	.reconfig = lc3_reconfig,
@@ -394,6 +405,7 @@ static struct bt_pacs_cap cap_source = {
 
 int bap_unicast_sr_init(void)
 {
+	bt_bap_unicast_server_register(&param);
 	bt_bap_unicast_server_register_cb(&unicast_server_cb);
 
 	bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &cap_sink);

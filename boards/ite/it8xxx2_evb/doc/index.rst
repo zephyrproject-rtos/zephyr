@@ -133,7 +133,7 @@ Wiring
 Building
 ========
 
-#. Build :ref:`hello_world` application as you would normally do
+#. Build :zephyr:code-sample:`hello_world` application as you would normally do
    (see :`Zephyr Getting Started Guide`_):.
 
    .. zephyr-app-commands::

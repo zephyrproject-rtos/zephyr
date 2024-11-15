@@ -19,7 +19,7 @@
  * @brief BSD socket service API
  * @defgroup bsd_socket_service BSD socket service API
  * @since 3.6
- * @version 0.1.0
+ * @version 0.2.0
  * @ingroup networking
  * @{
  */
@@ -32,15 +32,23 @@
 extern "C" {
 #endif
 
+struct net_socket_service_event;
+
+/** @brief The signature for a net socket service handler function.
+ *
+ * The function will be invoked by the socket service.
+ *
+ * @param pev the socket service event that provided the handler.
+ */
+typedef void (*net_socket_service_handler_t)(struct net_socket_service_event *pev);
+
 /**
  * This struct contains information which socket triggered
  * calls to the callback function.
  */
 struct net_socket_service_event {
-	/** k_work that is done when there is desired activity in file descriptor. */
-	struct k_work work;
 	/** Callback to be called for desired socket activity */
-	k_work_handler_t callback;
+	net_socket_service_handler_t callback;
 	/** Socket information that triggered this event. */
 	struct zsock_pollfd event;
 	/** User data */
@@ -67,8 +75,6 @@ struct net_socket_service_desc {
 	 */
 	const char *owner;
 #endif
-	/** Workqueue where the work is submitted. */
-	struct k_work_q *work_q;
 	/** Pointer to the list of services that we are listening */
 	struct net_socket_service_event *pev;
 	/** Length of the pollable socket array for this service. */
@@ -83,15 +89,13 @@ struct net_socket_service_desc {
 #define __z_net_socket_svc_get_idx(_svc_id) __z_net_socket_service_idx_##_svc_id
 #define __z_net_socket_svc_get_owner __FILE__ ":" STRINGIFY(__LINE__)
 
-extern void net_socket_service_callback(struct k_work *work);
-
 #if CONFIG_NET_SOCKETS_LOG_LEVEL >= LOG_LEVEL_DBG
 #define NET_SOCKET_SERVICE_OWNER .owner = __z_net_socket_svc_get_owner,
 #else
 #define NET_SOCKET_SERVICE_OWNER
 #endif
 
-#define __z_net_socket_service_define(_name, _work_q, _cb, _count, ...) \
+#define __z_net_socket_service_define(_name, _cb, _count, ...) \
 	static int __z_net_socket_svc_get_idx(_name);			\
 	static struct net_socket_service_event				\
 			__z_net_socket_svc_get_name(_name)[_count] = {	\
@@ -103,7 +107,6 @@ extern void net_socket_service_callback(struct k_work *work);
 	COND_CODE_0(NUM_VA_ARGS_LESS_1(__VA_ARGS__), (), __VA_ARGS__)	\
 	const STRUCT_SECTION_ITERABLE(net_socket_service_desc, _name) = { \
 		NET_SOCKET_SERVICE_OWNER				\
-		.work_q = (_work_q),                                    \
 		.pev = __z_net_socket_svc_get_name(_name),		\
 		.pev_len = (_count),					\
 		.idx = &__z_net_socket_svc_get_idx(_name),		\
@@ -126,13 +129,11 @@ extern void net_socket_service_callback(struct k_work *work);
  *       instead.
  *
  * @param name Name of the service.
- * @param work_q Pointer to workqueue where the work is done. Can be null in which case
- *        system workqueue is used.
  * @param cb Callback function that is called for socket activity.
  * @param count How many pollable sockets is needed for this service.
  */
-#define NET_SOCKET_SERVICE_SYNC_DEFINE(name, work_q, cb, count)	\
-	__z_net_socket_service_define(name, work_q, cb, count)
+#define NET_SOCKET_SERVICE_SYNC_DEFINE(name, cb, count)	\
+	__z_net_socket_service_define(name, cb, count)
 
 /**
  * @brief Statically define a network socket service in a private (static) scope.
@@ -141,13 +142,11 @@ extern void net_socket_service_callback(struct k_work *work);
  *        with next socket service.
  *
  * @param name Name of the service.
- * @param work_q Pointer to workqueue where the work is done. Can be null in which case
- *        system workqueue is used.
  * @param cb Callback function that is called for socket activity.
  * @param count How many pollable sockets is needed for this service.
  */
-#define NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(name, work_q, cb, count)	\
-	__z_net_socket_service_define(name, work_q, cb, count, static)
+#define NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(name, cb, count)	\
+	__z_net_socket_service_define(name, cb, count, static)
 
 /**
  * @brief Register pollable sockets.

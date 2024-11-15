@@ -345,7 +345,8 @@ ssize_t zpacket_recvfrom_ctx(struct net_context *ctx, void *buf, size_t max_len,
 		zpacket_set_source_addr(ctx, pkt, src_addr, addrlen);
 	}
 
-	if (IS_ENABLED(CONFIG_NET_PKT_RXTIME_STATS) &&
+	if ((IS_ENABLED(CONFIG_NET_PKT_RXTIME_STATS) ||
+	     IS_ENABLED(CONFIG_TRACING_NET_CORE)) &&
 	    !(flags & ZSOCK_MSG_PEEK)) {
 		net_socket_update_tc_rx_time(pkt, k_cycle_get_32());
 	}
@@ -461,16 +462,16 @@ static int packet_sock_setsockopt_vmeth(void *obj, int level, int optname,
 	return zpacket_setsockopt_ctx(obj, level, optname, optval, optlen);
 }
 
-static int packet_sock_close_vmeth(void *obj)
+static int packet_sock_close2_vmeth(void *obj, int fd)
 {
-	return zsock_close_ctx(obj);
+	return zsock_close_ctx(obj, fd);
 }
 
 static const struct socket_op_vtable packet_sock_fd_op_vtable = {
 	.fd_vtable = {
 		.read = packet_sock_read_vmeth,
 		.write = packet_sock_write_vmeth,
-		.close = packet_sock_close_vmeth,
+		.close2 = packet_sock_close2_vmeth,
 		.ioctl = packet_sock_ioctl_vmeth,
 	},
 	.bind = packet_sock_bind_vmeth,

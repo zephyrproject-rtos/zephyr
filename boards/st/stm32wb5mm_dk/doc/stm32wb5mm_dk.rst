@@ -1,7 +1,4 @@
-.. _stm32wb5mm_dk_discovery_kit:
-
-ST STM32WB5MM-DK
-################
+.. zephyr:board:: stm32wb5mm_dk
 
 Overview
 ********
@@ -46,10 +43,6 @@ STM32WB5MM-DK supports the following features:
 * On-board ST-LINK/V2-1 debugger/programmer with USB re-enumeration
     - Virtual COM port and debug port
 
-
-.. image:: img/STM32WB5MM_DK.jpg
-   :align: center
-   :alt: STM32WB5MM-DK
 
 More information about the board can be found in `STM32WB5MM-DK on www.st.com`_.
 
@@ -142,8 +135,8 @@ For compatibility information with the various versions of these binaries,
 please check `modules/hal/stm32/lib/stm32wb/hci/README`_
 in the ``hal_stm32`` repo.
 
-Note that since STM32WB Cube package V1.13.2, `"full stack"` binaries are not
-compatible anymore for a use in Zephyr and only `"HCI Only"` versions should be
+Note that since STM32WB Cube package V1.13.2, "full stack" binaries are not
+compatible anymore for a use in Zephyr and only "HCI Only" versions should be
 used on the M0 side.
 
 Connections and IOs
@@ -189,15 +182,24 @@ and the second to PC13. They have the aliases sw0 and sw1 respectively.
 Programming and Debugging
 *************************
 
+STM32WB5MM-DK has an on-board ST-Link to flash and debug the firmware on the module.
+
 Applications for the ``stm32wb5mm_dk`` board configuration can be built the
 usual way (see :ref:`build_an_application`).
 
 Flashing
 ========
 
-STM32WB5MM-DK has an on-board ST-Link to flash and debug the firmware on the
-module.
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
 
+Alternatively, OpenOCD or pyOCD can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner pyocd
 
 Flashing ``hello_world`` application to STM32WB5MM-DK
 ------------------------------------------------------
@@ -239,9 +241,15 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. _STM32WB5MM-DK on www.st.com:
    https://www.st.com/en/evaluation-tools/stm32wb5mm-dk.html
+
 .. _STM32WB5MMG datasheet:
    https://www.st.com/resource/en/datasheet/stm32wb5mmg.pdf
+
 .. _modules/hal/stm32/lib/stm32wb/hci/README:
    https://github.com/zephyrproject-rtos/hal_stm32/blob/main/lib/stm32wb/hci/README
+
 .. _Hello_World:
    https://docs.zephyrproject.org/latest/samples/hello_world/README.html
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

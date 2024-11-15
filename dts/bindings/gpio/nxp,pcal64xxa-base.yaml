@@ -15,6 +15,15 @@ properties:
     description: |
       GPIO connected to the controller RESET pin. This pin is active-low.
 
+  no-auto-reset:
+    type: boolean
+    description: |
+      This flag disables the automatic reset, which allows the implementation
+      of for instance an external state retention of the port expander. If
+      this flag is set it must be ensured that for an actually uninitialized
+      port expander the manual reset is triggered via the exposed reset
+      function, specific to the PCAL64XXA.
+
   "#gpio-cells":
     const: 2
 

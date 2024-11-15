@@ -11,6 +11,7 @@ config SOC_SERIES_NPCX9
 	select CPU_HAS_ARM_MPU
 	select SOC_FAMILY_NPCX
 	select HAS_PM
+	select SOC_EARLY_INIT_HOOK
 
 config NPCX_VCC1_RST_HANG_WORKAROUND
 	bool

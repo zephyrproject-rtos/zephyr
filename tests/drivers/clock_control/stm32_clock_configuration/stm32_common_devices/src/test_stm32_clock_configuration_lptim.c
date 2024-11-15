@@ -10,7 +10,7 @@
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/logging/log.h>
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(lptim1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lptim1))
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT st_stm32_lptim

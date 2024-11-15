@@ -38,20 +38,25 @@ static int nxp_gau_dac_channel_setup(const struct device *dev,
 {
 	const struct nxp_gau_dac_config *config = dev->config;
 	dac_channel_config_t dac_channel_config = {0};
+	bool use_internal = true;
 
 	if (channel_cfg->resolution != 10) {
 		LOG_ERR("DAC only support 10 bit resolution");
 		return -EINVAL;
 	}
 
-	if (channel_cfg->buffered) {
+	if (channel_cfg->internal && channel_cfg->buffered) {
+		LOG_ERR("DAC output can not be buffered and internal");
+		return -EINVAL;
+	} else if (channel_cfg->buffered) {
 		/* External and internal output are mutually exclusive */
 		LOG_WRN("Note: buffering DAC output to pad disconnects internal output");
+		use_internal = false;
 	}
 
 	dac_channel_config.waveType = kDAC_WaveNormal;
-	dac_channel_config.outMode = channel_cfg->buffered ?
-				kDAC_ChannelOutputPAD : kDAC_ChannelOutputInternal;
+	dac_channel_config.outMode =
+		use_internal ? kDAC_ChannelOutputInternal : kDAC_ChannelOutputPAD;
 	dac_channel_config.timingMode = kDAC_NonTimingCorrelated;
 	dac_channel_config.enableTrigger = false;
 	dac_channel_config.enableDMA = false;

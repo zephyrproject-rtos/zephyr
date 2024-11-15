@@ -1,17 +1,14 @@
-.. _esp32_devkitc_wroom:
-
-ESP32-DEVKITC-WROOM
-###################
+.. zephyr:board:: esp32_devkitc_wroom
 
 Overview
 ********
 
-ESP32-DEVKITC-WROOM is a series of low cost, low power system on a chip microcontrollers
-with integrated Wi-Fi & dual-mode Bluetooth.  The ESP32 series employs a
+ESP32 is a series of low cost, low power system on a chip microcontrollers
+with integrated Wi-Fi & dual-mode Bluetooth. The ESP32 series employs a
 Tensilica Xtensa LX6 microprocessor in both dual-core and single-core
-variations.  ESP32-WROOM is created and developed by Espressif Systems, a
+variations. ESP32 is created and developed by Espressif Systems, a
 Shanghai-based Chinese company, and is manufactured by TSMC using their 40nm
-process. [1]_
+process. For more information, check `ESP32-DevKitC-WROOM`_.
 
 The features include the following:
 
@@ -41,22 +38,19 @@ The features include the following:
 - Cryptographic hardware acceleration (RNG, ECC, RSA, SHA-2, AES)
 - 5uA deep sleep current
 
-.. figure:: img/esp32_devkitc_wroom.jpg
-    :align: center
-    :alt: ESP32-DEVKITC-WROOM
-
-    ESP32-DevKitC-WROOM-32D DK
+For more information, check the datasheet at `ESP32 Datasheet`_ or the technical reference
+manual at `ESP32 Technical Reference Manual`_.
 
 Asymmetric Multiprocessing (AMP)
 ********************************
 
-ESP32-DEVKITC-WROOM allows 2 different applications to be executed in ESP32 SoC. Due to its dual-core architecture, each core can be enabled to execute customized tasks in stand-alone mode
-and/or exchanging data over OpenAMP framework. See :ref:`ipc_samples` folder as code reference.
+ESP32-DevKitC-WROOM allows 2 different applications to be executed in ESP32 SoC. Due to its dual-core architecture, each core can be enabled to execute customized tasks in stand-alone mode
+and/or exchanging data over OpenAMP framework. See :zephyr:code-sample-category:`ipc` folder as code reference.
 
 Supported Features
 ==================
 
-Current Zephyr's ESP32-WROOM board supports the following features:
+Current Zephyr's ESP32-DevKitC-WROOM board supports the following features:
 
 +------------+------------+-------------------------------------+
 | Interface  | Controller | Driver/Component                    |
@@ -130,7 +124,7 @@ MCUboot bootloader
 ==================
 
 User may choose to use MCUboot bootloader instead. In that case the bootloader
-must be build (and flash) at least once.
+must be built (and flashed) at least once.
 
 There are two options to be used when building an application:
 
@@ -156,7 +150,7 @@ To build the sample application using sysbuild use the command:
 
 .. zephyr-app-commands::
    :tool: west
-   :app: samples/hello_world
+   :zephyr-app: samples/hello_world
    :board: esp_wrover_kit
    :goals: build
    :west-args: --sysbuild
@@ -192,7 +186,7 @@ Manual build
 ============
 
 During the development cycle, it is intended to build & flash as quickly possible.
-For that reason, images can be build one at a time using traditional build.
+For that reason, images can be built one at a time using traditional build.
 
 The instructions following are relevant for both manual build and sysbuild.
 The only difference is the structure of the build directory.
@@ -210,7 +204,7 @@ Build and flash applications as usual (see :ref:`build_an_application` and
    :goals: build
 
 The usual ``flash`` target will work with the ``esp32_devkitc_wroom`` board
-configuration. Here is an example for the :ref:`hello_world`
+configuration. Here is an example for the :zephyr:code-sample:`hello_world`
 application.
 
 .. zephyr-app-commands::
@@ -235,10 +229,9 @@ message in the monitor:
 Debugging
 *********
 
-ESP32-DEVKITC-WROOM support on OpenOCD is available upstream as of version 0.12.0.
-Download and install OpenOCD from `OpenOCD`_.
+ESP32 support on OpenOCD is available at `OpenOCD ESP32`_.
 
-On the ESP-WROOM-32 DevKitC board, the JTAG pins are not run to a
+On the ESP32-DevKitC-WROOM board, the JTAG pins are not run to a
 standard connector (e.g. ARM 20-pin) and need to be manually connected
 to the external programmer (e.g. a Flyswatter2):
 
@@ -260,17 +253,16 @@ to the external programmer (e.g. a Flyswatter2):
 | IO15       | TDO       |
 +------------+-----------+
 
-Further documentation can be obtained from the SoC vendor in `JTAG debugging
-for ESP32`_.
+Further documentation can be obtained from the SoC vendor in `JTAG debugging for ESP32`_.
 
-Here is an example for building the :ref:`hello_world` application.
+Here is an example for building the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: esp32_devkitc_wroom/esp32/procpu
    :goals: build flash
 
-You can debug an application in the usual way. Here is an example for the :ref:`hello_world` application.
+You can debug an application in the usual way. Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -288,12 +280,13 @@ GDB stub is enabled on ESP32.
   This does not work as the code is on flash which cannot be randomly
   accessed for modification.
 
-.. _`JTAG debugging for ESP32`: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/jtag-debugging/index.html
-.. _`OpenOCD`: https://github.com/openocd-org/openocd
-
 References
 **********
 
-.. [1] https://en.wikipedia.org/wiki/ESP32
-.. _ESP32 Technical Reference Manual: https://espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf
-.. _Hardware Reference: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/hw-reference/index.html
+.. target-notes::
+
+.. _`ESP32-DevKitC-WROOM`: https://docs.espressif.com/projects/esp-idf/en/stable/esp32/hw-reference/esp32/get-started-devkitc.html#
+.. _`ESP32 Datasheet`: https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf
+.. _`ESP32 Technical Reference Manual`: https://espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf
+.. _`JTAG debugging for ESP32`: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/jtag-debugging/index.html
+.. _`OpenOCD ESP32`: https://github.com/espressif/openocd-esp32/releases

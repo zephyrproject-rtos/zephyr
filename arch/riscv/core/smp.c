@@ -74,7 +74,11 @@ void arch_secondary_cpu_init(int hartid)
 #endif
 #ifdef CONFIG_SMP
 	irq_enable(RISCV_IRQ_MSOFT);
-#endif
+#endif /* CONFIG_SMP */
+#ifdef CONFIG_PLIC_IRQ_AFFINITY
+	/* Enable on secondary cores so that they can respond to PLIC */
+	irq_enable(RISCV_IRQ_MEXT);
+#endif /* CONFIG_PLIC_IRQ_AFFINITY */
 	riscv_cpu_init[cpu_num].fn(riscv_cpu_init[cpu_num].arg);
 }
 

@@ -7,6 +7,7 @@
  *
  * @brief public S2RAM APIs.
  * @defgroup pm_s2ram S2RAM APIs
+ * @ingroup subsys_pm
  * @{
  */
 
@@ -64,6 +65,11 @@ int arch_pm_s2ram_suspend(pm_s2ram_system_off_fn_t system_off);
  *
  * Default implementation is setting a magic word in RAM. CONFIG_PM_S2RAM_CUSTOM_MARKING
  * allows custom implementation.
+ * The following requirements must be fulfilled:
+ * - the function cannot use stack (asm function or function with 'naked' attribute)
+ * - the content of the R1 and R4 registers must remain unchanged
+ * - returning from the function should be performed with the `bx lr` instruction
+ *
  */
 void pm_s2ram_mark_set(void);
 
@@ -75,6 +81,11 @@ void pm_s2ram_mark_set(void);
  *
  * Default implementation is checking a magic word in RAM. CONFIG_PM_S2RAM_CUSTOM_MARKING
  * allows custom implementation.
+ * The following requirements must be fulfilled:
+ * - the function cannot use stack (most likely asm function)
+ * - the content of the R1 and R4 registers must remain unchanged
+ * - the function's return value is passed by R0 register
+ * - returning from the function should be performed with the `bx lr` instruction
  *
  * @retval true if marking is found which indicates resuming after suspend-to-RAM.
  * @retval false if marking is not found which indicates standard boot.

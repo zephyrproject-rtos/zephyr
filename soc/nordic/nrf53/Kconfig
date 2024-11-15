@@ -37,9 +37,14 @@ config SOC_NRF5340_CPUNET
 
 if SOC_SERIES_NRF53X
 
+VREGMAIN_PATH := $(dt_nodelabel_path,vregmain)
+VREGRADIO_PATH := $(dt_nodelabel_path,vregradio)
+
 config SOC_NRF53_ANOMALY_160_WORKAROUND_NEEDED
 	bool "Workaround for nRF5340 anomaly 160"
 	imply SOC_NRF53_ANOMALY_160_WORKAROUND
+	default y if "$(dt_node_int_prop_int,$(VREGMAIN_PATH),regulator-initial-mode)" = 1
+	default y if "$(dt_node_int_prop_int,$(VREGRADIO_PATH),regulator-initial-mode)" = 1
 	help
 	  Indicates that the workaround for the anomaly 160 that affects
 	  the nRF5340 SoC should be applied.
@@ -107,18 +112,42 @@ if SOC_NRF5340_CPUAPP
 config SOC_DCDC_NRF53X_APP
 	bool
 	imply SOC_NRF53_ANOMALY_160_WORKAROUND_NEEDED
+	select DEPRECATED
 	help
+	  This option is deprecated, use devicetree instead. Example
+	  configuration:
+
+	  &vregmain {
+	    regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
+	  };
+
 	  Enable nRF53 series System on Chip Application MCU DC/DC converter.
 
 config SOC_DCDC_NRF53X_NET
 	bool
 	imply SOC_NRF53_ANOMALY_160_WORKAROUND_NEEDED
+	select DEPRECATED
 	help
+	  This option is deprecated, use devicetree instead. Example
+	  configuration:
+
+	  &vregradio {
+	    regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
+	  };
+
 	  Enable nRF53 series System on Chip Network MCU DC/DC converter.
 
 config SOC_DCDC_NRF53X_HV
 	bool
+	select DEPRECATED
 	help
+	  This option is deprecated, use devicetree instead. Example
+	  configuration:
+
+	  &vregh {
+	    status = "okay";
+	  };
+
 	  Enable nRF53 series System on Chip High Voltage DC/DC converter.
 
 config NRF_SPU_FLASH_REGION_SIZE
@@ -134,10 +163,11 @@ config NRF_SPU_RAM_REGION_SIZE
 	  RAM region size for the NRF_SPU peripheral
 
 config SOC_NRF_GPIO_FORWARDER_FOR_NRF5340
-	bool
+	bool "Forward GPIO pins to network core"
 	depends on NRF_SOC_SECURE_SUPPORTED
+	default y if $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_GPIO_FORWARDER))
 	help
-	  hidden option for including the nRF GPIO pin forwarding
+	  Will forward configured pins with the forwarder compatible to the network core for usage.
 
 config SOC_NRF53_CPUNET_MGMT
 	bool
@@ -147,11 +177,8 @@ config SOC_NRF53_CPUNET_MGMT
 
 config SOC_NRF53_CPUNET_ENABLE
 	bool "NRF53 Network MCU is enabled at boot time"
-	depends on !BT
 	default y if NRF_802154_SER_HOST
 	select SOC_NRF53_CPUNET_MGMT
-	select SOC_NRF_GPIO_FORWARDER_FOR_NRF5340 if \
-		$(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_GPIO_FORWARDER))
 	help
 	  This option enables releasing the Network 'force off' signal, which
 	  as a consequence will power up the Network MCU during system boot.
@@ -167,7 +194,6 @@ config BOARD_ENABLE_CPUNET
 	bool "[DEPRECATED] NRF53 Network MCU is enabled at boot time"
 	select SOC_NRF53_CPUNET_ENABLE
 	select DEPRECATED
-	depends on !BT
 	help
 	  Use SOC_NRF53_CPUNET_ENABLE instead.
 
@@ -175,8 +201,12 @@ if !TRUSTED_EXECUTION_NONSECURE || BUILD_WITH_TFM
 
 config SOC_ENABLE_LFXO
 	bool "LFXO"
-	default y
+	select DEPRECATED
 	help
+	  This option is deprecated, use DT instead. For this option to apply,
+	  make sure to select either "internal" or "external" in the
+	  load-capacitors property.
+
 	  Enable the low-frequency oscillator (LFXO) functionality on XL1 and
 	  XL2 pins.
 	  This option must be enabled if either application or network core is
@@ -186,19 +216,49 @@ config SOC_ENABLE_LFXO
 choice SOC_LFXO_LOAD_CAPACITANCE
 	prompt "LFXO load capacitance"
 	depends on SOC_ENABLE_LFXO
-	default SOC_LFXO_CAP_INT_7PF
 
 config SOC_LFXO_CAP_EXTERNAL
 	bool "Use external load capacitors"
+	select DEPRECATED
+	help
+	  This option is deprecated, use DT instead. Example configuration:
+
+	  &lfxo {
+	      load-capacitors = "external";
+	  };
 
 config SOC_LFXO_CAP_INT_6PF
 	bool "6 pF internal load capacitance"
+	select DEPRECATED
+	help
+	  This option is deprecated, use DT instead. Example configuration:
+
+	  &lfxo {
+	      load-capacitors = "internal";
+	      load-capacitance-picofarad = <6>;
+	  };
 
 config SOC_LFXO_CAP_INT_7PF
 	bool "7 pF internal load capacitance"
+	select DEPRECATED
+	help
+	  This option is deprecated, use DT instead. Example configuration:
+
+	  &lfxo {
+	      load-capacitors = "internal";
+	      load-capacitance-picofarad = <7>;
+	  };
 
 config SOC_LFXO_CAP_INT_9PF
 	bool "9 pF internal load capacitance"
+	select DEPRECATED
+	help
+	  This option is deprecated, use DT instead. Example configuration:
+
+	  &lfxo {
+	      load-capacitors = "internal";
+	      load-capacitance-picofarad = <9>;
+	  };
 
 endchoice
 
@@ -209,6 +269,9 @@ choice SOC_HFXO_LOAD_CAPACITANCE
 config SOC_HFXO_CAP_DEFAULT
 	bool "SoC default"
 	help
+	  This option is deprecated, use DT instead. For this configuration to
+	  apply, no DT changes are required from the SoC DT file defaults.
+
 	  When this option is used, the SoC initialization routine does not
 	  touch the XOSC32MCAPS register value, so the default setting for
 	  the SoC is in effect. Please note that this may not necessarily be
@@ -217,10 +280,27 @@ config SOC_HFXO_CAP_DEFAULT
 
 config SOC_HFXO_CAP_EXTERNAL
 	bool "Use external load capacitors"
+	select DEPRECATED
+	help
+	  This option is deprecated, use DT instead. Example configuration:
+
+	  &hfxo {
+	      load-capacitors = "external";
+	  };
 
 config SOC_HFXO_CAP_INTERNAL
 	bool "Use internal load capacitors"
 	depends on NRF_SOC_SECURE_SUPPORTED
+	select DEPRECATED
+	help
+	  This option is deprecated, use DT instead. Example configuration:
+
+	  &hfxo {
+	      load-capacitors = "internal";
+	      ...
+	  };
+
+	  See CONFIG_SOC_HFXO_CAP_INT_VALUE_X2 for more information.
 
 endchoice
 
@@ -229,6 +309,13 @@ config SOC_HFXO_CAP_INT_VALUE_X2
 	depends on SOC_HFXO_CAP_INTERNAL
 	range 14 40
 	help
+	  This option is deprecated, use DT instead. Example configuration:
+
+	  &hfxo {
+	      load-capacitors = "internal";
+	      load-capacitance-femtofarad = <7000>;
+	  };
+
 	  Internal capacitors ranging from 7.0 pF to 20.0 pF in 0.5 pF steps
 	  can be enabled on pins XC1 and XC2. This option specifies doubled
 	  capacitance value for the two capacitors. Set it to 14 to get 7.0 pF

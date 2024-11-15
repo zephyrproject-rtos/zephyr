@@ -5,7 +5,6 @@
  *
  * Emulator for the TI INA230 I2C power monitor
  */
-#define DT_DRV_COMPAT ti_ina230
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/emul.h>
@@ -30,17 +29,23 @@ struct ina230_emul_cfg {
 	uint16_t addr;
 };
 
+#define MAX_REGS 0xff
+
 struct ina230_emul_data {
-	struct ina230_reg ina230_regs[INA230_REGISTER_COUNT];
+	struct ina230_reg *regs;
 };
 
 static struct ina230_reg *get_register(struct ina230_emul_data *data, int reg)
 {
-	for (int i = 0; i < INA230_REGISTER_COUNT; i++) {
-		if (data->ina230_regs[i].id == reg) {
-			return &data->ina230_regs[i];
+	struct ina230_reg *c_reg = data->regs;
+
+	while (c_reg->bytes) {
+		if (c_reg->id == reg) {
+			return c_reg;
 		}
+		c_reg++;
 	}
+
 	return NULL;
 }
 
@@ -151,22 +156,40 @@ static const struct i2c_emul_api ina230_emul_api_i2c = {
 	.transfer = ina230_emul_transfer_i2c,
 };
 
-#define INA230_EMUL(n)							\
-	static const struct ina230_emul_cfg ina230_emul_cfg_##n = {	\
-		.addr = DT_INST_REG_ADDR(n),				\
-	};								\
-	static struct ina230_emul_data ina230_emul_data_##n = {		\
-		.ina230_regs = {					\
-			{INA230_REG_CONFIG, 2, 0x4127},			\
-			{INA230_REG_SHUNT_VOLT, 2, 0},			\
-			{INA230_REG_BUS_VOLT, 2, 0},			\
-			{INA230_REG_POWER, 2, 0},			\
-			{INA230_REG_CURRENT, 2, 0},			\
-			{INA230_REG_CALIB, 2, 0},			\
-			{INA230_REG_MASK, 2, 0},			\
-			{INA230_REG_ALERT, 2, 0},			\
-		}};							\
-	EMUL_DT_INST_DEFINE(n, ina230_emul_init, &ina230_emul_data_##n, &ina230_emul_cfg_##n,	\
-			    &ina230_emul_api_i2c, NULL)
+/* clang-format off */
 
-DT_INST_FOREACH_STATUS_OKAY(INA230_EMUL)
+#define CREATE_INA230_REGS                                                                         \
+	{INA230_REG_CONFIG, 2, 0x4127},                                                            \
+	{INA230_REG_SHUNT_VOLT, 2, 0},                                                             \
+	{INA230_REG_BUS_VOLT, 2, 0},                                                               \
+	{INA230_REG_POWER, 2, 0},                                                                  \
+	{INA230_REG_CURRENT, 2, 0},                                                                \
+	{INA230_REG_CALIB, 2, 0},                                                                  \
+	{INA230_REG_MASK, 2, 0},                                                                   \
+	{INA230_REG_ALERT, 2, 0}
+
+#define CREATE_INA236_REGS                                                                         \
+	CREATE_INA230_REGS,                                                                        \
+	{INA236_REG_MANUFACTURER_ID, 2, 0x449},                                                    \
+	{INA236_REG_DEVICE_ID, 2, 0xa080}
+
+/* clang-format on */
+
+#define INA230_EMUL(n, v)                                                                          \
+	static const struct ina230_emul_cfg ina23##v##_emul_cfg_##n = {                            \
+		.addr = DT_INST_REG_ADDR(n),                                                       \
+	};                                                                                         \
+	static struct ina230_reg ina23##v##_regs_##n[] = {CREATE_INA23##v##_REGS, {}};             \
+	static struct ina230_emul_data ina23##v##_emul_data_##n = {                                \
+		.regs = (struct ina230_reg *)ina23##v##_regs_##n,                                  \
+	};                                                                                         \
+	EMUL_DT_INST_DEFINE(n, ina230_emul_init, &ina23##v##_emul_data_##n,                        \
+			    &ina23##v##_emul_cfg_##n, &ina230_emul_api_i2c, NULL)
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT ti_ina230
+DT_INST_FOREACH_STATUS_OKAY_VARGS(INA230_EMUL, 0)
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT ti_ina236
+DT_INST_FOREACH_STATUS_OKAY_VARGS(INA230_EMUL, 6)

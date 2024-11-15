@@ -64,6 +64,9 @@ enum ieee802154_openthread_tx_mode {
 	 * section 11.3, table 11-2).
 	 *
 	 * Requires IEEE802154_OPENTHREAD_HW_MULTIPLE_CCA capability.
+	 *
+	 * @note Capability @ref IEEE802154_HW_SELECTIVE_TXCHANNEL applies as for
+	 *       @ref IEEE802154_TX_MODE_TXTIME_CCA.
 	 */
 	IEEE802154_OPENTHREAD_TX_MODE_TXTIME_MULTIPLE_CCA = IEEE802154_TX_MODE_PRIV_START
 };

@@ -7,7 +7,7 @@ set(hal_dir         ${ZEPHYR_HAL_INFINEON_MODULE_DIR}/mtb-hal-cat1)
 set(hal_cat1a_dir   ${hal_dir}/COMPONENT_CAT1A)
 set(hal_cat1b_dir   ${hal_dir}/COMPONENT_CAT1B)
 
-# PSoC 6 family defines
+# PSOC 6 family defines
 zephyr_compile_definitions_ifdef(CONFIG_SOC_FAMILY_INFINEON_CAT1A COMPONENT_CAT1A)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_FAMILY_INFINEON_CAT1B COMPONENT_CAT1B)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_FAMILY_INFINEON_CAT1 COMPONENT_CAT1)
@@ -78,7 +78,6 @@ zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_ADC     ${hal_dir}/source/cyhal
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_FLASH   ${hal_dir}/source/cyhal_nvm.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_I2C     ${hal_dir}/source/cyhal_i2c.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_LPTIMER ${hal_dir}/source/cyhal_lptimer.c)
-zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_PWM     ${hal_dir}/source/cyhal_pwm.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_RTC     ${hal_dir}/source/cyhal_rtc.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_SDIO    ${hal_dir}/source/cyhal_sdhc.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_SPI     ${hal_dir}/source/cyhal_spi.c)

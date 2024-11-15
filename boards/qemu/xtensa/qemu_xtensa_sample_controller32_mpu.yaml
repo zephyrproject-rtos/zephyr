@@ -1,0 +1,10 @@
+identifier: qemu_xtensa/sample_controller32/mpu
+name: QEMU Emulation for Xtensa with MPU
+type: qemu
+simulation: qemu
+arch: xtensa
+testing:
+  default: true
+  ignore_tags:
+    - net
+    - bluetooth

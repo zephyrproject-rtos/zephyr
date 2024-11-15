@@ -1,0 +1,92 @@
+{#
+  Copyright (c) 2024, The Linux Foundation.
+  SPDX-License-Identifier: Apache-2.0
+#}
+
+<form class="filter-form" aria-label="Filter boards by name, architecture, and vendor">
+
+  <div class="form-group" style="flex-basis: 100%">
+    <label for="name">Name</label>
+    <input type="text" id="name"
+      placeholder='Name (or partial name) of the board, e.g. "reel board", "nucleo", &hellip;'
+      oninput="filterBoards()" />
+  </div>
+
+  <div class="form-group">
+    <label for="arch">Architecture</label>
+    <div class="select-container">
+      <select id="arch">
+        <option value="" disabled selected>Select an architecture</option>
+        <option value="nios2">Altera Nios II</option>
+        <option value="arm">ARM</option>
+        <option value="arm64">ARM 64</option>
+        <option value="mips">MIPS</option>
+        <option value="posix">POSIX</option>
+        <option value="riscv">RISC-V</option>
+        <option value="sparc">SPARC</option>
+        <option value="arc">Synopsys DesignWare ARC</option>
+        <option value="x86">x86</option>
+        <option value="xtensa">Xtensa</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="form-group" style="flex-basis: 400px">
+    <label for="vendor">Vendor</label>
+    <div class="select-container">
+      <select id="vendor">
+        <option value="" disabled selected>Select a vendor</option>
+        {# Only show those vendors that have actual boards in the catalog.
+           Note: as sorting per vendor name is not feasible in Jinja, the option list is sorted in the JavaScript code later #}
+        {% for vendor in (boards | items | map(attribute='1.vendor') | unique ) -%}
+        <option value="{{ vendor }}">{{ vendors[vendor] }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label for="family">Family</label>
+    <select id="family" name="family" size="10" multiple></select>
+  </div>
+
+  <div class="form-group">
+    <label for="series">Series</label>
+    <select id="series" name="series" size="10" multiple></select>
+  </div>
+
+  <div class="form-group">
+    <label for="soc">SoC</label>
+    <select id="soc" name="soc" size="10" multiple></select>
+  </div>
+
+</form>
+
+<div id="form-options" style="text-align: center; margin-bottom: 20px">
+  <button
+    id="reset-filters"
+    class="btn btn-info btn-disabled fa fa-times"
+    tabindex="0"
+    onclick="resetForm()">
+    Reset Filters
+  </button>
+  <button
+    id="toggle-compact"
+    class="btn btn-info fa fa-bars"
+    tabindex="0"
+    onclick="toggleDisplayMode(this)">
+    Switch to Compact View
+  </button>
+</div>
+
+<div id="nb-matches" style="text-align: center"></div>
+
+<div id="catalog">
+  {% for board_name, board in boards | items | sort(attribute='1.full_name') -%}
+  {% include "board-card.html" %}
+  {% endfor %}
+</div>
+
+<script>
+  socs_data = {{ socs | tojson }};
+</script>

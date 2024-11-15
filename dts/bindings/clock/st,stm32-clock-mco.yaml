@@ -1,0 +1,39 @@
+#
+# Copyright (c) 2024, Joakim Andersson
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+compatible: "st,stm32-clock-mco"
+
+description: |
+        STM32 Microcontroller Clock Output (MCO)
+
+        Used to output a clock signal from the MCU to a GPIO pin.
+        The selected signal goes through a configurable prescaler before output.
+
+        Example:
+                &mco1 {
+                        clocks = <&rcc STM32_SRC_LSE MCO1_SEL(7)>;
+                        prescaler = <MCO1_PRE(1)>;
+                        pinctrl-0 = <&rcc_mco_pa8>;
+                        pinctrl-names = "default";
+                        status = "okay";
+                };
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+
+  clocks:
+    required: true
+
+  prescaler:
+    type: int
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true

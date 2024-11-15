@@ -21,6 +21,8 @@ extern "C" {
 /**
  * @defgroup usbd_msg_api USB device core API
  * @ingroup usb
+ * @since 3.7
+ * @version 0.1.0
  * @{
  */
 
@@ -40,6 +42,8 @@ enum usbd_msg_type {
 	USBD_MSG_SUSPEND,
 	/** Bus reset detected */
 	USBD_MSG_RESET,
+	/** Device changed configuration */
+	USBD_MSG_CONFIGURATION,
 	/** Non-correctable UDC error message  */
 	USBD_MSG_UDC_ERROR,
 	/** Unrecoverable device stack error message  */
@@ -61,6 +65,7 @@ static const char *const usbd_msg_type_list[] = {
 	"Device resumed",
 	"Device suspended",
 	"Bus reset",
+	"New device configuration",
 	"Controller error",
 	"Stack error",
 	"CDC ACM line coding",

@@ -136,7 +136,7 @@ static int usbd_ctrl_feed_dout(const struct device *dev, const size_t length)
 		return -ENOMEM;
 	}
 
-	net_buf_put(&cfg->fifo, buf);
+	k_fifo_put(&cfg->fifo, buf);
 
 	HAL_PCD_EP_Receive(&priv->pcd, cfg->addr, buf->data, buf->size);
 
@@ -423,7 +423,7 @@ static int udc_stm32_ep_mem_config(const struct device *dev,
 	const struct udc_stm32_config *cfg = dev->config;
 	uint32_t size;
 
-	size = MIN(ep->mps, cfg->ep_mps);
+	size = MIN(udc_mps_ep_size(ep), cfg->ep_mps);
 
 	if (!enable) {
 		priv->occupied_mem -= size;
@@ -487,7 +487,7 @@ static int udc_stm32_ep_mem_config(const struct device *dev,
 		return 0;
 	}
 
-	words = MIN(ep->mps, cfg->ep_mps) / 4;
+	words = MIN(udc_mps_ep_size(ep), cfg->ep_mps) / 4;
 	words = (words <= 64) ? words * 2 : words;
 
 	if (!enable) {
@@ -667,8 +667,8 @@ static int udc_stm32_ep_enable(const struct device *dev,
 		return ret;
 	}
 
-	status = HAL_PCD_EP_Open(&priv->pcd, ep_cfg->addr, ep_cfg->mps,
-				 ep_type);
+	status = HAL_PCD_EP_Open(&priv->pcd, ep_cfg->addr,
+				 udc_mps_ep_size(ep_cfg), ep_type);
 	if (status != HAL_OK) {
 		LOG_ERR("HAL_PCD_EP_Open failed(0x%02x), %d",
 			ep_cfg->addr, (int)status);

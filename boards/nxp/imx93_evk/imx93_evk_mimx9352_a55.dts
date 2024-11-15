@@ -17,6 +17,7 @@
 		zephyr,console = &lpuart2;
 		zephyr,shell-uart = &lpuart2;
 		zephyr,sram = &sram0;
+		zephyr,canbus = &flexcan2;
 	};
 
 	cpus {
@@ -64,6 +65,24 @@
 			gpios = <&gpio2 24 GPIO_ACTIVE_LOW>;
 		};
 	};
+
+	board_exp_sel: board-exp-sel {
+		/*
+		 * Kconfig BOARD_MIMX93_EVK_A55_EXP_SEL_INIT must be
+		 * enabled to configure it during init.
+		 */
+		compatible = "imx93evk-exp-sel";
+		mux-gpios = <&gpio_exp0 4 GPIO_ACTIVE_HIGH>;
+		mux = "A";
+	};
+
+	can_phy0: can-phy0 {
+		compatible = "nxp,tja1057", "can-transceiver-gpio";
+		standby-gpios = <&gpio_exp0 8 GPIO_ACTIVE_HIGH>;
+		max-bitrate = <8000000>;
+		#phy-cells = <0>;
+		status = "okay";
+	};
 };
 
 &enet {
@@ -83,7 +102,7 @@
 	pinctrl-0 = <&pinmux_mdio>;
 	pinctrl-names = "default";
 	status = "okay";
-	phy: phy@0 {
+	phy: phy@2 {
 		compatible = "realtek,rtl8211f";
 		reg = <2>;
 		status = "okay";
@@ -115,7 +134,7 @@
 };
 
 &lpi2c2 {
-	status = "disabled";
+	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	pinctrl-0 = <&i2c2_default>;
 	pinctrl-names = "default";
@@ -123,7 +142,7 @@
 	mfd0:adp5585@34 {
 		compatible = "adi,adp5585";
 		reg = <0x34>;
-		status = "disabled";
+		status = "okay";
 
 		gpio_exp0: adp5585_gpio {
 			compatible = "adi,adp5585-gpio";
@@ -131,20 +150,23 @@
 			#gpio-cells = <2>;
 			ngpios = <13>;
 			gpio-reserved-ranges = <5 3>;
+			status = "okay";
 			/*
 			 * This device has non-contiguous gpio range:
 			 *   GPIO Pin R0~R4 are gpio0~4
 			 *   GPIO Pin C0~C4 are gpio8~12
 			 */
-
-			gpiohog_exp_sel: exp-sel-hog {
-				gpio-hog;
-				gpios = <4 GPIO_ACTIVE_HIGH>;
-				line-name = "exp_sel";
-				output-low;
-			};
-			status = "disabled";
 		};
+	};
+
+	gpio_exp1: pcal6524@22 {
+		compatible = "nxp,pcal6524";
+		reg = <0x22>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <24>;
+		int-gpios = <&gpio3 27 (GPIO_ACTIVE_LOW|GPIO_PULL_UP)>;
+		status = "okay";
 	};
 };
 
@@ -168,5 +190,12 @@
 };
 
 &gpio4{
+	status = "okay";
+};
+
+&flexcan2 {
+	pinctrl-0 = <&flexcan2_default>;
+	pinctrl-names = "default";
+	phys = <&can_phy0>;
 	status = "okay";
 };

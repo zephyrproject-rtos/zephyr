@@ -67,6 +67,44 @@
 				reset-gpios = <&test_gpio 0 0>;
 			};
 
+			test_i2c_pcal6524a: pcal6524@22 {
+				compatible = "nxp,pcal6524";
+				reg = <0x22>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <24>;
+				int-gpios = <&test_gpio 0 0>;
+				reset-gpios = <&test_gpio 0 0>;
+			};
+
+			test_i2c_pcal6534a: pcal6534@42 {
+				compatible = "nxp,pcal6534";
+				reg = <0x42>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <32>;
+				int-gpios = <&test_gpio 0 0>;
+				reset-gpios = <&test_gpio 0 0>;
+			};
+
+			test_i2c_pca9538: pca9538@70 {
+				compatible = "nxp,pca9538";
+				reg = <0x70>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <8>;
+				int-gpios = <&test_gpio 0 0>;
+			};
+
+			test_i2c_pca9539: pca9539@74 {
+				compatible = "nxp,pca9539";
+				reg = <0x74>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				int-gpios = <&test_gpio 0 0>;
+			};
+
 			test_i2c_pca95xx: pca95xx@3 {
 				compatible = "nxp,pca95xx";
 				reg = <0x03>;
@@ -103,8 +141,8 @@
 				nint-gpios = <&test_gpio 0 0>;
 			};
 
-			test_i2c_mcp230xx: mcp230xx@7 {
-				compatible = "microchip,mcp230xx";
+			test_i2c_mcp23017: mcp23017@7 {
+				compatible = "microchip,mcp23017";
 				reg = <0x07>;
 				gpio-controller;
 				#gpio-cells = <2>;
@@ -224,11 +262,87 @@
 					ngpios = <8>;
 				};
 			};
+
+			test_i2c_rt1718s: rt1718s@f {
+				compatible = "richtek,rt1718s";
+				reg = <0xf>;
+				irq-gpios = <&test_gpio 1 0>;
+
+				rt1718s_gpio_port0: rt1718s_gpio {
+					compatible = "richtek,rt1718s-gpio-port";
+
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <3>;
+				};
+			};
+
+			test_i2c_stmpe1600: stmpe1600@10 {
+				compatible = "st,stmpe1600";
+				reg = <0x10>;
+				ngpios = <16>;
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
+
+			test_i2c_adp5585: adp5585@11 {
+				compatible = "adi,adp5585";
+				reg = <0x11>;
+				status = "okay";
+
+				adp_5585_gpio0: adp5585_gpio {
+					compatible = "adi,adp5585-gpio";
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <13>;
+					gpio-reserved-ranges = <5 3>;
+					status = "okay";
+				};
+			};
+
+			test_i2c_npm6001: pmic@12 {
+				compatible = "nordic,npm6001";
+				reg = <0x12>;
+
+				npm6001_ek_gpio: gpio-controller {
+					compatible = "nordic,npm6001-gpio";
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <3>;
+				};
+			};
+
+			test_i2c_cy8c95xx: cy8c95xx@13 {
+				compatible = "cypress,cy8c95xx-gpio";
+				reg = <0x13>;
+				ranges;
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				cy8c95xx_port0: cy8c95xx_port@0 {
+					compatible = "cypress,cy8c95xx-gpio-port";
+					reg = <0x00>;
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <8>;
+					status = "okay";
+				};
+
+				cy8c95xx_port1: cy8c95xx_port@1 {
+					compatible = "cypress,cy8c95xx-gpio-port";
+					reg = <0x01>;
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <8>;
+					status = "okay";
+				};
+			};
+
 		};
 
 		nct3807_alert_1 {
 			compatible = "nuvoton,nct38xx-gpio-alert";
-			irq-gpios =  <&test_gpio 0 0>;
+			irq-gpios = <&test_gpio 0 0>;
 			nct38xx-dev = <&test_i2c_nct3808_p1 &test_i2c_nct3808_p2>;
 		};
 
@@ -242,6 +356,9 @@
 
 			/* one entry for every devices at spi.dtsi */
 			cs-gpios = <&test_gpio 0 0
+				    &test_gpio 0 0
+				    &test_gpio 0 0
+				    &test_gpio 0 0
 				    &test_gpio 0 0
 				    &test_gpio 0 0
 				    &test_gpio 0 0
@@ -312,6 +429,57 @@
 					#gpio-cells = <2>;
 					ngpios = <4>;
 				};
+			};
+
+			test_spi_sn74hc595: sn74hc595@5 {
+				compatible = "ti,sn74hc595";
+				status = "okay";
+				spi-max-frequency = <0>;
+				reg = <0x05>;
+
+				gpio-controller;
+				reset-gpios = <&test_gpio 0 0>;
+				ngpios = <8>;
+				#gpio-cells = <2>;
+			};
+
+			test_spi_max14906: max14906@6 {
+				compatible = "adi,max14906-gpio";
+				status = "okay";
+				reg = <0x06>;
+				spi-max-frequency = <0>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <4>;
+				crc-en;
+				spi-addr = <0>;
+				ow-en = <0 0 0 0>;
+				vdd-ov-en = <0 0 0 0>;
+				gdrv-en = <0 0 0 0>;
+				sh-vdd-en = <0 0 0 0>;
+				drdy-gpios = <&test_gpio 0 0>;
+				fault-gpios = <&test_gpio 0 0>;
+				sync-gpios = <&test_gpio 0 0>;
+				en-gpios = <&test_gpio 0 0>;
+			};
+
+			test_spi_max14916: max14916@7 {
+				compatible = "adi,max14916-gpio";
+				status = "okay";
+				reg = <0x07>;
+				spi-max-frequency = <0>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <8>;
+				crc-en;
+				spi-addr = <0>;
+				ow-on-en = <0 0 0 0>;
+				ow-off-en = <0 0 0 0>;
+				sh-vdd-en = <0 0 0 0>;
+				drdy-gpios = <&test_gpio 0 0>;
+				fault-gpios = <&test_gpio 0 0>;
+				sync-gpios = <&test_gpio 0 0>;
+				en-gpios = <&test_gpio 0 0>;
 			};
 		};
 	};

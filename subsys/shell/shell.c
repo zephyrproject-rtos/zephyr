@@ -141,6 +141,7 @@ static void tab_item_print(const struct shell *sh, const char *option,
 
 	columns = (sh->ctx->vt100_ctx.cons.terminal_wid
 			- z_shell_strlen(tab)) / longest_option;
+	__ASSERT_NO_MSG(columns != 0);
 	diff = longest_option - z_shell_strlen(option);
 
 	if (sh->ctx->vt100_ctx.printed_cmd++ % columns == 0U) {
@@ -1446,10 +1447,19 @@ int shell_start(const struct shell *sh)
 		z_shell_vt100_color_set(sh, SHELL_NORMAL);
 	}
 
-	if (z_shell_strlen(sh->default_prompt) > 0) {
-		z_shell_raw_fprintf(sh->fprintf_ctx, "\n\n");
-	}
+	/* print new line before printing the prompt to clear the line
+	 * vt100 are not used here for compatibility reasons
+	 */
+	z_cursor_next_line_move(sh);
 	state_set(sh, SHELL_STATE_ACTIVE);
+
+	/*
+	 * If the shell is stopped with the shell_stop function, its backend remains active
+	 * and continues to buffer incoming data. As a result, when the shell is resumed,
+	 * all buffered data is processed, which may lead to the execution of commands
+	 * received while the shell was stopped.
+	 */
+	z_shell_backend_rx_buffer_flush(sh);
 
 	k_mutex_unlock(&sh->ctx->wr_mtx);
 
@@ -1547,10 +1557,10 @@ void shell_vfprintf(const struct shell *sh, enum shell_vt100_color color,
 
 /* These functions mustn't be used from shell context to avoid deadlock:
  * - shell_fprintf_impl
- * - shell_info_impl
- * - shell_print_impl
- * - shell_warn_impl
- * - shell_error_impl
+ * - shell_fprintf_info
+ * - shell_fprintf_normal
+ * - shell_fprintf_warn
+ * - shell_fprintf_error
  * However, they can be used in shell command handlers.
  */
 void shell_fprintf_impl(const struct shell *sh, enum shell_vt100_color color,
@@ -1563,7 +1573,7 @@ void shell_fprintf_impl(const struct shell *sh, enum shell_vt100_color color,
 	va_end(args);
 }
 
-void shell_info_impl(const struct shell *sh, const char *fmt, ...)
+void shell_fprintf_info(const struct shell *sh, const char *fmt, ...)
 {
 	va_list args;
 
@@ -1572,7 +1582,7 @@ void shell_info_impl(const struct shell *sh, const char *fmt, ...)
 	va_end(args);
 }
 
-void shell_print_impl(const struct shell *sh, const char *fmt, ...)
+void shell_fprintf_normal(const struct shell *sh, const char *fmt, ...)
 {
 	va_list args;
 
@@ -1581,7 +1591,7 @@ void shell_print_impl(const struct shell *sh, const char *fmt, ...)
 	va_end(args);
 }
 
-void shell_warn_impl(const struct shell *sh, const char *fmt, ...)
+void shell_fprintf_warn(const struct shell *sh, const char *fmt, ...)
 {
 	va_list args;
 
@@ -1590,7 +1600,7 @@ void shell_warn_impl(const struct shell *sh, const char *fmt, ...)
 	va_end(args);
 }
 
-void shell_error_impl(const struct shell *sh, const char *fmt, ...)
+void shell_fprintf_error(const struct shell *sh, const char *fmt, ...)
 {
 	va_list args;
 
@@ -1606,35 +1616,35 @@ void shell_hexdump_line(const struct shell *sh, unsigned int offset,
 
 	int i;
 
-	shell_print_impl(sh, "%08X: ", offset);
+	shell_fprintf_normal(sh, "%08X: ", offset);
 
 	for (i = 0; i < SHELL_HEXDUMP_BYTES_IN_LINE; i++) {
 		if (i > 0 && !(i % 8)) {
-			shell_print_impl(sh, " ");
+			shell_fprintf_normal(sh, " ");
 		}
 
 		if (i < len) {
-			shell_print_impl(sh, "%02x ",
-					 data[i] & 0xFF);
+			shell_fprintf_normal(sh, "%02x ",
+					     data[i] & 0xFF);
 		} else {
-			shell_print_impl(sh, "   ");
+			shell_fprintf_normal(sh, "   ");
 		}
 	}
 
-	shell_print_impl(sh, "|");
+	shell_fprintf_normal(sh, "|");
 
 	for (i = 0; i < SHELL_HEXDUMP_BYTES_IN_LINE; i++) {
 		if (i > 0 && !(i % 8)) {
-			shell_print_impl(sh, " ");
+			shell_fprintf_normal(sh, " ");
 		}
 
 		if (i < len) {
 			char c = data[i];
 
-			shell_print_impl(sh, "%c",
-					 isprint((int)c) != 0 ? c : '.');
+			shell_fprintf_normal(sh, "%c",
+					     isprint((int)c) != 0 ? c : '.');
 		} else {
-			shell_print_impl(sh, " ");
+			shell_fprintf_normal(sh, " ");
 		}
 	}
 

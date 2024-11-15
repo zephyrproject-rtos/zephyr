@@ -19,7 +19,7 @@
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
@@ -48,7 +48,7 @@ struct sync_state {
 	bool pa_syncing;
 	struct k_work_delayable pa_timer;
 	struct bt_le_per_adv_sync *pa_sync;
-	uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE];
+	uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE];
 	uint32_t bis_sync_req[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS];
 } sync_states[CONFIG_BT_BAP_SCAN_DELEGATOR_RECV_STATE_COUNT];
 
@@ -108,28 +108,6 @@ static struct sync_state *sync_state_get_by_src_id(uint8_t src_id)
 	return NULL;
 }
 
-static uint16_t interval_to_sync_timeout(uint16_t pa_interval)
-{
-	uint16_t pa_timeout;
-
-	if (pa_interval == BT_BAP_PA_INTERVAL_UNKNOWN) {
-		/* Use maximum value to maximize chance of success */
-		pa_timeout = BT_GAP_PER_ADV_MAX_TIMEOUT;
-	} else {
-		uint32_t interval_ms;
-		uint32_t timeout;
-
-		/* Add retries and convert to unit in 10's of ms */
-		interval_ms = BT_GAP_PER_ADV_INTERVAL_TO_MS(pa_interval);
-		timeout = (interval_ms * PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO) / 10;
-
-		/* Enforce restraints */
-		pa_timeout = CLAMP(timeout, BT_GAP_PER_ADV_MIN_TIMEOUT, BT_GAP_PER_ADV_MAX_TIMEOUT);
-	}
-
-	return pa_timeout;
-}
-
 static void pa_timer_handler(struct k_work *work)
 {
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
@@ -160,6 +138,7 @@ static int pa_sync_past(struct bt_conn *conn,
 	struct bt_le_per_adv_sync_transfer_param param = { 0 };
 	int err;
 
+	param.options = BT_LE_PER_ADV_SYNC_TRANSFER_OPT_FILTER_DUPLICATES;
 	param.skip = PA_SYNC_SKIP;
 	param.timeout = interval_to_sync_timeout(pa_interval);
 
@@ -289,6 +268,13 @@ static int pa_sync_req_cb(struct bt_conn *conn,
 
 	if (past_avail) {
 		err = pa_sync_past(conn, state, pa_interval);
+		if (err == 0) {
+			err = bt_bap_scan_delegator_set_pa_state(state->recv_state->src_id,
+								 BT_BAP_PA_STATE_INFO_REQ);
+			if (err != 0) {
+				printk("Failed to set INFO_REQ state: %d", err);
+			}
+		}
 	} else {
 		err = pa_sync_no_past(state, pa_interval);
 	}
@@ -314,7 +300,7 @@ static int pa_sync_term_req_cb(struct bt_conn *conn,
 
 static void broadcast_code_cb(struct bt_conn *conn,
 			      const struct bt_bap_scan_delegator_recv_state *recv_state,
-			      const uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE])
+			      const uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE])
 {
 	struct sync_state *state;
 
@@ -326,7 +312,7 @@ static void broadcast_code_cb(struct bt_conn *conn,
 		return;
 	}
 
-	(void)memcpy(state->broadcast_code, broadcast_code, BT_AUDIO_BROADCAST_CODE_SIZE);
+	(void)memcpy(state->broadcast_code, broadcast_code, BT_ISO_BROADCAST_CODE_SIZE);
 
 	SET_FLAG(flag_broadcast_code_received);
 }
@@ -379,6 +365,14 @@ static void pa_synced_cb(struct bt_le_per_adv_sync *sync,
 	struct sync_state *state;
 
 	printk("PA %p synced\n", sync);
+
+	if (info->conn) { /* if from PAST */
+		for (size_t i = 0U; i < ARRAY_SIZE(sync_states); i++) {
+			if (!sync_states[i].pa_sync) {
+				sync_states[i].pa_sync = sync;
+			}
+		}
+	}
 
 	state = sync_state_get_by_pa(sync);
 	if (state == NULL) {
@@ -654,12 +648,17 @@ static void remove_all_sources(void)
 static int sync_broadcast(struct sync_state *state)
 {
 	int err;
+	uint32_t bis_sync[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS];
 
 	UNSET_FLAG(flag_recv_state_updated);
 
+	for (size_t i = 0U; i < CONFIG_BT_BAP_BASS_MAX_SUBGROUPS; i++) {
+		bis_sync[i] = BT_ISO_BIS_INDEX_BIT(i + 1);
+	}
+
 	/* We don't actually need to sync to the BIG/BISes */
-	err = bt_bap_scan_delegator_set_bis_sync_state(state->src_id,
-						       (uint32_t[]){BT_ISO_BIS_INDEX_BIT(1)});
+	err = bt_bap_scan_delegator_set_bis_sync_state(state->src_id, bis_sync);
+
 	if (err) {
 		return err;
 	}
@@ -702,10 +701,15 @@ static int common_init(void)
 
 	printk("Bluetooth initialized\n");
 
-	bt_bap_scan_delegator_register_cb(&scan_delegator_cb);
+	err = bt_bap_scan_delegator_register(&scan_delegator_cb);
+	if (err) {
+		FAIL("Scan delegator register failed (err %d)\n", err);
+		return err;
+	}
+
 	bt_le_per_adv_sync_cb_register(&pa_sync_cb);
 
-	err = bt_le_adv_start(BT_LE_ADV_CONN_ONE_TIME, ad, AD_SIZE, NULL, 0);
+	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, AD_SIZE, NULL, 0);
 	if (err) {
 		FAIL("Advertising failed to start (err %d)\n", err);
 		return err;

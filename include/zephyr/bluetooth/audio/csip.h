@@ -15,7 +15,7 @@
 /**
  * @brief Coordinated Set Identification Profile (CSIP)
  *
- * @defgroup bt_gatt_csip Coordinated Set Identification Profile (CSIP)
+ * @defgroup bt_csip Coordinated Set Identification Profile (CSIP)
  *
  * @since 3.0
  * @version 0.8.0
@@ -494,6 +494,8 @@ int bt_csip_set_coordinator_ordered_access(
  *
  * The members will be locked starting from lowest rank going up.
  *
+ * @kconfig_dep{CONFIG_BT_CSIP_SET_COORDINATOR,CONFIG_BT_BONDABLE}
+ *
  * TODO: If locking fails, the already locked members will not be unlocked.
  *
  * @param members   Array of set members to lock.
@@ -511,6 +513,8 @@ int bt_csip_set_coordinator_lock(const struct bt_csip_set_coordinator_set_member
  * @brief Release an array of set members
  *
  * The members will be released starting from highest rank going down.
+ *
+ * @kconfig_dep{CONFIG_BT_CSIP_SET_COORDINATOR,CONFIG_BT_BONDABLE}
  *
  * @param members   Array of set members to lock.
  * @param count     Number of set members in @p members.

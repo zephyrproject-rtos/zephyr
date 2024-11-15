@@ -19,8 +19,11 @@ config ZCBOR_CANONICAL
 	  indefinite-length arrays (it will still decode them properly).
 
 config ZCBOR_STOP_ON_ERROR
-	bool "Stop on error when processing"
+	bool "Stop on error when processing (Must also be enabled in state var)"
 	help
+	  Make the stop_on_error functionality available. Note that it still
+	  needs to be enabled in the state variable
+	  (`state->constant_state->stop_on_error`).
 	  This makes all functions abort their execution if called when an error
 	  has already happened.
 

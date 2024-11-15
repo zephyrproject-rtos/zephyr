@@ -1,7 +1,10 @@
-.. _tflm_ethosu:
+.. zephyr:code-sample:: tflite-ethosu
+   :name: TensorFlow Lite for Microcontrollers on Arm Ethos-U
 
-Arm(R) Ethos(TM)-U Tensorflow Lite for Microcontrollers test application
-########################################################################
+   Run an inference using an optimized TFLite model on Arm Ethos-U NPU.
+
+Overview
+********
 
 A sample application that demonstrates how to run an inference using the TFLM
 framework and the Arm Ethos-U NPU.
@@ -40,5 +43,5 @@ commands.
 
 .. code-block:: bash
 
-    $ west build -b mps3/an547 zephyr/samples/modules/tflite-micro/tflm_ethosu
+    $ west build -b mps3/corstone300/an547 zephyr/samples/modules/tflite-micro/tflm_ethosu
     $ FVP_Corstone_SSE-300_Ethos-U55 build/zephyr/zephyr.elf

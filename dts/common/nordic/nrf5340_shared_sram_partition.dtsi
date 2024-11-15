@@ -1,0 +1,47 @@
+/*
+ * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2024 Embeint Inc
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * This file specifies the default shared memory region used for inter-procesor
+ * communication between the application and network cores.
+ *
+ * This file, or a board specific variant of it, must be included by both
+ * cpuapp and cpunet application to ensure both processors have the same
+ * expectations of the memory region used. If a board specific variant is
+ * used, it is up to the author to ensure the shared memory region resides in
+ * the memory range allocated to the non-secure image (sram0_ns).
+ *
+ * By default the last 64 kB of application core SRAM is allocated as shared
+ * memory (sram0_shared) which is divided in:
+ * - 32 kB CPUAPP to CPUNET communication (cpuapp_cpunet_ipc_shm)
+ * - 32 kB CPUNET to CPUAPP communication (cpunet_cpuapp_ipc_shm)
+ */
+
+/ {
+	chosen {
+		zephyr,ipc_shm = &sram0_shared;
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		sram0_shared: memory@20070000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			/* Last 64 kB of sram0 */
+			reg = <0x20070000 0x10000>;
+
+			cpuapp_cpunet_ipc_shm: memory@20070000 {
+				reg = <0x20070000 DT_SIZE_K(32)>;
+			};
+
+			cpunet_cpuapp_ipc_shm: memory@20078000 {
+				reg = <0x20078000 DT_SIZE_K(32)>;
+			};
+		};
+	};
+};

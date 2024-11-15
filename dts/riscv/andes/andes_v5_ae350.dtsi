@@ -170,7 +170,7 @@
 			#address-cells = <1>;
 			#interrupt-cells = <2>;
 			interrupt-controller;
-			reg = <0xe4000000 0x04000000>;
+			reg = <0xe4000000 0x02000000>;
 			riscv,max-priority = <255>;
 			riscv,ndev = <1023>;
 			interrupts-extended = <&cpu0_intc 11 &cpu1_intc 11
@@ -179,12 +179,39 @@
 					       &cpu6_intc 11 &cpu7_intc 11>;
 		};
 
-		mbox: mbox-controller@e6400000 {
-			compatible = "andestech,plic-sw";
+		plic_sw: interrupt-controller@e6400000 {
+			compatible = "sifive,plic-1.0.0", "andestech,nceplic100";
+			#address-cells = <1>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
 			reg = <0xe6400000 0x00400000>;
-			#mbox-cells = <1>;
-			channel-max = <30>;
-			status = "okay";
+			riscv,max-priority = <255>;
+			riscv,ndev = <1023>;
+			interrupts-extended = <&cpu0_intc 3 &cpu1_intc 3
+					       &cpu2_intc 3 &cpu3_intc 3
+					       &cpu4_intc 3 &cpu5_intc 3
+					       &cpu6_intc 3 &cpu7_intc 3>;
+
+			#size-cells = <0>;
+			mbox: mbox-controller@0 {
+				compatible = "andestech,mbox-plic-sw";
+				#mbox-cells = <1>;
+				reg = <0>;
+				interrupts = <9 1>, <10 1>, <11 1>, <12 1>,
+					     <13 1>, <14 1>, <15 1>, <16 1>,
+					     <17 1>, <18 1>, <19 1>, <20 1>,
+					     <21 1>, <22 1>, <23 1>, <24 1>,
+					     <25 1>, <26 1>, <27 1>, <28 1>,
+					     <29 1>, <30 1>, <31 1>;
+				interrupt-names = "mbox_9", "mbox_10", "mbox_11", "mbox_12",
+						  "mbox_13", "mbox_14", "mbox_15", "mbox_16",
+						  "mbox_17", "mbox_18", "mbox_19", "mbox_20",
+						  "mbox_21", "mbox_22", "mbox_23", "mbox_24",
+						  "mbox_25", "mbox_26", "mbox_27", "mbox_28",
+						  "mbox_29", "mbox_30", "mbox_31";
+				interrupt-parent = <&plic_sw>;
+				status = "disabled";
+			};
 		};
 
 		mtimer: timer@e6000000 {

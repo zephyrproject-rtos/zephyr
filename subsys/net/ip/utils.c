@@ -79,18 +79,14 @@ const char *net_proto2str(int family, int proto)
 
 char *net_byte_to_hex(char *ptr, uint8_t byte, char base, bool pad)
 {
-	int i, val;
+	uint8_t high = (byte >> 4) & 0x0f;
+	uint8_t low = byte & 0x0f;
 
-	for (i = 0, val = (byte & 0xf0) >> 4; i < 2; i++, val = byte & 0x0f) {
-		if (i == 0 && !pad && !val) {
-			continue;
-		}
-		if (val < 10) {
-			*ptr++ = (char) (val + '0');
-		} else {
-			*ptr++ = (char) (val - 10 + base);
-		}
+	if (pad || (high > 0)) {
+		*ptr++ = (high < 10) ? (char) (high + '0') : (char) (high - 10 + base);
 	}
+
+	*ptr++ = (low < 10) ? (char) (low + '0') : (char) (low - 10 + base);
 
 	*ptr = '\0';
 
@@ -167,10 +163,11 @@ char *z_impl_net_addr_ntop(sa_family_t family, const void *src,
 	struct in_addr *addr = NULL;
 	struct in6_addr *addr6 = NULL;
 	uint16_t *w = NULL;
-	uint8_t i, bl, bh, longest = 1U;
-	int8_t pos = -1;
+	int i;
+	uint8_t longest = 1U;
+	int pos = -1;
 	char delim = ':';
-	unsigned char zeros[8] = { 0 };
+	uint8_t zeros[8] = { 0 };
 	char *ptr = dst;
 	int len = -1;
 	uint16_t value;
@@ -186,10 +183,8 @@ char *z_impl_net_addr_ntop(sa_family_t family, const void *src,
 			mapped = true;
 		}
 
-		for (i = 0U; i < 8; i++) {
-			uint8_t j;
-
-			for (j = i; j < 8; j++) {
+		for (i = 0; i < 8; i++) {
+			for (int j = i; j < 8; j++) {
 				if (UNALIGNED_GET(&w[j]) != 0) {
 					break;
 				}
@@ -198,7 +193,7 @@ char *z_impl_net_addr_ntop(sa_family_t family, const void *src,
 			}
 		}
 
-		for (i = 0U; i < 8; i++) {
+		for (i = 0; i < 8; i++) {
 			if (zeros[i] > longest) {
 				longest = zeros[i];
 				pos = i;
@@ -218,12 +213,12 @@ char *z_impl_net_addr_ntop(sa_family_t family, const void *src,
 	}
 
 print_mapped:
-	for (i = 0U; i < len; i++) {
+	for (i = 0; i < len; i++) {
 		/* IPv4 address a.b.c.d */
 		if (len == 4) {
 			uint8_t l;
 
-			value = (uint32_t)addr->s4_addr[i];
+			value = (uint16_t)addr->s4_addr[i];
 
 			/* net_byte_to_udec() eats 0 */
 			if (value == 0U) {
@@ -257,7 +252,7 @@ print_mapped:
 
 			*ptr++ = ':';
 			needcolon = false;
-			i += longest - 1U;
+			i += (int)longest - 1;
 
 			continue;
 		}
@@ -266,30 +261,21 @@ print_mapped:
 			*ptr++ = ':';
 		}
 
-		value = (uint32_t)sys_be16_to_cpu(UNALIGNED_GET(&w[i]));
-		bh = value >> 8;
-		bl = value & 0xff;
+		value = sys_be16_to_cpu(UNALIGNED_GET(&w[i]));
+		uint8_t bh = value >> 8;
+		uint8_t bl = value & 0xff;
 
 		if (bh) {
-			if (bh > 0x0f) {
-				ptr = net_byte_to_hex(ptr, bh, 'a', false);
-			} else {
-				if (bh < 10) {
-					*ptr++ = (char)(bh + '0');
-				} else {
-					*ptr++ = (char) (bh - 10 + 'a');
-				}
-			}
+			/* Convert high byte to hex without padding */
+			ptr = net_byte_to_hex(ptr, bh, 'a', false);
 
+			/* Always pad the low byte, since high byte is non - zero */
 			ptr = net_byte_to_hex(ptr, bl, 'a', true);
-		} else if (bl > 0x0f) {
-			ptr = net_byte_to_hex(ptr, bl, 'a', false);
 		} else {
-			if (bl < 10) {
-				*ptr++ = (char)(bl + '0');
-			} else {
-				*ptr++ = (char) (bl - 10 + 'a');
-			}
+			/* For the case where the high byte is zero, only process the low byte
+			 * Do not pad the low byte, since high byte is zero
+			 */
+			ptr = net_byte_to_hex(ptr, bl, 'a', false);
 		}
 
 		needcolon = true;
@@ -648,7 +634,7 @@ static inline uint16_t pkt_calc_chksum(struct net_pkt *pkt, uint16_t sum)
 	return sum;
 }
 
-#if defined(CONFIG_NET_IP)
+#if defined(CONFIG_NET_NATIVE_IP)
 uint16_t net_calc_chksum(struct net_pkt *pkt, uint8_t proto)
 {
 	size_t len = 0U;
@@ -698,7 +684,7 @@ uint16_t net_calc_chksum(struct net_pkt *pkt, uint8_t proto)
 }
 #endif
 
-#if defined(CONFIG_NET_IPV4)
+#if defined(CONFIG_NET_NATIVE_IPV4)
 uint16_t net_calc_chksum_ipv4(struct net_pkt *pkt)
 {
 	uint16_t sum;
@@ -711,7 +697,7 @@ uint16_t net_calc_chksum_ipv4(struct net_pkt *pkt)
 
 	return ~sum;
 }
-#endif /* CONFIG_NET_IPV4 */
+#endif /* CONFIG_NET_NATIVE_IPV4 */
 
 #if defined(CONFIG_NET_IPV4_IGMP)
 uint16_t net_calc_chksum_igmp(struct net_pkt *pkt)

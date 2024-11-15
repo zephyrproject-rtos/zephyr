@@ -129,6 +129,35 @@ config BT_DRIVER_RX_HIGH_PRIO
 	int
 	default 6
 
+config BT_CONN_TX_NOTIFY_WQ
+	bool "Use a separate workqueue for connection TX notify processing [EXPERIMENTAL]"
+	depends on BT_CONN_TX
+	select EXPERIMENTAL
+	help
+	  Use a separate workqueue instead of system workqueue for
+	  bt_conn_tx_notify processing. The option can be used to make Bluetooth
+	  stack more independent from the system workqueue.
+
+if BT_CONN_TX_NOTIFY_WQ
+
+config BT_CONN_TX_NOTIFY_WQ_STACK_SIZE
+	int "Stack size of workqueue for connection TX notify processing"
+	default SYSTEM_WORKQUEUE_STACK_SIZE
+
+config BT_CONN_TX_NOTIFY_WQ_PRIO
+	int "Cooperative priority of workqueue for connection TX notify processing"
+	default 8
+
+config BT_CONN_TX_NOTIFY_WQ_INIT_PRIORITY
+	int "Init priority of workqueue for connection TX notify processing"
+	default 50
+	help
+	  The connection TX notify processing workqueue is initialized during
+	  system initialization (at POST_KERNEL level). The Kconfig option
+	  controls the initialization priority within level.
+
+endif # BT_CONN_TX_NOTIFY_WQ
+
 menu "Bluetooth Host"
 
 if BT_HCI_HOST
@@ -238,6 +267,15 @@ config BT_SETTINGS_USE_PRINTK
 	  When not selected, Bluetooth settings will use a faster builtin
 	  function to encode the key string. The drawback is that if
 	  printk is enabled then the program memory footprint will be larger.
+
+config BT_SETTINGS_CCC_STORE_MAX
+	int "Max number of Client Characteristic Configuration (CCC)"
+	default 48
+	range 1 96
+	help
+	  Defines the max number of Client Characteristic Configuration (CCC)
+	  that the stack can handle
+
 endif # BT_SETTINGS
 
 config BT_FILTER_ACCEPT_LIST
@@ -271,8 +309,8 @@ config BT_CONN_TX_USER_DATA_SIZE
 	default 32 if 64BIT
 	default 16
 	help
-	  Necessary user_data size for allowing packet fragmentation when
-	  sending over HCI. See `struct tx_meta` in conn.c.
+	  Necessary user_data size for stack usage. Mostly used for passing
+	  callbacks around. See `struct closure` in conn_internal.h.
 
 config BT_CONN_FRAG_COUNT
 	int
@@ -304,6 +342,17 @@ config BT_CONN_PARAM_ANY
 	  However, the Host will still use numerical comparisons between the
 	  min and max connection intervals in order to verify whether the
 	  desired parameters have been established in the connection.
+
+config BT_CONN_CHECK_NULL_BEFORE_CREATE
+	bool "Check if *conn is NULL when creating a connection"
+	help
+	  Enable this option to ensure that bt_conn_le_create and
+	  bt_conn_le_create_synced return an error if *conn is not initialized
+	  to NULL. This option is recommended to use to catch programming
+	  errors where the application reuses the connection pointer of an
+	  active connection object without dereferencing it. Without
+	  dereferencing, the connection object stays alive which can lead to an
+	  unpredictable behavior.
 
 config BT_USER_PHY_UPDATE
 	bool "User control of PHY Update Procedure"
@@ -623,9 +672,13 @@ config BT_BONDABLE
 	bool "Bondable Mode"
 	default y
 	help
-	  This option enables support for Bondable Mode. In this mode,
-	  Bonding flag in AuthReq of SMP Pairing Request/Response will be set
-	  indicating the support for this mode.
+	  This option is the default value of the bonding flag for any ACL connection.
+	  If the option is true, the default bonding flag is true. Or, the default
+	  bonding flag is false.
+	  After a connection is established, the bonding flag of the connection
+	  can also be changed by calling `bt_conn_set_bondable()` if the configuration
+	  `the bonding flag per-connection` (BT_BONDABLE_PER_CONNECTION) is
+	  enabled. Please see the BT_BONDABLE_PER_CONNECTION configuration.
 
 config BT_BONDING_REQUIRED
 	bool "Always require bonding"
@@ -636,8 +689,7 @@ config BT_BONDING_REQUIRED
 	  requests will be rejected.
 
 config BT_BONDABLE_PER_CONNECTION
-	bool "Set/clear the bonding flag per-connection [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "Set/clear the bonding flag per-connection"
 	help
 	  Enable support for the bt_conn_set_bondable API function that is
 	  used to set/clear the bonding flag on a per-connection basis.
@@ -829,10 +881,6 @@ config BT_DEVICE_APPEARANCE_DYNAMIC
 	help
 	  Enables use of bt_set_appearance.
 	  If CONFIG_BT_SETTINGS is set, the appearance is persistently stored.
-
-config BT_DEVICE_APPEARANCE_GATT_WRITABLE
-	bool "Allow authenticated peers to set GAP Appearance"
-	depends on BT_DEVICE_APPEARANCE_DYNAMIC
 
 config BT_DEVICE_APPEARANCE
 	int "Bluetooth device appearance"

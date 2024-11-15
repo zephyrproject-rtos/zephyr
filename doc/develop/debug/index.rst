@@ -225,7 +225,7 @@ Generate and Import an Eclipse Project
 
    .. zephyr-app-commands::
       :tool: all
-      :app: %ZEPHYR_BASE%\samples\synchronization
+      :zephyr-app: samples/synchronization
       :host-os: win
       :board: frdm_k64f
       :gen-args: -G"Eclipse CDT4 - Ninja"
@@ -291,7 +291,7 @@ Debugging I2C communication
 
 There is a possibility to log all or some of the I2C transactions done by the application.
 This feature is enabled by the Kconfig option :kconfig:option:`CONFIG_I2C_DUMP_MESSAGES`, but it
-uses the ``LOG_DBG`` function to print the contents so the
+uses the :c:macro:`LOG_DBG` function to print the contents so the
 :kconfig:option:`CONFIG_I2C_LOG_LEVEL_DBG` option must also be enabled.
 
 The sample output of the dump looks like this::

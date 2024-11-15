@@ -3,6 +3,7 @@
 # Copyright (c) 2022 Google
 # SPDX-License-Identifier: Apache-2.0
 
+import argparse
 import colorama
 import logging
 import os
@@ -12,6 +13,7 @@ import time
 
 from colorama import Fore
 
+from twisterlib.statuses import TwisterStatus
 from twisterlib.testplan import TestPlan
 from twisterlib.reports import Reporting
 from twisterlib.hardwaremap import HardwareMap
@@ -24,7 +26,7 @@ logger = logging.getLogger("twister")
 logger.setLevel(logging.DEBUG)
 
 
-def setup_logging(outdir, log_file, verbose, timestamps):
+def setup_logging(outdir, log_file, log_level, timestamps):
     # create file handler which logs even debug messages
     if log_file:
         fh = logging.FileHandler(log_file)
@@ -35,11 +37,7 @@ def setup_logging(outdir, log_file, verbose, timestamps):
 
     # create console handler with a higher log level
     ch = logging.StreamHandler()
-
-    if verbose > 1:
-        ch.setLevel(logging.DEBUG)
-    else:
-        ch.setLevel(logging.INFO)
+    ch.setLevel(getattr(logging, log_level))
 
     # create formatter and add it to the handlers
     if timestamps:
@@ -62,7 +60,7 @@ def init_color(colorama_strip):
     colorama.init(strip=colorama_strip)
 
 
-def main(options, default_options):
+def main(options: argparse.Namespace, default_options: argparse.Namespace):
     start_time = time.time()
 
     # Configure color output
@@ -105,8 +103,7 @@ def main(options, default_options):
         with open(previous_results_file, "w") as fp:
             fp.write(previous_results)
 
-    VERBOSE = options.verbose
-    setup_logging(options.outdir, options.log_file, VERBOSE, options.timestamps)
+    setup_logging(options.outdir, options.log_file, options.log_level, options.timestamps)
 
     env = TwisterEnv(options, default_options)
     env.discover()
@@ -134,15 +131,15 @@ def main(options, default_options):
         logger.error(f"{e}")
         return 1
 
-    if VERBOSE > 1:
+    if options.verbose > 1:
         # if we are using command line platform filter, no need to list every
         # other platform as excluded, we know that already.
         # Show only the discards that apply to the selected platforms on the
         # command line
 
         for i in tplan.instances.values():
-            if i.status == "filtered":
-                if options.platform and i.platform.name not in options.platform:
+            if i.status == TwisterStatus.FILTER:
+                if options.platform and not tplan.check_platform(i.platform, options.platform):
                     continue
                 logger.debug(
                     "{:<25} {:<50} {}SKIPPED{}: {}".format(
@@ -157,10 +154,10 @@ def main(options, default_options):
     report = Reporting(tplan, env)
     plan_file = os.path.join(options.outdir, "testplan.json")
     if not os.path.exists(plan_file):
-        report.json_report(plan_file)
+        report.json_report(plan_file, env.version)
 
     if options.save_tests:
-        report.json_report(options.save_tests)
+        report.json_report(options.save_tests, env.version)
         return 0
 
     if options.report_summary is not None:
@@ -184,6 +181,15 @@ def main(options, default_options):
         tplan.create_build_dir_links()
 
     runner = TwisterRunner(tplan.instances, tplan.testsuites, env)
+    # FIXME: This is a workaround for the fact that the hardware map can be usng
+    # the short name of the platform, while the testplan is using the full name.
+    #
+    # convert platform names coming from the hardware map to the full target
+    # name.
+    # this is needed to match the platform names in the testplan.
+    for d in hwm.duts:
+        if d.platform in tplan.platform_names:
+            d.platform = tplan.get_platform(d.platform).name
     runner.duts = hwm.duts
     runner.run()
 
@@ -204,7 +210,7 @@ def main(options, default_options):
 
     duration = time.time() - start_time
 
-    if VERBOSE > 1:
+    if options.verbose > 1:
         runner.results.summary()
 
     report.summary(runner.results, options.disable_unrecognized_section_test, duration)

@@ -1,7 +1,4 @@
-.. _stm32f072b_disco_board:
-
-ST STM32F072B Discovery
-#######################
+.. zephyr:board:: stm32f072b_disco
 
 Overview
 ********
@@ -28,10 +25,6 @@ started quickly. Here are some highlights of the STM32F072B-DISCO board:
 - L3GD20, ST MEMS motion sensor, 3-axis digital output gyroscope
 - One linear touch sensor or four touch keys
 - RF EEprom daughter board connector
-
-.. image:: img/stm32f072b_disco.jpg
-     :align: center
-     :alt: STM32F072B-DISCO
 
 More information about the board can be found at the
 `STM32F072B-DISCO website`_.
@@ -144,6 +137,8 @@ is assigned to UART 1. Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
+STM32F072B-DISCO board includes an ST-LINK/V2 embedded debug tool interface.
+
 Applications for the ``stm32f072b_disco`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -151,9 +146,16 @@ flashed in the usual way (see :ref:`build_an_application` and
 Flashing
 ========
 
-STM32F072B-DISCO board includes an ST-LINK/V2 embedded debug tool interface.
-This interface is supported by the openocd version included in the Zephyr SDK.
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
 
+Alternatively, OpenOCD or JLink can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner jlink
 
 Flashing an application to STM32F072B-DISCO
 -------------------------------------------
@@ -161,7 +163,7 @@ Flashing an application to STM32F072B-DISCO
 First, connect the STM32F072B-DISCO Discovery kit to your host computer using
 the USB port to prepare it for flashing. Then build and flash your application.
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -189,7 +191,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -216,3 +218,6 @@ References
 
 .. _SK Pang CAN breakout board:
    https://www.skpang.co.uk/products/can-bus-can-fd-breakout-board-5v-supply-and-5v-logic
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

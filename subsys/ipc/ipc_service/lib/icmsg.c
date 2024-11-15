@@ -176,6 +176,7 @@ static void mbox_callback_process(struct icmsg_data_t *dev_data)
 #ifdef CONFIG_MULTITHREADING
 	struct icmsg_data_t *dev_data = CONTAINER_OF(item, struct icmsg_data_t, mbox_work);
 #endif
+	uint8_t rx_buffer[CONFIG_PBUF_RX_READ_BUF_SIZE] __aligned(4);
 
 	atomic_t state = atomic_get(&dev_data->state);
 
@@ -186,9 +187,13 @@ static void mbox_callback_process(struct icmsg_data_t *dev_data)
 		return;
 	}
 
-	uint8_t rx_buffer[len];
+	__ASSERT_NO_MSG(len <= sizeof(rx_buffer));
 
-	len = pbuf_read(dev_data->rx_pb, rx_buffer, len);
+	if (sizeof(rx_buffer) < len) {
+		return;
+	}
+
+	len = pbuf_read(dev_data->rx_pb, rx_buffer, sizeof(rx_buffer));
 
 	if (state == ICMSG_STATE_READY) {
 		if (dev_data->cb->received) {
@@ -265,16 +270,19 @@ int icmsg_open(const struct icmsg_config_t *conf,
 	k_mutex_init(&dev_data->tx_lock);
 #endif
 
-	int ret = pbuf_init(dev_data->tx_pb);
+	int ret = pbuf_tx_init(dev_data->tx_pb);
 
 	if (ret < 0) {
-		__ASSERT(false, "Incorrect configuration");
+		__ASSERT(false, "Incorrect Tx configuration");
 		return ret;
 	}
 
-	/* Initialize local copies of rx_pb. */
-	dev_data->rx_pb->data.wr_idx = 0;
-	dev_data->rx_pb->data.rd_idx = 0;
+	ret = pbuf_rx_init(dev_data->rx_pb);
+
+	if (ret < 0) {
+		__ASSERT(false, "Incorrect Rx configuration");
+		return ret;
+	}
 
 	ret = pbuf_write(dev_data->tx_pb, magic, sizeof(magic));
 

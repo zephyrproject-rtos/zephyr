@@ -29,13 +29,13 @@
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
-#if DT_NODE_HAS_STATUS(DT_ALIAS(pwm_0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_ALIAS(pwm_0))
 #define PWM_DEV_NODE DT_ALIAS(pwm_0)
-#elif DT_NODE_HAS_STATUS(DT_ALIAS(pwm_1), okay)
+#elif DT_NODE_HAS_STATUS_OKAY(DT_ALIAS(pwm_1))
 #define PWM_DEV_NODE DT_ALIAS(pwm_1)
-#elif DT_NODE_HAS_STATUS(DT_ALIAS(pwm_2), okay)
+#elif DT_NODE_HAS_STATUS_OKAY(DT_ALIAS(pwm_2))
 #define PWM_DEV_NODE DT_ALIAS(pwm_2)
-#elif DT_NODE_HAS_STATUS(DT_ALIAS(pwm_3), okay)
+#elif DT_NODE_HAS_STATUS_OKAY(DT_ALIAS(pwm_3))
 #define PWM_DEV_NODE DT_ALIAS(pwm_3)
 
 #elif DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_pwm)
@@ -52,6 +52,9 @@
 
 #elif DT_HAS_COMPAT_STATUS_OKAY(intel_blinky_pwm)
 #define PWM_DEV_NODE DT_INST(0, intel_blinky_pwm)
+
+#elif DT_HAS_COMPAT_STATUS_OKAY(renesas_ra8_pwm)
+#define PWM_DEV_NODE DT_INST(0, renesas_ra8_pwm)
 
 #else
 #error "Define a PWM device"

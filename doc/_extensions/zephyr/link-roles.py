@@ -9,6 +9,11 @@ from __future__ import unicode_literals
 import re
 import subprocess
 from docutils import nodes
+from pathlib import Path
+from sphinx.util import logging
+from typing import Final
+
+ZEPHYR_BASE: Final[str] = Path(__file__).parents[3]
 
 try:
     import west.manifest
@@ -19,6 +24,9 @@ try:
         west_manifest = None
 except ImportError:
     west_manifest = None
+
+
+logger = logging.getLogger(__name__)
 
 
 def get_github_rev():
@@ -39,6 +47,7 @@ def setup(app):
 
     app.add_config_value("link_roles_manifest_baseurl", None, "env")
     app.add_config_value("link_roles_manifest_project", None, "env")
+    app.add_config_value("link_roles_manifest_project_broken_links_ignore_globs", [], "env")
 
     # The role just creates new nodes based on information in the
     # arguments; its behavior doesn't depend on any other documents.
@@ -55,7 +64,8 @@ def modulelink(default_module=None, format="blob"):
         rev = get_github_rev()
         config = inliner.document.settings.env.app.config
         baseurl = config.link_roles_manifest_baseurl
-        trace = f"at '{inliner.parent.source}', line {lineno}"
+        source, line = inliner.reporter.get_source_and_line(lineno)
+        trace = f"at '{source}:{line}'"
 
         m = re.search(r"(.*)\s*<(.*)>", text)
         if m:
@@ -88,14 +98,23 @@ def modulelink(default_module=None, format="blob"):
             )
         # Invalid module provided
         elif module != config.link_roles_manifest_project:
-            raise ModuleNotFoundError(
-                f"Module {module} not found in the west manifest\n\t{trace}"
-            )
+            logger.debug(f"Module {module} not found in the west manifest")
         # Baseurl for manifest project not set
         elif baseurl is None:
             raise ValueError(
                 f"Configuration value `link_roles_manifest_baseurl` not set\n\t{trace}"
             )
+
+        if module == config.link_roles_manifest_project:
+            p = Path(source).relative_to(inliner.document.settings.env.srcdir)
+            if not any(
+                p.match(glob)
+                for glob in config.link_roles_manifest_project_broken_links_ignore_globs
+            ):
+                if not Path(ZEPHYR_BASE, link).exists():
+                    logger.warning(
+                        f"{link} not found in {config.link_roles_manifest_project} {trace}"
+                    )
 
         url = f"{baseurl}/{format}/{rev}/{link}"
         node = nodes.reference(rawtext, link_text, refuri=url, **options)

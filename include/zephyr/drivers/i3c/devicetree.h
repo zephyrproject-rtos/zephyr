@@ -71,6 +71,7 @@ extern "C" {
 		       | DT_PROP_BY_IDX(node_id, reg, 2),		\
 		.init_dynamic_addr =					\
 			DT_PROP_OR(node_id, assigned_address, 0),	\
+		.supports_setaasa = DT_PROP(node_id, supports_setaasa), \
 	},
 
 /**

@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config COMPARATOR_MCUX_ACMP
+	bool "NXP MCUX ACMP comparator driver"
+	default y
+	depends on DT_HAS_NXP_KINETIS_ACMP_ENABLED
+	select PINCTRL
+	select MCUX_ACMP

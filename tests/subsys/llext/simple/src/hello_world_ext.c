@@ -24,4 +24,4 @@ void test_entry(void)
 	printk("A number is %u\n", number);
 	zassert_equal(number, 42);
 }
-LL_EXTENSION_SYMBOL(test_entry);
+EXPORT_SYMBOL(test_entry);

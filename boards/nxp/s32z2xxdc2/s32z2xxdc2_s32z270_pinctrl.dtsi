@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 NXP
+ * Copyright 2022-2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -64,7 +64,7 @@
 		};
 	};
 
-	can0_default: can0_default {
+	canxl0_default: canxl0_default {
 		group1 {
 			pinmux = <PN2_CANXL_0_RX>;
 			input-enable;
@@ -75,7 +75,7 @@
 		};
 	};
 
-	can1_default: can1_default {
+	canxl1_default: canxl1_default {
 		group1 {
 			pinmux = <PM11_CANXL_1_RX>;
 			input-enable;
@@ -83,6 +83,48 @@
 		group2 {
 			pinmux = <PM10_CANXL_1_TX>;
 			output-enable;
+		};
+	};
+
+	flexcan0_default: flexcan0_default {
+		group1 {
+			pinmux = <PA5_CAN_0_RX>;
+			input-enable;
+		};
+		group2 {
+			pinmux = <PA4_CAN_0_TX>;
+			output-enable;
+		};
+	};
+
+	flexcan1_default: flexcan1_default {
+		group1 {
+			pinmux = <PB7_CAN_1_RX>;
+			input-enable;
+		};
+		group2 {
+			pinmux = <PB6_CAN_1_TX>;
+			output-enable;
+		};
+	};
+
+	i2c1_default: i2c1_default {
+		group1 {
+			pinmux = <(PC15_I2C_1_SDA_I | PC15_I2C_1_SDA_O)>,
+				<(PD0_I2C_1_SCL_I | PD0_I2C_1_SCL_O)>;
+			input-enable;
+			output-enable;
+			drive-open-drain;
+		};
+	};
+
+	i2c2_default: i2c2_default {
+		group1 {
+			pinmux = <(PJ11_I2C_2_SDA_I | PJ11_I2C_2_SDA_O)>,
+				<(PJ10_I2C_2_SCL_I | PJ10_I2C_2_SCL_O)>;
+			input-enable;
+			output-enable;
+			drive-open-drain;
 		};
 	};
 };

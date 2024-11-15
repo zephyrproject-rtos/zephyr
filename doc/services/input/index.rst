@@ -100,6 +100,8 @@ General Purpose Drivers
   matrix to key events.
 - :dtcompatible:`zephyr,input-longpress`: listens for key events, emits events
   for short and long press.
+- :dtcompatible:`zephyr,input-double-tap`: listens for key events, emits events
+  for input double taps
 - :dtcompatible:`zephyr,lvgl-button-input`
   :dtcompatible:`zephyr,lvgl-encoder-input`
   :dtcompatible:`zephyr,lvgl-keypad-input`
@@ -129,3 +131,8 @@ Analog Axis API Reference
 *************************
 
 .. doxygengroup:: input_analog_axis
+
+Touchscreen API Reference
+*************************
+
+.. doxygengroup:: touch_events

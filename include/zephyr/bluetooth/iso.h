@@ -5,7 +5,7 @@
 
 /*
  * Copyright (c) 2020 Intel Corporation
- * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,10 +23,16 @@
  * @{
  */
 
-#include <zephyr/sys/atomic.h>
+#include <stdint.h>
+
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/hci.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/slist.h>
 #include <zephyr/sys/util_macro.h>
 
 #ifdef __cplusplus
@@ -133,6 +139,14 @@ extern "C" {
 #define BT_ISO_PTO_MIN              0x00U
 /** Maximum pre-transmission offset */
 #define BT_ISO_PTO_MAX              0x0FU
+
+/**
+ * @brief Check if ISO BIS bitfield is valid (BT_ISO_BIS_INDEX_BIT(1)|..|BT_ISO_BIS_INDEX_BIT(31))
+ *
+ * @param _bis_bitfield BIS index bitfield (uint32)
+ */
+#define BT_ISO_VALID_BIS_BITFIELD(_bis_bitfield)                                                   \
+	((_bis_bitfield) != 0U && (_bis_bitfield) <= BIT_MASK(BT_ISO_BIS_INDEX_MAX))
 
 /**
  * @brief Life-span states of ISO channel. Used only by internal APIs dealing with setting channel

@@ -5,7 +5,7 @@ family:
         socs:
           - name: ace15_mtpm
           - name: ace20_lnl
-          - name: ace30_ptl
+          - name: ace30
       - name: intel_adsp_cavs
         socs:
           - name: cavs25

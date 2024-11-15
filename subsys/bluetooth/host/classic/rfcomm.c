@@ -261,8 +261,7 @@ static void rfcomm_dlc_disconnect(struct bt_rfcomm_dlc *dlc)
 		/* Queue a dummy buffer to wake up and stop the
 		 * tx thread for states where it was running.
 		 */
-		net_buf_put(&dlc->tx_queue,
-			    net_buf_alloc(&dummy_pool, K_NO_WAIT));
+		k_fifo_put(&dlc->tx_queue, net_buf_alloc(&dummy_pool, K_NO_WAIT));
 
 		/* There could be a writer waiting for credits so return a
 		 * dummy credit to wake it up.
@@ -583,7 +582,7 @@ static void rfcomm_dlc_tx_thread(void *p1, void *p2, void *p3)
 	       dlc->state == BT_RFCOMM_STATE_USER_DISCONNECT) {
 		/* Get next packet for dlc */
 		LOG_DBG("Wait for buf %p", dlc);
-		buf = net_buf_get(&dlc->tx_queue, timeout);
+		buf = k_fifo_get(&dlc->tx_queue, timeout);
 		/* If its dummy buffer or non user disconnect then break */
 		if ((dlc->state != BT_RFCOMM_STATE_CONNECTED &&
 		     dlc->state != BT_RFCOMM_STATE_USER_DISCONNECT) ||
@@ -618,7 +617,7 @@ static void rfcomm_dlc_tx_thread(void *p1, void *p2, void *p3)
 	LOG_DBG("dlc %p disconnected - cleaning up", dlc);
 
 	/* Give back any allocated buffers */
-	while ((buf = net_buf_get(&dlc->tx_queue, K_NO_WAIT))) {
+	while ((buf = k_fifo_get(&dlc->tx_queue, K_NO_WAIT))) {
 		bt_rfcomm_tx_destroy(dlc, buf);
 		net_buf_unref(buf);
 	}
@@ -830,6 +829,13 @@ static enum security_result rfcomm_dlc_security(struct bt_rfcomm_dlc *dlc)
 	}
 
 	if (!bt_conn_set_security(conn, dlc->required_sec_level)) {
+		/*
+		 * General Bonding refers to the process of performing bonding
+		 * during connection setup or channel establishment procedures
+		 * as a precursor to accessing a service.
+		 * For current case, it is dedicated bonding.
+		 */
+		atomic_set_bit(conn->flags, BT_CONN_BR_GENERAL_BONDING);
 		/* If Security elevation is initiated or in progress */
 		return RFCOMM_SECURITY_PENDING;
 	}
@@ -871,7 +877,7 @@ static int rfcomm_dlc_close(struct bt_rfcomm_dlc *dlc)
 		/* Queue a dummy buffer to wake up and stop the
 		 * tx thread.
 		 */
-		net_buf_put(&dlc->tx_queue,
+		k_fifo_put(&dlc->tx_queue,
 			    net_buf_alloc(&dummy_pool, K_NO_WAIT));
 
 		/* There could be a writer waiting for credits so return a
@@ -1489,7 +1495,7 @@ int bt_rfcomm_dlc_send(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 	fcs = rfcomm_calc_fcs(BT_RFCOMM_FCS_LEN_UIH, buf->data);
 	net_buf_add_u8(buf, fcs);
 
-	net_buf_put(&dlc->tx_queue, buf);
+	k_fifo_put(&dlc->tx_queue, buf);
 
 	return buf->len;
 }
@@ -1748,7 +1754,7 @@ int bt_rfcomm_dlc_disconnect(struct bt_rfcomm_dlc *dlc)
 		 * and stop the tx thread.
 		 */
 		dlc->state = BT_RFCOMM_STATE_USER_DISCONNECT;
-		net_buf_put(&dlc->tx_queue,
+		k_fifo_put(&dlc->tx_queue,
 			    net_buf_alloc(&dummy_pool, K_NO_WAIT));
 
 		k_work_reschedule(&dlc->rtx_work, RFCOMM_DISC_TIMEOUT);

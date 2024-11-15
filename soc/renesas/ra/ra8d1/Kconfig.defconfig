@@ -1,0 +1,13 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_RA8D1
+
+config NUM_IRQS
+	default 96
+
+# Set to the minimal size of data which can be written.
+config FLASH_FILL_BUFFER_SIZE
+	default 128
+
+endif # SOC_SERIES_RA8D1

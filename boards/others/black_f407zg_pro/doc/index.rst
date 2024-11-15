@@ -1,7 +1,4 @@
-.. _black_f407zg_pro_board:
-
-Black STM32 F407ZG Pro Development Board
-########################################
+.. zephyr:board:: black_f407zg_pro
 
 Overview
 ********
@@ -26,10 +23,6 @@ Here are some highlights of the BLACK_F407ZG_PRO board:
 
 - Four push-buttons: RESET, K0, K1 and WK_UP
 - Mini-AB connector
-
-.. image:: img/black_f407zg_pro.jpg
-     :align: center
-     :alt: BLACK_F407ZG_PRO
 
 .. warning:: The +5V pins on this board are directly connected to the +5V pin
 	     of the USB connector. There is no protection in place. Do not
@@ -204,7 +197,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

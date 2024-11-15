@@ -3,6 +3,12 @@
 
 if SOC_MIMXRT595S_CM33
 
+config FLEXSPI_CONFIG_BLOCK_OFFSET
+	default 0x400
+
+config CODE_DATA_RELOCATION_SRAM
+	default y if FLASH_MCUX_FLEXSPI_XIP
+
 config ROM_START_OFFSET
 	default 0x1200 if NXP_IMXRT_BOOT_HEADER
 
@@ -14,15 +20,7 @@ config NUM_IRQS
 config ZTEST_NO_YIELD
 	default y if (PM && ZTEST)
 
-# Code relocation is needed for flash clock setup
-config CODE_DATA_RELOCATION_SRAM
-	default y
-
-#
-# MBEDTLS is larger but much faster than TinyCrypt so choose wisely
-#
 config MBEDTLS
-#config TINYCRYPT
 	default y if CSPRNG_ENABLED
 	depends on ENTROPY_GENERATOR
 
@@ -49,10 +47,6 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 250105263
 
 endif # CORTEX_M_SYSTICK
-
-choice USB_MCUX_CONTROLLER_TYPE
-	default USB_DC_NXP_LPCIP3511
-endchoice
 
 if PM_DEVICE
 # Enable the MEMC FlexSPI driver when using device power

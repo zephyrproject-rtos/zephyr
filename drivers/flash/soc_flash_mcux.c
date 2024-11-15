@@ -22,35 +22,40 @@
 LOG_MODULE_REGISTER(flash_mcux);
 
 
-#if DT_NODE_HAS_STATUS(DT_INST(0, nxp_kinetis_ftfa), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_INST(0, nxp_kinetis_ftfa))
 #define DT_DRV_COMPAT nxp_kinetis_ftfa
-#elif DT_NODE_HAS_STATUS(DT_INST(0, nxp_kinetis_ftfe), okay)
+#elif DT_NODE_HAS_STATUS_OKAY(DT_INST(0, nxp_kinetis_ftfe))
 #define DT_DRV_COMPAT nxp_kinetis_ftfe
-#elif DT_NODE_HAS_STATUS(DT_INST(0, nxp_kinetis_ftfl), okay)
+#elif DT_NODE_HAS_STATUS_OKAY(DT_INST(0, nxp_kinetis_ftfl))
 #define DT_DRV_COMPAT nxp_kinetis_ftfl
-#elif DT_NODE_HAS_STATUS(DT_INST(0, nxp_iap_fmc55), okay)
+#elif DT_NODE_HAS_STATUS_OKAY(DT_INST(0, nxp_iap_fmc55))
 #define DT_DRV_COMPAT nxp_iap_fmc55
 #define SOC_HAS_IAP 1
-#elif DT_NODE_HAS_STATUS(DT_INST(0, nxp_iap_fmc553), okay)
+#elif DT_NODE_HAS_STATUS_OKAY(DT_INST(0, nxp_iap_fmc553))
 #define DT_DRV_COMPAT nxp_iap_fmc553
 #define SOC_HAS_IAP 1
-#elif DT_NODE_HAS_STATUS(DT_INST(0, nxp_iap_msf1), okay)
-#define DT_DRV_COMPAT nxp_iap_msf1
-#define SOC_HAS_IAP_MSF1 1
+#elif DT_NODE_HAS_STATUS_OKAY(DT_INST(0, nxp_msf1))
+#define DT_DRV_COMPAT nxp_msf1
+#define SOC_HAS_MSF1 1
 #else
 #error No matching compatible for soc_flash_mcux.c
 #endif
 
 #if defined(SOC_HAS_IAP) && !defined(CONFIG_SOC_LPC55S36)
 #include "fsl_iap.h"
+#elif defined(CONFIG_SOC_MCXA156)
+#include "fsl_romapi.h"
+#define FLASH_Erase   FLASH_EraseSector
+#define FLASH_Program FLASH_ProgramPhrase
+#elif defined(CONFIG_MCUX_FLASH_K4_API)
+#include "fsl_k4_flash.h"
 #else
 #include "fsl_flash.h"
 #endif /* SOC_HAS_IAP && !CONFIG_SOC_LPC55S36*/
 
-
 #define SOC_NV_FLASH_NODE DT_INST(0, soc_nv_flash)
 
-#if defined(CONFIG_CHECK_BEFORE_READING)  && !defined(CONFIG_SOC_LPC55S36)
+#if defined(CONFIG_CHECK_BEFORE_READING) && !defined(CONFIG_SOC_LPC55S36)
 #define FMC_STATUS_FAIL	FLASH_INT_CLR_ENABLE_FAIL_MASK
 #define FMC_STATUS_ERR	FLASH_INT_CLR_ENABLE_ERR_MASK
 #define FMC_STATUS_DONE	FLASH_INT_CLR_ENABLE_DONE_MASK
@@ -120,6 +125,32 @@ static status_t is_area_readable(uint32_t addr, size_t len)
 }
 #endif /* CONFIG_CHECK_BEFORE_READING && ! CONFIG_SOC_LPC55S36 */
 
+#define SOC_FLASH_NEED_CLEAR_CACHES 1
+#ifdef CONFIG_SOC_SERIES_MCXW
+static void clear_flash_caches(void)
+{
+	volatile uint32_t *const smscm_ocmdr0 = (volatile uint32_t *)0x40015400;
+	/* this bit clears the flash cache */
+	*smscm_ocmdr0 |= BIT(8);
+	volatile uint32_t *mcm_cpcr2 = (volatile uint32_t *)0xe0080034;
+	/* this bit clears the code cache */
+	*mcm_cpcr2 |= BIT(0);
+}
+#elif CONFIG_SOC_SERIES_MCXN
+static void clear_flash_caches(void)
+{
+	volatile uint32_t *const nvm_ctrl = (volatile uint32_t *)0x40000400;
+	/* this bit clears the flash cache */
+	*nvm_ctrl |= BIT(5);
+	volatile uint32_t *const lpcac_ctrl = (volatile uint32_t *)0x40000824;
+	/* this bit clears the code cache */
+	*lpcac_ctrl |= BIT(1);
+}
+#else
+#undef SOC_FLASH_NEED_CLEAR_CACHES
+#define clear_flash_caches(...)
+#endif
+
 struct flash_priv {
 	flash_config_t config;
 	/*
@@ -162,7 +193,16 @@ static int flash_mcux_erase(const struct device *dev, off_t offset,
 	addr = offset + priv->pflash_block_base;
 
 	key = irq_lock();
-	rc = FLASH_Erase(&priv->config, addr, len, kFLASH_ApiEraseKey);
+	rc = FLASH_Erase(&priv->config,
+#if CONFIG_MCUX_FLASH_K4_API
+			(FMU_Type *) DT_INST_REG_ADDR(0),
+#endif
+			addr, len, kFLASH_ApiEraseKey);
+
+	if (IS_ENABLED(SOC_FLASH_NEED_CLEAR_CACHES)) {
+		clear_flash_caches();
+	}
+
 	irq_unlock(key);
 
 	k_sem_give(&priv->write_lock);
@@ -196,35 +236,55 @@ static int flash_mcux_read(const struct device *dev, off_t offset,
 	addr = offset + priv->pflash_block_base;
 
 #ifdef CONFIG_CHECK_BEFORE_READING
+	/*
+	 * Ensure the area is readable, since a direct access may cause faults
+	 * on erased or otherwise unreadable pages. Emulate erased pages,
+	 * return other errors.
+	 */
   #ifdef CONFIG_SOC_LPC55S36
-	/* Validates the given address range is loaded in the flash hiding region. */
-	rc = FLASH_IsFlashAreaReadable(&priv->config, addr, len);
-	if (rc != kStatus_FLASH_Success) {
-		rc = -EIO;
-	} else {
-		/* Check whether the flash is erased ("len" and "addr" must be word-aligned). */
-		rc = FLASH_VerifyErase(&priv->config, ((addr + 0x3) & ~0x3),  ((len + 0x3) & ~0x3));
+	/* On LPC55S36, use a HAL function to safely copy from Flash. */
+	rc = FLASH_Read(&priv->config, addr, data, len);
+	switch (rc) {
+	case kStatus_FLASH_Success:
+		rc = 0;
+		break;
+	case kStatus_FLASH_EccError:
+		/* Check id the ECC issue is due to the Flash being erased
+		 * ("addr" and "len" must be word-aligned for this call).
+		 */
+		rc = FLASH_VerifyErase(&priv->config,
+				       ROUND_DOWN(addr, 4),
+				       ROUND_DOWN(addr + len + 3, 4) - ROUND_DOWN(addr, 4));
 		if (rc == kStatus_FLASH_Success) {
 			rc = -ENODATA;
 		} else {
-			rc = 0;
+			rc = -EIO;
 		}
+		break;
+	default:
+		rc = -EIO;
+		break;
 	}
-  #else
+  #else /* CONFIG_SOC_LPC55S36 */
+	/* On all other targets, check if the Flash area is readable.
+	 * If so, copy data from it directly.
+	 */
 	rc = is_area_readable(addr, len);
-  #endif /* CONFIG_SOC_LPC55S36 */
-#endif /* CONFIG_CHECK_BEFORE_READING */
-
 	if (!rc) {
 		memcpy(data, (void *) addr, len);
 	}
-#ifdef CONFIG_CHECK_BEFORE_READING
-	else if (rc == -ENODATA) {
+  #endif /* CONFIG_SOC_LPC55S36 */
+
+	if (rc == -ENODATA) {
 		/* Erased area, return dummy data as an erased page. */
 		memset(data, 0xFF, len);
 		rc = 0;
 	}
-#endif
+#else /* CONFIG_CHECK_BEFORE_READING */
+	/* No safety checks, directly copy the memory mapped data. */
+	memcpy(data, (void *) addr, len);
+#endif /* CONFIG_CHECK_BEFORE_READING */
+
 	return rc;
 }
 
@@ -243,7 +303,16 @@ static int flash_mcux_write(const struct device *dev, off_t offset,
 	addr = offset + priv->pflash_block_base;
 
 	key = irq_lock();
-	rc = FLASH_Program(&priv->config, addr, (uint8_t *) data, len);
+	rc = FLASH_Program(&priv->config,
+#if CONFIG_MCUX_FLASH_K4_API
+			(FMU_Type *) DT_INST_REG_ADDR(0),
+#endif
+			addr, (uint8_t *) data, len);
+
+	if (IS_ENABLED(SOC_FLASH_NEED_CLEAR_CACHES)) {
+		clear_flash_caches();
+	}
+
 	irq_unlock(key);
 
 	k_sem_give(&priv->write_lock);
@@ -287,6 +356,12 @@ static const struct flash_driver_api flash_mcux_api = {
 #endif
 };
 
+#if (defined(SOC_HAS_IAP) || defined(SOC_HAS_MSF1)) && !defined(CONFIG_MCUX_FLASH_K4_API)
+#define FLASH_PROP_BLOCK_BASE	kFLASH_PropertyPflashBlockBaseAddr
+#else
+#define FLASH_PROP_BLOCK_BASE kFLASH_PropertyPflash0BlockBaseAddr
+#endif
+
 static int flash_mcux_init(const struct device *dev)
 {
 	struct flash_priv *priv = dev->data;
@@ -297,13 +372,8 @@ static int flash_mcux_init(const struct device *dev)
 
 	rc = FLASH_Init(&priv->config);
 
-#if defined(SOC_HAS_IAP) || defined(SOC_HAS_IAP_MSF1)
-	FLASH_GetProperty(&priv->config, kFLASH_PropertyPflashBlockBaseAddr,
-			  &pflash_block_base);
-#else
-	FLASH_GetProperty(&priv->config, kFLASH_PropertyPflash0BlockBaseAddr,
-			  &pflash_block_base);
-#endif
+	FLASH_GetProperty(&priv->config, FLASH_PROP_BLOCK_BASE, &pflash_block_base);
+
 	priv->pflash_block_base = (uint32_t) pflash_block_base;
 
 	return (rc == kStatus_Success) ? 0 : -EIO;

@@ -1,7 +1,4 @@
-.. _adafruit_qt_py_rp2040:
-
-Adafruit QT Py RP2040
-#####################
+.. zephyr:board:: adafruit_qt_py_rp2040
 
 Overview
 ********
@@ -26,13 +23,6 @@ Hardware
 - 8 Programmable I/O (PIO) for custom peripherals
 - On-board RGB LED
 - 1 Watchdog timer peripheral
-
-
-.. figure:: img/qtpy_rp2040.jpg
-     :align: center
-     :alt: Adafruit QT Py RP2040
-
-     Adafruit QT Py RP2040 (Image courtesy of Adafruit)
 
 Supported Features
 ==================
@@ -116,7 +106,7 @@ Using UF2
 
 Since it doesn't expose the SWD pins, you must flash the Adafruit QT Py RP2040 with
 a UF2 file. By default, building an app for this board will generate a
-`build/zephyr/zephyr.uf2` file. If the QT Py RP2040 is powered on with the `BOOTSEL`
+:file:`build/zephyr/zephyr.uf2` file. If the QT Py RP2040 is powered on with the ``BOOTSEL``
 button pressed, it will appear on the host as a mass storage device. The
 UF2 file should be drag-and-dropped to the device, which will flash the QT Py RP2040.
 

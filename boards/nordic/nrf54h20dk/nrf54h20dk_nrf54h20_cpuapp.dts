@@ -7,9 +7,7 @@
 /dts-v1/;
 
 #include <nordic/nrf54h20_cpuapp.dtsi>
-#include "nrf54h20dk_nrf54h20-memory_map.dtsi"
-#include "nrf54h20dk_nrf54h20-ipc_conf.dtsi"
-#include "nrf54h20dk_nrf54h20-pinctrl.dtsi"
+#include "nrf54h20dk_nrf54h20-common.dtsi"
 
 /delete-node/ &cpurad_cpusys_ipc;
 /delete-node/ &cpusec_cpurad_ipc;
@@ -114,11 +112,7 @@
 	status = "okay";
 };
 
-&cpuapp_cpurad_ram0x_region {
-	status = "okay";
-};
-
-&shared_ram3x_region {
+&etr_buf_ram0x_region {
 	status = "okay";
 };
 
@@ -130,8 +124,14 @@
 	status = "okay";
 	interrupts = <96 NRF_DEFAULT_IRQ_PRIORITY>;
 	interrupt-names = "irq0";
-	/* irq0: 0: cpuapp-cpusec, 6: cpuapp-cpusys, 13: cpuapp-cpuppr, 18: cpuapp-cpurad */
-	nordic,interrupt-mapping = <0x00042041 0>;
+	/* irq0:
+	 *  - 0:  cpuapp-cpusec
+	 *  - 6:  cpuapp-cpusys
+	 *  - 13: cpuapp-cpuppr
+	 *  - 14: cpuapp-cpuflpr
+	 *  - 18: cpuapp-cpurad
+	 */
+	nordic,interrupt-mapping = <0x00046041 0>;
 };
 
 &cpurad_bellboard {
@@ -175,11 +175,13 @@ ipc0: &cpuapp_cpurad_ipc {
 	rx-region = <&cpuppr_cpuapp_ipc_shm>;
 };
 
-&cpuapp_dma_region {
-	status = "okay";
+&cpuapp_cpuflpr_ipc {
+	mbox-names = "rx", "tx";
+	tx-region = <&cpuapp_cpuflpr_ipc_shm>;
+	rx-region = <&cpuflpr_cpuapp_ipc_shm>;
 };
 
-&dma_fast_region {
+&cpuapp_dma_region {
 	status = "okay";
 };
 
@@ -194,6 +196,11 @@ ipc0: &cpuapp_cpurad_ipc {
 &cpuppr_vpr {
 	execution-memory = <&cpuppr_code_data>;
 	source-memory = <&cpuppr_code_partition>;
+};
+
+&cpuflpr_vpr {
+	execution-memory = <&cpuflpr_code_data>;
+	source-memory = <&cpuflpr_code_partition>;
 };
 
 &gpiote130 {
@@ -216,6 +223,13 @@ ipc0: &cpuapp_cpurad_ipc {
 	owned-channels = <4 5 6>;
 };
 
+&uart120 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart120_default>;
+	pinctrl-1 = <&uart120_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
 &uart135 {
 	current-speed = <115200>;
 	pinctrl-0 = <&uart135_default>;
@@ -230,7 +244,6 @@ ipc0: &cpuapp_cpurad_ipc {
 	pinctrl-0 = <&uart136_default>;
 	pinctrl-1 = <&uart136_sleep>;
 	pinctrl-names = "default", "sleep";
-	hw-flow-control;
 };
 
 &gpio6 {

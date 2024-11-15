@@ -1,7 +1,4 @@
-.. _blueclover_plt_demo_v2_nrf52832:
-
-Blue Clover PLT Demo V2 nRF52832
-################################
+.. zephyr:board:: blueclover_plt_demo_v2
 
 Overview
 ********
@@ -26,10 +23,6 @@ The Nordic Semiconductor nRF52832 ARM Cortex-M4F MCU features the following:
 * :abbr:`SPI (Serial Peripheral Interface)`
 * :abbr:`UART (Universal asynchronous receiver-transmitter)`
 * :abbr:`WDT (Watchdog Timer)`
-
-.. figure:: img/blueclover_plt_demo_v2.jpg
-     :align: center
-     :alt: Blue Clover PLT Demo V2 nRF52832
 
 Hardware
 ********
@@ -125,7 +118,7 @@ an external programmer. The programmer is attached to the SWD header.
 Build the Zephyr kernel and the :zephyr:code-sample:`led-strip` sample application.
 
    .. zephyr-app-commands::
-      :zephyr-app: samples/drivers/led_apa102
+      :zephyr-app: samples/drivers/led/led_strip
       :board: blueclover_plt_demo_v2/nrf52832
       :goals: build
       :compact:
@@ -133,7 +126,7 @@ Build the Zephyr kernel and the :zephyr:code-sample:`led-strip` sample applicati
 Flash the image.
 
    .. zephyr-app-commands::
-      :zephyr-app: samples/drivers/led_apa102
+      :zephyr-app: samples/drivers/led/led_strip
       :board: blueclover_plt_demo_v2/nrf52832
       :goals: flash
       :compact:

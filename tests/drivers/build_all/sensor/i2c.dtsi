@@ -23,6 +23,7 @@
 #include <zephyr/dt-bindings/sensor/tmag5273.h>
 #include <zephyr/dt-bindings/sensor/stts22h.h>
 #include <zephyr/dt-bindings/sensor/ina226.h>
+#include <zephyr/dt-bindings/sensor/apds9253.h>
 
 /****************************************
  * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
@@ -180,8 +181,8 @@ test_i2c_ms5837: ms5837@18 {
 	reg = <0x18>;
 };
 
-test_i2c_mcp9808: mcp9808@19 {
-	compatible = "microchip,mcp9808";
+test_i2c_jc42: jc42@19 {
+	compatible = "jedec,jc-42.4-temp";
 	reg = <0x19>;
 	int-gpios = <&test_gpio 0 0>;
 };
@@ -514,21 +515,6 @@ test_i2c_iis2iclx: iis2iclx@4c {
 	odr = <IIS2ICLX_DT_ODR_833Hz>;
 };
 
-test_i2c_wsen_hids: wsen_hids@4d {
-	compatible = "we,wsen-hids";
-	reg = <0x4d>;
-	drdy-gpios = <&test_gpio 0 0>;
-	odr = "1";
-};
-
-test_i2c_itds: itds@4e {
-	compatible = "we,wsen-itds";
-	reg = <0x4e>;
-	int-gpios = <&test_gpio 0 0>;
-	odr = "800";
-	op-mode = "high-perf";
-};
-
 test_i2c_max17055: max17055@4f {
 	compatible = "maxim,max17055";
 	reg = <0x4f>;
@@ -662,15 +648,6 @@ test_i2c_akm09918c: akm09918c@5f {
 	reg = <0x5f>;
 };
 
-test_i2c_wsen_tids: wsen_tids@60 {
-	compatible = "we,wsen-tids";
-	reg = <0x60>;
-	int-gpios = <&test_gpio 0 0>;
-	odr = <25>;
-	temp-high-threshold = <0>;
-	temp-low-threshold = <0>;
-};
-
 test_i2c_vl53l1x: vl53l1x@61 {
 	compatible = "st,vl53l1x";
 	reg = <0x61>;
@@ -692,23 +669,10 @@ test_i2c_tmd2620: tmd2620@62 {
 	wait-time-factor = <0>;
 };
 
-test_i2c_wsen_pads: wsen_pads@63 {
-	compatible = "we,wsen-pads";
-	reg = <0x63>;
-	drdy-gpios = <&test_gpio 0 0>;
-	odr = <1>;
-};
-
 test_i2c_s11059: s11059@64 {
 	compatible = "hamamatsu,s11059";
 	reg = <0x64>;
 	integration-time = <546000>;
-};
-
-test_i2c_wsen_pdus: wsen_pdus@65 {
-	compatible = "we,wsen-pdus";
-	reg = <0x65>;
-	sensor-type = <3>;
 };
 
 test_i2c_veml7700: veml7700@66 {
@@ -918,6 +882,8 @@ test_i2c_vishay_vcnl36825t: vcnl36825t@81 {
 	multi-pulse = <8>;
 
 	low-power;
+
+	int-gpios = <&test_gpio 0 0>;
 };
 
 test_i2c_tmag5273: tmag5273@82 {
@@ -1024,51 +990,138 @@ test_i2c_lis2dux12: lis2dux12@8a {
 	status = "okay";
 };
 
-test_i2c_iis328dq: iis328dq@8a {
+test_i2c_iis328dq: iis328dq@8b {
 	compatible = "st,iis328dq";
 	status = "okay";
-	reg = <0x8a>;
+	reg = <0x8b>;
 	int2-gpios = <&test_gpio 0 0>;
 	threshold-int-pad = <2>;
 };
 
-test_i2c_nct75: test_i2c_nct75@8b {
+test_i2c_nct75: test_i2c_nct75@8c {
 	compatible = "onnn,nct75";
-	reg = <0x8b>;
+	reg = <0x8c>;
 	status = "okay";
 };
 
-test_i2c_tmp114: tmp114@8c {
+test_i2c_tmp114: tmp114@8d {
 	compatible = "ti,tmp114";
-	reg = <0x8c>;
+	reg = <0x8d>;
 };
 
-test_i2c_ina226: ina226@8d {
+test_i2c_ina226: ina226@8e {
 	compatible = "ti,ina226";
-	reg = <0x8d>;
+	reg = <0x8e>;
 	current-lsb-microamps = <5000>;
 	rshunt-micro-ohms = <500>;
 };
 
-test_i2c_shtc1: shtc1@8e {
+test_i2c_shtc1: shtc1@8f {
 	compatible = "sensirion,shtc1", "sensirion,shtcx";
-	reg = <0x8e>;
+	reg = <0x8f>;
 	measure-mode = "low-power";
 	clock-stretching;
 };
 
-test_i2c_lm95234: lm95234@8f {
+test_i2c_lm95234: lm95234@90 {
 	compatible = "national,lm95234";
-	reg = <0x8f>;
+	reg = <0x90>;
 	status = "okay";
 };
 
-test_i2c_sht21@90 {
+test_i2c_sht21: sht21@91 {
 	compatible = "sensirion,sht21";
-	reg = <0x90>;
+	reg = <0x91>;
 };
 
-test_i2c_lsm9ds1: lsm9ds1@91 {
+test_i2c_lsm9ds1: lsm9ds1@92 {
 	compatible = "st,lsm9ds1";
-	reg = <0x8e>;
+	reg = <0x92>;
+};
+
+test_i2c_icm42670: icm42670@93 {
+	compatible = "invensense,icm42670";
+	reg = <0x93>;
+	int-gpios = <&test_gpio 0 0>;
+	accel-hz = <800>;
+	accel-fs = <16>;
+	gyro-hz = <800>;
+	gyro-fs = <2000>;
+};
+
+test_i2c_fxls8974: fxls8974@94 {
+	compatible = "nxp,fxls8974";
+	reg = <0x94>;
+	reset-gpios = <&test_gpio 0 0>;
+	int1-gpios = <&test_gpio 0 0>;
+	int2-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_bmp180: bmp180@95 {
+	compatible = "bosch,bmp180";
+	reg = <0x95>;
+	osr-press = <0x01>;
+};
+
+test_i2c_apds9253: apds9253@96 {
+	compatible = "avago,apds9253";
+	reg = <0x96>;
+	int-gpios = <&test_gpio 0 0>;
+	gain = <APDS9253_GAIN_RANGE_1>;
+	rate = <APDS9253_MEASUREMENT_RATE_50MS>;
+	resolution = <APDS9253_RESOLUTION_16BIT_25MS>;
+};
+
+test_i2c_mmc56x3: mmc56x3@97 {
+	compatible = "memsic,mmc56x3";
+	reg = <0x97>;
+	magn-odr = <0>;
+	auto-self-reset;
+};
+
+test_i2c_tmp1075: tmp1075@98 {
+	compatible = "ti,tmp1075";
+	reg = <0x98>;
+	alert-gpios =  <&test_gpio 0 0>;
+	conversion-rate = <220000>;
+	lower-threshold = <27>;
+	upper-threshold = <28>;
+	consecutive-fault-measurements = <4>;
+	interrupt-mode;
+};
+
+test_i2c_bmp390: bmp390@99 {
+	compatible = "bosch,bmp390";
+	reg = <0x99>;
+	int-gpios = <&test_gpio 0 0>;
+	osr-press = <0x01>;
+	odr = "12.5";
+	osr-press = <8>;
+	osr-temp = <1>;
+	iir-filter = <3>;
+};
+
+apds_9306: apds9306@9a {
+	compatible = "avago,apds9306";
+	reg = <0x9a>;
+	status = "okay";
+	gain = <1>;
+	resolution = <13>;
+	frequency = <2000>;
+};
+
+test_i2c_wsen_hids_2525020210002: wsen_hids_2525020210002@9b {
+	compatible = "we,wsen-hids-2525020210002";
+	reg = <0x9b>;
+	precision = "high";
+};
+
+test_i2c_ilps22qs: ilps22qs@9c {
+	compatible = "st,ilps22qs";
+	reg = <0x9c>;
+	status = "okay";
+	odr = <LPS2xDF_DT_ODR_10HZ>;
+	lpf = <LPS2xDF_DT_LP_FILTER_ODR_4>;
+	avg = <LPS2xDF_DT_AVG_128_SAMPLES>;
+	fs = <ILPS22QS_DT_FS_MODE_1_1260>;
 };

@@ -1,7 +1,4 @@
-.. _m5stack_atoms3:
-
-M5Stack AtomS3
-##############
+.. zephyr:board:: m5stack_atoms3
 
 Overview
 ********
@@ -17,14 +14,6 @@ It features the following integrated components:
 - LCD IPS TFT 0.85", 128x128 px screen (ST7789 compatible)
 - 6-axis IMU MPU6886
 - Infrared emitter
-
-
-.. figure:: img/m5stack_atoms3.webp
-        :align: center
-        :alt: M5Stack AtomS3
-
-        M5Stack AtomS3
-
 
 Supported Features
 ==================
@@ -98,7 +87,7 @@ Build and flash applications as usual (see :ref:`build_an_application` and
    :goals: build
 
 The usual ``flash`` target will work with the ``m5stack_atoms3`` board
-configuration. Here is an example for the :ref:`hello_world`
+configuration. Here is an example for the :zephyr:code-sample:`hello_world`
 application.
 
 .. zephyr-app-commands::

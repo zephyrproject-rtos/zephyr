@@ -116,6 +116,8 @@
 	pinctrl-0 = <&i2c3_default>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
+	scl-gpios = <&gpio32_63 10 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
+	sda-gpios = <&gpio32_63 11 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
 	status = "okay";
 };
 
@@ -149,6 +151,13 @@
 
 &counter7 {
 	status = "okay";
+};
+
+&adc0 {
+	compatible = "ambiq,adc";
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+	status = "disabled";
 };
 
 &gpio0_31 {

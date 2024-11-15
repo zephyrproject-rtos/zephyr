@@ -66,6 +66,7 @@ source "drivers/pinctrl/Kconfig.mci_io_mux"
 source "drivers/pinctrl/Kconfig.ene"
 source "drivers/pinctrl/Kconfig.zynqmp"
 source "drivers/pinctrl/Kconfig.max32"
+source "drivers/pinctrl/Kconfig.mec5"
 
 rsource "renesas/Kconfig"
 

@@ -255,7 +255,7 @@ static int tmp116_attr_set(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	switch (attr) {
+	switch ((int)attr) {
 	case SENSOR_ATTR_OFFSET:
 		if (drv_data->id != TMP117_DEVICE_ID) {
 			LOG_ERR("%s: Offset is only supported by TMP117",
@@ -293,6 +293,14 @@ static int tmp116_attr_set(const struct device *dev,
 			return -EINVAL;
 		}
 		return tmp116_write_config(dev, TMP116_CFGR_AVG, avg);
+	case SENSOR_ATTR_TMP116_SHUTDOWN_MODE:
+		return tmp116_write_config(dev, TMP116_CFGR_MODE, TMP116_MODE_SHUTDOWN);
+
+	case SENSOR_ATTR_TMP116_CONTINUOUS_CONVERSION_MODE:
+		return tmp116_write_config(dev, TMP116_CFGR_MODE, TMP116_MODE_CONTINUOUS);
+
+	case SENSOR_ATTR_TMP116_ONE_SHOT_MODE:
+		return tmp116_write_config(dev, TMP116_CFGR_MODE, TMP116_MODE_ONE_SHOT);
 
 	default:
 		return -ENOTSUP;

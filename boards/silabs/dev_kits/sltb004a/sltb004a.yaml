@@ -1,5 +1,5 @@
 identifier: sltb004a
-name: Thunderboard Sense 2 (SLTB004A, BRD4166A)
+name: Thunderboard Sense 2 (SLTB004A, BRD4166A, EFR32MG12)
 type: mcu
 arch: arm
 ram: 256

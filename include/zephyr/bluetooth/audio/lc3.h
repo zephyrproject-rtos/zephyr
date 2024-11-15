@@ -14,7 +14,11 @@
 
 /**
  * @brief LC3
- * @defgroup BT_AUDIO_CODEC_LC3 AUDIO
+ * @defgroup bt_lc3 Bluetooth LC3 codec
+
+ * @since 3.0
+ * @version 0.8.0
+
  * @ingroup bluetooth
  * @{
  */

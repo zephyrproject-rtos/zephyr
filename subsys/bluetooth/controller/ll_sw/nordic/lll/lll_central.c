@@ -75,8 +75,8 @@ void lll_central_prepare(void *param)
 	LL_ASSERT(err >= 0);
 
 	/* Invoke common pipeline handling of prepare */
-	err = lll_prepare(lll_is_abort_cb, lll_conn_abort_cb, prepare_cb, 0,
-			  param);
+	err = lll_prepare(lll_conn_central_is_abort_cb, lll_conn_abort_cb,
+			  prepare_cb, 0, param);
 	LL_ASSERT(!err || err == -EINPROGRESS);
 }
 
@@ -120,7 +120,8 @@ static int prepare_cb(struct lll_prepare_param *p)
 	lll_conn_prepare_reset();
 
 	/* Calculate the current event latency */
-	lll->latency_event = lll->latency_prepare + p->lazy;
+	lll->lazy_prepare = p->lazy;
+	lll->latency_event = lll->latency_prepare + lll->lazy_prepare;
 
 	/* Calculate the current event counter value */
 	event_counter = lll->event_counter + lll->latency_event;
@@ -185,7 +186,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	radio_isr_set(lll_conn_isr_tx, lll);
 
-	radio_tmr_tifs_set(EVENT_IFS_US);
+	radio_tmr_tifs_set(lll->tifs_rx_us);
 
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 	/* If CTE RX is enabled and the PHY is not CODED, store channel used for

@@ -24,7 +24,7 @@
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/shell/shell_string_conv.h>
 #include <zephyr/sys/byteorder.h>
@@ -32,11 +32,9 @@
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/types.h>
 
-#include "shell/bt.h"
+#include "host/shell/bt.h"
 #include "../../host/hci_core.h"
 #include "audio.h"
-
-#define INVALID_BROADCAST_ID 0xFFFFFFFFU
 
 static uint8_t received_base[UINT8_MAX];
 static size_t received_base_size;
@@ -47,7 +45,7 @@ static struct bt_auto_scan {
 	bool pa_sync;
 	struct bt_bap_bass_subgroup subgroup;
 } auto_scan = {
-	.broadcast_id = INVALID_BROADCAST_ID,
+	.broadcast_id = BT_BAP_INVALID_BROADCAST_ID,
 };
 
 struct bt_scan_recv_info {
@@ -141,8 +139,7 @@ static void bap_broadcast_assistant_recv_state_cb(
 	}
 
 	bt_addr_le_to_str(&state->addr, le_addr, sizeof(le_addr));
-	bin2hex(state->bad_code, BT_AUDIO_BROADCAST_CODE_SIZE,
-		bad_code, sizeof(bad_code));
+	bin2hex(state->bad_code, BT_ISO_BROADCAST_CODE_SIZE, bad_code, sizeof(bad_code));
 
 	is_bad_code = state->encrypt_state == BT_BAP_BIG_ENC_STATE_BAD_CODE;
 	shell_print(ctx_shell,
@@ -439,7 +436,7 @@ static int cmd_bap_broadcast_assistant_add_src(const struct shell *sh,
 			return -ENOEXEC;
 		}
 
-		if (!VALID_BIS_SYNC(bis_sync)) {
+		if (!BT_BAP_BASS_VALID_BIT_BITFIELD(bis_sync)) {
 			shell_error(sh, "Invalid bis_sync: %lu", bis_sync);
 
 			return -ENOEXEC;
@@ -518,9 +515,9 @@ static void scan_recv_cb(const struct bt_le_scan_recv_info *info,
 	struct bt_bap_broadcast_assistant_add_src_param param = { 0 };
 	int err;
 
-	sr_info.broadcast_id = INVALID_BROADCAST_ID;
+	sr_info.broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
 
-	if ((auto_scan.broadcast_id == INVALID_BROADCAST_ID) &&
+	if ((auto_scan.broadcast_id == BT_BAP_INVALID_BROADCAST_ID) &&
 	    (strlen(auto_scan.broadcast_name) == 0U)) {
 		/* no op */
 		return;
@@ -539,7 +536,7 @@ static void scan_recv_cb(const struct bt_le_scan_recv_info *info,
 	bt_data_parse(ad, broadcast_source_found, (void *)&sr_info);
 
 	/* Verify that it is a BAP broadcaster*/
-	if (sr_info.broadcast_id != INVALID_BROADCAST_ID) {
+	if (sr_info.broadcast_id != BT_BAP_INVALID_BROADCAST_ID) {
 		char addr_str[BT_ADDR_LE_STR_LEN];
 		bool identified_broadcast = false;
 
@@ -581,7 +578,7 @@ static void scan_recv_cb(const struct bt_le_scan_recv_info *info,
 			}
 
 			memset(&auto_scan, 0, sizeof(auto_scan));
-			auto_scan.broadcast_id = INVALID_BROADCAST_ID;
+			auto_scan.broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
 		}
 	}
 }
@@ -591,7 +588,7 @@ static void scan_timeout_cb(void)
 	shell_print(ctx_shell, "Scan timeout");
 
 	memset(&auto_scan, 0, sizeof(auto_scan));
-	auto_scan.broadcast_id = INVALID_BROADCAST_ID;
+	auto_scan.broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
 }
 
 static struct bt_le_scan_cb scan_callbacks = {
@@ -635,7 +632,7 @@ static int cmd_bap_broadcast_assistant_add_broadcast_id(const struct shell *sh,
 	unsigned long broadcast_id;
 	int err = 0;
 
-	if (auto_scan.broadcast_id != INVALID_BROADCAST_ID) {
+	if (auto_scan.broadcast_id != BT_BAP_INVALID_BROADCAST_ID) {
 		shell_info(sh, "Already scanning, wait for sync or timeout");
 
 		return -ENOEXEC;
@@ -667,7 +664,7 @@ static int cmd_bap_broadcast_assistant_add_broadcast_id(const struct shell *sh,
 			shell_error(sh, "failed to parse bis_sync: %d", err);
 
 			return -ENOEXEC;
-		} else if (!VALID_BIS_SYNC(bis_sync)) {
+		} else if (!BT_BAP_BASS_VALID_BIT_BITFIELD(bis_sync)) {
 			shell_error(sh, "Invalid bis_sync: %lu", bis_sync);
 
 			return -ENOEXEC;
@@ -735,7 +732,7 @@ static int cmd_bap_broadcast_assistant_add_broadcast_name(const struct shell *sh
 			shell_error(sh, "failed to parse bis_sync: %d", err);
 
 			return -ENOEXEC;
-		} else if (!VALID_BIS_SYNC(bis_sync)) {
+		} else if (!BT_BAP_BASS_VALID_BIT_BITFIELD(bis_sync)) {
 			shell_error(sh, "Invalid bis_sync: %lu", bis_sync);
 
 			return -ENOEXEC;
@@ -764,7 +761,7 @@ static int cmd_bap_broadcast_assistant_add_broadcast_name(const struct shell *sh
 
 	/* Store results in the `auto_scan` struct */
 	utf8_lcpy(auto_scan.broadcast_name, broadcast_name, strlen(broadcast_name) + 1);
-	auto_scan.broadcast_id = INVALID_BROADCAST_ID;
+	auto_scan.broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
 	memcpy(&auto_scan.subgroup, &subgroup, sizeof(subgroup));
 
 	return 0;
@@ -836,7 +833,7 @@ static int cmd_bap_broadcast_assistant_mod_src(const struct shell *sh,
 			return -ENOEXEC;
 		}
 
-		if (!VALID_BIS_SYNC(bis_sync)) {
+		if (!BT_BAP_BASS_VALID_BIT_BITFIELD(bis_sync)) {
 			shell_error(sh, "Invalid bis_sync: %lu", bis_sync);
 
 			return -ENOEXEC;
@@ -1043,7 +1040,7 @@ static int cmd_bap_broadcast_assistant_add_pa_sync(const struct shell *sh,
 static int cmd_bap_broadcast_assistant_broadcast_code(const struct shell *sh,
 						      size_t argc, char **argv)
 {
-	uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE] = { 0 };
+	uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE] = {0};
 	size_t broadcast_code_len;
 	unsigned long src_id;
 	int result = 0;
@@ -1062,7 +1059,7 @@ static int cmd_bap_broadcast_assistant_broadcast_code(const struct shell *sh,
 	}
 
 	broadcast_code_len = strlen(argv[2]);
-	if (!IN_RANGE(broadcast_code_len, 1, BT_AUDIO_BROADCAST_CODE_SIZE)) {
+	if (!IN_RANGE(broadcast_code_len, 1, BT_ISO_BROADCAST_CODE_SIZE)) {
 		shell_error(sh, "Invalid broadcast code length: %zu", broadcast_code_len);
 
 		return -ENOEXEC;

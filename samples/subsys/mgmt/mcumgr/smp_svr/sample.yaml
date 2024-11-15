@@ -6,7 +6,7 @@ common:
   tags: bluetooth
 tests:
   sample.mcumgr.smp_svr.bt:
-    extra_args: OVERLAY_CONFIG="overlay-bt.conf"
+    extra_args: EXTRA_CONF_FILE="overlay-bt.conf"
     platform_allow:
       - nrf52dk/nrf52832
       - nrf52840dk/nrf52840
@@ -16,7 +16,7 @@ tests:
       - nrf52dk/nrf52832
       - nrf52840dk/nrf52840
   sample.mcumgr.smp_svr.bt_static_svc:
-    extra_args: OVERLAY_CONFIG="overlay-bt.conf"
+    extra_args: EXTRA_CONF_FILE="overlay-bt.conf"
     extra_configs:
       - CONFIG_MCUMGR_TRANSPORT_BT_DYNAMIC_SVC_REGISTRATION=n
     platform_allow:
@@ -26,13 +26,13 @@ tests:
     integration_platforms:
       - nrf52840dk/nrf52840
   sample.mcumgr.smp_svr.udp:
-    extra_args: OVERLAY_CONFIG="overlay-udp.conf"
+    extra_args: EXTRA_CONF_FILE="overlay-udp.conf"
     platform_allow: frdm_k64f
     integration_platforms:
       - frdm_k64f
   sample.mcumgr.smp_svr.cdc:
     extra_args:
-      - OVERLAY_CONFIG="overlay-cdc.conf"
+      - EXTRA_CONF_FILE="overlay-cdc.conf"
       - DTC_OVERLAY_FILE="usb.overlay"
     platform_allow:
       - nrf52833dk/nrf52820
@@ -46,8 +46,37 @@ tests:
       - nrf52840dk/nrf52840
       - nrf5340dk/nrf5340/cpuapp
   sample.mcumgr.smp_svr.serial:
-    extra_args: OVERLAY_CONFIG="overlay-serial.conf"
+    extra_args: EXTRA_CONF_FILE="overlay-serial.conf"
     platform_allow:
+      - frdm_k22f
+      - frdm_k64f
+      - frdm_k82f
+      - frdm_ke17z
+      - frdm_ke17z512
+      - rddrone_fmuk66
+      - twr_ke18f
+      - twr_kv58f220m
+      - frdm_mcxn947/mcxn947/cpu0
+      - lpcxpresso55s06
+      - lpcxpresso55s16
+      - lpcxpresso55s28
+      - lpcxpresso55s36
+      - lpcxpresso55s69/lpc55s69/cpu0
+      - mimxrt1010_evk
+      - mimxrt1015_evk
+      - mimxrt1020_evk
+      - mimxrt1024_evk
+      - mimxrt1040_evk
+      - mimxrt1050_evk
+      - mimxrt1060_evk
+      - mimxrt1062_fmurt6
+      - mimxrt1064_evk
+      - mimxrt1160_evk/mimxrt1166/cm7
+      - mimxrt1170_evk/mimxrt1176/cm7
+      - vmu_rt1170/mimxrt1176/cm7
+      - mimxrt595_evk/mimxrt595s/cm33
+      - mimxrt685_evk/mimxrt685s/cm33
+      - rd_rw612_bga
       - nrf52840dk/nrf52840
       - pinnacle_100_dvk
       - mg100
@@ -57,7 +86,7 @@ tests:
   # transport. Transport does not affect flags so it does not really matter which is selected,
   # flags should affect any transport the same way.
   sample.mcumgr.smp_svr.mcuboot_flags.direct_xip_withrevert:
-    extra_args: OVERLAY_CONFIG="overlay-serial.conf"
+    extra_args: EXTRA_CONF_FILE="overlay-serial.conf"
     extra_configs:
       - CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT=y
     platform_allow:
@@ -67,7 +96,7 @@ tests:
     integration_platforms:
       - nrf52840dk/nrf52840
   sample.mcumgr.smp_svr.serial-console:
-    extra_args: OVERLAY_CONFIG="overlay-serial-console.conf"
+    extra_args: EXTRA_CONF_FILE="overlay-serial-console.conf"
     platform_allow:
       - nrf52840dk/nrf52840
       - pinnacle_100_dvk
@@ -75,11 +104,38 @@ tests:
     integration_platforms:
       - nrf52840dk/nrf52840
   sample.mcumgr.smp_svr.shell:
-    extra_args: OVERLAY_CONFIG="overlay-shell.conf"
+    extra_args: EXTRA_CONF_FILE="overlay-shell.conf"
     platform_allow:
-      - nrf52840dk/nrf52840
+      - frdm_k22f
+      - frdm_k64f
+      - frdm_k82f
+      - frdm_ke17z
+      - frdm_ke17z512
+      - rddrone_fmuk66
+      - twr_ke18f
+      - twr_kv58f220m
+      - frdm_mcxn947/mcxn947/cpu0
+      - lpcxpresso55s06
+      - lpcxpresso55s16
+      - lpcxpresso55s28
+      - lpcxpresso55s36
+      - lpcxpresso55s69/lpc55s69/cpu0
+      - mimxrt1010_evk
+      - mimxrt1015_evk
+      - mimxrt1020_evk
+      - mimxrt1024_evk
+      - mimxrt1040_evk
+      - mimxrt1050_evk
       - mimxrt1060_evk
+      - mimxrt1062_fmurt6
       - mimxrt1064_evk
+      - mimxrt1160_evk/mimxrt1166/cm7
+      - mimxrt1170_evk/mimxrt1176/cm7
+      - vmu_rt1170/mimxrt1176/cm7
+      - mimxrt595_evk/mimxrt595s/cm33
+      - mimxrt685_evk/mimxrt685s/cm33
+      - rd_rw612_bga
+      - nrf52840dk/nrf52840
       - pinnacle_100_dvk
       - mg100
     integration_platforms:
@@ -87,7 +143,7 @@ tests:
       - mimxrt1060_evk
       - mimxrt1064_evk
   sample.mcumgr.smp_svr.shell_mgmt:
-    extra_args: OVERLAY_CONFIG="overlay-shell-mgmt.conf"
+    extra_args: EXTRA_CONF_FILE="overlay-shell-mgmt.conf"
     platform_allow:
       - nrf52840dk/nrf52840
       - pinnacle_100_dvk
@@ -95,10 +151,33 @@ tests:
     integration_platforms:
       - nrf52840dk/nrf52840
   sample.mcumgr.smp_svr.fs:
-    extra_args: OVERLAY_CONFIG="overlay-fs.conf"
+    extra_args: EXTRA_CONF_FILE="overlay-fs.conf"
     platform_allow:
       - nrf52840dk/nrf52840
       - pinnacle_100_dvk
       - mg100
+    integration_platforms:
+      - nrf52840dk/nrf52840
+  sample.mcumgr.smp_svr.ram_load:
+    sysbuild: true
+    extra_args: FILE_SUFFIX="ram_load"
+    platform_allow:
+      - nrf52840dk/nrf52840
+    integration_platforms:
+      - nrf52840dk/nrf52840
+  sample.mcumgr.smp_svr.ram_load.serial:
+    sysbuild: true
+    extra_args: FILE_SUFFIX="ram_load"
+                EXTRA_CONF_FILE="overlay-serial.conf"
+    platform_allow:
+      - nrf52840dk/nrf52840
+    integration_platforms:
+      - nrf52840dk/nrf52840
+  sample.mcumgr.smp_svr.ram_load.serial.fs.shell:
+    sysbuild: true
+    extra_args: FILE_SUFFIX="ram_load"
+                EXTRA_CONF_FILE="overlay-serial.conf;overlay-fs.conf;overlay-shell.conf"
+    platform_allow:
+      - nrf52840dk/nrf52840
     integration_platforms:
       - nrf52840dk/nrf52840

@@ -23,6 +23,8 @@
 #include <zephyr/arch/arc/cluster.h>
 #include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
+#include <zephyr/platform/hooks.h>
+#include <zephyr/arch/cache.h>
 
 /* XXX - keep for future use in full-featured cache APIs */
 #if 0
@@ -113,6 +115,9 @@ static void dev_state_zero(void)
 #endif
 
 extern FUNC_NORETURN void z_cstart(void);
+extern void arc_mpu_init(void);
+extern void arc_secureshield_init(void);
+
 /**
  * @brief Prepare to and run C code
  *
@@ -121,6 +126,10 @@ extern FUNC_NORETURN void z_cstart(void);
 
 void z_prep_c(void)
 {
+#if defined(CONFIG_SOC_PREP_HOOK)
+	soc_prep_hook();
+#endif
+
 #ifdef CONFIG_ISA_ARCV3
 	arc_cluster_scm_enable();
 #endif
@@ -130,6 +139,15 @@ void z_prep_c(void)
 	dev_state_zero();
 #endif
 	z_data_copy();
+#if CONFIG_ARCH_CACHE
+	arch_cache_init();
+#endif
+#ifdef CONFIG_ARC_MPU
+	arc_mpu_init();
+#endif
+#ifdef CONFIG_ARC_SECURE_FIRMWARE
+	arc_secureshield_init();
+#endif
 	z_cstart();
 	CODE_UNREACHABLE;
 }

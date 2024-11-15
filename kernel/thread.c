@@ -145,6 +145,10 @@ int z_impl_k_thread_name_set(k_tid_t thread, const char *str)
 	strncpy(thread->name, str, CONFIG_THREAD_MAX_NAME_LEN - 1);
 	thread->name[CONFIG_THREAD_MAX_NAME_LEN - 1] = '\0';
 
+#ifdef CONFIG_ARCH_HAS_THREAD_NAME_HOOK
+	arch_thread_name_set(thread, str);
+#endif /* CONFIG_ARCH_HAS_THREAD_NAME_HOOK */
+
 	SYS_PORT_TRACING_OBJ_FUNC(k_thread, name_set, thread, 0);
 
 	return 0;
@@ -351,7 +355,7 @@ void z_impl_k_thread_start(k_tid_t thread)
 static inline void z_vrfy_k_thread_start(k_tid_t thread)
 {
 	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
-	return z_impl_k_thread_start(thread);
+	z_impl_k_thread_start(thread);
 }
 #include <zephyr/syscalls/k_thread_start_mrsh.c>
 #endif /* CONFIG_USERSPACE */
@@ -608,6 +612,9 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 			CONFIG_THREAD_MAX_NAME_LEN - 1);
 		/* Ensure NULL termination, truncate if longer */
 		new_thread->name[CONFIG_THREAD_MAX_NAME_LEN - 1] = '\0';
+#ifdef CONFIG_ARCH_HAS_THREAD_NAME_HOOK
+		arch_thread_name_set(new_thread, name);
+#endif /* CONFIG_ARCH_HAS_THREAD_NAME_HOOK */
 	} else {
 		new_thread->name[0] = '\0';
 	}

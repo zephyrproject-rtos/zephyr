@@ -19,6 +19,8 @@ LOG_MODULE_REGISTER(mdio_shell, CONFIG_LOG_DEFAULT_LEVEL);
 #define DT_DRV_COMPAT atmel_sam_mdio
 #elif DT_HAS_COMPAT_STATUS_OKAY(espressif_esp32_mdio)
 #define DT_DRV_COMPAT espressif_esp32_mdio
+#elif DT_HAS_COMPAT_STATUS_OKAY(nxp_imx_netc_emdio)
+#define DT_DRV_COMPAT nxp_imx_netc_emdio
 #elif DT_HAS_COMPAT_STATUS_OKAY(nxp_s32_netc_emdio)
 #define DT_DRV_COMPAT nxp_s32_netc_emdio
 #elif DT_HAS_COMPAT_STATUS_OKAY(nxp_s32_gmac_mdio)
@@ -35,6 +37,12 @@ LOG_MODULE_REGISTER(mdio_shell, CONFIG_LOG_DEFAULT_LEVEL);
 #define DT_DRV_COMPAT infineon_xmc4xxx_mdio
 #elif DT_HAS_COMPAT_STATUS_OKAY(nxp_enet_qos_mdio)
 #define DT_DRV_COMPAT nxp_enet_qos_mdio
+#elif DT_HAS_COMPAT_STATUS_OKAY(litex_liteeth_mdio)
+#define DT_DRV_COMPAT litex_liteeth_mdio
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_mdio)
+#define DT_DRV_COMPAT st_stm32_mdio
+#elif DT_HAS_COMPAT_STATUS_OKAY(snps_dwcxgmac_mdio)
+#define DT_DRV_COMPAT snps_dwcxgmac_mdio
 #else
 #error "No known devicetree compatible match for MDIO shell"
 #endif

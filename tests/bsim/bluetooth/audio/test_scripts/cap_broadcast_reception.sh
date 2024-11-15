@@ -17,15 +17,15 @@ printf "\n\n======== Running CAP commander broadcast reception start and stop te
 
 Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=cap_commander_broadcast_reception \
-  -rs=46 -D=${NR_OF_DEVICES}
+  -RealEncryption=1 -rs=46 -D=${NR_OF_DEVICES}
 
 Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=1 -testid=broadcast_source \
-  -rs=23 -D=${NR_OF_DEVICES}
+  -RealEncryption=1 -rs=23 -D=${NR_OF_DEVICES}
 
 Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=2 -testid=cap_acceptor_broadcast_reception \
-  -rs=69 -D=${NR_OF_DEVICES}
+  -RealEncryption=1 -rs=69 -D=${NR_OF_DEVICES}
 
 # Simulation time should be larger than the WAIT_TIME in common.h
 Execute ./bs_2G4_phy_v1 -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} \

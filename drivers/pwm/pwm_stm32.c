@@ -246,7 +246,7 @@ static int get_tim_clk(const struct stm32_pclken *pclken, uint32_t *tim_clk)
 #endif
 	}
 #if !defined(CONFIG_SOC_SERIES_STM32C0X) && !defined(CONFIG_SOC_SERIES_STM32F0X) &&                \
-	!defined(CONFIG_SOC_SERIES_STM32G0X)
+	!defined(CONFIG_SOC_SERIES_STM32G0X) && !defined(CONFIG_SOC_SERIES_STM32U0X)
 	else {
 #if defined(CONFIG_SOC_SERIES_STM32MP1X)
 		apb_psc = (uint32_t)(READ_BIT(RCC->APB2DIVR, RCC_APB2DIVR_APB2DIV));
@@ -330,6 +330,7 @@ static int pwm_stm32_set_cycles(const struct device *dev, uint32_t channel,
 	 */
 	if (!IS_TIM_32B_COUNTER_INSTANCE(cfg->timer) &&
 	    (period_cycles > UINT16_MAX + 1)) {
+		LOG_ERR("Cannot set PWM output, value exceeds 16-bit timer limit.");
 		return -ENOTSUP;
 	}
 
@@ -731,7 +732,6 @@ static void pwm_stm32_isr(const struct device *dev)
 	}
 
 	if (cpt->overflows) {
-		LOG_ERR("counter overflow during PWM capture");
 		status = -ERANGE;
 	}
 

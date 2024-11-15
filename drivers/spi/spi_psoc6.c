@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(spi_psoc6);
 #include <errno.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi/rtio.h>
 #include <soc.h>
 
 #include "spi_context.h"
@@ -168,7 +169,7 @@ static uint32_t spi_psoc6_get_freqdiv(uint32_t frequency)
 	uint32_t oversample;
 	uint32_t bus_freq = 100000000UL;
 	/*
-	 * TODO: Get PerBusSpeed when clocks are available to PSoC-6.
+	 * TODO: Get PerBusSpeed when clocks are available to PSOC 6.
 	 * Currently the bus freq is fixed to 50Mhz and max SPI clk can be
 	 * 12.5MHz.
 	 */
@@ -409,6 +410,9 @@ static const struct spi_driver_api spi_psoc6_driver_api = {
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_psoc6_transceive_async,
 #endif
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
+#endif
 	.release = spi_psoc6_release,
 };
 
@@ -426,7 +430,7 @@ static const struct spi_driver_api spi_psoc6_driver_api = {
 		SPI_CONTEXT_INIT_SYNC(spi_psoc6_dev_data_##n, ctx),	\
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)	\
 	};								\
-	DEVICE_DT_INST_DEFINE(n, &spi_psoc6_init, NULL,			\
+	DEVICE_DT_INST_DEFINE(n, spi_psoc6_init, NULL,			\
 			      &spi_psoc6_dev_data_##n,			\
 			      &spi_psoc6_config_##n, POST_KERNEL,	\
 			      CONFIG_SPI_INIT_PRIORITY,			\

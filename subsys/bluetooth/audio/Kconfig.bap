@@ -8,19 +8,17 @@
 
 config BT_BAP_UNICAST
 	bool
-	depends on BT_CONN
-	select BT_SMP
-	select BT_ISO_UNICAST
 
 config BT_BAP_UNICAST_SERVER
 	bool "Bluetooth Unicast Audio Server Support"
 	select BT_BAP_UNICAST
-	select BT_GATT_DYNAMIC_DB
-	select BT_GATT_CACHING
+	depends on BT_GATT_DYNAMIC_DB
+	depends on BT_GATT_CACHING
 	depends on BT_PERIPHERAL
 	depends on BT_ISO_PERIPHERAL
 	depends on BT_ASCS
 	depends on BT_PACS
+	depends on BT_BONDABLE
 	help
 	  This option enables support for Bluetooth Unicast Audio Server
 	  using Isochronous channels.
@@ -28,11 +26,12 @@ config BT_BAP_UNICAST_SERVER
 config BT_BAP_UNICAST_CLIENT
 	bool "Bluetooth Unicast Audio Client Support"
 	select BT_BAP_UNICAST
-	select BT_ISO_CENTRAL
-	select BT_CENTRAL
 	select BT_GATT_CLIENT
 	select BT_GATT_AUTO_DISCOVER_CCC
 	select BT_GATT_AUTO_UPDATE_MTU
+	depends on BT_CENTRAL
+	depends on BT_ISO_CENTRAL
+	depends on BT_BONDABLE
 	help
 	  This option enables support for Bluetooth Unicast Audio Client
 	  using Isochronous channels.
@@ -208,10 +207,12 @@ endif # BT_BAP_BROADCAST_SINK
 
 config BT_BAP_SCAN_DELEGATOR
 	bool "Basic Audio Profile Scan Delegator role support"
-	select BT_OBSERVER
 	select BT_EXT_ADV
 	select BT_PER_ADV_SYNC
 	select BT_ISO_SYNC_RECEIVER
+	depends on BT_OBSERVER
+	depends on BT_GATT_DYNAMIC_DB
+	depends on BT_BONDABLE
 	help
 	  This option enables support for the Scan Delegator role and the
 	  Broadcast Audio Scan Service (BASS).
@@ -240,13 +241,14 @@ endif # BT_BAP_SCAN_DELEGATOR
 
 config BT_BAP_BROADCAST_ASSISTANT
 	bool "Basic Audio Profile Broadcast Assistant role support"
-	select BT_OBSERVER
 	select BT_EXT_ADV
 	select BT_PER_ADV_SYNC
 	select BT_ISO_SYNC_RECEIVER
 	select BT_GATT_CLIENT
 	select BT_GATT_AUTO_DISCOVER_CCC
 	select BT_GATT_AUTO_UPDATE_MTU
+	depends on BT_OBSERVER
+	depends on BT_BONDABLE
 	help
 	  This option enables support for the Broadcast Assistant role.
 

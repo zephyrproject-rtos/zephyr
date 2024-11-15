@@ -84,11 +84,11 @@ For threads running in a non-privileged CPU state (hereafter referred to as
 - We prevent invoking system calls to functions excluded by the kernel
   configuration.
 
-- We prevent disabling of or tampering with kernel-defined and hardware-
-  enforced memory protections.
+- We prevent disabling of or tampering with kernel-defined and
+  hardware-enforced memory protections.
 
-- We prevent re-entry from user to supervisor mode except through the kernel-
-  defined system calls and interrupt handlers.
+- We prevent re-entry from user to supervisor mode except through the
+  kernel-defined system calls and interrupt handlers.
 
 - We prevent the introduction of new executable code by user mode threads,
   except to the extent to which this is supported by kernel system calls.

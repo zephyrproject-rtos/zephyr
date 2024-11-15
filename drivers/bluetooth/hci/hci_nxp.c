@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 NXP
+ * Copyright 2023-2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,14 +30,21 @@ struct bt_nxp_data {
 	bt_hci_recv_t recv;
 };
 
+struct hci_data {
+	uint8_t packetType;
+	uint8_t *data;
+	uint16_t len;
+};
+
 #define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
 LOG_MODULE_REGISTER(bt_driver);
 
 #define HCI_IRQ_N        DT_INST_IRQ_BY_NAME(0, hci_int, irq)
 #define HCI_IRQ_P        DT_INST_IRQ_BY_NAME(0, hci_int, priority)
+#if DT_INST_IRQ_HAS_NAME(0, wakeup_int)
 #define HCI_WAKEUP_IRQ_N DT_INST_IRQ_BY_NAME(0, wakeup_int, irq)
 #define HCI_WAKEUP_IRQ_P DT_INST_IRQ_BY_NAME(0, wakeup_int, priority)
-
+#endif
 /* Vendor specific commands */
 #define HCI_CMD_STORE_BT_CAL_DATA_OCF                   0x61U
 #define HCI_CMD_STORE_BT_CAL_DATA_PARAM_LENGTH          32U
@@ -47,7 +54,29 @@ LOG_MODULE_REGISTER(bt_driver);
 #define HCI_CMD_SET_BT_SLEEP_MODE_PARAM_LENGTH          3U
 #define HCI_CMD_BT_HOST_SLEEP_CONFIG_OCF                0x59U
 #define HCI_CMD_BT_HOST_SLEEP_CONFIG_PARAM_LENGTH       2U
+#define HCI_CMD_BT_HOST_SET_MAC_ADDR_PARAM_LENGTH       8U
+#define HCI_SET_MAC_ADDR_CMD                            0x0022U
+#define BT_USER_BD                                      254
+#define BD_ADDR_OUI                                     0x37U, 0x60U, 0x00U
+#define BD_ADDR_OUI_PART_SIZE                           3U
+#define BD_ADDR_UUID_PART_SIZE                          3U
 
+#if !defined(CONFIG_HCI_NXP_SET_CAL_DATA)
+#define bt_nxp_set_calibration_data() 0
+#endif
+
+#if !defined(CONFIG_HCI_NXP_SET_CAL_DATA_ANNEX100)
+#define bt_nxp_set_calibration_data_annex100() 0
+#endif
+
+#if !defined(CONFIG_HCI_NXP_ENABLE_AUTO_SLEEP)
+#define nxp_bt_set_host_sleep_config()       0
+#define nxp_bt_enable_controller_autosleep() 0
+#endif
+
+#if !defined(CONFIG_BT_HCI_SET_PUBLIC_ADDR)
+#define bt_nxp_set_mac_address(public_addr) 0
+#endif
 /* -------------------------------------------------------------------------- */
 /*                              Public prototypes                             */
 /* -------------------------------------------------------------------------- */
@@ -59,31 +88,31 @@ extern int32_t ble_wakeup_done_handler(void);
 /*                             Private functions                              */
 /* -------------------------------------------------------------------------- */
 
-#if CONFIG_HCI_NXP_ENABLE_AUTO_SLEEP || CONFIG_HCI_NXP_SET_CAL_DATA
+#if defined(CONFIG_HCI_NXP_ENABLE_AUTO_SLEEP) || defined(CONFIG_HCI_NXP_SET_CAL_DATA)
 static int nxp_bt_send_vs_command(uint16_t opcode, const uint8_t *params, uint8_t params_len)
 {
-#if CONFIG_BT_HCI_HOST
-	struct net_buf *buf;
+	if (IS_ENABLED(CONFIG_BT_HCI_HOST)) {
+		struct net_buf *buf;
 
-	/* Allocate buffer for the hci command */
-	buf = bt_hci_cmd_create(opcode, params_len);
-	if (buf == NULL) {
-		LOG_ERR("Unable to allocate command buffer");
-		return -ENOMEM;
+		/* Allocate buffer for the hci command */
+		buf = bt_hci_cmd_create(opcode, params_len);
+		if (buf == NULL) {
+			LOG_ERR("Unable to allocate command buffer");
+			return -ENOMEM;
+		}
+
+		/* Add data part of packet */
+		net_buf_add_mem(buf, params, params_len);
+
+		/* Send the command */
+		return bt_hci_cmd_send_sync(opcode, buf, NULL);
+	} else {
+		return 0;
 	}
-
-	/* Add data part of packet */
-	net_buf_add_mem(buf, params, params_len);
-
-	/* Send the command */
-	return bt_hci_cmd_send_sync(opcode, buf, NULL);
-#else
-	return 0;
-#endif
 }
 #endif /* CONFIG_HCI_NXP_ENABLE_AUTO_SLEEP || CONFIG_HCI_NXP_SET_CAL_DATA */
 
-#if CONFIG_HCI_NXP_ENABLE_AUTO_SLEEP
+#if defined(CONFIG_HCI_NXP_ENABLE_AUTO_SLEEP)
 static int nxp_bt_enable_controller_autosleep(void)
 {
 	uint16_t opcode = BT_OP(BT_OGF_VS, HCI_CMD_SET_BT_SLEEP_MODE_OCF);
@@ -110,7 +139,7 @@ static int nxp_bt_set_host_sleep_config(void)
 }
 #endif /* CONFIG_HCI_NXP_ENABLE_AUTO_SLEEP */
 
-#if CONFIG_HCI_NXP_SET_CAL_DATA
+#if defined(CONFIG_HCI_NXP_SET_CAL_DATA)
 static int bt_nxp_set_calibration_data(void)
 {
 	uint16_t opcode = BT_OP(BT_OGF_VS, HCI_CMD_STORE_BT_CAL_DATA_OCF);
@@ -121,7 +150,7 @@ static int bt_nxp_set_calibration_data(void)
 				      HCI_CMD_STORE_BT_CAL_DATA_PARAM_LENGTH);
 }
 
-#if CONFIG_HCI_NXP_SET_CAL_DATA_ANNEX100
+#if defined(CONFIG_HCI_NXP_SET_CAL_DATA_ANNEX100)
 static int bt_nxp_set_calibration_data_annex100(void)
 {
 	uint16_t opcode = BT_OP(BT_OGF_VS, HCI_CMD_STORE_BT_CAL_DATA_ANNEX100_OCF);
@@ -136,6 +165,54 @@ static int bt_nxp_set_calibration_data_annex100(void)
 #endif /* CONFIG_HCI_NXP_SET_CAL_DATA_ANNEX100 */
 
 #endif /* CONFIG_HCI_NXP_SET_CAL_DATA */
+
+#if defined(CONFIG_BT_HCI_SET_PUBLIC_ADDR)
+/* Currently, we cannot use nxp_bt_send_vs_command because the controller
+ * fails to send the command complete event expected by Zephyr Host stack.
+ * To workaround it, we directly send the message using our PLATFORM API.
+ * This will be reworked once it is fixed on the controller side.
+ */
+static int bt_nxp_set_mac_address(const bt_addr_t *public_addr)
+{
+	uint8_t bleDeviceAddress[BT_ADDR_SIZE] = {0};
+	uint16_t opcode = BT_OP(BT_OGF_VS, HCI_SET_MAC_ADDR_CMD);
+	uint8_t addrOUI[BD_ADDR_OUI_PART_SIZE] = {BD_ADDR_OUI};
+	uint8_t uid[16] = {0};
+	uint8_t uuidLen;
+	uint8_t hciBuffer[12];
+
+	/* If no public address is provided by the user, use a unique address made
+	 * from the device's UID (unique ID)
+	 */
+	if (bt_addr_eq(public_addr, BT_ADDR_ANY) || bt_addr_eq(public_addr, BT_ADDR_NONE)) {
+		PLATFORM_GetMCUUid(uid, &uuidLen);
+		/* Set 3 LSB of MAC address from UUID */
+		if (uuidLen > BD_ADDR_UUID_PART_SIZE) {
+			memcpy((void *)bleDeviceAddress,
+			       (void *)(uid + uuidLen - (BD_ADDR_UUID_PART_SIZE + 1)),
+			       BD_ADDR_UUID_PART_SIZE);
+		}
+		/* Set 3 MSB of MAC address from OUI */
+		memcpy((void *)(bleDeviceAddress + BD_ADDR_UUID_PART_SIZE), (void *)addrOUI,
+		       BD_ADDR_OUI_PART_SIZE);
+	} else {
+		bt_addr_copy((bt_addr_t *)bleDeviceAddress, public_addr);
+	}
+
+	hciBuffer[0] = BT_HCI_H4_CMD;
+	memcpy((void *)&hciBuffer[1], (const void *)&opcode, 2U);
+	/* Set HCI parameter length */
+	hciBuffer[3] = HCI_CMD_BT_HOST_SET_MAC_ADDR_PARAM_LENGTH;
+	/* Set command parameter ID */
+	hciBuffer[4] = BT_USER_BD;
+	/* Set command parameter length */
+	hciBuffer[5] = (uint8_t)6U;
+	memcpy(hciBuffer + 6U, (const void *)bleDeviceAddress,
+	       BD_ADDR_UUID_PART_SIZE + BD_ADDR_OUI_PART_SIZE);
+	/* Send the command */
+	return PLATFORM_SendHciMessage(hciBuffer, 12U);
+}
+#endif /* CONFIG_BT_HCI_SET_PUBLIC_ADDR */
 
 static bool is_hci_event_discardable(const uint8_t *evt_data)
 {
@@ -246,7 +323,7 @@ static struct net_buf *bt_acl_recv(uint8_t *data, size_t len)
 	return buf;
 }
 
-static void hci_rx_cb(uint8_t packetType, uint8_t *data, uint16_t len)
+static void process_rx(uint8_t packetType, uint8_t *data, uint16_t len)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
 	struct bt_nxp_data *hci = dev->data;
@@ -271,6 +348,58 @@ static void hci_rx_cb(uint8_t packetType, uint8_t *data, uint16_t len)
 		hci->recv(dev, buf);
 	}
 }
+
+#if defined(CONFIG_HCI_NXP_RX_THREAD)
+
+K_MSGQ_DEFINE(rx_msgq, sizeof(struct hci_data), CONFIG_HCI_NXP_RX_MSG_QUEUE_SIZE, 4);
+
+static void bt_rx_thread(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct hci_data hci_rx_frame;
+
+	while (true) {
+		if (k_msgq_get(&rx_msgq, &hci_rx_frame, K_FOREVER) < 0) {
+			LOG_ERR("Failed to get RX data from message queue");
+			continue;
+		}
+		process_rx(hci_rx_frame.packetType, hci_rx_frame.data, hci_rx_frame.len);
+		k_free(hci_rx_frame.data);
+	}
+}
+
+K_THREAD_DEFINE(nxp_hci_rx_thread, CONFIG_BT_DRV_RX_STACK_SIZE, bt_rx_thread, NULL, NULL, NULL,
+		K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO), 0, 0);
+
+static void hci_rx_cb(uint8_t packetType, uint8_t *data, uint16_t len)
+{
+	struct hci_data hci_rx_frame;
+
+	hci_rx_frame.packetType = packetType;
+	hci_rx_frame.data = k_malloc(len);
+
+	if (!hci_rx_frame.data) {
+		LOG_ERR("Failed to allocate RX buffer");
+	}
+
+	memcpy(hci_rx_frame.data, data, len);
+	hci_rx_frame.len = len;
+
+	if (k_msgq_put(&rx_msgq, &hci_rx_frame, K_NO_WAIT) < 0) {
+		LOG_ERR("Failed to push RX data to message queue");
+	}
+}
+
+#else  /* CONFIG_HCI_NXP_RX_THREAD */
+
+static void hci_rx_cb(uint8_t packetType, uint8_t *data, uint16_t len)
+{
+	process_rx(packetType, data, len);
+}
+#endif /* CONFIG_HCI_NXP_RX_THREAD */
 
 static int bt_nxp_send(const struct device *dev, struct net_buf *buf)
 {
@@ -331,44 +460,51 @@ static int bt_nxp_open(const struct device *dev, bt_hci_recv_t recv)
 int bt_nxp_setup(const struct device *dev, const struct bt_hci_setup_params *params)
 {
 	ARG_UNUSED(dev);
-	ARG_UNUSED(params);
 
-	int ret;
+	int ret = 0;
 
 	do {
-#if CONFIG_HCI_NXP_SET_CAL_DATA
-		ret = bt_nxp_set_calibration_data();
-		if (ret < 0) {
-			LOG_ERR("Failed to set calibration data");
-			break;
-		}
-#if CONFIG_HCI_NXP_SET_CAL_DATA_ANNEX100
-		/* After send annex55 to CPU2, CPU2 need reset,
-		 * a delay of at least 20ms is required to continue sending annex100
-		 */
-		k_sleep(Z_TIMEOUT_MS(20));
+		if (IS_ENABLED(CONFIG_HCI_NXP_SET_CAL_DATA)) {
+			ret = bt_nxp_set_calibration_data();
+			if (ret < 0) {
+				LOG_ERR("Failed to set calibration data");
+				break;
+			}
+			if (IS_ENABLED(CONFIG_HCI_NXP_SET_CAL_DATA_ANNEX100)) {
+				/* After send annex55 to CPU2, CPU2 need reset,
+				 * a delay of at least 20ms is required to continue sending annex100
+				 */
+				k_sleep(Z_TIMEOUT_MS(20));
 
-		ret = bt_nxp_set_calibration_data_annex100();
-		if (ret < 0) {
-			LOG_ERR("Failed to set calibration data");
-			break;
-		}
-#endif /* CONFIG_HCI_NXP_SET_CAL_DATA_ANNEX100 */
-#endif /* CONFIG_HCI_NXP_SET_CAL_DATA */
-
-#if CONFIG_HCI_NXP_ENABLE_AUTO_SLEEP
-		ret = nxp_bt_set_host_sleep_config();
-		if (ret < 0) {
-			LOG_ERR("Failed to set host sleep config");
-			break;
+				ret = bt_nxp_set_calibration_data_annex100();
+				if (ret < 0) {
+					LOG_ERR("Failed to set calibration data");
+					break;
+				}
+			}
 		}
 
-		ret = nxp_bt_enable_controller_autosleep();
-		if (ret < 0) {
-			LOG_ERR("Failed to configure controller autosleep");
-			break;
+		if (IS_ENABLED(CONFIG_HCI_NXP_ENABLE_AUTO_SLEEP)) {
+			ret = nxp_bt_set_host_sleep_config();
+			if (ret < 0) {
+				LOG_ERR("Failed to set host sleep config");
+				break;
+			}
+
+			ret = nxp_bt_enable_controller_autosleep();
+			if (ret < 0) {
+				LOG_ERR("Failed to configure controller autosleep");
+				break;
+			}
 		}
-#endif /* CONFIG_HCI_NXP_ENABLE_AUTO_SLEEP */
+
+		if (IS_ENABLED(CONFIG_BT_HCI_SET_PUBLIC_ADDR)) {
+			ret = bt_nxp_set_mac_address(&(params->public_addr));
+			if (ret < 0) {
+				LOG_ERR("Failed to set MAC address");
+				break;
+			}
+		}
 	} while (false);
 
 	return ret;
@@ -379,18 +515,18 @@ static int bt_nxp_close(const struct device *dev)
 	struct bt_nxp_data *hci = dev->data;
 	int ret = 0;
 	/* Reset the Controller */
-#if CONFIG_BT_HCI_HOST
-	ret = bt_hci_cmd_send_sync(BT_HCI_OP_RESET, NULL, NULL);
-	if (ret) {
-		LOG_ERR("Failed to reset BLE controller");
-	}
-	k_sleep(K_SECONDS(1));
+	if (IS_ENABLED(CONFIG_BT_HCI_HOST)) {
+		ret = bt_hci_cmd_send_sync(BT_HCI_OP_RESET, NULL, NULL);
+		if (ret) {
+			LOG_ERR("Failed to reset BLE controller");
+		}
+		k_sleep(K_SECONDS(1));
 
-	ret = PLATFORM_TerminateBle();
-	if (ret < 0) {
-		LOG_ERR("Failed to shutdown BLE controller");
+		ret = PLATFORM_TerminateBle();
+		if (ret < 0) {
+			LOG_ERR("Failed to shutdown BLE controller");
+		}
 	}
-#endif
 	hci->recv = NULL;
 
 	return ret;
@@ -413,11 +549,11 @@ static int bt_nxp_init(const struct device *dev)
 	/* HCI Interrupt */
 	IRQ_CONNECT(HCI_IRQ_N, HCI_IRQ_P, ble_hci_handler, 0, 0);
 	irq_enable(HCI_IRQ_N);
-
+#if DT_INST_IRQ_HAS_NAME(0, wakeup_int)
 	/* Wake up done interrupt */
 	IRQ_CONNECT(HCI_WAKEUP_IRQ_N, HCI_WAKEUP_IRQ_P, ble_wakeup_done_handler, 0, 0);
 	irq_enable(HCI_WAKEUP_IRQ_N);
-
+#endif
 #if (DT_INST_PROP(0, wakeup_source)) && CONFIG_PM
 	EnableDeepSleepIRQ(HCI_IRQ_N);
 #endif

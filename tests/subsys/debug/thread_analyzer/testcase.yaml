@@ -1,0 +1,82 @@
+common:
+  integration_platforms:
+    - qemu_x86
+    - qemu_x86_64
+  platform_allow:
+    # Representative platforms to make sure this builds without issues
+    # and the analyzer actually runs and outputs something.
+    - mps2/an385
+    - qemu_cortex_a53
+    - qemu_x86
+    - qemu_x86_64
+    - qemu_riscv32
+    - qemu_riscv64
+    - qemu_xtensa/dc233c/mmu
+  extra_configs:
+    - CONFIG_QEMU_ICOUNT=n
+  tags:
+    - debug
+    - thread_analyzer
+tests:
+  debug.thread_analyzer.printk:
+    extra_configs:
+      - CONFIG_THREAD_ANALYZER_USE_PRINTK=y
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "(.*)0x([0-9a-fA-F]+)([ ]+) : STACK: unused [0-9]+ usage [0-9]+ / [0-9]+ (.*)"
+        - "(.*)ISR0([ ]+) : STACK: unused [0-9]+ usage [0-9]+ / [0-9]+ (.*)"
+  debug.thread_analyzer.printk.userspace:
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    extra_configs:
+      - CONFIG_THREAD_ANALYZER_USE_PRINTK=y
+      - CONFIG_USERSPACE=y
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "(.*)0x([0-9a-fA-F]+)([ ]+) : STACK: unused [0-9]+ usage [0-9]+ / [0-9]+ (.*)"
+        - "(.*)ISR0([ ]+) : STACK: unused [0-9]+ usage [0-9]+ / [0-9]+ (.*)"
+  debug.thread_analyzer.printk.userspace.priv_stack:
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    extra_configs:
+      - CONFIG_THREAD_ANALYZER_USE_PRINTK=y
+      - CONFIG_THREAD_ANALYZER_PRIV_STACK_USAGE=y
+      - CONFIG_USERSPACE=y
+    platform_exclude:
+      # These platforms do not yet have the necessary bits to determine
+      # usage of privileged stacks.
+      - mps2/an385
+      - qemu_cortex_a53
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "(.*)0x([0-9a-fA-F]+)([ ]+) : STACK: unused [0-9]+ usage [0-9]+ / [0-9]+ (.*)"
+        - "(.*)PRIV_STACK: unused [0-9]+ usage [0-9]+ / [0-9]+"
+        - "(.*)ISR0([ ]+) : STACK: unused [0-9]+ usage [0-9]+ / [0-9]+ (.*)"
+  debug.thread_analyzer.log_backend:
+    extra_configs:
+      - CONFIG_THREAD_ANALYZER_USE_LOG=y
+      - CONFIG_LOG=y
+      - CONFIG_LOG_MODE_IMMEDIATE=y
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "(.*)0x([0-9a-fA-F]+)([ ]+) : STACK: unused [0-9]+ usage [0-9]+ / [0-9]+ (.*)"
+        - "(.*)ISR0([ ]+) : STACK: unused [0-9]+ usage [0-9]+ / [0-9]+ (.*)"
+  debug.thread_analyzer.log_backend.userspace:
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    extra_configs:
+      - CONFIG_USERSPACE=y
+      - CONFIG_THREAD_ANALYZER_USE_LOG=y
+      - CONFIG_LOG=y
+      - CONFIG_LOG_MODE_IMMEDIATE=y
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "(.*)0x([0-9a-fA-F]+)([ ]+) : STACK: unused [0-9]+ usage [0-9]+ / [0-9]+ (.*)"
+        - "(.*)ISR0([ ]+) : STACK: unused [0-9]+ usage [0-9]+ / [0-9]+ (.*)"

@@ -88,7 +88,7 @@ struct coap_client_option {
 struct coap_client_internal_request {
 	uint8_t request_token[COAP_TOKEN_MAX_LEN];
 	uint32_t offset;
-	uint32_t last_id;
+	uint16_t last_id;
 	uint8_t request_tkl;
 	bool request_ongoing;
 	atomic_t in_callback;
@@ -108,7 +108,6 @@ struct coap_client {
 	int fd;
 	struct sockaddr address;
 	socklen_t socklen;
-	bool response_ready;
 	struct k_mutex lock;
 	uint8_t send_buf[MAX_COAP_MSG_LEN];
 	uint8_t recv_buf[MAX_COAP_MSG_LEN];

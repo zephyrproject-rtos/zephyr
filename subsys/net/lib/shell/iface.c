@@ -56,6 +56,10 @@ static struct ethernet_capabilities eth_hw_caps[] = {
 	EC(ETHERNET_HW_FILTERING,         "MAC address filtering"),
 	EC(ETHERNET_DSA_SLAVE_PORT,       "DSA slave port"),
 	EC(ETHERNET_DSA_MASTER_PORT,      "DSA master port"),
+	EC(ETHERNET_TXTIME,               "TXTIME supported"),
+	EC(ETHERNET_TXINJECTION_MODE,     "TX-Injection supported"),
+	EC(ETHERNET_LINK_2500BASE_T,      "2.5 Gbits"),
+	EC(ETHERNET_LINK_5000BASE_T,      "5 Gbits"),
 };
 
 static void print_supported_ethernet_capabilities(
@@ -91,7 +95,6 @@ static void print_phy_link_state(const struct shell *sh, const struct device *ph
 }
 #endif
 
-#if defined(CONFIG_NET_NATIVE)
 static const char *iface_flags2str(struct net_if *iface)
 {
 	static char str[sizeof("POINTOPOINT") + sizeof("PROMISC") +
@@ -148,17 +151,17 @@ static const char *iface_flags2str(struct net_if *iface)
 
 	return str;
 }
-#endif
 
 static void iface_cb(struct net_if *iface, void *user_data)
 {
-#if defined(CONFIG_NET_NATIVE)
 	struct net_shell_user_data *data = user_data;
 	const struct shell *sh = data->sh;
 
-#if defined(CONFIG_NET_IPV6)
+#if defined(CONFIG_NET_NATIVE_IPV6)
 	struct net_if_ipv6_prefix *prefix;
 	struct net_if_router *router;
+#endif
+#if defined(CONFIG_NET_IPV6)
 	struct net_if_ipv6 *ipv6;
 #endif
 #if defined(CONFIG_NET_IPV4)
@@ -393,6 +396,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 		PR("\t<none>\n");
 	}
 
+#if defined(CONFIG_NET_NATIVE_IPV6)
 	count = 0;
 
 	PR("IPv6 prefixes (max %d):\n", NET_IF_MAX_IPV6_PREFIX);
@@ -421,6 +425,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 		   net_sprint_ipv6_addr(&router->address.in6_addr),
 		   router->is_infinite ? " infinite" : "");
 	}
+#endif /* CONFIG_NET_NATIVE_IPV6 */
 
 skip_ipv6:
 
@@ -440,6 +445,29 @@ skip_ipv6:
 		PR("IPv6 retransmit timer    : %d\n",
 		   ipv6->retrans_timer);
 	}
+
+#if defined(CONFIG_NET_DHCPV6)
+	if (net_if_flag_is_set(iface, NET_IF_IPV6)) {
+		PR("DHCPv6 renewal time (T1) : %llu ms\n",
+		   iface->config.dhcpv6.t1);
+		PR("DHCPv6 rebind time (T2)  : %llu ms\n",
+		   iface->config.dhcpv6.t2);
+		PR("DHCPv6 expire time       : %llu ms\n",
+		   iface->config.dhcpv6.expire);
+		if (iface->config.dhcpv6.params.request_addr) {
+			PR("DHCPv6 address           : %s\n",
+			   net_sprint_ipv6_addr(&iface->config.dhcpv6.addr));
+		}
+
+		if (iface->config.dhcpv6.params.request_prefix) {
+			PR("DHCPv6 prefix            : %s\n",
+			   net_sprint_ipv6_addr(&iface->config.dhcpv6.prefix));
+		}
+
+		PR("DHCPv6 state             : %s\n",
+		   net_dhcpv6_state_name(iface->config.dhcpv6.state));
+	}
+#endif /* CONFIG_NET_DHCPV6 */
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
@@ -532,12 +560,6 @@ skip_ipv4:
 		   iface->config.dhcpv4.attempts);
 	}
 #endif /* CONFIG_NET_DHCPV4 */
-
-#else
-	ARG_UNUSED(iface);
-	ARG_UNUSED(user_data);
-
-#endif /* CONFIG_NET_NATIVE */
 }
 
 static int cmd_net_set_mac(const struct shell *sh, size_t argc, char *argv[])

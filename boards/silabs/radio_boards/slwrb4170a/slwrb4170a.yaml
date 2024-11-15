@@ -1,5 +1,5 @@
 identifier: slwrb4170a
-name: EFR32MG12 2400/868-915 MHz 19 dBm Dual Band Radio Board (SLWRB4170A)
+name: EFR32MG12 2400/868-915 MHz 19 dBm Dual Band Radio Board (SLWRB4170A, BRD4170A)
 type: mcu
 arch: arm
 ram: 256

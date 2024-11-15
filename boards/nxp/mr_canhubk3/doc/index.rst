@@ -1,7 +1,4 @@
-.. _mr_canhubk3:
-
-NXP MR-CANHUBK3
-###############
+.. zephyr:board:: mr_canhubk3
 
 Overview
 ********
@@ -10,10 +7,6 @@ Overview
 as autonomous mobile robots (AMR) and automated guided vehicles (AGV). It
 features an `NXP S32K344`_ general-purpose automotive microcontroller based on
 an Arm Cortex-M7 core (Lock-Step).
-
-.. image:: img/mr_canhubk3_top.jpg
-     :align: center
-     :alt: NXP MR-CANHUBK3 (TOP)
 
 Hardware
 ********
@@ -56,11 +49,13 @@ LPI2C         on-chip     i2c
 ADC SAR       on-chip     adc
 LPSPI         on-chip     spi
 WDT           FS26 SBC    watchdog
+SWT           on-chip     watchdog
 EMAC          on-chip     ethernet
                           mdio
 eMIOS         on-chip     pwm
 EDMA          on-chip     dma
 FLEXIO PWM    on-chip     pwm
+STM           on-chip     counter
 ============  ==========  ================================
 
 The default configuration can be found in the Kconfig file

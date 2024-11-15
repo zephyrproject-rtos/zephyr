@@ -79,4 +79,3 @@ The API does not enforce any attributes, but at least it defines the two most
 common ones: :c:enumerator:`SMH_REG_ATTR_CACHEABLE` and :c:enumerator:`SMH_REG_ATTR_NON_CACHEABLE`.
 
 .. doxygengroup:: shared_multi_heap
-   :project: Zephyr

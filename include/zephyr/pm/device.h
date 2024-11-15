@@ -208,7 +208,7 @@ BUILD_ASSERT(offsetof(struct pm_device_isr, base) == 0);
 #ifdef CONFIG_PM_DEVICE_POWER_DOMAIN
 #define	Z_PM_DEVICE_POWER_DOMAIN_INIT(_node_id)			\
 	.domain = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(_node_id,	\
-				   power_domain)),
+				   power_domains)),
 #else
 #define Z_PM_DEVICE_POWER_DOMAIN_INIT(obj)
 #endif /* CONFIG_PM_DEVICE_POWER_DOMAIN */
@@ -625,7 +625,8 @@ bool pm_device_is_powered(const struct device *dev);
  * This helper function is intended to be called at the end of a driver
  * init function to automatically setup the device into the lowest power
  * mode. It assumes that the device has been configured as if it is in
- * @ref PM_DEVICE_STATE_OFF.
+ * @ref PM_DEVICE_STATE_OFF, or @ref PM_DEVICE_STATE_SUSPENDED if device can
+ * never be powered off.
  *
  * @param dev Device instance.
  * @param action_cb Device PM control callback function.
@@ -718,7 +719,7 @@ static inline int pm_device_driver_init(const struct device *dev, pm_device_acti
 
 	/* When power management is not enabled, all drivers should initialise to active state */
 	rc = action_cb(dev, PM_DEVICE_ACTION_TURN_ON);
-	if (rc < 0) {
+	if ((rc < 0) && (rc != -ENOTSUP)) {
 		return rc;
 	}
 

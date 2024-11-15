@@ -1,0 +1,147 @@
+/*
+ * Copyright (c) 2024 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <renesas/ra/ra8/r7fa8t1ahecbd.dtsi>
+#include <dt-bindings/gpio/gpio.h>
+
+#include "mck_ra8t1-pinctrl.dtsi"
+
+/ {
+	model = "Renesas MCK-RA8T1";
+	compatible = "renesas,ra8t1", "renesas,ra8";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart3;
+		zephyr,shell-uart = &uart3;
+		zephyr,entropy = &trng;
+		zephyr,flash-controller = &flash1;
+		zephyr,canbus = &canfd1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led1: led1 {
+			gpios = <&ioporta 12 GPIO_ACTIVE_HIGH>;
+			label = "LED1";
+		};
+		led2: led2 {
+			gpios = <&ioporta 14 GPIO_ACTIVE_HIGH>;
+			label = "LED2";
+		};
+		led3: led3 {
+			gpios = <&ioport6 6 GPIO_ACTIVE_HIGH>;
+			label = "LED3";
+		};
+		led4: led4 {
+			gpios = <&ioporta 6 GPIO_ACTIVE_HIGH>;
+			label = "LED4";
+		};
+	};
+
+	aliases {
+		led0 = &led1;
+	};
+};
+
+&xtal {
+	clock-frequency = <DT_FREQ_M(24)>;
+	mosel = <0>;
+	#clock-cells = <0>;
+	status = "okay";
+};
+
+&subclk {
+	status = "okay";
+};
+
+&pll {
+	status = "okay";
+	pllp {
+		status = "okay";
+	};
+
+	pllq {
+		status = "okay";
+	};
+
+	pllr {
+		status = "okay";
+	};
+};
+
+&sciclk {
+	clocks = <&pllp>;
+	div = <4>;
+	status = "okay";
+};
+
+&canfdclk {
+	clocks = <&pll>;
+	div = <5>;
+	status = "okay";
+};
+
+&ioport6 {
+	status = "okay";
+};
+
+&ioporta {
+	status = "okay";
+};
+
+&sci3 {
+	pinctrl-0 = <&sci3_default>;
+	pinctrl-names = "default";
+	status = "okay";
+	uart3: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};
+
+&trng {
+	status = "okay";
+};
+
+&spi0 {
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&flash1 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		storage_partition: partition@0 {
+			label = "storage";
+			reg = <0X0 DT_SIZE_K(12)>;
+		};
+	};
+};
+
+&pwm2 {
+	pinctrl-0 = <&pwm2_default>;
+	interrupts = <40 1>, <41 1>;
+	interrupt-names = "gtioca", "overflow";
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&canfd_global {
+	status = "okay";
+	canfd1 {
+		pinctrl-0 = <&canfd1_default>;
+		pinctrl-names = "default";
+		rx-max-filters = <16>;
+		status = "okay";
+	};
+};

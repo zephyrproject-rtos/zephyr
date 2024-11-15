@@ -14,8 +14,6 @@
 / {
 
 	chosen {
-		zephyr,sram = &sram0;
-		zephyr,flash = &flash0;
 		zephyr,ieee802154 = &ieee802154;
 	};
 
@@ -53,6 +51,10 @@
 		sw0 = &button0;
 		watchdog0 = &wdt0;
 	};
+};
+
+&reg1 {
+	regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
 };
 
 &adc {

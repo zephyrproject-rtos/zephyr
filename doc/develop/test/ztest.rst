@@ -46,10 +46,13 @@ Below is an example of a test suite using a predicate:
 Adding tests to a suite
 ***********************
 
-There are 4 macros used to add a test to a suite, they are:
+There are 5 macros used to add a test to a suite, they are:
 
 * :c:macro:`ZTEST` ``(suite_name, test_name)`` - Which can be used to add a test by ``test_name`` to a
   given suite by ``suite_name``.
+* :c:macro:`ZTEST_P` ``(suite_name, test_name)`` - Add a parameterized test to a given suite by specifying
+  the ``suite_name`` and ``test_name``. You can then access the passed parameter within
+  the body of the test using the ``data`` pointer.
 * :c:macro:`ZTEST_USER` ``(suite_name, test_name)`` - Which behaves the same as :c:macro:`ZTEST`, only
   that when :kconfig:option:`CONFIG_USERSPACE` is enabled, then the test will be run in a userspace
   thread.
@@ -260,7 +263,7 @@ prj.conf
    :language: text
    :linenos:
 
-src/main.c (see :ref:`best practices <main_c_bp>`)
+src/main.c
 
 .. literalinclude:: ../../../samples/subsys/testsuite/integration/src/main.c
    :language: c
@@ -597,13 +600,17 @@ By default the tests are sorted and ran in alphanumerical order.  Test cases may
 be dependent on this sequence. Enable :kconfig:option:`CONFIG_ZTEST_SHUFFLE` to
 randomize the order. The output from the test will display the seed for failed
 tests.  For native simulator builds you can provide the seed as an argument to
-twister with `--seed`
+twister with ``--seed``.
 
-Static configuration of ZTEST_SHUFFLE contains:
 
- - :kconfig:option:`CONFIG_ZTEST_SHUFFLE_SUITE_REPEAT_COUNT` - Number of iterations the test suite will run.
- - :kconfig:option:`CONFIG_ZTEST_SHUFFLE_TEST_REPEAT_COUNT` - Number of iterations the test will run.
-
+Repeating Tests
+***********************
+By default the tests are executed once. The test cases and test suites
+may be executed multiple times. Enable :kconfig:option:`CONFIG_ZTEST_REPEAT` to
+execute the tests multiple times. By default the multiplication factors are 3, which
+means every test suite is executed 3 times and every test case is executed 3 times. This can
+be changed by the :kconfig:option:`CONFIG_ZTEST_SUITE_REPEAT_COUNT` and
+:kconfig:option:`CONFIG_ZTEST_TEST_REPEAT_COUNT` Kconfig options.
 
 Test Selection
 **************

@@ -101,8 +101,9 @@ struct http_service_desc {
 /**
  * @brief Define an HTTP service without static resources.
  *
- * @note The @p _host parameter must be non-`NULL`. It is used to specify an IP address either in
- * IPv4 or IPv6 format a fully-qualified hostname or a virtual host.
+ * @note The @p _host parameter is used to specify an IP address either in
+ * IPv4 or IPv6 format a fully-qualified hostname or a virtual host. If left NULL, the listening
+ * port will listen on all addresses.
  *
  * @note The @p _port parameter must be non-`NULL`. It points to a location that specifies the port
  * number to use for the service. If the specified port number is zero, then an ephemeral port
@@ -122,8 +123,9 @@ struct http_service_desc {
 /**
  * @brief Define an HTTPS service without static resources.
  *
- * @note The @p _host parameter must be non-`NULL`. It is used to specify an IP address either in
- * IPv4 or IPv6 format a fully-qualified hostname or a virtual host.
+ * @note The @p _host parameter is used to specify an IP address either in
+ * IPv4 or IPv6 format a fully-qualified hostname or a virtual host. If left NULL, the listening
+ * port will listen on all addresses.
  *
  * @note The @p _port parameter must be non-`NULL`. It points to a location that specifies the port
  * number to use for the service. If the specified port number is zero, then an ephemeral port
@@ -149,8 +151,9 @@ struct http_service_desc {
 /**
  * @brief Define an HTTP service with static resources.
  *
- * @note The @p _host parameter must be non-`NULL`. It is used to specify an IP address either in
- * IPv4 or IPv6 format a fully-qualified hostname or a virtual host.
+ * @note The @p _host parameter is used to specify an IP address either in
+ * IPv4 or IPv6 format a fully-qualified hostname or a virtual host. If left NULL, the listening
+ * port will listen on all addresses.
  *
  * @note The @p _port parameter must be non-`NULL`. It points to a location that specifies the port
  * number to use for the service. If the specified port number is zero, then an ephemeral port
@@ -174,8 +177,9 @@ struct http_service_desc {
 /**
  * @brief Define an HTTPS service with static resources.
  *
- * @note The @p _host parameter must be non-`NULL`. It is used to specify an IP address either in
- * IPv4 or IPv6 format a fully-qualified hostname or a virtual host.
+ * @note The @p _host parameter is used to specify an IP address either in
+ * IPv4 or IPv6 format a fully-qualified hostname or a virtual host. If left NULL, the listening
+ * port will listen on all addresses.
  *
  * @note The @p _port parameter must be non-`NULL`. It points to a location that specifies the port
  * number to use for the service. If the specified port number is zero, then an ephemeral port

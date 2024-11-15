@@ -11,6 +11,30 @@ config LV_Z_DOUBLE_VDB
 config LV_Z_BITS_PER_PIXEL
 	default 16
 
+choice LV_COLOR_DEPTH
+	default LV_COLOR_DEPTH_16
+endchoice
+
+# VDB size is 10% of the full screen size
+config LV_Z_VDB_SIZE
+	default 10
+
+# Configure LVGL to use touchscreen
+config INPUT
+	default y
+
+config INPUT_GT911_INTERRUPT
+	default y
+
 endif # LVGL
+
+if INPUT
+
+# GT911 driver drives reset pin low, so it needs to initialize before
+# the display driver but after the MIPI DBI driver
+config INPUT_INIT_PRIORITY
+	default 82
+
+endif # INPUT
 
 endif # SHIELD_LCD_PAR_S035

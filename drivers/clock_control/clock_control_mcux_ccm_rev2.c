@@ -25,7 +25,7 @@ static int mcux_ccm_on(const struct device *dev,
 	switch (peripheral) {
 #ifdef CONFIG_ETH_NXP_ENET
 
-#ifdef CONFIG_SOC_MIMX9352_A55
+#ifdef CONFIG_SOC_MIMX9352
 #define ENET1G_CLOCK	kCLOCK_Enet1
 #else
 #define ENET_CLOCK	kCLOCK_Enet
@@ -63,9 +63,15 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 	instance = (clock_name & IMX_CCM_INSTANCE_MASK);
 	switch (peripheral) {
 #ifdef CONFIG_I2C_MCUX_LPI2C
+#if defined(CONFIG_SOC_SERIES_IMXRT118X)
+	case IMX_CCM_LPI2C0102_CLK:
+		clock_root = kCLOCK_Root_Lpi2c0102 + instance;
+		break;
+#else
 	case IMX_CCM_LPI2C1_CLK:
 		clock_root = kCLOCK_Root_Lpi2c1 + instance;
 		break;
+#endif
 #endif
 
 #ifdef CONFIG_SPI_MCUX_LPSPI
@@ -75,10 +81,17 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 #endif
 
 #ifdef CONFIG_UART_MCUX_LPUART
+#if defined(CONFIG_SOC_SERIES_IMXRT118X)
+	case IMX_CCM_LPUART0102_CLK:
+	case IMX_CCM_LPUART0304_CLK:
+		clock_root = kCLOCK_Root_Lpuart0102 + instance;
+		break;
+#else
 	case IMX_CCM_LPUART1_CLK:
 	case IMX_CCM_LPUART2_CLK:
 		clock_root = kCLOCK_Root_Lpuart1 + instance;
 		break;
+#endif
 #endif
 
 #if CONFIG_IMX_USDHC
@@ -133,7 +146,7 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 #ifdef CONFIG_ETH_NXP_ENET
 	case IMX_CCM_ENET_CLK:
 	case IMX_CCM_ENET1G_CLK:
-#ifdef CONFIG_SOC_MIMX9352_A55
+#ifdef CONFIG_SOC_MIMX9352
 		clock_root = kCLOCK_Root_WakeupAxi;
 #else
 		clock_root = kCLOCK_Root_Bus;
@@ -141,7 +154,7 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 		break;
 #endif
 
-#if defined(CONFIG_SOC_MIMX9352_A55) && defined(CONFIG_DAI_NXP_SAI)
+#if defined(CONFIG_SOC_MIMX9352) && defined(CONFIG_DAI_NXP_SAI)
 	case IMX_CCM_SAI1_CLK:
 	case IMX_CCM_SAI2_CLK:
 	case IMX_CCM_SAI3_CLK:
@@ -165,21 +178,34 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 		break;
 #endif
 
-#ifdef CONFIG_PWM_MCUX_QTMR
+#ifdef CONFIG_MCUX_FLEXIO
+	case IMX_CCM_FLEXIO1_CLK:
+		clock_root = kCLOCK_Root_Flexio1;
+		break;
+	case IMX_CCM_FLEXIO2_CLK:
+		clock_root = kCLOCK_Root_Flexio2;
+		break;
+#endif
+
+#if defined(CONFIG_PWM_MCUX_QTMR) || defined(CONFIG_COUNTER_MCUX_QTMR)
+#if defined(CONFIG_SOC_SERIES_IMXRT118X)
+	case IMX_CCM_QTMR_CLK:
+		clock_root = kCLOCK_Root_Bus_Aon;
+		break;
+#else
 	case IMX_CCM_QTMR1_CLK:
 	case IMX_CCM_QTMR2_CLK:
 	case IMX_CCM_QTMR3_CLK:
 	case IMX_CCM_QTMR4_CLK:
 		clock_root = kCLOCK_Root_Bus;
 		break;
-#endif
+#endif /* CONFIG_SOC_SERIES_IMXRT118X */
+#endif /* CONFIG_PWM_MCUX_QTMR || CONFIG_COUNTER_MCUX_QTMR */
 
 #ifdef CONFIG_MEMC_MCUX_FLEXSPI
 	case IMX_CCM_FLEXSPI_CLK:
-		clock_root = kCLOCK_Root_Flexspi1;
-		break;
 	case IMX_CCM_FLEXSPI2_CLK:
-		clock_root = kCLOCK_Root_Flexspi2;
+		clock_root = kCLOCK_Root_Flexspi1 + instance;
 		break;
 #endif
 #ifdef CONFIG_COUNTER_NXP_PIT
@@ -193,10 +219,29 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 		clock_root = kCLOCK_Root_Adc1 + instance;
 		break;
 #endif
+
+#if defined(CONFIG_ETH_NXP_IMX_NETC)
+	case IMX_CCM_NETC_CLK:
+		clock_root = kCLOCK_Root_Netc;
+		break;
+#endif
+
+#if defined(CONFIG_VIDEO_MCUX_MIPI_CSI2RX)
+	case IMX_CCM_MIPI_CSI2RX_ROOT_CLK:
+		clock_root = kCLOCK_Root_Csi2;
+		break;
+	case IMX_CCM_MIPI_CSI2RX_ESC_CLK:
+		clock_root = kCLOCK_Root_Csi2_Esc;
+		break;
+	case IMX_CCM_MIPI_CSI2RX_UI_CLK:
+		clock_root = kCLOCK_Root_Csi2_Ui;
+		break;
+#endif
+
 	default:
 		return -EINVAL;
 	}
-#ifdef CONFIG_SOC_MIMX9352_A55
+#ifdef CONFIG_SOC_MIMX9352
 	*rate = CLOCK_GetIpFreq(clock_root);
 #else
 	*rate = CLOCK_GetRootClockFreq(clock_root);
@@ -232,6 +277,16 @@ static int CCM_SET_FUNC_ATTR mcux_ccm_set_subsys_rate(const struct device *dev,
 		 */
 		return flexspi_clock_set_freq(clock_name, clock_rate);
 #endif
+
+#if defined(CONFIG_VIDEO_MCUX_MIPI_CSI2RX)
+	case IMX_CCM_MIPI_CSI2RX_ROOT_CLK:
+		return mipi_csi2rx_clock_set_freq(kCLOCK_Root_Csi2, clock_rate);
+	case IMX_CCM_MIPI_CSI2RX_UI_CLK:
+		return mipi_csi2rx_clock_set_freq(kCLOCK_Root_Csi2_Ui, clock_rate);
+	case IMX_CCM_MIPI_CSI2RX_ESC_CLK:
+		return mipi_csi2rx_clock_set_freq(kCLOCK_Root_Csi2_Esc, clock_rate);
+#endif
+
 	default:
 		/* Silence unused variable warning */
 		ARG_UNUSED(clock_rate);

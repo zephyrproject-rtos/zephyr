@@ -25,13 +25,6 @@
 /* System clock frequency. */
 extern uint32_t SystemCoreClock;
 
-__ramfunc static void enable_lpcac(void)
-{
-	SYSCON->LPCAC_CTRL |= SYSCON_LPCAC_CTRL_CLR_LPCAC_MASK;
-	SYSCON->LPCAC_CTRL &= ~(SYSCON_LPCAC_CTRL_CLR_LPCAC_MASK |
-				SYSCON_LPCAC_CTRL_DIS_LPCAC_MASK);
-}
-
 /* Update Active mode voltage for OverDrive mode. */
 void power_mode_od(void)
 {
@@ -57,10 +50,38 @@ void power_mode_od(void)
 	SPC_SetSRAMOperateVoltage(SPC0, &cfg);
 }
 
+#if CONFIG_FLASH_MCUX_FLEXSPI_NOR || CONFIG_FLASH_MCUX_FLEXSPI_XIP
+__ramfunc static void enable_cache64(void)
+{
+	/* Make sure the FlexSPI clock is enabled before configuring the FlexSPI cache. */
+	SYSCON->AHBCLKCTRLSET[0] |= SYSCON_AHBCLKCTRL0_FLEXSPI_MASK;
+
+	/* Set command to invalidate all ways and write GO bit to initiate command */
+	CACHE64_CTRL0->CCR = CACHE64_CTRL_CCR_INVW1_MASK | CACHE64_CTRL_CCR_INVW0_MASK;
+	CACHE64_CTRL0->CCR |= CACHE64_CTRL_CCR_GO_MASK;
+	/* Wait until the command completes */
+	while ((CACHE64_CTRL0->CCR & CACHE64_CTRL_CCR_GO_MASK) != 0U) {
+	}
+	/* Enable cache, enable write buffer */
+	CACHE64_CTRL0->CCR = (CACHE64_CTRL_CCR_ENWRBUF_MASK | CACHE64_CTRL_CCR_ENCACHE_MASK);
+
+	/* configure reg0, reg1 to cover the whole FlexSPI
+	 * reg 0 covers the space where Zephyr resides in case of XIP from FlexSPI
+	 * reg 1 covers the storage space in case of XIP from FlexSPI
+	 */
+	CACHE64_POLSEL0->REG0_TOP = 0x7FFC00;
+	CACHE64_POLSEL0->REG1_TOP = 0x0;
+	CACHE64_POLSEL0->POLSEL =
+		(CACHE64_POLSEL_POLSEL_REG0_POLICY(1) | CACHE64_POLSEL_POLSEL_REG1_POLICY(0) |
+		 CACHE64_POLSEL_POLSEL_REG2_POLICY(0));
+
+	__ISB();
+	__DSB();
+}
+#endif
+
 static int frdm_mcxn947_init(void)
 {
-	enable_lpcac();
-
 	power_mode_od();
 
 	/* Enable SCG clock */
@@ -106,7 +127,7 @@ static int frdm_mcxn947_init(void)
 
 	CLOCK_SetupExtClocking(BOARD_XTAL0_CLK_HZ);
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcan0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcan0))
 	/* Set up PLL1 for 80 MHz FlexCAN clock */
 	const pll_setup_t pll1Setup = {
 		.pllctrl = SCG_SPLLCTRL_SOURCE(1U) | SCG_SPLLCTRL_SELI(27U) |
@@ -125,50 +146,55 @@ static int frdm_mcxn947_init(void)
 	CLOCK_SetClkDiv(kCLOCK_DivPLL1Clk0, 1U);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcomm1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcomm1))
 	CLOCK_SetClkDiv(kCLOCK_DivFlexcom1Clk, 1u);
 	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM1);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcomm2), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcomm2))
 	CLOCK_SetClkDiv(kCLOCK_DivFlexcom2Clk, 1u);
 	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM2);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcomm4), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcomm4))
 	CLOCK_SetClkDiv(kCLOCK_DivFlexcom4Clk, 1u);
 	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM4);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(os_timer), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcomm7))
+	CLOCK_SetClkDiv(kCLOCK_DivFlexcom7Clk, 1u);
+	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM7);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(os_timer))
 	CLOCK_AttachClk(kCLK_1M_to_OSTIMER);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio0))
 	CLOCK_EnableClock(kCLOCK_Gpio0);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio1))
 	CLOCK_EnableClock(kCLOCK_Gpio1);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio2), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio2))
 	CLOCK_EnableClock(kCLOCK_Gpio2);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio3), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio3))
 	CLOCK_EnableClock(kCLOCK_Gpio3);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio4), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio4))
 	CLOCK_EnableClock(kCLOCK_Gpio4);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio5), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio5))
 	CLOCK_EnableClock(kCLOCK_Gpio5);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(dac0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dac0))
 	SPC_EnableActiveModeAnalogModules(SPC0, kSPC_controlDac0);
 	CLOCK_SetClkDiv(kCLOCK_DivDac0Clk, 1u);
 	CLOCK_AttachClk(kFRO_HF_to_DAC0);
@@ -176,7 +202,7 @@ static int frdm_mcxn947_init(void)
 	CLOCK_EnableClock(kCLOCK_Dac0);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(dac1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dac1))
 	SPC_EnableActiveModeAnalogModules(SPC0, kSPC_controlDac1);
 	CLOCK_SetClkDiv(kCLOCK_DivDac1Clk, 1u);
 	CLOCK_AttachClk(kFRO_HF_to_DAC1);
@@ -184,7 +210,7 @@ static int frdm_mcxn947_init(void)
 	CLOCK_EnableClock(kCLOCK_Dac1);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet))
 	CLOCK_AttachClk(kNONE_to_ENETRMII);
 	CLOCK_EnableClock(kCLOCK_Enet);
 	SYSCON0->PRESETCTRL2 = SYSCON_PRESETCTRL2_ENET_RST_MASK;
@@ -193,64 +219,76 @@ static int frdm_mcxn947_init(void)
 	SYSCON->ENET_PHY_INTF_SEL = SYSCON_ENET_PHY_INTF_SEL_PHY_SEL(1);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(wwdt0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(wwdt0))
 	CLOCK_SetClkDiv(kCLOCK_DivWdt0Clk, 1u);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer0))
 	CLOCK_SetClkDiv(kCLOCK_DivCtimer0Clk, 1U);
 	CLOCK_AttachClk(kPLL0_to_CTIMER0);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer1))
 	CLOCK_SetClkDiv(kCLOCK_DivCtimer1Clk, 1U);
 	CLOCK_AttachClk(kPLL0_to_CTIMER1);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer2), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer2))
 	CLOCK_SetClkDiv(kCLOCK_DivCtimer2Clk, 1U);
 	CLOCK_AttachClk(kPLL0_to_CTIMER2);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer3), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer3))
 	CLOCK_SetClkDiv(kCLOCK_DivCtimer3Clk, 1U);
 	CLOCK_AttachClk(kPLL0_to_CTIMER3);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer4), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer4))
 	CLOCK_SetClkDiv(kCLOCK_DivCtimer4Clk, 1U);
 	CLOCK_AttachClk(kPLL0_to_CTIMER4);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcan0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcan0))
 	CLOCK_SetClkDiv(kCLOCK_DivFlexcan0Clk, 1U);
 	CLOCK_AttachClk(kPLL1_CLK0_to_FLEXCAN0);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usdhc0))
 	CLOCK_SetClkDiv(kCLOCK_DivUSdhcClk, 1u);
 	CLOCK_AttachClk(kFRO_HF_to_USDHC);
 #endif
 
-#if CONFIG_FLASH_MCUX_FLEXSPI_NOR
-	/* We downclock the FlexSPI to 50MHz, it will be set to the
-	 * optimum speed supported by the Flash device during FLEXSPI
-	 * Init
-	 */
-	flexspi_clock_set_freq(MCUX_FLEXSPI_CLK, MHZ(50));
+#if CONFIG_FLASH_MCUX_FLEXSPI_NOR || CONFIG_FLASH_MCUX_FLEXSPI_XIP
+	/* Setup the FlexSPI clock */
+	flexspi_clock_set_freq(MCUX_FLEXSPI_CLK,
+			       DT_PROP(DT_NODELABEL(w25q64jvssiq), spi_max_frequency));
+	enable_cache64();
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(vref), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(smartdma))
+	CLOCK_EnableClock(kCLOCK_Smartdma);
+	RESET_PeripheralReset(kSMART_DMA_RST_SHIFT_RSTn);
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(video_sdma))
+	/* Drive CLKOUT from main clock, divided by 25 to yield 6MHz clock
+	 * The camera will use this clock signal to generate
+	 * PCLK, HSYNC, and VSYNC
+	 */
+	CLOCK_AttachClk(kMAIN_CLK_to_CLKOUT);
+	CLOCK_SetClkDiv(kCLOCK_DivClkOut, 25U);
+#endif
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(vref))
 	CLOCK_EnableClock(kCLOCK_Vref);
 	SPC_EnableActiveModeAnalogModules(SPC0, kSPC_controlVref);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpadc0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpadc0))
 	CLOCK_SetClkDiv(kCLOCK_DivAdc0Clk, 1U);
 	CLOCK_AttachClk(kFRO_HF_to_ADC0);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(usb1), okay) && CONFIG_USB_DC_NXP_EHCI
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb1)) && CONFIG_USB_DC_NXP_EHCI
 	usb_phy_config_struct_t usbPhyConfig = {
 		BOARD_USB_PHY_D_CAL, BOARD_USB_PHY_TXCAL45DP, BOARD_USB_PHY_TXCAL45DM,
 	};
@@ -292,19 +330,53 @@ static int frdm_mcxn947_init(void)
 	USB_EhciPhyInit(kUSB_ControllerEhci0, BOARD_XTAL0_CLK_HZ, &usbPhyConfig);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpcmp0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpcmp0))
 	CLOCK_SetClkDiv(kCLOCK_DivCmp0FClk, 1U);
 	CLOCK_AttachClk(kFRO12M_to_CMP0F);
 	SPC_EnableActiveModeAnalogModules(SPC0, (kSPC_controlCmp0 | kSPC_controlCmp0Dac));
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(lptmr0), okay)
-	CLOCK_SetupClk16KClocking(kCLOCK_Clk16KToVsys);
-#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lptmr0))
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexio0), okay)
+/*
+ * Clock Select Decides what input source the lptmr will clock from
+ *
+ * 0 <- 12MHz FRO
+ * 1 <- 16K FRO
+ * 2 <- 32K OSC
+ * 3 <- Output from the OSC_SYS
+ */
+#if DT_PROP(DT_NODELABEL(lptmr0), clk_source) == 0x0
+	CLOCK_SetupClockCtrl(kCLOCK_FRO12MHZ_ENA);
+#elif DT_PROP(DT_NODELABEL(lptmr0), clk_source) == 0x1
+	CLOCK_SetupClk16KClocking(kCLOCK_Clk16KToVsys);
+#elif DT_PROP(DT_NODELABEL(lptmr0), clk_source) == 0x2
+	CLOCK_SetupOsc32KClocking(kCLOCK_Osc32kToVsys);
+#elif DT_PROP(DT_NODELABEL(lptmr0), clk_source) == 0x3
+	/* Value here should not exceed 25MHZ when using lptmr */
+	CLOCK_SetupExtClocking(MHZ(24));
+	CLOCK_SetupClockCtrl(kCLOCK_CLKIN_ENA_FM_USBH_LPT);
+#endif /* DT_PROP(DT_NODELABEL(lptmr0), clk_source) */
+
+#endif /* DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lptmr0)) */
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexio0))
 	CLOCK_SetClkDiv(kCLOCK_DivFlexioClk, 1u);
 	CLOCK_AttachClk(kPLL0_to_FLEXIO);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(i3c1), okay)
+	/* Enable 1MHz clock. */
+	SYSCON->CLOCK_CTRL |= SYSCON_CLOCK_CTRL_FRO1MHZ_CLK_ENA_MASK;
+
+	CLOCK_SetClkDiv(kCLOCK_DivI3c1FClk, DT_PROP(DT_NODELABEL(i3c1), clk_divider));
+	CLOCK_SetClkDiv(kCLOCK_DivI3c1FClkS, DT_PROP(DT_NODELABEL(i3c1), clk_divider_slow));
+	CLOCK_SetClkDiv(kCLOCK_DivI3c1FClkStc, DT_PROP(DT_NODELABEL(i3c1), clk_divider_tc));
+
+	/* Attach PLL0 clock to I3C, 150MHz / 6 = 25MHz. */
+	CLOCK_AttachClk(kPLL0_to_I3C1FCLK);
+	CLOCK_AttachClk(kCLK_1M_to_I3C1FCLKS);
+	CLOCK_AttachClk(kI3C1FCLK_to_I3C1FCLKSTC);
 #endif
 
 	/* Set SystemCoreClock variable. */

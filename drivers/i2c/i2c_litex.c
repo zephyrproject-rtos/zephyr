@@ -141,6 +141,9 @@ static const struct i2c_driver_api i2c_litex_driver_api = {
 	.get_config = i2c_litex_get_config,
 	.transfer = i2c_litex_transfer,
 	.recover_bus = i2c_litex_recover_bus,
+#ifdef CONFIG_I2C_RTIO
+	.iodev_submit = i2c_iodev_submit_fallback,
+#endif
 };
 
 /* Device Instantiation */

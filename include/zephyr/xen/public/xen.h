@@ -41,7 +41,7 @@ DEFINE_XEN_GUEST_HANDLE(char);
 __DEFINE_XEN_GUEST_HANDLE(uchar, unsigned char);
 DEFINE_XEN_GUEST_HANDLE(int);
 __DEFINE_XEN_GUEST_HANDLE(uint,  unsigned int);
-#if __XEN_INTERFACE_VERSION__ < 0x00040300
+#if CONFIG_XEN_INTERFACE_VERSION < 0x00040300
 DEFINE_XEN_GUEST_HANDLE(long);
 __DEFINE_XEN_GUEST_HANDLE(ulong, unsigned long);
 #endif
@@ -216,7 +216,7 @@ DEFINE_XEN_GUEST_HANDLE(xen_ulong_t);
 
 typedef uint16_t domid_t;
 
-#if __XEN_INTERFACE_VERSION__ < 0x00040400
+#if CONFIG_XEN_INTERFACE_VERSION < 0x00040400
 /*
  * Event channel endpoints per domain (when using the 2-level ABI):
  *  1024 if a long is 32 bits; 4096 if a long is 64 bits.
@@ -248,7 +248,7 @@ struct vcpu_time_info {
 	 */
 	uint32_t	tsc_to_system_mul;
 	int8_t		tsc_shift;
-#if __XEN_INTERFACE_VERSION__ > 0x040600
+#if CONFIG_XEN_INTERFACE_VERSION > 0x040600
 	uint8_t		flags;
 	uint8_t		pad1[2];
 #else

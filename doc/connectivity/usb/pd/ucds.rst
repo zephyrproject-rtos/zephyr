@@ -17,7 +17,7 @@ It provides the following functionalities:
 Currently the device stack supports implementation of Sink only and Source only
 devices. Dual Role Power (DRP) devices are not yet supported.
 
-:ref:`List<usbc-samples>` of samples for different purposes.
+:zephyr:code-sample-category:`List<usbc>` of samples for different purposes.
 
 Implementing a Sink Type-C and Power Delivery USB-C device
 **********************************************************

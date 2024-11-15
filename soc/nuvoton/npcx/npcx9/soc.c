@@ -12,7 +12,8 @@
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
-static int soc_npcx9_init(void)
+extern void scfg_init(void);
+void soc_early_init_hook(void)
 {
 	if (IS_ENABLED(CONFIG_NPCX_VCC1_RST_HANG_WORKAROUND)) {
 		uintptr_t scfg_base = DT_REG_ADDR_BY_NAME(DT_NODELABEL(scfg), scfg);
@@ -20,8 +21,5 @@ static int soc_npcx9_init(void)
 		SET_FIELD(NPCX_JEN_CTL1(scfg_base), NPCX_JEN_CTL1_JEN_HEN,
 			  NPCX_JEN_CTL1_JEN_DISABLE);
 	}
-
-	return 0;
+	scfg_init();
 }
-
-SYS_INIT(soc_npcx9_init, PRE_KERNEL_1, 0);

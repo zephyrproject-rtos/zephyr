@@ -8,7 +8,6 @@
 #define DT_DRV_COMPAT futaba_sbus
 
 #include <zephyr/device.h>
-#include <zephyr/drivers/pinctrl.h>
 #include <zephyr/input/input.h>
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
@@ -356,7 +355,7 @@ static int input_sbus_init(const struct device *dev)
 
 #define INPUT_SBUS_INIT(n)                                                                         \
                                                                                                    \
-	static const struct sbus_input_channel input_##id[] = {                                    \
+	static const struct sbus_input_channel input_##n[] = {                                     \
 		DT_INST_FOREACH_CHILD(n, SBUS_INPUT_CHANNEL_INITIALIZER)                           \
 	};                                                                                         \
 	DT_INST_FOREACH_CHILD(n, INPUT_CHANNEL_CHECK)                                              \
@@ -364,9 +363,9 @@ static int input_sbus_init(const struct device *dev)
 	static struct input_sbus_data sbus_data_##n;                                               \
                                                                                                    \
 	static const struct input_sbus_config sbus_cfg_##n = {                                     \
-		.channel_info = input_##id,                                                        \
+		.channel_info = input_##n,                                                         \
 		.uart_dev = DEVICE_DT_GET(DT_INST_BUS(n)),                                         \
-		.num_channels = ARRAY_SIZE(input_##id),                                            \
+		.num_channels = ARRAY_SIZE(input_##n),                                             \
 		.cb = sbus_uart_isr,                                                               \
 	};                                                                                         \
                                                                                                    \

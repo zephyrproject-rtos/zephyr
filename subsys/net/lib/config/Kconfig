@@ -24,7 +24,7 @@ if NET_CONFIG_SETTINGS
 
 config NET_CONFIG_AUTO_INIT
 	bool "Init networking support automatically during device startup"
-	default n if USB_DEVICE_NETWORK
+	default n if USB_DEVICE_NETWORK || USBD_CDC_ECM_CLASS || USBD_CDC_NCM_CLASS
 	default y
 	help
 	  If this option is set, then the networking system is automatically
@@ -206,7 +206,7 @@ endif # NET_DHCPV6
 
 config NET_CONFIG_CLOCK_SNTP_INIT
 	bool "Initialize system clock using SNTP on application startup"
-	depends on SNTP && POSIX_CLOCK
+	depends on SNTP && POSIX_TIMERS
 	help
 	  Perform an SNTP request over networking to get and absolute
 	  wall clock time, and initialize system time from it, so
@@ -237,5 +237,16 @@ config NET_CONFIG_SNTP_INIT_SERVER_USE_DHCPV4_OPTION
 config NET_CONFIG_SNTP_INIT_TIMEOUT
 	int "SNTP timeout to init system clock (ms)"
 	default 3000
+
+config NET_CONFIG_SNTP_INIT_RESYNC
+	bool "Resync system clock using SNTP periodically"
+	help
+	  Perform an SNTP request over networking periodically to get and
+	  absolute wall clock time, and resync system time from it.
+
+config NET_CONFIG_SNTP_INIT_RESYNC_INTERVAL
+	int "SNTP resync interval (sec)"
+	depends on NET_CONFIG_SNTP_INIT_RESYNC
+	default 3600
 
 endif # NET_CONFIG_CLOCK_SNTP_INIT

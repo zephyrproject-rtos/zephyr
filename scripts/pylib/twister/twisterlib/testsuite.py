@@ -3,6 +3,7 @@
 # Copyright (c) 2018-2022 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+from enum import Enum
 import os
 from pathlib import Path
 import re
@@ -11,9 +12,11 @@ import contextlib
 import mmap
 import glob
 from typing import List
+
 from twisterlib.mixins import DisablePyTestCollectionMixin
 from twisterlib.environment import canonical_zephyr_base
-from twisterlib.error import TwisterException, TwisterRuntimeError
+from twisterlib.error import StatusAttributeError, TwisterException, TwisterRuntimeError
+from twisterlib.statuses import TwisterStatus
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -357,11 +360,24 @@ class TestCase(DisablePyTestCollectionMixin):
     def __init__(self, name=None, testsuite=None):
         self.duration = 0
         self.name = name
-        self.status = None
+        self._status = TwisterStatus.NONE
         self.reason = None
         self.testsuite = testsuite
         self.output = ""
         self.freeform = False
+
+    @property
+    def status(self) -> TwisterStatus:
+        return self._status
+
+    @status.setter
+    def status(self, value : TwisterStatus) -> None:
+        # Check for illegal assignments by value
+        try:
+            key = value.name if isinstance(value, Enum) else value
+            self._status = TwisterStatus[key]
+        except KeyError:
+            raise StatusAttributeError(self.__class__, value)
 
     def __lt__(self, other):
         return self.name < other.name
@@ -411,9 +427,23 @@ class TestSuite(DisablePyTestCollectionMixin):
 
         self.ztest_suite_names = []
 
+        self._status = TwisterStatus.NONE
+
         if data:
             self.load(data)
 
+    @property
+    def status(self) -> TwisterStatus:
+        return self._status
+
+    @status.setter
+    def status(self, value : TwisterStatus) -> None:
+        # Check for illegal assignments by value
+        try:
+            key = value.name if isinstance(value, Enum) else value
+            self._status = TwisterStatus[key]
+        except KeyError:
+            raise StatusAttributeError(self.__class__, value)
 
     def load(self, data):
         for k, v in data.items():

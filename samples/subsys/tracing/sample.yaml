@@ -28,7 +28,7 @@ tests:
       - mimxrt1064_evk
     integration_platforms:
       - nrf52840dk/nrf52840
-    extra_args: CONF_FILE="prj_sysview.conf"
+    extra_args: SNIPPET="rtt-tracing"
   sample.tracing.osawareness.openocd:
     arch_exclude:
       - posix
@@ -62,13 +62,11 @@ tests:
     extra_args: CONF_FILE="prj_usb_ctf.conf"
   sample.tracing.transport.native:
     platform_allow:
-      - native_posix
       - native_sim
     integration_platforms:
       - native_sim
   sample.tracing.transport.native.ctf:
     platform_allow:
-      - native_posix
       - native_sim
     integration_platforms:
       - native_sim

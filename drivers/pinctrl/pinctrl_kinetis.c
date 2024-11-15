@@ -75,10 +75,14 @@ static int pinctrl_mcux_init(const struct device *dev)
 	return 0;
 }
 
-#if DT_NODE_HAS_STATUS(DT_INST(0, nxp_kinetis_sim), okay)
-#define PINCTRL_MCUX_DT_INST_CLOCK_SUBSYS(n) \
-	CLK_GATE_DEFINE(DT_INST_CLOCKS_CELL(n, offset), \
-			DT_INST_CLOCKS_CELL(n, bits))
+#if DT_NODE_HAS_STATUS_OKAY(DT_INST(0, nxp_kinetis_sim))
+#define PINCTRL_MCUX_DT_INST_CLOCK_SUBSYS(n)                                                       \
+	CLK_GATE_DEFINE(DT_INST_CLOCKS_CELL(n, offset), DT_INST_CLOCKS_CELL(n, bits))
+#elif DT_HAS_COMPAT_STATUS_OKAY(nxp_scg_k4)
+#define PINCTRL_MCUX_DT_INST_CLOCK_SUBSYS(n)                                                       \
+	(DT_INST_CLOCKS_CELL(n, mrcc_offset) == 0                                                  \
+		 ? 0                                                                               \
+		 : MAKE_MRCC_REGADDR(MRCC_BASE, DT_INST_CLOCKS_CELL(n, mrcc_offset)))
 #else
 #define PINCTRL_MCUX_DT_INST_CLOCK_SUBSYS(n) \
 	DT_INST_CLOCKS_CELL(n, name)

@@ -1,9 +1,9 @@
 /*
  * Copyright (c) 2016 Intel Corporation
+ * Copyright 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
 
 #include "test_gpio.h"
 
@@ -20,18 +20,6 @@
 
 static void board_setup(void)
 {
-#if DT_NODE_HAS_STATUS(DT_INST(0, test_gpio_basic_api), okay)
-	/* PIN_IN and PIN_OUT must be on same controller. */
-	const struct device *const in_dev = DEVICE_DT_GET(DEV_OUT);
-	const struct device *const out_dev = DEVICE_DT_GET(DEV_IN);
-
-	if (in_dev != out_dev) {
-		printk("FATAL: output controller %s != input controller %s\n",
-		       out_dev->name, in_dev->name);
-		k_panic();
-	}
-#endif
-
 #if defined(CONFIG_BOARD_UDOO_NEO_FULL_MCIMX6X_M4)
 	/*
 	 * Configure pin mux.
@@ -68,20 +56,6 @@ static void board_setup(void)
 				IOMUXC_SW_PAD_CTL_PAD_RGMII2_RD3_PKE_MASK |
 				IOMUXC_SW_PAD_CTL_PAD_RGMII2_RD3_SPEED(2) |
 				IOMUXC_SW_PAD_CTL_PAD_RGMII2_RD3_DSE(6);
-#elif defined(CONFIG_BOARD_MIMXRT1050_EVK)
-	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_06_GPIO1_IO22, 0);
-	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_07_GPIO1_IO23, 0);
-
-	IOMUXC_SetPinConfig(IOMUXC_GPIO_AD_B1_06_GPIO1_IO22,
-			    IOMUXC_SW_PAD_CTL_PAD_PKE_MASK |
-			    IOMUXC_SW_PAD_CTL_PAD_HYS_MASK |
-			    IOMUXC_SW_PAD_CTL_PAD_SPEED(2) |
-			    IOMUXC_SW_PAD_CTL_PAD_DSE(6));
-
-	IOMUXC_SetPinConfig(IOMUXC_GPIO_AD_B1_07_GPIO1_IO23,
-			    IOMUXC_SW_PAD_CTL_PAD_PKE_MASK |
-			    IOMUXC_SW_PAD_CTL_PAD_SPEED(2) |
-			    IOMUXC_SW_PAD_CTL_PAD_DSE(6));
 #elif defined(CONFIG_GPIO_EMUL)
 	extern struct gpio_callback gpio_emul_callback;
 	const struct device *const dev = DEVICE_DT_GET(DEV);

@@ -626,7 +626,7 @@ static int rtc_smartbond_init(const struct device *dev)
 
 	/* Wakeup device from RTC events (alarm/roll over) */
 #if CONFIG_PM
-	bool is_xtal32m_enabled = DT_NODE_HAS_STATUS(DT_NODELABEL(xtal32m), okay);
+	bool is_xtal32m_enabled = DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(xtal32m));
 	int pdc_idx = da1469x_pdc_add(MCU_PDC_TRIGGER_RTC_ALARM, MCU_PDC_MASTER_M33,
 					is_xtal32m_enabled ? MCU_PDC_EN_XTAL : 0);
 

@@ -163,9 +163,7 @@ class Binding:
 
     def __init__(self, path: Optional[str], fname2path: Dict[str, str],
                  raw: Any = None, require_compatible: bool = True,
-                 require_description: bool = True,
-                 inc_allowlist: Optional[List[str]] = None,
-                 inc_blocklist: Optional[List[str]] = None):
+                 require_description: bool = True):
         """
         Binding constructor.
 
@@ -193,35 +191,15 @@ class Binding:
           "description:" line. If False, a missing "description:" is
           not an error. Either way, "description:" must be a string
           if it is present in the binding.
-
-        inc_allowlist:
-          The property-allowlist filter set by including bindings.
-
-        inc_blocklist:
-          The property-blocklist filter set by including bindings.
         """
         self.path: Optional[str] = path
         self._fname2path: Dict[str, str] = fname2path
-
-        self._inc_allowlist: Optional[List[str]] = inc_allowlist
-        self._inc_blocklist: Optional[List[str]] = inc_blocklist
 
         if raw is None:
             if path is None:
                 _err("you must provide either a 'path' or a 'raw' argument")
             with open(path, encoding="utf-8") as f:
                 raw = yaml.load(f, Loader=_BindingLoader)
-
-        # Get the properties this binding modifies
-        # before we merge the included ones.
-        last_modified_props = list(raw.get("properties", {}).keys())
-
-        # Map property names to their specifications:
-        # - first, _merge_includes() will recursively populate prop2specs with
-        #   the properties specified by the included bindings
-        # - eventually, we'll update prop2specs with the properties
-        #   this binding itself defines or modifies
-        self.prop2specs: Dict[str, 'PropertySpec'] = {}
 
         # Merge any included files into self.raw. This also pulls in
         # inherited child binding definitions, so it has to be done
@@ -246,11 +224,10 @@ class Binding:
         # Make sure this is a well defined object.
         self._check(require_compatible, require_description)
 
-        # Update specs with the properties this binding defines or modifies.
-        for prop_name in last_modified_props:
-            self.prop2specs[prop_name] = PropertySpec(prop_name, self)
-
         # Initialize look up tables.
+        self.prop2specs: Dict[str, 'PropertySpec'] = {}
+        for prop_name in self.raw.get("properties", {}).keys():
+            self.prop2specs[prop_name] = PropertySpec(prop_name, self)
         self.specifier2cells: Dict[str, List[str]] = {}
         for key, val in self.raw.items():
             if key.endswith("-cells"):
@@ -314,41 +291,18 @@ class Binding:
 
         if isinstance(include, str):
             # Simple scalar string case
-            # Load YAML file and register property specs into prop2specs.
-            inc_raw = self._load_raw(include, self._inc_allowlist,
-                                     self._inc_blocklist)
-
-            _merge_props(merged, inc_raw, None, binding_path,  False)
+            _merge_props(merged, self._load_raw(include), None, binding_path,
+                         False)
         elif isinstance(include, list):
             # List of strings and maps. These types may be intermixed.
             for elem in include:
                 if isinstance(elem, str):
-                    # Load YAML file and register property specs into prop2specs.
-                    inc_raw = self._load_raw(elem, self._inc_allowlist,
-                                             self._inc_blocklist)
-
-                    _merge_props(merged, inc_raw, None, binding_path, False)
+                    _merge_props(merged, self._load_raw(elem), None,
+                                 binding_path, False)
                 elif isinstance(elem, dict):
                     name = elem.pop('name', None)
-
-                    # Merge this include property-allowlist filter
-                    # with filters from including bindings.
                     allowlist = elem.pop('property-allowlist', None)
-                    if allowlist is not None:
-                        if self._inc_allowlist:
-                            allowlist.extend(self._inc_allowlist)
-                    else:
-                        allowlist = self._inc_allowlist
-
-                    # Merge this include property-blocklist filter
-                    # with filters from including bindings.
                     blocklist = elem.pop('property-blocklist', None)
-                    if blocklist is not None:
-                        if self._inc_blocklist:
-                            blocklist.extend(self._inc_blocklist)
-                    else:
-                        blocklist = self._inc_blocklist
-
                     child_filter = elem.pop('child-binding', None)
 
                     if elem:
@@ -359,12 +313,10 @@ class Binding:
                     _check_include_dict(name, allowlist, blocklist,
                                         child_filter, binding_path)
 
-                    # Load YAML file, and register (filtered) property specs
-                    # into prop2specs.
-                    contents = self._load_raw(name,
-                                              allowlist, blocklist,
-                                              child_filter)
+                    contents = self._load_raw(name)
 
+                    _filter_properties(contents, allowlist, blocklist,
+                                       child_filter, binding_path)
                     _merge_props(merged, contents, None, binding_path, False)
                 else:
                     _err(f"all elements in 'include:' in {binding_path} "
@@ -384,17 +336,11 @@ class Binding:
 
         return raw
 
-
-    def _load_raw(self, fname: str,
-                  allowlist: Optional[List[str]] = None,
-                  blocklist: Optional[List[str]] = None,
-                  child_filter: Optional[dict] = None) -> dict:
+    def _load_raw(self, fname: str) -> dict:
         # Returns the contents of the binding given by 'fname' after merging
-        # any bindings it lists in 'include:' into it, according to the given
-        # property filters.
-        #
-        # Will also register the (filtered) included property specs
-        # into prop2specs.
+        # any bindings it lists in 'include:' into it. 'fname' is just the
+        # basename of the file, so we check that there aren't multiple
+        # candidates.
 
         path = self._fname2path.get(fname)
 
@@ -406,54 +352,7 @@ class Binding:
             if not isinstance(contents, dict):
                 _err(f'{path}: invalid contents, expected a mapping')
 
-        # Apply constraints to included YAML contents.
-        _filter_properties(contents,
-                           allowlist, blocklist,
-                           child_filter, self.path)
-
-        # Register included property specs.
-        self._add_included_prop2specs(fname, contents, allowlist, blocklist)
-
         return self._merge_includes(contents, path)
-
-    def _add_included_prop2specs(self, fname: str, contents: dict,
-                                 allowlist: Optional[List[str]] = None,
-                                 blocklist: Optional[List[str]] = None) -> None:
-        # Registers the properties specified by an included binding file
-        # into the properties this binding supports/requires (aka prop2specs).
-        #
-        # Consider "this" binding B includes I1 which itself includes I2.
-        #
-        # We assume to be called in that order:
-        # 1) _add_included_prop2spec(B, I1)
-        # 2) _add_included_prop2spec(B, I2)
-        #
-        # Where we don't want I2 "taking ownership" for properties
-        # modified by I1.
-        #
-        # So we:
-        # - first create a binding that represents the included file
-        # - then add the property specs defined by this binding to prop2specs,
-        #   without overriding the specs modified by an including binding
-        #
-        # Note: Unfortunately, we can't cache these base bindings,
-        # as a same YAML file may be included with different filters
-        # (property-allowlist and such), leading to different contents.
-
-        inc_binding = Binding(
-            self._fname2path[fname],
-            self._fname2path,
-            contents,
-            require_compatible=False,
-            require_description=False,
-            # Recursively pass filters to included bindings.
-            inc_allowlist=allowlist,
-            inc_blocklist=blocklist,
-        )
-
-        for prop, spec in inc_binding.prop2specs.items():
-            if prop not in self.prop2specs:
-                self.prop2specs[prop] = spec
 
     def _check(self, require_compatible: bool, require_description: bool):
         # Does sanity checking on the binding.
@@ -601,10 +500,11 @@ class PropertySpec:
       True if enum is not None and all the values in it are tokenizable;
       False otherwise.
 
-      A property must have string type and an "enum:" in its binding to be
-      tokenizable. Additionally, the "enum:" values must be unique after
-      converting all non-alphanumeric characters to underscores (so "foo bar"
-      and "foo_bar" in the same "enum:" would not be tokenizable).
+      A property must have string or string-array type and an "enum:" in its
+      binding to be tokenizable. Additionally, the "enum:" values must be
+      unique after converting all non-alphanumeric characters to underscores
+      (so "foo bar" and "foo_bar" in the same "enum:" would not be
+      tokenizable).
 
     enum_upper_tokenizable:
       Like 'enum_tokenizable', with the additional restriction that the
@@ -659,7 +559,7 @@ class PropertySpec:
     def enum_tokenizable(self) -> bool:
         "See the class docstring"
         if not hasattr(self, '_enum_tokenizable'):
-            if self.type != 'string' or self.enum is None:
+            if self.type not in {'string', 'string-array'} or self.enum is None:
                 self._enum_tokenizable = False
             else:
                 # Saving _as_tokens here lets us reuse it in
@@ -764,14 +664,14 @@ class Property:
     type:
       Convenience for spec.type.
 
-    val_as_token:
-      The value of the property as a token, i.e. with non-alphanumeric
+    val_as_tokens:
+      The value of the property as a list of tokens, i.e. with non-alphanumeric
       characters replaced with underscores. This is only safe to access
       if 'spec.enum_tokenizable' returns True.
 
-    enum_index:
-      The index of 'val' in 'spec.enum' (which comes from the 'enum:' list
-      in the binding), or None if spec.enum is None.
+    enum_indices:
+      A list of indices of 'val' in 'spec.enum' (which comes from the 'enum:'
+      list in the binding), or None if spec.enum is None.
     """
 
     spec: PropertySpec
@@ -794,16 +694,20 @@ class Property:
         return self.spec.type
 
     @property
-    def val_as_token(self) -> str:
+    def val_as_tokens(self) -> List[str]:
         "See the class docstring"
-        assert isinstance(self.val, str)
-        return str_as_token(self.val)
+        ret = []
+        for subval in self.val if isinstance(self.val, list) else [self.val]:
+            assert isinstance(subval, str)
+            ret.append(str_as_token(subval))
+        return ret
 
     @property
-    def enum_index(self) -> Optional[int]:
+    def enum_indices(self) -> Optional[List[int]]:
         "See the class docstring"
         enum = self.spec.enum
-        return enum.index(self.val) if enum else None
+        val = self.val if isinstance(self.val, list) else [self.val]
+        return [enum.index(subval) for subval in val] if enum else None
 
 
 @dataclass
@@ -1519,10 +1423,11 @@ class Node:
             return
 
         enum = prop_spec.enum
-        if enum and val not in enum:
-            _err(f"value of property '{name}' on {self.path} in "
-                 f"{self.edt.dts_path} ({val!r}) is not in 'enum' list in "
-                 f"{self.binding_path} ({enum!r})")
+        for subval in val if isinstance(val, list) else [val]:
+            if enum and subval not in enum:
+                _err(f"value of property '{name}' on {self.path} in "
+                    f"{self.edt.dts_path} ({subval!r}) is not in 'enum' list in "
+                    f"{self.binding_path} ({enum!r})")
 
         const = prop_spec.const
         if const is not None and val != const:
@@ -1928,9 +1833,14 @@ class EDT:
     compat2nodes:
       A collections.defaultdict that maps each 'compatible' string that appears
       on some Node to a list of Nodes with that compatible.
+      The collection is sorted so that enabled nodes appear first in the
+      collection.
 
     compat2okay:
       Like compat2nodes, but just for nodes with status 'okay'.
+
+    compat2notokay:
+      Like compat2nodes, but just for nodes with status not 'okay'.
 
     compat2vendor:
       A collections.defaultdict that maps each 'compatible' string that appears
@@ -2036,6 +1946,7 @@ class EDT:
         self.nodes: List[Node] = []
         self.compat2nodes: Dict[str, List[Node]] = defaultdict(list)
         self.compat2okay: Dict[str, List[Node]] = defaultdict(list)
+        self.compat2notokay: Dict[str, List[Node]] = defaultdict(list)
         self.compat2vendor: Dict[str, str] = defaultdict(str)
         self.compat2model: Dict[str, str]  = defaultdict(str)
         self.label2node: Dict[str, Node] = {}
@@ -2267,7 +2178,6 @@ class EDT:
                 _err(
                         f"'{binding_path}' appears in binding directories "
                         f"but isn't valid YAML: {e}")
-                continue
 
             # Convert the raw data to a Binding object, erroring out
             # if necessary.
@@ -2369,10 +2279,10 @@ class EDT:
                 self.label2node[label] = node
 
             for compat in node.compats:
-                self.compat2nodes[compat].append(node)
-
                 if node.status == "okay":
                     self.compat2okay[compat].append(node)
+                else:
+                    self.compat2notokay[compat].append(node)
 
                 if compat in self.compat2vendor:
                     continue
@@ -2401,6 +2311,11 @@ class EDT:
                             f"node '{node.path}' compatible '{compat}' "
                             f"has unknown vendor prefix '{vendor}'")
 
+        for compat, nodes in self.compat2okay.items():
+            self.compat2nodes[compat].extend(nodes)
+
+        for compat, nodes in self.compat2notokay.items():
+            self.compat2nodes[compat].extend(nodes)
 
         for nodeset in self.scc_order:
             node = nodeset[0]

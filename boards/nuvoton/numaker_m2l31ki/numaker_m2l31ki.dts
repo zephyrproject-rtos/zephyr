@@ -35,12 +35,6 @@
 	};
 };
 
-&scc {
-	/* For USB 1.1 Host/Device/OTG, configure to 192MHz, which can generate necessary 48MHz. */
-	/* For USB 2.0 Host/Device/OTG or no USB application, comment out to use default. */
-	core-clock = <DT_FREQ_M(192)>;
-};
-
 &gpioc {
 	status = "okay";
 };
@@ -77,6 +71,13 @@
 &uart0 {
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+/* On enabled, usbd is required to be clocked in 48MHz. */
+zephyr_udc0: &usbd {
+	pinctrl-0 = <&usbd_default>;
 	pinctrl-names = "default";
 	status = "okay";
 };

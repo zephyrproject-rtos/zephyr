@@ -1,0 +1,65 @@
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32U0 Main PLL node binding:
+
+  Takes one of clk_hse, clk_hsi or clk_msi as input clock, with
+  an input frequency from 2.66 to 16 MHz. PLLM factor is used to set the input
+  clock in this acceptable range.
+
+  PLL can have up to 3 output clocks and for each output clock, the
+  frequency can be computed with the following formulae:
+
+    f(PLL_P) = f(VCO clock) / PLLP  --> to ADC
+    f(PLL_Q) = f(VCO clock) / PLLQ  --> to RNG
+    f(PLL_R) = f(VCO clock) / PLLR  --> PLLCLK (System Clock)
+
+      with f(VCO clock) = f(PLL clock input) × (PLLN / PLLM)
+
+  The PLL output frequency must not exceed 122 MHz.
+
+compatible: "st,stm32u0-pll-clock"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  "#clock-cells":
+    const: 0
+
+  clocks:
+    required: true
+
+  div-m:
+    type: int
+    required: true
+    description: |
+        Division factor M of the PLL
+        input clock divider
+        Valid range: 1 - 8
+
+  mul-n:
+    type: int
+    required: true
+    description: |
+        PLL frequency multiplication factor N
+        Valid range: 4 - 127
+
+  div-p:
+    type: int
+    description: |
+        PLL VCO division factor P
+        Valid range: 2 - 32
+
+  div-q:
+    type: int
+    description: |
+        PLL VCO division factor Q
+        Valid range: 2 - 8
+
+  div-r:
+    type: int
+    required: true
+    description: |
+        PLL VCO division factor R
+        Valid range: 2 - 8

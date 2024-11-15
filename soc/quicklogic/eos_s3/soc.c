@@ -50,7 +50,7 @@ static void eos_s3_cru_init(void)
 
 
 
-static int eos_s3_init(void)
+void soc_early_init_hook(void)
 {
 	/* Clocks setup */
 	eos_s3_lock_enable();
@@ -64,8 +64,4 @@ static int eos_s3_init(void)
 
 	/* Enable UART interrupt */
 	INTR_CTRL->OTHER_INTR_EN_M4 = UART_INTR_EN_M4;
-
-	return 0;
 }
-
-SYS_INIT(eos_s3_init, PRE_KERNEL_1, 0);

@@ -303,6 +303,13 @@ bool arm_gic_irq_is_enabled(unsigned int irq);
 bool arm_gic_irq_is_pending(unsigned int irq);
 
 /**
+ * @brief Set interrupt as pending
+ *
+ * @param irq interrupt ID
+ */
+void arm_gic_irq_set_pending(unsigned int irq);
+
+/**
  * @brief Clear the pending irq
  *
  * @param irq interrupt ID

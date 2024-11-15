@@ -7,20 +7,21 @@
 #include <st/l4/stm32l475.dtsi>
 
 / {
+
+	clocks {
+		clk_hsi48: clk-hsi48 {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(48)>;
+			status = "disabled";
+		};
+	};
+
 	soc {
 		compatible = "st,stm32l496", "st,stm32l4", "simple-bus";
 
-		clocks {
-			clk_hsi48: clk-hsi48 {
-				#clock-cells = <0>;
-				compatible = "fixed-clock";
-				clock-frequency = <DT_FREQ_M(48)>;
-				status = "disabled";
-			};
-		};
-
 		rng: rng@50060800 {
-			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00040000>,
+			clocks = <&rcc STM32_CLOCK(AHB2, 18U)>,
 				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
 		};
 
@@ -30,7 +31,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40008400 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000002>;
+			clocks = <&rcc STM32_CLOCK(APB1_2, 1U)>;
 			interrupts = <83 0>, <84 0>;
 			interrupt-names = "event", "error";
 			status = "disabled";
@@ -43,8 +44,9 @@
 				compatible = "st,stm32-gpio";
 				gpio-controller;
 				#gpio-cells = <2>;
+				ngpios = <12>;
 				reg = <0x48002000 0x400>;
-				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000100>;
+				clocks = <&rcc STM32_CLOCK(AHB2, 8U)>;
 			};
 		};
 
@@ -53,28 +55,18 @@
 			reg = <0x40006800 0x400>;
 			interrupts = <86 0>, <87 0>, <88 0>, <89 0>;
 			interrupt-names = "TX", "RX0", "RX1", "SCE";
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x04000000>; //RCC_APB1ENR1_CAN2EN
+			clocks = <&rcc STM32_CLOCK(APB1, 26U)>; //RCC_APB1ENR1_CAN2EN
 			master-can-reg = <0x40006400>;
 			status = "disabled";
 		};
 
-		aes: aes@50060000 {
-			compatible = "st,stm32-aes";
-			reg = <0x50060000 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00010000>;
-			resets = <&rctl STM32_RESET(AHB2, 16U)>;
-			interrupts = <79 0>;
-			interrupt-names = "aes";
-			status = "disabled";
-		};
-
 		usbotg_fs: otgfs@50000000 {
-			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00001000>,
+			clocks = <&rcc STM32_CLOCK(AHB2, 12U)>,
 				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
 		};
 
 		sdmmc1: sdmmc@40012800 {
-			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000400>,
+			clocks = <&rcc STM32_CLOCK(APB2, 10U)>,
 				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
 		};
 	};

@@ -8,6 +8,8 @@ on:
       - "west.yml"
       - "subsys/bluetooth/**"
       - "tests/bsim/**"
+      - "boards/nordic/nrf5*/*dt*"
+      - "dts/*/nordic/**"
       - "tests/bluetooth/common/testlib/**"
       - "samples/bluetooth/**"
       - "boards/posix/**"
@@ -16,6 +18,7 @@ on:
       - "include/zephyr/arch/posix/**"
       - "scripts/native_simulator/**"
       - "samples/net/sockets/echo_*/**"
+      - "modules/mbedtls/**"
       - "modules/openthread/**"
       - "subsys/net/l2/openthread/**"
       - "include/zephyr/net/openthread.h"
@@ -34,7 +37,7 @@ jobs:
     runs-on:
       group: zephyr-runner-v2-linux-x64-4xlarge
     container:
-      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.26.13.20240601
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.27.4.20241026
       options: '--entrypoint /bin/bash'
     env:
       ZEPHYR_TOOLCHAIN_VARIANT: zephyr
@@ -75,6 +78,7 @@ jobs:
           git config --global user.name "Zephyr Bot"
           rm -fr ".git/rebase-apply"
           git rebase origin/${BASE_REF}
+          git clean -f -d
           git log  --pretty=oneline | head -n 10
           west init -l . || true
           west config manifest.group-filter -- +ci
@@ -85,7 +89,7 @@ jobs:
           echo "ZEPHYR_SDK_INSTALL_DIR=/opt/toolchains/zephyr-sdk-$( cat SDK_VERSION )" >> $GITHUB_ENV
 
       - name: Check common triggering files
-        uses: tj-actions/changed-files@v44
+        uses: tj-actions/changed-files@v45
         id: check-common-files
         with:
           files: |
@@ -98,9 +102,12 @@ jobs:
             include/zephyr/arch/posix/
             scripts/native_simulator/
             tests/bsim/*
+            boards/nordic/nrf5*/*dt*
+            dts/*/nordic/
+            modules/mbedtls/**
 
       - name: Check if Bluethooth files changed
-        uses: tj-actions/changed-files@v44
+        uses: tj-actions/changed-files@v45
         id: check-bluetooth-files
         with:
           files: |
@@ -109,7 +116,7 @@ jobs:
             subsys/bluetooth/
 
       - name: Check if Networking files changed
-        uses: tj-actions/changed-files@v44
+        uses: tj-actions/changed-files@v45
         id: check-networking-files
         with:
           files: |
@@ -122,7 +129,7 @@ jobs:
             include/zephyr/net/ieee802154*
 
       - name: Check if UART files changed
-        uses: tj-actions/changed-files@v44
+        uses: tj-actions/changed-files@v45
         id: check-uart-files
         with:
           files: |
@@ -132,10 +139,10 @@ jobs:
 
       - name: Update BabbleSim to manifest revision
         if: >
-          steps.check-bluetooth-files.outputs.any_changed == 'true'
-          || steps.check-networking-files.outputs.any_changed == 'true'
-          || steps.check-uart-files.outputs.any_changed == 'true'
-          || steps.check-common-files.outputs.any_changed == 'true'
+          steps.check-bluetooth-files.outputs.any_modified == 'true'
+          || steps.check-networking-files.outputs.any_modified == 'true'
+          || steps.check-uart-files.outputs.any_modified == 'true'
+          || steps.check-common-files.outputs.any_modified == 'true'
         run: |
           export BSIM_VERSION=$( west list bsim -f {revision} )
           echo "Manifest points to bsim sha $BSIM_VERSION"
@@ -146,17 +153,17 @@ jobs:
           make everything -s -j 8
 
       - name: Run Bluetooth Tests with BSIM
-        if: steps.check-bluetooth-files.outputs.any_changed == 'true' || steps.check-common-files.outputs.any_changed == 'true'
+        if: steps.check-bluetooth-files.outputs.any_modified == 'true' || steps.check-common-files.outputs.any_modified == 'true'
         run: |
           tests/bsim/ci.bt.sh
 
       - name: Run Networking Tests with BSIM
-        if: steps.check-networking-files.outputs.any_changed == 'true' || steps.check-common-files.outputs.any_changed == 'true'
+        if: steps.check-networking-files.outputs.any_modified == 'true' || steps.check-common-files.outputs.any_modified == 'true'
         run: |
           tests/bsim/ci.net.sh
 
       - name: Run UART Tests with BSIM
-        if: steps.check-uart-files.outputs.any_changed == 'true' || steps.check-common-files.outputs.any_changed == 'true'
+        if: steps.check-uart-files.outputs.any_modified == 'true' || steps.check-common-files.outputs.any_modified == 'true'
         run: |
           tests/bsim/ci.uart.sh
 

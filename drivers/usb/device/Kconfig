@@ -53,6 +53,7 @@ config USB_DC_STM32
 	select USE_STM32_HAL_PCD
 	select USE_STM32_HAL_PCD_EX
 	select USB_DC_HAS_HS_SUPPORT if "$(DT_STM32_USBHS_SPEED)"
+	select PINCTRL
 	imply USB_DEVICE_REMOTE_WAKEUP
 	help
 	  Enable STM32 family USB device controller shim driver.
@@ -70,6 +71,7 @@ config USB_DC_SAM0
 	bool "SAM0 series USB Device Controller driver"
 	default y
 	depends on DT_HAS_ATMEL_SAM0_USB_ENABLED
+	select PINCTRL
 	help
 	  SAM0 family USB device controller Driver.
 
@@ -87,6 +89,7 @@ config USB_DC_SAM_USBC
 	bool "SAM4L USBC Device Controller driver"
 	default y
 	depends on DT_HAS_ATMEL_SAM_USBC_ENABLED
+	select PINCTRL
 	help
 	  SAM4L family USBC device controller Driver.
 
@@ -149,18 +152,16 @@ config USB_MCUX
 	bool "NXP MCUX USB Device Controller Driver"
 	default y
 	depends on DT_HAS_NXP_EHCI_ENABLED || DT_HAS_NXP_LPCIP3511_ENABLED
+	select PINCTRL
 	help
 	  NXP MCUX USB Device Controller Driver for MXRT and LPC SoC's.
 
 if USB_MCUX
 
-choice USB_MCUX_CONTROLLER_TYPE
-	prompt "USB Controller type"
-	help
-	  Select the type of controller available in the SoC.
-
 config USB_DC_NXP_EHCI
 	bool "MXRT EHCI USB Device Controller"
+	default y
+	depends on DT_HAS_NXP_EHCI_ENABLED
 	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 	select USB_DC_HAS_HS_SUPPORT
 	help
@@ -168,12 +169,12 @@ config USB_DC_NXP_EHCI
 
 config USB_DC_NXP_LPCIP3511
 	bool "LPC USB Device Controller"
+	default y
+	depends on DT_HAS_NXP_LPCIP3511_ENABLED
 	select USB_DC_HAS_HS_SUPPORT if "$(dt_nodelabel_enabled,usbhs)"
 	select PINCTRL
 	help
 	  LPC USB Device Controller Driver.
-
-endchoice
 
 config USB_DC_MSG_QUEUE_LEN
 	int
@@ -195,6 +196,7 @@ config USB_DC_IT82XX2
 	bool "ITE IT82XX2 USB Device Controller Driver"
 	default y
 	depends on DT_HAS_ITE_IT82XX2_USB_ENABLED
+	select PINCTRL
 	help
 	  ITE IT82XX2 USB Device Controller Driver
 

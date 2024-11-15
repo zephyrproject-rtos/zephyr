@@ -19,6 +19,7 @@
 #include "usbd_class.h"
 #include "usbd_class_api.h"
 #include "usbd_interface.h"
+#include "usbd_msg.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usbd_ch9, CONFIG_USBD_LOG_LEVEL);
@@ -169,6 +170,10 @@ static int sreq_set_configuration(struct usbd_context *const uds_ctx)
 		uds_ctx->ch9_data.state = USBD_STATE_ADDRESS;
 	} else {
 		uds_ctx->ch9_data.state = USBD_STATE_CONFIGURED;
+	}
+
+	if (ret == 0) {
+		usbd_msg_pub_simple(uds_ctx, USBD_MSG_CONFIGURATION, setup->wValue);
 	}
 
 	return ret;

@@ -23,7 +23,7 @@ if(CONFIG_BOARD_INTEL_ADSP_CAVS25 OR CONFIG_BOARD_INTEL_ADSP_CAVS25_TGPH)
 
   board_finalize_runner_args(intel_adsp)
 
-elseif(CONFIG_BOARD_INTEL_ADSP_ACE15_MTPM)
+elseif(CONFIG_BOARD_INTEL_ADSP_ACE15_MTPM  OR CONFIG_BOARD_INTEL_ADSP_ACE15_MTPM_SIM)
 
   board_set_rimage_target(mtl)
 
@@ -31,7 +31,7 @@ elseif(CONFIG_BOARD_INTEL_ADSP_ACE15_MTPM)
 
   board_finalize_runner_args(intel_adsp)
 
-elseif(CONFIG_BOARD_INTEL_ADSP_ACE20_LNL)
+elseif(CONFIG_BOARD_INTEL_ADSP_ACE20_LNL OR CONFIG_BOARD_INTEL_ADSP_ACE20_LNL_SIM)
 
   set(SUPPORTED_EMU_PLATFORMS acesim)
 
@@ -39,7 +39,7 @@ elseif(CONFIG_BOARD_INTEL_ADSP_ACE20_LNL)
 
   set(RIMAGE_SIGN_KEY "otc_private_key_3k.pem" CACHE STRING "default in ace20_lnl/board.cmake")
 
-elseif(CONFIG_BOARD_INTEL_ADSP_ACE30_PTL)
+elseif(CONFIG_BOARD_INTEL_ADSP_ACE30_PTL OR CONFIG_BOARD_INTEL_ADSP_ACE30_PTL_SIM)
 
   board_set_rimage_target(ptl)
 

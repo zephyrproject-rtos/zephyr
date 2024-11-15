@@ -118,17 +118,20 @@ static uint32_t bme280_compensate_humidity(struct bme280_data *data,
 
 static int bme280_wait_until_ready(const struct device *dev)
 {
-	uint8_t status = 0;
+	uint8_t status;
 	int ret;
 
-	/* Wait for NVM to copy and measurement to be completed */
-	do {
-		k_sleep(K_MSEC(3));
+	/* Wait for relevant flags to clear */
+	while (1) {
 		ret = bme280_reg_read(dev, BME280_REG_STATUS, &status, 1);
 		if (ret < 0) {
 			return ret;
 		}
-	} while (status & (BME280_STATUS_MEASURING | BME280_STATUS_IM_UPDATE));
+		if (!(status & (BME280_STATUS_MEASURING | BME280_STATUS_IM_UPDATE))) {
+			break;
+		}
+		k_sleep(K_MSEC(3));
+	}
 
 	return 0;
 }
@@ -148,8 +151,9 @@ int bme280_sample_fetch_helper(const struct device *dev,
 	enum pm_device_state state;
 	(void)pm_device_state_get(dev, &state);
 	/* Do not allow sample fetching from suspended state */
-	if (state == PM_DEVICE_STATE_SUSPENDED)
+	if (state == PM_DEVICE_STATE_SUSPENDED) {
 		return -EIO;
+	}
 #endif
 
 #ifdef CONFIG_BME280_MODE_FORCED
@@ -378,20 +382,21 @@ static int bme280_pm_action(const struct device *dev,
 	int ret = 0;
 
 	switch (action) {
+#ifdef CONFIG_BME280_MODE_NORMAL
 	case PM_DEVICE_ACTION_RESUME:
-		/* Re-initialize the chip */
-		ret = bme280_chip_init(dev);
+		/* Re-enable periodic measurement */
+		ret = bme280_reg_write(dev, BME280_REG_CTRL_MEAS, BME280_CTRL_MEAS_VAL);
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
 		/* Put the chip into sleep mode */
-		ret = bme280_reg_write(dev,
-			BME280_REG_CTRL_MEAS,
-			BME280_CTRL_MEAS_OFF_VAL);
-
-		if (ret < 0) {
-			LOG_DBG("CTRL_MEAS write failed: %d", ret);
-		}
+		ret = bme280_reg_write(dev, BME280_REG_CTRL_MEAS, BME280_CTRL_MEAS_OFF_VAL);
 		break;
+#else
+	case PM_DEVICE_ACTION_RESUME:
+	case PM_DEVICE_ACTION_SUSPEND:
+		/* Nothing to do in forced mode */
+		break;
+#endif
 	default:
 		return -ENOTSUP;
 	}

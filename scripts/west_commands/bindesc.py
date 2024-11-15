@@ -75,11 +75,13 @@ class Bindesc(WestCommand):
             self.bindesc_gen_tag(self.TYPE_UINT, 0x802): 'APP_VERSION_MINOR',
             self.bindesc_gen_tag(self.TYPE_UINT, 0x803): 'APP_VERSION_PATCHLEVEL',
             self.bindesc_gen_tag(self.TYPE_UINT, 0x804): 'APP_VERSION_NUMBER',
+            self.bindesc_gen_tag(self.TYPE_STR, 0x805): 'APP_BUILD_VERSION',
             self.bindesc_gen_tag(self.TYPE_STR, 0x900): 'KERNEL_VERSION_STRING',
             self.bindesc_gen_tag(self.TYPE_UINT, 0x901): 'KERNEL_VERSION_MAJOR',
             self.bindesc_gen_tag(self.TYPE_UINT, 0x902): 'KERNEL_VERSION_MINOR',
             self.bindesc_gen_tag(self.TYPE_UINT, 0x903): 'KERNEL_VERSION_PATCHLEVEL',
             self.bindesc_gen_tag(self.TYPE_UINT, 0x904): 'KERNEL_VERSION_NUMBER',
+            self.bindesc_gen_tag(self.TYPE_STR, 0x905): 'KERNEL_BUILD_VERSION',
             self.bindesc_gen_tag(self.TYPE_UINT, 0xa00): 'BUILD_TIME_YEAR',
             self.bindesc_gen_tag(self.TYPE_UINT, 0xa01): 'BUILD_TIME_MONTH',
             self.bindesc_gen_tag(self.TYPE_UINT, 0xa02): 'BUILD_TIME_DAY',
@@ -143,6 +145,13 @@ class Bindesc(WestCommand):
         list_parser = subparsers.add_parser('list', help='List all known descriptors')
         list_parser.set_defaults(subcmd='list', big_endian=False)
 
+        get_offset_parser = subparsers.add_parser('get_offset', help='Get the offset of the descriptors')
+        get_offset_parser.add_argument('file', type=str, help='Executable file')
+        get_offset_parser.add_argument('--file-type', type=str, choices=self.EXTENSIONS,
+                                          help='File type')
+        get_offset_parser.add_argument('-b', '--big-endian', action='store_true',
+                                       help='Target CPU is big endian')
+        get_offset_parser.set_defaults(subcmd='get_offset', big_endian=False)
         return parser
 
     def dump(self, args):
@@ -185,6 +194,15 @@ class Bindesc(WestCommand):
         }[args.type]
         custom_tag = self.bindesc_gen_tag(custom_type, int(args.id, 16))
         self.common_search(args, custom_tag)
+
+    def get_offset(self, args):
+        image = self.get_image_data(args.file)
+
+        magic = struct.pack('>Q' if self.is_big_endian else 'Q', self.MAGIC)
+        index = image.find(magic)
+        if index == -1:
+            log.die('Could not find binary descriptor magic')
+        log.inf(f'{index} {hex(index)}')
 
     def do_run(self, args, _):
         if MISSING_REQUIREMENTS:

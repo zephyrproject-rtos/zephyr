@@ -6,7 +6,7 @@
 #ifndef ZEPHYR_INCLUDE_POSIX_UNISTD_H_
 #define ZEPHYR_INCLUDE_POSIX_UNISTD_H_
 
-#include "posix_types.h"
+#include <zephyr/posix/posix_types.h>
 
 #ifdef CONFIG_POSIX_API
 #include <zephyr/fs/fs.h>
@@ -44,6 +44,7 @@ int rename(const char *old, const char *newp);
 int unlink(const char *path);
 int stat(const char *path, struct stat *buf);
 int mkdir(const char *path, mode_t mode);
+int rmdir(const char *path);
 
 FUNC_NORETURN void _exit(int status);
 

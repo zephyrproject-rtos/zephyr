@@ -17,7 +17,6 @@ LOG_MODULE_DECLARE(net_shell);
 #include "net_shell_private.h"
 
 #if defined(CONFIG_NET_MGMT_EVENT_MONITOR)
-#define EVENT_MON_STACK_SIZE 1024
 #define THREAD_PRIORITY K_PRIO_COOP(2)
 #define MAX_EVENT_INFO_SIZE NET_EVENT_INFO_MAX_SIZE
 #define MONITOR_L2_MASK (_NET_EVENT_IF_BASE)
@@ -32,7 +31,7 @@ static struct net_mgmt_event_callback l3_ipv4_cb;
 static struct net_mgmt_event_callback l3_ipv6_cb;
 static struct net_mgmt_event_callback l4_cb;
 static struct k_thread event_mon;
-static K_THREAD_STACK_DEFINE(event_mon_stack, EVENT_MON_STACK_SIZE);
+static K_THREAD_STACK_DEFINE(event_mon_stack, CONFIG_NET_MGMT_EVENT_MONITOR_STACK_SIZE);
 
 struct event_msg {
 	struct net_if *iface;

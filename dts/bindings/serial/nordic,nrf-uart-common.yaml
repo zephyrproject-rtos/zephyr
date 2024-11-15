@@ -1,4 +1,4 @@
-include: [uart-controller.yaml, pinctrl-device.yaml]
+include: [uart-controller.yaml, pinctrl-device.yaml, nordic-clockpin.yaml]
 
 properties:
   reg:

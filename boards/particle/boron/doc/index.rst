@@ -1,7 +1,4 @@
-.. _particle_boron:
-
-Particle Boron
-##############
+.. zephyr:board:: particle_boron
 
 Overview
 ********
@@ -28,12 +25,6 @@ Hardware
 
 On the front of the board are RGB-LED, LED and LIPO circuitry.
 The RGB-LED is controlled by the nRF52840 via GPIO pins.
-
-.. figure:: img/particle_boron.jpg
-     :align: center
-     :alt: Particle Boron
-
-     Particle Boron (Credit: Particle Industries)
 
 Power supply
 ============
@@ -141,7 +132,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

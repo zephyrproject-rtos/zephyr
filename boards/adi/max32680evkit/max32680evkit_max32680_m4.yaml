@@ -12,5 +12,12 @@ supported:
   - serial
   - trng
   - i2c
+  - dma
+  - watchdog
+  - spi
+  - adc
+  - counter
+  - w1
+  - flash
 ram: 128
 flash: 512

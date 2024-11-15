@@ -1,0 +1,31 @@
+sample:
+  name: Clock control sample
+common:
+  platform_allow:
+    - nrf54h20dk/nrf54h20/cpuapp
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "clock spec request released"
+tests:
+  sample.boards.nrf.clock_control.fll16m:
+    filter: dt_nodelabel_enabled("fll16m")
+    extra_args:
+      - CONF_FILE="configs/fll16m.conf"
+      - DTC_OVERLAY_FILE="configs/fll16m.overlay"
+  sample.boards.nrf.clock_control.lfclk:
+    filter: dt_nodelabel_enabled("lfclk")
+    extra_args:
+      - CONF_FILE="configs/lfclk.conf"
+      - DTC_OVERLAY_FILE="configs/lfclk.overlay"
+  sample.boards.nrf.clock_control.uart135:
+    filter: dt_nodelabel_enabled("uart135")
+    extra_args:
+      - CONF_FILE="configs/uart135.conf"
+      - DTC_OVERLAY_FILE="configs/uart135.overlay"
+  sample.boards.nrf.clock_control.cpuapp_hsfll:
+    filter: dt_nodelabel_enabled("cpuapp_hsfll")
+    extra_args:
+      - CONF_FILE="configs/cpuapp_hsfll.conf"
+      - DTC_OVERLAY_FILE="configs/cpuapp_hsfll.overlay"

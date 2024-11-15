@@ -1,0 +1,29 @@
+# Copyright (c) 2019 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Microchip MEC5 kernel timer implemented by combining
+  the 32kHz 32-bit RTOS timer with 32-bit basic timer 5.
+
+compatible: "microchip,mec5-ktimer"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clock-frequency:
+    type: int
+    required: true
+    const: 32768
+    description: RTOS timer runs at fixed 32 KHz.
+
+  max-value:
+    type: int
+    required: true
+    const: 0xffffffff
+    description: RTOS timer counter maximum value.
