@@ -9,6 +9,7 @@
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/clock/stm32c0_clock.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/dma/stm32_dma.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/pwm/stm32_pwm.h>
@@ -298,6 +299,16 @@
 			clocks = <&rcc STM32_CLOCK(APB1, 21U)>;
 			interrupts = <23 0>;
 			interrupt-names = "combined";
+			status = "disabled";
+		};
+
+		spi1: spi@40013000 {
+			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40013000 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1_2, 12U)>;
+			interrupts = <25 0>;
 			status = "disabled";
 		};
 
