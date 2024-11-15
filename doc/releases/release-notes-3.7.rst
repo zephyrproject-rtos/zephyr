@@ -141,6 +141,21 @@ Mbed TLS was updated to version 3.6.2 (from 3.6.0). The release notes can be fou
 Mbed TLS 3.6 is an LTS release that will be supported
 with security and bug fixes until at least March 2027.
 
+MCUboot
+*******
+
+MCUboot commit has been updated to ``ea2410697dd0262edec041a0ccb07fdbde7c1aff``.
+
+Trusted Firmware-M
+******************
+
+TF-M was updated to version 2.1.1 (from 2.1.0). The release notes can be found at:
+
+  * https://trustedfirmware-m.readthedocs.io/en/tf-mv2.1.1/releases/2.1.1.html
+
+TF-M 2.1 is an LTS release synchronized with Mbed TLS 3.6 that
+will be supported with security and bug fixes until March 2027.
+
 .. _zephyr_3.7.0:
 
 Zephyr 3.7.0
