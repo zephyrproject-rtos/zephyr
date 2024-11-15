@@ -841,7 +841,7 @@ Drivers and Sensors
   * Introduced stepper shell commands for controlling and configuring
     stepper motors with :kconfig:option:`CONFIG_STEPPER_SHELL`
   * Added support for ADI TMC5041 (:dtcompatible:`adi,tmc5041`)
-  * Added support for gpio-stepper-controller (:dtcompatible:`gpio-stepper-controller`)
+  * Added support for gpio-stepper-controller (:dtcompatible:`zephyr,gpio-steppers`)
   * Added stepper api test-suite
   * Added stepper shell test-suite
 
