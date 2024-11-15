@@ -1278,6 +1278,25 @@ using an external J-Link probe.  The ``probe_id`` keyword overrides the
       runner: jlink
       serial: null
 
+Using Single Board For Multiple Variants
+++++++++++++++++++++++++++++++++++++++++
+
+  The ``platform`` attribute can be a list of names or a string
+  with names separated by spaces. This allows to run tests for
+  different platform variants on the same physical board, without
+  re-configuring the hardware map file for each variant. For example:
+
+.. code-block:: yaml
+
+    - connected: true
+      id: '001234567890'
+      platform:
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf5340dk/nrf5340/cpuapp/ns
+      product: J-Link
+      runner: nrfjprog
+      serial: /dev/ttyACM1
+
 Quarantine
 ++++++++++
 
