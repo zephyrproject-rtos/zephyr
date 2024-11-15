@@ -1558,6 +1558,7 @@ struct bt_gatt_discover_params;
  *  @param conn Connection object.
  *  @param attr Attribute found, or NULL if not found.
  *  @param params Discovery parameters given.
+ *  @param err 0 on success, -ECONNRESET on connection lost, -EPROTO on invalid data
  *
  *  If discovery procedure has completed this callback will be called with
  *  attr set to NULL. This will not happen if procedure was stopped by returning
@@ -1598,7 +1599,8 @@ struct bt_gatt_discover_params;
  */
 typedef uint8_t (*bt_gatt_discover_func_t)(struct bt_conn *conn,
 					const struct bt_gatt_attr *attr,
-					struct bt_gatt_discover_params *params);
+					struct bt_gatt_discover_params *params,
+					int err);
 
 /** GATT Discover types */
 enum {
