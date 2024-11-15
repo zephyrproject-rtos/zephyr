@@ -77,6 +77,21 @@ static void decrement_coil_charge(const struct device *dev)
 	}
 }
 
+static int power_down_coils(const struct device *dev)
+{
+	const struct gpio_stepper_config *config = dev->config;
+
+	for (int i = 0; i < NUM_CONTROL_PINS; i++) {
+		const int err = gpio_pin_set_dt(&config->control_pins[i], 0u);
+
+		if (err != 0) {
+			LOG_ERR("Failed to power down coil %d", i);
+			return err;
+		}
+	}
+	return 0;
+}
+
 static void update_coil_charge(const struct device *dev)
 {
 	const struct gpio_stepper_config *config = dev->config;
@@ -313,6 +328,11 @@ static int gpio_stepper_enable(const struct device *dev, bool enable)
 			(void)k_work_reschedule(&data->stepper_dwork, K_NO_WAIT);
 		} else {
 			(void)k_work_cancel_delayable(&data->stepper_dwork);
+			const int err = power_down_coils(dev);
+
+			if (err != 0) {
+				return -EIO;
+			}
 		}
 	}
 	return 0;
