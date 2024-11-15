@@ -3,6 +3,10 @@ sample:
 tests:
   sample.board.stm32.mco:
     platform_allow:
+      - nucleo_f411re
+      - nucleo_f446ze
+      - stm32f746g_disco
       - nucleo_u5a5zj_q
+    integration_platforms:
       - stm32f746g_disco
     tags: board

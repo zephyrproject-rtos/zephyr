@@ -12,15 +12,10 @@
  */
 #define MCO1_SEL_LSE 1
 
-/* See reference manual (RM0385):
- *   0b100: division by 2
- */
-#define MCO1_PRE_DIV_2 4
-
 &mco1 {
 	status = "okay";
 	clocks = <&rcc STM32_SRC_LSE MCO1_SEL(MCO1_SEL_LSE)>;
-	prescaler = <MCO1_PRE(MCO1_PRE_DIV_2)>;
+	prescaler = <MCO1_PRE(MCO_PRE_DIV_2)>;
 	pinctrl-0 = <&rcc_mco_1_pa8>; /* D10 (CN7) */
 	pinctrl-names = "default";
 };
@@ -30,15 +25,10 @@
  */
 #define MCO2_SEL_HSE 2
 
-/* See reference manual (RM0385):
- *   0b111: division by 5
- */
-#define MCO2_PRE_DIV_5 7
-
 &mco2 {
 	status = "okay";
 	clocks = <&rcc STM32_SRC_HSE MCO2_SEL(MCO2_SEL_HSE)>;
-	prescaler = <MCO2_PRE(MCO2_PRE_DIV_5)>;
+	prescaler = <MCO2_PRE(MCO_PRE_DIV_5)>;
 	pinctrl-0 = <&rcc_mco_2_pc9>; /* uSD_D1 (CN3 pin 8) */
 	pinctrl-names = "default";
 };

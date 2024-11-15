@@ -8,15 +8,10 @@
  */
 #define MCO1_SEL_LSE 7
 
-/* See reference manual (RM0456):
- *   0b001: MCO divided by 2
- */
-#define MCO1_PRE_DIV_2 1
-
 &mco1 {
 	status = "okay";
 	clocks = <&rcc STM32_SRC_LSE MCO1_SEL(MCO1_SEL_LSE)>;
-	prescaler = <MCO1_PRE(MCO1_PRE_DIV_2)>;
+	prescaler = <MCO1_PRE(MCO_PRE_DIV_2)>;
 	pinctrl-0 = <&rcc_mco_pa8>;
 	pinctrl-names = "default";
 };
