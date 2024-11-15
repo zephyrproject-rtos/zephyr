@@ -563,11 +563,10 @@ static int control_point_subscribe(struct bt_has_client *inst, uint16_t value_ha
 }
 
 static uint8_t control_point_discover_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-					 struct bt_gatt_discover_params *params)
+					 struct bt_gatt_discover_params *params, int err)
 {
 	struct bt_has_client *inst = CONTAINER_OF(params, struct bt_has_client, params.discover);
 	const struct bt_gatt_chrc *chrc;
-	int err;
 
 	LOG_DBG("conn %p attr %p params %p", (void *)conn, attr, params);
 
@@ -754,11 +753,10 @@ static int features_subscribe(struct bt_has_client *inst, uint16_t value_handle)
 }
 
 static uint8_t features_discover_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-				    struct bt_gatt_discover_params *params)
+				    struct bt_gatt_discover_params *params, int err)
 {
 	struct bt_has_client *inst = CONTAINER_OF(params, struct bt_has_client, params.discover);
 	const struct bt_gatt_chrc *chrc;
-	int err;
 
 	LOG_DBG("conn %p attr %p params %p", (void *)conn, attr, params);
 

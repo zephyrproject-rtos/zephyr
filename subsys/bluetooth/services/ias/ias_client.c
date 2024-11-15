@@ -96,7 +96,8 @@ int bt_ias_client_alert_write(struct bt_conn *conn, enum bt_ias_alert_lvl lvl)
 
 static uint8_t bt_ias_alert_lvl_disc_cb(struct bt_conn *conn,
 					const struct bt_gatt_attr *attr,
-					struct bt_gatt_discover_params *discover)
+					struct bt_gatt_discover_params *discover,
+					int err)
 {
 	const struct bt_gatt_chrc *chrc;
 
@@ -118,9 +119,9 @@ static uint8_t bt_ias_alert_lvl_disc_cb(struct bt_conn *conn,
 
 static uint8_t bt_ias_prim_disc_cb(struct bt_conn *conn,
 				   const struct bt_gatt_attr *attr,
-				   struct bt_gatt_discover_params *discover)
+				   struct bt_gatt_discover_params *discover,
+				   int err)
 {
-	int err;
 	const struct bt_gatt_service_val *data;
 	struct bt_ias_client *client = client_by_conn(conn);
 

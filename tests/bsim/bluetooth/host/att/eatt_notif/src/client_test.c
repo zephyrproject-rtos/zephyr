@@ -133,7 +133,8 @@ void send_notification(void)
 
 static uint8_t discover_func(struct bt_conn *conn,
 		const struct bt_gatt_attr *attr,
-		struct bt_gatt_discover_params *params)
+		struct bt_gatt_discover_params *params,
+		int err)
 {
 	SET_FLAG(flag_discover_complete);
 	printk("Discover complete\n");

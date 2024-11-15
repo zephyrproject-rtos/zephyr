@@ -180,7 +180,8 @@ static void print_chrc_props(const struct shell *sh, uint8_t properties)
 
 static uint8_t discover_func(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr,
-			     struct bt_gatt_discover_params *params)
+			     struct bt_gatt_discover_params *params,
+			     int err)
 {
 	struct bt_gatt_service_val *gatt_service;
 	struct bt_gatt_chrc *gatt_chrc;

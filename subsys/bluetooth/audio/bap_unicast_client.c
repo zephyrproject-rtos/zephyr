@@ -3606,7 +3606,8 @@ int bt_bap_unicast_client_release(struct bt_bap_stream *stream)
 
 static uint8_t unicast_client_cp_discover_func(struct bt_conn *conn,
 					       const struct bt_gatt_attr *attr,
-					       struct bt_gatt_discover_params *discover)
+					       struct bt_gatt_discover_params *discover,
+					       int err)
 {
 	struct bt_gatt_chrc *chrc;
 	uint16_t value_handle;
@@ -3751,12 +3752,12 @@ static bool any_ases_found(const struct unicast_client *client)
 
 static uint8_t unicast_client_ase_discover_cb(struct bt_conn *conn,
 					      const struct bt_gatt_attr *attr,
-					      struct bt_gatt_discover_params *discover)
+					      struct bt_gatt_discover_params *discover,
+					      int err)
 {
 	struct unicast_client *client;
 	struct bt_gatt_chrc *chrc;
 	uint16_t value_handle;
-	int err;
 
 	client = &uni_cli_insts[bt_conn_index(conn)];
 
@@ -3911,13 +3912,13 @@ static int unicast_client_pacs_avail_ctx_read(struct bt_conn *conn, uint16_t han
 
 static uint8_t unicast_client_pacs_avail_ctx_discover_cb(struct bt_conn *conn,
 							 const struct bt_gatt_attr *attr,
-							 struct bt_gatt_discover_params *discover)
+							 struct bt_gatt_discover_params *discover,
+							 int err)
 {
 	uint8_t index = bt_conn_index(conn);
 	const struct bt_gatt_chrc *chrc;
 	uint8_t chrc_properties;
 	uint16_t value_handle;
-	int err;
 
 	if (!attr) {
 		/* If available_ctx is not found, we terminate the discovery as
@@ -4096,12 +4097,12 @@ static int unicast_client_pacs_location_read(struct bt_conn *conn, uint16_t hand
 
 static uint8_t unicast_client_pacs_location_discover_cb(struct bt_conn *conn,
 							const struct bt_gatt_attr *attr,
-							struct bt_gatt_discover_params *discover)
+							struct bt_gatt_discover_params *discover,
+							int err)
 {
 	uint8_t index = bt_conn_index(conn);
 	const struct bt_gatt_chrc *chrc;
 	uint16_t value_handle;
-	int err;
 
 	if (!attr) {
 		/* If location is not found, we just continue reading the
@@ -4212,12 +4213,12 @@ discover_loc:
 
 static uint8_t unicast_client_pacs_context_discover_cb(struct bt_conn *conn,
 						       const struct bt_gatt_attr *attr,
-						       struct bt_gatt_discover_params *discover)
+						       struct bt_gatt_discover_params *discover,
+						       int err)
 {
 	struct unicast_client *client = &uni_cli_insts[bt_conn_index(conn)];
 	struct bt_gatt_chrc *chrc;
 	uint16_t value_handle;
-	int err;
 
 	if (attr == NULL) {
 		LOG_ERR("Unable to find %s PAC context", bt_audio_dir_str(client->dir));
@@ -4404,12 +4405,12 @@ fail:
 
 static uint8_t unicast_client_pac_discover_cb(struct bt_conn *conn,
 					      const struct bt_gatt_attr *attr,
-					      struct bt_gatt_discover_params *discover)
+					      struct bt_gatt_discover_params *discover,
+					      int err)
 {
 	struct unicast_client *client = &uni_cli_insts[bt_conn_index(conn)];
 	struct bt_gatt_chrc *chrc;
 	uint16_t value_handle;
-	int err;
 
 	if (attr == NULL) {
 		LOG_DBG("Unable to find %s PAC", bt_audio_dir_str(client->dir));

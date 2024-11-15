@@ -430,10 +430,9 @@ static void subscribe_cb(struct bt_conn *conn, uint8_t err, struct bt_gatt_subsc
 }
 
 static uint8_t discover_features_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-				    struct bt_gatt_discover_params *params)
+				    struct bt_gatt_discover_params *params, int err)
 {
 	struct bt_gatt_subscribe_params *subscribe_params;
-	int err;
 
 	if (!attr) {
 		LOG_DBG("Discover complete");
@@ -496,10 +495,9 @@ static void discover_and_subscribe_features(void)
 
 static uint8_t discover_active_preset_index_cb(struct bt_conn *conn,
 					       const struct bt_gatt_attr *attr,
-					       struct bt_gatt_discover_params *params)
+					       struct bt_gatt_discover_params *params, int err)
 {
 	struct bt_gatt_subscribe_params *subscribe_params;
-	int err;
 
 	if (!attr) {
 		LOG_DBG("Discover complete");
@@ -561,10 +559,9 @@ static void discover_and_subscribe_active_preset_index(void)
 }
 
 static uint8_t discover_control_point_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-					 struct bt_gatt_discover_params *params)
+					 struct bt_gatt_discover_params *params, int err)
 {
 	struct bt_gatt_subscribe_params *subscribe_params;
-	int err;
 
 	if (!attr) {
 		LOG_DBG("Discover complete");

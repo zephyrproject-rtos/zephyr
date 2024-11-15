@@ -1553,7 +1553,8 @@ static void tbs_client_disc_read_ccid(struct bt_conn *conn)
  */
 static uint8_t discover_func(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr,
-			     struct bt_gatt_discover_params *params)
+			     struct bt_gatt_discover_params *params,
+			     int err)
 {
 	const uint8_t conn_index = bt_conn_index(conn);
 	struct bt_tbs_server_inst *srv_inst = &srv_insts[conn_index];
@@ -1690,8 +1691,6 @@ static uint8_t discover_func(struct bt_conn *conn,
 			}
 
 			if (sub_params->value != 0) {
-				int err;
-
 				sub_params->ccc_handle = BT_GATT_AUTO_DISCOVER_CCC_HANDLE;
 				sub_params->end_handle = current_inst->end_handle;
 				sub_params->notify = notify_handler;
@@ -1793,7 +1792,8 @@ static void primary_discover_complete(struct bt_tbs_server_inst *server, struct 
 static const struct bt_uuid *tbs_uuid = BT_UUID_TBS;
 
 static uint8_t primary_discover_tbs_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-				       struct bt_gatt_discover_params *params)
+				       struct bt_gatt_discover_params *params,
+				       int err)
 {
 	const uint8_t conn_index = bt_conn_index(conn);
 	struct bt_tbs_server_inst *srv_inst = &srv_insts[conn_index];
@@ -1843,7 +1843,8 @@ static int primary_discover_tbs(struct bt_conn *conn)
 static const struct bt_uuid *gtbs_uuid = BT_UUID_GTBS;
 
 static uint8_t primary_discover_gtbs_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-					struct bt_gatt_discover_params *params)
+					struct bt_gatt_discover_params *params,
+					int err)
 {
 	const uint8_t conn_index = bt_conn_index(conn);
 	struct bt_tbs_server_inst *srv_inst = &srv_insts[conn_index];
@@ -1863,8 +1864,6 @@ static uint8_t primary_discover_gtbs_cb(struct bt_conn *conn, const struct bt_ga
 	}
 
 #if defined(CONFIG_BT_TBS_CLIENT_TBS)
-	int err;
-
 	err = primary_discover_tbs(conn);
 	if (err == 0) {
 		return BT_GATT_ITER_STOP;

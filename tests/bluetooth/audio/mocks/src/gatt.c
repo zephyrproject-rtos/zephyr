@@ -532,7 +532,7 @@ int bt_gatt_discover(struct bt_conn *conn, struct bt_gatt_discover_params *param
 		.handle = start_handle,
 	};
 
-	params->func(conn, &attr, params);
+	params->func(conn, &attr, params, 0);
 
 	return 0;
 }

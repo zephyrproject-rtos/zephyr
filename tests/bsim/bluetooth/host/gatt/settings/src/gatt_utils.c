@@ -123,7 +123,7 @@ uint16_t gatt_handles[NUM_HANDLES] = {0};
 DEFINE_FLAG(flag_discovered);
 
 static uint8_t discover_func(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			     struct bt_gatt_discover_params *params)
+			     struct bt_gatt_discover_params *params, int err)
 {
 	if (attr == NULL) {
 		for (int i = 0; i < ARRAY_SIZE(gatt_handles); i++) {

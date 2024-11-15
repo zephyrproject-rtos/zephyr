@@ -353,7 +353,7 @@ static bool valid_inst_discovered(struct bt_vocs_client *inst)
 }
 
 static uint8_t vocs_discover_func(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-				  struct bt_gatt_discover_params *params)
+				  struct bt_gatt_discover_params *params, int err)
 {
 	struct bt_vocs_client *inst = CONTAINER_OF(params, struct bt_vocs_client, discover_params);
 
@@ -363,7 +363,7 @@ static uint8_t vocs_discover_func(struct bt_conn *conn, const struct bt_gatt_att
 		(void)memset(params, 0, sizeof(*params));
 
 		if (inst->cb && inst->cb->discover) {
-			int err = valid_inst_discovered(inst) ? 0 : -ENOENT;
+			err = valid_inst_discovered(inst) ? 0 : -ENOENT;
 
 			inst->cb->discover(&inst->vocs, err);
 		}
@@ -411,8 +411,6 @@ static uint8_t vocs_discover_func(struct bt_conn *conn, const struct bt_gatt_att
 		}
 
 		if (sub_params) {
-			int err;
-
 			sub_params->value = BT_GATT_CCC_NOTIFY;
 			sub_params->value_handle = chrc->value_handle;
 			/*

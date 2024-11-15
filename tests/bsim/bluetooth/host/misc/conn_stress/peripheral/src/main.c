@@ -247,9 +247,8 @@ static uint8_t rx_notification(struct bt_conn *conn, struct bt_gatt_subscribe_pa
 }
 
 static uint8_t discover_func(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			     struct bt_gatt_discover_params *params)
+			     struct bt_gatt_discover_params *params, int err)
 {
-	int err;
 	char uuid_str[BT_UUID_STR_LEN];
 
 	if (!attr) {

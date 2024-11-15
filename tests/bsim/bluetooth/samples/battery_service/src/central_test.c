@@ -504,10 +504,8 @@ static void subscribe_battery_level_status(const struct bt_gatt_attr *attr)
 }
 
 static uint8_t discover_func(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			     struct bt_gatt_discover_params *params)
+			     struct bt_gatt_discover_params *params, int err)
 {
-	int err;
-
 	if (!attr) {
 		LOG_DBG("Discover complete\n");
 		memset(params, 0, sizeof(*params));

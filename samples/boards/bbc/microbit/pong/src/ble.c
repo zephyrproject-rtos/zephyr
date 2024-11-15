@@ -169,10 +169,9 @@ static uint8_t notify_func(struct bt_conn *conn,
 
 static uint8_t discover_func(struct bt_conn *conn,
 			  const struct bt_gatt_attr *attr,
-			  struct bt_gatt_discover_params *param)
+			  struct bt_gatt_discover_params *param,
+			  int err)
 {
-	int err;
-
 	if (!attr) {
 		printk("Discover complete\n");
 		(void)memset(&discov_param, 0, sizeof(discov_param));

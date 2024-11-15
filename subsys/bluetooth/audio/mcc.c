@@ -1387,12 +1387,12 @@ static void discovery_complete(struct bt_conn *conn, int err)
 #ifdef CONFIG_BT_MCC_OTS
 static uint8_t discover_otc_char_func(struct bt_conn *conn,
 				      const struct bt_gatt_attr *attr,
-				      struct bt_gatt_discover_params *params)
+				      struct bt_gatt_discover_params *params,
+				      int err)
 {
 	struct mcs_instance_t *mcs_inst = CONTAINER_OF(params,
 						       struct mcs_instance_t,
 						       discover_params);
-	int err = 0;
 	struct bt_gatt_chrc *chrc;
 	struct bt_gatt_subscribe_params *sub_params = NULL;
 
@@ -1480,10 +1480,10 @@ static uint8_t discover_otc_char_func(struct bt_conn *conn,
 
 static uint8_t discover_include_func(struct bt_conn *conn,
 				     const struct bt_gatt_attr *attr,
-				     struct bt_gatt_discover_params *params)
+				     struct bt_gatt_discover_params *params,
+				     int err)
 {
 	struct bt_gatt_include *include;
-	int err = 0;
 
 	if (attr) {
 		struct mcs_instance_t *mcs_inst = CONTAINER_OF(params,
@@ -1765,7 +1765,8 @@ static bool subscribe_next_mcs_char(struct mcs_instance_t *mcs_inst,
  */
 static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 				      const struct bt_gatt_attr *attr,
-				      struct bt_gatt_discover_params *params)
+				      struct bt_gatt_discover_params *params,
+				      int err)
 {
 	struct mcs_instance_t *mcs_inst = CONTAINER_OF(params,
 						       struct mcs_instance_t,
@@ -2005,7 +2006,8 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
  */
 static uint8_t discover_primary_func(struct bt_conn *conn,
 				     const struct bt_gatt_attr *attr,
-				     struct bt_gatt_discover_params *params)
+				     struct bt_gatt_discover_params *params,
+				     int err)
 {
 	struct bt_gatt_service_val *prim_service;
 
@@ -2013,7 +2015,6 @@ static uint8_t discover_primary_func(struct bt_conn *conn,
 		struct mcs_instance_t *mcs_inst = CONTAINER_OF(params,
 							       struct mcs_instance_t,
 							       discover_params);
-		int err;
 		/* Found an attribute */
 		LOG_DBG("[ATTRIBUTE] handle 0x%04X", attr->handle);
 

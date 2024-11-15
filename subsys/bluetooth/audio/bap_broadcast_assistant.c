@@ -656,10 +656,10 @@ static void discover_init(struct bap_broadcast_assistant_instance *inst)
  */
 static uint8_t char_discover_func(struct bt_conn *conn,
 				  const struct bt_gatt_attr *attr,
-				  struct bt_gatt_discover_params *params)
+				  struct bt_gatt_discover_params *params,
+				  int err)
 {
 	struct bt_gatt_subscribe_params *sub_params = NULL;
-	int err;
 	struct bap_broadcast_assistant_instance *inst = inst_by_conn(conn);
 
 	if (inst == NULL) {
@@ -725,9 +725,9 @@ static uint8_t char_discover_func(struct bt_conn *conn,
 
 static uint8_t service_discover_func(struct bt_conn *conn,
 				     const struct bt_gatt_attr *attr,
-				     struct bt_gatt_discover_params *params)
+				     struct bt_gatt_discover_params *params,
+				     int err)
 {
-	int err;
 	struct bt_gatt_service_val *prim_service;
 	struct bap_broadcast_assistant_instance *inst = inst_by_conn(conn);
 

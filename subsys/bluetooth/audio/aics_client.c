@@ -551,7 +551,7 @@ static bool valid_inst_discovered(struct bt_aics *inst)
 }
 
 static uint8_t aics_discover_func(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-				  struct bt_gatt_discover_params *params)
+				  struct bt_gatt_discover_params *params, int err)
 {
 	struct bt_aics_client *client_inst = CONTAINER_OF(params,
 							  struct bt_aics_client,
@@ -566,7 +566,7 @@ static uint8_t aics_discover_func(struct bt_conn *conn, const struct bt_gatt_att
 		atomic_clear_bit(inst->cli.flags, BT_AICS_CLIENT_FLAG_BUSY);
 
 		if (inst->cli.cb && inst->cli.cb->discover) {
-			int err = valid_inst_discovered(inst) ? 0 : -ENOENT;
+			err = valid_inst_discovered(inst) ? 0 : -ENOENT;
 
 			inst->cli.cb->discover(inst, err);
 		}
@@ -616,8 +616,6 @@ static uint8_t aics_discover_func(struct bt_conn *conn, const struct bt_gatt_att
 		}
 
 		if (sub_params) {
-			int err;
-
 			sub_params->value = BT_GATT_CCC_NOTIFY;
 			sub_params->value_handle = chrc->value_handle;
 			/*

@@ -358,10 +358,8 @@ static bool is_discovery_complete(void)
 }
 
 static uint8_t discover_func(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			     struct bt_gatt_discover_params *params)
+			     struct bt_gatt_discover_params *params, int err)
 {
-	int err;
-
 	if (!attr) {
 		printk("Discover complete\n");
 		(void)memset(params, 0, sizeof(*params));

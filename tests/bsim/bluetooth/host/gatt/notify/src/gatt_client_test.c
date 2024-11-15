@@ -102,10 +102,8 @@ void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type, struct ne
 }
 
 static uint8_t discover_func(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			     struct bt_gatt_discover_params *params)
+			     struct bt_gatt_discover_params *params, int err)
 {
-	int err;
-
 	if (attr == NULL) {
 		if (chrc_handle == 0 || long_chrc_handle == 0) {
 			FAIL("Did not discover chrc (%x) or long_chrc (%x)", chrc_handle,

@@ -94,10 +94,9 @@ static uint8_t pacs_notify_handler(struct bt_conn *conn,
 }
 
 static uint8_t discover_supported_contexts(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			     struct bt_gatt_discover_params *params)
+			     struct bt_gatt_discover_params *params, int err)
 {
 	struct bt_gatt_subscribe_params *subscribe_params;
-	int err;
 
 	if (!attr) {
 		LOG_DBG("Discover complete");
@@ -161,10 +160,9 @@ static void discover_and_subscribe_supported_contexts(void)
 }
 
 static uint8_t discover_available_contexts(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			     struct bt_gatt_discover_params *params)
+			     struct bt_gatt_discover_params *params, int err)
 {
 	struct bt_gatt_subscribe_params *subscribe_params;
-	int err;
 
 	if (!attr) {
 		LOG_DBG("Discover complete");
@@ -228,10 +226,9 @@ static void discover_and_subscribe_available_contexts(void)
 }
 
 static uint8_t discover_src_loc(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			     struct bt_gatt_discover_params *params)
+			     struct bt_gatt_discover_params *params, int err)
 {
 	struct bt_gatt_subscribe_params *subscribe_params;
-	int err;
 
 	if (!attr) {
 		LOG_DBG("Discover complete");
@@ -295,10 +292,9 @@ static void discover_and_subscribe_src_loc(void)
 }
 
 static uint8_t discover_snk_loc(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			     struct bt_gatt_discover_params *params)
+			     struct bt_gatt_discover_params *params, int err)
 {
 	struct bt_gatt_subscribe_params *subscribe_params;
-	int err;
 
 	if (!attr) {
 		LOG_DBG("Discover complete");
@@ -362,10 +358,9 @@ static void discover_and_subscribe_snk_loc(void)
 }
 
 static uint8_t discover_pacs_src(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			     struct bt_gatt_discover_params *params)
+			     struct bt_gatt_discover_params *params, int err)
 {
 	struct bt_gatt_subscribe_params *subscribe_params;
-	int err;
 
 	if (!attr) {
 		LOG_DBG("Discover complete");
@@ -429,10 +424,9 @@ static void discover_and_subscribe_src_pacs(void)
 }
 
 static uint8_t discover_pacs_snk(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			     struct bt_gatt_discover_params *params)
+			     struct bt_gatt_discover_params *params, int err)
 {
 	struct bt_gatt_subscribe_params *subscribe_params;
-	int err;
 
 	if (!attr) {
 		LOG_DBG("Discover complete");

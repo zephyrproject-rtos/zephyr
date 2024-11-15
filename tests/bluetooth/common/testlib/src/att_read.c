@@ -208,7 +208,7 @@ struct bt_testlib_gatt_discover_service_closure {
 };
 
 static uint8_t gatt_discover_service_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-					struct bt_gatt_discover_params *params)
+					struct bt_gatt_discover_params *params, int err)
 {
 	struct bt_testlib_gatt_discover_service_closure *ctx =
 		CONTAINER_OF(params, struct bt_testlib_gatt_discover_service_closure, params);
@@ -297,7 +297,7 @@ struct bt_testlib_gatt_discover_char_closure {
 };
 
 static uint8_t gatt_discover_char_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-				     struct bt_gatt_discover_params *params)
+				     struct bt_gatt_discover_params *params, int err)
 {
 	struct bt_testlib_gatt_discover_char_closure *ctx =
 		CONTAINER_OF(params, struct bt_testlib_gatt_discover_char_closure, params);

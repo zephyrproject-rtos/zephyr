@@ -260,7 +260,7 @@ static int gatt_read(struct bt_conn *conn, const struct bt_uuid *uuid, size_t re
 }
 
 static uint8_t gatt_discover_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-				struct bt_gatt_discover_params *params)
+				struct bt_gatt_discover_params *params, int err)
 {
 	gatt_disc_err = attr ? 0 : BT_ATT_ERR_ATTRIBUTE_NOT_FOUND;
 

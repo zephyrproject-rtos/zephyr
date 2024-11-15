@@ -329,11 +329,11 @@ static void vcp_vol_ctlr_write_vcs_cp_cb(struct bt_conn *conn, uint8_t err,
 #if defined(CONFIG_BT_VCP_VOL_CTLR_VOCS) || defined(CONFIG_BT_VCP_VOL_CTLR_AICS)
 static uint8_t vcs_discover_include_func(struct bt_conn *conn,
 					 const struct bt_gatt_attr *attr,
-					 struct bt_gatt_discover_params *params)
+					 struct bt_gatt_discover_params *params,
+					 int err)
 {
 	struct bt_gatt_include *include;
 	uint8_t inst_idx;
-	int err;
 	struct bt_vcp_vol_ctlr *vol_ctlr = vol_ctlr_get_by_conn(conn);
 
 	if (attr == NULL) {
@@ -428,9 +428,9 @@ static uint8_t vcs_discover_include_func(struct bt_conn *conn,
  */
 static uint8_t vcs_discover_func(struct bt_conn *conn,
 				 const struct bt_gatt_attr *attr,
-				 struct bt_gatt_discover_params *params)
+				 struct bt_gatt_discover_params *params,
+				 int err)
 {
-	int err = 0;
 	struct bt_gatt_chrc *chrc;
 	struct bt_gatt_subscribe_params *sub_params = NULL;
 	struct bt_vcp_vol_ctlr *vol_ctlr = vol_ctlr_get_by_conn(conn);
@@ -509,7 +509,8 @@ static uint8_t vcs_discover_func(struct bt_conn *conn,
  */
 static uint8_t primary_discover_func(struct bt_conn *conn,
 				     const struct bt_gatt_attr *attr,
-				     struct bt_gatt_discover_params *params)
+				     struct bt_gatt_discover_params *params,
+				     int err)
 {
 	struct bt_gatt_service_val *prim_service;
 	struct bt_vcp_vol_ctlr *vol_ctlr = vol_ctlr_get_by_conn(conn);
@@ -524,8 +525,6 @@ static uint8_t primary_discover_func(struct bt_conn *conn,
 	LOG_DBG("[ATTRIBUTE] handle 0x%04X", attr->handle);
 
 	if (params->type == BT_GATT_DISCOVER_PRIMARY) {
-		int err;
-
 		LOG_DBG("Primary discover complete");
 		prim_service = (struct bt_gatt_service_val *)attr->user_data;
 

@@ -99,10 +99,9 @@ void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 
 static uint8_t discover_func(struct bt_conn *conn,
 		const struct bt_gatt_attr *attr,
-		struct bt_gatt_discover_params *params)
+		struct bt_gatt_discover_params *params,
+		int err)
 {
-	int err;
-
 	if (attr == NULL) {
 		if (unhandled_chrc_handle == 0 ||
 		    unauthorized_chrc_handle == 0 ||

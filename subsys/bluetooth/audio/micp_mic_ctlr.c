@@ -321,7 +321,8 @@ static void micp_mic_ctlr_aics_set_auto_mode_cb(struct bt_aics *inst, int err)
 
 static uint8_t micp_discover_include_func(
 	struct bt_conn *conn, const struct bt_gatt_attr *attr,
-	struct bt_gatt_discover_params *params)
+	struct bt_gatt_discover_params *params,
+	int err)
 {
 	struct bt_micp_mic_ctlr *mic_ctlr = mic_ctlr_get_by_conn(conn);
 
@@ -344,7 +345,6 @@ static uint8_t micp_discover_include_func(
 		if (bt_uuid_cmp(include->uuid, BT_UUID_AICS) == 0 &&
 		    mic_ctlr->aics_inst_cnt < CONFIG_BT_MICP_MIC_CTLR_MAX_AICS_INST) {
 			uint8_t inst_idx;
-			int err;
 			struct bt_aics_discover_param param = {
 				.start_handle = include->start_handle,
 				.end_handle = include->end_handle,
@@ -378,13 +378,12 @@ static uint8_t micp_discover_include_func(
  */
 static uint8_t micp_discover_func(struct bt_conn *conn,
 				  const struct bt_gatt_attr *attr,
-				  struct bt_gatt_discover_params *params)
+				  struct bt_gatt_discover_params *params,
+				  int err)
 {
 	struct bt_micp_mic_ctlr *mic_ctlr = mic_ctlr_get_by_conn(conn);
 
 	if (attr == NULL) {
-		int err = 0;
-
 		LOG_DBG("Discovery complete");
 		(void)memset(params, 0, sizeof(*params));
 
@@ -421,8 +420,6 @@ static uint8_t micp_discover_func(struct bt_conn *conn,
 		}
 
 		if (sub_params != NULL) {
-			int err;
-
 			sub_params->ccc_handle = BT_GATT_AUTO_DISCOVER_CCC_HANDLE;
 			sub_params->end_handle = mic_ctlr->end_handle;
 			sub_params->value = BT_GATT_CCC_NOTIFY;
@@ -449,7 +446,8 @@ static uint8_t micp_discover_func(struct bt_conn *conn,
 
 static uint8_t primary_discover_func(struct bt_conn *conn,
 				     const struct bt_gatt_attr *attr,
-				     struct bt_gatt_discover_params *params)
+				     struct bt_gatt_discover_params *params,
+				     int err)
 {
 	struct bt_micp_mic_ctlr *mic_ctlr = mic_ctlr_get_by_conn(conn);
 
@@ -465,7 +463,6 @@ static uint8_t primary_discover_func(struct bt_conn *conn,
 	if (params->type == BT_GATT_DISCOVER_PRIMARY) {
 		struct bt_gatt_service_val *prim_service =
 			(struct bt_gatt_service_val *)attr->user_data;
-		int err;
 
 		LOG_DBG("Primary discover complete");
 		mic_ctlr->start_handle = attr->handle + 1;
