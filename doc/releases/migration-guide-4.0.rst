@@ -196,9 +196,6 @@ Crypto
 * Following the deprecation of the TinyCrypt library (:github:`79566`), the
   TinyCrypt-based shim driver was marked as deprecated (:github:`79653`).
 
-Display
-=======
-
 Disk
 ====
 
@@ -238,12 +235,6 @@ Input
 
 * The :dtcompatible:`analog-axis` ``invert`` property has been renamed to
   ``invert-input`` (there's now an ``invert-output`` available as well).
-
-Interrupt Controller
-====================
-
-LED Strip
-=========
 
 PWM
 ===
@@ -348,9 +339,6 @@ Bluetooth HCI
 * The Kconfig option :kconfig:option:`BT_SPI` is now automatically selected based on devicetree
   compatibles and can be removed from board ``.defconfig`` files.
 
-Bluetooth Mesh
-==============
-
 Bluetooth Audio
 ===============
 
@@ -412,9 +400,6 @@ Bluetooth Audio
 
 * ``BT_AUDIO_BROADCAST_CODE_SIZE`` has been removed and ``BT_ISO_BROADCAST_CODE_SIZE`` should be
   used instead. (:github:`80217`)
-
-Bluetooth Classic
-=================
 
 Bluetooth Host
 ==============
@@ -491,9 +476,6 @@ Refer to the extended advertising sample for an example
 implementation of advertiser restarting. The same technique can
 be used for legacy advertising.
 
-Bluetooth Crypto
-================
-
 Networking
 **********
 
@@ -565,9 +547,6 @@ MCUmgr
   The requirement for Bluetooth authentication is now indicated by the :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_BT_PERM_RW_AUTHEN` Kconfig option.
   To remove the default requirement for Bluetooth authentication it is necessary to enable the :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_BT_PERM_RW` Kconfig option in the project configuration.
 
-Modem
-=====
-
 Random
 ======
 
@@ -600,6 +579,3 @@ JWT (JSON Web Token)
 
   They replace the previously-existing Kconfigs ``CONFIG_JWT_SIGN_RSA`` and
   ``CONFIG_JWT_SIGN_ECDSA``. (:github:`79653`)
-
-Architectures
-*************
