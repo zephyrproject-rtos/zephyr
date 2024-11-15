@@ -44,7 +44,7 @@ POSIX System Interfaces
     :ref:`_POSIX_REALTIME_SIGNALS<posix_option_group_realtime_signals>`, -1, :kconfig:option:`CONFIG_POSIX_REALTIME_SIGNALS`
     :ref:`_POSIX_SEMAPHORES<posix_option_group_semaphores>`, 200809L, :kconfig:option:`CONFIG_POSIX_SEMAPHORES`
     :ref:`_POSIX_SPIN_LOCKS<posix_option_group_spin_locks>`, 200809L, :kconfig:option:`CONFIG_POSIX_SPIN_LOCKS`
-    :ref:`_POSIX_THREAD_SAFE_FUNCTIONS<posix_thread_safe_functions>`, -1, :kconfig:option:`CONFIG_POSIX_THREAD_SAFE_FUNCTIONS`
+    :ref:`_POSIX_THREAD_SAFE_FUNCTIONS<posix_option_thread_safe_functions>`, -1, :kconfig:option:`CONFIG_POSIX_THREAD_SAFE_FUNCTIONS`
     :ref:`_POSIX_THREADS<posix_option_group_threads_base>`, -1, :kconfig:option:`CONFIG_POSIX_THREADS`
     :ref:`_POSIX_TIMEOUTS<posix_option_timeouts>`, 200809L, :kconfig:option:`CONFIG_POSIX_TIMEOUTS`
     :ref:`_POSIX_TIMERS<posix_option_group_timers>`, 200809L, :kconfig:option:`CONFIG_POSIX_TIMERS`
