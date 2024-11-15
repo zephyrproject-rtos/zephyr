@@ -249,6 +249,10 @@ ZTEST(threads_lifecycle_1cpu, test_k_thread_state_str)
 	str = k_thread_state_str(tid, state_str, sizeof(state_str));
 	zassert_str_equal(str, "dead");
 
+	tid->base.thread_state = _THREAD_SLEEPING;
+	str = k_thread_state_str(tid, state_str, sizeof(state_str));
+	zassert_str_equal(str, "sleeping");
+
 	tid->base.thread_state = _THREAD_SUSPENDED;
 	str = k_thread_state_str(tid, state_str, sizeof(state_str));
 	zassert_str_equal(str, "suspended");

@@ -236,6 +236,7 @@ const char *k_thread_state_str(k_tid_t thread_id, char *buf, size_t buf_size)
 	} state_string[] = {
 		SS_ENT(DUMMY),
 		SS_ENT(PENDING),
+		SS_ENT(SLEEPING),
 		SS_ENT(DEAD),
 		SS_ENT(SUSPENDED),
 		SS_ENT(ABORTING),

@@ -312,6 +312,7 @@ osThreadState_t osThreadGetState(osThreadId_t thread_id)
 		state = osThreadTerminated;
 		break;
 	case _THREAD_SUSPENDED:
+	case _THREAD_SLEEPING:
 	case _THREAD_PENDING:
 		state = osThreadBlocked;
 		break;
