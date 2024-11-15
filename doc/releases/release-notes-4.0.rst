@@ -73,6 +73,17 @@ https://docs.zephyrproject.org/latest/security/vulnerabilities.html
 API Changes
 ***********
 
+Removed APIs in this release
+============================
+
+* Macro ``K_THREAD_STACK_MEMBER``, deprecated since v3.5.0, has been removed.
+  Use :c:macro:`K_KERNEL_STACK_MEMBER` instead.
+
+* ``CBPRINTF_PACKAGE_COPY_*`` macros, deprecated since Zephyr 3.5.0, have been removed.
+
+* ``_ENUM_TOKEN`` and ``_ENUM_UPPER_TOKEN`` macros, deprecated since Zephyr 2.7.0,
+  are no longer generated.
+
 * Removed deprecated arch-level CMSIS header files
   ``include/zephyr/arch/arm/cortex_a_r/cmsis.h`` and
   ``include/zephyr/arch/arm/cortex_m/cmsis.h``. ``cmsis_core.h`` needs to be
@@ -81,20 +92,11 @@ API Changes
 * Removed deprecated ``ceiling_fraction`` macro. :c:macro:`DIV_ROUND_UP` needs
   to be used now.
 
-* Deprecated ``EARLY``, ``APPLICATION`` and ``SMP`` init levels can no longer be
-  used for devices.
-
 * Removed deprecated header file
   ``include/zephyr/random/rand32.h``. ``random.h`` needs to be included now.
 
-Removed APIs in this release
-============================
-
-* Macro ``K_THREAD_STACK_MEMBER``, deprecated since v3.5.0, has been removed.
-  Use :c:macro:`K_KERNEL_STACK_MEMBER` instead.
-* ``CBPRINTF_PACKAGE_COPY_*`` macros, deprecated since Zephyr 3.5.0, have been removed.
-* ``_ENUM_TOKEN`` and ``_ENUM_UPPER_TOKEN`` macros, deprecated since Zephyr 2.7.0,
-  are no longer generated.
+* Deprecated ``EARLY``, ``APPLICATION`` and ``SMP`` init levels can no longer be
+  used for devices.
 
 Deprecated in this release
 ==========================
