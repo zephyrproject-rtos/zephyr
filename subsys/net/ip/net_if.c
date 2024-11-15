@@ -3538,22 +3538,17 @@ out:
 struct net_if *net_if_ipv4_select_src_iface(const struct in_addr *dst)
 {
 	struct net_if *selected = NULL;
+	const struct in_addr *src;
 
-	STRUCT_SECTION_FOREACH(net_if, iface) {
-		bool ret;
-
-		ret = net_if_ipv4_addr_mask_cmp(iface, dst);
-		if (ret) {
-			selected = iface;
-			goto out;
-		}
+	src = net_if_ipv4_select_src_addr(NULL, dst);
+	if (src != net_ipv4_unspecified_address()) {
+		net_if_ipv4_addr_lookup(src, &selected);
 	}
 
 	if (selected == NULL) {
 		selected = net_if_get_default();
 	}
 
-out:
 	return selected;
 }
 
