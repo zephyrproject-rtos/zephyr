@@ -38,6 +38,8 @@ https://docs.zephyrproject.org/latest/security/vulnerabilities.html
 
 * :cve:`2024-8798`: Under embargo until 2024-11-22
 * :cve:`2024-10395`: Under embargo until 2025-01-23
+* :cve:`2024-11263` `Zephyr project bug tracker GHSA-jjf3-7x72-pqm9
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-jjf3-7x72-pqm9>`_
 
 API Changes
 ***********
