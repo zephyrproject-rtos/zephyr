@@ -869,7 +869,7 @@ Drivers and Sensors
   * Added a sample for capturing video and displaying it with LVGL
     (:zephyr:code-sample:`video-capture-to-lvgl`)
   * Added an automatic test to check colorbar pattern correctness
-  * Added support for GalaxyCore GC2145 image sensor (:dtcompatible:`gc,gc2145`)
+  * Added support for GalaxyCore GC2145 image sensor (:dtcompatible:`galaxycore,gc2145`)
   * Added support for ESP32-S3 LCD-CAM interface (:dtcompatible:`espressif,esp32-lcd-cam`)
   * Added support for NXP MCUX SMARTDMA interface (:dtcompatible:`nxp,smartdma`)
   * Added support for more OmniVision OV2640 controls (:dtcompatible:`ovti,ov2640`)
