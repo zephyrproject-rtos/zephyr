@@ -648,7 +648,10 @@ def test_scan_testsuite_path(
 
     def mock_stat(filename, *args, **kwargs):
         result = mock.Mock()
-        type(result).st_size = sizes[filename]
+        # as we may call os.stat in code
+        # some protection need add here
+        if filename in sizes:
+            type(result).st_size = sizes[filename]
 
         return result
 
