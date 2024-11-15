@@ -1612,6 +1612,99 @@ static enum tcp_conn_option get_tcp_option(int optname)
 	return -EINVAL;
 }
 
+static int ipv4_multicast_if(struct net_context *ctx, const void *optval,
+			     socklen_t optlen, bool do_get)
+{
+	struct net_if *iface = NULL;
+	int ifindex, ret;
+
+	if (do_get) {
+		struct net_if_addr *ifaddr;
+		size_t len = sizeof(ifindex);
+
+		if (optval == NULL || (optlen != sizeof(struct in_addr))) {
+			errno = EINVAL;
+			return -1;
+		}
+
+		ret = net_context_get_option(ctx, NET_OPT_MCAST_IFINDEX,
+					     &ifindex, &len);
+		if (ret < 0) {
+			errno  = -ret;
+			return -1;
+		}
+
+		if (ifindex == 0) {
+			/* No interface set */
+			((struct in_addr *)optval)->s_addr = INADDR_ANY;
+			return 0;
+		}
+
+		ifaddr = net_if_ipv4_addr_get_first_by_index(ifindex);
+		if (ifaddr == NULL) {
+			errno = ENOENT;
+			return -1;
+		}
+
+		net_ipaddr_copy((struct in_addr *)optval, &ifaddr->address.in_addr);
+
+		return 0;
+	}
+
+	/* setsockopt() can accept either struct ip_mreqn or
+	 * struct ip_mreq. We need to handle both cases.
+	 */
+	if (optval == NULL || (optlen != sizeof(struct ip_mreqn) &&
+			       optlen != sizeof(struct ip_mreq))) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	if (optlen == sizeof(struct ip_mreqn)) {
+		struct ip_mreqn *mreqn = (struct ip_mreqn *)optval;
+
+		if (mreqn->imr_ifindex != 0) {
+			iface = net_if_get_by_index(mreqn->imr_ifindex);
+
+		} else if (mreqn->imr_address.s_addr != INADDR_ANY) {
+			struct net_if_addr *ifaddr;
+
+			ifaddr = net_if_ipv4_addr_lookup(&mreqn->imr_address, &iface);
+			if (ifaddr == NULL) {
+				errno = ENOENT;
+				return -1;
+			}
+		}
+	} else {
+		struct ip_mreq *mreq = (struct ip_mreq *)optval;
+
+		if (mreq->imr_interface.s_addr != INADDR_ANY) {
+			struct net_if_addr *ifaddr;
+
+			ifaddr = net_if_ipv4_addr_lookup(&mreq->imr_interface, &iface);
+			if (ifaddr == NULL) {
+				errno = ENOENT;
+				return -1;
+			}
+		}
+	}
+
+	if (iface == NULL) {
+		ifindex = 0;
+	} else {
+		ifindex = net_if_get_by_iface(iface);
+	}
+
+	ret = net_context_set_option(ctx, NET_OPT_MCAST_IFINDEX,
+				     &ifindex, sizeof(ifindex));
+	if (ret < 0) {
+		errno  = -ret;
+		return -1;
+	}
+
+	return 0;
+}
+
 int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 			 void *optval, socklen_t *optlen)
 {
@@ -1831,6 +1924,18 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 
 			return 0;
 
+		case IP_MULTICAST_IF:
+			if (IS_ENABLED(CONFIG_NET_IPV4)) {
+				if (net_context_get_family(ctx) != AF_INET) {
+					errno = EAFNOSUPPORT;
+					return -1;
+				}
+
+				return ipv4_multicast_if(ctx, optval, *optlen, true);
+			}
+
+			break;
+
 		case IP_MULTICAST_TTL:
 			ret = net_context_get_option(ctx, NET_OPT_MCAST_TTL,
 						     optval, optlen);
@@ -1932,15 +2037,22 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 			return 0;
 
 		case IPV6_MULTICAST_IF:
-			ret = net_context_get_option(ctx,
-						     NET_OPT_MCAST_IFINDEX,
-						     optval, optlen);
-			if (ret < 0) {
-				errno  = -ret;
-				return -1;
-			}
+			if (IS_ENABLED(CONFIG_NET_IPV6)) {
+				if (net_context_get_family(ctx) != AF_INET6) {
+					errno = EAFNOSUPPORT;
+					return -1;
+				}
 
-			return 0;
+				ret = net_context_get_option(ctx,
+							     NET_OPT_MCAST_IFINDEX,
+							     optval, optlen);
+				if (ret < 0) {
+					errno  = -ret;
+					return -1;
+				}
+
+				return 0;
+			}
 
 		case IPV6_MULTICAST_HOPS:
 			ret = net_context_get_option(ctx,
@@ -2402,6 +2514,13 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 				}
 
 				return 0;
+			}
+
+			break;
+
+		case IP_MULTICAST_IF:
+			if (IS_ENABLED(CONFIG_NET_IPV4)) {
+				return ipv4_multicast_if(ctx, optval, optlen, false);
 			}
 
 			break;
