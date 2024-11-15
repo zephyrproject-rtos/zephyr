@@ -36,7 +36,7 @@ BUILD_ASSERT(N >= 2, "CONFIG_ZVFS_OPEN_MAX must be > 4");
 
 #define S_TYPEISSHM(st) (((st)->st_mode & ZVFS_MODE_IFMT) == ZVFS_MODE_IFSHM)
 
-ZTEST(shm, test_shm_open)
+ZTEST(xsi_realtime, test_shm_open)
 {
 	int ret;
 	int fd[N];
@@ -84,7 +84,7 @@ ZTEST(shm, test_shm_open)
 	}
 }
 
-ZTEST(shm, test_shm_unlink)
+ZTEST(xsi_realtime, test_shm_unlink)
 {
 	int fd;
 
@@ -107,7 +107,7 @@ ZTEST(shm, test_shm_unlink)
 	zassert_not_ok(shm_open(VALID_SHM_PATH, OPEN_FLAGS, VALID_MODE));
 }
 
-ZTEST(shm, test_shm_read_write)
+ZTEST(xsi_realtime, test_shm_read_write)
 {
 	int fd[N];
 
@@ -148,7 +148,7 @@ ZTEST(shm, test_shm_read_write)
 	zassert_ok(shm_unlink(VALID_SHM_PATH));
 }
 
-ZTEST(shm, test_shm_mmap)
+ZTEST(xsi_realtime, test_shm_mmap)
 {
 	int fd[N];
 	void *addr[N];
@@ -159,7 +159,7 @@ ZTEST(shm, test_shm_mmap)
 
 	for (size_t i = 0; i < N; ++i) {
 		fd[i] = shm_open(VALID_SHM_PATH, i == 0 ? CREATE_FLAGS : OPEN_FLAGS, VALID_MODE);
-		zassert_true(fd[i] >= 0, "shm_open(%s, %x, %04o) failed: %d", VALID_SHM_PATH,
+		zassert_true(fd[i] >= 0, "shm_open(%s, %x, %04o) failed : %d", VALID_SHM_PATH,
 			     VALID_FLAGS, VALID_MODE, errno);
 
 		if (i == 0) {
@@ -196,5 +196,3 @@ ZTEST(shm, test_shm_mmap)
 
 	zassert_ok(shm_unlink(VALID_SHM_PATH));
 }
-
-ZTEST_SUITE(shm, NULL, NULL, NULL, NULL, NULL);
