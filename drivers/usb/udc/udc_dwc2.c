@@ -948,6 +948,11 @@ static void dwc2_restore_essential_registers(const struct device *dev,
 	struct dwc2_reg_backup *backup = &priv->backup;
 	uint32_t pcgcctl = backup->pcgcctl & USB_DWC2_PCGCCTL_RESTOREVALUE_MASK;
 
+	if (usb_dwc2_get_pcgcctl_p2hd_dev_enum_spd(pcgcctl) ==
+	    USB_DWC2_PCGCCTL_P2HD_DEV_ENUM_SPD_HS) {
+		pcgcctl |= BIT(17);
+	}
+
 	sys_write32(backup->glpmcfg, (mem_addr_t)&base->glpmcfg);
 	sys_write32(backup->gi2cctl, (mem_addr_t)&base->gi2cctl);
 	sys_write32(pcgcctl, (mem_addr_t)&base->pcgcctl);
