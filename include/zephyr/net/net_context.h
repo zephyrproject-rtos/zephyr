@@ -361,13 +361,23 @@ __net_socket struct net_context {
 		 * see RFC 5014 for details.
 		 */
 		uint16_t addr_preferences;
-
-		/**
-		 * IPv6 multicast output network interface for this context/socket.
-		 * Only allowed for SOCK_DGRAM or SOCK_RAW type sockets.
-		 */
-		uint8_t ipv6_mcast_ifindex;
 #endif
+#if defined(CONFIG_NET_IPV6) || defined(CONFIG_NET_IPV4)
+		union {
+			/**
+			 * IPv6 multicast output network interface for this context/socket.
+			 * Only allowed for SOCK_DGRAM or SOCK_RAW type sockets.
+			 */
+			uint8_t ipv6_mcast_ifindex;
+
+			/**
+			 * IPv4 multicast output network interface for this context/socket.
+			 * Only allowed for SOCK_DGRAM type sockets.
+			 */
+			uint8_t ipv4_mcast_ifindex;
+		};
+#endif /* CONFIG_NET_IPV6 || CONFIG_NET_IPV4 */
+
 #if defined(CONFIG_NET_CONTEXT_TIMESTAMPING)
 		/** Enable RX, TX or both timestamps of packets send through sockets. */
 		uint8_t timestamping;
