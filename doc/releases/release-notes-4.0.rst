@@ -100,6 +100,8 @@ Removed APIs in this release
 * Deprecated ``EARLY``, ``APPLICATION`` and ``SMP`` init levels can no longer be
   used for devices.
 
+* Removed deprecated net_pkt functions.
+
 Deprecated in this release
 ==========================
 
@@ -107,6 +109,17 @@ Deprecated in this release
   :c:func:`k_fifo_put` and :c:func:`k_fifo_get`.
 
 * The :ref:`kscan_api` subsystem has been marked as deprecated.
+
+* Deprecated the TinyCrypt shim driver ``CONFIG_CRYPTO_TINYCRYPT_SHIM``.
+
+* :ref:`native_posix<native_posix>` has been deprecated in favour of
+  :ref:`native_sim<native_sim>`.
+
+* ``include/zephyr/net/buf.h`` is deprecated in favor of
+  ``include/zephyr/net_buf.h>``. The old header will be removed in future releases
+  and its usage should be avoided.
+
+* Deprecated the :c:func:`net_buf_put` and :c:func:`net_buf_get` API functions.
 
 Architectures
 *************
@@ -233,6 +246,7 @@ Boards & SoC Support
 * Made these changes in other SoC series:
 
   * NXP S32Z270: Added support for the new silicon cut version 2.0. Note that the previous
+    versions (1.0 and 1.1) are no longer supported.
   * NXP s32k3: fixed RAM retention issue
   * NXP s32k1: obtain system clock frequency from Devicetree
     versions (1.0 and 1.1) are no longer supported.
@@ -249,7 +263,7 @@ Boards & SoC Support
       * RW61x: increased main stack size to avoid stack overflows when running BLE
       * RW612: enabled SCTIMER
 
-  * NXP IMXRT: Fixed flexspi boot issue caused by am erroneous relocation of the Flash Configuration Block
+  * NXP IMXRT: Fixed flexspi boot issue caused by an erroneous relocation of the Flash Configuration Block
     of Kconfig defaults being sourced
   * NXP RT11xx: enabled FlexIO
   * NXP IMXRT116x: Fixed bus clocking to align with the settings of the MCUXpresso SDK
@@ -326,13 +340,11 @@ Boards & SoC Support
 
 * Made these board changes:
 
-  * :ref:`native_posix<native_posix>` has been deprecated in favour of
-    :ref:`native_sim<native_sim>`.
   * The nrf54l15bsim target now includes models of the AAR, CCM and ECB peripherals, and many
     other improvements.
   * Support for Google Kukui EC board (``google_kukui``) has been dropped.
   * STM32: Deprecated MCO configuration via Kconfig in favour of setting it through Devicetree.
-    See ``samples/boards/stm32/mco`` sample.
+    See ``samples/boards/st/mco`` sample.
   * STM32: STM32CubeProgrammer is now the default runner on all STMicroelectronics STM32 boards.
   * Removed the ``nrf54l15pdk`` board, use :ref:`nrf54l15dk_nrf54l15` instead.
   * PHYTEC: ``mimx8mp_phyboard_pollux`` has been renamed to :ref:`phyboard_pollux<phyboard_pollux>`,
@@ -409,7 +421,7 @@ Documentation
 * Added :rst:dir:`zephyr:code-sample-category` directive to describe and group code samples in the
   documentation.
 * Added a link to the source code of the driver matching a binding's compatible string (when one can
-  be found in the Zephyr tree) to the :ref:`dt-bindings` documentation.
+  be found in the Zephyr tree) to the :ref:`Devicetree bindings <devicetree_binding_index>` documentation.
 * Added a button to all code sample README pages allowing to directly browse the sample's source
   code on GitHub.
 * Moved Zephyr C API documentation out of main documentation. API references now feature a rich
@@ -468,17 +480,16 @@ Drivers and Sensors
 
   * Added initial support for Renesas RA8 AGT counter driver (:dtcompatible:`renesas,ra-agt`)
   * Added driver for Analog Devices MAX32 SoC series (:dtcompatible:`adi,max32-counter`).
+  * Updated the NXP counter_mcux_lptmr driver to support multiple instances of the lptmr
+    peripheral.
 
 * Crypto
 
   * Added support for STM32L4 AES.
-  * Deprecated the TinyCrypt shim driver ``CONFIG_CRYPTO_TINYCRYPT_SHIM``.
 
 * DAC
 
   * DAC API now supports specifying channel path as internal. Support has been added in STM32 drivers.
-  * Updated the NXP counter_mcux_lptmr driver to support multiple instances of the lptmr
-    peripheral.
   * Updated the initialization of clocks for the NXP LPTMR driver
   * Converted the NXP S32 System Timer Module driver to native Zephyr code
   * Converted NXP S32 Software Watchdog Timer driver to native Zephyr code
@@ -822,9 +833,7 @@ Drivers and Sensors
 
     * Added Würth Elektronik HIDS-2525020210002
       :dtcompatible:`we,wsen-hids-2525020210002` humidity sensor driver.
-
     * Added general samples for triggers
-    * Added driver for NXP's fxls8974 accelerometer
 
 * Serial
 
@@ -1072,12 +1081,9 @@ Networking
   * Fixed compilation issues with networking and SystemView Tracing enabled.
   * Removed redundant DHCPv4 code from telnet sample.
   * Fixed build warnings in Echo Client sample with IPv6 disabled.
-  * Removed deprecated net_pkt functions.
   * Extended network tracing support and added documentation page
     (:ref:`network_tracing`).
   * Moved network buffers implementation out of net subsystem into lib directory
-    and renamed public header to :zephyr_file:`include/zephyr/net_buf.h`.
-  * Deprecated the :c:func:`net_buf_put` and :c:func:`net_buf_get` API functions.
   * Removed ``wpansub`` sample.
 
 * MQTT:
@@ -1541,15 +1547,11 @@ Tests and Samples
 * Together with the deprecation of :ref:`native_posix<native_posix>`, many tests which were
   explicitly run in native_posix now run in :ref:`native_sim<native_sim>` instead.
   native_posix as a platform remains tested though.
-* Added documentation (readme) for the erase_blocks flash test
-* Extended the tests of counter_basic_api with a testcase for counters wihtout alarms
-* Excluded NXP RW612 based boards from the WiFi test suite, as these boards require binary blobs
-  be downloaded in order to build as expected
+* Extended the tests of counter_basic_api with a testcase for counters without alarms
 * Added support for testing SDMMC devices to the fatfs API test
 * Extended net/vlan to add IPv6 prefix config to each vlan-iface
 * Enhanced the camera fixture test by adding a color bar to enable automation
-* Fixed floating point logging issue in the video driver sample code
-* Added a number crunching (maths such as FFT, echo cancellation) sample using optimized an
+* Added a number crunching (maths such as FFT, echo cancellation) sample using an optimized
   library for the NXP ADSP board
 * Tailored the SPI_LOOPBACK test to the limitations of NXP Kinetis MCU's
 * Enabled the video sample to run video capture (samples/drivers/video)
