@@ -10,6 +10,7 @@ target_include_directories(app PRIVATE src)
 target_sources(app PRIVATE
     src/main.c
     src/coap_utils.c
+    src/coap_shell.c
 )
 
 target_sources_ifdef(CONFIG_OT_COAP_SAMPLE_LED app PRIVATE src/led.c)
