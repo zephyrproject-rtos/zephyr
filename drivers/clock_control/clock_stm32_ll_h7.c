@@ -16,7 +16,6 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
-#include "clock_stm32_ll_mco.h"
 #include "stm32_hsem.h"
 
 
@@ -1082,9 +1081,6 @@ int stm32_clock_control_init(const struct device *dev)
 	LL_AHB4_GRP1_EnableClock(LL_AHB4_GRP1_PERIPH_HSEM);
 #endif
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
-
-	/* Configure MCO1/MCO2 based on Kconfig */
-	stm32_clock_control_mco_init();
 
 	/* Set up individual enabled clocks */
 	set_up_fixed_clock_sources();
