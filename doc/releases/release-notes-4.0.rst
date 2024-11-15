@@ -1215,8 +1215,6 @@ Libraries / Subsystems
 
   * Made demand paging SMP compatible.
 
-* Formatted output
-
 * Management
 
   * MCUmgr
@@ -1254,10 +1252,6 @@ Libraries / Subsystems
       ``<zephyr/mgmt/hawkbit/autohandler.h>`` and the configuration header file is now
       ``<zephyr/mgmt/hawkbit/config.h>``.
 
-* Logging
-
-* Modem modules
-
 * Power management
 
   * Added initial ESP32-C6 power management interface to allow light and deep-sleep features.
@@ -1287,12 +1281,6 @@ Libraries / Subsystems
     * :kconfig:option:`CONFIG_MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_PSK_EPHEMERAL_ENABLED`
       for TLS 1.3 PSK ephemeral key exchange mode.
 
-* CMSIS-NN
-
-* FPGA
-
-* Random
-
 * SD
 
   * No significant changes in this release
@@ -1311,8 +1299,6 @@ Libraries / Subsystems
     runtime, do ``kernel thread -h`` for more info.
   * ``kernel reboot`` shell command without any additional arguments will now do a cold reboot
     instead of requiring you to type ``kernel reboot cold``.
-
-* State Machine Framework
 
 * Storage
 
