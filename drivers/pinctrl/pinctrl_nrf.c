@@ -97,6 +97,10 @@ static const nrf_gpio_pin_drive_t drive_modes[NRF_DRIVE_COUNT] = {
 int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			   uintptr_t reg)
 {
+#ifdef CONFIG_SOC_NRF54H20_GPD
+	bool gpd_requested = false;
+#endif
+
 	for (uint8_t i = 0U; i < pin_cnt; i++) {
 		nrf_gpio_pin_drive_t drive;
 		uint8_t drive_idx = NRF_GET_DRIVE(pins[i]);
@@ -357,13 +361,17 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 
 #ifdef CONFIG_SOC_NRF54H20_GPD
 			if (NRF_GET_GPD_FAST_ACTIVE1(pins[i]) == 1U) {
-				int ret;
 				uint32_t d_pin = pin;
 				NRF_GPIO_Type *port = nrf_gpio_pin_port_decode(&d_pin);
 
-				ret = nrf_gpd_request(NRF_GPD_SLOW_ACTIVE);
-				if (ret < 0) {
-					return ret;
+				if (!gpd_requested) {
+					int ret;
+
+					ret = nrf_gpd_request(NRF_GPD_SLOW_ACTIVE);
+					if (ret < 0) {
+						return ret;
+					}
+					gpd_requested = true;
 				}
 
 				port->RETAINCLR = BIT(d_pin);
@@ -387,20 +395,26 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 #endif
 #ifdef CONFIG_SOC_NRF54H20_GPD
 			if (NRF_GET_GPD_FAST_ACTIVE1(pins[i]) == 1U) {
-				int ret;
 				uint32_t d_pin = pin;
 				NRF_GPIO_Type *port = nrf_gpio_pin_port_decode(&d_pin);
 
 				port->RETAINSET = BIT(d_pin);
 
-				ret = nrf_gpd_release(NRF_GPD_SLOW_ACTIVE);
-				if (ret < 0) {
-					return ret;
-				}
 			}
 #endif /* CONFIG_SOC_NRF54H20_GPD */
 		}
 	}
+
+#ifdef CONFIG_SOC_NRF54H20_GPD
+	if (gpd_requested) {
+		int ret;
+
+		ret = nrf_gpd_release(NRF_GPD_SLOW_ACTIVE);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+#endif
 
 	return 0;
 }
