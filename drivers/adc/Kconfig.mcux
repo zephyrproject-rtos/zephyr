@@ -37,11 +37,13 @@ config ADC_MCUX_LPADC
 	help
 	  Enable the MCUX LPADC driver.
 
+if ADC_MCUX_12B1MSPS_SAR || ADC_MCUX_LPADC
 config ADC_MCUX_ETC
 	bool "MCUX ADC ETC driver"
 	depends on HAS_MCUX_ADC_ETC
 	help
 	  Enable the MCUX ADC ETC driver.
+endif
 
 config ADC_MCUX_GAU
 	bool "MCUX GAU ADC driver"
