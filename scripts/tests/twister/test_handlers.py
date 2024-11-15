@@ -1275,6 +1275,7 @@ def test_devicehandler_create_serial_connection(
     dut = DUT()
     dut.available = 0
     dut.failures = 0
+    handler.duts = [dut]
 
     hardware_baud = 14400
     flash_timeout = 60
