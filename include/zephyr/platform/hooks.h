@@ -31,13 +31,12 @@ void soc_reset_hook(void);
 /**
  * @brief SoC hook executed after the reset vector.
  *
- *
  * This hook is implemented by the SoC and can be used to perform any
  * SoC-specific initialization.
  */
 void soc_prep_hook(void);
 
-/*
+/**
  * @brief SoC hook executed before the kernel and devices are initialized.
  *
  * This hook is implemented by the SoC and can be used to perform any
@@ -45,7 +44,7 @@ void soc_prep_hook(void);
  */
 void soc_early_init_hook(void);
 
-/*
+/**
  * @brief SoC hook executed after the kernel and devices are initialized.
  *
  * This hook is implemented by the SoC and can be used to perform any
@@ -61,7 +60,7 @@ void soc_late_init_hook(void);
  */
 void soc_per_core_init_hook(void);
 
-/*
+/**
  * @brief Board hook executed before the kernel starts.
  *
  * This is called before the kernel has started. This hook
@@ -70,9 +69,9 @@ void soc_per_core_init_hook(void);
  */
 void board_early_init_hook(void);
 
-/*
+/**
  * @brief Board hook executed after the kernel starts.
-
+ *
  * This is called after the kernel has started, but before the main function is
  * called. This hook is implemented by the board and can be used to perform
  * any board-specific initialization.
