@@ -1454,8 +1454,8 @@ MCUboot
   * Added SHA512 support to MCUboot code and support for calculating SHA512 hash in imgtool.
   * Added fallback to USB DFU option.
   * Added better mode selection checks to bootutil.
-  * Added bootuil protected TLV size to image size check.
-  * Added functionaliy to remove images with conflicting flags or where features are required
+  * Added bootutil protected TLV size to image size check.
+  * Added functionality to remove images with conflicting flags or where features are required
     that are not supported.
   * Added compressed image flags and TLVs to MCUboot, Kconfig options and support for generating
     compressed LZMA2 images with ARM thumb filter to imgtool.
@@ -1478,7 +1478,7 @@ MCUboot
   * Fixed slot info for directXIP/RAM load in bootutil.
   * Fixed bootutil issue with not zeroing AES and SHA-256 contexts with mbedTLS.
   * Fixed boot_serial ``format`` and ``incompatible-pointer-types`` warnings.
-  * Fixed booltuil wrong definition of ``find_swap_count``.
+  * Fixed bootutil wrong definition of ``find_swap_count``.
   * Fixed bootutil swap move max app size calculation.
   * Fixed imgtool issue where getpub failed for ed25519 key.
   * Fixed issue with sysbuild if something else is named mcuboot.
