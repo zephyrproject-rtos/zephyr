@@ -4,8 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <ite/it51xxx-wuc-map.dtsi>
 #include <mem.h>
 #include <zephyr/dt-bindings/dt-util.h>
+#include <zephyr/dt-bindings/interrupt-controller/ite-it51xxx-intc.h>
+#include <zephyr/dt-bindings/interrupt-controller/ite-it51xxx-wuc.h>
 
 / {
 	#address-cells = <1>;
@@ -62,9 +65,179 @@
 			reg = <0x00f01600 0x100>;
 		};
 
+		wuc1: wakeup-controller@f01b00 {
+			compatible = "ite,it51xxx-wuc";
+			reg = <0x00f01b00 1   /* WUEMR1 */
+			       0x00f01b04 1   /* WUESR1 */
+			       0x00f01b08 1   /* WUENR1 */
+			       0x00f01b3c 1>; /* WUBEMR1 */
+			wakeup-controller;
+			#wuc-cells = <1>;
+		};
+
+		wuc2: wakeup-controller@f01b01 {
+			compatible = "ite,it51xxx-wuc";
+			reg = <0x00f01b01             1   /* WUEMR2 */
+			       0x00f01b05             1   /* WUESR2 */
+			       IT51XXX_WUC_UNUSED_REG 1   /* WUENR2 */
+			       0x00f01b3d             1>; /* WUBEMR2 */
+			wakeup-controller;
+			#wuc-cells = <1>;
+		};
+
+		wuc3: wakeup-controller@f01b02 {
+			compatible = "ite,it51xxx-wuc";
+			reg = <0x00f01b02 1   /* WUEMR3 */
+			       0x00f01b06 1   /* WUESR3 */
+			       0x00f01b0a 1   /* WUENR3 */
+			       0x00f01b3e 1>; /* WUBEMR3 */
+			wakeup-controller;
+			#wuc-cells = <1>;
+		};
+
+		wuc4: wakeup-controller@f01b03 {
+			compatible = "ite,it51xxx-wuc";
+			reg = <0x00f01b03 1   /* WUEMR4 */
+			       0x00f01b07 1   /* WUESR4 */
+			       0x00f01b0b 1   /* WUENR4 */
+			       0x00f01b3f 1>; /* WUBEMR4 */
+			wakeup-controller;
+			#wuc-cells = <1>;
+		};
+
+		wuc6: wakeup-controller@f01b10 {
+			compatible = "ite,it51xxx-wuc";
+			reg = <0x00f01b10             1   /* WUEMR6 */
+			       0x00f01b11             1   /* WUESR6 */
+			       IT51XXX_WUC_UNUSED_REG 1   /* WUENR6 */
+			       0x00f01b13             1>; /* WUBEMR6 */
+			wakeup-controller;
+			#wuc-cells = <1>;
+		};
+
+		wuc7: wakeup-controller@f01b14 {
+			compatible = "ite,it51xxx-wuc";
+			reg = <0x00f01b14             1   /* WUEMR7 */
+			       0x00f01b15             1   /* WUESR7 */
+			       IT51XXX_WUC_UNUSED_REG 1   /* WUENR7 */
+			       0x00f01b17             1>; /* WUBEMR7 */
+			wakeup-controller;
+			both-edge-trigger;
+			#wuc-cells = <1>;
+		};
+
+		wuc8: wakeup-controller@f01b18 {
+			compatible = "ite,it51xxx-wuc";
+			reg = <0x00f01b18             1   /* WUEMR8 */
+			       0x00f01b19             1   /* WUESR8 */
+			       IT51XXX_WUC_UNUSED_REG 1   /* WUENR8 */
+			       0x00f01b1b             1>; /* WUBEMR8 */
+			wakeup-controller;
+			#wuc-cells = <1>;
+		};
+
+		wuc9: wakeup-controller@f01b1c {
+			compatible = "ite,it51xxx-wuc";
+			reg = <0x00f01b1c             1   /* WUEMR9 */
+			       0x00f01b1d             1   /* WUESR9 */
+			       IT51XXX_WUC_UNUSED_REG 1   /* WUENR9 */
+			       0x00f01b1f             1>; /* WUBEMR9 */
+			wakeup-controller;
+			#wuc-cells = <1>;
+		};
+
+		wuc10: wakeup-controller@f01b20 {
+			compatible = "ite,it51xxx-wuc";
+			reg = <0x00f01b20             1   /* WUEMR10 */
+			       0x00f01b21             1   /* WUESR10 */
+			       IT51XXX_WUC_UNUSED_REG 1   /* WUENR10 */
+			       0x00f01b23             1>; /* WUBEMR10 */
+			wakeup-controller;
+			both-edge-trigger;
+			#wuc-cells = <1>;
+		};
+
+		wuc11: wakeup-controller@f01b24 {
+			compatible = "ite,it51xxx-wuc";
+			reg = <0x00f01b24             1   /* WUEMR11 */
+			       0x00f01b25             1   /* WUESR11 */
+			       IT51XXX_WUC_UNUSED_REG 1   /* WUENR11 */
+			       0x00f01b27             1>; /* WUBEMR11 */
+			wakeup-controller;
+			#wuc-cells = <1>;
+		};
+
+		wuc12: wakeup-controller@f01b28 {
+			compatible = "ite,it51xxx-wuc";
+			reg = <0x00f01b28             1   /* WUEMR12 */
+			       0x00f01b29             1   /* WUESR12 */
+			       IT51XXX_WUC_UNUSED_REG 1   /* WUENR12 */
+			       0x00f01b2b             1>; /* WUBEMR12 */
+			wakeup-controller;
+			both-edge-trigger;
+			#wuc-cells = <1>;
+		};
+
+		wuc13: wakeup-controller@f01b2c {
+			compatible = "ite,it51xxx-wuc";
+			reg = <0x00f01b2c             1   /* WUEMR13 */
+			       0x00f01b2d             1   /* WUESR13 */
+			       IT51XXX_WUC_UNUSED_REG 1   /* WUENR13 */
+			       0x00f01b2f             1>; /* WUBEMR13 */
+			wakeup-controller;
+			#wuc-cells = <1>;
+		};
+
+		wuc14: wakeup-controller@f01b30 {
+			compatible = "ite,it51xxx-wuc";
+			reg = <0x00f01b30             1   /* WUEMR14 */
+			       0x00f01b31             1   /* WUESR14 */
+			       IT51XXX_WUC_UNUSED_REG 1   /* WUENR14 */
+			       0x00f01b33             1>; /* WUBEMR14 */
+			wakeup-controller;
+			#wuc-cells = <1>;
+		};
+
+		wuc15: wakeup-controller@f01b34 {
+			compatible = "ite,it51xxx-wuc";
+			reg = <0x00f01b34             1   /* WUEMR15 */
+			       0x00f01b35             1   /* WUESR15 */
+			       IT51XXX_WUC_UNUSED_REG 1   /* WUENR15 */
+			       0x00f01b37             1>; /* WUBEMR15 */
+			wakeup-controller;
+			#wuc-cells = <1>;
+		};
+
+		wuc16: wakeup-controller@f01b38 {
+			compatible = "ite,it51xxx-wuc";
+			reg = <0x00f01b38             1   /* WUEMR16 */
+			       0x00f01b39             1   /* WUESR16 */
+			       IT51XXX_WUC_UNUSED_REG 1   /* WUENR16 */
+			       0x00f01b3b             1>; /* WUBEMR16 */
+			wakeup-controller;
+			#wuc-cells = <1>;
+		};
+
+		wuc_fake: wakeup-controller@0 {
+			compatible = "ite,it51xxx-wuc";
+			reg = <0 1
+			       0 1
+			       0 1
+			       0 1>;
+			#wuc-cells = <1>;
+		};
+
 		gctrl: general-control@f02000 {
 			compatible = "ite,it51xxx-gctrl";
 			reg = <0x00f02000 0x100>;
+		};
+
+		intc: interrupt-controller@f04300 {
+			compatible = "ite,it51xxx-intc";
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			reg = <0x00f04300 0x0100>;
 		};
 	};
 };
