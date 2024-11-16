@@ -1,0 +1,47 @@
+name: Publish Twister Test Results
+
+on:
+  workflow_run:
+    workflows: ["Run tests with twister"]
+    branches:
+      - main
+      - v*
+    types:
+      - completed
+
+jobs:
+  upload-to-elasticsearch:
+    if: github.repository == 'zephyrproject-rtos/zephyr'
+    env:
+      ELASTICSEARCH_KEY: ${{ secrets.ELASTICSEARCH_KEY }}
+      ELASTICSEARCH_SERVER: "https://elasticsearch.zephyrproject.io:443"
+    runs-on: ubuntu-22.04
+    steps:
+      # Needed for elasticearch and upload script
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Download Artifacts
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          path: artifacts
+          workflow: twister.yml
+          run_id: ${{ github.event.workflow_run.id }}
+
+      - name: Upload to elasticsearch
+        run: |
+          pip3 install elasticsearch
+          # set run date on upload to get consistent and unified data across the matrix.
+          run_date=`date --iso-8601=minutes`
+          if [ "${{github.event_name}}" = "push" ]; then
+          python3 ./scripts/ci/upload_test_results_es.py -r ${run_date} \
+          --run-attempt ${{github.run_attempt}} \
+          --index zephyr-main-ci-push-1 artifacts/*/*/twister.json
+          elif [ "${{github.event_name}}" = "schedule" ]; then
+          python3 ./scripts/ci/upload_test_results_es.py -r ${run_date} \
+          --run-attempt ${{github.run_attempt}} \
+          --index zephyr-main-ci-weekly-1 artifacts/*/*/twister.json
+          fi
