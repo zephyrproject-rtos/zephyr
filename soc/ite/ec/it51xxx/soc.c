@@ -12,6 +12,14 @@ static mm_reg_t ecpm_base = DT_REG_ADDR(DT_NODELABEL(ecpm));
 /* 0x03: PLL Control */
 #define ECPM_PLLCTRL 0x03
 
+void soc_prep_hook(void)
+{
+	struct gctrl_it51xxx_regs *const gctrl_regs = GCTRL_IT51XXX_REGS_BASE;
+
+	/* Scratch ROM0 is 4kb size */
+	gctrl_regs->GCTRL_SCR0SZR = IT51XXX_GCTRL_SCRSIZE_4K;
+}
+
 void chip_pll_ctrl(enum chip_pll_mode mode)
 {
 	volatile uint8_t _pll_ctrl __unused;
