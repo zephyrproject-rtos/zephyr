@@ -43,9 +43,3 @@ endif()
 if(NOT CONFIG_ARCMWDT_LIBC)
   list(APPEND TOOLCHAIN_C_FLAGS -fno-builtin)
 endif()
-
-# The MWDT compiler requires different macro definitions for ARC and RISC-V
-# architectures. __MW_ASM_RV_MACRO__ allows to select appropriate compilation branch.
-if(CONFIG_RISCV)
-  list(APPEND TOOLCHAIN_C_FLAGS -D__MW_ASM_RV_MACRO__)
-endif()
