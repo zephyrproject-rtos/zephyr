@@ -1367,6 +1367,7 @@ Libraries / Subsystems
 
     * :ref:`POSIX_DEVICE_IO <posix_option_group_device_io>`
     * :ref:`POSIX_SIGNALS <posix_option_group_signals>`
+    * :ref:`POSIX_FILE_SYSTEM_R <posix_option_group_file_system_r>`
 
   * Added support for the following Options:
 
@@ -1381,6 +1382,7 @@ Libraries / Subsystems
   * :ref:`_POSIX_THREAD_SAFE_FUNCTIONS <posix_option_thread_safe_functions>` improvements:
 
     * Support for :c:func:`asctime_r`, :c:func:`ctime_r`, and :c:func:`localtime_r`.
+    * Added stub for :c:func:`getpwnam_r`, :c:func:`getpwuid_r`, :c:func:`getgrgid_r` and :c:func:`getgrnam_r`.
 
   * :ref:`POSIX_THREADS_BASE <posix_option_group_threads_base>` improvements:
 
