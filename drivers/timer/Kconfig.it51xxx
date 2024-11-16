@@ -1,0 +1,11 @@
+# Copyright (c) 2025 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config ITE_IT51XXX_TIMER
+	bool "ITE it51xxx timer driver"
+	default y
+	depends on DT_HAS_ITE_IT51XXX_TIMER_ENABLED
+	select TICKLESS_CAPABLE
+	help
+	  This module implements a kernel device driver for the ITE IT51XXX
+	  HW timer model.
