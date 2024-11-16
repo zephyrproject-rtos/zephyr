@@ -66,6 +66,11 @@ Sensors
 Serial
 ======
 
+Stepper
+=======
+
+  * Renamed the ``compatible`` from ``zephyr,gpio-steppers`` to :dtcompatible:`zephyr,gpio-stepper`.
+
 Regulator
 =========
 
