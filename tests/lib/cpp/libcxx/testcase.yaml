@@ -24,7 +24,7 @@ tests:
     integration_platforms:
       - mps2/an385
   cpp.libcxx.glibcxx.picolibc:
-    filter: TOOLCHAIN_HAS_PICOLIBC == 1
+    filter: TOOLCHAIN_HAS_PICOLIBC == 1 and CONFIG_PICOLIBC_SUPPORTED
     toolchain_exclude: xcc
     tags: cpp
     timeout: 60
