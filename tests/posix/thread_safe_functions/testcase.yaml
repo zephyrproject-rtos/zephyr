@@ -1,0 +1,25 @@
+common:
+  filter: not CONFIG_NATIVE_LIBC
+  tags:
+    - posix
+    - thread_safe_functions
+  # 1 tier0 platform per supported architecture
+  platform_key:
+    - arch
+    - simulation
+  min_flash: 64
+  min_ram: 32
+tests:
+  portability.posix.thread_safe_functions: {}
+  portability.posix.thread_safe_functions.minimal:
+    extra_configs:
+      - CONFIG_MINIMAL_LIBC=y
+  portability.posix.thread_safe_functions.newlib:
+    filter: TOOLCHAIN_HAS_NEWLIB == 1
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC=y
+  portability.posix.thread_safe_functions.picolibc:
+    tags: picolibc
+    filter: CONFIG_PICOLIBC_SUPPORTED
+    extra_configs:
+      - CONFIG_PICOLIBC=y
