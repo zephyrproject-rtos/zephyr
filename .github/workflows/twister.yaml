@@ -230,6 +230,7 @@ jobs:
 
       - if: github.event_name == 'push'
         name: Run Tests with Twister (Push)
+        id: run_twister
         run: |
           export ZEPHYR_BASE=${PWD}
           export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
@@ -243,6 +244,7 @@ jobs:
 
       - if: github.event_name == 'pull_request_target'
         name: Run Tests with Twister (Pull Request)
+        id: run_twister_pr
         run: |
           rm -f testplan.json
           export ZEPHYR_BASE=${PWD}
@@ -258,6 +260,7 @@ jobs:
 
       - if: github.event_name == 'schedule'
         name: Run Tests with Twister (Daily)
+        id: run_twister_sched
         run: |
           export ZEPHYR_BASE=${PWD}
           export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
@@ -306,41 +309,17 @@ jobs:
 
   twister-test-results:
     name: "Publish Unit Tests Results"
-    env:
-      ELASTICSEARCH_KEY: ${{ secrets.ELASTICSEARCH_KEY }}
-      ELASTICSEARCH_SERVER: "https://elasticsearch.zephyrproject.io:443"
-    needs: twister-build
+    needs:
+      - twister-build
     runs-on: ubuntu-22.04
     # the build-and-test job might be skipped, we don't need to run this job then
     if: success() || failure()
 
     steps:
-      # Needed for elasticearch and upload script
-      - if: github.event_name == 'push' || github.event_name == 'schedule'
-        name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-
       - name: Download Artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts
-
-      - if: github.event_name == 'push' || github.event_name == 'schedule'
-        name: Upload to elasticsearch
-        run: |
-          pip3 install elasticsearch
-          # set run date on upload to get consistent and unified data across the matrix.
-          run_date=`date --iso-8601=minutes`
-          if [ "${{github.event_name}}" = "push" ]; then
-            python3 ./scripts/ci/upload_test_results_es.py -r ${run_date} \
-              --index zephyr-main-ci-push-1 artifacts/*/*/twister.json
-          elif [ "${{github.event_name}}" = "schedule" ]; then
-            python3 ./scripts/ci/upload_test_results_es.py -r ${run_date} \
-              --index zephyr-main-ci-weekly-1 artifacts/*/*/twister.json
-          fi
 
       - name: Merge Test Results
         run: |
