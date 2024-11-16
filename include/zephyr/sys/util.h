@@ -685,6 +685,16 @@ char *utf8_trunc(char *utf8_str);
  */
 char *utf8_lcpy(char *dst, const char *src, size_t n);
 
+/**
+ * @brief Checks if the given string @p str is UTF-8 encoded.
+ *
+ * @param str Target string
+ * @param maxlen The maximum length of string @p str to check
+ *
+ * @return true if @p str is UTF-8 encoded, or false otherwise.
+ */
+bool utf8_is_valid(const unsigned char *str, size_t maxlen);
+
 #define __z_log2d(x) (32 - __builtin_clz(x) - 1)
 #define __z_log2q(x) (64 - __builtin_clzll(x) - 1)
 #define __z_log2(x) (sizeof(__typeof__(x)) > 4 ? __z_log2q(x) : __z_log2d(x))
