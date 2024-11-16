@@ -927,6 +927,48 @@
 			reg = <0x00f02000 0x100>;
 		};
 
+		uart1: uart@f02700 {
+			compatible = "ns16550";
+			reg = <0x00f02700 0x0020>;
+			status = "disabled";
+			current-speed = <115200>;
+			clock-frequency = <1843200>;
+			interrupts = <38 IRQ_TYPE_EDGE_RISING>;
+			interrupt-parent = <&intc>;
+			reg-shift = <0>;
+		};
+
+		ite_uart1_wrapper: uartwrapper@f02720 {
+			compatible = "ite,it51xxx-uart";
+			reg = <0x00f02720 0x0020>;
+			status = "disabled";
+			wucctrl = <&wuc_wu86>; /* GPC7 */
+			interrupts = <IT51XXX_IRQ_WU86 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			clocks = <&ecpm IT51XXX_ECPM_CGCTRL3R_OFF BIT(2)>;
+		};
+
+		uart2: uart@f02800 {
+			compatible = "ns16550";
+			reg = <0x00f02800 0x0020>;
+			status = "disabled";
+			current-speed = <460800>;
+			clock-frequency = <1843200>;
+			interrupts = <39 IRQ_TYPE_EDGE_RISING>;
+			interrupt-parent = <&intc>;
+			reg-shift = <0>;
+		};
+
+		ite_uart2_wrapper: uartwrapper@f02820 {
+			compatible = "ite,it51xxx-uart";
+			reg = <0x00f02820 0x0020>;
+			status = "disabled";
+			wucctrl = <&wuc_wu61>; /* GPH1 */
+			interrupts = <IT51XXX_IRQ_WU61 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			clocks = <&ecpm IT51XXX_ECPM_CGCTRL3R_OFF BIT(2)>;
+		};
+
 		intc: interrupt-controller@f04300 {
 			compatible = "ite,it51xxx-intc";
 			#address-cells = <0>;
