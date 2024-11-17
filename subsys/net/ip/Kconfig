@@ -757,6 +757,15 @@ config NET_CONTEXT_TIMESTAMPING
 	  Allow to set the TIMESTAMPING option on a socket. This way timestamp for a network
 	  packet will be added to the net_pkt structure.
 
+config NET_CONTEXT_CLAMP_PORT_RANGE
+	bool "Allow clamping down the global local port range for net_context"
+	depends on NET_UDP || NET_TCP
+	help
+	  Set or get the per-context default local port range. This
+	  option can be used to clamp down the global local UDP/TCP port
+	  range for a given context. The port range is typically set by
+	  IP_LOCAL_PORT_RANGE socket option.
+
 endif # NET_RAW_MODE
 
 config NET_SLIP_TAP

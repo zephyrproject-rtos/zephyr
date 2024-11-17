@@ -1222,6 +1222,9 @@ struct ip_mreq  {
 	struct in_addr imr_interface;   /**< IP address of local interface */
 };
 
+/** Clamp down the global port range for a given socket */
+#define IP_LOCAL_PORT_RANGE 51
+
 /** @} */
 
 /**
