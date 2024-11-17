@@ -191,6 +191,7 @@ static int voltage_init(const struct device *dev)
 
 	data->sequence.buffer = &data->raw;
 	data->sequence.buffer_size = sizeof(data->raw);
+	data->sequence.calibrate = true;
 
 	return pm_device_driver_init(dev, pm_action);
 }
