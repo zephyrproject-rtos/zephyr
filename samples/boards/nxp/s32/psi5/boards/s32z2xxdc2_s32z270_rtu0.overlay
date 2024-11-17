@@ -15,12 +15,23 @@
 			input-enable;
 		};
 	};
+
+	psi5_s_0_default: psi5_s_0_default  {
+		group1 {
+			pinmux = <PA2_PSI5_S_0_TX>, <PB7_PSI5_S_0_TX>;
+			output-enable;
+		};
+		group2 {
+			pinmux = <PA3_PSI5_S_0_RX>, <PB8_PSI5_S_0_RX>;
+			input-enable;
+		};
+	};
 };
 
 &psi5_0 {
 	pinctrl-0 = <&psi5_0_default>;
 	pinctrl-names = "default";
-	status = "okay";
+	status = "disabled";
 };
 
 &psi5_0_ch1 {
@@ -34,7 +45,7 @@
 	array-slot-duration-us = <1000 1000>;
 	array-slot-start-offset-us = <0 0>;
 	array-slot-data-length = <16 16>;
-	status = "okay";
+	status = "disabled";
 };
 
 &psi5_0_ch2 {
@@ -48,5 +59,38 @@
 	array-slot-duration-us = <1000 1000>;
 	array-slot-start-offset-us = <0 0>;
 	array-slot-data-length = <16 16>;
+	status = "disabled";
+};
+
+&psi5_s_0 {
+	pinctrl-0 = <&psi5_s_0_default>;
+	pinctrl-names = "default";
+
+	uart-baud-rate = <115200>;
+	uart-preset-timeout = <5>;
+	uart-tx-idle-delay-time = <0>;
+	uart-reduced-over-sampling = <4>;
+	uart-sampling-point = <3>;
+
+	status = "okay";
+};
+
+&psi5_s_0_ch1 {
+	init-cmd = <500>;
+	init-acmd = <500>;
+	target-period = <500>;
+	counter-delay = <500>;
+	tx-mode = "short-frame-31";
+	slots-pay-load-size = <16 16>;
+	status = "okay";
+};
+
+&psi5_s_0_ch2 {
+	init-cmd = <500>;
+	init-acmd = <500>;
+	target-period = <500>;
+	counter-delay = <500>;
+	tx-mode = "short-frame-31";
+	slots-pay-load-size = <16 16>;
 	status = "okay";
 };
