@@ -1523,5 +1523,135 @@
 				status = "disabled";
 			};
 		};
+
+		psi5_s_0: psi5_s@401f0000 {
+			compatible = "nxp,s32-psi5_s";
+			reg = <0x401f0000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&clock NXP_S32_P0_PSI5_S_UART_CLK>;
+			status = "disabled";
+
+			psi5_s_0_ch0: ch@0 {
+				compatible = "nxp,s32-psi5_s-channel";
+				reg = <0>;
+				interrupts = <GIC_SPI 390 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+
+			psi5_s_0_ch1: ch@1 {
+				compatible = "nxp,s32-psi5_s-channel";
+				reg = <1>;
+				interrupts = <GIC_SPI 398 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+
+			psi5_s_0_ch2: ch@2 {
+				compatible = "nxp,s32-psi5_s-channel";
+				reg = <2>;
+				interrupts = <GIC_SPI 399 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+
+			psi5_s_0_ch3: ch@3 {
+				compatible = "nxp,s32-psi5_s-channel";
+				reg = <3>;
+				interrupts = <GIC_SPI 400 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+
+			psi5_s_0_ch4: ch@4 {
+				compatible = "nxp,s32-psi5_s-channel";
+				reg = <4>;
+				interrupts = <GIC_SPI 401 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+
+			psi5_s_0_ch5: ch@5 {
+				compatible = "nxp,s32-psi5_s-channel";
+				reg = <5>;
+				interrupts = <GIC_SPI 402 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+
+			psi5_s_0_ch6: ch@6 {
+				compatible = "nxp,s32-psi5_s-channel";
+				reg = <6>;
+				interrupts = <GIC_SPI 403 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+
+			psi5_s_0_ch7: ch@7 {
+				compatible = "nxp,s32-psi5_s-channel";
+				reg = <7>;
+				interrupts = <GIC_SPI 404 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+		};
+
+		psi5_s_1: psi5_s@421f0000 {
+			compatible = "nxp,s32-psi5_s";
+			reg = <0x421f0000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&clock NXP_S32_P0_PSI5_S_UART_CLK>;
+			status = "disabled";
+
+			psi5_s_1_ch0: ch@0 {
+				compatible = "nxp,s32-psi5_s-channel";
+				reg = <0>;
+				interrupts = <GIC_SPI 409 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+
+			psi5_s_1_ch1: ch@1 {
+				compatible = "nxp,s32-psi5_s-channel";
+				reg = <1>;
+				interrupts = <GIC_SPI 417 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+
+			psi5_s_1_ch2: ch@2 {
+				compatible = "nxp,s32-psi5_s-channel";
+				reg = <2>;
+				interrupts = <GIC_SPI 418 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+
+			psi5_s_1_ch3: ch@3 {
+				compatible = "nxp,s32-psi5_s-channel";
+				reg = <3>;
+				interrupts = <GIC_SPI 419 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+
+			psi5_s_1_ch4: ch@4 {
+				compatible = "nxp,s32-psi5_s-channel";
+				reg = <4>;
+				interrupts = <GIC_SPI 420 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+
+			psi5_s_1_ch5: ch@5 {
+				compatible = "nxp,s32-psi5_s-channel";
+				reg = <5>;
+				interrupts = <GIC_SPI 421 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+
+			psi5_s_1_ch6: ch@6 {
+				compatible = "nxp,s32-psi5_s-channel";
+				reg = <6>;
+				interrupts = <GIC_SPI 422 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+
+			psi5_s_1_ch7: ch@7 {
+				compatible = "nxp,s32-psi5_s-channel";
+				reg = <7>;
+				interrupts = <GIC_SPI 423 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+		};
 	};
 };
