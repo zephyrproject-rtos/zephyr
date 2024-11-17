@@ -77,6 +77,23 @@ static inline int lp5569_led_off(const struct device *dev, uint32_t led)
 	return lp5569_led_set_brightness(dev, led, 0);
 }
 
+static int lp5569_write_channels(const struct device *dev, uint32_t start_channel,
+				 uint32_t num_channels, const uint8_t *buf)
+{
+	const struct lp5569_config *config = dev->config;
+	uint32_t i2c_len = num_channels + 1;
+	uint8_t i2c_msg[LP5569_NUM_LEDS + 1];
+
+	if ((uint64_t)start_channel + num_channels > LP5569_NUM_LEDS) {
+		return -EINVAL;
+	}
+
+	i2c_msg[0] = LP5569_LED0_PWM + start_channel;
+	memcpy(&i2c_msg[1], buf, num_channels);
+
+	return i2c_write_dt(&config->bus, i2c_msg, i2c_len);
+}
+
 static int lp5569_enable(const struct device *dev)
 {
 	const struct lp5569_config *config = dev->config;
@@ -170,6 +187,7 @@ static const struct led_driver_api lp5569_led_api = {
 	.set_brightness = lp5569_led_set_brightness,
 	.on = lp5569_led_on,
 	.off = lp5569_led_off,
+	.write_channels = lp5569_write_channels,
 };
 
 #define LP5569_DEFINE(id)                                                                          \
