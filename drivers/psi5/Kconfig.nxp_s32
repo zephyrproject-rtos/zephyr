@@ -7,3 +7,10 @@ config PSI5_NXP_S32
 	depends on DT_HAS_NXP_S32_PSI5_ENABLED
 	help
 	  Enable support for NXP S32 PSI5 driver.
+
+config PSI5_S_NXP_S32
+	bool "NXP S32 PSI5_S driver"
+	default y
+	depends on DT_HAS_NXP_S32_PSI5_S_ENABLED
+	help
+	  Enable support for NXP S32 PSI5_S driver.

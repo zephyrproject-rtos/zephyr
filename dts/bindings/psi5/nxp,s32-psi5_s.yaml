@@ -1,0 +1,131 @@
+# Copyright 2024 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Properties for Peripheral Sensor Interface with Serial PHY (PSI5_S)
+
+compatible: "nxp,s32-psi5_s"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  uart-baud-rate:
+    type: int
+    required: true
+    enum:
+      - 1200
+      - 2400
+      - 4800
+      - 7200
+      - 9600
+      - 14400
+      - 19200
+      - 28800
+      - 38400
+      - 57600
+      - 115200
+      - 230400
+      - 460800
+      - 921600
+      - 1843200
+    description: |
+      uart-baud-rate
+
+  uart-preset-timeout:
+    type: int
+    required: true
+    description: |
+      Preset timeout defines the preset value of timeout counter.
+      A zero-value is forbidden
+
+  uart-tx-idle-delay-time:
+    type: int
+    required: true
+    description: |
+      This register is used to add a programmable idle time between the data that is transmitted
+      on the UART Tx line. The duration of this delay is programmable between 1 to 16 bit times.
+      The programmable delay is such that when the normal ECU to Sensor communication(no direct command)
+      is happening, then it comes into play between each byte of transmitted data, When the ECU
+      to Sensor direct command is used then this delay comes into play between each direct command.
+      The direct commands can be programmed as 1,2 and 4 bytes depending on the GLCR[DIRCMD_LEN] register
+
+  uart-reduced-over-sampling:
+    type: int
+    required: true
+    description: |
+      uart-reduced-over-sampling
+
+  uart-sampling-point:
+    type: int
+    required: true
+    description: |
+      uart-sampling-point
+
+child-binding:
+  description: Properties for Peripheral Sensor Interface with Serial PHY (PSI5_S) channel
+
+  compatible: "nxp,s32-psi5_s-channel"
+
+  include: base.yaml
+
+  properties:
+    async-mode:
+      type: boolean
+      description: |
+        This setting enables the channel operation asynchronous mode for Rx only.
+        Otherwise enables the channel operation synchronous mode for both Rx and Tx.
+
+    # Channel TX configuration
+    init-cmd:
+      required: true
+      type: int
+      description: |
+        Initial reset reload value for the integrated "CMD" format
+
+    init-acmd:
+      required: true
+      type: int
+      description: |
+        Initial reset reload value for the integrated "ACMD" format
+
+    target-period:
+      required: true
+      type: int
+      description: |
+        Subsequent reload values for the integrated period generator
+
+    counter-delay:
+      required: true
+      type: int
+      description: |
+        Time in us for which the manchester decoder is disabled after the falling
+        edge of a sync pulse
+
+    tx-mode:
+      type: string
+      required: true
+      enum:
+        - short-frame-31
+        - short-frame-5
+        - long-frame-31
+        - long-frame-5
+        - x-long-frame-31
+        - x-long-frame-5
+        - xx-long-frame
+        - non-standard-frame
+      description: |
+        Transmitter mode:
+          - short-frame-31: Short Frame (V1.3) with 31 "1s" as the start condition
+          - short-frame-5: Short Frame (V1.3) with 5 "0s" as the start condition
+          - long-frame-31: Long Frame (V1.3) with 31 "1s" as the start condition
+          - long-frame-5: Long Frame (V1.3) with 5 "0s" as the start condition
+          - x-long-fram-31: X-Long Frame (V1.3) with 31 "1s" as the start condition
+          - x-long-frame-5: X-Long Frame (V1.3) with 5 "0s" as the start condition
+          - xx-long-frame: XX-Long (V2.0)
+          - non-standard-frame: Non Standard Length
+
+    slots-pay-load-size:
+      type: array
+      required: true
+      description: |
+        Payload region length
