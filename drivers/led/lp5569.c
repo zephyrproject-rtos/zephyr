@@ -31,6 +31,7 @@ LOG_MODULE_REGISTER(lp5569, CONFIG_LED_LOG_LEVEL);
 
 #define LP5569_MISC          0x2F
 #define LP5569_POWERSAVE_EN  BIT(5)
+#define LP5569_EN_AUTO_INCR  BIT(6)
 #define LP5569_CP_MODE_SHIFT 3
 
 /* PWM base Register for controlling the duty-cycle */
@@ -110,7 +111,7 @@ static int lp5569_enable(const struct device *dev)
 	}
 
 	ret = i2c_reg_write_byte_dt(&config->bus, LP5569_MISC,
-				    LP5569_POWERSAVE_EN |
+				    LP5569_POWERSAVE_EN | LP5569_EN_AUTO_INCR |
 					    (config->cp_mode << LP5569_CP_MODE_SHIFT));
 	if (ret < 0) {
 		LOG_ERR("LED reg update failed");
