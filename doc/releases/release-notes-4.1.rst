@@ -141,6 +141,7 @@ Drivers and Sensors
 
   * Added a new set of devicetree based LED APIs, see :c:struct:`led_dt_spec`.
   * lp5569: added use of auto-increment functionality.
+  * lp5569: implemented ``write_channels`` api.
 
 * LED Strip
 
