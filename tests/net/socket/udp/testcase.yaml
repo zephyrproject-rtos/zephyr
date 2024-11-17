@@ -19,6 +19,9 @@ tests:
   net.socket.udp.pktinfo:
     extra_configs:
       - CONFIG_NET_CONTEXT_RECV_PKTINFO=y
+  net.socket.udp.port_range:
+    extra_configs:
+      - CONFIG_NET_CONTEXT_CLAMP_PORT_RANGE=y
   net.socket.udp.ttl:
     extra_configs:
       - CONFIG_NET_SOCKETS_PACKET=y
