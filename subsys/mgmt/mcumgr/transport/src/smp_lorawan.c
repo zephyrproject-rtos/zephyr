@@ -16,7 +16,7 @@
 
 LOG_MODULE_REGISTER(smp_lorawan, CONFIG_MCUMGR_TRANSPORT_LORAWAN_LOG_LEVEL);
 
-static void smp_lorawan_downlink(uint8_t port, bool data_pending, int16_t rssi, int8_t snr,
+static void smp_lorawan_downlink(uint8_t port, uint8_t flags, int16_t rssi, int8_t snr,
 				 uint8_t len, const uint8_t *hex_data);
 
 static int smp_lorawan_uplink(struct net_buf *nb);
@@ -122,10 +122,10 @@ static void smp_lorawan_uplink_thread(void *p1, void *p2, void *p3)
 }
 #endif
 
-static void smp_lorawan_downlink(uint8_t port, bool data_pending, int16_t rssi, int8_t snr,
+static void smp_lorawan_downlink(uint8_t port, uint8_t flags, int16_t rssi, int8_t snr,
 				 uint8_t len, const uint8_t *hex_data)
 {
-	ARG_UNUSED(data_pending);
+	ARG_UNUSED(flags);
 	ARG_UNUSED(rssi);
 	ARG_UNUSED(snr);
 
