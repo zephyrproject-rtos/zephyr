@@ -64,11 +64,24 @@ struct prometheus_counter {
 
 /**
  * @brief Increment the value of a Prometheus counter metric
+ * Increments the value of the specified counter metric by arbitrary amount.
+ * @param counter Pointer to the counter metric to increment.
+ * @param value Amount to increment the counter by.
+ * @return 0 on success, negative errno on error.
+ */
+int prometheus_counter_add(struct prometheus_counter *counter, uint64_t value);
+
+/**
+ * @brief Increment the value of a Prometheus counter metric
  * Increments the value of the specified counter metric by one.
  * @param counter Pointer to the counter metric to increment.
  * @return 0 on success, negative errno on error.
  */
-int prometheus_counter_inc(struct prometheus_counter *counter);
+static inline int prometheus_counter_inc(struct prometheus_counter *counter)
+{
+	return prometheus_counter_add(counter, 1ULL);
+}
+
 
 /**
  * @}
