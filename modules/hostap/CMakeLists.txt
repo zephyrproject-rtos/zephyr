@@ -560,7 +560,6 @@ zephyr_library_sources_ifdef(CONFIG_WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE
 )
 
 zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE
-	EAP_SERVER
 	TLS_FUNCS
 	EAP_TLS_FUNCS
 	EAP_SERVER_TLS
