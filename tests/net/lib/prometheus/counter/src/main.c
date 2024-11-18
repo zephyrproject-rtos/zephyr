@@ -63,4 +63,24 @@ ZTEST(test_counter, test_prometheus_counter_02_add)
 	zassert_equal(test_counter_m.value, 4, "Counter value is not 4");
 }
 
+/**
+ * @brief Test prometheus_counter_set
+ * @details The test shall set the counter value by arbitrary value
+ * and check if the value is incremented correctly.
+ */
+ZTEST(test_counter, test_prometheus_counter_03_set)
+{
+	int ret;
+
+	ret = prometheus_counter_set(&test_counter_m, 20);
+	zassert_ok(ret, "Error setting counter");
+
+	zassert_equal(test_counter_m.value, 20, "Counter value is not 20");
+
+	ret = prometheus_counter_set(&test_counter_m, 15);
+	zassert_equal(ret, -EINVAL, "Error setting counter");
+
+	zassert_equal(test_counter_m.value, 20, "Counter value is not 20");
+}
+
 ZTEST_SUITE(test_counter, NULL, NULL, NULL, NULL, NULL);
