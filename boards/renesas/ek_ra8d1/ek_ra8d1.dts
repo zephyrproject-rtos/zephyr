@@ -42,6 +42,7 @@
 
 	aliases {
 		led0 = &led1;
+		sdhc0 = &sdhc1;
 	};
 };
 
@@ -159,4 +160,18 @@
 	clock-frequency = <DT_FREQ_M(1)>;
 	pinctrl-0 = <&iic1_default>;
 	pinctrl-names = "default";
+};
+
+&sdhc1 {
+	compatible = "renesas,ra-sdhc";
+	interrupt-names = "accs", "card", "dma-req";
+	interrupts = <60 12>, <61 12>, <62 12>;
+	pinctrl-0 = <&sdhc1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+	sdmmc {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
+		status = "okay";
+	};
 };

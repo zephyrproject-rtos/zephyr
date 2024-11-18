@@ -97,4 +97,23 @@
 			drive-strength = "high";
 		};
 	};
+
+	sdhc0_default: sdhc0_default {
+		group1 {
+			/* SDCD SDCMD SDDATA0 SDDATA1 SDDATA2 SDDATA3 SDWP */
+			psels = <RA_PSEL(RA_PSEL_SDHI, 3, 6)>,
+			<RA_PSEL(RA_PSEL_SDHI, 3, 7)>,
+			<RA_PSEL(RA_PSEL_SDHI, 3, 4)>,
+			<RA_PSEL(RA_PSEL_SDHI, 3, 3)>,
+			<RA_PSEL(RA_PSEL_SDHI, 3, 2)>,
+			<RA_PSEL(RA_PSEL_SDHI, 3, 1)>,
+			<RA_PSEL(RA_PSEL_SDHI, 3, 5)>;
+			drive-strength = "high";
+		};
+		group2 {
+			/* SDCLK */
+			psels = <RA_PSEL(RA_PSEL_SDHI, 3, 8)>;   /* P308 */
+			drive-strength = "highspeed-high";
+		};
+	};
 };
