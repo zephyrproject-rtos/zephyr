@@ -8,6 +8,7 @@
  */
 
 #include <stdlib.h>
+#include <zephyr/kernel.h>
 #include <zephyr/types.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
@@ -75,12 +76,11 @@ static void test_ase_state_transition_invalid_after(void *f)
 	err = bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
 	zassert_equal(err, 0, "unexpected err response %d", err);
 
+	/* Sleep to trigger any pending state changes from unregister_cb */
+	k_sleep(K_SECONDS(1));
+
 	err = bt_bap_unicast_server_unregister();
-	while (err != 0) {
-		zassert_equal(err, -EBUSY, "unexpected err response %d", err);
-		k_sleep(K_MSEC(10));
-		err = bt_bap_unicast_server_unregister();
-	}
+	zassert_equal(err, 0, "Unexpected err response %d", err);
 }
 
 static void test_ase_state_transition_invalid_teardown(void *f)
