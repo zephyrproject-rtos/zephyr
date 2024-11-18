@@ -583,8 +583,6 @@ struct wifi_connect_req_params {
 	const uint8_t *domain_match;
 	/** Server domain length */
 	uint8_t domain_match_length; /* Max 64 */
-	/** Hidden SSID configure */
-	uint8_t ignore_broadcast_ssid;
 };
 
 /** @brief Wi-Fi connect result codes. To be overlaid on top of \ref wifi_status
