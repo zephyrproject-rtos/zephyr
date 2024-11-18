@@ -20,10 +20,6 @@ properties:
       - 4
     default: 4
 
-  block-size:
-    type: int
-    default: 512
-
   sd-support:
     type: boolean
 
