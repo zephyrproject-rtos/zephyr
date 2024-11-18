@@ -1,6 +1,7 @@
 identifier: m5stack_cores3/esp32s3/appcpu
 name: M5Stack CoreS3 APPCPU
 type: mcu
+twister: false
 arch: xtensa
 toolchain:
   - zephyr
