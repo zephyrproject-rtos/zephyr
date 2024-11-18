@@ -123,7 +123,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_ppc_cmds,
 					     cmd_ppc_dump, 1, 1),
 			       SHELL_CMD_ARG(status, &list_device_names,
 					     "Write PPC power status\n"
-					     "Usage: ppc statuc [<ppc device>]",
+					     "Usage: ppc status [<ppc device>]",
 					     cmd_ppc_status, 1, 1),
 			       SHELL_CMD_ARG(exitdb, &list_device_names,
 					     "Exit from the dead battery mode\n"
