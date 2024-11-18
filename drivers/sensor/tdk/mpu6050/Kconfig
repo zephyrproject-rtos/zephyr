@@ -69,4 +69,13 @@ config MPU6050_GYRO_FS
 	  An X value for the config represents a range of +/- X degrees/second.
 	  Valid values are 250, 500, 1000, 2000.
 
+config MPU6050_SAMPLE_RATE_DIVIDER
+	int "Data Sample Rate Divider"
+	default 7
+	help
+	  Sensor Data Sample Rate Divider.
+	  Sensor data Sample Rate = 8000Hz / (1 + Sample Rate Divider).
+	  While using I2C recommended Sensor Data Sample Rate is 1600Hz.
+	  Valid values: X = [4, 255].
+
 endif # MPU6050

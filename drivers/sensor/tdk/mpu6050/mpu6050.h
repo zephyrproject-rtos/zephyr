@@ -14,25 +14,50 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/types.h>
 
+// Chip ID Register
 #define MPU6050_REG_CHIP_ID		0x75
 #define MPU6050_CHIP_ID			0x68
 #define MPU6500_CHIP_ID			0x70
 #define MPU9250_CHIP_ID			0x71
 #define MPU6880_CHIP_ID			0x19
 
+// Sample Rate Divider Register
+#define MPU6050_REG_SAMPLE_RATE_DIVIDER	0x19
+
+// Gyro Config Register
 #define MPU6050_REG_GYRO_CFG		0x1B
 #define MPU6050_GYRO_FS_SHIFT		3
 
+// Accel Config Register
 #define MPU6050_REG_ACCEL_CFG		0x1C
 #define MPU6050_ACCEL_FS_SHIFT		3
 
+// Interrupt Enable Register
 #define MPU6050_REG_INT_EN		0x38
 #define MPU6050_DRDY_EN			BIT(0)
 
+// Sensor Data Start
 #define MPU6050_REG_DATA_START		0x3B
 
+// Signal Path Reset Register
+#define MPU6050_REG_SIGNAL_PATH_RESET	0x68
+#define MPU6050_TEMP_RESET				BIT(0)
+#define MPU6050_ACCEL_RESET				BIT(1)
+#define MPU6050_GYRO_RESET				BIT(2)
+
+// User Control Register
+#define MPU6050_REG_USER_CTRL			0x6A
+#define MPU6050_SIG_COND_RESET			BIT(0)
+
+// Power Management 1 Register
 #define MPU6050_REG_PWR_MGMT1		0x6B
-#define MPU6050_SLEEP_EN		BIT(6)
+#define MPU6050_SLEEP_EN			BIT(6)
+#define MPU6050_DEVICE_RESET		BIT(7)
+#define MPU6050_PWR_MGMT1_RST_VAL	0x40
+
+// Sample Rate Divider limits
+#define MPU6050_SMPRT_DIV_MIN	4
+#define MPU6050_SMPRT_DIV_MAX 	255
 
 /* measured in degrees/sec x10 to avoid floating point */
 static const uint16_t mpu6050_gyro_sensitivity_x10[] = {

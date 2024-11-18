@@ -177,10 +177,76 @@ int mpu6050_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	/* wake up chip */
-	if (i2c_reg_update_byte_dt(&cfg->i2c, MPU6050_REG_PWR_MGMT1,
-				   MPU6050_SLEEP_EN, 0) < 0) {
-		LOG_ERR("Failed to wake up chip.");
+	/* Reset sequence is added to ensure all registers are reset to their 
+	 * default values, and also to enable easier addition of SPI support in 
+	 * future. 
+	 */
+	/* When using SPI interface, user should use DEVICE_RESET as well as
+	 * SIGNAL_PATH_RESET to ensure th ereest is performed properly.
+	 * The sequence used should be:
+	 * 1. Set DEVICE_RESET = 1 (reg PWR_MGMT_1)
+	 * 2. Wait 100ms
+	 * 3. Set GYRO_RESET = ACCEL_RESET = TEMP_RESET = 1 (reg SIGNAL_PATH_RESET)
+	 * 4. Wait 100ms 
+	 * (RM-MPU-6000A-00 rev 4.2 page 41 of 46) */
+	if (i2c_reg_write_byte_dt(&cfg->i2c, MPU6050_REG_PWR_MGMT1, 
+							MPU6050_DEVICE_RESET) < 0) {
+		LOG_ERR("Device reset failed.");
+		return -EIO;
+	}
+
+	k_sleep(K_MSEC(100));
+	
+	// check content of Power Management 1 register.
+	uint8_t tmp;
+	if ((i2c_reg_read_byte_dt(&cfg->i2c, MPU6050_REG_PWR_MGMT1, &tmp) < 0)) {
+		LOG_ERR("Device reset request failed.");
+		return -EIO;
+	}
+
+	if (tmp != MPU6050_PWR_MGMT1_RST_VAL) {
+		LOG_ERR("Device reset failed.");
+		return -EINVAL;
+	}
+
+	// select clock source.
+	/* While gyros are active, selecting the gyros as the clock source provides 
+	 * for a more accurate clock source. 
+	 * (Document Number: PS-MPU-6000A-00 Page 30 of 52) */
+	if (i2c_reg_write_byte_dt(&cfg->i2c, MPU6050_REG_PWR_MGMT1, 0x01) < 0) {
+		LOG_ERR("Clock select failed.");
+		return -EIO;
+	}
+
+	// signal paths reset.
+	if (i2c_reg_update_byte_dt(&cfg->i2c, MPU6050_REG_SIGNAL_PATH_RESET, 
+			(MPU6050_GYRO_RESET | MPU6050_ACCEL_RESET | MPU6050_TEMP_RESET), 
+			0b00000111) < 0) {
+		LOG_ERR("Signal path reset failed.");
+		return -EIO;
+	}
+
+	// reset signal paths of all sensors and clear sensor registers.
+	if (i2c_reg_update_byte_dt(&cfg->i2c, MPU6050_REG_USER_CTRL, 
+						MPU6050_SIG_COND_RESET, 1) < 0) {
+		LOG_ERR("Signal path reset failed.");
+		return -EIO;
+	}
+
+	k_sleep(K_MSEC(100));
+
+	// Configure Sample Rate Divider.
+	if ((CONFIG_MPU6050_SAMPLE_RATE_DIVIDER > MPU6050_SMPRT_DIV_MAX)
+		|| (CONFIG_MPU6050_SAMPLE_RATE_DIVIDER < MPU6050_SMPRT_DIV_MIN)) {
+		LOG_ERR("Invalid sample rate divider.");
+		return -EINVAL;
+	}
+
+	/* Sample Rate = Gyroscope Output Rate / (1 + smplrt_div)
+	 * (RM-MPU-6000A-00 rev 4.2 page 12 of 46) */
+	if (i2c_reg_write_byte_dt(&cfg->i2c, MPU6050_REG_SAMPLE_RATE_DIVIDER, 
+						CONFIG_MPU6050_SAMPLE_RATE_DIVIDER) < 0) {
+		LOG_ERR("Sample rate divider configuration failed.");
 		return -EIO;
 	}
 
@@ -232,6 +298,13 @@ int mpu6050_init(const struct device *dev)
 		}
 	}
 #endif
+
+	// wake up chip
+	if (i2c_reg_update_byte_dt(&cfg->i2c, MPU6050_REG_PWR_MGMT1,
+                            MPU6050_SLEEP_EN, 0) < 0) {
+		LOG_ERR("Failed to wake up chip.");
+		return -EIO;
+	}
 
 	return 0;
 }
