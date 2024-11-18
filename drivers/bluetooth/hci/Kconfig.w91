@@ -4,9 +4,19 @@
 if BT_W91
 
 config BT_HCI_TX_STACK_SIZE
+	int
 	default 2048
 
 config BT_RX_STACK_SIZE
+	int
 	default 2048
+
+if BT_LONG_WQ
+
+config BT_LONG_WQ_STACK_SIZE
+	int
+	default 2048
+
+endif # BT_LONG_WQ
 
 endif # BT_W91
