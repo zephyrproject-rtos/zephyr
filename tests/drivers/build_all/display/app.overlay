@@ -71,7 +71,7 @@
 				height = <128>;
 			};
 
-			st7789v: st7789v@3 {
+			test_st7789v: st7789v@3 {
 				compatible = "sitronix,st7789v";
 				reg = <3>;
 				mipi-max-frequency = <25000000>;
@@ -108,7 +108,7 @@
 				busy-gpios = <&test_gpio 0 0>;
 			};
 
-			uc8176_waveshare_epaper_gdew042t2: uc8176@5 {
+			test_uc8176_waveshare_epaper_gdew042t2: uc8176@5 {
 				compatible = "ultrachip,uc8176";
 				mipi-max-frequency = <4000000>;
 				reg = <5>;
