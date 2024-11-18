@@ -46,6 +46,7 @@
 
 	aliases {
 		led0 = &led1;
+		sdhc0 = &sdhc0;
 	};
 };
 
@@ -84,6 +85,10 @@
 &canfdclk {
 	clocks = <&pll>;
 	div = <5>;
+	status = "okay";
+};
+
+&ioport3 {
 	status = "okay";
 };
 
@@ -168,6 +173,19 @@
 	phy: ethernet-phy@5 {
 		compatible = "ethernet-phy";
 		reg = <5>;
+		status = "okay";
+	};
+};
+
+&sdhc0 {
+	compatible = "renesas,ra-sdhc";
+	pinctrl-0 = <&sdhc0_default>;
+	enable-gpios = <&ioport3 11 GPIO_ACTIVE_HIGH>;
+	pinctrl-names = "default";
+	status = "okay";
+	sdmmc {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
 		status = "okay";
 	};
 };
