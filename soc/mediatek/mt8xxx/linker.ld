@@ -61,6 +61,7 @@ SECTIONS {
   } > dram
 
 #include <zephyr/linker/common-rom.ld>
+#include <snippets-rom-sections.ld>
 
   __rodata_region_end = .;
 
