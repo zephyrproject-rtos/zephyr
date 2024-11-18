@@ -41,6 +41,7 @@ struct gpio_stepper_data {
 	int32_t step_count;
 	stepper_event_callback_t callback;
 	void *event_cb_user_data;
+	bool latch;
 };
 
 static int stepper_motor_set_coil_charge(const struct device *dev)
@@ -130,6 +131,11 @@ static void position_mode_task(const struct device *dev)
 		update_coil_charge(dev);
 	}
 	update_remaining_steps(dev->data);
+	if (data -> step_count == 0 && !data->latch) {
+		for (uint8_t n_pin = 0; n_pin < NUM_CONTROL_PINS; n_pin++) {
+			(void)gpio_pin_set_dt(&config->control_pins[n_pin], 0);
+		}
+	}
 }
 
 static void velocity_mode_task(const struct device *dev)
@@ -318,6 +324,20 @@ static int gpio_stepper_enable(const struct device *dev, bool enable)
 	return 0;
 }
 
+static int gpio_stepper_set_latch(const struct device *dev, bool is_latch_after_movement)
+{
+	struct gpio_stepper_data *data = dev->data;
+	data->latch = is_latch_after_movement;
+	return 0;
+}
+
+static int gpio_stepper_is_latch(const struct device *dev, bool* latching_state)
+{
+	struct gpio_stepper_data *data = dev->data;
+	*latching_state = data->latch;
+	return 0;
+}
+
 static int gpio_stepper_motor_controller_init(const struct device *dev)
 {
 	struct gpio_stepper_data *data = dev->data;
@@ -363,6 +383,8 @@ static int gpio_stepper_motor_controller_init(const struct device *dev)
 		.enable_constant_velocity_mode = gpio_stepper_enable_constant_velocity_mode,       \
 		.set_micro_step_res = gpio_stepper_set_micro_step_res,                             \
 		.get_micro_step_res = gpio_stepper_get_micro_step_res,                             \
+		.set_latch = gpio_stepper_set_latch,    										   \
+		.is_latch  = gpio_stepper_is_latch,												   \
 		.set_event_callback = gpio_stepper_set_event_callback, };
 
 #define GPIO_STEPPER_DEVICE_DEFINE(child)                                                          \
