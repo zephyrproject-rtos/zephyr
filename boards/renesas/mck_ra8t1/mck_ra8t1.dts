@@ -87,6 +87,10 @@
 	status = "okay";
 };
 
+&ioport3 {
+	status = "okay";
+};
+
 &ioport6 {
 	status = "okay";
 };
