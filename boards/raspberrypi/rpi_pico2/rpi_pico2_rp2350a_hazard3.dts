@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Andrew Featherstone
+ * Copyright (c) 2025 Andrew Featherstone
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,5 +14,5 @@
  * 3. Board-specific configuration.
  */
 #include <raspberrypi/rpi_pico/rp2350a.dtsi>
-#include <raspberrypi/rpi_pico/m33.dtsi>
+#include <riscv/raspberrypi/hazard3.dtsi>
 #include "rpi_pico2.dtsi"
