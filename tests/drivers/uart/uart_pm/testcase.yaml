@@ -6,6 +6,7 @@ common:
   platform_allow:
     - nrf52840dk/nrf52840
     - nrf54l15dk/nrf54l15/cpuapp
+    - nrf54l15bsim/nrf54l15/cpuapp
     - nrf54h20dk/nrf54h20/cpuapp
     - nrf52_bsim
     - nrf5340bsim/nrf5340/cpuapp
@@ -29,6 +30,7 @@ tests:
     extra_args: DTC_OVERLAY_FILE="boards/nrf52840dk_nrf52840.overlay;nrf_rx_disable.overlay"
     platform_exclude:
       - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54l15bsim/nrf54l15/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
 
   drivers.uart.pm.enhanced_poll:
