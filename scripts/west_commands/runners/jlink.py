@@ -169,6 +169,9 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         self.logger.info('J-Link GDB server running on port '
                          f'{self.gdb_port}{thread_msg}')
 
+    def print_rttserver_message(self):
+        self.logger.info(f'J-Link RTT server running on port {self.rtt_port}')
+
     @property
     def jlink_version(self):
         # Get the J-Link version as a (major, minor, rev) tuple of integers.
@@ -276,6 +279,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
             self.check_call(server_cmd)
         elif command == 'rtt':
             self.print_gdbserver_message()
+            self.print_rttserver_message()
             server_cmd += ['-nohalt']
             server_proc = self.popen_ignore_int(server_cmd)
             try:
