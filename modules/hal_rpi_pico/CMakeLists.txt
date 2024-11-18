@@ -159,6 +159,7 @@ if(CONFIG_HAS_RPI_PICO)
           ${common_dir}/pico_sync/include
           ${common_dir}/pico_time/include
           ${rp2_common_dir}/hardware_hazard3/include
+          ${rp2_common_dir}/hardware_riscv_platform_timer/include
           ${rp2_common_dir}/hardware_riscv/include)
   zephyr_library_sources_ifdef(CONFIG_RISCV
           ${rp2_common_dir}/hardware_irq/irq.c)
