@@ -12,6 +12,7 @@
  */
 
 #include <zephyr/drivers/uart.h>
+#include <zephyr/pm/device_runtime.h>
 #include <zephyr/ztest.h>
 
 #if DT_NODE_EXISTS(DT_NODELABEL(dut))
@@ -268,14 +269,24 @@ ZTEST(uart_elementary, test_uart_dual_port_transmission)
 					      (void *)test_buffer_aux);
 	zassert_equal(err, 0, "Unexpected error when setting user data for UART1 callback %d", err);
 
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		int usage = pm_device_runtime_usage(uart_dev);
+		int usage_aux = pm_device_runtime_usage(uart_dev_aux);
+
+		zassert_equal(usage, 0);
+		zassert_equal(usage_aux, 0);
+		pm_device_runtime_get(uart_dev);
+		pm_device_runtime_get(uart_dev_aux);
+	}
+
 	uart_irq_err_enable(uart_dev);
 	uart_irq_err_enable(uart_dev_aux);
 
-	uart_irq_tx_enable(uart_dev);
-	uart_irq_tx_enable(uart_dev_aux);
-
 	uart_irq_rx_enable(uart_dev);
 	uart_irq_rx_enable(uart_dev_aux);
+
+	uart_irq_tx_enable(uart_dev);
+	uart_irq_tx_enable(uart_dev_aux);
 
 	/* wait for the tramission to finish (no polling is intentional) */
 	k_sleep(K_USEC(100 * SLEEP_TIME_US));
@@ -286,6 +297,17 @@ ZTEST(uart_elementary, test_uart_dual_port_transmission)
 	uart_irq_rx_disable(uart_dev_aux);
 	uart_irq_err_disable(uart_dev);
 	uart_irq_err_disable(uart_dev_aux);
+
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		pm_device_runtime_put(uart_dev);
+		pm_device_runtime_put(uart_dev_aux);
+
+		int usage = pm_device_runtime_usage(uart_dev);
+		int usage_aux = pm_device_runtime_usage(uart_dev_aux);
+
+		zassert_equal(usage, 0);
+		zassert_equal(usage_aux, 0);
+	}
 
 #if defined(CONFIG_SETUP_MISMATCH_TEST)
 	TC_PRINT("Mismatched configuration test\n");
