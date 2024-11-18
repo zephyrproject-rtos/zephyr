@@ -19,6 +19,7 @@
  * @{
  */
 
+#include <zephyr/kernel.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/net/prometheus/metric.h>
 
@@ -33,9 +34,9 @@ struct prometheus_collector {
 	/** Name of the collector */
 	const char *name;
 	/** Array of metrics associated with the collector */
-	struct prometheus_metric *metric[CONFIG_PROMETHEUS_MAX_METRICS];
-	/** Number of metrics associated with the collector */
-	size_t size;
+	sys_slist_t metrics;
+	/** Mutex to protect the metrics list manipulation */
+	struct k_mutex lock;
 };
 
 /**
@@ -45,9 +46,12 @@ struct prometheus_collector {
  *
  * @param _name The collector's name.
  */
-#define PROMETHEUS_COLLECTOR_DEFINE(_name)                                                         \
-	static STRUCT_SECTION_ITERABLE(prometheus_collector, _name) = {                            \
-		.name = STRINGIFY(_name), .size = 0, .metric = {0}}
+#define PROMETHEUS_COLLECTOR_DEFINE(_name)				\
+	static STRUCT_SECTION_ITERABLE(prometheus_collector, _name) = {	\
+		.name = STRINGIFY(_name),				\
+		.metrics = SYS_SLIST_STATIC_INIT(&_name.metrics),	\
+		.lock = Z_MUTEX_INITIALIZER(_name.lock),		\
+	}
 
 /**
  * @brief Register a metric with a Prometheus collector
@@ -73,7 +77,7 @@ int prometheus_collector_register_metric(struct prometheus_collector *collector,
  * @param name Name of the metric to retrieve.
  * @return Pointer to the retrieved metric, or NULL if not found.
  */
-const void *prometheus_collector_get_metric(const struct prometheus_collector *collector,
+const void *prometheus_collector_get_metric(struct prometheus_collector *collector,
 					    const char *name);
 
 /**

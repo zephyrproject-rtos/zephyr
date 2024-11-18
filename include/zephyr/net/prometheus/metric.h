@@ -17,6 +17,7 @@
  */
 
 #include <zephyr/sys/iterable_sections.h>
+#include <zephyr/sys/slist.h>
 #include <zephyr/net/prometheus/label.h>
 
 /**
@@ -46,6 +47,8 @@ enum prometheus_metric_type {
  * to control the metric access and usage.
  */
 struct prometheus_metric {
+	/** Slist metric list node */
+	sys_snode_t node;
 	/** Type of the Prometheus metric. */
 	enum prometheus_metric_type type;
 	/** Name of the Prometheus metric. */
