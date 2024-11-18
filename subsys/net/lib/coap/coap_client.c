@@ -793,7 +793,7 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 			return 0;
 		}
 		internal_req->pending.t0 = k_uptime_get();
-		internal_req->pending.timeout = internal_req->pending.t0 + COAP_SEPARATE_TIMEOUT;
+		internal_req->pending.timeout = COAP_SEPARATE_TIMEOUT;
 		internal_req->pending.retries = 0;
 		return 1;
 	}
