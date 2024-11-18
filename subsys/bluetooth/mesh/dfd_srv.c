@@ -925,12 +925,34 @@ const struct bt_mesh_blob_srv_cb _bt_mesh_dfd_srv_blob_cb = {
 
 static int dfd_srv_init(const struct bt_mesh_model *mod)
 {
+	int err;
 	struct bt_mesh_dfd_srv *srv = mod->rt->user_data;
 
 	srv->mod = mod;
 
-	if (IS_ENABLED(CONFIG_BT_MESH_MODEL_EXTENSIONS)) {
-		bt_mesh_model_extend(mod, srv->upload.blob.mod);
+	const struct bt_mesh_model *blob_srv =
+		bt_mesh_model_find(bt_mesh_model_elem(mod), BT_MESH_MODEL_ID_BLOB_SRV);
+
+	if (blob_srv == NULL) {
+		LOG_ERR("Missing BLOB Srv.");
+		return -EINVAL;
+	}
+
+	/** BLOB client also shall be present on the same element, but it is already checked by
+	 * initiation of dfu client which we check here.
+	 */
+	const struct bt_mesh_model *dfu_cli =
+		bt_mesh_model_find(bt_mesh_model_elem(mod), BT_MESH_MODEL_ID_DFU_CLI);
+
+	if (dfu_cli == NULL) {
+		LOG_ERR("Missing FU Cli.");
+		return -EINVAL;
+	}
+
+	err = bt_mesh_model_extend(mod, srv->upload.blob.mod);
+
+	if (err) {
+		return err;
 	}
 
 	return 0;
