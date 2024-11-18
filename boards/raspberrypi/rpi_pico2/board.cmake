@@ -5,7 +5,11 @@ if("${RPI_PICO_DEBUG_ADAPTER}" STREQUAL "")
 endif()
 
 board_runner_args(openocd --cmd-pre-init "source [find interface/${RPI_PICO_DEBUG_ADAPTER}.cfg]")
-board_runner_args(openocd --cmd-pre-init "source [find target/rp2350.cfg]")
+if(CONFIG_ARM)
+  board_runner_args(openocd --cmd-pre-init "source [find target/rp2350.cfg]")
+else()
+  board_runner_args(openocd --cmd-pre-init "source [find target/rp2350-riscv.cfg]")
+endif()
 
 # The adapter speed is expected to be set by interface configuration.
 # The Raspberry Pi's OpenOCD fork doesn't, so match their documentation at
