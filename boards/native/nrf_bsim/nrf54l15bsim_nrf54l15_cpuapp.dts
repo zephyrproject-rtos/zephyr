@@ -8,6 +8,7 @@
 
 #include <mem.h>
 #include <arm/nordic/nrf54l15_cpuapp.dtsi>
+#include <../boards/nordic/nrf54l15dk/nrf54l15dk_nrf54l_05_10_15-pinctrl.dtsi>
 
 / {
 	model = "Nordic NRF54L15 BSIM NRF54L15 Application";
@@ -15,6 +16,7 @@
 
 	chosen {
 		zephyr,entropy = &rng;
+		zephyr,bt-c2h-uart = &uart20;
 		zephyr,flash-controller = &rram_controller;
 		zephyr,flash = &cpuapp_rram;
 	};
@@ -28,19 +30,15 @@
 		/delete-node/ memory@2002f000;
 		peripheral@50000000 {
 			/delete-node/ spi@4a000;
-			/delete-node/ uart@4a000;
 			/delete-node/ vpr@4c000;
 			/delete-node/ mailbox@0;
 			/delete-node/ interrupt-controller@f0000000;
 			/delete-node/ i2c@c6000;
 			/delete-node/ spi@c6000;
-			/delete-node/ uart@c6000;
 			/delete-node/ i2c@c7000;
 			/delete-node/ spi@c7000;
-			/delete-node/ uart@c7000;
 			/delete-node/ i2c@c8000;
 			/delete-node/ spi@c8000;
-			/delete-node/ uart@c8000;
 			/delete-node/ pwm@d2000;
 			/delete-node/ pwm@d3000;
 			/delete-node/ pwm@d4000;
@@ -51,7 +49,6 @@
 			/delete-node/ qdec@e1000;
 			/delete-node/ i2c@104000;
 			/delete-node/ spi@104000;
-			/delete-node/ uart@104000;
 			/delete-node/ watchdog@108000;
 			/delete-node/ watchdog@109000;
 		};
@@ -86,6 +83,20 @@
 	};
 };
 
+&uart20 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart20_default>;
+	pinctrl-1 = <&uart20_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&uart30 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart30_default>;
+	pinctrl-1 = <&uart30_sleep>;
+	pinctrl-names = "default", "sleep";
+};
 
 &gpio0 {
 	status = "okay";

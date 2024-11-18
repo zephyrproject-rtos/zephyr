@@ -13,5 +13,4 @@ supported:
 testing:
   ignore_tags:
     - modem
-    - uart
     - bsim_skip_CI
