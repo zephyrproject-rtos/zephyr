@@ -201,6 +201,8 @@ __ramfunc void clock_init(void)
 
 	/* Initialize T3 clocks and t3pll_mci_48_60m_irc configured to 48.3MHz */
 	CLOCK_InitT3RefClk(kCLOCK_T3MciIrc48m);
+	/* Enable FFRO */
+	CLOCK_EnableClock(kCLOCK_T3PllMciIrcClk);
 	/* Enable T3 256M clock and SFRO */
 	CLOCK_EnableClock(kCLOCK_T3PllMci256mClk);
 
@@ -221,8 +223,16 @@ __ramfunc void clock_init(void)
 	/* Enable tcpu_mci_clk 260MHz. Keep tcpu_mci_flexspi_clk gated. */
 	CLOCK_EnableClock(kCLOCK_TcpuMciClk);
 
+	/* tddr_mci_flexspi_clk 320MHz */
+	CLOCK_InitTddrRefClk(kCLOCK_TddrFlexspiDiv10);
+	CLOCK_EnableClock(kCLOCK_TddrMciFlexspiClk); /* 320MHz */
+
 	/* Enable AUX0 PLL to 260 MHz */
 	CLOCK_SetClkDiv(kCLOCK_DivAux0PllClk, 1U);
+
+	/* Init AVPLL and enable both channels */
+	CLOCK_InitAvPll(&avpll_config);
+	CLOCK_SetClkDiv(kCLOCK_DivAudioPllClk, 1U);
 
 	/* Configure MainPll to 260MHz, then let CM33 run on Main PLL. */
 	CLOCK_SetClkDiv(kCLOCK_DivSysCpuAhbClk, 1U);
@@ -326,17 +336,7 @@ __ramfunc void clock_init(void)
 #endif
 #endif /* CONFIG_SPI */
 
-#if (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dmic0)) && CONFIG_AUDIO_DMIC_MCUX) || CONFIG_I2S
-	const clock_avpll_config_t avpll_config = {
-		.ch1Freq = kCLOCK_AvPllChFreq12p288m,
-		.ch2Freq = kCLOCK_AvPllChFreq64m,
-		.enableCali = true
-	};
-
-	/* Init AVPLL and enable both channels */
-	CLOCK_InitAvPll(&avpll_config);
-	CLOCK_SetClkDiv(kCLOCK_DivAudioPllClk, 1U);
-
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dmic0)) && CONFIG_AUDIO_DMIC_MCUX
 	/* Clock DMIC from Audio PLL. PLL output is sourced from AVPLL
 	 * channel 1, which is clocked at 12.288 MHz. We can divide this
 	 * by 4 to achieve the desired DMIC bit clk of 3.072 MHz
