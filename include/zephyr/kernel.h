@@ -542,8 +542,6 @@ __syscall int k_thread_join(struct k_thread *thread, k_timeout_t timeout);
  * This routine puts the current thread to sleep for @a duration,
  * specified as a k_timeout_t object.
  *
- * @note if @a timeout is set to K_FOREVER then the thread is suspended.
- *
  * @param timeout Desired duration of sleep.
  *
  * @return Zero if the requested time has elapsed or if the thread was woken up
@@ -1024,10 +1022,11 @@ int k_thread_cpu_pin(k_tid_t thread, int cpu);
  * This routine prevents the kernel scheduler from making @a thread
  * the current thread. All other internal operations on @a thread are
  * still performed; for example, kernel objects it is waiting on are
- * still handed to it.  Note that any existing timeouts
- * (e.g. k_sleep(), or a timeout argument to k_sem_take() et. al.)
- * will be canceled.  On resume, the thread will begin running
- * immediately and return from the blocked call.
+ * still handed to it. Thread suspension does not impact any timeout
+ * upon which the thread may be waiting (such as a timeout from a call
+ * to k_sem_take() or k_sleep()). Thus if the timeout expires while the
+ * thread is suspended, it is still suspended until k_thread_resume()
+ * is called.
  *
  * When the target thread is active on another CPU, the caller will block until
  * the target thread is halted (suspended or aborted).  But if the caller is in
@@ -1043,8 +1042,9 @@ __syscall void k_thread_suspend(k_tid_t thread);
 /**
  * @brief Resume a suspended thread.
  *
- * This routine allows the kernel scheduler to make @a thread the current
- * thread, when it is next eligible for that role.
+ * This routine reverses the thread suspension from k_thread_suspend()
+ * and allows the kernel scheduler to make @a thread the current thread
+ * when it is next eligible for that role.
  *
  * If @a thread is not currently suspended, the routine has no effect.
  *
@@ -1060,14 +1060,14 @@ __syscall void k_thread_resume(k_tid_t thread);
  * on it.
  *
  * @note This is a legacy API for compatibility.  Modern Zephyr
- * threads are initialized in the "suspended" state and no not need
+ * threads are initialized in the "sleeping" state and do not need
  * special handling for "start".
  *
  * @param thread thread to start
  */
 static inline void k_thread_start(k_tid_t thread)
 {
-	k_thread_resume(thread);
+	k_wakeup(thread);
 }
 
 /**
