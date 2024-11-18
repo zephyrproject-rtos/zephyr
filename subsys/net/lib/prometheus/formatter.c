@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024 Mustafa Abdullah Kus, Sparse Technology
+ * Copyright (c) 2024 Nordic Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -45,21 +46,22 @@ static int write_metric_to_buffer(char *buffer, size_t buffer_size, const char *
 	return 0;
 }
 
-int prometheus_format_exposition(const struct prometheus_collector *collector, char *buffer,
+int prometheus_format_exposition(struct prometheus_collector *collector, char *buffer,
 				 size_t buffer_size)
 {
-	int ret;
+	struct prometheus_metric *metric;
+	struct prometheus_metric *tmp;
 	int written = 0;
+	int ret = 0;
 
 	if (collector == NULL || buffer == NULL || buffer_size == 0) {
 		LOG_ERR("Invalid arguments");
 		return -EINVAL;
 	}
 
-	/* iterate through each metric in the collector */
-	for (size_t ind = 0; ind < collector->size; ind++) {
+	k_mutex_lock(&collector->lock, K_FOREVER);
 
-		const struct prometheus_metric *metric = collector->metric[ind];
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&collector->metrics, metric, tmp, node) {
 
 		/* write HELP line if available */
 		if (metric->description[0] != '\0') {
@@ -68,7 +70,7 @@ int prometheus_format_exposition(const struct prometheus_collector *collector, c
 						     metric->description);
 			if (ret < 0) {
 				LOG_ERR("Error writing to buffer");
-				return ret;
+				goto out;
 			}
 		}
 
@@ -79,40 +81,49 @@ int prometheus_format_exposition(const struct prometheus_collector *collector, c
 						     "# TYPE %s counter\n", metric->name);
 			if (ret < 0) {
 				LOG_ERR("Error writing counter");
-				return ret;
+				goto out;
 			}
+
 			break;
+
 		case PROMETHEUS_GAUGE:
 			ret = write_metric_to_buffer(buffer + written, buffer_size - written,
 						     "# TYPE %s gauge\n", metric->name);
 			if (ret < 0) {
 				LOG_ERR("Error writing gauge");
-				return ret;
+				goto out;
 			}
+
 			break;
+
 		case PROMETHEUS_HISTOGRAM:
 			ret = write_metric_to_buffer(buffer + written, buffer_size - written,
 						     "# TYPE %s histogram\n", metric->name);
 			if (ret < 0) {
 				LOG_ERR("Error writing histogram");
-				return ret;
+				goto out;
 			}
+
 			break;
+
 		case PROMETHEUS_SUMMARY:
 			ret = write_metric_to_buffer(buffer + written, buffer_size - written,
 						     "# TYPE %s summary\n", metric->name);
 			if (ret < 0) {
 				LOG_ERR("Error writing summary");
-				return ret;
+				goto out;
 			}
+
 			break;
+
 		default:
 			ret = write_metric_to_buffer(buffer + written, buffer_size - written,
 						     "# TYPE %s untyped\n", metric->name);
 			if (ret < 0) {
 				LOG_ERR("Error writing untyped");
-				return ret;
+				goto out;
 			}
+
 			break;
 		}
 
@@ -132,11 +143,13 @@ int prometheus_format_exposition(const struct prometheus_collector *collector, c
 					metric->labels[i].value, counter->value);
 				if (ret < 0) {
 					LOG_ERR("Error writing counter");
-					return ret;
+					goto out;
 				}
 			}
+
 			break;
 		}
+
 		case PROMETHEUS_GAUGE: {
 			const struct prometheus_gauge *gauge =
 				(const struct prometheus_gauge *)prometheus_collector_get_metric(
@@ -151,11 +164,13 @@ int prometheus_format_exposition(const struct prometheus_collector *collector, c
 					metric->labels[i].value, gauge->value);
 				if (ret < 0) {
 					LOG_ERR("Error writing gauge");
-					return ret;
+					goto out;
 				}
 			}
+
 			break;
 		}
+
 		case PROMETHEUS_HISTOGRAM: {
 			const struct prometheus_histogram *histogram =
 				(const struct prometheus_histogram *)
@@ -171,7 +186,7 @@ int prometheus_format_exposition(const struct prometheus_collector *collector, c
 					histogram->buckets[i].count);
 				if (ret < 0) {
 					LOG_ERR("Error writing histogram");
-					return ret;
+					goto out;
 				}
 			}
 
@@ -179,7 +194,7 @@ int prometheus_format_exposition(const struct prometheus_collector *collector, c
 						     "%s_sum %f\n", metric->name, histogram->sum);
 			if (ret < 0) {
 				LOG_ERR("Error writing histogram");
-				return ret;
+				goto out;
 			}
 
 			ret = write_metric_to_buffer(buffer + written, buffer_size - written,
@@ -187,10 +202,12 @@ int prometheus_format_exposition(const struct prometheus_collector *collector, c
 						     histogram->count);
 			if (ret < 0) {
 				LOG_ERR("Error writing histogram");
-				return ret;
+				goto out;
 			}
+
 			break;
 		}
+
 		case PROMETHEUS_SUMMARY: {
 			const struct prometheus_summary *summary =
 				(const struct prometheus_summary *)prometheus_collector_get_metric(
@@ -206,7 +223,7 @@ int prometheus_format_exposition(const struct prometheus_collector *collector, c
 					summary->quantiles[i].value);
 				if (ret < 0) {
 					LOG_ERR("Error writing summary");
-					return ret;
+					goto out;
 				}
 			}
 
@@ -214,7 +231,7 @@ int prometheus_format_exposition(const struct prometheus_collector *collector, c
 						     "%s_sum %f\n", metric->name, summary->sum);
 			if (ret < 0) {
 				LOG_ERR("Error writing summary");
-				return ret;
+				goto out;
 			}
 
 			ret = write_metric_to_buffer(buffer + written, buffer_size - written,
@@ -222,16 +239,22 @@ int prometheus_format_exposition(const struct prometheus_collector *collector, c
 						     summary->count);
 			if (ret < 0) {
 				LOG_ERR("Error writing summary");
-				return ret;
+				goto out;
 			}
+
 			break;
 		}
+
 		default:
 			/* should not happen */
 			LOG_ERR("Unsupported metric type %d", metric->type);
-			return -EINVAL;
+			ret = -EINVAL;
+			goto out;
 		}
 	}
 
-	return 0;
+out:
+	k_mutex_unlock(&collector->lock);
+
+	return ret;
 }
