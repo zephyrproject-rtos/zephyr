@@ -1209,4 +1209,8 @@ config NRFX_PRS_BOX_4
 
 endmenu
 
+config NRFX_RESERVED_RESOURCES_HEADER
+	string
+	default "nrfx_config_reserved_resources.h"
+
 endmenu # "nrfx drivers"
