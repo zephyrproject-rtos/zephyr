@@ -38,6 +38,10 @@ Security
 Boards
 ******
 
+* Shield ``mikroe_weather_click`` now supports both I2C and SPI interfaces. Users should select
+  the required configuration by using ``mikroe_weather_click_i2c`` or ``mikroe_weather_click_spi``
+  instead of ``mikroe_weather_click``.
+
 Devicetree
 **********
 
