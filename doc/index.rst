@@ -54,6 +54,20 @@ documentation for a specific version of Zephyr.
 	   <p>Explore samples and demos for various boards</p>
        </li>
        <li class="grid-item">
+	   <a href="build/index.html">
+               <span class="grid-icon fa fa-cubes"></span>
+	       <h2>Build and Configuration Systems</h2>
+	   </a>
+	   <p>Explore CMake, Kconfig, devicetrees and more</p>
+       </li>
+       <li class="grid-item">
+	   <a href="kernel/index.html">
+               <span class="grid-icon fa fa-microchip"></span>
+	       <h2>Kernel</h2>
+	   </a>
+	   <p>Learn about kernel services, driver models and more</p>
+       </li>
+       <li class="grid-item">
 	   <a href="hardware/index.html">
                <span class="grid-icon fa fa-sign-in"></span>
 	       <h2>Hardware Support</h2>
