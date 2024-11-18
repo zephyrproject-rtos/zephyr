@@ -103,11 +103,11 @@ config LV_Z_FLUSH_THREAD_STACK_SIZE
 	help
 	  Stack size for LVGL flush thread, which will call display_write
 
-config LV_Z_FLUSH_THREAD_PRIO
+config LV_Z_FLUSH_THREAD_PRIORITY
 	int "LVGL flush thread priority"
-	default 0
+	default -1
 	help
-	  Cooperative priority of LVGL flush thread.
+	  Priority of LVGL flush thread.
 
 endif # LV_Z_FLUSH_THREAD
 

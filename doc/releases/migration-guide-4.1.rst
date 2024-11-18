@@ -36,6 +36,10 @@ Trusted Firmware-M
 LVGL
 ====
 
+* The config option :kconfig:option:`CONFIG_LV_Z_FLUSH_THREAD_PRIO` is now called
+  :kconfig:option:`CONFIG_LV_Z_FLUSH_THREAD_PRIORITY` and its value is now interpreted as an
+  absolute priority instead of a cooperative one.
+
 Device Drivers and Devicetree
 *****************************
 
