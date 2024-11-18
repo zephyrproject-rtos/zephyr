@@ -488,8 +488,9 @@ void intel_adsp_hda_dma_isr(void)
 			enabled_chs &= ~(BIT(j));
 
 			if (!intel_adsp_hda_is_buffer_interrupt_enabled(cfg->base,
-									cfg->regblock_size, j))
+									cfg->regblock_size, j)) {
 				continue;
+			}
 
 			if (intel_adsp_hda_check_buffer_interrupt(cfg->base,
 								  cfg->regblock_size, j)) {
