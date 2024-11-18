@@ -76,7 +76,6 @@ class GdbStub_RISC_V(GdbStub):
         self.registers = dict()
 
         self.registers[RegNum.RA] = tu[0]
-        self.registers[RegNum.TP] = tu[1]
         self.registers[RegNum.T0] = tu[2]
         self.registers[RegNum.T1] = tu[3]
         self.registers[RegNum.T2] = tu[4]
