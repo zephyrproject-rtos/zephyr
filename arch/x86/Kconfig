@@ -417,15 +417,6 @@ config X86_DISABLE_SSBD
 	  Even if enabled, will have no effect on CPUs that do not
 	  require this feature.
 
-config DISABLE_SSBD
-	bool "Disable Speculative Store Bypass [DEPRECATED]"
-	depends on USERSPACE
-	default y if !X86_NO_SPECTRE_V4
-	select X86_DISABLE_SSBD
-	select DEPRECATED
-	help
-	  Deprecated. Use CONFIG_X86_DISABLE_SSBD instead.
-
 config X86_ENABLE_EXTENDED_IBRS
 	bool "Extended IBRS"
 	depends on USERSPACE
@@ -434,15 +425,6 @@ config X86_ENABLE_EXTENDED_IBRS
 	  This option will enable the Extended Indirect Branch Restricted
 	  Speculation 'always on' feature. This mitigates Indirect Branch
 	  Control vulnerabilities (aka Spectre V2).
-
-config ENABLE_EXTENDED_IBRS
-	bool "Extended IBRS [DEPRECATED]"
-	depends on USERSPACE
-	default y if !X86_NO_SPECTRE_V2
-	select X86_ENABLE_EXTENDED_IBRS
-	select DEPRECATED
-	help
-	  Deprecated. Use CONFIG_X86_ENABLE_EXTENDED_IBRS instead.
 
 config X86_BOUNDS_CHECK_BYPASS_MITIGATION
 	bool

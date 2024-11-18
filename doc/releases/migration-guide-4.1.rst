@@ -124,3 +124,9 @@ Architectures
   * For the native_sim target :kconfig:option:`CONFIG_NATIVE_SIM_NATIVE_POSIX_COMPAT` has been
     switched to ``n`` by default, and this option has been deprecated. Ensure your code does not
     use the :kconfig:option:`CONFIG_BOARD_NATIVE_POSIX` option anymore (:github:`81232`).
+
+* x86
+
+  * Kconfigs ``CONFIG_DISABLE_SSBD`` and ``CONFIG_ENABLE_EXTENDED_IBRS`` have been deprecated
+    since v3.7. These were removed.  Use :kconfig:option:`CONFIG_X86_DISABLE_SSBD` and
+    :kconfig:option:`CONFIG_X86_ENABLE_EXTENDED_IBRS` instead.
