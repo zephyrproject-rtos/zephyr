@@ -78,4 +78,21 @@
 			renesas,analog-enable;
 		};
 	};
+
+	sdhc0_default: sdhc0_default {
+		group1 {
+			psels = <RA_PSEL(RA_PSEL_SDHI, 3, 6)>, /* SDCD */
+			<RA_PSEL(RA_PSEL_SDHI, 3, 7)>, /* SDCMD */
+			<RA_PSEL(RA_PSEL_SDHI, 3, 4)>, /* SDDATA0 */
+			<RA_PSEL(RA_PSEL_SDHI, 3, 3)>, /* SDDATA1 */
+			<RA_PSEL(RA_PSEL_SDHI, 3, 2)>, /* SDDATA2 */
+			<RA_PSEL(RA_PSEL_SDHI, 3, 1)>, /* SDDATA3 */
+			<RA_PSEL(RA_PSEL_SDHI, 3, 5)>; /* SDWP */
+			drive-strength = "high";
+		};
+		group2 {
+			psels = <RA_PSEL(RA_PSEL_SDHI, 3, 8)>; /* SDCLK */
+			drive-strength = "highspeed-high";
+		};
+	};
 };
