@@ -1,0 +1,36 @@
+/*
+ * Copyright (c) 2024 Andrew Featherstone
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "skeleton.dtsi"
+
+/ {
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		interrupt-parent = <&intc>;
+		ranges;
+
+		intc: interrupt-controller  {
+			compatible = "raspberrypi,hazard3-intc";
+			interrupt-controller;
+			#interrupt-cells = <2>;
+		};
+	};
+};
+
+/* Model in the device tree a Hazard3 core being 'plugged' into each
+ * 'socket' within the SoC. Within the datasheet these are core 0 and core 1.
+ */
+&cpu0 {
+	compatible = "riscv";
+	riscv,isa = "rv32imac_zicsr_zifencei";
+};
+
+&cpu1 {
+	compatible = "riscv";
+	riscv,isa = "rv32imac_zicsr_zifencei";
+};
