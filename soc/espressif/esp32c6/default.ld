@@ -25,7 +25,8 @@ user_sram_org = HPSRAM_START;
 user_sram_size = (user_sram_end - user_sram_org);
 
 /* Aliases */
-#define CACHED_REGION      mmap0_0_seg
+#define FLASH_CODE_REGION  irom0_0_seg
+#define RODATA_REGION      drom0_0_seg
 #define RAMABLE_REGION     sram0_0_seg
 #define ROMABLE_REGION     FLASH
 
@@ -38,7 +39,7 @@ user_sram_size = (user_sram_end - user_sram_org);
 /* Flash segments (rodata and text) should be mapped in the virtual address spaces.
  * Executing directly from LMA is not possible. */
 #undef GROUP_ROM_LINK_IN
-#define GROUP_ROM_LINK_IN(vregion, lregion) > CACHED_REGION AT > lregion
+#define GROUP_ROM_LINK_IN(vregion, lregion) > RODATA_REGION AT > lregion
 
 /* Make sure new sections have consistent alignment between input and output sections */
 #undef SECTION_DATA_PROLOGUE
@@ -65,7 +66,8 @@ MEMORY
 
   sram0_0_seg(RW): org = user_sram_org, len = user_sram_size
 
-  mmap0_0_seg (R): org = CACHED_ORG, len = CACHED_SIZE
+  irom0_0_seg(RX): org = IROM_SEG_ORG, len = IROM_SEG_LEN
+  drom0_0_seg(R):  org = DROM_SEG_ORG, len = DROM_SEG_LEN
 
   lp_ram_seg(RW):    org = LPSRAM_IRAM_START,
                      len = 0x2000 - RESERVE_RTC_MEM
@@ -770,7 +772,7 @@ SECTIONS
     __rom_region_end = ABSOLUTE(.);
     _etext = .;
 
-  } GROUP_DATA_LINK_IN(CACHED_REGION, ROMABLE_REGION)
+  } GROUP_DATA_LINK_IN(FLASH_CODE_REGION, ROMABLE_REGION)
 
   /* --- END OF .flash.text --- */
 
@@ -781,12 +783,6 @@ SECTIONS
   {
     . = ALIGN(CACHE_ALIGN);
   } GROUP_LINK_IN(ROMABLE_REGION)
-
-  .flash.align_rodata (NOLOAD) :
-  {
-    /* Subsequent segment lma and vma align */
-    . = ALIGN(CACHE_ALIGN);
-  } GROUP_LINK_IN(CACHED_REGION)
 
   /* Symbols used during the application memory mapping */
   _image_drom_start = LOADADDR(.flash.rodata);
@@ -844,7 +840,7 @@ SECTIONS
     *(.rodata_wlog)
     *(.rodata_wlog*)
     . = ALIGN(4);
-  } GROUP_DATA_LINK_IN(CACHED_REGION, ROMABLE_REGION)
+  } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
 
   #include <zephyr/linker/cplusplus-rom.ld>
   #include <zephyr/linker/common-rom/common-rom-init.ld>
@@ -864,7 +860,7 @@ SECTIONS
     . = ALIGN(4);
     _rodata_reserved_end = ABSOLUTE(.);
     _image_rodata_end = ABSOLUTE(.);
-  } GROUP_DATA_LINK_IN(CACHED_REGION, ROMABLE_REGION)
+  } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
 
   /* --- END OF .rodata --- */
 
