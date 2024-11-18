@@ -1,0 +1,105 @@
+# Copyright (c) 2024 Texas Instruments Incorporated
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if TI_MCUMGR_BT_OTA_DFU
+	config MCUMGR_TRANSPORT_NETBUF_SIZE
+		default 550
+	config BT_L2CAP_TX_MTU
+		default 65
+endif # TI_MCUMGR_BT_OTA_DFU
+
+if BT
+	config ZEPHYR
+		bool
+		default y
+
+	config CRYPTO
+		default y
+
+	config ENTROPY_GENERATOR
+		default y
+
+	config BT_BUF_EVT_RX_SIZE
+		default 255
+
+	config BT_BUF_ACL_RX_SIZE
+		default 255
+
+	config BT_BUF_ACL_TX_SIZE
+		default 255
+
+	config BT_BUF_CMD_TX_SIZE
+		default 255
+
+	config BT_COMPANY_ID
+		default 0x000D
+
+	choice BT_RECV_CONTEXT
+		bool
+		default BT_RECV_WORKQ_BT if BT_MESH
+		default BT_RECV_WORKQ_SYS
+	endchoice
+endif # BT
+
+if BT_MESH
+	config BT_HOST_CRYPTO_PRNG
+		default n
+
+	config BT_CTLR_CRYPTO
+		default y
+
+	config BT_HOST_CRYPTO
+		default y
+
+if BT_MESH_FRIEND
+	config BT_MESH_FRIEND_ADV_LATENCY
+		default 7
+endif # BT_MESH_FRIEND
+
+if BT_MESH_LOW_POWER
+	config BT_MESH_LPN_SCAN_LATENCY
+		default 3
+
+	config BT_MESH_GATT_PROXY
+		default n
+
+	config BT_MESH_PRIV_BEACONS
+		default n
+
+	config BT_MESH_BEACON_ENABLED
+		default n
+
+	config BT_MESH_RELAY
+		default n
+
+	config BT_MESH_FRIEND
+		default n
+
+endif # BT_MESH_LOW_POWER
+endif # BT_MESH
+
+# Choose non-hardware based RNG
+choice RNG_GENERATOR_CHOICE
+	default XOSHIRO_RANDOM_GENERATOR
+endchoice
+
+# Use CTR DRBG since the entropy driver is not designed to provide continuous RNG
+choice CSPRNG_GENERATOR_CHOICE
+	default CTR_DRBG_CSPRNG_GENERATOR
+endchoice
+
+# By default mbedTLS uses RAM for AES tables, which are too big
+if MBEDTLS
+	config MBEDTLS_AES_ROM_TABLES
+		default y
+	config TEST_EXTRA_STACK_SIZE
+	default 1024
+endif # MBEDTLS
+
+# Object tracking for semaphores is currently not supported
+config OBJ_CORE_SEM
+		default n
+
+config TRACING_SEMAPHORE
+		default n

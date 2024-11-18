@@ -1,0 +1,8 @@
+name: ti-spi-nor-secondary-app
+boards:
+  /lp_em_cc2340r5[3]?/cc2340r5[3]?/:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: boards/lp_em_cc2340r5x_spi_nor_secondary.overlay
+  /lp_em_cc2745r10_q1/cc27(45|55)r10(_q1)?/:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: boards/lp_em_cc27xx_spi_nor_secondary.overlay
