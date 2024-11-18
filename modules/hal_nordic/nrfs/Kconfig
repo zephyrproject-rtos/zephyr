@@ -19,6 +19,9 @@ config NRFS_HAS_DIAG_SERVICE
 config NRFS_HAS_DVFS_SERVICE
 	bool
 
+config NRFS_HAS_GDFS_SERVICE
+	bool
+
 config NRFS_HAS_GDPWR_SERVICE
 	bool
 
@@ -117,6 +120,11 @@ config NRFS_CLOCK_SERVICE_ENABLED
 config NRFS_GDPWR_SERVICE_ENABLED
 	bool "Global domain power request service"
 	depends on NRFS_HAS_GDPWR_SERVICE
+	default y
+
+config NRFS_GDFS_SERVICE_ENABLED
+	bool "Global domain frequeny scaling service"
+	depends on NRFS_HAS_GDFS_SERVICE
 	default y
 
 endmenu
