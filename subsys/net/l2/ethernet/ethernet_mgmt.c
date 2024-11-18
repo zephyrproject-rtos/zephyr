@@ -90,7 +90,7 @@ static int ethernet_set_config(uint32_t mgmt_request,
 		config.full_duplex = params->full_duplex;
 		type = ETHERNET_CONFIG_TYPE_DUPLEX;
 	} else if (mgmt_request == NET_REQUEST_ETHERNET_SET_MAC_ADDRESS) {
-		if (net_if_is_up(iface)) {
+		if (net_if_is_admin_up(iface)) {
 			return -EACCES;
 		}
 
