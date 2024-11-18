@@ -176,8 +176,12 @@ static void validate_stream_codec_cfg(const struct bt_bap_stream *stream)
 
 static void started_cb(struct bt_bap_stream *stream)
 {
+	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
 	struct bt_bap_ep_info info;
 	int err;
+
+	test_stream->seq_num = 0U;
+	test_stream->tx_cnt = 0U;
 
 	err = bt_bap_ep_get_info(stream->ep, &info);
 	if (err != 0) {
