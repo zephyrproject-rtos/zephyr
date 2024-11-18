@@ -213,7 +213,7 @@ worth noting that the Zephyr source is not the same as the Zephyr SDK and
 they have different versions, which need to be compatible with each other.
 If you are following this guide, that's taken care of. But if you need a
 specific version of either in future, make sure the other one is compatible
-by checking against 
+by checking against
 https://github.com/zephyrproject-rtos/sdk-ng/wiki/Zephyr-SDK-Version-Compatibility-Matrix
 
 .. _Python virtual environment: https://docs.python.org/3/library/venv.html
