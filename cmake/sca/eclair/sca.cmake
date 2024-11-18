@@ -8,6 +8,9 @@ message(STATUS "Found eclair_env: ${ECLAIR_ENV}")
 find_program(ECLAIR_REPORT eclair_report REQUIRED)
 message(STATUS "Found eclair_report: ${ECLAIR_REPORT}")
 
+# Get eclair specific option file variables, also needed if invoked with sysbuild
+zephyr_get(ECLAIR_OPTIONS_FILE)
+
 if(ECLAIR_OPTIONS_FILE)
   if(IS_ABSOLUTE ${ECLAIR_OPTIONS_FILE})
     set(ECLAIR_OPTIONS ${ECLAIR_OPTIONS_FILE})
