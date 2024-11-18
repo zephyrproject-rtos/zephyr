@@ -903,3 +903,35 @@ ZTEST(coap_client, test_cancel_match)
 	zassert_ok(k_sem_take(&sem2, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
 
 }
+
+ZTEST(coap_client, test_non_confirmable)
+{
+	struct coap_client_request req = {
+		.method = COAP_METHOD_GET,
+		.confirmable = false,
+		.path = test_path,
+		.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN,
+		.cb = coap_callback,
+		.payload = short_payload,
+		.len = strlen(short_payload),
+		.user_data = &sem1
+	};
+
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_no_reply;
+	set_socket_events(client.fd, ZSOCK_POLLOUT);
+
+	for (int i = 0; i < CONFIG_COAP_CLIENT_MAX_REQUESTS; i++) {
+		zassert_ok(coap_client_req(&client, 0, &dst_address, &req, NULL));
+	}
+	zassert_equal(coap_client_req(&client, 0, &dst_address, &req, NULL), -EAGAIN, "");
+
+	k_sleep(K_MSEC(MORE_THAN_LONG_EXCHANGE_LIFETIME_MS));
+
+	for (int i = 0; i < CONFIG_COAP_CLIENT_MAX_REQUESTS; i++) {
+		zassert_ok(coap_client_req(&client, 0, &dst_address, &req, NULL));
+	}
+	zassert_equal(coap_client_req(&client, 0, &dst_address, &req, NULL), -EAGAIN, "");
+
+	/* No callbacks from non-confirmable */
+	zassert_not_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+}
