@@ -60,6 +60,8 @@
 #endif
 
 /* Cached memory */
-#define CACHE_ALIGN        CONFIG_MMU_PAGE_SIZE
-#define CACHED_ORG         0x42000000
-#define CACHED_SIZE        FLASH_SIZE
+#define CACHE_ALIGN  CONFIG_MMU_PAGE_SIZE
+#define IROM_SEG_ORG 0x42000000
+#define IROM_SEG_LEN FLASH_SIZE
+#define DROM_SEG_ORG 0x42800000
+#define DROM_SEG_LEN FLASH_SIZE
