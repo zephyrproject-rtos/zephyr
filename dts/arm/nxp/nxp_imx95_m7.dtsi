@@ -91,6 +91,7 @@
 			reg = <0x424e0000 0x88>;
 			interrupts = <73 0>;
 			clocks = <&scmi_clk IMX95_CLK_BUSWAKEUP>;
+			prescaler = <16>;
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
@@ -100,6 +101,7 @@
 			reg = <0x424f0000 0x88>;
 			interrupts = <74 0>;
 			clocks = <&scmi_clk IMX95_CLK_TPM4>;
+			prescaler = <16>;
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
@@ -109,6 +111,7 @@
 			reg = <0x42500000 0x88>;
 			interrupts = <75 0>;
 			clocks = <&scmi_clk IMX95_CLK_TPM5>;
+			prescaler = <16>;
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
@@ -118,6 +121,7 @@
 			reg = <0x42510000 0x88>;
 			interrupts = <76 0>;
 			clocks = <&scmi_clk IMX95_CLK_TPM6>;
+			prescaler = <16>;
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
@@ -254,6 +258,7 @@
 			reg = <0x44310000 0x88>;
 			interrupts = <29 0>;
 			clocks = <&scmi_clk IMX95_CLK_BUSAON>;
+			prescaler = <16>;
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
@@ -263,6 +268,7 @@
 			reg = <0x44320000 0x88>;
 			interrupts = <30 0>;
 			clocks = <&scmi_clk IMX95_CLK_TPM2>;
+			prescaler = <16>;
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
