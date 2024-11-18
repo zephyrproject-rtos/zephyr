@@ -26,7 +26,7 @@ PROMETHEUS_COUNTER_DEFINE(test_counter_m, &test_counter_metric);
  * @details The test shall increment the counter value by 1 and check if the
  * value is incremented correctly.
  */
-ZTEST(test_counter, test_prometheus_counter_inc)
+ZTEST(test_counter, test_prometheus_counter_01_inc)
 {
 	int ret;
 
@@ -41,6 +41,26 @@ ZTEST(test_counter, test_prometheus_counter_inc)
 	zassert_ok(ret, "Error incrementing counter");
 
 	zassert_equal(test_counter_m.value, 2, "Counter value is not 2");
+}
+
+/**
+ * @brief Test prometheus_counter_add
+ * @details The test shall increment the counter value by arbitrary value
+ * and check if the value is incremented correctly.
+ */
+ZTEST(test_counter, test_prometheus_counter_02_add)
+{
+	int ret;
+
+	ret = prometheus_counter_add(&test_counter_m, 2);
+	zassert_ok(ret, "Error adding counter");
+
+	zassert_equal(test_counter_m.value, 4, "Counter value is not 4");
+
+	ret = prometheus_counter_add(&test_counter_m, 0);
+	zassert_ok(ret, "Error adding counter");
+
+	zassert_equal(test_counter_m.value, 4, "Counter value is not 4");
 }
 
 ZTEST_SUITE(test_counter, NULL, NULL, NULL, NULL, NULL);
