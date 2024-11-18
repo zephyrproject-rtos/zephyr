@@ -118,8 +118,13 @@ The below features are currently supported on Zephyr OS for EK-RA8M1 board:
 +-----------+------------+----------------------+
 | ADC       | on-chip    | adc                  |
 +-----------+------------+----------------------+
+| SDHC      | on-chip    | sdhc                 |
++-----------+------------+----------------------+
 
-**Note:** For using Ethernet module on EK-RA8M1, remove jumper J61 to enable Ethernet B
+**Note:**
+
+- For using Ethernet module on EK-RA8M1, remove jumper J61 to enable Ethernet B
+- For using SDHC driver on EK-RA8M1, remove jumper J61 to use with channel 0
 
 Other hardware features are currently not supported by the port.
 
