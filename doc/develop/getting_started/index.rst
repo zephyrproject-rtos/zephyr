@@ -265,12 +265,12 @@ additional Python dependencies in a `Python virtual environment`_.
 
             west zephyr-export
 
-      #. Zephyr's ``scripts/requirements.txt`` file declares additional Python
-         dependencies. Install them with ``pip``.
+      #. The Zephyr west extension command, ``west packages`` can be used to install Python
+         dependencies.
 
          .. code-block:: bash
 
-            pip install -r ~/zephyrproject/zephyr/scripts/requirements.txt
+            west packages pip --install
 
    .. group-tab:: macOS
 
@@ -317,12 +317,12 @@ additional Python dependencies in a `Python virtual environment`_.
 
             west zephyr-export
 
-      #. Zephyr's ``scripts/requirements.txt`` file declares additional Python
-         dependencies. Install them with ``pip``.
+      #. The Zephyr west extension command, ``west packages`` can be used to install Python
+         dependencies.
 
          .. code-block:: bash
 
-            pip install -r ~/zephyrproject/zephyr/scripts/requirements.txt
+            west packages pip --install
 
    .. group-tab:: Windows
 
@@ -372,12 +372,12 @@ additional Python dependencies in a `Python virtual environment`_.
 
             west zephyr-export
 
-      #. Zephyr's ``scripts\requirements.txt`` file declares additional Python
-         dependencies. Install them with ``pip``.
+      #. The Zephyr west extension command, ``west packages`` can be used to install Python
+         dependencies.
 
          .. code-block:: bat
 
-            pip install -r %HOMEPATH%\zephyrproject\zephyr\scripts\requirements.txt
+            west packages pip --install
 
 Install the Zephyr SDK
 **********************
