@@ -1,9 +1,9 @@
 sample:
-  name: Console over USB
+  name: Console over CDC ACM serial
 tests:
   sample.usb.console:
     depends_on:
-      - usb_device
+      - usbd
     tags: usb
     harness: console
     harness_config:
