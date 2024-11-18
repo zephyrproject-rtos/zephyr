@@ -208,7 +208,13 @@ Get Zephyr and install Python dependencies
 
 Next, clone Zephyr and its :ref:`modules <modules>` into a new :ref:`west
 <west>` workspace named :file:`zephyrproject`. You'll also install Zephyr's
-additional Python dependencies in a `Python virtual environment`_.
+additional Python dependencies in a `Python virtual environment`_. It's
+worth noting that the Zephyr source is not the same as the Zephyr SDK and
+they have different versions, which need to be compatible with each other.
+If you are following this guide, that's taken care of. But if you need a
+specific version of either in future, make sure the other one is compatible
+by checking against 
+https://github.com/zephyrproject-rtos/sdk-ng/wiki/Zephyr-SDK-Version-Compatibility-Matrix
 
 .. _Python virtual environment: https://docs.python.org/3/library/venv.html
 
@@ -390,6 +396,8 @@ Zephyr applications.
 For Linux, it also contains additional host tools, such as custom QEMU and OpenOCD builds
 that are used to emulate, flash and debug Zephyr applications.
 
+Note that the SDK is different from the Zephyr source and has separate version control.
+See the "Get Zephyr" step above for version compatibility implications.
 
 .. tabs::
 
