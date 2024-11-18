@@ -91,6 +91,8 @@ if (CONFIG_UART_NRFX_UARTE)
   if (CONFIG_UART_NRFX_UARTE_LEGACY_SHIM)
     zephyr_library_sources(uart_nrfx_uarte.c)
   else()
+    message(DEPRECATION
+	    "Do not set CONFIG_UART_NRFX_UARTE_LEGACY_SHIM=n as this option is deprecated.")
     zephyr_library_sources(uart_nrfx_uarte2.c)
   endif()
 endif()
