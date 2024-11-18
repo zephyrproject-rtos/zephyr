@@ -1,11 +1,13 @@
 /*
  * Copyright 2023 NXP
+ * Copyright (c) 2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/audio.h>
@@ -27,6 +29,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 
+#include "bap_stream_rx.h"
 #include "bstests.h"
 #include "common.h"
 
@@ -41,13 +44,12 @@ static K_SEM_DEFINE(sem_pa_synced, 0U, 1U);
 static K_SEM_DEFINE(sem_base_received, 0U, 1U);
 static K_SEM_DEFINE(sem_syncable, 0U, 1U);
 static K_SEM_DEFINE(sem_pa_sync_lost, 0U, 1U);
-static K_SEM_DEFINE(sem_data_received, 0U, 1U);
 
 static struct bt_bap_broadcast_sink *broadcast_sink;
 static struct bt_le_per_adv_sync *bcast_pa_sync;
 
-static struct bt_bap_stream streams[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
-static struct bt_bap_stream *streams_p[ARRAY_SIZE(streams)];
+static struct audio_test_stream test_streams[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
+static struct bt_bap_stream *streams_p[ARRAY_SIZE(test_streams)];
 
 static const struct bt_audio_codec_cap codec = BT_AUDIO_CODEC_CAP_LC3(
 	BT_AUDIO_CODEC_CAP_FREQ_16KHZ | BT_AUDIO_CODEC_CAP_FREQ_24KHZ |
@@ -59,7 +61,7 @@ static const struct bt_audio_codec_cap codec = BT_AUDIO_CODEC_CAP_LC3(
  * we have. We add an additional 1 since the bis indexes start from 1 and not
  * 0.
  */
-static const uint32_t bis_index_mask = BIT_MASK(ARRAY_SIZE(streams) + 1U);
+static const uint32_t bis_index_mask = BIT_MASK(ARRAY_SIZE(test_streams) + 1U);
 static uint32_t bis_index_bitfield;
 static uint32_t broadcast_id;
 
@@ -93,25 +95,17 @@ static struct bt_bap_broadcast_sink_cb broadcast_sink_cbs = {
 
 static void started_cb(struct bt_bap_stream *stream)
 {
+	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
+
+	memset(&test_stream->last_info, 0, sizeof(test_stream->last_info));
+	test_stream->rx_cnt = 0U;
+
 	printk("Stream %p started\n", stream);
 }
 
 static void stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 {
 	printk("Stream %p stopped with reason 0x%02X\n", stream, reason);
-}
-
-static void recv_cb(struct bt_bap_stream *stream,
-		    const struct bt_iso_recv_info *info,
-		    struct net_buf *buf)
-{
-	static uint32_t recv_cnt;
-
-	recv_cnt++;
-	if (recv_cnt >= MIN_SEND_COUNT) {
-		k_sem_give(&sem_data_received);
-	}
-	printk("Receiving ISO packets\n");
 }
 
 static bool pa_decode_base(struct bt_data *data, void *user_data)
@@ -164,7 +158,7 @@ static void broadcast_pa_terminated(struct bt_le_per_adv_sync *sync,
 static struct bt_bap_stream_ops stream_ops = {
 	.started = started_cb,
 	.stopped = stopped_cb,
-	.recv = recv_cb
+	.recv = bap_stream_rx_recv_cb,
 };
 
 static struct bt_le_per_adv_sync_cb broadcast_sync_cb = {
@@ -181,7 +175,7 @@ static int reset(void)
 	k_sem_reset(&sem_base_received);
 	k_sem_reset(&sem_syncable);
 	k_sem_reset(&sem_pa_sync_lost);
-	k_sem_reset(&sem_data_received);
+	UNSET_FLAG(flag_audio_received);
 
 	broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
 	bis_index_bitfield = 0U;
@@ -224,12 +218,9 @@ static int init(void)
 		return err;
 	}
 
-	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
-		streams[i].ops = &stream_ops;
-	}
-
-	for (size_t i = 0U; i < ARRAY_SIZE(streams_p); i++) {
-		streams_p[i] = &streams[i];
+	for (size_t i = 0U; i < ARRAY_SIZE(test_streams); i++) {
+		streams_p[i] = bap_stream_from_audio_test_stream(&test_streams[i]);
+		bt_bap_stream_cb_register(streams_p[i], &stream_ops);
 	}
 
 	return 0;
@@ -389,7 +380,7 @@ static void test_main(void)
 
 		/* Wait for data */
 		printk("Waiting for data\n");
-		k_sem_take(&sem_data_received, SEM_TIMEOUT);
+		WAIT_FOR_FLAG(flag_audio_received);
 
 		printk("Sending signal to broadcaster to stop\n");
 		backchannel_sync_send_all(); /* let the broadcast source know it can stop */
