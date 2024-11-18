@@ -75,7 +75,9 @@ config MPU6050_SAMPLE_RATE_DIVIDER
 	help
 	  Sensor Data Sample Rate Divider.
 	  Sensor data Sample Rate = 8000Hz / (1 + Sample Rate Divider).
-	  While using I2C recommended Sensor Data Sample Rate is 1600Hz.
+	  While using I2C minimal Data Sample Rate Divider is 4, which results in 
+	  1600MHz Sensor Data Sample Rate. Sample Rates higher than this are not 
+	  recommended while using I2C.
 	  Valid values: X = [4, 255].
 
 endif # MPU6050
