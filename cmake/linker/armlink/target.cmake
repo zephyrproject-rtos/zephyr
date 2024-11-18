@@ -44,12 +44,14 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
            ${STEERING_FILE}
            ${STEERING_C}
     COMMAND ${CMAKE_COMMAND}
+      -C ${DEVICE_API_LINKER_SECTIONS_CMAKE}
       -C ${cmake_linker_script_settings}
       -DPASS="${linker_pass_define}"
       ${STEERING_FILE_ARG}
       ${STEERING_C_ARG}
       -DOUT_FILE=${CMAKE_CURRENT_BINARY_DIR}/${linker_script_gen}
       -P ${ZEPHYR_BASE}/cmake/linker/armlink/scatter_script.cmake
+    DEPENDS ${DEVICE_API_LD_TARGET}
   )
 
   if("LINKER_ZEPHYR_FINAL" IN_LIST linker_pass_define_list)

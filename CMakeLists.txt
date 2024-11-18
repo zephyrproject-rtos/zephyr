@@ -889,21 +889,30 @@ set(
   ${CMAKE_CURRENT_BINARY_DIR}/include/generated/device-api-sections.ld
   )
 
+set(DEVICE_API_LINKER_SECTIONS_CMAKE
+    ${CMAKE_CURRENT_BINARY_DIR}/include/generated/device-api-sections.cmake
+)
+
 add_custom_command(
-  OUTPUT ${DEVICE_API_LD_SECTIONS}
+  OUTPUT ${DEVICE_API_LD_SECTIONS} ${DEVICE_API_LINKER_SECTIONS_CMAKE}
   COMMAND
     ${PYTHON_EXECUTABLE}
     ${ZEPHYR_BASE}/scripts/build/gen_iter_sections.py
+    --alignment ${CONFIG_LINKER_ITERABLE_SUBALIGN}
     --input ${struct_tags_json}
     --tag __subsystem
     --ld-output ${DEVICE_API_LD_SECTIONS}
+    --cmake-output ${DEVICE_API_LINKER_SECTIONS_CMAKE}
   DEPENDS
     ${ZEPHYR_BASE}/scripts/build/gen_iter_sections.py
     ${struct_tags_json}
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   )
 
-add_custom_target(${DEVICE_API_LD_TARGET} DEPENDS ${DEVICE_API_LD_SECTIONS})
+add_custom_target(${DEVICE_API_LD_TARGET}
+                  DEPENDS ${DEVICE_API_LD_SECTIONS}
+                          ${DEVICE_API_LINKER_SECTIONS_CMAKE}
+)
 
 # Add a pseudo-target that is up-to-date when all generated headers
 # are up-to-date.
