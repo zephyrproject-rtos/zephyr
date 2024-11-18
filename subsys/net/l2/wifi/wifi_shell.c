@@ -1933,7 +1933,6 @@ static int cmd_wifi_listen_interval(const struct shell *sh, size_t argc, char *a
 		    WIFI_PS_PARAM_LISTEN_INTERVAL_RANGE_INVALID) {
 			PR_WARNING("Setting listen interval failed. Reason :%s\n",
 				   wifi_ps_get_config_err_code_str(params.fail_reason));
-			PR_WARNING("Hardware support valid range : 3 - 65535\n");
 		} else {
 			PR_WARNING("Setting listen interval failed. Reason :%s\n",
 				   wifi_ps_get_config_err_code_str(params.fail_reason));
