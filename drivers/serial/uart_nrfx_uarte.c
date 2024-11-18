@@ -353,16 +353,16 @@ static void uarte_nrfx_isr_int(const void *arg)
 	if (txstopped && (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME) || LOW_POWER_ENABLED(config))) {
 		unsigned int key = irq_lock();
 
-		if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME) &&
-		    (data->flags & UARTE_FLAG_POLL_OUT)) {
-			data->flags &= ~UARTE_FLAG_POLL_OUT;
-			pm_device_runtime_put(dev);
+		if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+			if (data->flags & UARTE_FLAG_POLL_OUT) {
+				data->flags &= ~UARTE_FLAG_POLL_OUT;
+				pm_device_runtime_put_async(dev, K_NO_WAIT);
+			}
 		} else {
 			nrf_uarte_disable(uarte);
 		}
-
 #ifdef UARTE_INTERRUPT_DRIVEN
-		if (!data->int_driven || data->int_driven->fifo_fill_lock == 0)
+		if (!data->int_driven)
 #endif
 		{
 			nrf_uarte_int_disable(uarte, NRF_UARTE_INT_TXSTOPPED_MASK);
@@ -378,15 +378,19 @@ static void uarte_nrfx_isr_int(const void *arg)
 
 	if (txstopped) {
 		data->int_driven->fifo_fill_lock = 0;
-		if (data->int_driven->disable_tx_irq) {
-			nrf_uarte_int_disable(uarte,
-					      NRF_UARTE_INT_TXSTOPPED_MASK);
-			data->int_driven->disable_tx_irq = false;
-			return;
+		if (!data->int_driven->tx_irq_enabled) {
+
+			nrf_uarte_int_disable(uarte, NRF_UARTE_INT_TXSTOPPED_MASK);
 		}
 
+		if (data->int_driven->disable_tx_irq) {
+			data->int_driven->disable_tx_irq = false;
+			if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+				pm_device_runtime_put_async(dev, K_NO_WAIT);
+			}
+			return;
+		}
 	}
-
 
 	if (nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_ERROR)) {
 		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_ERROR);
@@ -1900,6 +1904,11 @@ static void uarte_nrfx_irq_tx_enable(const struct device *dev)
 {
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 	struct uarte_nrfx_data *data = dev->data;
+
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		pm_device_runtime_get(dev);
+	}
+
 	unsigned int key = irq_lock();
 
 	data->int_driven->disable_tx_irq = false;
