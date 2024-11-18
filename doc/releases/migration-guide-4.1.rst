@@ -238,6 +238,11 @@ GPIO
 * Renamed the device tree property ``off_val`` to ``off-val``.
 * Renamed the device tree property ``on_val`` to ``on-val``.
 * Renamed the ``compatible`` from ``ti,ads114s0x-gpio`` to :dtcompatible:`ti,ads1x4s0x-gpio`.
+* To support the RP2350B, which has many pins, the RaspberryPi-GPIO configuration has
+  been changed. The previous role of :dtcompatible:`raspberrypi,rpi-gpio` has been migrated to
+  :dtcompatible:`raspberrypi,rpi-gpio-port`, and :dtcompatible:`raspberrypi,rpi-gpio` is
+  now left as a placeholder and mapper.
+  The labels have also been changed along, so no changes are necessary for regular use.
 
 HWSPINLOCK
 ==========
