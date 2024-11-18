@@ -294,10 +294,13 @@
 			status = "disabled";
 		};
 
-		flash-controller@407e0000 {
+		flash: flash-controller@407e0000 {
+			compatible = "renesas,ra-flash-lp-controller";
 			reg = <0x407e0000 0x10000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			interrupts = <30 1>;
+			interrupt-names = "frdyi";
 		};
 
 		agt0: agt@40084000 {
