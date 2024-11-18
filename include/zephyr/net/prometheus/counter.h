@@ -82,6 +82,17 @@ static inline int prometheus_counter_inc(struct prometheus_counter *counter)
 	return prometheus_counter_add(counter, 1ULL);
 }
 
+/**
+ * @brief Set the counter value to specific value.
+ * The new value must be higher than the current value. This function can be used
+ * if we cannot add individual increments to the counter but need to periodically
+ * update the counter value. This function will add the difference between the
+ * new value and the old value to the counter.
+ * @param counter Pointer to the counter metric to increment.
+ * @param value New value of the counter.
+ * @return 0 on success, negative errno on error.
+ */
+int prometheus_counter_set(struct prometheus_counter *counter, uint64_t value);
 
 /**
  * @}
