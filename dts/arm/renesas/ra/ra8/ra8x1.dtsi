@@ -717,6 +717,34 @@
 			#port-irq-cells = <0>;
 			status = "disabled";
 		};
+
+		sdhc0: sdhc@40252000 {
+			compatible = "renesas,ra-sdhc";
+			channel = <0>;
+			bus-width = <4>;
+			sd-support;
+			mmc-support;
+			card-detect;
+			max-bus-freq = <DT_FREQ_M(52)>;
+			clocks = <&pclkb MSTPC 12>;
+			reg = <0x40252000 0x0400>;
+			interrupt-names = "accs", "card", "dma-req";
+			interrupts = <57 12>, <58 12>, <59 12>;
+			status = "disabled";
+		};
+
+		sdhc1: sdhc@40252400 {
+			compatible = "renesas,ra-sdhc";
+			channel = <1>;
+			bus-width = <4>;
+			sd-support;
+			mmc-support;
+			card-detect;
+			max-bus-freq = <DT_FREQ_M(52)>;
+			clocks = <&pclkb MSTPC 11>;
+			reg = <0x40252400 0x0400>;
+			status = "disabled";
+		};
 	};
 };
 
