@@ -8,7 +8,9 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/misc/lorem_ipsum.h>
 #include <zephyr/ztest.h>
-
+#if defined(CONFIG_NATIVE_SIM_SLOWDOWN_TO_REAL_TIME)
+#include "timer_model.h"
+#endif
 #include "stubs.h"
 
 LOG_MODULE_REGISTER(coap_client_test, LOG_LEVEL_DBG);
@@ -16,12 +18,12 @@ LOG_MODULE_REGISTER(coap_client_test, LOG_LEVEL_DBG);
 DEFINE_FFF_GLOBALS;
 #define FFF_FAKES_LIST(FAKE)
 
-#define LONG_ACK_TIMEOUT_MS                 200
+#define LONG_ACK_TIMEOUT_MS                 (2 * CONFIG_COAP_INIT_ACK_TIMEOUT_MS)
 #define MORE_THAN_EXCHANGE_LIFETIME_MS      4 * CONFIG_COAP_INIT_ACK_TIMEOUT_MS
 #define MORE_THAN_LONG_EXCHANGE_LIFETIME_MS 4 * LONG_ACK_TIMEOUT_MS
 #define MORE_THAN_ACK_TIMEOUT_MS                                                                   \
 	(CONFIG_COAP_INIT_ACK_TIMEOUT_MS + CONFIG_COAP_INIT_ACK_TIMEOUT_MS / 2)
-#define COAP_SEPARATE_TIMEOUT (6000 * 3) /* Needs a safety marging, tests run faster than -rt */
+#define COAP_SEPARATE_TIMEOUT (6000 * 2) /* Needs a safety marging, tests run faster than -rt */
 #define VALID_MESSAGE_ID BIT(31)
 #define TOKEN_OFFSET          4
 
@@ -425,6 +427,13 @@ extern void net_coap_init(void);
 
 static void *suite_setup(void)
 {
+#if defined(CONFIG_NATIVE_SIM_SLOWDOWN_TO_REAL_TIME)
+	/* It is enough that some slow-down is happening on sleeps, it does not have to be
+	 * real time
+	 */
+	hwtimer_set_rt_ratio(100.0);
+	k_sleep(K_MSEC(1));
+#endif
 	net_coap_init();
 	zassert_ok(coap_client_init(&client, NULL));
 	zassert_ok(coap_client_init(&client2, NULL));
