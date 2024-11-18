@@ -30,7 +30,7 @@
  *
  * @return 0 on success, negative errno on error.
  */
-int prometheus_format_exposition(const struct prometheus_collector *collector, char *buffer,
+int prometheus_format_exposition(struct prometheus_collector *collector, char *buffer,
 				 size_t buffer_size);
 
 /**

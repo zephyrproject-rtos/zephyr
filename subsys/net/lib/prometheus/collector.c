@@ -31,15 +31,16 @@ int prometheus_collector_register_metric(struct prometheus_collector *collector,
 
 	LOG_DBG("Registering metric type=%d", metric->type);
 
-	for (int i = 0; i < CONFIG_PROMETHEUS_MAX_METRICS; i++) {
-		if (!collector->metric[i]) {
-			collector->metric[i] = metric;
-			collector->size++;
-			return 0;
-		}
-	}
+	k_mutex_lock(&collector->lock, K_FOREVER);
 
-	return -ENOMEM;
+	/* Node cannot be added to list twice */
+	(void)sys_slist_find_and_remove(&collector->metrics, &metric->node);
+
+	sys_slist_prepend(&collector->metrics, &metric->node);
+
+	k_mutex_unlock(&collector->lock);
+
+	return 0;
 }
 
 const struct prometheus_counter *prometheus_get_counter_metric(const char *name)
@@ -106,24 +107,35 @@ const struct prometheus_summary *prometheus_get_summary_metric(const char *name)
 	return NULL;
 }
 
-const void *prometheus_collector_get_metric(const struct prometheus_collector *collector,
+const void *prometheus_collector_get_metric(struct prometheus_collector *collector,
 					    const char *name)
 {
 	bool is_found = false;
 	enum prometheus_metric_type type = 0;
+	struct prometheus_metric *metric;
+	struct prometheus_metric *tmp;
 
-	for (size_t i = 0; i < collector->size; ++i) {
-		if (strncmp(collector->metric[i]->name, name, sizeof(collector->metric[i]->name)) ==
-		    0) {
-			type = collector->metric[i]->type;
+	if (collector == NULL || name == NULL) {
+		return NULL;
+	}
+
+	k_mutex_lock(&collector->lock, K_FOREVER);
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&collector->metrics, metric, tmp, node) {
+
+		if (strncmp(metric->name, name, sizeof(metric->name)) == 0) {
+			type = metric->type;
 			is_found = true;
 
-			LOG_DBG("metric found: %s", collector->metric[i]->name);
+			LOG_DBG("metric found: %s", metric->name);
+			break;
 		}
 	}
 
+	k_mutex_unlock(&collector->lock);
+
 	if (!is_found) {
-		LOG_ERR("Metric not found");
+		LOG_ERR("Metric %s not found", name);
 		return NULL;
 	}
 
