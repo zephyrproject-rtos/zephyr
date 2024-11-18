@@ -325,15 +325,6 @@ config BT_MESH_PB_GATT_CLIENT
 
 endif # BT_CONN
 
-config BT_MESH_PROV_DEVICE
-	bool "[DEPRECATED] Provisioning device role support"
-	select DEPRECATED
-	select BT_MESH_PROVISIONEE
-	help
-	  Enable this option to allow the device to be provisioned into a mesh network.
-	  The option is marked as deprecated and will be replaced by BT_MESH_PROVISIONEE
-	  option.
-
 config BT_MESH_PROVISIONEE
 	bool "Provisionee role support"
 	depends on BT_MESH_PB_ADV || BT_MESH_PB_GATT

@@ -2,7 +2,7 @@
 # Copyright (c) 2023 David Ullmann
 
 identifier: cy8ckit_062s4
-name: CY8CKIT-062S4 PSoC 62S4
+name: CY8CKIT-062S4 PSOC 62S4
 type: mcu
 arch: arm
 ram: 128

@@ -68,7 +68,9 @@ static void counter_smartbond_pm_policy_state_lock_get(const struct device *dev)
 static void counter_smartbond_pm_policy_state_lock_put(const struct device *dev)
 {
 	pm_device_runtime_put(dev);
-	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	if (pm_policy_state_lock_is_active(PM_STATE_STANDBY, PM_ALL_SUBSTATES)) {
+		pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	}
 }
 
 /*

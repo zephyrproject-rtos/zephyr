@@ -2,7 +2,7 @@
 # an affiliate of Cypress Semiconductor Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-# Infineon PSoC6 (legacy) series MCUs
+# Infineon PSOC 6 (legacy) series MCUs
 config SOC_CY8C6247_M0
 	bool
 	select SOC_SERIES_PSOC6_62

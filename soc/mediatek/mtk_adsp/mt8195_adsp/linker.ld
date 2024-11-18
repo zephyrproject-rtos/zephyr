@@ -136,4 +136,7 @@ SECTIONS {
  */
 #include <zephyr/linker/intlist.ld>
 
+#ifdef CONFIG_LLEXT
+#include <zephyr/linker/llext-sections.ld>
+#endif
 } /* SECTIONS */

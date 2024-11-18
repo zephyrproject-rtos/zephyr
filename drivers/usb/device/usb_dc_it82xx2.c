@@ -1322,7 +1322,7 @@ int usb_dc_ep_write(uint8_t ep, const uint8_t *buf,
 {
 	struct usb_it82xx2_regs *const usb_regs = it82xx2_get_usb_regs();
 	struct it82xx2_usb_ep_fifo_regs *ff_regs = usb_regs->fifo_regs;
-	unsigned int key;
+	unsigned int key = 0;
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 	uint8_t ep_fifo = (ep_idx > 0) ? (ep_fifo_res[ep_idx % FIFO_NUM]) : 0;
 
@@ -1369,7 +1369,7 @@ int usb_dc_ep_write(uint8_t ep, const uint8_t *buf,
 	}
 
 	it82xx2_usb_set_ep_ctrl(ep_idx, EP_READY_ENABLE, true);
-	if (ep_idx != 0) {
+	if (ep_idx != EP0) {
 		irq_unlock(key);
 	}
 

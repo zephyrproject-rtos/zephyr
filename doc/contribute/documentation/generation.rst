@@ -255,7 +255,7 @@ To enable this mode, set the following option when invoking cmake::
 
 or invoke make with the following target::
 
-   cd ~/zephyr
+   cd ~/zephyr/doc
 
    # To generate HTML output without detailed Kconfig
    make html-fast

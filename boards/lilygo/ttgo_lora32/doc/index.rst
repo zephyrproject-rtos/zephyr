@@ -1,7 +1,4 @@
-.. _ttgo_lora32:
-
-Lilygo TTGO LoRa32
-##################
+.. zephyr:board:: ttgo_lora32
 
 Overview
 ********
@@ -17,13 +14,6 @@ It's available in two versions supporting two different frequency ranges and fea
 - TF card slot
 
 Some of the ESP32 I/O pins are accessible on the board's pin headers.
-
-.. figure:: img/ttgo_lora32.webp
-        :align: center
-        :alt: Lilygo TTGO LoRa32 module
-        :width: 400 px
-
-        Lilygo TTGO LoRa32 module
 
 Functional Description
 **********************

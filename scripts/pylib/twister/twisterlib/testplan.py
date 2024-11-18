@@ -439,7 +439,6 @@ class TestPlan:
                 raise Exception(f"Duplicate platform identifier {platform.name} found")
             if not platform.twister:
                 return
-            logger.debug(f"Adding platform {platform.name} with aliases {platform.aliases}")
             self.platforms.append(platform)
 
         for board in known_boards.values():

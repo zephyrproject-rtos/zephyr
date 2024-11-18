@@ -263,7 +263,7 @@ prj.conf
    :language: text
    :linenos:
 
-src/main.c (see :ref:`best practices <main_c_bp>`)
+src/main.c
 
 .. literalinclude:: ../../../samples/subsys/testsuite/integration/src/main.c
    :language: c

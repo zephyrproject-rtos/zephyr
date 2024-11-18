@@ -268,7 +268,7 @@ struct zbus_channel_observation {
 /* clang-format off */
 
 /**
- * @brief Add a static channel observervation.
+ * @brief Add a static channel observation.
  *
  * This macro initializes a channel observation by receiving the
  * channel and the observer.
@@ -290,7 +290,7 @@ struct zbus_channel_observation {
 /* clang-format on */
 
 /**
- * @brief Add a static channel observervation.
+ * @brief Add a static channel observation.
  *
  * This macro initializes a channel observation by receiving the
  * channel and the observer.

@@ -7,7 +7,7 @@ set(hal_dir         ${ZEPHYR_HAL_INFINEON_MODULE_DIR}/mtb-hal-cat1)
 set(hal_cat1a_dir   ${hal_dir}/COMPONENT_CAT1A)
 set(hal_cat1b_dir   ${hal_dir}/COMPONENT_CAT1B)
 
-# PSoC 6 family defines
+# PSOC 6 family defines
 zephyr_compile_definitions_ifdef(CONFIG_SOC_FAMILY_INFINEON_CAT1A COMPONENT_CAT1A)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_FAMILY_INFINEON_CAT1B COMPONENT_CAT1B)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_FAMILY_INFINEON_CAT1 COMPONENT_CAT1)

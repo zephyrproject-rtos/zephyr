@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config UART_PSOC6
-	bool "PSoC-6 MCU SCB serial driver"
+	bool "PSOC 6 MCU SCB serial driver"
 	default y
 	depends on DT_HAS_CYPRESS_PSOC6_UART_ENABLED
 	select SERIAL_HAS_DRIVER
@@ -13,4 +13,4 @@ config UART_PSOC6
 	select USE_INFINEON_UART
 	select PINCTRL
 	help
-	  This option enables the SCB[UART] driver for PSoC-6 SoC family.
+	  This option enables the SCB[UART] driver for PSOC 6 SoC family.

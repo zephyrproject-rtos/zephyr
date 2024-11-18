@@ -37,7 +37,7 @@ hardware components:
 Supported Features
 ==================
 
-The Zephyr blackpill_f401ce board configuration supports the following
+The Zephyr blackpill_f401cc board configuration supports the following
 hardware features:
 
 +------------+------------+-------------------------------------+
@@ -65,7 +65,7 @@ hardware features:
 +------------+------------+-------------------------------------+
 
 The default configuration can be found in
-:zephyr_file:`boards/weact/blackpill_f401ce/blackpill_f401ce_defconfig`
+:zephyr_file:`boards/weact/blackpill_f401cc/blackpill_f401cc_defconfig`
 
 Pin Mapping
 ===========

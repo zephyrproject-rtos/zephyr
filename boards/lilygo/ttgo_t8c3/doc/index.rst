@@ -1,7 +1,4 @@
-.. _ttgo_t8c3:
-
-Lilygo TTGO T8-C3
-#################
+.. zephyr:board:: ttgo_t8c3
 
 Overview
 ********
@@ -16,12 +13,6 @@ It features the following integrated components:
 - USB-C connector for power and communication
 - JST GH 2-pin battery connector
 - LED
-
-.. figure:: img/ttgo_t8c3.webp
-   :align: center
-   :alt: TTGO T8-C3
-
-   Lilygo TTGO T8-C3
 
 Functional Description
 **********************

@@ -258,7 +258,7 @@ static ALWAYS_INLINE void z_arm_set_fault_sp(const struct arch_esf *esf, uint32_
 	}
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 
-#ifndef CONFIG_ARMV8_M_MAINLINE
+#if !(defined(CONFIG_ARMV8_M_MAINLINE) || defined(CONFIG_ARMV8_M_BASELINE))
 	if ((esf->basic.xpsr & SCB_CCR_STKALIGN_Msk) == SCB_CCR_STKALIGN_Msk) {
 		/* Adjust stack alignment after PSR bit[9] detected */
 		z_arm_coredump_fault_sp |= 0x4;

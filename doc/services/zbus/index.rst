@@ -92,7 +92,7 @@ The above figure illustrates some states, from (a) to (d), for channels from ``C
 ``Subscriber 1``, and the observations. The last two are in orange to indicate they are dynamically
 allocated (runtime observation). (a) shows that the observer and all observations are enabled. (b)
 shows the observer is disabled, so the event dispatcher will ignore it. (c) shows the observer
-enabled. However, there is one static observervation disabled. The event dispatcher will only stop
+enabled. However, there is one static observation disabled. The event dispatcher will only stop
 sending notifications from channel ``C3``.  In (d), the event dispatcher will stop sending
 notifications from channels ``C3`` and ``C5`` to ``Subscriber 1``.
 

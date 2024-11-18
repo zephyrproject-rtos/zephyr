@@ -584,19 +584,19 @@ class Reporting:
             if float(handler_time) > 0:
                 run += 1
 
-        if results.total and results.total != results.skipped_configs:
-            pass_rate = (float(results.passed) / float(results.total - results.skipped_configs))
+        if results.total and results.total != results.filtered_configs:
+            pass_rate = (float(results.passed) / float(results.total - results.filtered_configs))
         else:
             pass_rate = 0
 
         logger.info(
             f"{TwisterStatus.get_color(TwisterStatus.FAIL) if failed else TwisterStatus.get_color(TwisterStatus.PASS)}{results.passed}"
-            f" of {results.total - results.skipped_configs}{Fore.RESET}"
+            f" of {results.total - results.filtered_configs}{Fore.RESET}"
             f" executed test configurations passed ({pass_rate:.2%}),"
             f" {f'{TwisterStatus.get_color(TwisterStatus.NOTRUN)}{results.notrun}{Fore.RESET}' if results.notrun else f'{results.notrun}'} built (not run),"
             f" {f'{TwisterStatus.get_color(TwisterStatus.FAIL)}{results.failed}{Fore.RESET}' if results.failed else f'{results.failed}'} failed,"
             f" {f'{TwisterStatus.get_color(TwisterStatus.ERROR)}{results.error}{Fore.RESET}' if results.error else f'{results.error}'} errored,"
-            f" with {f'{Fore.YELLOW}{self.plan.warnings}{Fore.RESET}' if self.plan.warnings else 'no'} warnings"
+            f" with {f'{Fore.YELLOW}{self.plan.warnings + results.warnings}{Fore.RESET}' if (self.plan.warnings + results.warnings) else 'no'} warnings"
             f" in {duration:.2f} seconds."
         )
 
@@ -615,16 +615,15 @@ class Reporting:
                 f'{", " + str(results.none_cases) + " without a status" if results.none_cases else ""}'
                 f' on {len(self.filtered_platforms)} out of total {total_platforms} platforms ({platform_rate:02.2f}%).'
             )
-            if results.skipped_cases or results.filtered_cases or results.notrun_cases:
+            if results.skipped_cases or results.notrun_cases:
                 logger.info(
-                    f'{results.skipped_cases + results.filtered_cases} selected test cases not executed:' \
+                    f'{results.skipped_cases + results.notrun_cases} selected test cases not executed:' \
                     f'{" " + str(results.skipped_cases) + " skipped" if results.skipped_cases else ""}' \
-                    f'{(", " if results.skipped_cases else " ") + str(results.filtered_cases) + " filtered" if results.filtered_cases else ""}' \
-                    f'{(", " if results.skipped_cases or results.filtered_cases else " ") + str(results.notrun_cases) + " not run (built only)" if results.notrun_cases else ""}' \
+                    f'{(", " if results.skipped_cases else " ") + str(results.notrun_cases) + " not run (built only)" if results.notrun_cases else ""}' \
                     f'.'
                 )
 
-        built_only = results.total - run - results.skipped_configs
+        built_only = results.total - run - results.filtered_configs
         logger.info(f"{Fore.GREEN}{run}{Fore.RESET} test configurations executed on platforms, \
 {TwisterStatus.get_color(TwisterStatus.NOTRUN)}{built_only}{Fore.RESET} test configurations were only built.")
 

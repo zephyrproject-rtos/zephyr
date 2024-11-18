@@ -57,6 +57,7 @@ except ImportError:
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
 import expr_parser
+from anytree import Node, RenderTree
 
 
 class ExecutionCounter(object):
@@ -67,11 +68,11 @@ class ExecutionCounter(object):
 
         total = yaml test scenarios * applicable platforms
         done := instances that reached report_out stage of the pipeline
-        done = skipped_configs + passed + failed + error
-        completed = done - skipped_filter
-        skipped_configs = skipped_runtime + skipped_filter
+        done = filtered_configs + passed + failed + error
+        completed = done - filtered_static
+        filtered_configs = filtered_runtime + filtered_static
 
-        pass rate = passed / (total - skipped_configs)
+        pass rate = passed / (total - filtered_configs)
         case pass rate = passed_cases / (cases - filtered_cases - skipped_cases)
         '''
         # instances that go through the pipeline
@@ -91,19 +92,20 @@ class ExecutionCounter(object):
 
         # static filter + runtime filter + build skipped
         # updated by update_counting_before_pipeline() and report_out()
-        self._skipped_configs = Value('i', 0)
+        self._filtered_configs = Value('i', 0)
 
         # cmake filter + build skipped
         # updated by report_out()
-        self._skipped_runtime = Value('i', 0)
+        self._filtered_runtime = Value('i', 0)
 
         # static filtered at yaml parsing time
         # updated by update_counting_before_pipeline()
-        self._skipped_filter = Value('i', 0)
+        self._filtered_static = Value('i', 0)
 
         # updated by report_out() in pipeline
         self._error = Value('i', 0)
         self._failed = Value('i', 0)
+        self._skipped = Value('i', 0)
 
         # initialized to number of test instances
         self._total = Value('i', total)
@@ -129,6 +131,7 @@ class ExecutionCounter(object):
         self._none_cases = Value('i', 0)
         self._started_cases = Value('i', 0)
 
+        self._warnings = Value('i', 0)
 
         self.lock = Lock()
 
@@ -143,48 +146,57 @@ class ExecutionCounter(object):
         return length
 
     def summary(self):
-        executed_cases = self.cases - self.skipped_cases - self.filtered_cases
-        completed_configs = self.done - self.skipped_filter
+        selected_cases = self.cases - self.filtered_cases
+        selected_configs = self.done - self.filtered_static - self.filtered_runtime
 
-        # Find alignment length for aesthetic printing
-        suites_n_length = self._find_number_length(self.total if self.total > self.done else self.done)
-        processed_suites_n_length = self._find_number_length(self.done)
-        completed_suites_n_length = self._find_number_length(completed_configs)
-        skipped_suites_n_length = self._find_number_length(self.skipped_configs)
-        total_cases_n_length = self._find_number_length(self.cases)
-        executed_cases_n_length = self._find_number_length(executed_cases)
 
-        print("--------------------------------------------------")
-        print(f"{'Total test suites: ':<23}{self.total:>{suites_n_length}}") # actually test instances
-        print(f"{'Processed test suites: ':<23}{self.done:>{suites_n_length}}")
-        print(f"├─ {'Filtered test suites (static): ':<37}{self.skipped_filter:>{processed_suites_n_length}}")
-        print(f"└─ {'Completed test suites: ':<37}{completed_configs:>{processed_suites_n_length}}")
-        print(f"   ├─ {'Filtered test suites (at runtime): ':<37}{self.skipped_runtime:>{completed_suites_n_length}}")
-        print(f"   ├─ {'Passed test suites: ':<37}{self.passed:>{completed_suites_n_length}}")
-        print(f"   ├─ {'Built only test suites: ':<37}{self.notrun:>{completed_suites_n_length}}")
-        print(f"   ├─ {'Failed test suites: ':<37}{self.failed:>{completed_suites_n_length}}")
-        print(f"   └─ {'Errors in test suites: ':<37}{self.error:>{completed_suites_n_length}}")
-        print(f"")
-        print(f"{'Filtered test suites: ':<21}{self.skipped_configs}")
-        print(f"├─ {'Filtered test suites (static): ':<37}{self.skipped_filter:>{skipped_suites_n_length}}")
-        print(f"└─ {'Filtered test suites (at runtime): ':<37}{self.skipped_runtime:>{skipped_suites_n_length}}")
-        print("----------------------      ----------------------")
-        print(f"{'Total test cases: ':<18}{self.cases}")
-        print(f"├─ {'Filtered test cases: ':<21}{self.filtered_cases:>{total_cases_n_length}}")
-        print(f"├─ {'Skipped test cases: ':<21}{self.skipped_cases:>{total_cases_n_length}}")
-        print(f"└─ {'Executed test cases: ':<21}{executed_cases:>{total_cases_n_length}}")
-        print(f"   ├─ {'Passed test cases: ':<25}{self.passed_cases:>{executed_cases_n_length}}")
-        print(f"   ├─ {'Built only test cases: ':<25}{self.notrun_cases:>{executed_cases_n_length}}")
-        print(f"   ├─ {'Blocked test cases: ':<25}{self.blocked_cases:>{executed_cases_n_length}}")
-        print(f"   ├─ {'Failed test cases: ':<25}{self.failed_cases:>{executed_cases_n_length}}")
-        print(f"   {'├' if self.none_cases or self.started_cases else '└'}─ {'Errors in test cases: ':<25}{self.error_cases:>{executed_cases_n_length}}")
+        root = Node("Summary")
+
+        Node(f"Total test suites: {self.total}", parent=root)
+        processed_suites = Node(f"Processed test suites: {self.done}", parent=root)
+        filtered_suites = Node(f"Filtered test suites: {self.filtered_configs}", parent=processed_suites)
+        Node(f"Filtered test suites (static): {self.filtered_static}", parent=filtered_suites)
+        Node(f"Filtered test suites (at runtime): {self.filtered_runtime}", parent=filtered_suites)
+        selected_suites = Node(f"Selected test suites: {selected_configs}", parent=processed_suites)
+        Node(f"Skipped test suites: {self.skipped}", parent=selected_suites)
+        Node(f"Passed test suites: {self.passed}", parent=selected_suites)
+        Node(f"Built only test suites: {self.notrun}", parent=selected_suites)
+        Node(f"Failed test suites: {self.failed}", parent=selected_suites)
+        Node(f"Errors in test suites: {self.error}", parent=selected_suites)
+
+        total_cases = Node(f"Total test cases: {self.cases}", parent=root)
+        Node(f"Filtered test cases: {self.filtered_cases}", parent=total_cases)
+        selected_cases_node = Node(f"Selected test cases: {selected_cases}", parent=total_cases)
+        Node(f"Passed test cases: {self.passed_cases}", parent=selected_cases_node)
+        Node(f"Skipped test cases: {self.skipped_cases}", parent=selected_cases_node)
+        Node(f"Built only test cases: {self.notrun_cases}", parent=selected_cases_node)
+        Node(f"Blocked test cases: {self.blocked_cases}", parent=selected_cases_node)
+        Node(f"Failed test cases: {self.failed_cases}", parent=selected_cases_node)
+        error_cases_node = Node(f"Errors in test cases: {self.error_cases}", parent=selected_cases_node)
+
         if self.none_cases or self.started_cases:
-            print(f"   ├──── The following test case statuses should not appear in a proper execution ───")
+            Node("The following test case statuses should not appear in a proper execution", parent=error_cases_node)
         if self.none_cases:
-            print(f"   {'├' if self.started_cases else '└'}─ {'Statusless test cases: ':<25}{self.none_cases:>{executed_cases_n_length}}")
+            Node(f"Statusless test cases: {self.none_cases}", parent=error_cases_node)
         if self.started_cases:
-            print(f"   └─ {'Test cases only started: ':<25}{self.started_cases:>{executed_cases_n_length}}")
-        print("--------------------------------------------------")
+            Node(f"Test cases only started: {self.started_cases}", parent=error_cases_node)
+
+        for pre, _, node in RenderTree(root):
+            print("%s%s" % (pre, node.name))
+
+    @property
+    def warnings(self):
+        with self._warnings.get_lock():
+            return self._warnings.value
+
+    @warnings.setter
+    def warnings(self, value):
+        with self._warnings.get_lock():
+            self._warnings.value = value
+
+    def warnings_increment(self, value=1):
+        with self._warnings.get_lock():
+            self._warnings.value += value
 
     @property
     def cases(self):
@@ -327,6 +339,20 @@ class ExecutionCounter(object):
             self._started_cases.value += value
 
     @property
+    def skipped(self):
+        with self._skipped.get_lock():
+            return self._skipped.value
+
+    @skipped.setter
+    def skipped(self, value):
+        with self._skipped.get_lock():
+            self._skipped.value = value
+
+    def skipped_increment(self, value=1):
+        with self._skipped.get_lock():
+            self._skipped.value += value
+
+    @property
     def error(self):
         with self._error.get_lock():
             return self._error.value
@@ -397,46 +423,46 @@ class ExecutionCounter(object):
             self._notrun.value += value
 
     @property
-    def skipped_configs(self):
-        with self._skipped_configs.get_lock():
-            return self._skipped_configs.value
+    def filtered_configs(self):
+        with self._filtered_configs.get_lock():
+            return self._filtered_configs.value
 
-    @skipped_configs.setter
-    def skipped_configs(self, value):
-        with self._skipped_configs.get_lock():
-            self._skipped_configs.value = value
+    @filtered_configs.setter
+    def filtered_configs(self, value):
+        with self._filtered_configs.get_lock():
+            self._filtered_configs.value = value
 
-    def skipped_configs_increment(self, value=1):
-        with self._skipped_configs.get_lock():
-            self._skipped_configs.value += value
-
-    @property
-    def skipped_filter(self):
-        with self._skipped_filter.get_lock():
-            return self._skipped_filter.value
-
-    @skipped_filter.setter
-    def skipped_filter(self, value):
-        with self._skipped_filter.get_lock():
-            self._skipped_filter.value = value
-
-    def skipped_filter_increment(self, value=1):
-        with self._skipped_filter.get_lock():
-            self._skipped_filter.value += value
+    def filtered_configs_increment(self, value=1):
+        with self._filtered_configs.get_lock():
+            self._filtered_configs.value += value
 
     @property
-    def skipped_runtime(self):
-        with self._skipped_runtime.get_lock():
-            return self._skipped_runtime.value
+    def filtered_static(self):
+        with self._filtered_static.get_lock():
+            return self._filtered_static.value
 
-    @skipped_runtime.setter
-    def skipped_runtime(self, value):
-        with self._skipped_runtime.get_lock():
-            self._skipped_runtime.value = value
+    @filtered_static.setter
+    def filtered_static(self, value):
+        with self._filtered_static.get_lock():
+            self._filtered_static.value = value
 
-    def skipped_runtime_increment(self, value=1):
-        with self._skipped_runtime.get_lock():
-            self._skipped_runtime.value += value
+    def filtered_static_increment(self, value=1):
+        with self._filtered_static.get_lock():
+            self._filtered_static.value += value
+
+    @property
+    def filtered_runtime(self):
+        with self._filtered_runtime.get_lock():
+            return self._filtered_runtime.value
+
+    @filtered_runtime.setter
+    def filtered_runtime(self, value):
+        with self._filtered_runtime.get_lock():
+            self._filtered_runtime.value = value
+
+    def filtered_runtime_increment(self, value=1):
+        with self._filtered_runtime.get_lock():
+            self._filtered_runtime.value += value
 
     @property
     def failed(self):
@@ -877,8 +903,8 @@ class ProjectBuilder(FilterBuilder):
                         logger.debug("filtering %s" % self.instance.name)
                         self.instance.status = TwisterStatus.FILTER
                         self.instance.reason = "runtime filter"
-                        results.skipped_runtime_increment()
-                        self.instance.add_missing_case_status(TwisterStatus.SKIP)
+                        results.filtered_runtime_increment()
+                        self.instance.add_missing_case_status(TwisterStatus.FILTER)
                         next_op = 'report'
                     else:
                         next_op = 'cmake'
@@ -910,8 +936,8 @@ class ProjectBuilder(FilterBuilder):
                         logger.debug("filtering %s" % self.instance.name)
                         self.instance.status = TwisterStatus.FILTER
                         self.instance.reason = "runtime filter"
-                        results.skipped_runtime_increment()
-                        self.instance.add_missing_case_status(TwisterStatus.SKIP)
+                        results.filtered_runtime_increment()
+                        self.instance.add_missing_case_status(TwisterStatus.FILTER)
                         next_op = 'report'
                     else:
                         next_op = 'build'
@@ -937,7 +963,7 @@ class ProjectBuilder(FilterBuilder):
                     # Count skipped cases during build, for example
                     # due to ram/rom overflow.
                     if  self.instance.status == TwisterStatus.SKIP:
-                        results.skipped_runtime_increment()
+                        results.skipped_increment()
                         self.instance.add_missing_case_status(TwisterStatus.SKIP, self.instance.reason)
 
                     if ret.get('returncode', 1) > 0:
@@ -1324,19 +1350,22 @@ class ProjectBuilder(FilterBuilder):
                 # but having those statuses in this part of processing is an error.
                 case TwisterStatus.NONE:
                     results.none_cases_increment(increment_value)
-                    logger.error(f'A None status detected in instance {instance.name},'
+                    logger.warning(f'A None status detected in instance {instance.name},'
                                  f' test case {tc.name}.')
+                    results.warnings_increment(1)
                 case TwisterStatus.STARTED:
                     results.started_cases_increment(increment_value)
-                    logger.error(f'A started status detected in instance {instance.name},'
+                    logger.warning(f'A started status detected in instance {instance.name},'
                                  f' test case {tc.name}.')
+                    results.warnings_increment(1)
                 case _:
-                    logger.error(f'An unknown status "{tc.status}" detected in instance {instance.name},'
+                    logger.warning(f'An unknown status "{tc.status}" detected in instance {instance.name},'
                                  f' test case {tc.name}.')
+                    results.warnings_increment(1)
 
 
     def report_out(self, results):
-        total_to_do = results.total - results.skipped_filter
+        total_to_do = results.total - results.filtered_static
         total_tests_width = len(str(total_to_do))
         results.done_increment()
         instance = self.instance
@@ -1364,20 +1393,13 @@ class ProjectBuilder(FilterBuilder):
             if not self.options.verbose:
                 self.log_info_file(self.options.inline_logs)
         elif instance.status == TwisterStatus.SKIP:
-            results.skipped_configs_increment()
+            results.skipped_increment()
         elif instance.status == TwisterStatus.FILTER:
-            results.skipped_configs_increment()
+            results.filtered_configs_increment()
         elif instance.status == TwisterStatus.PASS:
             results.passed_increment()
-            for case in instance.testcases:
-                # test cases skipped at the test case level
-                if case.status == TwisterStatus.SKIP:
-                    results.skipped_cases_increment()
         elif instance.status == TwisterStatus.NOTRUN:
             results.notrun_increment()
-            for case in instance.testcases:
-                if case.status == TwisterStatus.SKIP:
-                    results.skipped_cases_increment()
         else:
             logger.debug(f"Unknown status = {instance.status}")
             status = Fore.YELLOW + "UNKNOWN" + Fore.RESET
@@ -1403,7 +1425,7 @@ class ProjectBuilder(FilterBuilder):
                      and self.instance.handler.seed is not None ):
                     more_info += "/seed: " + str(self.options.seed)
             logger.info("{:>{}}/{} {:<25} {:<50} {} ({})".format(
-                results.done - results.skipped_filter, total_tests_width, total_to_do , instance.platform.name,
+                results.done - results.filtered_static, total_tests_width, total_to_do , instance.platform.name,
                 instance.testsuite.name, status, more_info))
 
             if self.options.verbose > 1:
@@ -1418,19 +1440,19 @@ class ProjectBuilder(FilterBuilder):
         else:
             completed_perc = 0
             if total_to_do > 0:
-                completed_perc = int((float(results.done - results.skipped_filter) / total_to_do) * 100)
+                completed_perc = int((float(results.done - results.filtered_static) / total_to_do) * 100)
 
             sys.stdout.write("INFO    - Total complete: %s%4d/%4d%s  %2d%%  built (not run): %s%4d%s, filtered: %s%4d%s, failed: %s%4d%s, error: %s%4d%s\r" % (
                 TwisterStatus.get_color(TwisterStatus.PASS),
-                results.done - results.skipped_filter,
+                results.done - results.filtered_static,
                 total_to_do,
                 Fore.RESET,
                 completed_perc,
                 TwisterStatus.get_color(TwisterStatus.NOTRUN),
                 results.notrun,
                 Fore.RESET,
-                TwisterStatus.get_color(TwisterStatus.SKIP) if results.skipped_configs > 0 else Fore.RESET,
-                results.skipped_configs,
+                TwisterStatus.get_color(TwisterStatus.SKIP) if results.filtered_configs > 0 else Fore.RESET,
+                results.filtered_configs,
                 Fore.RESET,
                 TwisterStatus.get_color(TwisterStatus.FAIL) if results.failed > 0 else Fore.RESET,
                 results.failed,
@@ -1653,7 +1675,7 @@ class TwisterRunner:
                     self.results.error = 0
                     self.results.done -= self.results.error
             else:
-                self.results.done = self.results.skipped_filter
+                self.results.done = self.results.filtered_static
 
             self.execute(pipeline, done_queue)
 
@@ -1688,20 +1710,20 @@ class TwisterRunner:
         '''
         for instance in self.instances.values():
             if instance.status == TwisterStatus.FILTER and not instance.reason == 'runtime filter':
-                self.results.skipped_filter_increment()
-                self.results.skipped_configs_increment()
+                self.results.filtered_static_increment()
+                self.results.filtered_configs_increment()
                 self.results.filtered_cases_increment(len(instance.testsuite.testcases))
                 self.results.cases_increment(len(instance.testsuite.testcases))
             elif instance.status == TwisterStatus.ERROR:
                 self.results.error_increment()
 
     def show_brief(self):
-        logger.info("%d test scenarios (%d test instances) selected, "
+        logger.info("%d test scenarios (%d configurations) selected, "
                     "%d configurations filtered (%d by static filter, %d at runtime)." %
                     (len(self.suites), len(self.instances),
-                    self.results.skipped_configs,
-                    self.results.skipped_filter,
-                    self.results.skipped_configs - self.results.skipped_filter))
+                    self.results.filtered_configs,
+                    self.results.filtered_static,
+                    self.results.filtered_configs - self.results.filtered_static))
 
     def add_tasks_to_queue(self, pipeline, build_only=False, test_only=False, retry_build_errors=False):
         for instance in self.instances.values():

@@ -19,7 +19,7 @@ config SOC_PACKAGE_PSOC6_02_128_TQFP
 config SOC_PACKAGE_PSOC6_02_68_QFN
 	bool
 
-# Infineon PSoC6_02 series MCUs
+# Infineon PSOC 6_02 series MCUs
 config SOC_CYB0644ABZI_S2D44
 	bool
 	select SOC_DIE_PSOC6_02

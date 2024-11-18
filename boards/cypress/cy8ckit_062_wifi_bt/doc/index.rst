@@ -1,16 +1,16 @@
 .. _cy8ckit_062_wifi_bt:
 
-INFINEON PSoC6 WiFi-BT Pioneer Kit
-##################################
+INFINEON PSOC 6 WiFi-BT Pioneer Kit
+###################################
 
 Overview
 ********
 
-The PSoC 6 WiFi-BT Pioneer Kit (CY8CKIT-062-WiFi-BT) is a low-cost hardware
-platform that enables design and debug of the PSoC 62 MCU and the Murata
+The PSOC 6 WiFi-BT Pioneer Kit (CY8CKIT-062-WiFi-BT) is a low-cost hardware
+platform that enables design and debug of the PSOC 62 MCU and the Murata
 LBEE5KL1DX Module (CYW4343W WiFi + Bluetooth Combo Chip).
 
-The PSoC 6 WiFi-BT Pioneer Kit features the PSoC 62 MCU: a
+The PSOC 6 WiFi-BT Pioneer Kit features the PSOC 62 MCU: a
 dual-core MCU, with a 150-MHz Arm Cortex-M4 as the primary application
 processor and a 100-MHz Arm Cortex-M0+ that supports low-power operations,
 1MB of Flash, 288KB of SRAM, 104 GPIO, 7 programmable analog blocks,
@@ -18,7 +18,7 @@ processor and a 100-MHz Arm Cortex-M0+ that supports low-power operations,
 a PDM-PCM digital microphone interface, and industry-leading capacitive-sensing
 with CapSense.
 
-The PSoC 6 WiFi-BT Pioneer board offers compatibility with Arduino shields.
+The PSOC 6 WiFi-BT Pioneer board offers compatibility with Arduino shields.
 
 The Cortex-M0+ is a primary core on the board's SoC. It starts first and
 enables the CM4 core.
@@ -35,45 +35,45 @@ enables the CM4 core.
 6. KitProg2 I/O header (J6)1
 7. KitProg2 programming/custom application header (J7)1
 8. External power supply connector (J9)
-9. PSoC 6 user button (SW2)
+9. PSOC 6 user button (SW2)
 10. KitProg2 application selection button (SW4)
 11. Digilent® Pmod™ compatible I/O header (J14)1
 12. Power LED (LED4)
 13. KitProg2 status LEDs (LED1, LED2, and LED3)
-14. PSoC 6 reset button (SW1)
-15. PSoC 6 I/O header (J18, J19 and J20)
+14. PSOC 6 reset button (SW1)
+15. PSOC 6 I/O header (J18, J19 and J20)
 16. Arduino™ Uno R3 compatible power header (J1)
-17. PSoC 6 debug and trace header (J12)
-18. Arduino Uno R3 compatible PSoC 6 I/O header (J2, J3 and J4)
-19. PSoC 6 program and debug header (J11)
+17. PSOC 6 debug and trace header (J12)
+18. Arduino Uno R3 compatible PSOC 6 I/O header (J2, J3 and J4)
+19. PSOC 6 program and debug header (J11)
 20. CapSense proximity header (J13)
 21. CapSense slider and buttons
-22. PSoC 6 VDD selection switch (SW5)
+22. PSOC 6 VDD selection switch (SW5)
 23. Cypress  512-Mbit  serial  NOR  Flash  memory  (S25-FL512S, U4)
-24. PSoC 6 user LEDs (LED8 and LED9)
+24. PSOC 6 user LEDs (LED8 and LED9)
 25. RGB LED (LED5)
 26. WiFi/BT module (LBEE5KL 1DX, U6)
 27. Cypress serial Ferroelectric RAM (U5)1
 28. WiFi-BT Antenna
 29. VBACKUP and PMIC control selection switch (SW7)2
-30. PSoC 6 USB device Type-C connector (J28)
-31. Cypress PSoC 6 (CY8C6247BZI-D54, U1)
-32. PSoC 6 USB Host Type-A connector (J27)
+30. PSOC 6 USB device Type-C connector (J28)
+31. Cypress PSOC 6 (CY8C6247BZI-D54, U1)
+32. PSOC 6 USB Host Type-A connector (J27)
 33. Arduino Uno R3 compatible ICSP header (J5)1
-34. PSoC 6 power monitoring jumper (J8)2
-35. KitProg2  (PSoC  5LP)  programmer  and  debugger(CY8C5868LTI-LP039, U2)
+34. PSOC 6 power monitoring jumper (J8)2
+35. KitProg2  (PSOC  5LP)  programmer  and  debugger(CY8C5868LTI-LP039, U2)
 36. Battery connector (J15)1,2
 37. USB PD output voltage (9V/12V) connector (J16)
 
 Hardware
 ********
 
-For more information about the PSoC 62 MCU SoC and CY8CKIT-062-WiFi-BT board:
+For more information about the PSOC 62 MCU SoC and CY8CKIT-062-WiFi-BT board:
 
-- `PSoC 62 MCU SoC Website`_
-- `PSoC 62 MCU Datasheet`_
-- `PSoC 62 MCU Architecture Reference Manual`_
-- `PSoC 62 MCU Register Reference Manual`_
+- `PSOC 62 MCU SoC Website`_
+- `PSOC 62 MCU Datasheet`_
+- `PSOC 62 MCU Architecture Reference Manual`_
+- `PSOC 62 MCU Register Reference Manual`_
 - `CY8CKIT-062-WiFi-BT Website`_
 - `CY8CKIT-062-WiFi-BT User Guide`_
 - `CY8CKIT-062-WiFi-BT Schematics`_
@@ -105,18 +105,18 @@ The default configuration can be found in the Kconfig
 System Clock
 ============
 
-The PSoC 62 MCU SoC is configured to use the internal IMO+FLL as a source for
+The PSOC 62 MCU SoC is configured to use the internal IMO+FLL as a source for
 the system clock. CM0+ works at 50MHz, CM4 - at 100MHz. Other sources for the
 system clock are provided in the SOC, depending on your system requirements.
 
 Serial Port
 ===========
 
-The PSoC 62 MCU SoC has 9 SCB blocks 8 of each can be configured as UART
+The PSOC 62 MCU SoC has 9 SCB blocks 8 of each can be configured as UART
 interfaces for serial communication. At the moment UART5 on SCB5 and UART6 on
 SCB6 are configured. SCB5 is connected to the onboard KitProg2's USB-UART
 Bridge, SCB6 to P12_0, P12_1 pins on the J3 of the Arduino Uno R3 compatible
-PSoC6 I/O header.
+PSOC 6 I/O header.
 
 OpenOCD Installation
 ====================
@@ -136,7 +136,7 @@ Programming and Debugging
 
 The CY8CKIT-062-WiFi-BT includes an onboard programmer/debugger (KitProg2) with
 mass storage programming to provide debugging, flash programming, and serial
-communication over USB. There are also PSoC 6 program and debug headers J11
+communication over USB. There are also PSOC 6 program and debug headers J11
 and J12 that can be used with Segger J-Link.
 A watchdog timer is enabled by default. To disable it call Cy_WDT_Unlock() and
 Cy_WDT_Disable().
@@ -188,16 +188,16 @@ References
 
 .. target-notes::
 
-.. _PSoC 62 MCU SoC Website:
+.. _PSOC 62 MCU SoC Website:
 	https://www.cypress.com/products/32-bit-arm-cortex-m4-psoc-6
 
-.. _PSoC 62 MCU Datasheet:
+.. _PSOC 62 MCU Datasheet:
 	https://www.cypress.com/documentation/datasheets/psoc-6-mcu-psoc-62-datasheet-programmable-system-chip-psoc-preliminary
 
-.. _PSoC 62 MCU Architecture Reference Manual:
+.. _PSOC 62 MCU Architecture Reference Manual:
 	https://www.cypress.com/documentation/technical-reference-manuals/psoc-6-mcu-psoc-62-architecture-technical-reference-manual
 
-.. _PSoC 62 MCU Register Reference Manual:
+.. _PSOC 62 MCU Register Reference Manual:
 	https://www.cypress.com/documentation/technical-reference-manuals/psoc-6-mcu-psoc-62-register-technical-reference-manual-trm
 
 .. _CY8CKIT-062-WiFi-BT Website:

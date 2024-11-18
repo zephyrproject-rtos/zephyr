@@ -169,7 +169,7 @@ static uint32_t spi_psoc6_get_freqdiv(uint32_t frequency)
 	uint32_t oversample;
 	uint32_t bus_freq = 100000000UL;
 	/*
-	 * TODO: Get PerBusSpeed when clocks are available to PSoC-6.
+	 * TODO: Get PerBusSpeed when clocks are available to PSOC 6.
 	 * Currently the bus freq is fixed to 50Mhz and max SPI clk can be
 	 * 12.5MHz.
 	 */

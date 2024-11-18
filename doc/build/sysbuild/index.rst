@@ -499,8 +499,8 @@ In sysbuild and Zephyr CMake build system a board may refer to:
 * A specific SoC on a physical board with multiple SoCs, such as
   :ref:`nrf9160dk_nrf9160` and :ref:`nrf9160dk_nrf52840`.
 
-If your main application, for example, is built for ``mps2_an521``, and your
-helper application must target the ``mps2_an521_remote`` board (cpu1), add
+If your main application, for example, is built for ``mps2/an521/cpu0``, and your
+helper application must target the ``mps2/an521/cpu1`` board target, add
 a CMake function call that is structured as follows:
 
 .. code-block:: cmake
@@ -508,7 +508,7 @@ a CMake function call that is structured as follows:
    ExternalZephyrProject_Add(
      APPLICATION my_sample
      SOURCE_DIR <path-to>/my_sample
-     BOARD mps2_an521_remote
+     BOARD mps2/an521/cpu1
    )
 
 This could be useful, for example, if your main application requires another

@@ -62,7 +62,7 @@ Cadence Tensilica Xtensa C/C++ Compiler (XCC)
          export XTENSA_CORE=ace10_LX7HiFi4_2022_10
          export TOOLCHAIN_VER=RI-2022.10-linux
 
-   #. Muiltiple SoCs:
+   #. Multiple SoCs:
 
       .. code-block:: console
 

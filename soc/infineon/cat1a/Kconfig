@@ -35,17 +35,17 @@ config SOC_PSOC6_M0_ENABLES_M4
 	  Cortex-M0 CPU should boot Cortex-M4
 
 if SOC_FAMILY_PSOC6
-## PSoC™ 6 Cortex M0+ prebuilt images
+## PSOC™ 6 Cortex M0+ prebuilt images
 choice
-	prompt "PSoC™ 6 Cortex M0+ prebuilt images"
+	prompt "PSOC™ 6 Cortex M0+ prebuilt images"
 	help
-	  Choose the prebuilt application image to be executed on the Cortex-M0+ core of the PSoC™ 6
+	  Choose the prebuilt application image to be executed on the Cortex-M0+ core of the PSOC™ 6
 	  dual-core MCU. The image is responsible for booting the Cortex-M4 on the device.
 
 config SOC_PSOC6_CM0P_IMAGE_SLEEP
 	bool "DeepSleep"
 	help
-	  DeepSleep prebuilt application image is executed on the Cortex-M0+ core of the PSoC™ 6 BLE
+	  DeepSleep prebuilt application image is executed on the Cortex-M0+ core of the PSOC™ 6 BLE
 	  dual-core MCU.The image is provided as C array ready to be compiled as part of the Cortex-M4
 	  application. The Cortex-M0+ application code is placed to internal flash by the Cortex-M4
 	  linker script.

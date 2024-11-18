@@ -12,8 +12,8 @@
  * setting the continuous mode and bandwidth selection bits.
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_SENSOR_TSL2591_H_
-#define ZEPHYR_INCLUDE_DRIVERS_SENSOR_TSL2591_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_SENSOR_MMC56X3_H_
+#define ZEPHYR_INCLUDE_DRIVERS_SENSOR_MMC56X3_H_
 
 #include <zephyr/drivers/sensor.h>
 
@@ -48,4 +48,4 @@ enum sensor_attribute_mmc56x3 {
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_SENSOR_TSL2591_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_SENSOR_MMC56X3_H_ */

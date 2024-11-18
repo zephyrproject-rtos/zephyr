@@ -335,7 +335,7 @@ Code::
 		/* Child states do not have entry or exit actions */
 		[S0] = SMF_CREATE_STATE(NULL, s0_run, NULL, &demo_states[PARENT], NULL),
 		[S1] = SMF_CREATE_STATE(NULL, s1_run, NULL, &demo_states[PARENT], NULL),
-		/* State S2 do ot have entry or exit actions and no parent */
+		/* State S2 do not have entry or exit actions and no parent */
 		[S2] = SMF_CREATE_STATE(NULL, s2_run, NULL, NULL, NULL),
 	};
 

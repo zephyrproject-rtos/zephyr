@@ -19,7 +19,7 @@ config SOC_PACKAGE_PSOC6_04_80_TQFP
 config SOC_PACKAGE_PSOC6_04_80_M_CSP
 	bool
 
-# Infineon PSoC6_04 series MCUs
+# Infineon PSOC 6_04 series MCUs
 config SOC_CY8C6244AZI_S4D92
 	bool
 	select SOC_DIE_PSOC6_04

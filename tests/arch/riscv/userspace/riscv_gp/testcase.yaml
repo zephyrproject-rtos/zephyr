@@ -1,0 +1,8 @@
+common:
+  ignore_faults: true
+  ignore_qemu_crash: true
+  tags: kernel riscv
+  platform_allow:
+    - qemu_riscv64
+tests:
+  arch.riscv64.riscv_gp: {}

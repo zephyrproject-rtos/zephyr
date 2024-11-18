@@ -37,7 +37,7 @@ class TestPlatform:
                 'failed_configurations': 0,
                 'errored_configurations': 0,
                 'executed_test_cases': 8,
-                'skipped_test_cases': 5,
+                'skipped_test_cases': 2,
                 'platform_count': 3,
                 'executed_on_platform': 4,
                 'only_built': 2
@@ -58,7 +58,7 @@ class TestPlatform:
                 'failed_configurations': 0,
                 'errored_configurations': 0,
                 'executed_test_cases': 0,
-                'skipped_test_cases': 3,
+                'skipped_test_cases': 0,
                 'platform_count': 3,
                 'executed_on_platform': 0,
                 'only_built': 0
@@ -264,7 +264,7 @@ class TestPlatform:
             self.loader.exec_module(self.twister_module)
 
         select_regex = r'^INFO    - (?P<test_scenarios>[0-9]+) test scenarios' \
-                       r' \((?P<test_instances>[0-9]+) test instances\) selected,' \
+                       r' \((?P<test_instances>[0-9]+) configurations\) selected,' \
                        r' (?P<skipped_configurations>[0-9]+) configurations filtered' \
                        r' \((?P<skipped_by_static_filter>[0-9]+) by static filter,' \
                        r' (?P<skipped_at_runtime>[0-9]+) at runtime\)\.$'

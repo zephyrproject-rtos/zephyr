@@ -45,7 +45,7 @@ Usage
 
 When the core dump module is enabled, during a fatal error, CPU registers
 and memory content are printed or stored according to which backends
-are enabled. This core dump data can fed into a custom-made GDB server as
+are enabled. This core dump data can be fed into a custom-made GDB server as
 a remote target for GDB (and other GDB compatible debuggers). CPU registers,
 memory content and stack can be examined in the debugger.
 
