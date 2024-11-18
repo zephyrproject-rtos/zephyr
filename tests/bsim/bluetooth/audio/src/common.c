@@ -35,6 +35,7 @@ struct bt_conn *default_conn;
 atomic_t flag_connected;
 atomic_t flag_disconnected;
 atomic_t flag_conn_updated;
+atomic_t flag_audio_received;
 volatile bt_security_t security_level;
 
 const struct bt_data ad[AD_SIZE] = {

@@ -116,6 +116,11 @@ static const struct named_lc3_preset lc3_broadcast_presets[] = {
 
 static void broadcast_started_cb(struct bt_bap_stream *stream)
 {
+	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
+
+	test_stream->seq_num = 0U;
+	test_stream->tx_cnt = 0U;
+
 	printk("Stream %p started\n", stream);
 	k_sem_give(&sem_broadcast_started);
 }
