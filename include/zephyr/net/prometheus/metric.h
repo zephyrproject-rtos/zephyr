@@ -47,6 +47,8 @@ enum prometheus_metric_type {
 struct prometheus_metric {
 	/** Slist metric list node */
 	sys_snode_t node;
+	/** Back pointer to the collector that this metric belongs to */
+	struct prometheus_collector *collector;
 	/** Type of the Prometheus metric. */
 	enum prometheus_metric_type type;
 	/** Name of the Prometheus metric. */
