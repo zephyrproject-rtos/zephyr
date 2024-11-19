@@ -1039,14 +1039,6 @@ if(CONFIG_USERSPACE)
   set(PROCESS_GPERF ${ZEPHYR_BASE}/scripts/build/process_gperf.py)
 endif()
 
-get_property(GLOBAL_CSTD GLOBAL PROPERTY CSTD)
-if(DEFINED GLOBAL_CSTD)
-  message(DEPRECATION
-    "Global CSTD property is deprecated, see Kconfig.zephyr for C Standard options.")
-  set(CSTD ${GLOBAL_CSTD})
-  list(APPEND CMAKE_C_COMPILE_FEATURES ${compile_features_${CSTD}})
-endif()
-
 # @Intent: Obtain compiler specific flag for specifying the c standard
 zephyr_compile_options(
   $<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,cstd>${CSTD}>
