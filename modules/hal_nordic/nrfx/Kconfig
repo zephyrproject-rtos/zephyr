@@ -31,7 +31,7 @@ config NRFX_DPPI
 config NRFX_DPPI0
 	bool "DPPI0 driver instance"
 	default y if NRFX_GPPI
-	depends on $(dt_nodelabel_has_compat,dppic,$(DT_COMPAT_NORDIC_NRF_DPPIC))
+	depends on $(dt_nodelabel_has_compat,dppic0,$(DT_COMPAT_NORDIC_NRF_DPPIC))
 	select NRFX_DPPI
 
 config NRFX_DPPI00
