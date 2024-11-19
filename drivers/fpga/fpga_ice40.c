@@ -210,16 +210,6 @@ static int fpga_ice40_load_gpio(const struct device *dev, uint32_t *image_ptr, u
 		return -ENODEV;
 	}
 
-	if (config->set == NULL) {
-		LOG_ERR("%s: set register was not specified", dev->name);
-		return -EFAULT;
-	}
-
-	if (config->clear == NULL) {
-		LOG_ERR("%s: clear register was not specified", dev->name);
-		return -EFAULT;
-	}
-
 	/* prepare masks */
 	cs = BIT(config->bus.config.cs.gpio.pin);
 	clk = BIT(config->clk.pin);
@@ -589,6 +579,18 @@ static int fpga_ice40_init(const struct device *dev)
 	BUILD_ASSERT(FPGA_ICE40_TRAILING_CLOCKS(inst) >= FPGA_ICE40_TRAILING_CLOCKS_MIN);          \
 	BUILD_ASSERT(FPGA_ICE40_TRAILING_CLOCKS(inst) <= UINT8_MAX);                               \
 	BUILD_ASSERT(FPGA_ICE40_MHZ_DELAY_COUNT(inst) >= 0);                                       \
+	BUILD_ASSERT(!DT_INST_PROP(inst, load_mode_bitbang) ||                                     \
+		     DT_INST_NODE_HAS_PROP(inst, creset_gpios));                                   \
+	BUILD_ASSERT(!DT_INST_PROP(inst, load_mode_bitbang) ||                                     \
+		     DT_INST_NODE_HAS_PROP(inst, cdone_gpios));                                    \
+	BUILD_ASSERT(!DT_INST_PROP(inst, load_mode_bitbang) ||                                     \
+		     DT_INST_NODE_HAS_PROP(inst, clk_gpios));                                      \
+	BUILD_ASSERT(!DT_INST_PROP(inst, load_mode_bitbang) ||                                     \
+		     DT_INST_NODE_HAS_PROP(inst, pico_gpios));                                     \
+	BUILD_ASSERT(!DT_INST_PROP(inst, load_mode_bitbang) ||                                     \
+		     DT_INST_NODE_HAS_PROP(inst, gpios_set_reg));                                  \
+	BUILD_ASSERT(!DT_INST_PROP(inst, load_mode_bitbang) ||                                     \
+		     DT_INST_NODE_HAS_PROP(inst, gpios_clear_reg));                                \
                                                                                                    \
 	FPGA_ICE40_PINCTRL_DEFINE(inst);                                                           \
 	static struct fpga_ice40_data fpga_ice40_data_##inst;                                      \
