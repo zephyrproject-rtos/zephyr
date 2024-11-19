@@ -16,6 +16,15 @@
 			reg = <0x40002000 0xFFF>;
 			status = "disabled";
 		};
+
+		lcdif: display-controller@40342000 {
+			compatible = "renesas,ra-glcdc";
+			reg = <0x40342000 0x1454>;
+			clocks = <&lcdclk MSTPC 4>;
+			interrupts = <71 1>;
+			interrupt-names = "line";
+			status = "disabled";
+		};
 	};
 
 	clocks: clocks {
