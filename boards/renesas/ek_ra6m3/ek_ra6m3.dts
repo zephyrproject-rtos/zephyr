@@ -42,6 +42,12 @@
 	};
 };
 
+&spi0 {
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &ioport1 {
 	status = "okay";
 };
