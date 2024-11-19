@@ -300,7 +300,7 @@ Depending on the topology of build infrastructure, it may be preferable to simpl
 the ``/opt/zephyr/sdk/$SDK_VERSION`` directory to other build machines. Alternatively, use
 ``/opt/zephyr/sdk/$SDK_VERSION`` to create packages using the package manager of choice.
 
-.. _gs_package_managers:
+.. _toolchain_zephyr_sdk_package_manager:
 
 Guidelines for Package Managers
 *******************************
