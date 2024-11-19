@@ -98,4 +98,9 @@ config USE_RA_FSP_ETHER
 	help
 	  Enable RA FSP Ethernet driver
 
+config USB_RA_FSP_SDRAM
+	bool
+	help
+	  Enable RA FSP SDRAM support
+
 endif # HAS_RENESAS_RA_FSP
