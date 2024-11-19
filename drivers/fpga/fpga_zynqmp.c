@@ -16,7 +16,7 @@
 #include <stdio.h>
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(fpga_zynqmp);
+LOG_MODULE_REGISTER(fpga_zynqmp, CONFIG_FPGA_LOG_LEVEL);
 
 static void power_up_fpga(void)
 {
