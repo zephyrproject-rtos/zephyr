@@ -471,6 +471,11 @@ dvp_20pin_interface: &ceu {};
 	pinctrl-0 = <&usbfs_default>;
 	pinctrl-names = "default";
 	maximum-speed = "full-speed";
+	status = "okay";
+
+	zephyr_uhc0: uhc {
+		status = "okay";
+	};
 };
 
 &wdt {
