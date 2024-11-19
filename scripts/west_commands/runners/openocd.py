@@ -29,6 +29,18 @@ DEFAULT_OPENOCD_RTT_PORT = 5555
 DEFAULT_OPENOCD_RESET_HALT_CMD = 'reset init'
 DEFAULT_OPENOCD_TARGET_HANDLE = "_TARGETNAME"
 
+def to_num(number):
+    dev_match = re.search(r"^\d*\+dev", number)
+    dev_version = dev_match is not None
+
+    num_match = re.search(r"^\d*", number)
+    num = int(num_match.group(0))
+
+    if dev_version:
+        num += 1
+
+    return num
+
 class OpenOcdBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for openocd.'''
 
@@ -200,19 +212,6 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         self.logger.info('OpenOCD GDB server running on port '
                          f'{self.gdb_port}{thread_msg}')
 
-    # pylint: disable=R0201
-    def to_num(self, number):
-        dev_match = re.search(r"^\d*\+dev", number)
-        dev_version = not dev_match is None
-
-        num_match = re.search(r"^\d*", number)
-        num = int(num_match.group(0))
-
-        if dev_version:
-            num += 1
-
-        return num
-
     def read_version(self):
         self.require(self.openocd_cmd[0])
 
@@ -223,7 +222,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         version_match = re.search(r"Open On-Chip Debugger (\d+.\d+.\d+)", out)
         version = version_match.group(1).split('.')
 
-        return [self.to_num(i) for i in version]
+        return [to_num(i) for i in version]
 
     def supports_thread_info(self):
         # Zephyr rtos was introduced after 0.11.0
