@@ -2663,14 +2663,7 @@ static int dai_intel_ssp_init_device(const struct device *dev)
 static int ssp_init(const struct device *dev)
 {
 	dai_intel_ssp_init_device(dev);
-
-	if (pm_device_on_power_domain(dev)) {
-		pm_device_init_off(dev);
-	} else {
-		pm_device_init_suspended(dev);
-	}
-
-	return pm_device_runtime_enable(dev);
+	return pm_device_driver_init(dev, ssp_pm_action);
 }
 
 static int dai_ssp_dma_control_set(const struct device *dev,

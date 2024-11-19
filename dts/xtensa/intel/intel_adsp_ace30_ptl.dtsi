@@ -219,53 +219,68 @@
 				&hda_link_in 1>;
 			dma-names = "tx", "rx";
 			ssp-index = <0>;
-			power-domains = <&io0_domain>;
 			status = "okay";
 
 			ssp00: ssp@0 {
 				compatible = "intel,ssp-dai";
+				power-domains = <&io0_domain>;
+				zephyr,pm-device-runtime-auto;
 				reg = <0x0>;
 				status = "okay";
 			};
 
 			ssp01: ssp@1 {
 				compatible = "intel,ssp-dai";
+				power-domains = <&io0_domain>;
+				zephyr,pm-device-runtime-auto;
 				reg = <0x1>;
 				status = "okay";
 			};
 
 			ssp02: ssp@2 {
 				compatible = "intel,ssp-dai";
+				power-domains = <&io0_domain>;
+				zephyr,pm-device-runtime-auto;
 				reg = <0x2>;
 				status = "okay";
 			};
 
 			ssp03: ssp@3 {
 				compatible = "intel,ssp-dai";
+				power-domains = <&io0_domain>;
+				zephyr,pm-device-runtime-auto;
 				reg = <0x3>;
 				status = "okay";
 			};
 
 			ssp04: ssp@4 {
 				compatible = "intel,ssp-dai";
+				power-domains = <&io0_domain>;
+				zephyr,pm-device-runtime-auto;
 				reg = <0x4>;
 				status = "okay";
 			};
 
 			ssp05: ssp@5 {
 				compatible = "intel,ssp-dai";
+				power-domains = <&io0_domain>;
+				zephyr,pm-device-runtime-auto;
 				reg = <0x5>;
 				status = "okay";
 			};
 
 			ssp06: ssp@6 {
 				compatible = "intel,ssp-dai";
+				power-domains = <&io0_domain>;
+				zephyr,pm-device-runtime-auto;
 				reg = <0x6>;
 				status = "okay";
 			};
 
 			ssp07: ssp@7 {
 				compatible = "intel,ssp-dai";
+				power-domains = <&io0_domain>;
+				zephyr,pm-device-runtime-auto;
 				reg = <0x7>;
 				status = "okay";
 			};
@@ -284,53 +299,68 @@
 				&hda_link_in 2>;
 			dma-names = "tx", "rx";
 			ssp-index = <1>;
-			power-domains = <&io0_domain>;
 			status = "okay";
 
 			ssp10: ssp@10 {
 				compatible = "intel,ssp-dai";
+				power-domains = <&io0_domain>;
+				zephyr,pm-device-runtime-auto;
 				reg = <0x10>;
 				status = "okay";
 			};
 
 			ssp11: ssp@11 {
 				compatible = "intel,ssp-dai";
+				power-domains = <&io0_domain>;
+				zephyr,pm-device-runtime-auto;
 				reg = <0x11>;
 				status = "okay";
 			};
 
 			ssp12: ssp@12 {
 				compatible = "intel,ssp-dai";
+				power-domains = <&io0_domain>;
+				zephyr,pm-device-runtime-auto;
 				reg = <0x12>;
 				status = "okay";
 			};
 
 			ssp13: ssp@13 {
 				compatible = "intel,ssp-dai";
+				power-domains = <&io0_domain>;
+				zephyr,pm-device-runtime-auto;
 				reg = <0x13>;
 				status = "okay";
 			};
 
 			ssp14: ssp@14 {
 				compatible = "intel,ssp-dai";
+				power-domains = <&io0_domain>;
+				zephyr,pm-device-runtime-auto;
 				reg = <0x14>;
 				status = "okay";
 			};
 
 			ssp15: ssp@15 {
 				compatible = "intel,ssp-dai";
+				power-domains = <&io0_domain>;
+				zephyr,pm-device-runtime-auto;
 				reg = <0x15>;
 				status = "okay";
 			};
 
 			ssp16: ssp@16 {
 				compatible = "intel,ssp-dai";
+				power-domains = <&io0_domain>;
+				zephyr,pm-device-runtime-auto;
 				reg = <0x16>;
 				status = "okay";
 			};
 
 			ssp17: ssp@17 {
 				compatible = "intel,ssp-dai";
+				power-domains = <&io0_domain>;
+				zephyr,pm-device-runtime-auto;
 				reg = <0x17>;
 				status = "okay";
 			};
@@ -349,53 +379,68 @@
 				&hda_link_in 3>;
 			dma-names = "tx", "rx";
 			ssp-index = <2>;
-			power-domains = <&io0_domain>;
 			status = "okay";
 
 			ssp20: ssp@20 {
 				compatible = "intel,ssp-dai";
+				power-domains = <&io0_domain>;
+				zephyr,pm-device-runtime-auto;
 				reg = <0x20>;
 				status = "okay";
 			};
 
 			ssp21: ssp@21 {
 				compatible = "intel,ssp-dai";
+				power-domains = <&io0_domain>;
+				zephyr,pm-device-runtime-auto;
 				reg = <0x21>;
 				status = "okay";
 			};
 
 			ssp22: ssp@22 {
 				compatible = "intel,ssp-dai";
+				power-domains = <&io0_domain>;
+				zephyr,pm-device-runtime-auto;
 				reg = <0x22>;
 				status = "okay";
 			};
 
 			ssp23: ssp@23 {
 				compatible = "intel,ssp-dai";
+				power-domains = <&io0_domain>;
+				zephyr,pm-device-runtime-auto;
 				reg = <0x23>;
 				status = "okay";
 			};
 
 			ssp24: ssp@24 {
 				compatible = "intel,ssp-dai";
+				power-domains = <&io0_domain>;
+				zephyr,pm-device-runtime-auto;
 				reg = <0x24>;
 				status = "okay";
 			};
 
 			ssp25: ssp@25 {
 				compatible = "intel,ssp-dai";
+				power-domains = <&io0_domain>;
+				zephyr,pm-device-runtime-auto;
 				reg = <0x25>;
 				status = "okay";
 			};
 
 			ssp26: ssp@26 {
 				compatible = "intel,ssp-dai";
+				power-domains = <&io0_domain>;
+				zephyr,pm-device-runtime-auto;
 				reg = <0x26>;
 				status = "okay";
 			};
 
 			ssp27: ssp@27 {
 				compatible = "intel,ssp-dai";
+				power-domains = <&io0_domain>;
+				zephyr,pm-device-runtime-auto;
 				reg = <0x27>;
 				status = "okay";
 			};
