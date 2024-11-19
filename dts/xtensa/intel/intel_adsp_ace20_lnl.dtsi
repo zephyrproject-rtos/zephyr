@@ -180,6 +180,7 @@
 			fifo = <0x0008>;
 			interrupts = <0x08 0 0>;
 			interrupt-parent = <&ace_intc>;
+			zephyr,pm-device-runtime-auto;
 		};
 
 		dmic1: dai-dmic1@10100 {
@@ -189,6 +190,7 @@
 			fifo = <0x0108>;
 			interrupts = <0x08 0 0>;
 			interrupt-parent = <&ace_intc>;
+			zephyr,pm-device-runtime-auto;
 		};
 
 		dmicvss: dmicvss@16000 {
