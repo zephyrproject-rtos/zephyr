@@ -657,6 +657,9 @@ struct bt_conn_le_cs_subevent_result {
 		 */
 		uint8_t abort_step;
 	} header;
+	/** Pointer to buffer containing step data.
+	 *  NULL if num_steps_reported is 0.
+	 */
 	struct net_buf_simple *step_data_buf;
 };
 
