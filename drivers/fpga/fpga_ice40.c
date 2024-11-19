@@ -56,7 +56,7 @@
 #define FPGA_ICE40_LEADING_CLOCKS_MIN  8
 #define FPGA_ICE40_TRAILING_CLOCKS_MIN 49
 
-LOG_MODULE_REGISTER(fpga_ice40);
+LOG_MODULE_REGISTER(fpga_ice40, CONFIG_FPGA_LOG_LEVEL);
 
 struct fpga_ice40_data {
 	uint32_t crc;

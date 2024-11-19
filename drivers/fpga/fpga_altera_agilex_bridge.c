@@ -14,7 +14,7 @@
 #include <zephyr/logging/log.h>
 #include "fpga_altera_agilex_bridge.h"
 
-LOG_MODULE_REGISTER(fpga_altera);
+LOG_MODULE_REGISTER(fpga_altera, CONFIG_FPGA_LOG_LEVEL);
 
 struct fpga_bridge_dev_data {
 	/* SiP SVC controller */

@@ -13,7 +13,7 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(fpga_slg471x5);
+LOG_MODULE_REGISTER(fpga_slg471x5, CONFIG_FPGA_LOG_LEVEL);
 
 #define SLG471X5_NREG 256
 
