@@ -11,4 +11,14 @@
 			<RA_PSEL(RA_PSEL_SCI_0, 4, 10)>;
 		};
 	};
+
+	spi0_default: spi0_default {
+		group1 {
+			/* MISO MOSI RSPCK SSL */
+			psels = <RA_PSEL(RA_PSEL_SPI, 7, 0)>,
+			<RA_PSEL(RA_PSEL_SPI, 7, 1)>,
+			<RA_PSEL(RA_PSEL_SPI, 7, 2)>,
+			<RA_PSEL(RA_PSEL_SPI, 7, 3)>;
+		};
+	};
 };

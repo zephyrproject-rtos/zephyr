@@ -98,6 +98,8 @@ The below features are currently supported on Zephyr OS for EK-RA6M3 board:
 +-----------+------------+----------------------+
 | I2C       | on-chip    | i2c                  |
 +-----------+------------+----------------------+
+| SPI       | on-chip    | spi                  |
++-----------+------------+----------------------+
 
 Other hardware features are currently not supported by the port.
 

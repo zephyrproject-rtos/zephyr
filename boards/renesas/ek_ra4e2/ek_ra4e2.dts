@@ -76,3 +76,9 @@
 &ioport2 {
 	status = "okay";
 };
+
+&spi0 {
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
