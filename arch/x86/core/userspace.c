@@ -132,9 +132,9 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 	/* Transition will reset stack pointer to initial, discarding
 	 * any old context since this is a one-way operation
 	 */
-	stack_end = Z_STACK_PTR_ALIGN(_current->stack_info.start +
-				      _current->stack_info.size -
-				      _current->stack_info.delta);
+	stack_end = Z_STACK_PTR_ALIGN(arch_current_thread()->stack_info.start +
+				      arch_current_thread()->stack_info.size -
+				      arch_current_thread()->stack_info.delta);
 
 #ifdef CONFIG_X86_64
 	/* x86_64 SysV ABI requires 16 byte stack alignment, which
@@ -156,15 +156,15 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 	 * Note that this also needs to page in the reserved
 	 * portion of the stack (which is usually the page just
 	 * before the beginning of stack in
-	 * _current->stack_info.start.
+	 * arch_current_thread()->stack_info.start.
 	 */
 	uintptr_t stack_start;
 	size_t stack_size;
 	uintptr_t stack_aligned_start;
 	size_t stack_aligned_size;
 
-	stack_start = POINTER_TO_UINT(_current->stack_obj);
-	stack_size = K_THREAD_STACK_LEN(_current->stack_info.size);
+	stack_start = POINTER_TO_UINT(arch_current_thread()->stack_obj);
+	stack_size = K_THREAD_STACK_LEN(arch_current_thread()->stack_info.size);
 
 #if defined(CONFIG_X86_STACK_PROTECTION)
 	/* With hardware stack protection, the first page of stack
@@ -182,7 +182,7 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 #endif
 
 	z_x86_userspace_enter(user_entry, p1, p2, p3, stack_end,
-			      _current->stack_info.start);
+			      arch_current_thread()->stack_info.start);
 	CODE_UNREACHABLE;
 }
 

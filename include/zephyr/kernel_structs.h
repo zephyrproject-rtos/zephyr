@@ -171,7 +171,7 @@ struct _cpu {
 #endif
 
 #ifdef CONFIG_SMP
-	/* True when _current is allowed to context switch */
+	/* True when arch_current_thread() is allowed to context switch */
 	uint8_t swap_ok;
 #endif
 
@@ -260,12 +260,12 @@ bool z_smp_cpu_mobile(void);
 
 #define _current_cpu ({ __ASSERT_NO_MSG(!z_smp_cpu_mobile()); \
 			arch_curr_cpu(); })
-#define _current arch_current_thread()
 
 #else
 #define _current_cpu (&_kernel.cpus[0])
-#define _current _kernel.cpus[0].current
-#endif
+#endif /* CONFIG_SMP */
+
+#define _current arch_current_thread() __DEPRECATED_MACRO
 
 /* kernel wait queue record */
 #ifdef CONFIG_WAITQ_SCALABLE

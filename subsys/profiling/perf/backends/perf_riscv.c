@@ -76,10 +76,10 @@ size_t arch_perf_current_stack_trace(uintptr_t *buf, size_t size)
 	 * function prologue or epilogue.
 	 */
 	buf[idx++] = (uintptr_t)esf->ra;
-	if (valid_stack((uintptr_t)new_fp, _current)) {
+	if (valid_stack((uintptr_t)new_fp, arch_current_thread())) {
 		fp = new_fp;
 	}
-	while (valid_stack((uintptr_t)fp, _current)) {
+	while (valid_stack((uintptr_t)fp, arch_current_thread())) {
 		if (idx >= size) {
 			return 0;
 		}

@@ -276,7 +276,7 @@ Per-CPU data
 ============
 
 Many elements of the core kernel data need to be implemented for each
-CPU in SMP mode.  For example, the ``_current`` thread pointer obviously
+CPU in SMP mode.  For example, the ``arch_current_thread()`` thread pointer obviously
 needs to reflect what is running locally, there are many threads
 running concurrently.  Likewise a kernel-provided interrupt stack
 needs to be created and assigned for each physical CPU, as does the

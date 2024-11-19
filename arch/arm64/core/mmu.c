@@ -1309,7 +1309,7 @@ int arch_mem_domain_thread_add(struct k_thread *thread)
 	}
 
 	thread->arch.ptables = domain_ptables;
-	if (thread == _current) {
+	if (thread == arch_current_thread()) {
 		z_arm64_swap_ptables(thread);
 	} else {
 #ifdef CONFIG_SMP
