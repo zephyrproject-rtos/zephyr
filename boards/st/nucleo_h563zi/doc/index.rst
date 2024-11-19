@@ -167,6 +167,8 @@ The Zephyr nucleo_h563zi board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c bus                             |
 +-----------+------------+-------------------------------------+
+| I3C       | on-chip    | i3c bus                             |
++-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
@@ -222,6 +224,7 @@ Default Zephyr Peripheral Mapping:
 - SPI1 SCK/MISO/MOSI/CS: PA5/PG9/PB5/PD14
 - UART3 TX/RX : PD8/PD9 (VCP)
 - USER_PB : PC13
+- I3C1: PD12(SCL) & PD13(SDA)
 
 System Clock
 ------------
