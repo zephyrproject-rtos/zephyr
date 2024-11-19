@@ -1,15 +1,8 @@
 /*
  * Copyright (c) 2016 Cadence Design Systems, Inc.
  * Copyright (c) 2017 Intel Corporation
- * Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
  * SPDX-License-Identifier: Apache-2.0
- */
-
-/**
- * @file
- * @brief Linker command/script file
- *
- * Linker script for the Xtensa platform.
  */
 
 #include <zephyr/devicetree.h>
@@ -17,26 +10,54 @@
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/linker/linker-tool.h>
 
-#define RAMABLE_REGION dram0_1_seg
-#define RAMABLE_REGION_1 dram0_1_seg
-#define RODATA_REGION dram0_1_seg
-#define IRAM_REGION iram0_0_seg
-#define FLASH_CODE_REGION iram0_0_seg
-#define ROMABLE_REGION iram0_0_seg
-#define ROMABLE_DATA_REGION dram0_1_seg
-#define dram0_0_seg dram0_1_seg
+#if !defined(CONFIG_BOOTLOADER_MCUBOOT)
+#error "APPCPU image must use MCUboot image format."
+#endif /* CONFIG_BOOTLOADER_MCUBOOT */
 
-/* Flash segments (rodata and text) should be mapped in virtual address space by providing VMA.
+#include "memory.h"
+
+/* User available SRAM memory segments */
+appcpu_iram_end = USER_IRAM_END - APPCPU_DRAM_SIZE;
+appcpu_iram_org = appcpu_iram_end - APPCPU_IRAM_SIZE;
+appcpu_iram_len = APPCPU_IRAM_SIZE;
+
+appcpu_dram_org = SRAM1_DRAM_USER_START;
+appcpu_dram_len = APPCPU_DRAM_SIZE;
+
+/* Aliases */
+#define ROMABLE_REGION   FLASH
+#define RODATA_REGION    dram0_1_seg
+#define RAMABLE_REGION   dram0_1_seg
+#define IRAM_REGION      iram0_1_seg
+
+/* Zephyr macro re-definitions */
+#undef GROUP_DATA_LINK_IN
+#define GROUP_DATA_LINK_IN(vregion, lregion) > vregion AT > lregion
+
+#undef GROUP_NOLOAD_LINK_IN
+#define GROUP_NOLOAD_LINK_IN(vregion, lregion) > vregion
+
+/* Flash segments (rodata and text) should be mapped in the virtual address spaces.
  * Executing directly from LMA is not possible. */
 #undef GROUP_ROM_LINK_IN
 #define GROUP_ROM_LINK_IN(vregion, lregion) > RODATA_REGION AT > lregion
 
+/* Make sure new sections have consistent alignment between input and output sections */
+#undef SECTION_DATA_PROLOGUE
+#define SECTION_DATA_PROLOGUE(name, options, align) name options : ALIGN_WITH_INPUT
+
+#undef SECTION_PROLOGUE
+#define SECTION_PROLOGUE SECTION_DATA_PROLOGUE
+
 MEMORY
 {
-  iram0_0_seg(RX): org = 0x40080000 + 0x08000, len = 0x18000
-  dram0_shm0_seg(RW): org = 0x3FFE5230, len = 16K /* shared RAM reserved for IPM */
-  dram0_sem0_seg(RW): org = 0x3FFED238, len = 8 /*shared data reserved for IPM data header */
-  dram0_1_seg(RW): org = 0x3FFE9238 + CONFIG_ESP32_BT_RESERVE_DRAM, len = 0x17CB0 - 0xEE0 - CONFIG_ESP32_BT_RESERVE_DRAM
+  mcuboot_hdr (R):  org = 0x0,  len = 0x20
+  metadata (R):     org = 0x20, len = 0x20
+  FLASH (R):        org = 0x40, len = FLASH_SIZE - 0x40
+
+  iram0_1_seg(RX): org = appcpu_iram_org, len = appcpu_iram_len
+  dram0_1_seg(RW): org = appcpu_dram_org, len = appcpu_dram_len
+
 #ifdef CONFIG_GEN_ISR_TABLES
   IDT_LIST(RW): org = 0x3ebfe010, len = 0x2000
 #endif
@@ -44,26 +65,60 @@ MEMORY
 
 /*  Default entry point:  */
 PROVIDE ( _ResetVector = 0x40000400 );
-ENTRY(__app_cpu_start)
+ENTRY(__appcpu_start)
 
 _rom_store_table = 0;
 
 PROVIDE(_memmap_vecbase_reset = 0x40000450);
 PROVIDE(_memmap_reset_vector = 0x40000400);
 
-_heap_sentry = 0x3ffe3f20;
+_heap_sentry = BOOTLOADER_DRAM_SEG_START + APPCPU_DRAM_SIZE;
 
 SECTIONS
 {
-#include <zephyr/linker/rel-sections.ld>
+  /* Reserve space for MCUboot header in the binary */
+  .mcuboot_header :
+  {
+    QUAD(0x0)
+    QUAD(0x0)
+    QUAD(0x0)
+    QUAD(0x0)
+  } > mcuboot_hdr
+  /* Image load table */
+  .metadata :
+  {
+    /* 0. Magic byte for load header */
+    LONG(0xace637d3)
+
+    /* 1. Application entry point address */
+    KEEP(*(.entry_addr))
+
+    /* IRAM metadata:
+     * 2. Destination address (VMA) for IRAM region
+     * 3. Flash offset (LMA) for start of IRAM region
+     * 4. Size of IRAM region
+     */
+    LONG(ADDR(.iram0.vectors))
+    LONG(LOADADDR(.iram0.vectors))
+    LONG(_iram_end - _init_start);
+
+    /* DRAM metadata:
+     * 5. Destination address (VMA) for DRAM region
+     * 6. Flash offset (LMA) for start of DRAM region
+     * 7. Size of DRAM region
+     */
+    LONG(ADDR(.dram0.data))
+    LONG(LOADADDR(.dram0.data))
+    LONG(_data_end - _data_start)
+  } > metadata
+
+  #include <zephyr/linker/rel-sections.ld>
 
 #ifdef CONFIG_LLEXT
-#include <zephyr/linker/llext-sections.ld>
+  #include <zephyr/linker/llext-sections.ld>
 #endif
 
-  _image_iram_start = LOADADDR(.iram0.vectors);
-  _image_iram_size = LOADADDR(_TEXT_SECTION_NAME) + SIZEOF(_TEXT_SECTION_NAME) - _image_iram_start;
-  _image_iram_vaddr = ADDR(.iram0.vectors);
+  /* --- START OF IRAM --- */
 
   /* Send .iram0 code to iram */
   .iram0.vectors : ALIGN(4)
@@ -102,12 +157,10 @@ SECTIONS
     *(.init)
     _init_end = ABSOLUTE(.);
 
-    /* This goes here, not at top of linker script, so addr2line finds it last,
-       and uses it in preference to the first symbol in IRAM */
-    _iram_start = ABSOLUTE(0);
+    _iram_start = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(IRAM_REGION, ROMABLE_REGION)
 
-  SECTION_PROLOGUE(_TEXT_SECTION_NAME, , ALIGN(4))
+  .iram0.text : ALIGN(4)
   {
     /* Code marked as running out of IRAM */
     _iram_text_start = ABSOLUTE(.);
@@ -150,25 +203,136 @@ SECTIONS
     *libnet80211.a:( .wifirxiram  .wifirxiram.* .wifislprxiram .wifislprxiram.*)
     *libpp.a:( .wifirxiram  .wifirxiram.* .wifislprxiram .wifislprxiram.*)
 
+    . = ALIGN(16);
+
     _iram_text_end = ABSOLUTE(.);
-    . = ALIGN(4);
     _iram_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(IRAM_REGION, ROMABLE_REGION)
 
-  _image_drom_start = LOADADDR(_RODATA_SECTION_NAME);
-  _image_drom_size = LOADADDR(_RODATA_SECTION_END) + SIZEOF(_RODATA_SECTION_END)  - _image_drom_start;
-  _image_drom_vaddr = ADDR(_RODATA_SECTION_NAME);
-
-  SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
+  .flash.text : ALIGN(16)
   {
-    __rodata_region_start = ABSOLUTE(.);
+    _stext = .;
+    _text_start = ABSOLUTE(.);
+
+    *(.stub .gnu.warning .gnu.linkonce.literal.* .gnu.linkonce.t.*.literal .gnu.linkonce.t.*)
+    *(.irom0.text) /* catch stray ICACHE_RODATA_ATTR */
+    *(.fini.literal)
+    *(.fini)
+    *(.gnu.version)
+    *(.literal .text .literal.* .text.*)
+
+    /* CPU will try to prefetch up to 16 bytes of
+     * of instructions. This means that any configuration (e.g. MMU, PMS) must allow
+     * safe access to up to 16 bytes after the last real instruction, add
+     * dummy bytes to ensure this
+     */
+    . += 16;
+
+    _text_end = ABSOLUTE(.);
+    _etext = .;
+
+    /* Similar to _iram_start, this symbol goes here so it is
+     * resolved by addr2line in preference to the first symbol in
+     * the flash.text segment.
+     */
+    . = ALIGN(4);
+    _flash_cache_start = ABSOLUTE(0);
 
     . = ALIGN(4);
+    _iram_end = ABSOLUTE(.);
+
+  } GROUP_DATA_LINK_IN(IRAM_REGION, ROMABLE_REGION)
+
+  /* --- END OF IRAM --- */
+
+  /* --- START OF DRAM --- */
+
+  .dram0.data :
+  {
+    . = ALIGN(16);
+    __data_start = ABSOLUTE(.);
+    _data_start = ABSOLUTE(.);
+
+    _btdm_data_start = ABSOLUTE(.);
+    *libbtdm_app.a:(.data .data.*)
+    . = ALIGN (4);
+    _btdm_data_end = ABSOLUTE(.);
+
+    *(.data)
+    *(.data.*)
+    *(.gnu.linkonce.d.*)
+    *(.data1)
+    *(.sdata)
+    *(.sdata.*)
+    *(.gnu.linkonce.s.*)
+    *(.sdata2)
+    *(.sdata2.*)
+    *(.gnu.linkonce.s2.*)
+    /* rodata for panic handler(libarch__xtensa__core.a) and all
+     * dependent functions should be placed in DRAM to avoid issue
+     * when flash cache is disabled */
+    *libarch__xtensa__core.a:(.rodata .rodata.*)
+    *libkernel.a:fatal.*(.rodata .rodata.*)
+    *libkernel.a:init.*(.rodata .rodata.*)
+    *libzephyr.a:cbprintf_complete*(.rodata .rodata.*)
+    *libzephyr.a:log_core.*(.rodata .rodata.*)
+    *libzephyr.a:log_backend_uart.*(.rodata .rodata.*)
+    *libzephyr.a:log_output.*(.rodata .rodata.*)
+    *libzephyr.a:loader.*(.rodata .rodata.*)
+    *libdrivers__flash.a:flash_esp32.*(.rodata .rodata.*)
+    *libzephyr.a:spi_flash_rom_patch.*(.rodata  .rodata.*)
+    *libdrivers__serial.a:uart_esp32.*(.rodata .rodata.*)
+
+    . = ALIGN(4);
+    #include <snippets-rwdata.ld>
+    . = ALIGN(4);
+
+    KEEP(*(.jcr))
+    *(.dram1 .dram1.*)
+    . = ALIGN(16);
+
+  } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+  #include <snippets-data-sections.ld>
+  #include <zephyr/linker/common-ram.ld>
+  #include <snippets-ram-sections.ld>
+  #include <zephyr/linker/cplusplus-ram.ld>
+  #include <zephyr/linker/kobject-data.ld>
+  #include <zephyr/linker/common-rom/common-rom-logging.ld>
+
+  .dram0.rodata : ALIGN(4)
+  {
+    _rodata_start = ABSOLUTE(.);
+
+    *(.rodata_desc .rodata_desc.*)               /* Should be the first.  App version info.        DO NOT PUT ANYTHING BEFORE IT! */
+    *(.rodata_custom_desc .rodata_custom_desc.*) /* Should be the second. Custom app version info. DO NOT PUT ANYTHING BEFORE IT! */
+
+    __rodata_region_start = ABSOLUTE(.);
+    . = ALIGN(16);
     #include <snippets-rodata.ld>
 
     . = ALIGN(4);
-    *(EXCLUDE_FILE (*libarch__xtensa__core.a:* *libkernel.a:fatal.* *libkernel.a:init.* *libzephyr.a:cbprintf_complete* *libzephyr.a:log_core.* *libzephyr.a:log_backend_uart.* *libdrivers__flash.a:esp32_mp.* *libzephyr.a:log_output.* *libzephyr.a:loader.* *libdrivers__flash.a:flash_esp32.* *libdrivers__serial.a:uart_esp32.* *libzephyr.a:spi_flash_rom_patch.*) .rodata)
-    *(EXCLUDE_FILE (*libarch__xtensa__core.a:* *libkernel.a:fatal.* *libkernel.a:init.* *libzephyr.a:cbprintf_complete* *libzephyr.a:log_core.* *libzephyr.a:log_backend_uart.* *libdrivers__flash.a:esp32_mp.* *libzephyr.a:log_output.* *libzephyr.a:loader.* *libdrivers__flash.a:flash_esp32.* *libdrivers__serial.a:uart_esp32.* *libzephyr.a:spi_flash_rom_patch.*) .rodata.*)
+    *(EXCLUDE_FILE (
+        *libarch__xtensa__core.a:*
+        *libkernel.a:fatal.*
+        *libkernel.a:init.*
+        *libzephyr.a:cbprintf_complete*
+        *libzephyr.a:log_core.*
+        *libzephyr.a:log_backend_uart.*
+        *libzephyr.a:log_output.*
+        *libzephyr.a:loader.*
+        *libdrivers__serial.a:uart_esp32.*) .rodata)
+
+    *(EXCLUDE_FILE (
+        *libarch__xtensa__core.a:*
+        *libkernel.a:fatal.*
+        *libkernel.a:init.*
+        *libzephyr.a:cbprintf_complete*
+        *libzephyr.a:log_core.*
+        *libzephyr.a:log_backend_uart.*
+        *libzephyr.a:log_output.*
+        *libzephyr.a:loader.*
+        *libdrivers__serial.a:uart_esp32.*) .rodata.*)
 
     *(.irom1.text) /* catch stray ICACHE_RODATA_ATTR */
     *(.gnu.linkonce.r.*)
@@ -209,8 +373,9 @@ SECTIONS
     *(.rodata_wlog*)
     _thread_local_end = ABSOLUTE(.);
     . = ALIGN(4);
-  } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_DATA_REGION)
+  } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
 
+  #include <zephyr/linker/cplusplus-rom.ld>
   #include <zephyr/linker/common-rom/common-rom-init.ld>
   #include <zephyr/linker/common-rom/common-rom-kernel-devices.ld>
   #include <zephyr/linker/common-rom/common-rom-ztest.ld>
@@ -218,84 +383,33 @@ SECTIONS
   #include <zephyr/linker/common-rom/common-rom-bt.ld>
   #include <zephyr/linker/common-rom/common-rom-debug.ld>
   #include <zephyr/linker/common-rom/common-rom-misc.ld>
+  #include <zephyr/linker/thread-local-storage.ld>
   #include <snippets-sections.ld>
 
   /* Create an explicit section at the end of all the data that shall be mapped into drom.
    * This is used to calculate the size of the _image_drom_size variable */
-  SECTION_PROLOGUE(_RODATA_SECTION_END,,)
+  .dram0.rodata_end : ALIGN(16)
   {
     . = ALIGN(4);
     _image_rodata_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
 
-  _image_dram_start = LOADADDR(.dram0.data);
-  _image_dram_size = LOADADDR(.dram0.end) + SIZEOF(.dram0.end) - _image_dram_start;
-  _image_dram_vaddr = ADDR(.dram0.data);
-
-  .dram0.data :
-  {
-    __data_start = ABSOLUTE(.);
-
-    _btdm_data_start = ABSOLUTE(.);
-    *libbtdm_app.a:(.data .data.*)
-    . = ALIGN (4);
-    _btdm_data_end = ABSOLUTE(.);
-
-    *(.data)
-    *(.data.*)
-    *(.gnu.linkonce.d.*)
-    *(.data1)
-    *(.sdata)
-    *(.sdata.*)
-    *(.gnu.linkonce.s.*)
-    *(.sdata2)
-    *(.sdata2.*)
-    *(.gnu.linkonce.s2.*)
-    /* rodata for panic handler(libarch__xtensa__core.a) and all
-     * dependent functions should be placed in DRAM to avoid issue
-     * when flash cache is disabled */
-    *libarch__xtensa__core.a:(.rodata .rodata.*)
-    *libkernel.a:fatal.*(.rodata .rodata.*)
-    *libkernel.a:init.*(.rodata .rodata.*)
-    *libzephyr.a:cbprintf_complete*(.rodata .rodata.*)
-    *libzephyr.a:log_core.*(.rodata .rodata.*)
-    *libzephyr.a:log_backend_uart.*(.rodata .rodata.*)
-    *libzephyr.a:log_output.*(.rodata .rodata.*)
-    *libzephyr.a:loader.*(.rodata .rodata.*)
-    *libdrivers__flash.a:flash_esp32.*(.rodata .rodata.*)
-    *libzephyr.a:spi_flash_rom_patch.*(.rodata  .rodata.*)
-    *libdrivers__serial.a:uart_esp32.*(.rodata .rodata.*)
-
-    KEEP(*(.jcr))
-    *(.dram1 .dram1.*)
-    . = ALIGN(4);
-  } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_DATA_REGION)
-
-  #include <zephyr/linker/cplusplus-rom.ld>
-  #include <snippets-data-sections.ld>
-  #include <zephyr/linker/common-ram.ld>
-  #include <snippets-ram-sections.ld>
-  #include <zephyr/linker/cplusplus-ram.ld>
-
-  /* logging sections should be placed in RAM area to avoid flash cache disabled issues */
-  #pragma push_macro("GROUP_ROM_LINK_IN")
-  #undef GROUP_ROM_LINK_IN
-  #define GROUP_ROM_LINK_IN GROUP_DATA_LINK_IN
-  #include <zephyr/linker/common-rom/common-rom-logging.ld>
-  #pragma pop_macro("GROUP_ROM_LINK_IN")
-
   .dram0.end :
   {
-    . = ALIGN(4);
-
-    #include <snippets-rwdata.ld>
-
-    . = ALIGN(4);
     __data_end = ABSOLUTE(.);
-  } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_DATA_REGION)
+    _data_end = ABSOLUTE(.);
+  } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+  .dram0.noinit (NOLOAD):
+  {
+    . = ALIGN (8);
+    *(.noinit)
+    *(.noinit.*)
+    . = ALIGN (8);
+  } GROUP_LINK_IN(RAMABLE_REGION)
 
   /* Shared RAM */
-  SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)
+  .dram0.bss (NOLOAD) :
   {
     . = ALIGN (8);
     _bss_start = ABSOLUTE(.); /* required by bluetooth library */
@@ -305,9 +419,6 @@ SECTIONS
     *libbtdm_app.a:(.bss .bss.* COMMON)
     . = ALIGN (4);
     _btdm_bss_end = ABSOLUTE(.);
-
-    /* Buffer for system heap should be placed in dram0_0_seg */
-    *libkernel.a:mempool.*(.noinit.kheap_buf__system_heap .noinit.*.kheap_buf__system_heap)
 
     *(.dynsbss)
     *(.sbss)
@@ -330,40 +441,16 @@ SECTIONS
   /* Provide total SRAM usage, including IRAM and DRAM */
   _image_ram_start = __rodata_region_start;
   #include <zephyr/linker/ram-end.ld>
-  _image_ram_size += _iram_end - _iram_start;
+  _image_ram_size += _iram_end - _init_start;
 
-  ASSERT(((__bss_end - ORIGIN(dram0_0_seg)) <= LENGTH(dram0_0_seg)),
+  ASSERT(((__bss_end - ORIGIN(dram0_1_seg)) <= LENGTH(dram0_1_seg)),
           "DRAM segment data does not fit.")
 
-  SECTION_DATA_PROLOGUE(_NOINIT_SECTION_NAME, (NOLOAD),)
-  {
-    . = ALIGN (8);
-    *(.noinit)
-    *(.noinit.*)
-    . = ALIGN (8);
-  } GROUP_LINK_IN(RAMABLE_REGION_1)
+  /* --- END OF DRAM --- */
 
-  _image_irom_start = LOADADDR(.flash.text);
-  _image_irom_size = LOADADDR(.flash.text) + SIZEOF(.flash.text) - _image_irom_start;
-  _image_irom_vaddr = ADDR(.flash.text);
-
-  .flash.text : ALIGN(4)
-  {
-    _stext = .;
-    _text_start = ABSOLUTE(.);
-
-    *(.literal .text .literal.* .text.*)
-    . = ALIGN(4);
-    _text_end = ABSOLUTE(.);
-    _etext = .;
-
-    /* Similar to _iram_start, this symbol goes here so it is
-       resolved by addr2line in preference to the first symbol in
-       the flash.text segment.
-    */
-    _flash_cache_start = ABSOLUTE(0);
-  } GROUP_DATA_LINK_IN(FLASH_CODE_REGION, ROMABLE_REGION)
-
+#ifdef CONFIG_GEN_ISR_TABLES
+#include <zephyr/linker/intlist.ld>
+#endif
 
 #include <zephyr/linker/debug-sections.ld>
 
@@ -400,12 +487,7 @@ SECTIONS
     KEEP (*(.xt.profile_files))
     KEEP (*(.gnu.linkonce.xt.profile_files.*))
   }
-
-#ifdef CONFIG_GEN_ISR_TABLES
-#include <zephyr/linker/intlist.ld>
-#endif
-
 }
 
-ASSERT(((_iram_end - ORIGIN(iram0_0_seg)) <= LENGTH(iram0_0_seg)),
+ASSERT(((_iram_end - ORIGIN(iram0_1_seg)) <= LENGTH(iram0_1_seg)),
           "IRAM0 segment data does not fit.")
