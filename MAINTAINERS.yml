@@ -390,8 +390,10 @@ Bluetooth Host:
     - doc/connectivity/bluetooth/img/ctlr*
     - doc/connectivity/bluetooth/api/audio/
     - doc/connectivity/bluetooth/api/mesh/
-    - doc/connectivity/bluetooth/api/shell/iso.rst
     - doc/connectivity/bluetooth/api/controller.rst
+    - doc/connectivity/bluetooth/shell/classic/a2dp.rst
+    - doc/connectivity/bluetooth/shell/host/iso.rst
+    - doc/connectivity/bluetooth/shell/audio/
     - samples/bluetooth/bap*/
     - samples/bluetooth/cap*/
     - samples/bluetooth/hap*/
@@ -475,6 +477,7 @@ Bluetooth Audio:
     - tests/bluetooth/tester/overlay-le-audio.conf
     - tests/bluetooth/tester/src/audio/
     - doc/connectivity/bluetooth/api/audio/
+    - doc/connectivity/bluetooth/shell/audio/
     - samples/bluetooth/bap*/
     - samples/bluetooth/cap*/
     - samples/bluetooth/hap*/
@@ -493,6 +496,7 @@ Bluetooth Classic:
   collaborators:
     - jhedberg
   files:
+    - doc/connectivity/bluetooth/shell/classic/a2dp.rst
     - subsys/bluetooth/common/
     - subsys/bluetooth/host/classic/
     - include/zephyr/bluetooth/classic/
@@ -512,7 +516,7 @@ Bluetooth ISO:
     - rugeGerritsen
   files:
     - include/zephyr/bluetooth/iso.h
-    - doc/connectivity/bluetooth/api/shell/iso.rst
+    - doc/connectivity/bluetooth/shell/host/iso.rst
     - samples/bluetooth/iso_*/
     - subsys/bluetooth/Kconfig.iso
     - subsys/bluetooth/host/iso.c

@@ -1,5 +1,5 @@
-Bluetooth: Isochronous Channels
-################################
+Bluetooth: Isochronous Channels Shell
+#####################################
 
 Commands
 ********
