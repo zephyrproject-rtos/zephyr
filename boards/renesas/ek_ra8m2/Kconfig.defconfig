@@ -10,4 +10,8 @@ configdefault ETH_DRIVER
 config CLOCK_CONTROL_FIXED_RATE_CLOCK
 	default y if ETH_PHY_DRIVER
 
+# Output power supply for USBHS port
+config GPIO_HOGS
+	default y if UHC_DRIVER
+
 endif # BOARD_EK_RA8M2
