@@ -443,6 +443,22 @@ static void udc_nrf_thread(void *p1, void *p2, void *p3)
 		case UDC_NRF_EVT_HAL:
 			ep = evt.hal_evt.data.eptransfer.ep;
 			switch (evt.hal_evt.type) {
+			case NRF_USBD_COMMON_EVT_SUSPEND:
+				LOG_INF("SUSPEND state detected");
+				nrf_usbd_common_suspend();
+				udc_set_suspended(udc_nrf_dev, true);
+				udc_submit_event(udc_nrf_dev, UDC_EVT_SUSPEND, 0);
+				break;
+			case NRF_USBD_COMMON_EVT_RESUME:
+				LOG_INF("RESUMING from suspend");
+				udc_set_suspended(udc_nrf_dev, false);
+				udc_submit_event(udc_nrf_dev, UDC_EVT_RESUME, 0);
+				break;
+			case NRF_USBD_COMMON_EVT_WUREQ:
+				LOG_INF("Remote wakeup initiated");
+				udc_set_suspended(udc_nrf_dev, false);
+				udc_submit_event(udc_nrf_dev, UDC_EVT_RESUME, 0);
+				break;
 			case NRF_USBD_COMMON_EVT_EPTRANSFER:
 				start_xfer = true;
 				if (USB_EP_DIR_IS_IN(ep)) {
@@ -499,22 +515,6 @@ static void udc_sof_check_iso_out(const struct device *dev)
 static void usbd_event_handler(nrf_usbd_common_evt_t const *const hal_evt)
 {
 	switch (hal_evt->type) {
-	case NRF_USBD_COMMON_EVT_SUSPEND:
-		LOG_INF("SUSPEND state detected");
-		nrf_usbd_common_suspend();
-		udc_set_suspended(udc_nrf_dev, true);
-		udc_submit_event(udc_nrf_dev, UDC_EVT_SUSPEND, 0);
-		break;
-	case NRF_USBD_COMMON_EVT_RESUME:
-		LOG_INF("RESUMING from suspend");
-		udc_set_suspended(udc_nrf_dev, false);
-		udc_submit_event(udc_nrf_dev, UDC_EVT_RESUME, 0);
-		break;
-	case NRF_USBD_COMMON_EVT_WUREQ:
-		LOG_INF("Remote wakeup initiated");
-		udc_set_suspended(udc_nrf_dev, false);
-		udc_submit_event(udc_nrf_dev, UDC_EVT_RESUME, 0);
-		break;
 	case NRF_USBD_COMMON_EVT_RESET:
 		LOG_INF("Reset");
 		udc_submit_event(udc_nrf_dev, UDC_EVT_RESET, 0);
@@ -523,6 +523,9 @@ static void usbd_event_handler(nrf_usbd_common_evt_t const *const hal_evt)
 		udc_submit_event(udc_nrf_dev, UDC_EVT_SOF, 0);
 		udc_sof_check_iso_out(udc_nrf_dev);
 		break;
+	case NRF_USBD_COMMON_EVT_SUSPEND:
+	case NRF_USBD_COMMON_EVT_RESUME:
+	case NRF_USBD_COMMON_EVT_WUREQ:
 	case NRF_USBD_COMMON_EVT_EPTRANSFER:
 	case NRF_USBD_COMMON_EVT_SETUP: {
 		struct udc_nrf_evt evt = {
