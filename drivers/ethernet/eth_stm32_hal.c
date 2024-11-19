@@ -56,7 +56,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #define PHY_ADDR	CONFIG_ETH_STM32_HAL_PHY_ADDRESS
 
-#if defined(CONFIG_MDIO)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_mdio)
 
 #define DEVICE_PHY_BY_NAME(n) \
 	    DEVICE_DT_GET(DT_CHILD(DT_INST_CHILD(n, mdio), _CONCAT(ethernet_phy_, PHY_ADDR)))
@@ -239,7 +239,7 @@ static HAL_StatusTypeDef read_eth_phy_register(ETH_HandleTypeDef *heth,
 						uint32_t PHYReg,
 						uint32_t *RegVal)
 {
-#if defined(CONFIG_MDIO)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_mdio)
 	return phy_read(eth_stm32_phy_dev, PHYReg, RegVal);
 #elif defined(CONFIG_ETH_STM32_HAL_API_V2)
 	return HAL_ETH_ReadPHYRegister(heth, PHYAddr, PHYReg, RegVal);
