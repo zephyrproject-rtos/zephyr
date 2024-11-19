@@ -705,7 +705,7 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf, struct bt_mesh_net_rx
 	 * Anything else (like GATT to adv, or locally originated packets)
 	 * use the Network Transmit state.
 	 */
-	if (rx->net_if == BT_MESH_NET_IF_ADV && !rx->friend_cred) {
+	if (rx->net_if == BT_MESH_NET_IF_ADV && !rx->friend_cred && !bridge) {
 		transmit = bt_mesh_relay_retransmit_get();
 	} else {
 		transmit = bt_mesh_net_transmit_get();
