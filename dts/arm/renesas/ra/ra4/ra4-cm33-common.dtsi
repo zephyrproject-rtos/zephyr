@@ -320,6 +320,11 @@
 				compatible = "renesas,ra-udc";
 				status = "disabled";
 			};
+
+			uhc {
+				compatible = "renesas,ra-uhc";
+				status = "disabled";
+			};
 		};
 
 		option_setting_ofs: option_setting_ofs@100a100 {
