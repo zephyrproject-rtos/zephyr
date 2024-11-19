@@ -125,6 +125,11 @@ class Filters:
         if not self.platforms:
             self.find_archs()
             self.find_boards()
+        else:
+            for file in self.modified_files:
+                if file.startswith(("boards/", "dts/")):
+                    self.resolved_files.append(file)
+
         self.find_excludes()
 
     def get_plan(self, options, integration=False, use_testsuite_root=True):
