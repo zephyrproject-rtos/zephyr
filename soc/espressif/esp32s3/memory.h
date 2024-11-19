@@ -68,6 +68,7 @@
  * and it should not be overlapped by the user image.
  * When there is no 2nd stage bootloader the bootstrapping is done
  * by the so-called SIMPLE_BOOT.
+ * NOTE: AMP is supported only if MCUboot is enabled.
  */
 #ifdef CONFIG_ESP_SIMPLE_BOOT
 #define USER_DRAM_END BOOTLOADER_USER_DRAM_END
@@ -78,17 +79,19 @@
 
 /* AMP */
 #if defined(CONFIG_SOC_ENABLE_APPCPU) || defined(CONFIG_SOC_ESP32S3_APPCPU)
-#define APPCPU_IRAM_SIZE CONFIG_ESP32S3_APPCPU_IRAM_SIZE
-#define APPCPU_DRAM_SIZE CONFIG_ESP32S3_APPCPU_DRAM_SIZE
-#define AMP_COMM_SIZE    (0x4000 + 0x400)
+#define APPCPU_IRAM_SIZE CONFIG_ESP_APPCPU_IRAM_SIZE
+#define APPCPU_DRAM_SIZE CONFIG_ESP_APPCPU_DRAM_SIZE
+#define AMP_COMM_SIZE DT_REG_SIZE(DT_NODELABEL(ipmmem0)) + DT_REG_SIZE(DT_NODELABEL(shm0)) +       \
+		      DT_REG_SIZE(DT_NODELABEL(ipm0)) + DT_REG_SIZE(DT_NODELABEL(mbox0))
+#undef DRAM_RESERVED_START
+#define DRAM_RESERVED_START 0x3fce5000
 #else
 #define APPCPU_IRAM_SIZE 0
 #define APPCPU_DRAM_SIZE 0
 #define AMP_COMM_SIZE    0
 #endif
 
-#define APPCPU_SRAM_SIZE       (APPCPU_IRAM_SIZE + APPCPU_DRAM_SIZE)
-#define APPCPU_SRAM_TOTAL_SIZE (APPCPU_SRAM_SIZE + AMP_COMM_SIZE)
+#define APPCPU_SRAM_SIZE (APPCPU_IRAM_SIZE + APPCPU_DRAM_SIZE)
 
 /* Flash */
 #ifdef CONFIG_FLASH_SIZE

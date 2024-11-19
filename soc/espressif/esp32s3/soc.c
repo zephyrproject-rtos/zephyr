@@ -176,5 +176,5 @@ void sys_arch_reboot(int type)
 
 #if defined(CONFIG_SOC_ENABLE_APPCPU) && !defined(CONFIG_MCUBOOT)
 extern int esp_appcpu_init(void);
-SYS_INIT(esp_appcpu_init, POST_KERNEL, 50);
+SYS_INIT(esp_appcpu_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #endif
