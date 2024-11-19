@@ -469,19 +469,19 @@ class RimageSigner(Signer):
 
         kernel_name = build_conf.get('CONFIG_KERNEL_BIN_NAME', 'zephyr')
 
-        # TODO: make this a new sign.py --bootloader option.
-        if target in ('imx8', 'imx8m', 'imx8ulp', 'imx95', 'rmb'):
-            bootloader = None
-            kernel = str(b / 'zephyr' / f'{kernel_name}.elf')
-            out_bin = str(b / 'zephyr' / f'{kernel_name}.ri')
-            out_xman = str(b / 'zephyr' / f'{kernel_name}.ri.xman')
-            out_tmp = str(b / 'zephyr' / f'{kernel_name}.rix')
-        else:
+        bootloader = None
+        kernel = str(b / 'zephyr' / f'{kernel_name}.elf')
+        out_bin = str(b / 'zephyr' / f'{kernel_name}.ri')
+        out_xman = str(b / 'zephyr' / f'{kernel_name}.ri.xman')
+        out_tmp = str(b / 'zephyr' / f'{kernel_name}.rix')
+
+        # Intel platforms generate a "boot.mod" and "main.mod" as
+        # separate intermediates to use.  Other platforms just use
+        # zephyr.elf directly.
+        if os.path.exists(str(b / 'zephyr' / 'boot.mod')):
             bootloader = str(b / 'zephyr' / 'boot.mod')
+        if os.path.exists(str(b / 'zephyr' / 'main.mod')):
             kernel = str(b / 'zephyr' / 'main.mod')
-            out_bin = str(b / 'zephyr' / f'{kernel_name}.ri')
-            out_xman = str(b / 'zephyr' / f'{kernel_name}.ri.xman')
-            out_tmp = str(b / 'zephyr' / f'{kernel_name}.rix')
 
         # Clean any stale output. This is especially important when using --if-tool-available
         # (but not just)
