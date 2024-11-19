@@ -834,9 +834,10 @@ static void usbd_dmareq_process(void)
 {
 	if ((m_ep_dma_waiting & m_ep_ready) &&
 	    (k_sem_take(&dma_available, K_NO_WAIT) == 0)) {
+		const bool low_power = nrf_usbd_common_suspend_check();
 		uint32_t req;
 
-		while (0 != (req = m_ep_dma_waiting & m_ep_ready)) {
+		while (!low_power && 0 != (req = m_ep_dma_waiting & m_ep_ready)) {
 			uint8_t pos;
 
 			if (NRFX_USBD_CONFIG_DMASCHEDULER_ISO_BOOST &&
@@ -1310,7 +1311,11 @@ bool nrf_usbd_common_is_started(void)
 bool nrf_usbd_common_suspend(void)
 {
 	bool suspended = false;
-	unsigned int irq_lock_key = irq_lock();
+	unsigned int irq_lock_key;
+
+	/* DMA doesn't work in Low Power mode, ensure there is no active DMA */
+	k_sem_take(&dma_available, K_FOREVER);
+	irq_lock_key = irq_lock();
 
 	if (m_bus_suspend) {
 		if (!(NRF_USBD->EVENTCAUSE & USBD_EVENTCAUSE_RESUME_Msk)) {
@@ -1327,6 +1332,7 @@ bool nrf_usbd_common_suspend(void)
 	}
 
 	irq_unlock(irq_lock_key);
+	k_sem_give(&dma_available);
 
 	return suspended;
 }
