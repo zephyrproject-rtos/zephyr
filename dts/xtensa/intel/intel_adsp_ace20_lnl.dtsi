@@ -222,12 +222,13 @@
 			dmas = <&hda_link_out 1
 				&hda_link_in 1>;
 			dma-names = "tx", "rx";
-			power-domains = <&io0_domain>;
 			ssp-index = <0>;
 			status = "okay";
 
 			ssp00: ssp@0 {
 				compatible = "intel,ssp-dai";
+				power-domains = <&io0_domain>;
+				zephyr,pm-device-runtime-auto;
 				status = "okay";
 				reg = <0x0>;
 			};
@@ -245,12 +246,13 @@
 			dmas = <&hda_link_out 2
 				&hda_link_in 2>;
 			dma-names = "tx", "rx";
-			power-domains = <&io0_domain>;
 			ssp-index = <1>;
 			status = "okay";
 
 			ssp10: ssp@10 {
 				compatible = "intel,ssp-dai";
+				power-domains = <&io0_domain>;
+				zephyr,pm-device-runtime-auto;
 				status = "okay";
 				reg = <0x10>;
 			};
@@ -268,12 +270,13 @@
 			dmas = <&hda_link_out 3
 				&hda_link_in 3>;
 			dma-names = "tx", "rx";
-			power-domains = <&io0_domain>;
 			ssp-index = <2>;
 			status = "okay";
 
 			ssp20: ssp@20 {
 				compatible = "intel,ssp-dai";
+				power-domains = <&io0_domain>;
+				zephyr,pm-device-runtime-auto;
 				status = "okay";
 				reg = <0x20>;
 			};
