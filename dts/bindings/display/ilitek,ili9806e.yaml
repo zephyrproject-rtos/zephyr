@@ -1,0 +1,21 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: ILITEK ILI9806E display controller
+
+compatible: "ilitek,ili9806e-dsi"
+
+include: [mipi-dsi-device.yaml, display-controller.yaml]
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: |
+      The RESETn pin is asserted to disable the sensor causing a hard
+      reset.  The sensor receives this as an active-low signal.
+
+  bl-gpios:
+    type: phandle-array
+    description: |
+      The BLn pin is asserted to control the backlight of the panel.
+      The sensor receives this as an active-high signal.
