@@ -6,7 +6,7 @@
 /dts-v1/;
 
 #include <espressif/esp32/esp32_appcpu.dtsi>
-#include "odroid_go-flash_partition_table.dtsi"
+#include <espressif/partitions_0x1000_amp.dtsi>
 
 / {
 	model = "ODROID-GO Game Kit APPCPU";
@@ -16,6 +16,8 @@
 		zephyr,sram = &sram1;
 		zephyr,ipc_shm = &shm0;
 		zephyr,ipc = &ipm0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_appcpu_partition;
 	};
 };
 
