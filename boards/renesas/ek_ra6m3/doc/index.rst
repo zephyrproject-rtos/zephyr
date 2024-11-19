@@ -103,6 +103,7 @@ The below features are currently supported on Zephyr OS for EK-RA6M3 board:
 | COUNTER   | on-chip    | counter              |
 +-----------+------------+----------------------+
 | USBHS     | on-chip    | udc                  |
+|           |            | uhc                  |
 +-----------+------------+----------------------+
 | ADC       | on-chip    | adc                  |
 +-----------+------------+----------------------+
