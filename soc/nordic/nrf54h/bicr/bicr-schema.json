@@ -1,0 +1,422 @@
+{
+  "title": "nRF54H20 BICR Configuration",
+  "type": "object",
+  "properties": {
+    "power": {
+      "type": "object",
+      "title": "Power supply configuration",
+      "properties": {
+        "scheme": {
+          "type": "string",
+          "title": "Power supply scheme",
+          "enumNames": [
+            "Unconfigured (system will not boot)",
+            "VDDH supplied with 2.1-5.5 V and VDD regulated by the chip (inductor present)",
+            "Both VDD and VDDH supplied with 1.8 V (inductor present)"
+          ],
+          "enum": [
+            "UNCONFIGURED",
+            "VDD_VDDH_1V8",
+            "VDDH_2V1_5V5"
+          ],
+          "default": "UNCONFIGURED"
+        }
+      },
+      "required": [
+        "scheme"
+      ]
+    },
+    "ioPortPower": {
+      "type": "object",
+      "title": "IO port power configuration",
+      "properties": {
+        "p1Supply": {
+          "type": "string",
+          "title": "P1 power supply (VDDIO_P1)",
+          "enumNames": [
+            "Not supplied (P1 not used)",
+            "VDDIO_P1 connected to an external 1.8 V supply or to VDD_EXT",
+            "VDDIO_P1 shorted to VDD"
+          ],
+          "enum": [
+            "DISCONNECTED",
+            "EXTERNAL_1V8",
+            "SHORTED"
+          ],
+          "default": "DISCONNECTED"
+        },
+        "p2Supply": {
+          "type": "string",
+          "title": "P2 power supply (VDDIO_P2)",
+          "enumNames": [
+            "Not supplied (P2 not used)",
+            "VDDIO_P2 connected to an external 1.8 V supply or to VDD_EXT",
+            "VDDIO_P2 shorted to VDD"
+          ],
+          "enum": [
+            "DISCONNECTED",
+            "EXTERNAL_1V8",
+            "SHORTED"
+          ],
+          "default": "DISCONNECTED"
+        },
+        "p6Supply": {
+          "type": "string",
+          "title": "P6 power supply (VDDIO_P6)",
+          "enumNames": [
+            "Not supplied (P6 not used)",
+            "VDDIO_P6 connected to an external 1.8 V supply or to VDD_EXT",
+            "VDDIO_P6 shorted to VDD"
+          ],
+          "enum": [
+            "DISCONNECTED",
+            "EXTERNAL_1V8",
+            "SHORTED"
+          ],
+          "default": "DISCONNECTED"
+        },
+        "p7Supply": {
+          "type": "string",
+          "title": "P7 power supply (VDDIO_P7)",
+          "enumNames": [
+            "Not supplied (P7 not used)",
+            "VDDIO_P7 connected to an external 1.8 V supply or to VDD_EXT",
+            "VDDIO_P7 shorted to VDD"
+          ],
+          "enum": [
+            "DISCONNECTED",
+            "EXTERNAL_1V8",
+            "SHORTED"
+          ],
+          "default": "DISCONNECTED"
+        },
+        "p9Supply": {
+          "type": "string",
+          "title": "P9 power supply (VDDIO_P9)",
+          "enumNames": [
+            "Not supplied (P9 not used)",
+            "VDDIO_P9 connected to an external 1.8 V supply or to VDD_EXT",
+            "VDDIO_P9 connected to an external supply (above 1.8 V, up to 3 V)",
+            "VDDIO_P9 shorted to VDD"
+          ],
+          "enum": [
+            "DISCONNECTED",
+            "EXTERNAL_1V8",
+            "EXTERNAL_FULL",
+            "SHORTED"
+          ],
+          "default": "EXTERNAL_FULL"
+        }
+      },
+      "required": [
+        "p1Supply",
+        "p2Supply",
+        "p6Supply",
+        "p7Supply",
+        "p9Supply"
+      ]
+    },
+    "ioPortImpedance": {
+      "type": "object",
+      "title": "IO port impedance configuration",
+      "properties": {
+        "p6ImpedanceOhms": {
+          "type": "number",
+          "title": "P6 impedance",
+          "enum": [
+            33,
+            40,
+            50,
+            66,
+            100
+          ],
+          "default": 50
+        },
+        "p7ImpedanceOhms": {
+          "type": "number",
+          "title": "P7 impedance",
+          "enum": [
+            33,
+            40,
+            50,
+            66,
+            100
+          ],
+          "default": 50
+        }
+      },
+      "required": [
+        "p6ImpedanceOhms",
+        "p7ImpedanceOhms"
+      ]
+    },
+    "lfosc": {
+      "type": "object",
+      "title": "Low Frequency Oscillator (LFOSC) configuration",
+      "properties": {
+        "source": {
+          "type": "string",
+          "title": "Source",
+          "enumNames": [
+            "Low Frequency Crystal Oscillator (LFXO)",
+            "Low Frequency RC Oscillator (LFRC)"
+          ],
+          "enum": [
+            "LFXO",
+            "LFRC"
+          ],
+          "default": "LFXO"
+        }
+      },
+      "required": [
+        "source"
+      ],
+      "dependencies": {
+        "source": {
+          "oneOf": [
+            {
+              "properties": {
+                "source": {
+                  "const": "LFXO"
+                },
+                "lfxo": {
+                  "type": "object",
+                  "title": "Low Frequency Crystal Oscillator (LFXO) configuration",
+                  "properties": {
+                    "mode": {
+                      "type": "string",
+                      "title": "Mode",
+                      "enumNames": [
+                        "Crystal",
+                        "External sine signal",
+                        "External square signal"
+                      ],
+                      "enum": [
+                        "CRYSTAL",
+                        "ETX_SINE",
+                        "EXT_SQUARE"
+                      ],
+                      "default": "CRYSTAL"
+                    },
+                    "accuracyPPM": {
+                      "type": "number",
+                      "title": "Accuracy",
+                      "enum": [
+                        20,
+                        30,
+                        50,
+                        75,
+                        100,
+                        150,
+                        250,
+                        500
+                      ],
+                      "default": 20
+                    },
+                    "startupTimeMs": {
+                      "type": "number",
+                      "title": "Startup time",
+                      "minimum": 0,
+                      "maximum": 4094,
+                      "multipleOf": 1,
+                      "default": 600
+                    }
+                  },
+                  "required": [
+                    "mode",
+                    "accuracyPPM",
+                    "startupTimeMs"
+                  ],
+                  "dependencies": {
+                    "mode": {
+                      "oneOf": [
+                        {
+                          "properties": {
+                            "mode": {
+                              "const": "CRYSTAL"
+                            },
+                            "builtInLoadCapacitors": {
+                              "type": "boolean",
+                              "title": "Use built-in load capacitors",
+                              "default": true
+                            }
+                          },
+                          "required": [
+                            "builtInLoadCapacitors"
+                          ],
+                          "dependencies": {
+                            "builtInLoadCapacitors": {
+                              "oneOf": [
+                                {
+                                  "properties": {
+                                    "builtInLoadCapacitors": {
+                                      "const": true
+                                    },
+                                    "builtInLoadCapacitancePf": {
+                                      "type": "integer",
+                                      "title": "Built-in load capacitance",
+                                      "minimum": 1,
+                                      "maximum": 25,
+                                      "multipleOf": 1,
+                                      "default": 15
+                                    }
+                                  },
+                                  "required": [
+                                    "builtInLoadCapacitancePf"
+                                  ]
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "properties": {
+                "source": {
+                  "const": "LFRC"
+                },
+                "lfrccal": {
+                  "type": "object",
+                  "title": "Low Frequency RC (LFRC) autocalibration configuration",
+                  "properties": {
+                    "calibrationEnabled": {
+                      "type": "boolean",
+                      "title": "Enable autocalibration",
+                      "default": true
+                    }
+                  },
+                  "required": [
+                    "calibrationEnabled"
+                  ],
+                  "dependencies": {
+                    "calibrationEnabled": {
+                      "oneOf": [
+                        {
+                          "properties": {
+                            "calibrationEnabled": {
+                              "const": true
+                            },
+                            "tempMeasIntervalSeconds": {
+                              "type": "number",
+                              "title": "Temperature measurement interval",
+                              "minimum": 0.25,
+                              "maximum": 31.75,
+                              "multipleOf": 0.25,
+                              "default": 4
+                            },
+                            "tempDeltaCalibrationTriggerCelsius": {
+                              "type": "number",
+                              "title": "Temperature delta that should trigger calibration",
+                              "minimum": 0.25,
+                              "maximum": 31.75,
+                              "multipleOf": 0.25,
+                              "default": 0.5
+                            },
+                            "maxMeasIntervalBetweenCalibrations": {
+                              "type": "number",
+                              "title": "Maximum number of measurement intervals between calibrations",
+                              "minimum": 0,
+                              "maximum": 31,
+                              "multipleOf": 1,
+                              "default": 2
+                            }
+                          },
+                          "required": [
+                            "tempMeasIntervalSeconds",
+                            "tempDeltaCalibrationTriggerCelsius",
+                            "maxMeasIntervalBetweenCalibrations"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "hfxo": {
+      "type": "object",
+      "title": "High Frequency Cristal Oscillator (HFXO) configuration",
+      "properties": {
+        "mode": {
+          "type": "string",
+          "title": "Mode",
+          "enumNames": [
+            "Crystal",
+            "External square signal"
+          ],
+          "enum": [
+            "CRYSTAL",
+            "EXT_SQUARE"
+          ],
+          "default": "CRYSTAL"
+        },
+        "startupTimeUs": {
+          "type": "number",
+          "title": "Startup time",
+          "minimum": 0,
+          "maximum": 4294967294,
+          "multipleOf": 1,
+          "default": 850
+        }
+      },
+      "required": [
+        "mode",
+        "startupTimeUs"
+      ],
+      "dependencies": {
+        "mode": {
+          "oneOf": [
+            {
+              "properties": {
+                "mode": {
+                  "const": "CRYSTAL"
+                },
+                "builtInLoadCapacitors": {
+                  "type": "boolean",
+                  "title": "Use built-in load capacitors",
+                  "default": true
+                }
+              },
+              "required": [
+                "builtInLoadCapacitors"
+              ],
+              "dependencies": {
+                "builtInLoadCapacitors": {
+                  "oneOf": [
+                    {
+                      "properties": {
+                        "builtInLoadCapacitors": {
+                          "const": true
+                        },
+                        "builtInLoadCapacitancePf": {
+                          "type": "number",
+                          "title": "Built-in load capacitance",
+                          "minimum": 0.25,
+                          "maximum": 25.75,
+                          "multipleOf": 0.25,
+                          "default": 14
+                        }
+                      },
+                      "required": [
+                        "builtInLoadCapacitancePf"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}
