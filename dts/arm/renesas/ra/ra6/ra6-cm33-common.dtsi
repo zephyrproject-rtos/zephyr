@@ -286,6 +286,15 @@
 			status = "okay";
 		};
 
+		flash: flash-controller@407e0000 {
+			compatible = "renesas,ra-flash-hp-controller";
+			reg = <0x407e0000 0x10000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			interrupts = <49 1>, <50 1>;
+			interrupt-names = "frdyi", "fiferr";
+		};
+
 		option_setting_sas: option_setting_sas@100a134 {
 			compatible = "zephyr,memory-region";
 			reg = <0x0100a134 0xcc>;
