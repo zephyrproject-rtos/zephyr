@@ -135,7 +135,7 @@ void posix_irq_handler(void)
 	if (may_swap
 		&& (hw_irq_ctrl_get_cur_prio(cpu_n) == 256)
 		&& (CPU_will_be_awaken_from_WFE == false)
-		&& (_kernel.ready_q.cache) && (_kernel.ready_q.cache != _current)) {
+		&& (_kernel.ready_q.cache) && (_kernel.ready_q.cache != arch_current_thread())) {
 
 		z_swap_irqlock(irq_lock);
 	}

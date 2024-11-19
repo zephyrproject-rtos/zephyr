@@ -288,7 +288,7 @@ in_fp_endif:
 #if defined(CONFIG_MPU_STACK_GUARD) || defined(CONFIG_USERSPACE)
     /* Re-program dynamic memory map */
     push {r2,lr}
-    mov r0, r2 /* _current thread */
+    mov r0, r2 /* arch_current_thread() thread */
     bl z_arm_configure_dynamic_mpu_regions
     pop {r2,lr}
 #endif

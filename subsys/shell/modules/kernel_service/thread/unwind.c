@@ -30,7 +30,7 @@ static int cmd_kernel_thread_unwind(const struct shell *sh, size_t argc, char **
 	int err = 0;
 
 	if (argc == 1) {
-		thread = _current;
+		thread = arch_current_thread();
 	} else {
 		thread = UINT_TO_POINTER(shell_strtoull(argv[1], 16, &err));
 		if (err != 0) {

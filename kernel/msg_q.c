@@ -169,7 +169,7 @@ int z_impl_k_msgq_put(struct k_msgq *msgq, const void *data, k_timeout_t timeout
 		SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_msgq, put, msgq, timeout);
 
 		/* wait for put message success, failure, or timeout */
-		_current->base.swap_data = (void *) data;
+		arch_current_thread()->base.swap_data = (void *) data;
 
 		result = z_pend_curr(&msgq->lock, key, &msgq->wait_q, timeout);
 		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, put, msgq, timeout, result);
@@ -267,7 +267,7 @@ int z_impl_k_msgq_get(struct k_msgq *msgq, void *data, k_timeout_t timeout)
 		SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_msgq, get, msgq, timeout);
 
 		/* wait for get message success or timeout */
-		_current->base.swap_data = data;
+		arch_current_thread()->base.swap_data = data;
 
 		result = z_pend_curr(&msgq->lock, key, &msgq->wait_q, timeout);
 		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, get, msgq, timeout, result);

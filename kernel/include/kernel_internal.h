@@ -286,7 +286,7 @@ int z_kernel_stats_query(struct k_obj_core *obj_core, void *stats);
  * where these steps require that the thread is no longer running.
  * If the target thread is not the current running thread, the cleanup
  * steps will be performed immediately. However, if the target thread is
- * the current running thread (e.g. k_thread_abort(_current)), it defers
+ * the current running thread (e.g. k_thread_abort(arch_current_thread())), it defers
  * the cleanup steps to later when the work will be finished in another
  * context.
  *
