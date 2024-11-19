@@ -2,11 +2,20 @@
 #
 # Copyright 2024 Espressif
 
+# Prepare the full board name to be used for the remote target
+string(REPLACE "procpu" "appcpu" REMOTE_CPU "${BOARD_QUALIFIERS}")
+string(CONFIGURE "${BOARD}${REMOTE_CPU}" IPM_REMOTE_BOARD)
+
+if(${REMOTE_CPU} STREQUAL ${BOARD_QUALIFIERS})
+  # Make sure the remote build is using different target than host CPU
+  message(FATAL_ERROR "BOARD_QUALIFIERS name error. Please check the target board name string.")
+endif()
+
 # Add external project
 ExternalZephyrProject_Add(
     APPLICATION ipm_esp32_remote
     SOURCE_DIR ${APP_DIR}/remote
-    BOARD ${SB_CONFIG_IPM_REMOTE_BOARD}
+    BOARD ${IPM_REMOTE_BOARD}
   )
 
 # Add dependencies so that the remote sample will be built first

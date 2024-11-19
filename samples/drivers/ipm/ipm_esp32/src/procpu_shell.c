@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if defined(CONFIG_IPM) || defined(CONFIG_MBOX)
+
 #include <stdlib.h>
 
 #include <zephyr/device.h>
@@ -57,3 +59,4 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_amp,
 );
 
 SHELL_CMD_REGISTER(amp, &sub_amp, "AMP debug commands.", NULL);
+#endif
