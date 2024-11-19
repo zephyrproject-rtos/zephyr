@@ -122,6 +122,16 @@ Stepper
 Regulator
 =========
 
+Video
+=====
+
+* The :file:`include/zephyr/drivers/video-controls.h` got updated to have video controls IDs (CIDs)
+  matching the definitions in the Linux kernel file ``include/uapi/linux/v4l2-controls.h``.
+  In most cases, removing the category prefix is enough: ``VIDEO_CID_CAMERA_GAIN`` becomes
+  ``VIDEO_CID_GAIN``.
+  The new ``video-controls.h`` source now contains description of each control ID to help
+  disambiguating.
+
 Bluetooth
 *********
 

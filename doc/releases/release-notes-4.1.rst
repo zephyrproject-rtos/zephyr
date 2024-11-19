@@ -191,6 +191,9 @@ Drivers and Sensors
 
 * Video
 
+  * Changed :file:`include/zephyr/drivers/video-controls.h` to have control IDs (CIDs) matching
+    those present in the Linux kernel.
+
 * Watchdog
 
 * Wi-Fi
