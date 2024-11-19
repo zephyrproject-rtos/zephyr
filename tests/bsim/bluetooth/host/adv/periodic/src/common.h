@@ -27,7 +27,7 @@
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/gatt.h>
 
-#define WAIT_SECONDS 30                         /* seconds */
+#define WAIT_SECONDS 15                         /* seconds */
 #define WAIT_TIME (WAIT_SECONDS * USEC_PER_SEC) /* microseconds*/
 
 #define CREATE_FLAG(flag) static atomic_t flag = (atomic_t)false
