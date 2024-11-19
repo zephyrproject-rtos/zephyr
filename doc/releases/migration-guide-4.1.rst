@@ -70,6 +70,12 @@ Interrupt Controller
 LED Strip
 =========
 
+Pin Control
+===========
+
+  * Renamed the ``compatible`` from ``nxp,kinetis-pinctrl`` to :dtcompatible:`nxp,port-pinctrl`.
+  * Renamed the ``compatible`` from ``nxp,kinetis-pinmux`` to :dtcompatible:`nxp,port-pinmux`.
+
 Sensors
 =======
 
