@@ -333,6 +333,11 @@
 				compatible = "renesas,ra-udc";
 				status = "disabled";
 			};
+
+			uhc {
+				compatible = "renesas,ra-uhc";
+				status = "disabled";
+			};
 		};
 
 		id_code: id_code@100a150 {
