@@ -111,7 +111,7 @@ zephyr_library_sources(nrfx_glue.c)
 zephyr_library_sources(${HELPERS_DIR}/nrfx_flag32_allocator.c)
 zephyr_library_sources_ifdef(CONFIG_RETAINED_MEM_NRF_RAM_CTRL ${HELPERS_DIR}/nrfx_ram_ctrl.c)
 zephyr_library_sources_ifdef(CONFIG_NRFX_GPPI                 ${HELPERS_DIR}/nrfx_gppi_dppi.c)
-zephyr_library_sources_ifdef(CONFIG_NRFX_PPI                  ${HELPERS_DIR}/nrfx_gppi_ppi.c)
+zephyr_library_sources_ifdef(CONFIG_NRFX_GPPI                 ${HELPERS_DIR}/nrfx_gppi_ppi.c)
 
 zephyr_library_sources_ifdef(CONFIG_NRFX_PRS     ${SRC_DIR}/prs/nrfx_prs.c)
 
@@ -199,9 +199,7 @@ if(CONFIG_SOC_SERIES_NRF54LX AND CONFIG_NRFX_GPPI)
   zephyr_library_sources(${NRFX_DIR}/soc/interconnect/dppic_ppib/nrfx_interconnect_dppic_ppib.c)
 endif()
 
-if(CONFIG_SOC_SERIES_NRF54HX AND
-   (CONFIG_DT_HAS_NORDIC_NRF_DPPIC_LOCAL_ENABLED OR
-    CONFIG_DT_HAS_NORDIC_NRF_DPPIC_GLOBAL_ENABLED))
+if(CONFIG_SOC_SERIES_NRF54HX AND CONFIG_NRFX_GPPI)
   zephyr_library_sources(${HELPERS_DIR}/nrfx_gppi_dppi_ppib.c)
   zephyr_library_sources(${NRFX_DIR}/soc/interconnect/apb/nrfx_interconnect_apb.c)
   zephyr_library_sources(${NRFX_DIR}/soc/interconnect/ipct/nrfx_interconnect_ipct.c)
