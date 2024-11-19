@@ -41,6 +41,7 @@
 			output-high;
 		};
 	};
+
 	sdhc0_default: sdhc0_default {
 		group1 {
 			pinmux = <SDHC0_CD_GPIO34>;
