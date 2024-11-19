@@ -66,6 +66,8 @@ if(CONFIG_ESP_SIMPLE_BOOT OR CONFIG_MCUBOOT)
 
 endif()
 
+set_property(TARGET bintools PROPERTY disassembly_flag_inline_source)
+
 # Select the image origin depending on the boot configuration
 if(CONFIG_SOC_ESP32S3_APPCPU)
   dt_nodelabel(dts_partition_path NODELABEL "slot0_appcpu_partition")
@@ -91,10 +93,10 @@ if(CONFIG_MCUBOOT)
         ${PYTHON_EXECUTABLE} ${ESP_IDF_PATH}/tools/ci/check_callgraph.py
       ARGS
         --rtl-dirs ${CMAKE_BINARY_DIR}/zephyr
-	--elf-file ${CMAKE_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.elf
+        --elf-file ${CMAKE_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.elf
         find-refs
-	--from-section='.iram0.loader_text'
-	--to-section='.iram0.text'
+        --from-section='.iram0.loader_text'
+        --to-section='.iram0.text'
         --exit-code)
 endif()
 

@@ -11,9 +11,8 @@
 #include "memory.h"
 
 /* User available SRAM memory segments */
-amp_total_size = APPCPU_SRAM_TOTAL_SIZE;
-procpu_iram_end = USER_IRAM_END - APPCPU_SRAM_TOTAL_SIZE;
-procpu_dram_end = USER_DRAM_END - APPCPU_SRAM_TOTAL_SIZE;
+procpu_iram_end = USER_IRAM_END - APPCPU_SRAM_SIZE;
+procpu_dram_end = USER_DRAM_END - APPCPU_SRAM_SIZE;
 
 procpu_iram_org = SRAM_USER_IRAM_START;
 procpu_iram_len = procpu_iram_end - procpu_iram_org;
@@ -237,7 +236,6 @@ SECTIONS
   /* Send .iram0 code to iram */
   .iram0.vectors : ALIGN(4)
   {
-    _iram_start = ABSOLUTE(.);
     /* Vectors go to IRAM */
     _init_start = ABSOLUTE(.);
     /* Vectors according to builds/RF-2015.2-win32/esp108_v1_2_s5_512int_2/config.html */
@@ -271,9 +269,9 @@ SECTIONS
     *(.entry.text)
     *(.init.literal)
     *(.init)
-
     _init_end = ABSOLUTE(.);
 
+    _iram_start = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(IRAM_REGION, ROMABLE_REGION)
 
   .iram0.text : ALIGN(4)
@@ -745,7 +743,7 @@ SECTIONS
   } GROUP_LINK_IN(RAMABLE_REGION)
 
   /* Provide total SRAM usage, including IRAM and DRAM */
-  _image_ram_start = _iram_start - IRAM_DRAM_OFFSET;
+  _image_ram_start = _init_start - IRAM_DRAM_OFFSET;
   #include <zephyr/linker/ram-end.ld>
 
   ASSERT(((_end - ORIGIN(dram0_0_seg)) <= LENGTH(dram0_0_seg)), "DRAM segment data does not fit.")
