@@ -1,7 +1,7 @@
 .. _bluetooth_shell_audio:
 
-Bluetooth: Basic Audio Profile
-##############################
+Bluetooth: Basic Audio Profile Shell
+####################################
 
 This document describes how to run Basic Audio Profile functionality which
 includes:

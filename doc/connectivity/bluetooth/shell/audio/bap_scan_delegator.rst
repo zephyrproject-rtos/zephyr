@@ -1,5 +1,5 @@
-Bluetooth: Broadcast Audio Profile Scan Delegator
-#################################################
+Bluetooth: Basic Audio Profile: Scan Delegator Shell
+####################################################
 
 This document describes how to run the Scan Delegator functionality, Note that
 in the examples below, some lines of debug have been

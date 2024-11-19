@@ -1,5 +1,5 @@
-Media control for Generic Audio Content Control
-###############################################
+Bluetooth: Media Control Profile Shell
+######################################
 
 This document describes how to run the media control functionality,
 using the shell, both as a client and as a server.

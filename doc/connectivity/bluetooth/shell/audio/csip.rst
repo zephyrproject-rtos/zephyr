@@ -1,5 +1,5 @@
-Bluetooth: Coordinated Set Identification Profile
-#################################################
+Bluetooth: Coordinated Set Identification Profile Shell
+#######################################################
 
 This document describes how to run the coordinated set identification
 functionality, both as a client and as a server.

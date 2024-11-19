@@ -1,5 +1,5 @@
-Bluetooth: Broadcast Audio Profile Broadcast Assistant
-######################################################
+Bluetooth: Basic Audio Profile: Broadcast Assistant Shell
+#########################################################
 
 This document describes how to run the BAP Broadcast Assistant functionality.
 Note that in the examples below, some lines of debug have been
