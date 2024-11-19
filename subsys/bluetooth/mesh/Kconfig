@@ -165,10 +165,12 @@ config BT_MESH_RELAY_ADV_SETS
 	int "Maximum of simultaneous relay message support"
 	default 0
 	range 0 BT_EXT_ADV_MAX_ADV_SET
-	depends on BT_MESH_RELAY
+	depends on BT_MESH_RELAY || BT_MESH_BRG_CFG_SRV
 	help
 	  Maximum of simultaneous relay message support. Requires controller support
 	  multiple advertising sets.
+
+	  Note that: The Subnet Bridge feature uses the relay advertising sets.
 
 config BT_MESH_ADV_EXT_RELAY_USING_MAIN_ADV_SET
 	bool "Use the main advertising set to relay messages"
@@ -471,8 +473,11 @@ config BT_MESH_RELAY_RETRANSMIT_INTERVAL
 	  messages, in milliseconds. Can be changed through runtime
 	  configuration.
 
+endif # BT_MESH_RELAY
+
 config BT_MESH_RELAY_BUF_COUNT
 	int "Number of advertising buffers for relayed messages"
+	depends on BT_MESH_RELAY || BT_MESH_BRG_CFG_SRV
 	default 32
 	range 1 256
 	help
@@ -486,7 +491,9 @@ config BT_MESH_RELAY_BUF_COUNT
 	  BT_MESH_RELAY_ADV_SETS allows the increase in the number of buffers
 	  while maintaining the latency.
 
-endif # BT_MESH_RELAY
+	  Note that: The Subnet Bridge feature uses the relay advertising buffers. If both the Relay
+	  feature and the Subnet Bridge feature is enabled, the added load should be taken into
+	  account.
 
 endmenu # Network layer
 

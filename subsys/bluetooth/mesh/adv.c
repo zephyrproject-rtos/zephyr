@@ -137,7 +137,7 @@ void bt_mesh_adv_unref(struct bt_mesh_adv *adv)
 
 	struct k_mem_slab *slab = &local_adv_pool;
 
-#if defined(CONFIG_BT_MESH_RELAY)
+#if (defined(CONFIG_BT_MESH_RELAY) || defined(CONFIG_BT_MESH_BRG_CFG_SRV))
 	if (adv->ctx.tag == BT_MESH_ADV_TAG_RELAY) {
 		slab = &relay_adv_pool;
 	}
@@ -156,7 +156,7 @@ struct bt_mesh_adv *bt_mesh_adv_create(enum bt_mesh_adv_type type,
 				       enum bt_mesh_adv_tag tag,
 				       uint8_t xmit, k_timeout_t timeout)
 {
-#if defined(CONFIG_BT_MESH_RELAY)
+#if (defined(CONFIG_BT_MESH_RELAY) || defined(CONFIG_BT_MESH_BRG_CFG_SRV))
 	if (tag == BT_MESH_ADV_TAG_RELAY) {
 		return adv_create_from_pool(&relay_adv_pool,
 					    type, tag, xmit, timeout);
@@ -202,7 +202,7 @@ struct bt_mesh_adv *bt_mesh_adv_get(k_timeout_t timeout)
 						K_POLL_MODE_NOTIFY_ONLY,
 						&bt_mesh_adv_queue,
 						0),
-#if defined(CONFIG_BT_MESH_RELAY) && \
+#if (defined(CONFIG_BT_MESH_RELAY) || defined(CONFIG_BT_MESH_BRG_CFG_SRV)) && \
 	(defined(CONFIG_BT_MESH_ADV_LEGACY) || \
 	 defined(CONFIG_BT_MESH_ADV_EXT_RELAY_USING_MAIN_ADV_SET) || \
 	 !(CONFIG_BT_MESH_RELAY_ADV_SETS))
@@ -228,7 +228,7 @@ struct bt_mesh_adv *bt_mesh_adv_get_by_tag(enum bt_mesh_adv_tag_bit tags, k_time
 		return k_fifo_get(&bt_mesh_friend_queue, timeout);
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MESH_RELAY) &&
+	if ((IS_ENABLED(CONFIG_BT_MESH_RELAY) || IS_ENABLED(CONFIG_BT_MESH_BRG_CFG_SRV)) &&
 	    !(tags & BT_MESH_ADV_TAG_BIT_LOCAL)) {
 		return k_fifo_get(&bt_mesh_relay_queue, timeout);
 	}
@@ -242,7 +242,7 @@ void bt_mesh_adv_get_cancel(void)
 
 	k_fifo_cancel_wait(&bt_mesh_adv_queue);
 
-	if (IS_ENABLED(CONFIG_BT_MESH_RELAY)) {
+	if ((IS_ENABLED(CONFIG_BT_MESH_RELAY) || IS_ENABLED(CONFIG_BT_MESH_BRG_CFG_SRV))) {
 		k_fifo_cancel_wait(&bt_mesh_relay_queue);
 	}
 
@@ -276,7 +276,7 @@ void bt_mesh_adv_send(struct bt_mesh_adv *adv, const struct bt_mesh_send_cb *cb,
 		return;
 	}
 
-	if ((IS_ENABLED(CONFIG_BT_MESH_RELAY) &&
+	if (((IS_ENABLED(CONFIG_BT_MESH_RELAY) || IS_ENABLED(CONFIG_BT_MESH_BRG_CFG_SRV)) &&
 	    adv->ctx.tag == BT_MESH_ADV_TAG_RELAY) ||
 	    (IS_ENABLED(CONFIG_BT_MESH_PB_ADV_USE_RELAY_SETS) &&
 	     adv->ctx.tag == BT_MESH_ADV_TAG_PROV)) {
