@@ -6,7 +6,6 @@
 if SOC_NRF52833_QDAA
 
 config NUM_IRQS
-	int
 	default 48
 
 endif # SOC_NRF52833_QDAA

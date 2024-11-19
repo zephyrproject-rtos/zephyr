@@ -23,6 +23,7 @@ LOG_MODULE_DECLARE(net_ipv4, CONFIG_NET_IPV4_LOG_LEVEL);
 #include "ipv4.h"
 #include "route.h"
 #include "net_stats.h"
+#include "pmtu.h"
 
 /* Timeout for various buffer allocations in this file. */
 #define NET_BUF_TIMEOUT K_MSEC(100)
@@ -607,7 +608,7 @@ int net_ipv4_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 	return 0;
 }
 
-enum net_verdict net_ipv4_prepare_for_send(struct net_pkt *pkt)
+enum net_verdict net_ipv4_prepare_for_send_fragment(struct net_pkt *pkt)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv4_access, struct net_ipv4_hdr);
 	struct net_ipv4_hdr *ip_hdr;
@@ -624,10 +625,26 @@ enum net_verdict net_ipv4_prepare_for_send(struct net_pkt *pkt)
 	 * and we can skip other checks.
 	 */
 	if (ip_hdr->id[0] == 0 && ip_hdr->id[1] == 0) {
-		uint16_t mtu = net_if_get_mtu(net_pkt_iface(pkt));
 		size_t pkt_len = net_pkt_get_len(pkt);
+		uint16_t mtu;
 
-		mtu = MAX(NET_IPV4_MTU, mtu);
+		if (IS_ENABLED(CONFIG_NET_IPV4_PMTU)) {
+			struct sockaddr_in dst = {
+				.sin_family = AF_INET,
+				.sin_addr = *((struct in_addr *)ip_hdr->dst),
+			};
+
+			ret = net_pmtu_get_mtu((struct sockaddr *)&dst);
+			if (ret <= 0) {
+				goto use_interface_mtu;
+			}
+
+			mtu = ret;
+		} else {
+use_interface_mtu:
+			mtu = net_if_get_mtu(net_pkt_iface(pkt));
+			mtu = MAX(NET_IPV4_MTU, mtu);
+		}
 
 		if (pkt_len > mtu) {
 			ret = net_ipv4_send_fragmented_pkt(net_pkt_iface(pkt), pkt, pkt_len, mtu);

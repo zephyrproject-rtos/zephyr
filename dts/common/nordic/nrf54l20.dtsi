@@ -82,6 +82,18 @@
 				status = "disabled";
 			};
 
+			ppib00: ppib@44000 {
+				compatible = "nordic,nrf-ppib";
+				reg = <0x44000 0x1000>;
+				status = "disabled";
+			};
+
+			ppib01: ppib@45000 {
+				compatible = "nordic,nrf-ppib";
+				reg = <0x45000 0x1000>;
+				status = "disabled";
+			};
+
 			spi00: spi@4d000 {
 				/*
 				 * This spi node can be either SPIM or SPIS,
@@ -137,6 +149,18 @@
 				status = "disabled";
 			};
 
+			ppib10: ppib@83000 {
+				compatible = "nordic,nrf-ppib";
+				reg = <0x83000 0x1000>;
+				status = "disabled";
+			};
+
+			ppib11: ppib@84000 {
+				compatible = "nordic,nrf-ppib";
+				reg = <0x84000 0x1000>;
+				status = "disabled";
+			};
+
 			timer10: timer@85000 {
 				compatible = "nordic,nrf-timer";
 				status = "disabled";
@@ -182,6 +206,24 @@
 			dppic20: dppic@c2000 {
 				compatible = "nordic,nrf-dppic";
 				reg = <0xc2000 0x808>;
+				status = "disabled";
+			};
+
+			ppib20: ppib@c3000 {
+				compatible = "nordic,nrf-ppib";
+				reg = <0xc3000 0x1000>;
+				status = "disabled";
+			};
+
+			ppib21: ppib@c4000 {
+				compatible = "nordic,nrf-ppib";
+				reg = <0xc4000 0x1000>;
+				status = "disabled";
+			};
+
+			ppib22: ppib@c5000 {
+				compatible = "nordic,nrf-ppib";
+				reg = <0xc5000 0x1000>;
 				status = "disabled";
 			};
 
@@ -461,6 +503,12 @@
 			dppic30: dppic@102000 {
 				compatible = "nordic,nrf-dppic";
 				reg = <0x102000 0x808>;
+				status = "disabled";
+			};
+
+			ppib30: ppib@103000 {
+				compatible = "nordic,nrf-ppib";
+				reg = <0x103000 0x1000>;
 				status = "disabled";
 			};
 

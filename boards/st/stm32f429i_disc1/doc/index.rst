@@ -92,6 +92,8 @@ The Zephyr stm32f429i_disc1 board configuration supports the following hardware 
 +-----------+------------+-------------------------------------+
 | OTG_HS    | on-chip    | usbotg_hs                           |
 +-----------+------------+-------------------------------------+
+| LTDC      | on-chip    | display                             |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on Zephyr porting.
 
@@ -151,6 +153,7 @@ and host OTG operation, but only device mode has been tested with Zephyr at this
 Programming and Debugging
 *************************
 
+The STM32F429I-DISC1 Discovery kit includes a ST-LINK/V2-B embedded debug tool interface.
 Applications for the ``stm32f429i_disc1`` board configuration can be built
 and flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -158,19 +161,17 @@ and flashed in the usual way (see :ref:`build_an_application` and
 Flashing
 ========
 
-The STM32F429I-DISC1 Discovery kit includes a ST-LINK/V2-B embedded debug tool interface.
-This interface is supported by the openocd version included in Zephyr SDK.
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
 
-Flashing an application to STM32F429I-DISC1
--------------------------------------------
-
-The board is configured to be flashed using west OpenOCD runner.
-Alternatively, you can use `STM32CubeProgrammer`_ (after installing it) using the ``--runner``
-(or ``-r``) option:
+Alternatively, OpenOCD, JLink, or pyOCD can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
 
 .. code-block:: console
 
-   $ west flash --runner stm32cubeprogrammer
+   $ west flash --runner openocd
+   $ west flash --runner jlink
+   $ west flash --runner pyocd
 
 First, connect the STM32F429I-DISC1 Discovery kit to your host computer using
 the USB port to prepare it for flashing. Then build and flash your application.

@@ -111,8 +111,11 @@ void k_mem_paging_eviction_init(void)
 		      K_MSEC(CONFIG_EVICTION_NRU_PERIOD));
 }
 
+#ifdef CONFIG_EVICTION_TRACKING
 /*
- * unused interfaces
+ * Empty functions defined here so that architectures unconditionally
+ * implement eviction tracking can still use this algorithm for
+ * testing.
  */
 
 void k_mem_paging_eviction_add(struct k_mem_page_frame *pf)
@@ -129,3 +132,5 @@ void k_mem_paging_eviction_accessed(uintptr_t phys)
 {
 	ARG_UNUSED(phys);
 }
+
+#endif /* CONFIG_EVICTION_TRACKING */

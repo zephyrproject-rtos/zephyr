@@ -35,6 +35,7 @@ LOG_MODULE_REGISTER(net_ipv6_nd, CONFIG_NET_IPV6_ND_LOG_LEVEL);
 #include "6lo.h"
 #include "route.h"
 #include "net_stats.h"
+#include "pmtu.h"
 
 /* Timeout value to be used when allocating net buffer during various
  * neighbor discovery procedures.
@@ -809,13 +810,31 @@ enum net_verdict net_ipv6_prepare_for_send(struct net_pkt *pkt)
 	 * contain a proper value and we can skip other checks.
 	 */
 	if (net_pkt_ipv6_fragment_id(pkt) == 0U) {
-		uint16_t mtu = net_if_get_mtu(net_pkt_iface(pkt));
 		size_t pkt_len = net_pkt_get_len(pkt);
+		uint16_t mtu;
 
-		mtu = MAX(NET_IPV6_MTU, mtu);
+		if (IS_ENABLED(CONFIG_NET_IPV6_PMTU)) {
+			struct sockaddr_in6 dst = {
+				.sin6_family = AF_INET6,
+			};
+
+			net_ipv6_addr_copy_raw((uint8_t *)&dst.sin6_addr, ip_hdr->dst);
+
+			ret = net_pmtu_get_mtu((struct sockaddr *)&dst);
+			if (ret <= 0) {
+				goto use_interface_mtu;
+			}
+
+			mtu = ret;
+		} else {
+use_interface_mtu:
+			mtu = net_if_get_mtu(net_pkt_iface(pkt));
+			mtu = MAX(NET_IPV6_MTU, mtu);
+		}
+
 		if (mtu < pkt_len) {
 			ret = net_ipv6_send_fragmented_pkt(net_pkt_iface(pkt),
-							   pkt, pkt_len);
+							   pkt, pkt_len, mtu);
 			if (ret < 0) {
 				NET_DBG("Cannot fragment IPv6 pkt (%d)", ret);
 				return NET_DROP;
@@ -903,6 +922,26 @@ enum net_verdict net_ipv6_prepare_for_send(struct net_pkt *pkt)
 	}
 
 try_send:
+	if (IS_ENABLED(CONFIG_NET_IPV6_PMTU)) {
+		struct net_pmtu_entry *entry;
+		struct sockaddr_in6 dst = {
+			.sin6_family = AF_INET6,
+		};
+
+		net_ipaddr_copy(&dst.sin6_addr, (struct in6_addr *)ip_hdr->dst);
+
+		entry = net_pmtu_get_entry((struct sockaddr *)&dst);
+		if (entry == NULL) {
+			ret = net_pmtu_update_mtu((struct sockaddr *)&dst,
+						  net_if_get_mtu(iface));
+			if (ret < 0) {
+				NET_DBG("Cannot update PMTU for %s (%d)",
+					net_sprint_ipv6_addr(&dst.sin6_addr),
+					ret);
+			}
+		}
+	}
+
 	net_ipv6_nbr_lock();
 
 	nbr = nbr_lookup(&net_neighbor.table, iface, nexthop);
@@ -2727,6 +2766,98 @@ drop:
 }
 #endif /* CONFIG_NET_IPV6_ND */
 
+#if defined(CONFIG_NET_IPV6_PMTU)
+/* Packet format described in RFC 4443 ch 3.2. Packet Too Big Message */
+static int handle_ptb_input(struct net_icmp_ctx *ctx,
+			    struct net_pkt *pkt,
+			    struct net_icmp_ip_hdr *hdr,
+			    struct net_icmp_hdr *icmp_hdr,
+			    void *user_data)
+{
+	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ptb_access, struct net_icmpv6_ptb);
+	struct net_ipv6_hdr *ip_hdr = hdr->ipv6;
+	uint16_t length = net_pkt_get_len(pkt);
+	struct net_icmpv6_ptb *ptb_hdr;
+	struct sockaddr_in6 sockaddr_src = {
+		.sin6_family = AF_INET6,
+	};
+	struct net_pmtu_entry *entry;
+	uint32_t mtu;
+	int ret;
+
+	ARG_UNUSED(user_data);
+
+	ptb_hdr = (struct net_icmpv6_ptb *)net_pkt_get_data(pkt, &ptb_access);
+	if (!ptb_hdr) {
+		NET_DBG("DROP: NULL PTB header");
+		goto drop;
+	}
+
+	dbg_addr_recv("Packet Too Big", &ip_hdr->src, &ip_hdr->dst, pkt);
+
+	net_stats_update_ipv6_pmtu_recv(net_pkt_iface(pkt));
+
+	if (length < (sizeof(struct net_ipv6_hdr) +
+		      sizeof(struct net_icmp_hdr) +
+		      sizeof(struct net_icmpv6_ptb))) {
+		NET_DBG("DROP: length %d too big %zd",
+			length, sizeof(struct net_ipv6_hdr) +
+			sizeof(struct net_icmp_hdr) +
+			sizeof(struct net_icmpv6_ptb));
+		goto drop;
+	}
+
+	net_pkt_acknowledge_data(pkt, &ptb_access);
+
+	mtu = ntohl(ptb_hdr->mtu);
+
+	if (mtu < MIN_IPV6_MTU || mtu > MAX_IPV6_MTU) {
+		NET_DBG("DROP: Unsupported MTU %u, min is %u, max is %u",
+			mtu, MIN_IPV6_MTU, MAX_IPV6_MTU);
+		goto drop;
+	}
+
+	net_ipaddr_copy(&sockaddr_src.sin6_addr, (struct in6_addr *)&ip_hdr->src);
+
+	entry = net_pmtu_get_entry((struct sockaddr *)&sockaddr_src);
+	if (entry == NULL) {
+		NET_DBG("DROP: Cannot find PMTU entry for %s",
+			net_sprint_ipv6_addr(&ip_hdr->src));
+		goto silent_drop;
+	}
+
+	/* We must not accept larger PMTU value than what we already know.
+	 * RFC 8201 chapter 4 page 8.
+	 */
+	if (entry->mtu > 0 && entry->mtu < mtu) {
+		NET_DBG("DROP: PMTU for %s %u larger than %u",
+			net_sprint_ipv6_addr(&ip_hdr->src), mtu,
+			entry->mtu);
+		goto silent_drop;
+	}
+
+	ret = net_pmtu_update_entry(entry, mtu);
+	if (ret > 0) {
+		NET_DBG("PMTU for %s changed from %u to %u",
+			net_sprint_ipv6_addr(&ip_hdr->src), ret, mtu);
+	}
+
+	return 0;
+drop:
+	net_stats_update_ipv6_pmtu_drop(net_pkt_iface(pkt));
+
+	return -EIO;
+
+silent_drop:
+	/* If the event is not really an error then just ignore it and
+	 * return 0 so that icmpv6 module will not complain about it.
+	 */
+	net_stats_update_ipv6_pmtu_drop(net_pkt_iface(pkt));
+
+	return 0;
+}
+#endif /* CONFIG_NET_IPV6_PMTU */
+
 #if defined(CONFIG_NET_IPV6_NBR_CACHE)
 static struct net_icmp_ctx ns_ctx;
 static struct net_icmp_ctx na_ctx;
@@ -2735,6 +2866,10 @@ static struct net_icmp_ctx na_ctx;
 #if defined(CONFIG_NET_IPV6_ND)
 static struct net_icmp_ctx ra_ctx;
 #endif /* CONFIG_NET_IPV6_ND */
+
+#if defined(CONFIG_NET_IPV6_PMTU)
+static struct net_icmp_ctx ptb_ctx;
+#endif /* CONFIG_NET_IPV6_PMTU */
 
 void net_ipv6_nbr_init(void)
 {
@@ -2764,6 +2899,14 @@ void net_ipv6_nbr_init(void)
 
 	k_work_init_delayable(&ipv6_nd_reachable_timer,
 			      ipv6_nd_reachable_timeout);
+#endif
+
+#if defined(CONFIG_NET_IPV6_PMTU)
+	ret = net_icmp_init_ctx(&ptb_ctx, NET_ICMPV6_PACKET_TOO_BIG, 0, handle_ptb_input);
+	if (ret < 0) {
+		NET_ERR("Cannot register %s handler (%d)", STRINGIFY(NET_ICMPV6_PACKET_TOO_BIG),
+			ret);
+	}
 #endif
 
 	ARG_UNUSED(ret);

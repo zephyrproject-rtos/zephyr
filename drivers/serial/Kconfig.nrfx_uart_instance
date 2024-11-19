@@ -24,8 +24,7 @@ config UART_$(nrfx_uart_num)_ENHANCED_POLL_OUT
 	default y
 	depends on HAS_HW_NRF_UARTE$(nrfx_uart_num)
 	depends on HAS_HW_NRF_PPI || HAS_HW_NRF_DPPIC
-	select NRFX_PPI if HAS_HW_NRF_PPI
-	select NRFX_DPPI if HAS_HW_NRF_DPPIC
+	select NRFX_GPPI
 	help
 	  When enabled, polling out does not trigger interrupt which stops TX.
 	  Feature uses a PPI channel.
@@ -55,8 +54,7 @@ config UART_$(nrfx_uart_num)_NRF_HW_ASYNC
 	depends on UART_ASYNC_API
 	depends on UART_NRFX_UARTE_LEGACY_SHIM
 	depends on HAS_HW_NRF_PPI || HAS_HW_NRF_DPPIC
-	select NRFX_PPI if HAS_HW_NRF_PPI
-	select NRFX_DPPI if HAS_HW_NRF_DPPIC
+	select NRFX_GPPI
 	help
 	  If default driver uses interrupts to count incoming bytes, it is possible
 	  that with higher speeds and/or high cpu load some data can be lost.

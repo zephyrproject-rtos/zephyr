@@ -139,7 +139,7 @@ static int get_sync_locked(const struct device *dev)
 		if (flags & BIT(PM_DEVICE_FLAG_PD_CLAIMED)) {
 			const struct device *domain = PM_DOMAIN(&pm->base);
 
-			if (domain->pm_base->flags & PM_DEVICE_FLAG_ISR_SAFE) {
+			if (domain->pm_base->flags & BIT(PM_DEVICE_FLAG_ISR_SAFE)) {
 				ret = pm_device_runtime_get(domain);
 				if (ret < 0) {
 					return ret;
@@ -300,7 +300,7 @@ static int put_sync_locked(const struct device *dev)
 		if (flags & BIT(PM_DEVICE_FLAG_PD_CLAIMED)) {
 			const struct device *domain = PM_DOMAIN(&pm->base);
 
-			if (domain->pm_base->flags & PM_DEVICE_FLAG_ISR_SAFE) {
+			if (domain->pm_base->flags & BIT(PM_DEVICE_FLAG_ISR_SAFE)) {
 				ret = put_sync_locked(domain);
 			} else {
 				ret = -EWOULDBLOCK;

@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # zephyr-keep-sorted-start
+source "drivers/sensor/sensirion/scd4x/Kconfig"
 source "drivers/sensor/sensirion/sgp40/Kconfig"
 source "drivers/sensor/sensirion/sht3xd/Kconfig"
 source "drivers/sensor/sensirion/sht4x/Kconfig"

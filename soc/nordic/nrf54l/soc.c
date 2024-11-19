@@ -153,6 +153,11 @@ static int nordicsemi_nrf54l_init(void)
 	}
 
 #if (DT_PROP(DT_NODELABEL(vregmain), regulator_initial_mode) == NRF5X_REG_MODE_DCDC)
+#if defined(__CORTEX_M) && !defined(NRF_TRUSTZONE_NONSECURE) && defined(__ARM_FEATURE_CMSE)
+	if (*(uint32_t volatile *)0x00FFC334 <= 0x180A1D00) {
+		*(uint32_t volatile *)0x50120640 = 0x1EA9E040;
+	}
+#endif
 	nrf_regulators_vreg_enable_set(NRF_REGULATORS, NRF_REGULATORS_VREG_MAIN, true);
 #endif
 

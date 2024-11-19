@@ -180,7 +180,7 @@ typedef void (*stepper_event_callback_t)(const struct device *dev, const enum st
 /**
  * @brief Set the callback function to be called when a stepper event occurs
  *
- * @see stepper_set_callback() for details.
+ * @see stepper_set_event_callback() for details.
  */
 typedef int (*stepper_set_event_callback_t)(const struct device *dev,
 					    stepper_event_callback_t callback, void *user_data);
@@ -449,11 +449,12 @@ static inline int z_impl_stepper_enable_constant_velocity_mode(
  * @retval -ENOSYS If not implemented by device driver
  * @retval 0 Success
  */
-__syscall int stepper_set_callback(const struct device *dev, stepper_event_callback_t callback,
-				   void *user_data);
+__syscall int stepper_set_event_callback(const struct device *dev,
+					 stepper_event_callback_t callback, void *user_data);
 
-static inline int z_impl_stepper_set_callback(const struct device *dev,
-					      stepper_event_callback_t callback, void *user_data)
+static inline int z_impl_stepper_set_event_callback(const struct device *dev,
+						    stepper_event_callback_t callback,
+						    void *user_data)
 {
 	const struct stepper_driver_api *api = (const struct stepper_driver_api *)dev->api;
 

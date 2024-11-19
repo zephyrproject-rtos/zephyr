@@ -641,7 +641,8 @@
 		};
 
 		edma0: dma-controller@4020c000 {
-			compatible = "nxp,mcux-edma-v3";
+			compatible = "nxp,mcux-edma";
+			nxp,version = <3>;
 			reg = <0x4020c000 0x3000>, <0x40280000 0x4000>, <0x40284000 0x4000>;
 			dma-channels = <32>;
 			dma-requests = <64>;

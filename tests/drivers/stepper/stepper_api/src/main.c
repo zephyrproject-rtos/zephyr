@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Jilay Sandeep Pandya
+ * SPDX-FileCopyrightText: Copyright (c) 2024 Jilay Sandeep Pandya
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,7 +17,7 @@ struct k_poll_event stepper_event;
 void *user_data_received;
 
 static void stepper_print_event_callback(const struct device *dev, enum stepper_event event,
-					void *user_data)
+					 void *user_data)
 {
 	user_data_received = user_data;
 	switch (event) {
@@ -85,7 +85,7 @@ ZTEST_F(stepper, test_target_position)
 	(void)stepper_set_max_velocity(fixture->dev, 100u);
 
 	/* Pass the function name as user data */
-	(void)stepper_set_callback(fixture->dev, fixture->callback, &fixture);
+	(void)stepper_set_event_callback(fixture->dev, fixture->callback, &fixture);
 
 	(void)stepper_set_target_position(fixture->dev, pos);
 

@@ -187,8 +187,6 @@ int sys_mm_drv_map_page(void *virt, uintptr_t phys, uint32_t flags)
 	uintptr_t pa = POINTER_TO_UINT(sys_cache_cached_ptr_get(UINT_TO_POINTER(phys)));
 	uintptr_t va = POINTER_TO_UINT(sys_cache_cached_ptr_get(virt));
 
-	ARG_UNUSED(flags);
-
 	/* Make sure VA is page-aligned */
 	CHECKIF(!sys_mm_drv_is_addr_aligned(va)) {
 		ret = -EINVAL;
@@ -462,6 +460,10 @@ int sys_mm_drv_update_page_flags(void *virt, uint32_t flags)
 	entry |= flags_to_tlb_perms(flags);
 
 	tlb_entries[entry_idx] = entry;
+
+#ifdef CONFIG_MMU
+	arch_mem_map(virt, tlb_entry_to_pa(entry), CONFIG_MM_DRV_PAGE_SIZE, flags);
+#endif
 
 out:
 	k_spin_unlock(&tlb_lock, key);
@@ -838,18 +840,25 @@ static void adsp_mm_save_context(void *storage_buffer)
 
 		if (((tlb_entries[entry_idx] & TLB_PADDR_MASK) != entry) ||
 		    ((tlb_entries[entry_idx] & TLB_ENABLE_BIT) != TLB_ENABLE_BIT)) {
-			/* this page needs remapping, invalidate cache to avoid stalled data
-			 * all cache data has been flushed before
-			 * do this for pages to remap only
-			 */
-			sys_cache_data_invd_range(UINT_TO_POINTER(phys_addr),
-						  CONFIG_MM_DRV_PAGE_SIZE);
+			/* This page needs remapping */
 
 			/* Enable the translation in the TLB entry */
 			entry |= TLB_ENABLE_BIT;
 
 			/* map the page 1:1 virtual to physical */
 			tlb_entries[entry_idx] = entry;
+
+#ifdef CONFIG_MMU
+			arch_mem_map(UINT_TO_POINTER(phys_addr), phys_addr, CONFIG_MM_DRV_PAGE_SIZE,
+				     K_MEM_CACHE_WB);
+#endif
+
+			/* Invalidate cache to avoid stalled data
+			 * all cache data has been flushed before
+			 * do this for pages to remap only
+			 */
+			sys_cache_data_invd_range(UINT_TO_POINTER(phys_addr),
+						  CONFIG_MM_DRV_PAGE_SIZE);
 		}
 
 		/* save physical address */

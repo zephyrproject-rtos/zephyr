@@ -11,6 +11,26 @@
 #include <zephyr/usb/usbd.h>
 
 /**
+ * @brief Get vendor request node
+ *
+ * Get vendor request node from internal vendor request list.
+ *
+ * @param[in] ctx    Pointer to USB device support context
+ * @param[in] code   Vendor request code
+ *
+ * @return pointer to vendor request node or NULL if not found.
+ */
+struct usbd_vreq_node *usbd_device_get_vreq(struct usbd_context *const uds_ctx,
+					    const uint8_t code);
+
+/**
+ * @brief Unregister all registered vendor request
+ *
+ * @param[in] uds_ctx Pointer to a device context
+ */
+void usbd_device_unregister_all_vreq(struct usbd_context *const uds_ctx);
+
+/**
  * @brief Get device descriptor bNumConfigurations value
  *
  * @param[in] uds_ctx Pointer to a device context

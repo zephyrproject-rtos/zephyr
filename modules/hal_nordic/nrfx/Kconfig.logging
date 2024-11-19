@@ -64,6 +64,10 @@ config NRFX_PPI_LOG
 	bool "PPI driver logging"
 	depends on NRFX_PPI
 
+config NRFX_PPIB_LOG
+	bool "PPIB driver logging"
+	depends on NRFX_PPIB
+
 config NRFX_PRS_LOG
 	bool "PRS driver logging"
 	depends on NRFX_PRS

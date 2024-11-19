@@ -281,18 +281,19 @@ void bt_adv_reset_adv_pool(void)
 	(void)memset(&bt_dev.adv, 0, sizeof(bt_dev.adv));
 }
 
-static struct bt_le_ext_adv *adv_get_legacy(void)
+static int adv_create_legacy(void)
 {
 #if defined(CONFIG_BT_EXT_ADV)
 	if (bt_dev.adv) {
-		return bt_dev.adv;
+		return -EALREADY;
 	}
 
 	bt_dev.adv = adv_new();
-	return bt_dev.adv;
-#else
-	return &bt_dev.adv;
+	if (bt_dev.adv == NULL) {
+		return -ENOMEM;
+	}
 #endif
+	return 0;
 }
 
 void bt_le_adv_delete_legacy(void)
@@ -1363,12 +1364,15 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 		    const struct bt_data *ad, size_t ad_len,
 		    const struct bt_data *sd, size_t sd_len)
 {
-	struct bt_le_ext_adv *adv = adv_get_legacy();
+	struct bt_le_ext_adv *adv;
 	int err;
 
-	if (!adv) {
-		return -ENOMEM;
+	err = adv_create_legacy();
+	if (err) {
+		return err;
 	}
+
+	adv = bt_le_adv_lookup_legacy();
 
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
 	    BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {

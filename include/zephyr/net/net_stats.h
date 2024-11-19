@@ -199,6 +199,34 @@ struct net_stats_ipv6_nd {
 };
 
 /**
+ * @brief IPv6 Path MTU Discovery statistics
+ */
+struct net_stats_ipv6_pmtu {
+	/** Number of dropped IPv6 PMTU packets. */
+	net_stats_t drop;
+
+	/** Number of received IPv6 PMTU packets. */
+	net_stats_t recv;
+
+	/** Number of sent IPv6 PMTU packets. */
+	net_stats_t sent;
+};
+
+/**
+ * @brief IPv4 Path MTU Discovery statistics
+ */
+struct net_stats_ipv4_pmtu {
+	/** Number of dropped IPv4 PMTU packets. */
+	net_stats_t drop;
+
+	/** Number of received IPv4 PMTU packets. */
+	net_stats_t recv;
+
+	/** Number of sent IPv4 PMTU packets. */
+	net_stats_t sent;
+};
+
+/**
  * @brief IPv6 multicast listener daemon statistics
  */
 struct net_stats_ipv6_mld {
@@ -377,6 +405,16 @@ struct net_stats {
 #if defined(CONFIG_NET_STATISTICS_IPV6_ND)
 	/** IPv6 neighbor discovery statistics */
 	struct net_stats_ipv6_nd ipv6_nd;
+#endif
+
+#if defined(CONFIG_NET_STATISTICS_IPV6_PMTU)
+	/** IPv6 Path MTU Discovery statistics */
+	struct net_stats_ipv6_pmtu ipv6_pmtu;
+#endif
+
+#if defined(CONFIG_NET_STATISTICS_IPV4_PMTU)
+	/** IPv4 Path MTU Discovery statistics */
+	struct net_stats_ipv4_pmtu ipv4_pmtu;
 #endif
 
 #if defined(CONFIG_NET_STATISTICS_MLD)
@@ -665,6 +703,8 @@ enum net_request_stats_cmd {
 	NET_REQUEST_STATS_CMD_GET_IPV4,
 	NET_REQUEST_STATS_CMD_GET_IPV6,
 	NET_REQUEST_STATS_CMD_GET_IPV6_ND,
+	NET_REQUEST_STATS_CMD_GET_IPV6_PMTU,
+	NET_REQUEST_STATS_CMD_GET_IPV4_PMTU,
 	NET_REQUEST_STATS_CMD_GET_ICMP,
 	NET_REQUEST_STATS_CMD_GET_UDP,
 	NET_REQUEST_STATS_CMD_GET_TCP,
@@ -731,6 +771,26 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_IPV6);
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_IPV6_ND);
 /** @endcond */
 #endif /* CONFIG_NET_STATISTICS_IPV6_ND */
+
+#if defined(CONFIG_NET_STATISTICS_IPV6_PMTU)
+/** Request IPv6 Path MTU Discovery statistics */
+#define NET_REQUEST_STATS_GET_IPV6_PMTU				\
+	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_IPV6_PMTU)
+
+/** @cond INTERNAL_HIDDEN */
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_IPV6_PMTU);
+/** @endcond */
+#endif /* CONFIG_NET_STATISTICS_IPV6_PMTU */
+
+#if defined(CONFIG_NET_STATISTICS_IPV4_PMTU)
+/** Request IPv4 Path MTU Discovery statistics */
+#define NET_REQUEST_STATS_GET_IPV4_PMTU				\
+	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_IPV4_PMTU)
+
+/** @cond INTERNAL_HIDDEN */
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_IPV4_PMTU);
+/** @endcond */
+#endif /* CONFIG_NET_STATISTICS_IPV4_PMTU */
 
 #if defined(CONFIG_NET_STATISTICS_ICMP)
 /** Request ICMPv4 and ICMPv6 statistics */

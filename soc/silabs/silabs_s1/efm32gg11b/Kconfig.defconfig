@@ -5,7 +5,6 @@
 if SOC_SERIES_EFM32GG11B
 
 config NUM_IRQS
-	int
 	# must be >= the highest interrupt number used
 	default 68
 

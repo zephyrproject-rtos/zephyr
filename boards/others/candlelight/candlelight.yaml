@@ -1,0 +1,15 @@
+identifier: candlelight
+name: candleLight
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 16
+flash: 128
+supported:
+  - can
+  - gpio
+  - usb_device
+  - usbd
+vendor: others

@@ -25,6 +25,16 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <zephyr/net/dummy.h>
 
+/* Allow network tests to control the IP addresses swapping */
+#if defined(CONFIG_NET_TEST)
+static bool loopback_dont_swap_addresses;
+
+void loopback_enable_address_swap(bool swap_addresses)
+{
+	loopback_dont_swap_addresses = !swap_addresses;
+}
+#endif /* CONFIG_NET_TEST */
+
 int loopback_dev_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
@@ -123,17 +133,22 @@ static int loopback_send(const struct device *dev, struct net_pkt *pkt)
 
 	/* We need to swap the IP addresses because otherwise
 	 * the packet will be dropped.
+	 *
+	 * Some of the network tests require that addresses are not swapped so allow
+	 * the test to control this remotely.
 	 */
-	if (net_pkt_family(pkt) == AF_INET6) {
-		net_ipv6_addr_copy_raw(NET_IPV6_HDR(cloned)->src,
-				       NET_IPV6_HDR(pkt)->dst);
-		net_ipv6_addr_copy_raw(NET_IPV6_HDR(cloned)->dst,
-				       NET_IPV6_HDR(pkt)->src);
-	} else {
-		net_ipv4_addr_copy_raw(NET_IPV4_HDR(cloned)->src,
-				       NET_IPV4_HDR(pkt)->dst);
-		net_ipv4_addr_copy_raw(NET_IPV4_HDR(cloned)->dst,
-				       NET_IPV4_HDR(pkt)->src);
+	if (!COND_CODE_1(CONFIG_NET_TEST, (loopback_dont_swap_addresses), (false))) {
+		if (net_pkt_family(pkt) == AF_INET6) {
+			net_ipv6_addr_copy_raw(NET_IPV6_HDR(cloned)->src,
+					       NET_IPV6_HDR(pkt)->dst);
+			net_ipv6_addr_copy_raw(NET_IPV6_HDR(cloned)->dst,
+					       NET_IPV6_HDR(pkt)->src);
+		} else {
+			net_ipv4_addr_copy_raw(NET_IPV4_HDR(cloned)->src,
+					       NET_IPV4_HDR(pkt)->dst);
+			net_ipv4_addr_copy_raw(NET_IPV4_HDR(cloned)->dst,
+					       NET_IPV4_HDR(pkt)->src);
+		}
 	}
 
 	res = net_recv_data(net_pkt_iface(cloned), cloned);
