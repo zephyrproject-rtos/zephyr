@@ -50,6 +50,27 @@ __asm__(".align 4\n\t"
 	"  movi  a1, " INIT_STACK "\n\t"
 	"  call4 c_boot\n\t");
 
+/* Unfortunately the SOF kernel loader doesn't understand the boot
+ * vector in the ELF/rimage file yet, so we still need a stub to get
+ * actual audio firmware to load.  Leave a stub in place that jumps to
+ * our "real" vector.  Note that this is frustratingly pessimal: the
+ * kernel wants the entry point to be at the start of the SRAM region,
+ * but (1) Xtensa can only load an immediate from addresses LOWER than
+ * a L32R instruction, which we can't do and so need to jump across a
+ * region to put one, and (2) the vector table that gets displaced has
+ * a 1024 byte alignment requirement, forcing us to waste ~1011 bytes
+ * needlessly.
+ */
+__asm__(".pushsection .sof_entry.text\n\t"
+	"  j 2f\n"
+	".align 4\n\t"
+	"1:\n\t"
+	"  .word mtk_adsp_boot_entry\n"
+	"2:\n\t"
+	"  l32r a0, 1b\n\t"
+	"  jx a0\n\t"
+	".popsection");
+
 /* Initial MPU configuration, needed to enable caching */
 static void enable_mpu(void)
 {
