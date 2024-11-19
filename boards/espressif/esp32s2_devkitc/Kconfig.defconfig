@@ -1,7 +1,0 @@
-# ESP32S2 DevKitC board configuration
-
-# Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
-# SPDX-License-Identifier: Apache-2.0
-
-config ENTROPY_GENERATOR
-	default y

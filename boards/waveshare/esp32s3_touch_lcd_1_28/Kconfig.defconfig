@@ -3,9 +3,6 @@
 
 if BOARD_ESP32S3_TOUCH_LCD_1_28_ESP32S3_PROCPU
 
-config ENTROPY_GENERATOR
-	default y
-
 config KERNEL_MEM_POOL
 	default y
 
