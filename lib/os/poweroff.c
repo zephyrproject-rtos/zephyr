@@ -8,6 +8,10 @@
 
 void sys_poweroff(void)
 {
+	if (IS_ENABLED(CONFIG_POWEROFF_PREPARE)) {
+		(void)z_sys_poweroff_prepare();
+	}
+
 	(void)irq_lock();
 
 	z_sys_poweroff();

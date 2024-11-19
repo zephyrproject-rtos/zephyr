@@ -43,6 +43,19 @@ FUNC_NORETURN void z_sys_poweroff(void);
  */
 FUNC_NORETURN void sys_poweroff(void);
 
+/**
+ * @brief Prepare the power off.
+ *
+ * Platform specific code which can be executed before interrupts are locked and
+ * power off function is called. Called when @kconfig{CONFIG_POWEROFF_PREPARE} is
+ * enabled.
+ *
+ * @retval 0 if preparation was successful.
+ * @retval negative if error occurred. Note that @ref sys_poweroff cannot return so error
+ * does not stop powering off.
+ */
+int z_sys_poweroff_prepare(void);
+
 /** @} */
 
 #ifdef __cplusplus

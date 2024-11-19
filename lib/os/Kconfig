@@ -124,6 +124,12 @@ config POWEROFF
 	help
 	  Enable support for system power off.
 
+config POWEROFF_PREPARE
+	bool "Prepare before the power off"
+	depends on POWEROFF
+	help
+	  When enabled platform code can be executed before the power off.
+
 rsource "Kconfig.cbprintf"
 rsource "zvfs/Kconfig"
 
