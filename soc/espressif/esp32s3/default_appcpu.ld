@@ -8,6 +8,10 @@
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/linker/linker-tool.h>
 
+#if !defined(CONFIG_BOOTLOADER_MCUBOOT)
+#error "APPCPU image must use MCUboot image format."
+#endif /* CONFIG_BOOTLOADER_MCUBOOT */
+
 #include "memory.h"
 
 /* User available SRAM memory segments */
@@ -47,15 +51,9 @@ appcpu_dram_len = APPCPU_SRAM_SIZE;
 
 MEMORY
 {
-#ifdef CONFIG_BOOTLOADER_MCUBOOT
   mcuboot_hdr (R):  org = 0x0,  len = 0x20
   metadata (R):     org = 0x20, len = 0x20
   FLASH (R):        org = 0x40, len = FLASH_SIZE - 0x40
-#else
-  /* Make safety margin in the FLASH memory size so the
-   * (esp_img_header + (n*esp_seg_headers)) would fit */
-  FLASH (R):        org = 0x0, len = FLASH_SIZE - 0x100
-#endif /* CONFIG_BOOTLOADER_MCUBOOT */
 
   iram0_1_seg(RX): org = appcpu_iram_org, len = appcpu_iram_len
   dram0_1_seg(RW): org = appcpu_dram_org, len = appcpu_dram_len
@@ -73,7 +71,6 @@ _heap_sentry = DRAM_RESERVED_START;
 
 SECTIONS
 {
-#if defined(CONFIG_BOOTLOADER_MCUBOOT)
   /* Reserve space for MCUboot header in the binary */
   .mcuboot_header :
   {
@@ -109,20 +106,18 @@ SECTIONS
     LONG(LOADADDR(.dram0.data))
     LONG(_data_end - _data_start)
   } > metadata
-#endif /* CONFIG_BOOTLOADER_MCUBOOT */
 
   #include <zephyr/linker/rel-sections.ld>
 
-  #ifdef CONFIG_LLEXT
+#ifdef CONFIG_LLEXT
   #include <zephyr/linker/llext-sections.ld>
-  #endif
+#endif
 
   /* --- START OF IRAM --- */
 
   /* Send .iram0 code to iram */
   .iram0.vectors : ALIGN(4)
   {
-    _iram_start = ABSOLUTE(.);
     /* Vectors go to IRAM */
     _init_start = ABSOLUTE(.);
     /* Vectors according to builds/RF-2015.2-win32/esp108_v1_2_s5_512int_2/config.html */
@@ -156,10 +151,9 @@ SECTIONS
     *(.entry.text)
     *(.init.literal)
     *(.init)
-    . = ALIGN (16);
-
     _init_end = ABSOLUTE(.);
 
+    _iram_start = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(IRAM_REGION, ROMABLE_REGION)
 
   .iram0.text : ALIGN(4)
@@ -290,7 +284,6 @@ SECTIONS
   #include <zephyr/linker/kobject-data.ld>
   #include <zephyr/linker/common-rom/common-rom-logging.ld>
 
-  /* SECTION_PROLOGUE(_RODATA_SECTION_NAME,,) */
   .dram0.rodata : ALIGN(4)
   {
     _rodata_start = ABSOLUTE(.);
@@ -304,26 +297,26 @@ SECTIONS
 
     . = ALIGN(4);
     *(EXCLUDE_FILE (
-	*libarch__xtensa__core.a:*
-	*libkernel.a:fatal.*
-	*libkernel.a:init.*
-	*libzephyr.a:cbprintf_complete*
-	*libzephyr.a:log_core.*
-	*libzephyr.a:log_backend_uart.*
-	*libzephyr.a:log_output.*
-	*libzephyr.a:loader.*
-	*libdrivers__serial.a:uart_esp32.*) .rodata)
+        *libarch__xtensa__core.a:*
+        *libkernel.a:fatal.*
+        *libkernel.a:init.*
+        *libzephyr.a:cbprintf_complete*
+        *libzephyr.a:log_core.*
+        *libzephyr.a:log_backend_uart.*
+        *libzephyr.a:log_output.*
+        *libzephyr.a:loader.*
+        *libdrivers__serial.a:uart_esp32.*) .rodata)
 
     *(EXCLUDE_FILE (
-	*libarch__xtensa__core.a:*
-	*libkernel.a:fatal.*
-	*libkernel.a:init.*
-	*libzephyr.a:cbprintf_complete*
-	*libzephyr.a:log_core.*
-	*libzephyr.a:log_backend_uart.*
-	*libzephyr.a:log_output.*
-	*libzephyr.a:loader.*
-	*libdrivers__serial.a:uart_esp32.*) .rodata.*)
+        *libarch__xtensa__core.a:*
+        *libkernel.a:fatal.*
+        *libkernel.a:init.*
+        *libzephyr.a:cbprintf_complete*
+        *libzephyr.a:log_core.*
+        *libzephyr.a:log_backend_uart.*
+        *libzephyr.a:log_output.*
+        *libzephyr.a:loader.*
+        *libdrivers__serial.a:uart_esp32.*) .rodata.*)
 
     . = ALIGN(4);
 
@@ -371,10 +364,6 @@ SECTIONS
 
   /* Flash segments (rodata and text) should be mapped in virtual address space by providing VMA.
    * Executing directly from LMA is not possible. */
-  #pragma push_macro("GROUP_ROM_LINK_IN")
-  #undef GROUP_ROM_LINK_IN
-  #define GROUP_ROM_LINK_IN(vregion, lregion) > RAMABLE_REGION AT > lregion
-
   #include <zephyr/linker/cplusplus-rom.ld>
   #include <zephyr/linker/common-rom/common-rom-init.ld>
   #include <zephyr/linker/common-rom/common-rom-kernel-devices.ld>
@@ -386,17 +375,13 @@ SECTIONS
   #include <zephyr/linker/thread-local-storage.ld>
   #include <snippets-sections.ld>
 
-  #pragma pop_macro("GROUP_ROM_LINK_IN")
-
   /* Create an explicit section at the end of all the data that shall be mapped into drom.
    * This is used to calculate the size of the _image_drom_size variable */
-  /* SECTION_PROLOGUE(_RODATA_SECTION_END,,) */
-  .dram0.rodata_end : ALIGN(0x10)
+  .dram0.rodata_end : ALIGN(16)
   {
     . = ALIGN(16);
     _image_rodata_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-
 
   .dram0.end :
   {
@@ -438,18 +423,12 @@ SECTIONS
   } GROUP_LINK_IN(RAMABLE_REGION)
 
   /* Provide total SRAM usage, including IRAM and DRAM */
-  _image_ram_start = _iram_start - IRAM_DRAM_OFFSET;
+  _image_ram_start = _init_start - IRAM_DRAM_OFFSET;
   #include <zephyr/linker/ram-end.ld>
 
   ASSERT(((__bss_end - ORIGIN(dram0_1_seg)) <= LENGTH(dram0_1_seg)), "DRAM segment data does not fit.")
 
   /* --- END OF DRAM --- */
-
-  /* --- START OF IROM --- */
-  /* --- END OF IROM --- */
-
-  /* --- START OF DROM --- */
-  /* --- END OF DROM --- */
 
 #ifdef CONFIG_GEN_ISR_TABLES
 #include <zephyr/linker/intlist.ld>
