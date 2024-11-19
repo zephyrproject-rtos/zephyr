@@ -915,6 +915,52 @@ unlock:
 	k_mutex_unlock(&ctx->rpu_lock);
 	return ret;
 }
+
+static int nrf_wifi_util_rpu_recovery_info(const struct shell *sh,
+					   size_t argc,
+					   const char *argv[])
+{
+	struct nrf_wifi_fmac_dev_ctx *fmac_dev_ctx = NULL;
+	struct nrf_wifi_hal_dev_ctx *hal_dev_ctx = NULL;
+	unsigned long current_time_ms = nrf_wifi_osal_time_get_curr_ms();
+	int ret;
+
+	k_mutex_lock(&ctx->rpu_lock, K_FOREVER);
+	if (!ctx || !ctx->rpu_ctx) {
+		shell_fprintf(sh,
+			      SHELL_ERROR,
+			      "RPU context not initialized\n");
+		ret = -ENOEXEC;
+		goto unlock;
+	}
+
+	fmac_dev_ctx = ctx->rpu_ctx;
+	hal_dev_ctx = fmac_dev_ctx->hal_dev_ctx;
+
+	shell_fprintf(sh,
+		      SHELL_INFO,
+		      "wdt_irq_received: %d\n"
+		      "wdt_irq_ignored: %d\n"
+		      "last_wakeup_now_asserted_time_ms: %lu milliseconds\n"
+		      "last_wakeup_now_deasserted_time_ms: %lu milliseconds\n"
+		      "last_rpu_sleep_opp_time_ms: %lu milliseconds\n"
+		      "current time: %lu milliseconds\n"
+		      "rpu_recovery_success: %d\n"
+		      "rpu_recovery_failure: %d\n\n",
+		      hal_dev_ctx->wdt_irq_received,
+		      hal_dev_ctx->wdt_irq_ignored,
+		      hal_dev_ctx->last_wakeup_now_asserted_time_ms,
+		      hal_dev_ctx->last_wakeup_now_deasserted_time_ms,
+		      hal_dev_ctx->last_rpu_sleep_opp_time_ms,
+		      current_time_ms,
+		      ctx->rpu_recovery_success,
+		      ctx->rpu_recovery_failure);
+
+	ret = 0;
+unlock:
+	k_mutex_unlock(&ctx->rpu_lock);
+	return ret;
+}
 #endif /* CONFIG_NRF_WIFI_RPU_RECOVERY */
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
@@ -1011,6 +1057,12 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      NULL,
 		      "Trigger RPU recovery",
 		      nrf_wifi_util_trigger_rpu_recovery,
+		      1,
+		      0),
+	SHELL_CMD_ARG(rpu_recovery_info,
+		      NULL,
+		      "Dump RPU recovery information",
+		      nrf_wifi_util_rpu_recovery_info,
 		      1,
 		      0),
 #endif /* CONFIG_NRF_WIFI_RPU_RECOVERY */
