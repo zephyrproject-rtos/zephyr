@@ -104,6 +104,8 @@ The below features are currently supported on Zephyr OS for EK-RA4M3 board:
 +-----------+------------+----------------------+
 | COUNTER   | on-chip    | counter              |
 +-----------+------------+----------------------+
+| FLASH     | on-chip    | flash                |
++-----------+------------+----------------------+
 
 Other hardware features are currently not supported by the port.
 
