@@ -125,6 +125,11 @@ config USE_RA_FSP_DISPLAY
 	help
 	  Enable RA FSP Display driver
 
+config USE_RA_FSP_MIPI_DSI
+	bool
+	help
+	  Enable RA FSP MIPI DSI driver
+
 endif # HAS_RENESAS_RA_FSP
 
 if HAS_RENESAS_RZ_FSP
