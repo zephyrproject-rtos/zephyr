@@ -457,6 +457,32 @@
 			status = "disabled";
 		};
 
+		i3c1: i3c@40005c00 {
+			compatible = "st,stm32-i3c";
+			reg = <0x40005c00 0x400>;
+			interrupts = <123 0>, <124 0>;
+			interrupt-names = "event", "error";
+			#address-cells = <3>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(APB1, 23U)>;
+			resets = <&rctl STM32_RESET(APB1L, 23U)>;
+			zephyr,pm-device-runtime-auto;
+			status = "disabled";
+		};
+
+		i3c2: i3c@44003000 {
+			compatible = "st,stm32-i3c";
+			reg = <0x44003000 0x400>;
+			interrupts = <131 0>, <132 0>;
+			interrupt-names = "event", "error";
+			#address-cells = <3>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(APB3, 9U)>;
+			resets = <&rctl STM32_RESET(APB3, 9U)>;
+			zephyr,pm-device-runtime-auto;
+			status = "disabled";
+		};
+
 		spi1: spi@40013000 {
 			compatible = "st,stm32h7-spi", "st,stm32-spi-fifo", "st,stm32-spi";
 			#address-cells = <1>;
