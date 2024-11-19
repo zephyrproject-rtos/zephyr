@@ -11,7 +11,9 @@ on:
 
 jobs:
   upload-to-elasticsearch:
-    if: github.repository == 'zephyrproject-rtos/zephyr'
+    if: |
+      github.repository == 'zephyrproject-rtos/zephyr' &&
+      github.event.workflow_run.event != 'pull_request_target'
     env:
       ELASTICSEARCH_KEY: ${{ secrets.ELASTICSEARCH_KEY }}
       ELASTICSEARCH_SERVER: "https://elasticsearch.zephyrproject.io:443"
@@ -25,13 +27,16 @@ jobs:
           persist-credentials: false
 
       - name: Download Artifacts
+        id: download-artifacts
         uses: dawidd6/action-download-artifact@v6
         with:
           path: artifacts
           workflow: twister.yml
           run_id: ${{ github.event.workflow_run.id }}
+          if_no_artifact_found: ignore
 
       - name: Upload to elasticsearch
+        if: steps.download-artifacts.outputs.found_artifact == 'true'
         run: |
           pip3 install elasticsearch
           # set run date on upload to get consistent and unified data across the matrix.
