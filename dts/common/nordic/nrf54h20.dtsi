@@ -898,6 +898,15 @@
 				power-domains = <&gpd NRF_GPD_SLOW_ACTIVE>;
 			};
 
+			pdm0: pdm@993000 {
+				compatible = "nordic,nrf-pdm";
+				reg = <0x993000 0x1000>;
+				status = "disabled";
+				interrupts = <403 NRF_DEFAULT_IRQ_PRIORITY>;
+				nordic,clockpin-enable = <NRF_FUN_PDM_CLK>;
+				power-domains = <&gpd NRF_GPD_SLOW_ACTIVE>;
+			};
+
 			qdec130: qdec@994000 {
 				compatible = "nordic,nrf-qdec";
 				reg = <0x994000 0x1000>;
