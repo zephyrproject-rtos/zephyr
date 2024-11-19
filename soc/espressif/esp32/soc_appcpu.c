@@ -33,14 +33,28 @@
 #include <esp_app_format.h>
 #include <zephyr/sys/printk.h>
 
+#define HDR_ATTR __attribute__((section(".entry_addr"))) __attribute__((used))
+
+void __appcpu_start(void);
+static HDR_ATTR void (*_entry_point)(void) = &__appcpu_start;
+
 extern void z_prep_c(void);
+
+static void core_intr_matrix_clear(void)
+{
+	uint32_t core_id = esp_cpu_get_core_id();
+
+	for (int i = 0; i < ETS_MAX_INTR_SOURCE; i++) {
+		intr_matrix_set(core_id, i, ETS_INVALID_INUM);
+	}
+}
 
 /*
  * This is written in C rather than assembly since, during the port bring up,
  * Zephyr is being booted by the Espressif bootloader.  With it, the C stack
  * is already set up.
  */
-void __app_cpu_start(void)
+void IRAM_ATTR __appcpu_start(void)
 {
 	extern uint32_t _init_start;
 
@@ -69,9 +83,12 @@ void __app_cpu_start(void)
 	 * initialization code wants a valid arch_current_thread() before
 	 * z_prep_c() is invoked.
 	 */
-	__asm__ __volatile__("wsr.MISC0 %0; rsync" : : "r"(&_kernel.cpus[0]));
+	__asm__ __volatile__("wsr.MISC0 %0; rsync" : : "r"(&_kernel.cpus[1]));
+
+	core_intr_matrix_clear();
 
 	esp_intr_initialize();
+
 	/* Start Zephyr */
 	z_prep_c();
 
