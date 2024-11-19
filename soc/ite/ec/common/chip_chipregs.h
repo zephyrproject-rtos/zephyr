@@ -1662,6 +1662,7 @@ struct gctrl_it8xxx2_regs {
 /* 0x20: Memory Controller Configuration 3 */
 #define IT8XXX2_GCTRL_SPISLVPFE		BIT(6)
 /* 0x30: Memory Controller Configuration */
+#define IT8XXX2_GCTRL_USB_DEBUG_EN      BIT(7)
 #define IT8XXX2_GCTRL_ICACHE_RESET	BIT(4)
 /* 0x37: Eflash Protect Lock */
 #define IT8XXX2_GCTRL_EPLR_ENABLE	BIT(0)
