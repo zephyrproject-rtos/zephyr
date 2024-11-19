@@ -66,4 +66,5 @@ config SOC_NRF54H20_CPUPPR
 config SOC_NRF54H20_CPUFLPR
 	select RISCV_CORE_NORDIC_VPR
 
+rsource "bicr/Kconfig"
 rsource "gpd/Kconfig"
