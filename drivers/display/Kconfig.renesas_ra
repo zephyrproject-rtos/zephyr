@@ -1,0 +1,34 @@
+# Renesas RA Family
+
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config RENESAS_RA_GLCDC
+	bool "Renesas display controller driver"
+	default y
+	depends on DT_HAS_RENESAS_RA_GLCDC_ENABLED
+	select USE_RA_FSP_DISPLAY
+	help
+	  Enable Renesas display controller.
+
+if RENESAS_RA_GLCDC
+
+config RENESAS_RA_GLCDC_FB_NUM
+	int "Frame buffer number"
+	default 2
+	range 0 2
+	help
+	  RENESAS RA GLCDC frame buffer number config:
+	    - 0 frame buffer maintained by application, must write with full screen pixels.
+	    - 1 single frame buffer in RENESAS RA GLCDC driver.
+	    - 2 double frame buffer in RENESAS RA GLCDC driver.
+
+if LVGL
+
+# Force display buffers to be aligned to cache line size (64 bytes)
+config LV_Z_VDB_ALIGN
+	default 64
+
+endif # LVGL
+
+endif # RENESAS_RA_GLCDC

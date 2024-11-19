@@ -120,6 +120,11 @@ config USE_RA_FSP_SDRAM
 	help
 	  Enable RA FSP SDRAM support
 
+config USE_RA_FSP_DISPLAY
+	bool
+	help
+	  Enable RA FSP Display driver
+
 endif # HAS_RENESAS_RA_FSP
 
 if HAS_RENESAS_RZ_FSP
