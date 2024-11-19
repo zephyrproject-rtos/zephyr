@@ -74,6 +74,7 @@ static void nrf_wifi_rpu_recovery_work_handler(struct k_work *work)
 								nrf_wifi_rpu_recovery_work);
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
 	int ret;
+	bool recovery_fail = false;
 
 	if (!vif_ctx_zep) {
 		LOG_ERR("%s: vif_ctx_zep is NULL", __func__);
@@ -143,6 +144,8 @@ static void nrf_wifi_rpu_recovery_work_handler(struct k_work *work)
 	/* This indirectly does a cold-boot of RPU */
 	ret = net_if_down(vif_ctx_zep->zep_net_if_ctx);
 	if (ret) {
+		rpu_ctx_zep->rpu_recovery_failure++;
+		recovery_fail = true;
 		LOG_ERR("%s: net_if_down failed: %d", __func__, ret);
 		/* Continue with the recovery */
 	}
@@ -158,6 +161,9 @@ static void nrf_wifi_rpu_recovery_work_handler(struct k_work *work)
 	}
 	rpu_ctx_zep->rpu_recovery_in_progress = false;
 	rpu_ctx_zep->last_rpu_recovery_time_ms = k_uptime_get();
+	if (!recovery_fail) {
+		rpu_ctx_zep->rpu_recovery_success++;
+	}
 	k_mutex_unlock(&rpu_ctx_zep->rpu_lock);
 #ifdef CONFIG_NRF_WIFI_RPU_RECOVERY_DEBUG
 	LOG_ERR("%s: RPU recovery done", __func__);
