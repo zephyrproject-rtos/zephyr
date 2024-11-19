@@ -4,4 +4,4 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/drivers/pinctrl/pinctrl_soc_kinetis_common.h>
+#include <zephyr/drivers/pinctrl/pinctrl_nxp_port_common.h>
