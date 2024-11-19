@@ -32,7 +32,7 @@ static PORT_Type *ports[] = {
 
 #define PIN(mux) (((mux) & 0xFC00000) >> 22)
 #define PORT(mux) (((mux) & 0xF0000000) >> 28)
-#define PINCFG(mux) ((mux) & Z_PINCTRL_KINETIS_PCR_MASK)
+#define PINCFG(mux) ((mux) & Z_PINCTRL_NXP_PORT_PCR_MASK)
 
 struct pinctrl_mcux_config {
 	const struct device *clock_dev;
@@ -47,7 +47,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 		uint8_t pin = PIN(pins[i]);
 		uint16_t mux = PINCFG(pins[i]);
 
-		base->PCR[pin] = (base->PCR[pin] & (~Z_PINCTRL_KINETIS_PCR_MASK)) | mux;
+		base->PCR[pin] = (base->PCR[pin] & (~Z_PINCTRL_NXP_PORT_PCR_MASK)) | mux;
 	}
 	return 0;
 }
