@@ -70,7 +70,7 @@ static int stop(const struct device *dev)
 {
 	const struct counter_nrfx_config *config = dev->config;
 
-	nrf_timer_task_trigger(config->timer, NRF_TIMER_TASK_SHUTDOWN);
+	nrf_timer_task_trigger(config->timer, NRF_TIMER_TASK_STOP);
 
 	return 0;
 }
