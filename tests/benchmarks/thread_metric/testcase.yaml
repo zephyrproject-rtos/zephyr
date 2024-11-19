@@ -2,10 +2,12 @@ common:
   tags:
     - kernel
     - benchmark
-  # Native platforms excluded as timer interrupts may not be detected
-  # qemu_nios2 excluded as it is slow
+  # Native platforms excluded as they are not relevant: These benchmarks run some kernel primitives
+  # in a loop during a predefined time counting how many times they execute. But in the POSIX arch,
+  # time does not pass while the CPU executes. So the benchmark just appears as if hung.
   arch_exclude:
     - posix
+  # qemu_nios2 excluded as it is slow
   platform_exclude:
     - qemu_nios2
   integration_platforms:
