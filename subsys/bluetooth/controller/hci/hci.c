@@ -15,7 +15,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/atomic.h>
 
-#include <zephyr/drivers/bluetooth/hci_driver.h>
+#include <zephyr/drivers/bluetooth.h>
 
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/hci_vs.h>
