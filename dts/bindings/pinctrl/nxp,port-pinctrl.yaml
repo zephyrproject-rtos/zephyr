@@ -2,13 +2,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  Kinetis pinctrl node. This node will define pin configurations in pin groups,
-  and has the 'pinctrl' node identifier in the SOC's devicetree. Each group
-  within the pin configuration defines the pin configuration for a peripheral,
-  and each numbered subgroup in the pin group defines all the pins for that
-  peripheral with the same configuration properties. The 'pins' property in
-  a group selects the pins to be configured, and the remaining properties set
-  configuration values for those pins. Here is an example group for UART0 pins:
+  NXP PORT pinctrl node. This node will define pin configurations in pin
+  groups, and has the 'pinctrl' node identifier in the SOC's devicetree. Each
+  group within the pin configuration defines the pin configuration for a
+  peripheral, and each numbered subgroup in the pin group defines all the pins
+  for that peripheral with the same configuration properties. The 'pins'
+  property in a group selects the pins to be configured, and the remaining
+  properties set configuration values for those pins. Here is an example
+  group for UART0 pins:
 
   uart0_default: uart0_default {
     group0 {
@@ -28,15 +29,15 @@ description: |
   PCR_DSE=<drive-strength selection>,
   PCR_PFE=0
 
-compatible: "nxp,kinetis-pinctrl"
+compatible: "nxp,port-pinctrl"
 
 include: base.yaml
 
 child-binding:
-  description: Kinetis pin controller pin group
+  description: NXP PORT pin controller pin group
   child-binding:
     description: |
-      Kinetis pin controller pin configuration node
+      NXP PORT pin controller pin configuration node
 
     include:
       - name: pincfg-node.yaml

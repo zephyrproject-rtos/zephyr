@@ -30,7 +30,7 @@
 	};
 
 	pinctrl: pinctrl {
-		compatible = "nxp,kinetis-pinctrl";
+		compatible = "nxp,port-pinctrl";
 		status = "okay";
 	};
 };
@@ -74,37 +74,37 @@
 	};
 
 	porta: pinmux@116000 {
-		compatible = "nxp,kinetis-pinmux";
+		compatible = "nxp,port-pinmux";
 		reg = <0x116000 0x1000>;
 		clocks = <&syscon MCUX_PORT0_CLK>;
 	};
 
 	portb: pinmux@117000 {
-		compatible = "nxp,kinetis-pinmux";
+		compatible = "nxp,port-pinmux";
 		reg = <0x117000 0x1000>;
 		clocks = <&syscon MCUX_PORT1_CLK>;
 	};
 
 	portc: pinmux@118000 {
-		compatible = "nxp,kinetis-pinmux";
+		compatible = "nxp,port-pinmux";
 		reg = <0x118000 0x1000>;
 		clocks = <&syscon MCUX_PORT2_CLK>;
 	};
 
 	portd: pinmux@119000 {
-		compatible = "nxp,kinetis-pinmux";
+		compatible = "nxp,port-pinmux";
 		reg = <0x119000 0x1000>;
 		clocks = <&syscon MCUX_PORT3_CLK>;
 	};
 
 	porte: pinmux@11a000 {
-		compatible = "nxp,kinetis-pinmux";
+		compatible = "nxp,port-pinmux";
 		reg = <0x11a000 0x1000>;
 		clocks = <&syscon MCUX_PORT4_CLK>;
 	};
 
 	portf: pinmux@42000 {
-		compatible = "nxp,kinetis-pinmux";
+		compatible = "nxp,port-pinmux";
 		reg = <0x42000 0x1000>;
 		clocks = <&syscon MCUX_PORT5_CLK>;
 	};

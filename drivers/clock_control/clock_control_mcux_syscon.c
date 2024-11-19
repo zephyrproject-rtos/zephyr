@@ -44,7 +44,7 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 	}
 #endif
 
-#if defined(CONFIG_PINCTRL_NXP_KINETIS)
+#if defined(CONFIG_PINCTRL_NXP_PORT)
 	switch ((uint32_t)sub_system) {
 #if defined(CONFIG_SOC_SERIES_MCXA)
 	case MCUX_PORT0_CLK:
@@ -82,7 +82,7 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 	default:
 		break;
 	}
-#endif /* defined(CONFIG_PINCTRL_NXP_KINETIS) */
+#endif /* defined(CONFIG_PINCTRL_NXP_PORT) */
 
 #ifdef CONFIG_ETH_NXP_ENET_QOS
 	if ((uint32_t)sub_system == MCUX_ENET_QOS_CLK) {

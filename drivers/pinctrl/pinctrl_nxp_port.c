@@ -5,14 +5,14 @@
  */
 
 
-#define DT_DRV_COMPAT nxp_kinetis_pinmux
+#define DT_DRV_COMPAT nxp_port_pinmux
 
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/logging/log.h>
 #include <fsl_clock.h>
 
-LOG_MODULE_REGISTER(pinctrl_kinetis, CONFIG_PINCTRL_LOG_LEVEL);
+LOG_MODULE_REGISTER(pinctrl_nxp_port, CONFIG_PINCTRL_LOG_LEVEL);
 
 /* Port register addresses. */
 static PORT_Type *ports[] = {
@@ -52,10 +52,6 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 	return 0;
 }
 
-/* Kinetis pinmux driver binds to the same DTS nodes,
- * and handles clock init. Only bind to these nodes if pinmux driver
- * is disabled.
- */
 static int pinctrl_mcux_init(const struct device *dev)
 {
 	const struct pinctrl_mcux_config *config = dev->config;
