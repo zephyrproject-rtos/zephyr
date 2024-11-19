@@ -16,10 +16,6 @@
  * @{
  */
 
-/* maximum length of label key */
-#define MAX_PROMETHEUS_LABEL_KEY_LENGTH   16
-/* maximum length of label value */
-#define MAX_PROMETHEUS_LABEL_VALUE_LENGTH 16
 /* maximum namber of labels per metric */
 #define MAX_PROMETHEUS_LABELS_PER_METRIC  5
 
@@ -30,9 +26,9 @@
  */
 struct prometheus_label {
 	/** Prometheus metric label key */
-	char key[MAX_PROMETHEUS_LABEL_KEY_LENGTH];
+	const char *key;
 	/** Prometheus metric label value */
-	char value[MAX_PROMETHEUS_LABEL_VALUE_LENGTH];
+	const char *value;
 };
 
 /**

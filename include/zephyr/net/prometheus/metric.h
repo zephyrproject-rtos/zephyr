@@ -37,9 +37,6 @@ enum prometheus_metric_type {
 	PROMETHEUS_HISTOGRAM,
 };
 
-#define MAX_METRIC_NAME_LENGTH        32
-#define MAX_METRIC_DESCRIPTION_LENGTH 64
-
 /**
  * @brief Type used to represent a Prometheus metric base.
  *
@@ -52,9 +49,9 @@ struct prometheus_metric {
 	/** Type of the Prometheus metric. */
 	enum prometheus_metric_type type;
 	/** Name of the Prometheus metric. */
-	char name[MAX_METRIC_NAME_LENGTH];
+	const char *name;
 	/** Description of the Prometheus metric. */
-	char description[MAX_METRIC_DESCRIPTION_LENGTH];
+	const char *description;
 	/** Labels associated with the Prometheus metric. */
 	struct prometheus_label labels[MAX_PROMETHEUS_LABELS_PER_METRIC];
 	/** Number of labels associated with the Prometheus metric. */
