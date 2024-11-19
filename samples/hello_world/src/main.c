@@ -21,6 +21,8 @@
 #define ATTR_RST "\x1b[37;1m" // ANSI_COLOR_RESET
 #define ATTR_HIL "\x1b[33;1m" // ANSI_COLOR_HIGHLIGHT
 
+#define DEBUG_PRINT false
+
 #if (CONFIG_SPI_ANDES_ATCSPI200 && CONFIG_SPI_NOR)
 	#define FLASH_RW_SIZE   255
 	#define FLASH_BASE_ADDR 0xB0000000
@@ -37,9 +39,11 @@
 				ATTR_RST);
 		} else {
 			printf("%s Reading Back Before Erasing Flash%s\n", ATTR_INF, ATTR_RST);
-			// for(uint8_t i = 0; i < FLASH_RW_SIZE; i++) {
-			// 	printf("%s %d%s", ATTR_INF, flash_data_read[i],i%FORMATTER==0?"\n":"");
-			// } printf("\n");
+			#if DEBUG_PRINT
+				for(uint8_t i = 0; i < FLASH_RW_SIZE; i++) {
+					printf("%s %d%s", ATTR_INF, flash_data_read[i],i%FORMATTER==0?"\n":"");
+				} printf("\n");
+			#endif
 		}
 		errorcode = flash_erase(flash, FLASH_ADDR, 0x1000);
 		if (errorcode < 0) {
@@ -63,9 +67,11 @@
 			if (errorcode == -1) {
 				printf("%s\nFlash erase at 0x%08x did not produce correct results%s\n",
 					ATTR_ERR, FLASH_ADDR, ATTR_RST);
-				// for(uint8_t i = 0; i < FLASH_RW_SIZE; i++) {
-				// 	printf("%s 0x%02x%s", ATTR_INF,
-				// flash_data_read[i],i%FORMATTER==0?"\n":""); } printf("\n");
+				#if DEBUG_PRINT
+					for(uint8_t i = 0; i < FLASH_RW_SIZE; i++) {
+						printf("%s 0x%02x%s", ATTR_INF,
+					flash_data_read[i],i%FORMATTER==0?"\n":""); } printf("\n");
+				#endif
 			} else {
 				printf("%s\nSuccessfully performed erase to flash with code:%d%s\n",
 					ATTR_INF, errorcode, ATTR_RST);
@@ -78,9 +84,13 @@
 			for (uint8_t i = 0; i < FLASH_RW_SIZE; i++) {
 				flash_data_write[i] = ((rand() % (FLASH_RW_SIZE - 1 + 1)) + 1) +
 							((rand() % (FLASH_RW_SIZE - 1 + 1)) + 1);
-				// printf("%s %d%s", ATTR_INF, flash_data_write[i],i%FORMATTER==0?"\n":"");
+				#if DEBUG_PRINT
+					printf("%s %d%s", ATTR_INF, flash_data_write[i],i%FORMATTER==0?"\n":"");
+				#endif
 			}
-			// printf("\n");
+			#if DEBUG_PRINT
+				printf("\n");
+			#endif
 			errorcode = flash_write(flash, FLASH_ADDR, flash_data_write, FLASH_RW_SIZE);
 		}
 
@@ -132,10 +142,12 @@
 							i % FORMATTER == 0 ? "\n" : "");
 						memmaptestfail = true;
 					}
-					// else {
-					// printf("%s %d%s", ATTR_INF,
-					// MemMapReadAddr[i],i%FORMATTER==0?"\n":"");
-					// }
+					#if DEBUG_PRINT
+						else {
+							printf("%s %d%s", ATTR_INF,
+							MemMapReadAddr[i],i%FORMATTER==0?"\n":"");
+						}
+					#endif
 				}
 				printf("\n");
 				if (memmaptestfail) {
@@ -217,10 +229,12 @@
 								i % FORMATTER == 0 ? "\n" : "");
 							memmaptestfail = true;
 						}
-						// else {
-						// printf("%s %d%s", ATTR_INF,
-						// MemMapReadDestAddr[i],i%FORMATTER==0?"\n":"");
-						// }
+						#if DEBUG_PRINT
+							else {
+								printf("%s %d%s", ATTR_INF,
+								MemMapReadDestAddr[i],i%FORMATTER==0?"\n":"");
+							}
+						#endif
 					}
 					printf("\n");
 					if (memmaptestfail) {
@@ -455,14 +469,18 @@ void pufs_hash_sg_test(const struct device *pufs)
 	} else {
 		for (uint8_t i = 0; i < lvHashPkt1.out_len; i++) {
 			if (lvHashPkt1.out_buf[i] != pufs_sample_data_sha256[i]) {
-				// printf("%s%s(%d) out_buf[%d]0x%02x != in_buf[%d]:0x%02x %s\n",
-				// ATTR_ERR,__func__,__LINE__,
-				// i,lvHashPkt1.out_buf[i],i,pufs_sample_data_sha256[i],ATTR_RST);
+				#if DEBUG_PRINT
+					printf("%s%s(%d) out_buf[%d]0x%02x != in_buf[%d]:0x%02x %s\n",
+					ATTR_ERR,__func__,__LINE__,
+					i,lvHashPkt1.out_buf[i],i,pufs_sample_data_sha256[i],ATTR_RST);
+				#endif
 				status = -EINVAL;
 			} else {
-				// printf("%s%s(%d) out_buf[%d]0x%02x == in_buf[%d]:0x%02x %s\n",
-				// ATTR_INF,__func__,__LINE__,
-				// i,lvHashPkt1.out_buf[i],i,pufs_sample_data_sha256[i],ATTR_RST);
+				#if DEBUG_PRINT
+					printf("%s%s(%d) out_buf[%d]0x%02x == in_buf[%d]:0x%02x %s\n",
+					ATTR_INF,__func__,__LINE__,
+					i,lvHashPkt1.out_buf[i],i,pufs_sample_data_sha256[i],ATTR_RST);
+				#endif
 			}
 		}
 		if (status != 0) {
@@ -523,14 +541,18 @@ void pufs_hash_test(const struct device *pufs)
 	} else {
 		for (uint8_t i = 0; i < lvHashPkt.out_len; i++) {
 			if (lvHashPkt.out_buf[i] != pufs_sample_data_sha256[i]) {
-				// printf("%s%s(%d) out_buf[%d]0x%02x != in_buf[%d]:0x%02x %s\n",
-				// ATTR_ERR,__func__,__LINE__,
-				// i,lvHashPkt.out_buf[i],i,pufs_sample_data_sha256[i],ATTR_RST);
+			#if DEBUG_PRINT
+				printf("%s%s(%d) out_buf[%d]0x%02x != in_buf[%d]:0x%02x %s\n",
+				ATTR_ERR,__func__,__LINE__,
+				i,lvHashPkt.out_buf[i],i,pufs_sample_data_sha256[i],ATTR_RST);
+			#endif
 				status = -EINVAL;
 			} else {
-				// printf("%s%s(%d) out_buf[%d]0x%02x == in_buf[%d]:0x%02x %s\n",
-				// ATTR_INF,__func__,__LINE__,
-				// i,lvHashPkt.out_buf[i],i,pufs_sample_data_sha256[i],ATTR_RST);
+			#if DEBUG_PRINT
+				printf("%s%s(%d) out_buf[%d]0x%02x == in_buf[%d]:0x%02x %s\n",
+				ATTR_INF,__func__,__LINE__,
+				i,lvHashPkt.out_buf[i],i,pufs_sample_data_sha256[i],ATTR_RST);
+			#endif
 			}
 		}
 		if (status != 0) {
@@ -618,16 +640,20 @@ void pufs_decryption_test(const struct device *pufs)
 		bool comparison_ok = true;
 		for (int i = 0; i < strlen(lvCipherPkt.out_buf); i++) {
 			if (lvCipherPkt.out_buf[i] != plain_text[i]) {
-				// printf("Orig[%d]:0x%02x(%c) != Res[%d]:0x%02x(%c)\n", i,
-				// plain_text[i], plain_text[i], i, lvCipherPkt.out_buf[i],
-				// lvCipherPkt.out_buf[i]);
+				#if DEBUG_PRINT
+					printf("Orig[%d]:0x%02x(%c) != Res[%d]:0x%02x(%c)\n", i,
+					plain_text[i], plain_text[i], i, lvCipherPkt.out_buf[i],
+					lvCipherPkt.out_buf[i]);
+				#endif
 				comparison_ok = false;
 				break;
 			}
-			// else {
-			// printf("Orig[%d]:0x%02x(%c) == Res[%d]:0x%02x(%c)\n", i, plain_text[i],
-			// plain_text[i], i, lvCipherPkt.out_buf[i], lvCipherPkt.out_buf[i]);
-			// }
+			#if DEBUG_PRINT
+				else {
+					printf("Orig[%d]:0x%02x(%c) == Res[%d]:0x%02x(%c)\n", i, plain_text[i],
+					plain_text[i], i, lvCipherPkt.out_buf[i], lvCipherPkt.out_buf[i]);
+				}
+			#endif
 		}
 		if (!comparison_ok) {
 			printf("%s cipher decryption Failed! %s\n", ATTR_ERR, ATTR_RST);
@@ -1020,7 +1046,7 @@ int main(void)
 				ATTR_RST);
 		}
 	#endif
-	#if (CONFIG_SPI_ANDES_ATCSPI200 && CONFIG_SPI_NOR)
+	#if (CONFIG_SPI_ANDES_ATCSPI200 && CONFIG_SPI_NOR && CONFIG_DMA_ANDES_ATCDMAC100)
 		if (spi == NULL) {
 			printf("%s spi has status disabled...%s\n", ATTR_ERR, ATTR_RST);
 		} else {
