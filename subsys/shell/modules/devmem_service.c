@@ -247,8 +247,8 @@ static int cmd_load(const struct shell *sh, size_t argc, char **argv)
 		argc--;
 	}
 
-	bytes = (unsigned char *)strtol(argv[1], NULL, 0);
-	data = (uint32_t *)strtol(argv[1], NULL, 0);
+	bytes = (unsigned char *)strtoul(argv[1], NULL, 0);
+	data = (uint32_t *)strtoul(argv[1], NULL, 0);
 
 	set_bypass(sh, bypass_cb);
 	return 0;
