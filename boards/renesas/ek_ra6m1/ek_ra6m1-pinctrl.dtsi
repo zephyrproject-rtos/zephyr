@@ -20,4 +20,14 @@
 			drive-strength = "medium";
 		};
 	};
+
+	spi0_default: spi0_default {
+		group1 {
+			/* MISO MOSI RSPCK SSL */
+			psels = <RA_PSEL(RA_PSEL_SPI, 4, 10)>,
+			<RA_PSEL(RA_PSEL_SPI, 4, 11)>,
+			<RA_PSEL(RA_PSEL_SPI, 4, 12)>,
+			<RA_PSEL(RA_PSEL_SPI, 4, 13)>;
+		};
+	};
 };

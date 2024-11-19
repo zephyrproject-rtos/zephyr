@@ -59,6 +59,12 @@
 	pinctrl-names = "default";
 };
 
+&spi1 {
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &ioport4 {
 	status = "okay";
 };

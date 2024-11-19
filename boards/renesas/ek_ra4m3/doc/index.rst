@@ -100,6 +100,8 @@ The below features are currently supported on Zephyr OS for EK-RA4M3 board:
 +-----------+------------+----------------------+
 | CLOCK     | on-chip    | clock control        |
 +-----------+------------+----------------------+
+| SPI       | on-chip    | spi                  |
++-----------+------------+----------------------+
 
 Other hardware features are currently not supported by the port.
 
