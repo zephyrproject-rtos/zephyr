@@ -4,9 +4,9 @@ common:
     - benchmark
   # Native platforms excluded as timer interrupts may not be detected
   # qemu_nios2 excluded as it is slow
+  arch_exclude:
+    - posix
   platform_exclude:
-    - native_posix
-    - native_sim
     - qemu_nios2
   integration_platforms:
     - qemu_x86
