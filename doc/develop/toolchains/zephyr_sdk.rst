@@ -229,7 +229,130 @@ Zephyr SDK installation
             You must rerun the setup script if you relocate the Zephyr SDK bundle directory after
             the initial setup.
 
+.. toolchain_zephyr_sdk_install_end
+
+.. _toolchain_zephyr_sdk_shared_env:
+
+Zephyr SDK Installation in Shared Environments
+**********************************************
+
+In shared environments, such as common and distributed build infrastructure, it can be
+advantageous to install the Zephyr SDK and Python dependencies in a shared location.
+
+This has several benefits:
+
+* Reduced disk space used compared to multiple Zephyr SDKs and Python virtual environments
+* Reduced on-boarding time for new Zephyr developers
+* Simplified installation onto neighboring build machines (local and remote)
+* Supports multiple simultaneous installations of different SDK versions side-by-side
+
+Assumptions:
+
+* A UNIX-like operating system (e.g. Linux, macOS)
+* The installer has super-user privileges (e.g. with ``sudo``)
+* The version of the Zephyr SDK installed is represented by ``$SDK_VERSION`` (e.g. 0.17.0)
+* The SDK is installed to ``/opt/zephyr/sdk/$SDK_VERSION``
+* The version of the Python virtual environment is represented by ``$VENV_VERSION`` (e.g. 20250101)
+* The virtual environment is installed to ``/opt/zephyr/venv/$VENV_VERSION``
+
+The same steps in :ref:`Getting Started Guide <getting_started>` are followed
+with minor variations.
+
+1. Create the shared directory and set the owner to the current user
+
+   .. code-block:: console
+
+      sudo mkdir -p /opt/zephyr/sdk/$SDK_VERSION
+      sudo chown $UID:$UID /opt/zephyr/sdk/$SDK_VERSION
+
+2. Create a shared Python virtual environment (in :ref:`this step <gs_python_deps>`)
+
+   .. code-block:: console
+
+      python3 -m venv /opt/zephyr/venv/$VENV_VERSION
+      source /opt/zephyr/venv/$VENV_VERSION/bin/activate
+
+3. Install the Zephyr SDK (in :ref:`this step <gs_install_zephyr_sdk>`)
+
+   .. code-block:: console
+
+      west sdk install -d /opt/zephyr/sdk/$SDK_VERSION
+
+4. Change the owner to root
+
+   .. code-block:: console
+
+      sudo chown -R 0:0 /opt/zephyr/sdk/$SDK_VERSION
+      sudo chown -R 0:0 /opt/zephyr/venv/$VENV_VERSION
+
+When opening as a new or existing user, export the necessary environment
+variables before building Zephyr as usual.
+
+   .. code-block:: console
+
+      cd ~/zephyrproject/zephyr
+      source /opt/zephyr/venv/$VENV_VERSION/bin/activate
+      export ZEPHYR_BASE=$PWD
+      export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
+      export ZEPHYR_SDK_INSTALL_DIR=/opt/zephyr/sdk/$SDK_VERSION
+
+Depending on the topology of build infrastructure, it may be preferable to simply ``rsync``
+the ``/opt/zephyr/sdk/$SDK_VERSION`` directory to other build machines. Alternatively, use
+``/opt/zephyr/sdk/$SDK_VERSION`` to create packages using the package manager of choice.
+
+.. _gs_package_managers:
+
+Guidelines for Package Managers
+*******************************
+
+For those who wish to create redistributable packages (with e.g.
+`APT <https://en.wikipedia.org/wiki/APT_(software)>`_ or
+`RPM <https://en.wikipedia.org/wiki/RPM_Package_Manager>`_) from the Zephyr SDK and Python
+dependencies, please follow the general guidelines below. These guidelines support multiple
+simultaneous installations of different SDK versions side-by-side, which can be helpful when
+building for different Zephyr releases or when evaluating new Zephyr SDK releases.
+
+Assumptions:
+
+* A UNIX-like operating system (e.g. Linux, macOS)
+* The shared SDK is installed in ``/opt/zephyr/sdk/$SDK_VERSION``
+* The version of the Zephyr SDK installed is represented by ``$SDK_VERSION`` (e.g. 0.17.0)
+* The Python virtual environment is installed to ``/opt/zephyr/venv/$VENV_VERSION``
+* A Zephyr toolchain component by target architecture is represented by ``$TARGET`` (e.g. ``aarch64``)
+
+Suggested packages:
+
+* ``zephyr-pyvenv-$VENV_VERSION``:
+
+  * the tree structure under ``/opt/zephyr/venv/$VENV_VERSION``
+  * a time-based snapshot of all required python packages for building Zephyr at a specific time.
+  * may apply to multiple Zephyr and Zephyr SDK releases.
+
+* ``zephyr-sdk-$SDK_VERSION``:
+
+  * a top-level package that pulls in other all other packages for a given Zephyr SDK release
+  * does not install any files directly
+  * optional, but recommended for ease of use
+
+* ``zephyr-sdk-$SDK_VERSION-base``:
+
+  * the base layout for the installed Zephyr SDK version
+  * includes files under ``/opt/zephyr/sdk/$SDK_VERSION``
+  * limited to cmake rules, scripts, version files, etc
+  * does not include toolchain components
+  * does not include host tools
+  * does not include Python virtual environment
+
+* ``zephyr-sdk-$SDK_VERSION-hosttools``:
+
+  * the host tools for the installed Zephyr SDK version (if applicable)
+  * includes files under ``/opt/zephyr/sdk/$SDK_VERSION/sysroots``
+  * for hosts without complete host tools support, this package may be empty
+
+* ``zephyr-sdk-$SDK_VERSION-toolchain-$TARGET``:
+
+  * the ``$TARGET``-specific toolchain component of Zephyr SDK ``$SDK_VERSION``
+  * includes files under e.g. ``/opt/zephyr/sdk/$SDK_VERSION/$TARGET-zephyr-elf``
+
 .. _Zephyr SDK Releases: https://github.com/zephyrproject-rtos/sdk-ng/tags
 .. _Zephyr SDK Version Compatibility Matrix: https://github.com/zephyrproject-rtos/sdk-ng/wiki/Zephyr-SDK-Version-Compatibility-Matrix
-
-.. toolchain_zephyr_sdk_install_end
