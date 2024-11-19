@@ -264,7 +264,8 @@ void __start(void)
 	}
 #endif
 
-#if !defined(CONFIG_MCUBOOT) && !defined(CONFIG_SOC_ESP32S3_APPCPU)
+#if !defined(CONFIG_SOC_ESP32_APPCPU) && !defined(CONFIG_SOC_ESP32S3_APPCPU) && \
+	!defined(CONFIG_MCUBOOT)
 	map_rom_segments(_app_drom_start, _app_drom_vaddr, _app_drom_size, _app_irom_start,
 			 _app_irom_vaddr, _app_irom_size);
 #endif

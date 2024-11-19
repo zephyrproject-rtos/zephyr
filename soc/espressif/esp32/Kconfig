@@ -15,27 +15,6 @@ config SOC_SERIES_ESP32
 
 if SOC_SERIES_ESP32
 
-config ESP32_APPCPU_IRAM
-	hex "ESP32 APPCPU IRAM size"
-	depends on SOC_ESP32_PROCPU || SOC_ESP32_APPCPU
-	default 0x20000
-	help
-	  Defines APPCPU IRAM area in bytes.
-
-config ESP32_APPCPU_DRAM
-	hex "ESP32 APPCPU DRAM size"
-	depends on SOC_ESP32_PROCPU || SOC_ESP32_APPCPU
-	default 0x10000
-	help
-	  Defines APPCPU DRAM area in bytes.
-
-config SOC_ENABLE_APPCPU
-	bool
-	default y
-	depends on (IPM || MBOX) && SOC_ESP32_PROCPU
-	help
-	  This hidden configuration lets PROCPU core to map and start APPCPU whenever IPM is enabled.
-
 config ESP32_BT_RESERVE_DRAM
 	hex "Bluetooth controller reserved RAM region"
 	default 0xdb5c if BT
