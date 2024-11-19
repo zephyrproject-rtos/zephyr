@@ -560,5 +560,18 @@ void *mem_map_env_setup(void)
 	return NULL;
 }
 
-ZTEST_SUITE(mem_map, NULL, NULL, NULL, NULL, NULL);
-ZTEST_SUITE(mem_map_api, NULL, mem_map_env_setup, NULL, NULL, NULL);
+/* For CPUs with incoherent cache under SMP, the tests to read/write
+ * buffer (... majority of tests here) may not work correctly if
+ * the test thread jumps between CPUs. So use the test infrastructure
+ * to limit the test to 1 CPU.
+ */
+#ifdef CONFIG_CPU_CACHE_INCOHERENT
+#define FUNC_BEFORE ztest_simple_1cpu_before
+#define FUNC_AFTER  ztest_simple_1cpu_after
+#else
+#define FUNC_BEFORE NULL
+#define FUNC_AFTER  NULL
+#endif
+
+ZTEST_SUITE(mem_map, NULL, NULL, FUNC_BEFORE, FUNC_AFTER, NULL);
+ZTEST_SUITE(mem_map_api, NULL, mem_map_env_setup, FUNC_BEFORE, FUNC_AFTER, NULL);
