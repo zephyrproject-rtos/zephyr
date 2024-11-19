@@ -71,6 +71,7 @@ config MPU6050_GYRO_FS
 
 config MPU6050_SAMPLE_RATE_DIVIDER
 	int "Data Sample Rate Divider"
+	range 4 255
 	default 7
 	help
 	  Sensor Data Sample Rate Divider.
