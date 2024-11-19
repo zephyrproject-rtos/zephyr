@@ -15,7 +15,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/sys/util.h>
-LOG_MODULE_REGISTER(fpga_mpfs);
+LOG_MODULE_REGISTER(fpga_mpfs, CONFIG_FPGA_LOG_LEVEL);
 
 #define SPI_FLASH_DIRECTORY_OFFSET    0x00000000
 #define SPI_FLASH_GOLDEN_IMAGE_OFFSET 0x00100400
