@@ -10,6 +10,9 @@ SECTION_DATA_PROLOGUE(.sdram,(NOLOAD),)
 {
 	__SDRAM_Start = .;
 	KEEP(*(.sdram*))
+#ifdef CONFIG_LVGL
+	KEEP(*(.lvgl_buf*))
+#endif
 	__SDRAM_End = .;
 } GROUP_LINK_IN(SDRAM)
 
