@@ -421,6 +421,11 @@
 				compatible = "renesas,ra-udc";
 				status = "disabled";
 			};
+
+			uhc {
+				compatible = "renesas,ra-uhc";
+				status = "disabled";
+			};
 		};
 
 		port_irq0: external-interrupt@40006000 {
