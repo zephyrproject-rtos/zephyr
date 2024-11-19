@@ -1191,7 +1191,7 @@ int nrf_wifi_wpa_supp_signal_poll(void *if_priv, struct wpa_signal_info *si, uns
 			goto out;
 		}
 	} else {
-		si->current_signal = (int)vif_ctx_zep->rssi;
+		si->data.signal = (int)vif_ctx_zep->rssi;
 	}
 
 	ret = nrf_wifi_fmac_get_interface(rpu_ctx_zep->rpu_ctx, vif_ctx_zep->vif_idx);
@@ -1242,28 +1242,28 @@ void nrf_wifi_wpa_supp_event_proc_get_sta(void *if_priv,
 	}
 
 	if (info->sta_info.valid_fields & NRF_WIFI_STA_INFO_SIGNAL_VALID) {
-		signal_info->current_signal = info->sta_info.signal;
+		signal_info->data.signal = info->sta_info.signal;
 	} else {
-		signal_info->current_signal = -WPA_INVALID_NOISE;
+		signal_info->data.signal = 0;
 	}
 
 	if (info->sta_info.valid_fields & NRF_WIFI_STA_INFO_SIGNAL_AVG_VALID) {
-		signal_info->avg_signal = info->sta_info.signal_avg;
+		signal_info->data.avg_signal = info->sta_info.signal_avg;
 	} else {
-		signal_info->avg_signal = -WPA_INVALID_NOISE;
+		signal_info->data.avg_signal = 0;
 	}
 
 	if (info->sta_info.valid_fields & NRF_WIFI_STA_INFO_RX_BEACON_SIGNAL_AVG_VALID) {
-		signal_info->avg_beacon_signal = info->sta_info.rx_beacon_signal_avg;
+		signal_info->data.avg_beacon_signal = info->sta_info.rx_beacon_signal_avg;
 	} else {
-		signal_info->avg_beacon_signal = -WPA_INVALID_NOISE;
+		signal_info->data.avg_beacon_signal = 0;
 	}
 
-	signal_info->current_txrate = 0;
+	signal_info->data.current_tx_rate = 0;
 
 	if (info->sta_info.valid_fields & NRF_WIFI_STA_INFO_TX_BITRATE_VALID) {
 		if (info->sta_info.tx_bitrate.valid_fields & NRF_WIFI_RATE_INFO_BITRATE_VALID) {
-			signal_info->current_txrate = info->sta_info.tx_bitrate.bitrate * 100;
+			signal_info->data.current_tx_rate = info->sta_info.tx_bitrate.bitrate * 100;
 		}
 	}
 out:
