@@ -24,7 +24,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/direction.h>
 #include <zephyr/bluetooth/conn.h>
-#include <zephyr/drivers/bluetooth/hci_driver.h>
+#include <zephyr/bluetooth/hci_vs.h>
 #include <zephyr/bluetooth/att.h>
 
 #include "common/assert.h"
