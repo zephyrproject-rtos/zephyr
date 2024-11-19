@@ -339,7 +339,7 @@ rtc1: rtc@15000 {
 	prescaler = <1>;
 };
 
-dppic: dppic@17000 {
+dppic0: dppic: dppic@17000 {
 	compatible = "nordic,nrf-dppic";
 	reg = <0x17000 0x1000>;
 	status = "okay";

@@ -159,7 +159,7 @@
 			status = "okay";
 		};
 
-		dppic: dppic@4100f000 {
+		dppic0: dppic: dppic@4100f000 {
 			compatible = "nordic,nrf-dppic";
 			reg = <0x4100f000 0x1000>;
 			status = "okay";
