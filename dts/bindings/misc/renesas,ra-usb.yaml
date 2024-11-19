@@ -1,0 +1,22 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA USB controller
+
+compatible: "renesas,ra-usb"
+
+include: [pinctrl-device.yaml, usb-ep.yaml]
+
+properties:
+  reg:
+    required: true
+
+properties:
+  phys:
+    type: phandle
+    description: PHY provider specifier
+
+  bus-wait-cycles:
+    type: int
+    description: |
+      Specifies CPU bus access wait cycles
