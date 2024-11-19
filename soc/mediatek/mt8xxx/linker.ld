@@ -25,6 +25,11 @@ ENTRY(mtk_adsp_boot_entry)
 
 SECTIONS {
 
+  /* kluged-in entry point for Linux loader */
+  .sof_entry : {
+    KEEP(*(.sof_entry.text))
+  } > sram
+
 #include <xtensa_vectors.ld>
   > sram
 
