@@ -5667,7 +5667,7 @@ int net_if_set_promisc(struct net_if *iface)
 	net_if_lock(iface);
 
 	ret = promisc_mode_set(iface, true);
-	if (ret < 0) {
+	if (ret < 0 && ret != -EALREADY) {
 		goto out;
 	}
 
