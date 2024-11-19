@@ -1,0 +1,12 @@
+# Renesas RA Family
+
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config MIPI_DSI_RENESAS_RA
+	bool "Renesas RA MIPI-DSI Host Controller"
+	default y
+	depends on DT_HAS_RENESAS_RA_MIPI_DSI_ENABLED
+	select USE_RA_FSP_MIPI_DSI
+	help
+	  Renesas RA MIPI DSI controller driver
