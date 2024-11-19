@@ -110,6 +110,8 @@ The below features are currently supported on Zephyr OS for EK-RA8D1 board:
 +--------------+------------+------------------+
 | CAN          | on-chip    | canfd            |
 +--------------+------------+------------------+
+| USB host     | on-chip    | uhc              |
++--------------+------------+------------------+
 | I2C          | on-chip    | i2c              |
 +--------------+------------+------------------+
 | USBHS        | on-chip    | udc              |
