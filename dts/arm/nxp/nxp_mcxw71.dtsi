@@ -116,7 +116,7 @@
 	};
 
 	pinctrl: pinctrl {
-		compatible = "nxp,kinetis-pinctrl";
+		compatible = "nxp,port-pinctrl";
 	};
 };
 
@@ -147,25 +147,25 @@
 	};
 
 	porta: pinctrl@42000 {
-		compatible = "nxp,kinetis-pinmux";
+		compatible = "nxp,port-pinmux";
 		reg = <0x42000 0xe0>;
 		clocks = <&scg SCG_K4_SLOW_CLK 0x108>;
 	};
 
 	portb: pinctrl@43000 {
-		compatible = "nxp,kinetis-pinmux";
+		compatible = "nxp,port-pinmux";
 		reg = <0x43000 0xe0>;
 		clocks = <&scg SCG_K4_SLOW_CLK 0x10c>;
 	};
 
 	portc: pinctrl@44000 {
-		compatible = "nxp,kinetis-pinmux";
+		compatible = "nxp,port-pinmux";
 		reg = <0x44000 0xe0>;
 		clocks = <&scg SCG_K4_SLOW_CLK 0x110>;
 	};
 
 	portd: pinctrl@45000 {
-		compatible = "nxp,kinetis-pinmux";
+		compatible = "nxp,port-pinmux";
 		reg = <0x45000 0xe0>;
 		clocks = <&scg SCG_K4_SLOW_CLK 0>;
 	};

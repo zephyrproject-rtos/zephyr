@@ -24,7 +24,7 @@
 
 	/* Dummy pinctrl node, filled with pin mux options at board level */
 	pinctrl: pinctrl {
-		compatible = "nxp,kinetis-pinctrl";
+		compatible = "nxp,port-pinctrl";
 		status = "okay";
 	};
 
@@ -50,31 +50,31 @@
 		};
 
 		porta: pinmux@400bc000 {
-			compatible = "nxp,kinetis-pinmux";
+			compatible = "nxp,port-pinmux";
 			reg = <0x400bc000 0x1000>;
 			clocks = <&syscon MCUX_PORT0_CLK>;
 		};
 
 		portb: pinmux@400bd000 {
-			compatible = "nxp,kinetis-pinmux";
+			compatible = "nxp,port-pinmux";
 			reg = <0x400bd000 0x1000>;
 			clocks = <&syscon MCUX_PORT1_CLK>;
 		};
 
 		portc: pinmux@400be000 {
-			compatible = "nxp,kinetis-pinmux";
+			compatible = "nxp,port-pinmux";
 			reg = <0x400be000 0x1000>;
 			clocks = <&syscon MCUX_PORT2_CLK>;
 		};
 
 		portd: pinmux@400bf000 {
-			compatible = "nxp,kinetis-pinmux";
+			compatible = "nxp,port-pinmux";
 			reg = <0x400bf000 0x1000>;
 			clocks = <&syscon MCUX_PORT3_CLK>;
 		};
 
 		porte: pinmux@400c0000 {
-			compatible = "nxp,kinetis-pinmux";
+			compatible = "nxp,port-pinmux";
 			reg = <0x400c0000 0x1000>;
 			clocks = <&syscon MCUX_PORT4_CLK>;
 		};

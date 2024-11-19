@@ -1,6 +1,6 @@
-description: Kinetis pinmux node
+description: NXP PORT pinmux node
 
-compatible: "nxp,kinetis-pinmux"
+compatible: "nxp,port-pinmux"
 
 include: base.yaml
 
