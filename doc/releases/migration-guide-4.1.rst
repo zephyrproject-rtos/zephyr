@@ -24,6 +24,17 @@ Kernel
 Boards
 ******
 
+Devicetree
+**********
+
+STM32
+=====
+
+* MCO clock source and prescaler are now exclusively configured by the DTS
+  as it was introduced earlier.
+  The Kconfig method for configuration is now removed.
+
+
 Modules
 *******
 
