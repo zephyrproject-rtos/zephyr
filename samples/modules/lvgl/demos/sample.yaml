@@ -68,3 +68,17 @@ tests:
       - shield
       - lvgl
       - gui
+  sample.modules.lvgl.demos.rtkmipilcdb00000be:
+    platform_allow: ek_ra8d1
+    harness: console
+    harness_config:
+      fixture: fixture_display
+    extra_args: SHIELD=rtkmipilcdb00000be
+    modules:
+      - lvgl
+    tags:
+      - samples
+      - display
+      - shield
+      - lvgl
+      - gui
