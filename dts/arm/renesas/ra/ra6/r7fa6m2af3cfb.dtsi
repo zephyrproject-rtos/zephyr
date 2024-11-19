@@ -9,18 +9,21 @@
 / {
 	soc {
 		flash-controller@407e0000 {
-			compatible = "renesas,ra6-flash-controller";
-			reg = <0x407e0000 0x10000>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-			interrupts = <4 1>, <5 1>;
-			interrupt-names = "frdyi", "fiferr";
-
+			block-32kb-linear-end = <37>;
 			flash0: flash@0 {
-				compatible = "soc-nv-flash";
+				compatible = "renesas,ra-nv-flash";
 				reg = <0x0 DT_SIZE_M(1)>;
 				write-block-size = <128>;
 				erase-block-size = <8192>;
+				renesas,programming-enable;
+			};
+
+			flash1: flash@40100000 {
+				compatible = "renesas,ra-nv-flash";
+				reg = <0x40100000 DT_SIZE_K(32)>;
+				write-block-size = <4>;
+				erase-block-size = <64>;
+				renesas,programming-enable;
 			};
 		};
 
