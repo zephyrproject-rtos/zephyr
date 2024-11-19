@@ -1,5 +1,5 @@
-Bluetooth: Call Control Profile
-###############################
+Bluetooth: Call Control Profile Shell
+#####################################
 
 This document describes how to run the call control functionality, both as
 a client and as a (telephone bearer service (TBS)) server. Note that in the
