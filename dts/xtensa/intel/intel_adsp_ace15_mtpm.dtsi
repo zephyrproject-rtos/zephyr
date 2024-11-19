@@ -156,6 +156,7 @@
 			interrupts = <0x08 0 0>;
 			interrupt-parent = <&ace_intc>;
 			power-domains = <&hub_ulp_domain>;
+			zephyr,pm-device-runtime-auto;
 		};
 
 		dmic1: dmic1@10000 {
@@ -166,6 +167,7 @@
 			interrupts = <0x09 0 0>;
 			interrupt-parent = <&ace_intc>;
 			power-domains = <&hub_ulp_domain>;
+			zephyr,pm-device-runtime-auto;
 		};
 
 		/*
