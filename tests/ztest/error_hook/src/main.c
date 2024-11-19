@@ -71,10 +71,10 @@ __no_optimization static void trigger_fault_access(void)
 #elif defined(CONFIG_CPU_CORTEX_M) || defined(CONFIG_CPU_AARCH32_CORTEX_R) || \
 	defined(CONFIG_CPU_AARCH64_CORTEX_R)
 	/* As this test case only runs when User Mode is enabled,
-	 * accessing _current always triggers a memory access fault,
+	 * accessing arch_current_thread() always triggers a memory access fault,
 	 * and is guaranteed not to trigger SecureFault exceptions.
 	 */
-	void *a = (void *)_current;
+	void *a = (void *)arch_current_thread();
 #else
 	/* For most arch which support userspace, dereferencing NULL
 	 * pointer will be caught by exception.
@@ -338,7 +338,7 @@ ZTEST(error_hook_tests, test_catch_assert_in_isr)
 static void trigger_z_oops(void)
 {
 	/* Set up a dummy syscall frame, pointing to a valid area in memory. */
-	_current->syscall_frame = _image_ram_start;
+	arch_current_thread()->syscall_frame = _image_ram_start;
 
 	K_OOPS(true);
 }

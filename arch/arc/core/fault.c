@@ -55,7 +55,7 @@ static bool z_check_thread_stack_fail(const uint32_t fault_addr, uint32_t sp)
 {
 #if defined(CONFIG_MULTITHREADING)
 	uint32_t guard_end, guard_start;
-	const struct k_thread *thread = _current;
+	const struct k_thread *thread = arch_current_thread();
 
 	if (!thread) {
 		/* TODO: Under what circumstances could we get here ? */

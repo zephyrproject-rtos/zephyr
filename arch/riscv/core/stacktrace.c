@@ -108,7 +108,7 @@ static void walk_stackframe(riscv_stacktrace_cb cb, void *cookie, const struct k
 		/* Unwind the provided exception stack frame */
 		fp = esf->s0;
 		ra = esf->mepc;
-	} else if ((csf == NULL) || (csf == &_current->callee_saved)) {
+	} else if ((csf == NULL) || (csf == &arch_current_thread()->callee_saved)) {
 		/* Unwind current thread (default case when nothing is provided ) */
 		fp = (uintptr_t)__builtin_frame_address(0);
 		ra = (uintptr_t)walk_stackframe;
@@ -181,7 +181,7 @@ static void walk_stackframe(riscv_stacktrace_cb cb, void *cookie, const struct k
 		/* Unwind the provided exception stack frame */
 		sp = z_riscv_get_sp_before_exc(esf);
 		ra = esf->mepc;
-	} else if ((csf == NULL) || (csf == &_current->callee_saved)) {
+	} else if ((csf == NULL) || (csf == &arch_current_thread()->callee_saved)) {
 		/* Unwind current thread (default case when nothing is provided ) */
 		sp = current_stack_pointer;
 		ra = (uintptr_t)walk_stackframe;
@@ -215,8 +215,10 @@ void arch_stack_walk(stack_trace_callback_fn callback_fn, void *cookie,
 		     const struct k_thread *thread, const struct arch_esf *esf)
 {
 	if (thread == NULL) {
-		/* In case `thread` is NULL, default that to `_current` and try to unwind */
-		thread = _current;
+		/* In case `thread` is NULL, default that to `arch_current_thread()`
+		 * and try to unwind
+		 */
+		thread = arch_current_thread();
 	}
 
 	walk_stackframe((riscv_stacktrace_cb)callback_fn, cookie, thread, esf, in_stack_bound,
@@ -280,7 +282,8 @@ void z_riscv_unwind_stack(const struct arch_esf *esf, const _callee_saved_t *csf
 	int i = 0;
 
 	LOG_ERR("call trace:");
-	walk_stackframe(print_trace_address, &i, _current, esf, in_fatal_stack_bound, csf);
+	walk_stackframe(print_trace_address, &i, arch_current_thread(), esf, in_fatal_stack_bound,
+			csf);
 	LOG_ERR("");
 }
 #endif /* CONFIG_EXCEPTION_STACK_TRACE */

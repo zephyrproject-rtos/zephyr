@@ -158,23 +158,23 @@ static bool bad_stack_pointer(struct arch_esf *esf)
 	uintptr_t sp = (uintptr_t)esf + sizeof(struct arch_esf);
 
 #ifdef CONFIG_USERSPACE
-	if (_current->arch.priv_stack_start != 0 &&
-	    sp >= _current->arch.priv_stack_start &&
-	    sp <  _current->arch.priv_stack_start + Z_RISCV_STACK_GUARD_SIZE) {
+	if (arch_current_thread()->arch.priv_stack_start != 0 &&
+	    sp >= arch_current_thread()->arch.priv_stack_start &&
+	    sp <  arch_current_thread()->arch.priv_stack_start + Z_RISCV_STACK_GUARD_SIZE) {
 		return true;
 	}
 
-	if (z_stack_is_user_capable(_current->stack_obj) &&
-	    sp >= _current->stack_info.start - K_THREAD_STACK_RESERVED &&
-	    sp <  _current->stack_info.start - K_THREAD_STACK_RESERVED
+	if (z_stack_is_user_capable(arch_current_thread()->stack_obj) &&
+	    sp >= arch_current_thread()->stack_info.start - K_THREAD_STACK_RESERVED &&
+	    sp <  arch_current_thread()->stack_info.start - K_THREAD_STACK_RESERVED
 		  + Z_RISCV_STACK_GUARD_SIZE) {
 		return true;
 	}
 #endif /* CONFIG_USERSPACE */
 
 #if CONFIG_MULTITHREADING
-	if (sp >= _current->stack_info.start - K_KERNEL_STACK_RESERVED &&
-	    sp <  _current->stack_info.start - K_KERNEL_STACK_RESERVED
+	if (sp >= arch_current_thread()->stack_info.start - K_KERNEL_STACK_RESERVED &&
+	    sp <  arch_current_thread()->stack_info.start - K_KERNEL_STACK_RESERVED
 		  + Z_RISCV_STACK_GUARD_SIZE) {
 		return true;
 	}
@@ -191,10 +191,10 @@ static bool bad_stack_pointer(struct arch_esf *esf)
 
 #ifdef CONFIG_USERSPACE
 	if ((esf->mstatus & MSTATUS_MPP) == 0 &&
-	    (esf->sp < _current->stack_info.start ||
-	     esf->sp > _current->stack_info.start +
-		       _current->stack_info.size -
-		       _current->stack_info.delta)) {
+	    (esf->sp < arch_current_thread()->stack_info.start ||
+	     esf->sp > arch_current_thread()->stack_info.start +
+		       arch_current_thread()->stack_info.size -
+		       arch_current_thread()->stack_info.delta)) {
 		/* user stack pointer moved outside of its allowed stack */
 		return true;
 	}
@@ -246,9 +246,9 @@ FUNC_NORETURN void arch_syscall_oops(void *ssf_ptr)
 
 void z_impl_user_fault(unsigned int reason)
 {
-	struct arch_esf *oops_esf = _current->syscall_frame;
+	struct arch_esf *oops_esf = arch_current_thread()->syscall_frame;
 
-	if (((_current->base.user_options & K_USER) != 0) &&
+	if (((arch_current_thread()->base.user_options & K_USER) != 0) &&
 		reason != K_ERR_STACK_CHK_FAIL) {
 		reason = K_ERR_KERNEL_OOPS;
 	}

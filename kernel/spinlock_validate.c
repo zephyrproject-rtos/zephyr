@@ -24,11 +24,11 @@ bool z_spin_unlock_valid(struct k_spinlock *l)
 
 	l->thread_cpu = 0;
 
-	if (arch_is_in_isr() && _current->base.thread_state & _THREAD_DUMMY) {
-		/* Edge case where an ISR aborted _current */
+	if (arch_is_in_isr() && arch_current_thread()->base.thread_state & _THREAD_DUMMY) {
+		/* Edge case where an ISR aborted arch_current_thread() */
 		return true;
 	}
-	if (tcpu != (_current_cpu->id | (uintptr_t)_current)) {
+	if (tcpu != (_current_cpu->id | (uintptr_t)arch_current_thread())) {
 		return false;
 	}
 	return true;
@@ -36,7 +36,7 @@ bool z_spin_unlock_valid(struct k_spinlock *l)
 
 void z_spin_lock_set_owner(struct k_spinlock *l)
 {
-	l->thread_cpu = _current_cpu->id | (uintptr_t)_current;
+	l->thread_cpu = _current_cpu->id | (uintptr_t)arch_current_thread();
 }
 
 #ifdef CONFIG_KERNEL_COHERENCE

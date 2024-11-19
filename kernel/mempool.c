@@ -165,7 +165,7 @@ void *z_thread_aligned_alloc(size_t align, size_t size)
 	if (k_is_in_isr()) {
 		heap = _SYSTEM_HEAP;
 	} else {
-		heap = _current->resource_pool;
+		heap = arch_current_thread()->resource_pool;
 	}
 
 	if (heap != NULL) {

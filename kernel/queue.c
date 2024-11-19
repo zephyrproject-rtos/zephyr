@@ -346,9 +346,9 @@ void *z_impl_k_queue_get(struct k_queue *queue, k_timeout_t timeout)
 	int ret = z_pend_curr(&queue->lock, key, &queue->wait_q, timeout);
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_queue, get, queue, timeout,
-		(ret != 0) ? NULL : _current->base.swap_data);
+		(ret != 0) ? NULL : arch_current_thread()->base.swap_data);
 
-	return (ret != 0) ? NULL : _current->base.swap_data;
+	return (ret != 0) ? NULL : arch_current_thread()->base.swap_data;
 }
 
 bool k_queue_remove(struct k_queue *queue, void *data)

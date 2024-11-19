@@ -92,9 +92,9 @@ static inline int eswifi_request(struct eswifi_dev *eswifi, char *cmd,
 static inline void eswifi_lock(struct eswifi_dev *eswifi)
 {
 	/* Nested locking */
-	if (atomic_get(&eswifi->mutex_owner) != (atomic_t)(uintptr_t)_current) {
+	if (atomic_get(&eswifi->mutex_owner) != (atomic_t)(uintptr_t)arch_current_thread()) {
 		k_mutex_lock(&eswifi->mutex, K_FOREVER);
-		atomic_set(&eswifi->mutex_owner, (atomic_t)(uintptr_t)_current);
+		atomic_set(&eswifi->mutex_owner, (atomic_t)(uintptr_t)arch_current_thread());
 		eswifi->mutex_depth = 1;
 	} else {
 		eswifi->mutex_depth++;

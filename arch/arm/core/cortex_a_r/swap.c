@@ -17,8 +17,8 @@
 int arch_swap(unsigned int key)
 {
 	/* store off key and return value */
-	_current->arch.basepri = key;
-	_current->arch.swap_return_value = -EAGAIN;
+	arch_current_thread()->arch.basepri = key;
+	arch_current_thread()->arch.swap_return_value = -EAGAIN;
 
 	z_arm_cortex_r_svc();
 	irq_unlock(key);
@@ -26,5 +26,5 @@ int arch_swap(unsigned int key)
 	/* Context switch is performed here. Returning implies the
 	 * thread has been context-switched-in again.
 	 */
-	return _current->arch.swap_return_value;
+	return arch_current_thread()->arch.swap_return_value;
 }

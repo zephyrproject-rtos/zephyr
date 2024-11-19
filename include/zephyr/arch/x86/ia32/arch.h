@@ -305,7 +305,7 @@ static inline void arch_isr_direct_footer(int swap)
 	 * 3) Next thread to run in the ready queue is not this thread
 	 */
 	if (swap != 0 && _kernel.cpus[0].nested == 0 &&
-	    _kernel.ready_q.cache != _current) {
+	    _kernel.ready_q.cache != arch_current_thread()) {
 		unsigned int flags;
 
 		/* Fetch EFLAGS argument to z_swap() */

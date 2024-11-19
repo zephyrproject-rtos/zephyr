@@ -345,7 +345,7 @@ def marshall_defs(func_name, func_type, args):
     else:
         mrsh += "\t\t" + "uintptr_t arg3, uintptr_t arg4, void *more, void *ssf)\n"
     mrsh += "{\n"
-    mrsh += "\t" + "_current->syscall_frame = ssf;\n"
+    mrsh += "\t" + "arch_current_thread()->syscall_frame = ssf;\n"
 
     for unused_arg in range(nmrsh, 6):
         mrsh += "\t(void) arg%d;\t/* unused */\n" % unused_arg
@@ -371,7 +371,7 @@ def marshall_defs(func_name, func_type, args):
 
     if func_type == "void":
         mrsh += "\t" + "%s;\n" % vrfy_call
-        mrsh += "\t" + "_current->syscall_frame = NULL;\n"
+        mrsh += "\t" + "arch_current_thread()->syscall_frame = NULL;\n"
         mrsh += "\t" + "return 0;\n"
     else:
         mrsh += "\t" + "%s ret = %s;\n" % (func_type, vrfy_call)
@@ -380,10 +380,10 @@ def marshall_defs(func_name, func_type, args):
             ptr = "((uint64_t *)%s)" % mrsh_rval(nmrsh - 1, nmrsh)
             mrsh += "\t" + "K_OOPS(K_SYSCALL_MEMORY_WRITE(%s, 8));\n" % ptr
             mrsh += "\t" + "*%s = ret;\n" % ptr
-            mrsh += "\t" + "_current->syscall_frame = NULL;\n"
+            mrsh += "\t" + "arch_current_thread()->syscall_frame = NULL;\n"
             mrsh += "\t" + "return 0;\n"
         else:
-            mrsh += "\t" + "_current->syscall_frame = NULL;\n"
+            mrsh += "\t" + "arch_current_thread()->syscall_frame = NULL;\n"
             mrsh += "\t" + "return (uintptr_t) ret;\n"
 
     mrsh += "}\n"

@@ -49,8 +49,8 @@ void arch_irq_offload(irq_offload_routine_t routine, const void *parameter)
 
 	__asm__ volatile("sync");
 
-	/* If _current was aborted in the offload routine, we shouldn't be here */
-	__ASSERT_NO_MSG((_current->base.thread_state & _THREAD_DEAD) == 0);
+	/* If arch_current_thread() was aborted in the offload routine, we shouldn't be here */
+	__ASSERT_NO_MSG((arch_current_thread()->base.thread_state & _THREAD_DEAD) == 0);
 }
 
 /* need to be executed on every core in the system */

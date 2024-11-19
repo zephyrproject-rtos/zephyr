@@ -156,7 +156,7 @@ int arch_float_enable(struct k_thread *thread, unsigned int options)
 FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 					void *p1, void *p2, void *p3)
 {
-	struct k_thread *current = _current;
+	struct k_thread *current = arch_current_thread();
 	size_t stack_end;
 
 	/* Transition will reset stack pointer to initial, discarding
