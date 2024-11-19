@@ -20,6 +20,7 @@
 #include <zephyr/app_memory/app_memdomain.h>
 #include <zephyr/sys/libc-hooks.h>
 #include <zephyr/sys/mutex.h>
+#include <zephyr/sys/util.h>
 #include <inttypes.h>
 #include <zephyr/linker/linker-defs.h>
 
@@ -71,7 +72,7 @@ static struct k_spinlock objfree_lock;     /* k_object_free */
 #endif /* CONFIG_DYNAMIC_OBJECTS */
 static struct k_spinlock obj_lock;         /* kobj struct data */
 
-#define MAX_THREAD_BITS		(CONFIG_MAX_THREAD_BYTES * 8)
+#define MAX_THREAD_BITS (CONFIG_MAX_THREAD_BYTES * BITS_PER_BYTE)
 
 #ifdef CONFIG_DYNAMIC_OBJECTS
 extern uint8_t _thread_idx_map[CONFIG_MAX_THREAD_BYTES];

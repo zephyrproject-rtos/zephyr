@@ -42,14 +42,7 @@
  * achieve the minimum 1 MHz clock rate for loading the iCE40 bistream. So
  * in order to bitbang on lower-end microcontrollers, we actually require
  * direct register access to the set and clear registers.
- *
- * With that, this driver is left with 2 possible modes of operation which
- * are:
- * - FPGA_ICE40_LOAD_MODE_SPI (for higher-end microcontrollers)
- * - FPGA_ICE40_LOAD_MODE_GPIO (for lower-end microcontrollers)
  */
-#define FPGA_ICE40_LOAD_MODE_SPI  0
-#define FPGA_ICE40_LOAD_MODE_GPIO 1
 
 /*
  * Values in Hz, intentionally to be comparable with the spi-max-frequency
@@ -111,7 +104,7 @@ static void fpga_ice40_crc_to_str(uint32_t crc, char *s)
 
 /*
  * This is a calibrated delay loop used to achieve a 1 MHz SPI_CLK frequency
- * with FPGA_ICE40_LOAD_MODE_GPIO. It is used both in fpga_ice40_send_clocks()
+ * with the bitbang mode. It is used both in fpga_ice40_send_clocks()
  * and fpga_ice40_spi_send_data().
  *
  * Calibration is achieved via the mhz_delay_count device tree parameter. See
@@ -207,6 +200,26 @@ static int fpga_ice40_load_gpio(const struct device *dev, uint32_t *image_ptr, u
 	struct fpga_ice40_data *data = dev->data;
 	const struct fpga_ice40_config *config = dev->config;
 
+	if (!device_is_ready(config->clk.port)) {
+		LOG_ERR("%s: GPIO for clk is not ready", dev->name);
+		return -ENODEV;
+	}
+
+	if (!device_is_ready(config->pico.port)) {
+		LOG_ERR("%s: GPIO for pico is not ready", dev->name);
+		return -ENODEV;
+	}
+
+	if (config->set == NULL) {
+		LOG_ERR("%s: set register was not specified", dev->name);
+		return -EFAULT;
+	}
+
+	if (config->clear == NULL) {
+		LOG_ERR("%s: clear register was not specified", dev->name);
+		return -EFAULT;
+	}
+
 	/* prepare masks */
 	cs = BIT(config->bus.config.cs.gpio.pin);
 	clk = BIT(config->clk.pin);
@@ -242,7 +255,11 @@ static int fpga_ice40_load_gpio(const struct device *dev, uint32_t *image_ptr, u
 	LOG_DBG("Delay %u us", config->creset_delay_us);
 	fpga_ice40_delay(2 * config->mhz_delay_count * config->creset_delay_us);
 
-	__ASSERT(gpio_pin_get_dt(&config->cdone) == 0, "CDONE was not high");
+	if (gpio_pin_get_dt(&config->cdone) != 0) {
+		LOG_ERR("CDONE should be low after the reset");
+		ret = -EIO;
+		goto unlock;
+	}
 
 	LOG_DBG("Set CRESET high");
 	*config->set |= creset;
@@ -348,7 +365,11 @@ static int fpga_ice40_load_spi(const struct device *dev, uint32_t *image_ptr, ui
 	LOG_DBG("Delay %u us", config->creset_delay_us);
 	k_usleep(config->creset_delay_us);
 
-	__ASSERT(gpio_pin_get_dt(&config->cdone) == 0, "CDONE was not high");
+	if (gpio_pin_get_dt(&config->cdone) != 0) {
+		LOG_ERR("CDONE should be low after the reset");
+		ret = -EIO;
+		goto unlock;
+	}
 
 	LOG_DBG("Set CRESET high");
 	ret = gpio_pin_configure_dt(&config->creset, GPIO_OUTPUT_HIGH);
@@ -502,6 +523,16 @@ static int fpga_ice40_init(const struct device *dev)
 	int ret;
 	const struct fpga_ice40_config *config = dev->config;
 
+	if (!device_is_ready(config->creset.port)) {
+		LOG_ERR("%s: GPIO for creset is not ready", dev->name);
+		return -ENODEV;
+	}
+
+	if (!device_is_ready(config->cdone.port)) {
+		LOG_ERR("%s: GPIO for cdone is not ready", dev->name);
+		return -ENODEV;
+	}
+
 	ret = gpio_pin_configure_dt(&config->creset, GPIO_OUTPUT_HIGH);
 	if (ret < 0) {
 		LOG_ERR("failed to configure CRESET: %d", ret);
@@ -535,12 +566,8 @@ static int fpga_ice40_init(const struct device *dev)
 
 #define FPGA_ICE40_GPIO_PINS(inst, name) (volatile gpio_port_pins_t *)DT_INST_PROP_OR(inst, name, 0)
 
-#define FPGA_ICE40_LOAD_MODE(inst) DT_INST_PROP(inst, load_mode)
 #define FPGA_ICE40_LOAD_FUNC(inst)                                                                 \
-	(FPGA_ICE40_LOAD_MODE(inst) == FPGA_ICE40_LOAD_MODE_SPI                                    \
-		 ? fpga_ice40_load_spi                                                             \
-		 : (FPGA_ICE40_LOAD_MODE(inst) == FPGA_ICE40_LOAD_MODE_GPIO ? fpga_ice40_load_gpio \
-									    : NULL))
+	(DT_INST_PROP(inst, load_mode_bitbang) ? fpga_ice40_load_gpio : fpga_ice40_load_spi)
 
 #ifdef CONFIG_PINCTRL
 #define FPGA_ICE40_PINCTRL_CONFIG(inst) .pincfg = PINCTRL_DT_DEV_CONFIG_GET(DT_INST_PARENT(inst)),
@@ -551,8 +578,6 @@ static int fpga_ice40_init(const struct device *dev)
 #endif
 
 #define FPGA_ICE40_DEFINE(inst)                                                                    \
-	BUILD_ASSERT(FPGA_ICE40_LOAD_MODE(inst) == FPGA_ICE40_LOAD_MODE_SPI ||                     \
-		     FPGA_ICE40_LOAD_MODE(inst) == FPGA_ICE40_LOAD_MODE_GPIO);                     \
 	BUILD_ASSERT(FPGA_ICE40_BUS_FREQ(inst) >= FPGA_ICE40_SPI_HZ_MIN);                          \
 	BUILD_ASSERT(FPGA_ICE40_BUS_FREQ(inst) <= FPGA_ICE40_SPI_HZ_MAX);                          \
 	BUILD_ASSERT(FPGA_ICE40_CONFIG_DELAY_US(inst) >= FPGA_ICE40_CONFIG_DELAY_US_MIN);          \

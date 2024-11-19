@@ -7,7 +7,7 @@
 #define DT_DRV_COMPAT maxim_ds2485
 
 /**
- * @brief Driver for the Maxim ds2485 1-Wire Master
+ * @brief Driver for the Analog Devices DS2485 1-Wire Master
  */
 
 #include "w1_ds2477_85_common.h"

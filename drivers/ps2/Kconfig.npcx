@@ -6,6 +6,7 @@
 menuconfig PS2_NPCX
 	bool "Nuvoton NPCX embedded controller (EC) PS2 driver"
 	depends on DT_HAS_NUVOTON_NPCX_PS2_CHANNEL_ENABLED
+	select PINCTRL
 	default y
 	help
 	  Enable the NPCX family PS2 driver. It provides four PS/2 channels.

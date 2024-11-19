@@ -19,6 +19,7 @@ app=tests/bsim/bluetooth/host/l2cap/stress conf_file=prj_nofrag.conf compile
 app=tests/bsim/bluetooth/host/l2cap/stress conf_file=prj_syswq.conf compile
 run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/host/l2cap/split/compile.sh
 run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/host/l2cap/reassembly/compile.sh
+run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/host/l2cap/einprogress/compile.sh
 run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/host/l2cap/ecred/compile.sh
 app=tests/bsim/bluetooth/host/l2cap/credits compile
 app=tests/bsim/bluetooth/host/l2cap/credits conf_file=prj_ecred.conf compile

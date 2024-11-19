@@ -44,6 +44,9 @@ static void print_callback(const struct device *dev, const enum stepper_event ev
 			   void *user_data)
 {
 	const struct shell *sh = user_data;
+	if (!sh) {
+		return;
+	}
 
 	switch (event) {
 	case STEPPER_EVENT_STEPS_COMPLETED:
@@ -203,7 +206,7 @@ static int cmd_stepper_move(const struct shell *sh, size_t argc, char **argv)
 		return err;
 	}
 
-	err = stepper_set_callback(dev, print_callback, (void *)sh);
+	err = stepper_set_event_callback(dev, print_callback, (void *)sh);
 	if (err != 0) {
 		shell_error(sh, "Failed to set callback: %d", err);
 	}
@@ -350,7 +353,7 @@ static int cmd_stepper_set_target_position(const struct shell *sh, size_t argc, 
 		return err;
 	}
 
-	err = stepper_set_callback(dev, print_callback, NULL);
+	err = stepper_set_event_callback(dev, print_callback, (void *)sh);
 	if (err != 0) {
 		shell_error(sh, "Failed to set callback: %d", err);
 	}
@@ -393,7 +396,7 @@ static int cmd_stepper_enable_constant_velocity_mode(const struct shell *sh, siz
 		return err;
 	}
 
-	err = stepper_set_callback(dev, print_callback, NULL);
+	err = stepper_set_event_callback(dev, print_callback, (void *)sh);
 	if (err != 0) {
 		shell_error(sh, "Failed to set callback: %d", err);
 	}

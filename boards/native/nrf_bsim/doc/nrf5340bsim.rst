@@ -34,6 +34,7 @@ These boards include models of some of the nRF5340 SOC peripherals:
 * DPPI (Distributed Programmable Peripheral Interconnect)
 * EGU (Event Generator Unit)
 * FICR (Factory Information Configuration Registers)
+* GPIO & GPIOTE
 * IPC (Interprocessor communication)
 * MUTEX (Mutual exclusive peripheral)
 * NVMC (Non-Volatile Memory Controller / Flash)
@@ -42,6 +43,7 @@ These boards include models of some of the nRF5340 SOC peripherals:
 * RTC (Real Time Counter)
 * TEMP (Temperature sensor)
 * TIMER
+* UARTE (UART with Easy DMA)
 * UICR (User Information Configuration Registers)
 
 and will use the same drivers as the nrf5340dk targets for these.
@@ -97,7 +99,7 @@ you can provide that image to the Zephyr build of the second image using
 You can also use :ref:`System build (sysbuild) <sysbuild>` to build your dual MCU executable.
 The best way to understand how, may be to look into how this is done in one of the examples
 in the tree. For example, for :ref:`the nrf53_sync_rtc sample <nrf53_sync_rtc_sample_build_bsim>`,
-:zephyr_file:`samples/boards/nrf/nrf53_sync_rtc/sysbuild.cmake`.
+:zephyr_file:`samples/boards/nordic/nrf53_sync_rtc/sysbuild.cmake`.
 
 
 .. note::

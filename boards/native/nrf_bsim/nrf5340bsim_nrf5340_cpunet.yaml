@@ -9,7 +9,7 @@ toolchain:
   - zephyr
 testing:
   ignore_tags:
-    - gpio
     - modem
-    - uart
     - bsim_skip_CI
+supported:
+  - gpio

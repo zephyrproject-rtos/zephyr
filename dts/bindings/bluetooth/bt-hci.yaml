@@ -19,7 +19,10 @@ properties:
       - "sdio"
       - "spi"
       - "i2c"
-      - "ipm"
+      - "smd"
+      - "virtio"
+      - "ipm"    # Deprecated. "ipc" should be used instead.
+      - "ipc"
   bt-hci-quirks:
     type: string-array
     description: HCI device quirks

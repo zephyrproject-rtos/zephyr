@@ -11,6 +11,7 @@
 #if defined(CONFIG_FILE_SYSTEM_LITTLEFS)
 #include <zephyr/fs/littlefs.h>
 #endif
+#include <zephyr/llext/elf.h>
 #include <zephyr/llext/llext.h>
 #include <zephyr/llext/symbol.h>
 #include <zephyr/llext/buf_loader.h>
@@ -411,12 +412,18 @@ ZTEST(llext, test_find_section)
 	struct llext_loader *loader = &buf_loader.loader;
 	struct llext_load_param ldr_parm = LLEXT_LOAD_PARAM_DEFAULT;
 	struct llext *ext = NULL;
+	elf_shdr_t shdr;
 
 	res = llext_load(loader, "find_section", &ext, &ldr_parm);
 	zassert_ok(res, "load should succeed");
 
 	section_ofs = llext_find_section(loader, ".data");
 	zassert_true(section_ofs > 0, "find_section returned %zd", section_ofs);
+
+	res = llext_get_section_header(loader, ext, ".data", &shdr);
+	zassert_ok(res, "get_section_header() should succeed");
+	zassert_equal(shdr.sh_offset, section_ofs,
+		     "different section offset %zd from get_section_header", shdr.sh_offset);
 
 	uintptr_t symbol_ptr = (uintptr_t)llext_find_sym(&ext->exp_tab, "number");
 	uintptr_t section_ptr = (uintptr_t)find_section_ext + section_ofs;

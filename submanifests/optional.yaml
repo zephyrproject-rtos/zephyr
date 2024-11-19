@@ -22,7 +22,7 @@ manifest:
       groups:
         - optional
     - name: nanopb
-      revision: 4474bd35bd39de067f0532a1b19ce3aed9ed9807
+      revision: 98bf4db69897b53434f3d0ba72e0a3ab1a902824
       path: modules/lib/nanopb
       remote: upstream
       groups:
@@ -34,7 +34,7 @@ manifest:
       groups:
         - optional
     - name: zephyr-lang-rust
-      revision: f20afb5bae9a4b64332a230a734c0244b39d4035
+      revision: 7af3db47bf7335ac6a6fe7480df6b41fb46dbe9d
       path: modules/lang/rust
       remote: upstream
       groups:
@@ -46,7 +46,7 @@ manifest:
       groups:
         - optional
     - name: tf-m-tests
-      revision: d552e4f18b92032bd335d5e3aa312f6acd82a83b
+      revision: 502ea90105ee18f20c78f710e2ba2ded0fc0756e
       path: modules/tee/tf-m/tf-m-tests
       remote: upstream
       groups:

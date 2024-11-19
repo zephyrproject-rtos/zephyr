@@ -256,7 +256,7 @@ static int uart_ra_sci_b_fifo_fill(const struct device *dev, const uint8_t *tx_d
 {
 	struct uart_ra_sci_b_data *data = dev->data;
 	const struct uart_ra_sci_b_config *cfg = dev->config;
-	uint8_t num_tx = 0U;
+	int num_tx = 0U;
 
 	if (IS_ENABLED(CONFIG_UART_RA_SCI_B_UART_FIFO_ENABLE) && data->sci.fifo_depth > 0) {
 		while ((size - num_tx > 0) && cfg->regs->FTSR != 0x10U) {
@@ -281,7 +281,7 @@ static int uart_ra_sci_b_fifo_read(const struct device *dev, uint8_t *rx_data, c
 {
 	struct uart_ra_sci_b_data *data = dev->data;
 	const struct uart_ra_sci_b_config *cfg = dev->config;
-	uint8_t num_rx = 0U;
+	int num_rx = 0U;
 
 	if (IS_ENABLED(CONFIG_UART_RA_SCI_B_UART_FIFO_ENABLE) && data->sci.fifo_depth > 0) {
 		while ((size - num_rx > 0) && cfg->regs->FRSR_b.R > 0U) {
@@ -1123,7 +1123,7 @@ static void uart_ra_sci_b_eri_isr(const struct device *dev)
 				.parity = UART_CFG_PARITY_NONE,                                    \
 				.stop_bits = UART_CFG_STOP_BITS_1,                                 \
 				.data_bits = UART_CFG_DATA_BITS_8,                                 \
-				.flow_ctrl = COND_CODE_1(DT_NODE_HAS_PROP(idx, hw_flow_control),   \
+				.flow_ctrl = COND_CODE_1(DT_INST_PROP(index, hw_flow_control),     \
 							 (UART_CFG_FLOW_CTRL_RTS_CTS),             \
 							 (UART_CFG_FLOW_CTRL_NONE)),               \
 			},                                                                         \

@@ -83,17 +83,21 @@ GEN_OFFSET_SYM(_thread_stack_info_t, start);
  */
 #if defined(CONFIG_PM_S2RAM)
 GEN_OFFSET_SYM(_cpu_context_t, msp);
-GEN_OFFSET_SYM(_cpu_context_t, msplim);
 GEN_OFFSET_SYM(_cpu_context_t, psp);
-GEN_OFFSET_SYM(_cpu_context_t, psplim);
-GEN_OFFSET_SYM(_cpu_context_t, apsr);
-GEN_OFFSET_SYM(_cpu_context_t, ipsr);
-GEN_OFFSET_SYM(_cpu_context_t, epsr);
-
 GEN_OFFSET_SYM(_cpu_context_t, primask);
+GEN_OFFSET_SYM(_cpu_context_t, control);
+
+#if defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+/* Registers present only on ARMv7-M and ARMv8-M Mainline */
 GEN_OFFSET_SYM(_cpu_context_t, faultmask);
 GEN_OFFSET_SYM(_cpu_context_t, basepri);
-GEN_OFFSET_SYM(_cpu_context_t, control);
+#endif /* CONFIG_ARMV7_M_ARMV8_M_MAINLINE */
+
+#if defined(CONFIG_CPU_CORTEX_M_HAS_SPLIM)
+/* Registers present only on certain ARMv8-M implementations */
+GEN_OFFSET_SYM(_cpu_context_t, msplim);
+GEN_OFFSET_SYM(_cpu_context_t, psplim);
+#endif /* CONFIG_CPU_CORTEX_M_HAS_SPLIM */
 #endif /* CONFIG_PM_S2RAM */
 
 #endif /* _ARM_OFFSETS_INC_ */

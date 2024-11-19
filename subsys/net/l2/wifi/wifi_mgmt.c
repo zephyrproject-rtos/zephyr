@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(net_wifi_mgmt, CONFIG_NET_L2_WIFI_MGMT_LOG_LEVEL);
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING
 #define MAX_NEIGHBOR_AP_LIMIT 6U
-#define MAX_EVENT_STR_LEN 32U
+#define MAX_EVENT_STR_LEN 32
 
 struct wifi_rrm_neighbor_ap_t {
 	char ssid[WIFI_SSID_MAX_LEN + 1];
@@ -53,10 +53,6 @@ const char *wifi_security_txt(enum wifi_security_type security)
 	switch (security) {
 	case WIFI_SECURITY_TYPE_NONE:
 		return "OPEN";
-	case WIFI_SECURITY_TYPE_WEP:
-		return "WEP";
-	case WIFI_SECURITY_TYPE_WPA_PSK:
-		return "WPA-PSK";
 	case WIFI_SECURITY_TYPE_PSK:
 		return "WPA2-PSK";
 	case WIFI_SECURITY_TYPE_PSK_SHA256:
@@ -70,9 +66,25 @@ const char *wifi_security_txt(enum wifi_security_type security)
 	case WIFI_SECURITY_TYPE_WAPI:
 		return "WAPI";
 	case WIFI_SECURITY_TYPE_EAP_TLS:
-		return "EAP";
+		return "EAP-TLS";
+	case WIFI_SECURITY_TYPE_WEP:
+		return "WEP";
+	case WIFI_SECURITY_TYPE_WPA_PSK:
+		return "WPA-PSK";
 	case WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL:
 		return "WPA/WPA2/WPA3 PSK";
+	case WIFI_SECURITY_TYPE_DPP:
+		return "DPP";
+	case WIFI_SECURITY_TYPE_EAP_PEAP_MSCHAPV2:
+		return "EAP-PEAP-MSCHAPV2";
+	case WIFI_SECURITY_TYPE_EAP_PEAP_GTC:
+		return "EAP-PEAP-GTC";
+	case WIFI_SECURITY_TYPE_EAP_TTLS_MSCHAPV2:
+		return "EAP-TTLS-MSCHAPV2";
+	case WIFI_SECURITY_TYPE_EAP_PEAP_TLS:
+		return "EAP-PEAP-TLS";
+	case WIFI_SECURITY_TYPE_EAP_TLS_SHA256:
+		return "EAP-TLS-SHA256";
 	case WIFI_SECURITY_TYPE_FT_PSK:
 		return "FT-PSK";
 	case WIFI_SECURITY_TYPE_FT_SAE:
@@ -502,16 +514,21 @@ NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_NEIGHBOR_REP_COMPLETE,
 void wifi_mgmt_raise_neighbor_rep_recv_event(struct net_if *iface, char *inbuf, size_t buf_len)
 {
 	const uint8_t *buf = inbuf;
-	char event[MAX_EVENT_STR_LEN] = {0};
-	char bssid[WIFI_SSID_MAX_LEN] = {0};
-	char bssid_info[WIFI_SSID_MAX_LEN]  = {0};
+	char event[MAX_EVENT_STR_LEN + 1] = {0};
+	char bssid[WIFI_SSID_MAX_LEN + 1] = {0};
+	char bssid_info[WIFI_SSID_MAX_LEN + 1]  = {0};
 	int op_class, channel, phy_type;
 	int idx = roaming_params.neighbor_rep.neighbor_cnt;
 
 	if (!buf || buf[0] == '\0') {
 		return;
 	}
-	if (sscanf(buf, "%s bssid=%s info=%s op_class=%d chan=%d phy_type=%d",
+
+	if (sscanf(buf,
+		   "%" STRINGIFY(MAX_EVENT_STR_LEN) "s "
+		   "bssid=%" STRINGIFY(WIFI_SSID_MAX_LEN) "s "
+		   "info=%" STRINGIFY(WIFI_SSID_MAX_LEN) "s "
+		   "op_class=%d chan=%d phy_type=%d",
 		   event, bssid, bssid_info, &op_class, &channel, &phy_type) == 6) {
 		int i;
 		int match  = 0;
@@ -530,14 +547,15 @@ void wifi_mgmt_raise_neighbor_rep_recv_event(struct net_if *iface, char *inbuf, 
 			}
 		}
 		if (!match && (roaming_params.neighbor_rep.neighbor_cnt < MAX_NEIGHBOR_AP_LIMIT)) {
-			strncpy((char *)roaming_params.neighbor_rep.neighbor_ap[idx].bssid,
-				bssid, sizeof(roaming_params.neighbor_rep.neighbor_ap[idx].bssid));
+			memcpy((char *)roaming_params.neighbor_rep.neighbor_ap[idx].bssid,
+			       bssid,
+			       sizeof(roaming_params.neighbor_rep.neighbor_ap[idx].bssid));
 			len = strnlen(bssid, sizeof(bssid) - 1);
 			roaming_params.neighbor_rep.neighbor_ap[idx].bssid[len] = (uint8_t)'\0';
 
-			strncpy((char *)roaming_params.neighbor_rep.neighbor_ap[idx].bssid_info,
-				(bssid_info),
-				sizeof(roaming_params.neighbor_rep.neighbor_ap->bssid_info));
+			memcpy((char *)roaming_params.neighbor_rep.neighbor_ap[idx].bssid_info,
+			       bssid_info,
+			       sizeof(roaming_params.neighbor_rep.neighbor_ap[idx].bssid_info));
 			len = strnlen(bssid_info, sizeof(bssid_info) - 1);
 			roaming_params.neighbor_rep.neighbor_ap[idx].bssid_info[len] =
 				(uint8_t)'\0';
@@ -723,7 +741,9 @@ static int wifi_11k_cfg(uint32_t mgmt_request, struct net_if *iface,
 	}
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING
-	roaming_params.is_11k_enabled = params->enable_11k;
+	if (params->oper == WIFI_MGMT_SET) {
+		roaming_params.is_11k_enabled = params->enable_11k;
+	}
 #endif
 
 	return wifi_mgmt_api->cfg_11k(dev, params);

@@ -188,7 +188,9 @@ static inline void dma_smartbond_pm_policy_state_lock_get(void)
 static inline void dma_smartbond_pm_policy_state_lock_put(void)
 {
 #if defined(CONFIG_PM_DEVICE)
-	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	if (pm_policy_state_lock_is_active(PM_STATE_STANDBY, PM_ALL_SUBSTATES)) {
+		pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	}
 #endif
 }
 

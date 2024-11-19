@@ -13,6 +13,7 @@ if MEMC
 
 config MEMC_INIT_PRIORITY
 	int "Initialization priority"
+	default 80 if MSPI
 	default 0
 	help
 	  Memory controllers initialization priority.

@@ -179,7 +179,7 @@ taking form:
     | Content       | Size          | Description               |
     +===============+===============+===========================+
     | body          | no more than  | Raw body data fragment    |
-    |               | MTU - 3       |                           |
+    |               | MTU - 5       |                           |
     +---------------+---------------+---------------------------+
     | crc16         | 2 bytes       | CRC16 of entire packet    |
     |               |               | body, preceding length    |

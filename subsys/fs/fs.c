@@ -815,9 +815,6 @@ int fs_unmount(struct fs_mount_t *mp)
 		goto unmount_err;
 	}
 
-	/* clear file system interface */
-	mp->fs = NULL;
-
 	/* remove mount node from the list */
 	sys_dlist_remove(&mp->node);
 	LOG_DBG("fs unmounted from %s", mp->mnt_point);

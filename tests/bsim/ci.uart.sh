@@ -13,7 +13,8 @@ set -uex
 
 echo "UART: Single device tests"
 ${ZEPHYR_BASE}/scripts/twister -T tests/drivers/uart/ --force-color --inline-logs -v -M \
-  -p nrf52_bsim --fixture gpio_loopback -- -uart0_loopback
+  -p nrf52_bsim -p nrf5340bsim/nrf5340/cpuapp --fixture gpio_loopback \
+  -- -uart0_loopback -uart1_loopback
 
 echo "UART: Multi device tests"
 WORK_DIR=${ZEPHYR_BASE}/bsim_uart nice tests/bsim/drivers/uart/compile.sh

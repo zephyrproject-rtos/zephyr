@@ -1,5 +1,6 @@
 /dts-v1/;
 #include <ambiq/ambiq_apollo4p.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 #include "apollo4p_evb-pinctrl.dtsi"
 
@@ -45,13 +46,18 @@
 
 	buttons {
 		compatible = "gpio-keys";
+		polling-mode;
 		button0: button_0 {
 			gpios = <&gpio0_31 18 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "BTN0";
+			zephyr,code = <INPUT_KEY_0>;
+			status = "okay";
 		};
 		button1: button_1 {
 			gpios = <&gpio0_31 19 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "BTN1";
+			zephyr,code = <INPUT_KEY_1>;
+			status = "okay";
 		};
 	};
 };
@@ -59,6 +65,12 @@
 &uart0 {
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&itm {
+	pinctrl-0 = <&itm_default>;
 	pinctrl-names = "default";
 	status = "okay";
 };
@@ -117,6 +129,12 @@
 			reg = <0x001e4000 0x4000>;
 		};
 	};
+};
+
+zephyr_udc0: &usb {
+	vddusb33-gpios = <&gpio96_127 7 (GPIO_PULL_UP)>;
+	vddusb0p9-gpios = <&gpio96_127 5 (GPIO_PULL_UP)>;
+	status = "okay";
 };
 
 &gpio0_31 {

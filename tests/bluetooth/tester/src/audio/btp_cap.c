@@ -104,13 +104,13 @@ static void unicast_start_complete_cb(int err, struct bt_conn *conn)
 
 	if (err != 0) {
 		LOG_DBG("Failed to unicast-start, err %d", err);
-		btp_send_cap_unicast_start_completed_ev(u_group->cig->index,
+		btp_send_cap_unicast_start_completed_ev(u_group->cig_id,
 							BTP_CAP_UNICAST_START_STATUS_FAILED);
 
 		return;
 	}
 
-	btp_send_cap_unicast_start_completed_ev(u_group->cig->index,
+	btp_send_cap_unicast_start_completed_ev(u_group->cig_id,
 						BTP_CAP_UNICAST_START_STATUS_SUCCESS);
 }
 
@@ -129,13 +129,13 @@ static void unicast_stop_complete_cb(int err, struct bt_conn *conn)
 
 	if (err != 0) {
 		LOG_DBG("Failed to unicast-stop, err %d", err);
-		btp_send_cap_unicast_stop_completed_ev(u_group->cig->index,
+		btp_send_cap_unicast_stop_completed_ev(u_group->cig_id,
 						       BTP_CAP_UNICAST_START_STATUS_FAILED);
 
 		return;
 	}
 
-	btp_send_cap_unicast_stop_completed_ev(u_group->cig->index,
+	btp_send_cap_unicast_stop_completed_ev(u_group->cig_id,
 					       BTP_CAP_UNICAST_START_STATUS_SUCCESS);
 }
 
@@ -438,7 +438,7 @@ static uint8_t btp_cap_unicast_audio_stop(const void *cmd, uint16_t cmd_len,
 	param.streams = streams;
 	param.count = stream_cnt;
 	param.type = BT_CAP_SET_TYPE_AD_HOC;
-	param.release = true;
+	param.release = (cp->flags & BTP_CAP_UNICAST_AUDIO_STOP_FLAG_RELEASE) != 0;
 
 	err = bt_cap_initiator_unicast_audio_stop(&param);
 	if (err != 0) {

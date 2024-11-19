@@ -40,13 +40,14 @@
 #define SAMPLE_NUM  0x1F
 
 /* Registers */
-#define ADXL345_DEVICE_ID_REG      0x00
-#define ADXL345_RATE_REG           0x2c
-#define ADXL345_POWER_CTL_REG      0x2d
-#define ADXL345_DATA_FORMAT_REG    0x31
-#define ADXL345_X_AXIS_DATA_0_REG  0x32
-#define ADXL345_FIFO_CTL_REG       0x38
-#define ADXL345_FIFO_STATUS_REG    0x39
+#define ADXL345_DEVICE_ID_REG           0x00
+#define ADXL345_RATE_REG                0x2c
+#define ADXL345_POWER_CTL_REG           0x2d
+#define ADXL345_DATA_FORMAT_REG         0x31
+#define ADXL345_DATA_FORMAT_FULL_RES    0x08
+#define ADXL345_X_AXIS_DATA_0_REG       0x32
+#define ADXL345_FIFO_CTL_REG            0x38
+#define ADXL345_FIFO_STATUS_REG         0x39
 
 #define ADXL345_PART_ID            0xe5
 
@@ -58,6 +59,7 @@
 #define ADXL345_ENABLE_MEASURE_BIT (1 << 3)
 #define ADXL345_FIFO_STREAM_MODE   (1 << 7)
 #define ADXL345_FIFO_COUNT_MASK    0x3f
+#define ADXL345_COMPLEMENT_MASK(x) GENMASK(15, (x))
 #define ADXL345_COMPLEMENT         0xfc00
 
 #define ADXL345_MAX_FIFO_SIZE      32
@@ -149,6 +151,8 @@ struct adxl345_dev_data {
 	int16_t bufy[ADXL345_MAX_FIFO_SIZE];
 	int16_t bufz[ADXL345_MAX_FIFO_SIZE];
 	struct adxl345_fifo_config fifo_config;
+	uint8_t is_full_res;
+	uint8_t selected_range;
 #ifdef CONFIG_ADXL345_TRIGGER
 	struct gpio_callback gpio_cb;
 
@@ -182,6 +186,8 @@ struct adxl345_dev_data {
 
 struct adxl345_fifo_data {
 	uint8_t is_fifo: 1;
+	uint8_t is_full_res: 1;
+	uint8_t selected_range: 2;
 	uint8_t sample_set_size: 4;
 	uint8_t int_status;
 	uint16_t accel_odr: 4;
@@ -194,6 +200,7 @@ struct adxl345_sample {
 	uint8_t is_fifo: 1;
 	uint8_t res: 7;
 #endif /* CONFIG_ADXL345_STREAM */
+	uint8_t selected_range;
 	int16_t x;
 	int16_t y;
 	int16_t z;

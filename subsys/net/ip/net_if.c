@@ -520,11 +520,9 @@ enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt)
 		verdict = net_ipv6_prepare_for_send(pkt);
 	}
 
-#if defined(CONFIG_NET_IPV4_FRAGMENT)
-	if (net_pkt_family(pkt) == AF_INET) {
+	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == AF_INET) {
 		verdict = net_ipv4_prepare_for_send(pkt);
 	}
-#endif
 
 done:
 	/*   NET_OK in which case packet has checked successfully. In this case
@@ -1342,13 +1340,31 @@ void net_if_start_dad(struct net_if *iface)
 		goto out;
 	}
 
-	net_ipv6_addr_create_iid(&addr, net_if_get_link_addr(iface));
+	ret = net_ipv6_addr_generate_iid(iface, NULL,
+					 COND_CODE_1(CONFIG_NET_IPV6_IID_STABLE,
+						     ((uint8_t *)&ipv6->network_counter),
+						     (NULL)),
+					 COND_CODE_1(CONFIG_NET_IPV6_IID_STABLE,
+						     (sizeof(ipv6->network_counter)),
+						     (0U)),
+					 COND_CODE_1(CONFIG_NET_IPV6_IID_STABLE,
+						     (ipv6->iid ? ipv6->iid->dad_count : 0U),
+						     (0U)),
+					 &addr,
+					 net_if_get_link_addr(iface));
+	if (ret < 0) {
+		NET_WARN("IPv6 IID generation issue (%d)", ret);
+		goto out;
+	}
 
 	ifaddr = net_if_ipv6_addr_add(iface, &addr, NET_ADDR_AUTOCONF, 0);
 	if (!ifaddr) {
 		NET_ERR("Cannot add %s address to interface %p, DAD fails",
 			net_sprint_ipv6_addr(&addr), iface);
+		goto out;
 	}
+
+	IF_ENABLED(CONFIG_NET_IPV6_IID_STABLE, (ipv6->iid = ifaddr));
 
 	/* Start DAD for all the addresses that were added earlier when
 	 * the interface was down.
@@ -1383,10 +1399,11 @@ void net_if_ipv6_dad_failed(struct net_if *iface, const struct in6_addr *addr)
 		goto out;
 	}
 
+	if (IS_ENABLED(CONFIG_NET_IPV6_IID_STABLE) || IS_ENABLED(CONFIG_NET_IPV6_PE)) {
+		ifaddr->dad_count++;
+	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV6_PE)) {
-		ifaddr->dad_count++;
-
 		timeout = COND_CODE_1(CONFIG_NET_IPV6_PE,
 				      (ifaddr->addr_timeout), (0));
 		preferred_lifetime = COND_CODE_1(CONFIG_NET_IPV6_PE,
@@ -3251,16 +3268,29 @@ static void iface_ipv6_start(struct net_if *iface)
 
 static void iface_ipv6_stop(struct net_if *iface)
 {
-	struct in6_addr addr = { };
+	struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
 
 	if (!net_if_flag_is_set(iface, NET_IF_IPV6) ||
 	    net_if_flag_is_set(iface, NET_IF_IPV6_NO_ND)) {
 		return;
 	}
 
-	net_ipv6_addr_create_iid(&addr, net_if_get_link_addr(iface));
+	if (ipv6 == NULL) {
+		return;
+	}
 
-	(void)net_if_ipv6_addr_rm(iface, &addr);
+	IF_ENABLED(CONFIG_NET_IPV6_IID_STABLE, (ipv6->network_counter++));
+	IF_ENABLED(CONFIG_NET_IPV6_IID_STABLE, (ipv6->iid = NULL));
+
+	/* Remove all autoconf addresses */
+	ARRAY_FOR_EACH(ipv6->unicast, i) {
+		if (ipv6->unicast[i].is_used &&
+		    ipv6->unicast[i].address.family == AF_INET6 &&
+		    ipv6->unicast[i].addr_type == NET_ADDR_AUTOCONF) {
+			(void)net_if_ipv6_addr_rm(iface,
+						  &ipv6->unicast[i].address.in6_addr);
+		}
+	}
 }
 
 static void iface_ipv6_init(int if_count)
@@ -3508,22 +3538,17 @@ out:
 struct net_if *net_if_ipv4_select_src_iface(const struct in_addr *dst)
 {
 	struct net_if *selected = NULL;
+	const struct in_addr *src;
 
-	STRUCT_SECTION_FOREACH(net_if, iface) {
-		bool ret;
-
-		ret = net_if_ipv4_addr_mask_cmp(iface, dst);
-		if (ret) {
-			selected = iface;
-			goto out;
-		}
+	src = net_if_ipv4_select_src_addr(NULL, dst);
+	if (src != net_ipv4_unspecified_address()) {
+		net_if_ipv4_addr_lookup(src, &selected);
 	}
 
 	if (selected == NULL) {
 		selected = net_if_get_default();
 	}
 
-out:
 	return selected;
 }
 
@@ -3701,6 +3726,40 @@ const struct in_addr *net_if_ipv4_select_src_addr(struct net_if *dst_iface,
 
 out:
 	return src;
+}
+
+/* Internal function to get the first IPv4 address of the interface */
+struct net_if_addr *net_if_ipv4_addr_get_first_by_index(int ifindex)
+{
+	struct net_if *iface = net_if_get_by_index(ifindex);
+	struct net_if_addr *ifaddr = NULL;
+	struct net_if_ipv4 *ipv4;
+
+	if (!iface) {
+		return NULL;
+	}
+
+	net_if_lock(iface);
+
+	ipv4 = iface->config.ip.ipv4;
+	if (!ipv4) {
+		goto out;
+	}
+
+	ARRAY_FOR_EACH(ipv4->unicast, i) {
+		if (!ipv4->unicast[i].ipv4.is_used ||
+		    ipv4->unicast[i].ipv4.address.family != AF_INET) {
+			continue;
+		}
+
+		ifaddr = &ipv4->unicast[i].ipv4;
+		break;
+	}
+
+out:
+	net_if_unlock(iface);
+
+	return ifaddr;
 }
 
 struct net_if_addr *net_if_ipv4_addr_lookup(const struct in_addr *addr,

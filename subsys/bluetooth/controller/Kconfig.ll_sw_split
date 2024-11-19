@@ -616,6 +616,25 @@ config BT_CTLR_ISOAL_PSN_IGNORE
 	help
 	  Ignore the use of Tx ISO Data Packet Sequence Number.
 
+config BT_CTLR_ISOAL_FRAMED_BIS_OFFSET_MARGIN
+	int "Margin (in microseconds) to be used in framed time offset for BIS"
+	depends on BT_CTLR_ADV_ISO || BT_CTLR_CONN_ISO
+	default 2000
+	range 0 10000
+	help
+	  Needed margin for reliable delivery of payloads will vary, but should
+	  generally be EVENT_OVERHEAD_START_US + a small margin to cover ISOAL
+	  processing overhead
+
+config BT_CTLR_ISOAL_FRAMED_CIS_OFFSET_MARGIN
+	int "Margin (in microseconds) to be used in framed time offset for CIS"
+	depends on BT_CTLR_ADV_ISO || BT_CTLR_CONN_ISO
+	default 0
+	range 0 10000
+	help
+	  Note: Usually no margin is needed for CIS as null PDUs can be used if a payload
+	  is too late for the first subevent
+
 config BT_CTLR_ZLI
 	bool "Use Zero Latency IRQs"
 	depends on ZERO_LATENCY_IRQS

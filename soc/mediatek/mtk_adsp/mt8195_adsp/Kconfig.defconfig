@@ -3,12 +3,6 @@
 
 if SOC_SERIES_MT8195_ADSP
 
-config SOC
-	default "mt8195_adsp"
-
-config SOC_SERIES
-	default "mt8195_adsp"
-
 config NUM_2ND_LEVEL_AGGREGATORS
 	default 2
 config 2ND_LVL_INTR_00_OFFSET

@@ -389,7 +389,7 @@ int nrf_wifi_if_send(const struct device *dev,
 #ifdef CONFIG_NRF70_RAW_DATA_TX
 	if ((*(unsigned int *)pkt->frags->data) == NRF_WIFI_MAGIC_NUM_RAWTX) {
 		if (vif_ctx_zep->if_carr_state != NRF_WIFI_FMAC_IF_CARR_STATE_ON) {
-			goto unlock;
+			goto drop;
 		}
 
 		ret = nrf_wifi_fmac_start_rawpkt_xmit(rpu_ctx_zep->rpu_ctx,
@@ -399,7 +399,7 @@ int nrf_wifi_if_send(const struct device *dev,
 #endif /* CONFIG_NRF70_RAW_DATA_TX */
 		if ((vif_ctx_zep->if_carr_state != NRF_WIFI_FMAC_IF_CARR_STATE_ON) ||
 		    (!vif_ctx_zep->authorized && !is_eapol(pkt))) {
-			goto unlock;
+			goto drop;
 		}
 
 		ret = nrf_wifi_fmac_start_xmit(rpu_ctx_zep->rpu_ctx,
@@ -408,6 +408,10 @@ int nrf_wifi_if_send(const struct device *dev,
 #ifdef CONFIG_NRF70_RAW_DATA_TX
 	}
 #endif /* CONFIG_NRF70_RAW_DATA_TX */
+	goto unlock;
+drop:
+	host_stats->total_tx_drop_pkts++;
+	nrf_wifi_osal_nbuf_free(nbuf);
 unlock:
 	k_mutex_unlock(&vif_ctx_zep->vif_lock);
 #else
@@ -873,7 +877,7 @@ int nrf_wifi_if_stop_zep(const struct device *dev)
 	}
 
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
-	if (!rpu_ctx_zep) {
+	if (!rpu_ctx_zep || !rpu_ctx_zep->rpu_ctx) {
 		LOG_ERR("%s: rpu_ctx_zep is NULL",
 			__func__);
 		goto unlock;
@@ -976,10 +980,23 @@ int nrf_wifi_if_get_config_zep(const struct device *dev,
 		goto unlock;
 	}
 
+	memset(config, 0, sizeof(struct ethernet_config));
+
 	if (type == ETHERNET_CONFIG_TYPE_TXINJECTION_MODE) {
 		config->txinjection_mode =
 			def_dev_ctx->vif_ctx[vif_ctx_zep->vif_idx]->txinjection_mode;
 	}
+#ifdef CONFIG_NRF70_TCP_IP_CHECKSUM_OFFLOAD
+	if (type  == ETHERNET_CONFIG_TYPE_TX_CHECKSUM_SUPPORT ||
+	    type == ETHERNET_CONFIG_TYPE_RX_CHECKSUM_SUPPORT) {
+		config->chksum_support = ETHERNET_CHECKSUM_SUPPORT_IPV4_HEADER |
+					 ETHERNET_CHECKSUM_SUPPORT_IPV4_ICMP |
+					 ETHERNET_CHECKSUM_SUPPORT_IPV6_HEADER |
+					 ETHERNET_CHECKSUM_SUPPORT_IPV6_ICMP |
+					 ETHERNET_CHECKSUM_SUPPORT_TCP |
+					 ETHERNET_CHECKSUM_SUPPORT_UDP;
+	}
+#endif
 	ret = 0;
 unlock:
 	k_mutex_unlock(&vif_ctx_zep->vif_lock);

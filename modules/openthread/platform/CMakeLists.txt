@@ -16,6 +16,7 @@ zephyr_library_sources_ifdef(CONFIG_OPENTHREAD_COPROCESSOR uart.c)
 zephyr_library_sources_ifdef(CONFIG_OPENTHREAD_CRYPTO_PSA crypto_psa.c)
 zephyr_library_sources_ifdef(CONFIG_OPENTHREAD_SHELL shell.c)
 zephyr_library_sources_ifdef(CONFIG_OPENTHREAD_EXTERNAL_HEAP memory.c)
+zephyr_library_sources_ifdef(CONFIG_OPENTHREAD_PLATFORM_MESSAGE_MANAGEMENT messagepool.c)
 zephyr_library_sources_ifdef(CONFIG_SETTINGS settings.c)
 zephyr_library_sources_ifndef(CONFIG_LOG_BACKEND_SPINEL logging.c)
 

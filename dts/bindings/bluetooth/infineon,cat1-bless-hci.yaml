@@ -12,7 +12,7 @@ include: bt-hci.yaml
 
 properties:
   bt-hci-name:
-    default: "PSoC 6 BLESS"
+    default: "PSOC 6 BLESS"
   bt-hci-bus:
     default: "virtual"
   bt-hci-quirks:

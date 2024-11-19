@@ -31,9 +31,9 @@
 		zephyr,shell-uart = &uart0;
 	};
 
-	dram0: memory@0 {
+	dram0: memory@DT_DRAM_BASE {
 		device_type = "memory";
-		reg = <DT_DRAM_BASE DT_DRAM_SIZE>;
+		reg = <DT_ADDR(DT_DRAM_BASE) DT_DRAM_SIZE>;
 	};
 
 	soc {

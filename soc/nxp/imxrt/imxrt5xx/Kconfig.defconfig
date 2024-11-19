@@ -20,11 +20,7 @@ config NUM_IRQS
 config ZTEST_NO_YIELD
 	default y if (PM && ZTEST)
 
-#
-# MBEDTLS is larger but much faster than TinyCrypt so choose wisely
-#
 config MBEDTLS
-#config TINYCRYPT
 	default y if CSPRNG_ENABLED
 	depends on ENTROPY_GENERATOR
 
@@ -34,7 +30,6 @@ if MBEDTLS
 # what the ztest_thread_stack defaults to.
 #
 config TEST_EXTRA_STACK_SIZE
-	int
 	default 1024
 endif # MBEDTLS
 

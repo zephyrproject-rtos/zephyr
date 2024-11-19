@@ -147,42 +147,26 @@ static inline int z_vrfy_zsock_socket(int family, int type, int proto)
 #include <zephyr/syscalls/zsock_socket_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
+extern int zvfs_close(int fd);
+
 int z_impl_zsock_close(int sock)
 {
-	const struct socket_op_vtable *vtable;
-	struct k_mutex *lock;
-	void *ctx;
-	int ret;
-
-	SYS_PORT_TRACING_OBJ_FUNC_ENTER(socket, close, sock);
-
-	ctx = get_sock_vtable(sock, &vtable, &lock);
-	if (ctx == NULL) {
-		errno = EBADF;
-		SYS_PORT_TRACING_OBJ_FUNC_EXIT(socket, close, sock, -errno);
-		return -1;
-	}
-
-	(void)k_mutex_lock(lock, K_FOREVER);
-
-	NET_DBG("close: ctx=%p, fd=%d", ctx, sock);
-
-	ret = vtable->fd_vtable.close(ctx);
-
-	k_mutex_unlock(lock);
-
-	SYS_PORT_TRACING_OBJ_FUNC_EXIT(socket, close, sock, ret < 0 ? -errno : ret);
-
-	zvfs_free_fd(sock);
-
-	(void)sock_obj_core_dealloc(sock);
-
-	return ret;
+	return zvfs_close(sock);
 }
 
 #ifdef CONFIG_USERSPACE
 static inline int z_vrfy_zsock_close(int sock)
 {
+	const struct socket_op_vtable *vtable;
+	struct k_mutex *lock;
+	void *ctx;
+
+	ctx = get_sock_vtable(sock, &vtable, &lock);
+	if (ctx == NULL) {
+		errno = EBADF;
+		return -1;
+	}
+
 	return z_impl_zsock_close(sock);
 }
 #include <zephyr/syscalls/zsock_close_mrsh.c>

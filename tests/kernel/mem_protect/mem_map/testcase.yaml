@@ -5,7 +5,7 @@ common:
     - mmu
 tests:
   kernel.memory_protection.mem_map:
-    filter: CONFIG_MMU and not CONFIG_X86_64
+    filter: CONFIG_MMU and not CONFIG_X86_64 and not CONFIG_SOC_FAMILY_INTEL_ADSP
     extra_sections: _TRANSPLANTED_FUNC
     extra_configs:
       - CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=0
@@ -43,3 +43,4 @@ tests:
     extra_args: EXTRA_CFLAGS=-DSKIP_EXECUTE_TESTS
     platform_allow:
       - intel_adsp/ace30/ptl
+      - intel_adsp/ace30/ptl/sim

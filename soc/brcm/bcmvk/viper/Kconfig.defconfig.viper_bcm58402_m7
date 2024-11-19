@@ -4,11 +4,9 @@
 if SOC_BCM58402_M7
 
 config NUM_IRQS
-	int
 	default 240
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	int
 	default 500000000
 
 endif

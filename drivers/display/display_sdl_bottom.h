@@ -22,19 +22,20 @@ extern "C" {
 
 int sdl_display_init_bottom(uint16_t height, uint16_t width, uint16_t zoom_pct,
 			    bool use_accelerator, void **window, void **renderer, void **mutex,
-			    void **texture, void **read_texture);
-void sdl_display_write_bottom(const uint16_t height, const uint16_t width,
-			      const uint16_t x, const uint16_t y,
-			      void *renderer, void *mutex, void *texture,
-			      uint8_t *buf, bool display_on);
-int sdl_display_read_bottom(const uint16_t height, const uint16_t width,
-			    const uint16_t x, const uint16_t y,
-			    void *renderer, void *buf, uint16_t pitch,
-			    void *mutex, void *texture, void **read_texture);
-void sdl_display_blanking_off_bottom(void *renderer, void *texture);
+			    void **texture, void **read_texture, void **background_texture,
+			    uint32_t transparency_grid_color1, uint32_t transparency_grid_color2,
+			    uint16_t transparency_grid_cell_size);
+void sdl_display_write_bottom(const uint16_t height, const uint16_t width, const uint16_t x,
+			      const uint16_t y, void *renderer, void *mutex, void *texture,
+			      void *background_texture, uint8_t *buf, bool display_on,
+			      bool frame_incomplete);
+int sdl_display_read_bottom(const uint16_t height, const uint16_t width, const uint16_t x,
+			    const uint16_t y, void *renderer, void *buf, uint16_t pitch,
+			    void *mutex, void *texture, void *read_texture);
+void sdl_display_blanking_off_bottom(void *renderer, void *texture, void *background_texture);
 void sdl_display_blanking_on_bottom(void *renderer);
 void sdl_display_cleanup_bottom(void **window, void **renderer, void **mutex, void **texture,
-				void **read_texture);
+				void **read_texture, void **background_texture);
 
 #ifdef __cplusplus
 }

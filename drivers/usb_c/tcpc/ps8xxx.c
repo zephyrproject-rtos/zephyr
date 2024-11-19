@@ -189,8 +189,6 @@ int ps8xxx_tcpc_vconn_discharge(const struct device *dev, bool enable)
 	return tcpci_update_reg8(&cfg->bus, TCPC_REG_POWER_CTRL,
 				 TCPC_REG_POWER_CTRL_AUTO_DISCHARGE_DISCONNECT,
 				 (enable) ? TCPC_REG_POWER_CTRL_AUTO_DISCHARGE_DISCONNECT : 0);
-
-	return -EIO;
 }
 
 int ps8xxx_tcpc_set_vconn(const struct device *dev, bool enable)

@@ -33,6 +33,7 @@ struct sdl_display_data {
 	void *mutex;
 	void *texture;
 	void *read_texture;
+	void *background_texture;
 	bool display_on;
 	enum display_pixel_format current_pixel_format;
 	uint8_t *buf;
@@ -80,7 +81,10 @@ static int sdl_display_init(const struct device *dev)
 	int rc = sdl_display_init_bottom(config->height, config->width, sdl_display_zoom_pct,
 					 use_accelerator, &disp_data->window, &disp_data->renderer,
 					 &disp_data->mutex, &disp_data->texture,
-					 &disp_data->read_texture);
+					 &disp_data->read_texture, &disp_data->background_texture,
+					 CONFIG_SDL_DISPLAY_TRANSPARENCY_GRID_CELL_COLOR_1,
+					 CONFIG_SDL_DISPLAY_TRANSPARENCY_GRID_CELL_COLOR_2,
+					 CONFIG_SDL_DISPLAY_TRANSPARENCY_GRID_CELL_SIZE);
 
 	if (rc != 0) {
 		LOG_ERR("Failed to create SDL display");
@@ -119,7 +123,7 @@ static void sdl_display_write_rgb888(uint8_t *disp_buf,
 			pixel = *byte_ptr << 16;
 			pixel |= *(byte_ptr + 1) << 8;
 			pixel |= *(byte_ptr + 2);
-			*((uint32_t *)disp_buf) = pixel;
+			*((uint32_t *)disp_buf) = pixel | 0xFF000000;
 			disp_buf += 4;
 		}
 	}
@@ -145,7 +149,7 @@ static void sdl_display_write_rgb565(uint8_t *disp_buf,
 			pixel = (((rgb565 >> 11) & 0x1F) * 255 / 31) << 16;
 			pixel |= (((rgb565 >> 5) & 0x3F) * 255 / 63) << 8;
 			pixel |= (rgb565 & 0x1F) * 255 / 31;
-			*((uint32_t *)disp_buf) = pixel;
+			*((uint32_t *)disp_buf) = pixel | 0xFF000000;
 			disp_buf += 4;
 		}
 	}
@@ -169,7 +173,7 @@ static void sdl_display_write_bgr565(uint8_t *disp_buf,
 			pixel = (((*pix_ptr >> 11) & 0x1F) * 255 / 31) << 16;
 			pixel |= (((*pix_ptr >> 5) & 0x3F) * 255 / 63) << 8;
 			pixel |= (*pix_ptr & 0x1F) * 255 / 31;
-			*((uint32_t *)disp_buf) = pixel;
+			*((uint32_t *)disp_buf) = pixel | 0xFF000000;
 			disp_buf += 4;
 		}
 	}
@@ -207,9 +211,9 @@ static void sdl_display_write_mono(uint8_t *disp_buf,
 				if ((*byte_ptr & mono_pixel_order(h_idx)) != 0U)  {
 					pixel = one_color;
 				} else {
-					pixel = (~one_color) & 0x00FFFFFF;
+					pixel = ~one_color;
 				}
-				*((uint32_t *)disp_buf) = pixel;
+				*((uint32_t *)disp_buf) = pixel | 0xFF000000;
 				disp_buf += (desc->width * 4U);
 			}
 			disp_buf = disp_buf_start;
@@ -260,9 +264,10 @@ static int sdl_display_write(const struct device *dev, const uint16_t x,
 		sdl_display_write_bgr565(disp_data->buf, desc, buf);
 	}
 
-	sdl_display_write_bottom(desc->height, desc->width, x, y,
-				 disp_data->renderer, disp_data->mutex, disp_data->texture,
-				 disp_data->buf, disp_data->display_on);
+	sdl_display_write_bottom(desc->height, desc->width, x, y, disp_data->renderer,
+				 disp_data->mutex, disp_data->texture,
+				 disp_data->background_texture, disp_data->buf,
+				 disp_data->display_on, desc->frame_incomplete);
 
 	return 0;
 }
@@ -431,7 +436,8 @@ static int sdl_display_blanking_off(const struct device *dev)
 
 	disp_data->display_on = true;
 
-	sdl_display_blanking_off_bottom(disp_data->renderer, disp_data->texture);
+	sdl_display_blanking_off_bottom(disp_data->renderer, disp_data->texture,
+					disp_data->background_texture);
 
 	return 0;
 }
@@ -491,7 +497,8 @@ static int sdl_display_set_pixel_format(const struct device *dev,
 static void sdl_display_cleanup(struct sdl_display_data *disp_data)
 {
 	sdl_display_cleanup_bottom(&disp_data->window, &disp_data->renderer, &disp_data->mutex,
-				   &disp_data->texture, &disp_data->read_texture);
+				   &disp_data->texture, &disp_data->read_texture,
+				   &disp_data->background_texture);
 }
 
 static const struct display_driver_api sdl_display_api = {

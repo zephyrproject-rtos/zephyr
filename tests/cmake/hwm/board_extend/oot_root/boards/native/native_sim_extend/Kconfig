@@ -1,0 +1,30 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config EXTENDED_VARIANT_BOARD_SETTING
+	bool "Extended variant board test string"
+	depends on BOARD_NATIVE_SIM_NATIVE_ONE || BOARD_NATIVE_SIM_NATIVE_64_TWO
+	help
+	  This kconfig is set when the extended variant board config fragment
+	  is supposed to be sourced, that is when oot variant defines 'extends:'
+
+config EXTENDED_VARIANT_BOARD_ONE_SETTING_PROMPTLESS
+	bool
+	depends on BOARD_NATIVE_SIM_NATIVE_ONE
+	help
+	  This kconfig is promptless and is expected to be set through the
+	  Kconfig.defconfig for the extended board.
+
+config EXTENDED_VARIANT_BOARD_TWO_SETTING_PROMPTLESS
+	bool
+	depends on BOARD_NATIVE_SIM_NATIVE_64_TWO
+	help
+	  This kconfig is promptless and is expected to be set through the
+	  Kconfig.defconfig for the extended board.
+
+config EXTENDED_VARIANT_BOARD_SETTING_DEFCONFIG
+	bool "Extended variant board test string defconfig"
+	depends on BOARD_NATIVE_SIM_NATIVE_ONE || BOARD_NATIVE_SIM_NATIVE_64_TWO
+	help
+	  This kconfig is set when the extended variant board defconfig fragment
+	  is supposed to be sourced, that is when oot variant defines 'extends:'

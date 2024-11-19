@@ -7,6 +7,7 @@
 import argparse
 import collections
 from email.utils import parseaddr
+from itertools import takewhile
 import json
 import logging
 import os
@@ -346,9 +347,7 @@ class DevicetreeBindingsCheck(ComplianceTest):
 
     def required_false_check(self, dts_binding):
         with open(dts_binding) as file:
-            line_number = 0
-            for line in file:
-                line_number += 1
+            for line_number, line in enumerate(file, 1):
                 if 'required: false' in line:
                     self.fmtd_failure(
                         'warning', 'Devicetree Bindings', dts_binding,
@@ -511,8 +510,9 @@ class KconfigCheck(ComplianceTest):
         soc_roots = self.get_module_setting_root('soc', settings_file)
         soc_roots.insert(0, Path(ZEPHYR_BASE))
         root_args = argparse.Namespace(**{'board_roots': board_roots,
-                                          'soc_roots': soc_roots, 'board': None})
-        v2_boards = list_boards.find_v2_boards(root_args)
+                                          'soc_roots': soc_roots, 'board': None,
+                                          'board_dir': []})
+        v2_boards = list_boards.find_v2_boards(root_args).values()
 
         with open(kconfig_defconfig_file, 'w') as fp:
             for board in v2_boards:
@@ -546,7 +546,7 @@ class KconfigCheck(ComplianceTest):
         root_args = argparse.Namespace(**{'soc_roots': soc_roots})
         v2_systems = list_hardware.find_v2_systems(root_args)
 
-        soc_folders = {soc.folder for soc in v2_systems.get_socs()}
+        soc_folders = {soc.folder[0] for soc in v2_systems.get_socs()}
         with open(kconfig_defconfig_file, 'w') as fp:
             for folder in soc_folders:
                 fp.write('osource "' + (Path(folder) / 'Kconfig.defconfig').as_posix() + '"\n')
@@ -616,7 +616,7 @@ class KconfigCheck(ComplianceTest):
         os.makedirs(os.path.join(kconfiglib_dir, 'soc'), exist_ok=True)
         os.makedirs(os.path.join(kconfiglib_dir, 'arch'), exist_ok=True)
 
-        os.environ["BOARD_DIR"] = kconfiglib_boards_dir
+        os.environ["KCONFIG_BOARD_DIR"] = kconfiglib_boards_dir
         self.get_v2_model(kconfiglib_dir, os.path.join(kconfiglib_dir, "settings_file.txt"))
 
         # Tells Kconfiglib to generate warnings for all references to undefined
@@ -909,6 +909,7 @@ flagged.
     # Many of these are symbols used as examples. Note that the list is sorted
     # alphabetically, and skips the CONFIG_ prefix.
     UNDEF_KCONFIG_ALLOWLIST = {
+        # zephyr-keep-sorted-start re(^\s+")
         "ALSO_MISSING",
         "APP_LINK_WITH_",
         "APP_LOG_LEVEL", # Application log level is not detected correctly as
@@ -919,48 +920,52 @@ flagged.
                               # toolchain Kconfig which is sourced based on
                               # Zephyr toolchain variant and therefore not
                               # visible to compliance.
+        "BINDESC_", # Used in documentation as a prefix
         "BOARD_", # Used as regex in scripts/utils/board_v1_to_v2.py
+        "BOARD_MPS2_AN521_CPUTEST", # Used for board and SoC extension feature tests
+        "BOARD_NATIVE_SIM_NATIVE_64_TWO", # Used for board and SoC extension feature tests
+        "BOARD_NATIVE_SIM_NATIVE_ONE", # Used for board and SoC extension feature tests
         "BOOT_DIRECT_XIP", # Used in sysbuild for MCUboot configuration
         "BOOT_DIRECT_XIP_REVERT", # Used in sysbuild for MCUboot configuration
-        "BOOT_FIRMWARE_LOADER", # Used in sysbuild for MCUboot configuration
-        "BOOT_RAM_LOAD", # Used in sysbuild for MCUboot configuration
-        "BOOT_SWAP_USING_MOVE", # Used in sysbuild for MCUboot configuration
-        "BOOT_SWAP_USING_SCRATCH", # Used in sysbuild for MCUboot configuration
         "BOOT_ENCRYPTION_KEY_FILE", # Used in sysbuild
         "BOOT_ENCRYPT_IMAGE", # Used in sysbuild
+        "BOOT_FIRMWARE_LOADER", # Used in sysbuild for MCUboot configuration
         "BOOT_MAX_IMG_SECTORS_AUTO", # Used in sysbuild
-        "BINDESC_", # Used in documentation as a prefix
-        "BOOT_UPGRADE_ONLY", # Used in example adjusting MCUboot config, but
-                             # symbol is defined in MCUboot itself.
+        "BOOT_RAM_LOAD", # Used in sysbuild for MCUboot configuration
         "BOOT_SERIAL_BOOT_MODE",     # Used in (sysbuild-based) test/
                                      # documentation
         "BOOT_SERIAL_CDC_ACM",       # Used in (sysbuild-based) test
         "BOOT_SERIAL_ENTRANCE_GPIO", # Used in (sysbuild-based) test
         "BOOT_SERIAL_IMG_GRP_HASH",  # Used in documentation
+        "BOOT_SHARE_BACKEND_RETENTION", # Used in Kconfig text
         "BOOT_SHARE_DATA",           # Used in Kconfig text
         "BOOT_SHARE_DATA_BOOTINFO", # Used in (sysbuild-based) test
-        "BOOT_SHARE_BACKEND_RETENTION", # Used in Kconfig text
         "BOOT_SIGNATURE_KEY_FILE",   # MCUboot setting used by sysbuild
         "BOOT_SIGNATURE_TYPE_ECDSA_P256", # MCUboot setting used by sysbuild
         "BOOT_SIGNATURE_TYPE_ED25519",    # MCUboot setting used by sysbuild
         "BOOT_SIGNATURE_TYPE_NONE",       # MCUboot setting used by sysbuild
         "BOOT_SIGNATURE_TYPE_RSA",        # MCUboot setting used by sysbuild
+        "BOOT_SWAP_USING_MOVE", # Used in sysbuild for MCUboot configuration
+        "BOOT_SWAP_USING_SCRATCH", # Used in sysbuild for MCUboot configuration
+        "BOOT_UPGRADE_ONLY", # Used in example adjusting MCUboot config, but
+                             # symbol is defined in MCUboot itself.
         "BOOT_VALIDATE_SLOT0",       # Used in (sysbuild-based) test
         "BOOT_WATCHDOG_FEED",        # Used in (sysbuild-based) test
+        "BT_6LOWPAN",  # Defined in Linux, mentioned in docs
         "CDC_ACM_PORT_NAME_",
         "CHRE",  # Optional module
         "CHRE_LOG_LEVEL_DBG",  # Optional module
         "CLOCK_STM32_SYSCLK_SRC_",
+        "CMD_CACHE",  # Defined in U-Boot, mentioned in docs
         "CMU",
         "COMPILER_RT_RTLIB",
-        "BT_6LOWPAN",  # Defined in Linux, mentioned in docs
-        "CMD_CACHE",  # Defined in U-Boot, mentioned in docs
         "CRC",  # Used in TI CC13x2 / CC26x2 SDK comment
         "DEEP_SLEEP",  # #defined by RV32M1 in ext/
         "DESCRIPTION",
         "ERR",
         "ESP_DIF_LIBRARY",  # Referenced in CMake comment
         "EXPERIMENTAL",
+        "EXTRA_FIRMWARE_DIR", # Linux, in boards/xtensa/intel_adsp_cavs25/doc
         "FFT",  # Used as an example in cmake/extensions.cmake
         "FLAG",  # Used as an example
         "FOO",
@@ -968,24 +973,28 @@ flagged.
         "FOO_SETTING_1",
         "FOO_SETTING_2",
         "HEAP_MEM_POOL_ADD_SIZE_", # Used as an option matching prefix
-        "LSM6DSO_INT_PIN",
+        "HUGETLBFS",          # Linux, in boards/xtensa/intel_adsp_cavs25/doc
         "LIBGCC_RTLIB",
         "LLVM_USE_LD",   # Both LLVM_USE_* are in cmake/toolchain/llvm/Kconfig
         "LLVM_USE_LLD",  # which are only included if LLVM is selected but
                          # not other toolchains. Compliance check would complain,
                          # for example, if you are using GCC.
-        "MCUBOOT_LOG_LEVEL_WRN",        # Used in example adjusting MCUboot
-                                        # config,
-        "MCUBOOT_LOG_LEVEL_INF",
-        "MCUBOOT_DOWNGRADE_PREVENTION", # but symbols are defined in MCUboot
-                                        # itself.
+        "LOG_BACKEND_MOCK_OUTPUT_DEFAULT", #Referenced in tests/subsys/logging/log_syst
+        "LOG_BACKEND_MOCK_OUTPUT_SYST", #Referenced in testcase.yaml of log_syst test
+        "LSM6DSO_INT_PIN",
         "MCUBOOT_ACTION_HOOKS",     # Used in (sysbuild-based) test
         "MCUBOOT_CLEANUP_ARM_CORE", # Used in (sysbuild-based) test
+        "MCUBOOT_DOWNGRADE_PREVENTION", # but symbols are defined in MCUboot
+                                        # itself.
+        "MCUBOOT_LOG_LEVEL_INF",
+        "MCUBOOT_LOG_LEVEL_WRN",        # Used in example adjusting MCUboot
+                                        # config,
         "MCUBOOT_SERIAL",           # Used in (sysbuild-based) test/
                                     # documentation
         "MCUMGR_GRP_EXAMPLE_OTHER_HOOK", # Used in documentation
         "MISSING",
         "MODULES",
+        "MODVERSIONS",        # Linux, in boards/xtensa/intel_adsp_cavs25/doc
         "MYFEATURE",
         "MY_DRIVER_0",
         "NORMAL_SLEEP",  # #defined by RV32M1 in ext/
@@ -997,8 +1006,7 @@ flagged.
         "REG1",
         "REG2",
         "RIMAGE_SIGNING_SCHEMA",  # Optional module
-        "LOG_BACKEND_MOCK_OUTPUT_DEFAULT", #Referenced in tests/subsys/logging/log_syst
-        "LOG_BACKEND_MOCK_OUTPUT_SYST", #Referenced in testcase.yaml of log_syst test
+        "SECURITY_LOADPIN",   # Linux, in boards/xtensa/intel_adsp_cavs25/doc
         "SEL",
         "SHIFT",
         "SINGLE_APPLICATION_SLOT", # Used in sysbuild for MCUboot configuration
@@ -1011,6 +1019,9 @@ flagged.
         "SRAM2",  # Referenced in a comment in samples/application_development
         "STACK_SIZE",  # Used as an example in the Kconfig docs
         "STD_CPP",  # Referenced in CMake comment
+        "SUIT_MPI_APP_AREA_PATH", # Used by nRF runners to program provisioning data, based on build configuration
+        "SUIT_MPI_GENERATE", # Used by nRF runners to program provisioning data, based on build configuration
+        "SUIT_MPI_RAD_AREA_PATH", # Used by nRF runners to program provisioning data, based on build configuration
         "TEST1",
         "TOOLCHAIN_ARCMWDT_SUPPORTS_THREAD_LOCAL_STORAGE", # The symbol is defined in the toolchain
                                                     # Kconfig which is sourced based on Zephyr
@@ -1020,16 +1031,10 @@ flagged.
         "USB_CONSOLE",
         "USE_STDC_",
         "WHATEVER",
-        "EXTRA_FIRMWARE_DIR", # Linux, in boards/xtensa/intel_adsp_cavs25/doc
-        "HUGETLBFS",          # Linux, in boards/xtensa/intel_adsp_cavs25/doc
-        "MODVERSIONS",        # Linux, in boards/xtensa/intel_adsp_cavs25/doc
-        "SECURITY_LOADPIN",   # Linux, in boards/xtensa/intel_adsp_cavs25/doc
         "ZEPHYR_TRY_MASS_ERASE", # MCUBoot setting described in sysbuild
                                  # documentation
         "ZTEST_FAIL_TEST_",  # regex in tests/ztest/fail/CMakeLists.txt
-        "SUIT_MPI_GENERATE", # Used by nRF runners to program provisioning data, based on build configuration
-        "SUIT_MPI_APP_AREA_PATH", # Used by nRF runners to program provisioning data, based on build configuration
-        "SUIT_MPI_RAD_AREA_PATH", # Used by nRF runners to program provisioning data, based on build configuration
+        # zephyr-keep-sorted-stop
     }
 
 
@@ -1541,20 +1546,39 @@ class KeepSorted(ComplianceTest):
 
     MARKER = "zephyr-keep-sorted"
 
-    def block_is_sorted(self, block_data):
-        lines = []
+    def block_check_sorted(self, block_data, regex):
+        def _test_indent(txt: str):
+            return txt.startswith((" ", "\t"))
 
-        for line in textwrap.dedent(block_data).splitlines():
-            if len(lines) > 0 and line.startswith((" ", "\t")):
-                # Fold back indented lines
-                lines[-1] += line.strip()
+        if regex is None:
+            block_data = textwrap.dedent(block_data)
+
+        lines = block_data.splitlines()
+        last = ''
+
+        for idx, line in enumerate(lines):
+            if not line.strip():
+                # Ignore blank lines
+                continue
+
+            if regex:
+                # check for regex
+                if not re.match(regex, line):
+                    continue
             else:
-                lines.append(line.strip())
+                if _test_indent(line):
+                    continue
 
-        if lines != sorted(lines):
-            return False
+                # Fold back indented lines after the current one
+                for cont in takewhile(_test_indent, lines[idx + 1:]):
+                    line += cont.strip()
 
-        return True
+            if line < last:
+                return idx
+
+            last = line
+
+        return -1
 
     def check_file(self, file, fp):
         mime_type = magic.from_file(file, mime=True)
@@ -1567,8 +1591,9 @@ class KeepSorted(ComplianceTest):
 
         start_marker = f"{self.MARKER}-start"
         stop_marker = f"{self.MARKER}-stop"
-        start_line = None
-        stop_line = None
+        regex_marker = r"re\((.+)\)"
+        start_line = 0
+        regex = None
 
         for line_num, line in enumerate(fp.readlines(), start=1):
             if start_marker in line:
@@ -1579,22 +1604,22 @@ class KeepSorted(ComplianceTest):
                 in_block = True
                 block_data = ""
                 start_line = line_num + 1
+
+                # Test for a regex block
+                match = re.search(regex_marker, line)
+                regex = match.group(1) if match else None
             elif stop_marker in line:
                 if not in_block:
                     desc = f"{stop_marker} without {start_marker}"
                     self.fmtd_failure("error", "KeepSorted", file, line_num,
                                      desc=desc)
                 in_block = False
-                stop_line = line_num - 1
 
-                if not self.block_is_sorted(block_data):
-                    desc = (f"sorted block is not sorted, sort by running: " +
-                            f"\"ex -s -c '{start_line},{stop_line} sort i|x' {file}\"")
+                idx = self.block_check_sorted(block_data, regex)
+                if idx >= 0:
+                    desc = f"sorted block has out-of-order line at {start_line + idx}"
                     self.fmtd_failure("error", "KeepSorted", file, line_num,
                                       desc=desc)
-            elif not line.strip() or line.startswith("#"):
-                # Ignore comments and blank lines
-                continue
             elif in_block:
                 block_data += line
 

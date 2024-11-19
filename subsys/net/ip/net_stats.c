@@ -91,6 +91,12 @@ static inline void stats(struct net_if *iface)
 			 GET_STAT(iface, ipv6_nd.sent),
 			 GET_STAT(iface, ipv6_nd.drop));
 #endif /* CONFIG_NET_STATISTICS_IPV6_ND */
+#if defined(CONFIG_NET_STATISTICS_IPV6_PMTU)
+		NET_INFO("IPv6 PMTU recv %d\tsent\t%d\tdrop\t%d",
+			 GET_STAT(iface, ipv6_pmtu.recv),
+			 GET_STAT(iface, ipv6_pmtu.sent),
+			 GET_STAT(iface, ipv6_pmtu.drop));
+#endif /* CONFIG_NET_STATISTICS_IPV6_PMTU */
 #if defined(CONFIG_NET_STATISTICS_MLD)
 		NET_INFO("IPv6 MLD recv  %d\tsent\t%d\tdrop\t%d",
 			 GET_STAT(iface, ipv6_mld.recv),
@@ -115,6 +121,13 @@ static inline void stats(struct net_if *iface)
 			 GET_STAT(iface, ip_errors.fragerr),
 			 GET_STAT(iface, ip_errors.chkerr),
 			 GET_STAT(iface, ip_errors.protoerr));
+
+#if defined(CONFIG_NET_STATISTICS_IPV4_PMTU)
+		NET_INFO("IPv4 PMTU recv %d\tsent\t%d\tdrop\t%d",
+			 GET_STAT(iface, ipv4_pmtu.recv),
+			 GET_STAT(iface, ipv4_pmtu.sent),
+			 GET_STAT(iface, ipv4_pmtu.drop));
+#endif /* CONFIG_NET_STATISTICS_IPV4_PMTU */
 
 		NET_INFO("ICMP recv      %d\tsent\t%d\tdrop\t%d",
 			 GET_STAT(iface, icmp.recv),
@@ -279,6 +292,18 @@ static int net_stats_get(uint32_t mgmt_request, struct net_if *iface,
 		src = GET_STAT_ADDR(iface, ipv6_nd);
 		break;
 #endif
+#if defined(CONFIG_NET_STATISTICS_IPV6_PMTU)
+	case NET_REQUEST_STATS_CMD_GET_IPV6_PMTU:
+		len_chk = sizeof(struct net_stats_ipv6_pmtu);
+		src = GET_STAT_ADDR(iface, ipv6_pmtu);
+		break;
+#endif
+#if defined(CONFIG_NET_STATISTICS_IPV4_PMTU)
+	case NET_REQUEST_STATS_CMD_GET_IPV4_PMTU:
+		len_chk = sizeof(struct net_stats_ipv4_pmtu);
+		src = GET_STAT_ADDR(iface, ipv4_pmtu);
+		break;
+#endif
 #if defined(CONFIG_NET_STATISTICS_ICMP)
 	case NET_REQUEST_STATS_CMD_GET_ICMP:
 		len_chk = sizeof(struct net_stats_icmp);
@@ -338,6 +363,16 @@ NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_STATS_GET_IPV6,
 
 #if defined(CONFIG_NET_STATISTICS_IPV6_ND)
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_STATS_GET_IPV6_ND,
+				  net_stats_get);
+#endif
+
+#if defined(CONFIG_NET_STATISTICS_IPV6_PMTU)
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_STATS_GET_IPV6_PMTU,
+				  net_stats_get);
+#endif
+
+#if defined(CONFIG_NET_STATISTICS_IPV4_PMTU)
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_STATS_GET_IPV4_PMTU,
 				  net_stats_get);
 #endif
 

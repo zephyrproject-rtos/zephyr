@@ -1,5 +1,5 @@
 description: |
-  Zephyr MMC disk node. A binding with this compatible present within an SD
+  Zephyr SDMMC disk node. A binding with this compatible present within an SD
   host controller device node indicates that an SDMMC disk is attached to that
   SD bus. This binding will enable that disk to be used with the disk driver
   API and any subsystems that utilize it.
@@ -7,3 +7,10 @@ description: |
 compatible: "zephyr,sdmmc-disk"
 
 include: [sd-device.yaml]
+
+properties:
+  disk-name:
+    type: string
+    required: true
+    description: |
+      Disk name.

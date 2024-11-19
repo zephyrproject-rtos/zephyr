@@ -63,7 +63,7 @@ RA MCU
 **Special Feature Access**
 - 32 MB (256 Mb) External Quad-SPI Flash
 
-.. figure:: ek-ra4m3-board.webp
+.. figure:: ek_ra4m3.webp
 	:align: center
 	:alt: RA4M3 Evaluation Kit
 
@@ -73,7 +73,7 @@ Hardware
 ********
 Detail Hardware feature for the RA4M3 MCU group can be found at `RA4M3 Group User's Manual Hardware`_
 
-.. figure:: ra4m3-block-diagram.webp
+.. figure:: ra4m3_block_diagram.webp
 	:width: 442px
 	:align: center
 	:alt: RA4M3 MCU group feature

@@ -57,6 +57,20 @@ config NET_STATISTICS_IPV6_ND
 	help
 	  Keep track of IPv6 Neighbor Discovery related statistics
 
+config NET_STATISTICS_IPV6_PMTU
+	bool "IPv6 PMTU statistics"
+	depends on NET_IPV6_PMTU
+	default y
+	help
+	  Keep track of IPv6 Path MTU Discovery related statistics
+
+config NET_STATISTICS_IPV4_PMTU
+	bool "IPv4 PMTU statistics"
+	depends on NET_IPV4_PMTU
+	default y
+	help
+	  Keep track of IPv4 Path MTU Discovery related statistics
+
 config NET_STATISTICS_ICMP
 	bool "ICMP statistics"
 	depends on NET_IPV6 || NET_IPV4

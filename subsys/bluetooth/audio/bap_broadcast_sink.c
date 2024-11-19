@@ -295,31 +295,30 @@ static void broadcast_sink_iso_recv(struct bt_iso_chan *chan,
 	}
 }
 
-/** Gets the "highest" state of all BIS in the broadcast sink */
-static enum bt_bap_ep_state broadcast_sink_get_state(struct bt_bap_broadcast_sink *sink)
+static bool broadcast_sink_is_in_state(struct bt_bap_broadcast_sink *sink,
+				       enum bt_bap_ep_state state)
 {
-	enum bt_bap_ep_state state = BT_BAP_EP_STATE_IDLE;
 	struct bt_bap_stream *stream;
 
 	if (sink == NULL) {
 		LOG_DBG("sink is NULL");
 
-		return state;
+		return state == BT_BAP_EP_STATE_IDLE;
 	}
 
 	if (sys_slist_is_empty(&sink->streams)) {
 		LOG_DBG("Sink does not have any streams");
 
-		return state;
+		return state == BT_BAP_EP_STATE_IDLE;
 	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&sink->streams, stream, _node) {
-		if (stream->ep != NULL) {
-			state = MAX(state, stream->ep->status.state);
+		if (stream->ep != NULL && stream->ep->status.state != state) {
+			return false;
 		}
 	}
 
-	return state;
+	return true;
 }
 
 static void broadcast_sink_iso_connected(struct bt_iso_chan *chan)
@@ -362,7 +361,7 @@ static void broadcast_sink_iso_connected(struct bt_iso_chan *chan)
 		LOG_WRN("No callback for started set");
 	}
 
-	if (broadcast_sink_get_state(sink) != BT_BAP_EP_STATE_STREAMING) {
+	if (broadcast_sink_is_in_state(sink, BT_BAP_EP_STATE_STREAMING)) {
 		update_recv_state_big_synced(sink);
 	}
 }
@@ -953,12 +952,13 @@ static void biginfo_recv(struct bt_le_per_adv_sync *sync,
 
 static uint16_t interval_to_sync_timeout(uint16_t interval)
 {
-	uint32_t interval_ms;
+	uint32_t interval_us;
 	uint32_t timeout;
 
 	/* Add retries and convert to unit in 10's of ms */
-	interval_ms = BT_GAP_PER_ADV_INTERVAL_TO_MS(interval);
-	timeout = (interval_ms * PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO) / 10;
+	interval_us = BT_GAP_PER_ADV_INTERVAL_TO_US(interval);
+	timeout =
+		BT_GAP_US_TO_PER_ADV_SYNC_TIMEOUT(interval_us) * PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO;
 
 	/* Enforce restraints */
 	timeout = CLAMP(timeout, BT_GAP_PER_ADV_MIN_TIMEOUT, BT_GAP_PER_ADV_MAX_TIMEOUT);
@@ -1291,7 +1291,6 @@ int bt_bap_broadcast_sink_sync(struct bt_bap_broadcast_sink *sink, uint32_t inde
 
 int bt_bap_broadcast_sink_stop(struct bt_bap_broadcast_sink *sink)
 {
-	enum bt_bap_ep_state state;
 	int err;
 
 	CHECKIF(sink == NULL) {
@@ -1304,9 +1303,8 @@ int bt_bap_broadcast_sink_stop(struct bt_bap_broadcast_sink *sink)
 		return -EALREADY;
 	}
 
-	state = broadcast_sink_get_state(sink);
-	if (state != BT_BAP_EP_STATE_STREAMING && state != BT_BAP_EP_STATE_QOS_CONFIGURED) {
-		LOG_DBG("Broadcast sink %p invalid state: %u", sink, state);
+	if (broadcast_sink_is_in_state(sink, BT_BAP_EP_STATE_IDLE)) {
+		LOG_DBG("Broadcast sink %p in idle state", sink);
 		return -EBADMSG;
 	}
 
@@ -1324,16 +1322,14 @@ int bt_bap_broadcast_sink_stop(struct bt_bap_broadcast_sink *sink)
 
 int bt_bap_broadcast_sink_delete(struct bt_bap_broadcast_sink *sink)
 {
-	enum bt_bap_ep_state state;
 
 	CHECKIF(sink == NULL) {
 		LOG_DBG("sink is NULL");
 		return -EINVAL;
 	}
 
-	state = broadcast_sink_get_state(sink);
-	if (state != BT_BAP_EP_STATE_IDLE) {
-		LOG_DBG("Broadcast sink %p invalid state: %u", sink, state);
+	if (!broadcast_sink_is_in_state(sink, BT_BAP_EP_STATE_IDLE)) {
+		LOG_DBG("Broadcast sink %p not in idle state", sink);
 		return -EBADMSG;
 	}
 

@@ -24,6 +24,7 @@ Control Stepper
 - Run continuously with a **constant velocity** in a specific direction until
   a stop is detected using :c:func:`stepper_enable_constant_velocity_mode`.
 - Check if the stepper is **moving** using :c:func:`stepper_is_moving`.
+- Register an **event callback** using :c:func:`stepper_set_event_callback`.
 
 Device Tree
 ===========
@@ -36,6 +37,7 @@ be used in a boards devicetree to configure a stepper driver to its initial stat
 
 See examples in:
 
+- :dtcompatible:`zephyr,gpio-stepper`
 - :dtcompatible:`adi,tmc5041`
 
 Discord

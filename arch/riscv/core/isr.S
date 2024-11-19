@@ -163,6 +163,14 @@ SECTION_FUNC(exception.entry, _isr_wrapper)
 	lr t0, ___cpu_t_current_OFFSET(s0)
 	lr tp, _thread_offset_to_tls(t0)
 
+	/* Make sure global pointer is sane */
+#ifdef CONFIG_RISCV_GP
+	.option push
+	.option norelax
+	la gp, __global_pointer$
+	.option pop
+#endif /* CONFIG_RISCV_GP */
+
 	/* Clear our per-thread usermode flag */
 	lui t0, %tprel_hi(is_user_mode)
 	add t0, t0, tp, %tprel_add(is_user_mode)

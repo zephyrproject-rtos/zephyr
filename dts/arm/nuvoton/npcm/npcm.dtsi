@@ -6,6 +6,10 @@
 
 #include <arm/armv7-m.dtsi>
 
+/* Macros for device tree declarations of npcm soc family */
+#include <zephyr/dt-bindings/clock/npcm_clock.h>
+#include <freq.h>
+
 / {
 	cpus {
 		#address-cells = <1>;
@@ -15,6 +19,31 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-m4";
 			reg = <0>;
+		};
+	};
+
+	soc {
+		mdc: mdc@4000c000 {
+			compatible = "syscon";
+			reg = <0x4000c000 0xa>;
+			reg-io-width = <1>;
+		};
+
+		mdc_header: mdc@4000c00a {
+			compatible = "syscon";
+			reg = <0x4000c00a 0x4>;
+			reg-io-width = <2>;
+		};
+
+		pcc: clock-controller@4000d000 {
+			compatible = "nuvoton,npcm-pcc";
+			/* Cells for clock id */
+			#clock-cells = <1>;
+			/* First reg region is Power Management Controller */
+			/* Second reg region is Core Domain Clock Generator */
+			reg = <0x4000d000 0x2000
+				   0x400b5000 0x2000>;
+			reg-names = "pmc", "cdcg";
 		};
 	};
 };

@@ -1125,3 +1125,15 @@ test_i2c_ilps22qs: ilps22qs@9c {
 	avg = <LPS2xDF_DT_AVG_128_SAMPLES>;
 	fs = <ILPS22QS_DT_FS_MODE_1_1260>;
 };
+
+test_i2c_sts4x: sts4x@9d {
+	compatible = "sensirion,sts4x";
+	reg = <0x99>;
+	repeatability = <2>;
+};
+
+test_i2c_scd4x: scd4x@9e {
+	compatible = "sensirion,scd41";
+	reg = <0x9e>;
+	mode = <0>;
+};

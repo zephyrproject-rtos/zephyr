@@ -64,7 +64,7 @@ The key features of the EK-RA6M4 board are categorized in three groups as follow
 - 32 Mb (256 Mb) External Quad-SPI Flash
 - 64 Mb (512 Mb) External Octo-SPI Flash
 
-.. figure:: ek-ra6m4-board.webp
+.. figure:: ek_ra6m4.webp
 	:align: center
 	:alt: RA6M4 Evaluation Kit
 
@@ -74,7 +74,7 @@ Hardware
 ********
 Detailed hardware feature for the RA6M4 MCU group can be found at `RA6M4 Group User's Manual Hardware`_
 
-.. figure:: ra6m4-block-diagram.webp
+.. figure:: ra6m4_block_diagram.webp
 	:width: 442px
 	:align: center
 	:alt: RA6M4 MCU group feature

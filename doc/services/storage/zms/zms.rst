@@ -201,9 +201,9 @@ An entry has 16 bytes divided between these variables :
 
 	struct zms_ate {
 		uint8_t crc8;      /* crc8 check of the entry */
-		uint8_t cycle_cnt; /* cycle counter for non erasable devices */
-		uint32_t id;       /* data id */
+		uint8_t cycle_cnt; /* cycle counter for non-erasable devices */
 		uint16_t len;      /* data len within sector */
+		uint32_t id;       /* data id */
 		union {
 			uint8_t data[8]; /* used to store small size data */
 			struct {
@@ -218,21 +218,22 @@ An entry has 16 bytes divided between these variables :
 		};
 	} __packed;
 
-.. note:: The data CRC is checked only when the whole data of the element is read.
-   The data CRC is not checked for a partial read, as it is computed for the complete set of data.
+.. note:: The CRC of the data is checked only when the whole the element is read.
+   The CRC of the data is not checked for a partial read, as it is computed for the whole element.
 
-.. note:: Enabling the data CRC feature on a previously existing ZMS content without
-   data CRC will make all existing data invalid.
+.. note:: Enabling the CRC feature on previously existing ZMS content without CRC enabled
+   will make all existing data invalid.
 
 .. _free-space:
 
 Available space for user data (key-value pairs)
 ***********************************************
 
-For both scenarios ZMS should have always an empty sector to be able to perform the garbage
-collection.
-So if we suppose that 4 sectors exist in a partition, ZMS will only use 3 sectors to store
-Key-value pairs and keep always one (rotating sector) empty to be able to launch GC.
+For both scenarios ZMS should always have an empty sector to be able to perform the
+garbage collection (GC).
+So, if we suppose that 4 sectors exist in a partition, ZMS will only use 3 sectors to store
+Key-value pairs and keep one sector empty to be able to launch GC.
+The empty sector will rotate between the 4 sectors in the partition.
 
 .. note:: The maximum single data length that could be written at once in a sector is 64K
    (This could change in future versions of ZMS)
@@ -240,8 +241,8 @@ Key-value pairs and keep always one (rotating sector) empty to be able to launch
 Small data values
 =================
 
-For small data values (<= 8 bytes), the data is stored within the entry (ATE) itself and no data
-is written at the top of the sector.
+Values smaller than 8 bytes will be stored within the entry (ATE) itself, without writing data
+at the top of the sector.
 ZMS has an entry size of 16 bytes which means that the maximum available space in a partition to
 store data is computed in this scenario as :
 
@@ -265,7 +266,7 @@ Large data values
 =================
 
 Large data values ( > 8 bytes) are stored separately at the top of the sector.
-In this case it is hard to estimate the free available space as this depends on the size of
+In this case, it is hard to estimate the free available space, as this depends on the size of
 the data. But we can take into account that for N bytes of data (N > 8 bytes) an additional
 16 bytes of ATE must be added at the bottom of the sector.
 
@@ -286,17 +287,17 @@ This storage system is optimized for devices that do not require an erase.
 Using storage systems that rely on an erase-value (NVS as an example) will need to emulate the
 erase with write operations. This will cause a significant decrease in the life expectancy of
 these devices and will cause more delays for write operations and for initialization.
-ZMS introduces a cycle count mechanism that avoids emulating erase operation for these devices.
+ZMS uses a cycle count mechanism that avoids emulating erase operation for these devices.
 It also guarantees that every memory location is written only once for each cycle of sector write.
 
-As an example, to erase a 4096 bytes sector on a non erasable device using NVS, 256 flash writes
+As an example, to erase a 4096 bytes sector on a non-erasable device using NVS, 256 flash writes
 must be performed (supposing that write-block-size=16 bytes), while using ZMS only 1 write of
 16 bytes is needed. This operation is 256 times faster in this case.
 
 Garbage collection operation is also adding some writes to the memory cell life expectancy as it
 is moving some blocks from one sector to another.
 To make the garbage collector not affect the life expectancy of the device it is recommended
-to dimension correctly the partition size. Its size should be the double of the maximum size of
+to correctly dimension the partition size. Its size should be the double of the maximum size of
 data (including extra headers) that could be written in the storage.
 
 See :ref:`free-space`.
@@ -307,10 +308,10 @@ Device lifetime calculation
 Storage devices whether they are classical Flash or new technologies like RRAM/MRAM has a limited
 life expectancy which is determined by the number of times memory cells can be erased/written.
 Flash devices are erased one page at a time as part of their functional behavior (otherwise
-memory cells cannot be overwritten) and for non erasable storage devices memory cells can be
+memory cells cannot be overwritten) and for non-erasable storage devices memory cells can be
 overwritten directly.
 
-A typical scenario is shown here to calculate the life expectancy of a device.
+A typical scenario is shown here to calculate the life expectancy of a device:
 Let's suppose that we store an 8 bytes variable using the same ID but its content changes every
 minute. The partition has 4 sectors with 1024 bytes each.
 Each write of the variable requires 16 bytes of storage.
@@ -361,12 +362,12 @@ Existing features
 =================
 Version1
 --------
-- Supports non erasable devices (only one write operation to erase a sector)
+- Supports non-erasable devices (only one write operation to erase a sector)
 - Supports large partition size and sector size (64 bits address space)
-- Supports large IDs width (32 bits) to store ID/Value pairs
+- Supports 32-bit IDs to store ID/Value pairs
 - Small sized data ( <= 8 bytes) are stored in the ATE itself
 - Built-in Data CRC32 (included in the ATE)
-- Versionning of ZMS (to handle future evolution)
+- Versioning of ZMS (to handle future evolution)
 - Supports large write-block-size (Only for platforms that need this)
 
 Future features
@@ -375,7 +376,7 @@ Future features
 - Add multiple format ATE support to be able to use ZMS with different ATE formats that satisfies
   requirements from application
 - Add the possibility to skip garbage collector for some application usage where ID/value pairs
-  are written periodically and do not exceed half of the partition size (ther is always an old
+  are written periodically and do not exceed half of the partition size (there is always an old
   entry with the same ID).
 - Divide IDs into namespaces and allocate IDs on demand from application to handle collisions
   between IDs used by different subsystems or samples.
@@ -394,9 +395,9 @@ functionality: :ref:`NVS <nvs_api>` and :ref:`FCB <fcb_api>`.
 Which one to use in your application will depend on your needs and the hardware you are using,
 and this section provides information to help make a choice.
 
-- If you are using a non erasable technology device like RRAM or MRAM, :ref:`ZMS <zms_api>` is definitely the
-  best fit for your storage subsystem as it is designed very well to avoid emulating erase for
-  these devices and replace it by a single write call.
+- If you are using a non-erasable technology device like RRAM or MRAM, :ref:`ZMS <zms_api>` is definitely the
+  best fit for your storage subsystem as it is designed to avoid emulating erase operation using
+  large block writes for these devices and replaces it with a single write call.
 - For devices with large write_block_size and/or needs a sector size that is different than the
   classical flash page size (equal to erase_block_size), :ref:`ZMS <zms_api>` is also the best fit as there is
   the possibility to customize these parameters and add the support of these devices in ZMS.
@@ -413,6 +414,41 @@ More generally to make the right choice between NVS and ZMS, all the blockers sh
 verified to make sure that the application could work with one subsystem or the other, then if
 both solutions could be implemented, the best choice should be based on the calculations of the
 life expectancy of the device described in this section: :ref:`wear-leveling`.
+
+Recommendations to increase performance
+***************************************
+
+Sector size and count
+=====================
+
+- The total size of the storage partition should be well dimensioned to achieve the best
+  performance for ZMS.
+  All the information regarding the effectively available free space in ZMS can be found
+  in the documentation. See :ref:`free-space`.
+  We recommend choosing a storage partition that can hold double the size of the key-value pairs
+  that will be written in the storage.
+- The size of a sector needs to be dimensioned to hold the maximum data length that will be stored.
+  Increasing the size of a sector will slow down the garbage collection operation which will
+  occur less frequently.
+  Decreasing its size, in the opposite, will make the garbage collection operation faster
+  which will occur more frequently.
+- For some subsystems like :ref:`Settings <settings_api>`, all path-value pairs are split into two ZMS entries (ATEs).
+  The header needed by the two entries should be accounted when computing the needed storage space.
+- Using small data to store in the ZMS entries can increase the performance, as this data is
+  written within the entry header.
+  For example, for the :ref:`Settings <settings_api>` subsystem, choosing a path name that is
+  less than or equal to 8 bytes can make reads and writes faster.
+
+Dimensioning cache
+==================
+
+- When using ZMS API directly, the recommended cache size should be, at least, equal to
+  the number of different entries that will be written in the storage.
+- Each additional cache entry will add 8 bytes to your RAM usage. Cache size should be carefully
+  chosen.
+- If you use ZMS through :ref:`Settings <settings_api>`, you have to take into account that each Settings entry is
+  divided into two ZMS entries. The recommended cache size should be, at least, twice the number
+  of Settings entries.
 
 Sample
 ******

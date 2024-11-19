@@ -2,22 +2,17 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-# Do not specify default link libraries when targeting host (native build).
-if(NOT CONFIG_NATIVE_BUILD)
-  set_linker_property(NO_CREATE PROPERTY c_library    "-lc")
-  set_linker_property(NO_CREATE PROPERTY rt_library   "-lgcc")
-  set_linker_property(NO_CREATE PROPERTY c++_library  "-lstdc++")
-  set_linker_property(NO_CREATE PROPERTY math_library "-lm")
-  # Keeping default include dir empty. The linker will then select libraries
-  # from its default search path. The toolchain may adjust the value to a
-  # specific location, for example gcc infrastructure will set the value based
-  # on output from --print-libgcc-file-name.
-  set_linker_property(NO_CREATE PROPERTY lib_include_dir "")
-endif()
+set_linker_property(NO_CREATE PROPERTY c_library    "-lc")
+set_linker_property(NO_CREATE PROPERTY rt_library   "-lgcc")
+set_linker_property(NO_CREATE PROPERTY c++_library  "-lstdc++")
+set_linker_property(NO_CREATE PROPERTY math_library "-lm")
+# Keeping default include dir empty. The linker will then select libraries
+# from its default search path. The toolchain may adjust the value to a
+# specific location, for example gcc infrastructure will set the value based
+# on output from --print-libgcc-file-name.
+set_linker_property(NO_CREATE PROPERTY lib_include_dir "")
 
 if(CONFIG_CPP
-   AND NOT CONFIG_MINIMAL_LIBCPP
-   AND NOT CONFIG_NATIVE_LIBRARY
    # When new link principle is fully introduced, then the below condition can
    # be removed, and instead the external module c++ should use:
    # set_property(TARGET linker PROPERTY c++_library  "<external_c++_lib>")

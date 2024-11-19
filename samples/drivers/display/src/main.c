@@ -50,16 +50,16 @@ static void fill_buffer_argb8888(enum corner corner, uint8_t grey, uint8_t *buf,
 
 	switch (corner) {
 	case TOP_LEFT:
-		color = 0x00FF0000u;
+		color = 0xFFFF0000u;
 		break;
 	case TOP_RIGHT:
-		color = 0x0000FF00u;
+		color = 0xFF00FF00u;
 		break;
 	case BOTTOM_RIGHT:
-		color = 0x000000FFu;
+		color = 0xFF0000FFu;
 		break;
 	case BOTTOM_LEFT:
-		color = grey << 16 | grey << 8 | grey;
+		color = 0xFF000000u | grey << 16 | grey << 8 | grey;
 		break;
 	}
 
@@ -239,7 +239,7 @@ int main(void)
 
 	switch (capabilities.current_pixel_format) {
 	case PIXEL_FORMAT_ARGB_8888:
-		bg_color = 0xFFu;
+		bg_color = 0x00u;
 		fill_buffer_fnc = fill_buffer_argb8888;
 		buf_size *= 4;
 		break;
@@ -297,6 +297,14 @@ int main(void)
 	buf_desc.width = capabilities.x_resolution;
 	buf_desc.height = h_step;
 
+	/*
+	 * The following writes will only render parts of the image,
+	 * so turn this option on.
+	 * This allows double-buffered displays to hold the pixels
+	 * back until the image is complete.
+	 */
+	buf_desc.frame_incomplete = true;
+
 	for (int idx = 0; idx < capabilities.y_resolution; idx += h_step) {
 		/*
 		 * Tweaking the height value not to draw outside of the display.
@@ -322,6 +330,13 @@ int main(void)
 	x = capabilities.x_resolution - rect_w;
 	y = 0;
 	display_write(display_dev, x, y, &buf_desc, buf);
+
+	/*
+	 * This is the last write of the frame, so turn this off.
+	 * Double-buffered displays will now present the new image
+	 * to the user.
+	 */
+	buf_desc.frame_incomplete = false;
 
 	fill_buffer_fnc(BOTTOM_RIGHT, 0, buf, buf_size);
 	x = capabilities.x_resolution - rect_w;

@@ -156,8 +156,12 @@ Two eviction algorithms are currently available:
   to the NRU code but also considerably more efficient. This is recommended for
   production use.
 
-To implement a new eviction algorithm, the five functions mentioned
-above must be implemented.
+To implement a new eviction algorithm, :c:func:`k_mem_paging_eviction_init()`
+and :c:func:`k_mem_paging_eviction_select()` must be implemented.
+If :kconfig:option:`CONFIG_EVICTION_TRACKING` is enabled for an algorithm,
+these additional functions must also be implemented,
+:c:func:`k_mem_paging_eviction_add()`, :c:func:`k_mem_paging_eviction_remove()`,
+:c:func:`k_mem_paging_eviction_accessed()`.
 
 Backing Store
 *************

@@ -1,0 +1,52 @@
+common:
+  tags:
+    - kernel
+    - benchmark
+  # Native platforms excluded as timer interrupts may not be detected
+  # qemu_nios2 excluded as it is slow
+  platform_exclude:
+    - native_posix
+    - native_sim
+    - qemu_nios2
+  integration_platforms:
+    - qemu_x86
+    - qemu_cortex_a53
+  timeout: 300
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "(.*) Relative Time: (.*)"
+
+tests:
+  benchmark.thread_metric.basic:
+    extra_configs:
+      - CONFIG_TM_BASIC=y
+
+  benchmark.thread_metric.cooperative:
+    extra_configs:
+      - CONFIG_TM_COOPERATIVE=y
+
+  benchmark.thread_metric.interrupt:
+    extra_configs:
+      - CONFIG_TM_INTERRUPT=y
+
+  benchmark.thread_metric.interrupt_preemption:
+    extra_configs:
+      - CONFIG_TM_INTERRUPT_PREEMPTION=y
+
+  benchmark.thread_metric.memory_allocation:
+    extra_configs:
+      - CONFIG_TM_MEMORY_ALLOCATION=y
+
+  benchmark.thread_metric.message:
+    extra_configs:
+      - CONFIG_TM_MESSAGE=y
+
+  benchmark.thread_metric.preemptive:
+    extra_configs:
+      - CONFIG_TM_PREEMPTIVE=y
+
+  benchmark.thread_metric.synchronization:
+    extra_configs:
+      - CONFIG_TM_SYNCHRONIZATION=y

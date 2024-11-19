@@ -103,6 +103,64 @@ menuconfig BT_MESH_ADV_EXT
 
 if BT_MESH_ADV_EXT
 
+choice BT_MESH_WORKQ_CONTEXT
+	prompt "Advertising thread selection"
+	default BT_MESH_WORKQ_MESH
+	help
+	  Defines a context for mesh messages transmission.
+
+config BT_MESH_WORKQ_MESH
+	bool "Mesh-specific workqueue"
+	help
+	  When this option is selected, the mesh sends messages from the
+	  mesh-specific workqueue. This will ensure that messages are always sent.
+	  The application needs to ensure the mesh-specific workqueue size is large
+	  enough. Refer to BT_MESH_ADV_STACK_SIZE for the recommended minimum.
+
+config BT_MESH_WORKQ_SYS
+	bool "System workqueue"
+	help
+	  When this option is selected, the mesh sends messages from
+	  the system work queue. The application needs to ensure the system
+	  workqueue stack size (SYSTEM_WORKQUEUE_STACK_SIZE) is large enough,
+	  refer to BT_MESH_ADV_STACK_SIZE for the recommended minimum.
+
+	  When this option is enabled and the mesh tries to send a message,
+	  and the host ran out the HCI command buffers controlled by
+	  CONFIG_BT_BUF_CMD_TX_COUNT, the host returns -ENOBUFS immediately
+	  and the mesh drops the message transmission. To mitigate this
+	  issue, make sure to have sufficient number of HCI command buffers.
+	  When this option is enabled, the latency of sending mesh messages
+	  will be affected by other users on the system work queue, resulting in
+	  reduced reliability for sending mesh messages.
+
+endchoice
+
+if BT_MESH_WORKQ_MESH
+
+config BT_MESH_ADV_STACK_SIZE
+	int "Mesh extended advertiser thread stack size"
+	default 1536 if BT_MESH_PROXY
+	default 1024 if BT_HOST_CRYPTO
+	default 776 if BT_MESH_PRIV_BEACONS
+	default 768
+	help
+	  Size of bt mesh adv thread stack.
+
+	  NOTE: This is an advanced setting and should not be changed unless
+	  absolutely necessary
+
+config BT_MESH_ADV_PRIO
+	int "Mesh advertiser thread priority"
+	default 7
+	help
+	  Priority of bt mesh adv thread.
+
+	  NOTE: This is an advanced setting and should not be changed unless
+	  absolutely necessary
+
+endif # BT_MESH_WORKQ_MESH
+
 config BT_MESH_RELAY_ADV_SETS
 	int "Maximum of simultaneous relay message support"
 	default 0
@@ -266,15 +324,6 @@ config BT_MESH_PB_GATT_CLIENT
 	  device over GATT.
 
 endif # BT_CONN
-
-config BT_MESH_PROV_DEVICE
-	bool "[DEPRECATED] Provisioning device role support"
-	select DEPRECATED
-	select BT_MESH_PROVISIONEE
-	help
-	  Enable this option to allow the device to be provisioned into a mesh network.
-	  The option is marked as deprecated and will be replaced by BT_MESH_PROVISIONEE
-	  option.
 
 config BT_MESH_PROVISIONEE
 	bool "Provisionee role support"

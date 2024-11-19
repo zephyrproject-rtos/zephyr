@@ -13,6 +13,7 @@ import pytest
 import sys
 import re
 
+# pylint: disable=no-name-in-module
 from conftest import ZEPHYR_BASE, TEST_DATA, testsuite_filename_mock
 from twisterlib.testplan import TestPlan
 from twisterlib.error import TwisterRuntimeError
@@ -45,7 +46,7 @@ class TestError:
         ),
         (
             '--overflow-as-errors',
-            r'always_overflow.dummy  ERROR Build failure \(build\)'
+            r'always_overflow.dummy ERROR Build failure \(build\)'
         )
     ]
 

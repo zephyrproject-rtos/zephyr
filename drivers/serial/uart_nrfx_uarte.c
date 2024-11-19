@@ -23,6 +23,11 @@
 #include <zephyr/linker/devicetree_regions.h>
 #include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
+
+#ifdef CONFIG_SOC_NRF54H20_GPD
+#include <nrf/gpd.h>
+#endif
+
 LOG_MODULE_REGISTER(uart_nrfx_uarte, CONFIG_UART_LOG_LEVEL);
 
 #if !defined(CONFIG_ARCH_POSIX)
@@ -1516,7 +1521,7 @@ static void rxto_isr(const struct device *dev)
 			async_rx->total_user_byte_cnt += rx_flush(dev);
 		}
 #endif
-	} else {
+	} else if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME) || LOW_POWER_ENABLED(config)) {
 		async_rx->flush_cnt = rx_flush(dev);
 	}
 
@@ -2098,6 +2103,9 @@ static void uarte_pm_resume(const struct device *dev)
 
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME) || !LOW_POWER_ENABLED(cfg)) {
 		uarte_periph_enable(dev);
+#ifdef CONFIG_SOC_NRF54H20_GPD
+		nrf_gpd_retain_pins_set(cfg->pcfg, false);
+#endif
 	}
 }
 
@@ -2159,6 +2167,10 @@ static void uarte_pm_suspend(const struct device *dev)
 
 		wait_for_tx_stopped(dev);
 	}
+
+#ifdef CONFIG_SOC_NRF54H20_GPD
+	nrf_gpd_retain_pins_set(cfg->pcfg, true);
+#endif
 
 	nrf_uarte_disable(uarte);
 

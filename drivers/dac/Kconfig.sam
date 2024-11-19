@@ -6,5 +6,6 @@ config DAC_SAM
 	bool "Atmel SAM DAC driver"
 	default y
 	depends on DT_HAS_ATMEL_SAM_DAC_ENABLED
+	select PINCTRL
 	help
 	  Enable Atmel SAM MCU Family Digital Audio Converter (DAC) driver.

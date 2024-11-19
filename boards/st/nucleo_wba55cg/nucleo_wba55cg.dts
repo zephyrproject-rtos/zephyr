@@ -6,8 +6,7 @@
 
 /dts-v1/;
 #include <st/wba/stm32wba55Xg.dtsi>
-/* Todo: Once available, use wba55 dedicated pinctrl.dtsi */
-#include <st/wba/stm32wba52cgux-pinctrl.dtsi>
+#include <st/wba/stm32wba55cgux-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
@@ -20,6 +19,7 @@
 
 	chosen {
 		zephyr,bt-c2h-uart = &usart1;
+		zephyr,uart-pipe = &usart1;
 		zephyr,console = &usart1;
 		zephyr,shell-uart = &usart1;
 		zephyr,sram = &sram0;

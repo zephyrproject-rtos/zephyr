@@ -533,6 +533,21 @@ ZTEST(test_utils_fn, test_addr_parse)
 			.verdict = true
 		},
 		{
+			.address = "192.0.2.3:80/foobar",
+			.len = sizeof("192.0.2.3:80") - 1,
+			.result = {
+				.sin_family = AF_INET,
+				.sin_port = htons(80),
+				.sin_addr = {
+					.s4_addr[0] = 192,
+					.s4_addr[1] = 0,
+					.s4_addr[2] = 2,
+					.s4_addr[3] = 3
+				}
+			},
+			.verdict = true
+		},
+		{
 			.address = "192.0.2.3/foobar",
 			.len = sizeof("192.0.2.3/foobar") - 1,
 			.verdict = false

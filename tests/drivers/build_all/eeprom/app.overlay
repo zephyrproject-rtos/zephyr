@@ -10,6 +10,9 @@
  * (and be extended to test) real hardware.
  */
 
+ #include <freq.h>
+ #include <mem.h>
+
 / {
 	test {
 		#address-cells = <1>;
@@ -59,7 +62,7 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 
-				eeprom: ti_tmp116_eeprom@0 {
+				test_tmp116_eeprom: ti_tmp116_eeprom@0 {
 					compatible = "ti,tmp116-eeprom";
 					reg = <0x0>;
 					read-only;
@@ -88,6 +91,13 @@
 				timeout = <5>;
 				wp-gpios = <&test_gpio 0 0>;
 				/* read-only; */
+			};
+
+			test_spi_mb85rsxx: mb85rsxx@0 {
+				compatible = "fujitsu,mb85rsxx";
+				reg = <0x0>;
+				spi-max-frequency = <DT_FREQ_M(25)>;
+				size = <DT_SIZE_K(128)>;
 			};
 		};
 	};

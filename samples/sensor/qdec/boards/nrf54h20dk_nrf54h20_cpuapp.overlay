@@ -13,10 +13,10 @@
 	encoder-emulate {
 		compatible = "gpio-leds";
 		phase_a: phase_a {
-			gpios = <&gpio7 2 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio2 9 GPIO_ACTIVE_HIGH>;
 		};
 		phase_b: phase_b {
-			gpios = <&gpio1 3 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio2 11 GPIO_ACTIVE_HIGH>;
 		};
 	};
 };
@@ -24,17 +24,13 @@
 &pinctrl {
 	qdec_pinctrl: qdec_pinctrl {
 		group1 {
-			psels = <NRF_PSEL(QDEC_A, 1, 0)>,
-				<NRF_PSEL(QDEC_B, 1, 2)>;
+			psels = <NRF_PSEL(QDEC_A, 2, 8)>,
+				<NRF_PSEL(QDEC_B, 2, 10)>;
 		};
 	};
 };
 
-&gpio1 {
-	status = "okay";
-};
-
-&gpio7 {
+&gpio2 {
 	status = "okay";
 };
 

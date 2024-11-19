@@ -17,13 +17,13 @@ osource "${APPLICATION_SOURCE_DIR}/VERSION"
 # Shield defaults should have precedence over board defaults, which should have
 # precedence over SoC defaults, so include them in that order.
 #
-# $ARCH and $BOARD_DIR will be glob patterns when building documentation.
+# $ARCH and $KCONFIG_BOARD_DIR will be glob patterns when building documentation.
 # This loads custom shields defconfigs (from BOARD_ROOT)
 osource "$(KCONFIG_BINARY_DIR)/Kconfig.shield.defconfig"
 # This loads Zephyr base shield defconfigs
 source "boards/shields/*/Kconfig.defconfig"
 
-osource "$(BOARD_DIR)/Kconfig.defconfig"
+osource "$(KCONFIG_BOARD_DIR)/Kconfig.defconfig"
 
 # This loads Zephyr specific SoC root defconfigs
 source "$(KCONFIG_BINARY_DIR)/soc/Kconfig.defconfig"
@@ -536,11 +536,10 @@ config NO_OPTIMIZATIONS
 endchoice
 
 config LTO
-	bool "Link Time Optimization [EXPERIMENTAL]"
+	bool "Link Time Optimization"
 	depends on !(GEN_ISR_TABLES || GEN_IRQ_VECTOR_TABLE) || ISR_TABLES_LOCAL_DECLARATION
 	depends on !NATIVE_LIBRARY
 	depends on !CODE_DATA_RELOCATION
-	select EXPERIMENTAL
 	help
 	  This option enables Link Time Optimization.
 
@@ -1021,32 +1020,6 @@ config IS_BOOTLOADER
 	help
 	  This option indicates that Zephyr will act as a bootloader to execute
 	  a separate Zephyr image payload.
-
-config BOOTLOADER_SRAM_SIZE
-	int "SRAM reserved for bootloader [DEPRECATED]"
-	default 0
-	depends on !XIP || IS_BOOTLOADER
-	depends on ARM || XTENSA
-	help
-	  This option specifies the amount of SRAM (measure in kB) reserved for
-	  a bootloader image, when either:
-	  - the Zephyr image itself is to act as the bootloader, or
-	  - Zephyr is a !XIP image, which implicitly assumes existence of a
-	  bootloader that loads the Zephyr !XIP image onto SRAM.
-
-	  This option is deprecated, users should transition to using DTS to set this, if needed.
-	  To be removed after Zephyr 3.7 release.
-
-config BOOTLOADER_SRAM_SIZE_DEPRECATED
-	bool
-	default y
-	select DEPRECATED
-	depends on BOOTLOADER_SRAM_SIZE != 0
-	depends on !XIP || IS_BOOTLOADER
-	depends on ARM || XTENSA
-	help
-	  Non-prompt symbol to indicate that the deprecated BOOTLOADER_SRAM_SIZE Kconfig has a
-	  non-0 value. Please transition to using devicetree.
 
 config BOOTLOADER_BOSSA
 	bool "BOSSA bootloader support"

@@ -12,6 +12,7 @@ menuconfig ETH_SAM_GMAC
 	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 	select MDIO
 	select ETH_DSA_SUPPORT
+	select PINCTRL
 	help
 	  Enable Atmel SAM MCU Family Ethernet driver.
 

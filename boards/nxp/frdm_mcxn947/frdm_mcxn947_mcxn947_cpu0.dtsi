@@ -166,6 +166,7 @@
 	status = "okay";
 	sdmmc {
 		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
 		status = "okay";
 	};
 };

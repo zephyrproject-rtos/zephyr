@@ -74,9 +74,9 @@ struct bt_le_conn_param {
  *    Latency: 0
  *    Timeout: 4 s
  */
-#define BT_LE_CONN_PARAM_DEFAULT BT_LE_CONN_PARAM(BT_GAP_INIT_CONN_INT_MIN, \
-						  BT_GAP_INIT_CONN_INT_MAX, \
-						  0, 400)
+#define BT_LE_CONN_PARAM_DEFAULT                                                                   \
+	BT_LE_CONN_PARAM(BT_GAP_INIT_CONN_INT_MIN, BT_GAP_INIT_CONN_INT_MAX, 0,                    \
+			 BT_GAP_MS_TO_CONN_TIMEOUT(4000))
 
 /** Connection PHY information for LE connections */
 struct bt_conn_le_phy_info {
@@ -410,7 +410,7 @@ struct bt_conn_le_cs_capabilities {
 
 /** Remote FAE Table for LE connections supporting CS */
 struct bt_conn_le_cs_fae_table {
-	uint8_t *remote_fae_table;
+	int8_t *remote_fae_table;
 };
 
 /** Channel sounding main mode */

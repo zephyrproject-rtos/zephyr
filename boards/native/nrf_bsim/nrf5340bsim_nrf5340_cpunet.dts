@@ -8,6 +8,7 @@
 
 #include <mem.h>
 #include <arm/nordic/nrf5340_cpunet.dtsi>
+#include <../boards/nordic/nrf5340dk/nrf5340dk_nrf5340_cpunet-pinctrl.dtsi>
 
 / {
 	model = "Nordic NRF5340 BSIM NRF5340 Network";
@@ -17,15 +18,13 @@
 	aliases {
 		/delete-property/ sram-0;
 		/delete-property/ sram-1;
-		/delete-property/ gpiote-0;
 		/delete-property/ wdt-0;
 		/delete-property/ i2c-0;
 		/delete-property/ spi-0;
-		/delete-property/ gpio-0;
-		/delete-property/ gpio-1;
 	};
 
 	chosen {
+		zephyr,console = &uart0;
 		zephyr,bt-hci-ipc = &ipc0;
 		nordic,802154-spinel-ipc = &ipc0;
 		zephyr,ieee802154 = &ieee802154;
@@ -36,14 +35,11 @@
 	soc {
 		/delete-node/ memory@20000000;
 		/delete-node/ memory@21000000;
-		/delete-node/ gpiote@4100a000;
 		/delete-node/ watchdog@4100b000;
 		/delete-node/ i2c@41013000;
 		/delete-node/ spi@41013000;
 		/delete-node/ acl@41080000;
 		/delete-node/ vmc@41081000;
-		/delete-node/ gpio@418c0500;
-		/delete-node/ gpio@418c0800;
 	};
 
 	/delete-node/ cpus;
@@ -71,6 +67,26 @@
 			reg = <0x00000000 DT_SIZE_K(256)>;
 		};
 	};
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 /* We re-use the IPC shared buffer definition from the real HW. But note the start address of the

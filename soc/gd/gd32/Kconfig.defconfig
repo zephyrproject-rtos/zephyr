@@ -5,9 +5,6 @@ if SOC_FAMILY_GD_GD32
 
 rsource "*/Kconfig.defconfig.series"
 
-config PINCTRL
-	default y
-
 config RESET
 	default y
 

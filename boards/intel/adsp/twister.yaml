@@ -15,11 +15,30 @@ variants:
   intel_adsp/ace30/ptl:
     toolchain:
       - xt-clang
+      - zephyr
   intel_adsp/ace30:
     twister: false
+  intel_adsp/ace20_lnl/sim:
+    type: sim
+    simulation: custom
+    simulation_exec: acesim
+    testing:
+      timeout_multiplier: 4
+  intel_adsp/ace15_mtpm/sim:
+    type: sim
+    simulation: custom
+    simulation_exec: acesim
+    testing:
+      timeout_multiplier: 4
   intel_adsp/ace30/ptl/sim:
+    type: sim
+    simulation: custom
+    simulation_exec: acesim
     toolchain:
       - xt-clang
+      - zephyr
+    testing:
+      timeout_multiplier: 8
   intel_adsp/cavs25:
     toolchain:
       - xcc

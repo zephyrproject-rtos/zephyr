@@ -5,7 +5,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <stdint.h>
 
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/types.h>
@@ -103,7 +105,11 @@ static uint8_t read_car_cb(struct bt_conn *conn, uint8_t err,
 static void le_connected(struct bt_conn *conn, uint8_t err)
 {
 	struct btp_gap_device_connected_ev ev;
+	char addr_str[BT_ADDR_LE_STR_LEN];
 	struct bt_conn_info info;
+
+	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr_str, sizeof(addr_str));
+	LOG_DBG("%s: 0x%02x", addr_str, err);
 
 	if (err) {
 		return;
@@ -131,6 +137,10 @@ static void le_disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	struct btp_gap_device_disconnected_ev ev;
 	const bt_addr_le_t *addr = bt_conn_get_dst(conn);
+	char addr_str[BT_ADDR_LE_STR_LEN];
+
+	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr_str, sizeof(addr_str));
+	LOG_DBG("%s: 0x%02x", addr_str, reason);
 
 	bt_addr_le_copy(&ev.address, addr);
 
@@ -988,13 +998,18 @@ static uint8_t stop_discovery(const void *cmd, uint16_t cmd_len,
 static uint8_t connect(const void *cmd, uint16_t cmd_len,
 		       void *rsp, uint16_t *rsp_len)
 {
+	/* The conn interval is set to 60ms (0x30). This is to better support test cases where we
+	 * need to connect to multiple peripherals (up to 3). The connection interval should also be
+	 * a multiple of 30ms, as that is ideal to support both 7.5ms and 10ms ISO intervals
+	 */
+	const uint16_t interval = BT_GAP_MS_TO_CONN_INTERVAL(60U);
 	const struct bt_le_conn_param *conn_param =
-		BT_LE_CONN_PARAM(BT_GAP_INIT_CONN_INT_MIN, BT_GAP_INIT_CONN_INT_MIN, 0, 400);
+		BT_LE_CONN_PARAM(interval, interval, 0U, BT_GAP_MS_TO_CONN_TIMEOUT(4000U));
 	const struct btp_gap_connect_cmd *cp = cmd;
 	int err;
 
 	if (!bt_addr_le_eq(&cp->address, BT_ADDR_LE_ANY)) {
-		struct bt_conn *conn;
+		struct bt_conn *conn = NULL;
 
 		err = bt_conn_le_create(&cp->address, BT_CONN_LE_CREATE_CONN, conn_param, &conn);
 		if (err) {

@@ -1072,7 +1072,7 @@ uint8_t ull_cp_periodic_sync(struct ll_conn *conn, struct ll_sync_set *sync,
 		interval = sync->interval;
 
 		addr_type = sync->peer_id_addr_type;
-		if (sync->peer_addr_resolved) {
+		if (IS_ENABLED(CONFIG_BT_CTLR_PRIVACY) && sync->peer_addr_resolved) {
 			uint8_t rl_idx;
 
 			/* peer_id_addr contains the identity address; Get the peers RPA */

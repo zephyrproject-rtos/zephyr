@@ -8,9 +8,9 @@
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/sys/byteorder.h>
 
-#define BUF_ALLOC_TIMEOUT (10) /* milliseconds */
+#define BIG_SDU_INTERVAL_US      (10000)
+#define BUF_ALLOC_TIMEOUT_US     (BIG_SDU_INTERVAL_US * 2U) /* milliseconds */
 #define BIG_TERMINATE_TIMEOUT_US (60 * USEC_PER_SEC) /* microseconds */
-#define BIG_SDU_INTERVAL_US (10000)
 
 #define BIS_ISO_CHAN_COUNT 2
 NET_BUF_POOL_FIXED_DEFINE(bis_tx_pool, BIS_ISO_CHAN_COUNT,
@@ -163,16 +163,14 @@ int main(void)
 			struct net_buf *buf;
 			int ret;
 
-			buf = net_buf_alloc(&bis_tx_pool,
-					    K_MSEC(BUF_ALLOC_TIMEOUT));
+			buf = net_buf_alloc(&bis_tx_pool, K_USEC(BUF_ALLOC_TIMEOUT_US));
 			if (!buf) {
 				printk("Data buffer allocate timeout on channel"
 				       " %u\n", chan);
 				return 0;
 			}
 
-			ret = k_sem_take(&sem_iso_data,
-					 K_MSEC(BUF_ALLOC_TIMEOUT));
+			ret = k_sem_take(&sem_iso_data, K_USEC(BUF_ALLOC_TIMEOUT_US));
 			if (ret) {
 				printk("k_sem_take for ISO data sent failed\n");
 				net_buf_unref(buf);

@@ -11,11 +11,13 @@ sdhc@0 {
 
 	sdmmc {
 		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
 		status = "okay";
 	};
 
 	mmc {
 		compatible = "zephyr,mmc-disk";
+		disk-name = "SD2";
 		status = "okay";
 	};
 };

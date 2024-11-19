@@ -104,7 +104,7 @@ ZTEST(timer, test_CLOCK_MONOTONIC__SIGEV_THREAD)
 
 ZTEST(timer, test_timer_overrun)
 {
-	struct sigevent sig = { 0 };
+	struct sigevent sig = {0};
 	struct itimerspec value;
 
 	sig.sigev_notify = SIGEV_NONE;
@@ -120,6 +120,29 @@ ZTEST(timer, test_timer_overrun)
 	k_sleep(K_MSEC(2500));
 
 	zassert_equal(timer_getoverrun(timerid), 4, "Number of overruns is incorrect");
+}
+
+ZTEST(timer, test_one_shot__SIGEV_SIGNAL)
+{
+	struct sigevent sig = {0};
+	struct itimerspec value;
+
+	exp_count = 0;
+	sig.sigev_notify = SIGEV_SIGNAL;
+	sig.sigev_notify_function = handler;
+	sig.sigev_value.sival_int = TEST_SIGNAL_VAL;
+
+	zassert_ok(timer_create(CLOCK_MONOTONIC, &sig, &timerid));
+
+	/*Set the timer to expire only once*/
+	value.it_interval.tv_sec = 0;
+	value.it_interval.tv_nsec = 0;
+	value.it_value.tv_sec = 0;
+	value.it_value.tv_nsec = 100 * NSEC_PER_MSEC;
+	zassert_ok(timer_settime(timerid, 0, &value, NULL));
+	k_sleep(K_MSEC(300));
+
+	zassert_equal(exp_count, 1, "Number of expiry is incorrect");
 }
 
 static void after(void *arg)

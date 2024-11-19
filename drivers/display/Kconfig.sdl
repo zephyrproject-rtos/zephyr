@@ -59,4 +59,22 @@ config SDL_DISPLAY_MONO_MSB_FIRST
 	  If selected, set the MSB to represent the first pixel.
 	  This applies when the pixel format is MONO01/MONO10.
 
+config SDL_DISPLAY_TRANSPARENCY_GRID_CELL_SIZE
+	int "Transparency grid cell size"
+	default 8
+	help
+	  The size of the checkerboard pattern squares, in pixels.
+
+config SDL_DISPLAY_TRANSPARENCY_GRID_CELL_COLOR_1
+	hex "Transparency grid cell color 1"
+	default 0xcccccc
+	help
+	  The color of the odd cells in the transparency grid.
+
+config SDL_DISPLAY_TRANSPARENCY_GRID_CELL_COLOR_2
+	hex "Transparency grid cell color 2"
+	default 0xbbbbbb
+	help
+	  The color of the even cells in the transparency grid.
+
 endif # SDL_DISPLAY

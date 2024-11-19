@@ -278,7 +278,9 @@ static int draw_text(const struct device *dev, const char *const str, int16_t x,
 	}
 
 	if ((fb->screen_info & SCREEN_INFO_MONO_VTILED)) {
-		for (size_t i = 0; i < strlen(str); i++) {
+		const size_t len = strlen(str);
+
+		for (size_t i = 0; i < len; i++) {
 			if ((x + fptr->width > fb->x_res) && wrap) {
 				x = 0U;
 				y += fptr->height;
@@ -434,7 +436,7 @@ int cfb_framebuffer_clear(const struct device *dev, bool clear_display)
 {
 	const struct char_framebuffer *fb = &char_fb;
 
-	if (!fb || !fb->buf) {
+	if (!fb->buf) {
 		return -ENODEV;
 	}
 
@@ -460,17 +462,18 @@ int cfb_framebuffer_finalize(const struct device *dev)
 {
 	const struct display_driver_api *api = dev->api;
 	const struct char_framebuffer *fb = &char_fb;
-	struct display_buffer_descriptor desc;
 	int err;
 
-	if (!fb || !fb->buf) {
+	if (!fb->buf) {
 		return -ENODEV;
 	}
 
-	desc.buf_size = fb->size;
-	desc.width = fb->x_res;
-	desc.height = fb->y_res;
-	desc.pitch = fb->x_res;
+	struct display_buffer_descriptor desc = {
+		.buf_size = fb->size,
+		.width = fb->x_res,
+		.height = fb->y_res,
+		.pitch = fb->x_res,
+	};
 
 	if (!(fb->pixel_format & PIXEL_FORMAT_MONO10) != !(fb->inverted)) {
 		cfb_invert(fb);
@@ -572,7 +575,6 @@ int cfb_framebuffer_init(const struct device *dev)
 	fb->ppt = 8U;
 	fb->pixel_format = cfg.current_pixel_format;
 	fb->screen_info = cfg.screen_info;
-	fb->buf = NULL;
 	fb->kerning = 0;
 	fb->inverted = false;
 

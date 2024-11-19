@@ -352,6 +352,20 @@ typedef int (*dma_api_get_attribute)(const struct device *dev, uint32_t type, ui
 typedef bool (*dma_api_chan_filter)(const struct device *dev,
 				int channel, void *filter_param);
 
+/**
+ * @typedef dma_chan_release
+ * @brief channel release function call
+ *
+ * used to release channel resources "allocated" during the
+ * request phase. These resources can refer to enabled PDs, IRQs
+ * etc...
+ *
+ * @param dev Pointer to the DMA device instance
+ * @param channel channel id to use
+ */
+typedef void (*dma_api_chan_release)(const struct device *dev,
+				     uint32_t channel);
+
 __subsystem struct dma_driver_api {
 	dma_api_config config;
 	dma_api_reload reload;
@@ -362,6 +376,7 @@ __subsystem struct dma_driver_api {
 	dma_api_get_status get_status;
 	dma_api_get_attribute get_attribute;
 	dma_api_chan_filter chan_filter;
+	dma_api_chan_release chan_release;
 };
 /**
  * @endcond
@@ -538,7 +553,9 @@ static inline int z_impl_dma_resume(const struct device *dev, uint32_t channel)
  * request DMA channel resources
  * return -EINVAL if there is no valid channel available.
  *
- * @funcprops \isr_ok
+ * @note It is safe to use this function in contexts where blocking
+ * is not allowed, e.g. ISR, provided the implementation of the filter
+ * function does not block.
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param filter_param filter function parameter
@@ -583,7 +600,9 @@ static inline int z_impl_dma_request_channel(const struct device *dev,
  *
  * release DMA channel resources
  *
- * @funcprops \isr_ok
+ * @note It is safe to use this function in contexts where blocking
+ * is not allowed, e.g. ISR, provided the implementation of the release
+ * function does not block.
  *
  * @param dev  Pointer to the device structure for the driver instance.
  * @param channel  channel number
@@ -595,6 +614,8 @@ __syscall void dma_release_channel(const struct device *dev,
 static inline void z_impl_dma_release_channel(const struct device *dev,
 					      uint32_t channel)
 {
+	const struct dma_driver_api *api =
+		(const struct dma_driver_api *)dev->api;
 	struct dma_context *dma_ctx = (struct dma_context *)dev->data;
 
 	if (dma_ctx->magic != DMA_MAGIC) {
@@ -602,6 +623,10 @@ static inline void z_impl_dma_release_channel(const struct device *dev,
 	}
 
 	if ((int)channel < dma_ctx->dma_channels) {
+		if (api->chan_release) {
+			api->chan_release(dev, channel);
+		}
+
 		atomic_clear_bit(dma_ctx->atomic, channel);
 	}
 

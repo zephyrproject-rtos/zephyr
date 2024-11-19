@@ -22,7 +22,7 @@
 
 #define PA_RETRY_COUNT 6
 
-#define BIS_ISO_CHAN_COUNT 2
+#define BIS_ISO_CHAN_COUNT MIN(2U, CONFIG_BT_ISO_MAX_CHAN)
 
 static bool         per_adv_found;
 static bool         per_adv_lost;

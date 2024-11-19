@@ -21,14 +21,6 @@ Zephyr Project Documentation
 Use the version selection menu on the left to view
 documentation for a specific version of Zephyr.
 
-For information about the changes and additions for releases, please
-consult the published :ref:`zephyr_release_notes` documentation.
-
-The Zephyr OS is provided under the `Apache 2.0 license`_ (as found in
-the LICENSE file in the project's `GitHub repo`_).  The Zephyr OS also
-imports or reuses packages, scripts, and other files that use other
-licensing, as described in :ref:`Zephyr_Licensing`.
-
 
 .. raw:: html
 
@@ -91,9 +83,17 @@ licensing, as described in :ref:`Zephyr_Licensing`.
        </li>
    </ul>
 
+For information about the changes and additions for past releases, please
+consult the published :ref:`zephyr_release_notes` documentation.
+
+The Zephyr OS is provided under the `Apache 2.0 license`_ (as found in
+the LICENSE file in the project's `GitHub repo`_).  The Zephyr OS also
+imports or reuses packages, scripts, and other files that use other
+licensing, as described in :ref:`Zephyr_Licensing`.
+
 .. toctree::
    :maxdepth: 1
-   :caption: Contents
+   :hidden:
 
    introduction/index.rst
    develop/index.rst

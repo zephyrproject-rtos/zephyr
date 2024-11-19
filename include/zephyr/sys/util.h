@@ -30,7 +30,7 @@
 #include <stdint.h>
 
 /** @brief Number of bits that make up a type */
-#define NUM_BITS(t) (sizeof(t) * 8)
+#define NUM_BITS(t) (sizeof(t) * BITS_PER_BYTE)
 
 #ifdef __cplusplus
 extern "C" {

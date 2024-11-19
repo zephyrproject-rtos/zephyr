@@ -52,19 +52,8 @@
 #define ROM_SIZE (CONFIG_FLASH_SIZE * 1024 - CONFIG_FLASH_LOAD_OFFSET - ROM_END_OFFSET)
 #endif
 
-#if defined(CONFIG_XIP)
-#if defined(CONFIG_IS_BOOTLOADER)
-#define RAM_SIZE (CONFIG_BOOTLOADER_SRAM_SIZE * 1K)
-#define RAM_ADDR (CONFIG_SRAM_BASE_ADDRESS + \
-	(CONFIG_SRAM_SIZE * 1K - RAM_SIZE))
-#else
 #define RAM_SIZE (CONFIG_SRAM_SIZE * 1K)
 #define RAM_ADDR CONFIG_SRAM_BASE_ADDRESS
-#endif
-#else
-#define RAM_SIZE (CONFIG_SRAM_SIZE * 1K - CONFIG_BOOTLOADER_SRAM_SIZE * 1K)
-#define RAM_ADDR CONFIG_SRAM_BASE_ADDRESS
-#endif
 
 #if defined(CONFIG_CUSTOM_SECTION_ALIGN)
 _region_min_align = CONFIG_CUSTOM_SECTION_MIN_ALIGN_SIZE;
@@ -289,7 +278,6 @@ SECTIONS
 	_app_smem_size = _app_smem_end - _app_smem_start;
 	_app_smem_rom_start = LOADADDR(_APP_SMEM_SECTION_NAME);
 
-	__kernel_ram_start = .;
     SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)
 	{
         /*
@@ -298,6 +286,7 @@ SECTIONS
          */
         . = ALIGN(4);
 	__bss_start = .;
+	__kernel_ram_start = .;
 
 	*(.bss)
 	*(".bss.*")
@@ -358,7 +347,6 @@ SECTIONS
     __data_region_end = .;
 
 #ifndef CONFIG_USERSPACE
-   __kernel_ram_start = .;
    SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)
 	{
         /*
@@ -367,6 +355,7 @@ SECTIONS
          */
         . = ALIGN(4);
 	__bss_start = .;
+	__kernel_ram_start = .;
 
 	*(.bss)
 	*(".bss.*")

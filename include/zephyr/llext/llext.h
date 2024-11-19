@@ -120,7 +120,23 @@ struct llext {
 
 	/** Array of extensions, whose symbols this extension accesses */
 	struct llext *dependency[LLEXT_MAX_DEPENDENCIES];
+
+	/** @cond ignore */
+	unsigned int sect_cnt;
+	elf_shdr_t *sect_hdrs;
+	bool sect_hdrs_on_heap;
+	/** @endcond */
 };
+
+static inline const elf_shdr_t *llext_section_headers(const struct llext *ext)
+{
+	return ext->sect_hdrs;
+}
+
+static inline unsigned int llext_section_count(const struct llext *ext)
+{
+	return ext->sect_cnt;
+}
 
 /**
  * @brief Advanced llext_load parameters
@@ -132,7 +148,10 @@ struct llext_load_param {
 	bool relocate_local;
 	/**
 	 * Use the virtual symbol addresses from the ELF, not addresses within
-	 * the memory buffer, when calculating relocation targets.
+	 * the memory buffer, when calculating relocation targets. It also
+	 * means, that the application will take care to place the extension at
+	 * those pre-defined addresses, so the LLEXT core doesn't have to do any
+	 * allocation and copying internally.
 	 */
 	bool pre_located;
 	/**
@@ -336,16 +355,47 @@ int arch_elf_relocate(elf_rela_t *rel, uintptr_t loc,
 ssize_t llext_find_section(struct llext_loader *loader, const char *search_name);
 
 /**
- * @brief Architecture specific function for updating addresses via relocation table
+ * @brief Extract ELF section header by name.
+ *
+ * Searches for a section by name in the ELF file and retrieves its full header.
+ *
+ * @param[in] loader Extension loader data and context
+ * @param[in] ext Extension to be searched
+ * @param[in] search_name Section name to search for
+ * @param[out] shdr Buffer for the section header
+ * @retval 0 Success
+ * @retval -ENOTSUP "peek" method not supported
+ * @retval -ENOENT section not found
+ */
+int llext_get_section_header(struct llext_loader *loader, struct llext *ext,
+			     const char *search_name, elf_shdr_t *shdr);
+
+/**
+ * @brief Architecture specific function for local binding relocations
  *
  * @param[in] loader Extension loader data and context
  * @param[in] ext Extension to call function in
  * @param[in] rel Relocation data provided by elf
  * @param[in] sym Corresponding symbol table entry
- * @param[in] got_offset Offset within a relocation table
+ * @param[in] got_offset Offset within a relocation table or in the code
+ * @param[in] ldr_parm Loader parameters
  */
-void arch_elf_relocate_local(struct llext_loader *loader, struct llext *ext,
-			     const elf_rela_t *rel, const elf_sym_t *sym, size_t got_offset);
+void arch_elf_relocate_local(struct llext_loader *loader, struct llext *ext, const elf_rela_t *rel,
+			     const elf_sym_t *sym, size_t got_offset,
+			     const struct llext_load_param *ldr_parm);
+
+/**
+ * @brief Architecture specific function for global binding relocations
+ *
+ * @param[in] loader Extension loader data and context
+ * @param[in] ext Extension to call function in
+ * @param[in] rel Relocation data provided by elf
+ * @param[in] sym Corresponding symbol table entry
+ * @param[in] got_offset Offset within a relocation table or in the code
+ * @param[in] link_addr target address for table-based relocations
+ */
+void arch_elf_relocate_global(struct llext_loader *loader, struct llext *ext, const elf_rela_t *rel,
+			      const elf_sym_t *sym, size_t got_offset, const void *link_addr);
 
 /**
  * @}

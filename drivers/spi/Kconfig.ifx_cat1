@@ -9,5 +9,6 @@ config SPI_INFINEON_CAT1
 	depends on DT_HAS_INFINEON_CAT1_SPI_ENABLED
 	select USE_INFINEON_SPI
 	select PINCTRL
+	select GPIO
 	help
 	  This option enables the SPI driver for Infineon CAT1 family.

@@ -118,6 +118,7 @@ nxp_mipi_i2c: &lpi2c5 {
 	pwr-gpios = <&gpio10 2 GPIO_ACTIVE_LOW>;
 	sdmmc {
 		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
 		status = "okay";
 	};
 };

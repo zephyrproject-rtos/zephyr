@@ -73,6 +73,12 @@ static const struct device *eth_stm32_phy_dev = DEVICE_PHY_BY_NAME(0);
 #define IS_ETH_DMATXDESC_OWN(dma_tx_desc)	(dma_tx_desc->DESC3 & \
 							ETH_DMATXNDESCRF_OWN)
 
+#define ETH_RXBUFNB	ETH_RX_DESC_CNT
+#define ETH_TXBUFNB	ETH_TX_DESC_CNT
+
+#define ETH_MEDIA_INTERFACE_MII		HAL_ETH_MII_MODE
+#define ETH_MEDIA_INTERFACE_RMII	HAL_ETH_RMII_MODE
+
 /* Only one tx_buffer is sufficient to pass only 1 dma_buffer */
 #define ETH_TXBUF_DEF_NB	1U
 #else
@@ -99,14 +105,14 @@ static const struct device *eth_stm32_phy_dev = DEVICE_PHY_BY_NAME(0);
 #define __eth_stm32_buf  __aligned(4)
 #endif
 
-static ETH_DMADescTypeDef dma_rx_desc_tab[ETH_RX_DESC_CNT] __eth_stm32_desc;
-static ETH_DMADescTypeDef dma_tx_desc_tab[ETH_TX_DESC_CNT] __eth_stm32_desc;
-static uint8_t dma_rx_buffer[ETH_RX_DESC_CNT][ETH_MAX_PACKET_SIZE] __eth_stm32_buf;
-static uint8_t dma_tx_buffer[ETH_TX_DESC_CNT][ETH_MAX_PACKET_SIZE] __eth_stm32_buf;
+static ETH_DMADescTypeDef dma_rx_desc_tab[ETH_RXBUFNB] __eth_stm32_desc;
+static ETH_DMADescTypeDef dma_tx_desc_tab[ETH_TXBUFNB] __eth_stm32_desc;
+static uint8_t dma_rx_buffer[ETH_RXBUFNB][ETH_STM32_RX_BUF_SIZE] __eth_stm32_buf;
+static uint8_t dma_tx_buffer[ETH_TXBUFNB][ETH_STM32_TX_BUF_SIZE] __eth_stm32_buf;
 
 #if defined(CONFIG_ETH_STM32_HAL_API_V2)
 
-BUILD_ASSERT(ETH_MAX_PACKET_SIZE % 4 == 0, "Rx buffer size must be a multiple of 4");
+BUILD_ASSERT(ETH_STM32_RX_BUF_SIZE % 4 == 0, "Rx buffer size must be a multiple of 4");
 
 struct eth_stm32_rx_buffer_header {
 	struct eth_stm32_rx_buffer_header *next;
@@ -122,14 +128,16 @@ struct eth_stm32_tx_buffer_header {
 struct eth_stm32_tx_context {
 	struct net_pkt *pkt;
 	uint16_t first_tx_buffer_index;
+	bool used;
 };
 
-static struct eth_stm32_rx_buffer_header dma_rx_buffer_header[ETH_RX_DESC_CNT];
-static struct eth_stm32_tx_buffer_header dma_tx_buffer_header[ETH_TX_DESC_CNT];
+static struct eth_stm32_rx_buffer_header dma_rx_buffer_header[ETH_RXBUFNB];
+static struct eth_stm32_tx_buffer_header dma_tx_buffer_header[ETH_TXBUFNB];
+static struct eth_stm32_tx_context dma_tx_context[ETH_TX_DESC_CNT];
 
 void HAL_ETH_RxAllocateCallback(uint8_t **buf)
 {
-	for (size_t i = 0; i < ETH_RX_DESC_CNT; ++i) {
+	for (size_t i = 0; i < ETH_RXBUFNB; ++i) {
 		if (!dma_rx_buffer_header[i].used) {
 			dma_rx_buffer_header[i].next = NULL;
 			dma_rx_buffer_header[i].size = 0;
@@ -141,8 +149,8 @@ void HAL_ETH_RxAllocateCallback(uint8_t **buf)
 	*buf = NULL;
 }
 
-/* Pointer to an array of ETH_MAX_PACKET_SIZE uint8_t's */
-typedef uint8_t (*RxBufferPtr)[ETH_MAX_PACKET_SIZE];
+/* Pointer to an array of ETH_STM32_RX_BUF_SIZE uint8_t's */
+typedef uint8_t (*RxBufferPtr)[ETH_STM32_RX_BUF_SIZE];
 
 /* called by HAL_ETH_ReadData() */
 void HAL_ETH_RxLinkCallback(void **pStart, void **pEnd, uint8_t *buff, uint16_t Length)
@@ -153,7 +161,7 @@ void HAL_ETH_RxLinkCallback(void **pStart, void **pEnd, uint8_t *buff, uint16_t 
 	size_t index = (RxBufferPtr)buff - &dma_rx_buffer[0];
 	struct eth_stm32_rx_buffer_header *header = &dma_rx_buffer_header[index];
 
-	__ASSERT_NO_MSG(index < ETH_RX_DESC_CNT);
+	__ASSERT_NO_MSG(index < ETH_RXBUFNB);
 
 	header->size = Length;
 
@@ -188,16 +196,33 @@ void HAL_ETH_TxFreeCallback(uint32_t *buff)
 			buffer_header = NULL;
 		}
 	}
+	ctx->used = false;
 }
 
 /* allocate a tx buffer and mark it as used */
 static inline uint16_t allocate_tx_buffer(void)
 {
 	for (;;) {
-		for (uint16_t index = 0; index < ETH_TX_DESC_CNT; index++) {
+		for (uint16_t index = 0; index < ETH_TXBUFNB; index++) {
 			if (!dma_tx_buffer_header[index].used) {
 				dma_tx_buffer_header[index].used = true;
 				return index;
+			}
+		}
+		k_yield();
+	}
+}
+
+/* allocate a tx context and mark it as used, the first tx buffer is also allocated */
+static inline struct eth_stm32_tx_context *allocate_tx_context(struct net_pkt *pkt)
+{
+	for (;;) {
+		for (uint16_t index = 0; index < ETH_TX_DESC_CNT; index++) {
+			if (!dma_tx_context[index].used) {
+				dma_tx_context[index].used = true;
+				dma_tx_context[index].pkt = pkt;
+				dma_tx_context[index].first_tx_buffer_index = allocate_tx_buffer();
+				return &dma_tx_context[index];
 			}
 		}
 		k_yield();
@@ -304,7 +329,7 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 	size_t total_len;
 #if defined(CONFIG_ETH_STM32_HAL_API_V2)
 	size_t remaining_read;
-	struct eth_stm32_tx_context ctx = {.pkt = pkt, .first_tx_buffer_index = 0};
+	struct eth_stm32_tx_context *ctx = NULL;
 	struct eth_stm32_tx_buffer_header *buf_header = NULL;
 #else
 	uint8_t *dma_buffer;
@@ -323,7 +348,7 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 	heth = &dev_data->heth;
 
 	total_len = net_pkt_get_len(pkt);
-	if (total_len > (ETH_MAX_PACKET_SIZE * ETH_TX_DESC_CNT)) {
+	if (total_len > (ETH_STM32_TX_BUF_SIZE * ETH_TXBUFNB)) {
 		LOG_ERR("PKT too big");
 		return -EIO;
 	}
@@ -331,8 +356,8 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 	k_mutex_lock(&dev_data->tx_mutex, K_FOREVER);
 
 #if defined(CONFIG_ETH_STM32_HAL_API_V2)
-	ctx.first_tx_buffer_index = allocate_tx_buffer();
-	buf_header = &dma_tx_buffer_header[ctx.first_tx_buffer_index];
+	ctx = allocate_tx_context(pkt);
+	buf_header = &dma_tx_buffer_header[ctx->first_tx_buffer_index];
 #else
 	dma_tx_desc = heth->TxDesc;
 	while (IS_ETH_DMATXDESC_OWN(dma_tx_desc) != (uint32_t)RESET) {
@@ -356,19 +381,19 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 #if defined(CONFIG_ETH_STM32_HAL_API_V2)
 	remaining_read = total_len;
 	/* fill and allocate buffer until remaining data fits in one buffer */
-	while (remaining_read > ETH_MAX_PACKET_SIZE) {
-		if (net_pkt_read(pkt, buf_header->tx_buff.buffer, ETH_MAX_PACKET_SIZE)) {
+	while (remaining_read > ETH_STM32_TX_BUF_SIZE) {
+		if (net_pkt_read(pkt, buf_header->tx_buff.buffer, ETH_STM32_TX_BUF_SIZE)) {
 			res = -ENOBUFS;
 			goto error;
 		}
 		const uint16_t next_buffer_id = allocate_tx_buffer();
 
-		buf_header->tx_buff.len = ETH_MAX_PACKET_SIZE;
+		buf_header->tx_buff.len = ETH_STM32_TX_BUF_SIZE;
 		/* append new buffer to the linked list */
 		buf_header->tx_buff.next = &dma_tx_buffer_header[next_buffer_id].tx_buff;
 		/* and adjust tail pointer */
 		buf_header = &dma_tx_buffer_header[next_buffer_id];
-		remaining_read -= ETH_MAX_PACKET_SIZE;
+		remaining_read -= ETH_STM32_TX_BUF_SIZE;
 	}
 	if (net_pkt_read(pkt, buf_header->tx_buff.buffer, remaining_read)) {
 		res = -ENOBUFS;
@@ -388,8 +413,8 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 
 #if defined(CONFIG_ETH_STM32_HAL_API_V2)
 	tx_config.Length = total_len;
-	tx_config.pData = &ctx;
-	tx_config.TxBuffer = &dma_tx_buffer_header[ctx.first_tx_buffer_index].tx_buff;
+	tx_config.pData = ctx;
+	tx_config.TxBuffer = &dma_tx_buffer_header[ctx->first_tx_buffer_index].tx_buff;
 
 	/* Reset TX complete interrupt semaphore before TX request*/
 	k_sem_reset(&dev_data->tx_int_sem);
@@ -404,6 +429,9 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 		res = -EIO;
 		goto error;
 	}
+
+	/* the tx context is now owned by the HAL */
+	ctx = NULL;
 
 	/* Wait for end of TX buffer transmission */
 	/* If the semaphore timeout breaks, it means */
@@ -500,14 +528,14 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 error:
 
 #if defined(CONFIG_ETH_STM32_HAL_API_V2)
-	/* free package tx buffer */
-	if (res != 0) {
-		HAL_ETH_TxFreeCallback((uint32_t *)&ctx);
-	} else if (HAL_ETH_ReleaseTxPacket(heth) != HAL_OK) {
-		LOG_ERR("HAL_ETH_ReleaseTxPacket failed");
-		res = -EIO;
+	if (!ctx) {
+		/* The HAL owns the tx context */
+		HAL_ETH_ReleaseTxPacket(heth);
+	} else {
+		/* We need to release the tx context and its buffers */
+		HAL_ETH_TxFreeCallback((uint32_t *)ctx);
 	}
-#endif
+#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 
 	k_mutex_unlock(&dev_data->tx_mutex);
 
@@ -604,7 +632,7 @@ static struct net_pkt *eth_rx(const struct device *dev)
 			rx_header; rx_header = rx_header->next) {
 		const size_t index = rx_header - &dma_rx_buffer_header[0];
 
-		__ASSERT_NO_MSG(index < ETH_RX_DESC_CNT);
+		__ASSERT_NO_MSG(index < ETH_RXBUFNB);
 		if (net_pkt_write(pkt, dma_rx_buffer[index], rx_header->size)) {
 			LOG_ERR("Failed to append RX buffer to context buffer");
 			net_pkt_unref(pkt);
@@ -941,7 +969,7 @@ static int eth_initialize(const struct device *dev)
 #if defined(CONFIG_ETH_STM32_HAL_API_V2)
 	heth->Init.TxDesc = dma_tx_desc_tab;
 	heth->Init.RxDesc = dma_rx_desc_tab;
-	heth->Init.RxBuffLen = ETH_MAX_PACKET_SIZE;
+	heth->Init.RxBuffLen = ETH_STM32_RX_BUF_SIZE;
 #endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 
 	hal_ret = HAL_ETH_Init(heth);
@@ -1007,16 +1035,16 @@ static int eth_initialize(const struct device *dev)
 #if defined(CONFIG_ETH_STM32_HAL_API_V2)
 
 	/* prepare tx buffer header */
-	for (uint16_t i = 0; i < ETH_TX_DESC_CNT; ++i) {
+	for (uint16_t i = 0; i < ETH_TXBUFNB; ++i) {
 		dma_tx_buffer_header[i].tx_buff.buffer = dma_tx_buffer[i];
 	}
 
 	hal_ret = HAL_ETH_Start_IT(heth);
 #else
 	HAL_ETH_DMATxDescListInit(heth, dma_tx_desc_tab,
-		&dma_tx_buffer[0][0], ETH_TX_DESC_CNT);
+		&dma_tx_buffer[0][0], ETH_TXBUFNB);
 	HAL_ETH_DMARxDescListInit(heth, dma_rx_desc_tab,
-		&dma_rx_buffer[0][0], ETH_RX_DESC_CNT);
+		&dma_rx_buffer[0][0], ETH_RXBUFNB);
 
 	hal_ret = HAL_ETH_Start(heth);
 #endif /* CONFIG_ETH_STM32_HAL_API_V2 */
@@ -1303,14 +1331,14 @@ static struct eth_stm32_hal_dev_data eth0_data = {
 					ETH_CHECKSUM_BY_HARDWARE : ETH_CHECKSUM_BY_SOFTWARE,
 #endif /* !CONFIG_SOC_SERIES_STM32H7X */
 			.MediaInterface = IS_ENABLED(CONFIG_ETH_STM32_HAL_MII) ?
-					  HAL_ETH_MII_MODE : HAL_ETH_RMII_MODE,
+					  ETH_MEDIA_INTERFACE_MII : ETH_MEDIA_INTERFACE_RMII,
 		},
 	},
 };
 
 ETH_NET_DEVICE_DT_INST_DEFINE(0, eth_initialize,
 		    NULL, &eth0_data, &eth0_config,
-		    CONFIG_ETH_INIT_PRIORITY, &eth_api, NET_ETH_MTU);
+		    CONFIG_ETH_INIT_PRIORITY, &eth_api, ETH_STM32_HAL_MTU);
 
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
 

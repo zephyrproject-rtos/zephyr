@@ -71,7 +71,7 @@ Hardware
 ********
 Detail Hardware feature for the RA8M1 MCU group can be found at `RA8M1 Group User's Manual Hardware`_
 
-.. figure:: ra8m1-block-diagram.jpg
+.. figure:: ra8m1_block_diagram.jpg
 	:width: 442px
 	:align: center
 	:alt: RA8M1 MCU group feature
@@ -109,6 +109,8 @@ The below features are currently supported on Zephyr OS for EK-RA8M1 board:
 | PWM       | on-chip    | pwm                  |
 +-----------+------------+----------------------+
 | COUNTER   | on-chip    | counter              |
++-----------+------------+----------------------+
+| CAN       | on-chip    | canfd                |
 +-----------+------------+----------------------+
 
 Other hardware features are currently not supported by the port.

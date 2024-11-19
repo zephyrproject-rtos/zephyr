@@ -215,7 +215,7 @@ enum bt_le_cs_test_override_4_tone_antenna_permutation {
 	BT_LE_CS_TEST_OVERRIDE_4_ANTENNA_PERMUTATION_INDEX_21 = BT_HCI_OP_LE_CS_TEST_AP_INDEX_21,
 	BT_LE_CS_TEST_OVERRIDE_4_ANTENNA_PERMUTATION_INDEX_22 = BT_HCI_OP_LE_CS_TEST_AP_INDEX_22,
 	BT_LE_CS_TEST_OVERRIDE_4_ANTENNA_PERMUTATION_INDEX_23 = BT_HCI_OP_LE_CS_TEST_AP_INDEX_23,
-	/** Loop through all valid Antenna Permuation Indices starting
+	/** Loop through all valid Antenna Permutation Indices starting
 	 *  from the lowest index.
 	 */
 	BT_LE_CS_TEST_OVERRIDE_4_ANTENNA_PERMUTATION_INDEX_LOOP =
@@ -638,7 +638,7 @@ int bt_le_cs_test_cb_register(struct bt_le_cs_test_cb cs_test_cb);
  * of either the initiator or reflector.
  *
  * The first mode-0 channel in the list is used as the starting channel for
- * the test. At the beginning of any test, the IUT in the flector role shall
+ * the test. At the beginning of any test, the IUT in the reflector role shall
  * listen on the first mode-0 channel until it receives the first transmission
  * from the initiator. Similarly, with the IUT in the initiator role, the tester
  * will start by listening on the first mode-0 channel and the IUT shall transmit
@@ -718,7 +718,7 @@ void bt_le_cs_step_data_parse(struct net_buf_simple *step_data_buf,
 
 /** @brief CS Security Enable
  *
- * This commmand is used to start or restart the Channel Sounding Security
+ * This command is used to start or restart the Channel Sounding Security
  * Start procedure in the local Controller for the ACL connection identified
  * in the conn parameter.
  *
@@ -753,7 +753,7 @@ int bt_le_cs_procedure_enable(struct bt_conn *conn,
 
 enum bt_le_cs_procedure_phy {
 	BT_LE_CS_PROCEDURE_PHY_1M = BT_HCI_OP_LE_CS_PROCEDURE_PHY_1M,
-	BT_LE_CS_PROCEUDRE_PHY_2M = BT_HCI_OP_LE_CS_PROCEDURE_PHY_2M,
+	BT_LE_CS_PROCEDURE_PHY_2M = BT_HCI_OP_LE_CS_PROCEDURE_PHY_2M,
 	BT_LE_CS_PROCEDURE_PHY_CODED_S8 = BT_HCI_OP_LE_CS_PROCEDURE_PHY_CODED_S8,
 	BT_LE_CS_PROCEDURE_PHY_CODED_S2 = BT_HCI_OP_LE_CS_PROCEDURE_PHY_CODED_S2,
 };
@@ -886,7 +886,7 @@ int bt_le_cs_write_cached_remote_supported_capabilities(
  *
  * @return Zero on success or (negative) error code on failure.
  */
-int bt_le_cs_write_cached_remote_fae_table(struct bt_conn *conn, uint8_t remote_fae_table[72]);
+int bt_le_cs_write_cached_remote_fae_table(struct bt_conn *conn, int8_t remote_fae_table[72]);
 
 #ifdef __cplusplus
 }

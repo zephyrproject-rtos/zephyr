@@ -106,7 +106,6 @@ class TestPlan:
         self.platforms = []
         self.platform_names = []
         self.selected_platforms = []
-        self.filtered_platforms = []
         self.default_platforms = []
         self.load_errors = 0
         self.instances = dict()
@@ -439,10 +438,9 @@ class TestPlan:
                 raise Exception(f"Duplicate platform identifier {platform.name} found")
             if not platform.twister:
                 return
-            logger.debug(f"Adding platform {platform.name} with aliases {platform.aliases}")
             self.platforms.append(platform)
 
-        for board in known_boards:
+        for board in known_boards.values():
             new_config_found = False
             # don't load the same board data twice
             if not bdirs.get(board.dir):
@@ -659,6 +657,9 @@ class TestPlan:
                         self.hwm
                     )
 
+                    if self.options.test_only and not instance.run:
+                        continue
+
                     instance.metrics['handler_time'] = ts.get('execution_time', 0)
                     instance.metrics['used_ram'] = ts.get("used_ram", 0)
                     instance.metrics['used_rom']  = ts.get("used_rom",0)
@@ -676,9 +677,9 @@ class TestPlan:
                             instance.status = TwisterStatus.NONE
                             instance.reason = None
                             instance.retries += 1
-                    # test marked as passed (built only) but can run when
-                    # --test-only is used. Reset status to capture new results.
-                    elif status == TwisterStatus.PASS and instance.run and self.options.test_only:
+                    # test marked as built only can run when --test-only is used.
+                    # Reset status to capture new results.
+                    elif status == TwisterStatus.NOTRUN and instance.run and self.options.test_only:
                         instance.status = TwisterStatus.NONE
                         instance.reason = None
                     else:
@@ -1076,9 +1077,6 @@ class TestPlan:
             change_skip_to_error_if_integration(self.options, filtered_instance)
 
             filtered_instance.add_missing_case_status(filtered_instance.status)
-
-        self.filtered_platforms = set(p.platform.name for p in self.instances.values()
-                                      if p.status != TwisterStatus.SKIP )
 
     def add_instances(self, instance_list):
         for instance in instance_list:

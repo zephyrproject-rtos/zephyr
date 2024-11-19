@@ -243,32 +243,6 @@ exit:
 	return ret;
 }
 
-static void eth_nxp_enet_iface_init(struct net_if *iface)
-{
-	const struct device *dev = net_if_get_device(iface);
-	struct nxp_enet_mac_data *data = dev->data;
-	const struct nxp_enet_mac_config *config = dev->config;
-
-	net_if_set_link_addr(iface, data->mac_addr,
-			     sizeof(data->mac_addr),
-			     NET_LINK_ETHERNET);
-
-	if (data->iface == NULL) {
-		data->iface = iface;
-	}
-
-#if defined(CONFIG_NET_DSA)
-	dsa_register_master_tx(iface, &eth_nxp_enet_tx);
-#endif
-
-	ethernet_init(iface);
-	net_eth_carrier_off(data->iface);
-
-	config->irq_config_func();
-
-	nxp_enet_driver_cb(config->mdio, NXP_ENET_MDIO, NXP_ENET_INTERRUPT_ENABLED, NULL);
-}
-
 static enum ethernet_hw_caps eth_nxp_enet_get_capabilities(const struct device *dev)
 {
 #if defined(CONFIG_ETH_NXP_ENET_1G)
@@ -523,6 +497,41 @@ static void nxp_enet_phy_cb(const struct device *phy,
 	}
 }
 
+static void eth_nxp_enet_iface_init(struct net_if *iface)
+{
+	const struct device *dev = net_if_get_device(iface);
+	struct nxp_enet_mac_data *data = dev->data;
+	const struct nxp_enet_mac_config *config = dev->config;
+	const struct device *phy_dev = config->phy_dev;
+	struct phy_link_state state;
+
+	net_if_set_link_addr(iface, data->mac_addr,
+			     sizeof(data->mac_addr),
+			     NET_LINK_ETHERNET);
+
+	if (data->iface == NULL) {
+		data->iface = iface;
+	}
+
+#if defined(CONFIG_NET_DSA)
+	dsa_register_master_tx(iface, &eth_nxp_enet_tx);
+#endif
+
+	ethernet_init(iface);
+	net_if_carrier_off(iface);
+
+	/* In case the phy driver doesn't report a state change due to link being up
+	 * before calling phy_configure, we should check the state ourself, and then do a
+	 * pseudo-callback
+	 */
+	phy_get_link_state(phy_dev, &state);
+
+	nxp_enet_phy_cb(phy_dev, &state, (void *)dev);
+
+	config->irq_config_func();
+
+	nxp_enet_driver_cb(config->mdio, NXP_ENET_MDIO, NXP_ENET_INTERRUPT_ENABLED, NULL);
+}
 
 static int nxp_enet_phy_init(const struct device *dev)
 {

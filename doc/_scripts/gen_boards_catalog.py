@@ -70,7 +70,7 @@ def get_catalog():
         arch_roots=module_settings["arch_root"],
         board_roots=module_settings["board_root"],
         soc_roots=module_settings["soc_root"],
-        board_dir=ZEPHYR_BASE / "boards",
+        board_dir=[],
         board=None,
     )
 
@@ -78,7 +78,7 @@ def get_catalog():
     systems = list_hardware.find_v2_systems(args_find_boards)
     board_catalog = {}
 
-    for board in boards:
+    for board in boards.values():
         # We could use board.vendor but it is often incorrect. Instead, deduce vendor from
         # containing folder. There are a few exceptions, like the "native" and "others" folders
         # which we know are not actual vendors so treat them as such.

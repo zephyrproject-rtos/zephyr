@@ -98,7 +98,8 @@ static int ethernet_set_config(uint32_t mgmt_request,
 		 * generated from old MAC address, from network interface if
 		 * needed.
 		 */
-		if (IS_ENABLED(CONFIG_NET_NATIVE_IPV6)) {
+		if (IS_ENABLED(CONFIG_NET_NATIVE_IPV6) &&
+		    IS_ENABLED(CONFIG_NET_IPV6_IID_EUI_64)) {
 			struct in6_addr iid;
 
 			net_ipv6_addr_create_iid(&iid,

@@ -48,7 +48,7 @@ static bool stream_is_streaming(const struct bt_bap_stream *bap_stream)
 
 	err = bt_bap_ep_get_info(bap_stream->ep, &ep_info);
 	if (err != 0) {
-		false;
+		return false;
 	}
 
 	return ep_info.state == BT_BAP_EP_STATE_STREAMING;

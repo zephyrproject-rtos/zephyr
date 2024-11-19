@@ -52,19 +52,8 @@
   #define ROM_SIZE (CONFIG_FLASH_SIZE*1K - CONFIG_FLASH_LOAD_OFFSET - ROM_END_OFFSET)
 #endif
 
-#if defined(CONFIG_XIP)
-  #if defined(CONFIG_IS_BOOTLOADER)
-    #define RAM_SIZE (CONFIG_BOOTLOADER_SRAM_SIZE * 1K)
-    #define RAM_ADDR (CONFIG_SRAM_BASE_ADDRESS + \
-                     (CONFIG_SRAM_SIZE * 1K - RAM_SIZE))
-  #else
-    #define RAM_SIZE (CONFIG_SRAM_SIZE * 1K)
-    #define RAM_ADDR CONFIG_SRAM_BASE_ADDRESS
-  #endif
-#else
-  #define RAM_SIZE (CONFIG_SRAM_SIZE * 1K - CONFIG_BOOTLOADER_SRAM_SIZE * 1K)
-  #define RAM_ADDR CONFIG_SRAM_BASE_ADDRESS
-#endif
+#define RAM_SIZE (CONFIG_SRAM_SIZE * 1K)
+#define RAM_ADDR CONFIG_SRAM_BASE_ADDRESS
 
 /* Set alignment to CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE
  * to make linker section alignment comply with MPU granularity.
@@ -293,7 +282,6 @@ SECTIONS
     _app_smem_rom_start = LOADADDR(_APP_SMEM_SECTION_NAME);
 #endif  /* CONFIG_USERSPACE */
 
-    __kernel_ram_start = .;
     SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD), BSS_ALIGN)
     {
         /*
@@ -302,6 +290,7 @@ SECTIONS
          */
         . = ALIGN(4);
         __bss_start = .;
+        __kernel_ram_start = .;
 
         *(.bss)
         *(".bss.*")

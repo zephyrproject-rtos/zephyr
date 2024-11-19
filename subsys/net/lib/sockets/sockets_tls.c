@@ -2108,7 +2108,7 @@ free_fd:
 	return -1;
 }
 
-int ztls_close_ctx(struct tls_context *ctx)
+int ztls_close_ctx(struct tls_context *ctx, int sock)
 {
 	int ret, err = 0;
 
@@ -2119,6 +2119,10 @@ int ztls_close_ctx(struct tls_context *ctx)
 
 	err = tls_release(ctx);
 	ret = zsock_close(ctx->sock);
+
+	if (ret == 0) {
+		(void)sock_obj_core_dealloc(sock);
+	}
 
 	/* In case close fails, we propagate errno value set by close.
 	 * In case close succeeds, but tls_release fails, set errno
@@ -3826,9 +3830,9 @@ static int tls_sock_setsockopt_vmeth(void *obj, int level, int optname,
 	return ztls_setsockopt_ctx(obj, level, optname, optval, optlen);
 }
 
-static int tls_sock_close_vmeth(void *obj)
+static int tls_sock_close2_vmeth(void *obj, int sock)
 {
-	return ztls_close_ctx(obj);
+	return ztls_close_ctx(obj, sock);
 }
 
 static int tls_sock_getpeername_vmeth(void *obj, struct sockaddr *addr,
@@ -3851,7 +3855,7 @@ static const struct socket_op_vtable tls_sock_fd_op_vtable = {
 	.fd_vtable = {
 		.read = tls_sock_read_vmeth,
 		.write = tls_sock_write_vmeth,
-		.close = tls_sock_close_vmeth,
+		.close2 = tls_sock_close2_vmeth,
 		.ioctl = tls_sock_ioctl_vmeth,
 	},
 	.shutdown = tls_sock_shutdown_vmeth,

@@ -796,7 +796,7 @@ Application build commands
          :board: qemu_x86
          :goals: build
 
-   This wil render as:
+   This will render as:
 
       .. zephyr-app-commands::
          :zephyr-app: samples/hello_world

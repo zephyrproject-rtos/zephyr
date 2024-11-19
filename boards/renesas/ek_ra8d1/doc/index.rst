@@ -61,7 +61,7 @@ The key features of the EK-RA8D1 board are categorized in three groups as follow
 - 512 Mb (64 MB) External Octo-SPI Flash (present in the MCU Native Pin Access area of the EK-RA8D1 board)
 - CAN FD (3-pin header)
 
-.. figure:: ek-ra8d1-board.jpg
+.. figure:: ek_ra8d1.jpg
 	:align: center
 	:alt: RA8D1 Evaluation Kit
 
@@ -71,7 +71,7 @@ Hardware
 ********
 Detail Hardware feature for the RA8D1 MCU group can be found at `RA8D1 Group User's Manual Hardware`_
 
-.. figure:: ra8d1-block-diagram.png
+.. figure:: ra8d1_block_diagram.png
 	:width: 442px
 	:align: center
 	:alt: RA8D1 MCU group feature
@@ -107,6 +107,8 @@ The below features are currently supported on Zephyr OS for EK-RA8D1 board:
 | PWM          | on-chip    | pwm              |
 +--------------+------------+------------------+
 | COUNTER      | on-chip    | counter          |
++--------------+------------+------------------+
+| CAN          | on-chip    | canfd            |
 +--------------+------------+------------------+
 
 Other hardware features are currently not supported by the port.

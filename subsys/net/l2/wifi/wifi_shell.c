@@ -1248,7 +1248,7 @@ static int cmd_wifi_11k(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (params.oper == WIFI_MGMT_GET) {
-		PR("11k is %s\n", params.enable_11k ? "disabled" : "enabled");
+		PR("11k is %s\n", params.enable_11k ? "enabled" : "disabled");
 	} else {
 		PR("%s %s requested\n", argv[0], argv[1]);
 	}
@@ -3237,6 +3237,7 @@ SHELL_SUBCMD_ADD((wifi), connect, &wifi_commands,
 		  "[-I, --eap-id1]: Client Identity. Default no eap identity.\n"
 		  "[-P, --eap-pwd1]: Client Password.\n"
 		  "Default no password for eap user.\n"
+		  "[-R, --ieee-80211r]: Use IEEE80211R fast BSS transition connect."
 		  "[-h, --help]: Print out the help for the connect command.\n",
 		  cmd_wifi_connect,
 		 2, 19);

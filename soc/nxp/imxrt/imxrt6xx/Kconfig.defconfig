@@ -5,6 +5,10 @@
 
 if SOC_SERIES_IMXRT6XX
 
+config CMSIS_CORE_HAS_SYSTEM_CORE_CLOCK
+	bool
+	default y
+
 # alias for hal
 config SOC_SERIES_IMX_RT6XX
 	bool
@@ -34,11 +38,7 @@ config NUM_IRQS
 config ZTEST_NO_YIELD
 	default y if (ZTEST && PM)
 
-#
-# MBEDTLS is larger but much faster than TinyCrypt so choose wisely
-#
 config MBEDTLS
-#config TINYCRYPT
 	default y if CSPRNG_ENABLED
 	depends on ENTROPY_GENERATOR
 
@@ -48,7 +48,6 @@ if MBEDTLS
 # what the ztest_thread_stack defaults to.
 #
 config TEST_EXTRA_STACK_SIZE
-	int
 	default 1024
 endif # MBEDTLS
 

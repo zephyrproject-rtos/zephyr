@@ -26,7 +26,10 @@ tests:
     integration_platforms:
       - nucleo_h743zi
   drivers.uart.async_api.nrf_uarte_new:
-    platform_allow: nrf52840dk/nrf52840 nrf52_bsim
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf52_bsim
+      - nrf5340bsim/nrf5340/cpuapp
     filter: CONFIG_SERIAL_SUPPORT_ASYNC
     harness: ztest
     harness_config:

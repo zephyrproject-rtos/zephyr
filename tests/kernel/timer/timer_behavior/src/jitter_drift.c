@@ -209,8 +209,8 @@ static void do_test_using(void (*sample_collection_fn)(void), const char *mechan
 	variance_cyc = variance_cyc / (double)(CONFIG_TIMER_TEST_SAMPLES - periodic_rollovers);
 
 	/* A measure of timer precision, ideal is 0 */
-	double stddev_us = sqrtf(variance_us);
-	double stddev_cyc = sqrtf(variance_cyc);
+	double stddev_us = sqrt(variance_us);
+	double stddev_cyc = sqrt(variance_cyc);
 
 	/* Use double precision math here as integer overflows are possible in doing all the
 	 * conversions otherwise
@@ -333,7 +333,7 @@ static void do_test_using(void (*sample_collection_fn)(void), const char *mechan
 		     "Standard deviation (in microseconds) outside expected bound");
 
 	/* Validate the timer drift (accuracy over time) is within a configurable bound */
-	zassert_true(abs(time_diff_us) < CONFIG_TIMER_TEST_MAX_DRIFT,
+	zassert_true(fabs(time_diff_us) < CONFIG_TIMER_TEST_MAX_DRIFT,
 		     "Drift (in microseconds) outside expected bound");
 }
 

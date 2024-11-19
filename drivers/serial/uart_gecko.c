@@ -222,7 +222,7 @@ static int uart_gecko_fifo_fill(const struct device *dev, const uint8_t *tx_data
 			       int len)
 {
 	const struct uart_gecko_config *config = dev->config;
-	uint8_t num_tx = 0U;
+	int num_tx = 0U;
 
 	while ((len - num_tx > 0) &&
 	       (config->base->STATUS & USART_STATUS_TXBL)) {
@@ -237,7 +237,7 @@ static int uart_gecko_fifo_read(const struct device *dev, uint8_t *rx_data,
 			       const int len)
 {
 	const struct uart_gecko_config *config = dev->config;
-	uint8_t num_rx = 0U;
+	int num_rx = 0U;
 
 	while ((len - num_rx > 0) &&
 	       (config->base->STATUS & USART_STATUS_RXDATAV)) {
@@ -492,13 +492,15 @@ static int uart_gecko_init(const struct device *dev)
 #ifdef CONFIG_PM_DEVICE
 static int uart_gecko_pm_action(const struct device *dev, enum pm_device_action action)
 {
-	const struct uart_gecko_config *config = dev->config;
+	__maybe_unused const struct uart_gecko_config *config = dev->config;
 
 	switch (action) {
 	case PM_DEVICE_ACTION_SUSPEND:
+#ifdef USART_STATUS_TXIDLE
 		/* Wait for TX FIFO to flush before suspending */
 		while (!(USART_StatusGet(config->base) & USART_STATUS_TXIDLE)) {
 		}
+#endif
 		break;
 
 	case PM_DEVICE_ACTION_RESUME:

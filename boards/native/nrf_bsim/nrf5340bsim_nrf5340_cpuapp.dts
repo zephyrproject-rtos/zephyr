@@ -8,6 +8,7 @@
 
 #include <mem.h>
 #include <arm/nordic/nrf5340_cpuapp.dtsi>
+#include <../boards/nordic/nrf5340dk/nrf5340_cpuapp_common-pinctrl.dtsi>
 
 / {
 	model = "Nordic NRF5340 BSIM NRF5340 Application";
@@ -35,9 +36,6 @@
 		/delete-property/ i2s-0;
 		/delete-property/ qdec-0;
 		/delete-property/ qdec-1;
-		/delete-property/ gpio-0;
-		/delete-property/ gpio-1;
-		/delete-property/ gpiote-0;
 	};
 
 	chosen {
@@ -82,11 +80,8 @@
 			/delete-node/ regulator@37000;
 			/delete-node/ kmu@39000;
 			/delete-node/ vmc@81000;
-			/delete-node/ gpio@842500;
-			/delete-node/ gpio@842800;
 		};
 		/delete-node/ spu@50003000;
-		/delete-node/ gpiote@5000d000;
 		/delete-node/ crypto@50844000;
 	};
 
@@ -110,6 +105,27 @@
 			reg = <0x00000000 DT_SIZE_K(1024)>;
 		};
 	};
+};
+
+
+&gpiote {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 /* We re-use the IPC shared buffer definition from the real HW. But note the start address of the

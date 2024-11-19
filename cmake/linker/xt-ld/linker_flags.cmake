@@ -7,7 +7,7 @@ check_set_linker_property(TARGET linker PROPERTY base
                           ${LINKERFLAGPREFIX},--build-id=none
 )
 
-if(NOT CONFIG_MINIMAL_LIBCPP AND NOT CONFIG_NATIVE_LIBRARY AND NOT CONFIG_EXTERNAL_MODULE_LIBCPP)
+if(NOT CONFIG_NATIVE_LIBRARY AND NOT CONFIG_EXTERNAL_MODULE_LIBCPP)
   set_property(TARGET linker PROPERTY cpp_base -lstdc++)
 endif()
 
