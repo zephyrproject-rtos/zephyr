@@ -87,6 +87,7 @@ endchoice
 
 config LV_COLOR_16_SWAP
 	bool
+	depends on LV_COLOR_DEPTH_16
 
 config LV_Z_FLUSH_THREAD
 	bool "Flush LVGL frames in a separate thread"

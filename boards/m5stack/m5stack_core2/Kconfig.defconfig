@@ -29,7 +29,7 @@ config INPUT_FT5336_INTERRUPT
 config INPUT
 	default y
 
-config LV_COLOR_16_SWAP
+configdefault LV_COLOR_16_SWAP
 	default y if LVGL
 
 # Increase initialization priority of MIPI DBI device, so that it initializes
