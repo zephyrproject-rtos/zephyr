@@ -29,6 +29,8 @@ The key features of the EK-RA8M1 board are categorized in three groups as follow
 
   - USB (Debug, Full Speed, High Speed)
   - External power supply (using surface mount clamp test points and power input vias)
+  - Note: There is a known issue on the EK-RA8M1 v1 board running as a USB host with high-speed USB devices.
+    A workarround solution is to remove/short circuit resistors R84 and R83 on the board (refer to `EK-RA8M1 v1 - Design Package`_).
 
 - Three Debug modes
 
@@ -112,6 +114,8 @@ The below features are currently supported on Zephyr OS for EK-RA8M1 board:
 +-----------+------------+----------------------+
 | CAN       | on-chip    | canfd                |
 +-----------+------------+----------------------+
+| USB host  | on-chip    | uhc                  |
++-----------+------------+----------------------+
 | ETHERNET  | on-chip    | ethernet             |
 +-----------+------------+----------------------+
 
@@ -187,3 +191,6 @@ References
 
 .. _zephyr-sdk-0.16.5-6-ge895c4e_linux-x86_64:
    https://github.com/zephyrproject-rtos/sdk-ng/suites/22342313531/artifacts/1379111922
+
+.. _EK-RA8M1 v1 - Design Package:
+   https://www.renesas.com/en/document/sch/ek-ra8m1-v1-design-package?r=25448206
