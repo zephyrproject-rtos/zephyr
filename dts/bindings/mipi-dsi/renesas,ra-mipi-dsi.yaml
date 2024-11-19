@@ -1,0 +1,20 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA MIPI DSI host
+
+compatible: "renesas,ra-mipi-dsi"
+
+include: [mipi-dsi-host.yaml]
+
+properties:
+  clocks:
+    required: true
+
+  interrupts:
+    required: true
+
+  interrupt-names:
+    type: string-array
+    required: true
+    description: name of each interrupt
