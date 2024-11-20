@@ -119,7 +119,8 @@ class SiLabsCommanderBinaryRunner(ZephyrBinaryRunner):
                 flash_file = self.bin_name
                 flash_args = ['--binary', '--address', f'0x{flash_addr:x}', flash_file]
             else:
-                raise ValueError(f'Cannot flash; no hex ({self.hex_name}) or bin ({self.bin_name}) files found.')
+                raise ValueError(f'Cannot flash; no hex ({self.hex_name}) or '
+                                 f'bin ({self.bin_name}) files found.')
 
         args = [self.commander, 'flash'] + opts + self.tool_opt + flash_args
 

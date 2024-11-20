@@ -85,7 +85,9 @@ class EzFlashCliBinaryRunner(ZephyrBinaryRunner):
             self.check_call([self.tool] + options + ["image_flash", self.bin_])
         else:
             load_offset = self.build_conf['CONFIG_FLASH_LOAD_OFFSET']
-            self.check_call([self.tool] + options + ["write_flash", f'0x{load_offset:x}', self.bin_])
+            self.check_call(
+                [self.tool] + options + ["write_flash", f'0x{load_offset:x}', self.bin_]
+            )
 
     def reset_device(self):
         self.logger.info("Resetting...")

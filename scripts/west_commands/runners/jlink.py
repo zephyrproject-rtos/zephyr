@@ -253,21 +253,25 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                                'RTOSPlugin_Zephyr')
         big_endian = self.build_conf.getboolean('CONFIG_BIG_ENDIAN')
 
-        server_cmd = ([self.gdbserver] +
-                      ['-select',
-                                           ('ip' if (is_ip(self.dev_id) or is_tunnel(self.dev_id)) else 'usb') +
-                                           (f'={self.dev_id}' if self.dev_id else ''),
-                       '-port', str(self.gdb_port),
-                       '-if', self.iface,
-                       '-speed', self.speed,
-                       '-device', self.device,
-                       '-silent',
-                       '-endian', 'big' if big_endian else 'little',
-                       '-singlerun'] +
-                      (['-nogui'] if self.supports_nogui else []) +
-                      (['-rtos', plugin_dir] if rtos else []) +
-                      ['-rtttelnetport', str(self.rtt_port)] +
-                      self.tool_opt)
+        server_cmd = (
+            [self.gdbserver]
+            + [
+                '-select',
+                ('ip' if (is_ip(self.dev_id) or is_tunnel(self.dev_id)) else 'usb')
+                + (f'={self.dev_id}' if self.dev_id else ''),
+            ]
+            + ['-port', str(self.gdb_port)]
+            + ['-if', self.iface]
+            + ['-speed', self.speed]
+            + ['-device', self.device]
+            + ['-silent']
+            + ['-endian' 'big' if big_endian else 'little']
+            + ['-singlerun']
+            + (['-nogui'] if self.supports_nogui else [])
+            + (['-rtos', plugin_dir] if rtos else [])
+            + ['-rtttelnetport', str(self.rtt_port)]
+            + self.tool_opt
+        )
 
         if command == 'flash':
             self.flash(**kwargs)
@@ -412,15 +416,21 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
             if self.supports_loader and self.loader:
                 loader_details = "?" + self.loader
 
-            cmd = ([self.commander] +
-                   (['-IP', f'{self.dev_id}'] if (is_ip(self.dev_id) or is_tunnel(self.dev_id)) else (['-USB', f'{self.dev_id}'] if self.dev_id else [])) +
-                   (['-nogui', '1'] if self.supports_nogui else []) +
-                   ['-if', self.iface,
-                    '-speed', self.speed,
-                    '-device', self.device + loader_details,
-                    '-CommanderScript', fname] +
-                   (['-nogui', '1'] if self.supports_nogui else []) +
-                   self.tool_opt)
+            cmd = (
+                [self.commander]
+                + (
+                    ['-IP', f'{self.dev_id}']
+                    if (is_ip(self.dev_id) or is_tunnel(self.dev_id))
+                    else (['-USB', f'{self.dev_id}'] if self.dev_id else [])
+                )
+                + (['-nogui', '1'] if self.supports_nogui else [])
+                + ['-if', self.iface]
+                + ['-speed', self.speed]
+                + ['-device', self.device + loader_details]
+                + ['-CommanderScript', fname]
+                + (['-nogui', '1'] if self.supports_nogui else [])
+                + self.tool_opt
+            )
 
             self.logger.info(f'Flashing file: {flash_file}')
             kwargs = {}

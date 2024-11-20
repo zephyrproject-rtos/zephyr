@@ -576,16 +576,22 @@ class ZephyrBinaryRunner(abc.ABC):
         else:
             parser.add_argument('--elf-file',
                                 metavar='FILE',
-                                action=(partial(depr_action, cls=cls, replacement='-f/--file') if caps.file else None),
-                                help='path to zephyr.elf' if not caps.file else 'Deprecated, use -f/--file instead.')
+                                action=(partial(depr_action, cls=cls,
+                                                replacement='-f/--file') if caps.file else None),
+                                help='path to zephyr.elf'
+                                if not caps.file else 'Deprecated, use -f/--file instead.')
             parser.add_argument('--hex-file',
                                 metavar='FILE',
-                                action=(partial(depr_action, cls=cls, replacement='-f/--file') if caps.file else None),
-                                help='path to zephyr.hex' if not caps.file else 'Deprecated, use -f/--file instead.')
+                                action=(partial(depr_action, cls=cls,
+                                                replacement='-f/--file') if caps.file else None),
+                                help='path to zephyr.hex'
+                                if not caps.file else 'Deprecated, use -f/--file instead.')
             parser.add_argument('--bin-file',
                                 metavar='FILE',
-                                action=(partial(depr_action, cls=cls, replacement='-f/--file') if caps.file else None),
-                                help='path to zephyr.bin' if not caps.file else 'Deprecated, use -f/--file instead.')
+                                action=(partial(depr_action, cls=cls,
+                                                replacement='-f/--file') if caps.file else None),
+                                help='path to zephyr.bin'
+                                if not caps.file else 'Deprecated, use -f/--file instead.')
 
         parser.add_argument('--erase', '--no-erase', nargs=0,
                             action=_ToggleAction,
@@ -611,7 +617,8 @@ class ZephyrBinaryRunner(abc.ABC):
         if caps.rtt:
             parser.add_argument('--rtt-address', dest='rtt_address',
                                 type=lambda x: int(x, 0),
-                                help="address of RTT control block. If not supplied, it will be autodetected if possible")
+                                help="""address of RTT control block. If not supplied,
+                                it will be autodetected if possible""")
         else:
             parser.add_argument('--rtt-address', help=argparse.SUPPRESS)
 

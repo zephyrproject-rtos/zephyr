@@ -62,7 +62,8 @@ class IntelAdspBinaryRunner(ZephyrBinaryRunner):
 
         for old_sign_param in [ '--rimage-tool', '--config-dir', '--default-key', '--key']:
             parser.add_argument(old_sign_param, action=SignParamError,
-                            help='do not use, "west sign" is now called from CMake, see "west sign -h"')
+                                help='''do not use, "west sign" is now called from CMake,
+                                see "west sign -h"''')
 
     @classmethod
     def tool_opt_help(cls) -> str:
