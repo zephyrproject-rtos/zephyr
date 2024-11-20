@@ -1007,8 +1007,8 @@ Documentation Infrastructure:
 Release Notes:
   status: maintained
   maintainers:
-    - dkalowsk
-    - mmahadevan108
+    - fabiobaltieri
+    - kartben
   collaborators:
     - kartben
   files:
