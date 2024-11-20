@@ -19,7 +19,7 @@ class NrfJprogBinaryRunner(NrfBinaryRunner):
     '''Runner front-end for nrfjprog.'''
 
     def __init__(self, cfg, family, softreset, dev_id, erase=False,
-                 reset=True, tool_opt=[], force=False, recover=False,
+                 reset=True, tool_opt=None, force=False, recover=False,
                  qspi_ini=None):
 
         super().__init__(cfg, family, softreset, dev_id, erase, reset,

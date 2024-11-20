@@ -29,8 +29,8 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
                  gdb_host='',
                  gdb_port=DEFAULT_LINKSERVER_GDB_PORT,
                  semihost_port=DEFAULT_LINKSERVER_SEMIHOST_PORT,
-                 override=[],
-                 tui=False, tool_opt=[]):
+                 override=None,
+                 tui=False, tool_opt=None):
         super().__init__(cfg)
         self.file = cfg.file
         self.file_type = cfg.file_type
@@ -48,12 +48,13 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
         self.gdb_port = gdb_port
         self.semihost_port = semihost_port
         self.tui_arg = ['-tui'] if tui else []
-        self.override = override
+        self.override = override if override else []
         self.override_cli = self._build_override_cli()
 
         self.tool_opt = []
-        for opts in [shlex.split(opt) for opt in tool_opt]:
-            self.tool_opt += opts
+        if tool_opt is not None:
+            for opts in [shlex.split(opt) for opt in tool_opt]:
+                self.tool_opt += opts
 
     @classmethod
     def name(cls):
