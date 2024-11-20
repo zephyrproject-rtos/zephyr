@@ -104,10 +104,10 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
         try:
             with open(edt_pickle, 'rb') as f:
                 edt = pickle.load(f)
-        except ModuleNotFoundError:
+        except ModuleNotFoundError as err:
             error_msg = "could not load devicetree, something may be wrong " \
                     + "with the python environment"
-            raise RuntimeError(error_msg)
+            raise RuntimeError(error_msg) from err
 
         return edt.chosen_node('zephyr,code-partition')
 
