@@ -28,3 +28,11 @@ tests:
       - native_sim
     extra_configs:
       - CONFIG_KERNEL_BIN_NAME="A_kconfig_value_with_a_utf8_char_in_it_Bøe_"
+  buildsystem.lto.picolibc_module:
+    build_only: true
+    platform_allow:
+      - nucleo_f746zg
+    extra_configs:
+      - CONFIG_ISR_TABLES_LOCAL_DECLARATION=y
+      - CONFIG_LTO=y
+      - CONFIG_PICOLIBC_USE_MODULE=y
