@@ -14,6 +14,13 @@ Issues fixed
 
 These GitHub issues were addressed since the previous 3.7.0 tagged release:
 
+* :github:`77088` - net: buf: Pre-initialize user_data on net_buf_alloc()
+* :github:`81380` - test: twister: hwmap: missing serial_pty definition
+* :github:`81570` - ESP32 fails on assert when WiFi enabled
+* :github:`81083` - DA1469x dma driver initialization fails
+* :github:`80542` - Hard fault on boot w/ GCC 14 on Cortex-M
+* :github:`71896` - xtensa: remove unnecessary padding in arch_mem_domain
+* :github:`81372` - arch: riscv: userspace: potential security risk when CONFIG_RISCV_GP=y
 * :github:`42227` - Teensy41 support SDHC - Storage init Error
 * :github:`66800` - [Coverity CID: 338107] Division or modulo by zero in subsys/shell/backends/shell_uart.c
 * :github:`70498` - cellular_modem: Pinnacle 100 does not work with CONFIG_UART_INTERRUPT_DRIVEN
@@ -92,7 +99,6 @@ These GitHub issues were addressed since the previous 3.7.0 tagged release:
 * :github:`77784` - STM32 I2S Driver Clock Configuration
 * :github:`77824` - llext samples fail with BUS ERROR (zephyr-3.7 stable)
 * :github:`77952` - ESP32: Interrupts with ISRs in flash are not disabled during flash operations
-* :github:`78037` - [Backport v3.7-branch] Failed to backport #77874
 * :github:`78138` - riscv: plic: IRQs may not be enabled in non-zero HART
 * :github:`78146` - mDNS reponder might fail to serve if mDNS resolver is enabled
 * :github:`78244` - arch: riscv: IRQ stacks of secondary cores are not initialized to `0xAA` when `CONFIG_INIT_STACKS=y`
