@@ -5,13 +5,13 @@ on:
     outputs:
       subset:
         description: subset
-        value: ${{ jobs.prep_push.outputs.subset }} || ${{ jobs.prep_pr.outputs.subset }}
+        value: ${{ jobs.prep_push.outputs.subset != '' && jobs.prep_push.outputs.subset ||  jobs.prep_pr.outputs.subset }}
       size:
         description: size
-        value: ${{ jobs.prep_push.outputs.size }} || ${{ jobs.prep_pr.outputs.size }}
+        value: ${{ jobs.prep_push.outputs.size != '' && jobs.prep_push.outputs.size || jobs.prep_pr.outputs.size }}
       fullrun:
         description: fullrun
-        value: ${{ jobs.prep_push.outputs.fullrun }} || ${{ jobs.prep_pr.outputs.size }}
+        value: ${{ jobs.prep_push.outputs.fullrun != '' && jobs.prep_push.outputs.fullrun || jobs.prep_pr.outputs.size }}
 
 jobs:
   prep_pr:
