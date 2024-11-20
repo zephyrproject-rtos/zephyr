@@ -3,10 +3,10 @@ sample:
   name: smp svr
 common:
   sysbuild: true
-  harness: bluetooth
-  tags: bluetooth
 tests:
   sample.mcumgr.smp_svr.bt:
+    harness: bluetooth
+    tags: bluetooth
     extra_args: EXTRA_CONF_FILE="overlay-bt.conf"
     platform_allow:
       - nrf52dk/nrf52832
@@ -17,6 +17,8 @@ tests:
       - nrf52dk/nrf52832
       - nrf52840dk/nrf52840
   sample.mcumgr.smp_svr.bt_static_svc:
+    harness: bluetooth
+    tags: bluetooth
     extra_args: EXTRA_CONF_FILE="overlay-bt.conf"
     extra_configs:
       - CONFIG_MCUMGR_TRANSPORT_BT_DYNAMIC_SVC_REGISTRATION=n
