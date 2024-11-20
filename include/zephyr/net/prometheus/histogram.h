@@ -51,6 +51,8 @@ struct prometheus_histogram {
 	double sum;
 	/** Total count of observations in the histogram */
 	unsigned long count;
+	/** User data */
+	void *user_data;
 };
 
 /**
@@ -62,26 +64,34 @@ struct prometheus_histogram {
  * @param _name The histogram metric name.
  * @param _desc Histogram description
  * @param _label Label for the metric. Additional labels can be added at runtime.
+ * @param _collector Collector to map this metric. Can be set to NULL if it not yet known.
+ * @param ... Optional user data specific to this metric instance.
  *
  * Example usage:
  * @code{.c}
  *
  * PROMETHEUS_HISTOGRAM_DEFINE(http_request_histogram, "HTTP request histogram",
- *                         ({ .key = "request_latency", .value = "request_latency_seconds" }));
+ *                         ({ .key = "request_latency", .value = "request_latency_seconds" }),
+ *                         NULL);
  *
  * @endcode
  */
-#define PROMETHEUS_HISTOGRAM_DEFINE(_name, _desc, _label)		\
+#define PROMETHEUS_HISTOGRAM_DEFINE(_name, _desc, _label, _collector, ...) \
 	STRUCT_SECTION_ITERABLE(prometheus_histogram, _name) = {	\
 		.base.name = STRINGIFY(_name),				\
 		.base.type = PROMETHEUS_HISTOGRAM,			\
 		.base.description = _desc,				\
 		.base.labels[0] = __DEBRACKET _label,			\
 		.base.num_labels = 1,					\
+		.base.collector = _collector,				\
 		.buckets = NULL,					\
 		.num_buckets = 0,					\
 		.sum = 0.0,						\
 		.count = 0U,						\
+		.user_data = COND_CODE_0(				\
+			NUM_VA_ARGS_LESS_1(LIST_DROP_EMPTY(__VA_ARGS__, _)), \
+			(NULL),						\
+			(GET_ARG_N(1, __VA_ARGS__))),			\
 	}
 
 /**

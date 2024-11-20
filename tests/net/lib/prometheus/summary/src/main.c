@@ -9,7 +9,7 @@
 #include <zephyr/net/prometheus/summary.h>
 
 PROMETHEUS_SUMMARY_DEFINE(test_summary_m, "Test summary",
-			  ({ .key = "test", .value = "summary" }));
+			  ({ .key = "test", .value = "summary" }), NULL);
 
 /**
  * @brief Test prometheus_summary_observe

@@ -9,7 +9,7 @@
 #include <zephyr/net/prometheus/gauge.h>
 
 PROMETHEUS_GAUGE_DEFINE(test_gauge_m, "Test gauge",
-			({ .key = "test", .value = "gauge" }));
+			({ .key = "test", .value = "gauge" }), NULL);
 
 /**
  * @brief Test prometheus_gauge_set
