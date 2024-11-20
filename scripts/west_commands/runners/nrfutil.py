@@ -108,7 +108,7 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
                             indent=4) + '\n'
 
         hex_dir = Path(self.hex_).parent
-        json_file = os.fspath(hex_dir / f'generated_nrfutil_batch.json')
+        json_file = os.fspath(hex_dir / 'generated_nrfutil_batch.json')
 
         with open(json_file, "w") as f:
             f.write(batch)

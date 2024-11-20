@@ -90,7 +90,7 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
                             {DEFAULT_LINKSERVER_EXE}''')
         # user may need to override settings.
         parser.add_argument('--override', required=False, action='append',
-                            help=f'''configuration overrides as defined bylinkserver. Example: /device/memory/0/location=0xcafecafe''')
+                            help='''configuration overrides as defined bylinkserver. Example: /device/memory/0/location=0xcafecafe''')
 
     @classmethod
     def do_create(cls, cfg, args):
