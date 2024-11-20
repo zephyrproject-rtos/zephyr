@@ -103,6 +103,10 @@ static void esp32_xt_wdt_isr(void *arg)
 	struct esp32_clock_config clk_cfg = {0};
 	uint32_t status = REG_READ(RTC_CNTL_INT_ST_REG);
 
+	if (!(status & RTC_CNTL_XTAL32K_DEAD_INT_ST)) {
+		return;
+	}
+
 	REG_WRITE(RTC_CNTL_INT_CLR_REG, status);
 
 	clk_cfg.rtc.rtc_slow_clock_src = ESP32_RTC_SLOW_CLK_SRC_RC_SLOW;
@@ -123,16 +127,15 @@ static int esp32_xt_wdt_init(const struct device *dev)
 	xt_wdt_hal_config_t xt_wdt_hal_config = {
 		.timeout = ESP32_XT_WDT_MAX_TIMEOUT,
 	};
+	int err, flags = 0;
 
 	xt_wdt_hal_init(&data->hal, &xt_wdt_hal_config);
-	xt_wdt_hal_enable_backup_clk(&data->hal,
-						ESP32_RTC_SLOW_CLK_SRC_RC_SLOW_FREQ/1000);
+	xt_wdt_hal_enable_backup_clk(&data->hal, ESP32_RTC_SLOW_CLK_SRC_RC_SLOW_FREQ/1000);
 
-	int err = esp_intr_alloc(cfg->irq_source,
-				ESP_PRIO_TO_FLAGS(cfg->irq_priority) |
-				ESP_INT_FLAGS_CHECK(cfg->irq_flags),
-				(ISR_HANDLER)esp32_xt_wdt_isr, (void *)dev, NULL);
-
+	flags = ESP_PRIO_TO_FLAGS(cfg->irq_priority) | ESP_INT_FLAGS_CHECK(cfg->irq_flags) |
+		ESP_INTR_FLAG_SHARED;
+	err = esp_intr_alloc(cfg->irq_source, flags, (ISR_HANDLER)esp32_xt_wdt_isr, (void *)dev,
+			     NULL);
 	if (err) {
 		LOG_ERR("Failed to register ISR\n");
 		return -EFAULT;
