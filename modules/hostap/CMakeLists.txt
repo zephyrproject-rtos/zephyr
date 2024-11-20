@@ -187,6 +187,7 @@ zephyr_library_sources(
   ${HOSTAP_SRC_BASE}/ap/hw_features.c
   ${HOSTAP_SRC_BASE}/ap/ieee802_11_auth.c
   ${HOSTAP_SRC_BASE}/ap/ieee802_11.c
+  ${HOSTAP_SRC_BASE}/ap/comeback_token.c
   ${HOSTAP_SRC_BASE}/ap/ieee802_11_ht.c
   ${HOSTAP_SRC_BASE}/ap/ieee802_11_shared.c
   ${HOSTAP_SRC_BASE}/ap/ieee802_11_vht.c
