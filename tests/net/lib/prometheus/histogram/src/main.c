@@ -9,7 +9,7 @@
 #include <zephyr/net/prometheus/histogram.h>
 
 PROMETHEUS_HISTOGRAM_DEFINE(test_histogram_m, "Test histogram",
-			    ({ .key = "test", .value = "histogram" }));
+			    ({ .key = "test", .value = "histogram" }), NULL);
 
 /**
  * @brief Test prometheus_histogram_observe

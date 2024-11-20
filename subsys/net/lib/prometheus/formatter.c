@@ -63,6 +63,20 @@ int prometheus_format_exposition(struct prometheus_collector *collector, char *b
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&collector->metrics, metric, tmp, node) {
 
+		/* If there is a user callback, use it to update the metric data. */
+		if (collector->user_cb) {
+			ret = collector->user_cb(collector, metric, collector->user_data);
+			if (ret < 0) {
+				if (ret == -EAGAIN) {
+					/* Skip this metric for now */
+					continue;
+				}
+
+				LOG_ERR("Error in user callback (%d)", ret);
+				goto out;
+			}
+		}
+
 		/* write HELP line if available */
 		if (metric->description[0] != '\0') {
 			ret = write_metric_to_buffer(buffer + written, buffer_size - written,

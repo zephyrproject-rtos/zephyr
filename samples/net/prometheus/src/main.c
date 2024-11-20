@@ -146,7 +146,7 @@ static void setup_tls(void)
 }
 
 PROMETHEUS_COUNTER_DEFINE(http_request_counter, "HTTP request counter",
-			  ({ .key = "http_request", .value = "request_count" }));
+			  ({ .key = "http_request", .value = "request_count" }), NULL);
 
 PROMETHEUS_COLLECTOR_DEFINE(test_collector);
 

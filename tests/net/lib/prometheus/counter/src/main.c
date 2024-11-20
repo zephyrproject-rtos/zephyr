@@ -9,7 +9,8 @@
 #include <zephyr/net/prometheus/counter.h>
 
 PROMETHEUS_COUNTER_DEFINE(test_counter_m, "Test counter",
-			  ({ .key = "test_counter", .value = "test" }));
+			  ({ .key = "test_counter", .value = "test" }),
+			  NULL);
 
 /**
  * @brief Test prometheus_counter_inc
