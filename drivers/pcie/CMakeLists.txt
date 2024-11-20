@@ -1,2 +1,3 @@
 add_subdirectory_ifdef(CONFIG_PCIE host)
 add_subdirectory_ifdef(CONFIG_PCIE_ENDPOINT endpoint)
+add_subdirectory_ifdef(CONFIG_PCIE_CONTROLLER controller)
