@@ -5,7 +5,7 @@
 import importlib
 import logging
 
-from runners.core import ZephyrBinaryRunner, MissingProgram
+from runners.core import ZephyrBinaryRunner
 
 _logger = logging.getLogger('runners')
 
