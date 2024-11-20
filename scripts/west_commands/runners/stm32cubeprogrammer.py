@@ -31,13 +31,13 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
         self,
         cfg: RunnerConfig,
         port: str,
-        frequency: Optional[int],
-        reset_mode: Optional[str],
-        conn_modifiers: Optional[str],
-        cli: Optional[Path],
+        frequency: int | None,
+        reset_mode: str | None,
+        conn_modifiers: str | None,
+        cli: Path | None,
         use_elf: bool,
         erase: bool,
-        extload: Optional[str],
+        extload: str | None,
         tool_opt: list[str],
     ) -> None:
         super().__init__(cfg)

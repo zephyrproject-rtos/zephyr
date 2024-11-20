@@ -52,7 +52,7 @@ _logger = logging.getLogger('runners')
 # We could potentially search for RTT blocks in hex or bin files as well,
 # but since the magic string is "SEGGER RTT", i thought it might be better
 # to avoid, at the risk of false positives.
-def find_rtt_block(elf_file: str) -> Optional[int]:
+def find_rtt_block(elf_file: str) -> int | None:
     if ELFTOOLS_MISSING:
         raise RuntimeError('the Python dependency elftools was missing; '
                            'see the getting started guide for details on '
@@ -165,7 +165,7 @@ class BuildConfiguration:
 
     def __init__(self, build_dir: str):
         self.build_dir = build_dir
-        self.options: dict[str, Union[str, int]] = {}
+        self.options: dict[str, str | int] = {}
         self.path = os.path.join(self.build_dir, 'zephyr', '.config')
         self._parse()
 
@@ -345,17 +345,17 @@ class RunnerConfig(NamedTuple):
     '''
     build_dir: str                  # application build directory
     board_dir: str                  # board definition directory
-    elf_file: Optional[str]         # zephyr.elf path, or None
-    exe_file: Optional[str]         # zephyr.exe path, or None
-    hex_file: Optional[str]         # zephyr.hex path, or None
-    bin_file: Optional[str]         # zephyr.bin path, or None
-    uf2_file: Optional[str]         # zephyr.uf2 path, or None
-    file: Optional[str]             # binary file path (provided by the user), or None
-    file_type: Optional[FileType] = FileType.OTHER  # binary file type
-    gdb: Optional[str] = None       # path to a usable gdb
-    openocd: Optional[str] = None   # path to a usable openocd
+    elf_file: str | None         # zephyr.elf path, or None
+    exe_file: str | None         # zephyr.exe path, or None
+    hex_file: str | None         # zephyr.hex path, or None
+    bin_file: str | None         # zephyr.bin path, or None
+    uf2_file: str | None         # zephyr.uf2 path, or None
+    file: str | None             # binary file path (provided by the user), or None
+    file_type: FileType | None = FileType.OTHER  # binary file type
+    gdb: str | None = None       # path to a usable gdb
+    openocd: str | None = None   # path to a usable openocd
     openocd_search: list[str] = []  # add these paths to the openocd search path
-    rtt_address: Optional[int] = None # address of the rtt control block
+    rtt_address: int | None = None # address of the rtt control block
 
 
 _YN_CHOICES = ['Y', 'y', 'N', 'n', 'yes', 'no', 'YES', 'NO']
@@ -767,7 +767,7 @@ class ZephyrBinaryRunner(abc.ABC):
                   in the order they appear on the command line.'''
 
     @staticmethod
-    def require(program: str, path: Optional[str] = None) -> str:
+    def require(program: str, path: str | None = None) -> str:
         '''Require that a program is installed before proceeding.
 
         :param program: name of the program that is required,
@@ -786,7 +786,7 @@ class ZephyrBinaryRunner(abc.ABC):
             raise MissingProgram(program)
         return ret
 
-    def get_rtt_address(self) -> Optional[int]:
+    def get_rtt_address(self) -> int | None:
         '''Helper method for extracting a the RTT control block address.
 
         If args.rtt_address was supplied, returns that.
