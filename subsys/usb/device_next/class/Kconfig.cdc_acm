@@ -21,6 +21,14 @@ config USBD_CDC_ACM_STACK_SIZE
 	help
 	  USB CDC ACM workqueue stack size.
 
+config USBD_CDC_ACM_TX_DELAY
+	int
+	range 1 1000
+	default 100
+	help
+	  Time in milliseconds to wait before sending actual payload to host.
+	  This is needed to prevent tty ECHO on Linux.
+
 module = USBD_CDC_ACM
 module-str = usbd cdc_acm
 default-count = 1
