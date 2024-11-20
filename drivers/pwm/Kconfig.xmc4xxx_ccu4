@@ -5,5 +5,6 @@ config PWM_XMC4XXX_CCU4
 	bool "Infineon XMC4XXX CCU4 driver"
 	default y
 	depends on DT_HAS_INFINEON_XMC4XXX_CCU4_PWM_ENABLED
+	select PINCTRL
 	help
 	  Enables Infineon XMC4XXX CCU4 PWM driver.

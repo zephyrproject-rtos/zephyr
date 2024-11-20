@@ -7,6 +7,7 @@ menuconfig ETH_XMC4XXX
 	bool "XMC4XXX Ethernet driver"
 	default y
 	depends on DT_HAS_INFINEON_XMC4XXX_ETHERNET_ENABLED
+	select PINCTRL
 	help
 	  Enable XMC4XXX Ethernet driver.
 
