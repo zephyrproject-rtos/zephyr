@@ -89,12 +89,13 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
                             {DEFAULT_LINKSERVER_EXE}''')
         # user may need to override settings.
         parser.add_argument('--override', required=False, action='append',
-                            help='''configuration overrides as defined bylinkserver. Example: /device/memory/0/location=0xcafecafe''')
+                            help='''configuration overrides as defined bylinkserver.
+                            Example: /device/memory/0/location=0xcafecafe''')
 
     @classmethod
     def do_create(cls, cfg, args):
 
-        print("RUNNER - gdb_port = " + str(args.gdb_port) + ", semih port = " + str(args.semihost_port))
+        print(f"RUNNER - gdb_port = {args.gdb_port}, semih port = {args.semihost_port}")
         return LinkServerBinaryRunner(cfg, args.device, args.core,
                                  linkserver=args.linkserver,
                                  dt_flash=args.dt_flash,
@@ -180,8 +181,12 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
         return override_cli
 
     def flash(self, **kwargs):
-
-        linkserver_cmd = ([self.linkserver, "flash"] + ["--probe", str(self.probe)] + self.override_cli + [self.device])
+        linkserver_cmd = (
+            [self.linkserver, "flash"]
+            + ["--probe", str(self.probe)]
+            + self.override_cli
+            + [self.device]
+        )
         self.logger.debug(f'LinkServer cmd:  + {linkserver_cmd}')
 
         if self.erase:

@@ -34,11 +34,14 @@ def is_flash_cmd_need_exit_immediately(mdb_runner):
 
 def smp_core_order(mdb_runner, id):
     if is_simulation_run(mdb_runner):
-        # for simulation targets we start cores in direct order (core 0 first, core 1 second, etc...)
-        # otherwise we face mismatch arcnum (code ID) with ARConnect ID and core ID in instruction traces
+        # for simulation targets we start cores in direct order
+        # (core 0 first, core 1 second, etc...)
+        # otherwise we face mismatch arcnum (code ID) with ARConnect ID
+        # and core ID in instruction traces
         return id
     else:
-        # for HW targets we want to start the primary core last, to avoid ARConnect initialization interfere
+        # for HW targets we want to start the primary core last,
+        # to avoid ARConnect initialization interfere
         # with secondary cores startup - so we reverse start order
         return mdb_runner.cores - 1 - id
 
@@ -91,7 +94,7 @@ def mdb_do_run(mdb_runner, command):
                 mdb_sub_cmd += ['-prop=download=2']
             mdb_sub_cmd += mdb_basic_options + mdb_target + [mdb_runner.elf_name]
             mdb_runner.check_call(mdb_sub_cmd, cwd=mdb_runner.build_dir)
-            mdb_multifiles += ('core{}' if i == 0 else ',core{}').format(smp_core_order(mdb_runner, i))
+            mdb_multifiles += f'{"" if i == 0 else ","}core{smp_core_order(mdb_runner, i)}'
 
         # to enable multi-core aware mode for use with the MetaWare debugger,
         # need to set the NSIM_MULTICORE environment variable to a non-zero value

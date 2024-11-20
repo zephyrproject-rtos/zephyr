@@ -159,7 +159,8 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
             fname = self.elf_name
         else:
             raise ValueError(
-                f'Cannot flash; no hex ({self.hex_name}), bin ({self.bin_name}) or elf ({self.elf_name}) files found. ')
+                f'Cannot flash; no hex ({self.hex_name}), bin ({self.bin_name}) '
+                f'or elf ({self.elf_name}) files found. ')
 
         erase_method = 'chip' if self.erase else 'sector'
 
