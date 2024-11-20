@@ -151,8 +151,8 @@ class CANopenBinaryRunner(ZephyrBinaryRunner):
         if status == 0:
             self.downloader.swid()
         else:
-            self.logger.warning('Flash status 0x{:02x}, '
-                                'skipping software identification'.format(status))
+            self.logger.warning(f'Flash status 0x{status:02x}, '
+                                'skipping software identification')
 
         self.downloader.enter_pre_operational()
 
@@ -172,7 +172,7 @@ class CANopenBinaryRunner(ZephyrBinaryRunner):
         status = self.downloader.wait_for_flash_status_ok(self.timeout)
         if status != 0:
             raise ValueError('Program download failed: '
-                             'flash status 0x{:02x}'.format(status))
+                             f'flash status 0x{status:02x}')
 
         self.downloader.swid()
         self.downloader.start_program()
@@ -234,7 +234,7 @@ class CANopenProgramDownloader:
         try:
             self.ctrl_sdo.raw = cmd
         except Exception as err:
-            raise ValueError('Unable to write control command 0x{:02x}'.format(cmd)) from err
+            raise ValueError(f'Unable to write control command 0x{cmd:02x}') from err
 
     def stop_program(self):
         '''Write stop control command to CANopen object dictionary (0x1f51)'''
@@ -262,7 +262,7 @@ class CANopenProgramDownloader:
             swid = self.swid_sdo.raw
         except Exception as err:
             raise ValueError('Failed to read software identification') from err
-        self.logger.info('Program software identification: 0x{:08x}'.format(swid))
+        self.logger.info(f'Program software identification: 0x{swid:08x}')
         return swid
 
     def flash_status(self):

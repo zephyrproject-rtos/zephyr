@@ -83,10 +83,10 @@ class NsimBinaryRunner(ZephyrBinaryRunner):
         config = kwargs['nsim-cfg']
 
         server_cmd = (self.nsim_cmd + ['-gdb',
-                                       '-port={}'.format(self.gdb_port),
+                                       f'-port={self.gdb_port}',
                                        '-propsfile', config])
         gdb_cmd = (self.gdb_cmd +
-                   ['-ex', 'target remote :{}'.format(self.gdb_port),
+                   ['-ex', f'target remote :{self.gdb_port}',
                     '-ex', 'load', self.cfg.elf_file])
         self.require(gdb_cmd[0])
 
@@ -96,7 +96,7 @@ class NsimBinaryRunner(ZephyrBinaryRunner):
         config = kwargs['nsim-cfg']
 
         cmd = (self.nsim_cmd +
-               ['-gdb', '-port={}'.format(self.gdb_port),
+               ['-gdb', f'-port={self.gdb_port}',
                 '-propsfile', config])
 
         self.check_call(cmd)
