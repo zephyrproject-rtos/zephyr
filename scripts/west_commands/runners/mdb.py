@@ -63,7 +63,8 @@ def mdb_do_run(mdb_runner, command):
     else:
         if mdb_runner.jtag == 'digilent':
             mdb_target = ['-digilent']
-            if mdb_runner.dig_device: mdb_target += [mdb_runner.dig_device]
+            if mdb_runner.dig_device:
+                mdb_target += [mdb_runner.dig_device]
         else:
             # \todo: add support of other debuggers
             raise ValueError('unsupported jtag adapter {}'.format(mdb_runner.jtag))
@@ -86,7 +87,8 @@ def mdb_do_run(mdb_runner, command):
             mdb_sub_cmd = [commander] + ['-pset={}'.format(i + 1), '-psetname=core{}'.format(i)]
             # -prop=download=2 is used for SMP application debug, only the 1st core
             # will download the shared image.
-            if i > 0: mdb_sub_cmd += ['-prop=download=2']
+            if i > 0:
+                mdb_sub_cmd += ['-prop=download=2']
             mdb_sub_cmd += mdb_basic_options + mdb_target + [mdb_runner.elf_name]
             mdb_runner.check_call(mdb_sub_cmd, cwd=mdb_runner.build_dir)
             mdb_multifiles += ('core{}' if i == 0 else ',core{}').format(smp_core_order(mdb_runner, i))
