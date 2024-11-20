@@ -356,7 +356,7 @@ no_fp:	/* increment _current->arch.exception_depth */
 	li t1, RISCV_EXC_ECALLU
 	beq t0, t1, is_user_syscall
 
-#ifdef CONFIG_PMP_STACK_GUARD
+#if defined(CONFIG_PMP_STACK_GUARD) && defined(CONFIG_MULTITHREADING)
 	/*
 	 * Determine if we come from user space. If so, reconfigure the PMP for
 	 * kernel mode stack guard.
@@ -397,7 +397,7 @@ is_kernel_syscall:
 	addi t0, t0, 4
 	sr t0, __struct_arch_esf_mepc_OFFSET(sp)
 
-#ifdef CONFIG_PMP_STACK_GUARD
+#if defined(CONFIG_PMP_STACK_GUARD) && defined(CONFIG_MULTITHREADING)
 	/* Re-activate PMP for m-mode */
 	li t1, MSTATUS_MPP
 	csrc mstatus, t1
@@ -508,7 +508,7 @@ do_irq_offload:
 #ifdef CONFIG_USERSPACE
 is_user_syscall:
 
-#ifdef CONFIG_PMP_STACK_GUARD
+#if defined(CONFIG_PMP_STACK_GUARD) && defined(CONFIG_MULTITHREADING)
 	/*
 	 * We came from userspace and need to reconfigure the
 	 * PMP for kernel mode stack guard.
@@ -578,7 +578,7 @@ valid_syscall_id:
 
 is_interrupt:
 
-#ifdef CONFIG_PMP_STACK_GUARD
+#if defined(CONFIG_PMP_STACK_GUARD) && defined(CONFIG_MULTITHREADING)
 #ifdef CONFIG_USERSPACE
 	/*
 	 * If we came from userspace then we need to reconfigure the
@@ -748,7 +748,7 @@ fp_trap_exit:
 	and t0, t2, t1
 	bnez t0, 1f
 
-#ifdef CONFIG_PMP_STACK_GUARD
+#if defined(CONFIG_PMP_STACK_GUARD) && defined(CONFIG_MULTITHREADING)
 	/* Remove kernel stack guard and Reconfigure PMP for user mode */
 	lr a0, ___cpu_t_current_OFFSET(s0)
 	call z_riscv_pmp_usermode_enable
