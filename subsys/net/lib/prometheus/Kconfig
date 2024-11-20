@@ -10,6 +10,13 @@ menuconfig PROMETHEUS
 
 if PROMETHEUS
 
+config PROMETHEUS_LABEL_MAX_COUNT
+	int "Max label count in metric"
+	range 1 8
+	default 1
+	help
+	  Specify how many labels can be attached to a metric.
+
 module = PROMETHEUS
 module-dep = NET_LOG
 module-str = Log level for PROMETHEUS
