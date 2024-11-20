@@ -1,0 +1,11 @@
+# Copyright (c) 2024 Google Inc
+# SPDX-License-Identifier: BDS-3-Clause
+
+tests:
+  drivers.sensor.generator:
+    tags:
+      - drivers
+      - sensor
+      - subsys
+    platform_allow:
+      - native_sim

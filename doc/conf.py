@@ -253,6 +253,7 @@ doxyrunner_projects = {
         "fmt": True,
         "fmt_vars": {
             "ZEPHYR_BASE": str(ZEPHYR_BASE),
+            "CMAKE_BINARY_DIR": str(ZEPHYR_BUILD.parent),
             "ZEPHYR_VERSION": version,
         },
         "outdir_var": "DOXY_OUT",

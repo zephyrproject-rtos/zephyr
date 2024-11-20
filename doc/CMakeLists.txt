@@ -97,6 +97,12 @@ endfunction()
 #-------------------------------------------------------------------------------
 # Doxygen (standalone)
 
+set(CMAKE_C_ARCHIVE_CREATE "<CMAKE_C_COMPILER> cr <TARGET> <OBJECTS>")
+set(CMAKE_C_ARCHIVE_FINISH  "<CMAKE_C_COMPILER> s <TARGET>")
+add_library(zephyr_interface INTERFACE)
+include(${ZEPHYR_BASE}/drivers/sensor/codegen.cmake)
+set_target_properties(zephyr_sensor.constants PROPERTIES LINKER_LANGUAGE C)
+
 set(DOXY_OUT ${CMAKE_CURRENT_BINARY_DIR}/doxygen)
 set(DOXYFILE_IN ${CMAKE_CURRENT_LIST_DIR}/zephyr.doxyfile.in)
 set(DOXYFILE_OUT ${CMAKE_CURRENT_BINARY_DIR}/zephyr.doxyfile)
@@ -116,6 +122,8 @@ set_target_properties(
   PROPERTIES
     ADDITIONAL_CLEAN_FILES "${DOXY_OUT}"
 )
+
+add_dependencies(doxygen zephyr_sensor.constants.__generate_constants)
 
 #-------------------------------------------------------------------------------
 # devicetree
@@ -183,7 +191,7 @@ set_target_properties(
     ADDITIONAL_CLEAN_FILES "${DOCS_SRC_DIR};${DOCS_HTML_DIR};${DOCS_DOCTREE_DIR}"
 )
 
-add_dependencies(html devicetree)
+add_dependencies(html devicetree zephyr_sensor.constants.__generate_constants)
 
 #-------------------------------------------------------------------------------
 # html-live
@@ -213,7 +221,7 @@ set_target_properties(
     ADDITIONAL_CLEAN_FILES "${DOCS_SRC_DIR};${DOCS_HTML_DIR};${DOCS_DOCTREE_DIR}"
 )
 
-add_dependencies(html-live devicetree)
+add_dependencies(html-live devicetree zephyr_sensor.constants.__generate_constants)
 #-------------------------------------------------------------------------------
 # pdf
 
@@ -241,7 +249,7 @@ set_target_properties(
     ADDITIONAL_CLEAN_FILES "${DOCS_SRC_DIR};${DOCS_LATEX_DIR};${DOCS_DOCTREE_DIR}"
 )
 
-add_dependencies(latex devicetree)
+add_dependencies(latex devicetree zephyr_sensor.constants.__generate_constants)
 
 if(LATEX_PDFLATEX_FOUND AND LATEXMK)
   if(WIN32)
@@ -263,7 +271,7 @@ if(LATEX_PDFLATEX_FOUND AND LATEXMK)
     USES_TERMINAL
   )
 
-  add_dependencies(pdf latex)
+  add_dependencies(pdf latex zephyr_sensor.constants.__generate_constants)
 endif()
 
 #-------------------------------------------------------------------------------

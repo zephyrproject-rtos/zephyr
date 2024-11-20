@@ -972,6 +972,7 @@ WARN_LOGFILE           =
 
 INPUT                  = @ZEPHYR_BASE@/doc/_doxygen/mainpage.md \
                          @ZEPHYR_BASE@/doc/_doxygen/groups.dox \
+                         @CMAKE_BINARY_DIR@/zephyr_sensor.constants/ \
                          @ZEPHYR_BASE@/kernel/include/kernel_arch_interface.h \
                          @ZEPHYR_BASE@/include/zephyr/arch/cache.h \
                          @ZEPHYR_BASE@/include/zephyr/sys/atomic.h \
