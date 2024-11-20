@@ -438,63 +438,41 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 	const struct i2s_mcux_config *dev_cfg = dev->config;
 	I2S_Type *base = (I2S_Type *)dev_cfg->base;
 	struct i2s_dev_data *dev_data = dev->data;
-	sai_transceiver_t config;
-	uint32_t mclk;
-	/*num_words is frame size*/
-	uint8_t num_words = i2s_cfg->channels;
+	enum i2s_state *tx_state = &(dev_data->tx.state);
+	enum i2s_state *rx_state = &(dev_data->rx.state);
 	uint8_t word_size_bits = i2s_cfg->word_size;
+	uint8_t num_words = i2s_cfg->channels;
+	sai_transceiver_t config;
+	int ret = -EINVAL;
+	uint32_t mclk;
 
 	if ((dev_data->tx.state != I2S_STATE_NOT_READY) &&
 	    (dev_data->tx.state != I2S_STATE_READY) &&
 	    (dev_data->rx.state != I2S_STATE_NOT_READY) &&
 	    (dev_data->rx.state != I2S_STATE_READY)) {
 		LOG_ERR("invalid state tx(%u) rx(%u)", dev_data->tx.state, dev_data->rx.state);
-		if (dir == I2S_DIR_TX) {
-			dev_data->tx.state = I2S_STATE_NOT_READY;
-		} else {
-			dev_data->rx.state = I2S_STATE_NOT_READY;
-		}
-		return -EINVAL;
+		goto invalid_config;
 	}
 
 	if (i2s_cfg->frame_clk_freq == 0U) {
 		LOG_ERR("Invalid frame_clk_freq %u", i2s_cfg->frame_clk_freq);
-		if (dir == I2S_DIR_TX) {
-			dev_data->tx.state = I2S_STATE_NOT_READY;
-		} else {
-			dev_data->rx.state = I2S_STATE_NOT_READY;
-		}
-		return 0;
+		goto invalid_config;
 	}
 
 	if (word_size_bits < SAI_WORD_SIZE_BITS_MIN || word_size_bits > SAI_WORD_SIZE_BITS_MAX) {
 		LOG_ERR("Unsupported I2S word size %u", word_size_bits);
-		if (dir == I2S_DIR_TX) {
-			dev_data->tx.state = I2S_STATE_NOT_READY;
-		} else {
-			dev_data->rx.state = I2S_STATE_NOT_READY;
-		}
-		return -EINVAL;
+		goto invalid_config;
 	}
 
 	if (num_words < SAI_WORD_PER_FRAME_MIN || num_words > SAI_WORD_PER_FRAME_MAX) {
 		LOG_ERR("Unsupported words length %u", num_words);
-		if (dir == I2S_DIR_TX) {
-			dev_data->tx.state = I2S_STATE_NOT_READY;
-		} else {
-			dev_data->rx.state = I2S_STATE_NOT_READY;
-		}
-		return -EINVAL;
+		goto invalid_config;
 	}
 
 	if ((i2s_cfg->options & I2S_OPT_PINGPONG) == I2S_OPT_PINGPONG) {
 		LOG_ERR("Ping-pong mode not supported");
-		if (dir == I2S_DIR_TX) {
-			dev_data->tx.state = I2S_STATE_NOT_READY;
-		} else {
-			dev_data->rx.state = I2S_STATE_NOT_READY;
-		}
-		return -ENOTSUP;
+		ret = -ENOTSUP;
+		goto invalid_config;
 	}
 
 	memset(&config, 0, sizeof(config));
@@ -552,12 +530,8 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 		break;
 	default:
 		LOG_ERR("Unsupported I2S data format");
-		if (dir == I2S_DIR_TX) {
-			dev_data->tx.state = I2S_STATE_NOT_READY;
-		} else {
-			dev_data->rx.state = I2S_STATE_NOT_READY;
-		}
-		return -EINVAL;
+		ret = -EINVAL;
+		goto invalid_config;
 	}
 
 	/* sync mode configurations */
@@ -669,6 +643,14 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 	}
 
 	return 0;
+
+invalid_config:
+	if (dir == I2S_DIR_TX) {
+		*tx_state = I2S_STATE_NOT_READY;
+	} else if (dir == I2S_DIR_RX) {
+		*rx_state = I2S_STATE_NOT_READY;
+	}
+	return ret;
 }
 
 const struct i2s_config *i2s_mcux_config_get(const struct device *dev, enum i2s_dir dir)
