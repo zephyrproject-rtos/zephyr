@@ -131,8 +131,7 @@ int prometheus_format_exposition(struct prometheus_collector *collector, char *b
 		switch (metric->type) {
 		case PROMETHEUS_COUNTER: {
 			const struct prometheus_counter *counter =
-				(const struct prometheus_counter *)prometheus_collector_get_metric(
-					collector, metric->name);
+				CONTAINER_OF(metric, struct prometheus_counter, base);
 
 			LOG_DBG("counter->value: %llu", counter->value);
 
@@ -152,8 +151,7 @@ int prometheus_format_exposition(struct prometheus_collector *collector, char *b
 
 		case PROMETHEUS_GAUGE: {
 			const struct prometheus_gauge *gauge =
-				(const struct prometheus_gauge *)prometheus_collector_get_metric(
-					collector, metric->name);
+				CONTAINER_OF(metric, struct prometheus_gauge, base);
 
 			LOG_DBG("gauge->value: %f", gauge->value);
 
@@ -173,8 +171,7 @@ int prometheus_format_exposition(struct prometheus_collector *collector, char *b
 
 		case PROMETHEUS_HISTOGRAM: {
 			const struct prometheus_histogram *histogram =
-				(const struct prometheus_histogram *)
-					prometheus_collector_get_metric(collector, metric->name);
+				CONTAINER_OF(metric, struct prometheus_histogram, base);
 
 			LOG_DBG("histogram->count: %lu", histogram->count);
 
@@ -210,8 +207,7 @@ int prometheus_format_exposition(struct prometheus_collector *collector, char *b
 
 		case PROMETHEUS_SUMMARY: {
 			const struct prometheus_summary *summary =
-				(const struct prometheus_summary *)prometheus_collector_get_metric(
-					collector, metric->name);
+				CONTAINER_OF(metric, struct prometheus_summary, base);
 
 			LOG_DBG("summary->count: %lu", summary->count);
 

@@ -9,18 +9,8 @@
 #include <zephyr/net/prometheus/counter.h>
 #include <zephyr/net/prometheus/collector.h>
 
-struct prometheus_metric test_counter_metric = {
-	.type = PROMETHEUS_COUNTER,
-	.name = "test_counter",
-	.description = "Test counter",
-	.num_labels = 1,
-	.labels = {{
-		.key = "test",
-		.value = "counter",
-	}},
-};
-
-PROMETHEUS_COUNTER_DEFINE(test_counter_m, &test_counter_metric);
+PROMETHEUS_COUNTER_DEFINE(test_counter_m, "Test counter",
+			  ({ .key = "test_counter", .value = "test" }));
 
 PROMETHEUS_COLLECTOR_DEFINE(test_custom_collector);
 
@@ -38,7 +28,7 @@ ZTEST(test_collector, test_prometheus_collector_register)
 	int ret;
 	struct prometheus_counter *counter;
 
-	prometheus_collector_register_metric(&test_custom_collector, test_counter_m.base);
+	prometheus_collector_register_metric(&test_custom_collector, &test_counter_m.base);
 
 	counter = (struct prometheus_counter *)prometheus_collector_get_metric(
 		&test_custom_collector, "test_counter");

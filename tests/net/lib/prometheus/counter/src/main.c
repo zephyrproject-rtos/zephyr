@@ -8,18 +8,8 @@
 
 #include <zephyr/net/prometheus/counter.h>
 
-struct prometheus_metric test_counter_metric = {
-	.type = PROMETHEUS_COUNTER,
-	.name = "test_counter",
-	.description = "Test counter",
-	.num_labels = 1,
-	.labels = {{
-		.key = "test",
-		.value = "counter",
-	}},
-};
-
-PROMETHEUS_COUNTER_DEFINE(test_counter_m, &test_counter_metric);
+PROMETHEUS_COUNTER_DEFINE(test_counter_m, "Test counter",
+			  ({ .key = "test_counter", .value = "test" }));
 
 /**
  * @brief Test prometheus_counter_inc

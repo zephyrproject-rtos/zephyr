@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024 Mustafa Abdullah Kus, Sparse Technology
+ * Copyright (c) 2024 Nordic Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,7 +42,7 @@ struct prometheus_histogram_bucket {
  */
 struct prometheus_histogram {
 	/** Base of the Prometheus histogram metric */
-	struct prometheus_metric *base;
+	struct prometheus_metric base;
 	/** Array of buckets in the histogram */
 	struct prometheus_histogram_bucket *buckets;
 	/** Number of buckets in the histogram */
@@ -55,34 +56,33 @@ struct prometheus_histogram {
 /**
  * @brief Prometheus Histogram definition.
  *
- * This macro defines a Histogram metric.
+ * This macro defines a Histogram metric. If you want to make the histogram static,
+ * then add "static" keyword before the PROMETHEUS_HISTOGRAM_DEFINE.
  *
- * @param _name The channel's name.
- * @param _detail The metric base.
+ * @param _name The histogram metric name.
+ * @param _desc Histogram description
+ * @param _label Label for the metric. Additional labels can be added at runtime.
  *
  * Example usage:
  * @code{.c}
  *
- * struct prometheus_metric http_request_gauge = {
- *	.type = PROMETHEUS_HISTOGRAM,
- *	.name = "http_request_histograms",
- *	.description = "HTTP request histogram",
- *	.num_labels = 1,
- *	.labels = {
- *		{ .key = "request_latency", .value = "request_latency_seconds",}
- *	},
- * };
- *
- * PROMETHEUS_HISTOGRAM_DEFINE(test_histogram, &test_histogram_metric);
+ * PROMETHEUS_HISTOGRAM_DEFINE(http_request_histogram, "HTTP request histogram",
+ *                         ({ .key = "request_latency", .value = "request_latency_seconds" }));
  *
  * @endcode
  */
-#define PROMETHEUS_HISTOGRAM_DEFINE(_name, _detail)                                                \
-	static STRUCT_SECTION_ITERABLE(prometheus_histogram, _name) = {.base = (void *)(_detail),  \
-								       .buckets = NULL,            \
-								       .num_buckets = 0,           \
-								       .sum = 0,                   \
-								       .count = 0}
+#define PROMETHEUS_HISTOGRAM_DEFINE(_name, _desc, _label)		\
+	STRUCT_SECTION_ITERABLE(prometheus_histogram, _name) = {	\
+		.base.name = STRINGIFY(_name),				\
+		.base.type = PROMETHEUS_HISTOGRAM,			\
+		.base.description = _desc,				\
+		.base.labels[0] = __DEBRACKET _label,			\
+		.base.num_labels = 1,					\
+		.buckets = NULL,					\
+		.num_buckets = 0,					\
+		.sum = 0.0,						\
+		.count = 0U,						\
+	}
 
 /**
  * @brief Observe a value in a Prometheus histogram metric

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024 Mustafa Abdullah Kus, Sparse Technology
+ * Copyright (c) 2024 Nordic Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,10 +47,10 @@ int prometheus_collector_register_metric(struct prometheus_collector *collector,
 const struct prometheus_counter *prometheus_get_counter_metric(const char *name)
 {
 	STRUCT_SECTION_FOREACH(prometheus_counter, entry) {
-		LOG_DBG("entry->name: %s", entry->base->name);
+		LOG_DBG("entry->name: %s", entry->base.name);
 
-		if (strncmp(entry->base->name, name, sizeof(entry->base->name)) == 0) {
-			LOG_DBG("Counter found %s=%s", entry->base->name, name);
+		if (strncmp(entry->base.name, name, strlen(entry->base.name)) == 0) {
+			LOG_DBG("Counter found %s", entry->base.name);
 			return entry;
 		}
 	}
@@ -62,10 +63,10 @@ const struct prometheus_counter *prometheus_get_counter_metric(const char *name)
 const struct prometheus_gauge *prometheus_get_gauge_metric(const char *name)
 {
 	STRUCT_SECTION_FOREACH(prometheus_gauge, entry) {
-		LOG_DBG("entry->name: %s", entry->base->name);
+		LOG_DBG("entry->name: %s", entry->base.name);
 
-		if (strncmp(entry->base->name, name, sizeof(entry->base->name)) == 0) {
-			LOG_DBG("Counter found %s=%s", entry->base->name, name);
+		if (strncmp(entry->base.name, name, strlen(entry->base.name)) == 0) {
+			LOG_DBG("Counter found %s", entry->base.name);
 			return entry;
 		}
 	}
@@ -78,10 +79,10 @@ const struct prometheus_gauge *prometheus_get_gauge_metric(const char *name)
 const struct prometheus_histogram *prometheus_get_histogram_metric(const char *name)
 {
 	STRUCT_SECTION_FOREACH(prometheus_histogram, entry) {
-		LOG_DBG("entry->name: %s", entry->base->name);
+		LOG_DBG("entry->name: %s", entry->base.name);
 
-		if (strncmp(entry->base->name, name, sizeof(entry->base->name)) == 0) {
-			LOG_DBG("Counter found %s=%s", entry->base->name, name);
+		if (strncmp(entry->base.name, name, strlen(entry->base.name)) == 0) {
+			LOG_DBG("Counter found %s", entry->base.name);
 			return entry;
 		}
 	}
@@ -94,10 +95,10 @@ const struct prometheus_histogram *prometheus_get_histogram_metric(const char *n
 const struct prometheus_summary *prometheus_get_summary_metric(const char *name)
 {
 	STRUCT_SECTION_FOREACH(prometheus_summary, entry) {
-		LOG_DBG("entry->name: %s", entry->base->name);
+		LOG_DBG("entry->name: %s", entry->base.name);
 
-		if (strncmp(entry->base->name, name, sizeof(entry->base->name)) == 0) {
-			LOG_DBG("Counter found %s=%s", entry->base->name, name);
+		if (strncmp(entry->base.name, name, strlen(entry->base.name)) == 0) {
+			LOG_DBG("Counter found %s", entry->base.name);
 			return entry;
 		}
 	}
@@ -123,7 +124,7 @@ const void *prometheus_collector_get_metric(struct prometheus_collector *collect
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&collector->metrics, metric, tmp, node) {
 
-		if (strncmp(metric->name, name, sizeof(metric->name)) == 0) {
+		if (strncmp(metric->name, name, strlen(metric->name)) == 0) {
 			type = metric->type;
 			is_found = true;
 
@@ -136,22 +137,23 @@ const void *prometheus_collector_get_metric(struct prometheus_collector *collect
 
 	if (!is_found) {
 		LOG_ERR("Metric %s not found", name);
-		return NULL;
+		goto out;
 	}
 
 	switch (type) {
 	case PROMETHEUS_COUNTER:
-		return prometheus_get_counter_metric(name);
+		return CONTAINER_OF(metric, struct prometheus_counter, base);
 	case PROMETHEUS_GAUGE:
-		return prometheus_get_gauge_metric(name);
+		return CONTAINER_OF(metric, struct prometheus_gauge, base);
 	case PROMETHEUS_HISTOGRAM:
-		return prometheus_get_histogram_metric(name);
+		return CONTAINER_OF(metric, struct prometheus_histogram, base);
 	case PROMETHEUS_SUMMARY:
-		return prometheus_get_summary_metric(name);
+		return CONTAINER_OF(metric, struct prometheus_summary, base);
 	default:
 		LOG_ERR("Invalid metric type");
-		return NULL;
+		break;
 	}
 
+out:
 	return NULL;
 }
