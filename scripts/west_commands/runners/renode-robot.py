@@ -5,7 +5,8 @@
 '''Runner stub for renode-test.'''
 
 import subprocess
-from runners.core import ZephyrBinaryRunner, RunnerCaps
+
+from runners.core import RunnerCaps, ZephyrBinaryRunner
 
 
 class RenodeRobotRunner(ZephyrBinaryRunner):

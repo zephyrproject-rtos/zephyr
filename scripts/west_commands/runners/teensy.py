@@ -9,6 +9,7 @@ import subprocess
 
 from runners.core import ZephyrBinaryRunner
 
+
 class TeensyBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for teensy.'''
 

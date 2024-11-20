@@ -7,7 +7,7 @@
 
 from os import path
 
-from runners.core import ZephyrBinaryRunner, RunnerCaps
+from runners.core import RunnerCaps, ZephyrBinaryRunner
 
 DEFAULT_ARC_GDB_PORT = 3333
 DEFAULT_PROPS_FILE = 'nsim_em.props'

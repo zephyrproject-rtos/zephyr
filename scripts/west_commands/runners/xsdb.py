@@ -7,7 +7,9 @@
 """
 import argparse
 import os
-from runners.core import ZephyrBinaryRunner, RunnerCaps, RunnerConfig
+
+from runners.core import RunnerCaps, RunnerConfig, ZephyrBinaryRunner
+
 
 class XSDBBinaryRunner(ZephyrBinaryRunner):
     def __init__(self, cfg: RunnerConfig, config=None, bitstream=None,

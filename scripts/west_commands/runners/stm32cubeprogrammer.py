@@ -7,14 +7,14 @@
 """
 
 import argparse
-from pathlib import Path
-import platform
 import os
+import platform
 import shlex
 import shutil
+from pathlib import Path
 from typing import ClassVar
 
-from runners.core import ZephyrBinaryRunner, RunnerCaps, RunnerConfig
+from runners.core import RunnerCaps, RunnerConfig, ZephyrBinaryRunner
 
 
 class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):

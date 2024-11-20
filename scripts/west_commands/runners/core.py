@@ -26,8 +26,8 @@ import socket
 import subprocess
 import sys
 from dataclasses import dataclass, field
-from functools import partial
 from enum import Enum
+from functools import partial
 from inspect import isabstract
 from typing import NamedTuple, NoReturn
 

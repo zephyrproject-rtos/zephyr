@@ -6,12 +6,13 @@
 
 import json
 import os
-from pathlib import Path
-import sys
 import subprocess
+import sys
+from pathlib import Path
 
 from runners.core import _DRY_RUN
 from runners.nrf_common import NrfBinaryRunner
+
 
 class NrfUtilBinaryRunner(NrfBinaryRunner):
     '''Runner front-end for nrfutil.'''

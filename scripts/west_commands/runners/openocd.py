@@ -9,9 +9,9 @@
 
 import re
 import subprocess
-
 from os import path
 from pathlib import Path
+
 from zephyr_ext_common import ZEPHYR_BASE
 
 try:  # noqa SIM105
@@ -19,7 +19,7 @@ try:  # noqa SIM105
 except ImportError:
     pass
 
-from runners.core import ZephyrBinaryRunner, RunnerCaps
+from runners.core import RunnerCaps, ZephyrBinaryRunner
 
 DEFAULT_OPENOCD_TCL_PORT = 6333
 DEFAULT_OPENOCD_TELNET_PORT = 4444

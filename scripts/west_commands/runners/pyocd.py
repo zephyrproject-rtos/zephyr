@@ -7,7 +7,7 @@
 import os
 from os import path
 
-from runners.core import ZephyrBinaryRunner, RunnerCaps, BuildConfiguration
+from runners.core import BuildConfiguration, RunnerCaps, ZephyrBinaryRunner
 
 DEFAULT_PYOCD_GDB_PORT = 3333
 DEFAULT_PYOCD_TELNET_PORT = 4444

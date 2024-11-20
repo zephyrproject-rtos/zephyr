@@ -7,7 +7,7 @@
 from pathlib import Path
 from shutil import copy
 
-from runners.core import ZephyrBinaryRunner, RunnerCaps
+from runners.core import RunnerCaps, ZephyrBinaryRunner
 
 try:
     import psutil
