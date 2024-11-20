@@ -165,7 +165,7 @@ class BuildConfiguration:
 
     def __init__(self, build_dir: str):
         self.build_dir = build_dir
-        self.options: Dict[str, Union[str, int]] = {}
+        self.options: dict[str, Union[str, int]] = {}
         self.path = os.path.join(self.build_dir, 'zephyr', '.config')
         self._parse()
 
@@ -304,7 +304,7 @@ class RunnerCaps:
       option.
     '''
 
-    commands: Set[str] = field(default_factory=lambda: set(_RUNNERCAPS_COMMANDS))
+    commands: set[str] = field(default_factory=lambda: set(_RUNNERCAPS_COMMANDS))
     dev_id: bool = False
     flash_addr: bool = False
     erase: bool = False
@@ -321,7 +321,7 @@ class RunnerCaps:
             raise ValueError(f'{self.commands=} contains invalid command')
 
 
-def _missing_cap(cls: Type['ZephyrBinaryRunner'], option: str) -> NoReturn:
+def _missing_cap(cls: type['ZephyrBinaryRunner'], option: str) -> NoReturn:
     # Helper function that's called when an option was given on the
     # command line that corresponds to a missing capability in the
     # runner class cls.
@@ -354,7 +354,7 @@ class RunnerConfig(NamedTuple):
     file_type: Optional[FileType] = FileType.OTHER  # binary file type
     gdb: Optional[str] = None       # path to a usable gdb
     openocd: Optional[str] = None   # path to a usable openocd
-    openocd_search: List[str] = []  # add these paths to the openocd search path
+    openocd_search: list[str] = []  # add these paths to the openocd search path
     rtt_address: Optional[int] = None # address of the rtt control block
 
 
@@ -486,7 +486,7 @@ class ZephyrBinaryRunner(abc.ABC):
         '''logging.Logger for this instance.'''
 
     @staticmethod
-    def get_runners() -> List[Type['ZephyrBinaryRunner']]:
+    def get_runners() -> list[type['ZephyrBinaryRunner']]:
         '''Get a list of all currently defined runner classes.'''
         def inheritors(klass):
             subclasses = set()
@@ -827,14 +827,14 @@ class ZephyrBinaryRunner(abc.ABC):
         finally:
             signal.signal(signal.SIGINT, previous)
 
-    def _log_cmd(self, cmd: List[str]):
+    def _log_cmd(self, cmd: list[str]):
         escaped = ' '.join(shlex.quote(s) for s in cmd)
         if not _DRY_RUN:
             self.logger.debug(escaped)
         else:
             self.logger.info(escaped)
 
-    def call(self, cmd: List[str], **kwargs) -> int:
+    def call(self, cmd: list[str], **kwargs) -> int:
         '''Subclass subprocess.call() wrapper.
 
         Subclasses should use this method to run command in a
@@ -846,7 +846,7 @@ class ZephyrBinaryRunner(abc.ABC):
             return 0
         return subprocess.call(cmd, **kwargs)
 
-    def check_call(self, cmd: List[str], **kwargs):
+    def check_call(self, cmd: list[str], **kwargs):
         '''Subclass subprocess.check_call() wrapper.
 
         Subclasses should use this method to run command in a
@@ -858,7 +858,7 @@ class ZephyrBinaryRunner(abc.ABC):
             return
         subprocess.check_call(cmd, **kwargs)
 
-    def check_output(self, cmd: List[str], **kwargs) -> bytes:
+    def check_output(self, cmd: list[str], **kwargs) -> bytes:
         '''Subclass subprocess.check_output() wrapper.
 
         Subclasses should use this method to run command in a
@@ -870,7 +870,7 @@ class ZephyrBinaryRunner(abc.ABC):
             return b''
         return subprocess.check_output(cmd, **kwargs)
 
-    def popen_ignore_int(self, cmd: List[str], **kwargs) -> subprocess.Popen:
+    def popen_ignore_int(self, cmd: list[str], **kwargs) -> subprocess.Popen:
         '''Spawn a child command, ensuring it ignores SIGINT.
 
         The returned subprocess.Popen object must be manually terminated.'''

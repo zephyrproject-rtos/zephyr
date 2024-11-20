@@ -20,7 +20,7 @@ from runners.core import ZephyrBinaryRunner, RunnerCaps, RunnerConfig
 class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
     """Runner front-end for STM32CubeProgrammer CLI."""
 
-    _RESET_MODES: ClassVar[Dict[str, str]] = {
+    _RESET_MODES: ClassVar[dict[str, str]] = {
         "sw": "SWrst",
         "hw": "HWrst",
         "core": "Crst",
@@ -38,7 +38,7 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
         use_elf: bool,
         erase: bool,
         extload: Optional[str],
-        tool_opt: List[str],
+        tool_opt: list[str],
     ) -> None:
         super().__init__(cfg)
 
@@ -58,7 +58,7 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
         else:
             self._extload = []
 
-        self._tool_opt: List[str] = list()
+        self._tool_opt: list[str] = list()
         for opts in [shlex.split(opt) for opt in tool_opt]:
             self._tool_opt += opts
 
