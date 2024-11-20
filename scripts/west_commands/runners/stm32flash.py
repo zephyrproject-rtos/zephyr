@@ -4,10 +4,10 @@
 
 '''Runner for flashing with stm32flash.'''
 
-from os import path
 import platform
+from os import path
 
-from runners.core import ZephyrBinaryRunner, RunnerCaps
+from runners.core import RunnerCaps, ZephyrBinaryRunner
 
 DEFAULT_DEVICE = '/dev/ttyUSB0'
 if platform.system() == 'Darwin':

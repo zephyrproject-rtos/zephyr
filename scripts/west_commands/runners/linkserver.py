@@ -13,8 +13,7 @@ import shlex
 import subprocess
 import sys
 
-from runners.core import ZephyrBinaryRunner, RunnerCaps
-
+from runners.core import RunnerCaps, ZephyrBinaryRunner
 
 DEFAULT_LINKSERVER_EXE = 'Linkserver.exe' if sys.platform == 'win32' else 'LinkServer'
 DEFAULT_LINKSERVER_GDB_PORT =  3333

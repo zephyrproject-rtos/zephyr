@@ -5,11 +5,11 @@
 '''Runners for Synopsys Metaware Debugger(mdb).'''
 
 
-import shutil
 import os
+import shutil
 from os import path
 
-from runners.core import ZephyrBinaryRunner, RunnerCaps
+from runners.core import RunnerCaps, ZephyrBinaryRunner
 
 
 # normally we should create class with common functionality inherited from

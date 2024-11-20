@@ -4,14 +4,13 @@
 
 '''Modified openocd and gdb runner for Cyclone V SoC DevKit.'''
 
-import subprocess
-import re
 import os
-
+import re
+import subprocess
 from os import path
 from pathlib import Path
 
-from runners.core import ZephyrBinaryRunner, RunnerCaps
+from runners.core import RunnerCaps, ZephyrBinaryRunner
 
 DEFAULT_OPENOCD_TCL_PORT = 6333
 DEFAULT_OPENOCD_TELNET_PORT = 4444

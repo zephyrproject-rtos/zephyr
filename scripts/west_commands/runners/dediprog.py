@@ -8,7 +8,7 @@
 import platform
 import subprocess
 
-from runners.core import ZephyrBinaryRunner, RunnerCaps
+from runners.core import RunnerCaps, ZephyrBinaryRunner
 
 DPCMD_EXE = 'dpcmd.exe' if platform.system() == 'Windows' else 'dpcmd'
 DEFAULT_MAX_RETRIES = 3

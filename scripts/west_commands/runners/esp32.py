@@ -5,12 +5,12 @@
 
 '''Runner for flashing ESP32 devices with esptool/espidf.'''
 
-from os import path
-
-from runners.core import ZephyrBinaryRunner, RunnerCaps
-
 import os
 import sys
+from os import path
+
+from runners.core import RunnerCaps, ZephyrBinaryRunner
+
 
 class Esp32BinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for espidf.'''

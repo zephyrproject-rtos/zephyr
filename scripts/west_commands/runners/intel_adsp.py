@@ -5,14 +5,16 @@
 '''Runner for flashing with the Intel ADSP boards.'''
 
 import argparse
-import os
-import sys
-import re
 import hashlib
+import os
 import random
+import re
 import shutil
-from runners.core import ZephyrBinaryRunner, RunnerCaps
+import sys
+
 from zephyr_ext_common import ZEPHYR_BASE
+
+from runners.core import RunnerCaps, ZephyrBinaryRunner
 
 DEFAULT_CAVSTOOL='soc/intel/intel_adsp/tools/cavstool_client.py'
 

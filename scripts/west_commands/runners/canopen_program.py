@@ -8,7 +8,7 @@ import argparse
 import os
 import time
 
-from runners.core import ZephyrBinaryRunner, RunnerCaps
+from runners.core import RunnerCaps, ZephyrBinaryRunner
 
 try:
     import canopen

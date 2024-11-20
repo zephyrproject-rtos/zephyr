@@ -8,15 +8,15 @@ import argparse
 import ipaddress
 import logging
 import os
-from pathlib import Path
 import shlex
+import socket
 import subprocess
 import sys
-import socket
-import time
 import tempfile
+import time
+from pathlib import Path
 
-from runners.core import ZephyrBinaryRunner, RunnerCaps, FileType
+from runners.core import FileType, RunnerCaps, ZephyrBinaryRunner
 
 try:
     import pylink

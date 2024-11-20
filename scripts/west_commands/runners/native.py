@@ -5,7 +5,8 @@
 flashing (running) a native application."""
 
 import argparse
-from runners.core import ZephyrBinaryRunner, RunnerCaps, RunnerConfig
+
+from runners.core import RunnerCaps, RunnerConfig, ZephyrBinaryRunner
 
 DEFAULT_GDB_PORT = 3333
 
