@@ -117,8 +117,8 @@ struct i2s_dev_data {
 	void *rx_out_msgs[CONFIG_I2S_RX_BLOCK_COUNT];
 };
 
-static inline void i2s_purge_stream_buffers(struct stream *strm, struct k_mem_slab *mem_slab,
-					    bool in_drop, bool out_drop)
+static void i2s_purge_stream_buffers(struct stream *strm, struct k_mem_slab *mem_slab, bool in_drop,
+				     bool out_drop)
 {
 	void *buffer;
 
@@ -167,9 +167,7 @@ static void i2s_tx_stream_disable(const struct device *dev, bool drop)
 	}
 
 	/* purge buffers queued in the stream */
-	if (drop) {
-		i2s_purge_stream_buffers(strm, dev_data->tx.cfg.mem_slab, true, true);
-	}
+	i2s_purge_stream_buffers(strm, dev_data->tx.cfg.mem_slab, drop, drop);
 }
 
 static void i2s_rx_stream_disable(const struct device *dev, bool in_drop, bool out_drop)
@@ -200,9 +198,7 @@ static void i2s_rx_stream_disable(const struct device *dev, bool in_drop, bool o
 	dev_cfg->base->RCSR &= ~I2S_RCSR_SR_MASK;
 
 	/* purge buffers queued in the stream */
-	if (in_drop || out_drop) {
-		i2s_purge_stream_buffers(strm, dev_data->rx.cfg.mem_slab, in_drop, out_drop);
-	}
+	i2s_purge_stream_buffers(strm, dev_data->rx.cfg.mem_slab, in_drop, out_drop);
 }
 
 static int i2s_tx_reload_multiple_dma_blocks(const struct device *dev, uint8_t *blocks_queued)
