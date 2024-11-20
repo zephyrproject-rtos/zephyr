@@ -1,0 +1,24 @@
+# Copyright (c) 2024 Google Inc
+# SPDX-License-Identifier: BDS-3-Clause
+
+deps:
+  - "drivers/sensor/attributes.yaml"
+  - "drivers/sensor/channels.yaml"
+  - "drivers/sensor/triggers.yaml"
+  - "drivers/sensor/units.yaml"
+compatible:
+  org: "asahi-kasei"
+  part: "akm09918c"
+supported-buses:
+  - i2c
+channels:
+  magn_xyz: []
+  magn_x: []
+  magn_y: []
+  magn_z: []
+attributes:
+  - attribute: "sampling_frequency"
+    channel: "magn_xyz"
+    units: "frequency"
+extras:
+  doc-link: "asahi_kasei_akm09918c_driver"

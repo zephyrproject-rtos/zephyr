@@ -1,0 +1,34 @@
+# Copyright (c) 2024 Google Inc
+# SPDX-License-Identifier: BDS-3-Clause
+
+deps:
+  - "drivers/sensor/attributes.yaml"
+  - "drivers/sensor/channels.yaml"
+  - "drivers/sensor/triggers.yaml"
+  - "drivers/sensor/units.yaml"
+compatible:
+  org: "bosch"
+  part: "bma4xx"
+supported-buses:
+  - i2c
+  - spi
+description: |
+  Sensor driver implementation for bma422 and bma423.
+channels:
+  accel_x: []
+  accel_y: []
+  accel_z: []
+  accel_xyz: []
+  die_temp: []
+attributes:
+  - attribute: "sampling_frequency"
+    channel: "accel_xyz"
+    units: "frequency"
+  - attribute: "full_scale"
+    channel: "accel_xyz"
+    units: "acceleration"
+  - attribute: "offset"
+    channel: "accel_xyz"
+    units: "acceleration"
+extras:
+  doc-link: "bosch_bma4xx_driver"

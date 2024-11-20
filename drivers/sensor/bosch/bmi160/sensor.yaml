@@ -1,0 +1,50 @@
+# Copyright (c) 2024 Google Inc
+# SPDX-License-Identifier: BDS-3-Clause
+
+deps:
+  - "drivers/sensor/attributes.yaml"
+  - "drivers/sensor/channels.yaml"
+  - "drivers/sensor/triggers.yaml"
+  - "drivers/sensor/units.yaml"
+compatible:
+  org: "bosch"
+  part: "bmi160"
+supported-buses:
+  - i2c
+  - spi
+description: |
+  Sensor driver implementation for bmi160.
+channels:
+  accel_x: []
+  accel_y: []
+  accel_z: []
+  accel_xyz: []
+  gyro_x: []
+  gyro_y: []
+  gyro_z: []
+  gyro_xyz: []
+  die_temp: []
+attributes:
+  - attribute: "sampling_frequency"
+    channel: "accel_xyz"
+    units: "frequency"
+  - attribute: "sampling_frequency"
+    channel: "gyro_xyz"
+    units: "frequency"
+  - attribute: "full_scale"
+    channel: "accel_xyz"
+    units: "acceleration"
+  - attribute: "full_scale"
+    channel: "gyro_xyz"
+    units: "angular_velocity"
+  - attribute: "offset"
+    channel: "accel_xyz"
+    units: "acceleration"
+  - attribute: "offset"
+    channel: "gyro_xyz"
+    units: "angular_velocity"
+triggers:
+  - data_ready
+  - delta
+extras:
+  doc-link: "bosch_bmi160_driver"
