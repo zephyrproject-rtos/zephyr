@@ -541,18 +541,17 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 		config.syncMode = dev_cfg->rx_sync_mode;
 	}
 
-	if (i2s_cfg->options & I2S_OPT_FRAME_CLK_SLAVE) {
-		if (i2s_cfg->options & I2S_OPT_BIT_CLK_SLAVE) {
-			config.masterSlave = kSAI_Slave;
-		} else {
-			config.masterSlave = kSAI_Bclk_Master_FrameSync_Slave;
-		}
+	bool frame_clk_slave = i2s_cfg->options & I2S_OPT_FRAME_CLK_SLAVE;
+	bool bit_clk_slave = i2s_cfg->options & I2S_OPT_BIT_CLK_SLAVE;
+
+	if (frame_clk_slave && bit_clk_slave) {
+		config.masterSlave = kSAI_Slave;
+	} else if (frame_clk_slave && !bit_clk_slave) {
+		config.masterSlave = kSAI_Bclk_Master_FrameSync_Slave;
+	} else if (!frame_clk_slave && bit_clk_slave) {
+		config.masterSlave = kSAI_Bclk_Slave_FrameSync_Master;
 	} else {
-		if (i2s_cfg->options & I2S_OPT_BIT_CLK_SLAVE) {
-			config.masterSlave = kSAI_Bclk_Slave_FrameSync_Master;
-		} else {
-			config.masterSlave = kSAI_Master;
-		}
+		config.masterSlave = kSAI_Master;
 	}
 
 	/* clock signal polarity */
@@ -568,7 +567,6 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 				? kSAI_SampleOnRisingEdge
 				: kSAI_SampleOnFallingEdge;
 		break;
-
 	case I2S_FMT_CLK_IF_NB:
 		/* Swap frame sync polarity */
 		config.frameSync.frameSyncPolarity =
@@ -576,7 +574,6 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 				? kSAI_PolarityActiveLow
 				: kSAI_PolarityActiveHigh;
 		break;
-
 	case I2S_FMT_CLK_IF_IB:
 		/* Swap frame sync and bclk polarity */
 		config.frameSync.frameSyncPolarity =
