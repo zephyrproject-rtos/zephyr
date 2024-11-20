@@ -174,7 +174,6 @@ class IntelCycloneVBinaryRunner(ZephyrBinaryRunner):
         self.logger.info('OpenOCD GDB server running on port '
                          f'{self.gdb_port}{thread_msg}')
 
-    # pylint: disable=R0201
     def to_num(self, number):
         dev_match = re.search(r"^\d*\+dev", number)
         dev_version = not dev_match is None
