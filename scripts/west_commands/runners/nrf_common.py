@@ -7,6 +7,7 @@
 
 import abc
 from collections import deque
+import contextlib
 import functools
 import os
 from pathlib import Path
@@ -537,10 +538,8 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
                                'see the getting started guide for details on '
                                'how to fix')
         self.hex_contents = IntelHex()
-        try:
+        with contextlib.suppress(FileNotFoundError):
             self.hex_contents.loadfile(self.hex_, format='hex')
-        except FileNotFoundError:
-            pass
 
         self.ensure_snr()
         self.ensure_family()
