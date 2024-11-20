@@ -20,6 +20,9 @@
 #define MPU9250_CHIP_ID			0x71
 #define MPU6880_CHIP_ID			0x19
 
+/* Sample Rate Divider Register */
+#define MPU6050_REG_SAMPLE_RATE_DIVIDER 0x19
+
 #define MPU6050_REG_GYRO_CFG		0x1B
 #define MPU6050_GYRO_FS_SHIFT		3
 
@@ -31,8 +34,20 @@
 
 #define MPU6050_REG_DATA_START		0x3B
 
-#define MPU6050_REG_PWR_MGMT1		0x6B
-#define MPU6050_SLEEP_EN		BIT(6)
+/* Signal Path Reset Register */
+#define MPU6050_REG_SIGNAL_PATH_RESET 0x68
+#define MPU6050_TEMP_RESET            BIT(0)
+#define MPU6050_ACCEL_RESET           BIT(1)
+#define MPU6050_GYRO_RESET            BIT(2)
+
+/* User Control Register */
+#define MPU6050_REG_USER_CTRL  0x6A
+#define MPU6050_SIG_COND_RESET BIT(0)
+
+#define MPU6050_REG_PWR_MGMT1     0x6B
+#define MPU6050_SLEEP_EN          BIT(6)
+#define MPU6050_DEVICE_RESET      BIT(7)
+#define MPU6050_PWR_MGMT1_RST_VAL 0x40
 
 /* measured in degrees/sec x10 to avoid floating point */
 static const uint16_t mpu6050_gyro_sensitivity_x10[] = {
@@ -80,9 +95,8 @@ struct mpu6050_data {
 
 struct mpu6050_config {
 	struct i2c_dt_spec i2c;
-#ifdef CONFIG_MPU6050_TRIGGER
 	struct gpio_dt_spec int_gpio;
-#endif /* CONFIG_MPU6050_TRIGGER */
+	int smplrt_div;
 };
 
 #ifdef CONFIG_MPU6050_TRIGGER
