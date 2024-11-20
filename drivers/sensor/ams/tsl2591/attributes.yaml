@@ -1,0 +1,32 @@
+# Copyright (c) 2024 Google Inc
+# SPDX-License-Identifier: BDS-3-Clause
+
+attributes:
+  tsl2591_gain_mode:
+    name: "ADC Gain Mode"
+    description: |
+      Rather than set this value directly, can only be set to operate in one of four modes:
+
+      TSL2591_SENSOR_GAIN_LOW
+      TSL2591_SENSOR_GAIN_MED
+      TSL2591_SENSOR_GAIN_HIGH
+      TSL2591_SENSOR_GAIN_MAX
+
+      See datasheet for actual typical gain scales these modes correspond to.
+  tsl2591_integration_time:
+    name: "ADC Integration Time (in ms)"
+    description: |
+      Can only be set to one of six values:
+
+      100, 200, 300, 400, 500, or 600
+  tsl2591_int_persist:
+    name: "ALS Interrupt Persist Filter"
+    description: |
+      Represents the number of consecutive sensor readings outside of a set threshold
+      before triggering an interrupt. Can only be set to one of sixteen values:
+
+      0, 1, 2, 3, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, or 60
+
+      Setting this to 0 causes an interrupt to generate every ALS cycle,
+      regardless of threshold.
+      Setting this to 1 is equivalent to the no-persist interrupt mode.

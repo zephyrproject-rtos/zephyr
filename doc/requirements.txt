@@ -26,4 +26,4 @@ doxmlparser
 anytree
 
 # Used to generate the sensor catalog
-pigweed>=0.0.20
+pigweed==0.0.21

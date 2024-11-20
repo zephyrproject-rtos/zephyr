@@ -1,0 +1,22 @@
+attributes:
+  tsl2540_integration_time:
+    name: "Integration time"
+    description: |
+      Time used to collect light sample
+  int_apers:
+    name: "Interrupt persistence filters"
+    description: |
+      Filters used to persist an interrupt signal
+  tsl2540_shutdown_mode:
+    name: "Shutdown the sensor"
+    description: |
+      Allows setting the device to lower power after a trigger fires.
+  tsl2540_continuous_mode:
+    name: "Continuous mode"
+    description: |
+      Keep running the sensor even after a trigger fires.
+  tsl2540_continuous_no_wait_mode:
+    name: "Continuous no-wait mode"
+    description: |
+      Keep running the sensor after a trigger but don't wait for a status
+      register read.

@@ -1,0 +1,37 @@
+# Copyright (c) 2024 Google Inc
+# SPDX-License-Identifier: BDS-3-Clause
+
+deps:
+  - "drivers/sensor/attributes.yaml"
+  - "drivers/sensor/channels.yaml"
+  - "drivers/sensor/triggers.yaml"
+  - "drivers/sensor/units.yaml"
+  - "drivers/sensor/ams/tsl2591/attributes.yaml"
+compatible:
+  org: "ams"
+  part: "tsl2591"
+supported-buses:
+  - i2c
+description: |
+  TSL2591 IR and clear light sensor
+channels:
+  ir: []
+  light: []
+attributes:
+  - attribute: tsl2591_gain_mode
+    channel: light
+    units: none
+  - attribute: tsl2591_integration_time
+    channel: light
+    units: time
+  - attribute: tsl2591_int_persist
+    channel: light
+    units: none
+  - attribute: lower_thresh
+    channel: light
+    units: illuminance
+  - attribute: upper_thresh
+    channel: light
+    units: illuminance
+triggers:
+  - threshold

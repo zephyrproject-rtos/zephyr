@@ -1,0 +1,37 @@
+# Copyright (c) 2024 Google Inc
+# SPDX-License-Identifier: BDS-3-Clause
+
+deps:
+  - "drivers/sensor/attributes.yaml"
+  - "drivers/sensor/channels.yaml"
+  - "drivers/sensor/triggers.yaml"
+  - "drivers/sensor/units.yaml"
+compatible:
+  org: "adi"
+  part: "adxl367"
+supported-buses:
+  - i2c
+  - spi
+description: |
+  ADXL367 Accelerometer
+channels:
+  accel_x: []
+  accel_y: []
+  accel_z: []
+  accel_xyz: []
+  die_temp: []
+attributes:
+  - attribute: "sampling_frequency"
+    channel: "accel_xyz"
+    units: "frequency"
+  - attribute: "lower_thresh"
+    channel: "accel_xyz"
+    units: "acceleration"
+  - attribute: "upper_thresh"
+    channel: "accel_xyz"
+    units: "acceleration"
+triggers:
+  - data_ready
+  - fifo_full
+  - fifo_watermark
+  - threshold

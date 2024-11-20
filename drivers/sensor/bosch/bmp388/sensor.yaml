@@ -1,0 +1,31 @@
+# Copyright (c) 2024 Google Inc
+# SPDX-License-Identifier: BDS-3-Clause
+
+deps:
+  - "drivers/sensor/attributes.yaml"
+  - "drivers/sensor/channels.yaml"
+  - "drivers/sensor/triggers.yaml"
+  - "drivers/sensor/units.yaml"
+compatible:
+  org: "bosch"
+  part: "bmp388"
+supported-buses:
+  - i2c
+  - spi
+description: |
+  BMP388 temperature/pressure sensor
+channels:
+  ambient_temp: []
+  die_temp: []
+  press: []
+attributes:
+  - attribute: oversampling
+    channel: ambient_temp
+    units: none
+  - attribute: oversampling
+    channel: press
+    units: none
+  - attribute: sampling_frequency
+    units: frequency
+triggers:
+  - data_ready

@@ -384,16 +384,16 @@ static int tsl2591_attr_set(const struct device *dev, enum sensor_channel chan,
 	}
 #endif
 
-	switch ((enum sensor_attribute_tsl2591)attr) {
-	case SENSOR_ATTR_GAIN_MODE:
+	switch (attr) {
+	case SENSOR_ATTR_TSL2591_GAIN_MODE:
 		ret = tsl2591_set_gain(dev, (enum sensor_gain_tsl2591)val->val1);
 		break;
-	case SENSOR_ATTR_INTEGRATION_TIME:
+	case SENSOR_ATTR_TSL2591_INTEGRATION_TIME:
 		ret = tsl2591_set_integration(dev, val->val1);
 		break;
 
 #ifdef CONFIG_TSL2591_TRIGGER
-	case SENSOR_ATTR_INT_PERSIST:
+	case SENSOR_ATTR_TSL2591_INT_PERSIST:
 		ret = tsl2591_set_persist(dev, val->val1);
 		break;
 #endif

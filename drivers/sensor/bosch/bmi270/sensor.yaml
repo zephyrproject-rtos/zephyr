@@ -1,0 +1,53 @@
+# Copyright (c) 2024 Google Inc
+# SPDX-License-Identifier: BDS-3-Clause
+
+deps:
+  - "drivers/sensor/attributes.yaml"
+  - "drivers/sensor/channels.yaml"
+  - "drivers/sensor/triggers.yaml"
+  - "drivers/sensor/units.yaml"
+compatible:
+  org: "bosch"
+  part: "bmi270"
+supported-buses:
+  - i2c
+  - spi
+description: |
+  BMI270 accel/gyro
+channels:
+  accel_x: []
+  accel_y: []
+  accel_z: []
+  accel_xyz: []
+  gyro_x: []
+  gyro_y: []
+  gyro_z: []
+  gyro_xyz: []
+attributes:
+  - attribute: sampling_frequency
+    channel: accel_xyz
+    units: frequency
+  - attribute: sampling_frequency
+    channel: gyro_xyz
+    units: frequency
+  - attribute: oversampling
+    channel: accel_xyz
+    units: none
+  - attribute: oversampling
+    channel: gyro_xyz
+    units: none
+  - attribute: slope_dur
+    channel: accel_xyz
+    units: time
+  - attribute: slope_dur
+    channel: gyro_xyz
+    units: time
+  - attribute: slope_th
+    channel: accel_xyz
+    units: jerk
+  - attribute: slope_th
+    channel: gyro_xyz
+    units: angular_acceleration
+triggers:
+  - data_ready
+  - motion

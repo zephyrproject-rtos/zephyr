@@ -1,0 +1,5 @@
+attributes:
+  tcs3400_integration_cycles:
+    name: "RGBC integration cycles"
+    description: |
+      The number of clock cycles to collect RGBC values.

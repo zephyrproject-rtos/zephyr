@@ -1,0 +1,14 @@
+# Copyright (c) 2024 Google Inc
+# SPDX-License-Identifier: BDS-3-Clause
+channels:
+  ens160_aqi:
+    name: "Air Quality Index"
+    description: "An index value to represent air quality"
+    units: none
+attributes:
+  ens160_rh:
+    name: "Relative humidity"
+    description: "Humidity % relative to the maximum possible humidity"
+  ens160_temp:
+    name: "Temperature"
+    description: "Current ambient temperature"

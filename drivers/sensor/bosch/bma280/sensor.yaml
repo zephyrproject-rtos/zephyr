@@ -1,0 +1,31 @@
+# Copyright (c) 2024 Google Inc
+# SPDX-License-Identifier: BDS-3-Clause
+
+deps:
+  - "drivers/sensor/attributes.yaml"
+  - "drivers/sensor/channels.yaml"
+  - "drivers/sensor/triggers.yaml"
+  - "drivers/sensor/units.yaml"
+compatible:
+  org: "bosch"
+  part: "bma280"
+supported-buses:
+  - i2c
+description: |
+  BMA280 accelerometer
+channels:
+  accel_x: []
+  accel_y: []
+  accel_z: []
+  accel_xyz: []
+  die_temp: []
+attributes:
+  - attribute: slope_dur
+    channel: accel_xyz
+    units: time
+  - attribute: slope_th
+    channel: accel_xyz
+    units: jerk
+triggers:
+  - data_ready
+  - delta

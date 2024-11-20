@@ -1,0 +1,30 @@
+# Copyright (c) 2024 Google Inc
+# SPDX-License-Identifier: BDS-3-Clause
+
+deps:
+  - "drivers/sensor/attributes.yaml"
+  - "drivers/sensor/channels.yaml"
+  - "drivers/sensor/triggers.yaml"
+  - "drivers/sensor/units.yaml"
+compatible:
+  org: "ams"
+  part: "ccs811"
+supported-buses:
+  - i2c
+description: |
+  CCS811 air sensor
+channels:
+  co2: []
+  current: []
+  voc: []
+  voltage: []
+attributes:
+  - attribute: "lower_thresh"
+    channel: "co2"
+    units: "concentration"
+  - attribute: "upper_thresh"
+    channel: "co2"
+    units: "concentration"
+triggers:
+  - data_ready
+  - threshold

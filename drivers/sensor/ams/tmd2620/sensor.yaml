@@ -1,0 +1,26 @@
+# Copyright (c) 2024 Google Inc
+# SPDX-License-Identifier: BDS-3-Clause
+
+deps:
+  - "drivers/sensor/attributes.yaml"
+  - "drivers/sensor/channels.yaml"
+  - "drivers/sensor/triggers.yaml"
+  - "drivers/sensor/units.yaml"
+compatible:
+  org: "ams"
+  part: "tmd2620"
+supported-buses:
+  - i2c
+description: |
+  TMD2620 proximity sensor
+channels:
+  prox: []
+attributes:
+  - attribute: lower_thresh
+    channel: prox
+    units: distance
+  - attribute: upper_thresh
+    channel: prox
+    units: distance
+triggers:
+  - threshold

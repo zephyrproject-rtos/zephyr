@@ -1,0 +1,18 @@
+# Copyright (c) 2024 Google Inc
+# SPDX-License-Identifier: BDS-3-Clause
+
+deps:
+  - "drivers/sensor/attributes.yaml"
+  - "drivers/sensor/channels.yaml"
+  - "drivers/sensor/triggers.yaml"
+  - "drivers/sensor/units.yaml"
+compatible:
+  org: "aosong"
+  part: "dht20"
+supported-buses:
+  - i2c
+description: |
+  DHT20 temperature / humidity sensor
+channels:
+  ambient_temp: []
+  humidity: []
