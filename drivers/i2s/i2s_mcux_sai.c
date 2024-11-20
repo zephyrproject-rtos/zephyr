@@ -102,8 +102,8 @@ struct i2s_mcux_config {
 	const struct device *ccm_dev;
 	const struct pinctrl_dev_config *pinctrl;
 	void (*irq_connect)(const struct device *dev);
-	bool rx_sync_mode;
-	bool tx_sync_mode;
+	sai_sync_mode_t rx_sync_mode;
+	sai_sync_mode_t tx_sync_mode;
 };
 
 /* Device run time data */
@@ -562,19 +562,9 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 
 	/* sync mode configurations */
 	if (dir == I2S_DIR_TX) {
-		/* TX */
-		if (dev_cfg->tx_sync_mode) {
-			config.syncMode = kSAI_ModeSync;
-		} else {
-			config.syncMode = kSAI_ModeAsync;
-		}
-	} else {
-		/* RX */
-		if (dev_cfg->rx_sync_mode) {
-			config.syncMode = kSAI_ModeSync;
-		} else {
-			config.syncMode = kSAI_ModeAsync;
-		}
+		config.syncMode = dev_cfg->tx_sync_mode;
+	} else if (dir == I2S_DIR_RX) {
+		config.syncMode = dev_cfg->rx_sync_mode;
 	}
 
 	if (i2s_cfg->options & I2S_OPT_FRAME_CLK_SLAVE) {
@@ -1191,8 +1181,10 @@ static DEVICE_API(i2s, i2s_mcux_driver_api) = {
 		.ccm_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(i2s_id)),                             \
 		.irq_connect = i2s_irq_connect_##i2s_id,                                           \
 		.pinctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(i2s_id),                                 \
-		.tx_sync_mode = DT_INST_PROP(i2s_id, nxp_tx_sync_mode),                            \
-		.rx_sync_mode = DT_INST_PROP(i2s_id, nxp_rx_sync_mode),                            \
+		.tx_sync_mode =                                                                    \
+			DT_INST_PROP(i2s_id, nxp_tx_sync_mode) ? kSAI_ModeSync : kSAI_ModeAsync,   \
+		.rx_sync_mode =                                                                    \
+			DT_INST_PROP(i2s_id, nxp_rx_sync_mode) ? kSAI_ModeSync : kSAI_ModeAsync,   \
 		.tx_channel = DT_INST_PROP(i2s_id, nxp_tx_channel),                                \
 	};                                                                                         \
                                                                                                    \
