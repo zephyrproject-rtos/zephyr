@@ -126,7 +126,7 @@ const struct xtensa_mmu_range xtensa_soc_mmu_ranges[] = {
 	},
 	{
 		/* FIXME: definitely need more refinements... */
-		.start = (uint32_t)0x0,
+		.start = (uint32_t)0x1000,
 		.end   = (uint32_t)0x100000,
 		.attrs = XTENSA_MMU_PERM_W,
 		.name = "hwreg0",
