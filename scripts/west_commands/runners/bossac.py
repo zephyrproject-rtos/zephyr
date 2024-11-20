@@ -76,19 +76,13 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
 
     def supports(self, flag):
         """Check if bossac supports a flag by searching the help"""
-        for line in self.read_help():
-            if flag in line:
-                return True
-        return False
+        return any(flag in line for line in self.read_help())
 
     def is_extended_samba_protocol(self):
         ext_samba_versions = ['CONFIG_BOOTLOADER_BOSSA_ARDUINO',
                               'CONFIG_BOOTLOADER_BOSSA_ADAFRUIT_UF2']
 
-        for x in ext_samba_versions:
-            if self.build_conf.getboolean(x):
-                return True
-        return False
+        return any(self.build_conf.getboolean(x) for x in ext_samba_versions)
 
     def is_partition_enabled(self):
         return self.build_conf.getboolean('CONFIG_USE_DT_CODE_PARTITION')
