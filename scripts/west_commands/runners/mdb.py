@@ -67,7 +67,7 @@ def mdb_do_run(mdb_runner, command):
                 mdb_target += [mdb_runner.dig_device]
         else:
             # \todo: add support of other debuggers
-            raise ValueError('unsupported jtag adapter {}'.format(mdb_runner.jtag))
+            raise ValueError(f'unsupported jtag adapter {mdb_runner.jtag}')
 
     if command == 'flash':
         if is_flash_cmd_need_exit_immediately(mdb_runner):
@@ -84,7 +84,7 @@ def mdb_do_run(mdb_runner, command):
     elif 1 < mdb_runner.cores <= 12:
         mdb_multifiles = '-multifiles='
         for i in range(mdb_runner.cores):
-            mdb_sub_cmd = [commander] + ['-pset={}'.format(i + 1), '-psetname=core{}'.format(i)]
+            mdb_sub_cmd = [commander] + [f'-pset={i + 1}', f'-psetname=core{i}']
             # -prop=download=2 is used for SMP application debug, only the 1st core
             # will download the shared image.
             if i > 0:
@@ -100,7 +100,7 @@ def mdb_do_run(mdb_runner, command):
 
         mdb_cmd = [commander] + [mdb_multifiles] + mdb_run
     else:
-        raise ValueError('unsupported cores {}'.format(mdb_runner.cores))
+        raise ValueError(f'unsupported cores {mdb_runner.cores}')
 
     mdb_runner.call(mdb_cmd, cwd=mdb_runner.build_dir)
 

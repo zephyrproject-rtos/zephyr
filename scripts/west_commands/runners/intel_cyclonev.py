@@ -240,10 +240,10 @@ class IntelCycloneVBinaryRunner(ZephyrBinaryRunner):
                       pre_init_cmd)
         temp_str = '--cd=' + os.environ.get('ZEPHYR_BASE') #Go to Zephyr base Dir
         gdb_cmd = (self.gdb_cmd + self.tui_arg +
-                   [temp_str,'-ex', 'target extended-remote localhost:{}'.format(self.gdb_port) , '-batch']) #Execute First Script in Zephyr Base Dir
+                   [temp_str,'-ex', f'target extended-remote localhost:{self.gdb_port}' , '-batch']) #Execute First Script in Zephyr Base Dir
 
         gdb_cmd2 = (self.gdb_cmd + self.tui_arg +
-                   ['-ex', 'target extended-remote localhost:{}'.format(self.gdb_port) , '-batch'])	#Execute Second Script in Build Dir
+                   ['-ex', f'target extended-remote localhost:{self.gdb_port}' , '-batch'])	#Execute Second Script in Build Dir
         echo = ['echo']
         if self.gdb_init is not None:
             for i in self.gdb_init:
@@ -295,16 +295,16 @@ class IntelCycloneVBinaryRunner(ZephyrBinaryRunner):
                       pre_init_cmd)
 
         gdb_attach = (self.gdb_cmd + self.tui_arg +
-                   ['-ex', 'target extended-remote :{}'.format(self.gdb_port),
+                   ['-ex', f'target extended-remote :{self.gdb_port}',
                     self.elf_name, '-q'])
 
         temp_str = '--cd=' + os.environ.get('ZEPHYR_BASE') #Go to Zephyr base Dir
 
         gdb_cmd = (self.gdb_cmd + self.tui_arg +
-                   [temp_str,'-ex', 'target extended-remote localhost:{}'.format(self.gdb_port) , '-batch']) #Execute First Script in Zephyr Base Dir
+                   [temp_str,'-ex', f'target extended-remote localhost:{self.gdb_port}' , '-batch']) #Execute First Script in Zephyr Base Dir
 
         gdb_cmd2 = (self.gdb_cmd + self.tui_arg +
-                   ['-ex', 'target extended-remote :{}'.format(self.gdb_port) , '-batch'])	#Execute Second Script in Build Dir
+                   ['-ex', f'target extended-remote :{self.gdb_port}' , '-batch'])	#Execute Second Script in Build Dir
 
 
         if self.gdb_init is not None:
