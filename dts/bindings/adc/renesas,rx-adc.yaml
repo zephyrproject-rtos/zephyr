@@ -1,0 +1,33 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RX ADC
+
+compatible: "renesas,rx-adc"
+
+include: [adc-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  vref-mv:
+    type: int
+    required: true
+    description: ADC reference voltage (Unit:mV)
+
+  channel-count:
+    type: int
+    required: true
+    description: The number of ADC channels
+
+  channel-available-mask:
+    type: int
+    required: true
+    description: Mask for ADC channels existed in each unit S12AD
+
+  "#io-channel-cells":
+    const: 1
+
+io-channel-cells:
+  - input
