@@ -417,6 +417,38 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_SetRootClock(kCLOCK_Root_Flexspi1, &rootCfg);
 #endif
 
+#ifdef CONFIG_HAS_MCUX_TPM
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(tpm2), okay)
+	/* Configure TPM2 using SYS_PLL3_DIV2_CLK */
+	rootCfg.mux = kCLOCK_TPM2_ClockRoot_MuxSysPll3Div2;
+	rootCfg.div = 3;
+	CLOCK_SetRootClock(kCLOCK_Root_Tpm2, &rootCfg);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(tpm4), okay)
+	/* Configure TPM4 using SYS_PLL3_DIV2_CLK */
+	rootCfg.mux = kCLOCK_TPM4_ClockRoot_MuxSysPll3Div2;
+	rootCfg.div = 3;
+	CLOCK_SetRootClock(kCLOCK_Root_Tpm4, &rootCfg);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(tpm5), okay)
+	/* Configure TPM5 using SYS_PLL3_DIV2_CLK */
+	rootCfg.mux = kCLOCK_TPM5_ClockRoot_MuxSysPll3Div2;
+	rootCfg.div = 3;
+	CLOCK_SetRootClock(kCLOCK_Root_Tpm5, &rootCfg);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(tpm6), okay)
+	/* Configure TPM6 using SYS_PLL3_DIV2_CLK */
+	rootCfg.mux = kCLOCK_TPM6_ClockRoot_MuxSysPll3Div2;
+	rootCfg.div = 3;
+	CLOCK_SetRootClock(kCLOCK_Root_Tpm6, &rootCfg);
+#endif
+
+#endif /* CONFIG_HAS_MCUX_TPM */
+
 	/* Keep core clock ungated during WFI */
 	CCM->LPCG[1].LPM0 = 0x33333333;
 	CCM->LPCG[1].LPM1 = 0x33333333;
