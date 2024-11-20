@@ -111,6 +111,22 @@ struct cdc_acm_uart_data {
 	 * roughly emulating flow control.
 	 */
 	bool flow_ctrl;
+	/*
+	 * This is used to indicate that a client has started using a serial
+	 * device on the host side. We use it to enqueue the first transfer as
+	 * ZLP and later to delay the first data packet.
+	 *
+	 * The reason for this is to wait for initialization timeout before
+	 * sending actual payload to make it possible for application to
+	 * disable ECHO. The echo is long known problem related to the fact
+	 * that POSIX defaults to ECHO ON and thus every application that opens
+	 * tty device (on Linux) will have ECHO enabled in the short window
+	 * between open() and ioctl() that disables the echo (if application
+	 * wishes to disable the echo).
+	 *
+	 * The variable is set on line coding request.
+	 */
+	bool first_tx_pkt;
 	/* USBD CDC ACM TX fifo work */
 	struct k_work_delayable tx_fifo_work;
 	/* USBD CDC ACM RX fifo work */
@@ -259,8 +275,15 @@ static int usbd_cdc_acm_request(struct usbd_class_data *const c_data,
 		atomic_clear_bit(&data->state, CDC_ACM_TX_FIFO_BUSY);
 
 		if (!ring_buf_is_empty(data->tx_fifo.rb)) {
+			k_timeout_t timeout = K_NO_WAIT;
+
+			if (data->first_tx_pkt) {
+				timeout = K_MSEC(CONFIG_USBD_CDC_ACM_TX_DELAY);
+				data->first_tx_pkt = false;
+			}
+
 			/* Queue pending TX data on IN endpoint */
-			cdc_acm_work_schedule(&data->tx_fifo_work, K_NO_WAIT);
+			cdc_acm_work_schedule(&data->tx_fifo_work, timeout);
 		}
 
 	}
@@ -296,10 +319,16 @@ static void usbd_cdc_acm_enable(struct usbd_class_data *const c_data)
 		if (ring_buf_space_get(data->tx_fifo.rb)) {
 			/* Raise TX ready interrupt */
 			cdc_acm_work_submit(&data->irq_cb_work);
-		} else {
-			/* Queue pending TX data on IN endpoint */
-			cdc_acm_work_schedule(&data->tx_fifo_work, K_NO_WAIT);
 		}
+	}
+
+	if (!ring_buf_is_empty(data->tx_fifo.rb)) {
+		/* Queue pending TX data on the IN endpoint with a delay to
+		 * allow first_tx_pkt to be set if there is a Set Line Coding
+		 * request.
+		 */
+		cdc_acm_work_schedule(&data->tx_fifo_work,
+				      K_MSEC(CONFIG_USBD_CDC_ACM_TX_DELAY));
 	}
 }
 
@@ -463,6 +492,8 @@ static int usbd_cdc_acm_ctd(struct usbd_class_data *const c_data,
 		memcpy(&data->line_coding, buf->data, len);
 		cdc_acm_update_uart_cfg(data);
 		usbd_msg_pub_device(uds_ctx, USBD_MSG_CDC_ACM_LINE_CODING, dev);
+		data->first_tx_pkt = true;
+
 		return 0;
 
 	case SET_CONTROL_LINE_STATE:
@@ -545,7 +576,7 @@ static void cdc_acm_tx_fifo_handler(struct k_work *work)
 	struct cdc_acm_uart_data *data;
 	struct usbd_class_data *c_data;
 	struct net_buf *buf;
-	size_t len;
+	size_t len = 0;
 	int ret;
 
 	data = CONTAINER_OF(dwork, struct cdc_acm_uart_data, tx_fifo_work);
@@ -573,7 +604,10 @@ static void cdc_acm_tx_fifo_handler(struct k_work *work)
 		return;
 	}
 
-	len = ring_buf_get(data->tx_fifo.rb, buf->data, buf->size);
+	if (!data->first_tx_pkt) {
+		len = ring_buf_get(data->tx_fifo.rb, buf->data, buf->size);
+	}
+
 	net_buf_add(buf, len);
 
 	ret = usbd_ep_enqueue(c_data, buf);
