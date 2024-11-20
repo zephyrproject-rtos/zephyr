@@ -29,8 +29,7 @@ from dataclasses import dataclass, field
 from functools import partial
 from enum import Enum
 from inspect import isabstract
-from typing import Dict, List, NamedTuple, NoReturn, Optional, Set, Type, \
-    Union
+from typing import NamedTuple, NoReturn
 
 try:
     from elftools.elf.elffile import ELFFile
