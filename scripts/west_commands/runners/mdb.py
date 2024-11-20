@@ -27,12 +27,10 @@ def is_flash_cmd_need_exit_immediately(mdb_runner):
     if is_simulation_run(mdb_runner):
         # for nsim, we can't run and quit immediately
         return False
-    elif is_hostlink_used(mdb_runner):
-        # if hostlink is used we can't run and quit immediately, as we still need MDB process
-        # attached to process hostlink IO
-        return False
-    else:
-        return True
+
+    # if hostlink is used we can't run and quit immediately, as we still need MDB process
+    # attached to process hostlink IO
+    return not is_hostlink_used(mdb_runner)
 
 def smp_core_order(mdb_runner, id):
     if is_simulation_run(mdb_runner):
