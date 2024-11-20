@@ -14,6 +14,12 @@
 
 #define VPR_CPU DT_INST(0, nordic_vpr)
 
+#ifdef CONFIG_EXCEPTION_DEBUG
+#define ESF_CSF _callee_saved_t *csf
+#else
+#define ESF_CSF
+#endif /* CONFIG_EXCEPTION_DEBUG */
+
 #if DT_PROP(VPR_CPU, nordic_bus_width) == 64
 
 #define SOC_ISR_STACKING_ESF_DECLARE                                                               \
@@ -21,6 +27,7 @@
 		unsigned long s0;                                                                  \
 		unsigned long mstatus;                                                             \
 		struct soc_esf soc_context;                                                        \
+		ESF_CSF;                                                                           \
                                                                                                    \
 		unsigned long t2;                                                                  \
 		unsigned long ra;                                                                  \
@@ -43,6 +50,7 @@
 		unsigned long s0;                                                                  \
 		unsigned long mstatus;                                                             \
 		struct soc_esf soc_context;                                                        \
+		ESF_CSF;                                                                           \
                                                                                                    \
 		unsigned long ra;                                                                  \
 		unsigned long t2;                                                                  \

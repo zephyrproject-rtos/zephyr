@@ -93,6 +93,8 @@ Deprecated APIs and options
 * :kconfig:option:`CONFIG_JWT_SIGN_RSA_LEGACY` is deprecated. Please switch to the
   PSA Crypto API based alternative (i.e. :kconfig:option:`CONIFG_JWT_SIGN_RSA_PSA`).
 
+* RISCV's :kconfig:option:`CONFIG_EXTRA_EXCEPTION_INFO` is deprecated. Use :kconfig:option:`CONFIG_EXCEPTION_DEBUG` instead.
+
 New APIs and options
 ====================
 
