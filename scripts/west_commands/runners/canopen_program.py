@@ -185,7 +185,7 @@ class CANopenBinaryRunner(ZephyrBinaryRunner):
 
         self.downloader.disconnect()
 
-class CANopenProgramDownloader(object):
+class CANopenProgramDownloader:
     '''CANopen program downloader'''
     def __init__(self, logger, node_id, can_context=DEFAULT_CAN_CONTEXT,
                  program_number=DEFAULT_PROGRAM_NUMBER,
