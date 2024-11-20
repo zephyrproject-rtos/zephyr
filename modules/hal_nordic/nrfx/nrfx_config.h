@@ -12,8 +12,21 @@
 #define NRFX_CONFIG_API_VER_MINOR 8
 #define NRFX_CONFIG_API_VER_MICRO 0
 
+/* Macros used in zephyr-specific config files. */
+#include "nrfx_zephyr_utils.h"
+
 /* Define nrfx configuration based on Zephyrs KConfigs. */
 #include "nrfx_kconfig.h"
+
+/* Define resources reserved outside nrfx scope. */
+#ifdef CONFIG_NRFX_RESERVED_RESOURCES_HEADER
+#include CONFIG_NRFX_RESERVED_RESOURCES_HEADER
+#endif
+
+/* Include babble-sim configuration. */
+#if defined(CONFIG_SOC_SERIES_BSIM_NRFXX)
+#include "nrfx_config_bsim.h"
+#endif
 
 /* Use defaults for undefined symbols. */
 #include <templates/nrfx_config_common.h>
