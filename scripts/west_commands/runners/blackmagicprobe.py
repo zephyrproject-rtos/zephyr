@@ -11,7 +11,7 @@ import signal
 import sys
 from pathlib import Path
 
-from runners.core import ZephyrBinaryRunner, RunnerCaps
+from runners.core import RunnerCaps, ZephyrBinaryRunner
 
 try:
     import serial.tools.list_ports

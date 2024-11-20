@@ -15,8 +15,7 @@ import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
-from runners.core import (BuildConfiguration, RunnerCaps, RunnerConfig,
-                          ZephyrBinaryRunner)
+from runners.core import BuildConfiguration, RunnerCaps, RunnerConfig, ZephyrBinaryRunner
 
 NXP_S32DBG_USB_CLASS = 'NXP Probes'
 NXP_S32DBG_USB_VID = 0x15a2

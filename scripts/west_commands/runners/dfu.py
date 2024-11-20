@@ -4,13 +4,11 @@
 
 '''Runner for flashing with dfu-util.'''
 
-from collections import namedtuple
 import sys
 import time
+from collections import namedtuple
 
-from runners.core import ZephyrBinaryRunner, RunnerCaps, \
-    BuildConfiguration
-
+from runners.core import BuildConfiguration, RunnerCaps, ZephyrBinaryRunner
 
 DfuSeConfig = namedtuple('DfuSeConfig', ['address', 'options'])
 

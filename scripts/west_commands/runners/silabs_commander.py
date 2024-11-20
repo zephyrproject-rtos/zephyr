@@ -11,8 +11,8 @@ See SiLabs UG162: "Simplicity Commander Reference Guide" for more info.
 
 import os
 import shlex
-from runners.core import ZephyrBinaryRunner, RunnerCaps, FileType
 
+from runners.core import FileType, RunnerCaps, ZephyrBinaryRunner
 
 DEFAULT_APP = 'commander'
 

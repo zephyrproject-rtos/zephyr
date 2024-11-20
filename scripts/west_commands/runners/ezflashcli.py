@@ -5,7 +5,7 @@
 '''Runner for flashing with ezFlashCLI.'''
 import shlex
 
-from runners.core import ZephyrBinaryRunner, RunnerCaps
+from runners.core import RunnerCaps, ZephyrBinaryRunner
 
 DEFAULT_EZFLASHCLI = "ezFlashCLI"
 

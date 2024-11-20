@@ -6,22 +6,22 @@
 '''Runner base class for flashing with nrf tools.'''
 
 import abc
-from collections import deque
 import contextlib
 import functools
 import os
-from pathlib import Path
 import shlex
 import subprocess
 import sys
-from re import fullmatch, escape
+from collections import deque
+from pathlib import Path
+from re import escape, fullmatch
 
 from zephyr_ext_common import ZEPHYR_BASE
 
 sys.path.append(os.fspath(Path(__file__).parent.parent.parent))
 import zephyr_module
 
-from runners.core import ZephyrBinaryRunner, RunnerCaps
+from runners.core import RunnerCaps, ZephyrBinaryRunner
 
 try:
     from intelhex import IntelHex

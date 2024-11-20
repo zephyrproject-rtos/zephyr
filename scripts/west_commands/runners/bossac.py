@@ -13,7 +13,7 @@ import subprocess
 import sys
 import time
 
-from runners.core import ZephyrBinaryRunner, RunnerCaps
+from runners.core import RunnerCaps, ZephyrBinaryRunner
 
 if platform.system() == 'Darwin':
     DEFAULT_BOSSAC_PORT = None

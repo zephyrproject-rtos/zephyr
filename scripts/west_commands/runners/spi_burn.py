@@ -2,12 +2,13 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-import re
 import os
-import time
+import re
 import subprocess
+import time
 
-from runners.core import ZephyrBinaryRunner, RunnerCaps, BuildConfiguration
+from runners.core import BuildConfiguration, RunnerCaps, ZephyrBinaryRunner
+
 
 class SpiBurnBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for SPI_burn.'''

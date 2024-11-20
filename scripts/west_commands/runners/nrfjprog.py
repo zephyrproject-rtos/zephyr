@@ -8,8 +8,7 @@
 import subprocess
 import sys
 
-from runners.nrf_common import ErrNotAvailableBecauseProtection, ErrVerify, \
-                               NrfBinaryRunner
+from runners.nrf_common import ErrNotAvailableBecauseProtection, ErrVerify, NrfBinaryRunner
 
 # https://infocenter.nordicsemi.com/index.jsp?topic=%2Fug_nrf_cltools%2FUG%2Fcltools%2Fnrf_nrfjprogexe_return_codes.html&cp=9_1_3_1
 UnavailableOperationBecauseProtectionError = 16
