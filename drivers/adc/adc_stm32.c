@@ -23,7 +23,8 @@
 #include <zephyr/pm/policy.h>
 #include <stm32_ll_adc.h>
 #include <stm32_ll_system.h>
-#if defined(CONFIG_SOC_SERIES_STM32U5X)
+#if defined(CONFIG_SOC_SERIES_STM32N6X) || \
+	defined(CONFIG_SOC_SERIES_STM32U5X)
 #include <stm32_ll_pwr.h>
 #endif /* CONFIG_SOC_SERIES_STM32U5X */
 
@@ -196,7 +197,9 @@ static void adc_stm32_enable_dma_support(ADC_TypeDef *adc)
 	/* Allow ADC to create DMA request and set to one-shot mode as implemented in HAL drivers */
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
 	LL_ADC_REG_SetDMATransfer(adc, LL_ADC_REG_DMA_TRANSFER_UNLIMITED);
-#elif defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32U5X)
+#elif defined(CONFIG_SOC_SERIES_STM32H7X) || \
+	defined(CONFIG_SOC_SERIES_STM32N6X) || \
+	defined(CONFIG_SOC_SERIES_STM32U5X)
 	/* H72x ADC3 and U5 ADC4 are different from the rest, but this call works also for them,
 	 * so no need to call their specific function
 	 */
@@ -469,6 +472,41 @@ static void adc_stm32_calibration_delay(const struct device *dev)
 	}
 }
 
+#if defined(CONFIG_SOC_SERIES_STM32N6X)
+/* Number of ADC measurement during calibration procedure */
+#define ADC_CALIBRATION_STEPS (8U)
+
+static void adc_stm32_calibration_measure(ADC_TypeDef *adc, uint32_t *calibration_factor)
+{
+	uint32_t calib_step;
+	uint32_t calib_factor_avg = 0;
+	uint8_t done = 0;
+
+	do {
+		for (calib_step = 0; calib_step < ADC_CALIBRATION_STEPS; calib_step++) {
+			LL_ADC_REG_StartConversion(adc);
+			while (LL_ADC_REG_IsConversionOngoing(adc) != 0UL) {
+			}
+
+			calib_factor_avg += LL_ADC_REG_ReadConversionData32(adc);
+		}
+
+		/* Compute the average data */
+		calib_factor_avg /= ADC_CALIBRATION_STEPS;
+
+		if ((calib_factor_avg == 0) && (LL_ADC_IsCalibrationOffsetEnabled(adc) == 0UL)) {
+			/* If average is 0 and offset is disabled
+			 * set offset and repeat measurements
+			 */
+			LL_ADC_EnableCalibrationOffset(adc);
+		} else {
+			*calibration_factor = (uint32_t)(calib_factor_avg);
+			done = 1;
+		}
+	} while (done == 0);
+}
+#endif
+
 static void adc_stm32_calibration_start(const struct device *dev)
 {
 	const struct adc_stm32_cfg *config =
@@ -517,6 +555,17 @@ static void adc_stm32_calibration_start(const struct device *dev)
 	LL_ADC_StartCalibration(adc, LL_ADC_CALIB_OFFSET);
 #elif defined(CONFIG_SOC_SERIES_STM32H7X)
 	LL_ADC_StartCalibration(adc, LL_ADC_CALIB_OFFSET, LL_ADC_SINGLE_ENDED);
+#elif defined(CONFIG_SOC_SERIES_STM32N6X)
+	uint32_t calibration_factor;
+	/* Start ADC calibration */
+	LL_ADC_StartCalibration(adc, LL_ADC_SINGLE_ENDED);
+	/* Disable additional offset before calibration start */
+	LL_ADC_DisableCalibrationOffset(adc);
+
+	adc_stm32_calibration_measure(adc, &calibration_factor);
+
+	LL_ADC_SetCalibrationFactor(adc, LL_ADC_SINGLE_ENDED, calibration_factor);
+	LL_ADC_StopCalibration(adc);
 #endif
 	/* Make sure ADCAL is cleared before returning for proper operations
 	 * on the ADC control register, for enabling the peripheral for example
@@ -551,7 +600,8 @@ static int adc_stm32_calibrate(const struct device *dev)
 #endif /* CONFIG_SOC_SERIES_* */
 #endif /* CONFIG_ADC_STM32_DMA */
 
-#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) && \
+	!defined(CONFIG_SOC_SERIES_STM32N6X)
 	adc_stm32_disable(adc);
 	adc_stm32_calibration_start(dev);
 	adc_stm32_calibration_delay(dev);
@@ -562,7 +612,8 @@ static int adc_stm32_calibrate(const struct device *dev)
 		return err;
 	}
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) || \
+	defined(CONFIG_SOC_SERIES_STM32N6X)
 	adc_stm32_calibration_delay(dev);
 	adc_stm32_calibration_start(dev);
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) */
@@ -868,7 +919,9 @@ static int set_sequencer(const struct device *dev)
 
 #if ANY_ADC_SEQUENCER_TYPE_IS(FULLY_CONFIGURABLE)
 		if (config->sequencer_type == FULLY_CONFIGURABLE) {
-#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32U5X)
+#if defined(CONFIG_SOC_SERIES_STM32H7X) || \
+	defined(CONFIG_SOC_SERIES_STM32N6X) || \
+	defined(CONFIG_SOC_SERIES_STM32U5X)
 			/*
 			 * Each channel in the sequence must be previously enabled in PCSEL.
 			 * This register controls the analog switch integrated in the IO level.
@@ -1451,6 +1504,7 @@ static int adc_stm32_set_clock(const struct device *dev)
 		}
 	}
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(st_adc_clock_source)
 #if defined(CONFIG_SOC_SERIES_STM32F0X)
 	LL_ADC_SetClock(adc, config->clk_prescaler);
 #elif defined(ADC_STM32_HAS_INDIVIDUAL_CLOCKS)
@@ -1461,7 +1515,7 @@ static int adc_stm32_set_clock(const struct device *dev)
 				      config->clk_prescaler);
 		LL_ADC_SetClock(adc, LL_ADC_CLOCK_ASYNC);
 	}
-#elif !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
+#else
 	LL_ADC_SetCommonClock(__LL_ADC_COMMON_INSTANCE(adc),
 			      config->clk_prescaler);
 
@@ -1470,6 +1524,7 @@ static int adc_stm32_set_clock(const struct device *dev)
 	ret = adc_stm32h7_setup_boost(config, adc, clk);
 #endif
 #endif
+#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(st_adc_clock_source) */
 
 	return ret;
 }
@@ -1522,7 +1577,10 @@ static int adc_stm32_init(const struct device *dev)
 #if defined(CONFIG_SOC_SERIES_STM32U5X)
 	/* Enable the independent analog supply */
 	LL_PWR_EnableVDDA();
-#endif /* CONFIG_SOC_SERIES_STM32U5X */
+#elif defined(CONFIG_SOC_SERIES_STM32N6X)
+	/* Enable the independent analog supply */
+	LL_PWR_EnableVddADC();
+#endif /* CONFIG_SOC_SERIES_STM32N6X */
 
 #ifdef CONFIG_ADC_STM32_DMA
 	if ((data->dma.dma_dev != NULL) &&
@@ -1539,6 +1597,7 @@ static int adc_stm32_init(const struct device *dev)
 	defined(CONFIG_SOC_SERIES_STM32H5X) || \
 	defined(CONFIG_SOC_SERIES_STM32H7X) || \
 	defined(CONFIG_SOC_SERIES_STM32H7RSX) || \
+	defined(CONFIG_SOC_SERIES_STM32N6X) || \
 	defined(CONFIG_SOC_SERIES_STM32U5X)
 	/*
 	 * L4, WB, G4, H5, H7 and U5 series STM32 needs to be awaken from deep sleep
@@ -1554,7 +1613,8 @@ static int adc_stm32_init(const struct device *dev)
 	 */
 #if !defined(CONFIG_SOC_SERIES_STM32F0X) && \
 	!DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) && \
-	!DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
+	!DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc) && \
+	!defined(CONFIG_SOC_SERIES_STM32N6X)
 	LL_ADC_EnableInternalRegulator(adc);
 	/* Wait for Internal regulator stabilisation
 	 * Some series have a dedicated status bit, others relie on a delay
@@ -1604,7 +1664,8 @@ static int adc_stm32_suspend_setup(const struct device *dev)
 
 #if !defined(CONFIG_SOC_SERIES_STM32F0X) && \
 	!DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) && \
-	!DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
+	!DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc) && \
+	!defined(CONFIG_SOC_SERIES_STM32N6X)
 	/* Disable ADC internal voltage regulator */
 	LL_ADC_DisableInternalRegulator(adc);
 	while (LL_ADC_IsInternalRegulatorEnabled(adc) == 1U) {
@@ -1618,6 +1679,7 @@ static int adc_stm32_suspend_setup(const struct device *dev)
 	defined(CONFIG_SOC_SERIES_STM32H5X) || \
 	defined(CONFIG_SOC_SERIES_STM32H7X) || \
 	defined(CONFIG_SOC_SERIES_STM32H7RSX) || \
+	defined(CONFIG_SOC_SERIES_STM32N6X) || \
 	defined(CONFIG_SOC_SERIES_STM32U5X)
 	/*
 	 * L4, WB, G4, H5, H7 and U5 series STM32 needs to be put into
@@ -1630,7 +1692,10 @@ static int adc_stm32_suspend_setup(const struct device *dev)
 #if defined(CONFIG_SOC_SERIES_STM32U5X)
 	/* Disable the independent analog supply */
 	LL_PWR_DisableVDDA();
-#endif /* CONFIG_SOC_SERIES_STM32U5X */
+#elif defined(CONFIG_SOC_SERIES_STM32N6X)
+	/* Disable the independent analog supply */
+	LL_PWR_DisableVddADC();
+#endif /* CONFIG_SOC_SERIES_STM32N6X */
 
 	/* Stop device clock. Note: fixed clocks are not handled yet. */
 	err = clock_control_off(clk, (clock_control_subsys_t)&config->pclken[0]);
@@ -1680,6 +1745,9 @@ static DEVICE_API(adc, api_stm32_driver_api) = {
 	.ref_internal = STM32_ADC_VREF_MV, /* VREF is usually connected to VDD */
 };
 
+/* Macros for ADC clock source and prescaler */
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(st_adc_clock_source)
+
 #if defined(CONFIG_SOC_SERIES_STM32F0X)
 /* LL_ADC_CLOCK_ASYNC_DIV1 doesn't exist in F0 LL. Define it here. */
 #define LL_ADC_CLOCK_ASYNC_DIV1 LL_ADC_CLOCK_ASYNC
@@ -1696,17 +1764,20 @@ static DEVICE_API(adc, api_stm32_driver_api) = {
 		(LL_ADC_CLOCK_ASYNC_DIV))
 
 /* Concat prefix (1st element) and DIV value (2nd element) of st,adc-prescaler */
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
-#define ADC_STM32_DT_PRESC(x)	0
-#define ADC_STM32_CHECK_DT_CLOCK(x)
-#else
 #define ADC_STM32_DT_PRESC(x)	\
 	_CONCAT(ADC_STM32_CLOCK_PREFIX(x), ADC_STM32_DIV(x))
+
 /* Macro to check if the ADC instance clock setup is correct */
 #define ADC_STM32_CHECK_DT_CLOCK(x)								\
 	BUILD_ASSERT(IS_EQ(ADC_STM32_CLOCK(x), SYNC) || (DT_INST_NUM_CLOCKS(x) > 1),		\
 		     "ASYNC clock mode defined without ASYNC clock defined in device tree")
-#endif
+
+#else /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(st_adc_clock_source) */
+
+#define ADC_STM32_DT_PRESC(x)	0
+#define ADC_STM32_CHECK_DT_CLOCK(x)
+
+#endif /* !DT_ANY_INST_HAS_PROP_STATUS_OKAY(st_adc_clock_source) */
 
 
 #if defined(CONFIG_ADC_STM32_DMA)
