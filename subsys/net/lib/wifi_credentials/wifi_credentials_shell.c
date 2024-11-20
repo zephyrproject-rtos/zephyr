@@ -34,20 +34,20 @@ static void print_network_info(void *cb_arg, const char *ssid, size_t ssid_len)
 		shell_error(sh,
 			    "An error occurred when trying to load credentials for network \"%.*s\""
 			    ". err: %d",
-			    ssid_len, ssid, ret);
+			    (int)ssid_len, ssid, ret);
 		return;
 	}
 
 	shell_fprintf(sh, SHELL_VT100_COLOR_DEFAULT,
-		      "  network ssid: \"%.*s\", ssid_len: %d, type: %s", ssid_len, ssid, ssid_len,
-		      wifi_security_txt(creds.header.type));
+		      "  network ssid: \"%.*s\", ssid_len: %d, type: %s", (int)ssid_len, ssid,
+		      ssid_len, wifi_security_txt(creds.header.type));
 
 	if (creds.header.type == WIFI_SECURITY_TYPE_PSK ||
 	    creds.header.type == WIFI_SECURITY_TYPE_PSK_SHA256 ||
 	    creds.header.type == WIFI_SECURITY_TYPE_SAE ||
 	    creds.header.type == WIFI_SECURITY_TYPE_WPA_PSK) {
 		shell_fprintf(sh, SHELL_VT100_COLOR_DEFAULT,
-			      ", password: \"%.*s\", password_len: %d", creds.password_len,
+			      ", password: \"%.*s\", password_len: %d", (int)creds.password_len,
 			      creds.password, creds.password_len);
 	}
 
