@@ -158,6 +158,13 @@ Bluetooth Crypto
 Networking
 **********
 
+* The Prometheus metric creation has changed as user does not need to have a separate
+  struct :c:struct:`prometheus_metric` any more. This means that the Prometheus macros
+  :c:macro:`PROMETHEUS_COUNTER_DEFINE`, :c:macro:`PROMETHEUS_GAUGE_DEFINE`,
+  :c:macro:`PROMETHEUS_HISTOGRAM_DEFINE` and :c:macro:`PROMETHEUS_SUMMARY_DEFINE`
+  prototypes have changed. (:github:`81712`)
+
+
 Other Subsystems
 ****************
 
