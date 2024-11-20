@@ -180,7 +180,7 @@ class IntelCycloneVBinaryRunner(ZephyrBinaryRunner):
 
     def to_num(self, number):
         dev_match = re.search(r"^\d*\+dev", number)
-        dev_version = not dev_match is None
+        dev_version = dev_match is not None
 
         num_match = re.search(r"^\d*", number)
         num = int(num_match.group(0))
