@@ -178,10 +178,28 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 
 		return 0;
 #endif
-#ifdef CONFIG_COUNTER_MCUX_TPM
+#if defined(CONFIG_COUNTER_MCUX_TPM) || defined(CONFIG_PWM_MCUX_TPM)
+#if defined(CONFIG_SOC_SERIES_IMXRT118X)
+	case IMX_CCM_TPM_CLK:
+		switch (instance) {
+		case 0:
+			clock_root = kCLOCK_Root_Bus_Aon;
+			break;
+		case 1:
+			clock_root = kCLOCK_Root_Tpm2;
+			break;
+		case 2:
+			clock_root = kCLOCK_Root_Bus_Wakeup;
+			break;
+		default:
+			clock_root = (kCLOCK_Root_Tpm4 + instance - 3);
+		}
+		break;
+#else
 	case IMX_CCM_TPM_CLK:
 		clock_root = kCLOCK_Root_Tpm1 + instance;
 		break;
+#endif
 #endif
 
 #ifdef CONFIG_MCUX_FLEXIO
