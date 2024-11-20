@@ -992,10 +992,22 @@ static inline enum wifi_security_type nxp_wifi_security_type(enum wlan_security_
 #ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
 static int nxp_wifi_uap_status(const struct device *dev, struct wifi_iface_status *status)
 {
-	enum wlan_connection_state connection_state = WLAN_DISCONNECTED;
+	enum wlan_connection_state connection_state = WLAN_UAP_STOPPED;
 	struct interface *if_handle = (struct interface *)&g_uap;
 
 	wlan_get_uap_connection_state(&connection_state);
+
+	switch (connection_state) {
+	case WLAN_UAP_STARTED:
+		status->state = WIFI_SAP_IFACE_ENABLED;
+		break;
+	case WLAN_UAP_STOPPED:
+		status->state = WIFI_SAP_IFACE_DISABLED;
+		break;
+	default:
+		status->state = WIFI_SAP_IFACE_DISABLED;
+		break;
+	}
 
 	if (connection_state == WLAN_UAP_STARTED) {
 
@@ -1073,7 +1085,8 @@ static int nxp_wifi_status(const struct device *dev, struct wifi_iface_status *s
 		status->state = WIFI_STATE_ASSOCIATING;
 	} else if (connection_state == WLAN_ASSOCIATED) {
 		status->state = WIFI_STATE_ASSOCIATED;
-	} else if (connection_state == WLAN_CONNECTED) {
+	} else if (connection_state == WLAN_AUTHENTICATED
+			|| connection_state == WLAN_CONNECTED) {
 		status->state = WIFI_STATE_COMPLETED;
 
 		if (!wlan_get_current_network(&nxp_wlan_network)) {
@@ -1563,8 +1576,13 @@ static void nxp_wifi_sta_init(struct net_if *iface)
 	eth_ctx->eth_if_type = L2_ETH_IF_TYPE_WIFI;
 	intf->netif = iface;
 #ifdef CONFIG_WIFI_NM
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT
 	wifi_nm_register_mgd_type_iface(wifi_nm_get_instance("wifi_supplicant"),
 			WIFI_TYPE_STA, iface);
+#else
+	wifi_nm_register_mgd_type_iface(wifi_nm_get_instance("wifi_sta"),
+			WIFI_TYPE_STA, iface);
+#endif
 #endif
 	g_mlan.state.interface = WLAN_BSS_TYPE_STA;
 
@@ -1598,9 +1616,15 @@ static void nxp_wifi_uap_init(struct net_if *iface)
 
 	eth_ctx->eth_if_type = L2_ETH_IF_TYPE_WIFI;
 	intf->netif = iface;
+
 #ifdef CONFIG_WIFI_NM
+#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
 	wifi_nm_register_mgd_type_iface(wifi_nm_get_instance("hostapd"),
 			WIFI_TYPE_SAP, iface);
+#else
+	wifi_nm_register_mgd_type_iface(wifi_nm_get_instance("wifi_sap"),
+			WIFI_TYPE_SAP, iface);
+#endif
 #endif
 	g_uap.state.interface = WLAN_BSS_TYPE_UAP;
 
@@ -1845,6 +1869,10 @@ static const struct wifi_mgmt_ops nxp_wifi_sta_mgmt = {
 	.set_rts_threshold = nxp_wifi_set_rts_threshold,
 };
 
+#if defined(CONFIG_WIFI_NM) && !defined(CONFIG_WIFI_NM_WPA_SUPPLICANT)
+DEFINE_WIFI_NM_INSTANCE(wifi_sta, &nxp_wifi_sta_mgmt);
+#endif
+
 #if defined(CONFIG_WIFI_NM_WPA_SUPPLICANT)
 static const struct zep_wpa_supp_dev_ops nxp_wifi_drv_ops = {
 	.init = wifi_nxp_wpa_supp_dev_init,
@@ -1918,6 +1946,10 @@ static const struct wifi_mgmt_ops nxp_wifi_uap_mgmt = {
 	.set_rts_threshold = nxp_wifi_ap_set_rts_threshold,
 	.set_btwt = nxp_wifi_set_btwt,
 };
+
+#if defined(CONFIG_WIFI_NM) && !defined(CONFIG_WIFI_NM_HOSTAPD_AP)
+DEFINE_WIFI_NM_INSTANCE(wifi_sap, &nxp_wifi_uap_mgmt);
+#endif
 
 static const struct net_wifi_mgmt_offload nxp_wifi_uap_apis = {
 	.wifi_iface.iface_api.init = nxp_wifi_uap_init,
