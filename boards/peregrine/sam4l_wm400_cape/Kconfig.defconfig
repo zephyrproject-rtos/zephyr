@@ -17,6 +17,6 @@ endif # NETWORKING
 config USE_DT_CODE_PARTITION
 	default y
 
-source "boards/common/usb/Kconfig.cdc_acm_serial.defconfig"
+source "boards/common/usb/Kconfig.cdc_acm_serial_legacy.defconfig"
 
 endif # BOARD_SAM4L_WM400_CAPE
