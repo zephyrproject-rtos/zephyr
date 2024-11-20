@@ -14,7 +14,6 @@ import sys
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional, Union
 
 from runners.core import (BuildConfiguration, RunnerCaps, RunnerConfig,
                           ZephyrBinaryRunner)

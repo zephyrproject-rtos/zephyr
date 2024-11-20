@@ -12,7 +12,7 @@ import platform
 import os
 import shlex
 import shutil
-from typing import List, Optional, ClassVar, Dict
+from typing import ClassVar
 
 from runners.core import ZephyrBinaryRunner, RunnerCaps, RunnerConfig
 

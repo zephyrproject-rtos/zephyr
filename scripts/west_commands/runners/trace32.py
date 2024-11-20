@@ -9,7 +9,6 @@ import platform
 import subprocess
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import List, Optional
 
 from runners.core import BuildConfiguration, RunnerCaps, RunnerConfig, ZephyrBinaryRunner
 
