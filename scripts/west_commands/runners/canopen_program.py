@@ -278,7 +278,7 @@ class CANopenProgramDownloader(object):
         self.logger.info('Downloading program: %s', bin_file)
         try:
             size = os.path.getsize(bin_file)
-            infile = open(bin_file, 'rb')
+            infile = open(bin_file, 'rb')  # noqa: SIM115
             outfile = self.data_sdo.open('wb', buffering=self.download_buffer_size,
                                          size=size, block_transfer=self.block_transfer)
 
