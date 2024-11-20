@@ -472,7 +472,7 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
         op = op['operation']
         if op['type'] not in ('erase', 'recover', 'program'):
             return None
-        elif op['type']  == 'program' and op['chip_erase_mode'] != "ERASE_UICR":
+        if op['type'] == 'program' and op['chip_erase_mode'] != "ERASE_UICR":
             return None
 
         file = _get_suit_starter()

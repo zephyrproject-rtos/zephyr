@@ -216,9 +216,7 @@ class IntelCycloneVBinaryRunner(ZephyrBinaryRunner):
                 self.cfg_cmd.append('-f')
                 self.cfg_cmd.append(i)
 
-        if command == 'flash' and self.use_elf:
-            self.do_flash_elf(**kwargs)
-        elif command == 'flash':
+        if command == 'flash':
             self.do_flash_elf(**kwargs)
         elif command in ('attach', 'debug'):
             self.do_attach_debug(command, **kwargs)
