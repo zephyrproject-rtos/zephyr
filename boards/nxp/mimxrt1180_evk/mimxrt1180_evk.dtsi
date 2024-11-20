@@ -139,3 +139,8 @@
 	pinctrl-0 = <&pinmux_flexpwm2>;
 	pinctrl-names = "default";
 };
+
+&tpm5 {
+	pinctrl-0 = <&pinmux_tpm5>;
+	pinctrl-names = "default";
+};

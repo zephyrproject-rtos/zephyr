@@ -137,4 +137,12 @@
 			slew-rate = "fast";
 		};
 	};
+
+	pinmux_tpm5: pinmux_tpm5 {
+		group0 {
+			pinmux = <&iomuxc_gpio_b1_00_tpm5_ch0>;
+			drive-strength = "normal";
+			slew-rate = "slow";
+		};
+	};
 };
