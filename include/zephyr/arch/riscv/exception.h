@@ -45,11 +45,11 @@ struct soc_esf {
 };
 #endif
 
-#ifdef CONFIG_EXTRA_EXCEPTION_INFO
+#ifdef CONFIG_EXCEPTION_DEBUG
 /* Forward declaration */
 struct _callee_saved;
 typedef struct _callee_saved _callee_saved_t;
-#endif /* CONFIG_EXTRA_EXCEPTION_INFO */
+#endif /* CONFIG_EXCEPTION_DEBUG */
 
 #if defined(CONFIG_RISCV_SOC_HAS_ISR_STACKING)
 	SOC_ISR_STACKING_ESF_DECLARE;
@@ -91,9 +91,9 @@ struct arch_esf {
 	unsigned long sp;		/* preserved (user or kernel) stack pointer */
 #endif
 
-#ifdef CONFIG_EXTRA_EXCEPTION_INFO
+#ifdef CONFIG_EXCEPTION_DEBUG
 	_callee_saved_t *csf;		/* pointer to callee-saved-registers */
-#endif /* CONFIG_EXTRA_EXCEPTION_INFO */
+#endif /* CONFIG_EXCEPTION_DEBUG */
 
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
 	struct soc_esf soc_context;
