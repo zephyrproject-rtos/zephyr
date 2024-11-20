@@ -33,6 +33,8 @@ struct prometheus_counter {
 	struct prometheus_metric base;
 	/** Value of the Prometheus counter metric */
 	uint64_t value;
+	/** User data */
+	void *user_data;
 };
 
 /**
@@ -44,22 +46,30 @@ struct prometheus_counter {
  * @param _name The counter metric name
  * @param _desc Counter description
  * @param _label Label for the metric. Additional labels can be added at runtime.
+ * @param _collector Collector to map this metric. Can be set to NULL if it not yet known.
+ * @param ... Optional user data specific to this metric instance.
  *
  * Example usage:
  * @code{.c}
  *
  * PROMETHEUS_COUNTER_DEFINE(http_request_counter, "HTTP request counter",
- *                           ({ .key = "http_request", .value = "request_count" }));
+ *                           ({ .key = "http_request", .value = "request_count" }),
+ *                           NULL);
  * @endcode
  */
-#define PROMETHEUS_COUNTER_DEFINE(_name, _desc, _label)			\
+#define PROMETHEUS_COUNTER_DEFINE(_name, _desc, _label, _collector, ...) \
 	STRUCT_SECTION_ITERABLE(prometheus_counter, _name) = {		\
 		.base.name = STRINGIFY(_name),				\
 		.base.type = PROMETHEUS_COUNTER,			\
 		.base.description = _desc,				\
 		.base.labels[0] = __DEBRACKET _label,			\
 		.base.num_labels = 1,					\
+		.base.collector = _collector,				\
 		.value = 0ULL,						\
+		.user_data = COND_CODE_0(				\
+			NUM_VA_ARGS_LESS_1(LIST_DROP_EMPTY(__VA_ARGS__, _)), \
+			(NULL),						\
+			(GET_ARG_N(1, __VA_ARGS__))),			\
 	}
 
 /**

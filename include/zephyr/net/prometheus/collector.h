@@ -26,6 +26,22 @@
 
 #include <stddef.h>
 
+struct prometheus_collector;
+
+/**
+ * @typedef prometheus_scrape_cb_t
+ * @brief Callback used to scrape a collector for a specific metric.
+ *
+ * @param collector A valid pointer on the collector to scrape
+ * @param metric A valid pointer on the metric to scrape
+ * @param user_data A valid pointer to a user data or NULL
+ *
+ * @return 0 if successful, otherwise a negative error code.
+ */
+typedef int (*prometheus_scrape_cb_t)(struct prometheus_collector *collector,
+				      struct prometheus_metric *metric,
+				      void *user_data);
+
 /**
  * @brief Prometheus collector definition
  *
@@ -38,6 +54,12 @@ struct prometheus_collector {
 	sys_slist_t metrics;
 	/** Mutex to protect the metrics list manipulation */
 	struct k_mutex lock;
+	/** User callback function. If set, then the metric data is fetched
+	 * via the function callback.
+	 */
+	prometheus_scrape_cb_t user_cb;
+	/** User data */
+	void *user_data;
 };
 
 /**
@@ -46,12 +68,25 @@ struct prometheus_collector {
  * This macro defines a Collector.
  *
  * @param _name The collector's name.
+ * @param ... Optional user callback function. If set, this function is called
+ *            when the collector is scraped. The function should be of type
+ *            prometheus_scrape_cb_t.
+ *            Optional user data to pass to the user callback function.
  */
-#define PROMETHEUS_COLLECTOR_DEFINE(_name)				\
+#define PROMETHEUS_COLLECTOR_DEFINE(_name, ...)	\
 	STRUCT_SECTION_ITERABLE(prometheus_collector, _name) = {	\
 		.name = STRINGIFY(_name),				\
 		.metrics = SYS_SLIST_STATIC_INIT(&_name.metrics),	\
 		.lock = Z_MUTEX_INITIALIZER(_name.lock),		\
+		.user_cb = COND_CODE_0(					\
+			NUM_VA_ARGS_LESS_1(				\
+				LIST_DROP_EMPTY(__VA_ARGS__, _)),	\
+			(NULL),						\
+			(GET_ARG_N(1, __VA_ARGS__))),			\
+		.user_data = COND_CODE_0(				\
+			NUM_VA_ARGS_LESS_1(__VA_ARGS__), (NULL),	\
+			(GET_ARG_N(1,					\
+				   GET_ARGS_LESS_N(1, __VA_ARGS__)))),	\
 	}
 
 /**

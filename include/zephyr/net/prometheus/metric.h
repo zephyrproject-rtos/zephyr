@@ -49,6 +49,11 @@ struct prometheus_metric {
 	sys_snode_t node;
 	/** Back pointer to the collector that this metric belongs to */
 	struct prometheus_collector *collector;
+	/** Back pointer to the actual metric (counter, gauge, etc.).
+	 * This is just a temporary solution, ultimate goal is to place
+	 * this generic metrict struct into the actual metric struct.
+	 */
+	void *metric;
 	/** Type of the Prometheus metric. */
 	enum prometheus_metric_type type;
 	/** Name of the Prometheus metric. */
@@ -59,6 +64,8 @@ struct prometheus_metric {
 	struct prometheus_label labels[MAX_PROMETHEUS_LABELS_PER_METRIC];
 	/** Number of labels associated with the Prometheus metric. */
 	int num_labels;
+	/** User defined data */
+	void *user_data;
 	/* Add any other necessary fields */
 };
 
