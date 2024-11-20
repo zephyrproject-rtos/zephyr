@@ -645,6 +645,12 @@ struct hostapd_iface *hostapd_get_interface(const char *ifname)
 	return ctx->hostapd.iface[0];
 }
 
+static void hostapd_event_eapol_rx_cb(void *ctx, const u8 *src_addr,
+				       const u8 *buf, size_t len)
+{
+	hostapd_event_eapol_rx(ctx, src_addr, buf, len, FRAME_ENCRYPTION_UNKNOWN, -1);
+}
+
 static int hostapd_enable_iface_cb(struct hostapd_iface *hapd_iface)
 {
 	struct hostapd_data *bss;
@@ -662,7 +668,7 @@ static int hostapd_enable_iface_cb(struct hostapd_iface *hapd_iface)
 
 	l2_packet_deinit(bss->l2);
 	bss->l2 = l2_packet_init(bss->conf->iface, bss->conf->bssid, ETH_P_EAPOL,
-				 &hostapd_event_eapol_rx, bss, 0);
+				 &hostapd_event_eapol_rx_cb, bss, 0);
 	if (bss->l2 == NULL) {
 		wpa_printf(MSG_ERROR, "Failed to initialize l2 for hostapd interface");
 		return -1;
