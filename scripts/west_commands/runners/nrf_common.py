@@ -177,7 +177,7 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
         elif len(snrs) == 1:
             board_snr = snrs[0]
             self.verify_snr(board_snr)
-            print("Using board {}".format(board_snr))
+            print(f"Using board {board_snr}")
             return board_snr
         elif not sys.stdin.isatty():
             raise RuntimeError(
@@ -190,10 +190,9 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
         print('There are multiple boards connected{}.'.format(
                         f" matching '{glob}'" if glob != "*" else ""))
         for i, snr in enumerate(snrs, 1):
-            print('{}. {}'.format(i, snr))
+            print(f'{i}. {snr}')
 
-        p = 'Please select one with desired serial number (1-{}): '.format(
-                len(snrs))
+        p = f'Please select one with desired serial number (1-{len(snrs)}): '
         while True:
             try:
                 value = input(p)
@@ -299,7 +298,7 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
 
     def program_hex(self):
         # Get the command use to actually program self.hex_.
-        self.logger.info('Flashing file: {}'.format(self.hex_))
+        self.logger.info(f'Flashing file: {self.hex_}')
 
         # What type of erase/core arguments should we pass to the tool?
         core = None

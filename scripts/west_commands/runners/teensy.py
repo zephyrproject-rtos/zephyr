@@ -48,13 +48,13 @@ class TeensyBinaryRunner(ZephyrBinaryRunner):
             fname = self.hex_name
         else:
             raise ValueError(
-                'Cannot flash; no hex ({}) file found. '.format(self.hex_name))
+                f'Cannot flash; no hex ({self.hex_name}) file found. ')
 
         cmd = ([self.teensy_loader] +
                self.mcu_args +
                [fname])
 
-        self.logger.info('Flashing file: {}'.format(fname))
+        self.logger.info(f'Flashing file: {fname}')
 
         try:
             self.check_output(cmd)

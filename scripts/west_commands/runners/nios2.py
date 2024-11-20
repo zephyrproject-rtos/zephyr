@@ -62,7 +62,7 @@ class Nios2BinaryRunner(ZephyrBinaryRunner):
             raise ValueError('Cannot flash; --cpu-sof not given.')
         self.ensure_output('hex')
 
-        self.logger.info('Flashing file: {}'.format(self.hex_name))
+        self.logger.info(f'Flashing file: {self.hex_name}')
         cmd = [self.quartus_py,
                '--sof', self.cpu_sof,
                '--kernel', self.hex_name]
@@ -70,8 +70,7 @@ class Nios2BinaryRunner(ZephyrBinaryRunner):
         self.check_call(cmd)
 
     def print_gdbserver_message(self, gdb_port):
-        self.logger.info('Nios II GDB server running on port {}'.
-                         format(gdb_port))
+        self.logger.info(f'Nios II GDB server running on port {gdb_port}')
 
     def debug_debugserver(self, command, **kwargs):
         # Per comments in the shell script, the NIOSII GDB server
@@ -100,7 +99,7 @@ class Nios2BinaryRunner(ZephyrBinaryRunner):
             gdb_cmd = (self.gdb_cmd +
                        self.tui_arg +
                        [self.elf_name,
-                        '-ex', 'target remote :{}'.format(gdb_port)])
+                        '-ex', f'target remote :{gdb_port}'])
             self.require(gdb_cmd[0])
 
             self.print_gdbserver_message(gdb_port)

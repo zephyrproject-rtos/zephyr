@@ -98,19 +98,19 @@ class Stm32flashBinaryRunner(ZephyrBinaryRunner):
 
         if action == 'info':
             # show device information and exit
-            msg_text = "get device info from {}".format(self.device)
+            msg_text = f"get device info from {self.device}"
 
         elif action == 'erase':
             # erase flash
             #size_aligned = (int(bin_size)  >> 12) + 1 << 12
             size_aligned = (int(bin_size) & 0xfffff000) + 4096
-            msg_text = "erase {} bit starting at {}".format(size_aligned, self.start_addr)
+            msg_text = f"erase {size_aligned} bit starting at {self.start_addr}"
             cmd_flash.extend([
             '-S', str(self.start_addr) + ":" + str(size_aligned), '-o'])
 
         elif action == 'start':
             # start execution
-            msg_text = "start code execution at {}".format(self.exec_addr)
+            msg_text = f"start code execution at {self.exec_addr}"
             if self.exec_addr:
                 if self.exec_addr == 0 or self.exec_addr.lower() == '0x0':
                     msg_text += " (flash start)"
@@ -121,7 +121,7 @@ class Stm32flashBinaryRunner(ZephyrBinaryRunner):
 
         elif action == 'write':
             # flash binary file
-            msg_text = "write {} bytes starting at {}".format(bin_size, self.start_addr)
+            msg_text = f"write {bin_size} bytes starting at {self.start_addr}"
             cmd_flash.extend([
             '-S', str(self.start_addr) + ":" + str(bin_size),
             '-w', bin_name])
@@ -139,11 +139,11 @@ class Stm32flashBinaryRunner(ZephyrBinaryRunner):
                 cmd_flash.extend(['-v'])
 
         else:
-            msg_text = "invalid action \'{}\' passed!".format(action)
-            self.logger.error('Invalid action \'{}\' passed!'.format(action))
+            msg_text = f"invalid action \'{action}\' passed!"
+            self.logger.error(f'Invalid action \'{action}\' passed!')
             return -1
 
         cmd_flash.extend([self.device])
         self.logger.info("Board: " + msg_text)
         self.check_call(cmd_flash)
-        self.logger.info('Board: finished \'{}\' .'.format(action))
+        self.logger.info(f'Board: finished \'{action}\' .')

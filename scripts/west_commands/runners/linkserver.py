@@ -78,8 +78,7 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
                             help='if given, GDB uses -tui')
 
         parser.add_argument('--gdb-port', default=DEFAULT_LINKSERVER_GDB_PORT,
-                            help='gdb port to open, defaults to {}'.format(
-                               DEFAULT_LINKSERVER_GDB_PORT))
+                            help=f'gdb port to open, defaults to {DEFAULT_LINKSERVER_GDB_PORT}')
 
         parser.add_argument('--semihost-port', default=DEFAULT_LINKSERVER_SEMIHOST_PORT,
                             help='semihost port to open, defaults to the empty string '
@@ -147,7 +146,7 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
                 gdb_cmd = ([self.gdb_cmd] +
                            self.tui_arg +
                            [self.elf_name] +
-                           ['-ex', 'target remote {}:{}'.format(self.gdb_host, self.gdb_port)])
+                           ['-ex', f'target remote {self.gdb_host}:{self.gdb_port}'])
 
                 if command == 'debug':
                     gdb_cmd += [ '-ex', 'load', '-ex', 'monitor reset']

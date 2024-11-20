@@ -123,5 +123,5 @@ class SiLabsCommanderBinaryRunner(ZephyrBinaryRunner):
 
         args = [self.commander, 'flash'] + opts + self.tool_opt + flash_args
 
-        self.logger.info('Flashing file: {}'.format(flash_file))
+        self.logger.info(f'Flashing file: {flash_file}')
         self.check_call(args)
