@@ -500,6 +500,84 @@
 				status = "disabled";
 			};
 
+			i2c23: i2c@ed000 {
+				compatible = "nordic,nrf-twim";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <0xed000 0x1000>;
+				interrupts = <237 NRF_DEFAULT_IRQ_PRIORITY>;
+				easydma-maxcnt-bits = <16>;
+				status = "disabled";
+				zephyr,pm-device-runtime-auto;
+			};
+
+			spi23: spi@ed000 {
+				/*
+				 * This spi node can be either SPIM or SPIS,
+				 * for the user to pick:
+				 * compatible = "nordic,nrf-spim" or
+				 *              "nordic,nrf-spis".
+				 */
+				compatible = "nordic,nrf-spim";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <0xed000 0x1000>;
+				interrupts = <237 NRF_DEFAULT_IRQ_PRIORITY>;
+				max-frequency = <DT_FREQ_M(8)>;
+				easydma-maxcnt-bits = <16>;
+				rx-delay-supported;
+				rx-delay = <1>;
+				status = "disabled";
+			};
+
+			uart23: uart@ed000 {
+				compatible = "nordic,nrf-uarte";
+				reg = <0xed000 0x1000>;
+				interrupts = <237 NRF_DEFAULT_IRQ_PRIORITY>;
+				status = "disabled";
+				endtx-stoptx-supported;
+				frame-timeout-supported;
+			};
+
+			i2c24: i2c@ee000 {
+				compatible = "nordic,nrf-twim";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <0xee000 0x1000>;
+				interrupts = <238 NRF_DEFAULT_IRQ_PRIORITY>;
+				easydma-maxcnt-bits = <16>;
+				status = "disabled";
+				zephyr,pm-device-runtime-auto;
+			};
+
+			spi24: spi@ee000 {
+				/*
+				 * This spi node can be either SPIM or SPIS,
+				 * for the user to pick:
+				 * compatible = "nordic,nrf-spim" or
+				 *              "nordic,nrf-spis".
+				 */
+				compatible = "nordic,nrf-spim";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <0xee000 0x1000>;
+				interrupts = <238 NRF_DEFAULT_IRQ_PRIORITY>;
+				max-frequency = <DT_FREQ_M(8)>;
+				easydma-maxcnt-bits = <16>;
+				rx-delay-supported;
+				rx-delay = <1>;
+				status = "disabled";
+			};
+
+			uart24: uart@ee000 {
+				compatible = "nordic,nrf-uarte";
+				reg = <0xee000 0x1000>;
+				interrupts = <238 NRF_DEFAULT_IRQ_PRIORITY>;
+				status = "disabled";
+				endtx-stoptx-supported;
+				frame-timeout-supported;
+			};
+
 			dppic30: dppic@102000 {
 				compatible = "nordic,nrf-dppic";
 				reg = <0x102000 0x808>;
