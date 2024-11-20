@@ -73,6 +73,12 @@
 			rotation = <0>;
 		};
 	};
+
+	bus_5v: bus_5v {
+		compatible = "regulator-fixed";
+		regulator-name = "bus_5v";
+		enable-gpios = <&axp192_gpio 5 GPIO_ACTIVE_HIGH>;
+	};
 };
 
 &psram0 {
@@ -175,12 +181,6 @@
 				line-name = "bus_pwr_en";
 			};
 		};
-	};
-
-	bus_5v: bus_5v {
-		compatible = "regulator-fixed";
-		regulator-name = "bus_5v";
-		enable-gpios = <&axp192_gpio 5 GPIO_ACTIVE_HIGH>;
 	};
 
 	ft5336_touch: ft5336@38 {
