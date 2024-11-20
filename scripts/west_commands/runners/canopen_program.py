@@ -191,7 +191,7 @@ class CANopenProgramDownloader:
                  program_number=DEFAULT_PROGRAM_NUMBER,
                  sdo_retries=DEFAULT_SDO_RETRIES, sdo_timeout=DEFAULT_SDO_TIMEOUT,
                  download_buffer_size=DEFAULT_PROGRAM_DOWNLOAD_BUFFER_SIZE, block_transfer=False):
-        super(CANopenProgramDownloader, self).__init__()
+        super().__init__()
         self.logger = logger
         self.node_id = node_id
         self.can_context = can_context

@@ -47,7 +47,7 @@ class NXPS32DebugProbeRunner(ZephyrBinaryRunner):
                  start_all_cores: bool,
                  s32ds_path: Optional[str] = None,
                  tool_opt: Optional[List[str]] = None) -> None:
-        super(NXPS32DebugProbeRunner, self).__init__(runner_cfg)
+        super().__init__(runner_cfg)
         self.elf_file: str = runner_cfg.elf_file or ''
         self.probe_cfg: NXPS32DebugProbeConfig = probe_cfg
         self.core_name: str = core_name
