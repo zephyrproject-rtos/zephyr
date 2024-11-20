@@ -145,18 +145,8 @@ static void setup_tls(void)
 #endif /* defined(CONFIG_NET_SAMPLE_HTTPS_SERVICE) */
 }
 
-struct prometheus_metric http_request_counter = {
-	.type = PROMETHEUS_COUNTER,
-	.name = "http_request_counter",
-	.description = "HTTP request counter",
-	.num_labels = 1,
-	.labels = {{
-		.key = "http_request",
-		.value = "request_count",
-	}},
-};
-
-PROMETHEUS_COUNTER_DEFINE(test_counter, &http_request_counter);
+PROMETHEUS_COUNTER_DEFINE(http_request_counter, "HTTP request counter",
+			  ({ .key = "http_request", .value = "request_count" }));
 
 PROMETHEUS_COLLECTOR_DEFINE(test_collector);
 
@@ -165,10 +155,10 @@ int main(void)
 	/* Create a mock collector with different types of metrics */
 	prom_context.collector = &test_collector;
 
-	prom_context.counter = &test_counter;
+	prom_context.counter = &http_request_counter;
 	prometheus_counter_inc(prom_context.counter);
 
-	prometheus_collector_register_metric(prom_context.collector, prom_context.counter->base);
+	prometheus_collector_register_metric(prom_context.collector, &prom_context.counter->base);
 
 	setup_tls();
 
