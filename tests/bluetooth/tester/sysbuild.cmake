@@ -2,8 +2,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 if(SB_CONFIG_NET_CORE_IMAGE_HCI_IPC)
-	# For builds in the nrf5340, we build the netcore image with the controller
-
 	set(NET_APP hci_ipc)
 	set(NET_APP_SRC_DIR ${ZEPHYR_BASE}/samples/bluetooth/${NET_APP})
 
@@ -13,10 +11,23 @@ if(SB_CONFIG_NET_CORE_IMAGE_HCI_IPC)
 		BOARD       ${SB_CONFIG_NET_CORE_BOARD}
 	)
 
-	set(${NET_APP}_CONF_FILE
-	 ${NET_APP_SRC_DIR}/nrf5340_cpunet_iso-bt_ll_sw_split.conf
-	 CACHE INTERNAL ""
-	)
+	if(SB_CONFIG_SOC_NRF5340_CPUAPP)
+		set(${NET_APP}_CONF_FILE
+		${NET_APP_SRC_DIR}/nrf5340_cpunet_iso-bt_ll_sw_split.conf
+		CACHE INTERNAL ""
+		)
+		set(${NET_APP}_SNIPPET
+		"bt-ll-sw-split"
+		CACHE INTERNAL ""
+		)
+	endif()
+
+	if(SB_CONFIG_SOC_NRF54H20_CPUAPP)
+		set(${NET_APP}_CONF_FILE
+		${NET_APP_SRC_DIR}/nrf54h20_cpurad-bt_ll_softdevice.conf
+		CACHE INTERNAL ""
+		)
+	endif()
 
 	set(${NET_APP}_EXTRA_CONF_FILE
 	 ${APP_DIR}/hci_ipc_cpunet.conf
