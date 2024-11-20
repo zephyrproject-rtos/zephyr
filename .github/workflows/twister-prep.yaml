@@ -50,14 +50,12 @@ jobs:
           echo "ZEPHYR_RUNNER_CLOUD_POD = ${ZEPHYR_RUNNER_CLOUD_POD}"
 
       - name: Clone cached Zephyr repository
-        if: github.event_name == 'pull_request_target'
         continue-on-error: true
         run: |
           git clone --shared /repo-cache/zephyrproject/zephyr .
           git remote set-url origin ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}
 
       - name: Checkout
-        if: github.event_name == 'pull_request_target'
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
@@ -65,7 +63,6 @@ jobs:
           persist-credentials: false
 
       - name: Environment Setup
-        if: github.event_name == 'pull_request_target'
         run: |
           git config --global user.email "bot@zephyrproject.org"
           git config --global user.name "Zephyr Bot"
@@ -82,7 +79,6 @@ jobs:
           echo "ZEPHYR_SDK_INSTALL_DIR=/opt/toolchains/zephyr-sdk-$( cat SDK_VERSION )" >> $GITHUB_ENV
 
       - name: Generate Test Plan with Twister
-        if: github.event_name == 'pull_request_target'
         id: test-plan
         run: |
           export ZEPHYR_BASE=${PWD}
