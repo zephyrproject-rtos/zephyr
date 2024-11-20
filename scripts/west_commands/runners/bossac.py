@@ -199,7 +199,7 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
             offset = self.get_image_offset(self.supports('--offset'))
 
             if offset is not None and int(str(offset), 16) > 0:
-                cmd_flash += ['-o', '%s' % offset]
+                cmd_flash += ['-o', str(offset)]
 
         elif dt_chosen_code_partition_nd is not None:
             error_msg = 'There is no CONFIG_USE_DT_CODE_PARTITION Kconfig' \
