@@ -38,10 +38,23 @@ function is_undef {
 }
 readonly is_undef
 
+function get_ostype {
+    case "$OSTYPE" in
+	darwin*) echo "Darwin" ;;
+	linux*) echo "Linux" ;;
+	msys*) echo "Windows_NT" ;;
+	cygwin*) echo "Windows_NT" ;;
+	*) echo "unknown" ;;
+    esac
+}
+readonly get_ostype
+
 readonly PLATFORM_HAL=modules/hal/atmosic/ATM33xx-5
 readonly PLATFORM_HAL_LIB=openair/modules/hal_atmosic/ATM33xx-5
 readonly SPE=openair/samples/spe
 readonly MCUBOOT=bootloader/mcuboot/boot/zephyr
+readonly ATMISP=modules/hal/atmosic_lib/tools/atm_arch/bin/$(get_ostype)/atm_isp
+readonly CMAKE_OBJCOPY=${ZEPHYR_SDK_INSTALL_DIR}/arm-zephyr-eabi/bin/arm-zephyr-eabi-objcopy
 
 ################################################################################
 
@@ -59,10 +72,10 @@ function usage {
 Environment variables:
   ZEPHYR_SDK_INSTALL_DIR: The directory of Zephyr SDK.
   ZEPHYR_TOOLCHAIN_VARIANT: The toolchain and the default setting is Zephyr.
-  DEBUG_LOG: Set if enable log, 0: disable, 1: enabled, 2: by application (default).
+  DEBUG_LOG: Set if enable log, 0: disable, 1: enabled, 2: by application (default), 3: by application(debug).
   PM_SETTING: Set if enable power management, 0: disable, 1: enabled, 2: by application (default).
 
-usage: ${0##*/} [+-ha APP] [+-bdefjl FLAV] [+-mnp BPTH] [+-r BDRT] [+-s SER] [+-uw FLAV] [--] BOARD
+usage: ${0##*/} [+-ha APP] [+-bcdefgijl FLAV] [+-mnp BPTH] [+-r BDRT] [+-s SER] [+-uw FLAV] [--] BOARD
 
   BOARD    Atmosic board (passed as -b to west build)
 
@@ -70,7 +83,8 @@ Options:
   -h       Help (this message)
   -a APP   Application path relative to west_topdir
   -b       Build only (skip flashing)
-  -d       Build/flash not just the app but the dependencies
+  -c       Enable secure debug (not applicable when -n is set)
+  -d       Build/flash not just the app but the dependencies and generating atm file as well
            (MCUboot/SPE/ATMWSTK)
   -e       Erase flash
   -f       Flash only
@@ -91,10 +105,10 @@ EOF
 }
 
 # Ensure these options are not set from the environment
-unset APP BUILD_ONLY DEPENDENCIES ERASE_FLASH FLASH_ONLY FAST_LOAD JLINK ATMWSTKLIB MERGE_SPE_NSPE NO_MCUBOOT BPTH BOARD_ROOT FTDI_SERIAL JLINK_SERIAL DFU_IN_FLASH ATMWSTK X_SPE_OPTS PARALLEL_BUILD_JVAL
+unset APP BUILD_ONLY ATM_SECURE_DEBUG DEPENDENCIES ERASE_FLASH FLASH_ONLY FAST_LOAD GEN_ARCH JLINK ATMWSTKLIB MERGE_SPE_NSPE NO_MCUBOOT BPTH BOARD_ROOT FTDI_SERIAL JLINK_SERIAL DFU_IN_FLASH ATMWSTK X_SPE_OPTS PARALLEL_BUILD_JVAL
 declare -a X_SPE_OPTS
 
-while getopts :ha:bdefgjl:mnp:r:s:uw:x:J: OPT; do
+while getopts :ha:bcdefgjl:mnp:r:s:uw:x:J: OPT; do
     case $OPT in
 	h|+h)
 	    usage
@@ -105,6 +119,9 @@ while getopts :ha:bdefgjl:mnp:r:s:uw:x:J: OPT; do
 	    ;;
 	b|+b)
 	    BUILD_ONLY=1
+	    ;;
+	c|+c)
+	    ATM_SECURE_DEBUG=1
 	    ;;
 	d|+d)
 	    DEPENDENCIES=1
@@ -188,6 +205,7 @@ is_unset BUILD_ONLY || FLASH=0
 readonly SETTING_DISABLED=0
 readonly SETTING_ENABLED=1
 readonly SETTING_DEFAULT=2
+readonly SETTING_DEBUG=3
 [[ -n $DEBUG_LOG ]] || export DEBUG_LOG=$SETTING_DEFAULT
 [[ -n $PM_SETTING ]] || export PM_SETTING=$SETTING_DEFAULT
 
@@ -232,6 +250,7 @@ readonly -a CMAKE_CONF_LOG=(
 )
 
 DTS_EXTRAS=""
+DTS_BL_EXTRAS=""
 
 is_undef ATMWSTKLIB || {
     [[ -z $ATMWSTK ]] || die 'ATMWSTK and ATMWSTKLIB cannot both be set'
@@ -248,6 +267,21 @@ is_unset DFU_IN_FLASH || {
     DTS_EXTRAS="$DTS_EXTRAS;-DDFU_IN_FLASH"
 }
 
+is_unset ATM_SECURE_DEBUG || {
+    [[ -z $NO_MCUBOOT ]] || die 'USE_ATM_SECURE_DEBUG and NO_MCUBOOT cannot both be set'
+    BL_EXTRAS="$BL_EXTRAS -DCONFIG_ATM_MCUBOOT_SECURE_DEBUG=y"
+    DTS_BL_EXTRAS="$DTS_BL_EXTRAS;-DUSE_ATM_SECURE_DEBUG"
+}
+
+is_set DEPENDENCIES && [[ -n $APP ]] && [[ -z $FLASH_ONLY ]] && {
+    GEN_ARCH=1
+    [[ -e $ATMISP ]] || die "$ATMISP not exist"
+    [[ -z $ATMWSTK ]] || {
+	[[ -e $CMAKE_OBJCOPY ]] || die "$CMAKE_OBJCOPY not exist"
+    }
+    WARCH=(west atm_arch -atm_isp_path $ATMISP -o ${BOARD}_arch.atm)
+}
+
 if [ $BUILD -ne 0 ]
 then
     WBUILD=(west build -p)
@@ -260,6 +294,8 @@ then
     then WBUILD_CMAKE_OPTS+=($(cmake_def y ${CMAKE_CONF_LOG[@]}))
     elif [ $DEBUG_LOG -eq $SETTING_DISABLED ]
     then WBUILD_CMAKE_OPTS+=($(cmake_def n ${CMAKE_CONF_LOG[@]}))
+    elif [ $DEBUG_LOG -eq $SETTING_DEBUG ]
+    then NS_EXTRAS="$NS_EXTRAS -DFILE_SUFFIX=debug"
     fi
     if [ $PM_SETTING -eq $SETTING_DISABLED ]
     then WBUILD_CMAKE_OPTS+=($(cmake_def n CONFIG_PM))
@@ -271,7 +307,8 @@ then
     then
 	if is_set DEPENDENCIES
 	then
-	    ${WBUILD[@]} -s $MCUBOOT -b $BOARD@mcuboot -d build/$BOARD/$MCUBOOT -- $CMAKE_DEF_BOARD_ROOT -DCONFIG_BOOT_SIGNATURE_TYPE_ECDSA_P256=y -DCONFIG_DEBUG=n -DDTC_OVERLAY_FILE="${BOARD_ROOT:-$WEST_TOPDIR/zephyr}/boards/atmosic/atm33evk/${BOARD}_mcuboot_bl.overlay" -DDTS_EXTRA_CPPFLAGS=${DTS_EXTRAS}
+	    ${WBUILD[@]} -s $MCUBOOT -b $BOARD@mcuboot -d build/$BOARD/$MCUBOOT -- $CMAKE_DEF_BOARD_ROOT -DCONFIG_BOOT_SIGNATURE_TYPE_ECDSA_P256=y -DCONFIG_BOOT_ECDSA_MICRO_ECC=y -DCONFIG_BOOT_SHA2_ATM=y -DCONFIG_DEBUG=n ${BL_EXTRAS} -DDTC_OVERLAY_FILE="${BOARD_ROOT:-$WEST_TOPDIR/zephyr}/boards/atmosic/atm33evk/${BOARD}_mcuboot_bl.overlay" -DDTS_EXTRA_CPPFLAGS=${DTS_EXTRAS}${DTS_BL_EXTRAS}
+	    [[ $GEN_ARCH -eq 1 ]] && WARCH+=(--mcuboot_file build/$BOARD/$MCUBOOT/zephyr/zephyr.bin)
 	    ${WBUILD[@]} -s $SPE -b ${BOARD}@mcuboot -d build/${BOARD}/$SPE -- $CMAKE_DEF_BOARD_ROOT \
 			 -DCONFIG_BOOTLOADER_MCUBOOT=y -DCONFIG_MCUBOOT_GENERATE_UNSIGNED_IMAGE=n \
 			 -DDTS_EXTRA_CPPFLAGS=${DTS_EXTRAS} \
@@ -284,6 +321,8 @@ then
 			 ${NS_EXTRAS} \
 			 -DDTS_EXTRA_CPPFLAGS=${DTS_EXTRAS} -DCONFIG_SPE_PATH=\"${WEST_TOPDIR}/build/$BOARD/$SPE\" \
 			 ${WBUILD_CMAKE_OPTS[@]}
+	    [[ $GEN_ARCH -eq 1 ]] && WARCH+=(--app_file build/${BOARD}_ns/$APP/zephyr/zephyr.signed.bin)
+	    [[ $GEN_ARCH -eq 1 ]] && WARCH+=(-p build/${BOARD}_ns/$APP/zephyr/partition_info.map.merge)
     else
 	is_unset DEPENDENCIES || ${WBUILD[@]} -s $SPE -b $BOARD -d build/$BOARD/$SPE -- $CMAKE_DEF_BOARD_ROOT -DDTS_EXTRA_CPPFLAGS=${DTS_EXTRAS} ${X_SPE_OPTS[@]}
 	WBUILD_APP=(${WBUILD[@]} -s $APP -b ${BOARD}//ns -d build/${BOARD}_ns/$APP -- -DCONFIG_SPE_PATH=\"${WEST_TOPDIR}/build/$BOARD/$SPE\" ${NS_EXTRAS} \
@@ -291,9 +330,24 @@ then
 	if [[ -z $APP ]]
 	then echo 'No application to build'
 	elif is_set MERGE_SPE_NSPE
-	then ${WBUILD_APP[@]} -DCONFIG_MERGE_SPE_NSPE=y
-	else ${WBUILD_APP[@]}
+	then
+	    ${WBUILD_APP[@]} -DCONFIG_MERGE_SPE_NSPE=y
+	    [[ $GEN_ARCH -eq 1 ]] && WARCH+=(--app_file build/${BOARD}_ns/$APP/zephyr/zephyr.bin)
+	else
+	    ${WBUILD_APP[@]}
+	    [[ $GEN_ARCH -eq 1 ]] && WARCH+=(--spe_file build/$BOARD/$SPE/zephyr/zephyr.bin)
+	    [[ $GEN_ARCH -eq 1 ]] && WARCH+=(--app_file build/${BOARD}_ns/$APP/zephyr/zephyr.bin)
 	fi
+	[[ $GEN_ARCH -eq 1 ]] && WARCH+=(-p build/${BOARD}_ns/$APP/zephyr/partition_info.map.merge)
+    fi
+    if [[ $GEN_ARCH -eq 1 ]]
+    then
+	if [[ -n $ATMWSTK ]]
+	then
+	    ${CMAKE_OBJCOPY} -O binary $PLATFORM_HAL_LIB/drivers/ble/atmwstk_${ATMWSTK}.elf $PLATFORM_HAL_LIB/drivers/ble/atmwstk_${ATMWSTK}.bin
+	    WARCH+=(--atmwstk_file $PLATFORM_HAL_LIB/drivers/ble/atmwstk_${ATMWSTK}.bin)
+	fi
+	${WARCH[@]}
     fi
 elif [ $FLASH -eq 0 ]
 then die 'Nothing to build or flash'
@@ -361,8 +415,8 @@ fi
 
 # 3) Program the tag data file
 [[ -n $BPTH ]] || BPTH=build/${BOARD}_ns/$APP
-SETTINGS_FILE="build/${BOARD}_ns/${APP}/zephyr/settings.hex"
-FACTORY_FILE="build/${BOARD}_ns/${APP}/zephyr/factory.hex"
+SETTINGS_FILE="build/${BOARD}_ns/${APP}/zephyr/zephyr_settings.hex"
+FACTORY_FILE="build/${BOARD}_ns/${APP}/zephyr/zephyr_factory.hex"
 if [ -e "$SETTINGS_FILE" ]; then
     WFLASH_SETTINGS=(${WFLASH[@]} -d $BPTH --hex-file $SETTINGS_FILE)
     [[ -z $APP ]] || WFLASH_SETTINGS+=(--noreset)

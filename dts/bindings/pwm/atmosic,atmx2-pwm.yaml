@@ -1,0 +1,20 @@
+# Copyright (c) 2024, Atmosic
+# SPDX-License-Identifier: Apache-2.0
+
+description: ATMx2 PWM
+
+compatible: "atmosic,atmx2-pwm"
+
+include: ["atmosic,atm-pwm.yaml"]
+
+properties:
+
+    max-duty-cycle:
+      type: int
+      required: true
+      description: Max Duty Cycle
+
+    min-duty-cycle:
+      type: int
+      required: true
+      description: Min Duty Cycle

@@ -1,0 +1,7 @@
+identifier: ATMEVK-3425-PQK-2/ATM34xx-2/ns
+name: ATMEVK-3425-PQK-2_ns
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+vendor: atmosic

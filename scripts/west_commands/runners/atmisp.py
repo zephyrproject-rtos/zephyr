@@ -111,34 +111,40 @@ class AtmispBinaryRunner(ZephyrBinaryRunner):
         self.telnet_port = telnet_port
         self.gdb_port = gdb_port
         self.gdb_cmd = [cfg.gdb] if cfg.gdb else None
-        self.elf_name = Path(cfg.elf_file).as_posix()
+        self.elf_name = [Path(cfg.elf_file).as_posix()]
         self.build_config = BuildConfiguration(cfg.build_dir)
         is_split_img = self.build_config.getboolean('CONFIG_ATM_SPLIT_IMG')
         if cfg.hex_file is not None:
             if is_split_img:
                 # Runner hexfile string could include multiple files, delimited by ','
                 self.hex_name = [Path(hex_f).as_posix() for hex_f in cfg.hex_file.split(",")]
+                self.bin_name = [Path(bin_f).as_posix() for bin_f in cfg.bin_file.split(",")]
             else:
-                self.hex_name = Path(cfg.hex_file).as_posix()
+                self.hex_name = [Path(cfg.hex_file).as_posix()]
+                self.bin_name = [Path(cfg.bin_file).as_posix()]
 
         self.use_elf = use_elf
-        if is_split_img:
-            # split image does not support fast_load currently
-            fast_load = False
-
         if fast_load and not use_elf:
             self.fast_load = True
             self.fl_bin = os.path.join(os.path.dirname(openocd_config), 'fast_load', 'fast_load.bin')
             # The objdump locate at the same directory with gdb
             objdump = cfg.gdb.replace("-gdb", "-objdump")
-            content = subprocess.run([objdump, "-h", cfg.hex_file], capture_output=True, text=True)
-            pattern = re.compile(r"\s+0\s+.sec1\s+[0-9a-fA-F]+\s+[0-9a-fA-F]+\s+([0-9a-fA-F]+)\s+")
-            match = pattern.search(content.stdout)
-            if match:
-                hex_addr = '0x' + match.group(1)
-                int_addr = int(hex_addr,16) & 0xEFFFFFFF
-                self.fl_prog_addr = hex(int_addr)
-                self.logger.info("<fast_load> program address: %s", self.fl_prog_addr)
+            self.fl_prog_addr = None
+
+            for file in self.hex_name:
+                content = subprocess.run([objdump, "-h", file], capture_output=True, text=True)
+                pattern = re.compile(r"\s+0\s+.sec1\s+[0-9a-fA-F]+\s+[0-9a-fA-F]+\s+([0-9a-fA-F]+)\s+")
+                match = pattern.search(content.stdout)
+                if match:
+                    hex_addr = '0x' + match.group(1)
+                    int_addr = int(hex_addr,16) & 0xEFFFFFFF
+                    if self.fl_prog_addr is None:
+                        self.fl_prog_addr = hex(int_addr)
+                    else:
+                        self.fl_prog_addr += ','
+                        self.fl_prog_addr += hex(int_addr)
+
+            self.logger.info("<fast_load> program address: %s", self.fl_prog_addr)
         else:
             self.fast_load = False
             self.fl_bin = None
@@ -209,7 +215,9 @@ class AtmispBinaryRunner(ZephyrBinaryRunner):
 
     def do_run(self, command, **kwargs):
         self.require(self.openocd_cmd[0])
-        self.ensure_output('bin')
+        is_split_img = self.build_config.getboolean('CONFIG_ATM_SPLIT_IMG')
+        if not is_split_img:
+            self.ensure_output('bin')
 
         self.cfg_cmd = []
         if self.openocd_config is not None:
@@ -267,9 +275,6 @@ class AtmispBinaryRunner(ZephyrBinaryRunner):
     def do_flash_atmx3(self, **kwargs):
         is_split_img = self.build_config.getboolean('CONFIG_ATM_SPLIT_IMG')
         if is_split_img:
-            if self.fast_load:
-                self.logger.error('Fast load does not support split images')
-                sys.exit(1)
             if self.use_elf:
                 self.logger.error('--use_elf does not support split images')
                 sys.exit(1)
@@ -297,13 +302,15 @@ class AtmispBinaryRunner(ZephyrBinaryRunner):
                 cmd_flash += ['-c atm_erase_rram_all']
         if self.fast_load:
             FL_CMD_WRITE = '0x01'
-            cmd_flash += ['-c atm_fast_load ' + self.cfg.bin_file + ' ' + FL_CMD_WRITE + ' ' + self.fl_prog_addr]
+            addr_list = self.fl_prog_addr.split(',')
+            for index, addr in enumerate(addr_list):
+                cmd_flash += ['-c atm_fast_load ' + self.bin_name[index] + ' ' + FL_CMD_WRITE + ' ' + addr]
         else:
             if self.use_elf:
-                if os.path.isabs(self.elf_name):
-                    image = self.elf_name
+                if os.path.isabs(self.elf_name[0]):
+                    image = [self.elf_name[0]]
                 else:
-                    image = str.replace(path.join(os.path.dirname(os.path.abspath(os.environ['ZEPHYR_BASE'])), self.elf_name), "\\", "\\\\")
+                    image = [str.replace(path.join(os.path.dirname(os.path.abspath(os.environ['ZEPHYR_BASE'])), self.elf_name[0]), "\\", "\\\\")]
             else:
                 image = self.hex_name
             if is_split_img:
@@ -318,9 +325,9 @@ class AtmispBinaryRunner(ZephyrBinaryRunner):
                 if self.verify:
                     cmd_flash += ['-c atm_verify_flash ' + image[1]]
             else:
-                cmd_flash += ['-c atm_load_rram ' + image]
+                cmd_flash += ['-c atm_load_rram ' + image[0]]
                 if self.verify:
-                    cmd_flash += ['-c atm_verify_rram ' + image]
+                    cmd_flash += ['-c atm_verify_rram ' + image[0]]
         if not self.noreset and not self.fast_load:
             cmd_flash += ['-c set _RESET_HARD_ON_EXIT 1']
         cmd_flash += ['-c exit']
@@ -334,7 +341,9 @@ class AtmispBinaryRunner(ZephyrBinaryRunner):
                     cmd_flash = cmd_prefix
                     cmd_flash += ['-c init']
                     cmd_flash += ['-c verify_rom_version']
-                    cmd_flash += ['-c atm_verify_rram ' + self.cfg.bin_file + ' ' + self.fl_prog_addr]
+                    addr_list = self.fl_prog_addr.split(',')
+                    for index, addr in enumerate(addr_list):
+                        cmd_flash += ['-c atm_verify_rram ' + self.bin_name[index] + ' ' + addr]
                     if not self.noreset:
                         cmd_flash += ['-c set _RESET_HARD_ON_EXIT 1']
                     cmd_flash += ['-c exit']
@@ -359,6 +368,6 @@ class AtmispBinaryRunner(ZephyrBinaryRunner):
                                       '-c', 'halt'])
         gdb_cmd = (self.gdb_cmd + ['-x', self.gdb_config] +
                    ['-ex', 'target remote :{}'.format(self.gdb_port),
-                    self.elf_name])
+                    self.elf_name[0]])
         self.require(gdb_cmd[0])
         self.run_server_and_client(server_cmd, gdb_cmd)

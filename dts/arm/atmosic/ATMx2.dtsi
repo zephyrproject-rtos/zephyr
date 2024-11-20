@@ -112,74 +112,98 @@
 		};
 
 		pwm0: pwm@40006000 {
-			compatible = "atmosic,atm-pwm";
+			compatible = "atmosic,atmx2-pwm";
 			reg = <0x40006000 0x4>;
 			#pwm-cells = <3>;
 			channel = <0>;
 			max-frequency = <8000000>;
+			min-frequency = <250000>;
+			max-duty-cycle = <90>;
+			min-duty-cycle = <10>;
 			status = "disabled";
 		};
 
 		pwm1: pwm@40006004 {
-			compatible = "atmosic,atm-pwm";
+			compatible = "atmosic,atmx2-pwm";
 			reg = <0x40006004 0x4>;
 			#pwm-cells = <3>;
 			channel = <1>;
 			max-frequency = <8000000>;
+			min-frequency = <250000>;
+			max-duty-cycle = <90>;
+			min-duty-cycle = <10>;
 			status = "disabled";
 		};
 
 		pwm2: pwm@40006008 {
-			compatible = "atmosic,atm-pwm";
+			compatible = "atmosic,atmx2-pwm";
 			reg = <0x40006008 0x4>;
 			#pwm-cells = <3>;
 			channel = <2>;
 			max-frequency = <8000000>;
+			min-frequency = <250000>;
+			max-duty-cycle = <90>;
+			min-duty-cycle = <10>;
 			status = "disabled";
 		};
 
 		pwm3: pwm@4000600c {
-			compatible = "atmosic,atm-pwm";
+			compatible = "atmosic,atmx2-pwm";
 			reg = <0x4000600c 0x4>;
 			#pwm-cells = <3>;
 			channel = <3>;
 			max-frequency = <8000000>;
+			min-frequency = <250000>;
+			max-duty-cycle = <90>;
+			min-duty-cycle = <10>;
 			status = "disabled";
 		};
 
 		pwm4: pwm@40006010 {
-			compatible = "atmosic,atm-pwm";
+			compatible = "atmosic,atmx2-pwm";
 			reg = <0x40006010 0x4>;
 			#pwm-cells = <3>;
 			channel = <4>;
 			max-frequency = <8000000>;
+			min-frequency = <250000>;
+			max-duty-cycle = <90>;
+			min-duty-cycle = <10>;
 			status = "disabled";
 		};
 
 		pwm5: pwm@40006014 {
-			compatible = "atmosic,atm-pwm";
+			compatible = "atmosic,atmx2-pwm";
 			reg = <0x40006014 0x4>;
 			#pwm-cells = <3>;
 			channel = <5>;
 			max-frequency = <8000000>;
+			min-frequency = <250000>;
+			max-duty-cycle = <90>;
+			min-duty-cycle = <10>;
 			status = "disabled";
 		};
 
 		pwm6: pwm@40006018 {
-			compatible = "atmosic,atm-pwm";
+			compatible = "atmosic,atmx2-pwm";
 			reg = <0x40006018 0x4>;
 			#pwm-cells = <3>;
 			channel = <6>;
 			max-frequency = <8000000>;
+			min-frequency = <250000>;
+			max-duty-cycle = <90>;
+			min-duty-cycle = <10>;
 			status = "disabled";
 		};
 
 		pwm7: pwm@4000601c {
-			compatible = "atmosic,atm-pwm";
+			compatible = "atmosic,atmx2-pwm";
 			reg = <0x4000601c 0x4>;
 			#pwm-cells = <3>;
 			channel = <7>;
 			max-frequency = <8000000>;
+			min-frequency = <250000>;
+			max-duty-cycle = <90>;
+			min-duty-cycle = <10>;
 			status = "disabled";
 		};
 
@@ -321,6 +345,11 @@
 			compatible = "atmosic,atm-trng";
 			reg = <0x5000b000 0x1000>;
 			interrupts = <IRQ_SPI0 3>;
+			status = "okay";
+		};
+
+		brownout: brownout {
+			compatible = "atmosic,brownout";
 			status = "okay";
 		};
 	};

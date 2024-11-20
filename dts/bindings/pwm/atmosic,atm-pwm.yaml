@@ -1,9 +1,9 @@
-# Copyright (c) 2021, Atmosic
+# Copyright (c) 2021-2024, Atmosic
 # SPDX-License-Identifier: Apache-2.0
 
-description: Atmosic PWM
+description: Shared Atmosic PWM
 
-compatible: "atmosic,atm-pwm"
+compatible: "atmosic,atm3x-pwm"
 
 include: [pwm-controller.yaml, base.yaml]
 
@@ -28,6 +28,11 @@ properties:
       type: int
       required: true
       description: Max PWM frequency
+
+    min-frequency:
+      type: int
+      required: true
+      description: Min PWM frequency
 
 pwm-cells:
   - channel

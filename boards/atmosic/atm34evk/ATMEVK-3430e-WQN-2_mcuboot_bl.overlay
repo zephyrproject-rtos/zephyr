@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Atmosic
+ * Copyright (c) 2022-2024 Atmosic
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,3 +16,9 @@
 		reg = <0x30000000 0x20000>;
 	};
 };
+
+#ifdef USE_ATM_SECURE_DEBUG
+&uart0 {
+       status = "okay";
+};
+#endif

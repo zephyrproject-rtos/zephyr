@@ -1,0 +1,7 @@
+identifier: ATMEVK-3330-QN-5/ATM33xx-5/ns
+name: ATMEVK-3330-QN-5_ns
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+vendor: atmosic

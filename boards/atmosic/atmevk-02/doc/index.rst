@@ -222,3 +222,87 @@ Note on UART1 RX
 In order to use P32 for UART1 RX the MODE2 switch on the EVK (labelled SW1) needs to be in the OFF position.
 This switch is connected to a 1k pull-down resistor and when enabled the FTDI interface board is unable to drive the UART1 RX line.
 In order to connect the ATMx2 part and the FTDI interface board the J3 jumper on the FTDI interface board must also be connecting pins 5 and 6 (third position from the right); however, when loading the application, the jumper on J3 should be removed because otherwise benign boot will prevent the chip from booting into the application.
+
+Atmosic In-System Programming (ISP) Tool
+****************************************
+
+This SDK ships with a tool called Atmosic In-System Programming Tool
+(ISP) for bundling all three types of binaries -- OTP NVDS, flash NVDS, and
+flash -- into a single binary archive.
+
++---------------+-----------------------------------------------------+
+|  Binary Type  |  Description                                        |
++---------------+-----------------------------------------------------+
+|   .bin        |  binary file, contains flash or nvds data only.     |
++---------------+-----------------------------------------------------+
+
+The ISP tool, which is also shipped as a stand-alone package, can then be used
+to unpack the components of the archive and download them on a device.
+
+west atm_arch commands
+======================
+
+atm isp archive tool
+  -atm_isp_path ATM_ISP_PATH, --atm_isp_path ATM_ISP_PATH
+                        specify atm_isp exe path path
+  -d, --debug           debug enabled, default false
+  -s, --show            show archive
+  -b, --burn            burn archive
+  -a, --append          append to input atm file
+  -i INPUT_ATM_FILE, --input_atm_file INPUT_ATM_FILE
+                        input atm file path
+  -o OUTPUT_ATM_FILE, --output_atm_file OUTPUT_ATM_FILE
+                        output atm file path
+  -p PARTITION_INFO_FILE, --partition_info_file PARTITION_INFO_FILE
+                        partition info file path
+  -nvds_file NVDS_FILE, --nvds_file NVDS_FILE
+                        nvds file path
+  -spe_file SPE_FILE, --spe_file SPE_FILE
+                        spe file path
+  -app_file APP_FILE, --app_file APP_FILE
+                        application file path
+  -mcuboot_file MCUBOOT_FILE, --mcuboot_file MCUBOOT_FILE
+                        mcuboot file path
+  -atmwstk_file ATMWSTK_FILE, --atmwstk_file ATMWSTK_FILE
+                        atmwstk file path
+  -openocd_pkg_root OPENOCD_PKG_ROOT, --openocd_pkg_root OPENOCD_PKG_ROOT
+                        Path to directory where openocd and its scripts are found
+
+Support Linux and Windows currently. The ``--atm_isp_path`` option should be specifiec accordingly.
+
+On Linux::
+  the ``--atm_isp_path`` option should be modules/hal/atmosic_lib/tools/atm_arch/bin/Linux/atm_isp
+
+On Windows::
+  the ``--atm_isp_path`` option should be modules/hal/atmosic_lib/tools/atm_arch/bin/Windows_NT/atm_isp.exe
+
+Generate atm isp file
+---------------------
+
+Without MCUBOOT::
+  west atm_arch -o <BOARD>_beacon.atm \
+    -p build/<BOARD>_ns/<APP>/zephyr/partition_info.map \
+    --app_file build/<BOARD>_ns/<APP>/zephyr/zephyr.bin \
+    --atm_isp_path modules/hal/atmosic_lib/tools/atm_arch/bin/Linux/atm_isp
+
+With MCUBOOT::
+  west atm_arch -o <BOARD>_beacon.atm \
+    -p build/<BOARD>_ns/<APP>/zephyr/partition_info.map \
+    --app_file build/<BOARD>_ns/<APP>/zephyr/zephyr.signed.bin \
+    --mcuboot_file build/<BOARD>/<MCUBOOT>/zephyr/zephyr.bin \
+    --atm_isp_path modules/hal/atmosic_lib/tools/atm_arch/bin/Linux/atm_isp
+
+Show atm isp file
+-----------------
+
+  west atm_arch -i <BOARD>_beacon.atm \
+    --atm_isp_path modules/hal/atmosic_lib/tools/atm_arch/bin/Linux/atm_isp \
+    --show
+
+Flash atm isp file
+------------------
+
+  west atm_arch -i <BOARD>_beacon.atm \
+    --atm_isp_path modules/hal/atmosic_lib/tools/atm_arch/bin/Linux/atm_isp \
+    --openocd_pkg_root openair/modules/hal_atmosic \
+    --burn

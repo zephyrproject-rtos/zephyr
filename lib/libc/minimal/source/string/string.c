@@ -276,7 +276,7 @@ void *memmove(void *d, const void *s, size_t n)
  * @return pointer to start of destination buffer
  */
 
-void *memcpy(void *ZRESTRICT d, const void *ZRESTRICT s, size_t n)
+__weak void *memcpy(void *ZRESTRICT d, const void *ZRESTRICT s, size_t n)
 {
 	/* attempt word-sized copying only if buffers have identical alignment */
 
@@ -330,7 +330,7 @@ void *memcpy(void *ZRESTRICT d, const void *ZRESTRICT s, size_t n)
  * @return pointer to start of buffer
  */
 
-void *memset(void *buf, int c, size_t n)
+__weak void *memset(void *buf, int c, size_t n)
 {
 	/* do byte-sized initialization until word-aligned or finished */
 

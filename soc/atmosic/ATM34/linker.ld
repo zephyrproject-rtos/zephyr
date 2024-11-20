@@ -7,8 +7,25 @@
 #include <zephyr/devicetree.h>
 
 #if CONFIG_TRUSTED_EXECUTION_NONSECURE && DT_NODE_EXISTS(DT_NODELABEL(fast_code_partition))
+
+#define PART_ADDR(label) ( \
+    DT_REG_ADDR(DT_MTD_FROM_FIXED_PARTITION(DT_NODELABEL(label))) + \
+    DT_REG_ADDR(DT_NODELABEL(label)) \
+)
+
+#ifdef CONFIG_BOOTLOADER_MCUBOOT
+// the merged SPE/NSPE/fast_code slot needs the physical base address
+// of the parent of slot0_partition
+#define PART_FAST_CODE_ADDR(label) ( \
+    DT_REG_ADDR(DT_MTD_FROM_FIXED_PARTITION(DT_NODELABEL(slot0_partition))) + \
+    DT_REG_ADDR(DT_NODELABEL(label)) \
+)
+#else
+#define PART_FAST_CODE_ADDR(label) PART_ADDR(label)
+#endif
+
 MEMORY {
-    RRAM (rx) : ORIGIN = DT_REG_ADDR(DT_MTD_FROM_FIXED_PARTITION(DT_NODELABEL(fast_code_partition))) + DT_REG_ADDR(DT_NODELABEL(fast_code_partition)), LENGTH = DT_REG_SIZE(DT_NODELABEL(fast_code_partition))
+    RRAM (rx) : ORIGIN = PART_FAST_CODE_ADDR(fast_code_partition), LENGTH = DT_REG_SIZE(DT_NODELABEL(fast_code_partition))
 }
 
 SECTIONS {

@@ -16,3 +16,9 @@
 		reg = <0x30000000 0x20000>;
 	};
 };
+
+#ifdef USE_ATM_SECURE_DEBUG
+&uart0 {
+       status = "okay";
+};
+#endif

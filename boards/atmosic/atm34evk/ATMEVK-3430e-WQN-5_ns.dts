@@ -111,7 +111,6 @@
 };
 
 &uart1 {
-	rx-pin = <25>;
 	tx-pin = <27>;
 };
 
@@ -123,3 +122,4 @@
 };
 
 arduino_i2c: &i2c0 {};
+arduino_spi: &spi1 {};

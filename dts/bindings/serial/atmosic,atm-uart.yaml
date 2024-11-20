@@ -22,7 +22,7 @@ properties:
 
     rx-pin:
       type: int
-      required: true
+      required: false
       description: RX pin to use
 
     tx-pin:

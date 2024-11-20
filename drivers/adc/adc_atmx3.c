@@ -167,16 +167,30 @@ struct gadc_atm_data {
 
 static uint32_t chan_setup_mask;
 
-static uint8_t gext;
 typedef enum {
 	GAIN_EXT_QUARTER,
 	GAIN_EXT_HALF,
 	GAIN_EXT_X1,
 	GAIN_EXT_X2,
-	GAIN_EXT_MAX,
 	GAIN_EXT_END,
+	GAIN_EXT_MAX,
 } gadc_gain_ext_t;
 
+static gadc_gain_ext_t gext;
+static gadc_gain_ext_t const gextmap[CHANNEL_NUM_MAX][GAIN_EXT_MAX] = {
+	{GAIN_EXT_END}, // unused, invalid channel
+	{GAIN_EXT_QUARTER, GAIN_EXT_HALF, GAIN_EXT_END},
+	{GAIN_EXT_QUARTER, GAIN_EXT_HALF, GAIN_EXT_END},
+	{GAIN_EXT_HALF, GAIN_EXT_END},
+	{GAIN_EXT_X1, GAIN_EXT_END},
+	{GAIN_EXT_QUARTER, GAIN_EXT_HALF, GAIN_EXT_X1, GAIN_EXT_X2, GAIN_EXT_END},
+	{GAIN_EXT_QUARTER, GAIN_EXT_HALF, GAIN_EXT_X1, GAIN_EXT_X2, GAIN_EXT_END},
+	{GAIN_EXT_QUARTER, GAIN_EXT_HALF, GAIN_EXT_END},
+	{GAIN_EXT_QUARTER, GAIN_EXT_HALF, GAIN_EXT_END},
+	{GAIN_EXT_QUARTER, GAIN_EXT_HALF, GAIN_EXT_END},
+	{GAIN_EXT_QUARTER, GAIN_EXT_HALF, GAIN_EXT_END},
+	{GAIN_EXT_X1, GAIN_EXT_END},
+};
 static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repeat)
 {
 	struct gadc_atm_data *data = CONTAINER_OF(ctx, struct gadc_atm_data, ctx);
@@ -358,6 +372,17 @@ static int gadc_atm_read(struct device const *dev, struct adc_sequence const *se
 	return gadc_atm_read_async(dev, sequence, NULL);
 }
 
+static bool gadc_ext_valid(GADC_CHANNEL_ID ch, gadc_gain_ext_t gainext)
+{
+	for (int i = 0; (i < GAIN_EXT_MAX) && (gextmap[ch][i] != GAIN_EXT_END); i++) {
+		if (gainext == gextmap[ch][i]) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 static int gadc_atm_channel_setup(struct device const *dev,
 				  struct adc_channel_cfg const *channel_cfg)
 {
@@ -388,6 +413,11 @@ static int gadc_atm_channel_setup(struct device const *dev,
 		break;
 	default:
 		LOG_ERR("Invalid channel gain");
+		return -EINVAL;
+	}
+
+	if (!gadc_ext_valid(channel_cfg->channel_id, gext)) {
+		LOG_ERR("Invalid gext (%d) for channel (%d)", gext, channel_cfg->channel_id);
 		return -EINVAL;
 	}
 

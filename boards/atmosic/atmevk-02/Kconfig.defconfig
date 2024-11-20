@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2023 Atmosic
+# Copyright (c) 2021-2024 Atmosic
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -12,6 +12,9 @@ config BT_HCI_ACL_FLOW_CONTROL
 config BT_AUTO_PHY_UPDATE
 	default n
 	# To avoid procedure collision.
+
+config ENTROPY_GENERATOR
+	default y
 
 endif # BT
 

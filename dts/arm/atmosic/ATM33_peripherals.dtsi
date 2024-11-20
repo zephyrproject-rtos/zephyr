@@ -77,74 +77,82 @@ uart1: uart@145000 {
 };
 
 pwm0: pwm@146004 {
-	compatible = "atmosic,atm-pwm";
+	compatible = "atmosic,atm3x-pwm";
 	reg = <0x00146004 0x4>;
 	#pwm-cells = <3>;
 	channel = <0>;
 	max-frequency = <10000000>;
+	min-frequency = <123>;
 	status = "disabled";
 };
 
 pwm1: pwm@146010 {
-	compatible = "atmosic,atm-pwm";
+	compatible = "atmosic,atm3x-pwm";
 	reg = <0x00146010 0x4>;
 	#pwm-cells = <3>;
 	channel = <1>;
 	max-frequency = <10000000>;
+	min-frequency = <123>;
 	status = "disabled";
 };
 
 pwm2: pwm@14601c {
-	compatible = "atmosic,atm-pwm";
+	compatible = "atmosic,atm3x-pwm";
 	reg = <0x0014601c 0x4>;
 	#pwm-cells = <3>;
 	channel = <2>;
 	max-frequency = <10000000>;
+	min-frequency = <123>;
 	status = "disabled";
 };
 
 pwm3: pwm@146028 {
-	compatible = "atmosic,atm-pwm";
+	compatible = "atmosic,atm3x-pwm";
 	reg = <0x00146028 0x4>;
 	#pwm-cells = <3>;
 	channel = <3>;
 	max-frequency = <10000000>;
+	min-frequency = <123>;
 	status = "disabled";
 };
 
 pwm4: pwm@146034 {
-	compatible = "atmosic,atm-pwm";
+	compatible = "atmosic,atm3x-pwm";
 	reg = <0x00146034 0x4>;
 	#pwm-cells = <3>;
 	channel = <4>;
 	max-frequency = <10000000>;
+	min-frequency = <123>;
 	status = "disabled";
 };
 
 pwm5: pwm@146040 {
-	compatible = "atmosic,atm-pwm";
+	compatible = "atmosic,atm3x-pwm";
 	reg = <0x00146040 0x4>;
 	#pwm-cells = <3>;
 	channel = <5>;
 	max-frequency = <10000000>;
+	min-frequency = <123>;
 	status = "disabled";
 };
 
 pwm6: pwm@14604c {
-	compatible = "atmosic,atm-pwm";
+	compatible = "atmosic,atm3x-pwm";
 	reg = <0x0014604c 0x4>;
 	#pwm-cells = <3>;
 	channel = <6>;
 	max-frequency = <10000000>;
+	min-frequency = <123>;
 	status = "disabled";
 };
 
 pwm7: pwm@146058 {
-	compatible = "atmosic,atm-pwm";
+	compatible = "atmosic,atm3x-pwm";
 	reg = <0x00146058 0x4>;
 	#pwm-cells = <3>;
 	channel = <7>;
 	max-frequency = <10000000>;
+	min-frequency = <123>;
 	status = "disabled";
 };
 

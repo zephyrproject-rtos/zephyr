@@ -59,7 +59,13 @@ function(merge_spe spe_path spe_load_addr)
   list(APPEND byproducts ${S_NS_HEX_FILE})
   list(APPEND byproducts ${S_NS_BIN_FILE})
 
-  set(NS_APP_HEX_FILE ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_HEX_NAME})
+  if (CONFIG_ATM_SPLIT_IMG)
+     # merge with the RRAM portion of a split NSPE
+     set(NS_APP_HEX_FILE ${output}.rram.hex)
+  else()
+     set(NS_APP_HEX_FILE ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_HEX_NAME})
+  endif()
+
   set(S_APP_BIN_FILE ${spe_path}/zephyr/${KERNEL_BIN_NAME})
   set(S_HEX_NO_IDAU_FILE ${spe_path}/zephyr/${KERNEL_NAME}.idau_stripped.hex)
   MATH(EXPR S_ADDR_NO_IDAU "${spe_load_addr} - 0x10000000")
@@ -122,9 +128,17 @@ function(split_img)
   list(APPEND byproducts ${RRAM_HEX_FILE})
   list(APPEND byproducts ${FLASH_HEX_FILE})
 
+  set(RRAM_BIN_FILE ${output}.rram.bin)
+  set(FLASH_BIN_FILE ${output}.flash.bin)
+  list(APPEND byproducts ${RRAM_BIN_FILE})
+  list(APPEND byproducts ${FLASH_BIN_FILE})
+
   set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
     COMMAND ${CMAKE_OBJCOPY} -j fast_code -O ihex ${NS_APP_ELF_FILE} ${RRAM_HEX_FILE}
     COMMAND ${CMAKE_OBJCOPY} -R fast_code -O ihex ${NS_APP_ELF_FILE} ${FLASH_HEX_FILE}
+
+    COMMAND ${CMAKE_OBJCOPY} -j fast_code -O binary ${NS_APP_ELF_FILE} ${RRAM_BIN_FILE}
+    COMMAND ${CMAKE_OBJCOPY} -R fast_code -O binary ${NS_APP_ELF_FILE} ${FLASH_BIN_FILE}
   )
 
   if(CONFIG_BUILD_OUTPUT_HEX)
@@ -132,9 +146,186 @@ function(split_img)
     set_target_properties(runners_yaml_props_target PROPERTIES "hex_file" "${RRAM_HEX_FILE},${FLASH_HEX_FILE}")
   endif()
 
+  if(CONFIG_BUILD_OUTPUT_BIN)
+    # atmisp can parse comma-delimited strings and handle them independently.
+    set_target_properties(runners_yaml_props_target PROPERTIES "bin_file" "${RRAM_BIN_FILE},${FLASH_BIN_FILE}")
+  endif()
+
   set_property(GLOBAL APPEND PROPERTY extra_post_build_byproducts ${byproducts})
 endfunction()
 
+function(atm_zephyr_runner_file type path)
+  # Property magic which makes west flash choose the signed build
+  # output of a given type.
+  set_target_properties(runners_yaml_props_target PROPERTIES "${type}_file" "${path}")
+endfunction()
+
+# sign the FLASH located NSPE image
+function(sign_flash_nspe_tasks)
+
+  set(output ${ZEPHYR_BINARY_DIR}/${KERNEL_NAME})
+  set(FLASH_NSPE_BASE ${output}.flash)
+  set(SIGNED_FLASH_NSPE_BASE ${output}.signed.flash)
+
+  # Tread carefully here...
+  # Zephyr does not support multi-image signing in mcuboot.cmake
+  # minimal west sign functionality is pulled in here to just sign the FLASH NSPE.
+  # copied from zephyr/cmake/mcuboot.cmake starts here:
+  #  -) Removed encrypted images support
+  ##########################################################
+
+  set(keyfile "${CONFIG_MCUBOOT_SIGNATURE_KEY_FILE}")
+  set(keyfile_enc "${CONFIG_MCUBOOT_ENCRYPTION_KEY_FILE}")
+
+  foreach(file keyfile)
+    if(NOT "${${file}}" STREQUAL "")
+      if(NOT IS_ABSOLUTE "${${file}}")
+        # Relative paths are relative to 'west topdir'.
+        set(${file} "${WEST_TOPDIR}/${${file}}")
+      endif()
+
+      if(NOT EXISTS "${${file}}" AND NOT "${CONFIG_MCUBOOT_GENERATE_UNSIGNED_IMAGE}")
+        message(FATAL_ERROR "west sign can't find file ${${file}} (Note: Relative paths are relative to the west workspace topdir \"${WEST_TOPDIR}\")")
+      elseif(NOT (CONFIG_BUILD_OUTPUT_BIN OR CONFIG_BUILD_OUTPUT_HEX))
+        message(FATAL_ERROR "Can't sign images for MCUboot: Neither CONFIG_BUILD_OUTPUT_BIN nor CONFIG_BUILD_OUTPUT_HEX is enabled, so there's nothing to sign.")
+      endif()
+    endif()
+  endforeach()
+
+  # Find imgtool. Even though west is installed, imgtool might not be.
+  # The user may also have a custom manifest which doesn't include
+  # MCUboot.
+  #
+  # Therefore, go with an explicitly installed imgtool first, falling
+  # back on mcuboot/scripts/imgtool.py.
+  if(IMGTOOL)
+    set(imgtool_path "${IMGTOOL}")
+  elseif(DEFINED ZEPHYR_MCUBOOT_MODULE_DIR)
+    set(IMGTOOL_PY "${ZEPHYR_MCUBOOT_MODULE_DIR}/scripts/imgtool.py")
+    if(EXISTS "${IMGTOOL_PY}")
+      set(imgtool_path "${IMGTOOL_PY}")
+    endif()
+  endif()
+
+  # No imgtool, no signed binaries.
+  if(NOT DEFINED imgtool_path)
+    message(FATAL_ERROR "Can't sign images for MCUboot: can't find imgtool")
+    return()
+  endif()
+
+  # Basic 'west sign' command and output format independent arguments.
+  separate_arguments(west_sign_extra UNIX_COMMAND ${CONFIG_MCUBOOT_CMAKE_WEST_SIGN_PARAMS})
+  set(west_sign ${WEST} sign ${west_sign_extra}
+    --tool imgtool
+    --tool-path "${imgtool_path}"
+    --build-dir "${APPLICATION_BINARY_DIR}"
+    --hex_file "${FLASH_NSPE_BASE}.hex"
+    --bin_file "${FLASH_NSPE_BASE}.bin"
+    --shex "${SIGNED_FLASH_NSPE_BASE}.hex"
+    --sbin "${SIGNED_FLASH_NSPE_BASE}.bin"
+    --image_num 1)
+
+  # Arguments to imgtool.
+  if(NOT CONFIG_MCUBOOT_EXTRA_IMGTOOL_ARGS STREQUAL "")
+    # Separate extra arguments into the proper format for adding to
+    # extra_post_build_commands.
+    #
+    # Use UNIX_COMMAND syntax for uniform results across host
+    # platforms.
+    separate_arguments(imgtool_extra UNIX_COMMAND ${CONFIG_MCUBOOT_EXTRA_IMGTOOL_ARGS})
+  else()
+    set(imgtool_extra)
+  endif()
+
+  if(NOT "${keyfile}" STREQUAL "")
+    set(imgtool_extra --key "${keyfile}" ${imgtool_extra})
+  endif()
+
+  if(CONFIG_BOOT_MAX_IMG_SECTORS)
+    set(imgtool_extra --max-sectors "${CONFIG_BOOT_MAX_IMG_SECTORS}" ${imgtool_extra})
+  endif()
+
+  # Use overwrite-only instead of swap upgrades.
+  if(CONFIG_MCUBOOT_IMGTOOL_OVERWRITE_ONLY)
+    set(imgtool_extra --overwrite-only --align 1 ${imgtool_extra})
+  endif()
+
+  set(imgtool_args -- ${imgtool_extra})
+
+  # Extensionless prefix of any output file.
+  set(output ${ZEPHYR_BINARY_DIR}/${KERNEL_NAME})
+
+  # List of additional build byproducts.
+  set(byproducts)
+
+  # 'west sign' arguments for confirmed, unconfirmed and encrypted images.
+  set(unconfirmed_args)
+  set(confirmed_args)
+  set(encrypted_args)
+
+  # Set up .bin outputs.
+  if(CONFIG_BUILD_OUTPUT_BIN)
+    list(APPEND unconfirmed_args --bin --sbin ${SIGNED_FLASH_NSPE_BASE}.bin)
+    list(APPEND byproducts ${SIGNED_FLASH_NSPE_BASE}.bin)
+    atm_zephyr_runner_file(bin ${SIGNED_FLASH_NSPE_BASE}.bin)
+    set(BYPRODUCT_KERNEL_SIGNED_BIN_NAME "${SIGNED_FLASH_NSPE_BASE}.bin"
+        CACHE FILEPATH "Signed kernel bin file" FORCE
+    )
+
+    if(CONFIG_MCUBOOT_GENERATE_CONFIRMED_IMAGE)
+      list(APPEND confirmed_args --bin --sbin ${SIGNED_FLASH_NSPE_BASE}.confirmed.bin)
+      list(APPEND byproducts ${SIGNED_FLASH_NSPE_BASE}.confirmed.bin)
+      set(BYPRODUCT_KERNEL_SIGNED_CONFIRMED_BIN_NAME "${SIGNED_FLASH_NSPE_BASE}.confirmed.bin"
+          CACHE FILEPATH "Signed and confirmed kernel bin file" FORCE
+      )
+    endif()
+
+    if(NOT "${keyfile_enc}" STREQUAL "")
+      message(FATAL_ERROR "Encrypting NSPE image in Flash not supported")
+    endif()
+  endif()
+
+  # Set up .hex outputs.
+  if(CONFIG_BUILD_OUTPUT_HEX)
+    list(APPEND unconfirmed_args --hex --shex ${SIGNED_FLASH_NSPE_BASE}.hex)
+    list(APPEND byproducts ${SIGNED_FLASH_NSPE_BASE}.hex)
+    atm_zephyr_runner_file(hex ${SIGNED_FLASH_NSPE_BASE}.hex)
+    set(BYPRODUCT_KERNEL_SIGNED_HEX_NAME "${SIGNED_FLASH_NSPE_BASE}.hex"
+        CACHE FILEPATH "Signed kernel hex file" FORCE
+    )
+
+    if(CONFIG_MCUBOOT_GENERATE_CONFIRMED_IMAGE)
+      list(APPEND confirmed_args --hex --shex ${SIGNED_FLASH_NSPE_BASE}.confirmed.hex)
+      list(APPEND byproducts ${SIGNED_FLASH_NSPE_BASE}.confirmed.hex)
+      set(BYPRODUCT_KERNEL_SIGNED_CONFIRMED_HEX_NAME "${SIGNED_FLASH_NSPE_BASE}.confirmed.hex"
+          CACHE FILEPATH "Signed and confirmed kernel hex file" FORCE
+      )
+    endif()
+
+    if(NOT "${keyfile_enc}" STREQUAL "")
+      message(FATAL_ERROR "Encrypting NSPE image in Flash not supported")
+    endif()
+  endif()
+
+  # Add the west sign calls and their byproducts to the post-processing
+  # steps for zephyr.elf.
+  #
+  # CMake guarantees that multiple COMMANDs given to
+  # add_custom_command() are run in order, so adding the 'west sign'
+  # calls to the "extra_post_build_commands" property ensures they run
+  # after the commands which generate the unsigned versions.
+  set_property(GLOBAL APPEND PROPERTY extra_post_build_commands COMMAND
+    ${west_sign} ${unconfirmed_args} ${imgtool_args})
+  if(confirmed_args)
+    set_property(GLOBAL APPEND PROPERTY extra_post_build_commands COMMAND
+      ${west_sign} ${confirmed_args} ${imgtool_args} --pad --confirm)
+  endif()
+  set_property(GLOBAL APPEND PROPERTY extra_post_build_byproducts ${byproducts})
+
+  ###########################################################
+  # end of copied rules from mcuboot.cmake
+
+endfunction()
 
 # Generate partition_info.map
 function(atm_partition_info)
@@ -166,6 +357,21 @@ function(atm_partition_info)
       list(APPEND EXT_ARGS "--user_data_size")
       list(APPEND EXT_ARGS "${USER_DATA_SIZE}")
     endif()
+    if(CONFIG_MERGE_SPE_NSPE)
+      list(APPEND EXT_ARGS "--merge_spe_nspe")
+    endif()
+    if (CONFIG_SOC_ATM34XX_2)
+      list(APPEND EXT_ARGS "--revision")
+      list(APPEND EXT_ARGS "rev-2")
+    endif ()
+    if (CONFIG_SOC_ATM34XX_5)
+      list(APPEND EXT_ARGS "--revision")
+      list(APPEND EXT_ARGS "rev-5")
+    endif ()
+    if (CONFIG_ATM_SPLIT_IMG)
+      list(APPEND EXT_ARGS "--split_img")
+      list(APPEND EXT_ARGS "2")
+    endif ()
     message("Generate Partition Info Map File to ${output_file}")
     set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
       COMMAND ${PYTHON_EXECUTABLE} ${CONFIG_GEN_PARTITION_INFO_SCRIPT} gen -i ${dt_file} -o ${output_file}
@@ -194,14 +400,14 @@ function(atm_generate_tag_data_bin_file)
     set(factory_yaml_file ${CMAKE_SOURCE_DIR}/tag_data/factory.yml)
     if(EXISTS "${settings_yaml_file}")
       set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
-      COMMAND ${PYTHON_EXECUTABLE} ${CONFIG_GEN_TAG_DATA_BIN_FILE_SCRIPT} -t settings -z ${CONFIG_ZSG_TOOL_PATH} -p ${partition_file} -y ${settings_yaml_file} -b ${ZEPHYR_BINARY_DIR}/settings.bin
+      COMMAND ${PYTHON_EXECUTABLE} ${CONFIG_GEN_TAG_DATA_BIN_FILE_SCRIPT} -t settings -z ${CONFIG_ZSG_TOOL_PATH} -o ${CMAKE_OBJCOPY} -p ${partition_file} -y ${settings_yaml_file} -b ${ZEPHYR_BINARY_DIR}/zephyr_settings.bin
       )
     else()
       message("ignore generate settings.bin")
     endif()
     if(EXISTS "${factory_yaml_file}")
       set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
-      COMMAND ${PYTHON_EXECUTABLE} ${CONFIG_GEN_TAG_DATA_BIN_FILE_SCRIPT} -t factory -z ${CONFIG_ZSG_TOOL_PATH} -p ${partition_file} -y ${factory_yaml_file} -b ${ZEPHYR_BINARY_DIR}/factory.bin
+      COMMAND ${PYTHON_EXECUTABLE} ${CONFIG_GEN_TAG_DATA_BIN_FILE_SCRIPT} -t factory -z ${CONFIG_ZSG_TOOL_PATH} -o ${CMAKE_OBJCOPY} -p ${partition_file} -y ${factory_yaml_file} -b ${ZEPHYR_BINARY_DIR}/zephyr_factory.bin
       )
     else()
       message("ignore generate factory.bin")
@@ -232,18 +438,21 @@ function(zephyr_atmosic_tasks)
 
     # copy the veneer library to a location the zephyr can link
     zephyr_file_copy(${spe_path}/${CONFIG_ARM_ENTRY_VENEERS_LIB_NAME} ${CMAKE_BINARY_DIR}/${CONFIG_ARM_ENTRY_VENEERS_LIB_NAME})
-
+    if (CONFIG_ATM_SPLIT_IMG)
+      split_img()
+      if (CONFIG_BOOTLOADER_MCUBOOT)
+        # add tasks to sign the FLASH portion of the NSPE
+        sign_flash_nspe_tasks()
+      endif()
+    endif()
     if (CONFIG_MERGE_SPE_NSPE)
       MATH(EXPR S_LOAD_OFFSET "${SPE_CONFIG_FLASH_BASE_ADDRESS} + ${SPE_CONFIG_FLASH_LOAD_OFFSET}")
       merge_spe(${spe_path} ${S_LOAD_OFFSET})
     endif()
   endif()
-  if (CONFIG_ATM_SPLIT_IMG)
-    split_img()
-  endif()
   if (CONFIG_GEN_PARTITION_INFO)
     atm_partition_info()
-    if(CONFIG_ATM_SETTINGS)
+    if(CONFIG_ATM_SETTINGS AND NOT CONFIG_AUTO_TEST)
       atm_generate_tag_data_bin_file()
     endif()
   endif()

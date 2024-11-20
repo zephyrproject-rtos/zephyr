@@ -15,6 +15,10 @@
 #ifndef _ATMOSIC_ATM_ATM34XX_PARTITION_DEFS_H_
 #define _ATMOSIC_ATM_ATM34XX_PARTITION_DEFS_H_
 
+#ifdef ATM_APP_PART_DEFS
+#include ATM_APP_PART_DEFS
+#endif
+
 #define ATM_RRAM_BLOCK_SIZE 2048
 #define ROUND_DOWN_RRAM_BLK(s) \
 	(((s) / ATM_RRAM_BLOCK_SIZE) * ATM_RRAM_BLOCK_SIZE)
@@ -28,7 +32,7 @@
 #endif
 
 #ifndef ATM_STORAGE_SIZE
-#define ATM_STORAGE_SIZE 0x4000
+#define ATM_STORAGE_SIZE 0x800
 #endif
 #if ((ATM_STORAGE_SIZE % ATM_RRAM_BLOCK_SIZE) != 0)
 #error "Storage size must be aligned"
@@ -40,7 +44,7 @@
 
 #ifndef ATM_SPE_SIZE
 #if (RUN_IN_FLASH == 2)
-#define ATM_SPE_SIZE (64 * 1024)
+#define ATM_SPE_SIZE (32 * 1024)
 #elif (RUN_IN_FLASH == 1)
 /* this option gives all of RRAM to the SPE (used for testing) */
 #define ATM_SPE_SIZE (ATM_RRAM_AVAIL_SIZE - ATM_TOTAL_STORAGE_SIZE)

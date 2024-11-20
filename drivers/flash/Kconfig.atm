@@ -1,4 +1,4 @@
-# Copyright (c) 2023 Atmosic
+# Copyright (c) 2023-2024 Atmosic
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -8,7 +8,7 @@ config SOC_FLASH_ATM
 	select FLASH_HAS_DRIVER_ENABLED
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_EXPLICIT_ERASE
-	default y
+	default y if !(BOOTLOADER_MCUBOOT && TRUSTED_EXECUTION_SECURE)
 	help
 	  Enable Atmosic external flash driver.
 

@@ -19,6 +19,14 @@
 /delete-node/ &fast_code_partition;
 #endif
 
+#ifdef RUN_IN_FLASH
+/ {
+        chosen {
+		zephyr,flash_image1 = &flash0;
+        };
+};
+#endif
+
 &rram0 {
 	partitions {
 		compatible = "atmosic,tz-fixed-partitions", "fixed-partitions";
@@ -52,6 +60,12 @@
 				fast_code_partition: partition@ATM_FAST_CODE_NODE_ID {
 					label = "fast_code_partition";
 					reg = <ATM_FAST_CODE_OFFSET ATM_FAST_CODE_SIZE>;
+				};
+#endif
+#if ATM_SLOT0_TRAILER_RSVD_SIZE
+				slot0_trailer: partition@ATM_SLOT0_TRAILER_NODE_ID {
+					label = "slot_0_trailer";
+					reg = <ATM_SLOT0_TRAILER_RSVD_OFFSET ATM_SLOT0_TRAILER_RSVD_SIZE>;
 				};
 #endif
 			};
@@ -88,6 +102,12 @@
 					label = "nspe_partition";
 					reg = <ATM_NSPE_OFFSET ATM_NSPE_SIZE>;
 				};
+#if ATM_SLOT2_TRAILER_RSVD_SIZE
+				slot2_trailer: partition@ATM_SLOT2_TRAILER_NODE_ID {
+					label = "slot_2_trailer";
+					reg = <ATM_SLOT2_TRAILER_RSVD_OFFSET ATM_SLOT2_TRAILER_RSVD_SIZE>;
+				};
+#endif
 			};
 		};
 #endif

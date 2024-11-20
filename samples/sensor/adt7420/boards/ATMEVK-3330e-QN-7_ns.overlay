@@ -1,0 +1,9 @@
+&i2c0 {
+	status = "okay";
+        scl-pullup;
+	adt7420@4b {
+		compatible = "adi,adt7420";
+		reg = <0x4b>;
+		label = "ADT7420";
+	};
+};

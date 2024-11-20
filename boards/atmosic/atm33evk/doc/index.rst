@@ -166,7 +166,7 @@ and then the Atmosic SPE::
 
   west build -p -s <SPE> -b <BOARD>@mcuboot -d build/<BOARD>/<SPE> -- -DCONFIG_BOOTLOADER_MCUBOOT=y -DCONFIG_MCUBOOT_GENERATE_UNSIGNED_IMAGE=n -DDTS_EXTRA_CPPFLAGS=";"
 
-Note that make use of "board revision" to configure our board paritions to work for MCUboot.  On top of the "revisions," MCUboot currently needs an additional overlay that must be provided via the command line to give it the entire SRAM.
+Note that make use of "board revision" to configure our board partitions to work for MCUboot.  On top of the "revisions," MCUboot currently needs an additional overlay that must be provided via the command line to give it the entire SRAM.
 
 
 Building the Application
@@ -181,7 +181,7 @@ When building a Bluetooth application (``CONFIG_BT``) the BLE driver component p
 
 To review how the fixed and statically linked controllers are used, please refer to the README.rst in openair/modules/hal_atmosic/ATM33xx-5/drivers/ble/.
 
-If the ATM33 entropy driver is enabled without CONFIG_BT=y (mainly for evaluation), the system still requires a minimal BLE controller stack.  Without choosing a specific stack configuration an appopriate minimal BLE controller will be selected.  This may increase the size of your application.
+If the ATM33 entropy driver is enabled without CONFIG_BT=y (mainly for evaluation), the system still requires a minimal BLE controller stack.  Without choosing a specific stack configuration an appropriate minimal BLE controller will be selected.  This may increase the size of your application.
 
 Note that developers cannot use ``CONFIG_BT_CTLR_*`` `flags`__ with the ATM33 platform, as a custom, hardware-optimized link controller is used instead of Zephyr's link controller software.
 
@@ -288,13 +288,15 @@ Using the Support Script on Windows
 
 This script is written in Bash.  While Bash is readily available on most Linux distributions and macOS, it is not so on Windows.  However, Bash is bundled with Git.  The following single command demonstrates how to build, flash, and run the ``hello_world`` application using Bash in a typical installation of Git executed from the root of the Zephyr workspace::
 
-  C:\zephyrproject>"C:\Program Files\Git\bin\bash.exe" zephyr\boards\arm\atm33evk\support\run.sh -e -d -a zephyr\samples\hello_world -j -s <DEVICE_ID> <BOARD>
+  C:\zephyrproject>"C:\Program Files\Git\bin\bash.exe" zephyr\boards\atmosic\atm33evk\support\run.sh -e -d -a zephyr\samples\hello_world -j -s <DEVICE_ID> <BOARD>
 
 As an alternative, pass ``-n`` to build without MCUboot.
 
 From this point on out, unless the bootloader has been modified, the source code for the application (in this case ``zephyr\samples\hello_world``) can be modified and then programmed with ``-d`` and ``-e`` omitted::
 
-  C:\zephyrproject>"C:\Program Files\Git\bin\bash.exe" zephyr\boards\arm\atm33evk\support\run.sh -a zephyr\samples\hello_world -j -s <DEVICE_ID> <BOARD>
+  C:\zephyrproject>"C:\Program Files\Git\bin\bash.exe" zephyr\boards\atmosic\atm33evk\support\run.sh -a zephyr\samples\hello_world -j -s <DEVICE_ID> <BOARD>
+
+When -d and -a will build not just the app but the dependencies and generating atm file as well.
 
 
 Atmosic In-System Programming (ISP) Tool
@@ -309,20 +311,14 @@ flash -- into a single binary archive.
 +---------------+-----------------------------------------------------+
 |   .bin        |  binary file, contains flash or nvds data only.     |
 +---------------+-----------------------------------------------------+
-|   .elf        |  elf file, a common standard file format, consists  |
-|               |  of elf headers and flash data.                     |
-+---------------+-----------------------------------------------------+
-|   .nvm        |  OTP NVDS file, contains OTP nvds data.             |
-+---------------+-----------------------------------------------------+
 
 The ISP tool, which is also shipped as a stand-alone package, can then be used
 to unpack the components of the archive and download them on a device.
 
 west atm_arch commands
 ======================
-::
 
-  atm isp archive tool
+atm isp archive tool
   -atm_isp_path ATM_ISP_PATH, --atm_isp_path ATM_ISP_PATH
                         specify atm_isp exe path path
   -d, --debug           debug enabled, default false
@@ -348,32 +344,74 @@ west atm_arch commands
   -openocd_pkg_root OPENOCD_PKG_ROOT, --openocd_pkg_root OPENOCD_PKG_ROOT
                         Path to directory where openocd and its scripts are found
 
-Generate atm isp file
-=====================
-::
+Support Linux and Windows currently. The ``--atm_isp_path`` option should be specifiec accordingly.
 
+On Linux::
+  the ``--atm_isp_path`` option should be modules/hal/atmosic_lib/tools/atm_arch/bin/Linux/atm_isp
+
+On Windows::
+  the ``--atm_isp_path`` option should be modules/hal/atmosic_lib/tools/atm_arch/bin/Windows_NT/atm_isp.exe
+
+When ``-DCONFIG_SPE_PATH`` has been sepcified, the parition_info infomation will merge from build_dir of application and spe to build_dir of application and named as parition_info.map.merge.
+
+When not use SPE::
+  the ``-p`` option should be <build_dir>/zehpyr/parition_info.map
+When use SPE::
+  the ``-p`` option should be <build_dir>/zehpyr/parition_info.map.merge
+
+When build with wireless stack, the ``-DCONFIG_USE_ATMWSTK=y -DCONFIG_ATMWSTK=\"<ATMWSTK>\"``, the wireless stack elf file should be transfered to binary::
+    <ZEPHYR_TOOLCHAIN_VARIANT>/arm-zephyr-eabi/bin/arm-zephyr-eabi-objcopy -O binary <ATMSWTK_PATH>/atmwstk_<ATMWSTK>.elf <ATMSWTK_PATH>/atmwstk_<ATMWSTK>.bin
+
+* replace ``<ZEPHYR_TOOLCHAIN_VARIANT>`` the zephyr toolchain path.
+* replace ``<ATMSWTK_PATH>`` the wireless stack file, it should be openair/modules/hal_atmosic/ATM33xx-5/drivers/ble defaultly.
+* replace ``<ATMWSTK>`` the wireless stack, PD50LL or LL.
+
+Generate atm isp file
+---------------------
+
+Without SPE::
   west atm_arch -o <BOARD>_beacon.atm \
     -p build/<BOARD>_ns/<APP>/zephyr/partition_info.map \
     --app_file build/<BOARD>_ns/<APP>/zephyr/zephyr.signed.bin \
     --mcuboot_file build/<BOARD>/<MCUBOOT>/zephyr/zephyr.bin \
     --atmwstk_file openair/modules/hal_atmosic/ATM33xx-5/drivers/ble/atmwstk_PD50LL.bin \
-    --atm_isp_path modules/hal/atmosic_lib/tools/atm_isp
+    --atm_isp_path modules/hal/atmosic_lib/tools/atm_arch/bin/Linux/atm_isp
+
+With SPE::
+  west atm_arch -o <BOARD>_beacon.atm \
+    -p build/<BOARD>_ns/<APP>/zephyr/partition_info.map.merge \
+    --app_file build/<BOARD>_ns/<APP>/zephyr/zephyr.signed.bin \
+    --mcuboot_file build/<BOARD>/<MCUBOOT>/zephyr/zephyr.bin \
+    --atmwstk_file openair/modules/hal_atmosic/ATM33xx-5/drivers/ble/atmwstk_PD50LL.bin \
+    --atm_isp_path modules/hal/atmosic_lib/tools/atm_arch/bin/Linux/atm_isp
+
+Without ATMWSTK::
+  west atm_arch -o <BOARD>_beacon.atm \
+    -p build/<BOARD>_ns/<APP>/zephyr/partition_info.map.merge \
+    --app_file build/<BOARD>_ns/<APP>/zephyr/zephyr.signed.bin \
+    --mcuboot_file build/<BOARD>/<MCUBOOT>/zephyr/zephyr.bin \
+    --atm_isp_path modules/hal/atmosic_lib/tools/atm_arch/bin/Linux/atm_isp
+
+Without MCUBOOT::
+  west atm_arch -o <BOARD>_beacon.atm \
+    -p build/<BOARD>_ns/<APP>/zephyr/partition_info.map.merge \
+    --app_file build/<BOARD>_ns/<APP>/zephyr/zephyr.bin \
+    --spe_file build/<BOARD>/<SPE>/zephyr/zephyr.bin \
+    --atm_isp_path modules/hal/atmosic_lib/tools/atm_arch/bin/Linux/atm_isp
 
 Show atm isp file
-=================
-::
+-----------------
 
   west atm_arch -i <BOARD>_beacon.atm \
-    --atm_isp_path modules/hal/atmosic_lib/tools/atm_isp \
+    --atm_isp_path modules/hal/atmosic_lib/tools/atm_arch/bin/Linux/atm_isp \
     --show
 
 Flash atm isp file
-==================
-::
+------------------
 
   west atm_arch -i <BOARD>_beacon.atm \
-    --atm_isp_path modules/hal/atmosic_lib/tools/atm_isp \
-    --openocd_pkg_root=modules/hal/atmosic_lib \
+    --atm_isp_path modules/hal/atmosic_lib/tools/atm_arch/bin/Linux/atm_isp \
+    --openocd_pkg_root openair/modules/hal_atmosic \
     --burn
 
 Programming Secure Journal
@@ -383,7 +421,7 @@ The secure journal is a dedicated block of RRAM that has the property of being a
 
 The secure journal data updates are controlled by a secure counter (address ratchet). The counter determines the next writable location at an offset from the start of the journal. An offset greater than the counter value is writable while any offset below or equal to the counter is locked from updates. The counter can only increment monotonically and cannot be rolled back. This provides the immutability of OTP as well as the flexibility to append new data items or overriding past items using a find latest TLV search.
 
-The west extension command `secjrnl` is provided by the Atmosic HAL to allow for easy access and managment of the secure journal on supported platforms.
+The west extension command `secjrnl` is provided by the Atmosic HAL to allow for easy access and management of the secure journal on supported platforms.
 
 The tool provides a help command that describes all available operations via::
 
@@ -394,7 +432,7 @@ Dumping Secure Journal
 
 To dump the secure journal, run the command::
 
- west secjrnl dump --atm_plat atmx3 --device <DEVICE_ID>
+ west secjrnl dump --device <DEVICE_ID>
 
 This will dump all the TLV tags located in the secure journal.
 
@@ -403,12 +441,12 @@ Appending a tag to the Secure Journal
 
 To append a new tag to the secure journal::
 
- west secjrnl append --atm_plat atmx3 --device <DEVICE_ID> --tag=<TAG_ID> --data=<TAG_DATA>
+ west secjrnl append --device <DEVICE_ID> --tag=<TAG_ID> --data=<TAG_DATA>
 
 * replace ``<TAG_ID>`` with the appropriate tag ID (Ex: ``0xde``)
 * replace ``<TAG_DATA>`` with the data for the tag. This is passed as a string. To pass raw byte values format it like so: '\xde\xad\xbe\xef'. As such, ``--data="data"`` will result in the same output as ``--data="\x64\x61\x74\x61``.
 
-The secure journal uses a find latest search algorithm to allow overrides. If the passed tag should NOT be overridded in the future, add the flag ``--locked`` to the append command. See following section for more information regarding locking a tag.
+The secure journal uses a find latest search algorithm to allow overrides. If the passed tag should NOT be overridden in the future, add the flag ``--locked`` to the append command. See following section for more information regarding locking a tag.
 
 
 NOTE: The ``append`` command  does NOT increment the ratchet. The newly appended tag is still unprotected from erasing.
@@ -427,7 +465,7 @@ Erasing non-ratcheted data from the Secure Journal
 
 Appended tags are not ratcheted down. this allows for prototyping with the secure journal before needing to lock down the TLVs. To support prototyping, you can erase non-ratcheted data easily via::
 
- west secjrnl erase --atm_plat atmx3 --device <DEVICE_ID>
+ west secjrnl erase --device <DEVICE_ID>
 
 
 
@@ -436,11 +474,11 @@ Ratcheting Secure Journal
 
 To ratchet data, run the command::
 
- west secjrnl ratchet_jrnl --atm_plat atmx3 --device <DEVICE_ID>
+ west secjrnl ratchet_jrnl --device <DEVICE_ID>
 
 This will list the non-ratcheted tags and confirm that you want to ratchet the tags. Confirm by typing 'yes'.
 
-NOTE: This process is non reversable. Once ratcheted, that region of the secure journal cannot be modified.
+NOTE: This process is non reversible. Once ratcheted, that region of the secure journal cannot be modified.
 
 Viewing the Console Output
 **************************
@@ -453,7 +491,7 @@ program, such as::
 
   screen /dev/ttyACM1 115200
 
-On macOS, the serial console will be on USB port (``/dev/tty.usbmodem<12-digit devide ID>[13]``).  Use the following command to find the port for serial console::
+On macOS, the serial console will be on USB port (``/dev/tty.usbmodem<12-digit device ID>[13]``).  Use the following command to find the port for serial console::
 
   $ ls /dev/tty.usbmodem*
   /dev/tty.usbmodem<DEVICE_ID>1
@@ -542,3 +580,60 @@ smp_svr additionally needs to be configured to use the ATMWSTK using ``-DCONFIG_
   west build -p -s <MCUBOOT> -b <BOARD>@mcuboot -d build/<BOARD>/<MCUBOOT> -- -DCONFIG_BOOT_SIGNATURE_TYPE_ECDSA_P256=y -DCONFIG_BOOT_MAX_IMG_SECTORS=512 -DDTC_OVERLAY_FILE="<WEST_TOPDIR>/zephyr/boards/atmosic/atm33evk/<BOARD>_mcuboot_bl.overlay" -DDTS_EXTRA_CPPFLAGS="-DATMWSTK=<ATMWSTK>;"
   west build -p -s <SPE> -b <BOARD>@mcuboot -d build/<BOARD>/<SPE> -- -DCONFIG_BOOTLOADER_MCUBOOT=y -DCONFIG_MCUBOOT_GENERATE_UNSIGNED_IMAGE=n -DDTS_EXTRA_CPPFLAGS="-DATMWSTK=<ATMWSTK>;"
   west build -p -s <APP> -b <BOARD>@mcuboot//ns -d build/<BOARD>_ns/<APP> -- -DCONFIG_BOOTLOADER_MCUBOOT=y -DCONFIG_MCUBOOT_SIGNATURE_KEY_FILE=\"bootloader/mcuboot/root-ec-p256.pem\" -DCONFIG_SPE_PATH=\"<WEST_TOPDIR>/build/<BOARD>/<SPE>\" -DDTS_EXTRA_CPPFLAGS="-DATMWSTK=<ATMWSTK>;" -DCONFIG_USE_ATMWSTK=y -DCONFIG_ATMWSTK=\"<ATMWSTK>\" -DEXTRA_CONF_FILE="overlay-bt.conf" -DCONFIG_ATM_SLEEP_ADJ=17
+
+Building with Secure Debug
+--------------------------
+
+Secure Debug is a collection of hardware and software features to limit access to the debug port for devices in production. It is not intended to be used in development because once security measures are enabled many steps in the normal development flow will no longer function.
+
+Managing the OTP bits
+^^^^^^^^^^^^^^^^^^^^^
+
+At a hardware level, the debug security state at power-on is defined by two OTP bits (ATM_OTP_MASK_SEC_DBG_DEBUG_SECURED and ATM_OTP_MASK_SEC_DBG_DEBUG_DISABLED).
+Hardware applies the debug security state prior to the CPU booting.  No intervention is required by software to enforce the security state.  When secure debug is either SECURED or DISABLED, access through SWD is disallowed even if benign boot is enabled. When the port is SECURED (rather than DISABLED), the state can be cleared by software after a software challenge to prove the identity of the debug access requester.  The authenticator is implemented in the MCUboot image that monitors a UART console port.
+
+To check the state of the OTP bits, users can use the atmotp west extension by issuing the following command::
+ west atmotp get --board <BOARD> --device <DEVICE_ID> --otp SEC_DBG_CONFIG.DEBUG_DISABLED
+or::
+ west atmotp get --board <BOARD> --device <DEVICE_ID> --otp SEC_DBG_CONFIG.DEBUG_SECURED
+
+To completely disable secure debug, users can issue the following command (this is irreversible)::
+ west atmotp burn --board <BOARD> --device <DEVICE_ID> --otp SEC_DBG_CONFIG.DEBUG_DISABLED
+To enable secure debug, users can issue the following command::
+ west atmotp get --board <BOARD> --device <DEVICE_ID> --otp SEC_DBG_CONFIG.DEBUG_SECURED
+
+The authenticator software component runs during the boot sequence of MCUboot. Secure debug is not accessible in non-mcuboot builds. If no authentication occurs, software will sticky lock the debug port until reset.  A Python script is provided to demonstrate communications with the MCUboot authenticator to unlock the debug port.  The challenge/authentication process must be performed on each boot.  The challenge consists of a unique hash of per-device data stored in the secure journal.  This is computed by the MCUboot image and provided as a base64 encoded text output on the UART console port.  The hash will be unique for each manufactured device.  The challenge must be signed with the private ECDSA key and the resulting signature provided back to the authenticator to verify it using its local public ECDSA key.   The signature is unique for the device and can be used for every challenge response.
+
+Compiling MCUboot with secure debug
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To build with secure debug, add the following additional flags::
+  -DCONFIG_ATM_MCUBOOT_SECURE_DEBUG=y -DDTS_EXTRA_CPPFLAGS="-DUSE_ATM_SECURE_DEBUG"
+
+NOTE: if building with DFU_IN_FLASH, then your flags will look like::
+  -DCONFIG_ATM_MCUBOOT_SECURE_DEBUG=y -DDTS_EXTRA_CPPFLAGS="-DDFU_IN_FLASH;-DUSE_ATM_SECURE_DEBUG"
+
+The DTS option ``-DUSE_ATM_SECURE_DEBUG`` will enable UART0 as a bi-directional console port for authentication use.
+
+The MCUBOOT extension for secure debug will use a default private ECC-P256 key to generate the public ECC-P256 key stored in the image.  This is a widely distributed key and should not be used in production.
+
+At this time the authenticator implements a 500ms default timeout via ``CONFIG_ATM_MCUBOOT_UART_DEBUG_AUTH_TIMEOUT_MS`` while monitoring the console port for characters.  You can adjust as needed ``-DCONFIG_ATM_MCUBOOT_UART_DEBUG_AUTH_TIMEOUT_MS=<milliseconds>`` to extend the timeout. A future update will support monitoring the UART RX pin for a logic high state to detect the presence of a host UART connection.
+
+Using the debug unlock script
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+A debug unlock Python script is provided in ``openair/tools/scripts/sec_debug_unlock.py``. This tool requires PySerial.
+
+``python sec_debug_unlock.py -v -k <private ECC-P256 key in .pem format> -p <console port>``
+
+To unlock using the default private key in ``openair/lib/atm_debug_auth/`` ::
+  python sec_debug_unlock.py -v -k openair/lib/atm_debug_auth/root-debug-ec-p256.pem -p <console port>
+
+The unlock script using ``-v`` option will verbosely output::
+Sending: b'DBG REQUEST\n'
+Received: b'Static Challenge: o9H3wvgqOfAi/mvTV/qvvdNjBqzGILIai3G4OBURjhE=\n'
+Unlock Static Challenge
+Sending: b'DBG STATIC_RESPONSE sMdx+QFewpAt3Dnqy9BrjSLNxgtObtu3IKhSvpuvbG7J9IClpt/zJL4XRlo9rt7KCCw6orjUIyBdaWWM657aRw==\n'
+Received: b'Debug unlocked\n'
+
+The SWD port will be unlocked and MCUBOOT will remain in a benign state with the processor halted at a WFI instruction (Wait For Interrupt).  The developer can freely attach a debugger such as GDB and inspect the target (read memory, set breakpoints).  If the debugger allows the CPU to continue then MCUBOOT will continue its boot from the point at which WFI was entered.

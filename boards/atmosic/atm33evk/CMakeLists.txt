@@ -140,6 +140,9 @@ function(atm_partition_info)
       list(APPEND EXT_ARGS "--user_data_size")
       list(APPEND EXT_ARGS "${USER_DATA_SIZE}")
     endif()
+    if(CONFIG_MERGE_SPE_NSPE)
+      list(APPEND EXT_ARGS "--merge_spe_nspe")
+    endif()
     message("Generate Partition Info Map File to ${output_file}")
     set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
       COMMAND ${PYTHON_EXECUTABLE} ${CONFIG_GEN_PARTITION_INFO_SCRIPT} gen -i ${dt_file} -o ${output_file}
@@ -168,14 +171,14 @@ function(atm_generate_tag_data_bin_file)
     set(factory_yaml_file ${CMAKE_SOURCE_DIR}/tag_data/factory.yml)
     if(EXISTS "${settings_yaml_file}")
       set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
-      COMMAND ${PYTHON_EXECUTABLE} ${CONFIG_GEN_TAG_DATA_BIN_FILE_SCRIPT} -t settings -z ${CONFIG_ZSG_TOOL_PATH} -p ${partition_file} -y ${settings_yaml_file} -b ${ZEPHYR_BINARY_DIR}/settings.bin
+      COMMAND ${PYTHON_EXECUTABLE} ${CONFIG_GEN_TAG_DATA_BIN_FILE_SCRIPT} -t settings -z ${CONFIG_ZSG_TOOL_PATH} -o ${CMAKE_OBJCOPY} -p ${partition_file} -y ${settings_yaml_file} -b ${ZEPHYR_BINARY_DIR}/zephyr_settings.bin
       )
     else()
       message("ignore generate settings.bin")
     endif()
     if(EXISTS "${factory_yaml_file}")
       set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
-      COMMAND ${PYTHON_EXECUTABLE} ${CONFIG_GEN_TAG_DATA_BIN_FILE_SCRIPT} -t factory -z ${CONFIG_ZSG_TOOL_PATH} -p ${partition_file} -y ${factory_yaml_file} -b ${ZEPHYR_BINARY_DIR}/factory.bin
+      COMMAND ${PYTHON_EXECUTABLE} ${CONFIG_GEN_TAG_DATA_BIN_FILE_SCRIPT} -t factory -z ${CONFIG_ZSG_TOOL_PATH} -o ${CMAKE_OBJCOPY} -p ${partition_file} -y ${factory_yaml_file} -b ${ZEPHYR_BINARY_DIR}/zephyr_factory.bin
       )
     else()
       message("ignore generate factory.bin")
@@ -214,7 +217,7 @@ function(zephyr_atmosic_tasks)
   endif()
   if (CONFIG_GEN_PARTITION_INFO)
     atm_partition_info()
-    if(CONFIG_ATM_SETTINGS)
+    if(CONFIG_ATM_SETTINGS AND NOT CONFIG_AUTO_TEST)
       atm_generate_tag_data_bin_file()
     endif()
   endif()

@@ -14,7 +14,7 @@
 	};
 };
 
-&i2c1 {
+&i2c0 {
 	status = "okay";
 	bme280@0 {
 		compatible = "bosch,bme280";

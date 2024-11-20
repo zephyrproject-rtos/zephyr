@@ -8,6 +8,7 @@ rsource "*/Kconfig.defconfig"
 
 config SOC_FAMILY_ATM
 	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
+	select HAS_COVERAGE_SUPPORT
 
 config AUTO_TEST
 	bool "Enable Auto Test"

@@ -1020,7 +1020,10 @@ ATMOSIC_UART_IRQ_HANDLER_DECL(inst)					\
 static void uart_atm_config_pins##inst(void)				\
 {									\
 	WRPR_CTRL_SET(UART_BASE(inst), CLK_ENABLE);			\
-	PIN_SELECT(DT_INST_PROP(inst, rx_pin), UART_SIG(inst, RX));	\
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, rx_pin), (		\
+		PIN_SELECT(DT_INST_PROP(inst, rx_pin), UART_SIG(inst, RX)); \
+		PIN_PULLUP(DT_INST_PROP(inst, rx_pin));			\
+	)) /* rx_pin */							\
 	PIN_SELECT(DT_INST_PROP(inst, tx_pin), UART_SIG(inst, TX));	\
 	IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, rts_pin), (		\
 		IF_ENABLED(CONFIG_PM, (					\
