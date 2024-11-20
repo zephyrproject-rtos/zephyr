@@ -6050,6 +6050,8 @@ void net_if_init(void)
 		}
 #endif
 
+		net_stats_prometheus_init(iface);
+
 		if_count++;
 	}
 
