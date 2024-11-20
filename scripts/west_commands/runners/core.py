@@ -624,7 +624,7 @@ class ZephyrBinaryRunner(abc.ABC):
     def do_add_parser(cls, parser):
         '''Hook for adding runner-specific options.'''
 
-    @classmethod
+    @classmethod  # noqa: B027
     def args_from_previous_runner(cls, previous_runner,
                                   args: argparse.Namespace):
         '''Update arguments from a previously created runner.
