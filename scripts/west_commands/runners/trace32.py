@@ -33,7 +33,7 @@ class TRACE32BinaryRunner(ZephyrBinaryRunner):
                  arch: str,
                  startup_args: Optional[List[str]] = None,
                  timeout: int = 60) -> None:
-        super(TRACE32BinaryRunner, self).__init__(cfg)
+        super().__init__(cfg)
         self.arch = arch
         self.t32_cfg = t32_cfg
         self.t32_exec: Optional[Path] = None
