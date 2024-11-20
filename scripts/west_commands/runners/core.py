@@ -385,8 +385,8 @@ class DeprecatedAction(argparse.Action):
 
 def depr_action(*args, cls=None, replacement=None, **kwargs):
     action = DeprecatedAction(*args, **kwargs)
-    setattr(action, '_cls', cls)
-    setattr(action, '_replacement', replacement)
+    action._cls = cls
+    action._replacement = replacement
     return action
 
 class ZephyrBinaryRunner(abc.ABC):
