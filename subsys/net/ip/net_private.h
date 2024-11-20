@@ -73,6 +73,15 @@ extern int net_icmp_call_ipv6_handlers(struct net_pkt *pkt,
 
 extern struct net_if *net_ipip_get_virtual_interface(struct net_if *input_iface);
 
+#if defined(CONFIG_NET_STATISTICS_VIA_PROMETHEUS)
+extern void net_stats_prometheus_init(struct net_if *iface);
+#else
+static inline void net_stats_prometheus_init(struct net_if *iface)
+{
+	ARG_UNUSED(iface);
+}
+#endif /* CONFIG_NET_STATISTICS_VIA_PROMETHEUS */
+
 #if defined(CONFIG_NET_SOCKETS_SERVICE)
 extern void socket_service_init(void);
 #else
