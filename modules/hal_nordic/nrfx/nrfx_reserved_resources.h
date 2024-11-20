@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef NRFX_CONFIG_RESERVED_RESOURCES_H__
-#define NRFX_CONFIG_RESERVED_RESOURCES_H__
+#ifndef NRFX_RESERVED_RESOURCES_H__
+#define NRFX_RESERVED_RESOURCES_H__
 
 /** @brief Bitmask that defines GPIOTE130 channels reserved for use outside
  *         of the nrfx library.
@@ -707,4 +707,4 @@
 	(NRFX_PPIB_020_030_CHANNELS_USED_BY_BT_CTLR |                                              \
 	 NRFX_PPIB_020_030_CHANNELS_USED_BY_802154_DRV | NRFX_PPIB_020_030_CHANNELS_USED_BY_MPSL)
 
-#endif /* NRFX_CONFIG_RESERVED_RESOURCES_H__ */
+#endif /* NRFX_RESERVED_RESOURCES_H__ */
