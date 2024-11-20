@@ -71,7 +71,7 @@ ZTEST(zcbor_bulk, test_correct)
 	zassert_equal(sizeof("world") - 1, world.len, "Expected length %d",
 		sizeof("world") - 1);
 	zassert_equal(0, memcmp(world.value, "world", world.len),
-		"Expected \"world\", got %.*s", world.len, world.value);
+		"Expected \"world\", got %.*s", (int)world.len, world.value);
 	zassert_true(bool_val, "Expected bool val == true");
 }
 
@@ -112,7 +112,7 @@ ZTEST(zcbor_bulk, test_correct_out_of_order)
 	zassert_equal(sizeof("world") - 1, world.len, "Expected length %d",
 		sizeof("world") - 1);
 	zassert_equal(0, memcmp(world.value, "world", world.len),
-		"Expected \"world\", got %.*s", world.len, world.value);
+		"Expected \"world\", got %.*s", (int)world.len, world.value);
 	zassert_true(bool_val, "Expected bool val == true");
 }
 
@@ -222,7 +222,7 @@ ZTEST(zcbor_bulk, test_bad_type_2)
 	zassert_equal(sizeof("world") - 1, world.len, "Expected length %d",
 		sizeof("world") - 1);
 	zassert_equal(0, memcmp(world.value, "world", world.len),
-		"Expected \"world\", got %.*s", world.len, world.value);
+		"Expected \"world\", got %.*s", (int)world.len, world.value);
 	zassert_false(bool_val, "Expected bool val unmodified");
 }
 
@@ -298,7 +298,7 @@ ZTEST(zcbor_bulk, test_duplicate)
 	zassert_equal(sizeof("world") - 1, world.len, "Expected length %d",
 		sizeof("world") - 1);
 	zassert_equal(0, memcmp(world.value, "world", world.len),
-		"Expected \"world\", got %.*s", world.len, world.value);
+		"Expected \"world\", got %.*s", (int)world.len, world.value);
 	zassert_false(bool_val, "Expected bool val unmodified");
 }
 
@@ -377,7 +377,7 @@ ZTEST(zcbor_bulk, test_map_in_map_correct)
 	zassert_equal(sizeof("world") - 1, world.len, "Expected length %d",
 		sizeof("world") - 1);
 	zassert_equal(0, memcmp(world.value, "world", world.len),
-		"Expected \"world\", got %.*s", world.len, world.value);
+		"Expected \"world\", got %.*s", (int)world.len, world.value);
 	zassert_true(bool_val, "Expected bool_val == true");
 
 	/* Map within map */
