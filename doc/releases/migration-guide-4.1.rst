@@ -180,3 +180,9 @@ Architectures
   * For the native_sim target :kconfig:option:`CONFIG_NATIVE_SIM_NATIVE_POSIX_COMPAT` has been
     switched to ``n`` by default, and this option has been deprecated. Ensure your code does not
     use the :kconfig:option:`CONFIG_BOARD_NATIVE_POSIX` option anymore (:github:`81232`).
+
+* RISCV
+
+  * :kconfig:option:`CONFIG_EXTRA_EXCEPTION_INFO` has been removed, the ``*csf`` pointer will be
+    available in the ``struct arch_esf`` as long as :kconfig:option:`CONFIG_EXCEPTION_DEBUG` is
+    enabled.

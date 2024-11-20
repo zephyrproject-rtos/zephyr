@@ -78,12 +78,7 @@ GTEXT(__soc_save_context)
 GTEXT(__soc_restore_context)
 #endif /* CONFIG_RISCV_SOC_CONTEXT_SAVE */
 
-#ifdef CONFIG_EXCEPTION_DEBUG
-GTEXT(z_riscv_fatal_error_csf)
-#else
 GTEXT(z_riscv_fatal_error)
-#endif /* CONFIG_EXCEPTION_DEBUG */
-
 GTEXT(z_get_next_switch_handle)
 GTEXT(z_riscv_switch)
 GTEXT(z_riscv_thread_start)
@@ -460,19 +455,13 @@ do_fault:
 	/* Allocate space for caller-saved registers on current thread stack */
 	addi sp, sp, -__callee_saved_t_SIZEOF
 
-	/* Save callee-saved registers to be passed as 3rd arg */
+	/* Save callee-saved registers */
 	STORE_CALLEE_SAVED()		;
-	mv a2, sp
 
-#ifdef CONFIG_EXTRA_EXCEPTION_INFO
 	/* Store csf's addr into esf (a1 still holds the pointer to the esf at this point) */
-	sr a2 __struct_arch_esf_csf_OFFSET(a1)
-#endif /* CONFIG_EXTRA_EXCEPTION_INFO */
-
-	tail z_riscv_fatal_error_csf
-#else
-	tail z_riscv_fatal_error
+	sr sp __struct_arch_esf_csf_OFFSET(a1)
 #endif /* CONFIG_EXCEPTION_DEBUG */
+	tail z_riscv_fatal_error
 
 #if defined(CONFIG_IRQ_OFFLOAD)
 do_irq_offload:
