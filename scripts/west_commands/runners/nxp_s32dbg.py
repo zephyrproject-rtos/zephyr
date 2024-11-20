@@ -31,7 +31,7 @@ class NXPS32DebugProbeConfig:
     server_port: int = 45000
     speed: int = 16000
     remote_timeout: int = 30
-    reset_type: Optional[str] = 'default'
+    reset_type: str | None = 'default'
     reset_delay: int = 0
 
 
@@ -45,8 +45,8 @@ class NXPS32DebugProbeRunner(ZephyrBinaryRunner):
                  soc_name: str,
                  soc_family_name: str,
                  start_all_cores: bool,
-                 s32ds_path: Optional[str] = None,
-                 tool_opt: Optional[list[str]] = None) -> None:
+                 s32ds_path: str | None = None,
+                 tool_opt: list[str] | None = None) -> None:
         super().__init__(runner_cfg)
         self.elf_file: str = runner_cfg.elf_file or ''
         self.probe_cfg: NXPS32DebugProbeConfig = probe_cfg
@@ -54,7 +54,7 @@ class NXPS32DebugProbeRunner(ZephyrBinaryRunner):
         self.soc_name: str = soc_name
         self.soc_family_name: str = soc_family_name
         self.start_all_cores: bool = start_all_cores
-        self.s32ds_path_override: Optional[str] = s32ds_path
+        self.s32ds_path_override: str | None = s32ds_path
 
         self.tool_opt: list[str] = []
         if tool_opt:
@@ -190,7 +190,7 @@ class NXPS32DebugProbeRunner(ZephyrBinaryRunner):
             return probes_snr[value - 1]
 
     @property
-    def runtime_environment(self) -> Optional[dict[str, str]]:
+    def runtime_environment(self) -> dict[str, str] | None:
         """Execution environment used for the client process."""
         if platform.system() == 'Windows':
             python_lib = (self.s32ds_path / 'S32DS' / 'build_tools' / 'msys32'
@@ -203,7 +203,7 @@ class NXPS32DebugProbeRunner(ZephyrBinaryRunner):
         return None
 
     @property
-    def script_globals(self) -> dict[str, Optional[Union[str, int]]]:
+    def script_globals(self) -> dict[str, str | int | None]:
         """Global variables required by the debugger scripts."""
         return {
             '_PROBE_IP': self.probe_cfg.conn_str,
