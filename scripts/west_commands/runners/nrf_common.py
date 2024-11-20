@@ -264,15 +264,15 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
                     'must be recovered.\n'
                     '  To fix, run "west flash --recover" instead.\n' +
                     family_help)
-            if cpe.returncode == ErrVerify:
-                # If there are data in  the UICR region it is likely that the
-                # verify failed du to the UICR not been erased before, so giving
+            if cpe.returncode == ErrVerify and self.hex_get_uicrs():
+                # If there is data in the UICR region it is likely that the
+                # verify failed due to the UICR not been erased before, so giving
                 # a warning here will hopefully enhance UX.
-                if self.hex_get_uicrs():
-                    self.logger.warning(
-                        'The hex file contains data placed in the UICR, which '
-                        'may require a full erase before reprogramming. Run '
-                        'west flash again with --erase, or --recover.')
+                self.logger.warning(
+                    'The hex file contains data placed in the UICR, which '
+                    'may require a full erase before reprogramming. Run '
+                    'west flash again with --erase, or --recover.'
+                )
             raise
 
 
