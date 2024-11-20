@@ -60,7 +60,7 @@ class NativeSimBinaryRunner(ZephyrBinaryRunner):
         elif command == 'debugserver':
             self.do_debugserver(**kwargs)
         else:
-            assert False
+            raise AssertionError
 
     def do_flash(self, **kwargs):
         cmd = [self.cfg.exe_file]
