@@ -1,6 +1,7 @@
 common:
   depends_on: netif
   min_ram: 32
+  min_flash: 194
   tags:
     - net
     - socket
