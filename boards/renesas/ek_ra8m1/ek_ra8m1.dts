@@ -246,6 +246,8 @@ mikrobus_serial: &uart3 {};
 
 &spi1 {
 	pinctrl-0 = <&spi1_default>;
+	pinctrl-names = "default";
+	status = "okay";
 };
 
 &pwm7 {
