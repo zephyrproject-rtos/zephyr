@@ -42,6 +42,8 @@
 #include <zephyr/net/ipv4_autoconf.h>
 #endif
 
+#include <zephyr/net/prometheus/collector.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -694,6 +696,10 @@ struct net_if {
 #if defined(CONFIG_NET_STATISTICS_PER_INTERFACE)
 	/** Network statistics related to this network interface */
 	struct net_stats stats;
+
+	/** Promethus collector for this network interface */
+	IF_ENABLED(CONFIG_NET_STATISTICS_VIA_PROMETHEUS,
+		   (struct prometheus_collector *collector);)
 #endif /* CONFIG_NET_STATISTICS_PER_INTERFACE */
 
 	/** Network interface instance configuration */
@@ -3198,11 +3204,23 @@ struct net_if_api {
 		NET_IF_DHCPV6_INIT			\
 	}
 
+#define NET_PROMETHEUS_GET_COLLECTOR_NAME(dev_id, sfx)			\
+	net_stats_##dev_id##_##sfx##_collector
+#define NET_PROMETHEUS_INIT(dev_id, sfx)				\
+	IF_ENABLED(CONFIG_NET_STATISTICS_VIA_PROMETHEUS,		\
+		   (.collector = &NET_PROMETHEUS_GET_COLLECTOR_NAME(dev_id, sfx),))
+
 #define NET_IF_GET_NAME(dev_id, sfx) __net_if_##dev_id##_##sfx
 #define NET_IF_DEV_GET_NAME(dev_id, sfx) __net_if_dev_##dev_id##_##sfx
 
 #define NET_IF_GET(dev_id, sfx)						\
 	((struct net_if *)&NET_IF_GET_NAME(dev_id, sfx))
+
+#if defined(CONFIG_NET_STATISTICS_VIA_PROMETHEUS)
+extern int net_stats_prometheus_scrape(struct prometheus_collector *collector,
+				       struct prometheus_metric *metric,
+				       void *user_data);
+#endif /* CONFIG_NET_STATISTICS_VIA_PROMETHEUS */
 
 #define NET_IF_INIT(dev_id, sfx, _l2, _mtu, _num_configs)		\
 	static STRUCT_SECTION_ITERABLE(net_if_dev,			\
@@ -3221,7 +3239,15 @@ struct net_if_api {
 			.if_dev = &(NET_IF_DEV_GET_NAME(dev_id, sfx)),	\
 			NET_IF_CONFIG_INIT				\
 		}							\
-	}
+	};								\
+	IF_ENABLED(CONFIG_NET_STATISTICS_VIA_PROMETHEUS,		\
+		   (static PROMETHEUS_COLLECTOR_DEFINE(			\
+			   NET_PROMETHEUS_GET_COLLECTOR_NAME(dev_id,	\
+							     sfx),	\
+			   net_stats_prometheus_scrape,			\
+			   NET_IF_GET(dev_id, sfx));			\
+		    NET_STATS_PROMETHEUS(NET_IF_GET(dev_id, sfx),	\
+					 dev_id, sfx);))
 
 #define NET_IF_OFFLOAD_INIT(dev_id, sfx, _mtu)				\
 	static STRUCT_SECTION_ITERABLE(net_if_dev,			\
@@ -3239,7 +3265,16 @@ struct net_if_api {
 			.if_dev = &(NET_IF_DEV_GET_NAME(dev_id, sfx)),	\
 			NET_IF_CONFIG_INIT				\
 		}							\
-	}
+	};								\
+	IF_ENABLED(CONFIG_NET_STATISTICS_VIA_PROMETHEUS,		\
+		   (static PROMETHEUS_COLLECTOR_DEFINE(			\
+			   NET_PROMETHEUS_GET_COLLECTOR_NAME(dev_id,	\
+							     sfx),	\
+			   net_stats_prometheus_scrape,			\
+			   NET_IF_GET(dev_id, sfx));			\
+		    NET_STATS_PROMETHEUS(NET_IF_GET(dev_id, sfx),	\
+					 dev_id, sfx);))
+
 
 /** @endcond */
 
