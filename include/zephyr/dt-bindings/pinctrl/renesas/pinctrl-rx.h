@@ -20,6 +20,7 @@
 #define RX_PSEL_SCI_6 0xB
 #define RX_PSEL_TMR   0x5
 #define RX_PSEL_POE   0x7
+#define RX_PSEL_ADC   0x0
 
 /* P0nPFS */
 #define RX_PSEL_P0nPFS_HIZ    0x0
