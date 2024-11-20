@@ -34,6 +34,10 @@ class IntelCycloneVBinaryRunner(ZephyrBinaryRunner):
 
         support = path.join(cfg.board_dir, 'support')
 
+        gdb_commands = None
+        gdb_commands2 = None
+        gdb_commands_deb = None
+
         if not config:
             default = path.join(support, 'openocd.cfg')
             default2 = path.join(support, 'download_all.gdb')
