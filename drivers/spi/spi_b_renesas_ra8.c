@@ -92,7 +92,9 @@ static int ra_spi_b_configure(const struct device *dev, const struct spi_config 
 		return 0;
 	}
 
-	fsp_err = R_SPI_B_Close(&data->spi);
+	if (data->spi.open != 0) {
+		R_SPI_B_Close(&data->spi);
+	}
 
 	if ((config->operation & SPI_FRAME_FORMAT_TI) == SPI_FRAME_FORMAT_TI) {
 		return -ENOTSUP;
