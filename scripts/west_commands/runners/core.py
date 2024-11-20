@@ -190,7 +190,7 @@ class BuildConfiguration:
         opt_value = re.compile(f'^(?P<option>{self.config_prefix}_[A-Za-z0-9_]+)=(?P<value>.*)$')
         not_set = re.compile(f'^# (?P<option>{self.config_prefix}_[A-Za-z0-9_]+) is not set$')
 
-        with open(filename, 'r') as f:
+        with open(filename) as f:
             for line in f:
                 match = opt_value.match(line)
                 if match:
