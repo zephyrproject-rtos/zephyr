@@ -144,8 +144,8 @@ class NXPS32DebugProbeRunner(ZephyrBinaryRunner):
         try:
             outb = subprocess.check_output(shlex.split(cmd), stderr=subprocess.DEVNULL)
             out = outb.decode('utf-8').strip().lower()
-        except subprocess.CalledProcessError:
-            raise RuntimeError('error while looking for debug probes connected')
+        except subprocess.CalledProcessError as err:
+            raise RuntimeError('error while looking for debug probes connected') from err
 
         devices: List[str] = []
         if out and 'no devices were found' not in out:
