@@ -347,6 +347,10 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 	case WLAN_REASON_PRE_BEACON_LOST:
 		break;
 #endif
+	case WLAN_REASON_FW_HANG:
+	case WLAN_REASON_FW_RESET:
+		LOG_DBG("WLAN: FW hang");
+		break;
 	default:
 		LOG_WRN("WLAN: Unknown Event: %d", reason);
 	}
