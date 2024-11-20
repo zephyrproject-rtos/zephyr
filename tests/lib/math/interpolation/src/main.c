@@ -6,6 +6,18 @@
 #include <math.h>
 
 #include <zephyr/ztest.h>
+
+#ifdef __clang__
+/*
+ * Floating-point contraction merges an operation of the form (a*b + c) from
+ * two operations (fmul, fadd) into a single operation (fmadd). This can change
+ * the value of the resulting LSB, causing problems when the expected value is
+ * some multiple of 0.5f and the rounding functions are used. Disable
+ * contraction for the tests to ensure this doesn't occur.
+ */
+#pragma STDC FP_CONTRACT OFF
+#endif
+
 #include <zephyr/math/interpolation.h>
 
 ZTEST(interpolation, test_interpolation_oob)
