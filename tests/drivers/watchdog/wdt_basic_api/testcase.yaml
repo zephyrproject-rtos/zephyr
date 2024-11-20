@@ -45,6 +45,8 @@ tests:
     filter: dt_compat_enabled("st,stm32-window-watchdog") or dt_compat_enabled("st,stm32-watchdog")
     extra_args: DTC_OVERLAY_FILE="boards/stm32_wwdg_h7.overlay"
     platform_allow:
+      - nucleo_h7s3l8
+      - stm32h7s78_dk
       - nucleo_h753zi
       - nucleo_h743zi
   drivers.watchdog.stm32iwdg:
@@ -71,6 +73,8 @@ tests:
       - nucleo_h743zi
       - nucleo_c031c6
       - nucleo_h753zi
+      - nucleo_h7s3l8
+      - stm32h7s78_dk
       - nucleo_wba52cg
     integration_platforms:
       - nucleo_f091rc
