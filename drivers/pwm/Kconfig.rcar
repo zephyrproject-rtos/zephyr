@@ -8,5 +8,6 @@ config PWM_RCAR
 	default y
 	depends on SOC_FAMILY_RENESAS_RCAR
 	depends on DT_HAS_RENESAS_PWM_RCAR_ENABLED
+	select PINCTRL
 	help
 	  Enable Renesas R-Car PWM Driver.
