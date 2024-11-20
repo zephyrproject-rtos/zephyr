@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024 Mustafa Abdullah Kus, Sparse Technology
+ * Copyright (c) 2024 Nordic Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,7 +30,7 @@
  */
 struct prometheus_counter {
 	/** Base of the Prometheus counter metric */
-	struct prometheus_metric *base;
+	struct prometheus_metric base;
 	/** Value of the Prometheus counter metric */
 	uint64_t value;
 };
@@ -37,30 +38,29 @@ struct prometheus_counter {
 /**
  * @brief Prometheus Counter definition.
  *
- * This macro defines a Counter metric.
+ * This macro defines a Counter metric. If you want to make the counter static,
+ * then add "static" keyword before the PROMETHEUS_COUNTER_DEFINE.
  *
- * @param _name The channel's name.
- * @param _detail The metric base.
+ * @param _name The counter metric name
+ * @param _desc Counter description
+ * @param _label Label for the metric. Additional labels can be added at runtime.
  *
  * Example usage:
  * @code{.c}
  *
- * struct prometheus_metric http_request_counter = {
- *	.type = PROMETHEUS_COUNTER,
- *	.name = "http_request_counter",
- *	.description = "HTTP request counter",
- *	.num_labels = 1,
- *	.labels = {
- *		{ .key = "http_request", .value = "request_count",}
- *	},
- *};
- *
- * PROMETHEUS_COUNTER_DEFINE(test_counter, &test_counter_metric);
+ * PROMETHEUS_COUNTER_DEFINE(http_request_counter, "HTTP request counter",
+ *                           ({ .key = "http_request", .value = "request_count" }));
  * @endcode
  */
-#define PROMETHEUS_COUNTER_DEFINE(_name, _detail)                                                  \
-	static STRUCT_SECTION_ITERABLE(prometheus_counter, _name) = {.base = (void *)(_detail),    \
-								     .value = 0}
+#define PROMETHEUS_COUNTER_DEFINE(_name, _desc, _label)			\
+	STRUCT_SECTION_ITERABLE(prometheus_counter, _name) = {		\
+		.base.name = STRINGIFY(_name),				\
+		.base.type = PROMETHEUS_COUNTER,			\
+		.base.description = _desc,				\
+		.base.labels[0] = __DEBRACKET _label,			\
+		.base.num_labels = 1,					\
+		.value = 0ULL,						\
+	}
 
 /**
  * @brief Increment the value of a Prometheus counter metric

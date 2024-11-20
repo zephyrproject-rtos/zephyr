@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024 Mustafa Abdullah Kus, Sparse Technology
+ * Copyright (c) 2024 Nordic Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,7 +28,7 @@
  */
 struct prometheus_gauge {
 	/** Base of the Prometheus gauge metric */
-	struct prometheus_metric *base;
+	struct prometheus_metric base;
 	/** Value of the Prometheus gauge metric */
 	double value;
 };
@@ -35,31 +36,30 @@ struct prometheus_gauge {
 /**
  * @brief Prometheus Gauge definition.
  *
- * This macro defines a Gauge metric.
+ * This macro defines a Gauge metric. If you want to make the gauge static,
+ * then add "static" keyword before the PROMETHEUS_GAUGE_DEFINE.
  *
- * @param _name The channel's name.
- * @param _detail The metric base.
+ * @param _name The gauge metric name.
+ * @param _desc Gauge description
+ * @param _label Label for the metric. Additional labels can be added at runtime.
  *
  * Example usage:
  * @code{.c}
  *
- * struct prometheus_metric http_request_gauge = {
- *	.type = PROMETHEUS_GAUGE,
- *	.name = "http_request_gauge",
- *	.description = "HTTP request gauge",
- *	.num_labels = 1,
- *	.labels = {
- *		{ .key = "http_request", .value = "request_count",}
- *	},
- * };
- *
- * PROMETHEUS_GAUGE_DEFINE(test_gauge, &test_gauge_metric);
+ * PROMETHEUS_GAUGE_DEFINE(http_request_gauge, "HTTP request gauge",
+ *                         ({ .key = "http_request", .value = "request_count" }));
  *
  * @endcode
  */
-#define PROMETHEUS_GAUGE_DEFINE(_name, _detail)                                                    \
-	static STRUCT_SECTION_ITERABLE(prometheus_gauge, _name) = {.base = (void *)(_detail),      \
-								   .value = 0}
+#define PROMETHEUS_GAUGE_DEFINE(_name, _desc, _label)			\
+	STRUCT_SECTION_ITERABLE(prometheus_gauge, _name) = {		\
+		.base.name = STRINGIFY(_name),				\
+		.base.type = PROMETHEUS_GAUGE,				\
+		.base.description = _desc,				\
+		.base.labels[0] = __DEBRACKET _label,			\
+		.base.num_labels = 1,					\
+		.value = 0.0,						\
+	}
 
 /**
  * @brief Set the value of a Prometheus gauge metric

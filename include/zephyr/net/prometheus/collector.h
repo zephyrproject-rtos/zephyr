@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024 Mustafa Abdullah Kus, Sparse Technology
+ * Copyright (c) 2024 Nordic Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -47,7 +48,7 @@ struct prometheus_collector {
  * @param _name The collector's name.
  */
 #define PROMETHEUS_COLLECTOR_DEFINE(_name)				\
-	static STRUCT_SECTION_ITERABLE(prometheus_collector, _name) = {	\
+	STRUCT_SECTION_ITERABLE(prometheus_collector, _name) = {	\
 		.name = STRINGIFY(_name),				\
 		.metrics = SYS_SLIST_STATIC_INIT(&_name.metrics),	\
 		.lock = Z_MUTEX_INITIALIZER(_name.lock),		\

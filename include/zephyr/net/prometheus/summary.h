@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024 Mustafa Abdullah Kus, Sparse Technology
+ * Copyright (c) 2024 Nordic Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,7 +42,7 @@ struct prometheus_summary_quantile {
  */
 struct prometheus_summary {
 	/** Base of the Prometheus summary metric */
-	struct prometheus_metric *base;
+	struct prometheus_metric base;
 	/** Array of quantiles associated with the Prometheus summary metric */
 	struct prometheus_summary_quantile *quantiles;
 	/** Number of quantiles associated with the Prometheus summary metric */
@@ -55,35 +56,36 @@ struct prometheus_summary {
 /**
  * @brief Prometheus Summary definition.
  *
- * This macro defines a Summary metric.
+ * This macro defines a Summary metric. If you want to make the summary static,
+ * then add "static" keyword before the PROMETHEUS_SUMMARY_DEFINE.
  *
- * @param _name The channel's name.
- * @param _detail The metric base.
+ * @param _name The summary metric name.
+ * @param _desc Summary description
+ * @param _label Label for the metric. Additional labels can be added at runtime.
+ *
  *
  * Example usage:
  * @code{.c}
  *
- * struct prometheus_metric http_request_gauge = {
- *	.type = PROMETHEUS_SUMMARY,
- *	.name = "http_request_summary",
- *	.description = "HTTP request summary",
- *	.num_labels = 1,
- *	.labels = {
- *		{ .key = "request_latency", .value = "request_latency_seconds",}
- *	},
- * };
- *
- * PROMETHEUS_SUMMARY_DEFINE(test_summary, &test_summary_metric);
+ * PROMETHEUS_SUMMARY_DEFINE(http_request_summary, "HTTP request summary",
+ *                           ({ .key = "request_latency",
+ *                              .value = "request_latency_seconds" }));
  *
  * @endcode
  */
 
-#define PROMETHEUS_SUMMARY_DEFINE(_name, _detail)                                                  \
-	static STRUCT_SECTION_ITERABLE(prometheus_summary, _name) = {.base = (void *)(_detail),    \
-								     .quantiles = NULL,            \
-								     .num_quantiles = 0,           \
-								     .sum = 0,                     \
-								     .count = 0}
+#define PROMETHEUS_SUMMARY_DEFINE(_name, _desc, _label)			\
+	STRUCT_SECTION_ITERABLE(prometheus_summary, _name) = {		\
+		.base.name = STRINGIFY(_name),				\
+		.base.type = PROMETHEUS_SUMMARY,			\
+		.base.description = _desc,				\
+		.base.labels[0] = __DEBRACKET _label,			\
+		.base.num_labels = 1,					\
+		.quantiles = NULL,					\
+		.num_quantiles = 0,					\
+		.sum = 0.0,						\
+		.count = 0U,						\
+	}
 
 /**
  * @brief Observes a value in a Prometheus summary metric

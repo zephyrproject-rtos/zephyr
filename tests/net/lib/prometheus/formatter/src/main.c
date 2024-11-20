@@ -12,18 +12,8 @@
 
 #define MAX_BUFFER_SIZE 256
 
-struct prometheus_metric test_counter_metric = {
-	.type = PROMETHEUS_COUNTER,
-	.name = "test_counter",
-	.description = "Test counter",
-	.num_labels = 1,
-	.labels = {{
-		.key = "test",
-		.value = "counter",
-	}},
-};
-
-PROMETHEUS_COUNTER_DEFINE(test_counter_m, &test_counter_metric);
+PROMETHEUS_COUNTER_DEFINE(test_counter, "Test counter",
+			  ({ .key = "test", .value = "counter" }));
 
 PROMETHEUS_COLLECTOR_DEFINE(test_custom_collector);
 
@@ -42,16 +32,16 @@ ZTEST(test_formatter, test_prometheus_formatter_simple)
 			 "# TYPE test_counter counter\n"
 			 "test_counter{test=\"counter\"} 1\n";
 
-	prometheus_collector_register_metric(&test_custom_collector, test_counter_m.base);
+	prometheus_collector_register_metric(&test_custom_collector, &test_counter.base);
 
 	counter = (struct prometheus_counter *)prometheus_collector_get_metric(
 		&test_custom_collector, "test_counter");
 
-	zassert_equal(counter, &test_counter_m, "Counter not found in collector");
+	zassert_equal(counter, &test_counter, "Counter not found in collector");
 
-	zassert_equal(test_counter_m.value, 0, "Counter value is not 0");
+	zassert_equal(test_counter.value, 0, "Counter value is not 0");
 
-	ret = prometheus_counter_inc(&test_counter_m);
+	ret = prometheus_counter_inc(&test_counter);
 	zassert_ok(ret, "Error incrementing counter");
 
 	zassert_equal(counter->value, 1, "Counter value is not 1");
@@ -59,7 +49,9 @@ ZTEST(test_formatter, test_prometheus_formatter_simple)
 	ret = prometheus_format_exposition(&test_custom_collector, formatted, sizeof(formatted));
 	zassert_ok(ret, "Error formatting exposition data");
 
-	zassert_equal(strcmp(formatted, exposed), 0, "Exposition format is not as expected");
+	zassert_equal(strcmp(formatted, exposed), 0,
+		      "Exposition format is not as expected (expected \"%s\", got \"%s\")",
+		      exposed, formatted);
 }
 
 ZTEST_SUITE(test_formatter, NULL, NULL, NULL, NULL, NULL);
