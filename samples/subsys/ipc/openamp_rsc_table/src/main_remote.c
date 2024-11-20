@@ -299,7 +299,7 @@ void app_rpmsg_tty(void *arg1, void *arg2, void *arg3)
 		k_sem_take(&data_tty_sem,  K_FOREVER);
 		if (tty_msg.len) {
 			LOG_INF("[Linux TTY] incoming msg: %.*s",
-				tty_msg.len, (char *)tty_msg.data);
+				(int)tty_msg.len, (char *)tty_msg.data);
 			snprintf(tx_buff, 13, "TTY 0x%04x: ", tty_ept.addr);
 			memcpy(&tx_buff[12], tty_msg.data, tty_msg.len);
 			rpmsg_send(&tty_ept, tx_buff, tty_msg.len + 12);
