@@ -71,9 +71,12 @@ static int fpga_slg471x5_verify(const struct device *dev, uint8_t *img, uint32_t
 {
 	const struct fpga_slg471x5_config *config = dev->config;
 	uint8_t buf[SLG471X5_NREG] = {0}, addr, len;
-	int i;
+	int i, ret;
 
-	i2c_read_dt(&config->bus, buf, SLG471X5_NREG);
+	ret = i2c_read_dt(&config->bus, buf, SLG471X5_NREG);
+	if (ret < 0) {
+		return ret;
+	}
 
 	for (i = 0; i < config->verify_list_len; i++) {
 		addr = config->verify_list[i].addr;
