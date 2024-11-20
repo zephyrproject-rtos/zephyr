@@ -31,7 +31,7 @@ class TRACE32BinaryRunner(ZephyrBinaryRunner):
                  cfg: RunnerConfig,
                  t32_cfg: Path,
                  arch: str,
-                 startup_args: Optional[List[str]] = None,
+                 startup_args: Optional[list[str]] = None,
                  timeout: int = 60) -> None:
         super().__init__(cfg)
         self.arch = arch
@@ -135,7 +135,7 @@ class TRACE32BinaryRunner(ZephyrBinaryRunner):
         self.check_call(cmd)
 
     def get_launch_command(self, command_name: str,
-                           cfg: Optional[Path] = None) -> List[str]:
+                           cfg: Optional[Path] = None) -> list[str]:
         cmd = [
             str(self.t32_exec),
             '-c', str(cfg if cfg else self.t32_cfg),
