@@ -9,6 +9,8 @@
  * @brief I2S bus (SAI) driver for NXP i.MX RT series.
  */
 
+#define DT_DRV_COMPAT nxp_mcux_i2s
+
 #include <errno.h>
 #include <string.h>
 #include <zephyr/sys/__assert.h>
@@ -21,26 +23,30 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/dt-bindings/clock/imx_ccm.h>
 #include <zephyr/sys/barrier.h>
+#include <zephyr/device.h>
 #include <soc.h>
 
-#include "i2s_mcux_sai.h"
+#include <fsl_sai.h>
+#include <fsl_edma.h>
 
-#define LOG_DOMAIN dev_i2s_mcux
-#define LOG_LEVEL  CONFIG_I2S_LOG_LEVEL
 #include <zephyr/logging/log.h>
-#include <zephyr/irq.h>
+LOG_MODULE_REGISTER(dev_i2s_mcux, CONFIG_I2S_LOG_LEVEL);
 
-LOG_MODULE_REGISTER(LOG_DOMAIN);
-
-#define DT_DRV_COMPAT          nxp_mcux_i2s
 #define NUM_DMA_BLOCKS_RX_PREP 3
-#define MAX_TX_DMA_BLOCKS      CONFIG_DMA_TCD_QUEUE_SIZE
-#if (NUM_DMA_BLOCKS_RX_PREP >= CONFIG_DMA_TCD_QUEUE_SIZE)
-#error NUM_DMA_BLOCKS_RX_PREP must be < CONFIG_DMA_TCD_QUEUE_SIZE
-#endif
-#if defined(CONFIG_DMA_MCUX_EDMA) && (NUM_DMA_BLOCKS_RX_PREP < 3)
-#error eDMA avoids TCD coherency issue if NUM_DMA_BLOCKS_RX_PREP >= 3
-#endif
+#if defined(CONFIG_DMA_MCUX_EDMA)
+BUILD_ASSERT(NUM_DMA_BLOCKS_RX_PREP >= 3,
+	     "eDMA avoids TCD coherency issue if NUM_DMA_BLOCKS_RX_PREP >= 3");
+#endif /* CONFIG_DMA_MCUX_EDMA */
+
+#define MAX_TX_DMA_BLOCKS CONFIG_DMA_TCD_QUEUE_SIZE
+BUILD_ASSERT(MAX_TX_DMA_BLOCKS > NUM_DMA_BLOCKS_RX_PREP,
+	     "NUM_DMA_BLOCKS_RX_PREP must be < CONFIG_DMA_TCD_QUEUE_SIZE");
+
+#define SAI_WORD_SIZE_BITS_MIN 8
+#define SAI_WORD_SIZE_BITS_MAX 32
+
+#define SAI_WORD_PER_FRAME_MIN 0
+#define SAI_WORD_PER_FRAME_MAX 32
 
 /*
  * SAI driver uses source_gather_en/dest_scatter_en feature of DMA, and relies
@@ -65,7 +71,7 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
  *   (may optionally block) from out_queue and presented to application.
  */
 struct stream {
-	int32_t state;
+	enum i2s_state state;
 	uint32_t dma_channel;
 	uint32_t start_channel;
 	void (*irq_call_back)(void);
@@ -110,10 +116,6 @@ struct i2s_dev_data {
 	void *rx_in_msgs[CONFIG_I2S_RX_BLOCK_COUNT];
 	void *rx_out_msgs[CONFIG_I2S_RX_BLOCK_COUNT];
 };
-
-static void i2s_dma_tx_callback(const struct device *, void *, uint32_t, int);
-static void i2s_tx_stream_disable(const struct device *, bool drop);
-static void i2s_rx_stream_disable(const struct device *, bool in_drop, bool out_drop);
 
 static inline void i2s_purge_stream_buffers(struct stream *strm, struct k_mem_slab *mem_slab,
 					    bool in_drop, bool out_drop)
@@ -388,7 +390,6 @@ static void i2s_dma_rx_callback(const struct device *dma_dev, void *arg, uint32_
 					LOG_ERR("%p -> in_queue %p err %d", buffer, &strm->in_queue,
 						ret);
 				}
-
 			}
 		} else {
 			i2s_rx_stream_disable(dev, true, false);
@@ -398,6 +399,8 @@ static void i2s_dma_rx_callback(const struct device *dma_dev, void *arg, uint32_
 		break;
 	case I2S_STATE_ERROR:
 		i2s_rx_stream_disable(dev, true, true);
+		break;
+	default:
 		break;
 	}
 }
