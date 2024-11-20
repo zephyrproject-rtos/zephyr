@@ -102,8 +102,7 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
         b = pathlib.Path(self.cfg.build_dir)
         edt_pickle = b / 'zephyr' / 'edt.pickle'
         if not edt_pickle.is_file():
-            error_msg = "can't load devicetree; expected to find:" \
-	                + str(edt_pickle)
+            error_msg = "can't load devicetree; expected to find:" + str(edt_pickle)
 
             raise RuntimeError(error_msg)
 
