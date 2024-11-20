@@ -14,7 +14,7 @@ from os import path
 from pathlib import Path
 from zephyr_ext_common import ZEPHYR_BASE
 
-try:
+try:  # noqa SIM105
     from elftools.elf.elffile import ELFFile
 except ImportError:
     pass
