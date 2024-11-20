@@ -112,8 +112,10 @@ class CANopenBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument('--sdo-timeout', type=float, default=DEFAULT_SDO_TIMEOUT,
                             help=f'''CANopen SDO response timeout in seconds
                             (default: {DEFAULT_SDO_TIMEOUT})''')
-        parser.add_argument('--download-buffer-size', type=int, default=DEFAULT_PROGRAM_DOWNLOAD_BUFFER_SIZE,
-                            help=f'Program download buffer size in bytes (default: {DEFAULT_PROGRAM_DOWNLOAD_BUFFER_SIZE})')
+        parser.add_argument('--download-buffer-size', type=int,
+                            default=DEFAULT_PROGRAM_DOWNLOAD_BUFFER_SIZE,
+                            help=f'''Program download buffer size in bytes
+                            (default: {DEFAULT_PROGRAM_DOWNLOAD_BUFFER_SIZE})''')
         parser.add_argument('--block-transfer', default=False, action='store_true',
                             help='Use SDO block transfers (experimental, default: no)')
 

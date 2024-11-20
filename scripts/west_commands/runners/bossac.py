@@ -144,7 +144,9 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
 
     def is_gnu_coreutils_stty(self):
         try:
-            result = subprocess.run(['stty', '--version'], capture_output=True, text=True, check=True)
+            result = subprocess.run(
+                ['stty', '--version'], capture_output=True, text=True, check=True
+            )
             return 'coreutils' in result.stdout
         except subprocess.CalledProcessError:
             return False

@@ -128,7 +128,8 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                             help='''if given, override default config file;
                             may be given multiple times''')
         parser.add_argument('--serial', default="",
-                            help='if given, selects FTDI instance by its serial number, defaults to empty')
+                            help='''if given, selects FTDI instance by its serial number,
+                            defaults to empty''')
         parser.add_argument('--use-elf', default=False, action='store_true',
                             help='if given, Elf file will be used for loading instead of HEX image')
         # Options for flashing:
