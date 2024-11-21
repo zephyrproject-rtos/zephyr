@@ -85,13 +85,41 @@ struct bt_buf_data {
 #define BT_BUF_ISO_RX_COUNT 0
 #endif /* CONFIG_BT_ISO */
 
+/* see Core Spec v6.0 vol.4 part E 7.4.5 */
+#define BT_BUF_ACL_RX_COUNT_MAX 65535
+
+#if defined(CONFIG_BT_CONN) && defined(CONFIG_BT_HCI_HOST)
+ /* The host needs more ACL buffers than maximum ACL links. This is because of
+  * the way we re-assemble ACL packets into L2CAP PDUs.
+  *
+  * We keep around the first buffer (that comes from the driver) to do
+  * re-assembly into, and if all links are re-assembling, there will be no buffer
+  * available for the HCI driver to allocate from.
+  *
+  * TODO: When CONFIG_BT_BUF_ACL_RX_COUNT is removed,
+  *       remove the MAX and only keep (CONFIG_BT_MAX_CONN + 1)
+  */
+#define BT_BUF_ACL_RX_COUNT                                                                        \
+	(MAX(CONFIG_BT_BUF_ACL_RX_COUNT, (CONFIG_BT_MAX_CONN + 1)) +                               \
+	 CONFIG_BT_BUF_ACL_RX_COUNT_EXTRA)
+#else
+#define BT_BUF_ACL_RX_COUNT 0
+#endif /* CONFIG_BT_CONN && CONFIG_BT_HCI_HOST */
+
+#if defined(CONFIG_BT_BUF_ACL_RX_COUNT) && CONFIG_BT_BUF_ACL_RX_COUNT > 0
+#warning "CONFIG_BT_BUF_ACL_RX_COUNT is deprecated, see Zephyr 4.1 migration guide"
+#endif /* CONFIG_BT_BUF_ACL_RX_COUNT && CONFIG_BT_BUF_ACL_RX_COUNT > 0 */
+
+BUILD_ASSERT(BT_BUF_ACL_RX_COUNT <= BT_BUF_ACL_RX_COUNT_MAX,
+	     "Maximum number of ACL RX buffer is 65535, reduce CONFIG_BT_BUF_ACL_RX_COUNT_EXTRA");
+
 /** Data size needed for HCI ACL, HCI ISO or Event RX buffers */
 #define BT_BUF_RX_SIZE (MAX(MAX(BT_BUF_ACL_RX_SIZE, BT_BUF_EVT_RX_SIZE), \
 			    BT_BUF_ISO_RX_SIZE))
 
 /** Buffer count needed for HCI ACL, HCI ISO or Event RX buffers */
 #define BT_BUF_RX_COUNT (MAX(MAX(CONFIG_BT_BUF_EVT_RX_COUNT, \
-				 CONFIG_BT_BUF_ACL_RX_COUNT), \
+				 BT_BUF_ACL_RX_COUNT), \
 			     BT_BUF_ISO_RX_COUNT))
 
 /** Data size needed for HCI Command buffers. */
