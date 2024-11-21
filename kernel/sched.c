@@ -499,6 +499,19 @@ void z_impl_k_thread_suspend(k_tid_t thread)
 {
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_thread, suspend, thread);
 
+	/* Special case "suspend the current thread" as it doesn't
+	 * need the async complexity below.
+	 */
+	if (thread == _current && !arch_is_in_isr() && !IS_ENABLED(CONFIG_SMP)) {
+		k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
+
+		z_mark_thread_as_suspended(thread);
+		dequeue_thread(thread);
+		update_cache(1);
+		z_swap(&_sched_spinlock, key);
+		return;
+	}
+
 	(void)z_abort_thread_timeout(thread);
 
 	k_spinlock_key_t  key = k_spin_lock(&_sched_spinlock);
