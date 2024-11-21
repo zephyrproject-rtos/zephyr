@@ -61,6 +61,8 @@ class TwisterConfigParser:
                        "min_flash": {"type": "int", "default": 32},
                        "arch_allow": {"type": "set"},
                        "arch_exclude": {"type": "set"},
+                       "vendor_allow": {"type": "set"},
+                       "vendor_exclude": {"type": "set"},
                        "extra_sections": {"type": "list", "default": []},
                        "integration_platforms": {"type": "list", "default": []},
                        "ignore_faults": {"type": "bool", "default": False },
