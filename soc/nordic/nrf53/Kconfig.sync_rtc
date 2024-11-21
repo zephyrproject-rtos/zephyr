@@ -3,7 +3,8 @@
 
 config NRF53_SYNC_RTC
 	bool "RTC clock synchronization"
-	default y if LOG && !LOG_MODE_MINIMAL
+	default y if LOG && !LOG_MODE_MINIMAL && !IS_BOOTLOADER && \
+		(SOC_NRF53_CPUNET_ENABLE || SOC_NRF5340_CPUNET)
 	depends on NRF_RTC_TIMER
 	select NRFX_GPPI
 	select MBOX if !IPM
