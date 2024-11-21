@@ -615,7 +615,7 @@ New Samples
 * :zephyr:code-sample:`stream_fifo`
 * :zephyr:code-sample:`tdk_apex`
 * :zephyr:code-sample:`uart`
-* :zephyr:code-sample:`webusb-next`
+* :zephyr:code-sample:`webusb`
 
 Other notable changes
 *********************
