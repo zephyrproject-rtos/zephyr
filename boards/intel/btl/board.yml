@@ -1,0 +1,6 @@
+boards:
+  - name: intel_btl_s_crb
+    full_name: Bartlett Lake P CRB
+    vendor: intel
+    socs:
+      - name: raptor_lake
