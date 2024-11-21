@@ -1,0 +1,15 @@
+identifier: intel_btl_s_crb
+name: Bartlett Lake S CRB
+type: mcu
+arch: x86
+toolchain:
+  - zephyr
+ram: 2048
+supported:
+  - acpi
+  - smp
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: intel
