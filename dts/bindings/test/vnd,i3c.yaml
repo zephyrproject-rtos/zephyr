@@ -9,9 +9,3 @@ compatible: "vnd,i3c"
 
 include:
   - name: i3c-controller.yaml
-    property-blocklist:
-      - label
-
-properties:
-  label:
-    type: string
