@@ -11,6 +11,7 @@ from gdbstubs.arch.risc_v import GdbStub_RISC_V
 from gdbstubs.arch.xtensa import GdbStub_Xtensa
 from gdbstubs.arch.arm64 import GdbStub_ARM64
 
+
 class TgtCode:
     UNKNOWN = 0
     X86 = 1
@@ -19,6 +20,7 @@ class TgtCode:
     RISC_V = 4
     XTENSA = 5
     ARM64 = 6
+
 
 def get_gdbstub(logfile, elffile):
     stub = None

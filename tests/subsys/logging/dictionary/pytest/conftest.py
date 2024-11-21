@@ -6,8 +6,10 @@
 
 import pytest
 
+
 def pytest_addoption(parser):
     parser.addoption('--fpu', action="store_true")
+
 
 @pytest.fixture()
 def is_fpu_build(request):
