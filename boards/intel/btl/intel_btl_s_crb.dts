@@ -1,0 +1,36 @@
+/*
+ * Copyright (c) 2025 Intel Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <mem.h>
+
+#define DT_DRAM_SIZE		DT_SIZE_M(2048)
+
+#include <intel/bartlett_lake_s.dtsi>
+
+/ {
+	model = "intel_btl_s_crb";
+	compatible = "intel,bartlett-lake-crb";
+
+	chosen {
+		zephyr,sram = &dram0;
+		zephyr,console = &uart_ec_0;
+		zephyr,shell-uart = &uart_ec_0;
+	};
+
+	aliases {
+		watchdog0 = &tco_wdt;
+		rtc = &rtc;
+	};
+};
+
+&uart_ec_0 {
+	status = "okay";
+};
+
+&rtc {
+	status = "okay";
+};
