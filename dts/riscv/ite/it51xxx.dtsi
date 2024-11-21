@@ -6,6 +6,7 @@
 
 #include <ite/it51xxx-wuc-map.dtsi>
 #include <mem.h>
+#include <zephyr/dt-bindings/clock/ite-it51xxx-clock.h>
 #include <zephyr/dt-bindings/dt-util.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/interrupt-controller/ite-it51xxx-intc.h>
@@ -912,6 +913,13 @@
 			       0 1
 			       0 1>;
 			#wuc-cells = <1>;
+		};
+
+		ecpm: clock-controller@f01e00 {
+			compatible = "ite,it51xxx-ecpm";
+			reg = <0x00f01e00 0x0a>;
+			pll-frequency = <PLL_48000_KHZ>;
+			#clock-cells = <2>;
 		};
 
 		gctrl: general-control@f02000 {
