@@ -8,6 +8,8 @@ tests:
       - hifive_unmatched/fu740/s7
       - hifive_unmatched/fu740/u74
       - bl5340_dvk/nrf5340/cpuapp
+    integration_platforms:
+      - native_sim
     extra_args:
       - EXTRA_DTC_OVERLAY_FILE="ramdisk_small.overlay"
 

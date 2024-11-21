@@ -18,6 +18,9 @@ tests:
       - nrf54h20dk/nrf54h20/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf9280pdk/nrf9280/cpuapp
+    integration_platforms:
+      - nrf52dk/nrf52810
+      - nrf5340dk/nrf5340/cpuapp
   drivers.build_all.comparator.nrf_comp.se_aref:
     extra_args:
       - DTC_OVERLAY_FILE="nrf_comp/se_aref.overlay"
@@ -32,6 +35,9 @@ tests:
       - nrf54h20dk/nrf54h20/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf9280pdk/nrf9280/cpuapp
+    integration_platforms:
+      - nrf52dk/nrf52810
+      - nrf5340dk/nrf5340/cpuapp
   drivers.build_all.comparator.nrf_comp.se:
     extra_args:
       - DTC_OVERLAY_FILE="nrf_comp/se.overlay"
@@ -46,6 +52,9 @@ tests:
       - nrf54h20dk/nrf54h20/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf9280pdk/nrf9280/cpuapp
+    integration_platforms:
+      - nrf52dk/nrf52810
+      - nrf5340dk/nrf5340/cpuapp
   drivers.build_all.comparator.nrf_lpcomp.ext_ref:
     extra_args:
       - DTC_OVERLAY_FILE="nrf_lpcomp/ext_ref.overlay"
@@ -56,6 +65,9 @@ tests:
       - nrf54h20dk/nrf54h20/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf9280pdk/nrf9280/cpuapp
+    integration_platforms:
+      - nrf51dk/nrf51822
+      - nrf54l15dk/nrf54l15/cpuapp
   drivers.build_all.comparator.nrf_lpcomp.int_ref:
     extra_args:
       - DTC_OVERLAY_FILE="nrf_lpcomp/int_ref.overlay"
@@ -66,6 +78,9 @@ tests:
       - nrf54h20dk/nrf54h20/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf9280pdk/nrf9280/cpuapp
+    integration_platforms:
+      - nrf51dk/nrf51822
+      - nrf54h20dk/nrf54h20/cpuapp
   drivers.build_all.comparator.mcux_acmp.mimxrt1176_mux_dac:
     extra_args:
       - DTC_OVERLAY_FILE="mcux_acmp/mimxrt1176_mux_dac.dts"

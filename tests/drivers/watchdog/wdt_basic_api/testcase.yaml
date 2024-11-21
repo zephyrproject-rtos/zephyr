@@ -122,6 +122,8 @@ tests:
       - s32z2xxdc2@D/s32z270/rtu0
       - s32z2xxdc2@D/s32z270/rtu1
       - mr_canhubk3
+    integration_platforms:
+      - s32z2xxdc2/s32z270/rtu0
   drivers.watchdog.mimxrt1050_evk_ti_tps382x:
     filter: dt_compat_enabled("ti,tps382x")
     platform_allow: mimxrt1050_evk

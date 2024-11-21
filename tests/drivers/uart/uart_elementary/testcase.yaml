@@ -12,6 +12,8 @@ tests:
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54l15dk/nrf54l15/cpuflpr
       - nrf5340dk/nrf5340/cpuapp
+    integration_platforms:
+      - nrf54h20dk/nrf54h20/cpuapp
   drivers.uart.uart_elementary_dual_nrf54h:
     filter: CONFIG_SERIAL_SUPPORT_INTERRUPT
     platform_allow:

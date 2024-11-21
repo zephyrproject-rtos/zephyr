@@ -12,6 +12,8 @@ tests:
       - nrf54l15dk/nrf54l05/cpuapp
       - nrf54l15dk/nrf54l10/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
+    integration_platforms:
+      - qemu_cortex_m3
     tags:
       - drivers
       - retained_mem

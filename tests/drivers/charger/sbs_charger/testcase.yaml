@@ -31,6 +31,8 @@ tests:
       - qemu_kvm_arm64
       - xenvm
       - xenvm/xenvm/gicv3
+    integration_platforms:
+      - qemu_cortex_a53
     extra_args:
       CONF_FILE="prj.conf;boards/qemu_cortex_a53.conf"
       DTC_OVERLAY_FILE="boards/qemu_cortex_a53.overlay"
