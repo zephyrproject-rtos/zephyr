@@ -15,5 +15,12 @@
 
 	bt_hci_uart: bt_hci_uart {
 		compatible = "zephyr,bt-hci-uart";
+		status = "okay";
+
+		da1453x {
+			compatible = "renesas,bt-hci-da1453x";
+			reset-gpios = <&mikrobus_header 1 GPIO_ACTIVE_HIGH>;
+			status = "okay";
+		};
 	};
 };
