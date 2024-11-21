@@ -107,13 +107,13 @@ jobs:
           export ZEPHYR_TOOLCHAIN_VARIANT=llvm
 
           # check if we need to run a full twister or not based on files changed
-          python3 ./scripts/ci/test_plan.py --platform ${{ matrix.platform }} -c origin/${BASE_REF}..
+          python3 ./scripts/ci/test_plan.py --no-detailed-test-id --platform ${{ matrix.platform }} -c origin/${BASE_REF}..
 
           # We can limit scope to just what has changed
           if [ -s testplan.json ]; then
             echo "report_needed=1" >> $GITHUB_OUTPUT
             # Full twister but with options based on changes
-            ./scripts/twister --force-color --inline-logs -M -N -v --load-tests testplan.json --retry-failed 2
+            ./scripts/twister --no-detailed-test-id --force-color --inline-logs -M -N -v --load-tests testplan.json --retry-failed 2
           else
             # if nothing is run, skip reporting step
             echo "report_needed=0" >> $GITHUB_OUTPUT
