@@ -122,7 +122,7 @@ static void dai_ssp_update_bits(struct dai_intel_ssp *dp, uint32_t reg, uint32_t
 	sys_write32((sys_read32(dest) & (~mask)) | (val & mask), dest);
 }
 
-#if CONFIG_INTEL_MN
+#if SSP_IP_VER == SSP_IP_VER_1_0
 static int dai_ssp_gcd(int a, int b)
 {
 	int aux;
@@ -411,7 +411,7 @@ static void dai_ssp_mn_release_mclk(struct dai_intel_ssp *dp, uint32_t mclk_id)
 	k_spin_unlock(&mp->lock, key);
 }
 
-#if CONFIG_INTEL_MN
+#if SSP_IP_VER == SSP_IP_VER_1_0
 /**
  * \brief Finds valid M/(N * SCR) values for given frequencies.
  * \param[in] freq SSP clock frequency.
@@ -1156,7 +1156,7 @@ static void dai_ssp_mclk_disable_unprepare(struct dai_intel_ssp *dp)
 
 static int dai_ssp_bclk_prepare_enable(struct dai_intel_ssp *dp)
 {
-#if !(CONFIG_INTEL_MN)
+#if SSP_IP_VER != SSP_IP_VER_1_0
 	struct dai_intel_ssp_freq_table *ft = dai_get_ftable(dp);
 #endif
 	struct dai_intel_ssp_plat_data *ssp_plat_data = dai_get_plat_data(dp);
@@ -1170,7 +1170,7 @@ static int dai_ssp_bclk_prepare_enable(struct dai_intel_ssp *dp)
 
 	sscr0 = sys_read32(dai_base(dp) + SSCR0);
 
-#if CONFIG_INTEL_MN
+#if SSP_IP_VER == SSP_IP_VER_1_0
 	bool need_ecs = false;
 	/* BCLK config */
 	ret = dai_ssp_mn_set_bclk(dp, dp->dai_index, ssp_plat_data->params.bclk_rate,
@@ -1191,12 +1191,10 @@ static int dai_ssp_bclk_prepare_enable(struct dai_intel_ssp *dp)
 	mdiv = ft[DAI_INTEL_SSP_DEFAULT_IDX].freq / ssp_plat_data->params.bclk_rate;
 #endif
 
-#if SSP_IP_VER < CONFIG_SOC_INTEL_ACE30
-#if CONFIG_INTEL_MN
+#if SSP_IP_VER == SSP_IP_VER_1_0
 	if (need_ecs) {
 		sscr0 |= SSCR0_ECS;
 	}
-#endif
 #endif
 
 	/* clock divisor is SCR + 1 */
@@ -1231,7 +1229,7 @@ static void dai_ssp_bclk_disable_unprepare(struct dai_intel_ssp *dp)
 	if (!(ssp_plat_data->clk_active & SSP_CLK_BCLK_ACTIVE)) {
 		return;
 	}
-#if CONFIG_INTEL_MN
+#if SSP_IP_VER == SSP_IP_VER_1_0
 	dai_ssp_mn_release_bclk(dp, ssp_plat_data->ssp_index);
 #endif
 	ssp_plat_data->clk_active &= ~SSP_CLK_BCLK_ACTIVE;
@@ -2611,7 +2609,7 @@ static int dai_ssp_probe(struct dai_intel_ssp *dp)
 	dp->state[DAI_DIR_PLAYBACK] = DAI_STATE_READY;
 	dp->state[DAI_DIR_CAPTURE] = DAI_STATE_READY;
 
-#if CONFIG_INTEL_MN
+#if SSP_IP_VER == SSP_IP_VER_1_0
 	/* Reset M/N, power-gating functions need it */
 	dai_ssp_mn_reset_bclk_divider(dp, ssp_plat_data->ssp_index);
 #endif
