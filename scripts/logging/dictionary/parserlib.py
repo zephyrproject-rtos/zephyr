@@ -12,8 +12,8 @@ This library along with dictionary_parser converts the
 input binary data to the log using log database.
 """
 
-import sys
 import logging
+import sys
 
 import dictionary_parser
 from dictionary_parser.log_database import LogDatabase

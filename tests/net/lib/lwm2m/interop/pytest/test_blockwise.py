@@ -9,17 +9,16 @@ SPDX-License-Identifier: Apache-2.0
 
 """
 
-import time
-import logging
-import zlib
-import re
-import random
-import string
 import binascii
-from leshan import Leshan
+import logging
+import random
+import re
+import string
+import time
+import zlib
 
-from twister_harness import Shell
-from twister_harness import DeviceAdapter
+from leshan import Leshan
+from twister_harness import DeviceAdapter, Shell
 
 logger = logging.getLogger(__name__)
 

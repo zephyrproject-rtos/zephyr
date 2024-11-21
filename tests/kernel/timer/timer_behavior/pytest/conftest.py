@@ -2,9 +2,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-import pytest
-
 from pathlib import Path
+
+import pytest
 
 
 def pytest_addoption(parser):
