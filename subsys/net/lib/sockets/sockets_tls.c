@@ -954,6 +954,20 @@ static bool crt_is_pem(const unsigned char *buf, size_t buflen)
 	return (buflen != 0 && buf[buflen - 1] == '\0' &&
 		strstr((const char *)buf, "-----BEGIN CERTIFICATE-----") != NULL);
 }
+
+static int add_certificate(struct tls_context *tls, mbedtls_x509_crt *chain,
+			   struct tls_credential *cert)
+{
+	int make_copy =
+		(tls->options.cert_nocopy == TLS_CERT_NOCOPY_OPTIONAL) ? 0 : 1;
+
+	if (crt_is_pem(cert->buf, cert->len)) {
+		return mbedtls_x509_crt_parse(chain, cert->buf, cert->len);
+	}
+
+	return mbedtls_x509_crt_parse_der_with_ext_cb(
+			chain, cert->buf, cert->len, make_copy, NULL, NULL);
+}
 #endif
 
 static int tls_add_ca_certificate(struct tls_context *tls,
@@ -962,16 +976,7 @@ static int tls_add_ca_certificate(struct tls_context *tls,
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
 	int err;
 
-	if (tls->options.cert_nocopy == TLS_CERT_NOCOPY_NONE ||
-	    crt_is_pem(ca_cert->buf, ca_cert->len)) {
-		err = mbedtls_x509_crt_parse(&tls->ca_chain, ca_cert->buf,
-					     ca_cert->len);
-	} else {
-		err = mbedtls_x509_crt_parse_der_nocopy(&tls->ca_chain,
-							ca_cert->buf,
-							ca_cert->len);
-	}
-
+	err = add_certificate(tls, &tls->ca_chain, ca_cert);
 	if (err != 0) {
 		NET_ERR("Failed to parse CA certificate, err: -0x%x", -err);
 		return -EINVAL;
@@ -998,17 +1003,9 @@ static int tls_add_own_cert(struct tls_context *tls,
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
 	int err;
 
-	if (tls->options.cert_nocopy == TLS_CERT_NOCOPY_NONE ||
-	    crt_is_pem(own_cert->buf, own_cert->len)) {
-		err = mbedtls_x509_crt_parse(&tls->own_cert,
-					     own_cert->buf, own_cert->len);
-	} else {
-		err = mbedtls_x509_crt_parse_der_nocopy(&tls->own_cert,
-							own_cert->buf,
-							own_cert->len);
-	}
-
+	err = add_certificate(tls, &tls->own_cert, own_cert);
 	if (err != 0) {
+		NET_ERR("Failed to parse own certificate, err: -0x%x", -err);
 		return -EINVAL;
 	}
 
