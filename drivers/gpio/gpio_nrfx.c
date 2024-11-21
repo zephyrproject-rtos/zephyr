@@ -71,7 +71,7 @@ static int gpio_nrfx_gpd_retain_set(const struct device *port, uint32_t mask, gp
 		int ret;
 
 		if (flags & GPIO_OUTPUT) {
-			cfg->port->RETAINSET = mask;
+			nrf_gpio_port_retain_enable(cfg->port, mask);
 		}
 
 		ret = nrf_gpd_release(NRF_GPD_FAST_ACTIVE1);
@@ -101,7 +101,7 @@ static int gpio_nrfx_gpd_retain_clear(const struct device *port, uint32_t mask)
 			return ret;
 		}
 
-		cfg->port->RETAINCLR = mask;
+		nrf_gpio_port_retain_disable(cfg->port, mask);
 	}
 #else
 	ARG_UNUSED(port);
