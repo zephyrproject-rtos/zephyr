@@ -27,7 +27,9 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
-struct {
+extern int init_stats(struct prometheus_counter *counter);
+
+struct app_context {
 
 	struct prometheus_collector *collector;
 
@@ -88,7 +90,7 @@ HTTP_RESOURCE_DEFINE(dyn_resource, test_http_service, "/metrics", &dyn_resource_
 #if defined(CONFIG_NET_SAMPLE_HTTPS_SERVICE)
 #include "certificate.h"
 
-static const sec_tag_t sec_tag_list_verify_none[] = {
+const sec_tag_t sec_tag_list_verify_none[] = {
 	HTTP_SERVER_CERTIFICATE_TAG,
 #if defined(CONFIG_MBEDTLS_KEY_EXCHANGE_PSK_ENABLED)
 	PSK_TAG,
@@ -159,6 +161,10 @@ int main(void)
 	prometheus_counter_inc(prom_context.counter);
 
 	prometheus_collector_register_metric(prom_context.collector, &prom_context.counter->base);
+
+#if defined(CONFIG_NET_STATISTICS_VIA_PROMETHEUS)
+	(void)init_stats(prom_context.counter);
+#endif
 
 	setup_tls();
 
