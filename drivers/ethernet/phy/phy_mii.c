@@ -168,6 +168,7 @@ static int update_link_state(const struct device *dev)
 
 	/* If link is down, there is nothing more to be done */
 	if (data->state.is_up == false) {
+		LOG_INF("PHY (%d) is down", cfg->phy_addr);
 		return 0;
 	}
 
