@@ -15,8 +15,8 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import argparse
-from pathlib import Path
 import re
+from pathlib import Path
 
 
 def update_sys_init(project, dry_run):

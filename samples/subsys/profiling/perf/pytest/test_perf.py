@@ -7,8 +7,7 @@
 import logging
 import re
 
-from twister_harness import Shell
-from twister_harness import DeviceAdapter
+from twister_harness import DeviceAdapter, Shell
 
 logger = logging.getLogger(__name__)
 

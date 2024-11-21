@@ -14,12 +14,12 @@ Usage:
 
 import argparse
 import sys
+
 sys.path.append('gen-py')
 
-from thrift.protocol import TBinaryProtocol
-from thrift.transport import TTransport
-from thrift.transport import TSocket
 from hello import Hello
+from thrift.protocol import TBinaryProtocol
+from thrift.transport import TSocket, TTransport
 
 
 def parse_args():

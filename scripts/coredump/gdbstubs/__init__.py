@@ -4,12 +4,12 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from gdbstubs.arch.x86 import GdbStub_x86
-from gdbstubs.arch.x86_64 import GdbStub_x86_64
+from gdbstubs.arch.arm64 import GdbStub_ARM64
 from gdbstubs.arch.arm_cortex_m import GdbStub_ARM_CortexM
 from gdbstubs.arch.risc_v import GdbStub_RISC_V
+from gdbstubs.arch.x86 import GdbStub_x86
+from gdbstubs.arch.x86_64 import GdbStub_x86_64
 from gdbstubs.arch.xtensa import GdbStub_Xtensa
-from gdbstubs.arch.arm64 import GdbStub_ARM64
 
 
 class TgtCode:

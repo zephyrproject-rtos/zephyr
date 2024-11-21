@@ -7,9 +7,10 @@
 import argparse
 import sys
 
-from github_helpers import get_github_object
 from get_maintainer import Maintainers
 from github.GithubException import UnknownObjectException
+from github_helpers import get_github_object
+
 
 def parse_args():
     parser = argparse.ArgumentParser(

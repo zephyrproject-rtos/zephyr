@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import signal
+
 from te_udp_echo import TEUDPEcho
 from te_udp_receive import TEUDPReceive
 

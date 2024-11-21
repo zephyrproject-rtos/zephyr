@@ -12,13 +12,13 @@ log data taken directly from input serialport and print
 the log messages.
 """
 
-import serial
-import time
 import argparse
 import logging
 import sys
+import time
 
 import parserlib
+import serial
 
 LOGGER_FORMAT = "%(message)s"
 logger = logging.getLogger("parser")

@@ -23,8 +23,17 @@ import textwrap
 
 # Zephyr doesn't use tristate symbols. They're supported here just to make the
 # script a bit more generic.
-from kconfiglib import Kconfig, split_expr, expr_value, expr_str, BOOL, \
-                       TRISTATE, TRI_TO_STR, AND, OR
+from kconfiglib import (
+    AND,
+    BOOL,
+    OR,
+    TRI_TO_STR,
+    TRISTATE,
+    Kconfig,
+    expr_str,
+    expr_value,
+    split_expr,
+)
 
 
 def main():

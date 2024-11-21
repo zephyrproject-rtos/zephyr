@@ -5,18 +5,18 @@
 
 import argparse
 import os
-from pathlib import Path
 import re
 import sys
 import textwrap
+from pathlib import Path
 
 from west.commands import WestCommand
-
 from zephyr_ext_common import ZEPHYR_BASE
 
 sys.path.append(os.fspath(Path(__file__).parent.parent))
 import list_shields
 import zephyr_module
+
 
 class Shields(WestCommand):
 
