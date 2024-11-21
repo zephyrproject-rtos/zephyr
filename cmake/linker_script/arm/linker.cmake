@@ -161,6 +161,23 @@ if(CONFIG_CPU_CORTEX_M_HAS_VTOR)
   endif()
 endif()
 
+if(CONFIG_SW_VECTOR_RELAY)
+  if (CONFIG_CPU_CORTEX_M_HAS_VTOR)
+    set(VECTOR_RELAY_PRIO 100)
+  else()
+    set(VECTOR_RELAY_PRIO 0)
+  endif()
+
+  zephyr_linker_section_configure(
+    SECTION .rom_start
+    INPUT ".vector_relay_table*"
+    KEEP FIRST
+    ALIGN ${VECTOR_ALIGN}
+    PRIO ${VECTOR_RELAY_PRIO}
+  )
+
+endif()
+
 zephyr_linker_section_configure(
   SECTION .rom_start
   INPUT ".exc_vector_table*"
