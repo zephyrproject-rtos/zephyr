@@ -361,9 +361,6 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 
 #ifdef CONFIG_SOC_NRF54H20_GPD
 			if (NRF_GET_GPD_FAST_ACTIVE1(pins[i]) == 1U) {
-				uint32_t d_pin = pin;
-				NRF_GPIO_Type *port = nrf_gpio_pin_port_decode(&d_pin);
-
 				if (!gpd_requested) {
 					int ret;
 
@@ -374,7 +371,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 					gpd_requested = true;
 				}
 
-				port->RETAINCLR = BIT(d_pin);
+				nrf_gpio_pin_retain_disable(pin);
 			}
 #endif /* CONFIG_SOC_NRF54H20_GPD */
 
@@ -395,11 +392,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 #endif
 #ifdef CONFIG_SOC_NRF54H20_GPD
 			if (NRF_GET_GPD_FAST_ACTIVE1(pins[i]) == 1U) {
-				uint32_t d_pin = pin;
-				NRF_GPIO_Type *port = nrf_gpio_pin_port_decode(&d_pin);
-
-				port->RETAINSET = BIT(d_pin);
-
+				nrf_gpio_pin_retain_enable(pin);
 			}
 #endif /* CONFIG_SOC_NRF54H20_GPD */
 		}
