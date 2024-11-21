@@ -7,12 +7,4 @@ compatible: "vnd,gpio-expander"
 
 include:
   - name: "vnd,gpio-expander-common.yaml"
-    property-blocklist:
-      - label
   - name: i2c-device.yaml
-    property-blocklist:
-      - label
-
-properties:
-  label:
-    type: string
