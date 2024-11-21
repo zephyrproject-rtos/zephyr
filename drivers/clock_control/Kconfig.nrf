@@ -193,4 +193,17 @@ config CLOCK_CONTROL_NRF2_NRFS_CLOCK_TIMEOUT_MS
 	int "Timeout waiting for nrfs clock service callback in milliseconds"
 	default 1000
 
+config CLOCK_CONTROL_NRF2_GLOBAL_HSFLL
+	bool "Clock control for global HSFLL"
+	depends on NRFS_GDFS_SERVICE_ENABLED
+	default y
+
+if CLOCK_CONTROL_NRF2_GLOBAL_HSFLL
+
+config CLOCK_CONTROL_NRF2_GLOBAL_HSFLL_TIMEOUT_MS
+	int "Frequency request timeout in milliseconds"
+	default 10000
+
+endif # CLOCK_CONTROL_NRF2_GLOBAL_HSFLL
+
 endif # CLOCK_CONTROL_NRF2
