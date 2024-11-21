@@ -441,6 +441,7 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 	enum i2s_state *tx_state = &(dev_data->tx.state);
 	enum i2s_state *rx_state = &(dev_data->rx.state);
 	uint8_t word_size_bits = i2s_cfg->word_size;
+	uint8_t word_size_bytes = word_size_bits / 8;
 	uint8_t num_words = i2s_cfg->channels;
 	sai_transceiver_t config;
 	int ret = -EINVAL;
@@ -608,10 +609,10 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 				      i2s_cfg->channels);
 		LOG_DBG("tx start_channel = %d", dev_data->tx.start_channel);
 		/*set up dma settings*/
-		dev_data->tx.dma_cfg.source_data_size = word_size_bits / 8;
-		dev_data->tx.dma_cfg.dest_data_size = word_size_bits / 8;
-		dev_data->tx.dma_cfg.source_burst_length = i2s_cfg->word_size / 8;
-		dev_data->tx.dma_cfg.dest_burst_length = i2s_cfg->word_size / 8;
+		dev_data->tx.dma_cfg.source_data_size = word_size_bytes;
+		dev_data->tx.dma_cfg.dest_data_size = word_size_bytes;
+		dev_data->tx.dma_cfg.source_burst_length = word_size_bytes;
+		dev_data->tx.dma_cfg.dest_burst_length = word_size_bytes;
 		dev_data->tx.dma_cfg.user_data = (void *)dev;
 		dev_data->tx.state = I2S_STATE_READY;
 	} else {
@@ -631,10 +632,10 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 				      i2s_cfg->channels);
 		LOG_DBG("rx start_channel = %d", dev_data->rx.start_channel);
 		/*set up dma settings*/
-		dev_data->rx.dma_cfg.source_data_size = word_size_bits / 8;
-		dev_data->rx.dma_cfg.dest_data_size = word_size_bits / 8;
-		dev_data->rx.dma_cfg.source_burst_length = i2s_cfg->word_size / 8;
-		dev_data->rx.dma_cfg.dest_burst_length = i2s_cfg->word_size / 8;
+		dev_data->rx.dma_cfg.source_data_size = word_size_bytes;
+		dev_data->rx.dma_cfg.dest_data_size = word_size_bytes;
+		dev_data->rx.dma_cfg.source_burst_length = word_size_bytes;
+		dev_data->rx.dma_cfg.dest_burst_length = word_size_bytes;
 		dev_data->rx.dma_cfg.user_data = (void *)dev;
 		dev_data->rx.state = I2S_STATE_READY;
 	}
