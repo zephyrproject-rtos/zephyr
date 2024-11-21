@@ -18,6 +18,7 @@
 	chosen {
 		zephyr,console = &usart0;
 		zephyr,shell-uart = &usart0;
+		zephyr,uart-pipe = &usart0;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 	};
