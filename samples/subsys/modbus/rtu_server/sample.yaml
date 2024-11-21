@@ -33,4 +33,4 @@ tests:
     extra_args:
       - EXTRA_CONF_FILE="overlay-cdc-acm.conf"
       - DTC_OVERLAY_FILE="cdc-acm.overlay"
-    depends_on: usb_device
+    depends_on: usbd
