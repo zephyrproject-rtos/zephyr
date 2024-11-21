@@ -10,6 +10,8 @@ tests:
       - native_sim
       - native_sim/native/64
       - mr_canhubk3
+      - nrf54l15dk/nrf54l05/cpuapp
+      - nrf54l15dk/nrf54l10/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
     integration_platforms:
