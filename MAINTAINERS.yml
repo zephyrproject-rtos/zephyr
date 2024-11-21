@@ -2197,6 +2197,20 @@ Release Notes:
   tests:
     - drivers.video
 
+"Drivers: VIRTIO":
+  status: maintained
+  maintainers:
+    - fkokosinski
+    - tgorochowik
+  collaborators:
+    - kgugala
+  files:
+    - drivers/virtio/
+    - dts/bindings/virtio/
+    - include/zephyr/virtio/
+  labels:
+    - "area: VIRTIO"
+
 "Drivers: W1":
   status: maintained
   maintainers:
