@@ -116,6 +116,60 @@ int prometheus_collector_register_metric(struct prometheus_collector *collector,
 const void *prometheus_collector_get_metric(struct prometheus_collector *collector,
 					    const char *name);
 
+/** @cond INTERNAL_HIDDEN */
+
+enum prometheus_walk_state {
+	PROMETHEUS_WALK_START,
+	PROMETHEUS_WALK_CONTINUE,
+	PROMETHEUS_WALK_STOP,
+};
+
+struct prometheus_collector_walk_context {
+	struct prometheus_collector *collector;
+	struct prometheus_metric *metric;
+	struct prometheus_metric *tmp;
+	enum prometheus_walk_state state;
+};
+
+/** @endcond */
+
+/**
+ * @brief Walk through all metrics in a Prometheus collector and format them
+ *        into a buffer.
+ *
+ * @param ctx Pointer to the walker context.
+ * @param buffer Pointer to the buffer to store the formatted metrics.
+ * @param buffer_size Size of the buffer.
+ * @return 0 if successful and we went through all metrics, -EAGAIN if we
+ *	 need to call this function again, any other negative error code
+ *	 means an error occurred.
+ */
+int prometheus_collector_walk_metrics(struct prometheus_collector_walk_context *ctx,
+				      uint8_t *buffer, size_t buffer_size);
+
+/**
+ * @brief Initialize the walker context to walk through all metrics.
+ *
+ * @param ctx Pointer to the walker context.
+ * @param collector Pointer to the collector to walk through.
+ *
+ * @return 0 if successful, otherwise a negative error code.
+ */
+static inline int prometheus_collector_walk_init(struct prometheus_collector_walk_context *ctx,
+						 struct prometheus_collector *collector)
+{
+	if (collector == NULL) {
+		return -EINVAL;
+	}
+
+	ctx->collector = collector;
+	ctx->state = PROMETHEUS_WALK_START;
+	ctx->metric = NULL;
+	ctx->tmp = NULL;
+
+	return 0;
+}
+
 /**
  * @}
  */
