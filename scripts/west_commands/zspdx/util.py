@@ -6,6 +6,7 @@ import hashlib
 
 from west import log
 
+
 def getHashes(filePath):
     """
     Scan for and return hashes.
