@@ -27,6 +27,9 @@ API Changes
 Removed APIs in this release
 ============================
 
+ * The deprecated Bluetooth HCI driver API has been removed. It has been replaced by a
+   :c:group:`new API<bt_hci_api>` that follows the normal Zephyr driver model.
+
 Deprecated in this release
 ==========================
 
