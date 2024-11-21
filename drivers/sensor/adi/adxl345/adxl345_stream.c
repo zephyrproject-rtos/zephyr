@@ -216,6 +216,9 @@ static void adxl345_process_fifo_samples_cb(struct rtio *r, const struct rtio_sq
 							read_buf + data->fifo_total_bytes,
 							SAMPLE_SIZE, current_sqe);
 		data->fifo_total_bytes += SAMPLE_SIZE;
+		if (cfg->bus_type == ADXL345_BUS_I2C) {
+			read_fifo_data->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
+		}
 		if (i == fifo_samples-1) {
 			struct rtio_sqe *complete_op = rtio_sqe_acquire(data->rtio_ctx);
 
@@ -342,6 +345,9 @@ static void adxl345_process_status1_cb(struct rtio *r, const struct rtio_sqe *sq
 	rtio_sqe_prep_read(read_fifo_data, data->iodev, RTIO_PRIO_NORM, data->fifo_ent, 1,
 						current_sqe);
 	read_fifo_data->flags = RTIO_SQE_CHAINED;
+	if (cfg->bus_type == ADXL345_BUS_I2C) {
+		read_fifo_data->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
+	}
 	rtio_sqe_prep_callback(complete_op, adxl345_process_fifo_samples_cb, (void *)dev,
 							current_sqe);
 
@@ -351,6 +357,7 @@ static void adxl345_process_status1_cb(struct rtio *r, const struct rtio_sqe *sq
 void adxl345_stream_irq_handler(const struct device *dev)
 {
 	struct adxl345_dev_data *data = (struct adxl345_dev_data *) dev->data;
+	const struct adxl345_dev_config *cfg = (const struct adxl345_dev_config *) dev->config;
 
 	if (data->sqe == NULL) {
 		return;
@@ -366,6 +373,9 @@ void adxl345_stream_irq_handler(const struct device *dev)
 	rtio_sqe_prep_read(read_status_reg, data->iodev, RTIO_PRIO_NORM, &data->status1, 1, NULL);
 	read_status_reg->flags = RTIO_SQE_CHAINED;
 
+	if (cfg->bus_type == ADXL345_BUS_I2C) {
+		read_status_reg->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
+	}
 	rtio_sqe_prep_callback(check_status_reg, adxl345_process_status1_cb, (void *)dev, NULL);
 	rtio_submit(data->rtio_ctx, 0);
 }
