@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include "../../socket_helpers.h"
 #include "certificates.h"
+#include "certificates_with_policy.h"
 
 #define TEST_STR_SMALL "test"
 
@@ -89,7 +90,10 @@ static void test_config_psk(int s_sock, int c_sock)
 	}
 }
 
-static void test_config_cert(int s_sock, int c_sock)
+static void test_config_cert(
+	int s_sock, int c_sock, const unsigned char *root, size_t root_len,
+	const unsigned char *srv, size_t srv_len,
+	const unsigned char *srv_priv, size_t srv_priv_len)
 {
 	sec_tag_t server_tag_list[] = {
 		SERVER_CERTIFICATE_TAG
@@ -107,17 +111,17 @@ static void test_config_cert(int s_sock, int c_sock)
 
 	zassert_ok(tls_credential_add(CA_CERTIFICATE_TAG,
 				      TLS_CREDENTIAL_CA_CERTIFICATE,
-				      ca, sizeof(ca)),
+				      root, root_len),
 		   "Failed to register CA Certificate");
 
 	zassert_ok(tls_credential_add(SERVER_CERTIFICATE_TAG,
 				      TLS_CREDENTIAL_SERVER_CERTIFICATE,
-				      server, sizeof(server)),
+				      srv, srv_len),
 		   "Failed to register Server Certificate");
 
 	zassert_ok(tls_credential_add(SERVER_CERTIFICATE_TAG,
 				      TLS_CREDENTIAL_PRIVATE_KEY,
-				      server_privkey, sizeof(server_privkey)),
+				      srv_priv, srv_priv_len),
 		   "Failed to register Server Private Key");
 
 	if (s_sock >= 0) {
@@ -138,6 +142,13 @@ static void test_config_cert(int s_sock, int c_sock)
 				sizeof("localhost")),
 			   "Failed to set TLS_HOSTNAME");
 	}
+}
+
+static void test_config_cert_default(int s_sock, int c_sock)
+{
+	test_config_cert(s_sock, c_sock, ca, sizeof(ca),
+			 server, sizeof(server),
+			 server_privkey, sizeof(server_privkey));
 }
 
 static void test_fcntl(int sock, int cmd, int val)
@@ -1888,7 +1899,7 @@ static size_t test_common_option_cert_nocopy(int nocopy)
 				    &nocopy, sizeof(nocopy)),
 		   "Failed to set TLS_CERT_NOCOPY option");
 
-	test_config_cert(s_sock, c_sock);
+	test_config_cert_default(s_sock, c_sock);
 
 	test_bind(s_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
 	test_listen(s_sock);
@@ -1924,6 +1935,115 @@ ZTEST(net_socket_tls, test_option_cert_nocopy)
 	zassert_true(heap_nocopy < heap_copy,
 		     "Heap usage should be lower with TLS_CERT_NOCOPY_OPTIONAL "
 		     "option set");
+}
+
+struct tls_server_data {
+	struct k_work_delayable work;
+	int sock;
+	struct sockaddr *addr;
+	struct k_sem ready;
+};
+
+static void tls_server_work_handler(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct tls_server_data *data =
+		CONTAINER_OF(dwork, struct tls_server_data, work);
+	int ret;
+
+	ret = zsock_bind(data->sock, data->addr, data->addr->sa_family == AF_INET ?
+			 sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6));
+	if (ret < 0) {
+		return;
+	}
+
+	ret = zsock_listen(data->sock, 1);
+	if (ret < 0) {
+		return;
+	}
+
+	k_sem_give(&data->ready);
+	new_sock = zsock_accept(data->sock, NULL, NULL);
+}
+
+static bool test_crt_ext_accepted;
+static bool test_crt_ext_ctx;
+
+static int test_crt_ext_cb(void *p_ctx, mbedtls_x509_crt const *crt,
+			   mbedtls_x509_buf const *oid, int critical,
+			   const unsigned char *p, const unsigned char *end)
+{
+	bool *cb_called = (bool *)p_ctx;
+
+	*cb_called = true;
+
+	if (!test_crt_ext_accepted) {
+		return -1;
+	}
+
+	return 0;
+}
+
+static void test_common_option_cert_ext_cb(bool ext_accepted)
+{
+	struct sockaddr_in c_saddr;
+	struct sockaddr_in s_saddr;
+	struct tls_server_data test_data;
+	struct tls_cert_ext_cb cert_ext_opt = {
+		.cb = test_crt_ext_cb,
+		.ctx = &test_crt_ext_ctx,
+	};
+	int ret;
+
+	test_crt_ext_ctx = false;
+	test_crt_ext_accepted = ext_accepted;
+
+	prepare_sock_tls_v4(MY_IPV4_ADDR, ANY_PORT, &c_sock, &c_saddr,
+			    IPPROTO_TLS_1_2);
+	prepare_sock_tls_v4(MY_IPV4_ADDR, ANY_PORT, &s_sock, &s_saddr,
+			    IPPROTO_TLS_1_2);
+
+	zassert_ok(zsock_setsockopt(c_sock, SOL_TLS, TLS_CERT_EXT_CALLBACK,
+				    &cert_ext_opt, sizeof(cert_ext_opt)),
+		   "Failed to set TLS_CERT_EXT_CALLBACK option");
+
+	test_config_cert(s_sock, c_sock, ca_ext, sizeof(ca_ext),
+			 server_ext, sizeof(server_ext),
+			 server_privkey_ext, sizeof(server_privkey_ext));
+
+	/* Helper work for the server operation - need to handle client/server
+	 * in parallel due to handshake.
+	 */
+	test_data.sock = s_sock;
+	test_data.addr = (struct sockaddr *)&s_saddr;
+	k_sem_init(&test_data.ready, 0, 1);
+	k_work_init_delayable(&test_data.work, tls_server_work_handler);
+	test_work_reschedule(&test_data.work, K_NO_WAIT);
+
+	k_sem_take(&test_data.ready, K_MSEC(100));
+
+	ret = zsock_connect(c_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+
+	/* Make sure to cleanup before possible assertion. */
+	test_work_wait(&test_data.work);
+	test_sockets_close();
+
+	zassert_true(test_crt_ext_ctx,
+		     "Certificate extension callback should've been called.");
+
+	if (test_crt_ext_accepted) {
+		zassert_ok(ret, "TLS connect failed");
+	} else {
+		zassert_not_ok(ret, "TLS connect should've failed");
+	}
+
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
+}
+
+ZTEST(net_socket_tls, test_option_cert_ext_cb)
+{
+	test_common_option_cert_ext_cb(true);
+	test_common_option_cert_ext_cb(false);
 }
 
 static void *tls_tests_setup(void)
