@@ -18,7 +18,7 @@ common:
   integration_platforms:
     - nrf52840dk/nrf52840
   harness_config:
-    fixture: gpio_loopback
+    fixture: uart_loopback
 tests:
   drivers.uart.uart_mix_poll:
     extra_configs:
