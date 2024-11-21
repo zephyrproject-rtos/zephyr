@@ -13,8 +13,10 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/net/socket.h>
 #include <zephyr/net/tls_credentials.h>
 #include <mbedtls/ssl.h>
+#include <mbedtls/memory_buffer_alloc.h>
 
 #include "../../socket_helpers.h"
+#include "certificates.h"
 
 #define TEST_STR_SMALL "test"
 
@@ -25,6 +27,8 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #define SERVER_PORT 4242
 
 #define PSK_TAG 1
+#define CA_CERTIFICATE_TAG 2
+#define SERVER_CERTIFICATE_TAG 3
 
 #define MAX_CONNS 5
 
@@ -82,6 +86,57 @@ static void test_config_psk(int s_sock, int c_sock)
 		zassert_equal(zsock_setsockopt(c_sock, SOL_TLS, TLS_SEC_TAG_LIST,
 					 sec_tag_list, sizeof(sec_tag_list)),
 			      0, "Failed to set PSK on client socket");
+	}
+}
+
+static void test_config_cert(int s_sock, int c_sock)
+{
+	sec_tag_t server_tag_list[] = {
+		SERVER_CERTIFICATE_TAG
+	};
+	sec_tag_t client_tag_list[] = {
+		CA_CERTIFICATE_TAG
+	};
+
+	(void)tls_credential_delete(CA_CERTIFICATE_TAG,
+				    TLS_CREDENTIAL_CA_CERTIFICATE);
+	(void)tls_credential_delete(SERVER_CERTIFICATE_TAG,
+				    TLS_CREDENTIAL_SERVER_CERTIFICATE);
+	(void)tls_credential_delete(SERVER_CERTIFICATE_TAG,
+				    TLS_CREDENTIAL_PRIVATE_KEY);
+
+	zassert_ok(tls_credential_add(CA_CERTIFICATE_TAG,
+				      TLS_CREDENTIAL_CA_CERTIFICATE,
+				      ca, sizeof(ca)),
+		   "Failed to register CA Certificate");
+
+	zassert_ok(tls_credential_add(SERVER_CERTIFICATE_TAG,
+				      TLS_CREDENTIAL_SERVER_CERTIFICATE,
+				      server, sizeof(server)),
+		   "Failed to register Server Certificate");
+
+	zassert_ok(tls_credential_add(SERVER_CERTIFICATE_TAG,
+				      TLS_CREDENTIAL_PRIVATE_KEY,
+				      server_privkey, sizeof(server_privkey)),
+		   "Failed to register Server Private Key");
+
+	if (s_sock >= 0) {
+		zassert_ok(zsock_setsockopt(
+				s_sock, SOL_TLS, TLS_SEC_TAG_LIST,
+				server_tag_list, sizeof(server_tag_list)),
+			   "Failed to set certificate on server socket");
+	}
+
+	if (c_sock >= 0) {
+		zassert_ok(zsock_setsockopt(
+				c_sock, SOL_TLS, TLS_SEC_TAG_LIST,
+				client_tag_list, sizeof(client_tag_list)),
+			   "Failed to set certificate on client socket");
+
+		zassert_ok(zsock_setsockopt(
+				c_sock, SOL_TLS, TLS_HOSTNAME, "localhost",
+				sizeof("localhost")),
+			   "Failed to set TLS_HOSTNAME");
 	}
 }
 
@@ -1812,6 +1867,63 @@ ZTEST(net_socket_tls, test_poll_dtls_pollerr)
 
 	/* Small delay for the final alert exchange */
 	k_msleep(10);
+}
+
+/* Returns the mbed TLS heap usage in current scenario */
+static size_t test_common_option_cert_nocopy(int nocopy)
+{
+	struct sockaddr_in c_saddr;
+	struct sockaddr_in s_saddr;
+	struct sockaddr addr;
+	socklen_t addrlen = sizeof(addr);
+	struct connect_data test_data;
+	size_t cur_used, cur_blocks;
+
+	prepare_sock_tls_v4(MY_IPV4_ADDR, ANY_PORT, &c_sock, &c_saddr,
+			    IPPROTO_TLS_1_2);
+	prepare_sock_tls_v4(MY_IPV4_ADDR, ANY_PORT, &s_sock, &s_saddr,
+			    IPPROTO_TLS_1_2);
+
+	zassert_ok(zsock_setsockopt(c_sock, SOL_TLS, TLS_CERT_NOCOPY,
+				    &nocopy, sizeof(nocopy)),
+		   "Failed to set TLS_CERT_NOCOPY option");
+
+	test_config_cert(s_sock, c_sock);
+
+	test_bind(s_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+	test_listen(s_sock);
+
+	/* Helper work for the connect operation - need to handle client/server
+	 * in parallel due to handshake.
+	 */
+	test_data.sock = c_sock;
+	test_data.addr = (struct sockaddr *)&s_saddr;
+	k_work_init_delayable(&test_data.work, client_connect_work_handler);
+	test_work_reschedule(&test_data.work, K_NO_WAIT);
+
+	test_accept(s_sock, &new_sock, &addr, &addrlen);
+	zassert_equal(addrlen, sizeof(s_saddr), "Wrong addrlen");
+
+	test_work_wait(&test_data.work);
+
+	mbedtls_memory_buffer_alloc_cur_get(&cur_used, &cur_blocks);
+
+	test_sockets_close();
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
+
+	return cur_used;
+}
+
+ZTEST(net_socket_tls, test_option_cert_nocopy)
+{
+	size_t heap_copy, heap_nocopy;
+
+	heap_copy = test_common_option_cert_nocopy(TLS_CERT_NOCOPY_NONE);
+	heap_nocopy = test_common_option_cert_nocopy(TLS_CERT_NOCOPY_OPTIONAL);
+
+	zassert_true(heap_nocopy < heap_copy,
+		     "Heap usage should be lower with TLS_CERT_NOCOPY_OPTIONAL "
+		     "option set");
 }
 
 static void *tls_tests_setup(void)
