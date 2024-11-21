@@ -30,9 +30,7 @@
 
 LOG_MODULE_REGISTER(uart_nrfx_uarte, CONFIG_UART_LOG_LEVEL);
 
-#if !defined(CONFIG_ARCH_POSIX)
 #define RX_FLUSH_WORKAROUND 1
-#endif
 
 #define UARTE(idx)                DT_NODELABEL(uart##idx)
 #define UARTE_HAS_PROP(idx, prop) DT_NODE_HAS_PROP(UARTE(idx), prop)
