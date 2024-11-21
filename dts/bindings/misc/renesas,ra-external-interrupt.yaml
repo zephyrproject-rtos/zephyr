@@ -1,0 +1,44 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA External Interrupt
+
+compatible: "renesas,ra-external-interrupt"
+
+include: [base.yaml]
+
+properties:
+  interrupts:
+    required: true
+
+  reg:
+    required: true
+
+  channel:
+    type: int
+    required: true
+
+  renesas,trigger:
+    type: string
+    enum:
+      - "falling"
+      - "rising"
+      - "both-edges"
+      - "low-level"
+    description: |
+      Select the signal edge or state that triggers an interrupt
+
+  renesas,digital-filtering:
+    type: boolean
+    description: |
+      Select if data noise filter should be enabled.
+
+  renesas,sample-clock-div:
+    type: int
+    enum:
+      - 1
+      - 8
+      - 32
+      - 64
+    description: |
+      Select the clock divider for the digital noise filter. Clock source is system clock.
