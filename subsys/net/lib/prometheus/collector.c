@@ -12,6 +12,7 @@
 #include <zephyr/net/prometheus/summary.h>
 #include <zephyr/net/prometheus/counter.h>
 #include <zephyr/net/prometheus/gauge.h>
+#include <zephyr/net/prometheus/formatter.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -156,4 +157,78 @@ const void *prometheus_collector_get_metric(struct prometheus_collector *collect
 
 out:
 	return NULL;
+}
+
+int prometheus_collector_walk_metrics(struct prometheus_collector_walk_context *ctx,
+				      uint8_t *buffer, size_t buffer_size)
+{
+	int ret = 0;
+
+	if (ctx->collector == NULL) {
+		LOG_ERR("Invalid arguments");
+		return -EINVAL;
+	}
+
+	if (ctx->state == PROMETHEUS_WALK_START) {
+		k_mutex_lock(&ctx->collector->lock, K_FOREVER);
+		ctx->state = PROMETHEUS_WALK_CONTINUE;
+
+		/* Start of the loop is taken from
+		 * SYS_SLIST_FOR_EACH_CONTAINER_SAFE macro to simulate
+		 * a loop.
+		 */
+
+		ctx->metric = Z_GENLIST_PEEK_HEAD_CONTAINER(slist,
+							    &ctx->collector->metrics,
+							    ctx->metric,
+							    node);
+		ctx->tmp = Z_GENLIST_PEEK_NEXT_CONTAINER(slist,
+							 ctx->metric,
+							 node);
+	}
+
+	if (ctx->state == PROMETHEUS_WALK_CONTINUE) {
+		int len = 0;
+
+		ctx->metric = ctx->tmp;
+		ctx->tmp = Z_GENLIST_PEEK_NEXT_CONTAINER(slist,
+							 ctx->metric,
+							 node);
+
+		if (ctx->metric == NULL) {
+			ctx->state = PROMETHEUS_WALK_STOP;
+			goto out;
+		}
+
+		/* If there is a user callback, use it to update the metric data. */
+		if (ctx->collector->user_cb) {
+			ret = ctx->collector->user_cb(ctx->collector, ctx->metric,
+						      ctx->collector->user_data);
+			if (ret < 0) {
+				if (ret != -EAGAIN) {
+					ctx->state = PROMETHEUS_WALK_STOP;
+					goto out;
+				}
+
+				/* Skip this metric for now */
+				goto out;
+			}
+		}
+
+		ret = prometheus_format_one_metric(ctx->metric, buffer, buffer_size, &len);
+		if (ret < 0) {
+			ctx->state = PROMETHEUS_WALK_STOP;
+			goto out;
+		}
+
+		ret = -EAGAIN;
+	}
+
+out:
+	if (ctx->state == PROMETHEUS_WALK_STOP) {
+		k_mutex_unlock(&ctx->collector->lock);
+		ret = 0;
+	}
+
+	return ret;
 }
