@@ -255,9 +255,9 @@ static void i2s_dma_tx_callback(const struct device *dma_dev, void *arg, uint32_
 	const struct device *dev = (struct device *)arg;
 	struct i2s_dev_data *dev_data = dev->data;
 	struct stream *strm = &dev_data->tx;
+	uint8_t blocks_queued;
 	void *buffer = NULL;
 	int ret;
-	uint8_t blocks_queued;
 
 	LOG_DBG("tx cb");
 
@@ -289,35 +289,30 @@ static void i2s_dma_tx_callback(const struct device *dma_dev, void *arg, uint32_
 		goto disabled_exit_no_drop;
 	}
 
-	switch (strm->state) {
-	case I2S_STATE_RUNNING:
-	case I2S_STATE_STOPPING:
-		ret = i2s_tx_reload_multiple_dma_blocks(dev, &blocks_queued);
-
-		if (ret) {
-			strm->state = I2S_STATE_ERROR;
-			goto disabled_exit_no_drop;
-		}
-
-		if (blocks_queued || (strm->free_tx_dma_blocks < MAX_TX_DMA_BLOCKS)) {
-			goto enabled_exit;
-		} else {
-			/* all DMA blocks are free but no blocks were queued */
-			if (strm->state == I2S_STATE_STOPPING) {
-				/* TX queue has drained */
-				strm->state = I2S_STATE_READY;
-				LOG_DBG("TX stream has stopped");
-			} else {
-				strm->state = I2S_STATE_ERROR;
-				LOG_ERR("TX Failed to reload DMA");
-			}
-			goto disabled_exit_no_drop;
-		}
-
-	case I2S_STATE_ERROR:
-	default:
+	if (strm->state != I2S_STATE_RUNNING && strm->state != I2S_STATE_STOPPING) {
 		goto disabled_exit_drop;
 	}
+
+	ret = i2s_tx_reload_multiple_dma_blocks(dev, &blocks_queued);
+	if (ret) {
+		strm->state = I2S_STATE_ERROR;
+		goto disabled_exit_no_drop;
+	}
+
+	if (blocks_queued || (strm->free_tx_dma_blocks < MAX_TX_DMA_BLOCKS)) {
+		goto enabled_exit;
+	}
+
+	/* all DMA blocks are free but no blocks were queued */
+	if (strm->state == I2S_STATE_STOPPING) {
+		/* TX queue has drained */
+		strm->state = I2S_STATE_READY;
+		LOG_DBG("TX stream has stopped");
+	} else {
+		strm->state = I2S_STATE_ERROR;
+		LOG_ERR("TX Failed to reload DMA");
+	}
+	goto disabled_exit_no_drop;
 
 disabled_exit_no_drop:
 	i2s_tx_stream_disable(dev, false);
@@ -344,61 +339,62 @@ static void i2s_dma_rx_callback(const struct device *dma_dev, void *arg, uint32_
 
 	LOG_DBG("RX cb");
 
-	switch (strm->state) {
-	case I2S_STATE_STOPPING:
-	case I2S_STATE_RUNNING:
-		/* retrieve buffer from input queue */
-		ret = k_msgq_get(&strm->in_queue, &buffer, K_NO_WAIT);
-		__ASSERT_NO_MSG(ret == 0);
-
-		/* put buffer to output queue */
-		ret = k_msgq_put(&strm->out_queue, &buffer, K_NO_WAIT);
-		if (ret != 0) {
-			LOG_ERR("buffer %p -> out_queue %p err %d", buffer, &strm->out_queue, ret);
-			i2s_rx_stream_disable(dev, false, false);
-			strm->state = I2S_STATE_ERROR;
-			return;
-		}
-		if (strm->state == I2S_STATE_RUNNING) {
-			/* allocate new buffer for next audio frame */
-			ret = k_mem_slab_alloc(strm->cfg.mem_slab, &buffer, K_NO_WAIT);
-			if (ret != 0) {
-				LOG_ERR("buffer alloc from slab %p err %d", strm->cfg.mem_slab,
-					ret);
-				i2s_rx_stream_disable(dev, false, false);
-				strm->state = I2S_STATE_ERROR;
-			} else {
-				uint32_t data_path = strm->start_channel;
-
-				ret = dma_reload(dev_data->dev_dma, strm->dma_channel,
-						 (uint32_t)&base->RDR[data_path], (uint32_t)buffer,
-						 strm->cfg.block_size);
-				if (ret != 0) {
-					LOG_ERR("dma_reload() failed with error 0x%x", ret);
-					i2s_rx_stream_disable(dev, false, false);
-					strm->state = I2S_STATE_ERROR;
-					return;
-				}
-
-				/* put buffer in input queue */
-				ret = k_msgq_put(&strm->in_queue, &buffer, K_NO_WAIT);
-				if (ret != 0) {
-					LOG_ERR("%p -> in_queue %p err %d", buffer, &strm->in_queue,
-						ret);
-				}
-			}
-		} else {
-			i2s_rx_stream_disable(dev, true, false);
-			/* Received a STOP/DRAIN trigger */
-			strm->state = I2S_STATE_READY;
-		}
-		break;
-	case I2S_STATE_ERROR:
+	if (strm->state == I2S_STATE_ERROR) {
 		i2s_rx_stream_disable(dev, true, true);
-		break;
-	default:
-		break;
 	}
+
+	if (strm->state != I2S_STATE_STOPPING && strm->state != I2S_STATE_RUNNING) {
+		return;
+	}
+
+	/* retrieve buffer from input queue */
+	ret = k_msgq_get(&strm->in_queue, &buffer, K_NO_WAIT);
+	__ASSERT_NO_MSG(ret == 0);
+
+	/* put buffer to output queue */
+	ret = k_msgq_put(&strm->out_queue, &buffer, K_NO_WAIT);
+	if (ret != 0) {
+		LOG_ERR("buffer %p -> out_queue %p err %d", buffer, &strm->out_queue, ret);
+		goto error;
+	}
+
+	if (strm->state == I2S_STATE_STOPPING) {
+		i2s_rx_stream_disable(dev, true, false);
+		/* Received a STOP/DRAIN trigger */
+		strm->state = I2S_STATE_READY;
+		return;
+	}
+
+	/* Now the only possible case is the running state */
+
+	/* allocate new buffer for next audio frame */
+	ret = k_mem_slab_alloc(strm->cfg.mem_slab, &buffer, K_NO_WAIT);
+	if (ret != 0) {
+		LOG_ERR("buffer alloc from slab %p err %d", strm->cfg.mem_slab, ret);
+		goto error;
+	}
+
+	uint32_t data_path = strm->start_channel;
+
+	ret = dma_reload(dev_data->dev_dma, strm->dma_channel,
+			 (uint32_t)&base->RDR[data_path], (uint32_t)buffer,
+			 strm->cfg.block_size);
+	if (ret != 0) {
+		LOG_ERR("dma_reload() failed with error 0x%x", ret);
+		goto error;
+	}
+
+	/* put buffer in input queue */
+	ret = k_msgq_put(&strm->in_queue, &buffer, K_NO_WAIT);
+	if (ret != 0) {
+		LOG_ERR("%p -> in_queue %p err %d", buffer, &strm->in_queue, ret);
+	}
+
+	return;
+
+error:
+	i2s_rx_stream_disable(dev, false, false);
+	strm->state = I2S_STATE_ERROR;
 }
 
 static void enable_mclk_direction(const struct device *dev, bool dir)
