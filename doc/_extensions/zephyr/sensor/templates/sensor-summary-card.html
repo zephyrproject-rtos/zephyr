@@ -1,0 +1,44 @@
+<div class="board-card sensor-card" style="width: 100%; max-width: none;">
+    <div class="sensor-card-content sensor-summary-card-content">
+        <h4>Channels:</h4>
+        <div class="sensor-summary-property-list">
+            {% for channel in sensor.channels.keys() -%}
+            <button href="#" data-rst-ref="{{'sensor-chan-' ~ channel.replace('_', '-')}}">{{channel | upper}}</buton>
+                {% endfor %}
+        </div>
+        {% if sensor.attributes | length > 0 %}
+        <hr />
+        <h4>Attributes:</h4>
+        <div class="sensor-summary-property-list">
+            {% for attribute in sensor.attributes -%}
+            <div class="sensor-attribute-button-container">
+                <button href="#" class="left-button"
+                    data-rst-ref="{{'sensor-attribute-' ~ attribute.attribute.replace('_', '-')}}">{{attribute.attribute.upper()}}</button>
+                <span style="width: 2px; background-color=var(--link-color-visited); height: 100%; background-color: var(--link-color-visited);"></span>
+                <button href="#" class="right-button"
+                    data-rst-ref="{{'sensor-chan-' ~ attribute.channel.replace('_', '-')}}">{{attribute.channel.upper()}}</button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% if sensor.triggers | length > 0 %}
+        <hr />
+        <h4>Triggers:</h4>
+        <div class="sensor-summary-property-list">
+            {% for trigger in sensor.triggers -%}
+            <button href="#" data-rst-ref="{{'sensor-trigger-' ~ trigger.replace('_', '-')}}">{{trigger |
+                upper}}</button>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% if sensor.supported_buses | length > 0 %}
+        <hr />
+        <h4>Buses:</h4>
+        <div class="sensor-summary-property-list">
+            {% for bus in sensor.supported_buses -%}
+            <button href="#" data-rst-ref="{{bus_references[bus|lower]}}">{{bus}}</button>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>

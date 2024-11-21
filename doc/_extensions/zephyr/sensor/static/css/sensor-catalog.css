@@ -1,0 +1,260 @@
+/*
+ * Copyright (c) 2024 Google Inc
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+.dropdown-filter {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 20px;
+}
+
+.dropdown-filter-content {
+    display: none;
+    position: absolute;
+    background-color: var(--content-background-color);
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+    z-index: 1;
+    max-height: 25vh;
+    overflow-y: auto;
+    padding: 5px;
+}
+
+.dropdown-filter-content label {
+    display: block;
+    padding: 10px;
+    font-size: 14px !important;
+    padding: 0px !important;
+}
+
+.dropdown-filter-content input[type="radio"],
+.dropdown-filter-content input[type="checkbox"] {
+    -webkit-appearance: none;
+    /* Remove default appearance */
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    outline: none;
+    margin-right: 5px;
+    vertical-align: middle;
+    /* Align with the label text */
+    position: relative;
+    padding: 2px
+}
+
+.dropdown-filter-content input[type="radio"] {
+    border-radius: 50%;
+}
+
+.dropdown-filter-content input[type="checkbox"]:checked {
+    background-color: var(--input-focus-border-color);
+}
+
+.dropdown-filter-content input[type="checkbox"]:checked:before {
+    content: '\2713';
+    /* Unicode checkmark */
+    font-weight: bold;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 14px;
+}
+
+.dropdown-filter-content input[type="radio"]:checked:before {
+    content: '';
+    display: block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--input-focus-border-color);
+    margin: 4px;
+}
+
+.dropdown-filter-channels .dropdown-filter-content {
+    max-height: 25vh;
+    overflow-y: auto;
+}
+
+.dropdown-filter-channels .dropdown-filter-content label {
+    display: block;
+    padding: 10px;
+}
+
+.dropdown-filter:hover .dropdown-filter-content {
+    display: block;
+}
+
+button.sensor-filter-button {
+    background-color: transparent;
+    border: 1px solid var(--navbar-heading-color);
+    border-radius: 8px;
+    padding: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+button.sensor-filter-button.active {
+    background-color: color-mix(in srgb, var(--navbar-heading-color) 50%, transparent 50%);
+}
+
+span.sensor-filter-data {
+    display: none;
+}
+
+.dropdown-filter-attributes .dropdown-filter-content {
+    min-width: min-content;
+    display: flex;
+    flex-direction: column;
+    /* Arrange content vertically */
+    align-items: flex-start;
+    display: none;
+}
+
+.dropdown-filter-attributes #attribute-channel-lists {
+    display: flex;
+    flex-direction: row;
+}
+
+#attribute-channel-lists #sensor-filter-attribute-list,
+#attribute-channel-lists #sensor-filter-channel-list {
+    max-height: 25vh;
+    overflow-y: auto;
+    margin-right: 10px;
+}
+
+#attribute-channel-lists #sensor-filter-attribute-list {
+    white-space: nowrap;
+}
+
+#attribute-channel-lists #sensor-filter-channel-list {
+    flex-wrap: wrap;
+}
+
+#attribute-channel-lists #add-attribute-filter {
+    disabled: true;
+}
+
+#attribute-channel-active-filters .chip:after {
+    content: '\2715';
+    margin-left: 5px;
+}
+
+.chip {
+    display: inline-block;
+    padding: 5px 10px;
+    background-color: #f0f0f0;
+    border-radius: 20px;
+}
+
+.dropdown-filter-button {
+    pointer-events: none;
+}
+
+.sensor-card {
+    align-items: flex-start;
+}
+
+.sensor-card-content {
+    padding: 0px;
+    width: 100%;
+}
+
+.sensor-card-content hr {
+    margin: 12px 0;
+}
+
+.sensor-card-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.sensor-vendor-part-name h3 {
+    margin: 0 0 5px 0;
+    /* Reduce spacing between vendor and part name */
+}
+
+.sensor-vendor-part-name h4 {
+    margin: 0;
+}
+
+.sensor-card-details {
+    text-align: left;
+    margin-top: 5px;
+}
+
+.sensor-card-details p {
+    margin: 0;
+    color: var(--admonition-note-color);
+}
+
+.sensor-card-buses {
+    margin-top: 10px;
+    color: var(--admonition-note-color);
+}
+
+.sensor-icon-list {
+    padding: 5px 10px;
+    margin-top: 10px;
+    height: 34px;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 5px;
+}
+
+.sensor-icon-list img {
+    width: 24px;
+    height: 24px;
+}
+
+.sensor-summary-property-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.sensor-summary-card-content h4 {
+    margin-bottom: 12px;
+}
+
+.sensor-summary-card-content .sensor-summary-property-list button {
+    border: 2px solid var(--link-color-visited);
+    border-radius: 15px;
+    padding: 5px 10px;
+    background-color: transparent;
+}
+
+.sensor-summary-card-content .sensor-summary-property-list button:hover {
+    background-color: color-mix(in srgb, var(--link-color-visited), transparent 66%);
+}
+
+.sensor-attribute-button-container {
+    display: flex;
+    border: 2px solid var(--link-color-visited);
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+.sensor-summary-card-content .sensor-summary-property-list .sensor-attribute-button-container button.left-button {
+    border-right: none !important;
+    border-top-right-radius: 0px;
+    border-bottom-right-radius: 0px;
+    flex: 1;
+    border: 0px;
+}
+
+.sensor-summary-card-content .sensor-summary-property-list .sensor-attribute-button-container button.right-button {
+    border-left: none !important;
+    border-top-left-radius: 0px;
+    border-bottom-left-radius: 0px;
+    flex: 1;
+    border: 0px;
+}
