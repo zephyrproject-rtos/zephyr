@@ -266,16 +266,15 @@ int nrf_gpd_retain_pins_set(const struct pinctrl_dev_config *pcfg, bool retain)
 
 	for (uint8_t i = 0U; i < state->pin_cnt; i++) {
 		uint32_t pin = NRF_GET_PIN(state->pins[i]);
-		NRF_GPIO_Type *reg = nrf_gpio_pin_port_decode(&pin);
 
 		if (pin == NRF_PIN_DISCONNECTED) {
 			continue;
 		}
 
 		if (retain) {
-			reg->RETAINSET = BIT(pin);
+			nrf_gpio_pin_retain_enable(pin);
 		} else {
-			reg->RETAINCLR = BIT(pin);
+			nrf_gpio_pin_retain_disable(pin);
 		}
 	}
 
