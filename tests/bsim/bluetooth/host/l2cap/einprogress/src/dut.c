@@ -29,7 +29,7 @@ LOG_MODULE_REGISTER(dut, LOG_LEVEL_INF);
  *  application. This allows us to notice if the stack has freed
  *  references that were ours.
  */
-static atomic_t acl_pool_refs_held[CONFIG_BT_BUF_ACL_RX_COUNT];
+static atomic_t acl_pool_refs_held[BT_BUF_ACL_RX_COUNT];
 
 BUILD_ASSERT(IS_ENABLED(CONFIG_BT_TESTING));
 BUILD_ASSERT(IS_ENABLED(CONFIG_BT_HCI_ACL_FLOW_CONTROL));
@@ -46,7 +46,7 @@ static void acl_pool_refs_held_add(struct net_buf *buf)
 {
 	int buf_id = net_buf_id(buf);
 
-	__ASSERT_NO_MSG(0 <= buf_id && buf_id < CONFIG_BT_BUF_ACL_RX_COUNT);
+	__ASSERT_NO_MSG(0 <= buf_id && buf_id < BT_BUF_ACL_RX_COUNT);
 	atomic_inc(&acl_pool_refs_held[buf_id]);
 }
 
