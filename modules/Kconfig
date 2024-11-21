@@ -85,6 +85,9 @@ comment "Nanopb module not available."
 comment "Lz4 module not available."
 	depends on !ZEPHYR_LZ4_MODULE
 
+comment "LZMA module not available."
+	depends on !ZEPHYR_LZMA_MODULE
+
 comment "loramac-node module not available."
 	depends on !ZEPHYR_LORAMAC_NODE_MODULE
 

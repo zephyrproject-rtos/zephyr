@@ -4894,6 +4894,15 @@ West:
   labels:
     - "area: Compression"
 
+"West project: lzma":
+  status: odd fixes
+  collaborators:
+    - JiaT75
+  files:
+    - modules/lzma/
+  labels:
+    - "area: Compression"
+
 "West project: mbedtls":
   status: maintained
   maintainers:

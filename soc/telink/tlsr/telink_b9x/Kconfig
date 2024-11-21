@@ -100,11 +100,29 @@ config TELINK_B9X_MATTER_RETENTION_LAYOUT
 	help
 		This option enables support Matter retention layout
 
+if MCUBOOT
+
 config TELINK_B9X_MCUBOOT_STARTUP
 	bool "Telink B9x MCUBoot startup handler"
-	depends on MCUBOOT
 	help
 		Run Telink specific vendor code before MCUBoot
 		main process
+
+config COMPRESS_LZMA
+	bool "Support LZMA compression"
+	default n
+	select LZMA
+	select BOOT_IMAGE_ACCESS_HOOKS
+	help
+		This option enables LZMA compression with MCUBoot
+
+config COMPRESS_LZMA_DICTIONARY_SIZE
+	int "Set LZMA compression dictionary size"
+	default 32768
+	depends on COMPRESS_LZMA
+	help
+		This option sets LZMA compression dictionary size
+
+endif # MCUBOOT
 
 endif # SOC_RISCV_TELINK_B9X

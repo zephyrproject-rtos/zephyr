@@ -1,0 +1,11 @@
+# Copyright (c) 2024 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_LZMA_MODULE
+	bool
+
+config LZMA
+	bool "LZMA data compression and decompression"
+	help
+	  This option enables lzma compression & decompression library
+	  support.

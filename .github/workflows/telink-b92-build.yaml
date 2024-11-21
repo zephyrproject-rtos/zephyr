@@ -138,6 +138,11 @@ jobs:
         cd ..
         west build -b tlsr9528a                  -d build_crypto_mbedtls_b92            zephyr/tests/crypto/mbedtls                              -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y -DCONFIG_MBEDTLS_ECP_C=y -DCONFIG_MBEDTLS_ECP_ALL_ENABLED=y
 
+    - name: Build B92 bootloader/mcuboot/boot for compressed LZMA image
+      run: |
+        cd ..
+        west build -b tlsr9528a                  -d build_mcuboot_b92_lzma              bootloader/mcuboot/boot/zephyr                           -- -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y -DCONFIG_COMPRESS_LZMA=y -DCONFIG_BOOT_UPGRADE_ONLY=y
+
     - name: Collect artifacts
       run: |
         mkdir telink_build_artifacts
