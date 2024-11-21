@@ -113,6 +113,9 @@
 #define ADXL345_ODR_MSK     GENMASK(3, 0)
 #define ADXL345_ODR_MODE(x) ((x) & 0xF)
 
+#define ADXL345_BUS_I2C 0
+#define ADXL345_BUS_SPI 1
+
 enum adxl345_odr {
 	ADXL345_ODR_12HZ = 0x7,
 	ADXL345_ODR_25HZ,
@@ -226,6 +229,7 @@ struct adxl345_dev_config {
 	enum adxl345_odr odr;
 	bool op_mode;
 	struct adxl345_fifo_config fifo_config;
+	uint8_t bus_type;
 #ifdef CONFIG_ADXL345_TRIGGER
 	struct gpio_dt_spec interrupt;
 #endif
