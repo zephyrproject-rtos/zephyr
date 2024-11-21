@@ -519,18 +519,43 @@ static int adxl345_init(const struct device *dev)
 #define ADXL345_CFG_IRQ(inst)
 #endif /* CONFIG_ADXL345_TRIGGER */
 
-#define ADXL345_RTIO_DEFINE(inst)                                    \
-	SPI_DT_IODEV_DEFINE(adxl345_iodev_##inst, DT_DRV_INST(inst),     \
-						SPI_WORD_SET(8) | SPI_TRANSFER_MSB |    \
-						SPI_MODE_CPOL | SPI_MODE_CPHA, 0U);     \
-	RTIO_DEFINE(adxl345_rtio_ctx_##inst, 64, 64);
+#define ADXL345_RTIO_SPI_DEFINE(inst)   \
+	COND_CODE_1(CONFIG_SPI_RTIO,    \
+			(SPI_DT_IODEV_DEFINE(adxl345_iodev_##inst, DT_DRV_INST(inst), \
+			SPI_WORD_SET(8) | SPI_TRANSFER_MSB |            \
+			SPI_MODE_CPOL | SPI_MODE_CPHA, 0U);),    \
+			())
+
+#define ADXL345_RTIO_I2C_DEFINE(inst)    \
+	COND_CODE_1(CONFIG_I2C_RTIO, \
+			(I2C_DT_IODEV_DEFINE(adxl345_iodev_##inst, DT_DRV_INST(inst));),  \
+			())
+
+	/* Conditionally set the RTIO size based on the presence of SPI/I2C
+	 * lines 541 - 542.
+	 * The sizes of sqe and cqe pools are increased due to the amount of
+	 * multibyte reads needed for watermark using 31 samples
+	 * (adx345_stram - line 203), using smaller amounts of samples
+	 * to trigger an interrupt can decrease the pool sizes.
+	 */
+#define ADXL345_RTIO_DEFINE(inst)                                      \
+	/* Conditionally include SPI and/or I2C parts based on their presence */ \
+	COND_CODE_1(DT_INST_ON_BUS(inst, spi),  \
+				(ADXL345_RTIO_SPI_DEFINE(inst)), \
+				())       \
+	COND_CODE_1(DT_INST_ON_BUS(inst, i2c),     \
+				(ADXL345_RTIO_I2C_DEFINE(inst)),        \
+				())                                  \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, spi_dt_spec) &&           \
+				DT_INST_NODE_HAS_PROP(inst, i2c_dt_spec),              \
+		(RTIO_DEFINE(adxl345_rtio_ctx_##inst, 128, 128);),              \
+		(RTIO_DEFINE(adxl345_rtio_ctx_##inst, 64, 64);))               \
 
 #define ADXL345_CONFIG(inst)								\
 		.odr = DT_INST_PROP(inst, odr),						\
 		.fifo_config.fifo_mode = ADXL345_FIFO_STREAMED,				\
 		.fifo_config.fifo_trigger = ADXL345_INT2,			\
 		.fifo_config.fifo_samples = SAMPLE_NUM,					\
-		.op_mode = TRUE,					\
 		.odr = ADXL345_RATE_25HZ,						\
 
 #define ADXL345_CONFIG_SPI(inst)                                       \
@@ -543,6 +568,7 @@ static int adxl345_init(const struct device *dev)
 						    0)},               \
 		.bus_is_ready = adxl345_bus_is_ready_spi,              \
 		.reg_access = adxl345_reg_access_spi,                  \
+		.bus_type = ADXL345_BUS_SPI,       \
 		ADXL345_CONFIG(inst)					\
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, int2_gpios),	\
 		(ADXL345_CFG_IRQ(inst)), ())				\
@@ -553,13 +579,17 @@ static int adxl345_init(const struct device *dev)
 		.bus = {.i2c = I2C_DT_SPEC_INST_GET(inst)}, \
 		.bus_is_ready = adxl345_bus_is_ready_i2c,   \
 		.reg_access = adxl345_reg_access_i2c,	    \
+		.bus_type = ADXL345_BUS_I2C,                \
+		ADXL345_CONFIG(inst)					\
+		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, int2_gpios),	\
+		(ADXL345_CFG_IRQ(inst)), ())		\
 	}
 
 #define ADXL345_DEFINE(inst)								\
 	IF_ENABLED(CONFIG_ADXL345_STREAM, (ADXL345_RTIO_DEFINE(inst)));                 \
-	static struct adxl345_dev_data adxl345_data_##inst = {			\
-	IF_ENABLED(CONFIG_ADXL345_STREAM, (.rtio_ctx = &adxl345_rtio_ctx_##inst,        \
-				.iodev = &adxl345_iodev_##inst,)) \
+	static struct adxl345_dev_data adxl345_data_##inst = {                  \
+	COND_CODE_1(adxl345_iodev_##inst, (.rtio_ctx = &adxl345_rtio_ctx_##inst,        \
+				.iodev = &adxl345_iodev_##inst,), ()) \
 	};     \
 	static const struct adxl345_dev_config adxl345_config_##inst =                  \
 		COND_CODE_1(DT_INST_ON_BUS(inst, spi), (ADXL345_CONFIG_SPI(inst)),      \
