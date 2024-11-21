@@ -12,6 +12,8 @@ common:
   harness_config:
     fixture: gpio_loopback
   depends_on: gpio
+  integration_platforms:
+    - nrf52840dk/nrf52840
 tests:
   drivers.uart.pm:
     extra_configs:

@@ -52,6 +52,8 @@ tests:
       - mimxrt1060_evk
       - mimxrt1050_evk
       - mimxrt1040_evk
+    integration_platforms:
+      - mimxrt1040_evk
     tags: display
     harness: console
     extra_args: SHIELD=rk043fn02h_ct

@@ -19,6 +19,8 @@ tests:
       - nrf5340bsim/nrf5340/cpuapp
       - nrf5340bsim/nrf5340/cpunet
       - nrf54l15bsim/nrf54l15/cpuapp
+    integration_platforms:
+      - nrf52840dk/nrf52840
     extra_args: "DTC_OVERLAY_FILE=boards/nrf52840dk_nrf52840.overlay;\
                  boards/nrf52840dk_nrf52840_sense_edge.overlay"
 
@@ -75,6 +77,8 @@ tests:
       - nucleo_wb09ke
       - nucleo_wb05kz
       - nucleo_wba55cg
+    integration_platforms:
+      - mimxrt595_evk/mimxrt595s/cm33
   drivers.gpio.st_2pin_arduino:
     min_flash: 34
     depends_on:

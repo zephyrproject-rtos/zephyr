@@ -1,3 +1,6 @@
+common:
+  integration_platforms:
+    - esp32c6_devkitc
 tests:
   boards.esp32.rtc_clk:
     platform_allow:

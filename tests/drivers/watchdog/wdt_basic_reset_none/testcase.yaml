@@ -9,6 +9,8 @@ tests:
       - s32z2xxdc2@D/s32z270/rtu0
       - s32z2xxdc2@D/s32z270/rtu1
       - mr_canhubk3
+    integration_platforms:
+      - s32z2xxdc2/s32z270/rtu0
     tags:
       - drivers
       - watchdog

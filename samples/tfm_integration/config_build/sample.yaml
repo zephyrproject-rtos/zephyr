@@ -5,11 +5,12 @@ common:
   tags:
     - trusted-firmware-m
   platform_allow:
-    - mps2/an521/cpu0/ns
     - v2m_musca_s1/musca_s1/ns
     - nrf5340dk/nrf5340/cpuapp/ns
     - nrf9160dk/nrf9160/ns
     - bl5340_dvk/nrf5340/cpuapp/ns
+  integration_platforms:
+    - nrf5340dk/nrf5340/cpuapp/ns
   harness: console
   harness_config:
     type: one_line

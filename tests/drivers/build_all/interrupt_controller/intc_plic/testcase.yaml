@@ -6,6 +6,9 @@ common:
     - qemu_riscv32/qemu_virt_riscv32/smp
     - qemu_riscv64
     - qemu_riscv64/qemu_virt_riscv64/smp
+  integration_platforms:
+    - qemu_riscv32
+    - qemu_riscv64
   tags:
     - drivers
     - interrupt

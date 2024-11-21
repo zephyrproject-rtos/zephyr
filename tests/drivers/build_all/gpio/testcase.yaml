@@ -31,6 +31,8 @@ tests:
       - nrf52840dk/nrf52840
       - native_sim
       - native_sim/native/64
+    integration_platforms:
+      - native_sim
     depends_on:
       - gpio
       - adc

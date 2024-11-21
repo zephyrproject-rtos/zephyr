@@ -13,6 +13,8 @@ tests:
       - sltb010a@0
       - xg24_dk2601b
       - xg27_dk2602a
+    integration_platforms:
+      - esp32_devkitc_wroom/esp32/procpu
   drivers.clock.clock_control_nrf5:
     platform_allow:
       - nrf51dk/nrf51822
