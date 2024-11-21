@@ -65,6 +65,15 @@ SECTIONS {
     *(.gnu.linkonce.h.*)
   } > dram
 
+  /* SOF extended manifest */
+  . = ALIGN(16);
+  _fw_metadata_start = .;
+  .fw_metadata : {
+    KEEP (*(.fw_metadata))
+    . = ALIGN(16);
+  } > dram
+  _fw_metadata_end = .;
+
 #include <zephyr/linker/common-rom.ld>
 #include <snippets-rom-sections.ld>
 
