@@ -114,47 +114,6 @@ void bt_iso_disconnected(struct bt_conn *iso);
 /* Notify ISO connected channels of security changed */
 void bt_iso_security_changed(struct bt_conn *acl, uint8_t hci_status);
 
-/* Allocate ISO PDU */
-#if defined(CONFIG_NET_BUF_LOG)
-struct net_buf *bt_iso_create_pdu_timeout_debug(struct net_buf_pool *pool,
-						size_t reserve,
-						k_timeout_t timeout,
-						const char *func, int line);
-#define bt_iso_create_pdu_timeout(_pool, _reserve, _timeout) \
-	bt_iso_create_pdu_timeout_debug(_pool, _reserve, _timeout, \
-					__func__, __LINE__)
-
-#define bt_iso_create_pdu(_pool, _reserve) \
-	bt_iso_create_pdu_timeout_debug(_pool, _reserve, K_FOREVER, \
-					__func__, __LINE__)
-#else
-struct net_buf *bt_iso_create_pdu_timeout(struct net_buf_pool *pool,
-					  size_t reserve, k_timeout_t timeout);
-
-#define bt_iso_create_pdu(_pool, _reserve) \
-	bt_iso_create_pdu_timeout(_pool, _reserve, K_FOREVER)
-#endif
-
-/* Allocate ISO Fragment */
-#if defined(CONFIG_NET_BUF_LOG)
-struct net_buf *bt_iso_create_frag_timeout_debug(size_t reserve,
-						 k_timeout_t timeout,
-						 const char *func, int line);
-
-#define bt_iso_create_frag_timeout(_reserve, _timeout) \
-	bt_iso_create_frag_timeout_debug(_reserve, _timeout, \
-					 __func__, __LINE__)
-
-#define bt_iso_create_frag(_reserve) \
-	bt_iso_create_frag_timeout_debug(_reserve, K_FOREVER, \
-					 __func__, __LINE__)
-#else
-struct net_buf *bt_iso_create_frag_timeout(size_t reserve, k_timeout_t timeout);
-
-#define bt_iso_create_frag(_reserve) \
-	bt_iso_create_frag_timeout(_reserve, K_FOREVER)
-#endif
-
 #if defined(CONFIG_BT_ISO_LOG_LEVEL_DBG)
 void bt_iso_chan_set_state_debug(struct bt_iso_chan *chan,
 				 enum bt_iso_state state,
