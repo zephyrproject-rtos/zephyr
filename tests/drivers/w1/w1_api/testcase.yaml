@@ -47,3 +47,5 @@ tests:
       - max32680evkit/max32680/m4
       - max32690evkit/max32690/m4
       - max78002evkit/max78002/m4
+    integration_platforms:
+      - apard32690/max32690/m4

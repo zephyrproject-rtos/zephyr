@@ -43,6 +43,9 @@ tests:
       - stm32f3_disco
       - stm32h573i_dk
       - stm32u083c_dk
+    integration_platforms:
+      - disco_l475_iot1
+      - nucleo_l476rg
   drivers.adc.dma_nxp_kinetis:
     extra_args:
       - EXTRA_CONF_FILE="overlay-dma-kinetis.conf"
