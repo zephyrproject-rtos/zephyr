@@ -8,7 +8,7 @@ concurrency:
 
 jobs:
   clang-build:
-    runs-on: zephyr-runner-linux-x64-4xlarge
+    runs-on: zephyr-runner-v2-linux-x64-4xlarge
     container:
       image: zephyrprojectrtos/ci:v0.18.4
       options: '--entrypoint /bin/bash'
