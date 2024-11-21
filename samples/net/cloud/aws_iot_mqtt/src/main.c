@@ -126,6 +126,7 @@ static int publish_message(const char *topic, size_t topic_len, uint8_t *payload
 	struct mqtt_publish_param msg;
 
 	msg.retain_flag = 0u;
+	msg.dup_flag = 0u;
 	msg.message.topic.topic.utf8 = topic;
 	msg.message.topic.topic.size = topic_len;
 	msg.message.topic.qos = CONFIG_AWS_QOS;
