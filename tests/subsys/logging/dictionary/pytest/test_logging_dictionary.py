@@ -10,9 +10,9 @@ Pytest harness to test the output of the dictionary logging.
 
 import logging
 import os
+import re
 import shlex
 import subprocess
-import re
 
 from twister_harness import DeviceAdapter
 

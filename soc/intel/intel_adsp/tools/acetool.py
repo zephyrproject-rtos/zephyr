@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import asyncio
+
 import cavstool
 
 if __name__ == "__main__":

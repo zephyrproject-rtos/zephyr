@@ -6,10 +6,9 @@ from __future__ import annotations
 import logging
 import re
 import shlex
-
-from subprocess import check_output, getstatusoutput
-from pathlib import Path
 from dataclasses import dataclass
+from pathlib import Path
+from subprocess import check_output, getstatusoutput
 
 logger = logging.getLogger(__name__)
 
