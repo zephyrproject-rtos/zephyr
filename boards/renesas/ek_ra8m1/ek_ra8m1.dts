@@ -8,6 +8,7 @@
 #include <renesas/ra/ra8/r7fa8m1ahecbd.dtsi>
 #include <dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 #include "ek_ra8m1-pinctrl.dtsi"
 
 / {
@@ -93,8 +94,24 @@
 			   <7 0 &ioport8 11 0>;	/* IO8 */
 	};
 
+	buttons {
+		compatible = "gpio-keys";
+		button0: s1 {
+			gpios = <&ioport0 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button switch 1";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		button1: s2 {
+			gpios = <&ioport0 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button switch 2";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
 	aliases {
 		led0 = &led1;
+		sw0 = &button0;
+		sw1 = &button1;
 	};
 
 	transceiver0: can-phy0 {
@@ -319,4 +336,14 @@ pmod_header: &pmod1_header {};
 
 &usbhs_phy {
 	phys-clock-src = "xtal";
+};
+
+&port_irq12 {
+	interrupts = <88 12>;
+	status = "okay";
+};
+
+&port_irq13 {
+	interrupts = <89 12>;
+	status = "okay";
 };
