@@ -123,7 +123,7 @@ TESTDATA_1 = [
         True,
         [],
         'By default Twister should work without pytest-twister-harness' \
-        ' plugin being installed, so please, uninstall it by' \
+        ' plugin being installed, so please uninstall it by' \
         ' `pip uninstall pytest-twister-harness` and' \
         ' `git clean -dxf scripts/pylib/pytest-twister-harness`.'
     ),

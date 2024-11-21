@@ -940,16 +940,6 @@
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
-"./scripts/pylib/twister/twisterlib/environment.py" = [
-    "B006",     # https://docs.astral.sh/ruff/rules/mutable-argument-default
-    "E402",     # https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "SIM118",   # https://docs.astral.sh/ruff/rules/in-dict-keys
-    "UP006",    # https://docs.astral.sh/ruff/rules/non-pep585-annotation
-    "UP021",    # https://docs.astral.sh/ruff/rules/replace-universal-newlines
-    "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
-    "UP035",    # https://docs.astral.sh/ruff/rules/deprecated-import
-]
 "./scripts/pylib/twister/twisterlib/handlers.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
@@ -2217,7 +2207,6 @@ exclude = [
     "./scripts/pylib/twister/twisterlib/cmakecache.py",
     "./scripts/pylib/twister/twisterlib/config_parser.py",
     "./scripts/pylib/twister/twisterlib/coverage.py",
-    "./scripts/pylib/twister/twisterlib/environment.py",
     "./scripts/pylib/twister/twisterlib/error.py",
     "./scripts/pylib/twister/twisterlib/handlers.py",
     "./scripts/pylib/twister/twisterlib/hardwaremap.py",
