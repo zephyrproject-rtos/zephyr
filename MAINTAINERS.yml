@@ -2999,7 +2999,7 @@ Networking:
     - subsys/net/lib/ptp/
     - samples/net/ptp/
   labels:
-    - "area: PTP"
+    "area: Networking"
   tests:
     - sample.net.ptp
 
