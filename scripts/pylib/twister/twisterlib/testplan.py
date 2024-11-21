@@ -904,6 +904,12 @@ class TestPlan:
                     if ts.arch_exclude and plat.arch in ts.arch_exclude:
                         instance.add_filter("In test case arch exclude", Filters.TESTSUITE)
 
+                    if ts.vendor_allow and plat.vendor not in ts.vendor_allow:
+                        instance.add_filter("Not in test suite vendor allow list", Filters.TESTSUITE)
+
+                    if ts.vendor_exclude and plat.vendor in ts.vendor_exclude:
+                        instance.add_filter("In test suite vendor exclude", Filters.TESTSUITE)
+
                     if ts.platform_exclude and plat.name in ts.platform_exclude:
                         # works only when we have all platforms parsed, -p limits parsing...
                         if not platform_filter:
