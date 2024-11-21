@@ -15,7 +15,7 @@ jobs:
   upload-to-elasticsearch:
     if: |
       github.repository == 'zephyrproject-rtos/zephyr' &&
-      github.event.workflow_run.event != 'pull_request_target'
+      github.event.workflow_run.event != 'pull_request'
     env:
       ELASTICSEARCH_KEY: ${{ secrets.ELASTICSEARCH_KEY }}
       ELASTICSEARCH_SERVER: "https://elasticsearch.zephyrproject.io:443"
