@@ -1,5 +1,5 @@
-.. zephyr:code-sample:: webusb-next
-   :name: WebUSB-next
+.. zephyr:code-sample:: webusb
+   :name: WebUSB
    :relevant-api: usbd_api
 
    Receive and echo data from a web page using WebUSB API.
@@ -11,7 +11,7 @@ This sample demonstrates how to use the Binary Device Object Store (BOS),
 Microsoft OS 2.0 descriptors, and WebUSB descriptors to implement a WebUSB
 sample application. The sample USB function receives the data and echoes back
 to the WebUSB API based application running in the browser on your local host.
-This sample can be found at :zephyr_file:`samples/subsys/usb/webusb-next` in the
+This sample can be found at :zephyr_file:`samples/subsys/usb/webusb` in the
 Zephyr project tree.
 
 Requirements
@@ -27,7 +27,7 @@ Building and Running
 Build and flash webusb sample with:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/subsys/usb/webusb-next
+   :zephyr-app: samples/subsys/usb/webusb
    :board: <board to use>
    :goals: flash
    :compact:
@@ -36,7 +36,7 @@ Demonstration
 *************
 
 The sample includes a simple WebUSB API application and can be found in the
-sample directory: :zephyr_file:`samples/subsys/usb/webusb-next/index.html`.
+sample directory: :zephyr_file:`samples/subsys/usb/webusb/index.html`.
 
 There are two ways to access this sample page:
 
