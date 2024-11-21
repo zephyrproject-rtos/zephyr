@@ -16,6 +16,11 @@
 
 #ifndef _ASMLANGUAGE
 
+struct ite_clk_cfg {
+	uint8_t ctrl;
+	uint8_t bits;
+};
+
 #ifdef CONFIG_HAS_ITE_INTC
 /*
  * Save current interrupt state of soc-level into ier_setting[] with
