@@ -6,7 +6,7 @@ on:
       - main
       - v*-branch
       - collab-*
-  pull_request_target:
+  pull_request:
     branches:
       - main
       - v*-branch
@@ -84,7 +84,7 @@ jobs:
 
       - name: Environment Setup
         run: |
-          if [ "${{github.event_name}}" = "pull_request_target" ]; then
+          if [ "${{github.event_name}}" = "pull_request" ]; then
             git config --global user.email "bot@zephyrproject.org"
             git config --global user.name "Zephyr Builder"
             rm -fr ".git/rebase-apply"
@@ -146,7 +146,7 @@ jobs:
             fi
           fi
 
-      - if: github.event_name == 'pull_request_target'
+      - if: github.event_name == 'pull_request'
         name: Run Tests with Twister (Pull Request)
         id: run_twister_pr
         run: |
