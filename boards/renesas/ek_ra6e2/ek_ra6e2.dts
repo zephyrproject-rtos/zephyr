@@ -7,6 +7,7 @@
 
 #include <renesas/ra/ra6/r7fa6e2bb3cfm.dtsi>
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/adc/adc.h>
 
 #include "ek_ra6e2-pinctrl.dtsi"
@@ -39,8 +40,24 @@
 		};
 	};
 
+	buttons {
+		compatible = "gpio-keys";
+		button0: s1 {
+			gpios = <&ioport0 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button switch 1";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		button1: s2 {
+			gpios = <&ioport3 4 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button switch 2";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
 	aliases {
 		led0 = &led1;
+		sw0 = &button0;
+		sw1 = &button1;
 	};
 };
 
@@ -54,6 +71,10 @@
 	};
 };
 
+&ioport0 {
+	status = "okay";
+};
+
 &ioport1 {
 	status = "okay";
 };
@@ -65,6 +86,10 @@
 };
 
 &ioport2 {
+	status = "okay";
+};
+
+&ioport3 {
 	status = "okay";
 };
 
@@ -132,4 +157,14 @@
 	status = "okay";
 	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
+};
+
+&port_irq9 {
+	interrupts = <4 12>;
+	status = "okay";
+};
+
+&port_irq10 {
+	interrupts = <5 12>;
+	status = "okay";
 };
