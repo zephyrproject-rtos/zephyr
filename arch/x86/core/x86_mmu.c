@@ -1357,8 +1357,14 @@ void z_x86_mmu_init(void)
 	/* We booted with physical address space being identity mapped.
 	 * As we are now executing in virtual address space,
 	 * the identity map is no longer needed. So remove them.
-	 *
-	 * Without PAE, only need to remove the entries at the PD level.
+	 */
+#ifdef CONFIG_X86_IDENTITY_MAP_AT_PTE_LEVEL
+	/* Identity mappings are at the PTE level as requested
+	 * with kconfig.
+	 */
+	identity_map_remove(PTE_LEVEL);
+#else
+	/* Without PAE, only need to remove the entries at the PD level.
 	 * With PAE, need to also remove the entry at PDP level.
 	 */
 	identity_map_remove(PDE_LEVEL);
@@ -1366,6 +1372,7 @@ void z_x86_mmu_init(void)
 #ifdef CONFIG_X86_PAE
 	identity_map_remove(0);
 #endif
+#endif /* CONFIG_X86_IDENTITY_MAP_AT_PTE_LEVEL */
 #endif
 }
 

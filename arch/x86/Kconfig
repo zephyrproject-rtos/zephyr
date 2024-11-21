@@ -531,6 +531,23 @@ config X86_CET_SOC_PREPARE_SHADOW_STACK_SWITCH
 	  Code should be provided via soc_prepare_shadow_stack_switch assembler
 	  macro.
 
+config X86_IDENTITY_MAP_AT_PTE_LEVEL
+	bool "Do identity mapping on PTE level instead of PD/PDPT level"
+	depends on X86_MMU && (KERNEL_VM_BASE != SRAM_BASE_ADDRESS)
+	help
+	  When the kernel image is mapped at virtual addresses that are not
+	  the same physical addresses, the physical addresses are initially
+	  identity mapped for the boot loader to work. Once the MMU has been
+	  initialized, this identity map is removed so the kernel runs in
+	  virtual memory space. This identity mapping is usually at the PD
+	  or PDPT level to conserve memory space by not allocating another
+	  page for page table just for the identity mappings. However, PD
+	  and PDPT both cover relatively large range of memory (e.g.
+	  1GB on x86 with PAE for each entry). Removing the identity mapping
+	  entry from PD or PDPT may result in removing the pointer to page
+	  table for code execution. Enabling this will result in the
+	  identify mappings in the lowest PTE level to avoid such issue.
+
 source "arch/x86/core/Kconfig.ia32"
 source "arch/x86/core/Kconfig.intel64"
 
