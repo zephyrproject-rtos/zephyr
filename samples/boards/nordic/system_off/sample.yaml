@@ -8,6 +8,8 @@ tests:
     integration_platforms:
       - nrf52840dk/nrf52840
     platform_allow:
+      - nrf54l15dk/nrf54l05/cpuapp
+      - nrf54l15dk/nrf54l10/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf52840dk/nrf52840
       - nrf52dk/nrf52832
