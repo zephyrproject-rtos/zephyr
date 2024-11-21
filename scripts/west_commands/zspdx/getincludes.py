@@ -6,6 +6,7 @@ from subprocess import run, PIPE
 
 from west import log
 
+
 # Given a path to the applicable C compiler, a C source file, and the
 # corresponding TargetCompileGroup, determine which include files would
 # be used.
@@ -36,6 +37,7 @@ def getCIncludes(compilerPath, srcFile, tcg):
     else:
         # response will be in cp.stderr, not cp.stdout
         return extractIncludes(cp.stderr)
+
 
 # Parse the response from the CC -E -H call, to extract the include file paths
 def extractIncludes(resp):
