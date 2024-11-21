@@ -77,10 +77,21 @@ config BT_BUF_ACL_RX_SIZE
 	  In a Controller only build this will determine the maximum ACL size
 	  that the Controller will send to the Host.
 
+config BT_BUF_ACL_RX_COUNT_EXTRA
+	int "Number of extra incoming ACL data buffers"
+	default 0
+	range 0 65535
+	help
+	  Number of incoming extra ACL data buffers sent from the Controller to
+	  the Host.
+
+	  By default, the number of incoming ACL data buffers is equal to
+	  CONFIG_BT_MAX_CONN + 1.
+
 config BT_BUF_ACL_RX_COUNT
-	int "Number of incoming ACL data buffers"
-	default 6
-	range 2 256
+	int "[DEPRECATED] Number of incoming ACL data buffers"
+	default 0
+	range 0 256
 	help
 	  Number or incoming ACL data buffers sent from the Controller to the
 	  Host.

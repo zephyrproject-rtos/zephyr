@@ -153,6 +153,19 @@ Bluetooth Classic
 Bluetooth Host
 ==============
 
+* :kconfig:option:`CONFIG_BT_BUF_ACL_RX_COUNT` has been deprecated. The number of ACL RX buffers is
+  now computed internally and is equal to :kconfig:option:`CONFIG_BT_MAX_CONN` + 1. If an application
+  needs more buffers, it can use the new :kconfig:option:`CONFIG_BT_BUF_ACL_RX_COUNT_EXTRA` to add
+  additional ones.
+
+  e.g. if :kconfig:option:`CONFIG_BT_MAX_CONN` was ``3`` and
+  :kconfig:option:`CONFIG_BT_BUF_ACL_RX_COUNT` was ``7`` then
+  :kconfig:option:`CONFIG_BT_BUF_ACL_RX_COUNT_EXTRA` should be set to ``7 - (3 + 1) = 3``.
+
+  .. warning::
+
+   The default value of :kconfig:option:`CONFIG_BT_BUF_ACL_RX_COUNT` has been set to 0.
+
 Bluetooth Crypto
 ================
 
