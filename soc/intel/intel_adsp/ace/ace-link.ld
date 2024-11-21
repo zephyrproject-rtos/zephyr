@@ -285,6 +285,10 @@ SECTIONS {
     *libarch__xtensa__core.a:userspace.S.obj(.literal.xtensa_do_syscall)
     *libarch__xtensa__core.a:userspace.S.obj(.text.xtensa_do_syscall)
 
+#ifdef CONFIG_XTENSA_SYSCALL_USE_HELPER
+    *libarch__xtensa__core.a:syscall_helper.c.obj(.text.xtensa_syscall_helper*)
+#endif /* CONFIG_XTENSA_SYSCALL_USE_HELPER */
+
   } > xtensa_vector_code
 #endif /* CONFIG_XTENSA_MMU */
 
