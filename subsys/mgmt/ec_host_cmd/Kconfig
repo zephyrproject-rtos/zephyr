@@ -76,6 +76,15 @@ config EC_HOST_CMD_HANDLER_RX_BUFFER_DEF
 	help
 	  The handler defines common rx buffer
 
+config EC_HOST_CMD_NOCACHE_BUFFERS
+	bool "Place RX and TX buffers in __nocache section"
+	default y if DCACHE && DMA
+	depends on EC_HOST_CMD_HANDLER_TX_BUFFER_DEF || EC_HOST_CMD_HANDLER_RX_BUFFER_DEF
+	help
+	  DMA is often use for communication, however it usually requires
+	  uncached memory. Add possibility to place the RX and TX buffers in the
+	  __nocache section.
+
 config EC_HOST_CMD_INITIALIZE_AT_BOOT
 	bool "Initialize the host command subsystem automacitlly"
 	default y
