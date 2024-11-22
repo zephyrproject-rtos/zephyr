@@ -80,6 +80,13 @@
 			reg = <0x40090000 0x300>;
 		};
 	};
+
+	swj_port: swj-port {
+		compatible = "swj-connector";
+		pinctrl-0 = <&jtag_tdi_gpio87 &jtag_tdo_gpio88 &jtag_rst_gpio89
+			     &jtag_clk_gpio90 &jtag_tms_gpio91>;
+		pinctrl-names = "default";
+	};
 };
 
 &nvic {
