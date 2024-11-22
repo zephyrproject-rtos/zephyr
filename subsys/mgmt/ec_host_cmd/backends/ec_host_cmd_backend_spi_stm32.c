@@ -100,6 +100,8 @@ BUILD_ASSERT(DT_NODE_HAS_COMPAT_STATUS(DT_CHOSEN(zephyr_host_cmd_spi_backend),
 #define EC_HOST_CMD_ST_STM32_FIFO
 #endif /* st_stm32_spi_fifo */
 
+#define STM32_DMA_FEATURES_ID(id, dir) DT_DMAS_CELL_BY_NAME_OR(id, dir, features, 0)
+
 /*
  * Max data size for a version 3 request/response packet.  This is big enough
  * to handle a request/response header, flash write offset/size, and 512 bytes
@@ -195,8 +197,7 @@ static int prepare_rx(struct ec_host_cmd_spi_ctx *hc_spi);
 			.dma_callback = dma_callback,                                              \
 			.block_count = 2,                                                          \
 	},                                                                                         \
-	.fifo_threshold =                                                                          \
-		STM32_DMA_FEATURES_FIFO_THRESHOLD(DT_DMAS_CELL_BY_NAME(id, dir, features)),
+	.fifo_threshold = STM32_DMA_FEATURES_FIFO_THRESHOLD(STM32_DMA_FEATURES_ID(id, dir)),
 
 #define STM32_SPI_INIT(id)                                                                         \
 	PINCTRL_DT_DEFINE(id);                                                                     \
