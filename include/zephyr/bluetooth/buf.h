@@ -28,22 +28,22 @@
 extern "C" {
 #endif
 
-/** Possible types of buffers passed around the Bluetooth stack */
+/** Possible types of buffers passed around the Bluetooth stack in a form of bitmask. */
 enum bt_buf_type {
 	/** HCI command */
-	BT_BUF_CMD,
+	BT_BUF_CMD = BIT(0),
 	/** HCI event */
-	BT_BUF_EVT,
+	BT_BUF_EVT = BIT(1),
 	/** Outgoing ACL data */
-	BT_BUF_ACL_OUT,
+	BT_BUF_ACL_OUT = BIT(2),
 	/** Incoming ACL data */
-	BT_BUF_ACL_IN,
+	BT_BUF_ACL_IN = BIT(3),
 	/** Outgoing ISO data */
-	BT_BUF_ISO_OUT,
+	BT_BUF_ISO_OUT = BIT(4),
 	/** Incoming ISO data */
-	BT_BUF_ISO_IN,
+	BT_BUF_ISO_IN = BIT(5),
 	/** H:4 data */
-	BT_BUF_H4,
+	BT_BUF_H4 = BIT(6),
 };
 
 /** @brief This is a base type for bt_buf user data. */
