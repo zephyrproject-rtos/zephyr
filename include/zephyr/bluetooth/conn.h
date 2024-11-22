@@ -1432,8 +1432,8 @@ int bt_conn_create_auto_stop(void);
  *
  *  @return Zero on success or error code otherwise.
  */
-int bt_le_set_auto_conn(const bt_addr_le_t *addr,
-			const struct bt_le_conn_param *param);
+__deprecated int bt_le_set_auto_conn(const bt_addr_le_t *addr,
+				     const struct bt_le_conn_param *param);
 
 /** @brief Set security level for a connection.
  *

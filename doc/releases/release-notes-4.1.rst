@@ -33,6 +33,10 @@ Removed APIs in this release
 Deprecated in this release
 ==========================
 
+* Deprecated the :c:func:`bt_le_set_auto_conn` API function. Application developers can achieve
+  the same functionality in their application code by reconnecting to the peer when the
+  :c:member:`bt_conn_cb.disconnected` callback is invoked.
+
 Architectures
 *************
 
