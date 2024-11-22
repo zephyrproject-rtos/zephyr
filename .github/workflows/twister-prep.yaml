@@ -1,4 +1,4 @@
-name: Prep
+name: Prepare For a Twister Run
 
 on:
   workflow_call:
