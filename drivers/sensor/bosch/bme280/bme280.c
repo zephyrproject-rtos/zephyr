@@ -26,6 +26,13 @@ LOG_MODULE_REGISTER(BME280, CONFIG_SENSOR_LOG_LEVEL);
 #warning "BME280 driver enabled without any devices"
 #endif
 
+/* Maximum oversampling rate on each channel is 16x.
+ * Maximum measurement time is given by (Datasheet appendix B 9.1):
+ *    1.25 + [2.3 * T_over] + [2.3 * P_over + 0.575] + [2.3 * H_over + 0.575]
+ *    = 112.8 ms
+ */
+#define BME280_MEASUREMENT_TIMEOUT_MS 150
+
 struct bme280_config {
 	union bme280_bus bus;
 	const struct bme280_bus_io *bus_io;
@@ -116,8 +123,9 @@ static uint32_t bme280_compensate_humidity(struct bme280_data *data,
 	return (uint32_t)(h >> 12);
 }
 
-static int bme280_wait_until_ready(const struct device *dev)
+static int bme280_wait_until_ready(const struct device *dev, k_timeout_t timeout)
 {
+	k_timepoint_t end = sys_timepoint_calc(timeout);
 	uint8_t status;
 	int ret;
 
@@ -129,6 +137,10 @@ static int bme280_wait_until_ready(const struct device *dev)
 		}
 		if (!(status & (BME280_STATUS_MEASURING | BME280_STATUS_IM_UPDATE))) {
 			break;
+		}
+		/* Check if waiting has timed out */
+		if (sys_timepoint_expired(end)) {
+			return -EAGAIN;
 		}
 		k_sleep(K_MSEC(3));
 	}
@@ -163,7 +175,7 @@ int bme280_sample_fetch_helper(const struct device *dev,
 	}
 #endif
 
-	ret = bme280_wait_until_ready(dev);
+	ret = bme280_wait_until_ready(dev, K_MSEC(BME280_MEASUREMENT_TIMEOUT_MS));
 	if (ret < 0) {
 		return ret;
 	}
@@ -336,7 +348,8 @@ static int bme280_chip_init(const struct device *dev)
 		LOG_DBG("Soft-reset failed: %d", err);
 	}
 
-	err = bme280_wait_until_ready(dev);
+	/* The only mention of a soft reset duration is 2ms from the self test timeouts */
+	err = bme280_wait_until_ready(dev, K_MSEC(100));
 	if (err < 0) {
 		return err;
 	}
