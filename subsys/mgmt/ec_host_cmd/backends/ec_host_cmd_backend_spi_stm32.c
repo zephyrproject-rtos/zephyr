@@ -257,6 +257,9 @@ static inline void tx_status(SPI_TypeDef *spi, uint8_t status)
 	 * families than need to bypass the DMA threshold.
 	 */
 	LL_SPI_TransmitData8(spi, status);
+#ifdef EC_HOST_CMD_ST_STM32H7
+	LL_SPI_SetUDRPattern(spi, status);
+#endif /* EC_HOST_CMD_ST_STM32H7 */
 }
 
 static int expected_size(const struct ec_host_cmd_request_header *header)
@@ -395,6 +398,11 @@ static int spi_configure(const struct ec_host_cmd_spi_ctx *hc_spi)
 	LL_SPI_SetNSSMode(spi, LL_SPI_NSS_HARD_INPUT);
 	LL_SPI_SetMode(spi, LL_SPI_MODE_SLAVE);
 
+#ifdef EC_HOST_CMD_ST_STM32H7
+	LL_SPI_SetUDRConfiguration(spi, LL_SPI_UDR_CONFIG_REGISTER_PATTERN);
+	LL_SPI_SetUDRDetection(spi, LL_SPI_UDR_DETECT_END_DATA_FRAME);
+#endif /* EC_HOST_CMD_ST_STM32H7 */
+
 #ifdef EC_HOST_CMD_ST_STM32_FIFO
 #ifdef EC_HOST_CMD_ST_STM32H7
 	LL_SPI_SetFIFOThreshold(spi, LL_SPI_FIFO_TH_01DATA);
@@ -424,6 +432,9 @@ static int reload_dma_tx(struct ec_host_cmd_spi_ctx *hc_spi, size_t len)
 	if (ret != 0) {
 		return ret;
 	}
+#ifdef EC_HOST_CMD_ST_STM32H7
+	LL_SPI_ClearFlag_UDR(spi);
+#endif
 
 	return 0;
 }
