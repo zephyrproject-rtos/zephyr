@@ -669,16 +669,6 @@
 				port = <9>;
 			};
 
-			gpio10: gpio@939400 {
-				compatible = "nordic,nrf-gpio";
-				reg = <0x939400 0x200>;
-				status = "disabled";
-				#gpio-cells = <2>;
-				gpio-controller;
-				ngpios = <8>;
-				port = <10>;
-			};
-
 			gpio11: gpio@939600 {
 				compatible = "nordic,nrf-gpio";
 				reg = <0x939600 0x200>;
@@ -688,28 +678,6 @@
 				gpiote-instance = <&gpiote131>;
 				ngpios = <8>;
 				port = <11>;
-			};
-
-			gpio12: gpio@939800 {
-				compatible = "nordic,nrf-gpio";
-				reg = <0x939800 0x200>;
-				status = "disabled";
-				#gpio-cells = <2>;
-				gpio-controller;
-				gpiote-instance = <&gpiote131>;
-				ngpios = <3>;
-				port = <12>;
-			};
-
-			gpio13: gpio@939a00 {
-				compatible = "nordic,nrf-gpio";
-				reg = <0x939a00 0x200>;
-				status = "disabled";
-				#gpio-cells = <2>;
-				gpio-controller;
-				gpiote-instance = <&gpiote131>;
-				ngpios = <4>;
-				port = <13>;
 			};
 
 			dppic131: dppic@981000 {
