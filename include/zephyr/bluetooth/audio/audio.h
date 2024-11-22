@@ -1199,7 +1199,7 @@ int bt_audio_codec_cfg_meta_set_program_info(struct bt_audio_codec_cfg *codec_cf
  * @param[in]  codec_cfg The codec data to search in.
  * @param[out] lang      Pointer to the language bytes (of length BT_AUDIO_LANG_SIZE)
  *
- * @retval The language if positive or 0
+ * @retval 0 Success
  * @retval -EINVAL if arguments are invalid
  * @retval -ENODATA if not found
  * @retval -EBADMSG if found value has invalid size
