@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2024 Realtek Semiconductor Corporation, SIBG-SD7
+#
+
+if SOC_RTS5912
+
+if REALTEK_RTS5912_RTMR
+
+config PM
+	default y
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 32768
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 32768
+
+config ARCH_HAS_CUSTOM_BUSY_WAIT
+	default y
+
+endif # REALTEK_RTS5912_RTMR
+
+endif # SOC_RTS5912
