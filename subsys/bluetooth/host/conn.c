@@ -3735,6 +3735,12 @@ int bt_conn_le_create(const bt_addr_le_t *peer, const struct bt_conn_le_create_p
 		return -ENOMEM;
 	}
 
+	if (BT_LE_STATES_SCAN_INIT(bt_dev.le.states) &&
+	    bt_le_explicit_scanner_running() &&
+	    !bt_le_explicit_scanner_uses_same_params(create_param)) {
+		LOG_WRN("Use same scan and connection create params to obtain best performance");
+	}
+
 	create_param_setup(create_param);
 
 #if defined(CONFIG_BT_SMP)
