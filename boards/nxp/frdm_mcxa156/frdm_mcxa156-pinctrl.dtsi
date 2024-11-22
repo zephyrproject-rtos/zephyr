@@ -13,6 +13,7 @@
 				<LPUART0_TXD_P0_3>;
 			drive-strength = "low";
 			slew-rate = "fast";
+			input-enable;
 		};
 	};
 
