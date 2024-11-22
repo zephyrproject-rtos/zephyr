@@ -73,6 +73,25 @@
 			clock-names = "rc25m", "pll";
 		};
 
+		slwtmr0: slwtmr0@4000c200 {
+			compatible = "realtek,rts5912-slwtimer";
+			reg = <0x4000c200 0x10>;
+			interrupts = <202 0>;
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_SLWTMR0_CLKPWR>;
+			clock-names = "slwtmr";
+			max-value = <0xFFFFFFFF>;
+			clock-frequency = <1000000>;
+			prescaler = <0>;
+			status = "okay";
+		};
+
+		rtmr: rtmr@4000c500 {
+			compatible = "realtek,rts5912-rtmr";
+			reg = <0x4000c500 0x10>;
+			interrupts = <204 0>;
+			status = "okay";
+		};
+
 		pinctrl: pin-controller@40090000 {
 			compatible = "realtek,rts5912-pinctrl";
 			#address-cells = <1>;
