@@ -578,6 +578,16 @@ bool pm_device_wakeup_is_capable(const struct device *dev);
 bool pm_device_on_power_domain(const struct device *dev);
 
 /**
+ * @brief Get the device's power domain.
+ *
+ * @param dev Device instance.
+ *
+ * @retval pd The device's power domain if on a power domain
+ * @retval NULL if not on a power domain
+ */
+const struct device *pm_device_get_power_domain(const struct device *dev);
+
+/**
  * @brief Add a device to a power domain.
  *
  * This function adds a device to a given power domain.
