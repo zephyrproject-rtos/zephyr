@@ -536,6 +536,20 @@ static int prepare_rx(struct ec_host_cmd_spi_ctx *hc_spi)
 	int ret;
 
 	hc_spi->prepare_rx_later = 0;
+
+#ifdef EC_HOST_CMD_ST_STM32H7
+	/* As described in RM0433 "To restart the internal state machine
+	 * properly, SPI is strongly suggested to be disabled and re-enabled
+	 * before next transaction starts despite its setting is not changed.",
+	 * disable and re-enable the SPI module. Without that, the SPI module
+	 * receives the first byte on a next transaction incorrently - it is
+	 * always 0x00.
+	 * It also clears RX FIFO, so there is no needed to read the remianing
+	 * bytes manually.
+	 */
+	LL_SPI_Disable(spi);
+	LL_SPI_Enable(spi);
+#else  /* EC_HOST_CMD_ST_STM32H7 */
 	/* Flush RX buffer. It clears the RXNE(RX not empty) flag not to trigger
 	 * the DMA transfer at the beginning of a new SPI transfer. The flag is
 	 * set while sending response to host. The number of bytes to read can
@@ -543,6 +557,7 @@ static int prepare_rx(struct ec_host_cmd_spi_ctx *hc_spi)
 	 * threshold.
 	 */
 	LL_SPI_ReceiveData8(spi);
+#endif /* EC_HOST_CMD_ST_STM32H7 */
 
 	ret = reload_dma_rx(hc_spi);
 	if (!ret) {
