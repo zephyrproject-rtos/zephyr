@@ -7,14 +7,32 @@
 
 / {
 	reserved-memory {
-		cpuapp_ram0x_region: memory@2f010000 {
+		cpurad_ram0x_region: memory@2f010000 {
+			compatible = "nordic,owned-memory";
+			reg = <0x2f010000 DT_SIZE_K(4)>;
+			status = "disabled";
+			nordic,access = <NRF_OWNER_ID_RADIOCORE NRF_PERM_RWS>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x2f010000 0x1000>;
+
+			cpusec_cpurad_ipc_shm: memory@0 {
+				reg = <0x0 DT_SIZE_K(2)>;
+			};
+
+			cpurad_cpusec_ipc_shm: memory@800 {
+				reg = <0x800 DT_SIZE_K(2)>;
+			};
+		};
+
+		cpuapp_ram0x_region: memory@2f011000 {
 			compatible = "nordic,owned-memory";
 			reg = <0x2f010000 DT_SIZE_K(260)>;
 			status = "disabled";
 			nordic,access = <NRF_OWNER_ID_APPLICATION NRF_PERM_RWS>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0x2f010000 0x41000>;
+			ranges = <0x0 0x2f011000 0x41000>;
 
 			cpusec_cpuapp_ipc_shm: memory@0 {
 				reg = <0x0 DT_SIZE_K(2)>;
@@ -26,24 +44,6 @@
 
 			cpuapp_data: memory@1000 {
 				reg = <0x1000 DT_SIZE_K(256)>;
-			};
-		};
-
-		cpurad_ram0x_region: memory@2f051000 {
-			compatible = "nordic,owned-memory";
-			reg = <0x2f051000 DT_SIZE_K(4)>;
-			status = "disabled";
-			nordic,access = <NRF_OWNER_ID_RADIOCORE NRF_PERM_RWS>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-			ranges = <0x0 0x2f051000 0x1000>;
-
-			cpusec_cpurad_ipc_shm: memory@0 {
-				reg = <0x0 DT_SIZE_K(2)>;
-			};
-
-			cpurad_cpusec_ipc_shm: memory@800 {
-				reg = <0x800 DT_SIZE_K(2)>;
 			};
 		};
 
