@@ -8,6 +8,11 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
+#include <zephyr/logging/log.h>
+#include <debug_swj.h>
+
+#define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
+LOG_MODULE_REGISTER(soc);
 
 #if defined(CONFIG_RTS5912_ON_ENTER_CPU_IDLE_HOOK)
 bool z_arm_on_enter_cpu_idle(void)
@@ -24,5 +29,11 @@ bool z_arm_on_enter_cpu_idle(void)
  */
 void soc_early_init_hook(void)
 {
+	int ret;
+
 	/* Apply device related preinit configuration */
+	ret = swj_connector_init();
+	if (ret < 0) {
+		LOG_WRN("SWJ init failed");
+	}
 }
