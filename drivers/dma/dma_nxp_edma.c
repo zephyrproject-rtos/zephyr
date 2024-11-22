@@ -30,6 +30,11 @@ static void edma_isr(const void *parameter)
 	cfg = chan->dev->config;
 	data = chan->dev->data;
 
+	if (chan->state == CHAN_STATE_RELEASING || chan->state == CHAN_STATE_INIT) {
+		/* skip, not safe to access channel register space */
+		return;
+	}
+
 	if (!EDMA_ChannelRegRead(data->hal_cfg, chan->id, EDMA_TCD_CH_INT)) {
 		/* skip, interrupt was probably triggered by another channel */
 		return;
@@ -581,6 +586,7 @@ static int edma_get_attribute(const struct device *dev, uint32_t type, uint32_t 
 static bool edma_channel_filter(const struct device *dev, int chan_id, void *param)
 {
 	struct edma_channel *chan;
+	int ret;
 
 	if (!param) {
 		return false;
@@ -595,6 +601,15 @@ static bool edma_channel_filter(const struct device *dev, int chan_id, void *par
 		return false;
 	}
 
+	if (chan->pd_dev) {
+		ret = pm_device_runtime_get(chan->pd_dev);
+		if (ret < 0) {
+			LOG_ERR("failed to PM get channel %d PD dev: %d",
+				chan_id, ret);
+			return false;
+		}
+	}
+
 	irq_enable(chan->irq);
 
 	return true;
@@ -604,6 +619,7 @@ static void edma_channel_release(const struct device *dev, uint32_t chan_id)
 {
 	struct edma_channel *chan;
 	struct edma_data *data;
+	int ret;
 
 	chan = lookup_channel(dev, chan_id);
 	if (!chan) {
@@ -626,12 +642,20 @@ static void edma_channel_release(const struct device *dev, uint32_t chan_id)
 		return;
 	}
 
-	/* start the process of disabling IRQ */
+	/* start the process of disabling IRQ and PD */
 	chan->state = CHAN_STATE_RELEASING;
 
 #ifdef CONFIG_NXP_IRQSTEER
 	irq_disable(chan->irq);
 #endif /* CONFIG_NXP_IRQSTEER */
+
+	if (chan->pd_dev) {
+		ret = pm_device_runtime_put(chan->pd_dev);
+		if (ret < 0) {
+			LOG_ERR("failed to PM put channel %d PD dev: %d",
+				chan_id, ret);
+		}
+	}
 
 	/* done, proceed with next state */
 	chan->state = CHAN_STATE_INIT;
