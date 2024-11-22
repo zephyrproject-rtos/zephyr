@@ -9,3 +9,7 @@ family:
       - name: telink_w9x
         socs:
           - name: telink_w91
+      - name: telink_tlx
+        socs:
+          - name: telink_tl321x
+          - name: telink_tl721x

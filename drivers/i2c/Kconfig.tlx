@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config I2C_TELINK_TLX
+	bool "Telink Semiconductor TLx-series I2C driver"
+	default y
+	depends on DT_HAS_TELINK_TLX_I2C_ENABLED
+	help
+	  Enables Telink TLx-series I2C driver.

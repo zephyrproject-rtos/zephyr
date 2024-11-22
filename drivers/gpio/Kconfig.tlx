@@ -1,0 +1,11 @@
+# Copyright (c) 2024 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+# Telink TLx-series GPIO configuration options
+
+config GPIO_TELINK_TLX
+	bool "Telink TLx-series GPIO driver"
+	default y
+	depends on DT_HAS_TELINK_TLX_GPIO_ENABLED
+	help
+	  Enables the TLx-series GPIO driver.

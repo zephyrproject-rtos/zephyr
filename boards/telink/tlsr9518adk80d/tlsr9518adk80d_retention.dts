@@ -18,7 +18,7 @@
 		};
 
 		ram_ilm_nonretention: memory@10000 {
-			ompatible = "mmio-sram";
+			compatible = "mmio-sram";
 		};
 	};
 

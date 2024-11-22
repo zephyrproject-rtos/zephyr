@@ -1,0 +1,126 @@
+# Copyright (c) 2024 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_RISCV_TELINK_TLX
+	bool
+	select RISCV
+	select RISCV_ISA_RV32I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
+	select RISCV_PRIVILEGED
+	select RISCV_HAS_PLIC
+	select HAS_TELINK_DRIVERS
+	select ATOMIC_OPERATIONS_BUILTIN
+	select CPU_HAS_FPU
+	select INCLUDE_RESET_VECTOR
+	imply XIP
+	select SOC_EARLY_INIT_HOOK
+
+if SOC_RISCV_TELINK_TLX
+
+config TELINK_TL321X_PMP
+	bool "Support Hardware Memory Protection"
+	depends on SOC_RISCV_TELINK_TL321X
+	select RISCV_PMP
+	help
+		This option enables Telink TL321 PMP(memory protection) module.
+
+config TELINK_TL721X_PMP
+	bool "Support Hardware Memory Protection"
+	depends on SOC_RISCV_TELINK_TL721X
+	select RISCV_PMP
+	help
+		This option enables Telink TL721X PMP(memory protection) module.
+
+config TELINK_TLX_HWDSP
+	bool "Support Hardware DSP"
+	select RISCV_SOC_CONTEXT_SAVE
+
+config TELINK_TLX_PFT_ARCH
+	bool "Support performance throttling"
+	default y
+	select RISCV_SOC_CONTEXT_SAVE
+
+config TELINK_TLX_MBEDTLS_HW_ACCELERATION
+	bool "Use Telink TLx platform mbedtls HW acceleration"
+	depends on MBEDTLS
+	default y
+	help
+		This option enables Telink TLx hardware accelerated mbedtls version.
+
+config TELINK_SOC_REBOOT_ON_FAULT
+	bool "Reboot system when fault happened"
+	help
+		This option enables Telink TLx chip reboot after fault.
+
+config TELINK_SOC_REBOOT_ON_FAULT_DELAY
+	int "Reboot system delay in mS"
+	depends on TELINK_SOC_REBOOT_ON_FAULT
+	default 1000
+	range 0 30000
+	help
+		This option sets Telink TLx chip reboot on fault delay in mS.
+
+config TELINK_TLX_USB_SWI_DISABLE
+	bool "Don't use USB SWI interface"
+	help
+		This option disables USB SWI interface
+
+config TELINK_TLX_2_WIRE_SPI_ENABLE
+	bool "Use 2-wire SPI interface to FLASH"
+	help
+		This option enables 2-wire SPI interface to FLASH
+
+config TELINK_TLX_MALLOC_FAILED_HOOK
+	bool "Stop SW execution when system heap allocation failed"
+	default y
+	help
+		This option stops SW execution when system heap allocation failed.
+
+config SOC_SERIES_RISCV_TELINK_TLX_RETENTION
+	bool "Telink TLx SoCs retention memory layout"
+	help
+		Telink TLx SoCs retention memory layout
+
+config SOC_SERIES_RISCV_TELINK_TLX_NON_RETENTION_RAM_CODE
+	bool "Telink TLx SoCs non retention ram code"
+	depends on SOC_SERIES_RISCV_TELINK_TLX_RETENTION
+	help
+		Place Telink Tlx SoCs ram code in non-retention area
+		and restore this are after each retention.
+
+config TELINK_TLX_MATTER_RETENTION_LAYOUT
+	bool "Support Matter retention layout"
+	depends on SOC_SERIES_RISCV_TELINK_TLX_RETENTION
+	help
+		This option enables support Matter retention layout
+
+if MCUBOOT
+
+config TELINK_TLX_MCUBOOT_STARTUP
+	bool "Telink TLx MCUBoot startup handler"
+	help
+		Run Telink specific vendor code before MCUBoot
+		main process
+
+config COMPRESS_LZMA
+	bool "Support LZMA compression"
+	default n
+	select LZMA
+	select BOOT_IMAGE_ACCESS_HOOKS
+	help
+		This option enables LZMA compression with MCUBoot
+
+config COMPRESS_LZMA_DICTIONARY_SIZE
+	int "Set LZMA compression dictionary size"
+	default 32768
+	depends on COMPRESS_LZMA
+	help
+		This option sets LZMA compression dictionary size
+
+endif # MCUBOOT
+
+endif # SOC_RISCV_TELINK_TLX

@@ -60,6 +60,9 @@ class BDTBinaryRunner(ZephyrBinaryRunner):
         if build_conf['CONFIG_SOC_RISCV_TELINK_B91']:
             soc_type = '9518'
             print('Telink B91')
+        if build_conf['CONFIG_SOC_RISCV_TELINK_TL321X']:
+            soc_type = 'TL321X'
+            print('Telink TL321')
         if soc_type is None:
             print('only Telink chips are supported!')
             exit()
@@ -68,21 +71,21 @@ class BDTBinaryRunner(ZephyrBinaryRunner):
         # get binary file
         bin_file = os.path.abspath(self.cfg.bin_file)
         # adjust flash offset for MCU boot application
-        try:
-            build_conf['CONFIG_BOOTLOADER_MCUBOOT']
-        except:
-            print('default application offset', self.address)
-        else:
+        if 'CONFIG_BOOTLOADER_MCUBOOT' in build_conf:
             if self.address == '0x0' and build_conf['CONFIG_BOOTLOADER_MCUBOOT']:
                 self.address = hex(build_conf['CONFIG_FLASH_LOAD_OFFSET'])
                 print('set address offset for MCUBOOT application to', self.address)
+            else:
+                print('default application offset', self.address)
+        else:
+            print('default application offset', self.address)
         # activate chip
         print('activating...')
         activate = subprocess.Popen(['./bdt', soc_type, 'ac'], cwd=self.bdt_path)
         if activate.wait():
             exit()
         # unlock flash only B92
-        if soc_type == 'B92':
+        if soc_type in ('B92', 'TL321X'):
             print('unlocking flash...')
             unlock = subprocess.Popen(['./bdt', soc_type, 'ulf'], cwd=self.bdt_path)
             if unlock.wait():

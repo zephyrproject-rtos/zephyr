@@ -12,7 +12,7 @@
 #include "rf_common.h"
 #endif
 #include "stimer.h"
-#include "b9x_rf_power.h"
+#include "tl_rf_power.h"
 
 #define LOG_MODULE_NAME ieee802154_b9x
 #if defined(CONFIG_IEEE802154_DRIVER_LOG_LEVEL)
@@ -990,17 +990,17 @@ static int b9x_set_txpower(const struct device *dev, int16_t dbm)
 	struct b9x_data *b9x = dev->data;
 
 	/* check for supported Min/Max range */
-	if (dbm < B9X_TX_POWER_MIN) {
-		dbm = B9X_TX_POWER_MIN;
-	} else if (dbm > B9X_TX_POWER_MAX) {
-		dbm = B9X_TX_POWER_MAX;
+	if (dbm < TL_TX_POWER_MIN) {
+		dbm = TL_TX_POWER_MIN;
+	} else if (dbm > TL_TX_POWER_MAX) {
+		dbm = TL_TX_POWER_MAX;
 	}
 
 	if (b9x->current_dbm != dbm) {
 		b9x->current_dbm = dbm;
 		/* set TX power */
 		if (b9x->is_started) {
-			rf_set_power_level(b9x_tx_pwr_lt[dbm - B9X_TX_POWER_MIN]);
+			rf_set_power_level(tl_tx_pwr_lt[dbm - TL_TX_POWER_MIN]);
 		}
 	}
 
@@ -1036,7 +1036,7 @@ static int b9x_start(const struct device *dev)
 			rf_set_chn(B9X_LOGIC_CHANNEL_TO_PHYSICAL(b9x->current_channel));
 		}
 		if (b9x->current_dbm != B9X_TX_PWR_NOT_SET) {
-			rf_set_power_level(b9x_tx_pwr_lt[b9x->current_dbm - B9X_TX_POWER_MIN]);
+			rf_set_power_level(tl_tx_pwr_lt[b9x->current_dbm - TL_TX_POWER_MIN]);
 		}
 		rf_set_irq_mask(FLD_RF_IRQ_RX | FLD_RF_IRQ_TX);
 		riscv_plic_irq_enable(DT_INST_IRQN(0));

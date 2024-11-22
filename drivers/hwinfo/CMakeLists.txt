@@ -34,5 +34,6 @@ zephyr_library_sources_ifdef(CONFIG_HWINFO_SAM_RSTC    hwinfo_sam_rstc.c)
 zephyr_library_sources_ifdef(CONFIG_HWINFO_SMARTBOND   hwinfo_smartbond.c)
 zephyr_library_sources_ifdef(CONFIG_HWINFO_STM32       hwinfo_stm32.c)
 zephyr_library_sources_ifdef(CONFIG_HWINFO_TELINK_B9X  hwinfo_b9x.c)
+zephyr_library_sources_ifdef(CONFIG_HWINFO_TELINK_TLX  hwinfo_tlx.c)
 zephyr_library_sources_ifdef(CONFIG_HWINFO_TELINK_W91  hwinfo_w91.c)
 # zephyr-keep-sorted-stop

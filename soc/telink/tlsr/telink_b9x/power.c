@@ -7,7 +7,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/pm.h>
 #include <stimer.h>
-#include <b9x_sleep.h>
+#include <tl_sleep.h>
 #include <zephyr/kernel.h>
 
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
@@ -108,7 +108,7 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 		if (stimer_sleep_ticks > SYSTICKS_MAX_SLEEP) {
 			stimer_sleep_ticks = SYSTICKS_MAX_SLEEP;
 		}
-		if (b9x_suspend(tl_sleep_tick + stimer_sleep_ticks)) {
+		if (tl_suspend(tl_sleep_tick + stimer_sleep_ticks)) {
 			current_time +=
 				systicks_to_mticks(stimer_get_tick() - tl_sleep_tick);
 			set_mtime(current_time);
@@ -119,7 +119,7 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 		if (stimer_sleep_ticks > SYSTICKS_MAX_SLEEP) {
 			stimer_sleep_ticks = SYSTICKS_MAX_SLEEP;
 		}
-		if (b9x_deep_sleep(tl_sleep_tick + stimer_sleep_ticks)) {
+		if (tl_deep_sleep(tl_sleep_tick + stimer_sleep_ticks)) {
 			current_time +=
 				systicks_to_mticks(stimer_get_tick() - tl_sleep_tick);
 			set_mtime_compare(wakeup_time);

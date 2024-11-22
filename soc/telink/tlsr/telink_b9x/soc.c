@@ -23,7 +23,12 @@
 #include "b9x_bt_flash.h"
 #endif
 
-/* Software reset defines */
+#if CONFIG_SOC_RISCV_TELINK_B91
+#undef rand
+#endif /* CONFIG_SOC_RISCV_TELINK_B91 */
+#include <stdlib.h>
+
+/* Softre reset defines */
 #if CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B92
 #define reg_reset                   REG_ADDR8(0x1401ef)
 #elif CONFIG_SOC_RISCV_TELINK_B95
@@ -438,7 +443,6 @@ static int soc_b9x_check_flash(void)
 	if (hw_flash_size < dts_flash_size) {
 		printk("!!! flash error: expected (.dts) %u, actually %u\n",
 			dts_flash_size, hw_flash_size);
-		extern void abort(void);
 		abort();
 	}
 

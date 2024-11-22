@@ -34,6 +34,18 @@ config SOC_RISCV_TELINK_W91
 	help
 	  Telink W91
 
+config SOC_RISCV_TELINK_TL321X
+	bool "Telink TL321 SoC implementation"
+	select SOC_RISCV_TELINK_TLX
+	help
+	  Telink TL321X
+
+config SOC_RISCV_TELINK_TL721X
+	bool "Telink TL721 SoC implementation"
+	select SOC_RISCV_TELINK_TLX
+	help
+	  Telink TL721X
+
 endchoice
 
 config SOC_FAMILY_TELINK_TLSR

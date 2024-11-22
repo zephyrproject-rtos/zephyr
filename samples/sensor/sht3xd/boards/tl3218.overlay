@@ -1,0 +1,39 @@
+/*
+ * Copyright (c) 2024 Telink Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/tl321x-pinctrl.h>
+
+/ {
+	keys {
+		/delete-node/ button_1;
+		compatible = "gpio-keys";
+		key_1: button_1 {
+			gpios = <&gpiob 3 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		};
+	};
+};
+
+&pinctrl {
+	/* Define I2C pins: SCL(PC3), SDA(PC2) */
+
+	i2c_scl_pc3_default: i2c_scl_pc3_default {
+		pinmux = <TLX_PINMUX_SET(TLX_PORT_C, TLX_PIN_3, TL321X_FUNC_I2C_SCL_IO)>;
+		bias-pull-up;
+	};
+	i2c_sda_pc2_default: i2c_sda_pc2_default {
+		pinmux = <TLX_PINMUX_SET(TLX_PORT_C, TLX_PIN_2, TL321X_FUNC_I2C_SDA_IO)>;
+		bias-pull-up;
+	};
+};
+
+&i2c {
+	pinctrl-0 = <&i2c_scl_pc3_default &i2c_sda_pc2_default>;
+
+	sht3xd@44 {
+		compatible = "sensirion,sht3xd";
+		reg = <0x44>;
+	};
+};
