@@ -221,52 +221,47 @@ struct edma_config {
 	bool contiguous_channels;
 };
 
-static inline int channel_change_state(struct edma_channel *chan,
-				       enum channel_state next)
+static inline bool channel_allows_transition(struct edma_channel *chan,
+					     enum channel_state next)
 {
 	enum channel_state prev = chan->state;
-
-	LOG_DBG("attempting to change state from %d to %d for channel %d", prev, next, chan->id);
 
 	/* validate transition */
 	switch (prev) {
 	case CHAN_STATE_INIT:
 		if (next != CHAN_STATE_CONFIGURED) {
-			return -EPERM;
+			return false;
 		}
 		break;
 	case CHAN_STATE_CONFIGURED:
 		if (next != CHAN_STATE_STARTED &&
 		    next != CHAN_STATE_CONFIGURED) {
-			return -EPERM;
+			return false;
 		}
 		break;
 	case CHAN_STATE_STARTED:
 		if (next != CHAN_STATE_STOPPED &&
 		    next != CHAN_STATE_SUSPENDED) {
-			return -EPERM;
+			return false;
 		}
 		break;
 	case CHAN_STATE_STOPPED:
 		if (next != CHAN_STATE_CONFIGURED) {
-			return -EPERM;
+			return false;
 		}
 		break;
 	case CHAN_STATE_SUSPENDED:
 		if (next != CHAN_STATE_STARTED &&
 		    next != CHAN_STATE_STOPPED) {
-			return -EPERM;
+			return false;
 		}
 		break;
 	default:
 		LOG_ERR("invalid channel previous state: %d", prev);
-		return -EINVAL;
+		return false;
 	}
 
-	/* transition OK, proceed */
-	chan->state = next;
-
-	return 0;
+	return true;
 }
 
 static inline int get_transfer_type(enum dma_channel_direction dir, uint32_t *type)

@@ -270,11 +270,11 @@ static int edma_config(const struct device *dev, uint32_t chan_id,
 		chan->cyclic_buffer = false;
 	}
 
-	/* change channel's state to CONFIGURED */
-	ret = channel_change_state(chan, CHAN_STATE_CONFIGURED);
-	if (ret < 0) {
-		LOG_ERR("failed to change channel %d state to CONFIGURED", chan_id);
-		return ret;
+	/* check if transition to CONFIGURED is allowed */
+	if (!channel_allows_transition(chan, CHAN_STATE_CONFIGURED)) {
+		LOG_ERR("chan %d transition from %d to CONFIGURED not allowed",
+			chan_id, chan->state);
+		return -EPERM;
 	}
 
 	ret = get_transfer_type(dma_cfg->channel_direction, &transfer_type);
@@ -335,6 +335,8 @@ static int edma_config(const struct device *dev, uint32_t chan_id,
 	/* dump register status - for debugging purposes */
 	edma_dump_channel_registers(data, chan_id);
 
+	chan->state = CHAN_STATE_CONFIGURED;
+
 	return 0;
 }
 
@@ -389,7 +391,6 @@ static int edma_suspend(const struct device *dev, uint32_t chan_id)
 	struct edma_data *data;
 	const struct edma_config *cfg;
 	struct edma_channel *chan;
-	int ret;
 
 	data = dev->data;
 	cfg = dev->config;
@@ -403,11 +404,11 @@ static int edma_suspend(const struct device *dev, uint32_t chan_id)
 
 	edma_dump_channel_registers(data, chan_id);
 
-	/* change channel's state to SUSPENDED */
-	ret = channel_change_state(chan, CHAN_STATE_SUSPENDED);
-	if (ret < 0) {
-		LOG_ERR("failed to change channel %d state to SUSPENDED", chan_id);
-		return ret;
+	/* check if transition to SUSPENDED is allowed */
+	if (!channel_allows_transition(chan, CHAN_STATE_SUSPENDED)) {
+		LOG_ERR("chan %d transition from %d to SUSPENDED not allowed",
+			chan_id, chan->state);
+		return -EPERM;
 	}
 
 	LOG_DBG("suspending channel %u", chan_id);
@@ -415,6 +416,8 @@ static int edma_suspend(const struct device *dev, uint32_t chan_id)
 	/* disable HW requests */
 	EDMA_ChannelRegUpdate(data->hal_cfg, chan_id,
 			      EDMA_TCD_CH_CSR, 0, EDMA_TCD_CH_CSR_ERQ_MASK);
+
+	chan->state = CHAN_STATE_SUSPENDED;
 
 	return 0;
 }
@@ -439,11 +442,11 @@ static int edma_stop(const struct device *dev, uint32_t chan_id)
 
 	prev_state = chan->state;
 
-	/* change channel's state to STOPPED */
-	ret = channel_change_state(chan, CHAN_STATE_STOPPED);
-	if (ret < 0) {
-		LOG_ERR("failed to change channel %d state to STOPPED", chan_id);
-		return ret;
+	/* check if transition to STOPPED is allowed */
+	if (!channel_allows_transition(chan, CHAN_STATE_STOPPED)) {
+		LOG_ERR("chan %d transition from %d to STOPPED not allowed",
+			chan_id, chan->state);
+		return -EPERM;
 	}
 
 	LOG_DBG("stopping channel %u", chan_id);
@@ -482,6 +485,8 @@ out_release_channel:
 
 	edma_dump_channel_registers(data, chan_id);
 
+	chan->state = CHAN_STATE_STOPPED;
+
 	return 0;
 }
 
@@ -490,7 +495,6 @@ static int edma_start(const struct device *dev, uint32_t chan_id)
 	struct edma_data *data;
 	const struct edma_config *cfg;
 	struct edma_channel *chan;
-	int ret;
 
 	data = dev->data;
 	cfg = dev->config;
@@ -502,11 +506,11 @@ static int edma_start(const struct device *dev, uint32_t chan_id)
 		return -EINVAL;
 	}
 
-	/* change channel's state to STARTED */
-	ret = channel_change_state(chan, CHAN_STATE_STARTED);
-	if (ret < 0) {
-		LOG_ERR("failed to change channel %d state to STARTED", chan_id);
-		return ret;
+	/* check if transition to STARTED is allowed */
+	if (!channel_allows_transition(chan, CHAN_STATE_STARTED)) {
+		LOG_ERR("chan %d transition from %d to STARTED not allowed",
+			chan_id, chan->state);
+		return -EPERM;
 	}
 
 	LOG_DBG("starting channel %u", chan_id);
@@ -516,6 +520,8 @@ static int edma_start(const struct device *dev, uint32_t chan_id)
 	/* enable HW requests */
 	EDMA_ChannelRegUpdate(data->hal_cfg, chan_id,
 			      EDMA_TCD_CH_CSR, EDMA_TCD_CH_CSR_ERQ_MASK, 0);
+
+	chan->state = CHAN_STATE_STARTED;
 
 	return 0;
 }
