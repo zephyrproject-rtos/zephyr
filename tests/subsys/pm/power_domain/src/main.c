@@ -114,6 +114,7 @@ DEVICE_DEFINE(devc, "devc", NULL, PM_DEVICE_GET(devc),
  *
  * - get + put multiple devices under a domain
  * - notification when domain state changes
+ * - CONFIG_POWER_DOMAIN is disabled
  */
 ZTEST(power_domain_1cpu, test_power_domain_device_runtime)
 {
@@ -122,20 +123,24 @@ ZTEST(power_domain_1cpu, test_power_domain_device_runtime)
 
 	devc = DEVICE_GET(devc);
 
-	pm_device_init_suspended(domain);
 	pm_device_init_suspended(deva);
 	pm_device_init_suspended(devb);
 	pm_device_init_suspended(devc);
 
-	pm_device_runtime_enable(domain);
 	pm_device_runtime_enable(deva);
 	pm_device_runtime_enable(devb);
 	pm_device_runtime_enable(devc);
 
+#ifdef CONFIG_POWER_DOMAIN
+	pm_device_init_suspended(domain);
+	pm_device_runtime_enable(domain);
+
 	ret = pm_device_power_domain_remove(devc, domain);
 	zassert_equal(ret, -ENOENT);
+	zassert_equal(pm_device_get_power_domain(devc), NULL);
 
 	ret = pm_device_power_domain_add(devc, domain);
+	zassert_equal(pm_device_get_power_domain(devc), domain);
 	zassert_equal(ret, 0);
 
 	/* At this point all devices should be SUSPENDED */
@@ -219,7 +224,12 @@ ZTEST(power_domain_1cpu, test_power_domain_device_runtime)
 	zassert_equal(testing_domain_off_notitication, 0);
 
 	ret = pm_device_power_domain_remove(devc, domain);
+	zassert_equal(pm_device_get_power_domain(devc), NULL);
 	zassert_equal(ret, 0);
+#else
+	zassert_equal(pm_device_get_power_domain(devc), NULL);
+#endif
+
 }
 
 #define TEST_DOMAIN_BALANCED DT_NODELABEL(test_domain_balanced)
@@ -240,6 +250,7 @@ DEVICE_DT_DEFINE(TEST_DEV_BALANCED, NULL, PM_DEVICE_DT_GET(TEST_DEV_BALANCED),
  *
  * - get + put device with a PD while PM is disabled
  */
+#ifdef CONFIG_POWER_DOMAIN
 ZTEST(power_domain_1cpu, test_power_domain_device_balanced)
 {
 	const struct device *balanced_domain = DEVICE_DT_GET(TEST_DOMAIN_BALANCED);
@@ -278,23 +289,35 @@ ZTEST(power_domain_1cpu, test_power_domain_device_balanced)
 	pm_device_state_get(balanced_domain, &state);
 	zassert_equal(state, PM_DEVICE_STATE_ACTIVE);
 }
+#endif
 
 ZTEST(power_domain_1cpu, test_on_power_domain)
 {
-	zassert_true(device_is_ready(domain), "Device is not ready!");
 	zassert_true(device_is_ready(deva), "Device is not ready!");
 	devc = DEVICE_GET(devc);
 	zassert_true(device_is_ready(devc), "Device is not ready!");
+#ifdef CONFIG_POWER_DOMAIN
+	zassert_true(device_is_ready(domain), "Device is not ready!");
 
 	pm_device_power_domain_remove(deva, domain);
 	zassert_false(pm_device_on_power_domain(deva), "deva is in the power domain.");
+	zassert_equal(pm_device_get_power_domain(deva), NULL);
+
 	pm_device_power_domain_add(deva, domain);
 	zassert_true(pm_device_on_power_domain(deva), "deva is not in the power domain.");
+	zassert_equal(pm_device_get_power_domain(deva), domain);
 
 	pm_device_power_domain_add(devc, domain);
 	zassert_true(pm_device_on_power_domain(devc), "devc is not in the power domain.");
+	zassert_equal(pm_device_get_power_domain(devc), domain);
+
 	pm_device_power_domain_remove(devc, domain);
 	zassert_false(pm_device_on_power_domain(devc), "devc in the power domain.");
+	zassert_equal(pm_device_get_power_domain(devc), NULL);
+#else
+	zassert_equal(pm_device_get_power_domain(deva), NULL);
+	zassert_equal(pm_device_get_power_domain(devc), NULL);
+#endif
 }
 
 ZTEST_SUITE(power_domain_1cpu, NULL, NULL, ztest_simple_1cpu_before,
