@@ -39,6 +39,13 @@
 	};
 
 	soc {
+		flash: flash@10000000 {
+			reg = <0x10000000 DT_SIZE_M(1)>;
+			compatible = "soc-nv-flash";
+			write-block-size = <16>;
+			erase-block-size = <8192>;
+		};
+
 		ctcm: sram@14000000 {
 			ranges = <0x0 0x14000000 DT_SIZE_K(16)>;
 			#address-cells = <1>;
@@ -91,13 +98,6 @@
 					reg = <0x20000 0x1000>;
 					interrupts = <27 0>;
 					status = "disabled";
-
-					flash: flash@0 {
-						reg = <0x0 DT_SIZE_M(1)>;
-						compatible = "soc-nv-flash";
-						write-block-size = <16>;
-						erase-block-size = <8192>;
-					};
 				};
 			};
 
