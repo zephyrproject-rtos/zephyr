@@ -127,6 +127,8 @@ struct cdc_acm_uart_data {
 	 * The variable is set on line coding request.
 	 */
 	bool first_tx_pkt;
+	/* Trace whether uart_irq_update() was called or not */
+	bool irq_updated;
 	/* USBD CDC ACM TX fifo work */
 	struct k_work_delayable tx_fifo_work;
 	/* USBD CDC ACM RX fifo work */
@@ -841,6 +843,8 @@ static int cdc_acm_irq_update(const struct device *dev)
 		data->tx_fifo.irq = false;
 	}
 
+	data->irq_updated = true;
+
 	return 1;
 }
 
@@ -873,10 +877,16 @@ static void cdc_acm_irq_cb_handler(struct k_work *work)
 	data->rx_fifo.altered = false;
 	data->rx_fifo.irq = false;
 	data->tx_fifo.irq = false;
+	data->irq_updated = false;
 
 	if (atomic_test_bit(&data->state, CDC_ACM_IRQ_RX_ENABLED) ||
 	    atomic_test_bit(&data->state, CDC_ACM_IRQ_TX_ENABLED)) {
 		data->cb(usbd_class_get_private(c_data), data->cb_data);
+	}
+
+	if (!data->irq_updated) {
+		LOG_ERR("User callback did not call uart_irq_update()");
+		return;
 	}
 
 	if (data->rx_fifo.altered) {
