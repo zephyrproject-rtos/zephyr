@@ -72,6 +72,13 @@
 			clocks = <&rc25m>, <&pll>;
 			clock-names = "rc25m", "pll";
 		};
+
+		pinctrl: pin-controller@40090000 {
+			compatible = "realtek,rts5912-pinctrl";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0x40090000 0x300>;
+		};
 	};
 };
 
