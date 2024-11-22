@@ -11,6 +11,8 @@
 #include <zephyr/irq.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device_runtime.h>
+#include <zephyr/pm/device.h>
 
 #include "fsl_edma_soc_rev2.h"
 
@@ -54,12 +56,18 @@ LOG_MODULE_REGISTER(nxp_edma);
 		    0, edma_isr,				\
 		    &channels_##inst[idx], 0)
 
+#define _EDMA_CHANNEL_PD_DEVICE_OR_NULL(idx, inst)						\
+	COND_CODE_1(CONFIG_PM_DEVICE_POWER_DOMAIN,						\
+		    (DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE_BY_IDX(inst, power_domains, idx))),	\
+		    (NULL))
+
 /* used to declare a struct edma_channel by the non-explicit macro suite */
 #define _EDMA_CHANNEL_DECLARE(idx, inst)				\
 {									\
 	.id = DT_INST_PROP_BY_IDX(inst, valid_channels, idx),		\
 	.dev = DEVICE_DT_INST_GET(inst),				\
 	.irq = DT_INST_IRQN_BY_IDX(inst, idx),				\
+	.pd_dev = _EDMA_CHANNEL_PD_DEVICE_OR_NULL(idx, inst),		\
 }
 
 /* used to declare a struct edma_channel by the explicit macro suite */
@@ -68,6 +76,7 @@ LOG_MODULE_REGISTER(nxp_edma);
 	.id = idx,							\
 	.dev = DEVICE_DT_INST_GET(inst),				\
 	.irq = DT_INST_IRQN_BY_IDX(inst, idx),				\
+	.pd_dev = _EDMA_CHANNEL_PD_DEVICE_OR_NULL(idx, inst),		\
 }
 
 /* used to create an array of channel IDs via the valid-channels property */
@@ -183,6 +192,8 @@ struct edma_channel {
 	uint32_t id;
 	/* pointer to device representing the EDMA instance, used by edma_isr */
 	const struct device *dev;
+	/* channel power domain device */
+	const struct device *pd_dev;
 	/* current state of the channel */
 	enum channel_state state;
 	/* type of the channel (PRODUCER/CONSUMER) - only applicable to cyclic
