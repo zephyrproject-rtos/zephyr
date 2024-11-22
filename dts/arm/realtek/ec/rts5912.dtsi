@@ -49,6 +49,12 @@
 		#size-cells = <1>;
 		compatible = "simple-bus";
 		ranges;
+
+		sccon: clock-controller@40020000 {
+			compatible = "realtek,rts5912-sccon";
+			reg = <0x40020000 0xf0>;
+			#clock-cells = <2>;
+		};
 	};
 };
 
