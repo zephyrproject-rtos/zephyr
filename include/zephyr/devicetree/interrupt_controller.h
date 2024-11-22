@@ -93,6 +93,14 @@ extern "C" {
 	| (DT_INST_IRQ_BY_IDX(inst, idx, priority)) << 0)
 
 /**
+ * @brief Equivalent to DT_INTC_FLAGS_BY_IDX(inst, 0)
+ * @param inst instance of an interrupt controller
+ * @return the flags cell value at index 0, or zero if there is none
+ * @see DT_INTC_FLAGS_BY_IDX()
+ */
+#define DT_INTC_FLAGS(inst) DT_INTC_FLAGS_BY_IDX(inst, 0)
+
+/**
  * @}
  */
 
