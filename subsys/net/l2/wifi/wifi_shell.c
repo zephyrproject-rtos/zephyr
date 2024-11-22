@@ -580,6 +580,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 		{"key2-pwd", required_argument, 0, 'K'},
 		{"suiteb-type", required_argument, 0, 'S'},
 		{"TLS-cipher", required_argument, 0, 'T'},
+		{"use-ca", required_argument, 0, 'A'},
 		{"eap-version", required_argument, 0, 'V'},
 		{"eap-id1", required_argument, 0, 'I'},
 		{"eap-id2", required_argument, 0, 'I'},
@@ -625,8 +626,9 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 	params->mfp = WIFI_MFP_OPTIONAL;
 	params->eap_ver = 1;
 	params->ignore_broadcast_ssid = 0;
+	params->verify_peer = 0;
 
-	while ((opt = getopt_long(argc, argv, "s:p:k:e:w:b:c:m:t:a:K:S:T:V:I:P:d:i:Rh",
+	while ((opt = getopt_long(argc, argv, "s:p:k:e:w:b:c:m:t:a:K:S:T:A:V:I:P:d:i:Rh",
 				  long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
@@ -771,6 +773,21 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			break;
 		case 'T':
 			params->TLS_cipher = atoi(optarg);
+			break;
+		case 'A':
+			if (iface_mode == WIFI_MODE_INFRA) {
+				switch (atoi(state->optarg)) {
+				case 0:
+					params->verify_peer = 0;
+					break;
+				case 1:
+					params->verify_peer = 1;
+					break;
+				default:
+					PR_ERROR("Invalid use-ca: %d\n", atoi(state->optarg));
+					return -EINVAL;
+				}
+			}
 			break;
 		case 'V':
 			params->eap_ver = atoi(optarg);
@@ -3585,6 +3602,8 @@ SHELL_SUBCMD_ADD((wifi), connect, &wifi_commands,
 		  "Private key passwd for enterprise mode. Default no password for private key.\n"
 		  "[-S, --suiteb-type]: 1:suiteb, 2:suiteb-192. Default 0: not suiteb mode.\n"
 		  "[-T, --TLS-cipher]: 0:TLS-NONE, 1:TLS-ECC-P384, 2:TLS-RSA-3K.\n"
+		  "[-A, --use-ca]: apply for EAP-PEAP-MSCHAPv2 and EAP-TTLS-MSCHAPv2\n"
+		  "Default 0. 0:not use ca to verify peer, 1:use ca to verify peer.\n"
 		  "[-V, --eap-version]: 0 or 1. Default 1: eap version 1.\n"
 		  "[-I, --eap-id1]: Client Identity. Default no eap identity.\n"
 		  "[-P, --eap-pwd1]: Client Password.\n"
