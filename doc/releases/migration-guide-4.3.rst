@@ -69,6 +69,14 @@ Bluetooth
 * :c:struct:`bt_conn_le_cs_main_mode` and :c:struct:`bt_conn_le_cs_sub_mode` have been replaced
   with :c:struct:`bt_conn_le_cs_mode`.
 
+Bluetooth Controller
+====================
+
+* The following Kconfig option have been renamed:
+
+    * :kconfig:option:`CONFIG_BT_CTRL_ADV_ADI_IN_SCAN_RSP` to
+      :kconfig:option:`CONFIG_BT_CTLR_ADV_ADI_IN_SCAN_RSP`
+
 .. zephyr-keep-sorted-start re(^\w)
 
 Bluetooth Audio
