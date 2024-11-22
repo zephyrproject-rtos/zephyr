@@ -5,7 +5,6 @@ on:
     workflows: ["Run tests with twister"]
     branches:
       - main
-      - v*
     types:
       - completed
 
