@@ -141,4 +141,21 @@
 #define MCO2_SEL(val)           STM32_MCO_CFGR(val, 0xF, 29, CFGR_REG)
 #define MCO2_PRE(val)           STM32_MCO_CFGR(val, 0x7, 25, CFGR_REG)
 
+/* MCO prescaler : division factor */
+#define MCO_PRE_DIV_1 1
+#define MCO_PRE_DIV_2 2
+#define MCO_PRE_DIV_3 3
+#define MCO_PRE_DIV_4 4
+#define MCO_PRE_DIV_5 5
+#define MCO_PRE_DIV_6 6
+#define MCO_PRE_DIV_7 7
+#define MCO_PRE_DIV_8 8
+#define MCO_PRE_DIV_9 9
+#define MCO_PRE_DIV_10 10
+#define MCO_PRE_DIV_11 11
+#define MCO_PRE_DIV_12 12
+#define MCO_PRE_DIV_13 13
+#define MCO_PRE_DIV_14 14
+#define MCO_PRE_DIV_15 15
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32H7_CLOCK_H_ */

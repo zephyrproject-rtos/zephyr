@@ -82,4 +82,11 @@
 /** BDCR devices */
 #define RTC_SEL(val)  STM32_DOMAIN_CLOCK(val, 3, 8, BDCR_REG)
 
+/* MCO prescaler : division factor */
+#define MCO_PRE_DIV_1 0
+#define MCO_PRE_DIV_2 4
+#define MCO_PRE_DIV_3 5
+#define MCO_PRE_DIV_4 6
+#define MCO_PRE_DIV_5 7
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32F4_CLOCK_H_ */
