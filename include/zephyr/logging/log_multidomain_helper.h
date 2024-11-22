@@ -70,7 +70,7 @@
 
 /** @brief Content of the logging message. */
 struct log_multidomain_log_msg {
-	uint8_t data[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, data);
 } __packed;
 
 /** @brief Content of the domain count message. */
@@ -87,14 +87,14 @@ struct log_multidomain_source_cnt {
 /** @brief Content of the domain name message. */
 struct log_multidomain_domain_name {
 	uint8_t domain_id;
-	char name[0];
+	char name[];
 } __packed;
 
 /** @brief Content of the source name message. */
 struct log_multidomain_source_name {
 	uint8_t domain_id;
 	uint16_t source_id;
-	char name[0];
+	char name[];
 } __packed;
 
 /** @brief Content of the message for getting logging levels. */
