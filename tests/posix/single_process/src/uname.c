@@ -4,9 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/utsname.h>
-#include <unistd.h>
-
+#include <zephyr/posix/sys/utsname.h>
+#include <zephyr/posix/unistd.h>
 #include <zephyr/ztest.h>
 
 ZTEST(posix_single_process, test_uname)
