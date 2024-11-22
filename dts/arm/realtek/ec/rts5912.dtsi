@@ -1,0 +1,62 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2024 Realtek Semiconductor Corporation, SIBG-SD7
+ *
+ */
+
+#include <arm/armv8-m.dtsi>
+#include <zephyr/dt-bindings/clock/rts5912_clock.h>
+#include <zephyr/dt-bindings/gpio/realtek-gpio.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "arm,cortex-m33f";
+			reg = <0>;
+			cpu-power-states = <&idle &suspend_to_ram>;
+		};
+
+		power-states {
+			idle: idle {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				min-residency-us = <100000>;
+			};
+
+			suspend_to_ram: suspend_to_ram {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-ram";
+				min-residency-us = <250000>;
+			};
+		};
+	};
+
+	flash0: flash@20000400 {
+		reg = <0x20000400 0x4FC00>;
+	};
+
+	sram0: memory@20050000 {
+		compatible = "mmio-sram";
+		reg = <0x20050000 0x8000>;
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		interrupt-parent = <&nvic>;
+		ranges;
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};
+
+&systick {
+	status = "disabled";
+};
