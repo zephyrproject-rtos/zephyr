@@ -46,6 +46,7 @@ struct gpio_stepper_data {
 static int stepper_motor_set_coil_charge(const struct device *dev)
 {
 	struct gpio_stepper_data *data = dev->data;
+	/* touch */
 	const struct gpio_stepper_config *config = dev->config;
 
 	for (int i = 0; i < NUM_CONTROL_PINS; i++) {
