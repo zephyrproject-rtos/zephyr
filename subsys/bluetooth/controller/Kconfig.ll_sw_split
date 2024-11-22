@@ -524,10 +524,20 @@ config BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY
 	  that is part of PDU data.
 
 config BT_CTRL_ADV_ADI_IN_SCAN_RSP
+	bool "Include ADI in AUX_SCAN_RSP PDU [DEPRECATED]"
+	depends on BT_BROADCASTER && BT_CTLR_ADV_EXT
+	select BT_CTLR_ADV_ADI_IN_SCAN_RSP
+	select DEPRECATED
+	help
+	  DEPRECATED: Renamed as BT_CTLR_ADV_ADI_IN_SCAN_RSP.
+
+	  Enable ADI field in AUX_SCAN_RSP PDU.
+
+config BT_CTLR_ADV_ADI_IN_SCAN_RSP
 	bool "Include ADI in AUX_SCAN_RSP PDU"
 	depends on BT_BROADCASTER && BT_CTLR_ADV_EXT
 	help
-	  Enable ADI field in AUX_SCAN_RSP PDU
+	  Enable ADI field in AUX_SCAN_RSP PDU.
 
 config BT_CTLR_SCAN_AUX_USE_CHAINS
 	bool "Use new chains based implementation for following advertising chains"
