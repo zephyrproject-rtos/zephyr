@@ -82,6 +82,7 @@ static int memc_mspi_aps6404l_command_write(const struct device *psram, uint8_t 
 	data->trans.async             = false;
 	data->trans.xfer_mode         = MSPI_PIO;
 	data->trans.tx_dummy          = 0;
+	data->trans.rx_dummy          = data->dev_cfg.rx_dummy;
 	data->trans.cmd_length        = 1;
 	data->trans.addr_length       = 0;
 	data->trans.hold_ce           = false;
@@ -118,6 +119,7 @@ static int memc_mspi_aps6404l_command_read(const struct device *psram, uint8_t c
 
 	data->trans.async             = false;
 	data->trans.xfer_mode         = MSPI_PIO;
+	data->trans.tx_dummy          = data->dev_cfg.tx_dummy;
 	data->trans.rx_dummy          = 0;
 	data->trans.cmd_length        = 1;
 	data->trans.addr_length       = 3;
@@ -393,8 +395,8 @@ static int memc_mspi_aps6404l_init(const struct device *psram)
 		.write_cmd          = APS6404L_WRITE,                                             \
 		.cmd_length         = 1,                                                          \
 		.addr_length        = 3,                                                          \
-		.mem_boundary       = 1024,                                                        \
-		.time_to_break      = 8,                                                         \
+		.mem_boundary       = 1024,                                                       \
+		.time_to_break      = 8,                                                          \
 	}
 
 #define MSPI_DEVICE_CONFIG_QUAD(n)                                                                \
@@ -413,28 +415,21 @@ static int memc_mspi_aps6404l_init(const struct device *psram)
 		.write_cmd          = APS6404L_QUAD_WRITE,                                        \
 		.cmd_length         = 1,                                                          \
 		.addr_length        = 3,                                                          \
-		.mem_boundary       = 1024,                                                        \
-		.time_to_break      = 4,                                                         \
+		.mem_boundary       = 1024,                                                       \
+		.time_to_break      = 4,                                                          \
 	}
 
-#if CONFIG_SOC_FAMILY_AMBIQ
 #define MSPI_TIMING_CONFIG(n)                                                                     \
-	{                                                                                         \
-		.ui8WriteLatency    = DT_INST_PROP_BY_IDX(n, ambiq_timing_config, 0),             \
-		.ui8TurnAround      = DT_INST_PROP_BY_IDX(n, ambiq_timing_config, 1),             \
-		.bTxNeg             = DT_INST_PROP_BY_IDX(n, ambiq_timing_config, 2),             \
-		.bRxNeg             = DT_INST_PROP_BY_IDX(n, ambiq_timing_config, 3),             \
-		.bRxCap             = DT_INST_PROP_BY_IDX(n, ambiq_timing_config, 4),             \
-		.ui32TxDQSDelay     = DT_INST_PROP_BY_IDX(n, ambiq_timing_config, 5),             \
-		.ui32RxDQSDelay     = DT_INST_PROP_BY_IDX(n, ambiq_timing_config, 6),             \
-		.ui32RXDQSDelayEXT  = DT_INST_PROP_BY_IDX(n, ambiq_timing_config, 7),             \
-	}
-#define MSPI_TIMING_CONFIG_MASK(n) DT_INST_PROP(n, ambiq_timing_config_mask)
-#else
-#define MSPI_TIMING_CONFIG(n) {}
-#define MSPI_TIMING_CONFIG_MASK(n) MSPI_TIMING_PARAM_DUMMY
-#define MSPI_PORT(n) 0
-#endif
+	COND_CODE_1(CONFIG_SOC_FAMILY_AMBIQ,                                                      \
+		(MSPI_AMBIQ_TIMING_CONFIG(n)), ({}))                                              \
+
+#define MSPI_TIMING_CONFIG_MASK(n)                                                                \
+	COND_CODE_1(CONFIG_SOC_FAMILY_AMBIQ,                                                      \
+		(MSPI_AMBIQ_TIMING_CONFIG_MASK(n)), (MSPI_TIMING_PARAM_DUMMY))                    \
+
+#define MSPI_PORT(n)                                                                              \
+	COND_CODE_1(CONFIG_SOC_FAMILY_AMBIQ,                                                      \
+		(MSPI_AMBIQ_PORT(n)), (0))                                                        \
 
 #define MEMC_MSPI_APS6404L(n)                                                                     \
 	static const struct memc_mspi_aps6404l_config                                             \
