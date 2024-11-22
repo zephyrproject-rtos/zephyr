@@ -1159,8 +1159,15 @@ li>a.code-sample-link.reference.internal.current {
     margin-top: 12px !important;
     margin-bottom: 12px !important;
     grid-template-columns: auto 1fr !important;
+    padding-right: 1em;
 }
 
 .sidebar.board-overview dl.field-list > dt {
     background: transparent !important;
+}
+
+.sidebar.board-overview dl.field-list>dd {
+    margin-left: 1em;
+    text-overflow: ellipsis;
+    overflow: hidden;
 }
