@@ -30,7 +30,7 @@ int prometheus_collector_register_metric(struct prometheus_collector *collector,
 		return -EINVAL;
 	}
 
-	LOG_DBG("Registering metric type=%d", metric->type);
+	LOG_DBG("Registering metric type=%d name=\"%s\"", metric->type, metric->name);
 
 	k_mutex_lock(&collector->lock, K_FOREVER);
 
