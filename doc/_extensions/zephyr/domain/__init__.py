@@ -253,6 +253,7 @@ class ConvertBoardNode(SphinxTransform):
             sidebar += field_list
 
             details = [
+                ("Name", nodes.literal(text=node["id"])),
                 ("Vendor", node["vendor"]),
                 ("Architecture", ", ".join(node["archs"])),
                 ("SoC", ", ".join(node["socs"])),
@@ -262,7 +263,10 @@ class ConvertBoardNode(SphinxTransform):
                 field = nodes.field()
                 field_name = nodes.field_name(text=property_name)
                 field_body = nodes.field_body()
-                field_body += nodes.paragraph(text=value)
+                if isinstance(value, nodes.Node):
+                    field_body += value
+                else:
+                    field_body += nodes.paragraph(text=value)
                 field += field_name
                 field += field_body
                 field_list += field
