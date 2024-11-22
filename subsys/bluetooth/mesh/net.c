@@ -272,6 +272,8 @@ bool bt_mesh_iv_update(void)
 
 bool bt_mesh_net_iv_update(uint32_t iv_index, bool iv_update)
 {
+	bool iv_update_is_same;
+
 	/* Check if IV index should to be recovered. */
 	if (iv_index < bt_mesh.iv_index ||
 	    iv_index > bt_mesh.iv_index + 42) {
@@ -285,27 +287,27 @@ bool bt_mesh_net_iv_update(uint32_t iv_index, bool iv_update)
 		return false;
 	}
 
-	if ((iv_index > bt_mesh.iv_index + 1) ||
-	    (iv_index == bt_mesh.iv_index + 1 &&
-	     (atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_IN_PROGRESS) || !iv_update))) {
+	iv_update_is_same = (atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_IN_PROGRESS) == iv_update);
+
+	/* MshPRTv1.1 allows to initiate an
+	 * IV Index Recovery procedure if previous IV update has
+	 * been missed. This allows the node to remain
+	 * functional.
+	 *
+	 * Upon receiving and successfully authenticating a
+	 * Secure Network beacon for a primary subnet whose
+	 * IV Index is 1 or more higher than the current known IV
+	 * Index, the node shall set its current IV Index and its
+	 * current IV Update procedure state from the values in
+	 * this Secure Network beacon.
+	 */
+	if (((iv_index - bt_mesh.iv_index) + iv_update_is_same) > 1) {
 		if (ivi_was_recovered &&
 		    (bt_mesh.ivu_duration < (2 * BT_MESH_IVU_MIN_HOURS))) {
 			LOG_ERR("IV Index Recovery before minimum delay");
 			return false;
 		}
 
-		/* MshPRTv1.1 allows to initiate an
-		 * IV Index Recovery procedure if previous IV update has
-		 * been missed. This allows the node to remain
-		 * functional.
-		 *
-		 * Upon receiving and successfully authenticating a
-		 * Secure Network beacon for a primary subnet whose
-		 * IV Index is 1 or more higher than the current known IV
-		 * Index, the node shall set its current IV Index and its
-		 * current IV Update procedure state from the values in
-		 * this Secure Network beacon.
-		 */
 		LOG_WRN("Performing IV Index Recovery");
 		ivi_was_recovered = true;
 		bt_mesh_rpl_clear();
@@ -315,7 +317,7 @@ bool bt_mesh_net_iv_update(uint32_t iv_index, bool iv_update)
 		goto do_update;
 	}
 
-	if (atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_IN_PROGRESS) == iv_update) {
+	if (iv_update_is_same) {
 		LOG_DBG("No change for IV Update procedure");
 		return false;
 	}
