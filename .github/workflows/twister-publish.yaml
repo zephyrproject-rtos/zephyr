@@ -43,9 +43,11 @@ jobs:
           if [ "${{github.event.workflow_run.event}}" = "push" ]; then
             python3 ./scripts/ci/upload_test_results_es.py -r ${run_date} \
             --run-attempt ${{github.run_attempt}} \
+            --run-branch ${{github.ref_name}} \
             --index zephyr-main-ci-push-1 artifacts/*/*/twister.json
           elif [ "${{github.event.workflow_run.event}}" = "schedule" ]; then
             python3 ./scripts/ci/upload_test_results_es.py -r ${run_date} \
             --run-attempt ${{github.run_attempt}} \
+            --run-branch ${{github.ref_name}} \
             --index zephyr-main-ci-weekly-1 artifacts/*/*/twister.json
           fi
