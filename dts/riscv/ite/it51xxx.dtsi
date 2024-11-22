@@ -43,7 +43,7 @@
 		ranges;
 
 		flashctrl: flash-controller@f01000 {
-			compatible = "ite,it51xxx-flash-controller";
+			compatible = "ite,it8xxx2-flash-controller";
 			reg = <0x00f01000 0x100>;
 			#address-cells = <1>;
 			#size-cells = <1>;
