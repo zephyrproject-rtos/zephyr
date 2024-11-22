@@ -408,6 +408,14 @@ Bluetooth Host
   makes a device vulnerable for downgrade attacks. If an application still needs to use LE legacy
   pairing, it should disable :kconfig:option:`CONFIG_BT_SMP_SC_PAIR_ONLY` manually.
 
+Bluetooth Controller
+====================
+
+* The following Kconfig option have been renamed:
+
+    * :kconfig:option:`CONFIG_BT_CTRL_ADV_ADI_IN_SCAN_RSP` to
+      :kconfig:option:`CONFIG_BT_CTLR_ADV_ADI_IN_SCAN_RSP`
+
 Bluetooth Crypto
 ================
 
