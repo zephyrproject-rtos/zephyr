@@ -8,6 +8,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
+#include <debug_swj.h>
 #include <soc.h>
 
 #if defined(CONFIG_RTS5912_ON_ENTER_CPU_IDLE_HOOK)
@@ -26,4 +27,5 @@ bool z_arm_on_enter_cpu_idle(void)
 void soc_early_init_hook(void)
 {
 	/* Apply device related preinit configuration */
+	swj_connector_init();
 }
