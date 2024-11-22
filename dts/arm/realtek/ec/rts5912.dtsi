@@ -55,6 +55,13 @@
 			reg = <0x40020000 0xf0>;
 			#clock-cells = <2>;
 		};
+
+		pinctrl: pin-controller@40090000 {
+			compatible = "realtek,rts5912-pinctrl";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0x40090000 0x300>;
+		};
 	};
 };
 
