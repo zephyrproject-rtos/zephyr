@@ -232,17 +232,19 @@ static void bt_uart_isr(const struct device *unused, void *user_data)
 	ARG_UNUSED(unused);
 	ARG_UNUSED(user_data);
 
-	if (!(uart_irq_rx_ready(hci_uart_dev) ||
-	      uart_irq_tx_ready(hci_uart_dev))) {
-		LOG_DBG("spurious interrupt");
-	}
+	while (uart_irq_update(hci_uart_dev) && uart_irq_is_pending(hci_uart_dev)) {
+		if (!(uart_irq_rx_ready(hci_uart_dev) ||
+		      uart_irq_tx_ready(hci_uart_dev))) {
+			LOG_DBG("spurious interrupt");
+		}
 
-	if (uart_irq_tx_ready(hci_uart_dev)) {
-		tx_isr();
-	}
+		if (uart_irq_tx_ready(hci_uart_dev)) {
+			tx_isr();
+		}
 
-	if (uart_irq_rx_ready(hci_uart_dev)) {
-		rx_isr();
+		if (uart_irq_rx_ready(hci_uart_dev)) {
+			rx_isr();
+		}
 	}
 }
 
