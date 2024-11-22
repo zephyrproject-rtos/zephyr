@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2024 Realtek Semiconductor Corporation, SIBG-SD7
+#
+
+config CLOCK_CONTROL_RTS5912_SCCON
+	bool "Realtek RTS5912 system clock controller driver"
+	default y if DT_HAS_REALTEK_RTS5912_SCCON_ENABLED
+	help
+	  Enable support for RTS5912 system clock controller driver

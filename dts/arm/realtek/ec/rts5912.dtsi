@@ -44,12 +44,34 @@
 		reg = <0x20050000 0x8000>;
 	};
 
+	clocks {
+		rc25m: rc25m {
+			compatible = "fixed-clock";
+			clock-frequency = <25000000>;
+			#clock-cells = <0>;
+		};
+
+		pll: pll {
+			compatible = "fixed-clock";
+			clock-frequency = <100000000>;
+			#clock-cells = <0>;
+		};
+	};
+
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
 		compatible = "simple-bus";
 		interrupt-parent = <&nvic>;
 		ranges;
+
+		sccon: clock-controller@40020000 {
+			compatible = "realtek,rts5912-sccon";
+			reg = <0x40020000 0xf0>;
+			#clock-cells = <2>;
+			clocks = <&rc25m>, <&pll>;
+			clock-names = "rc25m", "pll";
+		};
 	};
 };
 
