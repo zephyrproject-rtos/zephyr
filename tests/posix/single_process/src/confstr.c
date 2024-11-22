@@ -5,9 +5,9 @@
  */
 
 #include <errno.h>
-#include <unistd.h>
 
 #include <zephyr/ztest.h>
+#include <zephyr/posix/unistd.h>
 #include <zephyr/sys/util.h>
 
 ZTEST(posix_single_process, test_confstr)

@@ -6,7 +6,8 @@
  */
 
 #include <zephyr/ztest.h>
-#include <unistd.h>
+
+#include <zephyr/posix/unistd.h>
 
 ZTEST(posix_single_process, test_posix_sysconf)
 {
