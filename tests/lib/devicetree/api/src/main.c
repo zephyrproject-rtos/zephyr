@@ -6,6 +6,7 @@
 
 #include <zephyr/ztest.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/devicetree/interrupt_controller.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/gpio.h>
@@ -3536,6 +3537,13 @@ ZTEST(devicetree_api, test_reset)
 #define DT_DRV_COMPAT vnd_interrupt_holder_extended
 ZTEST(devicetree_api, test_interrupt_controller)
 {
+	/* DT_INTC_FLAGS_BY_IDX */
+	zassert_equal(DT_INTC_FLAGS_BY_IDX(TEST_IRQ_EXT, 0), 0x4607, "");
+	zassert_equal(DT_INTC_FLAGS_BY_IDX(TEST_IRQ_EXT, 2), 0x2A07, "");
+
+	/* DT_INTC_FLAGS */
+	zassert_equal(DT_INTC_FLAGS(TEST_IRQ_EXT), 0x4607, "");
+
 	/* DT_IRQ_INTC_BY_IDX */
 	zassert_true(DT_SAME_NODE(DT_IRQ_INTC_BY_IDX(TEST_IRQ_EXT, 0), TEST_INTC), "");
 	zassert_true(DT_SAME_NODE(DT_IRQ_INTC_BY_IDX(TEST_IRQ_EXT, 1), TEST_GPIO_4), "");
