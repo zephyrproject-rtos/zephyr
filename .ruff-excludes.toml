@@ -43,35 +43,8 @@
 "./boards/microchip/mec172xevb_assy6906/support/mec172x_remote_flasher.py" = [
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
 ]
-"./doc/_scripts/gen_boards_catalog.py" = [
-    "E401",     # https://docs.astral.sh/ruff/rules/multiple-imports-on-one-line
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
-]
-"./doc/_scripts/gen_devicetree_rest.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
-    "UP034",    # https://docs.astral.sh/ruff/rules/extraneous-parentheses
-]
-"./doc/_scripts/gen_helpers.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
-]
 "./doc/_scripts/redirects.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-]
-"./doc/conf.py" = [
-    "E402",     # https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
-    "F821",     # https://docs.astral.sh/ruff/rules/undefined-name
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
-]
-"./doc/develop/test/twister/sample_blackbox_test.py" = [
-    "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
 ]
 "./modules/mbedtls/create_psa_files.py" = [
     "E101",     # https://docs.astral.sh/ruff/rules/mixed-spaces-and-tabs
