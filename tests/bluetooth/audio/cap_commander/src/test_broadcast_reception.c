@@ -9,7 +9,6 @@
 #include <stdlib.h>
 
 #include <zephyr/bluetooth/audio/cap.h>
-#include <zephyr/bluetooth/audio/vcp.h>
 #include <zephyr/fff.h>
 
 #include "bluetooth.h"
@@ -20,8 +19,6 @@
 #include "test_common.h"
 
 #include <zephyr/logging/log.h>
-
-int bt_cap_common_proc_is_active(void);
 
 LOG_MODULE_REGISTER(bt_broadcast_reception_test, CONFIG_BT_CAP_COMMANDER_LOG_LEVEL);
 
