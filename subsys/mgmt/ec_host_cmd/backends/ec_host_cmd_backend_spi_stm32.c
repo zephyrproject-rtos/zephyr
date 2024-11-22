@@ -706,10 +706,6 @@ static int ec_host_cmd_spi_init(const struct ec_host_cmd_backend *backend,
 		return -EIO;
 	}
 
-	gpio_init_callback(&hc_spi->cs_callback, gpio_cb_nss, BIT(hc_spi->cs.pin));
-	gpio_add_callback(hc_spi->cs.port, &hc_spi->cs_callback);
-	gpio_pin_interrupt_configure(hc_spi->cs.port, hc_spi->cs.pin, GPIO_INT_EDGE_BOTH);
-
 	hc_spi->rx_ctx = rx_ctx;
 	hc_spi->rx_ctx->len = 0;
 
@@ -745,6 +741,11 @@ static int ec_host_cmd_spi_init(const struct ec_host_cmd_backend *backend,
 
 	tx_status(spi, EC_SPI_RX_READY);
 	hc_spi->state = SPI_HOST_CMD_STATE_READY_TO_RX;
+
+	/* Configure CS interrupt once everything is ready. */
+	gpio_init_callback(&hc_spi->cs_callback, gpio_cb_nss, BIT(hc_spi->cs.pin));
+	gpio_add_callback(hc_spi->cs.port, &hc_spi->cs_callback);
+	gpio_pin_interrupt_configure(hc_spi->cs.port, hc_spi->cs.pin, GPIO_INT_EDGE_BOTH);
 
 	return ret;
 }
