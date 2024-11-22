@@ -260,6 +260,8 @@ struct flash_stm32_priv {
 #error RDP1 byte has to be different than RDP0 and RDP2 byte
 #endif
 
+int flash_stm32_write_protection(const struct device *dev, bool enable);
+
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 static inline bool flash_stm32_range_exists(const struct device *dev,
 					    off_t offset,
@@ -271,7 +273,6 @@ static inline bool flash_stm32_range_exists(const struct device *dev,
 		 flash_get_page_info_by_offs(dev, offset + len - 1, &info));
 }
 #endif	/* CONFIG_FLASH_PAGE_LAYOUT */
-
 
 #if defined(CONFIG_MULTITHREADING)
 /*

@@ -114,26 +114,6 @@ void flash_stm32_set_rdp_level(const struct device *dev, uint8_t level)
 }
 #endif /* CONFIG_FLASH_STM32_READOUT_PROTECTION */
 
-int flash_stm32_option_bytes_lock(const struct device *dev, bool enable)
-{
-	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
-
-	if (enable) {
-		regs->OPTCR |= FLASH_OPTCR_OPTLOCK;
-	} else if (regs->OPTCR & FLASH_OPTCR_OPTLOCK) {
-		regs->OPTKEYR = FLASH_OPT_KEY1;
-		regs->OPTKEYR = FLASH_OPT_KEY2;
-	}
-
-	if (enable) {
-		LOG_DBG("Option bytes locked");
-	} else {
-		LOG_DBG("Option bytes unlocked");
-	}
-
-	return 0;
-}
-
 bool flash_stm32_valid_range(const struct device *dev, off_t offset, uint32_t len, bool write)
 {
 #if defined(DUAL_BANK)
