@@ -7,10 +7,10 @@ common:
   platform_key:
     - arch
     - simulation
+  min_flash: 64
+  min_ram: 32
 tests:
-  portability.single_process.rwlocks:
-    min_flash: 64
-    min_ram: 32
+  portability.single_process: {}
   portability.posix.single_process.minimal:
     extra_configs:
       - CONFIG_MINIMAL_LIBC=y
