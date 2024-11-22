@@ -102,6 +102,12 @@ BUILD_ASSERT(DT_NODE_HAS_COMPAT_STATUS(DT_CHOSEN(zephyr_host_cmd_spi_backend),
 
 #define STM32_DMA_FEATURES_ID(id, dir) DT_DMAS_CELL_BY_NAME_OR(id, dir, features, 0)
 
+#if DT_CLOCKS_HAS_IDX(DT_CHOSEN(zephyr_host_cmd_spi_backend), 1)
+#define STM32_EC_HOST_CMD_SPI_DOMAIN_CLOCK_SUPPORT 1
+#else
+#define STM32_EC_HOST_CMD_SPI_DOMAIN_CLOCK_SUPPORT 0
+#endif
+
 /*
  * Max data size for a version 3 request/response packet.  This is big enough
  * to handle a request/response header, flash write offset/size, and 512 bytes
@@ -335,7 +341,8 @@ static int spi_init(const struct ec_host_cmd_spi_ctx *hc_spi)
 		return err;
 	}
 
-	if (IS_ENABLED(STM32_SPI_DOMAIN_CLOCK_SUPPORT) && (hc_spi->spi_config->pclk_len > 1)) {
+	if (IS_ENABLED(STM32_EC_HOST_CMD_SPI_DOMAIN_CLOCK_SUPPORT) &&
+	    hc_spi->spi_config->pclk_len > 1) {
 		err = clock_control_configure(
 			DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 			(clock_control_subsys_t)&hc_spi->spi_config->pclken[1], NULL);
