@@ -97,6 +97,20 @@ struct prometheus_summary {
 int prometheus_summary_observe(struct prometheus_summary *summary, double value);
 
 /**
+ * @brief Set the summary value to specific value.
+ * The new value must be higher than the current value. This function can be used
+ * if we cannot add individual increments to the summary but need to periodically
+ * update the counter value. This function will add the difference between the
+ * new value and the old value to the summary fields.
+ * @param summary Pointer to the summary metric to increment.
+ * @param value New value of the summary.
+ * @param count New counter value of the summary.
+ * @return 0 on success, negative errno on error.
+ */
+int prometheus_summary_observe_set(struct prometheus_summary *summary,
+				   double value, unsigned long count);
+
+/**
  * @}
  */
 
