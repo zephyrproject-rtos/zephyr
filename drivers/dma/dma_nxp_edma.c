@@ -462,10 +462,7 @@ static int edma_stop(const struct device *dev, uint32_t chan_id)
 	/* disable HW requests */
 	EDMA_ChannelRegUpdate(data->hal_cfg, chan_id, EDMA_TCD_CH_CSR, 0,
 			      EDMA_TCD_CH_CSR_ERQ_MASK);
-
 out_release_channel:
-
-	irq_disable(chan->irq);
 
 	/* clear the channel MUX so that it can used by a different peripheral.
 	 *
@@ -514,8 +511,6 @@ static int edma_start(const struct device *dev, uint32_t chan_id)
 	}
 
 	LOG_DBG("starting channel %u", chan_id);
-
-	irq_enable(chan->irq);
 
 	/* enable HW requests */
 	EDMA_ChannelRegUpdate(data->hal_cfg, chan_id,
@@ -583,19 +578,36 @@ static int edma_get_attribute(const struct device *dev, uint32_t type, uint32_t 
 
 static bool edma_channel_filter(const struct device *dev, int chan_id, void *param)
 {
-	int *requested_channel;
+	struct edma_channel *chan;
 
 	if (!param) {
 		return false;
 	}
 
-	requested_channel = param;
-
-	if (*requested_channel == chan_id && lookup_channel(dev, chan_id)) {
-		return true;
+	if (*(int *)param != chan_id) {
+		return false;
 	}
 
-	return false;
+	chan = lookup_channel(dev, chan_id);
+	if (!chan) {
+		return false;
+	}
+
+	irq_enable(chan->irq);
+
+	return true;
+}
+
+static void edma_channel_release(const struct device *dev, uint32_t chan_id)
+{
+	struct edma_channel *chan = lookup_channel(dev, chan_id);
+	if (!chan) {
+		return;
+	}
+
+#ifdef CONFIG_NXP_IRQSTEER
+	irq_disable(chan->irq);
+#endif /* CONFIG_NXP_IRQSTEER */
 }
 
 static const struct dma_driver_api edma_api = {
@@ -608,6 +620,7 @@ static const struct dma_driver_api edma_api = {
 	.get_status = edma_get_status,
 	.get_attribute = edma_get_attribute,
 	.chan_filter = edma_channel_filter,
+	.chan_release = edma_channel_release,
 };
 
 static edma_config_t *edma_hal_cfg_get(const struct edma_config *cfg)
