@@ -1657,7 +1657,7 @@ class Ruff(ComplianceTest):
                     f"ruff check --force-exclude --output-format=json {file}",
                     check=True,
                     stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT,
+                    stderr=subprocess.DEVNULL,
                     shell=True,
                     cwd=GIT_TOP,
                 )
