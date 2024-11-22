@@ -49,7 +49,7 @@ typedef enum __packed {
 enum {
 	/** The connection context is used for automatic connection establishment
 	 *
-	 * That is, with @ref bt_conn_le_create_auto() or bt_le_set_auto_conn().
+	 * That is, with @ref bt_conn_le_create_auto().
 	 * This flag is set even after the connection has been established so
 	 * that the connection can be reestablished once disconnected.
 	 * The connection establishment may be performed with or without the filter
