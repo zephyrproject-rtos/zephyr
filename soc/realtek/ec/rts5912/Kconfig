@@ -21,4 +21,11 @@ config RTS5912_ON_ENTER_CPU_IDLE_HOOK
 	  If needed, this hook can be used to prevent the CPU from actually
 	  entering sleep by skipping the WFE/WFI instruction.
 
+config SWJ_CONNECTOR_PRIORITY
+	int "SWJ DAP port routine initialization priority"
+	default 49
+	help
+	  Initialization priority of the routine within the PRE_KERNEL1 level.
+	  This priority must be greater than GPIO_INIT_PRIORITY.
+
 endif # SOC_SERIES_RTS5912
