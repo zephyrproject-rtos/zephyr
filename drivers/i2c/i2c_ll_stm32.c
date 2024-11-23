@@ -145,7 +145,8 @@ static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msg,
 			      uint8_t num_msgs, uint16_t slave)
 {
 	struct i2c_stm32_data *data = dev->data;
-	struct i2c_msg *current, *next;
+	struct i2c_msg *current;
+	struct i2c_msg *next = NULL;
 	int ret = 0;
 
 	/* Check for validity of all messages, to prevent having to abort
