@@ -1,18 +1,23 @@
 name: Compliance Checks
 
 on:
-  pull_request:
-    types:
-    - edited
-    - opened
-    - reopened
-    - synchronize
+  workflow_call:
 
 permissions:
   contents: read
 
 jobs:
+  check_compliance_push:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-22.04
+    name: Run compliance checks on patch series (PR)
+    steps:
+    - name: Do nothing
+      run: |
+        echo "Doing nothing"
+
   check_compliance:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-22.04
     name: Run compliance checks on patch series (PR)
     steps:
@@ -96,6 +101,8 @@ jobs:
         path: compliance.xml
 
     - name: check-warns
+      id: check-warns
+      continue-on-error: true
       run: |
         if [[ ! -s "compliance.xml" ]]; then
           exit 1;
@@ -124,10 +131,12 @@ jobs:
         if [ "${exit}" == "1" ]; then
           echo "Compliance error, check for error messages in the \"Run Compliance Tests\" step"
           echo "You can run this step locally with the ./scripts/ci/check_compliance.py script."
+          echo "exit_code=${exit}" >> $GITHUB_OUTPUT
           exit 1;
         fi
-
-        if [ "${{ steps.pr_description.outcome }}" == "failure" ]; then
-          echo "PR description cannot be empty"
-          exit 1;
-        fi
+    - name: resolve
+      if: |
+        steps.check-warns.outputs.exit_code != 0 &&
+        ! contains(github.event.pull_request.labels.*.name, 'Compliance: False Positive')
+      run: |
+        exit ${{ steps.check-warns.outputs.exit_code }}

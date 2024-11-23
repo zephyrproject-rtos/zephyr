@@ -23,7 +23,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  compliance-check:
+    uses: ./.github/workflows/compliance.yml
+
   twister-build-prep:
+    needs: compliance-check
     uses: ./.github/workflows/twister-prep.yaml
 
   twister-build:
@@ -219,7 +223,7 @@ jobs:
     permissions:
       checks: write # to create the check run entry with Twister test results
     # the build-and-test job might be skipped, we don't need to run this job then
-    if: success() || failure()
+    if: (success() || failure()) &&  needs.twister-build.result != 'skipped'
 
     steps:
       - name: Check out source code
@@ -236,6 +240,7 @@ jobs:
           path: artifacts
 
       - name: Merge Test Results
+        if: needs.twister-build.result != 'skipped'
         run: |
           pip install junitparser junit2html
           junitparser merge artifacts/*/*/twister.xml junit.xml
@@ -280,6 +285,7 @@ jobs:
     if: always()
     name: "Check Twister Status"
     needs:
+      - compliance-check
       - twister-build-prep
       - twister-build
     uses: ./.github/workflows/ready-to-merge.yml
