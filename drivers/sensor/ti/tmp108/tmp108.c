@@ -153,10 +153,7 @@ static int tmp108_channel_get(const struct device *dev,
 	}
 
 	uval = ((int32_t)drv_data->sample * TMP108_TEMP_MULTIPLIER(dev)) / TMP108_TEMP_DIVISOR(dev);
-	val->val1 = uval / 1000000;
-	val->val2 = uval % 1000000;
-
-	return 0;
+	return sensor_value_from_micro(val, uval);
 }
 
 static int tmp108_attr_get(const struct device *dev,
@@ -236,7 +233,7 @@ static int tmp108_attr_set(const struct device *dev,
 		break;
 
 	case SENSOR_ATTR_LOWER_THRESH:
-		uval = val->val1 * 1000000 + val->val2;
+		uval = sensor_value_to_micro(val);
 		reg_value = (uval * TMP108_TEMP_DIVISOR(dev)) / TMP108_TEMP_MULTIPLIER(dev);
 		result = tmp108_reg_write(dev,
 					  TI_TMP108_REG_LOW_LIMIT,
@@ -244,7 +241,7 @@ static int tmp108_attr_set(const struct device *dev,
 		break;
 
 	case SENSOR_ATTR_UPPER_THRESH:
-		uval = val->val1 * 1000000 + val->val2;
+		uval = sensor_value_to_micro(val);
 		reg_value = (uval * TMP108_TEMP_DIVISOR(dev)) / TMP108_TEMP_MULTIPLIER(dev);
 		result = tmp108_reg_write(dev,
 					  TI_TMP108_REG_HIGH_LIMIT,
