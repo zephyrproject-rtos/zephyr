@@ -24,6 +24,7 @@
 			 .CONF_HYS0 = TI_TMP108_CONF_NA,\
 			 .CONF_CR0  = 0x0040,	\
 			 .CONF_CR1  = 0x0080,	\
+			 .CONF_SLEEP = 0x0100,  \
 			 .CONF_M1   = 0x0000,	\
 			 .CONF_TM   = 0x0200,	\
 			 .CONF_POL  = 0x0400,	\
@@ -47,9 +48,11 @@
 			 .WAKEUP_TIME_IN_MS = 30 }
 
 #define TI_TMP108_MODE_SHUTDOWN(x) 0
-#define TI_TMP108_MODE_ONE_SHOT(x) TI_TMP108_CONF_M0(x)
+#define TI_TMP108_MODE_ONE_SHOT(x) (TI_TMP108_CONF_M0(x) | TI_TMP108_CONF_SLEEP(x))
 #define TI_TMP108_MODE_CONTINUOUS(x) TI_TMP108_CONF_M1(x)
-#define TI_TMP108_MODE_MASK(x)	~(TI_TMP108_CONF_M0(x) | TI_TMP108_CONF_M1(x))
+#define TI_TMP108_MODE_MASK(x)	~(TI_TMP108_CONF_M0(x) | \
+				  TI_TMP108_CONF_M1(x) | \
+				  TI_TMP108_CONF_SLEEP(x))
 
 #define TI_TMP108_FREQ_4_SECS(x) 0
 #define TI_TMP108_FREQ_1_HZ(x) TI_TMP108_GET_CONF(x, CONF_CR0)
@@ -77,6 +80,7 @@
 
 #define TI_TMP108_CONF_M1(x) TI_TMP108_GET_CONF(x, CONF_M1)
 #define TI_TMP108_CONF_M0(x) TI_TMP108_GET_CONF(x, CONF_M0)
+#define TI_TMP108_CONF_SLEEP(x) TI_TMP108_GET_CONF(x, CONF_SLEEP)
 
 #define TMP108_TEMP_MULTIPLIER(x)	TI_TMP108_GET_CONF(x, TEMP_MULT)
 #define TMP108_TEMP_DIVISOR(x)	TI_TMP108_GET_CONF(x, TEMP_DIV)
@@ -88,6 +92,7 @@
 struct tmp_108_reg_def {
 	uint16_t CONF_M0;	/** Mode 1 configuration bit */
 	uint16_t CONF_M1;	/** Mode 2 configuration bit */
+	uint16_t CONF_SLEEP;    /** Sleep mode configuration bit */
 	uint16_t CONF_CR0;	/** Conversion rate 1 configuration bit */
 	uint16_t CONF_CR1;	/** Conversion rate 2 configuration bit */
 	uint16_t CONF_POL;	/** Alert pin Polarity configuration bit */
