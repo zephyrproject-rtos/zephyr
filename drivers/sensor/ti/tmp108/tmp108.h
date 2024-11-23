@@ -20,30 +20,29 @@
 #define TI_TMP108_REG_LOW_LIMIT		0x02   /** Low alert set register */
 #define TI_TMP108_REG_HIGH_LIMIT	0x03   /** High alert set register */
 
-#define AMS_AS6212_CONF	{.CONF_HYS1 = TI_TMP108_CONF_NA,\
-			 .CONF_HYS0 = TI_TMP108_CONF_NA,\
-			 .CONF_CR0  = 0x0040,	\
-			 .CONF_CR1  = 0x0080,	\
-			 .CONF_SLEEP = 0x0100,  \
-			 .CONF_M1   = 0x0000,	\
-			 .CONF_TM   = 0x0200,	\
-			 .CONF_POL  = 0x0400,	\
-			 .CONF_M0   = 0x8000,	\
-			 .CONF_RST  = 0x0080,	\
-			 .TEMP_MULT = 15625,	\
-			 .TEMP_DIV  = 2 }
+#define AMS_AS6212_CONF                                                                            \
+	{.CONF_CR0 = 0x0040,                                                                       \
+	 .CONF_CR1 = 0x0080,                                                                       \
+	 .CONF_SLEEP = 0x0100,                                                                     \
+	 .CONF_M1 = 0x0000,                                                                        \
+	 .CONF_TM = 0x0200,                                                                        \
+	 .CONF_M0 = 0x8000,                                                                        \
+	 .CONF_RST = 0x0080,                                                                       \
+	 .TEMP_MULT = 15625,                                                                       \
+	 .TEMP_DIV = 2,                                                                            \
+	 IF_ENABLED(CONFIG_TMP108_ALERT_INTERRUPTS, (.CONF_POL = 0x0400))}
 
-#define TI_TMP108_CONF	{.CONF_HYS0  = 0x0010,	\
-			 .CONF_HYS1  = 0x0020,	\
-			 .CONF_POL   = 0x0080,	\
-			 .CONF_M0    = 0x0100,	\
-			 .CONF_M1    = 0x0200,	\
-			 .CONF_TM    = 0x0400,	\
-			 .CONF_CR0   = 0x2000,	\
-			 .CONF_CR1   = 0x4000,	\
-			 .CONF_RST   = 0x0022,	\
-			 .TEMP_MULT  = 15625,	\
-			 .TEMP_DIV   = 4 }
+#define TI_TMP108_CONF                                                                             \
+	{.CONF_M0 = 0x0100,                                                                        \
+	 .CONF_M1 = 0x0200,                                                                        \
+	 .CONF_TM = 0x0400,                                                                        \
+	 .CONF_CR0 = 0x2000,                                                                       \
+	 .CONF_CR1 = 0x4000,                                                                       \
+	 .CONF_RST = 0x0022,                                                                       \
+	 .TEMP_MULT = 15625,                                                                       \
+	 .TEMP_DIV = 4,                                                                            \
+	 IF_ENABLED(CONFIG_TMP108_ALERT_INTERRUPTS,                                                \
+		    (.CONF_HYS0 = 0x0010, .CONF_HYS1 = 0x0020, .CONF_POL = 0x0080))}
 
 #define TI_TMP108_MODE_SHUTDOWN(x) 0
 #define TI_TMP108_MODE_ONE_SHOT(x) (TI_TMP108_CONF_M0(x) | TI_TMP108_CONF_SLEEP(x))
@@ -87,39 +86,45 @@
 #define TI_TMP108_CONF_NA 0x0000
 
 struct tmp_108_reg_def {
-	uint16_t CONF_M0;	/** Mode 1 configuration bit */
-	uint16_t CONF_M1;	/** Mode 2 configuration bit */
-	uint16_t CONF_SLEEP;    /** Sleep mode configuration bit */
-	uint16_t CONF_CR0;	/** Conversion rate 1 configuration bit */
-	uint16_t CONF_CR1;	/** Conversion rate 2 configuration bit */
-	uint16_t CONF_POL;	/** Alert pin Polarity configuration bit */
-	uint16_t CONF_TM;	/** Thermostat mode setting bit */
-	uint16_t CONF_HYS1;	/** Temperature hysteresis config 1 bit  */
-	uint16_t CONF_HYS0;	/** Temperature hysteresis config 2 bit */
-	int32_t TEMP_MULT;	/** Temperature multiplier */
-	int32_t TEMP_DIV;	/** Temperature divisor */
-	uint16_t CONF_RST;	/** default reset values on init */
+	uint16_t CONF_M0;    /** Mode 1 configuration bit */
+	uint16_t CONF_M1;    /** Mode 2 configuration bit */
+	uint16_t CONF_SLEEP; /** Sleep mode configuration bit */
+	uint16_t CONF_CR0;   /** Conversion rate 1 configuration bit */
+	uint16_t CONF_CR1;   /** Conversion rate 2 configuration bit */
+	uint16_t CONF_TM;    /** Thermostat mode setting bit */
+	int32_t TEMP_MULT;   /** Temperature multiplier */
+	int32_t TEMP_DIV;    /** Temperature divisor */
+	uint16_t CONF_RST;   /** default reset values on init */
+#ifdef CONFIG_TMP108_ALERT_INTERRUPTS
+	uint16_t CONF_POL;  /** Alert pin Polarity configuration bit */
+	uint16_t CONF_HYS1; /** Temperature hysteresis config 1 bit  */
+	uint16_t CONF_HYS0; /** Temperature hysteresis config 2 bit */
+#endif
 };
 
 #define TI_TMP108_GET_CONF(x, cfg) ((struct tmp108_config *)(x->config))->reg_def.cfg
 
 struct tmp108_config {
 	const struct i2c_dt_spec i2c_spec;
-	const struct gpio_dt_spec alert_gpio;
 	struct tmp_108_reg_def reg_def;
+#ifdef CONFIG_TMP108_ALERT_INTERRUPTS
+	const struct gpio_dt_spec alert_gpio;
+#endif /* CONFIG_TMP108_ALERT_INTERRUPTS */
 };
 
 struct tmp108_data {
-	const struct device *tmp108_dev;
-
 	int16_t sample;
 
 	bool one_shot_mode;
+
+#ifdef CONFIG_TMP108_ALERT_INTERRUPTS
+	const struct device *tmp108_dev;
 
 	const struct sensor_trigger *temp_alert_trigger;
 	sensor_trigger_handler_t temp_alert_handler;
 
 	struct gpio_callback temp_alert_gpio_cb;
+#endif /* CONFIG_TMP108_ALERT_INTERRUPTS */
 };
 
 int tmp_108_trigger_set(const struct device *dev,
