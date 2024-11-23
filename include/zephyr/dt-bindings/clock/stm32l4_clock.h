@@ -26,8 +26,13 @@
 /* defined in stm32_common_clocks.h */
 /** Fixed clocks  */
 /* Low speed clocks defined in stm32_common_clocks.h */
-#define STM32_SRC_HSI		(STM32_SRC_LSI + 1)
+/** External High Speed oscillator */
+#define STM32_SRC_HSE		(STM32_SRC_LSI + 1)
+/** Internal High Speed 16MHz oscillator */
+#define STM32_SRC_HSI		(STM32_SRC_HSE + 1)
+/** Internal High Speed 48MHz oscillator */
 #define STM32_SRC_HSI48		(STM32_SRC_HSI + 1)
+/** Internal Multi Speed oscillator */
 #define STM32_SRC_MSI		(STM32_SRC_HSI48 + 1)
 /** Bus clock */
 #define STM32_SRC_PCLK		(STM32_SRC_MSI + 1)
