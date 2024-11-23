@@ -201,16 +201,17 @@ static int tmp108_attr_set(const struct device *dev,
 			   const struct sensor_value *val)
 {
 	struct tmp108_data *drv_data = dev->data;
-	uint16_t mode = 0;
-	uint16_t reg_value = 0;
+	__maybe_unused uint16_t reg_value;
+	__maybe_unused int32_t uval;
+	uint16_t mode;
 	int result = 0;
-	int32_t uval;
 
 	if (chan != SENSOR_CHAN_AMBIENT_TEMP && chan != SENSOR_CHAN_ALL) {
 		return -ENOTSUP;
 	}
 
 	switch ((int) attr) {
+#ifdef CONFIG_TMP108_ALERT_INTERRUPTS
 	case SENSOR_ATTR_HYSTERESIS:
 		if (TI_TMP108_HYSTER_0_C(dev) == TI_TMP108_CONF_NA) {
 			LOG_WRN("AS621x Series lacks Hysterisis setttings");
@@ -260,6 +261,18 @@ static int tmp108_attr_set(const struct device *dev,
 					  reg_value);
 		break;
 
+	case SENSOR_ATTR_TMP108_ALERT_POLARITY:
+		if (val->val1 == 1) {
+			mode = TI_TMP108_CONF_POL_HIGH(dev);
+		} else {
+			mode = TI_TMP108_CONF_POL_LOW(dev);
+		}
+		result = tmp108_write_config(dev,
+					     TI_TMP108_CONF_POL_MASK(dev),
+					     mode);
+		break;
+#endif /* CONFIG_TMP108_ALERT_INTERRUPTS */
+
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
 		if (val->val1 < 1) {
 			mode = TI_TMP108_FREQ_4_SECS(dev);
@@ -296,17 +309,6 @@ static int tmp108_attr_set(const struct device *dev,
 		drv_data->one_shot_mode = true;
 		break;
 
-	case SENSOR_ATTR_TMP108_ALERT_POLARITY:
-		if (val->val1 == 1) {
-			mode = TI_TMP108_CONF_POL_HIGH(dev);
-		} else {
-			mode = TI_TMP108_CONF_POL_LOW(dev);
-		}
-		result = tmp108_write_config(dev,
-					     TI_TMP108_CONF_POL_MASK(dev),
-					     mode);
-		break;
-
 	default:
 		return -ENOTSUP;
 	}
@@ -323,7 +325,9 @@ static DEVICE_API(sensor, tmp108_driver_api) = {
 	.attr_get = tmp108_attr_get,
 	.sample_fetch = tmp108_sample_fetch,
 	.channel_get = tmp108_channel_get,
+#ifdef CONFIG_TMP108_ALERT_INTERRUPTS
 	.trigger_set = tmp_108_trigger_set,
+#endif
 };
 
 #ifdef CONFIG_TMP108_ALERT_INTERRUPTS
@@ -371,7 +375,6 @@ static int setup_interrupts(const struct device *dev)
 static int tmp108_init(const struct device *dev)
 {
 	const struct tmp108_config *cfg = dev->config;
-	struct tmp108_data *drv_data = dev->data;
 	int result = 0;
 
 	if (!device_is_ready(cfg->i2c_spec.bus)) {
@@ -379,10 +382,12 @@ static int tmp108_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+#ifdef CONFIG_TMP108_ALERT_INTERRUPTS
+	struct tmp108_data *drv_data = dev->data;
+
 	/* save this driver instance for passing to other functions */
 	drv_data->tmp108_dev = dev;
 
-#ifdef CONFIG_TMP108_ALERT_INTERRUPTS
 	result = setup_interrupts(dev);
 
 	if (result < 0) {
@@ -396,22 +401,16 @@ static int tmp108_init(const struct device *dev)
 	return result;
 }
 
-#define TMP108_DEFINE(inst, t)						   \
-	static struct tmp108_data tmp108_prv_data_##inst##t;		   \
-	static const struct tmp108_config tmp108_config_##inst##t = {	   \
-		.i2c_spec = I2C_DT_SPEC_INST_GET(inst),			   \
-		.alert_gpio = GPIO_DT_SPEC_INST_GET_OR(inst,		   \
-						       alert_gpios, { 0 }),\
-		.reg_def = t##_CONF					   \
-	};								   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,				   \
-			      &tmp108_init,				   \
-			      NULL,					   \
-			      &tmp108_prv_data_##inst##t,		   \
-			      &tmp108_config_##inst##t,			   \
-			      POST_KERNEL,				   \
-			      CONFIG_SENSOR_INIT_PRIORITY,		   \
-			      &tmp108_driver_api);
+#define TMP108_DEFINE(inst, t)                                                                     \
+	static struct tmp108_data tmp108_prv_data_##inst##t;                                       \
+	static const struct tmp108_config tmp108_config_##inst##t = {                              \
+		.i2c_spec = I2C_DT_SPEC_INST_GET(inst),                                            \
+		IF_ENABLED(CONFIG_TMP108_ALERT_INTERRUPTS,                                         \
+			   (.alert_gpio = GPIO_DT_SPEC_INST_GET(inst, alert_gpios),))              \
+		.reg_def = t##_CONF};                                                              \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, &tmp108_init, NULL, &tmp108_prv_data_##inst##t,         \
+				     &tmp108_config_##inst##t, POST_KERNEL,                        \
+				     CONFIG_SENSOR_INIT_PRIORITY, &tmp108_driver_api);
 
 #define TMP108_INIT(n) TMP108_DEFINE(n, TI_TMP108)
 #undef DT_DRV_COMPAT
