@@ -230,4 +230,6 @@ source "drivers/serial/Kconfig.si32"
 
 source "drivers/serial/Kconfig.wch_usart"
 
+source "drivers/serial/Kconfig.realtek_rts5912"
+
 endif # SERIAL
