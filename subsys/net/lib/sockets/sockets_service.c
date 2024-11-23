@@ -245,12 +245,7 @@ restart:
 			break;
 		}
 
-		if (ret > 0 && ctx.events[0].revents) {
-			zvfs_eventfd_read(ctx.events[0].fd, &value);
-			NET_DBG("Received restart event.");
-			goto restart;
-		}
-
+		/* Process work here */
 		for (i = 1; i < (count + 1); i++) {
 			if (ctx.events[i].fd < 0) {
 				continue;
@@ -259,9 +254,18 @@ restart:
 			if (ctx.events[i].revents > 0) {
 				ret = trigger_work(&ctx.events[i]);
 				if (ret < 0) {
-					NET_DBG("Triggering work failed (%d)", ret);
+					NET_ERR("Triggering work failed (%d)", ret);
+					goto out;
 				}
 			}
+		}
+
+		/* Relocate after trigger work so the work gets done before restarting */
+		if (ret > 0 && ctx.events[0].revents) {
+			zvfs_eventfd_read(ctx.events[0].fd, &value);
+			ctx.events[0].revents = 0;
+			NET_DBG("Received restart event.");
+			goto restart;
 		}
 	}
 
