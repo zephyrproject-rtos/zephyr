@@ -33,7 +33,7 @@
 		interrupt-parent = <&nvic>;
 
 		mpu: mpu@4000d000 {
-			compatible = "nxp,kinetis-mpu";
+			compatible = "nxp,sysmpu";
 			reg = <0x4000d000 0x1000>;
 			status = "disabled";
 		};
