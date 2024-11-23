@@ -21,7 +21,7 @@
 #define MDM_REVISION_LENGTH 64
 #define MDM_IMEI_LENGTH 16
 #define MDM_TIME_LENGTH 32
-#define MAX_CI_BUF_SIZE   (64U * 6U)
+#define MAX_CI_BUF_SIZE   (128U * 16U)
 
 struct usr_http_cfg {
 	char *url;
