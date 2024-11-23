@@ -161,13 +161,11 @@ static int phy_mc_ksz8081_get_link(const struct device *dev,
 	ret = phy_mc_ksz8081_read(dev, MII_BMSR, &bmsr);
 	if (ret) {
 		LOG_ERR("Error reading phy (%d) basic status register", config->addr);
-		k_mutex_unlock(&data->mutex);
-		return ret;
+		goto done;
 	}
 	state->is_up = bmsr & MII_BMSR_LINK_STATUS;
 
 	if (!state->is_up) {
-		k_mutex_unlock(&data->mutex);
 		goto result;
 	}
 
@@ -175,20 +173,15 @@ static int phy_mc_ksz8081_get_link(const struct device *dev,
 	ret = phy_mc_ksz8081_read(dev, MII_ANAR, &anar);
 	if (ret) {
 		LOG_ERR("Error reading phy (%d) advertising register", config->addr);
-		k_mutex_unlock(&data->mutex);
-		return ret;
+		goto done;
 	}
 
 	/* Read link partner capability */
 	ret = phy_mc_ksz8081_read(dev, MII_ANLPAR, &anlpar);
 	if (ret) {
 		LOG_ERR("Error reading phy (%d) link partner register", config->addr);
-		k_mutex_unlock(&data->mutex);
-		return ret;
+		goto done;
 	}
-
-	/* Unlock mutex */
-	k_mutex_unlock(&data->mutex);
 
 	uint32_t mutual_capabilities = anar & anlpar;
 
@@ -213,6 +206,9 @@ result:
 				PHY_LINK_IS_FULL_DUPLEX(state->speed) ? "full" : "half");
 		}
 	}
+
+done:
+	k_mutex_unlock(&data->mutex);
 
 	return ret;
 }
