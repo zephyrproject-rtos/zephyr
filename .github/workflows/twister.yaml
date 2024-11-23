@@ -20,7 +20,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  compliance-check:
+    uses: ./.github/workflows/compliance.yml
+
   twister-build-prep:
+    needs: compliance-check
     uses: ./.github/workflows/twister-prep.yaml
 
   twister-build:
@@ -246,6 +250,7 @@ jobs:
     if: always()
     name: "Check Twister Status"
     needs:
+      - compliance-check
       - twister-build-prep
       - twister-build
     uses: ./.github/workflows/ready-to-merge.yml
