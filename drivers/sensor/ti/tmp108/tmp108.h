@@ -31,8 +31,7 @@
 			 .CONF_M0   = 0x8000,	\
 			 .CONF_RST  = 0x0080,	\
 			 .TEMP_MULT = 15625,	\
-			 .TEMP_DIV  = 2,        \
-			 .WAKEUP_TIME_IN_MS = 120 }
+			 .TEMP_DIV  = 2 }
 
 #define TI_TMP108_CONF	{.CONF_HYS0  = 0x0010,	\
 			 .CONF_HYS1  = 0x0020,	\
@@ -44,8 +43,7 @@
 			 .CONF_CR1   = 0x4000,	\
 			 .CONF_RST   = 0x0022,	\
 			 .TEMP_MULT  = 15625,	\
-			 .TEMP_DIV   = 4,       \
-			 .WAKEUP_TIME_IN_MS = 30 }
+			 .TEMP_DIV   = 4 }
 
 #define TI_TMP108_MODE_SHUTDOWN(x) 0
 #define TI_TMP108_MODE_ONE_SHOT(x) (TI_TMP108_CONF_M0(x) | TI_TMP108_CONF_SLEEP(x))
@@ -84,7 +82,6 @@
 
 #define TMP108_TEMP_MULTIPLIER(x)	TI_TMP108_GET_CONF(x, TEMP_MULT)
 #define TMP108_TEMP_DIVISOR(x)	TI_TMP108_GET_CONF(x, TEMP_DIV)
-#define TMP108_WAKEUP_TIME_IN_MS(x)	TI_TMP108_GET_CONF(x, WAKEUP_TIME_IN_MS)
 #define TMP108_CONF_RST(x)	TI_TMP108_GET_CONF(x, CONF_RST)
 
 #define TI_TMP108_CONF_NA 0x0000
@@ -101,7 +98,6 @@ struct tmp_108_reg_def {
 	uint16_t CONF_HYS0;	/** Temperature hysteresis config 2 bit */
 	int32_t TEMP_MULT;	/** Temperature multiplier */
 	int32_t TEMP_DIV;	/** Temperature divisor */
-	uint16_t WAKEUP_TIME_IN_MS; /** Wake up and conversion time from one shot */
 	uint16_t CONF_RST;	/** default reset values on init */
 };
 
@@ -120,13 +116,8 @@ struct tmp108_data {
 
 	bool one_shot_mode;
 
-	struct k_work_delayable scheduled_work;
-
 	const struct sensor_trigger *temp_alert_trigger;
 	sensor_trigger_handler_t temp_alert_handler;
-
-	sensor_trigger_handler_t data_ready_handler;
-	const struct sensor_trigger *data_ready_trigger;
 
 	struct gpio_callback temp_alert_gpio_cb;
 };
