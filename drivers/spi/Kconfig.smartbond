@@ -11,10 +11,9 @@ config SPI_SMARTBOND
 
 config SPI_SMARTBOND_DMA
 	bool "Renesas Smartbond(tm) SPI with DMA acceleration"
-	default y
 	depends on SPI_SMARTBOND
 	select DMA
 	help
 	  Enables using the DMA engine instead of interrupt-driven
 	  approach. This acceleration is available only for
-	  asynchronous transfers.
+	  synchronous transfers.
