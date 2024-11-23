@@ -263,30 +263,19 @@ static int phy_mc_ksz8081_static_cfg(const struct device *dev)
 	return 0;
 }
 
-static int phy_mc_ksz8081_reset(const struct device *dev)
-{
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
-	const struct mc_ksz8081_config *config = dev->config;
-#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios) */
-	struct mc_ksz8081_data *data = dev->data;
+static int phy_ksz8081_reset_gpio(const struct mc_ksz8081_config *config)
+{
 	int ret;
 
-	/* Lock mutex */
-	ret = k_mutex_lock(&data->mutex, K_FOREVER);
-	if (ret) {
-		LOG_ERR("PHY mutex lock error");
-		return ret;
-	}
-
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 	if (!config->reset_gpio.port) {
-		goto skip_reset_gpio;
+		return -ENODEV;
 	}
 
 	/* Start reset */
 	ret = gpio_pin_set_dt(&config->reset_gpio, 0);
 	if (ret) {
-		goto done;
+		return ret;
 	}
 
 	/* Wait for at least 500 us as specified by datasheet */
@@ -298,9 +287,35 @@ static int phy_mc_ksz8081_reset(const struct device *dev)
 	/* After deasserting reset, must wait at least 100 us to use programming interface */
 	k_busy_wait(200);
 
-	goto done;
-skip_reset_gpio:
+	return ret;
+}
+#else
+static int phy_ksz8081_reset_gpio(const struct mc_ksz8081_config *config)
+{
+	ARG_UNUSED(config);
+
+	return -ENODEV;
+}
 #endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios) */
+
+static int phy_mc_ksz8081_reset(const struct device *dev)
+{
+	const struct mc_ksz8081_config *config = dev->config;
+	struct mc_ksz8081_data *data = dev->data;
+	int ret;
+
+	/* Lock mutex */
+	ret = k_mutex_lock(&data->mutex, K_FOREVER);
+	if (ret) {
+		LOG_ERR("PHY mutex lock error");
+		return ret;
+	}
+
+	ret = phy_ksz8081_reset_gpio(config);
+	if (ret != -ENODEV) { /* On -ENODEV, attempt command-based reset */
+		goto done;
+	}
+
 	ret = phy_mc_ksz8081_write(dev, MII_BMCR, MII_BMCR_RESET);
 	if (ret) {
 		goto done;
