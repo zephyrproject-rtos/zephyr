@@ -184,7 +184,7 @@ static struct mqtt_sn_publish *mqtt_sn_publish_create(struct mqtt_sn_data *data)
 
 	if (data && data->data && data->size) {
 		if (data->size > sizeof(pub->pubdata)) {
-			LOG_ERR("Can't create PUB: Too much data (%" PRIu16 ")", data->size);
+			LOG_ERR("Can't create PUB: Too much data (%zu)", data->size);
 			return NULL;
 		}
 
@@ -242,7 +242,7 @@ static struct mqtt_sn_topic *mqtt_sn_topic_create(struct mqtt_sn_data *name)
 	}
 
 	if (name->size > sizeof(topic->name)) {
-		LOG_ERR("Can't create topic: name too long (%" PRIu16 ")", name->size);
+		LOG_ERR("Can't create topic: name too long (%zu)", name->size);
 		return NULL;
 	}
 
