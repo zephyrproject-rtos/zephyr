@@ -125,7 +125,7 @@
 		/delete-node/ i2c@403f4000;
 
 		lpi2c1: i2c@401a4000 {
-			compatible = "nxp,imx-lpi2c";
+			compatible = "nxp,lpi2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -136,7 +136,7 @@
 		};
 
 		lpi2c2: i2c@401a8000 {
-			compatible = "nxp,imx-lpi2c";
+			compatible = "nxp,lpi2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;

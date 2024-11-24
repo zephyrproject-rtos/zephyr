@@ -7,7 +7,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT nxp_imx_lpi2c
+#define DT_DRV_COMPAT nxp_lpi2c
 
 #include <errno.h>
 #include <zephyr/drivers/i2c.h>

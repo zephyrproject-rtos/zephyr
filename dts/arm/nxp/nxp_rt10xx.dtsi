@@ -391,7 +391,7 @@
 		};
 
 		lpi2c1: i2c@403f0000 {
-			compatible = "nxp,imx-lpi2c";
+			compatible = "nxp,lpi2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -402,7 +402,7 @@
 		};
 
 		lpi2c2: i2c@403f4000 {
-			compatible = "nxp,imx-lpi2c";
+			compatible = "nxp,lpi2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -413,7 +413,7 @@
 		};
 
 		lpi2c3: i2c@403f8000 {
-			compatible = "nxp,imx-lpi2c";
+			compatible = "nxp,lpi2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -424,7 +424,7 @@
 		};
 
 		lpi2c4: i2c@403fc000 {
-			compatible = "nxp,imx-lpi2c";
+			compatible = "nxp,lpi2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;

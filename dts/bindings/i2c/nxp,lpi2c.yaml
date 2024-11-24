@@ -1,9 +1,9 @@
 # Copyright (c) 2019, NXP
 # SPDX-License-Identifier: Apache-2.0
 
-description: NXP i.MX LPI2C controller
+description: NXP LPI2C controller
 
-compatible: "nxp,imx-lpi2c"
+compatible: "nxp,lpi2c"
 
 include: [i2c-controller.yaml, pinctrl-device.yaml]
 

@@ -141,11 +141,11 @@ static ALWAYS_INLINE void clock_init(void)
 		CLOCK_EnableClock(kCLOCK_Tpm1);
 	}
 
-	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpi2c0), nxp_imx_lpi2c, okay)) {
+	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpi2c0), nxp_lpi2c, okay)) {
 		CLOCK_EnableClock(kCLOCK_Lpi2c0);
 	}
 
-	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpi2c1), nxp_imx_lpi2c, okay)) {
+	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpi2c1), nxp_lpi2c, okay)) {
 		CLOCK_EnableClock(kCLOCK_Lpi2c1);
 	}
 

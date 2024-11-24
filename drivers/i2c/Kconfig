@@ -201,7 +201,7 @@ config I2C_MCUX
 config I2C_MCUX_LPI2C
 	bool "MCUX LPI2C driver"
 	default y
-	depends on DT_HAS_NXP_IMX_LPI2C_ENABLED
+	depends on DT_HAS_NXP_LPI2C_ENABLED
 	depends on CLOCK_CONTROL
 	select PINCTRL
 	help
