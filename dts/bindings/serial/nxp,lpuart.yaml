@@ -1,6 +1,6 @@
-description: Kinetis LPUART
+description: NXP LPUART
 
-compatible: "nxp,kinetis-lpuart"
+compatible: "nxp,lpuart"
 
 include: [uart-controller.yaml, uart-controller-pin-inversion.yaml, pinctrl-device.yaml]
 

@@ -70,7 +70,7 @@
 	};
 
 	lpuart1: uart@4380000 {
-		compatible = "nxp,kinetis-lpuart";
+		compatible = "nxp,lpuart";
 		reg = <0x4380000 0x4000>;
 		interrupts = <19 0>;
 		clocks = <&ccm IMX_CCM_LPUART0102_CLK 0x7c 24>;
@@ -78,7 +78,7 @@
 	};
 
 	lpuart2: uart@4390000 {
-		compatible = "nxp,kinetis-lpuart";
+		compatible = "nxp,lpuart";
 		reg = <0x4390000 0x4000>;
 		interrupts = <20 0>;
 		clocks = <&ccm IMX_CCM_LPUART0102_CLK 0x68 28>;
@@ -86,7 +86,7 @@
 	};
 
 	lpuart3: uart@2570000 {
-		compatible = "nxp,kinetis-lpuart";
+		compatible = "nxp,lpuart";
 		reg = <0x2570000 0x4000>;
 		interrupts = <68 0>;
 		clocks = <&ccm IMX_CCM_LPUART0304_CLK 0x68 12>;
@@ -94,7 +94,7 @@
 	};
 
 	lpuart4: uart@2580000 {
-		compatible = "nxp,kinetis-lpuart";
+		compatible = "nxp,lpuart";
 		reg = <0x2580000 0x4000>;
 		interrupts = <69 0>;
 		clocks = <&ccm IMX_CCM_LPUART0304_CLK 0x6c 24>;
@@ -102,7 +102,7 @@
 	};
 
 	lpuart5: uart@2590000 {
-		compatible = "nxp,kinetis-lpuart";
+		compatible = "nxp,lpuart";
 		reg = <0x2590000 0x4000>;
 		interrupts = <70 0>;
 		clocks = <&ccm IMX_CCM_LPUART0506_CLK 0x74 2>;
@@ -110,7 +110,7 @@
 	};
 
 	lpuart6: uart@25A0000 {
-		compatible = "nxp,kinetis-lpuart";
+		compatible = "nxp,lpuart";
 		reg = <0x25A0000 0x4000>;
 		interrupts = <71 0>;
 		clocks = <&ccm IMX_CCM_LPUART0506_CLK 0x74 6>;
@@ -118,7 +118,7 @@
 	};
 
 	lpuart7: uart@4570000 {
-		compatible = "nxp,kinetis-lpuart";
+		compatible = "nxp,lpuart";
 		reg = <0x4570000 0x4000>;
 		interrupts = <196 0>;
 		clocks = <&ccm IMX_CCM_LPUART0708_CLK 0x7c 26>;
@@ -126,7 +126,7 @@
 	};
 
 	lpuart8: uart@2DA0000 {
-		compatible = "nxp,kinetis-lpuart";
+		compatible = "nxp,lpuart";
 		reg = <0x2DA0000 0x4000>;
 		interrupts = <197 0>;
 		clocks = <&ccm IMX_CCM_LPUART0708_CLK 0x80 14>;
@@ -134,7 +134,7 @@
 	};
 
 	lpuart9: uart@2D70000 {
-		compatible = "nxp,kinetis-lpuart";
+		compatible = "nxp,lpuart";
 		reg = <0x2D70000 0x4000>;
 		interrupts = <156 0>;
 		clocks = <&ccm IMX_CCM_LPUART0910_CLK 0x80 14>;
@@ -142,7 +142,7 @@
 	};
 
 	lpuart10: uart@2D80000 {
-		compatible = "nxp,kinetis-lpuart";
+		compatible = "nxp,lpuart";
 		reg = <0x2D80000 0x4000>;
 		interrupts = <157 0>;
 		clocks = <&ccm IMX_CCM_LPUART0910_CLK 0x80 14>;
@@ -150,7 +150,7 @@
 	};
 
 	lpuart11: uart@2D90000 {
-		compatible = "nxp,kinetis-lpuart";
+		compatible = "nxp,lpuart";
 		reg = <0x2D90000 0x4000>;
 		interrupts = <158 0>;
 		clocks = <&ccm IMX_CCM_LPUART1112_CLK 0x80 14>;
@@ -158,7 +158,7 @@
 	};
 
 	lpuart12: uart@4580000 {
-		compatible = "nxp,kinetis-lpuart";
+		compatible = "nxp,lpuart";
 		reg = <0x4580000 0x4000>;
 		interrupts = <159 0>;
 		clocks = <&ccm IMX_CCM_LPUART1112_CLK 0x80 14>;
