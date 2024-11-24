@@ -143,7 +143,7 @@
 			interrupts = <30 2>;
 			gpio-controller;
 			#gpio-cells = <2>;
-			nxp,kinetis-port = <&porta>;
+			nxp,port = <&porta>;
 		};
 
 		gpiob: gpio@400ff040 {
@@ -152,7 +152,7 @@
 			reg = <0x400ff040 0x40>;
 			gpio-controller;
 			#gpio-cells = <2>;
-			nxp,kinetis-port = <&portb>;
+			nxp,port = <&portb>;
 		};
 
 		gpioc: gpio@400ff080 {
@@ -162,7 +162,7 @@
 			interrupts = <31 2>;
 			gpio-controller;
 			#gpio-cells = <2>;
-			nxp,kinetis-port = <&portc>;
+			nxp,port = <&portc>;
 		};
 
 		gpiod: gpio@400ff0c0 {
@@ -171,7 +171,7 @@
 			reg = <0x400ff0c0 0x40>;
 			gpio-controller;
 			#gpio-cells = <2>;
-			nxp,kinetis-port = <&portd>;
+			nxp,port = <&portd>;
 		};
 
 		gpioe: gpio@400ff100 {
@@ -180,7 +180,7 @@
 			reg = <0x400ff100 0x40>;
 			gpio-controller;
 			#gpio-cells = <2>;
-			nxp,kinetis-port = <&porte>;
+			nxp,port = <&porte>;
 		};
 
 		adc0: adc@4003b000{

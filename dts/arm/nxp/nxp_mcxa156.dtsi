@@ -85,7 +85,7 @@
 			interrupts = <71 0>;
 			gpio-controller;
 			#gpio-cells = <2>;
-			nxp,kinetis-port = <&porta>;
+			nxp,port = <&porta>;
 		};
 
 		gpio1: gpio@40103000 {
@@ -95,7 +95,7 @@
 			interrupts = <72 0>;
 			gpio-controller;
 			#gpio-cells = <2>;
-			nxp,kinetis-port = <&portb>;
+			nxp,port = <&portb>;
 		};
 
 		gpio2: gpio@40104000 {
@@ -105,7 +105,7 @@
 			interrupts = <73 0>;
 			gpio-controller;
 			#gpio-cells = <2>;
-			nxp,kinetis-port = <&portc>;
+			nxp,port = <&portc>;
 		};
 
 		gpio3: gpio@40105000 {
@@ -115,7 +115,7 @@
 			interrupts = <74 0>;
 			gpio-controller;
 			#gpio-cells = <2>;
-			nxp,kinetis-port = <&portd>;
+			nxp,port = <&portd>;
 		};
 
 		gpio4: gpio@40106000 {
@@ -125,7 +125,7 @@
 			interrupts = <75 0>;
 			gpio-controller;
 			#gpio-cells = <2>;
-			nxp,kinetis-port = <&porte>;
+			nxp,port = <&porte>;
 		};
 
 		lpuart0: lpuart@4009f000 {

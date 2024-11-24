@@ -116,7 +116,7 @@
 		interrupts = <17 0>,<18 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
-		nxp,kinetis-port = <&porta>;
+		nxp,port = <&porta>;
 	};
 
 	gpio1: gpio@98000 {
@@ -126,7 +126,7 @@
 		interrupts = <19 0>,<20 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
-		nxp,kinetis-port = <&portb>;
+		nxp,port = <&portb>;
 	};
 
 	gpio2: gpio@9a000 {
@@ -136,7 +136,7 @@
 		interrupts = <21 0>,<22 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
-		nxp,kinetis-port = <&portc>;
+		nxp,port = <&portc>;
 	};
 
 	gpio3: gpio@9c000 {
@@ -146,7 +146,7 @@
 		interrupts = <23 0>,<24 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
-		nxp,kinetis-port = <&portd>;
+		nxp,port = <&portd>;
 	};
 
 	gpio4: gpio@9e000 {
@@ -156,7 +156,7 @@
 		interrupts = <25 0>,<26 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
-		nxp,kinetis-port = <&porte>;
+		nxp,port = <&porte>;
 	};
 
 	gpio5: gpio@40000 {
@@ -166,7 +166,7 @@
 		interrupts = <27 0>,<28 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
-		nxp,kinetis-port = <&portf>;
+		nxp,port = <&portf>;
 	};
 
 	flexcomm0: flexcomm@92000 {

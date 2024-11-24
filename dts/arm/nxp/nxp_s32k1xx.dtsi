@@ -194,7 +194,7 @@
 			interrupts = <59 2>;
 			gpio-controller;
 			#gpio-cells = <2>;
-			nxp,kinetis-port = <&porta>;
+			nxp,port = <&porta>;
 			status = "disabled";
 		};
 
@@ -204,7 +204,7 @@
 			interrupts = <60 2>;
 			gpio-controller;
 			#gpio-cells = <2>;
-			nxp,kinetis-port = <&portb>;
+			nxp,port = <&portb>;
 			status = "disabled";
 		};
 
@@ -214,7 +214,7 @@
 			interrupts = <61 2>;
 			gpio-controller;
 			#gpio-cells = <2>;
-			nxp,kinetis-port = <&portc>;
+			nxp,port = <&portc>;
 			status = "disabled";
 		};
 
@@ -224,7 +224,7 @@
 			interrupts = <62 2>;
 			gpio-controller;
 			#gpio-cells = <2>;
-			nxp,kinetis-port = <&portd>;
+			nxp,port = <&portd>;
 			status = "disabled";
 		};
 
@@ -234,7 +234,7 @@
 			interrupts = <63 2>;
 			gpio-controller;
 			#gpio-cells = <2>;
-			nxp,kinetis-port = <&porte>;
+			nxp,port = <&porte>;
 			status = "disabled";
 		};
 

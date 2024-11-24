@@ -11,7 +11,7 @@ properties:
   "#gpio-cells":
     const: 2
 
-  nxp,kinetis-port:
+  nxp,port:
     required: true
     type: phandle
     description: |
