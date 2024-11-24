@@ -102,7 +102,9 @@ static void mbox_isr(const void *arg)
 }
 
 #define DEF_IRQ(N)							\
-	IRQ_CONNECT(DT_INST_IRQN(N), 0, mbox_isr, DEVICE_DT_INST_GET(N), 0);
+	{ IRQ_CONNECT(DT_INST_IRQN(N), 0, mbox_isr, DEVICE_DT_INST_GET(N), 0); \
+	  irq_enable(DT_INST_IRQN(N)); }
+
 
 static int mbox_init(void)
 {
