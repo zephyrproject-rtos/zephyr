@@ -227,7 +227,7 @@
 		};
 
 		wdog: watchdog@40052000 {
-			compatible = "nxp,kinetis-wdog32";
+			compatible = "nxp,wdog32";
 			reg = <0x40052000 0x1000>;
 			interrupts = <28 0>;
 			clocks = <&lpo>;

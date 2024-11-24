@@ -7,7 +7,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT nxp_kinetis_wdog32
+#define DT_DRV_COMPAT nxp_wdog32
 
 #include <zephyr/drivers/watchdog.h>
 #include <zephyr/drivers/clock_control.h>
