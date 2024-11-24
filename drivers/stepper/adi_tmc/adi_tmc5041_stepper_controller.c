@@ -410,7 +410,7 @@ static int tmc5041_stepper_get_micro_step_res(const struct device *dev,
 	return 0;
 }
 
-static int tmc5041_stepper_set_actual_position(const struct device *dev, const int32_t position)
+static int tmc5041_stepper_set_reference_position(const struct device *dev, const int32_t position)
 {
 	const struct tmc5041_stepper_config *config = dev->config;
 	int err;
@@ -728,7 +728,7 @@ static int tmc5041_stepper_init(const struct device *dev)
 		.set_max_velocity = tmc5041_stepper_set_max_velocity,				\
 		.set_micro_step_res = tmc5041_stepper_set_micro_step_res,			\
 		.get_micro_step_res = tmc5041_stepper_get_micro_step_res,			\
-		.set_actual_position = tmc5041_stepper_set_actual_position,			\
+		.set_reference_position = tmc5041_stepper_set_reference_position,		\
 		.get_actual_position = tmc5041_stepper_get_actual_position,			\
 		.set_target_position = tmc5041_stepper_set_target_position,			\
 		.enable_constant_velocity_mode = tmc5041_stepper_enable_constant_velocity_mode,	\
