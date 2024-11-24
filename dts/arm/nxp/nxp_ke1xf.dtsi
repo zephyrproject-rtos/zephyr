@@ -535,7 +535,7 @@
 		};
 
 		ftm0: ftm@40038000 {
-			compatible = "nxp,kinetis-ftm";
+			compatible = "nxp,ftm";
 			reg = <0x40038000 0x1000>;
 			interrupts = <42 0>;
 			clocks = <&pcc 0xe0 KINETIS_PCC_SRC_FIRC_ASYNC>;
@@ -544,7 +544,7 @@
 		};
 
 		ftm1: ftm@40039000 {
-			compatible = "nxp,kinetis-ftm";
+			compatible = "nxp,ftm";
 			reg = <0x40039000 0x1000>;
 			interrupts = <43 0>;
 			clocks = <&pcc 0xe4 KINETIS_PCC_SRC_FIRC_ASYNC>;
@@ -553,7 +553,7 @@
 		};
 
 		ftm2: ftm@4003a000 {
-			compatible = "nxp,kinetis-ftm";
+			compatible = "nxp,ftm";
 			reg = <0x4003a000 0x1000>;
 			interrupts = <44 0>;
 			clocks = <&pcc 0xe8 KINETIS_PCC_SRC_FIRC_ASYNC>;
@@ -562,7 +562,7 @@
 		};
 
 		ftm3: ftm@40026000 {
-			compatible = "nxp,kinetis-ftm";
+			compatible = "nxp,ftm";
 			reg = <0x40026000 0x1000>;
 			interrupts = <71 0>;
 			clocks = <&pcc 0x98 KINETIS_PCC_SRC_FIRC_ASYNC>;
