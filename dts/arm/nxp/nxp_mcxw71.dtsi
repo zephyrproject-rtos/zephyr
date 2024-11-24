@@ -209,7 +209,7 @@
 	};
 
 	lpspi0: spi@36000 {
-		compatible = "nxp,imx-lpspi";
+		compatible = "nxp,lpspi";
 		reg = <0x36000 0x800>;
 		interrupts = <42 0>;
 		clocks = <&scg SCG_K4_FIRC_CLK 0xd8>;
@@ -219,7 +219,7 @@
 	};
 
 	lpspi1: spi@37000 {
-		compatible = "nxp,imx-lpspi";
+		compatible = "nxp,lpspi";
 		reg = <0x37000 0x800>;
 		interrupts = <43 0>;
 		clocks = <&scg SCG_K4_FIRC_CLK 0xdc>;

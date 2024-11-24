@@ -71,7 +71,7 @@
 		};
 
 		lpspi0: spi@4002c000 {
-			compatible = "nxp,imx-lpspi";
+			compatible = "nxp,lpspi";
 			reg = <0x4002c000 0x1000>;
 			interrupts = <26 0>;
 			clocks = <&clock NXP_S32_LPSPI0_CLK>;
@@ -81,7 +81,7 @@
 		};
 
 		lpspi1: spi@4002d000 {
-			compatible = "nxp,imx-lpspi";
+			compatible = "nxp,lpspi";
 			reg = <0x4002d000 0x1000>;
 			interrupts = <27 0>;
 			#address-cells = <1>;
@@ -90,7 +90,7 @@
 		};
 
 		lpspi2: spi@4002e000 {
-			compatible = "nxp,imx-lpspi";
+			compatible = "nxp,lpspi";
 			reg = <0x4002e000 0x1000>;
 			interrupts = <28 0>;
 			#address-cells = <1>;

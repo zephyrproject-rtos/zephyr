@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT nxp_imx_lpspi
+#define DT_DRV_COMPAT nxp_lpspi
 
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/pinctrl.h>
