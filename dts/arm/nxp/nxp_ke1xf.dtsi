@@ -502,7 +502,7 @@
 		};
 
 		adc0: adc@4003b000 {
-			compatible = "nxp,kinetis-adc12";
+			compatible = "nxp,adc12";
 			reg = <0x4003b000 0x1000>;
 			interrupts = <39 0>;
 			clocks = <&pcc 0xec KINETIS_PCC_SRC_FIRC_ASYNC>;
@@ -513,7 +513,7 @@
 		};
 
 		adc1: adc@40027000 {
-			compatible = "nxp,kinetis-adc12";
+			compatible = "nxp,adc12";
 			reg = <0x40027000 0x1000>;
 			interrupts = <73 0>;
 			clocks = <&pcc 0x9c KINETIS_PCC_SRC_FIRC_ASYNC>;
@@ -524,7 +524,7 @@
 		};
 
 		adc2: adc@4003c000 {
-			compatible = "nxp,kinetis-adc12";
+			compatible = "nxp,adc12";
 			reg = <0x4003c000 0x1000>;
 			interrupts = <74 0>;
 			clocks = <&pcc 0xf0 KINETIS_PCC_SRC_FIRC_ASYNC>;

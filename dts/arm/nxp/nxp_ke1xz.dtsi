@@ -142,7 +142,7 @@
 		};
 
 		adc0: adc@4003b000 {
-			compatible = "nxp,kinetis-adc12";
+			compatible = "nxp,adc12";
 			reg = <0x4003b000 0x1000>;
 			interrupts = <15 0>;
 			clocks = <&pcc 0xec KINETIS_PCC_SRC_SIRC_ASYNC>;
