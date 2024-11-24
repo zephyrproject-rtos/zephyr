@@ -7,10 +7,10 @@ common:
   platform_key:
     - arch
     - simulation
+  min_flash: 64
+  min_ram: 32
 tests:
-  portability.posix.getopt:
-    min_flash: 64
-    min_ram: 32
+  portability.posix.getopt: {}
   portability.posix.getopt.minimal:
     extra_configs:
       - CONFIG_MINIMAL_LIBC=y
