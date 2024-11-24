@@ -2,9 +2,9 @@
 # Copyright 2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-description: Kinetis RTC
+description: NXP Real Time Clock (RTC)
 
-compatible: "nxp,kinetis-rtc"
+compatible: "nxp,rtc"
 
 include: rtc.yaml
 

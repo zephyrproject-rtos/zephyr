@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT nxp_kinetis_rtc
+#define DT_DRV_COMPAT nxp_rtc
 
 #include <zephyr/drivers/counter.h>
 #include <zephyr/irq.h>
