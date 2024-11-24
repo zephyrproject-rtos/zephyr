@@ -36,6 +36,12 @@ config MTK_ADSP_TIMER
 config XTENSA_TIMER
 	default n
 
+config XTENSA_CCOUNT_HZ
+	default 720000000 if SOC_MT8195
+	default 400000000 if SOC_MT8186
+	default 800000000 if SOC_MT8188
+	default 800000000 if SOC_MT8196
+
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,$(dt_nodelabel_path,ostimer64),freq-hz)
 
