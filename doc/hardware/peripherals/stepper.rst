@@ -10,7 +10,7 @@ Configure Stepper Driver
 
 - Configure **micro-stepping resolution** using :c:func:`stepper_set_micro_step_res`
   and :c:func:`stepper_get_micro_step_res`.
-- Configure **actual position a.k.a step count** in microsteps using :c:func:`stepper_set_actual_position`
+- Configure **reference position** in microsteps using :c:func:`stepper_set_reference_position`
   and :c:func:`stepper_get_actual_position`.
 - Set **max velocity** in micro-steps per second using :c:func:`stepper_set_max_velocity`
 - **Enable** the stepper driver using :c:func:`stepper_enable`.
