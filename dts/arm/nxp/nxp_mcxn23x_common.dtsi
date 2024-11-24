@@ -194,7 +194,7 @@
 			status = "disabled";
 		};
 		flexcomm0_lpi2c0: lpi2c@92800 {
-			compatible = "nxp,imx-lpi2c";
+			compatible = "nxp,lpi2c";
 			reg = <0x92800 0x1000>;
 			clocks = <&syscon MCUX_FLEXCOMM0_CLK>;
 			#address-cells = <1>;
@@ -234,7 +234,7 @@
 			status = "disabled";
 		};
 		flexcomm1_lpi2c1: lpi2c@93800 {
-			compatible = "nxp,imx-lpi2c";
+			compatible = "nxp,lpi2c";
 			reg = <0x93800 0x1000>;
 			clocks = <&syscon MCUX_FLEXCOMM1_CLK>;
 			#address-cells = <1>;
@@ -274,7 +274,7 @@
 			status = "disabled";
 		};
 		flexcomm2_lpi2c2: lpi2c@94800 {
-			compatible = "nxp,imx-lpi2c";
+			compatible = "nxp,lpi2c";
 			reg = <0x94800 0x1000>;
 			clocks = <&syscon MCUX_FLEXCOMM2_CLK>;
 			#address-cells = <1>;
@@ -308,7 +308,7 @@
 			status = "disabled";
 		};
 		flexcomm3_lpi2c3: lpi2c@95800 {
-			compatible = "nxp,imx-lpi2c";
+			compatible = "nxp,lpi2c";
 			reg = <0x95800 0x1000>;
 			clocks = <&syscon MCUX_FLEXCOMM3_CLK>;
 			#address-cells = <1>;
@@ -348,7 +348,7 @@
 			status = "disabled";
 		};
 		flexcomm4_lpi2c4: lpi2c@b4800 {
-			compatible = "nxp,imx-lpi2c";
+			compatible = "nxp,lpi2c";
 			reg = <0xb4800 0x1000>;
 			clocks = <&syscon MCUX_FLEXCOMM4_CLK>;
 			#address-cells = <1>;
@@ -382,7 +382,7 @@
 			status = "disabled";
 		};
 		flexcomm5_lpi2c5: lpi2c@b5800 {
-			compatible = "nxp,imx-lpi2c";
+			compatible = "nxp,lpi2c";
 			reg = <0xb5800 0x1000>;
 			clocks = <&syscon MCUX_FLEXCOMM5_CLK>;
 			#address-cells = <1>;
@@ -416,7 +416,7 @@
 			status = "disabled";
 		};
 		flexcomm6_lpi2c6: lpi2c@b6800 {
-			compatible = "nxp,imx-lpi2c";
+			compatible = "nxp,lpi2c";
 			reg = <0xb6800 0x1000>;
 			clocks = <&syscon MCUX_FLEXCOMM6_CLK>;
 			#address-cells = <1>;
@@ -450,7 +450,7 @@
 			status = "disabled";
 		};
 		flexcomm7_lpi2c7: lpi2c@b7800 {
-			compatible = "nxp,imx-lpi2c";
+			compatible = "nxp,lpi2c";
 			reg = <0xb7800 0x1000>;
 			clocks = <&syscon MCUX_FLEXCOMM7_CLK>;
 			#address-cells = <1>;

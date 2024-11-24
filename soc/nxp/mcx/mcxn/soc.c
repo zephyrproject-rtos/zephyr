@@ -28,7 +28,7 @@ void soc_reset_hook(void)
 
 #define FLEXCOMM_CHECK_2(n)	\
 	BUILD_ASSERT((DT_NODE_HAS_COMPAT(n, nxp_kinetis_lpuart) == 0) &&	\
-		     (DT_NODE_HAS_COMPAT(n, nxp_imx_lpi2c) == 0),		\
+		     (DT_NODE_HAS_COMPAT(n, nxp_lpi2c) == 0),			\
 		     "Do not enable SPI and UART/I2C on the same Flexcomm node");
 
 /* For SPI node enabled, check if UART or I2C is also enabled on the same parent Flexcomm node */
