@@ -328,7 +328,7 @@
 		};
 
 		adc0: adc@4003b000 {
-			compatible = "nxp,kinetis-adc12";
+			compatible = "nxp,adc12";
 			reg = <0x4003b000 0x1000>;
 			interrupts = <39 0>;
 			clk-source = <0>;
@@ -339,7 +339,7 @@
 		};
 
 		adc1: adc@40027000 {
-			compatible = "nxp,kinetis-adc12";
+			compatible = "nxp,adc12";
 			reg = <0x40027000 0x1000>;
 			interrupts = <40 0>;
 			clk-source = <0>;
