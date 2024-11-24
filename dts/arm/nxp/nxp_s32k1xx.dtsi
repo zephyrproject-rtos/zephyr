@@ -239,7 +239,7 @@
 		};
 
 		ftm0: ftm@40038000 {
-			compatible = "nxp,kinetis-ftm";
+			compatible = "nxp,ftm";
 			reg = <0x40038000 0x1000>;
 			interrupts = <99 0>, <100 0>, <101 0>, <102 0>, <104 0>;
 			interrupt-names = "0-1", "2-3", "4-5", "6-7", "overflow";
@@ -249,7 +249,7 @@
 		};
 
 		ftm1: ftm@40039000 {
-			compatible = "nxp,kinetis-ftm";
+			compatible = "nxp,ftm";
 			reg = <0x40039000 0x1000>;
 			interrupts = <105 0>, <106 0>, <107 0>, <108 0>, <110 0>;
 			interrupt-names = "0-1", "2-3", "4-5", "6-7", "overflow";
@@ -259,7 +259,7 @@
 		};
 
 		ftm2: ftm@4003a000 {
-			compatible = "nxp,kinetis-ftm";
+			compatible = "nxp,ftm";
 			reg = <0x4003a000 0x1000>;
 			interrupts = <111 0>, <112 0>, <113 0>, <114 0>, <116 0>;
 			interrupt-names = "0-1", "2-3", "4-5", "6-7", "overflow";
@@ -269,7 +269,7 @@
 		};
 
 		ftm3: ftm@40026000 {
-			compatible = "nxp,kinetis-ftm";
+			compatible = "nxp,ftm";
 			reg = <0x40026000 0x1000>;
 			interrupts = <117 0>, <118 0>, <119 0>, <120 0>, <122 0>;
 			interrupt-names = "0-1", "2-3", "4-5", "6-7", "overflow";
@@ -279,7 +279,7 @@
 		};
 
 		ftm4: ftm@4006e000 {
-			compatible = "nxp,kinetis-ftm";
+			compatible = "nxp,ftm";
 			reg = <0x4006e000 0x1000>;
 			interrupts = <123 0>, <124 0>, <125 0>, <126 0>, <128 0>;
 			interrupt-names = "0-1", "2-3", "4-5", "6-7", "overflow";
@@ -289,7 +289,7 @@
 		};
 
 		ftm5: ftm@4006f000 {
-			compatible = "nxp,kinetis-ftm";
+			compatible = "nxp,ftm";
 			reg = <0x4006f000 0x1000>;
 			interrupts = <129 0>, <130 0>, <131 0>, <132 0>, <134 0>;
 			interrupt-names = "0-1", "2-3", "4-5", "6-7", "overflow";
@@ -299,7 +299,7 @@
 		};
 
 		ftm6: ftm@40070000 {
-			compatible = "nxp,kinetis-ftm";
+			compatible = "nxp,ftm";
 			reg = <0x40070000 0x1000>;
 			interrupts = <135 0>, <136 0>, <137 0>, <138 0>, <140 0>;
 			interrupt-names = "0-1", "2-3", "4-5", "6-7", "overflow";
@@ -309,7 +309,7 @@
 		};
 
 		ftm7: ftm@40071000 {
-			compatible = "nxp,kinetis-ftm";
+			compatible = "nxp,ftm";
 			reg = <0x40071000 0x1000>;
 			interrupts = <141 0>, <142 0>, <143 0>, <144 0>, <146 0>;
 			interrupt-names = "0-1", "2-3", "4-5", "6-7", "overflow";
