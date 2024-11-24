@@ -26,7 +26,7 @@ DECLARE_FAKE_VALUE_FUNC(int, fake_stepper_set_micro_step_res, const struct devic
 DECLARE_FAKE_VALUE_FUNC(int, fake_stepper_get_micro_step_res, const struct device *,
 			enum stepper_micro_step_resolution *);
 
-DECLARE_FAKE_VALUE_FUNC(int, fake_stepper_set_actual_position, const struct device *, int32_t);
+DECLARE_FAKE_VALUE_FUNC(int, fake_stepper_set_reference_position, const struct device *, int32_t);
 
 DECLARE_FAKE_VALUE_FUNC(int, fake_stepper_get_actual_position, const struct device *, int32_t *);
 

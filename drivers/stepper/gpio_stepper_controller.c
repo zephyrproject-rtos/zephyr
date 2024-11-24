@@ -194,7 +194,7 @@ static int gpio_stepper_move(const struct device *dev, int32_t micro_steps)
 	return 0;
 }
 
-static int gpio_stepper_set_actual_position(const struct device *dev, int32_t position)
+static int gpio_stepper_set_reference_position(const struct device *dev, int32_t position)
 {
 	struct gpio_stepper_data *data = dev->data;
 
@@ -356,7 +356,7 @@ static const struct stepper_driver_api gpio_stepper_api = {
 	.enable = gpio_stepper_enable,
 	.move = gpio_stepper_move,
 	.is_moving = gpio_stepper_is_moving,
-	.set_actual_position = gpio_stepper_set_actual_position,
+	.set_reference_position = gpio_stepper_set_reference_position,
 	.get_actual_position = gpio_stepper_get_actual_position,
 	.set_target_position = gpio_stepper_set_target_position,
 	.set_max_velocity = gpio_stepper_set_max_velocity,

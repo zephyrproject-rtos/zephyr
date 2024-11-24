@@ -7,6 +7,7 @@
 
 /*
  * SPDX-FileCopyrightText: Copyright (c) 2024 Carl Zeiss Meditec AG
+ * SPDX-FileCopyrightText: Copyright (c) 2024 Jilay Sandeep Pandya
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -135,11 +136,11 @@ typedef int (*stepper_set_micro_step_res_t)(const struct device *dev,
 typedef int (*stepper_get_micro_step_res_t)(const struct device *dev,
 					    enum stepper_micro_step_resolution *resolution);
 /**
- * @brief Set the actual a.k.a reference position of the stepper
+ * @brief Set the reference position of the stepper
  *
  * @see stepper_set_actual_position() for details.
  */
-typedef int (*stepper_set_actual_position_t)(const struct device *dev, const int32_t value);
+typedef int (*stepper_set_reference_position_t)(const struct device *dev, const int32_t value);
 
 /**
  * @brief Get the actual a.k.a reference position of the stepper
@@ -194,7 +195,7 @@ __subsystem struct stepper_driver_api {
 	stepper_set_max_velocity_t set_max_velocity;
 	stepper_set_micro_step_res_t set_micro_step_res;
 	stepper_get_micro_step_res_t get_micro_step_res;
-	stepper_set_actual_position_t set_actual_position;
+	stepper_set_reference_position_t set_reference_position;
 	stepper_get_actual_position_t get_actual_position;
 	stepper_set_target_position_t set_target_position;
 	stepper_is_moving_t is_moving;
@@ -318,7 +319,7 @@ static inline int z_impl_stepper_get_micro_step_res(const struct device *dev,
 }
 
 /**
- * @brief Set the actual a.k.a reference position of the stepper
+ * @brief Set the reference position of the stepper
  *
  * @param dev Pointer to the stepper motor controller instance.
  * @param value The reference position to set in micro-steps.
@@ -327,16 +328,17 @@ static inline int z_impl_stepper_get_micro_step_res(const struct device *dev,
  * @retval -ENOSYS If not implemented by device driver
  * @retval 0 Success
  */
-__syscall int stepper_set_actual_position(const struct device *dev, int32_t value);
+__syscall int stepper_set_reference_position(const struct device *dev, int32_t value);
 
-static inline int z_impl_stepper_set_actual_position(const struct device *dev, const int32_t value)
+static inline int z_impl_stepper_set_reference_position(const struct device *dev,
+							const int32_t value)
 {
 	const struct stepper_driver_api *api = (const struct stepper_driver_api *)dev->api;
 
-	if (api->set_actual_position == NULL) {
+	if (api->set_reference_position == NULL) {
 		return -ENOSYS;
 	}
-	return api->set_actual_position(dev, value);
+	return api->set_reference_position(dev, value);
 }
 
 /**
