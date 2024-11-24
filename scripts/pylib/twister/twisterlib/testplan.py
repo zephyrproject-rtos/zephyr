@@ -188,6 +188,8 @@ class TestPlan:
         num = self.add_testsuites(testsuite_filter=self.run_individual_testsuite)
         if num == 0:
             raise TwisterRuntimeError("No test cases found at the specified location...")
+        if self.load_errors:
+            raise TwisterRuntimeError(f"Found {self.load_errors} errors loading {num} test configurations.")
 
         self.find_subtests()
         # get list of scenarios we have parsed into one list
@@ -196,9 +198,6 @@ class TestPlan:
 
         self.report_duplicates()
         self.parse_configuration(config_file=self.env.test_config)
-
-        if self.load_errors:
-            raise TwisterRuntimeError("Errors while loading configurations")
 
         # handle quarantine
         ql = self.options.quarantine_list
@@ -605,10 +604,18 @@ class TestPlan:
                             suite.add_subcases(suite_dict, subcases, ztest_suite_names)
                         else:
                             suite.add_subcases(suite_dict)
+
                         if testsuite_filter:
                             scenario = os.path.basename(suite.name)
                             if suite.name and (suite.name in testsuite_filter or scenario in testsuite_filter):
                                 self.testsuites[suite.name] = suite
+                        elif suite.name in self.testsuites:
+                            msg = f"test suite '{suite.name}' in '{suite.yamlfile}' is already added"
+                            if suite.yamlfile == self.testsuites[suite.name].yamlfile:
+                                logger.debug(f"Skip - {msg}")
+                            else:
+                                msg = f"Duplicate {msg} from '{self.testsuites[suite.name].yamlfile}'"
+                                raise TwisterRuntimeError(msg)
                         else:
                             self.testsuites[suite.name] = suite
 
