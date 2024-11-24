@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT	nxp_kinetis_dspi
+#define DT_DRV_COMPAT	nxp_dspi
 
 #include <errno.h>
 #include <zephyr/drivers/spi.h>
