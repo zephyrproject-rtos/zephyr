@@ -54,7 +54,8 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                  gdb_client_port=DEFAULT_OPENOCD_GDB_PORT,
                  gdb_init=None, no_load=False,
                  target_handle=DEFAULT_OPENOCD_TARGET_HANDLE,
-                 rtt_port=DEFAULT_OPENOCD_RTT_PORT):
+                 rtt_port=DEFAULT_OPENOCD_RTT_PORT,
+                 rtt_quiet=False):
         super().__init__(cfg)
 
         if not path.exists(cfg.board_dir):
@@ -113,6 +114,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         self.load_arg = [] if no_load else ['-ex', 'load']
         self.target_handle = target_handle
         self.rtt_port = rtt_port
+        self.rtt_quiet = rtt_quiet
 
     @classmethod
     def name(cls):
@@ -184,6 +186,8 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                             ''')
         parser.add_argument('--rtt-port', default=DEFAULT_OPENOCD_RTT_PORT,
                             help='openocd rtt port, defaults to 5555')
+        parser.add_argument('--rtt-quiet', action='store_true',
+                            help='only output rtt to stdout, not that of subprocesses')
 
 
     @classmethod
@@ -200,9 +204,12 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
             telnet_port=args.telnet_port, gdb_port=args.gdb_port,
             gdb_client_port=args.gdb_client_port, gdb_init=args.gdb_init,
             no_load=args.no_load, target_handle=args.target_handle,
-            rtt_port=args.rtt_port)
+            rtt_port=args.rtt_port, rtt_quiet=args.rtt_quiet)
 
     def print_gdbserver_message(self):
+        if self.rtt_quiet:
+            return
+
         if not self.thread_info_enabled:
             thread_msg = '; no thread info available'
         elif self.supports_thread_info():
@@ -213,6 +220,9 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                          f'{self.gdb_port}{thread_msg}')
 
     def print_rttserver_message(self):
+        if self.rtt_quiet:
+            return
+
         self.logger.info(f'OpenOCD RTT server running on port {self.rtt_port}')
 
     def read_version(self):
@@ -403,11 +413,15 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                 server_proc.terminate()
                 server_proc.wait()
         elif command == 'rtt':
+            rtt_quiet_kwargs = {'stdout': subprocess.DEVNULL,
+                                'stderr': subprocess.DEVNULL} if self.rtt_quiet else {}
+
             self.print_rttserver_message()
-            server_proc = self.popen_ignore_int(server_cmd)
+
+            server_proc = self.popen_ignore_int(server_cmd, **rtt_quiet_kwargs)
             try:
                 # run the binary with gdb, set up the rtt server (runs to completion)
-                subprocess.run(gdb_cmd)
+                subprocess.run(gdb_cmd, **rtt_quiet_kwargs)
                 # run the rtt client in the foreground
                 self.run_telnet_client('localhost', self.rtt_port)
             finally:
