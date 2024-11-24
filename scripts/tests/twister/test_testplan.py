@@ -1309,19 +1309,35 @@ def test_testplan_get_all_tests():
 
 
 TESTDATA_9 = [
-    ([], False, 7),
-    ([], True, 5),
-    (['good_test/dummy.common.1', 'good_test/dummy.common.2', 'good_test/dummy.common.3'], False, 3),
-    (['good_test/dummy.common.1', 'good_test/dummy.common.2', 'good_test/dummy.common.3'], True, 0),
+    ([], False, True, 11, 1),
+    ([], False, False, 7, 2),
+    ([], True, False, 9, 1),
+    ([], True, True, 9, 1),
+    ([], True, False, 9, 1),
+    (['good_test/dummy.common.1', 'good_test/dummy.common.2', 'good_test/dummy.common.3'], False, True, 3, 1),
+    (['good_test/dummy.common.1', 'good_test/dummy.common.2',
+      'duplicate_test/dummy.common.1', 'duplicate_test/dummy.common.2'], False, True, 4, 1),
+    (['dummy.common.1', 'dummy.common.2'], False, False, 2, 1),
+    (['good_test/dummy.common.1', 'good_test/dummy.common.2', 'good_test/dummy.common.3'], True, True, 0, 1),
 ]
 
 @pytest.mark.parametrize(
-    'testsuite_filter, use_alt_root, expected_suite_count',
+    'testsuite_filter, use_alt_root, detailed_id, expected_suite_count, expected_errors',
     TESTDATA_9,
-    ids=['no testsuite filter', 'no testsuite filter, alt root',
-         'testsuite filter', 'testsuite filter, alt root']
+    ids=[
+        'no testsuite filter, detailed id',
+        'no testsuite filter, short id',
+        'no testsuite filter, alt root, detailed id',
+        'no filter, alt root, detailed id',
+        'no filter, alt root, short id',
+        'testsuite filter',
+        'testsuite filter and valid duplicate',
+        'testsuite filter, short id and duplicate',
+        'testsuite filter, alt root',
+    ]
 )
-def test_testplan_add_testsuites(tmp_path, testsuite_filter, use_alt_root, expected_suite_count):
+def test_testplan_add_testsuites(tmp_path, testsuite_filter, use_alt_root, detailed_id,
+                                 expected_errors, expected_suite_count):
     # tmp_path
     # ├ tests  <- test root
     # │ ├ good_test
@@ -1330,6 +1346,8 @@ def test_testplan_add_testsuites(tmp_path, testsuite_filter, use_alt_root, expec
     # │ │ └ testcase.yaml
     # │ ├ good_sample
     # │ │ └ sample.yaml
+    # │ ├ duplicate_test
+    # │ │ └ testcase.yaml
     # │ └ others
     # │   └ other.txt
     # └ other_tests  <- alternate test root
@@ -1381,6 +1399,25 @@ tests:
     samplefile_1 = tmp_good_sample_dir / 'sample.yaml'
     samplefile_1.write_text(samplecase_yaml_1)
 
+    tmp_duplicate_test_dir = tmp_test_root_dir / 'duplicate_test'
+    tmp_duplicate_test_dir.mkdir()
+    # The duplicate needs to have the same number of tests as these configurations
+    # can be read either with duplicate_test first, or good_test first, so number
+    # of selected tests needs to be the same in both situations.
+    testcase_yaml_4 = """\
+tests:
+  dummy.common.1:
+    build_on_all: true
+  dummy.common.2:
+    build_on_all: true
+  dummy.common.3:
+    build_on_all: true
+  dummy.special:
+    build_on_all: false
+"""
+    testfile_4 = tmp_duplicate_test_dir / 'testcase.yaml'
+    testfile_4.write_text(testcase_yaml_4)
+
     tmp_other_dir = tmp_test_root_dir / 'others'
     tmp_other_dir.mkdir()
     _ = tmp_other_dir / 'other.txt'
@@ -1402,6 +1439,7 @@ tests:
 
     env = mock.Mock(
         test_roots=[tmp_test_root_dir],
+        options=mock.Mock(detailed_test_id=detailed_id),
         alt_config_root=[tmp_alt_test_root_dir] if use_alt_root else []
     )
 
@@ -1410,6 +1448,7 @@ tests:
     res = testplan.add_testsuites(testsuite_filter)
 
     assert res == expected_suite_count
+    assert testplan.load_errors == expected_errors
 
 
 def test_testplan_str():
