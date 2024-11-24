@@ -1106,7 +1106,7 @@
 		};
 
 		lpi2c1: i2c@409d0000 {
-			compatible = "nxp,imx-lpi2c";
+			compatible = "nxp,lpi2c";
 			reg = <0x409d0000 0x10000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -1117,7 +1117,7 @@
 		};
 
 		lpi2c2: i2c@421d0000 {
-			compatible = "nxp,imx-lpi2c";
+			compatible = "nxp,lpi2c";
 			reg = <0x421d0000 0x10000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
