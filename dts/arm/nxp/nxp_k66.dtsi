@@ -14,7 +14,7 @@
 / {
 	soc {
 		lpuart0: lpuart@400c4000 {
-			compatible = "nxp,kinetis-lpuart";
+			compatible = "nxp,lpuart";
 			reg = <0x400c4000 0x14>;
 			interrupts = <86 0>;
 			clocks = <&sim KINETIS_SIM_CORESYS_CLK 0x1038 20>;

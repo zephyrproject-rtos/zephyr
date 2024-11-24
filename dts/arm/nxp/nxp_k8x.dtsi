@@ -210,7 +210,7 @@
 		};
 
 		lpuart0: lpuart@400c4000 {
-			compatible = "nxp,kinetis-lpuart";
+			compatible = "nxp,lpuart";
 			reg = <0x400c4000 0x1000>;
 			interrupts = <30 0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x102c 4>;
@@ -220,7 +220,7 @@
 		};
 
 		lpuart1: lpuart@400c5000 {
-			compatible = "nxp,kinetis-lpuart";
+			compatible = "nxp,lpuart";
 			reg = <0x400c5000 0x1000>;
 			interrupts = <31 0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x102c 5>;
@@ -230,7 +230,7 @@
 		};
 
 		lpuart2: lpuart@400c6000 {
-			compatible = "nxp,kinetis-lpuart";
+			compatible = "nxp,lpuart";
 			reg = <0x400c6000 0x1000>;
 			interrupts = <32 0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x102c 6>;
@@ -240,7 +240,7 @@
 		};
 
 		lpuart3: lpuart@400c7000 {
-			compatible = "nxp,kinetis-lpuart";
+			compatible = "nxp,lpuart";
 			reg = <0x400c7000 0x1000>;
 			interrupts = <33 0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x102c 7>;
@@ -250,7 +250,7 @@
 		};
 
 		lpuart4: lpuart@400d6000 {
-			compatible = "nxp,kinetis-lpuart";
+			compatible = "nxp,lpuart";
 			reg = <0x400d6000 0x1000>;
 			interrupts = <34 0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x102c 22>;
