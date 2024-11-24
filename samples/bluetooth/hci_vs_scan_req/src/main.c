@@ -10,6 +10,9 @@
 #include <zephyr/bluetooth/hci_vs.h>
 #include <zephyr/bluetooth/addr.h>
 
+BUILD_ASSERT(IS_ENABLED(CONFIG_BT_HAS_HCI_VS),
+	     "This app requires Zephyr-specific HCI vendor extensions");
+
 #define DEVICE_NAME CONFIG_BT_DEVICE_NAME
 #define DEVICE_NAME_LENGTH (sizeof(DEVICE_NAME) - 1)
 
