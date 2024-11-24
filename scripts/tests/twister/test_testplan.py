@@ -1699,27 +1699,31 @@ def test_testplan_add_instances():
     }
 
 
-def test_testplan_get_testsuite():
+def test_testplan_get_testcase():
     testplan = TestPlan(env=mock.Mock())
     testplan.testsuites = {
-        'testsuite0': mock.Mock(testcases=[mock.Mock(), mock.Mock()]),
-        'testsuite1': mock.Mock(testcases=[mock.Mock()]),
-        'testsuite2': mock.Mock(testcases=[mock.Mock(), mock.Mock()]),
-        'testsuite3': mock.Mock(testcases=[])
+        'test1.suite0': mock.Mock(testcases=[mock.Mock(), mock.Mock()]),
+        'test1.suite1': mock.Mock(testcases=[mock.Mock(), mock.Mock()]),
+        'test1.suite2': mock.Mock(testcases=[mock.Mock(), mock.Mock()]),
+        'test1.suite3': mock.Mock(testcases=[])
     }
-    testplan.testsuites['testsuite0'].testcases[0].name = 'testcase name 0'
-    testplan.testsuites['testsuite0'].testcases[1].name = 'testcase name 1'
-    testplan.testsuites['testsuite1'].testcases[0].name = 'sample id'
-    testplan.testsuites['testsuite2'].testcases[0].name = 'dummy id'
-    testplan.testsuites['testsuite2'].testcases[1].name = 'sample id'
 
-    id = 'sample id'
+    testplan.testsuites['test1.suite0'].testcases[0].name = 'test1.suite0.case0'
+    testplan.testsuites['test1.suite0'].testcases[1].name = 'test1.suite0.case1'
+    #
+    testplan.testsuites['test1.suite1'].testcases[0].name = 'test1.suite1.case0'
+    testplan.testsuites['test1.suite1'].testcases[1].name = 'test1.suite1.case0'  # in suite duplicate
+    #
+    testplan.testsuites['test1.suite2'].testcases[0].name = 'test1.suite2.case0'
+    testplan.testsuites['test1.suite2'].testcases[1].name = 'test1.suite1.case0'  # out suite duplicate
 
-    res = testplan.get_testsuite(id)
+    id = 'test1.suite1.case0'
 
-    assert len(res) == 2
-    assert testplan.testsuites['testsuite1'] in res
-    assert testplan.testsuites['testsuite2'] in res
+    res = testplan.get_testcase(id)
+
+    assert len(res) == 3
+    assert testplan.testsuites['test1.suite1'] in res
+    assert testplan.testsuites['test1.suite2'] in res
 
 
 def test_testplan_verify_platforms_existence(caplog):
