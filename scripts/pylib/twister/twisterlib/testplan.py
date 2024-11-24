@@ -168,7 +168,7 @@ class TestPlan:
         sub_tests = self.options.sub_test
         if sub_tests:
             for subtest in sub_tests:
-                _subtests = self.get_testsuite(subtest)
+                _subtests = self.get_testcase(subtest)
                 for _subtest in _subtests:
                     self.run_individual_testsuite.append(_subtest.name)
 
@@ -1088,6 +1088,13 @@ class TestPlan:
 
 
     def get_testsuite(self, identifier):
+        results = []
+        for _, ts in self.testsuites.items():
+            if ts.id == identifier:
+                results.append(ts)
+        return results
+
+    def get_testcase(self, identifier):
         results = []
         for _, ts in self.testsuites.items():
             for case in ts.testcases:
