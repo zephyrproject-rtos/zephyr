@@ -213,7 +213,7 @@ class HardwareMap:
                                 True,
                                 flash_timeout=self.options.device_flash_timeout,
                                 flash_with_test=self.options.device_flash_with_test,
-                                flash_before=False,
+                                flash_before=self.options.flash_before
                                 )
 
             # the fixtures given by twister command explicitly should be assigned to each DUT

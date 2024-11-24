@@ -939,10 +939,6 @@ def parse_arguments(
         logger.error("--device-flash-with-test does not apply when --flash-before is used")
         sys.exit(1)
 
-    if options.flash_before and options.device_serial_pty:
-        logger.error("--device-serial-pty cannot be used when --flash-before is set (for now)")
-        sys.exit(1)
-
     if options.shuffle_tests and options.subset is None:
         logger.error("--shuffle-tests requires --subset")
         sys.exit(1)
