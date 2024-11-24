@@ -171,7 +171,7 @@
 	};
 
 	lpuart0: serial@38000 {
-		compatible = "nxp,kinetis-lpuart";
+		compatible = "nxp,lpuart";
 		reg = <0x38000 0x34>;
 		interrupts = <44 0>;
 		clocks = <&scg SCG_K4_FIRC_CLK 0xe0>;
@@ -179,7 +179,7 @@
 	};
 
 	lpuart1: serial@39000 {
-		compatible = "nxp,kinetis-lpuart";
+		compatible = "nxp,lpuart";
 		reg = <0x39000 0x34>;
 		interrupts = <45 0>;
 		clocks = <&scg SCG_K4_FIRC_CLK 0xe4>;

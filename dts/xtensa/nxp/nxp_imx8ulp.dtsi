@@ -61,7 +61,7 @@
 	 * from LPUART7.
 	 */
 	lpuart7: serial@29870000 {
-		compatible = "nxp,kinetis-lpuart";
+		compatible = "nxp,lpuart";
 		reg = <0x29870000 DT_SIZE_K(4)>;
 		clocks = <&pcc4 IMX8ULP_CLOCK_LPUART7 0x0>;
 		status = "disabled";
