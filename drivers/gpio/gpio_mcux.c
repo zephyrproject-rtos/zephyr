@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT nxp_kinetis_gpio
+#define DT_DRV_COMPAT nxp_gpio
 
 #include <errno.h>
 #include <zephyr/device.h>

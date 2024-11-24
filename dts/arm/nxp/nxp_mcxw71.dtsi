@@ -229,7 +229,7 @@
 	};
 
 	gpiod: gpio@46000{
-		compatible = "nxp,kinetis-gpio";
+		compatible = "nxp,gpio";
 		status = "disabled";
 		gpio-controller;
 		#gpio-cells = <2>;
@@ -351,7 +351,7 @@
 
 &fast_peripheral0 {
 	gpioa: gpio@10000{
-		compatible = "nxp,kinetis-gpio";
+		compatible = "nxp,gpio";
 		status = "disabled";
 		gpio-controller;
 		#gpio-cells = <2>;
@@ -361,7 +361,7 @@
 	};
 
 	gpiob: gpio@20000{
-		compatible = "nxp,kinetis-gpio";
+		compatible = "nxp,gpio";
 		status = "disabled";
 		gpio-controller;
 		#gpio-cells = <2>;
@@ -371,7 +371,7 @@
 	};
 
 	gpioc: gpio@30000{
-		compatible = "nxp,kinetis-gpio";
+		compatible = "nxp,gpio";
 		status = "disabled";
 		gpio-controller;
 		#gpio-cells = <2>;
