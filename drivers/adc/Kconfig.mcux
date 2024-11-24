@@ -6,7 +6,7 @@
 config ADC_MCUX_ADC12
 	bool "MCUX ADC12 driver"
 	default y
-	depends on DT_HAS_NXP_KINETIS_ADC12_ENABLED
+	depends on DT_HAS_NXP_ADC12_ENABLED
 	select PINCTRL
 	help
 	  Enable the MCUX ADC12 driver.
