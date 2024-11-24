@@ -133,6 +133,7 @@ ARC arch:
     - evgeniy-paltsev
   collaborators:
     - abrodkin
+    - tagunil
   files:
     - arch/arc/
     - include/zephyr/arch/arc/
