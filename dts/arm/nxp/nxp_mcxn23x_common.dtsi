@@ -186,7 +186,7 @@
 			status = "disabled";
 		};
 		flexcomm0_lpspi0: spi@92000 {
-			compatible = "nxp,imx-lpspi";
+			compatible = "nxp,lpspi";
 			reg = <0x92000 0x1000>;
 			clocks = <&syscon MCUX_FLEXCOMM0_CLK>;
 			#address-cells = <1>;
@@ -223,7 +223,7 @@
 			status = "disabled";
 		};
 		flexcomm1_lpspi1: spi@93000 {
-			compatible = "nxp,imx-lpspi";
+			compatible = "nxp,lpspi";
 			reg = <0x93000 0x1000>;
 			clocks = <&syscon MCUX_FLEXCOMM1_CLK>;
 			#address-cells = <1>;
@@ -263,7 +263,7 @@
 			status = "disabled";
 		};
 		flexcomm2_lpspi2: spi@94000 {
-			compatible = "nxp,imx-lpspi";
+			compatible = "nxp,lpspi";
 			reg = <0x94000 0x1000>;
 			clocks = <&syscon MCUX_FLEXCOMM2_CLK>;
 			#address-cells = <1>;
@@ -300,7 +300,7 @@
 			status = "disabled";
 		};
 		flexcomm3_lpspi3: spi@95000 {
-			compatible = "nxp,imx-lpspi";
+			compatible = "nxp,lpspi";
 			reg = <0x95000 0x1000>;
 			clocks = <&syscon MCUX_FLEXCOMM3_CLK>;
 			#address-cells = <1>;
@@ -337,7 +337,7 @@
 			status = "disabled";
 		};
 		flexcomm4_lpspi4: spi@b4000 {
-			compatible = "nxp,imx-lpspi";
+			compatible = "nxp,lpspi";
 			reg = <0xb4000 0x1000>;
 			clocks = <&syscon MCUX_FLEXCOMM4_CLK>;
 			#address-cells = <1>;
@@ -374,7 +374,7 @@
 			status = "disabled";
 		};
 		flexcomm5_lpspi5: spi@b5000 {
-			compatible = "nxp,imx-lpspi";
+			compatible = "nxp,lpspi";
 			reg = <0xb5000 0x1000>;
 			clocks = <&syscon MCUX_FLEXCOMM5_CLK>;
 			#address-cells = <1>;
@@ -408,7 +408,7 @@
 			status = "disabled";
 		};
 		flexcomm6_lpspi6: spi@b6000 {
-			compatible = "nxp,imx-lpspi";
+			compatible = "nxp,lpspi";
 			reg = <0xb6000 0x1000>;
 			clocks = <&syscon MCUX_FLEXCOMM6_CLK>;
 			#address-cells = <1>;
@@ -442,7 +442,7 @@
 			status = "disabled";
 		};
 		flexcomm7_lpspi7: spi@b7000 {
-			compatible = "nxp,imx-lpspi";
+			compatible = "nxp,lpspi";
 			reg = <0xb7000 0x1000>;
 			clocks = <&syscon MCUX_FLEXCOMM7_CLK>;
 			#address-cells = <1>;

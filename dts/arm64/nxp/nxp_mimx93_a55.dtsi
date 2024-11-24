@@ -240,7 +240,7 @@
 	};
 
 	lpspi1: spi@44360000 {
-		compatible = "nxp,imx-lpspi";
+		compatible = "nxp,lpspi";
 		reg = <0x44360000 0x4000>;
 		interrupts = <GIC_SPI 16 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-parent = <&gic>;
@@ -251,7 +251,7 @@
 	};
 
 	lpspi2: spi@44370000 {
-		compatible = "nxp,imx-lpspi";
+		compatible = "nxp,lpspi";
 		reg = <0x44370000 0x4000>;
 		interrupts = <GIC_SPI 17 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-parent = <&gic>;
@@ -262,7 +262,7 @@
 	};
 
 	lpspi3: spi@42550000 {
-		compatible = "nxp,imx-lpspi";
+		compatible = "nxp,lpspi";
 		reg = <0x42550000 0x4000>;
 		interrupts = <GIC_SPI 65 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-parent = <&gic>;
@@ -273,7 +273,7 @@
 	};
 
 	lpspi4: spi@42560000 {
-		compatible = "nxp,imx-lpspi";
+		compatible = "nxp,lpspi";
 		reg = <0x42560000 0x4000>;
 		interrupts = <GIC_SPI 66 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-parent = <&gic>;
@@ -284,7 +284,7 @@
 	};
 
 	lpspi5: spi@426f0000 {
-		compatible = "nxp,imx-lpspi";
+		compatible = "nxp,lpspi";
 		reg = <0x426f0000 0x4000>;
 		interrupts = <GIC_SPI 191 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-parent = <&gic>;
@@ -295,7 +295,7 @@
 	};
 
 	lpspi6: spi@42700000 {
-		compatible = "nxp,imx-lpspi";
+		compatible = "nxp,lpspi";
 		reg = <0x42700000 0x4000>;
 		interrupts = <GIC_SPI 192 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-parent = <&gic>;
@@ -306,7 +306,7 @@
 	};
 
 	lpspi7: spi@42710000 {
-		compatible = "nxp,imx-lpspi";
+		compatible = "nxp,lpspi";
 		reg = <0x42710000 0x4000>;
 		interrupts = <GIC_SPI 193 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-parent = <&gic>;
@@ -317,7 +317,7 @@
 	};
 
 	lpspi8: spi@42720000 {
-		compatible = "nxp,imx-lpspi";
+		compatible = "nxp,lpspi";
 		reg = <0x42720000 0x4000>;
 		interrupts = <GIC_SPI 194 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-parent = <&gic>;

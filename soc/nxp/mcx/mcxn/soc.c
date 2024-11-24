@@ -37,4 +37,4 @@ void soc_reset_hook(void)
 /* SPI cannot be exist with UART or I2C on the same FlexComm Interface
  * Throw a build error if user is enabling SPI and UART/I2C on a Flexcomm node.
  */
-DT_FOREACH_STATUS_OKAY(nxp_imx_lpspi, FLEXCOMM_CHECK)
+DT_FOREACH_STATUS_OKAY(nxp_lpspi, FLEXCOMM_CHECK)
