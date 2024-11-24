@@ -493,7 +493,7 @@
 		};
 
 		lpuart1: uart@40184000 {
-			compatible = "nxp,kinetis-lpuart";
+			compatible = "nxp,lpuart";
 			reg = <0x40184000 0x4000>;
 			interrupts = <20 0>;
 			clocks = <&ccm IMX_CCM_LPUART_CLK 0x7c 24>;
@@ -503,7 +503,7 @@
 		};
 
 		lpuart2: uart@40188000 {
-			compatible = "nxp,kinetis-lpuart";
+			compatible = "nxp,lpuart";
 			reg = <0x40188000 0x4000>;
 			interrupts = <21 0>;
 			clocks = <&ccm IMX_CCM_LPUART_CLK 0x68 28>;
@@ -513,7 +513,7 @@
 		};
 
 		lpuart3: uart@4018c000 {
-			compatible = "nxp,kinetis-lpuart";
+			compatible = "nxp,lpuart";
 			reg = <0x4018c000 0x4000>;
 			interrupts = <22 0>;
 			clocks = <&ccm IMX_CCM_LPUART_CLK 0x68 12>;
@@ -523,7 +523,7 @@
 		};
 
 		lpuart4: uart@40190000 {
-			compatible = "nxp,kinetis-lpuart";
+			compatible = "nxp,lpuart";
 			reg = <0x40190000 0x4000>;
 			interrupts = <23 0>;
 			clocks = <&ccm IMX_CCM_LPUART_CLK 0x6c 24>;
@@ -533,7 +533,7 @@
 		};
 
 		lpuart5: uart@40194000 {
-			compatible = "nxp,kinetis-lpuart";
+			compatible = "nxp,lpuart";
 			reg = <0x40194000 0x4000>;
 			interrupts = <24 0>;
 			clocks = <&ccm IMX_CCM_LPUART_CLK 0x74 2>;
@@ -543,7 +543,7 @@
 		};
 
 		lpuart6: uart@40198000 {
-			compatible = "nxp,kinetis-lpuart";
+			compatible = "nxp,lpuart";
 			reg = <0x40198000 0x4000>;
 			interrupts = <25 0>;
 			clocks = <&ccm IMX_CCM_LPUART_CLK 0x74 6>;
@@ -553,7 +553,7 @@
 		};
 
 		lpuart7: uart@4019c000 {
-			compatible = "nxp,kinetis-lpuart";
+			compatible = "nxp,lpuart";
 			reg = <0x4019c000 0x4000>;
 			interrupts = <26 0>;
 			clocks = <&ccm IMX_CCM_LPUART_CLK 0x7c 26>;
@@ -563,7 +563,7 @@
 		};
 
 		lpuart8: uart@401a0000 {
-			compatible = "nxp,kinetis-lpuart";
+			compatible = "nxp,lpuart";
 			reg = <0x401a0000 0x4000>;
 			interrupts = <27 0>;
 			clocks = <&ccm IMX_CCM_LPUART_CLK 0x80 14>;

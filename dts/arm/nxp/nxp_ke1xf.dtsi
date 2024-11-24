@@ -325,7 +325,7 @@
 		};
 
 		lpuart0: uart@4006a000 {
-			compatible = "nxp,kinetis-lpuart";
+			compatible = "nxp,lpuart";
 			reg = <0x4006a000 0x1000>;
 			interrupts = <31 0>, <32 0>;
 			interrupt-names = "transmit", "receive";
@@ -336,7 +336,7 @@
 		};
 
 		lpuart1: uart@4006b000 {
-			compatible = "nxp,kinetis-lpuart";
+			compatible = "nxp,lpuart";
 			reg = <0x4006b000 0x1000>;
 			interrupts = <33 0>, <34 0>;
 			interrupt-names = "transmit", "receive";
@@ -347,7 +347,7 @@
 		};
 
 		lpuart2: uart@4006c000 {
-			compatible = "nxp,kinetis-lpuart";
+			compatible = "nxp,lpuart";
 			reg = <0x4006c000 0x1000>;
 			interrupts = <35 0>, <36 0>;
 			interrupt-names = "transmit", "receive";
