@@ -1,9 +1,9 @@
 # Copyright (c) 2018, NXP
 # SPDX-License-Identifier: Apache-2.0
 
-description: NXP Kinetis DSPI controller
+description: NXP DSPI controller
 
-compatible: "nxp,kinetis-dspi"
+compatible: "nxp,dspi"
 
 include: ["spi-controller.yaml", "pinctrl-device.yaml"]
 

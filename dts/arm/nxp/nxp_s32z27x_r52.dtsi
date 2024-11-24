@@ -561,7 +561,7 @@
 		};
 
 		dspi0: spi@40340000 {
-			compatible = "nxp,kinetis-dspi";
+			compatible = "nxp,dspi";
 			reg = <0x40340000 0x10000>;
 			interrupts = <GIC_SPI 204 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			clocks = <&clock NXP_S32_MSCDSPI_CLK>;
