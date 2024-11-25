@@ -869,25 +869,47 @@ config XIP
 
 menu "Security Options"
 
-config STACK_CANARIES
-	bool "Compiler stack canaries"
-	depends on ENTROPY_GENERATOR || TEST_RANDOM_GENERATOR
-	select NEED_LIBC_MEM_PARTITION if !STACK_CANARIES_TLS
+config REQUIRES_STACK_CANARIES
+	bool
 	help
-	  This option enables compiler stack canaries.
+	  Hidden option to signal that software stack protection is required.
 
+choice
+	prompt "Stack canaries protection options"
+	optional
+	help
 	  If stack canaries are supported by the compiler, it will emit
 	  extra code that inserts a canary value into the stack frame when
 	  a function is entered and validates this value upon exit.
 	  Stack corruption (such as that caused by buffer overflow) results
 	  in a fatal error condition for the running entity.
-	  Enabling this option can result in a significant increase
-	  in footprint and an associated decrease in performance.
+	  Enabling this option, depending on the level chosen, can result in a
+	  significant increase in footprint and a corresponding decrease in performance.
 
 	  If stack canaries are not supported by the compiler an error
 	  will occur at build time.
 
-if STACK_CANARIES
+config STACK_CANARIES
+	bool "Maximum protection available"
+	depends on ENTROPY_GENERATOR || TEST_RANDOM_GENERATOR
+	select NEED_LIBC_MEM_PARTITION if !STACK_CANARIES_TLS
+	select REQUIRES_STACK_CANARIES
+	help
+	  This option enables compiler stack canaries for all functions.
+
+config STACK_CANARIES_STRONG
+	bool "Strong protection"
+	depends on ENTROPY_GENERATOR || TEST_RANDOM_GENERATOR
+	select NEED_LIBC_MEM_PARTITION if !STACK_CANARIES_TLS
+	select REQUIRES_STACK_CANARIES
+	help
+	  This option enables compiler stack canaries in functions that call alloca,
+	  functions that have local array definitiion or have references to local
+	  frame addresses.
+
+endchoice
+
+if REQUIRES_STACK_CANARIES
 
 config STACK_CANARIES_TLS
 	bool "Stack canaries using thread local storage"
