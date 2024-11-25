@@ -39,10 +39,10 @@ endif # BT
 
 config PM
 	select COUNTER
-	select HAS_MCUX_SPC
-	select HAS_MCUX_CMC
-	select HAS_MCUX_WUU
-	select HAS_MCUX_CRC
+	# select HAS_MCUX_SPC
+	# select HAS_MCUX_CMC
+	# select HAS_MCUX_WUU
+	# select HAS_MCUX_CRC
 
 config FLASH
 	default y if BT

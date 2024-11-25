@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 NXP
+ * Copyright 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,7 +25,7 @@ const struct device *const counter_dev = DEVICE_DT_GET(LPTMR0_DEV);
 /* TODO: change this line when PowerDown is enabled
  * This definition is needed for compilation, but only used on PowerDown
  */
-uint32_t m_warmboot_stack_end __attribute__((section("RetainedMem")));
+uint32_t m_warmboot_stack_end __section("RetainedMem");
 
 /* -------------------------------------------------------------------------- */
 /*                              Private variables                             */
@@ -72,8 +72,8 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 
 		timeout_expiry = z_get_next_timeout_expiry();
 
-		counter_info.ticks = counter_us_to_ticks(counter_dev,
-							k_ticks_to_us_floor32(timeout_expiry));
+		counter_info.ticks =
+			counter_us_to_ticks(counter_dev, k_ticks_to_us_floor32(timeout_expiry));
 		counter_info.callback = NULL;
 		counter_info.user_data = NULL;
 
@@ -86,7 +86,6 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 		}
 
 		PM_EnterLowPower(k_ticks_to_us_floor64(timeout_expiry));
-
 	}
 }
 
