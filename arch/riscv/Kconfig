@@ -30,7 +30,7 @@ config RISCV_GP
 
 config RISCV_CURRENT_VIA_GP
 	bool "Store current thread into the global pointer (GP) register"
-	depends on !RISCV_GP && !USERSPACE
+	depends on !RISCV_GP
 	depends on MP_MAX_NUM_CPUS > 1
 	select ARCH_HAS_CUSTOM_CURRENT_IMPL
 	help
