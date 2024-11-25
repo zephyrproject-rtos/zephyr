@@ -11,34 +11,31 @@
 #define THREAD0_PRIORITY 7
 #define THREAD1_PRIORITY 7
 #define GPIO_INPUT 0
-K_EVENT_DEFINE(event_flag)
+void thread0(void);
+void thread1(void);
+K_THREAD_DEFINE(thread0_id, STACKSIZE, thread0, NULL, NULL, NULL,
+		THREAD0_PRIORITY, 0, 0);
+K_THREAD_DEFINE(thread1_id, STACKSIZE, thread1, NULL, NULL, NULL,
+		THREAD1_PRIORITY, 0, 0);
+// extern const k_tid_t thread0_id;
+// extern const k_tid_t thread1_id;
+void main(){
+	*((uint32_t*)(0x40200))|=((1<<1)|(1<<2));
+}
 void thread0(void)
 {
-	// k_event_set(&event_flag, 1);
-	// const struct device * dev = DEVICE_DT_GET(DT_NODELABEL(gpio0));
-	// gpio_pin_configure(dev,7,GPIO_INPUT);
-	k_event_set(&event_flag,1);
-	k_event_clear(&event_flag,1);
+	thread0_id->id=1;
 	while (1) {
-	// printk("Value : %d\n",(gpio_pin_get(dev,7)>>7)&1);
-    // printk("Hello, I am thread0\n");
-	printf("Task 1 running\n");
-    // k_msleep(10);
-	k_yield();
+	printf("Task 1 is running\n");
+	// k_msleep(100);
 	}
 }
 
 void thread1(void)
 {
+	thread1_id->id=2;
 	while (1) {
-	 k_event_wait(&event_flag,1,0,K_FOREVER);
-     printk("Hello, I am thread1\n");
-	   	// k_msleep(10);
-		k_yield();
+	printf("Task 2 is running\n");
+	// k_msleep(200);
 	}
 }
-
-K_THREAD_DEFINE(thread0_id, STACKSIZE, thread0, NULL, NULL, NULL,
-		THREAD0_PRIORITY, 0, 0);
-K_THREAD_DEFINE(thread1_id, STACKSIZE, thread1, NULL, NULL, NULL,
-		THREAD1_PRIORITY, 0, 0);
