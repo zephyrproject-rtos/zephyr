@@ -23,4 +23,5 @@ supported:
   - i2c
   - pwm
   - uart
+  - i3c
 vendor: nxp
