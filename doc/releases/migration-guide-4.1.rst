@@ -159,6 +159,11 @@ Stepper
   * Renamed the ``compatible`` from ``zephyr,gpio-steppers`` to :dtcompatible:`zephyr,gpio-stepper`.
   * Renamed the ``stepper_set_actual_position`` function to :c:func:`stepper_set_reference_position`.
 
+SPI
+===
+
+* Renamed the ``compatible`` from ``nxp,imx-lpspi`` to :dtcompatible:`nxp,lpspi`.
+
 Regulator
 =========
 
