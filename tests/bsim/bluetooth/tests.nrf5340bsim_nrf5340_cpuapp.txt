@@ -10,6 +10,7 @@ tests/bsim/bluetooth/samples/central_hr_peripheral_hr/
 tests/bsim/bluetooth/audio_samples/
 tests/bsim/bluetooth/audio/
 tests/bsim/bluetooth/host/gatt/notify_stress/
+tests/bsim/bluetooth/host/iso/bis/tests_scripts/bis.sh
 tests/bsim/bluetooth/host/misc/hfc/
 tests/bsim/bluetooth/host/misc/hfc_multilink/
 tests/bsim/bluetooth/host/privacy/peripheral
