@@ -252,11 +252,9 @@ int bt_mesh_proxy_relay_send(struct bt_conn *conn, struct bt_mesh_adv *adv)
 
 static void proxy_msg_send_pending(struct k_work *work)
 {
-	struct bt_mesh_proxy_role *role;
-	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct bt_mesh_proxy_role *role = CONTAINER_OF(work, struct bt_mesh_proxy_role, work);
 	struct bt_mesh_adv *adv;
 
-	role = CONTAINER_OF(dwork, struct bt_mesh_proxy_role, sar_timer);
 	if (!role->conn) {
 		return;
 	}
