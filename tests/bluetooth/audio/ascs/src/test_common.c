@@ -43,9 +43,17 @@ void test_mocks_cleanup(void)
 	mock_bap_stream_cleanup();
 	mock_bt_gatt_cleanup();
 }
+#define TEST_INIT_AND_CLEANUP(mock) \
+    do { \
+        mock##_init(); \
+        mock##_cleanup(); \
+    } while (0)
 
-void test_mocks_reset(void)
-{
+void test_mocks_reset(void) {
+    TEST_INIT_AND_CLEANUP(mock_bap_unicast_server);
+    TEST_INIT_AND_CLEANUP(mock_bt_iso);
+    TEST_INIT_AND_CLEANUP(mock_bap_stream);
+    TEST_INIT_AND_CLEANUP(mock_bt_gatt);
 	test_mocks_cleanup();
 	test_mocks_init();
 }
@@ -366,4 +374,31 @@ void test_preamble_state_releasing(struct bt_conn *conn, uint8_t ase_id,
 	mock_bt_gatt_init();
 
 	/* At this point, ISO is still connected, thus ASE is in releasing state */
+}
+
+void expect_bt_bap_unicast_server_cb_called(int expected_count, const struct bt_bap_stream *expected_stream) {
+    zassert_equal(mock_bap_unicast_server_cb_config_fake.call_count, expected_count,
+                  "Expected %d callbacks but got %d",
+                  expected_count, mock_bap_unicast_server_cb_config_fake.call_count);
+
+    if (expected_stream) {
+        zassert_equal(mock_bap_unicast_server_cb_config_fake.arg0_val, expected_stream,
+                      "Expected stream does not match.");
+    }
+}
+
+void test_ase_state_transition(struct bt_conn *conn, uint8_t ase_id,
+                               struct bt_bap_stream *stream, struct bt_iso_chan **chan,
+                               enum ase_state target_state) {
+    test_ase_control_client_config_codec(conn, ase_id, stream);
+    if (target_state >= ASE_STATE_QOS_CONFIGURED) {
+        test_ase_control_client_config_qos(conn, ase_id);
+    }
+    if (target_state >= ASE_STATE_ENABLED) {
+        test_ase_control_client_enable(conn, ase_id);
+    }
+    if (target_state == ASE_STATE_STREAMING && chan) {
+        mock_bt_iso_accept(conn, 0x01, 0x01, chan);
+    }
+    test_mocks_reset();
 }
