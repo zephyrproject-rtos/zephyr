@@ -27,7 +27,13 @@
 #define z_pllr(v) LL_RCC_PLLR_DIV_ ## v
 #define pllr(v) z_pllr(v)
 
+#if defined(RCC_PLLI2SCFGR_PLLI2SM)
+/* Some stm32F4 devices have a dedicated PLL I2S with M divider */
 #define z_plli2s_m(v) LL_RCC_PLLI2SM_DIV_ ## v
+#else
+/* Some stm32F4 devices (typ. stm32F401) have a dedicated PLL I2S with PLL M divider */
+#define z_plli2s_m(v) LL_RCC_PLLM_DIV_ ## v
+#endif /* RCC_PLLI2SCFGR_PLLI2SM */
 #define plli2sm(v) z_plli2s_m(v)
 
 #define z_plli2s_r(v) LL_RCC_PLLI2SR_DIV_ ## v
