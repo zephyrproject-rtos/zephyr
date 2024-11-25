@@ -45,7 +45,7 @@ jobs:
       BSIM_OUT_PATH: /opt/bsim/
       BSIM_COMPONENTS_PATH: /opt/bsim/components
       TWISTER_COMMON: '--no-detailed-test-id --force-color --inline-logs -v -N -M --retry-failed 3 --timeout-multiplier 2 '
-      DAILY_OPTIONS: ' -M --build-only --all --show-footprint --report-filtered'
+      WEEKLY_OPTIONS: ' -M --build-only --all --show-footprint --report-filtered'
       PR_OPTIONS: ' --clobber-output --integration'
       PUSH_OPTIONS: ' --clobber-output -M --show-footprint --report-filtered'
       COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
@@ -163,11 +163,11 @@ jobs:
         run: |
           export ZEPHYR_BASE=${PWD}
           export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
-          ./scripts/twister --subset ${{matrix.subset}}/${{ strategy.job-total }} ${TWISTER_COMMON} ${DAILY_OPTIONS}
+          ./scripts/twister --subset ${{matrix.subset}}/${{ strategy.job-total }} ${TWISTER_COMMON} ${WEEKLY_OPTIONS}
           if [ "${{matrix.subset}}" = "1" ]; then
             ./scripts/zephyr_module.py --twister-out module_tests.args
             if [ -s module_tests.args ]; then
-              ./scripts/twister +module_tests.args --outdir module_tests ${TWISTER_COMMON} ${DAILY_OPTIONS}
+              ./scripts/twister +module_tests.args --outdir module_tests ${TWISTER_COMMON} ${WEEKLY_OPTIONS}
             fi
           fi
 
