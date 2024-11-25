@@ -54,9 +54,6 @@ extern "C" {
 /* Thread is waiting on an object */
 #define _THREAD_PENDING (BIT(1))
 
-/* Thread has not yet started */
-#define _THREAD_PRESTART (BIT(2))
-
 /* Thread has terminated */
 #define _THREAD_DEAD (BIT(3))
 

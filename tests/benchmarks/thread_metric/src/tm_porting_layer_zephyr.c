@@ -78,11 +78,7 @@ int tm_thread_create(int thread_id, int priority, void (*entry_function)(void *,
  */
 int tm_thread_resume(int thread_id)
 {
-	if (test_thread[thread_id].base.thread_state & _THREAD_PRESTART) {
-		k_thread_start(&test_thread[thread_id]);
-	} else {
-		k_thread_resume(&test_thread[thread_id]);
-	}
+	k_thread_resume(&test_thread[thread_id]);
 
 	return TM_SUCCESS;
 }
