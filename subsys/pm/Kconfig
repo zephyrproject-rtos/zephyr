@@ -53,6 +53,11 @@ config PM_NEED_ALL_DEVICES_IDLE
 	  When this option is enabled, check that no devices are busy before
 	  entering into system low power mode.
 
+config PM_POLICY_LATENCY_IMMEDIATE_BIN_ACTION
+	bool "Support latency change action"
+	select ONOFF
+	imply POLL
+
 endif # PM
 
 config PM_DEVICE

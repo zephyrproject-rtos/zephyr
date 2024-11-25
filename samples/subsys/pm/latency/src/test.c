@@ -13,19 +13,8 @@
 LOG_MODULE_REGISTER(dev_test, CONFIG_APP_LOG_LEVEL);
 
 struct dev_test_data {
-	struct pm_policy_latency_subscription subs;
 	struct pm_policy_latency_request req;
 };
-
-static void on_latency_changed(int32_t latency)
-{
-	if (latency == SYS_FOREVER_US) {
-		LOG_INF("Latency constraint changed: none");
-	} else {
-		LOG_INF("Latency constraint changed: %" PRId32 "ms",
-			latency / USEC_PER_MSEC);
-	}
-}
 
 static void dev_test_open(const struct device *dev)
 {
@@ -33,8 +22,6 @@ static void dev_test_open(const struct device *dev)
 
 	LOG_INF("Adding latency constraint: 20ms");
 	pm_policy_latency_request_add(&data->req, 20000);
-
-	pm_policy_latency_changed_subscribe(&data->subs, on_latency_changed);
 }
 
 static void dev_test_close(const struct device *dev)
@@ -43,8 +30,6 @@ static void dev_test_close(const struct device *dev)
 
 	LOG_INF("Removing latency constraint");
 	pm_policy_latency_request_remove(&data->req);
-
-	pm_policy_latency_changed_unsubscribe(&data->subs);
 }
 
 static const struct test_api dev_test_api = {

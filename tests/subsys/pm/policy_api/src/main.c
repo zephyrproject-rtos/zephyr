@@ -143,22 +143,8 @@ ZTEST(policy_api, test_pm_policy_next_state_default_allowed)
 	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE);
 }
 
-/** Flag to indicate number of times callback has been called */
-static uint8_t latency_cb_call_cnt;
 /** Flag to indicate expected latency */
 static int32_t expected_latency;
-
-/**
- * Callback to notify when state allowed status changes.
- */
-static void on_pm_policy_latency_changed(int32_t latency)
-{
-	TC_PRINT("Latency changed to %d\n", latency);
-
-	zassert_equal(latency, expected_latency);
-
-	latency_cb_call_cnt++;
-}
 
 /**
  * @brief Test the behavior of pm_policy_next_state() when
@@ -167,13 +153,24 @@ static void on_pm_policy_latency_changed(int32_t latency)
 ZTEST(policy_api, test_pm_policy_next_state_default_latency)
 {
 	struct pm_policy_latency_request req1, req2;
-	struct pm_policy_latency_subscription sreq1, sreq2;
 	const struct pm_state_info *next;
+	int rv;
+
+	rv = pm_policy_latency_immediate_ctrl_add(NULL);
+	zassert_equal(rv, 0);
+
+	memset(&req1, 0, sizeof(req1));
+	memset(&req2, 0, sizeof(req2));
 
 	/* add a latency requirement with a maximum value below the
 	 * latency given by any state, so we should stay active all the time
 	 */
-	pm_policy_latency_request_add(&req1, 9000);
+	rv = pm_policy_latency_request_add(&req1, 9000);
+	zassert_equal(rv, 0);
+
+	/* Cannot add already added request. */
+	rv = pm_policy_latency_request_add(&req1, 1000);
+	zassert_equal(rv, -EALREADY);
 
 	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(110000));
 	zassert_is_null(next);
@@ -185,7 +182,8 @@ ZTEST(policy_api, test_pm_policy_next_state_default_latency)
 	 * PM_STATE_RUNTIME_IDLE and PM_STATE_SUSPEND_TO_RAM, so we should
 	 * never enter PM_STATE_SUSPEND_TO_RAM.
 	 */
-	pm_policy_latency_request_update(&req1, 50000);
+	rv = pm_policy_latency_request_update(&req1, 50000);
+	zassert_equal(rv, 0);
 
 	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(110000));
 	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE);
@@ -197,7 +195,8 @@ ZTEST(policy_api, test_pm_policy_next_state_default_latency)
 	 * latency given by any state, so we should stay active all the time
 	 * since it overrides the previous one.
 	 */
-	pm_policy_latency_request_add(&req2, 8000);
+	rv = pm_policy_latency_request_add(&req2, 8000);
+	zassert_equal(rv, 0);
 
 	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(110000));
 	zassert_is_null(next);
@@ -208,7 +207,8 @@ ZTEST(policy_api, test_pm_policy_next_state_default_latency)
 	/* remove previous request, so we should recover behavior given by
 	 * first request.
 	 */
-	pm_policy_latency_request_remove(&req2);
+	rv = pm_policy_latency_request_remove(&req2);
+	zassert_equal(rv, 0);
 
 	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(110000));
 	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE);
@@ -225,38 +225,24 @@ ZTEST(policy_api, test_pm_policy_next_state_default_latency)
 	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(1100000));
 	zassert_equal(next->state, PM_STATE_SUSPEND_TO_RAM);
 
-	/* get notified when latency requirement changes */
-	pm_policy_latency_changed_subscribe(&sreq1, on_pm_policy_latency_changed);
-	pm_policy_latency_changed_subscribe(&sreq2, on_pm_policy_latency_changed);
-
 	/* add new request (expected notification) */
-	latency_cb_call_cnt = 0;
 	expected_latency = 10000;
 	pm_policy_latency_request_add(&req1, 10000);
-	zassert_equal(latency_cb_call_cnt, 2);
 
-	/* update request (expected notification, but only sreq1) */
-	pm_policy_latency_changed_unsubscribe(&sreq2);
 
-	latency_cb_call_cnt = 0;
 	expected_latency = 50000;
 	pm_policy_latency_request_update(&req1, 50000);
-	zassert_equal(latency_cb_call_cnt, 1);
 
 	/* add a new request, with higher value (no notification, previous
 	 * prevails)
 	 */
-	latency_cb_call_cnt = 0;
 	pm_policy_latency_request_add(&req2, 60000);
-	zassert_equal(latency_cb_call_cnt, 0);
 
 	pm_policy_latency_request_remove(&req2);
-	zassert_equal(latency_cb_call_cnt, 0);
 
 	/* remove first request, we no longer have latency requirements */
 	expected_latency = SYS_FOREVER_US;
 	pm_policy_latency_request_remove(&req1);
-	zassert_equal(latency_cb_call_cnt, 1);
 }
 #else
 ZTEST(policy_api, test_pm_policy_next_state_default)
