@@ -172,6 +172,62 @@
 #define NRF_FUN_GRTC_CLKOUT_FAST 55U
 /** GRTC slow clock output */
 #define NRF_FUN_GRTC_CLKOUT_32K  56U
+/** SDP_MSPI clock pin */
+#define NRF_FUN_SDP_MSPI_SCK 57U
+/** SDP_MSPI data pin 0 */
+#define NRF_FUN_SDP_MSPI_DQ0 58U
+/** SDP_MSPI data pin 1 */
+#define NRF_FUN_SDP_MSPI_DQ1 59U
+/** SDP_MSPI data pin 2 */
+#define NRF_FUN_SDP_MSPI_DQ2 60U
+/** SDP_MSPI data pin 3 */
+#define NRF_FUN_SDP_MSPI_DQ3 61U
+/** SDP_MSPI data pin 4 */
+#define NRF_FUN_SDP_MSPI_DQ4 62U
+/** SDP_MSPI data pin 5 */
+#define NRF_FUN_SDP_MSPI_DQ5 63U
+/** SDP_MSPI data pin 6 */
+#define NRF_FUN_SDP_MSPI_DQ6 64U
+/** SDP_MSPI data pin 7 */
+#define NRF_FUN_SDP_MSPI_DQ7 65U
+/** SDP_MSPI chip select 0 */
+#define NRF_FUN_SDP_MSPI_CS0 66U
+/** SDP_MSPI chip select 1 */
+#define NRF_FUN_SDP_MSPI_CS1 67U
+/** SDP_MSPI chip select 2 */
+#define NRF_FUN_SDP_MSPI_CS2 68U
+/** SDP_MSPI chip select 3 */
+#define NRF_FUN_SDP_MSPI_CS3 69U
+/** SDP_MSPI chip select 4 */
+#define NRF_FUN_SDP_MSPI_CS4 70U
+/** High-Performance Framework MSPI clock pin */
+#define NRF_FUN_HPF_MSPI_SCK NRF_FUN_SDP_MSPI_SCK
+/** High-Performance Framework MSPI data pin 0 */
+#define NRF_FUN_HPF_MSPI_DQ0 NRF_FUN_SDP_MSPI_DQ0
+/** High-Performance Framework MSPI data pin 1 */
+#define NRF_FUN_HPF_MSPI_DQ1 NRF_FUN_SDP_MSPI_DQ1
+/** High-Performance Framework MSPI data pin 2 */
+#define NRF_FUN_HPF_MSPI_DQ2 NRF_FUN_SDP_MSPI_DQ2
+/** High-Performance Framework MSPI data pin 3 */
+#define NRF_FUN_HPF_MSPI_DQ3 NRF_FUN_SDP_MSPI_DQ3
+/** High-Performance Framework MSPI data pin 4 */
+#define NRF_FUN_HPF_MSPI_DQ4 NRF_FUN_SDP_MSPI_DQ4
+/** High-Performance Framework MSPI data pin 5 */
+#define NRF_FUN_HPF_MSPI_DQ5 NRF_FUN_SDP_MSPI_DQ5
+/** High-Performance Framework MSPI data pin 6 */
+#define NRF_FUN_HPF_MSPI_DQ6 NRF_FUN_SDP_MSPI_DQ6
+/** High-Performance Framework MSPI data pin 7 */
+#define NRF_FUN_HPF_MSPI_DQ7 NRF_FUN_SDP_MSPI_DQ7
+/** High-Performance Framework MSPI chip select pin 0 */
+#define NRF_FUN_HPF_MSPI_CS0 NRF_FUN_SDP_MSPI_CS0
+/** High-Performance Framework MSPI chip select pin 1 */
+#define NRF_FUN_HPF_MSPI_CS1 NRF_FUN_SDP_MSPI_CS1
+/** High-Performance Framework MSPI chip select pin 2 */
+#define NRF_FUN_HPF_MSPI_CS2 NRF_FUN_SDP_MSPI_CS2
+/** High-Performance Framework MSPI chip select pin 3 */
+#define NRF_FUN_HPF_MSPI_CS3 NRF_FUN_SDP_MSPI_CS3
+/** High-Performance Framework MSPI chip select pin 4 */
+#define NRF_FUN_HPF_MSPI_CS4 NRF_FUN_SDP_MSPI_CS4
 /** TDM SCK in master mode */
 #define NRF_FUN_TDM_SCK_M        71U
 /** TDM SCK in slave mode */
