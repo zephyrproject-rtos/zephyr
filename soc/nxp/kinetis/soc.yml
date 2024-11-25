@@ -34,6 +34,9 @@ family:
     - name: mke15z7
     - name: mke17z7
     - name: mke17z9
+  - name: kw45
+    socs:
+    - name: kw45b41z83
 runners:
   run_once:
     '--erase':

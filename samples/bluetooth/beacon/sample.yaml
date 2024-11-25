@@ -9,6 +9,7 @@ tests:
       - nrf51dk/nrf51822
       - nrf52dk/nrf52832
       - nrf54l15dk/nrf54l15/cpuapp
+      - kw45b41z_evk
     tags: bluetooth
     integration_platforms:
       - qemu_cortex_m3
