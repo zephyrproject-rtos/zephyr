@@ -71,15 +71,6 @@ int main(void)
 	start_smp_bluetooth_adverts();
 #endif
 
-	if (IS_ENABLED(CONFIG_USB_DEVICE_STACK)) {
-		rc = usb_enable(NULL);
-
-		/* Ignore EALREADY error as USB CDC is likely already initialised */
-		if (rc != 0 && rc != -EALREADY) {
-			LOG_ERR("Failed to enable USB");
-			return 0;
-		}
-	}
 	/* using __TIME__ ensure that a new binary will be built on every
 	 * compile which is convenient when testing firmware upgrade.
 	 */
