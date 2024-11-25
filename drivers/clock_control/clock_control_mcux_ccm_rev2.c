@@ -74,6 +74,13 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 #endif
 #endif
 
+#ifdef CONFIG_I3C_MCUX
+	case IMX_CCM_I3C1_CLK:
+	case IMX_CCM_I3C2_CLK:
+		clock_root = kCLOCK_Root_I3c1 + instance;
+		break;
+#endif
+
 #ifdef CONFIG_SPI_MCUX_LPSPI
 	case IMX_CCM_LPSPI1_CLK:
 		clock_root = kCLOCK_Root_Lpspi1 + instance;
