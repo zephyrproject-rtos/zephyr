@@ -10,5 +10,6 @@ toolchain:
 supported:
   - flash
   - usb_device
+  - usbd
   - watchdog
 vendor: nxp
