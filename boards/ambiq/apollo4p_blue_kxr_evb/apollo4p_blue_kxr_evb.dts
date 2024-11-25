@@ -131,6 +131,10 @@
 	};
 };
 
+&stimer0 {
+	clk-source = <3>;
+};
+
 &xo32m {
 	pinctrl-0 = <&xo32m_default>;
 	pinctrl-names = "default";

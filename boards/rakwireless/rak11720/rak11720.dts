@@ -61,6 +61,10 @@
 	};
 };
 
+&stimer0 {
+	clk-source = <3>;
+};
+
 &bleif {
 	pinctrl-0 = <&bleif_default>;
 	pinctrl-names = "default";
