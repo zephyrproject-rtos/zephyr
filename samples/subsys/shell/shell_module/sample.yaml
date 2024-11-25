@@ -14,7 +14,7 @@ tests:
     extra_configs:
       - arch:posix:CONFIG_UART_NATIVE_PTY_0_ON_STDINOUT=y
   sample.shell.shell_module.usb:
-    depends_on: usb_device
+    depends_on: usbd
     tags:
       - shell
       - usb
@@ -24,7 +24,7 @@ tests:
       - EXTRA_CONF_FILE="overlay-usb.conf"
       - DTC_OVERLAY_FILE="usb.overlay"
     integration_platforms:
-      - native_sim
+      - frdm_k64f
   sample.shell.shell_module.minimal:
     filter: CONFIG_SERIAL and dt_chosen_enabled("zephyr,shell-uart")
     tags: shell
