@@ -169,8 +169,7 @@ static int wdt_esp32_init(const struct device *dev)
 
 	wdt_hal_init(&data->hal, config->wdt_inst, MWDT_TICK_PRESCALER, true);
 
-	flags = ESP_PRIO_TO_FLAGS(config->irq_priority) | ESP_INT_FLAGS_CHECK(config->irq_flags) |
-		ESP_INTR_FLAG_SHARED;
+	flags = ESP_PRIO_TO_FLAGS(config->irq_priority) | ESP_INT_FLAGS_CHECK(config->irq_flags);
 	ret = esp_intr_alloc(config->irq_source, flags, (ISR_HANDLER)wdt_esp32_isr, (void *)dev,
 			     NULL);
 
@@ -216,11 +215,6 @@ static void wdt_esp32_isr(void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
 	struct wdt_esp32_data *data = dev->data;
-	uint32_t status = REG_READ(RTC_CNTL_INT_ST_REG);
-
-	if (!(status & RTC_CNTL_WDT_INT_ST)) {
-		return;
-	}
 
 	if (data->callback) {
 		data->callback(dev, 0);
