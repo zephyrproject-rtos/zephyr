@@ -98,7 +98,10 @@ void posix_irq_handler(void)
 	irq_nbr = hw_irq_ctrl_get_highest_prio_irq(cpu_n);
 
 	if (irq_nbr == -1) {
-		/* This is a phony interrupt during a busy wait, no need for more */
+		/* We should not execute an interrupt handler
+		 * (This is a phony interrupt during a busy wait, or we are already running a higher
+		 * priority interrupt handler)
+		 */
 		return;
 	}
 
@@ -338,14 +341,18 @@ void posix_irq_offload(void (*routine)(const void *), const void *parameter)
 /*
  * Very simple model of the WFE and SEV ARM instructions
  * which seems good enough for the Nordic controller
+ * Note that in reality the event flag is also set when an interrupt is pended
  */
 static bool CPU_event_set_flag;
+static bool SEVONPEND;
 
 void nrfbsim_WFE_model(void)
 {
 	if (CPU_event_set_flag == false) {
 		CPU_will_be_awaken_from_WFE = true;
+		hw_irq_ctrl_set_wake_even_if_lock(CONFIG_NATIVE_SIMULATOR_MCU_N, SEVONPEND);
 		posix_halt_cpu();
+		hw_irq_ctrl_set_wake_even_if_lock(CONFIG_NATIVE_SIMULATOR_MCU_N, false);
 		CPU_will_be_awaken_from_WFE = false;
 	}
 	CPU_event_set_flag = false;
@@ -354,4 +361,16 @@ void nrfbsim_WFE_model(void)
 void nrfbsim_SEV_model(void)
 {
 	CPU_event_set_flag = true;
+}
+
+/*
+ * Model of setting the SEVONPEND bit to a given value (1 or 0).
+ * It returns the previous value of the bit.
+ */
+int nrfbsim_set_SEVONPEND(int new_value)
+{
+	bool previous = SEVONPEND;
+
+	SEVONPEND = new_value;
+	return previous;
 }

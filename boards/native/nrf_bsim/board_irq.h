@@ -16,6 +16,7 @@ extern "C" {
 
 void nrfbsim_WFE_model(void);
 void nrfbsim_SEV_model(void);
+int nrfbsim_set_SEVONPEND(int new_value);
 
 #define IRQ_ZERO_LATENCY	BIT(1) /* Unused in this board*/
 #define IRQ_PRIO_LOWEST		UINT8_MAX
