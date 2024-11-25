@@ -48,10 +48,24 @@ static void avrcp_unit_info_rsp(struct bt_avrcp *avrcp, struct bt_avrcp_unit_inf
 		    rsp->unit_type, rsp->company_id);
 }
 
+static void avrcp_subunit_info_rsp(struct bt_avrcp *avrcp, struct bt_avrcp_subunit_info_rsp *rsp)
+{
+	int i;
+
+	shell_print(ctx_shell,
+		    "AVRCP subunit info received, subunit type = 0x%02x, extended subunit = %d",
+		    rsp->subunit_type, rsp->max_subunit_id);
+	for (i = 0; i < rsp->max_subunit_id; i++) {
+		shell_print(ctx_shell, "extended subunit id = %d, subunit type = 0x%02x",
+			    rsp->extended_subunit_id[i], rsp->extended_subunit_type[i]);
+	}
+}
+
 static struct bt_avrcp_cb avrcp_cb = {
 	.connected = avrcp_connected,
 	.disconnected = avrcp_disconnected,
 	.unit_info_rsp = avrcp_unit_info_rsp,
+	.subunit_info_rsp = avrcp_subunit_info_rsp,
 };
 
 static int register_cb(const struct shell *sh)
@@ -141,12 +155,31 @@ static int cmd_get_unit_info(const struct shell *sh, int32_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_get_subunit_info(const struct shell *sh, int32_t argc, char *argv[])
+{
+	if (!avrcp_registered) {
+		if (register_cb(sh) != 0) {
+			return -ENOEXEC;
+		}
+	}
+
+	if (default_avrcp != NULL) {
+		bt_avrcp_get_subunit_info(default_avrcp);
+	} else {
+		shell_error(sh, "AVRCP is not connected");
+	}
+
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(avrcp_cmds,
 			       SHELL_CMD_ARG(register_cb, NULL, "register avrcp callbacks",
 					     cmd_register_cb, 1, 0),
 			       SHELL_CMD_ARG(connect, NULL, "<address>", cmd_connect, 2, 0),
 			       SHELL_CMD_ARG(disconnect, NULL, "<address>", cmd_disconnect, 2, 0),
 			       SHELL_CMD_ARG(get_unit, NULL, "<address>", cmd_get_unit_info, 2, 0),
+			       SHELL_CMD_ARG(get_subunit, NULL, "<address>", cmd_get_subunit_info,
+					     2, 0),
 			       SHELL_SUBCMD_SET_END);
 
 static int cmd_avrcp(const struct shell *sh, size_t argc, char **argv)
