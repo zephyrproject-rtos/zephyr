@@ -241,19 +241,6 @@ static void terminate_big(struct bt_iso_big *big)
 	big = NULL;
 }
 
-static void reset_bluetooth(void)
-{
-	int err;
-
-	LOG_INF("Resetting Bluetooth");
-
-	err = bt_disable();
-	TEST_ASSERT(err == 0, "Failed to disable: %d", err);
-
-	err = bt_enable(NULL);
-	TEST_ASSERT(err == 0, "Failed to re-enable: %d", err);
-}
-
 static void test_main(void)
 {
 	struct bt_le_ext_adv *adv;
@@ -280,6 +267,7 @@ static void test_main_disable(void)
 {
 	struct bt_le_ext_adv *adv;
 	struct bt_iso_big *big;
+	int err;
 
 	init();
 
@@ -288,11 +276,15 @@ static void test_main_disable(void)
 	create_big(adv, ARRAY_SIZE(iso_chans), &big);
 
 	/* Reset BT to see if we can set it up again */
-	reset_bluetooth();
+	LOG_INF("Resetting Bluetooth");
+	err = bt_disable();
+	TEST_ASSERT(err == 0, "Failed to disable: %d", err);
 
 	/* After a disable, all advertising sets and BIGs are removed */
 	big = NULL;
 	adv = NULL;
+
+	init();
 
 	/* Set everything up again to see if everything still works as expected */
 	create_ext_adv(&adv);
