@@ -16,7 +16,8 @@
 	chosen {
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
-		zephyr,sram = &sram0;
+		/* sram node actually locates at DDR DRAM */
+		zephyr,sram = &dram;
 	};
 
 	cpus {
@@ -41,7 +42,7 @@
 		};
 	};
 
-	sram0: memory@d0000000 {
+	dram: memory@d0000000 {
 		reg = <0xd0000000 DT_SIZE_M(1)>;
 	};
 };
