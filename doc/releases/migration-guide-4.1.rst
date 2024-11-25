@@ -115,6 +115,30 @@ Pin Control
 
   * Renamed the ``compatible`` from ``nxp,kinetis-pinctrl`` to :dtcompatible:`nxp,port-pinctrl`.
   * Renamed the ``compatible`` from ``nxp,kinetis-pinmux`` to :dtcompatible:`nxp,port-pinmux`.
+  * Silabs Series 2 devices now use a new pinctrl driver selected by
+    :dtcompatible:`silabs,dbus-pinctrl`. This driver allows the configuration of GPIO properties
+    through device tree, rather than having them hard-coded for each supported signal. It also
+    supports all possible digital bus signals by including a binding header such as
+    :zephyr_file:`include/zephyr/dt-bindings/pinctrl/silabs/xg24-pinctrl.h`.
+
+    Pinctrl should now be configured like this:
+
+    .. code-block:: devicetree
+
+      #include <dt-bindings/pinctrl/silabs/xg24-pinctrl.h>
+
+      &pinctrl {
+        i2c0_default: i2c0_default {
+          group0 {
+            /* Pin selection(s) using bindings included above */
+            pins = <I2C0_SDA_PD2>, <I2C0_SCL_PD3>;
+            /* Shared properties for the group of pins */
+            drive-open-drain;
+            bias-pull-up;
+          };
+        };
+      };
+
 
 Sensors
 =======
