@@ -31,6 +31,9 @@ config COMMON_LIBC_MALLOC_ARENA_SIZE
 config MAIN_STACK_SIZE
 	default 2304
 
+config BT_SEND_ECC_EMULATION
+	default y
+
 if SHELL
 
 config SHELL_STACK_SIZE
