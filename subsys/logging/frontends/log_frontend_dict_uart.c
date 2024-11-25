@@ -23,7 +23,7 @@ BUILD_ASSERT(sizeof(struct log_frontend_uart_pkt_hdr) == sizeof(uint16_t));
 
 struct log_frontend_uart_generic_pkt {
 	struct log_frontend_uart_pkt_hdr hdr;
-	uint8_t data[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, data);
 } __packed;
 
 struct log_frontend_uart_dropped_pkt {
@@ -34,7 +34,7 @@ struct log_frontend_uart_dropped_pkt {
 struct log_frontend_uart_pkt {
 	struct log_frontend_uart_pkt_hdr hdr;
 	struct log_dict_output_normal_msg_hdr_t data_hdr;
-	uint8_t data[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, data);
 } __packed;
 
 /* Union needed to avoid warning when casting to packed structure. */
