@@ -13,11 +13,10 @@
  */
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(wpan_serial, CONFIG_USB_DEVICE_LOG_LEVEL);
+LOG_MODULE_REGISTER(wpan_serial, LOG_LEVEL_DBG);
 
 #include <zephyr/drivers/uart.h>
 #include <zephyr/kernel.h>
-#include <zephyr/usb/usb_device.h>
 #include <zephyr/random/random.h>
 
 #include <zephyr/net_buf.h>
@@ -541,12 +540,6 @@ int main(void)
 
 	if (!device_is_ready(uart_dev)) {
 		LOG_ERR("CDC ACM device not ready");
-		return 0;
-	}
-
-	ret = usb_enable(NULL);
-	if (ret != 0) {
-		LOG_ERR("Failed to enable USB");
 		return 0;
 	}
 
