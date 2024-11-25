@@ -168,6 +168,7 @@ set_compiler_property(PROPERTY imacros -imacros)
 # Security canaries.
 #no support of -mstack-protector-guard=global"
 set_compiler_property(PROPERTY security_canaries -fstack-protector-all)
+set_compiler_property(PROPERTY security_canaries_strong -fstack-protector-strong)
 
 #no support of _FORTIFY_SOURCE"
 set_compiler_property(PROPERTY security_fortify_compile_time)

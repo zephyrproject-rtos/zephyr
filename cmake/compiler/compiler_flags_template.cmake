@@ -92,6 +92,7 @@ set_compiler_property(PROPERTY coverage)
 
 # Security canaries flags.
 set_compiler_property(PROPERTY security_canaries)
+set_compiler_property(PROPERTY security_canaries_strong)
 
 set_compiler_property(PROPERTY security_fortify_compile_time)
 set_compiler_property(PROPERTY security_fortify_run_time)

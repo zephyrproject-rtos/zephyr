@@ -10,7 +10,7 @@
  *
  * This module provides functions to support compiler stack protection
  * using canaries.  This feature is enabled with configuration
- * CONFIG_STACK_CANARIES=y.
+ * CONFIG_STACK_CANARIES=y or CONFIG_STACK_CANARIES_STRONG=y.
  *
  * When this feature is enabled, the compiler generated code refers to
  * function __stack_chk_fail and global variable __stack_chk_guard.
