@@ -341,7 +341,7 @@ static int avrcp_recv(struct bt_avctp *session, struct net_buf *buf)
 			/* Status changed notifiation, do not reset timer */
 		} else if (avrcp_hdr->opcode == BT_AVRCP_OPC_PASS_THROUGH) {
 			/* No max response time for pass through commands  */
-		} else if (tid != avrcp->req.tid || subunit_id != avrcp->req.subunit ||
+		} else if (tid != avrcp->req.tid || subunit_type != avrcp->req.subunit ||
 			   avrcp_hdr->opcode != avrcp->req.opcode) {
 			LOG_WRN("unexpected AVRCP response, expected tid:0x%X, subunit:0x%X, "
 				"opc:0x%02X",
@@ -510,7 +510,7 @@ static int avrcp_send(struct bt_avrcp *avrcp, struct net_buf *buf)
 	uint8_t tid = BT_AVCTP_HDR_GET_TRANSACTION_LABLE(avctp_hdr);
 	bt_avctp_cr_t cr = BT_AVCTP_HDR_GET_CR(avctp_hdr);
 	bt_avrcp_ctype_t ctype = BT_AVRCP_HDR_GET_CTYPE(avrcp_hdr);
-	bt_avrcp_subunit_type_t subunit_id = BT_AVRCP_HDR_GET_SUBUNIT_ID(avrcp_hdr);
+	bt_avrcp_subunit_type_t subunit_type = BT_AVRCP_HDR_GET_SUBUNIT_TYPE(avrcp_hdr);
 
 	LOG_DBG("AVRCP send cr:0x%X, tid:0x%X, ctype: 0x%X, opc:0x%02X\n", cr, tid, ctype,
 		avrcp_hdr->opcode);
@@ -521,7 +521,7 @@ static int avrcp_send(struct bt_avrcp *avrcp, struct net_buf *buf)
 
 	if (cr == BT_AVCTP_CMD && avrcp_hdr->opcode != BT_AVRCP_OPC_PASS_THROUGH) {
 		avrcp->req.tid = tid;
-		avrcp->req.subunit = subunit_id;
+		avrcp->req.subunit = subunit_type;
 		avrcp->req.opcode = avrcp_hdr->opcode;
 
 		k_work_reschedule(&avrcp->timeout_work, AVRCP_TIMEOUT);
