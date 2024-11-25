@@ -24,7 +24,6 @@ LOG_MODULE_REGISTER(spi_litex_litespi);
 #define SPI_MAX_CS_SIZE   4
 
 struct spi_litex_dev_config {
-	uint32_t core_mmap_dummy_bits_addr;
 	uint32_t core_master_cs_addr;
 	uint32_t core_master_phyconfig_addr;
 	uint32_t core_master_rxtx_addr;
@@ -263,7 +262,6 @@ static const struct spi_driver_api spi_litex_api = {
 		SPI_CONTEXT_INIT_SYNC(spi_litex_data_##n, ctx),                                    \
 	};                                                                                         \
 	static struct spi_litex_dev_config spi_litex_cfg_##n = {                                   \
-		.core_mmap_dummy_bits_addr = DT_INST_REG_ADDR_BY_NAME(n, core_mmap_dummy_bits),    \
 		.core_master_cs_addr = DT_INST_REG_ADDR_BY_NAME(n, core_master_cs),                \
 		.core_master_phyconfig_addr = DT_INST_REG_ADDR_BY_NAME(n, core_master_phyconfig),  \
 		.core_master_rxtx_addr = DT_INST_REG_ADDR_BY_NAME(n, core_master_rxtx),            \
