@@ -28,6 +28,13 @@
 #define TOOLCHAIN_HAS_C_AUTO_TYPE 1
 #endif
 
+/*
+ * -fstack-protector-explicit is not available in clang.
+ * Define the macro before including gcc.h to avoid
+ * problems with non existent attribute.
+ */
+#define __stack_protect
+
 #include <zephyr/toolchain/gcc.h>
 
 /*

@@ -281,6 +281,10 @@ do {                                                                    \
 #define __weak __attribute__((__weak__))
 #endif
 
+#ifndef __stack_protect
+#define __stack_protect __attribute__((stack_protect))
+#endif
+
 #ifndef __attribute_nonnull
 #define __attribute_nonnull(...) __attribute__((nonnull(__VA_ARGS__)))
 #endif
