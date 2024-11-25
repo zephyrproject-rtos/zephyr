@@ -152,8 +152,6 @@ static void init(void)
 		iso_qos.tx->sdu = MIN((bt_dev.le.iso_mtu - BT_HCI_ISO_SDU_TS_HDR_SIZE),
 				      ARRAY_SIZE(mock_iso_data));
 	}
-
-	bk_sync_init();
 }
 
 static void create_ext_adv(struct bt_le_ext_adv **adv)
@@ -243,25 +241,14 @@ static void terminate_big(struct bt_iso_big *big)
 	big = NULL;
 }
 
-static void reset_bluetooth(void)
-{
-	int err;
-
-	LOG_INF("Resetting Bluetooth");
-
-	err = bt_disable();
-	TEST_ASSERT(err == 0, "Failed to disable: %d", err);
-
-	err = bt_enable(NULL);
-	TEST_ASSERT(err == 0, "Failed to re-enable: %d", err);
-}
-
 static void test_main(void)
 {
 	struct bt_le_ext_adv *adv;
 	struct bt_iso_big *big;
 
 	init();
+
+	bk_sync_init();
 
 	/* Create advertising set and BIG and start it and starting TXing */
 	create_ext_adv(&adv);
@@ -282,19 +269,26 @@ static void test_main_disable(void)
 {
 	struct bt_le_ext_adv *adv;
 	struct bt_iso_big *big;
+	int err;
 
 	init();
+
+	bk_sync_init();
 
 	/* Create advertising set and BIG */
 	create_ext_adv(&adv);
 	create_big(adv, ARRAY_SIZE(iso_chans), &big);
 
 	/* Reset BT to see if we can set it up again */
-	reset_bluetooth();
+	LOG_INF("Resetting Bluetooth");
+	err = bt_disable();
+	TEST_ASSERT(err == 0, "Failed to disable: %d", err);
 
 	/* After a disable, all advertising sets and BIGs are removed */
 	big = NULL;
 	adv = NULL;
+
+	init();
 
 	/* Set everything up again to see if everything still works as expected */
 	create_ext_adv(&adv);
@@ -318,6 +312,8 @@ static void test_main_fragment(void)
 	uint32_t new_sdu_size;
 
 	init();
+
+	bk_sync_init();
 
 	/* Multiple the SDU by at least 3 so that we always fragment over HCI with a BT_ISO_START,
 	 * BT_ISO_CONT and BT_ISO_END
