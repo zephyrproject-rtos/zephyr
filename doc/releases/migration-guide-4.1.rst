@@ -113,6 +113,11 @@ Entropy
 GNSS
 ====
 
+I2C
+===
+
+* Renamed the ``compatible`` from ``nxp,imx-lpi2c`` to :dtcompatible:`nxp,lpi2c`.
+
 Input
 =====
 
