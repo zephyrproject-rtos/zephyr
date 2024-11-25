@@ -10,7 +10,6 @@
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <dt-bindings/clock/silabs/xg21-clock.h>
 #include <freq.h>
-#include "gpio_gecko.h"
 
 / {
 	chosen {
