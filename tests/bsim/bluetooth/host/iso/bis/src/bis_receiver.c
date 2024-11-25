@@ -20,7 +20,7 @@
 
 #include "common.h"
 
-LOG_MODULE_REGISTER(bis_receiver, LOG_LEVEL_INF);
+LOG_MODULE_REGISTER(bis_receiver, LOG_LEVEL_DBG);
 
 #define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 5U /* Set the timeout relative to interval */
 /* The broadcaster will send SDUs from 0 to CONFIG_BT_ISO_RX_MTU in the SDU data length. We want to
