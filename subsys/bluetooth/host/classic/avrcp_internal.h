@@ -17,6 +17,9 @@
 #define AVRCP_CAT_3 BIT(2) /* Tuner */
 #define AVRCP_CAT_4 BIT(3) /* Menu */
 
+#define AVRCP_SUBUNIT_PAGE           (0) /* Fixed value according to AVRCP */
+#define AVRCP_SUBUNIT_EXTENSION_COED (7) /* Fixed value according to TA Document 2001012 */
+
 typedef enum __packed {
 	BT_AVRCP_CTYPE_CONTROL = 0x0,
 	BT_AVRCP_CTYPE_STATUS = 0x1,
