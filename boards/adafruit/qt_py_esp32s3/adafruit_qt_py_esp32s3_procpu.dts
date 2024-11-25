@@ -1,0 +1,149 @@
+/*
+ * Copyright (c) 2023 Seeed Studio inc.
+ * Copyright (c) 2024 Ian Wakely
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <espressif/esp32s3/esp32s3_wroom_n8.dtsi>
+#include <zephyr/dt-bindings/led/led.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include "adafruit_qt_py_esp32s3-pinctrl.dtsi"
+#include "seeed_xiao_connector.dtsi"
+#include <espressif/partitions_0x0_amp.dtsi>
+
+/ {
+	model = "Adafruit QT Py ESP32S3 PROCPU";
+	compatible = "seeed,xiao-esp32s3";
+
+	chosen {
+		zephyr,sram = &sram1;
+		zephyr,console = &usb_serial;
+		zephyr,shell-uart = &usb_serial;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &esp32_bt_hci;
+	};
+
+	aliases {
+		i2c-0 = &i2c0;
+		watchdog0 = &wdt0;
+		led-strip = &led_strip;
+		sw0 = &button0;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button0: button_0 {
+			gpios = <&gpio0 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "User button";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
+
+&usb_serial {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+};
+
+&i2c1 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&spi2 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	pinctrl-0 = <&spim2_default>;
+	pinctrl-names = "default";
+};
+
+&spi3 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	pinctrl-0 = <&spim3_ws2812_led>;
+	pinctrl-names = "default";
+
+	line-idle-low;
+
+	led_strip: ws2812@0 {
+		compatible = "worldsemi,ws2812-spi";
+
+		/* SPI */
+		reg = <0>; /* ignored, but necessary for SPI bindings */
+		spi-max-frequency = <6400000>;
+
+		/* WS2812 */
+		chain-length = <1>;
+		spi-cpha;
+		spi-one-frame = <0xf0>; /* 11110000: 625 ns high and 625 ns low */
+		spi-zero-frame = <0xc0>; /* 11000000: 312.5 ns high and 937.5 ns low */
+		color-mapping = <LED_COLOR_ID_GREEN
+				LED_COLOR_ID_RED
+				LED_COLOR_ID_BLUE>;
+	};
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+
+	/*
+	 * Unlike some of the other Adafruit boards, the neopixel on this board has
+	 * its positive side hooked up to a GPIO pin rather than a positive voltage
+	 * rail to save on power. This will enable the LED on board initialization.
+	 */
+	neopixel-power-enable {
+		gpio-hog;
+		gpios = <6 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&twai {
+	pinctrl-0 = <&twai_default>;
+	pinctrl-names = "default";
+};
+
+&timer0 {
+	status = "okay";
+};
+
+&timer1 {
+	status = "okay";
+};
+
+&esp32_bt_hci {
+	status = "okay";
+};
