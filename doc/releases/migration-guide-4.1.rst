@@ -101,6 +101,18 @@ Entropy
 GNSS
 ====
 
+GPIO
+====
+
+* Renamed the ``compatible`` from ``nxp,kinetis-gpio`` to :dtcompatible:`nxp,gpio`.
+* The :dtcompatible:`nxp,gpio` ``nxp,kinetis-port`` property has been renamed to ``nxp,port``.
+* The devicetree binding header ``include/zephyr/dt-bindings/gpio/nxp-kinetis-gpio.h`` has been
+  renamed to :zephyr_file:`include/zephyr/dt-bindings/gpio/nxp-gpio.h` and the following defines
+  have changed:
+
+    * :c:macro:`KINETIS_GPIO_DS_DFLT` renamed to :c:macro:`NXP_GPIO_DS_DFLT`.
+    * :c:macro:`KINETIS_GPIO_DS_ALT` renamed to :c:macro:`NXP_GPIO_DS_ALT`.
+
 Input
 =====
 
