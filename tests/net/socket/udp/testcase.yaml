@@ -5,6 +5,7 @@ common:
     - socket
     - udp
   min_ram: 21
+  min_flash: 194
   filter: CONFIG_FULL_LIBC_SUPPORTED
 tests:
   net.socket.udp:
