@@ -169,6 +169,8 @@ Drivers and Sensors
 
 * Pin control
 
+  * Added new driver for Silabs Series 2 (:dtcompatible:`silabs,dbus-pinctrl`).
+
 * PWM
 
 * Regulators
