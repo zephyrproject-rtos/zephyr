@@ -145,4 +145,21 @@
 			slew-rate = "slow";
 		};
 	};
+
+	pinmux_i3c2: pinmux_i3c2 {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_18_i3c2_scl>,
+				<&iomuxc_gpio_ad_19_i3c2_sda>;
+			drive-strength = "normal";
+			drive-open-drain;
+			slew-rate = "fast";
+			input-enable;
+		};
+
+		group1 {
+			pinmux = <&iomuxc_gpio_ad_17_i3c2_pur>;
+			slew-rate = "fast";
+			drive-strength = "high";
+		};
+	};
 };
