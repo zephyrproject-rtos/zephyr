@@ -18,6 +18,12 @@
 	.interval_min = BT_GAP_ADV_FAST_INT_MIN_2,                             \
 	.interval_max = BT_GAP_ADV_FAST_INT_MAX_2
 
+#define BT_DEVICE_NAME (IS_ENABLED(CONFIG_BT_DEVICE_NAME_DYNAMIC) ? \
+			(const uint8_t *)bt_get_name() : \
+			(const uint8_t *)CONFIG_BT_DEVICE_NAME)
+#define BT_DEVICE_NAME_LEN (IS_ENABLED(CONFIG_BT_DEVICE_NAME_DYNAMIC) ? strlen(bt_get_name()) : \
+			    (sizeof(CONFIG_BT_DEVICE_NAME) - 1))
+
 #define BT_MESH_ID_TYPE_NET	  0x00
 #define BT_MESH_ID_TYPE_NODE	  0x01
 #define BT_MESH_ID_TYPE_PRIV_NET  0x02
