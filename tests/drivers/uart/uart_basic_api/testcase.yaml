@@ -47,7 +47,7 @@ tests:
       - drivers
       - usb
     filter: CONFIG_UART_CONSOLE
-    depends_on: usb_device
+    depends_on: usbd
     harness: keyboard
   drivers.uart.basic_api.shell_ke17z9_uart:
     tags:
