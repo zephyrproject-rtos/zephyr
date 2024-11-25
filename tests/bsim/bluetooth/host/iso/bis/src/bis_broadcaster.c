@@ -85,7 +85,7 @@ static void send_data(struct bt_iso_chan *chan)
 	}
 
 	len_to_send++;
-	if (len_to_send > (chan->qos->tx->sdu - BT_HCI_ISO_SDU_HDR_SIZE)) {
+	if (len_to_send > chan->qos->tx->sdu) {
 		len_to_send = 1;
 	}
 }
@@ -149,7 +149,8 @@ static void init(void)
 		iso_chans[i].qos = &iso_qos;
 
 		/* Default the SDU size to the maximum HCI buffer size */
-		iso_qos.tx->sdu = MIN(bt_dev.le.iso_mtu, ARRAY_SIZE(mock_iso_data));
+		iso_qos.tx->sdu = MIN((bt_dev.le.iso_mtu - BT_HCI_ISO_SDU_TS_HDR_SIZE),
+				      ARRAY_SIZE(mock_iso_data));
 	}
 
 	bk_sync_init();
@@ -318,10 +319,16 @@ static void test_main_fragment(void)
 
 	init();
 
-	/* Multiple the SDU by 3 so that we always fragment over HCI with a BT_ISO_START,
+	/* Multiple the SDU by at least 3 so that we always fragment over HCI with a BT_ISO_START,
 	 * BT_ISO_CONT and BT_ISO_END
 	 */
-	new_sdu_size = bt_dev.le.iso_mtu * 3U;
+	if (bt_dev.le.iso_limit < 3U) {
+		TEST_FAIL("Require 3 or more ISO packets support in the Controller, got %u.",
+			  bt_dev.le.iso_limit);
+		return;
+	}
+
+	new_sdu_size = (bt_dev.le.iso_mtu * bt_dev.le.iso_limit) - BT_HCI_ISO_SDU_TS_HDR_SIZE;
 
 	if (new_sdu_size > BT_ISO_MAX_SDU) {
 		TEST_FAIL("Not possible to use SDU size of 0x%08X (default SDU is 0x%04X)",
