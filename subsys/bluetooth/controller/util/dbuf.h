@@ -18,7 +18,7 @@ struct dbuf_hdr {
 	/* Size in a bytes of a single element stored in double buffer. */
 	uint8_t elem_size;
 	/* Pointer for actual buffer memory. Its size should be 2 times @p elem_size. */
-	uint8_t data[0];
+	uint8_t data[];
 };
 
 /**
