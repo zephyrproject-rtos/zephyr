@@ -64,6 +64,11 @@ Device Drivers and Devicetree
 
     * :c:struct:`adc_driver_api`
 
+ADC
+===
+
+* Renamed the ``compatible`` from ``nxp,kinetis-adc12`` to :dtcompatible:`nxp,adc12`.
+
 Controller Area Network (CAN)
 =============================
 
