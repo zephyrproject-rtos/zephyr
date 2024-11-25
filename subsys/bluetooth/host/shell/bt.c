@@ -3264,7 +3264,7 @@ static int cmd_connect_le(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
 	bt_addr_le_t addr;
-	struct bt_conn *conn;
+	struct bt_conn *conn = NULL;
 	uint32_t options = 0;
 
 	/* When no arguments are specified, connect to the last scanned device. */
