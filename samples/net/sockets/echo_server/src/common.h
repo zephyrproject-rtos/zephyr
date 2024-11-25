@@ -107,7 +107,7 @@ static inline bool is_tunnel(struct net_if *iface)
 }
 #endif /* CONFIG_NET_L2_IPIP */
 
-#if defined(CONFIG_USB_DEVICE_STACK) || defined(CONFIG_USB_DEVICE_STACK_NEXT)
+#if defined(CONFIG_USB_DEVICE_STACK_NEXT)
 int init_usb(void);
 #else
 static inline int init_usb(void)
