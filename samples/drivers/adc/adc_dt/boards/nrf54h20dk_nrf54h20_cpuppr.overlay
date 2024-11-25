@@ -5,3 +5,7 @@
  */
 
 #include "nrf54h20dk_nrf54h20_common.dtsi"
+
+&adc {
+	status = "okay";
+};
