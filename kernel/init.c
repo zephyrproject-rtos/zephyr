@@ -598,7 +598,7 @@ static void init_idle_thread(int i)
 			  stack_size, idle, &_kernel.cpus[i],
 			  NULL, NULL, K_IDLE_PRIO, K_ESSENTIAL,
 			  tname);
-	z_mark_thread_as_started(thread);
+	z_mark_thread_as_not_suspended(thread);
 
 #ifdef CONFIG_SMP
 	thread->base.is_idle = 1U;
@@ -675,7 +675,7 @@ static char *prepare_multithreading(void)
 				       NULL, NULL, NULL,
 				       CONFIG_MAIN_THREAD_PRIORITY,
 				       K_ESSENTIAL, "main");
-	z_mark_thread_as_started(&z_main_thread);
+	z_mark_thread_as_not_suspended(&z_main_thread);
 	z_ready_thread(&z_main_thread);
 
 	z_init_cpu(0);

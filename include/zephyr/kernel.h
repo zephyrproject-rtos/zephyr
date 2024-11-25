@@ -694,18 +694,6 @@ static inline k_tid_t k_current_get(void)
  */
 __syscall void k_thread_abort(k_tid_t thread);
 
-
-/**
- * @brief Start an inactive thread
- *
- * If a thread was created with K_FOREVER in the delay parameter, it will
- * not be added to the scheduling queue until this function is called
- * on it.
- *
- * @param thread thread to start
- */
-__syscall void k_thread_start(k_tid_t thread);
-
 k_ticks_t z_timeout_expires(const struct _timeout *timeout);
 k_ticks_t z_timeout_remaining(const struct _timeout *timeout);
 
@@ -1063,6 +1051,24 @@ __syscall void k_thread_suspend(k_tid_t thread);
  * @param thread ID of thread to resume.
  */
 __syscall void k_thread_resume(k_tid_t thread);
+
+/**
+ * @brief Start an inactive thread
+ *
+ * If a thread was created with K_FOREVER in the delay parameter, it will
+ * not be added to the scheduling queue until this function is called
+ * on it.
+ *
+ * @note This is a legacy API for compatibility.  Modern Zephyr
+ * threads are initialized in the "suspended" state and no not need
+ * special handling for "start".
+ *
+ * @param thread thread to start
+ */
+static inline void k_thread_start(k_tid_t thread)
+{
+	k_thread_resume(thread);
+}
 
 /**
  * @brief Set time-slicing period and scope.

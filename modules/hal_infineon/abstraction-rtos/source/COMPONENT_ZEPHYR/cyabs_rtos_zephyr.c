@@ -231,10 +231,6 @@ cy_rslt_t cy_rtos_get_thread_state(cy_thread_t *thread, cy_thread_state_t *state
 				*state = CY_THREAD_STATE_UNKNOWN;
 				break;
 
-			case _THREAD_PRESTART:
-				*state = CY_THREAD_STATE_INACTIVE;
-				break;
-
 			case _THREAD_SUSPENDED:
 			case _THREAD_PENDING:
 				*state = CY_THREAD_STATE_BLOCKED;

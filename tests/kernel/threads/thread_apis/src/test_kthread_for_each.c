@@ -213,7 +213,7 @@ ZTEST(threads_lifecycle_1cpu, test_k_thread_foreach_unlocked_null_cb)
  * @brief Test k_thread_state_str API with null callback
  *
  * @details It's impossible to sched a thread step by step manually to
- * experience each state from _THREAD_PRESTART to _THREAD_DEAD. To cover each
+ * experience each state from initialization to _THREAD_DEAD. To cover each
  * line of function k_thread_state_str(), set thread_state of tdata1 and check
  * the string this function returns
  *
@@ -244,10 +244,6 @@ ZTEST(threads_lifecycle_1cpu, test_k_thread_state_str)
 	tid->base.thread_state = _THREAD_PENDING;
 	str = k_thread_state_str(tid, state_str, sizeof(state_str));
 	zassert_str_equal(str, "pending");
-
-	tid->base.thread_state = _THREAD_PRESTART;
-	str = k_thread_state_str(tid, state_str, sizeof(state_str));
-	zassert_str_equal(str, "prestart");
 
 	tid->base.thread_state = _THREAD_DEAD;
 	str = k_thread_state_str(tid, state_str, sizeof(state_str));

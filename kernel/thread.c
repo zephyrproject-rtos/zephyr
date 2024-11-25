@@ -236,7 +236,6 @@ const char *k_thread_state_str(k_tid_t thread_id, char *buf, size_t buf_size)
 	} state_string[] = {
 		SS_ENT(DUMMY),
 		SS_ENT(PENDING),
-		SS_ENT(PRESTART),
 		SS_ENT(DEAD),
 		SS_ENT(SUSPENDED),
 		SS_ENT(ABORTING),
@@ -346,22 +345,6 @@ void z_check_stack_sentinel(void)
 	}
 }
 #endif /* CONFIG_STACK_SENTINEL */
-
-void z_impl_k_thread_start(k_tid_t thread)
-{
-	SYS_PORT_TRACING_OBJ_FUNC(k_thread, start, thread);
-
-	z_sched_start(thread);
-}
-
-#ifdef CONFIG_USERSPACE
-static inline void z_vrfy_k_thread_start(k_tid_t thread)
-{
-	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
-	z_impl_k_thread_start(thread);
-}
-#include <zephyr/syscalls/k_thread_start_mrsh.c>
-#endif /* CONFIG_USERSPACE */
 
 #if defined(CONFIG_STACK_POINTER_RANDOM) && (CONFIG_STACK_POINTER_RANDOM != 0)
 int z_stack_adjust_initialized;
@@ -559,7 +542,7 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	z_waitq_init(&new_thread->join_queue);
 
 	/* Initialize various struct k_thread members */
-	z_init_thread_base(&new_thread->base, prio, _THREAD_PRESTART, options);
+	z_init_thread_base(&new_thread->base, prio, _THREAD_SUSPENDED, options);
 	stack_ptr = setup_thread_stack(new_thread, stack, stack_size);
 
 #ifdef CONFIG_KERNEL_COHERENCE
