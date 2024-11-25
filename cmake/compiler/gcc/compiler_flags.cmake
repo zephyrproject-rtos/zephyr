@@ -169,14 +169,17 @@ set_compiler_property(PROPERTY coverage -fprofile-arcs -ftest-coverage -fno-inli
 # Security canaries.
 set_compiler_property(PROPERTY security_canaries -fstack-protector-all)
 set_compiler_property(PROPERTY security_canaries_strong -fstack-protector-strong)
+set_compiler_property(PROPERTY security_canaries_explicit -fstack-protector-explicit)
 
 # Only a valid option with GCC 7.x and above, so let's do check and set.
 if(CONFIG_STACK_CANARIES_TLS)
   check_set_compiler_property(APPEND PROPERTY security_canaries -mstack-protector-guard=tls)
   check_set_compiler_property(APPEND PROPERTY security_canaries_strong -mstack-protector-guard=tls)
+  check_set_compiler_property(APPEND PROPERTY security_canaries_explicit -mstack-protector-guard=tls)
 else()
   check_set_compiler_property(APPEND PROPERTY security_canaries -mstack-protector-guard=global)
   check_set_compiler_property(APPEND PROPERTY security_canaries_global -mstack-protector-guard=global)
+  check_set_compiler_property(APPEND PROPERTY security_canaries_explicit -mstack-protector-guard=global)
 endif()
 
 
