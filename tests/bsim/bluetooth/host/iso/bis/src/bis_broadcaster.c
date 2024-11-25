@@ -4,15 +4,25 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdint.h>
+#include <stddef.h>
+
 #include "common.h"
 
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 
 #include "babblekit/flags.h"
 #include "babblekit/sync.h"
 #include "babblekit/testcase.h"
+
+#include "host/hci_core.h" /* To get bt_dev */
 
 LOG_MODULE_REGISTER(bis_broadcaster, LOG_LEVEL_INF);
 
@@ -24,7 +34,7 @@ static struct bt_iso_chan iso_chans[CONFIG_BT_ISO_MAX_CHAN];
 static struct bt_iso_chan *default_chan = &iso_chans[0];
 static uint16_t seq_num;
 NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT,
-			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
+			  BT_ISO_SDU_BUF_SIZE(ARRAY_SIZE(mock_iso_data)),
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 static DEFINE_FLAG(flag_iso_connected);
@@ -34,9 +44,7 @@ K_WORK_DELAYABLE_DEFINE(iso_send_work, send_data_cb);
 
 static void send_data(struct bt_iso_chan *chan)
 {
-	static uint8_t buf_data[CONFIG_BT_ISO_TX_MTU];
 	static size_t len_to_send = 1U;
-	static bool data_initialized;
 	struct net_buf *buf;
 	int ret;
 
@@ -45,20 +53,12 @@ static void send_data(struct bt_iso_chan *chan)
 		return;
 	}
 
-	if (!data_initialized) {
-		for (int i = 0; i < ARRAY_SIZE(buf_data); i++) {
-			buf_data[i] = (uint8_t)i;
-		}
-
-		data_initialized = true;
-	}
-
 	buf = net_buf_alloc(&tx_pool, K_NO_WAIT);
 	TEST_ASSERT(buf != NULL, "Failed to allocate buffer");
 
 	net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
 
-	net_buf_add_mem(buf, buf_data, len_to_send);
+	net_buf_add_mem(buf, mock_iso_data, len_to_send);
 
 	ret = bt_iso_chan_send(default_chan, buf, seq_num++);
 	if (ret < 0) {
@@ -72,7 +72,7 @@ static void send_data(struct bt_iso_chan *chan)
 	}
 
 	len_to_send++;
-	if (len_to_send > ARRAY_SIZE(buf_data)) {
+	if (len_to_send > (chan->qos->tx->sdu - BT_HCI_ISO_SDU_HDR_SIZE)) {
 		len_to_send = 1;
 	}
 }
@@ -127,7 +127,7 @@ static void init(void)
 		.sent = sdu_sent_cb,
 	};
 	static struct bt_iso_chan_io_qos iso_tx = {
-		.sdu = CONFIG_BT_ISO_TX_MTU,
+		.sdu = 0U,
 		.phy = BT_GAP_LE_PHY_2M,
 		.rtn = 1,
 		.path = NULL,
@@ -144,6 +144,9 @@ static void init(void)
 	for (size_t i = 0U; i < ARRAY_SIZE(iso_chans); i++) {
 		iso_chans[i].ops = &iso_ops;
 		iso_chans[i].qos = &iso_qos;
+
+		/* Default the SDU size to the maximum HCI buffer size */
+		iso_qos.tx->sdu = MIN(bt_dev.le.iso_mtu, ARRAY_SIZE(mock_iso_data));
 	}
 
 	bk_sync_init();

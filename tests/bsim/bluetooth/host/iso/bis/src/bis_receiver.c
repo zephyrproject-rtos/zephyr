@@ -5,8 +5,9 @@
  */
 
 #include <stdint.h>
-#include "common.h"
+#include <string.h>
 
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/iso.h>
@@ -17,9 +18,15 @@
 #include "babblekit/sync.h"
 #include "babblekit/testcase.h"
 
+#include "common.h"
+
 LOG_MODULE_REGISTER(bis_receiver, LOG_LEVEL_INF);
 
 #define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 5U /* Set the timeout relative to interval */
+/* The broadcaster will send SDUs from 0 to CONFIG_BT_ISO_RX_MTU in the SDU data length. We want to
+ * receive at least 2 of each size to ensure correctness
+ */
+#define RX_CNT_TO_PASS                    (CONFIG_BT_ISO_RX_MTU * 2)
 
 extern enum bst_result_t bst_result;
 
@@ -74,10 +81,22 @@ static void iso_log_data(uint8_t *data, size_t data_len)
 static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *info,
 		     struct net_buf *buf)
 {
+	static size_t rx_cnt;
+
+	if (IS_FLAG_SET(flag_data_received)) {
+		return;
+	}
+
 	if (info->flags & BT_ISO_FLAGS_VALID) {
 		LOG_DBG("Incoming data channel %p len %u", chan, buf->len);
 		iso_log_data(buf->data, buf->len);
-		SET_FLAG(flag_data_received);
+
+		if (memcmp(buf->data, mock_iso_data, buf->len) != 0) {
+			TEST_FAIL("Unexpected data received");
+		} else if (rx_cnt++ > RX_CNT_TO_PASS) {
+			LOG_INF("Data received");
+			SET_FLAG(flag_data_received);
+		}
 	}
 }
 
