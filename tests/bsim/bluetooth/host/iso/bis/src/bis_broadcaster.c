@@ -9,6 +9,7 @@
 
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/logging/log.h>
@@ -35,6 +36,19 @@ static uint16_t seq_num;
 NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT,
 			  BT_ISO_SDU_BUF_SIZE(ARRAY_SIZE(mock_iso_data)),
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
+
+
+static struct bt_iso_chan_io_qos iso_tx = {
+	.sdu = 0U,
+	.phy = BT_GAP_LE_PHY_2M,
+	.rtn = 1,
+	.path = NULL,
+};
+
+static struct bt_iso_chan_qos iso_qos = {
+	.tx = &iso_tx,
+	.rx = NULL,
+};
 
 DEFINE_FLAG_STATIC(flag_iso_connected);
 
@@ -124,16 +138,6 @@ static void init(void)
 		.disconnected = iso_disconnected_cb,
 		.connected = iso_connected_cb,
 		.sent = sdu_sent_cb,
-	};
-	static struct bt_iso_chan_io_qos iso_tx = {
-		.sdu = 0U,
-		.phy = BT_GAP_LE_PHY_2M,
-		.rtn = 1,
-		.path = NULL,
-	};
-	static struct bt_iso_chan_qos iso_qos = {
-		.tx = &iso_tx,
-		.rx = NULL,
 	};
 	int err;
 
@@ -306,6 +310,50 @@ static void test_main_disable(void)
 	TEST_PASS("Disable test passed");
 }
 
+static void test_main_fragment(void)
+{
+	struct bt_le_ext_adv *adv;
+	struct bt_iso_big *big;
+	uint32_t new_sdu_size;
+
+	init();
+
+	/* Multiple the SDU by 3 so that we always fragment over HCI with a BT_ISO_START,
+	 * BT_ISO_CONT and BT_ISO_END
+	 */
+	new_sdu_size = bt_dev.le.iso_mtu * 3U;
+
+	if (new_sdu_size > BT_ISO_MAX_SDU) {
+		TEST_FAIL("Not possible to use SDU size of 0x%08X (default SDU is 0x%04X)",
+			  new_sdu_size, iso_qos.tx->sdu);
+		return;
+	}
+
+	if (new_sdu_size > ARRAY_SIZE(mock_iso_data)) {
+		TEST_FAIL("New SDU size (%u) needs to be smaller than the mock_iso_data size %zu",
+			  new_sdu_size, ARRAY_SIZE(mock_iso_data));
+		return;
+	}
+
+	for (size_t i = 0U; i < ARRAY_SIZE(iso_chans); i++) {
+		iso_qos.tx->sdu = (uint16_t)new_sdu_size;
+	}
+
+	/* Create advertising set and BIG and start it and starting TXing */
+	create_ext_adv(&adv);
+	create_big(adv, 1U, &big);
+	start_ext_adv(adv);
+	start_tx();
+
+	/* Wait for receiver to tell us to terminate */
+	bk_sync_wait();
+
+	terminate_big(big);
+	big = NULL;
+
+	TEST_PASS("Test passed");
+}
+
 static const struct bst_test_instance test_def[] = {
 	{
 		.test_id = "broadcaster",
@@ -316,6 +364,11 @@ static const struct bst_test_instance test_def[] = {
 		.test_id = "broadcaster_disable",
 		.test_descr = "BIS broadcaster that tests bt_disable for ISO",
 		.test_main_f = test_main_disable,
+	},
+	{
+		.test_id = "broadcaster_fragment",
+		.test_descr = "BIS broadcaster that tests fragmentation over HCI for ISO",
+		.test_main_f = test_main_fragment,
 	},
 	BSTEST_END_MARKER,
 };
