@@ -259,6 +259,10 @@ static void avrcp_unit_info_handler(struct bt_avrcp *avrcp, struct net_buf *buf,
 	} else { /* BT_AVCTP_RESPONSE */
 		if ((avrcp_cb != NULL) && (avrcp_cb->unit_info_rsp != NULL)) {
 			net_buf_pull(buf, sizeof(*avrcp_hdr));
+			if (buf->len != 5) {
+				LOG_ERR("Invalid unit info length");
+				return;
+			}
 			net_buf_pull_u8(buf); /* Always 0x07 */
 			rsp.unit_type = FIELD_GET(GENMASK(7, 3), net_buf_pull_u8(buf));
 			rsp.company_id = net_buf_pull_be24(buf);
@@ -279,6 +283,10 @@ static void avrcp_subunit_info_handler(struct bt_avrcp *avrcp, struct net_buf *b
 	} else { /* BT_AVCTP_RESPONSE */
 		if ((avrcp_cb != NULL) && (avrcp_cb->subunit_info_rsp != NULL)) {
 			net_buf_pull(buf, sizeof(*avrcp_hdr));
+			if (buf->len < 5) {
+				LOG_ERR("Invalid subunit info length");
+				return;
+			}
 			net_buf_pull_u8(buf); /* Always 0x07 */
 			tmp = net_buf_pull_u8(buf);
 			rsp.subunit_type = FIELD_GET(GENMASK(7, 3), tmp);
@@ -321,8 +329,12 @@ static int avrcp_recv(struct bt_avctp *session, struct net_buf *buf)
 
 	avctp_hdr = (void *)buf->data;
 	net_buf_pull(buf, sizeof(*avctp_hdr));
-	avrcp_hdr = (void *)buf->data;
+	if (buf->len < sizeof(*avrcp_hdr)) {
+		LOG_ERR("invalid AVRCP header received");
+		return -EINVAL;
+	}
 
+	avrcp_hdr = (void *)buf->data;
 	tid = BT_AVCTP_HDR_GET_TRANSACTION_LABLE(avctp_hdr);
 	cr = BT_AVCTP_HDR_GET_CR(avctp_hdr);
 	ctype = BT_AVRCP_HDR_GET_CTYPE(avrcp_hdr);
