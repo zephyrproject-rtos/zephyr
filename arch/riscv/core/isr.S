@@ -169,7 +169,9 @@ SECTION_FUNC(exception.entry, _isr_wrapper)
 	.option norelax
 	la gp, __global_pointer$
 	.option pop
-#endif /* CONFIG_RISCV_GP */
+#elif defined(CONFIG_RISCV_CURRENT_VIA_GP)
+	lr gp, ___cpu_t_current_OFFSET(s0)
+#endif /* CONFIG_RISCV_GP / CONFIG_RISCV_CURRENT_VIA_GP */
 
 	/* Clear our per-thread usermode flag */
 	lui t0, %tprel_hi(is_user_mode)
