@@ -907,6 +907,16 @@ config STACK_CANARIES_STRONG
 	  functions that have local array definitiion or have references to local
 	  frame addresses.
 
+config STACK_CANARIES_EXPLICIT
+	bool "Explicit protection"
+	depends on ENTROPY_GENERATOR || TEST_RANDOM_GENERATOR
+	depends on "${ZEPHYR_TOOLCHAIN_VARIANT}" = "zephyr"
+	select NEED_LIBC_MEM_PARTITION if !STACK_CANARIES_TLS
+	select REQUIRES_STACK_CANARIES
+	help
+	  This option enables compiler stack canaries only in functions which have the
+	  stack_protect attribute.
+
 endchoice
 
 if REQUIRES_STACK_CANARIES
