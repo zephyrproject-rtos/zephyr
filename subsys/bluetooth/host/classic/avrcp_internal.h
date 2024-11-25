@@ -99,7 +99,7 @@ struct bt_avrcp_header {
 
 struct bt_avrcp_unit_info_cmd {
 	struct bt_avrcp_header hdr;
-	uint8_t data[0];
+	uint8_t data[];
 } __packed;
 
 int bt_avrcp_init(void);
