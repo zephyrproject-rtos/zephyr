@@ -54,15 +54,12 @@ foreach(web_resource
 endforeach()
 
 foreach(inc_file
-	ca.der
-	server.der
+	server_cert.der
 	server_privkey.der
-	https-server-cert.der
-	https-server-key.der
     )
   generate_inc_file_for_target(
     app
-    src/${inc_file}
+    src/certs/${inc_file}
     ${gen_dir}/${inc_file}.inc
     )
 endforeach()
