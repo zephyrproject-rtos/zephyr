@@ -16,9 +16,13 @@ config FLOAT_HARD
 	help
 	  This option enables the hard-float calling convention.
 
+choice RISCV_GP_PURPOSE
+	prompt "Purpose of the global pointer (GP) register"
+	default RISCV_GP if RISCV_SOC_HAS_GP_RELATIVE_ADDRESSING
+
 config RISCV_GP
 	bool "RISC-V global pointer relative addressing"
-	default n
+	depends on RISCV_SOC_HAS_GP_RELATIVE_ADDRESSING
 	help
 	  Use global pointer relative addressing for small globals declared
 	  anywhere in the executable. It can benefit performance and reduce
@@ -30,13 +34,14 @@ config RISCV_GP
 
 config RISCV_CURRENT_VIA_GP
 	bool "Store current thread into the global pointer (GP) register"
-	depends on !RISCV_GP
 	depends on MP_MAX_NUM_CPUS > 1
 	select ARCH_HAS_CUSTOM_CURRENT_IMPL
 	help
 	  Store the current thread's pointer into the global pointer (GP) register.
 	  When is enabled, calls to `arch_current_thread()` & `k_sched_current_thread_query()` will
 	  be reduced to a single register read.
+
+endchoice # RISCV_GP_PURPOSE
 
 config RISCV_ALWAYS_SWITCH_THROUGH_ECALL
 	bool "Do not use mret outside a trap handler context"
@@ -147,6 +152,12 @@ config RISCV_SOC_HAS_CUSTOM_SYS_IO
 	  Enable this hidden option and specialize the z_soc_* functions when
 	  the RISC-V SoC needs to do something different and more than reading and
 	  writing the registers.
+
+config RISCV_SOC_HAS_GP_RELATIVE_ADDRESSING
+	bool
+	help
+	  Selected when SoC has implemented the initialization of global pointer (GP)
+	  at program start, or earlier than any instruction using GP relative addressing.
 
 config RISCV_SOC_CONTEXT_SAVE
 	bool "SOC-based context saving in IRQ handlers"

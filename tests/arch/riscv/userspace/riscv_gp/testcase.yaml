@@ -8,8 +8,6 @@ tests:
   arch.riscv64.riscv_gp.relative_addressing:
     extra_configs:
       - CONFIG_RISCV_GP=y
-      - CONFIG_RISCV_CURRENT_VIA_GP=n
   arch.riscv64.riscv_gp.thread_pointer:
     extra_configs:
       - CONFIG_RISCV_CURRENT_VIA_GP=y
-      - CONFIG_RISCV_GP=n
