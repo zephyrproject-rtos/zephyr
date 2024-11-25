@@ -1,0 +1,34 @@
+/*
+ * Copyright (c) 2024 Ian Wakely
+ */
+
+/delete-node/ &flash0;
+
+/ {
+	model = "Adafruit QT Py ESP32S3 PSRAM APPCPU";
+
+	soc {
+		flash: flash-controller@60002000 {
+			compatible = "espressif,esp32-flash-controller";
+			reg = <0x60002000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/* 4MB flash */
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				erase-block-size = <4096>;
+				write-block-size = <4>;
+				reg = <0x0 DT_SIZE_M(4)>;
+			};
+		};
+	};
+};
+
+/* 2MB psram */
+&psram0 {
+	reg = <0x3c000000 DT_SIZE_M(2)>;
+	status = "okay";
+};
+
+#include <espressif/partitions_0x0_amp.dtsi>
