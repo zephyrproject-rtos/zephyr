@@ -8,8 +8,6 @@
  * https://www.st.com/resource/en/datasheet/lsm6dso.pdf
  */
 
-#define DT_DRV_COMPAT st_lsm6dso
-
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
@@ -867,21 +865,17 @@ static int lsm6dso_init(const struct device *dev)
 	return 0;
 }
 
-#if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 0
-#warning "LSM6DSO driver enabled without any devices"
-#endif
-
 /*
  * Device creation macro, shared by LSM6DSO_DEFINE_SPI() and
  * LSM6DSO_DEFINE_I2C().
  */
 
-#define LSM6DSO_DEVICE_INIT(inst)					\
+#define LSM6DSO_DEVICE_INIT(inst, model)				\
 	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
 			    lsm6dso_init,				\
 			    NULL,					\
-			    &lsm6dso_data_##inst,			\
-			    &lsm6dso_config_##inst,			\
+			    &model##_data_##inst,			\
+			    &model##_config_##inst,			\
 			    POST_KERNEL,				\
 			    CONFIG_SENSOR_INIT_PRIORITY,		\
 			    &lsm6dso_driver_api);
@@ -917,9 +911,9 @@ static int lsm6dso_init(const struct device *dev)
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),		\
 		(LSM6DSO_CFG_IRQ(inst)), ())
 
-#define LSM6DSO_CONFIG_SPI(inst)					\
+#define LSM6DSO_CONFIG_SPI(inst, model)					\
 	{								\
-		STMEMSC_CTX_SPI(&lsm6dso_config_##inst.stmemsc_cfg),	\
+		STMEMSC_CTX_SPI(&model##_config_##inst.stmemsc_cfg),	\
 		.stmemsc_cfg = {					\
 			.spi = SPI_DT_SPEC_INST_GET(inst,		\
 					   LSM6DSO_SPI_OP,		\
@@ -932,9 +926,9 @@ static int lsm6dso_init(const struct device *dev)
  * Instantiation macros used when a device is on an I2C bus.
  */
 
-#define LSM6DSO_CONFIG_I2C(inst)					\
+#define LSM6DSO_CONFIG_I2C(inst, model)					\
 	{								\
-		STMEMSC_CTX_I2C(&lsm6dso_config_##inst.stmemsc_cfg),	\
+		STMEMSC_CTX_I2C(&model##_config_##inst.stmemsc_cfg),	\
 		.stmemsc_cfg = {					\
 			.i2c = I2C_DT_SPEC_INST_GET(inst),		\
 		},							\
@@ -946,12 +940,18 @@ static int lsm6dso_init(const struct device *dev)
  * bus-specific macro at preprocessor time.
  */
 
-#define LSM6DSO_DEFINE(inst)						\
-	static struct lsm6dso_data lsm6dso_data_##inst;			\
-	static const struct lsm6dso_config lsm6dso_config_##inst =	\
+#define LSM6DSO_DEFINE(inst, model)					\
+	static struct lsm6dso_data model##_data_##inst;			\
+	static const struct lsm6dso_config model##_config_##inst =	\
 		COND_CODE_1(DT_INST_ON_BUS(inst, spi),			\
-			(LSM6DSO_CONFIG_SPI(inst)),			\
-			(LSM6DSO_CONFIG_I2C(inst)));			\
-	LSM6DSO_DEVICE_INIT(inst)
+			(LSM6DSO_CONFIG_SPI(inst, model)),		\
+			(LSM6DSO_CONFIG_I2C(inst, model)));		\
+	LSM6DSO_DEVICE_INIT(inst, model)
 
-DT_INST_FOREACH_STATUS_OKAY(LSM6DSO_DEFINE)
+#define DT_DRV_COMPAT st_lsm6dso
+DT_INST_FOREACH_STATUS_OKAY_VARGS(LSM6DSO_DEFINE, lsm6dso)
+#undef DT_DRV_COMPAT
+
+#define DT_DRV_COMPAT st_lsm6dso32
+DT_INST_FOREACH_STATUS_OKAY_VARGS(LSM6DSO_DEFINE, lsm6dso32)
+#undef DT_DRV_COMPAT
