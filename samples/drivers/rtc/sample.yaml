@@ -1,12 +1,22 @@
 sample:
   name: Real-Time Clock Sample
+common:
+  tags:
+    - samples
+    - rtc
+    - api
+  depends_on:
+    - rtc
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "RTC date and time: 2024-11-17 04:19:01"
 tests:
   sample.drivers.rtc:
-    platform_allow:
+    filter: dt_alias_exists("rtc")
+    integration_platforms:
       - stm32f3_disco
-    tags:
-      - samples
-      - rtc
-      - api
-    depends_on:
-      - rtc
+  sample.drivers.rtc.stm32:
+    filter: dt_compat_enabled("st,stm32-rtc")
+    extra_args: DTC_OVERLAY_FILE=./boards/stm32_rtc.overlay
