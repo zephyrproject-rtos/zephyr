@@ -27,7 +27,7 @@
 
 		cpuapp_ram0x_region: memory@2f011000 {
 			compatible = "nordic,owned-memory";
-			reg = <0x2f010000 DT_SIZE_K(260)>;
+			reg = <0x2f011000 DT_SIZE_K(260)>;
 			status = "disabled";
 			nordic,access = <NRF_OWNER_ID_APPLICATION NRF_PERM_RWS>;
 			#address-cells = <1>;
