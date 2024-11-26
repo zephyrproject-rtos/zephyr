@@ -1330,7 +1330,7 @@ static int spi_nor_process_sfdp(const struct device *dev)
 				}
 
 				if (!((sys_le32_to_cpu(u2.dw[0]) & BIT(0)) &&
-				      (sys_le32_to_cpu(u2.dw[1]) & BIT(6)))) {
+				      (sys_le32_to_cpu(u2.dw[0]) & BIT(6)))) {
 					LOG_ERR("4-byte addressing not supported");
 					return -ENOTSUP;
 				}
