@@ -858,7 +858,13 @@ static int sreq_get_interface(struct usbd_context *const uds_ctx,
 		return 0;
 	}
 
+	/* Treat as error in default (not specified) and addressed states. */
 	cfg_nd = usbd_config_get_current(uds_ctx);
+	if (cfg_nd == NULL) {
+		errno = -EPERM;
+		return 0;
+	}
+
 	cfg_desc = cfg_nd->desc;
 
 	if (setup->wIndex > UINT8_MAX ||
