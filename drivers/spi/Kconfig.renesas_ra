@@ -26,10 +26,10 @@ config SPI_RA_DTC
 	  Enable the SPI DTC mode for SPI instances
 
 config SPI_USE_HW_SS
-	bool "RA MCU SPI Hardware Slave Select support"
+	bool "RA MCU SPI Hardware Peripheral Select support"
 	default y
-	depends on !SOC_SERIES_RA2A1
+	depends on !(SOC_SERIES_RA2A1 || SOC_SERIES_RA4M1)
 	help
-	  Use Slave Select pin instead of software Slave Select.
+	  Use Hardware Peripheral Select instead of Software Peripheral Select.
 
 endif # SPI_RENESAS_RA
