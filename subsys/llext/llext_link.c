@@ -188,7 +188,7 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr
 			ret = llext_read(ldr, &sym, sizeof(sym));
 		}
 
-		if (ret < 0) {
+		if (ret != 0) {
 			LOG_ERR("PLT: failed to read symbol table #%u RELA #%u, trying to continue",
 				j, i);
 			continue;
