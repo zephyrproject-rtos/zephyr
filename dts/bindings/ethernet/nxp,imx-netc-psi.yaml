@@ -11,9 +11,6 @@ properties:
   reg:
     required: true
 
-  phy-handle:
-    required: true
-
   mac-index:
     required: true
     type: int
