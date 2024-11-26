@@ -181,6 +181,8 @@ Sensors
 Serial
 ======
 
+* Renamed the ``compatible`` from ``nxp,kinetis-lpuart`` to :dtcompatible:`nxp,lpuart`.
+
 Stepper
 =======
 
