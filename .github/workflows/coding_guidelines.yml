@@ -40,6 +40,8 @@ jobs:
         git config --global user.email "actions@zephyrproject.org"
         git config --global user.name "Github Actions"
         git remote -v
+        rm -fr ".git/rebase-apply"
+        rm -fr ".git/rebase-merge"
         git rebase origin/${BASE_REF}
         git clean -f -d
         source zephyr-env.sh
