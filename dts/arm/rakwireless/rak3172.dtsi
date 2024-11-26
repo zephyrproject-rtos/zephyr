@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2024 Teslabs Engineering S.L.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/wl/stm32wle5Xc.dtsi>
+#include <st/wl/stm32wle5ccux-pinctrl.dtsi>
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(32)>;
+};
+
+&clk_lse {
+	clock-frequency = <32768>;
+};
+
+&subghzspi {
+	status = "okay";
+	lora: radio@0 {
+		status = "okay";
+		tx-enable-gpios = <&gpiob 8 GPIO_ACTIVE_LOW>;
+		rx-enable-gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+		power-amplifier-output = "rfo-hp";
+		rfo-hp-max-power = <22>;
+	};
+};
