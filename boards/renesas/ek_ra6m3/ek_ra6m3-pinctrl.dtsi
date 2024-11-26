@@ -61,4 +61,12 @@
 				<RA_PSEL(RA_PSEL_GPT1, 4, 6)>;
 		};
 	};
+
+	usbfs_default: usbfs_default {
+		group1 {
+			/* USB_VBUS */
+			psels = <RA_PSEL(RA_PSEL_USBFS, 11, 1)>;
+			drive-strength = "high";
+		};
+	};
 };
