@@ -135,12 +135,14 @@
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";
 				substate-id = <2>;
-				min-residency-us = <100000>;
+				min-residency-us = <1000>;
+				exit-latency-us = <30>;
 			};
 			s2ram: s2ram {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-ram";
-				min-residency-us = <800000>;
+				min-residency-us = <2000>;
+				exit-latency-us = <260>;
 			};
 		};
 	};
