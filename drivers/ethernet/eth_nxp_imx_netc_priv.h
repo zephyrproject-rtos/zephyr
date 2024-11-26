@@ -53,6 +53,9 @@
 						  ? kNETC_GmiiMode                                 \
 						  : kNETC_RmiiMode))))
 
+#define NETC_IS_PSEUDO_MAC(node_id)                                                                \
+	(DT_ENUM_HAS_VALUE(node_id, phy_connection_type, internal) ? true : false)
+
 /* Helper macros to convert from Zephyr PHY speed to NETC speed/duplex types */
 #define PHY_TO_NETC_SPEED(x)                                                                       \
 	(PHY_LINK_IS_SPEED_1000M(x)                                                                \
@@ -97,6 +100,7 @@ struct netc_eth_config {
 	uint16_t si_idx;
 	const struct device *phy_dev;
 	netc_hw_mii_mode_t phy_mode;
+	volatile bool pseudo_mac;
 	void (*generate_mac)(uint8_t *mac_addr);
 	void (*bdr_init)(netc_bdr_config_t *bdr_config, netc_rx_bdr_config_t *rx_bdr_config,
 			 netc_tx_bdr_config_t *tx_bdr_config);

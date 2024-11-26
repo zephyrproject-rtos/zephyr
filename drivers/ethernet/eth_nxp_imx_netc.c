@@ -225,6 +225,7 @@ int netc_eth_init_common(const struct device *dev)
 
 int netc_eth_tx(const struct device *dev, struct net_pkt *pkt)
 {
+	const struct netc_eth_config *cfg = dev->config;
 	struct netc_eth_data *data = dev->data;
 	netc_buffer_struct_t buff = {.buffer = data->tx_buff, .length = sizeof(data->tx_buff)};
 	netc_frame_struct_t frame = {.buffArray = &buff, .length = 1};
@@ -233,6 +234,11 @@ int netc_eth_tx(const struct device *dev, struct net_pkt *pkt)
 	int ret;
 
 	__ASSERT(pkt, "Packet pointer is NULL");
+
+	/* TODO: support DSA master */
+	if (cfg->pseudo_mac) {
+		return 0;
+	}
 
 	k_mutex_lock(&data->tx_mutex, K_FOREVER);
 
@@ -275,9 +281,10 @@ error:
 
 enum ethernet_hw_caps netc_eth_get_capabilities(const struct device *dev)
 {
-	ARG_UNUSED(dev);
+	const struct netc_eth_config *cfg = dev->config;
+	uint32_t caps;
 
-	return (ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T | ETHERNET_LINK_1000BASE_T |
+	caps = (ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T | ETHERNET_LINK_1000BASE_T |
 		ETHERNET_HW_RX_CHKSUM_OFFLOAD | ETHERNET_HW_FILTERING
 #if defined(CONFIG_NET_VLAN)
 		| ETHERNET_HW_VLAN
@@ -286,6 +293,12 @@ enum ethernet_hw_caps netc_eth_get_capabilities(const struct device *dev)
 		| ETHERNET_PROMISC_MODE
 #endif
 	);
+
+	if (cfg->pseudo_mac) {
+		caps |= ETHERNET_DSA_MASTER_PORT;
+	}
+
+	return caps;
 }
 
 int netc_eth_set_config(const struct device *dev, enum ethernet_config_type type,
