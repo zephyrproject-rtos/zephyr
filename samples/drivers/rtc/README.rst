@@ -27,8 +27,7 @@ Sample Output
 
 .. code-block:: console
 
-   RTC date and time: 2024-11-17 04:21:47
-   RTC date and time: 2024-11-17 04:21:48
-   RTC date and time: 2024-11-17 04:21:49
+   RTC date and time: 2024-11-17 04:19:00
+   RTC date and time: 2024-11-17 04:19:01
 
    <repeats endlessly>
