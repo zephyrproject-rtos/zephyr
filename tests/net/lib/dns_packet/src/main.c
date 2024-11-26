@@ -709,6 +709,24 @@ static uint8_t resp_truncated_response_ipv4_5[] = {
 	0x00, 0x04,
 };
 
+static uint8_t resp_truncated_response_ipv4_6[] = {
+	/* DNS msg header (12 bytes) */
+	/* Id (0) */
+	0x00, 0x00,
+	/* Flags (response, rcode = 1) */
+	0x80, 0x01,
+	/* Number of questions */
+	0x00, 0x01,
+	/* Number of answers */
+	0x00, 0x00,
+	/* Number of authority RRs */
+	0x00, 0x00,
+	/* Number of additional RRs */
+	0x00, 0x00,
+
+	/* Rest of the data is missing */
+};
+
 static uint8_t resp_valid_response_ipv4_6[] = {
 	/* DNS msg header (12 bytes) */
 	0xb0, 0x41, 0x81, 0x80, 0x00, 0x01, 0x00, 0x01,
@@ -1093,8 +1111,13 @@ static void run_dns_malformed_response(const char *test_case,
 
 	dns_id = dns_unpack_header_id(dns_msg.msg);
 
-	setup_dns_context(&dns_ctx, 0, dns_id, query, sizeof(query),
-			  DNS_QUERY_TYPE_A);
+	/* If the message is longer than 12 bytes, it could be a valid DNS message
+	 * in which case setup the context for the reply.
+	 */
+	if (len > 12) {
+		setup_dns_context(&dns_ctx, 0, dns_id, query, sizeof(query),
+				  DNS_QUERY_TYPE_A);
+	}
 
 	ret = dns_validate_msg(&dns_ctx, &dns_msg, &dns_id, &query_idx,
 			       NULL, &query_hash);
@@ -1198,6 +1221,7 @@ static void test_dns_malformed_responses(void)
 	RUN_MALFORMED_TEST(resp_truncated_response_ipv4_3);
 	RUN_MALFORMED_TEST(resp_truncated_response_ipv4_4);
 	RUN_MALFORMED_TEST(resp_truncated_response_ipv4_5);
+	RUN_MALFORMED_TEST(resp_truncated_response_ipv4_6);
 }
 
 static void test_dns_id_len(void)
