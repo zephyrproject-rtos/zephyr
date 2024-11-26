@@ -1296,3 +1296,9 @@ test_i2c_icm45686: icm45686@b1 {
 	reg = <0xb1>;
 	int-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_rrh46410: rrh46410@b2 {
+	compatible = "renesas,rrh46410";
+	reg = <0xb2>;
+	reset-gpios = <&test_gpio 0 0>;
+};

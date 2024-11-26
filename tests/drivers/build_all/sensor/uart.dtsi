@@ -38,3 +38,8 @@ test_uart_explorir_m: explorir-m {
 test_uart_fcx_mldx5: fcx-mldx5 {
 	compatible = "ap,fcx-mldx5";
 };
+
+test_uart_rrh46410: rrh46410 {
+	compatible = "renesas,rrh46410";
+	reset-gpios = <&test_gpio 0 0>;
+};
