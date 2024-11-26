@@ -51,7 +51,22 @@ static const uint32_t temp_period_ns[] = {
 	[LSM6DSV16X_TEMP_BATCHED_AT_60Hz] = UINT32_C(1000000000) / 60,
 };
 #endif
+
+static const uint32_t sflp_period_ns[] = {
+	[LSM6DSV16X_DT_SFLP_ODR_AT_15Hz] = UINT32_C(1000000000) / 15,
+	[LSM6DSV16X_DT_SFLP_ODR_AT_30Hz] = UINT32_C(1000000000) / 30,
+	[LSM6DSV16X_DT_SFLP_ODR_AT_60Hz] = UINT32_C(1000000000) / 60,
+	[LSM6DSV16X_DT_SFLP_ODR_AT_120Hz] = UINT32_C(1000000000) / 120,
+	[LSM6DSV16X_DT_SFLP_ODR_AT_240Hz] = UINT32_C(1000000000) / 240,
+	[LSM6DSV16X_DT_SFLP_ODR_AT_480Hz] = UINT32_C(1000000000) / 480,
+};
 #endif /* CONFIG_LSM6DSV16X_STREAM */
+
+/*
+ * Expand val to q31_t according to its range; this is achieved multiplying by 2^31/2^range.
+ */
+#define Q31_SHIFT_VAL(val, range) \
+	(q31_t) (round((val) * ((int64_t)1 << (31 - (range)))))
 
 /*
  * Expand micro_val (a generic micro unit) to q31_t according to its range; this is achieved
@@ -157,6 +172,7 @@ static int lsm6dsv16x_decoder_get_frame_count(const uint8_t *buffer,
 	const uint8_t *buffer_end;
 	uint8_t fifo_tag;
 	uint8_t tot_accel_fifo_words = 0, tot_gyro_fifo_words = 0;
+	uint8_t tot_sflp_gbias = 0, tot_sflp_gravity = 0, tot_sflp_game_rotation = 0;
 
 #if defined(CONFIG_LSM6DSV16X_ENABLE_TEMP)
 	uint8_t tot_temp_fifo_words = 0;
@@ -181,6 +197,15 @@ static int lsm6dsv16x_decoder_get_frame_count(const uint8_t *buffer,
 			tot_temp_fifo_words++;
 			break;
 #endif
+		case LSM6DSV16X_SFLP_GYROSCOPE_BIAS_TAG:
+			tot_sflp_gbias++;
+			break;
+		case LSM6DSV16X_SFLP_GRAVITY_VECTOR_TAG:
+			tot_sflp_gravity++;
+			break;
+		case LSM6DSV16X_SFLP_GAME_ROTATION_VECTOR_TAG:
+			tot_sflp_game_rotation++;
+			break;
 		default:
 			break;
 		}
@@ -208,11 +233,21 @@ static int lsm6dsv16x_decoder_get_frame_count(const uint8_t *buffer,
 		*frame_count = tot_temp_fifo_words;
 		break;
 #endif
+	case SENSOR_CHAN_GAME_ROTATION_VECTOR:
+		*frame_count = tot_sflp_game_rotation;
+		break;
+	case SENSOR_CHAN_GRAVITY_VECTOR:
+		*frame_count = tot_sflp_gravity;
+		break;
+	case SENSOR_CHAN_GBIAS_XYZ:
+		*frame_count = tot_sflp_gbias;
+		break;
 	default:
 		*frame_count = 0;
 		break;
 	}
 #endif
+
 	return 0;
 }
 
@@ -231,6 +266,7 @@ static int lsm6dsv16x_decode_fifo(const uint8_t *buffer, struct sensor_chan_spec
 #if defined(CONFIG_LSM6DSV16X_ENABLE_TEMP)
 	uint16_t temp_count = 0;
 #endif
+	uint16_t game_rot_count = 0, gravity_count = 0, gbias_count = 0;
 	int ret;
 
 	/* count total FIFO word for each tag */
@@ -261,6 +297,12 @@ static int lsm6dsv16x_decode_fifo(const uint8_t *buffer, struct sensor_chan_spec
 			edata->header.timestamp -
 			(tot_chan_fifo_words - 1) * temp_period_ns[edata->temp_batch_odr];
 #endif
+	} else if (chan_spec.chan_type == SENSOR_CHAN_GRAVITY_VECTOR ||
+		   chan_spec.chan_type == SENSOR_CHAN_GAME_ROTATION_VECTOR ||
+		   chan_spec.chan_type == SENSOR_CHAN_GBIAS_XYZ) {
+		((struct sensor_data_header *)data_out)->base_timestamp_ns =
+			edata->header.timestamp -
+			(tot_chan_fifo_words - 1) * sflp_period_ns[edata->sflp_batch_odr];
 	}
 
 	while (count < max_count && buffer < buffer_end) {
@@ -365,6 +407,126 @@ static int lsm6dsv16x_decode_fifo(const uint8_t *buffer, struct sensor_chan_spec
 			break;
 		}
 #endif
+		case LSM6DSV16X_SFLP_GAME_ROTATION_VECTOR_TAG: {
+			struct sensor_game_rotation_vector_data *out = data_out;
+			union { float32_t f; uint32_t i; } x, y, z;
+			float32_t w, sumsq;
+
+			game_rot_count++;
+			if ((uintptr_t)buffer < *fit) {
+				/* This frame was already decoded, move on to the next frame */
+				buffer = frame_end;
+				continue;
+			}
+
+			if (chan_spec.chan_type != SENSOR_CHAN_GAME_ROTATION_VECTOR) {
+				buffer = frame_end;
+				continue;
+			}
+
+			out->readings[count].timestamp_delta =
+				(game_rot_count - 1) * sflp_period_ns[edata->sflp_batch_odr];
+
+			x.i = lsm6dsv16x_from_f16_to_f32(buffer[1] | (buffer[2] << 8));
+			y.i = lsm6dsv16x_from_f16_to_f32(buffer[3] | (buffer[4] << 8));
+			z.i = lsm6dsv16x_from_f16_to_f32(buffer[5] | (buffer[6] << 8));
+
+			sumsq = powf(x.f, 2) + powf(y.f, 2) + powf(z.f, 2);
+
+			/*
+			 * Theoretically sumsq should never be greater than 1, but due to
+			 * lack of precision it might happen. So, add a software correction
+			 * which consists in normalizing the (x, y, z) vector.
+			 */
+			if (sumsq > 1.0f) {
+				float n = sqrtf(sumsq);
+
+				x.f /= n;
+				y.f /= n;
+				z.f /= n;
+				sumsq = 1.0f;
+			}
+
+			/* unity vector quaternions */
+			w = sqrtf(1.0f - sumsq);
+
+			/*
+			 * Quaternions are numbers between -1 and 1. So let's select the signed
+			 * Q0.31 format (m = 0, n (fractional bits) == 31)
+			 */
+			out->shift = 0;
+
+			out->readings[count].x = Q31_SHIFT_VAL(x.f, out->shift);
+			out->readings[count].y = Q31_SHIFT_VAL(y.f, out->shift);
+			out->readings[count].z = Q31_SHIFT_VAL(z.f, out->shift);
+			out->readings[count].w = Q31_SHIFT_VAL(w, out->shift);
+
+			break;
+		}
+
+		case LSM6DSV16X_SFLP_GYROSCOPE_BIAS_TAG: {
+			struct sensor_three_axis_data *out = data_out;
+			int16_t x, y, z;
+			const int32_t scale = gyro_scaler[LSM6DSV16X_DT_FS_125DPS];
+
+			gbias_count++;
+			if ((uintptr_t)buffer < *fit) {
+				/* This frame was already decoded, move on to the next frame */
+				buffer = frame_end;
+				continue;
+			}
+
+			if (chan_spec.chan_type != SENSOR_CHAN_GBIAS_XYZ) {
+				buffer = frame_end;
+				continue;
+			}
+
+			out->readings[count].timestamp_delta =
+				(gbias_count - 1) * sflp_period_ns[edata->sflp_batch_odr];
+
+			x = buffer[1] | (buffer[2] << 8);
+			y = buffer[3] | (buffer[4] << 8);
+			z = buffer[5] | (buffer[6] << 8);
+
+			out->shift = gyro_range[LSM6DSV16X_DT_FS_125DPS];
+
+			out->readings[count].x = Q31_SHIFT_MICROVAL(scale * x, out->shift);
+			out->readings[count].y = Q31_SHIFT_MICROVAL(scale * y, out->shift);
+			out->readings[count].z = Q31_SHIFT_MICROVAL(scale * z, out->shift);
+			break;
+		}
+
+		case LSM6DSV16X_SFLP_GRAVITY_VECTOR_TAG: {
+			struct sensor_three_axis_data *out = data_out;
+			float32_t x, y, z;
+
+			gravity_count++;
+			if ((uintptr_t)buffer < *fit) {
+				/* This frame was already decoded, move on to the next frame */
+				buffer = frame_end;
+				continue;
+			}
+
+			if (chan_spec.chan_type != SENSOR_CHAN_GRAVITY_VECTOR) {
+				buffer = frame_end;
+				continue;
+			}
+
+			out->readings[count].timestamp_delta =
+				(gravity_count - 1) * sflp_period_ns[edata->sflp_batch_odr];
+
+			x = lsm6dsv16x_from_sflp_to_mg(buffer[1] | (buffer[2] << 8));
+			y = lsm6dsv16x_from_sflp_to_mg(buffer[3] | (buffer[4] << 8));
+			z = lsm6dsv16x_from_sflp_to_mg(buffer[5] | (buffer[6] << 8));
+
+			out->shift = 12;
+
+			out->readings[count].x = Q31_SHIFT_VAL(x, out->shift);
+			out->readings[count].y = Q31_SHIFT_VAL(y, out->shift);
+			out->readings[count].z = Q31_SHIFT_VAL(z, out->shift);
+			break;
+		}
+
 		default:
 			/* skip unhandled FIFO tag */
 			buffer = frame_end;
