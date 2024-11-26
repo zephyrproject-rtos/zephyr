@@ -1,5 +1,7 @@
 tests:
   benchmark.kernel.scheduler:
+    platform_key:
+      - arch
     tags:
       - benchmark
       - kernel
