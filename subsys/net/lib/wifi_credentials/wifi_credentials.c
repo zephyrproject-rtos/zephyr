@@ -121,7 +121,6 @@ int wifi_credentials_get_by_ssid_personal_struct(const char *ssid, size_t ssid_l
 	k_mutex_lock(&wifi_credentials_mutex, K_FOREVER);
 
 	idx = lookup_idx(ssid, ssid_len);
-
 	if (idx == -1) {
 		LOG_DBG("Cannot retrieve WiFi credentials, no entry found for the provided SSID");
 		ret = -ENOENT;
@@ -129,7 +128,6 @@ int wifi_credentials_get_by_ssid_personal_struct(const char *ssid, size_t ssid_l
 	}
 
 	ret = wifi_credentials_load_entry(idx, buf, sizeof(struct wifi_credentials_personal));
-
 	if (ret) {
 		LOG_ERR("Failed to load WiFi credentials at index %d, err: %d", idx, ret);
 		goto exit;
@@ -169,7 +167,6 @@ int wifi_credentials_set_personal_struct(const struct wifi_credentials_personal 
 	k_mutex_lock(&wifi_credentials_mutex, K_FOREVER);
 
 	idx = lookup_idx(creds->header.ssid, creds->header.ssid_len);
-
 	if (idx == -1) {
 		idx = lookup_unused_idx();
 		if (idx == -1) {
@@ -180,7 +177,6 @@ int wifi_credentials_set_personal_struct(const struct wifi_credentials_personal 
 	}
 
 	ret = wifi_credentials_store_entry(idx, creds, sizeof(struct wifi_credentials_personal));
-
 	if (ret) {
 		LOG_ERR("Failed to store WiFi credentials at index %d, err: %d", idx, ret);
 		goto exit;
@@ -340,15 +336,14 @@ int wifi_credentials_delete_by_ssid(const char *ssid, size_t ssid_len)
 	}
 
 	k_mutex_lock(&wifi_credentials_mutex, K_FOREVER);
-	idx = lookup_idx(ssid, ssid_len);
 
+	idx = lookup_idx(ssid, ssid_len);
 	if (idx == -1) {
 		LOG_DBG("WiFi credentials entry was not found");
 		goto exit;
 	}
 
 	ret = wifi_credentials_delete_entry(idx);
-
 	if (ret) {
 		LOG_ERR("Failed to delete WiFi credentials index %d, err: %d", idx, ret);
 		goto exit;
