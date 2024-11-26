@@ -525,6 +525,11 @@ int dns_validate_msg(struct dns_resolve_context *ctx,
 
 	ret = dns_unpack_response_query(dns_msg);
 	if (ret < 0) {
+		if (ret == -ENOMEM) {
+			ret = DNS_EAI_FAIL;
+			goto quit;
+		}
+
 		/* Check mDNS like above */
 		if (*dns_id > 0) {
 			ret = DNS_EAI_FAIL;
