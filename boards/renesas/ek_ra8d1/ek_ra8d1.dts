@@ -103,6 +103,8 @@
 	};
 
 	pllq {
+		div = <4>;
+		freq = <DT_FREQ_M(240)>;
 		status = "okay";
 	};
 
@@ -127,6 +129,12 @@
 &lcdclk {
 	clocks = <&pll>;
 	div = <2>;
+	status = "okay";
+};
+
+&uclk {
+	clocks = <&pllq>;
+	div = <5>;
 	status = "okay";
 };
 
@@ -300,3 +308,9 @@ zephyr_mipi_dsi: &mipi_dsi {};
 renesas_mipi_i2c: &iic1{};
 
 pmod_sd_shield: &sdhc1 {};
+
+&usbfs {
+	pinctrl-0 = <&usbfs_default>;
+	pinctrl-names = "default";
+	maximum-speed = "full-speed";
+};
