@@ -50,6 +50,7 @@
 #define W5500_Sn_TX_WR(N)  (0x0024 + W5500_Sn_SREGS(N)) /* Sn Transmit memory write pointer */
 #define W5500_Sn_RX_RSR(N) (0x0026 + W5500_Sn_SREGS(N)) /* Sn Receive free memory size */
 #define W5500_Sn_RX_RD(N)  (0x0028 + W5500_Sn_SREGS(N)) /* Sn Receive memory read pointer */
+#define W5500_Sn_IMR(N)    (0x002C + W5500_Sn_SREGS(N)) /* Sn Interrupt Mask Register */
 
 #define W5500_Sn_TXBUFS(N)     ((2 + 4 * N) << 16)
 #define W5500_Sn_RXBUFS(N)     ((3 + 4 * N) << 16)
@@ -133,7 +134,6 @@ struct w5500_runtime {
 	struct k_thread thread;
 	uint8_t mac_addr[6];
 	struct gpio_callback gpio_cb;
-	struct k_sem tx_sem;
 	struct k_sem int_sem;
 	bool link_up;
 	uint8_t buf[NET_ETH_MAX_FRAME_SIZE];

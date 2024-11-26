@@ -183,8 +183,17 @@ static int w5500_tx(const struct device *dev, struct net_pkt *pkt)
 	w5500_spi_write_two_bytes(dev, W5500_Sn_TX_WR(0), offset + len);
 
 	w5500_socket_command(dev, 0, W5500_Sn_CR_SEND);
-	if (k_sem_take(&ctx->tx_sem, K_MSEC(10))) {
-		return -EIO;
+
+	k_timepoint_t end = sys_timepoint_calc(K_MSEC(10));
+
+	while (1) {
+		ret = w5500_spi_read_byte(dev, W5500_Sn_IR(0));
+		if (ret & W5500_Sn_IR_SENDOK) {
+			break;
+		} else if ((ret & W5500_Sn_IR_TIMEOUT) || sys_timepoint_expired(end)) {
+			return -EIO;
+		}
+		k_busy_wait(W5500_PHY_ACCESS_DELAY);
 	}
 
 	return 0;
@@ -260,7 +269,7 @@ static void w5500_rx(const struct device *dev)
 static void w5500_update_link_status(const struct device *dev)
 {
 	struct w5500_runtime *ctx = dev->data;
-	uint8_t phycfgr = w5500_spi_read_byte(dev, W5500_PHYCFGR)
+	uint8_t phycfgr = w5500_spi_read_byte(dev, W5500_PHYCFGR);
 
 	if (phycfgr < 0) {
 		return;
@@ -308,11 +317,6 @@ static void w5500_thread(void *p1, void *p2, void *p3)
 					w5500_socket_interrupt_clear(dev, 0, ir);
 
 					LOG_DBG("IR received");
-
-					if (ir & W5500_Sn_IR_SENDOK) {
-						k_sem_give(&ctx->tx_sem);
-						LOG_DBG("TX Done");
-					}
 
 					if (ir & W5500_Sn_IR_RECV) {
 						w5500_rx(dev);
@@ -412,6 +416,8 @@ static int w5500_hw_start(const struct device *dev)
 
 	/* enable interrupt for Socket 0 */
 	w5500_spi_write_byte(dev, W5500_SIMR, BIT(0));
+	/* mask all but data recv interrupt for Socket 0 */
+	w5500_spi_write_byte(dev, W5500_Sn_IMR(0), W5500_Sn_IR_RECV);
 
 	return 0;
 }
@@ -559,7 +565,6 @@ static struct w5500_runtime w5500_0_runtime = {
 #if NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(0))
 	.mac_addr = DT_INST_PROP(0, local_mac_address),
 #endif
-	.tx_sem = Z_SEM_INITIALIZER(w5500_0_runtime.tx_sem, 1, UINT_MAX),
 	.int_sem = Z_SEM_INITIALIZER(w5500_0_runtime.int_sem, 0, UINT_MAX),
 };
 
