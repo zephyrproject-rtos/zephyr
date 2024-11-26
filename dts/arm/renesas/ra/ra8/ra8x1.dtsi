@@ -770,6 +770,27 @@
 			reg = <0x40252400 0x0400>;
 			status = "disabled";
 		};
+
+		usbfs: usbfs@40250000 {
+			compatible = "renesas,ra-usbfs";
+			reg = <0x40250000 0x2000>;
+			interrupts = <55 12>, <56 12>;
+			interrupt-names = "usbfs-i", "usbfs-r";
+			num-bidir-endpoints = <10>;
+			phys = <&usbfs_phy>;
+			phys-clock = <&uclk>;
+			status = "disabled";
+
+			udc {
+				compatible = "renesas,ra-udc";
+				status = "disabled";
+			};
+		};
+	};
+
+	usbfs_phy: usbfs-phy {
+		compatible = "usb-nop-xceiv";
+		#phy-cells = <0>;
 	};
 };
 
