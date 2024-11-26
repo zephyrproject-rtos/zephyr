@@ -191,8 +191,13 @@ static void rampstat_work_handler(struct k_work *work)
 	uint32_t drv_status;
 	int err;
 
-	tmc5041_read(stepper_config->controller, TMC5041_DRVSTATUS(stepper_config->index),
-		     &drv_status);
+	err = tmc5041_read(stepper_config->controller, TMC5041_DRVSTATUS(stepper_config->index),
+			   &drv_status);
+	if (err != 0) {
+		LOG_ERR("%s: Failed to read DRVSTATUS register", stepper_data->stepper->name);
+		return;
+	}
+
 	if (FIELD_GET(TMC5XXX_DRV_STATUS_SG_STATUS_MASK, drv_status) == 1U) {
 		LOG_INF("%s: Stall detected", stepper_data->stepper->name);
 		err = tmc5041_write(stepper_config->controller,
@@ -453,7 +458,10 @@ static int tmc5041_stepper_set_target_position(const struct device *dev, const i
 	if (err != 0) {
 		return -EIO;
 	}
-	tmc5041_write(config->controller, TMC5041_XTARGET(config->index), position);
+	err = tmc5041_write(config->controller, TMC5041_XTARGET(config->index), position);
+	if (err != 0) {
+		return -EIO;
+	}
 
 	if (config->is_sg_enabled) {
 		k_work_reschedule(&data->stallguard_dwork,
