@@ -470,6 +470,10 @@ static int handle_http2_static_fs_resource(struct http_resource_detail_static_fs
 	remaining = client->data_len;
 	while (remaining > 0) {
 		len = fs_read(&file, tmp, sizeof(tmp));
+		if (len < 0) {
+			LOG_ERR("Filesystem read error (%d)", len);
+			goto out;
+		}
 
 		remaining -= len;
 		ret = send_data_frame(client, tmp, len, frame->stream_identifier,
