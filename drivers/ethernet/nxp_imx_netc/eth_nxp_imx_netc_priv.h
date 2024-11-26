@@ -77,6 +77,7 @@ struct netc_eth_config {
 	uint16_t si_idx;
 	const struct device *phy_dev;
 	netc_hw_mii_mode_t phy_mode;
+	volatile bool pseudo_mac;
 	void (*generate_mac)(uint8_t *mac_addr);
 	void (*bdr_init)(netc_bdr_config_t *bdr_config, netc_rx_bdr_config_t *rx_bdr_config,
 			 netc_tx_bdr_config_t *tx_bdr_config);
