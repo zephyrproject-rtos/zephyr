@@ -1,0 +1,17 @@
+common:
+  depends_on: pwm
+  tags:
+    - drivers
+    - pwm
+  harness: ztest
+  harness_config:
+    fixture: gpio_loopback
+tests:
+  drivers.pwm.gpio_loopback.esp:
+    platform_allow:
+      - esp32_devkitc_wrover/esp32/procpu
+      - esp8684_devkitm
+      - esp32c3_devkitm
+      - esp32c6_devkitc
+      - esp32s2_saola
+      - esp32s3_devkitm/esp32s3/procpu
