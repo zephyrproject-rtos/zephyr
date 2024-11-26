@@ -8,7 +8,7 @@
  *
  * WS/LRCK frequency:
  * This refers to the "I2S word or channel select" clock.
- * The I2C peripheral sends two 16-bit channel values for each clock period.
+ * The I2S peripheral sends two 16-bit channel values for each clock period.
  * A single LED color (8 data bits) will take up one 32-bit word or one LRCK
  * period. This means a standard RGB led will take 3 LRCK periods to transmit.
  *
@@ -16,8 +16,6 @@
  */
 
 #define DT_DRV_COMPAT worldsemi_ws2812_i2s
-
-#include <string.h>
 
 #include <zephyr/drivers/led_strip.h>
 
@@ -51,42 +49,30 @@ struct ws2812_i2s_cfg {
 /* Serialize an 8-bit color channel value into two 16-bit I2S values (or 1 32-bit
  * word).
  */
-static inline void ws2812_i2s_ser(uint32_t *word, uint8_t color, const uint8_t sym_one,
-				  const uint8_t sym_zero)
+static inline uint32_t ws2812_i2s_ser(uint8_t color, const uint8_t sym_one, const uint8_t sym_zero)
 {
-	*word = 0;
-	for (uint16_t i = 0; i < 8; i++) {
-		if ((1 << i) & color) {
-			*word |= sym_one << (i * 4);
-		} else {
-			*word |= sym_zero << (i * 4);
-		}
+	uint32_t word = 0;
+
+	for (uint_fast8_t mask = 0x80; mask != 0; mask >>= 1) {
+		word <<= 4;
+		word |= (color & mask) ? sym_one : sym_zero;
 	}
 
 	/* Swap the two I2S values due to the (audio) channel TX order. */
-	*word = (*word >> 16) | (*word << 16);
+	return (word >> 16) | (word << 16);
 }
 
 static int ws2812_strip_update_rgb(const struct device *dev, struct led_rgb *pixels,
 				   size_t num_pixels)
 {
 	const struct ws2812_i2s_cfg *cfg = dev->config;
-	uint8_t sym_one, sym_zero;
-	uint32_t reset_word;
+	const uint8_t sym_one = cfg->nibble_one;
+	const uint8_t sym_zero = cfg->nibble_zero;
+	const uint32_t reset_word = cfg->active_low ? ~0 : 0;
 	uint32_t *tx_buf;
 	uint32_t flush_time_us;
 	void *mem_block;
 	int ret;
-
-	if (cfg->active_low) {
-		sym_one = (~cfg->nibble_one) & 0x0F;
-		sym_zero = (~cfg->nibble_zero) & 0x0F;
-		reset_word = 0xFFFFFFFF;
-	} else {
-		sym_one = cfg->nibble_one & 0x0F;
-		sym_zero = cfg->nibble_zero & 0x0F;
-		reset_word = 0;
-	}
 
 	/* Acquire memory for the I2S payload. */
 	ret = k_mem_slab_alloc(cfg->mem_slab, &mem_block, K_SECONDS(10));
@@ -127,7 +113,7 @@ static int ws2812_strip_update_rgb(const struct device *dev, struct led_rgb *pix
 			default:
 				return -EINVAL;
 			}
-			ws2812_i2s_ser(tx_buf, pixel, sym_one, sym_zero);
+			*tx_buf = ws2812_i2s_ser(pixel, sym_one, sym_zero) ^ reset_word;
 			tx_buf++;
 		}
 	}
@@ -221,15 +207,12 @@ static const struct led_strip_driver_api ws2812_i2s_api = {
 	.length = ws2812_strip_length,
 };
 
-/* Integer division, but always rounds up: e.g. 10/3 = 4 */
-#define WS2812_ROUNDED_DIVISION(x, y) ((x + (y - 1)) / y)
-
 #define WS2812_I2S_LRCK_PERIOD_US(idx) DT_INST_PROP(idx, lrck_period)
 
 #define WS2812_RESET_DELAY_US(idx)    DT_INST_PROP(idx, reset_delay)
 /* Rounds up to the next 20us. */
-#define WS2812_RESET_DELAY_WORDS(idx) WS2812_ROUNDED_DIVISION(WS2812_RESET_DELAY_US(idx), \
-							      WS2812_I2S_LRCK_PERIOD_US(idx))
+#define WS2812_RESET_DELAY_WORDS(idx)                                                              \
+	DIV_ROUND_UP(WS2812_RESET_DELAY_US(idx), WS2812_I2S_LRCK_PERIOD_US(idx))
 
 #define WS2812_NUM_COLORS(idx) (DT_INST_PROP_LEN(idx, color_mapping))
 
