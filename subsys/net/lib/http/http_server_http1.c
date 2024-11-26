@@ -450,6 +450,11 @@ int handle_http1_static_fs_resource(struct http_resource_detail_static_fs *stati
 	remaining = file_size;
 	while (remaining > 0) {
 		len = fs_read(&file, http_response, sizeof(http_response));
+		if (len < 0) {
+			LOG_ERR("Filesystem read error (%d)", len);
+			goto close;
+		}
+
 		ret = http_server_sendall(client, http_response, len);
 		if (ret < 0) {
 			goto close;
