@@ -2103,6 +2103,21 @@ static int flash_stm32_ospi_init(const struct device *dev)
 	uint32_t prescaler = STM32_OSPI_CLOCK_PRESCALER_MIN;
 	int ret;
 
+	if (!device_is_ready(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE))) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
+
+#ifdef CONFIG_STM32_MEMMAP
+	/* If MemoryMapped then configure skip init */
+	if (stm32_ospi_is_memorymap(dev)) {
+		LOG_DBG("NOR init'd in MemMapped mode");
+		/* Force HAL instance in correct state */
+		dev_data->hospi.State = HAL_OSPI_STATE_BUSY_MEM_MAPPED;
+		return 0;
+	}
+#endif /* CONFIG_STM32_MEMMAP */
+
 	/* The SPI/DTR is not a valid config of data_mode/data_rate according to the DTS */
 	if ((dev_cfg->data_mode != OSPI_OPI_MODE)
 		&& (dev_cfg->data_rate == OSPI_DTR_TRANSFER)) {
@@ -2117,21 +2132,6 @@ static int flash_stm32_ospi_init(const struct device *dev)
 		LOG_ERR("OSPI pinctrl setup failed (%d)", ret);
 		return ret;
 	}
-
-	if (!device_is_ready(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE))) {
-		LOG_ERR("clock control device not ready");
-		return -ENODEV;
-	}
-
-#ifdef CONFIG_STM32_MEMMAP
-	/* If MemoryMapped then configure skip init */
-	if (stm32_ospi_is_memorymap(dev)) {
-		LOG_DBG("NOR init'd in MemMapped mode\n");
-		/* Force HAL instance in correct state */
-		dev_data->hospi.State = HAL_OSPI_STATE_BUSY_MEM_MAPPED;
-		return 0;
-	}
-#endif /* CONFIG_STM32_MEMMAP */
 
 #if STM32_OSPI_USE_DMA
 	/*
