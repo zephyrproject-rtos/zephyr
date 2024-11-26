@@ -115,6 +115,13 @@
 	status = "okay";
 };
 
+&pll2 {
+	clocks = <&hoco>;
+	div = <2>;
+	mul = <24 0>;
+	status = "okay";
+};
+
 &pclka {
 	clocks = <&pll>;
 	div = <2>;
@@ -166,4 +173,20 @@
 
 &trng {
 	status = "okay";
+};
+
+&uclk {
+	clocks = <&pll2>;
+	div = <5>;
+	status = "okay";
+};
+
+&usbfs {
+	pinctrl-0 = <&usbfs_default>;
+	pinctrl-names = "default";
+	maximum-speed = "full-speed";
+	status = "okay";
+	zephyr_udc0: udc {
+		status = "okay";
+	};
 };
