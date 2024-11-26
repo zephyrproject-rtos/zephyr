@@ -195,10 +195,10 @@
 		};
 
 		usbhs: usbhs@40111000 {
-			compatible = "renesas,ra-usb";
+			compatible = "renesas,ra-usbhs";
 			reg = <0x40111000 0x2000>;
-			interrupts = <54 12>, <55 12>, <56 12>;
-			interrupt-names = "usbhs-ir", "usbhs-d0", "usbhs-d1";
+			interrupts = <54 12>;
+			interrupt-names = "usbhs-ir";
 			num-bidir-endpoints = <10>;
 			phys = <&usbhs_phy>;
 			status = "disabled";
