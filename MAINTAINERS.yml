@@ -4747,11 +4747,6 @@ West:
   collaborators:
     - hubertmis
     - nordic-krch
-    - krish2718
-    - sachinthegreen
-    - udaynordic
-    - rajb9
-    - srkanordic
   files:
     - modules/hal_nordic/
   labels:
@@ -5072,6 +5067,10 @@ West:
   maintainers:
     - krish2718
     - sachinthegreen
+  collaborators:
+    - udaynordic
+    - rajb9
+    - srkanordic
   files:
     - modules/nrf_wifi/
   labels:
