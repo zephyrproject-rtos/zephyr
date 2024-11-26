@@ -372,6 +372,11 @@ static enum net_verdict bridge_iface_process(struct net_if *iface,
 			 */
 			if (count > 2) {
 				send_pkt = net_pkt_clone(pkt, K_NO_WAIT);
+				if (send_pkt == NULL) {
+					NET_DBG("DROP: clone failed");
+					break;
+				}
+
 				net_pkt_ref(send_pkt);
 			} else {
 				send_pkt = net_pkt_ref(pkt);
