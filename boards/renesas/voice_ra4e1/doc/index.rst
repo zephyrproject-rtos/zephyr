@@ -76,6 +76,8 @@ The below features are currently supported on Zephyr for the ``voice_ra4e1`` boa
 +-----------+------------+----------------------+
 | FLASH     | on-chip    | flash                |
 +-----------+------------+----------------------+
+| USBFS     | on-chip    | udc                  |
++-----------+------------+----------------------+
 
 Other hardware features are currently not supported by the port.
 
