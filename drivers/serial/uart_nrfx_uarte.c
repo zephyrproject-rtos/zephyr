@@ -23,6 +23,7 @@
 #include <zephyr/linker/devicetree_regions.h>
 #include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/drivers/clock_control/nrf_clock_control.h>
 
 #ifdef CONFIG_SOC_NRF54H20_GPD
 #include <nrf/gpd.h>
@@ -122,6 +123,8 @@ BUILD_ASSERT(NRF_GPD_FAST_ACTIVE1 == 0);
 			    (0))), (0))
 
 #if UARTE_FOR_EACH_INSTANCE(INSTANCE_IS_FAST, (||), (0))
+/* Fast instance requires special PM treatment so device runtime PM must be enabled. */
+BUILD_ASSERT(IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME));
 #define UARTE_ANY_FAST 1
 #endif
 
@@ -199,6 +202,12 @@ struct uarte_async_cb {
 };
 #endif /* UARTE_ANY_ASYNC */
 
+struct uarte_hsfll_data {
+	struct onoff_client cli;
+	struct k_sem *sem;
+	int res;
+};
+
 #ifdef UARTE_INTERRUPT_DRIVEN
 struct uarte_nrfx_int_driven {
 	uart_irq_callback_user_data_t cb; /**< Callback function pointer */
@@ -227,6 +236,9 @@ struct uarte_nrfx_data {
 #endif
 #ifdef UARTE_ANY_ASYNC
 	struct uarte_async_cb *async;
+#endif
+#ifdef UARTE_ANY_FAST
+	struct uarte_hsfll_data *hsfll_data;
 #endif
 	atomic_val_t poll_out_lock;
 	atomic_t flags;
@@ -309,6 +321,10 @@ struct uarte_nrfx_config {
 	const struct pinctrl_dev_config *pcfg;
 #ifdef CONFIG_HAS_NORDIC_DMM
 	void *mem_reg;
+#endif
+#ifdef UARTE_ANY_FAST
+	const struct device *clk_dev;
+	struct nrf_clock_spec clk_spec;
 #endif
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 	/* None-zero in case of high speed instances. Baudrate is adjusted by that ratio. */
@@ -614,6 +630,68 @@ static int wait_tx_ready(const struct device *dev)
 	(IS_ENABLED(UARTE_ANY_HW_ASYNC) ? \
 	 (config->flags & UARTE_CFG_FLAG_HW_BYTE_COUNTING) : false)
 
+#ifdef UARTE_ANY_FAST
+static void hsfll_cb(struct onoff_manager *mgr, struct onoff_client *cli, uint32_t state, int res)
+{
+	struct uarte_hsfll_data *data = CONTAINER_OF(cli, struct uarte_hsfll_data, cli);
+
+	data->res = res;
+	k_sem_give(data->sem);
+}
+
+static void hsfll_clk_request(const struct device *dev)
+{
+	const struct uarte_nrfx_config *config = dev->config;
+	struct uarte_nrfx_data *data = dev->data;
+	struct k_sem sem;
+
+	if (data->hsfll_data) {
+		__ASSERT_NO_MSG(!k_is_in_isr());
+		int err;
+
+		k_sem_init(&sem, 0, 1);
+		data->hsfll_data->sem = &sem;
+		sys_notify_init_callback(&data->hsfll_data->cli.notify, hsfll_cb);
+
+		err = nrf_clock_control_request(config->clk_dev, &config->clk_spec,
+						&data->hsfll_data->cli);
+		__ASSERT_NO_MSG(err >= 0);
+
+		err = k_sem_take(&sem, K_MSEC(1000));
+		__ASSERT_NO_MSG(err >= 0);
+
+		(void)err;
+	}
+}
+
+static void hsfll_clk_release(const struct device *dev)
+{
+	const struct uarte_nrfx_config *config = dev->config;
+	struct uarte_nrfx_data *data = dev->data;
+
+	if (data->hsfll_data) {
+		/* At this point interrupts must not be locked. */
+		int err;
+
+		err = nrf_clock_control_cancel_or_release(config->clk_dev, NULL,
+							  &data->hsfll_data->cli);
+		__ASSERT_NO_MSG(err >= 0);
+		(void)err;
+	}
+}
+
+#else
+static void hsfll_clk_request(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+}
+
+static void hsfll_clk_release(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+}
+#endif
+
 static void uarte_periph_enable(const struct device *dev)
 {
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
@@ -621,6 +699,7 @@ static void uarte_periph_enable(const struct device *dev)
 	struct uarte_nrfx_data *data = dev->data;
 
 	(void)data;
+	hsfll_clk_request(dev);
 	nrf_uarte_enable(uarte);
 #ifdef CONFIG_SOC_NRF54H20_GPD
 	nrf_gpd_retain_pins_set(config->pcfg, false);
@@ -702,7 +781,6 @@ static void tx_start(const struct device *dev, const uint8_t *buf, size_t len)
 	if (LOW_POWER_ENABLED(config)) {
 		uarte_enable_locked(dev, UARTE_FLAG_LOW_POWER_TX);
 	}
-
 	nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STARTTX);
 }
 
@@ -2206,6 +2284,8 @@ static void uarte_pm_suspend(const struct device *dev)
 	struct uarte_nrfx_data *data = dev->data;
 
 	(void)data;
+	hsfll_clk_release(dev);
+
 #ifdef UARTE_ANY_ASYNC
 	if (data->async) {
 		/* Entering inactive state requires device to be no
@@ -2389,11 +2469,30 @@ static int uarte_instance_init(const struct device *dev,
 #define UARTE_DISABLE_RX_INIT(node_id) \
 	.disable_rx = DT_PROP(node_id, disable_rx)
 
-#define UARTE_GET_FREQ(idx) DT_PROP(DT_CLOCKS_CTLR(UARTE(idx)), clock_frequency)
+#define UARTE_CLOCK(idx) DT_CLOCKS_CTLR(UARTE(idx))
 
-#define UARTE_GET_BAUDRATE_DIV(idx)						\
-	COND_CODE_1(DT_CLOCKS_HAS_IDX(UARTE(idx), 0),				\
-		   ((UARTE_GET_FREQ(idx) / NRF_UARTE_BASE_FREQUENCY_16MHZ)), (1))
+#define DT_PROP_LAST(node, prop) \
+	DT_PROP_BY_IDX(node, prop, UTIL_CAT(Z_UTIL_DEC_, DT_PROP_LEN(node, prop)))
+
+/* If clock node has list of supported clock frequency then pick the last one
+ * assuming that this is the highest (list is ascending).
+ */
+#define UARTE_GET_MAX_SUPPORTED_FREQ(idx)						\
+	COND_CODE_1(DT_NODE_HAS_PROP(UARTE_CLOCK(idx), supported_clock_frequencies),	\
+		    (DT_PROP_LAST(UARTE_CLOCK(idx), supported_clock_frequencies)),	\
+		    (NRF_UARTE_BASE_FREQUENCY_16MHZ))
+
+/* Get frequency of the clock that driver the UARTE peripheral. Clock node can
+ * have fixed or variable frequency. For fast UARTE use highest supported frequency.
+ */
+#define UARTE_GET_FREQ(idx)								\
+	COND_CODE_1(DT_CLOCKS_HAS_IDX(UARTE(idx), 0),					\
+		(COND_CODE_1(DT_NODE_HAS_PROP(UARTE_CLOCK(idx), clock_frequency),	\
+			     (DT_PROP(UARTE_CLOCK(idx), clock_frequency)),		\
+			     (UARTE_GET_MAX_SUPPORTED_FREQ(idx)))),			\
+		(NRF_UARTE_BASE_FREQUENCY_16MHZ))
+
+#define UARTE_GET_BAUDRATE_DIV(idx) (UARTE_GET_FREQ(idx) / NRF_UARTE_BASE_FREQUENCY_16MHZ)
 
 /* When calculating baudrate we need to take into account that high speed instances
  * must have baudrate adjust to the ratio between UARTE clocking frequency and 16 MHz.
@@ -2442,6 +2541,8 @@ static int uarte_instance_init(const struct device *dev,
 		struct uarte_async_cb uarte##idx##_async;))		       \
 	static uint8_t uarte##idx##_poll_out_byte DMM_MEMORY_SECTION(UARTE(idx));\
 	static uint8_t uarte##idx##_poll_in_byte DMM_MEMORY_SECTION(UARTE(idx)); \
+	IF_ENABLED(INSTANCE_IS_FAST(_, /*empty*/, idx, _),		       \
+		(struct uarte_hsfll_data uarte##idx##_hsfll_data;))	       \
 	static struct uarte_nrfx_data uarte_##idx##_data = {		       \
 		IF_ENABLED(CONFIG_UART_USE_RUNTIME_CONFIGURE,		       \
 				(.uart_config = UARTE_CONFIG(idx),))	       \
@@ -2449,6 +2550,8 @@ static int uarte_instance_init(const struct device *dev,
 			    (.async = &uarte##idx##_async,))		       \
 		IF_ENABLED(CONFIG_UART_##idx##_INTERRUPT_DRIVEN,	       \
 			    (.int_driven = &uarte##idx##_int_driven,))	       \
+		IF_ENABLED(INSTANCE_IS_FAST(_, /*empty*/, idx, _),	       \
+			    (.hsfll_data = &uarte##idx##_hsfll_data,))	       \
 	};								       \
 	COND_CODE_1(CONFIG_UART_USE_RUNTIME_CONFIGURE, (),		       \
 		(BUILD_ASSERT(NRF_BAUDRATE(UARTE_PROP(idx, current_speed)) > 0,\
@@ -2483,6 +2586,13 @@ static int uarte_instance_init(const struct device *dev,
 		IF_ENABLED(CONFIG_UART_##idx##_NRF_HW_ASYNC,		       \
 			(.timer = NRFX_TIMER_INSTANCE(			       \
 				CONFIG_UART_##idx##_NRF_HW_ASYNC_TIMER),))     \
+		IF_ENABLED(INSTANCE_IS_FAST(_, /*empty*/, idx, _),	       \
+			(.clk_dev = DEVICE_DT_GET(UARTE_CLOCK(idx)),	       \
+			 .clk_spec = {					       \
+				.frequency = UARTE_GET_FREQ(idx),	       \
+				.accuracy = 0,				       \
+				.precision = NRF_CLOCK_CONTROL_PRECISION_DEFAULT,\
+				},))					       \
 	};								       \
 	static int uarte_##idx##_init(const struct device *dev)		       \
 	{								       \

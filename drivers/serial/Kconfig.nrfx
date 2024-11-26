@@ -101,6 +101,11 @@ rsource "Kconfig.nrfx_uart_instance"
 endif
 
 if HAS_HW_NRF_UARTE120
+
+config UART_NRFX_UARTE_USE_CLOCK_CONTROL
+	def_bool y
+	select CLOCK_CONTROL
+
 nrfx_uart_num = 120
 rsource "Kconfig.nrfx_uart_instance"
 endif
