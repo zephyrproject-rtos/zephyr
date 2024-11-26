@@ -154,13 +154,13 @@ int wifi_credentials_set_personal_struct(const struct wifi_credentials_personal 
 {
 	int ret;
 
-	if (creds->header.ssid_len > WIFI_SSID_MAX_LEN || creds->header.ssid_len == 0) {
-		LOG_ERR("Cannot set WiFi credentials, SSID has invalid format");
+	if (creds == NULL) {
+		LOG_ERR("Cannot set WiFi credentials, provided struct pointer cannot be NULL");
 		return -EINVAL;
 	}
 
-	if (creds == NULL) {
-		LOG_ERR("Cannot set WiFi credentials, provided struct pointer cannot be NULL");
+	if (creds->header.ssid_len > WIFI_SSID_MAX_LEN || creds->header.ssid_len == 0) {
+		LOG_ERR("Cannot set WiFi credentials, SSID has invalid format");
 		return -EINVAL;
 	}
 
