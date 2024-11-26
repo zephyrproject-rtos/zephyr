@@ -138,6 +138,13 @@ Interrupt Controller
 LED Strip
 =========
 
+MMU/MPU
+=======
+
+* Renamed the ``compatible`` from ``nxp,kinetis-mpu`` to :dtcompatible:`nxp,sysmpu` and added
+  its corresponding binding.
+* Renamed the Kconfig option ``CPU_HAS_NXP_MPU`` to :kconfig:option:`CPU_HAS_NXP_SYSMPU`.
+
 Pin Control
 ===========
 
