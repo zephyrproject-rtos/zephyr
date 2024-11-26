@@ -9,14 +9,9 @@ description: |
 
 compatible: "worldsemi,ws2812-i2s"
 
-include: [base.yaml, ws2812.yaml]
+include: [i2s-device.yaml, ws2812.yaml]
 
 properties:
-
-  i2s-dev:
-    type: phandle
-    required: true
-    description: Pointer to the I2S instance.
 
   out-active-low:
     type: boolean
