@@ -172,6 +172,11 @@ Video
   The new ``video-controls.h`` source now contains description of each control ID to help
   disambiguating.
 
+Watchdog
+========
+
+* Renamed the ``compatible`` from ``nxp,kinetis-wdog32`` to :dtcompatible:`nxp,wdog32`.
+
 Bluetooth
 *********
 
