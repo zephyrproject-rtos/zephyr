@@ -234,6 +234,9 @@ config EAP_SIM
 config EAP_AKA
 	bool "EAP-AKA support"
 
+config EAP_FAST
+	bool "EAP-FAST support"
+
 config EAP_ALL
 	bool "All EAP methods support"
 	select EAP_TLS
@@ -459,49 +462,7 @@ config WPS
 config WSC
 	bool
 
-config EAP_TLS
-	bool
-
 config IEEE8021X_EAPOL
-	bool
-
-config EAP_PEAP
-	bool
-
-config EAP_TTLS
-	bool
-
-config EAP_MD5
-	bool
-
-config EAP_MSCHAPv2
-	bool
-
-config EAP_LEAP
-	bool
-
-config EAP_PSK
-	bool
-
-config EAP_FAST
-	bool
-
-config EAP_PAX
-	bool
-
-config EAP_SAKE
-	bool
-
-config EAP_GPSK
-	bool
-
-config EAP_PWD
-	bool
-
-config EAP_EKE
-	bool
-
-config EAP_IKEv2
 	bool
 
 config CRYPTO_INTERNAL
