@@ -414,21 +414,22 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         loader_details = ""
         if self.supports_loader and self.loader:
             loader_details = "?" + self.loader
-            cmd = (
-                [self.commander]
-                + (
-                    ['-IP', f'{self.dev_id}']
-                    if (is_ip(self.dev_id) or is_tunnel(self.dev_id))
-                    else (['-USB', f'{self.dev_id}'] if self.dev_id else [])
-                )
-                + (['-nogui', '1'] if self.supports_nogui else [])
-                + ['-if', self.iface]
-                + ['-speed', self.speed]
-                + ['-device', self.device + loader_details]
-                + ['-CommanderScript', fname]
-                + (['-nogui', '1'] if self.supports_nogui else [])
-                + self.tool_opt
+
+        cmd = (
+            [self.commander]
+            + (
+                ['-IP', f'{self.dev_id}']
+                if (is_ip(self.dev_id) or is_tunnel(self.dev_id))
+                else (['-USB', f'{self.dev_id}'] if self.dev_id else [])
             )
+            + (['-nogui', '1'] if self.supports_nogui else [])
+            + ['-if', self.iface]
+            + ['-speed', self.speed]
+            + ['-device', self.device + loader_details]
+            + ['-CommanderScript', fname]
+            + (['-nogui', '1'] if self.supports_nogui else [])
+            + self.tool_opt
+        )
 
         if flash_file:
             self.logger.info(f'Flashing file: {flash_file}')
