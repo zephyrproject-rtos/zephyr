@@ -24,10 +24,17 @@ config STEPPER_SHELL
 	help
 	  Enable stepper shell for testing.
 
+config STEP_DIR_STEPPER
+	bool
+	help
+	  Enable library used for step direction stepper drivers.
+
 comment "Stepper Drivers"
 
-rsource "adi_tmc/Kconfig"
+# zephyr-keep-sorted-start
 rsource "Kconfig.fake"
 rsource "Kconfig.gpio"
+rsource "adi_tmc/Kconfig"
+# zephyr-keep-sorted-stop
 
 endif
