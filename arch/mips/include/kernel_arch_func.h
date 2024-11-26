@@ -47,6 +47,8 @@ static inline bool arch_is_in_isr(void)
 	return _current_cpu->nested != 0U;
 }
 
+int arch_swap(unsigned int key);
+
 #ifdef CONFIG_IRQ_OFFLOAD
 void z_irq_do_offload(void);
 #endif

@@ -11,7 +11,6 @@ zephyr_library_sources(
   scb.c
   thread_abort.c
   vector_table.S
-  swap.c
   swap_helper.S
   irq_manage.c
   prep_c.c

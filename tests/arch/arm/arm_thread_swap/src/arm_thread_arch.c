@@ -429,6 +429,13 @@ static void alt_thread_entry(void *p1, void *p2, void *p3)
 		"Alternative thread: switch flag not false on thread exit\n");
 }
 
+#if !defined(CONFIG_NO_OPTIMIZATIONS)
+static int __noinline arch_swap_wrapper(void)
+{
+	return arch_swap(BASEPRI_MODIFIED_1);
+}
+#endif
+
 ZTEST(arm_thread_swap, test_arm_thread_swap)
 {
 	int test_flag;
@@ -609,9 +616,11 @@ ZTEST(arm_thread_swap, test_arm_thread_swap)
 
 	/* Fake a different irq_unlock key when performing swap.
 	 * This will be verified by the alternative test thread.
+	 *
+	 * Force an indirect call to arch_swap() to prevent the compiler from
+	 * changing the saved callee registers as arch_swap() is inlined.
 	 */
-	register int swap_return_val __asm__("r0") =
-		arch_swap(BASEPRI_MODIFIED_1);
+	register int swap_return_val __asm__("r0") = arch_swap_wrapper();
 
 #endif /* CONFIG_NO_OPTIMIZATIONS */
 
