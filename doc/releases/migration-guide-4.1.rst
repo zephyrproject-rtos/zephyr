@@ -187,6 +187,7 @@ SPI
 ===
 
 * Renamed the ``compatible`` from ``nxp,imx-lpspi`` to :dtcompatible:`nxp,lpspi`.
+* Renamed the ``compatible`` from ``nxp,kinetis-dspi`` to :dtcompatible:`nxp,dspi`.
 
 Regulator
 =========
