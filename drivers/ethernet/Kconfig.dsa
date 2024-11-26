@@ -45,6 +45,13 @@ config DSA_SPI
 	help
 	  Use SPI bus to communicate with PHY
 
+config DSA_NXP_IMX_NETC
+	bool "Support for NXP i.MX NETC"
+	default y
+	depends on DT_HAS_NXP_IMX_NETC_DSA_ENABLED
+	help
+	  Add support for NXP i.MX NETC DSA device driver.
+
 module = NET_DSA
 module-dep = NET_LOG
 module-str = Log level for DSA
