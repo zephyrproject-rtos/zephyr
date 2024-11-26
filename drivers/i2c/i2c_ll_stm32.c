@@ -549,6 +549,7 @@ static void dma_rx_callback(const struct device *dma_dev, void *user_data, uint3
 		dma_stop(dma_dev, channel);
 		break;
 	case DMA_STATUS_BLOCK:
+		__ASSERT(false, "Unsupported feature");
 		break;
 	default:
 		data->current.is_err = 1;
@@ -570,6 +571,7 @@ static void dma_tx_callback(const struct device *dma_dev, void *user_data, uint3
 		dma_stop(dma_dev, channel);
 		break;
 	case DMA_STATUS_BLOCK:
+		__ASSERT(false, "Unsupported feature");
 		break;
 	default:
 		data->current.is_err = 1;
