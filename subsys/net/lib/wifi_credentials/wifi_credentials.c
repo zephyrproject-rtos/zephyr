@@ -104,6 +104,7 @@ void wifi_credentials_uncache_ssid(size_t idx)
 int wifi_credentials_get_by_ssid_personal_struct(const char *ssid, size_t ssid_len,
 						 struct wifi_credentials_personal *buf)
 {
+	ssize_t idx;
 	int ret;
 
 	if (ssid == NULL || ssid_len > WIFI_SSID_MAX_LEN || ssid_len == 0) {
@@ -119,7 +120,7 @@ int wifi_credentials_get_by_ssid_personal_struct(const char *ssid, size_t ssid_l
 
 	k_mutex_lock(&wifi_credentials_mutex, K_FOREVER);
 
-	ssize_t idx = lookup_idx(ssid, ssid_len);
+	idx = lookup_idx(ssid, ssid_len);
 
 	if (idx == -1) {
 		LOG_DBG("Cannot retrieve WiFi credentials, no entry found for the provided SSID");
@@ -152,6 +153,7 @@ exit:
 
 int wifi_credentials_set_personal_struct(const struct wifi_credentials_personal *creds)
 {
+	ssize_t idx;
 	int ret;
 
 	if (creds == NULL) {
@@ -166,7 +168,7 @@ int wifi_credentials_set_personal_struct(const struct wifi_credentials_personal 
 
 	k_mutex_lock(&wifi_credentials_mutex, K_FOREVER);
 
-	ssize_t idx = lookup_idx(creds->header.ssid, creds->header.ssid_len);
+	idx = lookup_idx(creds->header.ssid, creds->header.ssid_len);
 
 	if (idx == -1) {
 		idx = lookup_unused_idx();
@@ -199,6 +201,7 @@ int wifi_credentials_set_personal(const char *ssid, size_t ssid_len, enum wifi_s
 {
 	int ret = 0;
 	uint8_t buf[ENTRY_MAX_LEN] = {0};
+	struct wifi_credentials_header *header;
 
 	if (ssid == NULL || ssid_len > WIFI_SSID_MAX_LEN || ssid_len == 0) {
 		LOG_ERR("Cannot set WiFi credentials, SSID has invalid format");
@@ -219,7 +222,7 @@ int wifi_credentials_set_personal(const char *ssid, size_t ssid_len, enum wifi_s
 	}
 
 	/* pack entry */
-	struct wifi_credentials_header *header = (struct wifi_credentials_header *)buf;
+	header = (struct wifi_credentials_header *)buf;
 
 	header->type = type;
 	memcpy(header->ssid, ssid, ssid_len);
@@ -267,6 +270,7 @@ int wifi_credentials_get_by_ssid_personal(const char *ssid, size_t ssid_len,
 {
 	int ret = 0;
 	uint8_t buf[ENTRY_MAX_LEN] = {0};
+	struct wifi_credentials_header *header;
 
 	if (ssid == NULL || ssid_len > WIFI_SSID_MAX_LEN || ssid_len == 0) {
 		LOG_ERR("Cannot retrieve WiFi credentials, SSID has invalid format");
@@ -292,7 +296,7 @@ int wifi_credentials_get_by_ssid_personal(const char *ssid, size_t ssid_len,
 	}
 
 	/* unpack entry*/
-	struct wifi_credentials_header *header = (struct wifi_credentials_header *)buf;
+	header = (struct wifi_credentials_header *)buf;
 
 	*type = header->type;
 	*flags = header->flags;
@@ -327,6 +331,7 @@ int wifi_credentials_get_by_ssid_personal(const char *ssid, size_t ssid_len,
 
 int wifi_credentials_delete_by_ssid(const char *ssid, size_t ssid_len)
 {
+	ssize_t idx;
 	int ret = 0;
 
 	if (ssid == NULL || ssid_len > WIFI_SSID_MAX_LEN || ssid_len == 0) {
@@ -335,7 +340,7 @@ int wifi_credentials_delete_by_ssid(const char *ssid, size_t ssid_len)
 	}
 
 	k_mutex_lock(&wifi_credentials_mutex, K_FOREVER);
-	ssize_t idx = lookup_idx(ssid, ssid_len);
+	idx = lookup_idx(ssid, ssid_len);
 
 	if (idx == -1) {
 		LOG_DBG("WiFi credentials entry was not found");
