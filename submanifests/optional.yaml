@@ -2,6 +2,7 @@ manifest:
   remotes:
     - name: upstream
       url-base: https://github.com/zephyrproject-rtos
+  # zephyr-keep-sorted-start re(^\s+\- name:)
   projects:
     - name: canopennode
       revision: dec12fa3f0d790cafa8414a4c2930ea71ab72ffd
@@ -33,12 +34,6 @@ manifest:
       remote: upstream
       groups:
         - optional
-    - name: zephyr-lang-rust
-      revision: 7af3db47bf7335ac6a6fe7480df6b41fb46dbe9d
-      path: modules/lang/rust
-      remote: upstream
-      groups:
-        - optional
     - name: sof
       revision: 316f414b64dee8e4aefce503af6c2c2e57d266f4
       path: modules/audio/sof
@@ -64,9 +59,16 @@ manifest:
       remote: upstream
       groups:
         - optional
+    - name: zephyr-lang-rust
+      revision: 7af3db47bf7335ac6a6fe7480df6b41fb46dbe9d
+      path: modules/lang/rust
+      remote: upstream
+      groups:
+        - optional
     - name: zscilib
       path: modules/lib/zscilib
       revision: ee1b287d9dd07208d2cc52284240ac25bb66eae3
       remote: upstream
       groups:
         - optional
+# zephyr-keep-sorted-stop
