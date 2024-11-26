@@ -660,6 +660,24 @@ config LWM2M_BINARYAPPDATA_OBJ_SUPPORT
 	help
 	  Include support for LwM2M BinaryAppDataContainer Object
 
+if LWM2M_BINARYAPPDATA_OBJ_SUPPORT
+config LWM2M_BINARYAPPDATA_INSTANCE_COUNT
+	int "Maximum # of BinaryAppDataContainer object instances"
+	default 2
+	range 1 10
+	help
+	  This setting establishes the total count of BinaryAppDataContainer
+	  instances available to the client.
+
+config LWM2M_BINARYAPPDATA_DATA_INSTANCE_COUNT
+	int "Maximum # of BinaryAppDataContainer data resource instances"
+	default 2
+	range 1 10
+	help
+	  This setting establishes the total count of BinaryAppDataContainer
+	  data resource instances available to the client.
+endif # LWM2M_BINARYAPPDATA_OBJ_SUPPORT
+
 config LWM2M_EVENT_LOG_OBJ_SUPPORT
 	bool "LwM2M Event Log Object (ID 20)"
 	help
