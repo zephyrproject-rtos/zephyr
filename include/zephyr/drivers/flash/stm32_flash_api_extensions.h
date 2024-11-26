@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef __ZEPHYR_INCLUDE_DRIVERS_FLASH_STM32_FLASH_API_EXTENSIONS_H__
+#define __ZEPHYR_INCLUDE_DRIVERS_FLASH_STM32_FLASH_API_EXTENSIONS_H__
+
 #include <zephyr/drivers/flash.h>
 
 enum stm32_ex_ops {
@@ -64,3 +67,5 @@ struct flash_stm32_ex_op_rdp {
 	bool permanent;
 };
 #endif /* CONFIG_FLASH_STM32_READOUT_PROTECTION */
+
+#endif /* __ZEPHYR_INCLUDE_DRIVERS_FLASH_STM32_FLASH_API_EXTENSIONS_H__ */
