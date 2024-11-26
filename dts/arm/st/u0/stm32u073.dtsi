@@ -21,6 +21,49 @@
 			interrupt-names = "combined";
 			status = "disabled";
 		};
+
+		lptim3: timers@40009000 {
+			compatible = "st,stm32-lptim";
+			clocks = <&rcc STM32_CLOCK(APB1, 26U)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40009000 0x400>;
+			interrupts = <19 1>;
+			interrupt-names = "combined";
+			status = "disabled";
+		};
+
+		dma2: dma@40020400 {
+			compatible = "st,stm32-dma-v2";
+			#dma-cells = <3>;
+			reg = <0x40020400 0x400>;
+			interrupts = <11 0 11 0 11 0 11 0 11 0>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 1U)>;
+			dma-requests = <5>;
+			dma-offset = <7>;
+			status = "disabled";
+		};
+
+		dmamux1: dmamux@40020800 {
+			dma-channels = <12>;
+		};
+
+		usb: usb@40005c00 {
+			compatible = "st,stm32-usb";
+			reg = <0x40005c00 0x400>;
+			interrupts = <8 0>;
+			interrupt-names = "usb";
+			num-bidir-endpoints = <8>;
+			ram-size = <1024>;
+			phys = <&usb_fs_phy>;
+			clocks = <&rcc STM32_CLOCK(APB1, 13U)>;
+			status = "disabled";
+		};
+
+		usb_fs_phy: usbphy {
+			compatible = "usb-nop-xceiv";
+			#phy-cells = <0>;
+		};
 	};
 
 	sram1: memory@20000000 {
