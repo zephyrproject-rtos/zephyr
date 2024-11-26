@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,11 +7,11 @@
 #ifndef ZEPHYR_DRIVERS_ETHERNET_ETH_NXP_IMX_NETC_PRIV_H_
 #define ZEPHYR_DRIVERS_ETHERNET_ETH_NXP_IMX_NETC_PRIV_H_
 
+#include "nxp_imx_netc.h"
 #include "fsl_netc_endpoint.h"
 #include "fsl_msgintr.h"
 
 /* Buffer and descriptor alignment */
-#define NETC_BD_ALIGN   128
 #define NETC_BUFF_ALIGN 64
 #define NETC_RX_RING_BUF_SIZE_ALIGN                                                                \
 	SDK_SIZEALIGN(CONFIG_ETH_NXP_IMX_RX_RING_BUF_SIZE, NETC_BUFF_ALIGN)
@@ -41,15 +41,6 @@
 
 /* Timeout for various operations */
 #define NETC_TIMEOUT K_MSEC(20)
-
-/* Helper macros to convert from Zephyr PHY speed to NETC speed/duplex types */
-#define PHY_TO_NETC_SPEED(x)                                                                       \
-	(PHY_LINK_IS_SPEED_1000M(x)                                                                \
-		 ? kNETC_MiiSpeed1000M                                                             \
-		 : (PHY_LINK_IS_SPEED_100M(x) ? kNETC_MiiSpeed100M : kNETC_MiiSpeed10M))
-
-#define PHY_TO_NETC_DUPLEX_MODE(x)                                                                 \
-	(PHY_LINK_IS_FULL_DUPLEX(x) ? kNETC_MiiFullDuplex : kNETC_MiiHalfDuplex)
 
 /* Helper function to generate an Ethernet MAC address for a given ENETC instance */
 #define FREESCALE_OUI_B0 0x00

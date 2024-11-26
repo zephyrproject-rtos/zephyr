@@ -1,4 +1,4 @@
-# Copyright 2024 NXP
+# Copyright 2024-2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig ETH_NXP_IMX_NETC
@@ -85,3 +85,14 @@ config ETH_NXP_IMX_RX_RING_BUF_SIZE
 	  store one complete Ethernet frame, and be a multiple of 8.
 
 endif # ETH_NXP_IMX_NETC
+
+if NET_DSA
+
+config DSA_NXP_IMX_NETC
+	bool "Support for NXP i.MX NETC"
+	default y
+	depends on DT_HAS_NXP_NETC_SWITCH_ENABLED
+	help
+	  Add support for NXP i.MX NETC DSA device driver.
+
+endif
