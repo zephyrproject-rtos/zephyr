@@ -192,6 +192,20 @@
 			reg = <0x4009f200 0x100>;
 			status = "disabled";
 		};
+
+		usbhs: usbhs@40111000 {
+			compatible = "renesas,ra-usb";
+			reg = <0x40111000 0x2000>;
+			interrupts = <54 12>, <55 12>, <56 12>;
+			interrupt-names = "usbhs-ir", "usbhs-d0", "usbhs-d1";
+			num-bidir-endpoints = <10>;
+			phys = <&usbhs_phy>;
+			status = "disabled";
+			udc {
+				compatible = "renesas,ra-udc";
+				status = "disabled";
+			};
+		};
 	};
 
 	clocks: clocks {
@@ -352,5 +366,10 @@
 				status = "disabled";
 			};
 		};
+	};
+
+	usbhs_phy: usbhs-phy {
+		compatible = "renesas,ra-usbphyc";
+		#phy-cells = <0>;
 	};
 };
