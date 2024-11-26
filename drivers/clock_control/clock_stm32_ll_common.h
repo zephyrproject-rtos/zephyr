@@ -36,6 +36,9 @@
 #endif /* RCC_PLLI2SCFGR_PLLI2SM */
 #define plli2sm(v) z_plli2s_m(v)
 
+#define z_plli2s_q(v) LL_RCC_PLLI2SQ_DIV_ ## v
+#define plli2sq(v) z_plli2s_q(v)
+
 #define z_plli2s_r(v) LL_RCC_PLLI2SR_DIV_ ## v
 #define plli2sr(v) z_plli2s_r(v)
 

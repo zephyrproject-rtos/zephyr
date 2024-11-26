@@ -64,6 +64,14 @@ void config_pll_sysclock(void)
 				    STM32_PLL_N_MULTIPLIER,
 				    pllp(STM32_PLL_P_DIVISOR));
 
+#if STM32_PLL_Q_ENABLED
+	/* There is a Q divider on the PLL to configure the PLL48CK */
+	LL_RCC_PLL_ConfigDomain_48M(get_pll_source(),
+				    pllm(STM32_PLL_M_DIVISOR),
+				    STM32_PLL_N_MULTIPLIER,
+				    pllq(STM32_PLL_Q_DIVISOR));
+#endif /* STM32_PLLI2S_Q_ENABLED */
+
 #if defined(CONFIG_SOC_SERIES_STM32F7X)
 	/* Assuming we stay on Power Scale default value: Power Scale 1 */
 	if (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC > 180000000) {
@@ -108,6 +116,14 @@ void config_plli2s(void)
 				       plli2sm(STM32_PLLI2S_M_DIVISOR),
 				       STM32_PLLI2S_N_MULTIPLIER,
 				       plli2sr(STM32_PLLI2S_R_DIVISOR));
+
+#if STM32_PLLI2S_Q_ENABLED
+	/* There is a Q divider on the PLLI2S to configure the PLL48CK */
+	LL_RCC_PLLI2S_ConfigDomain_48M(get_pll_source(),
+				       plli2sm(STM32_PLLI2S_M_DIVISOR),
+				       STM32_PLLI2S_N_MULTIPLIER,
+				       plli2sq(STM32_PLLI2S_Q_DIVISOR));
+#endif /* STM32_PLLI2S_Q_ENABLED */
 }
 
 #endif /* STM32_PLLI2S_ENABLED */

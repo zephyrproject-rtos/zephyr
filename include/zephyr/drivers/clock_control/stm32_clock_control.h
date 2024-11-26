@@ -27,6 +27,7 @@
 #elif defined(CONFIG_SOC_SERIES_STM32F2X) || \
 	defined(CONFIG_SOC_SERIES_STM32F4X)
 #include <zephyr/dt-bindings/clock/stm32f4_clock.h>
+#include <zephyr/dt-bindings/clock/stm32f410_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32F7X)
 #include <zephyr/dt-bindings/clock/stm32f7_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32G0X)
@@ -183,6 +184,8 @@
 #define STM32_PLLI2S_ENABLED	1
 #define STM32_PLLI2S_M_DIVISOR		DT_PROP(DT_NODELABEL(plli2s), div_m)
 #define STM32_PLLI2S_N_MULTIPLIER	DT_PROP(DT_NODELABEL(plli2s), mul_n)
+#define STM32_PLLI2S_Q_ENABLED		DT_NODE_HAS_PROP(DT_NODELABEL(plli2s), div_q)
+#define STM32_PLLI2S_Q_DIVISOR		DT_PROP_OR(DT_NODELABEL(plli2s), div_q, 1)
 #define STM32_PLLI2S_R_ENABLED		DT_NODE_HAS_PROP(DT_NODELABEL(plli2s), div_r)
 #define STM32_PLLI2S_R_DIVISOR		DT_PROP_OR(DT_NODELABEL(plli2s), div_r, 1)
 #endif
