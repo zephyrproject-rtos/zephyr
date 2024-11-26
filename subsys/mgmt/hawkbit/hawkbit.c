@@ -31,6 +31,8 @@
 #include <zephyr/storage/flash_map.h>
 #include <zephyr/sys/reboot.h>
 
+#include <bootutil/bootutil_public.h>
+
 #include "hawkbit_device.h"
 #include "hawkbit_firmware.h"
 #include "hawkbit_priv.h"
@@ -1439,6 +1441,7 @@ static void s_download(void *o)
 	int ret = 0;
 	struct s_object *s = (struct s_object *)o;
 	struct flash_img_check fic = {0};
+	const struct flash_area *flash_area_ptr;
 	char *url_buffer;
 
 	ret = hawkbit_parse_deployment(&s->hb_context, &s->hb_context.results.dep, &url_buffer);
@@ -1450,6 +1453,11 @@ static void s_download(void *o)
 	}
 
 	flash_img_init(&s->hb_context.flash_ctx);
+
+	/* The flash_area pointer has to be copied before the download starts
+	 * because the flash_area will be set to NULL after the download has finished.
+	 */
+	flash_area_ptr = s->hb_context.flash_ctx.flash_area;
 
 	if (!send_request(&s->hb_context, HAWKBIT_DOWNLOAD, url_buffer, NULL)) {
 		LOG_ERR("Send request failed (%s)", "HAWKBIT_DOWNLOAD");
@@ -1468,7 +1476,7 @@ static void s_download(void *o)
 	/* Verify the hash of the stored firmware */
 	fic.match = s->hb_context.dl.file_hash;
 	fic.clen = s->hb_context.dl.downloaded_size;
-	if (flash_img_check(&s->hb_context.flash_ctx, &fic, FIXED_PARTITION_ID(SLOT1_LABEL))) {
+	if (flash_img_check(&s->hb_context.flash_ctx, &fic, flash_area_ptr->fa_id)) {
 		LOG_ERR("Failed to validate stored firmware");
 		s->hb_context.code_status = HAWKBIT_DOWNLOAD_ERROR;
 		smf_set_state(SMF_CTX(s), &hawkbit_states[S_HAWKBIT_TERMINATE]);
@@ -1476,7 +1484,7 @@ static void s_download(void *o)
 	}
 
 	/* Request mcuboot to upgrade */
-	if (boot_request_upgrade(BOOT_UPGRADE_TEST)) {
+	if (boot_set_next(flash_area_ptr, false, false)) {
 		LOG_ERR("Failed to mark the image in slot 1 as pending");
 		s->hb_context.code_status = HAWKBIT_DOWNLOAD_ERROR;
 		smf_set_state(SMF_CTX(s), &hawkbit_states[S_HAWKBIT_TERMINATE]);
