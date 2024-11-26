@@ -79,6 +79,10 @@ static void netc_eth_iface_init(struct net_if *iface)
 
 	ethernet_init(iface);
 
+	if (cfg->pseudo_mac) {
+		return;
+	}
+
 	/*
 	 * PSI controls the PHY. If PHY is configured either as fixed
 	 * link or autoneg, the callback is executed at least once
@@ -99,9 +103,11 @@ static int netc_eth_init(const struct device *dev)
 	const struct netc_eth_config *cfg = dev->config;
 	int err;
 
-	err = pinctrl_apply_state(cfg->pincfg, PINCTRL_STATE_DEFAULT);
-	if (err) {
-		return err;
+	if (!cfg->pseudo_mac) {
+		err = pinctrl_apply_state(cfg->pincfg, PINCTRL_STATE_DEFAULT);
+		if (err) {
+			return err;
+		}
 	}
 
 	return netc_eth_init_common(dev);
@@ -181,8 +187,10 @@ static const struct ethernet_api netc_eth_api = {.iface_api.init = netc_eth_ifac
 	static const struct netc_eth_config netc_eth##n##_config = {                               \
 		.generate_mac = netc_eth##n##_generate_mac,                                        \
 		.bdr_init = netc_eth##n##_bdr_init,                                                \
-		.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(n, phy_handle)),                          \
+		.phy_dev = (COND_CODE_1(DT_INST_NODE_HAS_PROP(n, phy_handle),                      \
+					(DEVICE_DT_GET(DT_INST_PHANDLE(n, phy_handle))), NULL)),   \
 		.phy_mode = NETC_PHY_MODE(DT_DRV_INST(n)),                                         \
+		.pseudo_mac = NETC_IS_PSEUDO_MAC(DT_DRV_INST(n)),                                  \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
 		.si_idx = (DT_INST_PROP(n, mac_index) << 8) | DT_INST_PROP(n, si_index),           \
 		.tx_intr_msg_data = NETC_TX_INTR_MSG_DATA_START + n,                               \
