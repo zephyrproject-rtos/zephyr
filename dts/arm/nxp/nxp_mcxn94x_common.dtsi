@@ -534,6 +534,15 @@
 		};
 	};
 
+	mbox: mbox@b2000 {
+		compatible = "nxp,mbox-mailbox";
+		reg = <0xb2000 0xec>;
+		interrupts = <54 0>;
+		rx-channels = <4>;
+		#mbox-cells = <1>;
+		status = "disabled";
+	};
+
 	edma0: dma-controller@80000 {
 		#dma-cells = <2>;
 		compatible = "nxp,mcux-edma";
