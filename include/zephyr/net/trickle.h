@@ -136,7 +136,9 @@ void net_trickle_inconsistency(struct net_trickle *trickle);
  */
 static inline bool net_trickle_is_running(struct net_trickle *trickle)
 {
-	NET_ASSERT(trickle);
+	if (trickle == NULL) {
+		return false;
+	}
 
 	return trickle->I != 0U;
 }
