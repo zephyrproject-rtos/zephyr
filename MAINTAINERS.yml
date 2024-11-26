@@ -4685,6 +4685,17 @@ West:
   labels:
     - "area: CMSIS-NN"
 
+"West project: cmsis_6":
+  status: maintained
+  maintainers:
+    - ithinuel
+  collaborators:
+    - tomi-font
+    - wearyzen
+  files: []
+  labels:
+    - "area: CMSIS_6"
+
 "West project: edtt":
   status: maintained
   maintainers:
