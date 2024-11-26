@@ -118,34 +118,26 @@ static uint32_t i2c_valid_timing_nbr;
 #endif /* CONFIG_I2C_STM32_V2_TIMING */
 
 #ifdef I2C_STM32_V2_DMA
-static int configure_dma(const struct device *dma_dev, uint32_t dma_channel,
-			 struct dma_config *dma_cfg, struct dma_block_config *blk_cfg,
-			 uint32_t source_address, uint32_t dest_address, struct i2c_msg *msg,
-			 struct k_sem *dma_sem, const char *direction)
+static int configure_dma(struct stream const *dma, struct dma_config *dma_cfg,
+			 struct dma_block_config *blk_cfg)
 {
-	if (!device_is_ready(dma_dev)) {
-		LOG_ERR("DMA device not ready for %s", direction);
+	if (!device_is_ready(dma->dev_dma)) {
+		LOG_ERR("DMA device not ready");
 		return -ENODEV;
 	}
-
-	k_sem_take(dma_sem, K_FOREVER);
-
-	blk_cfg->source_address = source_address;
-	blk_cfg->dest_address = dest_address;
-	blk_cfg->block_size = msg->len;
 
 	dma_cfg->head_block = blk_cfg;
 	dma_cfg->block_count = 1;
 
-	int ret = dma_config(dma_dev, dma_channel, dma_cfg);
+	int ret = dma_config(dma->dev_dma, dma->dma_channel, dma_cfg);
 	if (ret != 0) {
-		LOG_ERR("Problem setting up %s DMA: %d", direction, ret);
+		LOG_ERR("Problem setting up DMA: %d", ret);
 		return ret;
 	}
 
-	ret = dma_start(dma_dev, dma_channel);
+	ret = dma_start(dma->dev_dma, dma->dma_channel);
 	if (ret != 0) {
-		LOG_ERR("Problem starting %s DMA: %d", direction, ret);
+		LOG_ERR("Problem starting DMA: %d", ret);
 		return ret;
 	}
 
@@ -189,37 +181,36 @@ static inline void msg_init(const struct device *dev, struct i2c_msg *msg, uint8
 		if (msg->len) {
 			if (msg->flags & I2C_MSG_READ) {
 				// Configure RX DMA
-				if (configure_dma(cfg->dev_dma_rx, cfg->dma_rx_channel,
-						  &data->dma_rx_cfg, &data->dma_rx_blk_cfg,
-						  LL_I2C_DMA_GetRegAddr(
-							  cfg->i2c, LL_I2C_DMA_REG_DATA_RECEIVE),
-						  (uint32_t)msg->buf, msg, &data->dma_rx_sem,
-						  "RX") != 0) {
+				k_sem_take(&data->dma_rx_sem, K_FOREVER);
+				data->dma_rx_blk_cfg.source_address = LL_I2C_DMA_GetRegAddr(
+					cfg->i2c, LL_I2C_DMA_REG_DATA_RECEIVE);
+				data->dma_rx_blk_cfg.dest_address = (uint32_t)msg->buf;
+				data->dma_rx_blk_cfg.block_size = msg->len;
+
+				if (configure_dma(&cfg->rx_dma, &data->dma_rx_cfg,
+						  &data->dma_rx_blk_cfg) != 0) {
+					k_sem_give(&data->dma_rx_sem);
 					return;
 				}
 				data->current.buf += msg->len;
 				data->current.len -= msg->len;
 				LL_I2C_EnableDMAReq_RX(i2c);
 			} else {
-				// Preload the TX register for the first byte
-
-				LL_I2C_TransmitData8(i2c, *data->current.buf);
-				data->current.buf++;
-				data->current.len--;
-
-				if (msg->len) {
+				if (data->current.len) {
 					// Configure TX DMA
-					if (configure_dma(
-						    cfg->dev_dma_tx, cfg->dma_tx_channel,
-						    &data->dma_tx_cfg, &data->dma_tx_blk_cfg,
-						    (uint32_t)msg->buf,
-						    LL_I2C_DMA_GetRegAddr(
-							    cfg->i2c, LL_I2C_DMA_REG_DATA_TRANSMIT),
-						    msg, &data->dma_tx_sem, "TX") != 0) {
+					k_sem_take(&data->dma_tx_sem, K_FOREVER);
+					data->dma_tx_blk_cfg.source_address =
+						(uint32_t)data->current.buf;
+					data->dma_tx_blk_cfg.dest_address = LL_I2C_DMA_GetRegAddr(
+						cfg->i2c, LL_I2C_DMA_REG_DATA_TRANSMIT);
+					data->dma_tx_blk_cfg.block_size = msg->len;
+					if (configure_dma(&cfg->tx_dma, &data->dma_tx_cfg,
+							  &data->dma_tx_blk_cfg) != 0) {
+						k_sem_give(&data->dma_tx_sem);
 						return;
 					}
-					data->current.buf += msg->len;
-					data->current.len -= msg->len;
+					data->current.buf += data->current.len;
+					data->current.len -= data->current.len;
 					LL_I2C_EnableDMAReq_TX(i2c);
 				}
 			}
@@ -287,11 +278,11 @@ static void stm32_i2c_master_mode_end(const struct device *dev)
 
 #ifdef I2C_STM32_V2_DMA
 	if (data->current.msg->flags & I2C_MSG_READ) {
-		dma_stop(cfg->dev_dma_rx, cfg->dma_rx_channel);
+		dma_stop(cfg->rx_dma.dev_dma, cfg->rx_dma.dma_channel);
 		k_sem_give(&data->dma_rx_sem);
 		LL_I2C_DisableDMAReq_RX(i2c);
 	} else {
-		dma_stop(cfg->dev_dma_tx, cfg->dma_tx_channel);
+		dma_stop(cfg->tx_dma.dev_dma, cfg->tx_dma.dma_channel);
 		k_sem_give(&data->dma_tx_sem);
 		LL_I2C_DisableDMAReq_TX(i2c);
 	}
@@ -593,11 +584,11 @@ static void stm32_i2c_event(const struct device *dev)
 
 #ifdef I2C_STM32_V2_DMA
 			if (data->current.msg->flags & I2C_MSG_READ) {
-				dma_stop(cfg->dev_dma_rx, cfg->dma_rx_channel);
+				dma_stop(cfg->rx_dma.dev_dma, cfg->rx_dma.dma_channel);
 				k_sem_give(&data->dma_rx_sem);
 				LL_I2C_DisableDMAReq_RX(i2c);
 			} else {
-				dma_stop(cfg->dev_dma_tx, cfg->dma_tx_channel);
+				dma_stop(cfg->tx_dma.dev_dma, cfg->tx_dma.dma_channel);
 				k_sem_give(&data->dma_tx_sem);
 				LL_I2C_DisableDMAReq_TX(i2c);
 			}

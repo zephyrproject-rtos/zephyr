@@ -33,6 +33,13 @@ struct i2c_config_timing {
 };
 #endif
 
+#ifdef I2C_STM32_V2_DMA
+struct stream {
+	const struct device *dev_dma;
+	int32_t dma_channel;
+};
+#endif /* I2C_STM32_V2_DMA */
+
 struct i2c_stm32_config {
 #ifdef CONFIG_I2C_STM32_INTERRUPT
 	irq_config_func_t irq_config_func;
@@ -51,10 +58,8 @@ struct i2c_stm32_config {
 	size_t n_timings;
 #endif
 #ifdef I2C_STM32_V2_DMA
-	const struct device *dev_dma_tx;
-	int32_t dma_tx_channel;
-	const struct device *dev_dma_rx;
-	int32_t dma_rx_channel;
+	struct stream tx_dma;
+	struct stream rx_dma;
 #endif /* I2C_STM32_V2_DMA */
 };
 

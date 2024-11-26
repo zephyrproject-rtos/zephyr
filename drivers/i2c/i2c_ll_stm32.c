@@ -629,10 +629,10 @@ static void dma_tx_callback(const struct device *dma_dev, void *user_data, uint3
 #ifdef I2C_STM32_V2_DMA
 
 #define I2C_DMA_INIT(index, dir)                                                                   \
-	.dev_dma_##dir = COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, dir),                                \
-                                 (DEVICE_DT_GET(STM32_DMA_CTLR(index, dir))), (NULL)),                              \
-		 .dma_##dir##_channel = COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, dir),                          \
-                                       (DT_INST_DMAS_CELL_BY_NAME(index, dir, channel)), (-1)),
+	.dir##_dma = {.dev_dma = COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, dir),                                 \
+                                 (DEVICE_DT_GET(STM32_DMA_CTLR(index, dir))), (NULL)),                \
+			       .dma_channel = COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, dir),                             \
+                                       (DT_INST_DMAS_CELL_BY_NAME(index, dir, channel)), (-1))},
 
 #define I2C_DMA_SLOT_INIT(index, dir)                                                              \
 	.dma_slot = COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, dir),                                     \
