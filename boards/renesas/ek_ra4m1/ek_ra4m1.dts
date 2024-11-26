@@ -66,3 +66,17 @@
 &ioport1 {
 	status = "okay";
 };
+
+&ioport2 {
+	status = "okay";
+};
+
+&ioport4 {
+	status = "okay";
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
