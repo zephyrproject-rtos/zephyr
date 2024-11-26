@@ -1266,6 +1266,27 @@ ZTEST(dns_packet, test_dns_flags_len)
 		      "DNS message length check failed (%d)", ret);
 }
 
+static uint8_t invalid_answer_resp_ipv4[18] = {
+	/* DNS msg header (12 bytes) */
+	0x01, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x01, 0x00, 0x01,
+};
+
+ZTEST(dns_packet, test_dns_invalid_answer)
+{
+	struct dns_msg_t dns_msg = { 0 };
+	enum dns_rr_type type;
+	uint32_t ttl;
+	int ret;
+
+	dns_msg.msg = invalid_answer_resp_ipv4;
+	dns_msg.msg_size = sizeof(invalid_answer_resp_ipv4);
+	dns_msg.answer_offset = 12;
+
+	ret = dns_unpack_answer(&dns_msg, 0, &ttl, &type);
+	zassert_equal(ret, -EINVAL, "DNS message answer check succeed (%d)", ret);
+}
+
 ZTEST_SUITE(dns_packet, NULL, NULL, NULL, NULL, NULL);
 /* TODO:
  *	1) add malformed DNS data (mostly done)
