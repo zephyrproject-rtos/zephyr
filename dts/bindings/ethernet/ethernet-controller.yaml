@@ -37,3 +37,4 @@ properties:
       - "rmii"
       - "gmii"
       - "rgmii"
+      - "internal"
