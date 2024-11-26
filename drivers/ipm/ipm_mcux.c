@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018, NXP
+ * Copyright (c) 2017-2018, 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,8 +20,11 @@
 #define MCUX_IPM_DATA_REGS 1
 #define MCUX_IPM_MAX_ID_VAL 0
 
-#if (defined(LPC55S69_cm33_core0_SERIES) || defined(LPC55S69_cm33_core1_SERIES))
-#ifdef LPC55S69_cm33_core0_SERIES
+#if (defined(LPC55S69_cm33_core0_SERIES) || defined(LPC55S69_cm33_core1_SERIES) || \
+defined(CONFIG_SOC_SERIES_MCXN))
+#if (defined(LPC55S69_cm33_core0_SERIES) || defined(MCXN947_cm33_core0_SERIES) || \
+defined(MCXN946_cm33_core0_SERIES) || defined(MCXN547_cm33_core0_SERIES) || \
+defined(MCXN546_cm33_core0_SERIES))
 #define MAILBOX_ID_THIS_CPU kMAILBOX_CM33_Core0
 #define MAILBOX_ID_OTHER_CPU kMAILBOX_CM33_Core1
 #else
