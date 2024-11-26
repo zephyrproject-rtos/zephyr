@@ -2023,7 +2023,9 @@ bool net_if_ipv6_addr_rm(struct net_if *iface, const struct in6_addr *addr)
 	bool result = true;
 	int ret;
 
-	NET_ASSERT(addr);
+	if (iface == NULL || addr == NULL) {
+		return false;
+	}
 
 	net_if_lock(iface);
 
@@ -2254,8 +2256,9 @@ void net_if_ipv6_maddr_foreach(struct net_if *iface, net_if_ip_maddr_cb_t cb,
 {
 	struct net_if_ipv6 *ipv6;
 
-	NET_ASSERT(iface);
-	NET_ASSERT(cb);
+	if (iface == NULL || cb == NULL) {
+		return;
+	}
 
 	net_if_lock(iface);
 
@@ -2325,8 +2328,9 @@ out:
 
 void net_if_ipv6_maddr_leave(struct net_if *iface, struct net_if_mcast_addr *addr)
 {
-	NET_ASSERT(iface);
-	NET_ASSERT(addr);
+	if (iface == NULL || addr == NULL) {
+		return;
+	}
 
 	net_if_lock(iface);
 	addr->is_joined = false;
@@ -2335,8 +2339,9 @@ void net_if_ipv6_maddr_leave(struct net_if *iface, struct net_if_mcast_addr *add
 
 void net_if_ipv6_maddr_join(struct net_if *iface, struct net_if_mcast_addr *addr)
 {
-	NET_ASSERT(iface);
-	NET_ASSERT(addr);
+	if (iface == NULL || addr == NULL) {
+		return;
+	}
 
 	net_if_lock(iface);
 	addr->is_joined = true;
@@ -3140,7 +3145,9 @@ const struct in6_addr *net_if_ipv6_select_src_addr_hint(struct net_if *dst_iface
 	const struct in6_addr *src = NULL;
 	uint8_t best_match = 0U;
 
-	NET_ASSERT(dst);
+	if (dst == NULL) {
+		return NULL;
+	}
 
 	if (!net_ipv6_is_ll_addr(dst) && !net_ipv6_is_addr_mcast_link(dst)) {
 		struct net_if_ipv6_prefix *prefix;
@@ -3665,7 +3672,9 @@ const struct in_addr *net_if_ipv4_select_src_addr(struct net_if *dst_iface,
 	const struct in_addr *src = NULL;
 	uint8_t best_match = 0U;
 
-	NET_ASSERT(dst);
+	if (dst == NULL) {
+		return NULL;
+	}
 
 	if (!net_ipv4_is_ll_addr(dst)) {
 
@@ -4358,7 +4367,9 @@ bool net_if_ipv4_addr_rm(struct net_if *iface, const struct in_addr *addr)
 	bool result = true;
 	int ret;
 
-	NET_ASSERT(addr);
+	if (iface == NULL || addr == NULL) {
+		return false;
+	}
 
 	net_if_lock(iface);
 
@@ -4590,8 +4601,9 @@ void net_if_ipv4_maddr_foreach(struct net_if *iface, net_if_ip_maddr_cb_t cb,
 {
 	struct net_if_ipv4 *ipv4;
 
-	NET_ASSERT(iface);
-	NET_ASSERT(cb);
+	if (iface == NULL || cb == NULL) {
+		return;
+	}
 
 	net_if_lock(iface);
 
@@ -4643,8 +4655,9 @@ out:
 
 void net_if_ipv4_maddr_leave(struct net_if *iface, struct net_if_mcast_addr *addr)
 {
-	NET_ASSERT(iface);
-	NET_ASSERT(addr);
+	if (iface == NULL || addr == NULL) {
+		return;
+	}
 
 	net_if_lock(iface);
 	addr->is_joined = false;
@@ -4653,8 +4666,9 @@ void net_if_ipv4_maddr_leave(struct net_if *iface, struct net_if_mcast_addr *add
 
 void net_if_ipv4_maddr_join(struct net_if *iface, struct net_if_mcast_addr *addr)
 {
-	NET_ASSERT(iface);
-	NET_ASSERT(addr);
+	if (iface == NULL || addr == NULL) {
+		return;
+	}
 
 	net_if_lock(iface);
 	addr->is_joined = true;
@@ -5581,7 +5595,9 @@ out:
 
 void net_if_carrier_on(struct net_if *iface)
 {
-	NET_ASSERT(iface);
+	if (iface == NULL) {
+		return;
+	}
 
 	net_if_lock(iface);
 
@@ -5594,7 +5610,9 @@ void net_if_carrier_on(struct net_if *iface)
 
 void net_if_carrier_off(struct net_if *iface)
 {
-	NET_ASSERT(iface);
+	if (iface == NULL) {
+		return;
+	}
 
 	net_if_lock(iface);
 
@@ -5607,7 +5625,9 @@ void net_if_carrier_off(struct net_if *iface)
 
 void net_if_dormant_on(struct net_if *iface)
 {
-	NET_ASSERT(iface);
+	if (iface == NULL) {
+		return;
+	}
 
 	net_if_lock(iface);
 
@@ -5620,7 +5640,9 @@ void net_if_dormant_on(struct net_if *iface)
 
 void net_if_dormant_off(struct net_if *iface)
 {
-	NET_ASSERT(iface);
+	if (iface == NULL) {
+		return;
+	}
 
 	net_if_lock(iface);
 
@@ -5636,7 +5658,9 @@ static int promisc_mode_set(struct net_if *iface, bool enable)
 {
 	enum net_l2_flags l2_flags = 0;
 
-	NET_ASSERT(iface);
+	if (iface == NULL) {
+		return -EINVAL;
+	}
 
 	l2_flags = l2_flags_get(iface);
 	if (!(l2_flags & NET_L2_PROMISC_MODE)) {
@@ -5702,7 +5726,9 @@ out:
 
 bool net_if_is_promisc(struct net_if *iface)
 {
-	NET_ASSERT(iface);
+	if (iface == NULL) {
+		return false;
+	}
 
 	return net_if_flag_is_set(iface, NET_IF_PROMISC);
 }
