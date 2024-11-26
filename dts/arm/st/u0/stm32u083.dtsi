@@ -9,5 +9,14 @@
 / {
 	soc {
 		compatible = "st,stm32u083", "st,stm32u0", "simple-bus";
+
+		lpuart3: serial@40008c00 {
+			compatible = "st,stm32-lpuart", "st,stm32-uart";
+			reg = <0x40008c00 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 12U)>;
+			resets = <&rctl STM32_RESET(APB1L, 12U)>;
+			interrupts = <30 0>;
+			status = "disabled";
+		};
 	};
 };
