@@ -168,7 +168,7 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr
 			ret = llext_read(ldr, &rela, sizeof(rela));
 		}
 
-		if (ret < 0) {
+		if (ret != 0) {
 			LOG_ERR("PLT: failed to read RELA #%u, trying to continue", i);
 			continue;
 		}
