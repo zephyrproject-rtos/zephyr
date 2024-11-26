@@ -84,6 +84,25 @@ extern FUNC_NORETURN void z_arm_userspace_enter(k_thread_entry_t user_entry,
 
 extern void z_arm_fatal_error(unsigned int reason, const struct arch_esf *esf);
 
+static ALWAYS_INLINE int arch_swap(unsigned int key)
+{
+	/* store off key and return value */
+	arch_current_thread()->arch.basepri = key;
+	arch_current_thread()->arch.swap_return_value = -EAGAIN;
+
+	/* set pending bit to make sure we will take a PendSV exception */
+	SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
+
+	/* clear mask or enable all irqs to take a pendsv */
+	irq_unlock(0);
+
+	/* Context switch is performed here. Returning implies the
+	 * thread has been context-switched-in again.
+	 */
+	return arch_current_thread()->arch.swap_return_value;
+}
+
+
 #endif /* _ASMLANGUAGE */
 
 #ifdef __cplusplus
