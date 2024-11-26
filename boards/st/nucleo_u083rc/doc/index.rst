@@ -49,6 +49,8 @@ They operate at a frequency of up to 56 MHz.
   - 4 µA wake-up from Stop mode
   - 52 µA/MHz Run mode
   - Brownout reset
+  - SPI (3)
+  - DMA Controller (2)
 
 - Core:
 
@@ -98,6 +100,7 @@ They operate at a frequency of up to 56 MHz.
   - Candidate for Arm |reg| PSA level 1 and SESIP level 3 certifications
   - 5 passive anti-tamper pins
   - 96-bit unique ID
+  - True Random Number Generator (RNG) NIST SP800-90B compliant
 
 - Up to 10 timers, 2 watchdogs and RTC:
 
@@ -105,6 +108,8 @@ They operate at a frequency of up to 56 MHz.
     2x 16-bit basic, 3x low-power 16-bit timers (available in Stop mode),
     2x watchdogs, SysTick timer
   - RTC with hardware calendar, alarms and calibration
+
+- 3 low-power 16-bit timers (available in Stop mode).
 
 - Up to 20 communication peripherals:
 
@@ -145,6 +150,8 @@ The Zephyr nucleo_u083rc board configuration supports the following hardware fea
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
+| WATCHDOG  | on-chip    | independent watchdog                |
++-----------+------------+-------------------------------------+
 | ADC       | on-chip    | adc                                 |
 +-----------+------------+-------------------------------------+
 | DAC       | on-chip    | DAC Controller                      |
@@ -152,6 +159,20 @@ The Zephyr nucleo_u083rc board configuration supports the following hardware fea
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
 | PWM       | on-chip    | pwm                                 |
++-----------+------------+-------------------------------------+
+| RTC       | on-chip    | Real Time Clock                     |
++-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
+| USB       | on-chip    | USB full-speed host/device bus      |
++-----------+------------+-------------------------------------+
+| DMA       | on-chip    | Direct Memory Access Controller     |
++-----------+------------+-------------------------------------+
+| RNG       | on-chip    | True Random number generator        |
++-----------+------------+-------------------------------------+
+| AES       | on-chip    | crypto                              |
++-----------+------------+-------------------------------------+
+| LPTIM     | on-chip    | Low Power Timer                     |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
