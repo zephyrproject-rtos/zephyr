@@ -60,6 +60,8 @@ struct lsm6dsv16x_config {
 	uint8_t accel_batch : 4;
 	uint8_t gyro_batch : 4;
 	uint8_t temp_batch : 2;
+	uint8_t sflp_odr : 3;
+	uint8_t sflp_fifo_en : 3;
 #endif
 #ifdef CONFIG_LSM6DSV16X_TRIGGER
 	const struct gpio_dt_spec int1_gpio;
@@ -118,6 +120,7 @@ struct lsm6dsv16x_data {
 	uint8_t accel_batch_odr : 4;
 	uint8_t gyro_batch_odr : 4;
 	uint8_t temp_batch_odr : 2;
+	uint8_t sflp_batch_odr : 3;
 	uint8_t bus_type : 1; /* I2C is 0, SPI is 1 */
 	uint8_t reserved : 5;
 #endif
