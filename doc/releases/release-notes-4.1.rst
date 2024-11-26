@@ -130,6 +130,12 @@ Drivers and Sensors
 
 * Flash
 
+* FPGA
+
+  * Extracted from :dtcompatible:`lattice,ice40-fpga` the compatible and driver for
+    :dtcompatible:`lattice,ice40-fpga-bitbang`. This replaces the original ``load_mode`` property from
+    the binding, which selected either the SPI or GPIO bitbang load mode.
+
 * GNSS
 
 * GPIO

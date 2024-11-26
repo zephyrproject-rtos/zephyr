@@ -8,12 +8,11 @@
 
 test_spi_fpga_ice40_gpio: ice40@0 {
 	status = "okay";
-	compatible = "lattice,ice40-fpga";
+	compatible = "lattice,ice40-fpga-bitbang";
 
 	reg = <0>;
 	spi-max-frequency = <1000000>;
 
-	load-mode-bitbang;
 	cdone-gpios = <&test_gpio 0 0>;
 	creset-gpios = <&test_gpio 0 0>;
 	clk-gpios = <&test_gpio 0 0>;
