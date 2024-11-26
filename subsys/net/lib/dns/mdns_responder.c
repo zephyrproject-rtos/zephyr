@@ -873,7 +873,7 @@ static int init_listener(void)
 				ifindex, ret);
 		} else {
 			memset(&if_req, 0, sizeof(if_req));
-			strncpy(if_req.ifr_name, name, sizeof(if_req.ifr_name));
+			strncpy(if_req.ifr_name, name, sizeof(if_req.ifr_name) - 1);
 
 			ret = zsock_setsockopt(v4, SOL_SOCKET, SO_BINDTODEVICE,
 					       &if_req, sizeof(if_req));
