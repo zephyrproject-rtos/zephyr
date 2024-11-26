@@ -1,0 +1,34 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config UDC_RENESAS_RA
+	bool "Renesas RA family UDC driver"
+	default y
+	depends on DT_HAS_RENESAS_RA_UDC_ENABLED
+	select USE_RA_FSP_USB_DEVICE
+	select PINCTRL
+	help
+	  Enable Renesas RA family UDC driver.
+
+if UDC_RENESAS_RA
+
+config UDC_RENESAS_RA_STACK_SIZE
+	int "UDC controller driver internal thread stack size"
+	default 512
+	help
+	  Renesas RA device controller driver internal thread stack size.
+
+config UDC_RENESAS_RA_THREAD_PRIORITY
+	int "Renesas RA family UDC driver thread priority"
+	default 8
+	help
+	  Renesas RA device controller driver thread priority.
+
+config UDC_RENESAS_RA_MAX_QMESSAGES
+	int "Renesas RA family UDC driver maximum number of ISR event messages"
+	range 4 64
+	default 8
+	help
+	  Maximum number of messages for handling of Renesas RA USBD ISR events.
+
+endif
