@@ -262,7 +262,7 @@ const struct ptp_clock *ptp_clock_init(void)
 	dds->n_ports = 0;
 	dds->time_receiver_only = IS_ENABLED(CONFIG_PTP_TIME_RECEIVER_ONLY) ? true : false;
 
-	dds->clk_quality.class = dds->time_receiver_only ? 255 : 248;
+	dds->clk_quality.cls = dds->time_receiver_only ? 255 : 248;
 	dds->clk_quality.accuracy = CONFIG_PTP_CLOCK_ACCURACY;
 	/* 0xFFFF means that value has not been computed - IEEE 1588-2019 7.6.3.3 */
 	dds->clk_quality.offset_scaled_log_variance = 0xFFFF;
