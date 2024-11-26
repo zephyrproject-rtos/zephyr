@@ -2332,6 +2332,10 @@ struct bt_mesh_comp_p1_elem *bt_mesh_comp_p1_elem_pull(struct net_buf_simple *bu
 	elem->nsig = net_buf_simple_pull_u8(buf);
 	elem->nvnd = net_buf_simple_pull_u8(buf);
 	for (i = 0; i < elem->nsig + elem->nvnd; i++) {
+		if (buf->len < elem_size + 1) {
+			return NULL;
+		}
+
 		header = buf->data[elem_size];
 		cor_present = COR_PRESENT(header);
 		fmt = FMT(header);
@@ -2344,6 +2348,10 @@ struct bt_mesh_comp_p1_elem *bt_mesh_comp_p1_elem_pull(struct net_buf_simple *bu
 		 * (each 1 or 2 octet long, depending on format)
 		 */
 		elem_size += (1 + cor_present) + (fmt + 1) * ext_item_cnt;
+	}
+
+	if (buf->len < elem_size) {
+		return NULL;
 	}
 
 	net_buf_simple_init_with_data(elem->_buf,
@@ -2372,7 +2380,15 @@ struct bt_mesh_comp_p1_model_item *bt_mesh_comp_p1_item_pull(
 	item->ext_item_cnt = EXT_ITEM_CNT(header);
 	item_size = item->ext_item_cnt * (item->format + 1);
 	if (item->cor_present) {
+		if (elem->_buf->len < 1) {
+			return NULL;
+		}
+
 		item->cor_id = net_buf_simple_pull_u8(elem->_buf);
+	}
+
+	if (elem->_buf->len < item_size) {
+		return NULL;
 	}
 
 	net_buf_simple_init_with_data(item->_buf,
