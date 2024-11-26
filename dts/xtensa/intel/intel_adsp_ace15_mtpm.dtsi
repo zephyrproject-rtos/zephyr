@@ -478,7 +478,8 @@
 			dma-buf-addr-alignment = <128>;
 			dma-buf-size-alignment = <32>;
 			dma-copy-alignment = <16>;
-			power-domains = <&io0_domain>;
+			power-domains = <&hub_ulp_domain>;
+			zephyr,pm-device-runtime-auto;
 			status = "okay";
 		};
 
@@ -490,7 +491,8 @@
 			dma-buf-addr-alignment = <128>;
 			dma-buf-size-alignment = <32>;
 			dma-copy-alignment = <16>;
-			power-domains = <&io0_domain>;
+			power-domains = <&hub_ulp_domain>;
+			zephyr,pm-device-runtime-auto;
 			status = "okay";
 		};
 
@@ -503,6 +505,7 @@
 			dma-buf-size-alignment = <32>;
 			dma-copy-alignment = <16>;
 			power-domains = <&hst_domain>;
+			zephyr,pm-device-runtime-auto;
 			interrupts = <13 0 0>;
 			interrupt-parent = <&ace_intc>;
 			status = "okay";
@@ -517,6 +520,7 @@
 			dma-buf-size-alignment = <32>;
 			dma-copy-alignment = <16>;
 			power-domains = <&hst_domain>;
+			zephyr,pm-device-runtime-auto;
 			interrupts = <12 0 0>;
 			interrupt-parent = <&ace_intc>;
 			status = "okay";
