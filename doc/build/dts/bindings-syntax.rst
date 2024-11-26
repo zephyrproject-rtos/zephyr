@@ -135,8 +135,8 @@ this:
        required: true
 
 In this example, a node with compatible ``"manufacturer,serial"`` must contain
-a node named ``current-speed``. The property's value must be a single integer.
-Similarly, the node must contain a ``reg`` property.
+a property named ``current-speed``. The property's value must be a single
+integer. Similarly, the node must contain a ``reg`` property.
 
 The build system uses bindings to generate C macros for devicetree properties
 that appear in DTS files. You can read more about how to get property values in
