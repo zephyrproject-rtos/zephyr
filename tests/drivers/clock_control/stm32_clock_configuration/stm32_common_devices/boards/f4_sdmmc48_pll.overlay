@@ -1,0 +1,34 @@
+/*
+ * Copyright (c) 2024 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Node is disabled by default unless the PLL_I2S is enabled */
+&clk48 {
+	/* select one source for the clk48MHz domain clock */
+/*	clocks = <&rcc STM32_SRC_PLL_Q CK48M_SEL(0)>;*/
+	clocks = <&rcc STM32_SRC_PLLI2S_Q CK48M_SEL(1)>;
+	status = "okay";
+};
+
+&plli2s {
+	div-m = <4>;
+	mul-n = <96>;
+	div-q = <4>;
+	div-r = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&sdmmc1 {
+	clocks = <&rcc STM32_CLOCK(APB2, 11U)>,
+	/* select one source for the sdmmc domain clock */
+		 <&rcc STM32_SRC_SYSCLK SDIO_SEL(1)>;
+/*		 <&rcc STM32_SRC_CK48 SDIO_SEL(0)>; */
+	pinctrl-0 = <&sdio_cmd_pa6 &sdio_ck_pc12
+			&sdio_d0_pc8 &sdio_d1_pc9
+			&sdio_d2_pc10 &sdio_d3_pc11>;
+	pinctrl-names = "default";
+	status = "okay";
+};
