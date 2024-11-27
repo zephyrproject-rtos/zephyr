@@ -1187,6 +1187,7 @@ int bt_mesh_cfg_cli_krp_get(uint16_t net_idx, uint16_t addr, uint16_t key_net_id
 	struct krp_param param = {
 		.status = status,
 		.phase = phase,
+		.net_idx = key_net_idx,
 	};
 	const struct bt_mesh_msg_rsp_ctx rsp = {
 		.ack = &cli->ack_ctx,
@@ -1209,6 +1210,7 @@ int bt_mesh_cfg_cli_krp_set(uint16_t net_idx, uint16_t addr, uint16_t key_net_id
 	struct krp_param param = {
 		.status = status,
 		.phase = phase,
+		.net_idx = key_net_idx,
 	};
 	const struct bt_mesh_msg_rsp_ctx rsp = {
 		.ack = &cli->ack_ctx,
