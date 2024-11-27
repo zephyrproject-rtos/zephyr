@@ -800,7 +800,6 @@
 "./scripts/pylib/twister/twisterlib/hardwaremap.py" = [
     "B006",     # https://docs.astral.sh/ruff/rules/mutable-argument-default
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "UP004",    # https://docs.astral.sh/ruff/rules/useless-object-inheritance
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
 ]
@@ -815,9 +814,6 @@
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
-]
-"./scripts/pylib/twister/twisterlib/mixins.py" = [
-    "UP004",    # https://docs.astral.sh/ruff/rules/useless-object-inheritance
 ]
 "./scripts/pylib/twister/twisterlib/package.py" = [
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
@@ -845,7 +841,6 @@
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
     "SIM102",   # https://docs.astral.sh/ruff/rules/collapsible-if
     "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
-    "UP004",    # https://docs.astral.sh/ruff/rules/useless-object-inheritance
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP022",    # https://docs.astral.sh/ruff/rules/replace-stdout-stderr
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting

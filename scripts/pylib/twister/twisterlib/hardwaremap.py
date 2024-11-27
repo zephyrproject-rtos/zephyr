@@ -33,7 +33,7 @@ logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
 
 
-class DUT(object):
+class DUT:
     def __init__(self,
                  id=None,
                  serial=None,
