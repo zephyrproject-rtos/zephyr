@@ -72,7 +72,7 @@ static int bbram_xec_write(const struct device *dev, size_t offset, size_t size,
 	return 0;
 }
 
-static const struct bbram_driver_api bbram_xec_driver_api = {
+static DEVICE_API(bbram, bbram_xec_driver_api) = {
 	.check_invalid = bbram_xec_check_invalid,
 	.get_size = bbram_xec_get_size,
 	.read = bbram_xec_read,
