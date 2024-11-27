@@ -371,6 +371,46 @@ ZTEST(ip_addr_fn, test_ipv6_addresses)
 		     "IPv6 removing address failed\n");
 }
 
+ZTEST(ip_addr_fn, test_ipv4_ll_address_select_default_first)
+{
+	struct net_if *iface;
+	const struct in_addr *out;
+	struct net_if_addr *ifaddr;
+	struct in_addr lladdr4_1 = { { { 169, 254, 0, 1 } } };
+	struct in_addr lladdr4_2 = { { { 169, 254, 0, 3 } } };
+	struct in_addr netmask = { { { 255, 255, 0, 0 } } };
+	struct in_addr dst4 = { { { 169, 254, 0, 2 } } };
+
+	ifaddr = net_if_ipv4_addr_add(default_iface, &lladdr4_1, NET_ADDR_MANUAL, 0);
+	zassert_not_null(ifaddr, "IPv4 interface address add failed");
+	zassert_true(net_ipv4_is_my_addr(&lladdr4_1),
+		     "My IPv4 address check failed");
+
+	net_if_ipv4_set_netmask_by_addr(default_iface, &lladdr4_1, &netmask);
+
+	ifaddr = net_if_ipv4_addr_add(second_iface, &lladdr4_2, NET_ADDR_MANUAL, 0);
+	zassert_not_null(ifaddr, "IPv4 interface address add failed");
+	zassert_true(net_ipv4_is_my_addr(&lladdr4_2),
+		     "My IPv4 address check failed");
+
+	net_if_ipv4_set_netmask_by_addr(second_iface, &lladdr4_2, &netmask);
+
+	/* In case two network interfaces have two equally good addresses
+	 * (same net mask), default interface should be selected.
+	 */
+	out = net_if_ipv4_select_src_addr(NULL, &dst4);
+	iface = net_if_ipv4_select_src_iface(&dst4);
+	zassert_not_null(out, "IPv4 src addr selection failed, iface %p\n",
+			 iface);
+
+	DBG("Selected IPv4 address %s, iface %p\n", net_sprint_ipv4_addr(out),
+	    iface);
+
+	zassert_equal_ptr(iface, default_iface, "Wrong iface selected");
+	zassert_equal(out->s_addr, lladdr4_1.s_addr,
+		      "IPv4 wrong src address selected, iface %p\n", iface);
+}
+
 ZTEST(ip_addr_fn, test_ipv4_ll_address_select)
 {
 	struct net_if *iface;
