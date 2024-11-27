@@ -267,6 +267,7 @@ class TwisterConfigParser:
                 except ValueError:
                     raise ConfigurationError(
                         self.filename, "bad %s value '%s' for key '%s' in name '%s'" %
-                                       (kinfo["type"], d[k], k, name))
+                                       (kinfo["type"], d[k], k, name)
+                    ) from None
 
         return d
