@@ -748,7 +748,6 @@
 ]
 "./scripts/pylib/twister/expr_parser.py" = [
     "SIM103",   # https://docs.astral.sh/ruff/rules/needless-bool
-    "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
 ]
 "./scripts/pylib/twister/scl.py" = [
@@ -778,7 +777,6 @@
 "./scripts/pylib/twister/twisterlib/handlers.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
-    "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
     "UP007",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation
     "UP030",    # https://docs.astral.sh/ruff/rules/format-literals
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
@@ -812,7 +810,6 @@
 "./scripts/pylib/twister/twisterlib/runner.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
-    "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
