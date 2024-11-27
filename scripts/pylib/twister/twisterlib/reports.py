@@ -106,7 +106,7 @@ class Reporting:
         else:
             if status == TwisterStatus.NONE:
                 logger.debug(f"{name}: No status")
-                ET.SubElement(eleTestcase, ReportStatus.SKIP, type=f"untested", message="No results captured, testsuite misconfiguration?")
+                ET.SubElement(eleTestcase, ReportStatus.SKIP, type="untested", message="No results captured, testsuite misconfiguration?")
             else:
                 logger.error(f"{name}: Unknown status '{status}'")
 
@@ -523,7 +523,7 @@ class Reporting:
             log_txt = f"The following issues were found (showing the all {count} items):"
         elif self.env.options.report_summary:
             count = self.env.options.report_summary
-            log_txt = f"The following issues were found "
+            log_txt = "The following issues were found "
             if count > self.instance_fail_count:
                 log_txt += f"(presenting {self.instance_fail_count} out of the {count} items requested):"
             else:
@@ -551,7 +551,7 @@ class Reporting:
                 break
         if cnt == 0 and self.env.options.report_summary is not None:
             logger.info("-+" * 40)
-            logger.info(f"No errors/fails found")
+            logger.info("No errors/fails found")
 
         if cnt and example_instance:
             cwd_rel_path = os.path.relpath(example_instance.testsuite.source_dir, start=os.getcwd())
@@ -563,7 +563,7 @@ class Reporting:
             logger.info("")
             logger.info(f"west twister -p {example_instance.platform.name} -s {example_instance.testsuite.name}"
                         f"{extra_parameters}")
-            logger.info(f"or with west:")
+            logger.info("or with west:")
             logger.info(f"west build -p -b {example_instance.platform.name} {cwd_rel_path} -T {example_instance.testsuite.id}")
             logger.info("-+" * 40)
 
