@@ -70,10 +70,12 @@ void platformUartPanic(void);
  */
 uint16_t platformRadioChannelGet(otInstance *aInstance);
 
+#if defined(CONFIG_IEEE802154_CARRIER_FUNCTIONS)
 /**
  * Start/stop continuous carrier wave transmission.
  */
 otError platformRadioTransmitCarrier(otInstance *aInstance, bool aEnable);
+#endif /* CONFIG_IEEE802154_CARRIER_FUNCTIONS */
 
 /**
  * This function initializes the random number service used by OpenThread.

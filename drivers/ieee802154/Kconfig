@@ -100,6 +100,11 @@ config IEEE802154_SELECTIVE_TXCHANNEL
 	  this Kconfig option is enabled. If the Kconfig option is disabled the drivers
 	  MUST NOT have the capability.
 
+config IEEE802154_CARRIER_FUNCTIONS
+	bool "Support for carrier functions"
+	help
+	  Enable support for functions such as modulated carrier and continuous carrier.
+
 module = IEEE802154_DRIVER
 module-str = IEEE 802.15.4 driver
 module-help = Sets log level for IEEE 802.15.4 Device Drivers.
