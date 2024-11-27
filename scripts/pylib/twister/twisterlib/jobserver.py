@@ -150,14 +150,14 @@ class GNUMakeJobClient(JobClient):
                     # Use F_GETFL to see if file descriptors are valid
                     if pipe:
                         rc = fcntl.fcntl(pipe[0], fcntl.F_GETFL)
-                        if not rc & os.O_ACCMODE == os.O_RDONLY:
+                        if rc & os.O_ACCMODE != os.O_RDONLY:
                             logger.warning(
                                 "FD %s is not readable (flags=%x); "
                                 "ignoring GNU make jobserver", pipe[0], rc)
                             pipe = None
                     if pipe:
                         rc = fcntl.fcntl(pipe[1], fcntl.F_GETFL)
-                        if not rc & os.O_ACCMODE == os.O_WRONLY:
+                        if rc & os.O_ACCMODE != os.O_WRONLY:
                             logger.warning(
                                 "FD %s is not writable (flags=%x); "
                                 "ignoring GNU make jobserver", pipe[1], rc)
