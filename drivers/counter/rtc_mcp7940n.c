@@ -733,7 +733,7 @@ out:
 	return rc;
 }
 
-static const struct counter_driver_api mcp7940n_api = {
+static DEVICE_API(counter, mcp7940n_api) = {
 	.start = mcp7940n_counter_start,
 	.stop = mcp7940n_counter_stop,
 	.get_value = mcp7940n_counter_get_value,

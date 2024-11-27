@@ -119,7 +119,7 @@ static uint32_t tmr_cmsdk_apb_get_pending_int(const struct device *dev)
 	return cfg->timer->intstatus;
 }
 
-static const struct counter_driver_api tmr_cmsdk_apb_api = {
+static DEVICE_API(counter, tmr_cmsdk_apb_api) = {
 	.start = tmr_cmsdk_apb_start,
 	.stop = tmr_cmsdk_apb_stop,
 	.get_value = tmr_cmsdk_apb_get_value,

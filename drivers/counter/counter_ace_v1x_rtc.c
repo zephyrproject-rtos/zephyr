@@ -35,7 +35,7 @@ int counter_ace_v1x_rtc_init(const struct device *dev)
 	return 0;
 }
 
-static const struct counter_driver_api ace_v1x_rtc_counter_apis = {
+static DEVICE_API(counter, ace_v1x_rtc_counter_apis) = {
 	.get_value_64 = counter_ace_v1x_rtc_get_value
 };
 

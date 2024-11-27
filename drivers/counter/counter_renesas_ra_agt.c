@@ -519,7 +519,7 @@ static uint32_t r_agt_ticks_sub(uint32_t val, uint32_t old, uint32_t top)
 	return (val >= old) ? (val - old) : val + top + 1 - old;
 }
 
-static const struct counter_driver_api ra_agt_driver_api = {
+static DEVICE_API(counter, ra_agt_driver_api) = {
 	.start = counter_ra_agt_start,
 	.stop = counter_ra_agt_stop,
 	.get_value = counter_ra_agt_get_value,
