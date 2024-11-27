@@ -550,7 +550,7 @@ static int gpio_intel_port_get_raw(const struct device *dev,
 	return port_get_raw(dev, 0xFFFFFFFF, value, false);
 }
 
-static const struct gpio_driver_api gpio_intel_api = {
+static DEVICE_API(gpio, gpio_intel_api) = {
 	.pin_configure = gpio_intel_config,
 	.manage_callback = gpio_intel_manage_callback,
 	.port_get_raw = gpio_intel_port_get_raw,

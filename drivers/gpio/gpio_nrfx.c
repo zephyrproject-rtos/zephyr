@@ -506,7 +506,7 @@ static int gpio_nrfx_init(const struct device *port)
 	return 0;
 }
 
-static const struct gpio_driver_api gpio_nrfx_drv_api_funcs = {
+static DEVICE_API(gpio, gpio_nrfx_drv_api_funcs) = {
 	.pin_configure = gpio_nrfx_pin_configure,
 	.port_get_raw = gpio_nrfx_port_get_raw,
 	.port_set_masked_raw = gpio_nrfx_port_set_masked_raw,

@@ -1099,7 +1099,7 @@ int pcal64xxa_init(const struct device *dev)
 #define PCAL64XXA_AUTOMATIC_RESET(idx) !(DT_INST_PROP(idx, no_auto_reset))
 
 #define GPIO_PCAL6408A_INST(idx)                                                                   \
-	static const struct gpio_driver_api pcal6408a_drv_api##idx = {                             \
+	static DEVICE_API(gpio, pcal6408a_drv_api##idx) = {                             \
 		.pin_configure = pcal64xxa_pin_configure,                                          \
 		.port_get_raw = pcal64xxa_port_get_raw,                                            \
 		.port_set_masked_raw = pcal64xxa_port_set_masked_raw,                              \
@@ -1133,7 +1133,7 @@ int pcal64xxa_init(const struct device *dev)
 DT_INST_FOREACH_STATUS_OKAY(GPIO_PCAL6408A_INST)
 
 #define GPIO_PCAL6416A_INST(idx)                                                                   \
-	static const struct gpio_driver_api pcal6416a_drv_api##idx = {                             \
+	static DEVICE_API(gpio, pcal6416a_drv_api##idx) = {                             \
 		.pin_configure = pcal64xxa_pin_configure,                                          \
 		.port_get_raw = pcal64xxa_port_get_raw,                                            \
 		.port_set_masked_raw = pcal64xxa_port_set_masked_raw,                              \

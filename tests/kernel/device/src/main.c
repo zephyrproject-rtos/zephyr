@@ -30,7 +30,7 @@ DEVICE_DEFINE(dummy_noinit, DUMMY_NOINIT, NULL, NULL, NULL, NULL,
 	      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
 
 /* To access from userspace, the device needs an API. Use a dummy GPIO one */
-static const struct gpio_driver_api fakedeferdriverapi;
+static DEVICE_API(gpio, fakedeferdriverapi);
 
 /* Fake deferred devices */
 DEVICE_DT_DEFINE(DT_INST(0, fakedeferdriver), NULL, NULL, NULL, NULL,
