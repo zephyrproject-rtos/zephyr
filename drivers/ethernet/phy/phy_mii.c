@@ -480,7 +480,7 @@ static int phy_mii_initialize(const struct device *dev)
 
 #define IS_FIXED_LINK(n)	DT_INST_NODE_HAS_PROP(n, fixed_link)
 
-static const struct ethphy_driver_api phy_mii_driver_api = {
+static DEVICE_API(ethphy, phy_mii_driver_api) = {
 	.get_link = phy_mii_get_link_state,
 	.cfg_link = phy_mii_cfg_link,
 	.link_cb_set = phy_mii_link_cb_set,
