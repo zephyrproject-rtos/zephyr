@@ -666,7 +666,7 @@ static int shim_nrf_comp_trigger_is_pending(const struct device *dev)
 	return atomic_test_and_clear_bit(&shim_nrf_comp_data0.triggered, 0);
 }
 
-static const struct comparator_driver_api shim_nrf_comp_api = {
+static DEVICE_API(comparator, shim_nrf_comp_api) = {
 	.get_output = shim_nrf_comp_get_output,
 	.set_trigger = shim_nrf_comp_set_trigger,
 	.set_trigger_callback = shim_nrf_comp_set_trigger_callback,
