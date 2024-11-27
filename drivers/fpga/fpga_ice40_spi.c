@@ -166,7 +166,7 @@ unlock:
 	return ret;
 }
 
-static const struct fpga_driver_api fpga_ice40_api = {
+static DEVICE_API(fpga, fpga_ice40_api) = {
 	.get_status = fpga_ice40_get_status,
 	.reset = fpga_ice40_reset,
 	.load = fpga_ice40_load,
