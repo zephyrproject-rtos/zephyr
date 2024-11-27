@@ -161,6 +161,7 @@ static void esp32_clock_perip_init(void)
 	}
 }
 #else
+#if !defined(CONFIG_SOC_ESP32_APPCPU) && !defined(CONFIG_SOC_ESP32S3_APPCPU)
 static void esp32_clock_perip_init(void)
 {
 	uint32_t common_perip_clk;
@@ -168,10 +169,6 @@ static void esp32_clock_perip_init(void)
 	uint32_t wifi_bt_sdio_clk;
 #if !defined(CONFIG_SOC_SERIES_ESP32)
 	uint32_t common_perip_clk1;
-#endif
-	/* Avoid APPCPU to mess with the clocks. */
-#if defined(CONFIG_SOC_ESP32_APPCPU) || defined(CONFIG_SOC_ESP32S3_APPCPU)
-	return;
 #endif
 	/* For reason that only reset CPU, do not disable the clocks
 	 * that have been enabled before reset.
@@ -487,6 +484,7 @@ static void esp32_clock_perip_init(void)
 #endif
 }
 #endif
+#endif
 
 static enum clock_control_status clock_control_esp32_get_status(const struct device *dev,
 								clock_control_subsys_t sys)
@@ -782,6 +780,8 @@ static int clock_control_esp32_init(const struct device *dev)
 		return ret;
 	}
 
+	/* Prevent APPCPU from interfering with the clock setup */
+#if !defined(CONFIG_SOC_ESP32_APPCPU) && !defined(CONFIG_SOC_ESP32S3_APPCPU)
 	rtc_clk_fast_src_set(cfg->rtc.rtc_fast_clock_src);
 
 	ret = esp32_select_rtc_slow_clk(cfg->rtc.rtc_slow_clock_src);
@@ -791,6 +791,7 @@ static int clock_control_esp32_init(const struct device *dev)
 	}
 
 	esp32_clock_perip_init();
+#endif
 
 	return 0;
 }
