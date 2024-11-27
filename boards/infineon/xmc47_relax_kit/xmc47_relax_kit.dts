@@ -19,6 +19,7 @@
 
 	aliases {
 		led0 = &led1;
+		sw0 = &button1;
 		die-temp0 = &die_temp;
 		pwm-led0 = &pwm_led1;
 		watchdog0 = &wdt0;
@@ -35,6 +36,16 @@
 			gpios = <&gpio5 8 GPIO_ACTIVE_HIGH>;
 		};
 	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button1: button1 {
+			gpios = < &gpio15 12 GPIO_ACTIVE_LOW >;
+		};
+		button2: button2 {
+			gpios = < &gpio15 13 GPIO_ACTIVE_LOW >;
+		};
+	};	
 
 	pwmleds {
 		compatible = "pwm-leds";
@@ -159,6 +170,10 @@
 };
 
 &gpio5 {
+	status = "okay";
+};
+
+&gpio15 {
 	status = "okay";
 };
 
