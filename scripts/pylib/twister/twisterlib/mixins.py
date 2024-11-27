@@ -4,5 +4,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
 
-class DisablePyTestCollectionMixin(object):
+class DisablePyTestCollectionMixin:
     __test__ = False
