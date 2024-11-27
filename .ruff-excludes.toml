@@ -761,7 +761,6 @@
 "./scripts/pylib/twister/twisterlib/cmakecache.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "SIM102",   # https://docs.astral.sh/ruff/rules/collapsible-if
-    "SIM114",   # https://docs.astral.sh/ruff/rules/if-with-same-arms
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
@@ -793,7 +792,6 @@
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
     "SIM102",   # https://docs.astral.sh/ruff/rules/collapsible-if
     "SIM105",   # https://docs.astral.sh/ruff/rules/suppressible-exception
-    "SIM114",   # https://docs.astral.sh/ruff/rules/if-with-same-arms
     "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
     "UP007",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
