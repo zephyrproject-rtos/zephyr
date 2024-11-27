@@ -1668,7 +1668,7 @@ static int modem_cellular_get_registration_status(const struct device *dev,
 	return ret;
 }
 
-const static struct cellular_driver_api modem_cellular_api = {
+static DEVICE_API(cellular, modem_cellular_api) = {
 	.get_signal = modem_cellular_get_signal,
 	.get_modem_info = modem_cellular_get_modem_info,
 	.get_registration_status = modem_cellular_get_registration_status,
