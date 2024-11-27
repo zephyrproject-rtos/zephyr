@@ -14,5 +14,4 @@ supported:
 testing:
   ignore_tags:
     - heap
-    - bluetooth
 vendor: franzininho

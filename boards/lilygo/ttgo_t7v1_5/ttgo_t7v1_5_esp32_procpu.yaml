@@ -14,7 +14,4 @@ supported:
   - display
   - lora
   - nvs
-testing:
-  ignore_tags:
-    - bluetooth
 vendor: lilygo

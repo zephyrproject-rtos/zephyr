@@ -16,7 +16,4 @@ supported:
   - pwm
   - dma
   - lora
-testing:
-  ignore_tags:
-    - bluetooth
 vendor: heltec

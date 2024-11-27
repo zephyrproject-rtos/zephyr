@@ -14,6 +14,5 @@ supported:
   - i2c
 testing:
   ignore_tags:
-    - bluetooth
     - tracing
 vendor: seeed
