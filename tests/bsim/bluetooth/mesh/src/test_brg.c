@@ -977,6 +977,94 @@ static void test_tester_ivu(void)
 	PASS();
 }
 
+static void start_krp(uint16_t addr, const uint8_t *key)
+{
+	uint8_t status;
+	uint16_t net_idx = (addr == PROV_ADDR) ? 0 : (addr - DEVICE_ADDR_START + 1);
+
+	ASSERT_OK(bt_mesh_cfg_cli_net_key_update(0, BRIDGE_ADDR, net_idx, key, &status));
+	if (status) {
+		FAIL("Could not update net key (status %u)", status);
+		return;
+	}
+
+	ASSERT_OK(bt_mesh_cfg_cli_net_key_update(0, addr, net_idx, key, &status));
+	if (status) {
+		FAIL("Could not update net key (status %u)", status);
+		return;
+	}
+}
+
+static void set_krp_phase(uint16_t addr, uint8_t transition)
+{
+	uint8_t status;
+	uint8_t phase;
+	uint16_t net_idx = (addr == PROV_ADDR) ? 0 : (addr - DEVICE_ADDR_START + 1);
+
+	ASSERT_OK(bt_mesh_cfg_cli_krp_set(0, BRIDGE_ADDR, net_idx, transition, &status, &phase));
+	if (status || (phase != (transition == 0x02 ? 0x02 : 0x00))) {
+		FAIL("Could not update KRP (status %u, transition %u, phase %u)", status,
+		     transition, phase);
+		return;
+	}
+
+	ASSERT_OK(bt_mesh_cfg_cli_krp_set(0, addr, net_idx, transition, &status, &phase));
+	if (status || (phase != (transition == 0x02 ? 0x02 : 0x00))) {
+		FAIL("Could not update KRP (status %u, transition %u, phase %u)", status,
+		     transition, phase);
+		return;
+	}
+}
+
+static void test_tester_key_refresh(void)
+{
+	const uint8_t new_net_keys[][16] = {
+		{0x12, 0x34, 0x56},
+		{0x78, 0x9a, 0xbc},
+		{0xde, 0xf0, 0x12},
+		{0x34, 0x56, 0x78}
+	};
+
+	remote_nodes = 1;
+	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
+
+	tester_init_common();
+	setup_basic_bridge();
+	tester_workaround();
+
+	LOG_INF("Step 1: Run KRP for tester net and check messaging");
+	start_krp(PROV_ADDR, new_net_keys[0]);
+	send_and_receive();
+	set_krp_phase(PROV_ADDR, 0x02);
+	send_and_receive();
+	set_krp_phase(PROV_ADDR, 0x03);
+	send_and_receive();
+
+	LOG_INF("Step 2: Run KRP for device net and check messaging");
+	start_krp(DEVICE_ADDR_START, new_net_keys[1]);
+	send_and_receive();
+	set_krp_phase(DEVICE_ADDR_START, 0x02);
+	send_and_receive();
+	set_krp_phase(DEVICE_ADDR_START, 0x03);
+	send_and_receive();
+
+	LOG_INF("Step 3: Run KRP in parallell for both device and tester");
+	start_krp(PROV_ADDR, new_net_keys[2]);
+	send_and_receive();
+	start_krp(DEVICE_ADDR_START, new_net_keys[3]);
+	send_and_receive();
+	set_krp_phase(PROV_ADDR, 0x02);
+	send_and_receive();
+	set_krp_phase(DEVICE_ADDR_START, 0x02);
+	send_and_receive();
+	set_krp_phase(PROV_ADDR, 0x03);
+	send_and_receive();
+	set_krp_phase(DEVICE_ADDR_START, 0x03);
+	send_and_receive();
+
+	PASS();
+}
+
 static void bridge_setup(void)
 {
 	bt_mesh_device_setup(&bridge_prov, &comp);
@@ -1071,6 +1159,8 @@ static const struct bst_test_instance test_brg[] = {
 	TEST_CASE(tester, persistence, "Tester node: test persistence of subnet bridge states"),
 #endif
 	TEST_CASE(tester, ivu, "Tester node: tests subnet bridge with IV Update procedure"),
+	TEST_CASE(tester, key_refresh,
+		  "Tester node: tests bridge behavior during key refresh procedures"),
 	TEST_CASE(bridge, simple, "Subnet Bridge node"),
 	TEST_CASE(device, simple, "A mesh node"),
 
