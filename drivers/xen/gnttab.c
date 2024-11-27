@@ -2,7 +2,7 @@
 /*
  ****************************************************************************
  * (C) 2006 - Cambridge University
- * (C) 2021-2022 - EPAM Systems
+ * (C) 2021-2024 - EPAM Systems
  ****************************************************************************
  *
  *        File: gnttab.c
@@ -277,7 +277,7 @@ int gnttab_map_refs(struct gnttab_map_grant_ref *map_ops, unsigned int count)
 	return 0;
 }
 
-int gnttab_unmap_refs(struct gnttab_map_grant_ref *unmap_ops, unsigned int count)
+int gnttab_unmap_refs(struct gnttab_unmap_grant_ref *unmap_ops, unsigned int count)
 {
 	return HYPERVISOR_grant_table_op(GNTTABOP_unmap_grant_ref, unmap_ops, count);
 }
