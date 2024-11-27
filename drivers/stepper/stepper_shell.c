@@ -366,8 +366,7 @@ static int cmd_stepper_set_target_position(const struct shell *sh, size_t argc, 
 	return err;
 }
 
-static int cmd_stepper_enable_constant_velocity_mode(const struct shell *sh, size_t argc,
-						     char **argv)
+static int cmd_stepper_run(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
 	int err = -EINVAL;
@@ -401,7 +400,7 @@ static int cmd_stepper_enable_constant_velocity_mode(const struct shell *sh, siz
 		shell_error(sh, "Failed to set callback: %d", err);
 	}
 
-	err = stepper_enable_constant_velocity_mode(dev, direction, velocity);
+	err = stepper_run(dev, direction, velocity);
 	if (err) {
 		shell_error(sh, "Error: %d", err);
 		return err;
@@ -468,9 +467,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      cmd_stepper_get_actual_position, 2, 0),
 	SHELL_CMD_ARG(set_target_position, &dsub_pos_stepper_motor_name, "<device> <micro_steps>",
 		      cmd_stepper_set_target_position, 3, 0),
-	SHELL_CMD_ARG(enable_constant_velocity_mode, &dsub_pos_stepper_motor_name_dir,
-		      "<device> <direction> <velocity>", cmd_stepper_enable_constant_velocity_mode,
-		      4, 0),
+	SHELL_CMD_ARG(run, &dsub_pos_stepper_motor_name_dir, "<device> <direction> <velocity>",
+		      cmd_stepper_run, 4, 0),
 	SHELL_CMD_ARG(info, &dsub_pos_stepper_motor_name, "<device>", cmd_stepper_info, 2, 0),
 	SHELL_SUBCMD_SET_END);
 
