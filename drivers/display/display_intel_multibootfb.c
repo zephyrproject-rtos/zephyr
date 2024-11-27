@@ -105,7 +105,7 @@ static int framebuf_read(const struct device *dev, const uint16_t x,
 	return 0;
 }
 
-const struct display_driver_api framebuf_display_api = {
+DEVICE_API(display, framebuf_display_api) = {
 	.write = framebuf_write,
 	.read = framebuf_read,
 	.get_capabilities = framebuf_get_capabilities,
