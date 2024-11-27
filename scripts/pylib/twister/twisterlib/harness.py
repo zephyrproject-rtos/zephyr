@@ -171,7 +171,7 @@ class Robot(Harness):
     is_robot_test = True
 
     def configure(self, instance):
-        super(Robot, self).configure(instance)
+        super().configure(instance)
         self.instance = instance
 
         config = instance.testsuite.harness_config
@@ -247,10 +247,10 @@ class Console(Harness):
         '''
         if self.instance and len(self.instance.testcases) == 1:
             return self.instance.testcases[0].name
-        return super(Console, self).get_testcase_name()
+        return super().get_testcase_name()
 
     def configure(self, instance):
-        super(Console, self).configure(instance)
+        super().configure(instance)
         if self.regex is None or len(self.regex) == 0:
             self.status = TwisterStatus.FAIL
             tc = self.instance.set_case_status_by_name(
@@ -354,7 +354,7 @@ class PytestHarnessException(Exception):
 class Pytest(Harness):
 
     def configure(self, instance: TestInstance):
-        super(Pytest, self).configure(instance)
+        super().configure(instance)
         self.running_dir = instance.build_dir
         self.source_dir = instance.testsuite.source_dir
         self.report_file = os.path.join(self.running_dir, 'report.xml')
