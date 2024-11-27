@@ -5,37 +5,37 @@
 # Copyright (c) 2024 Arm Limited (or its affiliates). All rights reserved.
 #
 # SPDX-License-Identifier: Apache-2.0
-import os
-import sys
-import re
-import subprocess
+import collections
+import copy
 import glob
 import json
-import collections
+import logging
+import os
+import random
+import re
+import subprocess
+import sys
+from argparse import Namespace
 from collections import OrderedDict
 from itertools import islice
-import logging
-import copy
-import random
-import snippets
 from pathlib import Path
-from argparse import Namespace
+
+import snippets
 
 try:
-    from anytree import RenderTree, Node, find
+    from anytree import Node, RenderTree, find
 except ImportError:
     print("Install the anytree module to use the --test-tree option")
 
-from twisterlib.testsuite import TestSuite, scan_testsuite_path
+import list_boards
+import scl
+from twisterlib.config_parser import TwisterConfigParser
 from twisterlib.error import TwisterRuntimeError
 from twisterlib.platform import Platform
-from twisterlib.config_parser import TwisterConfigParser
+from twisterlib.quarantine import Quarantine
 from twisterlib.statuses import TwisterStatus
 from twisterlib.testinstance import TestInstance
-from twisterlib.quarantine import Quarantine
-
-import scl
-import list_boards
+from twisterlib.testsuite import TestSuite, scan_testsuite_path
 from zephyr_module import parse_modules
 
 logger = logging.getLogger('twister')

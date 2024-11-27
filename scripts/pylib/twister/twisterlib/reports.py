@@ -4,16 +4,16 @@
 # Copyright (c) 2018 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-from enum import Enum
-import os
 import json
 import logging
-from colorama import Fore
-import xml.etree.ElementTree as ET
+import os
 import string
+import xml.etree.ElementTree as ET
 from datetime import datetime
+from enum import Enum
 from pathlib import PosixPath
 
+from colorama import Fore
 from twisterlib.statuses import TwisterStatus
 
 logger = logging.getLogger('twister')

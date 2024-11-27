@@ -7,10 +7,10 @@ from __future__ import annotations
 
 import logging
 import re
-import yaml
-
-from pathlib import Path
 from dataclasses import dataclass, field
+from pathlib import Path
+
+import yaml
 
 try:
     from yaml import CSafeLoader as SafeLoader

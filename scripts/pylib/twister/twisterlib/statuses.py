@@ -7,8 +7,9 @@ Status classes to be used instead of str statuses.
 """
 from __future__ import annotations
 
-from colorama import Fore
 from enum import Enum
+
+from colorama import Fore
 
 
 class TwisterStatus(str, Enum):

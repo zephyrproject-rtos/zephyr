@@ -15,16 +15,16 @@ import re
 import shutil
 import subprocess
 import sys
+from collections.abc import Generator
 from datetime import datetime, timezone
 from importlib import metadata
 from pathlib import Path
-from collections.abc import Generator
 
+import zephyr_module
 from twisterlib.constants import SUPPORTED_SIMS
 from twisterlib.coverage import supported_coverage_formats
 from twisterlib.error import TwisterRuntimeError
 from twisterlib.log_helper import log_command
-import zephyr_module
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)

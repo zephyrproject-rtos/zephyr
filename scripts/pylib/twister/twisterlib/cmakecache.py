@@ -7,6 +7,7 @@
 import re
 from collections import OrderedDict
 
+
 class CMakeCacheEntry:
     '''Represents a CMake cache entry.
 
