@@ -1121,33 +1121,37 @@ class ProjectBuilder(FilterBuilder):
         yaml_testsuite_name = self.instance.testsuite.id
         logger.debug(f"Determine test cases for test suite: {yaml_testsuite_name}")
 
-        elf_file = self.instance.get_elf_file()
-        elf = ELFFile(open(elf_file, "rb"))
-
         logger.debug(f"Test instance {self.instance.name} already has {len(self.instance.testcases)} cases.")
         new_ztest_unit_test_regex = re.compile(r"z_ztest_unit_test__([^\s]+?)__([^\s]*)")
         detected_cases = []
-        for section in elf.iter_sections():
-            if isinstance(section, SymbolTableSection):
-                for sym in section.iter_symbols():
-                    # It is only meant for new ztest fx because only new ztest fx exposes test functions
-                    # precisely.
-                    m_ = new_ztest_unit_test_regex.search(sym.name)
-                    if not m_:
-                        continue
-                    # Demangle C++ symbols
-                    m_ = new_ztest_unit_test_regex.search(self.demangle(sym.name))
-                    if not m_:
-                        continue
-                    # The 1st capture group is new ztest suite name.
-                    # The 2nd capture group is new ztest unit test name.
-                    new_ztest_suite = m_[1]
-                    if new_ztest_suite not in self.instance.testsuite.ztest_suite_names:
-                        logger.warning(f"Unexpected Ztest suite '{new_ztest_suite}' "
-                                       f"not present in: {self.instance.testsuite.ztest_suite_names}")
-                    test_func_name = m_[2].replace("test_", "", 1)
-                    testcase_id = f"{yaml_testsuite_name}.{new_ztest_suite}.{test_func_name}"
-                    detected_cases.append(testcase_id)
+
+        elf_file = self.instance.get_elf_file()
+        with open(elf_file, "rb") as elf_fp:
+            elf = ELFFile(elf_fp)
+
+            for section in elf.iter_sections():
+                if isinstance(section, SymbolTableSection):
+                    for sym in section.iter_symbols():
+                        # It is only meant for new ztest fx
+                        # because only new ztest fx exposes test functions precisely.
+                        m_ = new_ztest_unit_test_regex.search(sym.name)
+                        if not m_:
+                            continue
+                        # Demangle C++ symbols
+                        m_ = new_ztest_unit_test_regex.search(self.demangle(sym.name))
+                        if not m_:
+                            continue
+                        # The 1st capture group is new ztest suite name.
+                        # The 2nd capture group is new ztest unit test name.
+                        new_ztest_suite = m_[1]
+                        if new_ztest_suite not in self.instance.testsuite.ztest_suite_names:
+                            logger.warning(
+                                f"Unexpected Ztest suite '{new_ztest_suite}' "
+                                f"not present in: {self.instance.testsuite.ztest_suite_names}"
+                            )
+                        test_func_name = m_[2].replace("test_", "", 1)
+                        testcase_id = f"{yaml_testsuite_name}.{new_ztest_suite}.{test_func_name}"
+                        detected_cases.append(testcase_id)
 
         if detected_cases:
             logger.debug(f"Detected Ztest cases: [{', '.join(detected_cases)}] in {elf_file}")
