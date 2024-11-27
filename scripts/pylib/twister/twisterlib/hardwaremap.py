@@ -120,7 +120,7 @@ class DUT(object):
         d = {}
         exclude = ['_available', '_counter', '_failures', 'match']
         v = vars(self)
-        for k in v.keys():
+        for k in v:
             if k not in exclude and v[k]:
                 d[k] = v[k]
         return d
