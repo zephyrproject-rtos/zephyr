@@ -1036,7 +1036,7 @@ class TwisterEnv:
         try:
             subproc = subprocess.run(["git", "describe", "--abbrev=12", "--always"],
                                      stdout=subprocess.PIPE,
-                                     universal_newlines=True,
+                                     text=True,
                                      cwd=ZEPHYR_BASE)
             if subproc.returncode == 0:
                 _version = subproc.stdout.strip()
@@ -1052,7 +1052,7 @@ class TwisterEnv:
         try:
             subproc = subprocess.run(["git", "show", "-s", "--format=%cI", "HEAD"],
                                         stdout=subprocess.PIPE,
-                                        universal_newlines=True,
+                                        text=True,
                                         cwd=ZEPHYR_BASE)
             if subproc.returncode == 0:
                 self.commit_date = subproc.stdout.strip()
