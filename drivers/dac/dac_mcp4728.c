@@ -92,7 +92,7 @@ static int dac_mcp4728_init(const struct device *dev)
 	return 0;
 }
 
-static const struct dac_driver_api mcp4728_driver_api = {
+static DEVICE_API(dac, mcp4728_driver_api) = {
 	.channel_setup = mcp4728_channel_setup,
 	.write_value = mcp4728_write_value,
 };
