@@ -817,7 +817,6 @@
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
     "F811",     # https://docs.astral.sh/ruff/rules/redefined-while-unused
     "SIM102",   # https://docs.astral.sh/ruff/rules/collapsible-if
-    "SIM300",   # https://docs.astral.sh/ruff/rules/yoda-conditions
     "UP008",    # https://docs.astral.sh/ruff/rules/super-call-with-parameters
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
