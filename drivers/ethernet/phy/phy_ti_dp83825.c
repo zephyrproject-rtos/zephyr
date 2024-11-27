@@ -566,7 +566,7 @@ skip_int_gpio:
 	return 0;
 }
 
-static const struct ethphy_driver_api ti_dp83825_phy_api = {
+static DEVICE_API(ethphy, ti_dp83825_phy_api) = {
 	.get_link = phy_ti_dp83825_get_link,
 	.cfg_link = phy_ti_dp83825_cfg_link,
 	.link_cb_set = phy_ti_dp83825_link_cb_set,
