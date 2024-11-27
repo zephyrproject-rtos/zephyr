@@ -9,7 +9,6 @@ import os
 import re
 import subprocess
 import sys
-import typing
 
 from twisterlib.error import TwisterRuntimeError
 
@@ -99,7 +98,7 @@ class SizeCalculator:
     USEFUL_LINES_AMOUNT = 4
 
     def __init__(self, elf_filename: str,\
-        extra_sections: typing.List[str],\
+        extra_sections: list[str],\
         buildlog_filepath: str = '',\
         generate_warning: bool = True):
         """Constructor
@@ -292,7 +291,7 @@ class SizeCalculator:
         self._check_is_xip()
         self._get_info_elf_sections()
 
-    def _get_buildlog_file_content(self) -> typing.List[str]:
+    def _get_buildlog_file_content(self) -> list[str]:
         """Get content of the build.log file.
 
         @return Content of the build.log file (list[str])
@@ -306,7 +305,7 @@ class SizeCalculator:
             file_content = []
         return file_content
 
-    def _find_offset_of_last_pattern_occurrence(self, file_content: typing.List[str]) -> int:
+    def _find_offset_of_last_pattern_occurrence(self, file_content: list[str]) -> int:
         """Find the offset from which the information about the memory footprint is read.
 
         @param file_content (list[str]) Content of build.log.
@@ -329,7 +328,7 @@ class SizeCalculator:
             logger.warning(msg=f"Information about memory footprint for this test configuration is not found. Please check file {self.buildlog_filename}.")
         return result
 
-    def _get_lines_with_footprint(self, start_offset: int, file_content: typing.List[str]) -> typing.List[str]:
+    def _get_lines_with_footprint(self, start_offset: int, file_content: list[str]) -> list[str]:
         """Get lines from the file with a memory footprint.
 
         @param start_offset (int) Offset with the first line of the information about memory footprint.
@@ -351,7 +350,7 @@ class SizeCalculator:
             result = file_content[info_line_idx_start:info_line_idx_stop]
         return result
 
-    def _clear_whitespaces_from_lines(self, text_lines: typing.List[str]) -> typing.List[str]:
+    def _clear_whitespaces_from_lines(self, text_lines: list[str]) -> list[str]:
         """Clear text lines from whitespaces.
 
         @param text_lines (list[str]) Lines with useful information.
@@ -359,7 +358,7 @@ class SizeCalculator:
         """
         return [line.strip("\n").rstrip("%") for line in text_lines] if text_lines else []
 
-    def _divide_text_lines_into_columns(self, text_lines: typing.List[str]) -> typing.List[typing.List[str]]:
+    def _divide_text_lines_into_columns(self, text_lines: list[str]) -> list[list[str]]:
         """Divide lines of text into columns.
 
         @param lines (list[list[str]]) Lines with information about memory footprint.
@@ -376,7 +375,7 @@ class SizeCalculator:
 
         return result
 
-    def _unify_prefixes_on_all_values(self, data_lines: typing.List[typing.List[str]]) -> typing.List[typing.List[str]]:
+    def _unify_prefixes_on_all_values(self, data_lines: list[list[str]]) -> list[list[str]]:
         """Convert all values in the table to unified order of magnitude.
 
         @param data_lines (list[list[str]]) Lines with information about memory footprint.
@@ -418,7 +417,7 @@ class SizeCalculator:
             converted_value = str(numeric_value * unit_predictor)
         return converted_value
 
-    def _create_data_table(self) -> typing.List[typing.List[str]]:
+    def _create_data_table(self) -> list[list[str]]:
         """Create table with information about memory footprint.
 
         @return Table with information about memory usage (list[list[str]])
