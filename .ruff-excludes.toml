@@ -768,7 +768,6 @@
 "./scripts/pylib/twister/twisterlib/config_parser.py" = [
     "B028",     # https://docs.astral.sh/ruff/rules/no-explicit-stacklevel
     "B904",     # https://docs.astral.sh/ruff/rules/raise-without-from-inside-except
-    "SIM401",   # https://docs.astral.sh/ruff/rules/if-else-block-instead-of-dict-get
     "UP007",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
 ]
@@ -871,9 +870,6 @@
     "UP006",    # https://docs.astral.sh/ruff/rules/non-pep585-annotation
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
-]
-"./scripts/pylib/twister/twisterlib/statuses.py" = [
-    "SIM401",   # https://docs.astral.sh/ruff/rules/if-else-block-instead-of-dict-get
 ]
 "./scripts/pylib/twister/twisterlib/testinstance.py" = [
     "B006",     # https://docs.astral.sh/ruff/rules/mutable-argument-default

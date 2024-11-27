@@ -248,10 +248,7 @@ class TwisterConfigParser:
 
         for k, kinfo in self.testsuite_valid_keys.items():
             if k not in d:
-                if "required" in kinfo:
-                    required = kinfo["required"]
-                else:
-                    required = False
+                required = kinfo.get("required", False)
 
                 if required:
                     raise ConfigurationError(

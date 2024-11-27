@@ -35,7 +35,7 @@ class TwisterStatus(str, Enum):
             TwisterStatus.STARTED: Fore.MAGENTA,
             TwisterStatus.NONE: Fore.MAGENTA
         }
-        return status2color[status] if status in status2color else Fore.RESET
+        return status2color.get(status, Fore.RESET)
 
     # All statuses below this comment can be used for TestCase
     BLOCK = 'blocked'
