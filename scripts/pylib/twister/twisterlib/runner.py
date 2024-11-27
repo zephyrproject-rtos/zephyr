@@ -1093,8 +1093,13 @@ class ProjectBuilder(FilterBuilder):
     def demangle(self, symbol_name):
         if symbol_name[:2] == '_Z':
             try:
-                cpp_filt = subprocess.run('c++filt', input=symbol_name, text=True, check=True,
-                                          stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                cpp_filt = subprocess.run(
+                    'c++filt',
+                    input=symbol_name,
+                    text=True,
+                    check=True,
+                    capture_output=True
+                )
                 if self.trace:
                     logger.debug(f"Demangle: '{symbol_name}'==>'{cpp_filt.stdout}'")
                 return cpp_filt.stdout.strip()
