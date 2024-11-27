@@ -91,7 +91,13 @@ class TestPlan:
         os.path.join(ZEPHYR_BASE,
                      "scripts", "schemas", "twister", "quarantine-schema.yaml"))
 
-    tc_schema_path = os.path.join(ZEPHYR_BASE, "scripts", "schemas", "twister", "test-config-schema.yaml")
+    tc_schema_path = os.path.join(
+        ZEPHYR_BASE,
+        "scripts",
+        "schemas",
+        "twister",
+        "test-config-schema.yaml"
+    )
 
     SAMPLE_FILENAME = 'sample.yaml'
     TESTSUITE_FILENAME = 'testcase.yaml'
@@ -189,7 +195,9 @@ class TestPlan:
         if num == 0:
             raise TwisterRuntimeError("No test cases found at the specified location...")
         if self.load_errors:
-            raise TwisterRuntimeError(f"Found {self.load_errors} errors loading {num} test configurations.")
+            raise TwisterRuntimeError(
+                f"Found {self.load_errors} errors loading {num} test configurations."
+            )
 
         self.find_subtests()
         # get list of scenarios we have parsed into one list
@@ -217,7 +225,10 @@ class TestPlan:
     def load(self):
 
         if self.options.report_suffix:
-            last_run = os.path.join(self.options.outdir, f"twister_{self.options.report_suffix}.json")
+            last_run = os.path.join(
+                self.options.outdir,
+                f"twister_{self.options.report_suffix}.json"
+            )
         else:
             last_run = os.path.join(self.options.outdir, "twister.json")
 
@@ -264,7 +275,9 @@ class TestPlan:
             if int(subset) > 0 and int(sets) >= int(subset):
                 logger.info(f"Running only a subset: {subset}/{sets}")
             else:
-                raise TwisterRuntimeError(f"You have provided a wrong subset value: {self.options.subset}.")
+                raise TwisterRuntimeError(
+                    f"You have provided a wrong subset value: {self.options.subset}."
+                )
 
             self.generate_subset(subset, int(sets))
 
@@ -584,7 +597,13 @@ class TestPlan:
 
                     for name in parsed_data.scenarios:
                         suite_dict = parsed_data.get_scenario(name)
-                        suite = TestSuite(root, suite_path, name, data=suite_dict, detailed_test_id=self.options.detailed_test_id)
+                        suite = TestSuite(
+                            root,
+                            suite_path,
+                            name,
+                            data=suite_dict,
+                            detailed_test_id=self.options.detailed_test_id
+                        )
 
                         # convert to fully qualified names
                         _integration = []
@@ -619,14 +638,21 @@ class TestPlan:
 
                         if testsuite_filter:
                             scenario = os.path.basename(suite.name)
-                            if suite.name and (suite.name in testsuite_filter or scenario in testsuite_filter):
+                            if (
+                                suite.name
+                                and (suite.name in testsuite_filter or scenario in testsuite_filter)
+                            ):
                                 self.testsuites[suite.name] = suite
                         elif suite.name in self.testsuites:
-                            msg = f"test suite '{suite.name}' in '{suite.yamlfile}' is already added"
+                            msg = (
+                                f"test suite '{suite.name}' in '{suite.yamlfile}' is already added"
+                            )
                             if suite.yamlfile == self.testsuites[suite.name].yamlfile:
                                 logger.debug(f"Skip - {msg}")
                             else:
-                                msg = f"Duplicate {msg} from '{self.testsuites[suite.name].yamlfile}'"
+                                msg = (
+                                    f"Duplicate {msg} from '{self.testsuites[suite.name].yamlfile}'"
+                                )
                                 raise TwisterRuntimeError(msg)
                         else:
                             self.testsuites[suite.name] = suite
@@ -651,7 +677,10 @@ class TestPlan:
         if self.quarantine:
             simulator = plat.simulator_by_name(self.options)
             matched_quarantine = self.quarantine.get_matched_quarantine(
-                instance.testsuite.id, plat.name, plat.arch, simulator.name if simulator is not None else 'na'
+                instance.testsuite.id,
+                plat.name,
+                plat.arch,
+                simulator.name if simulator is not None else 'na'
             )
             if matched_quarantine and not self.options.quarantine_verify:
                 instance.add_filter("Quarantine: " + matched_quarantine, Filters.QUARANTINE)
@@ -722,7 +751,11 @@ class TestPlan:
                         if instance.status != TwisterStatus.NONE:
                             tc_reason = tc.get('reason')
                         if tc_status != TwisterStatus.NONE:
-                            case = instance.set_case_status_by_name(identifier, tc_status, tc_reason)
+                            case = instance.set_case_status_by_name(
+                                identifier,
+                                tc_status,
+                                tc_reason
+                            )
                             case.duration = tc.get('execution_time', 0)
                             if tc.get('log'):
                                 case.output = tc.get('log')
@@ -795,7 +828,9 @@ class TestPlan:
             platform_filter = _platforms
             platforms = list(filter(lambda p: p.name in platform_filter, self.platforms))
         elif emu_filter:
-            platforms = list(filter(lambda p: bool(p.simulator_by_name(self.options.sim_name)), self.platforms))
+            platforms = list(
+                filter(lambda p: bool(p.simulator_by_name(self.options.sim_name)), self.platforms)
+            )
         elif vendor_filter:
             platforms = list(filter(lambda p: p.vendor in vendor_filter, self.platforms))
             logger.info(f"Selecting platforms by vendors: {','.join(vendor_filter)}")
@@ -820,11 +855,16 @@ class TestPlan:
         keyed_tests = {}
 
         for ts_name, ts in self.testsuites.items():
-            if ts.build_on_all and not platform_filter and platform_config.get('increased_platform_scope', True):
+            if (
+                ts.build_on_all
+                and not platform_filter
+                and platform_config.get('increased_platform_scope', True)
+            ):
                 platform_scope = self.platforms
             elif ts.integration_platforms:
-                integration_platforms = list(filter(lambda item: item.name in ts.integration_platforms,
-                                                    self.platforms))
+                integration_platforms = list(
+                    filter(lambda item: item.name in ts.integration_platforms, self.platforms)
+                )
                 if self.options.integration:
                     self.verify_platforms_existence(
                         ts.integration_platforms, f"{ts_name} - integration_platforms")
@@ -844,14 +884,20 @@ class TestPlan:
 
             # If there isn't any overlap between the platform_allow list and the platform_scope
             # we set the scope to the platform_allow list
-            if ts.platform_allow and not platform_filter and not integration and platform_config.get('increased_platform_scope', True):
+            if (
+                ts.platform_allow
+                and not platform_filter
+                and not integration
+                and platform_config.get('increased_platform_scope', True)
+            ):
                 self.verify_platforms_existence(ts.platform_allow, f"{ts_name} - platform_allow")
                 a = set(platform_scope)
                 b = set(filter(lambda item: item.name in ts.platform_allow, self.platforms))
                 c = a.intersection(b)
                 if not c:
-                    platform_scope = list(filter(lambda item: item.name in ts.platform_allow, \
-                                             self.platforms))
+                    platform_scope = list(
+                        filter(lambda item: item.name in ts.platform_allow, self.platforms)
+                    )
             # list of instances per testsuite, aka configurations.
             instance_list = []
             for plat in platform_scope:
@@ -869,21 +915,34 @@ class TestPlan:
                     continue
 
                 if ts.modules and self.modules and not set(ts.modules).issubset(set(self.modules)):
-                    instance.add_filter(f"one or more required modules not available: {','.join(ts.modules)}", Filters.MODULE)
+                    instance.add_filter(
+                        f"one or more required modules not available: {','.join(ts.modules)}",
+                        Filters.MODULE
+                    )
 
                 if self.options.level:
                     tl = self.get_level(self.options.level)
                     if tl is None:
-                        instance.add_filter(f"Unknown test level '{self.options.level}'", Filters.TESTPLAN)
+                        instance.add_filter(
+                            f"Unknown test level '{self.options.level}'",
+                            Filters.TESTPLAN
+                        )
                     else:
                         planned_scenarios = tl.scenarios
-                        if ts.id not in planned_scenarios and not set(ts.levels).intersection(set(tl.levels)):
+                        if (
+                            ts.id not in planned_scenarios
+                            and not set(ts.levels).intersection(set(tl.levels))
+                        ):
                             instance.add_filter("Not part of requested test plan", Filters.TESTPLAN)
 
                 if runnable and not instance.run:
                     instance.add_filter("Not runnable on device", Filters.CMD_LINE)
 
-                if self.options.integration and ts.integration_platforms and plat.name not in ts.integration_platforms:
+                if (
+                    self.options.integration
+                    and ts.integration_platforms
+                    and plat.name not in ts.integration_platforms
+                ):
                     instance.add_filter("Not part of integration platforms", Filters.TESTSUITE)
 
                 if ts.skip:
@@ -915,7 +974,10 @@ class TestPlan:
                         instance.add_filter("In test case arch exclude", Filters.TESTSUITE)
 
                     if ts.vendor_allow and plat.vendor not in ts.vendor_allow:
-                        instance.add_filter("Not in test suite vendor allow list", Filters.TESTSUITE)
+                        instance.add_filter(
+                            "Not in test suite vendor allow list",
+                            Filters.TESTSUITE
+                        )
 
                     if ts.vendor_exclude and plat.vendor in ts.vendor_exclude:
                         instance.add_filter("In test suite vendor exclude", Filters.TESTSUITE)
@@ -923,7 +985,10 @@ class TestPlan:
                     if ts.platform_exclude and plat.name in ts.platform_exclude:
                         # works only when we have all platforms parsed, -p limits parsing...
                         if not platform_filter:
-                            self.verify_platforms_existence(ts.platform_exclude, f"{ts_name} - platform_exclude")
+                            self.verify_platforms_existence(
+                                ts.platform_exclude,
+                                f"{ts_name} - platform_exclude"
+                            )
                         instance.add_filter("In test case platform exclude", Filters.TESTSUITE)
 
                 if ts.toolchain_exclude and toolchain in ts.toolchain_exclude:
@@ -944,7 +1009,10 @@ class TestPlan:
                     instance.add_filter("Not in testsuite toolchain allow list", Filters.TOOLCHAIN)
 
                 if not plat.env_satisfied:
-                    instance.add_filter("Environment ({}) not satisfied".format(", ".join(plat.env)), Filters.PLATFORM)
+                    instance.add_filter(
+                        "Environment ({}) not satisfied".format(", ".join(plat.env)),
+                        Filters.PLATFORM
+                    )
 
                 if not force_toolchain \
                         and toolchain and (toolchain not in plat.supported_toolchains) \
@@ -958,7 +1026,10 @@ class TestPlan:
                 if ts.harness:
                     sim = plat.simulator_by_name(self.options.sim_name)
                     if ts.harness == 'robot' and not (sim and sim.name == 'renode'):
-                        instance.add_filter("No robot support for the selected platform", Filters.SKIP)
+                        instance.add_filter(
+                            "No robot support for the selected platform",
+                            Filters.SKIP
+                        )
 
                 if ts.depends_on:
                     dep_intersection = ts.depends_on.intersection(set(plat.supported))
@@ -969,7 +1040,10 @@ class TestPlan:
                     instance.add_filter("Not enough FLASH", Filters.PLATFORM)
 
                 if set(plat.ignore_tags) & ts.tags:
-                    instance.add_filter("Excluded tags per platform (exclude_tags)", Filters.PLATFORM)
+                    instance.add_filter(
+                        "Excluded tags per platform (exclude_tags)",
+                        Filters.PLATFORM
+                    )
 
                 if plat.only_tags and not set(plat.only_tags) & ts.tags:
                     instance.add_filter("Excluded tags per platform (only_tags)", Filters.PLATFORM)
@@ -977,7 +1051,10 @@ class TestPlan:
                 if ts.required_snippets:
                     missing_snippet = False
                     snippet_args = {"snippets": ts.required_snippets}
-                    found_snippets = snippets.find_snippets_in_roots(snippet_args, [*self.env.snippet_roots, Path(ts.source_dir)])
+                    found_snippets = snippets.find_snippets_in_roots(
+                        snippet_args,
+                        [*self.env.snippet_roots, Path(ts.source_dir)]
+                    )
 
                     # Search and check that all required snippet files are found
                     for this_snippet in snippet_args['snippets']:
@@ -1019,19 +1096,25 @@ class TestPlan:
                 # handle quarantined tests
                 self.handle_quarantined_tests(instance, plat)
 
-                # platform_key is a list of unique platform attributes that form a unique key a test
-                # will match against to determine if it should be scheduled to run. A key containing a
-                # field name that the platform does not have will filter the platform.
+                # platform_key is a list of unique platform attributes that form a unique key
+                # a test will match against to determine if it should be scheduled to run.
+                # A key containing a field name that the platform does not have
+                # will filter the platform.
                 #
                 # A simple example is keying on arch and simulation
                 # to run a test once per unique (arch, simulation) platform.
-                if not ignore_platform_key and hasattr(ts, 'platform_key') and len(ts.platform_key) > 0:
+                if (
+                    not ignore_platform_key
+                    and hasattr(ts, 'platform_key')
+                    and len(ts.platform_key) > 0
+                ):
                     key_fields = sorted(set(ts.platform_key))
                     keys = [getattr(plat, key_field, None) for key_field in key_fields]
                     for key in keys:
                         if key is None or key == 'na':
                             instance.add_filter(
-                                f"Excluded platform missing key fields demanded by test {key_fields}",
+                                "Excluded platform missing key fields"
+                                f" demanded by test {key_fields}",
                                 Filters.PLATFORM
                             )
                             break
@@ -1041,8 +1124,17 @@ class TestPlan:
                         test_keys = tuple(test_keys)
                         keyed_test = keyed_tests.get(test_keys)
                         if keyed_test is not None:
-                            plat_key = {key_field: getattr(keyed_test['plat'], key_field) for key_field in key_fields}
-                            instance.add_filter(f"Already covered for key {key} by platform {keyed_test['plat'].name} having key {plat_key}", Filters.PLATFORM_KEY)
+                            plat_key = {
+                                key_field: getattr(
+                                    keyed_test['plat'],
+                                    key_field
+                                ) for key_field in key_fields
+                            }
+                            instance.add_filter(
+                                f"Already covered for key {key}"
+                                f" by platform {keyed_test['plat'].name} having key {plat_key}",
+                                Filters.PLATFORM_KEY
+                            )
                         else:
                             # do not add a platform to keyed tests if previously
                             # filtered
@@ -1066,7 +1158,12 @@ class TestPlan:
                     _platform_allow = set(ts.platform_allow)
                     _intersection = _default_p.intersection(_platform_allow)
                     if _intersection:
-                        aa = list(filter(lambda _scenario: _scenario.platform.name in _intersection, instance_list))
+                        aa = list(
+                            filter(
+                                lambda _scenario: _scenario.platform.name in _intersection,
+                                instance_list
+                            )
+                        )
                         self.add_instances(aa)
                     else:
                         self.add_instances(instance_list)
@@ -1074,20 +1171,36 @@ class TestPlan:
                     # add integration platforms to the list of default
                     # platforms, even if we are not in integration mode
                     _platforms = self.default_platforms + ts.integration_platforms
-                    instances = list(filter(lambda ts: ts.platform.name in _platforms, instance_list))
+                    instances = list(
+                        filter(lambda ts: ts.platform.name in _platforms, instance_list)
+                    )
                     self.add_instances(instances)
             elif integration:
-                instances = list(filter(lambda item:  item.platform.name in ts.integration_platforms, instance_list))
+                instances = list(
+                    filter(
+                        lambda item:  item.platform.name in ts.integration_platforms,
+                        instance_list
+                    )
+                )
                 self.add_instances(instances)
 
             elif emulation_platforms:
                 self.add_instances(instance_list)
-                for instance in list(filter(lambda inst: not
-                                            inst.platform.simulator_by_name(self.options.sim_name), instance_list)):
+                for instance in list(
+                    filter(
+                        lambda inst: not inst.platform.simulator_by_name(self.options.sim_name),
+                        instance_list
+                    )
+                ):
                     instance.add_filter("Not an emulated platform", Filters.CMD_LINE)
             elif vendor_platforms:
                 self.add_instances(instance_list)
-                for instance in list(filter(lambda inst: inst.platform.vendor not in vendor_filter, instance_list)):
+                for instance in list(
+                    filter(
+                        lambda inst: inst.platform.vendor not in vendor_filter,
+                        instance_list
+                    )
+                ):
                     instance.add_filter("Not a selected vendor platform", Filters.CMD_LINE)
             else:
                 self.add_instances(instance_list)
@@ -1101,7 +1214,9 @@ class TestPlan:
 
         self.selected_platforms = set(p.platform.name for p in self.instances.values())
 
-        filtered_instances = list(filter(lambda item:  item.status == TwisterStatus.FILTER, self.instances.values()))
+        filtered_instances = list(
+            filter(lambda item:  item.status == TwisterStatus.FILTER, self.instances.values())
+        )
         for filtered_instance in filtered_instances:
             change_skip_to_error_if_integration(self.options, filtered_instance)
 
@@ -1195,4 +1310,6 @@ def change_skip_to_error_if_integration(options, instance):
             return
         instance.status = TwisterStatus.ERROR
         instance.reason += " but is one of the integration platforms"
-        logger.debug(f"Changing status of {instance.name} to ERROR because it is an integration platform")
+        logger.debug(
+            f"Changing status of {instance.name} to ERROR because it is an integration platform"
+        )

@@ -388,13 +388,18 @@ class Gcovr(CoverageTool):
             "xml": ["--xml", os.path.join(subdir, "coverage.xml"), "--xml-pretty"],
             "csv": ["--csv", os.path.join(subdir, "coverage.csv")],
             "txt": ["--txt", os.path.join(subdir, "coverage.txt")],
-            "coveralls": ["--coveralls", os.path.join(subdir, "coverage.coveralls.json"), "--coveralls-pretty"],
+            "coveralls": ["--coveralls", os.path.join(subdir, "coverage.coveralls.json"),
+                          "--coveralls-pretty"],
             "sonarqube": ["--sonarqube", os.path.join(subdir, "coverage.sonarqube.xml")]
         }
-        gcovr_options = self._flatten_list([report_options[r] for r in self.output_formats.split(',')])
+        gcovr_options = self._flatten_list(
+            [report_options[r] for r in self.output_formats.split(',')]
+        )
 
-        return subprocess.call(["gcovr", "-r", self.base_dir] + mode_options + gcovr_options + tracefiles,
-                               stdout=coveragelog)
+        return subprocess.call(
+            ["gcovr", "-r", self.base_dir] \
+                + mode_options + gcovr_options + tracefiles, stdout=coveragelog
+        )
 
 
 
@@ -427,7 +432,9 @@ def run_coverage(testplan, options):
         elif os.path.exists(zephyr_sdk_gcov_tool):
             gcov_tool = zephyr_sdk_gcov_tool
         else:
-            logger.error("Can't find a suitable gcov tool. Use --gcov-tool or set ZEPHYR_SDK_INSTALL_DIR.")
+            logger.error(
+                "Can't find a suitable gcov tool. Use --gcov-tool or set ZEPHYR_SDK_INSTALL_DIR."
+            )
             sys.exit(1)
     else:
         gcov_tool = str(options.gcov_tool)

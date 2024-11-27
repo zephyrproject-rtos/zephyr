@@ -153,7 +153,10 @@ class ExecutionCounter:
 
         Node(f"Total test suites: {self.total}", parent=root)
         processed_suites = Node(f"Processed test suites: {self.done}", parent=root)
-        filtered_suites = Node(f"Filtered test suites: {self.filtered_configs}", parent=processed_suites)
+        filtered_suites = Node(
+            f"Filtered test suites: {self.filtered_configs}",
+            parent=processed_suites
+        )
         Node(f"Filtered test suites (static): {self.filtered_static}", parent=filtered_suites)
         Node(f"Filtered test suites (at runtime): {self.filtered_runtime}", parent=filtered_suites)
         selected_suites = Node(f"Selected test suites: {selected_configs}", parent=processed_suites)
@@ -171,10 +174,16 @@ class ExecutionCounter:
         Node(f"Built only test cases: {self.notrun_cases}", parent=selected_cases_node)
         Node(f"Blocked test cases: {self.blocked_cases}", parent=selected_cases_node)
         Node(f"Failed test cases: {self.failed_cases}", parent=selected_cases_node)
-        error_cases_node = Node(f"Errors in test cases: {self.error_cases}", parent=selected_cases_node)
+        error_cases_node = Node(
+            f"Errors in test cases: {self.error_cases}",
+            parent=selected_cases_node
+        )
 
         if self.none_cases or self.started_cases:
-            Node("The following test case statuses should not appear in a proper execution", parent=error_cases_node)
+            Node(
+                "The following test case statuses should not appear in a proper execution",
+                parent=error_cases_node
+            )
         if self.none_cases:
             Node(f"Statusless test cases: {self.none_cases}", parent=error_cases_node)
         if self.started_cases:
@@ -550,7 +559,10 @@ class CMake:
         duration = time.time() - start_time
         self.instance.build_time += duration
         if p.returncode == 0:
-            msg = f"Finished building {self.source_dir} for {self.platform.name} in {duration:.2f} seconds"
+            msg = (
+                f"Finished building {self.source_dir} for {self.platform.name}"
+                f" in {duration:.2f} seconds"
+            )
             logger.debug(msg)
 
             if not self.instance.run:
@@ -562,7 +574,11 @@ class CMake:
 
             if out:
                 log_msg = out.decode(self.default_encoding)
-                with open(os.path.join(self.build_dir, self.log), "a", encoding=self.default_encoding) as log:
+                with open(
+                    os.path.join(self.build_dir, self.log),
+                    "a",
+                    encoding=self.default_encoding
+                ) as log:
                     log.write(log_msg)
             else:
                 return None
@@ -571,12 +587,22 @@ class CMake:
             log_msg = ""
             if out:
                 log_msg = out.decode(self.default_encoding)
-                with open(os.path.join(self.build_dir, self.log), "a", encoding=self.default_encoding) as log:
+                with open(
+                    os.path.join(self.build_dir, self.log),
+                    "a",
+                    encoding=self.default_encoding
+                ) as log:
                     log.write(log_msg)
 
             if log_msg:
-                overflow_found = re.findall("region `(FLASH|ROM|RAM|ICCM|DCCM|SRAM|dram\\d_\\d_seg)' overflowed by", log_msg)
-                imgtool_overflow_found = re.findall(r"Error: Image size \(.*\) \+ trailer \(.*\) exceeds requested size", log_msg)
+                overflow_found = re.findall(
+                    "region `(FLASH|ROM|RAM|ICCM|DCCM|SRAM|dram\\d_\\d_seg)' overflowed by",
+                    log_msg
+                )
+                imgtool_overflow_found = re.findall(
+                    r"Error: Image size \(.*\) \+ trailer \(.*\) exceeds requested size",
+                    log_msg
+                )
                 if overflow_found and not self.options.overflow_as_errors:
                     logger.debug(f"Test skipped due to {overflow_found[0]} Overflow")
                     self.instance.status = TwisterStatus.SKIP
@@ -650,7 +676,9 @@ class CMake:
         cmake_args.extend(cmake_opts)
 
         if self.instance.testsuite.required_snippets:
-            cmake_opts = ['-DSNIPPET={}'.format(';'.join(self.instance.testsuite.required_snippets))]
+            cmake_opts = [
+                '-DSNIPPET={}'.format(';'.join(self.instance.testsuite.required_snippets))
+            ]
             cmake_args.extend(cmake_opts)
 
         cmake = shutil.which('cmake')
@@ -683,7 +711,10 @@ class CMake:
 
         if p.returncode == 0:
             filter_results = self.parse_generated(filter_stages)
-            msg = f"Finished running cmake {self.source_dir} for {self.platform.name} in {duration:.2f} seconds"
+            msg = (
+                f"Finished running cmake {self.source_dir} for {self.platform.name}"
+                f" in {duration:.2f} seconds"
+            )
             logger.debug(msg)
             ret = {
                     'returncode': p.returncode,
@@ -701,7 +732,11 @@ class CMake:
 
         if out:
             os.makedirs(self.build_dir, exist_ok=True)
-            with open(os.path.join(self.build_dir, self.log), "a", encoding=self.default_encoding) as log:
+            with open(
+                os.path.join(self.build_dir, self.log),
+                "a",
+                encoding=self.default_encoding
+            ) as log:
                 log_msg = out.decode(self.default_encoding)
                 log.write(log_msg)
 
@@ -734,11 +769,12 @@ class FilterBuilder(CMake):
             edt_pickle = os.path.join(domain_build, "zephyr", "edt.pickle")
         else:
             cmake_cache_path = os.path.join(self.build_dir, "CMakeCache.txt")
-            # .config is only available after kconfig stage in cmake. If only dt based filtration is required
-            # package helper call won't produce .config
+            # .config is only available after kconfig stage in cmake.
+            # If only dt based filtration is required package helper call won't produce .config
             if not filter_stages or "kconfig" in filter_stages:
                 defconfig_path = os.path.join(self.build_dir, "zephyr", ".config")
-            # dt is compiled before kconfig, so edt_pickle is available regardless of choice of filter stages
+            # dt is compiled before kconfig,
+            # so edt_pickle is available regardless of choice of filter stages
             edt_pickle = os.path.join(self.build_dir, "zephyr", "edt.pickle")
 
 
@@ -811,7 +847,13 @@ class FilterBuilder(CMake):
 class ProjectBuilder(FilterBuilder):
 
     def __init__(self, instance: TestInstance, env: TwisterEnv, jobserver, **kwargs):
-        super().__init__(instance.testsuite, instance.platform, instance.testsuite.source_dir, instance.build_dir, jobserver)
+        super().__init__(
+            instance.testsuite,
+            instance.platform,
+            instance.testsuite.source_dir,
+            instance.build_dir,
+            jobserver
+        )
 
         self.log = "build.log"
         self.instance = instance
@@ -976,14 +1018,22 @@ class ProjectBuilder(FilterBuilder):
                     # due to ram/rom overflow.
                     if  self.instance.status == TwisterStatus.SKIP:
                         results.skipped_increment()
-                        self.instance.add_missing_case_status(TwisterStatus.SKIP, self.instance.reason)
+                        self.instance.add_missing_case_status(
+                            TwisterStatus.SKIP,
+                            self.instance.reason
+                        )
 
                     if ret.get('returncode', 1) > 0:
-                        self.instance.add_missing_case_status(TwisterStatus.BLOCK, self.instance.reason)
+                        self.instance.add_missing_case_status(
+                            TwisterStatus.BLOCK,
+                            self.instance.reason
+                        )
                         next_op = 'report'
                     else:
                         if self.instance.testsuite.harness in ['ztest', 'test']:
-                            logger.debug(f"Determine test cases for test instance: {self.instance.name}")
+                            logger.debug(
+                                f"Determine test cases for test instance: {self.instance.name}"
+                            )
                             try:
                                 self.determine_testcases(results)
                                 next_op = 'gather_metrics'
@@ -1015,9 +1065,15 @@ class ProjectBuilder(FilterBuilder):
                     next_op = 'run'
                 else:
                     if self.instance.status == TwisterStatus.NOTRUN:
-                        run_conditions =  f"(run:{self.instance.run}, handler.ready:{self.instance.handler.ready})"
+                        run_conditions =  (
+                            f"(run:{self.instance.run},"
+                            f" handler.ready:{self.instance.handler.ready})"
+                        )
                         logger.debug(f"Instance {self.instance.name} can't run {run_conditions}")
-                        self.instance.add_missing_case_status(TwisterStatus.NOTRUN, "Nowhere to run")
+                        self.instance.add_missing_case_status(
+                            TwisterStatus.NOTRUN,
+                            "Nowhere to run"
+                        )
                     next_op = 'report'
             except StatusAttributeError as sae:
                 logger.error(str(sae))
@@ -1090,7 +1146,10 @@ class ProjectBuilder(FilterBuilder):
                 mode = message.get("mode")
                 if mode == "device":
                     self.cleanup_device_testing_artifacts()
-                elif mode == "passed" or (mode == "all" and self.instance.reason != "CMake build failure"):
+                elif (
+                    mode == "passed"
+                    or (mode == "all" and self.instance.reason != "CMake build failure")
+                ):
                     self.cleanup_artifacts()
             except StatusAttributeError as sae:
                 logger.error(str(sae))
@@ -1120,7 +1179,9 @@ class ProjectBuilder(FilterBuilder):
         yaml_testsuite_name = self.instance.testsuite.id
         logger.debug(f"Determine test cases for test suite: {yaml_testsuite_name}")
 
-        logger.debug(f"Test instance {self.instance.name} already has {len(self.instance.testcases)} cases.")
+        logger.debug(
+            f"Test instance {self.instance.name} already has {len(self.instance.testcases)} cases."
+        )
         new_ztest_unit_test_regex = re.compile(r"z_ztest_unit_test__([^\s]+?)__([^\s]*)")
         detected_cases = []
 
@@ -1154,7 +1215,10 @@ class ProjectBuilder(FilterBuilder):
 
         if detected_cases:
             logger.debug(f"Detected Ztest cases: [{', '.join(detected_cases)}] in {elf_file}")
-            tc_keeper = {tc.name: {'status': tc.status, 'reason': tc.reason} for tc in self.instance.testcases}
+            tc_keeper = {
+                tc.name: {'status': tc.status, 'reason': tc.reason}
+                for tc in self.instance.testcases
+            }
             self.instance.testcases.clear()
             self.instance.testsuite.testcases.clear()
 
@@ -1400,8 +1464,10 @@ class ProjectBuilder(FilterBuilder):
                                  f' test case {tc.name}.')
                     results.warnings_increment(1)
                 case _:
-                    logger.warning(f'An unknown status "{tc.status}" detected in instance {instance.name},'
-                                 f' test case {tc.name}.')
+                    logger.warning(
+                        f'An unknown status "{tc.status}" detected in instance {instance.name},'
+                        f' test case {tc.name}.'
+                    )
                     results.warnings_increment(1)
 
 
@@ -1415,7 +1481,9 @@ class ProjectBuilder(FilterBuilder):
 
         self._add_instance_testcases_to_status_counts(instance, results)
 
-        status = f'{TwisterStatus.get_color(instance.status)}{str.upper(instance.status)}{Fore.RESET}'
+        status = (
+            f'{TwisterStatus.get_color(instance.status)}{str.upper(instance.status)}{Fore.RESET}'
+        )
 
         if instance.status in [TwisterStatus.ERROR, TwisterStatus.FAIL]:
             if instance.status == TwisterStatus.ERROR:
@@ -1426,7 +1494,9 @@ class ProjectBuilder(FilterBuilder):
                 status += " " + instance.reason
             else:
                 logger.error(
-                    f"{instance.platform.name:<25} {instance.testsuite.name:<50} {status}: {instance.reason}")
+                    f"{instance.platform.name:<25} {instance.testsuite.name:<50}"
+                    f" {status}: {instance.reason}"
+                )
             if not self.options.verbose:
                 self.log_info_file(self.options.inline_logs)
         elif instance.status == TwisterStatus.SKIP:
@@ -1479,35 +1549,46 @@ class ProjectBuilder(FilterBuilder):
         else:
             completed_perc = 0
             if total_to_do > 0:
-                completed_perc = int((float(results.done - results.filtered_static) / total_to_do) * 100)
+                completed_perc = int(
+                    (float(results.done - results.filtered_static) / total_to_do) * 100
+                )
 
             unfiltered = results.done - results.filtered_static
+            complete_section = (
+                f"{TwisterStatus.get_color(TwisterStatus.PASS)}"
+                f"{unfiltered:>4}/{total_to_do:>4}"
+                f"{Fore.RESET}  {completed_perc:>2}%"
+            )
+            notrun_section = (
+                f"{TwisterStatus.get_color(TwisterStatus.NOTRUN)}{results.notrun:>4}{Fore.RESET}"
+            )
             filtered_section_color = (
                 TwisterStatus.get_color(TwisterStatus.SKIP)
                 if results.filtered_configs > 0
                 else Fore.RESET
             )
+            filtered_section = (
+                f"{filtered_section_color}{results.filtered_configs:>4}{Fore.RESET}"
+            )
             failed_section_color = (
                 TwisterStatus.get_color(TwisterStatus.FAIL) if results.failed > 0 else Fore.RESET
+            )
+            failed_section = (
+                f"{failed_section_color}{results.failed:>4}{Fore.RESET}"
             )
             error_section_color = (
                 TwisterStatus.get_color(TwisterStatus.ERROR) if results.error > 0 else Fore.RESET
             )
-            sys.stdout.write(
-                f"INFO    - Total complete: "
-                f"{TwisterStatus.get_color(TwisterStatus.PASS)}"
-                f"{unfiltered:>4}/{total_to_do:>4}"
-                f"{Fore.RESET}  {completed_perc:>2}%"
-                "  built (not run):"
-                f" {TwisterStatus.get_color(TwisterStatus.NOTRUN)}{results.notrun:>4}{Fore.RESET},"
-                " filtered:"
-                f" {filtered_section_color}{results.filtered_configs:>4}{Fore.RESET},"
-                " failed:"
-                f" {failed_section_color}{results.failed:>4}{Fore.RESET},"
-                " error:"
-                f" {error_section_color}{results.error:>4}{Fore.RESET}\r"
+            error_section = (
+                f"{error_section_color}{results.error:>4}{Fore.RESET}"
             )
-
+            sys.stdout.write(
+                f"INFO    - Total complete: {complete_section}"
+                f"  built (not run): {notrun_section},"
+                f" filtered: {filtered_section},"
+                f" failed: {failed_section},"
+                f" error: {error_section}\r"
+            )
         sys.stdout.flush()
 
     @staticmethod
@@ -1648,7 +1729,10 @@ class ProjectBuilder(FilterBuilder):
         if instance.status not in [TwisterStatus.ERROR, TwisterStatus.FAIL, TwisterStatus.SKIP]:
             if instance.platform.type not in ["native", "qemu", "unit"]:
                 generate_warning = bool(instance.platform.type == "mcu")
-                size_calc = instance.calculate_sizes(from_buildlog=from_buildlog, generate_warning=generate_warning)
+                size_calc = instance.calculate_sizes(
+                    from_buildlog=from_buildlog,
+                    generate_warning=generate_warning
+                )
                 instance.metrics["used_ram"] = size_calc.get_used_ram()
                 instance.metrics["used_rom"] = size_calc.get_used_rom()
                 instance.metrics["available_rom"] = size_calc.get_available_rom()
@@ -1773,12 +1857,23 @@ class TwisterRunner:
             f" {self.results.filtered_configs - self.results.filtered_static} at runtime)."
         )
 
-    def add_tasks_to_queue(self, pipeline, build_only=False, test_only=False, retry_build_errors=False):
+    def add_tasks_to_queue(
+        self,
+        pipeline,
+        build_only=False,
+        test_only=False,
+        retry_build_errors=False
+    ):
         for instance in self.instances.values():
             if build_only:
                 instance.run = False
 
-            no_retry_statuses = [TwisterStatus.PASS, TwisterStatus.SKIP, TwisterStatus.FILTER, TwisterStatus.NOTRUN]
+            no_retry_statuses = [
+                TwisterStatus.PASS,
+                TwisterStatus.SKIP,
+                TwisterStatus.FILTER,
+                TwisterStatus.NOTRUN
+            ]
             if not retry_build_errors:
                 no_retry_statuses.append(TwisterStatus.ERROR)
 
@@ -1789,12 +1884,19 @@ class TwisterRunner:
                 instance.status = TwisterStatus.NONE
                 # Previous states should be removed from the stats
                 if self.results.iteration > 1:
-                    ProjectBuilder._add_instance_testcases_to_status_counts(instance, self.results, decrement=True)
+                    ProjectBuilder._add_instance_testcases_to_status_counts(
+                        instance,
+                        self.results,
+                        decrement=True
+                    )
 
                 # Check if cmake package_helper script can be run in advance.
                 instance.filter_stages = []
                 if instance.testsuite.filter:
-                    instance.filter_stages = self.get_cmake_filter_stages(instance.testsuite.filter, expr_parser.reserved.keys())
+                    instance.filter_stages = self.get_cmake_filter_stages(
+                        instance.testsuite.filter,
+                        expr_parser.reserved.keys()
+                    )
 
                 if test_only and instance.run:
                     pipeline.put({"op": "run", "test": instance})
@@ -1870,13 +1972,16 @@ class TwisterRunner:
 
     @staticmethod
     def get_cmake_filter_stages(filt, logic_keys):
-        """ Analyze filter expressions from test yaml and decide if dts and/or kconfig based filtering will be needed."""
+        """Analyze filter expressions from test yaml
+        and decide if dts and/or kconfig based filtering will be needed.
+        """
         dts_required = False
         kconfig_required = False
         full_required = False
         filter_stages = []
 
-        # Compress args in expressions like "function('x', 'y')" so they are not split when splitting by whitespaces
+        # Compress args in expressions like "function('x', 'y')"
+        # so they are not split when splitting by whitespaces
         filt = filt.replace(", ", ",")
         # Remove logic words
         for k in logic_keys:

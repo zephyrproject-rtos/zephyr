@@ -45,8 +45,9 @@ class Platform:
 
     Maps directly to BOARD when building"""
 
-    platform_schema = scl.yaml_load(os.path.join(ZEPHYR_BASE,
-                                                 "scripts", "schemas", "twister", "platform-schema.yaml"))
+    platform_schema = scl.yaml_load(
+        os.path.join(ZEPHYR_BASE, "scripts", "schemas", "twister", "platform-schema.yaml")
+    )
 
     def __init__(self):
         """Constructor.
@@ -132,7 +133,12 @@ class Platform:
         self.tier = variant_data.get("tier", data.get("tier", self.tier))
         self.type = variant_data.get('type', data.get('type', self.type))
 
-        self.simulators = [Simulator(data) for data in variant_data.get('simulation', data.get('simulation', self.simulators))]
+        self.simulators = [
+            Simulator(data) for data in variant_data.get(
+                'simulation',
+                data.get('simulation', self.simulators)
+            )
+        ]
         default_sim = self.simulator_by_name(None)
         if default_sim:
             self.simulation = default_sim.name

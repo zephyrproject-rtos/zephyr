@@ -125,11 +125,15 @@ class QuarantineData:
             if (qelem.platforms
                     and (matched := _is_element_matched(platform, qelem.re_platforms)) is False):
                 continue
-            if (qelem.architectures
-                    and (matched := _is_element_matched(architecture, qelem.re_architectures)) is False):
+            if (
+                qelem.architectures
+                and (matched := _is_element_matched(architecture, qelem.re_architectures)) is False
+            ):
                 continue
-            if (qelem.simulations
-                    and (matched := _is_element_matched(simulator_name, qelem.re_simulations)) is False):
+            if (
+                qelem.simulations
+                and (matched := _is_element_matched(simulator_name, qelem.re_simulations)) is False
+            ):
                 continue
 
             if matched:

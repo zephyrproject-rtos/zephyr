@@ -70,7 +70,12 @@ def main(options: argparse.Namespace, default_options: argparse.Namespace):
 
     previous_results = None
     # Cleanup
-    if options.no_clean or options.only_failed or options.test_only or options.report_summary is not None:
+    if (
+        options.no_clean
+        or options.only_failed
+        or options.test_only
+        or options.report_summary is not None
+    ):
         if os.path.exists(options.outdir):
             print("Keeping artifacts untouched")
     elif options.last_metrics:
@@ -141,7 +146,8 @@ def main(options: argparse.Namespace, default_options: argparse.Namespace):
                 if options.platform and not tplan.check_platform(i.platform, options.platform):
                     continue
                 logger.debug(
-                    f"{i.platform.name:<25} {i.testsuite.name:<50} {Fore.YELLOW}SKIPPED{Fore.RESET}: {i.reason}"
+                    f"{i.platform.name:<25} {i.testsuite.name:<50}"
+                    f" {Fore.YELLOW}SKIPPED{Fore.RESET}: {i.reason}"
                 )
 
     report = Reporting(tplan, env)

@@ -70,9 +70,15 @@ class TestInstance:
         if testsuite.detailed_test_id:
             self.build_dir = os.path.join(outdir, platform.normalized_name, testsuite.name)
         else:
-            # if suite is not in zephyr, keep only the part after ".." in reconstructed dir structure
+            # if suite is not in zephyr,
+            # keep only the part after ".." in reconstructed dir structure
             source_dir_rel = testsuite.source_dir_rel.rsplit(os.pardir+os.path.sep, 1)[-1]
-            self.build_dir = os.path.join(outdir, platform.normalized_name, source_dir_rel, testsuite.name)
+            self.build_dir = os.path.join(
+                outdir,
+                platform.normalized_name,
+                source_dir_rel,
+                testsuite.name
+            )
         self.run_id = self._get_run_id()
         self.domains = None
         # Instance need to use sysbuild if a given suite or a platform requires it
@@ -281,7 +287,9 @@ class TestInstance:
 
         # check if test is runnable in pytest
         if self.testsuite.harness == 'pytest':
-            target_ready = bool(filter == 'runnable' or simulator and simulator.name in SUPPORTED_SIMS_IN_PYTEST)
+            target_ready = bool(
+                filter == 'runnable' or simulator and simulator.name in SUPPORTED_SIMS_IN_PYTEST
+            )
 
         if filter != 'runnable' and \
                 simulator and \
@@ -300,7 +308,14 @@ class TestInstance:
 
         return testsuite_runnable and target_ready
 
-    def create_overlay(self, platform, enable_asan=False, enable_ubsan=False, enable_coverage=False, coverage_platform=None):
+    def create_overlay(
+        self,
+        platform,
+        enable_asan=False,
+        enable_ubsan=False,
+        enable_coverage=False,
+        coverage_platform=None
+    ):
         if coverage_platform is None:
             coverage_platform = []
         # Create this in a "twister/" subdirectory otherwise this
@@ -349,7 +364,11 @@ class TestInstance:
 
         return content
 
-    def calculate_sizes(self, from_buildlog: bool = False, generate_warning: bool = True) -> SizeCalculator:
+    def calculate_sizes(
+        self,
+        from_buildlog: bool = False,
+        generate_warning: bool = True
+    ) -> SizeCalculator:
         """Get the RAM/ROM sizes of a test case.
 
         This can only be run after the instance has been executed by

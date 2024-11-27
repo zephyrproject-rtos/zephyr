@@ -129,7 +129,9 @@ class Harness:
         if self.record_pattern:
             match = self.record_pattern.search(line)
             if match:
-                rec = self.translate_record({ k:v.strip() for k,v in match.groupdict(default="").items() })
+                rec = self.translate_record(
+                    { k:v.strip() for k,v in match.groupdict(default="").items() }
+                )
                 self.recording.append(rec)
         return match
     #
@@ -416,7 +418,9 @@ class Pytest(Harness):
         elif handler.type_str == 'build':
             command.append('--device-type=custom')
         else:
-            raise PytestHarnessException(f'Support for handler {handler.type_str} not implemented yet')
+            raise PytestHarnessException(
+                f'Support for handler {handler.type_str} not implemented yet'
+            )
 
         if handler.type_str != 'device':
             for fixture in handler.options.fixture:
@@ -522,12 +526,20 @@ class Pytest(Harness):
         env = os.environ.copy()
         if not PYTEST_PLUGIN_INSTALLED:
             cmd.extend(['-p', 'twister_harness.plugin'])
-            pytest_plugin_path = os.path.join(ZEPHYR_BASE, 'scripts', 'pylib', 'pytest-twister-harness', 'src')
+            pytest_plugin_path = os.path.join(
+                ZEPHYR_BASE,
+                'scripts',
+                'pylib',
+                'pytest-twister-harness',
+                'src'
+            )
             env['PYTHONPATH'] = pytest_plugin_path + os.pathsep + env.get('PYTHONPATH', '')
             if _WINDOWS:
                 cmd_append_python_path = f'set PYTHONPATH={pytest_plugin_path};%PYTHONPATH% && '
             else:
-                cmd_append_python_path = f'export PYTHONPATH={pytest_plugin_path}:${{PYTHONPATH}} && '
+                cmd_append_python_path = (
+                    f'export PYTHONPATH={pytest_plugin_path}:${{PYTHONPATH}} && '
+                )
         else:
             cmd_append_python_path = ''
         cmd_to_print = cmd_append_python_path + shlex.join(cmd)
@@ -571,7 +583,9 @@ class Pytest(Harness):
         if (elem_ts := root.find('testsuite')) is not None:
             if elem_ts.get('failures') != '0':
                 self.status = TwisterStatus.FAIL
-                self.instance.reason = f"{elem_ts.get('failures')}/{elem_ts.get('tests')} pytest scenario(s) failed"
+                self.instance.reason = (
+                    f"{elem_ts.get('failures')}/{elem_ts.get('tests')} pytest scenario(s) failed"
+                )
             elif elem_ts.get('errors') != '0':
                 self.status = TwisterStatus.ERROR
                 self.instance.reason = 'Error during pytest execution'
@@ -717,11 +731,20 @@ class Test(Harness):
     __test__ = False  # for pytest to skip this class when collects tests
 
     test_suite_start_pattern = re.compile(r"Running TESTSUITE (?P<suite_name>\S*)")
-    test_suite_end_pattern = re.compile(r"TESTSUITE (?P<suite_name>\S*)\s+(?P<suite_status>succeeded|failed)")
+    test_suite_end_pattern = re.compile(
+        r"TESTSUITE (?P<suite_name>\S*)\s+(?P<suite_status>succeeded|failed)"
+    )
     test_case_start_pattern = re.compile(r"START - (test_)?([a-zA-Z0-9_-]+)")
-    test_case_end_pattern = re.compile(r".*(PASS|FAIL|SKIP) - (test_)?(\S*) in (\d*[.,]?\d*) seconds")
-    test_suite_summary_pattern = re.compile(r"SUITE (?P<suite_status>\S*) - .* \[(?P<suite_name>\S*)\]: .* duration = (\d*[.,]?\d*) seconds")
-    test_case_summary_pattern = re.compile(r" - (PASS|FAIL|SKIP) - \[([^\.]*).(test_)?(\S*)\] duration = (\d*[.,]?\d*) seconds")
+    test_case_end_pattern = re.compile(
+        r".*(PASS|FAIL|SKIP) - (test_)?(\S*) in (\d*[.,]?\d*) seconds"
+    )
+    test_suite_summary_pattern = re.compile(
+        r"SUITE (?P<suite_status>\S*) - .* \[(?P<suite_name>\S*)\]:"
+        r" .* duration = (\d*[.,]?\d*) seconds"
+    )
+    test_case_summary_pattern = re.compile(
+        r" - (PASS|FAIL|SKIP) - \[([^\.]*).(test_)?(\S*)\] duration = (\d*[.,]?\d*) seconds"
+    )
 
 
     def get_testcase(self, tc_name, phase, ts_name=None):
@@ -740,7 +763,7 @@ class Test(Harness):
                 self.detected_suite_names.append(ts_name)
             ts_names = [ ts_name ] if ts_name in ts_names else []
 
-        # Firstly try to match the test case ID to the first running Ztest suite with this test name.
+        # First, try to match the test case ID to the first running Ztest suite with this test name.
         for ts_name_ in ts_names:
             if self.started_suites[ts_name_]['count'] < (0 if phase == 'TS_SUM' else 1):
                 continue
@@ -749,7 +772,10 @@ class Test(Harness):
                 if self.trace:
                     logger.debug(f"On {phase}: Ztest case '{tc_name}' matched to '{tc_fq_id}")
                 return tc
-        logger.debug(f"On {phase}: Ztest case '{tc_name}' is not known in {self.started_suites} running suite(s).")
+        logger.debug(
+            f"On {phase}: Ztest case '{tc_name}' is not known"
+            f" in {self.started_suites} running suite(s)."
+        )
         tc_id = f"{self.id}.{tc_name}"
         return self.instance.get_case_or_create(tc_id)
 
@@ -773,7 +799,9 @@ class Test(Harness):
             if phase == 'TS_SUM' and self.started_suites[suite_name]['count'] == 0:
                 return
             if self.started_suites[suite_name]['count'] < 1:
-                logger.error(f"Already ENDED {phase} suite '{suite_name}':{self.started_suites[suite_name]}")
+                logger.error(
+                    f"Already ENDED {phase} suite '{suite_name}':{self.started_suites[suite_name]}"
+                )
             elif self.trace:
                 logger.debug(f"END {phase} suite '{suite_name}':{self.started_suites[suite_name]}")
             self.started_suites[suite_name]['count'] -= 1
@@ -796,7 +824,9 @@ class Test(Harness):
             if phase == 'TS_SUM' and self.started_cases[tc_name]['count'] == 0:
                 return
             if self.started_cases[tc_name]['count'] < 1:
-                logger.error(f"Already ENDED {phase} case '{tc_name}':{self.started_cases[tc_name]}")
+                logger.error(
+                    f"Already ENDED {phase} case '{tc_name}':{self.started_cases[tc_name]}"
+                )
             elif self.trace:
                 logger.debug(f"END {phase} case '{tc_name}':{self.started_cases[tc_name]}")
             self.started_cases[tc_name]['count'] -= 1
