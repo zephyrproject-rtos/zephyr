@@ -160,7 +160,7 @@ static int can_numaker_init(const struct device *dev)
 	return rc;
 }
 
-static const struct can_driver_api can_numaker_driver_api = {
+static DEVICE_API(can, can_numaker_driver_api) = {
 	.get_capabilities = can_mcan_get_capabilities,
 	.start = can_mcan_start,
 	.stop = can_mcan_stop,
