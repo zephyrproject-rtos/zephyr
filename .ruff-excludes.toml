@@ -759,6 +759,7 @@
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
 ]
 "./scripts/pylib/twister/twisterlib/cmakecache.py" = [
+    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM102",   # https://docs.astral.sh/ruff/rules/collapsible-if
     "SIM114",   # https://docs.astral.sh/ruff/rules/if-with-same-arms
@@ -877,6 +878,7 @@
     "UP004",    # https://docs.astral.sh/ruff/rules/useless-object-inheritance
     "UP006",    # https://docs.astral.sh/ruff/rules/non-pep585-annotation
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
+    "UP022",    # https://docs.astral.sh/ruff/rules/replace-stdout-stderr
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
     "UP035",    # https://docs.astral.sh/ruff/rules/deprecated-import
