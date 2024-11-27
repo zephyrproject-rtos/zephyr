@@ -681,6 +681,32 @@ int bt_hfp_hf_send_cmd(struct bt_conn *conn, enum bt_hfp_hf_at_cmd cmd)
 	return 0;
 }
 
+int bt_hfp_hf_get_peer_indicator_status(struct bt_conn *conn)
+{
+    struct bt_hfp_hf *hf;
+    int err;
+
+    if (!conn) {
+        LOG_ERR("Invalid connection");
+        return -ENOTCONN;
+    }
+
+    hf = bt_hfp_hf_lookup_bt_conn(conn);
+    if (!hf) {
+        LOG_ERR("No HF connection found");
+        return -ENOTCONN;
+    }
+
+    err = hfp_hf_send_cmd(hf, cind_status_resp, cmd_complete,
+                         "AT+CIND?");
+    if (err < 0) {
+        LOG_ERR("Failed AT+CIND?");
+        return err;
+    }
+
+    return 0;
+}
+
 static void hfp_hf_connected(struct bt_rfcomm_dlc *dlc)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(dlc, struct bt_hfp_hf, rfcomm_dlc);

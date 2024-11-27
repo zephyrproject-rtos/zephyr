@@ -179,6 +179,20 @@ int bt_hfp_hf_register(struct bt_hfp_hf_cb *cb);
  */
 int bt_hfp_hf_send_cmd(struct bt_conn *conn, enum bt_hfp_hf_at_cmd cmd);
 
+/** @brief Handsfree Get peer indicators' status
+ *
+ *  Get peer indicators' status to handsfree client profile, send the AT
+ *  command "AT+CIND?" to retrieve the current status of the HFP AG 
+ *  indicators, as well as the indicators listed in the "AT+CIND=?" 
+ *  command, and also call the user-registered callback in application 
+ *  accordingly.
+ *
+ *  @param conn Connection object.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_hf_get_peer_indicator_status(struct bt_conn *conn);
+
 #ifdef __cplusplus
 }
 #endif
