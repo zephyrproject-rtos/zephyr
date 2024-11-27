@@ -138,9 +138,10 @@ class Handler:
         for tc in self.instance.testcases:
             tc.status = TwisterStatus.FAIL
         self.instance.reason = "Testsuite mismatch"
-        logger.debug("Test suite names were not printed or some of them in " \
-                     "output do not correspond with expected: %s",
-                     str(expected_suite_names))
+        logger.debug(
+            "Test suite names were not printed or some of them in output"
+            f" do not correspond with expected: {str(expected_suite_names)}",
+        )
 
     def _final_handle_actions(self, harness, handler_time):
 
@@ -166,7 +167,7 @@ class Handler:
             # have added any additional images to the run target manually
             domain_path = os.path.join(self.build_dir, "domains.yaml")
             domains = Domains.from_file(domain_path)
-            logger.debug("Loaded sysbuild domain data from %s" % domain_path)
+            logger.debug(f"Loaded sysbuild domain data from {domain_path}")
             build_dir = domains.get_default_domain().build_dir
         else:
             build_dir = self.build_dir
@@ -217,7 +218,7 @@ class BinaryHandler(Handler):
                     stripped_line = line_decoded.rstrip()
                     if stripped_line.endswith(suffix):
                         stripped_line = stripped_line[:-len(suffix)].rstrip()
-                    logger.debug("OUTPUT: %s", stripped_line)
+                    logger.debug(f"OUTPUT: {stripped_line}")
                     log_out_fp.write(strip_ansi_sequences(line_decoded))
                     log_out_fp.flush()
                     harness.handle(stripped_line)
@@ -343,10 +344,10 @@ class BinaryHandler(Handler):
             harness.run_robot_test(command, self)
             return
 
-        stderr_log = "{}/handler_stderr.log".format(self.instance.build_dir)
+        stderr_log = f"{self.instance.build_dir}/handler_stderr.log"
         with open(stderr_log, "w+") as stderr_log_fp, subprocess.Popen(command, stdout=subprocess.PIPE,
                               stderr=stderr_log_fp, cwd=self.build_dir, env=env) as proc:
-            logger.debug("Spawning BinaryHandler Thread for %s" % self.name)
+            logger.debug(f"Spawning BinaryHandler Thread for {self.name}")
             t = threading.Thread(target=self._output_handler, args=(proc, harness,), daemon=True)
             t.start()
             t.join()
@@ -357,7 +358,7 @@ class BinaryHandler(Handler):
             self.returncode = proc.returncode
             if proc.returncode != 0:
                 self.instance.status = TwisterStatus.ERROR
-                self.instance.reason = "BinaryHandler returned {}".format(proc.returncode)
+                self.instance.reason = f"BinaryHandler returned {proc.returncode}"
             self.try_kill_process_by_pid()
 
         handler_time = time.time() - start_time
@@ -521,7 +522,7 @@ class DeviceHandler(Handler):
             except subprocess.TimeoutExpired:
                 proc.kill()
                 proc.communicate()
-                logger.error("{} timed out".format(script))
+                logger.error(f"{script} timed out")
 
     def _create_command(self, runner, hardware):
         if (self.options.west_flash is not None) or runner:
@@ -550,13 +551,13 @@ class DeviceHandler(Handler):
                         command_extra_args.append(board_id)
                     elif runner == "openocd" and product == "STM32 STLink" or runner == "openocd" and product == "STLINK-V3":
                         command_extra_args.append("--cmd-pre-init")
-                        command_extra_args.append("hla_serial %s" % board_id)
+                        command_extra_args.append(f"hla_serial {board_id}")
                     elif runner == "openocd" and product == "EDBG CMSIS-DAP":
                         command_extra_args.append("--cmd-pre-init")
-                        command_extra_args.append("cmsis_dap_serial %s" % board_id)
+                        command_extra_args.append(f"cmsis_dap_serial {board_id}")
                     elif runner == "openocd" and product == "LPC-LINK2 CMSIS-DAP":
                         command_extra_args.append("--cmd-pre-init")
-                        command_extra_args.append("adapter serial %s" % board_id)
+                        command_extra_args.append(f"adapter serial {board_id}")
                     elif runner == "jlink":
                         command.append("--dev-id")
                         command.append(board_id)
@@ -564,9 +565,9 @@ class DeviceHandler(Handler):
                         # for linkserver
                         # --probe=#<number> select by probe index
                         # --probe=<serial number> select by probe serial number
-                        command.append("--probe=%s" % board_id)
+                        command.append(f"--probe={board_id}")
                     elif runner == "stm32cubeprogrammer":
-                        command.append("--tool-opt=sn=%s" % board_id)
+                        command.append(f"--tool-opt=sn={board_id}")
 
                     # Receive parameters from runner_params field.
                     if hardware.runner_params:
@@ -627,7 +628,7 @@ class DeviceHandler(Handler):
     def _handle_serial_exception(self, exception, dut, serial_pty, ser_pty_process):
         self.instance.status = TwisterStatus.FAIL
         self.instance.reason = "Serial Device Error"
-        logger.error("Serial device error: %s" % (str(exception)))
+        logger.error(f"Serial device error: {exception!s}")
 
         self.instance.add_missing_case_status(TwisterStatus.BLOCK, "Serial Device Error")
         if serial_pty and ser_pty_process:
@@ -666,10 +667,7 @@ class DeviceHandler(Handler):
                 )
             except subprocess.CalledProcessError as error:
                 logger.error(
-                    "Failed to run subprocess {}, error {}".format(
-                        serial_pty,
-                        error.output
-                    )
+                    f"Failed to run subprocess {serial_pty}, error {error.output}"
                 )
                 return
 
@@ -734,8 +732,8 @@ class DeviceHandler(Handler):
         start_time = time.time()
         t.start()
 
-        d_log = "{}/device.log".format(self.instance.build_dir)
-        logger.debug('Flash command: %s', command)
+        d_log = f"{self.instance.build_dir}/device.log"
+        logger.debug(f'Flash command: {command}', )
         flash_error = False
         try:
             stdout = stderr = None
@@ -797,7 +795,7 @@ class DeviceHandler(Handler):
             t.join(0.1)
 
         if t.is_alive():
-            logger.debug("Timed out while monitoring serial output on {}".format(self.instance.platform.name))
+            logger.debug(f"Timed out while monitoring serial output on {self.instance.platform.name}")
 
         if ser.isOpen():
             ser.close()
@@ -1036,7 +1034,7 @@ class QEMUHandler(Handler):
                 self.instance.reason = "Timeout"
             else:
                 if not self.instance.reason:
-                    self.instance.reason = "Exited with {}".format(self.returncode)
+                    self.instance.reason = f"Exited with {self.returncode}"
             self.instance.add_missing_case_status(TwisterStatus.BLOCK)
 
     def handle(self, harness):
@@ -1055,19 +1053,19 @@ class QEMUHandler(Handler):
                                              self.ignore_unexpected_eof))
 
         self.thread.daemon = True
-        logger.debug("Spawning QEMUHandler Thread for %s" % self.name)
+        logger.debug(f"Spawning QEMUHandler Thread for {self.name}")
         self.thread.start()
         thread_max_time = time.time() + self.get_test_timeout()
         if sys.stdout.isatty():
             subprocess.call(["stty", "sane"], stdin=sys.stdout)
 
-        logger.debug("Running %s (%s)" % (self.name, self.type_str))
+        logger.debug(f"Running {self.name} ({self.type_str})")
 
         is_timeout = False
         qemu_pid = None
 
         with subprocess.Popen(command, stdout=open(self.stdout_fn, "w"), stderr=open(self.stderr_fn, "w"), cwd=self.build_dir) as proc:
-            logger.debug("Spawning QEMUHandler Thread for %s" % self.name)
+            logger.debug(f"Spawning QEMUHandler Thread for {self.name}")
 
             try:
                 proc.wait(self.get_test_timeout())
@@ -1205,7 +1203,7 @@ class QEMUWinHandler(Handler):
                 self.instance.reason = "Timeout"
             else:
                 if not self.instance.reason:
-                    self.instance.reason = "Exited with {}".format(self.returncode)
+                    self.instance.reason = f"Exited with {self.returncode}"
             self.instance.add_missing_case_status(TwisterStatus.BLOCK)
 
     def _enqueue_char(self, queue):
@@ -1333,14 +1331,14 @@ class QEMUWinHandler(Handler):
         command = self._create_command(domain_build_dir)
         self._set_qemu_filenames(domain_build_dir)
 
-        logger.debug("Running %s (%s)" % (self.name, self.type_str))
+        logger.debug(f"Running {self.name} ({self.type_str})")
         is_timeout = False
         self.stop_thread = False
         queue = Queue()
 
         with subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT,
                               cwd=self.build_dir) as proc:
-            logger.debug("Spawning QEMUHandler Thread for %s" % self.name)
+            logger.debug(f"Spawning QEMUHandler Thread for {self.name}")
 
             self.thread = threading.Thread(target=self._enqueue_char, args=(queue,))
             self.thread.daemon = True

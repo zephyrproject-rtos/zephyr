@@ -361,7 +361,7 @@ class HardwareMap:
                 s_dev.lock = None
                 self.detected.append(s_dev)
             else:
-                logger.warning("Unsupported device (%s): %s" % (d.manufacturer, d))
+                logger.warning(f"Unsupported device ({d.manufacturer}): {d}")
 
     def save(self, hwm_file):
         # use existing map

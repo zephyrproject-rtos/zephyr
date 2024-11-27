@@ -301,9 +301,8 @@ def scan_testsuite_path(testsuite_path):
         try:
             result: ScanPathResult = scan_file(filename)
             if result.warnings:
-                logger.error("%s: %s" % (filename, result.warnings))
-                raise TwisterRuntimeError(
-                    "%s: %s" % (filename, result.warnings))
+                logger.error(f"{filename}: {result.warnings}")
+                raise TwisterRuntimeError(f"{filename}: {result.warnings}")
             if result.matches:
                 subcases += result.matches
             if result.has_registered_test_suites:
@@ -316,7 +315,7 @@ def scan_testsuite_path(testsuite_path):
                 ztest_suite_names += result.ztest_suite_names
 
         except ValueError as e:
-            logger.error("%s: error parsing source file: %s" % (filename, e))
+            logger.error(f"{filename}: error parsing source file: {e}")
 
     src_dir_pathlib_path = Path(src_dir_path)
     for filename in find_c_files_in(testsuite_path):
@@ -328,13 +327,13 @@ def scan_testsuite_path(testsuite_path):
         try:
             result: ScanPathResult = scan_file(filename)
             if result.warnings:
-                logger.error("%s: %s" % (filename, result.warnings))
+                logger.error(f"{filename}: {result.warnings}")
             if result.matches:
                 subcases += result.matches
             if result.ztest_suite_names:
                 ztest_suite_names += result.ztest_suite_names
         except ValueError as e:
-            logger.error("%s: can't find: %s" % (filename, e))
+            logger.error(f"{filename}: can't find: {e}")
 
     if (has_registered_test_suites and has_test_main and
             not has_run_registered_test_suites):
@@ -388,7 +387,7 @@ class TestCase(DisablePyTestCollectionMixin):
         return self.name < other.name
 
     def __repr__(self):
-        return "<TestCase %s with %s>" % (self.name, self.status)
+        return f"<TestCase {self.name} with {self.status}>"
 
     def __str__(self):
         return self.name
@@ -469,7 +468,7 @@ class TestSuite(DisablePyTestCollectionMixin):
             else:
                 # only add each testcase once
                 for sub in set(parsed_subcases):
-                    name = "{}.{}".format(self.id, sub)
+                    name = f"{self.id}.{sub}"
                     self.add_testcase(name)
 
         if suite_names:
