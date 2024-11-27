@@ -554,10 +554,7 @@ class DeviceHandler(Handler):
                     if runner in ("pyocd", "nrfjprog", "nrfutil"):
                         command_extra_args.append("--dev-id")
                         command_extra_args.append(board_id)
-                    elif runner == "openocd" and product == "STM32 STLink":
-                        command_extra_args.append("--cmd-pre-init")
-                        command_extra_args.append("hla_serial %s" % board_id)
-                    elif runner == "openocd" and product == "STLINK-V3":
+                    elif runner == "openocd" and product == "STM32 STLink" or runner == "openocd" and product == "STLINK-V3":
                         command_extra_args.append("--cmd-pre-init")
                         command_extra_args.append("hla_serial %s" % board_id)
                     elif runner == "openocd" and product == "EDBG CMSIS-DAP":
