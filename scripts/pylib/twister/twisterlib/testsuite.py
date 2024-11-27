@@ -11,7 +11,6 @@ import logging
 import contextlib
 import mmap
 import glob
-from typing import List
 
 from twisterlib.mixins import DisablePyTestCollectionMixin
 from twisterlib.environment import canonical_zephyr_base
@@ -39,12 +38,12 @@ class ScanPathResult:
         ztest_suite_names                Names of found ztest suites
     """
     def __init__(self,
-                 matches: List[str] = None,
+                 matches: list[str] = None,
                  warnings: str = None,
                  has_registered_test_suites: bool = False,
                  has_run_registered_test_suites: bool = False,
                  has_test_main: bool = False,
-                 ztest_suite_names: List[str] = []):
+                 ztest_suite_names: list[str] = []):
         self.matches = matches
         self.warnings = warnings
         self.has_registered_test_suites = has_registered_test_suites
