@@ -160,7 +160,7 @@ def test_cast_value(zephyr_base, value, typestr, expected, expected_warning):
             result = parser._cast_value(value, typestr)
             assert result == expected
             if expected_warning:
-                warn_mock.assert_called_once_with(*expected_warning)
+                warn_mock.assert_called_once_with(*expected_warning, stacklevel=mock.ANY)
             else:
                 warn_mock.assert_not_called()
 
