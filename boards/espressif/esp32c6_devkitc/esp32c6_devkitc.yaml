@@ -12,7 +12,3 @@ supported:
   - dma
   - spi
   - entropy
-testing:
-  ignore_tags:
-    - bluetooth
-    - tracing

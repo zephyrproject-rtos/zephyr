@@ -17,7 +17,4 @@ supported:
   - spi
   - counter
   - entropy
-testing:
-  ignore_tags:
-    - bluetooth
 vendor: vcc-gnd
