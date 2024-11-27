@@ -776,7 +776,6 @@
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
 "./scripts/pylib/twister/twisterlib/environment.py" = [
-    "B006",     # https://docs.astral.sh/ruff/rules/mutable-argument-default
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
 ]
@@ -792,7 +791,6 @@
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
 "./scripts/pylib/twister/twisterlib/hardwaremap.py" = [
-    "B006",     # https://docs.astral.sh/ruff/rules/mutable-argument-default
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
@@ -813,7 +811,6 @@
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
 ]
 "./scripts/pylib/twister/twisterlib/quarantine.py" = [
-    "B006",     # https://docs.astral.sh/ruff/rules/mutable-argument-default
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
@@ -826,7 +823,6 @@
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
 "./scripts/pylib/twister/twisterlib/runner.py" = [
-    "B006",     # https://docs.astral.sh/ruff/rules/mutable-argument-default
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
     "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
@@ -840,13 +836,11 @@
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
 ]
 "./scripts/pylib/twister/twisterlib/testinstance.py" = [
-    "B006",     # https://docs.astral.sh/ruff/rules/mutable-argument-default
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
 ]
 "./scripts/pylib/twister/twisterlib/testplan.py" = [
-    "B006",     # https://docs.astral.sh/ruff/rules/mutable-argument-default
     "E402",     # https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "F401",     # https://docs.astral.sh/ruff/rules/unused-import
@@ -856,7 +850,6 @@
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
 "./scripts/pylib/twister/twisterlib/testsuite.py" = [
-    "B006",     # https://docs.astral.sh/ruff/rules/mutable-argument-default
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string

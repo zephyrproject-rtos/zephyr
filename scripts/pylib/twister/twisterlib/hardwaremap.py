@@ -430,7 +430,11 @@ class HardwareMap:
             logger.info("Detected devices:")
             self.dump(detected=True)
 
-    def dump(self, filtered=[], header=[], connected_only=False, detected=False):
+    def dump(self, filtered=None, header=None, connected_only=False, detected=False):
+        if filtered is None:
+            filtered = []
+        if header is None:
+            header = []
         print("")
         table = []
         if detected:
