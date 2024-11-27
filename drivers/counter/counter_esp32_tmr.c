@@ -227,7 +227,7 @@ static uint32_t counter_esp32_get_top_value(const struct device *dev)
 	return config->counter_info.max_top_value;
 }
 
-static const struct counter_driver_api counter_api = {
+static DEVICE_API(counter, counter_api) = {
 	.start = counter_esp32_start,
 	.stop = counter_esp32_stop,
 	.get_value = counter_esp32_get_value,

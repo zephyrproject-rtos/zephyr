@@ -227,7 +227,7 @@ static int ctr_cancel_alarm(const struct device *dev, uint8_t chan_id)
 	return 0;
 }
 
-static const struct counter_driver_api ctr_api = {
+static DEVICE_API(counter, ctr_api) = {
 	.start = ctr_start,
 	.stop = ctr_stop,
 	.get_value = ctr_get_value,

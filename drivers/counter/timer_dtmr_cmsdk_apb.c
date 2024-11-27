@@ -122,7 +122,7 @@ static uint32_t dtmr_cmsdk_apb_get_pending_int(const struct device *dev)
 	return cfg->dtimer->timer1ris;
 }
 
-static const struct counter_driver_api dtmr_cmsdk_apb_api = {
+static DEVICE_API(counter, dtmr_cmsdk_apb_api) = {
 	.start = dtmr_cmsdk_apb_start,
 	.stop = dtmr_cmsdk_apb_stop,
 	.get_value = dtmr_cmsdk_apb_get_value,
