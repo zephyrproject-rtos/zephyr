@@ -6,6 +6,7 @@
 
 #include <zephyr/drivers/uart.h>
 #include <zephyr/kernel.h>
+#include <zephyr/toolchain.h>
 #include <string.h>
 
 #define DT_DRV_COMPAT snps_hostlink_uart
@@ -34,10 +35,6 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_ARC));
 #define HL_SYSCALL_GETPID	16
 #define HL_SYSCALL_GETCWD	17
 #define HL_SYSCALL_USER		18
-
-#ifndef __noinline
-#define __noinline __attribute__((noinline))
-#endif /* __noinline */
 
 #define HL_VERSION 1
 
