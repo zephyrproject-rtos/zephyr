@@ -564,7 +564,7 @@ static int h4_setup(const struct device *dev, const struct bt_hci_setup_params *
 }
 #endif
 
-static const struct bt_hci_driver_api h4_driver_api = {
+static DEVICE_API(bt_hci, h4_driver_api) = {
 	.open = h4_open,
 	.send = h4_send,
 #if defined(CONFIG_BT_HCI_SETUP)
