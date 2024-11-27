@@ -770,7 +770,6 @@
 "./scripts/pylib/twister/twisterlib/coverage.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
-    "SIM105",   # https://docs.astral.sh/ruff/rules/suppressible-exception
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
@@ -782,7 +781,6 @@
 "./scripts/pylib/twister/twisterlib/handlers.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
-    "SIM105",   # https://docs.astral.sh/ruff/rules/suppressible-exception
     "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
     "UP007",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes

@@ -3,6 +3,7 @@
 # Copyright (c) 2018-2022 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+import contextlib
 import glob
 import logging
 import os
@@ -114,10 +115,8 @@ class CoverageTool:
             # hence skipping it problem only in gcovr v4.1
             if "kobject_hash" in filename:
                 filename = (filename[:-4]) + "gcno"
-                try:
+                with contextlib.suppress(Exception):
                     os.remove(filename)
-                except Exception:
-                    pass
                 continue
 
             try:
