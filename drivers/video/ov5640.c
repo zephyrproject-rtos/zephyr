@@ -903,8 +903,7 @@ static int ov5640_enum_frmival(const struct device *dev, enum video_endpoint_id 
 			break;
 		}
 	}
-
-	if (i == ARRAY_SIZE(modes) || fie->index > ARRAY_SIZE(ov5640_frame_rates) ||
+	if (i == ARRAY_SIZE(modes) || fie->index >= ARRAY_SIZE(ov5640_frame_rates) ||
 	    ov5640_frame_rates[fie->index] > modes[i].max_frmrate) {
 		return -EINVAL;
 	}
