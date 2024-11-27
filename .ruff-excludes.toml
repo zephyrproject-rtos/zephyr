@@ -769,7 +769,6 @@
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
 ]
 "./scripts/pylib/twister/twisterlib/coverage.py" = [
-    "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
     "SIM105",   # https://docs.astral.sh/ruff/rules/suppressible-exception
