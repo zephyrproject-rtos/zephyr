@@ -1022,7 +1022,7 @@ class TwisterEnv:
             return diff
         dict_options = vars(self.options)
         dict_default = vars(self.default_options)
-        for k in dict_options.keys():
+        for k in dict_options:
             if k not in dict_default or dict_options[k] != dict_default[k]:
                 diff[k] = dict_options[k]
         return diff
