@@ -19,3 +19,10 @@ tests:
     extra_args: SHIELD=x_nucleo_idb05a1
     integration_platforms:
       - nucleo_l4r5zi
+  sample.bluetooth.periodic_adv.esp32:
+    extra_args:
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
+    platform_allow:
+      - esp32_devkitc_wroom/esp32/procpu
+      - esp32s3_devkitm/esp32s3/procpu
+      - esp32c3_devkitm
