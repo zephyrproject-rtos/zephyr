@@ -620,6 +620,7 @@
 			reg = <0x60b40000 0x10000>;
 			mac-index = <1>;
 			si-index = <1>;
+			phy-connection-type = "internal";
 			status = "disabled";
 		};
 
@@ -630,6 +631,41 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
+		};
+
+		switch: dsa {
+			compatible = "nxp,netc-switch";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			switch_port0: switch_port@0 {
+				reg = <0>;
+				status = "disabled";
+			};
+
+			switch_port1: switch_port@1 {
+				reg = <1>;
+				status = "disabled";
+			};
+
+			switch_port2: switch_port@2 {
+				reg = <2>;
+				status = "disabled";
+			};
+
+			switch_port3: switch_port@3 {
+				reg = <3>;
+				status = "disabled";
+			};
+
+			/* Internal port */
+			switch_port4: switch_port@4 {
+				reg = <4>;
+				ethernet = <&enetc_psi1>;
+				phy-connection-type = "internal";
+				status = "disabled";
+			};
 		};
 	};
 
