@@ -20,7 +20,7 @@ static int init_settings_subsys(void)
 	const int ret = settings_subsys_init();
 
 	if (ret) {
-		LOG_DBG("Failed to initialize the settings subsystem. (%d)", ret);
+		LOG_DBG("Failed. (%d)", ret);
 	}
 	return ret;
 }
@@ -107,9 +107,7 @@ psa_status_t secure_storage_its_store_remove(secure_storage_its_uid_t uid)
 
 	make_name(uid, name);
 	ret = settings_delete(name);
-	if (ret) {
-		LOG_DBG("Failed to delete %s. (%d)", name, ret);
-		return PSA_ERROR_STORAGE_FAILURE;
-	}
-	return PSA_SUCCESS;
+
+	LOG_DBG("%s %s. (%d)", ret ? "Failed to delete" : "Deleted", name, ret);
+	return ret ? PSA_ERROR_STORAGE_FAILURE : PSA_SUCCESS;
 }
