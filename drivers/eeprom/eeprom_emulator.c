@@ -720,7 +720,7 @@ static int eeprom_emu_init(const struct device *dev)
 	return rc;
 }
 
-static const struct eeprom_driver_api eeprom_emu_api = {
+static DEVICE_API(eeprom, eeprom_emu_api) = {
 	.read = eeprom_emu_read,
 	.write = eeprom_emu_write,
 	.size = eeprom_emu_size,

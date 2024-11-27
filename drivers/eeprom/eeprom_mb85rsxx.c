@@ -295,7 +295,7 @@ static int eeprom_mb85rsxx_init(const struct device *dev)
 	return 0;
 }
 
-static const struct eeprom_driver_api mb85rsxx_driver_api = {
+static DEVICE_API(eeprom, mb85rsxx_driver_api) = {
 	.read = &eeprom_mb85rsxx_read,
 	.write = &eeprom_mb85rsxx_write,
 	.size = &eeprom_mb85rsxx_size,
