@@ -759,7 +759,6 @@
 ]
 "./scripts/pylib/twister/twisterlib/cmakecache.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "SIM102",   # https://docs.astral.sh/ruff/rules/collapsible-if
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
@@ -786,7 +785,6 @@
 "./scripts/pylib/twister/twisterlib/handlers.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
-    "SIM102",   # https://docs.astral.sh/ruff/rules/collapsible-if
     "SIM105",   # https://docs.astral.sh/ruff/rules/suppressible-exception
     "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
     "UP007",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation
@@ -807,7 +805,6 @@
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
     "F811",     # https://docs.astral.sh/ruff/rules/redefined-while-unused
-    "SIM102",   # https://docs.astral.sh/ruff/rules/collapsible-if
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
@@ -836,7 +833,6 @@
     "B006",     # https://docs.astral.sh/ruff/rules/mutable-argument-default
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
-    "SIM102",   # https://docs.astral.sh/ruff/rules/collapsible-if
     "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
@@ -851,7 +847,6 @@
     "B006",     # https://docs.astral.sh/ruff/rules/mutable-argument-default
     "B904",     # https://docs.astral.sh/ruff/rules/raise-without-from-inside-except
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "SIM102",   # https://docs.astral.sh/ruff/rules/collapsible-if
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
 ]
@@ -863,7 +858,6 @@
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "F401",     # https://docs.astral.sh/ruff/rules/unused-import
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
-    "SIM102",   # https://docs.astral.sh/ruff/rules/collapsible-if
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string

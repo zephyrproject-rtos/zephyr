@@ -83,11 +83,10 @@ class CMakeCacheEntry:
             except ValueError as exc:
                 args = exc.args + ('on line {}: {}'.format(line_no, line),)
                 raise ValueError(args) from exc
-        elif type_ in ['STRING', 'INTERNAL']:
-            # If the value is a CMake list (i.e. is a string which
-            # contains a ';'), convert to a Python list.
-            if ';' in value:
-                value = value.split(';')
+        # If the value is a CMake list (i.e. is a string which contains a ';'),
+        # convert to a Python list.
+        elif type_ in ['STRING', 'INTERNAL'] and ';' in value:
+            value = value.split(';')
 
         return CMakeCacheEntry(name, value)
 
