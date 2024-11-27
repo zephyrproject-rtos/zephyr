@@ -98,7 +98,7 @@ class CoverageTool:
 
             # Iteratively call gcov-tool (not gcov) to merge the files
             merge_tool = self.gcov_tool + '-tool'
-            for d1, d2 in zip(dirs[:-1], dirs[1:]):
+            for d1, d2 in zip(dirs[:-1], dirs[1:], strict=False):
                 cmd = [merge_tool, 'merge', d1, d2, '--output', d2]
                 subprocess.call(cmd)
 
