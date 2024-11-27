@@ -132,5 +132,6 @@
 /* Keep it internal until an other interface has been implemented. */
 int dap_setup(const struct device *const dev);
 uint32_t dap_execute_cmd(const uint8_t *request, uint8_t *response);
+void dap_update_pkt_size(const uint16_t pkt_size);
 
 #endif	/* ZEPHYR_INCLUDE_CMSIS_DAP_H_ */

@@ -17,13 +17,6 @@ config CMSIS_DAP_PACKET_COUNT
 	help
 	  Maximum packet buffers for request and response data.
 
-config CMSIS_DAP_PACKET_SIZE
-	int "Maximum packet size for request and response data."
-	default 64
-	range 64 512
-	help
-	  Maximum packet size for request and response data.
-
 config CMSIS_DAP_PROBE_VENDOR
 	string "Probe vendor"
 	default "Zephyr"
