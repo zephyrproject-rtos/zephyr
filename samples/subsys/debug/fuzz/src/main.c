@@ -4,6 +4,7 @@
 #include <zephyr/kernel.h>
 #include <string.h>
 #include <zephyr/irq.h>
+#include <zephyr/toolchain.h>
 #include <irq_ctrl.h>
 #if defined(CONFIG_BOARD_NATIVE_SIM)
 #include <nsi_cpu_if.h>
@@ -38,7 +39,7 @@ bool found[ARRAY_SIZE(key)];
 
 #define GEN_CHECK(cur, nxt)                                                                        \
 	void check##nxt(const uint8_t *data, size_t sz);                                           \
-	void __attribute__((noinline)) check##cur(const uint8_t *data, size_t sz)                  \
+	void __noinline check##cur(const uint8_t *data, size_t sz)                  \
 	{                                                                                          \
 		if (cur < sz && data[cur] == key[cur]) {                                           \
 			if (!found[cur]) {                                                         \
