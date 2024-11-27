@@ -39,7 +39,7 @@ class CoverageTool:
         elif tool == 'gcovr':
             t =  Gcovr()
         else:
-            logger.error("Unsupported coverage tool specified: {}".format(tool))
+            logger.error(f"Unsupported coverage tool specified: {tool}")
             return None
 
         logger.debug(f"Select {tool} as the coverage tool...")
@@ -47,7 +47,7 @@ class CoverageTool:
 
     @staticmethod
     def retrieve_gcov_data(input_file):
-        logger.debug("Working on %s" % input_file)
+        logger.debug(f"Working on {input_file}")
         extracted_coverage_info = {}
         capture_data = False
         capture_complete = False
@@ -125,47 +125,61 @@ class CoverageTool:
                 with open(filename, 'wb') as fp:
                     fp.write(hex_bytes)
             except ValueError:
-                logger.exception("Unable to convert hex data for file: {}".format(filename))
+                logger.exception(f"Unable to convert hex data for file: {filename}")
                 gcda_created = False
             except FileNotFoundError:
-                logger.exception("Unable to create gcda file: {}".format(filename))
+                logger.exception(f"Unable to create gcda file: {filename}")
                 gcda_created = False
         return gcda_created
 
     def generate(self, outdir):
         coverage_completed = True
-        for filename in glob.glob("%s/**/handler.log" % outdir, recursive=True):
+        for filename in glob.glob(f"{outdir}/**/handler.log", recursive=True):
             gcov_data = self.__class__.retrieve_gcov_data(filename)
             capture_complete = gcov_data['complete']
             extracted_coverage_info = gcov_data['data']
             if capture_complete:
                 gcda_created = self.create_gcda_files(extracted_coverage_info)
                 if gcda_created:
-                    logger.debug("Gcov data captured: {}".format(filename))
+                    logger.debug(f"Gcov data captured: {filename}")
                 else:
-                    logger.error("Gcov data invalid for: {}".format(filename))
+                    logger.error(f"Gcov data invalid for: {filename}")
                     coverage_completed = False
             else:
-                logger.error("Gcov data capture incomplete: {}".format(filename))
+                logger.error(f"Gcov data capture incomplete: {filename}")
                 coverage_completed = False
 
         with open(os.path.join(outdir, "coverage.log"), "a") as coveragelog:
             ret = self._generate(outdir, coveragelog)
             if ret == 0:
                 report_log = {
-                    "html": "HTML report generated: {}".format(os.path.join(outdir, "coverage", "index.html")),
-                    "lcov": "LCOV report generated: {}".format(os.path.join(outdir, "coverage.info")),
-                    "xml": "XML report generated: {}".format(os.path.join(outdir, "coverage", "coverage.xml")),
-                    "csv": "CSV report generated: {}".format(os.path.join(outdir, "coverage", "coverage.csv")),
-                    "txt": "TXT report generated: {}".format(os.path.join(outdir, "coverage", "coverage.txt")),
-                    "coveralls": "Coveralls report generated: {}".format(os.path.join(outdir, "coverage", "coverage.coveralls.json")),
-                    "sonarqube": "Sonarqube report generated: {}".format(os.path.join(outdir, "coverage", "coverage.sonarqube.xml"))
+                    "html": "HTML report generated: {}".format(
+                        os.path.join(outdir, "coverage", "index.html")
+                    ),
+                    "lcov": "LCOV report generated: {}".format(
+                        os.path.join(outdir, "coverage.info")
+                    ),
+                    "xml": "XML report generated: {}".format(
+                        os.path.join(outdir, "coverage", "coverage.xml")
+                    ),
+                    "csv": "CSV report generated: {}".format(
+                        os.path.join(outdir, "coverage", "coverage.csv")
+                    ),
+                    "txt": "TXT report generated: {}".format(
+                        os.path.join(outdir, "coverage", "coverage.txt")
+                    ),
+                    "coveralls": "Coveralls report generated: {}".format(
+                        os.path.join(outdir, "coverage", "coverage.coveralls.json")
+                    ),
+                    "sonarqube": "Sonarqube report generated: {}".format(
+                        os.path.join(outdir, "coverage", "coverage.sonarqube.xml")
+                    )
                 }
                 for r in self.output_formats.split(','):
                     logger.info(report_log[r])
             else:
                 coverage_completed = False
-        logger.debug("All coverage data processed: {}".format(coverage_completed))
+        logger.debug(f"All coverage data processed: {coverage_completed}")
         return coverage_completed
 
 

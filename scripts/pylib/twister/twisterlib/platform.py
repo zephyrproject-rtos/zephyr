@@ -177,4 +177,4 @@ class Platform:
             return next(iter(self.simulators), None)
 
     def __repr__(self):
-        return "<%s on %s>" % (self.name, self.arch)
+        return f"<{self.name} on {self.arch}>"

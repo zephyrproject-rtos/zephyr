@@ -164,8 +164,7 @@ class TwisterConfigParser:
         elif typestr.startswith("map"):
             return value
         else:
-            raise ConfigurationError(
-                self.filename, "unknown type '%s'" % value)
+            raise ConfigurationError(self.filename, f"unknown type '{value}'")
 
     def get_scenario(self, name):
         """Get a dictionary representing the keys/values within a scenario
@@ -199,7 +198,7 @@ class TwisterConfigParser:
                 )
             if k in d:
                 if k == "filter":
-                    d[k] = "(%s) and (%s)" % (d[k], v)
+                    d[k] = f"({d[k]}) and ({v})"
                 elif k not in ("extra_conf_files", "extra_overlay_confs",
                                "extra_dtc_overlay_files"):
                     if isinstance(d[k], str) and isinstance(v, list):
@@ -258,8 +257,8 @@ class TwisterConfigParser:
                 if required:
                     raise ConfigurationError(
                         self.filename,
-                        "missing required value for '%s' in test '%s'" %
-                        (k, name))
+                        f"missing required value for '{k}' in test '{name}'"
+                    )
                 else:
                     if "default" in kinfo:
                         default = kinfo["default"]
@@ -271,8 +270,8 @@ class TwisterConfigParser:
                     d[k] = self._cast_value(d[k], kinfo["type"])
                 except ValueError:
                     raise ConfigurationError(
-                        self.filename, "bad %s value '%s' for key '%s' in name '%s'" %
-                                       (kinfo["type"], d[k], k, name)
+                        self.filename,
+                        f"bad {kinfo['type']} value '{d[k]}' for key '{k}' in name '{name}'"
                     ) from None
 
         return d

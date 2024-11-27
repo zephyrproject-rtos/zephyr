@@ -286,8 +286,7 @@ Artificially long but functional example:
 
     # Start of individual args place them in alpha-beta order
 
-    board_root_list = ["%s/boards" % ZEPHYR_BASE,
-                       "%s/subsys/testsuite/boards" % ZEPHYR_BASE]
+    board_root_list = [f"{ZEPHYR_BASE}/boards", f"{ZEPHYR_BASE}/subsys/testsuite/boards"]
 
     modules = zephyr_module.parse_modules(ZEPHYR_BASE)
     for module in modules:
@@ -934,10 +933,10 @@ def parse_arguments(parser: argparse.ArgumentParser, args, options = None, on_in
                 double_dash = len(options.extra_test_args)
             unrecognized = " ".join(options.extra_test_args[0:double_dash])
 
-            logger.error("Unrecognized arguments found: '%s'. Use -- to "
-                         "delineate extra arguments for test binary or pass "
-                         "-h for help.",
-                         unrecognized)
+            logger.error(
+                f"Unrecognized arguments found: '{unrecognized}'."
+                " Use -- to delineate extra arguments for test binary or pass -h for help."
+            )
 
             sys.exit(1)
 
@@ -1065,7 +1064,7 @@ class TwisterEnv:
             args = []
         script = os.fspath(args[0])
 
-        logger.debug("Running cmake script %s", script)
+        logger.debug(f"Running cmake script {script}")
 
         cmake_args = ["-D{}".format(a.replace('"', '')) for a in args[1:]]
         cmake_args.extend(['-P', script])
@@ -1093,12 +1092,12 @@ class TwisterEnv:
         out = strip_ansi_sequences(out.decode())
 
         if p.returncode == 0:
-            msg = "Finished running %s" % (args[0])
+            msg = f"Finished running {args[0]}"
             logger.debug(msg)
             results = {"returncode": p.returncode, "msg": msg, "stdout": out}
 
         else:
-            logger.error("CMake script failure: %s" % (args[0]))
+            logger.error(f"CMake script failure: {args[0]}")
             results = {"returncode": p.returncode, "returnmsg": out}
 
         return results

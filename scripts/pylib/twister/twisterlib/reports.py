@@ -450,7 +450,7 @@ class Reporting:
                                ("used_rom", int, True)]
 
         if not os.path.exists(filename):
-            logger.error("Cannot compare metrics, %s not found" % filename)
+            logger.error(f"Cannot compare metrics, {filename} not found")
             return []
 
         results = []
@@ -506,9 +506,7 @@ class Reporting:
                 if show_footprint:
                     logger.log(
                         logging.INFO if all_deltas else logging.WARNING,
-                        "{:<25} {:<60} {} {:<+4}, is now {:6} {:+.2%}".format(
-                        i.platform.name, i.testsuite.name,
-                        metric, delta, value, percentage))
+                        f"{i.platform.name:<25} {i.testsuite.name:<60} {metric} {delta:<+4}, is now {value:6} {percentage:+.2%}")
 
                 warnings += 1
 
@@ -574,9 +572,11 @@ class Reporting:
             if instance.status == TwisterStatus.FAIL:
                 failed += 1
             elif not ignore_unrecognized_sections and instance.metrics.get("unrecognized"):
-                logger.error("%sFAILED%s: %s has unrecognized binary sections: %s" %
-                             (Fore.RED, Fore.RESET, instance.name,
-                              str(instance.metrics.get("unrecognized", []))))
+                logger.error(
+                    f"{Fore.RED}FAILED{Fore.RESET}:"
+                    f" {instance.name} has unrecognized binary sections:"
+                    f" {instance.metrics.get('unrecognized', [])!s}"
+                )
                 failed += 1
 
             # FIXME: need a better way to identify executed tests
@@ -648,7 +648,7 @@ class Reporting:
             filename = os.path.join(outdir, report_name)
 
         if suffix:
-            filename = "{}_{}".format(filename, suffix)
+            filename = f"{filename}_{suffix}"
 
         if not no_update:
             json_file = filename + ".json"
@@ -669,10 +669,10 @@ class Reporting:
         platforms = {repr(inst.platform):inst.platform for _, inst in self.instances.items()}
         for platform in platforms.values():
             if suffix:
-                filename = os.path.join(outdir,"{}_{}.xml".format(platform.normalized_name, suffix))
-                json_platform_file = os.path.join(outdir,"{}_{}".format(platform.normalized_name, suffix))
+                filename = os.path.join(outdir,f"{platform.normalized_name}_{suffix}.xml")
+                json_platform_file = os.path.join(outdir,f"{platform.normalized_name}_{suffix}")
             else:
-                filename = os.path.join(outdir,"{}.xml".format(platform.normalized_name))
+                filename = os.path.join(outdir,f"{platform.normalized_name}.xml")
                 json_platform_file = os.path.join(outdir, platform.normalized_name)
             self.xunit_report(json_file, filename, platform.name, full_report=True)
             self.json_report(json_platform_file + ".json",

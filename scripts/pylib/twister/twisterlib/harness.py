@@ -222,8 +222,9 @@ class Robot(Harness):
                 # please note that there should be only one testcase in testcases list
                 self.instance.testcases[0].status = TwisterStatus.PASS
             else:
-                logger.error("Robot test failure: %s for %s" %
-                             (handler.sourcedir, self.instance.platform.name))
+                logger.error(
+                    f"Robot test failure: {handler.sourcedir} for {self.instance.platform.name}"
+                )
                 self.instance.status = TwisterStatus.FAIL
                 self.instance.testcases[0].status = TwisterStatus.FAIL
 
@@ -530,7 +531,7 @@ class Pytest(Harness):
         else:
             cmd_append_python_path = ''
         cmd_to_print = cmd_append_python_path + shlex.join(cmd)
-        logger.debug('Running pytest command: %s', cmd_to_print)
+        logger.debug(f'Running pytest command: {cmd_to_print}')
 
         return cmd, env
 
@@ -541,7 +542,7 @@ class Pytest(Harness):
             if not line:
                 continue
             self._output.append(line)
-            logger.debug('PYTEST: %s', line)
+            logger.debug(f'PYTEST: {line}')
             self.parse_record(line)
         proc.communicate()
 
@@ -639,11 +640,11 @@ class Gtest(Harness):
             # Assert that we don't already have a running test
             assert (
                 self.tc is None
-            ), "gTest error, {} didn't finish".format(self.tc)
+            ), f"gTest error, {self.tc} didn't finish"
 
             # Check that the instance doesn't exist yet (prevents re-running)
             tc = self.instance.get_case_by_name(name)
-            assert tc is None, "gTest error, {} running twice".format(tc)
+            assert tc is None, f"gTest error, {tc} running twice"
 
             # Create the test instance and set the context
             tc = self.instance.get_case_or_create(name)
@@ -674,7 +675,7 @@ class Gtest(Harness):
         tc = self.instance.get_case_by_name(name)
         assert (
             tc is not None and tc == self.tc
-        ), "gTest error, mismatched tests. Expected {} but got {}".format(self.tc, tc)
+        ), f"gTest error, mismatched tests. Expected {self.tc} but got {tc}"
 
         # Test finished, clear the context
         self.tc = None
@@ -743,13 +744,13 @@ class Test(Harness):
         for ts_name_ in ts_names:
             if self.started_suites[ts_name_]['count'] < (0 if phase == 'TS_SUM' else 1):
                 continue
-            tc_fq_id = "{}.{}.{}".format(self.id, ts_name_, tc_name)
+            tc_fq_id = f"{self.id}.{ts_name_}.{tc_name}"
             if tc := self.instance.get_case_by_name(tc_fq_id):
                 if self.trace:
                     logger.debug(f"On {phase}: Ztest case '{tc_name}' matched to '{tc_fq_id}")
                 return tc
         logger.debug(f"On {phase}: Ztest case '{tc_name}' is not known in {self.started_suites} running suite(s).")
-        tc_id = "{}.{}".format(self.id, tc_name)
+        tc_id = f"{self.id}.{tc_name}"
         return self.instance.get_case_or_create(tc_id)
 
     def start_suite(self, suite_name):

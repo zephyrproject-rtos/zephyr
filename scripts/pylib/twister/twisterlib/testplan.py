@@ -175,7 +175,7 @@ class TestPlan:
             if self.run_individual_testsuite:
                 logger.info("Running the following tests:")
                 for test in self.run_individual_testsuite:
-                    print(" - {}".format(test))
+                    print(f" - {test}")
             else:
                 raise TwisterRuntimeError("Tests not found")
 
@@ -217,7 +217,7 @@ class TestPlan:
     def load(self):
 
         if self.options.report_suffix:
-            last_run = os.path.join(self.options.outdir, "twister_{}.json".format(self.options.report_suffix))
+            last_run = os.path.join(self.options.outdir, f"twister_{self.options.report_suffix}.json")
         else:
             last_run = os.path.join(self.options.outdir, "twister.json")
 
@@ -262,7 +262,7 @@ class TestPlan:
                 raise TwisterRuntimeError("subset should not exceed the total number of sets")
 
             if int(subset) > 0 and int(sets) >= int(subset):
-                logger.info("Running only a subset: %s/%s" % (subset, sets))
+                logger.info(f"Running only a subset: {subset}/{sets}")
             else:
                 raise TwisterRuntimeError(f"You have provided a wrong subset value: {self.options.subset}.")
 
@@ -347,9 +347,9 @@ class TestPlan:
         if dupes:
             msg = "Duplicated test scenarios found:\n"
             for dupe in dupes:
-                msg += ("- {} found in:\n".format(dupe))
+                msg += (f"- {dupe} found in:\n")
                 for dc in self.get_testsuite(dupe):
-                    msg += ("  - {}\n".format(dc.yamlfile))
+                    msg += (f"  - {dc.yamlfile}\n")
             raise TwisterRuntimeError(msg)
         else:
             logger.debug("No duplicates found.")
@@ -360,7 +360,7 @@ class TestPlan:
             tags = tags.union(tc.tags)
 
         for t in tags:
-            print("- {}".format(t))
+            print(f"- {t}")
 
     def report_test_tree(self):
         tests_list = self.get_tests_list()
@@ -399,7 +399,7 @@ class TestPlan:
                     Node(test, parent=subarea)
 
         for pre, _, node in RenderTree(testsuite):
-            print("%s%s" % (pre, node.name))
+            print(f"{pre}{node.name}")
 
     def report_test_list(self):
         tests_list = self.get_tests_list()
@@ -407,8 +407,8 @@ class TestPlan:
         cnt = 0
         for test in sorted(tests_list):
             cnt = cnt + 1
-            print(" - {}".format(test))
-        print("{} total.".format(cnt))
+            print(f" - {test}")
+        print(f"{cnt} total.")
 
 
     # Debug Functions
@@ -550,7 +550,7 @@ class TestPlan:
         for root in self.env.test_roots:
             root = os.path.abspath(root)
 
-            logger.debug("Reading test case configuration files under %s..." % root)
+            logger.debug(f"Reading test case configuration files under {root}...")
 
             for dirpath, _, filenames in os.walk(root, topdown=True):
                 if self.SAMPLE_FILENAME in filenames:
@@ -570,8 +570,9 @@ class TestPlan:
                                               os.path.relpath(suite_path, root),
                                               filename)
                     if os.path.exists(alt_config):
-                        logger.info("Using alternative configuration from %s" %
-                                    os.path.normpath(alt_config))
+                        logger.info(
+                            f"Using alternative configuration from {os.path.normpath(alt_config)}"
+                        )
                         suite_yaml_path = alt_config
                         break
 
@@ -981,7 +982,9 @@ class TestPlan:
                     # Search and check that all required snippet files are found
                     for this_snippet in snippet_args['snippets']:
                         if this_snippet not in found_snippets:
-                            logger.error("Can't find snippet '%s' for test '%s'", this_snippet, ts.name)
+                            logger.error(
+                                f"Can't find snippet '{this_snippet}' for test '{ts.name}'"
+                            )
                             instance.status = TwisterStatus.ERROR
                             instance.reason = f"Snippet {this_snippet} not found"
                             missing_snippet = True
