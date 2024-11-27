@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 EPAM Systems
+ * Copyright (c) 2021-2024 EPAM Systems
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -76,12 +76,12 @@ int gnttab_map_refs(struct gnttab_map_grant_ref *map_ops, unsigned int count);
  * Unmap foreign grant refs. The gnttab_put_page() should be used after this for
  * each page, that was successfully unmapped.
  *
- * @param unmap_ops - array of prepared gnttab_map_grant_ref's for unmapping
+ * @param unmap_ops - array of prepared gnttab_unmap_grant_ref's for unmapping
  * @param count - number of grefs in unmap_ops array
  * @return - @count on success or negative errno on failure
  *           also per-page status will be set in unmap_ops[i].status (GNTST_*)
  */
-int gnttab_unmap_refs(struct gnttab_map_grant_ref *unmap_ops, unsigned int count);
+int gnttab_unmap_refs(struct gnttab_unmap_grant_ref *unmap_ops, unsigned int count);
 
 /*
  * Convert grant ref status codes (GNTST_*) to text messages.
