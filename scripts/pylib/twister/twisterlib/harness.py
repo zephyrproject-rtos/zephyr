@@ -924,7 +924,7 @@ class HarnessImporter:
             if harness_name:
                 harness_class = getattr(thismodule, harness_name)
             else:
-                harness_class = getattr(thismodule, 'Test')
+                harness_class = thismodule.Test
             return harness_class()
         except AttributeError as e:
             logger.debug(f"harness {harness_name} not implemented: {e}")
