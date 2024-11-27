@@ -400,7 +400,7 @@ def test_binaryhandler_output_handler(
          mock.patch('time.time', side_effect=faux_timer.time):
         handler._output_handler(proc, harness)
 
-        mock_file.assert_called_with(handler.log, 'wt')
+        mock_file.assert_called_with(handler.log, 'w')
 
     if expected_handler_calls:
         mock_file.return_value.write.assert_has_calls(expected_handler_calls)
@@ -1778,7 +1778,7 @@ def test_qemuhandler_thread_open_files(fifo_in_exists, fifo_out_exists):
     open_mock.assert_has_calls([
         mock.call('fifo.in', 'wb'),
         mock.call('fifo.out', 'rb', buffering=0),
-        mock.call('log.file', 'wt'),
+        mock.call('log.file', 'w'),
     ])
 
     if fifo_in_exists:

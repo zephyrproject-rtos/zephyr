@@ -51,7 +51,7 @@ class CoverageTool:
         extracted_coverage_info = {}
         capture_data = False
         capture_complete = False
-        with open(input_file, 'r') as fp:
+        with open(input_file) as fp:
             for line in fp.readlines():
                 if re.search("GCOV_COVERAGE_DUMP_START", line):
                     capture_data = True

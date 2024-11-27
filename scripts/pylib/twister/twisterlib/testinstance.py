@@ -92,7 +92,7 @@ class TestInstance:
                 self.recording.extend(recording)
 
             filename = os.path.join(self.build_dir, fname_csv)
-            with open(filename, "wt") as csvfile:
+            with open(filename, 'w') as csvfile:
                 cw = csv.DictWriter(csvfile,
                                     fieldnames = self.recording[0].keys(),
                                     lineterminator = os.linesep,
@@ -131,7 +131,7 @@ class TestInstance:
         run_id = ""
         run_id_file = os.path.join(self.build_dir, "run_id.txt")
         if os.path.exists(run_id_file):
-            with open(run_id_file, "r") as fp:
+            with open(run_id_file) as fp:
                 run_id = fp.read()
         else:
             hash_object = hashlib.md5(self.name.encode())

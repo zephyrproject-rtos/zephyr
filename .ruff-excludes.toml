@@ -759,7 +759,6 @@
 ]
 "./scripts/pylib/twister/twisterlib/cmakecache.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
 "./scripts/pylib/twister/twisterlib/config_parser.py" = [
@@ -769,7 +768,6 @@
 "./scripts/pylib/twister/twisterlib/coverage.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
-    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
@@ -782,26 +780,20 @@
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
     "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
     "UP007",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation
-    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP030",    # https://docs.astral.sh/ruff/rules/format-literals
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
 "./scripts/pylib/twister/twisterlib/hardwaremap.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
 ]
 "./scripts/pylib/twister/twisterlib/harness.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
     "F811",     # https://docs.astral.sh/ruff/rules/redefined-while-unused
-    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
-]
-"./scripts/pylib/twister/twisterlib/package.py" = [
-    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
 ]
 "./scripts/pylib/twister/twisterlib/platform.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
@@ -809,13 +801,11 @@
 ]
 "./scripts/pylib/twister/twisterlib/quarantine.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
 ]
 "./scripts/pylib/twister/twisterlib/reports.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
-    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
@@ -823,18 +813,15 @@
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
     "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
-    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
 "./scripts/pylib/twister/twisterlib/size_calc.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
 ]
 "./scripts/pylib/twister/twisterlib/testinstance.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
 ]
 "./scripts/pylib/twister/twisterlib/testplan.py" = [
@@ -842,7 +829,6 @@
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "F401",     # https://docs.astral.sh/ruff/rules/unused-import
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
-    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
@@ -853,7 +839,6 @@
 ]
 "./scripts/pylib/twister/twisterlib/twister_main.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
 "./scripts/pylint/checkers/argparse-checker.py" = [

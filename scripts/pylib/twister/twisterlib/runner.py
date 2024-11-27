@@ -743,7 +743,7 @@ class FilterBuilder(CMake):
 
 
         if not filter_stages or "kconfig" in filter_stages:
-            with open(defconfig_path, "r") as fp:
+            with open(defconfig_path) as fp:
                 defconfig = {}
                 for line in fp.readlines():
                     m = self.config_re.match(line)
@@ -1281,7 +1281,7 @@ class ProjectBuilder(FilterBuilder):
         if not os.path.exists(runners_file_path):
             return []
 
-        with open(runners_file_path, 'r') as file:
+        with open(runners_file_path) as file:
             runners_content: dict = yaml.load(file, Loader=SafeLoader)
 
         if 'config' not in runners_content:
@@ -1320,7 +1320,7 @@ class ProjectBuilder(FilterBuilder):
         if not os.path.exists(runners_file_path):
             return
 
-        with open(runners_file_path, 'rt') as file:
+        with open(runners_file_path) as file:
             runners_content_text = file.read()
             runners_content_yaml: dict = yaml.load(runners_content_text, Loader=SafeLoader)
 
@@ -1338,7 +1338,7 @@ class ProjectBuilder(FilterBuilder):
             binary_path_relative = os.path.relpath(binary_path, start=runners_dir_path)
             runners_content_text = runners_content_text.replace(binary_path, binary_path_relative)
 
-        with open(runners_file_path, 'wt') as file:
+        with open(runners_file_path, 'w') as file:
             file.write(runners_content_text)
 
     def _sanitize_zephyr_base_from_files(self):
@@ -1354,14 +1354,14 @@ class ProjectBuilder(FilterBuilder):
             if not os.path.exists(file_path):
                 continue
 
-            with open(file_path, "rt") as file:
+            with open(file_path) as file:
                 data = file.read()
 
             # add trailing slash at the end of canonical_zephyr_base if it does not exist:
             path_to_remove = os.path.join(canonical_zephyr_base, "")
             data = data.replace(path_to_remove, "")
 
-            with open(file_path, "wt") as file:
+            with open(file_path, 'w') as file:
                 file.write(data)
 
     @staticmethod

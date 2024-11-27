@@ -201,7 +201,7 @@ class BinaryHandler(Handler):
     def _output_handler(self, proc, harness):
         suffix = '\\r\\n'
 
-        with open(self.log, "wt") as log_out_fp:
+        with open(self.log, "w") as log_out_fp:
             timeout_extended = False
             timeout_time = time.time() + self.get_test_timeout()
             while True:
@@ -894,7 +894,7 @@ class QEMUHandler(Handler):
         # Disable internal buffering, we don't
         # want read() or poll() to ever block if there is data in there
         in_fp = open(fifo_out, "rb", buffering=0)
-        log_out_fp = open(logfile, "wt")
+        log_out_fp = open(logfile, "w")
 
         return out_fp, in_fp, log_out_fp
 
@@ -1087,7 +1087,7 @@ class QEMUHandler(Handler):
         is_timeout = False
         qemu_pid = None
 
-        with subprocess.Popen(command, stdout=open(self.stdout_fn, "wt"), stderr=open(self.stderr_fn, "wt"), cwd=self.build_dir) as proc:
+        with subprocess.Popen(command, stdout=open(self.stdout_fn, "w"), stderr=open(self.stderr_fn, "w"), cwd=self.build_dir) as proc:
             logger.debug("Spawning QEMUHandler Thread for %s" % self.name)
 
             try:
@@ -1174,7 +1174,7 @@ class QEMUWinHandler(Handler):
 
     @staticmethod
     def _open_log_file(logfile):
-        return open(logfile, "wt")
+        return open(logfile, "w")
 
     @staticmethod
     def _close_log_file(log_file):
