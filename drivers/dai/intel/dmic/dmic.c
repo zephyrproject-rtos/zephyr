@@ -874,7 +874,7 @@ static int dmic_pm_action(const struct device *dev, enum pm_device_action action
 	return 0;
 }
 
-const struct dai_driver_api dai_dmic_ops = {
+DEVICE_API(dai, dai_dmic_ops) = {
 	.probe			= pm_device_runtime_get,
 	.remove			= pm_device_runtime_put,
 	.config_set		= dai_dmic_set_config,

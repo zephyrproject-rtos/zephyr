@@ -103,7 +103,7 @@ static int dai_hda_remove(const struct device *dev)
 	return 0;
 }
 
-static const struct dai_driver_api dai_intel_hda_api_funcs = {
+static DEVICE_API(dai, dai_intel_hda_api_funcs) = {
 	.probe			= dai_hda_probe,
 	.remove			= dai_hda_remove,
 	.config_set		= dai_hda_config_set,
