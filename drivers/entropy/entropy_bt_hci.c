@@ -37,7 +37,7 @@ static int entropy_bt_get_entropy(const struct device *dev,
 }
 
 /* HCI commands cannot be run from an interrupt context */
-static const struct entropy_driver_api entropy_bt_api = {
+static DEVICE_API(entropy, entropy_bt_api) = {
 	.get_entropy = entropy_bt_get_entropy,
 	.get_entropy_isr = NULL
 };

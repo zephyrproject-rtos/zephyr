@@ -32,7 +32,7 @@ static int entropy_rv32m1_trng_get_entropy(const struct device *dev,
 	return 0;
 }
 
-static const struct entropy_driver_api entropy_rv32m1_trng_api_funcs = {
+static DEVICE_API(entropy, entropy_rv32m1_trng_api_funcs) = {
 	.get_entropy = entropy_rv32m1_trng_get_entropy
 };
 
