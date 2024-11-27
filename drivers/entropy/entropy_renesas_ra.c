@@ -35,7 +35,7 @@ static int entropy_ra_rsip_trng_get_entropy(const struct device *dev, uint8_t *b
 	return 0;
 }
 
-static const struct entropy_driver_api entropy_ra_rsip_trng_api = {
+static DEVICE_API(entropy, entropy_ra_rsip_trng_api) = {
 	.get_entropy = entropy_ra_rsip_trng_get_entropy,
 };
 

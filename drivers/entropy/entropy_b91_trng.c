@@ -59,7 +59,7 @@ static int entropy_b91_trng_get_entropy_isr(const struct device *dev,
 }
 
 /* Entropy driver APIs structure */
-static const struct entropy_driver_api entropy_b91_trng_api = {
+static DEVICE_API(entropy, entropy_b91_trng_api) = {
 	.get_entropy = entropy_b91_trng_get_entropy,
 	.get_entropy_isr = entropy_b91_trng_get_entropy_isr
 };
