@@ -148,7 +148,7 @@ void npcx_clock_control_turn_off_system_sleep(void)
 #endif /* CONFIG_PM */
 
 /* Clock controller driver registration */
-static const struct clock_control_driver_api npcx_clock_control_api = {
+static DEVICE_API(clock_control, npcx_clock_control_api) = {
 	.on = npcx_clock_control_on,
 	.off = npcx_clock_control_off,
 	.get_rate = npcx_clock_control_get_subsys_rate,

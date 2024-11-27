@@ -73,7 +73,7 @@ static int mcux_scg_k4_get_rate(const struct device *dev, clock_control_subsys_t
 	return 0;
 }
 
-static const struct clock_control_driver_api mcux_scg_driver_api = {
+static DEVICE_API(clock_control, mcux_scg_driver_api) = {
 	.on = mcux_scg_k4_on,
 	.off = mcux_scg_k4_off,
 	.get_rate = mcux_scg_k4_get_rate,

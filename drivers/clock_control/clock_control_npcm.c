@@ -301,7 +301,7 @@ static int npcm_clock_control_get_subsys_rate(const struct device *dev,
 }
 
 /* Clock controller driver registration */
-static struct clock_control_driver_api npcm_clock_control_api = {
+static DEVICE_API(clock_control, npcm_clock_control_api) = {
 	.on = npcm_clock_control_on,
 	.off = npcm_clock_control_off,
 	.get_rate = npcm_clock_control_get_subsys_rate,

@@ -103,7 +103,7 @@ static int mcux_sim_init(const struct device *dev)
 	return 0;
 }
 
-static const struct clock_control_driver_api mcux_sim_driver_api = {
+static DEVICE_API(clock_control, mcux_sim_driver_api) = {
 	.on = mcux_sim_on,
 	.off = mcux_sim_off,
 	.get_rate = mcux_sim_get_subsys_rate,
