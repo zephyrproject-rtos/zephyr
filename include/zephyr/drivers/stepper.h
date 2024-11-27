@@ -164,13 +164,12 @@ typedef int (*stepper_set_target_position_t)(const struct device *dev, const int
 typedef int (*stepper_is_moving_t)(const struct device *dev, bool *is_moving);
 
 /**
- * @brief Enable constant velocity mode for the stepper with a given velocity
+ * @brief Run the stepper with a given velocity in a given direction
  *
- * @see stepper_enable_constant_velocity_mode() for details.
+ * @see stepper_run() for details.
  */
-typedef int (*stepper_enable_constant_velocity_mode_t)(const struct device *dev,
-						       const enum stepper_direction direction,
-						       const uint32_t value);
+typedef int (*stepper_run_t)(const struct device *dev, const enum stepper_direction direction,
+			     const uint32_t value);
 
 /**
  * @brief Callback function for stepper events
@@ -199,7 +198,7 @@ __subsystem struct stepper_driver_api {
 	stepper_get_actual_position_t get_actual_position;
 	stepper_set_target_position_t set_target_position;
 	stepper_is_moving_t is_moving;
-	stepper_enable_constant_velocity_mode_t enable_constant_velocity_mode;
+	stepper_run_t run;
 	stepper_set_event_callback_t set_event_callback;
 };
 
@@ -408,36 +407,34 @@ static inline int z_impl_stepper_is_moving(const struct device *dev, bool *is_mo
 }
 
 /**
- * @brief Enable constant velocity mode for the stepper with a given velocity
+ * @brief Run the stepper with a given velocity in a given direction
  *
- * @details activate constant velocity mode with the given velocity in micro_steps_per_second.
- * If velocity > 0, motor shall be set into motion and run incessantly until and unless stalled or
- * stopped using some other command, for instance, motor_enable(false).
+ * @details If velocity > 0, motor shall be set into motion and run incessantly until and unless
+ * stalled or stopped using some other command, for instance, motor_enable(false).
  *
  * @param dev pointer to the stepper motor controller instance
  * @param direction The direction to set
- * @param value The velocity to set in steps per second where one step is dependent on the current
- * microstepping resolution:
- * > 0: Enable constant velocity mode with the given velocity in a given direction
- * 0: Disable constant velocity mode
+ * @param velocity The velocity to set in microsteps per second
+ *                 - > 0: Run the stepper with the given velocity in a given direction
+ *                 - 0: Stop the stepper
  *
  * @retval -EIO General input / output error
  * @retval -ENOSYS If not implemented by device driver
  * @retval 0 Success
  */
-__syscall int stepper_enable_constant_velocity_mode(const struct device *dev,
-						    enum stepper_direction direction,
-						    uint32_t value);
+__syscall int stepper_run(const struct device *dev, enum stepper_direction direction,
+			  uint32_t velocity);
 
-static inline int z_impl_stepper_enable_constant_velocity_mode(
-	const struct device *dev, const enum stepper_direction direction, const uint32_t value)
+static inline int z_impl_stepper_run(const struct device *dev,
+				     const enum stepper_direction direction,
+				     const uint32_t velocity)
 {
 	const struct stepper_driver_api *api = (const struct stepper_driver_api *)dev->api;
 
-	if (api->enable_constant_velocity_mode == NULL) {
+	if (api->run == NULL) {
 		return -ENOSYS;
 	}
-	return api->enable_constant_velocity_mode(dev, direction, value);
+	return api->run(dev, direction, velocity);
 }
 
 /**

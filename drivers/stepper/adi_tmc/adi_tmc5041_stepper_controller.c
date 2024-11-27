@@ -477,11 +477,10 @@ static int tmc5041_stepper_set_target_position(const struct device *dev, const i
 	return 0;
 }
 
-static int tmc5041_stepper_enable_constant_velocity_mode(const struct device *dev,
-							 const enum stepper_direction direction,
-							 const uint32_t velocity)
+static int tmc5041_stepper_run(const struct device *dev, const enum stepper_direction direction,
+			       const uint32_t velocity)
 {
-	LOG_DBG("Stepper motor controller %s enable constant velocity mode", dev->name);
+	LOG_DBG("Stepper motor controller %s run with velocity %d", dev->name, velocity);
 	const struct tmc5041_stepper_config *config = dev->config;
 	const struct tmc5041_config *tmc5041_config = config->controller->config;
 	struct tmc5041_stepper_data *data = dev->data;
@@ -731,7 +730,7 @@ static int tmc5041_stepper_init(const struct device *dev)
 		.set_reference_position = tmc5041_stepper_set_reference_position,		\
 		.get_actual_position = tmc5041_stepper_get_actual_position,			\
 		.set_target_position = tmc5041_stepper_set_target_position,			\
-		.enable_constant_velocity_mode = tmc5041_stepper_enable_constant_velocity_mode,	\
+		.run = tmc5041_stepper_run,							\
 		.set_event_callback = tmc5041_stepper_set_event_callback, };
 
 #define TMC5041_STEPPER_DEFINE(child)								\
