@@ -766,7 +766,6 @@
 ]
 "./scripts/pylib/twister/twisterlib/coverage.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
@@ -776,7 +775,6 @@
 ]
 "./scripts/pylib/twister/twisterlib/handlers.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
     "UP007",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation
     "UP030",    # https://docs.astral.sh/ruff/rules/format-literals
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
@@ -788,7 +786,6 @@
 ]
 "./scripts/pylib/twister/twisterlib/harness.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
@@ -802,13 +799,11 @@
 ]
 "./scripts/pylib/twister/twisterlib/reports.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
 "./scripts/pylib/twister/twisterlib/runner.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
@@ -824,7 +819,6 @@
     "E402",     # https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "F401",     # https://docs.astral.sh/ruff/rules/unused-import
-    "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]

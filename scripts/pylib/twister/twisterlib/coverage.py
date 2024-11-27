@@ -413,7 +413,7 @@ def run_coverage(testplan, options):
         elif os.path.exists(zephyr_sdk_gcov_tool):
             gcov_tool = zephyr_sdk_gcov_tool
         else:
-            logger.error(f"Can't find a suitable gcov tool. Use --gcov-tool or set ZEPHYR_SDK_INSTALL_DIR.")
+            logger.error("Can't find a suitable gcov tool. Use --gcov-tool or set ZEPHYR_SDK_INSTALL_DIR.")
             sys.exit(1)
     else:
         gcov_tool = str(options.gcov_tool)
