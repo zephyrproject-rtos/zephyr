@@ -748,7 +748,6 @@
 ]
 "./scripts/pylib/twister/expr_parser.py" = [
     "SIM103",   # https://docs.astral.sh/ruff/rules/needless-bool
-    "SIM110",   # https://docs.astral.sh/ruff/rules/reimplemented-builtin
     "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
 ]
@@ -832,7 +831,6 @@
 "./scripts/pylib/twister/twisterlib/quarantine.py" = [
     "B006",     # https://docs.astral.sh/ruff/rules/mutable-argument-default
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "SIM110",   # https://docs.astral.sh/ruff/rules/reimplemented-builtin
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
 ]
@@ -882,7 +880,6 @@
     "F401",     # https://docs.astral.sh/ruff/rules/unused-import
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
     "SIM102",   # https://docs.astral.sh/ruff/rules/collapsible-if
-    "SIM110",   # https://docs.astral.sh/ruff/rules/reimplemented-builtin
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string

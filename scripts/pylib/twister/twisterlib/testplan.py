@@ -726,10 +726,7 @@ class TestPlan:
             return 1
 
     def check_platform(self, platform, platform_list):
-        for p in platform_list:
-            if p in platform.aliases:
-                return True
-        return False
+        return any(p in platform.aliases for p in platform_list)
 
     def apply_filters(self, **kwargs):
 
