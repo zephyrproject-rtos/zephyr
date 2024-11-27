@@ -301,7 +301,10 @@ class SizeCalculator:
                 file_content = file.readlines()
         else:
             if self.generate_warning:
-                logger.error(msg=f"Incorrect path to build.log file to analyze footprints. Please check the path {self.buildlog_filename}.")
+                logger.error(
+                    msg="Incorrect path to build.log file to analyze footprints."
+                       f" Please check the path {self.buildlog_filename}."
+                )
             file_content = []
         return file_content
 
@@ -325,13 +328,16 @@ class SizeCalculator:
                     break
         # If the file does not contain information about memory footprint, the warning is raised.
         if result == -1:
-            logger.warning(msg=f"Information about memory footprint for this test configuration is not found. Please check file {self.buildlog_filename}.")
+            logger.warning(
+                msg="Information about memory footprint for this test configuration is not found."
+                   f" Please check file {self.buildlog_filename}."
+            )
         return result
 
     def _get_lines_with_footprint(self, start_offset: int, file_content: list[str]) -> list[str]:
         """Get lines from the file with a memory footprint.
 
-        @param start_offset (int) Offset with the first line of the information about memory footprint.
+        @param start_offset (int) Offset with the memory footprint's first line.
         @param file_content (list[str]) Content of the build.log file.
         @return Lines with information about memory footprint (list[str])
         """
@@ -368,7 +374,12 @@ class SizeCalculator:
             result = []
             PATTERN_SPLIT_COLUMNS = "  +"
             for line in text_lines:
-                line = [column.rstrip(":") for column in re.split(pattern=PATTERN_SPLIT_COLUMNS, string=line)]
+                line = [
+                    column.rstrip(":") for column in re.split(
+                        pattern=PATTERN_SPLIT_COLUMNS,
+                        string=line
+                    )
+                ]
                 result.append(list(filter(None, line)))
         else:
             result = [[]]
@@ -384,7 +395,10 @@ class SizeCalculator:
         if len(data_lines) != self.USEFUL_LINES_AMOUNT:
             data_lines = [[]]
             if self.generate_warning:
-                logger.warning(msg=f"Incomplete information about memory footprint. Please check file {self.buildlog_filename}")
+                logger.warning(
+                    msg="Incomplete information about memory footprint."
+                       f" Please check file {self.buildlog_filename}"
+                )
         else:
             for idx, line in enumerate(data_lines):
                 # Line with description of the columns
@@ -423,13 +437,18 @@ class SizeCalculator:
         @return Table with information about memory usage (list[list[str]])
         """
         file_content = self._get_buildlog_file_content()
-        data_line_start_idx = self._find_offset_of_last_pattern_occurrence(file_content=file_content)
+        data_line_start_idx = self._find_offset_of_last_pattern_occurrence(
+            file_content=file_content
+        )
 
         if data_line_start_idx < 0:
             data_from_content = [[]]
         else:
             # Clean lines and separate information to columns
-            information_lines = self._get_lines_with_footprint(start_offset=data_line_start_idx, file_content=file_content)
+            information_lines = self._get_lines_with_footprint(
+                start_offset=data_line_start_idx,
+                file_content=file_content
+            )
             information_lines = self._clear_whitespaces_from_lines(text_lines=information_lines)
             data_from_content = self._divide_text_lines_into_columns(text_lines=information_lines)
             data_from_content = self._unify_prefixes_on_all_values(data_lines=data_from_content)
@@ -446,7 +465,10 @@ class SizeCalculator:
             self.available_ram = 0
             self.available_rom = 0
             if self.generate_warning:
-                logger.warning(msg=f"Missing information about memory footprint. Check file {self.buildlog_filename}.")
+                logger.warning(
+                    msg="Missing information about memory footprint."
+                       f" Check file {self.buildlog_filename}."
+                )
         else:
             ROW_RAM_IDX = 2
             ROW_ROM_IDX = 1
