@@ -28,9 +28,9 @@ static void iface_cb(struct net_if *iface, void *user_data)
 				struct net_if *slave = dsa_get_slave_port(iface, i);
 
 				if (slave == NULL) {
-					LOG_ERR("Slave interface %d not found.", i);
-					break;
+					continue;
 				}
+				LOG_INF("Slave interface %d found.", i);
 
 				ifaces->lan[i] = slave;
 			}
