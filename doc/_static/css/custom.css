@@ -1171,3 +1171,7 @@ li>a.code-sample-link.reference.internal.current {
     text-overflow: ellipsis;
     overflow: hidden;
 }
+
+.sidebar.board-overview dl.field-list>dd code {
+    font-size: 0.9em;
+}
