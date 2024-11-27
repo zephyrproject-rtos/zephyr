@@ -354,7 +354,7 @@ static int eeprom_xec_init(const struct device *dev)
 	return 0;
 }
 
-static const struct eeprom_driver_api eeprom_xec_api = {
+static DEVICE_API(eeprom, eeprom_xec_api) = {
 	.read = eeprom_xec_read,
 	.write = eeprom_xec_write,
 	.size = eeprom_xec_size,
