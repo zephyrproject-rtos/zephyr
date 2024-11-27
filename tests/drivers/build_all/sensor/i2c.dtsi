@@ -1137,3 +1137,8 @@ test_i2c_scd4x: scd4x@9e {
 	reg = <0x9e>;
 	mode = <0>;
 };
+
+test_i2c_bma530: bma530@8 {
+	compatible = "bosch,bma530";
+	reg = <0x18>;
+};

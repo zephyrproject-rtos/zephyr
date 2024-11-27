@@ -1,0 +1,50 @@
+# Copyright (c) 2024 Arrow Electronics.
+# SPDX-License-Identifier: Apache-2.0
+
+properties:
+  sampling-frequency-hz:
+    description: |
+      Sampling frequency of accelerometer [Hz]. Only the listed values are allowed.
+      The position in enum is already the value to write to register (with a proper offset).
+      The default chip reset frequency is 200 Hz.
+    type: string
+    default: "200"
+    enum:
+      - "1.5625"
+      - "3.125"
+      - "6.25"
+      - "12.5"
+      - "25"
+      - "50"
+      - "100"
+      - "200"
+      - "400"
+      - "800"
+      - "1600"
+      - "3200"
+      - "6400"
+
+  full-scale-range-g:
+    description: Full scale range in [g].
+      The position in enum is already the value to write to register (with a proper offset).
+      The default chip reset range is 8 g.
+    type: int
+    default: 8
+    enum:
+      - 2
+      - 4
+      - 8
+      - 16
+
+  power-mode:
+    description: |
+      Accelerometer power mode.
+      The position in enum is already the value to write to register (with a proper offset).
+      The default chip reset mode is HPM.
+      "LPM" - Low power mode (Duty Cycling mode)
+      "HPM" - High performance mode (Continuous mode)
+    type: string
+    default: "HPM"
+    enum:
+      - "LPM"
+      - "HPM"

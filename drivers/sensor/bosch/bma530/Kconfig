@@ -1,0 +1,28 @@
+# Copyright (c) 2024 Arrow Electronics.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BMA530
+	bool "BMA530 3-axis acceleration sensor"
+	default y
+	depends on DT_HAS_BOSCH_BMA530_ENABLED
+	select I2C
+	help
+	  Enable driver for Bosch BMA530 (I2C-based)
+
+config BMA530_TEMPERATURE
+	bool "Allow reading the BMA530 die temperature"
+	default n
+	depends on BMA530
+	help
+	  Allow reading the BMA530's on-chip temperature sensor. This creates
+	  extra bus activity and increases code size.
+
+config BMA530_DELAY_COMMUNICATION_AFTER_POWER_ON
+	bool "Delay communication with BMA530 after power on"
+	default n
+	depends on BMA530
+	help
+	  It is recommended to wait at least 3 ms after power on before any
+	  communication with the accelerometer. This time should already pass until
+	  Zephyr initializes the driver. Enable this wait time in case sensor
+	  sensor initialization occurs earlier
