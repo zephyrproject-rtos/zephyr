@@ -297,7 +297,7 @@ static int gpio_cc13xx_cc26xx_port_get_direction(const struct device *port, gpio
 }
 #endif /* CONFIG_GPIO_GET_DIRECTION */
 
-static const struct gpio_driver_api gpio_cc13xx_cc26xx_driver_api = {
+static DEVICE_API(gpio, gpio_cc13xx_cc26xx_driver_api) = {
 	.pin_configure = gpio_cc13xx_cc26xx_config,
 	.port_get_raw = gpio_cc13xx_cc26xx_port_get_raw,
 	.port_set_masked_raw = gpio_cc13xx_cc26xx_port_set_masked_raw,

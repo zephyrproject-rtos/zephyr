@@ -376,7 +376,7 @@ static int pcf857x_init(const struct device *dev)
 }
 
 /** Realizes the functions of gpio.h for pcf857x*/
-static const struct gpio_driver_api pcf857x_drv_api = {
+static DEVICE_API(gpio, pcf857x_drv_api) = {
 	.pin_configure = pcf857x_pin_configure,
 	.port_get_raw = pcf857x_port_get_raw,
 	.port_set_masked_raw = pcf857x_port_set_masked_raw,

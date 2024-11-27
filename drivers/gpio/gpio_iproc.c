@@ -179,7 +179,7 @@ static int gpio_iproc_manage_callback(const struct device *port, struct gpio_cal
 	return gpio_manage_callback(&context->cb, callback, set);
 }
 
-static const struct gpio_driver_api gpio_iproc_api = {
+static DEVICE_API(gpio, gpio_iproc_api) = {
 	.pin_configure = gpio_iproc_configure,
 	.port_get_raw = gpio_iproc_port_get_raw,
 	.port_set_masked_raw = gpio_iproc_port_set_masked_raw,
