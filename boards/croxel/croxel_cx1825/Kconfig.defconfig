@@ -3,9 +3,6 @@
 
 if BOARD_CROXEL_CX1825
 
-config BT_CTLR
-	default BT
-
 if LOG
 
 # Logger cannot use itself to log
