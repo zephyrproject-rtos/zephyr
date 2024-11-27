@@ -1072,7 +1072,7 @@ class TestPlan:
                     instance.add_filter("Not an emulated platform", Filters.CMD_LINE)
             elif vendor_platforms:
                 self.add_instances(instance_list)
-                for instance in list(filter(lambda inst: not inst.platform.vendor in vendor_filter, instance_list)):
+                for instance in list(filter(lambda inst: inst.platform.vendor not in vendor_filter, instance_list)):
                     instance.add_filter("Not a selected vendor platform", Filters.CMD_LINE)
             else:
                 self.add_instances(instance_list)

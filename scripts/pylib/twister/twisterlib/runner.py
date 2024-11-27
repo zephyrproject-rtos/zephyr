@@ -1619,7 +1619,7 @@ class ProjectBuilder(FilterBuilder):
     @staticmethod
     def calc_size(instance: TestInstance, from_buildlog: bool):
         if instance.status not in [TwisterStatus.ERROR, TwisterStatus.FAIL, TwisterStatus.SKIP]:
-            if not instance.platform.type in ["native", "qemu", "unit"]:
+            if instance.platform.type not in ["native", "qemu", "unit"]:
                 generate_warning = bool(instance.platform.type == "mcu")
                 size_calc = instance.calculate_sizes(from_buildlog=from_buildlog, generate_warning=generate_warning)
                 instance.metrics["used_ram"] = size_calc.get_used_ram()
