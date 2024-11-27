@@ -41,6 +41,12 @@ config CMSIS_DAP_DEVICE_NAME
 	string "Target device name"
 	default ""
 
+config DAP_BACKEND_USB
+	bool "USB backend"
+	depends on USB_DEVICE_STACK_NEXT
+	help
+	  DAP USB backend using bulk endpoints.
+
 module = DAP
 module-str = dap
 source "subsys/logging/Kconfig.template.log_config"
