@@ -8,6 +8,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
+import contextlib
 import logging
 import math
 import os
@@ -60,10 +61,8 @@ def terminate_process(proc):
     """
 
     for child in psutil.Process(proc.pid).children(recursive=True):
-        try:
+        with contextlib.suppress(ProcessLookupError, psutil.NoSuchProcess):
             os.kill(child.pid, signal.SIGTERM)
-        except (ProcessLookupError, psutil.NoSuchProcess):
-            pass
     proc.terminate()
     # sleep for a while before attempting to kill
     time.sleep(0.5)
@@ -193,10 +192,8 @@ class BinaryHandler(Handler):
             pid = int(open(self.pid_fn).read())
             os.unlink(self.pid_fn)
             self.pid_fn = None  # clear so we don't try to kill the binary twice
-            try:
+            with contextlib.suppress(ProcessLookupError, psutil.NoSuchProcess):
                 os.kill(pid, signal.SIGKILL)
-            except (ProcessLookupError, psutil.NoSuchProcess):
-                pass
 
     def _output_reader(self, proc):
         self.line = proc.stdout.readline()
@@ -1283,11 +1280,9 @@ class QEMUWinHandler(Handler):
                 break
 
             if self.pid == 0 and os.path.exists(pid_fn):
-                try:
+                # pid file probably not contains pid yet, continue
+                with contextlib.suppress(ValueError):
                     self.pid = int(open(pid_fn).read())
-                except ValueError:
-                    # pid file probably not contains pid yet, continue
-                    pass
 
             try:
                 c = queue.get_nowait()
