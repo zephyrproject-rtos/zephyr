@@ -8,6 +8,7 @@ menuconfig SPI_DW
 	bool "Designware SPI controller driver"
 	default y
 	depends on DT_HAS_SNPS_DESIGNWARE_SPI_ENABLED
+	select PINCTRL if $(dt_compat_any_has_prop,$(DT_COMPAT_SNPS_DESIGNWARE_SPI),pinctrl-0)
 	help
 	  Enable support for Designware's SPI controllers.
 
