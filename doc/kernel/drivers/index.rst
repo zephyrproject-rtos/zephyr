@@ -61,6 +61,8 @@ High-level calls accessed through device-specific APIs, such as
 :file:`i2c.h` or :file:`spi.h`, are usually intended as synchronous. Thus,
 these calls should be blocking.
 
+.. _device_driver_api:
+
 Driver APIs
 ***********
 
