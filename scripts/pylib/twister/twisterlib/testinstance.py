@@ -333,12 +333,10 @@ class TestInstance:
                     content = content + "\nCONFIG_COVERAGE=y"
                     content = content + "\nCONFIG_COVERAGE_DUMP=y"
 
-        if enable_asan:
-            if platform.type == "native":
+        if platform.type == "native":
+            if enable_asan:
                 content = content + "\nCONFIG_ASAN=y"
-
-        if enable_ubsan:
-            if platform.type == "native":
+            if enable_ubsan:
                 content = content + "\nCONFIG_UBSAN=y"
 
         if content:
