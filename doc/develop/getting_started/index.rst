@@ -190,7 +190,7 @@ The current minimum required version for the main dependencies are:
 
          .. warning::
 
-            As of November 2023, Python 3.12 is not recommended for Zephyr development on Windows,
+            As of November 2024, Python 3.13 is not recommended for Zephyr development on Windows,
             as some required Python dependencies may be difficult to install.
 
       #. Close the terminal window.
