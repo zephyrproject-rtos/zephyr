@@ -7,12 +7,6 @@
 
 #include <zephyr/logging/log.h>
 
-#if DT_NODE_HAS_STATUS_OKAY(DT_INST(0, adi_adin2111_phy))
-#define DT_DRV_COMPAT adi_adin2111_phy
-#else
-#define DT_DRV_COMPAT adi_adin1100_phy
-#endif
-
 LOG_MODULE_REGISTER(DT_DRV_COMPAT, CONFIG_PHY_LOG_LEVEL);
 
 #include <errno.h>
@@ -636,22 +630,28 @@ static DEVICE_API(ethphy, phy_adin2111_api) = {
 	.write = phy_adin2111_reg_write,
 };
 
-#define ADIN2111_PHY_INITIALIZE(n)						\
-	static const struct phy_adin2111_config phy_adin2111_config_##n = {	\
-		.mdio = DEVICE_DT_GET(DT_INST_BUS(n)),				\
-		.phy_addr = DT_INST_REG_ADDR(n),				\
-		.led0_en = DT_INST_PROP(n, led0_en),				\
-		.led1_en = DT_INST_PROP(n, led1_en),				\
-		.tx_24v = !(DT_INST_PROP(n, disable_tx_mode_24v)),		\
-		IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(adi_adin1100_phy),		\
-		(.mii = 1))						\
-	};									\
-	static struct phy_adin2111_data phy_adin2111_data_##n = {		\
-		.sem = Z_SEM_INITIALIZER(phy_adin2111_data_##n.sem, 1, 1),	\
-	};									\
-	DEVICE_DT_INST_DEFINE(n, &phy_adin2111_init, NULL,			\
-			      &phy_adin2111_data_##n, &phy_adin2111_config_##n, \
-			      POST_KERNEL, CONFIG_PHY_INIT_PRIORITY,		\
+#define ADIN2111_PHY_INITIALIZE(n, model)						\
+	static const struct phy_adin2111_config phy_adin##model##_config_##n = {	\
+		.mdio = DEVICE_DT_GET(DT_INST_BUS(n)),					\
+		.phy_addr = DT_INST_REG_ADDR(n),					\
+		.led0_en = DT_INST_PROP(n, led0_en),					\
+		.led1_en = DT_INST_PROP(n, led1_en),					\
+		.tx_24v = !(DT_INST_PROP(n, disable_tx_mode_24v)),			\
+		IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(adi_adin1100_phy),			\
+		(.mii = 1))								\
+	};										\
+	static struct phy_adin2111_data phy_adin##model##_data_##n = {			\
+		.sem = Z_SEM_INITIALIZER(phy_adin##model##_data_##n.sem, 1, 1),		\
+	};										\
+	DEVICE_DT_INST_DEFINE(n, &phy_adin2111_init, NULL,				\
+			      &phy_adin##model##_data_##n,				\
+			      &phy_adin##model##_config_##n,				\
+			      POST_KERNEL, CONFIG_PHY_INIT_PRIORITY,			\
 			      &phy_adin2111_api);
 
-DT_INST_FOREACH_STATUS_OKAY(ADIN2111_PHY_INITIALIZE)
+#define DT_DRV_COMPAT adi_adin2111_phy
+DT_INST_FOREACH_STATUS_OKAY_VARGS(ADIN2111_PHY_INITIALIZE, 2111)
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT adi_adin1100_phy
+DT_INST_FOREACH_STATUS_OKAY_VARGS(ADIN2111_PHY_INITIALIZE, 1100)
+#undef DT_DRV_COMPAT
