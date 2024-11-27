@@ -1194,7 +1194,7 @@ static int crypto_si32_free_session(const struct device *dev, struct cipher_ctx 
 }
 
 /* AES only, no support for hashing */
-static const struct crypto_driver_api crypto_si32_api = {
+static DEVICE_API(crypto, crypto_si32_api) = {
 	.query_hw_caps = crypto_si32_query_hw_caps,
 	.cipher_begin_session = crypto_si32_begin_session,
 	.cipher_free_session = crypto_si32_free_session,
