@@ -278,7 +278,7 @@ static const struct ls0xx_config ls0xx_config = {
 #endif
 };
 
-static const struct display_driver_api ls0xx_driver_api = {
+static DEVICE_API(display, ls0xx_driver_api) = {
 	.blanking_on = ls0xx_blanking_on,
 	.blanking_off = ls0xx_blanking_off,
 	.write = ls0xx_write,
