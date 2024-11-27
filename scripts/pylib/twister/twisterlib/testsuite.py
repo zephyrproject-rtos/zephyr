@@ -43,7 +43,9 @@ class ScanPathResult:
                  has_registered_test_suites: bool = False,
                  has_run_registered_test_suites: bool = False,
                  has_test_main: bool = False,
-                 ztest_suite_names: list[str] = []):
+                 ztest_suite_names: list[str] = None):
+        if ztest_suite_names is None:
+            ztest_suite_names = []
         self.matches = matches
         self.warnings = warnings
         self.has_registered_test_suites = has_registered_test_suites
@@ -260,10 +262,12 @@ def _find_ztest_testcases(search_area, testcase_regex):
 
     return testcase_names, warnings
 
-def find_c_files_in(path: str, extensions: list = ['c', 'cpp', 'cxx', 'cc']) -> list:
+def find_c_files_in(path: str, extensions: list = None) -> list:
     """
     Find C or C++ sources in the directory specified by "path"
     """
+    if extensions is None:
+        extensions = ['c', 'cpp', 'cxx', 'cc']
     if not os.path.isdir(path):
         return []
 

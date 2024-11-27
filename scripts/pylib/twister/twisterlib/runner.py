@@ -513,11 +513,13 @@ class CMake:
         self.default_encoding = sys.getdefaultencoding()
         self.jobserver = jobserver
 
-    def parse_generated(self, filter_stages=[]):
+    def parse_generated(self, filter_stages=None):
         self.defconfig = {}
         return {}
 
-    def run_build(self, args=[]):
+    def run_build(self, args=None):
+        if args is None:
+            args = []
 
         logger.debug("Building %s for %s" % (self.source_dir, self.platform.name))
 
@@ -594,7 +596,9 @@ class CMake:
 
         return ret
 
-    def run_cmake(self, args="", filter_stages=[]):
+    def run_cmake(self, args="", filter_stages=None):
+        if filter_stages is None:
+            filter_stages = []
 
         if not self.options.disable_warnings_as_errors:
             warnings_as_errors = 'y'
@@ -711,7 +715,9 @@ class FilterBuilder(CMake):
 
         self.log = "config-twister.log"
 
-    def parse_generated(self, filter_stages=[]):
+    def parse_generated(self, filter_stages=None):
+        if filter_stages is None:
+            filter_stages = []
 
         if self.platform.name == "unit_testing":
             return {}
@@ -877,7 +883,9 @@ class ProjectBuilder(FilterBuilder):
             self.log_info("{}".format(b_log), inline_logs)
 
 
-    def _add_to_pipeline(self, pipeline, op: str, additionals: dict={}):
+    def _add_to_pipeline(self, pipeline, op: str, additionals: dict=None):
+        if additionals is None:
+            additionals = {}
         try:
             if op:
                 task = dict({'op': op, 'test': self.instance}, **additionals)
@@ -1161,7 +1169,9 @@ class ProjectBuilder(FilterBuilder):
                 testcase.reason = tc_info.get('reason')
 
 
-    def cleanup_artifacts(self, additional_keep: list[str] = []):
+    def cleanup_artifacts(self, additional_keep: list[str] = None):
+        if additional_keep is None:
+            additional_keep = []
         logger.debug("Cleaning up {}".format(self.instance.build_dir))
         allow = [
             os.path.join('zephyr', '.config'),
@@ -1529,7 +1539,9 @@ class ProjectBuilder(FilterBuilder):
 
         return args_expanded
 
-    def cmake(self, filter_stages=[]):
+    def cmake(self, filter_stages=None):
+        if filter_stages is None:
+            filter_stages = []
         args = []
         for va in self.testsuite.extra_args.copy():
             cond_args = va.split(":")

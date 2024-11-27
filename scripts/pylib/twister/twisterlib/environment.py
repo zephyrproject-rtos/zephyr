@@ -1060,7 +1060,9 @@ class TwisterEnv:
             logger.exception("Failure while reading head commit date.")
 
     @staticmethod
-    def run_cmake_script(args=[]):
+    def run_cmake_script(args=None):
+        if args is None:
+            args = []
         script = os.fspath(args[0])
 
         logger.debug("Running cmake script %s", script)

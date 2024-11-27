@@ -544,7 +544,9 @@ class TestPlan:
                             testcases.remove(case.name)
         return testcases
 
-    def add_testsuites(self, testsuite_filter=[]):
+    def add_testsuites(self, testsuite_filter=None):
+        if testsuite_filter is None:
+            testsuite_filter = []
         for root in self.env.test_roots:
             root = os.path.abspath(root)
 
@@ -656,7 +658,9 @@ class TestPlan:
             if not matched_quarantine and self.options.quarantine_verify:
                 instance.add_filter("Not under quarantine", Filters.QUARANTINE)
 
-    def load_from_file(self, file, filter_platform=[]):
+    def load_from_file(self, file, filter_platform=None):
+        if filter_platform is None:
+            filter_platform = []
         try:
             with open(file, "r") as json_test_plan:
                 jtp = json.load(json_test_plan)

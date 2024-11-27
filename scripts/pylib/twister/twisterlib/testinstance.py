@@ -300,7 +300,9 @@ class TestInstance:
 
         return testsuite_runnable and target_ready
 
-    def create_overlay(self, platform, enable_asan=False, enable_ubsan=False, enable_coverage=False, coverage_platform=[]):
+    def create_overlay(self, platform, enable_asan=False, enable_ubsan=False, enable_coverage=False, coverage_platform=None):
+        if coverage_platform is None:
+            coverage_platform = []
         # Create this in a "twister/" subdirectory otherwise this
         # will pass this overlay to kconfig.py *twice* and kconfig.cmake
         # will silently give that second time precedence over any
