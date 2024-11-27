@@ -123,8 +123,10 @@ class Handler:
             return
         # compare the expect and detect from end one by one without order
         _d_suite = detected_suite_names[-len(expected_suite_names):]
-        if set(_d_suite) != set(expected_suite_names):
-            if not set(_d_suite).issubset(set(expected_suite_names)):
+        if (
+            set(_d_suite) != set(expected_suite_names)
+            and not set(_d_suite).issubset(set(expected_suite_names))
+        ):
                 self._missing_suite_name(expected_suite_names, handler_time)
 
     def _missing_suite_name(self, expected_suite_names, handler_time):
@@ -221,13 +223,16 @@ class BinaryHandler(Handler):
                     log_out_fp.write(strip_ansi_sequences(line_decoded))
                     log_out_fp.flush()
                     harness.handle(stripped_line)
-                    if harness.status != TwisterStatus.NONE:
-                        if not timeout_extended or harness.capture_coverage:
-                            timeout_extended = True
-                            if harness.capture_coverage:
-                                timeout_time = time.time() + 30
-                            else:
-                                timeout_time = time.time() + 2
+                    if (
+                        harness.status != TwisterStatus.NONE
+                        and not timeout_extended
+                        or harness.capture_coverage
+                    ):
+                        timeout_extended = True
+                        if harness.capture_coverage:
+                            timeout_time = time.time() + 30
+                        else:
+                            timeout_time = time.time() + 2
                 else:
                     reader_t.join(0)
                     break
@@ -455,10 +460,9 @@ class DeviceHandler(Handler):
                         logger.debug("DEVICE: {0}".format(sl))
                         harness.handle(sl)
 
-            if harness.status != TwisterStatus.NONE:
-                if not harness.capture_coverage:
-                    ser.close()
-                    break
+            if harness.status != TwisterStatus.NONE and not harness.capture_coverage:
+                ser.close()
+                break
 
         log_out_fp.close()
 

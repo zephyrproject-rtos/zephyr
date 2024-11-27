@@ -854,9 +854,8 @@ class TestPlan:
                     # Discard silently
                     continue
 
-                if ts.modules and self.modules:
-                    if not set(ts.modules).issubset(set(self.modules)):
-                        instance.add_filter(f"one or more required modules not available: {','.join(ts.modules)}", Filters.MODULE)
+                if ts.modules and self.modules and not set(ts.modules).issubset(set(self.modules)):
+                    instance.add_filter(f"one or more required modules not available: {','.join(ts.modules)}", Filters.MODULE)
 
                 if self.options.level:
                     tl = self.get_level(self.options.level)

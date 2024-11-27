@@ -157,9 +157,8 @@ class Harness:
             self.status = TwisterStatus.FAIL
             self.reason = "Testsuite failed"
 
-        if self.fail_on_fault:
-            if line == self.FAULT:
-                self.fault = True
+        if self.fail_on_fault and line == self.FAULT:
+            self.fault = True
 
         if self.GCOV_START in line:
             self.capture_coverage = True
@@ -306,9 +305,8 @@ class Console(Harness):
         else:
             logger.error("Unknown harness_config type")
 
-        if self.fail_on_fault:
-            if self.FAULT in line:
-                self.fault = True
+        if self.fail_on_fault and self.FAULT in line:
+            self.fault = True
 
         if self.GCOV_START in line:
             self.capture_coverage = True
