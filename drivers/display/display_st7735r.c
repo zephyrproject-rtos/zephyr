@@ -479,7 +479,7 @@ static int st7735r_pm_action(const struct device *dev,
 }
 #endif /* CONFIG_PM_DEVICE */
 
-static const struct display_driver_api st7735r_api = {
+static DEVICE_API(display, st7735r_api) = {
 	.blanking_on = st7735r_blanking_on,
 	.blanking_off = st7735r_blanking_off,
 	.write = st7735r_write,

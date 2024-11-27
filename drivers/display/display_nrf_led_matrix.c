@@ -276,7 +276,7 @@ static int api_write(const struct device *dev,
 	return 0;
 }
 
-const struct display_driver_api driver_api = {
+DEVICE_API(display, driver_api) = {
 	.blanking_on = api_blanking_on,
 	.blanking_off = api_blanking_off,
 	.write = api_write,

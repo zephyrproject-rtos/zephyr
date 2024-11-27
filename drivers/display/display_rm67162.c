@@ -576,7 +576,7 @@ static int rm67162_pm_action(const struct device *dev,
 
 #endif /* CONFIG_PM_DEVICE */
 
-static const struct display_driver_api rm67162_api = {
+static DEVICE_API(display, rm67162_api) = {
 	.blanking_on = rm67162_blanking_on,
 	.blanking_off = rm67162_blanking_off,
 	.get_capabilities = rm67162_get_capabilities,

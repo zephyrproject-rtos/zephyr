@@ -501,7 +501,7 @@ static void sdl_display_cleanup(struct sdl_display_data *disp_data)
 				   &disp_data->background_texture);
 }
 
-static const struct display_driver_api sdl_display_api = {
+static DEVICE_API(display, sdl_display_api) = {
 	.blanking_on = sdl_display_blanking_on,
 	.blanking_off = sdl_display_blanking_off,
 	.write = sdl_display_write,

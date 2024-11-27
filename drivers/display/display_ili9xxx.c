@@ -476,7 +476,7 @@ static int ili9xxx_init(const struct device *dev)
 	return 0;
 }
 
-static const struct display_driver_api ili9xxx_api = {
+static DEVICE_API(display, ili9xxx_api) = {
 	.blanking_on = ili9xxx_display_blanking_on,
 	.blanking_off = ili9xxx_display_blanking_off,
 	.write = ili9xxx_write,

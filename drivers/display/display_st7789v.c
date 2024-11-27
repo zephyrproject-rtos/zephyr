@@ -360,7 +360,7 @@ static int st7789v_pm_action(const struct device *dev,
 }
 #endif /* CONFIG_PM_DEVICE */
 
-static const struct display_driver_api st7789v_api = {
+static DEVICE_API(display, st7789v_api) = {
 	.blanking_on = st7789v_blanking_on,
 	.blanking_off = st7789v_blanking_off,
 	.write = st7789v_write,
