@@ -1730,7 +1730,7 @@ class TwisterRunner:
         the static filter stats. So need to prepare them before pipline starts.
         '''
         for instance in self.instances.values():
-            if instance.status == TwisterStatus.FILTER and not instance.reason == 'runtime filter':
+            if instance.status == TwisterStatus.FILTER and instance.reason != 'runtime filter':
                 self.results.filtered_static_increment()
                 self.results.filtered_configs_increment()
                 self.results.filtered_cases_increment(len(instance.testsuite.testcases))

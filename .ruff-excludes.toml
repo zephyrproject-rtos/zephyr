@@ -795,7 +795,6 @@
     "SIM105",   # https://docs.astral.sh/ruff/rules/suppressible-exception
     "SIM114",   # https://docs.astral.sh/ruff/rules/if-with-same-arms
     "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
-    "SIM201",   # https://docs.astral.sh/ruff/rules/negate-equal-op
     "UP007",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP030",    # https://docs.astral.sh/ruff/rules/format-literals
@@ -821,9 +820,6 @@
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
-]
-"./scripts/pylib/twister/twisterlib/jobserver.py" = [
-    "SIM201",   # https://docs.astral.sh/ruff/rules/negate-equal-op
 ]
 "./scripts/pylib/twister/twisterlib/mixins.py" = [
     "UP004",    # https://docs.astral.sh/ruff/rules/useless-object-inheritance
@@ -856,7 +852,6 @@
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
     "SIM102",   # https://docs.astral.sh/ruff/rules/collapsible-if
     "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
-    "SIM201",   # https://docs.astral.sh/ruff/rules/negate-equal-op
     "UP004",    # https://docs.astral.sh/ruff/rules/useless-object-inheritance
     "UP006",    # https://docs.astral.sh/ruff/rules/non-pep585-annotation
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
@@ -890,7 +885,6 @@
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
     "SIM102",   # https://docs.astral.sh/ruff/rules/collapsible-if
     "SIM110",   # https://docs.astral.sh/ruff/rules/reimplemented-builtin
-    "SIM202",   # https://docs.astral.sh/ruff/rules/negate-not-equal-op
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string

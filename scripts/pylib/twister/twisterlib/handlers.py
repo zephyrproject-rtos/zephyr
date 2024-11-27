@@ -116,7 +116,7 @@ class Handler:
         logger.debug(f"Expected suite names:{expected_suite_names}")
         logger.debug(f"Detected suite names:{detected_suite_names}")
         if not expected_suite_names or \
-                not harness_status == TwisterStatus.PASS:
+                harness_status != TwisterStatus.PASS:
             return
         if not detected_suite_names:
             self._missing_suite_name(expected_suite_names, handler_time)
