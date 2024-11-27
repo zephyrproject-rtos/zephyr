@@ -132,12 +132,12 @@ class SizeCalculator:
         print(self.elf_filename)
         print("SECTION NAME             VMA        LMA     SIZE  HEX SZ TYPE")
         for v in self.sections:
-            print("%-17s 0x%08x 0x%08x %8d 0x%05x %-7s" %
-                        (v["name"], v["virt_addr"], v["load_addr"], v["size"], v["size"],
-                        v["type"]))
+            print(
+                f'{v["name"]:<17} {v["virt_addr"]:#010x} {v["load_addr"]:#010x}'
+                f' {v["size"]:>8} {v["size"]:#07x} {v["type"]:<7}'
+            )
 
-        print("Totals: %d bytes (ROM), %d bytes (RAM)" %
-                    (self.used_rom, self.used_ram))
+        print(f"Totals: {self.used_rom} bytes (ROM), {self.used_ram} bytes (RAM)")
         print("")
 
     def get_used_ram(self):
@@ -196,7 +196,7 @@ class SizeCalculator:
 
         try:
             if magic != b'\x7fELF':
-                raise TwisterRuntimeError("%s is not an ELF binary" % self.elf_filename)
+                raise TwisterRuntimeError(f"{self.elf_filename} is not an ELF binary")
         except Exception as e:
             print(str(e))
             sys.exit(2)
@@ -212,7 +212,7 @@ class SizeCalculator:
             "utf-8").strip()
         try:
             if is_xip_output.endswith("no symbols"):
-                raise TwisterRuntimeError("%s has no symbol information" % self.elf_filename)
+                raise TwisterRuntimeError(f"{self.elf_filename} has no symbol information")
         except Exception as e:
             print(str(e))
             sys.exit(2)

@@ -38,7 +38,7 @@ class Quarantine:
     def get_matched_quarantine(self, testname, platform, architecture, simulator):
         qelem = self.quarantine.get_matched_quarantine(testname, platform, architecture, simulator)
         if qelem:
-            logger.debug('%s quarantined with reason: %s' % (testname, qelem.comment))
+            logger.debug(f'{testname} quarantined with reason: {qelem.comment}')
             return qelem.comment
         return None
 

@@ -59,7 +59,7 @@ class CMakeCacheEntry:
                 v = int(val)
                 return v != 0
             except ValueError as exc:
-                raise ValueError('invalid bool {}'.format(val)) from exc
+                raise ValueError(f'invalid bool {val}') from exc
 
     @classmethod
     def from_line(cls, line, line_no):
@@ -81,7 +81,7 @@ class CMakeCacheEntry:
             try:
                 value = cls._to_bool(value)
             except ValueError as exc:
-                args = exc.args + ('on line {}: {}'.format(line_no, line),)
+                args = exc.args + (f'on line {line_no}: {line}',)
                 raise ValueError(args) from exc
         # If the value is a CMake list (i.e. is a string which contains a ';'),
         # convert to a Python list.

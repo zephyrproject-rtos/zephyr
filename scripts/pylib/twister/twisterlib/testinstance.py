@@ -397,4 +397,4 @@ class TestInstance:
         return buildlog_paths[0]
 
     def __repr__(self):
-        return "<TestSuite %s on %s>" % (self.testsuite.name, self.platform.name)
+        return f"<TestSuite {self.testsuite.name} on {self.platform.name}>"

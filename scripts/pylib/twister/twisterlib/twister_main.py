@@ -82,13 +82,13 @@ def main(options: argparse.Namespace, default_options: argparse.Namespace):
             sys.exit(f"Can't compare metrics with non existing file {ls}")
     elif os.path.exists(options.outdir):
         if options.clobber_output:
-            print("Deleting output directory {}".format(options.outdir))
+            print(f"Deleting output directory {options.outdir}")
             shutil.rmtree(options.outdir)
         else:
             for i in range(1, 100):
-                new_out = options.outdir + ".{}".format(i)
+                new_out = options.outdir + f".{i}"
                 if not os.path.exists(new_out):
-                    print("Renaming output directory to {}".format(new_out))
+                    print(f"Renaming output directory to {new_out}")
                     shutil.move(options.outdir, new_out)
                     break
             else:
@@ -141,13 +141,7 @@ def main(options: argparse.Namespace, default_options: argparse.Namespace):
                 if options.platform and not tplan.check_platform(i.platform, options.platform):
                     continue
                 logger.debug(
-                    "{:<25} {:<50} {}SKIPPED{}: {}".format(
-                        i.platform.name,
-                        i.testsuite.name,
-                        Fore.YELLOW,
-                        Fore.RESET,
-                        i.reason,
-                    )
+                    f"{i.platform.name:<25} {i.testsuite.name:<50} {Fore.YELLOW}SKIPPED{Fore.RESET}: {i.reason}"
                 )
 
     report = Reporting(tplan, env)
@@ -173,7 +167,7 @@ def main(options: argparse.Namespace, default_options: argparse.Namespace):
 
     if options.dry_run:
         duration = time.time() - start_time
-        logger.info("Completed in %d seconds" % (duration))
+        logger.info(f"Completed in {duration} seconds")
         return 0
 
     if options.short_build_path:
