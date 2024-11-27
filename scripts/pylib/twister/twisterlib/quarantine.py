@@ -96,7 +96,7 @@ class QuarantineData:
     @classmethod
     def load_data_from_yaml(cls, filename: str | Path) -> QuarantineData:
         """Load quarantine from yaml file."""
-        with open(filename, 'r', encoding='UTF-8') as yaml_fd:
+        with open(filename, encoding='UTF-8') as yaml_fd:
             qlist_raw_data: list[dict] = yaml.load(yaml_fd, Loader=SafeLoader)
         try:
             if not qlist_raw_data:

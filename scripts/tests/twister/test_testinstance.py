@@ -260,7 +260,7 @@ def test_testinstance_record(testinstance):
 
     mock_file.assert_called_with(
         os.path.join(testinstance.build_dir, 'recording.csv'),
-        'wt'
+        'w'
     )
 
     mock_writeheader.assert_has_calls([mock.call({ k:k for k in recording[0]})])

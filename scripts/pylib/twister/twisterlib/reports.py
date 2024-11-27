@@ -116,7 +116,7 @@ class Reporting:
     def xunit_report_suites(self, json_file, filename):
 
         json_data = {}
-        with open(json_file, "r") as json_results:
+        with open(json_file) as json_results:
             json_data = json.load(json_results)
 
 
@@ -185,7 +185,7 @@ class Reporting:
             selected = self.selected_platforms
 
         json_data = {}
-        with open(json_file, "r") as json_results:
+        with open(json_file) as json_results:
             json_data = json.load(json_results)
 
 
@@ -429,7 +429,7 @@ class Reporting:
                     if do_all or k in self.env.options.footprint_report:
                         footprint_fname = os.path.join(instance.build_dir, v)
                         try:
-                            with open(footprint_fname, "rt") as footprint_json:
+                            with open(footprint_fname) as footprint_json:
                                 logger.debug(f"Collect footprint.{k} for '{instance.name}'")
                                 suite['footprint'][k] = json.load(footprint_json)
                         except FileNotFoundError:
@@ -440,7 +440,7 @@ class Reporting:
             suites.append(suite)
 
         report["testsuites"] = suites
-        with open(filename, "wt") as json_file:
+        with open(filename, 'w') as json_file:
             json.dump(report, json_file, indent=4, separators=(',',':'))
 
 

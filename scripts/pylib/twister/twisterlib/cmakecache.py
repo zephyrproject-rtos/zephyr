@@ -112,7 +112,7 @@ class CMakeCache:
 
     def load(self, cache_file):
         entries = []
-        with open(cache_file, 'r') as cache:
+        with open(cache_file) as cache:
             for line_no, line in enumerate(cache):
                 entry = CMakeCacheEntry.from_line(line, line_no)
                 if entry:

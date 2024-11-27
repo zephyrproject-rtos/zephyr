@@ -662,7 +662,7 @@ class TestPlan:
         if filter_platform is None:
             filter_platform = []
         try:
-            with open(file, "r") as json_test_plan:
+            with open(file) as json_test_plan:
                 jtp = json.load(json_test_plan)
                 instance_list = []
                 for ts in jtp.get("testsuites", []):

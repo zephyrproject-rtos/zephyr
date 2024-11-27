@@ -76,7 +76,7 @@ def main(options: argparse.Namespace, default_options: argparse.Namespace):
     elif options.last_metrics:
         ls = os.path.join(options.outdir, "twister.json")
         if os.path.exists(ls):
-            with open(ls, "r") as fp:
+            with open(ls) as fp:
                 previous_results = fp.read()
         else:
             sys.exit(f"Can't compare metrics with non existing file {ls}")
