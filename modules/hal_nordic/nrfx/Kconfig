@@ -693,6 +693,19 @@ config NRFX_TBM
 	bool "TBM driver"
 	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_TBM))
 
+config NRFX_TDM
+	bool
+
+config NRFX_TDM130
+	bool "TDM130 driver instance"
+	depends on $(dt_nodelabel_has_compat,tdm130,$(DT_COMPAT_NORDIC_NRF_TDM))
+	select NRFX_TDM
+
+config NRFX_TDM131
+	bool "TDM131 driver instance"
+	depends on $(dt_nodelabel_has_compat,tdm131,$(DT_COMPAT_NORDIC_NRF_TDM))
+	select NRFX_TDM
+
 config NRFX_TEMP
 	bool "TEMP driver"
 	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_TEMP))
