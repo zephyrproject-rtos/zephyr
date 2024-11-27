@@ -26,4 +26,5 @@ supported:
   - regulator
   - spi
   - watchdog
+  - usb_device
 vendor: nxp
