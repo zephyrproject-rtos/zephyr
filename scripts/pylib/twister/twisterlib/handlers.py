@@ -23,7 +23,6 @@ import time
 from contextlib import contextmanager
 from pathlib import Path
 from queue import Empty, Queue
-from typing import Optional
 
 import psutil
 from twisterlib.environment import ZEPHYR_BASE, strip_ansi_sequences
@@ -71,7 +70,7 @@ def terminate_process(proc):
 
 class Handler:
     def __init__(self, instance, type_str: str, options: argparse.Namespace,
-                 generator_cmd: Optional[str] = None, suite_name_check: bool = True):
+                 generator_cmd: str | None = None, suite_name_check: bool = True):
         """Constructor
 
         """
@@ -175,7 +174,7 @@ class Handler:
 
 
 class BinaryHandler(Handler):
-    def __init__(self, instance, type_str: str, options: argparse.Namespace, generator_cmd: Optional[str] = None,
+    def __init__(self, instance, type_str: str, options: argparse.Namespace, generator_cmd: str | None = None,
                  suite_name_check: bool = True):
         """Constructor
 
@@ -186,7 +185,7 @@ class BinaryHandler(Handler):
         self.seed = None
         self.extra_test_args = None
         self.line = b""
-        self.binary: Optional[str] = None
+        self.binary: str | None = None
 
     def try_kill_process_by_pid(self):
         if self.pid_fn:
@@ -374,7 +373,7 @@ class BinaryHandler(Handler):
 
 
 class SimulationHandler(BinaryHandler):
-    def __init__(self, instance, type_str: str, options: argparse.Namespace, generator_cmd: Optional[str] = None,
+    def __init__(self, instance, type_str: str, options: argparse.Namespace, generator_cmd: str | None = None,
                  suite_name_check: bool = True):
         """Constructor
 
@@ -827,7 +826,7 @@ class QEMUHandler(Handler):
     for these to collect whether the test passed or failed.
     """
 
-    def __init__(self, instance, type_str: str, options: argparse.Namespace, generator_cmd: Optional[str] = None,
+    def __init__(self, instance, type_str: str, options: argparse.Namespace, generator_cmd: str | None = None,
                  suite_name_check: bool = True):
         """Constructor
 
@@ -1117,7 +1116,7 @@ class QEMUWinHandler(Handler):
      for these to collect whether the test passed or failed.
      """
 
-    def __init__(self, instance, type_str: str, options: argparse.Namespace, generator_cmd: Optional[str] = None,
+    def __init__(self, instance, type_str: str, options: argparse.Namespace, generator_cmd: str | None = None,
                  suite_name_check: bool = True):
         """Constructor
 

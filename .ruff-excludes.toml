@@ -759,9 +759,6 @@
 "./scripts/pylib/twister/twisterlib/cmakecache.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
 ]
-"./scripts/pylib/twister/twisterlib/config_parser.py" = [
-    "UP007",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation
-]
 "./scripts/pylib/twister/twisterlib/coverage.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
 ]
@@ -770,7 +767,6 @@
 ]
 "./scripts/pylib/twister/twisterlib/handlers.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "UP007",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation
 ]
 "./scripts/pylib/twister/twisterlib/hardwaremap.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
