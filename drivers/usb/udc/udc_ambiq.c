@@ -265,7 +265,10 @@ static int udc_ambiq_ep_enqueue(const struct device *dev, struct udc_ep_config *
 		udc_ambiq_ep_xfer_complete_callback(dev, USB_CONTROL_EP_IN, 0, 0, NULL);
 		return 0;
 	}
-	k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
+
+	if (!ep_cfg->stat.halted) {
+		k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
+	}
 
 	return 0;
 }
@@ -299,6 +302,9 @@ static int udc_ambiq_ep_set_halt(const struct device *dev, struct udc_ep_config 
 	LOG_DBG("Halt ep 0x%02x", ep_cfg->addr);
 
 	am_hal_usb_ep_stall(priv->usb_handle, ep_cfg->addr);
+	if (USB_EP_GET_IDX(ep_cfg->addr)) {
+		ep_cfg->stat.halted = true;
+	}
 
 	return 0;
 }
@@ -310,6 +316,17 @@ static int udc_ambiq_ep_clear_halt(const struct device *dev, struct udc_ep_confi
 	LOG_DBG("Clear halt ep 0x%02x", ep_cfg->addr);
 
 	am_hal_usb_ep_clear_stall(priv->usb_handle, ep_cfg->addr);
+
+	ep_cfg->stat.halted = false;
+
+	/* Resume queued transfer if any */
+	if (udc_buf_peek(dev, ep_cfg->addr)) {
+		struct udc_ambiq_event evt = {
+			.ep = ep_cfg->addr,
+			.type = UDC_AMBIQ_EVT_XFER,
+		};
+		k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
+	}
 
 	return 0;
 }
