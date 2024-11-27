@@ -372,19 +372,28 @@ class TestPlan:
         for test in sorted(tests_list):
             if test.startswith("sample."):
                 sec = test.split(".")
-                area = find(samples, lambda node: node.name == sec[1] and node.parent == samples)
+                area = find(
+                    samples,
+                    lambda node, sname=sec[1]: node.name == sname and node.parent == samples
+                )
                 if not area:
                     area = Node(sec[1], parent=samples)
 
                 Node(test, parent=area)
             else:
                 sec = test.split(".")
-                area = find(tests, lambda node: node.name == sec[0] and node.parent == tests)
+                area = find(
+                    tests,
+                    lambda node, sname=sec[0]: node.name == sname and node.parent == tests
+                )
                 if not area:
                     area = Node(sec[0], parent=tests)
 
                 if area and len(sec) > 2:
-                    subarea = find(area, lambda node: node.name == sec[1] and node.parent == area)
+                    subarea = find(
+                        area, lambda node, sname=sec[1], sparent=area: node.name == sname
+                        and node.parent == sparent
+                    )
                     if not subarea:
                         subarea = Node(sec[1], parent=area)
                     Node(test, parent=subarea)
