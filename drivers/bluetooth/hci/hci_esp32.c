@@ -362,7 +362,7 @@ static int bt_esp32_close(const struct device *dev)
 	return 0;
 }
 
-static const struct bt_hci_driver_api drv = {
+static DEVICE_API(bt_hci, drv) = {
 	.open           = bt_esp32_open,
 	.send           = bt_esp32_send,
 	.close          = bt_esp32_close,

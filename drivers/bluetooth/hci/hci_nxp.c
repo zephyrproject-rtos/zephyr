@@ -532,7 +532,7 @@ static int bt_nxp_close(const struct device *dev)
 	return ret;
 }
 
-static const struct bt_hci_driver_api drv = {
+static DEVICE_API(bt_hci, drv) = {
 	.open = bt_nxp_open,
 	.setup = bt_nxp_setup,
 	.close = bt_nxp_close,

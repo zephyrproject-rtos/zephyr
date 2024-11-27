@@ -252,7 +252,7 @@ void sl_bt_controller_init(void)
 	/* No extra initialization procedure required */
 }
 
-static const struct bt_hci_driver_api drv = {
+static DEVICE_API(bt_hci, drv) = {
 	.open           = slz_bt_open,
 	.send           = slz_bt_send,
 };

@@ -422,7 +422,7 @@ static int bt_apollo_setup(const struct device *dev, const struct bt_hci_setup_p
 	return ret;
 }
 
-static const struct bt_hci_driver_api drv = {
+static DEVICE_API(bt_hci, drv) = {
 	.open = bt_apollo_open,
 	.close = bt_apollo_close,
 	.send = bt_apollo_send,

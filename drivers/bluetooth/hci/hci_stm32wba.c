@@ -474,7 +474,7 @@ static int bt_hci_stm32wba_setup(const struct device *dev,
 }
 #endif /* CONFIG_BT_HCI_SETUP */
 
-static const struct bt_hci_driver_api drv = {
+static DEVICE_API(bt_hci, drv) = {
 #if defined(CONFIG_BT_HCI_SETUP)
 	.setup          = bt_hci_stm32wba_setup,
 #endif

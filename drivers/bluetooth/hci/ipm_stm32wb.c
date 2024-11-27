@@ -618,7 +618,7 @@ static int bt_ipm_close(const struct device *dev)
 }
 #endif /* CONFIG_BT_HCI_HOST */
 
-static const struct bt_hci_driver_api drv = {
+static DEVICE_API(bt_hci, drv) = {
 	.open           = bt_ipm_open,
 #ifdef CONFIG_BT_HCI_HOST
 	.close          = bt_ipm_close,

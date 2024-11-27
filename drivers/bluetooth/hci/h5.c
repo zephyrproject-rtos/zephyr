@@ -801,7 +801,7 @@ static int h5_open(const struct device *dev, bt_hci_recv_t recv)
 	return 0;
 }
 
-static const struct bt_hci_driver_api h5_driver_api = {
+static DEVICE_API(bt_hci, h5_driver_api) = {
 	.open = h5_open,
 	.send = h5_queue,
 };
