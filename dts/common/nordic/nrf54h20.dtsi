@@ -1491,6 +1491,34 @@
 				endtx-stoptx-supported;
 				frame-timeout-supported;
 			};
+
+			tdm130: tdm@992000 {
+				compatible = "nordic,nrf-tdm";
+				easydma-maxcnt-bits = <15>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <0x992000 0x1000>;
+				interrupts = <402 NRF_DEFAULT_IRQ_PRIORITY>;
+				status = "disabled";
+				clocks = <&fll16m>;
+				power-domains = <&gpd NRF_GPD_SLOW_ACTIVE>;
+				nordic,clockpin-enable = <NRF_FUN_TDM_SCK_M>,
+							 <NRF_FUN_TDM_MCK>;
+			};
+
+			tdm131: tdm@997000 {
+				compatible = "nordic,nrf-tdm";
+				easydma-maxcnt-bits = <15>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <0x997000 0x1000>;
+				interrupts = <407 NRF_DEFAULT_IRQ_PRIORITY>;
+				status = "disabled";
+				clocks = <&fll16m>;
+				power-domains = <&gpd NRF_GPD_SLOW_ACTIVE>;
+				nordic,clockpin-enable = <NRF_FUN_TDM_SCK_M>,
+							 <NRF_FUN_TDM_MCK>;
+			};
 		};
 	};
 
