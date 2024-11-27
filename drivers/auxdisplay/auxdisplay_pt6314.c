@@ -284,7 +284,7 @@ static int auxdisplay_pt6314_init(const struct device *dev)
 	return 0;
 }
 
-static const struct auxdisplay_driver_api auxdisplay_pt6314_auxdisplay_api = {
+static DEVICE_API(auxdisplay, auxdisplay_pt6314_auxdisplay_api) = {
 	.display_on = auxdisplay_pt6314_display_on,
 	.display_off = auxdisplay_pt6314_display_off,
 	.cursor_set_enabled = auxdisplay_pt6314_cursor_set_enabled,
