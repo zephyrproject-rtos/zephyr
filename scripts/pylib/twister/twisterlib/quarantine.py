@@ -28,7 +28,9 @@ class QuarantineException(Exception):
 class Quarantine:
     """Handle tests under quarantine."""
 
-    def __init__(self, quarantine_list=[]) -> None:
+    def __init__(self, quarantine_list=None) -> None:
+        if quarantine_list is None:
+            quarantine_list = []
         self.quarantine = QuarantineData()
         for quarantine_file in quarantine_list:
             self.quarantine.extend(QuarantineData.load_data_from_yaml(quarantine_file))
