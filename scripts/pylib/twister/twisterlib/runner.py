@@ -54,10 +54,11 @@ try:
 except ImportError:
     from yaml import SafeLoader
 
-logger = logging.getLogger('twister')
-logger.setLevel(logging.DEBUG)
 import expr_parser
 from anytree import Node, RenderTree
+
+logger = logging.getLogger('twister')
+logger.setLevel(logging.DEBUG)
 
 
 class ExecutionCounter(object):

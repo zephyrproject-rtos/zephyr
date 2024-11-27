@@ -22,20 +22,16 @@ from typing import Generator, List
 
 from twisterlib.constants import SUPPORTED_SIMS
 from twisterlib.coverage import supported_coverage_formats
+from twisterlib.error import TwisterRuntimeError
+from twisterlib.log_helper import log_command
+import zephyr_module
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
 
-from twisterlib.error import TwisterRuntimeError
-from twisterlib.log_helper import log_command
-
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 if not ZEPHYR_BASE:
     sys.exit("$ZEPHYR_BASE environment variable undefined")
-
-sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/"))
-
-import zephyr_module
 
 # Use this for internal comparisons; that's what canonicalization is
 # for. Don't use it when invoking other components of the build system
