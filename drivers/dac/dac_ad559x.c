@@ -80,7 +80,7 @@ static int dac_ad559x_write_value(const struct device *dev, uint8_t channel, uin
 	}
 }
 
-static const struct dac_driver_api dac_ad559x_api = {
+static DEVICE_API(dac, dac_ad559x_api) = {
 	.channel_setup = dac_ad559x_channel_setup,
 	.write_value = dac_ad559x_write_value,
 };
