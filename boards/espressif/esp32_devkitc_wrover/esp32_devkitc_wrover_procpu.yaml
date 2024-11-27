@@ -18,7 +18,4 @@ supported:
   - counter
   - entropy
   - input
-testing:
-  ignore_tags:
-    - bluetooth
 vendor: espressif
