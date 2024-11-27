@@ -3584,6 +3584,8 @@ static struct in_addr *net_if_ipv4_get_best_match(struct net_if *iface,
 	}
 
 	ARRAY_FOR_EACH(ipv4->unicast, i) {
+		struct in_addr subnet;
+
 		if (!is_proper_ipv4_address(&ipv4->unicast[i].ipv4)) {
 			continue;
 		}
@@ -3592,7 +3594,9 @@ static struct in_addr *net_if_ipv4_get_best_match(struct net_if *iface,
 			continue;
 		}
 
-		len = get_diff_ipv4(dst, &ipv4->unicast[i].ipv4.address.in_addr);
+		subnet.s_addr = ipv4->unicast[i].ipv4.address.in_addr.s_addr &
+				ipv4->unicast[i].netmask.s_addr;
+		len = get_diff_ipv4(dst, &subnet);
 		if (len >= *best_so_far) {
 			*best_so_far = len;
 			src = &ipv4->unicast[i].ipv4.address.in_addr;
