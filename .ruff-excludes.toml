@@ -793,7 +793,6 @@
     "UP006",    # https://docs.astral.sh/ruff/rules/non-pep585-annotation
     "UP021",    # https://docs.astral.sh/ruff/rules/replace-universal-newlines
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
-    "UP035",    # https://docs.astral.sh/ruff/rules/deprecated-import
 ]
 "./scripts/pylib/twister/twisterlib/handlers.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
@@ -880,7 +879,6 @@
     "UP022",    # https://docs.astral.sh/ruff/rules/replace-stdout-stderr
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
-    "UP035",    # https://docs.astral.sh/ruff/rules/deprecated-import
 ]
 "./scripts/pylib/twister/twisterlib/size_calc.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
@@ -929,7 +927,6 @@
     "UP006",    # https://docs.astral.sh/ruff/rules/non-pep585-annotation
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
-    "UP035",    # https://docs.astral.sh/ruff/rules/deprecated-import
 ]
 "./scripts/pylib/twister/twisterlib/twister_main.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long

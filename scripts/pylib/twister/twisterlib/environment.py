@@ -18,7 +18,7 @@ import sys
 from datetime import datetime, timezone
 from importlib import metadata
 from pathlib import Path
-from typing import Generator, List
+from collections.abc import Generator
 
 from twisterlib.constants import SUPPORTED_SIMS
 from twisterlib.coverage import supported_coverage_formats
@@ -59,7 +59,7 @@ def python_version_guard():
         sys.exit(1)
 
 
-installed_packages: List[str] = list(_get_installed_packages())
+installed_packages: list[str] = list(_get_installed_packages())
 PYTEST_PLUGIN_INSTALLED = 'pytest-twister-harness' in installed_packages
 
 
