@@ -220,7 +220,7 @@ static int __z_clock_nanosleep(clockid_t clock_id, int flags, const struct times
 	    unlikely(rqtp->tv_sec >= ULLONG_MAX / NSEC_PER_SEC)) {
 
 		ns = rqtp->tv_nsec + NSEC_PER_SEC
-			+ k_sleep(K_SECONDS(rqtp->tv_sec - 1)) * NSEC_PER_MSEC;
+			+ (uint64_t)k_sleep(K_SECONDS(rqtp->tv_sec - 1)) * NSEC_PER_MSEC;
 	} else {
 		ns = (uint64_t)rqtp->tv_sec * NSEC_PER_SEC + rqtp->tv_nsec;
 	}
