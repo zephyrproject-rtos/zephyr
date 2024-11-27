@@ -2697,7 +2697,7 @@ static int dai_ssp_dma_control_set(const struct device *dev,
 	return dai_ssp_parse_tlv(dp, bespoke_cfg, size);
 }
 
-static struct dai_driver_api dai_intel_ssp_api_funcs = {
+static DEVICE_API(dai, dai_intel_ssp_api_funcs) = {
 	.probe			= pm_device_runtime_get,
 	.remove			= pm_device_runtime_put,
 	.config_set		= dai_ssp_config_set,
