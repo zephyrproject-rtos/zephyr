@@ -52,9 +52,7 @@ class CMakeCacheEntry:
         val = val.upper()
         if val in ('ON', 'YES', 'TRUE', 'Y'):
             return 1
-        elif val in ('OFF', 'NO', 'FALSE', 'N', 'IGNORE', 'NOTFOUND', ''):
-            return 0
-        elif val.endswith('-NOTFOUND'):
+        elif val in ('OFF', 'NO', 'FALSE', 'N', 'IGNORE', 'NOTFOUND', '') or val.endswith('-NOTFOUND'):
             return 0
         else:
             try:
