@@ -145,6 +145,7 @@ static int lsm6dsv16x_decoder_get_frame_count(const uint8_t *buffer,
 			*frame_count = 1;
 			return 0;
 		default:
+			*frame_count = 0;
 			return -ENOTSUP;
 		}
 
@@ -152,35 +153,21 @@ static int lsm6dsv16x_decoder_get_frame_count(const uint8_t *buffer,
 	}
 
 #ifdef CONFIG_LSM6DSV16X_STREAM
-	*frame_count = data->fifo_count;
-#endif
-	return 0;
-}
-
-#ifdef CONFIG_LSM6DSV16X_STREAM
-static int lsm6dsv16x_decode_fifo(const uint8_t *buffer, struct sensor_chan_spec chan_spec,
-				  uint32_t *fit, uint16_t max_count, void *data_out)
-{
 	const struct lsm6dsv16x_fifo_data *edata = (const struct lsm6dsv16x_fifo_data *)buffer;
-	const uint8_t *buffer_end, *tmp_buffer;
-	const struct lsm6dsv16x_decoder_header *header = &edata->header;
-	int count = 0;
+	const uint8_t *buffer_end;
 	uint8_t fifo_tag;
-	uint16_t xl_count = 0, gy_count = 0;
 	uint8_t tot_accel_fifo_words = 0, tot_gyro_fifo_words = 0;
 
 #if defined(CONFIG_LSM6DSV16X_ENABLE_TEMP)
 	uint8_t tot_temp_fifo_words = 0;
-	uint16_t temp_count = 0;
 #endif
 
 	buffer += sizeof(struct lsm6dsv16x_fifo_data);
 	buffer_end = buffer + LSM6DSV16X_FIFO_SIZE(edata->fifo_count);
 
 	/* count total FIFO word for each tag */
-	tmp_buffer = buffer;
-	while (tmp_buffer < buffer_end) {
-		fifo_tag = (tmp_buffer[0] >> 3);
+	while (buffer < buffer_end) {
+		fifo_tag = (buffer[0] >> 3);
 
 		switch (fifo_tag) {
 		case LSM6DSV16X_XL_NC_TAG:
@@ -198,8 +185,62 @@ static int lsm6dsv16x_decode_fifo(const uint8_t *buffer, struct sensor_chan_spec
 			break;
 		}
 
-		tmp_buffer += LSM6DSV16X_FIFO_ITEM_LEN;
+		buffer += LSM6DSV16X_FIFO_ITEM_LEN;
 	}
+
+	switch (chan_spec.chan_type) {
+	case SENSOR_CHAN_ACCEL_X:
+	case SENSOR_CHAN_ACCEL_Y:
+	case SENSOR_CHAN_ACCEL_Z:
+	case SENSOR_CHAN_ACCEL_XYZ:
+		*frame_count = tot_accel_fifo_words;
+		break;
+
+	case SENSOR_CHAN_GYRO_X:
+	case SENSOR_CHAN_GYRO_Y:
+	case SENSOR_CHAN_GYRO_Z:
+	case SENSOR_CHAN_GYRO_XYZ:
+		*frame_count = tot_gyro_fifo_words;
+		break;
+
+#if defined(CONFIG_LSM6DSV16X_ENABLE_TEMP)
+	case SENSOR_CHAN_DIE_TEMP:
+		*frame_count = tot_temp_fifo_words;
+		break;
+#endif
+	default:
+		*frame_count = 0;
+		break;
+	}
+#endif
+	return 0;
+}
+
+#ifdef CONFIG_LSM6DSV16X_STREAM
+static int lsm6dsv16x_decode_fifo(const uint8_t *buffer, struct sensor_chan_spec chan_spec,
+				  uint32_t *fit, uint16_t max_count, void *data_out)
+{
+	const struct lsm6dsv16x_fifo_data *edata = (const struct lsm6dsv16x_fifo_data *)buffer;
+	const uint8_t *buffer_end;
+	const struct lsm6dsv16x_decoder_header *header = &edata->header;
+	int count = 0;
+	uint8_t fifo_tag;
+	uint16_t xl_count = 0, gy_count = 0;
+	uint16_t tot_chan_fifo_words = 0;
+
+#if defined(CONFIG_LSM6DSV16X_ENABLE_TEMP)
+	uint16_t temp_count = 0;
+#endif
+	int ret;
+
+	/* count total FIFO word for each tag */
+	ret = lsm6dsv16x_decoder_get_frame_count(buffer, chan_spec, &tot_chan_fifo_words);
+	if (ret < 0) {
+		return 0;
+	}
+
+	buffer += sizeof(struct lsm6dsv16x_fifo_data);
+	buffer_end = buffer + LSM6DSV16X_FIFO_SIZE(edata->fifo_count);
 
 	/*
 	 * Timestamp in header is set when FIFO threshold is reached, so
@@ -209,16 +250,16 @@ static int lsm6dsv16x_decode_fifo(const uint8_t *buffer, struct sensor_chan_spec
 	if (SENSOR_CHANNEL_IS_ACCEL(chan_spec.chan_type)) {
 		((struct sensor_data_header *)data_out)->base_timestamp_ns =
 			edata->header.timestamp -
-			(tot_accel_fifo_words - 1) * accel_period_ns[edata->accel_batch_odr];
+			(tot_chan_fifo_words - 1) * accel_period_ns[edata->accel_batch_odr];
 	} else if (SENSOR_CHANNEL_IS_GYRO(chan_spec.chan_type)) {
 		((struct sensor_data_header *)data_out)->base_timestamp_ns =
 			edata->header.timestamp -
-			(tot_gyro_fifo_words - 1) * gyro_period_ns[edata->gyro_batch_odr];
+			(tot_chan_fifo_words - 1) * gyro_period_ns[edata->gyro_batch_odr];
 #if defined(CONFIG_LSM6DSV16X_ENABLE_TEMP)
 	} else if (chan_spec.chan_type == SENSOR_CHAN_DIE_TEMP) {
 		((struct sensor_data_header *)data_out)->base_timestamp_ns =
 			edata->header.timestamp -
-			(tot_temp_fifo_words - 1) * temp_period_ns[edata->temp_batch_odr];
+			(tot_chan_fifo_words - 1) * temp_period_ns[edata->temp_batch_odr];
 #endif
 	}
 
