@@ -37,7 +37,7 @@ config XTENSA_TIMER
 	default n
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 13000000
+	default $(dt_node_int_prop_int,$(dt_nodelabel_path,ostimer64),freq-hz)
 
 config MAIN_STACK_SIZE
 	default 2048

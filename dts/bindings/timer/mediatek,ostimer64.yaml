@@ -1,0 +1,15 @@
+# Copyright 2024 The ChromiumOS Authors
+# SPDX-License-Identifier: Apache-2.0
+
+include: base.yaml
+
+# This clock hardware is almost fully described by its register block,
+# but needs a binding for the frequency property below (which is
+# architecturally fixed at 13 MHz on all known devices)
+
+description: MediaTek Audio DSP Core Clock
+compatible: "mediatek,ostimer64"
+properties:
+  freq-hz:
+    type: int
+    default: 13000000
