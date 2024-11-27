@@ -1387,11 +1387,12 @@ static void udc_dwc2_ep_disable(const struct device *dev,
 	uint8_t ep_idx = USB_EP_GET_IDX(cfg->addr);
 	mem_addr_t dxepctl_reg;
 	uint32_t dxepctl;
+	const bool is_iso = dwc2_ep_is_iso(cfg);
 
 	dxepctl_reg = dwc2_get_dxepctl_reg(dev, cfg->addr);
 	dxepctl = sys_read32(dxepctl_reg);
 
-	if (dxepctl & USB_DWC2_DEPCTL_NAKSTS) {
+	if (!is_iso && (dxepctl & USB_DWC2_DEPCTL_NAKSTS)) {
 		/* Endpoint already sends forced NAKs. STALL if necessary. */
 		if (stall) {
 			dxepctl |= USB_DWC2_DEPCTL_STALL;
