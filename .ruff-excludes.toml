@@ -789,7 +789,6 @@
 "./scripts/pylib/twister/twisterlib/harness.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
-    "F811",     # https://docs.astral.sh/ruff/rules/redefined-while-unused
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
