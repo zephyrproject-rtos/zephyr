@@ -137,7 +137,4 @@ class QuarantineData:
 
 def _is_element_matched(element: str, list_of_elements: list[re.Pattern]) -> bool:
     """Return True if given element is matching to any of elements from the list"""
-    for pattern in list_of_elements:
-        if pattern.fullmatch(element):
-            return True
-    return False
+    return any(pattern.fullmatch(element) for pattern in list_of_elements)
