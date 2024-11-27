@@ -119,15 +119,18 @@ Artificially long but functional example:
         "--save-tests",
         metavar="FILENAME",
         action="store",
-        help="Write a list of tests and platforms to be run to %(metavar)s file and stop execution. "
-             "The resulting file will have the same content as 'testplan.json'.")
+        help="Write a list of tests and platforms to be run to %(metavar)s file and stop execution."
+             " The resulting file will have the same content as 'testplan.json'."
+    )
 
     case_select.add_argument(
         "-F",
         "--load-tests",
         metavar="FILENAME",
         action="store",
-        help="Load a list of tests and platforms to be run from a JSON file ('testplan.json' schema).")
+        help="Load a list of tests and platforms to be run"
+             "from a JSON file ('testplan.json' schema)."
+    )
 
     case_select.add_argument(
         "-T", "--testsuite-root", action="append", default=[], type = norm_path,
@@ -219,8 +222,12 @@ Artificially long but functional example:
                         """)
 
     test_or_build.add_argument(
-        "-b", "--build-only", action="store_true", default="--prep-artifacts-for-testing" in sys.argv,
-        help="Only build the code, do not attempt to run the code on targets.")
+        "-b",
+        "--build-only",
+        action="store_true",
+        default="--prep-artifacts-for-testing" in sys.argv,
+        help="Only build the code, do not attempt to run the code on targets."
+    )
 
     test_or_build.add_argument(
         "--prep-artifacts-for-testing", action="store_true",
@@ -353,15 +360,23 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
     parser.add_argument("--coverage-tool", choices=['lcov', 'gcovr'], default='gcovr',
                         help="Tool to use to generate coverage report.")
 
-    parser.add_argument("--coverage-formats", action="store", default=None, # default behavior is set in run_coverage
-                        help="Output formats to use for generated coverage reports, as a comma-separated list. " +
-                             "Valid options for 'gcovr' tool are: " +
-                             ','.join(supported_coverage_formats['gcovr']) + " (html - default)." +
-                             " Valid options for 'lcov' tool are: " +
-                             ','.join(supported_coverage_formats['lcov']) + " (html,lcov - default).")
+    parser.add_argument(
+        "--coverage-formats",
+        action="store",
+        default=None, # default behavior is set in run_coverage
+        help="Output formats to use for generated coverage reports, as a comma-separated list. " +
+             "Valid options for 'gcovr' tool are: " +
+             ','.join(supported_coverage_formats['gcovr']) + " (html - default)." +
+             " Valid options for 'lcov' tool are: " +
+             ','.join(supported_coverage_formats['lcov']) + " (html,lcov - default)."
+        )
 
-    parser.add_argument("--test-config", action="store", default=os.path.join(ZEPHYR_BASE, "tests", "test_config.yaml"),
-        help="Path to file with plans and test configurations.")
+    parser.add_argument(
+        "--test-config",
+        action="store",
+        default=os.path.join(ZEPHYR_BASE, "tests", "test_config.yaml"),
+        help="Path to file with plans and test configurations."
+    )
 
     parser.add_argument("--level", action="store",
         help="Test level to be used. By default, no levels are used for filtering"
@@ -814,7 +829,12 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
     return parser
 
 
-def parse_arguments(parser: argparse.ArgumentParser, args, options = None, on_init=True) -> argparse.Namespace:
+def parse_arguments(
+    parser: argparse.ArgumentParser,
+    args,
+    options = None,
+    on_init=True
+) -> argparse.Namespace:
     if options is None:
         options = parser.parse_args(args)
 
@@ -875,11 +895,19 @@ def parse_arguments(parser: argparse.ArgumentParser, args, options = None, on_in
         logger.error("valgrind enabled but valgrind executable not found")
         sys.exit(1)
 
-    if (not options.device_testing) and (options.device_serial or options.device_serial_pty or options.hardware_map):
-        logger.error("Use --device-testing with --device-serial, or --device-serial-pty, or --hardware-map.")
+    if (
+        (not options.device_testing)
+        and (options.device_serial or options.device_serial_pty or options.hardware_map)
+    ):
+        logger.error(
+            "Use --device-testing with --device-serial, or --device-serial-pty, or --hardware-map."
+        )
         sys.exit(1)
 
-    if options.device_testing and (options.device_serial or options.device_serial_pty) and len(options.platform) != 1:
+    if (
+        options.device_testing
+        and (options.device_serial or options.device_serial_pty) and len(options.platform) != 1
+    ):
         logger.error("When --device-testing is used with --device-serial "
                      "or --device-serial-pty, exactly one platform must "
                      "be specified")

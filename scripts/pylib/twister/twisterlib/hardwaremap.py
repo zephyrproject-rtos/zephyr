@@ -234,10 +234,26 @@ class HardwareMap:
         print(tabulate(table, headers=header, tablefmt="github"))
 
 
-    def add_device(self, serial, platform, pre_script, is_pty, baud=None, flash_timeout=60, flash_with_test=False, flash_before=False):
-        device = DUT(platform=platform, connected=True, pre_script=pre_script, serial_baud=baud,
-                     flash_timeout=flash_timeout, flash_with_test=flash_with_test, flash_before=flash_before
-                    )
+    def add_device(
+        self,
+        serial,
+        platform,
+        pre_script,
+        is_pty,
+        baud=None,
+        flash_timeout=60,
+        flash_with_test=False,
+        flash_before=False
+    ):
+        device = DUT(
+            platform=platform,
+            connected=True,
+            pre_script=pre_script,
+            serial_baud=baud,
+            flash_timeout=flash_timeout,
+            flash_with_test=flash_with_test,
+            flash_before=flash_before
+        )
         if is_pty:
             device.serial_pty = serial
         else:
@@ -330,7 +346,10 @@ class HardwareMap:
         serial_devices = list_ports.comports()
         logger.info("Scanning connected hardware...")
         for d in serial_devices:
-            if d.manufacturer and d.manufacturer.casefold() in [m.casefold() for m in self.manufacturer]:
+            if (
+                d.manufacturer
+                and d.manufacturer.casefold() in [m.casefold() for m in self.manufacturer]
+            ):
 
                 # TI XDS110 can have multiple serial devices for a single board
                 # assume endpoint 0 is the serial, skip all others

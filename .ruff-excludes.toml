@@ -756,52 +756,9 @@
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
 ]
-"./scripts/pylib/twister/twisterlib/cmakecache.py" = [
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-]
-"./scripts/pylib/twister/twisterlib/coverage.py" = [
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-]
-"./scripts/pylib/twister/twisterlib/environment.py" = [
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-]
-"./scripts/pylib/twister/twisterlib/handlers.py" = [
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-]
-"./scripts/pylib/twister/twisterlib/hardwaremap.py" = [
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-]
-"./scripts/pylib/twister/twisterlib/harness.py" = [
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-]
-"./scripts/pylib/twister/twisterlib/platform.py" = [
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-]
-"./scripts/pylib/twister/twisterlib/quarantine.py" = [
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-]
-"./scripts/pylib/twister/twisterlib/reports.py" = [
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-]
-"./scripts/pylib/twister/twisterlib/runner.py" = [
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-]
-"./scripts/pylib/twister/twisterlib/size_calc.py" = [
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-]
-"./scripts/pylib/twister/twisterlib/testinstance.py" = [
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-]
 "./scripts/pylib/twister/twisterlib/testplan.py" = [
     "E402",     # https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "F401",     # https://docs.astral.sh/ruff/rules/unused-import
-]
-"./scripts/pylib/twister/twisterlib/testsuite.py" = [
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-]
-"./scripts/pylib/twister/twisterlib/twister_main.py" = [
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
 ]
 "./scripts/pylint/checkers/argparse-checker.py" = [
     "F821",     # https://docs.astral.sh/ruff/rules/undefined-name

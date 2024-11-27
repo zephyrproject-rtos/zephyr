@@ -125,7 +125,7 @@ class Handler:
             set(_d_suite) != set(expected_suite_names)
             and not set(_d_suite).issubset(set(expected_suite_names))
         ):
-                self._missing_suite_name(expected_suite_names, handler_time)
+            self._missing_suite_name(expected_suite_names, handler_time)
 
     def _missing_suite_name(self, expected_suite_names, handler_time):
         """
@@ -147,7 +147,11 @@ class Handler:
         # only for Ztest tests:
         harness_class_name = type(harness).__name__
         if self.suite_name_check and harness_class_name == "Test":
-            self._verify_ztest_suite_name(harness.status, harness.detected_suite_names, handler_time)
+            self._verify_ztest_suite_name(
+                harness.status,
+                harness.detected_suite_names,
+                handler_time
+            )
             if self.instance.status == TwisterStatus.FAIL:
                 return
             if not harness.matched_run_id and harness.run_id_exists:
@@ -174,8 +178,14 @@ class Handler:
 
 
 class BinaryHandler(Handler):
-    def __init__(self, instance, type_str: str, options: argparse.Namespace, generator_cmd: str | None = None,
-                 suite_name_check: bool = True):
+    def __init__(
+        self,
+        instance,
+        type_str: str,
+        options: argparse.Namespace,
+        generator_cmd: str | None = None,
+        suite_name_check: bool = True
+    ):
         """Constructor
 
         @param instance Test Instance
@@ -344,8 +354,12 @@ class BinaryHandler(Handler):
             return
 
         stderr_log = f"{self.instance.build_dir}/handler_stderr.log"
-        with open(stderr_log, "w+") as stderr_log_fp, subprocess.Popen(command, stdout=subprocess.PIPE,
-                              stderr=stderr_log_fp, cwd=self.build_dir, env=env) as proc:
+        with (
+            open(stderr_log, "w+") as stderr_log_fp,
+            subprocess.Popen(
+                command, stdout=subprocess.PIPE, stderr=stderr_log_fp, cwd=self.build_dir, env=env
+            ) as proc,
+        ):
             logger.debug(f"Spawning BinaryHandler Thread for {self.name}")
             t = threading.Thread(target=self._output_handler, args=(proc, harness,), daemon=True)
             t.start()
@@ -373,8 +387,14 @@ class BinaryHandler(Handler):
 
 
 class SimulationHandler(BinaryHandler):
-    def __init__(self, instance, type_str: str, options: argparse.Namespace, generator_cmd: str | None = None,
-                 suite_name_check: bool = True):
+    def __init__(
+        self,
+        instance,
+        type_str: str,
+        options: argparse.Namespace,
+        generator_cmd: str | None = None,
+        suite_name_check: bool = True,
+    ):
         """Constructor
 
         @param instance Test Instance
@@ -484,7 +504,8 @@ class DeviceHandler(Handler):
 
         # Select an available DUT with less failures
         for d in sorted(duts_found, key=lambda _dut: _dut.failures):
-            duts_shared_hw = [_d for _d in self.duts if _d.id == d.id]  # get all DUTs with the same id
+            # get all DUTs with the same id
+            duts_shared_hw = [_d for _d in self.duts if _d.id == d.id]
             with self.acquire_dut_locks(duts_shared_hw):
                 avail = False
                 if d.available:
@@ -504,7 +525,8 @@ class DeviceHandler(Handler):
             dut.failures_increment()
         logger.debug(f"Release DUT:{dut.platform}, Id:{dut.id}, "
                      f"counter:{dut.counter}, failures:{dut.failures}")
-        duts_shared_hw = [_d for _d in self.duts if _d.id == dut.id]  # get all DUTs with the same id
+        # get all DUTs with the same id
+        duts_shared_hw = [_d for _d in self.duts if _d.id == dut.id]
         with self.acquire_dut_locks(duts_shared_hw):
             for _d in duts_shared_hw:
                 _d.available = 1
@@ -548,7 +570,12 @@ class DeviceHandler(Handler):
                     if runner in ("pyocd", "nrfjprog", "nrfutil"):
                         command_extra_args.append("--dev-id")
                         command_extra_args.append(board_id)
-                    elif runner == "openocd" and product == "STM32 STLink" or runner == "openocd" and product == "STLINK-V3":
+                    elif (
+                        runner == "openocd"
+                        and product == "STM32 STLink"
+                        or runner == "openocd"
+                        and product == "STLINK-V3"
+                    ):
                         command_extra_args.append("--cmd-pre-init")
                         command_extra_args.append(f"hla_serial {board_id}")
                     elif runner == "openocd" and product == "EDBG CMSIS-DAP":
@@ -794,7 +821,9 @@ class DeviceHandler(Handler):
             t.join(0.1)
 
         if t.is_alive():
-            logger.debug(f"Timed out while monitoring serial output on {self.instance.platform.name}")
+            logger.debug(
+                f"Timed out while monitoring serial output on {self.instance.platform.name}"
+            )
 
         if ser.isOpen():
             ser.close()
@@ -826,8 +855,14 @@ class QEMUHandler(Handler):
     for these to collect whether the test passed or failed.
     """
 
-    def __init__(self, instance, type_str: str, options: argparse.Namespace, generator_cmd: str | None = None,
-                 suite_name_check: bool = True):
+    def __init__(
+        self,
+        instance,
+        type_str: str,
+        options: argparse.Namespace,
+        generator_cmd: str | None = None,
+        suite_name_check: bool = True,
+    ):
         """Constructor
 
         @param instance Test instance
@@ -1063,7 +1098,12 @@ class QEMUHandler(Handler):
         is_timeout = False
         qemu_pid = None
 
-        with subprocess.Popen(command, stdout=open(self.stdout_fn, "w"), stderr=open(self.stderr_fn, "w"), cwd=self.build_dir) as proc:
+        with subprocess.Popen(
+            command,
+            stdout=open(self.stdout_fn, "w"),
+            stderr=open(self.stderr_fn, "w"),
+            cwd=self.build_dir
+        ) as proc:
             logger.debug(f"Spawning QEMUHandler Thread for {self.name}")
 
             try:
@@ -1116,8 +1156,14 @@ class QEMUWinHandler(Handler):
      for these to collect whether the test passed or failed.
      """
 
-    def __init__(self, instance, type_str: str, options: argparse.Namespace, generator_cmd: str | None = None,
-                 suite_name_check: bool = True):
+    def __init__(
+        self,
+        instance,
+        type_str: str,
+        options: argparse.Namespace,
+        generator_cmd: str | None = None,
+        suite_name_check: bool = True,
+    ):
         """Constructor
 
         @param instance Test instance
@@ -1222,7 +1268,15 @@ class QEMUWinHandler(Handler):
             finally:
                 queue.put(c)
 
-    def _monitor_output(self, queue, timeout, logfile, pid_fn, harness, ignore_unexpected_eof=False):
+    def _monitor_output(
+        self,
+        queue,
+        timeout,
+        logfile,
+        pid_fn,
+        harness,
+        ignore_unexpected_eof=False
+    ):
         start_time = time.time()
         timeout_time = start_time + timeout
         _status = TwisterStatus.NONE
@@ -1318,7 +1372,9 @@ class QEMUWinHandler(Handler):
         self.stop_thread = True
 
         handler_time = time.time() - start_time
-        logger.debug(f"QEMU ({self.pid}) complete with {_status} ({_reason}) after {handler_time} seconds")
+        logger.debug(
+            f"QEMU ({self.pid}) complete with {_status} ({_reason}) after {handler_time} seconds"
+        )
         self._monitor_update_instance_info(self, handler_time, _status, _reason)
         self._close_log_file(log_out_fp)
         self._stop_qemu_process(self.pid)
