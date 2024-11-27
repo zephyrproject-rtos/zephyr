@@ -92,7 +92,7 @@ static int composite_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 	return 0;
 }
 
-static const struct fuel_gauge_driver_api composite_api = {
+static DEVICE_API(fuel_gauge, composite_api) = {
 	.get_property = composite_get_prop,
 };
 
