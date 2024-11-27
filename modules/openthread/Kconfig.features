@@ -144,6 +144,7 @@ config OPENTHREAD_DHCP6_SERVER
 
 config OPENTHREAD_DIAG
 	bool "Diagnostic functions support"
+	depends on IEEE802154_CARRIER_FUNCTIONS
 	help
 	  Enable OpenThread CLI diagnostic commands
 

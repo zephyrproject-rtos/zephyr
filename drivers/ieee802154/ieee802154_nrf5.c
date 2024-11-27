@@ -730,7 +730,7 @@ static int nrf5_stop(const struct device *dev)
 	return 0;
 }
 
-#if defined(CONFIG_NRF_802154_CARRIER_FUNCTIONS)
+#if defined(CONFIG_IEEE802154_CARRIER_FUNCTIONS)
 static int nrf5_continuous_carrier(const struct device *dev)
 {
 	ARG_UNUSED(dev);
@@ -743,6 +743,23 @@ static int nrf5_continuous_carrier(const struct device *dev)
 	}
 
 	LOG_DBG("Continuous carrier wave transmission started (channel: %d)",
+		nrf_802154_channel_get());
+
+	return 0;
+}
+
+static int nrf_modulated_carrier(const struct device *dev, const uint8_t *data)
+{
+	ARG_UNUSED(dev);
+
+	nrf_802154_tx_power_set(nrf5_data.txpwr);
+
+	if (!nrf_802154_modulated_carrier(data)) {
+		LOG_ERR("Failed to enter modulated carrier state");
+		return -EIO;
+	}
+
+	LOG_DBG("Modulated carrier wave transmission started (channel: %d)",
 		nrf_802154_channel_get());
 
 	return 0;
@@ -1271,15 +1288,16 @@ static const struct ieee802154_radio_api nrf5_radio_api = {
 	.set_txpower = nrf5_set_txpower,
 	.start = nrf5_start,
 	.stop = nrf5_stop,
-#if defined(CONFIG_NRF_802154_CARRIER_FUNCTIONS)
+#if defined(CONFIG_IEEE802154_CARRIER_FUNCTIONS)
 	.continuous_carrier = nrf5_continuous_carrier,
+	.modulated_carrier = nrf_modulated_carrier,
 #endif
 	.tx = nrf5_tx,
 	.ed_scan = nrf5_energy_scan_start,
 	.get_time = nrf5_get_time,
 	.get_sch_acc = nrf5_get_acc,
 	.configure = nrf5_configure,
-	.attr_get = nrf5_attr_get
+	.attr_get = nrf5_attr_get,
 };
 
 #if defined(CONFIG_NET_L2_IEEE802154)
