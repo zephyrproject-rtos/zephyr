@@ -137,7 +137,7 @@ class Handler:
         self.instance.execution_time = handler_time
         for tc in self.instance.testcases:
             tc.status = TwisterStatus.FAIL
-        self.instance.reason = f"Testsuite mismatch"
+        self.instance.reason = "Testsuite mismatch"
         logger.debug("Test suite names were not printed or some of them in " \
                      "output do not correspond with expected: %s",
                      str(expected_suite_names))

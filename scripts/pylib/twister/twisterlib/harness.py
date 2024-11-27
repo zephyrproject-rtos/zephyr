@@ -201,7 +201,7 @@ class Robot(Harness):
                     command.append(f'{v}')
 
         if self.path is None:
-            raise PytestHarnessException(f'The parameter robot_testsuite is mandatory')
+            raise PytestHarnessException('The parameter robot_testsuite is mandatory')
 
         if isinstance(self.path, list):
             for suite in self.path:

@@ -786,7 +786,7 @@ class TestPlan:
         if platform_filter:
             logger.debug(f"Checking platform filter: {platform_filter}")
             # find in aliases and rename
-            self.verify_platforms_existence(platform_filter, f"platform_filter")
+            self.verify_platforms_existence(platform_filter, "platform_filter")
             for pf in platform_filter:
                 logger.debug(f"Checking platform in filter: {pf}")
                 if pf in self.platform_names:
@@ -981,7 +981,7 @@ class TestPlan:
                     # Search and check that all required snippet files are found
                     for this_snippet in snippet_args['snippets']:
                         if this_snippet not in found_snippets:
-                            logger.error(f"Can't find snippet '%s' for test '%s'", this_snippet, ts.name)
+                            logger.error("Can't find snippet '%s' for test '%s'", this_snippet, ts.name)
                             instance.status = TwisterStatus.ERROR
                             instance.reason = f"Snippet {this_snippet} not found"
                             missing_snippet = True

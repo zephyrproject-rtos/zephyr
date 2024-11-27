@@ -1018,7 +1018,7 @@ class ProjectBuilder(FilterBuilder):
                     if self.instance.status == TwisterStatus.NOTRUN:
                         run_conditions =  f"(run:{self.instance.run}, handler.ready:{self.instance.handler.ready})"
                         logger.debug(f"Instance {self.instance.name} can't run {run_conditions}")
-                        self.instance.add_missing_case_status(TwisterStatus.NOTRUN, f"Nowhere to run")
+                        self.instance.add_missing_case_status(TwisterStatus.NOTRUN, "Nowhere to run")
                     next_op = 'report'
             except StatusAttributeError as sae:
                 logger.error(str(sae))
