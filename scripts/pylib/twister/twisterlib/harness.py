@@ -13,7 +13,6 @@ import sys
 import threading
 import time
 import xml.etree.ElementTree as ET
-from asyncio.log import logger
 from collections import OrderedDict
 from enum import Enum
 
