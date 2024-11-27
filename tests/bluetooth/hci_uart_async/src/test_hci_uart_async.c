@@ -37,7 +37,7 @@ static void serial_vnd_data_callback(const struct device *dev, void *user_data);
 static int drv_send(const struct device *dev, struct net_buf *buf);
 static int drv_open(const struct device *dev, bt_hci_recv_t recv);
 
-static const struct bt_hci_driver_api drv_api = {
+static DEVICE_API(bt_hci, drv_api) = {
 	.open = drv_open,
 	.send = drv_send,
 };

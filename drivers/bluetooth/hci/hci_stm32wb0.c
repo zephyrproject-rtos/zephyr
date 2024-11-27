@@ -488,7 +488,7 @@ static int bt_hci_stm32wb0_open(const struct device *dev, bt_hci_recv_t recv)
 	return 0;
 }
 
-static const struct bt_hci_driver_api drv = {
+static DEVICE_API(bt_hci, drv) = {
 	.open = bt_hci_stm32wb0_open,
 	.send = bt_hci_stm32wb0_send,
 };
