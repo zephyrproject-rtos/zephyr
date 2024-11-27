@@ -182,10 +182,12 @@ class Lcov(CoverageTool):
 
     def get_version(self):
         try:
-            result = subprocess.run(['lcov', '--version'],
-                                    stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE,
-                                    text=True, check=True)
+            result = subprocess.run(
+                ['lcov', '--version'],
+                capture_output=True,
+                text=True,
+                check=True
+            )
             version_output = result.stdout.strip().replace('lcov: LCOV version ', '')
             return version_output
         except subprocess.CalledProcessError as e:
@@ -293,10 +295,12 @@ class Gcovr(CoverageTool):
 
     def get_version(self):
         try:
-            result = subprocess.run(['gcovr', '--version'],
-                                    stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE,
-                                    text=True, check=True)
+            result = subprocess.run(
+                ['gcovr', '--version'],
+                capture_output=True,
+                text=True,
+                check=True
+            )
             version_lines = result.stdout.strip().split('\n')
             if version_lines:
                 version_output = version_lines[0].replace('gcovr ', '')

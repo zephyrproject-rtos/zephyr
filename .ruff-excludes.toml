@@ -775,14 +775,12 @@
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
     "SIM105",   # https://docs.astral.sh/ruff/rules/suppressible-exception
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
-    "UP022",    # https://docs.astral.sh/ruff/rules/replace-stdout-stderr
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
 "./scripts/pylib/twister/twisterlib/environment.py" = [
     "B006",     # https://docs.astral.sh/ruff/rules/mutable-argument-default
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "UP021",    # https://docs.astral.sh/ruff/rules/replace-universal-newlines
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
 ]
 "./scripts/pylib/twister/twisterlib/handlers.py" = [
@@ -842,7 +840,6 @@
     "SIM102",   # https://docs.astral.sh/ruff/rules/collapsible-if
     "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
-    "UP022",    # https://docs.astral.sh/ruff/rules/replace-stdout-stderr
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
