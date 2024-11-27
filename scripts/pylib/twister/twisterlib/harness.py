@@ -114,7 +114,7 @@ class Harness:
     def translate_record(self, record: dict) -> dict:
         if self.record_as_json:
             for k in self.record_as_json:
-                if not k in record:
+                if k not in record:
                     continue
                 try:
                     record[k] = json.loads(record[k]) if record[k] else {}
@@ -296,7 +296,7 @@ class Console(Harness):
         elif self.type == "multi_line" and not self.ordered:
             for i, pattern in enumerate(self.patterns):
                 r = self.regex[i]
-                if pattern.search(line) and not r in self.matches:
+                if pattern.search(line) and r not in self.matches:
                     self.matches[r] = line
                     logger.debug(f"HARNESS:{self.__class__.__name__}:EXPECTED("
                                  f"{len(self.matches)}/{self.patterns_expected}):"

@@ -809,7 +809,6 @@
     "B009",     # https://docs.astral.sh/ruff/rules/get-attr-with-constant
     "B904",     # https://docs.astral.sh/ruff/rules/raise-without-from-inside-except
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "E713",     # https://docs.astral.sh/ruff/rules/not-in-test
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
     "F811",     # https://docs.astral.sh/ruff/rules/redefined-while-unused
     "SIM102",   # https://docs.astral.sh/ruff/rules/collapsible-if
@@ -844,7 +843,6 @@
 "./scripts/pylib/twister/twisterlib/runner.py" = [
     "B006",     # https://docs.astral.sh/ruff/rules/mutable-argument-default
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "E713",     # https://docs.astral.sh/ruff/rules/not-in-test
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
     "SIM102",   # https://docs.astral.sh/ruff/rules/collapsible-if
     "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
@@ -875,7 +873,6 @@
     "B904",     # https://docs.astral.sh/ruff/rules/raise-without-from-inside-except
     "E402",     # https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "E713",     # https://docs.astral.sh/ruff/rules/not-in-test
     "F401",     # https://docs.astral.sh/ruff/rules/unused-import
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
     "SIM102",   # https://docs.astral.sh/ruff/rules/collapsible-if
