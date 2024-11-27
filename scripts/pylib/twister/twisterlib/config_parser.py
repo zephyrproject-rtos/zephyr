@@ -130,7 +130,9 @@ class TwisterConfigParser:
                 if len(vs) > 1:
                     warnings.warn(
                         "Space-separated lists are deprecated, use YAML lists instead",
-                        DeprecationWarning)
+                        DeprecationWarning,
+                        stacklevel=2
+                    )
 
                 if len(typestr) > 4 and typestr[4] == ":":
                     return [self._cast_value(vsi, typestr[5:]) for vsi in vs]
@@ -148,7 +150,9 @@ class TwisterConfigParser:
                 if len(vs) > 1:
                     warnings.warn(
                         "Space-separated lists are deprecated, use YAML lists instead",
-                        DeprecationWarning)
+                        DeprecationWarning,
+                        stacklevel=2
+                    )
 
                 if len(typestr) > 3 and typestr[3] == ":":
                     return {self._cast_value(vsi, typestr[4:]) for vsi in vs}
@@ -243,7 +247,8 @@ class TwisterConfigParser:
                 "in extra_args. This feature is deprecated and will soon "
                 "result in an error. Use extra_conf_files, extra_overlay_confs "
                 "or extra_dtc_overlay_files YAML fields instead",
-                DeprecationWarning
+                DeprecationWarning,
+                stacklevel=2
             )
 
         for k, kinfo in self.testsuite_valid_keys.items():
