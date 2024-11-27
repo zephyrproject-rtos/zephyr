@@ -785,7 +785,6 @@
 "./scripts/pylib/twister/twisterlib/environment.py" = [
     "B006",     # https://docs.astral.sh/ruff/rules/mutable-argument-default
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "SIM118",   # https://docs.astral.sh/ruff/rules/in-dict-keys
     "UP006",    # https://docs.astral.sh/ruff/rules/non-pep585-annotation
     "UP021",    # https://docs.astral.sh/ruff/rules/replace-universal-newlines
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
@@ -807,7 +806,6 @@
 "./scripts/pylib/twister/twisterlib/hardwaremap.py" = [
     "B006",     # https://docs.astral.sh/ruff/rules/mutable-argument-default
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "SIM118",   # https://docs.astral.sh/ruff/rules/in-dict-keys
     "UP004",    # https://docs.astral.sh/ruff/rules/useless-object-inheritance
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
@@ -897,7 +895,6 @@
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
     "SIM102",   # https://docs.astral.sh/ruff/rules/collapsible-if
     "SIM110",   # https://docs.astral.sh/ruff/rules/reimplemented-builtin
-    "SIM118",   # https://docs.astral.sh/ruff/rules/in-dict-keys
     "SIM202",   # https://docs.astral.sh/ruff/rules/negate-not-equal-op
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting

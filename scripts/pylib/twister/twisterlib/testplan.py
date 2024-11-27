@@ -570,7 +570,7 @@ class TestPlan:
                     subcases = None
                     ztest_suite_names = None
 
-                    for name in parsed_data.scenarios.keys():
+                    for name in parsed_data.scenarios:
                         suite_dict = parsed_data.get_scenario(name)
                         suite = TestSuite(root, suite_path, name, data=suite_dict, detailed_test_id=self.options.detailed_test_id)
 
