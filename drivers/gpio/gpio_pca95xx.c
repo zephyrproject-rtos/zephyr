@@ -759,7 +759,7 @@ static int gpio_pca95xx_manage_callback(const struct device *dev,
 }
 #endif /* CONFIG_GPIO_PCA95XX_INTERRUPT */
 
-static const struct gpio_driver_api gpio_pca95xx_drv_api_funcs = {
+static DEVICE_API(gpio, gpio_pca95xx_drv_api_funcs) = {
 	.pin_configure = gpio_pca95xx_config,
 	.port_get_raw = gpio_pca95xx_port_get_raw,
 	.port_set_masked_raw = gpio_pca95xx_port_set_masked_raw,

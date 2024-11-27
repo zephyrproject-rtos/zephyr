@@ -178,7 +178,7 @@ static int gpio_rpi_manage_callback(const struct device *dev,
 	return gpio_manage_callback(&data->callbacks, callback, set);
 }
 
-static const struct gpio_driver_api gpio_rpi_driver_api = {
+static DEVICE_API(gpio, gpio_rpi_driver_api) = {
 	.pin_configure = gpio_rpi_configure,
 	.port_get_raw = gpio_rpi_port_get_raw,
 	.port_set_masked_raw = gpio_rpi_port_set_masked_raw,

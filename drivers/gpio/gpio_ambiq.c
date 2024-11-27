@@ -550,7 +550,7 @@ static int ambiq_gpio_init(const struct device *port)
 	return 0;
 }
 
-static const struct gpio_driver_api ambiq_gpio_drv_api = {
+static DEVICE_API(gpio, ambiq_gpio_drv_api) = {
 	.pin_configure = ambiq_gpio_pin_configure,
 #ifdef CONFIG_GPIO_GET_CONFIG
 	.pin_get_config = ambiq_gpio_get_config,

@@ -194,7 +194,7 @@ static int mss_gpio_manage_callback(const struct device *dev,
 
 	return gpio_manage_callback(&data->cb, callback, set);
 }
-static const struct gpio_driver_api mss_gpio_driver = {
+static DEVICE_API(gpio, mss_gpio_driver) = {
 	.pin_configure           = mss_gpio_config,
 	.port_toggle_bits        = mss_gpio_port_toggle_bits,
 	.port_get_raw            = mss_gpio_port_get_raw,

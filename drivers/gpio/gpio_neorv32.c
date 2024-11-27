@@ -195,7 +195,7 @@ static int neorv32_gpio_init(const struct device *dev)
 	return 0;
 }
 
-static const struct gpio_driver_api neorv32_gpio_driver_api = {
+static DEVICE_API(gpio, neorv32_gpio_driver_api) = {
 	.pin_configure = neorv32_gpio_pin_configure,
 	.port_get_raw = neorv32_gpio_port_get_raw,
 	.port_set_masked_raw = neorv32_gpio_port_set_masked_raw,

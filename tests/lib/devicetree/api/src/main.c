@@ -1948,7 +1948,7 @@ static int test_gpio_init(const struct device *dev)
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT vnd_gpio_device
 
-static const struct gpio_driver_api test_api;
+static DEVICE_API(gpio, test_api);
 
 #define TEST_GPIO_INIT(num)					\
 	static struct test_gpio_data gpio_data_##num = {	\

@@ -1639,7 +1639,7 @@ static void gpio_pca_series_gpio_int_handler(const struct device *dev,
  * gpio_pca_zephyr_gpio_api
  */
 
-static const struct gpio_driver_api gpio_pca_series_api_funcs_standard = {
+static DEVICE_API(gpio, gpio_pca_series_api_funcs_standard) = {
 	.pin_configure = gpio_pca_series_pin_configure,
 	.port_get_raw = gpio_pca_series_port_read_standard,
 	.port_set_masked_raw = gpio_pca_series_port_set_masked,
@@ -1652,7 +1652,7 @@ static const struct gpio_driver_api gpio_pca_series_api_funcs_standard = {
 #endif
 };
 
-static const struct gpio_driver_api gpio_pca_series_api_funcs_extended = {
+static DEVICE_API(gpio, gpio_pca_series_api_funcs_extended) = {
 	.pin_configure = gpio_pca_series_pin_configure,
 	.port_get_raw = gpio_pca_series_port_read_extended, /* special version used */
 	.port_set_masked_raw = gpio_pca_series_port_set_masked,

@@ -431,7 +431,7 @@ static int gpio_max14906_init(const struct device *dev)
 	return ret;
 }
 
-static const struct gpio_driver_api gpio_max14906_api = {
+static DEVICE_API(gpio, gpio_max14906_api) = {
 	.pin_configure = gpio_max14906_config,
 	.port_get_raw = gpio_max14906_port_get_raw,
 	.port_set_bits_raw = gpio_max14906_port_set_bits_raw,
