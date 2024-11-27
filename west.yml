@@ -23,6 +23,8 @@ manifest:
       url-base: https://github.com/zephyrproject-rtos
     - name: babblesim
       url-base: https://github.com/BabbleSim
+    - name: husqvarnagroup
+      url-base: https://github.com/husqvarnagroup
 
   group-filter: [-babblesim, -optional]
 
@@ -117,7 +119,8 @@ manifest:
       groups:
         - babblesim
     - name: cmsis
-      revision: 4b96cbb174678dcd3ca86e11e1f24bc5f8726da0
+      revision: gardena/rs/upstream/sca-cppcheck
+      remote: husqvarnagroup
       path: modules/hal/cmsis
       groups:
         - hal
