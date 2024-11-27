@@ -158,7 +158,7 @@ class Harness:
             self.reason = "Testsuite failed"
 
         if self.fail_on_fault:
-            if self.FAULT == line:
+            if line == self.FAULT:
                 self.fault = True
 
         if self.GCOV_START in line:
