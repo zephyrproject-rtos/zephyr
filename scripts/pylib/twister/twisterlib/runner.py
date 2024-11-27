@@ -19,7 +19,6 @@ import traceback
 import yaml
 from multiprocessing import Lock, Process, Value
 from multiprocessing.managers import BaseManager
-from typing import List
 from packaging import version
 import pathlib
 
@@ -1156,7 +1155,7 @@ class ProjectBuilder(FilterBuilder):
                 testcase.reason = tc_info.get('reason')
 
 
-    def cleanup_artifacts(self, additional_keep: List[str] = []):
+    def cleanup_artifacts(self, additional_keep: list[str] = []):
         logger.debug("Cleaning up {}".format(self.instance.build_dir))
         allow = [
             os.path.join('zephyr', '.config'),
@@ -1209,7 +1208,7 @@ class ProjectBuilder(FilterBuilder):
 
         self._sanitize_files()
 
-    def _get_artifact_allow_list_for_domain(self, domain: str) -> List[str]:
+    def _get_artifact_allow_list_for_domain(self, domain: str) -> list[str]:
         """
         Return a list of files needed to test a given domain.
         """
@@ -1223,14 +1222,14 @@ class ProjectBuilder(FilterBuilder):
             ]
         return allow
 
-    def _get_binaries(self) -> List[str]:
+    def _get_binaries(self) -> list[str]:
         """
         Get list of binaries paths (absolute or relative to the
         self.instance.build_dir), basing on information from platform.binaries
         or runners.yaml. If they are not found take default binaries like
         "zephyr/zephyr.hex" etc.
         """
-        binaries: List[str] = []
+        binaries: list[str] = []
 
         platform = self.instance.platform
         if platform.binaries:
@@ -1254,7 +1253,7 @@ class ProjectBuilder(FilterBuilder):
             ]
         return binaries
 
-    def _get_binaries_from_runners(self, domain='') -> List[str]:
+    def _get_binaries_from_runners(self, domain='') -> list[str]:
         """
         Get list of binaries paths (absolute or relative to the
         self.instance.build_dir) from runners.yaml file. May be used for
@@ -1273,9 +1272,9 @@ class ProjectBuilder(FilterBuilder):
             return []
 
         runners_config: dict = runners_content['config']
-        binary_keys: List[str] = ['elf_file', 'hex_file', 'bin_file']
+        binary_keys: list[str] = ['elf_file', 'hex_file', 'bin_file']
 
-        binaries: List[str] = []
+        binaries: list[str] = []
         for binary_key in binary_keys:
             binary_path = runners_config.get(binary_key)
             if binary_path is None:
@@ -1313,7 +1312,7 @@ class ProjectBuilder(FilterBuilder):
             return
 
         runners_config: dict = runners_content_yaml['config']
-        binary_keys: List[str] = ['elf_file', 'hex_file', 'bin_file']
+        binary_keys: list[str] = ['elf_file', 'hex_file', 'bin_file']
 
         for binary_key in binary_keys:
             binary_path = runners_config.get(binary_key)
