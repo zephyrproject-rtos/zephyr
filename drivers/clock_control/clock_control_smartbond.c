@@ -603,7 +603,7 @@ int smartbond_clocks_init(const struct device *dev)
 	return 0;
 }
 
-static const struct clock_control_driver_api smartbond_clock_control_api = {
+static DEVICE_API(clock_control, smartbond_clock_control_api) = {
 	.on = smartbond_clock_control_on,
 	.off = smartbond_clock_control_off,
 	.get_rate = smartbond_clock_control_get_rate,

@@ -94,7 +94,7 @@ static int api_get_rate(const struct device *dev, clock_control_subsys_t clkcfg,
 	return 0;
 }
 
-static const struct clock_control_driver_api max32_clkctrl_api = {
+static DEVICE_API(clock_control, max32_clkctrl_api) = {
 	.on = api_on,
 	.off = api_off,
 	.get_rate = api_get_rate,

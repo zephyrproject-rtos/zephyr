@@ -84,7 +84,7 @@ static int clock_control_wch_rcc_get_rate(const struct device *dev, clock_contro
 	return 0;
 }
 
-static struct clock_control_driver_api clock_control_wch_rcc_api = {
+static DEVICE_API(clock_control, clock_control_wch_rcc_api) = {
 	.on = clock_control_wch_rcc_on,
 	.get_rate = clock_control_wch_rcc_get_rate,
 };
