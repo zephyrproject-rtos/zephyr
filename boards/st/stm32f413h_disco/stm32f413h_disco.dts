@@ -1,0 +1,102 @@
+/*
+ * Copyright (c) 2024 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/f4/stm32f413Xh.dtsi>
+#include <st/f4/stm32f413z(g-h)tx-pinctrl.dtsi>
+#include "arduino_r3_connector.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "STMicroelectronics STM32F413H-DISCO board";
+	compatible = "st,stm32f413h-disco";
+
+	chosen {
+		zephyr,console = &usart6;
+		zephyr,shell-uart = &usart6;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led_1: led_1 {
+			gpios = <&gpioc 5 GPIO_ACTIVE_HIGH>;
+			label = "User LD1";
+		};
+		red_led_2: led_2 {
+			gpios = <&gpioe 3 GPIO_ACTIVE_HIGH>;
+			label = "User LD4";
+		};
+	};
+
+	aliases {
+		led0 = &green_led_1;
+		led1 = &red_led_2;
+
+	};
+};
+
+&clk_lsi {
+	status = "okay";
+};
+
+&clk_hse {
+	hse-bypass;
+	clock-frequency = <DT_FREQ_M(8)>; /* STLink 8MHz clock */
+	status = "okay";
+};
+
+&pll {
+	div-m = <4>;
+	mul-n = <100>;
+	div-p = <2>;
+	div-q = <8>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(100)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <2>;
+	apb2-prescaler = <1>;
+};
+
+&usart6 {
+	pinctrl-0 = <&usart6_tx_pg14 &usart6_rx_pg9>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&uart7 {
+	pinctrl-0 = <&uart7_tx_pf7 &uart7_rx_pf6>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&i2c2 {
+	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pb11>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
+};
+
+&spi3 {
+	pinctrl-0 = <&spi3_nss_pa15 &spi3_sck_pb12
+		     &spi3_miso_pb4 &spi3_mosi_pb5>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
+	status = "okay";
+};

@@ -1,0 +1,6 @@
+board:
+  name: stm32f413h_disco
+  full_name: STM32F413H Discovery
+  vendor: st
+  socs:
+    - name: stm32f413xx
