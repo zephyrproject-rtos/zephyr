@@ -20,14 +20,15 @@ LOG_MODULE_REGISTER(usbd_uac2, CONFIG_USBD_UAC2_LOG_LEVEL);
 
 #define DT_DRV_COMPAT zephyr_uac2
 
-#define COUNT_UAC2_AS_ENDPOINTS(node)						\
+#define COUNT_UAC2_AS_ENDPOINT_BUFFERS(node)					\
 	IF_ENABLED(DT_NODE_HAS_COMPAT(node, zephyr_uac2_audio_streaming), (	\
 		+ AS_HAS_ISOCHRONOUS_DATA_ENDPOINT(node) +			\
+		+ AS_IS_USB_ISO_IN(node) /* ISO IN double buffering */ +	\
 		AS_HAS_EXPLICIT_FEEDBACK_ENDPOINT(node)))
-#define COUNT_UAC2_ENDPOINTS(i)							\
+#define COUNT_UAC2_EP_BUFFERS(i)						\
 	+ DT_PROP(DT_DRV_INST(i), interrupt_endpoint)				\
-	DT_INST_FOREACH_CHILD(i, COUNT_UAC2_AS_ENDPOINTS)
-#define UAC2_NUM_ENDPOINTS DT_INST_FOREACH_STATUS_OKAY(COUNT_UAC2_ENDPOINTS)
+	DT_INST_FOREACH_CHILD(i, COUNT_UAC2_AS_ENDPOINT_BUFFERS)
+#define UAC2_NUM_EP_BUFFERS DT_INST_FOREACH_STATUS_OKAY(COUNT_UAC2_EP_BUFFERS)
 
 /* Net buf is used mostly with external data. The main reason behind external
  * data is avoiding unnecessary isochronous data copy operations.
@@ -40,7 +41,7 @@ LOG_MODULE_REGISTER(usbd_uac2, CONFIG_USBD_UAC2_LOG_LEVEL);
  * "wasted memory" here is likely to be smaller than the memory overhead for
  * more complex "only as much as needed" schemes (e.g. heap).
  */
-UDC_BUF_POOL_DEFINE(uac2_pool, UAC2_NUM_ENDPOINTS, 6,
+UDC_BUF_POOL_DEFINE(uac2_pool, UAC2_NUM_EP_BUFFERS, 6,
 		    sizeof(struct udc_buf_info), NULL);
 
 /* 5.2.2 Control Request Layout */
@@ -80,6 +81,7 @@ struct uac2_ctx {
 	 */
 	atomic_t as_active;
 	atomic_t as_queued;
+	atomic_t as_double;
 	uint32_t fb_queued;
 };
 
@@ -247,6 +249,7 @@ int usbd_uac2_send(const struct device *dev, uint8_t terminal,
 	struct uac2_ctx *ctx = dev->data;
 	struct net_buf *buf;
 	const struct usb_ep_descriptor *desc;
+	atomic_t *queued_bits = &ctx->as_queued;
 	uint8_t ep = 0;
 	int as_idx = terminal_to_as_interface(dev, terminal);
 	int ret;
@@ -267,9 +270,12 @@ int usbd_uac2_send(const struct device *dev, uint8_t terminal,
 		return 0;
 	}
 
-	if (atomic_test_and_set_bit(&ctx->as_queued, as_idx)) {
-		LOG_ERR("Previous send not finished yet on 0x%02x", ep);
-		return -EAGAIN;
+	if (atomic_test_and_set_bit(queued_bits, as_idx)) {
+		queued_bits = &ctx->as_double;
+		if (atomic_test_and_set_bit(queued_bits, as_idx)) {
+			LOG_DBG("Already double queued on 0x%02x", ep);
+			return -EAGAIN;
+		}
 	}
 
 	buf = uac2_buf_alloc(ep, data, size);
@@ -278,7 +284,7 @@ int usbd_uac2_send(const struct device *dev, uint8_t terminal,
 		 * enough, but if it does all we loose is just single packet.
 		 */
 		LOG_ERR("No netbuf for send");
-		atomic_clear_bit(&ctx->as_queued, as_idx);
+		atomic_clear_bit(queued_bits, as_idx);
 		ctx->ops->buf_release_cb(dev, terminal, data, ctx->user_data);
 		return -ENOMEM;
 	}
@@ -287,7 +293,7 @@ int usbd_uac2_send(const struct device *dev, uint8_t terminal,
 	if (ret) {
 		LOG_ERR("Failed to enqueue net_buf for 0x%02x", ep);
 		net_buf_unref(buf);
-		atomic_clear_bit(&ctx->as_queued, as_idx);
+		atomic_clear_bit(queued_bits, as_idx);
 		ctx->ops->buf_release_cb(dev, terminal, data, ctx->user_data);
 	}
 
@@ -761,8 +767,8 @@ static int uac2_request(struct usbd_class_data *const c_data, struct net_buf *bu
 
 	if (is_feedback) {
 		ctx->fb_queued &= ~BIT(as_idx);
-	} else {
-		atomic_clear_bit(&ctx->as_queued, as_idx);
+	} else if (!atomic_test_and_clear_bit(&ctx->as_queued, as_idx) || buf->frags) {
+		atomic_clear_bit(&ctx->as_double, as_idx);
 	}
 
 	if (USB_EP_DIR_IS_OUT(ep)) {
