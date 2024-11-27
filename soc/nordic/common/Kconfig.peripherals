@@ -387,6 +387,15 @@ config HAS_HW_NRF_SWI4
 config HAS_HW_NRF_SWI5
 	def_bool $(dt_nodelabel_enabled_with_compat,swi5,$(DT_COMPAT_NORDIC_NRF_SWI))
 
+config HAS_HW_NRF_TDM
+	def_bool $(dt_nodelabel_enabled_with_compat,tdm,$(DT_COMPAT_NORDIC_NRF_TDM))
+
+config HAS_HW_NRF_TDM130
+	def_bool $(dt_nodelabel_enabled_with_compat,tdm130,$(DT_COMPAT_NORDIC_NRF_TDM))
+
+config HAS_HW_NRF_TDM131
+	def_bool $(dt_nodelabel_enabled_with_compat,tdm131,$(DT_COMPAT_NORDIC_NRF_TDM))
+
 config HAS_HW_NRF_TEMP
 	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_TEMP))
 
