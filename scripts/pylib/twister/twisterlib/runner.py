@@ -59,7 +59,7 @@ logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
 
 
-class ExecutionCounter(object):
+class ExecutionCounter:
     def __init__(self, total=0):
         '''
         Most of the stats are at test instance level
