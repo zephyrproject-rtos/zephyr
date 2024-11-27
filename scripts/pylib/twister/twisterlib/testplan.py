@@ -255,8 +255,8 @@ class TestPlan:
             s =  self.options.subset
             try:
                 subset, sets = (int(x) for x in s.split("/"))
-            except ValueError:
-                raise TwisterRuntimeError("Bad subset value.")
+            except ValueError as err:
+                raise TwisterRuntimeError("Bad subset value.") from err
 
             if subset > sets:
                 raise TwisterRuntimeError("subset should not exceed the total number of sets")

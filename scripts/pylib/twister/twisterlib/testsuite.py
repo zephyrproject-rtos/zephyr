@@ -377,8 +377,8 @@ class TestCase(DisablePyTestCollectionMixin):
         try:
             key = value.name if isinstance(value, Enum) else value
             self._status = TwisterStatus[key]
-        except KeyError:
-            raise StatusAttributeError(self.__class__, value)
+        except KeyError as err:
+            raise StatusAttributeError(self.__class__, value) from err
 
     def __lt__(self, other):
         return self.name < other.name
@@ -443,8 +443,8 @@ class TestSuite(DisablePyTestCollectionMixin):
         try:
             key = value.name if isinstance(value, Enum) else value
             self._status = TwisterStatus[key]
-        except KeyError:
-            raise StatusAttributeError(self.__class__, value)
+        except KeyError as err:
+            raise StatusAttributeError(self.__class__, value) from err
 
     def load(self, data):
         for k, v in data.items():
