@@ -11,7 +11,6 @@ import argparse
 import logging
 import math
 import os
-import psutil
 import re
 import select
 import shlex
@@ -20,15 +19,16 @@ import subprocess
 import sys
 import threading
 import time
-
 from contextlib import contextmanager
 from pathlib import Path
-from queue import Queue, Empty
+from queue import Empty, Queue
+from typing import Optional
+
+import psutil
 from twisterlib.environment import ZEPHYR_BASE, strip_ansi_sequences
 from twisterlib.error import TwisterException
 from twisterlib.platform import Platform
 from twisterlib.statuses import TwisterStatus
-from typing import Optional
 
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/build_helpers"))
 from domains import Domains

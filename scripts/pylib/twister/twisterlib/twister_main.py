@@ -4,23 +4,22 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
-import colorama
 import logging
 import os
 import shutil
 import sys
 import time
 
+import colorama
 from colorama import Fore
-
+from twisterlib.coverage import run_coverage
+from twisterlib.environment import TwisterEnv
+from twisterlib.hardwaremap import HardwareMap
+from twisterlib.package import Artifacts
+from twisterlib.reports import Reporting
+from twisterlib.runner import TwisterRunner
 from twisterlib.statuses import TwisterStatus
 from twisterlib.testplan import TestPlan
-from twisterlib.reports import Reporting
-from twisterlib.hardwaremap import HardwareMap
-from twisterlib.coverage import run_coverage
-from twisterlib.runner import TwisterRunner
-from twisterlib.environment import TwisterEnv
-from twisterlib.package import Artifacts
 
 logger = logging.getLogger("twister")
 logger.setLevel(logging.DEBUG)

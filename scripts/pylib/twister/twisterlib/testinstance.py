@@ -6,33 +6,34 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
-from enum import Enum
-import os
-import hashlib
-import random
-import logging
-import glob
-import csv
 
-from twisterlib.environment import TwisterEnv
-from twisterlib.testsuite import TestCase, TestSuite
-from twisterlib.platform import Platform
-from twisterlib.error import BuildError, StatusAttributeError
-from twisterlib.size_calc import SizeCalculator
-from twisterlib.statuses import TwisterStatus
-from twisterlib.handlers import (
-    Handler,
-    SimulationHandler,
-    BinaryHandler,
-    QEMUHandler,
-    QEMUWinHandler,
-    DeviceHandler,
-)
+import csv
+import glob
+import hashlib
+import logging
+import os
+import random
+from enum import Enum
+
 from twisterlib.constants import (
     SUPPORTED_SIMS,
     SUPPORTED_SIMS_IN_PYTEST,
     SUPPORTED_SIMS_WITH_EXEC,
 )
+from twisterlib.environment import TwisterEnv
+from twisterlib.error import BuildError, StatusAttributeError
+from twisterlib.handlers import (
+    BinaryHandler,
+    DeviceHandler,
+    Handler,
+    QEMUHandler,
+    QEMUWinHandler,
+    SimulationHandler,
+)
+from twisterlib.platform import Platform
+from twisterlib.size_calc import SizeCalculator
+from twisterlib.statuses import TwisterStatus
+from twisterlib.testsuite import TestCase, TestSuite
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)

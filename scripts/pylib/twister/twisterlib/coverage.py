@@ -3,14 +3,14 @@
 # Copyright (c) 2018-2022 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-import sys
-import os
+import glob
 import logging
+import os
 import pathlib
+import re
 import shutil
 import subprocess
-import glob
-import re
+import sys
 import tempfile
 
 logger = logging.getLogger('twister')

@@ -6,12 +6,13 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+import logging
 import os
 import shutil
+
 import scl
-from twisterlib.environment import ZEPHYR_BASE
 from twisterlib.constants import SUPPORTED_SIMS
-import logging
+from twisterlib.environment import ZEPHYR_BASE
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)

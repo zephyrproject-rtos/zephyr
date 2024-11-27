@@ -5,9 +5,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import logging
-from math import log10
 import multiprocessing
 import os
+import pathlib
 import pickle
 import queue
 import re
@@ -16,22 +16,21 @@ import subprocess
 import sys
 import time
 import traceback
-import yaml
+from math import log10
 from multiprocessing import Lock, Process, Value
 from multiprocessing.managers import BaseManager
-from packaging import version
-import pathlib
 
+import elftools
+import yaml
 from colorama import Fore
 from domains import Domains
+from elftools.elf.elffile import ELFFile
+from elftools.elf.sections import SymbolTableSection
+from packaging import version
 from twisterlib.cmakecache import CMakeCache
 from twisterlib.environment import canonical_zephyr_base
 from twisterlib.error import BuildError, ConfigurationError, StatusAttributeError
 from twisterlib.statuses import TwisterStatus
-
-import elftools
-from elftools.elf.elffile import ELFFile
-from elftools.elf.sections import SymbolTableSection
 
 if version.parse(elftools.__version__) < version.parse('0.24'):
     sys.exit("pyelftools is out of date, need version 0.24 or later")
@@ -40,13 +39,13 @@ if version.parse(elftools.__version__) < version.parse('0.24'):
 if sys.platform == 'linux':
     from twisterlib.jobserver import GNUMakeJobClient, GNUMakeJobServer, JobClient
 
-from twisterlib.log_helper import log_command
-from twisterlib.testinstance import TestInstance
 from twisterlib.environment import TwisterEnv
-from twisterlib.testsuite import TestSuite
-from twisterlib.platform import Platform
-from twisterlib.testplan import change_skip_to_error_if_integration
 from twisterlib.harness import HarnessImporter, Pytest
+from twisterlib.log_helper import log_command
+from twisterlib.platform import Platform
+from twisterlib.testinstance import TestInstance
+from twisterlib.testplan import change_skip_to_error_if_integration
+from twisterlib.testsuite import TestSuite
 
 try:
     from yaml import CSafeLoader as SafeLoader
