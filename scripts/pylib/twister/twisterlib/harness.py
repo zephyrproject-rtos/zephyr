@@ -82,8 +82,8 @@ class Harness:
         try:
             key = value.name if isinstance(value, Enum) else value
             self._status = TwisterStatus[key]
-        except KeyError:
-            raise StatusAttributeError(self.__class__, value)
+        except KeyError as err:
+            raise StatusAttributeError(self.__class__, value) from err
 
     def configure(self, instance):
         self.instance = instance

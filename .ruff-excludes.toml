@@ -764,7 +764,6 @@
 ]
 "./scripts/pylib/twister/twisterlib/config_parser.py" = [
     "B028",     # https://docs.astral.sh/ruff/rules/no-explicit-stacklevel
-    "B904",     # https://docs.astral.sh/ruff/rules/raise-without-from-inside-except
     "UP007",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
 ]
@@ -799,7 +798,6 @@
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
 ]
 "./scripts/pylib/twister/twisterlib/harness.py" = [
-    "B904",     # https://docs.astral.sh/ruff/rules/raise-without-from-inside-except
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
     "F811",     # https://docs.astral.sh/ruff/rules/redefined-while-unused
@@ -843,7 +841,6 @@
 ]
 "./scripts/pylib/twister/twisterlib/testinstance.py" = [
     "B006",     # https://docs.astral.sh/ruff/rules/mutable-argument-default
-    "B904",     # https://docs.astral.sh/ruff/rules/raise-without-from-inside-except
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
@@ -851,7 +848,6 @@
 "./scripts/pylib/twister/twisterlib/testplan.py" = [
     "B006",     # https://docs.astral.sh/ruff/rules/mutable-argument-default
     "B023",     # https://docs.astral.sh/ruff/rules/function-uses-loop-variable
-    "B904",     # https://docs.astral.sh/ruff/rules/raise-without-from-inside-except
     "E402",     # https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "F401",     # https://docs.astral.sh/ruff/rules/unused-import
@@ -862,7 +858,6 @@
 ]
 "./scripts/pylib/twister/twisterlib/testsuite.py" = [
     "B006",     # https://docs.astral.sh/ruff/rules/mutable-argument-default
-    "B904",     # https://docs.astral.sh/ruff/rules/raise-without-from-inside-except
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
