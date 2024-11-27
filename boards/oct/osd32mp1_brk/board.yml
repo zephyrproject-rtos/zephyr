@@ -1,0 +1,6 @@
+board:
+  name: osd32mp1_brk
+  full_name: OSD32MP1-BRK
+  vendor: oct
+  socs:
+    - name: osd32mp15x

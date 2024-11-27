@@ -1,0 +1,91 @@
+/*
+ * Copyright (c) 2024 Antmicro <www.antmicro.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <oct/osd32mp15x.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Octavo Systems OSD32MP1-BRK";
+	compatible = "oct,osd32mp1-brk";
+	chosen {
+		/*
+		 * By default, Zephyr console and shell are assigned to
+		 * remoteproc. To enable console and shell over UART, uncomment
+		 * following lines and set the correct config in
+		 * osd32mp1_brk_defconfig "Serial Port" section in Zephyr
+		 * board documentation.
+		 * zephyr,console = &usart2;
+		 * zephyr,shell-uart = &usart2;
+		 */
+		zephyr,flash = &retram;
+		zephyr,sram = &mcusram;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led_2: led_1 {
+			label = "LED2_GRN";
+			gpios = <&gpioi 9 GPIO_ACTIVE_HIGH>;
+			status = "okay";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button {
+			label = "User 1";
+			gpios = <&gpioa 14 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	aliases {
+		led0 = &green_led_2;
+		sw0 = &user_button;
+	};
+};
+
+&spi4_miso_pe13 {
+	slew-rate = "very-high-speed";
+};
+
+&usart2 {
+	pinctrl-0 = <&usart2_tx_pf5 &usart2_rx_pf4>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&uart7 {
+	pinctrl-0 = <&uart7_tx_pa15 &uart7_rx_pb3>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&i2c5 {
+	pinctrl-0 = <&i2c5_scl_pd1 &i2c5_sda_pd0>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&uart7_tx_pa15 {
+	bias-disable;
+};
+
+&uart7_rx_pb3 {
+	bias-disable;
+};
+
+&usart2_tx_pf5 {
+	bias-disable;
+};
+
+&usart2_rx_pf4 {
+	bias-disable;
+};
