@@ -103,7 +103,7 @@ static int fake_can_init(const struct device *dev)
 	return 0;
 }
 
-static const struct can_driver_api fake_can_driver_api = {
+static DEVICE_API(can, fake_can_driver_api) = {
 	.start = fake_can_start,
 	.stop = fake_can_stop,
 	.get_capabilities = fake_can_get_capabilities,
