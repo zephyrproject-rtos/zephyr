@@ -261,17 +261,16 @@ static int gpio_stepper_set_max_velocity(const struct device *dev, uint32_t velo
 	return 0;
 }
 
-static int gpio_stepper_enable_constant_velocity_mode(const struct device *dev,
-						      const enum stepper_direction direction,
-						      const uint32_t value)
+static int gpio_stepper_run(const struct device *dev, const enum stepper_direction direction,
+			    const uint32_t velocity)
 {
 	struct gpio_stepper_data *data = dev->data;
 
 	K_SPINLOCK(&data->lock) {
 		data->run_mode = STEPPER_RUN_MODE_VELOCITY;
 		data->direction = direction;
-		if (value != 0) {
-			data->delay_in_us = USEC_PER_SEC / value;
+		if (velocity != 0) {
+			data->delay_in_us = USEC_PER_SEC / velocity;
 			(void)k_work_reschedule(&data->stepper_dwork, K_NO_WAIT);
 		} else {
 			(void)k_work_cancel_delayable(&data->stepper_dwork);
@@ -360,7 +359,7 @@ static DEVICE_API(stepper, gpio_stepper_api) = {
 	.get_actual_position = gpio_stepper_get_actual_position,
 	.set_target_position = gpio_stepper_set_target_position,
 	.set_max_velocity = gpio_stepper_set_max_velocity,
-	.enable_constant_velocity_mode = gpio_stepper_enable_constant_velocity_mode,
+	.run = gpio_stepper_run,
 	.set_micro_step_res = gpio_stepper_set_micro_step_res,
 	.get_micro_step_res = gpio_stepper_get_micro_step_res,
 	.set_event_callback = gpio_stepper_set_event_callback,
