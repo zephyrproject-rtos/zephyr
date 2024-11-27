@@ -62,9 +62,7 @@ class JobClient:
         kwargs["env"].update(self.env())
         kwargs["pass_fds"] += self.pass_fds()
 
-        return subprocess.Popen(  # pylint:disable=consider-using-with
-            argv, **kwargs
-        )
+        return subprocess.Popen(argv, **kwargs)
 
 
 class GNUMakeJobClient(JobClient):
