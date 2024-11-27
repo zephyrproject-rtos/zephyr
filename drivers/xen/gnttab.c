@@ -320,8 +320,6 @@ static int gnttab_init(void)
 {
 	grant_ref_t gref;
 	struct xen_add_to_physmap xatp;
-	struct gnttab_setup_table setup;
-	xen_pfn_t frames[CONFIG_NR_GRANT_FRAMES];
 	int rc = 0, i;
 	unsigned long xen_max_grant_frames;
 	uintptr_t gnttab_base = DT_REG_ADDR_BY_IDX(DT_INST(0, xen_xen), 0);
@@ -353,13 +351,6 @@ static int gnttab_init(void)
 		rc = HYPERVISOR_memory_op(XENMEM_add_to_physmap, &xatp);
 		__ASSERT(!rc, "add_to_physmap failed; status = %d\n", rc);
 	}
-
-	setup.dom = DOMID_SELF;
-	setup.nr_frames = CONFIG_NR_GRANT_FRAMES;
-	set_xen_guest_handle(setup.frame_list, frames);
-	rc = HYPERVISOR_grant_table_op(GNTTABOP_setup_table, &setup, 1);
-	__ASSERT((!rc) && (!setup.status), "Table setup failed; status = %s\n",
-		gnttabop_error(setup.status));
 
 	/*
 	 * Xen DT region reserved for grant table (first reg in hypervisor node)
