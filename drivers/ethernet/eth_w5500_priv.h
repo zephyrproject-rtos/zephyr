@@ -120,11 +120,43 @@
 /* Delay for PHY write/read operations (25.6 us) */
 #define W5500_PHY_ACCESS_DELAY 26U
 
+
+enum w5500_transport_type {
+	W5500_TRANSPORT_MACRAW,
+#ifdef CONFIG_NET_SOCKETS_OFFLOAD
+	W5500_TRANSPORT_TCP,
+	W5500_TRANSPORT_UDP
+#endif
+};
+
+enum w5500_socket_state {
+	W5500_SOCKET_STATE_CLOSED,
+	W5500_SOCKET_STATE_MACRAW_OPEN,
+#ifdef CONFIG_NET_SOCKETS_OFFLOAD
+	W5500_SOCKET_STATE_CONNECTING,
+	W5500_SOCKET_STATE_CONNECTED,
+	W5500_SOCKET_STATE_ACCEPTING,
+	W5500_SOCKET_STATE_ACCEPTED
+#endif
+};
+
 struct w5500_config {
 	struct spi_dt_spec spi;
 	struct gpio_dt_spec interrupt;
 	struct gpio_dt_spec reset;
 	int32_t timeout;
+};
+
+struct w5500_socket {
+	uint8_t socknum;
+	enum w5500_transport_type type;
+	enum w5500_socket_state state;
+#ifdef CONFIG_NET_SOCKETS_OFFLOAD
+	struct sockaddr peer_addr;
+	struct k_sem recv_sem;
+	struct k_sem accept_sem;
+	uint16_t port;
+#endif
 };
 
 struct w5500_runtime {
@@ -137,6 +169,12 @@ struct w5500_runtime {
 	struct k_sem int_sem;
 	bool link_up;
 	uint8_t buf[NET_ETH_MAX_FRAME_SIZE];
+
+#ifdef CONFIG_NET_SOCKETS_OFFLOAD
+	struct w5500_socket socket[W5500_MAX_SOCK_NUM];
+#else
+	struct w5500_socket socket[1];
+#endif
 };
 
 int w5500_spi_read(const struct device *dev, uint32_t addr, uint8_t *data, uint32_t len);
@@ -184,6 +222,8 @@ int w5500_socket_readbuf(const struct device *dev, uint8_t sn, uint16_t offset, 
 			 size_t len);
 int w5500_socket_writebuf(const struct device *dev, uint8_t sn, uint16_t offset, uint8_t *buf,
 			  size_t len);
+int w5500_socket_tx(const struct device *dev, uint8_t sn, uint8_t * buf, size_t len);
+void w5500_socket_rx(const struct device *dev, uint8_t sn, uint8_t * buf, size_t len);
 
 int w5500_socket_command(const struct device *dev, uint8_t sn, uint8_t cmd);
 

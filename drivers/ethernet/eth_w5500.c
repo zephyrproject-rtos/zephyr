@@ -162,32 +162,26 @@ int w5500_socket_command(const struct device *dev, uint8_t sn, uint8_t cmd)
 	return 0;
 }
 
-static int w5500_tx(const struct device *dev, struct net_pkt *pkt)
+int w5500_socket_tx(const struct device *dev, uint8_t sn, uint8_t * buf, size_t len)
 {
-	struct w5500_runtime *ctx = dev->data;
-	uint16_t len = (uint16_t)net_pkt_get_len(pkt);
 	uint16_t offset;
 	int ret;
 
-	offset = w5500_spi_read_two_bytes(dev, W5500_Sn_TX_WR(0));
+	offset = w5500_spi_read_two_bytes(dev, W5500_Sn_TX_WR(sn));
 
-	if (net_pkt_read(pkt, ctx->buf, len)) {
-		return -EIO;
-	}
-
-	ret = w5500_socket_writebuf(dev, 0, offset, ctx->buf, len);
+	ret = w5500_socket_writebuf(dev, sn, offset, buf, len);
 	if (ret < 0) {
 		return ret;
 	}
 
-	w5500_spi_write_two_bytes(dev, W5500_Sn_TX_WR(0), offset + len);
+	w5500_spi_write_two_bytes(dev, W5500_Sn_TX_WR(sn), offset + len);
 
-	w5500_socket_command(dev, 0, W5500_Sn_CR_SEND);
+	w5500_socket_command(dev, sn, W5500_Sn_CR_SEND);
 
 	k_timepoint_t end = sys_timepoint_calc(K_MSEC(10));
 
 	while (1) {
-		ret = w5500_spi_read_byte(dev, W5500_Sn_IR(0));
+		ret = w5500_spi_read_byte(dev, W5500_Sn_IR(sn));
 		if (ret & W5500_Sn_IR_SENDOK) {
 			break;
 		} else if ((ret & W5500_Sn_IR_TIMEOUT) || sys_timepoint_expired(end)) {
@@ -195,11 +189,33 @@ static int w5500_tx(const struct device *dev, struct net_pkt *pkt)
 		}
 		k_busy_wait(W5500_PHY_ACCESS_DELAY);
 	}
-
 	return 0;
 }
 
-static void w5500_rx(const struct device *dev)
+void w5500_socket_rx(const struct device *dev, uint8_t sn, uint8_t * buf, size_t len)
+{
+	uint16_t offset;
+
+	offset = w5500_spi_read_two_bytes(dev, W5500_Sn_RX_RD(sn));
+	w5500_socket_readbuf(dev, sn, offset, buf, len);
+
+	w5500_spi_write_two_bytes(dev, W5500_Sn_RX_RD(sn), offset + len);
+	w5500_socket_command(dev, sn, W5500_Sn_CR_RECV);
+}
+
+static int w5500_l2_tx(const struct device *dev, struct net_pkt *pkt)
+{
+	struct w5500_runtime *ctx = dev->data;
+	uint16_t len = (uint16_t)net_pkt_get_len(pkt);
+
+	if (net_pkt_read(pkt, ctx->buf, len)) {
+		return -EIO;
+	}
+
+	return w5500_socket_tx(dev, 0, ctx->buf, len);
+}
+
+static void w5500_l2_rx(const struct device *dev)
 {
 	uint8_t header[2];
 	uint16_t off;
@@ -319,7 +335,7 @@ static void w5500_thread(void *p1, void *p2, void *p3)
 					LOG_DBG("IR received");
 
 					if (ir & W5500_Sn_IR_RECV) {
-						w5500_rx(dev);
+						w5500_l2_rx(dev);
 						LOG_DBG("RX Done");
 					}
 				}
@@ -437,7 +453,7 @@ static const struct ethernet_api w5500_api_funcs = {
 	.set_config = w5500_set_config,
 	.start = w5500_hw_start,
 	.stop = w5500_hw_stop,
-	.send = w5500_tx,
+	.send = w5500_l2_tx,
 };
 
 static int w5500_soft_reset(const struct device *dev)
@@ -473,6 +489,21 @@ static void w5500_set_macaddr(const struct device *dev)
 #endif
 
 	w5500_spi_write(dev, W5500_SHAR, ctx->mac_addr, sizeof(ctx->mac_addr));
+}
+
+static void w5500_set_ipaddr(const struct device *dev, uint8_t *ipaddr)
+{
+	w5500_spi_write(dev, W5500_SIPR, ipaddr, 4);
+}
+
+static void w5500_set_subnet_mask(const struct device *dev, uint8_t *sn)
+{
+	w5500_spi_write(dev, W5500_SUBR, sn, 4);
+}
+
+static void w5500_set_gateway(const struct device *dev, uint8_t *gw)
+{
+	w5500_spi_write(dev, W5500_GAR, gw, 4);
 }
 
 static void w5500_memory_configure(const struct device *dev)
