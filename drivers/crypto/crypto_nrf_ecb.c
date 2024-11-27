@@ -132,7 +132,7 @@ static int nrf_ecb_session_free(const struct device *dev,
 	return 0;
 }
 
-static const struct crypto_driver_api crypto_enc_funcs = {
+static DEVICE_API(crypto, crypto_enc_funcs) = {
 	.cipher_begin_session = nrf_ecb_session_setup,
 	.cipher_free_session = nrf_ecb_session_free,
 	.cipher_async_callback_set = NULL,

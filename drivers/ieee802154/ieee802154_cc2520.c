@@ -1397,7 +1397,7 @@ static int cc2520_crypto_init(const struct device *dev)
 	return 0;
 }
 
-struct crypto_driver_api cc2520_crypto_api = {
+DEVICE_API(crypto, cc2520_crypto_api) = {
 	.query_hw_caps			= cc2520_crypto_hw_caps,
 	.cipher_begin_session			= cc2520_crypto_begin_session,
 	.cipher_free_session			= cc2520_crypto_free_session,
