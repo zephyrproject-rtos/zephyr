@@ -402,7 +402,7 @@ static struct mpfs_fpga_config fpga_config = {
 	.mailbox = DT_INST_REG_ADDR_BY_IDX(0, 2),
 };
 
-static const struct fpga_driver_api mpfs_fpga_api = {
+static DEVICE_API(fpga, mpfs_fpga_api) = {
 	.reset = mpfs_fpga_reset,
 	.load = mpfs_fpga_load,
 	.get_info = mpfs_fpga_get_info,

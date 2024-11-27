@@ -465,7 +465,7 @@ static int altera_fpga_init(const struct device *dev)
 	return 0;
 }
 
-static const struct fpga_driver_api altera_fpga_api = {
+static DEVICE_API(fpga, altera_fpga_api) = {
 	.on = altera_fpga_on,
 	.off = altera_fpga_off,
 };

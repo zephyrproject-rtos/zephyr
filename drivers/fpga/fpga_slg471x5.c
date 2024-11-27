@@ -148,7 +148,7 @@ static int fpga_slg471x5_reset(const struct device *dev)
 	return 0;
 }
 
-static const struct fpga_driver_api fpga_slg471x5_api = {
+static DEVICE_API(fpga, fpga_slg471x5_api) = {
 	.get_status = fpga_slg471x5_get_status,
 	.reset = fpga_slg471x5_reset,
 	.load = fpga_slg471x5_load,

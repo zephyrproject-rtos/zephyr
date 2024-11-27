@@ -315,7 +315,7 @@ static int zynqmp_fpga_init(const struct device *dev)
 
 static struct zynqmp_fpga_data fpga_data;
 
-static const struct fpga_driver_api zynqmp_api = {
+static DEVICE_API(fpga, zynqmp_api) = {
 	.reset = zynqmp_fpga_reset,
 	.load = zynqmp_fpga_load,
 	.get_status = zynqmp_fpga_get_status,
