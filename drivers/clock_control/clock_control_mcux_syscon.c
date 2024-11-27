@@ -486,7 +486,7 @@ static int SYSCON_SET_FUNC_ATTR mcux_lpc_syscon_clock_control_set_subsys_rate(
 	}
 }
 
-static const struct clock_control_driver_api mcux_lpc_syscon_api = {
+static DEVICE_API(clock_control, mcux_lpc_syscon_api) = {
 	.on = mcux_lpc_syscon_clock_control_on,
 	.off = mcux_lpc_syscon_clock_control_off,
 	.get_rate = mcux_lpc_syscon_clock_control_get_subsys_rate,
