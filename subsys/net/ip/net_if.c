@@ -3561,8 +3561,7 @@ static uint8_t get_diff_ipv4(const struct in_addr *src,
 static inline bool is_proper_ipv4_address(struct net_if_addr *addr)
 {
 	if (addr->is_used && addr->addr_state == NET_ADDR_PREFERRED &&
-	    addr->address.family == AF_INET &&
-	    !net_ipv4_is_ll_addr(&addr->address.in_addr)) {
+	    addr->address.family == AF_INET) {
 		return true;
 	}
 
@@ -3571,7 +3570,7 @@ static inline bool is_proper_ipv4_address(struct net_if_addr *addr)
 
 static struct in_addr *net_if_ipv4_get_best_match(struct net_if *iface,
 						  const struct in_addr *dst,
-						  uint8_t *best_so_far)
+						  uint8_t *best_so_far, bool ll)
 {
 	struct net_if_ipv4 *ipv4;
 	struct in_addr *src = NULL;
@@ -3586,6 +3585,10 @@ static struct in_addr *net_if_ipv4_get_best_match(struct net_if *iface,
 
 	ARRAY_FOR_EACH(ipv4->unicast, i) {
 		if (!is_proper_ipv4_address(&ipv4->unicast[i].ipv4)) {
+			continue;
+		}
+
+		if (net_ipv4_is_ll_addr(&ipv4->unicast[i].ipv4.address.in_addr) != ll) {
 			continue;
 		}
 
@@ -3672,13 +3675,14 @@ const struct in_addr *net_if_ipv4_select_src_addr(struct net_if *dst_iface,
 		/* If caller has supplied interface, then use that */
 		if (dst_iface) {
 			src = net_if_ipv4_get_best_match(dst_iface, dst,
-							 &best_match);
+							 &best_match, false);
 		} else {
 			STRUCT_SECTION_FOREACH(net_if, iface) {
 				struct in_addr *addr;
 
 				addr = net_if_ipv4_get_best_match(iface, dst,
-								  &best_match);
+								  &best_match,
+								  false);
 				if (addr) {
 					src = addr;
 				}
@@ -3691,19 +3695,24 @@ const struct in_addr *net_if_ipv4_select_src_addr(struct net_if *dst_iface,
 		} else {
 			struct in_addr *addr;
 
-			addr = net_if_ipv4_get_ll(net_if_get_default(), NET_ADDR_PREFERRED);
-			if (addr) {
-				src = addr;
-				goto out;
-			}
-
 			STRUCT_SECTION_FOREACH(net_if, iface) {
-				addr = net_if_ipv4_get_ll(iface,
-							  NET_ADDR_PREFERRED);
+				addr = net_if_ipv4_get_best_match(iface, dst,
+								  &best_match,
+								  true);
 				if (addr) {
 					src = addr;
-					break;
 				}
+			}
+
+			/* Check the default interface again. It will only
+			 * be used if it has a valid LL address, and there was
+			 * no better match on any other interface.
+			 */
+			addr = net_if_ipv4_get_best_match(net_if_get_default(),
+							  dst, &best_match,
+							  true);
+			if (addr) {
+				src = addr;
 			}
 		}
 	}
@@ -3724,7 +3733,6 @@ const struct in_addr *net_if_ipv4_select_src_addr(struct net_if *dst_iface,
 		}
 	}
 
-out:
 	return src;
 }
 
