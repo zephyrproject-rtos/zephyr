@@ -800,7 +800,6 @@
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
 ]
 "./scripts/pylib/twister/twisterlib/harness.py" = [
-    "B009",     # https://docs.astral.sh/ruff/rules/get-attr-with-constant
     "B904",     # https://docs.astral.sh/ruff/rules/raise-without-from-inside-except
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
