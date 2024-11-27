@@ -210,7 +210,7 @@ static const struct counter_esp32_config counter_config = {
 	.irq_flags = DT_INST_IRQ_BY_IDX(0, 0, flags)
 };
 
-static const struct counter_driver_api rtc_timer_esp32_api = {
+static DEVICE_API(counter, rtc_timer_esp32_api) = {
 	.start = counter_esp32_start,
 	.stop = counter_esp32_stop,
 	.get_value = counter_esp32_get_value,

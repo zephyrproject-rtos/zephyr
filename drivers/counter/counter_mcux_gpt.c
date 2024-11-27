@@ -213,7 +213,7 @@ static int mcux_gpt_init(const struct device *dev)
 	return 0;
 }
 
-static const struct counter_driver_api mcux_gpt_driver_api = {
+static DEVICE_API(counter, mcux_gpt_driver_api) = {
 	.start = mcux_gpt_start,
 	.stop = mcux_gpt_stop,
 	.get_value = mcux_gpt_get_value,

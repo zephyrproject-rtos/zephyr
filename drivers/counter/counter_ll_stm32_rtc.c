@@ -672,7 +672,7 @@ static int rtc_stm32_pm_action(const struct device *dev,
 }
 #endif /* CONFIG_PM_DEVICE */
 
-static const struct counter_driver_api rtc_stm32_driver_api = {
+static DEVICE_API(counter, rtc_stm32_driver_api) = {
 	.start = rtc_stm32_start,
 	.stop = rtc_stm32_stop,
 	.get_value = rtc_stm32_get_value,

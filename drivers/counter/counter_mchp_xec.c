@@ -274,7 +274,7 @@ static void counter_xec_isr(const struct device *dev)
 	}
 }
 
-static const struct counter_driver_api counter_xec_api = {
+static DEVICE_API(counter, counter_xec_api) = {
 		.start = counter_xec_start,
 		.stop = counter_xec_stop,
 		.get_value = counter_xec_get_value,

@@ -262,7 +262,7 @@ static int mcux_rtc_init(const struct device *dev)
 	return 0;
 }
 
-static const struct counter_driver_api mcux_rtc_driver_api = {
+static DEVICE_API(counter, mcux_rtc_driver_api) = {
 	.start = mcux_rtc_start,
 	.stop = mcux_rtc_stop,
 	.get_value = mcux_rtc_get_value,
