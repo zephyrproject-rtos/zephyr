@@ -2572,7 +2572,11 @@ static void dwc2_handle_incompisoin(const struct device *dev)
 
 				buf = udc_buf_get(dev, cfg->addr);
 				if (buf) {
+					/* Data is no longer relevant */
 					udc_submit_ep_event(dev, buf, 0);
+
+					/* Try to queue next packet before SOF */
+					dwc2_handle_xfer_next(dev, cfg);
 				}
 			}
 		}
