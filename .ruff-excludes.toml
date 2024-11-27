@@ -876,7 +876,6 @@
     "E402",     # https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "E713",     # https://docs.astral.sh/ruff/rules/not-in-test
-    "E741",     # https://docs.astral.sh/ruff/rules/ambiguous-variable-name
     "F401",     # https://docs.astral.sh/ruff/rules/unused-import
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
     "SIM102",   # https://docs.astral.sh/ruff/rules/collapsible-if

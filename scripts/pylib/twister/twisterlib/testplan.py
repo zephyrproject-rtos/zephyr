@@ -127,7 +127,7 @@ class TestPlan:
         self.name = "unnamed"
 
     def get_level(self, name):
-        level = next((l for l in self.levels if l.name == name), None)
+        level = next((lvl for lvl in self.levels if lvl.name == name), None)
         return level
 
     def parse_configuration(self, config_file):
