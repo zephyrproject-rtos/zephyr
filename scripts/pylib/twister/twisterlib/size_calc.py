@@ -297,7 +297,7 @@ class SizeCalculator:
         @return Content of the build.log file (list[str])
         """
         if os.path.exists(path=self.buildlog_filename):
-            with open(file=self.buildlog_filename, mode='r') as file:
+            with open(file=self.buildlog_filename) as file:
                 file_content = file.readlines()
         else:
             if self.generate_warning:

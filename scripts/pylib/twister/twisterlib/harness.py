@@ -229,7 +229,7 @@ class Robot(Harness):
                 self.instance.testcases[0].status = TwisterStatus.FAIL
 
             if out:
-                with open(os.path.join(self.instance.build_dir, handler.log), "wt") as log:
+                with open(os.path.join(self.instance.build_dir, handler.log), 'w') as log:
                     log_msg = out.decode(sys.getdefaultencoding())
                     log.write(log_msg)
 

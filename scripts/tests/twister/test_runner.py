@@ -688,7 +688,7 @@ def test_filterbuilder_parse_generated(
         cache = [cache_elem]
         return cache
 
-    def mock_open(filepath, type, *args, **kwargs):
+    def mock_open(filepath, *args, **kwargs):
         if filepath == expected_defconfig_path:
             rd = 'I am not a proper line\n' \
                  'CONFIG_FOO="no"'
