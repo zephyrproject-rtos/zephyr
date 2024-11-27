@@ -130,12 +130,14 @@ static int configure_dma(struct stream const *dma, struct dma_config *dma_cfg,
 	dma_cfg->block_count = 1;
 
 	int ret = dma_config(dma->dev_dma, dma->dma_channel, dma_cfg);
+
 	if (ret != 0) {
 		LOG_ERR("Problem setting up DMA: %d", ret);
 		return ret;
 	}
 
 	ret = dma_start(dma->dev_dma, dma->dma_channel);
+
 	if (ret != 0) {
 		LOG_ERR("Problem starting DMA: %d", ret);
 		return ret;
@@ -180,7 +182,7 @@ static inline void msg_init(const struct device *dev, struct i2c_msg *msg, uint8
 #ifdef I2C_STM32_V2_DMA
 		if (msg->len) {
 			if (msg->flags & I2C_MSG_READ) {
-				// Configure RX DMA
+				/* Configure RX DMA */
 				k_sem_take(&data->dma_rx_sem, K_FOREVER);
 				data->dma_rx_blk_cfg.source_address = LL_I2C_DMA_GetRegAddr(
 					cfg->i2c, LL_I2C_DMA_REG_DATA_RECEIVE);
@@ -197,7 +199,7 @@ static inline void msg_init(const struct device *dev, struct i2c_msg *msg, uint8
 				LL_I2C_EnableDMAReq_RX(i2c);
 			} else {
 				if (data->current.len) {
-					// Configure TX DMA
+					/* Configure TX DMA */
 					k_sem_take(&data->dma_tx_sem, K_FOREVER);
 					data->dma_tx_blk_cfg.source_address =
 						(uint32_t)data->current.buf;
