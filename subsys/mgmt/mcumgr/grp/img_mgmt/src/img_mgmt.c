@@ -138,6 +138,7 @@ static bool img_mgmt_reset_zse(struct smp_streamer *ctxt)
 
 	return zcbor_map_start_encode(zse, CONFIG_MCUMGR_SMP_CBOR_MAX_MAIN_MAP_ENTRIES);
 }
+#endif
 
 #if defined(CONFIG_MCUMGR_GRP_IMG_TOO_LARGE_SYSBUILD)
 static bool img_mgmt_slot_max_size(size_t *area_sizes, zcbor_state_t *zse)
@@ -177,7 +178,6 @@ static bool img_mgmt_slot_max_size(size_t *area_sizes, zcbor_state_t *zse)
 
 	return ok;
 }
-#endif
 #endif
 
 /**
