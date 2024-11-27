@@ -4,26 +4,25 @@
 # Copyright (c) 2022 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-import os
-from multiprocessing import Lock, Value
-import re
-
-import platform
-import yaml
-import scl
 import logging
+import os
+import platform
+import re
+from multiprocessing import Lock, Value
 from pathlib import Path
-from natsort import natsorted
 
+import scl
+import yaml
+from natsort import natsorted
 from twisterlib.environment import ZEPHYR_BASE
 
 try:
     # Use the C LibYAML parser if available, rather than the Python parser.
     # It's much faster.
-    from yaml import CSafeLoader as SafeLoader
     from yaml import CDumper as Dumper
+    from yaml import CSafeLoader as SafeLoader
 except ImportError:
-    from yaml import SafeLoader, Dumper
+    from yaml import Dumper, SafeLoader
 
 try:
     from tabulate import tabulate

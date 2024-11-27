@@ -4,12 +4,13 @@
 # Copyright (c) 2018 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-import subprocess
-import sys
+import logging
 import os
 import re
+import subprocess
+import sys
 import typing
-import logging
+
 from twisterlib.error import TwisterRuntimeError
 
 logger = logging.getLogger('twister')

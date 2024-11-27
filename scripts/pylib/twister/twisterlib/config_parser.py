@@ -4,10 +4,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import copy
-import scl
 import warnings
 from typing import Union
+
+import scl
 from twisterlib.error import ConfigurationError
+
 
 def extract_fields_from_arg_list(target_fields: set, arg_list: Union[str, list]):
     """

@@ -760,7 +760,6 @@
 ]
 "./scripts/pylib/twister/twisterlib/cmakecache.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM102",   # https://docs.astral.sh/ruff/rules/collapsible-if
     "SIM114",   # https://docs.astral.sh/ruff/rules/if-with-same-arms
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
@@ -769,7 +768,6 @@
 "./scripts/pylib/twister/twisterlib/config_parser.py" = [
     "B028",     # https://docs.astral.sh/ruff/rules/no-explicit-stacklevel
     "B904",     # https://docs.astral.sh/ruff/rules/raise-without-from-inside-except
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM401",   # https://docs.astral.sh/ruff/rules/if-else-block-instead-of-dict-get
     "UP007",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
@@ -778,7 +776,6 @@
     "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM105",   # https://docs.astral.sh/ruff/rules/suppressible-exception
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP022",    # https://docs.astral.sh/ruff/rules/replace-stdout-stderr
@@ -788,7 +785,6 @@
 "./scripts/pylib/twister/twisterlib/environment.py" = [
     "B006",     # https://docs.astral.sh/ruff/rules/mutable-argument-default
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM118",   # https://docs.astral.sh/ruff/rules/in-dict-keys
     "UP006",    # https://docs.astral.sh/ruff/rules/non-pep585-annotation
     "UP021",    # https://docs.astral.sh/ruff/rules/replace-universal-newlines
@@ -797,7 +793,6 @@
 "./scripts/pylib/twister/twisterlib/handlers.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM102",   # https://docs.astral.sh/ruff/rules/collapsible-if
     "SIM105",   # https://docs.astral.sh/ruff/rules/suppressible-exception
     "SIM114",   # https://docs.astral.sh/ruff/rules/if-with-same-arms
@@ -812,7 +807,6 @@
 "./scripts/pylib/twister/twisterlib/hardwaremap.py" = [
     "B006",     # https://docs.astral.sh/ruff/rules/mutable-argument-default
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM118",   # https://docs.astral.sh/ruff/rules/in-dict-keys
     "UP004",    # https://docs.astral.sh/ruff/rules/useless-object-inheritance
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
@@ -825,7 +819,6 @@
     "E713",     # https://docs.astral.sh/ruff/rules/not-in-test
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
     "F811",     # https://docs.astral.sh/ruff/rules/redefined-while-unused
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM102",   # https://docs.astral.sh/ruff/rules/collapsible-if
     "SIM300",   # https://docs.astral.sh/ruff/rules/yoda-conditions
     "UP008",    # https://docs.astral.sh/ruff/rules/super-call-with-parameters
@@ -840,18 +833,15 @@
     "UP004",    # https://docs.astral.sh/ruff/rules/useless-object-inheritance
 ]
 "./scripts/pylib/twister/twisterlib/package.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
 ]
 "./scripts/pylib/twister/twisterlib/platform.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
 ]
 "./scripts/pylib/twister/twisterlib/quarantine.py" = [
     "B006",     # https://docs.astral.sh/ruff/rules/mutable-argument-default
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM110",   # https://docs.astral.sh/ruff/rules/reimplemented-builtin
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
@@ -859,7 +849,6 @@
 "./scripts/pylib/twister/twisterlib/reports.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
@@ -869,7 +858,6 @@
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "E713",     # https://docs.astral.sh/ruff/rules/not-in-test
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM102",   # https://docs.astral.sh/ruff/rules/collapsible-if
     "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
     "SIM201",   # https://docs.astral.sh/ruff/rules/negate-equal-op
@@ -882,20 +870,17 @@
 ]
 "./scripts/pylib/twister/twisterlib/size_calc.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP006",    # https://docs.astral.sh/ruff/rules/non-pep585-annotation
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
 ]
 "./scripts/pylib/twister/twisterlib/statuses.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM401",   # https://docs.astral.sh/ruff/rules/if-else-block-instead-of-dict-get
 ]
 "./scripts/pylib/twister/twisterlib/testinstance.py" = [
     "B006",     # https://docs.astral.sh/ruff/rules/mutable-argument-default
     "B904",     # https://docs.astral.sh/ruff/rules/raise-without-from-inside-except
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM102",   # https://docs.astral.sh/ruff/rules/collapsible-if
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
@@ -910,7 +895,6 @@
     "E741",     # https://docs.astral.sh/ruff/rules/ambiguous-variable-name
     "F401",     # https://docs.astral.sh/ruff/rules/unused-import
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM102",   # https://docs.astral.sh/ruff/rules/collapsible-if
     "SIM110",   # https://docs.astral.sh/ruff/rules/reimplemented-builtin
     "SIM118",   # https://docs.astral.sh/ruff/rules/in-dict-keys
@@ -923,14 +907,12 @@
     "B006",     # https://docs.astral.sh/ruff/rules/mutable-argument-default
     "B904",     # https://docs.astral.sh/ruff/rules/raise-without-from-inside-except
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP006",    # https://docs.astral.sh/ruff/rules/non-pep585-annotation
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
 "./scripts/pylib/twister/twisterlib/twister_main.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
