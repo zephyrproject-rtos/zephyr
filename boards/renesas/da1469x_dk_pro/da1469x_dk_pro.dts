@@ -75,6 +75,52 @@
 			   <ARDUINO_HEADER_R3_D15 0 &gpio0 29 0>;
 	};
 
+	mikrobus_1_header: mikrobus-connector-1 {
+		compatible = "mikro-bus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =	<0 0 &gpio1 9 0>,	/* AN  */
+				<1 0 &gpio0 12 0>,	/* RST */
+				<2 0 &gpio0 20 0>,	/* CS   */
+				<3 0 &gpio0 21 0>,	/* SCK  */
+				<4 0 &gpio0 24 0>,	/* MISO */
+				<5 0 &gpio0 26 0>,	/* MOSI */
+							/* +3.3V */
+							/* GND */
+				<6 0 &gpio1 1 1>,	/* PWM  */
+				<7 0 &gpio0 27 0>,	/* INT  */
+				<8 0 &gpio0 28 0>,	/* RX   */
+				<9 0 &gpio0 29 0>,	/* TX   */
+				<10 0 &gpio0 30 0>,	/* SCL  */
+				<11 0 &gpio0 31 0>;	/* SDA  */
+							/* +5V */
+							/* GND */
+	};
+
+	mikrobus_2_header: mikrobus-connector-2 {
+		compatible = "mikro-bus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =	<0 0 &gpio0 25 0>,	/* AN  */
+				<1 0 &gpio0 12 0>,	/* RST */
+				<2 0 &gpio1 2 0>,	/* CS   */
+				<3 0 &gpio1 3 0>,	/* SCK  */
+				<4 0 &gpio1 4 0>,	/* MISO */
+				<5 0 &gpio1 5 0>,	/* MOSI */
+							/* +3.3V */
+							/* GND */
+				<6 0 &gpio1 6 0>,	/* PWM  */
+				<7 0 &gpio1 7 0>,	/* INT  */
+				<8 0 &gpio1 8 0>,	/* RX   */
+				<9 0 &gpio0 17 0>,	/* TX   */
+				<10 0 &gpio0 18 0>,	/* SCL  */
+				<11 0 &gpio0 19 0>;	/* SDA  */
+							/* +5V */
+							/* GND */
+	};
+
 	aliases {
 		led0 = &red_led;
 		watchdog0 = &wdog;
@@ -205,3 +251,11 @@ zephyr_udc0: &usbd {
 &bt_hci_da1469x {
 	status = "okay";
 };
+
+mikrobus_1_i2c: &i2c {};
+mikrobus_1_spi: &spi {};
+
+mikrobus_i2c: &mikrobus_1_i2c {};
+mikrobus_spi: &mikrobus_1_spi {};
+
+mikrobus_header: &mikrobus_1_header {};
