@@ -3,7 +3,4 @@
 
 if BOARD_BYTESENSI_L
 
-config BT_CTLR
-	default BT
-
 endif # BOARD_BYTESENSI_L

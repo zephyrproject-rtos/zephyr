@@ -6,7 +6,4 @@
 
 if BOARD_EBYTE_E73_TBB_NRF52832
 
-config BT_CTLR
-	default BT
-
 endif # BOARD_EBYTE_E73_TBB_NRF52832

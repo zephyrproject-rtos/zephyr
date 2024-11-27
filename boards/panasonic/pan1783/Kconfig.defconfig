@@ -16,7 +16,4 @@ endif # SOC_NRF5340_CPUAPP_QKAA
 
 if SOC_NRF5340_CPUNET_QKAA
 
-config BT_CTLR
-	default y if BT
-
 endif # SOC_NRF5340_CPUNET_QKAA

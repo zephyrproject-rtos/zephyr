@@ -22,23 +22,23 @@ tests:
   bluetooth.shell.power_control_request:
     extra_configs:
       - CONFIG_BT_TRANSMIT_POWER_CONTROL=y
-      - CONFIG_BT_CTLR=n
+      - CONFIG_BT_LL_SW_SPLIT=n
     build_only: true
   bluetooth.shell.path_loss_monitoring:
     extra_configs:
       - CONFIG_BT_PATH_LOSS_MONITORING=y
-      - CONFIG_BT_CTLR=n
+      - CONFIG_BT_LL_SW_SPLIT=n
     build_only: true
   bluetooth.shell.subrating:
     extra_configs:
       - CONFIG_BT_SUBRATING=y
-      - CONFIG_BT_CTLR=n
+      - CONFIG_BT_LL_SW_SPLIT=n
     build_only: true
   bluetooth.shell.channel_sounding:
     extra_configs:
       - CONFIG_BT_CHANNEL_SOUNDING=y
       - CONFIG_BT_CHANNEL_SOUNDING_TEST=y
-      - CONFIG_BT_CTLR=n
+      - CONFIG_BT_LL_SW_SPLIT=n
     build_only: true
   bluetooth.shell.cdc_acm:
     extra_args:

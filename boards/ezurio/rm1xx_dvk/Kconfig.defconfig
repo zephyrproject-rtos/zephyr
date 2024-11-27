@@ -5,7 +5,4 @@
 
 if BOARD_RM1XX_DVK
 
-config BT_CTLR
-	default BT
-
 endif # BOARD_RM1XX_DVK

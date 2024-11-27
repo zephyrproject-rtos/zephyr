@@ -5,9 +5,6 @@
 
 if BOARD_XIAO_BLE
 
-config BT_CTLR
-	default BT
-
 if USB_DEVICE_STACK
 
 config UART_CONSOLE

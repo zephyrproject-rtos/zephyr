@@ -2,8 +2,3 @@
 
 # Copyright (c) 2021 u-blox AG
 # SPDX-License-Identifier: Apache-2.0
-
-# BT_CTLR depends on BT. When BT is enabled we should default to also
-# enabling the controller.
-config BT_CTLR
-	default y if BT
