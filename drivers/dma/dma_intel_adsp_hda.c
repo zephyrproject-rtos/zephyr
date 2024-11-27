@@ -385,10 +385,9 @@ static void intel_adsp_hda_channels_init(const struct device *dev)
 
 int intel_adsp_hda_dma_pm_action(const struct device *dev, enum pm_device_action action)
 {
+	ARG_UNUSED(dev);
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-		intel_adsp_hda_channels_init(dev);
-		break;
 	case PM_DEVICE_ACTION_SUSPEND:
 	case PM_DEVICE_ACTION_TURN_ON:
 	case PM_DEVICE_ACTION_TURN_OFF:
@@ -408,6 +407,7 @@ int intel_adsp_hda_dma_init(const struct device *dev)
 	data->ctx.dma_channels = cfg->dma_channels;
 	data->ctx.atomic = data->channels_atomic;
 	data->ctx.magic = DMA_MAGIC;
+	intel_adsp_hda_channels_init(dev);
 	return pm_device_driver_init(dev, intel_adsp_hda_dma_pm_action);
 }
 
