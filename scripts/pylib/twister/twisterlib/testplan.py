@@ -21,9 +21,6 @@ import snippets
 from pathlib import Path
 from argparse import Namespace
 
-logger = logging.getLogger('twister')
-logger.setLevel(logging.DEBUG)
-
 try:
     from anytree import RenderTree, Node, find
 except ImportError:
@@ -37,8 +34,12 @@ from twisterlib.statuses import TwisterStatus
 from twisterlib.testinstance import TestInstance
 from twisterlib.quarantine import Quarantine
 
+import scl
 import list_boards
 from zephyr_module import parse_modules
+
+logger = logging.getLogger('twister')
+logger.setLevel(logging.DEBUG)
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 if not ZEPHYR_BASE:
@@ -51,7 +52,6 @@ from devicetree import edtlib  # pylint: disable=unused-import
 
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/"))
 
-import scl
 class Filters:
     # platform keys
     PLATFORM_KEY = 'platform key filter'

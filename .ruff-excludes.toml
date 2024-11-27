@@ -787,8 +787,8 @@
 ]
 "./scripts/pylib/twister/twisterlib/environment.py" = [
     "B006",     # https://docs.astral.sh/ruff/rules/mutable-argument-default
-    "E402",     # https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
+    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM118",   # https://docs.astral.sh/ruff/rules/in-dict-keys
     "UP006",    # https://docs.astral.sh/ruff/rules/non-pep585-annotation
     "UP021",    # https://docs.astral.sh/ruff/rules/replace-universal-newlines
@@ -867,7 +867,6 @@
 ]
 "./scripts/pylib/twister/twisterlib/runner.py" = [
     "B006",     # https://docs.astral.sh/ruff/rules/mutable-argument-default
-    "E402",     # https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "E713",     # https://docs.astral.sh/ruff/rules/not-in-test
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
@@ -964,7 +963,6 @@
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
 "./scripts/release/list_devicetree_bindings_changes.py" = [
-    "E402",     # https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM117",   # https://docs.astral.sh/ruff/rules/multiple-with-statements
     "UP006",    # https://docs.astral.sh/ruff/rules/non-pep585-annotation
