@@ -26,6 +26,7 @@
 #include "foundation.h"
 #include "access.h"
 #include "proxy.h"
+#include "gatt.h"
 #include "proxy_msg.h"
 #include "pb_gatt_srv.h"
 
