@@ -599,7 +599,7 @@ static int auxdisplay_hd44780_write(const struct device *dev, const uint8_t *tex
 	return 0;
 }
 
-static const struct auxdisplay_driver_api auxdisplay_hd44780_auxdisplay_api = {
+static DEVICE_API(auxdisplay, auxdisplay_hd44780_auxdisplay_api) = {
 	.display_on = auxdisplay_hd44780_display_on,
 	.display_off = auxdisplay_hd44780_display_off,
 	.cursor_set_enabled = auxdisplay_hd44780_cursor_set_enabled,
