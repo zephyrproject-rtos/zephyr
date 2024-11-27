@@ -46,6 +46,12 @@
 			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_M(32)>;
 		};
+
+		hfpll: hfpll {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <DT_FREQ_M(128)>;
+		};
 	};
 
 	soc {
@@ -117,6 +123,7 @@
 				compatible = "nordic,nrf-uarte";
 				reg = <0x4d000 0x1000>;
 				interrupts = <77 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&hfpll>;
 				status = "disabled";
 				endtx-stoptx-supported;
 				frame-timeout-supported;
