@@ -45,8 +45,4 @@
 /* Two definitions required for the flash driver */
 #define __STRING(x) #x
 
-#ifndef __noinline
-#define __noinline __attribute__((noinline))
-#endif
-
 #endif
