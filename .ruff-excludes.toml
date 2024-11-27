@@ -847,7 +847,6 @@
 ]
 "./scripts/pylib/twister/twisterlib/testplan.py" = [
     "B006",     # https://docs.astral.sh/ruff/rules/mutable-argument-default
-    "B023",     # https://docs.astral.sh/ruff/rules/function-uses-loop-variable
     "E402",     # https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "F401",     # https://docs.astral.sh/ruff/rules/unused-import
