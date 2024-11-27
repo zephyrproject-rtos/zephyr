@@ -227,7 +227,7 @@ bool boot_is_img_confirmed(void)
 	const struct flash_area *fa;
 	int rc;
 
-	rc = flash_area_open(FLASH_AREA_IMAGE_PRIMARY, &fa);
+	rc = flash_area_open(ACTIVE_SLOT_FLASH_AREA_ID, &fa);
 	if (rc) {
 		return false;
 	}
