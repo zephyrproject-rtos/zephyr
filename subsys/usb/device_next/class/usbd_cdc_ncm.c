@@ -372,7 +372,7 @@ static int verify_nth16(const union recv_ntb *ntb, uint16_t len, uint16_t seq)
 		return -EINVAL;
 	}
 
-	if (sys_le16_to_cpu(nthdr16->wBlockLength) > len) {
+	if (sys_le16_to_cpu(nthdr16->wBlockLength) != len) {
 		LOG_DBG("DROP: %s len %d", "block",
 			sys_le16_to_cpu(nthdr16->wBlockLength));
 		return -EINVAL;
