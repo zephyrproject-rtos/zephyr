@@ -63,7 +63,7 @@ Execute_AC_14 32_1_2
 Execute_AC_14 32_2_2
 # Execute_AC_14 441_1_2 # BT_ISO_FLAGS_LOST
 # Execute_AC_14 441_2_2 # BT_ISO_FLAGS_ERROR
-# Execute_AC_14 48_1_2 # ISO receive error
+Execute_AC_14 48_1_2
 Execute_AC_14 48_2_2
 Execute_AC_14 48_3_2
 Execute_AC_14 48_4_2
