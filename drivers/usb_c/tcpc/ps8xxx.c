@@ -543,7 +543,7 @@ int ps8xxx_tcpc_set_alert_handler_cb(const struct device *dev, tcpc_alert_handle
 
 /* Functions not assigned to the driver API but used by device */
 
-static const struct tcpc_driver_api ps8xxx_driver_api = {
+static DEVICE_API(tcpc, ps8xxx_driver_api) = {
 	.init = ps8xxx_tcpc_init,
 	.get_cc = ps8xxx_tcpc_get_cc,
 	.select_rp_value = ps8xxx_tcpc_select_rp_value,
