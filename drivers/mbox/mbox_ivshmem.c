@@ -132,7 +132,7 @@ static int ivshmem_mbox_init(const struct device *dev)
 	return 0;
 }
 
-static const struct mbox_driver_api ivshmem_mbox_driver_api = {
+static DEVICE_API(mbox, ivshmem_mbox_driver_api) = {
 	.send = ivshmem_mbox_send,
 	.register_callback = ivshmem_mbox_register_callback,
 	.mtu_get = ivshmem_mbox_mtu_get,

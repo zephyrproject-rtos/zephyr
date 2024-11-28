@@ -113,7 +113,7 @@ static int nxp_imx_mu_set_enabled(const struct device *dev, uint32_t channel, bo
 	return 0;
 }
 
-static const struct mbox_driver_api nxp_imx_mu_driver_api = {
+static DEVICE_API(mbox, nxp_imx_mu_driver_api) = {
 	.send = nxp_imx_mu_send,
 	.register_callback = nxp_imx_mu_register_callback,
 	.mtu_get = nxp_imx_mu_mtu_get,

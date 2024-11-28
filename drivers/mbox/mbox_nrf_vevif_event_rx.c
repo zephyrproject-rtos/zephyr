@@ -104,7 +104,7 @@ static int vevif_event_rx_set_enabled(const struct device *dev, uint32_t id, boo
 	return 0;
 }
 
-static const struct mbox_driver_api vevif_event_rx_driver_api = {
+static DEVICE_API(mbox, vevif_event_rx_driver_api) = {
 	.max_channels_get = vevif_event_rx_max_channels_get,
 	.register_callback = vevif_event_rx_register_callback,
 	.set_enabled = vevif_event_rx_set_enabled,
