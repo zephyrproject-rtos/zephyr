@@ -387,12 +387,11 @@ Merge Criteria
 
   * Device Tree
   * Documentation
-  * Gitlint
+  * Code linters (Gitlint, Pylint, Ruff, Sphinx, etc.)
   * Identity/Emails
   * Kconfig
   * License checks
   * Checkpatch (Coding Style)
-  * Pylint
   * Integration Tests (Via twister) on emulation/simulation platforms
   * Simulated Bluetooth Tests
 
