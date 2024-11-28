@@ -325,7 +325,7 @@ static const struct regulator_parent_driver_api parent_api = {
 	.ship_mode = regulator_max20335_power_off,
 };
 
-static const struct regulator_driver_api api = {
+static DEVICE_API(regulator, api) = {
 	.enable = regulator_max20335_enable,
 	.disable = regulator_max20335_disable,
 	.set_mode = regulator_max20335_set_mode,

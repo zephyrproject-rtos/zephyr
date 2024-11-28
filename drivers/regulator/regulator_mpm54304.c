@@ -64,7 +64,7 @@ static int regulator_mpm54304_init(const struct device *dev)
 	return 0;
 }
 
-static const struct regulator_driver_api mpm54304_api = {
+static DEVICE_API(regulator, mpm54304_api) = {
 	.enable = regulator_mpm54304_enable,
 	.disable = regulator_mpm54304_disable,
 };

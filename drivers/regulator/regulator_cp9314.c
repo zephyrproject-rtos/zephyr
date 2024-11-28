@@ -686,7 +686,7 @@ static int regulator_cp9314_init(const struct device *dev)
 	return regulator_common_init(dev, false);
 }
 
-static const struct regulator_driver_api api = {
+static DEVICE_API(regulator, api) = {
 	.enable = regulator_cp9314_enable,
 	.disable = regulator_cp9314_disable,
 	.get_error_flags = regulator_cp9314_get_error_flags,

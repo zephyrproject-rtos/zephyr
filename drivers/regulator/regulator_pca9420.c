@@ -359,7 +359,7 @@ static int regulator_pca9420_disable(const struct device *dev)
 				      config->desc->enable_mask, dis_val);
 }
 
-static const struct regulator_driver_api api = {
+static DEVICE_API(regulator, api) = {
 	.enable = regulator_pca9420_enable,
 	.disable = regulator_pca9420_disable,
 	.count_voltages = regulator_pca9420_count_voltages,
