@@ -893,9 +893,9 @@ static const struct ethernet_api api_funcs = {
 #define driver_cache_maintain	false
 #elif defined(CONFIG_NOCACHE_MEMORY)
 #define _nxp_enet_dma_desc_section __nocache
-#define _nxp_enet_dma_buffer_section __nocache
+#define _nxp_enet_dma_buffer_section
 #define _nxp_enet_driver_buffer_section
-#define driver_cache_maintain	false
+#define driver_cache_maintain	true
 #else
 #define _nxp_enet_dma_desc_section
 #define _nxp_enet_dma_buffer_section
