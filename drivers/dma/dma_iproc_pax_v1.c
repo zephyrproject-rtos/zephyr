@@ -965,7 +965,7 @@ static int dma_iproc_pax_transfer_stop(const struct device *dev,
 	return 0;
 }
 
-static const struct dma_driver_api pax_dma_driver_api = {
+static DEVICE_API(dma, pax_dma_driver_api) = {
 	.config = dma_iproc_pax_configure,
 	.start = dma_iproc_pax_transfer_start,
 	.stop = dma_iproc_pax_transfer_stop,

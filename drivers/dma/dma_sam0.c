@@ -446,7 +446,7 @@ static int dma_sam0_init(const struct device *dev)
 
 static struct dma_sam0_data dmac_data;
 
-static const struct dma_driver_api dma_sam0_api = {
+static DEVICE_API(dma, dma_sam0_api) = {
 	.config = dma_sam0_config,
 	.start = dma_sam0_start,
 	.stop = dma_sam0_stop,

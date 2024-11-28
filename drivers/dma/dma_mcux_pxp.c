@@ -183,7 +183,7 @@ static int dma_mcux_pxp_start(const struct device *dev, uint32_t channel)
 	return 0;
 }
 
-static const struct dma_driver_api dma_mcux_pxp_api = {
+static DEVICE_API(dma, dma_mcux_pxp_api) = {
 	.config = dma_mcux_pxp_configure,
 	.start = dma_mcux_pxp_start,
 };
