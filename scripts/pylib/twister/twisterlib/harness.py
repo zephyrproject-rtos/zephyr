@@ -770,7 +770,7 @@ class Test(Harness):
         for ts_name_ in ts_names:
             if self.started_suites[ts_name_]['count'] < (0 if phase == 'TS_SUM' else 1):
                 continue
-            tc_fq_id = f"{self.id}.{ts_name_}.{tc_name}"
+            tc_fq_id = self.instance.compose_case_name(f"{ts_name_}.{tc_name}")
             if tc := self.instance.get_case_by_name(tc_fq_id):
                 if self.trace:
                     logger.debug(f"On {phase}: Ztest case '{tc_name}' matched to '{tc_fq_id}")
@@ -779,7 +779,7 @@ class Test(Harness):
             f"On {phase}: Ztest case '{tc_name}' is not known"
             f" in {self.started_suites} running suite(s)."
         )
-        tc_id = f"{self.id}.{tc_name}"
+        tc_id = self.instance.compose_case_name(tc_name)
         return self.instance.get_case_or_create(tc_id)
 
     def start_suite(self, suite_name):
