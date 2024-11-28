@@ -26,13 +26,14 @@ static void netc_eth_phylink_callback(const struct device *pdev, struct phy_link
 				      void *user_data)
 {
 	const struct device *dev = (struct device *)user_data;
+	const struct netc_eth_config *cfg = dev->config;
 	struct netc_eth_data *data = dev->data;
 	status_t result;
 
 	ARG_UNUSED(pdev);
 
 	if (state->is_up) {
-		LOG_DBG("Link up");
+		LOG_INF("ENETC%d Link up", getSiInstance(cfg->si_idx));
 		result = EP_Up(&data->handle, PHY_TO_NETC_SPEED(state->speed),
 			       PHY_TO_NETC_DUPLEX_MODE(state->speed));
 		if (result != kStatus_Success) {
@@ -40,7 +41,7 @@ static void netc_eth_phylink_callback(const struct device *pdev, struct phy_link
 		}
 		net_eth_carrier_on(data->iface);
 	} else {
-		LOG_DBG("Link down");
+		LOG_INF("ENETC%d Link down", getSiInstance(cfg->si_idx));
 		result = EP_Down(&data->handle);
 		if (result != kStatus_Success) {
 			LOG_ERR("Failed to set MAC down");
@@ -73,9 +74,9 @@ static void netc_eth_iface_init(struct net_if *iface)
 
 	net_if_set_link_addr(iface, data->mac_addr, sizeof(data->mac_addr), NET_LINK_ETHERNET);
 
-	LOG_INF("SI%d MAC: %02x:%02x:%02x:%02x:%02x:%02x", cfg->si_idx, data->mac_addr[0],
-		data->mac_addr[1], data->mac_addr[2], data->mac_addr[3], data->mac_addr[4],
-		data->mac_addr[5]);
+	LOG_INF("ENETC%d MAC: %02x:%02x:%02x:%02x:%02x:%02x", getSiInstance(cfg->si_idx),
+		data->mac_addr[0], data->mac_addr[1], data->mac_addr[2], data->mac_addr[3],
+		data->mac_addr[4], data->mac_addr[5]);
 
 	ethernet_init(iface);
 
