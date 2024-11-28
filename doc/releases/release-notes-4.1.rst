@@ -118,6 +118,15 @@ Build system and Infrastructure
   them can use the :zephyr_file:`scripts/utils/twister_to_list.py` script to
   automatically migrate Twister configuration files.
 
+* Twister
+
+  * Test Case names for Ztest now include Ztest suite name, so the resulting identifier has
+    three sections and looks like: ``<test_scenario_name>.<ztest_suite_name>.<ztest_name>``.
+    These extended identifiers are used in log output, twister.json and testplan.json,
+    as well as for ``--sub-test`` command line parameters (:github:`80088`).
+  * The ``--no-detailed-test-id`` command line option also shortens Ztest Test Case names excluding
+    its Test Scenario name prefix which is the same as the parent Test Suite id (:github:`82302`).
+
 Drivers and Sensors
 *******************
 
