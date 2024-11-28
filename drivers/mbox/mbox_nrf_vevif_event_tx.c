@@ -56,7 +56,7 @@ static uint32_t vevif_event_tx_max_channels_get(const struct device *dev)
 	return VEVIF_EVENTS_NUM;
 }
 
-static const struct mbox_driver_api vevif_event_tx_driver_api = {
+static DEVICE_API(mbox, vevif_event_tx_driver_api) = {
 	.send = vevif_event_tx_send,
 	.mtu_get = vevif_event_tx_mtu_get,
 	.max_channels_get = vevif_event_tx_max_channels_get,

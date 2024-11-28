@@ -235,7 +235,7 @@ static int esp32_mbox_init(const struct device *dev)
 	return ret;
 }
 
-static const struct mbox_driver_api esp32_mbox_driver_api = {
+static DEVICE_API(mbox, esp32_mbox_driver_api) = {
 	.send = esp32_mbox_send,
 	.register_callback = esp32_mbox_register_callback,
 	.mtu_get = esp32_mbox_mtu_get,
