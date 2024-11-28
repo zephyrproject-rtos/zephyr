@@ -5,7 +5,7 @@ description: Renesas RA OSPI FLASH
 
 compatible: "renesas,ra-ospi-b-nor"
 
-include: [base.yaml]
+include: [flash-controller.yaml]
 
 on-bus: ospi
 
@@ -13,11 +13,6 @@ properties:
   reg:
     required: true
     description: Flash Memory base address and size in bytes
-
-  size:
-    type: int
-    required: true
-    description: Flash Memory size
 
   protocol-mode:
     type: int
