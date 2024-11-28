@@ -1168,7 +1168,7 @@ static int grow_r502a_init(const struct device *dev)
 	return fps_init(dev);
 }
 
-static const struct sensor_driver_api grow_r502a_api = {
+static DEVICE_API(sensor, grow_r502a_api) = {
 	.sample_fetch = grow_r502a_sample_fetch,
 	.channel_get = grow_r502a_channel_get,
 	.attr_set = grow_r502a_attr_set,

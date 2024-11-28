@@ -466,7 +466,7 @@ static int apds9960_init(const struct device *dev)
 	return 0;
 }
 
-static const struct sensor_driver_api apds9960_driver_api = {
+static DEVICE_API(sensor, apds9960_driver_api) = {
 	.sample_fetch = &apds9960_sample_fetch,
 	.channel_get = &apds9960_channel_get,
 #ifdef CONFIG_APDS9960_TRIGGER

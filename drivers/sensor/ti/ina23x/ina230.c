@@ -229,7 +229,7 @@ static int ina230_init(const struct device *dev)
 	return 0;
 }
 
-static const struct sensor_driver_api ina230_driver_api = {
+static DEVICE_API(sensor, ina230_driver_api) = {
 	.attr_set = ina230_attr_set,
 	.attr_get = ina230_attr_get,
 #ifdef CONFIG_INA230_TRIGGER

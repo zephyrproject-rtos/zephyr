@@ -234,7 +234,7 @@ static int iis2mdc_sample_fetch(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api iis2mdc_driver_api = {
+static DEVICE_API(sensor, iis2mdc_driver_api) = {
 	.attr_set = iis2mdc_attr_set,
 #if CONFIG_IIS2MDC_TRIGGER
 	.trigger_set = iis2mdc_trigger_set,
