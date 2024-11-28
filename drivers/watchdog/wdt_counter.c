@@ -149,7 +149,7 @@ static int wdt_counter_feed(const struct device *dev, int chan_id)
 	return timeout_set(dev, chan_id, true);
 }
 
-static const struct wdt_driver_api wdt_counter_driver_api = {
+static DEVICE_API(wdt, wdt_counter_driver_api) = {
 	.setup = wdt_counter_setup,
 	.disable = wdt_counter_disable,
 	.install_timeout = wdt_counter_install_timeout,

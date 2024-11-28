@@ -242,10 +242,12 @@ static int wdt_max32_init(const struct device *dev)
 	return 0;
 }
 
-static const struct wdt_driver_api max32_wdt_api = {.setup = wdt_max32_setup,
-						    .disable = wdt_max32_disable,
-						    .install_timeout = wdt_max32_install_timeout,
-						    .feed = wdt_max32_feed};
+static DEVICE_API(wdt, max32_wdt_api) = {
+	.setup = wdt_max32_setup,
+	.disable = wdt_max32_disable,
+	.install_timeout = wdt_max32_install_timeout,
+	.feed = wdt_max32_feed,
+};
 
 #define MAX32_WDT_INIT(_num)                                                                       \
 	static void wdt_max32_irq_init_##_num(void)                                                \

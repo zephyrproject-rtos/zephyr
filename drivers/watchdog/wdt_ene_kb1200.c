@@ -143,7 +143,7 @@ static void wdt_kb1200_isr(const struct device *dev)
 	}
 }
 
-static const struct wdt_driver_api wdt_kb1200_api = {
+static DEVICE_API(wdt, wdt_kb1200_api) = {
 	.setup = wdt_kb1200_setup,
 	.disable = wdt_kb1200_disable,
 	.install_timeout = wdt_kb1200_install_timeout,

@@ -299,7 +299,7 @@ static int wdt_atcwdt200_feed(const struct device *dev, int channel_id)
 	return 0;
 }
 
-static const struct wdt_driver_api wdt_atcwdt200_api = {
+static DEVICE_API(wdt, wdt_atcwdt200_api) = {
 	.setup = wdt_atcwdt200_setup,
 	.disable = wdt_atcwdt200_disable,
 	.install_timeout = wdt_atcwdt200_install_timeout,

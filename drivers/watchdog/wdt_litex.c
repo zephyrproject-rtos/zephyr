@@ -203,7 +203,7 @@ static int wdt_litex_init(const struct device *dev)
 	return 0;
 }
 
-static const struct wdt_driver_api wdt_api = {
+static DEVICE_API(wdt, wdt_api) = {
 	.setup = wdt_litex_setup,
 	.disable = wdt_litex_disable,
 	.install_timeout = wdt_litex_install_timeout,

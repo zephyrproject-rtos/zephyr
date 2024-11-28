@@ -160,7 +160,7 @@ static int wdt_nrf_feed(const struct device *dev, int channel_id)
 	return 0;
 }
 
-static const struct wdt_driver_api wdt_nrfx_driver_api = {
+static DEVICE_API(wdt, wdt_nrfx_driver_api) = {
 	.setup = wdt_nrf_setup,
 	.disable = wdt_nrf_disable,
 	.install_timeout = wdt_nrf_install_timeout,

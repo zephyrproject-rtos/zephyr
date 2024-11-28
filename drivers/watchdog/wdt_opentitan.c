@@ -205,7 +205,7 @@ static struct wdt_ot_aontimer_cfg ot_aontimer_cfg = {
 	.wdog_lock = DT_INST_PROP(0, wdog_lock),
 };
 
-static const struct wdt_driver_api ot_aontimer_api = {
+static DEVICE_API(wdt, ot_aontimer_api) = {
 	.setup = ot_aontimer_setup,
 	.disable = ot_aontimer_disable,
 	.install_timeout = ot_aontimer_install_timeout,
