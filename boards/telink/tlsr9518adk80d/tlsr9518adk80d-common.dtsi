@@ -85,6 +85,30 @@
 		};
 	};
 
+	/* Short TL_Key1 (J20 pin 15) to ground (J50 pin 15-23) */
+	key_pool {
+		compatible = "gpio-keys";
+
+		inp {
+			gpios = <&gpioc 3 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>,
+				<&gpioc 1 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		};
+	};
+
+	key_matrix {
+		compatible = "gpio-keys";
+
+		col {
+			gpios = <&gpioc 2 GPIO_ACTIVE_HIGH>,
+				<&gpioc 0 GPIO_ACTIVE_HIGH>;
+		};
+
+		row {
+			gpios = <&gpioc 3 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
+				<&gpioc 1 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+		};
+	};
+
 	chosen {
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
