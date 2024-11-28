@@ -2963,7 +2963,7 @@ static int npcx_i3c_init(const struct device *dev)
 	return 0;
 }
 
-static const struct i3c_driver_api npcx_i3c_driver_api = {
+static DEVICE_API(i3c, npcx_i3c_driver_api) = {
 	.configure = npcx_i3c_configure,
 	.config_get = npcx_i3c_config_get,
 
