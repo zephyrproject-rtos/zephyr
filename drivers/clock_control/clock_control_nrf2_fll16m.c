@@ -239,7 +239,7 @@ static int fll16m_init(const struct device *dev)
 				 fll16m_work_handler);
 }
 
-static struct nrf_clock_control_driver_api fll16m_drv_api = {
+static DEVICE_API(nrf_clock_control, fll16m_drv_api) = {
 	.std_api = {
 		.on = api_nosys_on_off,
 		.off = api_nosys_on_off,
