@@ -439,6 +439,7 @@ static int check_frame(struct cdc_ncm_eth_data *data, struct net_buf *const buf)
 	/* TODO: support nth32 */
 	ret = verify_nth16(ntb, len, data->rx_seq);
 	if (ret < 0) {
+		LOG_ERR("Failed to verify NTH16");
 		return ret;
 	}
 
@@ -517,6 +518,10 @@ static int cdc_ncm_acl_out_cb(struct usbd_class_data *const c_data,
 	int ret;
 
 	if (err || buf->len == 0) {
+		if (err != -ECONNABORTED) {
+			LOG_ERR("Bulk OUT transfer error (%d) or zero length", err);
+		}
+
 		net_buf_unref(buf);
 		atomic_clear_bit(&data->state, CDC_NCM_OUT_ENGAGED);
 		return 0;
@@ -524,7 +529,7 @@ static int cdc_ncm_acl_out_cb(struct usbd_class_data *const c_data,
 
 	ret = check_frame(data, buf);
 	if (ret < 0) {
-		LOG_DBG("check frame failed (%d)", ret);
+		LOG_ERR("check frame failed (%d)", ret);
 		goto restart_out_transfer;
 	}
 
@@ -533,7 +538,7 @@ static int cdc_ncm_acl_out_cb(struct usbd_class_data *const c_data,
 	 */
 	src = net_pkt_alloc(K_MSEC(NET_PKT_ALLOC_TIMEOUT));
 	if (src == NULL) {
-		LOG_DBG("src packet alloc fail");
+		LOG_ERR("src packet alloc fail");
 		goto restart_out_transfer;
 	}
 
