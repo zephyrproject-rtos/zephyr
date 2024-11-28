@@ -387,7 +387,7 @@ static ssize_t mipi_dsi_stm32_transfer(const struct device *dev, uint8_t channel
 	return len;
 }
 
-static struct mipi_dsi_driver_api dsi_stm32_api = {
+static DEVICE_API(mipi_dsi, dsi_stm32_api) = {
 	.attach = mipi_dsi_stm32_attach,
 	.transfer = mipi_dsi_stm32_transfer,
 };
