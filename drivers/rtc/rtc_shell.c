@@ -146,9 +146,37 @@ static char *strptime(const char *s, const char *format, struct tm *tm_time)
 	}
 }
 
+/* Look up a device by some human-readable string identifier. We
+ * always search among device names. If the feature is available, we
+ * search by node label as well.
+ */
+static const struct device *get_rtc_device(char *id)
+{
+	const struct device *dev;
+
+	dev = device_get_binding(id);
+	if (dev != NULL) {
+		return dev;
+	}
+
+#ifdef CONFIG_DEVICE_DT_METADATA
+	dev = device_get_by_dt_nodelabel(id);
+	if (dev != NULL) {
+		return dev;
+	}
+#endif	/* CONFIG_DEVICE_DT_METADATA */
+
+	return NULL;
+}
+
 static int cmd_set(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct device *dev = device_get_binding(argv[1]);
+	const struct device *dev = get_rtc_device(argv[1]);
+
+	if (dev == NULL) {
+		shell_error(sh, "unknown RTC device %s", argv[1]);
+		return -EINVAL;
+	}
 
 	if (!device_is_ready(dev)) {
 		shell_error(sh, "device %s not ready", argv[1]);
@@ -191,7 +219,12 @@ static int cmd_set(const struct shell *sh, size_t argc, char **argv)
 
 static int cmd_get(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct device *dev = device_get_binding(argv[1]);
+	const struct device *dev = get_rtc_device(argv[1]);
+
+	if (dev == NULL) {
+		shell_error(sh, "unknown RTC device %s", argv[1]);
+		return -EINVAL;
+	}
 
 	if (!device_is_ready(dev)) {
 		shell_error(sh, "device %s not ready", argv[1]);
