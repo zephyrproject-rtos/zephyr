@@ -310,7 +310,7 @@ restore:
 }
 #endif /* CONFIG_I2C_STM32_BUS_RECOVERY */
 
-static const struct i2c_driver_api api_funcs = {
+static DEVICE_API(i2c, api_funcs) = {
 	.configure = i2c_stm32_runtime_configure,
 	.transfer = i2c_stm32_transfer,
 	.get_config = i2c_stm32_get_config,

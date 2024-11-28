@@ -722,7 +722,7 @@ static void IRAM_ATTR i2c_esp32_isr(void *arg)
 	k_sem_give(&data->cmd_sem);
 }
 
-static const struct i2c_driver_api i2c_esp32_driver_api = {
+static DEVICE_API(i2c, i2c_esp32_driver_api) = {
 	.configure = i2c_esp32_configure,
 	.get_config = i2c_esp32_get_config,
 	.transfer = i2c_esp32_transfer,
