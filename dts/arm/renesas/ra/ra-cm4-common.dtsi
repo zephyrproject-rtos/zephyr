@@ -217,10 +217,9 @@
 			interrupts = <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_PORT_IRQ0>,
 				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_PORT_IRQ1>,
 				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_PORT_IRQ2>,
-				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_PORT_IRQ3>,
-				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_PORT_IRQ9>;
+				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_PORT_IRQ3>;
 			interrupt-names = "port-irq0", "port-irq1", "port-irq2",
-					  "port-irq3", "port-irq9";
+					  "port-irq3";
 			port-irq0-pins = <6>;
 			port-irq1-pins = <5>;
 			port-irq2-pins = <13>;
