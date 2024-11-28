@@ -35,7 +35,7 @@ static int vnd_i2s_write(const struct device *dev, void *mem_block, size_t size)
 	return -ENOTSUP;
 }
 
-static const struct i2s_driver_api vnd_i2s_driver_api = {
+static DEVICE_API(i2s, vnd_i2s_driver_api) = {
 	.configure = vnd_i2s_configure,
 	.config_get = vnd_i2s_config_get,
 	.trigger = vnd_i2s_trigger,

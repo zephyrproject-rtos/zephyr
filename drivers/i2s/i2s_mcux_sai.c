@@ -1159,7 +1159,7 @@ static int i2s_mcux_initialize(const struct device *dev)
 	return 0;
 }
 
-static const struct i2s_driver_api i2s_mcux_driver_api = {
+static DEVICE_API(i2s, i2s_mcux_driver_api) = {
 	.configure = i2s_mcux_config,
 	.read = i2s_mcux_read,
 	.write = i2s_mcux_write,
