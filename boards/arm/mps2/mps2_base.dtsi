@@ -235,7 +235,7 @@
 		};
 
 		gpio_led0: mps2_fpgaio@40028000 {
-			compatible = "arm,mps2-fpgaio-gpio";
+			compatible = "arm,mmio32-gpio";
 			reg = <0x40028000 0x4>;
 			gpio-controller;
 			#gpio-cells = <1>;
@@ -243,15 +243,16 @@
 		};
 
 		gpio_button: mps2_fpgaio@40028008 {
-			compatible = "arm,mps2-fpgaio-gpio";
+			compatible = "arm,mmio32-gpio";
 			reg = <0x40028008 0x4>;
 			gpio-controller;
 			#gpio-cells = <1>;
 			ngpios = <2>;
+			direction-input;
 		};
 
 		gpio_misc: mps2_fpgaio@4002804c {
-			compatible = "arm,mps2-fpgaio-gpio";
+			compatible = "arm,mmio32-gpio";
 			reg = <0x4002804c 0x4>;
 			gpio-controller;
 			#gpio-cells = <1>;

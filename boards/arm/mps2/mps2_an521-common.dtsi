@@ -156,7 +156,7 @@ i2c_shield1: i2c@20d000 {
 };
 
 gpio_led0: mps2_fpgaio@302000 {
-	compatible = "arm,mps2-fpgaio-gpio";
+	compatible = "arm,mmio32-gpio";
 
 	reg = <0x302000 0x4>;
 	gpio-controller;
@@ -165,16 +165,17 @@ gpio_led0: mps2_fpgaio@302000 {
 };
 
 gpio_button: mps2_fpgaio@302008 {
-	compatible = "arm,mps2-fpgaio-gpio";
+	compatible = "arm,mmio32-gpio";
 
 	reg = <0x302008 0x4>;
 	gpio-controller;
 	#gpio-cells = <1>;
 	ngpios = <2>;
+	direction-input;
 };
 
 gpio_misc: mps2_fpgaio@30204c {
-	compatible = "arm,mps2-fpgaio-gpio";
+	compatible = "arm,mmio32-gpio";
 
 	reg = <0x30204c 0x4>;
 	gpio-controller;
