@@ -397,7 +397,7 @@ static const struct lpc11u6x_uart0_config uart0_config = {
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
-static const struct uart_driver_api uart0_api = {
+static DEVICE_API(uart, uart0_api) = {
 	.poll_in = lpc11u6x_uart0_poll_in,
 	.poll_out = lpc11u6x_uart0_poll_out,
 	.err_check = lpc11u6x_uart0_err_check,
@@ -827,7 +827,7 @@ static int lpc11u6x_uartx_init(const struct device *dev)
 	return 0;
 }
 
-static const struct uart_driver_api uartx_api = {
+static DEVICE_API(uart, uartx_api) = {
 	.poll_in = lpc11u6x_uartx_poll_in,
 	.poll_out = lpc11u6x_uartx_poll_out,
 	.err_check = lpc11u6x_uartx_err_check,

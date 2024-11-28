@@ -1759,7 +1759,7 @@ static void uart_ns16550_async_tx_timeout(struct k_work *work)
 
 #endif /* CONFIG_UART_ASYNC_API */
 
-static const struct uart_driver_api uart_ns16550_driver_api = {
+static DEVICE_API(uart, uart_ns16550_driver_api) = {
 	.poll_in = uart_ns16550_poll_in,
 	.poll_out = uart_ns16550_poll_out,
 	.err_check = uart_ns16550_err_check,

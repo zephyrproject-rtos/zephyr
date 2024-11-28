@@ -426,7 +426,7 @@ static int serial_vnd_rx_enable(const struct device *dev, uint8_t *read_buf, siz
 }
 #endif /* CONFIG_UART_ASYNC_API */
 
-static const struct uart_driver_api serial_vnd_api = {
+static DEVICE_API(uart, serial_vnd_api) = {
 	.poll_in = serial_vnd_poll_in,
 	.poll_out = serial_vnd_poll_out,
 	.err_check = serial_vnd_err_check,
