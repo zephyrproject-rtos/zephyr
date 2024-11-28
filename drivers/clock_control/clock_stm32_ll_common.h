@@ -61,6 +61,10 @@ void config_enable_default_clocks(void);
 void config_regulator_voltage(uint32_t hclk_freq);
 int enabled_clock(uint32_t src_clk);
 
+#if defined(STM32_CK48_ENABLED)
+uint32_t get_ck48_frequency(void);
+#endif
+
 /* functions exported to the soc power.c */
 int stm32_clock_control_init(const struct device *dev);
 void stm32_clock_control_standby_exit(void);

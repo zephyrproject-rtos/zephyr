@@ -50,6 +50,46 @@ uint32_t get_pllsrc_frequency(void)
 	return 0;
 }
 
+#if defined(STM32_CK48_ENABLED)
+/**
+ * @brief calculate the CK48 frequency depending on its clock source
+ */
+__unused
+uint32_t get_ck48_frequency(void)
+{
+	uint32_t source;
+
+	if (LL_RCC_GetCK48MClockSource(LL_RCC_CK48M_CLKSOURCE) ==
+			LL_RCC_CK48M_CLKSOURCE_PLL) {
+		/* Get the PLL48CK source : HSE or HSI */
+		source = (LL_RCC_PLL_GetMainSource() == LL_RCC_PLLSOURCE_HSE)
+			? HSE_VALUE
+			: HSI_VALUE;
+		/* Get the PLL48CK Q freq. No HAL macro for that */
+		return __LL_RCC_CALC_PLLCLK_48M_FREQ(source,
+						LL_RCC_PLL_GetDivider(),
+						LL_RCC_PLL_GetN(),
+						LL_RCC_PLL_GetQ()
+						);
+	} else if (LL_RCC_GetCK48MClockSource(LL_RCC_CK48M_CLKSOURCE) ==
+			LL_RCC_CK48M_CLKSOURCE_PLLI2S) {
+		/* Get the PLL I2S source : HSE or HSI */
+		source = (LL_RCC_PLLI2S_GetMainSource() == LL_RCC_PLLSOURCE_HSE)
+			? HSE_VALUE
+			: HSI_VALUE;
+		/* Get the PLL I2S Q freq. No HAL macro for that */
+		return __LL_RCC_CALC_PLLI2S_48M_FREQ(source,
+						LL_RCC_PLLI2S_GetDivider(),
+						LL_RCC_PLLI2S_GetN(),
+						LL_RCC_PLLI2S_GetQ()
+						);
+	}
+
+	__ASSERT(0, "Invalid source");
+	return 0;
+}
+#endif
+
 /**
  * @brief Set up pll configuration
  */

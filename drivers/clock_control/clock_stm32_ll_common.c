@@ -483,7 +483,7 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 #endif /* STM32_HSI48_ENABLED */
 #if defined(STM32_CK48_ENABLED)
 	case STM32_SRC_CK48:
-		*rate = STM32_CK48_FREQ;
+		*rate = get_ck48_frequency();
 		break;
 #endif /* STM32_CK48_ENABLED */
 
