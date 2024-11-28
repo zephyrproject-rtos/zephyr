@@ -1509,7 +1509,7 @@ error:
 	return ret;
 }
 
-static const struct ptp_clock_driver_api api = {
+static DEVICE_API(ptp_clock, api) = {
 	.set = ptp_clock_stm32_set,
 	.get = ptp_clock_stm32_get,
 	.adjust = ptp_clock_stm32_adjust,
