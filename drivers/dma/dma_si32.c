@@ -417,7 +417,7 @@ static int dma_si32_stop(const struct device *dev, const uint32_t channel)
 	return 0;
 }
 
-static const struct dma_driver_api dma_si32_driver_api = {
+static DEVICE_API(dma, dma_si32_driver_api) = {
 	.config = dma_si32_config,
 	.start = dma_si32_start,
 	.stop = dma_si32_stop,

@@ -476,7 +476,7 @@ int intel_adsp_gpdma_init(const struct device *dev)
 	return pm_device_driver_init(dev, gpdma_pm_action);
 }
 
-static const struct dma_driver_api intel_adsp_gpdma_driver_api = {
+static DEVICE_API(dma, intel_adsp_gpdma_driver_api) = {
 	.config = intel_adsp_gpdma_config,
 	.reload = intel_adsp_gpdma_copy,
 	.start = intel_adsp_gpdma_start,

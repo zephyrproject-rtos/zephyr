@@ -1061,7 +1061,7 @@ static bool dma_xilinx_axi_dma_chan_filter(const struct device *dev, int channel
 }
 
 /* DMA API callbacks */
-static const struct dma_driver_api dma_xilinx_axi_dma_driver_api = {
+static DEVICE_API(dma, dma_xilinx_axi_dma_driver_api) = {
 	.config = dma_xilinx_axi_dma_configure,
 	.reload = dma_xilinx_axi_dma_config_reload,
 	.start = dma_xilinx_axi_dma_start,

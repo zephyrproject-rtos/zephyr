@@ -129,7 +129,7 @@ void dma_smartdma_install_fw(const struct device *dev, uint8_t *firmware,
 	SMARTDMA_InstallFirmware((uint32_t)config->smartdma_progs, firmware, len);
 }
 
-static const struct dma_driver_api dma_mcux_smartdma_api = {
+static DEVICE_API(dma, dma_mcux_smartdma_api) = {
 	.config = dma_mcux_smartdma_configure,
 	.start = dma_mcux_smartdma_start,
 	.stop = dma_mcux_smartdma_stop,
