@@ -11,6 +11,7 @@
  *
  */
 
+#include <openthread/error.h>
 #define LOG_MODULE_NAME net_otPlat_radio
 
 #include <zephyr/logging/log.h>
@@ -846,6 +847,34 @@ otError platformRadioTransmitCarrier(otInstance *aInstance, bool aEnable)
 
 	return OT_ERROR_NONE;
 }
+
+otError platformRadioTransmitModulatedCarrier(otInstance *aInstance, bool aEnable,
+					      const uint8_t *aData)
+{
+	if (radio_api->modulated_carrier == NULL) {
+		return OT_ERROR_NOT_IMPLEMENTED;
+	}
+
+	if (aEnable && sState == OT_RADIO_STATE_RECEIVE) {
+		if (aData == NULL) {
+			return OT_ERROR_INVALID_ARGS;
+		}
+
+		radio_api->set_txpower(radio_dev, get_transmit_power_for_channel(channel));
+
+		if (radio_api->modulated_carrier(radio_dev, aData) != 0) {
+			return OT_ERROR_FAILED;
+		}
+		sState = OT_RADIO_STATE_TRANSMIT;
+	} else if ((!aEnable) && sState == OT_RADIO_STATE_TRANSMIT) {
+		return otPlatRadioReceive(aInstance, channel);
+	} else {
+		return OT_ERROR_INVALID_STATE;
+	}
+
+	return OT_ERROR_NONE;
+}
+
 #endif /* CONFIG_IEEE802154_CARRIER_FUNCTIONS */
 
 otRadioState otPlatRadioGetState(otInstance *aInstance)
