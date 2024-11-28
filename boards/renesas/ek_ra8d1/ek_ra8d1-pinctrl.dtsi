@@ -270,4 +270,23 @@
 			psels = <RA_PSEL(RA_PSEL_ACMPHS_VCOUT, 2, 8)>;
 		};
 	};
+
+	ospi0_default: ospi0_default {
+		group1 {
+			/* sclk dqs sio0-7 */
+			psels = <RA_PSEL(RA_PSEL_OSPI, 8, 8)>, <RA_PSEL(RA_PSEL_OSPI, 8, 1)>,
+			<RA_PSEL(RA_PSEL_OSPI, 1, 0)>, <RA_PSEL(RA_PSEL_OSPI, 8, 3)>,
+			<RA_PSEL(RA_PSEL_OSPI, 1, 3)>, <RA_PSEL(RA_PSEL_OSPI, 1, 1)>,
+			<RA_PSEL(RA_PSEL_OSPI, 1, 2)>, <RA_PSEL(RA_PSEL_OSPI, 8, 0)>,
+			<RA_PSEL(RA_PSEL_OSPI, 8, 2)>, <RA_PSEL(RA_PSEL_OSPI, 8, 4)>;
+			drive-strength = "highspeed-high";
+		};
+
+		group2 {
+			/* cs1 rst ecsint1 */
+			psels = <RA_PSEL(RA_PSEL_OSPI, 1, 4)>, <RA_PSEL(RA_PSEL_OSPI, 1, 6)>,
+			<RA_PSEL(RA_PSEL_OSPI, 1, 5)>;
+			drive-strength = "high";
+		};
+	};
 };
