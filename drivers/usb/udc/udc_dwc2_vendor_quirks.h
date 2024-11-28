@@ -201,6 +201,9 @@ static inline int usbhs_enable_core(const struct device *dev)
 	wrapper->ENABLE = USBHS_ENABLE_PHY_Msk | USBHS_ENABLE_CORE_Msk;
 	wrapper->TASKS_START = 1UL;
 
+	/* Wait for clock to start to avoid hang on too early register read */
+	k_busy_wait(1);
+
 	/* Enable interrupts */
 	wrapper->INTENSET = 1UL;
 
