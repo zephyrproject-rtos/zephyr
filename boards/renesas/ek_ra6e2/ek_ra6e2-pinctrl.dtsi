@@ -54,4 +54,16 @@
 				<RA_PSEL(RA_PSEL_GPT1, 4, 8)>;
 		};
 	};
+
+	qspi_default: qspi_default {
+		group1 {
+			/* QSPICLK QSSL QIO0 QIO1 QIO2 QIO3 */
+			psels = <RA_PSEL(RA_PSEL_QSPI, 1, 0)>,
+			<RA_PSEL(RA_PSEL_QSPI, 1, 12)>,
+			<RA_PSEL(RA_PSEL_QSPI, 1, 2)>,
+			<RA_PSEL(RA_PSEL_QSPI, 1, 1)>,
+			<RA_PSEL(RA_PSEL_QSPI, 1, 4)>,
+			<RA_PSEL(RA_PSEL_QSPI, 1, 3)>;
+		};
+	};
 };
