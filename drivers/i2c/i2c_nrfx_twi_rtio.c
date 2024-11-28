@@ -152,7 +152,7 @@ static void i2c_nrfx_twi_rtio_submit(const struct device *dev, struct rtio_iodev
 	}
 }
 
-static const struct i2c_driver_api i2c_nrfx_twi_rtio_driver_api = {
+static DEVICE_API(i2c, i2c_nrfx_twi_rtio_driver_api) = {
 	.configure   = i2c_nrfx_twi_rtio_configure,
 	.transfer    = i2c_nrfx_twi_rtio_transfer,
 	.recover_bus = i2c_nrfx_twi_rtio_recover_bus,

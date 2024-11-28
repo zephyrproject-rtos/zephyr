@@ -732,7 +732,7 @@ cleanup:
 	return err;
 }
 
-static const struct i2c_driver_api i2c_numaker_driver_api = {
+static DEVICE_API(i2c, i2c_numaker_driver_api) = {
 	.configure = i2c_numaker_configure,
 	.get_config = i2c_numaker_get_config,
 	.transfer = i2c_numaker_transfer,

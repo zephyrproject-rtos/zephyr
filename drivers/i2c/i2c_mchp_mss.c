@@ -232,7 +232,7 @@ static int mss_i2c_transfer(const struct device *dev, struct i2c_msg *msgs, uint
 	return 0;
 }
 
-static const struct i2c_driver_api mss_i2c_driver_api = {
+static DEVICE_API(i2c, mss_i2c_driver_api) = {
 	.configure = mss_i2c_configure,
 	.transfer = mss_i2c_transfer,
 #ifdef CONFIG_I2C_RTIO

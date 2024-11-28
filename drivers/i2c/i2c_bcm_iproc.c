@@ -916,7 +916,7 @@ static int iproc_i2c_init(const struct device *dev)
 	return 0;
 }
 
-static const struct i2c_driver_api iproc_i2c_driver_api = {
+static DEVICE_API(i2c, iproc_i2c_driver_api) = {
 	.configure = iproc_i2c_configure,
 	.transfer = iproc_i2c_transfer_multi,
 #ifdef CONFIG_I2C_TARGET

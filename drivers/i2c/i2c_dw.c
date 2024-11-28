@@ -1023,7 +1023,7 @@ static void i2c_dw_slave_read_clear_intr_bits(const struct device *dev)
 }
 #endif /* CONFIG_I2C_TARGET */
 
-static const struct i2c_driver_api funcs = {
+static DEVICE_API(i2c, funcs) = {
 	.configure = i2c_dw_runtime_configure,
 	.transfer = i2c_dw_transfer,
 #ifdef CONFIG_I2C_TARGET
