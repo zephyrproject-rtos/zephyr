@@ -56,14 +56,14 @@ Execute_AC_12 8_2_2
 Execute_AC_12 16_1_2
 Execute_AC_12 16_2_2
 Execute_AC_12 24_1_2
-# Execute_AC_12 24_2_2 # ISO receive error
+Execute_AC_12 24_2_2
 Execute_AC_12 32_1_2
 Execute_AC_12 32_2_2
 # Execute_AC_12 441_1_2 # BT_ISO_FLAGS_LOST
 # Execute_AC_12 441_2_2 # BT_ISO_FLAGS_LOST
 Execute_AC_12 48_1_2
-# Execute_AC_12 48_2_2 # ISO receive error
-# Execute_AC_12 48_3_2 # ISO receive error
-# Execute_AC_12 48_4_2 # ISO receive error
+Execute_AC_12 48_2_2
+Execute_AC_12 48_3_2
+Execute_AC_12 48_4_2
 Execute_AC_12 48_5_2
 Execute_AC_12 48_6_2
