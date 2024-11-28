@@ -53,14 +53,14 @@ ZTEST_USER(socket_misc_test_suite, test_inet_pton)
 	zassert_equal(res, 0, "");
 }
 
-#define TEST_MY_IPV4_ADDR "192.0.2.1"
+#define TEST_MY_IPV4_ADDR "192.0.1.1"
 #define TEST_PEER_IPV4_ADDR "192.0.2.2"
 #define TEST_MY_IPV6_ADDR "2001:db8::1"
 #define TEST_PEER_IPV6_ADDR "2001:db8::2"
 
 static struct in6_addr my_ipv6_addr1 = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					     0, 0, 0, 0, 0, 0, 0, 0x1 } } };
-static struct in_addr my_ipv4_addr1 = { { { 192, 0, 2, 1 } } };
+static struct in_addr my_ipv4_addr1 = { { { 192, 0, 1, 1 } } };
 
 static struct in6_addr my_ipv6_addr2 = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					     0, 0, 0, 0, 0, 0, 0, 0x2 } } };
@@ -300,7 +300,7 @@ void test_ipv4_so_bindtodevice(void)
 	struct sockaddr_in peer_addr_1 = {
 		.sin_family = AF_INET,
 		.sin_port = htons(DST_PORT),
-		.sin_addr = { { { 192, 0, 2, 1 } } },
+		.sin_addr = { { { 192, 0, 1, 1 } } },
 	};
 	struct sockaddr_in peer_addr_2 = {
 		.sin_family = AF_INET,
@@ -729,7 +729,7 @@ void test_ipv4_mapped_to_ipv6_server(void)
 	 */
 	srv_addr.sa_family = AF_INET;
 	net_sin(&srv_addr)->sin_port = htons(MAPPING_PORT);
-	ret = zsock_inet_pton(AF_INET, "192.0.2.1",
+	ret = zsock_inet_pton(AF_INET, "192.0.1.1",
 			      &net_sin(&srv_addr)->sin_addr);
 	zassert_equal(ret, 1, "inet_pton failed");
 
