@@ -1259,7 +1259,7 @@ static int optee_init(const struct device *dev)
 	return 0;
 }
 
-static const struct tee_driver_api optee_driver_api = {
+static DEVICE_API(tee, optee_driver_api) = {
 	.get_version = optee_get_version,
 	.open_session = optee_open_session,
 	.close_session = optee_close_session,
