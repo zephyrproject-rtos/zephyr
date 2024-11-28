@@ -1,0 +1,13 @@
+# ADT75 temperature sensor configuration options
+
+# Copyright (c) 2024 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config ADT75
+	bool "ADT75 Temperature Sensor"
+	default y
+	depends on DT_HAS_ADI_ADT75_ENABLED
+	select I2C
+	help
+	  Enable the driver for Analog Devices ADT75
+	  12-bit Digital I2C Temperature Sensors.

@@ -1230,3 +1230,8 @@ test_i2c_tmp435: tmp435@a9 {
 	resistance-correction;
 	beta-compensation = <0x0f>;
 };
+
+test_i2c_adt75: adt75@aa {
+	compatible = "adi,adt75";
+	reg = <0x48>;
+};

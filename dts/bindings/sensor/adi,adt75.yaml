@@ -1,0 +1,5 @@
+description: ADT75 12-Bit digital I2C temperature sensor
+
+compatible: "adi,adt75"
+
+include: [sensor-device.yaml, i2c-device.yaml]
