@@ -197,7 +197,7 @@ static int init(const struct device *dev)
 	return 0;
 }
 
-static const struct ipm_driver_api api = {
+static DEVICE_API(ipm, api) = {
 	.send = send,
 	.max_data_size_get = max_data_size_get,
 	.max_id_val_get = max_id_val_get,
