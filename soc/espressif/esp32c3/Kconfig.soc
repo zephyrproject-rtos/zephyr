@@ -22,7 +22,6 @@ config SOC_ESP32C3_FH4
 config SOC_ESP32C3_FH4X
 	bool
 	select SOC_ESP32C3
-	select SOC_ESP32C3_REV_1_1
 	help
 	  ESP32C3_FH4X
 
@@ -49,12 +48,6 @@ config SOC_ESP32C3
 	select SOC_SERIES_ESP32C3
 	help
 	  ESP32C3
-
-config SOC_ESP32C3_REV_1_1
-	bool "SOC is revision v1.1"
-	help
-	  ESP32-C3 revision v1.1 has updated ROM functions for Wi-Fi and BLE that
-	  can free up to 35kB of RAM.
 
 config SOC_SERIES
 	default "esp32c3" if SOC_SERIES_ESP32C3
