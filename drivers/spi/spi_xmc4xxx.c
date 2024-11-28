@@ -592,7 +592,7 @@ static int spi_xmc4xxx_init(const struct device *dev)
 	return 0;
 }
 
-static const struct spi_driver_api spi_xmc4xxx_driver_api = {
+static DEVICE_API(spi, spi_xmc4xxx_driver_api) = {
 	.transceive = spi_xmc4xxx_transceive_sync,
 #if defined(CONFIG_SPI_ASYNC)
 	.transceive_async = spi_xmc4xxx_transceive_async,

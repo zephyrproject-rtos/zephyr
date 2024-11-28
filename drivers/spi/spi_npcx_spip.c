@@ -402,7 +402,7 @@ static int spi_npcx_spip_init(const struct device *dev)
 	return 0;
 }
 
-static struct spi_driver_api spi_npcx_spip_api = {
+static DEVICE_API(spi, spi_npcx_spip_api) = {
 	.transceive = spi_npcx_spip_transceive,
 	.release = spi_npcx_spip_release,
 #ifdef CONFIG_SPI_ASYNC

@@ -525,7 +525,7 @@ out:
 	completed(dev, error);
 }
 
-static const struct spi_driver_api dw_spi_api = {
+static DEVICE_API(spi, dw_spi_api) = {
 	.transceive = spi_dw_transceive,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_dw_transceive_async,
