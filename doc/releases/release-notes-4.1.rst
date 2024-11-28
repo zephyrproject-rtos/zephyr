@@ -263,6 +263,8 @@ USB
 Devicetree
 **********
 
+* Added :c:macro:`DT_ANY_INST_HAS_BOOL_STATUS_OKAY`.
+
 Kconfig
 *******
 
