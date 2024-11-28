@@ -6,9 +6,11 @@
 menuconfig ADXL367
 	bool "ADXL367 Three Axis High-g I2C/SPI accelerometer"
 	default y
-	depends on DT_HAS_ADI_ADXL367_ENABLED
-	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ADI_ADXL367),i2c)
-	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ADI_ADXL367),spi)
+	depends on DT_HAS_ADI_ADXL367_ENABLED || DT_HAS_ADI_ADXL366_ENABLED
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ADI_ADXL367),i2c) || \
+				$(dt_compat_on_bus,$(DT_COMPAT_ADI_ADXL366),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ADI_ADXL367),spi) || \
+				$(dt_compat_on_bus,$(DT_COMPAT_ADI_ADXL366),spi)
 	help
 	  Enable driver for ADXL367 Three-Axis Digital Accelerometers.
 
