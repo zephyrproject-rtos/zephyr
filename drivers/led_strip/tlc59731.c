@@ -139,7 +139,7 @@ static size_t tlc59731_length(const struct device *dev)
 	return config->length;
 }
 
-static const struct led_strip_driver_api tlc59731_gpio_api = {
+static DEVICE_API(led_strip, tlc59731_gpio_api) = {
 	.update_rgb = tlc59731_gpio_update_rgb,
 	.length = tlc59731_length,
 };
