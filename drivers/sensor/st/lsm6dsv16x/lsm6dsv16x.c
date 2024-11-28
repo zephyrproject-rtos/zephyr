@@ -396,19 +396,20 @@ static int lsm6dsv16x_accel_get_config(const struct device *dev,
 
 	switch (attr) {
 	case SENSOR_ATTR_FULL_SCALE:
-		sensor_degrees_to_rad(lsm6dsv16x_accel_fs_map[data->accel_fs], val);
+		sensor_g_to_ms2(lsm6dsv16x_accel_fs_map[data->accel_fs], val);
 		break;
 	case SENSOR_ATTR_SAMPLING_FREQUENCY: {
 		lsm6dsv16x_data_rate_t odr;
 		int8_t mode;
 
-		if (lsm6dsv16x_gy_data_rate_get(ctx, &odr) < 0) {
+		if (lsm6dsv16x_xl_data_rate_get(ctx, &odr) < 0) {
 			return -EINVAL;
 		}
 
 		mode = (odr >> 4) & 0xf;
 
 		val->val1 = lsm6dsv16x_odr_map[mode][data->accel_freq];
+		val->val2 = 0;
 		break;
 	}
 	case SENSOR_ATTR_CONFIGURATION: {
@@ -476,6 +477,7 @@ static int lsm6dsv16x_gyro_get_config(const struct device *dev,
 		mode = (odr >> 4) & 0xf;
 
 		val->val1 = lsm6dsv16x_odr_map[mode][data->gyro_freq];
+		val->val2 = 0;
 		break;
 	}
 	case SENSOR_ATTR_CONFIGURATION: {
