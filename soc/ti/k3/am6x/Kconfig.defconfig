@@ -44,8 +44,4 @@ config BUILD_OUTPUT_BIN
 	default n if SOC_SERIES_AM6X_M4
 	default n if SOC_SERIES_AM6X_R5
 
-config BUILD_NO_GAP_FILL
-	default y if SOC_SERIES_AM6X_M4
-	default y if SOC_SERIES_AM6X_R5
-
 endif # SOC_SERIES_AM6X
