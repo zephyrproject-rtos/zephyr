@@ -880,7 +880,7 @@ static int mdio_smsc_write(const struct device *dev, uint8_t prtad, uint8_t deva
 	return 0;
 }
 
-static const struct mdio_driver_api mdio_smsc_api = {
+static DEVICE_API(mdio, mdio_smsc_api) = {
 	.bus_disable = mdio_smsc_bus_disable,
 	.bus_enable = mdio_smsc_bus_enable,
 	.read = mdio_smsc_read,
