@@ -4287,7 +4287,9 @@ struct net_if_addr *net_if_ipv4_addr_add(struct net_if *iface,
 					 enum net_addr_type addr_type,
 					 uint32_t vlifetime)
 {
+	uint32_t default_netmask = UINT32_MAX << (32 - CONFIG_NET_IPV4_DEFAULT_NETMASK);
 	struct net_if_addr *ifaddr = NULL;
+	struct net_if_addr_ipv4 *cur;
 	struct net_if_ipv4 *ipv4;
 	int idx;
 
@@ -4304,17 +4306,17 @@ struct net_if_addr *net_if_ipv4_addr_add(struct net_if *iface,
 	}
 
 	ARRAY_FOR_EACH(ipv4->unicast, i) {
-		struct net_if_addr *cur = &ipv4->unicast[i].ipv4;
+		cur = &ipv4->unicast[i];
 
 		if (addr_type == NET_ADDR_DHCP
-		    && cur->addr_type == NET_ADDR_OVERRIDABLE) {
-			ifaddr = cur;
+		    && cur->ipv4.addr_type == NET_ADDR_OVERRIDABLE) {
+			ifaddr = &cur->ipv4;
 			idx = i;
 			break;
 		}
 
 		if (!ipv4->unicast[i].ipv4.is_used) {
-			ifaddr = cur;
+			ifaddr = &cur->ipv4;
 			idx = i;
 			break;
 		}
@@ -4351,6 +4353,8 @@ struct net_if_addr *net_if_ipv4_addr_add(struct net_if *iface,
 		} else {
 			ifaddr->addr_state = NET_ADDR_PREFERRED;
 		}
+
+		cur->netmask.s_addr = htonl(default_netmask);
 
 		net_mgmt_event_notify_with_info(NET_EVENT_IPV4_ADDR_ADD, iface,
 						&ifaddr->address.in_addr,
