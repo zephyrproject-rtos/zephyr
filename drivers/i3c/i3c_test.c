@@ -32,7 +32,7 @@ static int vnd_i3c_recover_bus(const struct device *dev)
 	return -ENOTSUP;
 }
 
-static const struct i3c_driver_api vnd_i3c_api = {
+static DEVICE_API(i3c, vnd_i3c_api) = {
 	.configure = vnd_i3c_configure,
 	.config_get = vnd_i3c_config_get,
 	.recover_bus = vnd_i3c_recover_bus,
