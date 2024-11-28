@@ -1113,7 +1113,7 @@ static int gc2145_set_ctrl(const struct device *dev, unsigned int cid, void *val
 	}
 }
 
-static const struct video_driver_api gc2145_driver_api = {
+static DEVICE_API(video, gc2145_driver_api) = {
 	.set_format = gc2145_set_fmt,
 	.get_format = gc2145_get_fmt,
 	.get_caps = gc2145_get_caps,
