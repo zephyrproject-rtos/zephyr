@@ -914,7 +914,7 @@ static void init_clock_manager(const struct device *dev)
 	__ASSERT_NO_MSG(drv_data->clk_mgr != NULL);
 }
 
-static const struct i2s_driver_api i2s_nrf_drv_api = {
+static DEVICE_API(i2s, i2s_nrf_drv_api) = {
 	.configure = i2s_nrfx_configure,
 	.config_get = i2s_nrfx_config_get,
 	.read = i2s_nrfx_read,
