@@ -933,8 +933,8 @@ static int usbd_cdc_ncm_cth(struct usbd_class_data *const c_data,
 
 	case GET_NTB_INPUT_SIZE: {
 		struct ntb_input_size input_size = {
-			.dwNtbInMaxSize = sys_cpu_to_le32(CDC_NCM_RECV_NTB_MAX_SIZE),
-			.wNtbInMaxDatagrams = sys_cpu_to_le16(CDC_NCM_RECV_MAX_DATAGRAMS_PER_NTB),
+			.dwNtbInMaxSize = sys_cpu_to_le32(CDC_NCM_SEND_NTB_MAX_SIZE),
+			.wNtbInMaxDatagrams = sys_cpu_to_le16(CDC_NCM_SEND_MAX_DATAGRAMS_PER_NTB),
 			.wReserved = sys_cpu_to_le16(0),
 		};
 
