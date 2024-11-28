@@ -94,7 +94,7 @@ static int bk_intel_get_cycles_per_sec(const struct device *dev, uint32_t pin,
 	return 0;
 }
 
-static const struct pwm_driver_api api_funcs = {
+static DEVICE_API(pwm, api_funcs) = {
 	.set_cycles = bk_intel_set_cycles,
 	.get_cycles_per_sec = bk_intel_get_cycles_per_sec,
 };

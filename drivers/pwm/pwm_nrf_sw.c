@@ -335,7 +335,7 @@ static int pwm_nrf_sw_get_cycles_per_sec(const struct device *dev,
 	return 0;
 }
 
-static const struct pwm_driver_api pwm_nrf_sw_drv_api_funcs = {
+static DEVICE_API(pwm, pwm_nrf_sw_drv_api_funcs) = {
 	.set_cycles = pwm_nrf_sw_set_cycles,
 	.get_cycles_per_sec = pwm_nrf_sw_get_cycles_per_sec,
 };

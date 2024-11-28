@@ -761,7 +761,7 @@ static int pwm_stm32_get_cycles_per_sec(const struct device *dev,
 	return 0;
 }
 
-static const struct pwm_driver_api pwm_stm32_driver_api = {
+static DEVICE_API(pwm, pwm_stm32_driver_api) = {
 	.set_cycles = pwm_stm32_set_cycles,
 	.get_cycles_per_sec = pwm_stm32_get_cycles_per_sec,
 #ifdef CONFIG_PWM_CAPTURE

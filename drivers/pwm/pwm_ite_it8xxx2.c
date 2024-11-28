@@ -275,7 +275,7 @@ static int pwm_it8xxx2_init(const struct device *dev)
 	return 0;
 }
 
-static const struct pwm_driver_api pwm_it8xxx2_api = {
+static DEVICE_API(pwm, pwm_it8xxx2_api) = {
 	.set_cycles = pwm_it8xxx2_set_cycles,
 	.get_cycles_per_sec = pwm_it8xxx2_get_cycles_per_sec,
 };

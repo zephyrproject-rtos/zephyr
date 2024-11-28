@@ -178,7 +178,7 @@ static int rv32m1_tpm_init(const struct device *dev)
 	return 0;
 }
 
-static const struct pwm_driver_api rv32m1_tpm_driver_api = {
+static DEVICE_API(pwm, rv32m1_tpm_driver_api) = {
 	.set_cycles = rv32m1_tpm_set_cycles,
 	.get_cycles_per_sec = rv32m1_tpm_get_cycles_per_sec,
 };

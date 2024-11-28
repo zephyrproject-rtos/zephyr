@@ -110,7 +110,7 @@ static int pwm_b91_get_cycles_per_sec(const struct device *dev,
 }
 
 /* PWM driver APIs structure */
-static const struct pwm_driver_api pwm_b91_driver_api = {
+static DEVICE_API(pwm, pwm_b91_driver_api) = {
 	.set_cycles = pwm_b91_set_cycles,
 	.get_cycles_per_sec = pwm_b91_get_cycles_per_sec,
 };
