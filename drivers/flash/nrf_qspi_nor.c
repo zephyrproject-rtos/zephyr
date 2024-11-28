@@ -1185,7 +1185,7 @@ int qspi_nor_get_size(const struct device *dev, uint64_t *size)
 	return 0;
 }
 
-static const struct flash_driver_api qspi_nor_api = {
+static DEVICE_API(flash, qspi_nor_api) = {
 	.read = qspi_nor_read,
 	.write = qspi_nor_write,
 	.erase = qspi_nor_erase,

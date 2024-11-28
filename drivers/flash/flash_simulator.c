@@ -158,7 +158,7 @@ static uint8_t mock_flash[FLASH_SIMULATOR_FLASH_SIZE];
 #endif
 #endif /* CONFIG_ARCH_POSIX */
 
-static const struct flash_driver_api flash_sim_api;
+static DEVICE_API(flash, flash_sim_api);
 
 static const struct flash_parameters flash_sim_parameters = {
 	.write_block_size = FLASH_SIMULATOR_PROG_UNIT,
@@ -380,7 +380,7 @@ flash_sim_get_parameters(const struct device *dev)
 	return &flash_sim_parameters;
 }
 
-static const struct flash_driver_api flash_sim_api = {
+static DEVICE_API(flash, flash_sim_api) = {
 	.read = flash_sim_read,
 	.write = flash_sim_write,
 	.erase = flash_sim_erase,

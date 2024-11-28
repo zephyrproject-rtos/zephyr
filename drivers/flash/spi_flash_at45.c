@@ -655,7 +655,7 @@ static int spi_flash_at45_get_size(const struct device *dev, uint64_t *size)
 	return 0;
 }
 
-static const struct flash_driver_api spi_flash_at45_api = {
+static DEVICE_API(flash, spi_flash_at45_api) = {
 	.read = spi_flash_at45_read,
 	.write = spi_flash_at45_write,
 	.erase = spi_flash_at45_erase,

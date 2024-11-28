@@ -290,7 +290,7 @@ flash_nrf_get_parameters(const struct device *dev)
 	return &flash_nrf_parameters;
 }
 
-static const struct flash_driver_api flash_nrf_api = {
+static DEVICE_API(flash, flash_nrf_api) = {
 	.read = flash_nrf_read,
 	.write = flash_nrf_write,
 	.erase = flash_nrf_erase,

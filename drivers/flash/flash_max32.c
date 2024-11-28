@@ -132,7 +132,7 @@ static int flash_max32_init(const struct device *dev)
 	return ret != 0 ? -EIO : 0;
 }
 
-static const struct flash_driver_api flash_max32_driver_api = {
+static DEVICE_API(flash, flash_max32_driver_api) = {
 	.read = api_read,
 	.write = api_write,
 	.erase = api_erase,
