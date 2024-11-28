@@ -182,7 +182,7 @@ static int mcux_mailbox_init(const struct device *dev)
 	return 0;
 }
 
-static const struct ipm_driver_api mcux_mailbox_driver_api = {
+static DEVICE_API(ipm, mcux_mailbox_driver_api) = {
 	.send = mcux_mailbox_ipm_send,
 	.register_callback = mcux_mailbox_ipm_register_callback,
 	.max_data_size_get = mcux_mailbox_ipm_max_data_size_get,
