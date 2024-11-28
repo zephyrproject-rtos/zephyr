@@ -496,7 +496,7 @@ int regulator_npm1300_ship_mode(const struct device *dev)
 	return mfd_npm1300_reg_write(pconfig->mfd, SHIP_BASE, SHIP_OFFSET_SHIP, 1U);
 }
 
-static const struct regulator_parent_driver_api parent_api = {
+static DEVICE_API(regulator_parent, parent_api) = {
 	.dvs_state_set = regulator_npm1300_dvs_state_set,
 	.ship_mode = regulator_npm1300_ship_mode,
 };
