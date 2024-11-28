@@ -1048,7 +1048,7 @@ static int usbd_cdc_acm_preinit(const struct device *dev)
 	return 0;
 }
 
-static const struct uart_driver_api cdc_acm_uart_api = {
+static DEVICE_API(uart, cdc_acm_uart_api) = {
 	.irq_tx_enable = cdc_acm_irq_tx_enable,
 	.irq_tx_disable = cdc_acm_irq_tx_disable,
 	.irq_tx_ready = cdc_acm_irq_tx_ready,

@@ -514,7 +514,7 @@ static void uart_altera_jtag_isr(const struct device *dev)
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN && !CONFIG_UART_ALTERA_JTAG_HAL */
 
-static const struct uart_driver_api uart_altera_jtag_driver_api = {
+static DEVICE_API(uart, uart_altera_jtag_driver_api) = {
 #ifndef CONFIG_UART_ALTERA_JTAG_HAL
 	.poll_in = uart_altera_jtag_poll_in,
 #endif /* CONFIG_UART_ALTERA_JTAG_HAL */

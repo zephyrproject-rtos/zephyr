@@ -267,7 +267,7 @@ void uart_imx_isr(const struct device *dev)
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-static const struct uart_driver_api uart_imx_driver_api = {
+static DEVICE_API(uart, uart_imx_driver_api) = {
 	.poll_in  = uart_imx_poll_in,
 	.poll_out = uart_imx_poll_out,
 

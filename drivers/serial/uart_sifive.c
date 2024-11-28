@@ -354,7 +354,7 @@ static int uart_sifive_init(const struct device *dev)
 	return 0;
 }
 
-static const struct uart_driver_api uart_sifive_driver_api = {
+static DEVICE_API(uart, uart_sifive_driver_api) = {
 	.poll_in          = uart_sifive_poll_in,
 	.poll_out         = uart_sifive_poll_out,
 	.err_check        = NULL,

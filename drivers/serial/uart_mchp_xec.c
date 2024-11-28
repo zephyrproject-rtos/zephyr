@@ -217,7 +217,7 @@ struct uart_xec_dev_data {
 	struct k_work_delayable rx_refresh_timeout_work;
 #endif
 
-static const struct uart_driver_api uart_xec_driver_api;
+static DEVICE_API(uart, uart_xec_driver_api);
 
 #if defined(CONFIG_PM_DEVICE) && defined(CONFIG_UART_CONSOLE_INPUT_EXPIRED)
 static void uart_xec_pm_policy_state_lock_get(enum uart_xec_pm_policy_state_flag flag)
@@ -1001,7 +1001,7 @@ static int uart_xec_line_ctrl_set(const struct device *dev,
 
 #endif /* CONFIG_UART_XEC_LINE_CTRL */
 
-static const struct uart_driver_api uart_xec_driver_api = {
+static DEVICE_API(uart, uart_xec_driver_api) = {
 	.poll_in = uart_xec_poll_in,
 	.poll_out = uart_xec_poll_out,
 	.err_check = uart_xec_err_check,

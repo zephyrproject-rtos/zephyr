@@ -833,7 +833,7 @@ static void uart_ra_sci_b_callback_adapter(struct st_uart_callback_arg *fsp_args
 
 #endif /* CONFIG_UART_ASYNC_API */
 
-static const struct uart_driver_api uart_ra_sci_b_driver_api = {
+static DEVICE_API(uart, uart_ra_sci_b_driver_api) = {
 	.poll_in = uart_ra_sci_b_poll_in,
 	.poll_out = uart_ra_sci_b_poll_out,
 	.err_check = uart_ra_sci_b_err_check,

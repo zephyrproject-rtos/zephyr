@@ -1067,7 +1067,7 @@ static int mcux_flexcomm_init(const struct device *dev)
 	return 0;
 }
 
-static const struct uart_driver_api mcux_flexcomm_driver_api = {
+static DEVICE_API(uart, mcux_flexcomm_driver_api) = {
 	.poll_in = mcux_flexcomm_poll_in,
 	.poll_out = mcux_flexcomm_poll_out,
 	.err_check = mcux_flexcomm_err_check,
