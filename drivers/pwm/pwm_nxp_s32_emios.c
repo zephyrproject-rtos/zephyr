@@ -551,7 +551,7 @@ static int pwm_nxp_s32_init(const struct device *dev)
 	return err;
 }
 
-static const struct pwm_driver_api pwm_nxp_s32_driver_api = {
+static DEVICE_API(pwm, pwm_nxp_s32_driver_api) = {
 	.set_cycles = pwm_nxp_s32_set_cycles,
 	.get_cycles_per_sec = pwm_nxp_s32_get_cycles_per_sec,
 #ifdef CONFIG_PWM_CAPTURE

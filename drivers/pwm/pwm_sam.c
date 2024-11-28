@@ -118,7 +118,7 @@ static int sam_pwm_init(const struct device *dev)
 	return 0;
 }
 
-static const struct pwm_driver_api sam_pwm_driver_api = {
+static DEVICE_API(pwm, sam_pwm_driver_api) = {
 	.set_cycles = sam_pwm_set_cycles,
 	.get_cycles_per_sec = sam_pwm_get_cycles_per_sec,
 };

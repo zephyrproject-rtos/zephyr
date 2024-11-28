@@ -105,7 +105,7 @@ static int api_get_cycles_per_sec(const struct device *dev, uint32_t channel, ui
 	return ret;
 }
 
-static const struct pwm_driver_api pwm_max32_driver_api = {
+static DEVICE_API(pwm, pwm_max32_driver_api) = {
 	.set_cycles = api_set_cycles,
 	.get_cycles_per_sec = api_get_cycles_per_sec,
 };

@@ -146,7 +146,7 @@ static int pwm_rpi_set_cycles(const struct device *dev, uint32_t ch, uint32_t pe
 	return 0;
 };
 
-struct pwm_driver_api pwm_rpi_driver_api = {
+static DEVICE_API(pwm, pwm_rpi_driver_api) = {
 	.get_cycles_per_sec = pwm_rpi_get_cycles_per_sec,
 	.set_cycles = pwm_rpi_set_cycles,
 };

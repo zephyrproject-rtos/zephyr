@@ -163,7 +163,7 @@ static int pwm_npcx_get_cycles_per_sec(const struct device *dev,
 }
 
 /* PWM driver registration */
-static const struct pwm_driver_api pwm_npcx_driver_api = {
+static DEVICE_API(pwm, pwm_npcx_driver_api) = {
 	.set_cycles = pwm_npcx_set_cycles,
 	.get_cycles_per_sec = pwm_npcx_get_cycles_per_sec
 };
