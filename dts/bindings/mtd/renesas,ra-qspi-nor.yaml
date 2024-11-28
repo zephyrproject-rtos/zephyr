@@ -12,10 +12,7 @@ on-bus: qspi
 properties:
   reg:
     required: true
-
-  size:
-    type: int
-    description: Flash Memory size
+    description: Flash Memory base address and size in bytes
 
   erase-block-size:
     type: int
