@@ -1347,7 +1347,7 @@ void npcx_espi_disable_interrupts(const struct device *dev)
 /* eSPI driver registration */
 static int espi_npcx_init(const struct device *dev);
 
-static const struct espi_driver_api espi_npcx_driver_api = {
+static DEVICE_API(espi, espi_npcx_driver_api) = {
 	.config = espi_npcx_configure,
 	.get_channel_status = espi_npcx_channel_ready,
 	.send_vwire = espi_npcx_send_vwire,
