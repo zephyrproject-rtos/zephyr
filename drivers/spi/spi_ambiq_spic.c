@@ -417,7 +417,7 @@ static int spi_ambiq_release(const struct device *dev, const struct spi_config *
 	return 0;
 }
 
-static const struct spi_driver_api spi_ambiq_driver_api = {
+static DEVICE_API(spi, spi_ambiq_driver_api) = {
 	.transceive = spi_ambiq_transceive,
 #ifdef CONFIG_SPI_RTIO
 	.iodev_submit = spi_rtio_iodev_default_submit,

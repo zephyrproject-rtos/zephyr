@@ -249,7 +249,7 @@ int spi_bitbang_release(const struct device *dev,
 	return 0;
 }
 
-static const struct spi_driver_api spi_bitbang_api = {
+static DEVICE_API(spi, spi_bitbang_api) = {
 	.transceive = spi_bitbang_transceive,
 	.release = spi_bitbang_release,
 #ifdef CONFIG_SPI_ASYNC

@@ -453,7 +453,7 @@ static int spi_b91_release(const struct device *dev,
 }
 
 /* SPI driver APIs structure */
-static const struct spi_driver_api spi_b91_api = {
+static DEVICE_API(spi, spi_b91_api) = {
 	.transceive = spi_b91_transceive,
 	.release = spi_b91_release,
 #ifdef CONFIG_SPI_ASYNC

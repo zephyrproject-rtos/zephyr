@@ -500,7 +500,7 @@ static int spi_esp32_release(const struct device *dev,
 	return 0;
 }
 
-static const struct spi_driver_api spi_api = {
+static DEVICE_API(spi, spi_api) = {
 	.transceive = spi_esp32_transceive,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_esp32_transceive_async,

@@ -585,7 +585,7 @@ static int xlnx_quadspi_init(const struct device *dev)
 	return 0;
 }
 
-static const struct spi_driver_api xlnx_quadspi_driver_api = {
+static DEVICE_API(spi, xlnx_quadspi_driver_api) = {
 	.transceive = xlnx_quadspi_transceive_blocking,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = xlnx_quadspi_transceive_async,
