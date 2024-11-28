@@ -435,7 +435,7 @@ static void fsp_callback(timer_callback_args_t *p_args)
 
 #endif /* CONFIG_PWM_CAPTURE */
 
-static const struct pwm_driver_api pwm_ra8_driver_api = {
+static DEVICE_API(pwm, pwm_ra8_driver_api) = {
 	.get_cycles_per_sec = pwm_ra8_get_cycles_per_sec,
 	.set_cycles = pwm_ra8_set_cycles,
 #ifdef CONFIG_PWM_CAPTURE
