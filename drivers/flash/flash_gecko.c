@@ -216,7 +216,7 @@ static int flash_gecko_init(const struct device *dev)
 	return 0;
 }
 
-static const struct flash_driver_api flash_gecko_driver_api = {
+static DEVICE_API(flash, flash_gecko_driver_api) = {
 	.read = flash_gecko_read,
 	.write = flash_gecko_write,
 	.erase = flash_gecko_erase,
