@@ -417,7 +417,7 @@ static int spi_gecko_release(const struct device *dev,
 }
 
 /* Device Instantiation */
-static const struct spi_driver_api spi_gecko_api = {
+static DEVICE_API(spi, spi_gecko_api) = {
 	.transceive = spi_gecko_transceive,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_gecko_transceive_async,
