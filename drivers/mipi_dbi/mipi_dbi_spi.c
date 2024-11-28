@@ -314,7 +314,7 @@ static int mipi_dbi_spi_init(const struct device *dev)
 	return 0;
 }
 
-static const struct mipi_dbi_driver_api mipi_dbi_spi_driver_api = {
+static DEVICE_API(mipi_dbi, mipi_dbi_spi_driver_api) = {
 	.reset = mipi_dbi_spi_reset,
 	.command_write = mipi_dbi_spi_command_write,
 	.write_display = mipi_dbi_spi_write_display,
