@@ -85,4 +85,16 @@
 			drive-strength = "high";
 		};
 	};
+
+	qspi_default: qspi_default {
+		group1 {
+			/* QSPICLK QSSL QIO0 QIO1 QIO2 QIO3 */
+			psels = <RA_PSEL(RA_PSEL_QSPI, 3, 5)>,
+			<RA_PSEL(RA_PSEL_QSPI, 3, 6)>,
+			<RA_PSEL(RA_PSEL_QSPI, 3, 7)>,
+			<RA_PSEL(RA_PSEL_QSPI, 3, 8)>,
+			<RA_PSEL(RA_PSEL_QSPI, 3, 9)>,
+			<RA_PSEL(RA_PSEL_QSPI, 3, 10)>;
+		};
+	};
 };
