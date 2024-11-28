@@ -177,7 +177,7 @@ static int w1_max32_init(const struct device *dev)
 	return ret;
 }
 
-static const struct w1_driver_api w1_max32_driver_api = {
+static DEVICE_API(w1, w1_max32_driver_api) = {
 	.reset_bus = api_reset_bus,
 	.read_bit = api_read_bit,
 	.write_bit = api_write_bit,
