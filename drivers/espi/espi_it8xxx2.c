@@ -1336,7 +1336,7 @@ static void espi_it8xxx2_flash_init(const struct device *dev)
 /* eSPI driver registration */
 static int espi_it8xxx2_init(const struct device *dev);
 
-static const struct espi_driver_api espi_it8xxx2_driver_api = {
+static DEVICE_API(espi, espi_it8xxx2_driver_api) = {
 	.config = espi_it8xxx2_configure,
 	.get_channel_status = espi_it8xxx2_channel_ready,
 	.send_vwire = espi_it8xxx2_send_vwire,
