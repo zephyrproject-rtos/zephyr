@@ -80,7 +80,7 @@ DEFINE_FAKE_VALUE_FUNC(int, regulator_parent_fake_dvs_state_set,
 DEFINE_FAKE_VALUE_FUNC(int, regulator_parent_fake_ship_mode,
 		       const struct device *);
 
-static struct regulator_parent_driver_api parent_api = {
+static DEVICE_API(regulator_parent, parent_api) = {
 	.dvs_state_set = regulator_parent_fake_dvs_state_set,
 	.ship_mode = regulator_parent_fake_ship_mode,
 };

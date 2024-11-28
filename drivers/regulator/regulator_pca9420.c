@@ -455,7 +455,7 @@ int regulator_pca9420_dvs_state_set(const struct device *dev,
 	return 0;
 }
 
-static const struct regulator_parent_driver_api parent_api = {
+static DEVICE_API(regulator_parent, parent_api) = {
 	.dvs_state_set = regulator_pca9420_dvs_state_set,
 };
 

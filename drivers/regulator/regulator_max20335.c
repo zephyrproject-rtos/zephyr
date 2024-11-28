@@ -321,7 +321,7 @@ static int regulator_max20335_common_init(const struct device *dev)
 	return 0;
 }
 
-static const struct regulator_parent_driver_api parent_api = {
+static DEVICE_API(regulator_parent, parent_api) = {
 	.ship_mode = regulator_max20335_power_off,
 };
 
