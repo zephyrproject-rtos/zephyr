@@ -461,7 +461,7 @@ static int mt9m114_get_caps(const struct device *dev, enum video_endpoint_id ep,
 	return 0;
 }
 
-static const struct video_driver_api mt9m114_driver_api = {
+static DEVICE_API(video, mt9m114_driver_api) = {
 	.set_format = mt9m114_set_fmt,
 	.get_format = mt9m114_get_fmt,
 	.get_caps = mt9m114_get_caps,

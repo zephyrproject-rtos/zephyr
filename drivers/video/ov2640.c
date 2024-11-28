@@ -971,7 +971,7 @@ static int ov2640_set_ctrl(const struct device *dev,
 	return ret;
 }
 
-static const struct video_driver_api ov2640_driver_api = {
+static DEVICE_API(video, ov2640_driver_api) = {
 	.set_format = ov2640_set_fmt,
 	.get_format = ov2640_get_fmt,
 	.get_caps = ov2640_get_caps,
