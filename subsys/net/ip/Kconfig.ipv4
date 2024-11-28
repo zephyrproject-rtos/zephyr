@@ -31,6 +31,15 @@ config NET_IF_MCAST_IPV4_ADDR_COUNT
 	default 2 if NET_IPV4_IGMP
 	default 1
 
+config NET_IPV4_DEFAULT_NETMASK
+	int "The default netmask length for registered IPv4 addresses"
+	range 1 32
+	default 24
+	help
+	  The default netmask length for the registered IPv4 addresses.
+	  The application can set a custom netmask with
+	  net_if_ipv4_set_netmask_by_addr() API if needed.
+
 if NET_NATIVE_IPV4
 
 config NET_INITIAL_TTL
