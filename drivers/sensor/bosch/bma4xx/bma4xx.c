@@ -683,7 +683,7 @@ static int bma4xx_get_decoder(const struct device *dev, const struct sensor_deco
  * Sensor driver API
  */
 
-static const struct sensor_driver_api bma4xx_driver_api = {
+static DEVICE_API(sensor, bma4xx_driver_api) = {
 	.attr_set = bma4xx_attr_set,
 	.submit = bma4xx_submit,
 	.get_decoder = bma4xx_get_decoder,

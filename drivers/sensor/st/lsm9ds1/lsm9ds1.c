@@ -557,7 +557,7 @@ static int lsm9ds1_channel_get(const struct device *dev, enum sensor_channel cha
 	return 0;
 }
 
-static const struct sensor_driver_api lsm9ds1_api_funcs = {
+static DEVICE_API(sensor, lsm9ds1_api_funcs) = {
 	.sample_fetch = lsm9ds1_sample_fetch,
 	.channel_get = lsm9ds1_channel_get,
 	.attr_set = lsm9ds1_attr_set,

@@ -533,7 +533,7 @@ static int vcnl36825t_init(const struct device *dev)
 	return 0;
 }
 
-static const struct sensor_driver_api vcnl36825t_driver_api = {
+static DEVICE_API(sensor, vcnl36825t_driver_api) = {
 	.sample_fetch = vcnl36825t_sample_fetch,
 	.channel_get = vcnl36825t_channel_get,
 	.attr_set = vcnl36825t_attr_set,

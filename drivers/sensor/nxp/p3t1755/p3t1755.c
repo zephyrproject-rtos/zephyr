@@ -147,7 +147,7 @@ static int p3t1755_init(const struct device *dev)
 	return 0;
 }
 
-static const struct sensor_driver_api p3t1755_driver_api = {
+static DEVICE_API(sensor, p3t1755_driver_api) = {
 	.sample_fetch = p3t1755_sample_fetch,
 	.channel_get = p3t1755_channel_get,
 };

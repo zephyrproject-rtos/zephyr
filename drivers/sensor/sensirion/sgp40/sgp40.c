@@ -242,7 +242,7 @@ static int sgp40_init(const struct device *dev)
 	return 0;
 }
 
-static const struct sensor_driver_api sgp40_api = {
+static DEVICE_API(sensor, sgp40_api) = {
 	.sample_fetch = sgp40_sample_fetch,
 	.channel_get = sgp40_channel_get,
 	.attr_set = sgp40_attr_set,

@@ -122,7 +122,7 @@ static int tach_kb1200_init(const struct device *dev)
 	return 0;
 }
 
-static const struct sensor_driver_api tach_kb1200_driver_api = {
+static DEVICE_API(sensor, tach_kb1200_driver_api) = {
 	.sample_fetch = tach_kb1200_sample_fetch,
 	.channel_get = tach_kb1200_channel_get,
 };

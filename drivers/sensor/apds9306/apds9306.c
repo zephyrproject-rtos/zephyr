@@ -348,7 +348,7 @@ static int apds9306_init(const struct device *dev)
 	return 0;
 }
 
-static const struct sensor_driver_api apds9306_driver_api = {
+static DEVICE_API(sensor, apds9306_driver_api) = {
 	.attr_set = apds9306_attr_set,
 	.attr_get = apds9306_attr_get,
 	.sample_fetch = apds9306_sample_fetch,

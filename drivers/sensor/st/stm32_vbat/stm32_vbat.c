@@ -92,7 +92,7 @@ static int stm32_vbat_channel_get(const struct device *dev, enum sensor_channel 
 	return sensor_value_from_milli(val, voltage);
 }
 
-static const struct sensor_driver_api stm32_vbat_driver_api = {
+static DEVICE_API(sensor, stm32_vbat_driver_api) = {
 	.sample_fetch = stm32_vbat_sample_fetch,
 	.channel_get = stm32_vbat_channel_get,
 };

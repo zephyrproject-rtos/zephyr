@@ -580,7 +580,7 @@ static int fxls8974_init(const struct device *dev)
 		return 0;
 }
 
-static const struct sensor_driver_api fxls8974_driver_api = {
+static DEVICE_API(sensor, fxls8974_driver_api) = {
 		.sample_fetch = fxls8974_sample_fetch,
 		.channel_get = fxls8974_channel_get,
 		.attr_set = fxls8974_attr_set,

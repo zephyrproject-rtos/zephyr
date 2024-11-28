@@ -121,7 +121,7 @@ static int th02_channel_get(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api th02_driver_api = {
+static DEVICE_API(sensor, th02_driver_api) = {
 	.sample_fetch = th02_sample_fetch,
 	.channel_get = th02_channel_get,
 };

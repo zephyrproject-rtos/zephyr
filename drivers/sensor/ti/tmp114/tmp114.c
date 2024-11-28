@@ -197,7 +197,7 @@ static int tmp114_attr_set(const struct device *dev,
 	}
 }
 
-static const struct sensor_driver_api tmp114_driver_api = {
+static DEVICE_API(sensor, tmp114_driver_api) = {
 	.attr_get = tmp114_attr_get,
 	.attr_set = tmp114_attr_set,
 	.sample_fetch = tmp114_sample_fetch,
