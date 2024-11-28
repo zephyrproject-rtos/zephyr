@@ -103,6 +103,28 @@
 
 		};
 
+		i2c0: i2c@400f0000 {
+			compatible = "ti,mspm0-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x400f0000 0x2000>;
+			interrupts = <24 0>;
+			clocks = <&clkmux MSPM0_CLOCK_BUS_ULPCLK>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@400f2000 {
+			compatible = "ti,mspm0-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x400f2000 0x2000>;
+			interrupts = <25 0>;
+			clocks = <&clkmux MSPM0_CLOCK_BUS_ULPCLK>;
+			status = "disabled";
+		};
+
 		uart0: uart@40108000 {
 			compatible = "ti,mspm0-uart";
 			reg = <0x40108000 0x2000>;
