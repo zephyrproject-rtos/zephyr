@@ -270,7 +270,7 @@ void wwdg_stm32_isr(const struct device *dev)
 	}
 }
 
-static const struct wdt_driver_api wwdg_stm32_api = {
+static DEVICE_API(wdt, wwdg_stm32_api) = {
 	.setup = wwdg_stm32_setup,
 	.disable = wwdg_stm32_disable,
 	.install_timeout = wwdg_stm32_install_timeout,
