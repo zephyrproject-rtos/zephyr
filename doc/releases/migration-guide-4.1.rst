@@ -226,6 +226,10 @@ Networking
   :c:macro:`PROMETHEUS_HISTOGRAM_DEFINE` and :c:macro:`PROMETHEUS_SUMMARY_DEFINE`
   prototypes have changed. (:github:`81712`)
 
+* The default subnet mask on newly added IPv4 addresses is now specified with
+  :kconfig:option:`CONFIG_NET_IPV4_DEFAULT_NETMASK` option instead of being left
+  empty. Applications can still specify a custom netmask for an address with
+  :c:func:`net_if_ipv4_set_netmask_by_addr` function if needed.
 
 Other Subsystems
 ****************
