@@ -211,8 +211,10 @@ static int tsic_xx6_channel_get(const struct device *dev, enum sensor_channel ch
 	return 0;
 }
 
-static const struct sensor_driver_api tsic_xx6_driver_api = {.sample_fetch = tsic_xx6_sample_fetch,
-							     .channel_get = tsic_xx6_channel_get};
+static DEVICE_API(sensor, tsic_xx6_driver_api) = {
+	.sample_fetch = tsic_xx6_sample_fetch,
+	.channel_get = tsic_xx6_channel_get,
+};
 
 static int tsic_xx6_get_frame_cycles(const struct tsic_xx6_config *config, uint64_t *frame_cycles)
 {

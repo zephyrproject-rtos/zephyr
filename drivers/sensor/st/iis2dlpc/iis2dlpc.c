@@ -250,7 +250,7 @@ static int iis2dlpc_sample_fetch(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api iis2dlpc_driver_api = {
+static DEVICE_API(sensor, iis2dlpc_driver_api) = {
 	.attr_set = iis2dlpc_attr_set,
 #if CONFIG_IIS2DLPC_TRIGGER
 	.trigger_set = iis2dlpc_trigger_set,

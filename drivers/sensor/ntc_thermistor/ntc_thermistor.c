@@ -87,7 +87,7 @@ static int ntc_thermistor_channel_get(const struct device *dev, enum sensor_chan
 	return 0;
 }
 
-static const struct sensor_driver_api ntc_thermistor_driver_api = {
+static DEVICE_API(sensor, ntc_thermistor_driver_api) = {
 	.sample_fetch = ntc_thermistor_sample_fetch,
 	.channel_get = ntc_thermistor_channel_get,
 };

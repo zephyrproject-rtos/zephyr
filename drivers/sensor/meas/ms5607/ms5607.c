@@ -310,7 +310,7 @@ static int ms5607_init(const struct device *dev)
 	return 0;
 }
 
-static const struct sensor_driver_api ms5607_api_funcs = {
+static DEVICE_API(sensor, ms5607_api_funcs) = {
 	.attr_set = ms5607_attr_set,
 	.sample_fetch = ms5607_sample_fetch,
 	.channel_get = ms5607_channel_get,

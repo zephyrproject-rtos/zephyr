@@ -158,7 +158,7 @@ static int i3g4250d_attr_set(const struct device *dev, enum sensor_channel chan,
 	return -ENOTSUP;
 }
 
-static const struct sensor_driver_api i3g4250d_driver_api = {
+static DEVICE_API(sensor, i3g4250d_driver_api) = {
 	.attr_set = i3g4250d_attr_set,
 	.sample_fetch = i3g4250d_sample_fetch,
 	.channel_get = i3g4250d_channel_get,

@@ -237,7 +237,7 @@ static int akm09918c_init(const struct device *dev)
 	return 0;
 }
 
-static const struct sensor_driver_api akm09918c_driver_api = {
+static DEVICE_API(sensor, akm09918c_driver_api) = {
 	.sample_fetch = akm09918c_sample_fetch,
 	.channel_get = akm09918c_channel_get,
 	.attr_get = akm09918c_attr_get,

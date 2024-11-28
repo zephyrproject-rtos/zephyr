@@ -656,7 +656,7 @@ static int fxos8700_init(const struct device *dev)
 	return 0;
 }
 
-static const struct sensor_driver_api fxos8700_driver_api = {
+static DEVICE_API(sensor, fxos8700_driver_api) = {
 	.sample_fetch = fxos8700_sample_fetch,
 	.channel_get = fxos8700_channel_get,
 	.attr_set = fxos8700_attr_set,

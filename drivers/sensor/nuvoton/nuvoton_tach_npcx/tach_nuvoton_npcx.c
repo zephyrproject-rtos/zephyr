@@ -363,7 +363,7 @@ static int tach_npcx_init(const struct device *dev)
 	return 0;
 }
 
-static const struct sensor_driver_api tach_npcx_driver_api = {
+static DEVICE_API(sensor, tach_npcx_driver_api) = {
 	.sample_fetch = tach_npcx_sample_fetch,
 	.channel_get = tach_npcx_channel_get,
 };

@@ -327,7 +327,7 @@ static int explorir_m_channel_get(const struct device *dev, enum sensor_channel 
 	return 0;
 }
 
-static const struct sensor_driver_api explorir_m_api_funcs = {
+static DEVICE_API(sensor, explorir_m_api_funcs) = {
 	.attr_set = explorir_m_attr_set,
 	.attr_get = explorir_m_attr_get,
 	.sample_fetch = explorir_m_sample_fetch,

@@ -335,7 +335,7 @@ static int tsl2540_init(const struct device *dev)
 	return 0;
 }
 
-static const struct sensor_driver_api tsl2540_driver_api = {
+static DEVICE_API(sensor, tsl2540_driver_api) = {
 	.sample_fetch = tsl2540_sample_fetch,
 	.channel_get = tsl2540_channel_get,
 	.attr_set = tsl2540_attr_set,
