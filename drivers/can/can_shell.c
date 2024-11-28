@@ -68,6 +68,11 @@ static struct k_poll_event can_shell_rx_msgq_events[] = {
 static void can_shell_tx_msgq_triggered_work_handler(struct k_work *work);
 static void can_shell_rx_msgq_triggered_work_handler(struct k_work *work);
 
+static bool device_is_can_and_ready(const struct device *dev)
+{
+	return device_is_ready(dev) && DEVICE_API_IS(can, dev);
+}
+
 #ifdef CONFIG_CAN_SHELL_SCRIPTING_FRIENDLY
 static void can_shell_dummy_bypass_cb(const struct shell *sh, uint8_t *data, size_t len)
 {
@@ -996,7 +1001,7 @@ static int cmd_can_recover(const struct shell *sh, size_t argc, char **argv)
 
 static void cmd_can_device_name(size_t idx, struct shell_static_entry *entry)
 {
-	const struct device *dev = shell_device_lookup(idx, NULL);
+	const struct device *dev = shell_device_filter(idx, device_is_can_and_ready);
 
 	entry->syntax = (dev != NULL) ? dev->name : NULL;
 	entry->handler = NULL;
@@ -1026,7 +1031,7 @@ static void cmd_can_mode(size_t idx, struct shell_static_entry *entry)
 
 static void cmd_can_device_name_mode(size_t idx, struct shell_static_entry *entry)
 {
-	const struct device *dev = shell_device_lookup(idx, NULL);
+	const struct device *dev = shell_device_filter(idx, device_is_can_and_ready);
 
 	entry->syntax = (dev != NULL) ? dev->name : NULL;
 	entry->handler = NULL;
