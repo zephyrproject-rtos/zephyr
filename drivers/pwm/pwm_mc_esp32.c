@@ -521,7 +521,7 @@ static void IRAM_ATTR mcpwm_esp32_isr(const struct device *dev)
 }
 #endif /* CONFIG_PWM_CAPTURE */
 
-static const struct pwm_driver_api mcpwm_esp32_api = {
+static DEVICE_API(pwm, mcpwm_esp32_api) = {
 	.set_cycles = mcpwm_esp32_set_cycles,
 	.get_cycles_per_sec = mcpwm_esp32_get_cycles_per_sec,
 #ifdef CONFIG_PWM_CAPTURE

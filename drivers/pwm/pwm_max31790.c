@@ -321,7 +321,7 @@ static int max31790_get_cycles_per_sec(const struct device *dev, uint32_t channe
 	return 0;
 }
 
-static const struct pwm_driver_api max31790_pwm_api = {
+static DEVICE_API(pwm, max31790_pwm_api) = {
 	.set_cycles = max31790_set_cycles,
 	.get_cycles_per_sec = max31790_get_cycles_per_sec,
 };
