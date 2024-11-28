@@ -661,7 +661,7 @@ zephyr_library_sources_ifdef(CONFIG_EAP_SERVER_TTLS
   ${HOSTAP_SRC_BASE}/eap_server/eap_server_ttls.c
 )
 
-zephyr_library_compile_definitions_ifdef(CONFIGEAP_SERVER_TTLS
+zephyr_library_compile_definitions_ifdef(CONFIG_EAP_SERVER_TTLS
   EAP_SERVER_TTLS
 )
 
