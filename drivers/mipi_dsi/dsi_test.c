@@ -43,7 +43,7 @@ static int vnd_mipi_dsi_detach(const struct device *dev, uint8_t channel,
 	return -ENOTSUP;
 }
 
-static struct mipi_dsi_driver_api vnd_mipi_dsi_api = {
+static DEVICE_API(mipi_dsi, vnd_mipi_dsi_api) = {
 	.attach = vnd_mipi_dsi_attach,
 	.transfer = vnd_mipi_dsi_transfer,
 	.detach = vnd_mipi_dsi_detach,
