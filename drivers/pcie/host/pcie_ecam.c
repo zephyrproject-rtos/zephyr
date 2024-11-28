@@ -370,7 +370,7 @@ static uint8_t pcie_ecam_msi_device_setup(const struct device *dev, unsigned int
 }
 #endif
 
-static const struct pcie_ctrl_driver_api pcie_ecam_api = {
+static DEVICE_API(pcie_ctrl, pcie_ecam_api) = {
 	.conf_read = pcie_ecam_ctrl_conf_read,
 	.conf_write = pcie_ecam_ctrl_conf_write,
 	.region_allocate = pcie_ecam_region_allocate,
