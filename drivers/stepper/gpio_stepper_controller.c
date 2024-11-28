@@ -352,7 +352,7 @@ static int gpio_stepper_init(const struct device *dev)
 	return 0;
 }
 
-static const struct stepper_driver_api gpio_stepper_api = {
+static DEVICE_API(stepper, gpio_stepper_api) = {
 	.enable = gpio_stepper_enable,
 	.move = gpio_stepper_move,
 	.is_moving = gpio_stepper_is_moving,
