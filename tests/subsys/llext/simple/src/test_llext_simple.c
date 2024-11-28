@@ -304,7 +304,6 @@ static LLEXT_CONST uint8_t object_ext[] ELF_ALIGN = {
 };
 LLEXT_LOAD_UNLOAD(object)
 
-#ifndef CONFIG_LLEXT_TYPE_ELF_RELOCATABLE
 static LLEXT_CONST uint8_t syscalls_ext[] ELF_ALIGN = {
 	#include "syscalls.inc"
 };
@@ -316,7 +315,6 @@ static LLEXT_CONST uint8_t threads_kernel_objects_ext[] ELF_ALIGN = {
 LLEXT_LOAD_UNLOAD(threads_kernel_objects,
 	.test_setup = threads_objects_test_setup,
 )
-#endif
 
 #ifndef CONFIG_LLEXT_TYPE_ELF_OBJECT
 static LLEXT_CONST uint8_t multi_file_ext[] ELF_ALIGN = {
