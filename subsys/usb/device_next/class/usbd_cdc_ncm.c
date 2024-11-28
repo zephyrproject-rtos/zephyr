@@ -165,7 +165,6 @@ union send_ntb {
 union recv_ntb {
 	struct {
 		struct nth16 nth;
-		struct ndp16 ndp;
 	};
 
 	uint8_t data[CDC_NCM_RECV_NTB_MAX_SIZE];
@@ -510,6 +509,8 @@ static int cdc_ncm_acl_out_cb(struct usbd_class_data *const c_data,
 	const union recv_ntb *ntb = (union recv_ntb *)buf->data;
 	struct cdc_ncm_eth_data *data = dev->data;
 	const struct ndp16_datagram *ndp_datagram;
+	const struct nth16 *nthdr16;
+	const struct ndp16 *ndp;
 	struct net_pkt *pkt, *src;
 	uint16_t start, len;
 	uint16_t count;
@@ -527,10 +528,6 @@ static int cdc_ncm_acl_out_cb(struct usbd_class_data *const c_data,
 		goto restart_out_transfer;
 	}
 
-	ntb = (union recv_ntb *)buf->data;
-	ndp_datagram = (struct ndp16_datagram *)
-		(ntb->data + sys_le16_to_cpu(ntb->nth.wNdpIndex) + sizeof(struct ndp16));
-
 	/* Temporary source pkt we use to copy one Ethernet frame from
 	 * the list of USB net_buf's.
 	 */
@@ -543,14 +540,33 @@ static int cdc_ncm_acl_out_cb(struct usbd_class_data *const c_data,
 	net_pkt_append_buffer(src, buf);
 	net_pkt_set_overwrite(src, true);
 
-	count = (sys_le16_to_cpu(ntb->ndp.wLength) - 12U) / 4U;
-	LOG_DBG("%u Ethernet frame%s received", count, count == 1 ? "" : "s");
+	nthdr16 = &ntb->nth;
+	LOG_DBG("NTH16: wSequence %u wBlockLength %u wNdpIndex %u",
+		nthdr16->wSequence, nthdr16->wBlockLength, nthdr16->wNdpIndex);
+
+	/* NDP may be anywhere in the transfer buffer. Offsets, like wNdpIndex
+	 * or wDatagramIndex are always of from byte zero of the NTB.
+	 */
+	ndp = (const struct ndp16 *)(ntb->data + sys_le16_to_cpu(nthdr16->wNdpIndex));
+	LOG_DBG("NDP16: wLength %u", sys_le16_to_cpu(ndp->wLength));
+
+	ndp_datagram = (struct ndp16_datagram *)&ndp->datagram[0];
+
+	/* There is one (terminating zero) or more datagram pointer
+	 * entries starting after 8 bytes of header information.
+	 */
+	count = (sys_le16_to_cpu(ndp->wLength) - 8U) / 4U;
+	LOG_DBG("%u datagram%s received", count, count == 1 ? "" : "s");
 
 	for (int i = 0; i < count; i++) {
 		start = sys_le16_to_cpu(ndp_datagram[i].wDatagramIndex);
 		len = sys_le16_to_cpu(ndp_datagram[i].wDatagramLength);
 
 		LOG_DBG("[%d] start %u len %u", i, start, len);
+		if (start == 0 || len == 0) {
+			LOG_DBG("Terminating zero datagram %u", i);
+			break;
+		}
 
 		pkt = net_pkt_rx_alloc_with_buffer(data->iface, len, AF_UNSPEC, 0, K_FOREVER);
 		if (!pkt) {
