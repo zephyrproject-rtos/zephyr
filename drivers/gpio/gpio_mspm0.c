@@ -240,7 +240,12 @@ static bool init_irq = true;
 
 static int gpio_mspm0_init(const struct device *port)
 {
-	/* Powering up of GPIOs is part of soc.c */
+	/* Reset and enable GPIO banks */
+	DL_GPIO_reset(GPIOA);
+	DL_GPIO_reset(GPIOB);
+
+	DL_GPIO_enablePower(GPIOA);
+	DL_GPIO_enablePower(GPIOB);
 
 	if (init_irq) {
 

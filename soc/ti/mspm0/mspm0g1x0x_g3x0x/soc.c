@@ -10,13 +10,6 @@
 
 static int ti_mspm0g_init(void)
 {
-	/* Reset and enable GPIO banks */
-	DL_GPIO_reset(GPIOA);
-	DL_GPIO_reset(GPIOB);
-
-	DL_GPIO_enablePower(GPIOA);
-	DL_GPIO_enablePower(GPIOB);
-
 	/* Allow delay time to settle */
 	delay_cycles(POWER_STARTUP_DELAY);
 
