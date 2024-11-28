@@ -46,6 +46,14 @@ The Zephyr ``nucleo_wb09ke`` board target supports the following hardware featur
 +-----------+------------+-------------------------------------+
 | FLASH     | on-chip    | internal flash memory               |
 +-----------+------------+-------------------------------------+
+| I2C       | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
+| ADC       | on-chip    | adc                                 |
++-----------+------------+-------------------------------------+
+| RADIO     | on-chip    | Bluetooth Low Energy                |
++-----------+------------+-------------------------------------+
 
 
 Other hardware features are not yet supported on this Zephyr port.
@@ -53,6 +61,17 @@ Other hardware features are not yet supported on this Zephyr port.
 The default configuration can be found in the defconfig file:
 :zephyr_file:`boards/st/nucleo_wb09ke/nucleo_wb09ke_defconfig`
 
+Bluetooh support
+----------------
+
+BLE support is enabled; however, to build a Zephyr sample using this board,
+you first need to fetch the Bluetooth controller library into Zephyr as a binary BLOB.
+
+To fetch binary BLOBs:
+
+.. code-block:: console
+
+   west blobs fetch hal_stm32
 
 Connections and IOs
 ===================
