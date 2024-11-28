@@ -79,7 +79,25 @@
 	status = "okay";
 };
 
+&i2c0 {
+	status = "okay";
+	pinctrl-0 = <&i2c0_scl_pa31 &i2c0_sda_pa28>;
+	pinctrl-names = "default";
+};
+
+&i2c1 {
+	status = "okay";
+	pinctrl-0 = <&i2c1_scl_pb2 &i2c1_sda_pb3>;
+	pinctrl-names = "default";
+};
+
 &rtc0 {
+	status = "okay";
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_sclk_pb9 &spi1_pico_pb8 &spi1_poci_pb7 &spi1_cs0_pb6>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
@@ -88,10 +106,4 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_tx_pa10 &uart0_rx_pa11>;
 	pinctrl-names = "default";
-};
-
-&spi1 {
-	pinctrl-0 = <&spi1_sclk_pb9 &spi1_pico_pb8 &spi1_poci_pb7 &spi1_cs0_pb6>;
-	pinctrl-names = "default";
-	status = "okay";
 };
