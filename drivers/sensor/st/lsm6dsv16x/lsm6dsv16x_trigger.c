@@ -38,7 +38,7 @@ static int lsm6dsv16x_enable_xl_int(const struct device *dev, int enable)
 
 	/* set interrupt */
 	if (cfg->drdy_pin == 1) {
-		lsm6dsv16x_pin_int_route_t val;
+		lsm6dsv16x_pin_int_route_t val = {};
 
 		ret = lsm6dsv16x_pin_int1_route_get(ctx, &val);
 		if (ret < 0) {
@@ -50,7 +50,7 @@ static int lsm6dsv16x_enable_xl_int(const struct device *dev, int enable)
 
 		ret = lsm6dsv16x_pin_int1_route_set(ctx, &val);
 	} else {
-		lsm6dsv16x_pin_int_route_t val;
+		lsm6dsv16x_pin_int_route_t val = {};
 
 		ret = lsm6dsv16x_pin_int2_route_get(ctx, &val);
 		if (ret < 0) {
@@ -84,7 +84,7 @@ static int lsm6dsv16x_enable_g_int(const struct device *dev, int enable)
 
 	/* set interrupt */
 	if (cfg->drdy_pin == 1) {
-		lsm6dsv16x_pin_int_route_t val;
+		lsm6dsv16x_pin_int_route_t val = {};
 
 		ret = lsm6dsv16x_pin_int1_route_get(ctx, &val);
 		if (ret < 0) {
@@ -96,7 +96,7 @@ static int lsm6dsv16x_enable_g_int(const struct device *dev, int enable)
 
 		ret = lsm6dsv16x_pin_int1_route_set(ctx, &val);
 	} else {
-		lsm6dsv16x_pin_int_route_t val;
+		lsm6dsv16x_pin_int_route_t val = {};
 
 		ret = lsm6dsv16x_pin_int2_route_get(ctx, &val);
 		if (ret < 0) {
