@@ -147,6 +147,7 @@ config BT_ESP32
 	default y
 	depends on DT_HAS_ESPRESSIF_ESP32_BT_HCI_ENABLED
 	depends on ZEPHYR_HAL_ESPRESSIF_MODULE_BLOBS
+	select ENTROPY_GENERATOR
 	help
 	  Espressif HCI bluetooth interface
 
