@@ -1896,7 +1896,7 @@ def _main(args):
             else:
                 failed_cases.append(case)
         else:
-            # Some checks like codeowners can produce no .result
+            # Some checks can produce no .result
             logging.info(f"No JUnit result for {case.name}")
 
     n_fails = len(failed_cases)

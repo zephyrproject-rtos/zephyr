@@ -1132,7 +1132,7 @@ sub top_of_kernel_tree {
 	my ($root) = @_;
 
 	my @tree_check = (
-		"LICENSE", "CODEOWNERS", "Kconfig", "README.rst",
+		"LICENSE", "Kconfig", "README.rst",
 		"doc", "arch", "include", "drivers", "boards",
 		"kernel", "lib", "scripts",
 	);
@@ -2674,12 +2674,6 @@ sub process {
 			$in_commit_log = 0;
 		}
 
-# Check if CODEOWNERS is being updated.  If so, there's probably no need to
-# emit the "does CODEOWNERS need updating?" message on file add/move/delete
-		if ($line =~ /^\s*CODEOWNERS\s*\|/) {
-			$reported_maintainer_file = 1;
-		}
-
 # Check signature styles
 		if (!$in_header_lines &&
 		    $line =~ /^(\s*)([a-z0-9_-]+by:|$signature_tags)(\s*)(.*)/i) {
@@ -2881,8 +2875,6 @@ sub process {
 		      (defined($1) || defined($2))))) {
 			$is_patch = 1;
 			$reported_maintainer_file = 1;
-			WARN("FILE_PATH_CHANGES",
-			     "added, moved or deleted file(s), does CODEOWNERS need updating?\n" . $herecurr);
 		}
 
 # Check for adding new DT bindings not in schema format
