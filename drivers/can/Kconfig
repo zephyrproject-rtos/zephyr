@@ -41,6 +41,7 @@ config CAN_DEFAULT_BITRATE_DATA
 config CAN_SHELL
 	bool "CAN shell"
 	depends on SHELL
+	imply DEVICE_DT_METADATA
 	select POLL
 	help
 	  Enable CAN Shell for testing.
