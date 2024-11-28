@@ -401,7 +401,7 @@ static int mcux_sdif_request(const struct device *dev,
 	return ret;
 }
 
-static const struct sdhc_driver_api sdif_api = {
+static DEVICE_API(sdhc, sdif_api) = {
 	.reset = mcux_sdif_reset,
 	.get_host_props = mcux_sdif_get_host_props,
 	.set_io = mcux_sdif_set_io,
