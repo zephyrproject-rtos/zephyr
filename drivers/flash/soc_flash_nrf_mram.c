@@ -175,7 +175,7 @@ static void nrf_mram_page_layout(const struct device *dev, const struct flash_pa
 }
 #endif
 
-static const struct flash_driver_api nrf_mram_api = {
+static DEVICE_API(flash, nrf_mram_api) = {
 	.read = nrf_mram_read,
 	.write = nrf_mram_write,
 	.erase = nrf_mram_erase,

@@ -1683,7 +1683,7 @@ static int flash_nor_get_size(const struct device *dev, uint64_t *size)
 	return 0;
 }
 
-static const struct flash_driver_api spi_nor_api = {
+static DEVICE_API(flash, spi_nor_api) = {
 	.read = spi_nor_read,
 	.write = spi_nor_write,
 	.erase = spi_nor_erase,

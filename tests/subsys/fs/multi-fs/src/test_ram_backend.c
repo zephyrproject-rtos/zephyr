@@ -77,7 +77,7 @@ static void test_flash_ram_pages_layout(const struct device *dev,
 	*layout_size = ARRAY_SIZE(dev_layout);
 }
 
-static const struct flash_driver_api flash_ram_api = {
+static DEVICE_API(flash, flash_ram_api) = {
 	.erase = test_flash_ram_erase,
 	.write = test_flash_ram_write,
 	.read = test_flash_ram_read,
