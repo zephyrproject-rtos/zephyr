@@ -6,4 +6,6 @@ tests:
       - qemu_x86_64
     integration_platforms:
       - native_sim
-    tags: agnostic
+    tags:
+      - agnostic
+      - even

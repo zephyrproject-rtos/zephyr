@@ -29,7 +29,7 @@ class TestPrintOuts:
     TESTDATA_1 = [
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['agnostic', 'subgrouped']
+            ['agnostic', 'subgrouped', 'even', 'odd']
         ),
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'device'),
@@ -47,13 +47,100 @@ class TestPrintOuts:
                 'dummy.agnostic.group2.a2_tests.assert2',
                 'dummy.agnostic.group2.a3_tests.assert1',
                 'dummy.agnostic.group2.a2_tests.assert3'
-            ]
+            ],
+            '--no-detailed-test-id',
+            ''
+        ),
+        (
+            os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
+            [
+                'dummy.agnostic.group1.subgroup2.a1_2_tests.assert',
+                'dummy.agnostic.group2.a2_tests.assert1',
+                'dummy.agnostic.group2.a2_tests.assert2',
+                'dummy.agnostic.group2.a3_tests.assert1',
+                'dummy.agnostic.group2.a2_tests.assert3'
+            ],
+            '--no-detailed-test-id',
+            'odd'
+        ),
+        (
+            os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
+            [],
+            '--no-detailed-test-id',
+            'odd even'
+        ),
+        (
+            os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
+            [
+                'dummy.agnostic.group1.subgroup1.a1_1_tests.assert',
+                'dummy.agnostic.group1.subgroup2.a1_2_tests.assert',
+                'dummy.agnostic.group2.a2_tests.assert1',
+                'dummy.agnostic.group2.a2_tests.assert2',
+                'dummy.agnostic.group2.a3_tests.assert1',
+                'dummy.agnostic.group2.a2_tests.assert3'
+            ],
+            '--no-detailed-test-id',
+            'unknown_tag'
+        ),
+        (
+            os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
+            [
+                'dummy.agnostic.group1.subgroup1.a1_1_tests.assert',
+                'dummy.agnostic.group1.subgroup2.a1_2_tests.assert',
+                'dummy.agnostic.group2.a2_tests.assert1',
+                'dummy.agnostic.group2.a2_tests.assert2',
+                'dummy.agnostic.group2.a3_tests.assert1',
+                'dummy.agnostic.group2.a2_tests.assert3'
+            ],
+            '--detailed-test-id',
+            ''
+        ),
+        (
+            os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
+            [
+                'dummy.agnostic.group1.subgroup2.a1_2_tests.assert',
+                'dummy.agnostic.group2.a2_tests.assert1',
+                'dummy.agnostic.group2.a2_tests.assert2',
+                'dummy.agnostic.group2.a3_tests.assert1',
+                'dummy.agnostic.group2.a2_tests.assert3'
+            ],
+            '--detailed-test-id',
+            'odd'
+        ),
+        (
+            os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
+            [],
+            '--detailed-test-id',
+            'odd even'
+        ),
+        (
+            os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
+            [
+                'dummy.agnostic.group1.subgroup1.a1_1_tests.assert',
+                'dummy.agnostic.group1.subgroup2.a1_2_tests.assert',
+                'dummy.agnostic.group2.a2_tests.assert1',
+                'dummy.agnostic.group2.a2_tests.assert2',
+                'dummy.agnostic.group2.a3_tests.assert1',
+                'dummy.agnostic.group2.a2_tests.assert3'
+            ],
+            '--detailed-test-id',
+            'unknown_tag'
         ),
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'device'),
             [
                 'dummy.device.group.d_tests.assert'
-            ]
+            ],
+            '--no-detailed-test-id',
+            ''
+        ),
+        (
+            os.path.join(TEST_DATA, 'tests', 'dummy', 'device'),
+            [
+                'dummy.device.group.d_tests.assert'
+            ],
+            '--detailed-test-id',
+            ''
         ),
     ]
 
@@ -70,7 +157,79 @@ class TestPrintOuts:
             '            ├── dummy.agnostic.group2.a2_tests.assert1\n' \
             '            ├── dummy.agnostic.group2.a2_tests.assert2\n' \
             '            ├── dummy.agnostic.group2.a2_tests.assert3\n' \
-            '            └── dummy.agnostic.group2.a3_tests.assert1\n'
+            '            └── dummy.agnostic.group2.a3_tests.assert1\n',
+            '--no-detailed-test-id',
+            ''
+        ),
+        (
+            os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
+            'Testsuite\n' \
+            '├── Samples\n' \
+            '└── Tests\n' \
+            '    └── dummy\n' \
+            '        └── agnostic\n' \
+            '            ├── dummy.agnostic.group1.subgroup2.a1_2_tests.assert\n' \
+            '            ├── dummy.agnostic.group2.a2_tests.assert1\n' \
+            '            ├── dummy.agnostic.group2.a2_tests.assert2\n' \
+            '            ├── dummy.agnostic.group2.a2_tests.assert3\n' \
+            '            └── dummy.agnostic.group2.a3_tests.assert1\n',
+            '--no-detailed-test-id',
+            'odd'
+        ),
+        (
+            os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
+            'Testsuite\n' \
+            '├── Samples\n' \
+            '└── Tests\n' \
+            '    └── dummy\n' \
+            '        └── agnostic\n' \
+            '            ├── dummy.agnostic.group1.subgroup1.a1_1_tests.assert\n' \
+            '            ├── dummy.agnostic.group1.subgroup2.a1_2_tests.assert\n' \
+            '            ├── dummy.agnostic.group2.a2_tests.assert1\n' \
+            '            ├── dummy.agnostic.group2.a2_tests.assert2\n' \
+            '            ├── dummy.agnostic.group2.a2_tests.assert3\n' \
+            '            └── dummy.agnostic.group2.a3_tests.assert1\n',
+            '--detailed-test-id',
+            ''
+        ),
+        (
+            os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
+            'Testsuite\n' \
+            '├── Samples\n' \
+            '└── Tests\n' \
+            '    └── dummy\n' \
+            '        └── agnostic\n' \
+            '            ├── dummy.agnostic.group1.subgroup2.a1_2_tests.assert\n' \
+            '            ├── dummy.agnostic.group2.a2_tests.assert1\n' \
+            '            ├── dummy.agnostic.group2.a2_tests.assert2\n' \
+            '            ├── dummy.agnostic.group2.a2_tests.assert3\n' \
+            '            └── dummy.agnostic.group2.a3_tests.assert1\n',
+            '--detailed-test-id',
+            'odd'
+        ),
+        (
+            os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
+            'Testsuite\n' \
+            '├── Samples\n' \
+            '└── Tests\n',
+            '--detailed-test-id',
+            'odd even'
+        ),
+        (
+            os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
+            'Testsuite\n' \
+            '├── Samples\n' \
+            '└── Tests\n' \
+            '    └── dummy\n' \
+            '        └── agnostic\n' \
+            '            ├── dummy.agnostic.group1.subgroup1.a1_1_tests.assert\n' \
+            '            ├── dummy.agnostic.group1.subgroup2.a1_2_tests.assert\n' \
+            '            ├── dummy.agnostic.group2.a2_tests.assert1\n' \
+            '            ├── dummy.agnostic.group2.a2_tests.assert2\n' \
+            '            ├── dummy.agnostic.group2.a2_tests.assert3\n' \
+            '            └── dummy.agnostic.group2.a3_tests.assert1\n',
+            '--detailed-test-id',
+            'unknown_tag'
         ),
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'device'),
@@ -79,7 +238,20 @@ class TestPrintOuts:
             '└── Tests\n'
             '    └── dummy\n'
             '        └── device\n'
-            '            └── dummy.device.group.d_tests.assert\n'
+            '            └── dummy.device.group.d_tests.assert\n',
+            '--no-detailed-test-id',
+            ''
+        ),
+        (
+            os.path.join(TEST_DATA, 'tests', 'dummy', 'device'),
+            'Testsuite\n'
+            '├── Samples\n'
+            '└── Tests\n'
+            '    └── dummy\n'
+            '        └── device\n'
+            '            └── dummy.device.group.d_tests.assert\n',
+            '--detailed-test-id',
+            ''
         ),
     ]
 
@@ -128,15 +300,25 @@ class TestPrintOuts:
         assert str(sys_exit.value) == '0'
 
     @pytest.mark.parametrize(
-        'test_path, expected',
+        'test_path, expected, detailed_id, exclude_tags',
         TESTDATA_2,
         ids=[
-            'tests/dummy/agnostic',
+            'tests/dummy/agnostic no_detailed_id',
+            'tests/dummy/agnostic no_detailed_id excl_tag',
+            'tests/dummy/agnostic no_detailed_id excl_all_tags',
+            'tests/dummy/agnostic no_detailed_id no_excl_tag',
+            'tests/dummy/agnostic detailed_id',
+            'tests/dummy/agnostic detailed_id excl_tag',
+            'tests/dummy/agnostic detailed_id excl_all_tags',
+            'tests/dummy/agnostic detailed_id no_excl_tag',
             'tests/dummy/device',
+            'tests/dummy/device detailed_id',
         ]
     )
-    def test_list_tests(self, capfd, out_path, test_path, expected):
-        args = ['--outdir', out_path, '-T', test_path, '--list-tests']
+    def test_list_tests(self, capfd, out_path, test_path, expected, detailed_id, exclude_tags):
+        args = ['--outdir', out_path, '-T', test_path, '--list-tests', detailed_id]
+        for tag in exclude_tags.split():
+            args += ['--exclude-tag', tag]
 
         with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
                 pytest.raises(SystemExit) as sys_exit:
@@ -147,7 +329,8 @@ class TestPrintOuts:
         sys.stderr.write(err)
 
         printed_tests = [test.strip() for test in out.split('- ')[1:]]
-        printed_tests[-1] = printed_tests[-1].split('\n')[0]
+        if printed_tests:
+            printed_tests[-1] = printed_tests[-1].split('\n')[0]
 
         assert all([test in printed_tests for test in expected])
         assert all([test in expected for test in printed_tests])
@@ -155,15 +338,23 @@ class TestPrintOuts:
         assert str(sys_exit.value) == '0'
 
     @pytest.mark.parametrize(
-        'test_path, expected',
+        'test_path, expected, detailed_id, exclude_tags',
         TESTDATA_3,
         ids=[
-            'tests/dummy/agnostic',
+            'tests/dummy/agnostic no_detailed_id',
+            'tests/dummy/agnostic no_detailed_id excl_tag',
+            'tests/dummy/agnostic detailed_id',
+            'tests/dummy/agnostic detailed_id excl_tag',
+            'tests/dummy/agnostic detailed_id excl_all_tags',
+            'tests/dummy/agnostic detailed_id no_excl_tag',
             'tests/dummy/device',
+            'tests/dummy/device detailed_id',
         ]
     )
-    def test_tree(self, capfd, out_path, test_path, expected):
-        args = ['--outdir', out_path, '-T', test_path, '--test-tree']
+    def test_tree(self, capfd, out_path, test_path, expected, detailed_id, exclude_tags):
+        args = ['--outdir', out_path, '-T', test_path, '--test-tree', detailed_id]
+        for tag in exclude_tags.split():
+            args += ['--exclude-tag', tag]
 
         with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
                 pytest.raises(SystemExit) as sys_exit:
