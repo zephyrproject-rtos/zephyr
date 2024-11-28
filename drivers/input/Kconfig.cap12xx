@@ -1,0 +1,27 @@
+# Copyright (c) 2022 Keiya Nobuta
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig INPUT_CAP12XX
+	bool "cap12xx 3-cannel capacitive touch sensor driver"
+	default y
+	depends on DT_HAS_MICROCHIP_CAP12XX_ENABLED
+	select I2C
+	help
+	  Enable driver for microchip cap12xx 3-cannel capacitive
+	  touch sensor.
+
+if INPUT_CAP12XX
+
+config INPUT_CAP12XX_POLL
+	bool "Polling"
+	help
+	  Enable polling mode when interrupt GPIO is not specified.
+
+config INPUT_CAP1XX3_PERIOD
+	int "Sample period"
+	depends on INPUT_CAP12XX_POLL
+	default 10
+	help
+	  Sample period in milliseconds when in polling mode.
+
+endif # INPUT_CAP12XX
