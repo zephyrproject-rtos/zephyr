@@ -102,6 +102,7 @@ config IEEE802154_SELECTIVE_TXCHANNEL
 
 config IEEE802154_CARRIER_FUNCTIONS
 	bool "Support for carrier functions"
+	default y if OPENTHREAD_DIAG
 	help
 	  Enable support for functions such as modulated carrier and continuous carrier.
 
