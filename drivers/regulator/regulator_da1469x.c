@@ -383,7 +383,7 @@ static int regulator_da1469x_get_current_limit(const struct device *dev,
 	return ret;
 }
 
-static const struct regulator_driver_api regulator_da1469x_api = {
+static DEVICE_API(regulator, regulator_da1469x_api) = {
 	.enable = regulator_da1469x_enable,
 	.disable = regulator_da1469x_disable,
 	.count_voltages = regulator_da1469x_count_voltages,

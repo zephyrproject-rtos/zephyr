@@ -634,13 +634,15 @@ int regulator_npm1300_init(const struct device *dev)
 	return ret;
 }
 
-static const struct regulator_driver_api api = {.enable = regulator_npm1300_enable,
-						.disable = regulator_npm1300_disable,
-						.count_voltages = regulator_npm1300_count_voltages,
-						.list_voltage = regulator_npm1300_list_voltage,
-						.set_voltage = regulator_npm1300_set_voltage,
-						.get_voltage = regulator_npm1300_get_voltage,
-						.set_mode = regulator_npm1300_set_mode};
+static DEVICE_API(regulator, api) = {
+	.enable = regulator_npm1300_enable,
+	.disable = regulator_npm1300_disable,
+	.count_voltages = regulator_npm1300_count_voltages,
+	.list_voltage = regulator_npm1300_list_voltage,
+	.set_voltage = regulator_npm1300_set_voltage,
+	.get_voltage = regulator_npm1300_get_voltage,
+	.set_mode = regulator_npm1300_set_mode,
+};
 
 #define REGULATOR_NPM1300_DEFINE(node_id, id, _source)                                             \
 	static struct regulator_npm1300_data data_##id;                                            \
