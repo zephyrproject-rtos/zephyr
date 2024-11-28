@@ -291,9 +291,15 @@ SECTIONS {
 
 #include <zephyr/linker/ram-end.ld>
 
-    GROUP_END(RAMABLE_REGION)
+	GROUP_END(RAMABLE_REGION)
 
 #include <zephyr/linker/debug-sections.ld>
+
+	SECTION_PROLOGUE(.arcextmap, 0,) {
+		*(.arcextmap)
+		*(.arcextmap.*)
+		*(.gnu.linkonce.arcextmap.*)
+	}
 
 	SECTION_PROLOGUE(.ARC.attributes, 0,) {
 		KEEP(*(.ARC.attributes))
