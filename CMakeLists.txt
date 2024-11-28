@@ -1647,10 +1647,9 @@ list(APPEND
 )
 list(APPEND post_build_byproducts ${KERNEL_MAP_NAME})
 
-if(NOT CONFIG_BUILD_NO_GAP_FILL)
-  # Use ';' as separator to get proper space in resulting command.
-  set(GAP_FILL "$<TARGET_PROPERTY:bintools,elfconvert_flag_gapfill>0xff")
-endif()
+# Use ';' as separator to get proper space in resulting command.
+set(gap_fill_prop "$<TARGET_PROPERTY:bintools,elfconvert_flag_gapfill>")
+set(gap_fill "$<$<BOOL:${gap_fill_prop}>:${gap_fill_prop}${CONFIG_BUILD_GAP_FILL_PATTERN}>")
 
 if(CONFIG_OUTPUT_PRINT_MEMORY_USAGE)
   target_link_libraries(${logical_target_for_zephyr_elf} $<TARGET_PROPERTY:linker,memusage>)
@@ -1711,7 +1710,7 @@ if(CONFIG_BUILD_OUTPUT_HEX OR BOARD_FLASH_RUNNER STREQUAL openocd)
       post_build_commands
       COMMAND $<TARGET_PROPERTY:bintools,elfconvert_command>
               $<TARGET_PROPERTY:bintools,elfconvert_flag>
-              ${GAP_FILL}
+              $<$<BOOL:${CONFIG_BUILD_OUTPUT_HEX_GAP_FILL}>:${gap_fill}>
               $<TARGET_PROPERTY:bintools,elfconvert_flag_outtarget>ihex
               ${remove_sections_argument_list}
               $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${KERNEL_ELF_NAME}
@@ -1733,7 +1732,7 @@ if(CONFIG_BUILD_OUTPUT_BIN)
       post_build_commands
       COMMAND $<TARGET_PROPERTY:bintools,elfconvert_command>
               $<TARGET_PROPERTY:bintools,elfconvert_flag>
-              ${GAP_FILL}
+              ${gap_fill}
               $<TARGET_PROPERTY:bintools,elfconvert_flag_outtarget>binary
               ${remove_sections_argument_list}
               $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${KERNEL_ELF_NAME}
@@ -1820,7 +1819,7 @@ if(CONFIG_BUILD_OUTPUT_S19)
       post_build_commands
       COMMAND $<TARGET_PROPERTY:bintools,elfconvert_command>
               $<TARGET_PROPERTY:bintools,elfconvert_flag>
-              ${GAP_FILL}
+              $<$<BOOL:${CONFIG_BUILD_OUTPUT_S19_GAP_FILL}>:${gap_fill}>
               $<TARGET_PROPERTY:bintools,elfconvert_flag_outtarget>srec
               $<TARGET_PROPERTY:bintools,elfconvert_flag_srec_len>1
               $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${KERNEL_ELF_NAME}
