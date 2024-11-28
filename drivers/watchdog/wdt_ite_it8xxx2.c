@@ -236,7 +236,7 @@ static void wdt_it8xxx2_isr(const struct device *dev)
 	LOG_DBG("WDT ISR");
 }
 
-static const struct wdt_driver_api wdt_it8xxx2_api = {
+static DEVICE_API(wdt, wdt_it8xxx2_api) = {
 	.setup = wdt_it8xxx2_setup,
 	.disable = wdt_it8xxx2_disable,
 	.install_timeout = wdt_it8xxx2_install_timeout,

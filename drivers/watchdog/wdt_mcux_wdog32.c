@@ -178,7 +178,7 @@ static int mcux_wdog32_init(const struct device *dev)
 	return 0;
 }
 
-static const struct wdt_driver_api mcux_wdog32_api = {
+static DEVICE_API(wdt, mcux_wdog32_api) = {
 	.setup = mcux_wdog32_setup,
 	.disable = mcux_wdog32_disable,
 	.install_timeout = mcux_wdog32_install_timeout,
