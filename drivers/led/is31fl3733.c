@@ -275,7 +275,7 @@ int is31fl3733_current_limit(const struct device *dev, uint8_t limit)
 	return i2c_reg_write_byte_dt(&config->bus, GLOBAL_CURRENT_CTRL_REG, limit);
 }
 
-static const struct led_driver_api is31fl3733_api = {
+static DEVICE_API(led, is31fl3733_api) = {
 	.on = is31fl3733_led_on,
 	.off = is31fl3733_led_off,
 	.set_brightness = is31fl3733_led_set_brightness,

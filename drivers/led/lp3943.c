@@ -275,7 +275,7 @@ static const struct lp3943_config lp3943_led_config = {
 	.bus = I2C_DT_SPEC_INST_GET(0),
 };
 
-static const struct led_driver_api lp3943_led_api = {
+static DEVICE_API(led, lp3943_led_api) = {
 	.blink = lp3943_led_blink,
 	.set_brightness = lp3943_led_set_brightness,
 	.on = lp3943_led_on,
