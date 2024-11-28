@@ -825,9 +825,9 @@ __syscall int can_get_core_clock(const struct device *dev, uint32_t *rate);
 
 static inline int z_impl_can_get_core_clock(const struct device *dev, uint32_t *rate)
 {
-	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
+	__ASSERT_NO_MSG(DEVICE_API_IS(can, dev));
 
-	return api->get_core_clock(dev, rate);
+	return DEVICE_API_GET(can, dev)->get_core_clock(dev, rate);
 }
 
 /**
@@ -949,9 +949,9 @@ __syscall const struct can_timing *can_get_timing_min(const struct device *dev);
 
 static inline const struct can_timing *z_impl_can_get_timing_min(const struct device *dev)
 {
-	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
+	__ASSERT_NO_MSG(DEVICE_API_IS(can, dev));
 
-	return &api->timing_min;
+	return &DEVICE_API_GET(can, dev)->timing_min;
 }
 
 /**
@@ -965,9 +965,9 @@ __syscall const struct can_timing *can_get_timing_max(const struct device *dev);
 
 static inline const struct can_timing *z_impl_can_get_timing_max(const struct device *dev)
 {
-	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
+	__ASSERT_NO_MSG(DEVICE_API_IS(can, dev));
 
-	return &api->timing_max;
+	return &DEVICE_API_GET(can, dev)->timing_max;
 }
 
 /**
@@ -1017,9 +1017,9 @@ __syscall const struct can_timing *can_get_timing_data_min(const struct device *
 #ifdef CONFIG_CAN_FD_MODE
 static inline const struct can_timing *z_impl_can_get_timing_data_min(const struct device *dev)
 {
-	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
+	__ASSERT_NO_MSG(DEVICE_API_IS(can, dev));
 
-	return &api->timing_data_min;
+	return &DEVICE_API_GET(can, dev)->timing_data_min;
 }
 #endif /* CONFIG_CAN_FD_MODE */
 
@@ -1041,9 +1041,9 @@ __syscall const struct can_timing *can_get_timing_data_max(const struct device *
 #ifdef CONFIG_CAN_FD_MODE
 static inline const struct can_timing *z_impl_can_get_timing_data_max(const struct device *dev)
 {
-	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
+	__ASSERT_NO_MSG(DEVICE_API_IS(can, dev));
 
-	return &api->timing_data_max;
+	return &DEVICE_API_GET(can, dev)->timing_data_max;
 }
 #endif /* CONFIG_CAN_FD_MODE */
 
@@ -1176,9 +1176,9 @@ __syscall int can_get_capabilities(const struct device *dev, can_mode_t *cap);
 
 static inline int z_impl_can_get_capabilities(const struct device *dev, can_mode_t *cap)
 {
-	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
+	__ASSERT_NO_MSG(DEVICE_API_IS(can, dev));
 
-	return api->get_capabilities(dev, cap);
+	return DEVICE_API_GET(can, dev)->get_capabilities(dev, cap);
 }
 
 /**
@@ -1220,9 +1220,9 @@ __syscall int can_start(const struct device *dev);
 
 static inline int z_impl_can_start(const struct device *dev)
 {
-	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
+	__ASSERT_NO_MSG(DEVICE_API_IS(can, dev));
 
-	return api->start(dev);
+	return DEVICE_API_GET(can, dev)->start(dev);
 }
 
 /**
@@ -1244,9 +1244,9 @@ __syscall int can_stop(const struct device *dev);
 
 static inline int z_impl_can_stop(const struct device *dev)
 {
-	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
+	__ASSERT_NO_MSG(DEVICE_API_IS(can, dev));
 
-	return api->stop(dev);
+	return DEVICE_API_GET(can, dev)->stop(dev);
 }
 
 /**
@@ -1263,9 +1263,9 @@ __syscall int can_set_mode(const struct device *dev, can_mode_t mode);
 
 static inline int z_impl_can_set_mode(const struct device *dev, can_mode_t mode)
 {
-	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
+	__ASSERT_NO_MSG(DEVICE_API_IS(can, dev));
 
-	return api->set_mode(dev, mode);
+	return DEVICE_API_GET(can, dev)->set_mode(dev, mode);
 }
 
 /**
@@ -1456,9 +1456,9 @@ __syscall void can_remove_rx_filter(const struct device *dev, int filter_id);
 
 static inline void z_impl_can_remove_rx_filter(const struct device *dev, int filter_id)
 {
-	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
+	__ASSERT_NO_MSG(DEVICE_API_IS(can, dev));
 
-	api->remove_rx_filter(dev, filter_id);
+	DEVICE_API_GET(can, dev)->remove_rx_filter(dev, filter_id);
 }
 
 /**
@@ -1478,13 +1478,13 @@ __syscall int can_get_max_filters(const struct device *dev, bool ide);
 
 static inline int z_impl_can_get_max_filters(const struct device *dev, bool ide)
 {
-	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
+	__ASSERT_NO_MSG(DEVICE_API_IS(can, dev));
 
-	if (api->get_max_filters == NULL) {
+	if (DEVICE_API_GET(can, dev)->get_max_filters == NULL) {
 		return -ENOSYS;
 	}
 
-	return api->get_max_filters(dev, ide);
+	return DEVICE_API_GET(can, dev)->get_max_filters(dev, ide);
 }
 
 /** @} */
@@ -1514,9 +1514,9 @@ __syscall int can_get_state(const struct device *dev, enum can_state *state,
 static inline int z_impl_can_get_state(const struct device *dev, enum can_state *state,
 				       struct can_bus_err_cnt *err_cnt)
 {
-	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
+	__ASSERT_NO_MSG(DEVICE_API_IS(can, dev));
 
-	return api->get_state(dev, state, err_cnt);
+	return DEVICE_API_GET(can, dev)->get_state(dev, state, err_cnt);
 }
 
 /**
@@ -1541,13 +1541,13 @@ __syscall int can_recover(const struct device *dev, k_timeout_t timeout);
 #ifdef CONFIG_CAN_MANUAL_RECOVERY_MODE
 static inline int z_impl_can_recover(const struct device *dev, k_timeout_t timeout)
 {
-	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
+	__ASSERT_NO_MSG(DEVICE_API_IS(can, dev));
 
-	if (api->recover == NULL) {
+	if (DEVICE_API_GET(can, dev)->recover == NULL) {
 		return -ENOSYS;
 	}
 
-	return api->recover(dev, timeout);
+	return DEVICE_API_GET(can, dev)->recover(dev, timeout);
 }
 #endif /* CONFIG_CAN_MANUAL_RECOVERY_MODE */
 
@@ -1568,9 +1568,9 @@ static inline void can_set_state_change_callback(const struct device *dev,
 						 can_state_change_callback_t callback,
 						 void *user_data)
 {
-	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
+	__ASSERT_NO_MSG(DEVICE_API_IS(can, dev));
 
-	api->set_state_change_callback(dev, callback, user_data);
+	DEVICE_API_GET(can, dev)->set_state_change_callback(dev, callback, user_data);
 }
 
 /** @} */
