@@ -307,7 +307,7 @@ static int w1_gpio_init(const struct device *dev)
 	return 0;
 }
 
-static const struct w1_driver_api w1_gpio_driver_api = {
+static DEVICE_API(w1, w1_gpio_driver_api) = {
 	.reset_bus = w1_gpio_reset_bus,
 	.read_bit = w1_gpio_read_bit,
 	.write_bit = w1_gpio_write_bit,

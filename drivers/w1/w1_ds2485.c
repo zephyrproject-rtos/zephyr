@@ -89,7 +89,7 @@ static int w1_ds2485_init(const struct device *dev)
 	return w1_ds2477_85_init(dev);
 }
 
-static const struct w1_driver_api w1_ds2485_driver_api = {
+static DEVICE_API(w1, w1_ds2485_driver_api) = {
 	.reset_bus = ds2477_85_reset_bus,
 	.read_bit = ds2477_85_read_bit,
 	.write_bit = ds2477_85_write_bit,
