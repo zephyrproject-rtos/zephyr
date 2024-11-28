@@ -1117,7 +1117,11 @@ static int32_t z_tick_sleep(k_ticks_t ticks)
 
 	__ASSERT(!z_is_thread_state_set(arch_current_thread(), _THREAD_SUSPENDED), "");
 
-	ticks = (k_ticks_t)expected_wakeup_ticks - sys_clock_tick_get_32();
+	/* We require a 32 bit unsigned subtraction to care a wraparound */
+	uint32_t left_ticks = expected_wakeup_ticks - sys_clock_tick_get_32();
+
+	/* To handle a negative value correctly, once type-cast it to signed 32 bit */
+	ticks = (k_ticks_t)(int32_t)left_ticks;
 	if (ticks > 0) {
 		return ticks;
 	}
