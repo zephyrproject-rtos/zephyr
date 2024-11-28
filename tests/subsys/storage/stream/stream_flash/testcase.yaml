@@ -7,6 +7,8 @@ common:
 tests:
   storage.stream_flash:
     tags: stream_flash
+    platform_allow:
+      - nrf52840dk/nrf52840
     integration_platforms:
       - nrf52840dk/nrf52840
   storage.stream_flash.simulator.no_explicit_erase:
