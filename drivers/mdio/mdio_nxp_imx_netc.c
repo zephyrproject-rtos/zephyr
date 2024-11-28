@@ -80,7 +80,7 @@ static int nxp_imx_netc_mdio_initialize(const struct device *dev)
 	return 0;
 }
 
-static const struct mdio_driver_api nxp_imx_netc_mdio_api = {
+static DEVICE_API(mdio, nxp_imx_netc_mdio_api) = {
 	.read = nxp_imx_netc_mdio_read,
 	.write = nxp_imx_netc_mdio_write,
 };

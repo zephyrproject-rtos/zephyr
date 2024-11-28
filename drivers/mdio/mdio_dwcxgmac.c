@@ -203,7 +203,7 @@ static int mdio_dwcxgmac_initialize(const struct device *dev)
 	return 0;
 }
 
-static const struct mdio_driver_api mdio_dwcxgmac_driver_api = {
+static DEVICE_API(mdio, mdio_dwcxgmac_driver_api) = {
 	.read = mdio_dwcxgmac_read,
 	.write = mdio_dwcxgmac_write,
 	.bus_enable = mdio_dwcxgmac_bus_enable,
