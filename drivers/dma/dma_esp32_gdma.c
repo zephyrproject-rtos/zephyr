@@ -605,7 +605,7 @@ static int dma_esp32_init(const struct device *dev)
 	return 0;
 }
 
-static const struct dma_driver_api dma_esp32_api = {
+static DEVICE_API(dma, dma_esp32_api) = {
 	.config = dma_esp32_config,
 	.start = dma_esp32_start,
 	.stop = dma_esp32_stop,

@@ -661,7 +661,7 @@ static void edma_channel_release(const struct device *dev, uint32_t chan_id)
 	chan->state = CHAN_STATE_INIT;
 }
 
-static const struct dma_driver_api edma_api = {
+static DEVICE_API(dma, edma_api) = {
 	.reload = edma_reload,
 	.config = edma_config,
 	.start = edma_start,

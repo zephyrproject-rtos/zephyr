@@ -350,11 +350,12 @@ static int dma_sedi_stop(const struct device *dev, uint32_t channel)
 	return 0;
 }
 
-static const struct dma_driver_api dma_funcs = { .config = dma_sedi_chan_config,
-						 .start = dma_sedi_start,
-						 .stop = dma_sedi_stop,
-						 .reload = dma_sedi_reload,
-						 .get_status = NULL
+static DEVICE_API(dma, dma_funcs) = {
+	.config = dma_sedi_chan_config,
+	.start = dma_sedi_start,
+	.stop = dma_sedi_stop,
+	.reload = dma_sedi_reload,
+	.get_status = NULL,
 };
 
 static int dma_sedi_init(const struct device *dev)

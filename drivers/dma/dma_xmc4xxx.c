@@ -457,7 +457,7 @@ static int dma_xmc4xxx_init(const struct device *dev)
 	return 0;
 }
 
-static const struct dma_driver_api dma_xmc4xxx_driver_api = {
+static DEVICE_API(dma, dma_xmc4xxx_driver_api) = {
 	.config = dma_xmc4xxx_config,
 	.reload = dma_xmc4xxx_reload,
 	.start = dma_xmc4xxx_start,

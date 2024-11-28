@@ -332,7 +332,7 @@ static void dma_rpi_pico_isr(const struct device *dev)
 	}
 }
 
-static const struct dma_driver_api dma_rpi_pico_driver_api = {
+static DEVICE_API(dma, dma_rpi_pico_driver_api) = {
 	.config = dma_rpi_pico_config,
 	.reload = dma_rpi_pico_reload,
 	.start = dma_rpi_pico_start,
