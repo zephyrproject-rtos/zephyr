@@ -391,7 +391,7 @@ static void uart_hostlink_poll_out(const struct device *dev, unsigned char c)
 	hl_write_char(1, c);
 }
 
-static const struct uart_driver_api uart_hostlink_driver_api = {
+static DEVICE_API(uart, uart_hostlink_driver_api) = {
 	.poll_in = uart_hostlink_poll_in,
 	.poll_out = uart_hostlink_poll_out,
 };

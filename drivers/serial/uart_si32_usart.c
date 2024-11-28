@@ -219,7 +219,7 @@ static void usart_si32_irq_handler(const struct device *dev)
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-static const struct uart_driver_api usart_si32_driver_api = {
+static DEVICE_API(uart, usart_si32_driver_api) = {
 	.poll_in = usart_si32_poll_in,
 	.poll_out = usart_si32_poll_out,
 	.err_check = usart_si32_err_check,

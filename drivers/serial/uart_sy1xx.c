@@ -296,7 +296,7 @@ static int sy1xx_uart_init(const struct device *dev)
 	return 0;
 }
 
-static const struct uart_driver_api sy1xx_uart_driver_api = {
+static DEVICE_API(uart, sy1xx_uart_driver_api) = {
 
 	.poll_in = sy1xx_uart_poll_in,
 	.poll_out = sy1xx_uart_poll_out,

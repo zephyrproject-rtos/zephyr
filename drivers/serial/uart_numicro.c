@@ -173,7 +173,7 @@ static int uart_numicro_init(const struct device *dev)
 	return 0;
 }
 
-static const struct uart_driver_api uart_numicro_driver_api = {
+static DEVICE_API(uart, uart_numicro_driver_api) = {
 	.poll_in          = uart_numicro_poll_in,
 	.poll_out         = uart_numicro_poll_out,
 	.err_check        = uart_numicro_err_check,

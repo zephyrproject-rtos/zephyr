@@ -198,7 +198,7 @@ static void xen_hvc_irq_callback_set(const struct device *dev,
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-static const struct uart_driver_api xen_hvc_api = {
+static DEVICE_API(uart, xen_hvc_api) = {
 	.poll_in = xen_hvc_poll_in,
 	.poll_out = xen_hvc_poll_out,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN

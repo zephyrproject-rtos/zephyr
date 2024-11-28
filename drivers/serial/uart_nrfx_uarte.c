@@ -2017,7 +2017,7 @@ static void uarte_nrfx_irq_callback_set(const struct device *dev,
 }
 #endif /* UARTE_INTERRUPT_DRIVEN */
 
-static const struct uart_driver_api uart_nrfx_uarte_driver_api = {
+static DEVICE_API(uart, uart_nrfx_uarte_driver_api) = {
 	.poll_in		= uarte_nrfx_poll_in,
 	.poll_out		= uarte_nrfx_poll_out,
 	.err_check		= uarte_nrfx_err_check,

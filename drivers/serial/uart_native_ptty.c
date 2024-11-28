@@ -52,7 +52,7 @@ struct native_uart_status {
 
 static struct native_uart_status native_uart_status_0;
 
-static struct uart_driver_api np_uart_driver_api_0 = {
+static DEVICE_API(uart, np_uart_driver_api_0) = {
 	.poll_out = np_uart_poll_out,
 #if defined(CONFIG_NATIVE_UART_0_ON_OWN_PTY)
 	.poll_in = np_uart_tty_poll_in,
@@ -64,7 +64,7 @@ static struct uart_driver_api np_uart_driver_api_0 = {
 #if defined(CONFIG_UART_NATIVE_POSIX_PORT_1_ENABLE)
 static struct native_uart_status native_uart_status_1;
 
-static struct uart_driver_api np_uart_driver_api_1 = {
+static DEVICE_API(uart, np_uart_driver_api_1) = {
 	.poll_out = np_uart_poll_out,
 	.poll_in = np_uart_tty_poll_in,
 };
