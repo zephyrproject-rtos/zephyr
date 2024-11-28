@@ -20,9 +20,11 @@
 LOG_MODULE_REGISTER(gpd, CONFIG_SOC_LOG_LEVEL);
 
 /* enforce alignment between DT<->nrfs */
-BUILD_ASSERT(GDPWR_POWER_DOMAIN_ACTIVE_FAST == NRF_GPD_FAST_ACTIVE1);
-BUILD_ASSERT(GDPWR_POWER_DOMAIN_ACTIVE_SLOW == NRF_GPD_SLOW_ACTIVE);
-BUILD_ASSERT(GDPWR_POWER_DOMAIN_MAIN_SLOW == NRF_GPD_SLOW_MAIN);
+BUILD_ASSERT(GDPWR_GD_FAST_ACTIVE_0 == NRF_GPD_FAST_ACTIVE0);
+BUILD_ASSERT(GDPWR_GD_FAST_ACTIVE_1 == NRF_GPD_FAST_ACTIVE1);
+BUILD_ASSERT(GDPWR_GD_FAST_MAIN == NRF_GPD_FAST_MAIN);
+BUILD_ASSERT(GDPWR_GD_SLOW_ACTIVE == NRF_GPD_SLOW_ACTIVE);
+BUILD_ASSERT(GDPWR_GD_SLOW_MAIN == NRF_GPD_SLOW_MAIN);
 
 struct gpd_onoff_manager {
 	struct onoff_manager mgr;
@@ -44,10 +46,20 @@ static void stop(struct onoff_manager *mgr, onoff_notify_fn notify);
 #define GPD_SERVICE_REQ_ERR BIT(3)
 static atomic_t gpd_service_status = ATOMIC_INIT(0);
 
+static struct gpd_onoff_manager fast_active0 = {
+	.id = NRF_GPD_FAST_ACTIVE0,
+	.lock = Z_MUTEX_INITIALIZER(fast_active0.lock),
+	.sem = Z_SEM_INITIALIZER(fast_active0.sem, 0, 1),
+};
 static struct gpd_onoff_manager fast_active1 = {
 	.id = NRF_GPD_FAST_ACTIVE1,
 	.lock = Z_MUTEX_INITIALIZER(fast_active1.lock),
 	.sem = Z_SEM_INITIALIZER(fast_active1.sem, 0, 1),
+};
+static struct gpd_onoff_manager fast_main = {
+	.id = NRF_GPD_FAST_MAIN,
+	.lock = Z_MUTEX_INITIALIZER(fast_main.lock),
+	.sem = Z_SEM_INITIALIZER(fast_main.sem, 0, 1),
 };
 static struct gpd_onoff_manager slow_active = {
 	.id = NRF_GPD_SLOW_ACTIVE,
@@ -66,8 +78,12 @@ static const struct onoff_transitions transitions =
 static struct gpd_onoff_manager *get_mgr(uint8_t id)
 {
 	switch (id) {
+	case NRF_GPD_FAST_ACTIVE0:
+		return &fast_active0;
 	case NRF_GPD_FAST_ACTIVE1:
 		return &fast_active1;
+	case NRF_GPD_FAST_MAIN:
+		return &fast_main;
 	case NRF_GPD_SLOW_ACTIVE:
 		return &slow_active;
 	case NRF_GPD_SLOW_MAIN:
@@ -285,7 +301,17 @@ static int nrf_gpd_pre_init(void)
 {
 	int ret;
 
+	ret = onoff_manager_init(&fast_active0.mgr, &transitions);
+	if (ret < 0) {
+		return ret;
+	}
+
 	ret = onoff_manager_init(&fast_active1.mgr, &transitions);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = onoff_manager_init(&fast_main.mgr, &transitions);
 	if (ret < 0) {
 		return ret;
 	}
@@ -321,7 +347,17 @@ static int nrf_gpd_post_init(void)
 	}
 
 	/* submit GD requests now to align collected statuses */
+	ret = nrf_gpd_sync(&fast_active0);
+	if (ret < 0) {
+		goto err;
+	}
+
 	ret = nrf_gpd_sync(&fast_active1);
+	if (ret < 0) {
+		goto err;
+	}
+
+	ret = nrf_gpd_sync(&fast_main);
 	if (ret < 0) {
 		goto err;
 	}
