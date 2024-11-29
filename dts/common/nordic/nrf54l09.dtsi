@@ -1,0 +1,68 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "nrf54l_05_10_15.dtsi"
+
+/delete-node/ &gpio2;
+/delete-node/ &spi00;
+/delete-node/ &uart00;
+/delete-node/ &spi22;
+/delete-node/ &i2c22;
+/delete-node/ &uart22;
+/delete-node/ &pdm20;
+/delete-node/ &pdm21;
+/delete-node/ &pwm20;
+/delete-node/ &pwm21;
+/delete-node/ &pwm22;
+/delete-node/ &i2s20;
+/delete-node/ &qdec20;
+/delete-node/ &qdec21;
+/delete-node/ &nfct;
+
+&cpuapp_sram {
+	reg = <0x20000000 DT_SIZE_K(144)>;
+	ranges = <0x0 0x20000000 DT_SIZE_K(144)>;
+};
+
+/* 144 + 48 = 192KB */
+/ {
+	soc {
+		cpuflpr_sram: memory@20024000 {
+			compatible = "mmio-sram";
+			reg = <0x20024000 DT_SIZE_K(48)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x20024000 DT_SIZE_K(48)>;
+		};
+	};
+	cpus {
+		cpuapp: cpu@0 {
+			clock-frequency = <DT_FREQ_M(64)>;
+		};
+	};
+};
+
+&cpuapp_rram {
+	reg = <0x0 DT_SIZE_K(952)>;
+};
+
+/* 952 + 60 = 1012KB */
+&rram_controller {
+	cpuflpr_rram: rram@ee000 {
+		compatible = "soc-nv-flash";
+		reg = <0xee000 DT_SIZE_K(60)>;
+		erase-block-size = <4096>;
+		write-block-size = <16>;
+	};
+};
+
+&clock {
+  interrupts = <270 NRF_DEFAULT_IRQ_PRIORITY>;
+};
+
+&timer00 {
+        max-frequency = <DT_FREQ_M(64)>;
+};
