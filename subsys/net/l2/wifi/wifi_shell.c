@@ -1572,6 +1572,51 @@ static int cmd_wifi_twt_setup_quick(const struct shell *sh, size_t argc,
 	return 0;
 }
 
+static int cmd_wifi_btwt_setup(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = net_if_get_wifi_sap();
+	struct wifi_twt_params params = {0};
+	int idx = 1;
+	long value;
+	int ret = 0;
+
+	context.sh = sh;
+
+	params.btwt.sub_id = (uint16_t)shell_strtol(argv[idx++], 10, &ret);
+	params.btwt.nominal_wake = (uint8_t)shell_strtol(argv[idx++], 10, &ret);
+	params.btwt.max_sta_support = (uint8_t)shell_strtol(argv[idx++], 10, &ret);
+
+	if (!parse_number(sh, &value, argv[idx++], NULL, 1, 0xFFFF)) {
+		return -EINVAL;
+	}
+	params.btwt.twt_mantissa = (uint16_t)value;
+
+	params.btwt.twt_offset = (uint16_t)shell_strtol(argv[idx++], 10, &ret);
+
+	if (!parse_number(sh, &value, argv[idx++], NULL, 0, WIFI_MAX_TWT_EXPONENT)) {
+		return -EINVAL;
+	}
+	params.btwt.twt_exponent = (uint8_t)value;
+
+	params.btwt.sp_gap = (uint8_t)shell_strtol(argv[idx++], 10, &ret);
+
+	if (ret) {
+		PR_ERROR("Invalid argument (ret %d)\n", ret);
+		return -EINVAL;
+	}
+
+	if (net_mgmt(NET_REQUEST_WIFI_BTWT, iface, &params, sizeof(params))) {
+		PR_WARNING("Failed reason : %s\n",
+			   wifi_twt_get_err_code_str(params.fail_reason));
+
+		return -ENOEXEC;
+	}
+
+	PR("BTWT setup\n");
+
+	return 0;
+}
+
 static int twt_args_to_params(const struct shell *sh, size_t argc, char *argv[],
 				 struct wifi_twt_params *params)
 {
@@ -3344,6 +3389,13 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_twt_ops,
 		"[-h, --help]: Print out command usage.\n",
 		cmd_wifi_twt_setup,
 		23, 1),
+	SHELL_CMD_ARG(
+		btwt_setup, NULL,
+		" Start a BTWT flow:\n"
+		"<sub_id: Broadcast TWT AP config> <nominal_wake: 64-255> <max_sta_support>"
+		"<twt_mantissa:0-sizeof(UINT16)> <twt_offset> <twt_exponent: 0-31> <sp_gap>.\n",
+		cmd_wifi_btwt_setup,
+		8, 0),
 	SHELL_CMD_ARG(teardown, NULL, " Teardown a TWT flow:\n"
 		"<negotiation_type, 0: Individual, 1: Broadcast, 2: Wake TBTT>\n"
 		"<setup_cmd: 0: Request, 1: Suggest, 2: Demand>\n"

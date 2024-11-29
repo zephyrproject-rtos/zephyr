@@ -114,6 +114,7 @@ static const struct wifi_mgmt_ops mgmt_ap_ops = {
 #ifdef CONFIG_WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE
 	.enterprise_creds = supplicant_add_enterprise_creds,
 #endif
+	.set_btwt = supplicant_set_btwt,
 };
 
 DEFINE_WIFI_NM_INSTANCE(hostapd, &mgmt_ap_ops);
