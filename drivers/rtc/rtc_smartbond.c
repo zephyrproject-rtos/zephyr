@@ -583,7 +583,7 @@ static int rtc_smartbond_update_set_callback(const struct device *dev, rtc_updat
 }
 #endif
 
-static const struct rtc_driver_api rtc_smartbond_driver_api = {
+static DEVICE_API(rtc, rtc_smartbond_driver_api) = {
 	.get_time = rtc_smartbond_get_time,
 	.set_time = rtc_smartbond_set_time,
 #if defined(CONFIG_RTC_ALARM)

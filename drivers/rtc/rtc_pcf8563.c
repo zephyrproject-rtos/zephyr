@@ -449,7 +449,7 @@ static int pcf8563_alarm_set_callback(const struct device *dev, uint16_t id,
 #endif
 }
 
-static const struct rtc_driver_api pcf8563_driver_api = {
+static DEVICE_API(rtc, pcf8563_driver_api) = {
 	.set_time = pcf8563_set_time,
 	.get_time = pcf8563_get_time,
 #ifdef CONFIG_RTC_ALARM
