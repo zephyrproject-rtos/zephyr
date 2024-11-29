@@ -61,6 +61,7 @@ config XTENSA_HAL
 config SOC_TOOLCHAIN_NAME
 	default "mtk_mt8195_adsp" if SOC_SERIES_MT8195
 	default "mtk_mt818x_adsp" if SOC_SERIES_MT818X
+	default "mtk_mt8196_adsp" if SOC_SERIES_MT8196
 
 config XTENSA_RESET_VECTOR
 	default n
