@@ -16,4 +16,5 @@ toolchain:
   - xtools
 supported:
   - gpio
+  - dac
 vendor: nxp

@@ -116,6 +116,14 @@ static int frdm_mcxa156_init(void)
 	CLOCK_AttachClk(kFRO12M_to_LPUART0);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dac0))
+	SPC_EnableActiveModeAnalogModules(SPC0, kSPC_controlDac0);
+	CLOCK_SetClockDiv(kCLOCK_DivDAC0, 1u);
+	CLOCK_AttachClk(kFRO12M_to_DAC0);
+
+	CLOCK_EnableClock(kCLOCK_GateDAC0);
+#endif
+
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
 
