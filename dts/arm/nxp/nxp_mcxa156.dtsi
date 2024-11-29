@@ -150,6 +150,15 @@
 				write-block-size = <128>;
 			};
 		};
+
+		dac0: dac@400b4000 {
+			compatible = "nxp,lpdac";
+			reg = <0x400b4000 0x1000>;
+			interrupts = <67 0>;
+			status = "disabled";
+			voltage-reference = <0>;
+			#io-channel-cells = <1>;
+		};
 	};
 };
 
