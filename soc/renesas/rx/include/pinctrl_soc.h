@@ -13,7 +13,8 @@
 
 #include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-rx.h>
 
-#define PORT_POS (8)
+#define PORT_POS     (8)
+#define PFS_BIT_ISEL (6)
 
 #define PIN_MODE_GPIO       (0)
 #define PIN_MODE_PERIPHERAL (1)
