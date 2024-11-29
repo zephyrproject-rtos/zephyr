@@ -106,7 +106,7 @@ configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | ADC       | on-chip    | adc                                 |
 +-----------+------------+-------------------------------------+
-| NETC      | on-chip    | ethernet, mdio                      |
+| NETC      | on-chip    | dsa, ethernet, mdio                 |
 +-----------+------------+-------------------------------------+
 | CAN       | on-chip    | can                                 |
 +-----------+------------+-------------------------------------+
@@ -172,7 +172,35 @@ remaining are not used.
 Ethernet
 ========
 
-NETC driver supports to manage the Physical Station Interface (PSI).
+NETC Ethernet driver supports to manage the Physical Station Interface (PSI).
+NETC DSA driver supports to manage switch ports. Current DSA support is with
+limitation that only switch function is available without management via
+DSA master port. DSA master port support is TODO work.
+
+.. code-block:: none
+
+                   +--------+                  +--------+
+                   | ENETC1 |                  | ENETC0 |
+                   |        |                  |        |
+                   | Pseudo |                  |  1G    |
+                   |  MAC   |                  |  MAC   |
+                   +--------+                  +--------+
+                       | zero copy interface       |
+   +-------------- +--------+----------------+     |
+   |               | Pseudo |                |     |
+   |               |  MAC   |                |     |
+   |               |        |                |     |
+   |               | Port 4 |                |     |
+   |               +--------+                |     |
+   |           SWITCH       CORE             |     |
+   +--------+ +--------+ +--------+ +--------+     |
+   | Port 0 | | Port 1 | | Port 2 | | Port 3 |     |
+   |        | |        | |        | |        |     |
+   |  1G    | |  1G    | |  1G    | |  1G    |     |
+   |  MAC   | |  MAC   | |  MAC   | |  MAC   |     |
+   +--------+-+--------+-+--------+-+--------+     |
+       |          |          |          |          |
+   NETC External Interfaces (4 switch ports, 1 end-point port)
 
 Programming and Debugging
 *************************
