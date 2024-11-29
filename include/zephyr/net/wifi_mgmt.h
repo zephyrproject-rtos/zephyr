@@ -560,6 +560,12 @@ struct wifi_connect_req_params {
 	const uint8_t *identities[WIFI_ENT_IDENTITY_MAX_USERS];
 	/** User Passwords */
 	const uint8_t *passwords[WIFI_ENT_IDENTITY_MAX_USERS];
+	/** Hidden SSID configure
+	 * 0: disabled (default)
+	 * 1: send empty (length=0) SSID in beacon and ignore probe request for broadcast SSID
+	 * 2: clear SSID, but keep the original length and ignore probe request for broadcast SSID
+	 */
+	uint8_t ignore_broadcast_ssid;
 };
 
 /** @brief Wi-Fi connect result codes. To be overlaid on top of \ref wifi_status
