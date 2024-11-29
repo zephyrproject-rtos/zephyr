@@ -354,7 +354,7 @@ static int ambiq_rtc_init(const struct device *dev)
 	return 0;
 }
 
-static const struct rtc_driver_api ambiq_rtc_driver_api = {
+static DEVICE_API(rtc, ambiq_rtc_driver_api) = {
 	.set_time = ambiq_rtc_set_time,
 	.get_time = ambiq_rtc_get_time,
 	/* RTC_UPDATE not supported */

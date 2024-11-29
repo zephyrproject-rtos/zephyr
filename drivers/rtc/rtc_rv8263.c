@@ -680,7 +680,7 @@ int rv8263c8_calibration_get(const struct device *dev, int32_t *calibration)
 }
 #endif
 
-static const struct rtc_driver_api rv8263c8_driver_api = {
+static DEVICE_API(rtc, rv8263c8_driver_api) = {
 	.set_time = rv8263c8_time_set,
 	.get_time = rv8263c8_time_get,
 #if CONFIG_RTC_ALARM

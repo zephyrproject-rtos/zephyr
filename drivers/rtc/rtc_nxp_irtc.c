@@ -356,7 +356,7 @@ static void nxp_irtc_isr(const struct device *dev)
 #endif /* CONFIG_RTC_ALARM */
 }
 
-static const struct rtc_driver_api rtc_nxp_irtc_driver_api = {
+static DEVICE_API(rtc, rtc_nxp_irtc_driver_api) = {
 	.set_time = nxp_irtc_set_time,
 	.get_time = nxp_irtc_get_time,
 #if defined(CONFIG_RTC_ALARM)
