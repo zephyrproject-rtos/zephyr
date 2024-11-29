@@ -158,11 +158,17 @@ struct stream {
 };
 #endif /* CONFIG_ADC_STM32_DMA */
 
+#if defined(CONFIG_SOC_SERIES_STM32N6X)
+typedef uint32_t adc_data_size_t;
+#else
+typedef uint16_t adc_data_size_t;
+#endif
+
 struct adc_stm32_data {
 	struct adc_context ctx;
 	const struct device *dev;
-	uint16_t *buffer;
-	uint16_t *repeat_buffer;
+	adc_data_size_t *buffer;
+	adc_data_size_t *repeat_buffer;
 
 	uint8_t resolution;
 	uint32_t channels;
@@ -224,7 +230,7 @@ static int adc_stm32_dma_start(const struct device *dev,
 	blk_cfg = &dma->dma_blk_cfg;
 
 	/* prepare the block */
-	blk_cfg->block_size = channel_count * sizeof(int16_t);
+	blk_cfg->block_size = channel_count * sizeof(adc_data_size_t);
 
 	/* Source and destination */
 	blk_cfg->source_address = (uint32_t)LL_ADC_DMA_GetRegAddr(adc, LL_ADC_DMA_REG_REGULAR_DATA);
@@ -299,7 +305,7 @@ static int check_buffer(const struct adc_sequence *sequence,
 {
 	size_t needed_buffer_size;
 
-	needed_buffer_size = active_channels * sizeof(uint16_t);
+	needed_buffer_size = active_channels * sizeof(adc_data_size_t);
 
 	if (sequence->options) {
 		needed_buffer_size *= (1 + sequence->options->extra_samplings);
