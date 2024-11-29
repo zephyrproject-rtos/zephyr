@@ -16,15 +16,16 @@ toolchain:
 ram: 64
 flash: 16384
 supported:
+  - adc
   - arduino_gpio
   - arduino_i2c
   - arduino_serial
   - arduino_spi
-  - i2c
   - counter
   - dma
-  - usb_device
-  - spi
-  - adc
+  - flash
   - gpio
+  - i2c
+  - spi
+  - usb_device
 vendor: nxp

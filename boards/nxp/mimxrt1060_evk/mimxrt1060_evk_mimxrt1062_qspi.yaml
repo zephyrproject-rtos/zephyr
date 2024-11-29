@@ -15,15 +15,16 @@ toolchain:
 ram: 32768
 flash: 8192
 supported:
+  - adc
   - arduino_gpio
   - arduino_i2c
   - arduino_serial
   - arduino_spi
-  - adc
   - can
   - counter
   - display
   - dma
+  - flash
   - gpio
   - i2c
   - netif:eth
