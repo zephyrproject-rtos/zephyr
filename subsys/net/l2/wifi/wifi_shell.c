@@ -596,6 +596,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 		{"eap-pwd6", required_argument, 0, 'P'},
 		{"eap-pwd7", required_argument, 0, 'P'},
 		{"eap-pwd8", required_argument, 0, 'P'},
+		{"ignore-broadcast-ssid", required_argument, 0, 'i'},
 		{"ieee-80211r", no_argument, 0, 'R'},
 		{"help", no_argument, 0, 'h'},
 		{0, 0, 0, 0}};
@@ -613,6 +614,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 	size_t offset = 0;
 	long channel;
 	int key_passwd_cnt = 0;
+	int ret = 0;
 
 	/* Defaults */
 	params->band = WIFI_FREQ_BAND_UNKNOWN;
@@ -620,8 +622,9 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 	params->security = WIFI_SECURITY_TYPE_NONE;
 	params->mfp = WIFI_MFP_OPTIONAL;
 	params->eap_ver = 1;
+	params->ignore_broadcast_ssid = 0;
 
-	while ((opt = getopt_long(argc, argv, "s:p:k:e:w:b:c:m:t:a:K:S:V:I:P:Rh",
+	while ((opt = getopt_long(argc, argv, "s:p:k:e:w:b:c:m:t:a:K:S:V:I:P:i:Rh",
 				  long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
@@ -808,13 +811,22 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 		case 'R':
 			params->ft_used = true;
 			break;
+		case 'i':
+			params->ignore_broadcast_ssid = shell_strtol(state->optarg, 10, &ret);
+			break;
 		case 'h':
 			return -ENOEXEC;
 		default:
 			PR_ERROR("Invalid option %c\n", state->optopt);
 			return -EINVAL;
 		}
+
+		if (ret) {
+			PR_ERROR("Invalid argument %d ret %d\n", opt_index, ret);
+			return -EINVAL;
+		}
 	}
+
 	if (params->psk && !secure_connection) {
 		PR_WARNING("Passphrase provided without security configuration\n");
 	}
@@ -851,6 +863,10 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 		}
 	}
 #endif
+	if (params->ignore_broadcast_ssid > 2) {
+		PR_ERROR("Invalid ignore_broadcast_ssid value\n");
+		return -EINVAL;
+	}
 
 	return 0;
 }
@@ -3140,6 +3156,12 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "0:Disable, 1:Optional, 2:Required\n"
 		      "-b --band=<band> (2 -2.6GHz, 5 - 5Ghz, 6 - 6GHz)\n"
 		      "-m --bssid=<BSSID>\n"
+		      "-i --ignore-broadcast-ssid=<type>. Hide SSID in AP mode.\n"
+		      "0: disabled (default)\n"
+		      "1: send empty (length=0) SSID in beacon and ignore probe request for "
+		      "broadcast SSID.\n"
+		      "2: clear SSID (ASCII 0), but keep the original length and ignore "
+		      "probe requests for broadcast SSID.\n"
 		      "[-K, --key1-pwd for eap phase1 or --key2-pwd for eap phase2]:\n"
 		      "Private key passwd for enterprise mode. Default no password for private key.\n"
 		      "[-S, --suiteb-type]: 1:suiteb, 2:suiteb-192. Default 0: not suiteb mode.\n"

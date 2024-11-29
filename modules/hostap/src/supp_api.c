@@ -2232,6 +2232,10 @@ int hapd_config_network(struct hostapd_iface *iface,
 		goto out;
 	}
 
+	if (!hostapd_cli_cmd_v("set ignore_broadcast_ssid %d", params->ignore_broadcast_ssid)) {
+		goto out;
+	}
+
 	return ret;
 out:
 	return -1;
