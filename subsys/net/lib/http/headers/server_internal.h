@@ -51,4 +51,7 @@ int parse_http_frame_header(struct http_client_ctx *client, const uint8_t *buffe
 			    size_t buflen);
 const char *get_frame_type_name(enum http2_frame_type type);
 
+void populate_request_ctx(struct http_request_ctx *req_ctx, uint8_t *data, size_t len,
+			  struct http_header_capture_ctx *header_ctx);
+
 #endif /* HTTP_SERVER_INTERNAL_H_ */

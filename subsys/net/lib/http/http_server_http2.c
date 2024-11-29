@@ -563,6 +563,7 @@ static int dynamic_get_req_v2(struct http_resource_detail_dynamic *dynamic_detai
 	char *ptr;
 	struct http2_frame *frame = &client->current_frame;
 	enum http_data_status status;
+	struct http_request_ctx request_ctx;
 	struct http_response_ctx response_ctx;
 
 	if (client->current_stream == NULL) {
@@ -576,8 +577,9 @@ static int dynamic_get_req_v2(struct http_resource_detail_dynamic *dynamic_detai
 
 	do {
 		memset(&response_ctx, 0, sizeof(response_ctx));
+		populate_request_ctx(&request_ctx, ptr, len, &client->header_capture_ctx);
 
-		ret = dynamic_detail->cb(client, status, ptr, len, &response_ctx,
+		ret = dynamic_detail->cb(client, status, &request_ctx, &response_ctx,
 					 dynamic_detail->user_data);
 		if (ret < 0) {
 			return ret;
@@ -607,14 +609,17 @@ static int dynamic_get_req_v2(struct http_resource_detail_dynamic *dynamic_detai
 }
 
 static int dynamic_post_req_v2(struct http_resource_detail_dynamic *dynamic_detail,
-			       struct http_client_ctx *client)
+			       struct http_client_ctx *client, bool headers_only)
 {
 	int ret = 0;
 	char *ptr = client->cursor;
 	size_t data_len;
 	enum http_data_status status;
 	struct http2_frame *frame = &client->current_frame;
+	struct http_request_ctx request_ctx;
 	struct http_response_ctx response_ctx;
+	struct http_header_capture_ctx *request_headers_ctx =
+		headers_only ? &client->header_capture_ctx : NULL;
 
 	if (dynamic_detail == NULL) {
 		return -ENOENT;
@@ -624,20 +629,26 @@ static int dynamic_post_req_v2(struct http_resource_detail_dynamic *dynamic_deta
 		return -ENOENT;
 	}
 
-	data_len = MIN(frame->length, client->data_len);
-	frame->length -= data_len;
-	client->cursor += data_len;
-	client->data_len -= data_len;
+	if (headers_only) {
+		data_len = 0;
+	} else {
+		data_len = MIN(frame->length, client->data_len);
+		frame->length -= data_len;
+		client->cursor += data_len;
+		client->data_len -= data_len;
+	}
 
-	if (frame->length == 0 && is_header_flag_set(frame->flags, HTTP2_FLAG_END_STREAM)) {
+	if (frame->length == 0 && is_header_flag_set(frame->flags, HTTP2_FLAG_END_STREAM) &&
+	    !headers_only) {
 		status = HTTP_SERVER_DATA_FINAL;
 	} else {
 		status = HTTP_SERVER_DATA_MORE;
 	}
 
 	memset(&response_ctx, 0, sizeof(response_ctx));
+	populate_request_ctx(&request_ctx, ptr, data_len, request_headers_ctx);
 
-	ret = dynamic_detail->cb(client, status, ptr, data_len, &response_ctx,
+	ret = dynamic_detail->cb(client, status, &request_ctx, &response_ctx,
 				 dynamic_detail->user_data);
 	if (ret < 0) {
 		return ret;
@@ -656,8 +667,9 @@ static int dynamic_post_req_v2(struct http_resource_detail_dynamic *dynamic_deta
 	/* Once all data is transferred to application, repeat cb until response is complete */
 	while (!http_response_is_final(&response_ctx, status) && status == HTTP_SERVER_DATA_FINAL) {
 		memset(&response_ctx, 0, sizeof(response_ctx));
+		populate_request_ctx(&request_ctx, ptr, 0, request_headers_ctx);
 
-		ret = dynamic_detail->cb(client, status, ptr, 0, &response_ctx,
+		ret = dynamic_detail->cb(client, status, &request_ctx, &response_ctx,
 					 dynamic_detail->user_data);
 		if (ret < 0) {
 			return ret;
@@ -736,6 +748,17 @@ static int handle_http2_dynamic_resource(
 		if (user_method & BIT(HTTP_POST)) {
 			client->current_stream->current_detail =
 				(struct http_resource_detail *)dynamic_detail;
+
+			/* If there are any header fields to pass to the application, call the
+			 * dynamic handler now with the header data so that this may be cleared to
+			 * re-use for any other concurrent streams
+			 */
+			if (IS_ENABLED(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)) {
+				ret = dynamic_post_req_v2(dynamic_detail, client, true);
+				if (ret < 0) {
+					return ret;
+				}
+			}
 			break;
 		}
 
@@ -838,6 +861,14 @@ static int enter_http_frame_headers_state(struct http_client_ctx *client)
 		client->expect_continuation = true;
 	} else {
 		client->expect_continuation = false;
+	}
+
+	if (IS_ENABLED(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)) {
+		/* Reset header capture state for new headers frame */
+		client->header_capture_ctx.count = 0;
+		client->header_capture_ctx.cursor = 0;
+		client->header_capture_ctx.status = HTTP_HEADER_STATUS_OK;
+		client->header_capture_ctx.current_stream = stream;
 	}
 
 	client->server_state = HTTP_SERVER_FRAME_HEADERS_STATE;
@@ -1022,8 +1053,8 @@ int handle_http1_to_http2_upgrade(struct http_client_ctx *client)
 
 			if (client->method == HTTP_POST) {
 				ret = dynamic_post_req_v2(
-					(struct http_resource_detail_dynamic *)detail,
-					client);
+					(struct http_resource_detail_dynamic *)detail, client,
+					false);
 				if (ret < 0) {
 					goto error;
 				}
@@ -1131,7 +1162,7 @@ int handle_http_frame_data(struct http_client_ctx *client)
 
 	ret = dynamic_post_req_v2(
 		(struct http_resource_detail_dynamic *)client->current_stream->current_detail,
-		client);
+		client, false);
 	if (ret < 0 && ret == -ENOENT) {
 		ret = send_http2_404(client, frame);
 	}
@@ -1176,7 +1207,6 @@ int handle_http_frame_data(struct http_client_ctx *client)
 	return 0;
 }
 
-#if defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)
 static void check_user_request_headers_http2(struct http_header_capture_ctx *ctx,
 					     struct http_hpack_header_buf *hdr_buf)
 {
@@ -1223,14 +1253,13 @@ static void check_user_request_headers_http2(struct http_header_capture_ctx *ctx
 		}
 	}
 }
-#endif /* defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS) */
 
 static int process_header(struct http_client_ctx *client,
 			  struct http_hpack_header_buf *header)
 {
-#if defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)
-	check_user_request_headers_http2(&client->header_capture_ctx, header);
-#endif /* defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS) */
+	if (IS_ENABLED(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)) {
+		check_user_request_headers_http2(&client->header_capture_ctx, header);
+	}
 
 	if (header->name_len == (sizeof(":method") - 1) &&
 	    memcmp(header->name, ":method", header->name_len) == 0) {
@@ -1344,6 +1373,7 @@ static int handle_incomplete_http_header(struct http_client_ctx *client)
 static int handle_http_frame_headers_end_stream(struct http_client_ctx *client)
 {
 	struct http2_frame *frame = &client->current_frame;
+	struct http_request_ctx request_ctx;
 	struct http_response_ctx response_ctx;
 	int ret = 0;
 
@@ -1361,9 +1391,10 @@ static int handle_http_frame_headers_end_stream(struct http_client_ctx *client)
 				client->current_stream->current_detail;
 
 		memset(&response_ctx, 0, sizeof(response_ctx));
+		populate_request_ctx(&request_ctx, NULL, 0, NULL);
 
-		ret = dynamic_detail->cb(client, HTTP_SERVER_DATA_FINAL, NULL, 0, &response_ctx,
-					 dynamic_detail->user_data);
+		ret = dynamic_detail->cb(client, HTTP_SERVER_DATA_FINAL, &request_ctx,
+					 &response_ctx, dynamic_detail->user_data);
 		if (ret < 0) {
 			dynamic_detail->holder = NULL;
 			goto out;
