@@ -1,5 +1,6 @@
 /*
  * Copyright 2023 NXP
+ * Copyright 2024 TiaC Systems
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +10,7 @@
 #include <zephyr/drivers/mipi_dbi.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/sys/byteorder.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mipi_dbi_spi, CONFIG_MIPI_DBI_LOG_LEVEL);
@@ -20,6 +22,8 @@ struct mipi_dbi_spi_config {
 	const struct gpio_dt_spec cmd_data;
 	/* Reset GPIO */
 	const struct gpio_dt_spec reset;
+	/* Minimum transfer bits */
+	const uint8_t xfr_min_bits;
 };
 
 struct mipi_dbi_spi_data {
@@ -37,6 +41,18 @@ struct mipi_dbi_spi_data {
  */
 #define MIPI_DBI_SPI_READ_REQUIRED DT_INST_FOREACH_STATUS_OKAY(_WRITE_ONLY_ABSENT) 0
 uint32_t var = MIPI_DBI_SPI_READ_REQUIRED;
+
+/* Expands to 1 if the node does reflect the enum in `xfr-min-bits` property */
+#define _XFR_8BITS(n) (DT_INST_PROP(n, xfr_min_bits) == MIPI_DBI_SPI_XFR_8BIT) |
+#define _XFR_16BITS(n) (DT_INST_PROP(n, xfr_min_bits) == MIPI_DBI_SPI_XFR_16BIT) |
+
+/* This macros will evaluate to 1 if any of the nodes with zephyr,mipi-dbi-spi
+ * have the `xfr-min-bits` property to corresponding enum value. The intention
+ * here is to allow the write helper functions to be optimized out when not all
+ * minimum transfer bits will be needed.
+ */
+#define MIPI_DBI_SPI_WRITE_8BIT_REQUIRED DT_INST_FOREACH_STATUS_OKAY(_XFR_8BITS) 0
+#define MIPI_DBI_SPI_WRITE_16BIT_REQUIRED DT_INST_FOREACH_STATUS_OKAY(_XFR_16BITS) 0
 
 /* In Type C mode 1 MIPI BIT communication, the 9th bit of the word
  * (first bit sent in each word) indicates if the word is a command or
@@ -93,11 +109,13 @@ out:
 	return ret;
 }
 
+#if MIPI_DBI_SPI_WRITE_8BIT_REQUIRED
+
 static inline int
-mipi_dbi_spi_write_helper_4wire(const struct device *dev,
-				const struct mipi_dbi_config *dbi_config,
-				bool cmd_present, uint8_t cmd,
-				const uint8_t *data_buf, size_t len)
+mipi_dbi_spi_write_helper_4wire_8bit(const struct device *dev,
+				     const struct mipi_dbi_config *dbi_config,
+				     bool cmd_present, uint8_t cmd,
+				     const uint8_t *data_buf, size_t len)
 {
 	const struct mipi_dbi_spi_config *config = dev->config;
 	struct spi_buf buffer;
@@ -140,11 +158,104 @@ out:
 	return ret;
 }
 
+#endif /* MIPI_DBI_SPI_WRITE_8BIT_REQUIRED */
+
+#if MIPI_DBI_SPI_WRITE_16BIT_REQUIRED
+
+static inline int
+mipi_dbi_spi_write_helper_4wire_16bit(const struct device *dev,
+				      const struct mipi_dbi_config *dbi_config,
+				      bool cmd_present, uint8_t cmd,
+				      const uint8_t *data_buf, size_t len)
+{
+	const struct mipi_dbi_spi_config *config = dev->config;
+	struct spi_buf buffer;
+	struct spi_buf_set buf_set = {
+		.buffers = &buffer,
+		.count = 1,
+	};
+	uint16_t data16;
+	int ret = 0;
+
+	/*
+	 * 4 wire mode with toggle the command/data GPIO
+	 * to indicate if we are sending a command or data
+	 * but send 16-bit blocks (with bit stuffing).
+	 */
+
+	if (cmd_present) {
+		data16 = sys_cpu_to_be16(cmd);
+		buffer.buf = &data16;
+		buffer.len = sizeof(data16);
+
+		/* Set CD pin low for command */
+		gpio_pin_set_dt(&config->cmd_data, 0);
+		ret = spi_write(config->spi_dev, &dbi_config->config,
+				&buf_set);
+		if (ret < 0) {
+			goto out;
+		}
+
+		/* Set CD pin high for data, if there are any */
+		if (len > 0) {
+			gpio_pin_set_dt(&config->cmd_data, 1);
+		}
+
+		/* iterate command data */
+		for (int i = 0; i < len; i++) {
+			data16 = sys_cpu_to_be16(data_buf[i]);
+
+			ret = spi_write(config->spi_dev, &dbi_config->config,
+					&buf_set);
+			if (ret < 0) {
+				goto out;
+			}
+		}
+	} else {
+		int stuffing = len % sizeof(data16);
+
+		/* Set CD pin high for data, if there are any */
+		if (len > 0) {
+			gpio_pin_set_dt(&config->cmd_data, 1);
+		}
+
+		/* pass through generic device data */
+		if (len - stuffing > 0) {
+			buffer.buf = (void *)data_buf;
+			buffer.len = len - stuffing;
+
+			ret = spi_write(config->spi_dev, &dbi_config->config,
+					&buf_set);
+			if (ret < 0) {
+				goto out;
+			}
+		}
+
+		/* iterate remaining data with stuffing */
+		for (int i = len - stuffing; i < len; i++) {
+			data16 = sys_cpu_to_be16(data_buf[i]);
+			buffer.buf = &data16;
+			buffer.len = sizeof(data16);
+
+			ret = spi_write(config->spi_dev, &dbi_config->config,
+					&buf_set);
+			if (ret < 0) {
+				goto out;
+			}
+		}
+	}
+out:
+	return ret;
+}
+
+#endif /* MIPI_DBI_SPI_WRITE_16BIT_REQUIRED */
+
 static int mipi_dbi_spi_write_helper(const struct device *dev,
 				     const struct mipi_dbi_config *dbi_config,
 				     bool cmd_present, uint8_t cmd,
 				     const uint8_t *data_buf, size_t len)
 {
+	const struct mipi_dbi_spi_config *config = dev->config;
 	struct mipi_dbi_spi_data *data = dev->data;
 	int ret = 0;
 
@@ -158,20 +269,36 @@ static int mipi_dbi_spi_write_helper(const struct device *dev,
 		ret = mipi_dbi_spi_write_helper_3wire(dev, dbi_config,
 						      cmd_present, cmd,
 						      data_buf, len);
-		if (ret < 0) {
-			goto out;
-		}
-	} else if (dbi_config->mode == MIPI_DBI_MODE_SPI_4WIRE) {
-		ret = mipi_dbi_spi_write_helper_4wire(dev, dbi_config,
-						      cmd_present, cmd,
-						      data_buf, len);
-		if (ret < 0) {
-			goto out;
-		}
-	} else {
-		/* Otherwise, unsupported mode */
-		ret = -ENOTSUP;
+		goto out;
 	}
+
+	if (dbi_config->mode == MIPI_DBI_MODE_SPI_4WIRE) {
+
+#if MIPI_DBI_SPI_WRITE_8BIT_REQUIRED
+		if (config->xfr_min_bits == MIPI_DBI_SPI_XFR_8BIT) {
+			ret = mipi_dbi_spi_write_helper_4wire_8bit(
+							dev, dbi_config,
+							cmd_present, cmd,
+							data_buf, len);
+			goto out;
+		}
+#endif
+
+#if MIPI_DBI_SPI_WRITE_16BIT_REQUIRED
+		if (config->xfr_min_bits == MIPI_DBI_SPI_XFR_16BIT) {
+			ret = mipi_dbi_spi_write_helper_4wire_16bit(
+							dev, dbi_config,
+							cmd_present, cmd,
+							data_buf, len);
+			goto out;
+		}
+#endif
+
+	}
+
+	/* Otherwise, unsupported mode */
+	ret = -ENOTSUP;
+
 out:
 	k_mutex_unlock(&data->lock);
 	return ret;
@@ -433,6 +560,7 @@ static DEVICE_API(mipi_dbi, mipi_dbi_spi_driver_api) = {
 				    DT_INST_PHANDLE(n, spi_dev)),		\
 		    .cmd_data = GPIO_DT_SPEC_INST_GET_OR(n, dc_gpios, {}),	\
 		    .reset = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {}),	\
+		    .xfr_min_bits = DT_INST_PROP(n, xfr_min_bits)               \
 	};									\
 	static struct mipi_dbi_spi_data mipi_dbi_spi_data_##n;			\
 										\

@@ -111,6 +111,34 @@
 #define MIPI_DBI_MODE_8080_BUS_8_BIT 0x8
 
 /**
+ * SPI transfer of DBI commands as 8-bit blocks, the default behaviour in
+ * SPI 4 wire (Type C3) mode. The clocking diagram corresponds exactly to
+ * the illustration of Type C3.
+ */
+#define MIPI_DBI_SPI_XFR_8BIT 8
+/**
+ * SPI transfer of DBI commands as 16-bit blocks, a rare and seldom behaviour
+ * in SPI 4 wire (Type C3) mode. The corresponding clocking diagram is slightly
+ * different to the illustration of Type C3.
+ *
+ *           .-. .-. .-. .-. .-. .-. .-. .-. .-. .-. .-. .-. .-. .-. .-. .-.
+ *     SCK  -' '-' '-' '-' '-' '-' '-' '-' '-' '-' '-' '-' '-' '-' '-' '-' '---
+ *
+ *          -.---.---.---.---.---.---.---.---.---.---.---.---.---.---.---.---.-
+ *     DOUT  |D15|D14|D13|D12|D11|D10| D9| D8| D7| D6| D5| D4| D3| D2| D1| D0|
+ *          -'---'---'---'---'---'---'---'---'---'---'---'---'---'---'---'---'-
+ *           | Word 1             (stuffing) :                        (byte) |
+ *
+ *          -.								     .-
+ *     CS    '---------------------------------------------------------------'
+ *
+ *          -.---------------------------------------------------------------.-
+ *     CD    |                              D/C                              |
+ *          -'---------------------------------------------------------------'-
+ */
+#define MIPI_DBI_SPI_XFR_16BIT 16
+
+/**
  * @}
  */
 
