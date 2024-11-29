@@ -161,7 +161,7 @@ zephyr_library_sources_ifdef(CONFIG_NRF70_STA_MODE
 )
 
 zephyr_library_sources_ifdef(CONFIG_NRF70_PROMISC_DATA_RX
-  ${OS_AGNOSTIC_BASE}/fw_if/umac_if/src/fmac_promisc.c
+  ${NRF_WIFI_DIR}/fw_if/umac_if/src/fmac_promisc.c
 )
 
 zephyr_library_sources_ifdef(CONFIG_NRF70_AP_MODE
