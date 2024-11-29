@@ -2088,6 +2088,12 @@ struct bt_gatt_subscribe_params {
  *  notified value. One may then decide whether to unsubscribe directly from
  *  this callback. Notification callback with NULL data will not be called if
  *  subscription was removed by this method.
+ *  If user/application A subscribed to notifications and user/application
+ *  B subscribed to indications, both users/applications will receive the notify
+ *  callback for notifications and indications. The notify callback does not
+ *  inform if it was a notification or indication. This is a corner case since
+ *  most applications will only subscribe once and for either notification
+ *  or indication.
  *
  *  The Response comes in callback @p params->subscribe. The callback is run from
  *  the context specified by 'config BT_RECV_CONTEXT'.
@@ -2106,6 +2112,8 @@ struct bt_gatt_subscribe_params {
  *
  *  @retval 0 Successfully queued request. Will call @p params->write on
  *  resolution.
+ *
+ *  @retval -EINVAL if the @p params->value is out of range
  *
  *  @retval -ENOMEM ATT request queue is full and blocking would cause deadlock.
  *  Allow a pending request to resolve before retrying, or call this function

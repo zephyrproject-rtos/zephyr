@@ -521,6 +521,12 @@ Bluetooth Classic
 Bluetooth Host
 ==============
 
+* :c:func:`bt_gatt_subscribe` behavior has changed to if a different user/application has already
+  subscribed to the same handle. If user/application A subscribed to notifications and user/application
+  B subscribed to indications, both users/applications will receive the notify callback for notifications
+  and indications. The notify callback does not inform if it was a notification or indication. This is a
+  corner case since most applications will only subscribe once and for either notification or indication.
+
 * :kconfig:option:`CONFIG_BT_BUF_ACL_RX_COUNT` has been deprecated. The number of ACL RX buffers is
   now computed internally and is equal to :kconfig:option:`CONFIG_BT_MAX_CONN` + 1. If an application
   needs more buffers, it can use the new :kconfig:option:`CONFIG_BT_BUF_ACL_RX_COUNT_EXTRA` to add

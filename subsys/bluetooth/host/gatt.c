@@ -5456,7 +5456,7 @@ int bt_gatt_subscribe(struct bt_conn *conn,
 {
 	struct gatt_sub *sub;
 	struct bt_gatt_subscribe_params *tmp;
-	bool has_subscription = false;
+	int err;
 
 	__ASSERT(conn, "invalid parameters\n");
 	__ASSERT(params && params->notify,  "invalid parameters\n");
@@ -5471,6 +5471,11 @@ int bt_gatt_subscribe(struct bt_conn *conn,
 
 	if (conn->state != BT_CONN_CONNECTED) {
 		return -ENOTCONN;
+	}
+
+	if (!IN_RANGE(params->value, BT_GATT_CCC_NOTIFY,
+		      BT_GATT_CCC_NOTIFY | BT_GATT_CCC_INDICATE)) {
+		return -EINVAL;
 	}
 
 	sub = gatt_sub_add(conn);
@@ -5494,26 +5499,20 @@ int bt_gatt_subscribe(struct bt_conn *conn,
 		}
 
 		/* Check if another subscription exists */
-		if (tmp->value_handle == params->value_handle &&
-		    tmp->value >= params->value) {
-			has_subscription = true;
+		if (tmp->value_handle == params->value_handle) {
+			params->value |= tmp->value;
 		}
 	}
 
-	/* Skip write if already subscribed */
-	if (!has_subscription) {
-		int err;
-
 #if defined(CONFIG_BT_GATT_AUTO_DISCOVER_CCC)
-		if (params->ccc_handle == BT_GATT_AUTO_DISCOVER_CCC_HANDLE) {
-			return gatt_ccc_discover(conn, params);
-		}
+	if (params->ccc_handle == BT_GATT_AUTO_DISCOVER_CCC_HANDLE) {
+		return gatt_ccc_discover(conn, params);
+	}
 #endif
-		err = gatt_write_ccc(conn, params, gatt_write_ccc_rsp);
-		if (err) {
-			gatt_sub_remove(conn, sub, NULL, NULL);
-			return err;
-		}
+	err = gatt_write_ccc(conn, params, gatt_write_ccc_rsp);
+	if (err) {
+		gatt_sub_remove(conn, sub, NULL, NULL);
+		return err;
 	}
 
 	/*
