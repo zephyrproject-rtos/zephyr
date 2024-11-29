@@ -45,7 +45,6 @@ Additionally, Nanopb is an optional module and needs to be added explicitly to t
 
    west config manifest.project-filter -- +nanopb
    west update
-   west packages pip --install
 
 Configuration
 *************
