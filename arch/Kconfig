@@ -449,9 +449,8 @@ config ISR_TABLES_LOCAL_DECLARATION_SUPPORTED
 	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr" || "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "gnuarmemb"
 
 config ISR_TABLES_LOCAL_DECLARATION
-	bool "ISR tables created locally and placed by linker [EXPERIMENTAL]"
+	bool "ISR tables created locally and placed by linker"
 	depends on ISR_TABLES_LOCAL_DECLARATION_SUPPORTED
-	select EXPERIMENTAL
 	help
 	  Enable new scheme of interrupt tables generation.
 	  This is totally different generator that would create tables entries locally
