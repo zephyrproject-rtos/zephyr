@@ -12,10 +12,6 @@
 #include <offsets_short_arch.h>
 #include <ksched.h>
 
-#if !defined(__GNUC__)
-#error __FILE__ goes only with Cortex-M GCC
-#endif
-
 #if !defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) && \
 	!defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 #error "Unsupported architecture"
