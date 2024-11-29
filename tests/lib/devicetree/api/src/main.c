@@ -76,6 +76,20 @@
 #define TEST_DMA_CTLR_1 DT_NODELABEL(test_dma1)
 #define TEST_DMA_CTLR_2 DT_NODELABEL(test_dma2)
 
+#define TEST_VIDEO2           DT_NODELABEL(test_video2)
+#define TEST_VIDEO2_PORT0     DT_NODELABEL(test_video2_port0)
+#define TEST_VIDEO2_PORT0_IN0 DT_NODELABEL(test_video2_port0_in0)
+#define TEST_VIDEO2_PORT0_IN1 DT_NODELABEL(test_video2_port0_in1)
+#define TEST_VIDEO2_PORT1     DT_NODELABEL(test_video2_port1)
+#define TEST_VIDEO2_PORT1_IN  DT_NODELABEL(test_video2_port1_in)
+#define TEST_VIDEO0           DT_NODELABEL(test_video0)
+#define TEST_VIDEO0_OUT       DT_NODELABEL(test_video0_out)
+#define TEST_VIDEO0_PORT      DT_NODELABEL(test_video0_port)
+#define TEST_VIDEO1           DT_NODELABEL(test_video1)
+#define TEST_VIDEO1_OUT0      DT_NODELABEL(test_video1_out0)
+#define TEST_VIDEO1_OUT1      DT_NODELABEL(test_video1_out1)
+#define TEST_VIDEO1_PORT      DT_NODELABEL(test_video1_port)
+
 #define TEST_IO_CHANNEL_CTLR_1 DT_NODELABEL(test_adc_1)
 #define TEST_IO_CHANNEL_CTLR_2 DT_NODELABEL(test_adc_2)
 
@@ -1307,6 +1321,78 @@ ZTEST(devicetree_api, test_dma)
 	zassert_true(DT_INST_DMAS_HAS_IDX(0, 1), "");
 	zassert_false(DT_DMAS_HAS_IDX(TEST_TEMP, 2), "");
 	zassert_false(DT_INST_DMAS_HAS_IDX(0, 2), "");
+}
+
+#undef DT_DRV_COMPAT
+DT_FOREACH_STATUS_OKAY_VARGS(vnd_video_single_port, DEVICE_DT_DEFINE, NULL, NULL, NULL, NULL,
+			     POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY, NULL);
+DT_FOREACH_STATUS_OKAY_VARGS(vnd_video_multi_port, DEVICE_DT_DEFINE, NULL, NULL, NULL, NULL,
+			     POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY, NULL);
+ZTEST(devicetree_api, test_video)
+{
+	/* DT_INST_PORT_BY_ID */
+#define DT_DRV_COMPAT vnd_video_single_port
+	zassert_true(DT_SAME_NODE(DT_INST_PORT_BY_ID(0, 0),
+				  TEST_VIDEO0_PORT), "get port node of video0");
+	zassert_true(DT_SAME_NODE(DT_INST_PORT_BY_ID(1, 0), TEST_VIDEO1_PORT),
+		     "get port node of video1");
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_video_multi_port
+	zassert_true(DT_SAME_NODE(DT_INST_PORT_BY_ID(0, 0), TEST_VIDEO2_PORT0),
+		     "get port@0 node of video2");
+	zassert_true(DT_SAME_NODE(DT_INST_PORT_BY_ID(0, 1), TEST_VIDEO2_PORT1),
+		     "get port@1 node of video2");
+#undef DT_DRV_COMPAT
+
+	/* DT_INST_ENDPOINT_BY_ID */
+#define DT_DRV_COMPAT vnd_video_single_port
+	zassert_true(DT_SAME_NODE(DT_INST_ENDPOINT_BY_ID(0, 0, 0), TEST_VIDEO0_OUT),
+		     "get endpoint node of port node of video0");
+	zassert_true(DT_SAME_NODE(DT_INST_ENDPOINT_BY_ID(1, 0, 0), TEST_VIDEO1_OUT0),
+		     "get endpoint@0 node of port node of video1");
+	zassert_true(DT_SAME_NODE(DT_INST_ENDPOINT_BY_ID(1, 0, 1), TEST_VIDEO1_OUT1),
+		     "get endpoint@1 node of port node of video1");
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_video_multi_port
+	zassert_true(DT_SAME_NODE(DT_INST_ENDPOINT_BY_ID(0, 0, 0), TEST_VIDEO2_PORT0_IN0),
+		     "get endpoint@0 node of port@0 node of video2");
+	zassert_true(DT_SAME_NODE(DT_INST_ENDPOINT_BY_ID(0, 0, 1), TEST_VIDEO2_PORT0_IN1),
+		     "get endpoint@1 node of port@0 node of video2");
+	zassert_true(DT_SAME_NODE(DT_INST_ENDPOINT_BY_ID(0, 1, 0), TEST_VIDEO2_PORT1_IN),
+		     "get endpoint node of port@1 node of video2");
+#undef DT_DRV_COMPAT
+
+	/* DT_NODE_BY_ENDPOINT */
+	zassert_true(DT_SAME_NODE(DT_NODE_BY_ENDPOINT(TEST_VIDEO0_OUT),
+				  TEST_VIDEO0), "get video0 node from its endpoint");
+	zassert_true(DT_SAME_NODE(DT_NODE_BY_ENDPOINT(TEST_VIDEO1_OUT0), TEST_VIDEO1),
+		     "get video1 node from its endpoint@0");
+	zassert_true(DT_SAME_NODE(DT_NODE_BY_ENDPOINT(TEST_VIDEO1_OUT1), TEST_VIDEO1),
+		     "get video1 node from its endpoint@1");
+	zassert_true(DT_SAME_NODE(DT_NODE_BY_ENDPOINT(TEST_VIDEO2_PORT0_IN0), TEST_VIDEO2),
+		     "get video2 node from its endpoint@0 at port@0");
+	zassert_true(DT_SAME_NODE(DT_NODE_BY_ENDPOINT(TEST_VIDEO2_PORT0_IN1), TEST_VIDEO2),
+		     "get video2 node from its endpoint@1 at port@0");
+	zassert_true(DT_SAME_NODE(DT_NODE_BY_ENDPOINT(TEST_VIDEO2_PORT1_IN), TEST_VIDEO2),
+		     "get video2 node from its endpoint at port@1");
+
+	/* DT_NODE_REMOTE_DEVICE */
+#define DT_DRV_COMPAT vnd_video_single_port
+	zassert_true(DT_SAME_NODE(DT_NODE_REMOTE_DEVICE(TEST_VIDEO0_OUT), TEST_VIDEO2),
+			 "get remote device node of video0's endpoint");
+	zassert_true(DT_SAME_NODE(DT_NODE_REMOTE_DEVICE(TEST_VIDEO1_OUT0), TEST_VIDEO2),
+		     "get remote device node of video1's endpoint@0");
+	zassert_true(DT_SAME_NODE(DT_NODE_REMOTE_DEVICE(TEST_VIDEO1_OUT1), TEST_VIDEO2),
+		     "get remote device node of video1's endpoint@1");
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_video_multi_port
+	zassert_true(DT_SAME_NODE(DT_NODE_REMOTE_DEVICE(TEST_VIDEO2_PORT0_IN0), TEST_VIDEO0),
+		     "get remote device node of video2's port@0 endpoint@0");
+	zassert_true(DT_SAME_NODE(DT_NODE_REMOTE_DEVICE(TEST_VIDEO2_PORT0_IN1), TEST_VIDEO1),
+		     "get remote device node of video2's port@0 endpoint@1");
+	zassert_true(DT_SAME_NODE(DT_NODE_REMOTE_DEVICE(TEST_VIDEO2_PORT1_IN), TEST_VIDEO1),
+		     "get remote device node of video2's port@1 endpoint");
+#undef DT_DRV_COMPAT
 }
 
 #undef DT_DRV_COMPAT
