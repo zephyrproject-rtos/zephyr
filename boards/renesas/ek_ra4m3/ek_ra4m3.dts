@@ -124,3 +124,14 @@
 	interrupt-names = "gtioca", "overflow";
 	status = "okay";
 };
+
+&iic0 {
+	pinctrl-0 = <&iic0_default>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <DT_FREQ_M(1)>;
+	interrupts = <87 1>, <88 1>, <89 1>, <90 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
+};

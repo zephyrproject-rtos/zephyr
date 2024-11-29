@@ -98,3 +98,14 @@
 &trng {
 	status = "okay";
 };
+
+&iic0 {
+	pinctrl-0 = <&iic0_default>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <DT_FREQ_M(1)>;
+	interrupts = <0 1>, <1 1>, <2 1>, <3 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
+};
