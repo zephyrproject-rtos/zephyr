@@ -46,3 +46,14 @@ LPCMP positive input port voltage by changing the voltage input to J2-8.
    :board: frdm_mcxn236
    :goals: build flash
    :compact:
+
+Building and Running for NXP FRDM-MCXA156
+=========================================
+Build the application for the :zephyr:board:`frdm_mcxa156` board, and adjust the
+LPCMP positive input port voltage by changing the voltage input to J2-9.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/sensor/mcux_lpcmp
+   :board: frdm_mcxa156
+   :goals: build flash
+   :compact:
