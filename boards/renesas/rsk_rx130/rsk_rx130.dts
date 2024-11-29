@@ -9,6 +9,7 @@
 #include <renesas/r5f513083xfb.dtsi>
 #include <dt-bindings/gpio/gpio.h>
 #include "rsk_rx130_512kb-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "Renesas RSK+RX130-512KB KIT";
@@ -35,9 +36,20 @@
 		};
 	};
 
+	buttons {
+		compatible = "gpio-keys";
+
+		sw1: button {
+			label = "Key";
+			gpios = <&ioport3 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
 	aliases {
 		led0 = &led1;
 		led1 = &led3;
+		sw0 = &sw1;
 	};
 };
 
@@ -93,5 +105,8 @@
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
 	clock-frequency = <DT_FREQ_K(400)>;
+};
+
+&port_irq1 {
 	status = "okay";
 };
