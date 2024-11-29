@@ -20,6 +20,7 @@ supported:
   - arduino_spi
   - can
   - counter
+  - flash
   - gpio
   - i2c
   - spi

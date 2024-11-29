@@ -15,12 +15,13 @@ toolchain:
 ram: 128
 flash: 16384
 supported:
-  - gpio
-  - uart
-  - i2c
-  - counter
   - adc
-  - netif:eth
   - can
+  - counter
+  - flash
+  - gpio
+  - i2c
+  - netif:eth
   - pwm
+  - uart
 vendor: nxp
