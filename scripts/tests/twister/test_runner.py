@@ -467,6 +467,7 @@ def test_cmake_run_cmake(
     cmake.options.overflow_as_errors = False
     cmake.env = mock.Mock()
     cmake.env.generator = 'dummy_generator'
+    cmake.env.options.force_platform_toolchain = []
 
     cmake_path = os.path.join('dummy', 'cmake')
 
