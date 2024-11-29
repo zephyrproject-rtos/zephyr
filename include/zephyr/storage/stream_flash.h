@@ -65,7 +65,9 @@ struct stream_flash_ctx {
 	stream_flash_callback_t callback; /* Callback invoked after write op */
 #endif
 #ifdef CONFIG_STREAM_FLASH_ERASE
-	off_t last_erased_page_start_offset; /* Last erased offset */
+	size_t erased_up_to;		/* Offset of last erased byte, relative to
+					 * offset in this context.
+					 */
 #endif
 	size_t write_block_size;	/* Offset/size device write alignment */
 	uint8_t erase_value;
