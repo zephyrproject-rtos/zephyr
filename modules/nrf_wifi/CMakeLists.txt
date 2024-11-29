@@ -131,17 +131,24 @@ zephyr_library_sources(
   ${NRF_WIFI_DIR}/fw_if/umac_if/src/fmac_api_common.c
 )
 
-zephyr_library_sources_ifndef(CONFIG_NRF70_RADIO_TEST
-  ${NRF_WIFI_DIR}/fw_if/umac_if/src/rx.c
-  ${NRF_WIFI_DIR}/fw_if/umac_if/src/fmac_vif.c
-  ${NRF_WIFI_DIR}/fw_if/umac_if/src/fmac_util.c
-  ${NRF_WIFI_DIR}/fw_if/umac_if/src/default/fmac_api.c
-)
-
-zephyr_library_sources_ifdef(CONFIG_NRF70_RADIO_TEST
-  ${NRF_WIFI_DIR}/fw_if/umac_if/src/radio_test/fmac_api.c
-  ${NRF_WIFI_DIR}/fw_if/umac_if/src/fmac_util.c
-)
+if(CONFIG_NRF70_RADIO_TEST)
+  zephyr_library_sources(
+    ${NRF_WIFI_DIR}/fw_if/umac_if/src/radio_test/fmac_api.c
+    ${NRF_WIFI_DIR}/fw_if/umac_if/src/fmac_util.c
+  )
+elseif(CONFIG_NRF70_OFFLOADED_RAW_TX)
+  zephyr_library_sources(
+    ${NRF_WIFI_DIR}/fw_if/umac_if/src/offload_raw_tx/fmac_api.c
+    ${NRF_WIFI_DIR}/fw_if/umac_if/src/fmac_util.c
+  )
+else()
+  zephyr_library_sources(
+    ${NRF_WIFI_DIR}/fw_if/umac_if/src/rx.c
+    ${NRF_WIFI_DIR}/fw_if/umac_if/src/fmac_vif.c
+    ${NRF_WIFI_DIR}/fw_if/umac_if/src/fmac_util.c
+    ${NRF_WIFI_DIR}/fw_if/umac_if/src/default/fmac_api.c
+  )
+endif()
 
 zephyr_library_sources_ifdef(CONFIG_NRF70_DATA_TX
   ${NRF_WIFI_DIR}/fw_if/umac_if/src/tx.c
