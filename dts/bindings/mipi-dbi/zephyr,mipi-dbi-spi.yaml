@@ -27,6 +27,22 @@ properties:
     description: |
       Reset GPIO pin. Set high to reset the display
 
+  xfr-min-bits:
+    type: int
+    default: 8
+    description:
+      On rare types of SPI interfaces, discrete shift registers can be found
+      whose task is to convert the serial SPI bit stream to the parallel MCU
+      interface with clock and bit accuracy. Typically, these are 16 bits wide.
+
+      Use the macros, not the actual enum value. Here is the concordance list
+      (see dt-bindings/mipi_dbi/mipi_dbi.h)
+         8     MIPI_DBI_SPI_XFR_8BIT
+        16     MIPI_DBI_SPI_XFR_16BIT
+    enum:
+      - 8
+      - 16
+
   write-only:
     type: boolean
     description: |
