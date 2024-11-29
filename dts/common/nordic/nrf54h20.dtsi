@@ -605,7 +605,8 @@
 				reg = <0x8d8000 0x400>, <0x2fbef800 0x800>, <0x2fbe8000 0x7800>;
 				reg-names = "wrapper", "m_can", "message_ram";
 				interrupts = <216 NRF_DEFAULT_IRQ_PRIORITY>;
-				clocks = <&canpll>;
+				clocks = <&canpll>, <&hsfll120>;
+				clock-names = "auxpll", "hsfll";
 				power-domains = <&gpd NRF_GPD_FAST_ACTIVE1>;
 				bosch,mram-cfg = <0x0 28 8 3 3 0 1 1>;
 				status = "disabled";
