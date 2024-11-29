@@ -843,6 +843,13 @@ config NXP_WIFI_11AX_TWT
 	help
 	  This option enables 11ax TWT in the Wi-Fi driver.
 
+config NXP_WIFI_PKT_FWD
+	bool "Wi-Fi packet forward"
+	default y if NXP_RW610
+	depends on NXP_WIFI_SOFTAP_SUPPORT
+	help
+	  This option enables Wi-Fi packet forward on SoftAP.
+
 config NXP_WIFI_DTIM_PERIOD
 	bool "Wi-Fi DTIM period"
 	default y
