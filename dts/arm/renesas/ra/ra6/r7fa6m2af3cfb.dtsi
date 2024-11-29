@@ -23,5 +23,10 @@
 				erase-block-size = <8192>;
 			};
 		};
+
+		trng: trng {
+			compatible = "renesas,ra-sce7-rng";
+			status = "disabled";
+		};
 	};
 };
