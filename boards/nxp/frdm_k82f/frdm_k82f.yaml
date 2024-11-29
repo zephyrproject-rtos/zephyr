@@ -15,6 +15,7 @@ supported:
   - arduino_spi
   - counter
   - dma
+  - flash
   - gpio
   - i2c
   - nvs

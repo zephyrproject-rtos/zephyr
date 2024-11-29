@@ -15,9 +15,10 @@ toolchain:
   - gnuarmemb
   - xtools
 supported:
+  - counter
+  - flash
   - gpio
   - uart
-  - counter
 testing:
   ignore_tags:
     - net

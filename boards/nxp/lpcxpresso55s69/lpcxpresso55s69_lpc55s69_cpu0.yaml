@@ -21,6 +21,7 @@ supported:
   - arduino_serial
   - arduino_spi
   - counter
+  - flash
   - gpio
   - i2c
   - i2s
