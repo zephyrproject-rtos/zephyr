@@ -178,6 +178,12 @@ Bluetooth
 Bluetooth HCI
 =============
 
+* The :kconfig:option:`BT_CTLR` has been deprecated. A new :kconfig:option:`HAS_BT_CTLR` has been
+  introduced which should be selected by the respective link layer Kconfig options (e.g. a
+  HCI driver option, or the one for the upstream controller). It's recommended that all HCI drivers
+  for local link layers select the new option, since that opens up the possibility of indicating
+  build-time support for specific features, which e.g. the host stack can take advantage of.
+
 Bluetooth Mesh
 ==============
 
