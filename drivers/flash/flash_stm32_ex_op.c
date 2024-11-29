@@ -252,6 +252,41 @@ int flash_stm32_ex_op(const struct device *dev, uint16_t code,
 		rv = flash_stm32_control_register_disable(dev);
 		break;
 #endif /* CONFIG_FLASH_STM32_BLOCK_REGISTERS */
+#if defined(CONFIG_FLASH_STM32_OPTION_BYTES) && ( \
+		defined(CONFIG_DT_HAS_ST_STM32F4_FLASH_CONTROLLER_ENABLED) || \
+		defined(CONFIG_DT_HAS_ST_STM32F7_FLASH_CONTROLLER_ENABLED) || \
+		defined(CONFIG_DT_HAS_ST_STM32G4_FLASH_CONTROLLER_ENABLED) || \
+		defined(CONFIG_DT_HAS_ST_STM32L4_FLASH_CONTROLLER_ENABLED))
+	case FLASH_STM32_EX_OP_OPTB_READ:
+		if (out == NULL) {
+			rv = -EINVAL;
+			break;
+		}
+
+		*(uint32_t *)out = flash_stm32_option_bytes_read(dev);
+		rv = 0;
+
+		break;
+	case FLASH_STM32_EX_OP_OPTB_WRITE:
+		int rv2;
+
+		rv = flash_stm32_option_bytes_lock(dev, false);
+		if (rv > 0) {
+			break;
+		}
+
+		rv2 = flash_stm32_option_bytes_write(dev, UINT32_MAX, (uint32_t)in);
+		/* returned later, we always re-lock */
+
+		rv = flash_stm32_option_bytes_lock(dev, true);
+		if (rv > 0) {
+			break;
+		}
+
+		rv = rv2;
+
+		break;
+#endif
 	}
 
 	flash_stm32_sem_give(dev);
