@@ -774,4 +774,68 @@ config SHELL_BACKEND_ADSP_MEMORY_WINDOW_POLL_INTERVAL
 
 endif # SHELL_BACKEND_ADSP_MEMORY_WINDOW
 
+config SHELL_BACKEND_BLE
+	bool "BLE backend."
+	depends on BT
+	help
+	  Enable BLE backend which can be used to execute commands over a BLE
+	  connection.
+
+if SHELL_BACKEND_BLE
+
+config SHELL_PROMPT_BLE
+	string "Displayed prompt name"
+	default "ble:~$ "
+	help
+	  Displayed prompt name for BLE backend. If prompt is set, the shell will
+	  send two newlines during initialization.
+
+config SHELL_BACKEND_BLE_BUF_SIZE
+	int "Size of BLE buffer size"
+	default 400 if LOG_PRINTK
+	default 300
+	help
+	  This is size of output buffer that will be used by BLE backend, this limits number of
+	  characters that will be captured from command output.
+
+config SHELL_BACKEND_BLE_DEBUG
+	bool "Debug mode"
+	help
+	  Enables extra shell features that are useful during BLE debugging.
+
+choice
+	prompt "Initial log level limit"
+	default SHELL_BLE_INIT_LOG_LEVEL_INF
+
+config SHELL_BLE_INIT_LOG_LEVEL_DEFAULT
+	bool "System limit (LOG_MAX_LEVEL)"
+
+config SHELL_BLE_INIT_LOG_LEVEL_DBG
+	bool "Debug"
+
+config SHELL_BLE_INIT_LOG_LEVEL_INF
+	bool "Info"
+
+config SHELL_BLE_INIT_LOG_LEVEL_WRN
+	bool "Warning"
+
+config SHELL_BLE_INIT_LOG_LEVEL_ERR
+	bool "Error"
+
+config SHELL_BLE_INIT_LOG_LEVEL_NONE
+	bool "None"
+
+endchoice
+
+config SHELL_BLE_INIT_LOG_LEVEL
+	int
+	default 0 if SHELL_BLE_INIT_LOG_LEVEL_NONE
+	default 1 if SHELL_BLE_INIT_LOG_LEVEL_ERR
+	default 2 if SHELL_BLE_INIT_LOG_LEVEL_WRN
+	default 3 if SHELL_BLE_INIT_LOG_LEVEL_INF
+	default 4 if SHELL_BLE_INIT_LOG_LEVEL_DBG
+	default 5 if SHELL_BLE_INIT_LOG_LEVEL_DEFAULT
+
+endif # SHELL_BACKEND_BLE
+
 endif # SHELL_BACKENDS

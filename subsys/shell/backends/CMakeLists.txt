@@ -39,3 +39,8 @@ zephyr_sources_ifdef(
   CONFIG_SHELL_BACKEND_ADSP_MEMORY_WINDOW
   shell_adsp_memory_window.c
 )
+
+zephyr_sources_ifdef(
+  CONFIG_SHELL_BACKEND_BLE
+  shell_ble.c
+)
