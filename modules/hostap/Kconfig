@@ -240,6 +240,10 @@ config EAP_FAST
 config EAP_ALL
 	bool "All EAP methods support"
 	select EAP_TLS
+	select EAP_PEAP
+	select EAP_GTC
+	select EAP_TTLS
+	select EAP_MSCHAPV2
 	default y if WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 
 config WIFI_NM_WPA_SUPPLICANT_WPA3
