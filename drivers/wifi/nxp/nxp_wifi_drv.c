@@ -49,7 +49,9 @@ LOG_MODULE_REGISTER(nxp_wifi, CONFIG_WIFI_LOG_LEVEL);
  ******************************************************************************/
 static int s_nxp_wifi_State = NXP_WIFI_NOT_INITIALIZED;
 static bool s_nxp_wifi_StaConnected;
+#ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
 static bool s_nxp_wifi_UapActivated;
+#endif
 static struct k_event s_nxp_wifi_SyncEvent;
 
 static struct nxp_wifi_dev nxp_wifi0; /* static instance */
@@ -59,7 +61,7 @@ static struct wlan_network nxp_wlan_network;
 static struct wlan_network nxp_wlan_uap_network;
 #endif
 
-#ifndef CONFIG_WIFI_NM_HOSTAPD_AP
+#if defined(CONFIG_NXP_WIFI_SOFTAP_SUPPORT) && !defined(CONFIG_WIFI_NM_HOSTAPD_AP)
 static char uap_ssid[IEEEtypes_SSID_SIZE + 1];
 #endif
 
@@ -103,9 +105,9 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 	struct in_addr dhcps_addr4;
 	struct in_addr base_addr;
 	struct in_addr netmask_addr;
-#endif
 	struct wifi_iface_status status = { 0 };
 	struct wifi_ap_sta_info ap_sta_info = { 0 };
+#endif
 
 	LOG_DBG("WLAN: received event %d", reason);
 
@@ -1702,6 +1704,7 @@ static int nxp_wifi_set_twt(const struct device *dev, struct wifi_twt_params *pa
 	return ret;
 }
 
+#ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
 static int nxp_wifi_set_btwt(const struct device *dev, struct wifi_twt_params *params)
 {
 	wlan_btwt_config_t btwt_config;
@@ -1717,6 +1720,7 @@ static int nxp_wifi_set_btwt(const struct device *dev, struct wifi_twt_params *p
 
 	return wlan_set_btwt_cfg(&btwt_config);
 }
+#endif
 #endif
 
 static int nxp_wifi_set_rts_threshold(const struct device *dev, unsigned int rts_threshold)
@@ -1734,6 +1738,7 @@ static int nxp_wifi_set_rts_threshold(const struct device *dev, unsigned int rts
 	return ret;
 }
 
+#ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
 static int nxp_wifi_ap_set_rts_threshold(const struct device *dev, unsigned int rts_threshold)
 {
 	int ret = -1;
@@ -1748,6 +1753,7 @@ static int nxp_wifi_ap_set_rts_threshold(const struct device *dev, unsigned int 
 
 	return ret;
 }
+#endif
 
 static void nxp_wifi_sta_init(struct net_if *iface)
 {
