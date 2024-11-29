@@ -326,6 +326,11 @@ int flash_stm32_wait_flash_idle(const struct device *dev);
 
 int flash_stm32_option_bytes_lock(const struct device *dev, bool enable);
 
+uint32_t flash_stm32_option_bytes_read(const struct device *dev);
+
+int flash_stm32_option_bytes_write(const struct device *dev, uint32_t mask,
+				   uint32_t value);
+
 #ifdef CONFIG_SOC_SERIES_STM32WBX
 int flash_stm32_check_status(const struct device *dev);
 #endif /* CONFIG_SOC_SERIES_STM32WBX */

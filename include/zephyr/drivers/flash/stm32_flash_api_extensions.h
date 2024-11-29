@@ -48,6 +48,20 @@ enum stm32_ex_ops {
 	 * erasing or writing.
 	 */
 	FLASH_STM32_EX_OP_BLOCK_CONTROL_REG,
+	/*
+	 * STM32 option bytes read.
+	 *
+	 * Read the option bytes content, out takes a *uint32_t, in is unused.
+	 */
+	FLASH_STM32_EX_OP_OPTB_READ,
+	/*
+	 * STM32 option bytes write.
+	 *
+	 * Write the option bytes content, in takes the new value, out is
+	 * unused. Note that the new value only takes effect after the device
+	 * is restarted.
+	 */
+	FLASH_STM32_EX_OP_OPTB_WRITE,
 };
 
 #if defined(CONFIG_FLASH_STM32_WRITE_PROTECT)
