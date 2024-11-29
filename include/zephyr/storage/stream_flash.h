@@ -137,7 +137,7 @@ int stream_flash_buffered_write(struct stream_flash_ctx *ctx, const uint8_t *dat
  *
  * @return non-negative on success, negative errno code on fail
  */
-int stream_flash_erase_page(struct stream_flash_ctx *ctx, off_t off);
+__deprecated int stream_flash_erase_page(struct stream_flash_ctx *ctx, off_t off);
 
 /**
  * @brief Load persistent stream write progress stored with key
