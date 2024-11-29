@@ -33,8 +33,8 @@ static struct prometheus_collector *stats_collector;
 static struct prometheus_collector_walk_context walk_ctx;
 
 static int stats_handler(struct http_client_ctx *client, enum http_data_status status,
-			 uint8_t *buffer, size_t len, struct http_response_ctx *response_ctx,
-			 void *user_data)
+			 const struct http_request_ctx *request_ctx,
+			 struct http_response_ctx *response_ctx, void *user_data)
 {
 	int ret;
 	static uint8_t prom_buffer[1024];
