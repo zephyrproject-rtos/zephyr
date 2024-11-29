@@ -764,6 +764,7 @@ struct wifi_twt_params {
 /* 256 (u8) * 1TU */
 #define WIFI_MAX_TWT_WAKE_INTERVAL_US 262144
 #define WIFI_MAX_TWT_WAKE_AHEAD_DURATION_US (LONG_MAX - 1)
+#define WIFI_MAX_TWT_EXPONENT 63
 
 /** @endcond */
 
