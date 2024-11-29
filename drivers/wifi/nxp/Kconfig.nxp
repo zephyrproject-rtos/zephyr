@@ -539,6 +539,8 @@ config NXP_WIFI_SOFTAP_SUPPORT
 	bool "Wi-Fi SoftAP Support"
 	select NET_DHCPV4_SERVER
 	select WIFI_NM_HOSTAPD_AP if WIFI_NM_WPA_SUPPLICANT
+	imply WIFI_NM_HOSTAPD_WPS if WIFI_NM_HOSTAPD_AP && WIFI_NM_WPA_SUPPLICANT_WPS
+	imply WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE if WIFI_NM_HOSTAPD_AP && WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 	default y
 	help
 	  Option to enable Wi-Fi SoftAP functions in the Wi-Fi driver.
@@ -720,6 +722,7 @@ config NXP_WIFI_RESET
 config NXP_WIFI_ECSA
 	bool "ECSA"
 	default y
+	depends on NXP_WIFI_SOFTAP_SUPPORT
 	help
 	  This option is used to do channel switch according to spec.
 
