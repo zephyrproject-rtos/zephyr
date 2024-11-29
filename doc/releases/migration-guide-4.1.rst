@@ -57,12 +57,10 @@ LVGL
 Device Drivers and Devicetree
 *****************************
 
-* Device driver APIs are placed into iterable sections (:github:`71773`) to allow for runtime
-  checking. See :ref:`device_driver_api` for more details.
+* Device driver APIs are placed into iterable sections (:github:`71773` and :github:`82102`) to
+  allow for runtime checking. See :ref:`device_driver_api` for more details.
   The :c:macro:`DEVICE_API()` macro should be used by out-of-tree driver implementations for
-  the following driver classes:
-
-    * :c:struct:`adc_driver_api`
+  all the upstream driver classes.
 
 Controller Area Network (CAN)
 =============================
