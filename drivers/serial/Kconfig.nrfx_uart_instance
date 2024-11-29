@@ -20,7 +20,7 @@ config UART_$(nrfx_uart_num)_ASYNC
 
 config UART_$(nrfx_uart_num)_ENHANCED_POLL_OUT
 	bool "Efficient poll out on port $(nrfx_uart_num)"
-	depends on !$(dt_nodelabel_has_prop,uart$(nrfx_uart_num),short-endtx-stoptx)
+	depends on !$(dt_nodelabel_has_prop,uart$(nrfx_uart_num),endtx-stoptx-supported)
 	default y
 	depends on HAS_HW_NRF_UARTE$(nrfx_uart_num)
 	depends on HAS_HW_NRF_PPI || HAS_HW_NRF_DPPIC
