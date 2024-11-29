@@ -34,7 +34,7 @@
 #define B9X_TRX_LENGTH                      (256)
 #define B9X_RSSI_TO_LQI_SCALE               (3)
 #define B9X_RSSI_TO_LQI_MIN                 (-87)
-#define B9X_CCA_TIME_MAX_US                 (200)
+#define B9X_CCA_TIME_MAX_US                 (120)
 #define B9X_LOGIC_CHANNEL_TO_PHYSICAL(p)    (((p) - 10) * 5)
 #define B9X_MAC_KEYS_ITEMS                  (3)
 #ifndef IEEE802154_CRYPTO_LENGTH_AES_BLOCK

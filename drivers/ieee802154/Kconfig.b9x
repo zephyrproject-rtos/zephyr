@@ -25,7 +25,7 @@ config IEEE802154_B9X_SET_TXRX_DELAY_US
 
 config IEEE802154_B9X_CCA_RSSI_THRESHOLD
 	int "CCA procedure RSSI threshold"
-	default -50
+	default -70
 	help
 	  CCA procedure returns true if the current RSSI value is less than
 	  this parameter.

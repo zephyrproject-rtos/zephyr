@@ -914,13 +914,29 @@ static enum ieee802154_hw_caps b9x_get_capabilities(const struct device *dev)
 static int b9x_cca(const struct device *dev)
 {
 	ARG_UNUSED(dev);
-
+	signed char rssi_peak = -110;
+	signed char rssi_cur = -110;
+	signed int rssiSum = 0;
+	signed int cnt = 1;
 	unsigned int t1 = stimer_get_tick();
 
+	rf_set_rxmode();
+	rssi_cur = rf_get_rssi();
+	rssiSum += rssi_cur;
+
 	while (!clock_time_exceed(t1, B9X_CCA_TIME_MAX_US)) {
-		if (rf_get_rssi() < CONFIG_IEEE802154_B9X_CCA_RSSI_THRESHOLD) {
-			return 0;
-		}
+		rssi_cur = rf_get_rssi();
+		rssiSum += rssi_cur;
+		cnt++;
+	}
+
+	rssi_peak = rssiSum/cnt;
+	rf_set_tx_rx_off();
+
+	if (rssi_peak > CONFIG_IEEE802154_B9X_CCA_RSSI_THRESHOLD) {
+		return -EBUSY;
+	} else {
+		return 0;
 	}
 
 	return -EBUSY;
