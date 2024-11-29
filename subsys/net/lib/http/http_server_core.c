@@ -305,6 +305,7 @@ static void client_release_resources(struct http_client_ctx *client)
 {
 	struct http_resource_detail *detail;
 	struct http_resource_detail_dynamic *dynamic_detail;
+	struct http_request_ctx request_ctx;
 	struct http_response_ctx response_ctx;
 
 	HTTP_SERVICE_FOREACH(service) {
@@ -331,8 +332,10 @@ static void client_release_resources(struct http_client_ctx *client)
 				continue;
 			}
 
-			dynamic_detail->cb(client, HTTP_SERVER_DATA_ABORTED, NULL, 0, &response_ctx,
-					   dynamic_detail->user_data);
+			populate_request_ctx(&request_ctx, NULL, 0, NULL);
+
+			dynamic_detail->cb(client, HTTP_SERVER_DATA_ABORTED, &request_ctx,
+					   &response_ctx, dynamic_detail->user_data);
 		}
 	}
 }
@@ -421,11 +424,11 @@ static int handle_http_preface(struct http_client_ctx *client)
 		return -EAGAIN;
 	}
 
-#if defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)
-	client->header_capture_ctx.count = 0;
-	client->header_capture_ctx.cursor = 0;
-	client->header_capture_ctx.status = HTTP_HEADER_STATUS_OK;
-#endif /* defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS) */
+	if (IS_ENABLED(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)) {
+		client->header_capture_ctx.count = 0;
+		client->header_capture_ctx.cursor = 0;
+		client->header_capture_ctx.status = HTTP_HEADER_STATUS_OK;
+	}
 
 	if (strncmp(client->cursor, HTTP2_PREFACE, sizeof(HTTP2_PREFACE) - 1) != 0) {
 		return enter_http1_request(client);
@@ -827,6 +830,23 @@ bool http_response_is_provided(struct http_response_ctx *rsp)
 	}
 
 	return false;
+}
+
+void populate_request_ctx(struct http_request_ctx *req_ctx, uint8_t *data, size_t len,
+			  struct http_header_capture_ctx *header_ctx)
+{
+	req_ctx->data = data;
+	req_ctx->data_len = len;
+
+	if (NULL == header_ctx || header_ctx->status == HTTP_HEADER_STATUS_NONE) {
+		req_ctx->headers = NULL;
+		req_ctx->header_count = 0;
+		req_ctx->headers_status = HTTP_HEADER_STATUS_NONE;
+	} else {
+		req_ctx->headers = header_ctx->headers;
+		req_ctx->header_count = header_ctx->count;
+		req_ctx->headers_status = header_ctx->status;
+	}
 }
 
 int http_server_start(void)
