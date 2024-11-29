@@ -501,6 +501,10 @@ static int nxp_wifi_start_ap(const struct device *dev, struct wifi_connect_req_p
 		return -EAGAIN;
 	}
 
+	if (params->ignore_broadcast_ssid != 0) {
+		wlan_uap_set_hidden_ssid(params->ignore_broadcast_ssid);
+	}
+
 	ret = wlan_add_network(&nxp_wlan_network);
 	if (ret != WM_SUCCESS) {
 		status = NXP_WIFI_RET_FAIL;
