@@ -2660,8 +2660,8 @@ MAINTAINERS file:
   status: maintained
   maintainers:
     - MaureenHelm
-  collaborators:
     - nashif
+  collaborators:
     - stephanosio
   files:
     - MAINTAINERS.yml
