@@ -847,35 +847,6 @@ static inline uint32_t z_impl_can_get_bitrate_min(const struct device *dev)
 }
 
 /**
- * @brief Get minimum supported bitrate
- *
- * Get the minimum supported bitrate for the CAN controller/transceiver combination.
- *
- * @deprecated Use @a can_get_bitrate_min() instead.
- *
- * @note The minimum bitrate represents limitations of the CAN controller/transceiver
- * combination. Whether the CAN controller can achieve this bitrate depends on the CAN core clock
- * rate and the minimum CAN timing limits.
- *
- * @see can_get_core_clock()
- * @see can_get_timing_min()
- * @see can_get_timing_data_min()
- *
- * @param dev Pointer to the device structure for the driver instance.
- * @param[out] min_bitrate Minimum supported bitrate in bits/s. A value of 0 means the lower limit
- *                         is unspecified.
- *
- * @retval -EIO General input/output error.
- * @retval -ENOSYS If this function is not implemented by the driver.
- */
-__deprecated static inline int can_get_min_bitrate(const struct device *dev, uint32_t *min_bitrate)
-{
-	*min_bitrate = can_get_bitrate_min(dev);
-
-	return 0;
-}
-
-/**
  * @brief Get maximum supported bitrate
  *
  * Get the maximum supported bitrate for the CAN controller/transceiver combination.
@@ -898,35 +869,6 @@ static inline uint32_t z_impl_can_get_bitrate_max(const struct device *dev)
 	const struct can_driver_config *common = (const struct can_driver_config *)dev->config;
 
 	return common->max_bitrate;
-}
-
-/**
- * @brief Get maximum supported bitrate
- *
- * Get the maximum supported bitrate for the CAN controller/transceiver combination.
- *
- * @deprecated Use @a can_get_bitrate_max() instead.
- *
- * @note The maximum bitrate represents limitations of the CAN controller/transceiver
- * combination. Whether the CAN controller can achieve this bitrate depends on the CAN core clock
- * rate and the maximum CAN timing limits.
- *
- * @see can_get_core_clock()
- * @see can_get_timing_max()
- * @see can_get_timing_data_max()
- *
- * @param dev Pointer to the device structure for the driver instance.
- * @param[out] max_bitrate Maximum supported bitrate in bits/s
- *
- * @retval 0 If successful.
- * @retval -EIO General input/output error.
- * @retval -ENOSYS If this function is not implemented by the driver.
- */
-__deprecated static inline int can_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
-{
-	*max_bitrate = can_get_bitrate_max(dev);
-
-	return 0;
 }
 
 /**
