@@ -168,6 +168,8 @@ rsource "../audio/Kconfig"
 config BT_HOST_CRYPTO
 	bool "Use crypto functionality implemented in the Bluetooth host"
 	default y if !BT_CTLR_CRYPTO
+	# An implementation of z_impl_sys_rand_get() is required
+	select ENTROPY_GENERATOR
 	select MBEDTLS if !BUILD_WITH_TFM
 	select MBEDTLS_PSA_CRYPTO_C if !BUILD_WITH_TFM
 	select PSA_WANT_KEY_TYPE_AES
