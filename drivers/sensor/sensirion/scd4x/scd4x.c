@@ -889,14 +889,14 @@ static DEVICE_API(sensor, scd4x_api_funcs) = {
 };
 
 #define SCD4X_INIT(inst, scd4x_model)                                                              \
-	static struct scd4x_data scd4x_data_##inst;                                                \
-	static const struct scd4x_config scd4x_config_##inst = {                                   \
+	static struct scd4x_data scd4x_data_##scd4x_model##_##inst;                                \
+	static const struct scd4x_config scd4x_config_##scd4x_model##_##inst = {                   \
 		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \
 		.model = scd4x_model,                                                              \
 		.mode = DT_INST_ENUM_IDX_OR(inst, mode, SCD4X_MODE_NORMAL),                        \
 	};                                                                                         \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, scd4x_init, NULL, &scd4x_data_##inst,                   \
-				     &scd4x_config_##inst, POST_KERNEL,                            \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, scd4x_init, NULL, &scd4x_data_##scd4x_model##_##inst,   \
+				     &scd4x_config_##scd4x_model##_##inst, POST_KERNEL,            \
 				     CONFIG_SENSOR_INIT_PRIORITY, &scd4x_api_funcs);
 
 #define DT_DRV_COMPAT sensirion_scd40
