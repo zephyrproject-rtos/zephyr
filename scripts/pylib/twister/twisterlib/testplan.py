@@ -1206,6 +1206,11 @@ class TestPlan:
                 self.add_instances(instance_list)
 
         for _, case in self.instances.items():
+            # Do not create files for filtered instances
+            if case.status == TwisterStatus.FILTER:
+                continue
+            # set run_id for each unfiltered instance
+            case.setup_run_id()
             case.create_overlay(case.platform,
                                 self.options.enable_asan,
                                 self.options.enable_ubsan,
