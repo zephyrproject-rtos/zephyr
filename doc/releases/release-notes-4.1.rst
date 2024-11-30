@@ -29,6 +29,12 @@ Removed APIs in this release
 
  * The deprecated Bluetooth HCI driver API has been removed. It has been replaced by a
    :c:group:`new API<bt_hci_api>` that follows the normal Zephyr driver model.
+ * The deprecated ``CAN_MAX_STD_ID`` (replaced by :c:macro:`CAN_STD_ID_MASK`) and ``CAN_MAX_EXT_ID``
+   (replaced by :c:macro:`CAN_EXT_ID_MASK`) CAN API macros have been removed.
+ * The deprecated ``can_get_min_bitrate()`` (replaced by :c:func:`can_get_bitrate_min`) and
+   ``can_get_max_bitrate()`` (replaced by :c:func:`can_get_bitrate_max`) CAN API functions have been
+   removed.
+ * The deprecated ``can_calc_prescaler()`` CAN API function has been removed.
 
 Deprecated in this release
 ==========================
