@@ -23,7 +23,6 @@ from multiprocessing.managers import BaseManager
 import elftools
 import yaml
 from colorama import Fore
-from domains import Domains
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 from packaging import version
@@ -39,6 +38,10 @@ if version.parse(elftools.__version__) < version.parse('0.24'):
 if sys.platform == 'linux':
     from twisterlib.jobserver import GNUMakeJobClient, GNUMakeJobServer, JobClient
 
+from twisterlib.environment import ZEPHYR_BASE
+
+sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/build_helpers"))
+from domains import Domains
 from twisterlib.environment import TwisterEnv
 from twisterlib.harness import HarnessImporter, Pytest
 from twisterlib.log_helper import log_command
