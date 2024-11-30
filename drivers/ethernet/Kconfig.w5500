@@ -37,3 +37,14 @@ config ETH_W5500_TIMEOUT
 	  Given timeout in milliseconds. Maximum amount of time
 	  that the driver will wait from the IP stack to get
 	  a memory buffer before the Ethernet frame is dropped.
+
+config ETH_W5500_SOCKET_TIMEOUT
+	int "IP buffer timeout"
+	depends on ETH_W5500
+	depends on NET_SOCKETS_OFFLOAD
+	default 3000
+	help
+	  Given timeout in milliseconds. Maximum amount of time
+	  that the offload socket will wait during a blocking
+	  send/recv operation before causing a timeout error.
+	  0 means waiting forever.

@@ -6,15 +6,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/drivers/gpio.h>
-#include <zephyr/drivers/spi.h>
-
 #ifndef _W5500_
 #define _W5500_
 
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/spi.h>
 #include <zephyr/net/ethernet.h>
 
-#define W5500_MAX_SOCK_NUM 8
+#define W5500_MAX_SOCK_NUM   8
+#define W5500_SOCK_PORT_BASE 50000
 
 /*
  * W5500 common registers
@@ -27,6 +27,7 @@
 #define W5500_GAR         0x0001 /* Source gateway address */
 #define W5500_IR          0x0015 /* Interrupt Register */
 #define W5500_PHYCFGR     0x002E /* PHY Configuration register */
+#define W5500_SIR         0x0018 /* Socket Interrupt Register */
 #define W5500_SIMR        0x0018 /* Socket Interrupt Mask Register */
 #define W5500_RTR         0x0019 /* Retry Time-value Register */
 
@@ -120,8 +121,8 @@
 /* Delay for PHY write/read operations (25.6 us) */
 #define W5500_PHY_ACCESS_DELAY 26U
 
-
 enum w5500_transport_type {
+	W5500_TRANSPORT_UNSPECIFIED,
 	W5500_TRANSPORT_MACRAW,
 #ifdef CONFIG_NET_SOCKETS_OFFLOAD
 	W5500_TRANSPORT_TCP,
@@ -131,12 +132,22 @@ enum w5500_transport_type {
 
 enum w5500_socket_state {
 	W5500_SOCKET_STATE_CLOSED,
-	W5500_SOCKET_STATE_MACRAW_OPEN,
+
+	/* This socket has been assigned a fd */
+	W5500_SOCKET_STATE_ASSIGNED,
+
+	/* This socket is open on w5500 */
+	W5500_SOCKET_STATE_OPEN,
+
 #ifdef CONFIG_NET_SOCKETS_OFFLOAD
+	/* connect() issues */
 	W5500_SOCKET_STATE_CONNECTING,
-	W5500_SOCKET_STATE_CONNECTED,
-	W5500_SOCKET_STATE_ACCEPTING,
-	W5500_SOCKET_STATE_ACCEPTED
+
+	/* For TCP: Socket has been initialized, and connection had established */
+	W5500_SOCKET_STATE_ESTABLISHED,
+
+	/* This socket is listening for incoming connections */
+	W5500_SOCKET_STATE_LISTENING
 #endif
 };
 
@@ -148,14 +159,16 @@ struct w5500_config {
 };
 
 struct w5500_socket {
-	uint8_t socknum;
 	enum w5500_transport_type type;
 	enum w5500_socket_state state;
+	uint8_t tx_buf_size;
+	uint8_t rx_buf_size;
+	struct k_sem sint_sem;
+	uint8_t ir;
 #ifdef CONFIG_NET_SOCKETS_OFFLOAD
-	struct sockaddr peer_addr;
-	struct k_sem recv_sem;
-	struct k_sem accept_sem;
-	uint16_t port;
+	struct sockaddr_in peer_addr;
+	uint16_t lport;
+	bool nonblock;
 #endif
 };
 
@@ -171,14 +184,16 @@ struct w5500_runtime {
 	uint8_t buf[NET_ETH_MAX_FRAME_SIZE];
 
 #ifdef CONFIG_NET_SOCKETS_OFFLOAD
-	struct w5500_socket socket[W5500_MAX_SOCK_NUM];
+	bool net_config_changed;
+	struct in_addr local_ip_addr;
+	struct w5500_socket sockets[W5500_MAX_SOCK_NUM];
 #else
-	struct w5500_socket socket[1];
+	struct w5500_socket sockets[1];
 #endif
 };
 
 int w5500_spi_read(const struct device *dev, uint32_t addr, uint8_t *data, uint32_t len);
-int w5500_spi_write(const struct device *dev, uint32_t addr, uint8_t *data, uint32_t len);
+int w5500_spi_write(const struct device *dev, uint32_t addr, const uint8_t *data, uint32_t len);
 
 static inline uint8_t w5500_spi_read_byte(const struct device *dev, uint32_t addr)
 {
@@ -220,10 +235,11 @@ static inline int w5500_spi_write_two_bytes(const struct device *dev, uint32_t a
 
 int w5500_socket_readbuf(const struct device *dev, uint8_t sn, uint16_t offset, uint8_t *buf,
 			 size_t len);
-int w5500_socket_writebuf(const struct device *dev, uint8_t sn, uint16_t offset, uint8_t *buf,
+int w5500_socket_writebuf(const struct device *dev, uint8_t sn, uint16_t offset, const uint8_t *buf,
 			  size_t len);
-int w5500_socket_tx(const struct device *dev, uint8_t sn, uint8_t * buf, size_t len);
-void w5500_socket_rx(const struct device *dev, uint8_t sn, uint8_t * buf, size_t len);
+int w5500_socket_tx(const struct device *dev, uint8_t sn, const uint8_t *buf, size_t len);
+
+uint16_t w5500_socket_rx(const struct device *dev, uint8_t sn, uint8_t *buf, size_t len);
 
 int w5500_socket_command(const struct device *dev, uint8_t sn, uint8_t cmd);
 
@@ -242,5 +258,13 @@ static inline uint8_t w5500_socket_interrupt_status(const struct device *dev, ui
 {
 	return w5500_spi_read_byte(dev, W5500_Sn_IR(sn));
 }
+
+#ifdef CONFIG_NET_SOCKETS_OFFLOAD
+void w5500_hw_net_config(const struct device *dev);
+
+int w5500_socket_offload_init(const struct device *w5500_dev);
+
+int w5500_socket_create(int family, int type, int proto);
+#endif
 
 #endif /*_W5500_*/
