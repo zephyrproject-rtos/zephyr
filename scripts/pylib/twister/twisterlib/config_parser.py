@@ -56,7 +56,7 @@ class TwisterConfigParser:
                        "skip": {"type": "bool", "default": False},
                        "slow": {"type": "bool", "default": False},
                        "timeout": {"type": "int", "default": 60},
-                       "min_ram": {"type": "int", "default": 8},
+                       "min_ram": {"type": "int", "default": 16},
                        "modules": {"type": "list", "default": []},
                        "depends_on": {"type": "set"},
                        "min_flash": {"type": "int", "default": 32},
