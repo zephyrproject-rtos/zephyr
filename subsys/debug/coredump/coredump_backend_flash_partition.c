@@ -415,8 +415,12 @@ static void coredump_flash_backend_start(void)
 
 	if (ret == 0) {
 		/* Erase whole flash partition */
-		ret = flash_area_flatten(backend_ctx.flash_area, 0,
-					 backend_ctx.flash_area->fa_size);
+		if (IS_ENABLED(CONFIG_DEBUG_COREDUMP_BACKEND_DEVICE_WITHOUT_ERASE)) {
+			ret = erase_coredump_header();
+		} else {
+			ret = flash_area_erase(backend_ctx.flash_area, 0,
+					       backend_ctx.flash_area->fa_size);
+		}
 	}
 
 	if (ret == 0) {
