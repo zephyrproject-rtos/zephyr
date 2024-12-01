@@ -7,6 +7,8 @@ compatible: "x-powers,axp2101"
 
 include: i2c-device.yaml
 
+bus: axp2101
+
 properties:
   reg:
     required: true
