@@ -108,7 +108,7 @@ static void init_target(void)
 
 	erase_flash();
 
-	rc = stream_flash_init(&ctx, fdev, generic_buf, BUF_LEN, FLASH_BASE, 0,
+	rc = stream_flash_init(&ctx, fdev, generic_buf, BUF_LEN, FLASH_BASE, FLASH_AVAILABLE,
 			       stream_flash_callback);
 	zassert_equal(rc, 0, "expected success");
 }
@@ -133,10 +133,13 @@ ZTEST(lib_stream_flash, test_stream_flash_init)
 	rc = stream_flash_init(&ctx, fdev, NULL, BUF_LEN, FLASH_BASE, 0, NULL);
 	zassert_true(rc < 0, "should fail as buffer is NULL");
 
-	/* Entering '0' as flash size uses rest of flash. */
 	rc = stream_flash_init(&ctx, fdev, generic_buf, BUF_LEN, FLASH_BASE, 0, NULL);
-	zassert_equal(rc, 0, "should succeed");
-	zassert_equal(FLASH_AVAILABLE, ctx.available, "Wrong size");
+	zassert_equal(rc, -EFAULT, "should fail as size 0");
+
+	rc = stream_flash_init(&ctx, fdev, generic_buf, BUF_LEN,
+			       flash_get_write_block_size(ctx.fdev) - 1, 0, NULL);
+	zassert_equal(rc, -EFAULT, "should fail as size is not aligned to write block size ");
+	flash_get_write_block_size(ctx.fdev);
 }
 
 ZTEST(lib_stream_flash, test_stream_flash_buffered_write)
@@ -207,7 +210,7 @@ ZTEST(lib_stream_flash, test_stream_flash_buffered_write_unaligned)
 	VERIFY_WRITTEN(0, 1);
 
 	rc = stream_flash_init(&ctx, fdev, generic_buf, BUF_LEN, FLASH_BASE + BUF_LEN,
-			       0, stream_flash_callback);
+			       FLASH_AVAILABLE - BUF_LEN, stream_flash_callback);
 	zassert_equal(rc, 0, "expected success");
 
 	/* Trigger verification in callback */
@@ -278,11 +281,11 @@ ZTEST(lib_stream_flash, test_stream_flash_buf_size_greater_than_page_size)
 	int rc;
 
 	/* To illustrate that other params does not trigger error */
-	rc = stream_flash_init(&ctx, fdev, generic_buf, 0x10, 0, 0, NULL);
+	rc = stream_flash_init(&ctx, fdev, generic_buf, 0x10, 0, FLASH_AVAILABLE, NULL);
 	zassert_equal(rc, 0, "expected success");
 
 	/* Only change buf_len param */
-	rc = stream_flash_init(&ctx, fdev, generic_buf, 0x10000, 0, 0, NULL);
+	rc = stream_flash_init(&ctx, fdev, generic_buf, 0x10000, 0, FLASH_AVAILABLE, NULL);
 	zassert_true(rc < 0, "expected failure");
 }
 
@@ -410,7 +413,7 @@ ZTEST(lib_stream_flash, test_stream_flash_buffered_write_whole_page)
 	/* Reset stream_flash context */
 	memset(&ctx, 0, sizeof(ctx));
 	memset(generic_buf, 0, BUF_LEN);
-	rc = stream_flash_init(&ctx, fdev, generic_buf, BUF_LEN, FLASH_BASE, 0,
+	rc = stream_flash_init(&ctx, fdev, generic_buf, BUF_LEN, FLASH_BASE, FLASH_AVAILABLE,
 			       stream_flash_callback);
 	zassert_equal(rc, 0, "expected success");
 
