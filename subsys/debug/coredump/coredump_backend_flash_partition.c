@@ -49,8 +49,8 @@ LOG_MODULE_REGISTER(coredump, CONFIG_KERNEL_LOG_LEVEL);
 #if DT_NODE_HAS_PROP(FLASH_CONTROLLER, erase_block_size)
 #define DEVICE_ERASE_BLOCK_SIZE DT_PROP(FLASH_CONTROLLER, erase_block_size)
 #else
-/* Device has no erase block size */
-#define DEVICE_ERASE_BLOCK_SIZE 1
+/* Device has no erase block size but we are still bound by write block size  */
+#define DEVICE_ERASE_BLOCK_SIZE WRITE_BLOCK_SIZE
 #endif
 
 #define HEADER_SCRAMBLE_SIZE	ROUND_UP(sizeof(struct flash_hdr_t),	\
