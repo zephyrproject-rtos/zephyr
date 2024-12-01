@@ -40,6 +40,8 @@ description: |
 
 compatible: "x-powers,axp192-regulator"
 
+on-bus: axp192
+
 include: base.yaml
 
 child-binding:
