@@ -1,0 +1,46 @@
+#
+# Copyright (c) 2024 Nordic Semiconductor
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+DT_COMPAT_NORDIC_NRF7002_QSPI := nordic,nrf7002-qspi
+DT_COMPAT_NORDIC_NRF7002_SPI := nordic,nrf7002-spi
+DT_COMPAT_NORDIC_NRF7001_QSPI := nordic,nrf7001-qspi
+DT_COMPAT_NORDIC_NRF7001_SPI := nordic,nrf7001-spi
+DT_COMPAT_NORDIC_NRF7000_QSPI := nordic,nrf7000-qspi
+DT_COMPAT_NORDIC_NRF7000_SPI := nordic,nrf7000-spi
+
+menuconfig NRF70_BUSLIB
+	bool "NRF70 Bus Library"
+	help
+	  Enable the NRF70 Bus Library for the nRF7002 Wi-Fi shield.
+
+if NRF70_BUSLIB
+
+config NRF70_ON_QSPI
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF7002_QSPI)) ||\
+			 $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF7001_QSPI)) ||\
+			 $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF7000_QSPI))
+	select NRFX_QSPI
+
+config NRF70_ON_SPI
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF7002_SPI)) ||\
+			 $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF7001_SPI)) ||\
+			 $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF7000_SPI))
+	select SPI
+
+module = WIFI_NRF70_BUSLIB
+module-dep = LOG
+module-str = Log level for Wi-Fi nRF70 bus library
+source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
+
+config WIFI_NRF70_BUSLIB_LOG_LEVEL
+	# Enable error by default
+	default 1
+
+config NRF70_LOG_VERBOSE
+	bool "Maintains the verbosity of information in logs"
+	default y
+
+endif # NRF70_BUSLIB

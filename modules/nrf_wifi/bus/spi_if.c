@@ -13,11 +13,11 @@
 
 #include <zephyr/drivers/spi.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/drivers/wifi/nrf_wifi/bus/qspi_if.h>
 
-#include "qspi_if.h"
 #include "spi_if.h"
 
-LOG_MODULE_DECLARE(wifi_nrf_bus, CONFIG_WIFI_NRF70_BUS_LOG_LEVEL);
+LOG_MODULE_DECLARE(wifi_nrf_bus, CONFIG_WIFI_NRF70_BUSLIB_LOG_LEVEL);
 
 #define NRF7002_NODE DT_NODELABEL(nrf70)
 

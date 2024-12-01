@@ -18,13 +18,13 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/drivers/wifi/nrf_wifi/bus/rpu_hw_if.h>
+#include <zephyr/drivers/wifi/nrf_wifi/bus/qspi_if.h>
 
-#include "rpu_hw_if.h"
 #include "shim.h"
 #include "work.h"
 #include "timer.h"
 #include "osal_ops.h"
-#include "qspi_if.h"
 
 LOG_MODULE_REGISTER(wifi_nrf, CONFIG_WIFI_NRF70_LOG_LEVEL);
 

@@ -15,6 +15,7 @@
 #include <zephyr/init.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/wifi/nrf_wifi/bus/qspi_if.h>
 
 #include <soc.h>
 #include <nrf_erratas.h>
@@ -23,7 +24,6 @@
 #include <hal/nrf_gpio.h>
 
 #include "spi_nor.h"
-#include "qspi_if.h"
 
 /* The QSPI bus node which the NRF70 is on */
 #define QSPI_IF_BUS_NODE DT_NODELABEL(qspi)
@@ -152,7 +152,7 @@ static void qspi_device_uninit(const struct device *dev);
 
 #define WORD_SIZE 4
 
-LOG_MODULE_DECLARE(wifi_nrf_bus, CONFIG_WIFI_NRF70_BUS_LOG_LEVEL);
+LOG_MODULE_DECLARE(wifi_nrf_bus, CONFIG_WIFI_NRF70_BUSLIB_LOG_LEVEL);
 
 /**
  * @brief QSPI buffer structure
