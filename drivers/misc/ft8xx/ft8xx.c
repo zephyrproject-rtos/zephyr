@@ -23,7 +23,7 @@
 #include "ft8xx_drv.h"
 #include "ft8xx_host_commands.h"
 
-LOG_MODULE_REGISTER(ft8xx, CONFIG_DISPLAY_LOG_LEVEL);
+LOG_MODULE_REGISTER(ft8xx, CONFIG_FT800_LOG_LEVEL);
 
 #define FT8XX_DLSWAP_FRAME 0x02
 
