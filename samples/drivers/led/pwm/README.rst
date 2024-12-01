@@ -20,6 +20,7 @@ For each PWM LEDs (one after the other):
 - Turning on
 - Turning off
 - Increasing brightness gradually
+- Decreasing brightness gradually
 - Blinking on: 0.1 sec, off: 0.1 sec
 - Blinking on: 1 sec, off: 1 sec
 - Turning off

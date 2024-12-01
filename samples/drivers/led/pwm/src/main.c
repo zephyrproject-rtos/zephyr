@@ -33,7 +33,7 @@ const int num_leds = ARRAY_SIZE(led_label);
 static void run_led_test(const struct device *led_pwm, uint8_t led)
 {
 	int err;
-	uint16_t level;
+	int16_t level;
 
 	LOG_INF("Testing LED %d - %s", led, led_label[led] ? : "no label");
 
@@ -58,6 +58,18 @@ static void run_led_test(const struct device *led_pwm, uint8_t led)
 	/* Increase LED brightness gradually up to the maximum level. */
 	LOG_INF("  Increasing brightness gradually");
 	for (level = 0; level <= MAX_BRIGHTNESS; level++) {
+		err = led_set_brightness(led_pwm, led, level);
+		if (err < 0) {
+			LOG_ERR("err=%d brightness=%d\n", err, level);
+			return;
+		}
+		k_sleep(K_MSEC(CONFIG_FADE_DELAY));
+	}
+	k_sleep(K_MSEC(1000));
+
+	/* Decrease LED brightness gradually down to the minimum level. */
+	LOG_INF("  Decreasing brightness gradually");
+	for (level = MAX_BRIGHTNESS; level >= 0; level--) {
 		err = led_set_brightness(led_pwm, led, level);
 		if (err < 0) {
 			LOG_ERR("err=%d brightness=%d\n", err, level);
