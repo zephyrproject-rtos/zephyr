@@ -19,7 +19,12 @@
 enum {
 	CMD_DLSTART   = 0xffffff00,
 	CMD_SWAP      = 0xffffff01,
+	CMD_BGCOLOR   = 0xffffff09,
+	CMD_FGCOLOR   = 0xffffff0a,
 	CMD_TEXT      = 0xffffff0c,
+	CMD_SLIDER    = 0xffffff10,
+	CMD_TOGGLE    = 0xffffff12,
+	CMD_TRACK     = 0xffffff2c,
 	CMD_NUMBER    = 0xffffff2e,
 	CMD_CALIBRATE = 0xffffff15,
 } ft8xx_cmd;
@@ -80,6 +85,13 @@ static size_t ram_cmd_wr32(const struct device *dev, uint32_t data)
 	return sizeof(data);
 }
 
+static size_t ram_cmd_wr_padding(const struct device *dev, size_t padding_size)
+{
+	increase_reg_cmd_write(dev, padding_size);
+
+	return padding_size;
+}
+
 static size_t ram_cmd_wr_var(const struct device *dev, const uint8_t *data, size_t data_size,
 			   size_t padding_size)
 {
@@ -123,6 +135,124 @@ void ft8xx_copro_cmd_dlstart(const struct device *dev)
 void ft8xx_copro_cmd_swap(const struct device *dev)
 {
 	ft8xx_copro_cmd(dev, CMD_SWAP);
+}
+
+void ft8xx_copro_cmd_fgcolor(const struct device *dev, uint32_t color)
+{
+	const size_t cmd_size = sizeof(CMD_FGCOLOR) + sizeof(color);
+	size_t written_bytes = 0;
+
+	cmd_beginning(dev, cmd_size);
+	written_bytes += ram_cmd_wr32(dev, CMD_FGCOLOR);
+	written_bytes += ram_cmd_wr32(dev, color);
+	cmd_ending(dev, cmd_size, written_bytes);
+}
+
+void ft8xx_copro_cmd_bgcolor(const struct device *dev, uint32_t color)
+{
+	const size_t cmd_size = sizeof(CMD_BGCOLOR) + sizeof(color);
+	size_t written_bytes = 0;
+
+	cmd_beginning(dev, cmd_size);
+	written_bytes += ram_cmd_wr32(dev, CMD_BGCOLOR);
+	written_bytes += ram_cmd_wr32(dev, color);
+	cmd_ending(dev, cmd_size, written_bytes);
+}
+
+void ft8xx_copro_cmd_slider(const struct device *dev,
+			    int16_t x,
+			    int16_t y,
+			    int16_t width,
+			    int16_t height,
+			    uint16_t options,
+			    uint16_t val,
+			    uint16_t range)
+{
+	size_t padding_bytes = 2;
+	const size_t cmd_size = sizeof(CMD_SLIDER) +
+				sizeof(x) +
+				sizeof(y) +
+				sizeof(width) +
+				sizeof(height) +
+				sizeof(options) +
+				sizeof(val) +
+				sizeof(range) +
+				padding_bytes;
+	size_t written_bytes = 0;
+
+	cmd_beginning(dev, cmd_size);
+	written_bytes += ram_cmd_wr32(dev, CMD_SLIDER);
+	written_bytes += ram_cmd_wr16(dev, x);
+	written_bytes += ram_cmd_wr16(dev, y);
+	written_bytes += ram_cmd_wr16(dev, width);
+	written_bytes += ram_cmd_wr16(dev, height);
+	written_bytes += ram_cmd_wr16(dev, options);
+	written_bytes += ram_cmd_wr16(dev, val);
+	written_bytes += ram_cmd_wr16(dev, range);
+	written_bytes += ram_cmd_wr_padding(dev, padding_bytes);
+	cmd_ending(dev, cmd_size, written_bytes);
+}
+
+void ft8xx_copro_cmd_toggle(const struct device *dev,
+			    int16_t x,
+			    int16_t y,
+			    int16_t width,
+			    int16_t font,
+			    uint16_t options,
+			    uint16_t state,
+			    const char *string)
+{
+	const size_t str_bytes = strlen(string) + 1;
+	const size_t padding_bytes = (4 - (str_bytes % 4)) % 4;
+	const size_t cmd_size = sizeof(CMD_TOGGLE) +
+				sizeof(x) +
+				sizeof(y) +
+				sizeof(width) +
+				sizeof(font) +
+				sizeof(options) +
+				sizeof(state) +
+				str_bytes +
+				padding_bytes;
+	size_t written_bytes = 0;
+
+	cmd_beginning(dev, cmd_size);
+	written_bytes += ram_cmd_wr32(dev, CMD_TOGGLE);
+	written_bytes += ram_cmd_wr16(dev, x);
+	written_bytes += ram_cmd_wr16(dev, y);
+	written_bytes += ram_cmd_wr16(dev, width);
+	written_bytes += ram_cmd_wr16(dev, font);
+	written_bytes += ram_cmd_wr16(dev, options);
+	written_bytes += ram_cmd_wr16(dev, state);
+	written_bytes += ram_cmd_wr_var(dev, (const uint8_t *)string, str_bytes, padding_bytes);
+	cmd_ending(dev, cmd_size, written_bytes);
+}
+
+void ft8xx_copro_cmd_track(const struct device *dev,
+			   int16_t x,
+			   int16_t y,
+			   int16_t width,
+			   int16_t height,
+			   int16_t tag)
+{
+	size_t padding_bytes = 2;
+	const size_t cmd_size = sizeof(CMD_TRACK) +
+				sizeof(x) +
+				sizeof(y) +
+				sizeof(width) +
+				sizeof(height) +
+				sizeof(tag) +
+				padding_bytes;
+	size_t written_bytes = 0;
+
+	cmd_beginning(dev, cmd_size);
+	written_bytes += ram_cmd_wr32(dev, CMD_TRACK);
+	written_bytes += ram_cmd_wr16(dev, x);
+	written_bytes += ram_cmd_wr16(dev, y);
+	written_bytes += ram_cmd_wr16(dev, width);
+	written_bytes += ram_cmd_wr16(dev, height);
+	written_bytes += ram_cmd_wr16(dev, tag);
+	written_bytes += ram_cmd_wr_padding(dev, padding_bytes);
+	cmd_ending(dev, cmd_size, written_bytes);
 }
 
 void ft8xx_copro_cmd_text(const struct device *dev,
