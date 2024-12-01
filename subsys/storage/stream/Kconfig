@@ -6,11 +6,20 @@
 
 menuconfig STREAM_FLASH
 	bool "Stream to flash"
-	select FLASH_PAGE_LAYOUT
 	help
 	  Enable support of stream to flash API
 
 if STREAM_FLASH
+
+config STREAM_FLASH_INSPECT
+	bool "Check whether device layout is OK with Stream Flash definition"
+	default y
+	select FLASH_PAGE_LAYOUT
+	help
+	  Runs simple check to find whether provided device can be used for
+	  stream flash by verifying that buffer size will fit into page.
+	  Once correct configuration has been established and tested it is
+	  worth to disable the option to cut out some unneeded code.
 
 config STREAM_FLASH_POST_WRITE_CALLBACK
 	bool "Write complete callback"

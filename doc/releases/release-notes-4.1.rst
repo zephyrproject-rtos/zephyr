@@ -24,6 +24,10 @@ https://docs.zephyrproject.org/latest/security/vulnerabilities.html
 API Changes
 ***********
 
+ * Stream Flash initialization function :c:func:`stream_flash_init` no longer does
+   device size autodetection and instead requires user to explicitly provide size
+   of area available for Stream Flash instance operation.
+
 Removed APIs in this release
 ============================
 

@@ -81,8 +81,6 @@ struct stream_flash_ctx {
  *                Must be multiple of the flash device write-block-size.
  * @param offset Offset within flash device to start writing to
  * @param size Number of bytes available for performing buffered write.
- *             If this is '0', the size will be set to the total size
- *             of the flash device minus the offset.
  * @param cb Callback to be invoked on completed flash write operations.
  *           Callback is supported when CONFIG_STREAM_FLASH_POST_WRITE_CALLBACK
  *           is enabled.
