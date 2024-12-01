@@ -10,6 +10,11 @@ tests:
       - robokit1              # ntc_thermistor
       - adi_eval_adin1110ebz  # adt7420
       - frdm_mcxn947/mcxn947/cpu0 # p3t1755
+    extra_args:
+      - platform:mimxrt1180_evk/mimxrt1189/cm33:SHIELD=p3t1755dp_ard_i2c
+      - platform:mimxrt1180_evk/mimxrt1189/cm7:SHIELD=p3t1755dp_ard_i2c
+      - platform:mimxrt1180_evk/mimxrt1189/cm33:SHIELD=p3t1755dp_ard_i3c
+      - platform:mimxrt1180_evk/mimxrt1189/cm7:SHIELD=p3t1755dp_ard_i3c
     harness: console
     harness_config:
       fixture: sensor_ambient_temp
