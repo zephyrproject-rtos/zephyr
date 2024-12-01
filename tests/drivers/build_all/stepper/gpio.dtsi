@@ -12,3 +12,14 @@ test_gpio_stepper: test_gpio_stepper {
 		<&test_gpio 0 0>,
 		<&test_gpio 0 0>;
 };
+
+test_tmc2209: tmc2209_motor {
+	compatible = "adi,tmc2209";
+	status = "okay";
+	micro-step-res = <1>;
+	msx-gpios = <&test_gpio 0 0>,
+		    <&test_gpio 0 0>;
+	enable-gpios = <&test_gpio 0 0>;
+	step-gpios = <&test_gpio 0 0>;
+	direction-gpios = <&test_gpio 0 0>;
+};
