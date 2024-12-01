@@ -393,6 +393,14 @@ LoRa
   additional ``user_data`` parameter, which is a void pointer. This parameter can be used to reference
   any user-defined data structure. To maintain the current behavior, set this parameter to ``NULL``.
 
+Stream Flash
+============
+
+* The function :c:func:`stream_flash_init` no longer does auto-detection of device size
+  when ``size`` parameter is set to 0 and will return error in such case. User is now
+  required to explicitly provide device size. Issue :github:`71042` provides rationale
+  for the change.
+
 Architectures
 *************
 
