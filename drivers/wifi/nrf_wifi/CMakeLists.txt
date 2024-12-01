@@ -11,7 +11,6 @@ set(FW_BINS_BASE ${ZEPHYR_NRF_WIFI_MODULE_DIR}/zephyr/blobs/wifi_fw_bins)
 
 zephyr_include_directories(
   inc
-  src/qspi/inc
   # for net_sprint_ll_addr
   ${ZEPHYR_BASE}/subsys/net/ip
 )
@@ -22,12 +21,6 @@ zephyr_include_directories_ifdef(CONFIG_NRF70_OFFLOADED_RAW_TX
 
 zephyr_library_sources_ifdef(CONFIG_NRF70_SR_COEX
   src/coex.c
-)
-
-zephyr_library_sources(
-  src/qspi/src/device.c
-  src/qspi/src/rpu_hw_if.c
-  src/qspi/src/ficr_prog.c
 )
 
 zephyr_library_sources_ifndef(CONFIG_NRF70_OFFLOADED_RAW_TX
@@ -65,14 +58,6 @@ zephyr_library_sources_ifdef(CONFIG_NRF70_STA_MODE
 zephyr_library_sources_ifdef(CONFIG_NRF70_STA_MODE
   src/wpa_supp_if.c)
 
-zephyr_library_sources_ifdef(CONFIG_NRF70_ON_QSPI
-  src/qspi/src/qspi_if.c
-)
-
-zephyr_library_sources_ifdef(CONFIG_NRF70_ON_SPI
-  src/qspi/src/spi_if.c
-)
-
 zephyr_library_sources_ifdef(CONFIG_NRF70_UTIL
   src/wifi_util.c
 )
@@ -87,6 +72,8 @@ zephyr_compile_definitions_ifdef(CONFIG_NRF70_ON_QSPI
 # Alternative is 128MHz CPU should be disabled that impacts Wi-Fi performance.
   -DNRF53_ERRATA_159_ENABLE_WORKAROUND=0
 )
+
+target_link_libraries(nrf_wifi PRIVATE nrf70-buslib)
 
 if (CONFIG_NRF_WIFI_BUILD_ONLY_MODE)
   message(WARNING "

@@ -17,12 +17,12 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/dt-bindings/gpio/nordic-nrf-gpio.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/drivers/wifi/nrf_wifi/bus/rpu_hw_if.h>
+#include <zephyr/drivers/wifi/nrf_wifi/bus/qspi_if.h>
 
-#include "rpu_hw_if.h"
-#include "qspi_if.h"
 #include "spi_if.h"
 
-LOG_MODULE_REGISTER(wifi_nrf_bus, CONFIG_WIFI_NRF70_BUS_LOG_LEVEL);
+LOG_MODULE_REGISTER(wifi_nrf_bus, CONFIG_WIFI_NRF70_BUSLIB_LOG_LEVEL);
 
 #define NRF7002_NODE DT_NODELABEL(nrf70)
 
@@ -44,7 +44,7 @@ uint32_t rpu_7002_memmap[][3] = {
 	{ 0x009000, 0x03FFFF, 2 },
 	{ 0x040000, 0x07FFFF, 1 },
 	{ 0x0C0000, 0x0F0FFF, 0 },
-	{ 0x080000, 0x092000, 1 },
+	{ 0x080000, 0x092000, 2 },
 	{ 0x100000, 0x134000, 1 },
 	{ 0x140000, 0x14C000, 1 },
 	{ 0x180000, 0x190000, 1 },
@@ -483,11 +483,16 @@ int rpu_enable(void)
 		goto rpu_pwroff;
 	}
 
+/* TODO: rpu_validate_comms() needs firmware download to be done
+ * successfully before it can be called. So, disable this for
+ * nrf70_buslib only usage.
+ */
+#ifdef CONFIG_WIFI_NRF70
 	ret = rpu_validate_comms();
 	if (ret) {
 		goto rpu_pwroff;
 	}
-
+#endif
 	return 0;
 rpu_pwroff:
 	rpu_pwroff();
