@@ -241,7 +241,7 @@ int step_dir_stepper_common_run(const struct device *dev, const enum stepper_dir
 	K_SPINLOCK(&data->lock) {
 		data->run_mode = STEPPER_RUN_MODE_VELOCITY;
 		data->direction = direction;
-		if (value != 0) {
+		if (velocity != 0) {
 			data->delay_in_us = USEC_PER_SEC / velocity;
 			(void)k_work_reschedule(&data->stepper_dwork, K_NO_WAIT);
 		} else {
