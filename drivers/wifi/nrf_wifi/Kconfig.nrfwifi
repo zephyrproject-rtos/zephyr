@@ -11,6 +11,7 @@ menuconfig WIFI_NRF70
 	select NET_L2_ETHERNET_MGMT if NETWORKING && NET_L2_ETHERNET
 	select WIFI_USE_NATIVE_NETWORKING if NETWORKING
 	select EXPERIMENTAL if !SOC_SERIES_NRF53X && !SOC_SERIES_NRF91X
+	select NRF70_BUSLIB
 	default y
 	depends on \
 		DT_HAS_NORDIC_NRF7002_SPI_ENABLED || DT_HAS_NORDIC_NRF7002_QSPI_ENABLED || \
@@ -33,16 +34,9 @@ config WIFI_NRF7000
 	bool
 	default y if DT_HAS_NORDIC_NRF7000_SPI_ENABLED || DT_HAS_NORDIC_NRF7000_QSPI_ENABLED
 
-
-module = WIFI_NRF70_BUS
-module-dep = LOG
-module-str = Log level for Wi-Fi nRF70 bus layers
-module-help = Sets log level for Wi-Fi nRF70 bus layers
-source "subsys/net/Kconfig.template.log_config.net"
-
-config WIFI_NRF70_BUS_LOG_LEVEL
-	# Enable error by default
-	default 1
+config NRF70_QSPI_LOW_POWER
+	bool "low power mode in QSPI"
+	default y if NRF_WIFI_LOW_POWER
 
 choice NRF70_OPER_MODES
 	bool "nRF70 operating modes"
