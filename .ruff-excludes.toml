@@ -126,6 +126,7 @@
     "SIM113",   # https://docs.astral.sh/ruff/rules/enumerate-for-loop
     "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
     "UP010",    # https://docs.astral.sh/ruff/rules/unnecessary-future-import
+    "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
 "./samples/modules/tflite-micro/magic_wand/train/train_test.py" = [
@@ -199,6 +200,7 @@
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP030",    # https://docs.astral.sh/ruff/rules/format-literals
+    "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
 "./scripts/build/gen_isr_tables_parser_local.py" = [
@@ -206,6 +208,7 @@
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP030",    # https://docs.astral.sh/ruff/rules/format-literals
+    "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
 "./scripts/build/gen_kobject_list.py" = [
@@ -254,6 +257,7 @@
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
+    "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
 ]
 "./scripts/build/gen_syscalls.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
@@ -365,12 +369,14 @@
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
+    "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
     "UP039",    # https://docs.astral.sh/ruff/rules/unnecessary-class-parentheses
 ]
 "./scripts/coredump/coredump_parser/log_parser.py" = [
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
     "UP030",    # https://docs.astral.sh/ruff/rules/format-literals
+    "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
 "./scripts/coredump/coredump_serial_log_parser.py" = [
@@ -748,6 +754,8 @@
 ]
 "./scripts/pylib/twister/expr_parser.py" = [
     "SIM103",   # https://docs.astral.sh/ruff/rules/needless-bool
+    "SIM110",   # https://docs.astral.sh/ruff/rules/reimplemented-builtin
+    "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
 ]
 "./scripts/pylib/twister/scl.py" = [
@@ -786,6 +794,7 @@
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
 "./scripts/release/list_devicetree_bindings_changes.py" = [
+    "E402",     # https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM117",   # https://docs.astral.sh/ruff/rules/multiple-with-statements
     "UP006",    # https://docs.astral.sh/ruff/rules/non-pep585-annotation
@@ -833,7 +842,6 @@
 ]
 "./scripts/tests/twister/test_data/mixins/test_to_ignore.py" = [
     "B011",     # https://docs.astral.sh/ruff/rules/assert-false
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
 ]
 "./scripts/tests/twister/test_environment.py" = [
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
@@ -1259,7 +1267,6 @@
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
 "./scripts/west_commands/zspdx/cmakecache.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
 ]
 "./scripts/west_commands/zspdx/cmakefileapi.py" = [
@@ -1275,7 +1282,6 @@
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
 ]
 "./scripts/west_commands/zspdx/datatypes.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP008",    # https://docs.astral.sh/ruff/rules/super-call-with-parameters
 ]
 "./scripts/west_commands/zspdx/getincludes.py" = [
@@ -1290,7 +1296,6 @@
     "UP008",    # https://docs.astral.sh/ruff/rules/super-call-with-parameters
 ]
 "./scripts/west_commands/zspdx/scanner.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM113",   # https://docs.astral.sh/ruff/rules/enumerate-for-loop
     "UP008",    # https://docs.astral.sh/ruff/rules/super-call-with-parameters
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
@@ -1335,14 +1340,6 @@
 "./soc/intel/intel_ish/utils/build_ish_firmware.py" = [
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP009",    # https://docs.astral.sh/ruff/rules/utf8-encoding-declaration
-]
-"./soc/mediatek/mtk_adsp/gen_img.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
-]
-"./soc/mediatek/mtk_adsp/mtk_adsp_load.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
 ]
 "./soc/microchip/mec/common/spigen/mec_spi_gen.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
@@ -1465,11 +1462,11 @@ exclude = [
     "./doc/_extensions/zephyr/link-roles.py",
     "./doc/_scripts/gen_boards_catalog.py",
     "./doc/_scripts/gen_devicetree_rest.py",
-    "./doc/_scripts/gen_helpers.py",
     "./doc/_scripts/redirects.py",
     "./doc/conf.py",
     "./doc/develop/test/twister/sample_blackbox_test.py",
     "./modules/mbedtls/create_psa_files.py",
+    "./samples/boards/nordic/coresight_stm/pytest/test_stm.py",
     "./samples/modules/tflite-micro/magic_wand/train/data_augmentation.py",
     "./samples/modules/tflite-micro/magic_wand/train/data_augmentation_test.py",
     "./samples/modules/tflite-micro/magic_wand/train/data_load.py",
@@ -1770,8 +1767,6 @@ exclude = [
     "./soc/intel/intel_adsp/tools/cavstool_client.py",
     "./soc/intel/intel_adsp/tools/remote-fw-service.py",
     "./soc/intel/intel_ish/utils/build_ish_firmware.py",
-    "./soc/mediatek/mtk_adsp/gen_img.py",
-    "./soc/mediatek/mtk_adsp/mtk_adsp_load.py",
     "./soc/microchip/mec/common/spigen/mec_spi_gen.py",
     "./soc/nuvoton/npcm/common/esiost/esiost.py",
     "./soc/nuvoton/npcm/common/esiost/esiost_args.py",
