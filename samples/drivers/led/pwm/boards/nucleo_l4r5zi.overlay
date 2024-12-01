@@ -4,6 +4,12 @@
  * Copyright (c) 2022 STMicroelectronics
  */
 
+/ {
+	leds {
+		status = "disabled";
+	};
+};
+
 &pwmleds {
 	status = "okay";
 };
