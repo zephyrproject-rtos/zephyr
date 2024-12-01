@@ -1,0 +1,8 @@
+# Copyright (c) 2024 tinyVision.ai Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_SHELL
+	bool "Video shell commands support"
+	depends on SHELL
+	help
+	  Enable support for the video shell to perform commands on video devices.
