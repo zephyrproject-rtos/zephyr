@@ -1,0 +1,16 @@
+#  Copyright (c) 2024 Steve Boylan <stephen.boylan@beechwoods.com>
+#  SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Sample app Configuration"
+
+if WIFI
+config NET_SAMPLE_WIFI_SSID
+	string "WIFI SSID - Network name"
+	default "my_network"
+
+config NET_SAMPLE_WIFI_PSK
+	string "WIFI PSK - Network password key"
+	default "secret_passwd"
+endif
+
+source "Kconfig.zephyr"

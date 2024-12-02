@@ -19,6 +19,14 @@
 
 #include <zephyr/net/socket.h>
 #include <zephyr/kernel.h>
+#include <zephyr/net/net_mgmt.h>
+
+#ifdef CONFIG_NET_L2_WIFI_MGMT
+#include <zephyr/net/wifi_mgmt.h>
+#endif /* CONFIG_NET_L2_WIFI_MGMT */
+
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(socket_echo);
 
 #endif
 
@@ -35,6 +43,34 @@ int main(void)
 		.sin6_port = htons(BIND_PORT),
 	};
 	static int counter;
+
+#if defined(CONFIG_WIFI)
+	int nr_tries = 10;
+	struct net_if *iface = net_if_get_default();
+	static struct wifi_connect_req_params cnx_params = {
+		.ssid = CONFIG_NET_SAMPLE_WIFI_SSID,
+		.ssid_length = 0,
+		.psk = CONFIG_NET_SAMPLE_WIFI_PSK,
+		.psk_length = 0,
+		.channel = 0,
+		.security = WIFI_SECURITY_TYPE_PSK,
+	};
+
+	cnx_params.ssid_length = strlen(CONFIG_NET_SAMPLE_WIFI_SSID);
+	cnx_params.psk_length = strlen(CONFIG_NET_SAMPLE_WIFI_PSK);
+
+	/* Let's wait few seconds to allow wifi device be on-line */
+	while (nr_tries-- > 0) {
+		ret = net_mgmt(NET_REQUEST_WIFI_CONNECT, iface, &cnx_params,
+			       sizeof(struct wifi_connect_req_params));
+		if (ret == 0) {
+			break;
+		}
+
+		LOG_INF("Connect request failed %d. Waiting iface be up...", ret);
+		k_msleep(500);
+	}
+#endif
 
 	serv = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
 	if (serv < 0) {

@@ -83,3 +83,16 @@ the IP address will be printed to the console upon running this echo
 application.
 
 Proceed to test as above.
+
+Running on Raspberry Pi Pico W
+==============================
+
+Edit boards/rpi_pico_rp2040_w.conf to add the Access Point SSID and password
+at the end:
+
+.. code-block:: cfg
+
+    CONFIG_NET_SAMPLE_WIFI_SSID="MyWifi"
+    CONFIG_NET_SAMPLE_WIFI_PSK="SuperSecret"
+
+Build and test as above.
