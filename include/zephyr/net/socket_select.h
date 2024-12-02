@@ -120,44 +120,6 @@ static inline void ZSOCK_FD_SET(int fd, zsock_fd_set *set)
 	ZVFS_FD_SET(fd, set);
 }
 
-/** @cond INTERNAL_HIDDEN */
-
-#ifdef CONFIG_NET_SOCKETS_POSIX_NAMES
-
-#define fd_set zsock_fd_set
-#define FD_SETSIZE ZSOCK_FD_SETSIZE
-
-static inline int select(int nfds, zsock_fd_set *readfds,
-			 zsock_fd_set *writefds, zsock_fd_set *exceptfds,
-			 struct timeval *timeout)
-{
-	return zsock_select(nfds, readfds, writefds, exceptfds, timeout);
-}
-
-static inline void FD_ZERO(zsock_fd_set *set)
-{
-	ZSOCK_FD_ZERO(set);
-}
-
-static inline int FD_ISSET(int fd, zsock_fd_set *set)
-{
-	return ZSOCK_FD_ISSET(fd, set);
-}
-
-static inline void FD_CLR(int fd, zsock_fd_set *set)
-{
-	ZSOCK_FD_CLR(fd, set);
-}
-
-static inline void FD_SET(int fd, zsock_fd_set *set)
-{
-	ZSOCK_FD_SET(fd, set);
-}
-
-#endif /* CONFIG_NET_SOCKETS_POSIX_NAMES */
-
-/** @endcond */
-
 #ifdef __cplusplus
 }
 #endif

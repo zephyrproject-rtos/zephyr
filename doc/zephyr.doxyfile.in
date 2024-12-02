@@ -2489,7 +2489,6 @@ PREDEFINED             = __DOXYGEN__ \
                          CONFIG_NET_L2_IEEE802154_MGMT \
                          CONFIG_NET_L2_IEEE802154_SECURITY \
                          CONFIG_NET_MGMT_EVENT \
-                         CONFIG_NET_SOCKETS_POSIX_NAMES \
                          CONFIG_NET_TCP \
                          CONFIG_NET_UDP \
                          CONFIG_SCHED_CPU_MASK \
