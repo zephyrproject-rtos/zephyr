@@ -868,10 +868,6 @@ static void usbd_cdc_ncm_disable(struct usbd_class_data *const c_data)
 	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_ncm_eth_data *data = dev->data;
 
-	if (atomic_test_and_clear_bit(&data->state, CDC_NCM_CLASS_ENABLED)) {
-		net_if_carrier_off(data->iface);
-	}
-
 	atomic_clear_bit(&data->state, CDC_NCM_CLASS_SUSPENDED);
 
 	LOG_DBG("Configuration disabled");
