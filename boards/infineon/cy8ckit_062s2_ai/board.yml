@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Arrow Electronics.
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: cy8ckit_062s2_ai
+  full_name: PSOC 6 AI Evaluation Kit
+  vendor: infineon
+  socs:
+    - name: cy8c624abzi_s2d44
