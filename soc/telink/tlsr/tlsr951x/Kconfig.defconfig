@@ -12,9 +12,6 @@ config RISCV_SOC_INTERRUPT_INIT
 config NUM_IRQS
 	default 64
 
-config PINCTRL
-	default y
-
 config XIP
 	default n
 
