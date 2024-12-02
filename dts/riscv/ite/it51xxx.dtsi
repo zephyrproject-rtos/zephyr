@@ -9,6 +9,7 @@
 #include <zephyr/dt-bindings/dt-util.h>
 #include <zephyr/dt-bindings/interrupt-controller/ite-it51xxx-intc.h>
 #include <zephyr/dt-bindings/interrupt-controller/ite-it51xxx-wuc.h>
+#include <zephyr/dt-bindings/pinctrl/it8xxx2-pinctrl.h>
 
 / {
 	#address-cells = <1>;
@@ -63,6 +64,260 @@
 		gpiogcr: gpio-gcr@f01600 {
 			compatible = "ite,it51xxx-gpiogcr";
 			reg = <0x00f01600 0x100>;
+		};
+
+		pinctrl: pin-controller {
+			compatible = "ite,it8xxx2-pinctrl";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "okay";
+		};
+
+		pinctrla: pinctrl@f01610 {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f01610 8     /* GPCR */
+			       NO_FUNC    1>;
+			func3-gcr =     <NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC
+					 0xf016fe 0xf016fe 0xf016f0 0xf016f0>;
+			func3-en-mask = <0        0        0        0
+					 BIT(5)   BIT(5)   BIT(4)   BIT(3)  >;
+			func4-gcr =     <NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC
+					 NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC >;
+			func4-en-mask = <0        0        0        0
+					 0        0        0        0       >;
+			volt-sel =      <0xf016d4 0xf016d4 0xf016d4 0xf016d4
+					 NO_FUNC  NO_FUNC  0xf016d4 0xf016d4>;
+			volt-sel-mask = <BIT(0)   BIT(1)   BIT(2)   BIT(3)
+					 0        0        BIT(6)   BIT(7)  >;
+			#pinmux-cells = <2>;
+			gpio-group;
+		};
+
+		pinctrlb: pinctrl@f01618 {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f01618 8     /* GPCR */
+			       NO_FUNC    1>;
+			func3-gcr =     <NO_FUNC  NO_FUNC  0xf016f0 NO_FUNC
+					 NO_FUNC  0xf016f7 NO_FUNC  NO_FUNC >;
+			func3-en-mask = <0        0        BIT(1)   0
+					 0        BIT(5)   0        0       >;
+			func4-gcr =     <NO_FUNC  NO_FUNC  0xf016ed NO_FUNC
+					 NO_FUNC  0xf016ed NO_FUNC  NO_FUNC >;
+			func4-en-mask = <0        0        BIT(2)   0
+					 0        BIT(3)   0        0       >;
+			volt-sel =      <NO_FUNC  NO_FUNC  0xf016d5 NO_FUNC
+					 NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC >;
+			volt-sel-mask = <0        0        BIT(2)   0
+					 0        0        0        0       >;
+			#pinmux-cells = <2>;
+			gpio-group;
+		};
+
+		pinctrlc: pinctrl@f01620 {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f01620 8     /* GPCR */
+			       NO_FUNC    1>;
+			func3-gcr =     <NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC
+					 0xf016f0 NO_FUNC  0xf016f0 0xf016f6>;
+			func3-en-mask = <0        0        0        0
+					 BIT(4)   0        BIT(4)   BIT(7)  >;
+			func4-gcr =     <NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC
+					 NO_FUNC  NO_FUNC  0xf016f4 0xf016f5>;
+			func4-en-mask = <0        0        0        0
+					 0        0        BIT(0)   BIT(0)  >;
+			volt-sel =      <0xf016d6 NO_FUNC  NO_FUNC  0xf016d6
+					 0xf016d6 0xf016d6 0xf016d6 NO_FUNC >;
+			volt-sel-mask = <BIT(0)   0        0        BIT(3)
+					 BIT(4)   BIT(5)   BIT(6)   0       >;
+			#pinmux-cells = <2>;
+			gpio-group;
+		};
+
+		pinctrld: pinctrl@f01628 {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f01628 8     /* GPCR */
+			       NO_FUNC    1>;
+			func3-gcr =     <0xf016ed 0xf016ed NO_FUNC  NO_FUNC
+					 0xf03292 0xf016f0 NO_FUNC  NO_FUNC >;
+			func3-en-mask = <BIT(1)   BIT(1)   0        0
+					 BIT(5)   BIT(1)   0        0       >;
+			func4-gcr =     <NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC
+					 NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC >;
+			func4-en-mask = <0        0        0        0
+					 0        0        0        0       >;
+			volt-sel =      <NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC
+					 NO_FUNC  0xf016d7 0xf016d7 0xf016d7>;
+			volt-sel-mask = <0        0        0        0
+					 0        BIT(5)   BIT(6)   BIT(7)  >;
+			#pinmux-cells = <2>;
+			gpio-group;
+		};
+
+		pinctrle: pinctrl@f01630 {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f01630 8     /* GPCR */
+			       NO_FUNC    1>;
+			func3-gcr =     <0xf016f3 NO_FUNC  NO_FUNC  NO_FUNC
+					 NO_FUNC  0xf016f0 0xf016fe 0xf016fe>;
+			func3-en-mask = <BIT(0)   0        0        0
+					 0        BIT(3)   BIT(7)   BIT(4)  >;
+			func4-gcr =     <0xf016fe NO_FUNC  NO_FUNC  NO_FUNC
+					 NO_FUNC  NO_FUNC  0xf016f5 NO_FUNC >;
+			func4-en-mask = <BIT(4)   0        0        0
+					 0        0        BIT(1)   0       >;
+			volt-sel =      <NO_FUNC  0xf016d8 0xf016d8 0xf016d8
+					 NO_FUNC  0xf016d8 NO_FUNC  NO_FUNC >;
+			volt-sel-mask = <0        BIT(1)   BIT(2)   BIT(3)
+					 0        BIT(5)   0        0       >;
+			#pinmux-cells = <2>;
+			gpio-group;
+		};
+
+		pinctrlf: pinctrl@f01638 {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f01638 8     /* GPCR */
+			       NO_FUNC    1>;
+			func3-gcr =     <NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC
+					 NO_FUNC  NO_FUNC  0xf016f1 NO_FUNC>;
+			func3-en-mask = <0        0        0        0
+					 0        0        BIT(4)   0      >;
+			func4-gcr =     <NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC
+					 NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC>;
+			func4-en-mask = <0        0        0        0
+					 0        0        0        0      >;
+			volt-sel =      <0xf016d9 0xf016d9 NO_FUNC  NO_FUNC
+					 NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC>;
+			volt-sel-mask = <BIT(0)   BIT(1)   0        0
+					 0        0        0        0      >;
+			#pinmux-cells = <2>;
+			gpio-group;
+		};
+
+		pinctrlg: pinctrl@f01640 {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f01640 8     /* GPCR */
+			       NO_FUNC    1>;
+			func3-gcr =     <NO_FUNC  0xf016f0 NO_FUNC  NO_FUNC
+					 NO_FUNC  NO_FUNC  0xf016f0 NO_FUNC>;
+			func3-en-mask = <0        BIT(3)   0        0
+					 0        0        BIT(1)   0      >;
+			func4-gcr =     <NO_FUNC  0xf016f0 NO_FUNC  NO_FUNC
+					 NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC>;
+			func4-en-mask = <0        BIT(6)   0        0
+					 0        0        0        0      >;
+			volt-sel =      <0xf016da NO_FUNC  0xf016da NO_FUNC
+					 NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC>;
+			volt-sel-mask = <BIT(0)   0        BIT(2)   0
+					 0        0        0        0      >;
+			#pinmux-cells = <2>;
+			gpio-group;
+		};
+
+		pinctrlh: pinctrl@f01648 {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f01648 8     /* GPCR */
+			       NO_FUNC    1>;
+			func3-gcr =     <0xf016f0 0xf016f5 0xf016f5 0xf016f0
+					 0xf016f0 NO_FUNC  NO_FUNC  0xf016f0>;
+			func3-en-mask = <BIT(1)   BIT(2)   BIT(3)   BIT(1)
+					 BIT(1)   0        0        BIT(5)  >;
+			func4-gcr =     <0xf016ed 0xf016f1 0xf016f1 NO_FUNC
+					 NO_FUNC  NO_FUNC  NO_FUNC  0xf016f5>;
+			func4-en-mask = <BIT(2)   BIT(5)   BIT(5)   0
+					 0        0        0        BIT(7)  >;
+			volt-sel =      <NO_FUNC  NO_FUNC  NO_FUNC  0xf016db
+					 0xf016db 0xf016db 0xf016db 0xf016db>;
+			volt-sel-mask = <0        0        0        BIT(3)
+					 BIT(4)   BIT(5)   BIT(6)   BIT(7)  >;
+			#pinmux-cells = <2>;
+			gpio-group;
+		};
+
+		pinctrli: pinctrl@f01650 {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f01650 8     /* GPCR */
+			       NO_FUNC    1>;
+			func3-gcr =     <NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC
+					 NO_FUNC  0xf016f0 0xf016f0 0xf016f0>;
+			func3-en-mask = <0        0        0        0
+					 0        BIT(3)   BIT(3)   BIT(3)  >;
+			func4-gcr =     <NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC
+					 NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC >;
+			func4-en-mask = <0        0        0        0
+					 0        0        0        0       >;
+			volt-sel =      <0xf016dc 0xf016dc 0xf016dc 0xf016dc
+					 0xf016dc 0xf016dc 0xf016dc 0xf016dc>;
+			volt-sel-mask = <BIT(0)   BIT(1)   BIT(2)   BIT(3)
+					 BIT(4)   BIT(5)   BIT(6)   BIT(7)  >;
+			#pinmux-cells = <2>;
+			gpio-group;
+		};
+
+		pinctrlj: pinctrl@f01658 {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f01658 8     /* GPCR */
+			       NO_FUNC    1>;
+			func3-gcr =     <0xf016f1 0xf016fe NO_FUNC  NO_FUNC
+					 NO_FUNC  NO_FUNC  0xf016f4 0xf016d1>;
+			func3-en-mask = <BIT(7)   BIT(3)   0        0
+					 0        0        BIT(1)   BIT(3)  >;
+			func4-gcr =     <NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC
+					 NO_FUNC  NO_FUNC  0xf016ed 0xf016f0>;
+			func4-en-mask = <0        0        0        0
+					 0        0        BIT(3)   BIT(4)  >;
+			volt-sel =      <0xf016dd NO_FUNC  0xf016dd 0xf016dd
+					 0xf016dd 0xf016dd 0xf016dd 0xf016dd>;
+			volt-sel-mask = <BIT(0)   0        BIT(2)   BIT(3)
+					 BIT(4)   BIT(5)   BIT(6)   BIT(7)  >;
+			#pinmux-cells = <2>;
+			gpio-group;
+		};
+
+		pinctrlk: pinctrl@f01d2d {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f01d2d 1   /* KSOLGCTRL */
+			       0x00f01d02 1>; /* KSOCTRL */
+			pp-od-mask = <BIT(0)>;
+			pullup-mask = <BIT(2)>;
+			#pinmux-cells = <2>;
+		};
+
+		pinctrll: pinctrl@f01d2e {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f01d2e 1   /* KSOHGCTRL */
+			       0x00f01d02 1>; /* KSOCTRL */
+			pp-od-mask = <BIT(0)>;
+			pullup-mask = <BIT(2)>;
+			#pinmux-cells = <2>;
+		};
+
+		pinctrlm: pinctrl@f016a0 {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f016a0 8     /* GPCR */
+			       NO_FUNC    1>;
+			func3-gcr =     <NO_FUNC NO_FUNC NO_FUNC NO_FUNC
+					 NO_FUNC NO_FUNC NO_FUNC NO_FUNC>;
+			func3-en-mask = <0       0       0       0
+					 0       0       0       0      >;
+			func4-gcr =     <NO_FUNC NO_FUNC NO_FUNC NO_FUNC
+					 NO_FUNC NO_FUNC NO_FUNC NO_FUNC>;
+			func4-en-mask = <0       0       0       0
+					 0       0       0       0      >;
+			volt-sel =      <NO_FUNC NO_FUNC NO_FUNC NO_FUNC
+					 NO_FUNC NO_FUNC NO_FUNC NO_FUNC>;
+			volt-sel-mask = <0       0       0       0
+					 0       0       0       0      >;
+			#pinmux-cells = <2>;
+			gpio-group;
+		};
+
+		pinctrln: pinctrl@f01d2c {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f01d2c 1   /* KSIGCTRL */
+			       0x00f01d05 1>; /* KSICTRL */
+			pp-od-mask = <NO_FUNC>;
+			pullup-mask = <BIT(2)>;
+			#pinmux-cells = <2>;
 		};
 
 		wuc1: wakeup-controller@f01b00 {

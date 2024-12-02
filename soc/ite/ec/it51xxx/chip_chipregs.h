@@ -183,6 +183,7 @@ struct gpio_it51xxx_regs {
 /* GPIO register fields */
 /* 0x00: General Control */
 #define IT51XXX_GPIO_LPCRSTEN             (BIT(2) | BIT(1))
+#define ITE_EC_GPIO_LPCRSTEN              IT51XXX_GPIO_LPCRSTEN
 #define IT51XXX_GPIO_GCR_ESPI_RST_D2      0x2
 #define IT51XXX_GPIO_GCR_ESPI_RST_POS     1
 #define IT51XXX_GPIO_GCR_ESPI_RST_EN_MASK (0x3 << IT51XXX_GPIO_GCR_ESPI_RST_POS)
@@ -297,5 +298,9 @@ struct gctrl_it51xxx_regs {
 #define IT51XXX_GCTRL_LRSIPGWR    BIT(0)
 /* 0x38: Special Control 9 */
 #define IT51XXX_GCTRL_ALTIE       BIT(4)
+
+/* Alias gpio_ite_ec_regs to gpio_it51xxx_regs for compatibility */
+#define gpio_ite_ec_regs      gpio_it51xxx_regs
+#define GPIO_ITE_EC_REGS_BASE GPIO_IT51XXX_REGS_BASE
 
 #endif /* CHIP_CHIPREGS_H */
