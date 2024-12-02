@@ -2621,11 +2621,11 @@ static int big_init_bis(struct bt_iso_big *big, struct bt_iso_chan **bis_channel
 static int hci_le_create_big(struct bt_le_ext_adv *padv, struct bt_iso_big *big,
 			     struct bt_iso_big_create_param *param)
 {
+	const struct bt_iso_chan_io_qos *qos;
 	struct bt_hci_cp_le_create_big *req;
 	struct bt_hci_cmd_state_set state;
 	struct net_buf *buf;
 	int err;
-	static struct bt_iso_chan_qos *qos;
 	struct bt_iso_chan *bis;
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_CREATE_BIG, sizeof(*req));
@@ -2638,17 +2638,17 @@ static int hci_le_create_big(struct bt_le_ext_adv *padv, struct bt_iso_big *big,
 	__ASSERT(bis != NULL, "bis was NULL");
 
 	/* All BIS will share the same QOS */
-	qos = bis->qos;
+	qos = bis->qos->tx;
 
 	req = net_buf_add(buf, sizeof(*req));
 	req->big_handle = big->handle;
 	req->adv_handle = padv->handle;
 	req->num_bis = big->num_bis;
 	sys_put_le24(param->interval, req->sdu_interval);
-	req->max_sdu = sys_cpu_to_le16(qos->tx->sdu);
+	req->max_sdu = sys_cpu_to_le16(qos->sdu);
 	req->max_latency = sys_cpu_to_le16(param->latency);
-	req->rtn = qos->tx->rtn;
-	req->phy = qos->tx->phy;
+	req->rtn = qos->rtn;
+	req->phy = qos->phy;
 	req->packing = param->packing;
 	req->framing = param->framing;
 	req->encryption = param->encryption;
@@ -2657,6 +2657,11 @@ static int hci_le_create_big(struct bt_le_ext_adv *padv, struct bt_iso_big *big,
 	} else {
 		memset(req->bcode, 0, sizeof(req->bcode));
 	}
+
+	LOG_DBG("BIG handle 0x%02x, adv_handle 0x%02x, num_bis %u, sdu_interval %u, max_sdu %u, "
+		"max_latency %u, rtn %u, phy %u, packing %u, framing %u, encryption %u",
+		big->handle, padv->handle, big->num_bis, param->interval, qos->sdu, param->latency,
+		qos->rtn, qos->phy, param->packing, param->framing, param->encryption);
 
 	bt_hci_cmd_state_set_init(buf, &state, big->flags, BT_BIG_PENDING, true);
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_CREATE_BIG, buf, NULL);
