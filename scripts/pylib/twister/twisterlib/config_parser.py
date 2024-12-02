@@ -106,10 +106,8 @@ class TwisterConfigParser:
         return data
 
     def _cast_value(self, value, typestr):
-        if isinstance(value, str):
-            v = value.strip()
         if typestr == "str":
-            return v
+            return value.strip()
 
         elif typestr == "float":
             return float(value)
@@ -124,19 +122,8 @@ class TwisterConfigParser:
             if isinstance(value, list):
                 return value
             elif isinstance(value, str):
-                vs = v.split()
-
-                if len(vs) > 1:
-                    warnings.warn(
-                        "Space-separated lists are deprecated, use YAML lists instead",
-                        DeprecationWarning,
-                        stacklevel=2
-                    )
-
-                if len(typestr) > 4 and typestr[4] == ":":
-                    return [self._cast_value(vsi, typestr[5:]) for vsi in vs]
-                else:
-                    return vs
+                value = value.strip()
+                return [value] if value else list()
             else:
                 raise ValueError
 
@@ -144,19 +131,8 @@ class TwisterConfigParser:
             if isinstance(value, list):
                 return set(value)
             elif isinstance(value, str):
-                vs = v.split()
-
-                if len(vs) > 1:
-                    warnings.warn(
-                        "Space-separated lists are deprecated, use YAML lists instead",
-                        DeprecationWarning,
-                        stacklevel=2
-                    )
-
-                if len(typestr) > 3 and typestr[3] == ":":
-                    return {self._cast_value(vsi, typestr[4:]) for vsi in vs}
-                else:
-                    return set(vs)
+                value = value.strip()
+                return {value} if value else set()
             else:
                 raise ValueError
 
@@ -201,13 +177,20 @@ class TwisterConfigParser:
                 elif k not in ("extra_conf_files", "extra_overlay_confs",
                                "extra_dtc_overlay_files"):
                     if isinstance(d[k], str) and isinstance(v, list):
-                        d[k] = d[k].split() + v
+                        d[k] = [d[k]] + v
                     elif isinstance(d[k], list) and isinstance(v, str):
-                        d[k] += v.split()
+                        d[k] += [v]
                     elif isinstance(d[k], list) and isinstance(v, list):
                         d[k] += v
                     elif isinstance(d[k], str) and isinstance(v, str):
-                        d[k] += " " + v
+                        # overwrite if type is string, otherwise merge into a list
+                        type = self.testsuite_valid_keys[k]["type"]
+                        if type == "str":
+                            d[k] = v
+                        elif type in ("list", "set"):
+                            d[k] = [d[k], v]
+                        else:
+                            raise ValueError
                     else:
                         # replace value if not str/list (e.g. integer)
                         d[k] = v
