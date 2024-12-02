@@ -146,7 +146,7 @@ static int api_request_lfclk(const struct device *dev,
 	struct onoff_manager *mgr = lfclk_find_mgr(dev, spec);
 
 	if (mgr) {
-		return onoff_request(mgr, cli);
+		return clock_config_request(mgr, cli);
 	}
 
 	return -EINVAL;

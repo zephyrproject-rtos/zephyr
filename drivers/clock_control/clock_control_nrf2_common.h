@@ -60,6 +60,20 @@ int lfosc_get_accuracy(uint16_t *accuracy);
 int clock_config_init(void *clk_cfg, uint8_t onoff_cnt, k_work_handler_t update_work_handler);
 
 /**
+ * @brief Helper function for requesting a clock configuration handled by
+ *        a given on-off manager.
+ *
+ * If needed, the function resets the on-off service prior to making the new
+ * request.
+ *
+ * @param mgr pointer to the manager for which the request is to be done.
+ * @param cli pointer to a client state structure to be used for the request.
+ *
+ * @return result returned by onoff_request().
+ */
+int clock_config_request(struct onoff_manager *mgr, struct onoff_client *cli);
+
+/**
  * @brief Starts a clock configuration update.
  *
  * This function is supposed to be called by a specific clock control driver

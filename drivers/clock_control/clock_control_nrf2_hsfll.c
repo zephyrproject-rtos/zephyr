@@ -140,7 +140,7 @@ static int api_request_hsfll(const struct device *dev,
 	struct onoff_manager *mgr = hsfll_find_mgr(dev, spec);
 
 	if (mgr) {
-		return onoff_request(mgr, cli);
+		return clock_config_request(mgr, cli);
 	}
 
 	return -EINVAL;
