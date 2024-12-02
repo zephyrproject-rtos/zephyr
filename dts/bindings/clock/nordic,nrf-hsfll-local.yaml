@@ -2,15 +2,15 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  Nordic nRF HSFLL
+  Nordic nRF local HSFLL
 
-  The HSFLL mixed-mode IP generates several clock frequencies in the range from
-  64 MHz to 400 MHz (in steps of 16 MHz).
+  The local HSFLL mixed-mode IP generates several clock frequencies in the range
+  from 64 MHz to 400 MHz (in steps of 16 MHz).
 
   Usage example:
 
     hsfll: clock@deadbeef {
-        compatible = "nordic,nrf-hsfll";
+        compatible = "nordic,nrf-hsfll-local";
         reg = <0xdeadbeef 0x1000>;
         clocks = <&fll16m>;
         clock-frequency = <DT_FREQ_M(320)>;
@@ -22,7 +22,7 @@ description: |
 
   Required FICR entries are for VSUP, COARSE and FINE trim values.
 
-compatible: "nordic,nrf-hsfll"
+compatible: "nordic,nrf-hsfll-local"
 
 include: [base.yaml, fixed-clock.yaml, nordic-nrf-ficr-client.yaml]
 

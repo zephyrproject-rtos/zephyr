@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT nordic_nrf_hsfll
+#define DT_DRV_COMPAT nordic_nrf_hsfll_local
 
 #include "clock_control_nrf2_common.h"
 #include <zephyr/devicetree.h>

@@ -149,7 +149,7 @@
 			ranges = <0x0 0x52000000 0x1000000>;
 
 			cpuapp_hsfll: clock@d000 {
-				compatible = "nordic,nrf-hsfll";
+				compatible = "nordic,nrf-hsfll-local";
 				#clock-cells = <0>;
 				reg = <0xd000 0x1000>;
 				clocks = <&fll16m>;
@@ -201,7 +201,7 @@
 			ranges = <0x0 0x53000000 0x1000000>;
 
 			cpurad_hsfll: clock@d000 {
-				compatible = "nordic,nrf-hsfll";
+				compatible = "nordic,nrf-hsfll-local";
 				#clock-cells = <0>;
 				reg = <0xd000 0x1000>;
 				clocks = <&fll16m>;
