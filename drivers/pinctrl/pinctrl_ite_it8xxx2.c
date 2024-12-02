@@ -289,7 +289,7 @@ static int pinctrl_kscan_it8xxx2_configure_pins(const pinctrl_soc_pin_t *pins)
 		return -EINVAL;
 	}
 
-#ifdef CONFIG_SOC_IT8XXX2_REG_SET_V1
+#if defined(CONFIG_SOC_IT8XXX2_REG_SET_V1) || defined(CONFIG_SOC_SERIES_IT51XXX)
 	uint8_t pin_mask = BIT(pins->pin);
 	volatile uint8_t *reg_gctrl = ksi_kso->reg_gctrl;
 
