@@ -547,7 +547,7 @@ static int spi_setup_dma(struct ec_host_cmd_spi_ctx *hc_spi)
 	LL_SPI_EnableDMAReq_TX(spi);
 
 	LL_SPI_Enable(spi);
-#else /* EC_HOST_CMD_ST_STM32H7 */
+#else  /* EC_HOST_CMD_ST_STM32H7 */
 	LL_SPI_Enable(spi);
 #endif /* !EC_HOST_CMD_ST_STM32H7 */
 
@@ -783,8 +783,7 @@ struct ec_host_cmd_backend *ec_host_cmd_backend_get_spi(struct gpio_dt_spec *cs)
 }
 
 #ifdef CONFIG_PM_DEVICE
-static int ec_host_cmd_spi_stm32_pm_action(const struct device *dev,
-					   enum pm_device_action action)
+static int ec_host_cmd_spi_stm32_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	const struct ec_host_cmd_backend *backend = (struct ec_host_cmd_backend *)dev->data;
 	struct ec_host_cmd_spi_ctx *hc_spi = (struct ec_host_cmd_spi_ctx *)backend->ctx;
@@ -848,10 +847,8 @@ static int ec_host_cmd_spi_stm32_pm_action(const struct device *dev,
 
 PM_DEVICE_DT_DEFINE(DT_CHOSEN(zephyr_host_cmd_spi_backend), ec_host_cmd_spi_stm32_pm_action);
 
-DEVICE_DT_DEFINE(DT_CHOSEN(zephyr_host_cmd_spi_backend),
-		 NULL,
-		 PM_DEVICE_DT_GET(DT_CHOSEN(zephyr_host_cmd_spi_backend)),
-		 &ec_host_cmd_spi, NULL,
+DEVICE_DT_DEFINE(DT_CHOSEN(zephyr_host_cmd_spi_backend), NULL,
+		 PM_DEVICE_DT_GET(DT_CHOSEN(zephyr_host_cmd_spi_backend)), &ec_host_cmd_spi, NULL,
 		 PRE_KERNEL_1, CONFIG_EC_HOST_CMD_INIT_PRIORITY, NULL);
 
 #ifdef CONFIG_EC_HOST_CMD_INITIALIZE_AT_BOOT
