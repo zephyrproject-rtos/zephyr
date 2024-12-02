@@ -160,6 +160,10 @@ LOG_MODULE_REGISTER(nxp_edma);
 	 edma_chan_cyclic_produce(chan, size) :\
 	 edma_chan_cyclic_consume(chan, size))
 
+#define EDMA_CHAN_IS_ACTIVE(data, chan)\
+	(EDMA_ChannelRegRead((data)->hal_cfg, (chan)->id, EDMA_TCD_CH_CSR) &\
+	 EDMA_TCD_CH_CSR_ACTIVE_MASK)
+
 enum channel_type {
 	CHAN_TYPE_CONSUMER = 0,
 	CHAN_TYPE_PRODUCER,
@@ -171,6 +175,7 @@ enum channel_state {
 	CHAN_STATE_STARTED,
 	CHAN_STATE_STOPPED,
 	CHAN_STATE_SUSPENDED,
+	CHAN_STATE_RELEASING,
 };
 
 struct edma_channel {
@@ -235,7 +240,8 @@ static inline bool channel_allows_transition(struct edma_channel *chan,
 		break;
 	case CHAN_STATE_CONFIGURED:
 		if (next != CHAN_STATE_STARTED &&
-		    next != CHAN_STATE_CONFIGURED) {
+		    next != CHAN_STATE_CONFIGURED &&
+		    next != CHAN_STATE_RELEASING) {
 			return false;
 		}
 		break;
@@ -246,7 +252,8 @@ static inline bool channel_allows_transition(struct edma_channel *chan,
 		}
 		break;
 	case CHAN_STATE_STOPPED:
-		if (next != CHAN_STATE_CONFIGURED) {
+		if (next != CHAN_STATE_CONFIGURED &&
+		    next != CHAN_STATE_RELEASING) {
 			return false;
 		}
 		break;
