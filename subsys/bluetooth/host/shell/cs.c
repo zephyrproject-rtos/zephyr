@@ -220,8 +220,8 @@ static int cmd_cs_test_simple(const struct shell *sh, size_t argc, char *argv[])
 	params.t_pm_time = 20;
 	params.t_sw_time = 0;
 	params.tone_antenna_config_selection = BT_LE_CS_TONE_ANTENNA_CONFIGURATION_INDEX_ONE;
-	params.initiator_snr_control = BT_LE_CS_INITIATOR_SNR_CONTROL_NOT_USED;
-	params.reflector_snr_control = BT_LE_CS_REFLECTOR_SNR_CONTROL_NOT_USED;
+	params.initiator_snr_control = BT_LE_CS_SNR_CONTROL_NOT_USED;
+	params.reflector_snr_control = BT_LE_CS_SNR_CONTROL_NOT_USED;
 	params.drbg_nonce = 0x1234;
 	params.override_config = 0;
 	params.override_config_0.channel_map_repetition = 1;
@@ -641,8 +641,8 @@ static int cmd_set_procedure_parameters(const struct shell *sh, size_t argc, cha
 	params.phy = 0x01;
 	params.tx_power_delta = 0x80;
 	params.preferred_peer_antenna = 1;
-	params.snr_control_initiator = BT_LE_CS_INITIATOR_SNR_CONTROL_18dB;
-	params.snr_control_reflector = BT_HCI_OP_LE_CS_REFLECTOR_SNR_18;
+	params.snr_control_initiator = BT_LE_CS_SNR_CONTROL_18dB;
+	params.snr_control_reflector = BT_LE_CS_SNR_CONTROL_18dB;
 
 	err = bt_le_cs_set_procedure_parameters(default_conn, &params);
 
