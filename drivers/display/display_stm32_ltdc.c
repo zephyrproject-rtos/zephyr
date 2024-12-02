@@ -286,7 +286,7 @@ static int stm32_ltdc_display_blanking_on(const struct device *dev)
 		return -ENOSYS;
 	}
 
-	if (!device_is_ready(config->display_controller)) {
+	if (!device_is_ready(display_dev)) {
 		LOG_ERR("Display device %s not ready", display_dev->name);
 		return -ENODEV;
 	}

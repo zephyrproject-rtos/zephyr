@@ -65,7 +65,7 @@ static int api_get_entropy_isr(const struct device *dev, uint8_t *buf, uint16_t 
 	return ret;
 }
 
-static const struct entropy_driver_api entropy_max32_api = {.get_entropy = api_get_entropy,
+static DEVICE_API(entropy, entropy_max32_api) = {.get_entropy = api_get_entropy,
 							    .get_entropy_isr = api_get_entropy_isr};
 
 static int entropy_max32_init(const struct device *dev)

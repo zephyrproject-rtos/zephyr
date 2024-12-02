@@ -39,7 +39,7 @@ i2s_led: &i2s0 {
 &pinctrl {
 	i2s0_pinconf: i2s0_pinconf {
 		group1 {
-			pinmux = <I2S0_O_SD_GPIO39>;
+			pinmux = <I2S0_O_SD_GPIO38>;
 			output-enable;
 		};
 	};

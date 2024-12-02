@@ -967,8 +967,10 @@ int net_ipv6_addr_generate_iid(struct net_if *iface,
 		if (prefix == NULL) {
 			UNALIGNED_PUT(htonl(0xfe800000), &tmp_prefix.s6_addr32[0]);
 		} else {
-			UNALIGNED_PUT(prefix->s6_addr32[0], &tmp_prefix.s6_addr32[0]);
-			UNALIGNED_PUT(prefix->s6_addr32[1], &tmp_prefix.s6_addr32[1]);
+			UNALIGNED_PUT(UNALIGNED_GET(&prefix->s6_addr32[0]),
+				      &tmp_prefix.s6_addr32[0]);
+			UNALIGNED_PUT(UNALIGNED_GET(&prefix->s6_addr32[1]),
+				      &tmp_prefix.s6_addr32[1]);
 		}
 
 		ret = gen_stable_iid(if_index, &tmp_prefix, network_id, network_id_len,
@@ -983,8 +985,8 @@ int net_ipv6_addr_generate_iid(struct net_if *iface,
 		UNALIGNED_PUT(htonl(0xfe800000), &tmp_addr.s6_addr32[0]);
 		UNALIGNED_PUT(0, &tmp_addr.s6_addr32[1]);
 	} else {
-		UNALIGNED_PUT(prefix->s6_addr32[0], &tmp_addr.s6_addr32[0]);
-		UNALIGNED_PUT(prefix->s6_addr32[1], &tmp_addr.s6_addr32[1]);
+		UNALIGNED_PUT(UNALIGNED_GET(&prefix->s6_addr32[0]), &tmp_addr.s6_addr32[0]);
+		UNALIGNED_PUT(UNALIGNED_GET(&prefix->s6_addr32[1]), &tmp_addr.s6_addr32[1]);
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV6_IID_EUI_64)) {
