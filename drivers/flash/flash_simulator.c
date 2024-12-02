@@ -372,6 +372,22 @@ static int flash_sim_get_size(const struct device *dev, uint64_t *size)
 
 	return 0;
 }
+
+static int flash_sim_mmap(const struct device *dev, void **base, uint64_t *size,
+			  uint32_t flags)
+{
+	ARG_UNUSED(dev);
+
+	if (flags & ~(FLASH_MMAP_F_READ | FLASH_MMAP_F_WRITE)) {
+		return -EINVAL;
+	}
+
+	*base = (void *)&mock_flash[0];
+	*size = (uint64_t)FLASH_SIMULATOR_FLASH_SIZE;
+
+	return 0;
+}
+
 static const struct flash_parameters *
 flash_sim_get_parameters(const struct device *dev)
 {
@@ -384,6 +400,7 @@ static const struct flash_driver_api flash_sim_api = {
 	.read = flash_sim_read,
 	.write = flash_sim_write,
 	.erase = flash_sim_erase,
+	.mmap = flash_sim_mmap,
 	.get_parameters = flash_sim_get_parameters,
 	.get_size = flash_sim_get_size,
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
