@@ -11,6 +11,10 @@
 #include <zephyr/dt-bindings/pwm/pwm.h>
 
 / {
+	aliases {
+		watchdog0 = &rtwdog0;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -74,6 +78,12 @@
 		compatible = "nxp,imx-ccm-rev2";
 		reg = <0x4450000 0x4000>;
 		#clock-cells = <3>;
+
+		lpo: lpo32k {
+			compatible = "fixed-clock";
+			clock-frequency = <32000>;
+			#clock-cells = <0>;
+		};
 	};
 
 	lpuart1: uart@4380000 {
@@ -1069,6 +1079,56 @@
 		clocks = <&ccm IMX_CCM_LPSPI0506_CLK 0x6c 6>;
 		#address-cells = <1>;
 		#size-cells = <0>;
+	};
+
+	rtwdog0: wdog@42d0000 {
+		compatible = "nxp,rtwdog";
+		reg = <0x42d0000 0x10>;
+		status = "okay";
+		interrupts = <38 0>;
+		clocks = <&lpo>;
+		clk-source = <1>;
+		clk-divider = <1>;
+	};
+
+	rtwdog1: wdog@42e0000 {
+		compatible = "nxp,rtwdog";
+		reg = <0x42e0000 0x10>;
+		status = "disabled";
+		interrupts = <39 0>;
+		clocks = <&lpo>;
+		clk-source = <1>;
+		clk-divider = <1>;
+	};
+
+	rtwdog2: wdog@2490000 {
+		compatible = "nxp,rtwdog";
+		reg = <0x2490000 0x10>;
+		status = "disabled";
+		interrupts = <79 0>;
+		clocks = <&lpo>;
+		clk-source = <1>;
+		clk-divider = <1>;
+	};
+
+	rtwdog3: wdog@24a0000 {
+		compatible = "nxp,rtwdog";
+		reg = <0x24a0000 0x10>;
+		status = "disabled";
+		interrupts = <80 0>;
+		clocks = <&lpo>;
+		clk-source = <1>;
+		clk-divider = <1>;
+	};
+
+	rtwdog4: wdog@24b0000 {
+		compatible = "nxp,rtwdog";
+		reg = <0x24b0000 0x10>;
+		status = "disabled";
+		interrupts = <81 0>;
+		clocks = <&lpo>;
+		clk-source = <1>;
+		clk-divider = <1>;
 	};
 };
 

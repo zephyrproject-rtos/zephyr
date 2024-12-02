@@ -26,4 +26,5 @@ supported:
   - i3c
   - dma
   - spi
+  - watchdog
 vendor: nxp
