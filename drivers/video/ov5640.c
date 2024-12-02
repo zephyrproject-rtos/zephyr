@@ -17,6 +17,9 @@
 #include <zephyr/drivers/video.h>
 #include <zephyr/drivers/video-controls.h>
 
+#include "video_async.h"
+#include "video_ctrls.h"
+
 LOG_MODULE_REGISTER(video_ov5640, CONFIG_VIDEO_LOG_LEVEL);
 
 #define CHIP_ID_REG 0x300a
@@ -137,7 +140,22 @@ struct ov5640_mode_config {
 	uint16_t def_frmrate;
 };
 
+struct ov5640_ctrls {
+	struct video_ctrl_handler handler;
+	struct video_ctrl brightness;
+	struct video_ctrl contrast;
+	struct video_ctrl hue;
+	struct video_ctrl saturation;
+	struct video_ctrl hflip;
+	struct video_ctrl vflip;
+	struct video_ctrl light_freq;
+	struct video_ctrl test_pattern;
+	struct video_ctrl pixel_rate;
+};
+
 struct ov5640_data {
+	struct video_notifier notifier;
+	struct ov5640_ctrls ctrls;
 	struct video_format fmt;
 	uint64_t cur_pixrate;
 	uint16_t cur_frmrate;
@@ -543,6 +561,9 @@ static int ov5640_set_frmival(const struct device *dev, enum video_endpoint_id e
 	drv_data->cur_frmrate = best_match;
 	drv_data->cur_pixrate = drv_data->cur_mode->mipi_frmrate_config[ind].pixelrate;
 
+	/* Update pixerate control */
+	drv_data->ctrls.pixel_rate.val = drv_data->cur_pixrate;
+
 	frmival->numerator = 1;
 	frmival->denominator = best_match;
 
@@ -677,10 +698,6 @@ static int ov5640_set_ctrl_test_pattern(const struct device *dev, int value)
 {
 	const struct ov5640_config *cfg = dev->config;
 
-	if (!IN_RANGE(value, 0, ARRAY_SIZE(test_pattern_val) - 1)) {
-		return -EINVAL;
-	}
-
 	return ov5640_write_reg(&cfg->i2c, PRE_ISP_TEST_SET1, test_pattern_val[value]);
 }
 
@@ -688,10 +705,6 @@ static int ov5640_set_ctrl_hue(const struct device *dev, int value)
 {
 	const struct ov5640_config *cfg = dev->config;
 	int cos_coef, sin_coef, sign = 0;
-
-	if (!IN_RANGE(value, 0, 360)) {
-		return -EINVAL;
-	}
 
 	double rad_val = value;
 	int ret = ov5640_modify_reg(&cfg->i2c, SDE_CTRL0_REG, BIT(0), BIT(0));
@@ -725,10 +738,6 @@ static int ov5640_set_ctrl_saturation(const struct device *dev, int value)
 {
 	const struct ov5640_config *cfg = dev->config;
 
-	if (!IN_RANGE(value, 0, UINT8_MAX)) {
-		return -EINVAL;
-	}
-
 	struct ov5640_reg saturation_params[] = {{SDE_CTRL3_REG, value}, {SDE_CTRL4_REG, value}};
 	int ret = ov5640_modify_reg(&cfg->i2c, SDE_CTRL8_REG, BIT(6) | BIT(0), BIT(6) | BIT(0));
 
@@ -743,12 +752,8 @@ static int ov5640_set_ctrl_brightness(const struct device *dev, int value)
 {
 	const struct ov5640_config *cfg = dev->config;
 
-	if (!IN_RANGE(value, -UINT8_MAX, UINT8_MAX)) {
-		return -EINVAL;
-	}
-
 	struct ov5640_reg brightness_params[] = {{SDE_CTRL8_REG, value >= 0 ? 0x01 : 0x09},
-						 {SDE_CTRL7_REG, abs(value) & 0xff}};
+						 {SDE_CTRL7_REG, (abs(value) << 4) & 0xf0}};
 	int ret = ov5640_modify_reg(&cfg->i2c, SDE_CTRL0_REG, BIT(2), BIT(2));
 
 	if (ret) {
@@ -761,10 +766,6 @@ static int ov5640_set_ctrl_brightness(const struct device *dev, int value)
 static int ov5640_set_ctrl_contrast(const struct device *dev, int value)
 {
 	const struct ov5640_config *cfg = dev->config;
-
-	if (!IN_RANGE(value, 0, UINT8_MAX)) {
-		return -EINVAL;
-	}
 
 	int ret = ov5640_modify_reg(&cfg->i2c, SDE_CTRL0_REG, BIT(2), BIT(2));
 
@@ -841,41 +842,27 @@ static int ov5640_set_ctrl_power_line_freq(const struct device *dev, int value)
 	return ov5640_modify_reg(&cfg->i2c, HZ5060_CTRL01_REG, BIT(7), BIT(7));
 }
 
-static int ov5640_set_ctrl(const struct device *dev, unsigned int cid, void *value)
+static int ov5640_set_ctrl(const struct device *dev, struct video_control *ctrl)
 {
-	switch (cid) {
+	switch (ctrl->id) {
 	case VIDEO_CID_TEST_PATTERN:
-		return ov5640_set_ctrl_test_pattern(dev, (int)value);
+		return ov5640_set_ctrl_test_pattern(dev, ctrl->val);
 	case VIDEO_CID_HUE:
-		return ov5640_set_ctrl_hue(dev, (int)value);
+		return ov5640_set_ctrl_hue(dev, ctrl->val);
 	case VIDEO_CID_SATURATION:
-		return ov5640_set_ctrl_saturation(dev, (int)(value));
+		return ov5640_set_ctrl_saturation(dev, ctrl->val);
 	case VIDEO_CID_BRIGHTNESS:
-		return ov5640_set_ctrl_brightness(dev, (int)(value));
+		return ov5640_set_ctrl_brightness(dev, ctrl->val);
 	case VIDEO_CID_CONTRAST:
-		return ov5640_set_ctrl_contrast(dev, (int)value);
+		return ov5640_set_ctrl_contrast(dev, ctrl->val);
 	case VIDEO_CID_GAIN:
-		return ov5640_set_ctrl_gain(dev, (int)(value));
+		return ov5640_set_ctrl_gain(dev, ctrl->val);
 	case VIDEO_CID_HFLIP:
-		return ov5640_set_ctrl_hflip(dev, (int)(value));
+		return ov5640_set_ctrl_hflip(dev, ctrl->val);
 	case VIDEO_CID_VFLIP:
-		return ov5640_set_ctrl_vflip(dev, (int)(value));
+		return ov5640_set_ctrl_vflip(dev, ctrl->val);
 	case VIDEO_CID_POWER_LINE_FREQUENCY:
-		return ov5640_set_ctrl_power_line_freq(dev, (int)(value));
-	default:
-		return -ENOTSUP;
-	}
-}
-
-static inline int ov5640_get_ctrl(const struct device *dev, unsigned int cid, void *value)
-{
-	struct ov5640_data *drv_data = dev->data;
-
-	switch (cid) {
-	case VIDEO_CID_PIXEL_RATE:
-		*((uint64_t *)value) = drv_data->cur_pixrate;
-
-		return 0;
+		return ov5640_set_ctrl_power_line_freq(dev, ctrl->val);
 	default:
 		return -ENOTSUP;
 	}
@@ -915,6 +902,67 @@ static int ov5640_enum_frmival(const struct device *dev, enum video_endpoint_id 
 	return 0;
 }
 
+static int ov5640_init_controls(const struct device *dev)
+{
+	int ret;
+	struct ov5640_data *drv_data = dev->data;
+	struct ov5640_ctrls *ctrls = &drv_data->ctrls;
+
+	video_ctrl_handler_init(&ctrls->handler, dev);
+
+	ret = video_ctrl_init(&ctrls->brightness, &ctrls->handler, VIDEO_CID_BRIGHTNESS, -15, 15, 1,
+			      0);
+	if (ret) {
+		return ret;
+	}
+
+	ret = video_ctrl_init(&ctrls->contrast, &ctrls->handler, VIDEO_CID_CONTRAST, 0, 255, 1, 0);
+	if (ret) {
+		return ret;
+	}
+
+	ret = video_ctrl_init(&ctrls->hue, &ctrls->handler, VIDEO_CID_HUE, 0, 359, 1, 0);
+	if (ret) {
+		return ret;
+	}
+
+	ret = video_ctrl_init(&ctrls->saturation, &ctrls->handler, VIDEO_CID_SATURATION, 0, 255, 1,
+			      64);
+	if (ret) {
+		return ret;
+	}
+
+	ret = video_ctrl_init(&ctrls->hflip, &ctrls->handler, VIDEO_CID_HFLIP, 0, 1, 1, 0);
+	if (ret) {
+		return ret;
+	}
+
+	ret = video_ctrl_init(&ctrls->vflip, &ctrls->handler, VIDEO_CID_VFLIP, 0, 1, 1, 0);
+	if (ret) {
+		return ret;
+	}
+
+	ret = video_ctrl_init(&ctrls->light_freq, &ctrls->handler, VIDEO_CID_POWER_LINE_FREQUENCY,
+			      VIDEO_CID_POWER_LINE_FREQUENCY_DISABLED,
+			      VIDEO_CID_POWER_LINE_FREQUENCY_AUTO, 1,
+			      VIDEO_CID_POWER_LINE_FREQUENCY_50HZ);
+	if (ret) {
+		return ret;
+	}
+
+	ret = video_ctrl_init(&ctrls->test_pattern, &ctrls->handler, VIDEO_CID_TEST_PATTERN, 0,
+			      ARRAY_SIZE(test_pattern_val) - 1, 1, 0);
+	if (ret) {
+		return ret;
+	}
+
+	return video_ctrl_init(
+		&ctrls->pixel_rate, &ctrls->handler, VIDEO_CID_PIXEL_RATE,
+		mipi_vga_frmrate_params[0].pixelrate,
+		mipi_hd_frmrate_params[ARRAY_SIZE(mipi_hd_frmrate_params) - 1].pixelrate, 1,
+		drv_data->cur_pixrate);
+}
+
 static const struct video_driver_api ov5640_driver_api = {
 	.set_format = ov5640_set_fmt,
 	.get_format = ov5640_get_fmt,
@@ -922,11 +970,19 @@ static const struct video_driver_api ov5640_driver_api = {
 	.stream_start = ov5640_stream_start,
 	.stream_stop = ov5640_stream_stop,
 	.set_ctrl = ov5640_set_ctrl,
-	.get_ctrl = ov5640_get_ctrl,
 	.set_frmival = ov5640_set_frmival,
 	.get_frmival = ov5640_get_frmival,
 	.enum_frmival = ov5640_enum_frmival,
 };
+
+static int ov5640_async_register(const struct device *dev)
+{
+	struct ov5640_data *drv_data = dev->data;
+
+	video_async_init(&drv_data->notifier, dev, NULL, &drv_data->ctrls.handler, NULL, 0);
+
+	return video_async_register(&drv_data->notifier);
+}
 
 static int ov5640_init(const struct device *dev)
 {
@@ -1025,7 +1081,15 @@ static int ov5640_init(const struct device *dev)
 		return -EIO;
 	}
 
-	return 0;
+	/* Initialize controls */
+	ret = ov5640_init_controls(dev);
+	if (ret) {
+		LOG_ERR("Unable to init controls");
+		return ret;
+	}
+
+	/* Register async */
+	return ov5640_async_register(dev);
 }
 
 #define OV5640_INIT(n)                                                                             \

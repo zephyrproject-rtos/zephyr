@@ -18,23 +18,18 @@
 #include <fsl_cache.h>
 #endif
 
-#if defined(CONFIG_VIDEO_MCUX_MIPI_CSI2RX)
-#define DEVICE_DT_INST_GET_SOURCE_DEV(n)                                                           \
-	DEVICE_DT_GET(DT_PARENT(DT_GPARENT(DT_NODELABEL(DT_STRING_TOKEN(                           \
-		DT_CHILD(DT_INST_CHILD(n, port), endpoint), remote_endpoint_label)))))
-#else
-#define DEVICE_DT_INST_GET_SOURCE_DEV(n)                                                           \
-	DEVICE_DT_GET(DT_GPARENT(DT_NODELABEL(DT_STRING_TOKEN(                                     \
-		DT_CHILD(DT_INST_CHILD(n, port), endpoint), remote_endpoint_label))))
-#endif
+#include "video_async.h"
+#include "video_device.h"
 
 struct video_mcux_csi_config {
 	CSI_Type *base;
-	const struct device *source_dev;
+	const struct device **source_devs;
 	const struct pinctrl_dev_config *pincfg;
 };
 
 struct video_mcux_csi_data {
+	struct video_notifier notifier;
+	struct video_device vdev;
 	const struct device *dev;
 	csi_config_t csi_config;
 	csi_handle_t csi_handle;
@@ -177,7 +172,7 @@ static int video_mcux_csi_set_fmt(const struct device *dev, enum video_endpoint_
 		return -EIO;
 	}
 
-	if (config->source_dev && video_set_format(config->source_dev, ep, &format)) {
+	if (*config->source_devs && video_set_format(*config->source_devs, ep, &format)) {
 		return -EIO;
 	}
 
@@ -193,7 +188,7 @@ static int video_mcux_csi_get_fmt(const struct device *dev, enum video_endpoint_
 		return -EINVAL;
 	}
 
-	if (config->source_dev && !video_get_format(config->source_dev, ep, fmt)) {
+	if (*config->source_devs && !video_get_format(*config->source_devs, ep, fmt)) {
 #if defined(CONFIG_VIDEO_MCUX_MIPI_CSI2RX)
 		video_pix_fmt_convert(fmt, true);
 #endif
@@ -215,7 +210,7 @@ static int video_mcux_csi_stream_start(const struct device *dev)
 		return -EIO;
 	}
 
-	if (config->source_dev && video_stream_start(config->source_dev)) {
+	if (*config->source_devs && video_stream_start(*config->source_devs)) {
 		return -EIO;
 	}
 
@@ -228,7 +223,7 @@ static int video_mcux_csi_stream_stop(const struct device *dev)
 	struct video_mcux_csi_data *data = dev->data;
 	status_t ret;
 
-	if (config->source_dev && video_stream_stop(config->source_dev)) {
+	if (*config->source_devs && video_stream_stop(*config->source_devs)) {
 		return -EIO;
 	}
 
@@ -315,27 +310,14 @@ static int video_mcux_csi_dequeue(const struct device *dev, enum video_endpoint_
 	return 0;
 }
 
-static inline int video_mcux_csi_set_ctrl(const struct device *dev, unsigned int cid, void *value)
+static inline int video_mcux_csi_set_ctrl(const struct device *dev, struct video_control *ctrl)
 {
 	const struct video_mcux_csi_config *config = dev->config;
 	int ret = -ENOTSUP;
 
 	/* Forward to source dev if any */
-	if (config->source_dev) {
-		ret = video_set_ctrl(config->source_dev, cid, value);
-	}
-
-	return ret;
-}
-
-static inline int video_mcux_csi_get_ctrl(const struct device *dev, unsigned int cid, void *value)
-{
-	const struct video_mcux_csi_config *config = dev->config;
-	int ret = -ENOTSUP;
-
-	/* Forward to source dev if any */
-	if (config->source_dev) {
-		ret = video_get_ctrl(config->source_dev, cid, value);
+	if (*config->source_devs) {
+		ret = video_set_ctrl(*config->source_devs, ctrl);
 	}
 
 	return ret;
@@ -352,8 +334,8 @@ static int video_mcux_csi_get_caps(const struct device *dev, enum video_endpoint
 	}
 
 	/* Just forward to source dev for now */
-	if (config->source_dev) {
-		err = video_get_caps(config->source_dev, ep, caps);
+	if (*config->source_devs) {
+		err = video_get_caps(*config->source_devs, ep, caps);
 #if defined(CONFIG_VIDEO_MCUX_MIPI_CSI2RX)
 		/*
 		 * On i.MX RT11xx SoCs which have MIPI CSI-2 Rx, image data from the camera sensor
@@ -400,11 +382,23 @@ static void video_mcux_csi_isr(const void *p)
 	CSI_DriverIRQHandler();
 }
 
+static int video_mcux_csi_async_register(const struct device *dev)
+{
+	struct video_mcux_csi_data *data = dev->data;
+	const struct video_mcux_csi_config *config = dev->config;
+
+	video_async_init(&data->notifier, dev, &data->vdev, NULL, config->source_devs, 1);
+
+	return video_async_register(&data->notifier);
+}
+
 static int video_mcux_csi_init(const struct device *dev)
 {
 	const struct video_mcux_csi_config *config = dev->config;
 	struct video_mcux_csi_data *data = dev->data;
 	int err;
+
+	data->dev = dev;
 
 	k_fifo_init(&data->fifo_in);
 	k_fifo_init(&data->fifo_out);
@@ -414,7 +408,7 @@ static int video_mcux_csi_init(const struct device *dev)
 	/* check if there is any source device (video ctrl device)
 	 * the device is not yet initialized so we only check if it exists
 	 */
-	if (config->source_dev == NULL) {
+	if (*config->source_devs == NULL) {
 		return -ENODEV;
 	}
 
@@ -423,7 +417,12 @@ static int video_mcux_csi_init(const struct device *dev)
 		return err;
 	}
 
-	return 0;
+	err = video_register_vdev(&data->vdev, dev);
+	if (err) {
+		return err;
+	}
+
+	return video_mcux_csi_async_register(dev);
 }
 
 #ifdef CONFIG_POLL
@@ -447,7 +446,7 @@ static int video_mcux_csi_set_frmival(const struct device *dev, enum video_endpo
 {
 	const struct video_mcux_csi_config *config = dev->config;
 
-	return video_set_frmival(config->source_dev, ep, frmival);
+	return video_set_frmival(*config->source_devs, ep, frmival);
 }
 
 static int video_mcux_csi_get_frmival(const struct device *dev, enum video_endpoint_id ep,
@@ -455,7 +454,7 @@ static int video_mcux_csi_get_frmival(const struct device *dev, enum video_endpo
 {
 	const struct video_mcux_csi_config *config = dev->config;
 
-	return video_get_frmival(config->source_dev, ep, frmival);
+	return video_get_frmival(*config->source_devs, ep, frmival);
 }
 
 static int video_mcux_csi_enum_frmival(const struct device *dev, enum video_endpoint_id ep,
@@ -472,7 +471,7 @@ static int video_mcux_csi_enum_frmival(const struct device *dev, enum video_endp
 	fie->format = &converted_fmt;
 #endif
 
-	ret = video_enum_frmival(config->source_dev, ep, fie);
+	ret = video_enum_frmival(*config->source_devs, ep, fie);
 	fie->format = fie_fmt;
 
 	return ret;
@@ -487,7 +486,6 @@ static const struct video_driver_api video_mcux_csi_driver_api = {
 	.enqueue = video_mcux_csi_enqueue,
 	.dequeue = video_mcux_csi_dequeue,
 	.set_ctrl = video_mcux_csi_set_ctrl,
-	.get_ctrl = video_mcux_csi_get_ctrl,
 	.get_caps = video_mcux_csi_get_caps,
 	.set_frmival = video_mcux_csi_set_frmival,
 	.get_frmival = video_mcux_csi_get_frmival,
@@ -502,7 +500,8 @@ PINCTRL_DT_INST_DEFINE(0);
 
 static const struct video_mcux_csi_config video_mcux_csi_config_0 = {
 	.base = (CSI_Type *)DT_INST_REG_ADDR(0),
-	.source_dev = DEVICE_DT_INST_GET_SOURCE_DEV(0),
+	.source_devs = (const struct device *[]){DEVICE_DT_GET_REMOTE_DEVICE(
+		DT_INST_ENDPOINT_BY_ID(0, 0, 0))},
 	.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 };
 
@@ -510,13 +509,9 @@ static struct video_mcux_csi_data video_mcux_csi_data_0;
 
 static int video_mcux_csi_init_0(const struct device *dev)
 {
-	struct video_mcux_csi_data *data = dev->data;
-
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), video_mcux_csi_isr, NULL, 0);
 
 	irq_enable(DT_INST_IRQN(0));
-
-	data->dev = dev;
 
 	return video_mcux_csi_init(dev);
 }

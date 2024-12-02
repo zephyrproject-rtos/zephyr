@@ -161,6 +161,11 @@ enum video_power_line_frequency {
  * @}
  */
 
+struct video_control {
+	uint32_t id;
+	int32_t val;
+};
+
 #ifdef __cplusplus
 }
 #endif
