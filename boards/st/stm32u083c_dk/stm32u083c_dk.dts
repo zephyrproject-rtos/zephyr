@@ -150,5 +150,13 @@
 		group = <6>;
 		channel-ios = <TSC_IO2>;
 		sampling-io = <TSC_IO1>;
+		ts1 {
+			compatible = "tsc-keys";
+			sampling-interval-ms = <10>;
+			oversampling = <10>;
+			noise-threshold = <50>;
+			sticky-key-timeout-ms = <10000>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
 	};
 };

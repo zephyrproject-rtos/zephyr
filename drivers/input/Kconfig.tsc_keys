@@ -1,0 +1,21 @@
+# Copyright (c) 2024 Arif Balik <arifbalik@outlook.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config INPUT_STM32_TSC_KEYS
+	bool "STM32 TSC touch library"
+	default y
+	depends on DT_HAS_ST_STM32_TSC_ENABLED
+	select RING_BUFFER
+	help
+	  Enable support for STM32 TSC touch library.
+
+config INPUT_STM32_TSC_KEYS_BUFFER_WORD_SIZE
+	int "STM32 TSC touch buffer size in words"
+	default 10
+	depends on INPUT_STM32_TSC_KEYS
+	help
+	  Size of the ring buffer for the STM32 TSC touch library. The size of this
+	  buffer together with the sampling-interval property in the tsc-keys
+	  device tree node determines the time window of interest. A slope value is
+	  calculated between the oldest and the newest value in the buffer to
+	  generate a press or release input event.
