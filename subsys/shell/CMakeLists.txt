@@ -3,6 +3,8 @@
 add_subdirectory(modules)
 add_subdirectory(backends)
 
+zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/shell/shell.h)
+
 zephyr_sources_ifdef(
   CONFIG_SHELL
   shell.c
