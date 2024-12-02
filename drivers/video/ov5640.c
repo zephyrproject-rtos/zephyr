@@ -143,7 +143,7 @@ struct ov5640_mode_config {
 
 struct ov5640_data {
 	struct video_format fmt;
-	uint64_t cur_pixrate;
+	uint32_t cur_pixrate;
 	uint16_t cur_frmrate;
 	const struct ov5640_mode_config *cur_mode;
 };
@@ -1092,7 +1092,7 @@ static inline int ov5640_get_ctrl(const struct device *dev, unsigned int cid, vo
 
 	switch (cid) {
 	case VIDEO_CID_PIXEL_RATE:
-		*((uint64_t *)value) = drv_data->cur_pixrate;
+		*((uint32_t *)value) = drv_data->cur_pixrate;
 
 		return 0;
 	default:
