@@ -8,6 +8,7 @@ zephyr_library()
 zephyr_library_sources_ifdef(CONFIG_SERIAL_TEST serial_test.c)
 zephyr_library_sources_ifdef(CONFIG_UART_ASYNC_RX_HELPER uart_async_rx.c)
 zephyr_library_sources_ifdef(CONFIG_UART_ASYNC_TO_INT_DRIVEN_API uart_async_to_irq.c)
+zephyr_library_sources_ifdef(CONFIG_UART_SHELL uart_shell.c)
 zephyr_library_sources_ifdef(CONFIG_USB_CDC_ACM ${ZEPHYR_BASE}/misc/empty_file.c)
 # zephyr-keep-sorted-stop
 
