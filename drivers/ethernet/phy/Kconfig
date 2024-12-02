@@ -50,6 +50,15 @@ config PHY_MICROCHIP_KSZ8081
 	help
 	  Enable Microchip KSZ8081 Ethernet PHY Driver
 
+config PHY_MICROCHIP_LAN8720
+	bool "Microchip LAN8720 PHY driver"
+	default y
+	depends on DT_HAS_MICROCHIP_LAN8720_ENABLED
+	depends on MDIO
+	depends on GPIO
+	help
+	  Enable Microchip LAN8720 Ethernet PHY driver.
+
 config PHY_TI_DP83825
 	bool "TI DP83825 PHY Driver"
 	default y
