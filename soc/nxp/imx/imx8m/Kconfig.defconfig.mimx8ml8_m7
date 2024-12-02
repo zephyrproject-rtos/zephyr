@@ -40,8 +40,4 @@ config NUM_IRQS
 	# must be >= the highest interrupt number used
 	default 159
 
-config PINCTRL_IMX
-	default y if HAS_MCUX_IOMUXC
-	depends on PINCTRL
-
 endif # SOC_MIMX8ML8_M7

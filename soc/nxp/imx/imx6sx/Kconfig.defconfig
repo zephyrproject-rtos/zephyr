@@ -9,10 +9,6 @@ config NUM_IRQS
 	# must be >= the highest interrupt number used
 	default 128
 
-config PINCTRL_IMX
-	default y if HAS_IMX_IOMUXC
-	depends on PINCTRL
-
 rsource "Kconfig.defconfig.*"
 
 endif # SOC_SERIES_IMX6SX
