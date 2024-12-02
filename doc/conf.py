@@ -356,7 +356,7 @@ linkcheck_anchors = False
 
 # -- Options for zephyr.api_overview --------------------------------------
 
-api_overview_doxygen_base_url = "../../doxygen/html"
+api_overview_doxygen_out_dir = str(doxyrunner_outdir)
 
 def setup(app):
     # theme customizations
