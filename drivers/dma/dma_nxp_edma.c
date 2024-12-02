@@ -6,6 +6,8 @@
 
 #include "dma_nxp_edma.h"
 
+#define EDMA_ACTIVE_TIMEOUT 50
+
 /* TODO list:
  * 1) Support for requesting a specific channel.
  * 2) Support for checking if DMA transfer is pending when attempting config. (?)
@@ -600,14 +602,39 @@ static bool edma_channel_filter(const struct device *dev, int chan_id, void *par
 
 static void edma_channel_release(const struct device *dev, uint32_t chan_id)
 {
-	struct edma_channel *chan = lookup_channel(dev, chan_id);
+	struct edma_channel *chan;
+	struct edma_data *data;
+
+	chan = lookup_channel(dev, chan_id);
 	if (!chan) {
 		return;
 	}
 
+	data = dev->data;
+
+	if (!channel_allows_transition(chan, CHAN_STATE_RELEASING)) {
+		LOG_ERR("chan %d transition from %d to RELEASING not allowed",
+			chan_id, chan->state);
+		return;
+	}
+
+	/* channel needs to be INACTIVE before transitioning */
+	if (!WAIT_FOR(!EDMA_CHAN_IS_ACTIVE(data, chan),
+		      EDMA_ACTIVE_TIMEOUT, k_busy_wait(1))) {
+		LOG_ERR("timed out while waiting for chan %d to become inactive",
+			chan->id);
+		return;
+	}
+
+	/* start the process of disabling IRQ */
+	chan->state = CHAN_STATE_RELEASING;
+
 #ifdef CONFIG_NXP_IRQSTEER
 	irq_disable(chan->irq);
 #endif /* CONFIG_NXP_IRQSTEER */
+
+	/* done, proceed with next state */
+	chan->state = CHAN_STATE_INIT;
 }
 
 static const struct dma_driver_api edma_api = {
