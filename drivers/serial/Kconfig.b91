@@ -9,5 +9,6 @@ config UART_TELINK_B91
 	depends on DT_HAS_TELINK_B91_UART_ENABLED
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
+	select PINCTRL
 	help
 	  This option enables the B91 serial driver.
