@@ -91,6 +91,16 @@ Configuring a Debug Probe
 A debug probe is used for both flashing and debugging the board. This board is
 configured by default to use the MCU-Link CMSIS-DAP Onboard Debug Probe.
 
+Using LinkServer
+----------------
+
+Linkserver is the default runner for this board, and supports the factory
+default MCU-Link firmware. Follow the instructions in
+:ref:`mcu-link-cmsis-onboard-debug-probe` to reprogram the default MCU-Link
+firmware. This only needs to be done if the default onboard debug circuit
+firmware was changed. To put the board in ``DFU mode`` to program the firmware,
+short jumper J5.
+
 Using J-Link
 ------------
 
