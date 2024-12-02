@@ -48,6 +48,13 @@
 			};
 		};
 	};
+
+	/* USB PLL */
+	usbclk: usbpll-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <24000000>;
+		#clock-cells = <0>;
+	};
 };
 
 &peripheral {
@@ -1130,15 +1137,47 @@
 		clk-source = <1>;
 		clk-divider = <1>;
 	};
+
+	usb1: usbd@2c80000 {
+		compatible = "nxp,ehci";
+		reg = <0x2c80000 0x1000>;
+		interrupts = <215 0>;
+		interrupt-names = "usb_otg";
+		clocks = <&usbclk>;
+		num-bidir-endpoints = <8>;
+		status = "disabled";
+	};
+
+	usb2: usbd@2c90000 {
+		compatible = "nxp,ehci";
+		reg = <0x2c90000 0x1000>;
+		interrupts = <214 0>;
+		interrupt-names = "usb_otg";
+		clocks = <&usbclk>;
+		num-bidir-endpoints = <8>;
+		status = "disabled";
+	};
+
+	usbphy1: usbphy@2ca0000 {
+		compatible = "nxp,usbphy";
+		reg = <0x2ca0000 0x1000>;
+		status = "disabled";
+	};
+
+	usbphy2: usbphy@2cb0000 {
+		compatible = "nxp,usbphy";
+		reg = <0x2cb0000 0x1000>;
+		status = "disabled";
+	};
 };
 
 &flexspi {
-		compatible = "nxp,imx-flexspi";
-		interrupts = <55 0>;
-		#address-cells = <1>;
-		#size-cells = <0>;
-		status = "disabled";
-		clocks = <&ccm IMX_CCM_FLEXSPI_CLK 0x0 0>;
+	compatible = "nxp,imx-flexspi";
+	interrupts = <55 0>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "disabled";
+	clocks = <&ccm IMX_CCM_FLEXSPI_CLK 0x0 0>;
 };
 
 &flexspi2 {
