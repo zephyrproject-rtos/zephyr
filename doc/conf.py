@@ -246,15 +246,22 @@ latex_engine = "xelatex"
 # -- Options for zephyr.doxyrunner plugin ---------------------------------
 
 doxyrunner_doxygen = os.environ.get("DOXYGEN_EXECUTABLE", "doxygen")
-doxyrunner_doxyfile = ZEPHYR_BASE / "doc" / "zephyr.doxyfile.in"
-doxyrunner_outdir = ZEPHYR_BUILD / "doxygen"
-doxyrunner_fmt = True
-doxyrunner_fmt_vars = {"ZEPHYR_BASE": str(ZEPHYR_BASE), "ZEPHYR_VERSION": version}
-doxyrunner_outdir_var = "DOXY_OUT"
+doxyrunner_projects = {
+    "zephyr": {
+        "doxyfile": ZEPHYR_BASE / "doc" / "zephyr.doxyfile.in",
+        "outdir": ZEPHYR_BUILD / "doxygen",
+        "fmt": True,
+        "fmt_vars": {
+            "ZEPHYR_BASE": str(ZEPHYR_BASE),
+            "ZEPHYR_VERSION": version,
+        },
+        "outdir_var": "DOXY_OUT",
+    },
+}
 
 # -- Options for zephyr.doxybridge plugin ---------------------------------
 
-doxybridge_dir = doxyrunner_outdir
+doxybridge_dir = doxyrunner_projects["zephyr"]["outdir"]
 
 # -- Options for html_redirect plugin -------------------------------------
 
@@ -356,7 +363,7 @@ linkcheck_anchors = False
 
 # -- Options for zephyr.api_overview --------------------------------------
 
-api_overview_doxygen_out_dir = str(doxyrunner_outdir)
+api_overview_doxygen_out_dir = str(doxyrunner_projects["zephyr"]["outdir"])
 
 def setup(app):
     # theme customizations
