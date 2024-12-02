@@ -141,12 +141,10 @@ def test_default_values(zephyr_base):
         ('key: val', 'map', 'key: val', None),   # do-nothing cast
         ('test', 'int', ValueError, None),
         ('test', 'unknown', ConfigurationError, None),
-        ('1 2 2 3', 'list', ['1', '2', '2','3'], ('Space-separated lists are deprecated, use YAML lists instead', DeprecationWarning)),
-        ('1 2 2 3', 'set', {'1', '2', '3'}, ('Space-separated lists are deprecated, use YAML lists instead', DeprecationWarning)),
         ([ '1', '2', '3' ], 'set', { '1', '2', '2','3' }, None),
     ],
     ids=['str to str', 'str to float', 'str to int', 'str to bool', 'str to map',
-         'invalid', 'to unknown', "str to list", "str to set", "list to set"]
+         'invalid', 'to unknown', "list to set"]
 )
 
 def test_cast_value(zephyr_base, value, typestr, expected, expected_warning):
