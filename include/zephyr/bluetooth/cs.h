@@ -88,24 +88,14 @@ enum bt_le_cs_test_cs_sync_antenna_selection {
 	BT_LE_CS_TEST_CS_SYNC_ANTENNA_SELECTION_FOUR = BT_HCI_OP_LE_CS_ANTENNA_SEL_FOUR,
 };
 
-/** CS Test Initiator SNR control options */
-enum bt_le_cs_initiator_snr_control {
-	BT_LE_CS_INITIATOR_SNR_CONTROL_18dB = BT_HCI_OP_LE_CS_INITIATOR_SNR_18,
-	BT_LE_CS_INITIATOR_SNR_CONTROL_21dB = BT_HCI_OP_LE_CS_INITIATOR_SNR_21,
-	BT_LE_CS_INITIATOR_SNR_CONTROL_24dB = BT_HCI_OP_LE_CS_INITIATOR_SNR_24,
-	BT_LE_CS_INITIATOR_SNR_CONTROL_27dB = BT_HCI_OP_LE_CS_INITIATOR_SNR_27,
-	BT_LE_CS_INITIATOR_SNR_CONTROL_30dB = BT_HCI_OP_LE_CS_INITIATOR_SNR_30,
-	BT_LE_CS_INITIATOR_SNR_CONTROL_NOT_USED = BT_HCI_OP_LE_CS_INITIATOR_SNR_NOT_USED,
-};
-
-/** CS Test Reflector SNR control options */
-enum bt_le_cs_reflector_snr_control {
-	BT_LE_CS_REFLECTOR_SNR_CONTROL_18dB = BT_HCI_OP_LE_CS_REFLECTOR_SNR_18,
-	BT_LE_CS_REFLECTOR_SNR_CONTROL_21dB = BT_HCI_OP_LE_CS_REFLECTOR_SNR_21,
-	BT_LE_CS_REFLECTOR_SNR_CONTROL_24dB = BT_HCI_OP_LE_CS_REFLECTOR_SNR_24,
-	BT_LE_CS_REFLECTOR_SNR_CONTROL_27dB = BT_HCI_OP_LE_CS_REFLECTOR_SNR_27,
-	BT_LE_CS_REFLECTOR_SNR_CONTROL_30dB = BT_HCI_OP_LE_CS_REFLECTOR_SNR_30,
-	BT_LE_CS_REFLECTOR_SNR_CONTROL_NOT_USED = BT_HCI_OP_LE_CS_REFLECTOR_SNR_NOT_USED,
+/** CS SNR control options */
+enum bt_le_cs_snr_control {
+	BT_LE_CS_SNR_CONTROL_18dB = BT_HCI_OP_LE_CS_SNR_18,
+	BT_LE_CS_SNR_CONTROL_21dB = BT_HCI_OP_LE_CS_SNR_21,
+	BT_LE_CS_SNR_CONTROL_24dB = BT_HCI_OP_LE_CS_SNR_24,
+	BT_LE_CS_SNR_CONTROL_27dB = BT_HCI_OP_LE_CS_SNR_27,
+	BT_LE_CS_SNR_CONTROL_30dB = BT_HCI_OP_LE_CS_SNR_30,
+	BT_LE_CS_SNR_CONTROL_NOT_USED = BT_HCI_OP_LE_CS_SNR_NOT_USED,
 };
 
 /** CS Test Override 3 T_PM Tone Extension */
@@ -364,9 +354,9 @@ struct bt_le_cs_test_param {
 	 */
 	enum bt_conn_le_cs_tone_antenna_config_selection tone_antenna_config_selection;
 	/** Initiator SNR control options */
-	enum bt_le_cs_initiator_snr_control initiator_snr_control;
+	enum bt_le_cs_snr_control initiator_snr_control;
 	/** Reflector SNR control options */
-	enum bt_le_cs_reflector_snr_control reflector_snr_control;
+	enum bt_le_cs_snr_control reflector_snr_control;
 	/** Determines octets 14 and 15 of the initial value of the DRBG nonce. */
 	uint16_t drbg_nonce;
 
@@ -803,10 +793,10 @@ struct bt_le_cs_set_procedure_parameters_param {
 	uint8_t preferred_peer_antenna;
 
 	/* Initiator SNR control adjustment */
-	enum bt_le_cs_initiator_snr_control snr_control_initiator;
+	enum bt_le_cs_snr_control snr_control_initiator;
 
 	/* Reflector SNR control adjustment */
-	enum bt_le_cs_reflector_snr_control snr_control_reflector;
+	enum bt_le_cs_snr_control snr_control_reflector;
 };
 
 /** @brief CS Set Procedure Parameters
