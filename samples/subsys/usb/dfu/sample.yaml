@@ -13,6 +13,7 @@ common:
     - mimxrt1050_evk/mimxrt1052/hyperflash
     - mimxrt1050_evk/mimxrt1052/qspi
     - mimxrt1060_evk/mimxrt1062/hyperflash
+    - mimxrt1180_evk/mimxrt1189/cm7
     - nucleo_f207zg
     - teensy40
     - teensy41
