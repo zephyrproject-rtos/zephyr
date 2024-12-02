@@ -164,7 +164,6 @@ struct ov5640_ctrls {
 struct ov5640_data {
 	struct ov5640_ctrls ctrls;
 	struct video_format fmt;
-	uint64_t cur_pixrate;
 	uint16_t cur_frmrate;
 	const struct ov5640_mode_config *cur_mode;
 };
@@ -811,10 +810,9 @@ static int ov5640_set_frmival(const struct device *dev, struct video_frmival *fr
 	}
 
 	drv_data->cur_frmrate = best_match;
-	drv_data->cur_pixrate = drv_data->cur_mode->mipi_frmrate_config[ind].pixelrate;
 
 	/* Update pixerate control */
-	drv_data->ctrls.pixel_rate.val = drv_data->cur_pixrate;
+	drv_data->ctrls.pixel_rate.val64 = drv_data->cur_mode->mipi_frmrate_config[ind].pixelrate;
 
 	frmival->numerator = 1;
 	frmival->denominator = best_match;
