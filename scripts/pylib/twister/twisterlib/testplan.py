@@ -498,15 +498,21 @@ class TestPlan:
 
                 if board.revisions:
                     for rev in board.revisions:
-                        target = f"{board.name}@{rev.name}/{qual}"
-                        aliases = [target]
-                        target_no_rev = f"{board.name}/{qual}"
-                        if rev.name == board.revision_default:
-                            aliases.append(target_no_rev)
-                        if '/' not in qual and len(board.socs) == 1:
+                        if rev.name:
+                            target = f"{board.name}@{rev.name}/{qual}"
+                            aliases = [target]
                             if rev.name == board.revision_default:
+                                aliases.append(f"{board.name}/{qual}")
+                            if '/' not in qual and len(board.socs) == 1:
+                                if rev.name == board.revision_default:
+                                    aliases.append(f"{board.name}")
+                                aliases.append(f"{board.name}@{rev.name}")
+                        else:
+                            target = f"{board.name}/{qual}"
+                            aliases = [target]
+                            if '/' not in qual and len(board.socs) == 1 \
+                                    and rev.name == board.revision_default:
                                 aliases.append(f"{board.name}")
-                            aliases.append(f"{board.name}@{rev.name}")
 
                         init_and_add_platforms(data, board, target, qual, aliases)
                 else:
