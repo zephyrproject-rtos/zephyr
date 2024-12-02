@@ -25,7 +25,9 @@ tests:
   kernel.device.pm:
     integration_platforms:
       - native_sim
-    platform_exclude: mec15xxevb_assy6853 xenvm
+    platform_exclude:
+      - mec15xxevb_assy6853
+      - xenvm
     extra_configs:
       - CONFIG_PM_DEVICE=y
   kernel.device.linker_generator:

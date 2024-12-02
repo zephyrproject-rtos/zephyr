@@ -48,17 +48,29 @@ tests:
       - native_sim/native/64
   sample.net.zperf.device_next_ecm:
     harness: net
-    extra_args: EXTRA_CONF_FILE="overlay-usbd_next.conf"
-                DTC_OVERLAY_FILE="usbd_next_ecm.overlay"
-    platform_allow: nrf52840dk/nrf52840 frdm_k64f
-    tags: usb net zperf
+    extra_args:
+      - EXTRA_CONF_FILE="overlay-usbd_next.conf"
+      - DTC_OVERLAY_FILE="usbd_next_ecm.overlay"
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - frdm_k64f
+    tags:
+      - usb
+      - net
+      - zperf
     depends_on: usb_device
   sample.net.zperf.device_next_ncm:
     harness: net
-    extra_args: EXTRA_CONF_FILE="overlay-usbd_next.conf"
-                DTC_OVERLAY_FILE="usbd_next_ncm.overlay"
-    platform_allow: nrf52840dk/nrf52840 frdm_k64f
-    tags: usb net zperf
+    extra_args:
+      - EXTRA_CONF_FILE="overlay-usbd_next.conf"
+      - DTC_OVERLAY_FILE="usbd_next_ncm.overlay"
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - frdm_k64f
+    tags:
+      - usb
+      - net
+      - zperf
     depends_on: usb_device
   sample.net.zperf.netusb_eem:
     harness: net

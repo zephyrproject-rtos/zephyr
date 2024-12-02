@@ -1,5 +1,7 @@
 common:
-  tags: shell llext
+  tags:
+    - shell
+    - llext
   arch_allow:
     - arm
     - xtensa
