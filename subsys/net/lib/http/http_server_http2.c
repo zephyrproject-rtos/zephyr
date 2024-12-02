@@ -100,6 +100,7 @@ static void release_http_stream_context(struct http_client_ctx *client,
 		if (client->streams[i].stream_id == stream_id) {
 			client->streams[i].stream_id = 0;
 			client->streams[i].stream_state = HTTP2_STREAM_IDLE;
+			client->streams[i].current_detail = NULL;
 			break;
 		}
 	}
@@ -733,7 +734,7 @@ static int handle_http2_dynamic_resource(
 		 * which needs to be known when passing data to application.
 		 */
 		if (user_method & BIT(HTTP_POST)) {
-			client->current_detail =
+			client->current_stream->current_detail =
 				(struct http_resource_detail *)dynamic_detail;
 			break;
 		}
@@ -1114,7 +1115,7 @@ int handle_http_frame_data(struct http_client_ctx *client)
 
 	LOG_DBG("HTTP_SERVER_FRAME_DATA_STATE");
 
-	if (client->current_detail == NULL) {
+	if (client->current_stream->current_detail == NULL) {
 		/* There is no handler */
 		LOG_DBG("No dynamic handler found.");
 		(void)send_http2_404(client, frame);
@@ -1129,7 +1130,7 @@ int handle_http_frame_data(struct http_client_ctx *client)
 	}
 
 	ret = dynamic_post_req_v2(
-		(struct http_resource_detail_dynamic *)client->current_detail,
+		(struct http_resource_detail_dynamic *)client->current_stream->current_detail,
 		client);
 	if (ret < 0 && ret == -ENOENT) {
 		ret = send_http2_404(client, frame);
@@ -1160,7 +1161,7 @@ int handle_http_frame_data(struct http_client_ctx *client)
 		}
 
 		if (is_header_flag_set(frame->flags, HTTP2_FLAG_END_STREAM)) {
-			client->current_detail = NULL;
+			client->current_stream->current_detail = NULL;
 			release_http_stream_context(client, frame->stream_identifier);
 		}
 
@@ -1346,17 +1347,18 @@ static int handle_http_frame_headers_end_stream(struct http_client_ctx *client)
 	struct http_response_ctx response_ctx;
 	int ret = 0;
 
-	if (client->current_detail == NULL) {
-		goto out;
-	}
-
 	if (client->current_stream == NULL) {
 		return -ENOENT;
 	}
 
-	if (client->current_detail->type == HTTP_RESOURCE_TYPE_DYNAMIC) {
+	if (client->current_stream->current_detail == NULL) {
+		goto out;
+	}
+
+	if (client->current_stream->current_detail->type == HTTP_RESOURCE_TYPE_DYNAMIC) {
 		struct http_resource_detail_dynamic *dynamic_detail =
-			(struct http_resource_detail_dynamic *)client->current_detail;
+			(struct http_resource_detail_dynamic *)
+				client->current_stream->current_detail;
 
 		memset(&response_ctx, 0, sizeof(response_ctx));
 
@@ -1381,7 +1383,8 @@ static int handle_http_frame_headers_end_stream(struct http_client_ctx *client)
 
 	if (!client->current_stream->headers_sent) {
 		ret = send_headers_frame(client, HTTP_200_OK, frame->stream_identifier,
-					 client->current_detail, HTTP2_FLAG_END_STREAM, NULL, 0);
+					 client->current_stream->current_detail,
+					 HTTP2_FLAG_END_STREAM, NULL, 0);
 		if (ret < 0) {
 			LOG_DBG("Cannot write to socket (%d)", ret);
 			goto out;
@@ -1394,7 +1397,7 @@ static int handle_http_frame_headers_end_stream(struct http_client_ctx *client)
 		}
 	}
 
-	client->current_detail = NULL;
+	client->current_stream->current_detail = NULL;
 
 out:
 	release_http_stream_context(client, frame->stream_identifier);
