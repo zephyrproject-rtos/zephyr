@@ -1,5 +1,7 @@
 common:
-  tags: drivers uart
+  tags:
+    - drivers
+    - uart
   depends_on: gpio
   harness: ztest
   harness_config:

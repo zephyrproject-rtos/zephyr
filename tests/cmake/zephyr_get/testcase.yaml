@@ -7,5 +7,6 @@ tests:
     sysbuild: false
   buildsystem.extensions.zephyr_get.sysbuild:
     sysbuild: true
-    extra_args: TESTCASE_VARIABLE="sysbuild.main"
-      zephyr_get_2nd_TESTCASE_VARIABLE="sysbuild.2nd"
+    extra_args:
+      - TESTCASE_VARIABLE="sysbuild.main"
+      - zephyr_get_2nd_TESTCASE_VARIABLE="sysbuild.2nd"

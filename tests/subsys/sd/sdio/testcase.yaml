@@ -1,6 +1,8 @@
 common:
   depends_on: sdhc
-  tags: drivers sdhc
+  tags:
+    - drivers
+    - sdhc
 tests:
   sd.sdio:
     harness: ztest

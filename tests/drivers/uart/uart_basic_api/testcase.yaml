@@ -10,7 +10,9 @@ tests:
   drivers.uart.basic_api.wide:
     extra_configs:
       - CONFIG_UART_WIDE_DATA=y
-    tags: drivers uart
+    tags:
+      - drivers
+      - uart
     filter: CONFIG_UART_CONSOLE
     harness: keyboard
     arch_allow: arm
