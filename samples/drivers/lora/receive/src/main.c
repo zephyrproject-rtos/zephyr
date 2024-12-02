@@ -28,8 +28,8 @@ void lora_receive_cb(const struct device *dev, uint8_t *data, uint16_t size,
 	ARG_UNUSED(dev);
 	ARG_UNUSED(size);
 
-	LOG_INF("Received data: %s (RSSI:%ddBm, SNR:%ddBm)",
-		data, rssi, snr);
+	LOG_INF("LoRa RX RSSI: %d dBm, SNR: %d dB", rssi, snr);
+	LOG_HEXDUMP_INF(data, size, "LoRa RX payload");
 
 	/* Stop receiving after 10 packets */
 	if (++cnt == 10) {
@@ -79,8 +79,8 @@ int main(void)
 			return 0;
 		}
 
-		LOG_INF("Received data: %s (RSSI:%ddBm, SNR:%ddBm)",
-			data, rssi, snr);
+		LOG_INF("LoRa RX RSSI: %d dBm, SNR: %d dB", rssi, snr);
+		LOG_HEXDUMP_INF(data, size, "LoRa RX payload");
 	}
 
 	/* Enable asynchronous reception */
