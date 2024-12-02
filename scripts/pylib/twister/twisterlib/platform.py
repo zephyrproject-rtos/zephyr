@@ -19,7 +19,7 @@ logger.setLevel(logging.DEBUG)
 
 
 class Simulator:
-    """Class representing a simulator"""
+    """Class representing  a simulator"""
 
     def __init__(self, data: dict[str, str]):
         assert "name" in data
