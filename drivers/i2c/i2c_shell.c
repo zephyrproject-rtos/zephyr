@@ -33,6 +33,7 @@ static int get_bytes_count_for_hex(char *arg)
 	return MIN(MAX_BYTES_FOR_REGISTER_INDEX, length);
 }
 
+#if CONFIG_I2C_ZERO_LEN_XFER_SUPPORTED
 /*
  * This sends I2C messages without any data (i.e. stop condition after
  * sending just the address). If there is an ACK for the address, it
@@ -94,6 +95,7 @@ static int cmd_i2c_scan(const struct shell *shell_ctx,
 
 	return 0;
 }
+#endif
 
 /* i2c recover <device> */
 static int cmd_i2c_recover(const struct shell *shell_ctx,
@@ -318,6 +320,12 @@ static int cmd_i2c_speed(const struct shell *shell_ctx, size_t argc, char **argv
 	}
 
 	speed = strtol(argv[ARGV_DEV + 1], NULL, 10);
+
+	if (speed > I2C_SPEED_DT) {
+		shell_error(shell_ctx, "Invalid speed parameter");
+		return -EINVAL;
+	}
+
 	ret = i2c_get_config(dev, &dev_config);
 	if (ret == 0) {
 		dev_config &= ~I2C_SPEED_MASK;
@@ -349,10 +357,12 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry)
 SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_i2c_cmds,
+#if CONFIG_I2C_ZERO_LEN_XFER_SUPPORTED
 	SHELL_CMD_ARG(scan, &dsub_device_name,
 		      "Scan I2C devices\n"
 		      "Usage: scan <device>",
 		      cmd_i2c_scan, 2, 0),
+#endif
 	SHELL_CMD_ARG(recover, &dsub_device_name,
 		      "Recover I2C bus\n"
 		      "Usage: recover <device>",
