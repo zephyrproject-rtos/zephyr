@@ -25,4 +25,5 @@ supported:
   - pwm
   - uart
   - i3c
+  - usb_device
 vendor: nxp

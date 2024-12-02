@@ -23,6 +23,10 @@
 #include <fsl_trdc.h>
 #include <zephyr/dt-bindings/clock/imx_ccm_rev2.h>
 #include <cmsis_core.h>
+#if CONFIG_USB_DC_NXP_EHCI
+#include "usb_phy.h"
+#include "usb.h"
+#endif
 
 /*
  * Set ELE_STICK_FAILED_STS to 0 when ELE status check is not required,
@@ -87,6 +91,17 @@ const clock_sys_pll2_config_t sysPll2Config_BOARD_BootClockRUN = {
 __attribute__((weak)) void board_flexspi_clock_safe_config(void)
 {
 }
+
+#if CONFIG_USB_DC_NXP_EHCI
+/* USB PHY condfiguration */
+#define BOARD_USB_PHY_D_CAL     (0x07U)
+#define BOARD_USB_PHY_TXCAL45DP (0x06U)
+#define BOARD_USB_PHY_TXCAL45DM (0x06U)
+
+usb_phy_config_struct_t usbPhyConfig = {
+	BOARD_USB_PHY_D_CAL, BOARD_USB_PHY_TXCAL45DP, BOARD_USB_PHY_TXCAL45DM,
+};
+#endif
 
 /**
  * @brief Initialize the system clock
@@ -466,6 +481,16 @@ static ALWAYS_INLINE void clock_init(void)
 #endif
 
 #endif /* CONFIG_DT_HAS_NXP_MCUX_I3C_ENABLED */
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb1)) && (CONFIG_USB_DC_NXP_EHCI || CONFIG_UDC_NXP_EHCI)
+	CLOCK_EnableUsbhs0PhyPllClock(kCLOCK_Usb480M,
+		DT_PROP_BY_PHANDLE(DT_NODELABEL(usb1), clocks, clock_frequency));
+	CLOCK_EnableUsbhs0Clock(kCLOCK_Usb480M,
+		DT_PROP_BY_PHANDLE(DT_NODELABEL(usb1), clocks, clock_frequency));
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb1)) && CONFIG_USB_DC_NXP_EHCI
+	USB_EhciPhyInit(kUSB_ControllerEhci0, CPU_XTAL_CLK_HZ, &usbPhyConfig);
+#endif
+#endif
 
 	/* Keep core clock ungated during WFI */
 	CCM->LPCG[1].LPM0 = 0x33333333;
