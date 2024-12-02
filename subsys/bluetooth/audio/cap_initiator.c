@@ -119,7 +119,7 @@ static bool cap_initiator_valid_metadata(const uint8_t meta[], size_t meta_len)
 	};
 	int err;
 
-	LOG_DBG("meta %p len %zu", meta, meta_len);
+	LOG_DBG("meta %p len %zu", (void *)meta, meta_len);
 
 	err = bt_audio_data_parse(meta, meta_len, data_func_cb, &metadata_param);
 	if (err != 0 && err != -ECANCELED) {
