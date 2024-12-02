@@ -1,0 +1,28 @@
+# Copyright 2024, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP RT watchdog
+
+compatible: "nxp,rtwdog"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  clk-source:
+    type: int
+    required: true
+    description: Watchdog counter clock source
+
+  clk-divider:
+    type: int
+    description: Watchdog counter clock divider
+    required: true
