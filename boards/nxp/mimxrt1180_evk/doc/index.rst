@@ -118,6 +118,8 @@ configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | PWM       | on-chip    | tpm                                 |
 +-----------+------------+-------------------------------------+
+| RTWDOG    | on-chip    | rtwdog                              |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 :zephyr_file:`boards/nxp/mimxrt1180_evk/mimxrt1180_evk_mimxrt1189_cm33_defconfig`
