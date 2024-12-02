@@ -5447,7 +5447,7 @@ int bt_gatt_subscribe(struct bt_conn *conn,
 	}
 
 	if (!IN_RANGE(params->value, BT_GATT_CCC_NOTIFY,
-			BT_GATT_CCC_NOTIFY | BT_GATT_CCC_INDICATE)) {
+		      BT_GATT_CCC_NOTIFY | BT_GATT_CCC_INDICATE)) {
 		return -EINVAL;
 	}
 
