@@ -251,9 +251,6 @@ static int pwm_led_esp32_timer_set(const struct device *dev,
 		ledc_hal_ls_timer_update(&data->hal, channel->timer_num);
 	}
 
-	/* reset low speed timer */
-	ledc_hal_timer_rst(&data->hal, channel->timer_num);
-
 	return 0;
 }
 
@@ -303,8 +300,6 @@ static int pwm_led_esp32_set_cycles(const struct device *dev, uint32_t channel_i
 
 	k_sem_take(&data->cmd_sem, K_FOREVER);
 
-	ledc_hal_init(&data->hal, channel->speed_mode);
-
 	ret = pwm_led_esp32_timer_config(channel);
 	if (ret < 0) {
 		k_sem_give(&data->cmd_sem);
@@ -327,12 +322,6 @@ static int pwm_led_esp32_set_cycles(const struct device *dev, uint32_t channel_i
 
 	pwm_led_esp32_duty_set(dev, channel);
 
-	ret = pwm_led_esp32_configure_pinctrl(dev);
-	if (ret < 0) {
-		k_sem_give(&data->cmd_sem);
-		return ret;
-	}
-
 	k_sem_give(&data->cmd_sem);
 
 	return ret;
@@ -341,7 +330,9 @@ static int pwm_led_esp32_set_cycles(const struct device *dev, uint32_t channel_i
 
 int pwm_led_esp32_init(const struct device *dev)
 {
+	int ret;
 	const struct pwm_ledc_esp32_config *config = dev->config;
+	struct pwm_ledc_esp32_data *data = (struct pwm_ledc_esp32_data *const)(dev)->data;
 
 	if (!device_is_ready(config->clock_dev)) {
 		LOG_ERR("clock control device not ready");
@@ -350,6 +341,18 @@ int pwm_led_esp32_init(const struct device *dev)
 
 	/* Enable peripheral */
 	clock_control_on(config->clock_dev, config->clock_subsys);
+
+	for (int i = 0; i < config->channel_len; i++) {
+		struct pwm_ledc_esp32_channel_config *channel = &config->channel_config[i];
+
+		ledc_hal_init(&data->hal, channel->speed_mode);
+		ledc_hal_timer_rst(&data->hal, channel->timer_num);
+	}
+
+	ret = pwm_led_esp32_configure_pinctrl(dev);
+	if (ret < 0) {
+		return ret;
+	}
 
 	return 0;
 }
