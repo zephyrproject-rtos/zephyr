@@ -333,8 +333,8 @@ int main(void)
 		.phy = BT_LE_CS_PROCEDURE_PHY_1M,
 		.tx_power_delta = 0x80,
 		.preferred_peer_antenna = BT_LE_CS_PROCEDURE_PREFERRED_PEER_ANTENNA_1,
-		.snr_control_initiator = BT_LE_CS_INITIATOR_SNR_CONTROL_NOT_USED,
-		.snr_control_reflector = BT_LE_CS_REFLECTOR_SNR_CONTROL_NOT_USED,
+		.snr_control_initiator = BT_LE_CS_SNR_CONTROL_NOT_USED,
+		.snr_control_reflector = BT_LE_CS_SNR_CONTROL_NOT_USED,
 	};
 
 	err = bt_le_cs_set_procedure_parameters(connection, &procedure_params);
