@@ -10,6 +10,7 @@ from typing import Any
 
 import doxmlparser
 from docutils import nodes
+from docutils.parsers.rst import directives
 from doxmlparser.compound import DoxCompoundKind, DoxMemberKind
 from sphinx import addnodes
 from sphinx.application import Sphinx
@@ -34,6 +35,9 @@ class DoxygenGroupDirective(SphinxDirective):
     has_content = False
     required_arguments = 1
     optional_arguments = 0
+    option_spec = {
+        "project": directives.unchanged,
+    }
 
     def run(self):
 
@@ -48,6 +52,7 @@ class DoxygenGroupDirective(SphinxDirective):
             reftype="group",
             reftarget=self.arguments[0],
             refwarn=True,
+            project=self.options.get("project")
         )
         group_xref += nodes.Text(self.arguments[0])
         title_signode += group_xref
@@ -73,28 +78,40 @@ class DoxygenReferencer(SphinxPostTransform):
             if reftype in ("member", "data"):
                 reftype = "var"
 
-            entry = self.app.env.doxybridge_cache.get(reftype)
-            if not entry:
-                continue
-
-            reftarget = node.get("reftarget").replace(".", "::").rstrip("()")
-            id = entry.get(reftarget)
-            if not id:
-                if reftype == "func":
-                    # macros are sometimes referenced as functions, so try that
-                    id = self.app.env.doxybridge_cache.get("macro").get(reftarget)
-                    if not id:
-                        continue
-                else:
+            found_name = None
+            found_id = None
+            for name in self.app.config.doxybridge_projects:
+                entry = self.app.env.doxybridge_cache[name].get(reftype)
+                if not entry:
                     continue
+
+                reftarget = node.get("reftarget").replace(".", "::").rstrip("()")
+                id = entry.get(reftarget)
+                if not id:
+                    if reftype == "func":
+                        # macros are sometimes referenced as functions, so try that
+                        id = self.app.env.doxybridge_cache[name].get("macro").get(reftarget)
+                        if not id:
+                            continue
+                    else:
+                        continue
+
+                found_name = name
+                found_id = id
+                break
+
+            if not found_name or not found_id:
+                continue
 
             if reftype in ("struct", "union", "group"):
                 doxygen_target = f"{id}.html"
             else:
-                split = id.split("_")
+                split = found_id.split("_")
                 doxygen_target = f"{'_'.join(split[:-1])}.html#{split[-1][1:]}"
 
-            doxygen_target = str(self.app.config.doxybridge_dir) + "/html/" + doxygen_target
+            doxygen_target = (
+                str(self.app.config.doxybridge_projects[found_name]) + "/html/" + doxygen_target
+            )
 
             doc_dir = os.path.dirname(self.document.get("source"))
             doc_dest = os.path.join(
@@ -109,7 +126,7 @@ class DoxygenReferencer(SphinxPostTransform):
 
             if reftype == "group":
                 refnode["classes"].append("doxygroup")
-                title = self.app.env.doxybridge_group_titles.get(reftarget, "group")
+                title = self.app.env.doxybridge_group_titles[found_name].get(reftarget, "group")
                 refnode[0] = nodes.Text(title)
 
             node.replace_self([refnode])
@@ -178,7 +195,7 @@ def parse_compound(inDirName, baseName) -> dict:
     return cache, group_titles
 
 
-def parse_index(app: Sphinx, inDirName):
+def parse_index(app: Sphinx, name, inDirName):
     rootObj = doxmlparser.index.parse(inDirName + "/index.xml", True)
     compounds = rootObj.get_compound()
 
@@ -190,33 +207,40 @@ def parse_index(app: Sphinx, inDirName):
         for future in concurrent.futures.as_completed(futures):
             cache, group_titles = future.result()
             for kind, data in cache.items():
-                app.env.doxybridge_cache.setdefault(kind, {}).update(data)
-            app.env.doxybridge_group_titles.update(group_titles)
+                app.env.doxybridge_cache[name].setdefault(kind, {}).update(data)
+            app.env.doxybridge_group_titles[name].update(group_titles)
 
 
 def doxygen_parse(app: Sphinx) -> None:
-    if not app.env.doxygen_input_changed:
-        return
+    if not hasattr(app.env, "doxybridge_cache"):
+        app.env.doxybridge_cache = dict()
 
-    app.env.doxybridge_cache = {
-        "macro": {},
-        "var": {},
-        "type": {},
-        "enum": {},
-        "enumerator": {},
-        "func": {},
-        "union": {},
-        "struct": {},
-        "group": {},
-    }
+    if not hasattr(app.env, "doxybridge_group_titles"):
+        app.env.doxybridge_group_titles = dict()
 
-    app.env.doxybridge_group_titles = {}
+    for project, path in app.config.doxybridge_projects.items():
+        if project in app.env.doxygen_input_changed and not app.env.doxygen_input_changed[project]:
+            return
 
-    parse_index(app, str(app.config.doxybridge_dir / "xml"))
+        app.env.doxybridge_cache[project] = {
+            "macro": {},
+            "var": {},
+            "type": {},
+            "enum": {},
+            "enumerator": {},
+            "func": {},
+            "union": {},
+            "struct": {},
+            "group": {},
+        }
+
+        app.env.doxybridge_group_titles[project] = dict()
+
+        parse_index(app, project, str(path / "xml"))
 
 
 def setup(app: Sphinx) -> dict[str, Any]:
-    app.add_config_value("doxybridge_dir", None, "env")
+    app.add_config_value("doxybridge_projects", None, "env")
 
     app.add_directive("doxygengroup", DoxygenGroupDirective)
 
