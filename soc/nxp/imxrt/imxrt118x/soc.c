@@ -21,6 +21,9 @@
 #include <fsl_dcdc.h>
 #include <fsl_ele_base_api.h>
 #include <fsl_trdc.h>
+#if defined(CONFIG_WDT_MCUX_IMX_RTWDOG)
+#include <fsl_soc_src.h>
+#endif
 #include <zephyr/dt-bindings/clock/imx_ccm_rev2.h>
 #include <cmsis_core.h>
 
@@ -54,6 +57,14 @@ static const clock_arm_pll_config_t armPllConfig_BOARD_BootClockRUN = {
 	#error "Unknown SOC, no pll configuration defined"
 #endif
 };
+#endif
+
+#if defined(CONFIG_WDT_MCUX_IMX_RTWDOG)
+#define RTWDOG_IF_SET_SRC(n, i)                                                                    \
+        if (strcmp(DT_PROP(DT_NODELABEL(rtwdog##n), status), "okay") == 0) {                       \
+                SRC_SetGlobalSystemResetMode(SRC_GENERAL_REG, kSRC_Wdog##i##Reset,                 \
+                                             kSRC_ResetSystem);                                    \
+        }
 #endif
 
 const clock_sys_pll1_config_t sysPll1Config_BOARD_BootClockRUN = {
@@ -534,6 +545,14 @@ void soc_early_init_hook(void)
 	clock_init();
 	/* Get trdc and enable all access modes for MBC and MRC of TRDCA and TRDCW */
 	trdc_enable_all_access();
+#if defined(CONFIG_WDT_MCUX_IMX_RTWDOG)
+	/* Unmask the watchdog reset channel */
+	RTWDOG_IF_SET_SRC(0, 1)
+	RTWDOG_IF_SET_SRC(1, 2)
+	RTWDOG_IF_SET_SRC(2, 3)
+	RTWDOG_IF_SET_SRC(3, 4)
+	RTWDOG_IF_SET_SRC(4, 5)
+#endif
 
 	/* Enable data cache */
 #if defined(CONFIG_IMXRT118X_CM33_XCACHE_PS)
