@@ -1,0 +1,8 @@
+sample:
+  description: Demonstration of the LP55XX LED driver
+  name: LP55XX sample
+tests:
+  sample.drivers.led.lp55xx:
+    platform_allow: nrf52840dk/nrf52840 croxel_cx1825
+    tags: led
+    harness: TBD
