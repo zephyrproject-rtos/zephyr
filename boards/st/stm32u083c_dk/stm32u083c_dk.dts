@@ -36,6 +36,18 @@
 	aliases {
 		led0 = &green_led_1;
 	};
+
+	touch_buttons {
+		compatible = "tsc-keys";
+		tsc-controller = <&tsc>;
+		sampling-interval-ms = <10>;
+		ts1 {
+			group = <&tsc_group6>;
+			noise-threshold = <50>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+	};
 };
 
 &usart1 {
