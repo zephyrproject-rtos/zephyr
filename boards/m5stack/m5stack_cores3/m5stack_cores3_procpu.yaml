@@ -14,7 +14,6 @@ testing:
   ignore_tags:
     - bluetooth
     - gpio
-    - net
     - pinmux
     - pwm
     - regulator
