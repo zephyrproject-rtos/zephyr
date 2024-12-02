@@ -7,6 +7,7 @@ include: [gpio-controller.yaml, i2c-device.yaml]
 
 # Currently supported device:
 #   pca9538    pca9539
+#   pca9554    pca9555
 #   pca9574    pca9575
 #   pcal9538   pcal9539
 #   pcal6408a  pcal6416a

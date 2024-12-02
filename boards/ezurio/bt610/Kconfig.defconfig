@@ -9,6 +9,6 @@ config BT_CTLR
 	default BT
 
 config I2C
-	default $(dt_compat_on_bus,$(DT_COMPAT_TI_TCA9538),i2c)
+	default $(dt_compat_on_bus,$(DT_COMPAT_NXP_PCA9538),i2c)
 
 endif # BOARD_BT610
