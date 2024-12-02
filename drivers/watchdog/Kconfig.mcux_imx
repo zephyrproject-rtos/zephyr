@@ -10,3 +10,10 @@ config WDT_MCUX_IMX_WDOG
 	select PINCTRL
 	help
 	  Enable the mcux imx wdog driver.
+
+config WDT_MCUX_IMX_RTWDOG
+	bool "MCUX IMX RTWDOG driver"
+	default y
+	depends on DT_HAS_NXP_IMX_RTWDOG_ENABLED
+	help
+	  Enable the mcux rtwdog driver.

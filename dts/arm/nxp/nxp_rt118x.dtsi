@@ -67,6 +67,12 @@
 		compatible = "nxp,imx-ccm-rev2";
 		reg = <0x4450000 0x4000>;
 		#clock-cells = <3>;
+
+		lpo: lpo32k {
+			compatible = "fixed-clock";
+			clock-frequency = <32000>;
+			#clock-cells = <0>;
+		};
 	};
 
 	lpuart1: uart@4380000 {
@@ -847,6 +853,56 @@
 			nxp,prescaler = <128>;
 			status = "disabled";
 		};
+	};
+
+	rtwdog0: wdog@442d0000 {
+		compatible = "nxp,imx-rtwdog";
+		reg = <0x442d0000 0x10>;
+		status = "okay";
+		interrupts = <38 0>;
+		clocks = <&lpo>;
+		clk-source = <1>;
+		clk-divider = <256>;
+	};
+
+	rtwdog1: wdog@442e0000 {
+		compatible = "nxp,imx-rtwdog";
+		reg = <0x442e0000 0x10>;
+		status = "disabled";
+		interrupts = <39 0>;
+		clocks = <&lpo>;
+		clk-source = <1>;
+		clk-divider = <256>;
+	};
+
+	rtwdog2: wdog@42490000 {
+		compatible = "nxp,imx-rtwdog";
+		reg = <0x42490000 0x10>;
+		status = "disabled";
+		interrupts = <79 0>;
+		clocks = <&lpo>;
+		clk-source = <1>;
+		clk-divider = <256>;
+	};
+
+	rtwdog3: wdog@424a0000 {
+		compatible = "nxp,imx-rtwdog";
+		reg = <0x424a0000 0x10>;
+		status = "disabled";
+		interrupts = <80 0>;
+		clocks = <&lpo>;
+		clk-source = <1>;
+		clk-divider = <256>;
+	};
+
+	rtwdog4: wdog@424b0000 {
+		compatible = "nxp,imx-rtwdog";
+		reg = <0x424b0000 0x10>;
+		status = "disabled";
+		interrupts = <81 0>;
+		clocks = <&lpo>;
+		clk-source = <1>;
+		clk-divider = <256>;
 	};
 };
 
