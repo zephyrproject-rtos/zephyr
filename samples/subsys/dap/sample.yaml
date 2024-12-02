@@ -3,7 +3,9 @@ sample:
 tests:
   sample.dap.bulk:
     build_only: true
-    depends_on: arduino_gpio usb_device
+    depends_on:
+      - arduino_gpio
+      - usb_device
     platform_allow:
       - nrf52840dk/nrf52840
       - frdm_k64f

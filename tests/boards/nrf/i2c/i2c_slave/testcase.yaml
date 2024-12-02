@@ -1,7 +1,9 @@
 tests:
   boards.nrf.i2c.i2c_slave:
     depends_on: i2c
-    tags: drivers i2c
+    tags:
+      - drivers
+      - i2c
     harness: ztest
     harness_config:
       fixture: i2c_loopback

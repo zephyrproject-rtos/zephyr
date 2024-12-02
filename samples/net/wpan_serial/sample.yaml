@@ -4,13 +4,17 @@ sample:
 common:
   depends_on: usb_device
   harness: net
-  tags: usb ieee802154
+  tags:
+    - usb
+    - ieee802154
   platform_exclude: pinnacle_100_dvk
 tests:
   sample.net.wpan.serial:
     filter: dt_chosen_enabled("zephyr,ieee802154")
-    platform_exclude: thingy53/nrf5340/cpuapp/ns raytac_mdbt53_db_40/nrf5340/cpuapp/ns
-                      raytac_mdbt53_db_40/nrf5340/cpuapp
+    platform_exclude:
+      - thingy53/nrf5340/cpuapp/ns
+      - raytac_mdbt53_db_40/nrf5340/cpuapp/ns
+      - raytac_mdbt53_db_40/nrf5340/cpuapp
   sample.net.wpan_serial.frdm_cr20a:
     extra_args: SHIELD=frdm_cr20a
     platform_allow: frdm_k64f

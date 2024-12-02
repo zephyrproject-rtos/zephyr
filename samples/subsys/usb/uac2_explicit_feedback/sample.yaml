@@ -5,6 +5,8 @@ tests:
     depends_on:
       - usbd
       - i2s
-    tags: usb i2s
+    tags:
+      - usb
+      - i2s
     platform_allow: nrf5340dk/nrf5340/cpuapp
     harness: TBD
