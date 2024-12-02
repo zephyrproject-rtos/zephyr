@@ -146,7 +146,8 @@ static int dacx3608_write_value(const struct device *dev, uint8_t channel,
 	 * Check if channel is initialized
 	 * If broadcast channel is used, check if any channel is initialized
 	 */
-	if ((brdcast && !data->configured) || (!(data->configured & BIT(channel)))) {
+	if ((brdcast && !data->configured) ||
+	    (channel < DACX3608_MAX_CHANNEL && !(data->configured & BIT(channel)))) {
 		LOG_ERR("Channel %d not initialized", channel);
 		return -EINVAL;
 	}
