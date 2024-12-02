@@ -107,6 +107,11 @@ Boards & SoC Support
 Build system and Infrastructure
 *******************************
 
+* Space-separated lists support has been removed from Twister configuration
+  files. This feature was deprecated a long time ago. Projects that do still use
+  them can use the :zephyr_file:`scripts/utils/twister_to_list.py` script to
+  automatically migrate Twister configuration files.
+
 Drivers and Sensors
 *******************
 
