@@ -322,6 +322,9 @@ struct http2_stream_ctx {
 	enum http2_stream_state stream_state; /**< Stream state. */
 	int window_size; /**< Stream-level window size. */
 
+	/** Currently processed resource detail. */
+	struct http_resource_detail *current_detail;
+
 	/** Flag indicating that headers were sent in the reply. */
 	bool headers_sent : 1;
 
