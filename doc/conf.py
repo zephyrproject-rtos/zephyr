@@ -261,7 +261,7 @@ doxyrunner_projects = {
 
 # -- Options for zephyr.doxybridge plugin ---------------------------------
 
-doxybridge_dir = doxyrunner_projects["zephyr"]["outdir"]
+doxybridge_projects = {"zephyr": doxyrunner_projects["zephyr"]["outdir"]}
 
 # -- Options for html_redirect plugin -------------------------------------
 
