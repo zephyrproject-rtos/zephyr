@@ -90,6 +90,7 @@ BUILD_ASSERT(NUM_INSTS <= 1, "Only one USB device supported");
 #define CONTROLLER_ID	kUSB_ControllerLpcIp3511Fs0
 #endif /* LPC55s69 */
 #elif defined(CONFIG_SOC_SERIES_IMXRT11XX) || \
+	defined(CONFIG_SOC_SERIES_IMXRT118X) || \
 	defined(CONFIG_SOC_SERIES_IMXRT10XX) || \
 	defined(CONFIG_SOC_SERIES_MCXN)
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb1))
