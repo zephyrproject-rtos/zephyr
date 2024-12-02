@@ -35,7 +35,7 @@ struct mipi_csi2rx_data {
 };
 
 struct mipi_csi2rx_tHsSettleEscClk_config {
-	uint64_t pixel_rate;
+	uint32_t pixel_rate;
 	uint8_t tHsSettle_EscClk;
 };
 
@@ -51,7 +51,7 @@ static int mipi_csi2rx_update_settings(const struct device *dev, enum video_endp
 	const struct mipi_csi2rx_config *config = dev->config;
 	struct mipi_csi2rx_data *drv_data = dev->data;
 	uint8_t bpp;
-	uint64_t sensor_pixel_rate;
+	uint32_t sensor_pixel_rate;
 	uint32_t root_clk_rate, ui_clk_rate, sensor_byte_clk, best_match;
 	int ret, ind = 0;
 	struct video_format fmt;
@@ -95,9 +95,8 @@ static int mipi_csi2rx_update_settings(const struct device *dev, enum video_endp
 	}
 
 	if (sensor_pixel_rate > ui_clk_rate) {
-		ret = clock_control_set_rate(
-			drv_data->clock_dev, drv_data->clock_ui,
-			(clock_control_subsys_rate_t)(uint32_t)sensor_pixel_rate);
+		ret = clock_control_set_rate(drv_data->clock_dev, drv_data->clock_ui,
+					     (clock_control_subsys_rate_t)sensor_pixel_rate);
 		if (ret) {
 			return ret;
 		}
@@ -216,21 +215,20 @@ static int mipi_csi2rx_get_frmival(const struct device *dev, enum video_endpoint
 	return video_get_frmival(config->sensor_dev, ep, frmival);
 }
 
-static uint64_t mipi_csi2rx_cal_frame_size(const struct video_format *fmt)
+static uint32_t mipi_csi2rx_cal_frame_size(const struct video_format *fmt)
 {
 	return fmt->height * fmt->width * video_bits_per_pixel(fmt->pixelformat);
 }
 
-static uint64_t mipi_csi2rx_estimate_pixel_rate(const struct video_frmival *cur_fmival,
+static uint32_t mipi_csi2rx_estimate_pixel_rate(const struct video_frmival *cur_fmival,
 						const struct video_frmival *fie_frmival,
 						const struct video_format *cur_format,
 						const struct video_format *fie_format,
-						uint64_t cur_pixel_rate, uint8_t laneNum)
+						uint32_t cur_pixel_rate, uint8_t laneNum)
 {
-	return mipi_csi2rx_cal_frame_size(cur_format) * fie_frmival->denominator *
-	       cur_fmival->numerator * cur_pixel_rate /
-	       (mipi_csi2rx_cal_frame_size(fie_format) * fie_frmival->numerator *
-		cur_fmival->denominator);
+	return (mipi_csi2rx_cal_frame_size(cur_format) / mipi_csi2rx_cal_frame_size(fie_format) *
+		fie_frmival->denominator / fie_frmival->numerator * cur_fmival->numerator /
+		cur_fmival->denominator * cur_pixel_rate);
 }
 
 static int mipi_csi2rx_enum_frmival(const struct device *dev, enum video_endpoint_id ep,
@@ -239,7 +237,7 @@ static int mipi_csi2rx_enum_frmival(const struct device *dev, enum video_endpoin
 	const struct mipi_csi2rx_config *config = dev->config;
 	struct mipi_csi2rx_data *drv_data = dev->data;
 	int ret;
-	uint64_t cur_pixel_rate, est_pixel_rate;
+	uint32_t cur_pixel_rate, est_pixel_rate;
 	struct video_frmival cur_frmival;
 	struct video_format cur_fmt;
 
