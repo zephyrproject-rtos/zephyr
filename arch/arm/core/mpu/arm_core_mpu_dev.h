@@ -76,7 +76,7 @@ struct k_thread;
  */
 #if (defined(CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS) && \
 		defined(CONFIG_MPU_GAP_FILLING)) \
-	|| defined(CONFIG_CPU_HAS_NXP_MPU)
+	|| defined(CONFIG_CPU_HAS_NXP_SYSMPU)
 /*
  * When dynamic regions may not be defined on top of statically
  * allocated memory regions, defining a region for a supervisor
@@ -96,7 +96,7 @@ struct k_thread;
  * using a single MPU region.
  */
 #define ARM_CORE_MPU_NUM_MPU_REGIONS_FOR_MPU_STACK_GUARD 1
-#endif /* CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS || CPU_HAS_NXP_MPU */
+#endif /* CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS || CPU_HAS_NXP_SYSMPU */
 
 #endif /* CONFIG_USERSPACE */
 
