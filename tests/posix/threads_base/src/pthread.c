@@ -12,16 +12,16 @@
 
 #define DETACH_THR_ID 2
 
-#define N_THR_E 3
-#define N_THR_T 4
-#define BOUNCES 64
+#define N_THR_E    3
+#define N_THR_T    4
+#define BOUNCES    64
 #define ONE_SECOND 1
 
 /* Macros to test invalid states */
 #define PTHREAD_CANCEL_INVALID -1
-#define SCHED_INVALID -1
-#define PRIO_INVALID -1
-#define PTHREAD_INVALID -1
+#define SCHED_INVALID          -1
+#define PRIO_INVALID           -1
+#define PTHREAD_INVALID        -1
 
 static void *thread_top_exec(void *p1);
 static void *thread_top_term(void *p1);
@@ -57,13 +57,13 @@ static int barrier_return[N_THR_E];
 
 static void *thread_top_exec(void *p1)
 {
-	int i, j, id = (int) POINTER_TO_INT(p1);
+	int i, j, id = (int)POINTER_TO_INT(p1);
 	int policy;
 	struct sched_param schedparam;
 
 	pthread_getschedparam(pthread_self(), &policy, &schedparam);
-	printk("Thread %d starting with scheduling policy %d & priority %d\n",
-		 id, policy, schedparam.sched_priority);
+	printk("Thread %d starting with scheduling policy %d & priority %d\n", id, policy,
+	       schedparam.sched_priority);
 	/* Try a double-lock here to exercise the failing case of
 	 * trylock.  We don't support RECURSIVE locks, so this is
 	 * guaranteed to fail.
@@ -193,11 +193,9 @@ static void *thread_top_term(void *p1)
 		      "Unable to set thread priority!");
 
 	zassert_false(pthread_getschedparam(self, &policy, &getschedparam),
-			"Unable to get thread priority!");
+		      "Unable to get thread priority!");
 
-	printk("Thread %d starting with a priority of %d\n",
-			id,
-			getschedparam.sched_priority);
+	printk("Thread %d starting with a priority of %d\n", id, getschedparam.sched_priority);
 
 	if (id % 2) {
 		ret = pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
@@ -220,7 +218,7 @@ static void *thread_top_term(void *p1)
 /* Test the internal priority conversion functions */
 int zephyr_to_posix_priority(int z_prio, int *policy);
 int posix_to_zephyr_priority(int priority, int policy);
-ZTEST(pthread, test_pthread_priority_conversion)
+ZTEST(posix_threads_base, test_pthread_priority_conversion)
 {
 	/*
 	 *    ZEPHYR [-CONFIG_NUM_COOP_PRIORITIES, -1]
@@ -250,7 +248,7 @@ ZTEST(pthread, test_pthread_priority_conversion)
 	}
 }
 
-ZTEST(pthread, test_pthread_execution)
+ZTEST(posix_threads_base, test_pthread_execution)
 {
 	int i, ret;
 	pthread_t newthread[N_THR_E];
@@ -296,8 +294,7 @@ ZTEST(pthread, test_pthread_execution)
 	zassert_false(ret, "Set thread name failed!");
 
 	/* TESTPOINT: Try getting thread name */
-	ret = pthread_getname_np(newthread[0], thr_name_buf,
-				 sizeof(thr_name_buf));
+	ret = pthread_getname_np(newthread[0], thr_name_buf, sizeof(thr_name_buf));
 	zassert_false(ret, "Get thread name failed!");
 
 	/* TESTPOINT: Thread names match */
@@ -341,7 +338,7 @@ ZTEST(pthread, test_pthread_execution)
 	printk("Barrier test OK\n");
 }
 
-ZTEST(pthread, test_pthread_termination)
+ZTEST(posix_threads_base, test_pthread_termination)
 {
 	int32_t i, ret;
 	pthread_t newthread[N_THR_T] = {0};
@@ -377,7 +374,7 @@ static void *create_thread1(void *p1)
 	return NULL;
 }
 
-ZTEST(pthread, test_pthread_descriptor_leak)
+ZTEST(posix_threads_base, test_pthread_descriptor_leak)
 {
 	pthread_t pthread1;
 
@@ -389,7 +386,7 @@ ZTEST(pthread, test_pthread_descriptor_leak)
 	}
 }
 
-ZTEST(pthread, test_sched_getparam)
+ZTEST(posix_threads_base, test_sched_getparam)
 {
 	struct sched_param param;
 	int rc = sched_getparam(0, &param);
@@ -398,14 +395,14 @@ ZTEST(pthread, test_sched_getparam)
 	zassert_true((rc == -1 && err == ENOSYS));
 }
 
-ZTEST(pthread, test_sched_getscheduler)
+ZTEST(posix_threads_base, test_sched_getscheduler)
 {
 	int rc = sched_getscheduler(0);
 	int err = errno;
 
 	zassert_true((rc == -1 && err == ENOSYS));
 }
-ZTEST(pthread, test_sched_setparam)
+ZTEST(posix_threads_base, test_sched_setparam)
 {
 	struct sched_param param = {
 		.sched_priority = 2,
@@ -416,7 +413,7 @@ ZTEST(pthread, test_sched_setparam)
 	zassert_true((rc == -1 && err == ENOSYS));
 }
 
-ZTEST(pthread, test_sched_setscheduler)
+ZTEST(posix_threads_base, test_sched_setscheduler)
 {
 	struct sched_param param = {
 		.sched_priority = 2,
@@ -428,7 +425,7 @@ ZTEST(pthread, test_sched_setscheduler)
 	zassert_true((rc == -1 && err == ENOSYS));
 }
 
-ZTEST(pthread, test_sched_rr_get_interval)
+ZTEST(posix_threads_base, test_sched_rr_get_interval)
 {
 	struct timespec interval = {
 		.tv_sec = 0,
@@ -440,33 +437,10 @@ ZTEST(pthread, test_sched_rr_get_interval)
 	zassert_true((rc == -1 && err == ENOSYS));
 }
 
-ZTEST(pthread, test_pthread_equal)
+ZTEST(posix_threads_base, test_pthread_equal)
 {
 	zassert_true(pthread_equal(pthread_self(), pthread_self()));
 	zassert_false(pthread_equal(pthread_self(), (pthread_t)4242));
-}
-
-ZTEST(pthread, test_pthread_set_get_concurrency)
-{
-	/* EINVAL if the value specified by new_level is negative */
-	zassert_equal(EINVAL, pthread_setconcurrency(-42));
-
-	/*
-	 * Note: the special value 0 indicates the implementation will
-	 * maintain the concurrency level at its own discretion.
-	 *
-	 * pthread_getconcurrency() should return a value of 0 on init.
-	 */
-	zassert_equal(0, pthread_getconcurrency());
-
-	for (int i = 0; i <= CONFIG_MP_MAX_NUM_CPUS; ++i) {
-		zassert_ok(pthread_setconcurrency(i));
-		/* verify parameter is saved */
-		zassert_equal(i, pthread_getconcurrency());
-	}
-
-	/* EAGAIN if the a system resource to be exceeded */
-	zassert_equal(EAGAIN, pthread_setconcurrency(CONFIG_MP_MAX_NUM_CPUS + 1));
 }
 
 static void cleanup_handler(void *arg)
@@ -491,7 +465,7 @@ static void *test_pthread_cleanup_entry(void *arg)
 	return NULL;
 }
 
-ZTEST(pthread, test_pthread_cleanup)
+ZTEST(posix_threads_base, test_pthread_cleanup)
 {
 	pthread_t th;
 
@@ -529,7 +503,7 @@ static void *test_pthread_cancel_fn(void *arg)
 	return NULL;
 }
 
-ZTEST(pthread, test_pthread_testcancel)
+ZTEST(posix_threads_base, test_pthread_testcancel)
 {
 	pthread_t th;
 
@@ -557,22 +531,10 @@ static void *test_pthread_setschedprio_fn(void *arg)
 	return NULL;
 }
 
-ZTEST(pthread, test_pthread_setschedprio)
+ZTEST(posix_threads_base, test_pthread_setschedprio)
 {
 	pthread_t th;
 
 	zassert_ok(pthread_create(&th, NULL, test_pthread_setschedprio_fn, NULL));
 	zassert_ok(pthread_join(th, NULL));
 }
-
-static void before(void *arg)
-{
-	ARG_UNUSED(arg);
-
-	if (!IS_ENABLED(CONFIG_DYNAMIC_THREAD)) {
-		/* skip redundant testing if there is no thread pool / heap allocation */
-		ztest_test_skip();
-	}
-}
-
-ZTEST_SUITE(pthread, NULL, NULL, before, NULL, NULL);
