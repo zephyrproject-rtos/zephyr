@@ -42,6 +42,7 @@ struct cpustart_rec {
 volatile struct cpustart_rec *start_rec;
 static void *appcpu_top;
 static bool cpus_active[CONFIG_MP_MAX_NUM_CPUS];
+static struct k_spinlock loglock;
 #endif
 
 /* Note that the logging done here is ACTUALLY REQUIRED FOR RELIABLE
