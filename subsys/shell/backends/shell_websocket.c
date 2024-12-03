@@ -140,12 +140,6 @@ static void ws_recv(struct shell_websocket *ws, struct zsock_pollfd *pollfd)
 	}
 
 	len = ret;
-
-	if (len == 0) {
-		k_mutex_unlock(&ws->rx_lock);
-		return;
-	}
-
 	ws->rx_len += len;
 
 	k_mutex_unlock(&ws->rx_lock);
