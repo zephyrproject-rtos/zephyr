@@ -67,7 +67,7 @@ struct flash_flexspi_nor_data {
 	const struct device *controller;
 	flexspi_device_config_t config;
 	flexspi_port_t port;
-	uint64_t *size;
+	uint64_t size;
 	struct flash_pages_layout layout;
 	struct flash_parameters flash_parameters;
 };
@@ -500,9 +500,9 @@ static const struct flash_parameters *flash_flexspi_nor_get_parameters(
 
 static int flash_flexspi_nor_get_size(const struct device *dev, uint64_t *size)
 {
-	const struct flash_flexspi_nor_config *config = dev->config;
+	const struct flash_flexspi_nor_data *data = dev->data;
 
-	*size = config->size;
+	*size = data->size;
 
 	return 0;
 }
