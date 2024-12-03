@@ -168,6 +168,10 @@ static int init_nrfs(void)
 
 	state = MRAM_LATENCY_ON;
 
+	if (IS_ENABLED(CONFIG_MRAM_LATENCY_AUTO_REQ)) {
+		mram_no_latency_sync_request();
+	}
+
 	return rv;
 }
 
