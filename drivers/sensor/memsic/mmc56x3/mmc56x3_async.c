@@ -53,9 +53,13 @@ void mmc56x3_submit_sync(struct rtio_iodev_sqe *iodev_sqe)
 		case SENSOR_CHAN_MAGN_Z:
 			edata->has_magn_z = 1;
 			break;
+		case SENSOR_CHAN_MAGN_XYZ:
+			edata->has_magn_x = 1;
+			edata->has_magn_y = 1;
+			edata->has_magn_z = 1;
+			break;
 		case SENSOR_CHAN_ALL:
 			edata->has_temp = 1;
-		case SENSOR_CHAN_MAGN_XYZ:
 			edata->has_magn_x = 1;
 			edata->has_magn_y = 1;
 			edata->has_magn_z = 1;
