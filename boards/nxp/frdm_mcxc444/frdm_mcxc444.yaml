@@ -18,6 +18,7 @@ supported:
   - gpio
   - uart
   - counter
+  - adc
 testing:
   ignore_tags:
     - net

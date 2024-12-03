@@ -57,6 +57,8 @@ The ``frdm_mcxc444`` board target supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | LPTMR     | on-chip    | counter                             |
 +-----------+------------+-------------------------------------+
+| ADC       | on-chip    | adc                                 |
++-----------+------------+-------------------------------------+
 
 
 Targets available
