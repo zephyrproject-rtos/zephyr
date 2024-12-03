@@ -56,6 +56,20 @@
 	RV_I(	sr s9, ___callee_saved_t_s9_OFFSET(sp)		);\
 	RV_I(	sr s10, ___callee_saved_t_s10_OFFSET(sp)	);\
 	RV_I(	sr s11, ___callee_saved_t_s11_OFFSET(sp)	)
+
+/**
+ * Convenience macro to store the caller-saved registers (CSF) on stack,
+ * and link it to the `struct arch_esf`.
+ *  1. Restore the `s0` we saved early in ISR entry so it shows up properly in the CSF.
+ *  2. Allocate space for CSF on current thread stack
+ *  3. Save CSF to the allocated stack
+ *  4. Link the saved CSF to the `struct arch_esf`
+ */
+#define STORE_CSF_IN_ESF(_esf)                                                                     \
+	lr s0, __struct_arch_esf_s0_OFFSET(sp)		;                                          \
+	addi sp, sp, -__callee_saved_t_SIZEOF		;                                          \
+	STORE_CALLEE_SAVED()				;                                          \
+	sr sp __struct_arch_esf_csf_OFFSET(_esf)
 #endif /* CONFIG_EXCEPTION_DEBUG */
 
 	.macro get_current_cpu dst
@@ -78,12 +92,7 @@ GTEXT(__soc_save_context)
 GTEXT(__soc_restore_context)
 #endif /* CONFIG_RISCV_SOC_CONTEXT_SAVE */
 
-#ifdef CONFIG_EXCEPTION_DEBUG
-GTEXT(z_riscv_fatal_error_csf)
-#else
 GTEXT(z_riscv_fatal_error)
-#endif /* CONFIG_EXCEPTION_DEBUG */
-
 GTEXT(z_get_next_switch_handle)
 GTEXT(z_riscv_switch)
 GTEXT(z_riscv_thread_start)
@@ -382,8 +391,18 @@ no_fp:	/* increment arch_current_thread()->arch.exception_depth */
 	 * no_reschedule to restore stack.
 	 */
 	mv a0, sp
+#ifdef CONFIG_EXCEPTION_DEBUG
+	STORE_CSF_IN_ESF(a0)		;
+
+	call _Fault
+	/* Restore SP if _Fault returns before jumping to no_reschedule */
+	addi sp, sp, __callee_saved_t_SIZEOF
+
+	j no_reschedule
+#else
 	la ra, no_reschedule
 	tail _Fault
+#endif /* CONFIG_EXCEPTION_DEBUG */
 
 is_kernel_syscall:
 	/*
@@ -453,28 +472,9 @@ do_fault:
 1:	mv a1, sp
 
 #ifdef CONFIG_EXCEPTION_DEBUG
-	/*
-	 * Restore the s0 we saved early in ISR entry
-	 * so it shows up properly in the CSF.
-	 */
-	lr s0, __struct_arch_esf_s0_OFFSET(sp)
-
-	/* Allocate space for caller-saved registers on current thread stack */
-	addi sp, sp, -__callee_saved_t_SIZEOF
-
-	/* Save callee-saved registers to be passed as 3rd arg */
-	STORE_CALLEE_SAVED()		;
-	mv a2, sp
-
-#ifdef CONFIG_EXTRA_EXCEPTION_INFO
-	/* Store csf's addr into esf (a1 still holds the pointer to the esf at this point) */
-	sr a2 __struct_arch_esf_csf_OFFSET(a1)
-#endif /* CONFIG_EXTRA_EXCEPTION_INFO */
-
-	tail z_riscv_fatal_error_csf
-#else
-	tail z_riscv_fatal_error
+	STORE_CSF_IN_ESF(a1)		;
 #endif /* CONFIG_EXCEPTION_DEBUG */
+	tail z_riscv_fatal_error
 
 #if defined(CONFIG_IRQ_OFFLOAD)
 do_irq_offload:
