@@ -1,0 +1,78 @@
+/*
+ * Copyright (c) 2024 Google LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <st/h7/stm32h743Xi.dtsi>
+#include <st/h7/stm32h743vitx-pinctrl.dtsi>
+
+/ {
+	model = "Google Icetower development board";
+	compatible = "google,icetower-fpmcu";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+};
+
+&clk_lsi {
+	/* LSI clock frequency is 32kHz */
+	status = "okay";
+};
+
+&clk_hsi {
+	status = "okay";
+	hsi-div = <1>;
+	clock-frequency = <DT_FREQ_M(64)>;
+};
+
+&rcc {
+	clocks = <&clk_hsi>;
+	clock-frequency = <DT_FREQ_M(64)>;
+	d1cpre = <1>;
+	hpre = <1>;
+	d1ppre = <1>;
+	d2ppre1 = <1>;
+	d2ppre2 = <1>;
+	d3ppre = <1>;
+};
+
+/* USART1: Servo UART (console) */
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+/* SPI1: communication with the AP */
+&spi1 {
+	pinctrl-0 = <&spi1_nss_pa4 &spi1_sck_pa5
+		     &spi1_miso_pa6 &spi1_mosi_pa7>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+/* SPI4: communication with the fingerprint sensor */
+&spi4 {
+	pinctrl-0 = <&spi4_nss_pe11 &spi4_sck_pe12
+		     &spi4_miso_pe13 &spi4_mosi_pe14>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB4 0x00010000>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
+	status = "okay";
+
+	backup_regs {
+		status = "okay";
+	};
+};
