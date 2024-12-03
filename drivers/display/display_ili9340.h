@@ -50,7 +50,7 @@ struct ili9340_regs {
 
 /* Initializer macro for ILI9340 registers. */
 #define ILI9340_REGS_INIT(n)                                                   \
-	static const struct ili9340_regs ili9xxx_regs_##n = {                  \
+	static const struct ili9340_regs ili9340_regs_##n = {                  \
 		.gamset = DT_PROP(DT_INST(n, ilitek_ili9340), gamset),         \
 		.frmctr1 = DT_PROP(DT_INST(n, ilitek_ili9340), frmctr1),       \
 		.disctrl = DT_PROP(DT_INST(n, ilitek_ili9340), disctrl),       \
