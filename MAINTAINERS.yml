@@ -262,6 +262,24 @@ Ambiq Platforms:
   labels:
     - "platform: Ambiq"
 
+AndesTech Platforms:
+  status: maintained
+  maintainers:
+    - jimmyzhe
+  collaborators:
+    - kevinwang821020
+    - wtlee1995
+  files:
+    - boards/andestech/
+    - drivers/*/*andes*
+    - dts/bindings/*/*andestech*
+    - dts/riscv/andes/
+    - soc/andestech/
+  labels:
+    - "platform: Andes Technology"
+  description: >-
+    Andes Technology boards, SOCs, dts files and related drivers.
+
 BeagleBoard Platforms:
   status: maintained
   maintainers:

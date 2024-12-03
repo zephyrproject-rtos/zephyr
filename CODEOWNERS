@@ -36,7 +36,6 @@
 /soc/arm/xilinx_zynqmp/                   @stephanosio
 /soc/arm/renesas_rcar/                    @aaillet
 /soc/riscv/openisa*/                      @dleach02
-/soc/riscv/riscv-privileged/andes_v5/      @cwshu @kevinwang821020 @jimmyzhe
 /soc/riscv/riscv-privileged/neorv32/       @henrikbrixandersen
 /soc/riscv/riscv-privileged/gd32vf103/     @soburi
 /soc/starfive/jh71xx/ 			  @pfarwsi
@@ -107,7 +106,6 @@
 /boards/arm/stm32_min_dev/                @sidcha
 /boards/ezurio/*                          @rerickson1
 /boards/riscv/rv32m1_vega/                @dleach02
-/boards/riscv/adp_xc7k_ae350/             @cwshu @kevinwang821020 @jimmyzhe
 /boards/riscv/longan_nano/                @soburi
 /boards/riscv/neorv32/                    @henrikbrixandersen
 /boards/riscv/niosv*/                     @sweeaun
@@ -148,7 +146,6 @@
 /drivers/*/*native_posix*                 @aescolar @daor-oti
 /drivers/*/*lpc11u6x*                     @mbittan @simonguinot
 /drivers/*/*npcx*                         @MulinChao @ChiHuaL
-/drivers/*/*andes*                        @cwshu @kevinwang821020 @jimmyzhe
 /drivers/*/*ifx_cat1*                     @ifyall @npal-cy
 /drivers/*/*neorv32*                      @henrikbrixandersen
 /drivers/*/*_s32*                         @manuargue
@@ -436,7 +433,6 @@
 /dts/riscv/microchip/microchip-miv.dtsi   @galak
 /dts/riscv/openisa/rv32m1*                @dleach02
 /dts/riscv/starfive/                      @rajnesh-kanwal @pfarwsi
-/dts/riscv/andes/andes_v5*                @cwshu @kevinwang821020 @jimmyzhe
 /dts/riscv/niosv/                         @sweeaun
 /dts/arm/armv*m.dtsi                      @galak @ioannisg
 /dts/arm/armv7-a.dtsi                     @ibirnbaum
@@ -468,7 +464,6 @@
 /dts/bindings/*/raspberrypi*pico*         @yonsch
 /dts/bindings/sensor/ams*                 @alexanderwachter
 /dts/bindings/*/sifive*                   @mateusz-holenko @kgugala @pgielda
-/dts/bindings/*/andes*                    @cwshu @kevinwang821020 @jimmyzhe
 /dts/bindings/*/neorv32*                  @henrikbrixandersen
 /dts/bindings/*/*lan91c111*               @sgrrzhf
 /dts/bindings/i3c/                        @dcpleung
