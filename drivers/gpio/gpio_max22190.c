@@ -11,7 +11,7 @@
 #include <zephyr/drivers/spi.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/util.h>
+
 #define LOG_LEVEL CONFIG_GPIO_LOG_LEVEL
 #include <zephyr/logging/log.h>
 
