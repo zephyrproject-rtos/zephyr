@@ -254,7 +254,9 @@ Networking
 
 * Network Interface:
 
-* OpenThread
+* OpenThread:
+
+  * Removed the implicit enabling of the :kconfig:option:`CONFIG_NVS` Kconfig option by the :kconfig:option:`CONFIG_NET_L2_OPENTHREAD` symbol.
 
 * PPP
 
