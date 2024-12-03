@@ -540,6 +540,11 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 		*rate = STM32_LSI_FREQ;
 		break;
 #endif /* STM32_LSI_ENABLED */
+#if defined(STM32_HSI_ENABLED)
+	case STM32_SRC_HSI_KER:
+		*rate = STM32_HSI_FREQ/STM32_HSI_DIVISOR;
+	break;
+#endif /* STM32_HSI_ENABLED */
 #if defined(STM32_HSI48_ENABLED)
 	case STM32_SRC_HSI48:
 		*rate = STM32_HSI48_FREQ;
