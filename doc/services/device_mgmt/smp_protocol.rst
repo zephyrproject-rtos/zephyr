@@ -56,47 +56,47 @@ A description of the various fields and their meaning:
 .. table::
     :align: center
 
-    +-------------------+---------------------------------------------------+
-    | Field             | Description                                       |
-    +===================+===================================================+
-    | ``Res``           | This is reserved, not-used field and must be      |
-    |                   | always set to 0.                                  |
-    +-------------------+---------------------------------------------------+
-    | ``Ver`` (Version) | This indicates the version of the protocol being  |
-    |                   | used, this should be set to 0b01 to use the newer |
-    |                   | SMP transport where error codes are more detailed |
-    |                   | and returned in the map, otherwise left as 0b00   |
-    |                   | to use the legacy SMP protocol. Versions 0b10 and |
-    |                   | 0b11 are reserved for future use and should not   |
-    |                   | be used.                                          |
-    +-------------------+---------------------------------------------------+
-    | ``OP``            | :c:enum:`mcumgr_op_t`, determines whether         |
-    |                   | information is written to a device or requested   |
-    |                   | from it and whether a packet contains request to  |
-    |                   | an SMP server or response from it.                |
-    +-------------------+---------------------------------------------------+
-    | ``Flags``         | Reserved for flags; there are no flags defined    |
-    |                   | yet, the field should be set to 0                 |
-    +-------------------+---------------------------------------------------+
-    | ``Data Length``   | Length of the ``Data`` field                      |
-    +-------------------+---------------------------------------------------+
-    | ``Group ID``      | :c:enum:`mcumgr_group_t`, see                     |
-    |                   | :ref:`mcumgr_smp_protocol_group_ids` for further  |
-    |                   | details.                                          |
-    +-------------------+---------------------------------------------------+
-    | ``Sequence Num``  | This is a frame sequence number.                  |
-    |                   | The number is increased by one with each request  |
-    |                   | frame.                                            |
-    |                   | The Sequence Num of a response should match       |
-    |                   | the one in the request.                           |
-    +-------------------+---------------------------------------------------+
-    | ``Command ID``    | This is a command, within ``Group``.              |
-    +-------------------+---------------------------------------------------+
-    | ``Data``          | This is data payload of the ``Data Length``       |
-    |                   | size. It is optional as ``Data Length`` may be    |
-    |                   | set to zero, which means that no data follows     |
-    |                   | the header.                                       |
-    +-------------------+---------------------------------------------------+
+    +-------------------+------------+---------------------------------------------------+
+    | Field             | Byte Pos   | Description                                       |
+    +===================+============+===================================================+
+    | ``Res``           | 0, bits 7-5| This is reserved, not-used field and must be      |
+    |                   |            | always set to 0.                                  |
+    +-------------------+------------+---------------------------------------------------+
+    | ``Ver`` (Version) | 0, bits 4-3| This indicates the version of the protocol being  |
+    |                   |            | used, this should be set to 0b01 to use the newer |
+    |                   |            | SMP transport where error codes are more detailed |
+    |                   |            | and returned in the map, otherwise left as 0b00   |
+    |                   |            | to use the legacy SMP protocol. Versions 0b10 and |
+    |                   |            | 0b11 are reserved for future use and should not   |
+    |                   |            | be used.                                          |
+    +-------------------+------------+---------------------------------------------------+
+    | ``OP``            | 0, bits 2-0| :c:enum:`mcumgr_op_t`, determines whether         |
+    |                   |            | information is written to a device or requested   |
+    |                   |            | from it and whether a packet contains request to  |
+    |                   |            | an SMP server or response from it.                |
+    +-------------------+------------+---------------------------------------------------+
+    | ``Flags``         | 1          | Reserved for flags; there are no flags defined    |
+    |                   |            | yet, the field should be set to 0                 |
+    +-------------------+------------+---------------------------------------------------+
+    | ``Data Length``   | 2-3        | Length of the ``Data`` field                      |
+    +-------------------+------------+---------------------------------------------------+
+    | ``Group ID``      | 4-5        | :c:enum:`mcumgr_group_t`, see                     |
+    |                   |            | :ref:`mcumgr_smp_protocol_group_ids` for further  |
+    |                   |            | details.                                          |
+    +-------------------+------------+---------------------------------------------------+
+    | ``Sequence Num``  | 6          | This is a frame sequence number.                  |
+    |                   |            | The number is increased by one with each request  |
+    |                   |            | frame.                                            |
+    |                   |            | The Sequence Num of a response should match       |
+    |                   |            | the one in the request.                           |
+    +-------------------+------------+---------------------------------------------------+
+    | ``Command ID``    | 7          | This is a command, within ``Group``.              |
+    +-------------------+------------+---------------------------------------------------+
+    | ``Data``          | 8+         | This is data payload of the ``Data Length``       |
+    |                   |            | size. It is optional as ``Data Length`` may be    |
+    |                   |            | set to zero, which means that no data follows     |
+    |                   |            | the header.                                       |
+    +-------------------+------------+---------------------------------------------------+
 
 .. note::
     Contents of ``Data`` depends on a value of an ``OP``, a ``Group ID``,
