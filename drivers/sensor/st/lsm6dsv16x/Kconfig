@@ -29,6 +29,8 @@ config LSM6DSV16X_STREAM
 	  Use this config option to enable streaming sensor data via RTIO subsystem.
 
 choice LSM6DSV16X_TRIGGER_MODE
+	default LSM6DSV16X_TRIGGER_GLOBAL_THREAD if LSM6DSV16X_STREAM
+	default LSM6DSV16X_TRIGGER_NONE
 	prompt "Trigger mode"
 	help
 	  Specify the type of triggering to be used by the driver.
