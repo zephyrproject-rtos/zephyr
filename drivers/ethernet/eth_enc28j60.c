@@ -705,6 +705,11 @@ static void eth_enc28j60_rx_thread(void *p1, void *p2, void *p3)
 	while (true) {
 		k_sem_take(&context->int_sem, K_FOREVER);
 
+		/* Disable interrupts during processing, otherwise there's a small race
+		 * window where we can miss one!
+		 */
+		eth_enc28j60_clear_eth_reg(dev, ENC28J60_REG_EIE, ENC28J60_BIT_EIE_INTIE);
+
 		eth_enc28j60_read_reg(dev, ENC28J60_REG_EIR, &int_stat);
 		if (int_stat & ENC28J60_BIT_EIR_LINKIF) {
 			uint16_t phir;
@@ -735,6 +740,9 @@ static void eth_enc28j60_rx_thread(void *p1, void *p2, void *p3)
 		 * eth_enc28j60_rx() unconditionally. It will check EPKTCNT instead.
 		 */
 		eth_enc28j60_rx(dev);
+
+		/* Now that the IRQ line was released, enable interrupts back */
+		eth_enc28j60_set_eth_reg(dev, ENC28J60_REG_EIE, ENC28J60_BIT_EIE_INTIE);
 	}
 }
 
