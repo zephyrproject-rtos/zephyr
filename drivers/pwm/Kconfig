@@ -74,6 +74,8 @@ source "drivers/pwm/Kconfig.mcux_tpm"
 
 source "drivers/pwm/Kconfig.sam0"
 
+source "drivers/pwm/Kconfig.sam0_tc"
+
 source "drivers/pwm/Kconfig.npcx"
 
 source "drivers/pwm/Kconfig.xlnx"
