@@ -76,6 +76,7 @@
 				compatible = "ti,mspm0-gpio";
 				reg = <0x400a0000 0x2000>;
 				interrupts = <1 0>;
+				interrupt-parent = <&nvic>;
 				status = "disabled";
 				gpio-controller;
 				#gpio-cells = <2>;
@@ -85,6 +86,7 @@
 				compatible = "ti,mspm0-gpio";
 				reg = <0x400a2000 0x2000>;
 				interrupts = <1 0>;
+				interrupt-parent = <&nvic>;
 				status = "disabled";
 				gpio-controller;
 				#gpio-cells = <2>;
@@ -95,6 +97,7 @@
 			compatible = "ti,mspm0-uart";
 			reg = <0x40108000 0x2000>;
 			interrupts = <15 0>;
+			interrupt-parent = <&nvic>;
 			current-speed = <115200>;
 			clocks = <&clkmux MSPM0_CLOCK_BUS_ULPCLK>;
 			status = "disabled";
@@ -104,6 +107,7 @@
 			compatible = "ti,mspm0-uart";
 			reg = <0x40100000 0x2000>;
 			interrupts = <13 0>;
+			interrupt-parent = <&nvic>;
 			current-speed = <115200>;
 			clocks = <&clkmux MSPM0_CLOCK_BUS_ULPCLK>;
 			status = "disabled";
@@ -113,6 +117,7 @@
 			compatible = "ti,mspm0-uart";
 			reg = <0x40102000 0x2000>;
 			interrupts = <14 0>;
+			interrupt-parent = <&nvic>;
 			current-speed = <115200>;
 			clocks = <&clkmux MSPM0_CLOCK_BUS_ULPCLK>;
 			status = "disabled";
