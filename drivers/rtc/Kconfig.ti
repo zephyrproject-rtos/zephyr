@@ -1,0 +1,7 @@
+# Copyright 2024 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+config RTC_TI
+	bool "Texas Instruments Real Time Clock driver"
+	default y
+	depends on DT_HAS_TI_RTC_ENABLED
