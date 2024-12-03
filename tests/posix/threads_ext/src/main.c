@@ -132,9 +132,6 @@ static void before(void *arg)
 	ARG_UNUSED(arg);
 
 	zassert_ok(pthread_attr_init(&attr));
-	/* TODO: pthread_attr_init() should be sufficient to initialize a thread by itself */
-	/* zassert_ok(pthread_attr_setstack(&attr, &static_thread_stack, STATIC_THREAD_STACK_SIZE));
-	 */
 	attr_valid = true;
 }
 
