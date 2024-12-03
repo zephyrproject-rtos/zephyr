@@ -21,6 +21,7 @@ struct dev_data_hfxo {
 	onoff_notify_fn notify;
 	struct k_timer timer;
 	sys_snode_t hfxo_node;
+	uint16_t request_count;
 };
 
 struct dev_config_hfxo {
@@ -48,6 +49,28 @@ static void hfxo_start_up_timer_handler(struct k_timer *timer)
 	}
 }
 
+static void request_hfxo(struct dev_data_hfxo *dev_data)
+{
+	unsigned int key;
+
+	key = irq_lock();
+	if (dev_data->request_count == 0) {
+		nrf_lrcconf_event_clear(NRF_LRCCONF010, NRF_LRCCONF_EVENT_HFXOSTARTED);
+		soc_lrcconf_poweron_request(&dev_data->hfxo_node, NRF_LRCCONF_POWER_MAIN);
+		nrf_lrcconf_task_trigger(NRF_LRCCONF010, NRF_LRCCONF_TASK_REQHFXO);
+	}
+	dev_data->request_count++;
+	irq_unlock(key);
+}
+
+void nrf_clock_control_hfxo_request(void)
+{
+	const struct device *dev = DEVICE_DT_INST_GET(0);
+	struct dev_data_hfxo *dev_data = dev->data;
+
+	request_hfxo(dev_data);
+}
+
 static void onoff_start_hfxo(struct onoff_manager *mgr, onoff_notify_fn notify)
 {
 	struct dev_data_hfxo *dev_data =
@@ -56,10 +79,7 @@ static void onoff_start_hfxo(struct onoff_manager *mgr, onoff_notify_fn notify)
 	const struct dev_config_hfxo *dev_config = dev->config;
 
 	dev_data->notify = notify;
-
-	nrf_lrcconf_event_clear(NRF_LRCCONF010, NRF_LRCCONF_EVENT_HFXOSTARTED);
-	soc_lrcconf_poweron_request(&dev_data->hfxo_node, NRF_LRCCONF_POWER_MAIN);
-	nrf_lrcconf_task_trigger(NRF_LRCCONF010, NRF_LRCCONF_TASK_REQHFXO);
+	request_hfxo(dev_data);
 
 	/* Due to a hardware issue, the HFXOSTARTED event is currently
 	 * unreliable. Hence the timer is used to simply wait the expected
@@ -68,13 +88,42 @@ static void onoff_start_hfxo(struct onoff_manager *mgr, onoff_notify_fn notify)
 	k_timer_start(&dev_data->timer, dev_config->start_up_time, K_NO_WAIT);
 }
 
+static void release_hfxo(struct dev_data_hfxo *dev_data)
+{
+	unsigned int key;
+
+	key = irq_lock();
+	if (dev_data->request_count < 1) {
+		irq_unlock(key);
+		/* Misuse of the API, release without request? */
+		__ASSERT_NO_MSG(false);
+		/* In case asserts are disabled early return due to no requests pending */
+		return;
+	}
+
+	dev_data->request_count--;
+	if (dev_data->request_count < 1) {
+		nrf_lrcconf_task_trigger(NRF_LRCCONF010, NRF_LRCCONF_TASK_STOPREQHFXO);
+		soc_lrcconf_poweron_release(&dev_data->hfxo_node, NRF_LRCCONF_POWER_MAIN);
+	}
+
+	irq_unlock(key);
+}
+
+void nrf_clock_control_hfxo_release(void)
+{
+	const struct device *dev = DEVICE_DT_INST_GET(0);
+	struct dev_data_hfxo *dev_data = dev->data;
+
+	release_hfxo(dev_data);
+}
+
 static void onoff_stop_hfxo(struct onoff_manager *mgr, onoff_notify_fn notify)
 {
 	struct dev_data_hfxo *dev_data =
 		CONTAINER_OF(mgr, struct dev_data_hfxo, mgr);
 
-	nrf_lrcconf_task_trigger(NRF_LRCCONF010, NRF_LRCCONF_TASK_STOPREQHFXO);
-	soc_lrcconf_poweron_release(&dev_data->hfxo_node, NRF_LRCCONF_POWER_MAIN);
+	release_hfxo(dev_data);
 	notify(mgr, 0);
 }
 
