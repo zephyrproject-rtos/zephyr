@@ -7,6 +7,10 @@
 #include <freq.h>
 
 / {
+	aliases {
+		rtc = &rtc0;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -64,6 +68,14 @@
 	};
 
 	soc {
+		rtc0: rtc@40094000 {
+			compatible = "ti,rtc";
+			reg = <0x40094000 0x2000>;
+			interrupts = <30 0>;
+			prescaler = <1>;
+			clock-frequency = <32768>;
+			status = "disabled";
+		};
 
 		pinctrl: pin-controller@400a0000{
 			compatible = "ti,mspm0-pinctrl";
