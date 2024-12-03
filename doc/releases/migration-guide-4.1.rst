@@ -275,6 +275,10 @@ Networking
   rather than directly in the :c:struct:`http_client_ctx` to correctly handle concurrent requests
   on different HTTP/2 streams.
 
+* The :kconfig:option:`CONFIG_NET_L2_OPENTHREAD` symbol no longer implies the
+  :kconfig:option:`CONFIG_NVS` Kconfig option. Platforms using OpenThread must explicitly enable
+  either the :kconfig:option:`CONFIG_NVS` or :kconfig:option:`CONFIG_ZMS` Kconfig option.
+
 Other Subsystems
 ****************
 
