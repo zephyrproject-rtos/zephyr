@@ -1,0 +1,60 @@
+# Copyright (c) 2020 Google LLC.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Atmel SAM0 TC in PWM mode
+
+compatible: "atmel,sam0-tc-pwm"
+
+include:
+  - name: base.yaml
+  - name: pwm-controller.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+
+  channels:
+    type: int
+    required: true
+    description: Number of channels this TC has
+    enum:
+      - 2
+
+  counter-size:
+    type: int
+    required: true
+    description: Width of the TC counter in bits
+    enum:
+      - 8
+      - 16
+
+  prescaler:
+    type: int
+    required: true
+    description: PWM prescaler
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 64
+      - 256
+      - 1024
+
+  "#pwm-cells":
+    const: 2
+
+pwm-cells:
+  - channel
+  - period
