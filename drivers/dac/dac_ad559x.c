@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(dac_ad559x, CONFIG_DAC_LOG_LEVEL);
 
 struct dac_ad559x_config {
 	const struct device *mfd_dev;
+	bool double_output_range;
 };
 
 struct dac_ad559x_data {
@@ -79,7 +80,7 @@ static int dac_ad559x_write_value(const struct device *dev, uint8_t channel, uin
 	}
 }
 
-static const struct dac_driver_api dac_ad559x_api = {
+static DEVICE_API(dac, dac_ad559x_api) = {
 	.channel_setup = dac_ad559x_channel_setup,
 	.write_value = dac_ad559x_write_value,
 };
@@ -88,9 +89,26 @@ static int dac_ad559x_init(const struct device *dev)
 {
 	const struct dac_ad559x_config *config = dev->config;
 	int ret;
+	uint16_t reg_val;
 
 	if (!device_is_ready(config->mfd_dev)) {
 		return -ENODEV;
+	}
+
+	ret = mfd_ad559x_read_reg(config->mfd_dev, AD559X_REG_GEN_CTRL, 0, &reg_val);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (config->double_output_range) {
+		reg_val |= AD559X_DAC_RANGE;
+	} else {
+		reg_val &= ~AD559X_DAC_RANGE;
+	}
+
+	ret = mfd_ad559x_write_reg(config->mfd_dev, AD559X_REG_GEN_CTRL, reg_val);
+	if (ret < 0) {
+		return ret;
 	}
 
 	ret = mfd_ad559x_write_reg(config->mfd_dev, AD559X_REG_PD_REF_CTRL, AD559X_EN_REF);
@@ -104,6 +122,7 @@ static int dac_ad559x_init(const struct device *dev)
 #define DAC_AD559X_DEFINE(inst)                                                                    \
 	static const struct dac_ad559x_config dac_ad559x_config##inst = {                          \
 		.mfd_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                    \
+		.double_output_range = DT_INST_PROP(inst, double_output_range),                    \
 	};                                                                                         \
                                                                                                    \
 	struct dac_ad559x_data dac_ad559x_data##inst;                                              \

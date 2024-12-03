@@ -10,9 +10,17 @@
 #include <zephyr/dt-bindings/clock/rpi_pico_clock.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/regulator/rpi_pico.h>
+#include <zephyr/dt-bindings/reset/rpi_pico_reset.h>
 #include <mem.h>
 
-#include "rpi_pico_common.dtsi"
+#include <arm/rpi_pico/override.dtsi>
+/*
+ * This value can be overridden at the board level or in an application specific
+ * override.dtsi file.
+ */
+#ifndef RPI_PICO_DEFAULT_IRQ_PRIORITY
+#define RPI_PICO_DEFAULT_IRQ_PRIORITY 3
+#endif
 
 / {
 	aliases {

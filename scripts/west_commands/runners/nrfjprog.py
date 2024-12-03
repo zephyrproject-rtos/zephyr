@@ -8,8 +8,7 @@
 import subprocess
 import sys
 
-from runners.nrf_common import ErrNotAvailableBecauseProtection, ErrVerify, \
-                               NrfBinaryRunner
+from runners.nrf_common import ErrNotAvailableBecauseProtection, ErrVerify, NrfBinaryRunner
 
 # https://infocenter.nordicsemi.com/index.jsp?topic=%2Fug_nrf_cltools%2FUG%2Fcltools%2Fnrf_nrfjprogexe_return_codes.html&cp=9_1_3_1
 UnavailableOperationBecauseProtectionError = 16
@@ -19,7 +18,7 @@ class NrfJprogBinaryRunner(NrfBinaryRunner):
     '''Runner front-end for nrfjprog.'''
 
     def __init__(self, cfg, family, softreset, dev_id, erase=False,
-                 reset=True, tool_opt=[], force=False, recover=False,
+                 reset=True, tool_opt=None, force=False, recover=False,
                  qspi_ini=None):
 
         super().__init__(cfg, family, softreset, dev_id, erase, reset,

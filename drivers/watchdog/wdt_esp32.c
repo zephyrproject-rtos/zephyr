@@ -158,6 +158,7 @@ static int wdt_esp32_init(const struct device *dev)
 {
 	const struct wdt_esp32_config *const config = dev->config;
 	struct wdt_esp32_data *data = dev->data;
+	int ret, flags;
 
 	if (!device_is_ready(config->clock_dev)) {
 		LOG_ERR("clock control device not ready");
@@ -168,12 +169,9 @@ static int wdt_esp32_init(const struct device *dev)
 
 	wdt_hal_init(&data->hal, config->wdt_inst, MWDT_TICK_PRESCALER, true);
 
-	int ret = esp_intr_alloc(config->irq_source,
-				ESP_PRIO_TO_FLAGS(config->irq_priority) |
-				ESP_INT_FLAGS_CHECK(config->irq_flags),
-				(ISR_HANDLER)wdt_esp32_isr,
-				(void *)dev,
-				NULL);
+	flags = ESP_PRIO_TO_FLAGS(config->irq_priority) | ESP_INT_FLAGS_CHECK(config->irq_flags);
+	ret = esp_intr_alloc(config->irq_source, flags, (ISR_HANDLER)wdt_esp32_isr, (void *)dev,
+			     NULL);
 
 	if (ret != 0) {
 		LOG_ERR("could not allocate interrupt (err %d)", ret);
@@ -187,7 +185,7 @@ static int wdt_esp32_init(const struct device *dev)
 	return 0;
 }
 
-static const struct wdt_driver_api wdt_api = {
+static DEVICE_API(wdt, wdt_api) = {
 	.setup = wdt_esp32_set_config,
 	.disable = wdt_esp32_disable,
 	.install_timeout = wdt_esp32_install_timeout,

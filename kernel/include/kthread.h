@@ -15,7 +15,6 @@
 
 #define Z_STATE_STR_DUMMY       "dummy"
 #define Z_STATE_STR_PENDING     "pending"
-#define Z_STATE_STR_PRESTART    "prestart"
 #define Z_STATE_STR_DEAD        "dead"
 #define Z_STATE_STR_SUSPENDED   "suspended"
 #define Z_STATE_STR_ABORTING    "aborting"
@@ -97,7 +96,7 @@ static inline bool z_is_thread_prevented_from_running(struct k_thread *thread)
 {
 	uint8_t state = thread->base.thread_state;
 
-	return (state & (_THREAD_PENDING | _THREAD_PRESTART | _THREAD_DEAD |
+	return (state & (_THREAD_PENDING | _THREAD_DEAD |
 			 _THREAD_DUMMY | _THREAD_SUSPENDED)) != 0U;
 
 }
@@ -111,11 +110,6 @@ static inline bool z_is_thread_ready(struct k_thread *thread)
 {
 	return !((z_is_thread_prevented_from_running(thread)) != 0U ||
 		 z_is_thread_timeout_active(thread));
-}
-
-static inline bool z_has_thread_started(struct k_thread *thread)
-{
-	return (thread->base.thread_state & _THREAD_PRESTART) == 0U;
 }
 
 static inline bool z_is_thread_state_set(struct k_thread *thread, uint32_t state)
@@ -140,11 +134,6 @@ static inline void z_mark_thread_as_not_suspended(struct k_thread *thread)
 	thread->base.thread_state &= ~_THREAD_SUSPENDED;
 
 	SYS_PORT_TRACING_FUNC(k_thread, sched_resume, thread);
-}
-
-static inline void z_mark_thread_as_started(struct k_thread *thread)
-{
-	thread->base.thread_state &= ~_THREAD_PRESTART;
 }
 
 static inline void z_mark_thread_as_pending(struct k_thread *thread)
@@ -197,17 +186,17 @@ static ALWAYS_INLINE bool should_preempt(struct k_thread *thread,
 		return true;
 	}
 
-	__ASSERT(_current != NULL, "");
+	__ASSERT(arch_current_thread() != NULL, "");
 
 	/* Or if we're pended/suspended/dummy (duh) */
-	if (z_is_thread_prevented_from_running(_current)) {
+	if (z_is_thread_prevented_from_running(arch_current_thread())) {
 		return true;
 	}
 
 	/* Otherwise we have to be running a preemptible thread or
 	 * switching to a metairq
 	 */
-	if (thread_is_preemptible(_current) || thread_is_metairq(thread)) {
+	if (thread_is_preemptible(arch_current_thread()) || thread_is_metairq(thread)) {
 		return true;
 	}
 

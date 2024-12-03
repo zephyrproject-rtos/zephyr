@@ -50,7 +50,6 @@ config ARM64
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
 	select USE_SWITCH
 	select USE_SWITCH_SUPPORTED
-	select IRQ_OFFLOAD_NESTED if IRQ_OFFLOAD
 	select BARRIER_OPERATIONS_ARCH
 	select ARCH_HAS_DIRECTED_IPIS
 	select ARCH_HAS_DEMAND_PAGING
@@ -95,7 +94,6 @@ config X86
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
 	select ARCH_HAS_DEMAND_PAGING if !X86_64
 	select ARCH_HAS_DEMAND_MAPPING if ARCH_HAS_DEMAND_PAGING
-	select IRQ_OFFLOAD_NESTED if IRQ_OFFLOAD
 	select NEED_LIBC_MEM_PARTITION if USERSPACE && TIMING_FUNCTIONS \
 					  && !BOARD_HAS_TIMING_FUNCTIONS \
 					  && !SOC_HAS_TIMING_FUNCTIONS
@@ -123,7 +121,6 @@ config RISCV
 	select ARCH_SUPPORTS_EMPTY_IRQ_SPURIOUS
 	select ARCH_HAS_CODE_DATA_RELOCATION
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
-	select IRQ_OFFLOAD_NESTED if IRQ_OFFLOAD
 	select USE_SWITCH_SUPPORTED
 	select USE_SWITCH
 	select SCHED_IPI_SUPPORTED if SMP
@@ -138,7 +135,6 @@ config XTENSA
 	select ARCH_IS_SET
 	select USE_SWITCH
 	select USE_SWITCH_SUPPORTED
-	select IRQ_OFFLOAD_NESTED if IRQ_OFFLOAD
 	select ARCH_HAS_CODE_DATA_RELOCATION
 	select ARCH_HAS_TIMING_FUNCTIONS
 	select ARCH_MEM_DOMAIN_DATA if USERSPACE
@@ -581,11 +577,12 @@ config IRQ_OFFLOAD
 config IRQ_OFFLOAD_NESTED
 	bool "irq_offload() supports nested IRQs"
 	depends on IRQ_OFFLOAD
+	default y if ARM64 || X86 || RISCV || XTENSA
 	help
-	  When set by the arch layer, indicates that irq_offload() may
-	  legally be called in interrupt context to cause a
-	  synchronous nested interrupt on the current CPU.  Not all
-	  hardware is capable.
+	  When set by the platform layers, indicates that
+	  irq_offload() may legally be called in interrupt context to
+	  cause a synchronous nested interrupt on the current CPU.
+	  Not all hardware is capable.
 
 config EXCEPTION_DEBUG
 	bool "Unhandled exception debugging"
@@ -1148,3 +1145,9 @@ config ARCH_HAS_CUSTOM_BUSY_WAIT
 	  It's possible that an architecture port cannot or does not want to use
 	  the provided k_busy_wait(), but instead must do something custom. It must
 	  enable this option in that case.
+
+config ARCH_HAS_CUSTOM_CURRENT_IMPL
+	bool
+	help
+	  Select when architecture implements arch_current_thread() &
+	  arch_current_thread_set().

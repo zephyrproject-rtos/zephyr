@@ -11,7 +11,8 @@ type: mcu
 arch: arm
 ram: 2048
 flash: 512
-simulation: qemu
+simulation:
+  - name: qemu
 toolchain:
   - gnuarmemb
   - zephyr

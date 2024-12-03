@@ -7,12 +7,14 @@
 """
 import argparse
 import os
-from runners.core import ZephyrBinaryRunner, RunnerCaps, RunnerConfig
+
+from runners.core import RunnerCaps, RunnerConfig, ZephyrBinaryRunner
+
 
 class XSDBBinaryRunner(ZephyrBinaryRunner):
     def __init__(self, cfg: RunnerConfig, config=None, bitstream=None,
             fsbl=None):
-        super(XSDBBinaryRunner, self).__init__(cfg)
+        super().__init__(cfg)
         self.elf_file = cfg.elf_file
         if not config:
             cfgfile_path = os.path.join(cfg.board_dir, 'support')

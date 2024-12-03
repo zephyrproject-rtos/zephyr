@@ -86,6 +86,7 @@ void otPlatDiagRadioReceived(otInstance *aInstance,
 	ARG_UNUSED(aError);
 }
 
+#if defined(CONFIG_IEEE802154_CARRIER_FUNCTIONS)
 otError otPlatDiagRadioTransmitCarrier(otInstance *aInstance, bool aEnable)
 {
 	if (!otPlatDiagModeGet()) {
@@ -94,6 +95,7 @@ otError otPlatDiagRadioTransmitCarrier(otInstance *aInstance, bool aEnable)
 
 	return platformRadioTransmitCarrier(aInstance, aEnable);
 }
+#endif /* CONFIG_IEEE802154_CARRIER_FUNCTIONS */
 
 void otPlatDiagAlarmCallback(otInstance *aInstance)
 {

@@ -11,4 +11,23 @@
 			<RA_PSEL(RA_PSEL_SCI_7, 4, 2)>;
 		};
 	};
+
+	iic2_default: iic2_default {
+		group1 {
+			/* SCL2 SDA2 */
+			psels = <RA_PSEL(RA_PSEL_I2C, 5, 12)>,
+			<RA_PSEL(RA_PSEL_I2C, 5, 11)>;
+			drive-strength = "medium";
+		};
+	};
+
+	spi0_default: spi0_default {
+		group1 {
+			/* MISO MOSI RSPCK SSL */
+			psels = <RA_PSEL(RA_PSEL_SPI, 4, 10)>,
+			<RA_PSEL(RA_PSEL_SPI, 4, 11)>,
+			<RA_PSEL(RA_PSEL_SPI, 4, 12)>,
+			<RA_PSEL(RA_PSEL_SPI, 4, 13)>;
+		};
+	};
 };

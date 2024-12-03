@@ -5,7 +5,7 @@ config SOC_SERIES_RA4M1
 	bool
 	select SOC_FAMILY_RENESAS_RA
 	help
-	  Renesas RA4M1
+	  Renesas RA4M1 series
 
 config SOC_R7FA4M1AB3CFM
 	bool

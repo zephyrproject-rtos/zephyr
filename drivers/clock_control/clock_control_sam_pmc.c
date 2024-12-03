@@ -129,7 +129,7 @@ atmel_sam_clock_control_get_status(const struct device *dev,
 	return status;
 }
 
-static const struct clock_control_driver_api atmel_sam_clock_control_api = {
+static DEVICE_API(clock_control, atmel_sam_clock_control_api) = {
 	.on = atmel_sam_clock_control_on,
 	.off = atmel_sam_clock_control_off,
 	.get_rate = atmel_sam_clock_control_get_rate,

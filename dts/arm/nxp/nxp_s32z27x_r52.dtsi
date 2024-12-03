@@ -110,12 +110,12 @@
 			status = "okay";
 		};
 
-		sram0: memory@31780000 {
+		dram0: memory@31780000 {
 			compatible = "mmio-sram";
 			reg = <0x31780000 DT_SIZE_M(1)>;
 		};
 
-		sram1: memory@35780000 {
+		dram1: memory@35780000 {
 			compatible = "mmio-sram";
 			reg = <0x35780000 DT_SIZE_M(1)>;
 		};
@@ -1128,7 +1128,8 @@
 		};
 
 		edma0: dma-controller@405d0000 {
-			compatible = "nxp,mcux-edma-v3";
+			compatible = "nxp,mcux-edma";
+			nxp,version = <3>;
 			reg = <0x405d0000 0x10000>, <0x405a0000 0x10000>, <0x405b0000 0x100000>;
 			dma-channels = <32>;
 			dma-requests = <64>;
@@ -1172,7 +1173,8 @@
 		};
 
 		edma1: dma-controller@40dd0000 {
-			compatible = "nxp,mcux-edma-v3";
+			compatible = "nxp,mcux-edma";
+			nxp,version = <3>;
 			reg = <0x40dd0000 0x10000>, <0x40da0000 0x10000>;
 			dma-channels = <16>;
 			dma-requests = <64>;
@@ -1200,7 +1202,8 @@
 		};
 
 		edma4: dma-controller@425d0000 {
-			compatible = "nxp,mcux-edma-v3";
+			compatible = "nxp,mcux-edma";
+			nxp,version = <3>;
 			reg = <0x425d0000 0x10000>, <0x425a0000 0x10000>;
 			dma-channels = <32>;
 			dma-requests = <64>;
@@ -1228,7 +1231,8 @@
 		};
 
 		edma5: dma-controller@42dd0000 {
-			compatible = "nxp,mcux-edma-v3";
+			compatible = "nxp,mcux-edma";
+			nxp,version = <3>;
 			reg = <0x42dd0000 0x10000>, <0x42da0000 0x10000>;
 			dma-channels = <32>;
 			dma-requests = <64>;

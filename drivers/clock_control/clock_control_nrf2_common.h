@@ -75,14 +75,4 @@ void clock_config_update_end(void *clk_cfg, int status);
 
 int api_nosys_on_off(const struct device *dev, clock_control_subsys_t sys);
 
-struct clock_lrcconf_sink {
-	sys_snode_t node;
-};
-
-/**
- * @brief Request or release lrcconf main power domain
- */
-void clock_request_lrcconf_poweron_main(struct clock_lrcconf_sink *sink);
-void clock_release_lrcconf_poweron_main(struct clock_lrcconf_sink *sink);
-
 #endif /* ZEPHYR_DRIVERS_CLOCK_CONTROL_NRF2_COMMON_H_ */

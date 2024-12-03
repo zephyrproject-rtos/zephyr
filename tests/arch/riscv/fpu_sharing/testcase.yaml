@@ -1,4 +1,4 @@
 tests:
   arch.riscv.fpu_sharing:
     arch_allow: riscv
-    filter: CONFIG_CPU_HAS_FPU
+    filter: CONFIG_CPU_HAS_FPU and not CONFIG_RISCV_IMPRECISE_FPU_STATE_TRACKING

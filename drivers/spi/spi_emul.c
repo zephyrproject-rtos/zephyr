@@ -130,7 +130,7 @@ int spi_emul_register(const struct device *dev, struct spi_emul *emul)
 
 /* Device instantiation */
 
-static const struct spi_driver_api spi_emul_api = {
+static DEVICE_API(spi, spi_emul_api) = {
 	.transceive = spi_emul_io,
 #ifdef CONFIG_SPI_RTIO
 	.iodev_submit = spi_rtio_iodev_default_submit,

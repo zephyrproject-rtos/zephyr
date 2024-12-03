@@ -88,6 +88,7 @@ set(SYSCALL_LIST_H_TARGET      syscall_list_h_target)
 set(DRIVER_VALIDATION_H_TARGET driver_validation_h_target)
 set(KOBJ_TYPES_H_TARGET        kobj_types_h_target)
 set(PARSE_SYSCALLS_TARGET      parse_syscalls_target)
+set(DEVICE_API_LD_TARGET       device_api_ld_target)
 
 define_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT BRIEF_DOCS " " FULL_DOCS " ")
 set_property(   GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT elf32-little${ARCH}) # BFD format
@@ -882,6 +883,37 @@ add_custom_target(${DRIVER_VALIDATION_H_TARGET} DEPENDS ${DRV_VALIDATION})
 include(${ZEPHYR_BASE}/cmake/kobj.cmake)
 gen_kobj(KOBJ_INCLUDE_PATH)
 
+# Generate sections for kernel device subsystems
+set(
+  DEVICE_API_LD_SECTIONS
+  ${CMAKE_CURRENT_BINARY_DIR}/include/generated/device-api-sections.ld
+  )
+
+set(DEVICE_API_LINKER_SECTIONS_CMAKE
+    ${CMAKE_CURRENT_BINARY_DIR}/include/generated/device-api-sections.cmake
+)
+
+add_custom_command(
+  OUTPUT ${DEVICE_API_LD_SECTIONS} ${DEVICE_API_LINKER_SECTIONS_CMAKE}
+  COMMAND
+    ${PYTHON_EXECUTABLE}
+    ${ZEPHYR_BASE}/scripts/build/gen_iter_sections.py
+    --alignment ${CONFIG_LINKER_ITERABLE_SUBALIGN}
+    --input ${struct_tags_json}
+    --tag __subsystem
+    --ld-output ${DEVICE_API_LD_SECTIONS}
+    --cmake-output ${DEVICE_API_LINKER_SECTIONS_CMAKE}
+  DEPENDS
+    ${ZEPHYR_BASE}/scripts/build/gen_iter_sections.py
+    ${struct_tags_json}
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  )
+
+add_custom_target(${DEVICE_API_LD_TARGET}
+                  DEPENDS ${DEVICE_API_LD_SECTIONS}
+                          ${DEVICE_API_LINKER_SECTIONS_CMAKE}
+)
+
 # Add a pseudo-target that is up-to-date when all generated headers
 # are up-to-date.
 
@@ -912,6 +944,7 @@ add_dependencies(zephyr_interface
   ${SYSCALL_LIST_H_TARGET}
   ${DRIVER_VALIDATION_H_TARGET}
   ${KOBJ_TYPES_H_TARGET}
+  ${DEVICE_API_LD_TARGET}
   )
 
 add_custom_command(
@@ -1037,14 +1070,6 @@ if(CONFIG_USERSPACE)
 
   set(GEN_KOBJ_LIST ${ZEPHYR_BASE}/scripts/build/gen_kobject_list.py)
   set(PROCESS_GPERF ${ZEPHYR_BASE}/scripts/build/process_gperf.py)
-endif()
-
-get_property(GLOBAL_CSTD GLOBAL PROPERTY CSTD)
-if(DEFINED GLOBAL_CSTD)
-  message(DEPRECATION
-    "Global CSTD property is deprecated, see Kconfig.zephyr for C Standard options.")
-  set(CSTD ${GLOBAL_CSTD})
-  list(APPEND CMAKE_C_COMPILE_FEATURES ${compile_features_${CSTD}})
 endif()
 
 # @Intent: Obtain compiler specific flag for specifying the c standard
@@ -1622,10 +1647,9 @@ list(APPEND
 )
 list(APPEND post_build_byproducts ${KERNEL_MAP_NAME})
 
-if(NOT CONFIG_BUILD_NO_GAP_FILL)
-  # Use ';' as separator to get proper space in resulting command.
-  set(GAP_FILL "$<TARGET_PROPERTY:bintools,elfconvert_flag_gapfill>0xff")
-endif()
+# Use ';' as separator to get proper space in resulting command.
+set(gap_fill_prop "$<TARGET_PROPERTY:bintools,elfconvert_flag_gapfill>")
+set(gap_fill "$<$<BOOL:${gap_fill_prop}>:${gap_fill_prop}${CONFIG_BUILD_GAP_FILL_PATTERN}>")
 
 if(CONFIG_OUTPUT_PRINT_MEMORY_USAGE)
   target_link_libraries(${logical_target_for_zephyr_elf} $<TARGET_PROPERTY:linker,memusage>)
@@ -1686,7 +1710,7 @@ if(CONFIG_BUILD_OUTPUT_HEX OR BOARD_FLASH_RUNNER STREQUAL openocd)
       post_build_commands
       COMMAND $<TARGET_PROPERTY:bintools,elfconvert_command>
               $<TARGET_PROPERTY:bintools,elfconvert_flag>
-              ${GAP_FILL}
+              $<$<BOOL:${CONFIG_BUILD_OUTPUT_HEX_GAP_FILL}>:${gap_fill}>
               $<TARGET_PROPERTY:bintools,elfconvert_flag_outtarget>ihex
               ${remove_sections_argument_list}
               $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${KERNEL_ELF_NAME}
@@ -1708,7 +1732,7 @@ if(CONFIG_BUILD_OUTPUT_BIN)
       post_build_commands
       COMMAND $<TARGET_PROPERTY:bintools,elfconvert_command>
               $<TARGET_PROPERTY:bintools,elfconvert_flag>
-              ${GAP_FILL}
+              ${gap_fill}
               $<TARGET_PROPERTY:bintools,elfconvert_flag_outtarget>binary
               ${remove_sections_argument_list}
               $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${KERNEL_ELF_NAME}
@@ -1795,7 +1819,7 @@ if(CONFIG_BUILD_OUTPUT_S19)
       post_build_commands
       COMMAND $<TARGET_PROPERTY:bintools,elfconvert_command>
               $<TARGET_PROPERTY:bintools,elfconvert_flag>
-              ${GAP_FILL}
+              $<$<BOOL:${CONFIG_BUILD_OUTPUT_S19_GAP_FILL}>:${gap_fill}>
               $<TARGET_PROPERTY:bintools,elfconvert_flag_outtarget>srec
               $<TARGET_PROPERTY:bintools,elfconvert_flag_srec_len>1
               $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${KERNEL_ELF_NAME}

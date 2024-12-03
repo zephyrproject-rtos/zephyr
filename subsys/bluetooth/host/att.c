@@ -19,7 +19,6 @@
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/gatt.h>
-#include <zephyr/drivers/bluetooth/hci_driver.h>
 
 #include "common/bt_str.h"
 
@@ -3669,7 +3668,7 @@ int bt_eatt_connect(struct bt_conn *conn, size_t num_channels)
 	}
 
 	while (offset < i) {
-		/* bt_l2cap_ecred_chan_connect() uses the first L2CAP_ECRED_CHAN_MAX_PER_REQ
+		/* bt_l2cap_ecred_chan_connect() uses the first BT_L2CAP_ECRED_CHAN_MAX_PER_REQ
 		 * elements of the array or until a null-terminator is reached.
 		 */
 		err = bt_l2cap_ecred_chan_connect(conn, &chan[offset], BT_EATT_PSM);
@@ -3677,7 +3676,7 @@ int bt_eatt_connect(struct bt_conn *conn, size_t num_channels)
 			return err;
 		}
 
-		offset += L2CAP_ECRED_CHAN_MAX_PER_REQ;
+		offset += BT_L2CAP_ECRED_CHAN_MAX_PER_REQ;
 	}
 
 	return 0;
@@ -3768,7 +3767,7 @@ int bt_eatt_reconfigure(struct bt_conn *conn, uint16_t mtu)
 	}
 
 	while (offset < i) {
-		/* bt_l2cap_ecred_chan_reconfigure() uses the first L2CAP_ECRED_CHAN_MAX_PER_REQ
+		/* bt_l2cap_ecred_chan_reconfigure() uses the first BT_L2CAP_ECRED_CHAN_MAX_PER_REQ
 		 * elements of the array or until a null-terminator is reached.
 		 */
 		err = bt_l2cap_ecred_chan_reconfigure(&chans[offset], mtu);
@@ -3776,7 +3775,7 @@ int bt_eatt_reconfigure(struct bt_conn *conn, uint16_t mtu)
 			return err;
 		}
 
-		offset += L2CAP_ECRED_CHAN_MAX_PER_REQ;
+		offset += BT_L2CAP_ECRED_CHAN_MAX_PER_REQ;
 	}
 
 	return 0;

@@ -4,16 +4,16 @@
 # Copyright (c) 2018 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-from enum import Enum
-import os
 import json
 import logging
-from colorama import Fore
-import xml.etree.ElementTree as ET
+import os
 import string
+import xml.etree.ElementTree as ET
 from datetime import datetime
+from enum import Enum
 from pathlib import PosixPath
 
+from colorama import Fore
 from twisterlib.statuses import TwisterStatus
 
 logger = logging.getLogger('twister')
@@ -65,7 +65,19 @@ class Reporting:
 
 
     @staticmethod
-    def xunit_testcase(eleTestsuite, name, classname, status: TwisterStatus, ts_status: TwisterStatus, reason, duration, runnable, stats, log, build_only_as_skip):
+    def xunit_testcase(
+        eleTestsuite,
+        name,
+        classname,
+        status: TwisterStatus,
+        ts_status: TwisterStatus,
+        reason,
+        duration,
+        runnable,
+        stats,
+        log,
+        build_only_as_skip
+    ):
         fails, passes, errors, skips = stats
 
         if status in [TwisterStatus.SKIP, TwisterStatus.FILTER]:
@@ -106,7 +118,12 @@ class Reporting:
         else:
             if status == TwisterStatus.NONE:
                 logger.debug(f"{name}: No status")
-                ET.SubElement(eleTestcase, ReportStatus.SKIP, type=f"untested", message="No results captured, testsuite misconfiguration?")
+                ET.SubElement(
+                    eleTestcase,
+                    ReportStatus.SKIP,
+                    type="untested",
+                    message="No results captured, testsuite misconfiguration?"
+                )
             else:
                 logger.error(f"{name}: Unknown status '{status}'")
 
@@ -116,7 +133,7 @@ class Reporting:
     def xunit_report_suites(self, json_file, filename):
 
         json_data = {}
-        with open(json_file, "r") as json_results:
+        with open(json_file) as json_results:
             json_data = json.load(json_results)
 
 
@@ -129,7 +146,9 @@ class Reporting:
         suites_to_report = all_suites
             # do not create entry if everything is filtered out
         if not self.env.options.detailed_skipped_report:
-            suites_to_report = list(filter(lambda d: TwisterStatus(d.get('status')) != TwisterStatus.FILTER, all_suites))
+            suites_to_report = list(
+                filter(lambda d: TwisterStatus(d.get('status')) != TwisterStatus.FILTER, all_suites)
+            )
 
         for suite in suites_to_report:
             duration = 0
@@ -185,7 +204,7 @@ class Reporting:
             selected = self.selected_platforms
 
         json_data = {}
-        with open(json_file, "r") as json_results:
+        with open(json_file) as json_results:
             json_data = json.load(json_results)
 
 
@@ -199,7 +218,9 @@ class Reporting:
             suites = list(filter(lambda d: d['platform'] == platform, all_suites))
             # do not create entry if everything is filtered out
             if not self.env.options.detailed_skipped_report:
-                non_filtered = list(filter(lambda d: TwisterStatus(d.get('status')) != TwisterStatus.FILTER, suites))
+                non_filtered = list(
+                    filter(lambda d: TwisterStatus(d.get('status')) != TwisterStatus.FILTER, suites)
+                )
                 if not non_filtered:
                     continue
 
@@ -225,7 +246,10 @@ class Reporting:
 
                 ts_status = TwisterStatus(ts.get('status'))
                 # Do not report filtered testcases
-                if ts_status == TwisterStatus.FILTER and not self.env.options.detailed_skipped_report:
+                if (
+                    ts_status == TwisterStatus.FILTER
+                    and not self.env.options.detailed_skipped_report
+                ):
                     continue
                 if full_report:
                     for tc in ts.get("testcases", []):
@@ -289,13 +313,17 @@ class Reporting:
                 continue
             if (filters and 'allow_status' in filters and \
                 instance.status not in [TwisterStatus[s] for s in filters['allow_status']]):
-                logger.debug(f"Skip test suite '{instance.testsuite.name}' status '{instance.status}' "
-                             f"not allowed for {filename}")
+                logger.debug(
+                    f"Skip test suite '{instance.testsuite.name}'"
+                    f" status '{instance.status}' not allowed for {filename}"
+                )
                 continue
             if (filters and 'deny_status' in filters and \
                 instance.status in [TwisterStatus[s] for s in filters['deny_status']]):
-                logger.debug(f"Skip test suite '{instance.testsuite.name}' status '{instance.status}' "
-                             f"denied for {filename}")
+                logger.debug(
+                    f"Skip test suite '{instance.testsuite.name}'"
+                    f" status '{instance.status}' denied for {filename}"
+                )
                 continue
             suite = {}
             handler_log = os.path.join(instance.build_dir, "handler.log")
@@ -377,7 +405,11 @@ class Reporting:
                 # if we discover those at runtime, the fallback testcase wont be
                 # needed anymore and can be removed from the output, it does
                 # not have a status and would otherwise be reported as skipped.
-                if case.freeform and case.status == TwisterStatus.NONE and len(instance.testcases) > 1:
+                if (
+                    case.freeform
+                    and case.status == TwisterStatus.NONE
+                    and len(instance.testcases) > 1
+                ):
                     continue
                 testcase = {}
                 testcase['identifier'] = case.name
@@ -408,9 +440,15 @@ class Reporting:
             if instance.recording is not None:
                 suite['recording'] = instance.recording
 
-            if (instance.status not in [TwisterStatus.NONE, TwisterStatus.ERROR, TwisterStatus.FILTER]
-                    and self.env.options.create_rom_ram_report
-                    and self.env.options.footprint_report is not None):
+            if (
+                instance.status not in [
+                    TwisterStatus.NONE,
+                    TwisterStatus.ERROR,
+                    TwisterStatus.FILTER
+                ]
+                and self.env.options.create_rom_ram_report
+                and self.env.options.footprint_report is not None
+            ):
                 # Init as empty data preparing for filtering properties.
                 suite['footprint'] = {}
 
@@ -429,7 +467,7 @@ class Reporting:
                     if do_all or k in self.env.options.footprint_report:
                         footprint_fname = os.path.join(instance.build_dir, v)
                         try:
-                            with open(footprint_fname, "rt") as footprint_json:
+                            with open(footprint_fname) as footprint_json:
                                 logger.debug(f"Collect footprint.{k} for '{instance.name}'")
                                 suite['footprint'][k] = json.load(footprint_json)
                         except FileNotFoundError:
@@ -440,7 +478,7 @@ class Reporting:
             suites.append(suite)
 
         report["testsuites"] = suites
-        with open(filename, "wt") as json_file:
+        with open(filename, 'w') as json_file:
             json.dump(report, json_file, indent=4, separators=(',',':'))
 
 
@@ -450,7 +488,7 @@ class Reporting:
                                ("used_rom", int, True)]
 
         if not os.path.exists(filename):
-            logger.error("Cannot compare metrics, %s not found" % filename)
+            logger.error(f"Cannot compare metrics, {filename} not found")
             return []
 
         results = []
@@ -506,9 +544,9 @@ class Reporting:
                 if show_footprint:
                     logger.log(
                         logging.INFO if all_deltas else logging.WARNING,
-                        "{:<25} {:<60} {} {:<+4}, is now {:6} {:+.2%}".format(
-                        i.platform.name, i.testsuite.name,
-                        metric, delta, value, percentage))
+                        f"{i.platform.name:<25} {i.testsuite.name:<60} {metric} {delta:<+4},"
+                        f" is now {value:6} {percentage:+.2%}"
+                    )
 
                 warnings += 1
 
@@ -523,9 +561,11 @@ class Reporting:
             log_txt = f"The following issues were found (showing the all {count} items):"
         elif self.env.options.report_summary:
             count = self.env.options.report_summary
-            log_txt = f"The following issues were found "
+            log_txt = "The following issues were found "
             if count > self.instance_fail_count:
-                log_txt += f"(presenting {self.instance_fail_count} out of the {count} items requested):"
+                log_txt += (
+                    f"(presenting {self.instance_fail_count} out of the {count} items requested):"
+                )
             else:
                 log_txt += f"(showing the {count} of {self.instance_fail_count} items):"
         else:
@@ -535,7 +575,12 @@ class Reporting:
         example_instance = None
         detailed_test_id = self.env.options.detailed_test_id
         for instance in self.instances.values():
-            if instance.status not in [TwisterStatus.PASS, TwisterStatus.FILTER, TwisterStatus.SKIP, TwisterStatus.NOTRUN]:
+            if instance.status not in [
+                TwisterStatus.PASS,
+                TwisterStatus.FILTER,
+                TwisterStatus.SKIP,
+                TwisterStatus.NOTRUN
+            ]:
                 cnt += 1
                 if cnt == 1:
                     logger.info("-+" * 40)
@@ -545,13 +590,16 @@ class Reporting:
                 if self.env.options.report_summary is not None and \
                    status in [TwisterStatus.ERROR, TwisterStatus.FAIL]:
                     status = Fore.RED + status.upper() + Fore.RESET
-                logger.info(f"{cnt}) {instance.testsuite.name} on {instance.platform.name} {status} ({instance.reason})")
+                logger.info(
+                    f"{cnt}) {instance.testsuite.name} on {instance.platform.name}"
+                    f" {status} ({instance.reason})"
+                )
                 example_instance = instance
             if cnt == count:
                 break
         if cnt == 0 and self.env.options.report_summary is not None:
             logger.info("-+" * 40)
-            logger.info(f"No errors/fails found")
+            logger.info("No errors/fails found")
 
         if cnt and example_instance:
             cwd_rel_path = os.path.relpath(example_instance.testsuite.source_dir, start=os.getcwd())
@@ -561,10 +609,16 @@ class Reporting:
             extra_parameters = '' if detailed_test_id else ' --no-detailed-test-id'
             logger.info(f"west twister -p <PLATFORM> -s <TEST ID>{extra_parameters}, for example:")
             logger.info("")
-            logger.info(f"west twister -p {example_instance.platform.name} -s {example_instance.testsuite.name}"
-                        f"{extra_parameters}")
-            logger.info(f"or with west:")
-            logger.info(f"west build -p -b {example_instance.platform.name} {cwd_rel_path} -T {example_instance.testsuite.id}")
+            logger.info(
+                f"west twister -p {example_instance.platform.name}"
+                f" -s {example_instance.testsuite.name}"
+                f"{extra_parameters}"
+            )
+            logger.info("or with west:")
+            logger.info(
+                f"west build -p -b {example_instance.platform.name} {cwd_rel_path}"
+                f" -T {example_instance.testsuite.id}"
+            )
             logger.info("-+" * 40)
 
     def summary(self, results, ignore_unrecognized_sections, duration):
@@ -574,9 +628,11 @@ class Reporting:
             if instance.status == TwisterStatus.FAIL:
                 failed += 1
             elif not ignore_unrecognized_sections and instance.metrics.get("unrecognized"):
-                logger.error("%sFAILED%s: %s has unrecognized binary sections: %s" %
-                             (Fore.RED, Fore.RESET, instance.name,
-                              str(instance.metrics.get("unrecognized", []))))
+                logger.error(
+                    f"{Fore.RED}FAILED{Fore.RESET}:"
+                    f" {instance.name} has unrecognized binary sections:"
+                    f" {instance.metrics.get('unrecognized', [])!s}"
+                )
                 failed += 1
 
             # FIXME: need a better way to identify executed tests
@@ -589,45 +645,97 @@ class Reporting:
         else:
             pass_rate = 0
 
+        passed_color = (
+            TwisterStatus.get_color(TwisterStatus.FAIL)
+            if failed
+            else TwisterStatus.get_color(TwisterStatus.PASS)
+        )
+        unfiltered_configs = results.total - results.filtered_configs
+        notrun_number_section = (
+            f'{TwisterStatus.get_color(TwisterStatus.NOTRUN)}{results.notrun}{Fore.RESET}'
+            if results.notrun
+            else f'{results.notrun}'
+        )
+        failed_number_section = (
+            f'{TwisterStatus.get_color(TwisterStatus.FAIL)}{results.failed}{Fore.RESET}'
+            if results.failed
+            else f'{results.failed}'
+        )
+        error_number_section = (
+            f'{TwisterStatus.get_color(TwisterStatus.ERROR)}{results.error}{Fore.RESET}'
+            if results.error
+            else f'{results.error}'
+        )
+        warnings_number_section = (
+            f'{Fore.YELLOW}{self.plan.warnings + results.warnings}{Fore.RESET}'
+            if (self.plan.warnings + results.warnings)
+            else 'no'
+        )
         logger.info(
-            f"{TwisterStatus.get_color(TwisterStatus.FAIL) if failed else TwisterStatus.get_color(TwisterStatus.PASS)}{results.passed}"
-            f" of {results.total - results.filtered_configs}{Fore.RESET}"
+            f"{passed_color}{results.passed} of {unfiltered_configs}{Fore.RESET}"
             f" executed test configurations passed ({pass_rate:.2%}),"
-            f" {f'{TwisterStatus.get_color(TwisterStatus.NOTRUN)}{results.notrun}{Fore.RESET}' if results.notrun else f'{results.notrun}'} built (not run),"
-            f" {f'{TwisterStatus.get_color(TwisterStatus.FAIL)}{results.failed}{Fore.RESET}' if results.failed else f'{results.failed}'} failed,"
-            f" {f'{TwisterStatus.get_color(TwisterStatus.ERROR)}{results.error}{Fore.RESET}' if results.error else f'{results.error}'} errored,"
-            f" with {f'{Fore.YELLOW}{self.plan.warnings + results.warnings}{Fore.RESET}' if (self.plan.warnings + results.warnings) else 'no'} warnings"
+            f" {notrun_number_section} built (not run),"
+            f" {failed_number_section} failed,"
+            f" {error_number_section} errored,"
+            f" with {warnings_number_section} warnings"
             f" in {duration:.2f} seconds."
         )
 
         total_platforms = len(self.platforms)
-        filtered_platforms = set(instance.platform.name for instance in self.instances.values()
-                                  if instance.status not in[TwisterStatus.FILTER, TwisterStatus.NOTRUN, TwisterStatus.SKIP])
+        filtered_platforms = set(
+            instance.platform.name for instance in self.instances.values()
+            if instance.status not in [
+                TwisterStatus.FILTER,
+                TwisterStatus.NOTRUN,
+                TwisterStatus.SKIP
+            ]
+        )
         # if we are only building, do not report about tests being executed.
         if self.platforms and not self.env.options.build_only:
-            executed_cases = results.cases - results.filtered_cases - results.skipped_cases - results.notrun_cases
+            executed_cases = (
+                results.cases
+                - results.filtered_cases
+                - results.skipped_cases
+                - results.notrun_cases
+            )
             pass_rate = 100 * (float(results.passed_cases) / float(executed_cases)) \
                 if executed_cases != 0 else 0
             platform_rate = (100 * len(filtered_platforms) / len(self.platforms))
+            blocked_after_comma = ", " + str(results.blocked_cases) + " blocked"
+            failed_after_comma = ", " + str(results.failed_cases) + " failed"
+            error_after_comma = ", " + str(results.error_cases) + " errored"
+            none_after_comma = ", " + str(results.none_cases) + " without a status"
             logger.info(
-                f'{results.passed_cases} of {executed_cases} executed test cases passed ({pass_rate:02.2f}%)'
-                f'{", " + str(results.blocked_cases) + " blocked" if results.blocked_cases else ""}'
-                f'{", " + str(results.failed_cases) + " failed" if results.failed_cases else ""}'
-                f'{", " + str(results.error_cases) + " errored" if results.error_cases else ""}'
-                f'{", " + str(results.none_cases) + " without a status" if results.none_cases else ""}'
-                f' on {len(filtered_platforms)} out of total {total_platforms} platforms ({platform_rate:02.2f}%).'
+                f'{results.passed_cases} of {executed_cases} executed test cases passed'
+                f' ({pass_rate:02.2f}%)'
+                f'{blocked_after_comma if results.blocked_cases else ""}'
+                f'{failed_after_comma if results.failed_cases else ""}'
+                f'{error_after_comma if results.error_cases else ""}'
+                f'{none_after_comma if results.none_cases else ""}'
+                f' on {len(filtered_platforms)} out of total {total_platforms} platforms'
+                f' ({platform_rate:02.2f}%).'
             )
             if results.skipped_cases or results.notrun_cases:
+                not_executed = results.skipped_cases + results.notrun_cases
+                skipped_after_colon = " " + str(results.skipped_cases) + " skipped"
+                notrun_after_comma = (
+                    (", " if results.skipped_cases else " ")
+                    + str(results.notrun_cases)
+                    + " not run (built only)"
+                )
                 logger.info(
-                    f'{results.skipped_cases + results.notrun_cases} selected test cases not executed:' \
-                    f'{" " + str(results.skipped_cases) + " skipped" if results.skipped_cases else ""}' \
-                    f'{(", " if results.skipped_cases else " ") + str(results.notrun_cases) + " not run (built only)" if results.notrun_cases else ""}' \
+                    f'{not_executed} selected test cases not executed:' \
+                    f'{skipped_after_colon if results.skipped_cases else ""}' \
+                    f'{notrun_after_comma if results.notrun_cases else ""}' \
                     f'.'
                 )
 
         built_only = results.total - run - results.filtered_configs
-        logger.info(f"{Fore.GREEN}{run}{Fore.RESET} test configurations executed on platforms, \
-{TwisterStatus.get_color(TwisterStatus.NOTRUN)}{built_only}{Fore.RESET} test configurations were only built.")
+        logger.info(
+            f"{Fore.GREEN}{run}{Fore.RESET} test configurations executed on platforms,"
+            f" {TwisterStatus.get_color(TwisterStatus.NOTRUN)}{built_only}{Fore.RESET}"
+            " test configurations were only built."
+        )
 
     def save_reports(self, name, suffix, report_dir, no_update, platform_reports):
         if not self.instances:
@@ -648,7 +756,7 @@ class Reporting:
             filename = os.path.join(outdir, report_name)
 
         if suffix:
-            filename = "{}_{}".format(filename, suffix)
+            filename = f"{filename}_{suffix}"
 
         if not no_update:
             json_file = filename + ".json"
@@ -669,10 +777,10 @@ class Reporting:
         platforms = {repr(inst.platform):inst.platform for _, inst in self.instances.items()}
         for platform in platforms.values():
             if suffix:
-                filename = os.path.join(outdir,"{}_{}.xml".format(platform.normalized_name, suffix))
-                json_platform_file = os.path.join(outdir,"{}_{}".format(platform.normalized_name, suffix))
+                filename = os.path.join(outdir,f"{platform.normalized_name}_{suffix}.xml")
+                json_platform_file = os.path.join(outdir,f"{platform.normalized_name}_{suffix}")
             else:
-                filename = os.path.join(outdir,"{}.xml".format(platform.normalized_name))
+                filename = os.path.join(outdir,f"{platform.normalized_name}.xml")
                 json_platform_file = os.path.join(outdir, platform.normalized_name)
             self.xunit_report(json_file, filename, platform.name, full_report=True)
             self.json_report(json_platform_file + ".json",

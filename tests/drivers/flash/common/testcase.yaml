@@ -13,10 +13,14 @@ tests:
     extra_args:
       - EXTRA_CONF_FILE=boards/nrf52840dk_nrf52840_qspi_nor.conf
       - DTC_OVERLAY_FILE=boards/nrf52840_size_in_bytes.overlay
+    extra_configs:
+      - CONFIG_TEST_DRIVER_FLASH_SIZE=8388608
     integration_platforms:
       - nrf52840dk/nrf52840
   drivers.flash.common.nrf_qspi_nor_4B_addr:
     platform_allow: nrf52840dk/nrf52840
+    extra_configs:
+      - CONFIG_TEST_DRIVER_FLASH_SIZE=67108864
     extra_args:
       - EXTRA_CONF_FILE=boards/nrf52840dk_nrf52840_qspi_nor.conf
       - DTC_OVERLAY_FILE=boards/nrf52840dk_mx25l51245g.overlay
@@ -38,6 +42,8 @@ tests:
       - mimxrt1060_evk
   drivers.flash.common.no_explicit_erase:
     platform_allow:
+      - nrf54l15dk/nrf54l05/cpuapp
+      - nrf54l15dk/nrf54l10/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
   drivers.flash.common.tfm_ns:
@@ -46,30 +52,10 @@ tests:
       and dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions"))
     integration_platforms:
       - nrf9161dk/nrf9161/ns
-  drivers.flash.common.stm32:
-    platform_allow:
-      - nucleo_f103rb
-      - nucleo_f207zg
-      - stm32f3_disco
-      - nucleo_f429zi
-      - stm32f746g_disco
-      - nucleo_f767zi
-      - nucleo_g0b1re
-      - nucleo_g474re
-      - nucleo_h743zi
-      - nucleo_l152re
-      - disco_l475_iot1
-      - nucleo_wb55rg
-      - nucleo_wl55jc
-      - stm32l562e_dk
-      - stm32l562e_dk/stm32l562xx/ns
-    integration_platforms:
-      - nucleo_f103rb
-    filter: (dt_compat_enabled("st,stm32-flash-controller") or
-             dt_compat_enabled("st,stm32h7-flash-controller")) and
-             dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
   drivers.flash.common.mx25r_high_perf:
     platform_allow: nrf52840dk/nrf52840
+    extra_configs:
+      - CONFIG_TEST_DRIVER_FLASH_SIZE=216142092
     extra_args:
       - EXTRA_CONF_FILE=boards/nrf52840dk_flash_spi.conf
       - DTC_OVERLAY_FILE=boards/nrf52840dk_mx25r_high_perf.overlay
@@ -81,6 +67,8 @@ tests:
       - CONFIG_FLASH_NXP_S32_QSPI_NOR_SFDP_RUNTIME=y
   drivers.flash.common.spi_nor:
     platform_allow: nrf52840dk/nrf52840
+    extra_configs:
+      - CONFIG_TEST_DRIVER_FLASH_SIZE=2097152
     extra_args:
       - EXTRA_CONF_FILE=boards/nrf52840dk_flash_spi.conf
       - DTC_OVERLAY_FILE=boards/nrf52840dk_spi_nor.overlay
@@ -88,6 +76,8 @@ tests:
       fixture: external_flash_mx25v1635f
   drivers.flash.common.spi_nor_wp_hold:
     platform_allow: nrf52840dk/nrf52840
+    extra_configs:
+      - CONFIG_TEST_DRIVER_FLASH_SIZE=2097152
     extra_args:
       - EXTRA_CONF_FILE=boards/nrf52840dk_flash_spi.conf
       - DTC_OVERLAY_FILE=boards/nrf52840dk_spi_nor_wp_hold.overlay

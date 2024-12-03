@@ -8,6 +8,7 @@
 
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/renesas_ra_cgc.h>
 #include <zephyr/drivers/interrupt_controller/intc_ra_icu.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/irq.h>
@@ -27,7 +28,7 @@ enum {
 struct uart_ra_cfg {
 	mem_addr_t regs;
 	const struct device *clock_dev;
-	clock_control_subsys_t clock_id;
+	const struct clock_control_ra_subsys_cfg clock_id;
 	const struct pinctrl_dev_config *pcfg;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	int (*irq_config_func)(const struct device *dev);
@@ -389,12 +390,13 @@ static int uart_ra_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	ret = clock_control_on(config->clock_dev, config->clock_id);
+	ret = clock_control_on(config->clock_dev, (clock_control_subsys_t)&config->clock_id);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = clock_control_get_rate(config->clock_dev, config->clock_id, &data->clk_rate);
+	ret = clock_control_get_rate(config->clock_dev, (clock_control_subsys_t)&config->clock_id,
+				     &data->clk_rate);
 	if (ret < 0) {
 		return ret;
 	}
@@ -627,7 +629,7 @@ static void uart_ra_isr_eri(const void *param)
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-static const struct uart_driver_api uart_ra_driver_api = {
+static DEVICE_API(uart, uart_ra_driver_api) = {
 	.poll_in = uart_ra_poll_in,
 	.poll_out = uart_ra_poll_out,
 	.err_check = uart_ra_err_check,
@@ -659,12 +661,13 @@ static const struct uart_driver_api uart_ra_driver_api = {
 		.regs = DT_REG_ADDR(DT_INST_PARENT(n)),                                            \
 		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_INST_PARENT(n))),                     \
 		.clock_id =                                                                        \
-			(clock_control_subsys_t)DT_CLOCKS_CELL_BY_IDX(DT_INST_PARENT(n), 0, id),   \
+			{                                                                          \
+				.mstp = DT_CLOCKS_CELL_BY_IDX(DT_INST_PARENT(n), 0, mstp),         \
+				.stop_bit = DT_CLOCKS_CELL_BY_IDX(DT_INST_PARENT(n), 0, stop_bit), \
+			},                                                                         \
 		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(DT_INST_PARENT(n)),                              \
-		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, (                                         \
-			.irq_config_func = irq_config_func_##n,                                    \
-		))                                                                                 \
-	}
+		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN,                                           \
+			   (.irq_config_func = irq_config_func_##n,))}
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 

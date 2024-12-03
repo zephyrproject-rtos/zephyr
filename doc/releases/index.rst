@@ -85,7 +85,7 @@ needs to be changed are to be detailed in the release's migration guide.
 
    release-notes-2.7
    release-notes-3.[6-7]
-   release-notes-4.0
+   release-notes-4.[0-1]
 
 Migration Guides
 ****************
@@ -117,7 +117,7 @@ to be able to understand the context of the change.
    :reversed:
 
    migration-guide-3.[6-7]
-   migration-guide-4.[0]
+   migration-guide-4.[0-1]
 
 End-of-life Releases
 ********************

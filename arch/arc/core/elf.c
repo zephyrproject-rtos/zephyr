@@ -8,6 +8,7 @@
 #include <zephyr/llext/llext.h>
 #include <zephyr/llext/loader.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/util.h>
 
 LOG_MODULE_REGISTER(elf, CONFIG_LLEXT_LOG_LEVEL);
 
@@ -17,7 +18,7 @@ LOG_MODULE_REGISTER(elf, CONFIG_LLEXT_LOG_LEVEL);
 #define R_ARC_32_ME         27
 
 /* ARCompact insns packed in memory have Middle Endian encoding */
-#define ME(x) ((x & 0xffff0000) >> 16) | ((x & 0xffff) << 16);
+#define ME(x) (((x & 0xffff0000) >> 16) | ((x & 0xffff) << 16))
 
 /**
  * @brief Architecture specific function for relocating shared elf
@@ -34,7 +35,7 @@ int arch_elf_relocate(elf_rela_t *rel, uintptr_t loc, uintptr_t sym_base_addr, c
 		      uintptr_t load_bias)
 {
 	int ret = 0;
-	uint32_t insn = *(uint32_t *)loc;
+	uint32_t insn = UNALIGNED_GET((uint32_t *)loc);
 	uint32_t value;
 
 	sym_base_addr += rel->r_addend;
@@ -44,7 +45,7 @@ int arch_elf_relocate(elf_rela_t *rel, uintptr_t loc, uintptr_t sym_base_addr, c
 	switch (reloc_type) {
 	case R_ARC_32:
 	case R_ARC_B26:
-		*(uint32_t *)loc = sym_base_addr;
+		UNALIGNED_PUT(sym_base_addr, (uint32_t *)loc);
 		break;
 	case R_ARC_S25W_PCREL:
 		/* ((S + A) - P) >> 2
@@ -64,10 +65,10 @@ int arch_elf_relocate(elf_rela_t *rel, uintptr_t loc, uintptr_t sym_base_addr, c
 
 		insn = ME(insn);
 
-		*(uint32_t *)loc = insn;
+		UNALIGNED_PUT(insn, (uint32_t *)loc);
 		break;
 	case R_ARC_32_ME:
-		*(uint32_t *)loc = ME(sym_base_addr);
+		UNALIGNED_PUT(ME(sym_base_addr), (uint32_t *)loc);
 		break;
 	default:
 		LOG_ERR("unknown relocation: %u\n", reloc_type);

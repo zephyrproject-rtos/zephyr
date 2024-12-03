@@ -7,20 +7,20 @@
 """
 
 import argparse
-from pathlib import Path
-import platform
 import os
+import platform
 import shlex
 import shutil
-from typing import List, Optional, ClassVar, Dict
+from pathlib import Path
+from typing import ClassVar
 
-from runners.core import ZephyrBinaryRunner, RunnerCaps, RunnerConfig
+from runners.core import RunnerCaps, RunnerConfig, ZephyrBinaryRunner
 
 
 class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
     """Runner front-end for STM32CubeProgrammer CLI."""
 
-    _RESET_MODES: ClassVar[Dict[str, str]] = {
+    _RESET_MODES: ClassVar[dict[str, str]] = {
         "sw": "SWrst",
         "hw": "HWrst",
         "core": "Crst",
@@ -31,14 +31,14 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
         self,
         cfg: RunnerConfig,
         port: str,
-        frequency: Optional[int],
-        reset_mode: Optional[str],
-        conn_modifiers: Optional[str],
-        cli: Optional[Path],
+        frequency: int | None,
+        reset_mode: str | None,
+        conn_modifiers: str | None,
+        cli: Path | None,
         use_elf: bool,
         erase: bool,
-        extload: Optional[str],
-        tool_opt: List[str],
+        extload: str | None,
+        tool_opt: list[str],
     ) -> None:
         super().__init__(cfg)
 
@@ -53,12 +53,15 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
         self._erase = erase
 
         if extload:
-            p = STM32CubeProgrammerBinaryRunner._get_stm32cubeprogrammer_path().parent.resolve() / 'ExternalLoader'
+            p = (
+                STM32CubeProgrammerBinaryRunner._get_stm32cubeprogrammer_path().parent.resolve()
+                / 'ExternalLoader'
+            )
             self._extload = ['-el', str(p / extload)]
         else:
             self._extload = []
 
-        self._tool_opt: List[str] = list()
+        self._tool_opt: list[str] = list()
         for opts in [shlex.split(opt) for opt in tool_opt]:
             self._tool_opt += opts
 

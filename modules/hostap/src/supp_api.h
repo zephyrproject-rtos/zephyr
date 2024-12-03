@@ -183,7 +183,8 @@ int supplicant_reg_domain(const struct device *dev, struct wifi_reg_domain *reg_
  */
 int supplicant_mode(const struct device *dev, struct wifi_mode_info *mode);
 
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+#if defined CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE || \
+	defined CONFIG_WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE
 /** Set Wi-Fi enterprise mode CA/client Cert and key
  *
  * @param dev Pointer to the device structure for the driver instance
@@ -285,6 +286,17 @@ static inline int hapd_state(const struct device *dev, int *state)
 {
 	return -EINVAL;
 }
+#endif
+
+#ifdef CONFIG_WIFI_NM_HOSTAPD_WPS
+/** Start AP WPS PBC/PIN
+ *
+ * @param dev Pointer to the device structure for the driver instance
+ * @param params wps operarion parameters
+ *
+ * @return 0 if ok, < 0 if error
+ */
+int supplicant_ap_wps_config(const struct device *dev, struct wifi_wps_config_params *params);
 #endif
 
 /**

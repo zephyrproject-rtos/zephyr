@@ -133,6 +133,7 @@ ARC arch:
     - evgeniy-paltsev
   collaborators:
     - abrodkin
+    - tagunil
   files:
     - arch/arc/
     - include/zephyr/arch/arc/
@@ -390,8 +391,10 @@ Bluetooth Host:
     - doc/connectivity/bluetooth/img/ctlr*
     - doc/connectivity/bluetooth/api/audio/
     - doc/connectivity/bluetooth/api/mesh/
-    - doc/connectivity/bluetooth/api/shell/iso.rst
     - doc/connectivity/bluetooth/api/controller.rst
+    - doc/connectivity/bluetooth/shell/classic/a2dp.rst
+    - doc/connectivity/bluetooth/shell/host/iso.rst
+    - doc/connectivity/bluetooth/shell/audio/
     - samples/bluetooth/bap*/
     - samples/bluetooth/cap*/
     - samples/bluetooth/hap*/
@@ -475,6 +478,7 @@ Bluetooth Audio:
     - tests/bluetooth/tester/overlay-le-audio.conf
     - tests/bluetooth/tester/src/audio/
     - doc/connectivity/bluetooth/api/audio/
+    - doc/connectivity/bluetooth/shell/audio/
     - samples/bluetooth/bap*/
     - samples/bluetooth/cap*/
     - samples/bluetooth/hap*/
@@ -493,6 +497,7 @@ Bluetooth Classic:
   collaborators:
     - jhedberg
   files:
+    - doc/connectivity/bluetooth/shell/classic/a2dp.rst
     - subsys/bluetooth/common/
     - subsys/bluetooth/host/classic/
     - include/zephyr/bluetooth/classic/
@@ -512,7 +517,7 @@ Bluetooth ISO:
     - rugeGerritsen
   files:
     - include/zephyr/bluetooth/iso.h
-    - doc/connectivity/bluetooth/api/shell/iso.rst
+    - doc/connectivity/bluetooth/shell/host/iso.rst
     - samples/bluetooth/iso_*/
     - subsys/bluetooth/Kconfig.iso
     - subsys/bluetooth/host/iso.c
@@ -1007,8 +1012,8 @@ Documentation Infrastructure:
 Release Notes:
   status: maintained
   maintainers:
-    - dkalowsk
-    - mmahadevan108
+    - fabiobaltieri
+    - kartben
   collaborators:
     - kartben
   files:
@@ -2172,6 +2177,7 @@ Release Notes:
     - rlubos
     - kludentwo
     - krish2718
+    - MaochenWang1
   files:
     - drivers/wifi/
     - dts/bindings/wifi/
@@ -2198,7 +2204,7 @@ Release Notes:
   collaborators:
     - sachinthegreen
   files:
-    - drivers/wifi/nrfwifi/
+    - drivers/wifi/nrf_wifi/
     - dts/bindings/wifi/nordic,nrf70.yaml
     - dts/bindings/wifi/nordic,nrf70-qspi.yaml
     - dts/bindings/wifi/nordic,nrf70-spi.yaml
@@ -2993,7 +2999,7 @@ Networking:
     - subsys/net/lib/ptp/
     - samples/net/ptp/
   labels:
-    - "area: Networking"
+    - "area: PTP"
   tests:
     - sample.net.ptp
 
@@ -3040,6 +3046,7 @@ Networking:
   collaborators:
     - rlubos
     - krish2718
+    - MaochenWang1
   files:
     - doc/connectivity/networking/api/wifi.rst
     - include/zephyr/net/wifi*.h
@@ -3331,7 +3338,7 @@ Shields:
 SPARC arch:
   status: odd fixes
   collaborators:
-    - julius-barendt
+    - tbr-tt
   files:
     - arch/sparc/
     - include/zephyr/arch/sparc/
@@ -3343,7 +3350,7 @@ SPARC arch:
 Gaisler Platforms:
   status: odd fixes
   collaborators:
-    - julius-barendt
+    - tbr-tt
   files:
     - dts/sparc/gaisler/
     - soc/gaisler/
@@ -3674,7 +3681,7 @@ NXP Drivers:
     - drivers/*/*.mcux
     - drivers/*/*.nxp
     - drivers/*/*nxp*
-    - drivers/*/*kinetis*
+    - drivers/*/*/*kinetis*
     - drivers/misc/*/nxp*
     - include/zephyr/dt-bindings/*/*nxp*
     - include/zephyr/dt-bindings/*/*mcux*
@@ -4348,6 +4355,7 @@ USB:
     - samples/subsys/usb/
     - subsys/usb/
     - tests/subsys/usb/
+    - tests/drivers/build_all/usb/
     - tests/drivers/usb/
     - tests/drivers/udc/
     - doc/connectivity/usb/
@@ -4739,11 +4747,6 @@ West:
   collaborators:
     - hubertmis
     - nordic-krch
-    - krish2718
-    - sachinthegreen
-    - udaynordic
-    - rajb9
-    - srkanordic
   files:
     - modules/hal_nordic/
   labels:
@@ -4874,6 +4877,14 @@ West:
   files: []
   labels:
     - "platform: TI"
+
+"West project: hal_wch":
+  status: maintained
+  maintainers:
+    - nzmichaelh
+    - kholia
+  files:
+    - modules/hal_wch/
 
 "West project: hal_wurthelektronik":
   status: maintained
@@ -5050,6 +5061,20 @@ West:
   files: []
   labels:
     - "area: native port"
+
+"West project: nrf_wifi":
+  status: maintained
+  maintainers:
+    - krish2718
+    - sachinthegreen
+  collaborators:
+    - udaynordic
+    - rajb9
+    - srkanordic
+  files:
+    - modules/nrf_wifi/
+  labels:
+    - "area: Wi-Fi"
 
 "West project: open-amp":
   status: odd fixes
@@ -5237,6 +5262,8 @@ West:
   maintainers:
     - krish2718
     - jukkar
+  collaborators:
+    - MaochenWang1
   files:
     - modules/hostap/
   labels:

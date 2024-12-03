@@ -70,7 +70,7 @@ static int stop(const struct device *dev)
 {
 	const struct counter_nrfx_config *config = dev->config;
 
-	nrf_timer_task_trigger(config->timer, NRF_TIMER_TASK_SHUTDOWN);
+	nrf_timer_task_trigger(config->timer, NRF_TIMER_TASK_STOP);
 
 	return 0;
 }
@@ -390,7 +390,7 @@ static void irq_handler(const void *arg)
 	}
 }
 
-static const struct counter_driver_api counter_nrfx_driver_api = {
+static DEVICE_API(counter, counter_nrfx_driver_api) = {
 	.start = start,
 	.stop = stop,
 	.get_value = get_value,

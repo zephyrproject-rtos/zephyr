@@ -41,9 +41,7 @@ Execute_AC_14 24_1_1
 Execute_AC_14 24_2_1
 Execute_AC_14 32_1_1
 Execute_AC_14 32_2_1
-# ASSERTION FAIL [err == ((isoal_status_t) 0x00) || err == ((isoal_status_t) 0x04)]
-# @ WEST_TOPDIR/zephyr/subsys/bluetooth/controller/hci/hci_driver.c:513
-# Execute_AC_14 441_1_1
+Execute_AC_14 441_1_1
 # ASSERTION FAIL [err == ((isoal_status_t) 0x00) || err == ((isoal_status_t) 0x04)]
 # @ WEST_TOPDIR/zephyr/subsys/bluetooth/controller/hci/hci_driver.c:513
 # Execute_AC_14 441_2_1
@@ -55,19 +53,19 @@ Execute_AC_14 48_5_1
 Execute_AC_14 48_6_1
 
 # High reliability
-# Execute_AC_14 8_1_2 # BT_ISO_FLAGS_ERROR
-# Execute_AC_14 8_2_2 # BT_ISO_FLAGS_ERROR
-# Execute_AC_14 16_1_2 # BT_ISO_FLAGS_ERROR
-# Execute_AC_14 16_2_2 # BT_ISO_FLAGS_ERROR
-# Execute_AC_14 24_1_2 # BT_ISO_FLAGS_ERROR
-# Execute_AC_14 24_2_2 # BT_ISO_FLAGS_ERROR
-# Execute_AC_14 32_1_2 # BT_ISO_FLAGS_ERROR
-# Execute_AC_14 32_2_2 # BT_ISO_FLAGS_ERROR
-# Execute_AC_14 441_1_2 # BT_ISO_FLAGS_ERROR
+Execute_AC_14 8_1_2
+# Execute_AC_14 8_2_2 # ISO receive error
+Execute_AC_14 16_1_2
+Execute_AC_14 16_2_2
+# Execute_AC_14 24_1_2 # ISO receive error
+# Execute_AC_14 24_2_2 # ISO receive error
+# Execute_AC_14 32_1_2 # ISO receive error
+Execute_AC_14 32_2_2
+# Execute_AC_14 441_1_2 # BT_ISO_FLAGS_LOST
 # Execute_AC_14 441_2_2 # BT_ISO_FLAGS_ERROR
-# Execute_AC_14 48_1_2 # BT_ISO_FLAGS_ERROR
-# Execute_AC_14 48_2_2 # BT_ISO_FLAGS_ERROR
-# Execute_AC_14 48_3_2 # BT_ISO_FLAGS_ERROR
-# Execute_AC_14 48_4_2 # BT_ISO_FLAGS_ERROR
-# Execute_AC_14 48_5_2 # BT_ISO_FLAGS_ERROR
-# Execute_AC_14 48_6_2 # BT_ISO_FLAGS_ERROR
+# Execute_AC_14 48_1_2 # ISO receive error
+Execute_AC_14 48_2_2
+# Execute_AC_14 48_3_2 # ISO receive error
+# Execute_AC_14 48_4_2 # ISO receive error
+# Execute_AC_14 48_5_2  # BT_ISO_FLAGS_ERROR
+# Execute_AC_14 48_6_2  # BT_ISO_FLAGS_ERROR

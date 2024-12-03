@@ -677,7 +677,7 @@ void icm42670_unlock(const struct device *dev)
 
 #endif
 
-static const struct sensor_driver_api icm42670_driver_api = {
+static DEVICE_API(sensor, icm42670_driver_api) = {
 #ifdef CONFIG_ICM42670_TRIGGER
 	.trigger_set = icm42670_trigger_set,
 #endif

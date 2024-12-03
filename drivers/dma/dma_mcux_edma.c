@@ -8,6 +8,8 @@
  * @brief Common part of DMA drivers for imx rt series.
  */
 
+#define DT_DRV_COMPAT nxp_mcux_edma
+
 #include <errno.h>
 #include <soc.h>
 #include <zephyr/init.h>
@@ -22,14 +24,6 @@
 
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
-
-#ifdef CONFIG_DMA_MCUX_EDMA
-#define DT_DRV_COMPAT nxp_mcux_edma
-#elif CONFIG_DMA_MCUX_EDMA_V3
-#define DT_DRV_COMPAT nxp_mcux_edma_v3
-#elif CONFIG_DMA_MCUX_EDMA_V4
-#define DT_DRV_COMPAT nxp_mcux_edma_v4
-#endif
 
 LOG_MODULE_REGISTER(dma_mcux_edma, CONFIG_DMA_LOG_LEVEL);
 

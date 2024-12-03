@@ -79,7 +79,7 @@ static int entropy_native_posix_init(const struct device *dev)
 	return 0;
 }
 
-static const struct entropy_driver_api entropy_native_posix_api_funcs = {
+static DEVICE_API(entropy, entropy_native_posix_api_funcs) = {
 	.get_entropy     = entropy_native_posix_get_entropy,
 	.get_entropy_isr = entropy_native_posix_get_entropy_isr
 };

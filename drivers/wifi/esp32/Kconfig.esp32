@@ -377,7 +377,6 @@ config ESP32_WIFI_MBEDTLS_CRYPTO
 	select MBEDTLS_CIPHER_MODE_CTR_ENABLED
 	select MBEDTLS_CMAC
 	select MBEDTLS_ENTROPY_C
-	select MBEDTLS_ENTROPY_POLL_ZEPHYR
 	help
 	  Select this option to use MbedTLS crypto APIs which utilize hardware acceleration.
 

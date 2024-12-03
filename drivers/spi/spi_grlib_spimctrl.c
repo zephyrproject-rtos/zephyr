@@ -215,7 +215,7 @@ static int init(const struct device *dev)
 	return 0;
 }
 
-static struct spi_driver_api api = {
+static DEVICE_API(spi, api) = {
 	.transceive             = transceive,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async       = transceive_async,

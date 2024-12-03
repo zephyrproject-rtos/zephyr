@@ -648,7 +648,7 @@ static int gpio_stm32_manage_callback(const struct device *dev,
 	return gpio_manage_callback(&data->cb, callback, set);
 }
 
-static const struct gpio_driver_api gpio_stm32_driver = {
+static DEVICE_API(gpio, gpio_stm32_driver) = {
 	.pin_configure = gpio_stm32_config,
 #if defined(CONFIG_GPIO_GET_CONFIG) && !defined(CONFIG_SOC_SERIES_STM32F1X)
 	.pin_get_config = gpio_stm32_get_config,

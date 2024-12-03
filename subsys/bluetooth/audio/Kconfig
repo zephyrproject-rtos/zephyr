@@ -19,16 +19,10 @@ menuconfig BT_AUDIO
 if BT_AUDIO
 
 config BT_AUDIO_RX
-	bool
-	help
-	  This hidden option is enabled when any of the profiles/services
-	  enables support for receiving of audio data.
+	def_bool BT_ASCS_ASE_SNK || BT_BAP_UNICAST_CLIENT_ASE_SRC || BT_BAP_BROADCAST_SINK
 
 config BT_AUDIO_TX
-	bool
-	help
-	  This hidden option is enabled when any of the profiles/services
-	  enables support for transmitting of audio data.
+	def_bool BT_ASCS_ASE_SRC || BT_BAP_UNICAST_CLIENT_ASE_SNK || BT_BAP_BROADCAST_SOURCE
 
 config BT_AUDIO_NOTIFY_RETRY_DELAY
 	int "Delay for notification sending retried attempt in 1.25 ms units"

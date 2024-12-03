@@ -8,6 +8,7 @@ config USBC_TCPC_NUMAKER
 	default y
 	select HAS_NUMAKER_ADC
 	select HAS_NUMAKER_TMR
+	select PINCTRL
 	depends on DT_HAS_NUVOTON_NUMAKER_TCPC_ENABLED
 	help
 	  Enable USB-C TCPC support for Nuvoton NuMaker chip with UTCPD.

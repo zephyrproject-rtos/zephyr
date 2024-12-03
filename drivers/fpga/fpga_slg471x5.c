@@ -13,7 +13,7 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(fpga_slg471x5);
+LOG_MODULE_REGISTER(fpga_slg471x5, CONFIG_FPGA_LOG_LEVEL);
 
 #define SLG471X5_NREG 256
 
@@ -71,9 +71,12 @@ static int fpga_slg471x5_verify(const struct device *dev, uint8_t *img, uint32_t
 {
 	const struct fpga_slg471x5_config *config = dev->config;
 	uint8_t buf[SLG471X5_NREG] = {0}, addr, len;
-	int i;
+	int i, ret;
 
-	i2c_read_dt(&config->bus, buf, SLG471X5_NREG);
+	ret = i2c_read_dt(&config->bus, buf, SLG471X5_NREG);
+	if (ret < 0) {
+		return ret;
+	}
 
 	for (i = 0; i < config->verify_list_len; i++) {
 		addr = config->verify_list[i].addr;
@@ -145,7 +148,7 @@ static int fpga_slg471x5_reset(const struct device *dev)
 	return 0;
 }
 
-static const struct fpga_driver_api fpga_slg471x5_api = {
+static DEVICE_API(fpga, fpga_slg471x5_api) = {
 	.get_status = fpga_slg471x5_get_status,
 	.reset = fpga_slg471x5_reset,
 	.load = fpga_slg471x5_load,

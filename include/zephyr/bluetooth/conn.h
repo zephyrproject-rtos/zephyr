@@ -657,6 +657,9 @@ struct bt_conn_le_cs_subevent_result {
 		 */
 		uint8_t abort_step;
 	} header;
+	/** Pointer to buffer containing step data.
+	 *  NULL if num_steps_reported is 0.
+	 */
 	struct net_buf_simple *step_data_buf;
 };
 
@@ -1432,8 +1435,8 @@ int bt_conn_create_auto_stop(void);
  *
  *  @return Zero on success or error code otherwise.
  */
-int bt_le_set_auto_conn(const bt_addr_le_t *addr,
-			const struct bt_le_conn_param *param);
+__deprecated int bt_le_set_auto_conn(const bt_addr_le_t *addr,
+				     const struct bt_le_conn_param *param);
 
 /** @brief Set security level for a connection.
  *
@@ -2195,7 +2198,8 @@ struct bt_conn_auth_cb {
 	 *  This callback may be unregistered in which case pairing continues
 	 *  as if the Kconfig flag was not set.
 	 *
-	 *  This callback is not called for BR/EDR Secure Simple Pairing (SSP).
+	 *  For BR/EDR Secure Simple Pairing (SSP), this callback is called
+	 *  when receiving the BT_HCI_EVT_IO_CAPA_REQ hci event.
 	 *
 	 *  @param conn Connection where pairing is initiated.
 	 *  @param feat Pairing req/resp info.

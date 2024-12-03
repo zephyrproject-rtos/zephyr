@@ -913,7 +913,7 @@ unlock:
 	return ret;
 }
 
-static const struct gnss_driver_api gnss_api = {
+static DEVICE_API(gnss, gnss_api) = {
 	.set_fix_rate = ubx_m8_set_fix_rate,
 	.get_fix_rate = ubx_m8_get_fix_rate,
 	.set_navigation_mode = ubx_m8_set_navigation_mode,

@@ -478,7 +478,7 @@ static int video_mcux_csi_enum_frmival(const struct device *dev, enum video_endp
 	return ret;
 }
 
-static const struct video_driver_api video_mcux_csi_driver_api = {
+static DEVICE_API(video, video_mcux_csi_driver_api) = {
 	.set_format = video_mcux_csi_set_fmt,
 	.get_format = video_mcux_csi_get_fmt,
 	.stream_start = video_mcux_csi_stream_start,

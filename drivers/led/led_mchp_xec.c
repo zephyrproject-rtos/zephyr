@@ -258,7 +258,7 @@ static int xec_bbled_init(const struct device *dev)
 	return ret;
 }
 
-static const struct led_driver_api xec_bbled_api = {
+static DEVICE_API(led, xec_bbled_api) = {
 	.on		= xec_bbled_on,
 	.off		= xec_bbled_off,
 	.blink		= xec_bbled_blink,

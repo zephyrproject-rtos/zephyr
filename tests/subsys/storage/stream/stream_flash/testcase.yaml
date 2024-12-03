@@ -7,6 +7,10 @@ common:
 tests:
   storage.stream_flash:
     tags: stream_flash
+    platform_allow:
+      - nrf52840dk/nrf52840
+    integration_platforms:
+      - nrf52840dk/nrf52840
   storage.stream_flash.simulator.no_explicit_erase:
     extra_args:
       - CONFIG_STREAM_FLASH_ERASE=n
@@ -23,12 +27,4 @@ tests:
   storage.stream_flash.no_erase:
     extra_configs:
       - CONFIG_STREAM_FLASH_ERASE=n
-    tags: stream_flash
-  storage.stream_flash.mpu_allow_flash_write:
-    extra_configs:
-      - CONFIG_MPU_ALLOW_FLASH_WRITE=y
-    platform_allow:
-      - nrf52840dk/nrf52840
-    integration_platforms:
-      - nrf52840dk/nrf52840
     tags: stream_flash

@@ -19,6 +19,12 @@
 			compatible = "mmio-sram";
 			reg = <0x20000000 DT_SIZE_K(32)>;
 		};
+
+		spi1: spi@40072100 {
+			compatible = "renesas,ra-spi";
+			interrupts = <16 1>, <17 1>, <18 1>, <19 1>;
+			interrupt-names = "rxi", "txi", "tei", "eri";
+		};
 	};
 
 	clocks: clocks {

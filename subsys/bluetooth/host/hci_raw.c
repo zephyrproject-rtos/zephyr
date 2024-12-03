@@ -11,11 +11,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/devicetree.h>
 
-#if DT_HAS_CHOSEN(zephyr_bt_hci)
 #include <zephyr/drivers/bluetooth.h>
-#else
-#include <zephyr/drivers/bluetooth/hci_driver.h>
-#endif
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/hci_raw.h>
 #include <zephyr/bluetooth/l2cap.h>
@@ -53,39 +49,24 @@ NET_BUF_POOL_FIXED_DEFINE(hci_iso_pool, CONFIG_BT_ISO_TX_BUF_COUNT,
 			  sizeof(struct bt_buf_data), NULL);
 #endif /* CONFIG_BT_ISO */
 
-#define BT_HCI_DEV  DT_CHOSEN(zephyr_bt_hci)
-#define BT_HCI_BUS  BT_DT_HCI_BUS_GET(BT_HCI_DEV)
-#define BT_HCI_NAME BT_DT_HCI_NAME_GET(BT_HCI_DEV)
+#if DT_HAS_CHOSEN(zephyr_bt_hci)
+#define BT_HCI_NODE   DT_CHOSEN(zephyr_bt_hci)
+#define BT_HCI_DEV    DEVICE_DT_GET(BT_HCI_NODE)
+#define BT_HCI_BUS    BT_DT_HCI_BUS_GET(BT_HCI_NODE)
+#define BT_HCI_NAME   BT_DT_HCI_NAME_GET(BT_HCI_NODE)
+#else
+/* The zephyr,bt-hci chosen property is mandatory, except for unit tests */
+BUILD_ASSERT(IS_ENABLED(CONFIG_ZTEST), "Missing DT chosen property for HCI");
+#define BT_HCI_DEV    NULL
+#define BT_HCI_BUS    0
+#define BT_HCI_NAME   ""
+#endif
 
 struct bt_dev_raw bt_dev = {
-#if DT_HAS_CHOSEN(zephyr_bt_hci)
-	.hci = DEVICE_DT_GET(BT_HCI_DEV),
-#endif
+	.hci = BT_HCI_DEV,
 };
 struct bt_hci_raw_cmd_ext *cmd_ext;
 static size_t cmd_ext_size;
-
-#if !DT_HAS_CHOSEN(zephyr_bt_hci)
-int bt_hci_driver_register(const struct bt_hci_driver *drv)
-{
-	if (bt_dev.drv) {
-		return -EALREADY;
-	}
-
-	if (!drv->open || !drv->send) {
-		return -EINVAL;
-	}
-
-	bt_dev.drv = drv;
-
-	LOG_DBG("Registered %s", drv->name ? drv->name : "");
-
-	bt_monitor_new_index(BT_MONITOR_TYPE_PRIMARY, drv->bus,
-			     BT_ADDR_ANY, drv->name ? drv->name : "bt0");
-
-	return 0;
-}
-#endif
 
 struct net_buf *bt_buf_get_rx(enum bt_buf_type type, k_timeout_t timeout)
 {
@@ -191,14 +172,10 @@ struct net_buf *bt_buf_get_evt(uint8_t evt, bool discardable, k_timeout_t timeou
 	return bt_buf_get_rx(BT_BUF_EVT, timeout);
 }
 
-#if DT_HAS_CHOSEN(zephyr_bt_hci)
 int bt_hci_recv(const struct device *dev, struct net_buf *buf)
 {
 	ARG_UNUSED(dev);
-#else
-int bt_recv(struct net_buf *buf)
-{
-#endif
+
 	LOG_DBG("buf %p len %u", buf, buf->len);
 
 	bt_monitor_send(bt_monitor_opcode(buf), buf->data, buf->len);
@@ -243,11 +220,7 @@ static void bt_cmd_complete_ext(uint16_t op, uint8_t status)
 	cc = net_buf_add(buf, sizeof(*cc));
 	cc->status = status;
 
-#if DT_HAS_CHOSEN(zephyr_bt_hci)
 	bt_hci_recv(bt_dev.hci, buf);
-#else
-	bt_recv(buf);
-#endif
 }
 
 static uint8_t bt_send_ext(struct net_buf *buf)
@@ -323,15 +296,11 @@ int bt_send(struct net_buf *buf)
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_BT_TINYCRYPT_ECC)) {
+	if (IS_ENABLED(CONFIG_BT_SEND_ECC_EMULATION)) {
 		return bt_hci_ecc_send(buf);
 	}
 
-#if DT_HAS_CHOSEN(zephyr_bt_hci)
 	return bt_hci_send(bt_dev.hci, buf);
-#else
-	return bt_dev.drv->send(buf);
-#endif
 }
 
 int bt_hci_raw_set_mode(uint8_t mode)
@@ -375,7 +344,6 @@ int bt_enable_raw(struct k_fifo *rx_queue)
 
 	raw_rx = rx_queue;
 
-#if DT_HAS_CHOSEN(zephyr_bt_hci)
 	if (!device_is_ready(bt_dev.hci)) {
 		LOG_ERR("HCI driver is not ready");
 		return -ENODEV;
@@ -384,16 +352,6 @@ int bt_enable_raw(struct k_fifo *rx_queue)
 	bt_monitor_new_index(BT_MONITOR_TYPE_PRIMARY, BT_HCI_BUS, BT_ADDR_ANY, BT_HCI_NAME);
 
 	err = bt_hci_open(bt_dev.hci, bt_hci_recv);
-#else
-	const struct bt_hci_driver *drv = bt_dev.drv;
-
-	if (!drv) {
-		LOG_ERR("No HCI driver registered");
-		return -ENODEV;
-	}
-
-	err = drv->open();
-#endif
 	if (err) {
 		LOG_ERR("HCI driver open failed (%d)", err);
 		return err;

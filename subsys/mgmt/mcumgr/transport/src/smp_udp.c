@@ -41,9 +41,9 @@ BUILD_ASSERT(0, "Either IPv4 or IPv6 SMP must be enabled for the MCUmgr UDP SMP 
 BUILD_ASSERT(sizeof(struct sockaddr) <= CONFIG_MCUMGR_TRANSPORT_NETBUF_USER_DATA_SIZE,
 	     "CONFIG_MCUMGR_TRANSPORT_NETBUF_USER_DATA_SIZE must be >= sizeof(struct sockaddr)");
 
+/* FIXME: dangerous logic, use a kernel API for this */
 #define IS_THREAD_RUNNING(thread)					\
 	(thread.base.thread_state & (_THREAD_PENDING |			\
-				     _THREAD_PRESTART |			\
 				     _THREAD_SUSPENDED |		\
 				     _THREAD_QUEUED) ? true : false)
 

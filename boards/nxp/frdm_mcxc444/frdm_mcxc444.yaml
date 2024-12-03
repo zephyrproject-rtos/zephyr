@@ -16,6 +16,7 @@ toolchain:
   - xtools
 supported:
   - gpio
+  - uart
   - counter
 testing:
   ignore_tags:

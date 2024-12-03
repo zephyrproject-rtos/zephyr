@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024 Mustafa Abdullah Kus, Sparse Technology
+ * Copyright (c) 2024 Nordic Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,6 +32,8 @@ struct prometheus_summary_quantile {
 	double quantile;
 	/** Value of the quantile */
 	double value;
+	/** User data */
+	void *user_data;
 };
 
 /**
@@ -41,7 +44,7 @@ struct prometheus_summary_quantile {
  */
 struct prometheus_summary {
 	/** Base of the Prometheus summary metric */
-	struct prometheus_metric *base;
+	struct prometheus_metric base;
 	/** Array of quantiles associated with the Prometheus summary metric */
 	struct prometheus_summary_quantile *quantiles;
 	/** Number of quantiles associated with the Prometheus summary metric */
@@ -50,40 +53,50 @@ struct prometheus_summary {
 	double sum;
 	/** Total count of observations in the summary metric */
 	unsigned long count;
+	/** User data */
+	void *user_data;
 };
 
 /**
  * @brief Prometheus Summary definition.
  *
- * This macro defines a Summary metric.
+ * This macro defines a Summary metric. If you want to make the summary static,
+ * then add "static" keyword before the PROMETHEUS_SUMMARY_DEFINE.
  *
- * @param _name The channel's name.
- * @param _detail The metric base.
+ * @param _name The summary metric name.
+ * @param _desc Summary description
+ * @param _label Label for the metric. Additional labels can be added at runtime.
+ * @param _collector Collector to map this metric. Can be set to NULL if it not yet known.
+ * @param ... Optional user data specific to this metric instance.
+ *
  *
  * Example usage:
  * @code{.c}
  *
- * struct prometheus_metric http_request_gauge = {
- *	.type = PROMETHEUS_SUMMARY,
- *	.name = "http_request_summary",
- *	.description = "HTTP request summary",
- *	.num_labels = 1,
- *	.labels = {
- *		{ .key = "request_latency", .value = "request_latency_seconds",}
- *	},
- * };
- *
- * PROMETHEUS_SUMMARY_DEFINE(test_summary, &test_summary_metric);
+ * PROMETHEUS_SUMMARY_DEFINE(http_request_summary, "HTTP request summary",
+ *                           ({ .key = "request_latency",
+ *                              .value = "request_latency_seconds" }), NULL);
  *
  * @endcode
  */
 
-#define PROMETHEUS_SUMMARY_DEFINE(_name, _detail)                                                  \
-	static STRUCT_SECTION_ITERABLE(prometheus_summary, _name) = {.base = (void *)(_detail),    \
-								     .quantiles = NULL,            \
-								     .num_quantiles = 0,           \
-								     .sum = 0,                     \
-								     .count = 0}
+#define PROMETHEUS_SUMMARY_DEFINE(_name, _desc, _label, _collector, ...) \
+	STRUCT_SECTION_ITERABLE(prometheus_summary, _name) = {		\
+		.base.name = STRINGIFY(_name),				\
+		.base.type = PROMETHEUS_SUMMARY,			\
+		.base.description = _desc,				\
+		.base.labels[0] = __DEBRACKET _label,			\
+		.base.num_labels = 1,					\
+		.base.collector = _collector,				\
+		.quantiles = NULL,					\
+		.num_quantiles = 0,					\
+		.sum = 0.0,						\
+		.count = 0U,						\
+		.user_data = COND_CODE_0(				\
+			NUM_VA_ARGS_LESS_1(LIST_DROP_EMPTY(__VA_ARGS__, _)), \
+			(NULL),						\
+			(GET_ARG_N(1, __VA_ARGS__))),			\
+	}
 
 /**
  * @brief Observes a value in a Prometheus summary metric
@@ -95,6 +108,20 @@ struct prometheus_summary {
  * @return 0 on success, -EINVAL if the value is negative.
  */
 int prometheus_summary_observe(struct prometheus_summary *summary, double value);
+
+/**
+ * @brief Set the summary value to specific value.
+ * The new value must be higher than the current value. This function can be used
+ * if we cannot add individual increments to the summary but need to periodically
+ * update the counter value. This function will add the difference between the
+ * new value and the old value to the summary fields.
+ * @param summary Pointer to the summary metric to increment.
+ * @param value New value of the summary.
+ * @param count New counter value of the summary.
+ * @return 0 on success, negative errno on error.
+ */
+int prometheus_summary_observe_set(struct prometheus_summary *summary,
+				   double value, unsigned long count);
 
 /**
  * @}

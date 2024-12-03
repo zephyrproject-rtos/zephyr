@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2024 DNDG srl
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&usart3 {
+	modbus0 {
+		status = "okay";
+	};
+	status = "okay";
+};

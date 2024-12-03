@@ -165,10 +165,12 @@ config BT_MESH_RELAY_ADV_SETS
 	int "Maximum of simultaneous relay message support"
 	default 0
 	range 0 BT_EXT_ADV_MAX_ADV_SET
-	depends on BT_MESH_RELAY
+	depends on BT_MESH_RELAY || BT_MESH_BRG_CFG_SRV
 	help
 	  Maximum of simultaneous relay message support. Requires controller support
 	  multiple advertising sets.
+
+	  Note that: The Subnet Bridge feature uses the relay advertising sets.
 
 config BT_MESH_ADV_EXT_RELAY_USING_MAIN_ADV_SET
 	bool "Use the main advertising set to relay messages"
@@ -471,8 +473,11 @@ config BT_MESH_RELAY_RETRANSMIT_INTERVAL
 	  messages, in milliseconds. Can be changed through runtime
 	  configuration.
 
+endif # BT_MESH_RELAY
+
 config BT_MESH_RELAY_BUF_COUNT
 	int "Number of advertising buffers for relayed messages"
+	depends on BT_MESH_RELAY || BT_MESH_BRG_CFG_SRV
 	default 32
 	range 1 256
 	help
@@ -486,7 +491,9 @@ config BT_MESH_RELAY_BUF_COUNT
 	  BT_MESH_RELAY_ADV_SETS allows the increase in the number of buffers
 	  while maintaining the latency.
 
-endif # BT_MESH_RELAY
+	  Note that: The Subnet Bridge feature uses the relay advertising buffers. If both the Relay
+	  feature and the Subnet Bridge feature is enabled, the added load should be taken into
+	  account.
 
 endmenu # Network layer
 
@@ -1448,12 +1455,13 @@ endmenu # Proxy
 choice BT_MESH_CRYPTO_LIB
 	prompt "Crypto library:"
 	default BT_MESH_USES_TFM_PSA if BUILD_WITH_TFM
-	default BT_MESH_USES_TINYCRYPT
+	default BT_MESH_USES_MBEDTLS_PSA
 	help
 	  Crypto library selection for mesh security.
 
 config BT_MESH_USES_TINYCRYPT
-	bool "TinyCrypt"
+	bool "TinyCrypt [DEPRECATED]"
+	select DEPRECATED
 	select TINYCRYPT
 	select TINYCRYPT_AES
 	select TINYCRYPT_AES_CMAC
@@ -1468,10 +1476,7 @@ config BT_MESH_USES_MBEDTLS_PSA
 	bool "mbed TLS PSA [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	select MBEDTLS
-	select MBEDTLS_ENTROPY_C
-	select MBEDTLS_ENTROPY_POLL_ZEPHYR
 	select MBEDTLS_PSA_CRYPTO_C
-	select MBEDTLS_USE_PSA_CRYPTO
 	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT
 	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_EXPORT
 	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE
@@ -1479,32 +1484,26 @@ config BT_MESH_USES_MBEDTLS_PSA
 	select PSA_WANT_ALG_CMAC
 	select PSA_WANT_ALG_ECB_NO_PADDING
 	select PSA_WANT_KEY_TYPE_AES
-	select MBEDTLS_CIPHER_AES_ENABLED
 	select MBEDTLS_AES_ROM_TABLES
 	select PSA_WANT_ALG_CCM
 	select PSA_WANT_KEY_TYPE_HMAC
 	select PSA_WANT_ALG_HMAC
 	select PSA_WANT_ALG_SHA_256
 	select PSA_WANT_ALG_ECDH
-	select PSA_WANT_ALG_ECDSA
-	select MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED
 	select PSA_WANT_ECC_SECP_R1_256
-	select MBEDTLS_PK_WRITE_C
 	help
-	  Use mbed TLS library to perform crypto operations. Support of
-	  mbed TLS and PSA is experimental and only BabbleSim tests were run.
-	  Mbed TLS still does not support ITS (internal trust storage) based
-	  on Zephyr's settings subsystem.
-	  Not possible to use for embedded devices yet.
+	  Use Mbed TLS as PSA Crypto API provider. This is useful on platforms
+	  that do not support TF-M.
+	  This feature is experimental and only BabbleSim tests were run.
 
 config BT_MESH_USES_TFM_PSA
 	bool "Use TF-M PSA [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	depends on BUILD_WITH_TFM
 	help
-	  Use TF-M that implements PSA security framework. Support of TF-M is
-	  experimental. It is only possible to use with platforms that TF-M supports.
-	  For more platform details see TF-M documentation.
+	  Use TF-M as PSA Crypto API provider. This is only possible on platforms
+	  that support TF-M.
+	  This feature is experimental.
 
 endchoice
 

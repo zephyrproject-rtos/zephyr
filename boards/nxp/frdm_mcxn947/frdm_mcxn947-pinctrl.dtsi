@@ -232,6 +232,15 @@
 		};
 	};
 
+	pinmux_sctimer: pinmux_sctimer {
+		group0 {
+			pinmux = <SCT0_OUT0_PIO2_2>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+
 	pinmux_flexio_lcd: pinmux_flexio_lcd {
 		group0 {
 			pinmux = <FLEXIO0_D16_PIO2_8>,

@@ -44,7 +44,7 @@ struct phy_mii_dev_data {
 static int phy_mii_get_link_state(const struct device *dev,
 				  struct phy_link_state *state);
 
-static inline int reg_read(const struct device *dev, uint16_t reg_addr,
+static inline int phy_mii_reg_read(const struct device *dev, uint16_t reg_addr,
 			   uint16_t *value)
 {
 	const struct phy_mii_dev_config *const cfg = dev->config;
@@ -56,7 +56,7 @@ static inline int reg_read(const struct device *dev, uint16_t reg_addr,
 	return mdio_read(cfg->mdio, cfg->phy_addr, reg_addr, value);
 }
 
-static inline int reg_write(const struct device *dev, uint16_t reg_addr,
+static inline int phy_mii_reg_write(const struct device *dev, uint16_t reg_addr,
 			    uint16_t value)
 {
 	const struct phy_mii_dev_config *const cfg = dev->config;
@@ -73,12 +73,12 @@ static bool is_gigabit_supported(const struct device *dev)
 	uint16_t bmsr_reg;
 	uint16_t estat_reg;
 
-	if (reg_read(dev, MII_BMSR, &bmsr_reg) < 0) {
+	if (phy_mii_reg_read(dev, MII_BMSR, &bmsr_reg) < 0) {
 		return -EIO;
 	}
 
 	if (bmsr_reg & MII_BMSR_EXTEND_STATUS) {
-		if (reg_read(dev, MII_ESTAT, &estat_reg) < 0) {
+		if (phy_mii_reg_read(dev, MII_ESTAT, &estat_reg) < 0) {
 			return -EIO;
 		}
 
@@ -97,7 +97,7 @@ static int reset(const struct device *dev)
 	uint16_t value;
 
 	/* Issue a soft reset */
-	if (reg_write(dev, MII_BMCR, MII_BMCR_RESET) < 0) {
+	if (phy_mii_reg_write(dev, MII_BMCR, MII_BMCR_RESET) < 0) {
 		return -EIO;
 	}
 
@@ -112,7 +112,7 @@ static int reset(const struct device *dev)
 
 		k_sleep(K_MSEC(50));
 
-		if (reg_read(dev, MII_BMCR, &value) < 0) {
+		if (phy_mii_reg_read(dev, MII_BMCR, &value) < 0) {
 			return -EIO;
 		}
 	} while (value & MII_BMCR_RESET);
@@ -124,13 +124,13 @@ static int get_id(const struct device *dev, uint32_t *phy_id)
 {
 	uint16_t value;
 
-	if (reg_read(dev, MII_PHYID1R, &value) < 0) {
+	if (phy_mii_reg_read(dev, MII_PHYID1R, &value) < 0) {
 		return -EIO;
 	}
 
 	*phy_id = value << 16;
 
-	if (reg_read(dev, MII_PHYID2R, &value) < 0) {
+	if (phy_mii_reg_read(dev, MII_PHYID2R, &value) < 0) {
 		return -EIO;
 	}
 
@@ -153,7 +153,7 @@ static int update_link_state(const struct device *dev)
 	uint16_t s1kt_reg = 0;
 	uint32_t timeout = CONFIG_PHY_AUTONEG_TIMEOUT_MS / 100;
 
-	if (reg_read(dev, MII_BMSR, &bmsr_reg) < 0) {
+	if (phy_mii_reg_read(dev, MII_BMSR, &bmsr_reg) < 0) {
 		return -EIO;
 	}
 
@@ -168,6 +168,7 @@ static int update_link_state(const struct device *dev)
 
 	/* If link is down, there is nothing more to be done */
 	if (data->state.is_up == false) {
+		LOG_INF("PHY (%d) is down", cfg->phy_addr);
 		return 0;
 	}
 
@@ -178,19 +179,19 @@ static int update_link_state(const struct device *dev)
 		cfg->phy_addr);
 
 	/* Read PHY default advertising parameters */
-	if (reg_read(dev, MII_ANAR, &anar_reg) < 0) {
+	if (phy_mii_reg_read(dev, MII_ANAR, &anar_reg) < 0) {
 		return -EIO;
 	}
 
 	/* Configure and start auto-negotiation process */
-	if (reg_read(dev, MII_BMCR, &bmcr_reg) < 0) {
+	if (phy_mii_reg_read(dev, MII_BMCR, &bmcr_reg) < 0) {
 		return -EIO;
 	}
 
 	bmcr_reg |= MII_BMCR_AUTONEG_ENABLE | MII_BMCR_AUTONEG_RESTART;
 	bmcr_reg &= ~MII_BMCR_ISOLATE;  /* Don't isolate the PHY */
 
-	if (reg_write(dev, MII_BMCR, bmcr_reg) < 0) {
+	if (phy_mii_reg_write(dev, MII_BMCR, bmcr_reg) < 0) {
 		return -EIO;
 	}
 
@@ -204,7 +205,7 @@ static int update_link_state(const struct device *dev)
 
 		k_sleep(K_MSEC(100));
 
-		if (reg_read(dev, MII_BMSR, &bmsr_reg) < 0) {
+		if (phy_mii_reg_read(dev, MII_BMSR, &bmsr_reg) < 0) {
 			return -EIO;
 		}
 	} while (!(bmsr_reg & MII_BMSR_AUTONEG_COMPLETE));
@@ -213,15 +214,15 @@ static int update_link_state(const struct device *dev)
 		cfg->phy_addr);
 
 	/** Read peer device capability */
-	if (reg_read(dev, MII_ANLPAR, &anlpar_reg) < 0) {
+	if (phy_mii_reg_read(dev, MII_ANLPAR, &anlpar_reg) < 0) {
 		return -EIO;
 	}
 
 	if (data->gigabit_supported) {
-		if (reg_read(dev, MII_1KTCR, &c1kt_reg) < 0) {
+		if (phy_mii_reg_read(dev, MII_1KTCR, &c1kt_reg) < 0) {
 			return -EIO;
 		}
-		if (reg_read(dev, MII_1KSTSR, &s1kt_reg) < 0) {
+		if (phy_mii_reg_read(dev, MII_1KSTSR, &s1kt_reg) < 0) {
 			return -EIO;
 		}
 		s1kt_reg = (uint16_t)(s1kt_reg >> MII_1KSTSR_OFFSET);
@@ -293,13 +294,13 @@ static void monitor_work_handler(struct k_work *work)
 static int phy_mii_read(const struct device *dev, uint16_t reg_addr,
 			uint32_t *data)
 {
-	return reg_read(dev, reg_addr, (uint16_t *)data);
+	return phy_mii_reg_read(dev, reg_addr, (uint16_t *)data);
 }
 
 static int phy_mii_write(const struct device *dev, uint16_t reg_addr,
 			 uint32_t data)
 {
-	return reg_write(dev, reg_addr, (uint16_t)data);
+	return phy_mii_reg_write(dev, reg_addr, (uint16_t)data);
 }
 
 static int phy_mii_cfg_link(const struct device *dev,
@@ -310,16 +311,16 @@ static int phy_mii_cfg_link(const struct device *dev,
 	uint16_t bmcr_reg;
 	uint16_t c1kt_reg;
 
-	if (reg_read(dev, MII_ANAR, &anar_reg) < 0) {
+	if (phy_mii_reg_read(dev, MII_ANAR, &anar_reg) < 0) {
 		return -EIO;
 	}
 
-	if (reg_read(dev, MII_BMCR, &bmcr_reg) < 0) {
+	if (phy_mii_reg_read(dev, MII_BMCR, &bmcr_reg) < 0) {
 		return -EIO;
 	}
 
 	if (data->gigabit_supported) {
-		if (reg_read(dev, MII_1KTCR, &c1kt_reg) < 0) {
+		if (phy_mii_reg_read(dev, MII_1KTCR, &c1kt_reg) < 0) {
 			return -EIO;
 		}
 	}
@@ -361,18 +362,18 @@ static int phy_mii_cfg_link(const struct device *dev,
 			c1kt_reg &= ~MII_ADVERTISE_1000_HALF;
 		}
 
-		if (reg_write(dev, MII_1KTCR, c1kt_reg) < 0) {
+		if (phy_mii_reg_write(dev, MII_1KTCR, c1kt_reg) < 0) {
 			return -EIO;
 		}
 	}
 
 	bmcr_reg |= MII_BMCR_AUTONEG_ENABLE;
 
-	if (reg_write(dev, MII_ANAR, anar_reg) < 0) {
+	if (phy_mii_reg_write(dev, MII_ANAR, anar_reg) < 0) {
 		return -EIO;
 	}
 
-	if (reg_write(dev, MII_BMCR, bmcr_reg) < 0) {
+	if (phy_mii_reg_write(dev, MII_BMCR, bmcr_reg) < 0) {
 		return -EIO;
 	}
 
@@ -479,7 +480,7 @@ static int phy_mii_initialize(const struct device *dev)
 
 #define IS_FIXED_LINK(n)	DT_INST_NODE_HAS_PROP(n, fixed_link)
 
-static const struct ethphy_driver_api phy_mii_driver_api = {
+static DEVICE_API(ethphy, phy_mii_driver_api) = {
 	.get_link = phy_mii_get_link_state,
 	.cfg_link = phy_mii_cfg_link,
 	.link_cb_set = phy_mii_link_cb_set,

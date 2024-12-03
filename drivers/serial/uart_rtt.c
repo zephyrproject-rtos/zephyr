@@ -160,7 +160,7 @@ static int uart_rtt_rx_buf_rsp(const struct device *dev,
 
 #endif /* CONFIG_UART_ASYNC_API */
 
-static const struct uart_driver_api uart_rtt_driver_api = {
+static DEVICE_API(uart, uart_rtt_driver_api) = {
 	.poll_in = uart_rtt_poll_in,
 	.poll_out = uart_rtt_poll_out,
 #ifdef CONFIG_UART_ASYNC_API

@@ -10,7 +10,7 @@ menuconfig FPGA
 
 if FPGA
 
-module = fpga
+module = FPGA
 module-str = fpga
 source "subsys/logging/Kconfig.template.log_config"
 

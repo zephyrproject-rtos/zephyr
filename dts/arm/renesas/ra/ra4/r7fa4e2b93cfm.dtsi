@@ -7,6 +7,13 @@
 #include <zephyr/dt-bindings/clock/ra_clock.h>
 #include <arm/renesas/ra/ra4/ra4-cm33-common.dtsi>
 
+/delete-node/ &agt0;
+/delete-node/ &agt1;
+/delete-node/ &agt2;
+/delete-node/ &agt3;
+/delete-node/ &agt4;
+/delete-node/ &agt5;
+
 / {
 	soc {
 		sram0: memory@20000000 {

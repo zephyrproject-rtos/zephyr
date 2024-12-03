@@ -22,6 +22,9 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/services/hrs.h>
 
+BUILD_ASSERT(IS_ENABLED(CONFIG_BT_HAS_HCI_VS),
+	     "This app requires Zephyr-specific HCI vendor extensions");
+
 static struct bt_conn *default_conn;
 static uint16_t default_conn_handle;
 

@@ -11,11 +11,13 @@ Parser library for Dictionary-based Logging
 This library along with dictionary_parser converts the
 input binary data to the log using log database.
 """
-import sys
+
 import logging
+import sys
 
 import dictionary_parser
 from dictionary_parser.log_database import LogDatabase
+
 
 def parser(logdata, dbfile, logger):
     """function of serial parser"""

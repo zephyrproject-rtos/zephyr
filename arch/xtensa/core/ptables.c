@@ -1086,7 +1086,7 @@ static int mem_buffer_validate(const void *addr, size_t size, int write, int rin
 	int ret = 0;
 	uint8_t *virt;
 	size_t aligned_size;
-	const struct k_thread *thread = _current;
+	const struct k_thread *thread = arch_current_thread();
 	uint32_t *ptables = thread_page_tables_get(thread);
 
 	/* addr/size arbitrary, fix this up into an aligned region */

@@ -502,7 +502,7 @@ static int spi_it8xxx2_init(const struct device *dev)
 	return 0;
 }
 
-static const struct spi_driver_api spi_it8xxx2_driver_api = {
+static DEVICE_API(spi, spi_it8xxx2_driver_api) = {
 	.transceive = it8xxx2_transceive,
 	.release = it8xxx2_release,
 

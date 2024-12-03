@@ -183,7 +183,7 @@ static int hids_2525020210002_attr_get(const struct device *dev, enum sensor_cha
 	return 0;
 }
 
-static const struct sensor_driver_api hids_2525020210002_driver_api = {
+static DEVICE_API(sensor, hids_2525020210002_driver_api) = {
 	.attr_set = hids_2525020210002_attr_set,
 	.attr_get = hids_2525020210002_attr_get,
 	.sample_fetch = hids_2525020210002_sample_fetch,

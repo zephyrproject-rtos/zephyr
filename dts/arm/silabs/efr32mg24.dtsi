@@ -6,9 +6,7 @@
 
 #include <arm/armv8-m.dtsi>
 #include <dt-bindings/gpio/gpio.h>
-#include <arm/silabs/gpio_gecko.h>
 #include <dt-bindings/i2c/i2c.h>
-#include <dt-bindings/pinctrl/gecko-pinctrl.h>
 #include <dt-bindings/adc/adc.h>
 #include <dt-bindings/clock/silabs/xg24-clock.h>
 #include <freq.h>
@@ -345,7 +343,7 @@
 
 		gpio: gpio@5003c000 {
 			compatible = "silabs,gecko-gpio";
-			reg = <0x5003c000 0x4000>;
+			reg = <0x5003c000 0x440>;
 			interrupts = <26 2>, <25 2>;
 			interrupt-names = "GPIO_EVEN", "GPIO_ODD";
 			clocks = <&cmu CLOCK_GPIO CLOCK_BRANCH_PCLK>;
@@ -391,6 +389,11 @@
 			};
 		};
 
+		pinctrl: pin-controller@5003c440 {
+			compatible = "silabs,dbus-pinctrl";
+			reg = <0x5003c440 0xbc0>;
+		};
+
 		wdog0: wdog@5b004000 {
 			compatible = "silabs,gecko-wdog";
 			reg = <0x5b004000 0x2C>;
@@ -434,14 +437,6 @@
 };
 
 / {
-	pinctrl: pin-controller {
-		/* Pin controller is a "virtual" device since SiLabs SoCs do pin
-		 * control in a distributed way (GPIO registers and PSEL
-		 * registers on each peripheral).
-		 */
-		compatible = "silabs,gecko-pinctrl";
-	};
-
 	hwinfo: hwinfo {
 		compatible = "silabs,gecko-hwinfo";
 		status = "disabled";

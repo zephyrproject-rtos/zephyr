@@ -986,7 +986,7 @@ static int qmspi_xec_init(const struct device *dev)
 	return 0;
 }
 
-static const struct spi_driver_api spi_qmspi_xec_driver_api = {
+static DEVICE_API(spi, spi_qmspi_xec_driver_api) = {
 	.transceive = qmspi_transceive_sync,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = qmspi_transceive_async,

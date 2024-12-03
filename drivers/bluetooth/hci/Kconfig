@@ -101,6 +101,20 @@ config BT_STM32WBA
 	help
 	  ST STM32WBA HCI Bluetooth interface
 
+config BT_STM32WB0
+	bool "STM32WB0 HCI driver"
+	default y
+	depends on DT_HAS_ST_HCI_STM32WB0_ENABLED
+	depends on ZEPHYR_HAL_STM32_MODULE_BLOBS
+	select HAS_STM32LIB
+	select USE_STM32_HAL_PKA
+	select USE_STM32_HAL_CORTEX
+	select USE_STM32_HAL_GPIO
+	select USE_STM32_HAL_RADIO
+	select USE_STM32_HAL_RADIO_TIMER
+	help
+	  ST STM32WB0 HCI Bluetooth interface
+
 config BT_SILABS_EFR32
 	bool
 	default y
@@ -112,7 +126,6 @@ config BT_SILABS_EFR32
 	select MBEDTLS
 	select MBEDTLS_PSA_CRYPTO_C
 	select MBEDTLS_ENTROPY_C
-	select MBEDTLS_ENTROPY_POLL_ZEPHYR
 	help
 	  Use Silicon Labs binary Bluetooth library to connect to the
 	  controller.
@@ -134,6 +147,7 @@ config BT_ESP32
 	default y
 	depends on DT_HAS_ESPRESSIF_ESP32_BT_HCI_ENABLED
 	depends on ZEPHYR_HAL_ESPRESSIF_MODULE_BLOBS
+	select ENTROPY_GENERATOR
 	help
 	  Espressif HCI bluetooth interface
 
@@ -146,6 +160,15 @@ config BT_PSOC6_BLESS
 	help
 	  PSOC 6 BLESS driver with BLE Controller which operates in
 	  Single CPU mode.
+
+config BT_DA1453X
+	bool "DA1453x HCI driver"
+	default y
+	depends on DT_HAS_RENESAS_BT_HCI_DA1453X_ENABLED
+	select GPIO
+	help
+	  Bluetooth HCI driver for communication with controller
+	  running on DA1453x MCU.
 
 config BT_DA1469X
 	bool

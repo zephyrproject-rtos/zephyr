@@ -216,13 +216,11 @@ static int __z_clock_nanosleep(clockid_t clock_id, int flags, const struct times
 		return -1;
 	}
 
-	if ((flags & TIMER_ABSTIME) == 0 &&
-	    unlikely(rqtp->tv_sec >= ULLONG_MAX / NSEC_PER_SEC)) {
-
-		ns = rqtp->tv_nsec + NSEC_PER_SEC
-			+ k_sleep(K_SECONDS(rqtp->tv_sec - 1)) * NSEC_PER_MSEC;
+	if ((flags & TIMER_ABSTIME) == 0 && unlikely(rqtp->tv_sec >= ULLONG_MAX / NSEC_PER_SEC)) {
+		ns = rqtp->tv_nsec + NSEC_PER_SEC +
+		     (uint64_t)k_sleep(K_SECONDS(rqtp->tv_sec - 1)) * NSEC_PER_MSEC;
 	} else {
-		ns = rqtp->tv_sec * NSEC_PER_SEC + rqtp->tv_nsec;
+		ns = (uint64_t)rqtp->tv_sec * NSEC_PER_SEC + rqtp->tv_nsec;
 	}
 
 	uptime_ns = k_ticks_to_ns_ceil64(sys_clock_tick_get());

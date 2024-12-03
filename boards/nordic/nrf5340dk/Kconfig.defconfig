@@ -43,6 +43,19 @@ config SRAM_SIZE
 
 endif # BOARD_NRF5340DK_NRF5340_CPUAPP && TRUSTED_EXECUTION_SECURE
 
+if BOARD_NRF5340DK_NRF5340_CPUAPP
+
+# BT relies on PSA Crypto API to perform crypto operations. On this platform
+# this is implemented by Mbed TLS which requires a (possibly true) random
+# number generator to initialize properly. We enable ENTROPY_GENERATOR here
+# instead of manually adding it to all samples/tests configuration files because
+# it looks more compact and easier to maintain.
+config ENTROPY_GENERATOR
+	bool
+	default y if BT
+
+endif # BOARD_NRF5340DK_NRF5340_CPUAPP
+
 if BOARD_NRF5340DK_NRF5340_CPUAPP_NS
 
 config FLASH_LOAD_OFFSET

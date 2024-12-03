@@ -76,7 +76,7 @@ static int dac_esp32_init(const struct device *dev)
 	return 0;
 }
 
-static const struct dac_driver_api dac_esp32_driver_api = {
+static DEVICE_API(dac, dac_esp32_driver_api) = {
 	.channel_setup = dac_esp32_channel_setup,
 	.write_value = dac_esp32_write_value
 };

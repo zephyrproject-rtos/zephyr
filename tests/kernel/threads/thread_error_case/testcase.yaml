@@ -4,7 +4,7 @@ tests:
       - kernel
       - threads
       - userspace
-    filter: CONFIG_USERSPACE
+    filter: CONFIG_ARCH_HAS_USERSPACE
     ignore_faults: true
     integration_platforms:
       - qemu_x86

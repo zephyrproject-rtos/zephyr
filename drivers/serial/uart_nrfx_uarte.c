@@ -30,9 +30,7 @@
 
 LOG_MODULE_REGISTER(uart_nrfx_uarte, CONFIG_UART_LOG_LEVEL);
 
-#if !defined(CONFIG_ARCH_POSIX)
 #define RX_FLUSH_WORKAROUND 1
-#endif
 
 #define UARTE(idx)                DT_NODELABEL(uart##idx)
 #define UARTE_HAS_PROP(idx, prop) DT_NODE_HAS_PROP(UARTE(idx), prop)
@@ -353,16 +351,16 @@ static void uarte_nrfx_isr_int(const void *arg)
 	if (txstopped && (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME) || LOW_POWER_ENABLED(config))) {
 		unsigned int key = irq_lock();
 
-		if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME) &&
-		    (data->flags & UARTE_FLAG_POLL_OUT)) {
-			data->flags &= ~UARTE_FLAG_POLL_OUT;
-			pm_device_runtime_put(dev);
+		if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+			if (data->flags & UARTE_FLAG_POLL_OUT) {
+				data->flags &= ~UARTE_FLAG_POLL_OUT;
+				pm_device_runtime_put_async(dev, K_NO_WAIT);
+			}
 		} else {
 			nrf_uarte_disable(uarte);
 		}
-
 #ifdef UARTE_INTERRUPT_DRIVEN
-		if (!data->int_driven || data->int_driven->fifo_fill_lock == 0)
+		if (!data->int_driven)
 #endif
 		{
 			nrf_uarte_int_disable(uarte, NRF_UARTE_INT_TXSTOPPED_MASK);
@@ -378,15 +376,19 @@ static void uarte_nrfx_isr_int(const void *arg)
 
 	if (txstopped) {
 		data->int_driven->fifo_fill_lock = 0;
-		if (data->int_driven->disable_tx_irq) {
-			nrf_uarte_int_disable(uarte,
-					      NRF_UARTE_INT_TXSTOPPED_MASK);
-			data->int_driven->disable_tx_irq = false;
-			return;
+		if (!data->int_driven->tx_irq_enabled) {
+
+			nrf_uarte_int_disable(uarte, NRF_UARTE_INT_TXSTOPPED_MASK);
 		}
 
+		if (data->int_driven->disable_tx_irq) {
+			data->int_driven->disable_tx_irq = false;
+			if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+				pm_device_runtime_put_async(dev, K_NO_WAIT);
+			}
+			return;
+		}
 	}
-
 
 	if (nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_ERROR)) {
 		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_ERROR);
@@ -590,6 +592,9 @@ static void uarte_periph_enable(const struct device *dev)
 
 	(void)data;
 	nrf_uarte_enable(uarte);
+#ifdef CONFIG_SOC_NRF54H20_GPD
+	nrf_gpd_retain_pins_set(config->pcfg, false);
+#endif
 #if UARTE_BAUDRATE_RETENTION_WORKAROUND
 	nrf_uarte_baudrate_set(uarte,
 		COND_CODE_1(CONFIG_UART_USE_RUNTIME_CONFIGURE,
@@ -702,6 +707,11 @@ static void uarte_disable_locked(const struct device *dev, uint32_t dis_mask)
 	}
 #endif
 
+#ifdef CONFIG_SOC_NRF54H20_GPD
+	const struct uarte_nrfx_config *cfg = dev->config;
+
+	nrf_gpd_retain_pins_set(cfg->pcfg, true);
+#endif
 	nrf_uarte_disable(get_uarte_instance(dev));
 }
 
@@ -1892,6 +1902,11 @@ static void uarte_nrfx_irq_tx_enable(const struct device *dev)
 {
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 	struct uarte_nrfx_data *data = dev->data;
+
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		pm_device_runtime_get(dev);
+	}
+
 	unsigned int key = irq_lock();
 
 	data->int_driven->disable_tx_irq = false;
@@ -2002,7 +2017,7 @@ static void uarte_nrfx_irq_callback_set(const struct device *dev,
 }
 #endif /* UARTE_INTERRUPT_DRIVEN */
 
-static const struct uart_driver_api uart_nrfx_uarte_driver_api = {
+static DEVICE_API(uart, uart_nrfx_uarte_driver_api) = {
 	.poll_in		= uarte_nrfx_poll_in,
 	.poll_out		= uarte_nrfx_poll_out,
 	.err_check		= uarte_nrfx_err_check,
@@ -2103,9 +2118,6 @@ static void uarte_pm_resume(const struct device *dev)
 
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME) || !LOW_POWER_ENABLED(cfg)) {
 		uarte_periph_enable(dev);
-#ifdef CONFIG_SOC_NRF54H20_GPD
-		nrf_gpd_retain_pins_set(cfg->pcfg, false);
-#endif
 	}
 }
 

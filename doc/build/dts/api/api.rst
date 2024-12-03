@@ -33,10 +33,10 @@ devicetree data in C rvalue form using, for example, the
 :ref:`devicetree-property-access` API.
 
 The root node ``/`` has node identifier ``DT_ROOT``. You can create node
-identifiers for other devicetree nodes using :c:func:`DT_PATH`,
-:c:func:`DT_NODELABEL`, :c:func:`DT_ALIAS`, and :c:func:`DT_INST`.
+identifiers for other devicetree nodes using :c:macro:`DT_PATH`,
+:c:macro:`DT_NODELABEL`, :c:macro:`DT_ALIAS`, and :c:macro:`DT_INST`.
 
-There are also :c:func:`DT_PARENT` and :c:func:`DT_CHILD` macros which can be
+There are also :c:macro:`DT_PARENT` and :c:macro:`DT_CHILD` macros which can be
 used to create node identifiers for a given node's parent node or a particular
 child node, respectively.
 
@@ -105,11 +105,11 @@ For-each macros
 ===============
 
 There is currently only one "generic" for-each macro,
-:c:func:`DT_FOREACH_CHILD`, which allows iterating over the children of a
+:c:macro:`DT_FOREACH_CHILD`, which allows iterating over the children of a
 devicetree node.
 
 There are special-purpose for-each macros, like
-:c:func:`DT_INST_FOREACH_STATUS_OKAY`, but these require ``DT_DRV_COMPAT`` to
+:c:macro:`DT_INST_FOREACH_STATUS_OKAY`, but these require ``DT_DRV_COMPAT`` to
 be defined before use.
 
 .. doxygengroup:: devicetree-generic-foreach
@@ -120,7 +120,7 @@ Existence checks
 This section documents miscellaneous macros that can be used to test if a node
 exists, how many nodes of a certain type exist, whether a node has certain
 properties, etc. Some macros used for special purposes (such as
-:c:func:`DT_IRQ_HAS_IDX` and all macros which require ``DT_DRV_COMPAT``) are
+:c:macro:`DT_IRQ_HAS_IDX` and all macros which require ``DT_DRV_COMPAT``) are
 documented elsewhere on this page.
 
 .. doxygengroup:: devicetree-generic-exist
@@ -159,7 +159,7 @@ chosen is an implementation detail, but cyclic dependencies are detected and
 cause errors, so it's safe to assume there are none when using these macros.
 
 There are instance number-based conveniences as well; see
-:c:func:`DT_INST_DEP_ORD` and subsequent documentation.
+:c:macro:`DT_INST_DEP_ORD` and subsequent documentation.
 
 .. doxygengroup:: devicetree-dep-ord
 
@@ -201,7 +201,7 @@ with compatible ``vnd,serial``:
 
 .. warning::
 
-   Be careful making assumptions about instance numbers. See :c:func:`DT_INST`
+   Be careful making assumptions about instance numbers. See :c:macro:`DT_INST`
    for the API guarantees.
 
 As shown above, the ``DT_INST_*`` APIs are conveniences for addressing nodes by
@@ -210,8 +210,8 @@ instance number. They are almost all defined in terms of one of the
 removing ``INST_`` from the macro name. For example, ``DT_INST_PROP(inst,
 prop)`` is equivalent to ``DT_PROP(DT_DRV_INST(inst), prop)``. Similarly,
 ``DT_INST_REG_ADDR(inst)`` is equivalent to ``DT_REG_ADDR(DT_DRV_INST(inst))``,
-and so on. There are some exceptions: :c:func:`DT_ANY_INST_ON_BUS_STATUS_OKAY`
-and :c:func:`DT_INST_FOREACH_STATUS_OKAY` are special-purpose helpers without
+and so on. There are some exceptions: :c:macro:`DT_ANY_INST_ON_BUS_STATUS_OKAY`
+and :c:macro:`DT_INST_FOREACH_STATUS_OKAY` are special-purpose helpers without
 straightforward generic equivalents.
 
 Since ``DT_DRV_INST()`` requires ``DT_DRV_COMPAT`` to be defined, it's an error
@@ -355,7 +355,7 @@ Chosen nodes
 ************
 
 The special ``/chosen`` node contains properties whose values describe
-system-wide settings. The :c:func:`DT_CHOSEN()` macro can be used to get a node
+system-wide settings. The :c:macro:`DT_CHOSEN()` macro can be used to get a node
 identifier for a chosen node.
 
 .. doxygengroup:: devicetree-generic-chosen

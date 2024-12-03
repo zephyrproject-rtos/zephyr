@@ -6,6 +6,7 @@
 config GPIO_NUMICRO
 	bool "Nuvoton NuMicro GPIO driver"
 	default y
+	select PINCTRL
 	depends on DT_HAS_NUVOTON_NUMICRO_GPIO_ENABLED
 	help
 	  Enable the GPIO driver for the NuMicro family of processors.

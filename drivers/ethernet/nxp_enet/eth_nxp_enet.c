@@ -315,6 +315,26 @@ static int eth_nxp_enet_set_config(const struct device *dev,
 	return -ENOTSUP;
 }
 
+static int eth_nxp_enet_get_config(const struct device *dev,
+			       enum ethernet_config_type type,
+			       struct ethernet_config *cfg)
+{
+	switch (type) {
+	case ETHERNET_CONFIG_TYPE_RX_CHECKSUM_SUPPORT:
+	case ETHERNET_CONFIG_TYPE_TX_CHECKSUM_SUPPORT:
+		cfg->chksum_support = ETHERNET_CHECKSUM_SUPPORT_IPV4_HEADER	|
+				      ETHERNET_CHECKSUM_SUPPORT_IPV4_ICMP	|
+				      ETHERNET_CHECKSUM_SUPPORT_IPV6_HEADER	|
+				      ETHERNET_CHECKSUM_SUPPORT_TCP		|
+				      ETHERNET_CHECKSUM_SUPPORT_UDP;
+		return 0;
+	default:
+		break;
+	}
+
+	return -ENOTSUP;
+}
+
 static int eth_nxp_enet_rx(const struct device *dev)
 {
 #if defined(CONFIG_PTP_CLOCK_NXP_ENET)
@@ -845,6 +865,7 @@ static const struct ethernet_api api_funcs = {
 	.get_capabilities	= eth_nxp_enet_get_capabilities,
 	.get_phy                = eth_nxp_enet_get_phy,
 	.set_config		= eth_nxp_enet_set_config,
+	.get_config		= eth_nxp_enet_get_config,
 	.send			= NXP_ENET_SEND_FUNC,
 #if defined(CONFIG_PTP_CLOCK)
 	.get_ptp_clock		= eth_nxp_enet_get_ptp_clock,

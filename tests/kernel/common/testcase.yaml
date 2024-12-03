@@ -7,8 +7,7 @@ common:
   min_ram: 32
   timeout: 120
 tests:
-  kernel.common:
-    build_on_all: true
+  kernel.common: {}
   kernel.common.tls:
     # ARCMWDT can't handle THREAD_LOCAL_STORAGE with USERSPACE, see #52570 for details
     filter: >
@@ -17,6 +16,8 @@ tests:
     extra_configs:
       - CONFIG_THREAD_LOCAL_STORAGE=y
   kernel.common.misra:
+    platform_key:
+      - arch
     # Some configurations are known-incompliant and won't build
     filter: not ((CONFIG_I2C or CONFIG_SPI) and CONFIG_USERSPACE)
     integration_platforms:
@@ -24,30 +25,52 @@ tests:
     extra_configs:
       - CONFIG_MISRA_SANE=y
   kernel.common.minimallibc:
+    platform_key:
+      - arch
     filter: CONFIG_MINIMAL_LIBC_SUPPORTED
     tags: libc
     extra_configs:
       - CONFIG_MINIMAL_LIBC=y
+    integration_platforms:
+      - qemu_x86
+      - mps2/an385
   kernel.common.nano32:
+    platform_key:
+      - arch
     tags:
       - nano
     filter: not CONFIG_KERNEL_COHERENCE
     extra_configs:
       - CONFIG_CBPRINTF_NANO=y
       - CONFIG_CBPRINTF_REDUCED_INTEGRAL=y
+    integration_platforms:
+      - qemu_x86
+      - mps2/an385
   kernel.common.nano64:
+    platform_key:
+      - arch
     tags:
       - nano
     filter: not CONFIG_KERNEL_COHERENCE
     extra_configs:
       - CONFIG_CBPRINTF_NANO=y
       - CONFIG_CBPRINTF_FULL_INTEGRAL=y
+    integration_platforms:
+      - qemu_x86
+      - mps2/an385
   kernel.common.picolibc:
+    platform_key:
+      - arch
     filter: CONFIG_PICOLIBC_SUPPORTED
     tags: picolibc
     extra_configs:
       - CONFIG_PICOLIBC=y
+    integration_platforms:
+      - qemu_x86
+      - mps2/an385
   kernel.common.lto:
+    platform_key:
+      - arch
     # CONFIG_CODE_DATA_RELOCATION causes a build error (issue #69730)
     filter: CONFIG_ISR_TABLES_LOCAL_DECLARATION_SUPPORTED and not CONFIG_CODE_DATA_RELOCATION
     tags: lto
@@ -55,3 +78,6 @@ tests:
       - CONFIG_TEST_USERSPACE=n
       - CONFIG_ISR_TABLES_LOCAL_DECLARATION=y
       - CONFIG_LTO=y
+    integration_platforms:
+      - qemu_x86
+      - mps2/an385

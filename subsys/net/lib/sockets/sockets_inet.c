@@ -1957,6 +1957,23 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 
 				return 0;
 			}
+
+			break;
+
+		case IP_LOCAL_PORT_RANGE:
+			if (IS_ENABLED(CONFIG_NET_CONTEXT_CLAMP_PORT_RANGE)) {
+				ret = net_context_get_option(ctx,
+							     NET_OPT_LOCAL_PORT_RANGE,
+							     optval, optlen);
+				if (ret < 0) {
+					errno  = -ret;
+					return -1;
+				}
+
+				return 0;
+			}
+
+			break;
 		}
 
 		break;
@@ -2557,6 +2574,21 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 			if (IS_ENABLED(CONFIG_NET_IPV4)) {
 				return ipv4_multicast_group(ctx, optval,
 							    optlen, false);
+			}
+
+			break;
+
+		case IP_LOCAL_PORT_RANGE:
+			if (IS_ENABLED(CONFIG_NET_CONTEXT_CLAMP_PORT_RANGE)) {
+				ret = net_context_set_option(ctx,
+							     NET_OPT_LOCAL_PORT_RANGE,
+							     optval, optlen);
+				if (ret < 0) {
+					errno  = -ret;
+					return -1;
+				}
+
+				return 0;
 			}
 
 			break;

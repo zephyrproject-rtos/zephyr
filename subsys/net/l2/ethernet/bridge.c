@@ -345,7 +345,7 @@ static enum net_verdict bridge_iface_process(struct net_if *iface,
 	/* Drop all link-local packets for now. */
 	if (is_link_local_addr((struct net_eth_addr *)net_pkt_lladdr_dst(pkt))) {
 		NET_DBG("DROP: lladdr");
-		return NET_DROP;
+		goto out;
 	}
 
 	lock_bridge(ctx);
@@ -372,6 +372,11 @@ static enum net_verdict bridge_iface_process(struct net_if *iface,
 			 */
 			if (count > 2) {
 				send_pkt = net_pkt_clone(pkt, K_NO_WAIT);
+				if (send_pkt == NULL) {
+					NET_DBG("DROP: clone failed");
+					break;
+				}
+
 				net_pkt_ref(send_pkt);
 			} else {
 				send_pkt = net_pkt_ref(pkt);
@@ -392,11 +397,11 @@ static enum net_verdict bridge_iface_process(struct net_if *iface,
 
 	unlock_bridge(ctx);
 
+out:
 	/* The packet was cloned by the caller so remove it here. */
 	net_pkt_unref(pkt);
 
 	return NET_OK;
-
 }
 
 int bridge_iface_send(struct net_if *iface, struct net_pkt *pkt)

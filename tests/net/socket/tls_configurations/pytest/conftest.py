@@ -4,13 +4,16 @@
 
 import pytest
 
+
 def pytest_addoption(parser):
     parser.addoption('--server-type')
     parser.addoption('--port')
 
+
 @pytest.fixture()
 def server_type(request):
     return request.config.getoption('--server-type')
+
 
 @pytest.fixture()
 def port(request):

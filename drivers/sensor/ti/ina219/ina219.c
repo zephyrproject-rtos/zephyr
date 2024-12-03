@@ -276,7 +276,7 @@ static int ina219_init(const struct device *dev)
 	return 0;
 }
 
-static const struct sensor_driver_api ina219_api = {
+static DEVICE_API(sensor, ina219_api) = {
 	.sample_fetch = ina219_sample_fetch,
 	.channel_get = ina219_channel_get,
 };

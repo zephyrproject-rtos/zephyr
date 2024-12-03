@@ -520,7 +520,7 @@ static int mcux_acmp_init(const struct device *dev)
 	return 0;
 }
 
-static const struct sensor_driver_api mcux_acmp_driver_api = {
+static DEVICE_API(sensor, mcux_acmp_driver_api) = {
 	.attr_set = mcux_acmp_attr_set,
 	.attr_get = mcux_acmp_attr_get,
 #ifdef CONFIG_SENSOR_MCUX_ACMP_TRIGGER

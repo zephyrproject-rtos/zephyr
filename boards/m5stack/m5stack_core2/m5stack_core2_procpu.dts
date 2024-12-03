@@ -11,6 +11,7 @@
 #include "m5stack_mbus_connectors.dtsi"
 #include <zephyr/dt-bindings/display/ili9xxx.h>
 #include <zephyr/dt-bindings/regulator/axp192.h>
+#include <espressif/partitions_0x1000_amp.dtsi>
 
 / {
 	model = "M5Stack Core2 PROCPU";
@@ -73,6 +74,16 @@
 			rotation = <0>;
 		};
 	};
+
+	bus_5v: bus_5v {
+		compatible = "regulator-fixed";
+		regulator-name = "bus_5v";
+		enable-gpios = <&axp192_gpio 5 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(16)>;
 };
 
 &psram0 {
@@ -177,12 +188,6 @@
 		};
 	};
 
-	bus_5v: bus_5v {
-		compatible = "regulator-fixed";
-		regulator-name = "bus_5v";
-		enable-gpios = <&axp192_gpio 5 GPIO_ACTIVE_HIGH>;
-	};
-
 	ft5336_touch: ft5336@38 {
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
@@ -243,48 +248,6 @@
 
 &trng0 {
 	status = "okay";
-};
-
-&flash0 {
-	status = "okay";
-	reg = <0 DT_SIZE_M(16)>;
-
-	partitions {
-		compatible = "fixed-partitions";
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		/* Reserve 60kB for the bootloader */
-		boot_partition: partition@1000 {
-			label = "mcuboot";
-			reg = <0x00001000 0x0000F000>;
-			read-only;
-		};
-
-		/* Reserve 1024kB for the application in slot 0 */
-		slot0_partition: partition@10000 {
-			label = "image-0";
-			reg = <0x00010000 0x00100000>;
-		};
-
-		/* Reserve 1024kB for the application in slot 1 */
-		slot1_partition: partition@110000 {
-			label = "image-1";
-			reg = <0x00110000 0x00100000>;
-		};
-
-		/* Reserve 256kB for the scratch partition */
-		scratch_partition: partition@210000 {
-			label = "image-scratch";
-			reg = <0x00210000 0x00040000>;
-		};
-
-		/* 14MB storage */
-		storage_partition: partition@250000 {
-			label = "storage";
-			reg = <0x00250000 0x00db0000>;
-		};
-	};
 };
 
 &esp32_bt_hci {

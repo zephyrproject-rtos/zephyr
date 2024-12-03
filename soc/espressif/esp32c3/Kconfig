@@ -3,7 +3,7 @@
 
 config SOC_SERIES_ESP32C3
 	select RISCV
-	select RISCV_GP
+	select RISCV_SOC_HAS_GP_RELATIVE_ADDRESSING
 	select DYNAMIC_INTERRUPTS
 	select CLOCK_CONTROL
 	select PINCTRL
@@ -17,6 +17,14 @@ config SOC_SERIES_ESP32C3
 
 if SOC_SERIES_ESP32C3
 
+config SOC_ESP32C3_FH4X
+	select SOC_ESP32C3_REV_1_1
+
+config SOC_ESP32C3_REV_1_1
+	bool "SOC is revision v1.1"
+	help
+	  ESP32-C3 revision v1.1 has updated ROM functions for Wi-Fi and BLE that
+	  can free up to 35kB of RAM.
 
 config MAC_BB_PD
 	bool "Power down MAC and baseband of Wi-Fi and Bluetooth when PHY is disabled"

@@ -880,7 +880,7 @@ flash_andes_qspi_get_parameters(const struct device *dev)
 	return &config->parameters;
 }
 
-static const struct flash_driver_api flash_andes_qspi_api = {
+static DEVICE_API(flash, flash_andes_qspi_api) = {
 	.read = flash_andes_qspi_read,
 	.write = flash_andes_qspi_write,
 	.erase = flash_andes_qspi_erase,

@@ -170,6 +170,7 @@ config I2C_GECKO
 	default y
 	depends on DT_HAS_SILABS_GECKO_I2C_ENABLED
 	select SOC_GECKO_I2C
+	select PINCTRL if SOC_FAMILY_SILABS_S2
 	help
 	  Enable the SiLabs Gecko I2C bus driver.
 

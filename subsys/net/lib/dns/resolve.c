@@ -424,7 +424,7 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 			if (!ret) {
 				if (servers[i] != NULL && servers[i][0] != '\0') {
 					NET_DBG("Invalid server address %.*s",
-						server_len, servers[i]);
+						(int)server_len, servers[i]);
 				}
 
 				continue;
@@ -432,7 +432,7 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 
 			dns_postprocess_server(ctx, idx);
 
-			NET_DBG("[%d] %.*s%s%s%s%s", i, server_len, servers[i],
+			NET_DBG("[%d] %.*s%s%s%s%s", i, (int)server_len, servers[i],
 				IS_ENABLED(CONFIG_MDNS_RESOLVER) ?
 				(ctx->servers[i].is_mdns ? " mDNS" : "") : "",
 				IS_ENABLED(CONFIG_LLMNR_RESOLVER) ?
@@ -789,6 +789,11 @@ int dns_validate_msg(struct dns_resolve_context *ctx,
 
 	ret = dns_unpack_response_query(dns_msg);
 	if (ret < 0) {
+		if (ret == -ENOMEM) {
+			ret = DNS_EAI_FAIL;
+			goto quit;
+		}
+
 		/* Check mDNS like above */
 		if (*dns_id > 0) {
 			ret = DNS_EAI_FAIL;

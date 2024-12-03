@@ -32,6 +32,7 @@
 #include <zephyr/toolchain.h>
 
 #include "bap_common.h"
+#include "bap_stream_rx.h"
 #include "bstests.h"
 #include "common.h"
 
@@ -44,7 +45,6 @@ CREATE_FLAG(flag_base_metadata_updated);
 CREATE_FLAG(flag_pa_synced);
 CREATE_FLAG(flag_syncable);
 CREATE_FLAG(flag_pa_sync_lost);
-CREATE_FLAG(flag_received);
 CREATE_FLAG(flag_pa_request);
 CREATE_FLAG(flag_bis_sync_requested);
 CREATE_FLAG(flag_big_sync_mic_failure);
@@ -528,8 +528,12 @@ static void validate_stream_codec_cfg(const struct bt_bap_stream *stream)
 
 static void started_cb(struct bt_bap_stream *stream)
 {
+	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
 	struct bt_bap_ep_info info;
 	int err;
+
+	memset(&test_stream->last_info, 0, sizeof(test_stream->last_info));
+	test_stream->rx_cnt = 0U;
 
 	err = bt_bap_ep_get_info(stream->ep, &info);
 	if (err != 0) {
@@ -578,57 +582,10 @@ static void stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 	}
 }
 
-static void recv_cb(struct bt_bap_stream *stream,
-		    const struct bt_iso_recv_info *info,
-		    struct net_buf *buf)
-{
-	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
-
-	if ((test_stream->rx_cnt % 100U) == 0U) {
-		printk("[%zu]: Incoming audio on stream %p len %u and ts %u\n", test_stream->rx_cnt,
-		       stream, buf->len, info->ts);
-	}
-
-	if (test_stream->rx_cnt > 0U && info->ts == test_stream->last_info.ts) {
-		FAIL("Duplicated timestamp received: %u\n", test_stream->last_info.ts);
-		return;
-	}
-
-	if (test_stream->rx_cnt > 0U && info->seq_num == test_stream->last_info.seq_num) {
-		FAIL("Duplicated PSN received: %u\n", test_stream->last_info.seq_num);
-		return;
-	}
-
-	if (info->flags & BT_ISO_FLAGS_ERROR) {
-		/* Fail the test if we have not received what we expected */
-		if (!TEST_FLAG(flag_received)) {
-			FAIL("ISO receive error\n");
-		}
-
-		return;
-	}
-
-	if (info->flags & BT_ISO_FLAGS_LOST) {
-		FAIL("ISO receive lost\n");
-		return;
-	}
-
-	if (memcmp(buf->data, mock_iso_data, buf->len) == 0) {
-		test_stream->rx_cnt++;
-
-		if (test_stream->rx_cnt >= MIN_SEND_COUNT) {
-			/* We set the flag is just one stream has received the expected */
-			SET_FLAG(flag_received);
-		}
-	} else {
-		FAIL("Unexpected data received\n");
-	}
-}
-
 static struct bt_bap_stream_ops stream_ops = {
 	.started = started_cb,
 	.stopped = stopped_cb,
-	.recv = recv_cb
+	.recv = bap_stream_rx_recv_cb,
 };
 
 static int init(void)
@@ -964,7 +921,7 @@ static void test_common(void)
 	}
 
 	printk("Waiting for data\n");
-	WAIT_FOR_FLAG(flag_received);
+	WAIT_FOR_FLAG(flag_audio_received);
 	backchannel_sync_send_all(); /* let other devices know we have received what we wanted */
 
 	/* Ensure that we also see the metadata update */
@@ -1051,7 +1008,7 @@ static void test_sink_encrypted(void)
 	}
 
 	printk("Waiting for data\n");
-	WAIT_FOR_FLAG(flag_received);
+	WAIT_FOR_FLAG(flag_audio_received);
 
 	backchannel_sync_send_all(); /* let other devices know we have received data */
 
@@ -1140,7 +1097,7 @@ static void broadcast_sink_with_assistant(void)
 	}
 
 	printk("Waiting for data\n");
-	WAIT_FOR_FLAG(flag_received);
+	WAIT_FOR_FLAG(flag_audio_received);
 	backchannel_sync_send_all(); /* let other devices know we have received what we wanted */
 
 	/* Ensure that we also see the metadata update */

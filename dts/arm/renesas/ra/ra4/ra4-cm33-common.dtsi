@@ -137,6 +137,116 @@
 			};
 		};
 
+		spi0: spi@4011a000 {
+			compatible = "renesas,ra-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			channel = <0>;
+			interrupts = <28 1>, <29 1>, <30 1>, <31 1>;
+			interrupt-names = "rxi", "txi", "tei", "eri";
+			reg = <0x4011a000 0x100>;
+			status = "disabled";
+		};
+
+		spi1: spi@4011a100 {
+			compatible = "renesas,ra-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			channel = <1>;
+			reg = <0x4011a100 0x100>;
+			status = "disabled";
+		};
+
+		agt0: agt@400e8000 {
+			compatible = "renesas,ra-agt";
+			channel = <0>;
+			reg = <0x400e8000 0x100>;
+			renesas,count-source = "AGT_CLOCK_LOCO";
+			renesas,prescaler = <0>;
+			renesas,resolution = <16>;
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,ra-agt-counter";
+				status = "disabled";
+			};
+		};
+
+		agt1: agt@400e8100 {
+			compatible = "renesas,ra-agt";
+			channel = <1>;
+			reg = <0x400e8100 0x100>;
+			renesas,count-source = "AGT_CLOCK_LOCO";
+			renesas,prescaler = <0>;
+			renesas,resolution = <16>;
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,ra-agt-counter";
+				status = "disabled";
+			};
+		};
+
+		agt2: agt@400e8200 {
+			compatible = "renesas,ra-agt";
+			channel = <2>;
+			reg = <0x400e8200 0x100>;
+			renesas,count-source = "AGT_CLOCK_LOCO";
+			renesas,prescaler = <0>;
+			renesas,resolution = <16>;
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,ra-agt-counter";
+				status = "disabled";
+			};
+		};
+
+		agt3: agt@400e8300 {
+			compatible = "renesas,ra-agt";
+			channel = <3>;
+			reg = <0x400e8300 0x100>;
+			renesas,count-source = "AGT_CLOCK_LOCO";
+			renesas,prescaler = <0>;
+			renesas,resolution = <16>;
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,ra-agt-counter";
+				status = "disabled";
+			};
+		};
+
+		agt4: agt@400e8400 {
+			compatible = "renesas,ra-agt";
+			channel = <4>;
+			reg = <0x400e8400 0x100>;
+			renesas,count-source = "AGT_CLOCK_LOCO";
+			renesas,prescaler = <0>;
+			renesas,resolution = <16>;
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,ra-agt-counter";
+				status = "disabled";
+			};
+		};
+
+		agt5: agt@400e8500 {
+			compatible = "renesas,ra-agt";
+			channel = <5>;
+			reg = <0x400e8500 0x100>;
+			renesas,count-source = "AGT_CLOCK_LOCO";
+			renesas,prescaler = <0>;
+			renesas,resolution = <16>;
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,ra-agt-counter";
+				status = "disabled";
+			};
+		};
+
 		option_setting_ofs: option_setting_ofs@100a100 {
 			compatible = "zephyr,memory-region";
 			reg = <0x0100a100 0x18>;

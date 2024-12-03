@@ -25,6 +25,7 @@ IMPLEMENTATION NOTES:
 
 from hashlib import sha256
 
+
 def generate_slid(symbol_name: str, slid_size: int) -> int:
     """
     Generates the Symbol Link Identifier (SLID) for a symbol.
@@ -40,12 +41,14 @@ def generate_slid(symbol_name: str, slid_size: int) -> int:
     hash = m.digest()
     return int.from_bytes(hash[0:slid_size], byteorder='big', signed=False)
 
+
 def format_slid(slid: int, slid_size: int) -> str:
     if slid_size == 4:
         fmt = f"0x{slid:08X}"
     elif slid_size == 8:
         fmt = f"0x{slid:016X}"
     return fmt
+
 
 def repl():
     while True:
@@ -55,6 +58,7 @@ def repl():
         print(f"  32-bit SLID for '{sym_name}': {format_slid(slid32, 4)}")
         print(f"  64-bit SLID for '{sym_name}': {format_slid(slid64, 8)}")
         print()
+
 
 if __name__ == "__main__":
     print("LLEXT SLID calculation REPL")

@@ -134,9 +134,8 @@ config LOG_IMMEDIATE_CLEAN_OUTPUT
 
 config LOG_BACKEND_SHOW_COLOR
 	bool "Colors in the backend"
-	depends on LOG_BACKEND_UART || LOG_BACKEND_NATIVE_POSIX || LOG_BACKEND_RTT \
+	default y if LOG_BACKEND_UART || LOG_BACKEND_NATIVE_POSIX || LOG_BACKEND_RTT \
 	           || LOG_BACKEND_SWO || LOG_BACKEND_XTENSA_SIM || SHELL_LOG_BACKEND
-	default y
 	help
 	  When enabled selected backend prints errors in red and warning in yellow.
 

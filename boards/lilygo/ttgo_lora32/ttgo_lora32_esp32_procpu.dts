@@ -8,6 +8,7 @@
 #include <espressif/esp32/esp32_pico_d4.dtsi>
 #include "ttgo_lora32-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <espressif/partitions_0x1000_amp.dtsi>
 
 / {
 	model = "ttgo LoRa32 PROCPU";
@@ -18,6 +19,7 @@
 		uart-0 = &uart0;
 		i2c-0 = &i2c0;
 		watchdog0 = &wdt0;
+		sdhc0 = &sdhc1;
 		lora0 = &lora0;
 	};
 
@@ -28,6 +30,7 @@
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,display = &ssd1306_128x64;
+		zephyr,sdhc = &sdhc1;
 	};
 
 	leds {
@@ -121,41 +124,27 @@
 	status = "okay";
 };
 
-&flash0 {
-	status = "okay";
-	partitions {
-		compatible = "fixed-partitions";
-		#address-cells = <1>;
-		#size-cells = <1>;
+&sdhc {
+	sdhc1: sdhc@1 {
+		status = "okay";
 
-		/* Reserve 60kB for the bootloader */
-		boot_partition: partition@1000 {
-			label = "mcuboot";
-			reg = <0x00001000 0x0000F000>;
-			read-only;
-		};
+		pinctrl-0 = <&sdhc0_default>;
+		pinctrl-names = "default";
+		power-delay-ms = <100>;
+		max-bus-freq = <52000000>;
+		bus-width = <4>;
 
-		/* Reserve 1024kB for the application in slot 0 */
-		slot0_partition: partition@10000 {
-			label = "image-0";
-			reg = <0x00010000 0x00100000>;
-		};
+		clk-pin = <14>;
+		cmd-pin = <15>;
+		d0-pin = <2>;
+		d1-pin = <4>;
+		d2-pin = <12>;
+		d3-pin = <13>;
 
-		/* Reserve 1024kB for the application in slot 1 */
-		slot1_partition: partition@110000 {
-			label = "image-1";
-			reg = <0x00110000 0x00100000>;
-		};
-
-		/* Reserve 256kB for the scratch partition */
-		scratch_partition: partition@210000 {
-			label = "image-scratch";
-			reg = <0x00210000 0x00040000>;
-		};
-
-		storage_partition: partition@250000 {
-			label = "storage";
-			reg = <0x00250000 0x00006000>;
+		mmc {
+			compatible = "zephyr,sdmmc-disk";
+			disk-name = "SD";
+			status = "okay";
 		};
 	};
 };

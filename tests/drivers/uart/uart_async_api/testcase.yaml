@@ -30,6 +30,7 @@ tests:
       - nrf52840dk/nrf52840
       - nrf52_bsim
       - nrf5340bsim/nrf5340/cpuapp
+      - nrf54l15bsim/nrf54l15/cpuapp
     filter: CONFIG_SERIAL_SUPPORT_ASYNC
     harness: ztest
     harness_config:
@@ -85,6 +86,8 @@ tests:
       - CONFIG_UART_SAM0_ASYNC=y
       - CONFIG_DMA=y
     build_only: true
+    integration_platforms:
+      - samc21n_xpro
   drivers.uart.async_api.nocache_mem:
     # nocache memory region is defined by the linker
     filter: CONFIG_SERIAL_SUPPORT_ASYNC and CONFIG_CPU_HAS_DCACHE

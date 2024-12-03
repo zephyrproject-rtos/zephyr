@@ -29,6 +29,7 @@
 #include <zephyr/sys_clock.h>
 #include <zephyr/types.h>
 
+#include "bstests.h"
 #include "bs_types.h"
 #include "bs_tracing.h"
 
@@ -88,7 +89,7 @@ static const uint8_t mock_iso_data[] = {
 		(void)k_sleep(K_MSEC(1)); \
 	}
 
-
+extern enum bst_result_t bst_result;
 #define FAIL(...) \
 	do { \
 		bst_result = Failed; \
@@ -114,6 +115,7 @@ extern struct bt_conn *default_conn;
 extern atomic_t flag_connected;
 extern atomic_t flag_disconnected;
 extern atomic_t flag_conn_updated;
+extern atomic_t flag_audio_received;
 extern volatile bt_security_t security_level;
 
 void disconnected(struct bt_conn *conn, uint8_t reason);

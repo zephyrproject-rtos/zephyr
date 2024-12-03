@@ -13,8 +13,7 @@ import shlex
 import subprocess
 import sys
 
-from runners.core import ZephyrBinaryRunner, RunnerCaps
-
+from runners.core import RunnerCaps, ZephyrBinaryRunner
 
 DEFAULT_LINKSERVER_EXE = 'Linkserver.exe' if sys.platform == 'win32' else 'LinkServer'
 DEFAULT_LINKSERVER_GDB_PORT =  3333
@@ -29,8 +28,8 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
                  gdb_host='',
                  gdb_port=DEFAULT_LINKSERVER_GDB_PORT,
                  semihost_port=DEFAULT_LINKSERVER_SEMIHOST_PORT,
-                 override=[],
-                 tui=False, tool_opt=[]):
+                 override=None,
+                 tui=False, tool_opt=None):
         super().__init__(cfg)
         self.file = cfg.file
         self.file_type = cfg.file_type
@@ -48,12 +47,13 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
         self.gdb_port = gdb_port
         self.semihost_port = semihost_port
         self.tui_arg = ['-tui'] if tui else []
-        self.override = override
+        self.override = override if override else []
         self.override_cli = self._build_override_cli()
 
         self.tool_opt = []
-        for opts in [shlex.split(opt) for opt in tool_opt]:
-            self.tool_opt += opts
+        if tool_opt is not None:
+            for opts in [shlex.split(opt) for opt in tool_opt]:
+                self.tool_opt += opts
 
     @classmethod
     def name(cls):
@@ -78,8 +78,7 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
                             help='if given, GDB uses -tui')
 
         parser.add_argument('--gdb-port', default=DEFAULT_LINKSERVER_GDB_PORT,
-                            help='gdb port to open, defaults to {}'.format(
-                               DEFAULT_LINKSERVER_GDB_PORT))
+                            help=f'gdb port to open, defaults to {DEFAULT_LINKSERVER_GDB_PORT}')
 
         parser.add_argument('--semihost-port', default=DEFAULT_LINKSERVER_SEMIHOST_PORT,
                             help='semihost port to open, defaults to the empty string '
@@ -90,12 +89,13 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
                             {DEFAULT_LINKSERVER_EXE}''')
         # user may need to override settings.
         parser.add_argument('--override', required=False, action='append',
-                            help=f'''configuration overrides as defined bylinkserver. Example: /device/memory/0/location=0xcafecafe''')
+                            help='''configuration overrides as defined bylinkserver.
+                            Example: /device/memory/0/location=0xcafecafe''')
 
     @classmethod
     def do_create(cls, cfg, args):
 
-        print("RUNNER - gdb_port = " + str(args.gdb_port) + ", semih port = " + str(args.semihost_port))
+        print(f"RUNNER - gdb_port = {args.gdb_port}, semih port = {args.semihost_port}")
         return LinkServerBinaryRunner(cfg, args.device, args.core,
                                  linkserver=args.linkserver,
                                  dt_flash=args.dt_flash,
@@ -147,7 +147,7 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
                 gdb_cmd = ([self.gdb_cmd] +
                            self.tui_arg +
                            [self.elf_name] +
-                           ['-ex', 'target remote {}:{}'.format(self.gdb_host, self.gdb_port)])
+                           ['-ex', f'target remote {self.gdb_host}:{self.gdb_port}'])
 
                 if command == 'debug':
                     gdb_cmd += [ '-ex', 'load', '-ex', 'monitor reset']
@@ -181,8 +181,12 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
         return override_cli
 
     def flash(self, **kwargs):
-
-        linkserver_cmd = ([self.linkserver, "flash"] + ["--probe", str(self.probe)] + self.override_cli + [self.device])
+        linkserver_cmd = (
+            [self.linkserver, "flash"]
+            + ["--probe", str(self.probe)]
+            + self.override_cli
+            + [self.device]
+        )
         self.logger.debug(f'LinkServer cmd:  + {linkserver_cmd}')
 
         if self.erase:

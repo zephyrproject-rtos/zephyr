@@ -5,6 +5,7 @@ config UDC_NUMAKER
 	bool "Nuvoton NuMaker USB 1.1 device controller"
 	default y
 	depends on DT_HAS_NUVOTON_NUMAKER_USBD_ENABLED
+	select PINCTRL
 	help
 	  Enable Nuvoton NuMaker USB 1.1 device controller driver
 

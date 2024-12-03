@@ -5,13 +5,13 @@
  */
 
 #include <zephyr/dt-bindings/input/input-event-codes.h>
-#include <silabs/gpio_gecko.h>
 
 / {
 	chosen {
 		zephyr,bt-c2h-uart = &usart1;
 		zephyr,console = &usart1;
 		zephyr,shell-uart = &usart1;
+		zephyr,uart-pipe = &usart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 	};
@@ -19,7 +19,7 @@
 	leds {
 		compatible = "gpio-leds";
 		led0: led_0 {
-			gpios = <&gpiob GECKO_PIN(0) GPIO_ACTIVE_HIGH>;
+			gpios = <&gpiob 0 GPIO_ACTIVE_HIGH>;
 			label = "LED 0";
 		};
 	};
@@ -27,7 +27,7 @@
 	buttons {
 		compatible = "gpio-keys";
 		button0: button_0 {
-			gpios = <&gpiob GECKO_PIN(1) GPIO_ACTIVE_LOW>;
+			gpios = <&gpiob 1 GPIO_ACTIVE_LOW>;
 			label = "User Push Button 0";
 			zephyr,code = <INPUT_KEY_0>;
 		};
@@ -35,7 +35,7 @@
 
 	wake_up_trigger: gpio-wake-up  {
 		compatible = "silabs,gecko-wake-up-trigger";
-		gpios = <&gpioa GECKO_PIN(5) GPIO_ACTIVE_LOW>;
+		gpios = <&gpioa 5 GPIO_ACTIVE_LOW>;
 	};
 
 	/* GPIOs that power up different sensors */
@@ -136,17 +136,6 @@
 
 &trng {
 	status = "okay";
-};
-
-&pinctrl {
-	i2c0_default: i2c0_default {
-		group1 {
-			psels = <GECKO_PSEL(I2C_SDA, D, 2)>,
-				<GECKO_PSEL(I2C_SCL, D, 3)>,
-				<GECKO_LOC(I2C_SDA, 3)>,
-				<GECKO_LOC(I2C_SCL, 3)>;
-		};
-	};
 };
 
 &i2c0 {

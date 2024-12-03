@@ -18,22 +18,31 @@ endif()
 # NOTE: ${linker_script_gen} will be produced at build-time; not at configure-time
 macro(configure_linker_script linker_script_gen linker_pass_define)
   set(extra_dependencies ${ARGN})
+  set(cmake_linker_script_settings
+      ${PROJECT_BINARY_DIR}/include/generated/ld_script_settings_${linker_pass_define}.cmake
+  )
 
   if(CONFIG_CMAKE_LINKER_GENERATOR)
+    file(GENERATE OUTPUT ${cmake_linker_script_settings} CONTENT
+         "set(FORMAT \"$<TARGET_PROPERTY:linker,FORMAT>\" CACHE INTERNAL \"\")\n
+          set(ENTRY \"$<TARGET_PROPERTY:linker,ENTRY>\" CACHE INTERNAL \"\")\n
+          set(MEMORY_REGIONS \"$<TARGET_PROPERTY:linker,MEMORY_REGIONS>\" CACHE INTERNAL \"\")\n
+          set(GROUPS \"$<TARGET_PROPERTY:linker,GROUPS>\" CACHE INTERNAL \"\")\n
+          set(SECTIONS \"$<TARGET_PROPERTY:linker,SECTIONS>\" CACHE INTERNAL \"\")\n
+          set(SECTION_SETTINGS \"$<TARGET_PROPERTY:linker,SECTION_SETTINGS>\" CACHE INTERNAL \"\")\n
+          set(SYMBOLS \"$<TARGET_PROPERTY:linker,SYMBOLS>\" CACHE INTERNAL \"\")\n
+         "
+    )
     add_custom_command(
       OUTPUT ${linker_script_gen}
       COMMAND ${CMAKE_COMMAND}
+        -C ${DEVICE_API_LINKER_SECTIONS_CMAKE}
+        -C ${cmake_linker_script_settings}
         -DPASS="${linker_pass_define}"
-        -DFORMAT="$<TARGET_PROPERTY:linker,FORMAT>"
-        -DENTRY="$<TARGET_PROPERTY:linker,ENTRY>"
-        -DMEMORY_REGIONS="$<TARGET_PROPERTY:linker,MEMORY_REGIONS>"
-        -DGROUPS="$<TARGET_PROPERTY:linker,GROUPS>"
-        -DSECTIONS="$<TARGET_PROPERTY:linker,SECTIONS>"
-        -DSECTION_SETTINGS="$<TARGET_PROPERTY:linker,SECTION_SETTINGS>"
-        -DSYMBOLS="$<TARGET_PROPERTY:linker,SYMBOLS>"
         -DOUT_FILE=${CMAKE_CURRENT_BINARY_DIR}/${linker_script_gen}
         -P ${ZEPHYR_BASE}/cmake/linker/ld/ld_script.cmake
-      )
+      DEPENDS ${DEVICE_API_LD_TARGET}
+    )
   else()
     set(template_script_defines ${linker_pass_define})
     list(TRANSFORM template_script_defines PREPEND "-D")
@@ -147,7 +156,7 @@ macro(toolchain_linker_finalize)
   endforeach()
   string(REPLACE ";" " " zephyr_std_libs "${zephyr_std_libs}")
 
-  set(link_libraries "<LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES> ${zephyr_std_libs}")
+  set(link_libraries "<OBJECTS> -o <TARGET> <LINK_LIBRARIES> ${zephyr_std_libs}")
   set(common_link "<LINK_FLAGS> ${link_libraries}")
 
   set(CMAKE_ASM_LINK_EXECUTABLE "<CMAKE_ASM_COMPILER> <FLAGS> <CMAKE_ASM_LINK_FLAGS> ${common_link}")

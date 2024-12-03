@@ -119,3 +119,9 @@ config WIFI_MGMT_AP_MAX_NUM_STA
 	help
 	  Maximum number of stations allowed in station table. New stations will be
 	  rejected after the station table is full.
+
+config WIFI_ENT_IDENTITY_MAX_USERS
+	int "Maximum number of identity users allowed connection"
+	default 8
+	help
+	  This option defines the maximum number of identity users allowed connection.

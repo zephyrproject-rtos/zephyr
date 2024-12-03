@@ -180,7 +180,7 @@ int main(void)
 	}
 
 #ifdef CONFIG_TEST
-	video_set_ctrl(video_dev, VIDEO_CID_CAMERA_TEST_PATTERN, (void *)1);
+	video_set_ctrl(video_dev, VIDEO_CID_TEST_PATTERN, (void *)1);
 #endif
 
 #if DT_HAS_CHOSEN(zephyr_display)

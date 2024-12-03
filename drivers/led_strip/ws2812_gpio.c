@@ -172,7 +172,7 @@ static size_t ws2812_gpio_length(const struct device *dev)
 	return config->length;
 }
 
-static const struct led_strip_driver_api ws2812_gpio_api = {
+static DEVICE_API(led_strip, ws2812_gpio_api) = {
 	.update_rgb = ws2812_gpio_update_rgb,
 	.length = ws2812_gpio_length,
 };

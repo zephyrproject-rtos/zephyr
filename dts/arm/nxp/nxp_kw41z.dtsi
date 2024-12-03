@@ -37,7 +37,7 @@
 
 	/* Dummy pinctrl node, filled with pin mux options at board level */
 	pinctrl: pinctrl {
-		compatible = "nxp,kinetis-pinctrl";
+		compatible = "nxp,port-pinctrl";
 		status = "okay";
 	};
 
@@ -131,19 +131,19 @@
 		};
 
 		porta: pinmux@40049000 {
-			compatible = "nxp,kinetis-pinmux";
+			compatible = "nxp,port-pinmux";
 			reg = <0x40049000 0xa4>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 9>;
 		};
 
 		portb: pinmux@4004a000 {
-			compatible = "nxp,kinetis-pinmux";
+			compatible = "nxp,port-pinmux";
 			reg = <0x4004a000 0xa4>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 10>;
 		};
 
 		portc: pinmux@4004b000 {
-			compatible = "nxp,kinetis-pinmux";
+			compatible = "nxp,port-pinmux";
 			reg = <0x4004b000 0xa4>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 11>;
 		};
@@ -204,6 +204,7 @@
 			interrupts = <0x84 0>;
 			/* channel information needed - fixme */
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103C 24>;
+			prescaler = <16>;
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
@@ -214,6 +215,7 @@
 			interrupts = <0x88 0>;
 			/* channel information needed - fixme */
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103C 25>;
+			prescaler = <16>;
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
@@ -224,6 +226,7 @@
 			interrupts = <0x8C 0>;
 			/* channel information needed - fixme */
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103C 26>;
+			prescaler = <16>;
 			status = "disabled";
 			#pwm-cells = <3>;
 		};

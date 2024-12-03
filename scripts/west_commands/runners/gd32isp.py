@@ -3,7 +3,7 @@
 
 '''GigaDevice ISP tool (gd32isp) runner for serial boot ROM'''
 
-from runners.core import ZephyrBinaryRunner, RunnerCaps
+from runners.core import RunnerCaps, ZephyrBinaryRunner
 
 DEFAULT_GD32ISP_CLI   = 'GD32_ISP_Console'
 DEFAULT_GD32ISP_PORT  = '/dev/ttyUSB0'

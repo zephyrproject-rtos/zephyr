@@ -51,6 +51,12 @@ extern "C" {
 #define WIFI_MGMT_SCAN_CHAN_MAX_MANUAL 1
 #endif /* CONFIG_WIFI_MGMT_SCAN_CHAN_MAX_MANUAL */
 
+#ifdef CONFIG_WIFI_ENT_IDENTITY_MAX_USERS
+#define WIFI_ENT_IDENTITY_MAX_USERS CONFIG_WIFI_ENT_IDENTITY_MAX_USERS
+#else
+#define WIFI_ENT_IDENTITY_MAX_USERS 1
+#endif /* CONFIG_WIFI_ENT_IDENTITY_MAX_USERS */
+
 #define WIFI_MGMT_BAND_STR_SIZE_MAX 8
 #define WIFI_MGMT_SCAN_MAX_BSS_CNT 65535
 
@@ -123,6 +129,8 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_NEIGHBOR_REP_COMPLETE,
 	/** Specific scan */
 	NET_REQUEST_WIFI_CMD_CANDIDATE_SCAN,
+	/** AP WPS config */
+	NET_REQUEST_WIFI_CMD_AP_WPS_CONFIG,
 	/** @cond INTERNAL_HIDDEN */
 	NET_REQUEST_WIFI_CMD_MAX
 	/** @endcond */
@@ -533,7 +541,7 @@ struct wifi_connect_req_params {
 	/** suiteb or suiteb-192 */
 	uint8_t suiteb_type;
 	/** eap version */
-	uint8_t eap_ver;
+	int eap_ver;
 	/** Identity for EAP */
 	const uint8_t *eap_identity;
 	/** eap identity length, max 64 */
@@ -544,6 +552,14 @@ struct wifi_connect_req_params {
 	uint8_t eap_passwd_length;
 	/** Fast BSS Transition used */
 	bool ft_used;
+	/** Number of EAP users */
+	int nusers;
+	/** Number of EAP passwds */
+	uint8_t passwds;
+	/** User Identities */
+	const uint8_t *identities[WIFI_ENT_IDENTITY_MAX_USERS];
+	/** User Passwords */
+	const uint8_t *passwords[WIFI_ENT_IDENTITY_MAX_USERS];
 };
 
 /** @brief Wi-Fi connect result codes. To be overlaid on top of \ref wifi_status
@@ -655,8 +671,8 @@ struct wifi_iface_status {
 	unsigned short beacon_interval;
 	/** is TWT capable? */
 	bool twt_capable;
-	/** The current 802.11 PHY data rate */
-	int current_phy_rate;
+	/** The current 802.11 PHY TX data rate (in Kbps) */
+	int current_phy_tx_rate;
 };
 
 /** @brief Wi-Fi power save parameters */
@@ -795,6 +811,18 @@ struct wifi_enterprise_creds_params {
 	uint8_t *client_key2;
 	/** Phase2 Client key length */
 	uint32_t client_key2_len;
+	/** Server certification */
+	uint8_t *server_cert;
+	/** Server certification length */
+	uint32_t server_cert_len;
+	/** Server key */
+	uint8_t *server_key;
+	/** Server key length */
+	uint32_t server_key_len;
+	/** Diffie–Hellman parameter */
+	uint8_t *dh_param;
+	/** Diffie–Hellman parameter length */
+	uint32_t dh_param_len;
 };
 
 /** @brief Wi-Fi power save configuration */
@@ -846,7 +874,9 @@ struct wifi_reg_chan_info {
 struct wifi_reg_domain {
 	/** Regulatory domain operation */
 	enum wifi_mgmt_op oper;
-	/** Ignore all other regulatory hints over this one */
+	/** Ignore all other regulatory hints over this one, the behavior is
+	 * implementation specific.
+	 */
 	bool force;
 	/** Country code: ISO/IEC 3166-1 alpha-2 */
 	uint8_t country_code[WIFI_COUNTRY_CODE_LEN];

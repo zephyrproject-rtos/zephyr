@@ -39,7 +39,7 @@ osStatus_t osKernelGetInfo(osVersion_t *version, char *id_buf, uint32_t id_size)
  */
 int32_t osKernelLock(void)
 {
-	int temp = _current->base.sched_locked;
+	int temp = arch_current_thread()->base.sched_locked;
 
 	if (k_is_in_isr()) {
 		return osErrorISR;
@@ -55,7 +55,7 @@ int32_t osKernelLock(void)
  */
 int32_t osKernelUnlock(void)
 {
-	int temp = _current->base.sched_locked;
+	int temp = arch_current_thread()->base.sched_locked;
 
 	if (k_is_in_isr()) {
 		return osErrorISR;
@@ -71,7 +71,7 @@ int32_t osKernelUnlock(void)
  */
 int32_t osKernelRestoreLock(int32_t lock)
 {
-	_current->base.sched_locked = lock;
+	arch_current_thread()->base.sched_locked = lock;
 
 	if (k_is_in_isr()) {
 		return osErrorISR;

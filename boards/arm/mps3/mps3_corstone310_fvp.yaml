@@ -7,8 +7,9 @@ type: mcu
 arch: arm
 ram: 32
 flash: 32
-simulation: armfvp
-simulation_exec: FVP_Corstone_SSE-310
+simulation:
+  - name: armfvp
+    exec: FVP_Corstone_SSE-310
 toolchain:
   - gnuarmemb
   - zephyr

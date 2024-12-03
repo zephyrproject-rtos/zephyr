@@ -3,6 +3,11 @@ common:
   ignore_qemu_crash: true
   tags: kernel riscv
   platform_allow:
-    - qemu_riscv64
+    - qemu_riscv64/qemu_virt_riscv64/smp
 tests:
-  arch.riscv64.riscv_gp: {}
+  arch.riscv64.riscv_gp.relative_addressing:
+    extra_configs:
+      - CONFIG_RISCV_GP=y
+  arch.riscv64.riscv_gp.thread_pointer:
+    extra_configs:
+      - CONFIG_RISCV_CURRENT_VIA_GP=y

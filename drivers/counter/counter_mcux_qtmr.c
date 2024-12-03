@@ -289,7 +289,7 @@ static int mcux_qtmr_init(const struct device *dev)
 	return 0;
 }
 
-static const struct counter_driver_api mcux_qtmr_driver_api = {
+static DEVICE_API(counter, mcux_qtmr_driver_api) = {
 	.start = mcux_qtmr_start,
 	.stop = mcux_qtmr_stop,
 	.get_value = mcux_qtmr_get_value,

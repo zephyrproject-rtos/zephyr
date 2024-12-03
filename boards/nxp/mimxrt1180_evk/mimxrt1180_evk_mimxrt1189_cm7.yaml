@@ -21,4 +21,5 @@ supported:
   - counter
   - adc
   - can
+  - pwm
 vendor: nxp

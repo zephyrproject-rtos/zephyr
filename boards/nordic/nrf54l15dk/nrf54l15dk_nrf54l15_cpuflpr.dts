@@ -6,7 +6,7 @@
 
 /dts-v1/;
 #include <nordic/nrf54l15_cpuflpr.dtsi>
-#include "nrf54l15dk_nrf54l15-common.dtsi"
+#include "nrf54l15dk_common.dtsi"
 
 / {
 	model = "Nordic nRF54L15 DK nRF54L15 FLPR MCU";

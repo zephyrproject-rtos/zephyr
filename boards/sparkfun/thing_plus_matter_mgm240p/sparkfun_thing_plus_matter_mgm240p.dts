@@ -33,14 +33,14 @@
 	leds {
 		compatible = "gpio-leds";
 		blue_led: led_1 {
-			gpios = <&gpioa GECKO_PIN(8) GPIO_ACTIVE_LOW>;
+			gpios = <&gpioa 8 GPIO_ACTIVE_LOW>;
 		};
 
 	};
 
 	wake_up_trigger: gpio-wake-up  {
 		compatible = "silabs,gecko-wake-up-trigger";
-		gpios = <&gpioa GECKO_PIN(5) GPIO_ACTIVE_LOW>;
+		gpios = <&gpioa 5 GPIO_ACTIVE_LOW>;
 	};
 
 };

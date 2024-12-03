@@ -2,7 +2,7 @@ common:
   tags:
     - drivers
     - console
-  platform_allow: hifive1 hifive_unleashed
+  platform_allow: hifive1 hifive_unleashed/fu540/e51
   harness: robot
 
 tests:

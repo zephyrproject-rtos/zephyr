@@ -26,16 +26,6 @@ Bluetooth LE Audio
    audio/media.rst
    audio/microphone.rst
    audio/volume.rst
-   audio/shell/bap.rst
-   audio/shell/bap_broadcast_assistant.rst
-   audio/shell/bap_scan_delegator.rst
-   audio/shell/cap.rst
-   audio/shell/ccp.rst
-   audio/shell/csip.rst
-   audio/shell/gmap.rst
-   audio/shell/mcp.rst
-   audio/shell/tmap.rst
-   audio/shell/pbp.rst
 
 Bluetooth LE Host
 =================
@@ -45,7 +35,6 @@ Bluetooth LE Host
 
    services.rst
    gap.rst
-   shell/iso.rst
    gatt.rst
    att.rst
 

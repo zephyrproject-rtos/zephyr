@@ -263,7 +263,7 @@ int z_impl_hwinfo_get_supported_reset_cause(uint32_t *supported)
 
 #endif
 
-static const struct wdt_driver_api wdt_xilinx_api = {
+static DEVICE_API(wdt, wdt_xilinx_api) = {
 	.setup = wdt_xilinx_axi_setup,
 	.disable = wdt_xilinx_axi_disable,
 	.install_timeout = wdt_xilinx_axi_install_timeout,

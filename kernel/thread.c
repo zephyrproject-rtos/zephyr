@@ -82,7 +82,7 @@ EXPORT_SYMBOL(k_is_in_isr);
 #ifdef CONFIG_THREAD_CUSTOM_DATA
 void z_impl_k_thread_custom_data_set(void *value)
 {
-	_current->custom_data = value;
+	arch_current_thread()->custom_data = value;
 }
 
 #ifdef CONFIG_USERSPACE
@@ -95,7 +95,7 @@ static inline void z_vrfy_k_thread_custom_data_set(void *data)
 
 void *z_impl_k_thread_custom_data_get(void)
 {
-	return _current->custom_data;
+	return arch_current_thread()->custom_data;
 }
 
 #ifdef CONFIG_USERSPACE
@@ -110,7 +110,7 @@ static inline void *z_vrfy_k_thread_custom_data_get(void)
 
 int z_impl_k_is_preempt_thread(void)
 {
-	return !arch_is_in_isr() && thread_is_preemptible(_current);
+	return !arch_is_in_isr() && thread_is_preemptible(arch_current_thread());
 }
 
 #ifdef CONFIG_USERSPACE
@@ -139,7 +139,7 @@ int z_impl_k_thread_name_set(k_tid_t thread, const char *str)
 {
 #ifdef CONFIG_THREAD_NAME
 	if (thread == NULL) {
-		thread = _current;
+		thread = arch_current_thread();
 	}
 
 	strncpy(thread->name, str, CONFIG_THREAD_MAX_NAME_LEN - 1);
@@ -228,19 +228,21 @@ const char *k_thread_state_str(k_tid_t thread_id, char *buf, size_t buf_size)
 	size_t      off = 0;
 	uint8_t     bit;
 	uint8_t     thread_state = thread_id->base.thread_state;
+#define SS_ENT(s) { Z_STATE_STR_##s, _THREAD_##s, sizeof(Z_STATE_STR_##s) - 1 }
 	static const struct {
 		const char *str;
-		size_t      len;
+		uint16_t    bit;
+		uint16_t    len;
 	} state_string[] = {
-		{ Z_STATE_STR_DUMMY, sizeof(Z_STATE_STR_DUMMY) - 1},
-		{ Z_STATE_STR_PENDING, sizeof(Z_STATE_STR_PENDING) - 1},
-		{ Z_STATE_STR_PRESTART, sizeof(Z_STATE_STR_PRESTART) - 1},
-		{ Z_STATE_STR_DEAD, sizeof(Z_STATE_STR_DEAD) - 1},
-		{ Z_STATE_STR_SUSPENDED, sizeof(Z_STATE_STR_SUSPENDED) - 1},
-		{ Z_STATE_STR_ABORTING, sizeof(Z_STATE_STR_ABORTING) - 1},
-		{ Z_STATE_STR_SUSPENDING, sizeof(Z_STATE_STR_SUSPENDING) - 1},
-		{ Z_STATE_STR_QUEUED, sizeof(Z_STATE_STR_QUEUED) - 1},
+		SS_ENT(DUMMY),
+		SS_ENT(PENDING),
+		SS_ENT(DEAD),
+		SS_ENT(SUSPENDED),
+		SS_ENT(ABORTING),
+		SS_ENT(SUSPENDING),
+		SS_ENT(QUEUED),
 	};
+#undef SS_ENT
 
 	if ((buf == NULL) || (buf_size == 0)) {
 		return "";
@@ -256,7 +258,7 @@ const char *k_thread_state_str(k_tid_t thread_id, char *buf, size_t buf_size)
 
 
 	for (unsigned int index = 0; thread_state != 0; index++) {
-		bit = BIT(index);
+		bit = state_string[index].bit;
 		if ((thread_state & bit) == 0) {
 			continue;
 		}
@@ -331,11 +333,11 @@ void z_check_stack_sentinel(void)
 {
 	uint32_t *stack;
 
-	if ((_current->base.thread_state & _THREAD_DUMMY) != 0) {
+	if ((arch_current_thread()->base.thread_state & _THREAD_DUMMY) != 0) {
 		return;
 	}
 
-	stack = (uint32_t *)_current->stack_info.start;
+	stack = (uint32_t *)arch_current_thread()->stack_info.start;
 	if (*stack != STACK_SENTINEL) {
 		/* Restore it so further checks don't trigger this same error */
 		*stack = STACK_SENTINEL;
@@ -343,22 +345,6 @@ void z_check_stack_sentinel(void)
 	}
 }
 #endif /* CONFIG_STACK_SENTINEL */
-
-void z_impl_k_thread_start(k_tid_t thread)
-{
-	SYS_PORT_TRACING_OBJ_FUNC(k_thread, start, thread);
-
-	z_sched_start(thread);
-}
-
-#ifdef CONFIG_USERSPACE
-static inline void z_vrfy_k_thread_start(k_tid_t thread)
-{
-	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
-	z_impl_k_thread_start(thread);
-}
-#include <zephyr/syscalls/k_thread_start_mrsh.c>
-#endif /* CONFIG_USERSPACE */
 
 #if defined(CONFIG_STACK_POINTER_RANDOM) && (CONFIG_STACK_POINTER_RANDOM != 0)
 int z_stack_adjust_initialized;
@@ -556,7 +542,7 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	z_waitq_init(&new_thread->join_queue);
 
 	/* Initialize various struct k_thread members */
-	z_init_thread_base(&new_thread->base, prio, _THREAD_PRESTART, options);
+	z_init_thread_base(&new_thread->base, prio, _THREAD_SUSPENDED, options);
 	stack_ptr = setup_thread_stack(new_thread, stack, stack_size);
 
 #ifdef CONFIG_KERNEL_COHERENCE
@@ -627,8 +613,8 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	}
 #endif /* CONFIG_SCHED_CPU_MASK */
 #ifdef CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN
-	/* _current may be null if the dummy thread is not used */
-	if (!_current) {
+	/* arch_current_thread() may be null if the dummy thread is not used */
+	if (!arch_current_thread()) {
 		new_thread->resource_pool = NULL;
 		return stack_ptr;
 	}
@@ -637,13 +623,13 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	z_mem_domain_init_thread(new_thread);
 
 	if ((options & K_INHERIT_PERMS) != 0U) {
-		k_thread_perms_inherit(_current, new_thread);
+		k_thread_perms_inherit(arch_current_thread(), new_thread);
 	}
 #endif /* CONFIG_USERSPACE */
 #ifdef CONFIG_SCHED_DEADLINE
 	new_thread->base.prio_deadline = 0;
 #endif /* CONFIG_SCHED_DEADLINE */
-	new_thread->resource_pool = _current->resource_pool;
+	new_thread->resource_pool = arch_current_thread()->resource_pool;
 
 #ifdef CONFIG_SMP
 	z_waitq_init(&new_thread->halt_queue);
@@ -738,7 +724,7 @@ k_tid_t z_vrfy_k_thread_create(struct k_thread *new_thread,
 	 */
 	K_OOPS(K_SYSCALL_VERIFY(_is_valid_prio(prio, NULL)));
 	K_OOPS(K_SYSCALL_VERIFY(z_is_prio_lower_or_equal(prio,
-							_current->base.prio)));
+							arch_current_thread()->base.prio)));
 
 	z_setup_new_thread(new_thread, stack, stack_size,
 			   entry, p1, p2, p3, prio, options, NULL);
@@ -783,25 +769,25 @@ FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
 {
 	SYS_PORT_TRACING_FUNC(k_thread, user_mode_enter);
 
-	_current->base.user_options |= K_USER;
-	z_thread_essential_clear(_current);
+	arch_current_thread()->base.user_options |= K_USER;
+	z_thread_essential_clear(arch_current_thread());
 #ifdef CONFIG_THREAD_MONITOR
-	_current->entry.pEntry = entry;
-	_current->entry.parameter1 = p1;
-	_current->entry.parameter2 = p2;
-	_current->entry.parameter3 = p3;
+	arch_current_thread()->entry.pEntry = entry;
+	arch_current_thread()->entry.parameter1 = p1;
+	arch_current_thread()->entry.parameter2 = p2;
+	arch_current_thread()->entry.parameter3 = p3;
 #endif /* CONFIG_THREAD_MONITOR */
 #ifdef CONFIG_USERSPACE
-	__ASSERT(z_stack_is_user_capable(_current->stack_obj),
+	__ASSERT(z_stack_is_user_capable(arch_current_thread()->stack_obj),
 		 "dropping to user mode with kernel-only stack object");
 #ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
-	memset(_current->userspace_local_data, 0,
+	memset(arch_current_thread()->userspace_local_data, 0,
 	       sizeof(struct _thread_userspace_local_data));
 #endif /* CONFIG_THREAD_USERSPACE_LOCAL_DATA */
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
-	arch_tls_stack_setup(_current,
-			     (char *)(_current->stack_info.start +
-				      _current->stack_info.size));
+	arch_tls_stack_setup(arch_current_thread(),
+			     (char *)(arch_current_thread()->stack_info.start +
+				      arch_current_thread()->stack_info.size));
 #endif /* CONFIG_THREAD_LOCAL_STORAGE */
 	arch_user_mode_enter(entry, p1, p2, p3);
 #else
@@ -929,7 +915,7 @@ static inline k_ticks_t z_vrfy_k_thread_timeout_expires_ticks(
 void z_thread_mark_switched_in(void)
 {
 #if defined(CONFIG_SCHED_THREAD_USAGE) && !defined(CONFIG_USE_SWITCH)
-	z_sched_usage_start(_current);
+	z_sched_usage_start(arch_current_thread());
 #endif /* CONFIG_SCHED_THREAD_USAGE && !CONFIG_USE_SWITCH */
 
 #ifdef CONFIG_TRACING
@@ -946,8 +932,8 @@ void z_thread_mark_switched_out(void)
 #ifdef CONFIG_TRACING
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
 	/* Dummy thread won't have TLS set up to run arbitrary code */
-	if (!_current_cpu->current ||
-	    (_current_cpu->current->base.thread_state & _THREAD_DUMMY) != 0)
+	if (!arch_current_thread() ||
+	    (arch_current_thread()->base.thread_state & _THREAD_DUMMY) != 0)
 		return;
 #endif /* CONFIG_THREAD_LOCAL_STORAGE */
 	SYS_PORT_TRACING_FUNC(k_thread, switched_out);
@@ -1097,7 +1083,7 @@ void k_thread_abort_cleanup(struct k_thread *thread)
 			thread_to_cleanup = NULL;
 		}
 
-		if (thread == _current) {
+		if (thread == arch_current_thread()) {
 			/* Need to defer for current running thread as the cleanup
 			 * might result in exception. Actual cleanup will be done
 			 * at the next time k_thread_abort() is called, or at thread

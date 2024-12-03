@@ -33,11 +33,23 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 
+#include "bap_stream_rx.h"
 #include "bstests.h"
 #include "common.h"
 #include "bap_common.h"
 
 #if defined(CONFIG_BT_CAP_ACCEPTOR)
+/* Zephyr Controller works best while Extended Advertising interval to be a multiple
+ * of the ISO Interval minus 10 ms (max. advertising random delay). This is
+ * required to place the AUX_ADV_IND PDUs in a non-overlapping interval with the
+ * Broadcast ISO radio events.
+ */
+#define BT_LE_EXT_ADV_CONN_CUSTOM \
+		BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV | BT_LE_ADV_OPT_CONN, \
+				BT_GAP_MS_TO_ADV_INTERVAL(140), \
+				BT_GAP_MS_TO_ADV_INTERVAL(140), \
+				NULL)
+
 extern enum bst_result_t bst_result;
 
 #define SINK_CONTEXT                                                                               \
@@ -50,7 +62,6 @@ CREATE_FLAG(flag_broadcast_code);
 CREATE_FLAG(flag_base_received);
 CREATE_FLAG(flag_pa_synced);
 CREATE_FLAG(flag_syncable);
-CREATE_FLAG(flag_received);
 CREATE_FLAG(flag_pa_sync_lost);
 CREATE_FLAG(flag_pa_request);
 CREATE_FLAG(flag_bis_sync_requested);
@@ -275,6 +286,13 @@ static struct bt_le_per_adv_sync_cb bap_pa_sync_cb = {
 
 static void started_cb(struct bt_bap_stream *stream)
 {
+	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
+
+	memset(&test_stream->last_info, 0, sizeof(test_stream->last_info));
+	test_stream->rx_cnt = 0U;
+	test_stream->seq_num = 0U;
+	test_stream->tx_cnt = 0U;
+
 	printk("Stream %p started\n", stream);
 	k_sem_give(&sem_broadcast_started);
 }
@@ -285,54 +303,11 @@ static void stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 	k_sem_give(&sem_broadcast_stopped);
 }
 
-static void recv_cb(struct bt_bap_stream *stream, const struct bt_iso_recv_info *info,
-		    struct net_buf *buf)
-{
-	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
-
-	if ((test_stream->rx_cnt % 50U) == 0U) {
-		printk("[%zu]: Incoming audio on stream %p len %u and ts %u\n", test_stream->rx_cnt,
-		       stream, buf->len, info->ts);
-	}
-
-	if (test_stream->rx_cnt > 0U && info->ts == test_stream->last_info.ts) {
-		FAIL("Duplicated timestamp received: %u\n", test_stream->last_info.ts);
-		return;
-	}
-
-	if (test_stream->rx_cnt > 0U && info->seq_num == test_stream->last_info.seq_num) {
-		FAIL("Duplicated PSN received: %u\n", test_stream->last_info.seq_num);
-		return;
-	}
-
-	if (info->flags & BT_ISO_FLAGS_ERROR) {
-		/* Fail the test if we have not received what we expected */
-		if (!TEST_FLAG(flag_received)) {
-			FAIL("ISO receive error\n");
-		}
-
-		return;
-	}
-
-	if (info->flags & BT_ISO_FLAGS_LOST) {
-		FAIL("ISO receive lost\n");
-		return;
-	}
-
-	if (memcmp(buf->data, mock_iso_data, buf->len) == 0) {
-		test_stream->rx_cnt++;
-
-		if (test_stream->rx_cnt >= MIN_SEND_COUNT) {
-			/* We set the flag is just one stream has received the expected */
-			SET_FLAG(flag_received);
-		}
-	} else {
-		FAIL("Unexpected data received\n");
-	}
-}
-
 static struct bt_bap_stream_ops broadcast_stream_ops = {
-	.started = started_cb, .stopped = stopped_cb, .recv = recv_cb};
+	.started = started_cb,
+	.stopped = stopped_cb,
+	.recv = bap_stream_rx_recv_cb,
+};
 
 static void unicast_stream_enabled_cb(struct bt_bap_stream *stream)
 {
@@ -644,7 +619,7 @@ void test_start_adv(void)
 	struct bt_le_ext_adv *ext_adv;
 
 	/* Create a connectable non-scannable advertising set */
-	err = bt_le_ext_adv_create(BT_LE_ADV_CONN_FAST_1, NULL, &ext_adv);
+	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN_CUSTOM, NULL, &ext_adv);
 	if (err != 0) {
 		FAIL("Failed to create advertising set (err %d)\n", err);
 
@@ -796,7 +771,7 @@ static void init(void)
 		UNSET_FLAG(flag_base_received);
 		UNSET_FLAG(flag_pa_synced);
 		UNSET_FLAG(flag_pa_request);
-		UNSET_FLAG(flag_received);
+		UNSET_FLAG(flag_audio_received);
 		UNSET_FLAG(flag_base_metadata_updated);
 		UNSET_FLAG(flag_bis_sync_requested);
 
@@ -998,7 +973,7 @@ static void create_and_sync_sink(struct bt_bap_stream *bap_streams[], size_t *st
 static void sink_wait_for_data(void)
 {
 	printk("Waiting for data\n");
-	WAIT_FOR_FLAG(flag_received);
+	WAIT_FOR_FLAG(flag_audio_received);
 	backchannel_sync_send_all(); /* let other devices know we have received what we wanted */
 }
 

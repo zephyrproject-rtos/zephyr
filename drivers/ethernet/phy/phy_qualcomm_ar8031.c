@@ -483,7 +483,7 @@ static int qc_ar8031_init(const struct device *dev)
 	return 0;
 }
 
-static const struct ethphy_driver_api ar8031_driver_api = {
+static DEVICE_API(ethphy, ar8031_driver_api) = {
 	.get_link = qc_ar8031_get_link_state,
 	.cfg_link = qc_ar8031_cfg_link,
 	.link_cb_set = qc_ar8031_link_cb_set,

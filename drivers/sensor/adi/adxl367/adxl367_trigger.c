@@ -16,6 +16,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(ADXL367, CONFIG_SENSOR_LOG_LEVEL);
 
+#if defined(CONFIG_ADXL367_TRIGGER_OWN_THREAD) || defined(CONFIG_ADXL367_TRIGGER_GLOBAL_THREAD)
 static void adxl367_thread_cb(const struct device *dev)
 {
 	const struct adxl367_dev_config *cfg = dev->config;
@@ -45,6 +46,7 @@ static void adxl367_thread_cb(const struct device *dev)
 					      GPIO_INT_EDGE_TO_ACTIVE);
 	__ASSERT(ret == 0, "Interrupt configuration failed");
 }
+#endif /* CONFIG_ADXL367_TRIGGER_OWN_THREAD || CONFIG_ADXL367_TRIGGER_GLOBAL_THREAD */
 
 static void adxl367_gpio_callback(const struct device *dev,
 				  struct gpio_callback *cb, uint32_t pins)
@@ -54,6 +56,10 @@ static void adxl367_gpio_callback(const struct device *dev,
 	const struct adxl367_dev_config *cfg = drv_data->dev->config;
 
 	gpio_pin_interrupt_configure_dt(&cfg->interrupt, GPIO_INT_DISABLE);
+
+	if (IS_ENABLED(CONFIG_ADXL367_STREAM)) {
+		adxl367_stream_irq_handler(drv_data->dev);
+	}
 
 #if defined(CONFIG_ADXL367_TRIGGER_OWN_THREAD)
 	k_sem_give(&drv_data->gpio_sem);

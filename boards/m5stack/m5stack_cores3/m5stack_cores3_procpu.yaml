@@ -1,7 +1,6 @@
 identifier: m5stack_cores3/esp32s3/procpu
 name: M5Stack CoreS3 PROCPU
 type: mcu
-twister: false
 arch: xtensa
 toolchain:
   - zephyr

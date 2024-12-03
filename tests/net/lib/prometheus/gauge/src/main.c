@@ -8,18 +8,8 @@
 
 #include <zephyr/net/prometheus/gauge.h>
 
-struct prometheus_metric test_gauge_metric = {
-	.type = PROMETHEUS_GAUGE,
-	.name = "test_gauge",
-	.description = "Test gauge",
-	.num_labels = 1,
-	.labels = {{
-		.key = "test",
-		.value = "gauge",
-	}},
-};
-
-PROMETHEUS_GAUGE_DEFINE(test_gauge_m, &test_gauge_metric);
+PROMETHEUS_GAUGE_DEFINE(test_gauge_m, "Test gauge",
+			({ .key = "test", .value = "gauge" }), NULL);
 
 /**
  * @brief Test prometheus_gauge_set

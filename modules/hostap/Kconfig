@@ -25,7 +25,7 @@ if WIFI_NM_WPA_SUPPLICANT
 
 config HEAP_MEM_POOL_ADD_SIZE_HOSTAP
 	def_int 85000 if WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE && !MBEDTLS_ENABLE_HEAP
-	def_int 40000 if WIFI_NM_WPA_SUPPLICANT_AP
+	def_int 40000 if WIFI_NM_WPA_SUPPLICANT_AP || WIFI_NM_HOSTAPD_AP
 	# 8192 for MbedTLS heap
 	def_int 21808 if MBEDTLS_ENABLE_HEAP
 	# 30K is mandatory, but might need more for long duration use cases
@@ -159,12 +159,17 @@ config WIFI_NM_WPA_SUPPLICANT_CRYPTO_ALT
 	select MBEDTLS_NIST_KW_C
 	select MBEDTLS_DHM_C
 	select MBEDTLS_HKDF_C
-	select MBEDTLS_SERVER_NAME_INDICATION
-	select MBEDTLS_X509_CRL_PARSE_C
-	select MBEDTLS_TLS_VERSION_1_2
 
 config WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
 	bool "No Crypto support for WiFi"
+
+config WIFI_NM_WPA_SUPPLICANT_CRYPTO_EXT
+	bool "External Crypto support for hostap"
+	help
+	  Use external crypto implementation for hostp, this is useful for
+	  platforms where the crypto implementation is provided by the platform
+	  and not by Zephyr. The external crypto implementation should provide
+	  the required APIs and any other dependencies required by hostap.
 
 endchoice
 
@@ -176,6 +181,9 @@ config WIFI_NM_WPA_SUPPLICANT_CRYPTO_MBEDTLS_PSA
 config WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 	bool "Enterprise Crypto support for WiFi"
 	select MBEDTLS_PEM_CERTIFICATE_FORMAT
+	select MBEDTLS_SERVER_NAME_INDICATION
+	select MBEDTLS_X509_CRL_PARSE_C
+	select MBEDTLS_TLS_VERSION_1_2
 	depends on !WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
 
 config EAP_TLS
@@ -243,6 +251,11 @@ config WIFI_NM_WPA_SUPPLICANT_WPS
 	bool "WPS support"
 	depends on !WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
 
+config WIFI_NM_HOSTAPD_WPS
+	bool "WPS hostapd support"
+	depends on !WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
+	depends on WIFI_NM_HOSTAPD_AP
+
 config WIFI_NM_WPA_SUPPLICANT_P2P
 	bool "P2P mode support"
 	select WIFI_NM_WPA_SUPPLICANT_AP
@@ -264,6 +277,35 @@ config WIFI_NM_WPA_SUPPLICANT_INF_MON
 config WIFI_NM_HOSTAPD_AP
 	bool "FullAP mode support based on Hostapd"
 	depends on !WIFI_NM_WPA_SUPPLICANT_INF_MON
+
+config WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE
+	bool "Hostapd crypto enterprise support"
+
+config EAP_SERVER_TLS
+	bool "EAP-TLS server support"
+
+config EAP_SERVER_IDENTITY
+	bool "EAP-IDENTITY server support"
+
+config EAP_SERVER_MD5
+	bool "EAP-MD5 server support"
+
+config EAP_SERVER_MSCHAPV2
+	bool "EAP-MSCHAPV2 server support"
+
+config EAP_SERVER_PEAP
+	bool "EAP-PEAP server support"
+
+config EAP_SERVER_GTC
+	bool "EAP-GTC server support"
+
+config EAP_SERVER_TTLS
+	bool "EAP-TTLS server support"
+
+config EAP_SERVER_ALL
+	bool "All EAP methods support"
+	select EAP_SERVER_TLS
+	default y if WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE
 
 config WIFI_NM_WPA_SUPPLICANT_BSS_MAX_IDLE_TIME
 	int "BSS max idle timeout in seconds"
@@ -375,8 +417,8 @@ config TESTING_OPTIONS
 
 config AP
 	bool
-	depends on WIFI_NM_WPA_SUPPLICANT_AP
-	default y if WIFI_NM_WPA_SUPPLICANT_AP
+	depends on WIFI_NM_WPA_SUPPLICANT_AP || WIFI_NM_HOSTAPD_AP
+	default y if WIFI_NM_WPA_SUPPLICANT_AP || WIFI_NM_HOSTAPD_AP
 
 config NO_RADIUS
 	bool

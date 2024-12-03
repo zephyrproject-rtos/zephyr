@@ -314,7 +314,7 @@ ZTEST(fatal_exception, test_fatal)
 	 * priority -1. To run the test smoothly make both main and ztest
 	 * threads run at same priority level.
 	 */
-	k_thread_priority_set(_current, K_PRIO_PREEMPT(MAIN_PRIORITY));
+	k_thread_priority_set(arch_current_thread(), K_PRIO_PREEMPT(MAIN_PRIORITY));
 
 #ifndef CONFIG_ARCH_POSIX
 	TC_PRINT("test alt thread 1: generic CPU exception\n");

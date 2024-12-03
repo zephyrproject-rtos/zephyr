@@ -6,7 +6,7 @@
 
 /dts-v1/;
 #include <silabs/efr32bg22.dtsi>
-#include <silabs/efr32bg2x-pinctrl.dtsi>
+#include "sltb010a-pinctrl.dtsi"
 #include "thunderboard.dtsi"
 #include <zephyr/dt-bindings/regulator/silabs_dcdc.h>
 
@@ -102,7 +102,7 @@
 };
 
 &sw_imu_enable {
-	enable-gpios = <&gpiob GECKO_PIN(4) GPIO_ACTIVE_HIGH>;
+	enable-gpios = <&gpiob 4 GPIO_ACTIVE_HIGH>;
 };
 
 &bt_hci_silabs {

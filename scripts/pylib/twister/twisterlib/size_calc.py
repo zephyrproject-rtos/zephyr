@@ -4,12 +4,12 @@
 # Copyright (c) 2018 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-import subprocess
-import sys
+import logging
 import os
 import re
-import typing
-import logging
+import subprocess
+import sys
+
 from twisterlib.error import TwisterRuntimeError
 
 logger = logging.getLogger('twister')
@@ -98,7 +98,7 @@ class SizeCalculator:
     USEFUL_LINES_AMOUNT = 4
 
     def __init__(self, elf_filename: str,\
-        extra_sections: typing.List[str],\
+        extra_sections: list[str],\
         buildlog_filepath: str = '',\
         generate_warning: bool = True):
         """Constructor
@@ -132,12 +132,12 @@ class SizeCalculator:
         print(self.elf_filename)
         print("SECTION NAME             VMA        LMA     SIZE  HEX SZ TYPE")
         for v in self.sections:
-            print("%-17s 0x%08x 0x%08x %8d 0x%05x %-7s" %
-                        (v["name"], v["virt_addr"], v["load_addr"], v["size"], v["size"],
-                        v["type"]))
+            print(
+                f'{v["name"]:<17} {v["virt_addr"]:#010x} {v["load_addr"]:#010x}'
+                f' {v["size"]:>8} {v["size"]:#07x} {v["type"]:<7}'
+            )
 
-        print("Totals: %d bytes (ROM), %d bytes (RAM)" %
-                    (self.used_rom, self.used_ram))
+        print(f"Totals: {self.used_rom} bytes (ROM), {self.used_ram} bytes (RAM)")
         print("")
 
     def get_used_ram(self):
@@ -196,7 +196,7 @@ class SizeCalculator:
 
         try:
             if magic != b'\x7fELF':
-                raise TwisterRuntimeError("%s is not an ELF binary" % self.elf_filename)
+                raise TwisterRuntimeError(f"{self.elf_filename} is not an ELF binary")
         except Exception as e:
             print(str(e))
             sys.exit(2)
@@ -212,7 +212,7 @@ class SizeCalculator:
             "utf-8").strip()
         try:
             if is_xip_output.endswith("no symbols"):
-                raise TwisterRuntimeError("%s has no symbol information" % self.elf_filename)
+                raise TwisterRuntimeError(f"{self.elf_filename} has no symbol information")
         except Exception as e:
             print(str(e))
             sys.exit(2)
@@ -291,21 +291,24 @@ class SizeCalculator:
         self._check_is_xip()
         self._get_info_elf_sections()
 
-    def _get_buildlog_file_content(self) -> typing.List[str]:
+    def _get_buildlog_file_content(self) -> list[str]:
         """Get content of the build.log file.
 
         @return Content of the build.log file (list[str])
         """
         if os.path.exists(path=self.buildlog_filename):
-            with open(file=self.buildlog_filename, mode='r') as file:
+            with open(file=self.buildlog_filename) as file:
                 file_content = file.readlines()
         else:
             if self.generate_warning:
-                logger.error(msg=f"Incorrect path to build.log file to analyze footprints. Please check the path {self.buildlog_filename}.")
+                logger.error(
+                    msg="Incorrect path to build.log file to analyze footprints."
+                       f" Please check the path {self.buildlog_filename}."
+                )
             file_content = []
         return file_content
 
-    def _find_offset_of_last_pattern_occurrence(self, file_content: typing.List[str]) -> int:
+    def _find_offset_of_last_pattern_occurrence(self, file_content: list[str]) -> int:
         """Find the offset from which the information about the memory footprint is read.
 
         @param file_content (list[str]) Content of build.log.
@@ -325,13 +328,16 @@ class SizeCalculator:
                     break
         # If the file does not contain information about memory footprint, the warning is raised.
         if result == -1:
-            logger.warning(msg=f"Information about memory footprint for this test configuration is not found. Please check file {self.buildlog_filename}.")
+            logger.warning(
+                msg="Information about memory footprint for this test configuration is not found."
+                   f" Please check file {self.buildlog_filename}."
+            )
         return result
 
-    def _get_lines_with_footprint(self, start_offset: int, file_content: typing.List[str]) -> typing.List[str]:
+    def _get_lines_with_footprint(self, start_offset: int, file_content: list[str]) -> list[str]:
         """Get lines from the file with a memory footprint.
 
-        @param start_offset (int) Offset with the first line of the information about memory footprint.
+        @param start_offset (int) Offset with the memory footprint's first line.
         @param file_content (list[str]) Content of the build.log file.
         @return Lines with information about memory footprint (list[str])
         """
@@ -350,7 +356,7 @@ class SizeCalculator:
             result = file_content[info_line_idx_start:info_line_idx_stop]
         return result
 
-    def _clear_whitespaces_from_lines(self, text_lines: typing.List[str]) -> typing.List[str]:
+    def _clear_whitespaces_from_lines(self, text_lines: list[str]) -> list[str]:
         """Clear text lines from whitespaces.
 
         @param text_lines (list[str]) Lines with useful information.
@@ -358,7 +364,7 @@ class SizeCalculator:
         """
         return [line.strip("\n").rstrip("%") for line in text_lines] if text_lines else []
 
-    def _divide_text_lines_into_columns(self, text_lines: typing.List[str]) -> typing.List[typing.List[str]]:
+    def _divide_text_lines_into_columns(self, text_lines: list[str]) -> list[list[str]]:
         """Divide lines of text into columns.
 
         @param lines (list[list[str]]) Lines with information about memory footprint.
@@ -368,14 +374,19 @@ class SizeCalculator:
             result = []
             PATTERN_SPLIT_COLUMNS = "  +"
             for line in text_lines:
-                line = [column.rstrip(":") for column in re.split(pattern=PATTERN_SPLIT_COLUMNS, string=line)]
+                line = [
+                    column.rstrip(":") for column in re.split(
+                        pattern=PATTERN_SPLIT_COLUMNS,
+                        string=line
+                    )
+                ]
                 result.append(list(filter(None, line)))
         else:
             result = [[]]
 
         return result
 
-    def _unify_prefixes_on_all_values(self, data_lines: typing.List[typing.List[str]]) -> typing.List[typing.List[str]]:
+    def _unify_prefixes_on_all_values(self, data_lines: list[list[str]]) -> list[list[str]]:
         """Convert all values in the table to unified order of magnitude.
 
         @param data_lines (list[list[str]]) Lines with information about memory footprint.
@@ -384,7 +395,10 @@ class SizeCalculator:
         if len(data_lines) != self.USEFUL_LINES_AMOUNT:
             data_lines = [[]]
             if self.generate_warning:
-                logger.warning(msg=f"Incomplete information about memory footprint. Please check file {self.buildlog_filename}")
+                logger.warning(
+                    msg="Incomplete information about memory footprint."
+                       f" Please check file {self.buildlog_filename}"
+                )
         else:
             for idx, line in enumerate(data_lines):
                 # Line with description of the columns
@@ -417,19 +431,24 @@ class SizeCalculator:
             converted_value = str(numeric_value * unit_predictor)
         return converted_value
 
-    def _create_data_table(self) -> typing.List[typing.List[str]]:
+    def _create_data_table(self) -> list[list[str]]:
         """Create table with information about memory footprint.
 
         @return Table with information about memory usage (list[list[str]])
         """
         file_content = self._get_buildlog_file_content()
-        data_line_start_idx = self._find_offset_of_last_pattern_occurrence(file_content=file_content)
+        data_line_start_idx = self._find_offset_of_last_pattern_occurrence(
+            file_content=file_content
+        )
 
         if data_line_start_idx < 0:
             data_from_content = [[]]
         else:
             # Clean lines and separate information to columns
-            information_lines = self._get_lines_with_footprint(start_offset=data_line_start_idx, file_content=file_content)
+            information_lines = self._get_lines_with_footprint(
+                start_offset=data_line_start_idx,
+                file_content=file_content
+            )
             information_lines = self._clear_whitespaces_from_lines(text_lines=information_lines)
             data_from_content = self._divide_text_lines_into_columns(text_lines=information_lines)
             data_from_content = self._unify_prefixes_on_all_values(data_lines=data_from_content)
@@ -446,7 +465,10 @@ class SizeCalculator:
             self.available_ram = 0
             self.available_rom = 0
             if self.generate_warning:
-                logger.warning(msg=f"Missing information about memory footprint. Check file {self.buildlog_filename}.")
+                logger.warning(
+                    msg="Missing information about memory footprint."
+                       f" Check file {self.buildlog_filename}."
+                )
         else:
             ROW_RAM_IDX = 2
             ROW_ROM_IDX = 1

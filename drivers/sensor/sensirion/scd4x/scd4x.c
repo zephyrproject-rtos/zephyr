@@ -881,7 +881,7 @@ static int scd4x_init(const struct device *dev)
 	return 0;
 }
 
-static const struct sensor_driver_api scd4x_api_funcs = {
+static DEVICE_API(sensor, scd4x_api_funcs) = {
 	.sample_fetch = scd4x_sample_fetch,
 	.channel_get = scd4x_channel_get,
 	.attr_set = scd4x_attr_set,

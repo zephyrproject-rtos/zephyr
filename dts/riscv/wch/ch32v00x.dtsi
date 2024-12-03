@@ -1,0 +1,153 @@
+/*
+ * Copyright (c) 2024 Michael Hope
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <freq.h>
+#include <mem.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/clock/ch32v00x-clocks.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "wch,qingke-v2";
+			reg = <0>;
+			clock-frequency = <DT_FREQ_M(48)>;
+		};
+	};
+
+	clocks {
+		clk_hse: clk-hse {
+			#clock-cells = <0>;
+			compatible = "wch,ch32v00x-hse-clock";
+			status = "disabled";
+		};
+
+		clk_hsi: clk-hsi {
+			#clock-cells = <0>;
+			compatible = "wch,ch32v00x-hsi-clock";
+			clock-frequency = <DT_FREQ_M(24)>;
+			status = "disabled";
+		};
+
+		clk_lsi: clk-lsi {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_K(128)>;
+			status = "disabled";
+		};
+
+		pll: pll {
+			#clock-cells = <0>;
+			compatible = "wch,ch32v00x-pll-clock";
+			status = "disabled";
+		};
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		ranges;
+
+		sram0: memory@20000000 {
+			compatible = "mmio-sram";
+			reg = <0x20000000 0x800>;
+		};
+
+		flash: flash-controller@40022000 {
+			compatible = "wch,ch32v00x-flash-controller";
+			reg = <0x40022000 0x400>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				reg = <0 0x4000>;
+			};
+		};
+
+		pfic: interrupt-controller@e000e000 {
+			compatible = "wch,pfic";
+			#address-cells = <0>;
+			#interrupt-cells = <1>;
+			interrupt-controller;
+			reg = <0xe000e000 16>;
+			status = "okay";
+		};
+
+		systick: systimer@e000f000 {
+			compatible = "wch,systick";
+			reg = <0xe000f000 16>;
+			status = "okay";
+			interrupt-parent = <&pfic>;
+			interrupts = <12>;
+		};
+
+		pwr: pwr@40007000 {
+			compatible = "wch,pwr";
+			reg = <0x40007000 16>;
+		};
+
+		pinctrl: pin-controller@40010000 {
+			compatible = "wch,afio";
+			reg = <0x40010000 16>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "okay";
+
+			gpioa: gpio@40010800 {
+				compatible = "wch,gpio";
+				reg = <0x40010800 32>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <8>;
+				clocks = <&rcc CH32V00X_CLOCK_IOPA>;
+			};
+
+			gpioc: gpio@40011000 {
+				compatible = "wch,gpio";
+				reg = <0x40011000 32>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <8>;
+				clocks = <&rcc CH32V00X_CLOCK_IOPC>;
+			};
+
+			gpiod: gpio@40011400 {
+				compatible = "wch,gpio";
+				reg = <0x40011400 32>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <8>;
+				clocks = <&rcc CH32V00X_CLOCK_IOPD>;
+			};
+		};
+
+		usart1: uart@40013800 {
+			compatible = "wch,usart";
+			reg = <0x40013800 16>;
+			clocks = <&rcc CH32V00X_CLOCK_USART1>;
+			interrupt-parent = <&pfic>;
+			interrupts = <32>;
+		};
+
+		rcc: rcc@40021000 {
+			compatible = "wch,rcc";
+			reg = <0x40021000 16>;
+			#clock-cells = <1>;
+			status = "okay";
+		};
+	};
+};

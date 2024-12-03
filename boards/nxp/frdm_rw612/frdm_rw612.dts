@@ -73,6 +73,32 @@
 		erase-block-size = <4096>;
 		write-block-size = <1>;
 		spi-max-frequency = <104000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			boot_partition: partition@0 {
+				label = "mcuboot";
+				reg = <0x00000000 DT_SIZE_K(128)>;
+			};
+			/* The MCUBoot swap-move algorithm uses the last 2 sectors
+			 * of the primary slot0 for swap status and move.
+			 */
+			slot0_partition: partition@20000 {
+				label = "image-0";
+				reg = <0x00020000 (DT_SIZE_M(3) + DT_SIZE_K(2 * 4))>;
+			};
+			slot1_partition: partition@323000 {
+				label = "image-1";
+				reg = <0x00323000 DT_SIZE_M(3)>;
+			};
+			storage_partition: partition@623000 {
+				label = "storage";
+				reg = <0x00623000 (DT_SIZE_M(58) - DT_SIZE_K(136))>;
+			};
+		};
 	};
 	aps6404l: aps6404l@2 {
 			compatible = "nxp,imx-flexspi-aps6404l";

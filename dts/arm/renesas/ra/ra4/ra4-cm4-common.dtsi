@@ -160,6 +160,56 @@
 			};
 		};
 
+		spi0: spi@40072000 {
+			compatible = "renesas,ra-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			channel = <0>;
+			reg = <0x40072000 0x100>;
+			status = "disabled";
+		};
+
+		spi1: spi@40072100 {
+			compatible = "renesas,ra-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			channel = <1>;
+			interrupts = <32 1>, <33 1>, <34 1>, <35 1>;
+			interrupt-names = "rxi", "txi", "tei", "eri";
+			reg = <0x40072100 0x100>;
+			status = "disabled";
+		};
+
+		agt0: agt@40084000  {
+			compatible = "renesas,ra-agt";
+			channel = <0>;
+			reg = <0x40084000 0x100>;
+			renesas,count-source = "AGT_CLOCK_LOCO";
+			renesas,prescaler = <0>;
+			renesas,resolution = <16>;
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,ra-agt-counter";
+				status = "disabled";
+			};
+		};
+
+		agt1: agt@40084100 {
+			compatible = "renesas,ra-agt";
+			channel = <1>;
+			reg = <0x40084100 0x100>;
+			renesas,count-source = "AGT_CLOCK_LOCO";
+			renesas,prescaler = <0>;
+			renesas,resolution = <16>;
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,ra-agt-counter";
+				status = "disabled";
+			};
+		};
+
 		id_code: id_code@1010018 {
 			compatible = "zephyr,memory-region";
 			reg = <0x01010018 0x20>;

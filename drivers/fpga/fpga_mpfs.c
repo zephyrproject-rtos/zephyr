@@ -15,7 +15,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/sys/util.h>
-LOG_MODULE_REGISTER(fpga_mpfs);
+LOG_MODULE_REGISTER(fpga_mpfs, CONFIG_FPGA_LOG_LEVEL);
 
 #define SPI_FLASH_DIRECTORY_OFFSET    0x00000000
 #define SPI_FLASH_GOLDEN_IMAGE_OFFSET 0x00100400
@@ -402,7 +402,7 @@ static struct mpfs_fpga_config fpga_config = {
 	.mailbox = DT_INST_REG_ADDR_BY_IDX(0, 2),
 };
 
-static const struct fpga_driver_api mpfs_fpga_api = {
+static DEVICE_API(fpga, mpfs_fpga_api) = {
 	.reset = mpfs_fpga_reset,
 	.load = mpfs_fpga_load,
 	.get_info = mpfs_fpga_get_info,

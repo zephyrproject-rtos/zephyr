@@ -15,11 +15,17 @@ hobbyists, and researchers to explore and experiment with RISC-V technology.
 Building
 ========
 
+There are three board configurations provided for the BeagleV-Fire:
+
+* ``beaglev_fire/polarfire/e51``: Uses only the E51 core
+* ``beaglev_fire/polarfire/u54``: Uses the U54 cores
+* ``beaglev_fire/polarfire/u54/smp``: Uses the U54 cores with CONFIG_SMP=y
+
 Applications for the ``beaglev_fire`` board configuration can be built as usual:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: beaglev_fire
+   :board: beaglev_fire/polarfire/u54
    :goals: build
 
 Debugging
@@ -76,3 +82,49 @@ and load the binary:
    load
    break main
    continue
+
+Flashing
+========
+When using the PolarFire `Hart Software Services <https://github.com/polarfire-soc/hart-software-services>`_ along with Zephyr, you need to use the `hss-payload-generator <https://github.com/polarfire-soc/hart-software-services/tree/master/tools/hss-payload-generator>`_ tool to generate an image that HSS can boot.
+
+.. code-block:: yaml
+
+  set-name: 'ZephyrImage'
+
+  # Define the entry point address for each hart (U54 cores)
+  hart-entry-points:
+    u54_1: '0x1000000000'
+
+  # Define the payloads (ELF binaries or raw blobs)
+  payloads:
+    <path_to_zephyr.elf>:
+      exec-addr: '0x1000000000'  # Where Zephyr should be loaded
+      owner-hart: u54_1  # Primary hart that runs Zephyr
+      priv-mode: prv_m  # Start in Machine mode
+      skip-opensbi: true  # Boot directly without OpenSBI
+
+After generating the image, you can flash it to the board by restarting a board that's connected over USB and UART, interrupting the HSS boot process with a key press, and then running the ``mmc`` and ``usbdmsc`` commands:
+
+.. code-block:: bash
+
+  Press a key to enter CLI, ESC to skip
+  Timeout in 1 second
+  .[6.304162] Character 100 pressed
+  [6.308415] Type HELP for list of commands
+  [6.313276] >> mmc
+  [10.450867] Selecting SDCARD/MMC (fallback) as boot source ...
+  [10.457550] Attempting to select eMMC ... Passed
+  [10.712708] >> usbdmsc
+  [14.732841] initialize MMC
+  [14.736400] Attempting to select eMMC ... Passed
+  [15.168707] MMC - 512 byte pages, 512 byte blocks, 30621696 pages
+  Waiting for USB Host to connect... (CTRL-C to quit)
+  . 0 bytes written, 0 bytes read
+  USB Host connected. Waiting for disconnect... (CTRL-C to quit)
+  / 0 bytes written, 219136 bytes read
+
+This will cause the board to appear as a USB mass storage device. You can then then flash the image with ``dd`` or other tools like `BalenaEtcher <https://www.balena.io/etcher/>`_:
+
+.. code-block:: bash
+
+  dd if=<path_to_zephyr.elf> of=/dev/sdXD bs=4M status=progress oflag=sync

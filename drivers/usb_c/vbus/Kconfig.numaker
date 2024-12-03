@@ -7,5 +7,6 @@ config USBC_VBUS_NUMAKER
 	bool "Nuvoton NuMaker USB-C VBUS"
 	default y
 	depends on DT_HAS_NUVOTON_NUMAKER_VBUS_ENABLED && USBC_TCPC_NUMAKER
+	select PINCTRL
 	help
 	  Enable USB-C VBUS support for Nuvoton NuMaker chip with UTCPD.

@@ -31,7 +31,7 @@
 			device_type = "cpu";
 			clocks = <&cpuapp_hsfll>;
 			clock-frequency = <DT_FREQ_M(320)>;
-			cpu-power-states = <&idle &s2ram>;
+			cpu-power-states = <&idle_cache_disabled &s2ram>;
 		};
 
 		cpurad: cpu@3 {
@@ -40,6 +40,7 @@
 			device_type = "cpu";
 			clocks = <&cpurad_hsfll>;
 			clock-frequency = <DT_FREQ_M(256)>;
+			cpu-power-states = <&idle_cache_disabled>;
 		};
 
 		cpuppr: cpu@d {
@@ -128,16 +129,20 @@
 		};
 
 		power-states {
-			idle: idle {
+			// substate-id = <0>; is reserved for "idle", cache powered on
+			// substate-id = <1>; is reserved for "idle-cache-retained"
+			idle_cache_disabled: idle_cache_disabled {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";
-				min-residency-us = <100000>;
+				substate-id = <2>;
+				min-residency-us = <1000>;
+				exit-latency-us = <30>;
 			};
-
 			s2ram: s2ram {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-ram";
-				min-residency-us = <800000>;
+				min-residency-us = <2000>;
+				exit-latency-us = <260>;
 			};
 		};
 	};
@@ -627,6 +632,7 @@
 				reg = <0x8e4000 0x1000>;
 				status = "disabled";
 				interrupts = <228 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&hsfll120>;
 				power-domains = <&gpd NRF_GPD_FAST_ACTIVE1>;
 				#pwm-cells = <3>;
 			};

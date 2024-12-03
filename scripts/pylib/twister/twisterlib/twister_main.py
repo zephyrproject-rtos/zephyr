@@ -4,23 +4,22 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
-import colorama
 import logging
 import os
 import shutil
 import sys
 import time
 
+import colorama
 from colorama import Fore
-
+from twisterlib.coverage import run_coverage
+from twisterlib.environment import TwisterEnv
+from twisterlib.hardwaremap import HardwareMap
+from twisterlib.package import Artifacts
+from twisterlib.reports import Reporting
+from twisterlib.runner import TwisterRunner
 from twisterlib.statuses import TwisterStatus
 from twisterlib.testplan import TestPlan
-from twisterlib.reports import Reporting
-from twisterlib.hardwaremap import HardwareMap
-from twisterlib.coverage import run_coverage
-from twisterlib.runner import TwisterRunner
-from twisterlib.environment import TwisterEnv
-from twisterlib.package import Artifacts
 
 logger = logging.getLogger("twister")
 logger.setLevel(logging.DEBUG)
@@ -71,25 +70,30 @@ def main(options: argparse.Namespace, default_options: argparse.Namespace):
 
     previous_results = None
     # Cleanup
-    if options.no_clean or options.only_failed or options.test_only or options.report_summary is not None:
+    if (
+        options.no_clean
+        or options.only_failed
+        or options.test_only
+        or options.report_summary is not None
+    ):
         if os.path.exists(options.outdir):
             print("Keeping artifacts untouched")
     elif options.last_metrics:
         ls = os.path.join(options.outdir, "twister.json")
         if os.path.exists(ls):
-            with open(ls, "r") as fp:
+            with open(ls) as fp:
                 previous_results = fp.read()
         else:
             sys.exit(f"Can't compare metrics with non existing file {ls}")
     elif os.path.exists(options.outdir):
         if options.clobber_output:
-            print("Deleting output directory {}".format(options.outdir))
+            print(f"Deleting output directory {options.outdir}")
             shutil.rmtree(options.outdir)
         else:
             for i in range(1, 100):
-                new_out = options.outdir + ".{}".format(i)
+                new_out = options.outdir + f".{i}"
                 if not os.path.exists(new_out):
-                    print("Renaming output directory to {}".format(new_out))
+                    print(f"Renaming output directory to {new_out}")
                     shutil.move(options.outdir, new_out)
                     break
             else:
@@ -142,13 +146,8 @@ def main(options: argparse.Namespace, default_options: argparse.Namespace):
                 if options.platform and not tplan.check_platform(i.platform, options.platform):
                     continue
                 logger.debug(
-                    "{:<25} {:<50} {}SKIPPED{}: {}".format(
-                        i.platform.name,
-                        i.testsuite.name,
-                        Fore.YELLOW,
-                        Fore.RESET,
-                        i.reason,
-                    )
+                    f"{i.platform.name:<25} {i.testsuite.name:<50}"
+                    f" {Fore.YELLOW}SKIPPED{Fore.RESET}: {i.reason}"
                 )
 
     report = Reporting(tplan, env)
@@ -174,7 +173,7 @@ def main(options: argparse.Namespace, default_options: argparse.Namespace):
 
     if options.dry_run:
         duration = time.time() - start_time
-        logger.info("Completed in %d seconds" % (duration))
+        logger.info(f"Completed in {duration} seconds")
         return 0
 
     if options.short_build_path:

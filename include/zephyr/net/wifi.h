@@ -547,7 +547,7 @@ static inline const char *wifi_twt_get_err_code_str(int16_t err_no)
 enum wifi_ps_param_type {
 	/** Power save state. */
 	WIFI_PS_PARAM_STATE,
-	/** Power save listen interval. */
+	/** Power save listen interval (units: (short) beacon intervals). */
 	WIFI_PS_PARAM_LISTEN_INTERVAL,
 	/** Power save wakeup mode. */
 	WIFI_PS_PARAM_WAKEUP_MODE,

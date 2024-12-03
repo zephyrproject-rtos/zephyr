@@ -124,7 +124,7 @@ static int led_pwm_pm_action(const struct device *dev,
 }
 #endif /* CONFIG_PM_DEVICE */
 
-static const struct led_driver_api led_pwm_api = {
+static DEVICE_API(led, led_pwm_api) = {
 	.on		= led_pwm_on,
 	.off		= led_pwm_off,
 	.blink		= led_pwm_blink,

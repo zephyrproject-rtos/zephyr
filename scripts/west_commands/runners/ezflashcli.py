@@ -5,14 +5,14 @@
 '''Runner for flashing with ezFlashCLI.'''
 import shlex
 
-from runners.core import ZephyrBinaryRunner, RunnerCaps
+from runners.core import RunnerCaps, ZephyrBinaryRunner
 
 DEFAULT_EZFLASHCLI = "ezFlashCLI"
 
 class EzFlashCliBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for ezFlashCLI'''
 
-    def __init__(self, cfg, tool, dev_id=None, tool_opt=[], erase=False, reset=True):
+    def __init__(self, cfg, tool, dev_id=None, tool_opt=None, erase=False, reset=True):
         super().__init__(cfg)
         self.bin_ = cfg.bin_file
 
@@ -22,8 +22,9 @@ class EzFlashCliBinaryRunner(ZephyrBinaryRunner):
         self.reset = bool(reset)
 
         self.tool_opt = []
-        for opts in [shlex.split(opt) for opt in tool_opt]:
-            self.tool_opt += opts
+        if tool_opt is not None:
+            for opts in [shlex.split(opt) for opt in tool_opt]:
+                self.tool_opt += opts
 
     @classmethod
     def name(cls):
@@ -84,7 +85,9 @@ class EzFlashCliBinaryRunner(ZephyrBinaryRunner):
             self.check_call([self.tool] + options + ["image_flash", self.bin_])
         else:
             load_offset = self.build_conf['CONFIG_FLASH_LOAD_OFFSET']
-            self.check_call([self.tool] + options + ["write_flash", f'0x{load_offset:x}', self.bin_])
+            self.check_call(
+                [self.tool] + options + ["write_flash", f'0x{load_offset:x}', self.bin_]
+            )
 
     def reset_device(self):
         self.logger.info("Resetting...")

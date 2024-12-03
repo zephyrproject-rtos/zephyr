@@ -146,6 +146,15 @@
 #endif
 
 /**
+ * @brief NRFX_DPPI_ENABLED
+ *
+ * Boolean. Accepted values: 0 and 1.
+ */
+#ifndef NRFX_DPPI_ENABLED
+#define NRFX_DPPI_ENABLED 0
+#endif
+
+/**
  * @brief NRFX_DPPI_CONFIG_LOG_ENABLED
  *
  * Boolean. Accepted values: 0 and 1.
@@ -167,6 +176,42 @@
  */
 #ifndef NRFX_DPPI_CONFIG_LOG_LEVEL
 #define NRFX_DPPI_CONFIG_LOG_LEVEL 3
+#endif
+
+/**
+ * @brief NRFX_DPPI00_ENABLED
+ *
+ * Boolean. Accepted values: 0 and 1.
+ */
+#ifndef NRFX_DPPI00_ENABLED
+#define NRFX_DPPI00_ENABLED 0
+#endif
+
+/**
+ * @brief NRFX_DPPI10_ENABLED
+ *
+ * Boolean. Accepted values: 0 and 1.
+ */
+#ifndef NRFX_DPPI10_ENABLED
+#define NRFX_DPPI10_ENABLED 0
+#endif
+
+/**
+ * @brief NRFX_DPPI20_ENABLED
+ *
+ * Boolean. Accepted values: 0 and 1.
+ */
+#ifndef NRFX_DPPI20_ENABLED
+#define NRFX_DPPI20_ENABLED 0
+#endif
+
+/**
+ * @brief NRFX_DPPI30_ENABLED
+ *
+ * Boolean. Accepted values: 0 and 1.
+ */
+#ifndef NRFX_DPPI30_ENABLED
+#define NRFX_DPPI30_ENABLED 0
 #endif
 
 /**
@@ -284,21 +329,12 @@
 #endif
 
 /**
- * @brief NRFX_GRTC_CONFIG_SLEEP_ALLOWED
- *
- * Boolean. Accepted values: 0 and 1.
- */
-#ifndef NRFX_GRTC_CONFIG_SLEEP_ALLOWED
-#define NRFX_GRTC_CONFIG_SLEEP_ALLOWED 0
-#endif
-
-/**
  * @brief NRFX_GRTC_CONFIG_AUTOEN
  *
  * Boolean. Accepted values: 0 and 1.
  */
 #ifndef NRFX_GRTC_CONFIG_AUTOEN
-#define NRFX_GRTC_CONFIG_AUTOEN 0
+#define NRFX_GRTC_CONFIG_AUTOEN 1
 #endif
 
 /**
@@ -307,7 +343,7 @@
  * Boolean. Accepted values: 0 and 1.
  */
 #ifndef NRFX_GRTC_CONFIG_AUTOSTART
-#define NRFX_GRTC_CONFIG_AUTOSTART 1
+#define NRFX_GRTC_CONFIG_AUTOSTART 0
 #endif
 
 /**
@@ -588,6 +624,111 @@
  */
 #ifndef NRFX_POWER_DEFAULT_CONFIG_IRQ_PRIORITY
 #define NRFX_POWER_DEFAULT_CONFIG_IRQ_PRIORITY NRFX_DEFAULT_IRQ_PRIORITY
+#endif
+
+/**
+ * @brief NRFX_PPIB_ENABLED
+ *
+ * Boolean. Accepted values: 0 and 1.
+ */
+#ifndef NRFX_PPIB_ENABLED
+#define NRFX_PPIB_ENABLED 0
+#endif
+
+/**
+ * @brief NRFX_PPIB_CONFIG_LOG_ENABLED
+ *
+ * Boolean. Accepted values: 0 and 1.
+ */
+#ifndef NRFX_PPIB_CONFIG_LOG_ENABLED
+#define NRFX_PPIB_CONFIG_LOG_ENABLED 0
+#endif
+
+/**
+ * @brief NRFX_PPIB_CONFIG_LOG_LEVEL
+ *
+ * Integer value.
+ * Supported values:
+ * - Off     = 0
+ * - Error   = 1
+ * - Warning = 2
+ * - Info    = 3
+ * - Debug   = 4
+ */
+#ifndef NRFX_PPIB_CONFIG_LOG_LEVEL
+#define NRFX_PPIB_CONFIG_LOG_LEVEL 3
+#endif
+
+/**
+ * @brief NRFX_PPIB00_ENABLED
+ *
+ * Boolean. Accepted values: 0 and 1.
+ */
+#ifndef NRFX_PPIB00_ENABLED
+#define NRFX_PPIB00_ENABLED 0
+#endif
+
+/**
+ * @brief NRFX_PPIB01_ENABLED
+ *
+ * Boolean. Accepted values: 0 and 1.
+ */
+#ifndef NRFX_PPIB01_ENABLED
+#define NRFX_PPIB01_ENABLED 0
+#endif
+
+/**
+ * @brief NRFX_PPIB10_ENABLED
+ *
+ * Boolean. Accepted values: 0 and 1.
+ */
+#ifndef NRFX_PPIB10_ENABLED
+#define NRFX_PPIB10_ENABLED 0
+#endif
+
+/**
+ * @brief NRFX_PPIB11_ENABLED
+ *
+ * Boolean. Accepted values: 0 and 1.
+ */
+#ifndef NRFX_PPIB11_ENABLED
+#define NRFX_PPIB11_ENABLED 0
+#endif
+
+/**
+ * @brief NRFX_PPIB20_ENABLED
+ *
+ * Boolean. Accepted values: 0 and 1.
+ */
+#ifndef NRFX_PPIB20_ENABLED
+#define NRFX_PPIB20_ENABLED 0
+#endif
+
+/**
+ * @brief NRFX_PPIB21_ENABLED
+ *
+ * Boolean. Accepted values: 0 and 1.
+ */
+#ifndef NRFX_PPIB21_ENABLED
+#define NRFX_PPIB21_ENABLED 0
+#endif
+
+/**
+ * @brief NRFX_PPIB22_ENABLED
+ *
+ * Boolean. Accepted values: 0 and 1.
+ */
+#ifndef NRFX_PPIB22_ENABLED
+#define NRFX_PPIB22_ENABLED 0
+#endif
+
+/**
+ * @brief NRFX_PPIB30_ENABLED
+ *
+ * Boolean. Accepted values: 0 and 1.
+ */
+#ifndef NRFX_PPIB30_ENABLED
+#define NRFX_PPIB30_ENABLED 0
 #endif
 
 /**
@@ -1482,15 +1623,6 @@
  */
 #ifndef NRFX_UARTE_CONFIG_TX_LINK
 #define NRFX_UARTE_CONFIG_TX_LINK 1
-#endif
-
-/**
- * @brief NRFX_UARTE_RX_FIFO_FLUSH_WORKAROUND_MAGIC_BYTE
- *
- * Integer value. Minimum: 0. Maximum: 255.
- */
-#ifndef NRFX_UARTE_RX_FIFO_FLUSH_WORKAROUND_MAGIC_BYTE
-#define NRFX_UARTE_RX_FIFO_FLUSH_WORKAROUND_MAGIC_BYTE 171
 #endif
 
 /**

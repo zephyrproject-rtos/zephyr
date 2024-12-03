@@ -11,8 +11,6 @@
 # - no TF-M enabled devices because we assume that the TF-M implementation
 #   of PSA crypto is working fine on the platforms that support TF-M.
 # - platform should be testable by the CI.
-# - enable CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG in order to reduce as much
-#   as possible usage of legacy modules in Mbed TLS.
 # - pick 1 platform which supports entropy driver and 1 which does not. The
 #   latter case will allow to test
 #   CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG_ALLOW_NON_CSPRNG.
@@ -34,8 +32,11 @@ tests:
     # Pick a platform which does not have an entropy driver. In this case we
     # enable the timer random generator because it's always available on all
     # platforms.
+    # Explicitly select CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG because this is
+    # not "automatically selected" when there is no CSPRNG available.
     integration_platforms:
       - qemu_x86
     extra_configs:
+      - CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG=y
       - CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG_ALLOW_NON_CSPRNG=y
       - CONFIG_TEST_RANDOM_GENERATOR=y

@@ -26,3 +26,16 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 
 	return 0;
 }
+
+int ra_pinctrl_query_config(uint32_t port, uint32_t pin, pinctrl_soc_pin_t *pincfg)
+{
+	if (port >= RA_PINCTRL_PORT_NUM || pin >= RA_PINCTRL_PIN_NUM) {
+		return -EINVAL;
+	}
+
+	pincfg->port_num = port;
+	pincfg->pin_num = pin;
+
+	pincfg->cfg = R_PFS->PORT[port].PIN[pin].PmnPFS;
+	return 0;
+}

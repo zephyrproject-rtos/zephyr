@@ -1,0 +1,15 @@
+description: NXP PORT pinmux node
+
+compatible: "nxp,port-pinmux"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+child-binding:
+  include: pincfg-node.yaml

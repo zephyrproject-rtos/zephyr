@@ -7,6 +7,7 @@
 #include <zephyr/pm/pm.h>
 #include <soc.h>
 #include <zephyr/init.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
 
 #include <stm32wbxx_ll_utils.h>
 #include <stm32wbxx_ll_bus.h>
@@ -83,6 +84,17 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 			z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 			LOG_DBG("Unsupported power substate-id %u", substate_id);
 			return;
+		}
+
+		if (IS_ENABLED(STM32_HSI48_ENABLED)) {
+			/*
+			 * Release CLK48 semaphore to make sure M0 core can enable/disable
+			 * it as needed (shared between RNG and USB peripheral, M0 uses RNG
+			 * during BLE advertisement phase). It seems like if left locked M0
+			 * can enable the clock if needed but is not able (allowed) to stop
+			 * it, with increased power consumption as a result.
+			 */
+			z_stm32_hsem_unlock(CFG_HW_CLK48_CONFIG_SEMID);
 		}
 
 		/* Release RCC semaphore */

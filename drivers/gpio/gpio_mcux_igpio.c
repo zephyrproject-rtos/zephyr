@@ -338,7 +338,7 @@ static void mcux_igpio_port_isr(const struct device *dev)
 	gpio_fire_callbacks(&data->callbacks, dev, int_flags);
 }
 
-static const struct gpio_driver_api mcux_igpio_driver_api = {
+static DEVICE_API(gpio, mcux_igpio_driver_api) = {
 	.pin_configure = mcux_igpio_configure,
 	.port_get_raw = mcux_igpio_port_get_raw,
 	.port_set_masked_raw = mcux_igpio_port_set_masked_raw,

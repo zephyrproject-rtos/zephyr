@@ -56,6 +56,7 @@ def mocked_instance(tmp_path):
 def mocked_env():
     env = mock.Mock()
     options = mock.Mock()
+    options.verbose = 2
     env.options = options
     return env
 
@@ -687,7 +688,7 @@ def test_filterbuilder_parse_generated(
         cache = [cache_elem]
         return cache
 
-    def mock_open(filepath, type, *args, **kwargs):
+    def mock_open(filepath, *args, **kwargs):
         if filepath == expected_defconfig_path:
             rd = 'I am not a proper line\n' \
                  'CONFIG_FOO="no"'
@@ -1562,11 +1563,32 @@ def test_projectbuilder_process(
 TESTDATA_7 = [
     (
         [
-            'z_ztest_unit_test__dummy_suite_name__dummy_test_name',
-            'z_ztest_unit_test__dummy_suite_name__test_dummy_name',
+            'z_ztest_unit_test__dummy_suite1_name__dummy_test_name1',
+            'z_ztest_unit_test__dummy_suite2_name__test_dummy_name2',
             'no match'
         ],
-        ['dummy_id.dummy_name', 'dummy_id.dummy_name']
+        [
+         ('dummy_id.dummy_suite1_name.dummy_name1'),
+         ('dummy_id.dummy_suite2_name.dummy_name2')
+        ]
+    ),
+    (
+        [
+            'z_ztest_unit_test__dummy_suite2_name__test_dummy_name2',
+            'z_ztest_unit_test__bad_suite3_name_no_test',
+            '_ZN12_GLOBAL__N_1L54z_ztest_unit_test__dummy_suite3_name__test_dummy_name4E',
+            '_ZN12_GLOBAL__N_1L54z_ztest_unit_test__dummy_suite3_name__test_bad_name1E',
+            '_ZN12_GLOBAL__N_1L51z_ztest_unit_test_dummy_suite3_name__test_bad_name2E',
+            '_ZN12_GLOBAL__N_1L54z_ztest_unit_test__dummy_suite3_name__test_dummy_name5E',
+            '_ZN15foobarnamespaceL54z_ztest_unit_test__dummy_suite3_name__test_dummy_name6E',
+        ],
+        [
+         ('dummy_id.dummy_suite2_name.dummy_name2'),
+         ('dummy_id.dummy_suite3_name.dummy_name4'),
+         ('dummy_id.dummy_suite3_name.bad_name1E'),
+         ('dummy_id.dummy_suite3_name.dummy_name5'),
+         ('dummy_id.dummy_suite3_name.dummy_name6'),
+        ]
     ),
     (
         ['no match'],
@@ -1577,10 +1599,11 @@ TESTDATA_7 = [
 @pytest.mark.parametrize(
     'symbols_names, added_tcs',
     TESTDATA_7,
-    ids=['two hits, one miss', 'nothing']
+    ids=['two hits, one miss', 'demangle', 'nothing']
 )
 def test_projectbuilder_determine_testcases(
     mocked_jobserver,
+    mocked_env,
     symbols_names,
     added_tcs
 ):
@@ -1599,9 +1622,9 @@ def test_projectbuilder_determine_testcases(
     instance_mock = mock.Mock()
     instance_mock.testcases = []
     instance_mock.testsuite.id = 'dummy_id'
-    env_mock = mock.Mock()
+    instance_mock.testsuite.ztest_suite_names = []
 
-    pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
+    pb = ProjectBuilder(instance_mock, mocked_env, mocked_jobserver)
 
     with mock.patch('twisterlib.runner.ELFFile', elf_mock), \
          mock.patch('builtins.open', mock.mock_open()):
@@ -2137,13 +2160,11 @@ def test_projectbuilder_cmake():
     instance_mock = mock.Mock()
     instance_mock.handler = 'dummy handler'
     instance_mock.build_dir = os.path.join('build', 'dir')
-    instance_mock.platform.name = 'frdm_k64f'
     env_mock = mock.Mock()
 
     pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
     pb.build_dir = 'build_dir'
-    pb.testsuite.platform = instance_mock.platform
-    pb.testsuite.extra_args = ['some', 'platform:frdm_k64f:args']
+    pb.testsuite.extra_args = ['some', 'args']
     pb.testsuite.extra_conf_files = ['some', 'files1']
     pb.testsuite.extra_overlay_confs = ['some', 'files2']
     pb.testsuite.extra_dtc_overlay_files = ['some', 'files3']
@@ -2156,7 +2177,7 @@ def test_projectbuilder_cmake():
 
     assert res == cmake_res_mock
     pb.cmake_assemble_args.assert_called_once_with(
-        ['some', 'args'],
+        pb.testsuite.extra_args,
         pb.instance.handler,
         pb.testsuite.extra_conf_files,
         pb.testsuite.extra_overlay_confs,

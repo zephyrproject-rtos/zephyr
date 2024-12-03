@@ -61,6 +61,8 @@ extern "C" {
  */
 #define USB_STRING_DESCRIPTOR_LENGTH(s)	(sizeof(s) * 2)
 
+struct usbd_context;
+
 /** Used internally to keep descriptors in order
  * @cond INTERNAL_HIDDEN
  */
@@ -75,6 +77,7 @@ enum usbd_str_desc_utype {
 
 enum usbd_bos_desc_utype {
 	USBD_DUT_BOS_NONE,
+	USBD_DUT_BOS_VREQ,
 };
 /** @endcond */
 
@@ -93,11 +96,62 @@ struct usbd_str_desc_data {
 };
 
 /**
+ * USBD vendor request node
+ *
+ * Vendor request node is identified by the vendor code and is used to register
+ * callbacks to handle the vendor request with the receiving device.
+ * When the device stack receives a request with type Vendor and recipient
+ * Device, and bRequest value equal to the vendor request code, it will call
+ * the vendor callbacks depending on the direction of the request.
+ *
+ * Example callback code fragment:
+ *
+ * @code{.c}
+ * static int foo_to_host_cb(const struct usbd_context *const ctx,
+ *                           const struct usb_setup_packet *const setup,
+ *                           struct net_buf *const buf)
+ * {
+ *     if (setup->wIndex == WEBUSB_REQ_GET_URL) {
+ *         uint8_t index = USB_GET_DESCRIPTOR_INDEX(setup->wValue);
+ *
+ *         if (index != SAMPLE_WEBUSB_LANDING_PAGE) {
+ *             return -ENOTSUP;
+ *         }
+ *
+ *         net_buf_add_mem(buf, &webusb_origin_url,
+ *                         MIN(net_buf_tailroom(buf), sizeof(webusb_origin_url)));
+ *
+ *         return 0;
+ *     }
+ *
+ *     return -ENOTSUP;
+ * }
+ * @endcode
+ */
+struct usbd_vreq_node {
+	/** Node information for the dlist */
+	sys_dnode_t node;
+	/** Vendor code (bRequest value) */
+	const uint8_t code;
+	/** Vendor request callback for device-to-host direction */
+	int (*to_host)(const struct usbd_context *const ctx,
+		       const struct usb_setup_packet *const setup,
+		       struct net_buf *const buf);
+	/** Vendor request callback for host-to-device direction */
+	int (*to_dev)(const struct usbd_context *const ctx,
+		      const struct usb_setup_packet *const setup,
+		      const struct net_buf *const buf);
+};
+
+/**
  * USBD BOS Device Capability descriptor data
  */
 struct usbd_bos_desc_data {
 	/** Descriptor usage type (not bDescriptorType) */
 	enum usbd_bos_desc_utype utype : 8;
+	union {
+		struct usbd_vreq_node *const vreq_nd;
+	};
 };
 
 /**
@@ -204,8 +258,6 @@ struct usbd_status {
 	enum usbd_speed speed : 2;
 };
 
-struct usbd_context;
-
 /**
  * @brief Callback type definition for USB device message delivery
  *
@@ -243,6 +295,8 @@ struct usbd_context {
 	sys_slist_t fs_configs;
 	/** slist to manage High-Speed device configurations */
 	sys_slist_t hs_configs;
+	/** dlist to manage vendor requests with recipient device */
+	sys_dlist_t vreqs;
 	/** Status of the USB device support */
 	struct usbd_status status;
 	/** Pointer to Full-Speed device descriptor */
@@ -612,6 +666,49 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
 	static struct usbd_desc_node name = {					\
 		.bos = {							\
 			.utype = USBD_DUT_BOS_NONE,				\
+		},								\
+		.ptr = subset,							\
+		.bLength = len,							\
+		.bDescriptorType = USB_DESC_BOS,				\
+	}
+
+/**
+ * @brief Define a vendor request with recipient device
+ *
+ * @param name      Vendor request identifier
+ * @param vcode     Vendor request code
+ * @param vto_host  Vendor callback for to-host direction request
+ * @param vto_dev   Vendor callback for to-device direction request
+ */
+#define USBD_VREQUEST_DEFINE(name, vcode, vto_host, vto_dev)			\
+	static struct usbd_vreq_node name = {					\
+		.code = vcode,							\
+		.to_host = vto_host,						\
+		.to_dev = vto_dev,						\
+	}
+
+/**
+ * @brief Define BOS Device Capability descriptor node with vendor request
+ *
+ * This macro defines a BOS descriptor, usually a platform capability, with a
+ * vendor request node.
+ *
+ * USBD_DESC_BOS_VREQ_DEFINE(bos_vreq_webusb, sizeof(bos_cap_webusb), &bos_cap_webusb,
+ *                           SAMPLE_WEBUSB_VENDOR_CODE, webusb_to_host_cb, NULL);
+ *
+ * @param name      Descriptor node identifier
+ * @param len       Device Capability descriptor length
+ * @param subset    Pointer to a Device Capability descriptor
+ * @param vcode     Vendor request code
+ * @param vto_host  Vendor callback for to-host direction request
+ * @param vto_dev   Vendor callback for to-device direction request
+ */
+#define USBD_DESC_BOS_VREQ_DEFINE(name, len, subset, vcode, vto_host, vto_dev)	\
+	USBD_VREQUEST_DEFINE(vreq_nd_##name, vcode, vto_host, vto_dev);		\
+	static struct usbd_desc_node name = {					\
+		.bos = {							\
+			.utype = USBD_DUT_BOS_VREQ,				\
+			.vreq_nd = &vreq_nd_##name,				\
 		},								\
 		.ptr = subset,							\
 		.bLength = len,							\
@@ -1087,6 +1184,20 @@ int usbd_config_maxpower(struct usbd_context *const uds_ctx,
  * @return true if controller can detect VBUS state change, false otherwise
  */
 bool usbd_can_detect_vbus(struct usbd_context *const uds_ctx);
+
+/**
+ * @brief Register an USB vendor request with recipient device
+ *
+ * The vendor request with the recipient device applies to all configurations
+ * within the device.
+ *
+ * @param[in] uds_ctx Pointer to USB device support context
+ * @param[in] vreq_nd Pointer to vendor request node
+ *
+ * @return 0 on success, other values on fail.
+ */
+int usbd_device_register_vreq(struct usbd_context *const uds_ctx,
+			      struct usbd_vreq_node *const vreq_nd);
 
 /**
  * @}

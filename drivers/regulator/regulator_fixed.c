@@ -74,7 +74,7 @@ static int regulator_fixed_list_voltage(const struct device *dev,
 	return 0;
 }
 
-static const struct regulator_driver_api regulator_fixed_api = {
+static DEVICE_API(regulator, regulator_fixed_api) = {
 	.enable = regulator_fixed_enable,
 	.disable = regulator_fixed_disable,
 	.count_voltages = regulator_fixed_count_voltages,

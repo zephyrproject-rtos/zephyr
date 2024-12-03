@@ -628,7 +628,7 @@ static int phy_adin2111_link_cb_set(const struct device *dev, phy_callback_t cb,
 	return 0;
 }
 
-static const struct ethphy_driver_api phy_adin2111_api = {
+static DEVICE_API(ethphy, phy_adin2111_api) = {
 	.get_link = phy_adin2111_get_link_state,
 	.cfg_link = phy_adin2111_cfg_link,
 	.link_cb_set = phy_adin2111_link_cb_set,

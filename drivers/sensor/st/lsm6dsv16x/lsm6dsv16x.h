@@ -35,6 +35,9 @@
 /* Gyro sensor sensitivity grain is 4.375 udps/LSB */
 #define GAIN_UNIT_G				(4375LL)
 
+int lsm6dsv16x_calc_accel_gain(uint8_t fs);
+int lsm6dsv16x_calc_gyro_gain(uint8_t fs);
+
 struct lsm6dsv16x_config {
 	stmdev_ctx_t ctx;
 	union {
@@ -52,6 +55,12 @@ struct lsm6dsv16x_config {
 	uint8_t gyro_odr;
 	uint8_t gyro_range;
 	uint8_t drdy_pulsed;
+#ifdef CONFIG_LSM6DSV16X_STREAM
+	uint8_t fifo_wtm;
+	uint8_t accel_batch : 4;
+	uint8_t gyro_batch : 4;
+	uint8_t temp_batch : 2;
+#endif
 #ifdef CONFIG_LSM6DSV16X_TRIGGER
 	const struct gpio_dt_spec int1_gpio;
 	const struct gpio_dt_spec int2_gpio;
@@ -98,6 +107,21 @@ struct lsm6dsv16x_data {
 	uint8_t gyro_freq;
 	uint8_t gyro_fs;
 
+#ifdef CONFIG_LSM6DSV16X_STREAM
+	struct rtio_iodev_sqe *streaming_sqe;
+	struct rtio *rtio_ctx;
+	struct rtio_iodev *iodev;
+	uint64_t fifo_timestamp;
+	uint8_t fifo_status[2];
+	uint16_t fifo_count;
+	uint8_t fifo_irq;
+	uint8_t accel_batch_odr : 4;
+	uint8_t gyro_batch_odr : 4;
+	uint8_t temp_batch_odr : 2;
+	uint8_t bus_type : 1; /* I2C is 0, SPI is 1 */
+	uint8_t reserved : 5;
+#endif
+
 #ifdef CONFIG_LSM6DSV16X_TRIGGER
 	struct gpio_dt_spec *drdy_gpio;
 
@@ -118,6 +142,19 @@ struct lsm6dsv16x_data {
 #endif
 #endif /* CONFIG_LSM6DSV16X_TRIGGER */
 };
+
+#ifdef CONFIG_LSM6DSV16X_STREAM
+#define BUS_I2C 0
+#define BUS_SPI 1
+
+static inline uint8_t lsm6dsv16x_bus_reg(struct lsm6dsv16x_data *data, uint8_t x)
+{
+	return (data->bus_type == BUS_SPI) ? x | 0x80 : x;
+}
+
+#define LSM6DSV16X_FIFO_ITEM_LEN 7
+#define LSM6DSV16X_FIFO_SIZE(x) (x * LSM6DSV16X_FIFO_ITEM_LEN)
+#endif
 
 #if defined(CONFIG_LSM6DSV16X_SENSORHUB)
 int lsm6dsv16x_shub_init(const struct device *dev);

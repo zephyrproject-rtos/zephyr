@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2023 Intel Corporation
+# Copyright (c) 2023-2024 Intel Corporation
 #
 # SPDX-License-Identifier: Apache-2.0
 """
@@ -41,17 +41,18 @@ class TestPrintOuts:
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
             [
-                'dummy.agnostic.group1.subgroup1.assert',
-                'dummy.agnostic.group1.subgroup2.assert',
-                'dummy.agnostic.group2.assert1',
-                'dummy.agnostic.group2.assert2',
-                'dummy.agnostic.group2.assert3'
+                'dummy.agnostic.group1.subgroup1.a1_1_tests.assert',
+                'dummy.agnostic.group1.subgroup2.a1_2_tests.assert',
+                'dummy.agnostic.group2.a2_tests.assert1',
+                'dummy.agnostic.group2.a2_tests.assert2',
+                'dummy.agnostic.group2.a3_tests.assert1',
+                'dummy.agnostic.group2.a2_tests.assert3'
             ]
         ),
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'device'),
             [
-                'dummy.device.group.assert'
+                'dummy.device.group.d_tests.assert'
             ]
         ),
     ]
@@ -64,11 +65,12 @@ class TestPrintOuts:
             '└── Tests\n' \
             '    └── dummy\n' \
             '        └── agnostic\n' \
-            '            ├── dummy.agnostic.group1.subgroup1.assert\n' \
-            '            ├── dummy.agnostic.group1.subgroup2.assert\n' \
-            '            ├── dummy.agnostic.group2.assert1\n' \
-            '            ├── dummy.agnostic.group2.assert2\n' \
-            '            └── dummy.agnostic.group2.assert3\n'
+            '            ├── dummy.agnostic.group1.subgroup1.a1_1_tests.assert\n' \
+            '            ├── dummy.agnostic.group1.subgroup2.a1_2_tests.assert\n' \
+            '            ├── dummy.agnostic.group2.a2_tests.assert1\n' \
+            '            ├── dummy.agnostic.group2.a2_tests.assert2\n' \
+            '            ├── dummy.agnostic.group2.a2_tests.assert3\n' \
+            '            └── dummy.agnostic.group2.a3_tests.assert1\n'
         ),
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'device'),
@@ -77,7 +79,7 @@ class TestPrintOuts:
             '└── Tests\n'
             '    └── dummy\n'
             '        └── device\n'
-            '            └── dummy.device.group.assert\n'
+            '            └── dummy.device.group.d_tests.assert\n'
         ),
     ]
 

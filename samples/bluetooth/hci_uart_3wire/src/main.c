@@ -28,7 +28,6 @@
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/hci_raw.h>
-#include <zephyr/drivers/bluetooth/hci_driver.h>
 
 #define LOG_MODULE_NAME hci_uart_3wire
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);

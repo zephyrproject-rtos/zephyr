@@ -263,7 +263,7 @@ static int ms5837_attr_set(const struct device *dev, enum sensor_channel chan,
 	return -ENOTSUP;
 }
 
-static const struct sensor_driver_api ms5837_api_funcs = {
+static DEVICE_API(sensor, ms5837_api_funcs) = {
 	.attr_set = ms5837_attr_set,
 	.sample_fetch = ms5837_sample_fetch,
 	.channel_get = ms5837_channel_get,

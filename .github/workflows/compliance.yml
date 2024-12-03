@@ -23,6 +23,21 @@ jobs:
         ref: ${{ github.event.pull_request.head.sha }}
         fetch-depth: 0
 
+    - name: Rebase onto the target branch
+      env:
+        BASE_REF: ${{ github.base_ref }}
+      run: |
+        git config --global user.email "you@example.com"
+        git config --global user.name "Your Name"
+        git remote -v
+        # Ensure there's no merge commits in the PR
+        [[ "$(git rev-list --merges --count origin/${BASE_REF}..)" == "0" ]] || \
+        (echo "::error ::Merge commits not allowed, rebase instead";false)
+        git rebase origin/${BASE_REF}
+        git clean -f -d
+        # debug
+        git log  --pretty=oneline | head -n 10
+
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
@@ -38,23 +53,11 @@ jobs:
       run: |
         pip3 install setuptools
         pip3 install wheel
-        pip3 install python-magic lxml junitparser gitlint pylint pykwalify yamllint clang-format unidiff sphinx-lint
+        pip3 install -r scripts/requirements-compliance.txt
         pip3 install west
 
     - name: west setup
-      env:
-        BASE_REF: ${{ github.base_ref }}
       run: |
-        git config --global user.email "you@example.com"
-        git config --global user.name "Your Name"
-        git remote -v
-        # Ensure there's no merge commits in the PR
-        [[ "$(git rev-list --merges --count origin/${BASE_REF}..)" == "0" ]] || \
-        (echo "::error ::Merge commits not allowed, rebase instead";false)
-        git rebase origin/${BASE_REF}
-        git clean -f -d
-        # debug
-        git log  --pretty=oneline | head -n 10
         west init -l . || true
         west config manifest.group-filter -- +ci,-optional
         west update -o=--depth=1 -n 2>&1 1> west.update.log || west update -o=--depth=1 -n 2>&1 1> west.update2.log
@@ -79,7 +82,7 @@ jobs:
         git log  --pretty=oneline | head -n 10
         # Increase rename limit to allow for large PRs
         git config diff.renameLimit 10000
-        ./scripts/ci/check_compliance.py --annotate -e KconfigBasic \
+        ./scripts/ci/check_compliance.py --annotate -e KconfigBasic -e ClangFormat \
         -c origin/${BASE_REF}..
 
     - name: upload-results

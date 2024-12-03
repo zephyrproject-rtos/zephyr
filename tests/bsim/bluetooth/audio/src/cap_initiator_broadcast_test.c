@@ -39,15 +39,15 @@
  * Broadcast ISO radio events.
  */
 #define BT_LE_EXT_ADV_CUSTOM                                                                       \
-	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV, BT_GAP_MS_TO_ADV_INTERVAL(80),                      \
-			BT_GAP_MS_TO_ADV_INTERVAL(80), NULL)
+	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV, BT_GAP_MS_TO_ADV_INTERVAL(140),                     \
+			BT_GAP_MS_TO_ADV_INTERVAL(140), NULL)
 
 #define BT_LE_PER_ADV_CUSTOM                                                                       \
-	BT_LE_PER_ADV_PARAM(BT_GAP_MS_TO_PER_ADV_INTERVAL(90), BT_GAP_MS_TO_PER_ADV_INTERVAL(90),  \
-			    BT_LE_PER_ADV_OPT_NONE)
+	BT_LE_PER_ADV_PARAM(BT_GAP_MS_TO_PER_ADV_INTERVAL(150),                                    \
+			    BT_GAP_MS_TO_PER_ADV_INTERVAL(150), BT_LE_PER_ADV_OPT_NONE)
 
 #define BROADCAST_STREMT_CNT    CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT
-#define BROADCAST_ENQUEUE_COUNT 2U
+#define BROADCAST_ENQUEUE_COUNT 18U
 #define TOTAL_BUF_NEEDED        (BROADCAST_ENQUEUE_COUNT * BROADCAST_STREMT_CNT)
 #define CAP_AC_MAX_STREAM       2
 #define LOCATION                (BT_AUDIO_LOCATION_FRONT_LEFT | BT_AUDIO_LOCATION_FRONT_RIGHT)
@@ -116,6 +116,11 @@ static const struct named_lc3_preset lc3_broadcast_presets[] = {
 
 static void broadcast_started_cb(struct bt_bap_stream *stream)
 {
+	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
+
+	test_stream->seq_num = 0U;
+	test_stream->tx_cnt = 0U;
+
 	printk("Stream %p started\n", stream);
 	k_sem_give(&sem_broadcast_started);
 }

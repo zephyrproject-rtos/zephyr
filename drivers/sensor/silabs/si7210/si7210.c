@@ -421,7 +421,7 @@ static int si7210_channel_get(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api si7210_api_funcs = {
+static DEVICE_API(sensor, si7210_api_funcs) = {
 	.sample_fetch = si7210_sample_fetch,
 	.channel_get = si7210_channel_get,
 };

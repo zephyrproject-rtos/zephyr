@@ -22,4 +22,5 @@ supported:
   - adc
   - netif:eth
   - can
+  - pwm
 vendor: nxp

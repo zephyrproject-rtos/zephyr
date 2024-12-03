@@ -6,9 +6,9 @@
 
 /dts-v1/;
 #include <silabs/efr32mg24b310f1536im48.dtsi>
-#include <silabs/efr32mg24-pinctrl.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/regulator/silabs_dcdc.h>
+#include "xg24_dk2601b-pinctrl.dtsi"
 
 / {
 	model = "Silicon Labs BRD2601B (xG24 Dev Kit)";
@@ -17,6 +17,7 @@
 	chosen {
 		zephyr,console = &usart0;
 		zephyr,shell-uart = &usart0;
+		zephyr,uart-pipe = &usart0;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
@@ -35,37 +36,37 @@
 	leds {
 		compatible = "gpio-leds";
 		red_led: led_2 {
-			gpios = <&gpiod GECKO_PIN(2) GPIO_ACTIVE_LOW>;
+			gpios = <&gpiod 2 GPIO_ACTIVE_LOW>;
 		};
 		green_led: led_0 {
-			gpios = <&gpioa GECKO_PIN(4) GPIO_ACTIVE_LOW>;
+			gpios = <&gpioa 4 GPIO_ACTIVE_LOW>;
 		};
 		blue_led: led_1 {
-			gpios = <&gpiob GECKO_PIN(0) GPIO_ACTIVE_LOW>;
+			gpios = <&gpiob 0 GPIO_ACTIVE_LOW>;
 		};
 	};
 
 	buttons {
 		compatible = "gpio-keys";
 		button0: button_0 {
-			gpios = <&gpiob GECKO_PIN(2) GPIO_ACTIVE_LOW>;
+			gpios = <&gpiob 2 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
 		button1: button_1 {
-			gpios = <&gpiob GECKO_PIN(3) GPIO_ACTIVE_LOW>;
+			gpios = <&gpiob 3 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
 
 	wake_up_trigger: gpio-wake-up  {
 		compatible = "silabs,gecko-wake-up-trigger";
-		gpios = <&gpioa GECKO_PIN(5) GPIO_ACTIVE_LOW>;
+		gpios = <&gpioa 5 GPIO_ACTIVE_LOW>;
 	};
 
 	sensor_enable: gpio_switch_0 {
 		compatible = "regulator-fixed";
 		regulator-name = "sensor_enable";
-		enable-gpios = <&gpioc GECKO_PIN(9) GPIO_ACTIVE_HIGH>;
+		enable-gpios = <&gpioc 9 GPIO_ACTIVE_HIGH>;
 		regulator-boot-on;
 	};
 };

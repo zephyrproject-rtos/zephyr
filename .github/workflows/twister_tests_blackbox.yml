@@ -44,7 +44,8 @@ jobs:
 
         west init -l . || true
         # we do not depend on any hals, tools or bootloader, save some time and space...
-        west config manifest.group-filter -- -hal,-tools,-bootloader
+        west config manifest.group-filter -- -hal,-tools,-bootloader,-babblesim
+        west config manifest.project-filter -- -nrf_hw_models
         west config --global update.narrow true
         west update --path-cache /github/cache/zephyrproject 2>&1 1> west.update.log || west update --path-cache /github/cache/zephyrproject 2>&1 1> west.update.log || ( rm -rf ../modules ../bootloader ../tools && west update --path-cache /github/cache/zephyrproject)
         west forall -c 'git reset --hard HEAD'

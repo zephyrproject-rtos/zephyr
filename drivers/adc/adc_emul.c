@@ -155,7 +155,6 @@ int adc_emul_value_func_set(const struct device *dev, unsigned int chan,
 int adc_emul_ref_voltage_set(const struct device *dev, enum adc_reference ref,
 			     uint16_t value)
 {
-	struct adc_driver_api *api = (struct adc_driver_api *)dev->api;
 	struct adc_emul_data *data = dev->data;
 	int err = 0;
 
@@ -167,7 +166,6 @@ int adc_emul_ref_voltage_set(const struct device *dev, enum adc_reference ref,
 		break;
 	case ADC_REF_INTERNAL:
 		data->ref_int = value;
-		api->ref_internal = value;
 		break;
 	case ADC_REF_EXTERNAL0:
 		data->ref_ext0 = value;
@@ -548,7 +546,7 @@ static int adc_emul_init(const struct device *dev)
 }
 
 #define ADC_EMUL_INIT(_num)						\
-	static struct adc_driver_api adc_emul_api_##_num = {		\
+	static DEVICE_API(adc, adc_emul_api_##_num) = {			\
 		.channel_setup = adc_emul_channel_setup,		\
 		.read = adc_emul_read,					\
 		.ref_internal = DT_INST_PROP(_num, ref_internal_mv),	\

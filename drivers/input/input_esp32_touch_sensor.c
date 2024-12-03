@@ -22,9 +22,6 @@
 
 LOG_MODULE_REGISTER(espressif_esp32_touch, CONFIG_INPUT_LOG_LEVEL);
 
-BUILD_ASSERT(!IS_ENABLED(CONFIG_COUNTER_RTC_ESP32),
-	     "Conflict detected: COUNTER_RTC_ESP32 enabled");
-
 #define ESP32_SCAN_DONE_MAX_COUNT 5
 
 #if defined(CONFIG_SOC_SERIES_ESP32)
@@ -75,7 +72,6 @@ struct esp32_touch_sensor_channel_data {
 };
 
 struct esp32_touch_sensor_data {
-	uint32_t rtc_intr_msk;
 };
 
 static void esp32_touch_sensor_interrupt_cb(void *arg)
@@ -140,36 +136,18 @@ static void esp32_touch_sensor_interrupt_cb(void *arg)
 	}
 }
 
-static void esp32_rtc_isr(void *arg)
+static void esp32_touch_rtc_isr(void *arg)
 {
 	uint32_t status = REG_READ(RTC_CNTL_INT_ST_REG);
 
-	if (arg != NULL) {
-		const struct device *dev = arg;
-		struct esp32_touch_sensor_data *dev_data = dev->data;
-
-		if (dev_data->rtc_intr_msk & status) {
-			esp32_touch_sensor_interrupt_cb(arg);
-		}
+	if (!(status & ESP32_RTC_INTR_MSK)) {
+		return;
 	}
 
+	esp32_touch_sensor_interrupt_cb(arg);
 	REG_WRITE(RTC_CNTL_INT_CLR_REG, status);
 }
 
-static esp_err_t esp32_rtc_isr_install(intr_handler_t intr_handler, const void *handler_arg)
-{
-	esp_err_t err;
-
-	REG_WRITE(RTC_CNTL_INT_ENA_REG, 0);
-	REG_WRITE(RTC_CNTL_INT_CLR_REG, UINT32_MAX);
-
-	err = esp_intr_alloc(DT_IRQ_BY_IDX(DT_NODELABEL(touch), 0, irq),
-			ESP_PRIO_TO_FLAGS(DT_IRQ_BY_IDX(DT_NODELABEL(touch), 0, priority)) |
-			ESP_INT_FLAGS_CHECK(DT_IRQ_BY_IDX(DT_NODELABEL(touch), 0, flags)),
-			intr_handler, (void *)handler_arg, NULL);
-
-	return err;
-}
 
 /**
  * Handle debounced touch sensor touch state.
@@ -198,7 +176,8 @@ static void esp32_touch_sensor_change_deferred(struct k_work *work)
 
 static int esp32_touch_sensor_init(const struct device *dev)
 {
-	struct esp32_touch_sensor_data *dev_data = dev->data;
+	esp_err_t err, flags;
+
 	const struct esp32_touch_sensor_config *dev_cfg = dev->config;
 	const int num_channels = dev_cfg->num_channels;
 
@@ -293,8 +272,16 @@ static int esp32_touch_sensor_init(const struct device *dev)
 	touch_hal_timeout_set_threshold(SOC_TOUCH_PAD_THRESHOLD_MAX);
 #endif /* defined(CONFIG_SOC_SERIES_ESP32) */
 
-	dev_data->rtc_intr_msk = ESP32_RTC_INTR_MSK;
-	esp32_rtc_isr_install(&esp32_rtc_isr, dev);
+	flags = ESP_PRIO_TO_FLAGS(DT_IRQ_BY_IDX(DT_NODELABEL(touch), 0, priority)) |
+		ESP_INT_FLAGS_CHECK(DT_IRQ_BY_IDX(DT_NODELABEL(touch), 0, flags)) |
+		ESP_INTR_FLAG_SHARED;
+	err = esp_intr_alloc(DT_IRQ_BY_IDX(DT_NODELABEL(touch), 0, irq), flags, esp32_touch_rtc_isr,
+			     (void *)dev, NULL);
+	if (err) {
+		LOG_ERR("Failed to register ISR\n");
+		return -EFAULT;
+	}
+
 #if defined(CONFIG_SOC_SERIES_ESP32)
 	touch_hal_intr_enable();
 #elif defined(CONFIG_SOC_SERIES_ESP32S2) || defined(CONFIG_SOC_SERIES_ESP32S3)

@@ -712,11 +712,13 @@ int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 		goto out;
 	}
 
-	LOG_DBG("Linking ELF...");
-	ret = llext_link(ldr, ext, ldr_parm);
-	if (ret != 0) {
-		LOG_ERR("Failed to link, ret %d", ret);
-		goto out;
+	if (ldr_parm->relocate_local) {
+		LOG_DBG("Linking ELF...");
+		ret = llext_link(ldr, ext, ldr_parm);
+		if (ret != 0) {
+			LOG_ERR("Failed to link, ret %d", ret);
+			goto out;
+		}
 	}
 
 	ret = llext_export_symbols(ldr, ext);

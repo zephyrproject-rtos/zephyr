@@ -82,20 +82,25 @@ def get_files(filter=None, paths=None):
     return files
 
 class FmtdFailure(Failure):
-
-    def __init__(self, severity, title, file, line=None, col=None, desc=""):
+    def __init__(
+        self, severity, title, file, line=None, col=None, desc="", end_line=None, end_col=None
+    ):
         self.severity = severity
         self.title = title
         self.file = file
         self.line = line
         self.col = col
+        self.end_line = end_line
+        self.end_col = end_col
         self.desc = desc
         description = f':{desc}' if desc else ''
         msg_body = desc or title
 
         txt = f'\n{title}{description}\nFile:{file}' + \
               (f'\nLine:{line}' if line else '') + \
-              (f'\nColumn:{col}' if col else '')
+              (f'\nColumn:{col}' if col else '') + \
+              (f'\nEndLine:{end_line}' if end_line else '') + \
+              (f'\nEndColumn:{end_col}' if end_col else '')
         msg = f'{file}' + (f':{line}' if line else '') + f' {msg_body}'
         typ = severity.lower()
 
@@ -172,13 +177,15 @@ class ComplianceTest:
         fail = Failure(msg or f'{type(self).name} issues', type_)
         self._result(fail, text)
 
-    def fmtd_failure(self, severity, title, file, line=None, col=None, desc=""):
+    def fmtd_failure(
+        self, severity, title, file, line=None, col=None, desc="", end_line=None, end_col=None
+    ):
         """
         Signals that the test failed, and store the information in a formatted
         standardized manner. Can be called many times within the same test to
         report multiple failures.
         """
-        fail = FmtdFailure(severity, title, file, line, col, desc)
+        fail = FmtdFailure(severity, title, file, line, col, desc, end_line, end_col)
         self._result(fail, fail.text)
         self.fmtd_failures.append(fail)
 
@@ -516,7 +523,8 @@ class KconfigCheck(ComplianceTest):
 
         with open(kconfig_defconfig_file, 'w') as fp:
             for board in v2_boards:
-                fp.write('osource "' + (Path(board.dir) / 'Kconfig.defconfig').as_posix() + '"\n')
+                for board_dir in board.directories:
+                    fp.write('osource "' + (board_dir / 'Kconfig.defconfig').as_posix() + '"\n')
 
         with open(kconfig_boards_file, 'w') as fp:
             for board in v2_boards:
@@ -528,16 +536,18 @@ class KconfigCheck(ComplianceTest):
                                  re.sub(r"[^a-zA-Z0-9_]", "_", qualifier)).upper()
                     fp.write('config  ' + board_str + '\n')
                     fp.write('\t bool\n')
-                fp.write(
-                    'source "' + (Path(board.dir) / ('Kconfig.' + board.name)).as_posix() + '"\n\n'
-                )
+                for board_dir in board.directories:
+                    fp.write(
+                        'source "' + (board_dir / ('Kconfig.' + board.name)).as_posix() + '"\n'
+                    )
 
         with open(kconfig_file, 'w') as fp:
             fp.write(
                 'osource "' + (Path(kconfig_dir) / 'boards' / 'Kconfig.syms.v1').as_posix() + '"\n'
             )
             for board in v2_boards:
-                fp.write('osource "' + (Path(board.dir) / 'Kconfig').as_posix() + '"\n')
+                for board_dir in board.directories:
+                    fp.write('osource "' + (board_dir / 'Kconfig').as_posix() + '"\n')
 
         kconfig_defconfig_file = os.path.join(kconfig_dir, 'soc', 'Kconfig.defconfig')
         kconfig_soc_file = os.path.join(kconfig_dir, 'soc', 'Kconfig.soc')
@@ -546,7 +556,7 @@ class KconfigCheck(ComplianceTest):
         root_args = argparse.Namespace(**{'soc_roots': soc_roots})
         v2_systems = list_hardware.find_v2_systems(root_args)
 
-        soc_folders = {soc.folder[0] for soc in v2_systems.get_socs()}
+        soc_folders = {folder for soc in v2_systems.get_socs() for folder in soc.folder}
         with open(kconfig_defconfig_file, 'w') as fp:
             for folder in soc_folders:
                 fp.write('osource "' + (Path(folder) / 'Kconfig.defconfig').as_posix() + '"\n')
@@ -1019,9 +1029,6 @@ flagged.
         "SRAM2",  # Referenced in a comment in samples/application_development
         "STACK_SIZE",  # Used as an example in the Kconfig docs
         "STD_CPP",  # Referenced in CMake comment
-        "SUIT_MPI_APP_AREA_PATH", # Used by nRF runners to program provisioning data, based on build configuration
-        "SUIT_MPI_GENERATE", # Used by nRF runners to program provisioning data, based on build configuration
-        "SUIT_MPI_RAD_AREA_PATH", # Used by nRF runners to program provisioning data, based on build configuration
         "TEST1",
         "TOOLCHAIN_ARCMWDT_SUPPORTS_THREAD_LOCAL_STORAGE", # The symbol is defined in the toolchain
                                                     # Kconfig which is sourced based on Zephyr
@@ -1632,6 +1639,54 @@ class KeepSorted(ComplianceTest):
                 self.check_file(file, fp)
 
 
+class Ruff(ComplianceTest):
+    """
+    Ruff
+    """
+    name = "Ruff"
+    doc = "Check python files with ruff."
+    path_hint = "<git-top>"
+
+    def run(self):
+        for file in get_files(filter="d"):
+            if not file.endswith(".py"):
+                continue
+
+            try:
+                subprocess.run(
+                    f"ruff check --force-exclude --output-format=json {file}",
+                    check=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.DEVNULL,
+                    shell=True,
+                    cwd=GIT_TOP,
+                )
+            except subprocess.CalledProcessError as ex:
+                output = ex.output.decode("utf-8")
+                messages = json.loads(output)
+                for m in messages:
+                    self.fmtd_failure(
+                        "error",
+                        f'Python lint error ({m.get("code")}) see {m.get("url")}',
+                        file,
+                        line=m.get("location", {}).get("row"),
+                        col=m.get("location", {}).get("column"),
+                        end_line=m.get("end_location", {}).get("row"),
+                        end_col=m.get("end_location", {}).get("column"),
+                        desc=m.get("message"),
+                    )
+            try:
+                subprocess.run(
+                    f"ruff format --force-exclude --diff {file}",
+                    check=True,
+                    shell=True,
+                    cwd=GIT_TOP,
+                )
+            except subprocess.CalledProcessError:
+                desc = f"Run 'ruff format {file}'"
+                self.fmtd_failure("error", "Python format error", file, desc=desc)
+
+
 class TextEncoding(ComplianceTest):
     """
     Check that any text file is encoded in ascii or utf-8.
@@ -1696,6 +1751,8 @@ def annotate(res):
     notice = f'::{res.severity} file={res.file}' + \
              (f',line={res.line}' if res.line else '') + \
              (f',col={res.col}' if res.col else '') + \
+             (f',endLine={res.end_line}' if res.end_line else '') + \
+             (f',endColumn={res.end_col}' if res.end_col else '') + \
              f',title={res.title}::{msg}'
     print(notice)
 
@@ -1839,7 +1896,7 @@ def _main(args):
             else:
                 failed_cases.append(case)
         else:
-            # Some checks like codeowners can produce no .result
+            # Some checks can produce no .result
             logging.info(f"No JUnit result for {case.name}")
 
     n_fails = len(failed_cases)

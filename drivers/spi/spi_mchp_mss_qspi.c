@@ -569,7 +569,7 @@ static int mss_qspi_init(const struct device *dev)
 	return ret;
 }
 
-static const struct spi_driver_api mss_qspi_driver_api = {
+static DEVICE_API(spi, mss_qspi_driver_api) = {
 	.transceive = mss_qspi_transceive_blocking,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = mss_qspi_transceive_async,

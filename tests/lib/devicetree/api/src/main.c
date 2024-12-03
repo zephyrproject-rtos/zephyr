@@ -223,6 +223,35 @@ ZTEST(devicetree_api, test_any_compat_inst_prop)
 		      0, "");
 }
 
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_device_with_props
+ZTEST(devicetree_api, test_any_inst_bool)
+{
+	zassert_equal(DT_ANY_INST_HAS_BOOL_STATUS_OKAY(bool_foo), 1, "");
+	zassert_equal(DT_ANY_INST_HAS_BOOL_STATUS_OKAY(bool_bar), 1, "");
+	zassert_equal(DT_ANY_INST_HAS_BOOL_STATUS_OKAY(bool_baz), 0, "");
+	zassert_equal(DT_ANY_INST_HAS_BOOL_STATUS_OKAY(does_not_exist), 0, "");
+
+	zassert_equal(COND_CODE_1(DT_ANY_INST_HAS_BOOL_STATUS_OKAY(bool_foo),
+				  (5), (6)),
+		      5, "");
+	zassert_equal(COND_CODE_0(DT_ANY_INST_HAS_BOOL_STATUS_OKAY(bool_foo),
+				  (5), (6)),
+		      6, "");
+	zassert_equal(COND_CODE_1(DT_ANY_INST_HAS_BOOL_STATUS_OKAY(bool_baz),
+				  (5), (6)),
+		      6, "");
+	zassert_equal(COND_CODE_0(DT_ANY_INST_HAS_BOOL_STATUS_OKAY(bool_baz),
+				  (5), (6)),
+		      5, "");
+	zassert_true(IS_ENABLED(DT_ANY_INST_HAS_BOOL_STATUS_OKAY(bool_foo)), "");
+	zassert_true(!IS_ENABLED(DT_ANY_INST_HAS_BOOL_STATUS_OKAY(bool_baz)), "");
+	zassert_equal(IF_ENABLED(DT_ANY_INST_HAS_BOOL_STATUS_OKAY(bool_foo), (1)) + 1,
+		      2, "");
+	zassert_equal(IF_ENABLED(DT_ANY_INST_HAS_BOOL_STATUS_OKAY(bool_baz), (1)) + 1,
+		      1, "");
+}
+
 ZTEST(devicetree_api, test_default_prop_access)
 {
 	/*
@@ -1919,7 +1948,7 @@ static int test_gpio_init(const struct device *dev)
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT vnd_gpio_device
 
-static const struct gpio_driver_api test_api;
+static DEVICE_API(gpio, test_api);
 
 #define TEST_GPIO_INIT(num)					\
 	static struct test_gpio_data gpio_data_##num = {	\

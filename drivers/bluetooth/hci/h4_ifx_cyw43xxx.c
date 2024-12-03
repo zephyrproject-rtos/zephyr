@@ -15,7 +15,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/drivers/bluetooth/hci_driver.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/uart.h>
 

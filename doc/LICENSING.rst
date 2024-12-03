@@ -41,3 +41,11 @@ licensing in this document.
   *Origin:* ThreadX
 
   *Licensing:* `MIT License`_
+
+.. _BSD-3-clause:
+   https://opensource.org/license/bsd-3-clause
+
+*modules/openthread/platform/{hdlc_interface.cpp,hdlc_interface.hpp,radio_spinel.cpp}*
+  *Origin:* OpenThread
+
+  *Licensing:* `BSD-3-clause`_

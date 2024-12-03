@@ -58,3 +58,14 @@
 		status = "okay";
 	};
 };
+
+&spi1 {
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&ioport1 2 GPIO_ACTIVE_LOW>;
+	status = "okay";
+};
+
+&ioport1 {
+	status = "okay";
+};

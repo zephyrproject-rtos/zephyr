@@ -277,7 +277,7 @@ static int mcux_lpc_ctimer_init(const struct device *dev)
 	return 0;
 }
 
-static const struct counter_driver_api mcux_ctimer_driver_api = {
+static DEVICE_API(counter, mcux_ctimer_driver_api) = {
 	.start = mcux_lpc_ctimer_start,
 	.stop = mcux_lpc_ctimer_stop,
 	.get_value = mcux_lpc_ctimer_get_value,

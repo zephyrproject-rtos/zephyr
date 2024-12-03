@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2023 Intel Corporation
+# Copyright (c) 2023-2024 Intel Corporation
 #
 # SPDX-License-Identifier: Apache-2.0
 """
@@ -54,7 +54,7 @@ class TestRunner:
                 'built_configurations': 0,
                 'failed_configurations': 0,
                 'errored_configurations': 0,
-                'executed_test_cases': 8,
+                'executed_test_cases': 10,
                 'skipped_test_cases': 0,
                 'platform_count': 2,
                 'executed_on_platform': 4,
@@ -591,7 +591,7 @@ class TestRunner:
         sys.stderr.write(err)
 
         for line in expected:
-            assert re.search(line, err)
+            assert re.search(line, err), f"no expected:'{line}' in '{err}'"
 
         assert str(sys_exit.value) == '0'
 

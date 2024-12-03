@@ -18,6 +18,13 @@
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_mgmt.h>
 
+#include <zephyr/net/prometheus/collector.h>
+#include <zephyr/net/prometheus/counter.h>
+#include <zephyr/net/prometheus/metric.h>
+#include <zephyr/net/prometheus/gauge.h>
+#include <zephyr/net/prometheus/histogram.h>
+#include <zephyr/net/prometheus/summary.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -871,6 +878,566 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_WIFI);
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_RESET_WIFI);
 /** @endcond */
 #endif /* CONFIG_NET_STATISTICS_WIFI */
+
+#define NET_STATS_GET_METRIC_NAME(_name) _name
+#define NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx) net_stats_##dev_id##_##sfx##_collector
+#define NET_STATS_GET_VAR(dev_id, sfx, var) zephyr_net_##var
+#define NET_STATS_GET_INSTANCE(dev_id, sfx, _not_used) STRINGIFY(_##dev_id##_##sfx)
+
+/* The label value is set to be the network interface name. Note that we skip
+ * the first character (_) when setting the label value. This can be changed
+ * if there is a way to token paste the instance name without the prefix character.
+ * Note also that the below macros have some parameters that are not used atm.
+ */
+#define NET_STATS_PROMETHEUS_COUNTER_DEFINE(_desc, _labelval, _not_used,	\
+					    _collector, _name, _stat_var_ptr)	\
+	static PROMETHEUS_COUNTER_DEFINE(					\
+		NET_STATS_GET_METRIC_NAME(_name),				\
+		_desc, ({ .key = "nic", .value = &_labelval[1] }),		\
+		&(_collector), _stat_var_ptr)
+
+#define NET_STATS_PROMETHEUS_GAUGE_DEFINE(_desc,  _labelval, _not_used,		\
+					  _collector, _name, _stat_var_ptr)	\
+	static PROMETHEUS_GAUGE_DEFINE(						\
+		NET_STATS_GET_METRIC_NAME(_name),				\
+		_desc, ({ .key = "nic", .value = &_labelval[1] }),		\
+		&(_collector), _stat_var_ptr)
+
+#define NET_STATS_PROMETHEUS_SUMMARY_DEFINE(_desc,  _labelval, _not_used,	\
+					    _collector, _name, _stat_var_ptr)	\
+	static PROMETHEUS_SUMMARY_DEFINE(					\
+		NET_STATS_GET_METRIC_NAME(_name),				\
+		_desc, ({ .key = "nic", .value = &_labelval[1] }),		\
+		&(_collector), _stat_var_ptr)
+
+#define NET_STATS_PROMETHEUS_HISTOGRAM_DEFINE(_desc, _labelval, _not_used,	\
+					      _collector, _name, _stat_var_ptr)	\
+	static PROMETHEUS_HISTOGRAM_DEFINE(					\
+		NET_STATS_GET_METRIC_NAME(_name),				\
+		_desc, ({ .key = "nic", .value = &_labelval[1] }),		\
+		&(_collector), _stat_var_ptr)
+
+/* IPv6 layer statistics */
+#if defined(CONFIG_NET_STATISTICS_IPV6)
+#define NET_STATS_PROMETHEUS_IPV6(iface, dev_id, sfx)			\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"IPv6 packets sent",					\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, ipv6_sent),		\
+		"packet_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, ipv6_sent),		\
+		&(iface)->stats.ipv6.sent);				\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"IPv6 packets received",				\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, ipv6_recv),		\
+		"packet_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, ipv6_recv),		\
+		&(iface)->stats.ipv6.recv);				\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"IPv6 packets dropped",					\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, ipv6_drop),		\
+		"packet_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, ipv6_drop),		\
+		&(iface)->stats.ipv6.drop);				\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"IPv6 packets forwarded",				\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, ipv6_forward),	\
+		"packet_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, ipv6_forwarded),		\
+		&(iface)->stats.ipv6.forwarded)
+#else
+#define NET_STATS_PROMETHEUS_IPV6(iface, dev_id, sfx)
+#endif
+
+/* IPv4 layer statistics */
+#if defined(CONFIG_NET_STATISTICS_IPV4)
+#define NET_STATS_PROMETHEUS_IPV4(iface, dev_id, sfx)			\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"IPv4 packets sent",					\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, ipv4_sent),		\
+		"packet_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, ipv4_sent),		\
+		&(iface)->stats.ipv4.sent);				\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"IPv4 packets received",				\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, ipv4_recv),		\
+		"packet_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, ipv4_recv),		\
+		&(iface)->stats.ipv4.recv);				\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"IPv4 packets dropped",					\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, ipv4_drop),		\
+		"packet_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, ipv4_drop),		\
+		&(iface)->stats.ipv4.drop);				\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"IPv4 packets forwarded",				\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, ipv4_forwarded),	\
+		"packet_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, ipv4_forwarded),		\
+		&(iface)->stats.ipv4.forwarded)
+#else
+#define NET_STATS_PROMETHEUS_IPV4(iface, dev_id, sfx)
+#endif
+
+/* ICMP layer statistics */
+#if defined(CONFIG_NET_STATISTICS_ICMP)
+#define NET_STATS_PROMETHEUS_ICMP(iface, dev_id, sfx)			\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"ICMP packets sent",					\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, icmp_sent),		\
+		"packet_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, icmp_sent),		\
+		&(iface)->stats.icmp.sent);				\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"ICMP packets received",				\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, icmp_recv),		\
+		"packet_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, icmp_recv),		\
+		&(iface)->stats.icmp.recv);				\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"ICMP packets dropped",					\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, icmp_drop),		\
+		"packet_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, icmp_drop),		\
+		&(iface)->stats.icmp.drop);				\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"ICMP packets checksum error",				\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, icmp_chkerr),	\
+		"packet_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, icmp_chkerr),		\
+		&(iface)->stats.icmp.chkerr);				\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"ICMP packets type error",				\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, icmp_typeerr),	\
+		"packet_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, icmp_typeerr),		\
+		&(iface)->stats.icmp.typeerr)
+#else
+#define NET_STATS_PROMETHEUS_ICMP(iface, dev_id, sfx)
+#endif
+
+/* UDP layer statistics */
+#if defined(CONFIG_NET_STATISTICS_UDP)
+#define NET_STATS_PROMETHEUS_UDP(iface, dev_id, sfx)			\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"UDP packets sent",					\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, udp_sent),		\
+		"packet_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, udp_sent),		\
+		&(iface)->stats.udp.sent);				\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"UDP packets received",					\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, udp_recv),		\
+		"packet_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, udp_recv),		\
+		&(iface)->stats.udp.recv);				\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"UDP packets dropped",					\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, udp_drop),		\
+		"packet_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, udp_drop),		\
+		&(iface)->stats.udp.drop);				\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"UDP packets checksum error",				\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, udp_chkerr),	\
+		"packet_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, udp_chkerr),		\
+		&(iface)->stats.udp.chkerr)
+#else
+#define NET_STATS_PROMETHEUS_UDP(iface, dev_id, sfx)
+#endif
+
+/* TCP layer statistics */
+#if defined(CONFIG_NET_STATISTICS_TCP)
+#define NET_STATS_PROMETHEUS_TCP(iface, dev_id, sfx)			\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"TCP bytes sent",					\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, tcp_bytes_sent),	\
+		"byte_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, tcp_bytes_sent),		\
+		&(iface)->stats.tcp.bytes.sent);			\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"TCP bytes received",					\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, tcp_bytes_recv),	\
+		"byte_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, tcp_bytes_recv),		\
+		&(iface)->stats.tcp.bytes.received);			\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"TCP bytes resent",					\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, tcp_bytes_resent),	\
+		"byte_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, tcp_bytes_resent),	\
+		&(iface)->stats.tcp.resent);				\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"TCP packets sent",					\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, tcp_sent),		\
+		"packet_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, tcp_sent),		\
+		&(iface)->stats.tcp.sent);				\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"TCP packets received",					\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, tcp_recv),		\
+		"packet_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, tcp_recv),		\
+		&(iface)->stats.tcp.recv);				\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"TCP packets dropped",					\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, tcp_drop),		\
+		"packet_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, tcp_drop),		\
+		&(iface)->stats.tcp.drop);				\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"TCP packets checksum error",				\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, tcp_chkerr),	\
+		"packet_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, tcp_chkerr),		\
+		&(iface)->stats.tcp.chkerr);				\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"TCP packets ack error",				\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, tcp_ackerr),	\
+		"packet_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, tcp_ackerr),		\
+		&(iface)->stats.tcp.ackerr);				\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"TCP packets reset error",				\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, tcp_rsterr),	\
+		"packet_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, tcp_rsterr),		\
+		&(iface)->stats.tcp.rsterr);				\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"TCP packets retransmitted",				\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, tcp_rexmit),	\
+		"packet_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, tcp_rexmit),		\
+		&(iface)->stats.tcp.rexmit);				\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"TCP reset received",					\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, tcp_rst_recv),	\
+		"packet_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, tcp_rst),		\
+		&(iface)->stats.tcp.rst);				\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"TCP connection drop",					\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, tcp_conndrop),	\
+		"packet_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, tcp_conndrop),		\
+		&(iface)->stats.tcp.conndrop);				\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"TCP connection reset",					\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, tcp_connrst),	\
+		"packet_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, tcp_connrst),		\
+		&(iface)->stats.tcp.connrst)
+#else
+#define NET_STATS_PROMETHEUS_TCP(iface, dev_id, sfx)
+#endif
+
+/* IPv6 Neighbor Discovery statistics */
+#if defined(CONFIG_NET_STATISTICS_IPV6_ND)
+#define NET_STATS_PROMETHEUS_IPV6_ND(iface, dev_id, sfx)		\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"IPv6 ND packets sent",					\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, ipv6_nd_sent),	\
+		"packet_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, ipv6_nd_sent),		\
+		&(iface)->stats.ipv6_nd.sent);				\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"IPv6 ND packets received",				\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, ipv6_nd_recv),	\
+		"packet_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, ipv6_nd_recv),		\
+		&(iface)->stats.ipv6_nd.recv);				\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"IPv6 ND packets dropped",				\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, ipv6_nd_drop),	\
+		"packet_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, ipv6_nd_drop),		\
+		&(iface)->stats.ipv6_nd.drop)
+#else
+#define NET_STATS_PROMETHEUS_IPV6_ND(iface, dev_id, sfx)
+#endif
+
+/* IPv6 Path MTU Discovery statistics */
+#if defined(CONFIG_NET_STATISTICS_IPV6_PMTU)
+#define NET_STATS_PROMETHEUS_IPV6_PMTU(iface, dev_id, sfx)		\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"IPv6 PMTU packets sent",				\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, ipv6_pmtu_sent),	\
+		"packet_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, ipv6_pmtu_sent),		\
+		&(iface)->stats.ipv6_pmtu.sent);			\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"IPv6 PMTU packets received",				\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, ipv6_pmtu_recv),	\
+		"packet_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, ipv6_pmtu_recv),		\
+		&(iface)->stats.ipv6_pmtu.recv);			\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"IPv6 PMTU packets dropped",				\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, ipv6_pmtu_drop),	\
+		"packet_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, ipv6_pmtu_drop),		\
+		&(iface)->stats.ipv6_pmtu.drop)
+#else
+#define NET_STATS_PROMETHEUS_IPV6_PMTU(iface, dev_id, sfx)
+#endif
+
+/* IPv4 Path MTU Discovery statistics */
+#if defined(CONFIG_NET_STATISTICS_IPV4_PMTU)
+#define NET_STATS_PROMETHEUS_IPV4_PMTU(iface, dev_id, sfx)		\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"IPv4 PMTU packets sent",				\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, ipv4_pmtu_sent),	\
+		"packet_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, ipv4_pmtu_sent),		\
+		&(iface)->stats.ipv4_pmtu.sent);			\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"IPv4 PMTU packets received",				\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, ipv4_pmtu_recv),	\
+		"packet_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, ipv4_pmtu_recv),		\
+		&(iface)->stats.ipv4_pmtu.recv);			\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"IPv4 PMTU packets dropped",				\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, ipv4_pmtu_drop),	\
+		"packet_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, ipv4_pmtu_drop),		\
+		&(iface)->stats.ipv4_pmtu.drop)
+#else
+#define NET_STATS_PROMETHEUS_IPV4_PMTU(iface, dev_id, sfx)
+#endif
+
+/* IPv6 Multicast Listener Discovery statistics */
+#if defined(CONFIG_NET_STATISTICS_MLD)
+#define NET_STATS_PROMETHEUS_MLD(iface, dev_id, sfx)			\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"IPv6 MLD packets sent",				\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, ipv6_mld_sent),	\
+		"packet_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, ipv6_mld_sent),		\
+		&(iface)->stats.ipv6_mld.sent);				\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"IPv6 MLD packets received",				\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, ipv6_mld_recv),	\
+		"packet_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, ipv6_mld_recv),		\
+		&(iface)->stats.ipv6_mld.recv);				\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"IPv6 MLD packets dropped",				\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, ipv6_mld_drop),	\
+		"packet_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, ipv6_mld_drop),		\
+		&(iface)->stats.ipv6_mld.drop)
+#else
+#define NET_STATS_PROMETHEUS_MLD(iface, dev_id, sfx)
+#endif
+
+/* IPv4 IGMP statistics */
+#if defined(CONFIG_NET_STATISTICS_IGMP)
+#define NET_STATS_PROMETHEUS_IGMP(iface, dev_id, sfx)			\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"IPv4 IGMP packets sent",				\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, ipv4_igmp_sent),	\
+		"packet_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, ipv4_igmp_sent),		\
+		&(iface)->stats.ipv4_igmp.sent);			\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"IPv4 IGMP packets received",				\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, ipv4_igmp_recv),	\
+		"packet_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, ipv4_igmp_recv),		\
+		&(iface)->stats.ipv4_igmp.recv);			\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"IPv4 IGMP packets dropped",				\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, ipv4_igmp_drop),	\
+		"packet_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, ipv4_igmp_drop),		\
+		&(iface)->stats.ipv4_igmp.drop)
+#else
+#define NET_STATS_PROMETHEUS_IGMP(iface, dev_id, sfx)
+#endif
+
+/* DNS statistics */
+#if defined(CONFIG_NET_STATISTICS_DNS)
+#define NET_STATS_PROMETHEUS_DNS(iface, dev_id, sfx)			\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"DNS packets sent",					\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, dns_sent),		\
+		"packet_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, dns_sent),		\
+		&(iface)->stats.dns.sent);				\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"DNS packets received",					\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, dns_recv),		\
+		"packet_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, dns_recv),		\
+		&(iface)->stats.dns.recv);				\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"DNS packets dropped",					\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, dns_drop),		\
+		"packet_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, dns_drop),		\
+		&(iface)->stats.dns.drop)
+#else
+#define NET_STATS_PROMETHEUS_DNS(iface, dev_id, sfx)
+#endif
+
+/* TX time statistics */
+#if defined(CONFIG_NET_PKT_TXTIME_STATS)
+#define NET_STATS_PROMETHEUS_TX_TIME(iface, dev_id, sfx)		\
+	NET_STATS_PROMETHEUS_SUMMARY_DEFINE(				\
+		"TX time in microseconds",				\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, tx_time),		\
+		"time",							\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, tx_time),		\
+		&(iface)->stats.tx_time)
+#else
+#define NET_STATS_PROMETHEUS_TX_TIME(iface, dev_id, sfx)
+#endif
+
+/* RX time statistics */
+#if defined(CONFIG_NET_PKT_RXTIME_STATS)
+#define NET_STATS_PROMETHEUS_RX_TIME(iface, dev_id, sfx)		\
+	NET_STATS_PROMETHEUS_SUMMARY_DEFINE(				\
+		"RX time in microseconds",				\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, rx_time),		\
+		"time",							\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, rx_time),		\
+		&(iface)->stats.rx_time)
+#else
+#define NET_STATS_PROMETHEUS_RX_TIME(iface, dev_id, sfx)
+#endif
+
+/* Per network interface statistics via Prometheus */
+#define NET_STATS_PROMETHEUS(iface, dev_id, sfx)			\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"Processing error",					\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, process_error),	\
+		"error_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, processing_error),	\
+		&(iface)->stats.processing_error);			\
+	/* IP layer error statistics */					\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"IP proto error",					\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, ip_proto_error),	\
+		"error_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, ip_errors_protoerr),	\
+		&(iface)->stats.ip_errors.protoerr);			\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"IP version/header len error",				\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, ip_vhl_error),	\
+		"error_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, ip_errors_vhlerr),	\
+		&(iface)->stats.ip_errors.vhlerr);			\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"IP header len error (high byte)",			\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, ip_hblen_error),	\
+		"error_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, ip_errors_hblenerr),	\
+		&(iface)->stats.ip_errors.hblenerr);			\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"IP header len error (low byte)",			\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, ip_lblen_error),	\
+		"error_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, ip_errors_lblenerr),	\
+		&(iface)->stats.ip_errors.lblenerr);			\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"IP fragment error",					\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, ip_frag_error),	\
+		"error_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, ip_errors_fragerr),	\
+		&(iface)->stats.ip_errors.fragerr);			\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"IP checksum error",					\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, ip_chk_error),	\
+		"error_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, ip_errors_chkerr),	\
+		&(iface)->stats.ip_errors.chkerr);			\
+	/* General network statistics */				\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"Bytes received",					\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, bytes_recv),	\
+		"byte_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, bytes_recv),		\
+		&(iface)->stats.bytes.received);			\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"Bytes sent",						\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, bytes_sent),	\
+		"byte_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, bytes_sent),		\
+		&(iface)->stats.bytes.sent);				\
+	NET_STATS_PROMETHEUS_IPV6(iface, dev_id, sfx);			\
+	NET_STATS_PROMETHEUS_IPV4(iface, dev_id, sfx);			\
+	NET_STATS_PROMETHEUS_ICMP(iface, dev_id, sfx);			\
+	NET_STATS_PROMETHEUS_UDP(iface, dev_id, sfx);			\
+	NET_STATS_PROMETHEUS_TCP(iface, dev_id, sfx);			\
+	NET_STATS_PROMETHEUS_IPV6_ND(iface, dev_id, sfx);		\
+	NET_STATS_PROMETHEUS_IPV6_PMTU(iface, dev_id, sfx);		\
+	NET_STATS_PROMETHEUS_IPV4_PMTU(iface, dev_id, sfx);		\
+	NET_STATS_PROMETHEUS_MLD(iface, dev_id, sfx);			\
+	NET_STATS_PROMETHEUS_IGMP(iface, dev_id, sfx);			\
+	NET_STATS_PROMETHEUS_DNS(iface, dev_id, sfx);			\
+	NET_STATS_PROMETHEUS_TX_TIME(iface, dev_id, sfx);		\
+	NET_STATS_PROMETHEUS_RX_TIME(iface, dev_id, sfx)
 
 /**
  * @}

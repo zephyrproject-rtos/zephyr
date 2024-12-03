@@ -10,7 +10,7 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/regulator/axp192.h>
 #include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
-#include <espressif/partitions_0x0_amp.dtsi>
+#include <espressif/partitions_0x1000_amp.dtsi>
 
 / {
 	model = "M5StickC Plus PROCPU";
@@ -96,7 +96,7 @@
 			nvgam-param = [d0 00 02 07 0a 28 31 54 47 0e 1c 17 1b 1e];
 			ram-param = [00 F0];
 			rgb-param = [40 02 14];
-			mipi-mode = <MIPI_DBI_MODE_SPI_4WIRE>;
+			mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
 		};
 	};
 };

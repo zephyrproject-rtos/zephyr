@@ -21,6 +21,7 @@ function _compile(){
   local conf_file="${conf_file:-prj.conf}"
   local extra_conf_file="${extra_conf_file:-""}"
   local conf_overlay="${conf_overlay:-""}"
+  local snippet="${snippet:-""}"
 
   default_cmake_args=(-DCONFIG_COVERAGE=y -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
     -DCONFIG_COMPILER_WARNINGS_AS_ERRORS=y -DCONFIG_ASSERT=y)
@@ -60,6 +61,7 @@ function _compile(){
   orifs="$IFS"; IFS=
   local cmake_cmd+=( -DOVERLAY_CONFIG="${conf_overlay}" \
             -DEXTRA_CONF_FILE="${extra_conf_file}" \
+            -DSNIPPET="${snippet}" \
             ${modules_arg} \
             "${cmake_args[@]}" ${cc_flags:+-DCMAKE_C_FLAGS=${cc_flags}} "${cmake_extra_args[@]}")
   if [ -v sysbuild ]; then

@@ -1,14 +1,14 @@
 # Copyright (c) 2023 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-import doxmlparser
+from pathlib import Path
+from typing import Any
 
+import doxmlparser
 from docutils import nodes
 from doxmlparser.compound import DoxCompoundKind
-from pathlib import Path
 from sphinx.application import Sphinx
 from sphinx.util.docutils import SphinxDirective
-from typing import Any, Dict
 
 
 class ApiOverview(SphinxDirective):
@@ -56,7 +56,9 @@ def visit_group(app, group, all_groups, rows, indent=0):
 
     if since:
         since_url = nodes.inline()
-        reference = nodes.reference(text=f"v{since.strip()}.0", refuri=f"{github_uri}/v{since.strip()}.0")
+        reference = nodes.reference(
+            text=f"v{since.strip()}.0", refuri=f"{github_uri}/v{since.strip()}.0"
+        )
         reference.attributes["internal"] = True
         since_url += reference
     else:
@@ -161,7 +163,7 @@ def sync_contents(app: Sphinx) -> None:
     app.builder.env.api_overview_table = generate_table(app, toplevel, groups)
 
 
-def setup(app) -> Dict[str, Any]:
+def setup(app) -> dict[str, Any]:
     app.add_config_value("api_overview_doxygen_xml_dir", "html/doxygen/xml", "env")
     app.add_config_value("api_overview_doxygen_base_url", "../../doxygen/html", "env")
 

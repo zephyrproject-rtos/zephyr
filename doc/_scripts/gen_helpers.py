@@ -7,6 +7,7 @@ Helper functions used by gen_kconfig_rest.py and gen_devicetree_rest.py.
 
 import errno
 
+
 def write_if_updated(path, s):
     """
     Writes 's' as the contents of <out_dir>/<filename>, but only if it
@@ -17,7 +18,7 @@ def write_if_updated(path, s):
     """
 
     try:
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             if s == f.read():
                 return False
     except OSError as e:

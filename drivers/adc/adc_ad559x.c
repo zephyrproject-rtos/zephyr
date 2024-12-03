@@ -29,6 +29,7 @@ LOG_MODULE_REGISTER(adc_ad559x, CONFIG_ADC_LOG_LEVEL);
 
 struct adc_ad559x_config {
 	const struct device *mfd_dev;
+	bool double_input_range;
 };
 
 struct adc_ad559x_data {
@@ -240,9 +241,26 @@ static int adc_ad559x_init(const struct device *dev)
 	struct adc_ad559x_data *data = dev->data;
 	k_tid_t tid;
 	int ret;
+	uint16_t reg_val;
 
 	if (!device_is_ready(config->mfd_dev)) {
 		return -ENODEV;
+	}
+
+	ret = mfd_ad559x_read_reg(config->mfd_dev, AD559X_REG_GEN_CTRL, 0, &reg_val);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (config->double_input_range) {
+		reg_val |= AD559X_ADC_RANGE;
+	} else {
+		reg_val &= ~AD559X_ADC_RANGE;
+	}
+
+	ret = mfd_ad559x_write_reg(config->mfd_dev, AD559X_REG_GEN_CTRL, reg_val);
+	if (ret < 0) {
+		return ret;
 	}
 
 	ret = mfd_ad559x_write_reg(config->mfd_dev, AD559X_REG_PD_REF_CTRL, AD559X_EN_REF);
@@ -272,24 +290,31 @@ static int adc_ad559x_init(const struct device *dev)
 	return 0;
 }
 
-static const struct adc_driver_api adc_ad559x_api = {
-	.channel_setup = adc_ad559x_channel_setup,
-	.read = adc_ad559x_read,
 #ifdef CONFIG_ADC_ASYNC
-	.read_async = adc_ad559x_read_async,
+#define ADC_AD559X_ASYNC() .read_async = adc_ad559x_read_async,
+#else
+#define ADC_AD559X_ASYNC()
 #endif
-	.ref_internal = AD559X_ADC_VREF_MV,
-};
+
+#define ADC_AD559X_DRIVER_API(inst)                                                                \
+	static DEVICE_API(adc, adc_ad559x_api##inst) = {                                           \
+		.channel_setup = adc_ad559x_channel_setup,                                         \
+		.read = adc_ad559x_read,                                                           \
+		.ref_internal = AD559X_ADC_VREF_MV * (1 + DT_INST_PROP(inst, double_input_range)), \
+		ADC_AD559X_ASYNC()}
 
 #define ADC_AD559X_DEFINE(inst)                                                                    \
+	ADC_AD559X_DRIVER_API(inst);                                                               \
+                                                                                                   \
 	static const struct adc_ad559x_config adc_ad559x_config##inst = {                          \
 		.mfd_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                    \
+		.double_input_range = DT_INST_PROP(inst, double_input_range),                      \
 	};                                                                                         \
                                                                                                    \
 	static struct adc_ad559x_data adc_ad559x_data##inst;                                       \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, adc_ad559x_init, NULL, &adc_ad559x_data##inst,                 \
 			      &adc_ad559x_config##inst, POST_KERNEL, CONFIG_MFD_INIT_PRIORITY,     \
-			      &adc_ad559x_api);
+			      &adc_ad559x_api##inst);
 
 DT_INST_FOREACH_STATUS_OKAY(ADC_AD559X_DEFINE)

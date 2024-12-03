@@ -16,12 +16,8 @@ CONFIG_HW_STACK_PROTECTION=y
 # Use zephyr,code-partition as flash offset
 CONFIG_USE_DT_CODE_PARTITION=y
 
-# Disable following to assign serial ports to m4 core
-
-# Enable uart driver
+# On M7, USB CDC ACM is used as the UART console backend by default
 CONFIG_SERIAL=y
-
-# Enable console
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
 CONFIG_UART_LINE_CTRL=y

@@ -23,22 +23,6 @@
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
 	};
-
-	ethernet_phy_en: ethernet_phy_en {
-		compatible = "regulator-fixed";
-		regulator-name = "ethernet-phy-reset-release";
-		enable-gpios = <&gpioj 15 GPIO_ACTIVE_HIGH>;
-		regulator-boot-on;
-		status = "okay";
-	};
-
-	sdram2: sdram@d0000000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		device_type = "memory";
-		reg = <0xd0000000 DT_SIZE_M(32)>;
-		zephyr,memory-region = "SDRAM2";
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
-	};
 };
 
 zephyr_udc0: &usbotg_fs {
@@ -94,6 +78,12 @@ zephyr_udc0: &usbotg_fs {
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+		boot_partition: partition@0 {
+			label = "mcu-boot";
+			reg = <0x00000000 DT_SIZE_K(256)>;
+			read-only;
+		};
+
 		slot0_partition: partition@40000 {
 			label = "image-0";
 			reg = <0x00040000 DT_SIZE_K(768)>;
@@ -101,6 +91,7 @@ zephyr_udc0: &usbotg_fs {
 	};
 };
 
+/* Assign USB to M7 by default */
 &usbotg_fs {
 	status = "okay";
 };
@@ -109,10 +100,7 @@ zephyr_udc0: &usbotg_fs {
 	status = "disabled";
 };
 
-&cdc_acm_uart0 {
-	status = "okay";
-};
-
+/* Assign ethernet to M7 by default */
 &mac {
 	pinctrl-0 = <
 		&eth_ref_clk_pa1
@@ -128,9 +116,9 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &mdio {
-	status = "okay";
 	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	ethernet-phy@0 {
 		compatible = "ethernet-phy";
@@ -139,6 +127,7 @@ zephyr_udc0: &usbotg_fs {
 	};
 };
 
-&rng {
+/* Assign USB serial (ACM) to M7 to have a working console out of the box */
+&cdc_acm_uart0 {
 	status = "okay";
 };

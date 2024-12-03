@@ -84,6 +84,11 @@ typedef struct pthread_thread_data {
 	void *spec_data;
 } pthread_thread_data;
 
+struct pthread_key_data {
+	sys_snode_t node;
+	pthread_thread_data thread_data;
+};
+
 static inline bool is_pthread_obj_initialized(uint32_t obj)
 {
 	return (obj & PTHREAD_OBJ_MASK_INIT) != 0;

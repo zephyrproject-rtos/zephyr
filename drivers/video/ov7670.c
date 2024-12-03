@@ -547,7 +547,7 @@ static int ov7670_init(const struct device *dev)
 	return 0;
 }
 
-static const struct video_driver_api ov7670_api = {
+static DEVICE_API(video, ov7670_api) = {
 	.set_format = ov7670_set_fmt,
 	.get_format = ov7670_get_fmt,
 	.get_caps = ov7670_get_caps,

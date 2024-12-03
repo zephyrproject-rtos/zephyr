@@ -2925,6 +2925,173 @@ ZTEST(net_socket_udp, test_39_ipv4_multicast_ifindex)
 	loopback_enable_address_swap(true);
 }
 
+#if defined(CONFIG_NET_CONTEXT_CLAMP_PORT_RANGE)
+
+#define PORT_RANGE(lower, upper) \
+	(uint32_t)(((uint16_t)(upper) << 16) | (uint16_t)(lower))
+
+static void check_port_range(struct sockaddr *my_addr,
+			     size_t my_addr_len,
+			     struct sockaddr *local_addr,
+			     size_t local_addr_len)
+{
+	sa_family_t family = AF_UNSPEC;
+	uint32_t optval;
+	size_t addr_len;
+	size_t optlen;
+	int sock;
+	int ret, err;
+
+	addr_len = local_addr_len;
+
+	if (my_addr->sa_family == AF_INET) {
+		family = AF_INET;
+	} else if (my_addr->sa_family == AF_INET6) {
+		family = AF_INET6;
+	} else {
+		zassert_true(false, "Invalid address family %d",
+			     my_addr->sa_family);
+	}
+
+	sock = zsock_socket(family, SOCK_DGRAM, IPPROTO_UDP);
+	zassert_true(sock >= 0, "Cannot create socket (%d)", -errno);
+
+	optval = PORT_RANGE(1024, 1500);
+	ret = zsock_setsockopt(sock, IPPROTO_IP, IP_LOCAL_PORT_RANGE,
+			       &optval, sizeof(optval));
+	err = -errno;
+	zexpect_equal(ret, 0, "setsockopt failed (%d)", err);
+
+	optval = 0; optlen = 0U;
+	ret = zsock_setsockopt(sock, IPPROTO_IP, IP_LOCAL_PORT_RANGE,
+			       &optval, optlen);
+	err = -errno;
+	zexpect_equal(ret, -1, "setsockopt failed (%d)", err);
+
+	optval = 0; optlen = sizeof(uint64_t);
+	ret = zsock_setsockopt(sock, IPPROTO_IP, IP_LOCAL_PORT_RANGE,
+			       &optval, optlen);
+	err = -errno;
+	zexpect_equal(ret, -1, "setsockopt failed (%d)", err);
+
+	optval = PORT_RANGE(0, 0);
+	ret = zsock_setsockopt(sock, IPPROTO_IP, IP_LOCAL_PORT_RANGE,
+			       &optval, sizeof(optval));
+	zexpect_equal(ret, 0, "setsockopt failed (%d)", err);
+
+	/* Linux allows setting the invalid port range but that is not
+	 * then taken into use when we bind the socket.
+	 */
+	optval = PORT_RANGE(1024, 0);
+	ret = zsock_setsockopt(sock, IPPROTO_IP, IP_LOCAL_PORT_RANGE,
+			       &optval, sizeof(optval));
+	zexpect_equal(ret, 0, "setsockopt failed (%d)", err);
+
+	optval = PORT_RANGE(0, 1024);
+	ret = zsock_setsockopt(sock, IPPROTO_IP, IP_LOCAL_PORT_RANGE,
+			       &optval, sizeof(optval));
+	zexpect_equal(ret, 0, "setsockopt failed (%d)", err);
+
+	/* Then set a valid range and verify that bound socket is using it */
+	optval = PORT_RANGE(10000, 10010);
+	ret = zsock_setsockopt(sock, IPPROTO_IP, IP_LOCAL_PORT_RANGE,
+			       &optval, sizeof(optval));
+	zexpect_equal(ret, 0, "setsockopt failed (%d)", err);
+
+	optval = 0; optlen = sizeof(optval);
+	ret = zsock_getsockopt(sock, IPPROTO_IP, IP_LOCAL_PORT_RANGE,
+			       &optval, &optlen);
+	zexpect_equal(ret, 0, "setsockopt failed (%d)", err);
+	zexpect_equal(optval, PORT_RANGE(10000, 10010), "Invalid port range");
+
+	ret = zsock_bind(sock, my_addr, my_addr_len);
+	err = -errno;
+	zexpect_equal(ret, 0, "bind failed (%d)", err);
+
+	ret = zsock_getsockname(sock, local_addr, &addr_len);
+	err = -errno;
+	zexpect_equal(ret, 0, "getsockname failed (%d)", err);
+
+	/* The port should be in the range */
+	zexpect_true(ntohs(net_sin(local_addr)->sin_port) >= 10000 &&
+		     ntohs(net_sin(local_addr)->sin_port) <= 10010,
+		     "Invalid port %d", ntohs(net_sin(local_addr)->sin_port));
+
+	(void)zsock_close(sock);
+
+	/* Try setting invalid range and verify that we do not net a port from that
+	 * range.
+	 */
+	sock = zsock_socket(family, SOCK_DGRAM, IPPROTO_UDP);
+	zassert_true(sock >= 0, "Cannot create socket (%d)", -errno);
+
+	optval = PORT_RANGE(1001, 1000);
+	ret = zsock_setsockopt(sock, IPPROTO_IP, IP_LOCAL_PORT_RANGE,
+			       &optval, sizeof(optval));
+	err = -errno;
+	zexpect_equal(ret, -1, "setsockopt failed (%d)", err);
+	zexpect_equal(err, -EINVAL, "Invalid errno (%d)", -err);
+
+	/* Port range cannot be just one port */
+	optval = PORT_RANGE(1001, 1001);
+	ret = zsock_setsockopt(sock, IPPROTO_IP, IP_LOCAL_PORT_RANGE,
+			       &optval, sizeof(optval));
+	err = -errno;
+	zexpect_equal(ret, -1, "setsockopt failed (%d)", err);
+	zexpect_equal(err, -EINVAL, "Invalid errno (%d)", -err);
+
+	optval = PORT_RANGE(0, 1000);
+	ret = zsock_setsockopt(sock, IPPROTO_IP, IP_LOCAL_PORT_RANGE,
+			       &optval, sizeof(optval));
+	err = -errno;
+	zexpect_equal(ret, 0, "setsockopt failed (%d)", err);
+
+	ret = zsock_bind(sock, my_addr, my_addr_len);
+	err = -errno;
+	zexpect_equal(ret, 0, "bind failed (%d)", err);
+
+	addr_len = local_addr_len;
+	ret = zsock_getsockname(sock, local_addr, &addr_len);
+	err = -errno;
+	zexpect_equal(ret, 0, "getsockname failed (%d)", err);
+
+	/* The port should not be in the range */
+	zexpect_false(ntohs(net_sin(local_addr)->sin_port) >= 1000 &&
+		      ntohs(net_sin(local_addr)->sin_port) <= 1001,
+		      "Invalid port %d", ntohs(net_sin(local_addr)->sin_port));
+
+	(void)zsock_close(sock);
+}
+#endif
+
+ZTEST(net_socket_udp, test_40_clamp_udp_tcp_port_range)
+{
+#if defined(CONFIG_NET_CONTEXT_CLAMP_PORT_RANGE)
+	struct sockaddr_in my_addr4 = {
+		.sin_family = AF_INET,
+		.sin_port = 0,
+		.sin_addr = { { { 192, 0, 2, 2 } } },
+	};
+	struct sockaddr_in6 my_addr6 = {
+		.sin6_family = AF_INET6,
+		.sin6_port = 0,
+		.sin6_addr = in6addr_loopback,
+	};
+	struct sockaddr_in local_addr4;
+	struct sockaddr_in6 local_addr6;
+
+	/* First try with a IPv4 socket */
+	check_port_range((struct sockaddr *)&my_addr4, sizeof(my_addr4),
+			 (struct sockaddr *)&local_addr4, sizeof(local_addr4));
+
+	/* Finally try with a IPv6 socket */
+	check_port_range((struct sockaddr *)&my_addr6, sizeof(my_addr6),
+			 (struct sockaddr *)&local_addr6, sizeof(local_addr6));
+#else
+	ztest_test_skip();
+#endif
+}
+
 static void after(void *arg)
 {
 	ARG_UNUSED(arg);

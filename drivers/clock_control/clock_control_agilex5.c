@@ -69,7 +69,9 @@ static int clock_get_rate(const struct device *dev, clock_control_subsys_t sub_s
 	return 0;
 }
 
-static const struct clock_control_driver_api clock_api = {.get_rate = clock_get_rate};
+static DEVICE_API(clock_control, clock_api) = {
+	.get_rate = clock_get_rate,
+};
 
 #define CLOCK_CONTROL_DEVICE(_inst)                                                                \
                                                                                                    \

@@ -26,8 +26,91 @@ config NRFX_COMP
 	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_COMP))
 
 config NRFX_DPPI
-	bool "DPPI allocator"
-	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_DPPIC))
+	bool
+
+config NRFX_DPPI0
+	bool "DPPI0 driver instance"
+	default y if NRFX_GPPI
+	depends on $(dt_nodelabel_has_compat,dppic,$(DT_COMPAT_NORDIC_NRF_DPPIC))
+	select NRFX_DPPI
+
+config NRFX_DPPI00
+	bool "DPPI00 driver instance"
+	default y if NRFX_GPPI
+	depends on $(dt_nodelabel_has_compat,dppic00,$(DT_COMPAT_NORDIC_NRF_DPPIC))
+	select NRFX_DPPI
+
+config NRFX_DPPI10
+	bool "DPPI10 driver instance"
+	default y if NRFX_GPPI
+	depends on $(dt_nodelabel_has_compat,dppic10,$(DT_COMPAT_NORDIC_NRF_DPPIC))
+	select NRFX_DPPI
+
+config NRFX_DPPI20
+	bool "DPPI20 driver instance"
+	default y if NRFX_GPPI
+	depends on $(dt_nodelabel_has_compat,dppic20,$(DT_COMPAT_NORDIC_NRF_DPPIC))
+	select NRFX_DPPI
+
+config NRFX_DPPI30
+	bool "DPPI30 driver instance"
+	default y if NRFX_GPPI
+	depends on $(dt_nodelabel_has_compat,dppic30,$(DT_COMPAT_NORDIC_NRF_DPPIC))
+	select NRFX_DPPI
+
+config NRFX_DPPI020
+	bool "DPPI020 driver instance"
+	default y if NRFX_GPPI
+	depends on $(dt_nodelabel_has_compat,dppic020,$(DT_COMPAT_NORDIC_NRF_DPPIC_LOCAL))
+	select NRFX_DPPI
+
+config NRFX_DPPI120
+	bool "DPPI120 driver instance"
+	default y if NRFX_GPPI
+	depends on $(dt_nodelabel_has_compat,dppic120,$(DT_COMPAT_NORDIC_NRF_DPPIC_GLOBAL))
+	select NRFX_DPPI
+
+config NRFX_DPPI130
+	bool "DPPI130 driver instance"
+	default y if NRFX_GPPI
+	depends on $(dt_nodelabel_has_compat,dppic130,$(DT_COMPAT_NORDIC_NRF_DPPIC_GLOBAL))
+	select NRFX_DPPI
+
+config NRFX_DPPI131
+	bool "DPPI131 driver instance"
+	default y if NRFX_GPPI
+	depends on $(dt_nodelabel_has_compat,dppic131,$(DT_COMPAT_NORDIC_NRF_DPPIC_GLOBAL))
+	select NRFX_DPPI
+
+config NRFX_DPPI132
+	bool "DPPI132 driver instance"
+	default y if NRFX_GPPI
+	depends on $(dt_nodelabel_has_compat,dppic132,$(DT_COMPAT_NORDIC_NRF_DPPIC_GLOBAL))
+	select NRFX_DPPI
+
+config NRFX_DPPI133
+	bool "DPPI133 driver instance"
+	default y if NRFX_GPPI
+	depends on $(dt_nodelabel_has_compat,dppic133,$(DT_COMPAT_NORDIC_NRF_DPPIC_GLOBAL))
+	select NRFX_DPPI
+
+config NRFX_DPPI134
+	bool "DPPI134 driver instance"
+	default y if NRFX_GPPI
+	depends on $(dt_nodelabel_has_compat,dppic134,$(DT_COMPAT_NORDIC_NRF_DPPIC_GLOBAL))
+	select NRFX_DPPI
+
+config NRFX_DPPI135
+	bool "DPPI135 driver instance"
+	default y if NRFX_GPPI
+	depends on $(dt_nodelabel_has_compat,dppic135,$(DT_COMPAT_NORDIC_NRF_DPPIC_GLOBAL))
+	select NRFX_DPPI
+
+config NRFX_DPPI136
+	bool "DPPI136 driver instance"
+	default y if NRFX_GPPI
+	depends on $(dt_nodelabel_has_compat,dppic136,$(DT_COMPAT_NORDIC_NRF_DPPIC_GLOBAL))
+	select NRFX_DPPI
 
 config NRFX_EGU
 	bool
@@ -123,6 +206,12 @@ config NRFX_GPIOTE_NUM_OF_EVT_HANDLERS
 	  Specifies number of handlers that can be registered to nrfx_gpiote driver
 	  by the user.
 
+config NRFX_GPPI
+	bool "Generic PPI layer"
+	help
+	   Enable the nrfx_gppi utilities providing unified API for creating PPI
+	   connections across SoC families.
+
 config NRFX_GRTC
 	bool "GRTC driver"
 	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_GRTC))
@@ -188,7 +277,59 @@ config NRFX_POWER
 
 config NRFX_PPI
 	bool "PPI allocator"
+	default y if NRFX_GPPI
 	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_PPI))
+
+config NRFX_PPIB
+	bool
+
+config NRFX_PPIB00
+	bool "PPIB00 driver instance"
+	default y if NRFX_GPPI
+	depends on $(dt_nodelabel_has_compat,ppib00,$(DT_COMPAT_NORDIC_NRF_PPIB))
+	select NRFX_PPIB
+
+config NRFX_PPIB01
+	bool "PPIB01 driver instance"
+	default y if NRFX_GPPI
+	depends on $(dt_nodelabel_has_compat,ppib01,$(DT_COMPAT_NORDIC_NRF_PPIB))
+	select NRFX_PPIB
+
+config NRFX_PPIB10
+	bool "PPIB10 driver instance"
+	default y if NRFX_GPPI
+	depends on $(dt_nodelabel_has_compat,ppib10,$(DT_COMPAT_NORDIC_NRF_PPIB))
+	select NRFX_PPIB
+
+config NRFX_PPIB11
+	bool "PPIB11 driver instance"
+	default y if NRFX_GPPI
+	depends on $(dt_nodelabel_has_compat,ppib11,$(DT_COMPAT_NORDIC_NRF_PPIB))
+	select NRFX_PPIB
+
+config NRFX_PPIB20
+	bool "PPIB20 driver instance"
+	default y if NRFX_GPPI
+	depends on $(dt_nodelabel_has_compat,ppib20,$(DT_COMPAT_NORDIC_NRF_PPIB))
+	select NRFX_PPIB
+
+config NRFX_PPIB21
+	bool "PPIB21 driver instance"
+	default y if NRFX_GPPI
+	depends on $(dt_nodelabel_has_compat,ppib21,$(DT_COMPAT_NORDIC_NRF_PPIB))
+	select NRFX_PPIB
+
+config NRFX_PPIB22
+	bool "PPIB22 driver instance"
+	default y if NRFX_GPPI
+	depends on $(dt_nodelabel_has_compat,ppib22,$(DT_COMPAT_NORDIC_NRF_PPIB))
+	select NRFX_PPIB
+
+config NRFX_PPIB30
+	bool "PPIB30 driver instance"
+	default y if NRFX_GPPI
+	depends on $(dt_nodelabel_has_compat,ppib30,$(DT_COMPAT_NORDIC_NRF_PPIB))
+	select NRFX_PPIB
 
 config NRFX_PWM
 	bool

@@ -178,7 +178,8 @@ static int check_used_port(struct net_context *context,
 			   uint16_t local_port,
 			   const struct sockaddr *local_addr,
 			   bool reuseaddr_set,
-			   bool reuseport_set)
+			   bool reuseport_set,
+			   bool check_port_range)
 {
 	int i;
 
@@ -324,18 +325,79 @@ static int check_used_port(struct net_context *context,
 		}
 	}
 
+	/* Make sure that if the port range is active, the port is
+	 * within the range.
+	 */
+	if (IS_ENABLED(CONFIG_NET_CONTEXT_CLAMP_PORT_RANGE) && check_port_range) {
+		uint16_t upper, lower;
+
+		upper = COND_CODE_1(CONFIG_NET_CONTEXT_CLAMP_PORT_RANGE,
+				    (context->options.port_range >> 16),
+				    (0));
+		lower = COND_CODE_1(CONFIG_NET_CONTEXT_CLAMP_PORT_RANGE,
+				    (context->options.port_range & 0xffff),
+				    (0));
+
+		if (upper != 0 && lower != 0 && lower < upper) {
+			if (ntohs(local_port) < lower || ntohs(local_port) > upper) {
+				return -ERANGE;
+			}
+		}
+	}
+
 	return 0;
 }
+
+/* How many times we try to find a free port */
+#define MAX_PORT_RETRIES 5
 
 static uint16_t find_available_port(struct net_context *context,
 				    const struct sockaddr *addr)
 {
 	uint16_t local_port;
+	int count = MAX_PORT_RETRIES;
 
 	do {
-		local_port = sys_rand16_get() | 0x8000;
-	} while (check_used_port(context, NULL, net_context_get_proto(context),
-				 htons(local_port), addr, false, false) == -EEXIST);
+		if (IS_ENABLED(CONFIG_NET_CONTEXT_CLAMP_PORT_RANGE)) {
+			uint16_t upper, lower;
+
+			upper = COND_CODE_1(CONFIG_NET_CONTEXT_CLAMP_PORT_RANGE,
+					    (context->options.port_range >> 16),
+					    (0));
+			lower = COND_CODE_1(CONFIG_NET_CONTEXT_CLAMP_PORT_RANGE,
+					    (context->options.port_range & 0xffff),
+					    (0));
+
+			/* This works the same way as in Linux. If either port
+			 * range is 0, then we use random port. If both are set,
+			 * then we use the range. Also make sure that upper is
+			 * greater than lower.
+			 */
+			if (upper == 0 || lower == 0 || upper <= lower) {
+				local_port = sys_rand16_get() | 0x8000;
+			} else {
+				local_port = lower + sys_rand16_get() % (upper - lower);
+
+				NET_DBG("Port range %d - %d, proposing port %d",
+					lower, upper, local_port);
+			}
+		} else {
+			local_port = sys_rand16_get() | 0x8000;
+		}
+
+		count--;
+	} while (count > 0 && check_used_port(context,
+					      NULL,
+					      net_context_get_proto(context),
+					      htons(local_port),
+					      addr,
+					      false,
+					      false,
+					      false) == -EEXIST);
+
+	if (count == 0) {
+		return 0;
+	}
 
 	return htons(local_port);
 }
@@ -349,7 +411,7 @@ bool net_context_port_in_use(enum net_ip_protocol proto,
 			   const struct sockaddr *local_addr)
 {
 	return check_used_port(NULL, NULL, proto, htons(local_port),
-			       local_addr, false, false) != 0;
+			       local_addr, false, false, false) != 0;
 }
 
 #if defined(CONFIG_NET_CONTEXT_CHECK)
@@ -733,6 +795,49 @@ static int bind_default(struct net_context *context)
 	return -EINVAL;
 }
 
+static int recheck_port(struct net_context *context,
+			struct net_if *iface,
+			int proto,
+			uint16_t port,
+			const struct sockaddr *addr)
+{
+	int ret;
+
+	ret = check_used_port(context, iface,
+			      proto,
+			      net_sin(addr)->sin_port,
+			      addr,
+			      net_context_is_reuseaddr_set(context),
+			      net_context_is_reuseport_set(context),
+			      true);
+	if (ret != 0) {
+		if (IS_ENABLED(CONFIG_NET_CONTEXT_CLAMP_PORT_RANGE) && ret == -ERANGE) {
+			uint16_t re_port;
+
+			NET_DBG("Port %d is out of range, re-selecting!",
+				ntohs(net_sin(addr)->sin_port));
+			re_port = find_available_port(context, addr);
+			if (re_port == 0U) {
+				NET_ERR("No available port found (iface %d)",
+					iface ? net_if_get_by_iface(iface) : 0);
+				return -EADDRINUSE;
+			}
+
+			net_sin_ptr(&context->local)->sin_port = re_port;
+			net_sin(addr)->sin_port = re_port;
+		} else {
+			NET_ERR("Port %d is in use!", ntohs(net_sin(addr)->sin_port));
+			NET_DBG("Interface %d (%p)",
+				iface ? net_if_get_by_iface(iface) : 0, iface);
+			return -EADDRINUSE;
+		}
+	} else {
+		net_sin_ptr(&context->local)->sin_port = net_sin(addr)->sin_port;
+	}
+
+	return 0;
+}
+
 int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 		     socklen_t addrlen)
 {
@@ -827,26 +932,22 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 
 		ret = 0;
 		if (addr6->sin6_port) {
-			ret = check_used_port(context, iface,
-					      context->proto,
-					      addr6->sin6_port,
-					      addr,
-					      net_context_is_reuseaddr_set(context),
-					      net_context_is_reuseport_set(context));
+			ret = recheck_port(context, iface, context->proto,
+					   addr6->sin6_port, addr);
 			if (ret != 0) {
-				NET_ERR("Port %d is in use!",
-					ntohs(addr6->sin6_port));
-				NET_DBG("Interface %d (%p)",
-					iface ? net_if_get_by_iface(iface) : 0, iface);
-				ret = -EADDRINUSE;
 				goto unlock_ipv6;
-			} else {
-				net_sin6_ptr(&context->local)->sin6_port =
-					addr6->sin6_port;
 			}
 		} else {
 			addr6->sin6_port =
 				net_sin6_ptr(&context->local)->sin6_port;
+
+			if (IS_ENABLED(CONFIG_NET_CONTEXT_CLAMP_PORT_RANGE)) {
+				ret = recheck_port(context, iface, context->proto,
+						   addr6->sin6_port, addr);
+				if (ret != 0) {
+					goto unlock_ipv6;
+				}
+			}
 		}
 
 		NET_DBG("Context %p binding to %s [%s]:%d iface %d (%p)",
@@ -938,26 +1039,22 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 
 		ret = 0;
 		if (addr4->sin_port) {
-			ret = check_used_port(context, iface,
-					      context->proto,
-					      addr4->sin_port,
-					      addr,
-					      net_context_is_reuseaddr_set(context),
-					      net_context_is_reuseport_set(context));
+			ret = recheck_port(context, iface, context->proto,
+					   addr4->sin_port, addr);
 			if (ret != 0) {
-				NET_ERR("Port %d is in use!",
-					ntohs(addr4->sin_port));
-					ret = -EADDRINUSE;
-				NET_DBG("Interface %d (%p)",
-					iface ? net_if_get_by_iface(iface) : 0, iface);
 				goto unlock_ipv4;
-			} else {
-				net_sin_ptr(&context->local)->sin_port =
-					addr4->sin_port;
 			}
 		} else {
 			addr4->sin_port =
 				net_sin_ptr(&context->local)->sin_port;
+
+			if (IS_ENABLED(CONFIG_NET_CONTEXT_CLAMP_PORT_RANGE)) {
+				ret = recheck_port(context, iface, context->proto,
+						   addr4->sin_port, addr);
+				if (ret != 0) {
+					goto unlock_ipv4;
+				}
+			}
 		}
 
 		NET_DBG("Context %p binding to %s %s:%d iface %d (%p)",
@@ -1907,6 +2004,26 @@ static int get_context_mcast_ifindex(struct net_context *context,
 	}
 
 	return -EAFNOSUPPORT;
+#else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
+	return -ENOTSUP;
+#endif
+}
+
+static int get_context_local_port_range(struct net_context *context,
+					void *value, size_t *len)
+{
+#if defined(CONFIG_NET_CONTEXT_CLAMP_PORT_RANGE)
+	if (len == NULL || *len != sizeof(uint32_t)) {
+		return -EINVAL;
+	}
+
+	*((uint32_t *)value) = context->options.port_range;
+
+	return 0;
 #else
 	ARG_UNUSED(context);
 	ARG_UNUSED(value);
@@ -3384,6 +3501,45 @@ static int set_context_mcast_ifindex(struct net_context *context,
 #endif
 }
 
+static int set_context_local_port_range(struct net_context *context,
+					const void *value, size_t len)
+{
+#if defined(CONFIG_NET_CONTEXT_CLAMP_PORT_RANGE)
+	uint16_t lower_range, upper_range;
+	uint32_t port_range;
+
+	if (len != sizeof(uint32_t)) {
+		return -EINVAL;
+	}
+
+	port_range = *((uint32_t *)value);
+	lower_range = port_range & 0xffff;
+	upper_range = port_range >> 16;
+
+	/* If the range is 0, then it means that the port range clamping
+	 * is disabled. If the range is not 0, then the lower range must
+	 * be smaller than the upper range.
+	 */
+	if (lower_range != 0U && upper_range != 0U &&
+	    lower_range >= upper_range) {
+		return -EINVAL;
+	}
+
+	/* If either of the range is 0, then that bound has no effect.
+	 * This is checked when the emphemeral port is selected.
+	 */
+	context->options.port_range = port_range;
+
+	return 0;
+#else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
+	return -ENOTSUP;
+#endif
+}
+
 int net_context_set_option(struct net_context *context,
 			   enum net_context_option option,
 			   const void *value, size_t len)
@@ -3467,6 +3623,9 @@ int net_context_set_option(struct net_context *context,
 	case NET_OPT_MCAST_IFINDEX:
 		ret = set_context_mcast_ifindex(context, value, len);
 		break;
+	case NET_OPT_LOCAL_PORT_RANGE:
+		ret = set_context_local_port_range(context, value, len);
+		break;
 	}
 
 	k_mutex_unlock(&context->lock);
@@ -3548,6 +3707,9 @@ int net_context_get_option(struct net_context *context,
 		break;
 	case NET_OPT_MCAST_IFINDEX:
 		ret = get_context_mcast_ifindex(context, value, len);
+		break;
+	case NET_OPT_LOCAL_PORT_RANGE:
+		ret = get_context_local_port_range(context, value, len);
 		break;
 	}
 

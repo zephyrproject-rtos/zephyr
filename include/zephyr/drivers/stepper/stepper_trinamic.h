@@ -144,9 +144,9 @@ struct tmc_ramp_generator_data {
 		.tzerowait = DT_PROP(node, tzerowait),				\
 		.vcoolthrs = DT_PROP(node, vcoolthrs),				\
 		.vhigh = DT_PROP(node, vhigh),					\
-		.iholdrun = (TMC5041_IRUN(DT_PROP(node, irun)) |		\
-			     TMC5041_IHOLD(DT_PROP(node, ihold)) |		\
-			     TMC5041_IHOLDDELAY(DT_PROP(node, iholddelay))),	\
+		.iholdrun = (TMC5XXX_IRUN(DT_PROP(node, irun)) |		\
+			     TMC5XXX_IHOLD(DT_PROP(node, ihold)) |		\
+			     TMC5XXX_IHOLDDELAY(DT_PROP(node, iholddelay))),	\
 	}
 
 /**

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024 Mustafa Abdullah Kus, Sparse Technology
+ * Copyright (c) 2024 Nordic Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +18,7 @@
  */
 
 #include <zephyr/sys/iterable_sections.h>
+#include <zephyr/sys/slist.h>
 #include <zephyr/net/prometheus/label.h>
 
 /**
@@ -36,9 +38,6 @@ enum prometheus_metric_type {
 	PROMETHEUS_HISTOGRAM,
 };
 
-#define MAX_METRIC_NAME_LENGTH        32
-#define MAX_METRIC_DESCRIPTION_LENGTH 64
-
 /**
  * @brief Type used to represent a Prometheus metric base.
  *
@@ -46,16 +45,27 @@ enum prometheus_metric_type {
  * to control the metric access and usage.
  */
 struct prometheus_metric {
+	/** Slist metric list node */
+	sys_snode_t node;
+	/** Back pointer to the collector that this metric belongs to */
+	struct prometheus_collector *collector;
+	/** Back pointer to the actual metric (counter, gauge, etc.).
+	 * This is just a temporary solution, ultimate goal is to place
+	 * this generic metrict struct into the actual metric struct.
+	 */
+	void *metric;
 	/** Type of the Prometheus metric. */
 	enum prometheus_metric_type type;
 	/** Name of the Prometheus metric. */
-	char name[MAX_METRIC_NAME_LENGTH];
+	const char *name;
 	/** Description of the Prometheus metric. */
-	char description[MAX_METRIC_DESCRIPTION_LENGTH];
+	const char *description;
 	/** Labels associated with the Prometheus metric. */
 	struct prometheus_label labels[MAX_PROMETHEUS_LABELS_PER_METRIC];
 	/** Number of labels associated with the Prometheus metric. */
 	int num_labels;
+	/** User defined data */
+	void *user_data;
 	/* Add any other necessary fields */
 };
 

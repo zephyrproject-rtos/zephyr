@@ -165,7 +165,7 @@ static int hcsr04_channel_get(const struct device *dev, enum sensor_channel chan
 	return sensor_value_from_milli(val, distance_mm);
 }
 
-static const struct sensor_driver_api hcsr04_driver_api = {
+static DEVICE_API(sensor, hcsr04_driver_api) = {
 	.sample_fetch = hcsr04_sample_fetch,
 	.channel_get = hcsr04_channel_get
 };

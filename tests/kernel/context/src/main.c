@@ -135,7 +135,7 @@ static void isr_handler(const void *data)
 			break;
 		}
 
-		if (_current->base.prio < 0) {
+		if (arch_current_thread()->base.prio < 0) {
 			isr_info.value = K_COOP_THREAD;
 			break;
 		}
@@ -643,9 +643,9 @@ ZTEST(context, test_ctx_thread)
 	TC_PRINT("Testing k_is_in_isr() from a preemptible thread\n");
 	zassert_false(k_is_in_isr(), "Should not be in ISR context");
 
-	zassert_false(_current->base.prio < 0,
+	zassert_false(arch_current_thread()->base.prio < 0,
 		      "Current thread should have preemptible priority: %d",
-		      _current->base.prio);
+		      arch_current_thread()->base.prio);
 
 }
 
@@ -683,7 +683,7 @@ static void _test_kernel_thread(k_tid_t _thread_id)
 
 	zassert_false(k_is_in_isr(), "k_is_in_isr() when called from a thread is true");
 
-	zassert_false((_current->base.prio >= 0),
+	zassert_false((arch_current_thread()->base.prio >= 0),
 		      "thread is not a cooperative thread");
 }
 

@@ -2,7 +2,8 @@ identifier: qemu_x86/atom/virt
 name: QEMU Emulation for X86 (Run in Virtual Address Space)
 type: qemu
 arch: x86
-simulation: qemu
+simulation:
+  - name: qemu
 toolchain:
   - zephyr
   - xtools

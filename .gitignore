@@ -102,6 +102,7 @@ MaintainersFormat.txt
 ModulesMaintainers.txt
 Nits.txt
 Pylint.txt
+Ruff.txt
 SphinxLint.txt
 TextEncoding.txt
 YAMLLint.txt

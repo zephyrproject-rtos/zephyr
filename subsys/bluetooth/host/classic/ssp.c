@@ -650,6 +650,19 @@ void bt_hci_io_capa_req(struct net_buf *buf)
 		return;
 	}
 
+#if defined(CONFIG_BT_SMP_APP_PAIRING_ACCEPT)
+	if (bt_auth && bt_auth->pairing_accept) {
+		enum bt_security_err err;
+
+		err = bt_auth->pairing_accept(conn, NULL);
+		if (err != BT_SECURITY_ERR_SUCCESS) {
+			io_capa_neg_reply(&evt->bdaddr,
+					  BT_HCI_ERR_PAIRING_NOT_ALLOWED);
+			return;
+		}
+	}
+#endif
+
 	resp_buf = bt_hci_cmd_create(BT_HCI_OP_IO_CAPABILITY_REPLY,
 				     sizeof(*cp));
 	if (!resp_buf) {

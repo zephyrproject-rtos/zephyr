@@ -4,12 +4,13 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import copy
-import scl
 import warnings
-from typing import Union
+
+import scl
 from twisterlib.error import ConfigurationError
 
-def extract_fields_from_arg_list(target_fields: set, arg_list: Union[str, list]):
+
+def extract_fields_from_arg_list(target_fields: set, arg_list: str | list):
     """
     Given a list of "FIELD=VALUE" args, extract values of args with a
     given field name and return the remaining args separately.
@@ -55,12 +56,14 @@ class TwisterConfigParser:
                        "skip": {"type": "bool", "default": False},
                        "slow": {"type": "bool", "default": False},
                        "timeout": {"type": "int", "default": 60},
-                       "min_ram": {"type": "int", "default": 8},
+                       "min_ram": {"type": "int", "default": 16},
                        "modules": {"type": "list", "default": []},
                        "depends_on": {"type": "set"},
                        "min_flash": {"type": "int", "default": 32},
                        "arch_allow": {"type": "set"},
                        "arch_exclude": {"type": "set"},
+                       "vendor_allow": {"type": "set"},
+                       "vendor_exclude": {"type": "set"},
                        "extra_sections": {"type": "list", "default": []},
                        "integration_platforms": {"type": "list", "default": []},
                        "ignore_faults": {"type": "bool", "default": False },
@@ -126,7 +129,9 @@ class TwisterConfigParser:
                 if len(vs) > 1:
                     warnings.warn(
                         "Space-separated lists are deprecated, use YAML lists instead",
-                        DeprecationWarning)
+                        DeprecationWarning,
+                        stacklevel=2
+                    )
 
                 if len(typestr) > 4 and typestr[4] == ":":
                     return [self._cast_value(vsi, typestr[5:]) for vsi in vs]
@@ -144,7 +149,9 @@ class TwisterConfigParser:
                 if len(vs) > 1:
                     warnings.warn(
                         "Space-separated lists are deprecated, use YAML lists instead",
-                        DeprecationWarning)
+                        DeprecationWarning,
+                        stacklevel=2
+                    )
 
                 if len(typestr) > 3 and typestr[3] == ":":
                     return {self._cast_value(vsi, typestr[4:]) for vsi in vs}
@@ -156,8 +163,7 @@ class TwisterConfigParser:
         elif typestr.startswith("map"):
             return value
         else:
-            raise ConfigurationError(
-                self.filename, "unknown type '%s'" % value)
+            raise ConfigurationError(self.filename, f"unknown type '{value}'")
 
     def get_scenario(self, name):
         """Get a dictionary representing the keys/values within a scenario
@@ -191,7 +197,7 @@ class TwisterConfigParser:
                 )
             if k in d:
                 if k == "filter":
-                    d[k] = "(%s) and (%s)" % (d[k], v)
+                    d[k] = f"({d[k]}) and ({v})"
                 elif k not in ("extra_conf_files", "extra_overlay_confs",
                                "extra_dtc_overlay_files"):
                     if isinstance(d[k], str) and isinstance(v, list):
@@ -239,21 +245,19 @@ class TwisterConfigParser:
                 "in extra_args. This feature is deprecated and will soon "
                 "result in an error. Use extra_conf_files, extra_overlay_confs "
                 "or extra_dtc_overlay_files YAML fields instead",
-                DeprecationWarning
+                DeprecationWarning,
+                stacklevel=2
             )
 
         for k, kinfo in self.testsuite_valid_keys.items():
             if k not in d:
-                if "required" in kinfo:
-                    required = kinfo["required"]
-                else:
-                    required = False
+                required = kinfo.get("required", False)
 
                 if required:
                     raise ConfigurationError(
                         self.filename,
-                        "missing required value for '%s' in test '%s'" %
-                        (k, name))
+                        f"missing required value for '{k}' in test '{name}'"
+                    )
                 else:
                     if "default" in kinfo:
                         default = kinfo["default"]
@@ -265,7 +269,8 @@ class TwisterConfigParser:
                     d[k] = self._cast_value(d[k], kinfo["type"])
                 except ValueError:
                     raise ConfigurationError(
-                        self.filename, "bad %s value '%s' for key '%s' in name '%s'" %
-                                       (kinfo["type"], d[k], k, name))
+                        self.filename,
+                        f"bad {kinfo['type']} value '{d[k]}' for key '{k}' in name '{name}'"
+                    ) from None
 
         return d

@@ -1,0 +1,7 @@
+# DecaWave DWM3001CDK board configuration
+
+# Copyright (c) 2019 Stéphane D'Alu
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_DECAWAVE_DWM3001CDK
+	select SOC_NRF52833_QDAA

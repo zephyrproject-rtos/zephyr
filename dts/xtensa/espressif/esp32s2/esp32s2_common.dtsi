@@ -86,6 +86,7 @@
 
 		intc: interrupt-controller@3f4c2000 {
 			#interrupt-cells = <3>;
+			#address-cells = <0>;
 			compatible = "espressif,esp32-intc";
 			interrupt-controller;
 			reg = <0x3f4c2000 0x114>;

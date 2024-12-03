@@ -34,9 +34,8 @@ void lvgl_flush_thread_entry(void *arg1, void *arg2, void *arg3)
 	}
 }
 
-K_THREAD_DEFINE(lvgl_flush_thread, CONFIG_LV_Z_FLUSH_THREAD_STACK_SIZE,
-		lvgl_flush_thread_entry, NULL, NULL, NULL,
-		K_PRIO_COOP(CONFIG_LV_Z_FLUSH_THREAD_PRIO), 0, 0);
+K_THREAD_DEFINE(lvgl_flush_thread, CONFIG_LV_Z_FLUSH_THREAD_STACK_SIZE, lvgl_flush_thread_entry,
+		NULL, NULL, NULL, CONFIG_LV_Z_FLUSH_THREAD_PRIORITY, 0, 0);
 
 
 void lvgl_wait_cb(lv_disp_drv_t *disp_drv)

@@ -25,14 +25,6 @@
 		zephyr,camera = &dcmi;
 	};
 
-	sdram1: sdram@c0000000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		device_type = "memory";
-		reg = <0xc0000000 DT_SIZE_M(8)>;
-		zephyr,memory-region = "SDRAM1";
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
-	};
-
 	aliases {
 		led0 = &red_led;
 		led1 = &green_led;
@@ -46,10 +38,12 @@
 
 &clk_hse {
 	status = "okay";
+	hse-bypass;
 	clock-frequency = <DT_FREQ_M(25)>;
 };
 
 &clk_lse {
+	lse-bypass;
 	status = "okay";
 };
 
@@ -160,6 +154,37 @@
 		slot0_partition: partition@40000 {
 			label = "image-0";
 			reg = <0x40000 0x000c0000>;
+		};
+	};
+};
+
+&quadspi {
+	pinctrl-0 = <&quadspi_clk_pf10 &quadspi_bk1_ncs_pg6
+		     &quadspi_bk1_io0_pd11 &quadspi_bk1_io1_pf9
+		     &quadspi_bk1_io2_pe2 &quadspi_bk1_io3_pd13>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	n25q128a1: qspi-nor-flash@90000000 {
+		compatible = "st,stm32-qspi-nor";
+		reg = <0x90000000 DT_SIZE_M(16)>; /* 128 Mbits */
+		qspi-max-frequency = <72000000>;
+		status = "okay";
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			slot1_partition: partition@0 {
+				label = "image-1";
+				reg = <0x00000000 DT_SIZE_M(1)>;
+			};
+
+			storage_partition: partition@100000 {
+				label = "storage";
+				reg = <0x00100000 DT_SIZE_M(15)>;
+			};
 		};
 	};
 };

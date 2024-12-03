@@ -311,7 +311,7 @@ static int mipi_csi2rx_enum_frmival(const struct device *dev, enum video_endpoin
 	return 0;
 }
 
-static const struct video_driver_api mipi_csi2rx_driver_api = {
+static DEVICE_API(video, mipi_csi2rx_driver_api) = {
 	.get_caps = mipi_csi2rx_get_caps,
 	.get_format = mipi_csi2rx_get_fmt,
 	.set_format = mipi_csi2rx_set_fmt,

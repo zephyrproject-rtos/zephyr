@@ -7,7 +7,7 @@
 #include <zephyr/logging/log.h>
 #include <stubs.h>
 
-LOG_MODULE_DECLARE(coap_client_test);
+LOG_MODULE_DECLARE(coap_client_test, LOG_LEVEL_DBG);
 
 DEFINE_FAKE_VALUE_FUNC(uint32_t, z_impl_sys_rand32_get);
 DEFINE_FAKE_VALUE_FUNC(ssize_t, z_impl_zsock_recvfrom, int, void *, size_t, int, struct sockaddr *,
@@ -44,6 +44,9 @@ int z_impl_zvfs_poll(struct zvfs_pollfd *fds, int nfds, int poll_timeout)
 		if (fds[i].revents) {
 			events++;
 		}
+	}
+	if (events == 0) {
+		k_sleep(K_MSEC(poll_timeout));
 	}
 
 	return events;

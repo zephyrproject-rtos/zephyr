@@ -823,6 +823,7 @@ otError otPlatRadioReceiveAt(otInstance *aInstance, uint8_t aChannel,
 }
 #endif
 
+#if defined(CONFIG_IEEE802154_CARRIER_FUNCTIONS)
 otError platformRadioTransmitCarrier(otInstance *aInstance, bool aEnable)
 {
 	if (radio_api->continuous_carrier == NULL) {
@@ -845,6 +846,7 @@ otError platformRadioTransmitCarrier(otInstance *aInstance, bool aEnable)
 
 	return OT_ERROR_NONE;
 }
+#endif /* CONFIG_IEEE802154_CARRIER_FUNCTIONS */
 
 otRadioState otPlatRadioGetState(otInstance *aInstance)
 {

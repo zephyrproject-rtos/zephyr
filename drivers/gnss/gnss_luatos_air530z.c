@@ -336,7 +336,7 @@ static int luatos_air530z_get_supported_systems(const struct device *dev, gnss_s
 	return 0;
 }
 
-static const struct gnss_driver_api gnss_api = {
+static DEVICE_API(gnss, gnss_api) = {
 	.set_fix_rate = luatos_air530z_set_fix_rate,
 	.set_enabled_systems = luatos_air530z_set_enabled_systems,
 	.get_supported_systems = luatos_air530z_get_supported_systems,

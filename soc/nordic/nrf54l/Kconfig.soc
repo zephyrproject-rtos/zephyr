@@ -3,6 +3,42 @@
 # Copyright (c) 2024 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+config SOC_NRF54L05
+	bool
+	select SOC_SERIES_NRF54LX
+	help
+	  NRF54L05
+
+config SOC_NRF54L05_CPUAPP
+	bool
+	select SOC_NRF54L05
+	help
+	  NRF54L05 CPUAPP
+
+config SOC_NRF54L05_CPUFLPR
+	bool
+	select SOC_NRF54L05
+	help
+	  NRF54L05 CPUFLPR
+
+config SOC_NRF54L10
+	bool
+	select SOC_SERIES_NRF54LX
+	help
+	  NRF54L10
+
+config SOC_NRF54L10_CPUAPP
+	bool
+	select SOC_NRF54L10
+	help
+	  NRF54L10 CPUAPP
+
+config SOC_NRF54L10_CPUFLPR
+	bool
+	select SOC_NRF54L10
+	help
+	  NRF54L10 CPUFLPR
+
 config SOC_NRF54L15
 	bool
 	select SOC_SERIES_NRF54LX
@@ -40,5 +76,7 @@ config SOC_NRF54L20_ENGA_CPUAPP
 	  NRF54L20 ENGA CPUAPP
 
 config SOC
+	default "nrf54l05" if SOC_NRF54L05
+	default "nrf54l10" if SOC_NRF54L10
 	default "nrf54l15" if SOC_NRF54L15
 	default "nrf54l20" if SOC_NRF54L20

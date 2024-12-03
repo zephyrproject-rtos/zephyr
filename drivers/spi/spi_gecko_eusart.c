@@ -291,7 +291,7 @@ static int spi_gecko_eusart_release(const struct device *dev, const struct spi_c
 }
 
 /* Device Instantiation */
-static const struct spi_driver_api spi_gecko_eusart_api = {
+static DEVICE_API(spi, spi_gecko_eusart_api) = {
 	.transceive = spi_gecko_eusart_transceive,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_gecko_eusart_transceive_async,

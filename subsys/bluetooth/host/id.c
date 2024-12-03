@@ -17,7 +17,6 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci_vs.h>
 #include <zephyr/bluetooth/buf.h>
-#include <zephyr/drivers/bluetooth/hci_driver.h>
 #include <zephyr/sys/__assert.h>
 
 #include "hci_core.h"

@@ -25,5 +25,6 @@ DECLARE_FAKE_VOID_FUNC(mock_cap_commander_microphone_mute_changed_cb, struct bt_
 DECLARE_FAKE_VOID_FUNC(mock_cap_commander_microphone_gain_changed_cb, struct bt_conn *, int);
 DECLARE_FAKE_VOID_FUNC(mock_cap_commander_broadcast_reception_start_cb, struct bt_conn *, int);
 DECLARE_FAKE_VOID_FUNC(mock_cap_commander_broadcast_reception_stop_cb, struct bt_conn *, int);
+DECLARE_FAKE_VOID_FUNC(mock_cap_commander_distribute_broadcast_code_cb, struct bt_conn *, int);
 
 #endif /* MOCKS_CAP_COMMANDER_H_ */

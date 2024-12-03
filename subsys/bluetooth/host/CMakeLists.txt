@@ -8,7 +8,7 @@ add_subdirectory_ifdef(CONFIG_BT_SHELL shell)
 
 zephyr_library_sources_ifdef(CONFIG_BT_HCI_RAW          hci_raw.c hci_common.c)
 zephyr_library_sources_ifdef(CONFIG_BT_MONITOR          monitor.c)
-zephyr_library_sources_ifdef(CONFIG_BT_TINYCRYPT_ECC    hci_ecc.c)
+zephyr_library_sources_ifdef(CONFIG_BT_SEND_ECC_EMULATION          hci_ecc.c)
 zephyr_library_sources_ifdef(CONFIG_BT_SETTINGS         settings.c)
 zephyr_library_sources_ifdef(CONFIG_BT_HOST_CCM         aes_ccm.c)
 zephyr_library_sources_ifdef(CONFIG_BT_LONG_WQ          long_wq.c)
@@ -32,11 +32,10 @@ if(CONFIG_BT_HCI_HOST)
     scan.c
     )
 
-  if(CONFIG_BT_USE_PSA_API)
-    zephyr_library_sources_ifdef(CONFIG_BT_HOST_CRYPTO    crypto_psa.c)
-  else()
-    zephyr_library_sources_ifdef(CONFIG_BT_HOST_CRYPTO    crypto_tc.c)
-  endif()
+  zephyr_library_sources_ifdef(
+    CONFIG_BT_HOST_CRYPTO
+    crypto_psa.c
+    )
 
   zephyr_library_sources_ifdef(
     CONFIG_BT_ECC
@@ -116,12 +115,10 @@ if(CONFIG_BT_CONN_DISABLE_SECURITY)
     )
 endif()
 
-if(CONFIG_BT_USE_PSA_API)
-    zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)
-    zephyr_library_include_directories_ifdef(CONFIG_BUILD_WITH_TFM
-      $<TARGET_PROPERTY:tfm,TFM_BINARY_DIR>/api_ns/interface/include
-    )
-endif()
+zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)
+zephyr_library_include_directories_ifdef(CONFIG_BUILD_WITH_TFM
+  $<TARGET_PROPERTY:tfm,TFM_BINARY_DIR>/api_ns/interface/include
+)
 
 # Bluetooth Mesh has test dependencies in the host.
 # In order to compile Bsim tests with these test features

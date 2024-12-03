@@ -139,7 +139,7 @@ static int get_sync_locked(const struct device *dev)
 		if (flags & BIT(PM_DEVICE_FLAG_PD_CLAIMED)) {
 			const struct device *domain = PM_DOMAIN(&pm->base);
 
-			if (domain->pm_base->flags & PM_DEVICE_FLAG_ISR_SAFE) {
+			if (domain->pm_base->flags & BIT(PM_DEVICE_FLAG_ISR_SAFE)) {
 				ret = pm_device_runtime_get(domain);
 				if (ret < 0) {
 					return ret;
@@ -300,7 +300,7 @@ static int put_sync_locked(const struct device *dev)
 		if (flags & BIT(PM_DEVICE_FLAG_PD_CLAIMED)) {
 			const struct device *domain = PM_DOMAIN(&pm->base);
 
-			if (domain->pm_base->flags & PM_DEVICE_FLAG_ISR_SAFE) {
+			if (domain->pm_base->flags & BIT(PM_DEVICE_FLAG_ISR_SAFE)) {
 				ret = put_sync_locked(domain);
 			} else {
 				ret = -EWOULDBLOCK;
@@ -563,25 +563,9 @@ bool pm_device_runtime_is_enabled(const struct device *dev)
 
 int pm_device_runtime_usage(const struct device *dev)
 {
-	struct pm_device *pm = dev->pm;
-	uint32_t usage;
-
 	if (!pm_device_runtime_is_enabled(dev)) {
 		return -ENOTSUP;
 	}
 
-	if (atomic_test_bit(&dev->pm_base->flags, PM_DEVICE_FLAG_ISR_SAFE)) {
-		struct pm_device_isr *pm_sync = dev->pm_isr;
-		k_spinlock_key_t k = k_spin_lock(&pm_sync->lock);
-
-		usage = pm_sync->base.usage;
-
-		k_spin_unlock(&pm_sync->lock, k);
-	} else {
-		(void)k_sem_take(&pm->lock, K_FOREVER);
-		usage = pm->base.usage;
-		k_sem_give(&pm->lock);
-	}
-
-	return usage;
+	return dev->pm_base->usage;
 }

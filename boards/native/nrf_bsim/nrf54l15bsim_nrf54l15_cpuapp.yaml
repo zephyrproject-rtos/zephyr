@@ -2,7 +2,8 @@ identifier: nrf54l15bsim/nrf54l15/cpuapp
 name: NRF54L15 BabbleSim - Application Core target
 type: native
 arch: posix
-simulation: native
+simulation:
+  - name: native
 env:
   - BSIM_OUT_PATH
 toolchain:
@@ -13,5 +14,4 @@ supported:
 testing:
   ignore_tags:
     - modem
-    - uart
     - bsim_skip_CI

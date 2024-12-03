@@ -57,8 +57,8 @@ endif # BT_CSIP_SET_MEMBER
 
 config BT_CSIP_SET_COORDINATOR
 	bool "Coordinated Set Identification Profile Set Coordinator Support"
-	select BT_GATT_CLIENT
-	select BT_GATT_AUTO_DISCOVER_CCC
+	depends on BT_GATT_CLIENT
+	depends on BT_GATT_AUTO_DISCOVER_CCC
 	help
 	  This option enables support for Coordinated Set Identification
 	  Profile Set Coordinator.

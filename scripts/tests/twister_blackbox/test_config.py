@@ -13,6 +13,7 @@ import pytest
 import sys
 import json
 
+# pylint: disable=no-name-in-module
 from conftest import ZEPHYR_BASE, TEST_DATA, testsuite_filename_mock
 from twisterlib.testplan import TestPlan
 
@@ -55,13 +56,13 @@ class TestConfig:
 
         assert str(sys_exit.value) == '0'
 
-        assert len(filtered_j) == 3
+        assert len(filtered_j) == 4
 
     @pytest.mark.parametrize(
         'level, expected_tests',
         [
-            ('smoke', 5),
-            ('acceptance', 6),
+            ('smoke', 6),
+            ('acceptance', 7),
         ],
         ids=['smoke', 'acceptance']
     )

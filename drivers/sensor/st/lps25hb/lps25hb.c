@@ -107,7 +107,7 @@ static int lps25hb_channel_get(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api lps25hb_api_funcs = {
+static DEVICE_API(sensor, lps25hb_api_funcs) = {
 	.sample_fetch = lps25hb_sample_fetch,
 	.channel_get = lps25hb_channel_get,
 };

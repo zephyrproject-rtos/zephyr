@@ -128,6 +128,7 @@
 
 		intc: interrupt-controller@600c2000 {
 			#interrupt-cells = <3>;
+			#address-cells = <0>;
 			compatible = "espressif,esp32-intc";
 			interrupt-controller;
 			reg = <0x600c2000 0x1000>;
@@ -169,7 +170,6 @@
 
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
-				reg = <0 0x800000>;
 				erase-block-size = <4096>;
 				write-block-size = <4>;
 				/* Flash size is specified in SOC/SIP dtsi */

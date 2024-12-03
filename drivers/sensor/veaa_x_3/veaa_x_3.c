@@ -144,7 +144,7 @@ static int veaa_x_3_channel_get(const struct device *dev, enum sensor_channel ch
 	return 0;
 }
 
-static const struct sensor_driver_api veaa_x_3_api_funcs = {
+static DEVICE_API(sensor, veaa_x_3_api_funcs) = {
 	.attr_set = veaa_x_3_attr_set,
 	.attr_get = veaa_x_3_attr_get,
 	.sample_fetch = veaa_x_3_sample_fetch,

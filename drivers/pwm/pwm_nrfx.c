@@ -11,6 +11,11 @@
 #include <hal/nrf_gpio.h>
 #include <stdbool.h>
 #include <zephyr/linker/devicetree_regions.h>
+#include <zephyr/cache.h>
+#include <zephyr/mem_mgmt/mem_attr.h>
+#ifdef CONFIG_SOC_NRF54H20_GPD
+#include <nrf/gpd.h>
+#endif
 
 #include <zephyr/logging/log.h>
 
@@ -40,6 +45,10 @@ struct pwm_nrfx_config {
 	nrfx_pwm_config_t initial_config;
 	nrf_pwm_sequence_t seq;
 	const struct pinctrl_dev_config *pcfg;
+	uint32_t clock_freq;
+#ifdef CONFIG_DCACHE
+	uint32_t mem_attr;
+#endif
 };
 
 struct pwm_nrfx_data {
@@ -176,6 +185,12 @@ static int pwm_nrfx_set_cycles(const struct device *dev, uint32_t channel,
 
 	seq_values_ptr_get(dev)[channel] = PWM_NRFX_CH_VALUE(compare_value, inverted);
 
+#ifdef CONFIG_DCACHE
+	if (config->mem_attr & DT_MEM_CACHEABLE) {
+		sys_cache_data_flush_range(seq_values_ptr_get(dev), config->seq.length);
+	}
+#endif
+
 	LOG_DBG("channel %u, pulse %u, period %u, prescaler: %u.",
 		channel, pulse_cycles, period_cycles, data->prescaler);
 
@@ -243,11 +258,9 @@ static int pwm_nrfx_set_cycles(const struct device *dev, uint32_t channel,
 static int pwm_nrfx_get_cycles_per_sec(const struct device *dev, uint32_t channel,
 				       uint64_t *cycles)
 {
-	/* TODO: Since this function might be removed, we will always return
-	 * 16MHz from this function and handle the conversion with prescaler,
-	 * etc, in the pin set function. See issue #6958.
-	 */
-	*cycles = 16ul * 1000ul * 1000ul;
+	const struct pwm_nrfx_config *config = dev->config;
+
+	*cycles = config->clock_freq;
 
 	return 0;
 }
@@ -263,6 +276,10 @@ static void pwm_resume(const struct device *dev)
 	uint8_t initially_inverted = 0;
 
 	(void)pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+
+#ifdef CONFIG_SOC_NRF54H20_GPD
+	nrf_gpd_retain_pins_set(config->pcfg, false);
+#endif
 
 	for (size_t i = 0; i < NRF_PWM_CHANNEL_COUNT; i++) {
 		uint32_t psel;
@@ -291,6 +308,10 @@ static void pwm_suspend(const struct device *dev)
 	nrfx_pwm_stop(&config->pwm, false);
 	while (!nrfx_pwm_stopped_check(&config->pwm)) {
 	}
+
+#ifdef CONFIG_SOC_NRF54H20_GPD
+	nrf_gpd_retain_pins_set(config->pcfg, true);
+#endif
 
 	memset(dev->data, 0, sizeof(struct pwm_nrfx_data));
 	(void)pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
@@ -333,12 +354,17 @@ static int pwm_nrfx_init(const struct device *dev)
 #define PWM(dev_idx) DT_NODELABEL(pwm##dev_idx)
 #define PWM_PROP(dev_idx, prop) DT_PROP(PWM(dev_idx), prop)
 #define PWM_HAS_PROP(idx, prop) DT_NODE_HAS_PROP(PWM(idx), prop)
+#define PWM_MEM_REGION(idx)     DT_PHANDLE(PWM(idx), memory_regions)
 
 #define PWM_MEMORY_SECTION(idx)						      \
 	COND_CODE_1(PWM_HAS_PROP(idx, memory_regions),			      \
 		(__attribute__((__section__(LINKER_DT_NODE_REGION_NAME(	      \
-			DT_PHANDLE(PWM(idx), memory_regions)))))),	      \
+			PWM_MEM_REGION(idx)))))),			      \
 		())
+
+#define PWM_GET_MEM_ATTR(idx)						      \
+	COND_CODE_1(PWM_HAS_PROP(idx, memory_regions),			      \
+		(DT_PROP_OR(PWM_MEM_REGION(idx), zephyr_memory_attr, 0)), (0))
 
 #define PWM_NRFX_DEVICE(idx)						      \
 	NRF_DT_CHECK_NODE_HAS_PINCTRL_SLEEP(PWM(idx));			      \
@@ -362,6 +388,11 @@ static int pwm_nrfx_init(const struct device *dev)
 		.seq.values.p_raw = pwm_##idx##_seq_values,		      \
 		.seq.length = NRF_PWM_CHANNEL_COUNT,			      \
 		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(PWM(idx)),		      \
+		.clock_freq = COND_CODE_1(DT_CLOCKS_HAS_IDX(PWM(idx), 0),     \
+			(DT_PROP(DT_CLOCKS_CTLR(PWM(idx)), clock_frequency)), \
+			(16ul * 1000ul * 1000ul)),			      \
+		IF_ENABLED(CONFIG_DCACHE,				      \
+			(.mem_attr = PWM_GET_MEM_ATTR(idx),))		      \
 	};								      \
 	static int pwm_nrfx_init##idx(const struct device *dev)		      \
 	{								      \

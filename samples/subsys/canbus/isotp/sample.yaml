@@ -23,8 +23,6 @@ tests:
       - CONFIG_SAMPLE_LOOPBACK_MODE=y
       - CONFIG_SAMPLE_CAN_FD_MODE=y
     platform_allow:
-      - native_posix
-      - native_posix/native/64
       - native_sim
       - native_sim/native/64
     harness: console

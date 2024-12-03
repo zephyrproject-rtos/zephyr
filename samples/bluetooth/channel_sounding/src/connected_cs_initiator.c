@@ -16,6 +16,7 @@
 #define CS_CONFIG_ID     0
 #define NUM_MODE_0_STEPS 1
 
+static K_SEM_DEFINE(sem_acl_encryption_enabled, 0, 1);
 static K_SEM_DEFINE(sem_remote_capabilities_obtained, 0, 1);
 static K_SEM_DEFINE(sem_config_created, 0, 1);
 static K_SEM_DEFINE(sem_cs_security_enabled, 0, 1);
@@ -126,6 +127,17 @@ static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 	connection = NULL;
 }
 
+static void security_changed_cb(struct bt_conn *conn, bt_security_t level, enum bt_security_err err)
+{
+	if (err) {
+		printk("Encryption failed. (err %d)\n", err);
+	} else {
+		printk("Security changed to level %d.\n", level);
+	}
+
+	k_sem_give(&sem_acl_encryption_enabled);
+}
+
 static void remote_capabilities_cb(struct bt_conn *conn, struct bt_conn_le_cs_capabilities *params)
 {
 	ARG_UNUSED(params);
@@ -210,6 +222,7 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 BT_CONN_CB_DEFINE(conn_cb) = {
 	.connected = connected_cb,
 	.disconnected = disconnected_cb,
+	.security_changed = security_changed_cb,
 	.le_cs_remote_capabilities_available = remote_capabilities_cb,
 	.le_cs_config_created = config_created_cb,
 	.le_cs_security_enabled = security_enabled_cb,
@@ -261,6 +274,8 @@ int main(void)
 		printk("Failed to encrypt connection (err %d)\n", err);
 		return 0;
 	}
+
+	k_sem_take(&sem_acl_encryption_enabled, K_FOREVER);
 
 	err = bt_le_cs_read_remote_supported_capabilities(connection);
 	if (err) {

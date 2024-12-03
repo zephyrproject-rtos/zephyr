@@ -12,6 +12,8 @@ tests:
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54l15dk/nrf54l15/cpuflpr
       - nrf5340dk/nrf5340/cpuapp
+    integration_platforms:
+      - nrf54h20dk/nrf54h20/cpuapp
   drivers.uart.uart_elementary_dual_nrf54h:
     filter: CONFIG_SERIAL_SUPPORT_INTERRUPT
     platform_allow:
@@ -19,6 +21,15 @@ tests:
     extra_args: DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_dual_uart.overlay"
     extra_configs:
       - CONFIG_DUAL_UART_TEST=y
+  drivers.uart.uart_elementary_dual_nrf54h.pm:
+    filter: CONFIG_SERIAL_SUPPORT_INTERRUPT
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+    extra_args: DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_dual_uart.overlay"
+    extra_configs:
+      - CONFIG_DUAL_UART_TEST=y
+      - CONFIG_PM_DEVICE=y
+      - CONFIG_PM_DEVICE_RUNTIME=y
   drivers.uart.uart_elementary_dual_setup_mismatch_nrf54h:
     filter: CONFIG_SERIAL_SUPPORT_INTERRUPT
     platform_allow:

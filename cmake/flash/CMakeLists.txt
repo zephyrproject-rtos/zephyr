@@ -154,7 +154,7 @@ endif()
 
 # Generate the flash, debug, debugserver, attach targets within the build
 # system itself.
-foreach(target flash debug debugserver attach)
+foreach(target flash debug debugserver attach rtt)
   if(target STREQUAL flash)
     set(comment "Flashing ${BOARD}")
   elseif(target STREQUAL debug)
@@ -168,6 +168,8 @@ foreach(target flash debug debugserver attach)
     endif()
   elseif(target STREQUAL attach)
     set(comment "Debugging ${BOARD}")
+  elseif(target STREQUAL rtt)
+    set(comment "RTT ${BOARD}")
   endif()
   string(TOUPPER ${target} TARGET_UPPER)
 

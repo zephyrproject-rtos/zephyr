@@ -5,4 +5,5 @@ config GPIO_RPI_PICO
 	default y
 	depends on DT_HAS_RASPBERRYPI_PICO_GPIO_ENABLED
 	select PICOSDK_USE_GPIO
+	select PINCTRL
 	bool "Raspberry Pi Pico GPIO driver"

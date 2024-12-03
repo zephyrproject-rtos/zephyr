@@ -10,16 +10,17 @@ menuconfig PROMETHEUS
 
 if PROMETHEUS
 
+config PROMETHEUS_LABEL_MAX_COUNT
+	int "Max label count in metric"
+	range 1 8
+	default 1
+	help
+	  Specify how many labels can be attached to a metric.
+
 module = PROMETHEUS
 module-dep = NET_LOG
 module-str = Log level for PROMETHEUS
 module-help = Enable debug message of PROMETHEUS client library.
 source "subsys/net/Kconfig.template.log_config.net"
-
-config PROMETHEUS_MAX_METRICS
-	int "Maximum number of metrics"
-	default 10
-	help
-	  Maximum number of metrics that can be registered.
 
 endif # PROMETHEUS

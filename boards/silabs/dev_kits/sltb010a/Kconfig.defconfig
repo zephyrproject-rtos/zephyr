@@ -26,6 +26,9 @@ config MAIN_STACK_SIZE
 	default 3072 if PM
 	default 2304
 
+config BT_SEND_ECC_EMULATION
+	default y
+
 endif # BT
 
 config REGULATOR

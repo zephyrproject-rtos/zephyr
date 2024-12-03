@@ -294,7 +294,7 @@ static int cmd_stepper_get_micro_step_res(const struct shell *sh, size_t argc, c
 	return err;
 }
 
-static int cmd_stepper_set_actual_position(const struct shell *sh, size_t argc, char **argv)
+static int cmd_stepper_set_reference_position(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
 	int err = 0;
@@ -309,7 +309,7 @@ static int cmd_stepper_set_actual_position(const struct shell *sh, size_t argc, 
 		return err;
 	}
 
-	err = stepper_set_actual_position(dev, position);
+	err = stepper_set_reference_position(dev, position);
 	if (err) {
 		shell_error(sh, "Error: %d", err);
 	}
@@ -462,8 +462,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "<device> <resolution>", cmd_stepper_set_micro_step_res, 3, 0),
 	SHELL_CMD_ARG(get_micro_step_res, &dsub_pos_stepper_motor_name, "<device>",
 		      cmd_stepper_get_micro_step_res, 2, 0),
-	SHELL_CMD_ARG(set_actual_position, &dsub_pos_stepper_motor_name, "<device> <position>",
-		      cmd_stepper_set_actual_position, 3, 0),
+	SHELL_CMD_ARG(set_reference_position, &dsub_pos_stepper_motor_name, "<device> <position>",
+		      cmd_stepper_set_reference_position, 3, 0),
 	SHELL_CMD_ARG(get_actual_position, &dsub_pos_stepper_motor_name, "<device>",
 		      cmd_stepper_get_actual_position, 2, 0),
 	SHELL_CMD_ARG(set_target_position, &dsub_pos_stepper_motor_name, "<device> <micro_steps>",

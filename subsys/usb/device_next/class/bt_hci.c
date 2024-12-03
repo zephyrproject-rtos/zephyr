@@ -32,7 +32,7 @@
 #include <zephyr/bluetooth/hci_raw.h>
 #include <zephyr/bluetooth/l2cap.h>
 #include <zephyr/bluetooth/hci_vs.h>
-#include <zephyr/drivers/bluetooth/hci_driver.h>
+#include <zephyr/drivers/bluetooth.h>
 #include <zephyr/sys/atomic.h>
 
 #include <zephyr/logging/log.h>

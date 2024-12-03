@@ -7,6 +7,7 @@ config CLOCK_CONTROL_RPI_PICO
 	bool "Raspberry Pi Pico Clock Controller Driver"
 	default y
 	depends on DT_HAS_RASPBERRYPI_PICO_CLOCK_CONTROLLER_ENABLED
+	select PINCTRL
 
 if CLOCK_CONTROL_RPI_PICO
 

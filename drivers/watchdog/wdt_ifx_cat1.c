@@ -132,7 +132,7 @@ static int ifx_cat1_wdt_init(const struct device *dev)
 	return 0;
 }
 
-static const struct wdt_driver_api ifx_cat1_wdt_api = {
+static DEVICE_API(wdt, ifx_cat1_wdt_api) = {
 	.setup = ifx_cat1_wdt_setup,
 	.disable = ifx_cat1_wdt_disable,
 	.install_timeout = ifx_cat1_wdt_install_timeout,

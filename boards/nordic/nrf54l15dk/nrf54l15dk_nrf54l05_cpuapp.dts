@@ -1,0 +1,63 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nordic/nrf54l05_cpuapp.dtsi>
+#include "nrf54l_05_10_15_cpuapp_common.dtsi"
+
+/ {
+	compatible = "nordic,nrf54l15dk_nrf54l05-cpuapp";
+	model = "Nordic nRF54L15 DK nRF54L05 Application MCU";
+
+	chosen {
+		zephyr,code-partition = &slot0_partition;
+		zephyr,sram = &cpuapp_sram;
+	};
+};
+
+/* FLPR not supported yet, give all SRAM and RRAM to the APP core */
+&cpuapp_sram {
+	reg = <0x20000000 DT_SIZE_K(96)>;
+	ranges = <0x0 0x20000000 DT_SIZE_K(96)>;
+};
+
+&cpuapp_rram {
+	reg = <0x0 DT_SIZE_K(500)>;
+};
+
+/* These partition sizes assume no FLPR area in RRAM */
+&cpuapp_rram {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x0 DT_SIZE_K(64)>;
+		};
+		slot0_partition: partition@10000 {
+			label = "image-0";
+			reg = <0x10000 DT_SIZE_K(100)>;
+		};
+		slot0_ns_partition: partition@29000 {
+			label = "image-0-nonsecure";
+			reg = <0x29000 DT_SIZE_K(100)>;
+		};
+		slot1_partition: partition@42000 {
+			label = "image-1";
+			reg = <0x42000 DT_SIZE_K(100)>;
+		};
+		slot1_ns_partition: partition@5b000 {
+			label = "image-1-nonsecure";
+			reg = <0x5b000 DT_SIZE_K(100)>;
+		};
+		storage_partition: partition@74000 {
+			label = "storage";
+			reg = <0x74000 DT_SIZE_K(36)>;
+		};
+	};
+};

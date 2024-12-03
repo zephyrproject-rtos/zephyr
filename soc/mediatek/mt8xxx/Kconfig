@@ -1,0 +1,6 @@
+# Copyright 2024 The ChromiumOS Authors
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_MTK
+	select XTENSA
+	select XTENSA_GEN_HANDLERS

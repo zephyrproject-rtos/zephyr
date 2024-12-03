@@ -4,17 +4,12 @@
 from __future__ import annotations
 
 import logging
-
 from pathlib import Path
-from twister_harness import DeviceAdapter, Shell, MCUmgr
-from twister_harness.helpers.utils import (
-    find_in_config,
-    match_lines,
-    match_no_lines
-)
-from utils import check_with_shell_command, check_with_mcumgr_command
-from test_upgrade import create_signed_image
 
+from test_upgrade import create_signed_image
+from twister_harness import DeviceAdapter, MCUmgr, Shell
+from twister_harness.helpers.utils import find_in_config, match_lines, match_no_lines
+from utils import check_with_mcumgr_command, check_with_shell_command
 
 logger = logging.getLogger(__name__)
 

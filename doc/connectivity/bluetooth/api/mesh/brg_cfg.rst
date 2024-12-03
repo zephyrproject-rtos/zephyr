@@ -113,13 +113,16 @@ protection to ensure network security. Key considerations to take into account a
 Relay buffer considerations
 ===========================
 
-When a message is relayed between subnets by a Subnet Bridge, it is allocated from the relay buffer.
-To ensure that messages can be retransmitted to all subnetworks,
-the :kconfig:option:`CONFIG_BT_MESH_RELAY_BUF_COUNT` option should be increased accordingly.
+When a message is relayed between subnets by a Subnet Bridge, it is allocated from the relay buffer
+pool. The number of relay buffers are configurable using the
+:kconfig:option:`CONFIG_BT_MESH_RELAY_BUF_COUNT` Kconfig option.
 
-However, if the :kconfig:option:`CONFIG_BT_MESH_RELAY` feature is disabled, the messages will be
-allocated from the advertising buffer instead. In this case, increase the
-:kconfig:option:`CONFIG_BT_MESH_ADV_BUF_COUNT` option to allow for sufficient buffer space.
+When :kconfig:option:`CONFIG_BT_MESH_ADV_EXT` is enabled, messages will be transmitted using the
+relay advertising sets. The number of advertising sets are configurable using the
+:kconfig:option:`CONFIG_BT_MESH_RELAY_ADV_SETS` Kconfig option.
+
+Both the relay buffer pool and advertising sets can be used even if the relay feature
+:kconfig:option:`CONFIG_BT_MESH_RELAY` is disabled.
 
 Replay protection and Bridging Table
 ====================================

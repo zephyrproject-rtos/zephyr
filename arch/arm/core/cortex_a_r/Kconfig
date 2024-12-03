@@ -111,6 +111,32 @@ config CPU_CORTEX_R52
 	help
 	  This option signifies the use of a Cortex-R52 CPU
 
+config CPU_CORTEX_R52_CACHE_SEGREGATION
+	bool "Control segregation of L1 I/D-Cache ways between Flash and AXIM"
+	depends on CPU_CORTEX_R52
+	help
+	  Control segregation of L1 I/D-Cache ways between Flash and AXIM.
+	  Updates to the cache segregation controls are only permitted before the caches
+	  have ever been enabled, following a system reset, otherwise the update is ignored.
+
+config CPU_CORTEX_R52_ICACHE_FLASH_WAY
+	int "L1 I-Cache Flash way"
+	depends on CPU_CORTEX_R52_CACHE_SEGREGATION
+	range 0 4
+	default 0
+	help
+	  Configure L1 I-Cache ways for Flash interface. Default is reset value, all
+	  I-Cache ways are allocated for AXIM interface.
+
+config CPU_CORTEX_R52_DCACHE_FLASH_WAY
+	int "L1 D-Cache Flash way"
+	depends on CPU_CORTEX_R52_CACHE_SEGREGATION
+	range 0 4
+	default 0
+	help
+	  Configure L1 D-Cache ways for Flash interface. Default is reset value,
+	  all D-Cache ways are allocated for AXIM interface.
+
 if CPU_AARCH32_CORTEX_R
 
 config ARMV7_R

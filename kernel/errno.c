@@ -36,7 +36,7 @@ int *z_impl_z_errno(void)
 	/* Initialized to the lowest address in the stack so the thread can
 	 * directly read/write it
 	 */
-	return &_current->userspace_local_data->errno_var;
+	return &arch_current_thread()->userspace_local_data->errno_var;
 }
 
 static inline int *z_vrfy_z_errno(void)
@@ -48,7 +48,7 @@ static inline int *z_vrfy_z_errno(void)
 #else
 int *z_impl_z_errno(void)
 {
-	return &_current->errno_var;
+	return &arch_current_thread()->errno_var;
 }
 #endif /* CONFIG_USERSPACE */
 

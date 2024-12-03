@@ -8,18 +8,8 @@
 
 #include <zephyr/net/prometheus/summary.h>
 
-struct prometheus_metric test_summary_metric = {
-	.type = PROMETHEUS_SUMMARY,
-	.name = "test_summary",
-	.description = "Test summary",
-	.num_labels = 1,
-	.labels = {{
-		.key = "test",
-		.value = "summary",
-	}},
-};
-
-PROMETHEUS_SUMMARY_DEFINE(test_summary_m, &test_summary_metric);
+PROMETHEUS_SUMMARY_DEFINE(test_summary_m, "Test summary",
+			  ({ .key = "test", .value = "summary" }), NULL);
 
 /**
  * @brief Test prometheus_summary_observe

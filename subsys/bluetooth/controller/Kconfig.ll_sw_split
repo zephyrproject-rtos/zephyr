@@ -437,6 +437,17 @@ config BT_CTLR_ADV_RESERVE_MAX
 	  corresponding to the Advertising Data present at the time of the
 	  start/enable of Advertising is used.
 
+config BT_CTLR_ADV_AUX_SLOT_WINDOW_DRIFT
+	bool "Drift Extended Advertising Auxiliary PDUs within a slot window"
+	depends on BT_TICKER_EXT && \
+		   BT_BROADCASTER && \
+		   BT_CTLR_ADV_EXT
+	default y if BT_CTLR_SYNC_ISO || BT_CTLR_CONN_ISO
+	help
+	  Drift Extended Advertising Auxiliary PDUs within a slot window to
+	  avoid overlapping with other periodically scheduled states/roles; and
+	  be placed before or after such overlapping states/roles.
+
 config BT_CTLR_ADV_ISO_RESERVE_MAX
 	bool "Use maximum Broadcast ISO event time reservation"
 	depends on BT_CTLR_ADV_ISO

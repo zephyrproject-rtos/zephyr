@@ -23,7 +23,6 @@ supported:
   - adc
   - dac
   - dma
-  - nvs
   - rtc
   - usbd
 vendor: st

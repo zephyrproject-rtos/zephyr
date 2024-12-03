@@ -39,7 +39,7 @@
 		reg = <0>;
 		/* Baud rate on each pin is 1MHz */
 		mipi-max-frequency = <10000000>;
-		mipi-mode = <MIPI_DBI_MODE_8080_BUS_16_BIT>;
+		mipi-mode = "MIPI_DBI_MODE_8080_BUS_16_BIT";
 		height = <320>;
 		width = <480>;
 		invert-mode = "1-dot";

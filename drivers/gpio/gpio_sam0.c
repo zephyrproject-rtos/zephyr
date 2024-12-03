@@ -269,7 +269,7 @@ static uint32_t gpio_sam0_get_pending_int(const struct device *dev)
 
 #endif
 
-static const struct gpio_driver_api gpio_sam0_api = {
+static DEVICE_API(gpio, gpio_sam0_api) = {
 	.pin_configure = gpio_sam0_config,
 	.port_get_raw = gpio_sam0_port_get_raw,
 	.port_set_masked_raw = gpio_sam0_port_set_masked_raw,

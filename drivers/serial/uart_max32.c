@@ -395,7 +395,7 @@ static void uart_max32_isr(const struct device *dev)
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-static const struct uart_driver_api uart_max32_driver_api = {
+static DEVICE_API(uart, uart_max32_driver_api) = {
 	.poll_in = api_poll_in,
 	.poll_out = api_poll_out,
 	.err_check = api_err_check,

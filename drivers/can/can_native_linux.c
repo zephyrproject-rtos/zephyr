@@ -399,7 +399,7 @@ static int can_native_linux_get_max_filters(const struct device *dev, bool ide)
 	return CONFIG_CAN_MAX_FILTER;
 }
 
-static const struct can_driver_api can_native_linux_driver_api = {
+static DEVICE_API(can, can_native_linux_driver_api) = {
 	.start = can_native_linux_start,
 	.stop = can_native_linux_stop,
 	.get_capabilities = can_native_linux_get_capabilities,

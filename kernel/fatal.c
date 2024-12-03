@@ -90,7 +90,7 @@ void z_fatal_error(unsigned int reason, const struct arch_esf *esf)
 	 */
 	unsigned int key = arch_irq_lock();
 	struct k_thread *thread = IS_ENABLED(CONFIG_MULTITHREADING) ?
-			_current : NULL;
+			arch_current_thread() : NULL;
 
 	/* twister looks for the "ZEPHYR FATAL ERROR" string, don't
 	 * change it without also updating twister
