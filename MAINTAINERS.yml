@@ -888,6 +888,7 @@ Devicetree:
   collaborators:
     - decsny
     - galak
+    - rruuaanng
   files-regex:
     - dts/bindings/.*zephyr.*
     - dts/bindings/[^,]+$
