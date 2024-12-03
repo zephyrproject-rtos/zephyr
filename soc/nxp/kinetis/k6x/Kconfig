@@ -7,7 +7,7 @@ config SOC_SERIES_KINETIS_K6X
 	select ARM
 	select CPU_CORTEX_M4
 	select CPU_CORTEX_M_HAS_DWT
-	select CPU_HAS_NXP_MPU
+	select CPU_HAS_NXP_SYSMPU
 	select HAS_MCUX_PIT
 	select CLOCK_CONTROL
 	select SOC_RESET_HOOK

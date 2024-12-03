@@ -267,9 +267,9 @@ enum k_fatal_error_reason_arch {
 #ifdef CONFIG_CPU_HAS_ARM_MPU
 #include <zephyr/arch/arm/mpu/arm_mpu.h>
 #endif /* CONFIG_CPU_HAS_ARM_MPU */
-#ifdef CONFIG_CPU_HAS_NXP_MPU
+#ifdef CONFIG_CPU_HAS_NXP_SYSMPU
 #include <zephyr/arch/arm/mpu/nxp_mpu.h>
-#endif /* CONFIG_CPU_HAS_NXP_MPU */
+#endif /* CONFIG_CPU_HAS_NXP_SYSMPU */
 #endif /* CONFIG_ARM_MPU */
 #ifdef CONFIG_ARM_AARCH32_MMU
 #include <zephyr/arch/arm/mmu/arm_mmu.h>
