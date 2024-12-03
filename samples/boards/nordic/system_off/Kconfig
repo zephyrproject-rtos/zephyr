@@ -3,23 +3,9 @@
 
 mainmenu "Nordic SYSTEM_OFF demo"
 
-choice
-	prompt "Use retention"
-	optional
-
-config APP_USE_NRF_RETENTION
-	bool "Use state retention in system off using nRF POWER"
-	depends on SOC_COMPATIBLE_NRF52X && CRC
-	help
-	  On some Nordic chips this application supports retaining
-	  memory while in system off using POWER peripheral.
-	  Select this to enable the feature.
-
 config APP_USE_RETAINED_MEM
 	bool "Use state retention in system off using retained_mem driver"
-	depends on RETAINED_MEM
-
-endchoice
+	select RETAINED_MEM
 
 config GRTC_WAKEUP_ENABLE
 	bool "Use GRTC to wake up device from system off"
