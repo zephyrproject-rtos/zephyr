@@ -1,8 +1,14 @@
-name: Do Not Merge
+name: PR Metadata Check
 
 on:
   pull_request:
-    types: [synchronize, opened, reopened, labeled, unlabeled]
+    types:
+      - synchronize
+      - opened
+      - reopened
+      - labeled
+      - unlabeled
+      - edited
 
 permissions:
   contents: read
@@ -21,4 +27,14 @@ jobs:
         run: |
           echo "Pull request is labeled as 'DNM', 'TSC', 'Architecture Review' or 'dev-review'."
           echo "This workflow fails so that the pull request cannot be merged."
+          exit 1
+
+  empty_pr_description:
+    if: ${{ github.event.pull_request.body == '' }}
+    name: PR Description
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Check for PR description
+        run: |
+          echo "Pull request description cannot be empty."
           exit 1
