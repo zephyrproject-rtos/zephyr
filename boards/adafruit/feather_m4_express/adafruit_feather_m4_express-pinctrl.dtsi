@@ -35,10 +35,10 @@
 			pinmux = <PA22G_TCC0_WO2>;
 		};
 	};
-	pwm1_default: pwm1_default {
+
+	tc0_default: tc0_default {
 		group1 {
-			pinmux = <PA18F_TCC1_WO2>,
-				 <PA19F_TCC1_WO3>;
+			pinmux = <PA5E_TC0_WO1>;
 		};
 	};
 

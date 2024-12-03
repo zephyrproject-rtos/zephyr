@@ -25,6 +25,7 @@
 	aliases {
 		led0 = &led0;
 		pwm-0 = &tcc0;
+		pwm-1 = &tc0;
 	};
 
 	leds {
@@ -67,6 +68,17 @@
 	prescaler = <8>;
 	#pwm-cells = <2>;
 	pinctrl-0 = <&pwm0_default>;
+	pinctrl-names = "default";
+};
+
+&tc0 {
+	status = "okay";
+	compatible = "atmel,sam0-tc-pwm";
+	prescaler = <1024>;
+	#pwm-cells = <2>;
+	channels = <2>;
+	counter-size = <16>;
+	pinctrl-0 = <&tc0_default>;
 	pinctrl-names = "default";
 };
 
