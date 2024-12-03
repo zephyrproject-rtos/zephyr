@@ -712,6 +712,7 @@ ZTEST_USER(uart_async_write_abort, test_write_abort)
 	if (sent != 0) {
 		zassert_equal(k_sem_take(&rx_rdy, K_MSEC(100)), 0,
 			      "RX_RDY timeout");
+		k_sleep(K_MSEC(30));
 		zassert_equal(sent, received, "Sent is not equal to received.");
 	}
 	uart_rx_disable(uart_dev);
