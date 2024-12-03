@@ -11,6 +11,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/buf.h>
+#include <zephyr/sys/check.h>
 
 #include "addr_internal.h"
 #include "hci_core.h"
@@ -1566,6 +1567,12 @@ int bt_le_ext_adv_create(const struct bt_le_adv_param *param,
 		return -EAGAIN;
 	}
 
+	CHECKIF(out_adv == NULL) {
+		LOG_DBG("out_adv is NULL");
+
+		return -EINVAL;
+	}
+
 	if (!valid_adv_ext_param(param)) {
 		return -EINVAL;
 	}
@@ -1591,6 +1598,12 @@ int bt_le_ext_adv_create(const struct bt_le_adv_param *param,
 int bt_le_ext_adv_update_param(struct bt_le_ext_adv *adv,
 			       const struct bt_le_adv_param *param)
 {
+	CHECKIF(adv == NULL) {
+		LOG_DBG("adv is NULL");
+
+		return -EINVAL;
+	}
+
 	if (!valid_adv_ext_param(param)) {
 		return -EINVAL;
 	}
@@ -1624,6 +1637,12 @@ int bt_le_ext_adv_start(struct bt_le_ext_adv *adv,
 {
 	struct bt_conn *conn = NULL;
 	int err;
+
+	CHECKIF(adv == NULL) {
+		LOG_DBG("adv is NULL");
+
+		return -EINVAL;
+	}
 
 	if (atomic_test_bit(adv->flags, BT_ADV_ENABLED)) {
 		return -EALREADY;
@@ -1682,6 +1701,12 @@ int bt_le_ext_adv_start(struct bt_le_ext_adv *adv,
 
 int bt_le_ext_adv_stop(struct bt_le_ext_adv *adv)
 {
+	CHECKIF(adv == NULL) {
+		LOG_DBG("adv is NULL");
+
+		return -EINVAL;
+	}
+
 	(void)bt_le_lim_adv_cancel_timeout(adv);
 
 	atomic_clear_bit(adv->flags, BT_ADV_PERSIST);
@@ -1712,6 +1737,12 @@ int bt_le_ext_adv_set_data(struct bt_le_ext_adv *adv,
 {
 	bool ext_adv, scannable;
 
+	CHECKIF(adv == NULL) {
+		LOG_DBG("adv is NULL");
+
+		return -EINVAL;
+	}
+
 	ext_adv = atomic_test_bit(adv->flags, BT_ADV_EXT_ADV);
 	scannable = atomic_test_bit(adv->flags, BT_ADV_SCANNABLE);
 
@@ -1734,6 +1765,12 @@ int bt_le_ext_adv_delete(struct bt_le_ext_adv *adv)
 
 	if (!BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
 		return -ENOTSUP;
+	}
+
+	CHECKIF(adv == NULL) {
+		LOG_DBG("adv is NULL");
+
+		return -EINVAL;
 	}
 
 	/* Advertising set should be stopped first */
@@ -1815,6 +1852,12 @@ int bt_le_per_adv_set_param(struct bt_le_ext_adv *adv,
 		return -ENOTSUP;
 	}
 
+	CHECKIF(adv == NULL) {
+		LOG_DBG("adv is NULL");
+
+		return -EINVAL;
+	}
+
 	if (atomic_test_bit(adv->flags, BT_ADV_SCANNABLE)) {
 		return -EINVAL;
 	} else if (atomic_test_bit(adv->flags, BT_ADV_CONNECTABLE)) {
@@ -1887,6 +1930,12 @@ int bt_le_per_adv_set_data(const struct bt_le_ext_adv *adv,
 		return -ENOTSUP;
 	}
 
+	CHECKIF(adv == NULL) {
+		LOG_DBG("adv is NULL");
+
+		return -EINVAL;
+	}
+
 	if (!atomic_test_bit(adv->flags, BT_PER_ADV_PARAMS_SET)) {
 		return -EINVAL;
 	}
@@ -1920,6 +1969,12 @@ int bt_le_per_adv_set_subevent_data(const struct bt_le_ext_adv *adv, uint8_t num
 
 	if (!BT_FEAT_LE_PAWR_ADVERTISER(bt_dev.le.features)) {
 		return -ENOTSUP;
+	}
+
+	CHECKIF(adv == NULL) {
+		LOG_DBG("adv is NULL");
+
+		return -EINVAL;
 	}
 
 	for (size_t i = 0; i < num_subevents; i++) {
@@ -1961,6 +2016,12 @@ static int bt_le_per_adv_enable(struct bt_le_ext_adv *adv, bool enable)
 
 	if (!BT_FEAT_LE_EXT_PER_ADV(bt_dev.le.features)) {
 		return -ENOTSUP;
+	}
+
+	CHECKIF(adv == NULL) {
+		LOG_DBG("adv is NULL");
+
+		return -EINVAL;
 	}
 
 	/* TODO: We could setup some default ext adv params if not already set*/
