@@ -1,0 +1,19 @@
+identifier: google_icetower
+name: Google Icetower Development Board
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 1024
+flash: 2048
+vendor: google
+supported:
+  - counter
+  - dma
+  - gpio
+  - i2c
+  - spi
+  - pwm
+  - rtc
