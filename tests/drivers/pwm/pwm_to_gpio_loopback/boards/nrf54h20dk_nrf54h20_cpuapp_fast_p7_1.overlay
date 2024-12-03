@@ -1,0 +1,55 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/gpio/nordic-nrf-gpio.h>
+
+/* Test requires wire connection between:
+ *  - PWM120 OUT[1] at P7.1
+ *  - GPIO input at P1.05
+ */
+
+/ {
+	pwm_to_gpio_loopback: pwm_to_gpio_loopback {
+		compatible = "test-pwm-to-gpio-loopback";
+		pwms = <&pwm120 1 0 PWM_POLARITY_NORMAL>;
+		gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&pinctrl {
+	pwm_default: pwm_default {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT1, 7, 1)>;
+		};
+	};
+	pwm_sleep: pwm_sleep {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT1, 7, 1)>;
+			low-power-enable;
+		};
+	};
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&pwm120 {
+	status = "okay";
+	pinctrl-0 = <&pwm_default>;
+	pinctrl-1 = <&pwm_sleep>;
+	pinctrl-names = "default", "sleep";
+	memory-regions = <&dma_fast_region>;
+};
+
+&dma_fast_region {
+	status = "okay";
+};
+
+&pwm130 {
+	status = "disabled";
+};

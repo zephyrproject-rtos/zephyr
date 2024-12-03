@@ -1,0 +1,57 @@
+common:
+  tags:
+    - pwm
+    - drivers
+    - ci_tests_drivers_pwm
+  depends_on: pwm
+  filter: dt_compat_enabled("test-pwm-to-gpio-loopback")
+  harness: ztest
+  harness_config:
+    fixture: gpio_loopback
+
+tests:
+  drivers.pwm.gpio_loopback:
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
+    integration_platforms:
+      - nrf54h20dk/nrf54h20/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
+
+  drivers.pwm.gpio_loopback.fast_p7_0:
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+    integration_platforms:
+      - nrf54h20dk/nrf54h20/cpuapp
+    extra_args:
+      DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_fast_p7_0.overlay"
+      CONFIG_TEST_PWM_PERIOD_USEC=10000
+
+  drivers.pwm.gpio_loopback.fast_p7_1:
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+    integration_platforms:
+      - nrf54h20dk/nrf54h20/cpuapp
+    extra_args:
+      DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_fast_p7_1.overlay"
+      CONFIG_TEST_PWM_PERIOD_USEC=10000
+
+  drivers.pwm.gpio_loopback.fast_p7_6:
+    build_only: true
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+    integration_platforms:
+      - nrf54h20dk/nrf54h20/cpuapp
+    extra_args:
+      DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_fast_p7_6.overlay"
+      CONFIG_TEST_PWM_PERIOD_USEC=10000
+
+  drivers.pwm.gpio_loopback.fast_p7_7:
+    build_only: true
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+    integration_platforms:
+      - nrf54h20dk/nrf54h20/cpuapp
+    extra_args:
+      DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_fast_p7_7.overlay"
+      CONFIG_TEST_PWM_PERIOD_USEC=10000

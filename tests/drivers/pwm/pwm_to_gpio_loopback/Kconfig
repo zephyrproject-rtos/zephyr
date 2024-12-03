@@ -1,0 +1,15 @@
+#
+# Copyright (c) 2024 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config TEST_PWM_PERIOD_USEC
+	int "PWM period in microseconds"
+	default 200000
+	help
+	  Set PWM signal period to TEST_PWM_PERIOD_USEC microseconds.
+	  In the test, PWM pulse width will be set to half of this value.
+	  The maximum allowable PWM period value is limited by the hardware design.
+
+source "Kconfig.zephyr"
