@@ -522,20 +522,17 @@ static int rm67162_set_pixel_format(const struct device *dev,
 	switch (pixel_format) {
 	case PIXEL_FORMAT_RGB_565:
 		data->pixel_format = MIPI_DSI_PIXFMT_RGB565;
-		return 0;
+		param = MIPI_DCS_PIXEL_FORMAT_16BIT;
+		data->bytes_per_pixel = 2;
+		break;
 	case PIXEL_FORMAT_RGB_888:
 		data->pixel_format = MIPI_DSI_PIXFMT_RGB888;
-		return 0;
+		param = MIPI_DCS_PIXEL_FORMAT_24BIT;
+		data->bytes_per_pixel = 3;
+		break;
 	default:
 		/* Other display formats not implemented */
 		return -ENOTSUP;
-	}
-	if (data->pixel_format == MIPI_DSI_PIXFMT_RGB888) {
-		param = MIPI_DCS_PIXEL_FORMAT_24BIT;
-		data->bytes_per_pixel = 3;
-	} else if (data->pixel_format == MIPI_DSI_PIXFMT_RGB565) {
-		param = MIPI_DCS_PIXEL_FORMAT_16BIT;
-		data->bytes_per_pixel = 2;
 	}
 	return mipi_dsi_dcs_write(config->mipi_dsi, config->channel,
 				MIPI_DCS_SET_PIXEL_FORMAT, &param, 1);
