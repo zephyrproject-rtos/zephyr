@@ -350,7 +350,7 @@ static int rm67162_write_fb(const struct device *dev, bool first_write,
 			const uint8_t *src, uint32_t len)
 {
 	const struct rm67162_config *config = dev->config;
-	uint32_t wlen = 0;
+	ssize_t wlen;
 	struct mipi_dsi_msg msg = {0};
 
 	/* Note- we need to set custom flags on the DCS message,
@@ -368,7 +368,7 @@ static int rm67162_write_fb(const struct device *dev, bool first_write,
 		msg.tx_buf = src;
 		wlen = mipi_dsi_transfer(config->mipi_dsi, config->channel, &msg);
 		if (wlen < 0) {
-			return wlen;
+			return (int)wlen;
 		}
 		/* Advance source pointer and decrement remaining */
 		src += wlen;
