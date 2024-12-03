@@ -39,11 +39,21 @@
 	};
 
 	soc {
-		flash: flash@10000000 {
-			reg = <0x10000000 DT_SIZE_M(1)>;
-			compatible = "soc-nv-flash";
-			write-block-size = <16>;
-			erase-block-size = <8192>;
+		fmu: memory-controller@50020000 {
+			ranges = <0x0 0x10000000 DT_SIZE_M(1)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			compatible = "nxp,msf1";
+			reg = <0x50020000 0x1000>;
+			interrupts = <27 0>;
+			status = "disabled";
+
+			flash: flash@0 {
+				reg = <0x0 DT_SIZE_M(1)>;
+				compatible = "soc-nv-flash";
+				write-block-size = <16>;
+				erase-block-size = <8192>;
+			};
 		};
 
 		ctcm: sram@14000000 {
@@ -89,16 +99,6 @@
 				reg = <0x0 0x4b000>;
 				#address-cells = <1>;
 				#size-cells = <1>;
-
-				fmu: memory-controller@20000 {
-					ranges = <0x0 0x10000000 DT_SIZE_M(1)>;
-					#address-cells = <1>;
-					#size-cells = <1>;
-					compatible = "nxp,msf1";
-					reg = <0x20000 0x1000>;
-					interrupts = <27 0>;
-					status = "disabled";
-				};
 			};
 
 			fast_peripheral0: fast_peripherals0@8000000 {
