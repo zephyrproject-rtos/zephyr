@@ -334,7 +334,11 @@ static int rm67162_init(const struct device *dev)
 		/* Init and install GPIO callback */
 		gpio_init_callback(&data->te_gpio_cb, rm67162_te_isr_handler,
 				BIT(config->te_gpio.pin));
-		gpio_add_callback(config->te_gpio.port, &data->te_gpio_cb);
+		ret = gpio_add_callback(config->te_gpio.port, &data->te_gpio_cb);
+		if (ret < 0) {
+			LOG_ERR("Could not add TE gpio callback");
+			return ret;
+		}
 
 		/* Setup te pin semaphore */
 		k_sem_init(&data->te_sem, 0, 1);
