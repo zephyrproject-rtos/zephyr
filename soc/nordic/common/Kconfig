@@ -22,6 +22,13 @@ config MRAM_LATENCY_SYNC_TIMEOUT
 	help
 	  Timeout is given in milliseconds.
 
+config MRAM_LATENCY_AUTO_REQ
+	bool "Request MRAM without latency at start"
+	help
+	  When enabled then MRAM configuration without latency is requested
+	  during the initialization and is kept enabled until the mram_latency API user
+	  calls mram_no_latency_sync_release().
+
 module = MRAM_LATENCY
 module-str = mram_latency
 source "subsys/logging/Kconfig.template.log_config"
