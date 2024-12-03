@@ -241,5 +241,15 @@
 			clocks = <&rtc ESP32_LEDC_MODULE>;
 			status = "disabled";
 		};
+
+		mcpwm0: mcpwm@60014000 {
+			compatible = "espressif,esp32-mcpwm";
+			reg = <0x60014000 DT_SIZE_K(4)>;
+			interrupts = <MCPWM0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_MCPWM0_MODULE>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
 	};
 };
