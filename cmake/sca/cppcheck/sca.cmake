@@ -42,6 +42,7 @@ add_custom_target(
         --include=${CMAKE_BINARY_DIR}/zephyr/include/generated/zephyr/autoconf.h
         -j 12 # XXX: Works on my machine
         -D__cppcheck__ # As recommended by the Cppcheck manual
+        --clang
         --premium=safety-off # Prevent non-zero exit code when issues found
                              # XXX: Remove when running with the FOSS version.
         ${CODECHECKER_ANALYZE_OPTS}
