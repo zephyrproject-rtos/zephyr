@@ -12,6 +12,7 @@
 		led0 = &green_led;
 		sw0 = &user_button;
 		pwm-led0 = &green_pwm_led;
+		sdhc0 = &usdhc1;
 	};
 
 	leds {
@@ -138,4 +139,17 @@
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm2>;
 	pinctrl-names = "default";
+};
+
+&usdhc1 {
+	status = "okay";
+	no-1-8-v;
+	pwr-gpios = <&gpio4 14 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&pinmux_usdhc1>;
+	pinctrl-names = "default";
+	sdmmc {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
+		status = "okay";
+	};
 };

@@ -417,6 +417,24 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_SetRootClock(kCLOCK_Root_Flexspi1, &rootCfg);
 #endif
 
+#ifdef CONFIG_IMX_USDHC
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay)
+	/* Configure USDHC1 using SysPll2Pfd2 */
+	rootCfg.mux = kCLOCK_USDHC1_ClockRoot_MuxSysPll2Pfd2;
+	rootCfg.div = 2;
+	CLOCK_SetRootClock(kCLOCK_Root_Usdhc1, &rootCfg);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc2), okay)
+	/* Configure USDHC2 using SysPll2Pfd2 */
+	rootCfg.mux = kCLOCK_USDHC2_ClockRoot_MuxSysPll2Pfd2;
+	rootCfg.div = 2;
+	CLOCK_SetRootClock(kCLOCK_Root_Usdhc2, &rootCfg);
+#endif
+
+#endif /* CONFIG_IMX_USDHC */
+
 	/* Keep core clock ungated during WFI */
 	CCM->LPCG[1].LPM0 = 0x33333333;
 	CCM->LPCG[1].LPM1 = 0x33333333;
