@@ -22,4 +22,5 @@ supported:
   - adc
   - can
   - pwm
+  - i3c
 vendor: nxp
