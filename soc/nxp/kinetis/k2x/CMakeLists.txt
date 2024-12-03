@@ -9,7 +9,7 @@ zephyr_sources(
   soc.c
   )
 
-if(DEFINED CONFIG_ARM_MPU AND DEFINED CONFIG_CPU_HAS_NXP_MPU)
+if(DEFINED CONFIG_ARM_MPU AND DEFINED CONFIG_CPU_HAS_NXP_SYSMPU)
   # MK22F12 series MCUs have NXP MPU
   zephyr_sources(nxp_mpu_regions.c)
 endif()

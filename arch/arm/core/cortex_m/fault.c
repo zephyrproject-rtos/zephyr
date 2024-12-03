@@ -35,7 +35,7 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 #define PR_FAULT_INFO(...)
 #endif
 
-#if defined(CONFIG_ARM_MPU) && defined(CONFIG_CPU_HAS_NXP_MPU)
+#if defined(CONFIG_ARM_MPU) && defined(CONFIG_CPU_HAS_NXP_SYSMPU)
 #define EMN(edr)   (((edr) & SYSMPU_EDR_EMN_MASK) >> SYSMPU_EDR_EMN_SHIFT)
 #define EACD(edr)  (((edr) & SYSMPU_EDR_EACD_MASK) >> SYSMPU_EDR_EACD_SHIFT)
 #endif
@@ -392,7 +392,7 @@ static int bus_fault(struct arch_esf *esf, int from_hard_fault, bool *recoverabl
 	}
 #endif /* !defined(CONFIG_ARMV7_M_ARMV8_M_FP) */
 
-#if defined(CONFIG_ARM_MPU) && defined(CONFIG_CPU_HAS_NXP_MPU)
+#if defined(CONFIG_ARM_MPU) && defined(CONFIG_CPU_HAS_NXP_SYSMPU)
 	uint32_t sperr = SYSMPU->CESR & SYSMPU_CESR_SPERR_MASK;
 	uint32_t mask = BIT(31);
 	int i;
@@ -427,7 +427,7 @@ static int bus_fault(struct arch_esf *esf, int from_hard_fault, bool *recoverabl
 				/* Note: we can assume the fault originated
 				 * from the same security state for ARM
 				 * platforms implementing the NXP MPU
-				 * (CONFIG_CPU_HAS_NXP_MPU=y).
+				 * (CONFIG_CPU_HAS_NXP_SYSMPU=y).
 				 *
 				 * As we only assess thread stack corruption,
 				 * we only process the error further, if the
@@ -483,7 +483,7 @@ static int bus_fault(struct arch_esf *esf, int from_hard_fault, bool *recoverabl
 		}
 		SYSMPU->CESR &= ~sperr;
 	}
-#endif /* defined(CONFIG_ARM_MPU) && defined(CONFIG_CPU_HAS_NXP_MPU) */
+#endif /* defined(CONFIG_ARM_MPU) && defined(CONFIG_CPU_HAS_NXP_SYSMPU) */
 
 	/* clear BFSR sticky bits */
 	SCB->CFSR |= SCB_CFSR_BUSFAULTSR_Msk;

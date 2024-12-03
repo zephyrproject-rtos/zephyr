@@ -45,4 +45,4 @@ config SOC_MK22F12
 	select CPU_HAS_FPU
 	select HAS_MCUX_DAC
 	select HAS_MCUX_RCM
-	select CPU_HAS_NXP_MPU
+	select CPU_HAS_NXP_SYSMPU
