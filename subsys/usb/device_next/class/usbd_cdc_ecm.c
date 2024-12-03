@@ -89,7 +89,6 @@ struct cdc_ecm_eth_data {
 	uint8_t mac_addr[6];
 
 	struct k_sem sync_sem;
-	struct k_sem notif_sem;
 	atomic_t state;
 };
 
@@ -300,9 +299,7 @@ static int usbd_cdc_ecm_request(struct usbd_class_data *const c_data,
 	}
 
 	if (bi->ep == cdc_ecm_get_int_in(c_data)) {
-		k_sem_give(&data->notif_sem);
-
-		return 0;
+		LOG_INF("Notification %s", err ? "sent" : "cancelled or failed");
 	}
 
 	return usbd_ep_buf_free(uds_ctx, buf);
@@ -352,9 +349,6 @@ static int cdc_ecm_send_notification(const struct device *dev,
 		return ret;
 	}
 
-	k_sem_take(&data->notif_sem, K_FOREVER);
-	net_buf_unref(buf);
-
 	return 0;
 }
 
@@ -375,6 +369,12 @@ static void usbd_cdc_ecm_update(struct usbd_class_data *const c_data,
 
 	if (data_iface == iface && alternate == 1) {
 		net_if_carrier_on(data->iface);
+		if (atomic_test_bit(&data->state, CDC_ECM_IFACE_UP)) {
+			if (cdc_ecm_send_notification(dev, true)) {
+				LOG_ERR("Failed to send connected notification");
+			}
+		}
+
 		if (cdc_ecm_out_start(c_data)) {
 			LOG_ERR("Failed to start OUT transfer");
 		}
@@ -561,29 +561,35 @@ static enum ethernet_hw_caps cdc_ecm_get_capabilities(const struct device *dev)
 static int cdc_ecm_iface_start(const struct device *dev)
 {
 	struct cdc_ecm_eth_data *data = dev->data;
-	int ret;
 
 	LOG_DBG("Start interface %p", data->iface);
-	ret = cdc_ecm_send_notification(dev, true);
-	if (!ret) {
-		atomic_set_bit(&data->state, CDC_ECM_IFACE_UP);
+
+	atomic_set_bit(&data->state, CDC_ECM_IFACE_UP);
+
+	if (atomic_test_bit(&data->state, CDC_ECM_CLASS_ENABLED)) {
+		if (cdc_ecm_send_notification(dev, true)) {
+			LOG_ERR("Failed to send connected notification");
+		}
 	}
 
-	return ret;
+	return 0;
 }
 
 static int cdc_ecm_iface_stop(const struct device *dev)
 {
 	struct cdc_ecm_eth_data *data = dev->data;
-	int ret;
 
 	LOG_DBG("Stop interface %p", data->iface);
-	ret = cdc_ecm_send_notification(dev, false);
-	if (!ret) {
-		atomic_clear_bit(&data->state, CDC_ECM_IFACE_UP);
+
+	atomic_clear_bit(&data->state, CDC_ECM_IFACE_UP);
+
+	if (atomic_test_bit(&data->state, CDC_ECM_CLASS_ENABLED)) {
+		if (cdc_ecm_send_notification(dev, false)) {
+			LOG_ERR("Failed to send disconnected notification");
+		}
 	}
 
-	return ret;
+	return 0;
 }
 
 static void cdc_ecm_iface_init(struct net_if *const iface)
@@ -815,7 +821,6 @@ static struct usbd_cdc_ecm_desc cdc_ecm_desc_##n = {				\
 		.c_data = &cdc_ecm_##n,						\
 		.mac_addr = DT_INST_PROP_OR(n, local_mac_address, {0}),		\
 		.sync_sem = Z_SEM_INITIALIZER(eth_data_##n.sync_sem, 0, 1),	\
-		.notif_sem = Z_SEM_INITIALIZER(eth_data_##n.notif_sem, 0, 1),	\
 		.mac_desc_data = &mac_desc_data_##n,				\
 		.desc = &cdc_ecm_desc_##n,					\
 		.fs_desc = cdc_ecm_fs_desc_##n,					\
