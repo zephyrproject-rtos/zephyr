@@ -291,7 +291,8 @@ static inline struct net_pkt *arp_prepare(struct net_if *iface,
 	 */
 	if (entry) {
 		if (!net_pkt_ipv4_acd(pkt)) {
-			k_fifo_put(&entry->pending_queue, net_pkt_ref(pending));
+			net_pkt_ref(pending);
+			k_fifo_put(&entry->pending_queue, pending);
 		}
 
 		entry->iface = net_pkt_iface(pkt);
