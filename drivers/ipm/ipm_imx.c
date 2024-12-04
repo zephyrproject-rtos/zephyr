@@ -108,7 +108,8 @@ static void imx_mu_isr(const struct device *dev)
 	int32_t i;
 	bool all_registers_full;
 
-	status_reg = base->SR >>= MU_SR_RFn_SHIFT;
+	status_reg = MU_GetStatusFlags(base);
+	status_reg >>= kMU_Rx3FullFlag;
 
 	for (id = CONFIG_IPM_IMX_MAX_ID_VAL; id >= 0; id--) {
 		if (status_reg & 0x1U) {
@@ -140,8 +141,8 @@ static void imx_mu_isr(const struct device *dev)
 
 				if (data->callback) {
 					data->callback(dev, data->user_data,
-						       (uint32_t)id,
-						       &data32[0]);
+							   (uint32_t)id,
+							   &data32[0]);
 				}
 			}
 		}
@@ -206,7 +207,7 @@ static int imx_mu_ipm_send(const struct device *dev, int wait, uint32_t id,
 #else
 	for (i = 0; i < IMX_IPM_DATA_REGS; i++) {
 		status = MU_TrySendMsg(base, id * IMX_IPM_DATA_REGS + i,
-				       data32[i]);
+					   data32[i]);
 		if (status == kStatus_MU_TxNotEmpty) {
 			return -EBUSY;
 		}
@@ -361,17 +362,17 @@ static const struct imx_mu_config imx_mu_b_config = {
 static struct imx_mu_data imx_mu_b_data;
 
 DEVICE_DT_INST_DEFINE(0,
-		    &imx_mu_init,
-		    NULL,
-		    &imx_mu_b_data, &imx_mu_b_config,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &imx_mu_driver_api);
+			&imx_mu_init,
+			NULL,
+			&imx_mu_b_data, &imx_mu_b_config,
+			PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+			&imx_mu_driver_api);
 
 static void imx_mu_config_func_b(const struct device *dev)
 {
 	IRQ_CONNECT(DT_INST_IRQN(0),
-		    DT_INST_IRQ(0, priority),
-		    imx_mu_isr, DEVICE_DT_INST_GET(0), 0);
+			DT_INST_IRQ(0, priority),
+			imx_mu_isr, DEVICE_DT_INST_GET(0), 0);
 
 	irq_enable(DT_INST_IRQN(0));
 }
