@@ -23,6 +23,12 @@ LOG_MODULE_REGISTER(FXLS8974, CONFIG_SENSOR_LOG_LEVEL);
 int fxls8974_transceive(const struct device *dev,
 				void *data, size_t length)
 {
+		if (dev == NULL) {
+			return -ENXIO;
+		}
+		if (data == NULL) {
+			return -ENOSR;
+		}
 		const struct fxls8974_config *cfg = dev->config;
 		const struct spi_buf buf = { .buf = data, .len = length };
 		const struct spi_buf_set s = { .bufs = &buf, .count = 1 };
@@ -35,6 +41,12 @@ int fxls8974_read_spi(const struct device *dev,
 				void *data,
 				size_t length)
 {
+		if (dev == NULL) {
+			return -ENXIO;
+		}
+		if (data == NULL) {
+			return -ENOSR;
+		}
 		const struct fxls8974_config *cfg = dev->config;
 
 		/* Reads must clock out a dummy byte after sending the address. */
@@ -53,6 +65,12 @@ int fxls8974_byte_read_spi(const struct device *dev,
 				uint8_t reg,
 				uint8_t *byte)
 {
+		if (dev == NULL) {
+			return -ENXIO;
+		}
+		if (byte == NULL) {
+			return -ENOSR;
+		}
 		/* Reads must clock out a dummy byte after sending the address. */
 		uint8_t data[] = { DIR_READ(reg), ADDR_7(reg), 0};
 		int ret;
@@ -68,6 +86,9 @@ int fxls8974_byte_write_spi(const struct device *dev,
 				uint8_t reg,
 				uint8_t byte)
 {
+		if (dev == NULL) {
+			return -ENXIO;
+		}
 		uint8_t data[] = { DIR_WRITE(reg), ADDR_7(reg), byte };
 
 		return fxls8974_transceive(dev, data, sizeof(data));
@@ -78,6 +99,10 @@ int fxls8974_reg_field_update_spi(const struct device *dev,
 				uint8_t mask,
 				uint8_t val)
 {
+		if (dev == NULL) {
+			return -ENXIO;
+		}
+
 		uint8_t old_val;
 
 		if (fxls8974_byte_read_spi(dev, reg, &old_val) < 0) {
@@ -101,6 +126,13 @@ int fxls8974_read_i2c(const struct device *dev,
 				void *data,
 				size_t length)
 {
+		if (dev == NULL) {
+			return -ENXIO;
+		}
+		if (data == NULL) {
+			return -ENOSR;
+		}
+
 		const struct fxls8974_config *cfg = dev->config;
 
 		return i2c_burst_read_dt(&cfg->bus_cfg.i2c, reg, data, length);
@@ -110,6 +142,12 @@ int fxls8974_byte_read_i2c(const struct device *dev,
 				uint8_t reg,
 				uint8_t *byte)
 {
+		if (dev == NULL) {
+			return -ENXIO;
+		}
+		if (byte == NULL) {
+			return -ENOSR;
+		}
 		const struct fxls8974_config *cfg = dev->config;
 
 		return i2c_reg_read_byte_dt(&cfg->bus_cfg.i2c, reg, byte);
@@ -119,6 +157,10 @@ int fxls8974_byte_write_i2c(const struct device *dev,
 				uint8_t reg,
 				uint8_t byte)
 {
+		if (dev == NULL) {
+			return -ENXIO;
+		}
+
 		const struct fxls8974_config *cfg = dev->config;
 
 		return i2c_reg_write_byte_dt(&cfg->bus_cfg.i2c, reg, byte);
@@ -129,10 +171,15 @@ int fxls8974_reg_field_update_i2c(const struct device *dev,
 				uint8_t mask,
 				uint8_t val)
 {
+		if (dev == NULL) {
+			return -ENXIO;
+		}
+
 		const struct fxls8974_config *cfg = dev->config;
 
 		return i2c_reg_update_byte_dt(&cfg->bus_cfg.i2c, reg, mask, val);
 }
+
 static const struct fxls8974_io_ops fxls8974_i2c_ops = {
 		.read = fxls8974_read_i2c,
 		.byte_read = fxls8974_byte_read_i2c,
@@ -144,6 +191,13 @@ static const struct fxls8974_io_ops fxls8974_i2c_ops = {
 static int fxls8974_set_odr(const struct device *dev,
 				const struct sensor_value *val, enum fxls8974_wake mode)
 {
+		if (dev == NULL) {
+			return -ENXIO;
+		}
+		if (val == NULL) {
+			return -ENOSR;
+		}
+
 		const struct fxls8974_config *cfg = dev->config;
 		uint8_t odr;
 		/* val int32 */
@@ -222,6 +276,13 @@ static int fxls8974_attr_set(const struct device *dev,
 				enum sensor_attribute attr,
 				const struct sensor_value *val)
 {
+		if (dev == NULL) {
+			return -ENXIO;
+		}
+		if (val == NULL) {
+			return -ENOSR;
+		}
+
 		if (chan != SENSOR_CHAN_ALL) {
 			return -ENOTSUP;
 		}
@@ -237,6 +298,10 @@ static int fxls8974_attr_set(const struct device *dev,
 
 static int fxls8974_sample_fetch(const struct device *dev, enum sensor_channel ch)
 {
+		if (dev == NULL) {
+			return -ENXIO;
+		}
+
 		const struct fxls8974_config *cfg = dev->config;
 		struct fxls8974_data *data = dev->data;
 		uint8_t buf[FXLS8974_MAX_NUM_BYTES];
@@ -283,6 +348,10 @@ exit:
 static void fxls8974_accel_convert(struct sensor_value *val, int16_t raw,
 				uint8_t fsr)
 {
+		if (val == NULL) {
+			return;
+		}
+
 		int64_t micro_ms2;
 
 		/* Convert units to micro m/s^2. */
@@ -299,6 +368,13 @@ static void fxls8974_accel_convert(struct sensor_value *val, int16_t raw,
 static int fxls8974_get_accel_data(const struct device *dev,
 		struct sensor_value *val, enum sensor_channel ch)
 {
+		if (dev == NULL) {
+			return -ENXIO;
+		}
+		if (val == NULL) {
+			return -ENOSR;
+		}
+
 		const struct fxls8974_config *cfg = dev->config;
 		struct fxls8974_data *data = dev->data;
 		int16_t *raw;
@@ -355,6 +431,13 @@ static int fxls8974_get_accel_data(const struct device *dev,
 
 static int fxls8974_get_temp_data(const struct device *dev, struct sensor_value *val)
 {
+		if (dev == NULL) {
+			return -ENXIO;
+		}
+		if (val == NULL) {
+			return -ENOSR;
+		}
+
 		struct fxls8974_data *data = dev->data;
 		int16_t *raw;
 
@@ -370,6 +453,12 @@ static int fxls8974_channel_get(const struct device *dev,
 				enum sensor_channel chan,
 				struct sensor_value *val)
 {
+		if (dev == NULL) {
+			return -ENXIO;
+		}
+		if (val == NULL) {
+			return -ENOSR;
+		}
 
 		switch (chan) {
 		case SENSOR_CHAN_ALL:
@@ -401,6 +490,12 @@ static int fxls8974_channel_get(const struct device *dev,
 
 int fxls8974_get_active(const struct device *dev, enum fxls8974_active *active)
 {
+		if (dev == NULL) {
+			return -ENXIO;
+		}
+		if (active == NULL)
+			return -ENOSR;
+
 		const struct fxls8974_config *cfg = dev->config;
 		uint8_t val;
 
@@ -417,6 +512,10 @@ int fxls8974_get_active(const struct device *dev, enum fxls8974_active *active)
 
 int fxls8974_set_active(const struct device *dev, enum fxls8974_active active)
 {
+		if (dev == NULL) {
+			return -ENXIO;
+		}
+
 		const struct fxls8974_config *cfg = dev->config;
 
 		return cfg->ops->reg_field_update(dev, FXLS8974_REG_CTRLREG1,
@@ -425,6 +524,10 @@ int fxls8974_set_active(const struct device *dev, enum fxls8974_active active)
 
 static void fxls8974_print_config(const struct device *dev)
 {
+		if (dev == NULL) {
+			return;
+		}
+
 		const struct fxls8974_config *cfg = dev->config;
 		uint8_t regVal[5];
 
@@ -438,6 +541,10 @@ static void fxls8974_print_config(const struct device *dev)
 
 static int fxls8974_init(const struct device *dev)
 {
+		if (dev == NULL) {
+			return -ENXIO;
+		}
+
 		const struct fxls8974_config *cfg = dev->config;
 		struct fxls8974_data *data = dev->data;
 		struct sensor_value odr = {.val1 = 6, .val2 = 250000};
