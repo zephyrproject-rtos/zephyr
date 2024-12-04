@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,7 +19,7 @@
 		green_led: led-1 {
 			gpios = <&gpio4 27 GPIO_ACTIVE_HIGH>;
 			label = "User LED D6";
-	    };
+		};
 	};
 
 	gpio_keys {
@@ -140,6 +140,14 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_lpuart1>;
 	pinctrl-1 = <&pinmux_lpuart1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&lpuart12 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_lpuart12>;
+	pinctrl-1 = <&pinmux_lpuart12_sleep>;
 	pinctrl-names = "default", "sleep";
 };
 
