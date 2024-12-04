@@ -1,0 +1,10 @@
+# Copyright (c) 2024 Arrow Electronics.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Bosch BMA530 3-axis acceleration sensor in I2C mode. See more info at:
+  https://www.bosch-sensortec.com/products/motion-sensors/accelerometers/
+
+compatible: "bosch,bma530"
+
+include: [sensor-device.yaml, i2c-device.yaml, "bosch,bma530-common.yaml"]

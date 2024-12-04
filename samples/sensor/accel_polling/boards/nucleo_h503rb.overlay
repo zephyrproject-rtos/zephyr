@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2024 Arrow Electronics.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		accel0= &accelerometer;
+	};
+};
+
+/*
+ * Note - BMA530 is not present on the Nucleo h503rb eval board, and must be
+ * wired to i2c1 externally.
+ */
+&i2c1 {
+	accelerometer: bma530@18 {
+		compatible = "bosch,bma530";
+		friendly-name = "bosch_bma530";
+		reg = <0x18>;
+	};
+};

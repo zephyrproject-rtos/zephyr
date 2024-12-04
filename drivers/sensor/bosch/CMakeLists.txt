@@ -4,6 +4,7 @@
 # zephyr-keep-sorted-start
 add_subdirectory_ifdef(CONFIG_BMA280 bma280)
 add_subdirectory_ifdef(CONFIG_BMA4XX bma4xx)
+add_subdirectory_ifdef(CONFIG_BMA530 bma530)
 add_subdirectory_ifdef(CONFIG_BMC150_MAGN bmc150_magn)
 add_subdirectory_ifdef(CONFIG_BME280 bme280)
 add_subdirectory_ifdef(CONFIG_BME680 bme680)

@@ -4,6 +4,7 @@
 # zephyr-keep-sorted-start
 source "drivers/sensor/bosch/bma280/Kconfig"
 source "drivers/sensor/bosch/bma4xx/Kconfig"
+source "drivers/sensor/bosch/bma530/Kconfig"
 source "drivers/sensor/bosch/bmc150_magn/Kconfig"
 source "drivers/sensor/bosch/bme280/Kconfig"
 source "drivers/sensor/bosch/bme680/Kconfig"
