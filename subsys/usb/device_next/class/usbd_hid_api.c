@@ -129,8 +129,11 @@ void wrapper_set_protocol(const struct device *dev, const uint8_t proto)
 	}
 }
 
-void wrapper_input_report_done(const struct device *dev)
+void wrapper_input_report_done(const struct device *dev,
+			       const uint8_t *const report)
 {
+	ARG_UNUSED(report);
+
 	const struct hid_ops *legacy_ops = get_legacy_ops(dev);
 
 	if (legacy_ops != NULL && legacy_ops->int_in_ready != NULL) {
