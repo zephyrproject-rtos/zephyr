@@ -73,18 +73,4 @@ config SOC_NRF_FORCE_CONSTLAT
 	  of base resources on while in sleep. The advantage of having a constant
 	  and predictable latency will be at the cost of having increased power consumption.
 
-if NRF_GRTC_TIMER
-
-config ELV_GRTC_LFXO_ALLOWED
-	bool
-	depends on POWEROFF
-	select EXPERIMENTAL
-	help
-	  This feature allows using ELV mode when GRTC operates with the LFXO as
-	  a low-frequency clock source. The LFXO is automatically activated when
-	  preparing to system-off.
-	  WARNING! This feature is EXPERIMENTAL and may brick your device!
-
-endif # NRF_GRTC_TIMER
-
 endif # SOC_SERIES_NRF54LX

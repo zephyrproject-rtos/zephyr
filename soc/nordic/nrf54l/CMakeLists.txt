@@ -6,7 +6,3 @@ zephyr_library_sources(
   ../validate_rram_partitions.c
   )
 zephyr_include_directories(.)
-
-if(CONFIG_ELV_GRTC_LFXO_ALLOWED)
-  message(WARNING "WARNING! ELV mode feature is EXPERIMENTAL and may brick your device!")
-endif()
