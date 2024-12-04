@@ -212,10 +212,16 @@ enum mspi_timing_param {
  * @brief Stub for struct timing_cfg
  */
 struct mspi_timing_cfg {
-#ifdef __cplusplus
-	/* For C++ compatibility. */
-	uint8_t dummy;
-#endif
+	/* @brief minimum interval between CE assertions, in nanoseconds */
+	uint8_t ce_interval;
+	/* @brief CE setup time from rising clock edge, in nanoseconds */
+	uint8_t ce_setup;
+	/* @brief CE hold time from rising clock edge, in nanoseconds */
+	uint8_t ce_hold;
+	/* @brief delay from falling clock edge until output data is valid,
+	 * in nanoseconds
+	 */
+	uint8_t data_valid_time;
 };
 
 /**
