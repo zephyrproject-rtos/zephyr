@@ -1,0 +1,17 @@
+common:
+  build_only: true
+  tags:
+    - bluetooth
+  platform_allow:
+    - nrf52_bsim/native
+  harness: bsim
+
+tests:
+  bluetooth.host.gatt.ccc_store:
+    harness_config:
+      bsim_exe_name: tests_bsim_bluetooth_host_gatt_ccc_store_prj_conf
+  bluetooth.host.gatt.ccc_store_2:
+    harness_config:
+      bsim_exe_name: tests_bsim_bluetooth_host_gatt_ccc_store_prj_2_conf
+    extra_args:
+      EXTRA_CONF_FILE=prj_2.conf

@@ -1,0 +1,10 @@
+tests:
+  bluetooth.host.iso.bis:
+    build_only: true
+    tags:
+      - bluetooth
+    platform_allow:
+      - nrf52_bsim/native
+    harness: bsim
+    harness_config:
+      bsim_exe_name: tests_bsim_bluetooth_host_iso_bis_prj_conf
