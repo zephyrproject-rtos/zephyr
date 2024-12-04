@@ -1,9 +1,12 @@
 /*
  * SPDX-FileCopyrightText: Copyright (c) 2023 Carl Zeiss Meditec AG
+ * SPDX-FileCopyrightText: Copyright (c) 2024 Jilay Sandeep Pandya
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #define DT_DRV_COMPAT adi_adltc2990
+
+#include <stdbool.h>
 
 #include <zephyr/sys/util.h>
 #include <zephyr/drivers/i2c.h>
@@ -30,25 +33,24 @@ static enum adltc2990_monitoring_type adltc2990_get_v1_v2_measurement_modes(uint
 
 	switch (mode_2_0) {
 	case ADLTC2990_MODE_V1_V2_TR2:
-	case ADLTC2990_MODE_V1_V2_V3_V4: {
+	case ADLTC2990_MODE_V1_V2_V3_V4:
 		type = VOLTAGE_SINGLEENDED;
 		break;
-	}
+
 	case ADLTC2990_MODE_V1_MINUS_V2_TR2:
 	case ADLTC2990_MODE_V1_MINUS_V2_V3_V4:
-	case ADLTC2990_MODE_V1_MINUS_V2_V3_MINUS_V4: {
+	case ADLTC2990_MODE_V1_MINUS_V2_V3_MINUS_V4:
 		type = VOLTAGE_DIFFERENTIAL;
 		break;
-	}
+
 	case ADLTC2990_MODE_TR1_V3_V4:
-	case ADLTC2990_MODE_TR1_V3_MINUS_V4: {
+	case ADLTC2990_MODE_TR1_V3_MINUS_V4:
 	case ADLTC2990_MODE_TR1_TR2:
 		type = TEMPERATURE;
 		break;
-	}
-	default: {
+
+	default:
 		break;
-	}
 	}
 	return type;
 }
@@ -70,25 +72,23 @@ static enum adltc2990_monitoring_type adltc2990_get_v3_v4_measurement_modes(uint
 	switch (mode_2_0) {
 	case ADLTC2990_MODE_V1_V2_TR2:
 	case ADLTC2990_MODE_V1_MINUS_V2_TR2:
-	case ADLTC2990_MODE_TR1_TR2: {
+	case ADLTC2990_MODE_TR1_TR2:
 		type = TEMPERATURE;
 		break;
-	}
 
 	case ADLTC2990_MODE_V1_MINUS_V2_V3_V4:
 	case ADLTC2990_MODE_TR1_V3_V4:
-	case ADLTC2990_MODE_V1_V2_V3_V4: {
+	case ADLTC2990_MODE_V1_V2_V3_V4:
 		type = VOLTAGE_SINGLEENDED;
 		break;
-	}
+
 	case ADLTC2990_MODE_TR1_V3_MINUS_V4:
-	case ADLTC2990_MODE_V1_MINUS_V2_V3_MINUS_V4: {
+	case ADLTC2990_MODE_V1_MINUS_V2_V3_MINUS_V4:
 		type = VOLTAGE_DIFFERENTIAL;
 		break;
-	}
-	default: {
+
+	default:
 		break;
-	}
 	}
 	return type;
 }
@@ -152,40 +152,39 @@ static int adltc2990_fetch_property_value(const struct device *dev,
 	uint8_t msb_address, lsb_address;
 
 	switch (pin) {
-	case V1: {
+	case V1:
 		msb_address = ADLTC2990_REG_V1_MSB;
 		lsb_address = ADLTC2990_REG_V1_LSB;
 		break;
-	}
-	case V2: {
+
+	case V2:
 		msb_address = ADLTC2990_REG_V2_MSB;
 		lsb_address = ADLTC2990_REG_V2_LSB;
 		break;
-	}
-	case V3: {
+
+	case V3:
 		msb_address = ADLTC2990_REG_V3_MSB;
 		lsb_address = ADLTC2990_REG_V3_LSB;
 		break;
-	}
-	case V4: {
+
+	case V4:
 		msb_address = ADLTC2990_REG_V4_MSB;
 		lsb_address = ADLTC2990_REG_V4_LSB;
 		break;
-	}
-	case INTERNAL_TEMPERATURE: {
+
+	case INTERNAL_TEMPERATURE:
 		msb_address = ADLTC2990_REG_INTERNAL_TEMP_MSB;
 		lsb_address = ADLTC2990_REG_INTERNAL_TEMP_LSB;
 		break;
-	}
-	case SUPPLY_VOLTAGE: {
+
+	case SUPPLY_VOLTAGE:
 		msb_address = ADLTC2990_REG_VCC_MSB;
 		lsb_address = ADLTC2990_REG_VCC_LSB;
 		break;
-	}
-	default: {
+
+	default:
 		LOG_ERR("Trying to access illegal register");
 		return -EINVAL;
-	}
 	}
 	int ret;
 
@@ -268,7 +267,7 @@ static int adltc2990_sample_fetch(const struct device *dev, enum sensor_channel 
 	int32_t value;
 
 	switch (chan) {
-	case SENSOR_CHAN_DIE_TEMP: {
+	case SENSOR_CHAN_DIE_TEMP:
 		ret = adltc2990_fetch_property_value(dev, TEMPERATURE, INTERNAL_TEMPERATURE,
 						     &value);
 		if (ret) {
@@ -276,8 +275,8 @@ static int adltc2990_sample_fetch(const struct device *dev, enum sensor_channel 
 		}
 		data->internal_temperature = value;
 		break;
-	}
-	case SENSOR_CHAN_CURRENT: {
+
+	case SENSOR_CHAN_CURRENT:
 		if (!(mode_v1_v2 == VOLTAGE_DIFFERENTIAL || mode_v3_v4 == VOLTAGE_DIFFERENTIAL)) {
 			LOG_ERR("Sensor is not configured to measure Current");
 			return -EINVAL;
@@ -300,8 +299,8 @@ static int adltc2990_sample_fetch(const struct device *dev, enum sensor_channel 
 				 (float)cfg->pins_v3_v4.pins_current_resistor);
 		}
 		break;
-	}
-	case SENSOR_CHAN_VOLTAGE: {
+
+	case SENSOR_CHAN_VOLTAGE:
 		ret = adltc2990_fetch_property_value(dev, VOLTAGE_SINGLEENDED, SUPPLY_VOLTAGE,
 						     &value);
 		if (ret) {
@@ -370,8 +369,8 @@ static int adltc2990_sample_fetch(const struct device *dev, enum sensor_channel 
 			data->pins_v3_v4_values[1] = value * voltage_divider_ratio;
 		}
 		break;
-	}
-	case SENSOR_CHAN_AMBIENT_TEMP: {
+
+	case SENSOR_CHAN_AMBIENT_TEMP:
 		if (!(mode_v1_v2 == TEMPERATURE || mode_v3_v4 == TEMPERATURE)) {
 			LOG_ERR("Sensor is not configured to measure Ambient Temperature");
 			return -EINVAL;
@@ -391,9 +390,9 @@ static int adltc2990_sample_fetch(const struct device *dev, enum sensor_channel 
 			data->pins_v3_v4_values[0] = value;
 		}
 		break;
-	}
-	case SENSOR_CHAN_ALL: {
-		bool is_busy;
+
+	case SENSOR_CHAN_ALL:
+		bool is_busy = false;
 
 		ret = adltc2990_is_busy(dev, &is_busy);
 		if (ret) {
@@ -406,11 +405,10 @@ static int adltc2990_sample_fetch(const struct device *dev, enum sensor_channel 
 		}
 		adltc2990_trigger_measurement(dev);
 		break;
-	}
-	default: {
+
+	default:
 		LOG_ERR("does not measure channel: %d", chan);
 		return -ENOTSUP;
-	}
 	}
 
 	return 0;
@@ -433,13 +431,13 @@ static int adltc2990_channel_get(const struct device *dev, enum sensor_channel c
 	uint8_t offset_index = 0, num_values_v1_v2 = 0, num_values_v3_v4 = 0;
 
 	switch (chan) {
-	case SENSOR_CHAN_DIE_TEMP: {
+	case SENSOR_CHAN_DIE_TEMP:
 		val->val1 = (data->internal_temperature) / 1000000;
 		val->val2 = (data->internal_temperature) % 1000000;
 		LOG_DBG("Internal Temperature Value is:%d.%d", val->val1, val->val2);
 		break;
-	}
-	case SENSOR_CHAN_VOLTAGE: {
+
+	case SENSOR_CHAN_VOLTAGE:
 		if (mode_v1_v2 == VOLTAGE_SINGLEENDED) {
 			LOG_DBG("Getting V1,V2");
 			num_values_v1_v2 = ADLTC2990_VOLTAGE_SINGLE_ENDED_VALUES;
@@ -458,8 +456,8 @@ static int adltc2990_channel_get(const struct device *dev, enum sensor_channel c
 		val[num_values_v1_v2 + num_values_v3_v4].val1 = data->supply_voltage / 1000000;
 		val[num_values_v1_v2 + num_values_v3_v4].val2 = data->supply_voltage % 1000000;
 		break;
-	}
-	case SENSOR_CHAN_CURRENT: {
+
+	case SENSOR_CHAN_CURRENT:
 		if (!(mode_v1_v2 == VOLTAGE_DIFFERENTIAL || mode_v3_v4 == VOLTAGE_DIFFERENTIAL)) {
 			LOG_ERR("Sensor is not configured to measure Current");
 			return -EINVAL;
@@ -476,8 +474,8 @@ static int adltc2990_channel_get(const struct device *dev, enum sensor_channel c
 			num_values_v3_v4 = ADLTC2990_CURRENT_VALUES;
 		}
 		break;
-	}
-	case SENSOR_CHAN_AMBIENT_TEMP: {
+
+	case SENSOR_CHAN_AMBIENT_TEMP:
 		if (!(mode_v1_v2 == TEMPERATURE || mode_v3_v4 == TEMPERATURE)) {
 			LOG_ERR("Sensor is not configured to measure Ambient Temperature");
 			return -EINVAL;
@@ -494,10 +492,10 @@ static int adltc2990_channel_get(const struct device *dev, enum sensor_channel c
 			num_values_v3_v4 = ADLTC2990_TEMP_VALUES;
 		}
 		break;
-	}
-	default: {
+
+	default:
 		return -ENOTSUP;
-	}
+
 	}
 
 	adltc2990_get_v1_v2_val(dev, val, num_values_v1_v2, &offset_index);
