@@ -88,7 +88,9 @@ static void telink_w91_debug_init(void)
 
 			IRQ_CONNECT(UART_ISR_NUM + CONFIG_2ND_LVL_ISR_TBL_OFFSET, 0,
 				telink_w91_debug_isr, NULL, 0);
-			riscv_plic_set_priority(IRQ_TO_L2(UART_ISR_NUM), 1);
+			riscv_plic_set_priority(IRQ_TO_L2(UART_ISR_NUM) |
+							DT_IRQN(DT_INST(0, sifive_plic_1_0_0)),
+						1);
 		}
 		arch_irq_unlock(keys);
 	}
@@ -101,9 +103,11 @@ void telink_w91_debug_isr_set(bool enabled, void (*on_rx)(char c, void *ctx), vo
 		telink_w91_debug_isr_data.on_rx = on_rx;
 		telink_w91_debug_isr_data.ctx = ctx;
 		__write_reg32(UART_BASE_ADDR + OFT_ATCUART_IER, (1 << 0));
-		riscv_plic_irq_enable(IRQ_TO_L2(UART_ISR_NUM));
+		riscv_plic_irq_enable(IRQ_TO_L2(UART_ISR_NUM) |
+				      DT_IRQN(DT_INST(0, sifive_plic_1_0_0)));
 	} else {
-		riscv_plic_irq_disable(IRQ_TO_L2(UART_ISR_NUM));
+		riscv_plic_irq_disable(IRQ_TO_L2(UART_ISR_NUM) |
+				       DT_IRQN(DT_INST(0, sifive_plic_1_0_0)));
 		__write_reg32(UART_BASE_ADDR + OFT_ATCUART_IER, 0);
 		telink_w91_debug_isr_data.on_rx = NULL;
 		telink_w91_debug_isr_data.ctx = NULL;
