@@ -33,7 +33,7 @@ register struct k_thread *__arch_current_thread __asm__("gp");
 #define arch_current_thread() __arch_current_thread
 #define arch_current_thread_set(thread)                                                            \
 	do {                                                                                       \
-		_current_cpu->current = __arch_current_thread = (thread);                          \
+		__arch_current_thread = _current_cpu->current = (thread);                          \
 	} while (0)
 #endif /* CONFIG_RISCV_CURRENT_VIA_GP */
 
