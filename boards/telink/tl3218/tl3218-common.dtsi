@@ -87,6 +87,30 @@
 		};
 	};
 
+	/* Short TL_Key3 (J6 pin 21) to ground */
+	key_pool {
+		compatible = "gpio-keys";
+
+		inp {
+			gpios = <&gpiob 3 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>,
+				<&gpiob 5 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		};
+	};
+
+	key_matrix {
+		compatible = "gpio-keys";
+
+		col {
+			gpios = <&gpiob 6 GPIO_ACTIVE_HIGH>,
+				<&gpiob 7 GPIO_ACTIVE_HIGH>;
+		};
+
+		row {
+			gpios = <&gpiob 3 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
+				<&gpiob 5 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+		};
+	};
+
 	chosen {
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
