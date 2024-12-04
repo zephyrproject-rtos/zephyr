@@ -301,7 +301,7 @@ static int tmc5041_stepper_is_moving(const struct device *dev, bool *is_moving)
 	return 0;
 }
 
-static int tmc5041_stepper_move(const struct device *dev, const int32_t steps)
+static int tmc5041_stepper_move_by(const struct device *dev, const int32_t micro_steps)
 {
 	const struct tmc5041_stepper_config *config = dev->config;
 	struct tmc5041_stepper_data *data = dev->data;
@@ -320,7 +320,7 @@ static int tmc5041_stepper_move(const struct device *dev, const int32_t steps)
 	if (err != 0) {
 		return -EIO;
 	}
-	int32_t target_position = position + steps;
+	int32_t target_position = position + micro_steps;
 
 	err = tmc5041_write(config->controller, TMC5041_RAMPMODE(config->index),
 			    TMC5XXX_RAMPMODE_POSITIONING_MODE);
@@ -328,7 +328,7 @@ static int tmc5041_stepper_move(const struct device *dev, const int32_t steps)
 		return -EIO;
 	}
 	LOG_DBG("Stepper motor controller %s moved to %d by steps: %d", dev->name, target_position,
-		steps);
+		micro_steps);
 	err = tmc5041_write(config->controller, TMC5041_XTARGET(config->index), target_position);
 	if (err != 0) {
 		return -EIO;
@@ -723,7 +723,7 @@ static int tmc5041_stepper_init(const struct device *dev)
 	static DEVICE_API(stepper, tmc5041_stepper_api_##child) = {				\
 		.enable = tmc5041_stepper_enable,						\
 		.is_moving = tmc5041_stepper_is_moving,						\
-		.move = tmc5041_stepper_move,							\
+		.move_by = tmc5041_stepper_move_by,						\
 		.set_max_velocity = tmc5041_stepper_set_max_velocity,				\
 		.set_micro_step_res = tmc5041_stepper_set_micro_step_res,			\
 		.get_micro_step_res = tmc5041_stepper_get_micro_step_res,			\
