@@ -10,3 +10,17 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 1000000
 
 endif # BOARD_HIFIVE_UNMATCHED
+
+if BOARD_HIFIVE_UNMATCHED_FU740_U74_SMP
+
+# Enable CONFIG_TICKET_SPINLOCKS due to fact, that compiler
+# builtin functions for atomic operations like `atomic_cas`
+# uses `lr` and `sc` RISC-V instructions. These instructions require
+# cache-coherent memory, but currently L2LIM memory is in use,
+# which isn't cacheable. Therefore, ticket spinlocks implementation
+# is used, which avoids `atomic_cas`.
+
+config TICKET_SPINLOCKS
+	default y
+
+endif # BOARD_HIFIVE_UNMATCHED_FU740_U74_SMP
