@@ -62,7 +62,7 @@ config USB_DC_STM32
 config USB_DC_STM32_CLOCK_CHECK
 	bool "Runtime USB 48MHz clock check"
 	depends on USB_DC_STM32
-	default y if !(SOC_SERIES_STM32F1X || SOC_SERIES_STM32F3X)
+	default y if !(SOC_SERIES_STM32F1X || SOC_SERIES_STM32F3X || SOC_SERIES_STM32U5X)
 	help
 	  Enable USB clock 48MHz configuration runtime check.
 	  In specific cases, this check might provide wrong verdict and should
