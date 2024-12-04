@@ -181,6 +181,7 @@ Stepper
   * Renamed the ``stepper_set_actual_position`` function to :c:func:`stepper_set_reference_position`.
   * Renamed the ``stepper_enable_constant_velocity_mode`` function to :c:func:`stepper_run`.
   * Renamed the ``stepper_move`` function to :c:func:`stepper_move_by`.
+  * Renamed the ``stepper_set_target_position`` function to :c:func:`stepper_move_to`.
 
 SPI
 ===

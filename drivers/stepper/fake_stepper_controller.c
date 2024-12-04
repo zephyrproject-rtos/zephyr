@@ -37,7 +37,7 @@ DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_set_reference_position, const struct de
 
 DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_get_actual_position, const struct device *, int32_t *);
 
-DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_set_target_position, const struct device *, int32_t);
+DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_move_to, const struct device *, int32_t);
 
 DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_run, const struct device *, enum stepper_direction,
 		       uint32_t);
@@ -97,7 +97,7 @@ static void fake_stepper_reset_rule_before(const struct ztest_unit_test *test, v
 	RESET_FAKE(fake_stepper_get_micro_step_res);
 	RESET_FAKE(fake_stepper_set_reference_position);
 	RESET_FAKE(fake_stepper_get_actual_position);
-	RESET_FAKE(fake_stepper_set_target_position);
+	RESET_FAKE(fake_stepper_move_to);
 	RESET_FAKE(fake_stepper_run);
 
 	/* Install custom fakes for the setter and getter functions */
@@ -133,7 +133,7 @@ static DEVICE_API(stepper, fake_stepper_driver_api) = {
 	.get_micro_step_res = fake_stepper_get_micro_step_res,
 	.set_reference_position = fake_stepper_set_reference_position,
 	.get_actual_position = fake_stepper_get_actual_position,
-	.set_target_position = fake_stepper_set_target_position,
+	.move_to = fake_stepper_move_to,
 	.run = fake_stepper_run,
 	.set_event_callback = fake_stepper_set_event_callback,
 };
