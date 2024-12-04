@@ -1,0 +1,19 @@
+# Copyright (c) 2019 Nordic Semiconductor ASA
+# Copyright (c) 2024 Sensoan Oy
+# SPDX-License-Identifier: Apache-2.0
+
+description: GPIO used to reset nRF5340 on SGW-2
+
+compatible: "sensoan,sgw2-nrf5340-reset"
+
+include: base.yaml
+
+properties:
+  status:
+    required: true
+
+  gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO to use as nRF5340 reset line: output in nRF9160, input in nRF5340.
