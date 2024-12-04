@@ -697,6 +697,11 @@ static uint8_t btp_cap_broadcast_source_release(const void *cmd, uint16_t cmd_le
 
 	LOG_DBG("");
 
+	/* If no source has been created yet, there is nothing to release */
+	if (source == NULL || source->cap_broadcast == NULL) {
+		return BTP_STATUS_SUCCESS;
+	}
+
 	err = bt_cap_initiator_broadcast_audio_delete(source->cap_broadcast);
 	if (err != 0) {
 		LOG_DBG("Unable to delete broadcast source: %d", err);
@@ -744,7 +749,11 @@ static uint8_t btp_cap_broadcast_adv_stop(const void *cmd, uint16_t cmd_len,
 	LOG_DBG("");
 
 	err = tester_gap_padv_stop();
-	if (err != 0) {
+	if (err == -ESRCH) {
+		/* Ext adv hasn't been created yet */
+		return BTP_STATUS_SUCCESS;
+	} else if (err != 0) {
+		LOG_DBG("Failed to stop periodic adv, err: %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -785,6 +794,11 @@ static uint8_t btp_cap_broadcast_source_stop(const void *cmd, uint16_t cmd_len,
 	const struct btp_cap_broadcast_source_stop_cmd *cp = cmd;
 	struct btp_bap_broadcast_local_source *source =
 		btp_bap_broadcast_local_source_get(cp->source_id);
+
+	/* If no source has been started yet, there is nothing to stop */
+	if (source == NULL || source->cap_broadcast == NULL) {
+		return BTP_STATUS_SUCCESS;
+	}
 
 	err = bt_cap_initiator_broadcast_audio_stop(source->cap_broadcast);
 	if (err != 0) {
