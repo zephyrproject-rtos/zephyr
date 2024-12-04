@@ -20,6 +20,7 @@
 		led2 = &red_led;
 		sw0 = &user_button_2;
 		sw1 = &user_button_3;
+		pwm-0 = &flexpwm0_pwm0;
 	};
 
 	chosen {
@@ -92,5 +93,11 @@
 &dac0 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_dac0>;
+	pinctrl-names = "default";
+};
+
+&flexpwm0_pwm0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexpwm0_pwm0>;
 	pinctrl-names = "default";
 };
