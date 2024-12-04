@@ -587,6 +587,7 @@ segger	SEGGER Microcontroller GmbH
 seirobotics	Shenzhen SEI Robotics Co., Ltd
 semtech	Semtech Corporation
 sensirion	Sensirion AG
+sensoan	Sensoan Oy
 sensortek	Sensortek Technology Corporation
 sensry	sensry.io
 sff	Small Form Factor Committee
