@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,10 +25,9 @@ LOG_MODULE_REGISTER(mcpwm_esp32, CONFIG_PWM_LOG_LEVEL);
 
 #define SOC_MCPWM_BASE_CLK_HZ (160000000U)
 #ifdef CONFIG_PWM_CAPTURE
-#define SKIP_IRQ_NUM 4U
-#define MCPWM_INTR_CAP0  BIT(0)
-#define MCPWM_INTR_CAP1  BIT(1)
-#define MCPWM_INTR_CAP2  BIT(2)
+#define SKIP_IRQ_NUM        4U
+#define CAP_INT_MASK        7U
+#define CAP_INT_BASE_BIT    27U
 #define MCPWM_CHANNEL_NUM   8U
 #define CAPTURE_CHANNEL_IDX 6U
 #else
@@ -37,7 +36,6 @@ LOG_MODULE_REGISTER(mcpwm_esp32, CONFIG_PWM_LOG_LEVEL);
 
 struct mcpwm_esp32_data {
 	mcpwm_hal_context_t hal;
-	mcpwm_hal_init_config_t init_config;
 	struct k_sem cmd_sem;
 };
 
@@ -53,7 +51,6 @@ struct mcpwm_esp32_capture_config {
 	void *user_data;
 	uint32_t period;
 	uint32_t pulse;
-	uint32_t overflows;
 	uint8_t skip_irq;
 	bool capture_period;
 	bool capture_pulse;
@@ -94,6 +91,7 @@ struct mcpwm_esp32_config {
 static void mcpwm_esp32_duty_set(const struct device *dev,
 				 struct mcpwm_esp32_channel_config *channel)
 {
+	struct mcpwm_esp32_config *config = (struct mcpwm_esp32_config *)dev->config;
 	struct mcpwm_esp32_data *data = (struct mcpwm_esp32_data *const)(dev)->data;
 	mcpwm_duty_type_t duty_type;
 	uint32_t set_duty;
@@ -108,8 +106,9 @@ static void mcpwm_esp32_duty_set(const struct device *dev,
 			MCPWM_HAL_GENERATOR_MODE_FORCE_HIGH : MCPWM_DUTY_MODE_0;
 	}
 
-	set_duty = mcpwm_ll_timer_get_peak(data->hal.dev, channel->timer_id, false) *
-		   channel->duty / 100;
+	uint32_t timer_clk_hz = SOC_MCPWM_BASE_CLK_HZ / config->prescale / channel->prescale;
+
+	set_duty = (timer_clk_hz / channel->freq) * channel->duty / 100;
 	mcpwm_ll_operator_connect_timer(data->hal.dev, channel->operator_id, channel->timer_id);
 	mcpwm_ll_operator_set_compare_value(data->hal.dev, channel->operator_id,
 					    channel->generator_id, set_duty);
@@ -175,6 +174,7 @@ static int mcpwm_esp32_configure_pinctrl(const struct device *dev)
 static int mcpwm_esp32_timer_set(const struct device *dev,
 				 struct mcpwm_esp32_channel_config *channel)
 {
+	struct mcpwm_esp32_config *config = (struct mcpwm_esp32_config *)dev->config;
 	struct mcpwm_esp32_data *data = (struct mcpwm_esp32_data *const)(dev)->data;
 
 	__ASSERT_NO_MSG(channel->freq > 0);
@@ -182,11 +182,10 @@ static int mcpwm_esp32_timer_set(const struct device *dev,
 	mcpwm_ll_timer_set_clock_prescale(data->hal.dev, channel->timer_id, channel->prescale);
 	mcpwm_ll_timer_set_count_mode(data->hal.dev, channel->timer_id, MCPWM_TIMER_COUNT_MODE_UP);
 	mcpwm_ll_timer_update_period_at_once(data->hal.dev, channel->timer_id);
-	int real_group_prescale = mcpwm_ll_group_get_clock_prescale(data->hal.dev);
-	uint32_t real_timer_clk_hz =
-		SOC_MCPWM_BASE_CLK_HZ / real_group_prescale /
-		mcpwm_ll_timer_get_clock_prescale(data->hal.dev, channel->timer_id);
-	mcpwm_ll_timer_set_peak(data->hal.dev, channel->timer_id, real_timer_clk_hz / channel->freq,
+
+	uint32_t timer_clk_hz = SOC_MCPWM_BASE_CLK_HZ / config->prescale / channel->prescale;
+
+	mcpwm_ll_timer_set_peak(data->hal.dev, channel->timer_id, timer_clk_hz / channel->freq,
 				false);
 
 	return 0;
@@ -368,7 +367,6 @@ static int mcpwm_esp32_enable_capture(const struct device *dev, uint32_t channel
 		.cap_prescale = 1,
 	};
 
-	mcpwm_hal_init(&data->hal, &data->init_config);
 	mcpwm_ll_group_set_clock_prescale(data->hal.dev, config->prescale);
 	mcpwm_ll_group_enable_shadow_mode(data->hal.dev);
 	mcpwm_ll_group_flush_shadow(data->hal.dev);
@@ -383,7 +381,7 @@ static int mcpwm_esp32_enable_capture(const struct device *dev, uint32_t channel
 				      cap_conf.cap_prescale);
 
 	mcpwm_ll_intr_enable(data->hal.dev, MCPWM_LL_EVENT_CAPTURE(capture->capture_signal), true);
-	mcpwm_ll_intr_clear_capture_status(data->hal.dev, 1 << capture->capture_signal);
+	mcpwm_ll_intr_clear_status(data->hal.dev, MCPWM_LL_EVENT_CAPTURE(capture->capture_signal));
 
 	capture->skip_irq = 0;
 
@@ -428,7 +426,6 @@ int mcpwm_esp32_init(const struct device *dev)
 
 	channel_init(dev);
 
-	mcpwm_hal_init(&data->hal, &data->init_config);
 	mcpwm_ll_group_set_clock_prescale(data->hal.dev, config->prescale);
 	mcpwm_ll_group_enable_shadow_mode(data->hal.dev);
 	mcpwm_ll_group_flush_shadow(data->hal.dev);
@@ -450,26 +447,22 @@ static void IRAM_ATTR mcpwm_esp32_isr(const struct device *dev)
 	struct mcpwm_esp32_data *data = (struct mcpwm_esp32_data *const)(dev)->data;
 	struct mcpwm_esp32_channel_config *channel;
 	struct mcpwm_esp32_capture_config *capture;
-	uint32_t mcpwm_intr_status;
+	uint32_t mcpwm_intr_status, mcpwm_cap_intr_status;
+	uint8_t cap_id;
 
-	mcpwm_intr_status = mcpwm_ll_intr_get_capture_status(data->hal.dev);
+	mcpwm_intr_status = mcpwm_ll_intr_get_status(data->hal.dev);
+	mcpwm_cap_intr_status = (mcpwm_intr_status >> CAP_INT_BASE_BIT) & CAP_INT_MASK;
 
-	mcpwm_ll_intr_clear_capture_status(data->hal.dev, mcpwm_intr_status);
-
-	if (mcpwm_intr_status & MCPWM_INTR_CAP0) {
-		channel = &config->channel_config[CAPTURE_CHANNEL_IDX];
-	} else if (mcpwm_intr_status & MCPWM_INTR_CAP1) {
-		channel = &config->channel_config[CAPTURE_CHANNEL_IDX + 1];
-	} else if (mcpwm_intr_status & MCPWM_INTR_CAP2) {
-		channel = &config->channel_config[CAPTURE_CHANNEL_IDX + 2];
-	} else {
+	if (!mcpwm_cap_intr_status) {
 		return;
 	}
 
-	if (!channel) {
-		return;
-	}
+	cap_id = __builtin_ctz(mcpwm_cap_intr_status);
 
+	mcpwm_ll_intr_clear_status(data->hal.dev,
+				   mcpwm_intr_status & MCPWM_LL_EVENT_CAPTURE(cap_id));
+
+	channel = &config->channel_config[CAPTURE_CHANNEL_IDX + cap_id];
 	capture = &channel->capture;
 
 	/* We need to wait at least 4 (2 positive edges and 2 negative edges) interrupts to
@@ -556,10 +549,6 @@ static DEVICE_API(pwm, mcpwm_esp32_api) = {
 		.hal =                                                                             \
 			{                                                                          \
 				.dev = (mcpwm_dev_t *)DT_INST_REG_ADDR(idx),                       \
-			},                                                                         \
-		.init_config =                                                                     \
-			{                                                                          \
-				.group_id = idx,                                                   \
 			},                                                                         \
 		.cmd_sem = Z_SEM_INITIALIZER(mcpwm_esp32_data_##idx.cmd_sem, 1, 1),                \
 	};                                                                                         \
