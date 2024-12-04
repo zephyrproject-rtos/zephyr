@@ -139,7 +139,13 @@ static bool arm_gic_lpi_is_enabled(unsigned int intid)
 #if defined(CONFIG_ARMV8_A_NS) || defined(CONFIG_GIC_SINGLE_SECURITY_STATE)
 static inline void arm_gic_write_irouter(uint64_t val, unsigned int intid)
 {
-	mem_addr_t addr = IROUTER(GET_DIST_BASE(intid), intid);
+	mem_addr_t addr;
+
+	if (GIC_IS_ESPI(intid)) {
+		addr = IROUTERnE(GET_DIST_BASE(intid), intid - GIC_ESPI_START);
+	} else {
+		addr = IROUTER(GET_DIST_BASE(intid), intid);
+	}
 
 #ifdef CONFIG_ARM
 	sys_write32((uint32_t)val, addr);
@@ -159,29 +165,45 @@ void arm_gic_irq_set_priority(unsigned int intid, unsigned int prio, uint32_t fl
 	}
 #endif
 	uint32_t mask = BIT(intid & (GIC_NUM_INTR_PER_REG - 1));
-	uint32_t idx = intid / GIC_NUM_INTR_PER_REG;
+	uint32_t idx = GIC_IS_ESPI(intid) ? ((intid - GIC_ESPI_START) / GIC_NUM_INTR_PER_REG)
+					  : (intid / GIC_NUM_INTR_PER_REG);
 	uint32_t shift;
 	uint32_t val;
 	mem_addr_t base = GET_DIST_BASE(intid);
 
 	/* Disable the interrupt */
-	sys_write32(mask, ICENABLER(base, idx));
+	if (GIC_IS_ESPI(intid)) {
+		sys_write32(mask, ICENABLERnE(base, idx));
+	} else {
+		sys_write32(mask, ICENABLER(base, idx));
+	}
+
 	gic_wait_rwp(intid);
 
 	/* PRIORITYR registers provide byte access */
-	sys_write8(prio & GIC_PRI_MASK, IPRIORITYR(base, intid));
+	if (GIC_IS_ESPI(intid)) {
+		sys_write8(prio & GIC_PRI_MASK, IPRIORITYRnE(base, intid - GIC_ESPI_START));
+	} else {
+		sys_write8(prio & GIC_PRI_MASK, IPRIORITYR(base, intid));
+	}
 
 	/* Interrupt type config */
 	if (!GIC_IS_SGI(intid)) {
-		idx = intid / GIC_NUM_CFG_PER_REG;
+		idx = GIC_IS_ESPI(intid) ? ((intid - GIC_ESPI_START) / GIC_NUM_CFG_PER_REG)
+					 : (intid / GIC_NUM_CFG_PER_REG);
 		shift = (intid & (GIC_NUM_CFG_PER_REG - 1)) * 2;
 
-		val = sys_read32(ICFGR(base, idx));
+		val = GIC_IS_ESPI(intid) ? sys_read32(ICFGRnE(base, idx))
+					 : sys_read32(ICFGR(base, idx));
 		val &= ~(GICD_ICFGR_MASK << shift);
 		if (flags & IRQ_TYPE_EDGE) {
 			val |= (GICD_ICFGR_TYPE << shift);
 		}
-		sys_write32(val, ICFGR(base, idx));
+		if (GIC_IS_ESPI(intid)) {
+			sys_write32(val, ICFGRnE(base, idx));
+		} else {
+			sys_write32(val, ICFGR(base, idx));
+		}
 	}
 }
 
@@ -194,7 +216,8 @@ void arm_gic_irq_enable(unsigned int intid)
 	}
 #endif
 	uint32_t mask = BIT(intid & (GIC_NUM_INTR_PER_REG - 1));
-	uint32_t idx = intid / GIC_NUM_INTR_PER_REG;
+	uint32_t idx = GIC_IS_ESPI(intid) ? ((intid - GIC_ESPI_START) / GIC_NUM_INTR_PER_REG)
+					  : (intid / GIC_NUM_INTR_PER_REG);
 
 #if defined(CONFIG_ARMV8_A_NS) || defined(CONFIG_GIC_SINGLE_SECURITY_STATE)
 	/*
@@ -202,12 +225,16 @@ void arm_gic_irq_enable(unsigned int intid)
 	 * is set to '1') and for GIC single security state (GICD_CTRL.ARE is set to '1'),
 	 * so need to set SPI's affinity, now set it to be the PE on which it is enabled.
 	 */
-	if (GIC_IS_SPI(intid)) {
+	if (GIC_IS_SPI(intid) || GIC_IS_ESPI(intid)) {
 		arm_gic_write_irouter(MPIDR_TO_CORE(GET_MPIDR()), intid);
 	}
 #endif
 
-	sys_write32(mask, ISENABLER(GET_DIST_BASE(intid), idx));
+	if (GIC_IS_ESPI(intid)) {
+		sys_write32(mask, ISENABLERnE(GET_DIST_BASE(intid), idx));
+	} else {
+		sys_write32(mask, ISENABLER(GET_DIST_BASE(intid), idx));
+	}
 }
 
 void arm_gic_irq_disable(unsigned int intid)
@@ -219,9 +246,15 @@ void arm_gic_irq_disable(unsigned int intid)
 	}
 #endif
 	uint32_t mask = BIT(intid & (GIC_NUM_INTR_PER_REG - 1));
-	uint32_t idx = intid / GIC_NUM_INTR_PER_REG;
+	uint32_t idx = GIC_IS_ESPI(intid) ? ((intid - GIC_ESPI_START) / GIC_NUM_INTR_PER_REG)
+					  : (intid / GIC_NUM_INTR_PER_REG);
 
-	sys_write32(mask, ICENABLER(GET_DIST_BASE(intid), idx));
+	if (GIC_IS_ESPI(intid)) {
+		sys_write32(mask, ICENABLERnE(GET_DIST_BASE(intid), idx));
+	} else {
+		sys_write32(mask, ICENABLER(GET_DIST_BASE(intid), idx));
+	}
+
 	/* poll to ensure write is complete */
 	gic_wait_rwp(intid);
 }
@@ -234,10 +267,12 @@ bool arm_gic_irq_is_enabled(unsigned int intid)
 	}
 #endif
 	uint32_t mask = BIT(intid & (GIC_NUM_INTR_PER_REG - 1));
-	uint32_t idx = intid / GIC_NUM_INTR_PER_REG;
+	uint32_t idx = GIC_IS_ESPI(intid) ? ((intid - GIC_ESPI_START) / GIC_NUM_INTR_PER_REG)
+					  : (intid / GIC_NUM_INTR_PER_REG);
 	uint32_t val;
 
-	val = sys_read32(ISENABLER(GET_DIST_BASE(intid), idx));
+	val = GIC_IS_ESPI(intid) ? sys_read32(ISENABLERnE(GET_DIST_BASE(intid), idx))
+				 : sys_read32(ISENABLER(GET_DIST_BASE(intid), idx));
 
 	return (val & mask) != 0;
 }
@@ -245,10 +280,12 @@ bool arm_gic_irq_is_enabled(unsigned int intid)
 bool arm_gic_irq_is_pending(unsigned int intid)
 {
 	uint32_t mask = BIT(intid & (GIC_NUM_INTR_PER_REG - 1));
-	uint32_t idx = intid / GIC_NUM_INTR_PER_REG;
+	uint32_t idx = GIC_IS_ESPI(intid) ? ((intid - GIC_ESPI_START) / GIC_NUM_INTR_PER_REG)
+					  : (intid / GIC_NUM_INTR_PER_REG);
 	uint32_t val;
 
-	val = sys_read32(ISPENDR(GET_DIST_BASE(intid), idx));
+	val = GIC_IS_ESPI(intid) ? sys_read32(ISPENDRnE(GET_DIST_BASE(intid), idx))
+				 : sys_read32(ISPENDR(GET_DIST_BASE(intid), idx));
 
 	return (val & mask) != 0;
 }
@@ -256,17 +293,27 @@ bool arm_gic_irq_is_pending(unsigned int intid)
 void arm_gic_irq_set_pending(unsigned int intid)
 {
 	uint32_t mask = BIT(intid & (GIC_NUM_INTR_PER_REG - 1));
-	uint32_t idx = intid / GIC_NUM_INTR_PER_REG;
+	uint32_t idx = GIC_IS_ESPI(intid) ? ((intid - GIC_ESPI_START) / GIC_NUM_INTR_PER_REG)
+					  : (intid / GIC_NUM_INTR_PER_REG);
 
-	sys_write32(mask, ISPENDR(GET_DIST_BASE(intid), idx));
+	if (GIC_IS_ESPI(intid)) {
+		sys_write32(mask, ISPENDRnE(GET_DIST_BASE(intid), idx));
+	} else {
+		sys_write32(mask, ISPENDR(GET_DIST_BASE(intid), idx));
+	}
 }
 
 void arm_gic_irq_clear_pending(unsigned int intid)
 {
 	uint32_t mask = BIT(intid & (GIC_NUM_INTR_PER_REG - 1));
-	uint32_t idx = intid / GIC_NUM_INTR_PER_REG;
+	uint32_t idx = GIC_IS_ESPI(intid) ? ((intid - GIC_ESPI_START) / GIC_NUM_INTR_PER_REG)
+					  : (intid / GIC_NUM_INTR_PER_REG);
 
-	sys_write32(mask, ICPENDR(GET_DIST_BASE(intid), idx));
+	if (GIC_IS_ESPI(intid)) {
+		sys_write32(mask, ICPENDRnE(GET_DIST_BASE(intid), idx));
+	} else {
+		sys_write32(mask, ICPENDR(GET_DIST_BASE(intid), idx));
+	}
 }
 
 unsigned int arm_gic_get_active(void)
@@ -463,7 +510,7 @@ static void gicv3_cpuif_init(void)
  */
 static void gicv3_dist_init(void)
 {
-	unsigned int num_ints;
+	unsigned int num_ints, num_espi;
 	unsigned int intid;
 	unsigned int idx;
 	mem_addr_t base = GIC_DIST_BASE;
@@ -480,6 +527,7 @@ static void gicv3_dist_init(void)
 #endif
 
 	num_ints = sys_read32(GICD_TYPER);
+	num_espi = (num_ints & GICD_TYPER_ESPI_MASK) ? ((num_ints >> 27) + 1) * 32 : 0;
 	num_ints &= GICD_TYPER_ITLINESNUM_MASK;
 	num_ints = (num_ints + 1) << 5;
 
@@ -509,6 +557,20 @@ static void gicv3_dist_init(void)
 		sys_write32(IGROUPR_VAL, IGROUPR(base, idx));
 		sys_write32(BIT64_MASK(GIC_NUM_INTR_PER_REG), IGROUPMODR(base, idx));
 	}
+
+	/*
+	 * Default configuration of all ESPIs
+	 */
+	for (intid = 0; intid < num_espi; intid += GIC_NUM_INTR_PER_REG) {
+		idx = intid / GIC_NUM_INTR_PER_REG;
+		/* Disable interrupt */
+		sys_write32(BIT64_MASK(GIC_NUM_INTR_PER_REG), ICENABLERnE(base, idx));
+		/* Clear pending */
+		sys_write32(BIT64_MASK(GIC_NUM_INTR_PER_REG), ICPENDRnE(base, idx));
+		sys_write32(IGROUPR_VAL, IGROUPRnE(base, idx));
+		sys_write32(BIT64_MASK(GIC_NUM_INTR_PER_REG), IGROUPMODRnE(base, idx));
+	}
+
 	/* wait for rwp on GICD */
 	gic_wait_rwp(GIC_SPI_INT_BASE);
 
@@ -517,10 +579,21 @@ static void gicv3_dist_init(void)
 		sys_write32(GIC_INT_DEF_PRI_X4, IPRIORITYR(base, intid));
 	}
 
+	/* Configure default priorities for all ESPIs. */
+	for (intid = 0; intid < num_espi; intid += GIC_NUM_PRI_PER_REG) {
+		sys_write32(GIC_INT_DEF_PRI_X4, IPRIORITYRnE(base, intid));
+	}
+
 	/* Configure all SPIs as active low, level triggered by default */
 	for (intid = GIC_SPI_INT_BASE; intid < num_ints; intid += GIC_NUM_CFG_PER_REG) {
 		idx = intid / GIC_NUM_CFG_PER_REG;
 		sys_write32(0, ICFGR(base, idx));
+	}
+
+	/* Configure all ESPIs as active low, level triggered by default */
+	for (intid = 0; intid < num_espi; intid += GIC_NUM_CFG_PER_REG) {
+		idx = intid / GIC_NUM_CFG_PER_REG;
+		sys_write32(0, ICFGRnE(base, idx));
 	}
 
 #ifdef CONFIG_ARMV8_A_NS
