@@ -1,4 +1,4 @@
-# Copyright 2024 NXP
+# Copyright 2024-2025 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -9,5 +9,6 @@ string
 	default "mimxrt1170_evkb/mimxrt1176/cm4" if $(BOARD) = "mimxrt1170_evkb"
 	default "mimxrt1170_evk/mimxrt1176/cm4" if $(BOARD) = "mimxrt1170_evk"
 	default "mimxrt1160_evk/mimxrt1166/cm4" if $(BOARD) = "mimxrt1160_evk"
+	default "mimxrt1180_evk/mimxrt1189/cm7" if $(BOARD) = "mimxrt1180_evk"
 	default "lpcxpresso55s69/lpc55s69/cpu1" if $(BOARD) = "lpcxpresso55s69"
 	default "frdm_mcxn947/mcxn947/cpu1" if $(BOARD) = "frdm_mcxn947"
