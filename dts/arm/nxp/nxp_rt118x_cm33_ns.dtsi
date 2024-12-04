@@ -22,6 +22,12 @@
 			zephyr,memory-region = "DTCM";
 		};
 
+		m7_itcm: itcm@203C0000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			zephyr,memory-region = "M7_ITCM";
+			reg = <0x203C0000 DT_SIZE_K(256)>;
+		};
+
 		memory: memory@20000000 {
 			ranges = <0x0 0x20000000 0x10000000>;
 		};

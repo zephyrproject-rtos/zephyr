@@ -16,7 +16,7 @@
 	chosen {
 		zephyr,sram = &dtcm;
 		zephyr,flash-controller = &w25q128jw;
-		zephyr,flash = &ocram3;
+		zephyr,flash = &itcm;
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
 		zephyr,canbus = &flexcan3;

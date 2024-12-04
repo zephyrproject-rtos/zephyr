@@ -26,8 +26,7 @@ DT_CHOSEN_IMAGE_M7 = nxp,m7-partition
 config BUILD_OUTPUT_ADJUST_LMA
 	default "($(dt_chosen_reg_addr_hex,$(DT_CHOSEN_IMAGE_M7)) + \
 	$(dt_node_reg_addr_hex,/soc/spi@425e0000,1)) - \
-	(0x203C0000)"
-	# $(dt_node_reg_addr_hex,/soc/ocram@203C0000)"
+	$(dt_node_reg_addr_hex,/soc/itcm@0)"
 
 endif
 

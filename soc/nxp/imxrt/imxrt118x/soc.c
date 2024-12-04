@@ -31,7 +31,7 @@
  * n is the segment number, as defined in zephyr_image_info.h
  */
 #define MEMCPY_SEGMENT(n, _)							\
-	memcpy((uint32_t *)(((SEGMENT_LMA_ADDRESS_ ## n) - ADJUSTED_LMA) + 0x10000000),	\
+	memcpy((uint32_t *)(((SEGMENT_LMA_ADDRESS_ ## n) - ADJUSTED_LMA) + 0x303C0000),	\
 		(uint32_t *)(SEGMENT_LMA_ADDRESS_ ## n),			\
 		(SEGMENT_SIZE_ ## n))
 #endif
