@@ -50,7 +50,7 @@ Then separately, call
 
 ...code-block::
 
-   gdb bs_nrf52_bsim_tests_bsim_bluetooth_mesh_prj_conf \
+   gdb bs_nrf52_bsim_native_tests_bsim_bluetooth_mesh_prj_conf \
        -s=mesh_transport_seg_block -d=0 -RealEncryption=1 \
        -testid=transport_tx_seg_block
 
