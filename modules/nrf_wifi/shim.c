@@ -18,6 +18,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/sys/math_extras.h>
 
 #include "rpu_hw_if.h"
 #include "shim.h"
@@ -27,21 +28,79 @@
 #include "qspi_if.h"
 
 LOG_MODULE_REGISTER(wifi_nrf, CONFIG_WIFI_NRF70_LOG_LEVEL);
+#if defined(CONFIG_NOCACHE_MEMORY)
+K_HEAP_DEFINE_NOCACHE(wifi_drv_ctrl_mem_pool, CONFIG_NRF_WIFI_CTRL_HEAP_SIZE);
+K_HEAP_DEFINE_NOCACHE(wifi_drv_data_mem_pool, CONFIG_NRF_WIFI_DATA_HEAP_SIZE);
+#else
+K_HEAP_DEFINE(wifi_drv_ctrl_mem_pool, CONFIG_NRF_WIFI_CTRL_HEAP_SIZE);
+K_HEAP_DEFINE(wifi_drv_data_mem_pool, CONFIG_NRF_WIFI_DATA_HEAP_SIZE);
+#endif /* CONFIG_NOCACHE_MEMORY */
+#define WORD_SIZE 4
 
 struct zep_shim_intr_priv *intr_priv;
 
 static void *zep_shim_mem_alloc(size_t size)
 {
-	size_t size_aligned = ROUND_UP(size, 4);
+	size = (size + 4) & 0xfffffffc;
+	return k_heap_aligned_alloc(&wifi_drv_ctrl_mem_pool, WORD_SIZE, size, K_FOREVER);
+}
 
-	return k_malloc(size_aligned);
+static void *zep_shim_data_mem_alloc(size_t size)
+{
+	size = (size + 4) & 0xfffffffc;
+	return k_heap_aligned_alloc(&wifi_drv_data_mem_pool, WORD_SIZE, size, K_FOREVER);
 }
 
 static void *zep_shim_mem_zalloc(size_t size)
 {
-	size_t size_aligned = ROUND_UP(size, 4);
+	void *ret;
+	size_t bounds;
 
-	return k_calloc(size_aligned, sizeof(char));
+	size = (size + 4) & 0xfffffffc;
+
+	if (size_mul_overflow(size, sizeof(char), &bounds)) {
+		return NULL;
+	}
+
+	ret = zep_shim_mem_alloc(bounds);
+	if (ret != NULL) {
+		(void)memset(ret, 0, bounds);
+	}
+
+	return ret;
+}
+
+static void *zep_shim_data_mem_zalloc(size_t size)
+{
+	void *ret;
+	size_t bounds;
+
+	size = (size + 4) & 0xfffffffc;
+
+	if (size_mul_overflow(size, sizeof(char), &bounds)) {
+		return NULL;
+	}
+
+	ret = zep_shim_data_mem_alloc(bounds);
+	if (ret != NULL) {
+		(void)memset(ret, 0, bounds);
+	}
+
+	return ret;
+}
+
+static void zep_shim_mem_free(void *buf)
+{
+	if (buf) {
+		k_heap_free(&wifi_drv_ctrl_mem_pool, buf);
+	}
+}
+
+static void zep_shim_data_mem_free(void *buf)
+{
+	if (buf) {
+		k_heap_free(&wifi_drv_data_mem_pool, buf);
+	}
 }
 
 static void *zep_shim_mem_cpy(void *dest, const void *src, size_t count)
@@ -213,16 +272,16 @@ static void *zep_shim_nbuf_alloc(unsigned int size)
 {
 	struct nwb *nbuff;
 
-	nbuff = (struct nwb *)k_calloc(sizeof(struct nwb), sizeof(char));
+	nbuff = (struct nwb *)zep_shim_data_mem_zalloc(sizeof(struct nwb));
 
 	if (!nbuff) {
 		return NULL;
 	}
 
-	nbuff->priv = k_calloc(size, sizeof(char));
+	nbuff->priv = zep_shim_data_mem_zalloc(size);
 
 	if (!nbuff->priv) {
-		k_free(nbuff);
+		zep_shim_data_mem_free(nbuff);
 		return NULL;
 	}
 
@@ -241,8 +300,8 @@ static void zep_shim_nbuf_free(void *nbuf)
 		return;
 	}
 
-	k_free(((struct nwb *)nbuf)->priv);
-	k_free(nbuf);
+	zep_shim_data_mem_free(((struct nwb *)nbuf)->priv);
+	zep_shim_data_mem_free(nbuf);
 }
 
 static void zep_shim_nbuf_headroom_res(void *nbuf, unsigned int size)
@@ -907,7 +966,9 @@ static unsigned int zep_shim_strlen(const void *str)
 const struct nrf_wifi_osal_ops nrf_wifi_os_zep_ops = {
 	.mem_alloc = zep_shim_mem_alloc,
 	.mem_zalloc = zep_shim_mem_zalloc,
-	.mem_free = k_free,
+	.data_mem_zalloc = zep_shim_data_mem_zalloc,
+	.mem_free = zep_shim_mem_free,
+	.data_mem_free = zep_shim_data_mem_free,
 	.mem_cpy = zep_shim_mem_cpy,
 	.mem_set = zep_shim_mem_set,
 	.mem_cmp = zep_shim_mem_cmp,
