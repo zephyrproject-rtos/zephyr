@@ -150,11 +150,11 @@ typedef int (*stepper_set_reference_position_t)(const struct device *dev, const 
 typedef int (*stepper_get_actual_position_t)(const struct device *dev, int32_t *value);
 
 /**
- * @brief Set the absolute target position of the stepper
+ * @brief Move the stepper motor absolutely by a given number of micro_steps.
  *
- * @see stepper_set_target_position() for details.
+ * @see stepper_move_to() for details.
  */
-typedef int (*stepper_set_target_position_t)(const struct device *dev, const int32_t value);
+typedef int (*stepper_move_to_t)(const struct device *dev, const int32_t micro_steps);
 
 /**
  * @brief Is the target position fo the stepper reached
@@ -196,7 +196,7 @@ __subsystem struct stepper_driver_api {
 	stepper_get_micro_step_res_t get_micro_step_res;
 	stepper_set_reference_position_t set_reference_position;
 	stepper_get_actual_position_t get_actual_position;
-	stepper_set_target_position_t set_target_position;
+	stepper_move_to_t move_to;
 	stepper_is_moving_t is_moving;
 	stepper_run_t run;
 	stepper_set_event_callback_t set_event_callback;
@@ -368,23 +368,26 @@ static inline int z_impl_stepper_get_actual_position(const struct device *dev, i
 /**
  * @brief Set the absolute target position of the stepper
  *
+ * @details The motor will move to the given micro_steps position from the reference position.
+ * This function is non-blocking.
+ *
  * @param dev pointer to the stepper motor controller instance
- * @param value target position to set in micro_steps
+ * @param micro_steps target position to set in micro_steps
  *
  * @retval -EIO General input / output error
  * @retval -ENOSYS If not implemented by device driver
  * @retval 0 Success
  */
-__syscall int stepper_set_target_position(const struct device *dev, int32_t value);
+__syscall int stepper_move_to(const struct device *dev, int32_t micro_steps);
 
-static inline int z_impl_stepper_set_target_position(const struct device *dev, const int32_t value)
+static inline int z_impl_stepper_move_to(const struct device *dev, const int32_t micro_steps)
 {
 	const struct stepper_driver_api *api = (const struct stepper_driver_api *)dev->api;
 
-	if (api->set_target_position == NULL) {
+	if (api->move_to == NULL) {
 		return -ENOSYS;
 	}
-	return api->set_target_position(dev, value);
+	return api->move_to(dev, micro_steps);
 }
 
 /**

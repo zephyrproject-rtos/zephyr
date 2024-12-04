@@ -117,13 +117,13 @@ ZTEST(stepper_shell, test_stepper_get_actual_position)
 	ASSERT_STEPPER_FUNC_CALLED(fake_stepper_get_actual_position_fake, err);
 }
 
-ZTEST(stepper_shell, test_stepper_set_target_position)
+ZTEST(stepper_shell, test_stepper_move_to)
 {
 	const struct shell *sh = shell_backend_dummy_get_ptr();
-	int err = shell_execute_cmd(sh, "stepper set_target_position " FAKE_STEPPER_NAME " 200");
+	int err = shell_execute_cmd(sh, "stepper move_to " FAKE_STEPPER_NAME " 200");
 
-	ASSERT_STEPPER_FUNC_CALLED(fake_stepper_set_target_position_fake, err);
-	zassert_equal(fake_stepper_set_target_position_fake.arg1_val, 200,
+	ASSERT_STEPPER_FUNC_CALLED(fake_stepper_move_to_fake, err);
+	zassert_equal(fake_stepper_move_to_fake.arg1_val, 200,
 		      "wrong target position value");
 }
 

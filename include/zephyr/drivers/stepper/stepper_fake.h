@@ -30,7 +30,7 @@ DECLARE_FAKE_VALUE_FUNC(int, fake_stepper_set_reference_position, const struct d
 
 DECLARE_FAKE_VALUE_FUNC(int, fake_stepper_get_actual_position, const struct device *, int32_t *);
 
-DECLARE_FAKE_VALUE_FUNC(int, fake_stepper_set_target_position, const struct device *, int32_t);
+DECLARE_FAKE_VALUE_FUNC(int, fake_stepper_move_to, const struct device *, int32_t);
 
 DECLARE_FAKE_VALUE_FUNC(int, fake_stepper_is_moving, const struct device *, bool *);
 

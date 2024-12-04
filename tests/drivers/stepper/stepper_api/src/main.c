@@ -87,7 +87,7 @@ ZTEST_F(stepper, test_target_position)
 	/* Pass the function name as user data */
 	(void)stepper_set_event_callback(fixture->dev, fixture->callback, &fixture);
 
-	(void)stepper_set_target_position(fixture->dev, pos);
+	(void)stepper_move_to(fixture->dev, pos);
 
 	(void)k_poll(&stepper_event, 1, K_SECONDS(5));
 	unsigned int signaled;

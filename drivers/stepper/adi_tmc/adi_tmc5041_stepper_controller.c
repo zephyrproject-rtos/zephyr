@@ -442,9 +442,9 @@ static int tmc5041_stepper_get_actual_position(const struct device *dev, int32_t
 	return 0;
 }
 
-static int tmc5041_stepper_set_target_position(const struct device *dev, const int32_t position)
+static int tmc5041_stepper_move_to(const struct device *dev, const int32_t micro_steps)
 {
-	LOG_DBG("Stepper motor controller %s set target position to %d", dev->name, position);
+	LOG_DBG("Stepper motor controller %s set target position to %d", dev->name, micro_steps);
 	const struct tmc5041_stepper_config *config = dev->config;
 	struct tmc5041_stepper_data *data = dev->data;
 	int err;
@@ -458,7 +458,7 @@ static int tmc5041_stepper_set_target_position(const struct device *dev, const i
 	if (err != 0) {
 		return -EIO;
 	}
-	err = tmc5041_write(config->controller, TMC5041_XTARGET(config->index), position);
+	err = tmc5041_write(config->controller, TMC5041_XTARGET(config->index), micro_steps);
 	if (err != 0) {
 		return -EIO;
 	}
@@ -729,7 +729,7 @@ static int tmc5041_stepper_init(const struct device *dev)
 		.get_micro_step_res = tmc5041_stepper_get_micro_step_res,			\
 		.set_reference_position = tmc5041_stepper_set_reference_position,		\
 		.get_actual_position = tmc5041_stepper_get_actual_position,			\
-		.set_target_position = tmc5041_stepper_set_target_position,			\
+		.move_to = tmc5041_stepper_move_to,						\
 		.run = tmc5041_stepper_run,							\
 		.set_event_callback = tmc5041_stepper_set_event_callback, };
 
