@@ -91,9 +91,6 @@ struct spi_mcux_data {
 };
 
 static int spi_mcux_transfer_next_packet(const struct device *dev);
-#ifdef CONFIG_SPI_RTIO
-static void spi_mcux_iodev_complete(const struct device *dev, int status);
-#endif
 
 static void spi_mcux_isr(const struct device *dev)
 {
@@ -108,14 +105,6 @@ static void spi_mcux_master_callback(LPSPI_Type *base, lpspi_master_handle_t *ha
 {
 	struct spi_mcux_data *data = userData;
 
-#ifdef CONFIG_SPI_RTIO
-	struct spi_rtio *rtio_ctx = data->rtio_ctx;
-
-	if (rtio_ctx->txn_head != NULL) {
-		spi_mcux_iodev_complete(data->dev, status);
-		return;
-	}
-#endif
 	spi_context_update_tx(&data->ctx, 1, data->transfer_len);
 	spi_context_update_rx(&data->ctx, 1, data->transfer_len);
 
@@ -226,7 +215,6 @@ static int spi_mcux_configure(const struct device *dev, const struct spi_config 
 	master_config.pinCfg = config->data_pin_config;
 
 	LPSPI_MasterInit(base, &master_config, clock_freq);
-	LPSPI_MasterTransferCreateHandle(base, &data->handle, spi_mcux_master_callback, data);
 	LPSPI_SetDummyData(base, 0);
 
 	if (IS_ENABLED(CONFIG_DEBUG)) {
@@ -537,6 +525,22 @@ out:
 #endif /* CONFIG_SPI_MCUX_LPSPI_DMA */
 
 #ifdef CONFIG_SPI_RTIO
+static void spi_mcux_iodev_complete(const struct device *dev, int status);
+
+static void spi_mcux_master_rtio_callback(LPSPI_Type *base, lpspi_master_handle_t *handle,
+					  status_t status, void *userData)
+{
+	struct spi_mcux_data *data = userData;
+	struct spi_rtio *rtio_ctx = data->rtio_ctx;
+
+	if (rtio_ctx->txn_head != NULL) {
+		spi_mcux_iodev_complete(data->dev, status);
+		return;
+	}
+
+	spi_mcux_master_callback(base, handle, status, userData);
+}
+
 static void spi_mcux_iodev_start(const struct device *dev)
 {
 	struct spi_mcux_data *data = dev->data;
@@ -553,6 +557,8 @@ static void spi_mcux_iodev_start(const struct device *dev)
 		LOG_ERR("Error configuring lpspi");
 		return;
 	}
+
+	LPSPI_MasterTransferCreateHandle(base, &data->handle, spi_mcux_master_rtio_callback, data);
 
 	transfer.configFlags = LPSPI_MASTER_XFER_CFG_FLAGS(spi_cfg->slave);
 
@@ -647,6 +653,7 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 		      const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs,
 		      bool asynchronous, spi_callback_t cb, void *userdata)
 {
+	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 	struct spi_mcux_data *data = dev->data;
 	int ret;
 
@@ -656,6 +663,8 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 	if (ret) {
 		goto out;
 	}
+
+	LPSPI_MasterTransferCreateHandle(base, &data->handle, spi_mcux_master_callback, data);
 
 	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
 
