@@ -656,7 +656,7 @@
 		ucpd1: ucpd@4000a000 {
 			compatible = "st,stm32-ucpd";
 			reg = <0x4000a000 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 4U)>;
+			clocks = <&rcc STM32_CLOCK(APB1_2, 8U)>;
 			interrupts = <63 0>;
 			status = "disabled";
 		};
