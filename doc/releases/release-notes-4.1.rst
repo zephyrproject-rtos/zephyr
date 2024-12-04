@@ -150,6 +150,8 @@ Drivers and Sensors
 
 * Flash
 
+  * NXP MCUX FlexSPI: Add support for 4-byte addressing mode of Micron MT25Q flash family (:github:`82532`)
+
 * FPGA
 
   * Extracted from :dtcompatible:`lattice,ice40-fpga` the compatible and driver for
