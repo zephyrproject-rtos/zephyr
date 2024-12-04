@@ -28,13 +28,14 @@
  * @{
  */
 
+/* errno_private.h depends on errno being defined first. */
+#define errno (*z_errno())
+
 #include <zephyr/sys/errno_private.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#define errno (*z_errno())
 
 #define EPERM 1         /**< Not owner */
 #define ENOENT 2        /**< No such file or directory */
