@@ -108,6 +108,10 @@
 #define GIC_DIST_IROUTER 0x6000
 #define IROUTER(base, n) (base + GIC_DIST_IROUTER + (n) * 8)
 
+/* GITCD_IROUTERnE for GICv3.1 Extended SPI Range */
+#define GIC_DIST_IROUTERnE 0x8000
+#define IROUTERnE(base, n) (base + GIC_DIST_IROUTERnE + (n) * 8)
+
 /*
  * ITS registers, offsets from ITS_base
  */
