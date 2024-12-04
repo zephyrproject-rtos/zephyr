@@ -204,9 +204,9 @@ smp_rx_req(struct smp_transport *smpt, struct net_buf *nb)
 }
 
 #ifdef CONFIG_SMP_CLIENT
-void smp_tx_req(struct k_work *work)
+struct k_work_q *smp_get_wq(void)
 {
-	k_work_submit_to_queue(&smp_work_queue, work);
+	return &smp_work_queue;
 }
 #endif
 
