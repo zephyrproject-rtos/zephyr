@@ -7,6 +7,7 @@ config ENTROPY_MCUX_RNGA
 	bool "MCUX RNGA driver"
 	default y
 	depends on DT_HAS_NXP_KINETIS_RNGA_ENABLED
+	depends on SYS_CLOCK_EXISTS
 	select ENTROPY_HAS_DRIVER
 	help
 	  This option enables the random number generator accelerator (RNGA)
