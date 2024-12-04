@@ -1139,3 +1139,12 @@ test_i2c_scd4x: scd4x@9e {
 	reg = <0x9e>;
 	mode = <0>;
 };
+
+test_i2c_tmp435: tmp435@9f {
+	compatible = "ti,tmp435";
+	reg = <0x9f>;
+	external-channel;
+	resistance-correction;
+	beta-compensation = <0x0f>;
+	status = "okay";
+};
