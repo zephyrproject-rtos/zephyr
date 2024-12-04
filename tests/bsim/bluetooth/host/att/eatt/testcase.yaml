@@ -1,0 +1,27 @@
+common:
+  build_only: true
+  tags:
+    - bluetooth
+  platform_allow:
+    - nrf52_bsim/native
+  harness: bsim
+
+tests:
+  bluetooth.host.att.eatt.autoconnect:
+    harness_config:
+      bsim_exe_name: tests_bsim_bluetooth_host_att_eatt_prj_autoconnect_conf
+    extra_args:
+      EXTRA_CONF_FILE=prj_autoconnect.conf
+  bluetooth.host.adt.eatt.collision:
+    harness_config:
+      bsim_exe_name: tests_bsim_bluetooth_host_att_eatt_prj_collision_conf
+  bluetooth.host.att.eatt.lowres:
+    harness_config:
+      bsim_exe_name: tests_bsim_bluetooth_host_att_eatt_prj_lowres_conf
+    extra_args:
+      EXTRA_CONF_FILE=prj_lowres.conf
+  bluetooth.host.att.eatt.multiple_conn:
+    harness_config:
+      bsim_exe_name: tests_bsim_bluetooth_host_att_eatt_prj_multiple_conn_conf
+    extra_args:
+      EXTRA_CONF_FILE=prj_multiple_conn.conf
