@@ -1,0 +1,113 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP FlexSPI MSPI Controller
+
+compatible: "nxp,flexspi"
+
+include: [mspi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  nxp,ahb-bufferable:
+    type: boolean
+    description: |
+      Enable AHB bufferable write access by setting register field
+      AHBCR[BUFFERABLEEN].
+
+  nxp,ahb-cacheable:
+    type: boolean
+    description: |
+      Enable AHB cacheable read access by setting register field
+      AHBCR[CACHEABLEEN].
+
+  nxp,ahb-prefetch:
+    type: boolean
+    description: |
+      Enable AHB read prefetch by setting register field AHBCR[PREFETCHEN].
+
+  nxp,ahb-read-addr-opt:
+    type: boolean
+    description: |
+      Remove burst start address alignment limitation by setting register
+      field AHBCR[READADDROPT].
+
+  nxp,combination-mode:
+    type: boolean
+    description: |
+      Combine port A and port B data pins to support octal mode access by
+      setting register field MCR0[COMBINATIONEN].
+
+  nxp,sck-differential-clock:
+    type: boolean
+    description: |
+      Enable/disable SCKB pad use as SCKA differential clock output,
+      when enabled, Port B flash access is not available.
+
+  nxp,rx-clock-source:
+    type: string
+    default: "loopback-internal"
+    enum:
+      - "loopback-internal"
+      - "loopback-dqs"
+      - "loopback-sck"
+      - "external-dqs"
+    description: |
+      Source clock for flash read. See the RXCLKSRC field in register MCR0.
+      The default corresponds to the reset value of the register field.
+
+  nxp,rx-clock-source-b:
+    type: string
+    default: "loopback-internal"
+    enum:
+      - "loopback-internal"
+      - "loopback-dqs"
+      - "loopback-sck"
+      - "external-dqs"
+    description: |
+      Source clock for flash read on port B. Only supported by some instances
+      of this IP. See the RXCLKSRC_B field in register MCR2.
+      The default corresponds to the reset value of the register field.
+
+  nxp,rx-buffer-config:
+    type: array
+    description: |
+      Array of tuples to configure AHB RX buffers. Format is the following:
+      <prefetch priority master_id buf_size>. Pass multiple tuples to configure
+      multiple RX buffers (up to maximum supported by SOC).
+      The tuple fields correspond to the following register bitfields:
+      prefetch: AHBRXBUFxCRx[PREFETCH]
+      priority: AHBRXBUFxCRx[PRIORITY]
+      master_id: AHBRXBUFxCRx[MSTRID]
+      buf_size: AHBRXBUFxCRx[BUFSZ]
+
+  nxp,combination-supported:
+    type: boolean
+    description: |
+      Set if the IP instance supports combining port A and port B to enable
+      octal mode. Indicates presence of MCR0[COMBINATIONEN] bit
+
+  nxp,sckb-invert-supported:
+    type: boolean
+    description: |
+      Set if the IP instance supports outputting an inverted SCLK signal on
+      port B. Indicates presence of MRC2[SCKBDIFFOPT] bit
+
+  nxp,diff-rxclk-supported:
+    type: boolean
+    description: |
+      Set if the IP instance supports a different RX clock source on port B.
+      Indicates presence of MCR2[RXCLKSRC_B] bit
+
+  nxp,xip-port:
+    type: int
+    default: 0
+    description: |
+      SOC specific value. Sets the port that the ROM uses to boot from this
+      FlexSPI instance, if supported. Defaults to 0 as most NXP ROMs boot from
+      port A1, some SOCs may need to override this setting.
