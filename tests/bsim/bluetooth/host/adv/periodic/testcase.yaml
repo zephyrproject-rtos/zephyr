@@ -1,0 +1,23 @@
+common:
+  build_only: true
+  tags:
+    - bluetooth
+  platform_allow:
+    - nrf52_bsim/native
+    - nrf5340bsim/nrf5340/cpunet
+  harness: bsim
+
+tests:
+  bluetooth.host.adv.periodic:
+    harness_config:
+      bsim_exe_name: tests_bsim_bluetooth_host_adv_periodic_prj_conf
+  bluetooth.host.adv.periodic.coded:
+    harness_config:
+      bsim_exe_name: tests_bsim_bluetooth_host_adv_periodic_prj_coded_conf
+    extra_args:
+      EXTRA_CONF_FILE=prj_coded.conf
+  bluetooth.host.adv.periodic.long_data:
+    harness_config:
+      bsim_exe_name: tests_bsim_bluetooth_host_adv_periodic_prj_long_data_conf
+    extra_args:
+      EXTRA_CONF_FILE=prj_long_data.conf

@@ -14,6 +14,7 @@ set -uex
 # nrf52_bsim set:
 nice tests/bsim/bluetooth/compile.sh
 
+BOARD=nrf52_bsim/native \
 RESULTS_FILE=${ZEPHYR_BASE}/bsim_out/bsim_results.bt.52.xml \
 TESTS_FILE=tests/bsim/bluetooth/tests.nrf52bsim.txt \
 tests/bsim/run_parallel.sh
