@@ -153,6 +153,8 @@ source "drivers/spi/Kconfig.ifx_cat1"
 
 source "drivers/spi/Kconfig.sedi"
 
+source "drivers/spi/Kconfig.si32"
+
 source "drivers/spi/Kconfig.npcx"
 
 source "drivers/spi/Kconfig.mchp_mss"

@@ -39,6 +39,12 @@
 	status = "okay";
 };
 
+&spi2 {
+	pinctrl-0 = <&spi2_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &usart0 {
 	current-speed = <500000>;
 	pinctrl-0 = <&usart0_default>;

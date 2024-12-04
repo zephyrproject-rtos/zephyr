@@ -1,0 +1,10 @@
+# Copyright (c) 2024 GARDENA GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_SI32
+	bool "Si32 SPI controller driver"
+	default y
+	depends on DT_HAS_SILABS_SI32_SPI_ENABLED
+	help
+	  Currently, the SPI driver is limited to master mode only.

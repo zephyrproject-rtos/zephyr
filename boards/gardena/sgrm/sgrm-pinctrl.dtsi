@@ -30,4 +30,18 @@
 			input-enable;
 		};
 	};
+
+	spi2_default: spi2_default {
+		group1 {
+			pinmux = <SI32_MUX(SPI2_SCK, 3, 6)>,
+				<SI32_MUX(SPI2_MOSI, 3, 8)>,
+				<SI32_MUX(SPI2_NSS, 3, 9)>;
+			output-enable;
+		};
+
+		group2 {
+			pinmux = <SI32_MUX(SPI2_MISO, 3, 7)>;
+			input-enable;
+		};
+	};
 };
