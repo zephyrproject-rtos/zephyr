@@ -56,11 +56,23 @@
 #define GICD_IGROUPRn (GIC_DIST_BASE + 0x80)
 
 /*
+ * 0x1000  Interrupt Group Registers for Extended SPI Range
+ * v3.1		GICD_IGROUPRnE
+ */
+#define GICD_IGROUPRnE (GIC_DIST_BASE + 0x1000)
+
+/*
  * 0x100  Interrupt Set-Enable Registers
  * v1		ICDISERn
  * v2/v3	GICD_ISENABLERn
  */
 #define GICD_ISENABLERn (GIC_DIST_BASE + 0x100)
+
+/*
+ * 0x1200  Interrupt Set-Enable Registers for Extended SPI Range
+ * v3.1		GICD_ISENABLERnE
+ */
+#define GICD_ISENABLERnE (GIC_DIST_BASE + 0x1200)
 
 /*
  * 0x180  Interrupt Clear-Enable Registers
@@ -70,11 +82,23 @@
 #define GICD_ICENABLERn (GIC_DIST_BASE + 0x180)
 
 /*
+ * 0x1400  Interrupt Clear-Enable Registers for Extended SPI Range
+ * v3.1		GICD_ICENABLERnE
+ */
+#define GICD_ICENABLERnE (GIC_DIST_BASE + 0x1400)
+
+/*
  * 0x200  Interrupt Set-Pending Registers
  * v1		ICDISPRn
  * v2/v3	GICD_ISPENDRn
  */
 #define GICD_ISPENDRn (GIC_DIST_BASE + 0x200)
+
+/*
+ * 1600  Interrupt Set-Pending Registers for Extended SPI Range
+ * v3.1		GICD_ISPENDRnE
+ */
+#define GICD_ISPENDRnE (GIC_DIST_BASE + 0x1600)
 
 /*
  * 0x280  Interrupt Clear-Pending Registers
@@ -84,11 +108,23 @@
 #define GICD_ICPENDRn (GIC_DIST_BASE + 0x280)
 
 /*
+ * 0x1800  Interrupt Clear-Pending Registers for Extended SPI Range
+ * v3.1		GICD_ICPENDRnE
+ */
+#define GICD_ICPENDRnE (GIC_DIST_BASE + 0x1800)
+
+/*
  * 0x300  Interrupt Set-Active Registers
  * v1		ICDABRn
  * v2/v3	GICD_ISACTIVERn
  */
 #define GICD_ISACTIVERn (GIC_DIST_BASE + 0x300)
+
+/*
+ * 0x1A00  Interrupt Set-Active Registers for Extended SPI Range
+ * v3.1		GICD_ISACTIVERnE
+ */
+#define GICD_ISACTIVERnE (GIC_DIST_BASE + 0x1A00)
 
 #if CONFIG_GIC_VER >= 2
 /*
@@ -96,6 +132,12 @@
  * v2/v3	GICD_ICACTIVERn
  */
 #define GICD_ICACTIVERn (GIC_DIST_BASE + 0x380)
+
+/*
+ * 0x1C00  Interrupt Clear-Active Registers for Extended SPI Range
+ * v3.1		GICD_ICACTIVERnE
+ */
+#define GICD_ICACTIVERnE (GIC_DIST_BASE + 0x1C00)
 #endif
 
 /*
@@ -104,6 +146,12 @@
  * v2/v3	GICD_IPRIORITYRn
  */
 #define GICD_IPRIORITYRn (GIC_DIST_BASE + 0x400)
+
+/*
+ * 0x2000  Interrupt Priority Registers for Extended SPI Range
+ * v3.1		GICD_IPRIORITYRnE
+ */
+#define GICD_IPRIORITYRnE (GIC_DIST_BASE + 0x2000)
 
 /*
  * 0x800  Interrupt Processor Targets Registers
@@ -118,6 +166,12 @@
  * v2/v3	GICD_ICFGRn
  */
 #define GICD_ICFGRn (GIC_DIST_BASE + 0xc00)
+
+/*
+ * 0x3000  Interrupt Configuration Registers for Extended SPI Range
+ * v3.1		GICD_ICFGRnE
+ */
+#define GICD_ICFGRnE (GIC_DIST_BASE + 0x3000)
 
 /*
  * 0xF00  Software Generated Interrupt Register
@@ -212,6 +266,9 @@
 
 /* GICD_TYPER.ITLinesNumber 0:4 */
 #define GICD_TYPER_ITLINESNUM_MASK 0x1f
+
+/* GICD_TYPER.ESPI [8] */
+#define GICD_TYPER_ESPI_MASK BIT(8)
 
 /* GICD_TYPER.IDbits */
 #define GICD_TYPER_IDBITS(typer) ((((typer) >> 19) & 0x1f) + 1)
