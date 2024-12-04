@@ -71,7 +71,7 @@ LOG_MODULE_REGISTER(MAX31865, CONFIG_SENSOR_LOG_LEVEL);
  * For under zero, taken from
  * https://www.analog.com/media/en/technical-documentation/application-notes/AN709_0.pdf
  */
-static const float A[6] = {-242.02, 2.2228, 2.5859e-3, 4.8260e-6, 2.8183e-8, 1.5243e-10};
+static const double RTD_C[6] = {-242.02, 2.2228, 2.5859e-3, 4.8260e-6, 2.8183e-8, 1.5243e-10};
 
 struct max31865_data {
 	double temperature;
