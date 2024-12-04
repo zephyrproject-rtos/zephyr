@@ -101,7 +101,7 @@ Programming and Debugging
 
 .. note::
    Before using the kit the first time, you should update the J-Link firmware
-   from `J-Link-Downloads`_
+   in Simplicity Studio.
 
 Flashing
 ========
@@ -161,6 +161,3 @@ this example.
 
 .. _BRD2703A User Guide:
    https://www.silabs.com/documents/public/user-guides/ug533-xg24-ek2703a.pdf
-
-.. _J-Link-Downloads:
-   https://www.segger.com/downloads/jlink
