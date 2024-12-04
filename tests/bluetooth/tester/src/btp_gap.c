@@ -1548,7 +1548,8 @@ int tester_gap_padv_stop(void)
 	int err;
 
 	if (ext_adv == NULL) {
-		return -EINVAL;
+		/* Ext adv not yet created */
+		return -ESRCH;
 	}
 
 	/* Enable Periodic Advertising */
