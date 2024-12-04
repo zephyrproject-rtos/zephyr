@@ -159,6 +159,84 @@
 			voltage-reference = <0>;
 			#io-channel-cells = <1>;
 		};
+
+		flexpwm0: flexpwm@400a9000 {
+			compatible = "nxp,flexpwm";
+			reg = <0x400a9000 0x1000>;
+			interrupt-names = "RELOAD-ERROR", "FAULT";
+			interrupts = <44 0>, <45 0>;
+			flexpwm0_pwm0: pwm0 {
+				compatible = "nxp,imx-pwm";
+				index = <0>;
+				interrupts = <46 0>;
+				#pwm-cells = <3>;
+				clocks = <&syscon MCUX_BUS_CLK>;
+				nxp,prescaler = <128>;
+				status = "disabled";
+				run-in-wait;
+			};
+
+			flexpwm0_pwm1: pwm1 {
+				compatible = "nxp,imx-pwm";
+				index = <1>;
+				interrupts = <47 0>;
+				#pwm-cells = <3>;
+				clocks = <&syscon MCUX_BUS_CLK>;
+				nxp,prescaler = <128>;
+				status = "disabled";
+				run-in-wait;
+			};
+
+			flexpwm0_pwm2: pwm2 {
+				compatible = "nxp,imx-pwm";
+				index = <2>;
+				interrupts = <48 0>;
+				#pwm-cells = <3>;
+				clocks = <&syscon MCUX_BUS_CLK>;
+				nxp,prescaler = <128>;
+				status = "disabled";
+				run-in-wait;
+			};
+		};
+
+		flexpwm1: flexpwm@d0000 {
+			compatible = "nxp,flexpwm";
+			reg = <0xd0000 0x1000>;
+			interrupt-names = "RELOAD-ERROR", "FAULT";
+			interrupts = <79 0>, <80 0>;
+			flexpwm1_pwm0: pwm0 {
+				compatible = "nxp,imx-pwm";
+				index = <0>;
+				interrupts = <81 0>;
+				#pwm-cells = <3>;
+				clocks = <&syscon MCUX_BUS_CLK>;
+				nxp,prescaler = <128>;
+				status = "disabled";
+				run-in-wait;
+			};
+
+			flexpwm1_pwm1: pwm1 {
+				compatible = "nxp,imx-pwm";
+				index = <1>;
+				interrupts = <82 0>;
+				#pwm-cells = <3>;
+				clocks = <&syscon MCUX_BUS_CLK>;
+				nxp,prescaler = <128>;
+				status = "disabled";
+				run-in-wait;
+			};
+
+			flexpwm1_pwm2: pwm2 {
+				compatible = "nxp,imx-pwm";
+				index = <2>;
+				interrupts = <83 0>;
+				#pwm-cells = <3>;
+				clocks = <&syscon MCUX_BUS_CLK>;
+				nxp,prescaler = <128>;
+				status = "disabled";
+				run-in-wait;
+			};
+		};
 	};
 };
 
