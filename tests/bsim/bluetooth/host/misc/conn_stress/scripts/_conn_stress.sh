@@ -23,22 +23,11 @@ function Execute(){
 }
 
 test_path="bsim_bluetooth_host_misc_conn_stress"
-bsim_central_exe_name="bs_nrf52_${test_path}_central_prj_conf"
-bsim_peripheral_exe_name="bs_nrf52_${test_path}_peripheral_prj_conf"
+bsim_central_exe_name="bs_${BOARD_TS}_${test_path}_central_prj_conf"
+bsim_peripheral_exe_name="bs_${BOARD_TS}_${test_path}_peripheral_prj_conf"
 
 # terminate running simulations (if any)
 ${BSIM_COMPONENTS_PATH}/common/stop_bsim.sh $simulation_id
-
-# (re)Build the central & peripheral images. Don't continue if build fails.
-west build -b ${BOARD} -d build_central central && \
-    cp build_central/zephyr/zephyr.exe \
-    "${BSIM_OUT_PATH}/bin/${bsim_central_exe_name}" \
-    || exit 1
-
-west build -b ${BOARD} -d build_peripheral peripheral && \
-    cp build_peripheral/zephyr/zephyr.exe \
-    "${BSIM_OUT_PATH}/bin/${bsim_peripheral_exe_name}" \
-    || exit 1
 
 cd ${BSIM_OUT_PATH}/bin
 

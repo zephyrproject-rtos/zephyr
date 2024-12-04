@@ -14,8 +14,8 @@ DEBUG_PERMUTATE=false
  directory}"
 
 source ${ZEPHYR_BASE}/tests/bsim/compile.source
-
 BOARD_ROOT="${BOARD_ROOT:-${ZEPHYR_BASE}}"
+BOARD_TS="${BOARD//\//_}"
 
 mkdir -p ${WORK_DIR}
 
