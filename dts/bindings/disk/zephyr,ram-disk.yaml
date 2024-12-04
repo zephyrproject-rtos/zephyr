@@ -1,4 +1,5 @@
 # Copyright (c) 2023 Nordic Semiconductor ASA
+# Copyright (c) 2024 Siemens AG
 # SPDX-License-Identifier: Apache-2.0
 
 description: RAM disk
@@ -31,5 +32,15 @@ properties:
     type: phandle
     description: |
       Optional phandle to the memory region to be used as a RAM disk,
-      if not used a local buffer is defined for each disk instance.
-      Use it with caution as it makes memory contents easily accessible.
+      if not used, and 'zephyr,disk-image-path' property is also not used, a
+      local buffer is defined for each disk instance. Use it with caution as it
+      makes memory contents easily accessible.
+
+  zephyr,disk-image-path:
+    type: string
+    description: |
+      Optional path of a disk image, on the build host system, to be used as
+      backing store of a RAM disk. Make sure that 'sector-size' matches the
+      corresponding value used in the existing filesystem (if any) on the disk
+      image. The value of 'sector-count' will be ignored and overridden with the
+      value computed automatically from the disk image size, at build time.
