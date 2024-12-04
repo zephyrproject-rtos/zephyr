@@ -190,7 +190,7 @@ static int cmd_stepper_enable(const struct shell *sh, size_t argc, char **argv)
 	return err;
 }
 
-static int cmd_stepper_move(const struct shell *sh, size_t argc, char **argv)
+static int cmd_stepper_move_by(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
 	int err = 0;
@@ -211,7 +211,7 @@ static int cmd_stepper_move(const struct shell *sh, size_t argc, char **argv)
 		shell_error(sh, "Failed to set callback: %d", err);
 	}
 
-	err = stepper_move(dev, micro_steps);
+	err = stepper_move_by(dev, micro_steps);
 	if (err) {
 		shell_error(sh, "Error: %d", err);
 	}
@@ -453,8 +453,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	stepper_cmds,
 	SHELL_CMD_ARG(enable, &dsub_pos_stepper_motor_name, "<device> <on/off>", cmd_stepper_enable,
 		      3, 0),
-	SHELL_CMD_ARG(move, &dsub_pos_stepper_motor_name, "<device> <micro_steps>",
-		      cmd_stepper_move, 3, 0),
+	SHELL_CMD_ARG(move_by, &dsub_pos_stepper_motor_name, "<device> <micro_steps>",
+		      cmd_stepper_move_by, 3, 0),
 	SHELL_CMD_ARG(set_max_velocity, &dsub_pos_stepper_motor_name, "<device> <velocity>",
 		      cmd_stepper_set_max_velocity, 3, 0),
 	SHELL_CMD_ARG(set_micro_step_res, &dsub_pos_stepper_motor_name_microstep,

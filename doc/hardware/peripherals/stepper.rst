@@ -18,7 +18,7 @@ Configure Stepper Driver
 Control Stepper
 ===============
 
-- **Move by** +/- micro-steps also known as **relative movement** using :c:func:`stepper_move`.
+- **Move by** +/- micro-steps also known as **relative movement** using :c:func:`stepper_move_by`.
 - **Move to** a specific position also known as **absolute movement**
   using :c:func:`stepper_set_target_position`.
 - Run continuously with a **constant velocity** in a specific direction until

@@ -180,6 +180,7 @@ Stepper
   * Renamed the ``compatible`` from ``zephyr,gpio-steppers`` to :dtcompatible:`zephyr,gpio-stepper`.
   * Renamed the ``stepper_set_actual_position`` function to :c:func:`stepper_set_reference_position`.
   * Renamed the ``stepper_enable_constant_velocity_mode`` function to :c:func:`stepper_run`.
+  * Renamed the ``stepper_move`` function to :c:func:`stepper_move_by`.
 
 SPI
 ===
