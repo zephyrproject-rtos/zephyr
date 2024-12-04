@@ -1254,6 +1254,11 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		 */
 		switch (old_state) {
 		case BT_CONN_DISCONNECT_COMPLETE:
+			/* Any previously scheduled deferred work now becomes invalid
+			 * so cancel it here, before we yield to tx thread.
+			 */
+			k_work_cancel_delayable(&conn->deferred_work);
+
 			bt_conn_tx_notify(conn, true);
 
 			bt_conn_reset_rx_state(conn);
