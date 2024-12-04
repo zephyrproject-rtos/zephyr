@@ -122,7 +122,7 @@ static int usbd_hid_request(struct usbd_class_data *const c_data,
 
 	if (bi->ep == hid_get_in_ep(c_data)) {
 		if (ops->input_report_done != NULL) {
-			ops->input_report_done(dev);
+			ops->input_report_done(dev, buf->__buf);
 		} else {
 			k_sem_give(&ddata->in_sem);
 		}
