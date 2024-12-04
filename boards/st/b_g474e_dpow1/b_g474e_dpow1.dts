@@ -102,10 +102,10 @@ stm32_lp_tick_source: &lptim1 {
 };
 
 &pll {
-	div-m = <1>;
-	mul-n = <16>;
-	div-p = <7>;
-	div-q = <2>;
+	div-m = <4>;
+	mul-n = <85>;
+	div-p = <8>;
+	div-q = <8>;
 	div-r = <2>;
 	clocks = <&clk_hsi>;
 	status = "okay";
@@ -113,7 +113,7 @@ stm32_lp_tick_source: &lptim1 {
 
 &rcc {
 	clocks = <&pll>;
-	clock-frequency = <DT_FREQ_M(128)>;
+	clock-frequency = <DT_FREQ_M(170)>;
 	ahb-prescaler = <1>;
 	apb1-prescaler = <1>;
 	apb2-prescaler = <1>;
