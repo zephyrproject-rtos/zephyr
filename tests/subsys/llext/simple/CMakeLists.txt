@@ -37,7 +37,7 @@ if (CONFIG_LLEXT_TYPE_ELF_RELOCATABLE AND NOT CONFIG_ARM)
 endif()
 
 if (CONFIG_LLEXT_STORAGE_WRITABLE)
-    list(APPEND ext_names find_section)
+    list(APPEND ext_names find_section detached_fn)
 endif()
 
 if (NOT CONFIG_LLEXT_TYPE_ELF_SHAREDLIB)
