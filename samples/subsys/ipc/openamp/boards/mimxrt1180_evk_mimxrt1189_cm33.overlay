@@ -1,0 +1,47 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/ipc_service/static_vrings.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+
+/ {
+	chosen {
+		/*
+		* shared memory reserved for the inter-processor communication
+		*/
+
+		zephyr,ipc_shm = &sram1_ipc0;
+		zephyr,ipc = &mailbox_a;
+	};
+
+	/* Define memory regions for IPC
+	* Note that shared memory must have specific MPU attributes set.
+	*/
+	sram1_ipc0: memory@30060000{
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x30060000 DT_SIZE_K(16)>;
+		zephyr,memory-region="SRAM1_IPC0";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO))>;
+	};
+
+	sram1_ipc1: memory@30064000{
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x30064000 DT_SIZE_K(16)>;
+		zephyr,memory-region="SRAM1_IPC1";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO))>;
+	};
+
+	/delete-node/ mbox@4220000;
+	soc {
+		mailbox_a: mailbox@4220000 {
+			compatible = "nxp,imx-mu";
+			reg = <0x4220000 0x4000>;
+			interrupts = <21 0>;
+			rdc = <0>;
+			status = "okay";
+		};
+	};
+};
