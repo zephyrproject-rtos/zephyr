@@ -161,9 +161,6 @@ static int nordicsemi_nrf54l_init(void)
 	nrf_regulators_vreg_enable_set(NRF_REGULATORS, NRF_REGULATORS_VREG_MAIN, true);
 #endif
 
-#if defined(CONFIG_ELV_GRTC_LFXO_ALLOWED)
-	nrf_regulators_elv_mode_allow_set(NRF_REGULATORS, NRF_REGULATORS_ELV_ELVGRTCLFXO_MASK);
-#endif /* CONFIG_ELV_GRTC_LFXO_ALLOWED */
 #endif /* NRF_APPLICATION */
 
 	return 0;
