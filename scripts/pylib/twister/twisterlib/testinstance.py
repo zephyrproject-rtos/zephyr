@@ -264,9 +264,9 @@ class TestInstance:
         simulation = options.sim_name
 
         simulator = self.platform.simulator_by_name(simulation)
-        if os.name == 'nt':
+        if os.name == 'nt' and simulator:
             # running on simulators is currently supported only for QEMU on Windows
-            if (not simulator) or simulator.name not in ('na', 'qemu'):
+            if simulator.name not in ('na', 'qemu'):
                 return False
 
             # check presence of QEMU on Windows
