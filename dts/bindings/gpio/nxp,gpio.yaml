@@ -1,6 +1,6 @@
-description: Kinetis GPIO node
+description: NXP GPIO controller
 
-compatible: "nxp,kinetis-gpio"
+compatible: "nxp,gpio"
 
 include: [gpio-controller.yaml, base.yaml]
 
@@ -11,7 +11,7 @@ properties:
   "#gpio-cells":
     const: 2
 
-  nxp,kinetis-port:
+  nxp,port:
     required: true
     type: phandle
     description: |

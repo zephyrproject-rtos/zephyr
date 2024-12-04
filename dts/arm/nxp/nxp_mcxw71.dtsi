@@ -229,11 +229,11 @@
 	};
 
 	gpiod: gpio@46000{
-		compatible = "nxp,kinetis-gpio";
+		compatible = "nxp,gpio";
 		status = "disabled";
 		gpio-controller;
 		#gpio-cells = <2>;
-		nxp,kinetis-port = <&portd>;
+		nxp,port = <&portd>;
 		reg = <0x46000 0x128>;
 		interrupts = <65 0>, <66 0>;
 	};
@@ -353,31 +353,31 @@
 
 &fast_peripheral0 {
 	gpioa: gpio@10000{
-		compatible = "nxp,kinetis-gpio";
+		compatible = "nxp,gpio";
 		status = "disabled";
 		gpio-controller;
 		#gpio-cells = <2>;
-		nxp,kinetis-port = <&porta>;
+		nxp,port = <&porta>;
 		reg = <0x10000 0x128>;
 		interrupts = <59 0>, <60 0>;
 	};
 
 	gpiob: gpio@20000{
-		compatible = "nxp,kinetis-gpio";
+		compatible = "nxp,gpio";
 		status = "disabled";
 		gpio-controller;
 		#gpio-cells = <2>;
-		nxp,kinetis-port = <&portb>;
+		nxp,port = <&portb>;
 		reg = <0x20000 0x128>;
 		interrupts = <61 0>, <62 0>;
 	};
 
 	gpioc: gpio@30000{
-		compatible = "nxp,kinetis-gpio";
+		compatible = "nxp,gpio";
 		status = "disabled";
 		gpio-controller;
 		#gpio-cells = <2>;
-		nxp,kinetis-port = <&portc>;
+		nxp,port = <&portc>;
 		reg = <0x30000 0x128>;
 		interrupts = <63 0>, <64 0>;
 	};

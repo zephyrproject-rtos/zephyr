@@ -5,12 +5,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT nxp_kinetis_gpio
+#define DT_DRV_COMPAT nxp_gpio
 
 #include <errno.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
-#include <zephyr/dt-bindings/gpio/nxp-kinetis-gpio.h>
+#include <zephyr/dt-bindings/gpio/nxp-gpio.h>
 #include <zephyr/irq.h>
 #include <soc.h>
 #include <fsl_common.h>
@@ -104,12 +104,12 @@ static int gpio_mcux_configure(const struct device *dev,
 
 #if defined(FSL_FEATURE_PORT_HAS_DRIVE_STRENGTH) && FSL_FEATURE_PORT_HAS_DRIVE_STRENGTH
 	/* Determine the drive strength */
-	switch (flags & KINETIS_GPIO_DS_MASK) {
-	case KINETIS_GPIO_DS_DFLT:
+	switch (flags & NXP_GPIO_DS_MASK) {
+	case NXP_GPIO_DS_DFLT:
 		/* Default is low drive strength */
 		mask |= PORT_PCR_DSE_MASK;
 		break;
-	case KINETIS_GPIO_DS_ALT:
+	case NXP_GPIO_DS_ALT:
 		/* Alternate is high drive strength */
 		pcr |= PORT_PCR_DSE_MASK;
 		break;
@@ -414,7 +414,7 @@ static DEVICE_API(gpio, gpio_mcux_driver_api) = {
 		irq_enable(DT_INST_IRQN(n));				\
 	} while (false)
 
-#define GPIO_PORT_BASE_ADDR(n) DT_REG_ADDR(DT_INST_PHANDLE(n, nxp_kinetis_port))
+#define GPIO_PORT_BASE_ADDR(n) DT_REG_ADDR(DT_INST_PHANDLE(n, nxp_port))
 
 #define GPIO_DEVICE_INIT_MCUX(n)					\
 	static int gpio_mcux_port## n ## _init(const struct device *dev); \

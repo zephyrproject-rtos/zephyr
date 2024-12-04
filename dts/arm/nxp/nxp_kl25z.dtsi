@@ -149,50 +149,50 @@
 		};
 
 		gpioa: gpio@400ff000 {
-			compatible = "nxp,kinetis-gpio";
+			compatible = "nxp,gpio";
 			status = "disabled";
 			reg = <0x400ff000 0x40>;
 			interrupts = <30 2>;
 			gpio-controller;
 			#gpio-cells = <2>;
-			nxp,kinetis-port = <&porta>;
+			nxp,port = <&porta>;
 		};
 
 		gpiob: gpio@400ff040 {
-			compatible = "nxp,kinetis-gpio";
+			compatible = "nxp,gpio";
 			status = "disabled";
 			reg = <0x400ff040 0x40>;
 			gpio-controller;
 			#gpio-cells = <2>;
-			nxp,kinetis-port = <&portb>;
+			nxp,port = <&portb>;
 		};
 
 		gpioc: gpio@400ff080 {
-			compatible = "nxp,kinetis-gpio";
+			compatible = "nxp,gpio";
 			status = "disabled";
 			reg = <0x400ff080 0x40>;
 			gpio-controller;
 			#gpio-cells = <2>;
-			nxp,kinetis-port = <&portc>;
+			nxp,port = <&portc>;
 		};
 
 		gpiod: gpio@400ff0c0 {
-			compatible = "nxp,kinetis-gpio";
+			compatible = "nxp,gpio";
 			status = "disabled";
 			reg = <0x400ff0c0 0x40>;
 			interrupts = <31 2>;
 			gpio-controller;
 			#gpio-cells = <2>;
-			nxp,kinetis-port = <&portd>;
+			nxp,port = <&portd>;
 		};
 
 		gpioe: gpio@400ff100 {
-			compatible = "nxp,kinetis-gpio";
+			compatible = "nxp,gpio";
 			status = "disabled";
 			reg = <0x400ff100 0x40>;
 			gpio-controller;
 			#gpio-cells = <2>;
-			nxp,kinetis-port = <&porte>;
+			nxp,port = <&porte>;
 		};
 
 		usbotg: usbd@40072000 {
