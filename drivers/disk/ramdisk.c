@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2016 Intel Corporation.
  * Copyright (c) 2021,2023 Nordic Semiconductor ASA
+ * Copyright (c) 2024 Siemens AG
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -142,6 +143,20 @@ static const struct disk_operations ram_disk_ops = {
 		.buf = UINT_TO_POINTER(DT_REG_ADDR(DT_INST_PHANDLE(n, ram_region))),	\
 	}
 
+/* Include disk image binary data for all enabled RAM disk device instances
+ * that have been configured to use existing disk images as backing stores.
+ */
+#include <ramdisk_diskimages.inc>
+
+#define RAMDISK_DEVICE_CONFIG_DEFINE_DISKIMG(n)                                         \
+	static struct ram_disk_config disk_config_##n = {				\
+		.sector_size = DT_INST_PROP(n, sector_size),				\
+		.sector_count = UTIL_CAT(DT_INST(n, DT_DRV_COMPAT), _sector_count),	\
+		.size = DT_INST_PROP(n, sector_size) *					\
+			UTIL_CAT(DT_INST(n, DT_DRV_COMPAT), _sector_count),		\
+		.buf = UTIL_CAT(DT_INST(n, DT_DRV_COMPAT), _buf),			\
+	}
+
 #define RAMDISK_DEVICE_CONFIG_DEFINE_LOCAL(n)						\
 	static uint8_t disk_buf_##n[DT_INST_PROP(n, sector_size) *			\
 				    DT_INST_PROP(n, sector_count)];			\
@@ -156,7 +171,9 @@ static const struct disk_operations ram_disk_ops = {
 #define RAMDISK_DEVICE_CONFIG_DEFINE(n)							\
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, ram_region),				\
 		    (RAMDISK_DEVICE_CONFIG_DEFINE_MEMREG(n)),				\
-		    (RAMDISK_DEVICE_CONFIG_DEFINE_LOCAL(n)))
+			(COND_CODE_1(DT_INST_NODE_HAS_PROP(n, zephyr_disk_image_path),	\
+				(RAMDISK_DEVICE_CONFIG_DEFINE_DISKIMG(n)),		\
+				(RAMDISK_DEVICE_CONFIG_DEFINE_LOCAL(n)))))
 
 #define RAMDISK_DEVICE_DEFINE(n)							\
 											\
