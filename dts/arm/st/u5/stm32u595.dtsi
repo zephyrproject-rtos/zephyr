@@ -106,16 +106,16 @@
 			num-bidir-endpoints = <9>;
 			ram-size = <4096>;
 			maximum-speed = "high-speed";
-			clocks = <&rcc STM32_CLOCK(AHB2, 15U)>,
-				 <&rcc STM32_SRC_HSI48 ICKLK_SEL(0)>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 14U)>;
 			phys = <&otghs_phy>;
 			status = "disabled";
 		};
 	};
 
 	otghs_phy: otghs_phy {
-		/* Clock source defined by USBPHYC_SEL in */
-		compatible = "usb-nop-xceiv";
+		compatible = "st,stm32u5-otghs-phy";
+		clocks = <&rcc STM32_CLOCK(AHB2, 15U)>,
+			 <&rcc STM32_SRC_HSE OTGHS_SEL(0)>;
 		#phy-cells = <0>;
 	};
 
