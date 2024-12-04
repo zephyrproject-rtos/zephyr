@@ -56,6 +56,8 @@ The FRDM-MCXA156 board configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | DAC       | on-chip    | dac                                 |
 +-----------+------------+-------------------------------------+
+| PWM       | on-chip    | pwm                                 |
++-----------+------------+-------------------------------------+
 
 Targets available
 ==================
