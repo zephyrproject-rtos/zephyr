@@ -428,6 +428,21 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 		*rate = CLOCK_GetLpuartClkFreq(4);
 		break;
 #endif /* defined(CONFIG_UART_MCUX_LPUART) */
+
+#if (defined(CONFIG_I2C_MCUX_LPI2C) && CONFIG_SOC_SERIES_MCXA)
+	case MCUX_LPI2C0_CLK:
+		*rate = CLOCK_GetLpi2cClkFreq(0);
+		break;
+	case MCUX_LPI2C1_CLK:
+		*rate = CLOCK_GetLpi2cClkFreq(1);
+		break;
+	case MCUX_LPI2C2_CLK:
+		*rate = CLOCK_GetLpi2cClkFreq(2);
+		break;
+	case MCUX_LPI2C3_CLK:
+		*rate = CLOCK_GetLpi2cClkFreq(3);
+		break;
+#endif /* defined(CONFIG_I2C_MCUX_LPI2C) */
 	}
 
 	return 0;
