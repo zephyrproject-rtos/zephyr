@@ -338,7 +338,7 @@ static int cmd_stepper_get_actual_position(const struct shell *sh, size_t argc, 
 	return err;
 }
 
-static int cmd_stepper_set_target_position(const struct shell *sh, size_t argc, char **argv)
+static int cmd_stepper_move_to(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
 	int err = 0;
@@ -358,7 +358,7 @@ static int cmd_stepper_set_target_position(const struct shell *sh, size_t argc, 
 		shell_error(sh, "Failed to set callback: %d", err);
 	}
 
-	err = stepper_set_target_position(dev, position);
+	err = stepper_move_to(dev, position);
 	if (err) {
 		shell_error(sh, "Error: %d", err);
 	}
@@ -465,8 +465,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      cmd_stepper_set_reference_position, 3, 0),
 	SHELL_CMD_ARG(get_actual_position, &dsub_pos_stepper_motor_name, "<device>",
 		      cmd_stepper_get_actual_position, 2, 0),
-	SHELL_CMD_ARG(set_target_position, &dsub_pos_stepper_motor_name, "<device> <micro_steps>",
-		      cmd_stepper_set_target_position, 3, 0),
+	SHELL_CMD_ARG(move_to, &dsub_pos_stepper_motor_name, "<device> <micro_steps>",
+		      cmd_stepper_move_to, 3, 0),
 	SHELL_CMD_ARG(run, &dsub_pos_stepper_motor_name_dir, "<device> <direction> <velocity>",
 		      cmd_stepper_run, 4, 0),
 	SHELL_CMD_ARG(info, &dsub_pos_stepper_motor_name, "<device>", cmd_stepper_info, 2, 0),
