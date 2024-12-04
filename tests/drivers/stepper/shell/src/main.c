@@ -55,13 +55,13 @@ ZTEST(stepper_shell, test_stepper_enable)
 	zassert_equal(fake_stepper_enable_fake.arg1_val, false, "wrong enable value");
 }
 
-ZTEST(stepper_shell, test_stepper_move)
+ZTEST(stepper_shell, test_stepper_move_by)
 {
 	const struct shell *sh = shell_backend_dummy_get_ptr();
-	int err = shell_execute_cmd(sh, "stepper move " FAKE_STEPPER_NAME " 1000");
+	int err = shell_execute_cmd(sh, "stepper move_by " FAKE_STEPPER_NAME " 1000");
 
-	ASSERT_STEPPER_FUNC_CALLED(fake_stepper_move_fake, err);
-	zassert_equal(fake_stepper_move_fake.arg1_val, 1000, "wrong microsteps value");
+	ASSERT_STEPPER_FUNC_CALLED(fake_stepper_move_by_fake, err);
+	zassert_equal(fake_stepper_move_by_fake.arg1_val, 1000, "wrong microsteps value");
 }
 
 ZTEST(stepper_shell, test_stepper_set_max_velocity)
