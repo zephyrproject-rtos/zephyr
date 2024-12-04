@@ -423,6 +423,16 @@ struct mspi_xfer {
 	uint8_t                     cmd_length;
 	/** @brief  Configure address length     */
 	uint8_t                     addr_length;
+	/** @brief Configure size of column address, for PSRAM devices */
+	uint8_t                 column_addr_length;
+	/** @brief Set mode bits for write command */
+	uint32_t                write_mode_bits;
+	/** @brief Configure count of mode bits for write command */
+	uint8_t                 write_mode_length;
+	/** @brief Set mode bits for read command */
+	uint32_t                read_mode_bits;
+	/** @brief Configure count of mode bits for read command */
+	uint8_t                 read_mode_length;
 	/** @brief  Hold CE active after xfer    */
 	bool                        hold_ce;
 	/** @brief  Software CE control          */
