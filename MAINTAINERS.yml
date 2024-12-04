@@ -159,6 +159,7 @@ ARM arch:
     - MaureenHelm
     - stephanosio
     - bbolen
+    - wearyzen
   files:
     - arch/arm/
     - arch/arm/core/offsets/
@@ -195,6 +196,8 @@ ARM Platforms:
   status: maintained
   maintainers:
     - ithinuel
+  collaborators:
+    - wearyzen
   files:
     - boards/arm/mps*/
     - boards/arm/v2m_*/
@@ -5020,6 +5023,7 @@ West:
     - ceolin
   collaborators:
     - ithinuel
+    - wearyzen
     - valeriosetti
     - tomi-font
   files:
@@ -5208,6 +5212,7 @@ West:
   collaborators:
     - Vge0rge
     - ithinuel
+    - wearyzen
     - valeriosetti
     - tomi-font
   files:
@@ -5227,6 +5232,7 @@ West:
   collaborators:
     - Vge0rge
     - ithinuel
+    - wearyzen
   files: []
   labels:
     - "area: TF-M"
@@ -5239,6 +5245,7 @@ West:
   collaborators:
     - carlocaione
     - ithinuel
+    - wearyzen
   files:
     - modules/trusted-firmware-a/
   labels:
@@ -5251,6 +5258,7 @@ West:
   collaborators:
     - Vge0rge
     - ithinuel
+    - wearyzen
   files: []
   labels:
     - "area: TF-M"
