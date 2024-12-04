@@ -55,6 +55,18 @@ config MSPI_TIMING
 	  Enables mspi_timing_config calls in device drivers for those
 	  controllers that need this to proper function at high frequencies.
 
+config MSPI_SHELL
+	bool "MSPI Shell"
+	depends on SHELL
+	select SHELL_GETOPT
+	select GETOPT_LONG
+	help
+	  Enables shell for testing MSPI controller devices
+
+# Raise default argument count for MSPI shell
+config SHELL_ARGC_MAX
+	default 32
+
 module = MSPI
 module-str = mspi
 source "subsys/logging/Kconfig.template.log_config"
