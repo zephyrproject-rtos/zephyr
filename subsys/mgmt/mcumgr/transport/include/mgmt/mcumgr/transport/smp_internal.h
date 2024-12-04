@@ -50,11 +50,11 @@ void smp_rx_req(struct smp_transport *smtp, struct net_buf *nb);
 
 #ifdef CONFIG_SMP_CLIENT
 /**
- * @brief Trig SMP client request packet for transmission.
+ * @brief Get work queue for SMP client.
  *
- * @param work	The transport to use to send the corresponding response(s).
+ * @return SMP work queue object.
  */
-void smp_tx_req(struct k_work *work);
+struct k_work_q *smp_get_wq(void);
 #endif
 
 /**
