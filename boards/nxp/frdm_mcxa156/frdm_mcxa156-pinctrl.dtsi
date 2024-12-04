@@ -23,4 +23,12 @@
 			slew-rate = "fast";
 		};
 	};
+	pinmux_flexpwm0_pwm0: pinmux_flexpwm0_pwm0 {
+		group0 {
+			pinmux = <PWM0_A0_P3_6>,
+				<PWM0_B0_P3_7>;
+			slew-rate = "fast";
+			drive-strength = "low";
+		};
+	};
 };
