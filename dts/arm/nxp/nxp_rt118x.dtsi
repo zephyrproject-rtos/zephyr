@@ -877,7 +877,6 @@
 		/* OCRAM1 first 16K access is blocked by TRDC */
 		reg = <0x484000 DT_SIZE_K(496)>;
 	};
-
 	ocram2: ocram@500000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		zephyr,memory-region = "OCRAM2";
