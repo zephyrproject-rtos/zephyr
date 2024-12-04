@@ -16,7 +16,7 @@ extern "C" {
 
 DECLARE_FAKE_VALUE_FUNC(int, fake_stepper_enable, const struct device *, bool);
 
-DECLARE_FAKE_VALUE_FUNC(int, fake_stepper_move, const struct device *, int32_t);
+DECLARE_FAKE_VALUE_FUNC(int, fake_stepper_move_by, const struct device *, int32_t);
 
 DECLARE_FAKE_VALUE_FUNC(int, fake_stepper_set_max_velocity, const struct device *, uint32_t);
 

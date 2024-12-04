@@ -177,7 +177,7 @@ static void stepper_work_step_handler(struct k_work *work)
 	}
 }
 
-static int gpio_stepper_move(const struct device *dev, int32_t micro_steps)
+static int gpio_stepper_move_by(const struct device *dev, int32_t micro_steps)
 {
 	struct gpio_stepper_data *data = dev->data;
 
@@ -353,7 +353,7 @@ static int gpio_stepper_init(const struct device *dev)
 
 static DEVICE_API(stepper, gpio_stepper_api) = {
 	.enable = gpio_stepper_enable,
-	.move = gpio_stepper_move,
+	.move_by = gpio_stepper_move_by,
 	.is_moving = gpio_stepper_is_moving,
 	.set_reference_position = gpio_stepper_set_reference_position,
 	.get_actual_position = gpio_stepper_get_actual_position,
