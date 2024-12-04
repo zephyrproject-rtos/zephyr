@@ -138,7 +138,7 @@ struct cdc_acm_dev_data_t {
 };
 
 static sys_slist_t cdc_acm_data_devlist;
-static const struct uart_driver_api cdc_acm_driver_api;
+static DEVICE_API(uart, cdc_acm_driver_api);
 
 /**
  * @brief Handler called for Class requests not handled by the USB stack.
@@ -1053,7 +1053,7 @@ static void cdc_acm_poll_out(const struct device *dev, unsigned char c)
 	k_work_schedule_for_queue(&USB_WORK_Q, &dev_data->tx_work, K_MSEC(1));
 }
 
-static const struct uart_driver_api cdc_acm_driver_api = {
+static DEVICE_API(uart, cdc_acm_driver_api) = {
 	.poll_in = cdc_acm_poll_in,
 	.poll_out = cdc_acm_poll_out,
 	.fifo_fill = cdc_acm_fifo_fill,

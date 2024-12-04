@@ -482,7 +482,7 @@ static void gpio_lpc11u6x_isr(const void *arg)
 #endif
 }
 
-static const struct gpio_driver_api gpio_lpc11u6x_driver_api = {
+static DEVICE_API(gpio, gpio_lpc11u6x_driver_api) = {
 	.pin_configure = gpio_lpc11u6x_pin_configure,
 	.port_get_raw = gpio_lpc11u6x_port_get_raw,
 	.port_set_masked_raw = gpio_lpc11u6x_port_set_masked_raw,

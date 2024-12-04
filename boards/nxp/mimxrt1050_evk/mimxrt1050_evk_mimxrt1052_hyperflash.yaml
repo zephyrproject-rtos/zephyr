@@ -15,11 +15,13 @@ toolchain:
 ram: 32768
 flash: 65536
 supported:
+  - adc
   - arduino_gpio
   - arduino_serial
   - counter
   - display
   - dma
+  - flash
   - gpio
   - i2c
   - netif:eth
@@ -28,5 +30,4 @@ supported:
   - usb_device
   - usbd
   - watchdog
-  - adc
 vendor: nxp

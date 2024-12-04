@@ -147,7 +147,7 @@ static int gpio_mmio32_port_toggle_bits(const struct device *dev,
 	return 0;
 }
 
-const struct gpio_driver_api gpio_mmio32_api = {
+DEVICE_API(gpio, gpio_mmio32_api) = {
 	.pin_configure = gpio_mmio32_config,
 	.port_get_raw = gpio_mmio32_port_get_raw,
 	.port_set_masked_raw = gpio_mmio32_port_set_masked_raw,

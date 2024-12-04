@@ -417,7 +417,7 @@ static int fcx_mldx5_channel_get(const struct device *dev, enum sensor_channel c
 	return 0;
 }
 
-static const struct sensor_driver_api fcx_mldx5_api_funcs = {
+static DEVICE_API(sensor, fcx_mldx5_api_funcs) = {
 	.attr_get = fcx_mldx5_attr_get,
 	.sample_fetch = fcx_mldx5_sample_fetch,
 	.channel_get = fcx_mldx5_channel_get,

@@ -209,7 +209,7 @@ static void phy_3d_sensor_submit(const struct device *dev,
 	return;
 }
 
-static const struct sensor_driver_api phy_3d_sensor_api = {
+static DEVICE_API(sensor, phy_3d_sensor_api) = {
 	.attr_set = phy_3d_sensor_attr_set,
 	.submit = phy_3d_sensor_submit,
 };

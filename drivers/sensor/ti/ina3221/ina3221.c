@@ -267,7 +267,7 @@ static int ina3221_attr_set(const struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
-static const struct sensor_driver_api ina3221_api = {
+static DEVICE_API(sensor, ina3221_api) = {
 	.sample_fetch = ina3221_sample_fetch,
 	.channel_get = ina3221_channel_get,
 	.attr_set = ina3221_attr_set,

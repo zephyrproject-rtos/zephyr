@@ -293,7 +293,7 @@ static int iis328dq_sample_fetch(const struct device *dev, enum sensor_channel c
 	return 0;
 }
 
-static const struct sensor_driver_api iis328dq_driver_api = {
+static DEVICE_API(sensor, iis328dq_driver_api) = {
 	.attr_set = iis328dq_attr_set,
 #if CONFIG_IIS328DQ_TRIGGER
 	.trigger_set = iis328dq_trigger_set,

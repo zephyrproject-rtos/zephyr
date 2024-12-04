@@ -148,7 +148,7 @@ int dw_wdt_disable(const struct device *dev)
 	return ret;
 }
 
-static const struct wdt_driver_api dw_wdt_api = {
+static DEVICE_API(wdt, dw_wdt_api) = {
 	.setup = dw_wdt_setup,
 	.disable = dw_wdt_disable,
 	.install_timeout = dw_wdt_install_timeout,

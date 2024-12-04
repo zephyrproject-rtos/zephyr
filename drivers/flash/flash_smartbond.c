@@ -270,7 +270,7 @@ void flash_smartbond_page_layout(const struct device *dev,
 }
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
-static const struct flash_driver_api flash_smartbond_driver_api = {
+static DEVICE_API(flash, flash_smartbond_driver_api) = {
 	.read = flash_smartbond_read,
 	.write = flash_smartbond_write,
 	.erase = flash_smartbond_erase,

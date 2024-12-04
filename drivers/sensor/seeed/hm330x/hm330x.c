@@ -84,7 +84,7 @@ static int hm330x_channel_get(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api hm330x_driver_api = {
+static DEVICE_API(sensor, hm330x_driver_api) = {
 	.sample_fetch = hm330x_sample_fetch,
 	.channel_get = hm330x_channel_get
 };

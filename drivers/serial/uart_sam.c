@@ -417,7 +417,7 @@ static int uart_sam_init(const struct device *dev)
 	return uart_sam_configure(dev, &uart_config);
 }
 
-static const struct uart_driver_api uart_sam_driver_api = {
+static DEVICE_API(uart, uart_sam_driver_api) = {
 	.poll_in = uart_sam_poll_in,
 	.poll_out = uart_sam_poll_out,
 	.err_check = uart_sam_err_check,

@@ -661,7 +661,7 @@ int npm1300_charger_init(const struct device *dev)
 	return 0;
 }
 
-static const struct sensor_driver_api npm1300_charger_battery_driver_api = {
+static DEVICE_API(sensor, npm1300_charger_battery_driver_api) = {
 	.sample_fetch = npm1300_charger_sample_fetch,
 	.channel_get = npm1300_charger_channel_get,
 	.attr_set = npm1300_charger_attr_set,

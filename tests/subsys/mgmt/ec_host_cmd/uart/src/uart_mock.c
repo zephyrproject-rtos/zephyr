@@ -59,7 +59,7 @@ static int uart_mock_rx_disable(const struct device *dev)
 	return 0;
 }
 
-static struct uart_driver_api mock_api = {
+static DEVICE_API(uart, mock_api) = {
 	.callback_set = uart_mock_callback_set,
 	.tx = uart_mock_tx,
 	.rx_enable = uart_mock_rx_enable,

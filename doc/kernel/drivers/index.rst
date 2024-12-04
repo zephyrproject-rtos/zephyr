@@ -144,15 +144,11 @@ A subsystem API definition typically looks like this:
 
   static inline int subsystem_do_this(const struct device *dev, int foo, int bar)
   {
-        __ASSERT_NO_MSG(DEVICE_API_IS(subsystem, dev));
-
         return DEVICE_API_GET(subsystem, dev)->do_this(dev, foo, bar);
   }
 
   static inline void subsystem_do_that(const struct device *dev, void *baz)
   {
-        __ASSERT_NO_MSG(DEVICE_API_IS(subsystem, dev));
-
         DEVICE_API_GET(subsystem, dev)->do_that(dev, baz);
   }
 

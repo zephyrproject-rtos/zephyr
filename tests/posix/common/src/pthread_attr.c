@@ -147,56 +147,6 @@ ZTEST(pthread_attr, test_pthread_attr_init_destroy)
 	/* note: attr is still valid and is destroyed in after() */
 }
 
-ZTEST(pthread_attr, test_pthread_attr_getguardsize)
-{
-	size_t guardsize;
-
-	/* degenerate cases */
-	{
-		if (false) {
-			/* undefined behaviour */
-			zassert_equal(pthread_attr_getguardsize(NULL, NULL), EINVAL);
-			zassert_equal(pthread_attr_getguardsize(NULL, &guardsize), EINVAL);
-			zassert_equal(pthread_attr_getguardsize(&uninit_attr, &guardsize), EINVAL);
-		}
-		zassert_equal(pthread_attr_getguardsize(&attr, NULL), EINVAL);
-	}
-
-	guardsize = BIOS_FOOD;
-	zassert_ok(pthread_attr_getguardsize(&attr, &guardsize));
-	zassert_not_equal(guardsize, BIOS_FOOD);
-}
-
-ZTEST(pthread_attr, test_pthread_attr_setguardsize)
-{
-	size_t guardsize = CONFIG_POSIX_PTHREAD_ATTR_GUARDSIZE_DEFAULT;
-	size_t sizes[] = {0, BIT_MASK(CONFIG_POSIX_PTHREAD_ATTR_GUARDSIZE_BITS / 2),
-			  BIT_MASK(CONFIG_POSIX_PTHREAD_ATTR_GUARDSIZE_BITS)};
-
-	/* valid value */
-	zassert_ok(pthread_attr_getguardsize(&attr, &guardsize));
-
-	/* degenerate cases */
-	{
-		if (false) {
-			/* undefined behaviour */
-			zassert_equal(pthread_attr_setguardsize(NULL, SIZE_MAX), EINVAL);
-			zassert_equal(pthread_attr_setguardsize(NULL, guardsize), EINVAL);
-			zassert_equal(pthread_attr_setguardsize((pthread_attr_t *)&uninit_attr,
-								guardsize),
-				      EINVAL);
-		}
-		zassert_equal(pthread_attr_setguardsize(&attr, SIZE_MAX), EINVAL);
-	}
-
-	ARRAY_FOR_EACH(sizes, i) {
-		zassert_ok(pthread_attr_setguardsize(&attr, sizes[i]));
-		guardsize = ~sizes[i];
-		zassert_ok(pthread_attr_getguardsize(&attr, &guardsize));
-		zassert_equal(guardsize, sizes[i]);
-	}
-}
-
 ZTEST(pthread_attr, test_pthread_attr_getschedparam)
 {
 	struct sched_param param = {

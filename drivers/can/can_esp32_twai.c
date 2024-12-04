@@ -216,7 +216,7 @@ static int can_esp32_twai_init(const struct device *dev)
 	return err;
 }
 
-const struct can_driver_api can_esp32_twai_driver_api = {
+DEVICE_API(can, can_esp32_twai_driver_api) = {
 	.get_capabilities = can_sja1000_get_capabilities,
 	.start = can_sja1000_start,
 	.stop = can_sja1000_stop,

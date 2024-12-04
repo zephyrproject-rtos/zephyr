@@ -593,7 +593,7 @@ static int eeprom_at2x_init(const struct device *dev)
 	return 0;
 }
 
-static const struct eeprom_driver_api eeprom_at2x_api = {
+static DEVICE_API(eeprom, eeprom_at2x_api) = {
 	.read = eeprom_at2x_read,
 	.write = eeprom_at2x_write,
 	.size = eeprom_at2x_size,

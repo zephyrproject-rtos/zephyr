@@ -109,8 +109,9 @@ BLE-enabled builds that can be produced from the Zephyr project codebase:
   * :kconfig:option:`CONFIG_BT` ``=y``
   * :kconfig:option:`CONFIG_BT_HCI` ``=y``
   * :kconfig:option:`CONFIG_BT_HCI_RAW` ``=y``
-  * :kconfig:option:`CONFIG_BT_CTLR` ``=y``
-  * :kconfig:option:`CONFIG_BT_LL_SW_SPLIT` ``=y`` (if using the open source Link Layer)
+
+  The controller itself needs to be enabled as well, typically by making sure the
+  corresponding device tree node is enabled.
 
 * **Host-only build**: A Zephyr OS Host build will contain the Application and
   the BLE Host, along with an HCI driver (UART or SPI) to interface with an
@@ -119,7 +120,11 @@ BLE-enabled builds that can be produced from the Zephyr project codebase:
 
   * :kconfig:option:`CONFIG_BT` ``=y``
   * :kconfig:option:`CONFIG_BT_HCI` ``=y``
-  * :kconfig:option:`CONFIG_BT_CTLR` ``=n``
+
+  Additionally, if the platform supports also a local controller, it needs to be
+  disabled, typically by disabling the corresponding device tree node. This is done
+  together with enabling the device tree node for some other HCI driver and making
+  sure that the ``zephyr,bt-hci`` device tree chosen property points at it.
 
   All of the samples located in ``samples/bluetooth`` except for the ones
   used for Controller-only builds can be built as Host-only
@@ -130,8 +135,9 @@ BLE-enabled builds that can be produced from the Zephyr project codebase:
 
   * :kconfig:option:`CONFIG_BT` ``=y``
   * :kconfig:option:`CONFIG_BT_HCI` ``=y``
-  * :kconfig:option:`CONFIG_BT_CTLR` ``=y``
-  * :kconfig:option:`CONFIG_BT_LL_SW_SPLIT` ``=y`` (if using the open source Link Layer)
+
+  The controller itself needs to be enabled as well, typically by making sure the
+  corresponding device tree node is enabled.
 
   All of the samples located in ``samples/bluetooth`` except for the ones
   used for Controller-only builds can be built as Combined

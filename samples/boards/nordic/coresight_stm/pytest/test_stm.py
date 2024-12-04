@@ -122,11 +122,11 @@ def _nrfutil_dictionary_from_serial(
     BUILD_DIR = str(dut.device_config.build_dir)
     logger.debug(f"{BUILD_DIR=}")
     config_str = f"{STM_M_ID['app']}:{BUILD_DIR}/coresight_stm/zephyr/log_dictionary.json"
-    config_str = config_str + f",{STM_M_ID['rad']}:{BUILD_DIR}/remote_rad/zephyr/log_dictionary.json"
+    config_str += f",{STM_M_ID['rad']}:{BUILD_DIR}/remote_rad/zephyr/log_dictionary.json"
     if SB_CONFIG_APP_CPUPPR_RUN:
-        config_str = config_str + f",{STM_M_ID['ppr']}:{BUILD_DIR}/remote_ppr/zephyr/log_dictionary.json"
+        config_str += f",{STM_M_ID['ppr']}:{BUILD_DIR}/remote_ppr/zephyr/log_dictionary.json"
     if SB_CONFIG_APP_CPUFLPR_RUN:
-        config_str = config_str + f",{STM_M_ID['flpr']}:{BUILD_DIR}/remote_flpr/zephyr/log_dictionary.json"
+        config_str += f",{STM_M_ID['flpr']}:{BUILD_DIR}/remote_flpr/zephyr/log_dictionary.json"
     logger.debug(f"{config_str=}")
 
     cmd = (

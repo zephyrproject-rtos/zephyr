@@ -1267,7 +1267,7 @@ static int emmc_init(const struct device *dev)
 	return emmc_reset(dev);
 }
 
-static const struct sdhc_driver_api emmc_api = {
+static DEVICE_API(sdhc, emmc_api) = {
 	.reset = emmc_reset,
 	.request = emmc_request,
 	.set_io = emmc_set_io,

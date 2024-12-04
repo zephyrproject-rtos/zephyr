@@ -106,7 +106,7 @@ static int gpio_ch32v00x_port_toggle_bits(const struct device *dev, uint32_t pin
 	return 0;
 }
 
-static const struct gpio_driver_api gpio_ch32v00x_driver_api = {
+static DEVICE_API(gpio, gpio_ch32v00x_driver_api) = {
 	.pin_configure = gpio_ch32v00x_configure,
 	.port_get_raw = gpio_ch32v00x_port_get_raw,
 	.port_set_masked_raw = gpio_ch32v00x_port_set_masked_raw,

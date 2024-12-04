@@ -184,7 +184,7 @@ static int ncp5623_led_init(const struct device *dev)
 	return 0;
 }
 
-static const struct led_driver_api ncp5623_led_api = {
+static DEVICE_API(led, ncp5623_led_api) = {
 	.set_brightness = ncp5623_set_brightness,
 	.on = ncp5623_led_on,
 	.off = ncp5623_led_off,

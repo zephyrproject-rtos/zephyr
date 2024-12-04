@@ -76,7 +76,7 @@ static int sb_tsi_channel_get(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api sb_tsi_driver_api = {
+static DEVICE_API(sensor, sb_tsi_driver_api) = {
 	.sample_fetch = sb_tsi_sample_fetch,
 	.channel_get = sb_tsi_channel_get,
 };

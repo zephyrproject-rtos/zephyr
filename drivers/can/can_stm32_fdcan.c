@@ -507,7 +507,7 @@ static int can_stm32fd_init(const struct device *dev)
 	return ret;
 }
 
-static const struct can_driver_api can_stm32fd_driver_api = {
+static DEVICE_API(can, can_stm32fd_driver_api) = {
 	.get_capabilities = can_mcan_get_capabilities,
 	.start = can_mcan_start,
 	.stop = can_mcan_stop,

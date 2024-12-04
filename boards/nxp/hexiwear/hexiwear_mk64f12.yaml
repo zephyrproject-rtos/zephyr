@@ -9,6 +9,7 @@ toolchain:
 supported:
   - adc
   - ble
+  - flash
   - gpio
   - i2c
   - pwm

@@ -38,6 +38,7 @@ target_compile_definitions(
   $<$<BOOL:${CONFIG_NRF_WIFI_MGMT_BUFF_OFFLOAD}>:NRF_WIFI_MGMT_BUFF_OFFLOAD>
   $<$<BOOL:${CONFIG_NRF_WIFI_FEAT_KEEPALIVE}>:NRF_WIFI_FEAT_KEEPALIVE>
   $<$<BOOL:${CONFIG_NRF_WIFI_FEAT_KEEPALIVE}>:NRF_WIFI_KEEPALIVE_PERIOD_S=${CONFIG_NRF_WIFI_KEEPALIVE_PERIOD_S}>
+  $<$<BOOL:${CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS}>:WIFI_MGMT_RAW_SCAN_RESULTS>
   NRF70_RX_NUM_BUFS=${CONFIG_NRF70_RX_NUM_BUFS}
   NRF70_MAX_TX_TOKENS=${CONFIG_NRF70_MAX_TX_TOKENS}
   NRF70_RX_MAX_DATA_SIZE=${CONFIG_NRF70_RX_MAX_DATA_SIZE}
@@ -131,17 +132,24 @@ zephyr_library_sources(
   ${NRF_WIFI_DIR}/fw_if/umac_if/src/fmac_api_common.c
 )
 
-zephyr_library_sources_ifndef(CONFIG_NRF70_RADIO_TEST
-  ${NRF_WIFI_DIR}/fw_if/umac_if/src/rx.c
-  ${NRF_WIFI_DIR}/fw_if/umac_if/src/fmac_vif.c
-  ${NRF_WIFI_DIR}/fw_if/umac_if/src/fmac_util.c
-  ${NRF_WIFI_DIR}/fw_if/umac_if/src/default/fmac_api.c
-)
-
-zephyr_library_sources_ifdef(CONFIG_NRF70_RADIO_TEST
-  ${NRF_WIFI_DIR}/fw_if/umac_if/src/radio_test/fmac_api.c
-  ${NRF_WIFI_DIR}/fw_if/umac_if/src/fmac_util.c
-)
+if(CONFIG_NRF70_RADIO_TEST)
+  zephyr_library_sources(
+    ${NRF_WIFI_DIR}/fw_if/umac_if/src/radio_test/fmac_api.c
+    ${NRF_WIFI_DIR}/fw_if/umac_if/src/fmac_util.c
+  )
+elseif(CONFIG_NRF70_OFFLOADED_RAW_TX)
+  zephyr_library_sources(
+    ${NRF_WIFI_DIR}/fw_if/umac_if/src/offload_raw_tx/fmac_api.c
+    ${NRF_WIFI_DIR}/fw_if/umac_if/src/fmac_util.c
+  )
+else()
+  zephyr_library_sources(
+    ${NRF_WIFI_DIR}/fw_if/umac_if/src/rx.c
+    ${NRF_WIFI_DIR}/fw_if/umac_if/src/fmac_vif.c
+    ${NRF_WIFI_DIR}/fw_if/umac_if/src/fmac_util.c
+    ${NRF_WIFI_DIR}/fw_if/umac_if/src/default/fmac_api.c
+  )
+endif()
 
 zephyr_library_sources_ifdef(CONFIG_NRF70_DATA_TX
   ${NRF_WIFI_DIR}/fw_if/umac_if/src/tx.c
@@ -154,7 +162,7 @@ zephyr_library_sources_ifdef(CONFIG_NRF70_STA_MODE
 )
 
 zephyr_library_sources_ifdef(CONFIG_NRF70_PROMISC_DATA_RX
-  ${OS_AGNOSTIC_BASE}/fw_if/umac_if/src/fmac_promisc.c
+  ${NRF_WIFI_DIR}/fw_if/umac_if/src/fmac_promisc.c
 )
 
 zephyr_library_sources_ifdef(CONFIG_NRF70_AP_MODE

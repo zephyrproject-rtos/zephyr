@@ -247,7 +247,7 @@ static int smbus_stm32_block_write(const struct device *dev, uint16_t periph_add
 	return i2c_transfer(config->i2c_dev, messages, ARRAY_SIZE(messages), periph_addr);
 }
 
-static const struct smbus_driver_api smbus_stm32_api = {
+static DEVICE_API(smbus, smbus_stm32_api) = {
 	.configure = smbus_stm32_configure,
 	.get_config = smbus_stm32_get_config,
 	.smbus_quick = smbus_stm32_quick,

@@ -963,7 +963,7 @@ static int uart_esp32_init(const struct device *dev)
 	return 0;
 }
 
-static const DRAM_ATTR struct uart_driver_api uart_esp32_api = {
+static DEVICE_API(uart, uart_esp32_api) = {
 	.poll_in = uart_esp32_poll_in,
 	.poll_out = uart_esp32_poll_out,
 	.err_check = uart_esp32_err_check,

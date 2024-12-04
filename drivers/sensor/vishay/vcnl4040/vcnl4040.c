@@ -291,7 +291,7 @@ static int vcnl4040_init(const struct device *dev)
 	return 0;
 }
 
-static const struct sensor_driver_api vcnl4040_driver_api = {
+static DEVICE_API(sensor, vcnl4040_driver_api) = {
 	.sample_fetch = vcnl4040_sample_fetch,
 	.channel_get = vcnl4040_channel_get,
 #ifdef CONFIG_VCNL4040_TRIGGER

@@ -229,7 +229,7 @@ static int nx20p3483_dump_regs(const struct device *dev)
 	return 0;
 }
 
-static struct usbc_ppc_driver_api nx20p3483_driver_api = {
+static DEVICE_API(usbc_ppc, nx20p3483_driver_api) = {
 	.is_dead_battery_mode = nx20p3483_is_dead_battery_mode,
 	.exit_dead_battery_mode = nx20p3483_exit_dead_battery_mode,
 	.is_vbus_source = nx20p3483_is_vbus_source,

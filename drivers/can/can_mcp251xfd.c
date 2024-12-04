@@ -1682,7 +1682,7 @@ static int mcp251xfd_init(const struct device *dev)
 	return ret;
 }
 
-static const struct can_driver_api mcp251xfd_api_funcs = {
+static DEVICE_API(can, mcp251xfd_api_funcs) = {
 	.get_capabilities = mcp251xfd_get_capabilities,
 	.set_mode = mcp251xfd_set_mode,
 	.set_timing = mcp251xfd_set_timing,

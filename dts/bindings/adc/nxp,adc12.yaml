@@ -1,9 +1,9 @@
 # Copyright (c) 2019 Vestas Wind Systems A/S
 # SPDX-License-Identifier: Apache-2.0
 
-description: NXP Kinetis ADC12
+description: NXP ADC12
 
-compatible: "nxp,kinetis-adc12"
+compatible: "nxp,adc12"
 
 include: [adc-controller.yaml, pinctrl-device.yaml]
 

@@ -870,7 +870,7 @@ static int uart_emul_rx_disable(const struct device *dev)
 }
 #endif /* CONFIG_UART_ASYNC_API */
 
-static const struct uart_driver_api uart_emul_api = {
+static DEVICE_API(uart, uart_emul_api) = {
 	.poll_in = uart_emul_poll_in,
 	.poll_out = uart_emul_poll_out,
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE

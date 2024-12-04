@@ -361,7 +361,7 @@ static int uart_miv_init(const struct device *dev)
 	return 0;
 }
 
-static const struct uart_driver_api uart_miv_driver_api = {
+static DEVICE_API(uart, uart_miv_driver_api) = {
 	.poll_in          = uart_miv_poll_in,
 	.poll_out         = uart_miv_poll_out,
 	.err_check        = uart_miv_err_check,

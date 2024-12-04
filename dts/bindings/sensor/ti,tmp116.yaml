@@ -8,3 +8,20 @@ compatible: "ti,tmp116"
 bus: tmp116
 
 include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  odr:
+    type: int
+    default: 0x200
+    description: |
+      Specify the default temperature output data rate in milliseconds (ms).
+      Default is power-up configuration.
+    enum:
+      - 0     # TMP116_DT_ODR_15_5_MS
+      - 0x80  # TMP116_DT_ODR_125_MS
+      - 0x100 # TMP116_DT_ODR_250_MS
+      - 0x180 # TMP116_DT_ODR_500_MS
+      - 0x200 # TMP116_DT_ODR_1000_MS
+      - 0x280 # TMP116_DT_ODR_4000_MS
+      - 0x300 # TMP116_DT_ODR_8000_MS
+      - 0x380 # TMP116_DT_ODR_16000_MS

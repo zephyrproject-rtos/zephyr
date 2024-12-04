@@ -258,7 +258,7 @@ static int lis2ds12_channel_get(const struct device *dev,
 	return lis2ds12_get_channel(chan, val, data, data->gain);
 }
 
-static const struct sensor_driver_api lis2ds12_driver_api = {
+static DEVICE_API(sensor, lis2ds12_driver_api) = {
 	.attr_set = lis2ds12_attr_set,
 #if defined(CONFIG_LIS2DS12_TRIGGER)
 	.trigger_set = lis2ds12_trigger_set,

@@ -254,7 +254,7 @@ static void max7219_get_capabilities(const struct device *dev, struct display_ca
 	caps->current_orientation = DISPLAY_ORIENTATION_NORMAL;
 }
 
-static const struct display_driver_api max7219_api = {
+static DEVICE_API(display, max7219_api) = {
 	.write = max7219_write,
 	.set_brightness = max7219_set_brightness,
 	.get_capabilities = max7219_get_capabilities,

@@ -646,7 +646,7 @@ static int max20335_init(const struct device *dev)
 	return 0;
 }
 
-static const struct charger_driver_api max20335_driver_api = {
+static DEVICE_API(charger, max20335_driver_api) = {
 	.get_property = max20335_get_prop,
 	.set_property = max20335_set_prop,
 	.charge_enable = max20335_set_enabled,

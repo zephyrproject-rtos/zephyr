@@ -9,5 +9,6 @@ toolchain:
 flash: 256
 ram: 24
 supported:
+  - flash
   - gpio
   - uart

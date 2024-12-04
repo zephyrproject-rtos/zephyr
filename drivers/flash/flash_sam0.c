@@ -487,7 +487,7 @@ static int flash_sam0_init(const struct device *dev)
 	return flash_sam0_write_protection(dev, false);
 }
 
-static const struct flash_driver_api flash_sam0_api = {
+static DEVICE_API(flash, flash_sam0_api) = {
 	.erase = flash_sam0_erase,
 	.write = flash_sam0_write,
 	.read = flash_sam0_read,

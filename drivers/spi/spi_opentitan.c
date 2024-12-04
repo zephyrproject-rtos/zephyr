@@ -302,7 +302,7 @@ static int spi_opentitan_release(const struct device *dev,
 
 /* Device Instantiation */
 
-static const struct spi_driver_api spi_opentitan_api = {
+static DEVICE_API(spi, spi_opentitan_api) = {
 	.transceive = spi_opentitan_transceive,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_opentitan_transceive_async,

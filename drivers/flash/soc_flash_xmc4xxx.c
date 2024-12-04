@@ -180,14 +180,15 @@ static const struct flash_parameters *flash_xmc4xxx_get_parameters(const struct 
 	return &dev_config->parameters;
 }
 
-static const struct flash_driver_api flash_xmc4xxx_api = {.erase = flash_xmc4xxx_erase,
-							  .write = flash_xmc4xxx_write,
-							  .read = flash_xmc4xxx_read,
+static DEVICE_API(flash, flash_xmc4xxx_api) = {
+	.erase = flash_xmc4xxx_erase,
+	.write = flash_xmc4xxx_write,
+	.read = flash_xmc4xxx_read,
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
-							  .page_layout = flash_xmc4xxx_page_layout,
+	.page_layout = flash_xmc4xxx_page_layout,
 #endif
-							  .get_parameters =
-								  flash_xmc4xxx_get_parameters};
+	.get_parameters = flash_xmc4xxx_get_parameters,
+};
 
 static struct flash_xmc4xxx_data flash_xmc4xxx_data_0;
 static struct flash_xmc4xxx_config flash_xmc4xxx_cfg_0 = {

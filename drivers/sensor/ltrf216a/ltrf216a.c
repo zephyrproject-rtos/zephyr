@@ -135,7 +135,7 @@ static int ltrf216a_channel_get(const struct device *dev, enum sensor_channel ch
 	return 0;
 }
 
-static const struct sensor_driver_api ltrf216a_driver_api = {
+static DEVICE_API(sensor, ltrf216a_driver_api) = {
 	.sample_fetch = ltrf216a_sample_fetch,
 	.channel_get = ltrf216a_channel_get,
 };

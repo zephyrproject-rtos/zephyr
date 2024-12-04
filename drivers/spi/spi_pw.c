@@ -734,7 +734,7 @@ static void spi_pw_isr(const void *arg)
 }
 #endif
 
-static const struct spi_driver_api pw_spi_api = {
+static DEVICE_API(spi, pw_spi_api) = {
 	.transceive = spi_pw_transceive,
 	.release = spi_pw_release,
 #ifdef CONFIG_SPI_ASYNC

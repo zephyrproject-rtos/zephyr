@@ -1068,7 +1068,7 @@ static int lp5562_led_init(const struct device *dev)
 	return 0;
 }
 
-static const struct led_driver_api lp5562_led_api = {
+static DEVICE_API(led, lp5562_led_api) = {
 	.blink = lp5562_led_blink,
 	.set_brightness = lp5562_led_set_brightness,
 	.on = lp5562_led_on,

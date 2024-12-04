@@ -31,6 +31,8 @@
 
 #define TIMER_IRQ (DT_INST_IRQN(0))
 
+#define TIMER_CLKSRC (DT_INST_PROP(0, clk_source))
+
 #if defined(CONFIG_TEST)
 const int32_t z_sys_timer_irq_for_test = TIMER_IRQ;
 #endif
@@ -184,10 +186,10 @@ static int stimer_init(void)
 
 #if defined(CONFIG_SOC_SERIES_APOLLO3X)
 	am_hal_stimer_config((oldCfg & ~(AM_HAL_STIMER_CFG_FREEZE | CTIMER_STCFG_CLKSEL_Msk)) |
-			     AM_HAL_STIMER_XTAL_32KHZ | AM_HAL_STIMER_CFG_COMPARE_A_ENABLE);
+			     TIMER_CLKSRC | AM_HAL_STIMER_CFG_COMPARE_A_ENABLE);
 #else
 	am_hal_stimer_config((oldCfg & ~(AM_HAL_STIMER_CFG_FREEZE | STIMER_STCFG_CLKSEL_Msk)) |
-			     AM_HAL_STIMER_XTAL_32KHZ | AM_HAL_STIMER_CFG_COMPARE_A_ENABLE);
+			     TIMER_CLKSRC | AM_HAL_STIMER_CFG_COMPARE_A_ENABLE);
 #endif
 	g_last_time_stamp = am_hal_stimer_counter_get();
 

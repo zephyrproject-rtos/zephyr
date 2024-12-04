@@ -270,7 +270,7 @@ static int mcux_lpsci_init(const struct device *dev)
 	return 0;
 }
 
-static const struct uart_driver_api mcux_lpsci_driver_api = {
+static DEVICE_API(uart, mcux_lpsci_driver_api) = {
 	.poll_in = mcux_lpsci_poll_in,
 	.poll_out = mcux_lpsci_poll_out,
 	.err_check = mcux_lpsci_err_check,

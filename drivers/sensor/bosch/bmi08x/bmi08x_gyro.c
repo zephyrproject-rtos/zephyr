@@ -348,7 +348,7 @@ static int bmi08x_gyro_pm_action(const struct device *dev, enum pm_device_action
 }
 #endif /* CONFIG_PM_DEVICE */
 
-static const struct sensor_driver_api bmi08x_api = {
+static DEVICE_API(sensor, bmi08x_api) = {
 	.attr_set = bmi08x_attr_set,
 #ifdef CONFIG_BMI08X_GYRO_TRIGGER
 	.trigger_set = bmi08x_trigger_set_gyr,

@@ -354,7 +354,7 @@ static int mcux_elcdif_init(const struct device *dev)
 	return 0;
 }
 
-static const struct display_driver_api mcux_elcdif_api = {
+static DEVICE_API(display, mcux_elcdif_api) = {
 	.blanking_on = mcux_elcdif_display_blanking_on,
 	.blanking_off = mcux_elcdif_display_blanking_off,
 	.write = mcux_elcdif_write,

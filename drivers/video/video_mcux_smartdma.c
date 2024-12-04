@@ -357,7 +357,7 @@ static int nxp_video_sdma_init(const struct device *dev)
 	return 0;
 }
 
-static const struct video_driver_api nxp_video_sdma_api = {
+static DEVICE_API(video, nxp_video_sdma_api) = {
 	.get_format = nxp_video_sdma_get_format,
 	.set_format = nxp_video_sdma_set_format,
 	.get_caps = nxp_video_sdma_get_caps,

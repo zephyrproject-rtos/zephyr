@@ -112,7 +112,7 @@ struct uart_stellaris_dev_data_t {
 #define UARTMIS_RXMIS 0x00000010
 #define UARTMIS_TXMIS 0x00000020
 
-static const struct uart_driver_api uart_stellaris_driver_api;
+static DEVICE_API(uart, uart_stellaris_driver_api);
 
 /**
  * @brief Set the baud rate
@@ -549,7 +549,7 @@ static void uart_stellaris_isr(const struct device *dev)
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 
-static const struct uart_driver_api uart_stellaris_driver_api = {
+static DEVICE_API(uart, uart_stellaris_driver_api) = {
 	.poll_in = uart_stellaris_poll_in,
 	.poll_out = uart_stellaris_poll_out,
 

@@ -275,7 +275,7 @@ fail:
 	return ret;
 }
 
-static const struct mipi_dbi_driver_api mipi_dbi_bitbang_driver_api = {
+static DEVICE_API(mipi_dbi, mipi_dbi_bitbang_driver_api) = {
 	.reset = mipi_dbi_bitbang_reset,
 	.command_write = mipi_dbi_bitbang_command_write,
 	.write_display = mipi_dbi_bitbang_write_display

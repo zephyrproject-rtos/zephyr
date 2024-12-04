@@ -203,7 +203,7 @@ config BT_HAS_HCI_VS
 
 config BT_HCI_VS
 	bool "Zephyr HCI Vendor-Specific Commands"
-	depends on BT_HAS_HCI_VS || !BT_CTLR
+	depends on BT_HAS_HCI_VS || !HAS_BT_CTLR
 	default y if BT_HAS_HCI_VS
 	help
 	  Enable support for the Zephyr HCI Vendor-Specific Commands in the
@@ -219,7 +219,7 @@ config BT_HCI_VS_FATAL_ERROR
 
 config BT_HCI_VS_EXT_DETECT
 	bool "Use heuristics to guess HCI vendor extensions support in advance"
-	depends on BT_HCI_VS && !BT_CTLR
+	depends on BT_HCI_VS && !HAS_BT_CTLR
 	default y if BOARD_QEMU_X86 || BOARD_QEMU_CORTEX_M3 || BOARD_NATIVE_POSIX || BOARD_NATIVE_SIM
 	help
 	  Use some heuristics to try to guess in advance whether the controller

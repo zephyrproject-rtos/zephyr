@@ -32,10 +32,9 @@ register struct k_thread *__arch_current_thread __asm__("gp");
 
 #define arch_current_thread() __arch_current_thread
 #define arch_current_thread_set(thread)                                                            \
-	{                                                                                          \
-		_current_cpu->current = thread;                                                    \
-		__arch_current_thread = (thread);                                                  \
-	}
+	do {                                                                                       \
+		_current_cpu->current = __arch_current_thread = (thread);                          \
+	} while (0)
 #endif /* CONFIG_RISCV_CURRENT_VIA_GP */
 
 static ALWAYS_INLINE unsigned int arch_num_cpus(void)

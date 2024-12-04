@@ -2304,7 +2304,7 @@ int numaker_tcpc_vbus_enable(const struct device *dev, bool enable)
 
 /* End of "*_tcpc_vbus_*" functions */
 
-static const struct tcpc_driver_api numaker_tcpc_driver_api = {
+static DEVICE_API(tcpc, numaker_tcpc_driver_api) = {
 	.init = numaker_tcpc_init_recycle,
 	.get_cc = numaker_tcpc_get_cc,
 	.select_rp_value = numaker_tcpc_select_rp_value,

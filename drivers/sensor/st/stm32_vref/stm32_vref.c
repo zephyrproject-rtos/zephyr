@@ -121,7 +121,7 @@ static int stm32_vref_channel_get(const struct device *dev, enum sensor_channel 
 	return sensor_value_from_milli(val, vref);
 }
 
-static const struct sensor_driver_api stm32_vref_driver_api = {
+static DEVICE_API(sensor, stm32_vref_driver_api) = {
 	.sample_fetch = stm32_vref_sample_fetch,
 	.channel_get = stm32_vref_channel_get,
 };

@@ -124,7 +124,7 @@ static int qdec_mcux_ch_get(const struct device *dev, enum sensor_channel ch,
 	return 0;
 }
 
-static const struct sensor_driver_api qdec_mcux_api = {
+static DEVICE_API(sensor, qdec_mcux_api) = {
 	.attr_set = &qdec_mcux_attr_set,
 	.attr_get = &qdec_mcux_attr_get,
 	.sample_fetch = &qdec_mcux_fetch,

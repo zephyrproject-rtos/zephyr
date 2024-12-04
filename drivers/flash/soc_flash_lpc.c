@@ -145,7 +145,7 @@ flash_lpc_get_parameters(const struct device *dev)
 
 static struct flash_priv flash_data;
 
-static const struct flash_driver_api flash_lpc_api = {
+static DEVICE_API(flash, flash_lpc_api) = {
 	.erase = flash_lpc_erase,
 	.write = flash_lpc_write,
 	.read = flash_lpc_read,

@@ -223,7 +223,7 @@ static int spi_litex_release(const struct device *dev, const struct spi_config *
 }
 
 /* Device Instantiation */
-static const struct spi_driver_api spi_litex_api = {
+static DEVICE_API(spi, spi_litex_api) = {
 	.transceive = spi_litex_transceive,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_litex_transceive_async,

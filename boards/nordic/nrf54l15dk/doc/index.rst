@@ -150,3 +150,41 @@ Test the nRF54L15 DK with a :zephyr:code-sample:`blinky` sample.
 
 .. _nRF54L15 website: https://www.nordicsemi.com/Products/nRF54L15
 .. _nRF54L15 documentation: https://docs.nordicsemi.com/bundle/ncs-latest/page/nrf/app_dev/device_guides/nrf54l/index.html
+
+.. _nrf54l15dk_nrf54l05:
+
+nRF54L05 emulation on nRF54L15 DK
+#################################
+
+Overview
+********
+
+The ``nrf54l15dk/nrf54l05`` board is a modified version of the :ref:`nrf54l15dk_nrf54l15`
+that enforces the limitations imposed by the nRF54L05 IC, which is a
+cost-reduced variant of the original nRF54L15. Since Nordic does not offer a
+development kit for the nRF54L05, you can use this board to develop for this
+IC while using the nRF54L15 Development Kit (PCA10156).
+
+See :ref:`nrf54l15dk_nrf54l15` for more information about the development board and
+`nRF54L05 website`_ for the official reference on the IC itself.
+
+.. _nRF54L05 website: https://www.nordicsemi.com/Products/nRF54L05
+
+.. _nrf54l15dk_nrf54l10:
+
+nRF54L10 emulation on nRF54L15 DK
+#################################
+
+Overview
+********
+
+The ``nrf54l15dk/nrf54l10`` board is a modified version of the :ref:`nrf54l15dk_nrf54l15`
+that enforces the limitations imposed by the nRF54L10 IC, which is a
+cost-reduced variant of the original nRF54L15. Since Nordic does not offer a
+development kit for the nRF54L10 you can use this board to develop for this
+IC while using the nRF54L15 Development Kit (PCA10156).
+
+See :ref:`nrf54l15dk_nrf54l15` for more information about the development board and
+`nRF54L10 website`_ for the official reference on the IC itself.
+
+.. _nRF54L10 website: https://www.nordicsemi.com/Products/nRF54L10

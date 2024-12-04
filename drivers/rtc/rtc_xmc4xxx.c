@@ -221,7 +221,7 @@ static int rtc_xmc4xxx_update_set_callback(const struct device *dev, rtc_update_
 }
 #endif /* CONFIG_RTC_UPDATE */
 
-static const struct rtc_driver_api rtc_xmc4xxx_driver_api = {
+static DEVICE_API(rtc, rtc_xmc4xxx_driver_api) = {
 	.set_time = rtc_xmc4xxx_set_time,
 	.get_time = rtc_xmc4xxx_get_time,
 #ifdef CONFIG_RTC_ALARM

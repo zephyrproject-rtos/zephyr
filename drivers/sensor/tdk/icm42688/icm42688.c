@@ -233,7 +233,7 @@ static int icm42688_attr_get(const struct device *dev, enum sensor_channel chan,
 	return res;
 }
 
-static const struct sensor_driver_api icm42688_driver_api = {
+static DEVICE_API(sensor, icm42688_driver_api) = {
 	.sample_fetch = icm42688_sample_fetch,
 	.channel_get = icm42688_channel_get,
 	.attr_set = icm42688_attr_set,

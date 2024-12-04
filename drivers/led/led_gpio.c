@@ -77,7 +77,7 @@ static int led_gpio_init(const struct device *dev)
 	return err;
 }
 
-static const struct led_driver_api led_gpio_api = {
+static DEVICE_API(led, led_gpio_api) = {
 	.on		= led_gpio_on,
 	.off		= led_gpio_off,
 	.set_brightness	= led_gpio_set_brightness,

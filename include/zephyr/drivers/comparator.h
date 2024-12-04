@@ -70,10 +70,7 @@ __syscall int comparator_get_output(const struct device *dev);
 
 static inline int z_impl_comparator_get_output(const struct device *dev)
 {
-	const struct comparator_driver_api *api =
-		(const struct comparator_driver_api *)dev->api;
-
-	return api->get_output(dev);
+	return DEVICE_API_GET(comparator, dev)->get_output(dev);
 }
 
 /**
@@ -91,10 +88,7 @@ __syscall int comparator_set_trigger(const struct device *dev,
 static inline int z_impl_comparator_set_trigger(const struct device *dev,
 						enum comparator_trigger trigger)
 {
-	const struct comparator_driver_api *api =
-		(const struct comparator_driver_api *)dev->api;
-
-	return api->set_trigger(dev, trigger);
+	return DEVICE_API_GET(comparator, dev)->set_trigger(dev, trigger);
 }
 
 /**
@@ -114,10 +108,7 @@ static inline int comparator_set_trigger_callback(const struct device *dev,
 						  comparator_callback_t callback,
 						  void *user_data)
 {
-	const struct comparator_driver_api *api =
-		(const struct comparator_driver_api *)dev->api;
-
-	return api->set_trigger_callback(dev, callback, user_data);
+	return DEVICE_API_GET(comparator, dev)->set_trigger_callback(dev, callback, user_data);
 }
 
 /**
@@ -133,10 +124,7 @@ __syscall int comparator_trigger_is_pending(const struct device *dev);
 
 static inline int z_impl_comparator_trigger_is_pending(const struct device *dev)
 {
-	const struct comparator_driver_api *api =
-		(const struct comparator_driver_api *)dev->api;
-
-	return api->trigger_is_pending(dev);
+	return DEVICE_API_GET(comparator, dev)->trigger_is_pending(dev);
 }
 
 #ifdef __cplusplus

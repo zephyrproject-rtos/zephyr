@@ -304,6 +304,7 @@ config BT_H4_NXP_CTLR
 	select GPIO
 	depends on BT_H4
 	select CRC
+	select BT_HCI_SETUP
 	default y
 	depends on DT_HAS_NXP_BT_HCI_UART_ENABLED
 	help
@@ -326,5 +327,12 @@ config BT_H4_NXP_CTLR_WAIT_TIME_AFTER_UPLOAD
 	default 1000
 	help
 	  Waiting time after firmware is uploaded. Unit is millisecond.
+
+config BT_H4_NXP_CTLR_WAIT_TIME_AFTER_BAUDRATE_UPDATE
+	int "Waiting time after controller baudrate is updated"
+	range 500 5000
+	default 500
+	help
+	  Waiting time after controller baudrate is updated. Unit is millisecond.
 
 endif #BT_H4_NXP_CTLR

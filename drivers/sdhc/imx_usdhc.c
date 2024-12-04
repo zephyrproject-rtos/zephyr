@@ -1046,7 +1046,7 @@ static int imx_usdhc_init(const struct device *dev)
 	return k_sem_init(&data->transfer_sem, 0, 1);
 }
 
-static const struct sdhc_driver_api usdhc_api = {
+static DEVICE_API(sdhc, usdhc_api) = {
 	.reset = imx_usdhc_reset,
 	.request = imx_usdhc_request,
 	.set_io = imx_usdhc_set_io,

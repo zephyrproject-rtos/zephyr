@@ -124,7 +124,7 @@ static int fake_stepper_init(const struct device *dev)
 	return 0;
 }
 
-static const struct stepper_driver_api fake_stepper_driver_api = {
+static DEVICE_API(stepper, fake_stepper_driver_api) = {
 	.enable = fake_stepper_enable,
 	.move = fake_stepper_move,
 	.is_moving = fake_stepper_is_moving,

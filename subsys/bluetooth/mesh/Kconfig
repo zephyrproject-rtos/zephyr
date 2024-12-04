@@ -94,7 +94,7 @@ endif # BT_MESH_ADV_LEGACY
 
 menuconfig BT_MESH_ADV_EXT
 	bool "Extended advertising"
-	depends on BT_CTLR_ADV_EXT || !BT_CTLR
+	depends on BT_CTLR_ADV_EXT || !HAS_BT_CTLR
 	depends on BT_EXT_ADV
 	help
 	  Use extended advertising commands for operating the advertiser.

@@ -48,9 +48,9 @@ config BT_HCI_TX_STACK_SIZE
 	default 512 if BT_H4
 	default 512 if BT_H5
 	default 416 if BT_SPI
-	default 1280 if BT_CTLR && BT_LL_SW_SPLIT && (NO_OPTIMIZATIONS || BT_ISO_BROADCAST)
-	default 1024 if BT_CTLR && BT_LL_SW_SPLIT && BT_CENTRAL
-	default 768 if BT_CTLR && BT_LL_SW_SPLIT
+	default 1280 if BT_LL_SW_SPLIT && (NO_OPTIMIZATIONS || BT_ISO_BROADCAST)
+	default 1024 if BT_LL_SW_SPLIT && BT_CENTRAL
+	default 768 if BT_LL_SW_SPLIT
 	default 512 if BT_USERCHAN
 	default 640 if BT_STM32_IPM
 	# Even if no driver is selected the following default is still
@@ -903,7 +903,7 @@ config BT_ID_MAX
 
 config BT_DF
 	bool "Direction Finding support [EXPERIMENTAL]"
-	depends on !BT_CTLR || BT_CTLR_DF_SUPPORT
+	depends on !HAS_BT_CTLR || BT_CTLR_DF_SUPPORT
 	select EXPERIMENTAL
 	help
 	  Enable support for Bluetooth 5.1 Direction Finding.
@@ -914,28 +914,28 @@ if BT_DF
 
 config BT_DF_CONNECTIONLESS_CTE_RX
 	bool "Support for receive of CTE in connectionless mode"
-	depends on !BT_CTLR || BT_CTLR_DF_CTE_RX_SUPPORT
+	depends on !HAS_BT_CTLR || BT_CTLR_DF_CTE_RX_SUPPORT
 	help
 	  Enable support for reception and sampling of Constant Tone Extension
 	  in connectionless mode.
 
 config BT_DF_CONNECTIONLESS_CTE_TX
 	bool "Support for transmission of CTE in connectionless mode"
-	depends on !BT_CTLR || BT_CTLR_DF_CTE_TX_SUPPORT
+	depends on !HAS_BT_CTLR || BT_CTLR_DF_CTE_TX_SUPPORT
 	help
 	  Enable support for transmission of Constant Tone Extension in
 	  connectionless mode.
 
 config BT_DF_CONNECTION_CTE_RX
 	bool "Support for receive of CTE in connection mode"
-	depends on !BT_CTLR || BT_CTLR_DF_CTE_RX_SUPPORT
+	depends on !HAS_BT_CTLR || BT_CTLR_DF_CTE_RX_SUPPORT
 	help
 	  Enable support for reception and sampling of Constant Tone Extension
 	  in connection mode.
 
 config BT_DF_CONNECTION_CTE_TX
 	bool "Support for transmission of CTE in connection mode"
-	depends on !BT_CTLR || BT_CTLR_DF_CTE_TX_SUPPORT
+	depends on !HAS_BT_CTLR || BT_CTLR_DF_CTE_TX_SUPPORT
 	help
 	  Enable support for transmission of Constant Tone Extension in
 	  connection mode.
@@ -1009,7 +1009,7 @@ config BT_SEND_ECC_EMULATION
 	select MBEDTLS_PSA_P256M_DRIVER_ENABLED if MBEDTLS_PSA_CRYPTO_C
 	select BT_LONG_WQ
 	depends on BT_ECC && (BT_HCI_RAW || BT_HCI_HOST)
-	default y if BT_CTLR && !BT_CTLR_ECDH
+	default y if HAS_BT_CTLR && !BT_CTLR_ECDH
 	help
 	  If this option is set PSA Crypto API library is used for emulating the
 	  ECDH HCI commands and events needed by e.g. LE Secure Connections.

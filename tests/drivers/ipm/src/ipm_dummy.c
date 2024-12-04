@@ -113,7 +113,7 @@ static int ipm_dummy_max_data_size_get(const struct device *d)
 	return DUMMY_IPM_DATA_WORDS * sizeof(uint32_t);
 }
 
-struct ipm_driver_api ipm_dummy_api = {
+DEVICE_API(ipm, ipm_dummy_api) = {
 	.send = ipm_dummy_send,
 	.register_callback = ipm_dummy_register_callback,
 	.max_data_size_get = ipm_dummy_max_data_size_get,

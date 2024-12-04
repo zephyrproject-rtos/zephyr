@@ -306,7 +306,7 @@ static int lm75_channel_get(const struct device *dev, enum sensor_channel chan,
 	}
 }
 
-static const struct sensor_driver_api lm75_driver_api = {
+static DEVICE_API(sensor, lm75_driver_api) = {
 	.attr_set = lm75_attr_set,
 	.attr_get = lm75_attr_get,
 #if LM75_TRIGGER_SUPPORT

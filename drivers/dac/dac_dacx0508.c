@@ -361,7 +361,7 @@ static int dacx0508_init(const struct device *dev)
 	return 0;
 }
 
-static const struct dac_driver_api dacx0508_driver_api = {
+static DEVICE_API(dac, dacx0508_driver_api) = {
 	.channel_setup = dacx0508_channel_setup,
 	.write_value = dacx0508_write_value,
 };

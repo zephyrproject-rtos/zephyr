@@ -241,7 +241,7 @@ static int lfclk_init(const struct device *dev)
 				 lfclk_work_handler);
 }
 
-static struct nrf_clock_control_driver_api lfclk_drv_api = {
+static DEVICE_API(nrf_clock_control, lfclk_drv_api) = {
 	.std_api = {
 		.on = api_nosys_on_off,
 		.off = api_nosys_on_off,

@@ -150,7 +150,7 @@ static int sts4x_init(const struct device *dev)
 	return 0;
 }
 
-static const struct sensor_driver_api sts4x_api_funcs = {
+static DEVICE_API(sensor, sts4x_api_funcs) = {
 	.sample_fetch = sts4x_sample_fetch,
 	.channel_get = sts4x_channel_get,
 };

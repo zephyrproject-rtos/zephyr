@@ -147,7 +147,7 @@ static int esp32_xt_wdt_init(const struct device *dev)
 	return 0;
 }
 
-static const struct wdt_driver_api esp32_xt_wdt_api = {
+static DEVICE_API(wdt, esp32_xt_wdt_api) = {
 	.setup = esp32_xt_wdt_setup,
 	.disable = esp32_xt_wdt_disable,
 	.install_timeout = esp32_xt_wdt_install_timeout,

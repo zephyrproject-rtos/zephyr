@@ -216,6 +216,11 @@ static int cmd_trigger_is_pending(const struct shell *sh, size_t argc, char **ar
 	return 0;
 }
 
+static bool device_is_comp_and_ready(const struct device *dev)
+{
+	return device_is_ready(dev) && DEVICE_API_IS(comparator, dev);
+}
+
 static void dsub_set_trigger_lookup_1(size_t idx, struct shell_static_entry *entry)
 {
 	entry->syntax = (idx < ARRAY_SIZE(trigger_lookup)) ? trigger_lookup[idx] : NULL;
@@ -228,7 +233,7 @@ SHELL_DYNAMIC_CMD_CREATE(dsub_set_trigger_1, dsub_set_trigger_lookup_1);
 
 static void dsub_set_trigger_lookup_0(size_t idx, struct shell_static_entry *entry)
 {
-	const struct device *dev = shell_device_lookup(idx, NULL);
+	const struct device *dev = shell_device_filter(idx, device_is_comp_and_ready);
 
 	entry->syntax = dev != NULL ? dev->name : NULL;
 	entry->handler = NULL;
@@ -240,7 +245,7 @@ SHELL_DYNAMIC_CMD_CREATE(dsub_set_trigger_0, dsub_set_trigger_lookup_0);
 
 static void dsub_device_lookup_0(size_t idx, struct shell_static_entry *entry)
 {
-	const struct device *dev = shell_device_lookup(idx, NULL);
+	const struct device *dev = shell_device_filter(idx, device_is_comp_and_ready);
 
 	entry->syntax = (dev != NULL) ? dev->name : NULL;
 	entry->handler = NULL;

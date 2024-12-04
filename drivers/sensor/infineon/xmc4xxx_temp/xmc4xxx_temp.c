@@ -57,7 +57,7 @@ static int xmc4xxx_temp_channel_get(const struct device *dev, enum sensor_channe
 	return sensor_value_from_double(val, data->temp_out);
 }
 
-static const struct sensor_driver_api xmc4xxx_temp_driver_api = {
+static DEVICE_API(sensor, xmc4xxx_temp_driver_api) = {
 	.sample_fetch = xmc4xxx_temp_sample_fetch,
 	.channel_get = xmc4xxx_temp_channel_get,
 };

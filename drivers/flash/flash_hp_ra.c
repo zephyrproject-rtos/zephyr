@@ -51,7 +51,7 @@ void flash_ra_page_layout(const struct device *dev, const struct flash_pages_lay
 static int flash_ra_ex_op(const struct device *dev, uint16_t code, const uintptr_t in, void *out);
 #endif
 
-static const struct flash_driver_api flash_ra_api = {
+static DEVICE_API(flash, flash_ra_api) = {
 	.erase = flash_ra_erase,
 	.write = flash_ra_write,
 	.read = flash_ra_read,

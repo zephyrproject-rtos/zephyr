@@ -684,7 +684,7 @@ static int mipi_dbi_lcdic_init(const struct device *dev)
 	return 0;
 }
 
-static const struct mipi_dbi_driver_api mipi_dbi_lcdic_driver_api = {
+static DEVICE_API(mipi_dbi, mipi_dbi_lcdic_driver_api) = {
 	.command_write = mipi_dbi_lcdic_write_cmd,
 	.write_display = mipi_dbi_lcdic_write_display,
 	.reset = mipi_dbi_lcdic_reset,

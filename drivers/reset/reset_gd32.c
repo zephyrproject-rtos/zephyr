@@ -59,7 +59,7 @@ static int reset_gd32_line_toggle(const struct device *dev, uint32_t id)
 	return 0;
 }
 
-static const struct reset_driver_api reset_gd32_driver_api = {
+static DEVICE_API(reset, reset_gd32_driver_api) = {
 	.status = reset_gd32_status,
 	.line_assert = reset_gd32_line_assert,
 	.line_deassert = reset_gd32_line_deassert,

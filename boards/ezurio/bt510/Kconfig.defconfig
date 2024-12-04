@@ -5,9 +5,6 @@
 
 if BOARD_BT510
 
-config BT_CTLR
-	default BT
-
 config I2C
 	default SENSOR
 

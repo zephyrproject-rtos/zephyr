@@ -183,7 +183,7 @@ static int lp5569_pm_action(const struct device *dev, enum pm_device_action acti
 }
 #endif /* CONFIG_PM_DEVICE */
 
-static const struct led_driver_api lp5569_led_api = {
+static DEVICE_API(led, lp5569_led_api) = {
 	.set_brightness = lp5569_led_set_brightness,
 	.on = lp5569_led_on,
 	.off = lp5569_led_off,

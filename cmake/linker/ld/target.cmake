@@ -156,7 +156,7 @@ macro(toolchain_linker_finalize)
   endforeach()
   string(REPLACE ";" " " zephyr_std_libs "${zephyr_std_libs}")
 
-  set(link_libraries "<LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES> ${zephyr_std_libs}")
+  set(link_libraries "<OBJECTS> -o <TARGET> <LINK_LIBRARIES> ${zephyr_std_libs}")
   set(common_link "<LINK_FLAGS> ${link_libraries}")
 
   set(CMAKE_ASM_LINK_EXECUTABLE "<CMAKE_ASM_COMPILER> <FLAGS> <CMAKE_ASM_LINK_FLAGS> ${common_link}")

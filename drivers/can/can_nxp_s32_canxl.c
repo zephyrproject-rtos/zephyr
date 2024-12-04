@@ -1080,7 +1080,7 @@ static void can_nxp_s32_isr_error(const struct device *dev)
 	Canexcel_Ip_ErrIRQHandler(config->instance);
 }
 
-static const struct can_driver_api can_nxp_s32_driver_api = {
+static DEVICE_API(can, can_nxp_s32_driver_api) = {
 	.get_capabilities = can_nxp_s32_get_capabilities,
 	.start = can_nxp_s32_start,
 	.stop = can_nxp_s32_stop,

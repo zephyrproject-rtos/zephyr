@@ -217,7 +217,7 @@ static int hsfll_init(const struct device *dev)
 	return 0;
 }
 
-static struct nrf_clock_control_driver_api hsfll_drv_api = {
+static DEVICE_API(nrf_clock_control, hsfll_drv_api) = {
 	.std_api = {
 		.on = api_nosys_on_off,
 		.off = api_nosys_on_off,

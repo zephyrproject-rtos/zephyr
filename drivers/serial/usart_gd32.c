@@ -284,7 +284,7 @@ void usart_gd32_irq_callback_set(const struct device *dev,
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-static const struct uart_driver_api usart_gd32_driver_api = {
+static DEVICE_API(uart, usart_gd32_driver_api) = {
 	.poll_in = usart_gd32_poll_in,
 	.poll_out = usart_gd32_poll_out,
 	.err_check = usart_gd32_err_check,

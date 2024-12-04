@@ -9,5 +9,6 @@ toolchain:
 ram: 128
 flash: 1024
 supported:
+  - flash
   - i2c
 vendor: nxp

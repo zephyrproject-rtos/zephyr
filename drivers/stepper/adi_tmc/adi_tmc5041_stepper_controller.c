@@ -721,7 +721,7 @@ static int tmc5041_stepper_init(const struct device *dev)
 		.stepper = DEVICE_DT_GET(child),};
 
 #define TMC5041_STEPPER_API_DEFINE(child)							\
-	static const struct stepper_driver_api tmc5041_stepper_api_##child = {			\
+	static DEVICE_API(stepper, tmc5041_stepper_api_##child) = {				\
 		.enable = tmc5041_stepper_enable,						\
 		.is_moving = tmc5041_stepper_is_moving,						\
 		.move = tmc5041_stepper_move,							\

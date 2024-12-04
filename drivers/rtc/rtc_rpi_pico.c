@@ -307,7 +307,7 @@ static int rtc_rpi_pico_alarm_set_callback(const struct device *dev, uint16_t id
 
 #endif /* CONFIG_RTC_ALARM */
 
-static const struct rtc_driver_api rtc_rpi_pico_driver_api = {
+static DEVICE_API(rtc, rtc_rpi_pico_driver_api) = {
 	.set_time = rtc_rpi_pico_set_time,
 	.get_time = rtc_rpi_pico_get_time,
 #if defined(CONFIG_RTC_ALARM)

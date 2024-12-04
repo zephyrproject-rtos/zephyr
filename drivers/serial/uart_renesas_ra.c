@@ -629,7 +629,7 @@ static void uart_ra_isr_eri(const void *param)
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-static const struct uart_driver_api uart_ra_driver_api = {
+static DEVICE_API(uart, uart_ra_driver_api) = {
 	.poll_in = uart_ra_poll_in,
 	.poll_out = uart_ra_poll_out,
 	.err_check = uart_ra_err_check,

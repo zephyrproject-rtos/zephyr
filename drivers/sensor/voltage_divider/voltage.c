@@ -87,7 +87,7 @@ static int get(const struct device *dev, enum sensor_channel chan, struct sensor
 	return ret;
 }
 
-static const struct sensor_driver_api voltage_api = {
+static DEVICE_API(sensor, voltage_api) = {
 	.sample_fetch = fetch,
 	.channel_get = get,
 };

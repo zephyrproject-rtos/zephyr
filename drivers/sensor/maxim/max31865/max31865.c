@@ -302,7 +302,7 @@ static int max31865_attr_set(const struct device *dev, enum sensor_channel chan,
 	}
 }
 
-static const struct sensor_driver_api max31865_api_funcs = {
+static DEVICE_API(sensor, max31865_api_funcs) = {
 	.sample_fetch = max31865_sample_fetch,
 	.channel_get = max31865_channel_get,
 	.attr_set = max31865_attr_set,

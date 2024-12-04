@@ -516,7 +516,7 @@ static int apbuart_init(const struct device *dev)
 }
 
 /* Driver API defined in uart.h */
-static const struct uart_driver_api apbuart_driver_api = {
+static DEVICE_API(uart, apbuart_driver_api) = {
 	.poll_in                = apbuart_poll_in,
 	.poll_out               = apbuart_poll_out,
 	.err_check              = apbuart_err_check,

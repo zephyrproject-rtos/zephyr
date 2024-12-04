@@ -1118,7 +1118,7 @@ static int spi_smartbond_release(const struct device *dev, const struct spi_conf
 	return 0;
 }
 
-static const struct spi_driver_api spi_smartbond_driver_api = {
+static DEVICE_API(spi, spi_smartbond_driver_api) = {
 	.transceive = spi_smartbond_transceive,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_smartbond_transceive_async,

@@ -940,7 +940,7 @@ static int uart_xmc4xxx_init(const struct device *dev)
 	return ret;
 }
 
-static const struct uart_driver_api uart_xmc4xxx_driver_api = {
+static DEVICE_API(uart, uart_xmc4xxx_driver_api) = {
 	.poll_in = uart_xmc4xxx_poll_in,
 	.poll_out = uart_xmc4xxx_poll_out,
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN)

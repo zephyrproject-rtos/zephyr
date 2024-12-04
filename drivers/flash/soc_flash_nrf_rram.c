@@ -342,7 +342,7 @@ static void nrf_rram_page_layout(const struct device *dev, const struct flash_pa
 }
 #endif
 
-static const struct flash_driver_api nrf_rram_api = {
+static DEVICE_API(flash, nrf_rram_api) = {
 	.read = nrf_rram_read,
 	.write = nrf_rram_write,
 	.erase = nrf_rram_erase,

@@ -139,7 +139,7 @@ static int gpio_davinci_port_toggle_bits(const struct device *dev,
 	return 0;
 }
 
-static const struct gpio_driver_api gpio_davinci_driver_api = {
+static DEVICE_API(gpio, gpio_davinci_driver_api) = {
 	.pin_configure = gpio_davinci_configure,
 	.port_get_raw = gpio_davinci_port_get_raw,
 	.port_set_masked_raw = gpio_davinci_port_set_masked_raw,

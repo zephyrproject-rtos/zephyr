@@ -892,7 +892,7 @@ static int spi_pl022_release(const struct device *dev,
 	return 0;
 }
 
-static const struct spi_driver_api spi_pl022_api = {
+static DEVICE_API(spi, spi_pl022_api) = {
 	.transceive = spi_pl022_transceive,
 #if defined(CONFIG_SPI_ASYNC)
 	.transceive_async = spi_pl022_transceive_async,

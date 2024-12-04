@@ -303,7 +303,7 @@ static int ifx_cat1_sdio_init(const struct device *dev)
 	return 0;
 }
 
-static const struct sdhc_driver_api ifx_cat1_sdio_api = {
+static DEVICE_API(sdhc, ifx_cat1_sdio_api) = {
 	.reset = ifx_cat1_sdio_reset,
 	.request = ifx_cat1_sdio_request,
 	.set_io = ifx_cat1_sdio_set_io,

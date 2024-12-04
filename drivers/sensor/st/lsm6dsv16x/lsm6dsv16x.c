@@ -722,15 +722,14 @@ static int lsm6dsv16x_gyro_channel_get(enum sensor_channel chan,
 static void lsm6dsv16x_gyro_channel_get_temp(struct sensor_value *val,
 					  struct lsm6dsv16x_data *data)
 {
-	int32_t micro_c;
-
 	/* convert units to micro Celsius. Raw temperature samples are
 	 * expressed in 256 LSB/deg_C units. And LSB output is 0 at 25 C.
 	 */
-	micro_c = (data->temp_sample * 1000000) / 256;
+	int64_t temp_sample = data->temp_sample;
+	int64_t micro_c = (temp_sample * 1000000LL) / 256;
 
-	val->val1 = micro_c / 1000000 + 25;
-	val->val2 = micro_c % 1000000;
+	val->val1 = (int32_t)(micro_c / 1000000) + 25;
+	val->val2 = (int32_t)(micro_c % 1000000);
 }
 #endif
 
@@ -930,7 +929,7 @@ static int lsm6dsv16x_channel_get(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api lsm6dsv16x_driver_api = {
+static DEVICE_API(sensor, lsm6dsv16x_driver_api) = {
 	.attr_set = lsm6dsv16x_attr_set,
 	.attr_get = lsm6dsv16x_attr_get,
 #if CONFIG_LSM6DSV16X_TRIGGER

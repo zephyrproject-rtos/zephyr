@@ -235,7 +235,7 @@ static int spi_cc13xx_cc26xx_pm_action(const struct device *dev,
 #endif /* CONFIG_PM_DEVICE */
 
 
-static const struct spi_driver_api spi_cc13xx_cc26xx_driver_api = {
+static DEVICE_API(spi, spi_cc13xx_cc26xx_driver_api) = {
 	.transceive = spi_cc13xx_cc26xx_transceive,
 	.release = spi_cc13xx_cc26xx_release,
 #ifdef CONFIG_SPI_RTIO

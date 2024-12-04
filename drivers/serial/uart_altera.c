@@ -901,7 +901,7 @@ static int uart_altera_drv_cmd(const struct device *dev, uint32_t cmd,
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-static const struct uart_driver_api uart_altera_driver_api = {
+static DEVICE_API(uart, uart_altera_driver_api) = {
 	.poll_in = uart_altera_poll_in,
 	.poll_out = uart_altera_poll_out,
 	.err_check = uart_altera_err_check,

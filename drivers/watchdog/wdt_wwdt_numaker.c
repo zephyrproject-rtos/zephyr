@@ -238,7 +238,7 @@ static void wwdt_numaker_isr(const struct device *dev)
 	}
 }
 
-static const struct wdt_driver_api wwdt_numaker_api = {
+static DEVICE_API(wdt, wwdt_numaker_api) = {
 	.setup = wwdt_numaker_setup,
 	.disable = wwdt_numaker_disable,
 	.install_timeout = wwdt_numaker_install_timeout,

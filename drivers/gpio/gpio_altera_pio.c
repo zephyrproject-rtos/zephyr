@@ -278,7 +278,7 @@ static void gpio_altera_irq_handler(const struct device *dev)
 	gpio_fire_callbacks(&data->cb, dev, port_value);
 }
 
-static const struct gpio_driver_api gpio_altera_driver_api = {
+static DEVICE_API(gpio, gpio_altera_driver_api) = {
 	.pin_configure		 = gpio_altera_configure,
 	.port_get_raw		 = gpio_altera_port_get_raw,
 	.port_set_masked_raw	 = NULL,

@@ -63,7 +63,7 @@ static int vnd_gpio_port_toggle_bits(const struct device *port,
 	return -ENOTSUP;
 }
 
-static const struct gpio_driver_api vnd_gpio_api = {
+static DEVICE_API(gpio, vnd_gpio_api) = {
 	.pin_configure = vnd_gpio_pin_configure,
 	.port_get_raw = vnd_gpio_port_get_raw,
 	.port_set_masked_raw = vnd_gpio_port_set_masked_raw,

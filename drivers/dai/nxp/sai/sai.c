@@ -818,7 +818,7 @@ static int sai_remove(const struct device *dev)
 	return 0;
 }
 
-static const struct dai_driver_api sai_api = {
+static DEVICE_API(dai, sai_api) = {
 	.config_set = sai_config_set,
 	.config_get = sai_config_get,
 	.trigger = sai_trigger,

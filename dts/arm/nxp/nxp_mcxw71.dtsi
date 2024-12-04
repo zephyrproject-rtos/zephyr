@@ -209,7 +209,7 @@
 	};
 
 	lpspi0: spi@36000 {
-		compatible = "nxp,imx-lpspi";
+		compatible = "nxp,lpspi";
 		reg = <0x36000 0x800>;
 		interrupts = <42 0>;
 		clocks = <&scg SCG_K4_FIRC_CLK 0xd8>;
@@ -219,7 +219,7 @@
 	};
 
 	lpspi1: spi@37000 {
-		compatible = "nxp,imx-lpspi";
+		compatible = "nxp,lpspi";
 		reg = <0x37000 0x800>;
 		interrupts = <43 0>;
 		clocks = <&scg SCG_K4_FIRC_CLK 0xdc>;
@@ -264,7 +264,7 @@
 	};
 
 	wdog0: watchdog@1a000 {
-		compatible = "nxp,kinetis-wdog32";
+		compatible = "nxp,wdog32";
 		reg = <0x1a000 16>;
 		interrupts = <23 0>;
 		clocks = <&scg SCG_K4_SYSOSC_CLK 0x68>;
@@ -274,7 +274,7 @@
 	};
 
 	wdog1: watchdog@1b000 {
-		compatible = "nxp,kinetis-wdog32";
+		compatible = "nxp,wdog32";
 		reg = <0x1b000 16>;
 		interrupts = <24 0>;
 		clocks = <&scg SCG_K4_SYSOSC_CLK 0x6c>;

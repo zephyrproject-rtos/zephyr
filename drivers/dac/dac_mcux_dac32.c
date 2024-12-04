@@ -101,7 +101,7 @@ static int mcux_dac32_init(const struct device *dev)
 	return pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 }
 
-static const struct dac_driver_api mcux_dac32_driver_api = {
+static DEVICE_API(dac, mcux_dac32_driver_api) = {
 	.channel_setup = mcux_dac32_channel_setup,
 	.write_value = mcux_dac32_write_value,
 };

@@ -405,7 +405,7 @@ static int spi_psoc6_init(const struct device *dev)
 	return spi_psoc6_release(dev, NULL);
 }
 
-static const struct spi_driver_api spi_psoc6_driver_api = {
+static DEVICE_API(spi, spi_psoc6_driver_api) = {
 	.transceive = spi_psoc6_transceive_sync,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_psoc6_transceive_async,

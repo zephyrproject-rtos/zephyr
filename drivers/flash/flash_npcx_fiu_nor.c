@@ -509,7 +509,7 @@ static int flash_npcx_nor_ex_op(const struct device *dev, uint16_t code,
 }
 #endif
 
-static const struct flash_driver_api flash_npcx_nor_driver_api = {
+static DEVICE_API(flash, flash_npcx_nor_driver_api) = {
 	.read = flash_npcx_nor_read,
 	.write = flash_npcx_nor_write,
 	.erase = flash_npcx_nor_erase,

@@ -11,4 +11,7 @@ config NUM_IRQS
 config NRF_REGTOOL_GENERATE_UICR
 	default y
 
+config PM
+	default y
+
 endif # SOC_NRF54H20_CPURAD

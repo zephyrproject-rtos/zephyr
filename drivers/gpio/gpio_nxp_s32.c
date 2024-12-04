@@ -462,7 +462,7 @@ static int nxp_s32_gpio_port_get_direction(const struct device *dev,
 }
 #endif /* CONFIG_GPIO_GET_DIRECTION */
 
-static const struct gpio_driver_api gpio_nxp_s32_driver_api = {
+static DEVICE_API(gpio, gpio_nxp_s32_driver_api) = {
 	.pin_configure = nxp_s32_gpio_configure,
 	.port_get_raw = nxp_s32_gpio_port_get_raw,
 	.port_set_masked_raw = nxp_s32_gpio_port_set_masked_raw,

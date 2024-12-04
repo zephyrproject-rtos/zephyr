@@ -709,14 +709,33 @@ config CLEANUP_INTERMEDIATE_FILES
 	  from the build process. Note this breaks incremental builds, west spdx
 	  (Software Bill of Material generation), and maybe others.
 
+config BUILD_GAP_FILL_PATTERN
+	hex "Gap fill pattern"
+	default 0xFF
+	help
+	  Pattern used for gap filling of output files.
+	  This value should be set to the value of a clean flash as this can
+	  significantly reduce flash write times.
+	  This setting only defines the gap fill pattern and doesn't enable gap
+	  filling.
+	  Note: binary files are always gap filled as they contain no address
+	  information.
+
 config BUILD_NO_GAP_FILL
-	bool "Don't fill gaps in generated hex/bin/s19 files."
+	bool "Don't fill gaps in generated hex/s19 files [DEPRECATED]."
+	select DEPRECATED
 
 config BUILD_OUTPUT_HEX
 	bool "Build a binary in HEX format"
 	help
 	  Build an Intel HEX binary zephyr/zephyr.hex in the build directory.
 	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
+
+config BUILD_OUTPUT_HEX_GAP_FILL
+	bool "Fill gaps in hex files"
+	depends on !BUILD_NO_GAP_FILL
+	help
+	  Fill gaps in hex based files.
 
 config BUILD_OUTPUT_BIN
 	bool "Build a binary in BIN format"
@@ -751,6 +770,12 @@ config BUILD_OUTPUT_S19
 	help
 	  Build an S19 binary zephyr/zephyr.s19 in the build directory.
 	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
+
+config BUILD_OUTPUT_S19_GAP_FILL
+	bool "Fill gaps in s19 files"
+	depends on !BUILD_NO_GAP_FILL
+	help
+	  Fill gaps in s19 based files.
 
 config BUILD_OUTPUT_UF2
 	bool "Build a binary in UF2 format"

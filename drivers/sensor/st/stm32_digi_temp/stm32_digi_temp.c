@@ -257,7 +257,7 @@ static int stm32_digi_temp_pm_action(const struct device *dev, enum pm_device_ac
 }
 #endif /* CONFIG_PM_DEVICE */
 
-static const struct sensor_driver_api stm32_digi_temp_driver_api = {
+static DEVICE_API(sensor, stm32_digi_temp_driver_api) = {
 	.sample_fetch = stm32_digi_temp_sample_fetch,
 	.channel_get = stm32_digi_temp_channel_get,
 };

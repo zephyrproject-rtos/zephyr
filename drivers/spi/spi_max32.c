@@ -898,7 +898,7 @@ static int spi_max32_init(const struct device *dev)
 }
 
 /* SPI driver APIs structure */
-static const struct spi_driver_api spi_max32_api = {
+static DEVICE_API(spi, spi_max32_api) = {
 	.transceive = api_transceive,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = api_transceive_async,

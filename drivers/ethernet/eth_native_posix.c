@@ -560,7 +560,7 @@ static int ptp_clock_rate_adjust_native_posix(const struct device *clk,
 	return 0;
 }
 
-static const struct ptp_clock_driver_api api = {
+static DEVICE_API(ptp_clock, api) = {
 	.set = ptp_clock_set_native_posix,
 	.get = ptp_clock_get_native_posix,
 	.adjust = ptp_clock_adjust_native_posix,

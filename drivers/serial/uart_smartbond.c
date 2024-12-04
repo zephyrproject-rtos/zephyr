@@ -726,7 +726,7 @@ static int uart_smartbond_pm_action(const struct device *dev,
 }
 #endif /* CONFIG_PM_DEVICE */
 
-static const struct uart_driver_api uart_smartbond_driver_api = {
+static DEVICE_API(uart, uart_smartbond_driver_api) = {
 	.poll_in = uart_smartbond_poll_in,
 	.poll_out = uart_smartbond_poll_out,
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE

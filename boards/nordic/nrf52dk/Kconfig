@@ -5,9 +5,4 @@
 
 if BOARD_NRF52DK
 
-# BT_CTLR depends on BT. When BT is enabled we should default to also
-# enabling the controller.
-config BT_CTLR
-	default y if BT
-
 endif # BOARD_NRF52DK

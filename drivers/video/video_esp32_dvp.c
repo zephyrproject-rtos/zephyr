@@ -396,7 +396,7 @@ static int video_esp32_init(const struct device *dev)
 	return 0;
 }
 
-static const struct video_driver_api esp32_driver_api = {
+static DEVICE_API(video, esp32_driver_api) = {
 	/* mandatory callbacks */
 	.set_format = video_esp32_set_fmt,
 	.get_format = video_esp32_get_fmt,

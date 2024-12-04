@@ -739,7 +739,7 @@ int spi_atcspi200_init(const struct device *dev)
 	return 0;
 }
 
-static const struct spi_driver_api spi_atcspi200_api = {
+static DEVICE_API(spi, spi_atcspi200_api) = {
 	.transceive = spi_atcspi200_transceive,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_atcspi200_transceive_async,

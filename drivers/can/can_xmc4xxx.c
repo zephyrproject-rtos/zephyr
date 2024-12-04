@@ -882,7 +882,7 @@ static int can_xmc4xxx_init(const struct device *dev)
 	return can_set_timing(dev, &timing);
 }
 
-static const struct can_driver_api can_xmc4xxx_api_funcs = {
+static DEVICE_API(can, can_xmc4xxx_api_funcs) = {
 	.get_capabilities = can_xmc4xxx_get_capabilities,
 	.set_mode = can_xmc4xxx_set_mode,
 	.set_timing = can_xmc4xxx_set_timing,

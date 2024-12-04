@@ -268,7 +268,7 @@ static int regulator_adp5360_init(const struct device *dev)
 	return regulator_common_init(dev, (val & ADP5360_BUCK_CFG_EN_MSK) != 0U);
 }
 
-static const struct regulator_driver_api api = {
+static DEVICE_API(regulator, api) = {
 	.enable = regulator_adp5360_enable,
 	.disable = regulator_adp5360_disable,
 	.count_voltages = regulator_adp5360_count_voltages,

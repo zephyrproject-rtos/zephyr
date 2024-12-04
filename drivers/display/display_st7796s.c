@@ -347,7 +347,7 @@ static int st7796s_init(const struct device *dev)
 	return 0;
 }
 
-static const struct display_driver_api st7796s_api = {
+static DEVICE_API(display, st7796s_api) = {
 	.blanking_on = st7796s_blanking_on,
 	.blanking_off = st7796s_blanking_off,
 	.write = st7796s_write,

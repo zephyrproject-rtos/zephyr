@@ -935,7 +935,7 @@ static int uart_intel_lw_drv_cmd(const struct device *dev, uint32_t cmd,
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-static const struct uart_driver_api uart_intel_lw_driver_api = {
+static DEVICE_API(uart, uart_intel_lw_driver_api) = {
 	.poll_in = uart_intel_lw_poll_in,
 	.poll_out = uart_intel_lw_poll_out,
 	.err_check = uart_intel_lw_err_check,

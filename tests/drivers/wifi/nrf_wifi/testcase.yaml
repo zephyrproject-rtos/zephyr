@@ -1,0 +1,46 @@
+common:
+  build_only: true
+  tags:
+    - drivers
+    - wifi
+    - net
+  platform_allow:
+    - nrf7002dk/nrf5340/cpuapp
+tests:
+  nrf70.build.radio_test:
+    extra_configs:
+      - CONFIG_NRF70_RADIO_TEST=y
+      - CONFIG_NETWORKING=n
+      - CONFIG_WIFI_NM_WPA_SUPPLICANT=n
+  nrf70.build.scan_only:
+    extra_configs:
+      - CONFIG_NRF70_SCAN_ONLY=y
+      - CONFIG_NETWORKING=y
+      - CONFIG_NET_DHCPV4=n
+      - CONFIG_NET_NATIVE=n
+      - CONFIG_NET_OFFLOAD=y
+      - CONFIG_WIFI_NM_WPA_SUPPLICANT=n
+  nrf70.build.raw_scan_results:
+    extra_configs:
+      - CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS=y
+      - CONFIG_NRF70_SCAN_ONLY=y
+      - CONFIG_NETWORKING=y
+      - CONFIG_NET_DHCPV4=n
+      - CONFIG_NET_NATIVE=n
+      - CONFIG_NET_OFFLOAD=y
+      - CONFIG_WIFI_NM_WPA_SUPPLICANT=n
+  nrf70.build.raw_tx:
+    extra_configs:
+      - CONFIG_NRF70_RAW_DATA_TX=y
+  nrf70.build.raw_rx:
+    extra_configs:
+      - CONFIG_NRF70_RAW_DATA_RX=y
+  nrf70.build.promiscuous:
+    extra_configs:
+      - CONFIG_NRF70_PROMISC_DATA_RX=y
+  nrf70.build.offloaded_raw_tx:
+    extra_configs:
+      - CONFIG_NRF70_OFFLOADED_RAW_TX=y
+      - CONFIG_NETWORKING=n
+      - CONFIG_WIFI_NM_WPA_SUPPLICANT=n
+      - CONFIG_NET_L2_WIFI_MGMT=n

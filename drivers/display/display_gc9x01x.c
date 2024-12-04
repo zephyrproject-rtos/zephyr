@@ -609,7 +609,7 @@ static int gc9x01x_pm_action(const struct device *dev, enum pm_device_action act
 #endif /* CONFIG_PM_DEVICE */
 
 /* Device driver API*/
-static const struct display_driver_api gc9x01x_api = {
+static DEVICE_API(display, gc9x01x_api) = {
 	.blanking_on = gc9x01x_display_blanking_on,
 	.blanking_off = gc9x01x_display_blanking_off,
 	.write = gc9x01x_write,

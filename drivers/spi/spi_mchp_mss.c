@@ -443,7 +443,7 @@ static int mss_spi_init(const struct device *dev)
 
 #define MICROCHIP_SPI_PM_OPS (NULL)
 
-static const struct spi_driver_api mss_spi_driver_api = {
+static DEVICE_API(spi, mss_spi_driver_api) = {
 	.transceive = mss_spi_transceive_blocking,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = mss_spi_transceive_async,

@@ -303,7 +303,7 @@ static int icp10125_init(const struct device *dev)
 	return 0;
 }
 
-static const struct sensor_driver_api icp10125_api_funcs = {
+static DEVICE_API(sensor, icp10125_api_funcs) = {
 	.sample_fetch = icp10125_sample_fetch,
 	.channel_get = icp10125_channel_get,
 };

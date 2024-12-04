@@ -638,18 +638,22 @@
 			status = "okay";
 			foo = <1>;
 			bar = <2>;
+			bool-foo;
+			bool-bar;
 		};
 
 		device-with-props-1 {
 			compatible = "vnd,device-with-props";
 			status = "okay";
 			foo = <2>;
+			bool-foo;
 		};
 
 		device-with-props-2 {
 			compatible = "vnd,device-with-props";
 			status = "disabled";
 			baz = <1>;
+			bool-baz;
 		};
 
 		test_string_token_0: string-token-0 {

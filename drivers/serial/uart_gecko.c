@@ -514,7 +514,7 @@ static int uart_gecko_pm_action(const struct device *dev, enum pm_device_action 
 }
 #endif
 
-static const struct uart_driver_api uart_gecko_driver_api = {
+static DEVICE_API(uart, uart_gecko_driver_api) = {
 	.poll_in = uart_gecko_poll_in,
 	.poll_out = uart_gecko_poll_out,
 	.err_check = uart_gecko_err_check,

@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2024 TOKITA Hiroshi
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	grove_header: grove_header {
+		compatible = "grove-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio0 1 0>,
+			   <1 0 &gpio0 2 0>;
+	};
+};
+
+grove_i2c: &i2c1 {};
+grove_uart: &uart2 {};

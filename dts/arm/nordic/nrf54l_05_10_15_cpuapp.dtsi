@@ -84,3 +84,51 @@ nvic: &cpuapp_nvic {};
 	interrupts = <269 NRF_DEFAULT_IRQ_PRIORITY>;
 #endif
 };
+
+&dppic00 {
+	status = "okay";
+};
+
+&dppic10 {
+	status = "okay";
+};
+
+&dppic20 {
+	status = "okay";
+};
+
+&dppic30 {
+	status = "okay";
+};
+
+&ppib00 {
+	status = "okay";
+};
+
+&ppib01 {
+	status = "okay";
+};
+
+&ppib10 {
+	status = "okay";
+};
+
+&ppib11 {
+	status = "okay";
+};
+
+&ppib20 {
+	status = "okay";
+};
+
+&ppib21 {
+	status = "okay";
+};
+
+&ppib22 {
+	status = "okay";
+};
+
+&ppib30 {
+	status = "okay";
+};

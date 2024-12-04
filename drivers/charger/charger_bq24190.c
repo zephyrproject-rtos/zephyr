@@ -470,7 +470,7 @@ static int bq24190_init(const struct device *dev)
 	return i2c_reg_read_byte_dt(&config->i2c, BQ24190_REG_SS, &data->ss_reg);
 }
 
-static const struct charger_driver_api bq24190_driver_api = {
+static DEVICE_API(charger, bq24190_driver_api) = {
 	.get_property = bq24190_get_prop,
 	.set_property = bq24190_set_prop,
 };

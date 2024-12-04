@@ -24,6 +24,13 @@ struct bt_avrcp_unit_info_rsp {
 	uint32_t company_id;
 };
 
+struct bt_avrcp_subunit_info_rsp {
+	uint8_t subunit_type;
+	uint8_t max_subunit_id;
+	const uint8_t *extended_subunit_type; /**< contains max_subunit_id items */
+	const uint8_t *extended_subunit_id; /**< contains max_subunit_id items */
+};
+
 struct bt_avrcp_cb {
 	/** @brief An AVRCP connection has been established.
 	 *
@@ -41,7 +48,7 @@ struct bt_avrcp_cb {
 	 *  @param avrcp AVRCP connection object.
 	 */
 	void (*disconnected)(struct bt_avrcp *avrcp);
-	/** @brief Callback function for bt_avrcp_get_unit_info()
+	/** @brief Callback function for bt_avrcp_get_unit_info().
 	 *
 	 *  Called when the get unit info process is completed.
 	 *
@@ -49,6 +56,14 @@ struct bt_avrcp_cb {
 	 *  @param rsp The response for UNIT INFO command.
 	 */
 	void (*unit_info_rsp)(struct bt_avrcp *avrcp, struct bt_avrcp_unit_info_rsp *rsp);
+	/** @brief Callback function for bt_avrcp_get_subunit_info().
+	 *
+	 *  Called when the get subunit info process is completed.
+	 *
+	 *  @param avrcp AVRCP connection object.
+	 *  @param rsp The response for SUBUNIT INFO command.
+	 */
+	void (*subunit_info_rsp)(struct bt_avrcp *avrcp, struct bt_avrcp_subunit_info_rsp *rsp);
 };
 
 /** @brief Connect AVRCP.
@@ -86,13 +101,24 @@ int bt_avrcp_register_cb(const struct bt_avrcp_cb *cb);
 
 /** @brief Get AVRCP Unit Info.
  *
- *  This function obtains information that pertains to the unit as a whole.
+ *  This function obtains information that pertains to the AV/C unit as a whole.
  *
  *  @param avrcp The AVRCP instance.
  *
  *  @return 0 in case of success or error code in case of error.
  */
 int bt_avrcp_get_unit_info(struct bt_avrcp *avrcp);
+
+/** @brief Get AVRCP Subunit Info.
+ *
+ *  This function obtains information about the subunit(s) of an AV/C unit. A device with AVRCP
+ *  may support other subunits than the panel subunit if other profiles co-exist in the device.
+ *
+ *  @param avrcp The AVRCP instance.
+ *
+ *  @return 0 in case of success or error code in case of error.
+ */
+int bt_avrcp_get_subunit_info(struct bt_avrcp *avrcp);
 
 #ifdef __cplusplus
 }

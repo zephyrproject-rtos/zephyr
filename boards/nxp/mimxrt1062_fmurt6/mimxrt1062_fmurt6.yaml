@@ -15,17 +15,18 @@ toolchain:
 ram: 768
 flash: 65536
 supported:
+  - adc
+  - can
   - counter
-  - uart
   - dma
+  - flash
   - gpio
   - i2c
   - netif:eth
+  - pwm
   - sdhc
   - spi
+  - uart
   - usb_device
-  - can
   - watchdog
-  - adc
-  - pwm
 vendor: nxp

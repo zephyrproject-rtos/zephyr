@@ -198,7 +198,7 @@ void flash_stm32wba_page_layout(const struct device *dev,
 	*layout_size = 1;
 }
 
-static const struct flash_driver_api flash_stm32_api = {
+static DEVICE_API(flash, flash_stm32_api) = {
 	.erase = flash_stm32_erase,
 	.write = flash_stm32_write,
 	.read = flash_stm32_read,

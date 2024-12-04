@@ -464,7 +464,7 @@ static int uart_cc13xx_cc26xx_pm_action(const struct device *dev,
 }
 #endif /* CONFIG_PM_DEVICE */
 
-static const struct uart_driver_api uart_cc13xx_cc26xx_driver_api = {
+static DEVICE_API(uart, uart_cc13xx_cc26xx_driver_api) = {
 	.poll_in = uart_cc13xx_cc26xx_poll_in,
 	.poll_out = uart_cc13xx_cc26xx_poll_out,
 	.err_check = uart_cc13xx_cc26xx_err_check,

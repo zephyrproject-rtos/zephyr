@@ -22,7 +22,6 @@ select = [
 ignore = [
     # zephyr-keep-sorted-start
     "SIM108", # Allow if-else blocks instead of forcing ternary operator
-    "UP027",  # deprecated pyupgrade rule
     # zephyr-keep-sorted-stop
 ]
 

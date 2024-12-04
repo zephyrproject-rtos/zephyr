@@ -477,7 +477,7 @@ static int tsl2591_init(const struct device *dev)
 	return 0;
 }
 
-static const struct sensor_driver_api tsl2591_driver_api = {
+static DEVICE_API(sensor, tsl2591_driver_api) = {
 #ifdef CONFIG_TSL2591_TRIGGER
 	.trigger_set = tsl2591_trigger_set,
 #endif

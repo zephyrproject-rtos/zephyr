@@ -11,7 +11,7 @@ add_subdirectory_ifdef(CONFIG_BT_MESH mesh)
 add_subdirectory_ifdef(CONFIG_BT_AUDIO audio)
 add_subdirectory_ifdef(CONFIG_BT_CRYPTO crypto)
 
-if(CONFIG_BT_CTLR AND CONFIG_BT_LL_SW_SPLIT)
+if(CONFIG_BT_LL_SW_SPLIT)
   add_subdirectory(controller)
 endif()
 

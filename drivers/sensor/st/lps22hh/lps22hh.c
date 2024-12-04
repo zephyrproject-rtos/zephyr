@@ -169,7 +169,7 @@ static int lps22hh_attr_set(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api lps22hh_driver_api = {
+static DEVICE_API(sensor, lps22hh_driver_api) = {
 	.attr_set = lps22hh_attr_set,
 	.sample_fetch = lps22hh_sample_fetch,
 	.channel_get = lps22hh_channel_get,

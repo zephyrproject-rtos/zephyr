@@ -74,7 +74,7 @@ static int ti_tps382x_feed(const struct device *dev, int channel_id)
 	return gpio_pin_toggle_dt(&config->wdi_gpio);
 }
 
-static const struct wdt_driver_api ti_tps382x_api = {
+static DEVICE_API(wdt, ti_tps382x_api) = {
 	.setup = ti_tps382x_setup,
 	.disable = ti_tps382x_disable,
 	.install_timeout = ti_tps382x_install_timeout,

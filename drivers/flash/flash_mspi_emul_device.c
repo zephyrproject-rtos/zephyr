@@ -339,7 +339,7 @@ static void flash_mspi_emul_pages_layout(const struct device *flash,
 }
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
-static const struct flash_driver_api flash_mspi_emul_device_api = {
+static DEVICE_API(flash, flash_mspi_emul_device_api) = {
 	.erase = flash_mspi_emul_erase,
 	.write = flash_mspi_emul_write,
 	.read = flash_mspi_emul_read,

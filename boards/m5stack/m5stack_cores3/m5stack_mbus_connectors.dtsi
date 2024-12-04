@@ -1,0 +1,34 @@
+/*
+ * Copyright (c) 2024 TOKITA Hiroshi
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	m5stack_mbus_header: m5stack_mbus_connector {
+		compatible = "m5stack,mbus-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = /*      GND */                    <1 0  &gpio 10 0>, /* ADC      */
+			   /*      GND */                    <3 0  &gpio  8 0>, /* PB_IN    */
+			   /*      GND */                                       /* RESET/EN */
+			   /*     MOSI */ <6 0  &gpio 37 0>, <7 0  &gpio  5 0>, /* GPIO     */
+			   /*     MISO */ <8 0  &gpio 35 0>, <9 0  &gpio  9 0>, /* PB_OUT   */
+			   /*      SCK */ <10 0 &gpio 36 0>,                    /* 3.3V     */
+			   /*     RXD0 */ <12 0 &gpio 44 0>, <13 0 &gpio 43 0>, /* TXD0     */
+			   /*    PC_RX */ <14 0 &gpio 18 0>, <15 0 &gpio 17 0>, /* PC_TX    */
+			   /*   intSDA */ <16 0 &gpio 12 0>, <17 0 &gpio 11 0>, /* intSCL   */
+			   /*   PA_SDA */ <18 0 &gpio  2 0>, <19 0 &gpio  1 0>, /* PA_SCL   */
+			   /*     GPIO */ <20 0 &gpio  6 0>, <21 0 &gpio  7 0>, /* GPIO     */
+			   /* I2S_DOUT */ <22 0 &gpio 13 0>, <23 0 &gpio  0 0>, /* I2S_LRCK */
+			   /*       NC */                    <25 0 &gpio  3 0>; /* I2S_DIN  */
+			   /*       NC */                                       /* 5V       */
+			   /*       NC */                                       /* BAT      */
+	};
+};
+
+m5stack_mbus_i2c0: &i2c0 {};
+m5stack_mbus_i2c1: &i2c1 {};
+m5stack_mbus_uart0: &uart0 {};
+m5stack_mbus_uart1: &uart1 {};
+m5stack_mbus_spi: &spi2 {};

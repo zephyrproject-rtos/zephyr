@@ -281,7 +281,7 @@ static int rv32m1_lpuart_init(const struct device *dev)
 	return 0;
 }
 
-static const struct uart_driver_api rv32m1_lpuart_driver_api = {
+static DEVICE_API(uart, rv32m1_lpuart_driver_api) = {
 	.poll_in = rv32m1_lpuart_poll_in,
 	.poll_out = rv32m1_lpuart_poll_out,
 	.err_check = rv32m1_lpuart_err_check,

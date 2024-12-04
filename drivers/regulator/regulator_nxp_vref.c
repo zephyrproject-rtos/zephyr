@@ -171,7 +171,7 @@ static int regulator_nxp_vref_get_voltage(const struct device *dev,
 	return ret;
 }
 
-static const struct regulator_driver_api api = {
+static DEVICE_API(regulator, api) = {
 	.enable = regulator_nxp_vref_enable,
 	.disable = regulator_nxp_vref_disable,
 	.set_mode = regulator_nxp_vref_set_mode,

@@ -338,7 +338,7 @@ void rt1718s_gpio_alert_handler(const struct device *dev)
 	}
 }
 
-static const struct gpio_driver_api gpio_rt1718s_driver = {
+static DEVICE_API(gpio, gpio_rt1718s_driver) = {
 	.pin_configure = gpio_rt1718s_pin_config,
 	.port_get_raw = gpio_rt1718s_port_get_raw,
 	.port_set_masked_raw = gpio_rt1718s_port_set_masked_raw,

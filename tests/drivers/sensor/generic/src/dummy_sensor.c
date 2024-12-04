@@ -161,7 +161,7 @@ int dummy_sensor_trigger_set(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api dummy_sensor_api = {
+static DEVICE_API(sensor, dummy_sensor_api) = {
 	.sample_fetch = &dummy_sensor_sample_fetch,
 	.channel_get = &dummy_sensor_channel_get,
 	.attr_set = dummy_sensor_attr_set,
@@ -169,7 +169,7 @@ static const struct sensor_driver_api dummy_sensor_api = {
 	.trigger_set = dummy_sensor_trigger_set,
 };
 
-static const struct sensor_driver_api dummy_sensor_no_trig_api = {
+static DEVICE_API(sensor, dummy_sensor_no_trig_api) = {
 	.sample_fetch = &dummy_sensor_sample_fetch,
 	.channel_get = &dummy_sensor_channel_get,
 	.attr_set = NULL,

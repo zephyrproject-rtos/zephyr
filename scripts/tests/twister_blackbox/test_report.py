@@ -174,7 +174,7 @@ class TestReport:
                 pytest.fail(f"Unsupported file type: '{path}'")
 
         for f_platform in test_platforms:
-            platform_path = os.path.join(out_path, f_platform.replace("/", "_"))
+            platform_path = os.path.join(out_path, f_platform.replace("/", "_") + ".json", )
             assert os.path.exists(platform_path), f'file not found {f_platform}'
 
         assert str(sys_exit.value) == '0'

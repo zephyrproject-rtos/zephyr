@@ -317,7 +317,7 @@ static int ssd1327_init(const struct device *dev)
 	return 0;
 }
 
-static struct display_driver_api ssd1327_driver_api = {
+static DEVICE_API(display, ssd1327_driver_api) = {
 	.blanking_on = ssd1327_suspend,
 	.blanking_off = ssd1327_resume,
 	.write = ssd1327_write,

@@ -7,7 +7,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT nxp_kinetis_adc12
+#define DT_DRV_COMPAT nxp_adc12
 
 #include <zephyr/drivers/adc.h>
 #include <fsl_adc12.h>

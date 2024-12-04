@@ -103,7 +103,7 @@ static int max31855_channel_get(const struct device *dev, enum sensor_channel ch
 	return 0;
 }
 
-static const struct sensor_driver_api max31855_api = {
+static DEVICE_API(sensor, max31855_api) = {
 	.sample_fetch = max31855_sample_fetch,
 	.channel_get = max31855_channel_get,
 };

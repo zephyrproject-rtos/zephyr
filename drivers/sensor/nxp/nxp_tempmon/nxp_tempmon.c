@@ -72,7 +72,7 @@ static int nxp_tempmon_channel_get(const struct device *dev, enum sensor_channel
 	return sensor_value_from_double(val, temp);
 }
 
-static const struct sensor_driver_api nxp_tempmon_driver_api = {
+static DEVICE_API(sensor, nxp_tempmon_driver_api) = {
 	.sample_fetch = nxp_tempmon_sample_fetch,
 	.channel_get = nxp_tempmon_channel_get,
 };

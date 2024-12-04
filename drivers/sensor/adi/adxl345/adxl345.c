@@ -383,7 +383,7 @@ static int adxl345_channel_get(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api adxl345_api_funcs = {
+static DEVICE_API(sensor, adxl345_api_funcs) = {
 	.attr_set = adxl345_attr_set,
 	.sample_fetch = adxl345_sample_fetch,
 	.channel_get = adxl345_channel_get,

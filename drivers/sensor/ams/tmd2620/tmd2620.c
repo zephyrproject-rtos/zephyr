@@ -387,7 +387,7 @@ static int tmd2620_pm_action(const struct device *dev, enum pm_device_action act
 }
 #endif
 
-static const struct sensor_driver_api tmd2620_driver_api = {
+static DEVICE_API(sensor, tmd2620_driver_api) = {
 	.sample_fetch = tmd2620_sample_fetch,
 	.channel_get = tmd2620_channel_get,
 #ifdef CONFIG_TMD2620_TRIGGER

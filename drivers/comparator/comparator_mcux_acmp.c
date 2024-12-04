@@ -375,7 +375,7 @@ static int mcux_acmp_trigger_is_pending(const struct device *dev)
 	return 0;
 }
 
-static const struct comparator_driver_api mcux_acmp_comp_api = {
+static DEVICE_API(comparator, mcux_acmp_comp_api) = {
 	.get_output = mcux_acmp_get_output,
 	.set_trigger = mcux_acmp_set_trigger,
 	.set_trigger_callback = mcux_acmp_set_trigger_callback,

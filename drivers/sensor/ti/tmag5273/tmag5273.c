@@ -1189,7 +1189,7 @@ static int tmag5273_init(const struct device *dev)
 	return 0;
 }
 
-static const struct sensor_driver_api tmag5273_driver_api = {
+static DEVICE_API(sensor, tmag5273_driver_api) = {
 	.attr_set = tmag5273_attr_set,
 	.attr_get = tmag5273_attr_get,
 	.sample_fetch = tmag5273_sample_fetch,

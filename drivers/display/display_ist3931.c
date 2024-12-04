@@ -256,7 +256,7 @@ static inline int ist3931_blanking_off(const struct device *dev)
 	return ist3931_driver_sleep_on_off(dev, true);
 }
 
-static const struct display_driver_api ist3931_api = {
+static DEVICE_API(display, ist3931_api) = {
 	.write = ist3931_write,
 	.get_capabilities = ist3931_get_capabilities,
 	.blanking_on = ist3931_blanking_on,

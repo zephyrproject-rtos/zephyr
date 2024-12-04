@@ -202,7 +202,7 @@ static int ws2812_i2s_init(const struct device *dev)
 	return 0;
 }
 
-static const struct led_strip_driver_api ws2812_i2s_api = {
+static DEVICE_API(led_strip, ws2812_i2s_api) = {
 	.update_rgb = ws2812_strip_update_rgb,
 	.length = ws2812_strip_length,
 };

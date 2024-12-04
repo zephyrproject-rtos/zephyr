@@ -288,7 +288,7 @@ static void flash_cc13xx_cc26xx_layout(const struct device *dev,
 }
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
-static const struct flash_driver_api flash_cc13xx_cc26xx_api = {
+static DEVICE_API(flash, flash_cc13xx_cc26xx_api) = {
 	.erase = flash_cc13xx_cc26xx_erase,
 	.write = flash_cc13xx_cc26xx_write,
 	.read = flash_cc13xx_cc26xx_read,

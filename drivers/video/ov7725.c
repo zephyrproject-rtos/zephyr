@@ -548,7 +548,7 @@ static int ov7725_get_caps(const struct device *dev,
 	return 0;
 }
 
-static const struct video_driver_api ov7725_driver_api = {
+static DEVICE_API(video, ov7725_driver_api) = {
 	.set_format = ov7725_set_fmt,
 	.get_format = ov7725_get_fmt,
 	.get_caps = ov7725_get_caps,

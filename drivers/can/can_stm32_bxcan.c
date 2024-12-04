@@ -1063,7 +1063,7 @@ static void can_stm32_remove_rx_filter(const struct device *dev, int filter_id)
 	k_mutex_unlock(&filter_mutex);
 }
 
-static const struct can_driver_api can_api_funcs = {
+static DEVICE_API(can, can_api_funcs) = {
 	.get_capabilities = can_stm32_get_capabilities,
 	.start = can_stm32_start,
 	.stop = can_stm32_stop,

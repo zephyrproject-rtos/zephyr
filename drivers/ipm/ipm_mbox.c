@@ -89,7 +89,7 @@ static int ipm_mbox_init(const struct device *ipmdev)
 	return 0;
 }
 
-static const struct ipm_driver_api ipm_mbox_funcs = {
+static DEVICE_API(ipm, ipm_mbox_funcs) = {
 	.send = ipm_mbox_send,
 	.register_callback = ipm_mbox_register_callback,
 	.max_data_size_get = ipm_mbox_get_max_data_size,

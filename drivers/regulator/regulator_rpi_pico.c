@@ -131,7 +131,7 @@ static int regulator_rpi_pico_init(const struct device *dev)
 	return regulator_common_init(dev, true);
 }
 
-static const struct regulator_driver_api api = {
+static DEVICE_API(regulator, api) = {
 	.enable = regulator_rpi_pico_enable,
 	.disable = regulator_rpi_pico_disable,
 	.count_voltages = regulator_rpi_pico_count_voltages,

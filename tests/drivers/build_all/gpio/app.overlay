@@ -338,6 +338,53 @@
 				};
 			};
 
+			it8801_mfd: it8801@38 {
+				compatible = "ite,it8801-mfd";
+				reg = <0x38>;
+				irq-gpios = <&test_gpio 1 0>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				ioex_it8801_port0: it8801_port@0  {
+					compatible = "ite,it8801-gpio";
+					reg = <0x00 1   /* GPIPSR */
+					       0x05 1   /* GPSOVR */
+					       0x0a 8   /* GPCR */
+					       0x32 1   /* GPISR */
+					       0x37 1>; /* GPIER */
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <8>;
+					pin-mask = <0xdb>;
+				};
+
+				ioex_it8801_port1: it8801_port@1 {
+					compatible = "ite,it8801-gpio";
+					reg = <0x01 1   /* GPIPSR */
+					       0x06 1   /* GPSOVR */
+					       0x12 8   /* GPCR */
+					       0x33 1   /* GPISR */
+					       0x38 1>; /* GPIER */
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <8>;
+					pin-mask = <0x3f>;
+				};
+
+				ioex_it8801_port2: it8801_port@2 {
+					compatible = "ite,it8801-gpio";
+					reg = <0x02 1   /* GPIPSR */
+					       0x07 1   /* GPSOVR */
+					       0x1a 8   /* GPCR */
+					       0x34 1   /* GPISR */
+					       0x39 1>; /* GPIER */
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <8>;
+					pin-mask = <0x0f>;
+				};
+			};
+
 		};
 
 		nct3807_alert_1 {

@@ -437,7 +437,7 @@ static int fxas21002_init(const struct device *dev)
 	return 0;
 }
 
-static const struct sensor_driver_api fxas21002_driver_api = {
+static DEVICE_API(sensor, fxas21002_driver_api) = {
 	.sample_fetch = fxas21002_sample_fetch,
 	.channel_get = fxas21002_channel_get,
 #if CONFIG_FXAS21002_TRIGGER

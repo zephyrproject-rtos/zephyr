@@ -415,7 +415,7 @@ static int ht16k33_init(const struct device *dev)
 	return 0;
 }
 
-static const struct led_driver_api ht16k33_leds_api = {
+static DEVICE_API(led, ht16k33_leds_api) = {
 	.blink = ht16k33_led_blink,
 	.set_brightness = ht16k33_led_set_brightness,
 	.on = ht16k33_led_on,

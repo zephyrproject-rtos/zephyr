@@ -144,7 +144,7 @@ static int dac_gd32_write_value(const struct device *dev,
 	return 0;
 }
 
-struct dac_driver_api dac_gd32_driver_api = {
+DEVICE_API(dac, dac_gd32_driver_api) = {
 	.channel_setup = dac_gd32_channel_setup,
 	.write_value = dac_gd32_write_value
 };

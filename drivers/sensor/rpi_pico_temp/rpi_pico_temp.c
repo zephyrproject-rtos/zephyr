@@ -82,7 +82,7 @@ static int rpi_pico_temp_channel_get(const struct device *dev, enum sensor_chann
 	return 0;
 }
 
-static const struct sensor_driver_api rpi_pico_temp_driver_api = {
+static DEVICE_API(sensor, rpi_pico_temp_driver_api) = {
 	.sample_fetch = rpi_pico_temp_sample_fetch,
 	.channel_get = rpi_pico_temp_channel_get,
 };

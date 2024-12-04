@@ -32,9 +32,6 @@ endif
 
 if BOARD_NRF7002DK_NRF5340_CPUNET
 
-config BT_CTLR
-	default y if BT
-
 config BT_ECC
 	default y if BT
 

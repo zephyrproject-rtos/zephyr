@@ -142,7 +142,7 @@
 		};
 
 		adc0: adc@4003b000 {
-			compatible = "nxp,kinetis-adc12";
+			compatible = "nxp,adc12";
 			reg = <0x4003b000 0x1000>;
 			interrupts = <15 0>;
 			clocks = <&pcc 0xec KINETIS_PCC_SRC_SIRC_ASYNC>;
@@ -227,7 +227,7 @@
 		};
 
 		wdog: watchdog@40052000 {
-			compatible = "nxp,kinetis-wdog32";
+			compatible = "nxp,wdog32";
 			reg = <0x40052000 0x1000>;
 			interrupts = <28 0>;
 			clocks = <&lpo>;
@@ -422,7 +422,7 @@
 		};
 
 		lpspi0: spi@4002c000 {
-			compatible = "nxp,imx-lpspi";
+			compatible = "nxp,lpspi";
 			reg = <0x4002c000 0x1000>;
 			interrupts = <10 0>;
 			clocks = <&pcc 0xb0 KINETIS_PCC_SRC_FIRC_ASYNC>;
@@ -432,7 +432,7 @@
 		};
 
 		lpspi1: spi@4002d000 {
-			compatible = "nxp,imx-lpspi";
+			compatible = "nxp,lpspi";
 			reg = <0x4002d000 0x1000>;
 			interrupts = <11 0>;
 			clocks = <&pcc 0xb4 KINETIS_PCC_SRC_FIRC_ASYNC>;

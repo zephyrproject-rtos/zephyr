@@ -9,4 +9,44 @@ if SOC_SERIES_STM32G0X
 
 rsource "Kconfig.defconfig.stm32g0*"
 
+if UART_STM32
+
+configdefault SHARED_IRQ_MAX_NUM_CLIENTS
+	# LPUART1 - USART3/4/5/6 instances are all enabled
+	default 5 if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,usart4) && $(dt_nodelabel_enabled,usart5) && $(dt_nodelabel_enabled,usart6) && $(dt_nodelabel_enabled,lpuart1)
+	# 4 out of 5 USART instances are enabled
+	default 4 if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,usart4) && $(dt_nodelabel_enabled,usart5) && $(dt_nodelabel_enabled,usart6)
+	default 4 if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,usart4) && $(dt_nodelabel_enabled,usart5) && $(dt_nodelabel_enabled,lpuart1)
+	default 4 if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,usart4) && $(dt_nodelabel_enabled,usart6) && $(dt_nodelabel_enabled,lpuart1)
+	default 4 if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,usart5) && $(dt_nodelabel_enabled,usart6) && $(dt_nodelabel_enabled,lpuart1)
+	default 4 if $(dt_nodelabel_enabled,usart4) && $(dt_nodelabel_enabled,usart5) && $(dt_nodelabel_enabled,usart6) && $(dt_nodelabel_enabled,lpuart1)
+	# 3 out of 5 USART instances are enabled
+	default 3 if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,usart4) && $(dt_nodelabel_enabled,usart5)
+	default 3 if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,usart4) && $(dt_nodelabel_enabled,usart6)
+	default 3 if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,usart5) && $(dt_nodelabel_enabled,usart6)
+	default 3 if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,usart4) && $(dt_nodelabel_enabled,lpuart1)
+	default 3 if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,usart5) && $(dt_nodelabel_enabled,lpuart1)
+	default 3 if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,usart6) && $(dt_nodelabel_enabled,lpuart1)
+	default 3 if $(dt_nodelabel_enabled,usart4) && $(dt_nodelabel_enabled,usart5) && $(dt_nodelabel_enabled,usart6)
+	default 3 if $(dt_nodelabel_enabled,usart4) && $(dt_nodelabel_enabled,usart5) && $(dt_nodelabel_enabled,lpuart1)
+	default 3 if $(dt_nodelabel_enabled,usart4) && $(dt_nodelabel_enabled,usart6) && $(dt_nodelabel_enabled,lpuart1)
+	default 3 if $(dt_nodelabel_enabled,usart5) && $(dt_nodelabel_enabled,usart6) && $(dt_nodelabel_enabled,lpuart1)
+
+config SHARED_INTERRUPTS
+	# LPUART1 - USART3/4/5/6 : irq 29
+	default y if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,usart4)
+	default y if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,usart5)
+	default y if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,usart6)
+	default y if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,lpuart1)
+	default y if $(dt_nodelabel_enabled,usart4) && $(dt_nodelabel_enabled,usart5)
+	default y if $(dt_nodelabel_enabled,usart4) && $(dt_nodelabel_enabled,usart6)
+	default y if $(dt_nodelabel_enabled,usart4) && $(dt_nodelabel_enabled,lpuart1)
+	default y if $(dt_nodelabel_enabled,usart5) && $(dt_nodelabel_enabled,usart6)
+	default y if $(dt_nodelabel_enabled,usart5) && $(dt_nodelabel_enabled,lpuart1)
+	default y if $(dt_nodelabel_enabled,usart6) && $(dt_nodelabel_enabled,lpuart1)
+	# USART2 - LPUART2 : irq 28
+	default y if $(dt_nodelabel_enabled,lpuart2) && $(dt_nodelabel_enabled,usart2)
+
+endif # UART_STM32
+
 endif # SOC_SERIES_STM32G0X

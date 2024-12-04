@@ -20,13 +20,14 @@ supported:
   - arduino_serial
   - counter
   - dma
+  - dmic
+  - flash
   - gpio
   - i2c
+  - i2s
+  - pwm
+  - sdhc
   - spi
   - usb_device
   - watchdog
-  - sdhc
-  - pwm
-  - i2s
-  - dmic
 vendor: nxp

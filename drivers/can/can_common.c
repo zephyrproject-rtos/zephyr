@@ -343,24 +343,6 @@ int z_impl_can_calc_timing_data(const struct device *dev, struct can_timing *res
 }
 #endif /* CONFIG_CAN_FD_MODE */
 
-int can_calc_prescaler(const struct device *dev, struct can_timing *timing,
-		       uint32_t bitrate)
-{
-	uint32_t ts = timing->prop_seg + timing->phase_seg1 + timing->phase_seg2 +
-		   CAN_SYNC_SEG;
-	uint32_t core_clock;
-	int ret;
-
-	ret = can_get_core_clock(dev, &core_clock);
-	if (ret != 0) {
-		return ret;
-	}
-
-	timing->prescaler = core_clock / (bitrate * ts);
-
-	return core_clock % (ts * timing->prescaler);
-}
-
 static int check_timing_in_range(const struct can_timing *timing,
 				 const struct can_timing *min,
 				 const struct can_timing *max)

@@ -464,6 +464,8 @@ int cfb_framebuffer_finalize(const struct device *dev)
 	const struct char_framebuffer *fb = &char_fb;
 	int err;
 
+	__ASSERT_NO_MSG(DEVICE_API_IS(display, dev));
+
 	if (!fb->buf) {
 		return -ENODEV;
 	}
@@ -563,6 +565,8 @@ int cfb_framebuffer_init(const struct device *dev)
 	const struct display_driver_api *api = dev->api;
 	struct char_framebuffer *fb = &char_fb;
 	struct display_capabilities cfg;
+
+	__ASSERT_NO_MSG(DEVICE_API_IS(display, dev));
 
 	api->get_capabilities(dev, &cfg);
 

@@ -8,7 +8,4 @@ if BOARD_RUUVI_RUUVITAG
 config SPI
 	default y
 
-config BT_CTLR
-	default BT
-
 endif # BOARD_RUUVI_RUUVITAG

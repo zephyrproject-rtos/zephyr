@@ -460,7 +460,7 @@ static int ra_spi_release(const struct device *dev, const struct spi_config *con
 	return 0;
 }
 
-static const struct spi_driver_api ra_spi_driver_api = {.transceive = ra_spi_transceive,
+static DEVICE_API(spi, ra_spi_driver_api) = {.transceive = ra_spi_transceive,
 #ifdef CONFIG_SPI_ASYNC
 							.transceive_async = ra_spi_transceive_async,
 #endif /* CONFIG_SPI_ASYNC */

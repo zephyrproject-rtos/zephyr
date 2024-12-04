@@ -105,7 +105,7 @@ static int gpio_brcmstb_port_toggle_bits(const struct device *port, gpio_port_pi
 	return 0;
 }
 
-static const struct gpio_driver_api gpio_brcmstb_api = {
+static DEVICE_API(gpio, gpio_brcmstb_api) = {
 	.pin_configure = gpio_brcmstb_pin_configure,
 	.port_get_raw = gpio_brcmstb_port_get_raw,
 	.port_set_masked_raw = gpio_brcmstb_port_set_masked_raw,

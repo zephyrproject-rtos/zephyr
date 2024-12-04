@@ -303,7 +303,7 @@ static int ina226_init(const struct device *dev)
 	return 0;
 }
 
-static const struct sensor_driver_api ina226_driver_api = {
+static DEVICE_API(sensor, ina226_driver_api) = {
 	.attr_set = ina226_attr_set,
 	.attr_get = ina226_attr_get,
 	.sample_fetch = ina226_sample_fetch,

@@ -2,9 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config RISCV_CORE_NORDIC_VPR
-	bool "RISC-V Nordic VPR core"
-	default y
-	depends on DT_HAS_NORDIC_VPR_ENABLED
+	bool
 	select ATOMIC_OPERATIONS_C
 	select RISCV
 	select RISCV_PRIVILEGED

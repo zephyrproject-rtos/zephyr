@@ -13,3 +13,29 @@ properties:
 
   interrupts:
     required: true
+
+  clk-source:
+    type: int
+    required: true
+    description: |
+      clk-source specifies the clock source that used by the system timer.
+      For Apollo3:
+      0 - NOCLK : No clock enabled.
+      1 - HFRC_DIV16 : 3MHz from the HFRC clock divider.
+      2 - HFRC_DIV256 : 187.5KHz from the HFRC clock divider.
+      3 - XTAL_DIV1 : 32768Hz from the crystal oscillator.
+      4 - XTAL_DIV2 : 16384Hz from the crystal oscillator.
+      5 - XTAL_DIV32 : 1024Hz from the crystal oscillator.
+      6 - LFRC_DIV1 : Approximately 1KHz from the LFRC oscillator (uncalibrated).
+      7 - CTIMER0A : Use CTIMER 0 section A as a prescaler.
+      8 - CTIMER0B : Use CTIMER 0 section B (or A and B linked together) as a prescaler.
+      For Apollo4:
+      0 - NOCLK : No clock enabled.
+      1 - HFRC_6MHZ : 6MHz from the HFRC clock divider.
+      2 - HFRC_375KHZ : 375KHz from the HFRC clock divider.
+      3 - XTAL_32KHZ : 32768Hz from the crystal oscillator.
+      4 - XTAL_16KHZ : 16384Hz from the crystal oscillator.
+      5 - XTAL_1KHZ : 1024Hz from the crystal oscillator.
+      6 - LFRC_1KHZ : Approximately 1KHz from the LFRC oscillator (uncalibrated).
+      7 - CTIMER0 : Use CTIMER 0 for the clock source (allows prescaling from other system clocks).
+      8 - CTIMER1 : Use CTIMER 1 for the clock source (allows prescaling from other system clocks).

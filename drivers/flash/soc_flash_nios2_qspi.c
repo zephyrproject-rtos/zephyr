@@ -490,7 +490,7 @@ flash_nios2_qspi_get_parameters(const struct device *dev)
 	return &flash_nios2_qspi_parameters;
 }
 
-static const struct flash_driver_api flash_nios2_qspi_api = {
+static DEVICE_API(flash, flash_nios2_qspi_api) = {
 	.erase = flash_nios2_qspi_erase,
 	.write = flash_nios2_qspi_write,
 	.read = flash_nios2_qspi_read,

@@ -310,7 +310,7 @@ static int lis2mdl_sample_fetch(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api lis2mdl_driver_api = {
+static DEVICE_API(sensor, lis2mdl_driver_api) = {
 	.attr_set = lis2mdl_attr_set,
 #if CONFIG_LIS2MDL_TRIGGER
 	.trigger_set = lis2mdl_trigger_set,

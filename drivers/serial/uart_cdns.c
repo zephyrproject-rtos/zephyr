@@ -213,7 +213,7 @@ void uart_cdns_set_irq_callback(const struct device *dev, uart_irq_callback_user
 }
 #endif
 
-static const struct uart_driver_api uart_cdns_driver_api = {
+static DEVICE_API(uart, uart_cdns_driver_api) = {
 	.poll_in = uart_cdns_poll_in,
 	.poll_out = uart_cdns_poll_out,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN

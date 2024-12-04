@@ -154,7 +154,7 @@ static int bd8lb600fs_gpio_port_toggle_bits(const struct device *dev, uint32_t m
 	return result;
 }
 
-static const struct gpio_driver_api api_table = {
+static DEVICE_API(gpio, api_table) = {
 	.pin_configure = bd8lb600fs_gpio_pin_configure,
 	.port_get_raw = bd8lb600fs_gpio_port_get_raw,
 	.port_set_masked_raw = bd8lb600fs_gpio_port_set_masked_raw,

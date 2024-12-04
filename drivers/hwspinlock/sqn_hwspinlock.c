@@ -123,7 +123,7 @@ static uint32_t sqn_hwspinlock_get_max_id(const struct device *dev)
 	return config->num_locks;
 }
 
-static const struct hwspinlock_driver_api hwspinlock_api = {
+static DEVICE_API(hwspinlock, hwspinlock_api) = {
 	.trylock = sqn_hwspinlock_trylock,
 	.lock = sqn_hwspinlock_lock,
 	.unlock = sqn_hwspinlock_unlock,

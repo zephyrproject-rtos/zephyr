@@ -699,7 +699,7 @@ static int lsm6dsl_channel_get(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api lsm6dsl_driver_api = {
+static DEVICE_API(sensor, lsm6dsl_driver_api) = {
 	.attr_set = lsm6dsl_attr_set,
 #if CONFIG_LSM6DSL_TRIGGER
 	.trigger_set = lsm6dsl_trigger_set,

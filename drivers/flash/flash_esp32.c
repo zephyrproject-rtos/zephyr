@@ -161,7 +161,7 @@ static int flash_esp32_init(const struct device *dev)
 	return 0;
 }
 
-static const struct flash_driver_api flash_esp32_driver_api = {
+static DEVICE_API(flash, flash_esp32_driver_api) = {
 	.read = flash_esp32_read,
 	.write = flash_esp32_write,
 	.erase = flash_esp32_erase,

@@ -186,7 +186,7 @@ static void qdec_nrfx_gpio_ctrl(const struct device *dev, bool enable)
 	}
 }
 
-static const struct sensor_driver_api qdec_nrfx_driver_api = {
+static DEVICE_API(sensor, qdec_nrfx_driver_api) = {
 	.sample_fetch = qdec_nrfx_sample_fetch,
 	.channel_get  = qdec_nrfx_channel_get,
 	.trigger_set  = qdec_nrfx_trigger_set,

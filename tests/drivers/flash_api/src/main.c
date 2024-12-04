@@ -50,7 +50,7 @@ static struct device_state some_dev_state = {
 };
 
 /* Device with get_size */
-const static struct flash_driver_api size_fun_api = {
+static DEVICE_API(flash, size_fun_api) = {
 	.get_size = some_get_size,
 };
 const static struct device size_fun_dev = {
@@ -61,7 +61,7 @@ const static struct device size_fun_dev = {
 };
 
 /* No functions device */
-const static struct flash_driver_api no_fun_api = {0};
+static DEVICE_API(flash, no_fun_api) = {0};
 const static struct device no_fun_dev = {
 	"no_fun",
 	NULL,
@@ -70,7 +70,7 @@ const static struct device no_fun_dev = {
 };
 
 /* Device with get_size implemented but returning -ENOTSUP */
-static struct flash_driver_api enotsup_fun_api = {
+static DEVICE_API(flash, enotsup_fun_api) = {
 	.get_size = enotsup_get_size,
 };
 static struct device enotsup_fun_dev = {

@@ -141,7 +141,7 @@ static int iis3dhhc_attr_set(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api iis3dhhc_api_funcs = {
+static DEVICE_API(sensor, iis3dhhc_api_funcs) = {
 	.attr_set = iis3dhhc_attr_set,
 	.sample_fetch = iis3dhhc_sample_fetch,
 	.channel_get = iis3dhhc_channel_get,

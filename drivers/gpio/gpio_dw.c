@@ -399,7 +399,7 @@ static void gpio_dw_isr(const struct device *port)
 }
 #endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(interrupts) */
 
-static const struct gpio_driver_api api_funcs = {
+static DEVICE_API(gpio, api_funcs) = {
 	.pin_configure = gpio_dw_config,
 	.port_get_raw = gpio_dw_port_get_raw,
 	.port_set_masked_raw = gpio_dw_port_set_masked_raw,

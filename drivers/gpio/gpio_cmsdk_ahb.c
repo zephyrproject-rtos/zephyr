@@ -216,7 +216,7 @@ static int gpio_cmsdk_ahb_manage_callback(const struct device *dev,
 	return gpio_manage_callback(&data->gpio_cb, callback, set);
 }
 
-static const struct gpio_driver_api gpio_cmsdk_ahb_drv_api_funcs = {
+static DEVICE_API(gpio, gpio_cmsdk_ahb_drv_api_funcs) = {
 	.pin_configure = gpio_cmsdk_ahb_config,
 	.port_get_raw = gpio_cmsdk_ahb_port_get_raw,
 	.port_set_masked_raw = gpio_cmsdk_ahb_port_set_masked_raw,

@@ -366,7 +366,7 @@ static int gpio_xlnx_axi_init(const struct device *dev)
 	return 0;
 }
 
-static const struct gpio_driver_api gpio_xlnx_axi_driver_api = {
+static DEVICE_API(gpio, gpio_xlnx_axi_driver_api) = {
 	.pin_configure = gpio_xlnx_axi_pin_configure,
 	.port_get_raw = gpio_xlnx_axi_port_get_raw,
 	.port_set_masked_raw = gpio_xlnx_axi_port_set_masked_raw,

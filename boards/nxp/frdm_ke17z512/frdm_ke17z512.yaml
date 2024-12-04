@@ -18,6 +18,7 @@ supported:
   - counter
   - gpio
   - adc
+  - flash
   - uart
   - pwm
   - i2c

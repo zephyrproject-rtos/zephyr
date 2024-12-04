@@ -648,6 +648,7 @@ static int lwm2m_engine_set(const struct lwm2m_obj_path *path, const void *value
 		if (!lwm2m_validate_time_resource_lenghts(max_data_len, len)) {
 			LOG_ERR("Time Set: buffer length %u  max data len %zu not supported", len,
 				max_data_len);
+			k_mutex_unlock(&registry_lock);
 			return -EINVAL;
 		}
 
@@ -924,6 +925,7 @@ static int lwm2m_engine_get(const struct lwm2m_obj_path *path, void *buf, uint16
 			if (!lwm2m_validate_time_resource_lenghts(data_len, buflen)) {
 				LOG_ERR("Time get buffer length %u  data len %zu not supported",
 					buflen, data_len);
+				k_mutex_unlock(&registry_lock);
 				return -EINVAL;
 			}
 

@@ -198,7 +198,7 @@ static size_t eeprom_sim_size(const struct device *dev)
 	return config->size;
 }
 
-static const struct eeprom_driver_api eeprom_sim_api = {
+static DEVICE_API(eeprom, eeprom_sim_api) = {
 	.read = eeprom_sim_read,
 	.write = eeprom_sim_write,
 	.size = eeprom_sim_size,

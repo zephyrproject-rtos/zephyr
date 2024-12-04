@@ -76,7 +76,7 @@ static int uart_usbserial_poll_in(const struct device *dev, unsigned char *c)
 	return 0;
 }
 
-static const struct uart_driver_api uart_usbserial_driver_api = {
+static DEVICE_API(uart, uart_usbserial_driver_api) = {
 	.poll_in		= uart_usbserial_poll_in,
 	.poll_out		= uart_usbserial_poll_out,
 };

@@ -10,6 +10,6 @@ config CRYPTO_NRF_ECB
 	# Bluetooth controller uses the ECB peripheral directly
 	# (see subsys/bluetooth/controller/ll_sw/nordic/hal/nrf5/ecb.c),
 	# hence this driver cannot be enabled together with it.
-	depends on !BT_CTLR
+	depends on !HAS_BT_CTLR
 	help
 	  Enable nRF HAL-based AES ECB encryption driver

@@ -47,7 +47,7 @@ DEFINE_FAKE_VALUE_FUNC(int, regulator_fake_get_active_discharge, const struct de
 DEFINE_FAKE_VALUE_FUNC(int, regulator_fake_get_error_flags,
 		       const struct device *, regulator_error_flags_t *);
 
-static struct regulator_driver_api api = {
+static DEVICE_API(regulator, api) = {
 	.enable = regulator_fake_enable,
 	.disable = regulator_fake_disable,
 	.count_voltages = regulator_fake_count_voltages,
@@ -80,7 +80,7 @@ DEFINE_FAKE_VALUE_FUNC(int, regulator_parent_fake_dvs_state_set,
 DEFINE_FAKE_VALUE_FUNC(int, regulator_parent_fake_ship_mode,
 		       const struct device *);
 
-static struct regulator_parent_driver_api parent_api = {
+static DEVICE_API(regulator_parent, parent_api) = {
 	.dvs_state_set = regulator_parent_fake_dvs_state_set,
 	.ship_mode = regulator_parent_fake_ship_mode,
 };

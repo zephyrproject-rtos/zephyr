@@ -3,6 +3,7 @@ sample:
   name: smp svr
 common:
   sysbuild: true
+  build_only: true
 tests:
   sample.mcumgr.smp_svr.bt:
     harness: bluetooth

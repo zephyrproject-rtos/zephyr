@@ -104,7 +104,7 @@ static int mcp9600_channel_get(const struct device *dev, enum sensor_channel cha
 	return 0;
 }
 
-static const struct sensor_driver_api mcp9600_api = {
+static DEVICE_API(sensor, mcp9600_api) = {
 	.sample_fetch = mcp9600_sample_fetch,
 	.channel_get = mcp9600_channel_get,
 };

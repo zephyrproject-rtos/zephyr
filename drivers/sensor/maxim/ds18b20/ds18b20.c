@@ -310,7 +310,7 @@ int ds18b20_attr_set(const struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
-static const struct sensor_driver_api ds18b20_driver_api = {
+static DEVICE_API(sensor, ds18b20_driver_api) = {
 	.attr_set = ds18b20_attr_set,
 	.sample_fetch = ds18b20_sample_fetch,
 	.channel_get = ds18b20_channel_get,

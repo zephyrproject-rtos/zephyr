@@ -220,7 +220,7 @@ static int mpu9250_sample_fetch(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api mpu9250_driver_api = {
+static DEVICE_API(sensor, mpu9250_driver_api) = {
 #if CONFIG_MPU9250_TRIGGER
 	.trigger_set = mpu9250_trigger_set,
 #endif

@@ -333,7 +333,7 @@ static int gpio_gd32_manage_callback(const struct device *dev,
 	return gpio_manage_callback(&data->callbacks, callback, set);
 }
 
-static const struct gpio_driver_api gpio_gd32_api = {
+static DEVICE_API(gpio, gpio_gd32_api) = {
 	.pin_configure = gpio_gd32_configure,
 	.port_get_raw = gpio_gd32_port_get_raw,
 	.port_set_masked_raw = gpio_gd32_port_set_masked_raw,

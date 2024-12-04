@@ -273,7 +273,7 @@ static uint32_t gpio_sedi_get_pending(const struct device *dev)
 	return sedi_gpio_get_gisr(gpio_dev, 0);
 }
 
-static const struct gpio_driver_api gpio_sedi_driver_api = {
+static DEVICE_API(gpio, gpio_sedi_driver_api) = {
 	.pin_configure = gpio_sedi_configure,
 	.port_get_raw = gpio_sedi_get_raw,
 	.port_set_masked_raw = gpio_sedi_set_masked_raw,

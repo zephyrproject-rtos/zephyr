@@ -116,7 +116,7 @@ static int usart_wch_err_check(const struct device *dev)
 	return errors;
 }
 
-static const struct uart_driver_api usart_wch_driver_api = {
+static DEVICE_API(uart, usart_wch_driver_api) = {
 	.poll_in = usart_wch_poll_in,
 	.poll_out = usart_wch_poll_out,
 	.err_check = usart_wch_err_check,

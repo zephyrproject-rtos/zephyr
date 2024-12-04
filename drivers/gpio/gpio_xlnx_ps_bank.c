@@ -393,7 +393,7 @@ static int gpio_xlnx_ps_bank_manage_callback(const struct device *dev,
 }
 
 /* GPIO bank device driver API */
-static const struct gpio_driver_api gpio_xlnx_ps_bank_apis = {
+static DEVICE_API(gpio, gpio_xlnx_ps_bank_apis) = {
 	.pin_configure = gpio_xlnx_ps_pin_configure,
 	.port_get_raw = gpio_xlnx_ps_bank_get,
 	.port_set_masked_raw = gpio_xlnx_ps_bank_set_masked,

@@ -570,11 +570,55 @@ static const struct device *eth_nxp_enet_qos_get_phy(const struct device *dev)
 	return config->phy_dev;
 }
 
+
+
+static int eth_nxp_enet_qos_set_config(const struct device *dev,
+			       enum ethernet_config_type type,
+			       const struct ethernet_config *cfg)
+{
+	const struct nxp_enet_qos_mac_config *config = dev->config;
+	struct nxp_enet_qos_mac_data *data = dev->data;
+	struct nxp_enet_qos_config *module_cfg = ENET_QOS_MODULE_CFG(config->enet_dev);
+	enet_qos_t *base = module_cfg->base;
+
+	switch (type) {
+	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
+		memcpy(data->mac_addr.addr,
+		       cfg->mac_address.addr,
+		       sizeof(data->mac_addr.addr));
+		/* Set MAC address */
+		base->MAC_ADDRESS0_HIGH =
+			ENET_QOS_REG_PREP(MAC_ADDRESS0_HIGH, ADDRHI,
+						data->mac_addr.addr[5] << 8 |
+						data->mac_addr.addr[4]);
+		base->MAC_ADDRESS0_LOW =
+			ENET_QOS_REG_PREP(MAC_ADDRESS0_LOW, ADDRLO,
+						data->mac_addr.addr[3] << 24 |
+						data->mac_addr.addr[2] << 16 |
+						data->mac_addr.addr[1] << 8  |
+						data->mac_addr.addr[0]);
+		net_if_set_link_addr(data->iface, data->mac_addr.addr,
+				     sizeof(data->mac_addr.addr),
+				     NET_LINK_ETHERNET);
+		LOG_DBG("%s MAC set to %02x:%02x:%02x:%02x:%02x:%02x",
+			dev->name,
+			data->mac_addr.addr[0], data->mac_addr.addr[1],
+			data->mac_addr.addr[2], data->mac_addr.addr[3],
+			data->mac_addr.addr[4], data->mac_addr.addr[5]);
+		return 0;
+	default:
+		break;
+	}
+
+	return -ENOTSUP;
+}
+
 static const struct ethernet_api api_funcs = {
 	.iface_api.init = eth_nxp_enet_qos_iface_init,
 	.send = eth_nxp_enet_qos_tx,
 	.get_capabilities = eth_nxp_enet_qos_get_capabilities,
 	.get_phy = eth_nxp_enet_qos_get_phy,
+	.set_config	= eth_nxp_enet_qos_set_config,
 };
 
 #define NXP_ENET_QOS_NODE_HAS_MAC_ADDR_CHECK(n)						\

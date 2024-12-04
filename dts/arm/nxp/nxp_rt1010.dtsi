@@ -157,7 +157,7 @@
 		/delete-node/ spi@40394000;
 		/delete-node/ spi@40398000;
 		lpspi1: spi@40194000 {
-			compatible = "nxp,imx-lpspi";
+			compatible = "nxp,lpspi";
 			reg = <0x40194000 0x4000>;
 			interrupts = <32 3>;
 			status = "disabled";
@@ -167,7 +167,7 @@
 		};
 
 		lpspi2: spi@40198000 {
-			compatible = "nxp,imx-lpspi";
+			compatible = "nxp,lpspi";
 			reg = <0x40198000 0x4000>;
 			interrupts = <33 3>;
 			status = "disabled";

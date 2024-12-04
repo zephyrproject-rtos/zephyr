@@ -123,7 +123,7 @@ static int qdec_s32_ch_get(const struct device *dev, enum sensor_channel ch,
 	return 0;
 }
 
-static const struct sensor_driver_api qdec_s32_api = {
+static DEVICE_API(sensor, qdec_s32_api) = {
 	.sample_fetch = &qdec_s32_fetch,
 	.channel_get = &qdec_s32_ch_get,
 };

@@ -24,6 +24,7 @@
 #include <zephyr/dt-bindings/sensor/stts22h.h>
 #include <zephyr/dt-bindings/sensor/ina226.h>
 #include <zephyr/dt-bindings/sensor/apds9253.h>
+#include <zephyr/dt-bindings/sensor/tmp116.h>
 
 /****************************************
  * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
@@ -478,6 +479,7 @@ test_i2c_tmp112: tmp112@46 {
 test_i2c_tmp116: tmp116@47 {
 	compatible = "ti,tmp116";
 	reg = <0x47>;
+	odr = <TMP116_DT_ODR_125_MS>;
 };
 
 test_i2c_bq274xx: bq27xx@48 {

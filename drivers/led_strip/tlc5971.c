@@ -322,7 +322,7 @@ static int tlc5971_init(const struct device *dev)
 	return 0;
 }
 
-static const struct led_strip_driver_api tlc5971_api = {
+static DEVICE_API(led_strip, tlc5971_api) = {
 	.update_rgb = tlc5971_update_rgb,
 	.length = tlc5971_length,
 };

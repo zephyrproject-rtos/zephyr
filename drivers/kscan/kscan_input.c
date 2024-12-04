@@ -94,7 +94,7 @@ static int kscan_input_init(const struct device *dev)
 	return 0;
 }
 
-static const struct kscan_driver_api kscan_input_driver_api = {
+static DEVICE_API(kscan, kscan_input_driver_api) = {
 	.config = kscan_input_configure,
 	.enable_callback = kscan_input_enable_callback,
 	.disable_callback = kscan_input_disable_callback,

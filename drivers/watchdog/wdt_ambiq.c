@@ -166,7 +166,7 @@ static int wdt_ambiq_init(const struct device *dev)
 	return 0;
 }
 
-static const struct wdt_driver_api wdt_ambiq_driver_api = {
+static DEVICE_API(wdt, wdt_ambiq_driver_api) = {
 	.setup = wdt_ambiq_setup,
 	.disable = wdt_ambiq_disable,
 	.install_timeout = wdt_ambiq_install_timeout,

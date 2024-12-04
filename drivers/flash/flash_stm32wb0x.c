@@ -427,7 +427,7 @@ void flash_wb0x_pages_layout(const struct device *dev,
 }
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
-static const struct flash_driver_api flash_wb0x_api = {
+static DEVICE_API(flash, flash_wb0x_api) = {
 	.erase = flash_wb0x_erase,
 	.write = flash_wb0x_write,
 	.read = flash_wb0x_read,

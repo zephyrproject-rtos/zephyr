@@ -68,6 +68,11 @@ static struct k_poll_event can_shell_rx_msgq_events[] = {
 static void can_shell_tx_msgq_triggered_work_handler(struct k_work *work);
 static void can_shell_rx_msgq_triggered_work_handler(struct k_work *work);
 
+static bool can_device_check(const struct device *dev)
+{
+	return DEVICE_API_IS(can, dev) && device_is_ready(dev);
+}
+
 #ifdef CONFIG_CAN_SHELL_SCRIPTING_FRIENDLY
 static void can_shell_dummy_bypass_cb(const struct shell *sh, uint8_t *data, size_t len)
 {
@@ -279,7 +284,7 @@ static int cmd_can_start(const struct shell *sh, size_t argc, char **argv)
 	const struct device *dev = device_get_binding(argv[1]);
 	int err;
 
-	if (!device_is_ready(dev)) {
+	if (!can_device_check(dev)) {
 		shell_error(sh, "device %s not ready", argv[1]);
 		return -ENODEV;
 	}
@@ -300,7 +305,7 @@ static int cmd_can_stop(const struct shell *sh, size_t argc, char **argv)
 	const struct device *dev = device_get_binding(argv[1]);
 	int err;
 
-	if (!device_is_ready(dev)) {
+	if (!can_device_check(dev)) {
 		shell_error(sh, "device %s not ready", argv[1]);
 		return -ENODEV;
 	}
@@ -331,7 +336,7 @@ static int cmd_can_show(const struct shell *sh, size_t argc, char **argv)
 	can_mode_t cap;
 	int err;
 
-	if (!device_is_ready(dev)) {
+	if (!can_device_check(dev)) {
 		shell_error(sh, "device %s not ready", argv[1]);
 		return -ENODEV;
 	}
@@ -436,7 +441,7 @@ static int cmd_can_bitrate_set(const struct shell *sh, size_t argc, char **argv)
 	char *endptr;
 	int err;
 
-	if (!device_is_ready(dev)) {
+	if (!can_device_check(dev)) {
 		shell_error(sh, "device %s not ready", argv[1]);
 		return -ENODEV;
 	}
@@ -507,7 +512,7 @@ static int cmd_can_dbitrate_set(const struct shell *sh, size_t argc, char **argv
 	char *endptr;
 	int err;
 
-	if (!device_is_ready(dev)) {
+	if (!can_device_check(dev)) {
 		shell_error(sh, "device %s not ready", argv[1]);
 		return -ENODEV;
 	}
@@ -613,7 +618,7 @@ static int cmd_can_timing_set(const struct shell *sh, size_t argc, char **argv)
 	struct can_timing timing = { 0 };
 	int err;
 
-	if (!device_is_ready(dev)) {
+	if (!can_device_check(dev)) {
 		shell_error(sh, "device %s not ready", argv[1]);
 		return -ENODEV;
 	}
@@ -642,7 +647,7 @@ static int cmd_can_dtiming_set(const struct shell *sh, size_t argc, char **argv)
 	struct can_timing timing = { 0 };
 	int err;
 
-	if (!device_is_ready(dev)) {
+	if (!can_device_check(dev)) {
 		shell_error(sh, "device %s not ready", argv[1]);
 		return -ENODEV;
 	}
@@ -675,7 +680,7 @@ static int cmd_can_mode_set(const struct shell *sh, size_t argc, char **argv)
 	int i;
 	int j;
 
-	if (!device_is_ready(dev)) {
+	if (!can_device_check(dev)) {
 		shell_error(sh, "device %s not ready", argv[1]);
 		return -ENODEV;
 	}
@@ -727,7 +732,7 @@ static int cmd_can_send(const struct shell *sh, size_t argc, char **argv)
 	int err;
 	int i;
 
-	if (!device_is_ready(dev)) {
+	if (!can_device_check(dev)) {
 		shell_error(sh, "device %s not ready", argv[1]);
 		return -ENODEV;
 	}
@@ -844,7 +849,7 @@ static int cmd_can_filter_add(const struct shell *sh, size_t argc, char **argv)
 	char *endptr;
 	int err;
 
-	if (!device_is_ready(dev)) {
+	if (!can_device_check(dev)) {
 		shell_error(sh, "device %s not ready", argv[1]);
 		return -ENODEV;
 	}
@@ -940,7 +945,7 @@ static int cmd_can_filter_remove(const struct shell *sh, size_t argc, char **arg
 	int filter_id;
 	char *endptr;
 
-	if (!device_is_ready(dev)) {
+	if (!can_device_check(dev)) {
 		shell_error(sh, "device %s not ready", argv[1]);
 		return -ENODEV;
 	}
@@ -966,7 +971,7 @@ static int cmd_can_recover(const struct shell *sh, size_t argc, char **argv)
 	char *endptr;
 	int err;
 
-	if (!device_is_ready(dev)) {
+	if (!can_device_check(dev)) {
 		shell_error(sh, "device %s not ready", argv[1]);
 		return -ENODEV;
 	}
@@ -996,7 +1001,7 @@ static int cmd_can_recover(const struct shell *sh, size_t argc, char **argv)
 
 static void cmd_can_device_name(size_t idx, struct shell_static_entry *entry)
 {
-	const struct device *dev = shell_device_lookup(idx, NULL);
+	const struct device *dev = shell_device_filter(idx, can_device_check);
 
 	entry->syntax = (dev != NULL) ? dev->name : NULL;
 	entry->handler = NULL;

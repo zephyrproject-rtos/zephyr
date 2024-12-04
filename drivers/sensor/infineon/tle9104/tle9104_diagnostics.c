@@ -64,7 +64,7 @@ static int tle9104_diagnostics_channel_get(const struct device *dev, enum sensor
 	}
 }
 
-static const struct sensor_driver_api tle9104_diagnostics_driver_api = {
+static DEVICE_API(sensor, tle9104_diagnostics_driver_api) = {
 	.sample_fetch = tle9104_diagnostics_sample_fetch,
 	.channel_get = tle9104_diagnostics_channel_get,
 };

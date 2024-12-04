@@ -439,7 +439,7 @@ static int mmc56x3_attr_get(const struct device *dev, enum sensor_channel chan,
 	return ret;
 }
 
-static const struct sensor_driver_api mmc56x3_api_funcs = {
+static DEVICE_API(sensor, mmc56x3_api_funcs) = {
 	.sample_fetch = mmc56x3_sample_fetch,
 	.channel_get = mmc56x3_channel_get,
 	.attr_get = mmc56x3_attr_get,

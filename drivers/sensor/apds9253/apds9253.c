@@ -226,7 +226,7 @@ static int apds9253_init(const struct device *dev)
 	return 0;
 }
 
-static const struct sensor_driver_api apds9253_driver_api = {
+static DEVICE_API(sensor, apds9253_driver_api) = {
 	.sample_fetch = &apds9253_sample_fetch,
 	.channel_get = &apds9253_channel_get,
 };

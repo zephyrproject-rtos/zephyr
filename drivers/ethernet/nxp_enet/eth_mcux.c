@@ -1711,7 +1711,7 @@ static int ptp_clock_mcux_rate_adjust(const struct device *dev, double ratio)
 	return 0;
 }
 
-static const struct ptp_clock_driver_api api = {
+static DEVICE_API(ptp_clock, api) = {
 	.set = ptp_clock_mcux_set,
 	.get = ptp_clock_mcux_get,
 	.adjust = ptp_clock_mcux_adjust,

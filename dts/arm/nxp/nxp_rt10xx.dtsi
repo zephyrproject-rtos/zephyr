@@ -453,7 +453,7 @@
 		};
 
 		lpspi1: spi@40394000 {
-			compatible = "nxp,imx-lpspi";
+			compatible = "nxp,lpspi";
 			reg = <0x40394000 0x4000>;
 			interrupts = <32 3>;
 			status = "disabled";
@@ -463,7 +463,7 @@
 		};
 
 		lpspi2: spi@40398000 {
-			compatible = "nxp,imx-lpspi";
+			compatible = "nxp,lpspi";
 			reg = <0x40398000 0x4000>;
 			interrupts = <33 3>;
 			status = "disabled";
@@ -473,7 +473,7 @@
 		};
 
 		lpspi3: spi@4039c000 {
-			compatible = "nxp,imx-lpspi";
+			compatible = "nxp,lpspi";
 			reg = <0x4039c000 0x4000>;
 			interrupts = <34 3>;
 			status = "disabled";
@@ -483,7 +483,7 @@
 		};
 
 		lpspi4: spi@403a0000 {
-			compatible = "nxp,imx-lpspi";
+			compatible = "nxp,lpspi";
 			reg = <0x403a0000 0x4000>;
 			interrupts = <35 3>;
 			status = "disabled";

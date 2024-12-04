@@ -130,7 +130,7 @@ static int can_kvaser_pci_init(const struct device *dev)
 	return 0;
 }
 
-const struct can_driver_api can_kvaser_pci_driver_api = {
+DEVICE_API(can, can_kvaser_pci_driver_api) = {
 	.get_capabilities = can_sja1000_get_capabilities,
 	.start = can_sja1000_start,
 	.stop = can_sja1000_stop,

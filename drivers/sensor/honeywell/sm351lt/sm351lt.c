@@ -177,7 +177,7 @@ static int sm351lt_attr_get(const struct device *dev,
 }
 #endif
 
-static const struct sensor_driver_api sm351lt_api_funcs = {
+static DEVICE_API(sensor, sm351lt_api_funcs) = {
 	.sample_fetch = sm351lt_sample_fetch,
 	.channel_get = sm351lt_channel_get,
 #if CONFIG_SM351LT_TRIGGER

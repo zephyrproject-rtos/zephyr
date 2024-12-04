@@ -225,7 +225,7 @@ static void ptp_clock_nxp_enet_isr(const struct device *dev)
 	irq_unlock(irq_lock_key);
 }
 
-static const struct ptp_clock_driver_api ptp_clock_nxp_enet_api = {
+static DEVICE_API(ptp_clock, ptp_clock_nxp_enet_api) = {
 	.set = ptp_clock_nxp_enet_set,
 	.get = ptp_clock_nxp_enet_get,
 	.adjust = ptp_clock_nxp_enet_adjust,

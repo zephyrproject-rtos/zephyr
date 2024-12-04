@@ -380,7 +380,7 @@ static int gpio_npcx_manage_callback(const struct device *dev,
 }
 
 /* GPIO driver registration */
-static const struct gpio_driver_api gpio_npcx_driver = {
+static DEVICE_API(gpio, gpio_npcx_driver) = {
 	.pin_configure = gpio_npcx_config,
 #ifdef CONFIG_GPIO_GET_CONFIG
 	.pin_get_config = gpio_npcx_pin_get_config,

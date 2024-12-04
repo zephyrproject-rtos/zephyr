@@ -118,7 +118,7 @@ unlock:
 	return err;
 }
 
-static const struct rtc_driver_api ds1307_driver_api = {
+static DEVICE_API(rtc, ds1307_driver_api) = {
 	.set_time = ds1307_set_time,
 	.get_time = ds1307_get_time,
 };

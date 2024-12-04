@@ -247,7 +247,7 @@ static int mcux_dcnano_lcdif_init(const struct device *dev)
 	return 0;
 }
 
-static const struct display_driver_api mcux_dcnano_lcdif_api = {
+static DEVICE_API(display, mcux_dcnano_lcdif_api) = {
 	.blanking_on = mcux_dcnano_lcdif_display_blanking_on,
 	.blanking_off = mcux_dcnano_lcdif_display_blanking_off,
 	.set_pixel_format = mcux_dcnano_lcdif_set_pixel_format,

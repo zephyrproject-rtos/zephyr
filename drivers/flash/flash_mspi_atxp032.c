@@ -774,7 +774,7 @@ static int flash_mspi_atxp032_pm_action(const struct device *flash, enum pm_devi
 }
 #endif /** IS_ENABLED(CONFIG_PM_DEVICE) */
 
-static const struct flash_driver_api flash_mspi_atxp032_api = {
+static DEVICE_API(flash, flash_mspi_atxp032_api) = {
 	.erase = flash_mspi_atxp032_erase,
 	.write = flash_mspi_atxp032_write,
 	.read = flash_mspi_atxp032_read,

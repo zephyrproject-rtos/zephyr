@@ -144,7 +144,7 @@ static int nxp_enet_qos_mdio_write(const struct device *dev,
 	return do_transaction(&mdio_write);
 }
 
-static const struct mdio_driver_api nxp_enet_qos_mdio_api = {
+static DEVICE_API(mdio, nxp_enet_qos_mdio_api) = {
 	.read = nxp_enet_qos_mdio_read,
 	.write = nxp_enet_qos_mdio_write,
 };

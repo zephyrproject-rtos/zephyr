@@ -1150,7 +1150,7 @@ static int can_rcar_get_max_filters(const struct device *dev, bool ide)
 	return CONFIG_CAN_RCAR_MAX_FILTER;
 }
 
-static const struct can_driver_api can_rcar_driver_api = {
+static DEVICE_API(can, can_rcar_driver_api) = {
 	.get_capabilities = can_rcar_get_capabilities,
 	.start = can_rcar_start,
 	.stop = can_rcar_stop,

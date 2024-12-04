@@ -599,7 +599,7 @@ static void spi_nxp_s32_transfer_callback(const struct device *dev, Spi_Ip_Event
 }
 #endif /*CONFIG_NXP_S32_SPI_INTERRUPT*/
 
-static const struct spi_driver_api spi_nxp_s32_driver_api = {
+static DEVICE_API(spi, spi_nxp_s32_driver_api) = {
 	.transceive = spi_nxp_s32_transceive,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_nxp_s32_transceive_async,
