@@ -5,7 +5,6 @@
  */
 
 #include <fsl_clock.h>
-#include <fsl_flexspi.h>
 #include <soc.h>
 #include <errno.h>
 #include <zephyr/irq.h>
@@ -48,10 +47,13 @@ uint32_t flexspi_clock_set_freq(uint32_t clock_name, uint32_t rate)
 	/* Cap divider to max value */
 	divider = MIN(divider, kCLOCK_FlexspiDivBy8);
 
-	while (FLEXSPI_GetBusIdleStatus(flexspi) == false) {
+	/* Wait for bus idle */
+	while (((flexspi->STS0 & FLEXSPI_STS0_ARBIDLE_MASK) == 0U) ||
+	       ((flexspi->STS0 & FLEXSPI_STS0_SEQIDLE_MASK) == 0U)) {
 		/* Spin */
 	}
-	FLEXSPI_Enable(flexspi, false);
+	/* Disable FlexSPI */
+	flexspi->MCR0 |= FLEXSPI_MCR0_MDIS_MASK;
 
 	CLOCK_DisableClock(clk_name);
 
@@ -59,9 +61,13 @@ uint32_t flexspi_clock_set_freq(uint32_t clock_name, uint32_t rate)
 
 	CLOCK_EnableClock(clk_name);
 
-	FLEXSPI_Enable(flexspi, true);
+	/* Enable FlexSPI */
+	flexspi->MCR0 &= ~FLEXSPI_MCR0_MDIS_MASK;
 
-	FLEXSPI_SoftwareReset(flexspi);
+	flexspi->MCR0 |= FLEXSPI_MCR0_SWRESET_MASK;
+	while (flexspi->MCR0 & FLEXSPI_MCR0_SWRESET_MASK)  {
+		/* Wait for HW to reset flexspi */
+	}
 
 	return 0;
 }
