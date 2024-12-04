@@ -1,0 +1,18 @@
+common:
+  build_only: true
+  tags:
+    - bluetooth
+  platform_allow:
+    - nrf52_bsim/native
+    - nrf5340bsim/nrf5340/cpunet
+  harness: bsim
+
+tests:
+  bluetooth.host.l2cap.send_on_connect:
+    harness_config:
+      bsim_exe_name: tests_bsim_bluetooth_host_l2cap_send_on_connect_prj_conf
+  bluetooth.host.l2cap.send_on_connect_ecred:
+    harness_config:
+      bsim_exe_name: tests_bsim_bluetooth_host_l2cap_send_on_connect_prj_ecred_conf
+    extra_args:
+      CONF_FILE=prj_ecred.conf
