@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,14 +14,15 @@
 	compatible = "nxp,mimxrt1189";
 
 	chosen {
-		zephyr,sram = &hyperram0;
+		zephyr,sram = &dtcm;
 		zephyr,dtcm = &dtcm;
 		zephyr,itcm = &itcm;
 		zephyr,flash-controller = &w25q128jw;
-		zephyr,flash = &w25q128jw;
-		zephyr,console = &lpuart1;
-		zephyr,shell-uart = &lpuart1;
+		zephyr,flash = &itcm;
+		zephyr,console = &lpuart12;
+		zephyr,shell-uart = &lpuart12;
 		zephyr,canbus = &flexcan3;
+		nxp,m7-partition = &slot1_partition;
 	};
 
 	hyperram0: memory@04000000 {
@@ -31,7 +32,7 @@
 	};
 };
 
-&lpuart1 {
+&lpuart12 {
 	status = "okay";
 	current-speed = <115200>;
 };
