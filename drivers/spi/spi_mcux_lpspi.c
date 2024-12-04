@@ -29,8 +29,8 @@ LOG_MODULE_REGISTER(spi_mcux_lpspi, CONFIG_SPI_LOG_LEVEL);
 /* If any hardware revisions change this, make it into a DT property.
  * DONT'T make #ifdefs here by platform.
  */
-#define CHIP_SELECT_COUNT 4
-#define MAX_DATA_WIDTH    4096
+#define LPSPI_CHIP_SELECT_COUNT   4
+#define LPSPI_MIN_FRAME_SIZE_BITS 8
 
 /* Required by DEVICE_MMIO_NAMED_* macros */
 #define DEV_CFG(_dev)  ((const struct spi_mcux_config *)(_dev)->config)
@@ -161,29 +161,35 @@ static int spi_mcux_configure(const struct device *dev, const struct spi_config 
 	uint32_t word_size = SPI_WORD_SIZE_GET(spi_cfg->operation);
 	lpspi_master_config_t master_config;
 	uint32_t clock_freq;
+	int ret;
 
 	if (spi_cfg->operation & SPI_HALF_DUPLEX) {
+		/* the IP DOES support half duplex, need to implement driver support */
 		LOG_ERR("Half-duplex not supported");
 		return -ENOTSUP;
 	}
 
-	if (spi_cfg->slave > CHIP_SELECT_COUNT) {
-		LOG_ERR("Slave %d is greater than %d", spi_cfg->slave, CHIP_SELECT_COUNT);
+	if (word_size < 8 || (word_size % 32 == 1)) {
+		/* Zephyr word size == hardware FRAME size (not word size)
+		 * Max frame size: 4096 bits
+		 *   (zephyr field is 6 bit wide for max 64 bit size, no need to check)
+		 * Min frame size: 8 bits.
+		 * Minimum hardware word size is 2. Since this driver is intended to work
+		 * for 32 bit platforms, and 64 bits is max size, then only 33 and 1 are invalid.
+		 */
+		LOG_ERR("Word size %d not allowed", word_size);
 		return -EINVAL;
 	}
 
-	if (word_size > MAX_DATA_WIDTH) {
-		LOG_ERR("Word size %d is greater than %d", word_size, MAX_DATA_WIDTH);
+	if (spi_cfg->slave > LPSPI_CHIP_SELECT_COUNT) {
+		LOG_ERR("Peripheral %d select exceeds max %d", spi_cfg->slave,
+			LPSPI_CHIP_SELECT_COUNT - 1);
 		return -EINVAL;
 	}
 
-	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("clock control device not ready");
-		return -ENODEV;
-	}
-
-	if (clock_control_get_rate(config->clock_dev, config->clock_subsys, &clock_freq)) {
-		return -EINVAL;
+	ret = clock_control_get_rate(config->clock_dev, config->clock_subsys, &clock_freq);
+	if (ret) {
+		return ret;
 	}
 
 	if (data->ctx.config != NULL) {
@@ -198,10 +204,6 @@ static int spi_mcux_configure(const struct device *dev, const struct spi_config 
 			 * completed the current transfer and is idle.
 			 */
 		}
-	}
-
-	if (IS_ENABLED(CONFIG_DEBUG)) {
-		base->CR |= LPSPI_CR_DBGEN_MASK;
 	}
 
 	data->ctx.config = spi_cfg;
@@ -226,6 +228,10 @@ static int spi_mcux_configure(const struct device *dev, const struct spi_config 
 	LPSPI_MasterInit(base, &master_config, clock_freq);
 	LPSPI_MasterTransferCreateHandle(base, &data->handle, spi_mcux_master_callback, data);
 	LPSPI_SetDummyData(base, 0);
+
+	if (IS_ENABLED(CONFIG_DEBUG)) {
+		base->CR |= LPSPI_CR_DBGEN_MASK;
+	}
 
 	return 0;
 }
@@ -750,6 +756,11 @@ static int spi_mcux_init(const struct device *dev)
 	DEVICE_MMIO_NAMED_MAP(dev, reg_base, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
 
 	data->dev = dev;
+
+	if (!device_is_ready(config->clock_dev)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
 
 	if (IS_ENABLED(CONFIG_SPI_MCUX_LPSPI_DMA) && lpspi_inst_has_dma(data)) {
 		err = lpspi_dma_devs_ready(data);
