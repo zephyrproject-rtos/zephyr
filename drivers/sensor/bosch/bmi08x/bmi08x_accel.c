@@ -548,7 +548,7 @@ static int bmi08x_accel_pm_action(const struct device *dev, enum pm_device_actio
 }
 #endif /* CONFIG_PM_DEVICE */
 
-static DEVICE_API(sensor, bmi08x_api) = {
+static const struct sensor_driver_api bmi08x_api = {
 	.attr_set = bmi08x_attr_set,
 #ifdef CONFIG_BMI08X_ACCEL_TRIGGER
 	.trigger_set = bmi08x_trigger_set_acc,
@@ -736,19 +736,19 @@ int bmi08x_accel_init(const struct device *dev)
 	return ret;
 }
 
-#define BMI08X_CONFIG_SPI(inst)								    \
-	.bus.spi = SPI_DT_SPEC_INST_GET(							   \
+#define BMI08X_CONFIG_SPI(inst)                                                                    \
+	.bus.spi = SPI_DT_SPEC_INST_GET(                                                           \
 		inst, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8), 2),
 
 #define BMI08X_CONFIG_I2C(inst) .bus.i2c = I2C_DT_SPEC_INST_GET(inst),
 
-#define BMI08X_ACCEL_TRIG(inst)								    \
+#define BMI08X_ACCEL_TRIG(inst)                                                                    \
 	.int1_map = DT_INST_PROP(inst, int1_map_io), .int2_map = DT_INST_PROP(inst, int2_map_io),  \
-	.int1_conf_io = DT_INST_PROP(inst, int1_conf_io),					  \
+	.int1_conf_io = DT_INST_PROP(inst, int1_conf_io),                                          \
 	.int2_conf_io = DT_INST_PROP(inst, int2_conf_io),
 
 /* verify the bmi08x-accel is paired with a bmi08x-gyro */
-#define BMI08X_VERIFY_DATA_SYNC(inst)							      \
+#define BMI08X_VERIFY_DATA_SYNC(inst)                                                              \
 	BUILD_ASSERT(DT_NODE_HAS_COMPAT(DT_INST_PHANDLE(inst, data_sync), bosch_bmi08x_gyro) != 0, \
 		     "bmi08x-accel data sync not paired with a bmi08x-gyro")
 /*
@@ -759,26 +759,26 @@ int bmi08x_accel_init(const struct device *dev)
 #define BMI08X_GYRO_ODR(inst)  DT_ENUM_IDX(DT_INST_PHANDLE(inst, data_sync), gyro_hz)
 #define BMI08X_ACCEL_ODR(inst) DT_INST_ENUM_IDX(inst, accel_hz)
 /* As the dts uses strings to define the definition, ints must be used for comparision */
-#define BMI08X_VERIFY_DATA_SYNC_ODR(inst)							  \
-	BUILD_ASSERT((BMI08X_GYRO_ODR(inst) == 3 && BMI08X_ACCEL_ODR(inst) == 5) ||		\
-			     (BMI08X_GYRO_ODR(inst) == 2 && BMI08X_ACCEL_ODR(inst) == 6) ||	\
-			     ((BMI08X_GYRO_ODR(inst) == 1 || BMI08X_GYRO_ODR(inst) == 0) &&	\
-			      BMI08X_ACCEL_ODR(inst) == 7),					\
+#define BMI08X_VERIFY_DATA_SYNC_ODR(inst)                                                          \
+	BUILD_ASSERT((BMI08X_GYRO_ODR(inst) == 3 && BMI08X_ACCEL_ODR(inst) == 5) ||                \
+			     (BMI08X_GYRO_ODR(inst) == 2 && BMI08X_ACCEL_ODR(inst) == 6) ||        \
+			     ((BMI08X_GYRO_ODR(inst) == 1 || BMI08X_GYRO_ODR(inst) == 0) &&        \
+			      BMI08X_ACCEL_ODR(inst) == 7),                                        \
 		     "Invalid gyro and accel odr for data-sync")
 /* Assert if the gyro does not have data-sync enabled */
-#define BMI08X_VERIFY_GYRO_DATA_SYNC_EN(inst)						      \
-	BUILD_ASSERT(DT_PROP(DT_INST_PHANDLE(inst, data_sync), data_sync),			 \
+#define BMI08X_VERIFY_GYRO_DATA_SYNC_EN(inst)                                                      \
+	BUILD_ASSERT(DT_PROP(DT_INST_PHANDLE(inst, data_sync), data_sync),                         \
 		     "paired bmi08x-gyro does not have data-sync enabled")
 
 /* infer the data-sync value from the gyro and accel odr 2000=1, 1000=2, 400=3, otherwise it is 0 if
  * it is not enabled. the build_assert should prevent any invalid values when it is enabled
  */
-#define BMI08X_DATA_SYNC_REG_VAL(inst)							     \
-	(BMI08X_GYRO_ODR(inst) == 3 && BMI08X_ACCEL_ODR(inst) == 5)   ? 3			  \
-	: (BMI08X_GYRO_ODR(inst) == 2 && BMI08X_ACCEL_ODR(inst) == 6) ? 2			  \
-	: ((BMI08X_GYRO_ODR(inst) == 1 || BMI08X_GYRO_ODR(inst) == 0) &&			   \
-	   BMI08X_ACCEL_ODR(inst) == 7)							    \
-		? 1										\
+#define BMI08X_DATA_SYNC_REG_VAL(inst)                                                             \
+	(BMI08X_GYRO_ODR(inst) == 3 && BMI08X_ACCEL_ODR(inst) == 5)   ? 3                          \
+	: (BMI08X_GYRO_ODR(inst) == 2 && BMI08X_ACCEL_ODR(inst) == 6) ? 2                          \
+	: ((BMI08X_GYRO_ODR(inst) == 1 || BMI08X_GYRO_ODR(inst) == 0) &&                           \
+	   BMI08X_ACCEL_ODR(inst) == 7)                                                            \
+		? 1                                                                                \
 		: 0
 
 /* define the .data_sync in the driver config */
@@ -786,37 +786,37 @@ int bmi08x_accel_init(const struct device *dev)
 /* if another bmi08x as the data sync enabled, and one doesn't, it will get the value of 0 and won't
  * have the config file sent over
  */
-#define BMI08X_DATA_SYNC_REG(inst)								 \
-	.data_sync = COND_CODE_1(BMI08X_ACCEL_DATA_SYNC_EN(inst),				  \
+#define BMI08X_DATA_SYNC_REG(inst)                                                                 \
+	.data_sync = COND_CODE_1(BMI08X_ACCEL_DATA_SYNC_EN(inst),                                  \
 				 (BMI08X_DATA_SYNC_REG_VAL(inst)), (0)),
 #define BMI08X_ACCEL_TRIGGER_PINS(inst) BMI08X_ACCEL_TRIG(inst)
 #else
 #define BMI08X_DATA_SYNC_REG(inst)
-#define BMI08X_ACCEL_TRIGGER_PINS(inst)							    \
+#define BMI08X_ACCEL_TRIGGER_PINS(inst)                                                            \
 	IF_ENABLED(CONFIG_BMI08X_ACCEL_TRIGGER, (BMI08X_ACCEL_TRIG(inst)))
 #endif
 
-#define BMI08X_CREATE_INST(inst)								   \
-												   \
-	IF_ENABLED(BMI08X_ACCEL_DATA_SYNC_EN(inst), (BMI08X_VERIFY_DATA_SYNC(inst);))	      \
-	IF_ENABLED(BMI08X_ACCEL_DATA_SYNC_EN(inst), (BMI08X_VERIFY_DATA_SYNC_ODR(inst);))	  \
+#define BMI08X_CREATE_INST(inst)                                                                   \
+                                                                                                   \
+	IF_ENABLED(BMI08X_ACCEL_DATA_SYNC_EN(inst), (BMI08X_VERIFY_DATA_SYNC(inst);))              \
+	IF_ENABLED(BMI08X_ACCEL_DATA_SYNC_EN(inst), (BMI08X_VERIFY_DATA_SYNC_ODR(inst);))          \
 	IF_ENABLED(BMI08X_ACCEL_DATA_SYNC_EN(inst), (BMI08X_VERIFY_GYRO_DATA_SYNC_EN(inst);))      \
-												   \
-	static struct bmi08x_accel_data bmi08x_drv_##inst;					 \
-												   \
-	static const struct bmi08x_accel_config bmi08x_config_##inst = {			   \
-		COND_CODE_1(DT_INST_ON_BUS(inst, spi), (BMI08X_CONFIG_SPI(inst)),		  \
-			    (BMI08X_CONFIG_I2C(inst)))					     \
-			.api = COND_CODE_1(DT_INST_ON_BUS(inst, spi), (&bmi08x_spi_api),	   \
-					   (&bmi08x_i2c_api)),				     \
-		IF_ENABLED(CONFIG_BMI08X_ACCEL_TRIGGER,					    \
-			   (.int_gpio = GPIO_DT_SPEC_INST_GET(inst, int_gpios),))		  \
-			BMI08X_ACCEL_TRIGGER_PINS(inst)					    \
-				.accel_hz = DT_INST_ENUM_IDX(inst, accel_hz) + 5,		  \
-		.accel_fs = DT_INST_PROP(inst, accel_fs), BMI08X_DATA_SYNC_REG(inst)};	     \
-												   \
-	PM_DEVICE_DT_INST_DEFINE(inst, bmi08x_accel_pm_action);				    \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, bmi08x_accel_init, PM_DEVICE_DT_INST_GET(inst),	 \
+                                                                                                   \
+	static struct bmi08x_accel_data bmi08x_drv_##inst;                                         \
+                                                                                                   \
+	static const struct bmi08x_accel_config bmi08x_config_##inst = {                           \
+		COND_CODE_1(DT_INST_ON_BUS(inst, spi), (BMI08X_CONFIG_SPI(inst)),                  \
+			    (BMI08X_CONFIG_I2C(inst)))                                             \
+			.api = COND_CODE_1(DT_INST_ON_BUS(inst, spi), (&bmi08x_spi_api),           \
+					   (&bmi08x_i2c_api)),                                     \
+		IF_ENABLED(CONFIG_BMI08X_ACCEL_TRIGGER,                                            \
+			   (.int_gpio = GPIO_DT_SPEC_INST_GET(inst, int_gpios),))                  \
+			BMI08X_ACCEL_TRIGGER_PINS(inst)                                            \
+				.accel_hz = DT_INST_ENUM_IDX(inst, accel_hz) + 5,                  \
+		.accel_fs = DT_INST_PROP(inst, accel_fs), BMI08X_DATA_SYNC_REG(inst)};             \
+                                                                                                   \
+	PM_DEVICE_DT_INST_DEFINE(inst, bmi08x_accel_pm_action);                                    \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, bmi08x_accel_init, PM_DEVICE_DT_INST_GET(inst),         \
 				     &bmi08x_drv_##inst, &bmi08x_config_##inst, POST_KERNEL,       \
 				     CONFIG_SENSOR_INIT_PRIORITY, &bmi08x_api);
 
