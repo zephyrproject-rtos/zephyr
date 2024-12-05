@@ -1,5 +1,10 @@
 :orphan:
 
+..
+  What goes here: anything that is likely to require a change in a downstream
+  application using a specific subsystem or driver. Renamed or removed bindings
+  or properties, Kconfig options, etc.
+
 .. _migration_4.1:
 
 Migration guide to Zephyr v4.1.0 (Working Draft)
