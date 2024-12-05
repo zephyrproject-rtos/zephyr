@@ -26,7 +26,6 @@ tests:
   sample.drivers.jesd216.nrf52840dk_spi:
     extra_args:
       - DTC_OVERLAY_FILE=boards/nrf52840dk_nrf52840_spi.overlay
-      - EXTRA_CONF_FILE=boards/nrf52840dk_nrf52840_spi.conf
     platform_allow: nrf52840dk/nrf52840
     integration_platforms:
       - nrf52840dk/nrf52840
