@@ -340,7 +340,8 @@ static int cdc_ncm_out_start(struct usbd_class_data *const c_data)
 	return  ret;
 }
 
-static int verify_nth16(const union recv_ntb *ntb, uint16_t len, uint16_t seq)
+static int verify_nth16(struct cdc_ncm_eth_data *const data,
+			const union recv_ntb *const ntb, const uint16_t len)
 {
 	const struct nth16 *nthdr16 = &ntb->nth;
 	const struct ndp16 *ndphdr16;
@@ -361,6 +362,14 @@ static int verify_nth16(const union recv_ntb *ntb, uint16_t len, uint16_t seq)
 			(unsigned int)sys_le32_to_cpu(nthdr16->dwSignature));
 		return -EINVAL;
 	}
+
+	if (sys_le16_to_cpu(nthdr16->wSequence) != data->rx_seq) {
+		LOG_WRN("OUT NTH wSequence %u mismatch expected %u",
+			sys_le16_to_cpu(nthdr16->wSequence), data->rx_seq);
+		data->rx_seq = sys_le16_to_cpu(nthdr16->wSequence);
+	}
+
+	data->rx_seq++;
 
 	if (len < (sizeof(struct nth16) + sizeof(struct ndp16) +
 		   2U * sizeof(struct ndp16_datagram))) {
@@ -385,13 +394,6 @@ static int verify_nth16(const union recv_ntb *ntb, uint16_t len, uint16_t seq)
 	     (len - (sizeof(struct ndp16) + 2U * sizeof(struct ndp16_datagram))))) {
 		LOG_DBG("DROP: ndp pos %d (%d)",
 			sys_le16_to_cpu(nthdr16->wNdpIndex), len);
-		return -EINVAL;
-	}
-
-	if (sys_le16_to_cpu(nthdr16->wSequence) != 0 &&
-	    sys_le16_to_cpu(nthdr16->wSequence) != (seq + 1)) {
-		LOG_DBG("DROP: seq %d %d",
-			seq, sys_le16_to_cpu(nthdr16->wSequence));
 		return -EINVAL;
 	}
 
@@ -433,7 +435,7 @@ static int check_frame(struct cdc_ncm_eth_data *data, struct net_buf *const buf)
 	int ret;
 
 	/* TODO: support nth32 */
-	ret = verify_nth16(ntb, len, data->rx_seq);
+	ret = verify_nth16(data, ntb, len);
 	if (ret < 0) {
 		LOG_ERR("Failed to verify NTH16");
 		return ret;
@@ -487,8 +489,6 @@ static int check_frame(struct cdc_ncm_eth_data *data, struct net_buf *const buf)
 
 		ndx++;
 	}
-
-	data->rx_seq = sys_le16_to_cpu(nthdr16->wSequence);
 
 	if (DUMP_PKT) {
 		LOG_HEXDUMP_DBG(ntb->data, len, "NTB");
@@ -837,6 +837,7 @@ static void usbd_cdc_ncm_update(struct usbd_class_data *const c_data,
 	if (data_iface == iface && alternate == 0) {
 		atomic_clear_bit(&data->state, CDC_NCM_DATA_IFACE_ENABLED);
 		data->tx_seq = 0;
+		data->rx_seq = 0;
 	}
 
 	if (data_iface == iface && alternate == 1) {
