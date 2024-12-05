@@ -248,9 +248,10 @@ static int adv_send(struct bt_mesh_ext_adv *ext_adv, struct bt_mesh_adv *adv)
 
 static bool stop_proxy_adv(struct bt_mesh_ext_adv *ext_adv)
 {
-	if (atomic_test_and_clear_bit(ext_adv->flags, ADV_FLAG_PROXY)) {
-		int err = bt_le_ext_adv_stop(ext_adv->instance);
+	int err;
 
+	if (atomic_test_and_clear_bit(ext_adv->flags, ADV_FLAG_PROXY)) {
+		err = bt_le_ext_adv_stop(ext_adv->instance);
 		__ASSERT_NO_MSG(err == 0);
 
 		atomic_clear_bit(ext_adv->flags, ADV_FLAG_ACTIVE);
@@ -369,8 +370,16 @@ static void send_pending_adv(struct k_work *work)
 		 * proxy advertising, the proxy advertising needs to be stop and
 		 * sent pending advertising immediately.
 		 */
-	} while ((adv = bt_mesh_adv_get_by_tag(ext_adv->tags, K_NO_WAIT)) &&
-		 stop_proxy_adv(ext_adv));
+		adv = bt_mesh_adv_get_by_tag(ext_adv->tags, K_NO_WAIT);
+		if (!adv) {
+			return;
+		}
+
+		(void)stop_proxy_adv(ext_adv);
+
+		/* Give other threads a chance to run. */
+		k_yield();
+	} while (1);
 }
 
 static bool schedule_send(struct bt_mesh_ext_adv *ext_adv)
