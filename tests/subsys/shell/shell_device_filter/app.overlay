@@ -1,0 +1,8 @@
+/ {
+	chosen {
+		/* Remove extra unneed devices that cause the "test_unfiltered"
+		 * test to fail.
+		 */
+		/delete-property/ zephyr,entropy;
+	};
+};
