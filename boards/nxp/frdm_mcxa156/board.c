@@ -124,6 +124,13 @@ static int frdm_mcxa156_init(void)
 	CLOCK_EnableClock(kCLOCK_GateDAC0);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpadc0))
+	CLOCK_SetClockDiv(kCLOCK_DivADC0, 1u);
+	CLOCK_AttachClk(kFRO12M_to_ADC0);
+
+	CLOCK_EnableClock(kCLOCK_GateADC0);
+#endif
+
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
 
