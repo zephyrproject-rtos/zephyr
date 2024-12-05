@@ -137,7 +137,8 @@ jobs:
           if [ "${{matrix.subset}}" = "1" ]; then
             ./scripts/zephyr_module.py --twister-out module_tests.args
             if [ -s module_tests.args ]; then
-              ./scripts/twister +module_tests.args --outdir module_tests ${TWISTER_COMMON} ${PUSH_OPTIONS}
+              # FIXME: workaround for modules with invalid test data
+              ./scripts/twister +module_tests.args --outdir module_tests ${TWISTER_COMMON} ${PUSH_OPTIONS} --integration
             fi
           fi
 
