@@ -646,6 +646,10 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 		return -ENOTSUP;
 	}
 
+	if (pclken->div) {
+		*rate /= (pclken->div + 1);
+	}
+
 	return 0;
 }
 
