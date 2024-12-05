@@ -103,3 +103,8 @@
 &dcdc {
 	interrupts = <8 0>;
 };
+
+&dma0 {
+	clocks = <&cmu CLOCK_LDMA0 CLOCK_BRANCH_HCLK>;
+	interrupts = <26 0>;
+};
