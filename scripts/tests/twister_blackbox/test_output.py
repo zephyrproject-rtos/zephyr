@@ -97,7 +97,7 @@ class TestOutput:
         assert str(sys_exit.value) == '1'
 
         rel_path = os.path.relpath(path, ZEPHYR_BASE)
-        build_path = os.path.join(out_path, 'qemu_x86_atom', rel_path, 'always_fail.dummy', 'build.log')
+        build_path = os.path.join(out_path, 'qemu_x86_atom', 'zephyr', rel_path, 'always_fail.dummy', 'build.log')
         with open(build_path) as f:
             build_log = f.read()
 
@@ -147,12 +147,13 @@ class TestOutput:
         matches = []
         for line in err.split('\n'):
             columns = line.split()
-            if len(columns) == 8:
-                for i in range(8):
-                    match = re.fullmatch(regex_line[i], columns[i])
+            regexes = len(regex_line)
+            if len(columns) == regexes:
+                for i, column in enumerate(columns):
+                    match = re.fullmatch(regex_line[i], column)
                     if match:
                         matches.append(match)
-                if len(matches) == 8:
+                if len(matches) == regexes:
                     return matches
                 else:
                     matches = []
@@ -192,7 +193,7 @@ class TestOutput:
             assert 'Total test suites: ' not in out
 
         # Brief summary shows up only on verbosity 0 - instance-by-instance otherwise
-        regex_info_line = [r'INFO', r'-', r'\d+/\d+', r'\S+', r'\S+', r'[A-Z]+', r'\(\w+', r'[\d.]+s\)']
+        regex_info_line = [r'INFO', r'-', r'\d+/\d+', r'\S+', r'\S+', r'[A-Z]+', r'\(\w+', r'[\d.]+s', r'<\S+>\)']
         info_matches = self._get_matches(err, regex_info_line)
         if not any(f in flags for f in ['-v', '-vv']):
             assert not info_matches

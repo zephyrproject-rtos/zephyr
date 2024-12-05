@@ -46,7 +46,7 @@ class TestError:
         ),
         (
             '--overflow-as-errors',
-            r'always_overflow.dummy ERROR Build failure \(build\)'
+            r'always_overflow.dummy ERROR Build failure \(build <zephyr>\)'
         )
     ]
 

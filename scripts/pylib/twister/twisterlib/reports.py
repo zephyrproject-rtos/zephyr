@@ -357,6 +357,8 @@ class Reporting:
                 suite["used_rom"] = used_rom
 
             suite['retries'] = instance.retries
+            if instance.toolchain:
+                suite['toolchain'] = instance.toolchain
 
             if instance.dut:
                 suite["dut"] = instance.dut

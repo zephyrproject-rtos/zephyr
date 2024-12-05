@@ -66,6 +66,7 @@ class TwisterConfigParser:
                        "vendor_exclude": {"type": "set"},
                        "extra_sections": {"type": "list", "default": []},
                        "integration_platforms": {"type": "list", "default": []},
+                       "integration_toolchains": {"type": "list", "default": []},
                        "ignore_faults": {"type": "bool", "default": False },
                        "ignore_qemu_crash": {"type": "bool", "default": False },
                        "testcases": {"type": "list", "default": []},
