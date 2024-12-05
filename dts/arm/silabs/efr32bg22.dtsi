@@ -24,6 +24,10 @@
 	interrupts = <10 2 18 2>;
 };
 
+&dma0 {
+	interrupts = <21 0>;
+};
+
 &i2c0 {
 	interrupts = <27 0>;
 };
