@@ -135,11 +135,6 @@ static void *lb_get_desc(struct usbd_class_data *const c_data,
 
 static int lb_init(struct usbd_class_data *c_data)
 {
-	struct lb_data *data = usbd_class_get_private(c_data);
-	struct loopback_desc *desc = data->desc;
-
-	desc->iad.bFirstInterface = desc->if0.bInterfaceNumber;
-
 	LOG_DBG("Init class instance %p", c_data);
 
 	return 0;
