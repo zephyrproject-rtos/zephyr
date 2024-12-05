@@ -35,4 +35,8 @@
 			supply-gpios = <&test_gpio_0 2 0>;
 		};
 	};
+
+	chosen {
+		/delete-property/ zephyr,entropy;
+	};
 };
