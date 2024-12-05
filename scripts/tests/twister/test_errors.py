@@ -7,12 +7,19 @@ Tests for the error classes
 """
 
 import os
+import re
 import pytest
 
 from pathlib import Path
-from twisterlib.error import StatusAttributeError
-from twisterlib.error import ConfigurationError
+from twisterlib.error import (
+    StatusAttributeError,
+    StatusAssignmentError,
+    StatusInitError,
+    StatusKeyError,
+    ConfigurationError
+)
 from twisterlib.harness import Test
+from twisterlib.statuses import TwisterStatus
 
 
 def test_configurationerror():
@@ -25,11 +32,43 @@ def test_configurationerror():
         raise ConfigurationError(cfile, message)
 
 
-def test_status_value_error():
+def test_status_assignment_error():
     harness = Test()
 
-    expected_err = 'Test assigned status OK,' \
-                   ' which could not be cast to a TwisterStatus.'
+    expected_err = 'Test assigned status "OK", which could not be cast to a TwisterStatus.'
+
+    with pytest.raises(StatusAssignmentError, match=expected_err):
+        harness.status = "OK"
+
+
+def test_status_attribute_error():
+    harness = Test()
+
+    expected_err = (
+        'Attempted access to nonexistent TwisterStatus.OK. Please verify the status list.'
+    )
 
     with pytest.raises(StatusAttributeError, match=expected_err):
-        harness.status = "OK"
+        harness.status = TwisterStatus.OK
+
+
+def test_status_init_error():
+    harness = Test()
+
+    expected_err = (
+        'Attempted initialisation of status "OK", which could not be cast to a TwisterStatus.'
+    )
+
+    with pytest.raises(StatusInitError, match=expected_err):
+        harness.status = TwisterStatus("OK")
+
+
+def test_status_key_error():
+    harness = Test()
+
+    expected_err = re.escape(
+        'Attempted access to nonexistent TwisterStatus[OK]. Please verify the status list.'
+    )
+
+    with pytest.raises(StatusKeyError, match=expected_err):
+        harness.status = TwisterStatus["OK"]

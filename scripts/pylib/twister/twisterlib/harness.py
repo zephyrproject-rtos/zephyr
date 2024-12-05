@@ -19,7 +19,7 @@ from enum import Enum
 from pytest import ExitCode
 from twisterlib.constants import SUPPORTED_SIMS_IN_PYTEST
 from twisterlib.environment import PYTEST_PLUGIN_INSTALLED, ZEPHYR_BASE
-from twisterlib.error import ConfigurationError, StatusAttributeError
+from twisterlib.error import ConfigurationError, StatusAssignmentError
 from twisterlib.handlers import Handler, terminate_process
 from twisterlib.reports import ReportStatus
 from twisterlib.statuses import TwisterStatus
@@ -82,7 +82,7 @@ class Harness:
             key = value.name if isinstance(value, Enum) else value
             self._status = TwisterStatus[key]
         except KeyError as err:
-            raise StatusAttributeError(self.__class__, value) from err
+            raise StatusAssignmentError(self.__class__, value) from err
 
     def configure(self, instance):
         self.instance = instance
