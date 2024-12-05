@@ -1,0 +1,18 @@
+# Copyright (c) 2024 tinyVision.ai Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_EMUL_IMAGER
+	bool "Software implementation of an imager"
+	depends on DT_HAS_ZEPHYR_VIDEO_EMUL_IMAGER_ENABLED
+	default y
+	help
+	  Enable driver for the emulated Imager.
+
+config VIDEO_EMUL_IMAGER_FRAMEBUFFER_SIZE
+	int "Internal framebuffer size used for link emulation purpose"
+	default 4096
+	help
+	  Configure the size of the internal framebuffer the emulated Imager
+	  driver uses to simulate MIPI transfers. This is the first field of
+	  dev->data, and the emulated video MIPI driver will `memcpy()` it
+	  into the video buffer.
