@@ -55,7 +55,7 @@ tests:
   drivers.flash.common.mx25r_high_perf:
     platform_allow: nrf52840dk/nrf52840
     extra_configs:
-      - CONFIG_TEST_DRIVER_FLASH_SIZE=216142092
+      - CONFIG_TEST_DRIVER_FLASH_SIZE=8388608
     extra_args:
       - EXTRA_CONF_FILE=boards/nrf52840dk_flash_spi.conf
       - DTC_OVERLAY_FILE=boards/nrf52840dk_mx25r_high_perf.overlay
