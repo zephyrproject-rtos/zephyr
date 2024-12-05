@@ -1,0 +1,26 @@
+# Copyright (c) 2024 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Silabs LDMA controller
+
+  The Silabs LDMA is a general-purpose direct memory access controller
+  capable of supporting 8 independent DMA channels. It supports specific
+  functions like scatter-gather.
+
+  It is present on silabs radio board devices like EFR32xG21
+
+compatible: "silabs,ldma"
+
+include: dma-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  dma_channels:
+    type: int
+    required: true
