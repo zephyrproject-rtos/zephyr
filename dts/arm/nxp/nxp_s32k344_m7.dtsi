@@ -571,6 +571,8 @@
 			clocks = <&clock NXP_S32_LPSPI0_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <4>;
+			rx-fifo-size = <4>;
 			status = "disabled";
 		};
 
@@ -581,6 +583,8 @@
 			clocks = <&clock NXP_S32_LPSPI1_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <4>;
+			rx-fifo-size = <4>;
 			status = "disabled";
 		};
 
@@ -591,6 +595,8 @@
 			clocks = <&clock NXP_S32_LPSPI2_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <4>;
+			rx-fifo-size = <4>;
 			status = "disabled";
 		};
 
@@ -601,6 +607,8 @@
 			clocks = <&clock NXP_S32_LPSPI3_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <4>;
+			rx-fifo-size = <4>;
 			status = "disabled";
 		};
 
@@ -611,6 +619,8 @@
 			clocks = <&clock NXP_S32_LPSPI4_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <4>;
+			rx-fifo-size = <4>;
 			status = "disabled";
 		};
 
@@ -621,6 +631,8 @@
 			clocks = <&clock NXP_S32_LPSPI5_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <4>;
+			rx-fifo-size = <4>;
 			status = "disabled";
 		};
 

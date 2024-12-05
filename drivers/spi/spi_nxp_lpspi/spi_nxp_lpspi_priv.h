@@ -42,6 +42,8 @@ struct spi_mcux_config {
 	const struct pinctrl_dev_config *pincfg;
 	lpspi_pin_config_t data_pin_config;
 	bool output_config;
+	uint8_t tx_fifo_size;
+	uint8_t rx_fifo_size;
 };
 
 struct spi_mcux_data {
@@ -99,6 +101,8 @@ int spi_mcux_release(const struct device *dev, const struct spi_config *spi_cfg)
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
 		.data_pin_config = DT_INST_ENUM_IDX(n, data_pin_config),                           \
 		.output_config = DT_INST_PROP(n, tristate_output),                                 \
+		.rx_fifo_size = (uint8_t)DT_INST_PROP(n, rx_fifo_size),                            \
+		.tx_fifo_size = (uint8_t)DT_INST_PROP(n, tx_fifo_size),                            \
 	};
 
 #define SPI_NXP_LPSPI_COMMON_INIT(n)                                                               \
