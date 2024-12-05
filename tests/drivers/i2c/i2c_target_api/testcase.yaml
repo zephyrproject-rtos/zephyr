@@ -37,6 +37,7 @@ tests:
   drivers.i2c.target_api.single_role:
     platform_allow:
       - frdm_mcxn947/mcxn947/cpu0
+      - mcxw72_evk/mcxw727c/cpu0
       - mimxrt1170_evk@B/mimxrt1176/cm7
       - mimxrt1170_evk/mimxrt1176/cm7
       - mimxrt1180_evk/mimxrt1189/cm33
