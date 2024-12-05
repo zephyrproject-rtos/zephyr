@@ -90,7 +90,53 @@ struct spi_mcux_data {
 #endif
 };
 
-static int spi_mcux_transfer_next_packet(const struct device *dev);
+static int lpspi_do_single_buf_transfer(const struct device *dev, lpspi_transfer_t *xfer)
+{
+	struct spi_mcux_data *data = dev->data;
+	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
+	status_t status;
+
+	status = LPSPI_MasterTransferNonBlocking(base, &data->handle, xfer);
+	if (status != kStatus_Success) {
+		LOG_ERR("Transfer could not start on %s: %d", dev->name, status);
+		return status == kStatus_LPSPI_Busy ? -EBUSY : -EINVAL;
+	}
+
+	return 0;
+}
+
+static void lpspi_prepare_transfer_single_buffer(const struct device *dev, lpspi_transfer_t *xfer)
+{
+	struct spi_mcux_data *data = dev->data;
+	struct spi_context *ctx = &data->ctx;
+	size_t max_chunk = spi_context_max_continuous_chunk(ctx);
+
+	data->transfer_len = max_chunk;
+
+	xfer->configFlags = LPSPI_MASTER_XFER_CFG_FLAGS(ctx->config->slave);
+	xfer->txData = (ctx->tx_len == 0 ? NULL : ctx->tx_buf);
+	xfer->rxData = (ctx->rx_len == 0 ? NULL : ctx->rx_buf);
+	xfer->dataSize = max_chunk;
+
+	return;
+}
+
+static int lpspi_transfer_single_buffer(const struct device *dev)
+{
+	struct spi_mcux_data *data = dev->data;
+	struct spi_context *ctx = &data->ctx;
+	lpspi_transfer_t xfer;
+
+	if (spi_context_max_continuous_chunk(ctx) == 0) {
+		spi_context_cs_control(ctx, false);
+		spi_context_complete(ctx, dev, 0);
+		return 0;
+	}
+
+	lpspi_prepare_transfer_single_buffer(dev, &xfer);
+
+	return lpspi_do_single_buf_transfer(dev, &xfer);
+}
 
 static void spi_mcux_isr(const struct device *dev)
 {
@@ -100,6 +146,7 @@ static void spi_mcux_isr(const struct device *dev)
 	LPSPI_MasterTransferHandleIRQ(LPSPI_IRQ_HANDLE_ARG, &data->handle);
 }
 
+/* called by the isr */
 static void spi_mcux_master_callback(LPSPI_Type *base, lpspi_master_handle_t *handle,
 				     status_t status, void *userData)
 {
@@ -108,38 +155,7 @@ static void spi_mcux_master_callback(LPSPI_Type *base, lpspi_master_handle_t *ha
 	spi_context_update_tx(&data->ctx, 1, data->transfer_len);
 	spi_context_update_rx(&data->ctx, 1, data->transfer_len);
 
-	spi_mcux_transfer_next_packet(data->dev);
-}
-
-static int spi_mcux_transfer_next_packet(const struct device *dev)
-{
-	struct spi_mcux_data *data = dev->data;
-	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
-	struct spi_context *ctx = &data->ctx;
-	size_t max_chunk = spi_context_max_continuous_chunk(ctx);
-	lpspi_transfer_t transfer;
-	status_t status;
-
-	if (max_chunk == 0) {
-		spi_context_cs_control(ctx, false);
-		spi_context_complete(ctx, dev, 0);
-		return 0;
-	}
-
-	data->transfer_len = max_chunk;
-
-	transfer.configFlags = LPSPI_MASTER_XFER_CFG_FLAGS(ctx->config->slave);
-	transfer.txData = (ctx->tx_len == 0 ? NULL : ctx->tx_buf);
-	transfer.rxData = (ctx->rx_len == 0 ? NULL : ctx->rx_buf);
-	transfer.dataSize = max_chunk;
-
-	status = LPSPI_MasterTransferNonBlocking(base, &data->handle, &transfer);
-	if (status != kStatus_Success) {
-		LOG_ERR("Transfer could not start on %s: %d", dev->name, status);
-		return status == kStatus_LPSPI_Busy ? -EBUSY : -EINVAL;
-	}
-
-	return 0;
+	lpspi_transfer_single_buffer(data->dev);
 }
 
 static int spi_mcux_configure(const struct device *dev, const struct spi_config *spi_cfg)
@@ -593,9 +609,8 @@ static void spi_mcux_iodev_start(const struct device *dev)
 
 	spi_context_cs_control(&data->ctx, true);
 
-	status = LPSPI_MasterTransferNonBlocking(base, &data->handle, &transfer);
-	if (status != kStatus_Success) {
-		LOG_ERR("Transfer could not start on %s: %d", dev->name, status);
+	status = lpspi_do_single_buf_transfer(dev, &transfer);
+	if (status) {
 		spi_mcux_iodev_complete(dev, -EIO);
 	}
 }
@@ -670,12 +685,13 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 
 	spi_context_cs_control(&data->ctx, true);
 
-	ret = spi_mcux_transfer_next_packet(dev);
+	ret = lpspi_transfer_single_buffer(dev);
 	if (ret) {
 		goto out;
 	}
 
 	ret = spi_context_wait_for_completion(&data->ctx);
+
 out:
 	spi_context_release(&data->ctx, ret);
 
