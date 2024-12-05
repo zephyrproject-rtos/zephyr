@@ -1,0 +1,41 @@
+/*
+ * Copyright (c) 2024, TDK Invensense
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Get a node identifier for 6-axis IMU sensor.
+ */
+/ {
+	aliases {
+		6dof-motion-drdy0 = &icm42670p;
+	};
+};
+
+/* Example configuration of a ICM42670-P device on spi2 compatible with an Arduino SPI bus.
+ *
+ * Configure 100Hz IMU data reporting
+ */
+&arduino_spi {
+	status = "okay";
+	cs-gpios = <&arduino_header 14 GPIO_ACTIVE_LOW>; /* D8 */
+	icm42670p: icm42670p@0 {
+		compatible = "invensense,icm42670p";
+		reg = <0>;
+		spi-max-frequency = <1000000>; /* conservatively set to 1MHz */
+		int-gpios = <&arduino_header 8 GPIO_ACTIVE_HIGH>; /* D2 */
+		accel-hz = <100>;
+		gyro-hz = <100>;
+		accel-fs = <16>;
+		gyro-fs = <2000>;
+	};
+};
+
+/*
+ * Increase native UART speed to report all IMU data at 100Hz.
+ */
+&uart0 {
+	compatible = "nordic,nrf-uarte";
+	current-speed = <1000000>;
+};
