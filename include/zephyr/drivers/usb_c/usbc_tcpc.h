@@ -145,7 +145,7 @@ __subsystem struct tcpc_driver_api {
 	int (*dump_std_reg)(const struct device *dev);
 	void (*alert_handler_cb)(const struct device *dev, void *data, enum tcpc_alert alert);
 	int (*get_status_register)(const struct device *dev, enum tcpc_status_reg reg,
-				   int32_t *status);
+				   uint32_t *status);
 	int (*clear_status_register)(const struct device *dev, enum tcpc_status_reg reg,
 				     uint32_t mask);
 	int (*mask_status_register)(const struct device *dev, enum tcpc_status_reg reg,
@@ -573,7 +573,7 @@ static inline int tcpc_set_alert_handler_cb(const struct device *dev,
  * @retval -ENOSYS if not implemented
  */
 static inline int tcpc_get_status_register(const struct device *dev, enum tcpc_status_reg reg,
-					   int32_t *status)
+					   uint32_t *status)
 {
 	const struct tcpc_driver_api *api = (const struct tcpc_driver_api *)dev->api;
 

@@ -423,7 +423,7 @@ void ps8xxx_tcpc_alert_handler_cb(const struct device *dev, void *data, enum tcp
 }
 
 int ps8xxx_tcpc_get_status_register(const struct device *dev, enum tcpc_status_reg reg,
-				    int32_t *status)
+				    uint32_t *status)
 {
 	return -ENOSYS;
 }
