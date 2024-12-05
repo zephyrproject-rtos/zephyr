@@ -331,6 +331,8 @@
 			clocks = <&clkctl0 MCUX_FLEXCOMM0_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
 			status = "disabled";
 		};
 
@@ -368,6 +370,8 @@
 			clocks = <&clkctl0 MCUX_FLEXCOMM1_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
 			status = "disabled";
 		};
 
@@ -405,6 +409,8 @@
 			clocks = <&clkctl0 MCUX_FLEXCOMM2_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
 			status = "disabled";
 		};
 
@@ -442,6 +448,8 @@
 			clocks = <&clkctl0 MCUX_FLEXCOMM3_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
 			status = "disabled";
 		};
 
@@ -479,6 +487,8 @@
 			clocks = <&clkctl0 MCUX_FLEXCOMM4_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
 			status = "disabled";
 		};
 
@@ -516,6 +526,8 @@
 			clocks = <&clkctl0 MCUX_FLEXCOMM5_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
 			status = "disabled";
 		};
 
@@ -553,6 +565,8 @@
 			clocks = <&clkctl0 MCUX_FLEXCOMM6_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
 			status = "disabled";
 		};
 
@@ -590,6 +604,8 @@
 			clocks = <&clkctl0 MCUX_FLEXCOMM7_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
 			status = "disabled";
 		};
 
@@ -627,6 +643,8 @@
 			clocks = <&clkctl0 MCUX_FLEXCOMM8_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
 			status = "disabled";
 		};
 
@@ -664,6 +682,8 @@
 			clocks = <&clkctl0 MCUX_FLEXCOMM9_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
 			status = "disabled";
 		};
 
@@ -701,6 +721,8 @@
 			clocks = <&clkctl0 MCUX_FLEXCOMM10_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
 			status = "disabled";
 		};
 
@@ -738,6 +760,8 @@
 			clocks = <&clkctl0 MCUX_FLEXCOMM11_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
 			status = "disabled";
 		};
 
@@ -775,6 +799,8 @@
 			clocks = <&clkctl0 MCUX_FLEXCOMM12_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
 			status = "disabled";
 		};
 
@@ -812,6 +838,8 @@
 			clocks = <&clkctl0 MCUX_FLEXCOMM13_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
 			status = "disabled";
 		};
 
@@ -833,6 +861,8 @@
 		clocks = <&clkctl4 MCUX_LPSPI14_CLK>;
 		#address-cells = <1>;
 		#size-cells = <0>;
+		tx-fifo-size = <8>;
+		rx-fifo-size = <8>;
 		status = "disabled";
 	};
 
@@ -856,6 +886,8 @@
 		clocks = <&clkctl4 MCUX_LPSPI16_CLK>;
 		#address-cells = <1>;
 		#size-cells = <0>;
+		tx-fifo-size = <8>;
+		rx-fifo-size = <8>;
 		status = "disabled";
 	};
 
