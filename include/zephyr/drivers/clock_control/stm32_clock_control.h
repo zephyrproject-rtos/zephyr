@@ -431,7 +431,8 @@
 /** Driver structure definition */
 
 struct stm32_pclken {
-	uint32_t bus;
+	uint32_t bus : STM32_CLOCK_DIV_SHIFT;
+	uint32_t div : (32 - STM32_CLOCK_DIV_SHIFT);
 	uint32_t enr;
 };
 
@@ -440,7 +441,9 @@ struct stm32_pclken {
 #define STM32_CLOCK_INFO(clk_index, node_id)				\
 	{								\
 	.enr = DT_CLOCKS_CELL_BY_IDX(node_id, clk_index, bits),		\
-	.bus = DT_CLOCKS_CELL_BY_IDX(node_id, clk_index, bus)		\
+	.bus = DT_CLOCKS_CELL_BY_IDX(node_id, clk_index, bus) & 0xff,	\
+	.div = DT_CLOCKS_CELL_BY_IDX(node_id, clk_index, bus) >>	\
+		STM32_CLOCK_DIV_SHIFT,					\
 	}
 #define STM32_DT_CLOCKS(node_id)					\
 	{								\

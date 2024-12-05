@@ -271,10 +271,10 @@ static inline int stm32_clock_control_configure(const struct device *dev,
 	return 0;
 }
 
-static inline int get_apb0_periph_clkrate(uint32_t enr, uint32_t *rate,
-	uint32_t slow_clock, uint32_t sysclk, uint32_t clk_sys)
+static inline int get_apb0_periph_clkrate(struct stm32_pclken *pclken,
+	uint32_t *rate, uint32_t slow_clock, uint32_t sysclk, uint32_t clk_sys)
 {
-	switch (enr) {
+	switch (pclken->enr) {
 	/* Slow clock peripherals: RTC & IWDG */
 	case LL_APB0_GRP1_PERIPH_RTC:
 	case LL_APB0_GRP1_PERIPH_WDG:
@@ -305,13 +305,17 @@ static inline int get_apb0_periph_clkrate(uint32_t enr, uint32_t *rate,
 		return -ENOTSUP;
 	}
 
+	if (pclken->div) {
+		*rate /= (pclken->div + 1);
+	}
+
 	return 0;
 }
 
-static inline int get_apb1_periph_clkrate(uint32_t enr, uint32_t *rate,
-	uint32_t clk_sys)
+static inline int get_apb1_periph_clkrate(struct stm32_pclken *pclken,
+	uint32_t *rate, uint32_t clk_sys)
 {
-	switch (enr) {
+	switch (pclken->enr) {
 #if defined(SPI1)
 	case LL_APB1_GRP1_PERIPH_SPI1:
 		*rate = clk_sys;
@@ -387,6 +391,10 @@ static inline int get_apb1_periph_clkrate(uint32_t enr, uint32_t *rate,
 		return -ENOTSUP;
 	}
 
+	if (pclken->div) {
+		*rate /= (pclken->div + 1);
+	}
+
 	return 0;
 }
 
@@ -457,11 +465,10 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 		*rate = clk_sys;
 		break;
 	case STM32_CLOCK_BUS_APB0:
-		return get_apb0_periph_clkrate(pclken->enr, rate,
-			slow_clock, sysclk, clk_sys);
+		return get_apb0_periph_clkrate(pclken, rate, slow_clock,
+					       sysclk, clk_sys);
 	case STM32_CLOCK_BUS_APB1:
-		return get_apb1_periph_clkrate(pclken->enr, rate,
-			clk_sys);
+		return get_apb1_periph_clkrate(pclken, rate, clk_sys);
 	case STM32_SRC_SYSCLK:
 		*rate = sysclk;
 		break;
@@ -492,6 +499,10 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 		 * very easily, this should not pose any problem.
 		 */
 		return -ENOTSUP;
+	}
+
+	if (pclken->div) {
+		*rate /= (pclken->div + 1);
 	}
 
 	return 0;

@@ -67,6 +67,17 @@ description: |
           should be the one matching SoC reset state. Confere reference manual to check
           what is the reset value of the clock source for each peripheral.
 
+  Specifying a divided domain clock source:
+
+  Some peripherals are sourced through fixed clock dividers. For such cases there is
+  STM32_CLOCK_DIV() macro, which allows to specify such divider value. Selecting HSE/2 (HSE
+  frequency divided by 2) is done with following clock property:
+  ... {
+           ...
+           clocks = <&rcc (STM32_SRC_HSE | STM32_CLOCK_DIV(2)) ...>;
+           ...
+  }
+
 compatible: "st,stm32-rcc"
 
 include: [clock-controller.yaml, base.yaml]
