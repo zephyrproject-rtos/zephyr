@@ -50,6 +50,15 @@ config ZMS_CUSTOM_BLOCK_SIZE
 	help
 	  Changes the internal buffer size of ZMS
 
+config ZMS_NO_DOUBLE_WRITE
+	bool "Avoid writing the same data again in the storage"
+	help
+	  For some memory technologies, write cycles for memory cells are limited and any
+	  unncessary writes should be avoided.
+	  Enable this config to avoid rewriting data in the storage if it already exists.
+	  This option will reduce write performance as it will need to do a research of the
+	  data in the whole storage before any write.
+
 module = ZMS
 module-str = zms
 source "subsys/logging/Kconfig.template.log_config"
