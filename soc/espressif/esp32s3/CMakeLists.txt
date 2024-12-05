@@ -62,7 +62,7 @@ if(CONFIG_ESP_SIMPLE_BOOT OR CONFIG_MCUBOOT)
       -o ${CMAKE_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.bin
       ${CMAKE_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.elf)
 
-  endif()
+ eppppcpndif()
 
 endif()
 
@@ -102,8 +102,6 @@ endif()
 
 if(CONFIG_MCUBOOT)
   set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/mcuboot.ld CACHE INTERNAL "")
-elseif(CONFIG_SOC_ESP32S3_APPCPU)
-  set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/default_appcpu.ld CACHE INTERNAL "")
 else()
   set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/default.ld CACHE INTERNAL "")
 endif()
