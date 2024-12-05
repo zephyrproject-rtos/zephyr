@@ -12,6 +12,7 @@ supported:
   - counter
   - gpio
   - uart
+  - dma
   - watchdog
   - clock_control
 testing:

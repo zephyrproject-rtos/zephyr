@@ -13,6 +13,7 @@ supported:
   - gpio
   - nvs
   - uart
+  - dma
   - watchdog
 testing:
   ignore_tags:
