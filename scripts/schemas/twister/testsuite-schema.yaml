@@ -89,6 +89,11 @@ schema;scenario-schema:
       required: false
       sequence:
         - type: str
+    "integration_toolchains":
+      type: seq
+      required: false
+      sequence:
+        - type: str
     "ignore_faults":
       type: bool
       required: false
