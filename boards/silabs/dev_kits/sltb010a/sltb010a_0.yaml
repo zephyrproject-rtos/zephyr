@@ -14,6 +14,7 @@ supported:
   - gpio
   - uart
   - i2c
+  - dma
   - spi
   - clock_control
 vendor: silabs
