@@ -33,6 +33,7 @@ properties:
     description: |
       Specifies the interface connection type between ethernet MAC and PHY.
     enum:
+      - "internal"
       - "mii"
       - "rmii"
       - "gmii"

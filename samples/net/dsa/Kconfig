@@ -1,0 +1,18 @@
+# Private config options for DSA
+
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "DSA sample application"
+
+if NET_DSA
+
+config NET_SAMPLE_DSA_LLDP
+	bool "DSA LLDP example"
+	default y
+	help
+	  Enable DSA LLDP example.
+
+endif
+
+source "Kconfig.zephyr"
