@@ -1,0 +1,9 @@
+sample:
+  name: TDK Sensor APEX sample
+tests:
+  sample.sensor.icm42670.apex:
+    build_only: true
+    tags: sensors
+    filter: dt_alias_exists("tdk_apex_sensor0")
+    integration_platforms:
+      - nrf52dk/nrf52832
