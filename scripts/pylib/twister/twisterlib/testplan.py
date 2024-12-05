@@ -614,27 +614,15 @@ class TestPlan:
                         )
 
                         # convert to fully qualified names
-                        _integration = []
-                        _platform_allow = []
-                        _platform_exclude = []
-                        for _ip in suite.integration_platforms:
-                            if _ip in self.platform_names:
-                                _integration.append(self.get_platform(_ip).name)
-                            else:
-                                logger.error(f"Platform {_ip} not found in the list of platforms")
-                        suite.integration_platforms = _integration
-                        for _pe in suite.platform_exclude:
-                            if _pe in self.platform_names:
-                                _platform_exclude.append(self.get_platform(_pe).name)
-                            else:
-                                logger.error(f"Platform {_pe} not found in the list of platforms")
-                        suite.platform_exclude = _platform_exclude
-                        for _pa in suite.platform_allow:
-                            if _pa in self.platform_names:
-                                _platform_allow.append(self.get_platform(_pa).name)
-                            else:
-                                logger.error(f"Platform {_pa} not found in the list of platforms")
-                        suite.platform_allow = _platform_allow
+                        suite.integration_platforms = self.verify_platforms_existence(
+                                suite.integration_platforms,
+                                f"integration_platforms in {suite.name}")
+                        suite.platform_exclude = self.verify_platforms_existence(
+                                suite.platform_exclude,
+                                f"platform_exclude in {suite.name}")
+                        suite.platform_allow =  self.verify_platforms_existence(
+                                suite.platform_allow,
+                                f"platform_allow in {suite.name}")
 
                         if suite.harness in ['ztest', 'test']:
                             if subcases is None:
@@ -1261,12 +1249,16 @@ class TestPlan:
         as platform_allow or integration_platforms options) is correct. If not -
         log and raise error.
         """
+        _platforms = []
         for platform in platform_names_to_verify:
             if platform in self.platform_names:
-                continue
+                p = self.get_platform(platform)
+                if p:
+                    _platforms.append(p.name)
             else:
                 logger.error(f"{log_info} - unrecognized platform - {platform}")
                 sys.exit(2)
+        return _platforms
 
     def create_build_dir_links(self):
         """
