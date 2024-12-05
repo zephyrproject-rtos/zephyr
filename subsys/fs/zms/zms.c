@@ -1392,12 +1392,10 @@ ssize_t zms_write(struct zms_fs *fs, uint32_t id, const void *data, size_t len)
 {
 	int rc;
 	size_t data_size;
-	struct zms_ate wlk_ate;
 	uint64_t wlk_addr;
 	uint64_t rd_addr;
 	uint32_t gc_count;
 	uint32_t required_space = 0U; /* no space, appropriate for delete ate */
-	int prev_found = 0;
 
 	if (!fs->ready) {
 		LOG_ERR("zms not initialized");
@@ -1428,15 +1426,14 @@ ssize_t zms_write(struct zms_fs *fs, uint32_t id, const void *data, size_t len)
 #endif
 	rd_addr = wlk_addr;
 
+#ifdef CONFIG_ZMS_NO_DOUBLE_WRITE
 	/* Search for a previous valid ATE with the same ID */
-	prev_found = zms_find_ate_with_id(fs, id, wlk_addr, fs->ate_wra, &wlk_ate, &rd_addr);
+	struct zms_ate wlk_ate;
+	int prev_found = zms_find_ate_with_id(fs, id, wlk_addr, fs->ate_wra, &wlk_ate, &rd_addr);
 	if (prev_found < 0) {
 		return prev_found;
 	}
 
-#ifdef CONFIG_ZMS_LOOKUP_CACHE
-no_cached_entry:
-#endif
 	if (prev_found) {
 		/* previous entry found */
 		if (len > ZMS_DATA_IN_ATE_SIZE) {
@@ -1473,7 +1470,11 @@ no_cached_entry:
 			return 0;
 		}
 	}
+#endif
 
+#ifdef CONFIG_ZMS_LOOKUP_CACHE
+no_cached_entry:
+#endif
 	/* calculate required space if the entry contains data */
 	if (data_size) {
 		/* Leave space for delete ate */
