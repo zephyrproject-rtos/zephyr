@@ -39,6 +39,7 @@ static ALWAYS_INLINE void clock_init(void)
 	};
 	/* Enable OSC32K */
 	CCM32K_Set32kOscConfig(CCM32K, kCCM32K_Enable32kHzCrystalOsc, &ccm32k_osc_config);
+
 	/* Disable ROSC Monitor, because switching the source would generate an expected error */
 	CLOCK_SetRoscMonitorMode(kSCG_RoscMonitorDisable);
 
