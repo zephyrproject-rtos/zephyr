@@ -70,24 +70,6 @@
 	status = "okay";
 };
 
-&flash0 {
-	partitions {
-		compatible = "fixed-partitions";
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		boot_partition: partition@0 {
-			label = "application";
-			reg = <0x00000000 DT_SIZE_K(128)>;
-		};
-
-		storage_partition: partition@20000 {
-			label = "storage";
-			reg = <0x20000 DT_SIZE_K(128)>;
-		};
-	};
-};
-
 &xtal {
 	clock-frequency = <DT_FREQ_M(20)>;
 	mosel = <0>;
@@ -104,4 +86,18 @@
 	div = <1>;
 	mul = <10 0>;
 	status = "okay";
+};
+
+&qspi0 {
+	pinctrl-0 = <&qspi_default>;
+	pinctrl-names = "default";
+	status = "okay";
+	at25sf128a: ra-qspi-nor@60000000 {
+		compatible = "renesas,ra-qspi-nor";
+		reg = <0x60000000 DT_SIZE_M(16)>;
+		size = <DT_SIZE_M(16)>;
+		status = "okay";
+		write-block-size = <1>;
+		erase-block-size = <4096>;
+	};
 };

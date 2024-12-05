@@ -154,6 +154,7 @@ zephyr_library_include_directories_ifdef(
   ${ZEPHYR_BASE}/drivers/memc
 )
 
+zephyr_library_sources_ifdef(CONFIG_FLASH_QSPI_RENESAS_RA flash_qspi_renesas_ra.c)
 if(CONFIG_RA_FLASH_HP)
   zephyr_library_sources(flash_hp_ra.c)
   zephyr_library_sources_ifdef(CONFIG_FLASH_EX_OP_ENABLED flash_hp_ra_ex_op.c)

@@ -100,6 +100,8 @@ The below features are currently supported on Zephyr OS for EK-RA6E2 board:
 +-----------+------------+----------------------+
 | SPI       | on-chip    | spi                  |
 +-----------+------------+----------------------+
+| QSPI      | on-chip    | qspi flash           |
++-----------+------------+----------------------+
 
 Other hardware features are currently not supported by the port.
 
