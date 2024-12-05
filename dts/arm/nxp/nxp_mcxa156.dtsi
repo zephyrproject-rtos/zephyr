@@ -237,6 +237,38 @@
 				run-in-wait;
 			};
 		};
+
+		lpadc0: lpadc@400af000 {
+			compatible = "nxp,lpc-lpadc";
+			reg = <0x400af000 0x1000>;
+			interrupts = <62 0>;
+			status = "disabled";
+			clk-divider = <1>;
+			clk-source = <0>;
+			voltage-ref= <2>;
+			calibration-average = <128>;
+			power-level = <0>;
+			offset-value-a = <0>;
+			offset-value-b = <0>;
+			#io-channel-cells = <1>;
+			clocks = <&syscon MCUX_LPADC1_CLK>;
+		};
+
+		lpadc1: lpadc@400b0000 {
+			compatible = "nxp,lpc-lpadc";
+			reg = <0x400b0000 0x1000>;
+			interrupts = <63 0>;
+			status = "disabled";
+			clk-divider = <1>;
+			clk-source = <0>;
+			voltage-ref= <2>;
+			calibration-average = <128>;
+			power-level = <1>;
+			offset-value-a = <0>;
+			offset-value-b = <0>;
+			#io-channel-cells = <1>;
+			clocks = <&syscon MCUX_LPADC2_CLK>;
+		};
 	};
 };
 
