@@ -15,7 +15,7 @@ tests:
       - rd_rw612_bga
       - frdm_rw612
     extra_configs:
-      - CONFIG_NXP_MONOLITHIC_BT=n
+      - CONFIG_NXP_MONOLITHIC_NBU=n
   bluetooth.general.tester_le_audio:
     build_only: true
     platform_allow:
