@@ -1,0 +1,5 @@
+int InitTarget(void) {
+  // Base address where DMI registers can be found in the APB address space
+  JLINK_ExecCommand("CORESIGHT_SetCoreBaseAddr = 0x5004C400");
+  return 0;
+}
