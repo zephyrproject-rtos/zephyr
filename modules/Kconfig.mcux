@@ -394,4 +394,9 @@ config NXP_RF_IMU
 	help
 	   RF_IMU adapter is needed for intercore messaging.
 
+config HAS_GLIKEY
+	bool
+	help
+	   Set if the GLIKEY module is present in the SoC.
+
 endif # HAS_MCUX
