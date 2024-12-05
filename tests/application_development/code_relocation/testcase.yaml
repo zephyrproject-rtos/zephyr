@@ -7,7 +7,7 @@ tests:
     extra_configs:
       - CONFIG_RELOCATE_TO_ITCM=y
     platform_allow:
-      - mimxrt1060_evk
+      - mimxrt1060_evk/mimxrt1062/qspi
   application_development.code_relocation_kinetis:
     filter: CONFIG_CPU_HAS_NXP_MPU
     arch_allow: arm
