@@ -248,9 +248,10 @@ static int adv_send(struct bt_mesh_ext_adv *ext_adv, struct bt_mesh_adv *adv)
 
 static bool stop_proxy_adv(struct bt_mesh_ext_adv *ext_adv)
 {
-	if (atomic_test_and_clear_bit(ext_adv->flags, ADV_FLAG_PROXY)) {
-		int err = bt_le_ext_adv_stop(ext_adv->instance);
+	int err;
 
+	if (atomic_test_and_clear_bit(ext_adv->flags, ADV_FLAG_PROXY)) {
+		err = bt_le_ext_adv_stop(ext_adv->instance);
 		__ASSERT_NO_MSG(err == 0);
 
 		atomic_clear_bit(ext_adv->flags, ADV_FLAG_ACTIVE);
