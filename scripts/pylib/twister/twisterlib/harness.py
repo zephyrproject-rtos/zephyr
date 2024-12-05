@@ -426,6 +426,9 @@ class Pytest(Harness):
             for fixture in handler.options.fixture:
                 command.append(f'--twister-fixture={fixture}')
 
+        if handler.options.extra_test_args and handler.type_str == 'native':
+            command.append(f'--extra-test-args={shlex.join(handler.options.extra_test_args)}')
+
         command.extend(pytest_args_yaml)
 
         if handler.options.pytest_args:
