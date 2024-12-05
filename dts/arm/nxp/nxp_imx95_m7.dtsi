@@ -156,6 +156,8 @@
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <16>;
+			rx-fifo-size = <16>;
 		};
 
 		lpspi4: spi@42560000 {
@@ -166,6 +168,8 @@
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <16>;
+			rx-fifo-size = <16>;
 		};
 
 		lpuart3: serial@42570000 {
@@ -281,6 +285,8 @@
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <16>;
+			rx-fifo-size = <16>;
 		};
 
 		lpspi6: spi@42700000 {
@@ -291,6 +297,8 @@
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <16>;
+			rx-fifo-size = <16>;
 		};
 
 		lpspi7: spi@42710000 {
@@ -301,6 +309,8 @@
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <16>;
+			rx-fifo-size = <16>;
 		};
 
 		lpspi8: spi@42720000 {
@@ -311,6 +321,8 @@
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <16>;
+			rx-fifo-size = <16>;
 		};
 
 		tpm1: pwm@44310000 {
@@ -363,6 +375,8 @@
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <16>;
+			rx-fifo-size = <16>;
 		};
 
 		lpspi2: spi@44370000 {
@@ -373,6 +387,8 @@
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			tx-fifo-size = <16>;
+			rx-fifo-size = <16>;
 		};
 
 		lpuart1: serial@44380000 {
