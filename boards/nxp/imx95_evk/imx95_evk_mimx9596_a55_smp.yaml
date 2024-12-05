@@ -15,4 +15,5 @@ ram: 1024
 supported:
   - smp
   - uart
+  - counter
 vendor: nxp
