@@ -12,6 +12,8 @@ supported:
   - counter
   - gpio
   - uart
+  - dma
+  - clock_control
 testing:
   ignore_tags:
     - net

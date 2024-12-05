@@ -66,6 +66,8 @@ The board configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial                              |
 +-----------+------------+-------------------------------------+
+| DMA       | on-chip    | ldma                                |
++-----------+------------+-------------------------------------+
 | TRNG      | on-chip    | semailbox                           |
 +-----------+------------+-------------------------------------+
 | WATCHDOG  | on-chip    | watchdog                            |
