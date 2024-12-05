@@ -43,6 +43,12 @@ Deprecated in this release
   the same functionality in their application code by reconnecting to the peer when the
   :c:member:`bt_conn_cb.disconnected` callback is invoked.
 
+* Deprecated TinyCrypt library. The reasons for this are (:github:`43712`):
+
+  * The upstream version of this library is no longer maintained.
+  * Reducing the number of cryptographic libraries in Zephyr to reduce maintenance overhead.
+  * The PSA Crypto API is the recommended cryptographic library for Zephyr.
+
 Architectures
 *************
 
