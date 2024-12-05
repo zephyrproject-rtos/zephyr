@@ -152,3 +152,7 @@ zephyr_udc0: &usbd {
 	regulator-always-on;
 	regulator-allowed-modes = <REGULATOR_RPI_PICO_MODE_NORMAL>;
 };
+
+&xosc {
+	startup-delay-multiplier = <64>;
+};
