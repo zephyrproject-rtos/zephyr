@@ -24,6 +24,18 @@
 #include <zephyr/dt-bindings/clock/imx_ccm_rev2.h>
 #include <cmsis_core.h>
 
+#if  defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_CPU_CORTEX_M33)
+#include <zephyr_image_info.h>
+/* Memcpy macro to copy segments from secondary core image stored in flash
+ * to RAM section that secondary core boots from.
+ * n is the segment number, as defined in zephyr_image_info.h
+ */
+#define MEMCPY_SEGMENT(n, _)							\
+	memcpy((uint32_t *)(((SEGMENT_LMA_ADDRESS_ ## n) - ADJUSTED_LMA) + 0x303C0000),	\
+		(uint32_t *)(SEGMENT_LMA_ADDRESS_ ## n),			\
+		(SEGMENT_SIZE_ ## n))
+#endif
+
 /*
  * Set ELE_STICK_FAILED_STS to 0 when ELE status check is not required,
  * which is useful when debug reset, where the core has already get the
@@ -444,7 +456,7 @@ static ALWAYS_INLINE void trdc_enable_all_access(void)
 	status_t sts;
 	uint8_t i, j;
 
-    /* Get ELE FW status */
+	/* Get ELE FW status */
 	do {
 		uint32_t ele_fw_sts;
 
@@ -535,6 +547,24 @@ void soc_early_init_hook(void)
 	/* Get trdc and enable all access modes for MBC and MRC of TRDCA and TRDCW */
 	trdc_enable_all_access();
 
+#if  defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_CPU_CORTEX_M33)
+	/**
+	 * Copy CM7 core from flash to memory. Note that depending on where the
+	 * user decided to store CM7 code, this is likely going to read from the
+	 * flexspi while using XIP. Provided we DO NOT WRITE TO THE FLEXSPI,
+	 * this operation is safe.
+	 *
+	 * Note that this copy MUST occur before enabling the M7 caching to
+	 * ensure the data is written directly to RAM (since the M4 core will use it)
+	 */
+	LISTIFY(SEGMENT_NUM, MEMCPY_SEGMENT, (;));
+#endif
+
+// #if DUAL_CORE_MU_ENABLED && CONFIG_CPU_CORTEX_M4
+// 	/* Set boot flag in messaging unit to indicate boot to primary core */
+// 	MU_SetFlags(MU_BASE, BOOT_FLAG);
+// #endif
+
 	/* Enable data cache */
 #if defined(CONFIG_IMXRT118X_CM33_XCACHE_PS)
 	XCACHE_EnableCache(XCACHE_PC);
@@ -551,5 +581,49 @@ void soc_early_init_hook(void)
 void soc_reset_hook(void)
 {
 	SystemInit();
+
+#if defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_CPU_CORTEX_M33)
+	Prepare_CM7(0);
+#endif
 }
+#endif
+
+#if defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_CPU_CORTEX_M33)
+/**
+ * @brief Kickoff secondary core.
+ *
+ * Kick the secondary core out of reset and wait for it to indicate boot. The
+ * core image was already copied to RAM (and the boot address was set) in
+ * imxrt_init()
+ *
+ * @return 0
+ */
+static int second_core_boot(void)
+{
+	/* Kick CM4 core out of reset */
+	/*
+	 * RT1180 Specific CM7 Kick Off operation
+	 */
+	/* Trigger S401 */
+	while ((MU_RT_S3MUA->TSR & MU_TSR_TE0_MASK) == 0)
+		; /* Wait TR empty */
+	MU_RT_S3MUA->TR[0] = 0x17d20106;
+	while ((MU_RT_S3MUA->RSR & MU_RSR_RF0_MASK) == 0)
+		; /* Wait RR Full */
+	while ((MU_RT_S3MUA->RSR & MU_RSR_RF1_MASK) == 0)
+		; /* Wait RR Full */
+
+	/* Response from ELE must be always read */
+	__attribute__((unused)) volatile uint32_t result1, result2;
+	result1 = MU_RT_S3MUA->RR[0];
+	result2 = MU_RT_S3MUA->RR[1];
+
+	/* Deassert Wait */
+	BLK_CTRL_S_AONMIX->M7_CFG =
+		(BLK_CTRL_S_AONMIX->M7_CFG & (~BLK_CTRL_S_AONMIX_M7_CFG_WAIT_MASK)) | BLK_CTRL_S_AONMIX_M7_CFG_WAIT(0);
+
+	return 0;
+}
+
+SYS_INIT(second_core_boot, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #endif

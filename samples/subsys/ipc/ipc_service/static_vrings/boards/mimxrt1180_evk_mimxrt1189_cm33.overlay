@@ -1,0 +1,51 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/ipc_service/static_vrings.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+
+/ {
+	/* Define memory regions for IPC
+	* Note that shared memory must have specific MPU attributes set.
+	*/
+	sram1_ipc0: memory@30060000{
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x30060000 DT_SIZE_K(16)>;
+		zephyr,memory-region="SRAM1_IPC0";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO))>;
+	};
+
+	sram1_ipc1: memory@30064000{
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x30064000 DT_SIZE_K(16)>;
+		zephyr,memory-region="SRAM1_IPC1";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO))>;
+	};
+
+	ipc {
+		/delete-node/ ipc0;
+
+		ipc0: ipc0 {
+			compatible = "zephyr,ipc-openamp-static-vrings";
+			memory-region = <&sram1_ipc0>;
+			mboxes = <&mbox1_a 0>, <&mbox1_a 1>;
+			mbox-names = "tx", "rx";
+			role = "host";
+			status = "okay";
+		};
+
+		ipc1: ipc1 {
+			compatible = "zephyr,ipc-openamp-static-vrings";
+			memory-region = <&sram1_ipc1>;
+			mboxes = <&mbox1_a 2>, <&mbox1_a 3>;
+			mbox-names = "tx", "rx";
+			role = "host";
+			zephyr,priority = <1 PRIO_COOP>;
+			zephyr,buffer-size = <128>;
+			status = "okay";
+		};
+	};
+};

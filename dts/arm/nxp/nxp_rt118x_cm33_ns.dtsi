@@ -22,6 +22,12 @@
 			zephyr,memory-region = "DTCM";
 		};
 
+		m7_itcm: itcm@203C0000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			zephyr,memory-region = "M7_ITCM";
+			reg = <0x203C0000 DT_SIZE_K(256)>;
+		};
+
 		memory: memory@20000000 {
 			ranges = <0x0 0x20000000 0x10000000>;
 		};
@@ -46,6 +52,26 @@
 	cpus {
 		/delete-node/ cpu@1;
 	};
+};
+
+&peripheral {
+    mbox1_a:mbox@4220000 {
+        compatible = "nxp,mbox-imx-mu";
+        reg = <0x4220000 0x4000>;
+        interrupts = <21 0>;
+        rx-channels = <4>;
+        #mbox-cells = <1>;
+        status = "okay";
+    };
+
+    mbox2_a:mbox@2430000 {
+        compatible = "nxp,mbox-imx-mu";
+        reg = <0x2430000 0x4000>;
+        interrupts = <22 0>;
+        rx-channels = <4>;
+        #mbox-cells = <1>;
+        status = "okay";
+    };
 };
 
 &nvic {
