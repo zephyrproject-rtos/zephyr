@@ -8,6 +8,7 @@
 
 #include <nxp/nxp_mimx93_a55.dtsi>
 #include "imx93_evk-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "NXP i.MX93 A55";
@@ -59,11 +60,13 @@
 		btn_1: btn_1{
 			label = "BTN1";
 			gpios = <&gpio2 23 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 
 		btn_2: btn_2{
 			label = "BTN2";
 			gpios = <&gpio2 24 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
 
