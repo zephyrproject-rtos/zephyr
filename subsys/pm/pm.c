@@ -121,7 +121,7 @@ void pm_system_resume(void)
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 		sys_clock_idle_exit();
 #endif /* CONFIG_SYS_CLOCK_EXISTS */
-		z_cpus_pm_state[id] = (struct pm_state_info){PM_STATE_ACTIVE,
+		z_cpus_pm_state[id] = (struct pm_state_info){PM_STATE_ACTIVE, 0, false,
 			0, 0};
 	}
 }
