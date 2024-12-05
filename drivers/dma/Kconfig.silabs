@@ -1,0 +1,21 @@
+# Copyright (c) 2024 Silicon-labs
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_SILABS_LDMA
+	bool "Silabs DMA driver"
+	default y
+	select SYS_MEM_BLOCKS
+	select SOC_GECKO_LDMA
+	depends on DT_HAS_SILABS_LDMA_ENABLED
+	help
+	  Driver for Silabs DMA.
+
+if DMA_SILABS_LDMA
+
+config DMA_MAX_DESCRIPTOR
+	int "Max Number of block_config (LDMA_Descriptor)"
+	default 8
+	help
+	  Max Number of block_config (LDMA_Descriptor)
+
+endif
