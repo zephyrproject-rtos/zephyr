@@ -31,4 +31,12 @@
 			drive-strength = "low";
 		};
 	};
+	pinmux_lpadc0: pinmux_lpadc0 {
+		group0 {
+			pinmux = <ADC0_A0_P2_0>,
+				<ADC0_A1_P2_1>;
+			slew-rate = "fast";
+			drive-strength = "low";
+		};
+	};
 };
