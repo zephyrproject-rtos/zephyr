@@ -97,7 +97,7 @@ class TestOutfile:
         assert str(sys_exit.value) == '0'
 
         relpath = os.path.relpath(path, ZEPHYR_BASE)
-        sample_path = os.path.join(out_path, 'qemu_x86_atom', relpath, 'sample.basic.helloworld')
+        sample_path = os.path.join(out_path, 'qemu_x86_atom', 'zephyr', relpath, 'sample.basic.helloworld')
         listdir = os.listdir(sample_path)
         zephyr_listdir = os.listdir(os.path.join(sample_path, 'zephyr'))
 
@@ -122,7 +122,7 @@ class TestOutfile:
                ) for val in pair]
 
         relative_test_path = os.path.relpath(path, ZEPHYR_BASE)
-        test_result_path = os.path.join(out_path, 'qemu_x86_atom',
+        test_result_path = os.path.join(out_path, 'qemu_x86_atom', 'zephyr',
                                         relative_test_path, 'dummy.agnostic.group2')
 
         with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
@@ -181,7 +181,7 @@ class TestOutfile:
         test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'samples', 'hello_world')
         relative_test_path = os.path.relpath(path, ZEPHYR_BASE)
-        zephyr_out_path = os.path.join(out_path, 'qemu_x86_atom', relative_test_path,
+        zephyr_out_path = os.path.join(out_path, 'qemu_x86_atom', 'zephyr', relative_test_path,
                                        'sample.basic.helloworld', 'zephyr')
         args = ['-i', '--outdir', out_path, '-T', path] + \
                ['--prep-artifacts-for-testing'] + \

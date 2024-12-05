@@ -49,7 +49,7 @@ class TestInstance:
 
     __test__ = False
 
-    def __init__(self, testsuite, platform, outdir):
+    def __init__(self, testsuite, platform, toolchain, outdir):
 
         self.testsuite: TestSuite = testsuite
         self.platform: Platform = platform
@@ -63,12 +63,15 @@ class TestInstance:
         self.execution_time = 0
         self.build_time = 0
         self.retries = 0
+        self.toolchain = toolchain
 
-        self.name = os.path.join(platform.name, testsuite.name)
+        self.name = os.path.join(platform.name, toolchain, testsuite.name)
         self.dut = None
 
         if testsuite.detailed_test_id:
-            self.build_dir = os.path.join(outdir, platform.normalized_name, testsuite.name)
+            self.build_dir = os.path.join(
+                outdir, platform.normalized_name, self.toolchain, testsuite.name
+            )
         else:
             # if suite is not in zephyr,
             # keep only the part after ".." in reconstructed dir structure
@@ -76,6 +79,7 @@ class TestInstance:
             self.build_dir = os.path.join(
                 outdir,
                 platform.normalized_name,
+                self.toolchain,
                 source_dir_rel,
                 testsuite.name
             )
