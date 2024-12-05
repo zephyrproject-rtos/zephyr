@@ -20,6 +20,10 @@ family:
   - name: mcxw
     socs:
     - name: mcxw716c
+    - name: mcxw727c
+      cpuclusters:
+      - name: cpu0
+      - name: cpu1
 runners:
   run_once:
     '--erase':
