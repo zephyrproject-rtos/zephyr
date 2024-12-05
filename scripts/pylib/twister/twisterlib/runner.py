@@ -28,7 +28,13 @@ from elftools.elf.sections import SymbolTableSection
 from packaging import version
 from twisterlib.cmakecache import CMakeCache
 from twisterlib.environment import canonical_zephyr_base
-from twisterlib.error import BuildError, ConfigurationError, StatusAttributeError
+from twisterlib.error import (
+    BuildError,
+    ConfigurationError,
+    StatusAssignmentError,
+    StatusAttributeError,
+    StatusInitError,
+)
 from twisterlib.statuses import TwisterStatus
 
 if version.parse(elftools.__version__) < version.parse('0.24'):
@@ -965,7 +971,7 @@ class ProjectBuilder(FilterBuilder):
                         next_op = 'report'
                     else:
                         next_op = 'cmake'
-            except StatusAttributeError as sae:
+            except (StatusAssignmentError, StatusAttributeError, StatusInitError) as sae:
                 logger.error(str(sae))
                 self.instance.status = TwisterStatus.ERROR
                 reason = 'Incorrect status assignment'
@@ -998,8 +1004,8 @@ class ProjectBuilder(FilterBuilder):
                         next_op = 'report'
                     else:
                         next_op = 'build'
-            except StatusAttributeError as sae:
-                logger.error(str(sae))
+            except (StatusAssignmentError, StatusAttributeError, StatusInitError) as se:
+                logger.error(str(se))
                 self.instance.status = TwisterStatus.ERROR
                 reason = 'Incorrect status assignment'
                 self.instance.reason = reason
@@ -1047,7 +1053,7 @@ class ProjectBuilder(FilterBuilder):
                                 next_op = 'report'
                         else:
                             next_op = 'gather_metrics'
-            except StatusAttributeError as sae:
+            except (StatusAssignmentError, StatusAttributeError, StatusInitError) as sae:
                 logger.error(str(sae))
                 self.instance.status = TwisterStatus.ERROR
                 reason = 'Incorrect status assignment'
@@ -1078,7 +1084,7 @@ class ProjectBuilder(FilterBuilder):
                             "Nowhere to run"
                         )
                     next_op = 'report'
-            except StatusAttributeError as sae:
+            except (StatusAssignmentError, StatusAttributeError, StatusInitError) as sae:
                 logger.error(str(sae))
                 self.instance.status = TwisterStatus.ERROR
                 reason = 'Incorrect status assignment'
@@ -1104,7 +1110,7 @@ class ProjectBuilder(FilterBuilder):
                     "status": self.instance.status,
                     "reason": self.instance.reason
                 }
-            except StatusAttributeError as sae:
+            except (StatusAssignmentError, StatusAttributeError, StatusInitError) as sae:
                 logger.error(str(sae))
                 self.instance.status = TwisterStatus.ERROR
                 reason = 'Incorrect status assignment'
@@ -1133,7 +1139,7 @@ class ProjectBuilder(FilterBuilder):
                     elif self.options.runtime_artifact_cleanup == "all":
                         next_op = 'cleanup'
                         additionals = {"mode": "all"}
-            except StatusAttributeError as sae:
+            except (StatusAssignmentError, StatusAttributeError, StatusInitError) as sae:
                 logger.error(str(sae))
                 self.instance.status = TwisterStatus.ERROR
                 reason = 'Incorrect status assignment'
@@ -1154,7 +1160,7 @@ class ProjectBuilder(FilterBuilder):
                     or (mode == "all" and self.instance.reason != "CMake build failure")
                 ):
                     self.cleanup_artifacts()
-            except StatusAttributeError as sae:
+            except (StatusAssignmentError, StatusAttributeError, StatusInitError) as sae:
                 logger.error(str(sae))
                 self.instance.status = TwisterStatus.ERROR
                 reason = 'Incorrect status assignment'
