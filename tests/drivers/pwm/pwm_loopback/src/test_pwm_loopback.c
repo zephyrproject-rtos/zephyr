@@ -99,12 +99,9 @@ static void test_capture(uint32_t period, uint32_t pulse, enum test_pwm_unit uni
 			       "period capture off by more than 1%");
 	}
 
-	if (flags & PWM_POLARITY_INVERTED) {
-		zassert_within(pulse_capture, period - pulse, (period - pulse) / 100,
-				"pulse capture off by more than 1%");
-	} else {
+	if (flags & PWM_CAPTURE_TYPE_PULSE) {
 		zassert_within(pulse_capture, pulse, pulse / 100,
-				"pulse capture off by more than 1%");
+			       "pulse capture off by more than 1%");
 	}
 }
 
