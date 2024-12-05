@@ -1,18 +1,33 @@
-# ICM42670 Six-Axis Motion Tracking device configuration options
+# ICM42670-P ICM42670-S Six-Axis Motion Tracking device configuration options
 #
+# Copyright (c) 2024 TDK Invensense
 # Copyright (c) 2022 Esco Medical ApS
 # Copyright (c) 2020 TDK Invensense
 #
 # SPDX-License-Identifier: Apache-2.0
+config TDK_APEX
+	bool "TDK APEX features"
 
 menuconfig ICM42670
-	bool "ICM42670 Six-Axis Motion Tracking Device"
+	bool "ICM42670-P/-S Six-Axis Motion Tracking Device"
 	default y
-	depends on DT_HAS_INVENSENSE_ICM42670_ENABLED
-	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM42670),spi)
-	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM42670),i2c)
+	depends on DT_HAS_INVENSENSE_ICM42670P_ENABLED \
+		|| DT_HAS_INVENSENSE_ICM42670S_ENABLED
+	depends on ZEPHYR_HAL_TDK_MODULE
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM42670P),spi) \
+		|| $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM42670S),spi)
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM42670P),i2c) \
+		|| $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM42670S),i2c)
+	select TDK_APEX if $(dt_node_str_prop_equals,$(dt_nodelabel_path,icm42670p),apex,pedometer) \
+		|| $(dt_node_str_prop_equals,$(dt_nodelabel_path,icm42670p),apex,tilt) \
+		|| $(dt_node_str_prop_equals,$(dt_nodelabel_path,icm42670p),apex,smd) \
+		|| $(dt_node_str_prop_equals,$(dt_nodelabel_path,icm42670p),apex,wom) \
+		|| $(dt_node_str_prop_equals,$(dt_nodelabel_path,icm42670s),apex,pedometer) \
+		|| $(dt_node_str_prop_equals,$(dt_nodelabel_path,icm42670s),apex,tilt) \
+		|| $(dt_node_str_prop_equals,$(dt_nodelabel_path,icm42670s),apex,smd) \
+		|| $(dt_node_str_prop_equals,$(dt_nodelabel_path,icm42670s),apex,wom)
 	help
-	  Enable driver for ICM42670 SPI-based six-axis motion tracking device.
+	  Enable driver for ICM42670 SPI-based or I2C-based Six-Axis Motion Tracking device.
 
 if ICM42670
 
@@ -28,13 +43,15 @@ config ICM42670_TRIGGER_NONE
 config ICM42670_TRIGGER_GLOBAL_THREAD
 	bool "Use global thread"
 	depends on GPIO
-	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM42670),int-gpios)
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM42670P),int-gpios) \
+		|| $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM42670S),int-gpios)
 	select ICM42670_TRIGGER
 
 config ICM42670_TRIGGER_OWN_THREAD
 	bool "Use own thread"
 	depends on GPIO
-	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM42670),int-gpios)
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM42670P),int-gpios) \
+		|| $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM42670S),int-gpios)
 	select ICM42670_TRIGGER
 
 endchoice
