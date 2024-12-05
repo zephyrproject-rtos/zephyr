@@ -10,3 +10,4 @@ toolchain:
 supported:
   - gpio
   - uart
+  - sdhc
