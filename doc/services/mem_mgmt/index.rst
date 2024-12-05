@@ -45,7 +45,9 @@ regions out of devicetree defined memory regions, for example:
    };
 
 See :zephyr_file:`include/zephyr/dt-bindings/memory-attr/memory-attr-arm.h` and
-:ref:`arm_cortex_m_developer_guide` for more details about MPU usage.
+:ref:`arm_cortex_m_mpu_considerations` in the :ref:`arm_cortex_m_developer_guide`
+for more details about MPU usage. Also see :ref:`cache_guide` for details on how
+Zephyr handles caching.
 
 The conventional and recommended way to deal and manage with memory regions
 marked with attributes is by using the provided ``mem-attr`` helper library by
@@ -61,7 +63,10 @@ and act on regions and attributes (see next section for more details).
    actual setting for the memory to be set. The user, code or subsystem willing
    to use this information to do some work (for example creating an MPU region
    out of the property) must use either the provided ``mem-attr`` library or
-   the usual devicetree helpers to perform the required work / setting.
+   the usual devicetree helpers to perform the required work / setting. Note,
+   however, that for some architectures (such as ARM and ARM64) the MPU driver
+   uses this information to properly initialize caching at boot. See
+   :kconfig:option:`CONFIG_ARM_MPU`, :kconfig:option:`CONFIG_RISCV_PMP`, etc.
 
 A test for the ``mem-attr`` library and its usage is provided in
 ``tests/subsys/mem_mgmt/mem_attr/``.
