@@ -816,12 +816,7 @@ class TestPlan:
         if platform_filter:
             logger.debug(f"Checking platform filter: {platform_filter}")
             # find in aliases and rename
-            self.verify_platforms_existence(platform_filter, "platform_filter")
-            for pf in platform_filter:
-                logger.debug(f"Checking platform in filter: {pf}")
-                if pf in self.platform_names:
-                    _platforms.append(self.get_platform(pf).name)
-            platform_filter = _platforms
+            platform_filter = self.verify_platforms_existence(platform_filter, "platform_filter")
             platforms = list(filter(lambda p: p.name in platform_filter, self.platforms))
         elif emu_filter:
             platforms = list(
@@ -850,7 +845,7 @@ class TestPlan:
 
         keyed_tests = {}
 
-        for ts_name, ts in self.testsuites.items():
+        for _, ts in self.testsuites.items():
             if (
                 ts.build_on_all
                 and not platform_filter
@@ -862,14 +857,10 @@ class TestPlan:
                     filter(lambda item: item.name in ts.integration_platforms, self.platforms)
                 )
                 if self.options.integration:
-                    self.verify_platforms_existence(
-                        ts.integration_platforms, f"{ts_name} - integration_platforms")
                     platform_scope = integration_platforms
                 else:
                     # if not in integration mode, still add integration platforms to the list
                     if not platform_filter:
-                        self.verify_platforms_existence(
-                            ts.integration_platforms, f"{ts_name} - integration_platforms")
                         platform_scope = platforms + integration_platforms
                     else:
                         platform_scope = platforms
@@ -886,7 +877,6 @@ class TestPlan:
                 and not integration
                 and platform_config.get('increased_platform_scope', True)
             ):
-                self.verify_platforms_existence(ts.platform_allow, f"{ts_name} - platform_allow")
                 a = set(platform_scope)
                 b = set(filter(lambda item: item.name in ts.platform_allow, self.platforms))
                 c = a.intersection(b)
@@ -979,12 +969,6 @@ class TestPlan:
                         instance.add_filter("In test suite vendor exclude", Filters.TESTSUITE)
 
                     if ts.platform_exclude and plat.name in ts.platform_exclude:
-                        # works only when we have all platforms parsed, -p limits parsing...
-                        if not platform_filter:
-                            self.verify_platforms_existence(
-                                ts.platform_exclude,
-                                f"{ts_name} - platform_exclude"
-                            )
                         instance.add_filter("In test case platform exclude", Filters.TESTSUITE)
 
                 if ts.toolchain_exclude and toolchain in ts.toolchain_exclude:
