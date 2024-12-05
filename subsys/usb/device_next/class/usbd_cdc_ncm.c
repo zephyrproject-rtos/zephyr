@@ -33,7 +33,7 @@ LOG_MODULE_REGISTER(cdc_ncm, CONFIG_USBD_CDC_NCM_LOG_LEVEL);
 
 enum {
 	CDC_NCM_IFACE_UP,
-	CDC_NCM_CLASS_ENABLED,
+	CDC_NCM_DATA_IFACE_ENABLED,
 	CDC_NCM_CLASS_SUSPENDED,
 	CDC_NCM_OUT_ENGAGED,
 };
@@ -320,10 +320,6 @@ static int cdc_ncm_out_start(struct usbd_class_data *const c_data)
 	uint8_t ep;
 	int ret;
 
-	if (!atomic_test_bit(&data->state, CDC_NCM_CLASS_ENABLED)) {
-		return -EACCES;
-	}
-
 	if (atomic_test_and_set_bit(&data->state, CDC_NCM_OUT_ENGAGED)) {
 		return -EBUSY;
 	}
@@ -523,9 +519,7 @@ static int cdc_ncm_acl_out_cb(struct usbd_class_data *const c_data,
 			LOG_ERR("Bulk OUT transfer error (%d) or zero length", err);
 		}
 
-		net_buf_unref(buf);
-		atomic_clear_bit(&data->state, CDC_NCM_OUT_ENGAGED);
-		return 0;
+		goto restart_out_transfer;
 	}
 
 	ret = check_frame(data, buf);
@@ -612,8 +606,11 @@ restart_out_transfer:
 	net_buf_unref(buf);
 
 	atomic_clear_bit(&data->state, CDC_NCM_OUT_ENGAGED);
+	if (atomic_test_bit(&data->state, CDC_NCM_DATA_IFACE_ENABLED)) {
+		return cdc_ncm_out_start(c_data);
+	}
 
-	return cdc_ncm_out_start(c_data);
+	return 0;
 }
 
 static void ncm_handle_notifications(const struct device *dev, const int err)
@@ -676,7 +673,7 @@ static int cdc_ncm_send_notification(const struct device *dev,
 	uint8_t ep;
 	int ret;
 
-	if (!atomic_test_bit(&data->state, CDC_NCM_CLASS_ENABLED)) {
+	if (!atomic_test_bit(&data->state, CDC_NCM_DATA_IFACE_ENABLED)) {
 		LOG_INF("USB configuration is not enabled");
 		return -EBUSY;
 	}
@@ -839,12 +836,12 @@ static void usbd_cdc_ncm_update(struct usbd_class_data *const c_data,
 		iface, alternate);
 
 	if (data_iface == iface && alternate == 0) {
-		LOG_DBG("Skip iface %u alternate %u", iface, alternate);
-
+		atomic_clear_bit(&data->state, CDC_NCM_DATA_IFACE_ENABLED);
 		data->tx_seq = 0;
 	}
 
 	if (data_iface == iface && alternate == 1) {
+		atomic_set_bit(&data->state, CDC_NCM_DATA_IFACE_ENABLED);
 		data->if_state = IF_STATE_INIT;
 		(void)k_work_reschedule(&data->notif_work, K_MSEC(100));
 		ret = cdc_ncm_out_start(c_data);
@@ -856,12 +853,7 @@ static void usbd_cdc_ncm_update(struct usbd_class_data *const c_data,
 
 static void usbd_cdc_ncm_enable(struct usbd_class_data *const c_data)
 {
-	const struct device *dev = usbd_class_get_private(c_data);
-	struct cdc_ncm_eth_data *data = dev->data;
-
-	atomic_set_bit(&data->state, CDC_NCM_CLASS_ENABLED);
-
-	LOG_DBG("Configuration enabled");
+	LOG_INF("Enabled %s", c_data->name);
 }
 
 static void usbd_cdc_ncm_disable(struct usbd_class_data *const c_data)
@@ -871,7 +863,7 @@ static void usbd_cdc_ncm_disable(struct usbd_class_data *const c_data)
 
 	atomic_clear_bit(&data->state, CDC_NCM_CLASS_SUSPENDED);
 
-	LOG_DBG("Configuration disabled");
+	LOG_INF("Disabled %s", c_data->name);
 }
 
 static void usbd_cdc_ncm_suspended(struct usbd_class_data *const c_data)
@@ -1037,10 +1029,10 @@ static int cdc_ncm_send(const struct device *dev, struct net_pkt *const pkt)
 		return -ENOMEM;
 	}
 
-	if (!atomic_test_bit(&data->state, CDC_NCM_CLASS_ENABLED) ||
+	if (!atomic_test_bit(&data->state, CDC_NCM_DATA_IFACE_ENABLED) ||
 	    !atomic_test_bit(&data->state, CDC_NCM_IFACE_UP)) {
 		LOG_DBG("Configuration is not enabled or interface not ready (%d / %d)",
-			atomic_test_bit(&data->state, CDC_NCM_CLASS_ENABLED),
+			atomic_test_bit(&data->state, CDC_NCM_DATA_IFACE_ENABLED),
 			atomic_test_bit(&data->state, CDC_NCM_IFACE_UP));
 		return -EACCES;
 	}
@@ -1126,7 +1118,7 @@ static int cdc_ncm_iface_start(const struct device *dev)
 	atomic_set_bit(&data->state, CDC_NCM_IFACE_UP);
 	net_if_carrier_on(data->iface);
 
-	if (atomic_test_bit(&data->state, CDC_NCM_CLASS_ENABLED)) {
+	if (atomic_test_bit(&data->state, CDC_NCM_DATA_IFACE_ENABLED)) {
 		(void)k_work_reschedule(&data->notif_work, K_MSEC(1));
 	}
 
@@ -1141,7 +1133,7 @@ static int cdc_ncm_iface_stop(const struct device *dev)
 
 	atomic_clear_bit(&data->state, CDC_NCM_IFACE_UP);
 
-	if (atomic_test_bit(&data->state, CDC_NCM_CLASS_ENABLED)) {
+	if (atomic_test_bit(&data->state, CDC_NCM_DATA_IFACE_ENABLED)) {
 		(void)k_work_reschedule(&data->notif_work, K_MSEC(1));
 	}
 
