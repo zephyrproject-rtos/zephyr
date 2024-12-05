@@ -556,8 +556,7 @@ class TestRunner:
         out, err = capfd.readouterr()
         sys.stdout.write(out)
         sys.stderr.write(err)
-
-        elapsed_time = float(re.search(r'Timeout \(qemu (\d+\.\d+)s\)', err).group(1))
+        elapsed_time = float(re.search(r'Timeout \(qemu (\d+\.\d+)s.*\)', err).group(1))
 
         assert abs(
             elapsed_time - float(timeout) * 10) <= tolerance, f"Time is different from expected"

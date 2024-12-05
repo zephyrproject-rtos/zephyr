@@ -22,7 +22,7 @@ def testinstance() -> TestInstance:
     testsuite.sysbuild = False
     platform = Platform()
 
-    testinstance = TestInstance(testsuite, platform, 'outdir')
+    testinstance = TestInstance(testsuite, platform, 'zephyr', 'outdir')
     testinstance.handler = mock.Mock()
     testinstance.handler.options = mock.Mock()
     testinstance.handler.options.verbose = 1
