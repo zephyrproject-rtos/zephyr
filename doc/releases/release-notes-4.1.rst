@@ -101,7 +101,7 @@ Boards & SoC Support
 
   * All HWMv1 board name aliases which were added as deprecated in v3.7 are now removed
     (:github:`82247`).
-  * Enabled USB on NXP ``frdm_mcxn236``
+  * Enabled USB, RTC on NXP ``frdm_mcxn236``
 
 * Added support for the following shields:
 
