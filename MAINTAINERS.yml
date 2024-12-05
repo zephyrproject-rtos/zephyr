@@ -313,6 +313,7 @@ Bluetooth HCI:
     - sjanc
     - theob-pro
     - HoZHel
+    - cvinayak
   files:
     - include/zephyr/drivers/bluetooth/
     - include/zephyr/drivers/bluetooth.h
@@ -326,7 +327,7 @@ Bluetooth HCI:
   tests:
     - bluetooth
 
-Bluetooth controller:
+Bluetooth Controller:
   status: maintained
   maintainers:
     - cvinayak
@@ -365,6 +366,7 @@ Bluetooth Host:
     - sjanc
     - Thalley
     - theob-pro
+    - cvinayak
   files:
     - doc/connectivity/bluetooth/
     - include/zephyr/bluetooth/
@@ -515,6 +517,7 @@ Bluetooth ISO:
     - jhedberg
     - kruithofa
     - rugeGerritsen
+    - cvinayak
   files:
     - include/zephyr/bluetooth/iso.h
     - doc/connectivity/bluetooth/shell/host/iso.rst
