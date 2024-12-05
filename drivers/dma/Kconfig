@@ -68,6 +68,8 @@ source "drivers/dma/Kconfig.andes_atcdmac300"
 
 source "drivers/dma/Kconfig.sedi"
 
+source "drivers/dma/Kconfig.silabs"
+
 source "drivers/dma/Kconfig.smartbond"
 
 source "drivers/dma/Kconfig.nxp_sof_host_dma"
