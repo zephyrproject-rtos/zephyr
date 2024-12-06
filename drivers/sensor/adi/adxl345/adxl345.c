@@ -519,11 +519,27 @@ static int adxl345_init(const struct device *dev)
 #define ADXL345_CFG_IRQ(inst)
 #endif /* CONFIG_ADXL345_TRIGGER */
 
-#define ADXL345_RTIO_DEFINE(inst)                                    \
-	SPI_DT_IODEV_DEFINE(adxl345_iodev_##inst, DT_DRV_INST(inst),     \
-						SPI_WORD_SET(8) | SPI_TRANSFER_MSB |    \
-						SPI_MODE_CPOL | SPI_MODE_CPHA, 0U);     \
-	RTIO_DEFINE(adxl345_rtio_ctx_##inst, 64, 64);
+#define ADXL345_RTIO_DEFINE(inst)                                      \
+	/* Conditionally include SPI and/or I2C parts based on their presence */ \
+	COND_CODE_1(DT_INST_ON_BUS(inst, spi),             \
+		(SPI_DT_IODEV_DEFINE(adxl345_iodev_##inst, DT_DRV_INST(inst), \
+				SPI_WORD_SET(8) | SPI_TRANSFER_MSB |            \
+				SPI_MODE_CPOL | SPI_MODE_CPHA, 0U);),           \
+		())                                                              \
+	COND_CODE_1(DT_INST_ON_BUS(inst, i2c),             \
+		(I2C_DT_IODEV_DEFINE(adxl345_iodev_##inst, DT_DRV_INST(inst));), \
+		())                                                              \
+								\
+	/* Conditionally set the RTIO size based on the presence of SPI/I2C
+	 * the sizes of sqe and cqe pools are increased due to the amount of
+	 * multibyte reads needed for watermark using 31 samples
+	 * (adx345_stram - line 203), using smaller amounts of samples
+	 * to trigger an interrupt can decrease the pool sizes.
+	 */ \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, spi_dt_spec) &&           \
+				DT_INST_NODE_HAS_PROP(inst, i2c_dt_spec),              \
+		(RTIO_DEFINE(adxl345_rtio_ctx_##inst, 128, 128);),              \
+		(RTIO_DEFINE(adxl345_rtio_ctx_##inst, 64, 64);))               \
 
 #define ADXL345_CONFIG(inst)								\
 		.odr = DT_INST_PROP(inst, odr),						\
@@ -553,6 +569,9 @@ static int adxl345_init(const struct device *dev)
 		.bus = {.i2c = I2C_DT_SPEC_INST_GET(inst)}, \
 		.bus_is_ready = adxl345_bus_is_ready_i2c,   \
 		.reg_access = adxl345_reg_access_i2c,	    \
+		ADXL345_CONFIG(inst)					\
+		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, int2_gpios),	\
+		(ADXL345_CFG_IRQ(inst)), ())		\
 	}
 
 #define ADXL345_DEFINE(inst)								\

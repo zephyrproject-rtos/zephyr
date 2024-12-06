@@ -216,6 +216,9 @@ static void adxl345_process_fifo_samples_cb(struct rtio *r, const struct rtio_sq
 							read_buf + data->fifo_total_bytes,
 							SAMPLE_SIZE, current_sqe);
 		data->fifo_total_bytes += SAMPLE_SIZE;
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+		read_fifo_data->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
+#endif
 		if (i == fifo_samples-1) {
 			struct rtio_sqe *complete_op = rtio_sqe_acquire(data->rtio_ctx);
 
@@ -342,6 +345,9 @@ static void adxl345_process_status1_cb(struct rtio *r, const struct rtio_sqe *sq
 	rtio_sqe_prep_read(read_fifo_data, data->iodev, RTIO_PRIO_NORM, data->fifo_ent, 1,
 						current_sqe);
 	read_fifo_data->flags = RTIO_SQE_CHAINED;
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+	read_fifo_data->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
+#endif
 	rtio_sqe_prep_callback(complete_op, adxl345_process_fifo_samples_cb, (void *)dev,
 							current_sqe);
 
@@ -366,6 +372,9 @@ void adxl345_stream_irq_handler(const struct device *dev)
 	rtio_sqe_prep_read(read_status_reg, data->iodev, RTIO_PRIO_NORM, &data->status1, 1, NULL);
 	read_status_reg->flags = RTIO_SQE_CHAINED;
 
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+	read_status_reg->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
+#endif
 	rtio_sqe_prep_callback(check_status_reg, adxl345_process_status1_cb, (void *)dev, NULL);
 	rtio_submit(data->rtio_ctx, 0);
 }
