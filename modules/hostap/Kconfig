@@ -294,6 +294,7 @@ config WIFI_NM_HOSTAPD_AP
 
 config WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE
 	bool "Hostapd crypto enterprise support"
+	depends on WIFI_NM_HOSTAPD_AP
 
 config EAP_SERVER_TLS
 	bool "EAP-TLS server support"
