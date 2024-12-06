@@ -1774,6 +1774,11 @@ static int cmd_wifi_twt_teardown(const struct shell *sh, size_t argc,
 	}
 	params.flow_id = (uint8_t)value;
 
+	if (!parse_number(sh, &value, argv[idx++], NULL, 0, 1)) {
+		return -EINVAL;
+	}
+	params.teardown.teardown_all = (bool)value;
+
 	if (net_mgmt(NET_REQUEST_WIFI_TWT, iface, &params, sizeof(params))) {
 		PR_WARNING("%s with %s failed, reason : %s\n",
 			   wifi_twt_operation_txt(params.operation),
@@ -3331,7 +3336,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_twt_ops,
 	SHELL_CMD_ARG(teardown, NULL, " Teardown a TWT flow:\n"
 		"<negotiation_type, 0: Individual, 1: Broadcast, 2: Wake TBTT>\n"
 		"<setup_cmd: 0: Request, 1: Suggest, 2: Demand>\n"
-		"<dialog_token: 1-255> <flow_id: 0-7>.\n",
+		"<dialog_token: 1-255> <flow_id: 0-7> <teardown_all_twt: 0/1>.\n",
 		cmd_wifi_twt_teardown,
 		5, 0),
 	SHELL_CMD_ARG(teardown_all, NULL, " Teardown all TWT flows.\n",
