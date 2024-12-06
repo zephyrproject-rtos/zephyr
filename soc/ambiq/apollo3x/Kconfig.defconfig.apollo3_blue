@@ -37,4 +37,11 @@ config BT_HCI_ACL_FLOW_CONTROL
 
 endif # BT
 
+if !BOOTLOADER_MCUBOOT
+
+config FLASH_LOAD_OFFSET
+	default 0xc000
+
+endif # !BOOTLOADER_MCUBOOT
+
 endif # SOC_APOLLO3_BLUE
