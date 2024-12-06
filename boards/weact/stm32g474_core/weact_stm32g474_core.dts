@@ -50,7 +50,6 @@
 		volt-sensor0 = &vref;
 		volt-sensor1 = &vbat;
 	};
-
 };
 
 &usb {
@@ -71,6 +70,7 @@
 	current-speed = <115200>;
 	status = "okay";
 };
+
 &clk_lsi {
 	status = "okay";
 };
