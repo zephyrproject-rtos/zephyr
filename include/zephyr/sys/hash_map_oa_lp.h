@@ -32,6 +32,32 @@ struct sys_hashmap_oa_lp_data {
 };
 
 /**
+ * @brief Declare a Open Addressing Linear Probe Hashmap
+ *
+ * Declare a Open Addressing Linear Probe Hashmap
+ *
+ * @param _name Name of the Hashmap.
+ */
+#define SYS_HASHMAP_OA_LP_DECLARE(_name) \
+	SYS_HASHMAP_DECLARE_ADVANCED(_name, sys_hashmap_config, sys_hashmap_oa_lp_data)
+
+/**
+ * @brief Init a Open Addressing Linear Probe Hashmap (advanced)
+ *
+ * Init a Open Addressing Linear Probe Hashmap with control over advanced parameters.
+ *
+ * @note The allocator @p _alloc is used for allocating internal Hashmap
+ * entries and does not interact with any user-provided keys or values.
+ *
+ * @param _name Name of the Hashmap.
+ * @param _hash_func Hash function pointer of type @ref sys_hash_func32_t.
+ * @param _alloc_func Allocator function pointer of type @ref sys_hashmap_allocator_t.
+ * @param ... Variant-specific details for @ref sys_hashmap_config.
+ */
+#define SYS_HASHMAP_OA_LP_INIT_ADVANCED(_name, _hash_func, _alloc_func, _max_size, _load_factor) \
+	SYS_HASHMAP_INIT_ADVANCED(_name, &sys_hashmap_oa_lp_api, _hash_func, _alloc_func, _max_size, _load_factor)
+
+/**
  * @brief Declare a Open Addressing Linear Probe Hashmap (advanced)
  *
  * Declare a Open Addressing Linear Probe Hashmap with control over advanced parameters.
@@ -91,8 +117,11 @@ struct sys_hashmap_oa_lp_data {
 		SYS_HASHMAP_CONFIG(SIZE_MAX, SYS_HASHMAP_DEFAULT_LOAD_FACTOR))
 
 #ifdef CONFIG_SYS_HASH_MAP_CHOICE_OA_LP
+#define SYS_HASHMAP_DEFAULT_DECLARE(_name) SYS_HASHMAP_OA_LP_DECLARE(_name)
 #define SYS_HASHMAP_DEFAULT_DEFINE(_name)	 SYS_HASHMAP_OA_LP_DEFINE(_name)
 #define SYS_HASHMAP_DEFAULT_DEFINE_STATIC(_name) SYS_HASHMAP_OA_LP_DEFINE_STATIC(_name)
+#define SYS_HASHMAP_DEFAULT_INIT_ADVANCED(_name, _hash_func, _alloc_func, _max_size, _load_factor) \
+	SYS_HASHMAP_OA_LP_INIT_ADVANCED(_name, _hash_func, _alloc_func, _max_size, _load_factor)
 #define SYS_HASHMAP_DEFAULT_DEFINE_ADVANCED(_name, _hash_func, _alloc_func, ...)                   \
 	SYS_HASHMAP_OA_LP_DEFINE_ADVANCED(_name, _hash_func, _alloc_func, __VA_ARGS__)
 #define SYS_HASHMAP_DEFAULT_DEFINE_STATIC_ADVANCED(_name, _hash_func, _alloc_func, ...)            \
