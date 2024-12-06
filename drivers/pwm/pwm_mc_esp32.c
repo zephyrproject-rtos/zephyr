@@ -17,13 +17,13 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control.h>
+#include <esp_clk_tree.h>
 #ifdef CONFIG_PWM_CAPTURE
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #endif /* CONFIG_PWM_CAPTURE */
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mcpwm_esp32, CONFIG_PWM_LOG_LEVEL);
 
-#define SOC_MCPWM_BASE_CLK_HZ (160000000U)
 #ifdef CONFIG_PWM_CAPTURE
 #define SKIP_IRQ_NUM        4U
 #define CAP_INT_MASK        7U
@@ -36,6 +36,7 @@ LOG_MODULE_REGISTER(mcpwm_esp32, CONFIG_PWM_LOG_LEVEL);
 
 struct mcpwm_esp32_data {
 	mcpwm_hal_context_t hal;
+	uint32_t mcpwm_clk_hz;
 	struct k_sem cmd_sem;
 };
 
@@ -106,7 +107,7 @@ static void mcpwm_esp32_duty_set(const struct device *dev,
 			MCPWM_HAL_GENERATOR_MODE_FORCE_HIGH : MCPWM_DUTY_MODE_0;
 	}
 
-	uint32_t timer_clk_hz = SOC_MCPWM_BASE_CLK_HZ / config->prescale / channel->prescale;
+	uint32_t timer_clk_hz = data->mcpwm_clk_hz / config->prescale / channel->prescale;
 
 	set_duty = (timer_clk_hz / channel->freq) * channel->duty / 100;
 	mcpwm_ll_operator_connect_timer(data->hal.dev, channel->operator_id, channel->timer_id);
@@ -183,7 +184,7 @@ static int mcpwm_esp32_timer_set(const struct device *dev,
 	mcpwm_ll_timer_set_count_mode(data->hal.dev, channel->timer_id, MCPWM_TIMER_COUNT_MODE_UP);
 	mcpwm_ll_timer_update_period_at_once(data->hal.dev, channel->timer_id);
 
-	uint32_t timer_clk_hz = SOC_MCPWM_BASE_CLK_HZ / config->prescale / channel->prescale;
+	uint32_t timer_clk_hz = data->mcpwm_clk_hz / config->prescale / channel->prescale;
 
 	mcpwm_ll_timer_set_peak(data->hal.dev, channel->timer_id, timer_clk_hz / channel->freq,
 				false);
@@ -196,6 +197,7 @@ static int mcpwm_esp32_get_cycles_per_sec(const struct device *dev, uint32_t cha
 {
 	struct mcpwm_esp32_config *config = (struct mcpwm_esp32_config *)dev->config;
 	struct mcpwm_esp32_channel_config *channel = &config->channel_config[channel_idx];
+	struct mcpwm_esp32_data *data = (struct mcpwm_esp32_data *const)(dev)->data;
 
 	if (!channel) {
 		LOG_ERR("Error getting channel %d", channel_idx);
@@ -204,13 +206,18 @@ static int mcpwm_esp32_get_cycles_per_sec(const struct device *dev, uint32_t cha
 
 #ifdef CONFIG_PWM_CAPTURE
 	if (channel->idx >= CAPTURE_CHANNEL_IDX) {
+#if SOC_MCPWM_CAPTURE_CLK_FROM_GROUP
+		/* Capture prescaler is disabled by default (equals 1) */
+		*cycles = (uint64_t)data->mcpwm_clk_hz / (config->prescale + 1) / 1;
+#else
 		*cycles = (uint64_t)APB_CLK_FREQ;
+#endif
 		return 0;
 	}
 #endif /* CONFIG_PWM_CAPTURE */
 
 	*cycles =
-		(uint64_t)SOC_MCPWM_BASE_CLK_HZ / (config->prescale + 1) / (channel->prescale + 1);
+		(uint64_t)data->mcpwm_clk_hz / (config->prescale + 1) / (channel->prescale + 1);
 
 	return 0;
 }
@@ -416,6 +423,10 @@ int mcpwm_esp32_init(const struct device *dev)
 		LOG_ERR("clock control device not ready");
 		return -ENODEV;
 	}
+
+	mcpwm_ll_group_set_clock_source(data->hal.dev, MCPWM_TIMER_CLK_SRC_DEFAULT);
+	esp_clk_tree_src_get_freq_hz(MCPWM_TIMER_CLK_SRC_DEFAULT,
+				     ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &data->mcpwm_clk_hz);
 
 	/* Enable peripheral */
 	ret = clock_control_on(config->clock_dev, config->clock_subsys);
