@@ -4,6 +4,7 @@
 
 config USBD_CDC_ACM_CLASS
 	bool "USB CDC ACM implementation [EXPERIMENTAL]"
+	default y
 	depends on SERIAL
 	depends on DT_HAS_ZEPHYR_CDC_ACM_UART_ENABLED
 	select SERIAL_HAS_DRIVER
