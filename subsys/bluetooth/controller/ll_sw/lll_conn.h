@@ -37,9 +37,9 @@ struct data_pdu_length {
 };
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
-struct data_pdu_frame_space {
-	uint16_t frame_space_min;
-	uint16_t frame_space_max;
+struct data_pdu_fsu {
+	uint16_t fsu_min;
+	uint16_t fsu_max;
 	uint8_t phys;
 	uint16_t spacing_type;
 };
@@ -121,11 +121,11 @@ struct lll_conn {
 	} dle;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 	struct {
-		struct data_pdu_frame_space local;
-		struct data_pdu_frame_space perphy[4]; /* store frame-space for each PHY */
-		struct data_pdu_frame_space eff;
+		struct data_pdu_fsu local;
+		struct data_pdu_fsu perphy[4]; /* store frame-space for each PHY */
+		struct data_pdu_fsu eff;
 		uint8_t update;
-	} frame_space;
+	} fsu;
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	uint8_t phy_tx:3;

@@ -205,7 +205,7 @@ static void lp_comm_tx(struct ll_conn *conn, struct proc_ctx *ctx)
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 	case PROC_FRAME_SPACE:
-		llcp_pdu_encode_frame_space_req(conn, pdu);
+		llcp_pdu_encode_fsu_req(conn, pdu);
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_RSP;
 		break;
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
@@ -284,10 +284,10 @@ static void lp_comm_ntf_length_change(struct ll_conn *conn, struct proc_ctx *ctx
 }
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
-static void lp_comm_ntf_frame_space_change(struct ll_conn *conn, struct proc_ctx *ctx,
+static void lp_comm_ntf_fsu_change(struct ll_conn *conn, struct proc_ctx *ctx,
 					   struct pdu_data *pdu)
 {
-	llcp_ntf_encode_frame_space_change(conn, pdu);
+	llcp_ntf_encode_fsu_change(conn, pdu);
 }
 
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
@@ -424,7 +424,7 @@ static void lp_comm_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 	case PROC_FRAME_SPACE:
-		lp_comm_ntf_frame_space_change(conn, ctx, pdu);
+		lp_comm_ntf_fsu_change(conn, ctx, pdu);
 		break;
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
 	case PROC_CTE_REQ:
@@ -563,9 +563,9 @@ static void lp_comm_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 	case PROC_FRAME_SPACE:
 		if (ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_RSP) {
-			uint8_t frame_space_changed = ull_frame_space_update_eff(conn);
+			uint8_t fsu_changed = ull_fsu_update_eff(conn);
 
-			if (frame_space_changed) {
+			if (fsu_changed) {
 				lp_comm_ntf(conn, ctx);
 			}
 			llcp_lr_complete(conn);
@@ -719,7 +719,7 @@ static void lp_comm_send_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 	case PROC_FRAME_SPACE:
-		if (feature_frame_space(conn) && !ull_cp_remote_frame_space_pending(conn)) {
+		if (feature_fsu(conn) && !ull_cp_remote_fsu_pending(conn)) {
 			if (llcp_lr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
 				ctx->state = LP_COMMON_STATE_WAIT_TX;
 			} else {
@@ -879,7 +879,7 @@ static void lp_comm_rx_decode(struct ll_conn *conn, struct proc_ctx *ctx, struct
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 	case PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_RSP:
-		llcp_pdu_decode_frame_space_rsp(conn, pdu);
+		llcp_pdu_decode_fsu_rsp(conn, pdu);
 		break;
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
 	case PDU_DATA_LLCTRL_TYPE_CTE_RSP:
@@ -1079,8 +1079,8 @@ static void rp_comm_rx_decode(struct ll_conn *conn, struct proc_ctx *ctx, struct
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 	case PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_REQ:
 		/* receive req from remote */
-		llcp_pdu_decode_frame_space_req(conn, pdu);
-		ull_frame_space_update_eff(conn);
+		llcp_pdu_decode_fsu_req(conn, pdu);
+		ull_fsu_update_eff(conn);
 
 		llcp_rx_node_retain(ctx);
 		break;
@@ -1135,15 +1135,15 @@ static void rp_comm_tx(struct ll_conn *conn, struct proc_ctx *ctx)
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 	case PROC_FRAME_SPACE:
-		if ((conn->lll.frame_space.local.phys & 0x04)) {
+		if ((conn->lll.fsu.local.phys & 0x04)) {
 			llcp_pdu_encode_reject_ext_ind(pdu, PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_REQ,
 						       BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL);
 		} else if (!IS_ENABLED(CONFIG_BT_ISO) &&
-			   ((conn->lll.frame_space.local.spacing_type & (T_IFS_CIS | T_MSS_CIS)))) {
+			   ((conn->lll.fsu.local.spacing_type & (T_IFS_CIS | T_MSS_CIS)))) {
 			llcp_pdu_encode_reject_ext_ind(pdu, PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_REQ,
 						       BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL);
 		} else {
-			llcp_pdu_encode_frame_space_rsp(conn, pdu);
+			llcp_pdu_encode_fsu_rsp(conn, pdu);
 		}
 		ctx->node_ref.tx_ack = tx;
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_UNUSED;
@@ -1444,11 +1444,11 @@ static void rp_comm_st_wait_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, u
 		}
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 		case PROC_FRAME_SPACE: {
-			uint8_t frame_space_changed = ull_frame_space_update_eff(conn);
+			uint8_t fsu_changed = ull_fsu_update_eff(conn);
 
-			frame_space_changed |= ctx->data.frame_space.ntf_frame_space;
+			fsu_changed |= ctx->data.fsu.ntf_fsu;
 
-			rp_comm_ntf(conn, ctx, frame_space_changed);
+			rp_comm_ntf(conn, ctx, fsu_changed);
 
 			llcp_rr_complete(conn);
 			ctx->state = RP_COMMON_STATE_IDLE;

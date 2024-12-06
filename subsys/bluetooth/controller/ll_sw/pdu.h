@@ -798,15 +798,15 @@ struct pdu_data_llctrl_length_req_rsp_common {
 	uint16_t max_tx_time;
 } __packed;
 
-struct pdu_data_llctrl_frame_space_req {
-	uint16_t frame_space_min;
-	uint16_t frame_space_max;
+struct pdu_data_llctrl_fsu_req {
+	uint16_t fsu_min;
+	uint16_t fsu_max;
 	uint8_t phys;
 	uint16_t spacing_type;
 } __packed;
 
-struct pdu_data_llctrl_frame_space_rsp {
-	uint16_t frame_space;
+struct pdu_data_llctrl_fsu_rsp {
+	uint16_t fsu;
 	uint8_t phys;
 	uint16_t spacing_type;
 } __packed;
@@ -959,8 +959,8 @@ struct pdu_data_llctrl {
 		struct pdu_data_llctrl_ping_rsp ping_rsp;
 		struct pdu_data_llctrl_length_req length_req;
 		struct pdu_data_llctrl_length_rsp length_rsp;
-		struct pdu_data_llctrl_frame_space_req frame_space_req;
-		struct pdu_data_llctrl_frame_space_rsp frame_space_rsp;
+		struct pdu_data_llctrl_fsu_req fsu_req;
+		struct pdu_data_llctrl_fsu_rsp fsu_rsp;
 		struct pdu_data_llctrl_phy_req phy_req;
 		struct pdu_data_llctrl_phy_rsp phy_rsp;
 		struct pdu_data_llctrl_phy_upd_ind phy_upd_ind;

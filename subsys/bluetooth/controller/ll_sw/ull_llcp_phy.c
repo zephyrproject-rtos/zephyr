@@ -327,35 +327,35 @@ static uint8_t pu_update_eff_tifs(struct ll_conn *conn, struct proc_ctx *ctx)
 	phy_index_rx =
 		conn->lll.phy_rx == 4 ? 2 : conn->lll.phy_rx - 1; /* a bit tricky but should work */
 
-	if (((conn->lll.frame_space.perphy[phy_index_tx].spacing_type & T_IFS_ACL_CP) ==
+	if (((conn->lll.fsu.perphy[phy_index_tx].spacing_type & T_IFS_ACL_CP) ==
 	     T_IFS_ACL_CP) &&
 	    (conn->lll.role == BT_HCI_ROLE_PERIPHERAL)) {
-		conn->lll.frame_space.eff.frame_space_min =
-			conn->lll.frame_space.perphy[phy_index_tx].frame_space_min;
-		conn->lll.tifs_tx_us = conn->lll.frame_space.eff.frame_space_min;
+		conn->lll.fsu.eff.fsu_min =
+			conn->lll.fsu.perphy[phy_index_tx].fsu_min;
+		conn->lll.tifs_tx_us = conn->lll.fsu.eff.fsu_min;
 	}
-	if (((conn->lll.frame_space.perphy[phy_index_tx].spacing_type & T_IFS_ACL_PC) ==
+	if (((conn->lll.fsu.perphy[phy_index_tx].spacing_type & T_IFS_ACL_PC) ==
 	     T_IFS_ACL_PC) &&
 	    (conn->lll.role == BT_HCI_ROLE_CENTRAL)) {
-		conn->lll.frame_space.eff.frame_space_min =
-			conn->lll.frame_space.perphy[phy_index_tx].frame_space_min;
-		conn->lll.tifs_tx_us = conn->lll.frame_space.eff.frame_space_min;
+		conn->lll.fsu.eff.fsu_min =
+			conn->lll.fsu.perphy[phy_index_tx].fsu_min;
+		conn->lll.tifs_tx_us = conn->lll.fsu.eff.fsu_min;
 	}
 
-	if (((conn->lll.frame_space.perphy[phy_index_rx].spacing_type & T_IFS_ACL_CP) ==
+	if (((conn->lll.fsu.perphy[phy_index_rx].spacing_type & T_IFS_ACL_CP) ==
 	     T_IFS_ACL_CP) &&
 	    (conn->lll.role == BT_HCI_ROLE_CENTRAL)) {
-		conn->lll.frame_space.eff.frame_space_min =
-			conn->lll.frame_space.perphy[phy_index_rx].frame_space_min;
-		conn->lll.tifs_rx_us = conn->lll.frame_space.eff.frame_space_min;
+		conn->lll.fsu.eff.fsu_min =
+			conn->lll.fsu.perphy[phy_index_rx].fsu_min;
+		conn->lll.tifs_rx_us = conn->lll.fsu.eff.fsu_min;
 	}
 
-	if (((conn->lll.frame_space.perphy[phy_index_rx].spacing_type & T_IFS_ACL_PC) ==
+	if (((conn->lll.fsu.perphy[phy_index_rx].spacing_type & T_IFS_ACL_PC) ==
 	     T_IFS_ACL_PC) &&
 	    (conn->lll.role == BT_HCI_ROLE_PERIPHERAL)) {
-		conn->lll.frame_space.eff.frame_space_min =
-			conn->lll.frame_space.perphy[phy_index_rx].frame_space_min;
-		conn->lll.tifs_rx_us = conn->lll.frame_space.eff.frame_space_min;
+		conn->lll.fsu.eff.fsu_min =
+			conn->lll.fsu.perphy[phy_index_rx].fsu_min;
+		conn->lll.tifs_rx_us = conn->lll.fsu.eff.fsu_min;
 	}
 
 	return 0;

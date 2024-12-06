@@ -89,7 +89,7 @@ static uint8_t MALIGN(4) buffer_mem_remote_ctx[PROC_CTX_BUF_SIZE *
 				     CONFIG_BT_CTLR_LLCP_REMOTE_PROC_CTX_BUF_NUM];
 static struct llcp_mem_pool mem_remote_ctx = { .pool = buffer_mem_remote_ctx };
 
-uint8_t ull_cp_frame_space(struct ll_conn *conn, uint16_t frame_space_min, uint16_t frame_space_max,
+uint8_t ull_cp_fsu(struct ll_conn *conn, uint16_t fsu_min, uint16_t fsu_max,
 			   uint8_t phys, uint16_t spacing_type);
 
 /*
@@ -859,7 +859,7 @@ uint8_t ull_cp_cis_create(struct ll_conn *conn, struct ll_conn_iso_stream *cis)
 }
 #endif /* defined(CONFIG_BT_CTLR_CENTRAL_ISO) */
 
-uint8_t bt_ull_cp_frame_space(uint16_t handle, uint16_t frame_space_min, uint16_t frame_space_max,
+uint8_t bt_ull_cp_fsu(uint16_t handle, uint16_t fsu_min, uint16_t fsu_max,
 			      uint8_t phys, uint16_t spacing_type)
 {
 	struct ll_conn *conn;
@@ -869,7 +869,7 @@ uint8_t bt_ull_cp_frame_space(uint16_t handle, uint16_t frame_space_min, uint16_
 	if (!conn) {
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
 	}
-	err = ull_cp_frame_space(conn, frame_space_min, frame_space_max, phys, spacing_type);
+	err = ull_cp_fsu(conn, fsu_min, fsu_max, phys, spacing_type);
 	return err;
 }
 
@@ -943,12 +943,12 @@ uint8_t ull_cp_data_length_update(struct ll_conn *conn, uint16_t max_tx_octets,
 }
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
-uint8_t ull_cp_frame_space(struct ll_conn *conn, uint16_t frame_space_min, uint16_t frame_space_max,
+uint8_t ull_cp_fsu(struct ll_conn *conn, uint16_t fsu_min, uint16_t fsu_max,
 			   uint8_t phys, uint16_t spacing_type)
 {
 	struct proc_ctx *ctx;
 
-	if (!feature_frame_space(conn)) {
+	if (!feature_fsu(conn)) {
 		return BT_HCI_ERR_SUCCESS;
 	}
 
@@ -957,7 +957,7 @@ uint8_t ull_cp_frame_space(struct ll_conn *conn, uint16_t frame_space_min, uint1
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	ull_frame_space_local_tx_update(conn, frame_space_min, frame_space_max, phys, spacing_type);
+	ull_fsu_local_tx_update(conn, fsu_min, fsu_max, phys, spacing_type);
 
 	llcp_lr_enqueue(conn, ctx);
 
@@ -1191,7 +1191,7 @@ uint8_t ull_cp_remote_dle_pending(struct ll_conn *conn)
 }
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
-uint8_t ull_cp_remote_frame_space_pending(struct ll_conn *conn)
+uint8_t ull_cp_remote_fsu_pending(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx;
 
@@ -1752,14 +1752,14 @@ static bool pdu_validate_length_rsp(struct pdu_data *pdu)
 	return VALIDATE_PDU_LEN(pdu, length_rsp);
 }
 
-static bool pdu_validate_frame_space_req(struct pdu_data *pdu)
+static bool pdu_validate_fsu_req(struct pdu_data *pdu)
 {
-	return VALIDATE_PDU_LEN(pdu, frame_space_req);
+	return VALIDATE_PDU_LEN(pdu, fsu_req);
 }
 
-static bool pdu_validate_frame_space_rsp(struct pdu_data *pdu)
+static bool pdu_validate_fsu_rsp(struct pdu_data *pdu)
 {
-	return VALIDATE_PDU_LEN(pdu, frame_space_rsp);
+	return VALIDATE_PDU_LEN(pdu, fsu_rsp);
 }
 
 #if defined(CONFIG_BT_CTLR_PHY)
@@ -1873,8 +1873,8 @@ static const struct pdu_validate pdu_validate[] = {
 	[PDU_DATA_LLCTRL_TYPE_LENGTH_REQ] = {pdu_validate_length_req},
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 	[PDU_DATA_LLCTRL_TYPE_LENGTH_RSP] = {pdu_validate_length_rsp},
-	[PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_REQ] = {pdu_validate_frame_space_req},
-	[PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_RSP] = {pdu_validate_frame_space_rsp},
+	[PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_REQ] = {pdu_validate_fsu_req},
+	[PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_RSP] = {pdu_validate_fsu_rsp},
 #if defined(CONFIG_BT_CTLR_PHY)
 	[PDU_DATA_LLCTRL_TYPE_PHY_REQ] = {pdu_validate_phy_req},
 #endif /* CONFIG_BT_CTLR_PHY */

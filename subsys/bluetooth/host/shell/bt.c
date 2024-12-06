@@ -3647,7 +3647,7 @@ static int cmd_conn_data_len_update(const struct shell *sh, size_t argc,
 }
 #endif
 
-uint8_t bt_ull_cp_frame_space(uint16_t handle, uint16_t frame_space_min, uint16_t frame_space_max,
+uint8_t bt_ull_cp_fsu(uint16_t handle, uint16_t fsu_min, uint16_t fsu_max,
 			      uint8_t phys, uint16_t spacing_type);
 
 static int cmd_conn_tifs_update(const struct shell *sh, size_t argc, char *argv[])
@@ -3669,7 +3669,7 @@ static int cmd_conn_tifs_update(const struct shell *sh, size_t argc, char *argv[
 			    sh->ctx->active_cmd.syntax);
 		return -ENOEXEC;
 	}
-	err = bt_ull_cp_frame_space(handle, tifs_min, tifs_max, phys, direction);
+	err = bt_ull_cp_fsu(handle, tifs_min, tifs_max, phys, direction);
 	if (err) {
 		shell_error(sh, "frame space update failed (err %d).", err);
 	} else {
