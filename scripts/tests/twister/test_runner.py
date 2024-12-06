@@ -381,6 +381,7 @@ TESTDATA_2_2 = [
       '-DSB_CONFIG_COMPILER_WARNINGS_AS_ERRORS=y',
       '-DEXTRA_GEN_EDT_ARGS=--edtlib-Werror', '-Gdummy_generator',
       f'-DPython3_EXECUTABLE={pathlib.Path(sys.executable).as_posix()}',
+      '-DZEPHYR_TOOLCHAIN_VARIANT=zephyr',
       '-S' + os.path.join('source', 'dir'),
       'arg1', 'arg2',
       '-DBOARD=<platform name>',
@@ -396,6 +397,7 @@ TESTDATA_2_2 = [
       '-DSB_CONFIG_COMPILER_WARNINGS_AS_ERRORS=n',
       '-DEXTRA_GEN_EDT_ARGS=', '-Gdummy_generator',
       f'-DPython3_EXECUTABLE={pathlib.Path(sys.executable).as_posix()}',
+      '-DZEPHYR_TOOLCHAIN_VARIANT=zephyr',
       '-Szephyr_base/share/sysbuild',
       '-DAPP_DIR=' + os.path.join('source', 'dir'),
       'arg1', 'arg2',
@@ -451,6 +453,7 @@ def test_cmake_run_cmake(
     instance_mock.build_time = 0
     instance_mock.status = TwisterStatus.NONE
     instance_mock.reason = None
+    instance_mock.toolchain = 'zephyr'
     instance_mock.testsuite = mock.Mock()
     instance_mock.testsuite.name = 'testcase'
     instance_mock.testsuite.required_snippets = ['dummy snippet 1', 'ds2']
@@ -1994,14 +1997,14 @@ TESTDATA_13 = [
         ['INFO      20/25 dummy platform' \
          '            dummy.testsuite.name' \
          '                               PASSED' \
-         ' (dummy handler type: dummy dut, 60.000s)'],
+         ' (dummy handler type: dummy dut, 60.000s <zephyr>)'],
         None
     ),
     (
         TwisterStatus.PASS, True, False, False,
         ['INFO      20/25 dummy platform' \
          '            dummy.testsuite.name' \
-         '                               PASSED (build)'],
+         '                               PASSED (build <zephyr>)'],
         None
     ),
     (
@@ -2039,6 +2042,7 @@ def test_projectbuilder_report_out(
     instance_mock.platform.name = 'dummy platform'
     instance_mock.status = status
     instance_mock.reason = 'dummy reason'
+    instance_mock.toolchain = 'zephyr'
     instance_mock.testsuite.name = 'dummy.testsuite.name'
     skip_mock_tc = mock.Mock(status=TwisterStatus.SKIP, reason=None)
     skip_mock_tc.name = 'mocked_testcase_to_skip'

@@ -651,6 +651,9 @@ class CMake:
             f'-DPython3_EXECUTABLE={pathlib.Path(sys.executable).as_posix()}'
         ]
 
+        if self.instance.toolchain:
+            cmake_args.append(f'-DZEPHYR_TOOLCHAIN_VARIANT={self.instance.toolchain}')
+
         # If needed, run CMake using the package_helper script first, to only run
         # a subset of all cmake modules. This output will be used to filter
         # testcases, and the full CMake configuration will be run for
@@ -1534,6 +1537,8 @@ class ProjectBuilder(FilterBuilder):
                      and hasattr(self.instance.handler, 'seed')
                      and self.instance.handler.seed is not None ):
                     more_info += "/seed: " + str(self.options.seed)
+                if instance.toolchain:
+                    more_info += f" <{instance.toolchain}>"
             logger.info(
                 f"{results.done - results.filtered_static:>{total_tests_width}}/{total_to_do}"
                 f" {instance.platform.name:<25} {instance.testsuite.name:<50}"
