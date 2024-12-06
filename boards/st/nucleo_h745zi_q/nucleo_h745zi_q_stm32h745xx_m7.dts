@@ -26,6 +26,7 @@
 		zephyr,dtcm = &dtcm;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,canbus = &fdcan1;
 	};
 
 	pwmleds {
