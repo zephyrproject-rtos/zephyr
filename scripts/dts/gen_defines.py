@@ -288,6 +288,9 @@ def write_special_props(node: edtlib.Node) -> None:
     write_fixed_partitions(node)
     write_gpio_hogs(node)
 
+    # Macros specific to Zephyr's clock implementation
+    write_clocks(node)
+
 
 def write_ranges(node: edtlib.Node) -> None:
     # ranges property: edtlib knows the right #address-cells and
@@ -566,6 +569,21 @@ def write_gpio_hogs(node: edtlib.Node) -> None:
         for macro, val in macro2val.items():
             out_dt_define(macro, val)
 
+def write_clocks(node: edtlib.Node) -> None:
+    # Write special macros for clock-output-names and clock-state-names properties.
+
+    out_comment("Clock management (clock-output-names, clock-state-names) properties:")
+
+    for prop_name, prop in node.props.items():
+        if prop_name == "clock-output-names":
+            for i, clock_name in enumerate(prop.val):
+                prop_name = clock_name.replace("-", "_")
+                out_dt_define(f"{node.z_path_id}_CLOCK_OUTPUT_NAME_{prop_name}_IDX", i)
+        if prop_name == "clock-state-names":
+            for i, clock_state in enumerate(prop.val):
+                prop_name = clock_state.replace("-", "_")
+                out_dt_define(f"{node.z_path_id}_CLOCK_STATE_NAME_{prop_name}_IDX", i)
+
 
 def write_vanilla_props(node: edtlib.Node) -> None:
     # Writes macros for any and all properties defined in the
@@ -720,6 +738,21 @@ def write_dep_info(node: edtlib.Node) -> None:
     out_comment("Ordinals for what depends directly on this node:")
     out_dt_define(f"{node.z_path_id}_SUPPORTS_ORDS",
                   fmt_dep_list(node.required_by))
+
+    # Generate supported clock ordinals. This list looks similar to
+    # the standard "required by" for a given node, but will exclude
+    # dependencies with the "clock-state" compatible, as these
+    # dependencies only exist because of the phandle clock reference,
+    # and do not need clock configuration notifications.
+    clock_ords = []
+    for dep in node.required_by:
+        if not (("compatible" in dep.props) and
+                (dep.props["compatible"] == "clock-state")):
+            clock_ords.append(dep)
+
+    out_comment("Ordinals for clock dependencies:")
+    out_dt_define(f"{node.z_path_id}_SUPPORTS_CLK_ORDS",
+                  fmt_dep_list(clock_ords))
 
 
 def prop2value(prop: edtlib.Property) -> edtlib.PropertyValType:
