@@ -13,6 +13,8 @@
 	aliases {
 		led0 = &led0;
 		led1 = &led1;
+		led2 = &led2;
+		led3 = &led3;
 		sw0 = &btn0;
 		sw1 = &btn1;
 	};
