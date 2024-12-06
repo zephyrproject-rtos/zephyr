@@ -252,11 +252,7 @@ int supplicant_send_wifi_mgmt_disc_event(void *ctx, int reason_code)
 }
 
 #ifdef CONFIG_AP
-#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
-static enum wifi_link_mode get_sta_link_mode(struct hostapd_iface *iface, struct sta_info *sta)
-#else
 static enum wifi_link_mode get_sta_link_mode(struct wpa_supplicant *wpa_s, struct sta_info *sta)
-#endif
 {
 	if (sta->flags & WLAN_STA_HE) {
 		return WIFI_6;
@@ -264,37 +260,17 @@ static enum wifi_link_mode get_sta_link_mode(struct wpa_supplicant *wpa_s, struc
 		return WIFI_5;
 	} else if (sta->flags & WLAN_STA_HT) {
 		return WIFI_4;
-#ifndef CONFIG_WIFI_NM_HOSTAPD_AP
 	} else if (sta->flags & WLAN_STA_NONERP) {
 		return WIFI_1;
 	} else if (wpa_s->assoc_freq > 4000) {
 		return WIFI_2;
 	} else if (wpa_s->assoc_freq > 2000) {
 		return WIFI_3;
-#else
-	} else if ((sta->flags & WLAN_STA_NONERP) ||
-		   (iface->current_mode->mode == HOSTAPD_MODE_IEEE80211B)) {
-		return WIFI_1;
-	} else if (iface->freq > 4000) {
-		return WIFI_2;
-	} else if (iface->freq > 2000) {
-		return WIFI_3;
-#endif
 	} else {
 		return WIFI_LINK_MODE_UNKNOWN;
 	}
 }
 
-#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
-static bool is_twt_capable(struct hostapd_iface *iface, struct sta_info *sta)
-{
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_11AX
-	return hostapd_get_he_twt_responder(iface->bss[0], IEEE80211_MODE_AP);
-#else
-	return false;
-#endif
-}
-#else
 static bool is_twt_capable(struct wpa_supplicant *wpa_s, struct sta_info *sta)
 {
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_11AX
@@ -303,19 +279,13 @@ static bool is_twt_capable(struct wpa_supplicant *wpa_s, struct sta_info *sta)
 	return false;
 #endif
 }
-#endif
 
 int supplicant_send_wifi_mgmt_ap_status(void *ctx,
 					enum net_event_wifi_cmd event,
 					enum wifi_ap_status ap_status)
 {
-#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
-	struct hostapd_iface *iface = ctx;
-	char *ifname = iface->conf->bss[0]->iface;
-#else
 	struct wpa_supplicant *wpa_s = ctx;
 	char *ifname = wpa_s->ifname;
-#endif
 	int status = ap_status;
 
 	return supplicant_send_wifi_mgmt_event(ifname,
@@ -329,13 +299,8 @@ int supplicant_send_wifi_mgmt_ap_sta_event(void *ctx,
 					   void *data)
 {
 	struct sta_info *sta = data;
-#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
-	struct hostapd_iface *ap_ctx = ctx;
-	char *ifname = ap_ctx->bss[0]->conf->iface;
-#else
 	struct wpa_supplicant *ap_ctx = ctx;
 	char *ifname = ap_ctx->ifname;
-#endif
 	struct wifi_ap_sta_info sta_info = { 0 };
 
 	if (!ap_ctx || !sta) {
@@ -463,42 +428,3 @@ int supplicant_generate_state_event(const char *ifname,
 
 	return 0;
 }
-
-#if defined(CONFIG_WIFI_NM_HOSTAPD_AP) && defined(CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP)
-void hostapd_handle_dpp_event(void *ctx, char *buf, size_t len)
-{
-	struct hostapd_data *hapd = (struct hostapd_data *)ctx;
-
-	if (hapd == NULL) {
-		return;
-	}
-
-	struct hostapd_bss_config *conf = hapd->conf;
-
-	if (conf == NULL || !(conf->wpa_key_mgmt & WPA_KEY_MGMT_DPP)) {
-		return;
-	}
-
-	/* check hostapd */
-	if (!strncmp(buf, DPP_EVENT_CONNECTOR, sizeof(DPP_EVENT_CONNECTOR) - 1)) {
-		if (conf->dpp_connector) {
-			os_free(conf->dpp_connector);
-		}
-
-		conf->dpp_connector = os_strdup(buf + sizeof(DPP_EVENT_CONNECTOR) - 1);
-	} else if (!strncmp(buf, DPP_EVENT_C_SIGN_KEY, sizeof(DPP_EVENT_C_SIGN_KEY) - 1)) {
-		if (conf->dpp_csign) {
-			wpabuf_free(conf->dpp_csign);
-		}
-
-		conf->dpp_csign = wpabuf_parse_bin(buf + sizeof(DPP_EVENT_C_SIGN_KEY) - 1);
-	} else if (!strncmp(buf, DPP_EVENT_NET_ACCESS_KEY, sizeof(DPP_EVENT_NET_ACCESS_KEY) - 1)) {
-		if (conf->dpp_netaccesskey) {
-			wpabuf_free(conf->dpp_netaccesskey);
-		}
-
-		conf->dpp_netaccesskey =
-			wpabuf_parse_bin(buf + sizeof(DPP_EVENT_NET_ACCESS_KEY) - 1);
-	}
-}
-#endif /* CONFIG_WIFI_NM_HOSTAPD_AP && CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
