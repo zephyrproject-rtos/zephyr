@@ -2223,6 +2223,16 @@ Release Notes:
   labels:
     - "area: Wi-Fi"
 
+"Drivers: Wi-Fi NXP":
+  status: maintained
+  maintainers:
+    - dleach02
+    - MaochenWang1
+  files:
+    - drivers/wifi/nxp/
+  labels:
+    - "platform: NXP Drivers"
+
 "Drivers: Memory Management":
   status: maintained
   maintainers:
@@ -3695,6 +3705,8 @@ NXP Drivers:
     - include/zephyr/drivers/*/*mcux*
     - arch/arm/core/mpu/nxp_mpu.c
     - dts/bindings/*/nxp*
+  files-exclude:
+    - drivers/wifi/nxp/
   files-regex-exclude:
     - .*s32.*
   labels:
