@@ -1517,6 +1517,7 @@ static int cmd_wifi_twt_setup_quick(const struct shell *sh, size_t argc,
 	params.setup.implicit = 1;
 	params.setup.trigger = 0;
 	params.setup.announce = 0;
+	params.setup.exponent = 10;
 
 	if (!parse_number(sh, &value, argv[idx++], NULL, 1, WIFI_MAX_TWT_WAKE_INTERVAL_US)) {
 		return -EINVAL;
