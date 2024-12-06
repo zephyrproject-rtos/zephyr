@@ -207,6 +207,10 @@ __net_socket struct tls_context {
 
 		bool dtls_handshake_on_connect;
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
+
+#if defined(CONFIG_NET_SOCKETS_TLS_CERT_EXT_CALLBACK)
+		struct tls_cert_ext_cb cert_ext;
+#endif /* CONFIG_NET_SOCKETS_TLS_CERT_EXT_CALLBACK */
 	} options;
 
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
@@ -954,6 +958,27 @@ static bool crt_is_pem(const unsigned char *buf, size_t buflen)
 	return (buflen != 0 && buf[buflen - 1] == '\0' &&
 		strstr((const char *)buf, "-----BEGIN CERTIFICATE-----") != NULL);
 }
+
+static int add_certificate(struct tls_context *tls, mbedtls_x509_crt *chain,
+			   struct tls_credential *cert)
+{
+	int make_copy =
+		(tls->options.cert_nocopy == TLS_CERT_NOCOPY_OPTIONAL) ? 0 : 1;
+	mbedtls_x509_crt_ext_cb_t cb =
+		COND_CODE_1(CONFIG_NET_SOCKETS_TLS_CERT_EXT_CALLBACK,
+			    (tls->options.cert_ext.cb),
+			    (NULL));
+	void *cb_ctx = COND_CODE_1(CONFIG_NET_SOCKETS_TLS_CERT_EXT_CALLBACK,
+				   (tls->options.cert_ext.ctx),
+				   (NULL));
+
+	if (crt_is_pem(cert->buf, cert->len)) {
+		return mbedtls_x509_crt_parse(chain, cert->buf, cert->len);
+	}
+
+	return mbedtls_x509_crt_parse_der_with_ext_cb(
+			chain, cert->buf, cert->len, make_copy, cb, cb_ctx);
+}
 #endif
 
 static int tls_add_ca_certificate(struct tls_context *tls,
@@ -962,16 +987,7 @@ static int tls_add_ca_certificate(struct tls_context *tls,
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
 	int err;
 
-	if (tls->options.cert_nocopy == TLS_CERT_NOCOPY_NONE ||
-	    crt_is_pem(ca_cert->buf, ca_cert->len)) {
-		err = mbedtls_x509_crt_parse(&tls->ca_chain, ca_cert->buf,
-					     ca_cert->len);
-	} else {
-		err = mbedtls_x509_crt_parse_der_nocopy(&tls->ca_chain,
-							ca_cert->buf,
-							ca_cert->len);
-	}
-
+	err = add_certificate(tls, &tls->ca_chain, ca_cert);
 	if (err != 0) {
 		NET_ERR("Failed to parse CA certificate, err: -0x%x", -err);
 		return -EINVAL;
@@ -998,17 +1014,9 @@ static int tls_add_own_cert(struct tls_context *tls,
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
 	int err;
 
-	if (tls->options.cert_nocopy == TLS_CERT_NOCOPY_NONE ||
-	    crt_is_pem(own_cert->buf, own_cert->len)) {
-		err = mbedtls_x509_crt_parse(&tls->own_cert,
-					     own_cert->buf, own_cert->len);
-	} else {
-		err = mbedtls_x509_crt_parse_der_nocopy(&tls->own_cert,
-							own_cert->buf,
-							own_cert->len);
-	}
-
+	err = add_certificate(tls, &tls->own_cert, own_cert);
 	if (err != 0) {
+		NET_ERR("Failed to parse own certificate, err: -0x%x", -err);
 		return -EINVAL;
 	}
 
@@ -2031,6 +2039,40 @@ static int tls_opt_dtls_role_set(struct tls_context *context,
 
 	return 0;
 }
+
+#if defined(CONFIG_NET_SOCKETS_TLS_CERT_EXT_CALLBACK)
+static int tls_opt_cert_ext_cb_set(struct tls_context *context,
+				   const void *optval, socklen_t optlen)
+{
+	struct tls_cert_ext_cb *cert_ext;
+
+	if (!optval) {
+		return -EINVAL;
+	}
+
+	if (optlen != sizeof(struct tls_cert_ext_cb)) {
+		return -EINVAL;
+	}
+
+	cert_ext = (struct tls_cert_ext_cb *)optval;
+	if (cert_ext->cb == NULL && cert_ext->ctx != NULL) {
+		return -EINVAL;
+	}
+
+	context->options.cert_ext = *cert_ext;
+
+	return 0;
+}
+#else /* CONFIG_NET_SOCKETS_TLS_CERT_EXT_CALLBACK */
+static int tls_opt_cert_ext_cb_set(struct tls_context *context,
+				   const void *optval, socklen_t optlen)
+{
+	NET_ERR("TLS_CERT_EXT_CALLBACK option requires "
+		"CONFIG_NET_SOCKETS_TLS_CERT_EXT_CALLBACK enabled");
+
+	return -ENOPROTOOPT;
+}
+#endif /* CONFIG_NET_SOCKETS_TLS_CERT_EXT_CALLBACK */
 
 static int protocol_check(int family, int type, int *proto)
 {
@@ -3637,6 +3679,10 @@ int ztls_setsockopt_ctx(struct tls_context *ctx, int level, int optname,
 	case TLS_NATIVE:
 		/* Option handled at the socket dispatcher level. */
 		err = 0;
+		break;
+
+	case TLS_CERT_EXT_CALLBACK:
+		err = tls_opt_cert_ext_cb_set(ctx, optval, optlen);
 		break;
 
 	default:
