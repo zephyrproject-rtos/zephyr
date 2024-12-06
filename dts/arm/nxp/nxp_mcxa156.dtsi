@@ -269,6 +269,17 @@
 			#io-channel-cells = <1>;
 			clocks = <&syscon MCUX_LPADC2_CLK>;
 		};
+
+		lptmr0: lptmr@400ab000 {
+			compatible = "nxp,lptmr";
+			reg = <0x400ab000 0x1000>;
+			interrupts = <55 0>;
+			clock-frequency = <16000>;
+			prescaler = <1>;
+			clk-source = <1>;
+			resolution = <32>;
+			status = "disabled";
+		};
 	};
 };
 
