@@ -39,12 +39,23 @@ struct ina230_data {
 	int16_t current;
 	uint16_t bus_voltage;
 	uint16_t power;
+	int16_t shunt_voltage;
+	uint16_t mask;
 #ifdef CONFIG_INA230_TRIGGER
 	const struct device *gpio;
 	struct gpio_callback gpio_cb;
-	struct k_work work;
 	sensor_trigger_handler_t handler_alert;
 	const struct sensor_trigger *trig_alert;
+	sensor_trigger_handler_t handler_cnvr;
+	const struct sensor_trigger *trig_cnvr;
+#if defined(CONFIG_INA230_TRIGGER_OWN_THREAD)
+
+	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_INA230_THREAD_STACK_SIZE);
+	struct k_sem sem;
+	struct k_thread thread;
+#elif defined(CONFIG_INA230_TRIGGER_GLOBAL_THREAD)
+	struct k_work work;
+#endif
 #endif /* CONFIG_INA230_TRIGGER */
 };
 
@@ -56,7 +67,6 @@ struct ina230_config {
 	uint8_t power_scale;
 	uint32_t uv_lsb;
 #ifdef CONFIG_INA230_TRIGGER
-	bool trig_enabled;
 	uint16_t mask;
 	const struct gpio_dt_spec alert_gpio;
 	uint16_t alert_limit;
