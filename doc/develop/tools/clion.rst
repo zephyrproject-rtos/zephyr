@@ -3,7 +3,7 @@
 CLion
 #####
 
-> **Updated:** This guide describes how to set up, build, and debug Zephyr’s sample application in CLion, using the IDE’s CMake integration. This approach is no longer optimal. 
+> **Updated:** This guide describes how to set up, build, and debug Zephyr’s sample application in CLion, using the IDE’s CMake integration. This approach is no longer optimal.
 >
 > CLion now features [native Zephyr West integration](https://www.jetbrains.com/help/clion/zephyr.html), which provides an easier and more intuitive way to open, build, and run/debug Zephyr projects. This guide will be updated soon, but it’s still valid if you prefer to use CMake.
 
