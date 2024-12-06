@@ -648,8 +648,13 @@ class CMake:
             f'-D{warning_command}={warnings_as_errors}',
             f'-DEXTRA_GEN_EDT_ARGS={gen_edt_args}',
             f'-G{self.env.generator}',
-            f'-DPython3_EXECUTABLE={pathlib.Path(sys.executable).as_posix()}'
+            f'-DPython3_EXECUTABLE={pathlib.Path(sys.executable).as_posix()}',
         ]
+        if self.env.options.force_platform_toolchain:
+            for e in self.env.options.force_platform_toolchain:
+                platform, variant = e.split(":")
+                if platform and variant and self.platform.name == platform:
+                    cmake_args.append(f'-DZEPHYR_TOOLCHAIN_VARIANT={variant}')
 
         # If needed, run CMake using the package_helper script first, to only run
         # a subset of all cmake modules. This output will be used to filter
