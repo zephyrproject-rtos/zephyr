@@ -20,7 +20,7 @@ The board features a USB Type-C interface with configurable routing through sold
 | SB7/SB8       | Closed  | Connect CC1/CC2 to pull-down resistors       |
 +---------------+---------+-----------------------------------------------+
 
-Supported Hardware Features
+The ``stm32g474_core`` board target supports the following hardware features:
 --------------------------
 
 +------------+------------+-------------------------------------+
