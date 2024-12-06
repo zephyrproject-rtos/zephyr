@@ -25,7 +25,7 @@
 		zephyr,shell-uart = &lpuart1;
 		zephyr,canbus = &flexcan2;
 		zephyr,flash-controller = &is25wp128;
-		zephyr,flash = &sram0;
+		zephyr,flash = &ocram;
 		nxp,m4-partition = &slot1_partition;
 		zephyr,ipc = &mailbox_b;
 	};
