@@ -29,6 +29,7 @@ LOG_MODULE_REGISTER(net_wifi_shell, LOG_LEVEL_INF);
 #include <zephyr/sys/slist.h>
 
 #include "net_shell_private.h"
+#include <math.h>
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 static const char ca_cert_test[] = {
 	#include <wifi_enterprise_test_certs/ca.pem.inc>
@@ -1624,6 +1625,10 @@ static int twt_args_to_params(const struct shell *sh, size_t argc, char *argv[],
 	int opt_index = 0;
 	struct getopt_state *state;
 	long value;
+	double twt_mantissa_scale = 0.0;
+	double twt_interval_scale = 0.0;
+	uint16_t scale = 1000;
+	int exponent = 0;
 	static const struct option long_options[] = {
 		{"negotiation-type", required_argument, 0, 'n'},
 		{"setup-cmd", required_argument, 0, 'c'},
@@ -1636,12 +1641,15 @@ static int twt_args_to_params(const struct shell *sh, size_t argc, char *argv[],
 		{"wake-interval", required_argument, 0, 'w'},
 		{"interval", required_argument, 0, 'i'},
 		{"wake-ahead-duration", required_argument, 0, 'D'},
+		{"info-disable", required_argument, 0, 'd'},
+		{"exponent", required_argument, 0, 'e'},
+		{"mantissa", required_argument, 0, 'm'},
 		{"help", no_argument, 0, 'h'},
 		{0, 0, 0, 0}};
 
 	params->operation = WIFI_TWT_SETUP;
 
-	while ((opt = getopt_long(argc, argv, "n:c:t:f:r:T:I:a:t:w:i:D:d:e:h",
+	while ((opt = getopt_long(argc, argv, "n:c:t:f:r:T:I:a:t:w:i:D:d:e:m:h",
 				  long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
@@ -1730,9 +1738,54 @@ static int twt_args_to_params(const struct shell *sh, size_t argc, char *argv[],
 			params->setup.twt_wake_ahead_duration = (uint32_t)value;
 			break;
 
+		case 'd':
+			if (!parse_number(sh, &value, state->optarg, NULL, 0, 1)) {
+				return -EINVAL;
+			}
+			params->setup.twt_info_disable = (bool)value;
+			break;
+
+		case 'e':
+			if (!parse_number(sh, &value, state->optarg, NULL, 0,
+					  WIFI_MAX_TWT_EXPONENT)) {
+				return -EINVAL;
+			}
+			params->setup.twt_exponent = (uint8_t)value;
+			break;
+
+		case 'm':
+			if (!parse_number(sh, &value, state->optarg, NULL, 0, 0xFFFF)) {
+				return -EINVAL;
+			}
+			params->setup.twt_mantissa = (uint16_t)value;
+			break;
+
 		case 'h':
 			return -ENOEXEC;
 		}
+	}
+
+	if ((params->setup.twt_interval != 0) &&
+	   ((params->setup.twt_exponent != 0) ||
+	   (params->setup.twt_mantissa != 0))) {
+		PR_ERROR("Only one of TWT internal or (mantissa, exponent) should be used\n");
+		return -EINVAL;
+	}
+
+	if (params->setup.twt_interval) {
+		/* control the region of mantissa filed */
+		twt_interval_scale = (double)(params->setup.twt_interval / scale);
+		/* derive mantissa and exponent from interval */
+		twt_mantissa_scale = frexp(twt_interval_scale, &exponent);
+		params->setup.twt_mantissa = ceil(twt_mantissa_scale * scale);
+		params->setup.twt_exponent = exponent;
+	} else if ((params->setup.twt_exponent != 0) ||
+		   (params->setup.twt_mantissa != 0)) {
+		params->setup.twt_interval = floor(ldexp(params->setup.twt_mantissa,
+							 params->setup.twt_exponent));
+	} else {
+		PR_ERROR("Either TWT interval or (mantissa, exponent) is needed\n");
+		return -EINVAL;
 	}
 
 	return 0;
@@ -3386,9 +3439,12 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_twt_ops,
 		"<-w --wake-interval>: 1-262144us\n"
 		"<-i --interval>: 1us-2^31us\n"
 		"<-D --wake-ahead-duration>: 0us-2^31us\n"
+		"<-d --info-disable>: 0/1\n"
+		"<-e --exponent>: 0-31\n"
+		"<-m --mantissa>: 1-2^16\n"
 		"[-h, --help]: Print out command usage.\n",
 		cmd_wifi_twt_setup,
-		23, 1),
+		25, 5),
 	SHELL_CMD_ARG(
 		btwt_setup, NULL,
 		" Start a BTWT flow:\n"

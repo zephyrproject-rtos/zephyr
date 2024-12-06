@@ -756,6 +756,12 @@ struct wifi_twt_params {
 			 * prepare the data before TWT SP starts.
 			 */
 			uint32_t twt_wake_ahead_duration;
+			/** TWT info enabled or disable */
+			bool twt_info_disable;
+			/** TWT exponent */
+			uint8_t twt_exponent;
+			/** TWT Mantissa Range: [0-sizeof(UINT16)] */
+			uint16_t twt_mantissa;
 		} setup;
 		/** Setup specific parameters */
 		struct {
@@ -792,6 +798,7 @@ struct wifi_twt_params {
 /* 256 (u8) * 1TU */
 #define WIFI_MAX_TWT_WAKE_INTERVAL_US 262144
 #define WIFI_MAX_TWT_WAKE_AHEAD_DURATION_US (LONG_MAX - 1)
+#define WIFI_MAX_TWT_EXPONENT 31
 
 /** @endcond */
 
