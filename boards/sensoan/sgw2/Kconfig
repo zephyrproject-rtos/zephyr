@@ -1,0 +1,37 @@
+# SGW-2 board configuration
+#
+# Copyright (c) 2019 Nordic Semiconductor ASA
+# Copyright (c) 2024 Sensoan Oy
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_SGW2_NRF5340_CPUAPP || BOARD_SGW2_NRF5340_CPUAPP_NS || BOARD_SGW2_NRF5340_CPUNET
+
+if BOARD_SGW2_NRF5340_CPUAPP || BOARD_SGW2_NRF5340_CPUAPP_NS
+
+config DOMAIN_CPUNET_BOARD
+	string
+	default "sgw2/nrf5340/cpunet"
+	help
+	  The board which will be used for CPUNET domain when creating a multi
+	  image application where one or more images should be located on
+	  another board. For example hci_rpmsg on the nRF5340_cpunet for
+	  Bluetooth applications.
+
+endif #  BOARD_SGW2_NRF5340_CPUAPP || BOARD_SGW2_NRF5340_CPUAPP_NS
+
+config DOMAIN_CPUAPP_BOARD
+	string
+	default "sgw2/nrf5340/cpuapp"
+	depends on BOARD_SGW2_NRF5340_CPUNET
+	help
+	  The board which will be used for CPUAPP domain when creating a multi
+	  image application where one or more images should be located on
+	  another board.
+
+endif # BOARD_SGW2_NRF5340_CPUAPP || BOARD_SGW2_NRF5340_CPUAPP_NS || BOARD_SGW2_NRF5340_CPUNET
+
+module=BOARD
+module-dep=LOG
+module-str=Log level for board
+source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
