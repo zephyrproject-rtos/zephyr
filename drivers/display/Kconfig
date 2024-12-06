@@ -48,5 +48,6 @@ source "drivers/display/Kconfig.gc9x01x"
 source "drivers/display/Kconfig.led_strip_matrix"
 source "drivers/display/Kconfig.renesas_lcdc"
 source "drivers/display/Kconfig.nt35510"
+source "drivers/display/Kconfig.backlight_pwm"
 
 endif # DISPLAY
