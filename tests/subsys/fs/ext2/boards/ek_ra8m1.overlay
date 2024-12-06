@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2024 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&sdhc0 {
+	sdmmc {
+		partition {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size_cells = <1>;
+			slot1_partition: partition@0 {
+				reg = <0x00000000 0x800000>;
+			};
+		};
+	};
+};
