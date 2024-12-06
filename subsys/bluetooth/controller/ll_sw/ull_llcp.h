@@ -129,14 +129,13 @@ uint8_t ull_cp_conn_update(struct ll_conn *conn, uint16_t interval_min, uint16_t
 			   uint16_t latency, uint16_t timeout, uint16_t *offsets);
 
 /**
- * @brief Accept the remote device’s request to change connection parameters.
+ * @brief Accept/decline the remote device’s request to change
+ *        connection parameters possibly requesting updated
+ *        parameters.
  */
-void ull_cp_conn_param_req_reply(struct ll_conn *conn);
-
-/**
- * @brief Reject the remote device’s request to change connection parameters.
- */
-void ull_cp_conn_param_req_neg_reply(struct ll_conn *conn, uint8_t error_code);
+uint8_t ull_cp_conn_param_req_reply(struct ll_conn *conn, uint8_t status,
+				  uint16_t interval_min, uint16_t interval_max, uint16_t latency,
+				  uint16_t timeout, uint16_t min_ce_len, uint16_t max_ce_len);
 
 /**
  * @brief Check if a remote data length update is in the works.

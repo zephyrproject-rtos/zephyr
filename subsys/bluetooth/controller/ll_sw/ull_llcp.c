@@ -1153,28 +1153,36 @@ uint8_t ull_cp_remote_dle_pending(struct ll_conn *conn)
 }
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
+uint8_t ull_cp_conn_param_req_reply(struct ll_conn *conn, uint8_t status,
+				  uint16_t interval_min, uint16_t interval_max, uint16_t latency,
+				  uint16_t timeout, uint16_t min_ce_len, uint16_t max_ce_len)
+{
+	ARG_UNUSED(min_ce_len);
+	ARG_UNUSED(max_ce_len);
+	uint8_t ret = BT_HCI_ERR_CMD_DISALLOWED;
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
-void ull_cp_conn_param_req_reply(struct ll_conn *conn)
-{
 	struct proc_ctx *ctx;
 
 	ctx = llcp_rr_peek(conn);
 	if (ctx && ctx->proc == PROC_CONN_PARAM_REQ) {
-		llcp_rp_conn_param_req_reply(conn, ctx);
+		if (status) {
+			ctx->data.cu.error = status;
+			llcp_rp_conn_param_req_neg_reply(conn, ctx);
+		} else {
+			ctx->data.cu.interval_min = interval_min;
+			ctx->data.cu.interval_max = interval_max;
+			ctx->data.cu.latency = latency;
+			ctx->data.cu.timeout = timeout;
+			llcp_rp_conn_param_req_reply(conn, ctx);
+		}
+		ret = BT_HCI_ERR_SUCCESS;
 	}
+#endif
+
+	return ret;
 }
 
-void ull_cp_conn_param_req_neg_reply(struct ll_conn *conn, uint8_t error_code)
-{
-	struct proc_ctx *ctx;
-
-	ctx = llcp_rr_peek(conn);
-	if (ctx && ctx->proc == PROC_CONN_PARAM_REQ) {
-		ctx->data.cu.error = error_code;
-		llcp_rp_conn_param_req_neg_reply(conn, ctx);
-	}
-}
-
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 uint8_t ull_cp_remote_cpr_pending(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx;

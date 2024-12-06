@@ -296,46 +296,42 @@ int ll_tx_mem_enqueue(uint16_t handle, void *tx)
 	return 0;
 }
 
-uint8_t ll_conn_update(uint16_t handle, uint8_t cmd, uint8_t status, uint16_t interval_min,
-		    uint16_t interval_max, uint16_t latency, uint16_t timeout, uint16_t *offset)
+uint8_t ll_conn_update(uint16_t handle, uint16_t interval_min, uint16_t interval_max,
+		       uint16_t latency, uint16_t timeout, uint16_t *offset)
 {
+	uint8_t err = BT_HCI_ERR_UNKNOWN_CONN_ID;
 	struct ll_conn *conn;
 
 	conn = ll_connected_get(handle);
-	if (!conn) {
-		return BT_HCI_ERR_UNKNOWN_CONN_ID;
-	}
-
-	if (cmd == 0U) {
-		uint8_t err;
-
+	if (conn) {
 		err = ull_cp_conn_update(conn, interval_min, interval_max, latency, timeout,
 					 offset);
-		if (err) {
-			return err;
-		}
 
-		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
-		    conn->lll.role) {
+		if (!err && IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn->lll.role) {
 			ull_periph_latency_cancel(conn, handle);
 		}
-	} else if (cmd == 2U) {
-#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
-		if (status == 0U) {
-			ull_cp_conn_param_req_reply(conn);
-		} else {
-			ull_cp_conn_param_req_neg_reply(conn, status);
-		}
-		return BT_HCI_ERR_SUCCESS;
-#else /* !CONFIG_BT_CTLR_CONN_PARAM_REQ */
-		/* CPR feature not supported */
-		return BT_HCI_ERR_CMD_DISALLOWED;
-#endif /* !CONFIG_BT_CTLR_CONN_PARAM_REQ */
-	} else {
-		return BT_HCI_ERR_UNKNOWN_CMD;
 	}
 
-	return 0;
+	return err;
+}
+
+uint8_t ll_conn_update_reply(uint16_t handle, uint8_t status,
+			     uint16_t interval_min, uint16_t interval_max,
+			     uint16_t latency, uint16_t timeout,
+			     uint16_t min_ce_len, uint16_t max_ce_len)
+{
+	uint8_t ret = BT_HCI_ERR_UNKNOWN_CONN_ID;
+	struct ll_conn *conn;
+
+	conn = ll_connected_get(handle);
+	if (conn) {
+		ret = ull_cp_conn_param_req_reply(conn, status,
+					    interval_min, interval_max,
+					    latency, timeout,
+					    min_ce_len, max_ce_len);
+	}
+
+	return ret;
 }
 
 uint8_t ll_chm_get(uint16_t handle, uint8_t *chm)
