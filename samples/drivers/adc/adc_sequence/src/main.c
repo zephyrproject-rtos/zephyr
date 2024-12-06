@@ -81,6 +81,11 @@ int main(void)
 
 		for (size_t channel_index = 0U; channel_index < CHANNEL_COUNT; channel_index++) {
 			int32_t val_mv;
+			uint8_t resolution = CONFIG_SEQUENCE_RESOLUTION;
+
+			if (channel_cfgs[channel_index].differential) {
+				resolution -= 1;
+			}
 
 			printf("- %s, channel %" PRId32 ", %" PRId32 " sequence samples:\n",
 			       adc->name, channel_cfgs[channel_index].channel_id,
@@ -93,7 +98,7 @@ int main(void)
 				printf("- - %" PRId32, val_mv);
 				err = adc_raw_to_millivolts(vrefs_mv[channel_index],
 							    channel_cfgs[channel_index].gain,
-							    CONFIG_SEQUENCE_RESOLUTION, &val_mv);
+							    resolution, &val_mv);
 
 				/* conversion to mV may not be supported, skip if not */
 				if ((err < 0) || vrefs_mv[channel_index] == 0) {
