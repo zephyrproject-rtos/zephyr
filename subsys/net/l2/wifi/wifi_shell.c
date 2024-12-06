@@ -1609,6 +1609,8 @@ static int twt_args_to_params(const struct shell *sh, size_t argc, char *argv[],
 		{"wake-interval", required_argument, 0, 'w'},
 		{"interval", required_argument, 0, 'i'},
 		{"wake-ahead-duration", required_argument, 0, 'D'},
+		{"info-disable", required_argument, 0, 'd'},
+		{"exponent", required_argument, 0, 'e'},
 		{"help", no_argument, 0, 'h'},
 		{0, 0, 0, 0}};
 
@@ -1701,6 +1703,21 @@ static int twt_args_to_params(const struct shell *sh, size_t argc, char *argv[],
 				return -EINVAL;
 			}
 			params->setup.twt_wake_ahead_duration = (uint32_t)value;
+			break;
+
+		case 'd':
+			if (!parse_number(sh, &value, state->optarg, NULL, 0, 1)) {
+				return -EINVAL;
+			}
+			params->setup.twt_info_disable = (bool)value;
+			break;
+
+		case 'e':
+			if (!parse_number(sh, &value, state->optarg, NULL, 0,
+					  WIFI_MAX_TWT_EXPONENT)) {
+				return -EINVAL;
+			}
+			params->setup.exponent = (uint8_t)value;
 			break;
 
 		case 'h':
@@ -3318,9 +3335,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_twt_ops,
 		"<-w --wake-interval>: 1-262144us\n"
 		"<-i --interval>: 1us-2^31us\n"
 		"<-D --wake-ahead-duration>: 0us-2^31us\n"
+		"<-d --info-disable>: 0/1\n"
+		"<-e --exponent>: 0-63\n"
 		"[-h, --help]: Print out command usage.\n",
 		cmd_wifi_twt_setup,
-		23, 1),
+		27, 1),
 	SHELL_CMD_ARG(
 		btwt_setup, NULL,
 		" Start a BTWT flow:\n"

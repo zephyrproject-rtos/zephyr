@@ -752,6 +752,10 @@ struct wifi_twt_params {
 			 * prepare the data before TWT SP starts.
 			 */
 			uint32_t twt_wake_ahead_duration;
+			/** TWT info enabled or disable */
+			bool twt_info_disable;
+			/** TWT exponent */
+			uint8_t exponent;
 		} setup;
 		/** Setup specific parameters */
 		struct {
