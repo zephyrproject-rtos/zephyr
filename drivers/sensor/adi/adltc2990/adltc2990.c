@@ -10,9 +10,10 @@
 
 #include <zephyr/sys/util.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/sensor/adltc2990.h>
 
 #include "adltc2990_reg.h"
-#include "adltc2990.h"
+#include "adltc2990_internal.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(adltc2990, CONFIG_SENSOR_LOG_LEVEL);
@@ -93,7 +94,7 @@ static enum adltc2990_monitoring_type adltc2990_get_v3_v4_measurement_modes(uint
 	return type;
 }
 
-static int adltc2990_is_busy(const struct device *dev, bool *is_busy)
+int adltc2990_is_busy(const struct device *dev, bool *is_busy)
 {
 	const struct adltc2990_config *cfg = dev->config;
 	uint8_t status_reg = 0;
@@ -132,10 +133,31 @@ static void adltc2990_get_v3_v4_val(const struct device *dev, struct sensor_valu
 	}
 }
 
-static int adltc2990_trigger_measurement(const struct device *dev)
+int adltc2990_trigger_measurement(const struct device *dev,
+				  enum adltc2990_acquisition_format format)
 {
 	const struct adltc2990_config *cfg = dev->config;
+	struct adltc2990_data *data = dev->data;
 
+	if (data->acq_format == format) {
+		goto trigger_conversion;
+	}
+
+	data->acq_format = format;
+	uint8_t ctrl_reg_setting;
+
+	if (i2c_reg_read_byte_dt(&cfg->bus, ADLTC2990_REG_CONTROL, &ctrl_reg_setting)) {
+		LOG_ERR("reading control register failed.");
+		return -EIO;
+	}
+
+	ctrl_reg_setting |= format << 6;
+	if (i2c_reg_write_byte_dt(&cfg->bus, ADLTC2990_REG_CONTROL, ctrl_reg_setting)) {
+		LOG_ERR("configuring for single bus failed.");
+		return -EIO;
+	}
+
+trigger_conversion:
 	return i2c_reg_write_byte_dt(&cfg->bus, ADLTC2990_REG_TRIGGER, 0x1);
 }
 
@@ -223,6 +245,7 @@ static int adltc2990_fetch_property_value(const struct device *dev,
 static int adltc2990_init(const struct device *dev)
 {
 	const struct adltc2990_config *cfg = dev->config;
+	struct adltc2990_data *data = dev->data;
 	int err;
 
 	if (!i2c_is_ready_dt(&cfg->bus)) {
@@ -230,7 +253,7 @@ static int adltc2990_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	const uint8_t ctrl_reg_setting = cfg->temp_format << 7 | cfg->acq_format << 6 | 0 << 5 |
+	const uint8_t ctrl_reg_setting = cfg->temp_format << 7 | data->acq_format << 6 | 0 << 5 |
 					 cfg->measurement_mode[1] << 3 | cfg->measurement_mode[0];
 
 	LOG_DBG("Setting Control Register to: 0x%x", ctrl_reg_setting);
@@ -239,7 +262,7 @@ static int adltc2990_init(const struct device *dev)
 		return -EIO;
 	}
 
-	err = adltc2990_trigger_measurement(dev);
+	err = adltc2990_trigger_measurement(dev, data->acq_format);
 	if (err < 0) {
 		LOG_ERR("triggering measurement failed: %d", err);
 	}
@@ -386,21 +409,6 @@ static int adltc2990_sample_fetch(const struct device *dev, enum sensor_channel 
 		}
 		break;
 
-	case SENSOR_CHAN_ALL:
-		bool is_busy = false;
-
-		ret = adltc2990_is_busy(dev, &is_busy);
-		if (ret) {
-			return ret;
-		}
-
-		if (is_busy) {
-			LOG_INF("ADLTC2990 conversion ongoing");
-			return -EBUSY;
-		}
-		adltc2990_trigger_measurement(dev);
-		break;
-
 	default:
 		LOG_ERR("does not measure channel: %d", chan);
 		return -ENOTSUP;
@@ -504,11 +512,12 @@ static DEVICE_API(sensor, adltc2990_driver_api) = {
 };
 
 #define ADLTC2990_DEFINE(inst)                                                                     \
-	static struct adltc2990_data adltc2990_data_##inst;                                        \
+	static struct adltc2990_data adltc2990_data_##inst = {                                     \
+		.acq_format = DT_INST_PROP(inst, acquistion_format),                               \
+	};                                                                                         \
 	static const struct adltc2990_config adltc2990_config_##inst = {                           \
 		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \
 		.temp_format = DT_INST_PROP(inst, temperature_format),                             \
-		.acq_format = DT_INST_PROP(inst, acquistion_format),                               \
 		.measurement_mode = DT_INST_PROP(inst, measurement_mode),                          \
 		.pins_v1_v2.pins_current_resistor =                                                \
 			DT_INST_PROP_OR(inst, pins_v1_v2_current_resistor, 1),                     \
