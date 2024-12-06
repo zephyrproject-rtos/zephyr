@@ -9,13 +9,12 @@
 
 #include <zephyr/drivers/display.h>
 #include <zephyr/drivers/video.h>
+#include <zephyr/drivers/video-controls.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(main);
 
 #ifdef CONFIG_TEST
-#include <zephyr/drivers/video-controls.h>
-
 #include "check_test_pattern.h"
 
 #define LOG_LEVEL LOG_LEVEL_DBG
@@ -177,6 +176,11 @@ int main(void)
 			       fie.stepwise.step.numerator, fie.stepwise.step.denominator);
 		}
 		fie.index++;
+	}
+
+	/* Set controls */
+	if (IS_ENABLED(CONFIG_VIDEO_CTRL_HFLIP)) {
+		video_set_ctrl(video_dev, VIDEO_CID_HFLIP, (void *)1);
 	}
 
 #ifdef CONFIG_TEST
