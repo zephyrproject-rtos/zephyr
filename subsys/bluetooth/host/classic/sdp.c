@@ -1789,7 +1789,7 @@ static uint16_t get_ss_record_len(struct net_buf *buf)
 	return 0;
 }
 
-static uint16_t get_ssa_sa_record_len(struct net_buf *buf)
+static uint16_t get_ssa_record_len(struct net_buf *buf)
 {
 	uint16_t len;
 	uint8_t seq;
@@ -1830,13 +1830,13 @@ static uint16_t get_record_len(struct bt_sdp_client *session)
 	case BT_SDP_DISCOVER_SERVICE_SEARCH:
 		len = get_ss_record_len(buf);
 		break;
-	case BT_SDP_DISCOVER_SERVICE_ATTR:
-		__fallthrough;
 	case BT_SDP_DISCOVER_SERVICE_SEARCH_ATTR:
-		len = get_ssa_sa_record_len(buf);
+		len = get_ssa_record_len(buf);
 		break;
+	case BT_SDP_DISCOVER_SERVICE_ATTR:
 	default:
 		len = buf->len;
+		break;
 	}
 
 	LOG_DBG("Record len %u", len);
