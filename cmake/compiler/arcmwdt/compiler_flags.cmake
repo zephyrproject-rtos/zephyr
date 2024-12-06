@@ -115,7 +115,7 @@ set_compiler_property(PROPERTY warning_error_misra_sane -Werror=vla)
 
 set_compiler_property(PROPERTY cstd -std=)
 
-if (NOT CONFIG_ARCMWDT_LIBC)
+if (NOT CONFIG_ARCMWDT_LIBC AND NOT CONFIG_PICOLIBC_USE_TOOLCHAIN)
   set_compiler_property(PROPERTY nostdinc -Hno_default_include -Hnoarcexlib -U__STDC_LIB_EXT1__)
   set_compiler_property(APPEND PROPERTY nostdinc_include ${NOSTDINC})
 endif()
@@ -196,7 +196,7 @@ set_compiler_property(PROPERTY no_global_merge "")
 # Required ASM flags when using mwdt
 set_property(TARGET asm PROPERTY required "-Hasmcpp")
 
-if(CONFIG_ARCMWDT_LIBC)
+if(CONFIG_ARCMWDT_LIBC OR CONFIG_PICOLIBC_USE_TOOLCHAIN)
   # We rely on the default C/C++ include locations which are provided by MWDT if we do build with
   # MW C / C++ libraries. However, for that case we still need to explicitly set header directory
   # to ASM builds (which may use 'stdbool.h').
