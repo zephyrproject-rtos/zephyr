@@ -107,3 +107,7 @@
 	pinctrl-0 = <&pinmux_lpadc0>;
 	pinctrl-names = "default";
 };
+
+&lptmr0 {
+	status = "okay";
+};
