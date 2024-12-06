@@ -67,6 +67,7 @@ else()
 		i2c_nrfx_twim_common.c
 	)
 endif()
+zephyr_library_sources_ifdef(CONFIG_I2C_NRFX_TWIS	i2c_nrfx_twis.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_NUMAKER		i2c_numaker.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_SAM_TWI		i2c_sam_twi.c)
 if(CONFIG_I2C_RTIO)
