@@ -17,6 +17,8 @@ LOG_MODULE_REGISTER(power_domain_gpio, CONFIG_POWER_DOMAIN_LOG_LEVEL);
 
 struct pd_gpio_config {
 	struct gpio_dt_spec enable;
+	const struct gpio_dt_spec *followers;
+	uint32_t num_followers;
 	uint32_t startup_delay_us;
 	uint32_t off_on_delay_us;
 };
@@ -55,6 +57,7 @@ static int pd_gpio_pm_action(const struct device *dev,
 #endif
 	const struct pd_gpio_config *cfg = dev->config;
 	struct pd_gpio_data *data = dev->data;
+	const struct gpio_dt_spec *gpio;
 	int64_t next_boot_ticks;
 	int rc = 0;
 
@@ -70,6 +73,14 @@ static int pd_gpio_pm_action(const struct device *dev,
 		k_sleep(data->next_boot);
 		/* Switch power on */
 		gpio_pin_set_dt(&cfg->enable, 1);
+		/* Enable all follower GPIOs */
+		for (int i = 0; i < cfg->num_followers; i++) {
+			/* Set pin back to physical high value */
+			gpio = &cfg->followers[i];
+			gpio_pin_set_raw(gpio->port, gpio->pin, 1);
+			LOG_DBG("%s:%02d active", cfg->followers[i].port->name,
+				cfg->followers[i].pin);
+		}
 		LOG_INF("%s is now ON", dev->name);
 		/* Wait for domain to come up */
 		k_sleep(K_USEC(cfg->startup_delay_us));
@@ -85,6 +96,14 @@ static int pd_gpio_pm_action(const struct device *dev,
 		context.action = PM_DEVICE_ACTION_TURN_OFF;
 		(void)device_supported_foreach(dev, pd_on_domain_visitor, &context);
 #endif
+		/* Disable all follower GPIOs */
+		for (int i = 0; i < cfg->num_followers; i++) {
+			/* Set pin to physical low value */
+			gpio = &cfg->followers[i];
+			gpio_pin_set_raw(gpio->port, gpio->pin, 0);
+			LOG_DBG("%s:%02d inactive", cfg->followers[i].port->name,
+				cfg->followers[i].pin);
+		}
 		/* Switch power off */
 		gpio_pin_set_dt(&cfg->enable, 0);
 		LOG_INF("%s is now OFF", dev->name);
@@ -93,6 +112,14 @@ static int pd_gpio_pm_action(const struct device *dev,
 		data->next_boot = K_TIMEOUT_ABS_TICKS(next_boot_ticks);
 		break;
 	case PM_DEVICE_ACTION_TURN_ON:
+		/* Ensure follower GPIOs are disabled */
+		for (int i = 0; i < cfg->num_followers; i++) {
+			/* Set pin to physical low value */
+			gpio = &cfg->followers[i];
+			gpio_pin_set_raw(gpio->port, gpio->pin, 0);
+			LOG_DBG("%s:%02d inactive", cfg->followers[i].port->name,
+				cfg->followers[i].pin);
+		}
 		/* Actively control the enable pin now that the device is powered */
 		gpio_pin_configure_dt(&cfg->enable, GPIO_OUTPUT_INACTIVE);
 		LOG_DBG("%s is OFF and powered", dev->name);
@@ -125,9 +152,23 @@ static int pd_gpio_init(const struct device *dev)
 	return pm_device_driver_init(dev, pd_gpio_pm_action);
 }
 
+#define _INST_RAW_FOLLOWERS(id)					\
+	DT_INST_FOREACH_PROP_ELEM_SEP(id, raw_follower_gpios,	\
+		GPIO_DT_SPEC_GET_BY_IDX, (,))
+
+/* Generate array of raw follower GPIOs */
+#define RAW_FOLLOWERS(id, name)							\
+	static const struct gpio_dt_spec name[] = {				\
+		COND_CODE_1(DT_INST_NODE_HAS_PROP(id, raw_follower_gpios),	\
+			    (_INST_RAW_FOLLOWERS(id)), ())			\
+	}
+
 #define POWER_DOMAIN_DEVICE(id)							\
+	RAW_FOLLOWERS(id, followers##id);					\
 	static const struct pd_gpio_config pd_gpio_##id##_cfg = {		\
 		.enable = GPIO_DT_SPEC_INST_GET(id, enable_gpios),		\
+		.followers = followers##id,					\
+		.num_followers = ARRAY_SIZE(followers##id),			\
 		.startup_delay_us = DT_INST_PROP(id, startup_delay_us),		\
 		.off_on_delay_us = DT_INST_PROP(id, off_on_delay_us),		\
 	};									\
