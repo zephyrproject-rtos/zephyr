@@ -56,6 +56,31 @@ static const struct irq_parent_offset lvl2_irq_list[CONFIG_NUM_2ND_LEVEL_AGGREGA
 		CONFIG_2ND_LVL_ISR_TBL_OFFSET) };
 
 /*
+ * Provide constant time access to itlineXX_mux device at runtime
+ */
+
+/* CONFIG_2ND_LVL_ISR_TBL_OFFSET is number of 1st level interrupts */
+static const struct device *itline_muxes[CONFIG_2ND_LVL_ISR_TBL_OFFSET] = {NULL};
+
+static void register_itline_mux(uint8_t irq, const struct device *dev)
+{
+	if (irq >= CONFIG_2ND_LVL_ISR_TBL_OFFSET) {
+		return;
+	}
+
+	itline_muxes[irq] = dev;
+}
+
+const struct device *get_itline_mux(uint8_t irq)
+{
+	if (irq >= CONFIG_2ND_LVL_ISR_TBL_OFFSET) {
+		return NULL;
+	}
+
+	return itline_muxes[irq];
+}
+
+/*
  * <irq_nextlevel.h> API
  */
 
@@ -181,6 +206,7 @@ static int syscfg_itline_init(const struct device *dev)
 		IRQ_CONNECT(DT_INST_IRQN(index),					\
 			    DT_INST_IRQ(index, priority),				\
 			    syscfg_itline_isr, DEVICE_DT_INST_GET(index), 0);		\
+		register_itline_mux(DT_INST_IRQN(index), DEVICE_DT_INST_GET(index));	\
 	}										\
 											\
 	const struct syscfg_itline_config syscfg_itline_config_##index = {		\
