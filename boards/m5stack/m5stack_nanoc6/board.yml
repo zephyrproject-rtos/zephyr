@@ -1,0 +1,5 @@
+board:
+  name: m5stack_nanoc6
+  vendor: m5stack
+  socs:
+  - name: esp32c6

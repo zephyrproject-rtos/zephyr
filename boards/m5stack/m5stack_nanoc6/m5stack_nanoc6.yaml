@@ -1,0 +1,18 @@
+identifier: m5stack_nanoc6
+name: M5Stack NanoC6
+vendor: m5stack
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - watchdog
+  - uart
+  - spi
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+    - pm
+    - tracing
