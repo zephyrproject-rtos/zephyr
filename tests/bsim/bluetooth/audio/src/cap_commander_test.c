@@ -34,6 +34,7 @@
 
 #include "bstests.h"
 #include "common.h"
+#include "bap_common.h"
 
 #if defined(CONFIG_BT_CAP_COMMANDER)
 
@@ -1056,6 +1057,27 @@ static void test_broadcast_reception_stop(size_t acceptor_count)
 	WAIT_FOR_FLAG(flag_broadcast_reception_stop);
 }
 
+static void test_distribute_broadcast_code(size_t acceptor_count)
+{
+	struct bt_cap_commander_distribute_broadcast_code_param distribute_broadcast_code_param = {
+		0};
+	struct bt_cap_commander_distribute_broadcast_code_member_param param[CONFIG_BT_MAX_CONN] = {
+		0};
+
+	distribute_broadcast_code_param.type = BT_CAP_SET_TYPE_AD_HOC;
+	distribute_broadcast_code_param.param = param;
+	distribute_broadcast_code_param.count = acceptor_count;
+	memcpy(distribute_broadcast_code_param.broadcast_code, BROADCAST_CODE,
+	       sizeof(BROADCAST_CODE));
+	for (size_t i = 0; i < acceptor_count; i++) {
+
+		distribute_broadcast_code_param.param[i].member.member = connected_conns[i];
+		distribute_broadcast_code_param.param[i].src_id = src_id[i];
+	}
+
+	bt_cap_commander_distribute_broadcast_code(&distribute_broadcast_code_param);
+}
+
 static void test_main_cap_commander_capture_and_render(void)
 {
 	const size_t acceptor_cnt = get_dev_cnt() - 1; /* Assume all other devices are acceptors
@@ -1132,6 +1154,8 @@ static void test_main_cap_commander_broadcast_reception(void)
 	pa_sync_to_broadcaster();
 
 	test_broadcast_reception_start(acceptor_count);
+
+	test_distribute_broadcast_code(acceptor_count);
 
 	backchannel_sync_wait_any(); /* wait for the acceptor to receive data */
 
