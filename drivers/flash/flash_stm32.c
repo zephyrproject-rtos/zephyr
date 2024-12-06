@@ -22,7 +22,6 @@
 #include <zephyr/logging/log.h>
 
 #include "flash_stm32.h"
-#include "stm32_hsem.h"
 
 LOG_MODULE_REGISTER(flash_stm32, CONFIG_FLASH_LOG_LEVEL);
 
@@ -43,8 +42,6 @@ static const struct flash_parameters flash_stm32_parameters = {
 #endif
 };
 
-static int flash_stm32_write_protection(const struct device *dev, bool enable);
-
 bool __weak flash_stm32_valid_range(const struct device *dev, off_t offset,
 				    uint32_t len, bool write)
 {
@@ -59,32 +56,66 @@ int __weak flash_stm32_check_configuration(void)
 	return 0;
 }
 
-#if defined(CONFIG_MULTITHREADING)
-/*
- * This is named flash_stm32_sem_take instead of flash_stm32_lock (and
- * similarly for flash_stm32_sem_give) to avoid confusion with locking
- * actual flash pages.
- */
-static inline void _flash_stm32_sem_take(const struct device *dev)
-{
-	k_sem_take(&FLASH_STM32_PRIV(dev)->sem, K_FOREVER);
-	z_stm32_hsem_lock(CFG_HW_FLASH_SEMID, HSEM_LOCK_WAIT_FOREVER);
-}
 
-static inline void _flash_stm32_sem_give(const struct device *dev)
+int flash_stm32_write_protection(const struct device *dev, bool enable)
 {
-	z_stm32_hsem_unlock(CFG_HW_FLASH_SEMID);
-	k_sem_give(&FLASH_STM32_PRIV(dev)->sem);
-}
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 
-#define flash_stm32_sem_init(dev) k_sem_init(&FLASH_STM32_PRIV(dev)->sem, 1, 1)
-#define flash_stm32_sem_take(dev) _flash_stm32_sem_take(dev)
-#define flash_stm32_sem_give(dev) _flash_stm32_sem_give(dev)
+	int rc = 0;
+
+	if (enable) {
+		rc = flash_stm32_wait_flash_idle(dev);
+		if (rc) {
+			flash_stm32_sem_give(dev);
+			return rc;
+		}
+	}
+
+#if defined(FLASH_SECURITY_NS)
+	if (enable) {
+		regs->NSCR |= FLASH_STM32_NSLOCK;
+	} else {
+		if (regs->NSCR & FLASH_STM32_NSLOCK) {
+			regs->NSKEYR = FLASH_KEY1;
+			regs->NSKEYR = FLASH_KEY2;
+		}
+	}
+#elif defined(FLASH_CR_LOCK)
+	if (enable) {
+		regs->CR |= FLASH_CR_LOCK;
+	} else {
+		if (regs->CR & FLASH_CR_LOCK) {
+			regs->KEYR = FLASH_KEY1;
+			regs->KEYR = FLASH_KEY2;
+		}
+	}
 #else
-#define flash_stm32_sem_init(dev)
-#define flash_stm32_sem_take(dev)
-#define flash_stm32_sem_give(dev)
-#endif
+	if (enable) {
+		regs->PECR |= FLASH_PECR_PRGLOCK;
+		regs->PECR |= FLASH_PECR_PELOCK;
+	} else {
+		if (regs->PECR & FLASH_PECR_PRGLOCK) {
+			LOG_DBG("Disabling write protection");
+			regs->PEKEYR = FLASH_PEKEY1;
+			regs->PEKEYR = FLASH_PEKEY2;
+			regs->PRGKEYR = FLASH_PRGKEY1;
+			regs->PRGKEYR = FLASH_PRGKEY2;
+		}
+		if (FLASH->PECR & FLASH_PECR_PRGLOCK) {
+			LOG_ERR("Unlock failed");
+			rc = -EIO;
+		}
+	}
+#endif /* FLASH_SECURITY_NS */
+
+	if (enable) {
+		LOG_DBG("Enable write protection");
+	} else {
+		LOG_DBG("Disable write protection");
+	}
+
+	return rc;
+}
 
 #if !defined(CONFIG_SOC_SERIES_STM32WBX)
 static int flash_stm32_check_status(const struct device *dev)
@@ -255,148 +286,12 @@ static int flash_stm32_write(const struct device *dev, off_t offset,
 	return rc;
 }
 
-static int flash_stm32_write_protection(const struct device *dev, bool enable)
-{
-	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
-
-	int rc = 0;
-
-	if (enable) {
-		rc = flash_stm32_wait_flash_idle(dev);
-		if (rc) {
-			flash_stm32_sem_give(dev);
-			return rc;
-		}
-	}
-
-#if defined(FLASH_SECURITY_NS)
-	if (enable) {
-		regs->NSCR |= FLASH_STM32_NSLOCK;
-	} else {
-		if (regs->NSCR & FLASH_STM32_NSLOCK) {
-			regs->NSKEYR = FLASH_KEY1;
-			regs->NSKEYR = FLASH_KEY2;
-		}
-	}
-#elif defined(FLASH_CR_LOCK)
-	if (enable) {
-		regs->CR |= FLASH_CR_LOCK;
-	} else {
-		if (regs->CR & FLASH_CR_LOCK) {
-			regs->KEYR = FLASH_KEY1;
-			regs->KEYR = FLASH_KEY2;
-		}
-	}
-#else
-	if (enable) {
-		regs->PECR |= FLASH_PECR_PRGLOCK;
-		regs->PECR |= FLASH_PECR_PELOCK;
-	} else {
-		if (regs->PECR & FLASH_PECR_PRGLOCK) {
-			LOG_DBG("Disabling write protection");
-			regs->PEKEYR = FLASH_PEKEY1;
-			regs->PEKEYR = FLASH_PEKEY2;
-			regs->PRGKEYR = FLASH_PRGKEY1;
-			regs->PRGKEYR = FLASH_PRGKEY2;
-		}
-		if (FLASH->PECR & FLASH_PECR_PRGLOCK) {
-			LOG_ERR("Unlock failed");
-			rc = -EIO;
-		}
-	}
-#endif /* FLASH_SECURITY_NS */
-
-	if (enable) {
-		LOG_DBG("Enable write protection");
-	} else {
-		LOG_DBG("Disable write protection");
-	}
-
-	return rc;
-}
-
-int flash_stm32_option_bytes_lock(const struct device *dev, bool enable)
-{
-	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
-
-#if defined(FLASH_OPTCR_OPTLOCK) /* F2, F4, F7 and H7 */
-	if (enable) {
-		regs->OPTCR |= FLASH_OPTCR_OPTLOCK;
-	} else if (regs->OPTCR & FLASH_OPTCR_OPTLOCK) {
-		regs->OPTKEYR = FLASH_OPT_KEY1;
-		regs->OPTKEYR = FLASH_OPT_KEY2;
-	}
-#else
-	int rc;
-
-	/* Unlock CR/PECR/NSCR register if needed. */
-	if (!enable) {
-		rc = flash_stm32_write_protection(dev, false);
-		if (rc) {
-			return rc;
-		}
-	}
-#if defined(FLASH_CR_OPTWRE)	  /* F0, F1 and F3 */
-	if (enable) {
-		regs->CR &= ~FLASH_CR_OPTWRE;
-	} else if (!(regs->CR & FLASH_CR_OPTWRE)) {
-		regs->OPTKEYR = FLASH_OPTKEY1;
-		regs->OPTKEYR = FLASH_OPTKEY2;
-	}
-#elif defined(FLASH_CR_OPTLOCK)	  /* G0, G4, L4, WB and WL */
-	if (enable) {
-		regs->CR |= FLASH_CR_OPTLOCK;
-	} else if (regs->CR & FLASH_CR_OPTLOCK) {
-		regs->OPTKEYR = FLASH_OPTKEY1;
-		regs->OPTKEYR = FLASH_OPTKEY2;
-	}
-#elif defined(FLASH_PECR_OPTLOCK) /* L0 and L1 */
-	if (enable) {
-		regs->PECR |= FLASH_PECR_OPTLOCK;
-	} else if (regs->PECR & FLASH_PECR_OPTLOCK) {
-		regs->OPTKEYR = FLASH_OPTKEY1;
-		regs->OPTKEYR = FLASH_OPTKEY2;
-	}
-#elif defined(FLASH_NSCR_OPTLOCK) /* L5 and U5 */
-	if (enable) {
-		regs->NSCR |= FLASH_NSCR_OPTLOCK;
-	} else if (regs->NSCR & FLASH_NSCR_OPTLOCK) {
-		regs->OPTKEYR = FLASH_OPTKEY1;
-		regs->OPTKEYR = FLASH_OPTKEY2;
-	}
-#elif defined(FLASH_NSCR1_OPTLOCK) /* WBA */
-	if (enable) {
-		regs->NSCR1 |= FLASH_NSCR1_OPTLOCK;
-	} else if (regs->NSCR1 & FLASH_NSCR1_OPTLOCK) {
-		regs->OPTKEYR = FLASH_OPTKEY1;
-		regs->OPTKEYR = FLASH_OPTKEY2;
-	}
-#endif
-	/* Lock CR/PECR/NSCR register if needed. */
-	if (enable) {
-		rc = flash_stm32_write_protection(dev, true);
-		if (rc) {
-			return rc;
-		}
-	}
-#endif
-
-	if (enable) {
-		LOG_DBG("Option bytes locked");
-	} else {
-		LOG_DBG("Option bytes unlocked");
-	}
-
-	return 0;
-}
-
 #if defined(CONFIG_FLASH_EX_OP_ENABLED) && defined(CONFIG_FLASH_STM32_BLOCK_REGISTERS)
-static int flash_stm32_control_register_disable(const struct device *dev)
+int flash_stm32_control_register_disable(const struct device *dev)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 
-#if defined(FLASH_CR_LOCK) /* F0, F1, F2, F3, F4, F7, L4, G0, G4, H7, WB, WL   \
-			    */
+#if defined(FLASH_CR_LOCK) /* F0, F1, F2, F3, F4, F7, L4, G0, G4, WB, WL */
 	/*
 	 * Access to control register can be disabled by writing wrong key to
 	 * the key register. Option register will remain disabled until reset.
@@ -421,11 +316,11 @@ static int flash_stm32_control_register_disable(const struct device *dev)
 #endif
 }
 
-static int flash_stm32_option_bytes_disable(const struct device *dev)
+int flash_stm32_option_bytes_disable(const struct device *dev)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 
-#if defined(FLASH_OPTCR_OPTLOCK) /* F2, F4, F7 and H7 */
+#if defined(FLASH_OPTCR_OPTLOCK) /* F2, F4, F7 */
 	/*
 	 * Access to option register can be disabled by writing wrong key to
 	 * the key register. Option register will remain disabled until reset.
@@ -459,41 +354,6 @@ flash_stm32_get_parameters(const struct device *dev)
 	return &flash_stm32_parameters;
 }
 
-#ifdef CONFIG_FLASH_EX_OP_ENABLED
-static int flash_stm32_ex_op(const struct device *dev, uint16_t code,
-			     const uintptr_t in, void *out)
-{
-	int rv = -ENOTSUP;
-
-	flash_stm32_sem_take(dev);
-
-	switch (code) {
-#if defined(CONFIG_FLASH_STM32_WRITE_PROTECT)
-	case FLASH_STM32_EX_OP_SECTOR_WP:
-		rv = flash_stm32_ex_op_sector_wp(dev, in, out);
-		break;
-#endif /* CONFIG_FLASH_STM32_WRITE_PROTECT */
-#if defined(CONFIG_FLASH_STM32_READOUT_PROTECTION)
-	case FLASH_STM32_EX_OP_RDP:
-		rv = flash_stm32_ex_op_rdp(dev, in, out);
-		break;
-#endif /* CONFIG_FLASH_STM32_READOUT_PROTECTION */
-#if defined(CONFIG_FLASH_STM32_BLOCK_REGISTERS)
-	case FLASH_STM32_EX_OP_BLOCK_OPTION_REG:
-		rv = flash_stm32_option_bytes_disable(dev);
-		break;
-	case FLASH_STM32_EX_OP_BLOCK_CONTROL_REG:
-		rv = flash_stm32_control_register_disable(dev);
-		break;
-#endif /* CONFIG_FLASH_STM32_BLOCK_REGISTERS */
-	}
-
-	flash_stm32_sem_give(dev);
-
-	return rv;
-}
-#endif
-
 static struct flash_stm32_priv flash_data = {
 	.regs = (FLASH_TypeDef *) DT_INST_REG_ADDR(0),
 	/* Getting clocks information from device tree description depending
@@ -524,7 +384,7 @@ static int stm32_flash_init(const struct device *dev)
 {
 	int rc;
 	/* Below is applicable to F0, F1, F3, G0, G4, L1, L4, L5, U5 & WB55 series.
-	 * For F2, F4, F7 & H7 series, this is not applicable.
+	 * For F2, F4, F7 series, this is not applicable.
 	 */
 #if DT_INST_NODE_HAS_PROP(0, clocks)
 	struct flash_stm32_priv *p = FLASH_STM32_PRIV(dev);

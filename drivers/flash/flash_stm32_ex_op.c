@@ -20,6 +20,9 @@
 
 LOG_MODULE_REGISTER(flash_stm32_ex_op, CONFIG_FLASH_LOG_LEVEL);
 
+/* Function definition is in the flash_stm32 driver for flash w/o FLASH_OPTCR_OPTLOCK */
+extern int flash_stm32_write_protection(const struct device *dev, bool enable);
+
 #if defined(CONFIG_FLASH_STM32_WRITE_PROTECT)
 int flash_stm32_ex_op_sector_wp(const struct device *dev, const uintptr_t in,
 				void *out)
@@ -225,3 +228,111 @@ int flash_stm32_ex_op_rdp(const struct device *dev, const uintptr_t in,
 	return rc;
 }
 #endif /* CONFIG_FLASH_STM32_READOUT_PROTECTION */
+
+int flash_stm32_ex_op(const struct device *dev, uint16_t code,
+			     const uintptr_t in, void *out)
+{
+	int rv = -ENOTSUP;
+
+	flash_stm32_sem_take(dev);
+
+	switch (code) {
+#if defined(CONFIG_FLASH_STM32_WRITE_PROTECT)
+	case FLASH_STM32_EX_OP_SECTOR_WP:
+		rv = flash_stm32_ex_op_sector_wp(dev, in, out);
+		break;
+#endif /* CONFIG_FLASH_STM32_WRITE_PROTECT */
+#if defined(CONFIG_FLASH_STM32_READOUT_PROTECTION)
+	case FLASH_STM32_EX_OP_RDP:
+		rv = flash_stm32_ex_op_rdp(dev, in, out);
+		break;
+#endif /* CONFIG_FLASH_STM32_READOUT_PROTECTION */
+#if defined(CONFIG_FLASH_STM32_BLOCK_REGISTERS)
+	case FLASH_STM32_EX_OP_BLOCK_OPTION_REG:
+		rv = flash_stm32_option_bytes_disable(dev);
+		break;
+	case FLASH_STM32_EX_OP_BLOCK_CONTROL_REG:
+		rv = flash_stm32_control_register_disable(dev);
+		break;
+#endif /* CONFIG_FLASH_STM32_BLOCK_REGISTERS */
+	}
+
+	flash_stm32_sem_give(dev);
+
+	return rv;
+}
+
+int flash_stm32_option_bytes_lock(const struct device *dev, bool enable)
+{
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
+
+#if defined(FLASH_OPTCR_OPTLOCK) /* F2, F4, F7 or H7 */
+	if (enable) {
+		regs->OPTCR |= FLASH_OPTCR_OPTLOCK;
+	} else if (regs->OPTCR & FLASH_OPTCR_OPTLOCK) {
+		regs->OPTKEYR = FLASH_OPT_KEY1;
+		regs->OPTKEYR = FLASH_OPT_KEY2;
+	}
+#else
+	int rc;
+
+	/* Unlock CR/PECR/NSCR register if needed. */
+	if (!enable) {
+		rc = flash_stm32_write_protection(dev, false);
+		if (rc) {
+			return rc;
+		}
+	}
+#if defined(FLASH_CR_OPTWRE)	  /* F0, F1 and F3 */
+	if (enable) {
+		regs->CR &= ~FLASH_CR_OPTWRE;
+	} else if (!(regs->CR & FLASH_CR_OPTWRE)) {
+		regs->OPTKEYR = FLASH_OPTKEY1;
+		regs->OPTKEYR = FLASH_OPTKEY2;
+	}
+#elif defined(FLASH_CR_OPTLOCK)	  /* G0, G4, L4, WB and WL */
+	if (enable) {
+		regs->CR |= FLASH_CR_OPTLOCK;
+	} else if (regs->CR & FLASH_CR_OPTLOCK) {
+		regs->OPTKEYR = FLASH_OPTKEY1;
+		regs->OPTKEYR = FLASH_OPTKEY2;
+	}
+#elif defined(FLASH_PECR_OPTLOCK) /* L0 and L1 */
+	if (enable) {
+		regs->PECR |= FLASH_PECR_OPTLOCK;
+	} else if (regs->PECR & FLASH_PECR_OPTLOCK) {
+		regs->OPTKEYR = FLASH_OPTKEY1;
+		regs->OPTKEYR = FLASH_OPTKEY2;
+	}
+#elif defined(FLASH_NSCR_OPTLOCK) /* L5 and U5 */
+	if (enable) {
+		regs->NSCR |= FLASH_NSCR_OPTLOCK;
+	} else if (regs->NSCR & FLASH_NSCR_OPTLOCK) {
+		regs->OPTKEYR = FLASH_OPTKEY1;
+		regs->OPTKEYR = FLASH_OPTKEY2;
+	}
+#elif defined(FLASH_NSCR1_OPTLOCK) /* WBA */
+	if (enable) {
+		regs->NSCR1 |= FLASH_NSCR1_OPTLOCK;
+	} else if (regs->NSCR1 & FLASH_NSCR1_OPTLOCK) {
+		regs->OPTKEYR = FLASH_OPTKEY1;
+		regs->OPTKEYR = FLASH_OPTKEY2;
+	}
+#endif
+	/* Lock CRPECR/NSCR register if needed. */
+	if (enable) {
+		rc = flash_stm32_write_protection(dev, true);
+		if (rc) {
+			return rc;
+		}
+	}
+#endif
+
+	if (enable) {
+		LOG_DBG("Option bytes locked");
+	} else {
+		LOG_DBG("Option bytes unlocked");
+	}
+
+	return 0;
+}
