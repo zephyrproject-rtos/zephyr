@@ -1,0 +1,157 @@
+{# Copyright (c) 2024 Google Inc #}
+{# SPDX-License-Identifier: BDS-3-Clause #}
+/* Auto-generated file, do not edit */
+#ifndef _INCLUDE_ZEPHYR_GENERATED_SENSOR_CONSTANTS_H_
+#define _INCLUDE_ZEPHYR_GENERATED_SENSOR_CONSTANTS_H_
+
+/**
+ * @addtogroup sensor_interface
+ * @{
+ */
+
+#include <stdint.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * @brief Sensor channels.
+ */
+enum sensor_channel {
+{% for chan_id, chan in spec.channels.items() %}
+  /**
+   * {{chan.description.strip()}}
+   *
+   * Units: {{spec.units[chan.units].symbol}}
+   */
+  SENSOR_CHAN_{{chan_id.upper().replace('-', '_')}},
+{% endfor %}
+
+  /** All channels */
+  SENSOR_CHAN_ALL,
+
+  /** Number of all common sensor channels. */
+  SENSOR_CHAN_COMMON_COUNT = (SENSOR_CHAN_ALL + 1),
+
+  /**
+   * This and higher values are sensor specific.
+   * Refer to the sensor header file.
+   */
+  SENSOR_CHAN_PRIV_START = SENSOR_CHAN_COMMON_COUNT,
+
+  /**
+   * Maximum value describing a sensor channel type.
+   */
+  SENSOR_CHAN_MAX = INT16_MAX,
+};
+
+/**
+ * @brief Sensor attribute types.
+ */
+enum sensor_attribute {
+{% for attr_id, attr in spec.attributes.items() %}
+  /**
+   * {{attr.description.strip()}}
+   */
+  SENSOR_ATTR_{{attr_id.upper().replace('-', '_')}},
+{% endfor %}
+
+  /** Number of all common sensor attributes. */
+  SENSOR_ATTR_COMMON_COUNT,
+
+  /**
+   * This and higher values are sensor specific.
+   * Refer to the sensor header file.
+   */
+  SENSOR_ATTR_PRIV_START = SENSOR_ATTR_COMMON_COUNT,
+
+  /**
+   * Maximum value describing a sensor attribute type.
+   */
+  SENSOR_ATTR_MAX = INT16_MAX,
+};
+
+/**
+ * @brief Sensor trigger types.
+ */
+enum sensor_trigger_type {
+{% for trig_id, trig in spec.triggers.items() %}
+  /**
+   * {{trig.description.strip()}}
+   */
+  SENSOR_TRIG_{{trig_id.upper().replace('-', '_')}},
+{% endfor %}
+
+  /** Number of all common sensor triggers. */
+  SENSOR_TRIG_COMMON_COUNT,
+
+  /**
+   * This and higher values are sensor specific.
+   * Refer to the sensor header file.
+   */
+  SENSOR_TRIG_PRIV_START = SENSOR_TRIG_COMMON_COUNT,
+
+  /**
+   * Maximum value describing a sensor trigger type.
+   */
+  SENSOR_TRIG_MAX = INT16_MAX,
+};
+
+/**
+ * @brief Sensor Channel Specification
+ *
+ * A sensor channel specification is a unique identifier per sensor device describing
+ * a measurement channel.
+ *
+ * @note Typically passed by value as the size of a sensor_chan_spec is a single word.
+ */
+struct sensor_chan_spec {
+	uint16_t chan_type; /**< A sensor channel type */
+	uint16_t chan_idx;  /**< A sensor channel index */
+};
+
+#define SENSOR_SPEC_FOREACH_COMPAT(fn) \
+{%- for sensor in spec.sensors.values() %}
+    fn({{ getSensorCompatibleString(sensor) }}) {% if not loop.last %}\
+    {%- endif %}
+{%- endfor %}
+
+{% for sensor in spec.sensors.values() %}
+/*
+ * Definitions for {{sensor.compatible.org}},{{sensor.compatible.part}}
+ */
+#define SENSOR_SPEC_{{ getSensorCompatibleString(sensor) }}_EXISTS 1
+#define SENSOR_SPEC_{{ getSensorCompatibleString(sensor) }}_CHAN_COUNT {{ sensor.channels | length }}
+#define SENSOR_SPEC_{{ getSensorCompatibleString(sensor) }}_ATTR_COUNT {{ sensor.attributes | length }}
+#define SENSOR_SPEC_{{ getSensorCompatibleString(sensor) }}_TRIG_COUNT {{ sensor.triggers | length }}
+{% for chan_id, channels in sensor.channels.items() -%}
+#define SENSOR_SPEC_{{ getSensorCompatibleString(sensor) }}_CH_{{chan_id}}_COUNT {{ channels | length }}
+{% for chan_index, chan in channels | enumerate -%}
+#define SENSOR_SPEC_{{ getSensorCompatibleString(sensor) }}_CH_{{chan_id}}_{{chan_index}}_EXISTS 1
+#define SENSOR_SPEC_{{ getSensorCompatibleString(sensor) }}_CH_{{chan_id}}_{{chan_index}}_NAME "{{ chan.name }}"
+#define SENSOR_SPEC_{{ getSensorCompatibleString(sensor) }}_CH_{{chan_id}}_{{chan_index}}_DESC "{{ formatStringForC(chan.description) }}"
+#define SENSOR_SPEC_{{ getSensorCompatibleString(sensor) }}_CH_{{chan_id}}_{{chan_index}}_SPEC { \
+    .chan_type = SENSOR_CHAN_{{chan_id.upper().replace('-', '_')}}, \
+    .chan_idx = {{chan_index}}, \
+}
+{% endfor -%} {# sensor channel instance loop #}
+{%- endfor -%} {# sensor channel loop #}
+{%- for attribute in sensor.attributes -%}
+#define SENSOR_SPEC_{{ getSensorCompatibleString(sensor) }}_AT_{{ attribute.attribute }}_CH_{{ attribute.channel }}_EXISTS 1
+{% endfor %} {# sensor attribute loop #}
+{% for trigger in sensor.triggers -%}
+#define SENSOR_SPEC_{{ getSensorCompatibleString(sensor) }}_TR_{{ trigger }}_EXISTS 1
+#define SENSOR_SPEC_{{ getSensorCompatibleString(sensor) }}_TR_{{ trigger }}_NAME "{{ spec.triggers[trigger].name }}"
+#define SENSOR_SPEC_{{ getSensorCompatibleString(sensor) }}_TR_{{ trigger }}_DESC "{{ formatStringForC(spec.triggers[trigger].description) }}"
+{% endfor -%} {# sensor trigger loop #}
+{%- endfor %} {# sensor loop #}
+#ifdef __cplusplus
+}
+#endif
+
+/**
+ * @}
+ */
+
+#endif /* _INCLUDE_ZEPHYR_GENERATED_SENSOR_CONSTANTS_H_ */

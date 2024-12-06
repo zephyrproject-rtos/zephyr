@@ -88,12 +88,20 @@ extensions = [
     "zephyr.doxytooltip",
     "zephyr.gh_utils",
     "zephyr.manifest_projects_table",
+    "zephyr.sensor",
+    "zephyr.sensor.attribute_catalog",
+    "zephyr.sensor.channel_catalog",
+    "zephyr.sensor.sensor_catalog",
+    "zephyr.sensor.sensor_details",
+    "zephyr.sensor.trigger_catalog",
+    "zephyr.sensor.units_catalog",
     "notfound.extension",
     "sphinx_copybutton",
     "sphinx_togglebutton",
     "zephyr.external_content",
     "zephyr.domain",
     "zephyr.api_overview",
+    "zephyr.sensor",
 ]
 
 # Only use image conversion when it is really needed, e.g. LaTeX build.
@@ -250,7 +258,11 @@ doxyrunner_doxygen = os.environ.get("DOXYGEN_EXECUTABLE", "doxygen")
 doxyrunner_doxyfile = ZEPHYR_BASE / "doc" / "zephyr.doxyfile.in"
 doxyrunner_outdir = ZEPHYR_BUILD / "doxygen"
 doxyrunner_fmt = True
-doxyrunner_fmt_vars = {"ZEPHYR_BASE": str(ZEPHYR_BASE), "ZEPHYR_VERSION": version}
+doxyrunner_fmt_vars = {
+    "ZEPHYR_BASE": str(ZEPHYR_BASE),
+    "CMAKE_BINARY_DIR": str(ZEPHYR_BUILD.parent),
+    "ZEPHYR_VERSION": version,
+}
 doxyrunner_outdir_var = "DOXY_OUT"
 
 # -- Options for zephyr.doxybridge plugin ---------------------------------
@@ -300,6 +312,7 @@ external_content_contents = [
     (ZEPHYR_BASE / "doc", "[!_]*"),
     (ZEPHYR_BASE, "boards/**/*.rst"),
     (ZEPHYR_BASE, "boards/**/doc"),
+    (ZEPHYR_BASE, "drivers/sensor/**/*.rst"),
     (ZEPHYR_BASE, "samples/**/*.html"),
     (ZEPHYR_BASE, "samples/**/*.rst"),
     (ZEPHYR_BASE, "samples/**/doc"),
