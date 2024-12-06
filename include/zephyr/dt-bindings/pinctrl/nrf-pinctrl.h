@@ -162,6 +162,10 @@
 #define NRF_FUN_CAN_TX 46U
 /** CAN RX */
 #define NRF_FUN_CAN_RX 47U
+/** TWIS SCL */
+#define NRF_FUN_TWIS_SCL 48U
+/** TWIS SDA */
+#define NRF_FUN_TWIS_SDA 49U
 
 /** @} */
 
