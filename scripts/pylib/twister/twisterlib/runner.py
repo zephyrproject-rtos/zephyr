@@ -651,6 +651,13 @@ class CMake:
             f'-DPython3_EXECUTABLE={pathlib.Path(sys.executable).as_posix()}'
         ]
 
+        if self.instance.testsuite.harness == 'bsim':
+            cmake_args.extend([
+                '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON',
+                '-DCONFIG_ASSERT=y',
+                '-DCONFIG_COVERAGE=y'
+            ])
+
         # If needed, run CMake using the package_helper script first, to only run
         # a subset of all cmake modules. This output will be used to filter
         # testcases, and the full CMake configuration will be run for
