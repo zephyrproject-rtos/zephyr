@@ -229,7 +229,7 @@ static int adxl345_attr_set_odr(const struct device *dev,
 				const struct sensor_value *val)
 {
 	enum adxl345_odr odr;
-	struct adxl345_dev_config *cfg = (struct adxl345_dev_config *)dev->config;
+	struct adxl345_dev_data *data = dev->data;
 
 	switch (val->val1) {
 	case 12:
@@ -257,7 +257,7 @@ static int adxl345_attr_set_odr(const struct device *dev,
 	int ret = adxl345_set_odr(dev, odr);
 
 	if (ret == 0) {
-		cfg->odr = odr;
+		data->odr = odr;
 	}
 
 	return ret;
@@ -435,9 +435,7 @@ static int adxl345_init(const struct device *dev)
 {
 	int rc;
 	struct adxl345_dev_data *data = dev->data;
-#ifdef CONFIG_ADXL345_TRIGGER
 	const struct adxl345_dev_config *cfg = dev->config;
-#endif
 	uint8_t dev_id, full_res;
 
 	data->sample_number = 0;
@@ -488,6 +486,11 @@ static int adxl345_init(const struct device *dev)
 		return -EIO;
 	}
 
+	rc = adxl345_set_odr(dev, cfg->odr);
+	if (rc) {
+		return rc;
+	}
+
 #ifdef CONFIG_ADXL345_TRIGGER
 	rc = adxl345_init_interrupt(dev);
 	if (rc < 0) {
@@ -495,10 +498,6 @@ static int adxl345_init(const struct device *dev)
 		return -EIO;
 	}
 
-	rc = adxl345_set_odr(dev, cfg->odr);
-	if (rc) {
-		return rc;
-	}
 	rc = adxl345_interrupt_config(dev, ADXL345_INT_MAP_WATERMARK_MSK);
 	if (rc) {
 		return rc;
@@ -531,7 +530,6 @@ static int adxl345_init(const struct device *dev)
 		.fifo_config.fifo_trigger = ADXL345_INT2,			\
 		.fifo_config.fifo_samples = SAMPLE_NUM,					\
 		.op_mode = TRUE,					\
-		.odr = ADXL345_RATE_25HZ,						\
 
 #define ADXL345_CONFIG_SPI(inst)                                       \
 	{                                                              \

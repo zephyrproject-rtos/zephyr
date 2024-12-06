@@ -11,6 +11,7 @@
 		compatible = "adi,adxl345";
 		reg = <0x0>;
 		spi-max-frequency = <DT_FREQ_M(1)>;
+		int2-gpios = <&pmod_header 4 GPIO_ACTIVE_HIGH>;
 		status = "okay";
 	};
 };
