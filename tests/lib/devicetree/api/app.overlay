@@ -570,6 +570,18 @@
 			phys = <&test_transceiver1>;
 		};
 
+		test_parent: test-parent {
+			compatible = "vnd,parent-bindings";
+
+			test_parent_a: parent-a {
+				val = <0>;
+
+				test_parent_b: parent-b {
+					val = <0>;
+				};
+			};
+		};
+
 		/* there should only be one of these */
 		test_children: test-children {
 			compatible = "vnd,child-bindings";

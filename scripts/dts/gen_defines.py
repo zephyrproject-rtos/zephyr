@@ -97,6 +97,7 @@ def main():
             out_dt_define(f"{node.z_path_id}_FOREACH_NODELABEL_VARGS(fn, ...)",
                           " ".join(f"fn({nodelabel}, __VA_ARGS__)" for nodelabel in node.labels))
 
+            write_parent(node)
             write_children(node)
             write_dep_info(node)
             write_idents_and_existence(node)
@@ -457,6 +458,17 @@ def write_compatibles(node: edtlib.Node) -> None:
             out_dt_define(f"{node.z_path_id}_COMPAT_MODEL_IDX_{i}",
                           quote_str(node.edt.compat2model[compat]))
 
+def write_parent(node: edtlib.Node) -> None:
+    # Visit all parent nodes.
+    def _visit_parent_node(node: edtlib.Node):
+        while node is not None:
+            yield node.parent
+            node = node.parent
+
+    # Writes helper macros for dealing with node's parent.
+    out_dt_define(f"{node.z_path_id}_FOREACH_ANCESTOR(fn)",
+            " ".join(f"fn(DT_{parent.z_path_id})" for parent in
+            _visit_parent_node(node) if parent is not None))
 
 def write_children(node: edtlib.Node) -> None:
     # Writes helper macros for dealing with node's children.
