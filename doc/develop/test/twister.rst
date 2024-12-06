@@ -261,8 +261,7 @@ A Test Suite is a collection of Test Cases which are intended to be used to test
 a software program to ensure it meets certain requirements. The Test Cases in a
 Test Suite are either related or meant to be executed together.
 
-The name of each Test Scenario needs to be unique in the context of the overall
-test application and has to follow basic rules:
+Test Scenario, Test Suite, and Test Case names must follow to these basic rules:
 
 #. The format of the Test Scenario identifier shall be a string without any spaces or
    special characters (allowed characters: alphanumeric and [\_=]) consisting
@@ -272,7 +271,8 @@ test application and has to follow basic rules:
    subsection names delimited with a dot (``.``). For example, a test scenario
    that covers semaphores in the kernel shall start with ``kernel.semaphore``.
 
-#. All Test Scenario identifiers within a ``testcase.yaml`` file need to be unique.
+#. All Test Scenario identifiers within a Test Configuration (``testcase.yaml`` file)
+   need to be unique.
    For example a ``testcase.yaml`` file covering semaphores in the kernel can have:
 
    * ``kernel.semaphore``: For general semaphore tests
@@ -293,6 +293,18 @@ test application and has to follow basic rules:
      a Test Scenario identifier from the corresponding ``testcase.yaml`` (or
      ``sample.yaml``) file where the last section signifies the standalone
      Test Case name, for example: ``debug.coredump.logging_backend``.
+
+
+The ``--no-detailed-test-id`` command line option modifies the above rules in this way:
+
+#. A Test Suite name has only ``<Test Scenario identifier>`` component.
+   Its Application Project path can be found in ``twister.json`` report as ``path:`` property.
+
+#. With short Test Suite names in this mode, all corresponding Test Scenario names
+   must be unique for the Twister execution scope.
+
+#. **Ztest** Test Case names have only Ztest components ``<Ztest suite name>.<Ztest test name>``.
+   Its parent Test Suite name equals to the corresponding Test Scenario identifier.
 
 
 The following is an example test configuration with a few options that are
