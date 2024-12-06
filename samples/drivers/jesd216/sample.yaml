@@ -35,3 +35,12 @@ tests:
       or dt_compat_enabled("st,stm32-ospi-nor")
       or dt_compat_enabled("st,stm32-qspi-nor")
     depends_on: spi
+  sample.drivers.jesd216.atxp032:
+    tags:
+      - mspi
+    filter: dt_compat_enabled("mspi-atxp032")
+    platform_allow:
+      - apollo3p_evb
+    integration_platforms:
+      - apollo3p_evb
+    depends_on: mspi
