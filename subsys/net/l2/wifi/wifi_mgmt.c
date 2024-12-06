@@ -129,6 +129,21 @@ const char *wifi_band_txt(enum wifi_frequency_bands band)
 	}
 }
 
+const char *const wifi_bandwidth_txt(enum wifi_frequency_bandwidths bandwidth)
+{
+	switch (bandwidth) {
+	case WIFI_FREQ_BANDWIDTH_20MHZ:
+		return "20 MHz";
+	case WIFI_FREQ_BANDWIDTH_40MHZ:
+		return "40 MHz";
+	case WIFI_FREQ_BANDWIDTH_80MHZ:
+		return "80 MHz";
+	case WIFI_FREQ_BANDWIDTH_UNKNOWN:
+	default:
+		return "UNKNOWN";
+	}
+}
+
 const char *wifi_state_txt(enum wifi_iface_state state)
 {
 	switch (state) {
