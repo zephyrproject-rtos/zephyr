@@ -2,7 +2,7 @@ sample:
   name: Real-Time Clock Sample
 tests:
   sample.drivers.rtc:
-    platform_allow:
+    integration_platforms:
       - stm32f3_disco
     tags:
       - samples
@@ -10,3 +10,8 @@ tests:
       - api
     depends_on:
       - rtc
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "RTC date and time: 2024-11-17 04:19:01"
