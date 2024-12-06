@@ -1092,22 +1092,51 @@ struct rtio_sqe *i2c_rtio_copy(struct rtio *r,
 			       const struct i2c_msg *msgs,
 			       uint8_t num_msgs);
 
-#endif /* CONFIG_I2C_RTIO */
+/**
+ * @brief Copy the register address and data to a SQE
+ *
+ * @param r RTIO context
+ * @param iodev RTIO IODev to target for the submissions
+ * @param reg_addr target register address
+ * @param data data to be written
+ *
+ * @retval sqe Last submission in the queue added
+ * @retval NULL Not enough memory in the context to copy the requests
+ */
+struct rtio_sqe *i2c_rtio_copy_reg_write_byte(struct rtio *r, struct rtio_iodev *iodev,
+					      uint8_t reg_addr, uint8_t data);
 
 /**
- * @brief Perform data transfer to another I2C device in controller mode.
+ * @brief acquire and configure a i2c burst read transmission
  *
- * This is equivalent to:
+ * @param r RTIO context
+ * @param iodev RTIO IODev to target for the submissions
+ * @param start_addr target register address
+ * @param buf Memory pool that stores the retrieved data.
+ * @param num_bytes Number of bytes to read.
  *
- *     i2c_transfer(spec->bus, msgs, num_msgs, spec->addr);
- *
- * @param spec I2C specification from devicetree.
- * @param msgs Array of messages to transfer.
- * @param num_msgs Number of messages to transfer.
- *
- * @return a value from i2c_transfer()
+ * @retval sqe Last submission in the queue added
+ * @retval NULL Not enough memory in the context to copy the requests
  */
-static inline int i2c_transfer_dt(const struct i2c_dt_spec *spec,
+struct rtio_sqe *i2c_rtio_copy_reg_burst_read(struct rtio *r, struct rtio_iodev *iodev,
+					      uint8_t start_addr, void *buf, size_t num_bytes);
+
+#endif /* CONFIG_I2C_RTIO */
+
+	/**
+	 * @brief Perform data transfer to another I2C device in controller mode.
+	 *
+	 * This is equivalent to:
+	 *
+	 *     i2c_transfer(spec->bus, msgs, num_msgs, spec->addr);
+	 *
+	 * @param spec I2C specification from devicetree.
+	 * @param msgs Array of messages to transfer.
+	 * @param num_msgs Number of messages to transfer.
+	 *
+	 * @return a value from i2c_transfer()
+	 */
+	static inline int i2c_transfer_dt(const struct i2c_dt_spec *spec,
 				  struct i2c_msg *msgs, uint8_t num_msgs)
 {
 	return i2c_transfer(spec->bus, msgs, num_msgs, spec->addr);
