@@ -117,12 +117,18 @@ static void stream_started(struct bt_bap_stream *stream)
 {
 	struct btp_bap_broadcast_remote_source *broadcaster;
 	struct btp_bap_broadcast_stream *b_stream = stream_bap_to_broadcast(stream);
+	int err;
 
 	/* Callback called on transition to Streaming state */
 
 	LOG_DBG("Started stream %p", stream);
 
-	btp_bap_audio_stream_started(&b_stream->audio_stream);
+	/* Start TX */
+	err = btp_bap_audio_stream_tx_register(&b_stream->audio_stream);
+	if (err != 0) {
+		LOG_ERR("Failed to register stream: %d", err);
+	}
+
 	b_stream->bis_synced = true;
 	broadcaster = &remote_broadcast_sources[b_stream->source_id];
 
@@ -132,10 +138,16 @@ static void stream_started(struct bt_bap_stream *stream)
 static void stream_stopped(struct bt_bap_stream *stream, uint8_t reason)
 {
 	struct btp_bap_broadcast_stream *b_stream = stream_bap_to_broadcast(stream);
+	int err;
 
 	LOG_DBG("Stopped stream %p with reason 0x%02X", stream, reason);
 
-	btp_bap_audio_stream_stopped(&b_stream->audio_stream);
+	/* Stop TX */
+	err = btp_bap_audio_stream_tx_unregister(&b_stream->audio_stream);
+	if (err != 0) {
+		LOG_ERR("Failed to unregister stream: %d", err);
+	}
+
 	b_stream->bis_synced = false;
 
 	k_sem_give(&sem_stream_stopped);
@@ -183,16 +195,11 @@ static void stream_recv(struct bt_bap_stream *stream,
 	}
 }
 
-static void stream_sent(struct bt_bap_stream *stream)
-{
-	LOG_DBG("Stream %p sent", stream);
-}
-
 static struct bt_bap_stream_ops stream_ops = {
 	.started = stream_started,
 	.stopped = stream_stopped,
 	.recv = stream_recv,
-	.sent = stream_sent,
+	.sent = btp_bap_audio_stream_sent_cb,
 };
 
 struct btp_bap_broadcast_stream *btp_bap_broadcast_stream_alloc(

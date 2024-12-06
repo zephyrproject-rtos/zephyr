@@ -569,9 +569,6 @@ static void stream_disabled(struct bt_bap_stream *stream)
 
 	LOG_DBG("Disabled stream %p", stream);
 
-	/* Stop send timer */
-	btp_bap_audio_stream_stopped(&u_stream->audio_stream);
-
 	btp_send_ascs_operation_completed_ev(stream->conn, u_stream->ase_id,
 					     BT_ASCS_DISABLE_OP, BTP_ASCS_STATUS_SUCCESS);
 }
@@ -586,9 +583,6 @@ static void stream_released(struct bt_bap_stream *stream)
 	LOG_DBG("Released stream %p", stream);
 
 	u_conn = &connections[u_stream->conn_id];
-
-	/* Stop send timer */
-	btp_bap_audio_stream_stopped(&u_stream->audio_stream);
 
 	if (stream->ep != NULL) {
 		(void)bt_bap_ep_get_info(stream->ep, &info);
@@ -626,25 +620,23 @@ static void stream_started(struct bt_bap_stream *stream)
 {
 	struct btp_bap_unicast_stream *u_stream = stream_bap_to_unicast(stream);
 	struct bt_bap_ep_info info;
-	static uint8_t test_data[CONFIG_BT_ISO_TX_MTU];
-	uint16_t sdu;
 
 	/* Callback called on transition to Streaming state */
 
 	LOG_DBG("Started stream %p", stream);
 
-	btp_bap_audio_stream_started(&u_stream->audio_stream);
+	/* Start TX */
+	if (btp_bap_audio_stream_can_send(&u_stream->audio_stream)) {
+		int err;
+
+		err = btp_bap_audio_stream_tx_register(&u_stream->audio_stream);
+		if (err != 0) {
+			LOG_ERR("Failed to register stream: %d", err);
+		}
+	}
 
 	(void)bt_bap_ep_get_info(stream->ep, &info);
 	btp_send_ascs_ase_state_changed_ev(stream->conn, u_stream->ase_id, info.state);
-
-	/* Send test data after entering streaming state. For now this seems to
-	 * be required by PTS as there is not Upper Tester action for this in
-	 * Test Specification
-	 */
-	memset(test_data, 42, sizeof(test_data));
-	sdu = MIN(stream->qos->sdu, sizeof(test_data));
-	btp_bap_audio_stream_send_data(test_data, sdu);
 }
 
 static void stream_connected(struct bt_bap_stream *stream)
@@ -673,7 +665,14 @@ static void stream_stopped(struct bt_bap_stream *stream, uint8_t reason)
 
 	LOG_DBG("Stopped stream %p with reason 0x%02X", stream, reason);
 
-	btp_bap_audio_stream_stopped(&u_stream->audio_stream);
+	if (btp_bap_audio_stream_can_send(&u_stream->audio_stream)) {
+		int err;
+
+		err = btp_bap_audio_stream_tx_unregister(&u_stream->audio_stream);
+		if (err != 0) {
+			LOG_ERR("Failed to unregister stream: %d", err);
+		}
+	}
 
 	btp_send_ascs_operation_completed_ev(stream->conn, u_stream->ase_id,
 					     BT_ASCS_STOP_OP, BTP_STATUS_SUCCESS);
@@ -718,11 +717,6 @@ static void stream_recv(struct bt_bap_stream *stream,
 	}
 }
 
-static void stream_sent(struct bt_bap_stream *stream)
-{
-	LOG_DBG("Stream %p sent", stream);
-}
-
 static struct bt_bap_stream_ops stream_ops = {
 	.configured = stream_configured,
 	.qos_set = stream_qos_set,
@@ -733,7 +727,7 @@ static struct bt_bap_stream_ops stream_ops = {
 	.started = stream_started,
 	.stopped = stream_stopped,
 	.recv = stream_recv,
-	.sent = stream_sent,
+	.sent = btp_bap_audio_stream_sent_cb,
 	.connected = stream_connected,
 };
 
