@@ -1498,11 +1498,13 @@ static int nxp_wifi_set_twt(const struct device *dev, struct wifi_twt_params *pa
 		twt_setup_conf.implicit = params->setup.implicit;
 		twt_setup_conf.announced = params->setup.announce;
 		twt_setup_conf.trigger_enabled = params->setup.trigger;
+		twt_setup_conf.twt_info_disabled = params->setup.twt_info_disable;
 		twt_setup_conf.negotiation_type = params->negotiation_type;
 		twt_setup_conf.twt_wakeup_duration = params->setup.twt_wake_interval;
 		twt_setup_conf.flow_identifier = params->flow_id;
 		twt_setup_conf.hard_constraint = 1;
-		twt_setup_conf.twt_mantissa = params->setup.twt_interval;
+		twt_setup_conf.twt_exponent = params->setup.twt_exponent;
+		twt_setup_conf.twt_mantissa = params->setup.twt_mantissa;
 		twt_setup_conf.twt_request = params->setup.responder;
 		ret = wlan_set_twt_setup_cfg(&twt_setup_conf);
 	} else if (params->operation == WIFI_TWT_TEARDOWN) {
