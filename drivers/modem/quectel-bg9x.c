@@ -885,14 +885,20 @@ static void pin_init(void)
 	 */
 
 	/* MDM_POWER -> 1 for 500-1000 msec. */
-	modem_pin_write(&mctx, MDM_POWER, 1);
-	k_sleep(K_MSEC(750));
+	modem_pin_write(&mctx, MDM_POWER, 0);
+	k_sleep(K_MSEC(2000));
 
 	/* MDM_POWER -> 0 and wait for ~2secs as UART remains in "inactive" state
 	 * for some time after the power signal is enabled.
 	 */
-	modem_pin_write(&mctx, MDM_POWER, 0);
+	modem_pin_write(&mctx, MDM_POWER, 1);
 	k_sleep(K_SECONDS(2));
+
+	LOG_INF("MDM_RESET_PIN -> ASSERTED");
+	modem_pin_write(&mctx, MDM_RESET, 1);
+	k_sleep(K_SECONDS(1));
+	LOG_INF("MDM_RESET_PIN -> NOT_ASSERTED");
+	modem_pin_write(&mctx, MDM_RESET, 0);
 
 	LOG_INF("... Done!");
 }
@@ -912,8 +918,13 @@ static const struct modem_cmd unsol_cmds[] = {
 /* Commands sent to the modem to set it up at boot time. */
 static const struct setup_cmd setup_cmds[] = {
 	SETUP_CMD_NOHANDLE("ATE0"),
-	SETUP_CMD_NOHANDLE("ATH"),
+	//SETUP_CMD_NOHANDLE("ATH"),
+    SETUP_CMD_NOHANDLE("AT+CFUN=0"),
 	SETUP_CMD_NOHANDLE("AT+CMEE=1"),
+    SETUP_CMD_NOHANDLE("AT+QCFG=\"nwscanmode\", 1"),
+    SETUP_CMD_NOHANDLE("AT+CFUN=1"),
+    SETUP_CMD_NOHANDLE("AT+CREG=2"),
+    SETUP_CMD_NOHANDLE("AT+IFC=2,2"),
 
 	/* Commands to read info from the modem (things like IMEI, Model etc). */
 	SETUP_CMD("AT+CGMI", "", on_cmd_atcmdinfo_manufacturer, 0U, ""),
@@ -924,7 +935,7 @@ static const struct setup_cmd setup_cmds[] = {
 	SETUP_CMD("AT+CIMI", "", on_cmd_atcmdinfo_imsi, 0U, ""),
 	SETUP_CMD("AT+QCCID", "", on_cmd_atcmdinfo_iccid, 0U, ""),
 #endif /* #if defined(CONFIG_MODEM_SIM_NUMBERS) */
-	SETUP_CMD_NOHANDLE("AT+QICSGP=1,1,\"" MDM_APN "\",\"" MDM_USERNAME "\", \"" MDM_PASSWORD "\",1"),
+	SETUP_CMD_NOHANDLE("AT+QICSGP=1,1,\"" MDM_APN "\",\"" MDM_USERNAME "\",\"" MDM_PASSWORD "\",1"),
 };
 
 /* Func: modem_pdp_context_active
@@ -995,6 +1006,7 @@ restart:
 		goto error;
 	}
 
+	k_sleep(K_SECONDS(20));
 	/* Run setup commands on the modem. */
 	ret = modem_cmd_handler_setup_cmds(&mctx.iface, &mctx.cmd_handler,
 					   setup_cmds, ARRAY_SIZE(setup_cmds),
