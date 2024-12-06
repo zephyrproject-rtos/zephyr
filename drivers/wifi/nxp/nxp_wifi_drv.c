@@ -1534,6 +1534,36 @@ static int nxp_wifi_set_btwt(const struct device *dev, struct wifi_twt_params *p
 }
 #endif
 
+static int nxp_wifi_set_rts_threshold(const struct device *dev, unsigned int rts_threshold)
+{
+	int ret = -1;
+
+#if CONFIG_NXP_WIFI_RTS_THRESHOLD
+	if (rts_threshold == -1) {
+		rts_threshold = MLAN_RTS_MAX_VALUE;
+	}
+
+	ret = wlan_set_rts(rts_threshold);
+#endif
+
+	return ret;
+}
+
+static int nxp_wifi_ap_set_rts_threshold(const struct device *dev, unsigned int rts_threshold)
+{
+	int ret = -1;
+
+#if CONFIG_NXP_WIFI_RTS_THRESHOLD
+	if (rts_threshold == -1) {
+		rts_threshold = MLAN_RTS_MAX_VALUE;
+	}
+
+	ret = wlan_set_uap_rts(rts_threshold);
+#endif
+
+	return ret;
+}
+
 static void nxp_wifi_sta_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
@@ -1825,6 +1855,7 @@ static const struct wifi_mgmt_ops nxp_wifi_sta_mgmt = {
 #ifdef CONFIG_NXP_WIFI_11AX_TWT
 	.set_twt = nxp_wifi_set_twt,
 #endif
+	.set_rts_threshold = nxp_wifi_set_rts_threshold,
 };
 
 #if defined(CONFIG_WIFI_NM_WPA_SUPPLICANT)
@@ -1899,6 +1930,7 @@ static const struct wifi_mgmt_ops nxp_wifi_uap_mgmt = {
 #ifdef CONFIG_NXP_WIFI_11AX_TWT
 	.set_btwt = nxp_wifi_set_btwt,
 #endif
+	.set_rts_threshold = nxp_wifi_ap_set_rts_threshold,
 };
 
 static const struct net_wifi_mgmt_offload nxp_wifi_uap_apis = {
