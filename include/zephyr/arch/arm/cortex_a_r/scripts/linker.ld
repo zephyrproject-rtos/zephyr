@@ -257,7 +257,10 @@ SECTIONS
 
     GROUP_START(RAMABLE_REGION)
 
+#if ROM_ADDR != RAM_ADDR
     . = RAM_ADDR;
+#endif
+
     /* Align the start of image RAM with the
      * minimum granularity required by MPU.
      */
