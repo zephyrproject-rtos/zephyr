@@ -271,7 +271,10 @@ static int apds9306_sensor_setup(const struct device *dev)
 	/* Wait for the device to become ready after a possible power cycle. */
 	now = k_uptime_get_32();
 	do {
-		i2c_reg_read_byte_dt(&config->i2c, APDS9306_REGISTER_MAIN_STATUS, &temp);
+		if (i2c_reg_read_byte_dt(&config->i2c, APDS9306_REGISTER_MAIN_STATUS, &temp)) {
+			LOG_ERR("Failed reading sensor status!");
+			return -EFAULT;
+		}
 
 		/* We wait 100 ms maximum for the device to become ready. */
 		if ((k_uptime_get_32() - now) > 100) {
@@ -308,7 +311,10 @@ static int apds9306_sensor_setup(const struct device *dev)
 
 	/* Perform a dummy read to avoid bus errors after the reset. See */
 	/* https://lore.kernel.org/lkml/ab1d9746-4d23-efcc-0ee1-d2b8c634becd@tweaklogic.com/ */
-	i2c_reg_read_byte_dt(&config->i2c, APDS9306_REGISTER_PART_ID, &temp);
+	if (i2c_reg_read_byte_dt(&config->i2c, APDS9306_REGISTER_PART_ID, &temp)) {
+		LOG_ERR("Failed reading chip id!");
+		return -EFAULT;
+	}
 
 	return 0;
 }
