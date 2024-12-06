@@ -582,7 +582,7 @@ static int spi_stm32_configure(const struct device *dev,
 	uint32_t clock;
 	int br;
 
-	if (spi_context_configured(&data->ctx, config)) {
+	if (!data->need_reconfigure && spi_context_configured(&data->ctx, config)) {
 		/* Nothing to do */
 		return 0;
 	}
@@ -701,6 +701,7 @@ static int spi_stm32_configure(const struct device *dev,
 
 	/* At this point, it's mandatory to set this on the context! */
 	data->ctx.config = config;
+	data->need_reconfigure = false;
 
 	LOG_DBG("Installed config %p: freq %uHz (div = %u),"
 		    " mode %u/%u/%u, slave %u",
@@ -1175,6 +1176,8 @@ static int spi_stm32_init(const struct device *dev)
 	const struct spi_stm32_config *cfg = dev->config;
 	int err;
 
+	data->need_reconfigure = true;
+
 	if (!device_is_ready(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE))) {
 		LOG_ERR("clock control device not ready");
 		return -ENODEV;
@@ -1243,6 +1246,7 @@ static int spi_stm32_pm_action(const struct device *dev,
 {
 	const struct spi_stm32_config *config = dev->config;
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	struct spi_stm32_data *data = dev->data;
 	int err;
 
 
@@ -1286,6 +1290,8 @@ static int spi_stm32_pm_action(const struct device *dev,
 				return err;
 			}
 		}
+		data->need_reconfigure = true;
+
 		break;
 	default:
 		return -ENOTSUP;
