@@ -143,22 +143,8 @@ ZTEST(policy_api, test_pm_policy_next_state_default_allowed)
 	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE);
 }
 
-/** Flag to indicate number of times callback has been called */
-static uint8_t latency_cb_call_cnt;
 /** Flag to indicate expected latency */
 static int32_t expected_latency;
-
-/**
- * Callback to notify when state allowed status changes.
- */
-static void on_pm_policy_latency_changed(int32_t latency)
-{
-	TC_PRINT("Latency changed to %d\n", latency);
-
-	zassert_equal(latency, expected_latency);
-
-	latency_cb_call_cnt++;
-}
 
 /**
  * @brief Test the behavior of pm_policy_next_state() when
@@ -167,13 +153,24 @@ static void on_pm_policy_latency_changed(int32_t latency)
 ZTEST(policy_api, test_pm_policy_next_state_default_latency)
 {
 	struct pm_policy_latency_request req1, req2;
-	struct pm_policy_latency_subscription sreq1, sreq2;
 	const struct pm_state_info *next;
+	int rv;
+
+	rv = pm_policy_latency_immediate_ctrl_add(NULL);
+	zassert_equal(rv, 0);
+
+	memset(&req1, 0, sizeof(req1));
+	memset(&req2, 0, sizeof(req2));
 
 	/* add a latency requirement with a maximum value below the
 	 * latency given by any state, so we should stay active all the time
 	 */
-	pm_policy_latency_request_add(&req1, 9000);
+	rv = pm_policy_latency_request_add(&req1, 9000);
+	zassert_equal(rv, 0);
+
+	/* Cannot add already added request. */
+	rv = pm_policy_latency_request_add(&req1, 1000);
+	zassert_equal(rv, -EALREADY);
 
 	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(110000));
 	zassert_is_null(next);
@@ -185,7 +182,8 @@ ZTEST(policy_api, test_pm_policy_next_state_default_latency)
 	 * PM_STATE_RUNTIME_IDLE and PM_STATE_SUSPEND_TO_RAM, so we should
 	 * never enter PM_STATE_SUSPEND_TO_RAM.
 	 */
-	pm_policy_latency_request_update(&req1, 50000);
+	rv = pm_policy_latency_request_update(&req1, 50000);
+	zassert_equal(rv, 0);
 
 	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(110000));
 	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE);
@@ -197,7 +195,8 @@ ZTEST(policy_api, test_pm_policy_next_state_default_latency)
 	 * latency given by any state, so we should stay active all the time
 	 * since it overrides the previous one.
 	 */
-	pm_policy_latency_request_add(&req2, 8000);
+	rv = pm_policy_latency_request_add(&req2, 8000);
+	zassert_equal(rv, 0);
 
 	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(110000));
 	zassert_is_null(next);
@@ -208,7 +207,8 @@ ZTEST(policy_api, test_pm_policy_next_state_default_latency)
 	/* remove previous request, so we should recover behavior given by
 	 * first request.
 	 */
-	pm_policy_latency_request_remove(&req2);
+	rv = pm_policy_latency_request_remove(&req2);
+	zassert_equal(rv, 0);
 
 	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(110000));
 	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE);
@@ -225,39 +225,175 @@ ZTEST(policy_api, test_pm_policy_next_state_default_latency)
 	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(1100000));
 	zassert_equal(next->state, PM_STATE_SUSPEND_TO_RAM);
 
-	/* get notified when latency requirement changes */
-	pm_policy_latency_changed_subscribe(&sreq1, on_pm_policy_latency_changed);
-	pm_policy_latency_changed_subscribe(&sreq2, on_pm_policy_latency_changed);
-
 	/* add new request (expected notification) */
-	latency_cb_call_cnt = 0;
 	expected_latency = 10000;
 	pm_policy_latency_request_add(&req1, 10000);
-	zassert_equal(latency_cb_call_cnt, 2);
 
-	/* update request (expected notification, but only sreq1) */
-	pm_policy_latency_changed_unsubscribe(&sreq2);
 
-	latency_cb_call_cnt = 0;
 	expected_latency = 50000;
 	pm_policy_latency_request_update(&req1, 50000);
-	zassert_equal(latency_cb_call_cnt, 1);
 
 	/* add a new request, with higher value (no notification, previous
 	 * prevails)
 	 */
-	latency_cb_call_cnt = 0;
 	pm_policy_latency_request_add(&req2, 60000);
-	zassert_equal(latency_cb_call_cnt, 0);
 
 	pm_policy_latency_request_remove(&req2);
-	zassert_equal(latency_cb_call_cnt, 0);
 
 	/* remove first request, we no longer have latency requirements */
 	expected_latency = SYS_FOREVER_US;
 	pm_policy_latency_request_remove(&req1);
-	zassert_equal(latency_cb_call_cnt, 1);
 }
+
+struct test_data {
+	struct k_timer timer;
+	struct onoff_manager mgr;
+	struct onoff_monitor monitor;
+	int res;
+	onoff_notify_fn notify;
+	k_timeout_t timeout;
+	bool on;
+};
+
+struct test_req {
+	struct pm_policy_latency_request req;
+	volatile int result;
+};
+
+static void onoff_monitor_cb(struct onoff_manager *mgr,
+			     struct onoff_monitor *mon,
+			     uint32_t state,
+			     int res)
+{
+	struct test_data *data = CONTAINER_OF(mgr, struct test_data, mgr);
+
+	data->on = (state == ONOFF_STATE_ON);
+}
+
+static void onoff_timeout(struct k_timer *timer)
+{
+	struct test_data *data = CONTAINER_OF(timer, struct test_data, timer);
+
+	data->notify(&data->mgr, data->res);
+}
+
+K_TIMER_DEFINE(onoff_timer, onoff_timeout, NULL);
+
+static void onoff_start(struct onoff_manager *mgr, onoff_notify_fn notify)
+{
+	struct test_data *data = CONTAINER_OF(mgr, struct test_data, mgr);
+
+	data->notify = notify;
+	k_timer_start(&data->timer, data->timeout, K_NO_WAIT);
+}
+
+static void onoff_stop(struct onoff_manager *mgr, onoff_notify_fn notify)
+{
+	struct test_data *data = CONTAINER_OF(mgr, struct test_data, mgr);
+
+	data->notify = notify;
+	k_timer_start(&data->timer, data->timeout, K_NO_WAIT);
+}
+
+static void immediate_ctrl_binary_init(struct test_data *data, uint32_t thr, uint32_t t_op)
+{
+	static const struct onoff_transitions transitions = {
+		.start = onoff_start,
+		.stop = onoff_stop
+	};
+	static struct pm_policy_latency_immediate_binary bin_mgr;
+	struct pm_policy_latency_immediate_ctrl ctrl;
+	int rv;
+
+	bin_mgr.mgr = &data->mgr;
+	bin_mgr.thr = thr;
+	ctrl.onoff = true;
+	ctrl.bin_mgr = &bin_mgr;
+	data->monitor.callback = onoff_monitor_cb;
+
+	data->timeout = K_MSEC(t_op);
+	k_timer_init(&data->timer, onoff_timeout, NULL);
+	rv = onoff_manager_init(&data->mgr, &transitions);
+	zassert_equal(rv, 0);
+
+	rv = onoff_monitor_register(&data->mgr, &data->monitor);
+	zassert_equal(rv, 0);
+
+	rv = pm_policy_latency_immediate_ctrl_add(&ctrl);
+	zassert_equal(rv, 0);
+}
+
+static void latency_changed(struct pm_policy_latency_request *req, int32_t result)
+{
+	struct test_req *test_req = CONTAINER_OF(req, struct test_req, req);
+
+	test_req->result = result;
+}
+
+ZTEST(policy_api, test_pm_policy_latency_immediate_action_bin)
+{
+	struct test_data data;
+	uint32_t thr = 1000;
+	uint32_t t_op = 1;
+	struct test_req req1, req2;
+	int rv;
+	int result = -EAGAIN;
+
+	immediate_ctrl_binary_init(&data, thr, t_op);
+
+	sys_notify_init_spinwait(&req1.req.cli.notify);
+
+	/* Latency above threhold so requirement is already met. */
+	rv = pm_policy_latency_request_add(&req1.req, thr + 1);
+	zassert_equal(rv, 0, "Unexpected rv: %d", rv);
+	zassert_equal(sys_notify_fetch_result(&req1.req.cli.notify, &result), 0);
+	zassert_equal(result, 0, "Unexpected result: %d", result);
+
+	req2.result = -EIO;
+	sys_notify_init_callback(&req2.req.cli.notify, latency_changed);
+	rv = pm_policy_latency_request_add(&req2.req, thr + 2);
+	zassert_equal(rv, 0, "Unexpected rv: %d", rv);
+	zassert_equal(req2.result, 0, "Unexpected rv: %d", req2.result);
+
+	req2.result = -EIO;
+	sys_notify_init_callback(&req2.req.cli.notify, latency_changed);
+	/* Below the threshold, it triggers asynchronous action. */
+	rv = pm_policy_latency_request_update(&req2.req, thr - 1);
+	zassert_equal(rv, 1, "Unexpected rv: %d", rv);
+	/* Not finished yet. */
+	zassert_equal(req2.result, -EIO, "Unexpected rv: %d", req2.result);
+	k_msleep(t_op);
+	zassert_equal(req2.result, 0, "Unexpected rv: %d", req2.result);
+
+	rv = pm_policy_latency_request_remove(&req1.req);
+	zassert_equal(rv, 0, "Unexpected rv: %d", rv);
+
+	rv = pm_policy_latency_request_remove(&req2.req);
+	zassert_equal(rv, 0, "Unexpected rv: %d", rv);
+
+	zassert_false(data.on);
+	rv = pm_policy_latency_request_add_sync(&req1.req, thr - 1);
+	zassert_equal(rv, 0, "Unexpected rv: %d", rv);
+	/* Synchronous request blocks until immediate action is completed. */
+	zassert_true(data.on);
+
+	rv = pm_policy_latency_request_remove(&req1.req);
+	zassert_equal(rv, 0, "Unexpected rv: %d", rv);
+
+	/* Add request below the threshold. */
+	rv = pm_policy_latency_request_add(&req1.req, thr + 1);
+	zassert_equal(rv, 0, "Unexpected rv: %d", rv);
+	zassert_false(data.on);
+
+	/* Synchronous request for update that trigger the immediate action. */
+	rv = pm_policy_latency_request_update_sync(&req1.req, thr - 1);
+	zassert_equal(rv, 0, "Unexpected rv: %d", rv);
+	zassert_true(data.on);
+
+	rv = pm_policy_latency_request_remove(&req1.req);
+	zassert_equal(rv, 0, "Unexpected rv: %d", rv);
+}
+
 #else
 ZTEST(policy_api, test_pm_policy_next_state_default)
 {

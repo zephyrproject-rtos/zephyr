@@ -13,6 +13,7 @@
 #include <zephyr/device.h>
 #include <zephyr/pm/state.h>
 #include <zephyr/sys/slist.h>
+#include <zephyr/sys/onoff.h>
 #include <zephyr/toolchain.h>
 
 #ifdef __cplusplus
@@ -27,27 +28,6 @@ extern "C" {
  */
 
 /**
- * @brief Callback to notify when maximum latency changes.
- *
- * @param latency New maximum latency. Positive value represents latency in
- * microseconds. SYS_FOREVER_US value lifts the latency constraint. Other values
- * are forbidden.
- */
-typedef void (*pm_policy_latency_changed_cb_t)(int32_t latency);
-
-/**
- * @brief Latency change subscription.
- *
- * @note All fields in this structure are meant for private usage.
- */
-struct pm_policy_latency_subscription {
-	/** @cond INTERNAL_HIDDEN */
-	sys_snode_t node;
-	pm_policy_latency_changed_cb_t cb;
-	/** @endcond */
-};
-
-/**
  * @brief Latency request.
  *
  * @note All fields in this structure are meant for private usage.
@@ -56,8 +36,21 @@ struct pm_policy_latency_request {
 	/** @cond INTERNAL_HIDDEN */
 	sys_snode_t node;
 	uint32_t value_us;
+	struct onoff_client cli;
+	void *internal;
+	uint32_t flags;
 	/** @endcond */
 };
+
+/**
+ * @brief Callback to notify when maximum latency changes.
+ *
+ * @param latency New maximum latency. Positive value represents latency in
+ * microseconds. SYS_FOREVER_US value lifts the latency constraint. Other values
+ * are forbidden.
+ */
+typedef void (*pm_policy_latency_changed_cb_t)(struct pm_policy_latency_request *req,
+					       int32_t latency);
 
 /**
  * @brief Event.
@@ -275,27 +268,96 @@ static inline int32_t pm_policy_next_event_ticks(void)
  * The system will not enter any power state that would make the system to
  * exceed the given latency value.
  *
+ * If immediate control manager is provided request may trigger an action asynchronous action
+ * to reconfigure the system runtime to fullfil requested latency. @p req contains an
+ * asynchronous notification field that must be initialize prior to the call to get the
+ * notification.
+ *
  * @param req Latency request.
  * @param value_us Maximum allowed latency in microseconds.
+ *
+ * @retval 0 if request is applied.
+ * @retval 1 if request required immediate action that is not completed. Configured completion
+ * notification will inform about completion.
+ * @retval -EIO immediate action returned error.
  */
-void pm_policy_latency_request_add(struct pm_policy_latency_request *req,
-				   uint32_t value_us);
+int pm_policy_latency_request_add(struct pm_policy_latency_request *req, uint32_t value_us);
+
+/**
+ * @brief Synchronously add a new latency requirement.
+ *
+ * If immediate control manager is not used then it is an equivalent of
+ * @ref pm_policy_latency_request_add. If immediate control manager is used then context
+ * blocks until request is completed. It can only be called from the thread context.
+ * Asynchronous notification field in the @p req is configured and used internally.
+ *
+ * @retval 0 if request required immediate action that is not completed. Configured completion
+ * notification will inform about completion.
+ * @retval -EIO immediate action returned error.
+ */
+int pm_policy_latency_request_add_sync(struct pm_policy_latency_request *req, uint32_t value_us);
 
 /**
  * @brief Update a latency requirement.
  *
  * @param req Latency request.
  * @param value_us New maximum allowed latency in microseconds.
+ *
+ * @retval 0 if request is applied.
+ * @retval 1 if request required immediate action that is not completed. Configured completion
+ * notification will inform about completion.
+ * @retval -EIO immediate action returned error.
  */
-void pm_policy_latency_request_update(struct pm_policy_latency_request *req,
-				      uint32_t value_us);
+int pm_policy_latency_request_update(struct pm_policy_latency_request *req, uint32_t value_us);
+
+/**
+ * @brief Synchronously update a latency requirement.
+ *
+ * If immediate control manager is not used then it is an equivalent of
+ * @ref pm_policy_latency_request_update. If immediate control manager is used then context
+ * blocks until request is completed. It can only be called from the thread context.
+ * Asynchronous notification field in the @p req is configured and used internally.
+ *
+ * @retval 0 if request required immediate action that is not completed. Configured completion
+ * notification will inform about completion.
+ * @retval -EIO immediate action returned error.
+ */
+int pm_policy_latency_request_update_sync(struct pm_policy_latency_request *req, uint32_t value_us);
 
 /**
  * @brief Remove a latency requirement.
  *
  * @param req Latency request.
+ *
+ * @retval 0 if request removed successfully.
+ * @retval -EALREADY if request is not active and cannot be removed.
+ * @retval -EIO immediate action returned error.
  */
-void pm_policy_latency_request_remove(struct pm_policy_latency_request *req);
+int pm_policy_latency_request_remove(struct pm_policy_latency_request *req);
+
+/** @brief Immediate action manager for single threshold.
+ *
+ * If there is only a single threshold that triggers an action then @ref onoff_manager
+ * can handle that. Structure must be persistent.
+ */
+struct pm_policy_latency_immediate_binary {
+	/** Onoff manager. */
+	struct onoff_manager *mgr;
+	/** Latency threshold. Value below threshold trigger 'on' action. */
+	int32_t thr;
+};
+
+struct pm_policy_latency_immediate_ctrl {
+	/** Indication that onoff manager is used. In future gradual manager might
+	 * also be supported.
+	 */
+	bool onoff;
+	/** Pointer to the manager which controls immediate action. */
+	union {
+		struct pm_policy_latency_immediate_binary *bin_mgr;
+		void *mgr;
+	};
+};
 
 /**
  * @brief Subscribe to maximum latency changes.
@@ -303,35 +365,43 @@ void pm_policy_latency_request_remove(struct pm_policy_latency_request *req);
  * @param req Subscription request.
  * @param cb Callback function (NULL to disable).
  */
-void pm_policy_latency_changed_subscribe(struct pm_policy_latency_subscription *req,
-					 pm_policy_latency_changed_cb_t cb);
+int pm_policy_latency_immediate_ctrl_add(struct pm_policy_latency_immediate_ctrl *mgr);
 
 /**
  * @brief Unsubscribe to maximum latency changes.
  *
  * @param req Subscription request.
  */
-void pm_policy_latency_changed_unsubscribe(struct pm_policy_latency_subscription *req);
 #else
-static inline void pm_policy_latency_request_add(
+static inline int pm_policy_latency_request_add(
 	struct pm_policy_latency_request *req, uint32_t value_us)
 {
 	ARG_UNUSED(req);
 	ARG_UNUSED(value_us);
+	return 0;
 }
 
-static inline void pm_policy_latency_request_update(
+static inline int pm_policy_latency_request_update(
 	struct pm_policy_latency_request *req, uint32_t value_us)
 {
 	ARG_UNUSED(req);
 	ARG_UNUSED(value_us);
+	return 0;
 }
 
-static inline void pm_policy_latency_request_remove(
+static inline int pm_policy_latency_request_remove(
 	struct pm_policy_latency_request *req)
 {
 	ARG_UNUSED(req);
+	return 0;
 }
+
+static inline int pm_policy_latency_immediate_ctrl_add(struct pm_policy_latency_immediate_ctrl *mgr)
+{
+	ARG_UNUSED(mgr);
+	return 0;
+}
+
 #endif /* CONFIG_PM CONFIG_PM_POLICY_LATENCY_STANDALONE */
 
 /**
