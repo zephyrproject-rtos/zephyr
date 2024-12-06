@@ -514,15 +514,19 @@ harness: <string>
     - pytest
     - gtest
     - robot
+    - cpputest
 
-    Harnesses ``ztest``, ``gtest`` and ``console`` are based on parsing of the
-    output and matching certain phrases. ``ztest`` and ``gtest`` harnesses look
-    for pass/fail/etc. frames defined in those frameworks. Use ``gtest``
-    harness if you've already got tests written in the gTest framework and do
-    not wish to update them to zTest. The ``console`` harness tells Twister to
-    parse a test's text output for a regex defined in the test's YAML file.
-    The ``robot`` harness is used to execute Robot Framework test suites
-    in the Renode simulation framework.
+    Harnesses ``ztest``, ``gtest``, ``cpputest`` and ``console`` are based on parsing of the
+    output and matching certain phrases. ``ztest``, ``gtest`` and ``cpputest`` harnesses look
+    for pass/fail/etc. frames defined in those frameworks. Use ``gtest`` or ``cpputest``
+    harness if you've already got tests written with either of these framework and do
+    If you are using ``cpputest``, you will need to enable verbose within your ``cpputest``
+    application when calling ``CommandLineTestRunner::RunAllTests``.
+    The reason for this is that by default ``cpputest`` does not output any information
+    about individual test cases.
+    The ``console`` harness tells Twister to parse a test's text output
+    for a regex defined in the test's YAML file. The ``robot`` harness is used
+    to execute Robot Framework test suites in the Renode simulation framework.
 
     Some widely used harnesses that are not supported yet:
 
