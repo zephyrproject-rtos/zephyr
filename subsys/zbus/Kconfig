@@ -16,6 +16,9 @@ config ZBUS_CHANNELS_SYS_INIT_PRIORITY
 config ZBUS_CHANNEL_NAME
 	bool "Channel name field"
 
+config ZBUS_CHANNEL_ID
+	bool "Channel identifier field"
+
 config ZBUS_OBSERVER_NAME
 	bool "Observer name field"
 
