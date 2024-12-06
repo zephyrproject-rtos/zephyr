@@ -97,11 +97,9 @@ static int adltc2990_is_busy(const struct device *dev, bool *is_busy)
 {
 	const struct adltc2990_config *cfg = dev->config;
 	uint8_t status_reg = 0;
-	int ret;
 
-	ret = i2c_reg_read_byte_dt(&cfg->bus, ADLTC2990_REG_STATUS, &status_reg);
-	if (ret) {
-		return ret;
+	if (i2c_reg_read_byte_dt(&cfg->bus, ADLTC2990_REG_STATUS, &status_reg)) {
+		return -EIO;
 	}
 
 	*is_busy = status_reg & BIT(0);
@@ -186,17 +184,15 @@ static int adltc2990_fetch_property_value(const struct device *dev,
 		LOG_ERR("Trying to access illegal register");
 		return -EINVAL;
 	}
-	int ret;
 
-	ret = i2c_reg_read_byte_dt(&cfg->bus, msb_address, &msb_value);
-	if (ret) {
-		return ret;
+	if (i2c_reg_read_byte_dt(&cfg->bus, msb_address, &msb_value)) {
+		return -EIO;
 	}
 
-	ret = i2c_reg_read_byte_dt(&cfg->bus, lsb_address, &lsb_value);
-	if (ret) {
-		return ret;
+	if (i2c_reg_read_byte_dt(&cfg->bus, lsb_address, &lsb_value)) {
+		return -EIO;
 	}
+
 	uint16_t conversion_factor;
 	uint8_t negative_bit_index = 14U, sensor_val_divisor = 100U;
 
@@ -238,10 +234,9 @@ static int adltc2990_init(const struct device *dev)
 					 cfg->measurement_mode[1] << 3 | cfg->measurement_mode[0];
 
 	LOG_DBG("Setting Control Register to: 0x%x", ctrl_reg_setting);
-	err = i2c_reg_write_byte_dt(&cfg->bus, ADLTC2990_REG_CONTROL, ctrl_reg_setting);
-	if (err < 0) {
-		LOG_ERR("configuring for single bus failed: %d", err);
-		return err;
+	if (i2c_reg_write_byte_dt(&cfg->bus, ADLTC2990_REG_CONTROL, ctrl_reg_setting)) {
+		LOG_ERR("configuring for single bus failed.");
+		return -EIO;
 	}
 
 	err = adltc2990_trigger_measurement(dev);
