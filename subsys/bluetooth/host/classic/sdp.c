@@ -2098,11 +2098,6 @@ static int sdp_client_receive(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	}
 
 	hdr = net_buf_pull_mem(buf, sizeof(*hdr));
-	if (hdr->op_code == BT_SDP_ERROR_RSP) {
-		LOG_INF("Error SDP PDU response");
-		return 0;
-	}
-
 	len = sys_be16_to_cpu(hdr->param_len);
 	tid = sys_be16_to_cpu(hdr->tid);
 
@@ -2126,8 +2121,10 @@ static int sdp_client_receive(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	case BT_SDP_SVC_SEARCH_ATTR_RSP:
 		return sdp_client_receive_ssa_sa(session, buf);
 	case BT_SDP_ERROR_RSP:
+		LOG_INF("Invalid SDP request");
+		sdp_client_notify_result(session, UUID_NOT_RESOLVED);
 		sdp_client_params_iterator(session);
-		break;
+		return 0;
 	default:
 		LOG_DBG("PDU 0x%0x response not handled", hdr->op_code);
 		break;
