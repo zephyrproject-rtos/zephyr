@@ -7,11 +7,11 @@
 Overview
 ********
 
-These samples demonstrates how to use the Bluetooth Channel Sounding feature.
+These samples demonstrate how to use the Bluetooth Channel Sounding feature.
 
-The CS Test sample shows how to us the CS test command to override randomization of certain channel
+The CS Test sample shows how to use the CS test command to override the randomization of certain channel
 sounding parameters, experiment with different configurations, or evaluate the RF medium. It can
-be found under :zephyr_file:`samples/bluetooth/channel_sounding/cs_test`.
+be found under zephyr_file:`samples/bluetooth/channel_sounding/cs_test`.
 
 The connected CS sample shows how to set up regular channel sounding procedures on a connection
 between two devices.
@@ -22,13 +22,13 @@ The Channel Sounding feature does not mandate a specific algorithm for computing
 but the mathematical representation described in [#phase_and_amplitude]_ and [#rtt_packets]_ is used
 as a starting point for these samples.
 
-Distance estimation using channel sounding requires data from two devices, and for that reason
-the channel sounding results in the sample are exchanged in a simple way using a GATT characteristic.
+Distance estimation using channel sounding requires data from two devices and for that reason
+the channel sounding results in the sample are exchanged simply using a GATT characteristic.
 This limits the amount of data that can be processed at once to about 512 bytes from each device,
 which is enough to estimate distance using a handful of RTT timings and PBR phase samples across
 about 35-40 channels, assuming a single antenna path.
 
-Both samples will perform channel sounding procedures repeatedly and print regular distance estimates to
+Both samples repeatedly perform channel sounding procedures and print regular distance estimates to
 the console. They are designed assuming a single subevent per procedure.
 
 Diagrams illustrating the steps involved in setting up channel sounding procedures between two
@@ -37,18 +37,18 @@ connected devices are available in [#cs_setup_phase]_ and [#cs_start]_.
 Requirements
 ************
 
-* Two boards with Bluetooth LE and Channel Sounding support (such as an :ref:`nRF54L15 <nrf54l15dk_nrf54l15>`)
+* Two boards with Bluetooth LE and Channel Sounding support (such as an:ref:`nRF54L15 <nrf54l15dk_nrf54l15>`)
 * A controller that supports the Channel Sounding feature
 
 Building and Running
 ********************
 
-These samples can be found under :zephyr_file:`samples/bluetooth/channel_sounding` in
+These samples can be found under zephyr_file:`samples/bluetooth/channel_sounding` in
 the Zephyr tree.
 
-See :zephyr:code-sample-category:`bluetooth` samples for details.
+See zephyr:code-sample-category:`bluetooth` samples for details.
 
-These sample use two applications, so two devices need to be setup.
+These samples use two applications, so two devices must be set up.
 Flash one device with the initiator application, and another device with the
 reflector application.
 
