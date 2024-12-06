@@ -3684,7 +3684,6 @@ NXP Drivers:
     - decsny
     - manuargue
     - dbaluta
-    - MarkWangChinese
   files-regex:
     - ^drivers/.*nxp.*
     - ^drivers/.*mcux.*
@@ -3707,11 +3706,23 @@ NXP Drivers:
     - dts/bindings/*/nxp*
   files-exclude:
     - drivers/wifi/nxp/
+    - drivers/usb/*/*mcux*
   files-regex-exclude:
     - .*s32.*
   labels:
     - "platform: NXP Drivers"
   description: NXP Drivers
+
+NXP MCUX USB:
+  status: maintained
+  maintainers:
+    - mmahadevan108
+    - MarkWangChinese
+  files:
+    - drivers/usb/*/*mcux*
+  labels:
+    - "platform: NXP Drivers"
+  description: NXP MCUX USB shim drivers
 
 NXP Platforms (MCU):
   status: maintained
