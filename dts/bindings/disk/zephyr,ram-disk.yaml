@@ -31,16 +31,15 @@ properties:
     type: phandle
     description: |
       Optional phandle to the memory region to be used as a RAM disk,
-      if not used, and 'disk-image' property is also not used, a local buffer is
-      defined for each disk instance. Use it with caution as it makes memory
-      contents easily accessible.
+      if not used, and 'zephyr,disk-image-path' property is also not used, a
+      local buffer is defined for each disk instance. Use it with caution as it
+      makes memory contents easily accessible.
 
-  disk-image:
+  zephyr,disk-image-path:
     type: string
     description: |
       Optional path of a disk image, on the build host system, to be used as
-      backing store of a RAM disk. Make sure that 'sector-size' and 'sector-count'
-      are set to correct values such that 'sector-size' matches the corresponding
-      value used in the existing filesystem (if any) on the disk image and the
-      computed disk size (sector-size x sector-count) matches the size of the disk
-      image in bytes.
+      backing store of a RAM disk. Make sure that 'sector-size' matches the
+      corresponding value used in the existing filesystem (if any) on the disk
+      image. The value of 'sector-count' will be ignored and overridden with the
+      value computed automatically from the disk image size, at build time.
