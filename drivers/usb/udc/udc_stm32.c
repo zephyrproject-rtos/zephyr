@@ -546,9 +546,9 @@ static void udc_stm32_mem_init(const struct device *dev)
 	}
 
 	/* The documentation is not clear at all about RX FiFo size requirement,
-	 * Allocate a minimum of 0x40 words, which seems to work reliably.
+	 * 160 has been selected through trial and error.
 	 */
-	words = MAX(0x40, cfg->ep_mps / 4);
+	words = MAX(160, cfg->ep_mps / 4);
 	HAL_PCDEx_SetRxFiFo(&priv->pcd, words);
 	priv->occupied_mem = words * 4;
 
