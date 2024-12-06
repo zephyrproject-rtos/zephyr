@@ -76,3 +76,13 @@ properties:
       leveling.
 
       This corresponds to CONFIG_FS_LITTLEFS_BLOCK_CYCLES.
+
+  disk-version:
+    type: int
+    description: |
+      The littlefs disk version.
+
+      To maintain backward compatibility with existing littlefs
+      with the same major disk version.
+
+      The default version is LFS_DISK_VERSION.
