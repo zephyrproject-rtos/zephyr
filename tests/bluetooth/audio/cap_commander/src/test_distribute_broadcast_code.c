@@ -245,6 +245,10 @@ ZTEST_F(cap_commander_test_distribute_broadcast_code,
 {
 	int err;
 
+	if (CONFIG_BT_MAX_CONN == 1) {
+		ztest_test_skip();
+	}
+
 	for (size_t i = 0; i < ARRAY_SIZE(fixture->broadcast_code_member_params); i++) {
 		fixture->broadcast_code_member_params[i].member.member = &fixture->conns[0];
 	}
