@@ -21,6 +21,8 @@ struct dev_data_hfxo {
 	onoff_notify_fn notify;
 	struct k_timer timer;
 	sys_snode_t hfxo_node;
+	bool requested;
+	bool zli_requested;
 };
 
 struct dev_config_hfxo {
@@ -48,6 +50,41 @@ static void hfxo_start_up_timer_handler(struct k_timer *timer)
 	}
 }
 
+static void start_hfxo(const struct device *dev)
+{
+	struct dev_data_hfxo *dev_data = dev->data;
+
+	nrf_lrcconf_event_clear(NRF_LRCCONF010, NRF_LRCCONF_EVENT_HFXOSTARTED);
+	soc_lrcconf_poweron_request(&dev_data->hfxo_node, NRF_LRCCONF_POWER_MAIN);
+	nrf_lrcconf_task_trigger(NRF_LRCCONF010, NRF_LRCCONF_TASK_REQHFXO);
+}
+
+static void request_hfxo(const struct device *dev)
+{
+	struct dev_data_hfxo *dev_data = dev->data;
+	unsigned int key;
+
+	key = irq_lock();
+	if (!dev_data->requested && !dev_data->zli_requested) {
+		start_hfxo(dev);
+	}
+	dev_data->requested = true;
+	irq_unlock(key);
+}
+
+static void request_zli_hfxo(const struct device *dev)
+{
+	struct dev_data_hfxo *dev_data = dev->data;
+	unsigned int key;
+
+	key = irq_lock();
+	if (!dev_data->zli_requested && !dev_data->requested) {
+		start_hfxo(dev);
+	}
+	dev_data->zli_requested = true;
+	irq_unlock(key);
+}
+
 static void onoff_start_hfxo(struct onoff_manager *mgr, onoff_notify_fn notify)
 {
 	struct dev_data_hfxo *dev_data =
@@ -56,10 +93,7 @@ static void onoff_start_hfxo(struct onoff_manager *mgr, onoff_notify_fn notify)
 	const struct dev_config_hfxo *dev_config = dev->config;
 
 	dev_data->notify = notify;
-
-	nrf_lrcconf_event_clear(NRF_LRCCONF010, NRF_LRCCONF_EVENT_HFXOSTARTED);
-	soc_lrcconf_poweron_request(&dev_data->hfxo_node, NRF_LRCCONF_POWER_MAIN);
-	nrf_lrcconf_task_trigger(NRF_LRCCONF010, NRF_LRCCONF_TASK_REQHFXO);
+	request_hfxo(dev);
 
 	/* Due to a hardware issue, the HFXOSTARTED event is currently
 	 * unreliable. Hence the timer is used to simply wait the expected
@@ -68,13 +102,45 @@ static void onoff_start_hfxo(struct onoff_manager *mgr, onoff_notify_fn notify)
 	k_timer_start(&dev_data->timer, dev_config->start_up_time, K_NO_WAIT);
 }
 
-static void onoff_stop_hfxo(struct onoff_manager *mgr, onoff_notify_fn notify)
+static void stop_hfxo(const struct device *dev)
 {
-	struct dev_data_hfxo *dev_data =
-		CONTAINER_OF(mgr, struct dev_data_hfxo, mgr);
+	struct dev_data_hfxo *dev_data = dev->data;
 
 	nrf_lrcconf_task_trigger(NRF_LRCCONF010, NRF_LRCCONF_TASK_STOPREQHFXO);
 	soc_lrcconf_poweron_release(&dev_data->hfxo_node, NRF_LRCCONF_POWER_MAIN);
+}
+
+static void release_hfxo(const struct device *dev)
+{
+	struct dev_data_hfxo *dev_data = dev->data;
+	unsigned int key;
+
+	key = irq_lock();
+	if (dev_data->requested && !dev_data->zli_requested) {
+		stop_hfxo(dev);
+	}
+	dev_data->requested = false;
+	irq_unlock(key);
+}
+
+static void release_zli_hfxo(const struct device *dev)
+{
+	struct dev_data_hfxo *dev_data = dev->data;
+	unsigned int key;
+
+	key = irq_lock();
+	if (dev_data->zli_requested && !dev_data->requested) {
+		stop_hfxo(dev);
+	}
+	dev_data->zli_requested = false;
+	irq_unlock(key);
+}
+
+static void onoff_stop_hfxo(struct onoff_manager *mgr, onoff_notify_fn notify)
+{
+	const struct device *dev = DEVICE_DT_INST_GET(0);
+
+	release_hfxo(dev);
 	notify(mgr, 0);
 }
 
@@ -152,6 +218,16 @@ static int api_get_rate_hfxo(const struct device *dev,
 	return 0;
 }
 
+static void api_request_zli_hfxo(const struct device *dev)
+{
+	request_zli_hfxo(dev);
+}
+
+static void api_release_zli_hfxo(const struct device *dev)
+{
+	release_zli_hfxo(dev);
+}
+
 static int init_hfxo(const struct device *dev)
 {
 	struct dev_data_hfxo *dev_data = dev->data;
@@ -180,6 +256,8 @@ static DEVICE_API(nrf_clock_control, drv_api_hfxo) = {
 	.request = api_request_hfxo,
 	.release = api_release_hfxo,
 	.cancel_or_release = api_cancel_or_release_hfxo,
+	.request_zli = api_request_zli_hfxo,
+	.release_zli = api_release_zli_hfxo,
 };
 
 static struct dev_data_hfxo data_hfxo;
