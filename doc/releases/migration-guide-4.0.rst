@@ -404,6 +404,10 @@ Bluetooth Audio
 Bluetooth Host
 ==============
 
+* The ISO data paths are not longer setup automatically, and shall explicitly be setup and removd
+  by the application by calling :c:func:`bt_iso_setup_data_path` and
+  :c:func:`bt_iso_remove_data_path` respectively. (:github:`75549`)
+
 Automatic advertiser resumption is deprecated
 ---------------------------------------------
 
