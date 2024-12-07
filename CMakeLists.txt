@@ -175,6 +175,10 @@ endif()
 # @Intent: Set compiler flags to detect general stack overflows across all functions
 if(CONFIG_STACK_CANARIES)
   zephyr_compile_options($<TARGET_PROPERTY:compiler,security_canaries>)
+elseif(CONFIG_STACK_CANARIES_STRONG)
+  zephyr_compile_options($<TARGET_PROPERTY:compiler,security_canaries_strong>)
+elseif(CONFIG_STACK_CANARIES_EXPLICIT)
+  zephyr_compile_options($<TARGET_PROPERTY:compiler,security_canaries_explicit>)
 endif()
 
 # @Intent: Obtain compiler optimizations flags and store in variables

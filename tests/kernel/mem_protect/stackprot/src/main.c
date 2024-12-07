@@ -14,11 +14,12 @@
 #define STACKSIZE       (2048 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 ZTEST_BMEM static int count;
+ZTEST_BMEM static bool should_fail;
 ZTEST_BMEM static int ret = TC_PASS;
 
 void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *esf)
 {
-	if (reason != K_ERR_STACK_CHK_FAIL) {
+	if ((reason != K_ERR_STACK_CHK_FAIL) && !should_fail) {
 		printk("wrong error type\n");
 		TC_END_REPORT(TC_FAIL);
 		k_fatal_halt(reason);
@@ -61,14 +62,29 @@ void print_loop(const char *name)
  * error like: Trying to execute code outside RAM or ROM.
  *
  */
-
-void __noinline check_input(const char *name, const char *input)
+void __noinline __stack_protect check_input(const char *name, const char *input)
 {
 	/* Stack will overflow when input is more than 16 characters */
 	char buf[16];
 
 	strcpy(buf, input);
 	TC_PRINT("%s: %s\n", name, buf);
+}
+
+/**
+ *
+ * check_input_fail
+ *
+ * This function is similar to check_input() but does not use an array
+ * so, unless it is built with stack protection for all functions it should fail
+ * with an error different from K_ERR_STACK_CHK_FAIL.
+ */
+void __noinline check_input_fail(const char *name, const char *input)
+{
+	char buf;
+
+	strcpy(&buf, input);
+	TC_PRINT("%s: %s\n", name, &buf);
 }
 
 /**
@@ -86,15 +102,21 @@ void alternate_thread(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p3);
 
 	TC_PRINT("Starts %s\n", __func__);
-	check_input(__func__,
-		    "Input string is too long and stack overflowed!\n");
+
+	if (should_fail) {
+		check_input_fail(__func__, "Input string is too long 2222 and stack overflowed!\n");
+	} else {
+		check_input(__func__, "Input string is too long and stack overflowed!\n");
+	}
 	/*
 	 * Expect this thread to terminate due to stack check fail and will not
 	 * execute pass here.
 	 */
 	print_loop(__func__);
 
-	ret = TC_FAIL;
+	if (!should_fail) {
+		ret = TC_FAIL;
+	}
 }
 
 
@@ -132,6 +154,35 @@ ZTEST_USER(stackprot, test_stackprot)
  */
 ZTEST(stackprot, test_create_alt_thread)
 {
+	should_fail = false;
+
+	/* Start thread */
+	k_thread_create(&alt_thread_data, alt_thread_stack_area, STACKSIZE,
+			alternate_thread, NULL, NULL, NULL,
+			K_PRIO_COOP(1), K_USER, K_NO_WAIT);
+
+	/* Note that this sleep is required on SMP platforms where
+	 * that thread will execute asynchronously!
+	 */
+	k_sleep(K_MSEC(100));
+}
+
+/**
+ * @brief Test optional mechanism to detect stack overflow
+ *
+ * @details Test that, depending on stack canaries option, not all functions
+ * have protection.
+ *
+ * @ingroup kernel_memprotect_tests
+ */
+ZTEST(stackprot, test_create_alt_fail_thread)
+{
+	if (IS_ENABLED(CONFIG_STACK_CANARIES_STRONG) ||
+	    IS_ENABLED(CONFIG_STACK_CANARIES_EXPLICIT)) {
+		should_fail = true;
+	} else {
+		should_fail = false;
+	}
 	/* Start thread */
 	k_thread_create(&alt_thread_data, alt_thread_stack_area, STACKSIZE,
 			alternate_thread, NULL, NULL, NULL,
