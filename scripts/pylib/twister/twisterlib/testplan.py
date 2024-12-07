@@ -614,27 +614,15 @@ class TestPlan:
                         )
 
                         # convert to fully qualified names
-                        _integration = []
-                        _platform_allow = []
-                        _platform_exclude = []
-                        for _ip in suite.integration_platforms:
-                            if _ip in self.platform_names:
-                                _integration.append(self.get_platform(_ip).name)
-                            else:
-                                logger.error(f"Platform {_ip} not found in the list of platforms")
-                        suite.integration_platforms = _integration
-                        for _pe in suite.platform_exclude:
-                            if _pe in self.platform_names:
-                                _platform_exclude.append(self.get_platform(_pe).name)
-                            else:
-                                logger.error(f"Platform {_pe} not found in the list of platforms")
-                        suite.platform_exclude = _platform_exclude
-                        for _pa in suite.platform_allow:
-                            if _pa in self.platform_names:
-                                _platform_allow.append(self.get_platform(_pa).name)
-                            else:
-                                logger.error(f"Platform {_pa} not found in the list of platforms")
-                        suite.platform_allow = _platform_allow
+                        suite.integration_platforms = self.verify_platforms_existence(
+                                suite.integration_platforms,
+                                f"integration_platforms in {suite.name}")
+                        suite.platform_exclude = self.verify_platforms_existence(
+                                suite.platform_exclude,
+                                f"platform_exclude in {suite.name}")
+                        suite.platform_allow =  self.verify_platforms_existence(
+                                suite.platform_allow,
+                                f"platform_allow in {suite.name}")
 
                         if suite.harness in ['ztest', 'test']:
                             if subcases is None:
@@ -828,12 +816,7 @@ class TestPlan:
         if platform_filter:
             logger.debug(f"Checking platform filter: {platform_filter}")
             # find in aliases and rename
-            self.verify_platforms_existence(platform_filter, "platform_filter")
-            for pf in platform_filter:
-                logger.debug(f"Checking platform in filter: {pf}")
-                if pf in self.platform_names:
-                    _platforms.append(self.get_platform(pf).name)
-            platform_filter = _platforms
+            platform_filter = self.verify_platforms_existence(platform_filter, "platform_filter")
             platforms = list(filter(lambda p: p.name in platform_filter, self.platforms))
         elif emu_filter:
             platforms = list(
@@ -862,7 +845,7 @@ class TestPlan:
 
         keyed_tests = {}
 
-        for ts_name, ts in self.testsuites.items():
+        for _, ts in self.testsuites.items():
             if (
                 ts.build_on_all
                 and not platform_filter
@@ -874,14 +857,10 @@ class TestPlan:
                     filter(lambda item: item.name in ts.integration_platforms, self.platforms)
                 )
                 if self.options.integration:
-                    self.verify_platforms_existence(
-                        ts.integration_platforms, f"{ts_name} - integration_platforms")
                     platform_scope = integration_platforms
                 else:
                     # if not in integration mode, still add integration platforms to the list
                     if not platform_filter:
-                        self.verify_platforms_existence(
-                            ts.integration_platforms, f"{ts_name} - integration_platforms")
                         platform_scope = platforms + integration_platforms
                     else:
                         platform_scope = platforms
@@ -898,7 +877,6 @@ class TestPlan:
                 and not integration
                 and platform_config.get('increased_platform_scope', True)
             ):
-                self.verify_platforms_existence(ts.platform_allow, f"{ts_name} - platform_allow")
                 a = set(platform_scope)
                 b = set(filter(lambda item: item.name in ts.platform_allow, self.platforms))
                 c = a.intersection(b)
@@ -991,12 +969,6 @@ class TestPlan:
                         instance.add_filter("In test suite vendor exclude", Filters.TESTSUITE)
 
                     if ts.platform_exclude and plat.name in ts.platform_exclude:
-                        # works only when we have all platforms parsed, -p limits parsing...
-                        if not platform_filter:
-                            self.verify_platforms_existence(
-                                ts.platform_exclude,
-                                f"{ts_name} - platform_exclude"
-                            )
                         instance.add_filter("In test case platform exclude", Filters.TESTSUITE)
 
                 if ts.toolchain_exclude and toolchain in ts.toolchain_exclude:
@@ -1261,12 +1233,16 @@ class TestPlan:
         as platform_allow or integration_platforms options) is correct. If not -
         log and raise error.
         """
+        _platforms = []
         for platform in platform_names_to_verify:
             if platform in self.platform_names:
-                continue
+                p = self.get_platform(platform)
+                if p:
+                    _platforms.append(p.name)
             else:
                 logger.error(f"{log_info} - unrecognized platform - {platform}")
                 sys.exit(2)
+        return _platforms
 
     def create_build_dir_links(self):
         """
