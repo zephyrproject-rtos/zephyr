@@ -99,6 +99,12 @@ struct cdc_acm_uart_data {
 	bool line_state_rts;
 	/* UART actual DTR state */
 	bool line_state_dtr;
+	/* When flow_ctrl is set, poll out is blocked when the buffer is full,
+	 * roughly emulating flow control.
+	 */
+	bool flow_ctrl;
+	/* ZLP needed if no more tx is needed after this tx is done */
+	bool zlp_needed;
 	/* UART API IRQ callback */
 	uart_irq_callback_user_data_t cb;
 	/* UART API user callback data */
@@ -107,10 +113,6 @@ struct cdc_acm_uart_data {
 	struct k_work irq_cb_work;
 	struct cdc_acm_uart_fifo rx_fifo;
 	struct cdc_acm_uart_fifo tx_fifo;
-	/* When flow_ctrl is set, poll out is blocked when the buffer is full,
-	 * roughly emulating flow control.
-	 */
-	bool flow_ctrl;
 	/* USBD CDC ACM TX fifo work */
 	struct k_work_delayable tx_fifo_work;
 	/* USBD CDC ACM RX fifo work */
@@ -576,6 +578,10 @@ static void cdc_acm_tx_fifo_handler(struct k_work *work)
 	len = ring_buf_get(data->tx_fifo.rb, buf->data, buf->size);
 	net_buf_add(buf, len);
 
+	if (IS_ENABLED(CONFIG_USBD_CDC_ACM_TX_ZLP_ENABLED)) {
+		data->zlp_needed = len != 0 && len % cdc_acm_get_bulk_mps(c_data) == 0;
+	}
+
 	ret = usbd_ep_enqueue(c_data, buf);
 	if (ret) {
 		LOG_ERR("Failed to enqueue");
@@ -846,9 +852,12 @@ static void cdc_acm_irq_cb_handler(struct k_work *work)
 		cdc_acm_work_submit(&data->rx_fifo_work);
 	}
 
-	if (data->tx_fifo.altered) {
-		LOG_DBG("tx fifo altered, submit work");
-		if (!atomic_test_bit(&data->state, CDC_ACM_TX_FIFO_BUSY)) {
+	if (!atomic_test_bit(&data->state, CDC_ACM_TX_FIFO_BUSY)) {
+		if (data->tx_fifo.altered) {
+			LOG_DBG("tx fifo altered, submit work");
+			cdc_acm_work_schedule(&data->tx_fifo_work, K_NO_WAIT);
+		} else if (IS_ENABLED(CONFIG_USBD_CDC_ACM_TX_ZLP_ENABLED) && data->zlp_needed) {
+			LOG_DBG("zlp needed, submit work");
 			cdc_acm_work_schedule(&data->tx_fifo_work, K_NO_WAIT);
 		}
 	}
