@@ -20,6 +20,7 @@ supported:
   - gpio
   - spi
   - i2c
+  - i2s
   - entropy
   - usb_device
   - watchdog
