@@ -6,7 +6,7 @@
 #ifndef ZEPHYR_INCLUDE_POSIX_DIRENT_H_
 #define ZEPHYR_INCLUDE_POSIX_DIRENT_H_
 
-#include <limits.h>
+#include <zephyr/posix/limits.h>
 
 #include <zephyr/posix/posix_types.h>
 

@@ -1,0 +1,107 @@
+/*
+ * Copyright (c) 2024 Tenstorrent AI ULC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef ZEPHYR_POSIX_SYS_LIMITS_UNDEF_H_
+#define ZEPHYR_POSIX_SYS_LIMITS_UNDEF_H_
+
+/* Maximum values */
+#undef _POSIX_CLOCKRES_MIN
+
+/* Minimum values */
+#undef _POSIX_AIO_LISTIO_MAX
+#undef _POSIX_AIO_MAX
+#undef _POSIX_ARG_MAX
+#undef _POSIX_CHILD_MAX
+#undef _POSIX_DELAYTIMER_MAX
+#undef _POSIX_HOST_NAME_MAX
+#undef _POSIX_LINK_MAX
+#undef _POSIX_LOGIN_NAME_MAX
+#undef _POSIX_MAX_CANON
+#undef _POSIX_MAX_INPUT
+#undef _POSIX_MQ_OPEN_MAX
+#undef _POSIX_MQ_PRIO_MAX
+#undef _POSIX_NAME_MAX
+#undef _POSIX_NGROUPS_MAX
+#undef _POSIX_OPEN_MAX
+#undef _POSIX_PATH_MAX
+#undef _POSIX_PIPE_BUF
+#undef _POSIX_RE_DUP_MAX
+#undef _POSIX_RTSIG_MAX
+#undef _POSIX_SEM_NSEMS_MAX
+#undef _POSIX_SEM_VALUE_MAX
+#undef _POSIX_SIGQUEUE_MAX
+#undef _POSIX_SSIZE_MAX
+#undef _POSIX_SS_REPL_MAX
+#undef _POSIX_STREAM_MAX
+#undef _POSIX_SYMLINK_MAX
+#undef _POSIX_SYMLOOP_MAX
+#undef _POSIX_THREAD_DESTRUCTOR_ITERATIONS
+#undef _POSIX_THREAD_KEYS_MAX
+#undef _POSIX_THREAD_THREADS_MAX
+#undef _POSIX_TIMER_MAX
+#undef _POSIX_TRACE_EVENT_NAME_MAX
+#undef _POSIX_TRACE_NAME_MAX
+#undef _POSIX_TRACE_SYS_MAX
+#undef _POSIX_TRACE_USER_EVENT_MAX
+#undef _POSIX_TTY_NAME_MAX
+#undef _POSIX_TZNAME_MAX
+#undef _POSIX2_BC_BASE_MAX
+#undef _POSIX2_BC_DIM_MAX
+#undef _POSIX2_BC_SCALE_MAX
+#undef _POSIX2_BC_STRING_MAX
+#undef _POSIX2_CHARCLASS_NAME_MAX
+#undef _POSIX2_COLL_WEIGHTS_MAX
+#undef _POSIX2_EXPR_NEST_MAX
+#undef _POSIX2_LINE_MAX
+#undef _XOPEN_IOV_MAX
+#undef _XOPEN_NAME_MAX
+#undef _XOPEN_PATH_MAX
+
+/* Other invariant values */
+#undef NL_LANGMAX
+#undef NL_MSGMAX
+#undef NL_SETMAX
+#undef NL_TEXTMAX
+#undef NZERO
+
+/* Runtime invariant values */
+#undef AIO_LISTIO_MAX
+#undef AIO_MAX
+#undef AIO_PRIO_DELTA_MAX
+#undef ARG_MAX
+#undef ATEXIT_MAX
+#undef DELAYTIMER_MAX
+#undef HOST_NAME_MAX
+#undef LOGIN_NAME_MAX
+#undef MQ_OPEN_MAX
+#undef MQ_PRIO_MAX
+#undef OPEN_MAX
+#undef PAGE_SIZE
+#undef PAGESIZE
+#undef PATH_MAX
+#undef PTHREAD_DESTRUCTOR_ITERATIONS
+#undef PTHREAD_KEYS_MAX
+#undef PTHREAD_THREADS_MAX
+#undef RTSIG_MAX
+#undef SEM_NSEMS_MAX
+#undef SEM_VALUE_MAX
+#undef SIGQUEUE_MAX
+#undef STREAM_MAX
+#undef SYMLOOP_MAX
+#undef TIMER_MAX
+#undef TTY_NAME_MAX
+#undef TZNAME_MAX
+
+/* Pathname variable values */
+#undef FILESIZEBITS
+#undef POSIX_ALLOC_SIZE_MIN
+#undef POSIX_REC_INCR_XFER_SIZE
+#undef POSIX_REC_MAX_XFER_SIZE
+#undef POSIX_REC_MIN_XFER_SIZE
+#undef POSIX_REC_XFER_ALIGN
+#undef SYMLINK_MAX
+
+#endif /* ZEPHYR_POSIX_SYS_LIMITS_UNDEF_H_ */
