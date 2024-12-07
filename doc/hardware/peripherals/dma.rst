@@ -14,6 +14,10 @@ peripheral interactions, and features. The API in effect provides a union of all
 functionality drivers have needed in the tree. It can still be a good abstraction, with care, for
 peripheral devices for vendors where the DMA IP might be very similar but have slight variances.
 
+The DMA drivers in general do not handle cache coherency; this is left up to the developer as
+requirements vary dramatically depending on the application. See :ref:`cache_guide` for an
+overview of cache management in Zephyr.
+
 Driver Implementation Expectations
 **********************************
 
