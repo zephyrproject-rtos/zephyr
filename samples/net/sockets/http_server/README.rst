@@ -55,6 +55,35 @@ HTTP/2 protocol from the host machine.
 - Using curl: ``curl --http2 -v --compressed http://192.0.2.1/``
 - Using h2load: ``h2load -n10 http://192.0.2.1/``
 
+Web browsers use stricter security settings for the HTTP/2 protocol. So to use HTTP/2
+with a web browser, you must enable ``CONFIG_NET_SAMPLE_HTTPS_SERVICE`` and
+``CONFIG_NET_SAMPLE_HTTPS_USE_ALPN``. Additionally the server certificate must be signed
+by a CA certificate trusted by your browser.
+
+The best way to do this is to generate your own CA certificate:
+
+.. code-block:: bash
+
+   $ west build -b <board_to_use> -t sample_ca_cert samples/net/sockets/http_server
+
+Generate a server certificate signed by this CA certificate:
+
+.. code-block:: bash
+
+   $ west build -t sample_server_cert samples/net/sockets/http_server
+
+And then build the application with the newly generated server certificate and key:
+
+.. code-block:: bash
+
+   $ west build samples/net/sockets/http_server
+
+The CA certificate should be added to your browser's list of trusted authorities to
+enable usage of HTTP/2. If using Firefox, it may also be required to change the setting
+``network.http.http2.enforce-tls-profile`` to false, since it seems that using a CA
+certificate issued by an authority unknown to Firefox is considered a security error when
+using HTTP/2.
+
 Server Customization
 ---------------------
 
