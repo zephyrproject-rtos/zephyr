@@ -18,6 +18,7 @@
 #include "esp_mcuboot_image.h"
 #include "esp_memory_utils.h"
 
+/* AMP support */
 #ifdef CONFIG_SOC_ENABLE_APPCPU
 
 #include "bootloader_flash_priv.h"

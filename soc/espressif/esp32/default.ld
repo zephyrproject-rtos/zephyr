@@ -12,19 +12,15 @@
 
 #include "memory.h"
 
-/* The "user_iram_end" represents the last DRAM memory location
- * that is occupied by the ROM code. Since the "iram_loader_seg"
- * - which is the last memory the bootloader runs from - resides
- * in the SRAM0 "cache" memory, the "user_iram_end" applies for\
- * all build cases - Simple boot and the MCUboot application.
- */
-user_iram_end = SRAM1_DRAM_IRAM_CALC(SRAM1_DRAM_USER_START);
-
 /* User available SRAM memory segments */
-user_iram_seg_org = (SRAM0_IRAM_START + SRAM0_CACHE_SIZE);
-user_iram_seg_len = user_iram_end - user_iram_seg_org;
-user_dram_seg_org = SRAM2_DRAM_USER_START;
-user_dram_seg_len = SRAM2_DRAM_USER_SIZE;
+procpu_iram_end = USER_IRAM_END - APPCPU_IRAM_SIZE - APPCPU_DRAM_SIZE;
+procpu_iram_org = SRAM0_IRAM_START;
+procpu_iram_len = procpu_iram_end - procpu_iram_org;
+
+procpu_dram_end = SRAM2_DRAM_END;
+procpu_dram_org = SRAM2_DRAM_USER_START + CONFIG_ESP32_BT_RESERVE_DRAM;
+procpu_dram_len = SRAM2_DRAM_USER_SIZE - CONFIG_ESP32_BT_RESERVE_DRAM;
+
 user_dram_2_seg_org = SRAM1_DRAM_USER_START;
 user_dram_2_seg_len = SRAM1_USER_SIZE;
 
@@ -35,12 +31,6 @@ user_dram_2_seg_len = SRAM1_USER_SIZE;
 #define DRAM_REGION         dram0_0_seg
 #define RAMABLE_REGION      dram0_0_seg
 #define ROMABLE_REGION      FLASH
-
-#ifndef CONFIG_SOC_ESP32_PROCPU
-#define RAMABLE_REGION_1    dram0_1_seg
-#else
-#define RAMABLE_REGION_1    dram0_0_seg
-#endif
 
 #undef GROUP_DATA_LINK_IN
 #define GROUP_DATA_LINK_IN(vregion, lregion) > vregion AT > lregion
@@ -72,26 +62,13 @@ MEMORY
   FLASH (R):       org = 0x0,  len = FLASH_SIZE - 0x100
 #endif /* CONFIG_BOOTLOADER_MCUBOOT */
 
-#ifndef CONFIG_SOC_ESP32_APPCPU
-  iram0_0_seg(RX): org = user_iram_seg_org, len = user_iram_seg_len
-#else
-  iram0_0_seg(RX): org = user_iram_seg_org, len = 0x8000
-#endif /* CONFIG_SOC_ESP32_APPCPU */
+  iram0_0_seg(RX): org = procpu_iram_org, len = procpu_iram_len
+  dram0_0_seg(RW): org = procpu_dram_org, len = procpu_dram_len
 
-  dram0_0_seg(RW): org = user_dram_seg_org + CONFIG_ESP32_BT_RESERVE_DRAM,
-                   len = user_dram_seg_len - CONFIG_ESP32_BT_RESERVE_DRAM
-
-#ifdef CONFIG_SOC_ESP32_PROCPU
   /* shared RAM reserved for IPM */
   dram0_shm0_seg(RW): org = 0x3ffe5230, len = 2K
   /* shared data reserved for IPM data header */
   dram0_sem0_seg(RW): org = 0x3ffe5a30, len = 8
-  /* for AMP builds dram0_1 is reserved for network core */
-  dram0_1_seg(RW):    org = 0x3ffe5a38, len = 0K
-#else
-  /* skip data for APP CPU initialization usage */
-  dram0_1_seg(RW):    org = user_dram_2_seg_org, len = user_dram_2_seg_len
-#endif /* CONFIG_SOC_ESP32_PROCPU */
 
   irom0_0_seg(RX): org = IROM_SEG_ORG, len = IROM_SEG_LEN
   drom0_0_seg(R):  org = DROM_SEG_ORG, len = DROM_SEG_LEN
@@ -712,7 +689,7 @@ SECTIONS
     *(.noinit)
     *(.noinit.*)
     . = ALIGN (8);
-  } GROUP_LINK_IN(RAMABLE_REGION_1)
+  } GROUP_LINK_IN(RAMABLE_REGION)
 
   /* Provide total SRAM usage, including IRAM and DRAM */
   _image_ram_start = _dram_data_start;
