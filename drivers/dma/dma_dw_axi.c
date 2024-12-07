@@ -851,7 +851,7 @@ static int dma_dw_axi_init(const struct device *dev)
 	return 0;
 }
 
-static const struct dma_driver_api dma_dw_axi_driver_api = {
+static DEVICE_API(dma, dma_dw_axi_driver_api) = {
 	.config = dma_dw_axi_config,
 	.start = dma_dw_axi_start,
 	.stop = dma_dw_axi_stop,

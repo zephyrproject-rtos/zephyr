@@ -197,7 +197,7 @@ static int nios2_msgdma_transfer_stop(const struct device *dev,
 	return status;
 }
 
-static const struct dma_driver_api nios2_msgdma_driver_api = {
+static DEVICE_API(dma, nios2_msgdma_driver_api) = {
 	.config = nios2_msgdma_config,
 	.start = nios2_msgdma_transfer_start,
 	.stop = nios2_msgdma_transfer_stop,
