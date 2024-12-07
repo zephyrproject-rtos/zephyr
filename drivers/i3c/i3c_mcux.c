@@ -2090,7 +2090,7 @@ out_xfer_i2c_stop_unlock:
 	return ret;
 }
 
-static const struct i3c_driver_api mcux_i3c_driver_api = {
+static DEVICE_API(i3c, mcux_i3c_driver_api) = {
 	.i2c_api.configure = mcux_i3c_i2c_api_configure,
 	.i2c_api.transfer = mcux_i3c_i2c_api_transfer,
 	.i2c_api.recover_bus = mcux_i3c_recover_bus,

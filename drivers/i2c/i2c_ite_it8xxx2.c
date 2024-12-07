@@ -1250,7 +1250,7 @@ static int i2c_it8xxx2_recover_bus(const struct device *dev)
 	return 0;
 }
 
-static const struct i2c_driver_api i2c_it8xxx2_driver_api = {
+static DEVICE_API(i2c, i2c_it8xxx2_driver_api) = {
 	.configure = i2c_it8xxx2_configure,
 	.get_config = i2c_it8xxx2_get_config,
 	.transfer = i2c_it8xxx2_transfer,
