@@ -210,6 +210,11 @@ Drivers and Sensors
 
 * SPI
 
+* Stepper
+
+  * Added driver for ADI TMC2209. :dtcompatible:`adi,tmc2209`
+  * Added :kconfig:option:`CONFIG_STEP_DIR_STEPPER` to enable common functions for step/dir steppers.
+
 * USB
 
 * Video
