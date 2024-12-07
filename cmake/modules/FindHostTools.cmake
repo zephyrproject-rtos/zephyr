@@ -65,6 +65,12 @@ find_program(BOSSAC bossac)
 # in the mcuboot repository if that's present in some cases)
 find_program(IMGTOOL imgtool)
 
+# winpty is an optional dependency
+find_program(PTY_INTERFACE winpty)
+if("${PTY_INTERFACE}" STREQUAL "PTY_INTERFACE-NOTFOUND")
+  set(PTY_INTERFACE "")
+endif()
+
 # Default to the host system's toolchain if we are targeting a host based target
 if((${BOARD_DIR} MATCHES "boards\/native") OR ("${ARCH}" STREQUAL "posix")
    OR ("${BOARD}" STREQUAL "unit_testing"))
