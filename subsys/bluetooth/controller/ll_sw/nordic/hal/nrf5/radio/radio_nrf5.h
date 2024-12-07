@@ -74,16 +74,14 @@
 /* Include RTC/GRTC Compare Index used to Trigger Radio TXEN/RXEN */
 #include "hal/cntr.h"
 
-#if defined(PPI_PRESENT)
+#if defined(CONFIG_SOC_SERIES_NRF51X) || defined(CONFIG_SOC_COMPATIBLE_NRF52X)
 #include <hal/nrf_ppi.h>
 #include "radio_nrf5_ppi_resources.h"
 #include "radio_nrf5_ppi.h"
-#elif defined(DPPI_PRESENT)
+#else
 #include <hal/nrf_dppi.h>
 #include "radio_nrf5_dppi_resources.h"
 #include "radio_nrf5_dppi.h"
-#else
-#error "PPI or DPPI abstractions missing."
 #endif
 
 #include "radio_nrf5_txp.h"
