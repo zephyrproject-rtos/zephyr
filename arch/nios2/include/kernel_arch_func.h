@@ -51,6 +51,8 @@ static inline bool arch_is_in_isr(void)
 	return _kernel.cpus[0].nested != 0U;
 }
 
+int arch_swap(unsigned int key);
+
 #ifdef CONFIG_IRQ_OFFLOAD
 void z_irq_do_offload(void);
 #endif
