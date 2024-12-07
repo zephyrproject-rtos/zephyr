@@ -6,7 +6,7 @@
 
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/sensor.h>
-
+#include <zephyr/drivers/sensor_clock.h>
 #include "adxl345.h"
 
 LOG_MODULE_DECLARE(ADXL345, CONFIG_SENSOR_LOG_LEVEL);
@@ -355,7 +355,18 @@ void adxl345_stream_irq_handler(const struct device *dev)
 	if (data->sqe == NULL) {
 		return;
 	}
-	data->timestamp = k_ticks_to_ns_floor64(k_uptime_ticks());
+
+	uint64_t cycles;
+
+	int rc = sensor_clock_get_cycles(&cycles);
+
+	if (rc != 0) {
+		LOG_ERR("Failed to get sensor clock cycles");
+		rtio_iodev_sqe_err(data->sqe, rc);
+		return;
+	}
+
+	data->timestamp = sensor_clock_cycles_to_ns(cycles);
 	struct rtio_sqe *write_status_addr = rtio_sqe_acquire(data->rtio_ctx);
 	struct rtio_sqe *read_status_reg = rtio_sqe_acquire(data->rtio_ctx);
 	struct rtio_sqe *check_status_reg = rtio_sqe_acquire(data->rtio_ctx);

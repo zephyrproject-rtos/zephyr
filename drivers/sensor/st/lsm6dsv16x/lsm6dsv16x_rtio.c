@@ -11,6 +11,7 @@
 #include "lsm6dsv16x_rtio.h"
 #include "lsm6dsv16x_decoder.h"
 #include <zephyr/rtio/work.h>
+#include <zephyr/drivers/sensor_clock.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LSM6DSV16X_RTIO, CONFIG_SENSOR_LOG_LEVEL);
@@ -112,10 +113,19 @@ static void lsm6dsv16x_submit_sample(const struct device *dev, struct rtio_iodev
 		}
 	}
 
+	uint64_t cycles;
+
+	rc = sensor_clock_get_cycles(&cycles);
+	if (rc != 0) {
+		LOG_ERR("Failed to get sensor clock cycles");
+		rtio_iodev_sqe_err(iodev_sqe, rc);
+		goto err;
+	}
+
 	edata->header.is_fifo = false;
 	edata->header.accel_fs = data->accel_fs;
 	edata->header.gyro_fs = data->gyro_fs;
-	edata->header.timestamp = k_ticks_to_ns_floor64(k_uptime_ticks());
+	edata->header.timestamp = sensor_clock_cycles_to_ns(cycles);
 
 	rtio_iodev_sqe_ok(iodev_sqe, 0);
 
