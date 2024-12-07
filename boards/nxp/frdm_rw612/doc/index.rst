@@ -25,6 +25,10 @@ Supported Features
 
 .. zephyr:board-supported-hw::
 
+.. note::
+
+   Power modes 1, 2 and 3 are supported when using System Power Management.
+
 Programming and Debugging
 *************************
 
@@ -134,8 +138,22 @@ frdm_rw612 platform supports the monolithic feature. The required binary blob
 ``<zephyr workspace>/modules/hal/nxp/zephyr/blobs/rw61x_sb_wifi_a2.bin`` will be linked
 with the application image directly, forming one single monolithic image.
 
+RTC Sub-Second Counter
+======================
+
+To use the RTC sub-second counter which is clocked at a 32kHZ rate, make the
+following modifications to the board hardware:
+
+1. Move the short on SJ21 from 1 and 2 to short 2 and 3.
+2. Move the short on SJ22 from 1 and 2 to short 2 and 3.
+
+After this change, the ENET will stop functioning on the board.
+
 .. include:: ../../common/board-footer.rst
    :start-after: nxp-board-footer
+
+Resources
+*********
 
 .. _RW612 Website:
    https://www.nxp.com/products/wireless-connectivity/wi-fi-plus-bluetooth-plus-802-15-4/wireless-mcu-with-integrated-tri-radiobr1x1-wi-fi-6-plus-bluetooth-low-energy-5-3-802-15-4:RW612

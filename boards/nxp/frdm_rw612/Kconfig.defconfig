@@ -1,6 +1,6 @@
 # FRDM_RW612 board
 
-# Copyright 2024 NXP
+# Copyright 2024-25 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_FRDM_RW612
@@ -24,5 +24,12 @@ config LV_Z_FLUSH_THREAD
 	default y
 
 endif # LVGL
+
+if COUNTER_MCUX_LPC_RTC_1HZ
+
+config XTAL32K
+	default y
+
+endif # COUNTER_MCUX_LPC_RTC_1HZ
 
 endif # BOARD_FRDM_RW612
