@@ -161,6 +161,28 @@
 			};
 		};
 
+		test_mipi_dbi_xfr_16bit_write_only {
+			compatible = "zephyr,mipi-dbi-spi";
+			status = "okay";
+			dc-gpios = <&test_gpio 0 0>;
+			spi-dev = <&test_spi>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			xfr-min-bits = <MIPI_DBI_SPI_XFR_16BIT>;
+			write-only;
+
+			test_mipi_dbi_xfr_16bit_ili9342c: ili9342c@0 {
+				compatible = "ilitek,ili9342c";
+				reg = <0>;
+				mipi-max-frequency = <25000000>;
+				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+				pixel-format = <0>;
+				rotation = <270>;
+				width = <320>;
+				height = <240>;
+			};
+		};
+
 		test_mipi_dsi {
 			compatible = "vnd,mipi-dsi";
 			#address-cells = <1>;
