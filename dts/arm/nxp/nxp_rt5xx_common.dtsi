@@ -14,6 +14,7 @@
 #include <zephyr/dt-bindings/inputmux/inputmux_trigger_ports.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <zephyr/dt-bindings/reset/nxp_syscon_reset_common.h>
+#include <zephyr/dt-bindings/inputmux/nxp_inputmux_rt5xx.h>
 
 / {
 	chosen {
@@ -719,6 +720,16 @@
 			status = "disabled";
 		};
 	};
+
+	inputmux: inputmux@26000 {
+		compatible = "nxp,inputmux";
+		reg = <0x26000 0x2000>;
+		status = "okay";
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+
 };
 
 &flexspi {
