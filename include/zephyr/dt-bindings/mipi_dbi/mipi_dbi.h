@@ -110,6 +110,40 @@
 #define MIPI_DBI_MODE_8080_BUS_9_BIT 0x7
 #define MIPI_DBI_MODE_8080_BUS_8_BIT 0x8
 
+/** MIPI DBI tearing enable synchronization is disabled. */
+#define MIPI_DBI_TE_NO_EDGE 0x0
+
+/**
+ * MIPI DBI tearing enable synchronization on rising edge of TE signal.
+ * The controller will only send display write data on a rising edge of TE.
+ * This should be used when the controller can send a frame worth of data
+ * data to the display panel faster than the display panel can read a frame
+ * from its RAM
+ *
+ *                   .------.                        .------.
+ *     TE       -----'      '------------------------'      '-------------
+ *              -----.        .----------------------.
+ *     CS            '--------'                      '--------------------
+ */
+#define MIPI_DBI_TE_RISING_EDGE 0x1
+
+/**
+ * MIPI DBI tearing enable synchronization on falling edge of TE signal.
+ * The controller will only send display write data on a falling edge of TE.
+ * This should be used when the controller sends a frame worth of data
+ * data to the display panel slower than the display panel can read a frame
+ * from its RAM. TE synchronization in this mode will only work if the
+ * controller can complete the write before the display panel completes 2
+ * read cycles, otherwise the read pointer will "catch up" with the write
+ * pointer.
+ *
+ *                   .------.                        .------.
+ *     TE       -----'      '------------------------'      '-------------
+ *              ------------.                                       .-----
+ *     CS                   '---------------------------------------'
+ */
+#define MIPI_DBI_TE_FALLING_EDGE 0x2
+
 /**
  * @}
  */
