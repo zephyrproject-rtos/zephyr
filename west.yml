@@ -220,7 +220,7 @@ manifest:
         - hal
     - name: hal_rpi_pico
       path: modules/hal/rpi_pico
-      revision: 79ee0f9e058a6327fc943d2f2a19cf3ade107cec
+      revision: pull/27/head
       groups:
         - hal
     - name: hal_silabs
