@@ -24,6 +24,7 @@ config SOC_NRF54H20_CPUAPP_COMMON
 	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
 	select NRFS_HAS_CLOCK_SERVICE
 	select NRFS_HAS_DVFS_SERVICE
+	select NRFS_HAS_GDFS_SERVICE
 	select NRFS_HAS_GDPWR_SERVICE
 	select NRFS_HAS_MRAM_SERVICE
 	select NRFS_HAS_TEMP_SERVICE
@@ -47,6 +48,7 @@ config SOC_NRF54H20_CPURAD_COMMON
 	select CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS
 	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
 	select NRFS_HAS_CLOCK_SERVICE
+	select NRFS_HAS_GDFS_SERVICE
 	select NRFS_HAS_GDPWR_SERVICE
 	select NRFS_HAS_MRAM_SERVICE
 	select NRFS_HAS_TEMP_SERVICE
@@ -65,3 +67,36 @@ config SOC_NRF54H20_CPUFLPR
 	select RISCV_CORE_NORDIC_VPR
 
 rsource "gpd/Kconfig"
+
+config SOC_NRF54H20_GLOBAL_HSFLL_RESTRICT_MIN_FREQ
+	bool "Restrict minimum global HSFLL clock frequency"
+	select NRFS
+	select NRFS_GDFS_SERVICE_ENABLED
+	select CLOCK_CONTROL
+	default y if SOC_NRF54H20_CPUAPP
+
+if SOC_NRF54H20_GLOBAL_HSFLL_RESTRICT_MIN_FREQ
+
+choice SOC_NRF54H20_GLOBAL_HSFLL_MIN_FREQ_CHOICE
+	prompt "Minimum global HSFLL clock frequency in MHz"
+	default SOC_NRF54H20_GLOBAL_HSFLL_MIN_FREQ_320_MHZ
+
+config SOC_NRF54H20_GLOBAL_HSFLL_MIN_FREQ_64_MHZ
+	bool "Restrict minimum global HSFLL clock frequency to 64MHz"
+
+config SOC_NRF54H20_GLOBAL_HSFLL_MIN_FREQ_128_MHZ
+	bool "Restrict minimum global HSFLL clock frequency to 128MHz"
+
+config SOC_NRF54H20_GLOBAL_HSFLL_MIN_FREQ_256_MHZ
+	bool "Restrict minimum global HSFLL clock frequency to 256MHz"
+
+config SOC_NRF54H20_GLOBAL_HSFLL_MIN_FREQ_320_MHZ
+	bool "Restrict minimum global HSFLL clock frequency to 320MHz"
+
+endchoice
+
+config SOC_NRF54H20_GLOBAL_HSFLL_TIMEOUT_MS
+	int "Global HSFLL timeout in milliseconds"
+	default 10000
+
+endif # SOC_NRF54H20_RESTRICT_GLOBAL_HSFLL_FREQ
