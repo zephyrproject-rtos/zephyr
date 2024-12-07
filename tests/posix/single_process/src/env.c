@@ -33,7 +33,7 @@ static DEFINE_ENVIRON(pwd, "PWD", M_PWD);
 
 static char *environ_for_test[] = {home, uid, pwd, NULL};
 
-ZTEST(env, test_getenv)
+ZTEST(posix_single_process, test_getenv)
 {
 	zassert_equal(getenv(NULL), NULL);
 	zassert_equal(getenv(""), NULL);
@@ -46,7 +46,7 @@ ZTEST(env, test_getenv)
 	zassert_mem_equal(getenv("PWD"), M_PWD, strlen(M_PWD) + 1);
 }
 
-ZTEST(env, test_getenv_r)
+ZTEST(posix_single_process, test_getenv_r)
 {
 	static char buf[16];
 	static const int exp_errno[] = {
@@ -74,8 +74,7 @@ ZTEST(env, test_getenv_r)
 
 	BUILD_ASSERT(ARRAY_SIZE(exp_errno) == ARRAY_SIZE(args));
 
-	ARRAY_FOR_EACH(args, i)
-	{
+	ARRAY_FOR_EACH(args, i) {
 		errno = 0;
 		zassert_equal(getenv_r(args[i].name, args[i].buf, args[i].size), -1,
 			      "getenv_r(\"%s\", %p, %zu): expected to fail", args[i].name,
@@ -90,7 +89,7 @@ ZTEST(env, test_getenv_r)
 	zassert_mem_equal(getenv("PWD"), M_PWD, strlen(M_PWD) + 1);
 }
 
-ZTEST(env, test_setenv)
+ZTEST(posix_single_process, test_setenv)
 {
 	zassert_equal(setenv(NULL, NULL, 0), -1);
 	zassert_equal(errno, EINVAL);
@@ -114,7 +113,7 @@ ZTEST(env, test_setenv)
 	zassert_mem_equal(getenv("HOME"), "/root", strlen("/root") + 1);
 }
 
-ZTEST(env, test_unsetenv)
+ZTEST(posix_single_process, test_unsetenv)
 {
 	/* not hardened / application should fault */
 	zassert_equal(unsetenv(NULL), -1);
@@ -137,7 +136,7 @@ ZTEST(env, test_unsetenv)
 	zassert_is_null(getenv("HOME"));
 }
 
-ZTEST(env, test_watertight)
+ZTEST(posix_single_process, test_watertight)
 {
 	extern size_t posix_env_get_allocated_space(void);
 
@@ -158,7 +157,7 @@ ZTEST(env, test_watertight)
 	zassert_equal(posix_env_get_allocated_space(), 0);
 }
 
-static void before(void *arg)
+void test_env_before(void)
 {
 	old_environ = environ;
 
@@ -172,9 +171,7 @@ static void before(void *arg)
 	zassert_equal((environ = environ_for_test), environ_for_test);
 }
 
-static void after(void *arg)
+void test_env_after(void)
 {
 	environ = old_environ;
 }
-
-ZTEST_SUITE(env, NULL, NULL, before, after, NULL);

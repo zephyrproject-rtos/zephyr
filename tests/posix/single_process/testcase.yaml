@@ -10,10 +10,21 @@ common:
   min_flash: 64
   min_ram: 32
 tests:
-  portability.single_process: {}
+  portability.posix.single_process:
+    extra_configs:
+      - CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=256
+  portability.posix.single_process.armclang_std_libc:
+    toolchain_allow: armclang
+    extra_configs:
+      - CONFIG_ARMCLANG_STD_LIBC=y
+  portability.posix.single_process.arcmwdtlib:
+    toolchain_allow: arcmwdt
+    extra_configs:
+      - CONFIG_ARCMWDT_LIBC=y
   portability.posix.single_process.minimal:
     extra_configs:
       - CONFIG_MINIMAL_LIBC=y
+      - CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=256
   portability.posix.single_process.newlib:
     filter: TOOLCHAIN_HAS_NEWLIB == 1
     extra_configs:
