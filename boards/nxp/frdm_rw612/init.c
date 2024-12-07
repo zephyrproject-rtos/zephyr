@@ -11,6 +11,31 @@
 #include <fsl_power.h>
 #include "fsl_io_mux.h"
 
+static void frdm_rw612_power_init_config(void)
+{
+	power_init_config_t initCfg = {
+		/* VCORE AVDD18 supplied from iBuck on FRDM board. */
+		.iBuck = true,
+		/* CAU_SOC_SLP_REF_CLK needed for LPOSC. */
+		.gateCauRefClk = false,
+	};
+
+	POWER_InitPowerConfig(&initCfg);
+}
+
+#if CONFIG_PM
+static void frdm_rw612_pm_state_exit(enum pm_state state)
+{
+	switch (state) {
+	case PM_STATE_STANDBY:
+		frdm_rw612_power_init_config();
+		break;
+	default:
+		break;
+	}
+}
+#endif
+
 static int frdm_rw612_init(void)
 {
 #ifdef CONFIG_I2S_TEST_SEPARATE_DEVICES
@@ -40,6 +65,19 @@ static int frdm_rw612_init(void)
 	SYSCTL1->FCCTRLSEL[1] |= SYSCTL1_FCCTRLSEL_DATAOUTSEL(1);
 
 #endif /* CONFIG_I2S_TEST_SEPARATE_DEVICES */
+
+	frdm_rw612_power_init_config();
+
+#if CONFIG_PM
+	static struct pm_notifier frdm_rw612_pm_notifier = {
+		.state_exit = frdm_rw612_pm_state_exit,
+	};
+
+	/* clk_32k not derived from cau. It's safe to disable CAU clock in Power Mode 3, 4. */
+	POWER_ConfigCauInSleep(true);
+
+	pm_notifier_register(&frdm_rw612_pm_notifier);
+#endif
 
 	return 0;
 }
