@@ -1,0 +1,82 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_rw6xx_ns.dtsi>
+#include "rd_rw612_bga.dtsi"
+
+/*
+ * Default Flash planning for RW61x-ns board.
+ *
+ * Zephyr build for rd_rw612_bga with ARM TrustZone-M support,
+ * implies building Secure and Non-Secure Zephyr images.
+ *
+ * Non-Secure image will be placed in slot0_ns_partition, and use
+ * sram0_ns for system memory.
+ *
+ * Note that the Secure image only requires knowledge of
+ * the beginning of the Non-Secure image (not its size).
+ */
+
+/ {
+	chosen {
+		zephyr,sram = &sram0_ns;
+		zephyr,code-partition = &slot0_ns_partition;
+	};
+	
+	soc {
+		/delete-node/ memory@20000000;
+	};
+};
+
+&sram {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	sram0_ns: memory@20040000 {
+		compatible = "mmio-sram";
+		reg = <0x20040000 DT_SIZE_K(960)>;
+	};
+
+	sram_code: memory@0 {
+		compatible = "mmio-sram";
+		reg = <0x00000000 DT_SIZE_K(256)>;
+	};
+};
+
+
+
+&mx25u51245g {
+	/delete-node/ partitions;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Note slot 0 has one additional sector,
+		 * this is intended for use with the swap move algorithm
+		 */
+		slot0_ns_partition: partition@80A0000 {
+			label = "image-0-nonsecure";
+			reg = <0x080A0000 0x083A0000>;
+		};
+
+		/* This partition is reserved for connectivity firmwares storage
+		 * and shouldn't be moved.
+		 */
+		fw_storage: partition@400000 {
+			label = "fw_storage";
+			reg = <0x400000 0x280000>;
+			read-only;
+		};
+	};
+};
+
+&flexspi {
+	reg = <0x40134000 0x1000>, <0x080A0000 DT_SIZE_M(128)>;
+};
