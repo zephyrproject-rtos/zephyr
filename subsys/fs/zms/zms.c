@@ -1362,7 +1362,7 @@ int zms_mount(struct zms_fs *fs)
 	 * 1 close ATE, 1 empty ATE, 1 GC done ATE, 1 Delete ATE, 1 ID/Value ATE
 	 */
 	if (fs->sector_size < ZMS_MIN_ATE_NUM * fs->ate_size) {
-		LOG_ERR("Invalid sector size, should be at least %u",
+		LOG_ERR("Invalid sector size, should be at least %zu",
 			ZMS_MIN_ATE_NUM * fs->ate_size);
 	}
 
