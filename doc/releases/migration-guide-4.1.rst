@@ -306,6 +306,18 @@ Other Subsystems
 Flash map
 =========
 
+Secure storage
+==============
+
+* The :kconfig:option:`CONFIG_SECURE_STORAGE_ITS_STORE_MODULE` symbol no longer implies the
+  :kconfig:option:`CONFIG_FLASH` Kconfig option. Platforms using Secure storage must explicitly enable it.
+
+* The :kconfig:option:`CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_SETTINGS` symbol no longer implies the
+  :kconfig:option:`CONFIG_FLASH_MAP` and :kconfig:option:`CONFIG_NVS` Kconfig options.
+  It no longer selects the :kconfig:option:`CONFIG_SETTINGS` Kconfig option either.
+  Platforms using Secure storage must explicitly enable :kconfig:option:`CONFIG_FLASH_MAP`,
+  :kconfig:option:`CONFIG_SETTINGS` and the desired storage system (e.g. :kconfig:option:`CONFIG_ZMS`).
+
 hawkBit
 =======
 
