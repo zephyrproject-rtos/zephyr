@@ -168,6 +168,12 @@
 	status = "okay";
 };
 
+/* RTC is the wakeup source for PM modes 3, 4 */
+&rtc_highres {
+	status = "okay";
+	wakeup-source;
+};
+
 &pmu {
 	reset-causes-en = <PMU_RESET_CM33_LOCKUP>,
 			  <PMU_RESET_ITRC>,
@@ -178,6 +184,7 @@
 &os_timer {
 	status = "okay";
 	wakeup-source;
+	deep-sleep-counter = <&rtc_highres>;
 };
 
 &systick {
@@ -196,6 +203,11 @@
 	status = "okay";
 	pinctrl-0 = <&pinmux_pwm0>;
 	pinctrl-names = "default";
+};
+
+&imu {
+	status = "okay";
+	wakeup-source;
 };
 
 zephyr_udc0: &usb_otg {
