@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2024 TDK Invensense
  * Copyright (c) 2022 Esco Medical ApS
  * Copyright (c) 2016 TDK Invensense
  *
@@ -9,7 +10,6 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/sys/util.h>
 #include "icm42670.h"
-#include "icm42670_reg.h"
 #include "icm42670_trigger.h"
 
 #include <zephyr/logging/log.h>
@@ -60,7 +60,6 @@ static void icm42670_thread(void *p1, void *p2, void *p3)
 		icm42670_thread_cb(data->dev);
 	}
 }
-
 #elif defined(CONFIG_ICM42670_TRIGGER_GLOBAL_THREAD)
 
 static void icm42670_work_handler(struct k_work *work)
@@ -75,7 +74,6 @@ static void icm42670_work_handler(struct k_work *work)
 int icm42670_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 			 sensor_trigger_handler_t handler)
 {
-	int res = 0;
 	struct icm42670_data *data = dev->data;
 	const struct icm42670_config *cfg = dev->config;
 
@@ -86,20 +84,22 @@ int icm42670_trigger_set(const struct device *dev, const struct sensor_trigger *
 	icm42670_lock(dev);
 	gpio_pin_interrupt_configure_dt(&cfg->gpio_int, GPIO_INT_DISABLE);
 
-	switch (trig->type) {
-	case SENSOR_TRIG_DATA_READY:
+	if (trig->type == SENSOR_TRIG_DATA_READY) {
 		data->data_ready_handler = handler;
 		data->data_ready_trigger = trig;
-		break;
-	default:
-		res = -ENOTSUP;
-		break;
+#ifdef CONFIG_TDK_APEX
+	} else if (trig->type == SENSOR_TRIG_MOTION) {
+		data->data_ready_handler = handler;
+		data->data_ready_trigger = trig;
+#endif
+	} else {
+		return -ENOTSUP;
 	}
 
 	icm42670_unlock(dev);
 	gpio_pin_interrupt_configure_dt(&cfg->gpio_int, GPIO_INT_EDGE_TO_ACTIVE);
 
-	return res;
+	return 0;
 }
 
 int icm42670_trigger_init(const struct device *dev)
@@ -139,24 +139,26 @@ int icm42670_trigger_init(const struct device *dev)
 	data->work.handler = icm42670_work_handler;
 #endif
 
-	return gpio_pin_interrupt_configure_dt(&cfg->gpio_int, GPIO_INT_EDGE_TO_ACTIVE);
+	return gpio_pin_interrupt_configure_dt(&cfg->gpio_int, GPIO_INT_EDGE_TO_INACTIVE);
 }
 
 int icm42670_trigger_enable_interrupt(const struct device *dev)
 {
-	int res;
-	const struct icm42670_config *cfg = dev->config;
+	struct icm42670_data *data = dev->data;
+	int err = 0;
+	inv_imu_int1_pin_config_t int1_pin_config;
+	inv_imu_interrupt_parameter_t config_int = {(inv_imu_interrupt_value)0};
 
-	/* pulse-mode (auto clearing), push-pull and active-high */
-	res = cfg->bus_io->write(&cfg->bus, REG_INT_CONFIG,
-					BIT_INT1_DRIVE_CIRCUIT | BIT_INT1_POLARITY);
+	/* Set interrupt config */
+	int1_pin_config.int_polarity = INT_CONFIG_INT1_POLARITY_HIGH;
+	int1_pin_config.int_mode = INT_CONFIG_INT1_MODE_PULSED;
+	int1_pin_config.int_drive = INT_CONFIG_INT1_DRIVE_CIRCUIT_PP;
+	err |= inv_imu_set_pin_config_int1(&data->driver, &int1_pin_config);
 
-	if (res) {
-		return res;
-	}
+	config_int.INV_FIFO_THS = INV_IMU_ENABLE;
+	err |= inv_imu_set_config_int1(&data->driver, &config_int);
 
-	/* enable data ready interrupt on INT1 pin */
-	return cfg->bus_io->write(&cfg->bus, REG_INT_SOURCE0, BIT_INT_DRDY_INT1_EN);
+	return err;
 }
 
 void icm42670_lock(const struct device *dev)
