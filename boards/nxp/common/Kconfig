@@ -1,0 +1,11 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NXP_SPSDK_IMAGE
+	bool "Generate bootable firmware image with SPSDK"
+	depends on BOARD_IMX95_EVK_MIMX9596_M7
+	help
+	  Generate bootable firmware image with NXP SPSDK.
+	  Some firmware images dependency may need to be
+	  fetched with west blobs, or prepared manually
+	  per board doc.

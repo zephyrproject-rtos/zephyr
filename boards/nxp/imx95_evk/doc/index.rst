@@ -233,12 +233,51 @@ To program M7, an i.MX container image ``flash.bin`` must be made, which contain
 multiple elements required, like ELE+V2X firmware, System Manager, TCM OEI, Cortex-M7
 image and so on.
 
-The steps making flash.bin and programming should refer to ``Getting Started with
+Two methods to build and program ``flash.bin``. Either can be choosed.
+
+1. The steps making flash.bin and programming should refer to ``Getting Started with
 MCUXpresso SDK for IMX95LPD5EVK-19.pdf`` in i.MX95 `MCUX SDK release`_. Note that
 for the DDR variant, one should use the Makefile targets containing the ``ddr`` keyword.
-
 See ``4.2 Run an example application``, just rename ``zephyr.bin`` to ``m7_image.bin``
 to make flash.bin and program to SD/eMMC.
+
+2. The quick and recommended method is enabling ``CONFIG_BOARD_NXP_SPSDK_IMAGE`` to build
+``flash.bin`` if supports. Before build, below images preparation must be made.
+(They could be found and built from i.MX Linux BSP release. We will consider to integrate
+into blobs for using in the future.)
+
+.. code-block:: none
+
+   modules/hal/nxp/zephyr/blobs/imx-firmware/imx95-19x19-lpddr5-evk/
+   ├── imx-boot-imx95-19x19-lpddr5-evk-sd.bin-flash_a55
+   ├── lpddr5_dmem_qb_v202311.bin
+   ├── lpddr5_dmem_v202311.bin
+   ├── lpddr5_imem_qb_v202311.bin
+   ├── lpddr5_imem_v202311.bin
+   ├── m33_image-mx95alt.bin
+   ├── mx95a0-ahab-container.img
+   ├── oei-m33-ddr.bin
+   └── oei-m33-tcm.bin
+
+The programming to default boot device SD card could be through below commands.
+Before that, switch SW7[1:4] should be configured to 0b1001 for usb download mode
+to boot, and USB1 and DBG ports should be connected to PC. There are 4 serial ports
+enumerated (115200 8n1), and we use the first for M7 and the fourth for M33 System Manager.
+(The flasher is spsdk which already installed via scripts/requirements.txt.
+On linux host, usb device permission should be configured per Installation Guide
+of https://spsdk.readthedocs.io)
+
+.. code-block:: none
+
+   # program to SD card, then set SW7[1:4]=0b1011 to reboot
+   $ west flash
+
+   # program to emmc card, then set SW7[1:4]=0b1010 to reboot
+   $ west flash --bootdevice=emmc
+
+   # load and run without programming. for next flashing, execute 'reset' in the
+   # fourth serail port
+   $ west flash --bootdevice=spl
 
 Zephyr supports two M7-based i.MX95 boards: ``imx95_evk/mimx9596/m7`` and
 ``imx95_evk/mimx9596/m7/ddr``. The main difference between them is the memory
