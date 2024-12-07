@@ -1,0 +1,35 @@
+# Copyright (c) 2024 Texas Instruments Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI MSPM0 Clock Mux
+
+compatible: "ti,mspm0-clock-mux"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  "#clock-cells":
+    const: 1
+
+  uclk-div:
+    type: int
+    default: 1
+
+  mclk-div:
+    type: int
+    default: 1
+
+  clock-source:
+    type: phandle
+    required: true
+    description: |
+      Clock Source for the system clock
+
+  clock-frequency:
+    required: true
+    type: int
+    description: |
+      default frequency in Hz for clock output
+
+clock-cells:
+  - bus
