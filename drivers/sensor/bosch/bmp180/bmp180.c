@@ -327,7 +327,7 @@ static uint32_t bmp180_compensate_press(struct bmp180_data *data)
 	partial_X1 = (cal->ac3 * partial_B6) / 0x2000;
 	partial_X2 = cal->b1 * partial_B6 * (float)(1.0f * partial_B6 / 0x8000000);
 	partial_X3 = (partial_X1 + partial_X2 + 2) / 4;
-	partial_B4 = (uint64_t)(cal->ac4 * (partial_X3 + 32768)) / 0x8000;
+	partial_B4 = (uint64_t)(cal->ac4 * ((int64_t)(partial_X3) + 32768)) >> 15;
 	partial_B7 = (uint64_t)(raw_pressure - partial_B3) * (50000 >> data->osr_pressure);
 
 	comp_press = (uint32_t)(partial_B7 / partial_B4 * 2);
