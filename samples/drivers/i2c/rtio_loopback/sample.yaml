@@ -1,0 +1,9 @@
+sample:
+  name: I2C RTIO loopback sample
+tests:
+  sample.drivers.i2c.rtio_loopback:
+    tags:
+      - rtio
+      - i2c_target
+    platform_allow:
+      - nrf5340dk/nrf5340/cpuapp
