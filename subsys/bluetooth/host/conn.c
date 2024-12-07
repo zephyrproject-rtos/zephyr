@@ -478,14 +478,6 @@ static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags
 
 void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 {
-	/* Make sure we notify any pending TX callbacks before processing
-	 * new data for this connection.
-	 *
-	 * Always do so from the same context for sanity. In this case that will
-	 * be either a dedicated Bluetooth connection TX workqueue or system workqueue.
-	 */
-	bt_conn_tx_notify(conn, true);
-
 	LOG_DBG("handle %u len %u flags %02x", conn->handle, buf->len, flags);
 
 	if (IS_ENABLED(CONFIG_BT_ISO_RX) && conn->type == BT_CONN_TYPE_ISO) {
