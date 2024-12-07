@@ -22,4 +22,4 @@ supported:
   - dma
   - can
   - rtc
-vendor: st
+vendor: weact
