@@ -57,7 +57,7 @@ Supported Features
 | OS_TIMER  | on-chip    | os timer                          |
 +-----------+------------+-----------------------------------+
 | PM        | on-chip    | power management; uses SoC Power  |
-|           |            | Modes 1 and 2                     |
+|           |            | Modes 1, 2 and 3                  |
 +-----------+------------+-----------------------------------+
 | BLE       | on-chip    | Bluetooth                         |
 +-----------+------------+-----------------------------------+
@@ -187,6 +187,20 @@ with the application image directly, forming one single monolithic image.
 
 .. include:: ../../common/board-footer.rst
    :start-after: nxp-board-footer
+=======
+RTC Sub-Second Counter
+======================
+
+To use the RTC sub-second counter which is clocked at a 32kHZ rate, you first need to make the
+following modifications to the board hardware:
+
+1. Move the short on SJ21 from 1 and 2 to short 2 and 3.
+2. Move the short on SJ22 from 1 and 2 to short 2 and 3.
+
+After you make this change, the ENET will stop functioning on the board.
+
+Resources
+*********
 
 .. _RW612 Website:
    https://www.nxp.com/products/wireless-connectivity/wi-fi-plus-bluetooth-plus-802-15-4/wireless-mcu-with-integrated-tri-radiobr1x1-wi-fi-6-plus-bluetooth-low-energy-5-3-802-15-4:RW612
