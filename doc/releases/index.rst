@@ -62,8 +62,6 @@ Supported Releases
 +-----------------+----------------+---------------+
 | `Zephyr 3.7.0`_ | 2024-07-26     | 2027-01-26    |
 +-----------------+----------------+---------------+
-| `Zephyr 3.6.0`_ | 2024-02-23     | 2024-11-29    |
-+-----------------+----------------+---------------+
 | `Zephyr 4.0.0`_ | 2024-11-15     | 2025-07-18    |
 +-----------------+----------------+---------------+
 
@@ -84,7 +82,7 @@ needs to be changed are to be detailed in the release's migration guide.
    :reversed:
 
    release-notes-2.7
-   release-notes-3.[6-7]
+   release-notes-3.7
    release-notes-4.[0-1]
 
 Migration Guides
@@ -134,6 +132,5 @@ Release notes and migration guides for end-of-life releases of Zephyr RTOS can b
 .. _`GitHub repository`: https://github.com/zephyrproject-rtos/zephyr
 .. _`GitHub tagged releases`: https://github.com/zephyrproject-rtos/zephyr/tags
 .. _`Zephyr 2.7.6`: https://docs.zephyrproject.org/2.7.6/
-.. _`Zephyr 3.6.0`: https://docs.zephyrproject.org/3.6.0/
 .. _`Zephyr 3.7.0`: https://docs.zephyrproject.org/3.7.0/
 .. _`Zephyr 4.0.0`: https://docs.zephyrproject.org/4.0.0/
