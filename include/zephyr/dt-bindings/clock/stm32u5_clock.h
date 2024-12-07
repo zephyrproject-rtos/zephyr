@@ -122,7 +122,7 @@
 #define HSPI_SEL(val)		STM32_DOMAIN_CLOCK(val, 3, 22, CCIPR2_REG)
 #define I2C5_SEL(val)		STM32_DOMAIN_CLOCK(val, 3, 24, CCIPR2_REG)
 #define I2C6_SEL(val)		STM32_DOMAIN_CLOCK(val, 3, 26, CCIPR2_REG)
-#define USBPHYC_SEL(val)	STM32_DOMAIN_CLOCK(val, 3, 30, CCIPR2_REG)
+#define OTGHS_SEL(val)		STM32_DOMAIN_CLOCK(val, 3, 30, CCIPR2_REG)
 /** CCIPR3 devices */
 #define LPUART1_SEL(val)	STM32_DOMAIN_CLOCK(val, 7, 0, CCIPR3_REG)
 #define SPI3_SEL(val)		STM32_DOMAIN_CLOCK(val, 3, 3, CCIPR3_REG)
@@ -138,5 +138,12 @@
 /** CFGR1 devices */
 #define MCO1_SEL(val)           STM32_MCO_CFGR(val, 0xF, 24, CFGR1_REG)
 #define MCO1_PRE(val)           STM32_MCO_CFGR(val, 0x7, 28, CFGR1_REG)
+
+/* MCO prescaler : division factor */
+#define MCO_PRE_DIV_1  0
+#define MCO_PRE_DIV_2  1
+#define MCO_PRE_DIV_4  2
+#define MCO_PRE_DIV_8  3
+#define MCO_PRE_DIV_16 4
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32U5_CLOCK_H_ */
