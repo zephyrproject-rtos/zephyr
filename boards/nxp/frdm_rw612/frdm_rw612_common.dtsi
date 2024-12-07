@@ -254,6 +254,12 @@ mikrobus_serial: &flexcomm0 {};
 	status = "okay";
 };
 
+/* RTC is the wakeup source for PM modes 3, 4 */
+&rtc_highres {
+	status = "okay";
+	wakeup-source;
+};
+
 &pmu {
 	reset-causes-en = <PMU_RESET_CM33_LOCKUP>,
 			  <PMU_RESET_ITRC>,
