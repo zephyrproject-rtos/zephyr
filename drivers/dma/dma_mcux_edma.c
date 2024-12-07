@@ -10,20 +10,24 @@
 
 #define DT_DRV_COMPAT nxp_mcux_edma
 
-#include <errno.h>
-#include <soc.h>
+#include <zephyr/drivers/dma.h>
+#include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
-#include <zephyr/devicetree.h>
 #include <zephyr/sys/atomic.h>
-#include <zephyr/drivers/dma.h>
-#include <zephyr/drivers/clock_control.h>
 #include <zephyr/sys/barrier.h>
-
-#include "dma_mcux_edma.h"
-
-#include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/logging/log.h>
+#include <errno.h>
+#include <soc.h>
+
+#include <fsl_edma.h>
+
+#if defined(FSL_FEATURE_SOC_DMAMUX_COUNT) && FSL_FEATURE_SOC_DMAMUX_COUNT
+#include <fsl_dmamux.h>
+#endif
 
 LOG_MODULE_REGISTER(dma_mcux_edma, CONFIG_DMA_LOG_LEVEL);
 
@@ -35,28 +39,22 @@ struct dma_mcux_edma_config {
 #if defined(FSL_FEATURE_SOC_DMAMUX_COUNT) && FSL_FEATURE_SOC_DMAMUX_COUNT
 	DMAMUX_Type **dmamux_base;
 #endif
-	uint8_t channels_per_mux;
-	uint8_t dmamux_reg_offset;
-	int dma_requests;
-	int dma_channels; /* number of channels */
+	void (*irq_config_func)(const struct device *dev);
+	edma_tcd_t (*tcdpool)[CONFIG_DMA_TCD_QUEUE_SIZE];
 #if DMA_MCUX_HAS_CHANNEL_GAP
 	uint32_t channel_gap[2];
 #endif
-	void (*irq_config_func)(const struct device *dev);
-	edma_tcd_t (*tcdpool)[CONFIG_DMA_TCD_QUEUE_SIZE];
+	uint16_t dma_requests;
+	uint16_t dma_channels; /* number of channels */
+	uint8_t channels_per_mux;
+	uint8_t dmamux_reg_offset;
 };
 
-
-#ifdef CONFIG_HAS_MCUX_CACHE
-
-#ifdef CONFIG_DMA_MCUX_USE_DTCM_FOR_DMA_DESCRIPTORS
-
-#if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm))
+#ifndef CONFIG_HAS_MCUX_CACHE
+/* if no cache on part, no need to worry about noncache for TCD */
+#define EDMA_TCDPOOL_CACHE_ATTR
+#elif defined(CONFIG_DMA_MCUX_USE_DTCM_FOR_DMA_DESCRIPTORS)
 #define EDMA_TCDPOOL_CACHE_ATTR __dtcm_noinit_section
-#else /* DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm)) */
-#error Selected DTCM for MCUX DMA descriptors but no DTCM section.
-#endif /* DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm)) */
-
 #elif defined(CONFIG_NOCACHE_MEMORY)
 #define EDMA_TCDPOOL_CACHE_ATTR __nocache
 #else
@@ -67,15 +65,8 @@ struct dma_mcux_edma_config {
  * TCD pools would be moved to cacheable memory, resulting in DMA cache
  * coherency issues.
  */
-
+#warning EDMA TCD pool might not be in noncacheable memory
 #define EDMA_TCDPOOL_CACHE_ATTR
-
-#endif /* CONFIG_DMA_MCUX_USE_DTCM_FOR_DMA_DESCRIPTORS */
-
-#else /* CONFIG_HAS_MCUX_CACHE */
-
-#define EDMA_TCDPOOL_CACHE_ATTR
-
 #endif /* CONFIG_HAS_MCUX_CACHE */
 
 struct dma_mcux_channel_transfer_edma_settings {
@@ -537,13 +528,6 @@ static int dma_mcux_edma_start(const struct device *dev, uint32_t channel)
 
 	LOG_DBG("START TRANSFER");
 
-#if defined(FSL_FEATURE_SOC_DMAMUX_COUNT) && FSL_FEATURE_SOC_DMAMUX_COUNT
-	uint8_t dmamux_idx = DEV_DMAMUX_IDX(dev, channel);
-	uint8_t dmamux_channel = DEV_DMAMUX_CHANNEL(dev, channel);
-
-	LOG_DBG("DMAMUX CHCFG 0x%x", DEV_DMAMUX_BASE(dev, dmamux_idx)->CHCFG[dmamux_channel]);
-#endif
-
 #if !defined(CONFIG_DMA_MCUX_EDMA_V3) && !defined(CONFIG_DMA_MCUX_EDMA_V4)
 	LOG_DBG("DMA CR 0x%x", DEV_BASE(dev)->CR);
 #endif
@@ -759,13 +743,6 @@ static int dma_mcux_edma_get_status(const struct device *dev, uint32_t channel,
 	}
 	status->dir = DEV_CHANNEL_DATA(dev, channel)->transfer_settings.direction;
 
-#if defined(FSL_FEATURE_SOC_DMAMUX_COUNT) && FSL_FEATURE_SOC_DMAMUX_COUNT
-	uint8_t dmamux_idx = DEV_DMAMUX_IDX(dev, channel);
-	uint8_t dmamux_channel = DEV_DMAMUX_CHANNEL(dev, channel);
-
-	LOG_DBG("DMAMUX CHCFG 0x%x", DEV_DMAMUX_BASE(dev, dmamux_idx)->CHCFG[dmamux_channel]);
-#endif
-
 #if defined(CONFIG_DMA_MCUX_EDMA_V3) || defined(CONFIG_DMA_MCUX_EDMA_V4)
 	LOG_DBG("DMA MP_CSR 0x%x",  DEV_BASE(dev)->MP_CSR);
 	LOG_DBG("DMA MP_ES 0x%x",   DEV_BASE(dev)->MP_ES);
@@ -789,13 +766,10 @@ static int dma_mcux_edma_get_status(const struct device *dev, uint32_t channel,
 static bool dma_mcux_edma_channel_filter(const struct device *dev,
 					 int channel_id, void *param)
 {
-	enum dma_channel_filter *filter = (enum dma_channel_filter *)param;
+	ARG_UNUSED(dev);
+	ARG_UNUSED(channel_id);
+	ARG_UNUSED(param);
 
-	if (filter && *filter == DMA_CHANNEL_PERIODIC) {
-		if (channel_id > 3) {
-			return false;
-		}
-	}
 	return true;
 }
 
@@ -820,9 +794,7 @@ static int dma_mcux_edma_init(const struct device *dev)
 	LOG_DBG("INIT NXP EDMA");
 
 #if defined(FSL_FEATURE_SOC_DMAMUX_COUNT) && FSL_FEATURE_SOC_DMAMUX_COUNT
-	uint8_t i;
-
-	for (i = 0; i < config->dma_channels / config->channels_per_mux; i++) {
+	for (uint8_t i = 0; i < config->dma_channels / config->channels_per_mux; i++) {
 		DMAMUX_Init(DEV_DMAMUX_BASE(dev, i));
 	}
 #endif
@@ -926,8 +898,8 @@ static int dma_mcux_edma_init(const struct device *dev)
 	static const struct dma_mcux_edma_config dma_config_##n = {		\
 		.base = (DMA_Type *)DT_INST_REG_ADDR(n),			\
 		DMAMUX_BASE_INIT(n)						\
-		.dma_requests = DT_INST_PROP(n, dma_requests),			\
-		.dma_channels = DT_INST_PROP(n, dma_channels),			\
+		.dma_requests = (uint16_t)DT_INST_PROP(n, dma_requests),	\
+		.dma_channels = (uint16_t)DT_INST_PROP(n, dma_channels),	\
 		CHANNELS_PER_MUX(n)						\
 		.irq_config_func = dma_imx_config_func_##n,			\
 		.dmamux_reg_offset = DT_INST_PROP(n, dmamux_reg_offset),	\

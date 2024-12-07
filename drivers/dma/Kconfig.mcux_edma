@@ -45,10 +45,13 @@ config DMA_MCUX_TEST_SLOT_START
 	help
 	  test slot start num
 
+ZEPHYR_DTCM := zephyr,dtcm
+IMX_DTCM := nxp,imx-dtcm
+
 config DMA_MCUX_USE_DTCM_FOR_DMA_DESCRIPTORS
 	bool "Use DTCM for DMA descriptors"
 	default y
-	depends on DT_HAS_NXP_IMX_DTCM_ENABLED
+	depends on $(dt_chosen_has_compat,$(ZEPHYR_DTCM),$(IMX_DTCM))
 	help
 	  When this option is activated, the descriptors for DMA transfer are
 	  located in the DTCM (Data Tightly Coupled Memory).
