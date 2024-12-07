@@ -1148,3 +1148,9 @@ test_i2c_npm2100: npm2100@9f {
 		compatible = "nordic,npm2100-vbat";
 	};
 };
+
+test_i2c_mlx90394: mlx90394@a0 {
+	compatible = "melexis,mlx90394";
+	status = "okay";
+	reg = <0xa0>;
+};
