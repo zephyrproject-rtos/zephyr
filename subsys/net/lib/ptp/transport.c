@@ -266,7 +266,7 @@ int ptp_transport_close(struct ptp_port *port)
 
 int ptp_transport_send(struct ptp_port *port, struct ptp_msg *msg, enum ptp_socket idx)
 {
-	__ASSERT(PTP_SOCKET_CNT <= idx, "Invalid socket index");
+	__ASSERT(PTP_SOCKET_CNT > idx, "Invalid socket index");
 
 	static const int socket_port[] = {PTP_SOCKET_PORT_EVENT, PTP_SOCKET_PORT_GENERAL};
 	int length = ntohs(msg->header.msg_length);
@@ -276,7 +276,7 @@ int ptp_transport_send(struct ptp_port *port, struct ptp_msg *msg, enum ptp_sock
 
 int ptp_transport_sendto(struct ptp_port *port, struct ptp_msg *msg, enum ptp_socket idx)
 {
-	__ASSERT(PTP_SOCKET_CNT <= idx, "Invalid socket index");
+	__ASSERT(PTP_SOCKET_CNT > idx, "Invalid socket index");
 
 	static const int socket_port[] = {PTP_SOCKET_PORT_EVENT, PTP_SOCKET_PORT_GENERAL};
 	int length = ntohs(msg->header.msg_length);
@@ -286,7 +286,7 @@ int ptp_transport_sendto(struct ptp_port *port, struct ptp_msg *msg, enum ptp_so
 
 int ptp_transport_recv(struct ptp_port *port, struct ptp_msg *msg, enum ptp_socket idx)
 {
-	__ASSERT(PTP_SOCKET_CNT <= idx, "Invalid socket index");
+	__ASSERT(PTP_SOCKET_CNT > idx, "Invalid socket index");
 
 	int cnt = 0;
 	uint8_t ctrl[CMSG_SPACE(sizeof(struct net_ptp_time))] = {0};
