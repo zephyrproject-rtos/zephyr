@@ -179,6 +179,11 @@ class GdbStub(abc.ABC):
             # For packets qfThreadInfo/qsThreadInfo, obtain a list of all active thread IDs
             if pkt[0:12] == b"qfThreadInfo":
                 threads_metadata_data = self.logfile.get_threads_metadata()["data"]
+
+                if threads_metadata_data is None:
+                    self.put_gdb_packet(b"l")
+                    return
+
                 size_t_size = self.elffile.get_kernel_thread_info_size_t_size()
 
                 # First, find and store the thread that _kernel considers current
