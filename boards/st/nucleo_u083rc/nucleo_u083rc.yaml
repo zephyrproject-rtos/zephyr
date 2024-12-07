@@ -14,5 +14,12 @@ supported:
   - i2c
   - pwm
   - usart
+  - spi
+  - dma
+  - usb
+  - rtc
+  - rng
+  - aes
+  - lptim
 ram: 40
 flash: 256
