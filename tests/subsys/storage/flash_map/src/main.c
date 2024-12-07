@@ -30,6 +30,11 @@ ZTEST(flash_map, test_flash_area_disabled_device)
 	zassert_equal(rc, -ENOENT, "Open did not fail");
 	rc = flash_area_open(FIXED_PARTITION_ID(disabled_b), &fa);
 	zassert_equal(rc, -ENOENT, "Open did not fail");
+
+	/* Note lack of tests for FIXED_PARTITION(...) instantiation,
+	 * because this macro will fail, at compile time, if node does not
+	 * exist or is disabled.
+	 */
 }
 
 ZTEST(flash_map, test_flash_area_device_is_ready)
@@ -143,6 +148,10 @@ ZTEST(flash_map, test_fixed_partition_node_macros)
 		DT_REG_SIZE(SLOT1_PARTITION_NODE));
 	zassert_equal(FIXED_PARTITION_NODE_DEVICE(SLOT1_PARTITION_NODE),
 		DEVICE_DT_GET(DT_MTD_FROM_FIXED_PARTITION(SLOT1_PARTITION_NODE)));
+
+	/* Taking by node and taking by label should give same device */
+	zassert_equal(FIXED_PARTITION_BY_NODE(DT_NODELABEL(SLOT1_PARTITION)),
+		      FIXED_PARTITION(SLOT1_PARTITION));
 }
 
 ZTEST(flash_map, test_flash_area_erase_and_flatten)
