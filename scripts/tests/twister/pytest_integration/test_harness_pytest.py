@@ -28,6 +28,7 @@ def testinstance() -> TestInstance:
     testinstance.handler.options.verbose = 1
     testinstance.handler.options.fixture = ['fixture1:option1', 'fixture2']
     testinstance.handler.options.pytest_args = None
+    testinstance.handler.options.extra_test_args = []
     testinstance.handler.type_str = 'native'
     return testinstance
 
@@ -70,6 +71,15 @@ def test_pytest_command_extra_args(testinstance: TestInstance):
     command = pytest_harness.generate_command()
     for c in pytest_args:
         assert c in command
+
+
+def test_pytest_command_extra_test_args(testinstance: TestInstance):
+    pytest_harness = Pytest()
+    extra_test_args = ['-stop_at=3', '-no-rt']
+    testinstance.handler.options.extra_test_args = extra_test_args
+    pytest_harness.configure(testinstance)
+    command = pytest_harness.generate_command()
+    assert f'--extra-test-args={extra_test_args[0]} {extra_test_args[1]}' in command
 
 
 def test_pytest_command_extra_args_in_options(testinstance: TestInstance):
