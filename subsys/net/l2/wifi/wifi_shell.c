@@ -190,18 +190,19 @@ static void handle_wifi_scan_result(struct net_mgmt_event_callback *cb)
 	context.scan_result++;
 
 	if (context.scan_result == 1U) {
-		PR("\n%-4s | %-32s %-5s | %-13s | %-4s | %-15s | %-17s | %-8s\n",
-		   "Num", "SSID", "(len)", "Chan (Band)", "RSSI", "Security", "BSSID", "MFP");
+		PR("\n%-4s | %-32s %-5s | %-13s | %-4s | %-30s | %-17s | %-8s\n",
+		   "Num", "SSID", "(len)", "Chan (Band)", "RSSI", "Security (Suite-B)",
+		   "BSSID", "MFP");
 	}
 
 	strncpy(ssid_print, entry->ssid, sizeof(ssid_print) - 1);
 	ssid_print[sizeof(ssid_print) - 1] = '\0';
 
-	PR("%-4d | %-32s %-5u | %-4u (%-6s) | %-4d | %-15s | %-17s | %-8s\n",
+	PR("%-4d | %-32s %-5u | %-4u (%-6s) | %-4d | %-18s (%-12s) | %-17s | %-8s\n",
 	   context.scan_result, ssid_print, entry->ssid_length, entry->channel,
 	   wifi_band_txt(entry->band),
 	   entry->rssi,
-	   wifi_security_txt(entry->security),
+	   wifi_security_txt(entry->security), wifi_suiteb_txt(entry->suite_b_type),
 	   ((entry->mac_length) ?
 		   net_sprint_ll_addr_buf(entry->mac, WIFI_MAC_ADDR_LEN,
 					  mac_string_buf,

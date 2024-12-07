@@ -38,6 +38,18 @@
 extern "C" {
 #endif
 
+/** @brief IEEE 802.11 SUITE-B */
+enum wifi_cipher_suite_b {
+	/** Not Applicable for Personal mode security */
+	WIFI_CIPHER_SUITE_B_NA,
+	/** Not enable for Enterprise mode security */
+	WIFI_CIPHER_SUITE_B_NONE,
+	/** SUITE-B */
+	WIFI_CIPHER_SUITE_B,
+	/** SUITE-B-192 */
+	WIFI_CIPHER_SUITE_B_192,
+};
+
 /** @brief IEEE 802.11 security types. */
 enum wifi_security_type {
 	/** No security. */
@@ -86,6 +98,8 @@ enum wifi_security_type {
 	WIFI_SECURITY_TYPE_FT_EAP,
 	/** FT-EAP-SHA384 security */
 	WIFI_SECURITY_TYPE_FT_EAP_SHA384,
+	/** WPA2-PSK-SHA384 security. */
+	WIFI_SECURITY_TYPE_PSK_SHA384,
 
 	/** @cond INTERNAL_HIDDEN */
 	__WIFI_SECURITY_TYPE_AFTER_LAST,
@@ -178,6 +192,9 @@ struct wifi_eap_config {
 	/** Phase2 setting string. */
 	char *phase2;
 };
+
+/** Helper function to get user-friendly Suite_B type name. */
+const char *wifi_suiteb_txt(enum wifi_cipher_suite_b suite_b);
 
 /** Helper function to get user-friendly security type name. */
 const char *wifi_security_txt(enum wifi_security_type security);

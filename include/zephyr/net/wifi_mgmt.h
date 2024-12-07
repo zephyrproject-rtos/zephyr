@@ -490,6 +490,8 @@ struct wifi_scan_result {
 	uint8_t channel;
 	/** Security type */
 	enum wifi_security_type security;
+	/** Cipher SuiteB */
+	enum wifi_cipher_suite_b suite_b_type;
 	/** MFP options */
 	enum wifi_mfp_options mfp;
 	/** RSSI */
