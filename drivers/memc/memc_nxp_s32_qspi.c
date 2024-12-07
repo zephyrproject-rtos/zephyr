@@ -11,6 +11,7 @@ LOG_MODULE_REGISTER(nxp_s32_qspi_memc, CONFIG_MEMC_LOG_LEVEL);
 
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/dt-bindings/qspi/nxp-s32-qspi.h>
 
 #include <soc.h>
 #include "memc_nxp_s32_qspi.h"
@@ -138,7 +139,7 @@ uint8_t memc_nxp_s32_qspi_get_instance(const struct device *dev)
 	))
 
 #define QSPI_PORT_SIZE_FN(node_id, side_upper, port)					\
-	COND_CODE_1(IS_EQ(DT_REG_ADDR(node_id), QSPI_PCSF##side_upper##port),		\
+	COND_CODE_1(IS_EQ(DT_REG_ADDR_RAW(node_id), QSPI_PCSF##side_upper##port),	\
 		(COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(node_id),				\
 			(.memSize##side_upper##port = DT_PROP(node_id, size) / 8,),	\
 			(.memSize##side_upper##port = 0,))),				\
@@ -153,6 +154,91 @@ uint8_t memc_nxp_s32_qspi_get_instance(const struct device *dev)
 	QSPI_DLL_CFG(n, side, side_upper)						\
 	QSPI_PORT_SIZE(n, side_upper)							\
 	.readMode##side_upper = QSPI_READ_MODE(n, side, side_upper),
+
+#if FEATURE_QSPI_HAS_SFP
+
+#if QSPI_IP_SFP_ENABLE_MDAD
+#define SFP_MDAD_NODE(n, i) DT_INST_CHILD(n, sfp_S_mdad_##i)
+
+#define QSPI_SECURE_ATTRIBUTE(node_id)								\
+	(DT_PROP(node_id, secure_attribute) == NXP_S32_QSPI_NON_SECURE ? QSPI_IP_SFP_UNSECURE :	\
+	(DT_PROP(node_id, secure_attribute) == NXP_S32_QSPI_SECURE ? QSPI_IP_SFP_SECURE :	\
+	(DT_PROP(node_id, secure_attribute) == (NXP_S32_QSPI_NON_SECURE | NXP_S32_QSPI_SECURE) ?\
+									QSPI_IP_SFP_BOTH :	\
+	QSPI_IP_SFP_RESERVED)))
+
+#define _QSPI_SFP_MDAD_CFG(i, n)							\
+	COND_CODE_1(DT_NODE_EXISTS(SFP_MDAD_NODE(n, i)),				\
+		({ /* Get configuration from DT if DT node exists */			\
+			.SecureAttribute = QSPI_SECURE_ATTRIBUTE(SFP_MDAD_NODE(n, i)),	\
+			.MaskType = DT_ENUM_IDX(SFP_MDAD_NODE(n, i), mask_type),	\
+			.Valid = true,							\
+			.Mask = DT_PROP(SFP_MDAD_NODE(n, i), mask),			\
+			.DomainId = DT_PROP(SFP_MDAD_NODE(n, i), domain_id),		\
+		},),									\
+		({ /* Otherwise mark as invalid configuration (not configured) */	\
+			.Valid = false							\
+		},))
+
+#define QSPI_SFP_MDAD_CFG(n)								\
+	.Tg = {										\
+		LISTIFY(QuadSPI_MDAD_COUNT, _QSPI_SFP_MDAD_CFG, (), n)			\
+	},
+#endif /* QSPI_IP_SFP_ENABLE_MDAD */
+
+#if QSPI_IP_SFP_ENABLE_FRAD
+#define SFP_FRAD_NODE(n, i) DT_INST_CHILD(n, sfp_S_frad_##i)
+
+#define QSPI_ACP_POLICY(node_id)							\
+	(DT_PROP(node_id, master_domain_acp_policy) == NXP_S32_QSPI_SECURE ?		\
+								QSPI_IP_SFP_ACP_SECURE :\
+	(DT_PROP(node_id, master_domain_acp_policy) == (NXP_S32_QSPI_NON_SECURE |	\
+				NXP_S32_QSPI_PRIVILEGE) ? QSPI_IP_SFP_ACP_PRIVILEGED :	\
+	(DT_PROP(node_id, master_domain_acp_policy) == (NXP_S32_QSPI_SECURE |		\
+				NXP_S32_QSPI_PRIVILEGE) ? QSPI_IP_SFP_ACP_SECURE_PRIVILEGED :\
+	(DT_PROP(node_id, master_domain_acp_policy) == (NXP_S32_QSPI_NON_SECURE |	\
+		NXP_S32_QSPI_SECURE | NXP_S32_QSPI_PRIVILEGE) ? QSPI_IP_SFP_ACP_ALL :	\
+	QSPI_IP_SFP_ACP_NONE))))
+
+#define QSPI_EXCLUSIVE_ACCESS_LOCK(node_id)						\
+	(DT_ENUM_IDX(node_id, exclusive_access_lock) == 0 ? QSPI_IP_SFP_EAL_DISABLED :	\
+	(DT_ENUM_IDX(node_id, exclusive_access_lock) == 1 ? QSPI_IP_SFP_EAL_OWNER :	\
+	QSPI_IP_SFP_EAL_NONE))
+
+#define _QSPI_SFP_FRAD_CFG(i, n)							\
+	COND_CODE_1(DT_NODE_EXISTS(SFP_FRAD_NODE(n, i)),				\
+		({ /* Get configuration from DT if DT node exists */			\
+			.StartAddress = DT_REG_ADDR(SFP_FRAD_NODE(n, i)),		\
+			.EndAddress = DT_REG_ADDR(SFP_FRAD_NODE(n, i)) +		\
+					DT_REG_SIZE(SFP_FRAD_NODE(n, i)) - 1,		\
+			.Valid = true,							\
+			.Md0Acp = QSPI_ACP_POLICY(SFP_FRAD_NODE(n, i)),			\
+			.Md1Acp = QSPI_ACP_POLICY(SFP_FRAD_NODE(n, i)),			\
+			.ExclusiveAccessLock = QSPI_EXCLUSIVE_ACCESS_LOCK(SFP_FRAD_NODE(n, i)),\
+			.ExclusiveAccessOwner = DT_PROP(SFP_FRAD_NODE(n, i),		\
+							exclusive_access_owner),	\
+		},),									\
+		({ /* Otherwise mark as invalid configuration (not configured) */	\
+			.Valid = false							\
+		},))
+
+#define QSPI_SFP_FRAD_CFG(n)								\
+	.Frad = {									\
+		LISTIFY(QuadSPI_FRAD_COUNT, _QSPI_SFP_FRAD_CFG, (), n)			\
+	},
+#endif /* QSPI_IP_SFP_ENABLE_FRAD */
+
+#define QSPI_SFP_MASTER_TIMEOUT_CYCLES 0xffff
+
+#define QSPI_SFP_CFG(n)									\
+	IF_ENABLED(QSPI_IP_SFP_ENABLE_GLOBAL,						\
+		(.SfpCfg = {								\
+			.MasterTimeout = QSPI_SFP_MASTER_TIMEOUT_CYCLES,		\
+			IF_ENABLED(QSPI_IP_SFP_ENABLE_MDAD, (QSPI_SFP_MDAD_CFG(n)))	\
+			IF_ENABLED(QSPI_IP_SFP_ENABLE_FRAD, (QSPI_SFP_FRAD_CFG(n)))	\
+		},))
+
+#endif /* FEATURE_QSPI_HAS_SFP */
 
 #define MEMC_NXP_S32_QSPI_CONTROLLER_CONFIG(n)						\
 	BUILD_ASSERT(DT_INST_PROP_LEN(n, ahb_buffers_masters) == QSPI_IP_AHB_BUFFERS,	\
@@ -174,6 +260,7 @@ uint8_t memc_nxp_s32_qspi_get_instance(const struct device *dev)
 		QSPI_DATA_CFG(n)							\
 		QSPI_ADDR_CFG(n)							\
 		QSPI_BYTES_SWAP_ADDR(n)							\
+		IF_ENABLED(FEATURE_QSPI_HAS_SFP, (QSPI_SFP_CFG(n)))			\
 	}
 
 #define MEMC_NXP_S32_QSPI_INIT_DEVICE(n)						\
