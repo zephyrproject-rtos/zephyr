@@ -43,7 +43,7 @@ volatile struct cpustart_rec *start_rec;
 static void *appcpu_top;
 static bool cpus_active[CONFIG_MP_MAX_NUM_CPUS];
 static struct k_spinlock loglock;
-#endif
+
 
 /* Note that the logging done here is ACTUALLY REQUIRED FOR RELIABLE
  * OPERATION!  At least one particular board will experience spurious
@@ -62,7 +62,6 @@ static struct k_spinlock loglock;
  */
 void smp_log(const char *msg)
 {
-#ifndef CONFIG_SOC_ESP32_PROCPU
 	k_spinlock_key_t key = k_spin_lock(&loglock);
 
 	while (*msg) {
@@ -72,10 +71,8 @@ void smp_log(const char *msg)
 	esp_rom_uart_tx_one_char('\n');
 
 	k_spin_unlock(&loglock, key);
-#endif
 }
 
-#ifdef CONFIG_SMP
 static void appcpu_entry2(void)
 {
 	volatile int ps, ie;
@@ -177,7 +174,7 @@ static void appcpu_entry1(void)
  */
 void esp_appcpu_start(void *entry_point)
 {
-	smp_log("ESP32: starting APPCPU");
+	ets_printf("ESP32: starting APPCPU");
 
 	/* These two calls are wrapped in a "stall_other_cpu" API in
 	 * esp-idf.  But in this context the appcpu is stalled by
@@ -223,7 +220,7 @@ void esp_appcpu_start(void *entry_point)
 	 */
 	esp_rom_ets_set_appcpu_boot_addr((void *)entry_point);
 
-	smp_log("ESP32: APPCPU start sequence complete");
+	ets_printf("ESP32: APPCPU start sequence complete");
 }
 
 #ifdef CONFIG_SMP
