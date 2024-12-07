@@ -349,11 +349,6 @@ static const struct btp_handler bap_handlers[] = {
 		.expect_len = sizeof(struct btp_bap_discover_cmd),
 		.func = btp_bap_discover,
 	},
-	{
-		.opcode = BTP_BAP_SEND,
-		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
-		.func = btp_bap_audio_stream_send,
-	},
 #if defined(CONFIG_BT_BAP_BROADCAST_SINK) || defined(CONFIG_BT_BAP_BROADCAST_SINK)
 	{
 		.opcode = BTP_BAP_BROADCAST_SOURCE_SETUP,
@@ -534,7 +529,7 @@ uint8_t tester_init_bap(void)
 		return BTP_STATUS_FAILED;
 	}
 
-	btp_bap_audio_stream_init_send_worker();
+	btp_bap_audio_stream_tx_init();
 
 	tester_register_command_handlers(BTP_SERVICE_ID_BAP, bap_handlers,
 					 ARRAY_SIZE(bap_handlers));
