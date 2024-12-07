@@ -85,6 +85,8 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_PS,
 	/** Setup or teardown TWT flow */
 	NET_REQUEST_WIFI_CMD_TWT,
+	/** Setup BTWT flow */
+	NET_REQUEST_WIFI_CMD_BTWT,
 	/** Get power save config */
 	NET_REQUEST_WIFI_CMD_PS_CONFIG,
 	/** Set or get regulatory domain */
@@ -193,6 +195,11 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_PS);
 	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_TWT)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_TWT);
+
+#define NET_REQUEST_WIFI_BTWT			\
+	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_BTWT)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_BTWT);
 
 /** Request a Wi-Fi power save configuration */
 #define NET_REQUEST_WIFI_PS_CONFIG				\
@@ -745,7 +752,28 @@ struct wifi_twt_params {
 			 * prepare the data before TWT SP starts.
 			 */
 			uint32_t twt_wake_ahead_duration;
+			/** TWT info enabled or disable */
+			bool twt_info_disable;
+			/** TWT exponent */
+			uint8_t exponent;
 		} setup;
+		/** Setup specific parameters */
+		struct {
+			/** Broadcast TWT AP config */
+			uint16_t sub_id;
+			/** Range 64-255 */
+			uint8_t nominal_wake;
+			/** Max STA support */
+			uint8_t max_sta_support;
+			/** TWT interval */
+			uint16_t twt_interval;
+			/** TWT offset */
+			uint16_t twt_offset;
+			/** TWT exponent */
+			uint8_t twt_exponent;
+			/** SP gap */
+			uint8_t sp_gap;
+		} btwt;
 		/** Teardown specific parameters */
 		struct {
 			/** Teardown all flows */
@@ -764,6 +792,7 @@ struct wifi_twt_params {
 /* 256 (u8) * 1TU */
 #define WIFI_MAX_TWT_WAKE_INTERVAL_US 262144
 #define WIFI_MAX_TWT_WAKE_AHEAD_DURATION_US (LONG_MAX - 1)
+#define WIFI_MAX_TWT_EXPONENT 63
 
 /** @endcond */
 
@@ -1351,6 +1380,14 @@ struct wifi_mgmt_ops {
 	 * @return 0 if ok, < 0 if error
 	 */
 	int (*set_twt)(const struct device *dev, struct wifi_twt_params *params);
+	/** Setup BTWT flow
+	 *
+	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param params BTWT parameters
+	 *
+	 * @return 0 if ok, < 0 if error
+	 */
+	int (*set_btwt)(const struct device *dev, struct wifi_twt_params *params);
 	/** Get power save config
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
