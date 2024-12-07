@@ -9,6 +9,7 @@ tests:
   drivers.watchdog.wdt_error_cases:
     platform_allow:
       - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54l20pdk/nrf54l20/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
       - nrf54h20dk/nrf54h20/cpurad
       - nrf9280pdk/nrf9280/cpuapp
