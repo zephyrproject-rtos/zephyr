@@ -103,8 +103,8 @@ static int l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		return l2cap_recv_metrics(chan, buf);
 	}
 
-	bt_shell_print("Incoming data channel %p len %u", chan,
-		       buf->len);
+	bt_shell_print("Incoming data channel %p len %u",
+		       chan, buf->len);
 
 	if (buf->len) {
 		bt_shell_hexdump(buf->data, buf->len);
@@ -347,14 +347,12 @@ static int cmd_ecred_connect(const struct shell *sh, size_t argc, char *argv[])
 			return err;
 		}
 
-
 		l2ch_chan.ch.required_sec_level = sec;
 	}
 
 	err = bt_l2cap_ecred_chan_connect(default_conn, l2cap_ecred_chans, psm);
 	if (err < 0) {
-		shell_error(sh, "Unable to connect to psm %u (err %d)", psm,
-			    err);
+		shell_error(sh, "Unable to connect to psm %u (err %d)", psm, err);
 	} else {
 		shell_print(sh, "L2CAP connection pending");
 	}
@@ -390,8 +388,7 @@ static int cmd_connect(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_l2cap_chan_connect(default_conn, &l2ch_chan.ch.chan, psm);
 	if (err < 0) {
-		shell_error(sh, "Unable to connect to psm %u (err %d)", psm,
-			    err);
+		shell_error(sh, "Unable to connect to psm %u (err %d)", psm, err);
 	} else {
 		shell_print(sh, "L2CAP connection pending");
 	}
@@ -424,8 +421,7 @@ static int cmd_send(const struct shell *sh, size_t argc, char *argv[])
 	if (argc > 2) {
 		len = strtoul(argv[2], NULL, 10);
 		if (len > DATA_MTU) {
-			shell_print(sh,
-				    "Length exceeds TX MTU for the channel");
+			shell_print(sh, "Length exceeds TX MTU for the channel");
 			return -ENOEXEC;
 		}
 	}
