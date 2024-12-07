@@ -5,7 +5,7 @@
  */
 /dts-v1/;
 
-#include <espressif/esp32/esp32_appcpu.dtsi>
+#include <espressif/esp32/esp32_pico_d4.dtsi>
 #include <espressif/partitions_0x1000_amp.dtsi>
 
 / {

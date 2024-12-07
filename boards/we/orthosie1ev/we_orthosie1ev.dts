@@ -1,40 +1,41 @@
 /*
- * Copyright 2024 Lothar Felten <lothar.felten@gmail.com>
+ * Copyright (c) 2024 Würth Elektronik GmbH & Co. KG
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /dts-v1/;
 
-#include <espressif/esp32c3/esp32c3_common.dtsi>
-#include "ttgo_t8c3-pinctrl.dtsi"
+#include <espressif/esp32c3/esp32c3.dtsi>
+#include "we_orthosie1ev-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <espressif/partitions_0x0_default.dtsi>
 
 / {
-	model = "Lilygo TTGO T8-C3";
-	compatible = "lilygo,ttgo-t8c3";
+	model = "we_orthosie1ev";
+	compatible = "we,we-orthosie1ev";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &esp32_bt_hci;
+	};
 
 	aliases {
-		led0 = &green_led;
+		sw0 = &user_button1;
 		i2c-0 = &i2c0;
 		watchdog0 = &wdt0;
 	};
 
-	chosen {
-		zephyr,sram = &sram0;
-		zephyr,console = &usb_serial;
-		zephyr,shell-uart = &usb_serial;
-		zephyr,flash = &flash0;
-		zephyr,code-partition = &slot0_partition;
-		zephyr,bt-hci = &esp32_bt_hci;
-		zephyr,canbus = &twai;
-	};
-
-	leds {
-		compatible = "gpio-leds";
-		green_led: led_0 {
-			gpios =  <&gpio0 3 GPIO_ACTIVE_HIGH>;
-			label = "Green - LED0";
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button1: button_1 {
+			label = "User SW1";
+			gpios = <&gpio0 3 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 };
@@ -51,6 +52,7 @@
 };
 
 &usb_serial {
+	/* requires resoldering of resistors on the board */
 	status = "okay";
 };
 
@@ -59,6 +61,12 @@
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
+};
+
+&i2s {
+	pinctrl-0 = <&i2s_default>;
+	pinctrl-names = "default";
+	status = "disabled";
 };
 
 &trng0 {
@@ -82,23 +90,20 @@
 };
 
 &timer0 {
-	status = "okay";
+	status = "disabled";
 };
 
 &timer1 {
-	status = "okay";
+	status = "disabled";
 };
 
 &twai {
-	status = "okay";
+	/* requires external CAN transceiver or jumper on RX and TX pins for loopback testing */
+	status = "disabled";
 	pinctrl-0 = <&twai_default>;
 	pinctrl-names = "default";
 };
 
-&wifi {
-	status = "okay";
-};
-
-&esp32_bt_hci{
+&esp32_bt_hci {
 	status = "okay";
 };
