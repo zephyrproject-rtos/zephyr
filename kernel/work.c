@@ -653,6 +653,12 @@ static void work_queue_main(void *workq_ptr, void *p2, void *p3)
 			 * submissions.
 			 */
 			(void)z_sched_wake_all(&queue->drainq, 1, NULL);
+		} else if (flag_test(&queue->flags, K_WORK_QUEUE_STOP_BIT)) {
+			/* User has requested that the queue stop. Clear the status flags and exit.
+			 */
+			flags_set(&queue->flags, 0);
+			k_spin_unlock(&lock, key);
+			return;
 		} else {
 			/* No work is available and no queue state requires
 			 * special handling.
@@ -810,6 +816,41 @@ int k_work_queue_unplug(struct k_work_q *queue)
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_work_queue, unplug, queue, ret);
 
 	return ret;
+}
+
+int k_work_queue_stop(struct k_work_q *queue, k_timeout_t timeout)
+{
+	__ASSERT_NO_MSG(queue);
+
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_work_queue, stop, queue, timeout);
+	k_spinlock_key_t key = k_spin_lock(&lock);
+
+	if (!flag_test(&queue->flags, K_WORK_QUEUE_STARTED_BIT)) {
+		k_spin_unlock(&lock, key);
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_work_queue, stop, queue, timeout, -EALREADY);
+		return -EALREADY;
+	}
+
+	if (!flag_test(&queue->flags, K_WORK_QUEUE_PLUGGED_BIT)) {
+		k_spin_unlock(&lock, key);
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_work_queue, stop, queue, timeout, -EBUSY);
+		return -EBUSY;
+	}
+
+	flag_set(&queue->flags, K_WORK_QUEUE_STOP_BIT);
+	notify_queue_locked(queue);
+	k_spin_unlock(&lock, key);
+	SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_work_queue, stop, queue, timeout);
+	if (k_thread_join(&queue->thread, timeout)) {
+		key = k_spin_lock(&lock);
+		flag_clear(&queue->flags, K_WORK_QUEUE_STOP_BIT);
+		k_spin_unlock(&lock, key);
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_work_queue, stop, queue, timeout, -ETIMEDOUT);
+		return -ETIMEDOUT;
+	}
+
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_work_queue, stop, queue, timeout, 0);
+	return 0;
 }
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
