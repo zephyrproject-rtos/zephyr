@@ -115,6 +115,7 @@ static int init_configuration_inst(struct usbd_context *const uds_ctx,
 				   uint8_t *const nif)
 {
 	struct usb_desc_header **dhp;
+	struct usb_association_descriptor *iad = NULL;
 	struct usb_if_descriptor *ifd = NULL;
 	struct usb_ep_descriptor *ed;
 	uint32_t class_ep_bm = 0;
@@ -132,6 +133,14 @@ static int init_configuration_inst(struct usbd_context *const uds_ctx,
 	c_nd->ep_active = 0U;
 
 	while (*dhp != NULL && (*dhp)->bLength != 0) {
+		if ((*dhp)->bDescriptorType == USB_DESC_INTERFACE_ASSOC) {
+			iad = (struct usb_association_descriptor *)(*dhp);
+
+			/* IAD must be before interfaces it associates, so the
+			 * first interface will be the next interface assigned.
+			 */
+			iad->bFirstInterface = tmp_nif;
+		}
 
 		if ((*dhp)->bDescriptorType == USB_DESC_INTERFACE) {
 			ifd = (struct usb_if_descriptor *)(*dhp);
