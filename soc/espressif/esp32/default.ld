@@ -672,6 +672,33 @@ SECTIONS
     _data_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
+  /* --- SPIRAM BEGIN --- */
+
+#ifdef CONFIG_ESP_SPIRAM
+  .ext_ram.bss (NOLOAD):
+  {
+    _ext_ram_data_start = ABSOLUTE(.);
+
+#ifdef CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM
+    *libdrivers__wifi.a:(.noinit .noinit.*)
+    *libsubsys__net__l2__ethernet.a:(.noinit .noinit.*)
+    *libsubsys__net__lib__config.a:(.noinit .noinit.*)
+    *libsubsys__net__ip.a:(.noinit .noinit.*)
+    *libsubsys__net.a:(.noinit .noinit.*)
+#endif /* CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM */
+
+    _ext_ram_bss_start = ABSOLUTE(.);
+    *(.ext_ram.bss*)
+    _ext_ram_bss_end = ABSOLUTE(.);
+    _spiram_heap_start = ABSOLUTE(.);
+    . = . + CONFIG_ESP_SPIRAM_HEAP_SIZE;
+
+    _ext_ram_data_end = ABSOLUTE(.);
+  } GROUP_LINK_IN(ext_ram_seg)
+#endif /* CONFIG_ESP_SPIRAM */
+
+  /* --- SPIRAM END --- */
+
   /* Shared RAM */
   .dram0.bss (NOLOAD) :
   {
@@ -722,33 +749,6 @@ SECTIONS
   ASSERT(((_end - ORIGIN(dram0_0_seg)) <= LENGTH(dram0_0_seg)), "DRAM data does not fit.")
 
   /* --- DRAM END --- */
-
-  /* --- SPIRAM BEGIN --- */
-
-#ifdef CONFIG_ESP_SPIRAM
-  .ext_ram.bss (NOLOAD):
-  {
-    _ext_ram_data_start = ABSOLUTE(.);
-
-#ifdef CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM
-    *libdrivers__wifi.a:(.noinit .noinit.*)
-    *libsubsys__net__l2__ethernet.a:(.noinit .noinit.*)
-    *libsubsys__net__lib__config.a:(.noinit .noinit.*)
-    *libsubsys__net__ip.a:(.noinit .noinit.*)
-    *libsubsys__net.a:(.noinit .noinit.*)
-#endif /* CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM */
-
-    _ext_ram_bss_start = ABSOLUTE(.);
-    *(.ext_ram.bss*)
-    _ext_ram_bss_end = ABSOLUTE(.);
-    _spiram_heap_start = ABSOLUTE(.);
-    . = . + CONFIG_ESP_SPIRAM_HEAP_SIZE;
-
-    _ext_ram_data_end = ABSOLUTE(.);
-  } GROUP_LINK_IN(ext_ram_seg)
-#endif /* CONFIG_ESP_SPIRAM */
-
-  /* --- SPIRAM END --- */
 
   /* --- RODATA BEGIN --- */
 
