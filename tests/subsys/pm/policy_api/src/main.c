@@ -308,29 +308,29 @@ ZTEST(policy_api, test_pm_policy_events)
 {
 	struct pm_policy_event evt1;
 	struct pm_policy_event evt2;
-	uint32_t now_cycle;
-	uint32_t evt1_1_cycle;
-	uint32_t evt1_2_cycle;
-	uint32_t evt2_cycle;
+	int64_t now_uptime_ticks;
+	int64_t evt1_1_uptime_ticks;
+	int64_t evt1_2_uptime_ticks;
+	int64_t evt2_uptime_ticks;
 
-	now_cycle = k_cycle_get_32();
-	evt1_1_cycle = now_cycle + k_ticks_to_cyc_floor32(100);
-	evt1_2_cycle = now_cycle + k_ticks_to_cyc_floor32(200);
-	evt2_cycle = now_cycle + k_ticks_to_cyc_floor32(2000);
+	now_uptime_ticks = k_uptime_ticks();
+	evt1_1_uptime_ticks = now_uptime_ticks + 100;
+	evt1_2_uptime_ticks = now_uptime_ticks + 200;
+	evt2_uptime_ticks = now_uptime_ticks + 2000;
 
 	zassert_equal(pm_policy_next_event_ticks(), -1);
-	pm_policy_event_register(&evt1, evt1_1_cycle);
-	pm_policy_event_register(&evt2, evt2_cycle);
+	pm_policy_event_register(&evt1, evt1_1_uptime_ticks);
+	pm_policy_event_register(&evt2, evt2_uptime_ticks);
 	zassert_within(pm_policy_next_event_ticks(), 100, 50);
 	pm_policy_event_unregister(&evt1);
 	zassert_within(pm_policy_next_event_ticks(), 2000, 50);
 	pm_policy_event_unregister(&evt2);
 	zassert_equal(pm_policy_next_event_ticks(), -1);
-	pm_policy_event_register(&evt2, evt2_cycle);
+	pm_policy_event_register(&evt2, evt2_uptime_ticks);
 	zassert_within(pm_policy_next_event_ticks(), 2000, 50);
-	pm_policy_event_register(&evt1, evt1_1_cycle);
+	pm_policy_event_register(&evt1, evt1_1_uptime_ticks);
 	zassert_within(pm_policy_next_event_ticks(), 100, 50);
-	pm_policy_event_update(&evt1, evt1_2_cycle);
+	pm_policy_event_update(&evt1, evt1_2_uptime_ticks);
 	zassert_within(pm_policy_next_event_ticks(), 200, 50);
 	pm_policy_event_unregister(&evt1);
 	pm_policy_event_unregister(&evt2);
