@@ -69,6 +69,7 @@ if(CONFIG_HAS_RPI_PICO)
 
   zephyr_include_directories(
     ${common_dir}/pico_base_headers/include
+    ${rp2_common_dir}/boot_bootrom_headers/include
     ${rp2_common_dir}/hardware_base/include
     ${rp2_common_dir}/hardware_clocks/include
     ${rp2_common_dir}/hardware_watchdog/include
@@ -82,6 +83,7 @@ if(CONFIG_HAS_RPI_PICO)
     ${rp2_common_dir}/hardware_ticks/include
     ${rp2_common_dir}/hardware_sync_spin_lock/include
     ${rp2_common_dir}/pico_bootrom/include
+    ${rp2_common_dir}/pico_flash/include
     ${rp2_common_dir}/pico_platform_compiler/include
     ${rp2_common_dir}/pico_platform_sections/include
     ${rp2_common_dir}/pico_platform_panic/include
