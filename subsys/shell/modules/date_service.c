@@ -42,7 +42,6 @@ static int get_y_m_d(const struct shell *sh, struct tm *t, char *date_str)
 	int day;
 	char *endptr;
 
-	endptr = NULL;
 	year = strtol(date_str, &endptr, 10);
 	if ((endptr == date_str) || (*endptr != '-')) {
 		return -EINVAL;
@@ -50,7 +49,6 @@ static int get_y_m_d(const struct shell *sh, struct tm *t, char *date_str)
 
 	date_str = endptr + 1;
 
-	endptr = NULL;
 	month = strtol(date_str, &endptr, 10);
 	if ((endptr == date_str) || (*endptr != '-')) {
 		return -EINVAL;
@@ -63,7 +61,6 @@ static int get_y_m_d(const struct shell *sh, struct tm *t, char *date_str)
 
 	date_str = endptr + 1;
 
-	endptr = NULL;
 	day = strtol(date_str, &endptr, 10);
 	if ((endptr == date_str) || (*endptr != '\0')) {
 		return -EINVAL;
@@ -94,7 +91,6 @@ static int get_h_m_s(const struct shell *sh, struct tm *t, char *time_str)
 	if (*time_str == ':') {
 		time_str++;
 	} else {
-		endptr = NULL;
 		t->tm_hour = strtol(time_str, &endptr, 10);
 		if (endptr == time_str) {
 			return -EINVAL;
@@ -113,7 +109,6 @@ static int get_h_m_s(const struct shell *sh, struct tm *t, char *time_str)
 	if (*time_str == ':') {
 		time_str++;
 	} else {
-		endptr = NULL;
 		t->tm_min = strtol(time_str, &endptr, 10);
 		if (endptr == time_str) {
 			return -EINVAL;
@@ -129,7 +124,6 @@ static int get_h_m_s(const struct shell *sh, struct tm *t, char *time_str)
 		}
 	}
 
-	endptr = NULL;
 	t->tm_sec = strtol(time_str, &endptr, 10);
 	if ((endptr == time_str) || (*endptr != '\0')) {
 		return -EINVAL;
