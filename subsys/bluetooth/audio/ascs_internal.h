@@ -14,6 +14,7 @@
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/sys/util.h>
 
 #define BT_ASCS_ASE_ID_NONE              0x00
 
@@ -34,13 +35,13 @@
 struct bt_ascs_ase_status {
 	uint8_t  id;
 	uint8_t  state;
-	uint8_t  params[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, params);
 } __packed;
 
 struct bt_ascs_codec_config {
 	uint8_t len;
 	uint8_t type;
-	uint8_t data[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, data);
 } __packed;
 
 struct bt_ascs_codec {
@@ -64,7 +65,7 @@ struct bt_ascs_ase_status_config {
 	struct bt_ascs_codec codec;
 	uint8_t  cc_len;
 	/* LTV-formatted Codec-Specific Configuration */
-	struct bt_ascs_codec_config cc[0];
+	FLEXIBLE_ARRAY_DECLARE(struct bt_ascs_codec_config, cc);
 } __packed;
 
 /* ASE_State = 0x02 (QoS Configured), defined in Table 4.4. */
@@ -86,7 +87,7 @@ struct bt_ascs_ase_status_enable {
 	uint8_t  cig_id;
 	uint8_t  cis_id;
 	uint8_t  metadata_len;
-	uint8_t  metadata[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, metadata);
 } __packed;
 
 /* ASE_Status =  0x04 (Streaming) defined in Table 4.5.
@@ -95,7 +96,7 @@ struct bt_ascs_ase_status_stream {
 	uint8_t  cig_id;
 	uint8_t  cis_id;
 	uint8_t  metadata_len;
-	uint8_t  metadata[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, metadata);
 } __packed;
 
 /* ASE_Status = 0x05 (Disabling) as defined in Table 4.5.
@@ -104,14 +105,14 @@ struct bt_ascs_ase_status_disable {
 	uint8_t  cig_id;
 	uint8_t  cis_id;
 	uint8_t  metadata_len;
-	uint8_t  metadata[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, metadata);
 } __packed;
 
 /* ASE Control Point Protocol */
 struct bt_ascs_ase_cp {
 	/* Request/Notification opcode */
 	uint8_t  op;
-	uint8_t  pdu[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, pdu);
 } __packed;
 
 /* Opcodes */
@@ -137,14 +138,14 @@ struct bt_ascs_config {
 	/* Codec Specific Config Length */
 	uint8_t  cc_len;
 	/* LTV-formatted Codec-Specific Configuration */
-	struct bt_ascs_codec_config cc[0];
+	FLEXIBLE_ARRAY_DECLARE(struct bt_ascs_codec_config, cc);
 } __packed;
 
 struct bt_ascs_config_op {
 	/* Number of ASEs */
 	uint8_t  num_ases;
 	/* Config Parameters */
-	struct bt_ascs_config cfg[0];
+	FLEXIBLE_ARRAY_DECLARE(struct bt_ascs_codec_config, cfg);
 } __packed;
 
 #define BT_ASCS_QOS_OP                   0x02
@@ -175,7 +176,7 @@ struct bt_ascs_qos_op {
 	/* Number of ASEs */
 	uint8_t  num_ases;
 	/* QoS Parameters */
-	struct bt_ascs_qos qos[0];
+	FLEXIBLE_ARRAY_DECLARE(struct bt_ascs_qos, qos);
 } __packed;
 
 #define BT_ASCS_ENABLE_OP                0x03
@@ -185,14 +186,14 @@ struct bt_ascs_metadata {
 	/* Metadata length */
 	uint8_t  len;
 	/* LTV-formatted Metadata */
-	uint8_t  data[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, data);
 } __packed;
 
 struct bt_ascs_enable_op {
 	/* Number of ASEs */
 	uint8_t  num_ases;
 	/* Metadata */
-	struct bt_ascs_metadata metadata[0];
+	FLEXIBLE_ARRAY_DECLARE(struct bt_ascs_metadata, metadata);
 } __packed;
 
 #define BT_ASCS_START_OP                 0x04
@@ -200,7 +201,7 @@ struct bt_ascs_start_op {
 	/* Number of ASEs */
 	uint8_t  num_ases;
 	/* ASE IDs */
-	uint8_t  ase[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, ase);
 } __packed;
 
 #define BT_ASCS_DISABLE_OP               0x05
@@ -208,7 +209,7 @@ struct bt_ascs_disable_op {
 	/* Number of ASEs */
 	uint8_t  num_ases;
 	/* ASE IDs */
-	uint8_t  ase[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, ase);
 } __packed;
 
 #define BT_ASCS_STOP_OP                  0x06
@@ -216,7 +217,7 @@ struct bt_ascs_stop_op {
 	/* Number of ASEs */
 	uint8_t  num_ases;
 	/* ASE IDs */
-	uint8_t  ase[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, ase);
 } __packed;
 
 #define BT_ASCS_METADATA_OP              0x07
@@ -224,7 +225,7 @@ struct bt_ascs_metadata_op {
 	/* Number of ASEs */
 	uint8_t  num_ases;
 	/* Metadata */
-	struct bt_ascs_metadata metadata[0];
+	FLEXIBLE_ARRAY_DECLARE(struct bt_ascs_metadata, metadata);
 } __packed;
 
 #define BT_ASCS_RELEASE_OP              0x08
@@ -232,7 +233,7 @@ struct bt_ascs_release_op {
 	/* Number of ASEs */
 	uint8_t  num_ases;
 	/* Ase IDs */
-	uint8_t  ase[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, ase);
 } __packed;
 
 struct bt_ascs_cp_ase_rsp {
@@ -250,7 +251,7 @@ struct bt_ascs_cp_rsp {
 	/* Number of ASEs */
 	uint8_t  num_ase;
 	/* ASE response */
-	struct bt_ascs_cp_ase_rsp ase_rsp[0];
+	FLEXIBLE_ARRAY_DECLARE(struct bt_ascs_cp_ase_rsp, ase_rsp);
 } __packed;
 
 static inline const char *bt_ascs_op_str(uint8_t op)

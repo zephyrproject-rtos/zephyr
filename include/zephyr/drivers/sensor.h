@@ -926,7 +926,7 @@ struct __attribute__((__packed__)) sensor_data_generic_header {
 	int8_t _padding[sizeof(struct sensor_chan_spec) - 1];
 
 	/* Channels present in the frame */
-	struct sensor_chan_spec channels[0];
+	FLEXIBLE_ARRAY_DECLARE(struct sensor_chan_spec, channels);
 };
 
 /**

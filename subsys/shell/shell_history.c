@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/shell/shell_history.h>
+#include <zephyr/sys/util.h>
 #include <string.h>
 
 /*
@@ -42,7 +43,7 @@ struct shell_history_item {
 	sys_dnode_t dnode;
 	uint16_t len;
 	uint16_t padding;
-	char data[0];
+	FLEXIBLE_ARRAY_DECLARE(char, data);
 };
 
 void z_shell_history_mode_exit(struct shell_history *history)

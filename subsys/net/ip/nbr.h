@@ -12,6 +12,7 @@
 
 #include <stddef.h>
 #include <zephyr/types.h>
+#include <zephyr/sys/util.h>
 #include <stdbool.h>
 
 #include <zephyr/net/net_if.h>
@@ -68,7 +69,7 @@ struct net_nbr {
 	/** Start of the data storage. Not to be accessed directly
 	 *  (the data pointer should be used instead).
 	 */
-	uint8_t __nbr[0] __net_nbr_align;
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, __nbr) __net_nbr_align;
 };
 
 /* This is an array of struct net_nbr + some additional data */

@@ -9,6 +9,7 @@
 
 #include <stdint.h>
 
+#include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 
 #define BT_AUDIO_LOCATION_MASK BIT_MASK(28)
@@ -22,12 +23,12 @@ struct bt_pac_codec {
 struct bt_pac_ltv {
 	uint8_t  len;
 	uint8_t  type;
-	uint8_t  value[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, value);
 } __packed;
 
 struct bt_pac_ltv_data {
 	uint8_t  len;
-	struct bt_pac_ltv data[0];
+	FLEXIBLE_ARRAY_DECLARE(struct bt_pac_ltv, data);
 } __packed;
 
 struct bt_pacs_read_rsp {
