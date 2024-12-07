@@ -13,14 +13,14 @@
 #include "common.h"
 #include <string.h>
 
-LOG_MODULE_REGISTER(stream_tx, LOG_LEVEL_INF);
+LOG_MODULE_REGISTER(bap_stream_rx, LOG_LEVEL_INF);
 
 static void log_stream_rx(struct bt_bap_stream *stream, const struct bt_iso_recv_info *info,
 			  struct net_buf *buf)
 {
 	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
 
-	LOG_INF("[%zu]: Incoming audio on stream %p len %u, flags 0x%02X, seq_num %u and ts %u\n",
+	LOG_INF("[%zu]: Incoming audio on stream %p len %u, flags 0x%02X, seq_num %u and ts %u",
 		test_stream->rx_cnt, stream, buf->len, info->flags, info->seq_num, info->ts);
 }
 
