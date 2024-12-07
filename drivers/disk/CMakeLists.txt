@@ -15,4 +15,6 @@ zephyr_library_sources_ifdef(CONFIG_MMC_SUBSYS mmc_subsys.c)
 
 add_subdirectory_ifdef(CONFIG_NVME nvme)
 
+zephyr_linker_sources_ifdef(CONFIG_DISK_DRIVER_RAM RWDATA ramdisk.ld)
+
 endif()
