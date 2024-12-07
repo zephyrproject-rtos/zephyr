@@ -18,6 +18,12 @@ the :ref:`release notes<zephyr_4.1>`.
 Build System
 ************
 
+BOSSA Runner
+============
+
+The ``bossac`` runner has been changed to no longer do a full erase by default when flashing. To
+perform a full erase, pass the ``--erase`` option when executing ``west flash``.
+
 Kernel
 ******
 
