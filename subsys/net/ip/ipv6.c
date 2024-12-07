@@ -30,6 +30,7 @@ LOG_MODULE_REGISTER(net_ipv6, CONFIG_NET_IPV6_LOG_LEVEL);
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/virtual.h>
+#include <zephyr/net/conn_mgr_monitor.h>
 #include "net_private.h"
 #include "connection.h"
 #include "icmpv6.h"
@@ -820,6 +821,7 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 	NET_DBG("%s verdict %s", "Connection", net_verdict2str(verdict));
 
 	if (verdict != NET_DROP) {
+		conn_mgr_online_checker_update(pkt, hdr, AF_INET6, is_loopback);
 		return verdict;
 	}
 
