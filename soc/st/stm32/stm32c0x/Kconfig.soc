@@ -1,6 +1,6 @@
 # STMicroelectronics STM32C0 MCU line
 
-# Copyright (c) 2023 Benjamin Björnsson <benjamin.bjornsson@gmail.com>
+# Copyright (c) 2024 STMicroelectronics
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_STM32C0X
@@ -10,14 +10,19 @@ config SOC_SERIES_STM32C0X
 config SOC_SERIES
 	default "stm32c0x" if SOC_SERIES_STM32C0X
 
+config SOC_STM32C011XX
+	bool
+	select SOC_SERIES_STM32C0X
+
 config SOC_STM32C031XX
 	bool
 	select SOC_SERIES_STM32C0X
 
-config SOC_STM32C011XX
+config SOC_STM32C071XX
 	bool
 	select SOC_SERIES_STM32C0X
 
 config SOC
 	default "stm32c011xx" if SOC_STM32C011XX
 	default "stm32c031xx" if SOC_STM32C031XX
+	default "stm32c071xx" if SOC_STM32C071XX
