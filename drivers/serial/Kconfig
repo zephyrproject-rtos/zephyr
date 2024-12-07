@@ -219,6 +219,8 @@ rsource "Kconfig.xlnx"
 rsource "Kconfig.xmc4xxx"
 # zephyr-keep-sorted-stop
 
+rsource "Kconfig.bflb"
+
 source "drivers/serial/Kconfig.si32"
 
 source "drivers/serial/Kconfig.wch_usart"

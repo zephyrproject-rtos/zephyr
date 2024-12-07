@@ -14,6 +14,7 @@ osource "$(KCONFIG_BINARY_DIR)/Kconfig.modules"
 
 source "modules/Kconfig.altera"
 source "modules/Kconfig.atmel"
+source "modules/Kconfig.bouffalolab"
 source "modules/Kconfig.chre"
 source "modules/Kconfig.cypress"
 source "modules/Kconfig.eos_s3"
@@ -57,6 +58,9 @@ comment "Unavailable modules, please install those via the project manifest."
 # ---------------------------------------------------
 # config ZEPHYR_<MODULE_NAME_UPPER>_MODULE
 # 	bool
+
+comment "hal_bouffalolab module not available."
+	depends on !ZEPHYR_HAL_BOUFFALOLAB_MODULE
 
 comment "hal_gigadevice module not available."
 	depends on !ZEPHYR_HAL_GIGADEVICE_MODULE

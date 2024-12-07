@@ -1,0 +1,7 @@
+# Copyright (c) 2021-2024 Gerson Fernando Budke <nandojve@gmail.com>
+# Copyright (c) 2024 MASSDRIVER EI (massdriver.space)
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_HAL_BOUFFALOLAB_MODULE
+	bool
