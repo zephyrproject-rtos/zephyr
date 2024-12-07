@@ -91,9 +91,11 @@ Zephyr SDK installation
 
          .. parsed-literal::
 
-            cd ~
-            wget |sdk-url-linux|
-            wget -O - |sdk-url-linux-sha| | shasum --check --ignore-missing
+            .. code-block:: bash
+
+               cd ~
+               wget |sdk-url-linux|
+               wget -O - |sdk-url-linux-sha| | shasum --check --ignore-missing
 
          If your host architecture is 64-bit ARM (for example, Raspberry Pi), replace ``x86_64``
          with ``aarch64`` in order to download the 64-bit ARM Linux SDK.
@@ -102,7 +104,9 @@ Zephyr SDK installation
 
          .. parsed-literal::
 
-            tar xvf zephyr-sdk- |sdk-version-trim| _linux-x86_64.tar.xz
+            .. code-block:: bash
+
+               tar xvf zephyr-sdk- |sdk-version-trim| _linux-x86_64.tar.xz
 
          .. note::
             It is recommended to extract the Zephyr SDK bundle at one of the following locations:
@@ -122,8 +126,10 @@ Zephyr SDK installation
 
          .. parsed-literal::
 
-            cd zephyr-sdk- |sdk-version-ltrim|
-            ./setup.sh
+            .. code-block:: bash
+
+               cd zephyr-sdk- |sdk-version-ltrim|
+               ./setup.sh
 
          .. note::
             You only need to run the setup script once after extracting the Zephyr SDK bundle.
@@ -136,8 +142,10 @@ Zephyr SDK installation
 
          .. parsed-literal::
 
-            sudo cp ~/zephyr-sdk- |sdk-version-trim| /sysroots/x86_64-pokysdk-linux/usr/share/openocd/contrib/60-openocd.rules /etc/udev/rules.d
-            sudo udevadm control --reload
+            .. code-block:: bash
+
+               sudo cp ~/zephyr-sdk- |sdk-version-trim| /sysroots/x86_64-pokysdk-linux/usr/share/openocd/contrib/60-openocd.rules /etc/udev/rules.d
+               sudo udevadm control --reload
 
    .. group-tab:: macOS
 
@@ -147,9 +155,11 @@ Zephyr SDK installation
 
          .. parsed-literal::
 
-            cd ~
-            curl -L -O |sdk-url-macos|
-            curl -L |sdk-url-macos-sha| | shasum --check --ignore-missing
+            .. code-block:: bash
+
+               cd ~
+               curl -L -O |sdk-url-macos|
+               curl -L |sdk-url-macos-sha| | shasum --check --ignore-missing
 
          If your host architecture is 64-bit ARM (Apple Silicon), replace
          ``x86_64`` with ``aarch64`` in order to download the 64-bit ARM macOS SDK.
@@ -158,7 +168,9 @@ Zephyr SDK installation
 
          .. parsed-literal::
 
-            tar xvf zephyr-sdk- |sdk-version-trim| _macos-x86_64.tar.xz
+            .. code-block:: bash
+
+               tar xvf zephyr-sdk- |sdk-version-trim| _macos-x86_64.tar.xz
 
          .. note::
             It is recommended to extract the Zephyr SDK bundle at one of the following locations:
@@ -178,8 +190,10 @@ Zephyr SDK installation
 
          .. parsed-literal::
 
-            cd zephyr-sdk- |sdk-version-ltrim|
-            ./setup.sh
+            .. code-block:: bash
+
+               cd zephyr-sdk- |sdk-version-ltrim|
+               ./setup.sh
 
          .. note::
             You only need to run the setup script once after extracting the Zephyr SDK bundle.
@@ -197,14 +211,18 @@ Zephyr SDK installation
 
          .. parsed-literal::
 
-            cd %HOMEPATH%
-            wget |sdk-url-windows|
+            .. code-block:: bash
+
+               cd %HOMEPATH%
+               wget |sdk-url-windows|
 
       #. Extract the Zephyr SDK bundle archive:
 
          .. parsed-literal::
 
-            7z x zephyr-sdk- |sdk-version-trim| _windows-x86_64.7z
+            .. code-block:: bash
+
+               7z x zephyr-sdk- |sdk-version-trim| _windows-x86_64.7z
 
          .. note::
             It is recommended to extract the Zephyr SDK bundle at one of the following locations:
@@ -220,8 +238,10 @@ Zephyr SDK installation
 
          .. parsed-literal::
 
-            cd zephyr-sdk- |sdk-version-ltrim|
-            setup.cmd
+            .. code-block:: bash
+
+               cd zephyr-sdk- |sdk-version-ltrim|
+               setup.cmd
 
          .. note::
             You only need to run the setup script once after extracting the Zephyr SDK bundle.
