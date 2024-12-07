@@ -43,3 +43,17 @@ properties:
     description: |
       Configures which pins (SDO and SDI) are used for input and output data
       during single bit transfers.
+
+  rx-fifo-size:
+    type: int
+    default: 8
+    description: |
+      Max number of words in the RX fifo on this instance of the LPSPI.
+      The default of 8 is the smallest found on any chips known at time of writing.
+
+  tx-fifo-size:
+    type: int
+    default: 8
+    description: |
+      Max number of words in the TX/Command fifo on this instance of the LPSPI.
+      The default of 8 is the smallest found on any chips known at time of writing.

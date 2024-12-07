@@ -29,8 +29,8 @@ LOG_MODULE_REGISTER(spi_mcux_lpspi, CONFIG_SPI_LOG_LEVEL);
 /* If any hardware revisions change this, make it into a DT property.
  * DONT'T make #ifdefs here by platform.
  */
-#define CHIP_SELECT_COUNT 4
-#define MAX_DATA_WIDTH    4096
+#define LPSPI_CHIP_SELECT_COUNT   4
+#define LPSPI_MIN_FRAME_SIZE_BITS 8
 
 /* Required by DEVICE_MMIO_NAMED_* macros */
 #define DEV_CFG(_dev)  ((const struct spi_mcux_config *)(_dev)->config)
@@ -70,6 +70,8 @@ struct spi_mcux_config {
 	uint32_t transfer_delay;
 	const struct pinctrl_dev_config *pincfg;
 	lpspi_pin_config_t data_pin_config;
+	uint8_t tx_fifo_size;
+	uint8_t rx_fifo_size;
 };
 
 struct spi_mcux_data {
@@ -90,10 +92,53 @@ struct spi_mcux_data {
 #endif
 };
 
-static int spi_mcux_transfer_next_packet(const struct device *dev);
-#ifdef CONFIG_SPI_RTIO
-static void spi_mcux_iodev_complete(const struct device *dev, int status);
-#endif
+static int lpspi_do_single_buf_transfer(const struct device *dev, lpspi_transfer_t *xfer)
+{
+	struct spi_mcux_data *data = dev->data;
+	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
+	status_t status;
+
+	status = LPSPI_MasterTransferNonBlocking(base, &data->handle, xfer);
+	if (status != kStatus_Success) {
+		LOG_ERR("Transfer could not start on %s: %d", dev->name, status);
+		return status == kStatus_LPSPI_Busy ? -EBUSY : -EINVAL;
+	}
+
+	return 0;
+}
+
+static void lpspi_prepare_transfer_single_buffer(const struct device *dev, lpspi_transfer_t *xfer)
+{
+	struct spi_mcux_data *data = dev->data;
+	struct spi_context *ctx = &data->ctx;
+	size_t max_chunk = spi_context_max_continuous_chunk(ctx);
+
+	data->transfer_len = max_chunk;
+
+	xfer->configFlags = LPSPI_MASTER_XFER_CFG_FLAGS(ctx->config->slave);
+	xfer->txData = (ctx->tx_len == 0 ? NULL : ctx->tx_buf);
+	xfer->rxData = (ctx->rx_len == 0 ? NULL : ctx->rx_buf);
+	xfer->dataSize = max_chunk;
+
+	return;
+}
+
+static int lpspi_transfer_single_buffer(const struct device *dev)
+{
+	struct spi_mcux_data *data = dev->data;
+	struct spi_context *ctx = &data->ctx;
+	lpspi_transfer_t xfer;
+
+	if (spi_context_max_continuous_chunk(ctx) == 0) {
+		spi_context_cs_control(ctx, false);
+		spi_context_complete(ctx, dev, 0);
+		return 0;
+	}
+
+	lpspi_prepare_transfer_single_buffer(dev, &xfer);
+
+	return lpspi_do_single_buf_transfer(dev, &xfer);
+}
 
 static void spi_mcux_isr(const struct device *dev)
 {
@@ -103,54 +148,16 @@ static void spi_mcux_isr(const struct device *dev)
 	LPSPI_MasterTransferHandleIRQ(LPSPI_IRQ_HANDLE_ARG, &data->handle);
 }
 
+/* called by the isr */
 static void spi_mcux_master_callback(LPSPI_Type *base, lpspi_master_handle_t *handle,
 				     status_t status, void *userData)
 {
 	struct spi_mcux_data *data = userData;
 
-#ifdef CONFIG_SPI_RTIO
-	struct spi_rtio *rtio_ctx = data->rtio_ctx;
-
-	if (rtio_ctx->txn_head != NULL) {
-		spi_mcux_iodev_complete(data->dev, status);
-		return;
-	}
-#endif
 	spi_context_update_tx(&data->ctx, 1, data->transfer_len);
 	spi_context_update_rx(&data->ctx, 1, data->transfer_len);
 
-	spi_mcux_transfer_next_packet(data->dev);
-}
-
-static int spi_mcux_transfer_next_packet(const struct device *dev)
-{
-	struct spi_mcux_data *data = dev->data;
-	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
-	struct spi_context *ctx = &data->ctx;
-	size_t max_chunk = spi_context_max_continuous_chunk(ctx);
-	lpspi_transfer_t transfer;
-	status_t status;
-
-	if (max_chunk == 0) {
-		spi_context_cs_control(ctx, false);
-		spi_context_complete(ctx, dev, 0);
-		return 0;
-	}
-
-	data->transfer_len = max_chunk;
-
-	transfer.configFlags = LPSPI_MASTER_XFER_CFG_FLAGS(ctx->config->slave);
-	transfer.txData = (ctx->tx_len == 0 ? NULL : ctx->tx_buf);
-	transfer.rxData = (ctx->rx_len == 0 ? NULL : ctx->rx_buf);
-	transfer.dataSize = max_chunk;
-
-	status = LPSPI_MasterTransferNonBlocking(base, &data->handle, &transfer);
-	if (status != kStatus_Success) {
-		LOG_ERR("Transfer could not start on %s: %d", dev->name, status);
-		return status == kStatus_LPSPI_Busy ? -EBUSY : -EINVAL;
-	}
-
-	return 0;
+	lpspi_transfer_single_buffer(data->dev);
 }
 
 static int spi_mcux_configure(const struct device *dev, const struct spi_config *spi_cfg)
@@ -161,29 +168,35 @@ static int spi_mcux_configure(const struct device *dev, const struct spi_config 
 	uint32_t word_size = SPI_WORD_SIZE_GET(spi_cfg->operation);
 	lpspi_master_config_t master_config;
 	uint32_t clock_freq;
+	int ret;
 
 	if (spi_cfg->operation & SPI_HALF_DUPLEX) {
+		/* the IP DOES support half duplex, need to implement driver support */
 		LOG_ERR("Half-duplex not supported");
 		return -ENOTSUP;
 	}
 
-	if (spi_cfg->slave > CHIP_SELECT_COUNT) {
-		LOG_ERR("Slave %d is greater than %d", spi_cfg->slave, CHIP_SELECT_COUNT);
+	if (word_size < 8 || (word_size % 32 == 1)) {
+		/* Zephyr word size == hardware FRAME size (not word size)
+		 * Max frame size: 4096 bits
+		 *   (zephyr field is 6 bit wide for max 64 bit size, no need to check)
+		 * Min frame size: 8 bits.
+		 * Minimum hardware word size is 2. Since this driver is intended to work
+		 * for 32 bit platforms, and 64 bits is max size, then only 33 and 1 are invalid.
+		 */
+		LOG_ERR("Word size %d not allowed", word_size);
 		return -EINVAL;
 	}
 
-	if (word_size > MAX_DATA_WIDTH) {
-		LOG_ERR("Word size %d is greater than %d", word_size, MAX_DATA_WIDTH);
+	if (spi_cfg->slave > LPSPI_CHIP_SELECT_COUNT) {
+		LOG_ERR("Peripheral %d select exceeds max %d", spi_cfg->slave,
+			LPSPI_CHIP_SELECT_COUNT - 1);
 		return -EINVAL;
 	}
 
-	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("clock control device not ready");
-		return -ENODEV;
-	}
-
-	if (clock_control_get_rate(config->clock_dev, config->clock_subsys, &clock_freq)) {
-		return -EINVAL;
+	ret = clock_control_get_rate(config->clock_dev, config->clock_subsys, &clock_freq);
+	if (ret) {
+		return ret;
 	}
 
 	if (data->ctx.config != NULL) {
@@ -198,10 +211,6 @@ static int spi_mcux_configure(const struct device *dev, const struct spi_config 
 			 * completed the current transfer and is idle.
 			 */
 		}
-	}
-
-	if (IS_ENABLED(CONFIG_DEBUG)) {
-		base->CR |= LPSPI_CR_DBGEN_MASK;
 	}
 
 	data->ctx.config = spi_cfg;
@@ -224,8 +233,11 @@ static int spi_mcux_configure(const struct device *dev, const struct spi_config 
 	master_config.pinCfg = config->data_pin_config;
 
 	LPSPI_MasterInit(base, &master_config, clock_freq);
-	LPSPI_MasterTransferCreateHandle(base, &data->handle, spi_mcux_master_callback, data);
 	LPSPI_SetDummyData(base, 0);
+
+	if (IS_ENABLED(CONFIG_DEBUG)) {
+		base->CR |= LPSPI_CR_DBGEN_MASK;
+	}
 
 	return 0;
 }
@@ -531,6 +543,22 @@ out:
 #endif /* CONFIG_SPI_MCUX_LPSPI_DMA */
 
 #ifdef CONFIG_SPI_RTIO
+static void spi_mcux_iodev_complete(const struct device *dev, int status);
+
+static void spi_mcux_master_rtio_callback(LPSPI_Type *base, lpspi_master_handle_t *handle,
+					  status_t status, void *userData)
+{
+	struct spi_mcux_data *data = userData;
+	struct spi_rtio *rtio_ctx = data->rtio_ctx;
+
+	if (rtio_ctx->txn_head != NULL) {
+		spi_mcux_iodev_complete(data->dev, status);
+		return;
+	}
+
+	spi_mcux_master_callback(base, handle, status, userData);
+}
+
 static void spi_mcux_iodev_start(const struct device *dev)
 {
 	struct spi_mcux_data *data = dev->data;
@@ -547,6 +575,8 @@ static void spi_mcux_iodev_start(const struct device *dev)
 		LOG_ERR("Error configuring lpspi");
 		return;
 	}
+
+	LPSPI_MasterTransferCreateHandle(base, &data->handle, spi_mcux_master_rtio_callback, data);
 
 	transfer.configFlags = LPSPI_MASTER_XFER_CFG_FLAGS(spi_cfg->slave);
 
@@ -581,9 +611,8 @@ static void spi_mcux_iodev_start(const struct device *dev)
 
 	spi_context_cs_control(&data->ctx, true);
 
-	status = LPSPI_MasterTransferNonBlocking(base, &data->handle, &transfer);
-	if (status != kStatus_Success) {
-		LOG_ERR("Transfer could not start on %s: %d", dev->name, status);
+	status = lpspi_do_single_buf_transfer(dev, &transfer);
+	if (status) {
 		spi_mcux_iodev_complete(dev, -EIO);
 	}
 }
@@ -641,6 +670,7 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 		      const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs,
 		      bool asynchronous, spi_callback_t cb, void *userdata)
 {
+	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 	struct spi_mcux_data *data = dev->data;
 	int ret;
 
@@ -651,16 +681,19 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 		goto out;
 	}
 
+	LPSPI_MasterTransferCreateHandle(base, &data->handle, spi_mcux_master_callback, data);
+
 	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
 
 	spi_context_cs_control(&data->ctx, true);
 
-	ret = spi_mcux_transfer_next_packet(dev);
+	ret = lpspi_transfer_single_buffer(dev);
 	if (ret) {
 		goto out;
 	}
 
 	ret = spi_context_wait_for_completion(&data->ctx);
+
 out:
 	spi_context_release(&data->ctx, ret);
 
@@ -750,6 +783,11 @@ static int spi_mcux_init(const struct device *dev)
 	DEVICE_MMIO_NAMED_MAP(dev, reg_base, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
 
 	data->dev = dev;
+
+	if (!device_is_ready(config->clock_dev)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
 
 	if (IS_ENABLED(CONFIG_SPI_MCUX_LPSPI_DMA) && lpspi_inst_has_dma(data)) {
 		err = lpspi_dma_devs_ready(data);
@@ -841,6 +879,8 @@ static int spi_mcux_init(const struct device *dev)
 					   DT_INST_PROP(n, transfer_delay)),                       \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
 		.data_pin_config = DT_INST_ENUM_IDX(n, data_pin_config),                           \
+		.rx_fifo_size = (uint8_t)DT_INST_PROP(n, rx_fifo_size),                            \
+		.tx_fifo_size = (uint8_t)DT_INST_PROP(n, tx_fifo_size),                            \
 	};                                                                                         \
                                                                                                    \
 	static struct spi_mcux_data spi_mcux_data_##n = {                                          \
