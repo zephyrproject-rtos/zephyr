@@ -18,10 +18,16 @@
 	};
 
 	chosen {
+		zephyr,hdlc_rcp_if = &hdlc_rcp_if;
 		zephyr,sram = &sram_data;
 		zephyr,flash = &w25q512jvfiq;
 		zephyr,console = &flexcomm3;
 		zephyr,shell-uart = &flexcomm3;
+	};
+
+	hdlc_rcp_if: hdlc_rcp_if {
+		compatible = "nxp,hdlc-rcp-if";
+		status = "okay";
 	};
 
 	leds {
