@@ -383,6 +383,22 @@ static void intel_adsp_hda_channels_init(const struct device *dev)
 #endif
 }
 
+int intel_adsp_hda_dma_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	ARG_UNUSED(dev);
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+	case PM_DEVICE_ACTION_SUSPEND:
+	case PM_DEVICE_ACTION_TURN_ON:
+	case PM_DEVICE_ACTION_TURN_OFF:
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
 int intel_adsp_hda_dma_init(const struct device *dev)
 {
 	struct intel_adsp_hda_dma_data *data = dev->data;
@@ -391,19 +407,8 @@ int intel_adsp_hda_dma_init(const struct device *dev)
 	data->ctx.dma_channels = cfg->dma_channels;
 	data->ctx.atomic = data->channels_atomic;
 	data->ctx.magic = DMA_MAGIC;
-#ifdef CONFIG_PM_DEVICE_RUNTIME
-	if (pm_device_on_power_domain(dev)) {
-		pm_device_init_off(dev);
-	} else {
-		intel_adsp_hda_channels_init(dev);
-		pm_device_init_suspended(dev);
-	}
-
-	return pm_device_runtime_enable(dev);
-#else
 	intel_adsp_hda_channels_init(dev);
-	return 0;
-#endif
+	return pm_device_driver_init(dev, intel_adsp_hda_dma_pm_action);
 }
 
 int intel_adsp_hda_dma_get_attribute(const struct device *dev, uint32_t type, uint32_t *value)
@@ -429,25 +434,6 @@ int intel_adsp_hda_dma_get_attribute(const struct device *dev, uint32_t type, ui
 
 	return 0;
 }
-
-#ifdef CONFIG_PM_DEVICE
-int intel_adsp_hda_dma_pm_action(const struct device *dev, enum pm_device_action action)
-{
-	switch (action) {
-	case PM_DEVICE_ACTION_RESUME:
-		intel_adsp_hda_channels_init(dev);
-		break;
-	case PM_DEVICE_ACTION_SUSPEND:
-	case PM_DEVICE_ACTION_TURN_ON:
-	case PM_DEVICE_ACTION_TURN_OFF:
-		break;
-	default:
-		return -ENOTSUP;
-	}
-
-	return 0;
-}
-#endif
 
 #define DEVICE_DT_GET_AND_COMMA(node_id) DEVICE_DT_GET(node_id),
 
