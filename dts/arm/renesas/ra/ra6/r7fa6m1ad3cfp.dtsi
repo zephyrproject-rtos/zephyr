@@ -24,6 +24,11 @@
 				reg = <0x0 DT_SIZE_K(512)>;
 			};
 		};
+
+		trng: trng {
+			compatible = "renesas,ra-sce7-rng";
+			status = "disabled";
+		};
 	};
 
 	clocks: clocks {
