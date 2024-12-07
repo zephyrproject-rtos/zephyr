@@ -109,7 +109,7 @@ static int is31fl3194_set_color(const struct device *dev, uint32_t led, uint8_t 
 			break;
 		default:
 			/* unreachable: mapping already tested in is31fl3194_check_config */
-			continue;
+			return -EINVAL;
 		}
 
 		ret = i2c_reg_write_byte_dt(&config->bus, led_channels[i], value);
