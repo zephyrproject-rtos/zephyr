@@ -6231,6 +6231,17 @@ int k_thread_runtime_stats_enable(k_tid_t thread);
 int k_thread_runtime_stats_disable(k_tid_t thread);
 
 /**
+ * @brief Check if runtime statistics gathering is enabled for a thread
+ *
+ * This routine checks whether the specified thread has enabled the of runtime
+ * statistics.
+ *
+ * @param thread ID of thread
+ * @return true if usage statistics are enabled for the given thread, otherwise false
+ */
+bool k_thread_runtime_stats_is_enabled(k_tid_t thread);
+
+/**
  * @brief Enable gathering of system runtime statistics
  *
  * This routine enables the gathering of system runtime statistics. Note that
