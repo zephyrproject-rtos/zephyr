@@ -1326,6 +1326,38 @@ Using Single Board For Multiple Variants
       runner: nrfjprog
       serial: /dev/ttyACM1
 
+Scripts Usage for platform
+++++++++++++++++++++++++++
+
+Below scripts are supported
+
+* pre_script: <path to pre script>
+
+* post_script: <path to pre script>
+
+* post_flash_script: <path to pre script>
+
+each of above scripts can have timeout defined as below in hardwar map file by script_param
+
+.. code-block:: yaml
+
+    - connected: false
+      id: 0229000005d9ebc600000000000000000000000097969905
+      platform: mimxrt1060_evk
+      probe_id: 000609301751
+      product: DAPLink CMSIS-DAP
+      runner: jlink
+      serial: null
+      pre_script: pre_scripts.sh
+      post_script: post_scripts.sh
+      post_flash_script: post_flash_scripts.sh
+      script_param:
+        "pre_script_timeout":  100
+        "post_script_timeout": 100
+        "post_flash_timeout":  100
+
+also a default patameter <testinstance.name> will be pass as fist parameter for scripts
+
 Quarantine
 ++++++++++
 
