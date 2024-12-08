@@ -63,6 +63,8 @@ The ``frdm_mcxc444`` board target supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | RTC       | on-chip    | counter                             |
 +-----------+------------+-------------------------------------+
+| USB       | on-chip    | USB device                          |
++-----------+------------+-------------------------------------+
 
 
 Targets available
