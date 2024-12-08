@@ -238,6 +238,7 @@ mikrobus_serial: &uart3 {};
 	status = "okay";
 	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
+	average-count = <4>;
 };
 
 &trng {
