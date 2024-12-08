@@ -160,6 +160,28 @@ const struct device *shell_device_filter(size_t idx,
 					 shell_device_filter_t filter);
 
 /**
+ * @brief Get a @ref device reference from its @ref device.name field or label.
+ *
+ * This function iterates through the devices on the system. If a device with
+ * the given @p name field is found, and that device initialized successfully at
+ * boot time, this function returns a pointer to the device.
+ *
+ * If no device has the given @p name, this function returns `NULL`.
+ *
+ * This function also returns NULL when a device is found, but it failed to
+ * initialize successfully at boot time. (To troubleshoot this case, set a
+ * breakpoint on your device driver's initialization function.)
+ *
+ * @param name device name to search for. A null pointer, or a pointer to an
+ * empty string, will cause NULL to be returned.
+ *
+ * @return pointer to device structure with the given name; `NULL` if the device
+ * is not found or if the device with that name's initialization function
+ * failed.
+ */
+const struct device *shell_device_get_binding(const char *name);
+
+/**
  * @brief Shell command handler prototype.
  *
  * @param sh Shell instance.

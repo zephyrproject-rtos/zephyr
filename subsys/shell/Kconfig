@@ -25,6 +25,11 @@ config SHELL_MINIMAL
 	  defaults which favor reduced flash or memory requirements over extra
 	  features.
 
+config SHELL_DEVICE_HELPERS
+	bool "Shell device helpers"
+	imply DEVICE_DT_METADATA
+	default y if !SHELL_MINIMAL
+
 config SHELL_THREAD_PRIORITY_OVERRIDE
 	bool "Override default shell thread priority"
 	help
