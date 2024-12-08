@@ -134,9 +134,10 @@ DT_FOREACH_STATUS_OKAY_NODE(IS_GPIO_CTRL_PIN_GET)
 
 static const struct gpio_ctrl gpio_list[] = {DT_FOREACH_STATUS_OKAY_NODE(IS_GPIO_CTRL_LIST)};
 
-static const struct gpio_ctrl *get_gpio_ctrl_helper(const struct device *dev)
+static const struct gpio_ctrl *get_gpio_ctrl(const char *name)
 {
 	size_t i;
+	const struct device *dev = shell_device_get_binding(name);
 
 	if (dev == NULL) {
 		return NULL;
@@ -147,29 +148,6 @@ static const struct gpio_ctrl *get_gpio_ctrl_helper(const struct device *dev)
 			return &gpio_list[i];
 		}
 	}
-
-	return NULL;
-}
-
-/* Look up a device by some human-readable string identifier. We
- * always search among device names. If the feature is available, we
- * search by node label as well.
- */
-static const struct gpio_ctrl *get_gpio_ctrl(char *id)
-{
-	const struct gpio_ctrl *ctrl;
-
-	ctrl = get_gpio_ctrl_helper(device_get_binding(id));
-	if (ctrl != NULL) {
-		return ctrl;
-	}
-
-#ifdef CONFIG_DEVICE_DT_METADATA
-	ctrl = get_gpio_ctrl_helper(device_get_by_dt_nodelabel(id));
-	if (ctrl != NULL) {
-		return ctrl;
-	}
-#endif	/* CONFIG_DEVICE_DT_METADATA */
 
 	return NULL;
 }
