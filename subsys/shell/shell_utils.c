@@ -536,6 +536,17 @@ const struct device *shell_device_lookup(size_t idx,
 	return shell_device_internal(idx, prefix, NULL);
 }
 
+const struct device *shell_device_get_binding(const char *name)
+{
+	const struct device *dev = device_get_binding(name);
+
+	if (IS_ENABLED(CONFIG_DEVICE_DT_METADATA) && dev == NULL) {
+		dev = device_get_by_dt_nodelabel(name);
+	}
+
+	return dev;
+}
+
 long shell_strtol(const char *str, int base, int *err)
 {
 	long val;
