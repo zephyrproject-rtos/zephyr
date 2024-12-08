@@ -37,7 +37,7 @@
 			gpios = <&gpio1 0 GPIO_ACTIVE_HIGH>;
 		};
 	};
-	
+
 	buttons {
 		compatible = "gpio-keys";
 		button1: button1 {
@@ -46,7 +46,7 @@
 		button2: button2 {
 			gpios = < &gpio1 15 GPIO_ACTIVE_LOW >;
 		};
- 	};
+	};
 
 	pwmleds {
 		compatible = "pwm-leds";
