@@ -30,7 +30,7 @@ properties:
     description: |
       The GPIO pins used to send step signals to the stepper motor.
 
-  direction-gpios:
+  dir-gpios:
     type: phandle-array
     description: |
       The GPIO pins used to send direction signals to the stepper motor.
