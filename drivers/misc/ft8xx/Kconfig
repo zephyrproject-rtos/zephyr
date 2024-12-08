@@ -3,7 +3,7 @@
 # Copyright (c) 2020-2021 Hubert Miś <hubert.mis@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
-config FT800
+menuconfig FT800
 	bool "FT800 Embedded Video Engine driver"
 	default y
 	depends on DT_HAS_FTDI_FT800_ENABLED
@@ -11,9 +11,17 @@ config FT800
 	help
 	  Enable driver for FT800 controller.
 
+if FT800
+
 config FT800_INIT_PRIORITY
 	int "FT800 init priority"
 	default 90
 	depends on FT800
 	help
 	  FT800 driver initialization priority in POST_KERNEL.
+
+module = FT800
+module-str = FT800
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # FT800
