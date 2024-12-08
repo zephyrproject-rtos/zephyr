@@ -20,6 +20,7 @@
 #include <zephyr/dt-bindings/memory-controller/stm32-fmc-nor-psram.h>
 #include <zephyr/dt-bindings/adc/stm32u5_adc.h>
 #include <zephyr/dt-bindings/power/stm32_pwr.h>
+#include <zephyr/dt-bindings/phy/stm32u5_otg_hs_phy.h>
 #include <freq.h>
 
 / {
