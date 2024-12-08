@@ -1,0 +1,62 @@
+/ {
+	aliases {
+		i2c-slave = &i2c131;
+	};
+};
+
+&pinctrl {
+	i2c130_default_alt: i2c130_default_alt {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SDA, 2, 8)>,
+				<NRF_PSEL(TWIM_SCL, 1, 2)>;
+		};
+	};
+
+	i2c130_sleep_alt: i2c130_sleep_alt {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SDA, 2, 8)>,
+				<NRF_PSEL(TWIM_SCL, 1, 2)>;
+			low-power-enable;
+		};
+	};
+
+	i2c131_default_alt: i2c131_default_alt {
+		group1 {
+/* Temporary workaround as it is currently not possible
+ * to configure pins for TWIS with pinctrl.
+ */
+			psels = <NRF_PSEL(TWIM_SDA, 2, 9)>,
+				<NRF_PSEL(TWIM_SCL, 1, 3)>;
+			bias-pull-up;
+		};
+	};
+
+	i2c131_sleep_alt: i2c131_sleep_alt {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SDA, 2, 9)>,
+				<NRF_PSEL(TWIM_SCL, 1, 3)>;
+			low-power-enable;
+		};
+	};
+};
+
+&i2c130 {
+	compatible = "nordic,nrf-twim";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c130_default_alt>;
+	pinctrl-1 = <&i2c130_sleep_alt>;
+	pinctrl-names = "default", "sleep";
+	sensor: sensor@54 {
+		reg = <0x54>;
+	};
+};
+
+&i2c131 {
+	compatible = "nordic,nrf-twis";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c131_default_alt>;
+	pinctrl-1 = <&i2c131_sleep_alt>;
+	pinctrl-names = "default", "sleep";
+};
