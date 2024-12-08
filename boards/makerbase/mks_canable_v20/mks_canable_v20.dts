@@ -81,7 +81,7 @@ zephyr_udc0: &usb {
 &fdcan1 {
 	pinctrl-0 = <&fdcan1_rx_pb8 &fdcan1_tx_pb9>;
 	pinctrl-names = "default";
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00001000>,
+	clocks = <&rcc STM32_CLOCK(APB1, 25U)>,
 		 <&rcc STM32_SRC_PLL_Q FDCAN_SEL(1)>;
 	status = "okay";
 };
