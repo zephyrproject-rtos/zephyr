@@ -52,9 +52,6 @@ static log_timestamp_t timestamp_div;
 
 #define SECONDS_IN_DAY			86400U
 
-static uint32_t days_in_month[12] = {31, 28, 31, 30, 31, 30, 31,
-									31, 30, 31, 30, 31};
-
 struct YMD_date {
 	uint32_t year;
 	uint32_t month;
@@ -158,6 +155,17 @@ static inline bool is_leap_year(uint32_t year)
 static void __attribute__((unused)) get_YMD_from_seconds(uint64_t seconds,
 			struct YMD_date *output_date)
 {
+#if defined(CONFIG_COMMON_LIBC_GMTIME_R) || defined(CONFIG_TC_PROVIDES_POSIX_C_LANG_SUPPORT_R)
+	time_t time_seconds = seconds;
+	struct tm tm_timestamp = {0};
+
+	gmtime_r(&time_seconds, &tm_timestamp);
+
+	output_date->year = tm_timestamp.tm_year + 1900;
+	output_date->month = tm_timestamp.tm_mon + 1;
+	output_date->day = tm_timestamp.tm_mday;
+#else  /* CONFIG_COMMON_LIBC_GMTIME_R || CONFIG_TC_PROVIDES_POSIX_C_LANG_SUPPORT_R */
+	static const uint32_t days_in_month[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 	uint64_t tmp;
 	int i;
 
@@ -188,6 +196,7 @@ static void __attribute__((unused)) get_YMD_from_seconds(uint64_t seconds,
 	}
 
 	output_date->day += seconds / SECONDS_IN_DAY;
+#endif /* CONFIG_COMMON_LIBC_GMTIME_R || CONFIG_TC_PROVIDES_POSIX_C_LANG_SUPPORT_R*/
 }
 
 static int timestamp_print(const struct log_output *output,
