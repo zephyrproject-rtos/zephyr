@@ -11,7 +11,7 @@ description: |
       msx-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>,
                   <&gpio0 2 GPIO_ACTIVE_HIGH>;
       step-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
-      direction-gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
+      dir-gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
       dual-edge-step;
   }
 
@@ -22,7 +22,7 @@ include:
     property-allowlist:
       - micro-step-res
       - step-gpios
-      - direction-gpios
+      - dir-gpios
 
 properties:
   enable-gpios:
