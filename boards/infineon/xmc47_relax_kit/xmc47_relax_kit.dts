@@ -45,7 +45,7 @@
 		button2: button2 {
 			gpios = < &gpio15 13 GPIO_ACTIVE_LOW >;
 		};
-	};	
+	};
 
 	pwmleds {
 		compatible = "pwm-leds";
