@@ -581,7 +581,19 @@ void log_frontend_panic(void)
 
 void log_frontend_init(void)
 {
-	/* empty */
+#if defined(CONFIG_LOG_FRONTEND_STPESP_TURBO_SOURCE_PORT_ID) && !defined(CONFIG_NRF_ETR)
+	/* Send location of section with constant source data. It is used by the
+	 * application core to retrieve source names of log messages coming from
+	 * coprocessors (FLPR and PPR).
+	 */
+	TYPE_SECTION_START_EXTERN(struct log_source_const_data, log_const);
+	STMESP_Type *stm_esp;
+	uintptr_t log_const_start;
+
+	(void)stmesp_get_port(CONFIG_LOG_FRONTEND_STPESP_TURBO_SOURCE_PORT_ID, &stm_esp);
+	log_const_start = (uintptr_t)TYPE_SECTION_START(log_const);
+	STM_D32(stm_esp, log_const_start, false, true);
+#endif
 }
 
 void log_frontend_stmesp_dummy_write(void)
@@ -646,3 +658,31 @@ int log_frontend_stmesp_etr_ready(void)
 	return 0;
 }
 #endif /* EARLY_BUF_SIZE > 0 */
+
+void log_frontend_stmesp_log0(const void *source, uint32_t x)
+{
+	STMESP_Type *port;
+	int err = stmesp_get_port((uint32_t)x + 0x8000, &port);
+	uint16_t source_id = log_source_id(source);
+
+	__ASSERT_NO_MSG(err == 0);
+	if (err == 0) {
+		stmesp_data16(port, source_id, true, true,
+			      IS_ENABLED(CONFIG_LOG_FRONTEND_STMESP_GUARANTEED_ACCESS));
+	}
+}
+
+void log_frontend_stmesp_log1(const void *source, uint32_t x, uint32_t arg)
+{
+	STMESP_Type *port;
+	int err = stmesp_get_port((uint32_t)x + 0x8000, &port);
+	uint16_t source_id = log_source_id(source);
+
+	__ASSERT_NO_MSG(err == 0);
+	if (err == 0) {
+		stmesp_data16(port, source_id, false, true,
+			      IS_ENABLED(CONFIG_LOG_FRONTEND_STMESP_GUARANTEED_ACCESS));
+		stmesp_data32(port, arg, true, true,
+			      IS_ENABLED(CONFIG_LOG_FRONTEND_STMESP_GUARANTEED_ACCESS));
+	}
+}
