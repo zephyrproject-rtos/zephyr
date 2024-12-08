@@ -76,7 +76,7 @@
 #include "ll_settings.h"
 
 #include "hci_internal.h"
-#include "hci_vendor.h"
+#include "hci/hci_vendor.h"
 
 #if defined(CONFIG_BT_HCI_MESH_EXT)
 #include "ll_sw/ll_mesh.h"
