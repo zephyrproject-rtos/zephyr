@@ -131,6 +131,12 @@ static int frdm_mcxa156_init(void)
 	CLOCK_EnableClock(kCLOCK_GateADC0);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpcmp0))
+	CLOCK_AttachClk(kFRO12M_to_CMP0);
+	CLOCK_SetClockDiv(kCLOCK_DivCMP0_FUNC, 1U);
+	SPC_EnableActiveModeAnalogModules(SPC0, (kSPC_controlCmp0 | kSPC_controlCmp0Dac));
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lptmr0))
 
 /*

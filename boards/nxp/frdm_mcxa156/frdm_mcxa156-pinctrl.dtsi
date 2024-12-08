@@ -39,4 +39,12 @@
 			drive-strength = "low";
 		};
 	};
+	pinmux_lpcmp0: pinmux_lpcmp0 {
+		group0 {
+			pinmux = <CMP0_IN0_P2_2>;
+			drive-strength = "low";
+			slew-rate = "fast";
+			bias-pull-up;
+		};
+	};
 };
