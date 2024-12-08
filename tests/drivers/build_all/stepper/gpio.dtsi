@@ -21,5 +21,5 @@ test_tmc2209: tmc2209_motor {
 		    <&test_gpio 0 0>;
 	enable-gpios = <&test_gpio 0 0>;
 	step-gpios = <&test_gpio 0 0>;
-	direction-gpios = <&test_gpio 0 0>;
+	dir-gpios = <&test_gpio 0 0>;
 };
