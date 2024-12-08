@@ -919,6 +919,8 @@ static void log_process_thread_timer_expiry_fn(struct k_timer *timer)
 	k_sem_give(&log_process_thread_sem);
 }
 
+K_SEM_DEFINE(log_process_done, 0, 1);
+
 static void log_process_thread_func(void *dummy1, void *dummy2, void *dummy3)
 {
 	__ASSERT_NO_MSG(log_backend_count_get() > 0);
@@ -959,6 +961,7 @@ static void log_process_thread_func(void *dummy1, void *dummy2, void *dummy3)
 				processed_any = false;
 				log_backend_notify_all(LOG_BACKEND_EVT_PROCESS_THREAD_DONE, NULL);
 			}
+			k_sem_give(&log_process_done);
 			(void)k_sem_take(&log_process_thread_sem, timeout);
 		} else {
 			processed_any = true;
@@ -988,6 +991,20 @@ static int enable_logger(void)
 	}
 
 	return 0;
+}
+
+void log_flush(void)
+{
+	if (proc_tid && !panic_mode) {
+		k_thread_suspend(proc_tid);
+		k_sem_reset(&log_process_done);
+		k_sem_give(&log_process_thread_sem);
+		k_thread_resume(proc_tid);
+		k_sem_take(&log_process_done, K_FOREVER);
+	} else {
+		while (LOG_PROCESS()) {
+		}
+	}
 }
 
 SYS_INIT(enable_logger, POST_KERNEL, CONFIG_LOG_CORE_INIT_PRIORITY);
