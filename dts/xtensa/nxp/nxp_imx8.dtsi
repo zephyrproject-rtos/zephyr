@@ -186,7 +186,7 @@
 	};
 
 	lpuart2: serial@5a080000 {
-		compatible = "nxp,imx-lpuart", "nxp,kinetis-lpuart";
+		compatible = "nxp,imx-lpuart", "nxp,lpuart";
 		reg = <0x5a080000 DT_SIZE_K(4)>;
 		interrupt-parent = <&master4>;
 		interrupts = <3>;
