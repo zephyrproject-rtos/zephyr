@@ -56,6 +56,12 @@ config ETH_STM32_HAL_RX_THREAD_PRIO
 	  Preemptive scheduling can lead to more responsive handling of network traffic,
 	  especially under high load.
 
+config ETH_STM32_HAL_ETH_POST_INIT_PRIO
+	int "Second part of the ethernet initialization"
+	default 89
+	help
+		Second part of the ethernet initialization
+
 config ETH_STM32_HAL_USE_DTCM_FOR_DMA_BUFFER
 	bool "Use DTCM for DMA buffers"
 	default y
