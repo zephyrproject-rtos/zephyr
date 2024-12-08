@@ -625,11 +625,11 @@ void sys_trace_k_pipe_flush_enter(struct k_pipe *pipe);
 void sys_trace_k_pipe_flush_exit(struct k_pipe *pipe);
 void sys_trace_k_pipe_buffer_flush_enter(struct k_pipe *pipe);
 void sys_trace_k_pipe_buffer_flush_exit(struct k_pipe *pipe);
-void sys_trace_k_pipe_put_enter(struct k_pipe *pipe, void *data, size_t bytes_to_write,
+void sys_trace_k_pipe_put_enter(struct k_pipe *pipe, const void *data, size_t bytes_to_write,
 				size_t *bytes_written, size_t min_xfer, k_timeout_t timeout);
-void sys_trace_k_pipe_put_blocking(struct k_pipe *pipe, void *data, size_t bytes_to_write,
+void sys_trace_k_pipe_put_blocking(struct k_pipe *pipe, const void *data, size_t bytes_to_write,
 				   size_t *bytes_written, size_t min_xfer, k_timeout_t timeout);
-void sys_trace_k_pipe_put_exit(struct k_pipe *pipe, void *data, size_t bytes_to_write,
+void sys_trace_k_pipe_put_exit(struct k_pipe *pipe, const void *data, size_t bytes_to_write,
 			       size_t *bytes_written, size_t min_xfer, k_timeout_t timeout,
 			       int ret);
 void sys_trace_k_pipe_get_enter(struct k_pipe *pipe, void *data, size_t bytes_to_read,
@@ -732,7 +732,44 @@ void sys_trace_k_event_init(struct k_event *event);
 #define sys_port_trace_socket_socketpair_enter(family, type, proto, sv)
 #define sys_port_trace_socket_socketpair_exit(sockA, sockB, ret)
 
+#define sys_port_trace_net_recv_data_enter(iface, pkt)
+#define sys_port_trace_net_recv_data_exit(iface, pkt, ret)
+#define sys_port_trace_net_send_data_enter(pkt)
+#define sys_port_trace_net_send_data_exit(pkt, ret)
+#define sys_port_trace_net_rx_time(pkt, end_time)
+#define sys_port_trace_net_tx_time(pkt, end_time)
+
 #define sys_trace_sys_init_enter(...)
 #define sys_trace_sys_init_exit(...)
+
+#define sys_trace_named_event(name, arg0, arg1)
+#define sys_port_trace_gpio_pin_interrupt_configure_enter(port, pin, flags)
+#define sys_port_trace_gpio_pin_interrupt_configure_exit(port, pin, ret)
+#define sys_port_trace_gpio_pin_configure_enter(port, pin, flags)
+#define sys_port_trace_gpio_pin_configure_exit(port, pin, ret)
+#define sys_port_trace_gpio_port_get_direction_enter(port, map, inputs, outputs)
+#define sys_port_trace_gpio_port_get_direction_exit(port, map, ret)
+#define sys_port_trace_gpio_pin_get_config_enter(port, pin, flags)
+#define sys_port_trace_gpio_pin_get_config_exit(port, pin, ret)
+#define sys_port_trace_gpio_port_get_raw_enter(port, value)
+#define sys_port_trace_gpio_port_get_raw_exit(port, ret)
+#define sys_port_trace_gpio_port_set_masked_raw_enter(port, mask, value)
+#define sys_port_trace_gpio_port_set_masked_raw_exit(port, ret)
+#define sys_port_trace_gpio_port_set_bits_raw_enter(port, pins)
+#define sys_port_trace_gpio_port_set_bits_raw_exit(port, ret)
+#define sys_port_trace_gpio_port_clear_bits_raw_enter(port, pins)
+#define sys_port_trace_gpio_port_clear_bits_raw_exit(port, ret)
+#define sys_port_trace_gpio_port_toggle_bits_enter(port, pins)
+#define sys_port_trace_gpio_port_toggle_bits_exit(port, ret)
+#define sys_port_trace_gpio_init_callback_enter(callback, handler, pin_mask)
+#define sys_port_trace_gpio_init_callback_exit(callback)
+#define sys_port_trace_gpio_add_callback_enter(port, callback)
+#define sys_port_trace_gpio_add_callback_exit(port, ret)
+#define sys_port_trace_gpio_remove_callback_enter(port, callback)
+#define sys_port_trace_gpio_remove_callback_exit(port, ret)
+#define sys_port_trace_gpio_get_pending_int_enter(dev)
+#define sys_port_trace_gpio_get_pending_int_exit(dev, ret)
+#define sys_port_trace_gpio_fire_callbacks_enter(list, port, pins)
+#define sys_port_trace_gpio_fire_callback(port, cb)
 
 #endif /* ZEPHYR_TRACE_TEST_H */

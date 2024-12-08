@@ -5,64 +5,6 @@
 
 menu "Networking"
 
-config NET_BUF
-	bool "Network buffer support"
-	help
-	  This option enables support for generic network protocol
-	  buffers.
-
-if NET_BUF
-
-config NET_BUF_LOG
-	bool "Network buffer logging"
-	select LOG
-	help
-	  Enable logs and checks for the generic network buffers.
-
-module = NET_BUF
-module-str = net_buf
-source "subsys/logging/Kconfig.template.log_config"
-
-if NET_BUF_LOG
-
-config NET_BUF_WARN_ALLOC_INTERVAL
-	int "Interval of Network buffer allocation warnings"
-	default 1
-	range 0 60
-	help
-	  Interval in seconds of Network buffer allocation warnings which are
-	  generated when a buffer cannot immediately be allocated with K_FOREVER
-	  which may lead to deadlocks. Setting it to 0 makes warnings to be
-	  printed only once per allocation.
-
-config NET_BUF_SIMPLE_LOG
-	bool "Network buffer memory debugging"
-	select LOG
-	help
-	  Enable extra debug logs and checks for the generic network buffers.
-
-endif # NET_BUF_LOG
-
-config NET_BUF_POOL_USAGE
-	bool "Network buffer pool usage tracking"
-	help
-	  Enable network buffer pool tracking. This means that:
-	  * amount of free buffers in the pool is remembered
-	  * total size of the pool is calculated
-	  * pool name is stored and can be shown in debugging prints
-
-config NET_BUF_ALIGNMENT
-	int "Network buffer alignment restriction"
-	default 0
-	help
-	  Alignment restriction for network buffers. This is useful for
-	  some hardware IP with DMA that requires the buffers to be aligned
-	  to a certain byte boundary, or dealing with cache line restrictions.
-	  Default value of 0 means the alignment will be the size of a void pointer,
-	  any other value will force the alignment of a net buffer in bytes.
-
-endif # NET_BUF
-
 config NETWORKING
 	bool "Link layer and networking (including IP)"
 	select NET_BUF

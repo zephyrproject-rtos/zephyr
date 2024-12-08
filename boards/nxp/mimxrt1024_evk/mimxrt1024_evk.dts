@@ -21,12 +21,14 @@
 		magn0 = &fxos8700;
 		accel0 = &fxos8700;
 		sdhc0 = &usdhc1;
+		mcuboot-button0 = &user_button;
 	};
 
 	chosen {
 		zephyr,flash-controller = &w25q32jvwj0;
 		zephyr,flash = &w25q32jvwj0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,uart-mcumgr = &lpuart1;
 		zephyr,sram = &sdram0;
 		zephyr,itcm = &itcm;
 		zephyr,dtcm = &dtcm;
@@ -239,6 +241,7 @@ zephyr_udc0: &usb1 {
 	no-1-8-v;
 	sdmmc {
 		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
 		status = "okay";
 	};
 };

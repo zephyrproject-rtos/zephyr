@@ -14,7 +14,7 @@ tests:
       - qemu_riscv64
       - qemu_x86
       - qemu_x86_64
-      - qemu_xtensa
+      - qemu_xtensa/dc233c
       - native_posix
       - native_sim
     integration_platforms:

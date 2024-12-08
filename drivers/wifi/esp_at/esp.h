@@ -175,6 +175,7 @@ struct esp_socket {
 	atomic_t flags;
 
 	/* socket info */
+	struct sockaddr src;
 	struct sockaddr dst;
 
 	/* sem */

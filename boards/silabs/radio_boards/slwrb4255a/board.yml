@@ -1,4 +1,5 @@
 boards:
   - name: slwrb4255a
+    full_name: EFR32FG13 2400/915 MHz 19 dBm Dual Band (SLWRB4255A)
     socs:
       - name: efr32fg13p233f512gm48

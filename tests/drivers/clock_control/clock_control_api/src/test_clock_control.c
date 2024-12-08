@@ -12,6 +12,8 @@ LOG_MODULE_REGISTER(test);
 #include "nrf_device_subsys.h"
 #elif DT_HAS_COMPAT_STATUS_OKAY(espressif_esp32_rtc)
 #include "esp32_device_subsys.h"
+#elif DT_HAS_COMPAT_STATUS_OKAY(silabs_series_clock)
+#include "silabs_device_subsys.h"
 #else
 #error "Unsupported board"
 #endif
@@ -256,7 +258,7 @@ ZTEST(clock_control, test_async_on_stopped)
 }
 
 /*
- * Test checks that that second start returns error.
+ * Test checks that the second start returns error.
  */
 static void test_double_start_on_instance(const struct device *dev,
 						clock_control_subsys_t subsys,
@@ -282,7 +284,7 @@ ZTEST(clock_control, test_double_start)
 }
 
 /*
- * Test checks that that second stop returns 0.
+ * Test checks that the second stop returns 0.
  * Test precondition: clock is stopped.
  */
 static void test_double_stop_on_instance(const struct device *dev,

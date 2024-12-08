@@ -1,7 +1,4 @@
-.. _bbc_microbit:
-
-BBC MicroBit
-##############
+.. zephyr:board:: bbc_microbit
 
 Overview
 ********
@@ -22,12 +19,6 @@ connectors that are part of the 23-pin edge connector.
 * GPIO
 * FLASH
 * RADIO (Bluetooth Low Energy)
-
-.. figure:: img/bbc_microbit.jpg
-     :align: center
-     :alt: BBC Micro Bit
-
-     BBC Micro Bit (Credit: http://microbit.org/)
 
 More information about the board can be found at the `microbit website`_.
 
@@ -77,7 +68,7 @@ Flashing
 Build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 First, run your favorite terminal program to listen for output.
 

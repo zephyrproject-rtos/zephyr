@@ -1,0 +1,40 @@
+/*
+ * Copyright (c) 2024 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+
+#include "mec5.dtsi"
+
+/ {
+	flash0: flash@b0000 {
+		reg = <0x000b0000 0x68000>;
+	};
+
+	sram0: memory@118000 {
+		compatible = "mmio-sram";
+		reg = <0x00118000 0xf800>;
+	};
+
+	soc {
+		#include "mec5/mec5_dma_chan16.dtsi"
+		#include "mec5/mec5_gpspi_v2.dtsi"
+		#include "mec5/mec5_eeprom_8kb.dtsi"
+
+		kscan0: kscan@40009c00 {
+			reg = <0x40009c00 0x18>;
+			interrupts = <135 0>;
+			status = "disabled";
+		};
+
+		uart2: uart@400f2c00 {
+			reg = <0x400f2c00 0x400>;
+			interrupts = <183 1>;
+			clock-frequency = <1843200>;
+			current-speed = <38400>;
+			status = "disabled";
+		};
+	};
+};

@@ -10,7 +10,7 @@ tests:
       - nrf5340bsim/nrf5340/cpunet
     extra_args:
       - DTC_OVERLAY_FILE=./entropy_bt_hci.overlay
-      - OVERLAY_CONFIG=./entropy_bt_hci.conf
+      - EXTRA_CONF_FILE=./entropy_bt_hci.conf
     tags:
       - driver
       - entropy
@@ -19,7 +19,7 @@ tests:
     filter: CONFIG_BUILD_WITH_TFM
     extra_args:
       - DTC_OVERLAY_FILE=./entropy_psa_crypto.overlay
-      - OVERLAY_CONFIG=./entropy_psa_crypto.conf
+      - EXTRA_CONF_FILE=./entropy_psa_crypto.conf
     tags:
       - driver
       - entropy

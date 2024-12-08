@@ -71,8 +71,13 @@ static int lps22hh_sample_fetch(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	data->sample_press = raw_press;
-	data->sample_temp = raw_temp;
+	/** Prevent overwriting values that weren't fetched */
+	if (chan == SENSOR_CHAN_PRESS || chan == SENSOR_CHAN_ALL) {
+		data->sample_press = raw_press;
+	}
+	if (chan == SENSOR_CHAN_AMBIENT_TEMP || chan == SENSOR_CHAN_ALL) {
+		data->sample_temp = raw_temp;
+	}
 
 	return 0;
 }
@@ -164,7 +169,7 @@ static int lps22hh_attr_set(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api lps22hh_driver_api = {
+static DEVICE_API(sensor, lps22hh_driver_api) = {
 	.attr_set = lps22hh_attr_set,
 	.sample_fetch = lps22hh_sample_fetch,
 	.channel_get = lps22hh_channel_get,

@@ -3,9 +3,12 @@
 # Copyright (c) 2020 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-import tarfile
 import json
 import os
+import tarfile
+
+from twisterlib.statuses import TwisterStatus
+
 
 class Artifacts:
 
@@ -22,10 +25,10 @@ class Artifacts:
 
     def package(self):
         dirs = []
-        with open(os.path.join(self.options.outdir, "twister.json"), "r") as json_test_plan:
+        with open(os.path.join(self.options.outdir, "twister.json")) as json_test_plan:
             jtp = json.load(json_test_plan)
             for t in jtp['testsuites']:
-                if t['status'] != "filtered":
+                if t['status'] != TwisterStatus.FILTER:
                     p = t['platform']
                     normalized  = p.replace("/", "_")
                     dirs.append(os.path.join(self.options.outdir, normalized, t['name']))

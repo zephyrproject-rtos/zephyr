@@ -1320,7 +1320,7 @@ static int mspi_ambiq_init(const struct device *controller)
 	return mspi_ambiq_config(&spec);
 }
 
-static struct mspi_driver_api mspi_ambiq_driver_api = {
+static DEVICE_API(mspi, mspi_ambiq_driver_api) = {
 	.config                = mspi_ambiq_config,
 	.dev_config            = mspi_ambiq_dev_config,
 	.xip_config            = mspi_ambiq_xip_config,
@@ -1356,7 +1356,7 @@ static struct mspi_driver_api mspi_ambiq_driver_api = {
 
 #define MSPI_CONFIG(n)                                                                           \
 	{                                                                                        \
-		.channel_num           = (DT_INST_REG_ADDR(n) - REG_MSPI_BASEADDR) /             \
+		.channel_num           = (DT_INST_REG_ADDR(n) - MSPI0_BASE) /                    \
 					 (DT_INST_REG_SIZE(n) * 4),                              \
 		.op_mode               = MSPI_OP_MODE_CONTROLLER,                                \
 		.duplex                = MSPI_HALF_DUPLEX,                                       \

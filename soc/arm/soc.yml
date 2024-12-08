@@ -10,7 +10,8 @@ family:
       - name: cpu1
   - name: mps3
     socs:
-    - name: an547
+    - name: corstone300
+    - name: corstone310
   - name: musca
     socs:
     - name: musca_b1

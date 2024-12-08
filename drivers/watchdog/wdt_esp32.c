@@ -51,6 +51,8 @@ struct wdt_esp32_config {
 	const clock_control_subsys_t clock_subsys;
 	void (*connect_irq)(void);
 	int irq_source;
+	int irq_priority;
+	int irq_flags;
 };
 
 static inline void wdt_esp32_seal(const struct device *dev)
@@ -156,6 +158,7 @@ static int wdt_esp32_init(const struct device *dev)
 {
 	const struct wdt_esp32_config *const config = dev->config;
 	struct wdt_esp32_data *data = dev->data;
+	int ret, flags;
 
 	if (!device_is_ready(config->clock_dev)) {
 		LOG_ERR("clock control device not ready");
@@ -166,11 +169,14 @@ static int wdt_esp32_init(const struct device *dev)
 
 	wdt_hal_init(&data->hal, config->wdt_inst, MWDT_TICK_PRESCALER, true);
 
-	esp_intr_alloc(config->irq_source,
-		0,
-		(ISR_HANDLER)wdt_esp32_isr,
-		(void *)dev,
-		NULL);
+	flags = ESP_PRIO_TO_FLAGS(config->irq_priority) | ESP_INT_FLAGS_CHECK(config->irq_flags);
+	ret = esp_intr_alloc(config->irq_source, flags, (ISR_HANDLER)wdt_esp32_isr, (void *)dev,
+			     NULL);
+
+	if (ret != 0) {
+		LOG_ERR("could not allocate interrupt (err %d)", ret);
+		return ret;
+	}
 
 #ifndef CONFIG_WDT_DISABLE_AT_BOOT
 	wdt_esp32_enable(dev);
@@ -179,7 +185,7 @@ static int wdt_esp32_init(const struct device *dev)
 	return 0;
 }
 
-static const struct wdt_driver_api wdt_api = {
+static DEVICE_API(wdt, wdt_api) = {
 	.setup = wdt_esp32_set_config,
 	.disable = wdt_esp32_disable,
 	.install_timeout = wdt_esp32_install_timeout,
@@ -190,7 +196,9 @@ static const struct wdt_driver_api wdt_api = {
 	static struct wdt_esp32_data wdt##idx##_data;				   \
 	static struct wdt_esp32_config wdt_esp32_config##idx = {		   \
 		.wdt_inst = WDT_MWDT##idx,	\
-		.irq_source = DT_IRQN(DT_NODELABEL(wdt##idx)),			   \
+		.irq_source = DT_IRQ_BY_IDX(DT_NODELABEL(wdt##idx), 0, irq),	\
+		.irq_priority = DT_IRQ_BY_IDX(DT_NODELABEL(wdt##idx), 0, priority),	\
+		.irq_flags = DT_IRQ_BY_IDX(DT_NODELABEL(wdt##idx), 0, flags),	\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)), \
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(idx, offset), \
 	};									   \
@@ -206,7 +214,6 @@ static const struct wdt_driver_api wdt_api = {
 static void wdt_esp32_isr(void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
-	const struct wdt_esp32_config *config = dev->config;
 	struct wdt_esp32_data *data = dev->data;
 
 	if (data->callback) {
@@ -217,10 +224,10 @@ static void wdt_esp32_isr(void *arg)
 }
 
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(wdt0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(wdt0))
 ESP32_WDT_INIT(0);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(wdt1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(wdt1))
 ESP32_WDT_INIT(1);
 #endif

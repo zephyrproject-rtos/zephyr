@@ -49,6 +49,15 @@ config PHY_MICROCHIP_KSZ8081
 	help
 	  Enable Microchip KSZ8081 Ethernet PHY Driver
 
+config PHY_TI_DP83825
+	bool "TI DP83825 PHY Driver"
+	default y
+	depends on DT_HAS_TI_DP83825_ENABLED
+	depends on MDIO
+	depends on GPIO
+	help
+	  Enable TI DP83825 Ethernet PHY Driver
+
 config PHY_REALTEK_RTL8211F
 	bool "Realtek RTL8211F PHY Driver"
 	default y
@@ -58,6 +67,14 @@ config PHY_REALTEK_RTL8211F
 			    !$(dt_compat_any_has_prop,$(DT_COMPAT_REALTEK_RTL8211F),int-gpios))
 	help
 	  Enable Realtek RTL8211F Ethernet PHY Driver
+
+config PHY_QUALCOMM_AR8031
+	bool "Qualcomm Atheros AR8031 Ethernet PHY Driver"
+	default y
+	depends on DT_HAS_QCA_AR8031_ENABLED
+	depends on MDIO
+	help
+	  Enable Qualcomm Atheros AR8031 Ethernet PHY Driver
 
 config PHY_AUTONEG_TIMEOUT_MS
 	int "Auto-negotiation timeout value in milliseconds"

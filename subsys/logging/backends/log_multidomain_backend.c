@@ -51,11 +51,8 @@ static void process(const struct log_backend *const backend,
 	/* Update package len field in the message descriptor. */
 	out_log_msg->hdr.desc.package_len = fsc_plen;
 
-	out_log_msg->hdr.source = out_log_msg->hdr.source ?
-			(const void *)(IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ?
-				log_dynamic_source_id((void *)out_log_msg->hdr.source) :
-				log_const_source_id((void *)out_log_msg->hdr.source)) :
-			(const void *)-1;
+	out_log_msg->hdr.source = (const void *)(out_log_msg->hdr.source ?
+				log_source_id(out_log_msg->hdr.source) : -1);
 
 	/* Fill new package. */
 	fsc_plen = cbprintf_fsc_package(msg->log.data, msg->log.hdr.desc.package_len,

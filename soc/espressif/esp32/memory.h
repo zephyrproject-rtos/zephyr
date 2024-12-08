@@ -4,25 +4,27 @@
  */
 #pragma once
 
-/* SRAM0 (64k+128k)  instruction cache+memory */
-#define SRAM0_IRAM_START    0x40070000
+/* SRAM0 (192kB)  instruction cache+memory */
+#define SRAM0_IRAM_START    DT_REG_ADDR(DT_NODELABEL(sram0))
 #define SRAM0_CACHE_SIZE    0x10000
-#define SRAM0_SIZE          0x30000
+#define SRAM0_SIZE          DT_REG_SIZE(DT_NODELABEL(sram0))
 
-/* SRAM1 (128k) instruction/data memory */
-#define SRAM1_IRAM_START    0x400a0000
-#define SRAM1_DRAM_START    0x3ffe0000
-#define SRAM1_SIZE          0x20000
+/* SRAM1 (128kB) instruction/data memory */
+#define SRAM1_IRAM_START            (SRAM0_IRAM_START + SRAM0_SIZE)
+#define SRAM1_DRAM_START            DT_REG_ADDR(DT_NODELABEL(sram1))
+#define SRAM1_SIZE                  DT_REG_SIZE(DT_NODELABEL(sram1))
+#define SRAM1_DRAM_END              (SRAM1_DRAM_START + SRAM1_SIZE)
 #define SRAM1_DRAM_PROAPP_PRIV_SIZE 0x8000
-#define SRAM1_DRAM_USER_START 0x3ffe5400
-#define SRAM1_USER_SIZE     (0x40000000 - SRAM1_DRAM_USER_START)
+#define SRAM1_DRAM_USER_START       (SRAM1_DRAM_START + SRAM1_DRAM_PROAPP_PRIV_SIZE)
+#define SRAM1_USER_SIZE             (0x40000000 - SRAM1_DRAM_USER_START)
 
-/* SRAM2 (200k) data memory */
-#define SRAM2_DRAM_START    0x3ffae000
-#define SRAM2_SIZE          0x32000
-#define SRAM2_DRAM_SHM_PRIV_SIZE 0x2000
-#define SRAM2_DRAM_USER_START 0x3ffb0000
-#define SRAM2_USER_SIZE     (SRAM1_DRAM_START - SRAM2_DRAM_USER_START)
+/* SRAM2 (200kB) data memory */
+#define SRAM2_DRAM_START      DT_REG_ADDR(DT_NODELABEL(sram2))
+#define SRAM2_DRAM_SIZE       DT_REG_SIZE(DT_NODELABEL(sram2))
+#define SRAM2_DRAM_SHM_SIZE   0x2000
+#define SRAM2_DRAM_END        (SRAM2_DRAM_START + SRAM2_DRAM_SIZE)
+#define SRAM2_DRAM_USER_START (SRAM2_DRAM_START + SRAM2_DRAM_SHM_SIZE)
+#define SRAM2_DRAM_USER_SIZE  (SRAM2_DRAM_END - SRAM2_DRAM_USER_START)
 
 /** Simplified memory map for the bootloader.
  *  Make sure the bootloader can load into main memory without overwriting itself.
@@ -41,19 +43,21 @@
 #define DRAM1_BT_SHM_BUFFERS_START  0x3ffe4350
 #define DRAM1_BT_SHM_BUFFERS_END    0x3ffe5230
 
-/* Conversion beween IRAM and DRAM in SRAM1 memory */
-#define SRAM1_IRAM_DRAM_CALC(addr_iram) \
-	(SRAM1_SIZE - ((addr_iram) - SRAM1_IRAM_START) + SRAM1_DRAM_START)
-#define SRAM1_DRAM_IRAM_CALC(addr_dram) \
-	(SRAM1_SIZE - ((addr_dram) - SRAM1_DRAM_START) + SRAM1_IRAM_START)
+/* Convert IRAM address to its DRAM counterpart in SRAM1 memory */
+#define SRAM1_IRAM_DRAM_CALC(addr_iram) ((addr_iram > SRAM1_IRAM_START) ? \
+	(SRAM1_SIZE - (addr_iram - SRAM1_IRAM_START) + SRAM1_DRAM_START) : (SRAM1_DRAM_END))
 
-/* For safety margin between bootloader data section and startup stacks */
-#define BOOTLOADER_DRAM_SEG_LEN        0x6400
+/* Convert DRAM address to its IRAM counterpart in SRAM1 memory */
+#define SRAM1_DRAM_IRAM_CALC(addr_dram) \
+	(SRAM1_SIZE - (addr_dram - SRAM1_DRAM_START) + SRAM1_IRAM_START)
+
+/* Set bootloader segments size */
+#define BOOTLOADER_DRAM_SEG_LEN        0x7a00
 #define BOOTLOADER_IRAM_LOADER_SEG_LEN 0x4000
-#define BOOTLOADER_IRAM_SEG_LEN        0x9500
+#define BOOTLOADER_IRAM_SEG_LEN        0xa000
 
 /* Start of the lower region is determined by region size and the end of the higher region */
-#define BOOTLOADER_DRAM_SEG_START  0x3fff0000
+#define BOOTLOADER_DRAM_SEG_START  0x3ffe8000
 #define BOOTLOADER_DRAM_SEG_END    (BOOTLOADER_DRAM_SEG_START + BOOTLOADER_DRAM_SEG_LEN)
 #define BOOTLOADER_IRAM_LOADER_SEG_START 0x40078000
 #define BOOTLOADER_IRAM_SEG_START  0x400a0000

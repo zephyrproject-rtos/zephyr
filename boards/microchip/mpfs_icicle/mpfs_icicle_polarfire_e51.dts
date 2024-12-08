@@ -1,0 +1,31 @@
+/dts-v1/;
+#include "mpfs_icicle_common.dtsi"
+
+/ {
+	compatible = "microchip,mpfs-icicle-kit", "microchip,mpfs";
+
+	cpus {
+		cpu@1 {
+			status = "disabled";
+		};
+
+		cpu@2 {
+			status = "disabled";
+		};
+
+		cpu@3 {
+			status = "disabled";
+		};
+
+		cpu@4 {
+			status = "disabled";
+		};
+	};
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &sram1;
+	};
+
+};

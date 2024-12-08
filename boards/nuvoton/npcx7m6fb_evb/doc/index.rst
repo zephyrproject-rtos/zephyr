@@ -1,7 +1,4 @@
-.. _npcx7m6fb_evb:
-
-Nuvoton NPCX7M6FB_EVB
-#####################
+.. zephyr:board:: npcx7m6fb_evb
 
 Overview
 ********
@@ -9,10 +6,6 @@ Overview
 The NPCX7M6FB_EVB kit is a development platform to evaluate the
 Nuvoton NPCX7 series microcontrollers. This board needs to be mated with
 part number NPCX796FB.
-
-.. image:: npcx7m6fb_evb.jpg
-     :align: center
-     :alt: NPCX7M6FB Evaluation Board
 
 Hardware
 ********

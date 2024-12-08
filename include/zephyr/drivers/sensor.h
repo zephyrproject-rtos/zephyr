@@ -343,7 +343,10 @@ enum sensor_attribute {
 
 	/** Hardware batch duration in ticks */
 	SENSOR_ATTR_BATCH_DURATION,
-
+	/* Configure the gain of a sensor. */
+	SENSOR_ATTR_GAIN,
+	/* Configure the resolution of a sensor. */
+	SENSOR_ATTR_RESOLUTION,
 	/**
 	 * Number of all common sensor attributes.
 	 */
@@ -939,6 +942,30 @@ struct __attribute__((__packed__)) sensor_data_generic_header {
 	 (chan) == SENSOR_CHAN_MAGN_XYZ || (chan) == SENSOR_CHAN_POS_DXYZ)
 
 /**
+ * @brief checks if a given channel is an Accelerometer
+ *
+ * @param[in] chan The channel to check
+ * @retval true if @p chan is any of @ref SENSOR_CHAN_ACCEL_XYZ, @ref SENSOR_CHAN_ACCEL_X, or
+ *         @ref SENSOR_CHAN_ACCEL_Y, or @ref SENSOR_CHAN_ACCEL_Z
+ * @retval false otherwise
+ */
+#define SENSOR_CHANNEL_IS_ACCEL(chan)                                          \
+	((chan) == SENSOR_CHAN_ACCEL_XYZ || (chan) == SENSOR_CHAN_ACCEL_X ||   \
+	 (chan) == SENSOR_CHAN_ACCEL_Y || (chan) == SENSOR_CHAN_ACCEL_Z)
+
+/**
+ * @brief checks if a given channel is a Gyroscope
+ *
+ * @param[in] chan The channel to check
+ * @retval true if @p chan is any of @ref SENSOR_CHAN_GYRO_XYZ, @ref SENSOR_CHAN_GYRO_X, or
+ *         @ref SENSOR_CHAN_GYRO_Y, or @ref SENSOR_CHAN_GYRO_Z
+ * @retval false otherwise
+ */
+#define SENSOR_CHANNEL_IS_GYRO(chan)                                           \
+	((chan) == SENSOR_CHAN_GYRO_XYZ || (chan) == SENSOR_CHAN_GYRO_X ||     \
+	 (chan) == SENSOR_CHAN_GYRO_Y || (chan) == SENSOR_CHAN_GYRO_Z)
+
+/**
  * @brief Get the sensor's decoder API
  *
  * @param[in] dev The sensor device
@@ -1056,12 +1083,12 @@ static inline int sensor_read(struct rtio_iodev *iodev, struct rtio *ctx, uint8_
 		}
 		rtio_sqe_prep_read(sqe, iodev, RTIO_PRIO_NORM, buf, buf_len, buf);
 	}
-	rtio_submit(ctx, 1);
+	rtio_submit(ctx, 0);
 
-	struct rtio_cqe *cqe = rtio_cqe_consume(ctx);
+	struct rtio_cqe *cqe = rtio_cqe_consume_block(ctx);
 	int res = cqe->result;
 
-	__ASSERT(cqe->userdata != buf,
+	__ASSERT(cqe->userdata == buf,
 		 "consumed non-matching completion for sensor read into buffer %p\n", buf);
 
 	rtio_cqe_release(ctx, cqe);

@@ -1,0 +1,108 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2024, Nordic Semiconductor ASA
+
+# A pykwalify schema for basic validation of the Zephyr build info YAML file.
+
+type: map
+mapping:
+  version:
+    required: true
+    type: str
+  cmake:
+    type: map
+    mapping:
+      application:
+        type: map
+        mapping:
+          source-dir:
+            type: str
+          configuration-dir:
+            type: str
+      board:
+        type: map
+        mapping:
+          name:
+            required: true
+            type: str
+          qualifiers:
+            type: str
+          revision:
+            type: str
+          path:
+            type: seq
+            sequence:
+              - type: str
+      devicetree:
+        type: map
+        mapping:
+          files:
+            type: seq
+            sequence:
+              - type: str
+          user-files:
+            type: seq
+            sequence:
+              - type: str
+          extra-user-files:
+            type: seq
+            sequence:
+              - type: str
+          include-dirs:
+            type: seq
+            sequence:
+              - type: str
+          bindings-dirs:
+            type: seq
+            sequence:
+              - type: str
+      kconfig:
+        type: map
+        mapping:
+          files:
+            type: seq
+            sequence:
+              - type: str
+          user-files:
+            type: seq
+            sequence:
+              - type: str
+          extra-user-files:
+            type: seq
+            sequence:
+              - type: str
+      sysbuild:
+        type: bool
+      toolchain:
+        type: map
+        mapping:
+          name:
+            type: str
+          version:
+            type: str
+          path:
+            type: str
+      zephyr:
+        type: map
+        mapping:
+          zephyr-base:
+            type: str
+          version:
+            type: str
+      vendor-specific:
+        type: map
+        mapping:
+          regex;(.*):
+            type: map
+            mapping:
+              regex;(.*):
+                type: str
+  west:
+    type: map
+    mapping:
+      command:
+        type: str
+      topdir:
+        type: str
+      version:
+        type: str

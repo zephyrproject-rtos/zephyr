@@ -5,7 +5,10 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <stdint.h>
 
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/gap.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/types.h>
 #include <string.h>
@@ -17,7 +20,7 @@
 #include <zephyr/bluetooth/hci.h>
 
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 
 #include <hci_core.h>
 
@@ -30,7 +33,11 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 #define CONTROLLER_NAME "btp_tester"
 
 #define BT_LE_AD_DISCOV_MASK (BT_LE_AD_LIMITED | BT_LE_AD_GENERAL)
+#if defined(CONFIG_BT_EXT_ADV)
+#define ADV_BUF_LEN (sizeof(struct btp_gap_device_found_ev) + 2 * CONFIG_BT_EXT_SCAN_BUF_SIZE)
+#else
 #define ADV_BUF_LEN (sizeof(struct btp_gap_device_found_ev) + 2 * 31)
+#endif
 
 static atomic_t current_settings;
 struct bt_conn_auth_cb cb;
@@ -98,7 +105,11 @@ static uint8_t read_car_cb(struct bt_conn *conn, uint8_t err,
 static void le_connected(struct bt_conn *conn, uint8_t err)
 {
 	struct btp_gap_device_connected_ev ev;
+	char addr_str[BT_ADDR_LE_STR_LEN];
 	struct bt_conn_info info;
+
+	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr_str, sizeof(addr_str));
+	LOG_DBG("%s: 0x%02x", addr_str, err);
 
 	if (err) {
 		return;
@@ -126,6 +137,10 @@ static void le_disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	struct btp_gap_device_disconnected_ev ev;
 	const bt_addr_le_t *addr = bt_conn_get_dst(conn);
+	char addr_str[BT_ADDR_LE_STR_LEN];
+
+	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr_str, sizeof(addr_str));
+	LOG_DBG("%s: 0x%02x", addr_str, reason);
 
 	bt_addr_le_copy(&ev.address, addr);
 
@@ -611,7 +626,7 @@ int tester_gap_create_adv_instance(struct bt_le_adv_param *param, uint8_t own_ad
 	}
 
 	if (atomic_test_bit(&current_settings, BTP_GAP_SETTINGS_CONNECTABLE)) {
-		param->options |= BT_LE_ADV_OPT_CONNECTABLE;
+		param->options |= BT_LE_ADV_OPT_CONN;
 
 		if (filter_list_in_use) {
 			param->options |= BT_LE_ADV_OPT_FILTER_CONN;
@@ -628,7 +643,7 @@ int tester_gap_create_adv_instance(struct bt_le_adv_param *param, uint8_t own_ad
 		break;
 #if defined(CONFIG_BT_PRIVACY)
 	case BTP_GAP_ADDR_TYPE_RESOLVABLE_PRIVATE:
-		/* RPA usage is is controlled via privacy settings */
+		/* RPA usage is controlled via privacy settings */
 		if (!atomic_test_bit(&current_settings, BTP_GAP_SETTINGS_PRIVACY)) {
 			return -EINVAL;
 		}
@@ -677,10 +692,8 @@ static uint8_t start_advertising(const void *cmd, uint16_t cmd_len,
 {
 	const struct btp_gap_start_advertising_cmd *cp = cmd;
 	struct btp_gap_start_advertising_rp *rp = rsp;
-	struct bt_le_adv_param param = BT_LE_ADV_PARAM_INIT(BT_LE_ADV_OPT_ONE_TIME,
-							    BT_GAP_ADV_FAST_INT_MIN_2,
-							    BT_GAP_ADV_FAST_INT_MAX_2,
-							    NULL);
+	struct bt_le_adv_param param =
+		BT_LE_ADV_PARAM_INIT(0, BT_GAP_ADV_FAST_INT_MIN_2, BT_GAP_ADV_FAST_INT_MAX_2, NULL);
 	uint8_t own_addr_type;
 	uint32_t duration;
 	uint8_t adv_len;
@@ -985,14 +998,20 @@ static uint8_t stop_discovery(const void *cmd, uint16_t cmd_len,
 static uint8_t connect(const void *cmd, uint16_t cmd_len,
 		       void *rsp, uint16_t *rsp_len)
 {
+	/* The conn interval is set to 60ms (0x30). This is to better support test cases where we
+	 * need to connect to multiple peripherals (up to 3). The connection interval should also be
+	 * a multiple of 30ms, as that is ideal to support both 7.5ms and 10ms ISO intervals
+	 */
+	const uint16_t interval = BT_GAP_MS_TO_CONN_INTERVAL(60U);
+	const struct bt_le_conn_param *conn_param =
+		BT_LE_CONN_PARAM(interval, interval, 0U, BT_GAP_MS_TO_CONN_TIMEOUT(4000U));
 	const struct btp_gap_connect_cmd *cp = cmd;
 	int err;
 
 	if (!bt_addr_le_eq(&cp->address, BT_ADDR_LE_ANY)) {
-		struct bt_conn *conn;
+		struct bt_conn *conn = NULL;
 
-		err = bt_conn_le_create(&cp->address, BT_CONN_LE_CREATE_CONN,
-					BT_LE_CONN_PARAM_DEFAULT, &conn);
+		err = bt_conn_le_create(&cp->address, BT_CONN_LE_CREATE_CONN, conn_param, &conn);
 		if (err) {
 			LOG_ERR("Failed to create connection (%d)", err);
 			return BTP_STATUS_FAILED;
@@ -1000,8 +1019,7 @@ static uint8_t connect(const void *cmd, uint16_t cmd_len,
 
 		bt_conn_unref(conn);
 	} else {
-		err = bt_conn_le_create_auto(BT_CONN_LE_CREATE_CONN,
-					     BT_LE_CONN_PARAM_DEFAULT);
+		err = bt_conn_le_create_auto(BT_CONN_LE_CREATE_CONN, conn_param);
 		if (err) {
 			LOG_ERR("Failed to create auto connection (%d)", err);
 			return BTP_STATUS_FAILED;
@@ -1432,10 +1450,8 @@ static struct bt_le_per_adv_sync_cb pa_sync_cb = {
 int tester_gap_padv_configure(const struct bt_le_per_adv_param *param)
 {
 	int err;
-	struct bt_le_adv_param ext_adv_param = BT_LE_ADV_PARAM_INIT(BT_LE_ADV_OPT_ONE_TIME,
-								    param->interval_min,
-								    param->interval_max,
-								    NULL);
+	struct bt_le_adv_param ext_adv_param =
+		BT_LE_ADV_PARAM_INIT(0, param->interval_min, param->interval_max, NULL);
 
 	if (ext_adv == NULL) {
 		current_settings = BIT(BTP_GAP_SETTINGS_DISCOVERABLE) |
@@ -1532,7 +1548,8 @@ int tester_gap_padv_stop(void)
 	int err;
 
 	if (ext_adv == NULL) {
-		return -EINVAL;
+		/* Ext adv not yet created */
+		return -ESRCH;
 	}
 
 	/* Enable Periodic Advertising */

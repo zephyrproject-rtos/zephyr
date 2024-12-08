@@ -1,7 +1,4 @@
-.. _stm32f4_disco_board:
-
-ST STM32F4 Discovery
-####################
+.. zephyr:board:: stm32f4_disco
 
 Overview
 ********
@@ -31,10 +28,6 @@ some highlights of the STM32F4DISCOVERY board:
 - LIS302DL or LIS3DSH ST MEMS 3-axis accelerometer
 - MP45DT02 ST-MEMS audio sensor omni-directional digital microphone
 - CS43L22 audio DAC with integrated class D speaker driver
-
-.. image:: img/stm32f4_disco.jpg
-     :align: center
-     :alt: STM32F4DISCOVERY
 
 More information about the board can be found at the `STM32F4DISCOVERY website`_.
 
@@ -155,6 +148,8 @@ enable console output you should use a serial cable and connect it to UART2 pins
 Programming and Debugging
 *************************
 
+STM32F4DISCOVERY Discovery kit includes an ST-LINK/V2 embedded debug tool interface.
+
 Applications for the ``stm32f4_disco`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -162,8 +157,16 @@ flashed in the usual way (see :ref:`build_an_application` and
 Flashing
 ========
 
-STM32F4DISCOVERY Discovery kit includes an ST-LINK/V2 embedded debug tool interface.
-This interface is supported by the openocd version included in Zephyr SDK.
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
+
+Alternatively, OpenOCD or JLink can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner jlink
 
 Flashing an application to STM32F4DISCOVERY
 -------------------------------------------
@@ -189,7 +192,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -211,3 +214,6 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. _SK Pang CAN breakout board:
    https://www.skpang.co.uk/products/can-bus-can-fd-breakout-board-5v-supply-and-3-3v-logic
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

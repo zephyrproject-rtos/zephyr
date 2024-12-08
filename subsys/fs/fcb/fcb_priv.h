@@ -8,6 +8,10 @@
 #ifndef __FCB_PRIV_H_
 #define __FCB_PRIV_H_
 
+#include <stdint.h>
+
+#include <zephyr/fs/fcb.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -35,11 +39,11 @@ extern "C" {
  *
  * @return uin32_t formatted magic value
  */
-static inline uint32_t fcb_flash_magic(const struct fcb *fcb)
+static inline uint32_t fcb_flash_magic(const struct fcb *fcbp)
 {
-	const uint8_t ev = fcb->f_erase_value;
+	const uint8_t ev = fcbp->f_erase_value;
 
-	return (fcb->f_magic ^ ~MK32(ev));
+	return (fcbp->f_magic ^ ~MK32(ev));
 }
 
 struct fcb_disk_area {
@@ -49,32 +53,30 @@ struct fcb_disk_area {
 	uint16_t fd_id;
 };
 
-int fcb_put_len(const struct fcb *fcb, uint8_t *buf, uint16_t len);
-int fcb_get_len(const struct fcb *fcb, uint8_t *buf, uint16_t *len);
+int fcb_put_len(const struct fcb *fcbp, uint8_t *buf, uint16_t len);
+int fcb_get_len(const struct fcb *fcbp, uint8_t *buf, uint16_t *len);
 
-static inline int fcb_len_in_flash(struct fcb *fcb, uint16_t len)
+static inline int fcb_len_in_flash(struct fcb *fcbp, uint16_t len)
 {
-	if (fcb->f_align <= 1U) {
+	if (fcbp->f_align <= 1U) {
 		return len;
 	}
-	return (len + (fcb->f_align - 1U)) & ~(fcb->f_align - 1U);
+	return (len + (fcbp->f_align - 1U)) & ~(fcbp->f_align - 1U);
 }
 
-const struct flash_area *fcb_open_flash(const struct fcb *fcb);
-uint8_t fcb_get_align(const struct fcb *fcb);
-int fcb_erase_sector(const struct fcb *fcb, const struct flash_sector *sector);
+const struct flash_area *fcb_open_flash(const struct fcb *fcbp);
+uint8_t fcb_get_align(const struct fcb *fcbp);
+int fcb_erase_sector(const struct fcb *fcbp, const struct flash_sector *sector);
 
-int fcb_getnext_in_sector(struct fcb *fcb, struct fcb_entry *loc);
-struct flash_sector *fcb_getnext_sector(struct fcb *fcb,
-					struct flash_sector *sector);
-int fcb_getnext_nolock(struct fcb *fcb, struct fcb_entry *loc);
+int fcb_getnext_in_sector(struct fcb *fcbp, struct fcb_entry *loc);
+struct flash_sector *fcb_getnext_sector(struct fcb *fcbp, struct flash_sector *sector);
+int fcb_getnext_nolock(struct fcb *fcbp, struct fcb_entry *loc);
 
-int fcb_elem_info(struct fcb *fcb, struct fcb_entry *loc);
-int fcb_elem_endmarker(struct fcb *fcb, struct fcb_entry *loc, uint8_t *crc8p);
+int fcb_elem_info(struct fcb *fcbp, struct fcb_entry *loc);
+int fcb_elem_endmarker(struct fcb *fcbp, struct fcb_entry *loc, uint8_t *crc8p);
 
-int fcb_sector_hdr_init(struct fcb *fcb, struct flash_sector *sector, uint16_t id);
-int fcb_sector_hdr_read(struct fcb *fcb, struct flash_sector *sector,
-			struct fcb_disk_area *fdap);
+int fcb_sector_hdr_init(struct fcb *fcbp, struct flash_sector *sector, uint16_t id);
+int fcb_sector_hdr_read(struct fcb *fcbp, struct flash_sector *sector, struct fcb_disk_area *fdap);
 
 #ifdef __cplusplus
 }

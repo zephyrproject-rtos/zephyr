@@ -487,6 +487,31 @@ ZTEST_USER(can_classic, test_bitrate_limits)
 }
 
 /**
+ * @brief Test setting a too low bitrate.
+ */
+ZTEST_USER(can_classic, test_set_bitrate_too_low)
+{
+	uint32_t min = can_get_bitrate_min(can_dev);
+	int err;
+
+	if (min == 0) {
+		ztest_test_skip();
+	}
+
+	err = can_stop(can_dev);
+	zassert_equal(err, 0, "failed to stop CAN controller (err %d)", err);
+
+	err = can_set_bitrate(can_dev, min - 1);
+	zassert_equal(err, -ENOTSUP, "too low bitrate accepted");
+
+	err = can_set_bitrate(can_dev, CONFIG_CAN_DEFAULT_BITRATE);
+	zassert_equal(err, 0, "failed to restore default bitrate");
+
+	err = can_start(can_dev);
+	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
+}
+
+/**
  * @brief Test setting a too high bitrate.
  */
 ZTEST_USER(can_classic, test_set_bitrate_too_high)
@@ -529,6 +554,9 @@ ZTEST_USER(can_classic, test_set_bitrate)
 	err = can_set_bitrate(can_dev, TEST_BITRATE_1);
 	zassert_equal(err, 0, "failed to set bitrate");
 
+	err = can_set_bitrate(can_dev, CONFIG_CAN_DEFAULT_BITRATE);
+	zassert_equal(err, 0, "failed to restore default bitrate");
+
 	err = can_start(can_dev);
 	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
 }
@@ -546,6 +574,9 @@ ZTEST_USER(can_classic, test_set_timing_min)
 	err = can_set_timing(can_dev, can_get_timing_min(can_dev));
 	zassert_equal(err, 0, "failed to set minimum timing parameters (err %d)", err);
 
+	err = can_set_bitrate(can_dev, CONFIG_CAN_DEFAULT_BITRATE);
+	zassert_equal(err, 0, "failed to restore default bitrate");
+
 	err = can_start(can_dev);
 	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
 }
@@ -562,6 +593,9 @@ ZTEST_USER(can_classic, test_set_timing_max)
 
 	err = can_set_timing(can_dev, can_get_timing_max(can_dev));
 	zassert_equal(err, 0, "failed to set maximum timing parameters (err %d)", err);
+
+	err = can_set_bitrate(can_dev, CONFIG_CAN_DEFAULT_BITRATE);
+	zassert_equal(err, 0, "failed to restore default bitrate");
 
 	err = can_start(can_dev);
 	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
@@ -604,6 +638,19 @@ ZTEST(can_classic, test_add_filter)
 
 	filter_id = add_rx_filter(can_dev, &test_ext_masked_filter_1, rx_ext_mask_callback_1);
 	can_remove_rx_filter(can_dev, filter_id);
+}
+
+/**
+ * @brief Test adding filter without callback.
+ */
+ZTEST(can_classic, test_add_filter_without_callback)
+{
+	int err;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_RUNTIME_ERROR_CHECKS);
+
+	err = can_add_rx_filter(can_dev, NULL, NULL, &test_std_filter_1);
+	zassert_equal(err, -EINVAL, "added filter with NULL callback");
 }
 
 /**
@@ -804,6 +851,33 @@ ZTEST(can_classic, test_send_ext_id_out_of_range)
 	struct can_frame frame = {
 		.flags = CAN_FRAME_IDE,
 		.id = CAN_EXT_ID_MASK + 1U,
+	};
+
+	send_invalid_frame(can_dev, &frame);
+}
+
+/**
+ * @brief Test sending standard (11-bit ID) CAN frame with too big payload.
+ */
+ZTEST(can_classic, test_send_std_id_dlc_of_range)
+{
+	struct can_frame frame = {
+		.id = TEST_CAN_STD_ID_1,
+		.dlc = CAN_MAX_DLC + 1U,
+	};
+
+	send_invalid_frame(can_dev, &frame);
+}
+
+/**
+ * @brief Test sending extended (29-bit ID) CAN frame with too big payload.
+ */
+ZTEST(can_classic, test_send_ext_id_dlc_of_range)
+{
+	struct can_frame frame = {
+		.flags = CAN_FRAME_IDE,
+		.id = TEST_CAN_EXT_ID_1,
+		.dlc = CAN_MAX_DLC + 1U,
 	};
 
 	send_invalid_frame(can_dev, &frame);
@@ -1180,10 +1254,13 @@ ZTEST_USER(can_classic, test_filters_preserved_through_bitrate_change)
 	zassert_equal(state, CAN_STATE_STOPPED, "CAN controller not stopped");
 
 	err = can_set_bitrate(can_dev, TEST_BITRATE_2);
-	zassert_equal(err, 0, "failed to set bitrate");
+	zassert_equal(err, 0, "failed to set bitrate 2");
 
 	err = can_set_bitrate(can_dev, TEST_BITRATE_1);
-	zassert_equal(err, 0, "failed to set bitrate");
+	zassert_equal(err, 0, "failed to set bitrate 1");
+
+	err = can_set_bitrate(can_dev, CONFIG_CAN_DEFAULT_BITRATE);
+	zassert_equal(err, 0, "failed to restore default bitrate");
 
 	err = can_start(can_dev);
 	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);

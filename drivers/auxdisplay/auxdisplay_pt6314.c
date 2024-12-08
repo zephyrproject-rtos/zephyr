@@ -164,7 +164,6 @@ static int auxdisplay_pt6314_cursor_position_set(const struct device *dev,
 {
 	const struct auxdisplay_pt6314_config *config = dev->config;
 	struct auxdisplay_pt6314_data *data = dev->data;
-	uint8_t inst;
 
 	if (type == AUXDISPLAY_POSITION_RELATIVE) {
 		x += data->cursor_x;
@@ -273,8 +272,6 @@ static int auxdisplay_pt6314_write(const struct device *dev, const uint8_t *text
 static int auxdisplay_pt6314_init(const struct device *dev)
 {
 	const struct auxdisplay_pt6314_config *config = dev->config;
-	struct auxdisplay_pt6314_data *data = dev->data;
-	uint8_t inst;
 
 	if (!device_is_ready(config->bus.bus)) {
 		return -ENODEV;
@@ -287,7 +284,7 @@ static int auxdisplay_pt6314_init(const struct device *dev)
 	return 0;
 }
 
-static const struct auxdisplay_driver_api auxdisplay_pt6314_auxdisplay_api = {
+static DEVICE_API(auxdisplay, auxdisplay_pt6314_auxdisplay_api) = {
 	.display_on = auxdisplay_pt6314_display_on,
 	.display_off = auxdisplay_pt6314_display_off,
 	.cursor_set_enabled = auxdisplay_pt6314_cursor_set_enabled,

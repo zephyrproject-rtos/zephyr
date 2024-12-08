@@ -1,5 +1,6 @@
 board:
   name: 96b_meerkat96
+  full_name: Meerkat96
   vendor: 96boards
   socs:
     - name: mcimx7d

@@ -30,6 +30,7 @@
 		watchdog0 = &iwdg;
 		volt-sensor0 = &vref1;
 		volt-sensor1 = &vbat4;
+		die-temp0 = &die_temp;
 	};
 };
 
@@ -41,5 +42,9 @@
 };
 
 &gpdma1 {
+	status = "okay";
+};
+
+&die_temp {
 	status = "okay";
 };

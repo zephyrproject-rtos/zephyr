@@ -12,6 +12,5 @@ supported:
   - can
   - pwm
   - counter
-  - usb
   - spi
   - gpio

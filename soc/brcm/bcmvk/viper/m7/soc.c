@@ -13,11 +13,8 @@
  * @brief Perform basic hardware initialization at boot.
  *
  * This needs to be run from the very beginning.
- * So the init priority has to be 0 (zero).
- *
- * @return 0
  */
-static int viper_init(void)
+void soc_early_init_hook(void)
 {
 	uint32_t data;
 
@@ -29,8 +26,4 @@ static int viper_init(void)
 	data = sys_read32(LS_ICFG_PMON_LITE_SW_RESETN);
 	data |= PCIE_PMON_LITE_SW_RESETN;
 	sys_write32(data, LS_ICFG_PMON_LITE_SW_RESETN);
-
-	return 0;
 }
-
-SYS_INIT(viper_init, PRE_KERNEL_1, 0);

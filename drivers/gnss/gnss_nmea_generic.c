@@ -64,7 +64,7 @@ static int gnss_nmea_generic_resume(const struct device *dev)
 	struct gnss_nmea_generic_data *data = dev->data;
 	int ret;
 
-	ret = modem_pipe_open(data->uart_pipe);
+	ret = modem_pipe_open(data->uart_pipe, K_SECONDS(10));
 	if (ret < 0) {
 		return ret;
 	}
@@ -76,12 +76,12 @@ static int gnss_nmea_generic_resume(const struct device *dev)
 	}
 
 	if (ret < 0) {
-		modem_pipe_close(data->uart_pipe);
+		modem_pipe_close(data->uart_pipe, K_SECONDS(10));
 	}
 	return ret;
 }
 
-static const struct gnss_driver_api gnss_api = {
+static DEVICE_API(gnss, gnss_api) = {
 };
 
 static int gnss_nmea_generic_init_nmea0183_match(const struct device *dev)

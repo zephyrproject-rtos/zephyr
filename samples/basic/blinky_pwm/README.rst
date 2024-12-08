@@ -41,23 +41,23 @@ In these other cases, however, manual wiring is necessary:
 
    * - Board
      - Wiring
-   * - :ref:`nucleo_f401re_board`
+   * - :zephyr:board:`nucleo_f401re`
      - connect PWM2 (PA0) to an LED
-   * - :ref:`nucleo_l476rg_board`
+   * - :zephyr:board:`nucleo_l476rg`
      - connect PWM2 (PA0) to an LED
-   * - :ref:`stm32f4_disco_board`
+   * - :zephyr:board:`stm32f4_disco`
      - connect PWM2 (PA0) to an LED
-   * - :ref:`nucleo_f302r8_board`
+   * - :zephyr:board:`nucleo_f302r8`
      - connect PWM2 (PA0) to an LED
-   * - :ref:`nucleo_f103rb_board`
+   * - :zephyr:board:`nucleo_f103rb`
      - connect PWM1 (PA8) to an LED
-   * - :ref:`nucleo_wb55rg_board`
+   * - :zephyr:board:`nucleo_wb55rg`
      - connect PWM1 (PA8) to an LED
-   * - :ref:`esp32_devkitc_wroom`
+   * - :zephyr:board:`esp32_devkitc_wroom`
      - connect GPIO2 to an LED
-   * - :ref:`esp32s2_saola`
+   * - :zephyr:board:`esp32s2_saola`
      - connect GPIO2 to an LED
-   * - :ref:`esp32c3_devkitm`
+   * - :zephyr:board:`esp32c3_devkitm`
      - connect GPIO2 to an LED
 
 Building and Running

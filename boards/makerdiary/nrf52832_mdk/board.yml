@@ -1,5 +1,6 @@
 board:
   name: nrf52832_mdk
+  full_name: nRF52832-mdk
   vendor: makerdiary
   socs:
   - name: nrf52832

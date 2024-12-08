@@ -42,7 +42,7 @@ tests:
     arch_exclude:
       - posix
     extra_args:
-      - OVERLAY_CONFIG="overlay-bt.conf"
+      - EXTRA_CONF_FILE="overlay-bt.conf"
       - DTC_OVERLAY_FILE="bt.overlay"
 
   sample.logger.usermode:
@@ -54,6 +54,8 @@ tests:
       - bl654_dvk
       - decawave_dwm1001_dev
       - segger_trb_stm32f407
+      - bytesensi_l
+      - bl654_dvk/nrf52840/pa
     arch_exclude:
       - posix
     tags:

@@ -14,6 +14,6 @@ supported:
   - spi
   - backup_sram
   - watchdog
-  - usb
   - qspi
+  - video
 vendor: weact

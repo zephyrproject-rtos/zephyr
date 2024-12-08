@@ -17,6 +17,8 @@ config USBC_VBUS_INIT_PRIORITY
 	  Initialization priority of the USB-C VBUS measurement drivers in POST_KERNEL.
 
 source "drivers/usb_c/vbus/Kconfig.usbc_vbus_adc"
+source "drivers/usb_c/vbus/Kconfig.numaker"
+source "drivers/usb_c/vbus/Kconfig.usbc_vbus_tcpci"
 
 endif # USBC_VBUS_DRIVER
 

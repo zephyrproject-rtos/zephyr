@@ -46,11 +46,11 @@ properties:
     type: phandle
     description: phandle to interrupt controller node
 
+  # description of label should be given in bindings inheriting base.yaml
+  # label property is included here to help enforce its type being string
   label:
     type: string
-    deprecated: true
-    description: |
-      Human readable string describing the device (used as device_get_binding() argument)
+    description: No description provided for this label
 
   clocks:
     type: phandle-array
@@ -92,6 +92,18 @@ properties:
   mbox-names:
     type: string-array
     description: Provided names of mailbox / IPM channel specifiers
+
+  power-domains:
+    type: phandle-array
+    description: Power domain specifiers
+
+  power-domain-names:
+    type: string-array
+    description: Provided names of power domain specifiers
+
+  "#power-domain-cells":
+    type: int
+    description: Number of cells in power-domains property
 
   zephyr,deferred-init:
     type: boolean

@@ -1168,7 +1168,7 @@ static int grow_r502a_init(const struct device *dev)
 	return fps_init(dev);
 }
 
-static const struct sensor_driver_api grow_r502a_api = {
+static DEVICE_API(sensor, grow_r502a_api) = {
 	.sample_fetch = grow_r502a_sample_fetch,
 	.channel_get = grow_r502a_channel_get,
 	.attr_set = grow_r502a_attr_set,
@@ -1218,7 +1218,7 @@ static int grow_r502a_led_off(const struct device *dev, uint32_t led)
 	return fps_led_control(dev, &led_ctrl);
 }
 
-static const struct led_driver_api grow_r502a_leds_api = {
+static DEVICE_API(led, grow_r502a_leds_api) = {
 	.set_color = grow_r502a_led_set_color,
 	.on = grow_r502a_led_on,
 	.off = grow_r502a_led_off,

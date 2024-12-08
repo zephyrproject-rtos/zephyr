@@ -92,6 +92,12 @@
 	status = "okay";
 };
 
+&i2c2 {
+	pinctrl-0 = <&i2c2_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &rtcc0 {
 	prescaler = <1>;
 	status = "okay";

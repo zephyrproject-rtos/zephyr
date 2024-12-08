@@ -1,6 +1,10 @@
 common:
   # renode causes timeouts unfortunately
-  platform_exclude: m2gl025_miv m5stack_core2 hifive1
+  # xtensa dc233 (with mmu) has a TLB exception for unclear reasons
+  platform_exclude:
+    - m2gl025_miv
+    - hifive1
+    - qemu_xtensa/dc233c/mmu
   platform_key:
     - arch
     - simulation

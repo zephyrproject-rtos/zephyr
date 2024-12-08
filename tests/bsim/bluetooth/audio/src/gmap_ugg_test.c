@@ -6,6 +6,7 @@
 
 #include <errno.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stddef.h>
 #include <string.h>
 
@@ -26,7 +27,7 @@
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
@@ -43,14 +44,13 @@
  * required to place the AUX_ADV_IND PDUs in a non-overlapping interval with the
  * Broadcast ISO radio events.
  */
-#define BT_LE_EXT_ADV_CUSTOM \
-		BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV, \
-				0x0080, 0x0080, NULL)
+#define BT_LE_EXT_ADV_CUSTOM                                                                       \
+	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV, BT_GAP_MS_TO_ADV_INTERVAL(80),                      \
+			BT_GAP_MS_TO_ADV_INTERVAL(80), NULL)
 
-#define BT_LE_PER_ADV_CUSTOM \
-		BT_LE_PER_ADV_PARAM(0x0048, \
-				    0x0048, \
-				    BT_LE_PER_ADV_OPT_NONE)
+#define BT_LE_PER_ADV_CUSTOM                                                                       \
+	BT_LE_PER_ADV_PARAM(BT_GAP_MS_TO_PER_ADV_INTERVAL(90), BT_GAP_MS_TO_PER_ADV_INTERVAL(90),  \
+			    BT_LE_PER_ADV_OPT_NONE)
 
 #define UNICAST_SINK_SUPPORTED (CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0)
 #define UNICAST_SRC_SUPPORTED  (CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0)
@@ -225,7 +225,7 @@ static void stream_sent_cb(struct bt_bap_stream *bap_stream)
 }
 
 static void stream_configured_cb(struct bt_bap_stream *stream,
-				 const struct bt_audio_codec_qos_pref *pref)
+				 const struct bt_bap_qos_cfg_pref *pref)
 {
 	printk("Configured stream %p\n", stream);
 
@@ -545,10 +545,10 @@ static void gmap_device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t typ
 		return;
 	}
 
-	err = bt_conn_le_create(
-		addr, BT_CONN_LE_CREATE_CONN,
-		BT_LE_CONN_PARAM(BT_GAP_INIT_CONN_INT_MIN, BT_GAP_INIT_CONN_INT_MIN, 0, 400),
-		&connected_conns[connected_conn_cnt]);
+	err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN,
+				BT_LE_CONN_PARAM(BT_GAP_INIT_CONN_INT_MIN, BT_GAP_INIT_CONN_INT_MIN,
+						 0, BT_GAP_MS_TO_CONN_TIMEOUT(4000)),
+				&connected_conns[connected_conn_cnt]);
 	if (err) {
 		FAIL("Could not connect to peer: %d", err);
 	}
@@ -928,6 +928,7 @@ static void unicast_audio_stop(struct bt_bap_unicast_group *unicast_group)
 	param.type = BT_CAP_SET_TYPE_AD_HOC;
 	param.count = started_unicast_streams_cnt;
 	param.streams = started_unicast_streams;
+	param.release = true;
 
 	err = bt_cap_initiator_unicast_audio_stop(&param);
 	if (err != 0) {
@@ -1053,9 +1054,9 @@ static void setup_extended_adv_data(struct bt_cap_broadcast_source *source,
 	uint32_t broadcast_id;
 	int err;
 
-	err = bt_cap_initiator_broadcast_get_id(source, &broadcast_id);
-	if (err != 0) {
-		FAIL("Unable to get broadcast ID: %d\n", err);
+	err = bt_rand(&broadcast_id, BT_AUDIO_BROADCAST_ID_SIZE);
+	if (err) {
+		FAIL("Unable to generate broadcast ID: %d\n", err);
 		return;
 	}
 
@@ -1201,7 +1202,7 @@ static int test_gmap_ugg_broadcast_ac(const struct gmap_broadcast_ac_param *para
 		stream_params[GMAP_BROADCAST_AC_MAX_STREAM] = {0};
 	struct bt_cap_broadcast_source *broadcast_source;
 	struct bt_audio_codec_cfg codec_cfg;
-	struct bt_audio_codec_qos qos;
+	struct bt_bap_qos_cfg qos;
 	struct bt_le_ext_adv *adv;
 	int err;
 

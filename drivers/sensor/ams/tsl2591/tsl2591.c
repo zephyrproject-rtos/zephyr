@@ -136,7 +136,7 @@ static int tsl2591_channel_get(const struct device *dev, enum sensor_channel cha
 			       struct sensor_value *val)
 {
 	const struct tsl2591_data *data = dev->data;
-	int64_t cpl = data->atime * data->again;
+	int64_t cpl = (int64_t)data->atime * (int64_t)data->again;
 	int64_t strength;
 
 	/* Unfortunately, datasheet does not provide a lux conversion formula for this particular
@@ -477,7 +477,7 @@ static int tsl2591_init(const struct device *dev)
 	return 0;
 }
 
-static const struct sensor_driver_api tsl2591_driver_api = {
+static DEVICE_API(sensor, tsl2591_driver_api) = {
 #ifdef CONFIG_TSL2591_TRIGGER
 	.trigger_set = tsl2591_trigger_set,
 #endif

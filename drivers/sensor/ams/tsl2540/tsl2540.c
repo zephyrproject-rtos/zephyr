@@ -212,10 +212,12 @@ static int tsl2540_attr_set(const struct device *dev, enum sensor_channel chan,
 	}
 #endif /* CONFIG_TSL2540_TRIGGER */
 
-	switch ((enum sensor_attribute_tsl2540)attr) {
-	case SENSOR_ATTR_GAIN:
+	if (attr == SENSOR_ATTR_GAIN) {
 		tsl2540_attr_set_gain(dev, (enum sensor_gain_tsl2540)val->val1);
-		break;
+		goto exit;
+	}
+
+	switch ((enum sensor_attribute_tsl2540)attr) {
 	case SENSOR_ATTR_INT_APERS:
 		temp = (uint8_t)val->val1;
 
@@ -333,7 +335,7 @@ static int tsl2540_init(const struct device *dev)
 	return 0;
 }
 
-static const struct sensor_driver_api tsl2540_driver_api = {
+static DEVICE_API(sensor, tsl2540_driver_api) = {
 	.sample_fetch = tsl2540_sample_fetch,
 	.channel_get = tsl2540_channel_get,
 	.attr_set = tsl2540_attr_set,

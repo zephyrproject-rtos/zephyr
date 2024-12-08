@@ -2,7 +2,6 @@
 
 zephyr_syscall_header(
   ${ZEPHYR_BASE}/include/zephyr/net/socket.h
-  ${ZEPHYR_BASE}/include/zephyr/net/socket_select.h
 )
 
 zephyr_library_include_directories(.)
@@ -10,7 +9,6 @@ zephyr_library_include_directories(.)
 zephyr_library_sources(
   getaddrinfo.c
   sockets.c
-  sockets_select.c
 )
 
 if(NOT CONFIG_NET_SOCKETS_OFFLOAD)
@@ -20,6 +18,7 @@ zephyr_library_sources(
   )
 endif()
 
+zephyr_library_sources_ifdef(CONFIG_NET_NATIVE                     sockets_inet.c)
 zephyr_library_sources_ifdef(CONFIG_NET_SOCKETS_CAN                sockets_can.c)
 zephyr_library_sources_ifdef(CONFIG_NET_SOCKETS_PACKET             sockets_packet.c)
 zephyr_library_sources_ifdef(CONFIG_NET_SOCKETS_SOCKOPT_TLS        sockets_tls.c)

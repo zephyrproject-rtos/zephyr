@@ -1,5 +1,6 @@
 board:
   name: nsim
+  full_name: ARC nSIM and HAPS FPGA boards
   vendor: snps
   socs:
   - name: nsim_em

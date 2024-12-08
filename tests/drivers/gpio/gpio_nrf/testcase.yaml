@@ -1,5 +1,7 @@
 common:
-  tags: drivers gpio
+  tags:
+    - drivers
+    - gpio
   depends_on: gpio
   harness: ztest
 tests:

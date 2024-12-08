@@ -150,7 +150,7 @@ static int regulator_gpio_get_voltage(const struct device *dev, int32_t *volt_uv
 	return 0;
 }
 
-static const struct regulator_driver_api regulator_gpio_api = {
+static DEVICE_API(regulator, regulator_gpio_api) = {
 	.enable = regulator_gpio_enable,
 	.disable = regulator_gpio_disable,
 	.set_voltage = regulator_gpio_set_voltage,

@@ -26,11 +26,8 @@ logger = logging.getLogger(__name__)
 def test_LightweightM2M_1_1_int_101(shell: Shell, dut: DeviceAdapter, leshan: Leshan, endpoint_nosec: str):
     """
     Verify that the client is registered.
-    Note that this MUST be the first testcase executed, otherwise it will fail to get the
-    correct log output.
     """
     logger.info("LightweightM2M-1.1-int-101 - Initial Registration")
-    dut.readlines_until(regex='.*Registration Done', timeout=5.0)
     assert leshan.get(f'/clients/{endpoint_nosec}')
 
 def test_LightweightM2M_1_1_int_105(shell: Shell, dut: DeviceAdapter, leshan: Leshan, endpoint_nosec: str, helperclient: object):

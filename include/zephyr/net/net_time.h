@@ -14,6 +14,8 @@
  * https://github.com/torvalds/linux/blob/master/[tools/]include/linux/time64.h
  *
  * @defgroup net_time Network time representation.
+ * @since 3.5
+ * @version 0.1.0
  * @ingroup networking
  * @{
  */
@@ -67,7 +69,7 @@ extern "C" {
  * @ref timespec (C11, POSIX.1-2001), @ref timeval (POSIX.1-2001) or broken down
  * time as in @ref tm (C90). The advantage of net_time_t over these structured
  * time representations is lower memory footprint, faster and simpler scalar
- * arithmetics and easier conversion from/to low-level hardware counter values.
+ * arithmetic and easier conversion from/to low-level hardware counter values.
  * Also net_time_t can be used in the network stack as well as in applications
  * while POSIX concepts cannot. Converting net_time_t from/to structured time
  * representations is possible in a limited way but - except for @ref timespec -

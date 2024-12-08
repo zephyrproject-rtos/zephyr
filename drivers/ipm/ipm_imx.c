@@ -167,7 +167,7 @@ static int imx_mu_ipm_send(const struct device *dev, int wait, uint32_t id,
 	const struct imx_mu_config *config = dev->config;
 	MU_Type *base = MU(config);
 	uint32_t data32[IMX_IPM_DATA_REGS] = {0};
-#if !IS_ENABLED(CONFIG_HAS_MCUX)
+#if !defined(CONFIG_HAS_MCUX)
 	mu_status_t status;
 #endif
 	int i;
@@ -341,7 +341,7 @@ static int imx_mu_init(const struct device *dev)
 	return 0;
 }
 
-static const struct ipm_driver_api imx_mu_driver_api = {
+static DEVICE_API(ipm, imx_mu_driver_api) = {
 	.send = imx_mu_ipm_send,
 	.register_callback = imx_mu_ipm_register_callback,
 	.max_data_size_get = imx_mu_ipm_max_data_size_get,

@@ -29,6 +29,8 @@ LOG_MODULE_REGISTER(net_dhcpv4_server, CONFIG_NET_DHCPV4_SERVER_LOG_LEVEL);
 #define DHCPV4_OPTIONS_IP_LEASE_TIME_SIZE 6
 #define DHCPV4_OPTIONS_SERVER_ID_SIZE 6
 #define DHCPV4_OPTIONS_SUBNET_MASK_SIZE 6
+#define DHCPV4_OPTIONS_ROUTER_SIZE 6
+#define DHCPV4_OPTIONS_DNS_SERVER_SIZE 6
 #define DHCPV4_OPTIONS_CLIENT_ID_MIN_SIZE 2
 
 #define ADDRESS_RESERVED_TIMEOUT K_SECONDS(30)
@@ -69,6 +71,8 @@ struct dhcpv4_server_ctx {
 #endif
 };
 
+static void *address_provider_callback_user_data;
+static net_dhcpv4_server_provider_cb_t address_provider_callback;
 static struct dhcpv4_server_ctx server_ctx[CONFIG_NET_DHCPV4_SERVER_INSTANCES];
 static struct zsock_pollfd fds[CONFIG_NET_DHCPV4_SERVER_INSTANCES];
 static K_MUTEX_DEFINE(server_lock);
@@ -379,6 +383,45 @@ static uint8_t *dhcpv4_encode_subnet_mask_option(uint8_t *buf, size_t *buflen,
 	return buf + DHCPV4_OPTIONS_SUBNET_MASK_SIZE;
 }
 
+static uint8_t *dhcpv4_encode_router_option(uint8_t *buf, size_t *buflen,
+					    struct in_addr *router)
+{
+	if (buf == NULL || *buflen < DHCPV4_OPTIONS_ROUTER_SIZE) {
+		return NULL;
+	}
+
+	buf[0] = DHCPV4_OPTIONS_ROUTER;
+	buf[1] = sizeof(struct in_addr);
+	memcpy(&buf[2], router->s4_addr, sizeof(struct in_addr));
+
+	*buflen -= DHCPV4_OPTIONS_ROUTER_SIZE;
+
+	return buf + DHCPV4_OPTIONS_ROUTER_SIZE;
+}
+
+static uint8_t *dhcpv4_encode_dns_server_option(uint8_t *buf, size_t *buflen)
+{
+	struct in_addr dns_address;
+
+	if (buf == NULL || *buflen < DHCPV4_OPTIONS_DNS_SERVER_SIZE) {
+		return NULL;
+	}
+
+	if (net_addr_pton(AF_INET, CONFIG_NET_DHCPV4_SERVER_OPTION_DNS_ADDRESS, &dns_address)) {
+		LOG_ERR("Invalid DNS server address: %s",
+			CONFIG_NET_DHCPV4_SERVER_OPTION_DNS_ADDRESS);
+		return NULL;
+	}
+
+	buf[0] = DHCPV4_OPTIONS_DNS_SERVER;
+	buf[1] = sizeof(struct in_addr);
+	memcpy(&buf[2], dns_address.s4_addr, sizeof(struct in_addr));
+
+	*buflen -= DHCPV4_OPTIONS_DNS_SERVER_SIZE;
+
+	return buf + DHCPV4_OPTIONS_DNS_SERVER_SIZE;
+}
+
 static uint8_t *dhcpv4_encode_end_option(uint8_t *buf, size_t *buflen)
 {
 	if (buf == NULL || *buflen < 1) {
@@ -472,6 +515,20 @@ static uint8_t *dhcpv4_encode_requested_params(
 			}
 			break;
 
+		case DHCPV4_OPTIONS_ROUTER:
+			buf = dhcpv4_encode_router_option(
+				buf, buflen, &ctx->iface->config.ip.ipv4->gw);
+			if (buf == NULL) {
+				goto out;
+			}
+			break;
+
+		case DHCPV4_OPTIONS_DNS_SERVER:
+			buf = dhcpv4_encode_dns_server_option(buf, buflen);
+			if (buf == NULL) {
+				goto out;
+			}
+			break;
 		/* Others - just ignore. */
 		default:
 			break;
@@ -691,9 +748,8 @@ static int dhcpv4_get_client_id(struct dhcp_msg *msg, uint8_t *options,
 	}
 
 	client_id->buf[0] = msg->htype;
-	client_id->buf[1] = msg->hlen;
-	memcpy(client_id->buf + 2, msg->chaddr, msg->hlen);
-	client_id->len = msg->hlen + 2;
+	memcpy(client_id->buf + 1, msg->chaddr, msg->hlen);
+	client_id->len = msg->hlen + 1;
 
 	return 0;
 }
@@ -921,6 +977,18 @@ static void dhcpv4_handle_discover(struct dhcpv4_server_ctx *ctx,
 			selected = slot;
 			break;
 		}
+		struct in_addr addr = { 0 };
+
+		if (slot->state == DHCPV4_SERVER_ADDR_FREE &&
+		    address_provider_callback) {
+			ret = address_provider_callback(ctx->iface, &client_id, &addr,
+							address_provider_callback_user_data);
+			if (ret == 0) {
+				selected = slot;
+				slot->addr = addr;
+			}
+			break;
+		}
 	}
 
 	/* 2. Skipped, for now expired/released entries are forgotten. */
@@ -954,7 +1022,7 @@ static void dhcpv4_handle_discover(struct dhcpv4_server_ctx *ctx,
 
 		memcpy(&giaddr, msg->giaddr, sizeof(giaddr));
 		if (!net_ipv4_is_addr_unspecified(&giaddr)) {
-			/* Only addresses in local subnet supproted for now. */
+			/* Only addresses in local subnet supported for now. */
 			return;
 		}
 
@@ -1421,10 +1489,8 @@ static void dhcpv4_process_data(struct dhcpv4_server_ctx *ctx, uint8_t *data,
 	k_mutex_unlock(&server_lock);
 }
 
-static void dhcpv4_server_cb(struct k_work *work)
+static void dhcpv4_server_cb(struct net_socket_service_event *evt)
 {
-	struct net_socket_service_event *evt =
-		CONTAINER_OF(work, struct net_socket_service_event, work);
 	struct dhcpv4_server_ctx *ctx = NULL;
 	uint8_t recv_buf[NET_IPV4_MTU];
 	int ret;
@@ -1466,7 +1532,7 @@ static void dhcpv4_server_cb(struct k_work *work)
 	dhcpv4_process_data(ctx, recv_buf, ret);
 }
 
-NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(dhcpv4_server, NULL, dhcpv4_server_cb,
+NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(dhcpv4_server, dhcpv4_server_cb,
 				      CONFIG_NET_DHCPV4_SERVER_INSTANCES);
 
 int net_dhcpv4_server_start(struct net_if *iface, struct in_addr *base_addr)
@@ -1526,7 +1592,7 @@ int net_dhcpv4_server_start(struct net_if *iface, struct in_addr *base_addr)
 	}
 
 	if (slot < 0) {
-		LOG_ERR("No free DHCPv4 server intance.");
+		LOG_ERR("No free DHCPv4 server instance.");
 		ret = -ENOMEM;
 		goto error;
 	}
@@ -1720,8 +1786,17 @@ out:
 	return ret;
 }
 
+void net_dhcpv4_server_set_provider_cb(net_dhcpv4_server_provider_cb_t cb, void *user_data)
+{
+	address_provider_callback_user_data = user_data;
+	address_provider_callback = cb;
+}
+
 void net_dhcpv4_server_init(void)
 {
+	address_provider_callback = NULL;
+	address_provider_callback_user_data = NULL;
+
 	for (int i = 0; i < ARRAY_SIZE(fds); i++) {
 		fds[i].fd = -1;
 	}

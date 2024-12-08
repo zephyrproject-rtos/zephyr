@@ -1,0 +1,92 @@
+/*
+ * Copyright (c) 2024 GARDENA GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/sim3u167.dtsi>
+#include "sgrm-pinctrl.dtsi"
+
+/ {
+	model = "GARDENA Smart Garden Radio Module";
+	compatible = "gardena,sgrm-sim3u167", "silabs,sim3u167","silabs,sim3u";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,flash = &flash0;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,ppp-uart = &usart0;
+	};
+};
+
+&cpu0 {
+	clock-frequency = <76953600>;
+};
+
+&pll0 {
+	status = "okay";
+};
+
+&clk_ahb {
+	clocks = <&pll0>;
+	status = "okay";
+};
+
+&clk_apb {
+	divider = <2>;
+	status = "okay";
+};
+
+&usart0 {
+	current-speed = <500000>;
+	pinctrl-0 = <&usart0_default>;
+	pinctrl-names = "default";
+	hw-flow-control;
+	status = "okay";
+};
+
+&usart1 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	disable-pullups;
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&flash0 {
+	status = "okay";
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		slot0_partition: partition@0 {
+			label = "image-0";
+			reg = <0x00000000 DT_SIZE_K(192)>;
+		};
+
+		storage_partition: partition@30000 {
+			label = "storage";
+			reg = <0x00030000 DT_SIZE_K(64)>;
+		};
+	};
+};

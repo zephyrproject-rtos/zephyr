@@ -8,5 +8,14 @@ tests:
       - charger
     build_only: true
     platform_allow:
-      - native_posix
       - native_sim
+
+  drivers.charger.emul.build:
+    tags:
+      - drivers
+      - charger
+    build_only: true
+    platform_allow:
+      - native_sim
+    extra_configs:
+      - CONFIG_EMUL=y

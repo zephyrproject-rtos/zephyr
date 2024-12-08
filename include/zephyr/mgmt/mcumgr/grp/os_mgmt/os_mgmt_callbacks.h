@@ -29,6 +29,30 @@ struct os_mgmt_reset_data {
 };
 
 /**
+ * Structure provided in the #MGMT_EVT_OP_OS_MGMT_BOOTLOADER_INFO notification callback: This
+ * callback function is used to add new fields to the bootloader info response.
+ */
+struct os_mgmt_bootloader_info_data {
+	/**
+	 * The zcbor encoder which is currently being used to output group information, additional
+	 * fields to the group can be added using this.
+	 */
+	zcbor_state_t *zse;
+
+	/** Contains the number of decoded parameters. */
+	const size_t *decoded;
+
+	/** Contains the value of the query parameter. */
+	struct zcbor_string *query;
+
+	/**
+	 * Must be set to true to indicate a response has been added, otherwise will return the
+	 * #OS_MGMT_ERR_QUERY_YIELDS_NO_ANSWER error.
+	 */
+	bool *has_output;
+};
+
+/**
  * @}
  */
 

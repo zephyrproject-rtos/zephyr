@@ -1,5 +1,6 @@
 board:
   name: warp7
+  full_name: WaRP7 - Next Generation IoT and Wearable Development Platform
   vendor: element14
   socs:
     - name: mcimx7d

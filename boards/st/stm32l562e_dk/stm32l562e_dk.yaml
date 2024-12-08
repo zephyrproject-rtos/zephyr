@@ -19,9 +19,9 @@ supported:
   - dma
   - usart
   - arduino_spi
-  - usb
   - usb_device
   - nvs
+  - usbd
 ram: 192
 flash: 512
 vendor: st

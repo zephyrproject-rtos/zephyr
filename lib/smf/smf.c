@@ -36,7 +36,9 @@ static bool share_paren(const struct smf_state *test_state, const struct smf_sta
 static const struct smf_state *get_child_of(const struct smf_state *states,
 					    const struct smf_state *parent)
 {
-	for (const struct smf_state *tmp = states;; tmp = tmp->parent) {
+	const struct smf_state *tmp = states;
+
+	while (true) {
 		if (tmp->parent == parent) {
 			return tmp;
 		}
@@ -44,9 +46,9 @@ static const struct smf_state *get_child_of(const struct smf_state *states,
 		if (tmp->parent == NULL) {
 			return NULL;
 		}
-	}
 
-	return NULL;
+		tmp = tmp->parent;
+	}
 }
 
 static const struct smf_state *get_last_of(const struct smf_state *states)
@@ -139,19 +141,14 @@ static bool smf_execute_ancestor_run_actions(struct smf_ctx *ctx)
 	struct internal_ctx *const internal = (void *)&ctx->internal;
 	/* Execute all run actions in reverse order */
 
-	/* Return if the current state switched states */
-	if (internal->new_state) {
-		internal->new_state = false;
-		return false;
-	}
-
 	/* Return if the current state terminated */
 	if (internal->terminate) {
 		return true;
 	}
 
-	if (internal->handled) {
-		/* Event was handled by this state. Stop propagating */
+	/* The child state either transitioned or handled it. Either way, stop propagating. */
+	if (internal->new_state || internal->handled) {
+		internal->new_state = false;
 		internal->handled = false;
 		return false;
 	}
@@ -169,19 +166,16 @@ static bool smf_execute_ancestor_run_actions(struct smf_ctx *ctx)
 				return true;
 			}
 
-			if (internal->new_state) {
-				break;
-			}
-
-			if (internal->handled) {
-				/* Event was handled by this state. Stop propagating */
-				internal->handled = false;
+			/* This state dealt with it. Stop propagating. */
+			if (internal->new_state || internal->handled) {
 				break;
 			}
 		}
 	}
 
 	internal->new_state = false;
+	internal->handled = false;
+
 	/* All done executing the run actions */
 
 	return false;
@@ -231,6 +225,8 @@ void smf_set_initial(struct smf_ctx *ctx, const struct smf_state *init_state)
 
 	internal->is_exit = false;
 	internal->terminate = false;
+	internal->handled = false;
+	internal->new_state = false;
 	ctx->current = init_state;
 	ctx->previous = NULL;
 	ctx->terminate_val = 0;

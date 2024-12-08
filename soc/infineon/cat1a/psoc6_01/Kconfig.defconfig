@@ -2,7 +2,7 @@
 # an affiliate of Cypress Semiconductor Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-# Infineon PSoC6_01 based MCU default configuration
+# Infineon PSOC 6_01 based MCU default configuration
 
 if SOC_DIE_PSOC6_01
 

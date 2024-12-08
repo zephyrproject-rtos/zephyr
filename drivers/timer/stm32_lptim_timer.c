@@ -162,8 +162,9 @@ static void lptim_set_autoreload(uint32_t arr)
 	/* Update autoreload register */
 	autoreload_next = arr;
 
-	if (!autoreload_ready)
+	if (!autoreload_ready) {
 		return;
+	}
 
 	/* The ARR register ready, we could set it directly */
 	if ((arr > 0) && (arr != LL_LPTIM_GetAutoReload(LPTIM))) {
@@ -449,6 +450,26 @@ static int sys_clock_driver_init(void)
 	}
 #endif
 
+#if DT_INST_NODE_HAS_PROP(0, st_timeout)
+	/*
+	 * Check if prescaler corresponding to the DT_INST_PROP(0, st_timeout)
+	 * is matching the lptim_clock_presc calculated one from the lptim_clock_freq
+	 * max lptim period is 0xFFFF/(lptim_clock_freq/lptim_clock_presc)
+	 */
+	if (DT_INST_PROP(0, st_timeout) >
+		(lptim_clock_presc / lptim_clock_freq) * 0xFFFF) {
+		return -EIO;
+	}
+
+	/*
+	 * LPTIM is counting DT_INST_PROP(0, st_timeout),
+	 * seconds at lptim_clock_freq divided lptim_clock_presc) Hz",
+	 * lptim_time_base is the autoreload counter
+	 */
+	lptim_time_base = 2 * (lptim_clock_freq *
+		(uint32_t)DT_INST_PROP(0, st_timeout))
+		/ lptim_clock_presc;
+#else
 	/* Set LPTIM time base based on clock source freq */
 	if (lptim_clock_freq == KHZ(32)) {
 		lptim_time_base = 0xF9FF;
@@ -457,6 +478,8 @@ static int sys_clock_driver_init(void)
 	} else {
 		return -EIO;
 	}
+
+#endif /* st_timeout */
 
 #if !defined(CONFIG_STM32_LPTIM_TICK_FREQ_RATIO_OVERRIDE)
 	/*

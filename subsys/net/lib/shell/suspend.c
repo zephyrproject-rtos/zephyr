@@ -56,4 +56,4 @@ static int cmd_net_suspend(const struct shell *sh, size_t argc, char *argv[])
 
 SHELL_SUBCMD_ADD((net), suspend, NULL,
 		 "Suspend a network interface",
-		 cmd_net_suspend, 1, 0);
+		 cmd_net_suspend, 2, 0);

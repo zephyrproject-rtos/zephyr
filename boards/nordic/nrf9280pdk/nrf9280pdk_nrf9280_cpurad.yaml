@@ -1,0 +1,19 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: nrf9280pdk/nrf9280/cpurad
+name: nRF9280-DK-nRF9280-Radio
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - xtools
+  - zephyr
+sysbuild: true
+ram: 32
+flash: 256
+supported:
+  - counter
+  - gpio
+  - pwm
+  - spi

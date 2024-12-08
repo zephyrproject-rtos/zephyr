@@ -1,7 +1,4 @@
-.. _roc_rk3568_pc:
-
-Firefly ROC-RK3568-PC (Quad-core Cortex-A55)
-############################################
+.. zephyr:board:: roc_rk3568_pc
 
 Overview
 ********

@@ -10,6 +10,7 @@ from zspdx.walker import WalkerConfig, Walker
 from zspdx.scanner import ScannerConfig, scanDocument
 from zspdx.writer import writeSPDX
 
+
 # SBOMConfig contains settings that will be passed along to the various
 # SBOM maker subcomponents.
 class SBOMConfig:
@@ -30,6 +31,7 @@ class SBOMConfig:
 
         # should also add an SPDX document for the SDK?
         self.includeSDK = False
+
 
 # create Cmake file-based API directories and query file
 # Arguments:
@@ -59,6 +61,7 @@ def setupCmakeQuery(build_dir):
         cm_fd = open(queryFilePath, "w")
         cm_fd.close()
         return True
+
 
 # main entry point for SBOM maker
 # Arguments:

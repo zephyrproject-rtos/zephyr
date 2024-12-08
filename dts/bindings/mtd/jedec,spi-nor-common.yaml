@@ -102,3 +102,14 @@ properties:
       low power mode.
 
       Only supported on Macronix MX25R Ultra Low Power series.
+
+  use-4b-addr-opcodes:
+    type: boolean
+    description: |
+      Indicates the device uses special 4-byte address opcodes.
+      Instead of switching to 4-byte addressing mode, the device uses
+      special opcodes for 4-byte addressing.
+
+      Some devices support 4-byte address opcodes for read/write/erase
+      operations.  Use this property to indicate that the device supports
+      4-byte address opcodes.

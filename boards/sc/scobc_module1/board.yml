@@ -1,5 +1,6 @@
 board:
   name: scobc_module1
+  full_name: OBC module 1
   vendor: spacecubics
   socs:
   - name: designstart_fpga_cortex_m3

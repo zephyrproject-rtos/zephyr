@@ -9,7 +9,6 @@
 #include <assert.h>
 #include <errno.h>
 #include <zephyr/bluetooth/mesh.h>
-#include <zephyr/bluetooth/testing.h>
 #include <zephyr/bluetooth/mesh/cfg.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/settings/settings.h>
@@ -18,6 +17,7 @@
 #include <sar_cfg_internal.h>
 #include <string.h>
 #include "mesh/access.h"
+#include "mesh/testing.h"
 
 #include <zephyr/logging/log.h>
 #define LOG_MODULE_NAME bttester_mesh
@@ -290,7 +290,7 @@ static void oob_store_handler(struct k_work *work)
 #endif /* CONFIG_BT_MESH_DFD_SRV_OOB_UPLOAD */
 #endif
 
-#if defined(CONFIG_BT_MESH_BLOB_CLI) && !defined(CONFIG_BT_MESH_DFD_SRV)
+#if defined(CONFIG_BT_MESH_BLOB_CLI)
 static struct {
 	struct bt_mesh_blob_cli_inputs inputs;
 	struct bt_mesh_blob_target targets[32];
@@ -1019,7 +1019,11 @@ static uint8_t proxy_solicit(const void *cmd, uint16_t cmd_len,
 }
 #endif /* CONFIG_BT_MESH_PROXY_SOLICITATION */
 
-static const struct bt_mesh_model root_models[] = {
+#if defined(CONFIG_BT_MESH_BRG_CFG_CLI)
+static struct bt_mesh_brg_cfg_cli brg_cfg_cli;
+#endif /* CONFIG_BT_MESH_BRG_CFG_CLI */
+
+static const struct bt_mesh_model primary_models[] = {
 	BT_MESH_MODEL_CFG_SRV,
 	BT_MESH_MODEL_CFG_CLI(&cfg_cli),
 	BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub, health_srv_meta),
@@ -1048,15 +1052,6 @@ static const struct bt_mesh_model root_models[] = {
 #if defined(CONFIG_BT_MESH_RPR_SRV)
 	BT_MESH_MODEL_RPR_SRV,
 #endif
-#if defined(CONFIG_BT_MESH_DFD_SRV)
-	BT_MESH_MODEL_DFD_SRV(&dfd_srv),
-#endif
-#if defined(CONFIG_BT_MESH_DFU_SRV)
-	BT_MESH_MODEL_DFU_SRV(&dfu_srv),
-#endif
-#if defined(CONFIG_BT_MESH_BLOB_CLI) && !defined(CONFIG_BT_MESH_DFD_SRV)
-	BT_MESH_MODEL_BLOB_CLI(&blob_cli),
-#endif
 #if defined(CONFIG_BT_MESH_PRIV_BEACON_SRV)
 	BT_MESH_MODEL_PRIV_BEACON_SRV,
 #endif
@@ -1072,10 +1067,32 @@ static const struct bt_mesh_model root_models[] = {
 #if defined(CONFIG_BT_MESH_OD_PRIV_PROXY_SRV)
 	BT_MESH_MODEL_OD_PRIV_PROXY_SRV,
 #endif
+#if defined(CONFIG_BT_MESH_BRG_CFG_SRV)
+	BT_MESH_MODEL_BRG_CFG_SRV,
+#endif
+#if defined(CONFIG_BT_MESH_BRG_CFG_CLI)
+	BT_MESH_MODEL_BRG_CFG_CLI(&brg_cfg_cli),
+#endif
 
 };
 
-static const struct bt_mesh_model root_models_alt[] = {
+#if defined(CONFIG_BT_MESH_DFD_SRV)
+static const struct bt_mesh_model dfu_distributor_models[] = {BT_MESH_MODEL_DFD_SRV(&dfd_srv)};
+#endif
+
+#if defined(CONFIG_BT_MESH_DFU_SRV)
+static const struct bt_mesh_model dfu_target_models[] = {
+	BT_MESH_MODEL_DFU_SRV(&dfu_srv),
+};
+#endif
+
+#if defined(CONFIG_BT_MESH_BLOB_CLI)
+static const struct bt_mesh_model blob_client_models[] = {
+	BT_MESH_MODEL_BLOB_CLI(&blob_cli),
+};
+#endif
+
+static const struct bt_mesh_model primary_models_alt[] = {
 	BT_MESH_MODEL_CFG_SRV,
 	BT_MESH_MODEL_CFG_CLI(&cfg_cli),
 	BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub, health_srv_meta_alt),
@@ -1104,15 +1121,6 @@ static const struct bt_mesh_model root_models_alt[] = {
 #if defined(CONFIG_BT_MESH_RPR_SRV)
 	BT_MESH_MODEL_RPR_SRV,
 #endif
-#if defined(CONFIG_BT_MESH_DFD_SRV)
-	BT_MESH_MODEL_DFD_SRV(&dfd_srv),
-#endif
-#if defined(CONFIG_BT_MESH_DFU_SRV)
-	BT_MESH_MODEL_DFU_SRV(&dfu_srv),
-#endif
-#if defined(CONFIG_BT_MESH_BLOB_CLI) && !defined(CONFIG_BT_MESH_DFD_SRV)
-	BT_MESH_MODEL_BLOB_CLI(&blob_cli),
-#endif
 #if defined(CONFIG_BT_MESH_PRIV_BEACON_SRV)
 	BT_MESH_MODEL_PRIV_BEACON_SRV,
 #endif
@@ -1128,8 +1136,15 @@ static const struct bt_mesh_model root_models_alt[] = {
 #if defined(CONFIG_BT_MESH_OD_PRIV_PROXY_SRV)
 	BT_MESH_MODEL_OD_PRIV_PROXY_SRV,
 #endif
+#if defined(CONFIG_BT_MESH_BRG_CFG_SRV)
+	BT_MESH_MODEL_BRG_CFG_SRV,
+#endif
+#if defined(CONFIG_BT_MESH_BRG_CFG_CLI)
+	BT_MESH_MODEL_BRG_CFG_CLI(&brg_cfg_cli),
+#endif
 
 };
+
 struct model_data *lookup_model_bound(uint16_t id)
 {
 	int i;
@@ -1148,11 +1163,29 @@ static const struct bt_mesh_model vnd_models[] = {
 };
 
 static const struct bt_mesh_elem elements[] = {
-	BT_MESH_ELEM(0, root_models, vnd_models),
+	BT_MESH_ELEM(0, primary_models, vnd_models),
+#if defined(CONFIG_BT_MESH_DFD_SRV)
+	BT_MESH_ELEM(0, dfu_distributor_models, BT_MESH_MODEL_NONE),
+#endif
+#if defined(CONFIG_BT_MESH_DFU_SRV)
+	BT_MESH_ELEM(0, dfu_target_models, BT_MESH_MODEL_NONE),
+#endif
+#if defined(CONFIG_BT_MESH_BLOB_CLI)
+	BT_MESH_ELEM(0, blob_client_models, BT_MESH_MODEL_NONE),
+#endif
 };
 
 static const struct bt_mesh_elem elements_alt[] = {
-	BT_MESH_ELEM(0, root_models_alt, vnd_models),
+	BT_MESH_ELEM(0, primary_models_alt, vnd_models),
+#if defined(CONFIG_BT_MESH_DFD_SRV)
+	BT_MESH_ELEM(0, dfu_distributor_models, BT_MESH_MODEL_NONE),
+#endif
+#if defined(CONFIG_BT_MESH_DFU_SRV)
+	BT_MESH_ELEM(0, dfu_target_models, BT_MESH_MODEL_NONE),
+#endif
+#if defined(CONFIG_BT_MESH_BLOB_CLI)
+	BT_MESH_ELEM(0, blob_client_models, BT_MESH_MODEL_NONE),
+#endif
 };
 
 static void link_open(bt_mesh_prov_bearer_t bearer)
@@ -1734,12 +1767,12 @@ static uint8_t health_generate_faults(const void *cmd, uint16_t cmd_len,
 
 	cur_faults_count = MIN(sizeof(cur_faults), sizeof(some_faults));
 	memcpy(cur_faults, some_faults, cur_faults_count);
-	memcpy(rp->current_faults, cur_faults, cur_faults_count);
+	memcpy(rp->faults, cur_faults, cur_faults_count);
 	rp->cur_faults_count = cur_faults_count;
 
 	reg_faults_count = MIN(sizeof(reg_faults), sizeof(some_faults));
 	memcpy(reg_faults, some_faults, reg_faults_count);
-	memcpy(rp->registered_faults + cur_faults_count, reg_faults, reg_faults_count);
+	memcpy(rp->faults + cur_faults_count, reg_faults, reg_faults_count);
 	rp->reg_faults_count = reg_faults_count;
 
 	bt_mesh_health_srv_fault_update(&elements[0]);
@@ -1829,7 +1862,7 @@ static uint8_t lpn_subscribe(const void *cmd, uint16_t cmd_len,
 
 	LOG_DBG("address 0x%04x", address);
 
-	err = bt_test_mesh_lpn_group_add(address);
+	err = bt_mesh_test_lpn_group_add(address);
 	if (err) {
 		LOG_ERR("Failed to subscribe (err %d)", err);
 		return BTP_STATUS_FAILED;
@@ -1847,7 +1880,7 @@ static uint8_t lpn_unsubscribe(const void *cmd, uint16_t cmd_len,
 
 	LOG_DBG("address 0x%04x", address);
 
-	err = bt_test_mesh_lpn_group_remove(&address, 1);
+	err = bt_mesh_test_lpn_group_remove(&address, 1);
 	if (err) {
 		LOG_ERR("Failed to unsubscribe (err %d)", err);
 		return BTP_STATUS_FAILED;
@@ -1864,7 +1897,7 @@ static uint8_t rpl_clear(const void *cmd, uint16_t cmd_len,
 
 	LOG_DBG("");
 
-	err = bt_test_mesh_rpl_clear();
+	err = bt_mesh_test_rpl_clear();
 	if (err) {
 		LOG_ERR("Failed to clear RPL (err %d)", err);
 		return BTP_STATUS_FAILED;
@@ -2066,8 +2099,161 @@ static uint8_t models_metadata_get(const void *cmd, uint16_t cmd_len,
 }
 #endif
 
-static uint8_t composition_data_get(const void *cmd, uint16_t cmd_len,
-				    void *rsp, uint16_t *rsp_len)
+#if defined(CONFIG_BT_MESH_BRG_CFG_CLI)
+static uint8_t subnet_bridge_get(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_mesh_subnet_bridge_get_cmd *cp = cmd;
+	enum bt_mesh_brg_cfg_state state;
+	int err;
+
+	err = bt_mesh_brg_cfg_cli_get(net.net_idx, sys_le16_to_cpu(cp->addr), &state);
+	if (err) {
+		LOG_ERR("err=%d", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	LOG_DBG("Subnet Bridge state: %u", state);
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t subnet_bridge_set(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_mesh_subnet_bridge_set_cmd *cp = cmd;
+	enum bt_mesh_brg_cfg_state state;
+	int err;
+
+	state = cp->val;
+
+	err = bt_mesh_brg_cfg_cli_set(net.net_idx, sys_le16_to_cpu(cp->addr), state, &state);
+	if (err) {
+		LOG_ERR("err=%d", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	LOG_DBG("Subnet Bridge state: %u", state);
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t bridging_table_add(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_mesh_bridging_table_add_cmd *cp = cmd;
+	struct bt_mesh_brg_cfg_table_entry entry;
+	struct bt_mesh_brg_cfg_table_status rp;
+	int err;
+
+	LOG_DBG("");
+
+	entry.directions = cp->directions;
+	entry.net_idx1 = sys_le16_to_cpu(cp->net_idx1);
+	entry.net_idx2 = sys_le16_to_cpu(cp->net_idx2);
+	entry.addr1 = sys_le16_to_cpu(cp->addr1);
+	entry.addr2 = sys_le16_to_cpu(cp->addr2);
+
+	err = bt_mesh_brg_cfg_cli_table_add(net_key_idx, sys_le16_to_cpu(cp->addr), &entry, &rp);
+	if (err) {
+		LOG_ERR("err=%d", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t bridging_table_remove(const void *cmd, uint16_t cmd_len, void *rsp,
+				     uint16_t *rsp_len)
+{
+	const struct btp_mesh_bridging_table_remove_cmd *cp = cmd;
+	struct bt_mesh_brg_cfg_table_status rp;
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_brg_cfg_cli_table_remove(
+		net_key_idx, sys_le16_to_cpu(cp->addr), sys_le16_to_cpu(cp->net_idx1),
+		sys_le16_to_cpu(cp->net_idx2), sys_le16_to_cpu(cp->addr1),
+		sys_le16_to_cpu(cp->addr2), &rp);
+
+	if (err) {
+		LOG_ERR("err=%d", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t bridged_subnets_get(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_mesh_bridged_subnets_get_cmd *cp = cmd;
+	struct bt_mesh_brg_cfg_filter_netkey filter_net_idx;
+	struct bt_mesh_brg_cfg_subnets_list rp;
+	int err;
+
+	LOG_DBG("");
+
+	/* Initialize list ptr to NULL to prevent the client copying response to whatever was
+	 * on the stack where `rp` was allocated.
+	 */
+	rp.list = NULL;
+
+	filter_net_idx.filter = cp->filter;
+	filter_net_idx.net_idx = sys_le16_to_cpu(cp->net_idx);
+
+	err = bt_mesh_brg_cfg_cli_subnets_get(net_key_idx, sys_le16_to_cpu(cp->addr),
+					      filter_net_idx, cp->start_idx, &rp);
+	if (err) {
+		LOG_ERR("err=%d", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t bridging_table_get(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_mesh_bridging_table_get_cmd *cp = cmd;
+	struct bt_mesh_brg_cfg_table_list rp;
+	int err;
+
+	LOG_DBG("");
+
+	/* Initialize list ptr to NULL to prevent the client copying response to whatever was
+	 * on the stack where `rp` was allocated.
+	 */
+	rp.list = NULL;
+
+	err = bt_mesh_brg_cfg_cli_table_get(
+		net_key_idx, sys_le16_to_cpu(cp->addr), sys_le16_to_cpu(cp->net_idx1),
+		sys_le16_to_cpu(cp->net_idx2), sys_le16_to_cpu(cp->start_idx), &rp);
+	if (err) {
+		LOG_ERR("err=%d", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t bridging_table_size_get(const void *cmd, uint16_t cmd_len, void *rsp,
+				       uint16_t *rsp_len)
+{
+	const struct btp_mesh_bridging_table_size_get_cmd *cp = cmd;
+	uint16_t size;
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_brg_cfg_cli_table_size_get(net_key_idx, sys_le16_to_cpu(cp->addr), &size);
+	if (err) {
+		LOG_ERR("err=%d", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+#endif
+
+static uint8_t composition_data_get(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_comp_data_get_cmd *cp = cmd;
 	struct btp_mesh_comp_data_get_rp *rp = rsp;
@@ -4323,7 +4509,7 @@ static uint8_t dfu_firmware_update_apply(const void *cmd, uint16_t cmd_len,
 }
 #endif
 
-#if defined(CONFIG_BT_MESH_BLOB_CLI) && !defined(CONFIG_BT_MESH_DFD_SRV)
+#if defined(CONFIG_BT_MESH_BLOB_CLI)
 static void blob_cli_inputs_prepare(uint16_t group, uint16_t app_idx)
 {
 	int i;
@@ -4982,180 +5168,136 @@ static const struct btp_handler handlers[] = {
 		.func = proxy_identity_enable,
 	},
 #if defined(CONFIG_BT_MESH_PROXY_CLIENT)
-	{
-		.opcode = BTP_MESH_PROXY_CONNECT,
-		.expect_len = sizeof(struct btp_proxy_connect_cmd),
-		.func = proxy_connect
-	},
+	{.opcode = BTP_MESH_PROXY_CONNECT,
+	 .expect_len = sizeof(struct btp_proxy_connect_cmd),
+	 .func = proxy_connect},
 #endif
 #if defined(CONFIG_BT_MESH_SAR_CFG_CLI)
-	{
-		.opcode = BTP_MESH_SAR_TRANSMITTER_GET,
-		.expect_len = sizeof(struct btp_mesh_sar_transmitter_get_cmd),
-		.func = sar_transmitter_get
-	},
-	{
-		.opcode = BTP_MESH_SAR_TRANSMITTER_SET,
-		.expect_len = sizeof(struct btp_mesh_sar_transmitter_set_cmd),
-		.func = sar_transmitter_set
-	},
-	{
-		.opcode = BTP_MESH_SAR_RECEIVER_GET,
-		.expect_len = sizeof(struct btp_mesh_sar_receiver_get_cmd),
-		.func = sar_receiver_get
-	},
-	{
-		.opcode = BTP_MESH_SAR_RECEIVER_SET,
-		.expect_len = sizeof(struct btp_mesh_sar_receiver_set_cmd),
-		.func = sar_receiver_set
-	},
+	{.opcode = BTP_MESH_SAR_TRANSMITTER_GET,
+	 .expect_len = sizeof(struct btp_mesh_sar_transmitter_get_cmd),
+	 .func = sar_transmitter_get},
+	{.opcode = BTP_MESH_SAR_TRANSMITTER_SET,
+	 .expect_len = sizeof(struct btp_mesh_sar_transmitter_set_cmd),
+	 .func = sar_transmitter_set},
+	{.opcode = BTP_MESH_SAR_RECEIVER_GET,
+	 .expect_len = sizeof(struct btp_mesh_sar_receiver_get_cmd),
+	 .func = sar_receiver_get},
+	{.opcode = BTP_MESH_SAR_RECEIVER_SET,
+	 .expect_len = sizeof(struct btp_mesh_sar_receiver_set_cmd),
+	 .func = sar_receiver_set},
 #endif
 #if defined(CONFIG_BT_MESH_LARGE_COMP_DATA_CLI)
-	{
-		.opcode = BTP_MESH_LARGE_COMP_DATA_GET,
-		.expect_len = sizeof(struct btp_mesh_large_comp_data_get_cmd),
-		.func = large_comp_data_get
-	},
-	{
-		.opcode = BTP_MESH_MODELS_METADATA_GET,
-		.expect_len = sizeof(struct btp_mesh_models_metadata_get_cmd),
-		.func = models_metadata_get
-	},
+	{.opcode = BTP_MESH_LARGE_COMP_DATA_GET,
+	 .expect_len = sizeof(struct btp_mesh_large_comp_data_get_cmd),
+	 .func = large_comp_data_get},
+	{.opcode = BTP_MESH_MODELS_METADATA_GET,
+	 .expect_len = sizeof(struct btp_mesh_models_metadata_get_cmd),
+	 .func = models_metadata_get},
 #endif
 #if defined(CONFIG_BT_MESH_OP_AGG_CLI)
-	{
-		.opcode = BTP_MESH_OPCODES_AGGREGATOR_INIT,
-		.expect_len = sizeof(struct btp_mesh_opcodes_aggregator_init_cmd),
-		.func = opcodes_aggregator_init
-	},
-	{
-		.opcode = BTP_MESH_OPCODES_AGGREGATOR_SEND,
-		.expect_len = 0,
-		.func = opcodes_aggregator_send
-	},
+	{.opcode = BTP_MESH_OPCODES_AGGREGATOR_INIT,
+	 .expect_len = sizeof(struct btp_mesh_opcodes_aggregator_init_cmd),
+	 .func = opcodes_aggregator_init},
+	{.opcode = BTP_MESH_OPCODES_AGGREGATOR_SEND,
+	 .expect_len = 0,
+	 .func = opcodes_aggregator_send},
 #endif
-	{
-		.opcode = BTP_MESH_COMP_CHANGE_PREPARE,
-		.expect_len = 0,
-		.func = change_prepare
-	},
+	{.opcode = BTP_MESH_COMP_CHANGE_PREPARE, .expect_len = 0, .func = change_prepare},
 #if defined(CONFIG_BT_MESH_RPR_CLI)
-	{
-		.opcode = BTP_MESH_RPR_SCAN_START,
-		.expect_len = sizeof(struct btp_rpr_scan_start_cmd),
-		.func = rpr_scan_start
-	},
-	{
-		.opcode = BTP_MESH_RPR_EXT_SCAN_START,
-		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
-		.func = rpr_ext_scan_start
-	},
-	{
-		.opcode = BTP_MESH_RPR_SCAN_CAPS_GET,
-		.expect_len = sizeof(struct btp_rpr_scan_caps_get_cmd),
-		.func = rpr_scan_caps_get
-	},
-	{
-		.opcode = BTP_MESH_RPR_SCAN_GET,
-		.expect_len = sizeof(struct btp_rpr_scan_get_cmd),
-		.func = rpr_scan_get
-	},
-	{
-		.opcode = BTP_MESH_RPR_SCAN_STOP,
-		.expect_len = sizeof(struct btp_rpr_scan_stop_cmd),
-		.func = rpr_scan_stop
-	},
-	{
-		.opcode = BTP_MESH_RPR_LINK_GET,
-		.expect_len = sizeof(struct btp_rpr_link_get_cmd),
-		.func = rpr_link_get
-	},
-	{
-		.opcode = BTP_MESH_RPR_LINK_CLOSE,
-		.expect_len = sizeof(struct btp_rpr_link_close_cmd),
-		.func = rpr_link_close
-	},
-	{
-		.opcode = BTP_MESH_RPR_PROV_REMOTE,
-		.expect_len = sizeof(struct btp_rpr_prov_remote_cmd),
-		.func = rpr_prov_remote
-	},
-	{
-		.opcode = BTP_MESH_RPR_REPROV_REMOTE,
-		.expect_len = sizeof(struct btp_rpr_reprov_remote_cmd),
-		.func = rpr_reprov_remote
-	},
+	{.opcode = BTP_MESH_RPR_SCAN_START,
+	 .expect_len = sizeof(struct btp_rpr_scan_start_cmd),
+	 .func = rpr_scan_start},
+	{.opcode = BTP_MESH_RPR_EXT_SCAN_START,
+	 .expect_len = BTP_HANDLER_LENGTH_VARIABLE,
+	 .func = rpr_ext_scan_start},
+	{.opcode = BTP_MESH_RPR_SCAN_CAPS_GET,
+	 .expect_len = sizeof(struct btp_rpr_scan_caps_get_cmd),
+	 .func = rpr_scan_caps_get},
+	{.opcode = BTP_MESH_RPR_SCAN_GET,
+	 .expect_len = sizeof(struct btp_rpr_scan_get_cmd),
+	 .func = rpr_scan_get},
+	{.opcode = BTP_MESH_RPR_SCAN_STOP,
+	 .expect_len = sizeof(struct btp_rpr_scan_stop_cmd),
+	 .func = rpr_scan_stop},
+	{.opcode = BTP_MESH_RPR_LINK_GET,
+	 .expect_len = sizeof(struct btp_rpr_link_get_cmd),
+	 .func = rpr_link_get},
+	{.opcode = BTP_MESH_RPR_LINK_CLOSE,
+	 .expect_len = sizeof(struct btp_rpr_link_close_cmd),
+	 .func = rpr_link_close},
+	{.opcode = BTP_MESH_RPR_PROV_REMOTE,
+	 .expect_len = sizeof(struct btp_rpr_prov_remote_cmd),
+	 .func = rpr_prov_remote},
+	{.opcode = BTP_MESH_RPR_REPROV_REMOTE,
+	 .expect_len = sizeof(struct btp_rpr_reprov_remote_cmd),
+	 .func = rpr_reprov_remote},
 #endif
 #if defined(CONFIG_BT_MESH_PRIV_BEACON_CLI)
-	{
-		.opcode = BTP_MESH_PRIV_BEACON_GET,
-		.expect_len = sizeof(struct btp_priv_beacon_get_cmd),
-		.func = priv_beacon_get
-	},
-	{
-		.opcode = BTP_MESH_PRIV_BEACON_SET,
-		.expect_len = sizeof(struct btp_priv_beacon_set_cmd),
-		.func = priv_beacon_set
-	},
-	{
-		.opcode = BTP_MESH_PRIV_GATT_PROXY_GET,
-		.expect_len = sizeof(struct btp_priv_gatt_proxy_get_cmd),
-		.func = priv_gatt_proxy_get
-	},
-	{
-		.opcode = BTP_MESH_PRIV_GATT_PROXY_SET,
-		.expect_len = sizeof(struct btp_priv_gatt_proxy_set_cmd),
-		.func = priv_gatt_proxy_set
-	},
-	{
-		.opcode = BTP_MESH_PRIV_NODE_ID_GET,
-		.expect_len = sizeof(struct btp_priv_node_id_get_cmd),
-		.func = priv_node_id_get
-	},
-	{
-		.opcode = BTP_MESH_PRIV_NODE_ID_SET,
-		.expect_len = sizeof(struct btp_priv_node_id_set_cmd),
-		.func = priv_node_id_set
-	},
-	{
-		.opcode = BTP_MESH_PROXY_PRIVATE_IDENTITY,
-		.expect_len = 0,
-		.func = proxy_private_identity_enable
-	},
+	{.opcode = BTP_MESH_PRIV_BEACON_GET,
+	 .expect_len = sizeof(struct btp_priv_beacon_get_cmd),
+	 .func = priv_beacon_get},
+	{.opcode = BTP_MESH_PRIV_BEACON_SET,
+	 .expect_len = sizeof(struct btp_priv_beacon_set_cmd),
+	 .func = priv_beacon_set},
+	{.opcode = BTP_MESH_PRIV_GATT_PROXY_GET,
+	 .expect_len = sizeof(struct btp_priv_gatt_proxy_get_cmd),
+	 .func = priv_gatt_proxy_get},
+	{.opcode = BTP_MESH_PRIV_GATT_PROXY_SET,
+	 .expect_len = sizeof(struct btp_priv_gatt_proxy_set_cmd),
+	 .func = priv_gatt_proxy_set},
+	{.opcode = BTP_MESH_PRIV_NODE_ID_GET,
+	 .expect_len = sizeof(struct btp_priv_node_id_get_cmd),
+	 .func = priv_node_id_get},
+	{.opcode = BTP_MESH_PRIV_NODE_ID_SET,
+	 .expect_len = sizeof(struct btp_priv_node_id_set_cmd),
+	 .func = priv_node_id_set},
+	{.opcode = BTP_MESH_PROXY_PRIVATE_IDENTITY,
+	 .expect_len = 0,
+	 .func = proxy_private_identity_enable},
 #endif
 #if defined(CONFIG_BT_MESH_OD_PRIV_PROXY_CLI)
-	{
-		.opcode = BTP_MESH_OD_PRIV_PROXY_GET,
-		.expect_len = sizeof(struct btp_od_priv_proxy_get_cmd),
-		.func = od_priv_proxy_get
-	},
-	{
-		.opcode = BTP_MESH_OD_PRIV_PROXY_SET,
-		.expect_len = sizeof(struct btp_od_priv_proxy_set_cmd),
-		.func = od_priv_proxy_set
-	},
+	{.opcode = BTP_MESH_OD_PRIV_PROXY_GET,
+	 .expect_len = sizeof(struct btp_od_priv_proxy_get_cmd),
+	 .func = od_priv_proxy_get},
+	{.opcode = BTP_MESH_OD_PRIV_PROXY_SET,
+	 .expect_len = sizeof(struct btp_od_priv_proxy_set_cmd),
+	 .func = od_priv_proxy_set},
 #endif
 #if defined(CONFIG_BT_MESH_SOL_PDU_RPL_CLI)
-	{
-		.opcode = BTP_MESH_SRPL_CLEAR,
-		.expect_len = sizeof(struct btp_srpl_clear_cmd),
-		.func = srpl_clear
-	},
+	{.opcode = BTP_MESH_SRPL_CLEAR,
+	 .expect_len = sizeof(struct btp_srpl_clear_cmd),
+	 .func = srpl_clear},
+#endif
+#if defined(CONFIG_BT_MESH_BRG_CFG_CLI)
+	{.opcode = BTP_MESH_SUBNET_BRIDGE_GET,
+	 .expect_len = sizeof(struct btp_mesh_subnet_bridge_get_cmd),
+	 .func = subnet_bridge_get},
+	{.opcode = BTP_MESH_SUBNET_BRIDGE_SET,
+	 .expect_len = sizeof(struct btp_mesh_subnet_bridge_set_cmd),
+	 .func = subnet_bridge_set},
+	{.opcode = BTP_MESH_BRIDGING_TABLE_ADD,
+	 .expect_len = sizeof(struct btp_mesh_bridging_table_add_cmd),
+	 .func = bridging_table_add},
+	{.opcode = BTP_MESH_BRIDGING_TABLE_REMOVE,
+	 .expect_len = sizeof(struct btp_mesh_bridging_table_remove_cmd),
+	 .func = bridging_table_remove},
+	{.opcode = BTP_MESH_BRIDGED_SUBNETS_GET,
+	 .expect_len = sizeof(struct btp_mesh_bridged_subnets_get_cmd),
+	 .func = bridged_subnets_get},
+	{.opcode = BTP_MESH_BRIDGING_TABLE_GET,
+	 .expect_len = sizeof(struct btp_mesh_bridging_table_get_cmd),
+	 .func = bridging_table_get},
+	{.opcode = BTP_MESH_BRIDGING_TABLE_SIZE_GET,
+	 .expect_len = sizeof(struct btp_mesh_bridging_table_size_get_cmd),
+	 .func = bridging_table_size_get},
 #endif
 #if defined(CONFIG_BT_MESH_PROXY_SOLICITATION)
-	{
-		.opcode = BTP_MESH_PROXY_SOLICIT,
-		.expect_len = sizeof(struct btp_proxy_solicit_cmd),
-		.func = proxy_solicit
-	},
+	{.opcode = BTP_MESH_PROXY_SOLICIT,
+	 .expect_len = sizeof(struct btp_proxy_solicit_cmd),
+	 .func = proxy_solicit},
 #endif
-	{
-		.opcode = BTP_MESH_START,
-		.expect_len = 0,
-		.func = start
-	},
+	{.opcode = BTP_MESH_START, .expect_len = 0, .func = start},
 };
-
 
 static const struct btp_handler mdl_handlers[] = {
 #if defined(CONFIG_BT_MESH_DFD_SRV)
@@ -5190,7 +5332,7 @@ static const struct btp_handler mdl_handlers[] = {
 		.func = dfu_firmware_update_apply,
 	},
 #endif
-#if defined(CONFIG_BT_MESH_BLOB_CLI) && !defined(CONFIG_BT_MESH_DFD_SRV)
+#if defined(CONFIG_BT_MESH_BLOB_CLI)
 	{
 		.opcode = BTP_MMDL_BLOB_INFO_GET,
 		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
@@ -5213,23 +5355,13 @@ static const struct btp_handler mdl_handlers[] = {
 	},
 #endif
 #if defined(CONFIG_BT_MESH_BLOB_SRV)
-	{
-		.opcode = BTP_MMDL_BLOB_SRV_RECV,
-		.expect_len = sizeof(struct btp_mmdl_blob_srv_recv_cmd),
-		.func = blob_srv_recv
-	},
-	{
-		.opcode = BTP_MMDL_BLOB_SRV_CANCEL,
-		.expect_len = 0,
-		.func = blob_srv_cancel
-	},
+	{.opcode = BTP_MMDL_BLOB_SRV_RECV,
+	 .expect_len = sizeof(struct btp_mmdl_blob_srv_recv_cmd),
+	 .func = blob_srv_recv},
+	{.opcode = BTP_MMDL_BLOB_SRV_CANCEL, .expect_len = 0, .func = blob_srv_cancel},
 #endif
 #if defined(CONFIG_BT_MESH_DFU_SRV)
-	{
-		.opcode = BTP_MMDL_DFU_SRV_APPLY,
-		.expect_len = 0,
-		.func = dfu_srv_apply
-	},
+	{.opcode = BTP_MMDL_DFU_SRV_APPLY, .expect_len = 0, .func = dfu_srv_apply},
 #endif
 };
 
@@ -5338,13 +5470,13 @@ static void incomp_timer_exp_cb(void)
 	tester_event(BTP_SERVICE_ID_MESH, BTP_MESH_EV_INCOMP_TIMER_EXP, NULL, 0);
 }
 
-static struct bt_test_cb bt_test_cb = {
-	.mesh_net_recv = net_recv_ev,
-	.mesh_model_recv = model_recv_ev,
-	.mesh_model_bound = model_bound_cb,
-	.mesh_model_unbound = model_unbound_cb,
-	.mesh_prov_invalid_bearer = invalid_bearer_cb,
-	.mesh_trans_incomp_timer_exp = incomp_timer_exp_cb,
+static struct bt_mesh_test_cb bt_mesh_test_cb = {
+	.net_recv = net_recv_ev,
+	.model_recv = model_recv_ev,
+	.model_bound = model_bound_cb,
+	.model_unbound = model_unbound_cb,
+	.prov_invalid_bearer = invalid_bearer_cb,
+	.trans_incomp_timer_exp = incomp_timer_exp_cb,
 };
 
 static void friend_established(uint16_t net_idx, uint16_t lpn_addr,
@@ -5417,7 +5549,7 @@ BT_MESH_LPN_CB_DEFINE(lpn_cb) = {
 uint8_t tester_init_mesh(void)
 {
 	if (IS_ENABLED(CONFIG_BT_TESTING)) {
-		bt_test_cb_register(&bt_test_cb);
+		bt_mesh_test_cb_register(&bt_mesh_test_cb);
 	}
 
 #if defined(CONFIG_BT_MESH_COMP_PAGE_2)

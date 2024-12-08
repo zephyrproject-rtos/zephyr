@@ -123,18 +123,28 @@ def process_pr(gh, maintainer_file, number):
     log(f"candidate maintainers: {_all_maintainers}")
 
     assignees = []
+    tmp_assignees = []
 
     # we start with areas with most files changed and pick the maintainer from the first one.
     # if the first area is an implementation, i.e. driver or platform, we
-    # continue searching for any other areas
+    # continue searching for any other areas involved
     for area, count in area_counter.items():
         if count == 0:
             continue
         if len(area.maintainers) > 0:
-            assignees = area.maintainers
+            tmp_assignees = area.maintainers
+            if pr.user.login in area.maintainers:
+                # submitter = assignee, try to pick next area and
+                # assign someone else other than the submitter
+                continue
+            else:
+                assignees = area.maintainers
 
             if 'Platform' not in area.name:
                 break
+
+    if tmp_assignees and not assignees:
+        assignees = tmp_assignees
 
     if assignees:
         prop = (found_maintainers[assignees[0]] / num_files) * 100

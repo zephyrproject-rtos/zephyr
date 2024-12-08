@@ -8,5 +8,6 @@ config TACH_NPCX
 	default y
 	depends on DT_HAS_NUVOTON_NPCX_TACH_ENABLED
 	depends on SOC_FAMILY_NPCX
+	select PINCTRL
 	help
 	  Enable the "Nuvoton NPCX tachometer sensor.

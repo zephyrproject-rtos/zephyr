@@ -1,7 +1,4 @@
-.. _mm_swiftio:
-
-MadMachine SwiftIO
-##################
+.. zephyr:board:: mm_swiftio
 
 Overview
 ********
@@ -15,12 +12,6 @@ at:
 
 - `MadMachine Homepage`_
 - `SwiftIO API Reference`_
-
-
-
-.. image:: mm_swiftio.jpg
-   :align: center
-   :alt: SwiftIO Board
 
 Hardware
 ********
@@ -206,7 +197,7 @@ etc.):
 Flashing
 ========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 Connect a USB cable from your PC to "Serial" port of SwiftIO.
 On Ubuntu, DAPLink debug probes appear on the host

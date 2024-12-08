@@ -40,6 +40,8 @@ tests:
       - mimxrt595_evk/mimxrt595s/cm33
     integration_platforms:
       - mimxrt1170_evk/mimxrt1176/cm7
+    harness_config:
+      fixture: fixture_display_rk055hdmipi4m
   sample.subsys.display.lvgl.st_b_lcd40_dsi1_mb1166:
     filter: dt_compat_enabled("orisetech,otm8009a")
     platform_allow: stm32h747i_disco/stm32h747xx/m7
@@ -76,19 +78,23 @@ tests:
       - mimxrt1060_evk
       - mimxrt1050_evk
       - mimxrt1040_evk
+    integration_platforms:
+      - mimxrt1040_evk
     tags: display
     harness: console
     extra_args: SHIELD=rk043fn66hs_ctg
     harness_config:
-      fixture: fixture_display
+      fixture: fixture_display_rk043fn66hs_ctg
   samples.subsys.display.lvgl.rk043fn02h_ct:
     platform_allow:
       - mimxrt1064_evk
       - mimxrt1060_evk
       - mimxrt1050_evk
       - mimxrt1040_evk
+    integration_platforms:
+      - mimxrt1040_evk
     tags: display
     harness: console
     extra_args: SHIELD=rk043fn02h_ct
     harness_config:
-      fixture: fixture_display
+      fixture: fixture_display_rk043fn02h_ct

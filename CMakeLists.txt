@@ -88,6 +88,7 @@ set(SYSCALL_LIST_H_TARGET      syscall_list_h_target)
 set(DRIVER_VALIDATION_H_TARGET driver_validation_h_target)
 set(KOBJ_TYPES_H_TARGET        kobj_types_h_target)
 set(PARSE_SYSCALLS_TARGET      parse_syscalls_target)
+set(DEVICE_API_LD_TARGET       device_api_ld_target)
 
 define_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT BRIEF_DOCS " " FULL_DOCS " ")
 set_property(   GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT elf32-little${ARCH}) # BFD format
@@ -152,6 +153,7 @@ zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler-cpp,
 # Extra warnings options for twister run
 if (CONFIG_COMPILER_WARNINGS_AS_ERRORS)
   zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,warnings_as_errors>>)
+  zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,warnings_as_errors>>)
   zephyr_compile_options($<$<COMPILE_LANGUAGE:ASM>:$<TARGET_PROPERTY:asm,warnings_as_errors>>)
   zephyr_link_libraries($<TARGET_PROPERTY:linker,warnings_as_errors>)
 endif()
@@ -360,8 +362,21 @@ zephyr_compile_options(
   $<$<COMPILE_LANGUAGE:ASM>:-D_ASMLANGUAGE>
 )
 
-# @Intent: Set fundamental linker specific flags
-toolchain_ld_base()
+find_package(Deprecated COMPONENTS toolchain_ld_base)
+
+if(DEFINED TOOLCHAIN_LD_FLAGS)
+  zephyr_ld_options(${TOOLCHAIN_LD_FLAGS})
+endif()
+
+zephyr_link_libraries(PROPERTY base)
+
+zephyr_link_libraries_ifndef(CONFIG_LINKER_USE_RELAX PROPERTY no_relax)
+
+zephyr_link_libraries_ifdef(CONFIG_LINKER_USE_RELAX PROPERTY relax)
+
+# Sort the common symbols and each input section by alignment
+# in descending order to minimize padding between these symbols.
+zephyr_link_libraries_ifdef(CONFIG_LINKER_SORT_BY_ALIGNMENT PROPERTY sort_alignment)
 
 toolchain_ld_force_undefined_symbols(
   _OffsetAbsSyms
@@ -369,13 +384,37 @@ toolchain_ld_force_undefined_symbols(
 )
 
 if(NOT CONFIG_NATIVE_BUILD)
-  # @Intent: Set linker specific flags for bare metal target
-  toolchain_ld_baremetal()
+  find_package(Deprecated COMPONENTS toolchain_ld_baremetal)
+
+  zephyr_link_libraries(PROPERTY baremetal)
+
+  # Note that some architectures will skip this flag if set to error, even
+  # though the compiler flag check passes (e.g. ARC and Xtensa). So warning
+  # should be the default for now.
+  #
+  # Skip this for native application as Zephyr only provides
+  # additions to the host toolchain linker script. The relocation
+  # sections (.rel*) requires us to override those provided
+  # by host toolchain. As we can't account for all possible
+  # combination of compiler and linker on all machines used
+  # for development, it is better to turn this off.
+  #
+  # CONFIG_LINKER_ORPHAN_SECTION_PLACE is to place the orphan sections
+  # without any warnings or errors, which is the default behavior.
+  # So there is no need to explicitly set a linker flag.
+  if(CONFIG_LINKER_ORPHAN_SECTION_WARN)
+    zephyr_link_libraries(PROPERTY orphan_warning)
+  elseif(CONFIG_LINKER_ORPHAN_SECTION_ERROR)
+    zephyr_link_libraries(PROPERTY orphan_error)
+  endif()
 endif()
 
-if(CONFIG_CPP AND NOT CONFIG_MINIMAL_LIBCPP AND NOT CONFIG_NATIVE_LIBRARY)
-  # @Intent: Set linker specific flags for C++
-  toolchain_ld_cpp()
+if(CONFIG_CPP)
+  if(NOT CONFIG_MINIMAL_LIBCPP AND NOT CONFIG_NATIVE_LIBRARY)
+    find_package(Deprecated COMPONENTS toolchain_ld_cpp)
+  endif()
+
+  zephyr_link_libraries(PROPERTY cpp_base)
 endif()
 
 # @Intent: Add the basic toolchain warning flags
@@ -560,6 +599,8 @@ add_custom_command(
   COMMAND_EXPAND_LISTS
 )
 add_custom_target(version_h DEPENDS ${PROJECT_BINARY_DIR}/include/generated/zephyr/version.h)
+zephyr_get(KERNEL_VERSION_CUSTOMIZATION SYSBUILD LOCAL)
+set_property(TARGET version_h PROPERTY KERNEL_VERSION_CUSTOMIZATION ${KERNEL_VERSION_CUSTOMIZATION})
 
 if(EXISTS ${APPLICATION_SOURCE_DIR}/VERSION)
   add_custom_command(
@@ -578,6 +619,8 @@ if(EXISTS ${APPLICATION_SOURCE_DIR}/VERSION)
     app_version_h
     DEPENDS ${PROJECT_BINARY_DIR}/include/generated/zephyr/app_version.h)
   add_dependencies(zephyr_interface app_version_h)
+  zephyr_get(APP_VERSION_CUSTOMIZATION SYSBUILD LOCAL)
+  set_property(TARGET app_version_h PROPERTY APP_VERSION_CUSTOMIZATION ${APP_VERSION_CUSTOMIZATION})
 endif()
 
 # Unfortunately, the order in which CMakeLists.txt code is processed
@@ -840,6 +883,37 @@ add_custom_target(${DRIVER_VALIDATION_H_TARGET} DEPENDS ${DRV_VALIDATION})
 include(${ZEPHYR_BASE}/cmake/kobj.cmake)
 gen_kobj(KOBJ_INCLUDE_PATH)
 
+# Generate sections for kernel device subsystems
+set(
+  DEVICE_API_LD_SECTIONS
+  ${CMAKE_CURRENT_BINARY_DIR}/include/generated/device-api-sections.ld
+  )
+
+set(DEVICE_API_LINKER_SECTIONS_CMAKE
+    ${CMAKE_CURRENT_BINARY_DIR}/include/generated/device-api-sections.cmake
+)
+
+add_custom_command(
+  OUTPUT ${DEVICE_API_LD_SECTIONS} ${DEVICE_API_LINKER_SECTIONS_CMAKE}
+  COMMAND
+    ${PYTHON_EXECUTABLE}
+    ${ZEPHYR_BASE}/scripts/build/gen_iter_sections.py
+    --alignment ${CONFIG_LINKER_ITERABLE_SUBALIGN}
+    --input ${struct_tags_json}
+    --tag __subsystem
+    --ld-output ${DEVICE_API_LD_SECTIONS}
+    --cmake-output ${DEVICE_API_LINKER_SECTIONS_CMAKE}
+  DEPENDS
+    ${ZEPHYR_BASE}/scripts/build/gen_iter_sections.py
+    ${struct_tags_json}
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  )
+
+add_custom_target(${DEVICE_API_LD_TARGET}
+                  DEPENDS ${DEVICE_API_LD_SECTIONS}
+                          ${DEVICE_API_LINKER_SECTIONS_CMAKE}
+)
+
 # Add a pseudo-target that is up-to-date when all generated headers
 # are up-to-date.
 
@@ -870,6 +944,7 @@ add_dependencies(zephyr_interface
   ${SYSCALL_LIST_H_TARGET}
   ${DRIVER_VALIDATION_H_TARGET}
   ${KOBJ_TYPES_H_TARGET}
+  ${DEVICE_API_LD_TARGET}
   )
 
 add_custom_command(
@@ -995,14 +1070,6 @@ if(CONFIG_USERSPACE)
 
   set(GEN_KOBJ_LIST ${ZEPHYR_BASE}/scripts/build/gen_kobject_list.py)
   set(PROCESS_GPERF ${ZEPHYR_BASE}/scripts/build/process_gperf.py)
-endif()
-
-get_property(GLOBAL_CSTD GLOBAL PROPERTY CSTD)
-if(DEFINED GLOBAL_CSTD)
-  message(DEPRECATION
-    "Global CSTD property is deprecated, see Kconfig.zephyr for C Standard options.")
-  set(CSTD ${GLOBAL_CSTD})
-  list(APPEND CMAKE_C_COMPILE_FEATURES ${compile_features_${CSTD}})
 endif()
 
 # @Intent: Obtain compiler specific flag for specifying the c standard
@@ -1580,10 +1647,9 @@ list(APPEND
 )
 list(APPEND post_build_byproducts ${KERNEL_MAP_NAME})
 
-if(NOT CONFIG_BUILD_NO_GAP_FILL)
-  # Use ';' as separator to get proper space in resulting command.
-  set(GAP_FILL "$<TARGET_PROPERTY:bintools,elfconvert_flag_gapfill>0xff")
-endif()
+# Use ';' as separator to get proper space in resulting command.
+set(gap_fill_prop "$<TARGET_PROPERTY:bintools,elfconvert_flag_gapfill>")
+set(gap_fill "$<$<BOOL:${gap_fill_prop}>:${gap_fill_prop}${CONFIG_BUILD_GAP_FILL_PATTERN}>")
 
 if(CONFIG_OUTPUT_PRINT_MEMORY_USAGE)
   target_link_libraries(${logical_target_for_zephyr_elf} $<TARGET_PROPERTY:linker,memusage>)
@@ -1613,11 +1679,14 @@ endif()
 
 if(CONFIG_BUILD_OUTPUT_ADJUST_LMA)
   math(EXPR adjustment "${CONFIG_BUILD_OUTPUT_ADJUST_LMA}" OUTPUT_FORMAT DECIMAL)
+  set(args_adjustment ${CONFIG_BUILD_OUTPUT_ADJUST_LMA_SECTIONS})
+  list(TRANSFORM args_adjustment PREPEND $<TARGET_PROPERTY:bintools,elfconvert_flag_lma_adjust>)
+  list(TRANSFORM args_adjustment APPEND +${adjustment})
   list(APPEND
     post_build_commands
     COMMAND $<TARGET_PROPERTY:bintools,elfconvert_command>
             $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
-            $<TARGET_PROPERTY:bintools,elfconvert_flag_lma_adjust>${adjustment}
+            ${args_adjustment}
             $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${KERNEL_ELF_NAME}
             $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>${KERNEL_ELF_NAME}
     )
@@ -1641,7 +1710,7 @@ if(CONFIG_BUILD_OUTPUT_HEX OR BOARD_FLASH_RUNNER STREQUAL openocd)
       post_build_commands
       COMMAND $<TARGET_PROPERTY:bintools,elfconvert_command>
               $<TARGET_PROPERTY:bintools,elfconvert_flag>
-              ${GAP_FILL}
+              $<$<BOOL:${CONFIG_BUILD_OUTPUT_HEX_GAP_FILL}>:${gap_fill}>
               $<TARGET_PROPERTY:bintools,elfconvert_flag_outtarget>ihex
               ${remove_sections_argument_list}
               $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${KERNEL_ELF_NAME}
@@ -1663,7 +1732,7 @@ if(CONFIG_BUILD_OUTPUT_BIN)
       post_build_commands
       COMMAND $<TARGET_PROPERTY:bintools,elfconvert_command>
               $<TARGET_PROPERTY:bintools,elfconvert_flag>
-              ${GAP_FILL}
+              ${gap_fill}
               $<TARGET_PROPERTY:bintools,elfconvert_flag_outtarget>binary
               ${remove_sections_argument_list}
               $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${KERNEL_ELF_NAME}
@@ -1750,7 +1819,7 @@ if(CONFIG_BUILD_OUTPUT_S19)
       post_build_commands
       COMMAND $<TARGET_PROPERTY:bintools,elfconvert_command>
               $<TARGET_PROPERTY:bintools,elfconvert_flag>
-              ${GAP_FILL}
+              $<$<BOOL:${CONFIG_BUILD_OUTPUT_S19_GAP_FILL}>:${gap_fill}>
               $<TARGET_PROPERTY:bintools,elfconvert_flag_outtarget>srec
               $<TARGET_PROPERTY:bintools,elfconvert_flag_srec_len>1
               $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${KERNEL_ELF_NAME}
@@ -1898,7 +1967,6 @@ if (CONFIG_LLEXT AND CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID)
     ${ZEPHYR_BASE}/scripts/build/llext_prepare_exptab.py
     --elf-file ${PROJECT_BINARY_DIR}/${KERNEL_ELF_NAME}
     --slid-listing ${PROJECT_BINARY_DIR}/slid_listing.txt
-    -vvv
   )
 
 endif()
@@ -1989,22 +2057,39 @@ elseif(CONFIG_LOG_MIPI_SYST_USE_CATALOG)
 endif()
 
 if(LOG_DICT_DB_NAME_ARG)
-  if (NOT CONFIG_LOG_DICTIONARY_DB_TARGET)
-    set(LOG_DICT_DB_ALL_TARGET ALL)
-  endif()
-  add_custom_command(
-    OUTPUT ${LOG_DICT_DB_NAME}
-    COMMAND
+  set(log_dict_gen_command
       ${PYTHON_EXECUTABLE}
       ${ZEPHYR_BASE}/scripts/logging/dictionary/database_gen.py
       ${KERNEL_ELF_NAME}
       ${LOG_DICT_DB_NAME_ARG}=${LOG_DICT_DB_NAME}
       --build-header ${PROJECT_BINARY_DIR}/include/generated/zephyr/version.h
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-    COMMENT "Generating logging dictionary database: ${LOG_DICT_DB_NAME}"
-    DEPENDS ${logical_target_for_zephyr_elf}
   )
-  add_custom_target(log_dict_db_gen ${LOG_DICT_DB_ALL_TARGET} DEPENDS ${LOG_DICT_DB_NAME})
+
+  if (NOT CONFIG_LOG_DICTIONARY_DB_TARGET)
+    # If not using a separate target for generating logging dictionary
+    # database, add the generation to post build command to make sure
+    # the database is actually being generated.
+    list(APPEND
+      post_build_commands
+      COMMAND ${CMAKE_COMMAND} -E echo "Generating logging dictionary database: ${LOG_DICT_DB_NAME}"
+      COMMAND ${log_dict_gen_command}
+    )
+    list(APPEND
+      post_build_byproducts
+      ${LOG_DICT_DB_NAME}
+    )
+  else()
+    # Seprate build target for generating logging dictionary database.
+    # This needs to be explicitly called/used to generate the database.
+    add_custom_command(
+      OUTPUT ${LOG_DICT_DB_NAME}
+      COMMAND ${log_dict_gen_command}
+      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+      COMMENT "Generating logging dictionary database: ${LOG_DICT_DB_NAME}"
+      DEPENDS ${logical_target_for_zephyr_elf}
+    )
+    add_custom_target(log_dict_db_gen DEPENDS ${LOG_DICT_DB_NAME})
+  endif()
 endif()
 
 # Add post_build_commands to post-process the final .elf file produced by
@@ -2117,12 +2202,15 @@ endif()
 set(llext_edk_file ${PROJECT_BINARY_DIR}/${CONFIG_LLEXT_EDK_NAME}.tar.xz)
 
 # TODO maybe generate flags for C CXX ASM
+zephyr_get_compile_definitions_for_lang(C zephyr_defs)
 zephyr_get_compile_options_for_lang(C zephyr_flags)
 
 # Filter out non LLEXT and LLEXT_EDK flags - and add required ones
-llext_filter_zephyr_flags(LLEXT_REMOVE_FLAGS ${zephyr_flags} llext_edk_cflags)
-llext_filter_zephyr_flags(LLEXT_EDK_REMOVE_FLAGS ${llext_edk_cflags} llext_edk_cflags)
+llext_filter_zephyr_flags(LLEXT_REMOVE_FLAGS ${zephyr_flags} llext_filt_flags)
+llext_filter_zephyr_flags(LLEXT_EDK_REMOVE_FLAGS ${llext_filt_flags} llext_filt_flags)
 
+set(llext_edk_cflags ${zephyr_defs} -DLL_EXTENSION_BUILD)
+list(APPEND llext_edk_cflags ${llext_filt_flags})
 list(APPEND llext_edk_cflags ${LLEXT_APPEND_FLAGS})
 list(APPEND llext_edk_cflags ${LLEXT_EDK_APPEND_FLAGS})
 
@@ -2146,7 +2234,7 @@ add_custom_command(
         -DAPPLICATION_SOURCE_DIR=${APPLICATION_SOURCE_DIR}
         -DINTERFACE_INCLUDE_DIRECTORIES="$<TARGET_PROPERTY:zephyr_interface,INTERFACE_INCLUDE_DIRECTORIES>"
         -Dllext_edk_file=${llext_edk_file}
-        -Dllext_cflags="${llext_edk_cflags}"
+        -Dllext_edk_cflags="${llext_edk_cflags}"
         -Dllext_edk_name=${CONFIG_LLEXT_EDK_NAME}
         -DWEST_TOPDIR=${WEST_TOPDIR}
         -DZEPHYR_BASE=${ZEPHYR_BASE}
@@ -2173,3 +2261,12 @@ add_subdirectory_ifdef(
   CONFIG_MAKEFILE_EXPORTS
   cmake/makefile_exports
   )
+
+toolchain_linker_finalize()
+
+yaml_context(EXISTS NAME build_info result)
+if(result)
+  build_info(zephyr version VALUE ${PROJECT_VERSION_STR})
+  build_info(zephyr zephyr-base VALUE ${ZEPHYR_BASE})
+  yaml_save(NAME build_info)
+endif()

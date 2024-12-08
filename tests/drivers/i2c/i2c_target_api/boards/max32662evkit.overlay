@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2024 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+	status = "okay";
+	pinctrl-0 = <&i2c0a_scl_p0_12 &i2c0a_sda_p0_13>;
+	pinctrl-names = "default";
+
+	eeprom0: eeprom@54 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x54>;
+		size = <256>;
+	};
+};
+
+&i2c1 {
+	dmas = <&dma0 1 MAX32_DMA_SLOT_I2C1_TX>, <&dma0 2 MAX32_DMA_SLOT_I2C1_RX>;
+	dma-names = "tx", "rx";
+
+	eeprom1: eeprom@56 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x56>;
+		size = <256>;
+	};
+};

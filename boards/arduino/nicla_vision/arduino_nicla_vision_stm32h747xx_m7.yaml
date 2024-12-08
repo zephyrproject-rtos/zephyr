@@ -1,0 +1,15 @@
+identifier: arduino_nicla_vision/stm32h747xx/m7
+name: Arduino Nicla Vision (M7)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 512
+flash: 1024
+supported:
+  - gpio
+  - spi
+  - i2c
+vendor: arduino

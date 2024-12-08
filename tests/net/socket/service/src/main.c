@@ -31,21 +31,15 @@ K_SEM_DEFINE(wait_data, 0, UINT_MAX);
 K_SEM_DEFINE(wait_data_tcp, 0, UINT_MAX);
 #define WAIT_TIME 500
 
-static void server_handler(struct k_work *work)
+static void server_handler(struct net_socket_service_event *pev)
 {
-	struct net_socket_service_event *pev =
-		CONTAINER_OF(work, struct net_socket_service_event, work);
-
 	ARG_UNUSED(pev);
 
 	k_sem_give(&wait_data);
 }
 
-static void tcp_server_handler(struct k_work *work)
+static void tcp_server_handler(struct net_socket_service_event *pev)
 {
-	struct net_socket_service_event *pev =
-		CONTAINER_OF(work, struct net_socket_service_event, work);
-
 	ARG_UNUSED(pev);
 
 	k_sem_give(&wait_data_tcp);
@@ -55,13 +49,9 @@ static void tcp_server_handler(struct k_work *work)
 	Z_SPIN_DELAY(100);
 }
 
-NET_SOCKET_SERVICE_ASYNC_DEFINE(udp_service_async, NULL, server_handler, 2);
-NET_SOCKET_SERVICE_ASYNC_DEFINE(tcp_service_small_async, NULL, tcp_server_handler, 1);
-NET_SOCKET_SERVICE_ASYNC_DEFINE_STATIC(tcp_service_async, NULL, tcp_server_handler, 2);
-
-NET_SOCKET_SERVICE_SYNC_DEFINE(udp_service_sync, NULL, server_handler, 2);
-NET_SOCKET_SERVICE_SYNC_DEFINE(tcp_service_small_sync, NULL, tcp_server_handler, 1);
-NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(tcp_service_sync, NULL, tcp_server_handler, 2);
+NET_SOCKET_SERVICE_SYNC_DEFINE(udp_service_sync, server_handler, 2);
+NET_SOCKET_SERVICE_SYNC_DEFINE(tcp_service_small_sync, tcp_server_handler, 1);
+NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(tcp_service_sync, tcp_server_handler, 2);
 
 
 void run_test_service(const struct net_socket_service_desc *udp_service,
@@ -188,12 +178,6 @@ ZTEST(net_socket_service, test_service_sync)
 {
 	run_test_service(&udp_service_sync, &tcp_service_small_sync,
 			 &tcp_service_sync);
-}
-
-ZTEST(net_socket_service, test_service_async)
-{
-	run_test_service(&udp_service_async, &tcp_service_small_async,
-			 &tcp_service_async);
 }
 
 ZTEST_SUITE(net_socket_service, NULL, NULL, NULL, NULL, NULL);

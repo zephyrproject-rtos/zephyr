@@ -14,6 +14,12 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 
+#ifdef CONFIG_ADXL372_STREAM
+#include <zephyr/rtio/rtio.h>
+#endif /* CONFIG_ADXL372_STREAM */
+
+#define DT_DRV_COMPAT adi_adxl372
+
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 #include <zephyr/drivers/spi.h>
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
@@ -281,6 +287,10 @@ struct adxl372_activity_threshold {
 };
 
 struct adxl372_xyz_accel_data {
+#ifdef CONFIG_ADXL372_STREAM
+	uint8_t is_fifo: 1;
+	uint8_t res: 7;
+#endif /* CONFIG_ADXL372_STREAM */
 	int16_t x;
 	int16_t y;
 	int16_t z;
@@ -319,6 +329,16 @@ struct adxl372_data {
 	struct k_work work;
 #endif
 #endif /* CONFIG_ADXL372_TRIGGER */
+#ifdef CONFIG_ADXL372_STREAM
+	struct rtio_iodev_sqe *sqe;
+	struct rtio *rtio_ctx;
+	struct rtio_iodev *iodev;
+	uint8_t status1;
+	uint8_t fifo_ent[2];
+	uint64_t timestamp;
+	uint8_t fifo_full_irq;
+	uint8_t pwr_reg;
+#endif /* CONFIG_ADXL372_STREAM */
 };
 
 struct adxl372_dev_config {
@@ -358,8 +378,26 @@ struct adxl372_dev_config {
 	uint8_t int2_config;
 };
 
+struct adxl372_fifo_data {
+	uint8_t is_fifo: 1;
+	uint8_t sample_set_size: 4;
+	uint8_t has_x: 1;
+	uint8_t has_y: 1;
+	uint8_t has_z: 1;
+	uint8_t int_status;
+	uint16_t accel_odr: 4;
+	uint16_t fifo_byte_count: 12;
+	uint64_t timestamp;
+} __attribute__((__packed__));
+
+BUILD_ASSERT(sizeof(struct adxl372_fifo_data) % 4 == 0,
+	     "adxl372_fifo_data struct should be word aligned");
+
 int adxl372_spi_init(const struct device *dev);
 int adxl372_i2c_init(const struct device *dev);
+
+void adxl372_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
+void adxl372_stream_irq_handler(const struct device *dev);
 
 #ifdef CONFIG_ADXL372_TRIGGER
 int adxl372_get_status(const struct device *dev,
@@ -371,5 +409,20 @@ int adxl372_trigger_set(const struct device *dev,
 
 int adxl372_init_interrupt(const struct device *dev);
 #endif /* CONFIG_ADXL372_TRIGGER */
+
+#ifdef CONFIG_SENSOR_ASYNC_API
+int adxl372_get_accel_data(const struct device *dev, bool maxpeak,
+			   struct adxl372_xyz_accel_data *accel_data);
+void adxl372_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
+int adxl372_get_decoder(const struct device *dev, const struct sensor_decoder_api **decoder);
+void adxl372_accel_convert(struct sensor_value *val, int16_t sample);
+#endif /* CONFIG_SENSOR_ASYNC_API */
+
+#ifdef CONFIG_ADXL372_STREAM
+int adxl372_configure_fifo(const struct device *dev, enum adxl372_fifo_mode mode,
+			   enum adxl372_fifo_format format, uint16_t fifo_samples);
+size_t adxl372_get_packet_size(const struct adxl372_dev_config *cfg);
+int adxl372_set_op_mode(const struct device *dev, enum adxl372_op_mode op_mode);
+#endif /* CONFIG_ADXL372_STREAM */
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_ADXL372_ADXL372_H_ */

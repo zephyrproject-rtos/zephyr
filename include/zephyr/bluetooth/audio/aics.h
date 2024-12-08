@@ -1,5 +1,10 @@
+/**
+ * @file
+ * @brief Bluetooth Audio Input Control Service APIs.
+ */
+
 /*
- * Copyright (c) 2020 Nordic Semiconductor ASA
+ * Copyright (c) 2020-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +15,7 @@
 /**
  * @brief Audio Input Control Service (AICS)
  *
- * @defgroup bt_gatt_aics Audio Input Control Service (AICS)
+ * @defgroup bt_aics Audio Input Control Service (AICS)
  *
  * @since 2.6
  * @version 0.8.0
@@ -37,32 +42,88 @@
 extern "C" {
 #endif
 
-/** Audio Input Control Service mute states */
+/**
+ * @name Audio Input Control Service mute states
+ * @{
+ */
+/** The mute state is unmuted */
 #define BT_AICS_STATE_UNMUTED                      0x00
+/** The mute state is muted */
 #define BT_AICS_STATE_MUTED                        0x01
+/** The mute state is disabled */
 #define BT_AICS_STATE_MUTE_DISABLED                0x02
+/** @} */
 
-/** Audio Input Control Service input modes */
+/**
+ * @name Audio Input Control Service input modes
+ * @{
+ */
+/**
+ * @brief The gain mode is manual only and cannot be changed to automatic.
+ *
+ * The gain can be controlled by the client.
+ */
 #define BT_AICS_MODE_MANUAL_ONLY                   0x00
+/**
+ * @brief The gain mode is automatic only and cannot be changed to manual.
+ *
+ * The gain cannot be controlled by the client.
+ */
 #define BT_AICS_MODE_AUTO_ONLY                     0x01
+/**
+ * @brief The gain mode is manual.
+ *
+ * The gain can be controlled by the client.
+ */
 #define BT_AICS_MODE_MANUAL                        0x02
+/**
+ * @brief The gain mode is automatic.
+ *
+ * The gain cannot be controlled by the client.
+ */
 #define BT_AICS_MODE_AUTO                          0x03
+/** @} */
 
-/** Audio Input Control Service input types */
+/**
+ * @name Audio Input Control Service input types
+ * @{
+ */
+/** The input is unspecified */
 #define BT_AICS_INPUT_TYPE_UNSPECIFIED             0x00
+/** The input is a Bluetooth Audio Stream */
 #define BT_AICS_INPUT_TYPE_BLUETOOTH               0x01
+/** The input is a microphone */
 #define BT_AICS_INPUT_TYPE_MICROPHONE              0x02
+/** The input is analog */
 #define BT_AICS_INPUT_TYPE_ANALOG                  0x03
+/** The input is digital */
 #define BT_AICS_INPUT_TYPE_DIGITAL                 0x04
+/** The input is a radio (AM/FM/XM/etc.) */
 #define BT_AICS_INPUT_TYPE_RADIO                   0x05
+/** The input is a Streaming Audio Source */
 #define BT_AICS_INPUT_TYPE_STREAMING               0x06
+/** The input is transparent / pass-through */
+#define BT_AICS_INPUT_TYPE_AMBIENT                 0x07
+/** @} */
 
-/** Audio Input Control Service Error codes */
+/**
+ * @name Audio Input Control Service Error codes
+ * @{
+ */
+/**
+ * The Change_Counter operand value does not match the Change_Counter field value of the
+ * Audio Input State characteristic.
+ */
 #define BT_AICS_ERR_INVALID_COUNTER                0x80
+/** An invalid opcode has been used in a control point procedure */
 #define BT_AICS_ERR_OP_NOT_SUPPORTED               0x81
+/** Mute/unmute commands are disabled.(see @ref BT_AICS_STATE_MUTE_DISABLED) */
 #define BT_AICS_ERR_MUTE_DISABLED                  0x82
+/** An operand value used in a control point procedure is outside the permissible range */
 #define BT_AICS_ERR_OUT_OF_RANGE                   0x83
+/** A requested gain mode change is not allowed */
 #define BT_AICS_ERR_GAIN_MODE_NOT_ALLOWED          0x84
+/** @} */
 
 /** @brief Opaque Audio Input Control Service instance. */
 struct bt_aics;
@@ -105,12 +166,14 @@ struct bt_aics_register_param {
 
 /** @brief Structure for discovering a Audio Input Control Service instance. */
 struct bt_aics_discover_param {
-	/** @brief The start handle of the discovering.
+	/**
+	 * @brief The start handle of the discovering.
 	 *
 	 * Typically the @p start_handle of a @ref bt_gatt_include.
 	 */
 	uint16_t start_handle;
-	/** @brief The end handle of the discovering.
+	/**
+	 * @brief The end handle of the discovering.
 	 *
 	 * Typically the @p end_handle of a @ref bt_gatt_include.
 	 */
@@ -256,19 +319,35 @@ typedef void (*bt_aics_description_cb)(struct bt_aics *inst, int err,
  */
 typedef void (*bt_aics_discover_cb)(struct bt_aics *inst, int err);
 
+/**
+ * @brief Struct to hold callbacks for the Audio Input Control Service.
+ *
+ * Used by both clients and servers
+ */
 struct bt_aics_cb {
+	/** The audio input state has changed */
 	bt_aics_state_cb                 state;
+	/** The gain setting has changed */
 	bt_aics_gain_setting_cb          gain_setting;
+	/** The audio input type has changed */
 	bt_aics_type_cb                  type;
+	/** The audio input status has changed */
 	bt_aics_status_cb                status;
+	/** The audio input decscription has changed */
 	bt_aics_description_cb           description;
 
-#if defined(CONFIG_BT_AICS_CLIENT)
+#if defined(CONFIG_BT_AICS_CLIENT) || defined(__DOXYGEN__)
+	/** The discovery has completed */
 	bt_aics_discover_cb              discover;
+	/** The set gain operation has completed */
 	bt_aics_write_cb                 set_gain;
+	/** The unmute operation has completed */
 	bt_aics_write_cb                 unmute;
+	/** The mut operation has completed */
 	bt_aics_write_cb                 mute;
+	/** The set manual mode operation has completed */
 	bt_aics_write_cb                 set_manual_mode;
+	/** The set automatic mode has completed */
 	bt_aics_write_cb                 set_auto_mode;
 #endif /* CONFIG_BT_AICS_CLIENT */
 };

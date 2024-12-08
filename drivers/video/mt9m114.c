@@ -6,17 +6,15 @@
  */
 
 #define DT_DRV_COMPAT aptina_mt9m114
+
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
-
+#include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
-
 #include <zephyr/drivers/video.h>
 #include <zephyr/drivers/i2c.h>
 
-#define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
-#include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(mt9m114);
+LOG_MODULE_REGISTER(video_mt9m114, CONFIG_VIDEO_LOG_LEVEL);
 
 #define MT9M114_CHIP_ID_VAL 0x2481
 
@@ -463,7 +461,7 @@ static int mt9m114_get_caps(const struct device *dev, enum video_endpoint_id ep,
 	return 0;
 }
 
-static const struct video_driver_api mt9m114_driver_api = {
+static DEVICE_API(video, mt9m114_driver_api) = {
 	.set_format = mt9m114_set_fmt,
 	.get_format = mt9m114_get_fmt,
 	.get_caps = mt9m114_get_caps,

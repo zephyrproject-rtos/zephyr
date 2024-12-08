@@ -92,14 +92,14 @@ struct veml7700_data {
 	uint32_t int_flags;
 };
 
-static bool is_veml7700_gain_in_range(int32_t gain_selection)
+static bool is_veml7700_gain_in_range(uint32_t gain_selection)
 {
-	return ((gain_selection >= 0U) && (gain_selection < VEML7700_ALS_GAIN_ELEM_COUNT));
+	return (gain_selection < VEML7700_ALS_GAIN_ELEM_COUNT);
 }
 
-static bool is_veml7700_it_in_range(int32_t it_selection)
+static bool is_veml7700_it_in_range(uint32_t it_selection)
 {
-	return ((it_selection >= 0U) && (it_selection < VEML7700_ALS_IT_ELEM_COUNT));
+	return (it_selection < VEML7700_ALS_IT_ELEM_COUNT);
 }
 
 /**
@@ -585,10 +585,12 @@ static int veml7700_init(const struct device *dev)
 	return 0;
 }
 
-static const struct sensor_driver_api veml7700_api = {.sample_fetch = veml7700_sample_fetch,
-						      .channel_get = veml7700_channel_get,
-						      .attr_set = veml7700_attr_set,
-						      .attr_get = veml7700_attr_get};
+static DEVICE_API(sensor, veml7700_api) = {
+	.sample_fetch = veml7700_sample_fetch,
+	.channel_get = veml7700_channel_get,
+	.attr_set = veml7700_attr_set,
+	.attr_get = veml7700_attr_get,
+};
 
 #define VEML7700_INIT(n)                                                                           \
 	static struct veml7700_data veml7700_data_##n;                                             \

@@ -17,21 +17,3 @@
 		};
 	};
 };
-
-&pinctrl {
-	pwm0_default: pwm0_default {
-		pinmux = <17 IOC_PORT_MCU_PORT_EVENT1>;
-		bias-disable;
-		drive-strength = <8>;
-	};
-};
-
-&gpt0 {
-	status = "okay";
-};
-
-&pwm0 {
-	status = "okay";
-	pinctrl-0 = <&pwm0_default>;
-	pinctrl-names = "default";
-};

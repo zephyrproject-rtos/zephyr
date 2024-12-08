@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/{
+	fake_comp: fake_comp {
+		compatible = "zephyr,fake-comp";
+		status = "okay";
+	};
+};

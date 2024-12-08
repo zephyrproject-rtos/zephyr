@@ -332,9 +332,6 @@ static int edma_config(const struct device *dev, uint32_t chan_id,
 				      EDMA_TCD_CSR_INTHALF_MASK, 0);
 	}
 
-	/* enable channel interrupt */
-	irq_enable(chan->irq);
-
 	/* dump register status - for debugging purposes */
 	edma_dump_channel_registers(data, chan_id);
 
@@ -462,7 +459,10 @@ static int edma_stop(const struct device *dev, uint32_t chan_id)
 	/* disable HW requests */
 	EDMA_ChannelRegUpdate(data->hal_cfg, chan_id, EDMA_TCD_CH_CSR, 0,
 			      EDMA_TCD_CH_CSR_ERQ_MASK);
+
 out_release_channel:
+
+	irq_disable(chan->irq);
 
 	/* clear the channel MUX so that it can used by a different peripheral.
 	 *
@@ -510,6 +510,8 @@ static int edma_start(const struct device *dev, uint32_t chan_id)
 	}
 
 	LOG_DBG("starting channel %u", chan_id);
+
+	irq_enable(chan->irq);
 
 	/* enable HW requests */
 	EDMA_ChannelRegUpdate(data->hal_cfg, chan_id,
@@ -602,6 +604,19 @@ static const struct dma_driver_api edma_api = {
 	.chan_filter = edma_channel_filter,
 };
 
+static edma_config_t *edma_hal_cfg_get(const struct edma_config *cfg)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(s_edmaConfigs); i++) {
+		if (cfg->regmap_phys == s_edmaConfigs[i].regmap) {
+			return s_edmaConfigs + i;
+		}
+	}
+
+	return NULL;
+}
+
 static int edma_init(const struct device *dev)
 {
 	const struct edma_config *cfg;
@@ -610,6 +625,11 @@ static int edma_init(const struct device *dev)
 
 	data = dev->data;
 	cfg = dev->config;
+
+	data->hal_cfg = edma_hal_cfg_get(cfg);
+	if (!data->hal_cfg) {
+		return -ENODEV;
+	}
 
 	/* map instance MMIO */
 	device_map(&regmap, cfg->regmap_phys, cfg->regmap_size, K_MEM_CACHE_NONE);
@@ -676,7 +696,6 @@ static struct edma_config edma_config_##inst = {				\
 static struct edma_data edma_data_##inst = {					\
 	.channels = channels_##inst,						\
 	.ctx.magic = DMA_MAGIC,							\
-	.hal_cfg = &EDMA_HAL_CFG_GET(inst),					\
 };										\
 										\
 DEVICE_DT_INST_DEFINE(inst, &edma_init, NULL,					\

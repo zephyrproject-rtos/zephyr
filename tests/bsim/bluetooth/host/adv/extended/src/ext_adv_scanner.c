@@ -87,7 +87,7 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 	printk("Found advertisement. Adv-type: 0x%02x, Adv-prop: 0x%02x\n",
 		info->adv_type, info->adv_props);
 
-	if (info->adv_type & BT_GAP_ADV_TYPE_EXT_ADV &&
+	if (info->adv_type == BT_GAP_ADV_TYPE_EXT_ADV &&
 	    info->adv_props & BT_GAP_ADV_PROP_EXT_ADV) {
 		printk("Found extended advertisement!\n");
 		SET_FLAG(flag_ext_adv_seen);

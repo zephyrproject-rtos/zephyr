@@ -1,0 +1,201 @@
+# Copyright (c) 2024 Analog Devices Inc.
+# Copyright (c) 2024 BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+description: ADI MAX14906 quad industrial Input/Output with advanced diagnostics
+
+compatible: "adi,max14906-gpio"
+
+properties:
+  "#gpio-cells":
+    const: 2
+  ngpios:
+    type: int
+    required: true
+    const: 4
+    description: Number of gpios supported
+  drdy-gpios:
+    description: |
+      High-Side Open-Drain Output. READY is passive low when the internal
+      logic supply is higher than the UVLO threshold, indicating that the
+      registers have adequate supply voltage.
+    type: phandle-array
+  fault-gpios:
+    description: |
+      Fault pin indicates when there is Fault state in either FAULT1 or FAULT2
+      bothe of which are cleaned on read once problem is not persistent.
+    type: phandle-array
+  sync-gpios:
+    description: |
+      Latch the data so it could be read (partially duplicate CS).
+    type: phandle-array
+  en-gpios:
+    description: |
+      DOI Enable Pin. Drive the EN pin high to enable the DOI_ outputs.
+      Drive EN low to disable/three-state all DOI_ outputs.
+    type: phandle-array
+  crc-en:
+    description: |
+      Notify driver if crc pin is enabled.
+    type: boolean
+  spi-addr:
+    type: int
+    default: 0
+    required: true
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+    description: |
+      On MAX14906PMB module default address is 0 (A0-LOW, A1-LOW)
+      Selectable device address, configurable from A0 and A1
+  ow-en:
+    type: array
+    default: [0, 0, 0, 0]
+    description: |
+      Default values are from documentation.
+      Enable or disable open-wire functionality per channel.
+      - 0 mean disable
+      - 1 mean enable
+      channels indentation start from CH0...CH3
+  vdd-ov-en:
+    type: array
+    default: [0, 0, 0, 0]
+    description: |
+      Default values are from documentation.
+      VDDOVEN
+      Enable or disable open-wire functionality per channel.
+      - 0 mean disable
+      - 1 mean enable
+      channels indentation start from CH0...CH3
+  gdrv-en:
+    type: array
+    default: [0, 0, 0, 0]
+    description: |
+      Default values are from documentation.
+      GDrvEn - Gate drive enabl disable for power eff
+      Enable or disable open-wire functionality per channel.
+      - 0 mean disable
+      - 1 mean enable
+      channels indentation start from CH0...CH3
+  sh-vdd-en:
+    type: array
+    default: [0, 0, 0, 0]
+    description: |
+      Default values are from documentation.
+      ShVddEN - Short to VDD enable
+      Enable or disable short to VDD functionality per channel.
+      - 0 mean disable
+      - 1 mean enable
+      channels indentation start from CH0...CH3
+  fled-set:
+    type: boolean
+    description: |
+      Internal fault diagnostics include (if enabled): SafeDemagF_, SHVDD_,
+      VDDOV_, OWOff_, AboveVDD_, CL_, OVL_, VDDOKFault_.
+  sled-set:
+    type: boolean
+    description: |
+      Enable status LEDs
+  fled-stretch:
+    type: int
+    default: 0
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+    description: |
+      Default values are from documentation.
+      Set minimum on time for FLEDs in case of fault
+      0 - Disable minimum fault LED (FLED) on-time
+      1 - Minimum fault LED (FLED) on-time = 1s (typ)
+      2 - Minimum fault LED (FLED) on-time = 2s (typ)
+      3 - Minimum fault LED (FLED) on-time = 3s (typ)
+  ffilter-en:
+    type: boolean
+    description: |
+      When the fault LEDs (FLEDs) are controlled internally (FLEDSet = 0), open-
+      wire and short-to-V DD diagnostics always use filtering and cannot be disabled
+      by the FFilterEn bit.
+  filter-long:
+    type: boolean
+    description: |
+      false: To select regular blanking time (4ms, typ) for diagnostic fault bits, OWOff_
+             and SHVDD_
+      true:  To select long blanking time (8ms, typ) for diagnostic fault bits, OWOff_
+             and SHVDD_
+  flatch-en:
+    type: boolean
+    description: |
+      false: Disable latching of diagnostic fault bits in the OvrLdChF, OpnWirChF, and
+             ShtVDDChF registers
+      true:  Enable latching of diagnostic fault bits in the OvrLdChF, OpnWirChF, and
+             ShtVDDChF registers
+  led-cur-lim:
+    type: boolean
+    description: |
+      false: Disable fault LEDs (FLEDs) signaling current limit
+      true:  Enable fault LEDs (FLEDs) signaling current limit
+  vdd-on-thr:
+    type: boolean
+    description: |
+      Enable higher voltage thresholds for VDD and VDD_ undervoltage monitoring
+  synch-wd-en:
+    type: boolean
+    description: |
+      The SYNCH watchdog timeout is defined by the WDTo[1:0] bits if the SPI
+      watchdog is enabled. When WDTo[1:0] = 00 (SPI watchdog disabled), the
+      SYNCH watchdog timeout is 600ms (typ) if enabled.
+  sht-vdd-thr:
+    type: int
+    default: 0
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+    description: |
+      Default values are from documentation.
+      Set threshold voltage for short-to-V DD detection
+      0: Set threshold voltage for short-to-VDD detection to 9V (typ)
+      1: Set threshold voltage for short-to-VDD detection to 10V (typ)
+      2: Set threshold voltage for short-to-VDD detection to 12V (typ)
+      3: Set threshold voltage for short-to-VDD detection to 14V (typ)
+  ow-off-cs:
+    type: int
+    default: 0
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+    description: |
+      Default values are from documentation.
+      Set the pullup current for open-wire and short-to-VDD detection
+      0: Set open-wire and short-to-VDD detection current to 60μA (typ)
+      1: Set open-wire and short-to-VDD detection current to 100μA (typ)
+      2: Set open-wire and short-to-VDD detection current to 300μA (typ)
+      3: Set open-wire and short-to-VDD detection current to 600μA (typ)
+  wd-to:
+    type: int
+    default: 0
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+    description: |
+      Default values are from documentation.
+      SPI Watchdog Status, set SPI and SYNCH Watchdog Timeout
+      0: Disable SPI Watchdog Status and SPI Watchdog Timeout
+      1: Enable SPI Watchdog Status, set SPI and SYNCH Watchdog Timeout to 200ms (typ)
+      2: Enable SPI Watchdog Status, set SPI and SYNCH Watchdog Timeout to 600ms (typ)
+      3: Enable SPI Watchdog Status, set SPI and SYNCH Watchdog Timeout to 1.2s (typ)
+
+gpio-cells:
+  - pin
+  - flags
+
+include: [gpio-controller.yaml, spi-device.yaml]

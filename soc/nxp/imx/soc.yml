@@ -6,23 +6,16 @@ family:
     - name: mimx8qm6
       cpuclusters:
       - name: adsp
-      - name: a72
-      - name: a53
-      - name: m4
   - name: imx8x
     socs:
     - name: mimx8qx6
       cpuclusters:
       - name: adsp
-      - name: a35
-      - name: m4
   - name: imx8ulp
     socs:
     - name: mimx8ud7
       cpuclusters:
       - name: adsp
-      - name: f1_dsp
-      - name: a35
   - name: imx8m
     socs:
     - name: mimx8ml8
@@ -37,10 +30,8 @@ family:
     - name: mimx8mn6
       cpuclusters:
       - name: a53
-      - name: m7
     - name: mimx8mq6
       cpuclusters:
-      - name: a53
       - name: m4
   - name: imx9
     socs:
@@ -48,6 +39,10 @@ family:
       cpuclusters:
       - name: a55
       - name: m33
+    - name: mimx9596
+      cpuclusters:
+      - name: a55
+      - name: m7
   - name: imx6sx
     socs:
     - name: mcimx6x

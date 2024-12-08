@@ -21,9 +21,10 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 #include "btp/btp.h"
 #include "btp_bap_audio_stream.h"
 
-NET_BUF_POOL_FIXED_DEFINE(tx_pool, MAX(CONFIG_BT_ASCS_ASE_SRC_COUNT,
+NET_BUF_POOL_FIXED_DEFINE(tx_pool, MAX(CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT,
 			  CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT),
-			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), 8, NULL);
+			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
+			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 RING_BUF_DECLARE(audio_ring_buf, CONFIG_BT_ISO_TX_MTU);
 
@@ -151,6 +152,11 @@ void btp_bap_audio_stream_stopped(struct btp_bap_audio_stream *a_stream)
 	k_work_cancel_delayable(&a_stream->audio_send_work);
 }
 
+uint8_t btp_bap_audio_stream_send_data(const uint8_t *data, uint8_t data_len)
+{
+	return ring_buf_put(&audio_ring_buf, data, data_len);
+}
+
 uint8_t btp_bap_audio_stream_send(const void *cmd, uint16_t cmd_len,
 				  void *rsp, uint16_t *rsp_len)
 {
@@ -158,10 +164,10 @@ uint8_t btp_bap_audio_stream_send(const void *cmd, uint16_t cmd_len,
 	const struct btp_bap_send_cmd *cp = cmd;
 	uint32_t ret;
 
-	ret = ring_buf_put(&audio_ring_buf, cp->data, cp->data_len);
+	ret = btp_bap_audio_stream_send_data(cp->data, cp->data_len);
 
 	rp->data_len = ret;
-	*rsp_len = sizeof(*rp) + 1;
+	*rsp_len = sizeof(*rp);
 
 	return BTP_STATUS_SUCCESS;
 }

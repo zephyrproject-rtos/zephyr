@@ -261,8 +261,8 @@ Non-Secure Processing Environment
 Zephyr is used for the NSPE, using a board that is supported by TF-M where the
 :kconfig:option:`CONFIG_BUILD_WITH_TFM` flag has been enabled.
 
-Generally, you simply need to select the ``*_ns`` variant of a valid target
-(for example ``mps2_an521_ns``), which will configure your Zephyr application
+Generally, you simply need to select the ``*/ns`` board target of a valid board
+(for example ``mps2/an521/cpu0/ns``), which will configure your Zephyr application
 to run in the NSPE, correctly build and link it with the TF-M secure images,
 sign the secure and non-secure images, and merge the three binaries into a
 single ``tfm_merged.hex`` file. The :ref:`west flash <west-flashing>` command

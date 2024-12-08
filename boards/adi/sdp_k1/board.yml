@@ -1,5 +1,6 @@
 board:
   name: adi_sdp_k1
+  full_name: SDP-K1
   vendor: adi
   socs:
     - name: stm32f469xx

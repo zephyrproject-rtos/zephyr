@@ -78,7 +78,7 @@ static int hmc5883l_sample_fetch(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api hmc5883l_driver_api = {
+static DEVICE_API(sensor, hmc5883l_driver_api) = {
 #if CONFIG_HMC5883L_TRIGGER
 	.trigger_set = hmc5883l_trigger_set,
 #endif

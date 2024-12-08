@@ -21,16 +21,24 @@ jobs:
 
     steps:
     - name: Download artifacts
-      uses: dawidd6/action-download-artifact@v3
+      id: download-artifacts
+      uses: dawidd6/action-download-artifact@v6
       with:
         workflow: doc-build.yml
         run_id: ${{ github.event.workflow_run.id }}
+        if_no_artifact_found: ignore
 
     - name: Load PR number
-      run: |
-        echo "PR_NUM=$(<pr_num/pr_num)" >> $GITHUB_ENV
+      if: steps.download-artifacts.outputs.found_artifact == 'true'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          let fs = require("fs");
+          let pr_number = Number(fs.readFileSync("./pr_num/pr_num"));
+          core.exportVariable("PR_NUM", pr_number);
 
     - name: Check PR number
+      if: steps.download-artifacts.outputs.found_artifact == 'true'
       id: check-pr
       uses: carpentries/actions/check-valid-pr@v0.14.0
       with:
@@ -38,12 +46,15 @@ jobs:
         sha: ${{ github.event.workflow_run.head_sha }}
 
     - name: Validate PR number
-      if: steps.check-pr.outputs.VALID != 'true'
+      if: |
+        steps.download-artifacts.outputs.found_artifact == 'true' &&
+        steps.check-pr.outputs.VALID != 'true'
       run: |
         echo "ABORT: PR number validation failed!"
         exit 1
 
     - name: Uncompress HTML docs
+      if: steps.download-artifacts.outputs.found_artifact == 'true'
       run: |
         tar xf html-output/html-output.tar.xz -C html-output
         if [ -f api-coverage/api-coverage.tar.xz ]; then
@@ -51,6 +62,7 @@ jobs:
         fi
 
     - name: Configure AWS Credentials
+      if: steps.download-artifacts.outputs.found_artifact == 'true'
       uses: aws-actions/configure-aws-credentials@v4
       with:
         aws-access-key-id: ${{ vars.AWS_BUILDS_ZEPHYR_PR_ACCESS_KEY_ID }}
@@ -58,6 +70,7 @@ jobs:
         aws-region: us-east-1
 
     - name: Upload to AWS S3
+      if: steps.download-artifacts.outputs.found_artifact == 'true'
       env:
         HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
       run: |

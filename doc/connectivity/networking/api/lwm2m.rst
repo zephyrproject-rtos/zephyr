@@ -504,7 +504,7 @@ Enabling and configuring
 
 Enable data cache by selecting :kconfig:option:`CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT`.
 Application needs to allocate an array of :c:struct:`lwm2m_time_series_elem` structures and then
-enable the cache by calling :c:func:`lwm2m_engine_enable_cache` for a given resource. Earch resource
+enable the cache by calling :c:func:`lwm2m_engine_enable_cache` for a given resource. Each resource
 must be enabled separately and each resource needs their own storage.
 
 .. code-block:: c
@@ -579,7 +579,7 @@ The events are prefixed with ``LWM2M_RD_CLIENT_EVENT_``.
    * - 4
      - REGISTRATION_FAILURE
      - Registration to LwM2M server failed.
-       Occurs if there is a failure in the registration.
+       Occurs if server rejects the registration attempt.
    * - 5
      - REGISTRATION_COMPLETE
      - Registration to LwM2M server successful.
@@ -587,8 +587,8 @@ The events are prefixed with ``LWM2M_RD_CLIENT_EVENT_``.
        or when session resumption is used.
    * - 6
      - REG_TIMEOUT
-     - Registration or registration update timeout.
-       Occurs if there is a timeout during registration. Client have lost connection to the server.
+     - Registration status lost.
+       Occurs if there is socket errors or message timeouts. Client have lost connection to the server.
    * - 7
      - REG_UPDATE_COMPLETE
      - Registration update completed.
@@ -641,7 +641,8 @@ where it cannot recover.
    * - BOOTSTRAP_TRANSFER_COMPLETE
      - No actions needed
    * - REGISTRATION_FAILURE
-     - No actions needed
+     - No actions needed.
+       Client proceeds re-registration automatically. Might need a bootstrap or configuration fix. Cannot send or receive data.
    * - REGISTRATION_COMPLETE
      - No actions needed.
        Application can send or receive data.
@@ -670,7 +671,7 @@ where it cannot recover.
      - Try to recover network connection. Then restart the client by calling :c:func:`lwm2m_rd_client_start`.
        This might also indicate configuration issue.
 
-Sending of data in the table above refers to calling :c:func:`lwm2m_send_cb` or by writing into of of the observed resources where observation would trigger a notify message.
+Sending of data in the table above refers to calling :c:func:`lwm2m_send_cb` or by writing into one of the observed resources where observation would trigger a notify message.
 Receiving of data refers to receiving read, write or execute operations from the server. Application can register callbacks for these operations.
 
 Configuring lifetime and activity period
@@ -788,6 +789,9 @@ required actions from the server side.
     resume  :LwM2M engine thread resume
     lock    :Lock the LwM2M registry
     unlock  :Unlock the LwM2M registry
+    obs     : List observations
+    ls      : ls [PATH]
+            List objects, instances, resources
 
 
 

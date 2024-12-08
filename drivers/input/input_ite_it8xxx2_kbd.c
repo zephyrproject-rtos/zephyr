@@ -44,6 +44,8 @@ struct it8xxx2_kbd_config {
 	struct gpio_dt_spec kso16_gpios;
 	/* KSO17 GPIO cells */
 	struct gpio_dt_spec kso17_gpios;
+	/* Mask of signals to ignore */
+	uint32_t kso_ignore_mask;
 };
 
 struct it8xxx2_kbd_data {
@@ -59,10 +61,11 @@ static void it8xxx2_kbd_drive_column(const struct device *dev, int col)
 	const struct it8xxx2_kbd_config *const config = dev->config;
 	const struct input_kbd_matrix_common_config *common = &config->common;
 	struct kscan_it8xxx2_regs *const inst = config->base;
-	const uint32_t kso_mask = BIT_MASK(common->col_size);
+	const uint32_t kso_mask = BIT_MASK(common->col_size) & ~config->kso_ignore_mask;
 	const uint8_t ksol_mask = kso_mask & 0xff;
 	const uint8_t ksoh1_mask = (kso_mask >> 8) & 0xff;
 	uint32_t kso_val;
+	unsigned int key;
 
 	/* Tri-state all outputs */
 	if (col == INPUT_KBD_MATRIX_COLUMN_DRIVE_NONE) {
@@ -75,9 +78,16 @@ static void it8xxx2_kbd_drive_column(const struct device *dev, int col)
 		kso_val = kso_mask ^ BIT(col);
 	}
 
-	/* Set KSO[17:0] output data */
+	/* Set KSO[17:0] output data, disable global interrupts for critical section.
+	 * The KBS_KSO* registers contains both keyboard and GPIO output settings.
+	 * Not all bits are for the keyboard will be driven, so a critical section
+	 * is needed to avoid race conditions.
+	 */
+	key = irq_lock();
 	inst->KBS_KSOL = (inst->KBS_KSOL & ~ksol_mask) | (kso_val & ksol_mask);
 	inst->KBS_KSOH1 = (inst->KBS_KSOH1 & ~ksoh1_mask) | ((kso_val >> 8) & ksoh1_mask);
+	irq_unlock(key);
+
 	if (common->col_size > 16) {
 		inst->KBS_KSOH2 = (kso_val >> 16) & 0xff;
 	}
@@ -142,7 +152,7 @@ static int it8xxx2_kbd_init(const struct device *dev)
 	const struct input_kbd_matrix_common_config *common = &config->common;
 	struct it8xxx2_kbd_data *data = dev->data;
 	struct kscan_it8xxx2_regs *const inst = config->base;
-	const uint32_t kso_mask = BIT_MASK(common->col_size);
+	const uint32_t kso_mask = BIT_MASK(common->col_size) & ~config->kso_ignore_mask;
 	const uint8_t ksol_mask = kso_mask & 0xff;
 	const uint8_t ksoh1_mask = (kso_mask >> 8) & 0xff;
 	int status;
@@ -237,13 +247,20 @@ static const struct it8xxx2_kbd_config it8xxx2_kbd_cfg_0 = {
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 	.kso16_gpios = GPIO_DT_SPEC_INST_GET(0, kso16_gpios),
 	.kso17_gpios = GPIO_DT_SPEC_INST_GET(0, kso17_gpios),
+	.kso_ignore_mask = DT_INST_PROP(0, kso_ignore_mask),
 };
 
 static struct it8xxx2_kbd_data it8xxx2_kbd_data_0;
 
-DEVICE_DT_INST_DEFINE(0, &it8xxx2_kbd_init, NULL,
+PM_DEVICE_DT_INST_DEFINE(0, input_kbd_matrix_pm_action);
+
+DEVICE_DT_INST_DEFINE(0, &it8xxx2_kbd_init, PM_DEVICE_DT_INST_GET(0),
 		      &it8xxx2_kbd_data_0, &it8xxx2_kbd_cfg_0,
 		      POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, NULL);
+
+BUILD_ASSERT(!IS_ENABLED(CONFIG_PM_DEVICE_SYSTEM_MANAGED) ||
+	     IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME),
+	     "CONFIG_PM_DEVICE_RUNTIME must be enabled when using CONFIG_PM_DEVICE_SYSTEM_MANAGED");
 
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 	     "only one ite,it8xxx2-kbd compatible node can be supported");

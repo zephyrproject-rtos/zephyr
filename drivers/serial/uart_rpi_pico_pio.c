@@ -176,7 +176,7 @@ static int pio_uart_init(const struct device *dev)
 	return pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 }
 
-static const struct uart_driver_api pio_uart_driver_api = {
+static DEVICE_API(uart, pio_uart_driver_api) = {
 	.poll_in = pio_uart_poll_in,
 	.poll_out = pio_uart_poll_out,
 };
@@ -192,7 +192,7 @@ static const struct uart_driver_api pio_uart_driver_api = {
 	};											\
 	static struct pio_uart_data pio_uart##idx##_data;					\
 												\
-	DEVICE_DT_INST_DEFINE(idx, &pio_uart_init, NULL, &pio_uart##idx##_data,			\
+	DEVICE_DT_INST_DEFINE(idx, pio_uart_init, NULL, &pio_uart##idx##_data,			\
 			      &pio_uart##idx##_config, POST_KERNEL,				\
 			      CONFIG_SERIAL_INIT_PRIORITY,					\
 			      &pio_uart_driver_api);

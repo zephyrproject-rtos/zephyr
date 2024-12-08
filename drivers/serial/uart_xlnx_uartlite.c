@@ -354,7 +354,7 @@ static int xlnx_uartlite_init(const struct device *dev)
 	return 0;
 }
 
-static const struct uart_driver_api xlnx_uartlite_driver_api = {
+static DEVICE_API(uart, xlnx_uartlite_driver_api) = {
 	.poll_in = xlnx_uartlite_poll_in,
 	.poll_out = xlnx_uartlite_poll_out,
 	.err_check = xlnx_uartlite_err_check,
@@ -377,7 +377,7 @@ static const struct uart_driver_api xlnx_uartlite_driver_api = {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 #define XLNX_UARTLITE_IRQ_INIT(n, i)					\
 	do {								\
-		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, i, irq),		\
+		IRQ_CONNECT(DT_INST_IRQN_BY_IDX(n, i),			\
 			    DT_INST_IRQ_BY_IDX(n, i, priority),		\
 			    xlnx_uartlite_isr,				\
 			    DEVICE_DT_INST_GET(n), 0);			\

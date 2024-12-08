@@ -40,7 +40,7 @@ tests:
   sample.net.lwm2m_client.dtls:
     harness: net
     depends_on: netif
-    extra_args: OVERLAY_CONFIG=overlay-dtls.conf
+    extra_args: EXTRA_CONF_FILE=overlay-dtls.conf
     platform_allow:
       - qemu_x86
       - frdm_k64f
@@ -55,7 +55,7 @@ tests:
   sample.net.lwm2m_client.queue_mode:
     harness: net
     depends_on: netif
-    extra_args: OVERLAY_CONFIG=overlay-queue.conf
+    extra_args: EXTRA_CONF_FILE=overlay-queue.conf
     platform_allow:
       - qemu_x86
       - native_sim

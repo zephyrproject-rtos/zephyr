@@ -183,12 +183,14 @@ int regulator_disable(const struct device *dev)
 	(void)k_mutex_lock(&data->lock, K_FOREVER);
 #endif
 
-	data->refcnt--;
+	if (data->refcnt > 0) {
+		data->refcnt--;
 
-	if (data->refcnt == 0) {
-		ret = api->disable(dev);
-		if (ret < 0) {
-			data->refcnt++;
+		if (data->refcnt == 0) {
+			ret = api->disable(dev);
+			if (ret < 0) {
+				data->refcnt++;
+			}
 		}
 	}
 

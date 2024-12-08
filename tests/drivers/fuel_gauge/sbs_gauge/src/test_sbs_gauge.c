@@ -206,7 +206,24 @@ ZTEST_USER_F(sbs_gauge_new_api, test_get_buffer_props__returns_ok)
 ZTEST_USER_F(sbs_gauge_new_api, test_charging_5v_3a)
 {
 	uint32_t expected_uV = 5000 * 1000;
-	uint32_t expected_uA = 3000 * 1000;
+	int32_t expected_uA = 3000 * 1000;
+
+	union fuel_gauge_prop_val voltage;
+	union fuel_gauge_prop_val current;
+
+	zassume_ok(emul_fuel_gauge_set_battery_charging(fixture->sbs_fuel_gauge, expected_uV,
+							expected_uA));
+	zassert_ok(fuel_gauge_get_prop(fixture->dev, FUEL_GAUGE_VOLTAGE, &voltage));
+	zassert_ok(fuel_gauge_get_prop(fixture->dev, FUEL_GAUGE_CURRENT, &current));
+
+	zassert_equal(voltage.voltage, expected_uV, "Got %d instead of %d", voltage, expected_uV);
+	zassert_equal(current.current, expected_uA, "Got %d instead of %d", current, expected_uA);
+}
+
+ZTEST_USER_F(sbs_gauge_new_api, test_charging_5v_neg_1a)
+{
+	uint32_t expected_uV = 5000 * 1000;
+	int32_t expected_uA = -1000 * 1000;
 
 	union fuel_gauge_prop_val voltage;
 	union fuel_gauge_prop_val current;

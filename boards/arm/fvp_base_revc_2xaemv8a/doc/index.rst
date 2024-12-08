@@ -99,7 +99,7 @@ Checkout and Build the TF-A:
    cd trusted-firmware-a/
    make PLAT=fvp PRELOADED_BL33_BASE="0x88000000" all fip
 
-then export the ``ARMFVP_BL1_FILE` and ``ARMFVP_FIP_FILE`` environment variables:
+then export the :envvar:`ARMFVP_BL1_FILE` and :envvar:`ARMFVP_FIP_FILE` environment variables:
 
 .. code-block:: console
 
@@ -116,6 +116,8 @@ Networking
 
 References
 **********
+
+.. target-notes::
 
 1. (ID070919) Arm® Architecture Reference Manual - Armv8, for Armv8-A architecture profile
 2. AArch64 Exception and Interrupt Handling

@@ -10,7 +10,7 @@ tests:
       - qemu_cortex_m3
       - mps2/an385
       - mps2/an521/cpu0
-      - mps3/an547
+      - mps3/corstone300/an547
       - nrf52840dk/nrf52840
       - nrf9160dk/nrf9160
       - nrf51dk/nrf51822

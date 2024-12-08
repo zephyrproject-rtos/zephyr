@@ -72,9 +72,9 @@ int stream_flash_callback(uint8_t *buf, size_t len, size_t offset)
 
 static void erase_flash(void)
 {
-#if IS_ENABLED(CONFIG_FLASH_HAS_EXPLICIT_ERASE)
+#if defined(CONFIG_FLASH_HAS_EXPLICIT_ERASE)
 	int rc;
-#if IS_ENABLED(CONFIG_FLASH_HAS_NO_EXPLICIT_ERASE)
+#if defined(CONFIG_FLASH_HAS_NO_EXPLICIT_ERASE)
 	const struct flash_parameters *fparam = flash_get_parameters(fdev);
 
 	if (!(flash_params_get_erase_cap(fparam) & FLASH_ERASE_C_EXPLICIT)) {
@@ -465,6 +465,25 @@ ZTEST(lib_stream_flash, test_stream_flash_erase_page)
 	zassert_equal(memcmp(&bad_ctx, &cmp_ctx, sizeof(bad_ctx)), 0,
 		      "Ctx should not get altered");
 	zassert_equal(rc, -EINVAL, "Expected failure");
+
+	/* False dev with erase set to NULL to avoid actual erase */
+	fake_api.erase = NULL;
+	struct stream_flash_ctx range_test_ctx = {
+		.offset = 1024,
+		.available = 2048,
+		.fdev = &fake_dev,
+		.last_erased_page_start_offset = -1,
+	};
+
+	rc = stream_flash_erase_page(&range_test_ctx, 1024);
+	zassert_equal(rc, -ENOSYS, "%d No device attached - expected failure", rc);
+
+	rc = stream_flash_erase_page(&range_test_ctx, 1023);
+	zassert_equal(rc, -ERANGE, "Expected failure - offset before designated area");
+
+	rc = stream_flash_erase_page(&range_test_ctx,
+				     range_test_ctx.offset + range_test_ctx.available + 1);
+	zassert_equal(rc, -ERANGE, "Expected failure - offset after designated area");
 }
 #else
 ZTEST(lib_stream_flash, test_stream_flash_erase_page)

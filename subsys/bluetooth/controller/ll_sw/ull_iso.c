@@ -21,6 +21,8 @@
 #include "util/mayfly.h"
 #include "util/dbuf.h"
 
+#include "ticker/ticker.h"
+
 #include "pdu_df.h"
 #include "lll/pdu_vendor.h"
 #include "pdu.h"
@@ -36,6 +38,7 @@
 #include "lll_conn.h"
 #include "lll_conn_iso.h"
 #include "lll_iso_tx.h"
+#include "lll/lll_vendor.h"
 
 #include "ll_sw/ull_tx_queue.h"
 
@@ -107,6 +110,11 @@ static struct ll_iso_datapath datapath_pool[BT_CTLR_ISO_STREAMS];
 static void *datapath_free;
 
 #if defined(CONFIG_BT_CTLR_SYNC_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
+static void ticker_resume_op_cb(uint32_t status, void *param);
+static void ticker_resume_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
+			     uint32_t remainder, uint16_t lazy, uint8_t force,
+			     void *param);
+
 #define NODE_RX_HEADER_SIZE (offsetof(struct node_rx_pdu, pdu))
 /* ISO LL conformance tests require a PDU size of maximum 251 bytes + header */
 #define ISO_RX_BUFFER_SIZE (2 + 251)
@@ -1456,10 +1464,9 @@ int ull_iso_reset(void)
 #if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
 void ull_iso_lll_ack_enqueue(uint16_t handle, struct node_tx_iso *node_tx)
 {
-	struct ll_iso_datapath *dp = NULL;
-
 	if (IS_ENABLED(CONFIG_BT_CTLR_CONN_ISO) && IS_CIS_HANDLE(handle)) {
 		struct ll_conn_iso_stream *cis;
+		struct ll_iso_datapath *dp;
 
 		cis = ll_conn_iso_stream_get(handle);
 		dp  = cis->hdr.datapath_in;
@@ -1467,13 +1474,19 @@ void ull_iso_lll_ack_enqueue(uint16_t handle, struct node_tx_iso *node_tx)
 		if (dp) {
 			isoal_tx_pdu_release(dp->source_hdl, node_tx);
 		} else {
-			/* Race with Data Path remove */
+#if defined(CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH)
+			/* Possible race with Data Path remove - handle release in vendor
+			 * function.
+			 */
+			ll_data_path_tx_pdu_release(handle, node_tx);
+#else
 			/* FIXME: ll_tx_ack_put is not LLL callable as it is
 			 * used by ACL connections in ULL context to dispatch
 			 * ack.
 			 */
 			ll_tx_ack_put(handle, (void *)node_tx);
 			ll_rx_sched();
+#endif /* CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH */
 		}
 	} else if (IS_ENABLED(CONFIG_BT_CTLR_ADV_ISO) && IS_ADV_ISO_HANDLE(handle)) {
 		/* Process as TX ack. TODO: Can be unified with CIS and use
@@ -1968,3 +1981,127 @@ static int init_reset(void)
 
 	return 0;
 }
+
+#if defined(CONFIG_BT_CTLR_CONN_ISO) || defined(CONFIG_BT_CTLR_SYNC_ISO)
+void ull_iso_resume_ticker_start(struct lll_event *resume_event,
+				 uint16_t group_handle,
+				 uint16_t stream_handle,
+				 uint8_t  role,
+				 uint32_t ticks_anchor,
+				 uint32_t resume_timeout)
+{
+	uint32_t resume_delay_us;
+	int32_t resume_offset_us;
+	uint8_t ticker_id = 0;
+	uint32_t ret;
+
+	resume_delay_us  = EVENT_OVERHEAD_START_US;
+	resume_delay_us += EVENT_TICKER_RES_MARGIN_US;
+
+	if (0) {
+#if defined(CONFIG_BT_CTLR_CONN_ISO)
+	} else if (IS_CIS_HANDLE(stream_handle)) {
+		ticker_id = TICKER_ID_CONN_ISO_RESUME_BASE + group_handle;
+#endif /* CONFIG_BT_CTLR_CONN_ISO */
+#if defined(CONFIG_BT_CTLR_SYNC_ISO)
+	} else if (IS_SYNC_ISO_HANDLE(stream_handle)) {
+		ticker_id = TICKER_ID_SCAN_SYNC_ISO_RESUME_BASE + group_handle;
+#endif /* CONFIG_BT_CTLR_SYNC_ISO */
+	} else {
+		LL_ASSERT(0);
+	}
+
+	if (role == BT_HCI_ROLE_PERIPHERAL) {
+		/* Add peripheral specific delay */
+		if (0) {
+#if defined(CONFIG_BT_CTLR_PHY)
+		} else {
+			uint8_t phy = 0;
+
+			if (0) {
+#if defined(CONFIG_BT_CTLR_CONN_ISO)
+			} else if (IS_CIS_HANDLE(stream_handle)) {
+				struct ll_conn_iso_stream *cis;
+				struct ll_conn *conn;
+
+				cis = ll_conn_iso_stream_get(stream_handle);
+				conn = ll_conn_get(cis->lll.acl_handle);
+				phy = conn->lll.phy_rx;
+#endif /* CONFIG_BT_CTLR_CONN_ISO */
+#if defined(CONFIG_BT_CTLR_SYNC_ISO)
+			} else if (IS_SYNC_ISO_HANDLE(stream_handle)) {
+				struct ll_sync_iso_set *sync_iso;
+				uint16_t stream_idx;
+
+				stream_idx = LL_BIS_SYNC_IDX_FROM_HANDLE(stream_handle);
+				sync_iso = ull_sync_iso_by_stream_get(stream_idx);
+				phy = sync_iso->lll.phy;
+#endif /* CONFIG_BT_CTLR_SYNC_ISO */
+			} else {
+				LL_ASSERT(0);
+			}
+
+			resume_delay_us +=
+				lll_radio_rx_ready_delay_get(phy, PHY_FLAGS_S8);
+#else
+		} else {
+			resume_delay_us += lll_radio_rx_ready_delay_get(0, 0);
+#endif /* CONFIG_BT_CTLR_PHY */
+		}
+	}
+
+	resume_offset_us = (int32_t)(resume_timeout - resume_delay_us);
+	LL_ASSERT(resume_offset_us >= 0);
+
+	/* Setup resume timeout as single-shot */
+	ret = ticker_start(TICKER_INSTANCE_ID_CTLR,
+			   TICKER_USER_ID_LLL,
+			   ticker_id,
+			   ticks_anchor,
+			   HAL_TICKER_US_TO_TICKS(resume_offset_us),
+			   TICKER_NULL_PERIOD,
+			   TICKER_NULL_REMAINDER,
+			   TICKER_NULL_LAZY,
+			   TICKER_NULL_SLOT,
+			   ticker_resume_cb, resume_event,
+			   ticker_resume_op_cb, NULL);
+
+	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
+		  (ret == TICKER_STATUS_BUSY));
+}
+
+static void ticker_resume_op_cb(uint32_t status, void *param)
+{
+	ARG_UNUSED(param);
+
+	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
+}
+
+static void ticker_resume_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
+			     uint32_t remainder, uint16_t lazy, uint8_t force,
+			     void *param)
+{
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL, lll_resume};
+	struct lll_event *resume_event;
+	uint32_t ret;
+
+	ARG_UNUSED(ticks_drift);
+	LL_ASSERT(lazy == 0);
+
+	resume_event = param;
+
+	/* Append timing parameters */
+	resume_event->prepare_param.ticks_at_expire = ticks_at_expire;
+	resume_event->prepare_param.remainder = remainder;
+	resume_event->prepare_param.lazy = 0;
+	resume_event->prepare_param.force = force;
+	mfy.param = resume_event;
+
+	/* Kick LLL resume */
+	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL,
+			     0, &mfy);
+
+	LL_ASSERT(!ret);
+}
+#endif /* CONFIG_BT_CTLR_CONN_ISO || CONFIG_BT_CTLR_SYNC_ISO */

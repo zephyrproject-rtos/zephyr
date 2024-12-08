@@ -28,11 +28,13 @@ config TSL2540_TRIGGER_NONE
 config TSL2540_TRIGGER_GLOBAL_THREAD
 	bool "Use global thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_AMS_TSL2540),int-gpios)
 	select TSL2540_TRIGGER
 
 config TSL2540_TRIGGER_OWN_THREAD
 	bool "Use own thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_AMS_TSL2540),int-gpios)
 	select TSL2540_TRIGGER
 
 endchoice

@@ -5,7 +5,9 @@
  */
 
 #include <app_api.h>
-#include <app_api.h>
+
+#include <zephyr/llext/symbol.h>
+#include <zephyr/internal/syscall_handler.h>
 
 int z_impl_foo(int bar)
 {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 NXP
+ * Copyright 2021, 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 #include <mem.h>
 #include <zephyr/dt-bindings/clock/imx_ccm.h>
 #include <zephyr/dt-bindings/dai/esai.h>
+#include <zephyr/dt-bindings/power/imx_scu_rsrc.h>
 
 / {
 	cpus {
@@ -34,6 +35,7 @@
 	irqsteer: interrupt-controller@510a0000 {
 		compatible = "nxp,irqsteer-intc";
 		reg = <0x510a0000 DT_SIZE_K(64)>;
+		power-domains = <&irqstr_pd>;
 
 		#size-cells = <0>;
 		#address-cells = <1>;
@@ -130,6 +132,8 @@
 		reg = <0x59050000 DT_SIZE_K(64)>;
 		interrupt-parent = <&master5>;
 		interrupts = <28>;
+		clocks = <&ccm IMX_CCM_SAI1_CLK 0x0 0x0>;
+		clock-names = "bus";
 		dai-index = <1>;
 		dmas = <&edma0 15 0>, <&edma0 14 0>;
 		dma-names = "tx", "rx";
@@ -167,6 +171,18 @@
 				compatible = "nxp,imx8-pinctrl";
 			};
 		};
+
+		power-domains {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			irqstr_pd: pd@0 {
+				compatible = "nxp,imx8qm-scu-pd", "nxp,scu-pd";
+				reg = <0>;
+				nxp,resource-id = <IMX_SC_R_IRQSTR_DSP>;
+				#power-domain-cells = <0>;
+			};
+		};
 	};
 
 	lpuart2: serial@5a080000 {
@@ -176,6 +192,15 @@
 		interrupts = <3>;
 		/* this is actually LPUART2 clock but the macro indexing starts at 1 */
 		clocks = <&ccm IMX_CCM_LPUART3_CLK 0x0 0x0>;
+		status = "disabled";
+	};
+
+	mailbox0: mailbox@5d310000 {
+		compatible = "nxp,imx-mu";
+		reg = <0x5d310000 0x10000>;
+		interrupt-parent = <&clic>;
+		interrupts = <7 0 0>;
+		rdc = <0>;
 		status = "disabled";
 	};
 };

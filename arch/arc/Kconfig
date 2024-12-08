@@ -262,7 +262,7 @@ config ARC_CURRENT_THREAD_USE_NO_TLS
 	  RGF_NUM_BANKS the parameter is disabled by-default because banks syncronization
 	  requires significant time, and it slows down performance.
 	  ARCMWDT works with tls pointer in different way then GCC. Optimized access to
-	  TLS pointer via _current variable does not provide significant advantages
+	  TLS pointer via arch_current_thread() does not provide significant advantages
 	  in case of MetaWare.
 
 config GEN_ISR_TABLES
@@ -342,6 +342,15 @@ config ARC_NORMAL_FIRMWARE
 	  Code executing in normal mode has no access to secure
 	  resources of the ARC processors, and, therefore, it shall avoid
 	  accessing them.
+
+config ARC_VPX_COOPERATIVE_SHARING
+	bool "Cooperative sharing of ARC VPX vector registers"
+	select SCHED_CPU_MASK if MP_MAX_NUM_CPUS > 1
+	help
+	  This option enables the cooperative sharing of the ARC VPX vector
+	  registers. Threads that want to use those registers must successfully
+	  call arc_vpx_lock() before using them, and call arc_vpx_unlock()
+	  when done using them.
 
 source "arch/arc/core/dsp/Kconfig"
 

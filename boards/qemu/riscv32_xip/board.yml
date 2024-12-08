@@ -1,5 +1,6 @@
 board:
   name: qemu_riscv32_xip
+  full_name: QEMU Emulation for RISCV32 XIP
   vendor: qemu
   socs:
     - name: fe310

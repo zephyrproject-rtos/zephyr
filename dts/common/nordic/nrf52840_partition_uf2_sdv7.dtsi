@@ -1,0 +1,52 @@
+/*
+ * Copyright (c) 2024 Jacob Winther
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+/ {
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &code_partition;
+	};
+};
+
+&flash0 {
+	/*
+	 * Default flash layout for nrf52840 using UF2 and SoftDevice s140 v7
+	 *
+	 * 0x00000000 SoftDevice s140 v7    (156 kB)
+	 * 0x00027000 Application partition (788 kB)
+	 * 0x000ec000 Storage partition     (32 kB)
+	 * 0x000f4000 UF2 boot partition    (48 kB)
+	 */
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		reserved_partition_0: partition@0 {
+			label = "SoftDevice";
+			read-only;
+			reg = <0x00000000 0x00027000>;
+		};
+		code_partition: partition@27000 {
+			label = "Application";
+			reg = <0x00027000 0x000C5000>;
+		};
+
+		storage_partition: partition@ec000 {
+			label = "Storage";
+			reg = <0x000ec000 0x00008000>;
+		};
+
+		boot_partition: partition@f4000 {
+			label = "UF2";
+			read-only;
+			reg = <0x000f4000 0x0000c000>;
+		};
+	};
+};

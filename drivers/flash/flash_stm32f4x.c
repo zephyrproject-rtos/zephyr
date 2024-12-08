@@ -295,102 +295,17 @@ int flash_stm32_get_wp_sectors(const struct device *dev,
 #endif /* CONFIG_FLASH_STM32_WRITE_PROTECT */
 
 #if defined(CONFIG_FLASH_STM32_READOUT_PROTECTION)
-int flash_stm32_update_rdp(const struct device *dev, bool enable,
-			   bool permanent)
+uint8_t flash_stm32_get_rdp_level(const struct device *dev)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
-	uint8_t current_level, target_level;
 
-	current_level =
-		(regs->OPTCR & FLASH_OPTCR_RDP_Msk) >> FLASH_OPTCR_RDP_Pos;
-	target_level = current_level;
-
-	/*
-	 * 0xAA = RDP level 0 (no protection)
-	 * 0xCC = RDP level 2 (permanent protection)
-	 * others = RDP level 1 (protection active)
-	 */
-	switch (current_level) {
-	case FLASH_STM32_RDP2:
-		if (!enable || !permanent) {
-			LOG_ERR("RDP level 2 is permanent and can't be changed!");
-			return -ENOTSUP;
-		}
-		break;
-	case FLASH_STM32_RDP0:
-		if (enable) {
-			target_level = FLASH_STM32_RDP1;
-			if (permanent) {
-#if defined(CONFIG_FLASH_STM32_READOUT_PROTECTION_PERMANENT_ALLOW)
-				target_level = FLASH_STM32_RDP2;
-#else
-				LOG_ERR("Permanent readout protection (RDP "
-					"level 0 -> 2) not allowed");
-				return -ENOTSUP;
-#endif
-			}
-		}
-		break;
-	default: /* FLASH_STM32_RDP1 */
-		if (enable && permanent) {
-#if defined(CONFIG_FLASH_STM32_READOUT_PROTECTION_PERMANENT_ALLOW)
-			target_level = FLASH_STM32_RDP2;
-#else
-			LOG_ERR("Permanent readout protection (RDP "
-				"level 1 -> 2) not allowed");
-			return -ENOTSUP;
-#endif
-		}
-		if (!enable) {
-#if defined(CONFIG_FLASH_STM32_READOUT_PROTECTION_DISABLE_ALLOW)
-			target_level = FLASH_STM32_RDP0;
-#else
-			LOG_ERR("Disabling readout protection (RDP "
-				"level 1 -> 0) not allowed");
-			return -EACCES;
-#endif
-		}
-	}
-
-	/* Update RDP level if needed */
-	if (current_level != target_level) {
-		LOG_INF("RDP changed from 0x%02x to 0x%02x", current_level,
-			target_level);
-
-		write_optb(dev, FLASH_OPTCR_RDP_Msk,
-			   (uint32_t)target_level << FLASH_OPTCR_RDP_Pos);
-	}
-	return 0;
+	return (regs->OPTCR & FLASH_OPTCR_RDP_Msk) >> FLASH_OPTCR_RDP_Pos;
 }
 
-int flash_stm32_get_rdp(const struct device *dev, bool *enabled,
-			bool *permanent)
+void flash_stm32_set_rdp_level(const struct device *dev, uint8_t level)
 {
-	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
-	uint8_t current_level;
-
-	current_level =
-		(regs->OPTCR & FLASH_OPTCR_RDP_Msk) >> FLASH_OPTCR_RDP_Pos;
-
-	/*
-	 * 0xAA = RDP level 0 (no protection)
-	 * 0xCC = RDP level 2 (permanent protection)
-	 * others = RDP level 1 (protection active)
-	 */
-	switch (current_level) {
-	case FLASH_STM32_RDP2:
-		*enabled = true;
-		*permanent = true;
-		break;
-	case FLASH_STM32_RDP0:
-		*enabled = false;
-		*permanent = false;
-		break;
-	default: /* FLASH_STM32_RDP1 */
-		*enabled = true;
-		*permanent = false;
-	}
-	return 0;
+	write_optb(dev, FLASH_OPTCR_RDP_Msk,
+		(uint32_t)level << FLASH_OPTCR_RDP_Pos);
 }
 #endif /* CONFIG_FLASH_STM32_READOUT_PROTECTION */
 

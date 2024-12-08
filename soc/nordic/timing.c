@@ -47,14 +47,14 @@ uint64_t soc_timing_cycles_get(volatile timing_t *const start,
 {
 #if defined(CONFIG_SOC_SERIES_NRF51X)
 #define COUNTER_SPAN BIT(16)
+#else
+#define COUNTER_SPAN BIT64(32)
+#endif
 	if (*end >= *start) {
 		return (*end - *start);
 	} else {
 		return COUNTER_SPAN + *end - *start;
 	}
-#else
-	return (*end - *start);
-#endif
 }
 
 uint64_t soc_timing_freq_get(void)

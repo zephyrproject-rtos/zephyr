@@ -133,7 +133,7 @@ static int32_t queue_insert(struct k_queue *queue, void *prev, void *data,
 	}
 	first_pending_thread = z_unpend_first_thread(&queue->wait_q);
 
-	if (first_pending_thread != NULL) {
+	if (unlikely(first_pending_thread != NULL)) {
 		SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_queue, queue_insert, queue, alloc, K_FOREVER);
 
 		prepare_thread_to_run(first_pending_thread, data);
@@ -346,9 +346,9 @@ void *z_impl_k_queue_get(struct k_queue *queue, k_timeout_t timeout)
 	int ret = z_pend_curr(&queue->lock, key, &queue->wait_q, timeout);
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_queue, get, queue, timeout,
-		(ret != 0) ? NULL : _current->base.swap_data);
+		(ret != 0) ? NULL : arch_current_thread()->base.swap_data);
 
-	return (ret != 0) ? NULL : _current->base.swap_data;
+	return (ret != 0) ? NULL : arch_current_thread()->base.swap_data;
 }
 
 bool k_queue_remove(struct k_queue *queue, void *data)

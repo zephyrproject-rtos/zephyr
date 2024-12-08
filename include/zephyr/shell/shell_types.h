@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef SHELL_TYPES_H__
-#define SHELL_TYPES_H__
+#ifndef ZEPHYR_INCLUDE_SHELL_TYPES_H_
+#define ZEPHYR_INCLUDE_SHELL_TYPES_H_
 
 
 #ifdef __cplusplus
@@ -51,4 +51,4 @@ struct shell_vt100_ctx {
 }
 #endif
 
-#endif /* SHELL_TYPES_H__ */
+#endif /* ZEPHYR_INCLUDE_SHELL_TYPES_H_ */

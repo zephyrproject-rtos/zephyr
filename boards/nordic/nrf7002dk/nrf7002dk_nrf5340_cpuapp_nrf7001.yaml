@@ -1,0 +1,20 @@
+identifier: nrf7002dk/nrf5340/cpuapp/nrf7001
+name: NRF7002-DK-NRF7001-NRF5340-application-MCU
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - xtools
+  - zephyr
+ram: 448
+flash: 1024
+supported:
+  - gpio
+  - i2c
+  - i2s
+  - pwm
+  - watchdog
+  - usbd
+  - usb_device
+  - netif:openthread
+vendor: nordic

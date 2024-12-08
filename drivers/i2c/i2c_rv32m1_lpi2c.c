@@ -257,7 +257,10 @@ static int rv32m1_lpi2c_init(const struct device *dev)
 
 static const struct i2c_driver_api rv32m1_lpi2c_driver_api = {
 	.configure = rv32m1_lpi2c_configure,
-	.transfer  = rv32m1_lpi2c_transfer,
+	.transfer = rv32m1_lpi2c_transfer,
+#ifdef CONFIG_I2C_RTIO
+	.iodev_submit = i2c_iodev_submit_fallback,
+#endif
 };
 
 #define RV32M1_LPI2C_DEVICE(id)                                                \

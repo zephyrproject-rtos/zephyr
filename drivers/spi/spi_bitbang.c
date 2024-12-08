@@ -12,6 +12,7 @@ LOG_MODULE_REGISTER(spi_bitbang);
 
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi/rtio.h>
 #include "spi_context.h"
 
 struct spi_bitbang_data {
@@ -231,7 +232,8 @@ static int spi_bitbang_transceive_async(const struct device *dev,
 				    const struct spi_config *spi_cfg,
 				    const struct spi_buf_set *tx_bufs,
 				    const struct spi_buf_set *rx_bufs,
-				    struct k_poll_signal *async)
+				    spi_callback_t cb,
+				    void *userdata)
 {
 	return -ENOTSUP;
 }
@@ -247,12 +249,15 @@ int spi_bitbang_release(const struct device *dev,
 	return 0;
 }
 
-static const struct spi_driver_api spi_bitbang_api = {
+static DEVICE_API(spi, spi_bitbang_api) = {
 	.transceive = spi_bitbang_transceive,
 	.release = spi_bitbang_release,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_bitbang_transceive_async,
 #endif /* CONFIG_SPI_ASYNC */
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
+#endif
 };
 
 int spi_bitbang_init(const struct device *dev)
@@ -320,7 +325,7 @@ int spi_bitbang_init(const struct device *dev)
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(inst), ctx)	\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(inst,					\
+	SPI_DEVICE_DT_INST_DEFINE(inst,					\
 			    spi_bitbang_init,				\
 			    NULL,					\
 			    &spi_bitbang_data_##inst,			\

@@ -14,7 +14,14 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			reg = <0x42021400 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000080>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 7U)>;
+		};
+
+		fmc: memory-controller@47000400 {
+			compatible = "st,stm32-fmc";
+			reg = <0x47000400 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB4, 16U)>;
+			status = "disabled";
 		};
 	};
 };

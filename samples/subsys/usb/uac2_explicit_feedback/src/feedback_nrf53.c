@@ -48,7 +48,7 @@ static const nrfx_timer_t feedback_timer_instance =
  * the 4 least significant bits (does not use the bits for extra precision).
  */
 #define FEEDBACK_K		10
-#if IS_ENABLED(CONFIG_APP_USE_I2S_LRCLK_EDGES_COUNTER)
+#if defined(CONFIG_APP_USE_I2S_LRCLK_EDGES_COUNTER)
 #define FEEDBACK_P		1
 #else
 #define FEEDBACK_P		5

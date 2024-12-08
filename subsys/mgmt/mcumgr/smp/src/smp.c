@@ -8,7 +8,7 @@
 /** SMP - Simple Management Protocol. */
 
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
 #include <zephyr/mgmt/mcumgr/smp/smp.h>
 #include <zephyr/mgmt/mcumgr/smp/smp_client.h>
@@ -380,7 +380,7 @@ static void smp_on_err(struct smp_streamer *streamer, const struct smp_hdr *req_
  */
 int smp_process_request_packet(struct smp_streamer *streamer, void *vreq)
 {
-	struct smp_hdr req_hdr;
+	struct smp_hdr req_hdr = { 0 };
 	void *rsp;
 	struct net_buf *req = vreq;
 	bool valid_hdr = false;

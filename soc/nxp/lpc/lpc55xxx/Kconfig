@@ -8,7 +8,7 @@ config SOC_SERIES_LPC55XXX
 	select HAS_MCUX_WWDT
 	select CPU_CORTEX_M_HAS_SYSTICK
 	select CPU_CORTEX_M_HAS_DWT
-	select PLATFORM_SPECIFIC_INIT
+	select SOC_RESET_HOOK
 
 config SOC_LPC55S06
 	select CPU_CORTEX_M33
@@ -31,6 +31,18 @@ config SOC_LPC55S16
 	select HAS_MCUX_MCAN
 	select HAS_MCUX_RNG
 
+config SOC_LPC55S26
+	select CPU_CORTEX_M33
+	select CPU_HAS_ARM_SAU
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select ARMV8_M_DSP
+	select HAS_MCUX_IAP
+	select HAS_MCUX_LPADC
+	select HAS_MCUX_LPC_DMA
+	select HAS_MCUX_RNG
+	select HAS_MCUX_SCTIMER
+
 config SOC_LPC55S28
 	select CPU_CORTEX_M33
 	select CPU_HAS_ARM_SAU
@@ -41,6 +53,7 @@ config SOC_LPC55S28
 	select HAS_MCUX_LPADC
 	select HAS_MCUX_LPC_DMA
 	select HAS_MCUX_RNG
+	select HAS_MCUX_SCTIMER
 
 config SOC_LPC55S36
 	select CPU_CORTEX_M33

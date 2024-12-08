@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018-2021 mcumgr authors
- * Copyright (c) 2022-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -103,7 +103,7 @@ mgmt_get_handler(const struct mgmt_group *group, uint16_t command_id)
 	return &group->mg_handlers[command_id];
 }
 
-#if IS_ENABLED(CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL)
+#if defined(CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL)
 smp_translate_error_fn mgmt_find_error_translation_function(uint16_t group_id)
 {
 	struct mgmt_group *group = NULL;
@@ -225,6 +225,22 @@ uint8_t mgmt_evt_get_index(uint32_t event)
 	return index;
 }
 #endif
+
+void mgmt_groups_foreach(mgmt_groups_cb_t user_cb, void *user_data)
+{
+	sys_snode_t *snp, *sns;
+	bool ok;
+
+	SYS_SLIST_FOR_EACH_NODE_SAFE(&mgmt_group_list, snp, sns) {
+		const struct mgmt_group *group = CONTAINER_OF(snp, struct mgmt_group, node);
+
+		ok = user_cb(group, user_data);
+
+		if (!ok) {
+			return;
+		}
+	}
+}
 
 /* Processes all registered MCUmgr handlers at start up and registers them */
 static int mcumgr_handlers_init(void)

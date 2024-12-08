@@ -11,6 +11,11 @@ set(EXTRA_KCONFIG_TARGET_COMMAND_FOR_sysbuild_guiconfig
 )
 
 set(KCONFIG_TARGETS sysbuild_menuconfig sysbuild_guiconfig)
+foreach(extra_target ${EXTRA_KCONFIG_TARGETS})
+  set(EXTRA_KCONFIG_TARGET_COMMAND_FOR_sysbuild_${extra_target}
+      "${EXTRA_KCONFIG_TARGET_COMMAND_FOR_${extra_target}}"
+  )
+endforeach()
 list(TRANSFORM EXTRA_KCONFIG_TARGETS PREPEND "sysbuild_")
 
 zephyr_get(APPLICATION_CONFIG_DIR)
@@ -71,6 +76,13 @@ if(NOT DEFINED SB_CONF_FILE)
   # Not adding it to CMake cache ensures that a later created sysbuild.conf
   # will be automatically detected.
   set(SB_CONF_FILE ${CMAKE_CURRENT_BINARY_DIR}/empty.conf)
+endif()
+
+if(NOT EXISTS "${APPLICATION_CONFIG_DIR}")
+  message(FATAL_ERROR "${APPLICATION_CONFIG_DIR} (APPLICATION_CONFIG_DIR) doesn't exist. "
+          "Unable to lookup sysbuild.conf or other related sysbuild configuration files. "
+	  "Please ensure APPLICATION_CONFIG_DIR points to a valid location."
+  )
 endif()
 
 # Empty files to make kconfig.py happy.

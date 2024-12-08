@@ -1,0 +1,16 @@
+# i.MX 93 EVK board configuration
+
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MIMX93_EVK_EXP_SEL_INIT
+	bool "Configure i.MX 93 EVK board mux control during init"
+	default n
+
+config BOARD_MIMX93_EVK_EXP_SEL_INIT_PRIO
+	int "i.MX 93 EVK board mux control init priority"
+	default 60
+
+module = BOARD_MIMX93_EVK
+module-str = Board Control
+source "subsys/logging/Kconfig.template.log_config"

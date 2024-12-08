@@ -23,6 +23,7 @@ config TMD2620_TRIGGER_NONE
 config TMD2620_TRIGGER_GLOBAL_THREAD
 	bool "Use global thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_AMS_TMD2620),int-gpios)
 	select TMD2620_TRIGGER
 
 endchoice # Trigger Mode

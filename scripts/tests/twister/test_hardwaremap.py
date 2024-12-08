@@ -59,7 +59,12 @@ TESTDATA_1 = [
             'post_flash_script': 'dummy post flash script',
             'runner': 'dummy runner',
             'flash_timeout': 30,
-            'flash_with_test': True
+            'flash_with_test': True,
+            'script_param': {
+                'pre_script_timeout' : 30,
+                'post_flash_timeout' : 30,
+                'post_script_timeout' : 30,
+                }
         },
         {
             'lock': mock.ANY,
@@ -76,7 +81,12 @@ TESTDATA_1 = [
             'post_flash_script': 'dummy post flash script',
             'runner': 'dummy runner',
             'flash_timeout': 30,
-            'flash_with_test': True
+            'flash_with_test': True,
+            'script_param': {
+                'pre_script_timeout' : 30,
+                'post_flash_timeout' : 30,
+                'post_script_timeout' : 30,
+                }
         },
         '<dummy platform (dummy product) on dummy serial>'
     ),
@@ -213,10 +223,10 @@ def test_hardwaremap_summary(capfd, mocked_hm):
     expected = """
 Hardware distribution summary:
 
-| Board   |   ID |   Counter |
-|---------|------|-----------|
-| p1      |    1 |         0 |
-| p7      |    7 |         0 |
+| Board   |   ID |   Counter |   Failures |
+|---------|------|-----------|------------|
+| p1      |    1 |         0 |          0 |
+| p7      |    7 |         0 |          0 |
 """
 
     out, err = capfd.readouterr()
@@ -647,7 +657,7 @@ def test_hardwaremap_save(mocked_hm, hwm, expected_dump):
     read_mock = mock.mock_open(read_data=hwm)
     write_mock = mock.mock_open()
 
-    def mock_open(filename, mode):
+    def mock_open(filename, mode='r'):
         if mode == 'r':
             return read_mock()
         elif mode == 'w':

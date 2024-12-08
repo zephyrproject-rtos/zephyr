@@ -27,8 +27,8 @@
 #elif defined(CONFIG_SOC_SERIES_NRF54LX)
 /* For nRF54L Series, use SWI00-02 interrupt lines. */
 #define _ISR_OFFSET SWI00_IRQn
-#elif defined(CONFIG_SOC_SERIES_NRF54HX)
-/* For nRF54H Series, use BELLBOARD_0-2 interrupt lines. */
+#elif defined(CONFIG_SOC_SERIES_NRF54HX) || defined(CONFIG_SOC_SERIES_NRF92X)
+/* For nRF54H and nRF92 Series, use BELLBOARD_0-2 interrupt lines. */
 #define _ISR_OFFSET BELLBOARD_0_IRQn
 #else
 /* For other nRF targets, use TIMER0-2 interrupt lines. */
@@ -144,7 +144,7 @@ typedef void (*vth)(void); /* Vector Table Handler */
 void nrfx_power_clock_irq_handler(void);
 #if defined(CONFIG_SOC_SERIES_NRF51X) || defined(CONFIG_SOC_SERIES_NRF52X)
 #define POWER_CLOCK_IRQ_NUM	POWER_CLOCK_IRQn
-#elif defined(CONFIG_SOC_SERIES_NRF54HX)
+#elif defined(CONFIG_SOC_SERIES_NRF54HX) || defined(CONFIG_SOC_SERIES_NRF92X)
 #define POWER_CLOCK_IRQ_NUM	-1 /* not needed */
 #else
 #define POWER_CLOCK_IRQ_NUM	CLOCK_POWER_IRQn
@@ -154,7 +154,8 @@ void nrfx_power_clock_irq_handler(void);
 void timer0_nrf_isr(void);
 #define TIMER_IRQ_HANDLER	timer0_nrf_isr
 #define TIMER_IRQ_NUM		TIMER0_IRQn
-#elif defined(CONFIG_SOC_SERIES_NRF54LX) || defined(CONFIG_SOC_SERIES_NRF54HX)
+#elif defined(CONFIG_SOC_SERIES_NRF54LX) || defined(CONFIG_SOC_SERIES_NRF54HX) || \
+	defined(CONFIG_SOC_SERIES_NRF92X)
 void nrfx_grtc_irq_handler(void);
 #define TIMER_IRQ_HANDLER	nrfx_grtc_irq_handler
 #define TIMER_IRQ_NUM		GRTC_0_IRQn
@@ -184,7 +185,8 @@ vth __irq_vector_table _irq_vector_table[] = {
 	isr0, isr1, isr2, 0,
 	rtc_isr
 };
-#elif defined(CONFIG_SOC_SERIES_IMXRT6XX) || defined(CONFIG_SOC_SERIES_IMXRT5XX) && \
+#elif (defined(CONFIG_SOC_SERIES_IMXRT6XX) || defined(CONFIG_SOC_SERIES_IMXRT5XX) ||	\
+	defined(CONFIG_SOC_SERIES_RW6XX)) && \
 	defined(CONFIG_MCUX_OS_TIMER)
 /* MXRT685 employs a OS Event timer to implement the Kernel system
  * timer, instead of the ARM Cortex-M SysTick. Therefore, a pointer to

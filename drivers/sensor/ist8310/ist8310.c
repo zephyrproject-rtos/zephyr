@@ -98,7 +98,7 @@ static int ist8310_channel_get(const struct device *dev, enum sensor_channel cha
 	return 0;
 }
 
-static const struct sensor_driver_api ist8310_api_funcs = {
+static DEVICE_API(sensor, ist8310_api_funcs) = {
 	.sample_fetch = ist8310_sample_fetch,
 	.channel_get = ist8310_channel_get,
 };

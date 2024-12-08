@@ -1,7 +1,4 @@
-.. mini_stm32h743:
-
-WeAct Studio MiniSTM32H743 Core Board
-#####################################
+.. zephyr:board:: mini_stm32h743
 
 Overview
 ********
@@ -26,12 +23,6 @@ Key Features
    - USB Type-C Connector
    - SWD header for external debugger
    - 2x 40-pin GPIO connector
-
-.. figure:: img/stm32h7xx.webp
-      :align: center
-      :alt: MiniSTM32H743 Core Board
-
-      MiniSTM32H743 Core Board (Credit: WeAct Studio)
 
 More information about the board can be found on the `Mini_STM32H743 website`_.
 
@@ -168,7 +159,7 @@ the device using the west tool or the STM32CubeProgrammer.
 Flashing an application to MiniSTM32H743
 ----------------------------------------
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 First, put the board in bootloader mode as described above. Then build and flash
 the application in the usual way. Just add ``CONFIG_BOOT_DELAY=5000`` to the

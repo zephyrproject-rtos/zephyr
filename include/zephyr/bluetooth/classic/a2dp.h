@@ -65,6 +65,7 @@ BT_A2DP_EP_INIT(BT_AVDTP_SOURCE, _codec, _capability)
  * SBC is mandatory as a2dp specification, BT_A2DP_SBC_SINK_EP_DEFAULT
  * is more convenient for user to register SBC endpoint.
  *
+ *  @param _name unique structure name postfix.
  *  @param _freq sbc codec frequency.
  *               for example: A2DP_SBC_SAMP_FREQ_44100 | A2DP_SBC_SAMP_FREQ_48000
  *  @param _ch_mode sbc codec channel mode.
@@ -151,6 +152,7 @@ static struct bt_a2dp_ep _name = BT_A2DP_SOURCE_EP_INIT(BT_A2DP_SBC,\
 
 /** @brief define the SBC default configuration.
  *
+ *  @param _name unique structure name postfix.
  *  @param _freq_cfg sbc codec frequency.
  *               for example: A2DP_SBC_SAMP_FREQ_44100
  *  @param _ch_mode_cfg sbc codec channel mode.
@@ -173,6 +175,7 @@ struct bt_a2dp_codec_cfg _name = {.codec_config = &bt_a2dp_codec_ie##_name,}
 
 /** @brief define the SBC default configuration.
  *
+ *  @param _name unique structure name postfix.
  *  @param _freq_cfg the frequency to configure the remote same codec type endpoint.
  */
 #define BT_A2DP_SBC_EP_CFG_DEFAULT(_name, _freq_cfg)\
@@ -348,7 +351,7 @@ enum {
  *  @param a2dp a2dp connection object identifying a2dp connection to queried remote.
  *  @param info Object pointing to the information of the callbacked endpoint.
  *  @param ep If the user want to use this found endpoint, user can set value to it
- *  to get the ednpoint that can be used futher in other A2DP APIs. It is NULL if info
+ *  to get the endpoint that can be used further in other A2DP APIs. It is NULL if info
  *  is NULL (no more endpoint is found).
  *
  *  @return BT_A2DP_DISCOVER_EP_STOP in case of no more need to continue discovery
@@ -367,7 +370,7 @@ struct bt_a2dp_discover_param {
 	 *  it save endpoint info internally.
 	 */
 	struct bt_avdtp_sep_info *seps_info;
-	/** The max count of seps (strem endpoint) that can be got in this call route */
+	/** The max count of seps (stream endpoint) that can be got in this call route */
 	uint8_t sep_count;
 };
 
@@ -415,7 +418,7 @@ struct bt_a2dp_cb {
 	 *  Called when the codec configure operation is completed.
 	 *
 	 *  @param[in] stream    Pointer to stream object.
-	 *  @param[in] rsp_err_code the remote responsed error code
+	 *  @param[in] rsp_err_code the remote responded error code
 	 *                          bt_a2dp_err_code or bt_avdtp_err_code
 	 */
 	void (*config_rsp)(struct bt_a2dp_stream *stream, uint8_t rsp_err_code);
@@ -438,7 +441,7 @@ struct bt_a2dp_cb {
 	 *  (open cmd and create the stream l2cap channel).
 	 *
 	 *  @param[in] stream    Pointer to stream object.
-	 *  @param[in] rsp_err_code the remote responsed error code
+	 *  @param[in] rsp_err_code the remote responded error code
 	 *                          bt_a2dp_err_code or bt_avdtp_err_code
 	 */
 	void (*establish_rsp)(struct bt_a2dp_stream *stream, uint8_t rsp_err_code);
@@ -461,7 +464,7 @@ struct bt_a2dp_cb {
 	 *  (release cmd and release the l2cap channel)
 	 *
 	 *  @param[in] stream    Pointer to stream object.
-	 *  @param[in] rsp_err_code the remote responsed error code
+	 *  @param[in] rsp_err_code the remote responded error code
 	 *                          bt_a2dp_err_code or bt_avdtp_err_code
 	 */
 	void (*release_rsp)(struct bt_a2dp_stream *stream, uint8_t rsp_err_code);
@@ -483,7 +486,7 @@ struct bt_a2dp_cb {
 	 *  Called when the start operation is completed.
 	 *
 	 *  @param[in] stream    Pointer to stream object.
-	 *  @param[in] rsp_err_code the remote responsed error code
+	 *  @param[in] rsp_err_code the remote responded error code
 	 *                          bt_a2dp_err_code or bt_avdtp_err_code
 	 */
 	void (*start_rsp)(struct bt_a2dp_stream *stream, uint8_t rsp_err_code);
@@ -505,7 +508,7 @@ struct bt_a2dp_cb {
 	 *  Called when the suspend operation is completed.
 	 *
 	 *  @param[in] stream    Pointer to stream object.
-	 *  @param[in] rsp_err_code the remote responsed error code
+	 *  @param[in] rsp_err_code the remote responded error code
 	 *                          bt_a2dp_err_code or bt_avdtp_err_code
 	 */
 	void (*suspend_rsp)(struct bt_a2dp_stream *stream, uint8_t rsp_err_code);
@@ -527,7 +530,7 @@ struct bt_a2dp_cb {
 	 *  Called when the reconfig operation is completed.
 	 *
 	 *  @param[in] stream    Pointer to stream object.
-	 *  @param[in] rsp_err_code the remote responsed error code
+	 *  @param[in] rsp_err_code the remote responded error code
 	 *                          bt_a2dp_err_code or bt_avdtp_err_code
 	 */
 	void (*reconfig_rsp)(struct bt_a2dp_stream *stream, uint8_t rsp_err_code);
@@ -659,7 +662,7 @@ struct bt_a2dp_stream_ops {
 	/** @brief the media streaming data, only for sink
 	 *
 	 *  @param buf the data buf
-	 *  @param seq_num the seqence number
+	 *  @param seq_num the sequence number
 	 *  @param ts the time stamp
 	 */
 	void (*recv)(struct bt_a2dp_stream *stream,

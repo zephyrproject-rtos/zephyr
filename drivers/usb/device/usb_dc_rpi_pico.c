@@ -18,6 +18,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/pinctrl.h>
 
 LOG_MODULE_REGISTER(udc_rpi, CONFIG_USB_DRIVER_LOG_LEVEL);
 
@@ -49,6 +50,16 @@ struct udc_rpi_ep_state {
 	uint8_t *buf;
 	uint8_t next_pid;
 };
+
+#define USB_RPI_PICO_PINCTRL_DT_INST_DEFINE(n)                                                     \
+	COND_CODE_1(DT_INST_PINCTRL_HAS_NAME(n, default), (PINCTRL_DT_INST_DEFINE(n)), ())
+
+#define USB_RPI_PICO_PINCTRL_DT_INST_DEV_CONFIG_GET(n)                                             \
+	COND_CODE_1(DT_INST_PINCTRL_HAS_NAME(n, default),                                          \
+		    ((void *)PINCTRL_DT_INST_DEV_CONFIG_GET(n)), (NULL))
+
+USB_RPI_PICO_PINCTRL_DT_INST_DEFINE(0);
+const struct pinctrl_dev_config *pcfg = USB_RPI_PICO_PINCTRL_DT_INST_DEV_CONFIG_GET(0);
 
 #define USBD_THREAD_STACK_SIZE 1024
 
@@ -94,10 +105,10 @@ static struct udc_rpi_ep_state *udc_rpi_get_ep_state(uint8_t ep)
 	return ep_state_base + USB_EP_GET_IDX(ep);
 }
 
-static int udc_rpi_start_xfer(uint8_t ep, const void *data, size_t len)
+static int udc_rpi_start_xfer(uint8_t ep, const void *data, const size_t len)
 {
 	struct udc_rpi_ep_state *ep_state = udc_rpi_get_ep_state(ep);
-	uint32_t val = len | USB_BUF_CTRL_AVAIL;
+	uint32_t val = len;
 
 	if (*ep_state->buf_ctl & USB_BUF_CTRL_AVAIL) {
 		LOG_WRN("ep 0x%02x was already armed", ep);
@@ -121,6 +132,14 @@ static int udc_rpi_start_xfer(uint8_t ep, const void *data, size_t len)
 
 	ep_state->next_pid ^= 1u;
 	*ep_state->buf_ctl = val;
+	/*
+	 * By default, clk_sys runs at 125MHz, wait 3 nop instructions before
+	 * setting the AVAILABLE bit. See 4.1.2.5.1. Concurrent access.
+	 */
+	arch_nop();
+	arch_nop();
+	arch_nop();
+	*ep_state->buf_ctl = val | USB_BUF_CTRL_AVAIL;
 
 	return 0;
 }
@@ -322,10 +341,34 @@ static void udc_rpi_isr(const void *arg)
 		msg.ep = 0U;
 		msg.ep_event = false;
 		msg.type = usb_hw->sie_status & USB_SIE_STATUS_CONNECTED_BITS ?
-			USB_DC_DISCONNECTED :
-			USB_DC_CONNECTED;
+			USB_DC_CONNECTED :
+			USB_DC_DISCONNECTED;
+
+		/* VBUS detection does not always detect the detach.
+		 * Check on disconnect if VBUS is still attached
+		 */
+		if (pcfg != NULL && msg.type == USB_DC_DISCONNECTED &&
+		    (usb_hw->sie_status & USB_SIE_STATUS_VBUS_DETECTED_BITS) == 0) {
+			LOG_DBG("Disconnected. Disabling pull-up");
+			hw_clear_alias(usb_hw)->sie_ctrl = USB_SIE_CTRL_PULLUP_EN_BITS;
+		}
 
 		k_msgq_put(&usb_dc_msgq, &msg, K_NO_WAIT);
+	}
+
+	if (status & USB_INTS_VBUS_DETECT_BITS) {
+		handled |= USB_INTS_VBUS_DETECT_BITS;
+		hw_clear_alias(usb_hw)->sie_status = USB_SIE_STATUS_VBUS_DETECTED_BITS;
+
+		if (pcfg != NULL) {
+			if (usb_hw->sie_status & USB_SIE_STATUS_VBUS_DETECTED_BITS) {
+				LOG_DBG("VBUS attached. Enabling pull-up");
+				hw_set_alias(usb_hw)->sie_ctrl = USB_SIE_CTRL_PULLUP_EN_BITS;
+			} else {
+				LOG_DBG("VBUS detached. Disabling pull-up");
+				hw_clear_alias(usb_hw)->sie_ctrl = USB_SIE_CTRL_PULLUP_EN_BITS;
+			}
+		}
 	}
 
 	if (status & USB_INTS_BUS_RESET_BITS) {
@@ -418,6 +461,17 @@ static void udc_rpi_init_endpoint(const uint8_t i)
 
 static int udc_rpi_init(void)
 {
+	int ret;
+
+	/* Apply the pinctrl */
+	if (pcfg != NULL) {
+		ret = pinctrl_apply_state(pcfg, PINCTRL_STATE_DEFAULT);
+		if (ret != 0) {
+			LOG_ERR("Failed to apply pincfg: %d", ret);
+			return ret;
+		}
+	}
+
 	/* Reset usb controller */
 	reset_block(RESETS_RESET_USBCTRL_BITS);
 	unreset_block_wait(RESETS_RESET_USBCTRL_BITS);
@@ -429,8 +483,11 @@ static int udc_rpi_init(void)
 	/* Mux the controller to the onboard usb phy */
 	usb_hw->muxing = USB_USB_MUXING_TO_PHY_BITS | USB_USB_MUXING_SOFTCON_BITS;
 
-	/* Force VBUS detect so the device thinks it is plugged into a host */
-	usb_hw->pwr = USB_USB_PWR_VBUS_DETECT_BITS | USB_USB_PWR_VBUS_DETECT_OVERRIDE_EN_BITS;
+	if (pcfg == NULL) {
+		/* Force VBUS detect so the device thinks it is plugged into a host */
+		usb_hw->pwr =
+			USB_USB_PWR_VBUS_DETECT_BITS | USB_USB_PWR_VBUS_DETECT_OVERRIDE_EN_BITS;
+	}
 
 	/* Enable the USB controller in device mode. */
 	usb_hw->main_ctrl = USB_MAIN_CTRL_CONTROLLER_EN_BITS;
@@ -447,7 +504,7 @@ static int udc_rpi_init(void)
 		       USB_INTS_ERROR_BIT_STUFF_BITS | USB_INTS_ERROR_CRC_BITS |
 		       USB_INTS_ERROR_DATA_SEQ_BITS | USB_INTS_ERROR_RX_OVERFLOW_BITS |
 		       USB_INTS_ERROR_RX_TIMEOUT_BITS | USB_INTS_DEV_SUSPEND_BITS |
-		       USB_INTR_DEV_RESUME_FROM_HOST_BITS;
+		       USB_INTR_DEV_RESUME_FROM_HOST_BITS | USB_INTE_VBUS_DETECT_BITS;
 
 	/* Set up endpoints (endpoint control registers)
 	 * described by device configuration
@@ -457,8 +514,15 @@ static int udc_rpi_init(void)
 		udc_rpi_init_endpoint(i);
 	}
 
-	/* Present full speed device by enabling pull up on DP */
-	hw_set_alias(usb_hw)->sie_ctrl = USB_SIE_CTRL_PULLUP_EN_BITS;
+	/* Self powered devices must enable the pull up only if vbus is detected.
+	 * If the pull-up is not enabled here, this will be handled by the USB_INTS_VBUS_DETECT
+	 * interrupt.
+	 */
+	if (usb_hw->sie_status & USB_SIE_STATUS_VBUS_DETECTED_BITS) {
+		LOG_DBG("Enabling pull-up");
+		/* Present full speed device by enabling pull up on DP */
+		hw_set_alias(usb_hw)->sie_ctrl = USB_SIE_CTRL_PULLUP_EN_BITS;
+	}
 
 	return 0;
 }

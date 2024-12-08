@@ -10,6 +10,7 @@ config I2C_INFINEON_CAT1
 	default y
 	depends on DT_HAS_INFINEON_CAT1_I2C_ENABLED
 	select USE_INFINEON_I2C
+	select PINCTRL
 	help
 	  This option enables the I2C driver for Infineon CAT1 family.
 

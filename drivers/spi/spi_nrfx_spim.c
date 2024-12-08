@@ -5,11 +5,15 @@
  */
 
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi/rtio.h>
 #include <zephyr/cache.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/mem_mgmt/mem_attr.h>
 #include <soc.h>
+#ifdef CONFIG_SOC_NRF54H20_GPD
+#include <nrf/gpd.h>
+#endif
 #ifdef CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
 #include <nrfx_ppi.h>
 #endif
@@ -556,10 +560,13 @@ static int spi_nrfx_release(const struct device *dev,
 	return 0;
 }
 
-static const struct spi_driver_api spi_nrfx_driver_api = {
+static DEVICE_API(spi, spi_nrfx_driver_api) = {
 	.transceive = spi_nrfx_transceive,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_nrfx_transceive_async,
+#endif
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
 #endif
 	.release = spi_nrfx_release,
 };
@@ -582,6 +589,11 @@ static int spim_nrfx_pm_action(const struct device *dev,
 		/* nrfx_spim_init() will be called at configuration before
 		 * the next transfer.
 		 */
+
+#ifdef CONFIG_SOC_NRF54H20_GPD
+		nrf_gpd_retain_pins_set(dev_config->pcfg, false);
+#endif
+
 		break;
 
 	case PM_DEVICE_ACTION_SUSPEND:
@@ -589,6 +601,10 @@ static int spim_nrfx_pm_action(const struct device *dev,
 			nrfx_spim_uninit(&dev_config->spim);
 			dev_data->initialized = false;
 		}
+
+#ifdef CONFIG_SOC_NRF54H20_GPD
+		nrf_gpd_retain_pins_set(dev_config->pcfg, true);
+#endif
 
 		ret = pinctrl_apply_state(dev_config->pcfg,
 					  PINCTRL_STATE_SLEEP);
@@ -725,7 +741,7 @@ static int spi_nrfx_init(const struct device *dev)
 		     !(DT_GPIO_FLAGS(SPIM(idx), wake_gpios) & GPIO_ACTIVE_LOW),\
 		     "WAKE line must be configured as active high");	       \
 	PM_DEVICE_DT_DEFINE(SPIM(idx), spim_nrfx_pm_action);		       \
-	DEVICE_DT_DEFINE(SPIM(idx),					       \
+	SPI_DEVICE_DT_DEFINE(SPIM(idx),					       \
 		      spi_nrfx_init,					       \
 		      PM_DEVICE_DT_GET(SPIM(idx)),			       \
 		      &spi_##idx##_data,				       \

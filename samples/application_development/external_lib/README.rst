@@ -1,7 +1,7 @@
-.. _external_library:
+.. zephyr:code-sample:: external_library
+   :name: External Library
 
-External Library
-#################
+   Include an external static library into the Zephyr build system.
 
 Overview
 ********

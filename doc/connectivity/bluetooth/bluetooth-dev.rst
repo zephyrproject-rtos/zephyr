@@ -153,7 +153,7 @@ devices in either of :ref:`these boards's documentation <nrf52bsim_build_and_run
 
 With the :ref:`nrf52_bsim <nrf52_bsim>`, typically you do :ref:`Combined builds
 <bluetooth-build-types>`, but it is also possible to build the controller with one of the
-:ref:`HCI UART <bluetooth-hci-uart-sample>` samples in one simulated device, and the host with
+:zephyr:code-sample:`bluetooth_hci_uart` samples in one simulated device, and the host with
 the H4 driver instead of the integrated controller in another simulated device.
 
 With the :ref:`nrf5340bsim <nrf5340bsim>`, you can build with either, both controller and host
@@ -189,7 +189,7 @@ and scan response data.
 More Examples
 *************
 
-More :ref:`sample Bluetooth applications <bluetooth-samples>` are available in
+More :zephyr:code-sample-category:`sample Bluetooth applications <bluetooth>` are available in
 ``samples/bluetooth/``.
 
 .. _BabbleSim: https://babblesim.github.io/

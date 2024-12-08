@@ -105,5 +105,7 @@ include(${TOOLCHAIN_ROOT}/cmake/linker/${LINKER}/target.cmake OPTIONAL)
 include(${ZEPHYR_BASE}/cmake/bintools/bintools_template.cmake)
 include(${TOOLCHAIN_ROOT}/cmake/bintools/${BINTOOLS}/target.cmake OPTIONAL)
 
+include(${TOOLCHAIN_ROOT}/cmake/linker/target_template.cmake)
+
 set(TargetTools_FOUND TRUE)
 set(TARGETTOOLS_FOUND TRUE)

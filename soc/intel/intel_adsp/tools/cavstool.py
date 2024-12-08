@@ -197,9 +197,6 @@ class HDAStream:
         self.debug()
         log.info(f"Reset stream {self.stream_id}")
 
-def adsp_is_cavs():
-    return cavs15 or cavs18 or cavs15
-
 def adsp_is_ace():
     return ace15 or ace20 or ace30
 
@@ -213,17 +210,16 @@ def adsp_mem_window_config():
 
     return (base, stride)
 
-def map_regs():
+def map_regs(log_only):
     p = runx(f"grep -iEl 'PCI_CLASS=40(10|38)0' /sys/bus/pci/devices/*/uevent")
     pcidir = os.path.dirname(p)
 
     # Platform/quirk detection.  ID lists cribbed from the SOF kernel driver
-    global cavs15, cavs18, cavs25, ace15, ace20, ace30
+    global cavs25, ace15, ace20, ace30
     did = int(open(f"{pcidir}/device").read().rstrip(), 16)
-    cavs15 = did in [ 0x5a98, 0x1a98, 0x3198 ]
-    cavs18 = did in [ 0x9dc8, 0xa348, 0x02c8, 0x06c8, 0xa3f0 ]
-    cavs25 = did in [ 0xa0c8, 0x43c8, 0x4b55, 0x4b58, 0x7ad0, 0x51c8 ]
-    ace15 = did in [ 0x7e28 ]
+    cavs25 = did in [ 0x43c8, 0x4b55, 0x4b58, 0x51c8, 0x51ca, 0x51cb, 0x51ce, 0x51cf, 0x54c8,
+                      0x7ad0, 0xa0c8 ]
+    ace15 = did in [ 0x7728, 0x7f50, 0x7e28 ]
     ace20 = did in [ 0xa828 ]
     ace30 = did in [ 0xe428 ]
 
@@ -231,7 +227,7 @@ def map_regs():
     if os.path.exists(f"{pcidir}/driver"):
         mod = os.path.basename(os.readlink(f"{pcidir}/driver/module"))
         found_msg = f"Existing driver \"{mod}\" found"
-        if args.log_only:
+        if log_only:
             log.info(found_msg)
         else:
             log.warning(found_msg + ", unloading module")
@@ -279,8 +275,8 @@ def map_regs():
     dsp = Regs(bar4_mem)
     if adsp_is_ace():
         dsp.HFDSSCS        = 0x1000
-        dsp.HFPWRCTL       = 0x1d18 if ace20 else 0x1d20
-        dsp.HFPWRSTS       = 0x1d1c if ace20 else 0x1d24
+        dsp.HFPWRCTL       = 0x1d18 if ace15 or ace20 else 0x1d20
+        dsp.HFPWRSTS       = 0x1d1c if ace15 or ace20 else 0x1d24
         dsp.DSP2CXCTL_PRIMARY = 0x178d04
         dsp.HFIPCXTDR      = 0x73200
         dsp.HFIPCXTDA      = 0x73204
@@ -293,12 +289,12 @@ def map_regs():
         dsp.SRAM_FW_STATUS = WINDOW_BASE_ACE
     else:
         dsp.ADSPCS         = 0x00004
-        dsp.HIPCTDR        = 0x00040 if cavs15 else 0x000c0
-        dsp.HIPCTDA        =                        0x000c4 # 1.8+ only
-        dsp.HIPCTDD        = 0x00044 if cavs15 else 0x000c8
-        dsp.HIPCIDR        = 0x00048 if cavs15 else 0x000d0
-        dsp.HIPCIDA        =                        0x000d4 # 1.8+ only
-        dsp.HIPCIDD        = 0x0004c if cavs15 else 0x000d8
+        dsp.HIPCTDR        = 0x000c0
+        dsp.HIPCTDA        = 0x000c4
+        dsp.HIPCTDD        = 0x000c8
+        dsp.HIPCIDR        = 0x000d0
+        dsp.HIPCIDA        = 0x000d4
+        dsp.HIPCIDD        = 0x000d8
         dsp.ROM_STATUS     = WINDOW_BASE # Start of first SRAM window
         dsp.SRAM_FW_STATUS = WINDOW_BASE
     dsp.freeze()
@@ -396,10 +392,6 @@ def runx(cmd):
 def mask(bit):
     if cavs25:
         return 0b1 << bit
-    if cavs18:
-        return 0b1111 << bit
-    if cavs15:
-        return 0b11 << bit
 
 def load_firmware(fw_file):
     try:
@@ -452,10 +444,7 @@ def load_firmware(fw_file):
     hda.SPBFCTL |= (1 << hda_ostream_id)
     hda.SD_SPIB = len(fw_bytes)
 
-    # Start DSP.  Host needs to provide power to all cores on 1.5
-    # (which also starts them) and 1.8 (merely gates power, DSP also
-    # has to set PWRCTL). On 2.5 where the DSP has full control,
-    # and only core 0 is set.
+    # Start DSP. Only start up core 0, reset is managed by DSP.
     log.info(f"Starting DSP, ADSPCS = 0x{dsp.ADSPCS:x}")
     dsp.ADSPCS = mask(SPA)
     while (dsp.ADSPCS & mask(CPA)) == 0: pass
@@ -478,9 +467,8 @@ def load_firmware(fw_file):
     # Send the DSP an IPC message to tell the device how to boot.
     # Note: with cAVS 1.8+ the ROM receives the stream argument as an
     # index within the array of output streams (and we always use the
-    # first one by construction).  But with 1.5 it's the HDA index,
-    # and depends on the number of input streams on the device.
-    stream_idx = hda_ostream_id if cavs15 else 0
+    # first one by construction).
+    stream_idx = 0
     ipcval = (  (1 << 31)            # BUSY bit
                 | (0x01 << 24)       # type = PURGE_FW
                 | (1 << 14)          # purge_fw = 1
@@ -491,7 +479,7 @@ def load_firmware(fw_file):
     log.info(f"Starting DMA, FW_STATUS = 0x{dsp.SRAM_FW_STATUS:x}")
     sd.CTL |= 2 # START flag
 
-    wait_fw_entered()
+    wait_fw_entered(dsp, timeout_s=None)
 
     # Turn DMA off and reset the stream.  Clearing START first is a
     # noop per the spec, but absolutely required for stability.
@@ -585,8 +573,7 @@ def load_firmware_ace(fw_file):
     # Send the DSP an IPC message to tell the device how to boot.
     # Note: with cAVS 1.8+ the ROM receives the stream argument as an
     # index within the array of output streams (and we always use the
-    # first one by construction).  But with 1.5 it's the HDA index,
-    # and depends on the number of input streams on the device.
+    # first one by construction).
     stream_idx = 0
     ipcval = (  (1 << 31)            # BUSY bit
                 | (0x01 << 24)       # type = PURGE_FW
@@ -613,7 +600,7 @@ def load_firmware_ace(fw_file):
     log.info(f"Starting DMA, FW_STATUS = 0x{dsp.ROM_STATUS:x}")
     sd.CTL |= 2 # START flag
 
-    wait_fw_entered()
+    wait_fw_entered(dsp, timeout_s=None)
 
     # Turn DMA off and reset the stream.  Clearing START first is a
     # noop per the spec, but absolutely required for stability.
@@ -627,17 +614,17 @@ def load_firmware_ace(fw_file):
     sd.CTL |= 1
     log.info(f"ACE firmware load complete")
 
-def fw_is_alive():
+def fw_is_alive(dsp):
     return dsp.ROM_STATUS & ((1 << 28) - 1) == 5 # "FW_ENTERED"
 
-def wait_fw_entered(timeout_s=2):
+def wait_fw_entered(dsp, timeout_s):
     log.info("Waiting %s for firmware handoff, ROM_STATUS = 0x%x",
              "forever" if timeout_s is None else f"{timeout_s} seconds",
              dsp.ROM_STATUS)
     hertz = 100
     attempts = None if timeout_s is None else timeout_s * hertz
     while True:
-        alive = fw_is_alive()
+        alive = fw_is_alive(dsp)
         if alive:
             break
         if attempts is not None:
@@ -754,6 +741,29 @@ def debug_offset():
     ( base, stride ) = adsp_mem_window_config()
     return base + stride * 2
 
+def debug_slot_offset(num):
+    return debug_offset() + DEBUG_SLOT_SIZE * (1 + num)
+
+def debug_slot_offset_by_type(the_type, timeout_s=0.2):
+    ADSP_DW_SLOT_COUNT=15
+    hertz = 100
+    attempts = timeout_s * hertz
+    while attempts > 0:
+        data = win_read(debug_offset(), 0, ADSP_DW_SLOT_COUNT * 3 * 4)
+        for i in range(ADSP_DW_SLOT_COUNT):
+            start_index = i * (3 * 4)
+            end_index = (i + 1) * (3 * 4)
+            desc = data[start_index:end_index]
+            resource_id, type_id, vma = struct.unpack('<III', desc)
+            if type_id == the_type:
+                log.info("found desc %u resource_id 0x%08x type_id 0x%08x vma 0x%08x",
+                         i, resource_id, type_id, vma)
+                return debug_slot_offset(i)
+        log.debug("not found, %u attempts left", attempts)
+        attempts -= 1
+        time.sleep(1 / hertz)
+    return None
+
 def shell_base_offset():
     return debug_offset() + DEBUG_SLOT_SIZE * (1 + DEBUG_SLOT_SHELL)
 
@@ -801,9 +811,8 @@ def ipc_command(data, ext_data):
     if data == 0: # noop, with synchronous DONE
         pass
     elif data == 1: # async command: signal DONE after a delay (on 1.8+)
-        if not cavs15:
-            done = False
-            asyncio.ensure_future(ipc_delay_done())
+        done = False
+        asyncio.ensure_future(ipc_delay_done())
     elif data == 2: # echo back ext_data as a message command
         send_msg = True
     elif data == 3: # set ADSPCS
@@ -885,10 +894,10 @@ def ipc_command(data, ext_data):
         sys.stdout.flush()
     else:
         log.warning(f"cavstool: Unrecognized IPC command 0x{data:x} ext 0x{ext_data:x}")
-        if not fw_is_alive():
+        if not fw_is_alive(dsp):
             if args.log_only:
                 log.info("DSP power seems off")
-                wait_fw_entered(timeout_s=None)
+                wait_fw_entered(dsp, timeout_s=None)
             else:
                 log.warning("DSP power seems off?!")
                 time.sleep(2) # potential spam reduction
@@ -896,7 +905,7 @@ def ipc_command(data, ext_data):
             return
 
     if adsp_is_ace():
-        dsp.HFIPCXTDR = 1<<31 # Ack local interrupt, also signals DONE on v1.5
+        dsp.HFIPCXTDR = 1<<31 # Ack local interrupt
         if done:
             dsp.HFIPCXTDA = ~(1<<31) & dsp.HFIPCXTDA # Signal done
         if send_msg:
@@ -904,10 +913,8 @@ def ipc_command(data, ext_data):
             dsp.HFIPCXIDDY = ext_data
             dsp.HFIPCXIDR = (1<<31) | ext_data
     else:
-        dsp.HIPCTDR = 1<<31 # Ack local interrupt, also signals DONE on v1.5
-        if cavs18:
-            time.sleep(0.01) # Needed on 1.8, or the command below won't send!
-        if done and not cavs15:
+        dsp.HIPCTDR = 1<<31 # Ack local interrupt
+        if done:
             dsp.HIPCTDA = 1<<31 # Signal done
         if send_msg:
             dsp.HIPCIDD = ext_data
@@ -932,16 +939,16 @@ async def main():
     global hda, sd, dsp, hda_ostream_id, hda_streams
 
     try:
-        (hda, sd, dsp, hda_ostream_id) = map_regs()
+        (hda, sd, dsp, hda_ostream_id) = map_regs(args.log_only)
     except Exception as e:
         log.error("Could not map device in sysfs; run as root?")
         log.error(e)
         sys.exit(1)
 
-    log.info(f"Detected cAVS {'1.5' if cavs15 else '1.8+'} hardware")
+    log.info(f"Detected a supported cAVS/ACE hardware version")
 
     if args.log_only:
-        wait_fw_entered(timeout_s=None)
+        wait_fw_entered(dsp, timeout_s=None)
     else:
         if not args.fw_file:
             log.error("Firmware file argument missing")
@@ -974,28 +981,30 @@ async def main():
         if not args.log_only:
             handle_ipc()
 
+def args_parse():
+    global args
+    ap = argparse.ArgumentParser(description="DSP loader/logger tool", allow_abbrev=False)
+    ap.add_argument("-q", "--quiet", action="store_true",
+                    help="No loader output, just DSP logging")
+    ap.add_argument("-v", "--verbose", action="store_true",
+                    help="More loader output, DEBUG logging level")
+    ap.add_argument("-l", "--log-only", action="store_true",
+                    help="Don't load firmware, just show log output")
+    ap.add_argument("-p", "--shell-pty", action="store_true",
+                    help="Create a Zephyr shell pty if enabled in firmware")
+    ap.add_argument("-n", "--no-history", action="store_true",
+                    help="No current log buffer at start, just new output")
+    ap.add_argument("fw_file", nargs="?", help="Firmware file")
 
-ap = argparse.ArgumentParser(description="DSP loader/logger tool", allow_abbrev=False)
-ap.add_argument("-q", "--quiet", action="store_true",
-                help="No loader output, just DSP logging")
-ap.add_argument("-v", "--verbose", action="store_true",
-                help="More loader output, DEBUG logging level")
-ap.add_argument("-l", "--log-only", action="store_true",
-                help="Don't load firmware, just show log output")
-ap.add_argument("-p", "--shell-pty", action="store_true",
-                help="Create a Zephyr shell pty if enabled in firmware")
-ap.add_argument("-n", "--no-history", action="store_true",
-                help="No current log buffer at start, just new output")
-ap.add_argument("fw_file", nargs="?", help="Firmware file")
+    args = ap.parse_args()
 
-args = ap.parse_args()
-
-if args.quiet:
-    log.setLevel(logging.WARN)
-elif args.verbose:
-    log.setLevel(logging.DEBUG)
+    if args.quiet:
+        log.setLevel(logging.WARN)
+    elif args.verbose:
+        log.setLevel(logging.DEBUG)
 
 if __name__ == "__main__":
+    args_parse()
     try:
         asyncio.run(main())
     except KeyboardInterrupt:

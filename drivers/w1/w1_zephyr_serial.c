@@ -13,7 +13,7 @@
  * The driver uses a uart peripheral with a baudrate of 115.2 kBd to send
  * and receive data bits and a baurade of 9.6 kBd for slave reset and
  * presence detection as suggested for normal speed operating mode in:
- * https://www.maximintegrated.com/en/design/technical-documents/tutorials/2/214.html
+ * https://www.analog.com/en/resources/technical-articles/using-a-uart-to-implement-a-1wire-bus-master.html
  * For overdrive speed communication baudrates of 1 MBd and 115.2 kBd
  * are used, respectively.
  */
@@ -265,7 +265,7 @@ static int w1_serial_init(const struct device *dev)
 	return 0;
 }
 
-static const struct w1_driver_api w1_serial_driver_api = {
+static DEVICE_API(w1, w1_serial_driver_api) = {
 	.reset_bus = w1_serial_reset_bus,
 	.read_bit = w1_serial_read_bit,
 	.write_bit = w1_serial_write_bit,

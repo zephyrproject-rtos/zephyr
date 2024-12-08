@@ -1,0 +1,8 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: FXLS8974 3-axis accelerometer sensor
+
+compatible: "nxp,fxls8974"
+
+include: ["i2c-device.yaml", "nxp,fxls8974-common.yaml"]

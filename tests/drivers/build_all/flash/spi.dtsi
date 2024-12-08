@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2024 TOKITA Hiroshi
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+at45@0 {
+	compatible = "atmel,at45";
+	reg = <0x0>;
+	status = "okay";
+	spi-max-frequency = <5000000>;
+	jedec-id = [00 11 22];
+	size = <1048576>;
+	sector-size = <1>;
+	sector-0a-pages = <1>;
+	block-size = <1>;
+	page-size = <1>;
+};
+
+spi-nor@1 {
+	compatible = "jedec,spi-nor";
+	reg = <0x1>;
+	status = "okay";
+	spi-max-frequency = <5000000>;
+	size = <1048576>;
+	jedec-id = [00 11 22];
+};

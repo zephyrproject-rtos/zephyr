@@ -14,13 +14,17 @@
 
 #include <stddef.h> /* For size_t */
 
+#include <zephyr/platform/hooks.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 static inline void arch_kernel_init(void)
 {
-	/* No-op on this arch */
+#ifdef CONFIG_SOC_PER_CORE_INIT_HOOK
+	soc_per_core_init_hook();
+#endif /* CONFIG_SOC_PER_CORE_INIT_HOOK */
 }
 
 static ALWAYS_INLINE void

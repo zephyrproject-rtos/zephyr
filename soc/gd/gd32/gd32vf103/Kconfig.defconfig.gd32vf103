@@ -17,15 +17,9 @@ config RISCV_MCAUSE_EXCEPTION_MASK
 config RISCV_SOC_INTERRUPT_INIT
 	default y
 
-config RISCV_GP
-	default y
-
 config NUM_IRQS
 	default 87 if  NUCLEI_ECLIC
 	default 16 if !NUCLEI_ECLIC
-
-config 2ND_LEVEL_INTERRUPTS
-	default y
 
 config ARCH_IRQ_VECTOR_TABLE_ALIGN
 	default 512 if NUCLEI_ECLIC

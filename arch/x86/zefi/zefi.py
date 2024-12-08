@@ -8,6 +8,9 @@ import elftools.elf.elffile
 import argparse
 
 ENTRY_SYM = "__start64"
+BOOTARGS_SYM = "efi_bootargs"
+
+args = None
 
 def verbose(msg):
     if args.verbose:
@@ -92,6 +95,9 @@ def build_elf(elf_file, include_dirs):
     cf.write("};\n\n")
 
     cf.write("static uintptr_t zefi_entry = 0x%xUL;\n" % (entry_addr))
+
+    if symtab.get_symbol_by_name(BOOTARGS_SYM):
+        cf.write("static uintptr_t zefi_bootargs = 0x%xUL;\n" % (symtab.get_symbol_by_name(BOOTARGS_SYM)[0].entry.st_value))
 
     cf.close()
 

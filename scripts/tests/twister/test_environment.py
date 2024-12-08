@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # Copyright (c) 2023 Intel Corporation
+# Copyright (c) 2024 Arm Limited (or its affiliates). All rights reserved.
 #
 # SPDX-License-Identifier: Apache-2.0
 """
@@ -258,16 +259,6 @@ def test_parse_arguments(zephyr_base, additional_args):
 
 TESTDATA_3 = [
     (
-        None,
-        mock.Mock(
-            generator_cmd='make',
-            generator='Unix Makefiles',
-            test_roots=None,
-            board_roots=None,
-            outdir=None,
-        )
-    ),
-    (
         mock.Mock(
             ninja=True,
             board_root=['dummy1', 'dummy2'],
@@ -316,7 +307,6 @@ TESTDATA_3 = [
     'options, expected_env',
     TESTDATA_3,
     ids=[
-        'no options',
         'ninja',
         'make'
     ]
@@ -498,7 +488,7 @@ TESTDATA_5 = [
         True,
         1,
         b'another\x1B_dummy',
-        'Cmake script failure: dummy/script/path',
+        'CMake script failure: dummy/script/path',
         {
             'returncode': 1,
             'returnmsg': 'anotherdummy'

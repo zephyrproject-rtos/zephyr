@@ -1,0 +1,26 @@
+# Copyright 2024 Espressif Systems (Shanghai) PTE LTD
+
+if BT_ESP32
+
+choice ESP_BT_HEAP
+	prompt "Bluetooth adapter heap in use"
+	default ESP_BT_HEAP_RUNTIME
+
+	config ESP_BT_HEAP_RUNTIME
+		bool "Bluetooth adapter use ESP runtime heap"
+		depends on ESP_HEAP_RUNTIME
+
+	config ESP_BT_HEAP_SYSTEM
+		bool "Bluetooth adapter use system heap"
+
+endchoice # ESP_BT_HEAP
+
+config ESP32_BT_CONTROLLER_STACK_SIZE
+	int "Bluetooth controller stack size"
+	default 4096
+
+config ESP32_BT_CONTROLLER_TASK_PRIO
+	int "Bluetooth controller task priority level"
+	default 2
+
+endif # BT_ESP32

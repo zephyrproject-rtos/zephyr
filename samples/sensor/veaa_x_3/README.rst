@@ -1,7 +1,8 @@
-.. veaa_x_3:
+.. zephyr:code-sample:: veea_x_3
+   :name: VEAA-X-3 proportional pressure control valve
+   :relevant-api: sensor_interface
 
-VEAA-X-3 sample
-##########################
+   Control a VEAA-X-3 proportional pressure control valve.
 
 Overview
 ********

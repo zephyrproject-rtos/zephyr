@@ -35,6 +35,13 @@ extern "C" {
  */
 #define _PBUF_MIN_DATA_LEN ROUND_UP(PBUF_PACKET_LEN_SZ + 1 + _PBUF_IDX_SIZE, _PBUF_IDX_SIZE)
 
+#if defined(CONFIG_ARCH_POSIX)
+/* For the native simulated boards we need to modify some pointers at init */
+#define PBUF_MAYBE_CONST
+#else
+#define PBUF_MAYBE_CONST const
+#endif
+
 /** @brief Control block of packet buffer.
  *
  * The structure contains configuration data.
@@ -60,7 +67,7 @@ struct pbuf_cfg {
  * @brief Data block of the packed buffer.
  *
  * The structure contains local copies of wr and rd indexes used by writer and
- * reader respecitvely.
+ * reader respectively.
  */
 struct pbuf_data {
 	volatile uint32_t wr_idx;	/* Index of the first holding first
@@ -87,9 +94,9 @@ struct pbuf_data {
  * written in a way to protect the data from being corrupted.
  */
 struct pbuf {
-	const struct pbuf_cfg *const cfg;	/* Configuration of the
-						 * buffer.
-						 */
+	PBUF_MAYBE_CONST struct pbuf_cfg *const cfg; /* Configuration of the
+						      * buffer.
+						      */
 	struct pbuf_data data;			/* Data used to read and write
 						 * to the buffer
 						 */
@@ -144,17 +151,16 @@ struct pbuf {
 			"Misaligned memory.");						\
 	BUILD_ASSERT(size >= (MAX(dcache_align, _PBUF_IDX_SIZE) + _PBUF_IDX_SIZE +	\
 			_PBUF_MIN_DATA_LEN), "Insufficient size.");			\
-											\
-	static const struct pbuf_cfg cfg_##name =					\
+	static PBUF_MAYBE_CONST struct pbuf_cfg cfg_##name =				\
 			PBUF_CFG_INIT(mem_addr, size, dcache_align);			\
 	static struct pbuf name = {							\
 		.cfg = &cfg_##name,							\
 	}
 
 /**
- * @brief Initialize the packet buffer.
+ * @brief Initialize the Tx packet buffer.
  *
- * This function initializes the packet buffer based on provided configuration.
+ * This function initializes the Tx packet buffer based on provided configuration.
  * If the configuration is incorrect, the function will return error.
  *
  * It is recommended to use PBUF_DEFINE macro for build time initialization.
@@ -165,7 +171,23 @@ struct pbuf {
  * @retval 0 on success.
  * @retval -EINVAL when the input parameter is incorrect.
  */
-int pbuf_init(struct pbuf *pb);
+int pbuf_tx_init(struct pbuf *pb);
+
+/**
+ * @brief Initialize the Rx packet buffer.
+ *
+ * This function initializes the Rx packet buffer.
+ * If the configuration is incorrect, the function will return error.
+ *
+ * It is recommended to use PBUF_DEFINE macro for build time initialization.
+ *
+ * @param pb	Pointer to the packed buffer containing
+ *		configuration and data. Configuration has to be
+ *		fixed before the initialization.
+ * @retval 0 on success.
+ * @retval -EINVAL when the input parameter is incorrect.
+ */
+int pbuf_rx_init(struct pbuf *pb);
 
 /**
  * @brief Write specified amount of data to the packet buffer.

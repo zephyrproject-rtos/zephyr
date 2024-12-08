@@ -36,7 +36,7 @@ static struct k_thread udp_tx_thread;
 static struct udp_control udp4_ctrl, udp6_ctrl;
 static struct k_poll_signal udp_kill;
 
-static int send_udp_data(struct data *data);
+static int send_udp_data(struct sample_data *data);
 static void wait_reply(struct k_timer *timer);
 static void wait_transmit(struct k_timer *timer);
 
@@ -136,7 +136,7 @@ void init_udp(void)
 	}
 }
 
-static int send_udp_data(struct data *data)
+static int send_udp_data(struct sample_data *data)
 {
 	int ret;
 
@@ -156,7 +156,7 @@ static int send_udp_data(struct data *data)
 	return ret < 0 ? -EIO : 0;
 }
 
-static int compare_udp_data(struct data *data, const char *buf, uint32_t received)
+static int compare_udp_data(struct sample_data *data, const char *buf, uint32_t received)
 {
 	if (received != data->udp.expecting) {
 		LOG_ERR("Invalid amount of data received: UDP %s", data->proto);
@@ -175,7 +175,7 @@ static void wait_reply(struct k_timer *timer)
 {
 	/* This means that we did not receive response in time. */
 	struct udp_control *ctrl = CONTAINER_OF(timer, struct udp_control, rx_timer);
-	struct data *data = (ctrl == conf.ipv4.udp.ctrl) ? &conf.ipv4 : &conf.ipv6;
+	struct sample_data *data = (ctrl == conf.ipv4.udp.ctrl) ? &conf.ipv4 : &conf.ipv6;
 
 	LOG_ERR("UDP %s: Data packet not received", data->proto);
 
@@ -190,16 +190,16 @@ static void wait_transmit(struct k_timer *timer)
 	k_poll_signal_raise(&ctrl->tx_signal, 0);
 }
 
-static int start_udp_proto(struct data *data, struct sockaddr *addr,
-			   socklen_t addrlen)
+static int start_udp_proto(struct sample_data *data, sa_family_t family,
+			   struct sockaddr *addr, socklen_t addrlen)
 {
 	int optval;
 	int ret;
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
-	data->udp.sock = socket(addr->sa_family, SOCK_DGRAM, IPPROTO_DTLS_1_2);
+	data->udp.sock = socket(family, SOCK_DGRAM, IPPROTO_DTLS_1_2);
 #else
-	data->udp.sock = socket(addr->sa_family, SOCK_DGRAM, IPPROTO_UDP);
+	data->udp.sock = socket(family, SOCK_DGRAM, IPPROTO_UDP);
 #endif
 	if (data->udp.sock < 0) {
 		LOG_ERR("Failed to create UDP socket (%s): %d", data->proto,
@@ -233,7 +233,7 @@ static int start_udp_proto(struct data *data, struct sockaddr *addr,
 #endif
 
 	/* Prefer IPv6 temporary addresses */
-	if (addr->sa_family == AF_INET6) {
+	if (family == AF_INET6) {
 		optval = IPV6_PREFER_SRC_TMP;
 		(void)setsockopt(data->udp.sock, IPPROTO_IPV6,
 				 IPV6_ADDR_PREFERENCES,
@@ -251,7 +251,7 @@ static int start_udp_proto(struct data *data, struct sockaddr *addr,
 	return ret;
 }
 
-static int process_udp_proto(struct data *data)
+static int process_udp_proto(struct sample_data *data)
 {
 	int ret, received;
 
@@ -312,7 +312,7 @@ int start_udp(void)
 		inet_pton(AF_INET6, CONFIG_NET_CONFIG_PEER_IPV6_ADDR,
 			  &addr6.sin6_addr);
 
-		ret = start_udp_proto(&conf.ipv6,
+		ret = start_udp_proto(&conf.ipv6, AF_INET6,
 				      (struct sockaddr *)&addr6,
 				      sizeof(addr6));
 		if (ret < 0) {
@@ -326,7 +326,8 @@ int start_udp(void)
 		inet_pton(AF_INET, CONFIG_NET_CONFIG_PEER_IPV4_ADDR,
 			  &addr4.sin_addr);
 
-		ret = start_udp_proto(&conf.ipv4, (struct sockaddr *)&addr4,
+		ret = start_udp_proto(&conf.ipv4, AF_INET,
+				      (struct sockaddr *)&addr4,
 				      sizeof(addr4));
 		if (ret < 0) {
 			return ret;

@@ -1,5 +1,6 @@
 board:
   name: esp32c3_devkitm
+  full_name: ESP32-C3-DevKitM
   vendor: espressif
   socs:
   - name: esp32c3

@@ -1,5 +1,6 @@
 board:
   name: qemu_cortex_a9
+  full_name: QEMU Emulation for Cortex-A9
   vendor: qemu
   socs:
   - name: xc7z007s

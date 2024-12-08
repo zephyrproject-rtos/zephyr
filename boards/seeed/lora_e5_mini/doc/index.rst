@@ -1,7 +1,4 @@
-.. _lora_e5_mini:
-
-Seeed Studio LoRa-E5 mini
-#########################
+.. zephyr:board:: lora_e5_mini
 
 Overview
 ********
@@ -9,10 +6,6 @@ Overview
 LoRa-E5 mini is a compacted-sized development board suitable for the rapid
 testing and building of small-sized LoRa device, exposing all capabilities of
 Seeed Studio LoRa-E5 STM32WLE5JC module.
-
-.. image:: img/lora_e5_mini.jpg
-   :align: center
-   :alt: LoRa-E5 mini
 
 Hardware
 ********
@@ -178,7 +171,7 @@ Flashing an application to LoRa-E5 mini
 
 Connect the LoRa-E5 to your host computer using the external debug probe.
 Then build and flash an application. Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 Run a serial host program to connect with your board:
 Per default the console on ``usart1`` is available on the USB Type C connector

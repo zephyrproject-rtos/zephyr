@@ -1,0 +1,24 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+properties:
+  iovdd-ctrl-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO of the SoC controlling IO_VDD Control pin of the nRF70
+
+  bucken-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO of the SoC controlling BUCK_EN pin of the nRF70
+
+  host-irq-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO of the SoC controlling the HOST_IRQ pin of the nRF70
+
+  srrf-switch-gpios:
+    type: phandle-array
+    description: |
+      GPIO of the RF Switch to control SR RF output to either SR Antenna
+      or shared Antenna with Wi-Fi

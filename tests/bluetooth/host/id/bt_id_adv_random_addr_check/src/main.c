@@ -154,7 +154,7 @@ ZTEST(bt_id_adv_random_addr_check, test_check_returns_false_advertise_with_local
 
 	atomic_set_bit(bt_dev.flags, BT_DEV_SCANNING);
 
-	adv_param.options &= ~BT_LE_ADV_OPT_CONNECTABLE;
+	adv_param.options &= ~BT_LE_ADV_OPT_CONN;
 	adv_param.options |= BT_LE_ADV_OPT_USE_IDENTITY;
 	bt_dev.id_addr[BT_ID_DEFAULT].type = BT_ADDR_LE_RANDOM;
 

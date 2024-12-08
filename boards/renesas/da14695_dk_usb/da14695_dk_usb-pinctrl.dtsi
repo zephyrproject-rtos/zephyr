@@ -18,20 +18,20 @@
 
 	uart2_default: uart2_default {
 		group1 {
-			pinmux = <SMARTBOND_PINMUX(UART_TX, 0, 17)>;
+			pinmux = <SMARTBOND_PINMUX(UART2_TX, 0, 17)>;
 		};
 		group2 {
-			pinmux = <SMARTBOND_PINMUX(UART_RX, 1, 8)>;
+			pinmux = <SMARTBOND_PINMUX(UART2_RX, 1, 8)>;
 			bias-pull-up;
 		};
 	};
 
 	uart3_default: uart3_default {
 		group1 {
-			pinmux = <SMARTBOND_PINMUX(UART_TX, 0, 29)>;
+			pinmux = <SMARTBOND_PINMUX(UART3_TX, 0, 29)>;
 		};
 		group2 {
-			pinmux = <SMARTBOND_PINMUX(UART_RX, 0, 28)>;
+			pinmux = <SMARTBOND_PINMUX(UART3_RX, 0, 28)>;
 			bias-pull-up;
 		};
 	};
@@ -44,10 +44,27 @@
 		};
 	};
 
+	/omit-if-no-ref/ i2c_sleep: i2c_sleep {
+		group1 {
+			pinmux = <SMARTBOND_PINMUX(GPIO, 0, 31)>,
+				<SMARTBOND_PINMUX(GPIO, 0, 30)>;
+			bias-pull-up;
+
+		};
+	};
+
 	i2c2_default: i2c2_default {
 		group1 {
 			pinmux = <SMARTBOND_PINMUX(I2C2_SDA, 0, 19)>,
 				<SMARTBOND_PINMUX(I2C2_SCL, 0, 18)>;
+			bias-pull-up;
+		};
+	};
+
+	/omit-if-no-ref/ i2c2_sleep: i2c2_sleep {
+		group1 {
+			pinmux = <SMARTBOND_PINMUX(GPIO, 0, 19)>,
+				<SMARTBOND_PINMUX(GPIO, 0, 18)>;
 			bias-pull-up;
 		};
 	};

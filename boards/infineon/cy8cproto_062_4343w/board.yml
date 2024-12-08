@@ -1,5 +1,6 @@
 board:
   name: cy8cproto_062_4343w
+  full_name: CY8CPROTO-062-4343W
   vendor: infineon
   socs:
   - name: cy8c624abzi_s2d44

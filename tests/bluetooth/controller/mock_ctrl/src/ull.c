@@ -384,3 +384,15 @@ static inline void rx_alloc(uint8_t max)
 		ll_rx_link_inc_quota(-1);
 	}
 }
+
+#if defined(CONFIG_BT_CTLR_ISO) || \
+	defined(CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER) || \
+	defined(CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER)
+uint32_t ull_get_wrapped_time_us(uint32_t time_now_us, int32_t time_diff_us)
+{
+	return 0;
+}
+#endif /* CONFIG_BT_CTLR_ISO ||
+	* CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER ||
+	* CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER
+	*/

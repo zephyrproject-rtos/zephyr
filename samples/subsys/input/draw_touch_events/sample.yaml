@@ -1,0 +1,16 @@
+sample:
+  description: Sample application for touch controllers
+  name: touch_sample
+tests:
+  sample.touch.native:
+    build_only: true
+    platform_allow: native_sim/native/64
+    tags:
+      - touch
+  sample.touch.ft5336:
+    platform_allow:
+      - stm32f429i_disc1
+      - stm32f746g_disco
+    tags:
+      - touch
+    harness: none

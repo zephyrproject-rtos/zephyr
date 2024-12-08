@@ -50,10 +50,11 @@ per symbol and the percentage it uses. The data is grouped based on the file
 system location of the object in the tree and the file containing the symbol.
 
 Use the ``ram_report`` target with your board, as in the following example.
+If you are using :ref:`sysbuild`, see :ref:`sysbuild_dedicated_image_build_targets` instead.
 
 .. zephyr-app-commands::
     :tool: all
-    :app: samples/hello_world
+    :zephyr-app: samples/hello_world
     :board: reel_board
     :goals: ram_report
 
@@ -111,10 +112,11 @@ per symbol and the percentage it uses. The data is grouped based on the file
 system location of the object in the tree and the file containing the symbol.
 
 Use the ``rom_report`` target with your board, as in the following example.
+If you are using :ref:`sysbuild`, see :ref:`sysbuild_dedicated_image_build_targets` instead.
 
 .. zephyr-app-commands::
     :tool: all
-    :app: samples/hello_world
+    :zephyr-app: samples/hello_world
     :board: reel_board
     :goals: rom_report
 
@@ -176,10 +178,11 @@ target, install the puncover Python module::
 
 After you installed the Python module, use ``puncover`` target with your board,
 as in the following example.
+If you are using :ref:`sysbuild`, see :ref:`sysbuild_dedicated_image_build_targets` instead.
 
 .. zephyr-app-commands::
     :tool: all
-    :app: samples/hello_world
+    :zephyr-app: samples/hello_world
     :board: reel_board
     :goals: puncover
 
@@ -189,7 +192,7 @@ To view worst-case stack usage analysis, build this with the
 
 .. zephyr-app-commands::
     :tool: all
-    :app: samples/hello_world
+    :zephyr-app: samples/hello_world
     :board: reel_board
     :goals: puncover
     :gen-args: -DCONFIG_STACK_USAGE=y
@@ -220,10 +223,11 @@ Alternatively, you can get it from fedora::
 
 After you installed the package, use ``pahole`` target with your board,
 as in the following example.
+If you are using :ref:`sysbuild`, see :ref:`sysbuild_dedicated_image_build_targets` instead.
 
 .. zephyr-app-commands::
     :tool: all
-    :app: samples/hello_world
+    :zephyr-app: samples/hello_world
     :board: reel_board
     :goals: pahole
 

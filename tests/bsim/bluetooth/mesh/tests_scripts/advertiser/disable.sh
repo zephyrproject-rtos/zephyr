@@ -36,3 +36,6 @@ RunTest mesh_adv_disable adv_tx_disable adv_rx_disable
 # Low latency overlay uses legacy advertiser
 overlay=overlay_low_lat_conf
 RunTest mesh_adv_disable adv_tx_disable adv_rx_disable
+
+overlay=overlay_workq_sys_conf
+RunTest mesh_adv_disable_workq adv_tx_disable adv_rx_disable

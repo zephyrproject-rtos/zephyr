@@ -1,0 +1,46 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	acmp1_default: acmp1_default {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_01_acmp1_in2>;
+			drive-strength = "high";
+			bias-pull-up;
+			slew-rate = "fast";
+		};
+	};
+};
+
+&acmp1 {
+	status = "okay";
+	pinctrl-0 = <&acmp1_default>;
+	pinctrl-names = "default";
+
+	positive-mux-input = "IN2";
+	positive-port-input = "MUX";
+	negative-mux-input = "IN2";
+	negative-port-input = "DAC";
+
+	dac-vref-source = "VIN1";
+	dac-value = <128>;
+	dac-enable;
+
+	offset-mode = "LEVEL0";
+	hysteresis-mode = "LEVEL0";
+	enable-high-speed-mode;
+
+	filter-enable-sample;
+	filter-count = <4>;
+	filter-period = <32>;
+
+	discrete-mode-enable-positive-channel;
+	discrete-mode-enable-resistor-divider;
+	discrete-mode-clock-source = "FAST";
+	discrete-mode-sample-time = "T1";
+	discrete-mode-phase1-time = "ALT4";
+	discrete-mode-phase2-time = "ALT7";
+};

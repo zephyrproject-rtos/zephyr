@@ -1,0 +1,105 @@
+# Xilinx AXI DMA configuration options
+
+# Copyright (c) 2023 CISPA Helmholtz Center for Information Security gGmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_XILINX_AXI_DMA
+	bool "Xilinx AXI DMA LogiCORE IP driver"
+	default y
+	depends on DT_HAS_XLNX_AXI_DMA_1_00_A_ENABLED || DT_HAS_XLNX_ETH_DMA_ENABLED
+	help
+	  DMA driver for Xilinx AXI DMAs, usually found on FPGAs.
+
+
+config DMA_XILINX_AXI_DMA_DISABLE_CACHE_WHEN_ACCESSING_SG_DESCRIPTORS
+	bool "Disable data cache while accessing Scatter-Gather Descriptors."
+	depends on DMA_XILINX_AXI_DMA
+	default n
+	help
+		Disable dcache while operating on Scatter-Gather descriptors.
+		This allows the DMA to be used on architectures that do not provide
+		coherency for DMA accesses. If you are unsure whether you need this feature,
+		you should select n here.
+
+config DMA_XILINX_AXI_DMA_SG_DESCRIPTOR_NUM_TX
+	int "Number of transfer descriptors allocated for transmission (TX)."
+	depends on DMA_XILINX_AXI_DMA
+	default 16
+	help
+		The Xilinx AXI DMA uses a ring of in-memory DMA descriptors which reference
+		the buffers containing the network packets and control and status information.
+		Increasing the number of descriptors increases the amount of packets in flight,
+		which benefits performance, while increasing memory usage.
+
+config DMA_XILINX_AXI_DMA_SG_DESCRIPTOR_NUM_RX
+	int "Number of transfer descriptors allocated for reception (RX)."
+	depends on DMA_XILINX_AXI_DMA
+	default 16
+	help
+		The AXI DMA driver currently allocates a single DMA descriptor for each RX transfer,
+		because transfers need to be started by the upstream driver.
+
+choice
+	prompt "IRQs to lock when manipulating per-channel data structures during dma_start."
+	depends on DMA_XILINX_AXI_DMA
+	default DMA_XILINX_AXI_DMA_LOCK_ALL_IRQS
+
+config DMA_XILINX_AXI_DMA_LOCK_ALL_IRQS
+	bool "Lock all IRQs"
+	help
+		Lock all interrupts (including, e.g., timers and scheduler) when modifying channel data
+		during dma_start.
+		This is required when calling dma_start outside of the TX/RX callbacks.
+		This is the safest option and the default, select this if you are unsure.
+
+config DMA_XILINX_AXI_DMA_LOCK_DMA_IRQS
+	bool "Lock TX and RX IRQs"
+	help
+		Lock all interrupts of this DMA device when modifying channel data during dma_start.
+		This is only safe when dma_start is only called from the TX/RX callbacks (and possibly
+		once directly after initialization of the DMA).
+
+config DMA_XILINX_AXI_DMA_LOCK_CHANNEL_IRQ
+	bool "Lock IRQs of the DMA channel"
+	help
+		Only lock the interrupt of the DMA channel whose data are to be modified during dma_start.
+		Only select this when you can guarantee that dma_start is only called from the callback
+		registered for the same channel.
+
+endchoice
+
+config DMA_XILINX_AXI_DMA_POLL_INTERVAL
+	int "Period of the timer used for polling the DMA in milliseconds"
+	depends on DMA_XILINX_AXI_DMA
+	default 100
+	help
+		On certain platforms (e.g., RISC-V), the DMA driver can sometimes miss interrupts.
+		This can cause the DMA driver to stop processing completed transactions.
+		In order to prevent this, the DMA driver periodically polls the DMA's registers and
+		determines whether it needs to handle outstanding transactions.
+		This configuration controls how often this happens.
+		Choose a larger value to minimize overhead and a smaller value to minimize
+		worst-case latency.
+
+config DMA_XILINX_AXI_DMA_INTERRUPT_THRESHOLD
+	int "Number of completed transactions after which to trigger an interrupt"
+	depends on DMA_XILINX_AXI_DMA
+	range 1 255
+	default 8
+	help
+		Number of completed transactions after which to trigger an interrupt.
+		Decrease to minimize latency, increase to minimize overhead introduced by interrupts.
+
+config DMA_XILINX_AXI_DMA_INTERRUPT_TIMEOUT
+	int "Timeout for triggering an interrupt"
+	depends on DMA_XILINX_AXI_DMA
+	range 0 255
+	default 16
+	help
+		Trigger an interrupt at the latest after
+		CONFIG_DMA_XILINX_AXI_DMA_INTERRUPT_TIMEOUT * 125 * DMA_CLOCK_PERIOD cycles.
+		This is useful in conjunction with DMA_XILINX_AXI_DMA_INTERRUPT_THRESHOLD - the DMA
+		can raise an interrupt before the threshold is reached, minimizing latency in scenarios
+		where only few transactions per second are completed.
+		Set to 0 to disable this feature, i.e., interrupts will only be raised when the threshold
+		has been reached.

@@ -454,7 +454,16 @@ static void oacp_read_proc_cb(struct bt_gatt_ots_l2cap *l2cap_ctx,
 	struct bt_ots *ots;
 	struct bt_gatt_ots_object_read_op *read_op;
 
-	ots     = CONTAINER_OF(l2cap_ctx, struct bt_ots, l2cap);
+	ots = CONTAINER_OF(l2cap_ctx, struct bt_ots, l2cap);
+
+	if (ots->cb->obj_read == NULL &&
+	    !(IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ) && ots->cur_obj->id == OTS_OBJ_ID_DIR_LIST)) {
+		ots->cur_obj->state.type = BT_GATT_OTS_OBJECT_IDLE_STATE;
+		LOG_ERR("OTS Read operation failed: there is no OTS Read callback");
+
+		return;
+	}
+
 	read_op = &ots->cur_obj->state.read_op;
 	offset  = read_op->oacp_params.offset + read_op->sent_len;
 
@@ -521,16 +530,7 @@ static void oacp_read_proc_execute(struct bt_ots *ots,
 	LOG_DBG("Executing Read procedure with offset: 0x%08X and "
 		"length: 0x%08X", params->offset, params->len);
 
-	if (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ) &&
-	    ots->cur_obj->id == OTS_OBJ_ID_DIR_LIST) {
-		oacp_read_proc_cb(&ots->l2cap, conn);
-	} else if (ots->cb->obj_read) {
-		oacp_read_proc_cb(&ots->l2cap, conn);
-	} else {
-		ots->cur_obj->state.type = BT_GATT_OTS_OBJECT_IDLE_STATE;
-		LOG_ERR("OTS Read operation failed: "
-			"there is no OTS Read callback");
-	}
+	oacp_read_proc_cb(&ots->l2cap, conn);
 }
 
 #if defined(CONFIG_BT_OTS_OACP_WRITE_SUPPORT)

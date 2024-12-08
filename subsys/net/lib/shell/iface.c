@@ -19,6 +19,9 @@ LOG_MODULE_DECLARE(net_shell);
 #if defined(CONFIG_NET_L2_VIRTUAL)
 #include <zephyr/net/virtual.h>
 #endif
+#if defined(CONFIG_ETH_PHY_DRIVER)
+#include <zephyr/net/phy.h>
+#endif
 
 #include "net_shell_private.h"
 
@@ -53,6 +56,10 @@ static struct ethernet_capabilities eth_hw_caps[] = {
 	EC(ETHERNET_HW_FILTERING,         "MAC address filtering"),
 	EC(ETHERNET_DSA_SLAVE_PORT,       "DSA slave port"),
 	EC(ETHERNET_DSA_MASTER_PORT,      "DSA master port"),
+	EC(ETHERNET_TXTIME,               "TXTIME supported"),
+	EC(ETHERNET_TXINJECTION_MODE,     "TX-Injection supported"),
+	EC(ETHERNET_LINK_2500BASE_T,      "2.5 Gbits"),
+	EC(ETHERNET_LINK_5000BASE_T,      "5 Gbits"),
 };
 
 static void print_supported_ethernet_capabilities(
@@ -68,7 +75,26 @@ static void print_supported_ethernet_capabilities(
 }
 #endif /* CONFIG_NET_L2_ETHERNET */
 
-#if defined(CONFIG_NET_NATIVE)
+#ifdef CONFIG_ETH_PHY_DRIVER
+static void print_phy_link_state(const struct shell *sh, const struct device *phy_dev)
+{
+	struct phy_link_state link;
+	int ret;
+
+	ret = phy_get_link_state(phy_dev, &link);
+	if (ret < 0) {
+		PR_ERROR("Failed to get link state (%d)\n", ret);
+		return;
+	}
+
+	PR("Ethernet link speed: %s ", PHY_LINK_IS_SPEED_1000M(link.speed)  ? "1 Gbits"
+				       : PHY_LINK_IS_SPEED_100M(link.speed) ? "100 Mbits"
+									    : "10 Mbits");
+
+	PR("%s-duplex\n", PHY_LINK_IS_FULL_DUPLEX(link.speed) ? "full" : "half");
+}
+#endif
+
 static const char *iface_flags2str(struct net_if *iface)
 {
 	static char str[sizeof("POINTOPOINT") + sizeof("PROMISC") +
@@ -125,17 +151,17 @@ static const char *iface_flags2str(struct net_if *iface)
 
 	return str;
 }
-#endif
 
 static void iface_cb(struct net_if *iface, void *user_data)
 {
-#if defined(CONFIG_NET_NATIVE)
 	struct net_shell_user_data *data = user_data;
 	const struct shell *sh = data->sh;
 
-#if defined(CONFIG_NET_IPV6)
+#if defined(CONFIG_NET_NATIVE_IPV6)
 	struct net_if_ipv6_prefix *prefix;
 	struct net_if_router *router;
+#endif
+#if defined(CONFIG_NET_IPV6)
 	struct net_if_ipv6 *ipv6;
 #endif
 #if defined(CONFIG_NET_IPV4)
@@ -305,6 +331,16 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
 		PR("Ethernet capabilities supported:\n");
 		print_supported_ethernet_capabilities(sh, iface);
+
+#ifdef CONFIG_ETH_PHY_DRIVER
+		const struct device *phy_dev = net_eth_get_phy(iface);
+
+		PR("Ethernet PHY device: %s (%p)\n", (phy_dev != NULL) ? phy_dev->name : "<none>",
+		   phy_dev);
+		if (phy_dev != NULL) {
+			print_phy_link_state(sh, phy_dev);
+		}
+#endif /* CONFIG_ETH_PHY_DRIVER */
 	}
 #endif /* CONFIG_NET_L2_ETHERNET */
 
@@ -360,6 +396,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 		PR("\t<none>\n");
 	}
 
+#if defined(CONFIG_NET_NATIVE_IPV6)
 	count = 0;
 
 	PR("IPv6 prefixes (max %d):\n", NET_IF_MAX_IPV6_PREFIX);
@@ -388,6 +425,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 		   net_sprint_ipv6_addr(&router->address.in6_addr),
 		   router->is_infinite ? " infinite" : "");
 	}
+#endif /* CONFIG_NET_NATIVE_IPV6 */
 
 skip_ipv6:
 
@@ -407,6 +445,29 @@ skip_ipv6:
 		PR("IPv6 retransmit timer    : %d\n",
 		   ipv6->retrans_timer);
 	}
+
+#if defined(CONFIG_NET_DHCPV6)
+	if (net_if_flag_is_set(iface, NET_IF_IPV6)) {
+		PR("DHCPv6 renewal time (T1) : %llu ms\n",
+		   iface->config.dhcpv6.t1);
+		PR("DHCPv6 rebind time (T2)  : %llu ms\n",
+		   iface->config.dhcpv6.t2);
+		PR("DHCPv6 expire time       : %llu ms\n",
+		   iface->config.dhcpv6.expire);
+		if (iface->config.dhcpv6.params.request_addr) {
+			PR("DHCPv6 address           : %s\n",
+			   net_sprint_ipv6_addr(&iface->config.dhcpv6.addr));
+		}
+
+		if (iface->config.dhcpv6.params.request_prefix) {
+			PR("DHCPv6 prefix            : %s\n",
+			   net_sprint_ipv6_addr(&iface->config.dhcpv6.prefix));
+		}
+
+		PR("DHCPv6 state             : %s\n",
+		   net_dhcpv6_state_name(iface->config.dhcpv6.state));
+	}
+#endif /* CONFIG_NET_DHCPV6 */
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
@@ -499,12 +560,6 @@ skip_ipv4:
 		   iface->config.dhcpv4.attempts);
 	}
 #endif /* CONFIG_NET_DHCPV4 */
-
-#else
-	ARG_UNUSED(iface);
-	ARG_UNUSED(user_data);
-
-#endif /* CONFIG_NET_NATIVE */
 }
 
 static int cmd_net_set_mac(const struct shell *sh, size_t argc, char *argv[])

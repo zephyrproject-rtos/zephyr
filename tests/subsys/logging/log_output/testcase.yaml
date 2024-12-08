@@ -15,6 +15,38 @@ tests:
       - logging
     extra_configs:
       - CONFIG_LOG_TIMESTAMP_64BIT=y
+  logging.output.ts64.date:
+    tags:
+      - log_output
+      - logging
+    extra_configs:
+      - CONFIG_LOG_TIMESTAMP_64BIT=y
+      - CONFIG_LOG_OUTPUT_FORMAT_DATE_TIMESTAMP=y
+  logging.output.ts64.date.fulllibc:
+    tags:
+      - log_output
+      - logging
+    extra_configs:
+      - CONFIG_LOG_TIMESTAMP_64BIT=y
+      - CONFIG_LOG_OUTPUT_FORMAT_DATE_TIMESTAMP=y
+      - CONFIG_REQUIRES_FULL_LIBC=y
+    filter: CONFIG_FULL_LIBC_SUPPORTED
+  logging.output.ts64.iso8601:
+    tags:
+      - log_output
+      - logging
+    extra_configs:
+      - CONFIG_LOG_TIMESTAMP_64BIT=y
+      - CONFIG_LOG_OUTPUT_FORMAT_ISO8601_TIMESTAMP=y
+  logging.output.ts64.iso8601.fulllibc:
+    tags:
+      - log_output
+      - logging
+    extra_configs:
+      - CONFIG_LOG_TIMESTAMP_64BIT=y
+      - CONFIG_LOG_OUTPUT_FORMAT_ISO8601_TIMESTAMP=y
+      - CONFIG_REQUIRES_FULL_LIBC=y
+    filter: CONFIG_FULL_LIBC_SUPPORTED
   logging.output.thread_id:
     tags:
       - log_output

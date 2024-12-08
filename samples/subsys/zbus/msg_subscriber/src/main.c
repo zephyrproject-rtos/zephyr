@@ -170,7 +170,7 @@ ZBUS_CHAN_ADD_OBS(acc_data_chan, bar_msg_sub16, 3);
 static struct acc_msg acc = {.x = 1, .y = 10, .z = 100};
 
 #if defined(CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION)
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 
 #if defined(CONFIG_ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC)
 NET_BUF_POOL_HEAP_DEFINE(isolated_pool, (CONFIG_ZBUS_MSG_SUBSCRIBER_SAMPLE_ISOLATED_BUF_POOL_SIZE),

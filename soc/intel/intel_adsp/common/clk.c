@@ -96,6 +96,11 @@ void adsp_clock_init(void)
 	} else {
 		platform_lowest_freq_idx = ADSP_CPU_CLOCK_FREQ_IPLL;
 	}
+#if CONFIG_SOC_INTEL_ACE30
+	/* Set the Cardinal clock divider to 18 to get 24.576MHz */
+	ACE_DfPMCCU.dfcrodiv &= ACE_CRODIV_CARCDS_MASK;
+	ACE_DfPMCCU.dfcrodiv |= ACE_CRODIV_CARCDS(0x12);
+#endif
 #else
 	CAVS_SHIM.clkctl |= CAVS_CLKCTL_WOVCRO;
 	if (CAVS_SHIM.clkctl & CAVS_CLKCTL_WOVCRO) {
@@ -124,10 +129,10 @@ struct adsp_clock_source_desc adsp_clk_src_info[ADSP_CLOCK_SOURCE_COUNT] = {
 	 */
 	[ADSP_CLOCK_SOURCE_XTAL_OSC] = { CONFIG_DAI_DMIC_HW_IOCLK },
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(audioclk), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(audioclk))
 	[ADSP_CLOCK_SOURCE_AUDIO_CARDINAL] = { DT_PROP(DT_NODELABEL(audioclk), clock_frequency) },
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(pllclk), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pllclk))
 	[ADSP_CLOCK_SOURCE_AUDIO_PLL_FIXED] = { DT_PROP(DT_NODELABEL(pllclk), clock_frequency) },
 #endif
 	[ADSP_CLOCK_SOURCE_MLCK_INPUT] = { 0 },

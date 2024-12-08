@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2024 Arrow Electronics.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		ambient-temp0 = &tmp1075_temperature;
+	};
+};
+
+/*
+ * Note - TMP1075 is not present on the Nucleo h7a3zi_q eval board, and must be
+ * wired to i2c1 externally.
+ */
+&i2c1 {
+	pinctrl-0 = <&i2c1_sda_pb7 &i2c1_scl_pb6>;
+	pinctrl-names = "default";
+	compatible = "st,stm32-i2c-v2";
+	status = "okay";
+	tmp1075_temperature: tmp1075@48 {
+		compatible = "ti,tmp1075";
+		friendly-name = "texas_temperature_tmp1075";
+		reg = <0x48>;
+		alert-gpios = <&gpiob 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+		conversion-rate = <220000>;
+		lower-threshold = <27>;
+		upper-threshold = <28>;
+		consecutive-fault-measurements = <4>;
+		interrupt-mode;
+	};
+};

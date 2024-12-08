@@ -16,6 +16,7 @@
 #include <zephyr/logging/log.h>
 
 #include "lsm6dsv16x.h"
+#include "lsm6dsv16x_rtio.h"
 
 LOG_MODULE_DECLARE(LSM6DSV16X, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -37,7 +38,7 @@ static int lsm6dsv16x_enable_xl_int(const struct device *dev, int enable)
 
 	/* set interrupt */
 	if (cfg->drdy_pin == 1) {
-		lsm6dsv16x_pin_int_route_t val;
+		lsm6dsv16x_pin_int_route_t val = {};
 
 		ret = lsm6dsv16x_pin_int1_route_get(ctx, &val);
 		if (ret < 0) {
@@ -49,7 +50,7 @@ static int lsm6dsv16x_enable_xl_int(const struct device *dev, int enable)
 
 		ret = lsm6dsv16x_pin_int1_route_set(ctx, &val);
 	} else {
-		lsm6dsv16x_pin_int_route_t val;
+		lsm6dsv16x_pin_int_route_t val = {};
 
 		ret = lsm6dsv16x_pin_int2_route_get(ctx, &val);
 		if (ret < 0) {
@@ -83,7 +84,7 @@ static int lsm6dsv16x_enable_g_int(const struct device *dev, int enable)
 
 	/* set interrupt */
 	if (cfg->drdy_pin == 1) {
-		lsm6dsv16x_pin_int_route_t val;
+		lsm6dsv16x_pin_int_route_t val = {};
 
 		ret = lsm6dsv16x_pin_int1_route_get(ctx, &val);
 		if (ret < 0) {
@@ -95,7 +96,7 @@ static int lsm6dsv16x_enable_g_int(const struct device *dev, int enable)
 
 		ret = lsm6dsv16x_pin_int1_route_set(ctx, &val);
 	} else {
-		lsm6dsv16x_pin_int_route_t val;
+		lsm6dsv16x_pin_int_route_t val = {};
 
 		ret = lsm6dsv16x_pin_int2_route_get(ctx, &val);
 		if (ret < 0) {
@@ -120,33 +121,49 @@ int lsm6dsv16x_trigger_set(const struct device *dev,
 {
 	const struct lsm6dsv16x_config *cfg = dev->config;
 	struct lsm6dsv16x_data *lsm6dsv16x = dev->data;
+	int ret = 0;
 
 	if (!cfg->trig_enabled) {
 		LOG_ERR("trigger_set op not supported");
 		return -ENOTSUP;
 	}
 
-	if (trig->chan == SENSOR_CHAN_ACCEL_XYZ) {
-		lsm6dsv16x->handler_drdy_acc = handler;
-		lsm6dsv16x->trig_drdy_acc = trig;
-		if (handler) {
-			return lsm6dsv16x_enable_xl_int(dev, LSM6DSV16X_EN_BIT);
-		} else {
-			return lsm6dsv16x_enable_xl_int(dev, LSM6DSV16X_DIS_BIT);
-		}
-	} else if (trig->chan == SENSOR_CHAN_GYRO_XYZ) {
-		lsm6dsv16x->handler_drdy_gyr = handler;
-		lsm6dsv16x->trig_drdy_gyr = trig;
-		if (handler) {
-			return lsm6dsv16x_enable_g_int(dev, LSM6DSV16X_EN_BIT);
-		} else {
-			return lsm6dsv16x_enable_g_int(dev, LSM6DSV16X_DIS_BIT);
-		}
+	if (trig == NULL) {
+		LOG_ERR("no trigger");
+		return -EINVAL;
 	}
 
-	return -ENOTSUP;
+	switch (trig->type) {
+	case SENSOR_TRIG_DATA_READY:
+		if (trig->chan == SENSOR_CHAN_ACCEL_XYZ) {
+			lsm6dsv16x->handler_drdy_acc = handler;
+			lsm6dsv16x->trig_drdy_acc = trig;
+			if (handler) {
+				lsm6dsv16x_enable_xl_int(dev, LSM6DSV16X_EN_BIT);
+			} else {
+				lsm6dsv16x_enable_xl_int(dev, LSM6DSV16X_DIS_BIT);
+			}
+		} else if (trig->chan == SENSOR_CHAN_GYRO_XYZ) {
+			lsm6dsv16x->handler_drdy_gyr = handler;
+			lsm6dsv16x->trig_drdy_gyr = trig;
+			if (handler) {
+				lsm6dsv16x_enable_g_int(dev, LSM6DSV16X_EN_BIT);
+			} else {
+				lsm6dsv16x_enable_g_int(dev, LSM6DSV16X_DIS_BIT);
+			}
+		}
+
+		break;
+	default:
+		ret = -ENOTSUP;
+		break;
+	}
+
+	return ret;
 }
 
+#if defined(CONFIG_LSM6DSV16X_TRIGGER_OWN_THREAD) || \
+	defined(CONFIG_LSM6DSV16X_TRIGGER_GLOBAL_THREAD)
 /**
  * lsm6dsv16x_handle_interrupt - handle the drdy event
  * read data and call handler if registered any
@@ -181,6 +198,7 @@ static void lsm6dsv16x_handle_interrupt(const struct device *dev)
 	gpio_pin_interrupt_configure_dt(lsm6dsv16x->drdy_gpio,
 					GPIO_INT_EDGE_TO_ACTIVE);
 }
+#endif /* CONFIG_LSM6DSV16X_TRIGGER_OWN_THREAD || CONFIG_LSM6DSV16X_TRIGGER_GLOBAL_THREAD */
 
 static void lsm6dsv16x_gpio_callback(const struct device *dev,
 				    struct gpio_callback *cb, uint32_t pins)
@@ -191,6 +209,10 @@ static void lsm6dsv16x_gpio_callback(const struct device *dev,
 	ARG_UNUSED(pins);
 
 	gpio_pin_interrupt_configure_dt(lsm6dsv16x->drdy_gpio, GPIO_INT_DISABLE);
+
+	if (IS_ENABLED(CONFIG_LSM6DSV16X_STREAM)) {
+		lsm6dsv16x_stream_irq_handler(lsm6dsv16x->dev);
+	}
 
 #if defined(CONFIG_LSM6DSV16X_TRIGGER_OWN_THREAD)
 	k_sem_give(&lsm6dsv16x->gpio_sem);

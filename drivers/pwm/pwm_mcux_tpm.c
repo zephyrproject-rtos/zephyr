@@ -1,6 +1,6 @@
 /*
  * Copyright 2019 Henrik Brix Andersen <henrik@brixandersen.dk>
- * Copyright 2020 NXP
+ * Copyright 2020, 2024 NXP
  *
  * Heavily based on pwm_mcux_ftm.c, which is:
  * Copyright (c) 2017, NXP
@@ -22,7 +22,11 @@
 
 LOG_MODULE_REGISTER(pwm_mcux_tpm, CONFIG_PWM_LOG_LEVEL);
 
+#if defined(TPM0)
 #define MAX_CHANNELS ARRAY_SIZE(TPM0->CONTROLS)
+#else
+#define MAX_CHANNELS ARRAY_SIZE(TPM1->CONTROLS)
+#endif
 
 struct mcux_tpm_config {
 	TPM_Type *base;
@@ -160,9 +164,16 @@ static int mcux_tpm_init(const struct device *dev)
 
 	for (i = 0; i < config->channel_count; i++) {
 		channel->chnlNumber = i;
+#if !(defined(FSL_FEATURE_TPM_HAS_PAUSE_LEVEL_SELECT) && FSL_FEATURE_TPM_HAS_PAUSE_LEVEL_SELECT)
 		channel->level = kTPM_NoPwmSignal;
+#else
+		channel->level = kTPM_HighTrue;
+		channel->pauseLevel = kTPM_ClearOnPause;
+#endif
 		channel->dutyCyclePercent = 0;
+#if defined(FSL_FEATURE_TPM_HAS_COMBINE) && FSL_FEATURE_TPM_HAS_COMBINE
 		channel->firstEdgeDelayPercent = 0;
+#endif
 		channel++;
 	}
 
@@ -179,10 +190,12 @@ static int mcux_tpm_init(const struct device *dev)
 	return 0;
 }
 
-static const struct pwm_driver_api mcux_tpm_driver_api = {
+static DEVICE_API(pwm, mcux_tpm_driver_api) = {
 	.set_cycles = mcux_tpm_set_cycles,
 	.get_cycles_per_sec = mcux_tpm_get_cycles_per_sec,
 };
+
+#define TO_TPM_PRESCALE_DIVIDE(val) _DO_CONCAT(kTPM_Prescale_Divide_, val)
 
 #define TPM_DEVICE(n) \
 	PINCTRL_DT_INST_DEFINE(n); \
@@ -193,7 +206,7 @@ static const struct pwm_driver_api mcux_tpm_driver_api = {
 		.clock_subsys = (clock_control_subsys_t) \
 			DT_INST_CLOCKS_CELL(n, name), \
 		.tpm_clock_source = kTPM_SystemClock, \
-		.prescale = kTPM_Prescale_Divide_16, \
+		.prescale = TO_TPM_PRESCALE_DIVIDE(DT_INST_PROP(n, prescaler)), \
 		.channel_count = FSL_FEATURE_TPM_CHANNEL_COUNTn((TPM_Type *) \
 			DT_INST_REG_ADDR(n)), \
 		.mode = kTPM_EdgeAlignedPwm, \

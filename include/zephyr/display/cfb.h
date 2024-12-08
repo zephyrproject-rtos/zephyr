@@ -9,8 +9,8 @@
  * @brief Public Monochrome Character Framebuffer API
  */
 
-#ifndef __CFB_H__
-#define __CFB_H__
+#ifndef ZEPHYR_INCLUDE_DISPLAY_CFB_H_
+#define ZEPHYR_INCLUDE_DISPLAY_CFB_H_
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/display.h>
@@ -241,6 +241,13 @@ int cfb_get_numof_fonts(const struct device *dev);
  */
 int cfb_framebuffer_init(const struct device *dev);
 
+/**
+ * @brief Deinitialize Character Framebuffer.
+ *
+ * @param dev Pointer to device structure for driver instance
+ */
+void cfb_framebuffer_deinit(const struct device *dev);
+
 #ifdef __cplusplus
 }
 #endif
@@ -249,4 +256,4 @@ int cfb_framebuffer_init(const struct device *dev);
  * @}
  */
 
-#endif /* __CFB_H__ */
+#endif /* ZEPHYR_INCLUDE_DISPLAY_CFB_H_ */

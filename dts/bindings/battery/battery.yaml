@@ -8,6 +8,34 @@ description: |
   linux/Documentation/devicetree/bindings/power/supply/battery.yaml
 
 properties:
+  device-chemistry:
+    type: string
+    description: This describes the chemical technology of the battery.
+      The "lithium-ion" value is a blanket type for all lithium-ion batteries.
+      If the specific chemistry is unknown, this value can be used instead of
+      the precise "lithium-ion-X" options.
+    enum:
+      - "nickel-cadmium"
+      - "nickel-metal-hydride"
+      - "lithium-ion"
+      - "lithium-ion-polymer"
+      - "lithium-ion-iron-phosphate"
+      - "lithium-ion-manganese-oxide"
+
+  ocv-capacity-table-0:
+    type: array
+    description: |
+      An array providing the open circuit voltage (OCV) , which is used to look
+      up battery capacity according to current OCV value. The OCV unit is
+      microvolts.
+
+      Unlike the linux equivalent this array is required to be 11 elements
+      long, representing the voltages for 0-100% charge in 10% steps.
+
+  charge-full-design-microamp-hours:
+    type: int
+    description: battery design capacity
+
   re-charge-voltage-microvolt:
     type: int
     description: limit to automatically start charging again

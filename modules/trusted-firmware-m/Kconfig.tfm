@@ -2,6 +2,7 @@
 
 # Copyright (c) 2019, 2020 Linaro Limited
 # Copyright (c) 2020, 2021 Nordic Semiconductor ASA
+# Copyright 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
 config ZEPHYR_TRUSTED_FIRMWARE_M_MODULE
@@ -11,7 +12,11 @@ config TFM_BOARD
 	string
 	default "nxp/lpcxpresso55s69" if BOARD_LPCXPRESSO55S69_LPC55S69_CPU0_NS
 	default "arm/mps2/an521" if BOARD_MPS2_AN521_CPU0_NS
-	default "arm/mps3/an547" if BOARD_MPS3_AN547
+	default "arm/mps3/corstone300/fvp"   if BOARD_MPS3_CORSTONE300_FVP_NS
+	default "arm/mps3/corstone300/an547" if BOARD_MPS3_CORSTONE300_AN547_NS
+	default "arm/mps3/corstone300/an552" if BOARD_MPS3_CORSTONE300_AN552_NS
+	default "arm/mps3/corstone310/an555" if BOARD_MPS3_CORSTONE310_AN555_NS
+	default "arm/mps3/corstone310/fvp"   if BOARD_MPS3_CORSTONE310_FVP_NS
 	default "stm/b_u585i_iot02a" if BOARD_B_U585I_IOT02A
 	default "stm/nucleo_l552ze_q" if BOARD_NUCLEO_L552ZE_Q
 	default "stm/stm32l562e_dk" if BOARD_STM32L562E_DK
@@ -188,19 +193,18 @@ config TFM_BL2_NOT_SUPPORTED
 
 config TFM_IMAGE_VERSION_S
 	string "Version of the Secure Image"
+	default "$(APP_VERSION_TWEAK_STRING)" if "$(VERSION_MAJOR)" != "" && TFM_MCUBOOT_IMAGE_NUMBER = 1
 	default "0.0.0+0"
 	help
-	  MCUBoot may be configured to prevent rollback prevention based on image
-	  versions of both the secure firmware and non-secure firmware. This sets
-	  the secure firmware's version for rollback prevention.
+	  Version of the secure image. This version is also used for merged
+	  secure + non-secure builds (TFM_MCUBOOT_IMAGE_NUMBER == 1).
 
 config TFM_IMAGE_VERSION_NS
 	string "Version of the Non-Secure Image"
+	default "$(APP_VERSION_TWEAK_STRING)" if "$(VERSION_MAJOR)" != "" && TFM_MCUBOOT_IMAGE_NUMBER = 2
 	default "0.0.0+0"
 	help
-	  MCUBoot may be configured to prevent rollback prevention based on image
-	  versions of both the secure firmware and non-secure firmware. This sets
-	  the non-secure firmware's version for rollback prevention.
+	  Version of the non-secure image.
 
 config TFM_BL2
 	bool "Add MCUboot to TFM"
@@ -238,6 +242,16 @@ config TFM_CONNECTION_BASED_SERVICE_API
 
 if TFM_BL2
 
+config TFM_IMAGE_SECURITY_COUNTER
+	int "Security counter value used for hardware rollback protection"
+	range 1 1024
+	default 1
+	help
+	  By default, TFM enables hardware rollback protection, which requires a security counter
+	  to be embedded in the image trailer. As per "Hardware-based downgrade prevention" in
+	  mcuboot/docs/design.md, this does not need to be incremented on every firmware update,
+	  but hardware rollback protection will only apply when this value is incremented.
+
 config TFM_MCUBOOT_SIGNATURE_TYPE
 	string "The signature type used to sign the secure and non-secure firmware images."
 	default "EC-P256"
@@ -250,7 +264,8 @@ config TFM_KEY_FILE_S
 	help
 	  The path and filename for the .pem file containing the private key
 	  that should be used by the BL2 bootloader when signing secure
-	  firmware images.
+	  firmware images. This key file is also used for merged secure +
+	  non-secure builds (TFM_MCUBOOT_IMAGE_NUMBER == 1).
 
 config TFM_KEY_FILE_NS
 	string "Path to private key used to sign non-secure firmware images."

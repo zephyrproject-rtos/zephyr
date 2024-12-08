@@ -6,7 +6,7 @@
 #define DT_DRV_COMPAT cypress_psoc6_uart
 
 /** @file
- * @brief UART driver for Cypress PSoC6 MCU family.
+ * @brief UART driver for Cypress PSOC 6 MCU family.
  *
  * Note:
  * - Error handling is not implemented.
@@ -303,7 +303,7 @@ static void uart_psoc6_isr(const struct device *dev)
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-static const struct uart_driver_api uart_psoc6_driver_api = {
+static DEVICE_API(uart, uart_psoc6_driver_api) = {
 	.poll_in = uart_psoc6_poll_in,
 	.poll_out = uart_psoc6_poll_out,
 	.err_check = uart_psoc6_err_check,

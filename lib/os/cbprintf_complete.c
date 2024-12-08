@@ -1345,12 +1345,13 @@ static inline void store_count(const struct conversion *conv,
 }
 
 /* Outline function to emit all characters in [sp, ep). */
-static int outs(cbprintf_cb out,
+static int outs(cbprintf_cb __out,
 		void *ctx,
 		const char *sp,
 		const char *ep)
 {
 	size_t count = 0;
+	cbprintf_cb_local out = __out;
 
 	while ((sp < ep) || ((ep == NULL) && *sp)) {
 		int rc = out((int)*sp, ctx);
@@ -1365,12 +1366,13 @@ static int outs(cbprintf_cb out,
 	return (int)count;
 }
 
-int z_cbvprintf_impl(cbprintf_cb out, void *ctx, const char *fp,
+int z_cbvprintf_impl(cbprintf_cb __out, void *ctx, const char *fp,
 		     va_list ap, uint32_t flags)
 {
 	char buf[CONVERTED_BUFLEN];
 	size_t count = 0;
 	sint_value_type sint;
+	cbprintf_cb_local out = __out;
 
 	const bool tagged_ap = (flags & Z_CBVPRINTF_PROCESS_FLAG_TAGGED_ARGS)
 			       == Z_CBVPRINTF_PROCESS_FLAG_TAGGED_ARGS;

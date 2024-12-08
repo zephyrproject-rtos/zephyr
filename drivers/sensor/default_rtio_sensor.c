@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023 Google LLC.
+ * Copyright (c) 2024 Croxel Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +10,7 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/dsp/types.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/rtio/work.h>
 
 LOG_MODULE_REGISTER(sensor_compat, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -106,14 +108,14 @@ static inline int check_header_contains_channel(const struct sensor_data_generic
 }
 
 /**
- * @brief Fallback function for retrofiting old drivers to rtio
+ * @brief Fallback function for retrofiting old drivers to rtio (sync)
  *
- * @param[in] dev The sensor device to read
  * @param[in] iodev_sqe The read submission queue event
  */
-static void sensor_submit_fallback(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
+static void sensor_submit_fallback_sync(struct rtio_iodev_sqe *iodev_sqe)
 {
 	const struct sensor_read_config *cfg = iodev_sqe->sqe.iodev->data;
+	const struct device *dev = cfg->sensor;
 	const struct sensor_chan_spec *const channels = cfg->channels;
 	const int num_output_samples = compute_num_samples(channels, cfg->count);
 	uint32_t min_buf_len = compute_min_buf_len(num_output_samples);
@@ -253,6 +255,26 @@ static void sensor_submit_fallback(const struct device *dev, struct rtio_iodev_s
 	rtio_iodev_sqe_ok(iodev_sqe, 0);
 }
 
+/**
+ * @brief Fallback function for retrofiting old drivers to rtio
+ *
+ * @param[in] dev The sensor device to read
+ * @param[in] iodev_sqe The read submission queue event
+ */
+static void sensor_submit_fallback(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
+{
+	struct rtio_work_req *req = rtio_work_req_alloc();
+
+	if (req == NULL) {
+		LOG_ERR("RTIO work item allocation failed. Consider to increase "
+			"CONFIG_RTIO_WORKQ_POOL_ITEMS.");
+		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
+		return;
+	}
+
+	rtio_work_req_submit(req, iodev_sqe, sensor_submit_fallback_sync);
+}
+
 void sensor_processing_with_callback(struct rtio *ctx, sensor_processing_callback_t cb)
 {
 	void *userdata = NULL;
@@ -326,7 +348,7 @@ int sensor_natively_supported_channel_size_info(struct sensor_chan_spec channel,
 	__ASSERT_NO_MSG(base_size != NULL);
 	__ASSERT_NO_MSG(frame_size != NULL);
 
-	if (((int)channel.chan_type < 0) || channel.chan_type >= (SENSOR_CHAN_ALL)) {
+	if (channel.chan_type >= SENSOR_CHAN_ALL) {
 		return -ENOTSUP;
 	}
 
@@ -452,7 +474,7 @@ static int decode(const uint8_t *buffer, struct sensor_chan_spec chan_spec,
 		return -EINVAL;
 	}
 
-	if (((int)chan_spec.chan_type < 0) || chan_spec.chan_type >= (SENSOR_CHAN_ALL)) {
+	if (chan_spec.chan_type >= SENSOR_CHAN_ALL) {
 		return 0;
 	}
 

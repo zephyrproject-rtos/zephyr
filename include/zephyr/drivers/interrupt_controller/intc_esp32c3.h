@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_ESP_INTR_ALLOC_H__
-#define ZEPHYR_INCLUDE_DRIVERS_ESP_INTR_ALLOC_H__
+#ifndef ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_ESP32C3_H_
+#define ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_ESP32C3_H_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -39,6 +39,18 @@
 #define ESP_INTR_FLAG_LEVELMASK	(ESP_INTR_FLAG_LEVEL1|ESP_INTR_FLAG_LEVEL2|ESP_INTR_FLAG_LEVEL3| \
 				 ESP_INTR_FLAG_LEVEL4|ESP_INTR_FLAG_LEVEL5|ESP_INTR_FLAG_LEVEL6| \
 				 ESP_INTR_FLAG_NMI)
+
+/*
+ * Get the interrupt flags from the supplied priority.
+ */
+#define ESP_PRIO_TO_FLAGS(priority) \
+	((priority) > 0 ? ((1 << (priority)) & ESP_INTR_FLAG_LEVELMASK) : 0)
+
+/*
+ * Check interrupt flags from input and filter unallowed values.
+ */
+#define ESP_INT_FLAGS_CHECK(int_flags) ((int_flags) & ESP_INTR_FLAG_SHARED)
+
 
 /* Function prototype for interrupt handler function */
 typedef void (*isr_handler_t)(const void *arg);
@@ -106,4 +118,4 @@ int esp_intr_enable(int source);
  */
 uint32_t esp_intr_get_enabled_intmask(int status_mask_number);
 
-#endif
+#endif /* ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_ESP32C3_H_ */

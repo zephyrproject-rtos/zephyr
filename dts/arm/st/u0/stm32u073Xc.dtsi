@@ -1,0 +1,26 @@
+
+/*
+ * Copyright (c) 2024 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <mem.h>
+#include <st/u0/stm32u073.dtsi>
+
+/ {
+	sram1: memory@20000000 {
+		reg = <0x20000000 DT_SIZE_K(32)>;
+	};
+
+	sram2: memory@20008000 {
+		reg = <0x20008000 DT_SIZE_K(8)>;
+	};
+
+	soc {
+		flash-controller@40022000 {
+			flash0: flash@8000000 {
+				reg = <0x08000000 DT_SIZE_K(256)>;
+			};
+		};
+	};
+};

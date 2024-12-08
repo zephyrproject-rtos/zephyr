@@ -1,0 +1,11 @@
+# Fake stepper configuration options
+
+# Copyright (c) 2024 Fabian Blatz <fabianblatz@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config FAKE_STEPPER
+	bool "Fake stepper driver"
+	default y
+	depends on DT_HAS_ZEPHYR_FAKE_STEPPER_ENABLED
+	help
+	  Enable support for the FFF-based fake stepper driver.

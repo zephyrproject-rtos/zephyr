@@ -166,9 +166,9 @@ Using a Zephyr-based BLE Controller
 Depending on which hardware you have available, you can choose between two
 transports when building a single-mode, Zephyr-based BLE Controller:
 
-* UART: Use the :ref:`hci_uart <bluetooth-hci-uart-sample>` sample and follow
+* UART: Use the :zephyr:code-sample:`bluetooth_hci_uart` sample and follow
   the instructions in :ref:`bluetooth-hci-uart-qemu-posix`.
-* USB: Use the :ref:`hci_usb <bluetooth-hci-usb-sample>` sample and then
+* USB: Use the :zephyr:code-sample:`bluetooth_hci_usb` sample and then
   treat it as a Host System Bluetooth Controller (see previous section)
 
 .. _bluetooth-hci-tracing:
@@ -301,7 +301,8 @@ After following these steps the Zephyr application will be available to the Andr
 over the virtual Bluetooth controller that was bridged with Bumble. You can verify that the
 Zephyr application can communicate over Bluetooth by opening the Bluetooth settings in your
 AVD and scanning for your Zephyr application device. To test this you can build the Bluetooth
-peripheral samples such as :ref:`Peripheral HR <peripheral_hr>` or :ref:`Peripheral DIS <peripheral_dis>`
+peripheral samples such as :zephyr:code-sample:`ble_peripheral_hr` or
+:zephyr:code-sample:`ble_peripheral_dis`.
 
 .. _bluetooth_ctlr_bluez:
 

@@ -147,8 +147,9 @@ bool z_arm_fault_undef_instruction_fp(void)
 	 * the FP was already enabled then this was an actual undefined
 	 * instruction.
 	 */
-	if (__get_FPEXC() & FPEXC_EN)
+	if (__get_FPEXC() & FPEXC_EN) {
 		return true;
+	}
 
 	__set_FPEXC(FPEXC_EN);
 
@@ -162,8 +163,9 @@ bool z_arm_fault_undef_instruction_fp(void)
 		struct __fpu_sf *spill_esf =
 			(struct __fpu_sf *)_current_cpu->fp_ctx;
 
-		if (spill_esf == NULL)
+		if (spill_esf == NULL) {
 			return false;
+		}
 
 		_current_cpu->fp_ctx = NULL;
 
@@ -176,7 +178,7 @@ bool z_arm_fault_undef_instruction_fp(void)
 		 * context because it is about to be overwritten.
 		 */
 		if (((_current_cpu->nested == 2)
-				&& (_current->base.user_options & K_FP_REGS))
+				&& (arch_current_thread()->base.user_options & K_FP_REGS))
 			|| ((_current_cpu->nested > 2)
 				&& (spill_esf->undefined & FPEXC_EN))) {
 			/*
@@ -194,7 +196,7 @@ bool z_arm_fault_undef_instruction_fp(void)
 		 * means that a thread that uses the VFP does not have to,
 		 * but should, set K_FP_REGS on thread creation.
 		 */
-		_current->base.user_options |= K_FP_REGS;
+		arch_current_thread()->base.user_options |= K_FP_REGS;
 	}
 
 	return false;

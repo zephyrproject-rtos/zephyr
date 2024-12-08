@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef DMA_SMARTBOND_H_
-#define DMA_SMARTBOND_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_DMA_DMA_SMARTBOND_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_DMA_DMA_SMARTBOND_H_
 
 /**
  * @brief Vendror-specific DMA peripheral triggering sources.
@@ -28,4 +28,4 @@
 #define DMA_SMARTBOND_TRIG_MUX_SDADC		0xD
 #define DMA_SMARTBOND_TRIG_MUX_NONE		0xF
 
-#endif /* DMA_SMARTBOND_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_DMA_DMA_SMARTBOND_H_ */

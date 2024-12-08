@@ -201,7 +201,7 @@ static int memc_flexspi_is66wvq8m4_init(const struct device *dev)
 		.flexspiRootClk = DT_INST_PROP(n, spi_max_frequency),	\
 		.isSck2Enabled = false,					\
 		.flashSize = DT_INST_PROP(n, size) / 8 / KB(1),		\
-		.addressShift = DT_INST_REG_ADDR(n) != 0,		\
+		.addressShift = true,					\
 		.CSIntervalUnit =					\
 			CS_INTERVAL_UNIT(				\
 				DT_INST_PROP(n, cs_interval_unit)),	\

@@ -26,16 +26,9 @@ bool z_arm_on_enter_cpu_idle(void)
  * @brief Perform basic hardware initialization at boot.
  *
  * This needs to be run from the very beginning.
- * So the init priority has to be 0 (zero).
- *
- * @return 0
  */
-static int max32xxx_init(void)
+void soc_early_init_hook(void)
 {
 	/* Apply device related preinit configuration */
 	max32xx_system_init();
-
-	return 0;
 }
-
-SYS_INIT(max32xxx_init, PRE_KERNEL_1, 0);

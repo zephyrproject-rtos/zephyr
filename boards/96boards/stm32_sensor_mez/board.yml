@@ -1,5 +1,6 @@
 board:
   name: 96b_stm32_sensor_mez
+  full_name: STM32 Sensor Mezzanine
   vendor: st
   socs:
     - name: stm32f446xx

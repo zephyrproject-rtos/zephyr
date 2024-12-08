@@ -15,7 +15,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/drivers/bluetooth/hci_driver.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/uart.h>
 
@@ -32,6 +31,7 @@ BUILD_ASSERT(DT_PROP(DT_INST_GPARENT(0), hw_flow_control) == 1,
 
 /* BT settling time after power on */
 #define BT_POWER_ON_SETTLING_TIME_MS      (500u)
+#define BT_POWER_CBUCK_DISCHARGE_TIME_MS  (300u)
 
 /* Stabilization delay after FW loading */
 #define BT_STABILIZATION_DELAY_MS         (250u)
@@ -230,12 +230,16 @@ int bt_h4_vnd_setup(const struct device *dev)
 	}
 
 	/* Configure bt_reg_on as output  */
-	err = gpio_pin_configure_dt(&bt_reg_on, GPIO_OUTPUT);
+	err = gpio_pin_configure_dt(&bt_reg_on, GPIO_OUTPUT_LOW);
 	if (err) {
 		LOG_ERR("Error %d: failed to configure bt_reg_on %s pin %d",
 			err, bt_reg_on.port->name, bt_reg_on.pin);
 		return err;
 	}
+
+	/* Allow BT CBUCK regulator to discharge */
+	(void)k_msleep(BT_POWER_CBUCK_DISCHARGE_TIME_MS);
+
 	err = gpio_pin_set_dt(&bt_reg_on, 1);
 	if (err) {
 		return err;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Intel Corporation.
+ * Copyright (c) 2024, Intel Corporation.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,6 +26,7 @@
 	mmc {
 		/*SD Disk Access */
 		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
 		status = "okay";
 	};
 };
@@ -33,4 +34,28 @@
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
+};
+
+&xgmac0 {
+	full-duplex-mode-en;
+	num-dma-ch   = <1>;
+	num-tx-queues = <1>;
+	num-rx-queues = <1>;
+	num-tc = <1>;
+	dma-ch-rdrl = <128>;
+	dma-ch-tdrl = <128>;
+	max-speed = <1000>;
+	max-frame-size = <9018>;
+	jumbo-pkt-en;
+	zephyr,random-mac-address;
+	phy-handle = <&phy0>;
+};
+
+&mdio0  {
+	csr-clock-indx = <4>;
+
+	phy0: phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0>;
+	};
 };

@@ -1877,7 +1877,7 @@ static int rcar_mmc_get_host_props(const struct device *dev, struct sdhc_host_pr
 	return 0;
 }
 
-static const struct sdhc_driver_api rcar_sdhc_api = {
+static DEVICE_API(sdhc, rcar_sdhc_api) = {
 	.card_busy = rcar_mmc_card_busy,
 #ifdef CONFIG_RCAR_MMC_SCC_SUPPORT
 	.execute_tuning = rcar_mmc_execute_tuning,
@@ -2045,7 +2045,7 @@ static int rcar_mmc_init_controller_regs(const struct device *dev)
 	reg |= RCAR_MMC_DMA_MODE_ADDR_INC | RCAR_MMC_DMA_MODE_WIDTH;
 	rcar_mmc_write_reg32(dev, RCAR_MMC_DMA_MODE, reg);
 
-	/* store version of of introductory IP */
+	/* store version of introductory IP */
 	data->ver = rcar_mmc_read_reg32(dev, RCAR_MMC_VERSION);
 	data->ver &= RCAR_MMC_VERSION_IP;
 

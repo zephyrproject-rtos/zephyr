@@ -442,7 +442,7 @@ static int cmd_gpio_devices(const struct shell *sh, size_t argc, char **argv)
 #ifdef CONFIG_DEVICE_DT_METADATA
 		const struct device_dt_nodelabels *nl = device_get_dt_nodelabels(dev);
 
-		if (nl->num_nodelabels > 0) {
+		if (nl != NULL && nl->num_nodelabels > 0) {
 			for (size_t j = 0; j < nl->num_nodelabels; j++) {
 				const char *nodelabel = nl->nodelabels[j];
 

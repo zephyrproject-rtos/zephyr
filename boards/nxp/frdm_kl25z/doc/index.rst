@@ -1,7 +1,4 @@
-.. _frdm_kl25z:
-
-NXP FRDM-KL25Z
-##############
+.. zephyr:board:: frdm_kl25z
 
 Overview
 ********
@@ -13,11 +10,6 @@ on ARM |reg| Cortex |reg|-M0+ processor.
 The FRDM-KL25Z features include easy access to MCU I/O, battery-ready,
 low-power operation, a standard-based form factor with expansion board
 options and a built-in debug interface for flash programming and run-control.
-
-
-.. image:: frdm_kl25z.jpg
-   :align: center
-   :alt: FRDM-KL25Z
 
 Hardware
 ********
@@ -189,7 +181,7 @@ etc.):
 Flashing
 ========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -207,7 +199,7 @@ see the following message in the terminal:
 Debugging
 =========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

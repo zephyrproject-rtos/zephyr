@@ -11,7 +11,7 @@
 #include <zephyr/logging/log.h>
 
 #if !defined(CONFIG_SOC_SERIES_STM32F4X)
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(i2c1))
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_i2c_v1)
 #define DT_DRV_COMPAT st_stm32_i2c_v1

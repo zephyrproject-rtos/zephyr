@@ -9,6 +9,14 @@ toolchain:
   - gnuarmemb
   - xtools
 supported:
+  - adc
+  - counter
+  - dma
+  - flash
   - gpio
+  - i2c
+  - pwm
+  - spi
   - uart
+  - watchdog
 vendor: nxp

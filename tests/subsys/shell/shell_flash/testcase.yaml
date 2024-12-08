@@ -8,5 +8,4 @@ tests:
       - shell
     platform_allow:
       - qemu_x86
-      - native_posix
       - native_sim

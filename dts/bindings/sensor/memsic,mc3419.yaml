@@ -1,7 +1,18 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (c) 2023 Linumiz
 
-description: MC3419 3-axis accel sensor
+description: |
+    MC3419 3-axis accel sensor
+
+    Example:
+    #include <zephyr/dt-bindings/sensor/mc3419.h>
+
+    mc3419: mc3419@0 {
+      ...
+
+      lpf-fc-sel = <MC3419_LPF_DISABLE>;
+      decimation-rate = <MC3419_DECIMATE_IDR_BY_1>;
+    };
 
 compatible: "memsic,mc3419"
 
@@ -21,3 +32,50 @@ properties:
       has two interrupt pins.By default the interrupt are routed
       to interrupt pin 1, by enabled this property interrupt are
       routed to interrupt pin 2.
+
+  lpf-fc-sel:
+    type: int
+    default: 0
+    enum: [0, 9, 10, 11, 13]
+    description: |
+      Enable and select LPF cutoff frequency for a given IDR (Input Data Rate).
+      Possible values are listed below. Either use Int value or Macro Name in node definition.
+      +-----------+-------------------------------------+
+      | int value | Macro Name                          |
+      +-----------+-------------------------------------+
+      | 0         | MC3419_LPF_DISABLE                  |
+      | 9         | MC3419_LPF_EN_WITH_IDR_BY_4p255_FC  |
+      | 10        | MC3419_LPF_EN_WITH_IDR_BY_6_FC      |
+      | 11        | MC3419_LPF_EN_WITH_IDR_BY_12_FC     |
+      | 13        | MC3419_LPF_EN_WITH_IDR_BY_16_FC     |
+      +-----------+-------------------------------------+
+      Default is LPF disabled (reset value of the register).
+
+  decimation-rate:
+    type: int
+    default: 0
+    enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    description: |
+      This helps in producing slower Output Data Rate (ODR) from given Input Data Rate (IDR).
+      Possible values are listed below. Either use Int value or Macro Name in node definition.
+      +-----------+-------------------------------+
+      | Int value | Macro Name                    |
+      +-----------+-------------------------------+
+      | 0         | MC3419_DECIMATE_IDR_BY_1      |
+      | 1         | MC3419_DECIMATE_IDR_BY_2      |
+      | 2         | MC3419_DECIMATE_IDR_BY_4      |
+      | 3         | MC3419_DECIMATE_IDR_BY_5      |
+      | 4         | MC3419_DECIMATE_IDR_BY_8      |
+      | 5         | MC3419_DECIMATE_IDR_BY_10     |
+      | 6         | MC3419_DECIMATE_IDR_BY_16     |
+      | 7         | MC3419_DECIMATE_IDR_BY_20     |
+      | 8         | MC3419_DECIMATE_IDR_BY_40     |
+      | 9         | MC3419_DECIMATE_IDR_BY_67     |
+      | 10        | MC3419_DECIMATE_IDR_BY_80     |
+      | 11        | MC3419_DECIMATE_IDR_BY_100    |
+      | 12        | MC3419_DECIMATE_IDR_BY_200    |
+      | 13        | MC3419_DECIMATE_IDR_BY_250    |
+      | 14        | MC3419_DECIMATE_IDR_BY_500    |
+      | 15        | MC3419_DECIMATE_IDR_BY_1000   |
+      +-----------+-------------------------------+
+      Default is Decimation 0 (reset value of the register).

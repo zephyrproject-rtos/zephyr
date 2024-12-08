@@ -110,7 +110,16 @@ int main(void)
 #if PIN_THREADS
 	if (arch_num_cpus() > 1) {
 		k_thread_cpu_pin(&thread_a_data, 0);
+
+		/*
+		 * Thread b is a static thread that is spawned immediately. This means that the
+		 * following `k_thread_cpu_pin` call can fail with `-EINVAL` if the thread is
+		 * actively running. Let's suspend the thread and resume it after the affinity mask
+		 * is set.
+		 */
+		k_thread_suspend(thread_b);
 		k_thread_cpu_pin(thread_b, 1);
+		k_thread_resume(thread_b);
 	}
 #endif
 

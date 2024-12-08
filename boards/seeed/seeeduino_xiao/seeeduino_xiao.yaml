@@ -16,7 +16,6 @@ supported:
   - i2c
   - spi
   - uart
-  - usb
   - usb_device
   - watchdog
 vendor: seeed

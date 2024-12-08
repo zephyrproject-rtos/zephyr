@@ -1,7 +1,4 @@
-.. _xg24_rb4187c:
-
-EFR32xG24 2.4 GHz 20 dBm (xG24-RB4187C)
-#######################################
+.. zephyr:board:: xg24_rb4187c
 
 Overview
 ********
@@ -10,12 +7,6 @@ The EFR32MG24 Mighty Gecko Radio Board is one of the two
 radio boards delivered with `xG24-PK6010A Website`_. It contains
 a Wireless System-On-Chip from the EFR32MG24 family built on an
 ARM Cortex®-M33F processor with excellent low power capabilities.
-
-.. figure:: efr32mg24-xg24-rb4187c.jpg
-   :align: center
-   :alt: xG24-RB4187C Mighty Gecko Radio Board
-
-   xG24-RB4187C (image courtesy of Silicon Labs)
 
 The BRD4187C a.k.a. xG24-RB4187C radio board plugs into the Wireless Pro Kit
 Mainboard BRD4002A and is supported as one of :ref:`silabs_radio_boards`.
@@ -120,7 +111,7 @@ Flashing
 Connect the BRD4002A board with a mounted BRD4187C radio module to your host
 computer using the USB port.
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

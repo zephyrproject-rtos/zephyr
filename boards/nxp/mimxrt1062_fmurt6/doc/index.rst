@@ -1,7 +1,4 @@
-.. _fmurt6:
-
-NXP FMURT6
-##################
+.. zephyr:board:: mimxrt1062_fmurt6
 
 Overview
 ********
@@ -14,10 +11,6 @@ compatibility with i.MX RT1050. This series introduces additional features
 ideal for real-time applications such as High-Speed GPIO, CAN FD, and
 synchronous parallel NAND/NOR/PSRAM controller. The i.MX RT1062 runs on the
 Arm® Cortex-M7® core up to 600 MHz.
-
-.. image:: mimxrt1062_fmurt6.jpg
-   :align: center
-   :alt: MIMXRT1062_FMURT6
 
 Hardware
 ********
@@ -77,7 +70,7 @@ Supported Features
 
 The mimxrt1062_fmurt6 board configuration supports the hardware features listed
 below.  For additional features not yet supported, please also refer to the
-:ref:`mimxrt1064_evk` , which is the superset board in NXP's i.MX RT10xx family.
+:zephyr:board:`mimxrt1064_evk` , which is the superset board in NXP's i.MX RT10xx family.
 NXP prioritizes enabling the superset board with NXP's Full Platform Support for
 Zephyr.  Therefore, the mimxrt1064_evk board may have additional features
 already supported, which can also be re-used on this mimxrt1060_evk board:
@@ -303,7 +296,7 @@ SWO frequency of 7500KHz.
 Flashing
 ========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -321,7 +314,7 @@ see the following message in the terminal:
 Debugging
 =========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

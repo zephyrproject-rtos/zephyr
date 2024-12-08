@@ -1,0 +1,6 @@
+board:
+  name: sparkfun_thing_plus_matter_mgm240p
+  full_name: THING PLUS MATTER
+  vendor: sparkfun
+  socs:
+  - name: efr32mg24b020f1536im40

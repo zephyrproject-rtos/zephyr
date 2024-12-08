@@ -39,7 +39,7 @@
 	csa_i_sense: i_sense {
 		compatible = "current-sense-amplifier";
 		io-channels = <&adc 5>;
-		sense-resistor-micro-ohms = <4000>;
+		sense-resistor-milli-ohms = <4>;
 		sense-gain-mult = <100>;
 	};
 

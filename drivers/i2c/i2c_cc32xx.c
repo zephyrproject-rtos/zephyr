@@ -382,8 +382,10 @@ static int i2c_cc32xx_init(const struct device *dev)
 static const struct i2c_driver_api i2c_cc32xx_driver_api = {
 	.configure = i2c_cc32xx_configure,
 	.transfer = i2c_cc32xx_transfer,
+#ifdef CONFIG_I2C_RTIO
+	.iodev_submit = i2c_iodev_submit_fallback,
+#endif
 };
-
 
 PINCTRL_DT_INST_DEFINE(0);
 

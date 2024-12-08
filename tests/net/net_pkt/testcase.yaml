@@ -13,3 +13,6 @@ tests:
     extra_configs:
       - CONFIG_NET_BUF_FIXED_DATA_SIZE=y
       - CONFIG_NET_BUF_DATA_SIZE=512
+  net.packet.allocation_stats:
+    extra_configs:
+      - CONFIG_NET_PKT_ALLOC_STATS=y

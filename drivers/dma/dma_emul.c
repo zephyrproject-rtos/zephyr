@@ -526,7 +526,7 @@ static const struct dma_driver_api dma_emul_driver_api = {
 };
 
 #ifdef CONFIG_PM_DEVICE
-static int gpio_emul_pm_device_pm_action(const struct device *dev, enum pm_device_action action)
+static int dma_emul_pm_device_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(action);

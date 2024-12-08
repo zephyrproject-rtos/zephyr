@@ -15,10 +15,10 @@
 #include <zephyr/sys/iterable_sections.h>
 
 /* Default configurations used in the shell context. */
-USBD_CONFIGURATION_DEFINE(config_1_fs, USB_SCD_REMOTE_WAKEUP, 200);
-USBD_CONFIGURATION_DEFINE(config_1_hs, USB_SCD_REMOTE_WAKEUP, 200);
-USBD_CONFIGURATION_DEFINE(config_2_fs, USB_SCD_SELF_POWERED, 200);
-USBD_CONFIGURATION_DEFINE(config_2_hs, USB_SCD_SELF_POWERED, 200);
+USBD_CONFIGURATION_DEFINE(config_1_fs, USB_SCD_REMOTE_WAKEUP, 200, NULL);
+USBD_CONFIGURATION_DEFINE(config_1_hs, USB_SCD_REMOTE_WAKEUP, 200, NULL);
+USBD_CONFIGURATION_DEFINE(config_2_fs, USB_SCD_SELF_POWERED, 200, NULL);
+USBD_CONFIGURATION_DEFINE(config_2_hs, USB_SCD_SELF_POWERED, 200, NULL);
 
 static struct usbd_shell_config {
 	struct usbd_config_node *cfg_nd;
@@ -285,14 +285,14 @@ static int cmd_select(const struct shell *sh, size_t argc, char **argv)
 	return -ENODEV;
 }
 
-static int cmd_device_bcd(const struct shell *sh, size_t argc,
-			  char *argv[])
+static int cmd_device_bcd_usb(const struct shell *sh, size_t argc,
+			      char *argv[])
 {
 	uint16_t bcd;
 	int ret;
 
 	bcd = strtol(argv[2], NULL, 16);
-	ret = usbd_device_set_bcd(my_uds_ctx, current_cmd_speed, bcd);
+	ret = usbd_device_set_bcd_usb(my_uds_ctx, current_cmd_speed, bcd);
 	if (ret) {
 		shell_error(sh, "dev: failed to set device bcdUSB to %x", bcd);
 	} else {
@@ -568,9 +568,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(device_cmds,
 	SHELL_CMD_ARG(vid, NULL,
 		      "<idVendor> sets device Vendor ID",
 		      cmd_device_vid, 2, 0),
-	SHELL_CMD_ARG(bcd, &dsub_config_speed,
-		      "<speed> <bcdUSB> sets device release number",
-		      cmd_device_bcd, 3, 0),
+	SHELL_CMD_ARG(bcd_usb, &dsub_config_speed,
+		      "<speed> <bcdUSB> sets device USB specification version",
+		      cmd_device_bcd_usb, 3, 0),
 	SHELL_CMD_ARG(triple, &dsub_config_speed,
 		      "<speed> <Base Class> <SubClass> <Protocol> sets device code triple",
 		      cmd_device_code_triple, 5, 0),

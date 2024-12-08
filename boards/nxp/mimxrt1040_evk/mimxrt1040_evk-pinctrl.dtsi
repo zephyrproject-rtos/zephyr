@@ -43,11 +43,11 @@
 		};
 	};
 
-	/* Conflicts with lpspi1 pin routing. SDA: J17 pin 3, SCL: J17 pin 6 */
+	/* LPI2C3 SDA: J33 pin 6, LPI2C3 SCL: J33 pin 5 */
 	pinmux_lpi2c3: pinmux_lpi2c3 {
 		group0 {
-			pinmux = <&iomuxc_gpio_sd_b0_00_lpi2c3_scl>,
-				<&iomuxc_gpio_sd_b0_01_lpi2c3_sda>;
+			pinmux = <&iomuxc_gpio_ad_b1_06_lpi2c3_sda>,
+				<&iomuxc_gpio_ad_b1_07_lpi2c3_scl>;
 			drive-strength = "r0-6";
 			slew-rate = "slow";
 			nxp,speed = "100-mhz";
@@ -88,6 +88,37 @@
 		};
 		group1 {
 			pinmux = <&iomuxc_gpio_ad_b0_12_lpuart1_tx>;
+			drive-strength = "r0-6";
+			slew-rate = "slow";
+			nxp,speed = "100-mhz";
+		};
+	};
+
+	pinmux_lpuart3_flowcontrol: pinmux_lpuart3_flowcontrol {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_b1_04_lpuart3_cts_b>,
+				<&iomuxc_gpio_ad_b1_05_lpuart3_rts_b>,
+				<&iomuxc_gpio_ad_b1_06_lpuart3_tx>,
+				<&iomuxc_gpio_ad_b1_07_lpuart3_rx>;
+			drive-strength = "r0-6";
+			slew-rate = "slow";
+			nxp,speed = "100-mhz";
+		};
+	};
+
+	pinmux_lpuart3_sleep: pinmux_lpuart3_sleep {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_b1_05_gpio1_io21>,
+				<&iomuxc_gpio_ad_b1_07_gpio1_io23>;
+			drive-strength = "r0";
+			bias-pull-up;
+			bias-pull-up-value = "100k";
+			slew-rate = "slow";
+			nxp,speed = "50-mhz";
+		};
+		group1 {
+			pinmux = <&iomuxc_gpio_ad_b1_04_lpuart3_cts_b>,
+				<&iomuxc_gpio_ad_b1_06_lpuart3_tx>;
 			drive-strength = "r0-6";
 			slew-rate = "slow";
 			nxp,speed = "100-mhz";

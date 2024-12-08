@@ -8,3 +8,6 @@ CONFIG_UART_CONSOLE=y
 
 CONFIG_GPIO=y
 CONFIG_I2C=y
+
+# the following config is required to support chips of revision 1
+CONFIG_ESP32_USE_UNSUPPORTED_REVISION=y

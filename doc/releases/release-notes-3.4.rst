@@ -253,7 +253,7 @@ Deprecated in this release
 Stable API changes in this release
 ==================================
 
-* Removed `bt_set_oob_data_flag` and replaced it with two new API calls:
+* Removed ``bt_set_oob_data_flag`` and replaced it with two new API calls:
   * :c:func:`bt_le_oob_set_sc_flag` for setting/clearing OOB flag in SC pairing
   * :c:func:`bt_le_oob_set_legacy_flag` for setting/clearing OOB flag in legacy paring
 
@@ -723,7 +723,7 @@ Build system and infrastructure
 * Babblesim is now included in the west manifest. Users can fetch it by enabling
   the ``babblesim`` group with west config.
 
-* `west sign` now uses DT labels, of "fixed-partition" compatible nodes, to identify
+* ``west sign`` now uses DT labels, of "fixed-partition" compatible nodes, to identify
   application image slots, instead of previously used DT node label properties.
   If you have been using custom partition layout for MCUboot, you will have to label
   your MCUboot slot partitions with proper DT node labels; for example partition
@@ -1406,7 +1406,7 @@ MCUboot
   interactive Kconfig interfaces, the MCUboot options will now be located under
   ``Modules`` instead of under ``Boot Options``.
 
-* Added :kconfig:option:`CONFIG_MCUBOOT_CMAKE_WEST_SIGN_PARAMS` that allows to pass arguments to
+* Added ``CONFIG_MCUBOOT_CMAKE_WEST_SIGN_PARAMS`` that allows to pass arguments to
   west sign when invoked from cmake.
 
 Storage

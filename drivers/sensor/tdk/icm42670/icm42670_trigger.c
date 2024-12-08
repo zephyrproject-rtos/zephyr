@@ -10,7 +10,6 @@
 #include <zephyr/sys/util.h>
 #include "icm42670.h"
 #include "icm42670_reg.h"
-#include "icm42670_spi.h"
 #include "icm42670_trigger.h"
 
 #include <zephyr/logging/log.h>
@@ -149,7 +148,7 @@ int icm42670_trigger_enable_interrupt(const struct device *dev)
 	const struct icm42670_config *cfg = dev->config;
 
 	/* pulse-mode (auto clearing), push-pull and active-high */
-	res = icm42670_spi_single_write(&cfg->spi, REG_INT_CONFIG,
+	res = cfg->bus_io->write(&cfg->bus, REG_INT_CONFIG,
 					BIT_INT1_DRIVE_CIRCUIT | BIT_INT1_POLARITY);
 
 	if (res) {
@@ -157,7 +156,7 @@ int icm42670_trigger_enable_interrupt(const struct device *dev)
 	}
 
 	/* enable data ready interrupt on INT1 pin */
-	return icm42670_spi_single_write(&cfg->spi, REG_INT_SOURCE0, BIT_INT_DRDY_INT1_EN);
+	return cfg->bus_io->write(&cfg->bus, REG_INT_SOURCE0, BIT_INT_DRDY_INT1_EN);
 }
 
 void icm42670_lock(const struct device *dev)

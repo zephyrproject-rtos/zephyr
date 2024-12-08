@@ -1,13 +1,18 @@
-.. _esp32s2_devkitc:
-
-ESP32-S2
-########
+.. zephyr:board:: esp32s2_devkitc
 
 Overview
 ********
 
+ESP32-S2-DevKitC is an entry-level development board. This board integrates complete Wi-Fi functions.
+Most of the I/O pins are broken out to the pin headers on both sides for easy interfacing.
+Developers can either connect peripherals with jumper wires or mount ESP32-S2-DevKitC on a breadboard.
+For more information, check `ESP32-S2-DevKitC`_.
+
+Hardware
+********
+
 ESP32-S2 is a highly integrated, low-power, single-core Wi-Fi Microcontroller SoC, designed to be secure and
-cost-effective, with a high performance and a rich set of IO capabilities. [1]_
+cost-effective, with a high performance and a rich set of IO capabilities.
 
 The features include the following:
 
@@ -29,6 +34,9 @@ The features include the following:
   - ADC
   - DAC
   - LED PWM with up to 8 channels
+
+For more information, check the datasheet at `ESP32-S2 Datasheet`_ or the technical reference
+manual at `ESP32-S2 Technical Reference Manual`_.
 
 Supported Features
 ==================
@@ -101,7 +109,7 @@ MCUboot bootloader
 ==================
 
 User may choose to use MCUboot bootloader instead. In that case the bootloader
-must be build (and flash) at least once.
+must be built (and flashed) at least once.
 
 There are two options to be used when building an application:
 
@@ -112,9 +120,10 @@ There are two options to be used when building an application:
 
    User can select the MCUboot bootloader by adding the following line
    to the board default configuration file.
-   ```
-   CONFIG_BOOTLOADER_MCUBOOT=y
-   ```
+
+   .. code:: cfg
+
+      CONFIG_BOOTLOADER_MCUBOOT=y
 
 Sysbuild
 ========
@@ -126,7 +135,7 @@ To build the sample application using sysbuild use the command:
 
 .. zephyr-app-commands::
    :tool: west
-   :app: samples/hello_world
+   :zephyr-app: samples/hello_world
    :board: esp32s2_devkitc
    :goals: build
    :west-args: --sysbuild
@@ -162,7 +171,7 @@ Manual build
 ============
 
 During the development cycle, it is intended to build & flash as quickly possible.
-For that reason, images can be build one at a time using traditional build.
+For that reason, images can be built one at a time using traditional build.
 
 The instructions following are relevant for both manual build and sysbuild.
 The only difference is the structure of the build directory.
@@ -180,7 +189,7 @@ Build and flash applications as usual (see :ref:`build_an_application` and
    :goals: build
 
 The usual ``flash`` target will work with the ``esp32s2_devkitc`` board
-configuration. Here is an example for the :ref:`hello_world`
+configuration. Here is an example for the :zephyr:code-sample:`hello_world`
 application.
 
 .. zephyr-app-commands::
@@ -205,8 +214,7 @@ message in the monitor:
 Debugging
 *********
 
-ESP32-S2 support on OpenOCD is available upstream as of version 0.12.0.
-Download and install OpenOCD from `OpenOCD`_.
+ESP32-S2 support on OpenOCD is available at `OpenOCD ESP32`_.
 
 The following table shows the pin mapping between ESP32-S2 board and JTAG interface.
 
@@ -224,28 +232,27 @@ The following table shows the pin mapping between ESP32-S2 board and JTAG interf
 
 Further documentation can be obtained from the SoC vendor in `JTAG debugging for ESP32-S2`_.
 
-Here is an example for building the :ref:`hello_world` application.
+Here is an example for building the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: esp32s2_devkitc
    :goals: build flash
 
-You can debug an application in the usual way. Here is an example for the :ref:`hello_world` application.
+You can debug an application in the usual way. Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: esp32s2_devkitc
    :goals: debug
 
-.. _`OpenOCD`: https://github.com/openocd-org/openocd
-.. _`JTAG debugging for ESP32-S2`: https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/api-guides/jtag-debugging/index.html
-
-
 References
 **********
 
-.. [1] https://www.espressif.com/en/products/socs/esp32-s2
-.. _ESP32-S2 DevKitC User Guide: https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/hw-reference/esp32s2/user-guide-s2-devkitc-1.html
-.. _ESP32S2 Technical Reference Manual: https://espressif.com/sites/default/files/documentation/esp32-s2_technical_reference_manual_en.pdf
-.. _ESP32S2 Datasheet: https://www.espressif.com/sites/default/files/documentation/esp32-s2_datasheet_en.pdf
+.. target-notes::
+
+.. _`ESP32-S2-DevKitC`: https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/hw-reference/esp32s2/user-guide-saola-1-v1.2.html
+.. _`ESP32-S2 Datasheet`: https://www.espressif.com/sites/default/files/documentation/esp32-s2_datasheet_en.pdf
+.. _`ESP32-S2 Technical Reference Manual`: https://espressif.com/sites/default/files/documentation/esp32-s2_technical_reference_manual_en.pdf
+.. _`JTAG debugging for ESP32-S2`: https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/api-guides/jtag-debugging/index.html
+.. _`OpenOCD ESP32`: https://github.com/espressif/openocd-esp32/releases

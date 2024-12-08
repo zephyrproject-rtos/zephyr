@@ -26,4 +26,12 @@
 
 zephyr_udc0: &usbhs {
 	status = "okay";
+	phy_handle = <&usbphy1>;
+};
+
+&usbphy1 {
+	status = "okay";
+	tx-d-cal = <5>;
+	tx-cal-45-dp-ohms = <10>;
+	tx-cal-45-dm-ohms = <10>;
 };

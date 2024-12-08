@@ -4,6 +4,7 @@
 
 from runners.core import ZephyrBinaryRunner
 
+
 def test_runner_imports():
     # Ensure that all runner modules are imported and returned by
     # get_runners().
@@ -13,40 +14,46 @@ def test_runner_imports():
     # test suites.
     runner_names = set(r.name() for r in ZephyrBinaryRunner.get_runners())
 
-    # Please keep this sorted alphabetically.
-    expected = set(('arc-nsim',
-                    'blackmagicprobe',
-                    'bossac',
-                    'canopen',
-                    'dediprog',
-                    'dfu-util',
-                    'esp32',
-                    'ezflashcli',
-                    'gd32isp',
-                    'hifive1',
-                    'intel_adsp',
-                    'intel_cyclonev',
-                    'jlink',
-                    'linkserver',
-                    'mdb-nsim',
-                    'mdb-hw',
-                    'misc-flasher',
-                    'native',
-                    'nios2',
-                    'nrfjprog',
-                    'nrfutil',
-                    'nxp_s32dbg',
-                    'openocd',
-                    'pyocd',
-                    'qemu',
-                    'renode',
-                    'renode-robot',
-                    'silabs_commander',
-                    'spi_burn',
-                    'stm32cubeprogrammer',
-                    'stm32flash',
-                    'trace32',
-                    'teensy',
-                    'uf2',
-                    'xtensa'))
+    expected = set((
+        # zephyr-keep-sorted-start
+        'arc-nsim',
+        'blackmagicprobe',
+        'bossac',
+        'canopen',
+        'dediprog',
+        'dfu-util',
+        'esp32',
+        'ezflashcli',
+        'gd32isp',
+        'hifive1',
+        'intel_adsp',
+        'intel_cyclonev',
+        'jlink',
+        'linkserver',
+        'mdb-hw',
+        'mdb-nsim',
+        'minichlink',
+        'misc-flasher',
+        'native',
+        'nios2',
+        'nrfjprog',
+        'nrfutil',
+        'nxp_s32dbg',
+        'openocd',
+        'probe-rs',
+        'pyocd',
+        'qemu',
+        'renode',
+        'renode-robot',
+        'silabs_commander',
+        'spi_burn',
+        'stm32cubeprogrammer',
+        'stm32flash',
+        'teensy',
+        'trace32',
+        'uf2',
+        'xsdb',
+        'xtensa',
+        # zephyr-keep-sorted-stop
+    ))
     assert runner_names == expected

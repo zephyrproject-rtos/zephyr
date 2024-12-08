@@ -1,19 +1,10 @@
-.. _nrf9160_innblue21:
-
-nRF9160 INNBLUE21
-#################
+.. zephyr:board:: innblue21
 
 Overview
 ********
 
 The nRF9160 innblue21 is a cellular IoT sensor development board, which
 is based on the nRF9160 SiP, and features NB-IoT and LTE-M connectivity.
-
-.. figure:: img/nrf9160_innblue21.jpg
-	 :align: center
-	 :alt: nRF9160 innblue21
-
-	 nRF9160 innblue21 (Credit: innblue)
 
 Hardware
 ********
@@ -119,7 +110,7 @@ found in :ref:`nordic_segger_flashing`. Then build and flash
 applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 First, run your favorite terminal program to listen for output.
 

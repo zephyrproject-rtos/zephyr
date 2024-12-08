@@ -21,7 +21,7 @@
  * from there. Otherwise, the task watchdog will be used without a
  * hardware watchdog fallback.
  */
-#if DT_NODE_HAS_STATUS(DT_ALIAS(watchdog0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_ALIAS(watchdog0))
 #define WDT_NODE DT_ALIAS(watchdog0)
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_window_watchdog)
 #define WDT_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(st_stm32_window_watchdog)
@@ -33,8 +33,8 @@
 #define WDT_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(espressif_esp32_watchdog)
 #elif DT_HAS_COMPAT_STATUS_OKAY(silabs_gecko_wdog)
 #define WDT_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(silabs_gecko_wdog)
-#elif DT_HAS_COMPAT_STATUS_OKAY(nxp_kinetis_wdog32)
-#define WDT_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(nxp_kinetis_wdog32)
+#elif DT_HAS_COMPAT_STATUS_OKAY(nxp_wdog32)
+#define WDT_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(nxp_wdog32)
 #elif DT_HAS_COMPAT_STATUS_OKAY(microchip_xec_watchdog)
 #define WDT_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(microchip_xec_watchdog)
 #else

@@ -14,7 +14,7 @@
 #include <zephyr/logging/log.h>
 #include "fpga_altera_agilex_bridge.h"
 
-LOG_MODULE_REGISTER(fpga_altera);
+LOG_MODULE_REGISTER(fpga_altera, CONFIG_FPGA_LOG_LEVEL);
 
 struct fpga_bridge_dev_data {
 	/* SiP SVC controller */
@@ -270,18 +270,21 @@ static int32_t fpga_reconfig_status_validate(struct fpga_config_status *reconfig
 		return MBOX_CONFIG_STATUS_STATE_CONFIG;
 	}
 
-	if (ret && ret != MBOX_CONFIG_STATUS_STATE_CONFIG)
+	if (ret && ret != MBOX_CONFIG_STATUS_STATE_CONFIG) {
 		return ret;
+	}
 
 	/* Make sure nStatus is not 0 */
 	ret = reconfig_status_resp->pin_status.pin_status;
-	if (!(ret & RECONFIG_PIN_STATUS_NSTATUS))
+	if (!(ret & RECONFIG_PIN_STATUS_NSTATUS)) {
 		return MBOX_CFGSTAT_STATE_ERROR_HARDWARE;
+	}
 
 	ret = reconfig_status_resp->soft_function_status;
 	if ((ret & RECONFIG_SOFTFUNC_STATUS_CONF_DONE) &&
-		(ret & RECONFIG_SOFTFUNC_STATUS_INIT_DONE) && !reconfig_status_resp->state)
+	    (ret & RECONFIG_SOFTFUNC_STATUS_INIT_DONE) && !reconfig_status_resp->state) {
 		return 0; /* Configuration success */
+	}
 
 	return MBOX_CONFIG_STATUS_STATE_CONFIG;
 }
@@ -462,7 +465,7 @@ static int altera_fpga_init(const struct device *dev)
 	return 0;
 }
 
-static const struct fpga_driver_api altera_fpga_api = {
+static DEVICE_API(fpga, altera_fpga_api) = {
 	.on = altera_fpga_on,
 	.off = altera_fpga_off,
 };

@@ -46,8 +46,8 @@ static int bt_unpair_unreachable_custom_fake(uint8_t id, const bt_addr_le_t *add
 	return 0;
 }
 
-static void bt_conn_foreach_key_slot_0_in_use_custom_fake(int type, bt_conn_foreach_cb func,
-							  void *data)
+static void bt_conn_foreach_key_slot_0_in_use_custom_fake(enum bt_conn_type type,
+							  bt_conn_foreach_cb func, void *data)
 {
 	struct bt_conn conn;
 
@@ -71,8 +71,8 @@ static void bt_conn_foreach_key_slot_0_in_use_custom_fake(int type, bt_conn_fore
 	func(&conn, data);
 }
 
-static void bt_conn_foreach_all_keys_in_use_custom_fake(int type, bt_conn_foreach_cb func,
-							void *data)
+static void bt_conn_foreach_all_keys_in_use_custom_fake(enum bt_conn_type type,
+							bt_conn_foreach_cb func, void *data)
 {
 	struct bt_conn conn;
 
@@ -86,8 +86,8 @@ static void bt_conn_foreach_all_keys_in_use_custom_fake(int type, bt_conn_foreac
 	}
 }
 
-static void bt_conn_foreach_no_keys_in_use_custom_fake(int type, bt_conn_foreach_cb func,
-							void *data)
+static void bt_conn_foreach_no_keys_in_use_custom_fake(enum bt_conn_type type,
+						       bt_conn_foreach_cb func, void *data)
 {
 	struct bt_conn conn;
 

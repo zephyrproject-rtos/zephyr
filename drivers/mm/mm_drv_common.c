@@ -78,6 +78,41 @@ bool sys_mm_drv_is_virt_region_unmapped(void *virt, size_t size)
 	return ret;
 }
 
+/**
+ * Unmap a memory region with synchronization already locked.
+ *
+ * @param virt Page-aligned base virtual address to un-map
+ * @param size Page-aligned region size
+ * @param is_reset True if resetting the mappings
+ *
+ * @retval 0 if successful
+ * @retval -EINVAL if invalid arguments are provided
+ * @retval -EFAULT if virtual address is not mapped
+ */
+static int unmap_locked(void *virt, size_t size, bool is_reset)
+{
+	int ret = 0;
+	size_t offset;
+
+	for (offset = 0; offset < size; offset += CONFIG_MM_DRV_PAGE_SIZE) {
+		uint8_t *va = (uint8_t *)virt + offset;
+
+		int ret2 = sys_mm_drv_unmap_page(va);
+
+		if (ret2 != 0) {
+			if (is_reset) {
+				__ASSERT(false, "cannot reset mapping %p\n", va);
+			} else {
+				__ASSERT(false, "cannot unmap %p\n", va);
+			}
+
+			ret = ret2;
+		}
+	}
+
+	return ret;
+}
+
 int sys_mm_drv_simple_map_region(void *virt, uintptr_t phys,
 				 size_t size, uint32_t flags)
 {
@@ -98,12 +133,19 @@ int sys_mm_drv_simple_map_region(void *virt, uintptr_t phys,
 		uint8_t *va = (uint8_t *)virt + offset;
 		uintptr_t pa = phys + offset;
 
-		int ret2 = sys_mm_drv_map_page(va, pa, flags);
+		ret = sys_mm_drv_map_page(va, pa, flags);
 
-		if (ret2 != 0) {
+		if (ret != 0) {
 			__ASSERT(false, "cannot map 0x%lx to %p\n", pa, va);
 
-			ret = ret2;
+			/*
+			 * Reset the already mapped virtual addresses.
+			 * Note the offset is at the current failed address
+			 * which will not be included during unmapping.
+			 */
+			(void)unmap_locked(virt, offset, true);
+
+			break;
 		}
 	}
 
@@ -136,12 +178,19 @@ int sys_mm_drv_simple_map_array(void *virt, uintptr_t *phys,
 	while (idx < cnt) {
 		uint8_t *va = (uint8_t *)virt + offset;
 
-		int ret2 = sys_mm_drv_map_page(va, phys[idx], flags);
+		ret = sys_mm_drv_map_page(va, phys[idx], flags);
 
-		if (ret2 != 0) {
+		if (ret != 0) {
 			__ASSERT(false, "cannot map 0x%lx to %p\n", phys[idx], va);
 
-			ret = ret2;
+			/*
+			 * Reset the already mapped virtual addresses.
+			 * Note the offset is at the current failed address
+			 * which will not be included during unmapping.
+			 */
+			(void)unmap_locked(virt, offset, true);
+
+			break;
 		}
 
 		offset += CONFIG_MM_DRV_PAGE_SIZE;
@@ -160,7 +209,6 @@ int sys_mm_drv_simple_unmap_region(void *virt, size_t size)
 {
 	k_spinlock_key_t key;
 	int ret = 0;
-	size_t offset;
 
 	CHECKIF(!sys_mm_drv_is_virt_addr_aligned(virt) ||
 		!sys_mm_drv_is_size_aligned(size)) {
@@ -170,17 +218,7 @@ int sys_mm_drv_simple_unmap_region(void *virt, size_t size)
 
 	key = k_spin_lock(&sys_mm_drv_common_lock);
 
-	for (offset = 0; offset < size; offset += CONFIG_MM_DRV_PAGE_SIZE) {
-		uint8_t *va = (uint8_t *)virt + offset;
-
-		int ret2 = sys_mm_drv_unmap_page(va);
-
-		if (ret2 != 0) {
-			__ASSERT(false, "cannot unmap %p\n", va);
-
-			ret = ret2;
-		}
-	}
+	ret = unmap_locked(virt, size, false);
 
 	k_spin_unlock(&sys_mm_drv_common_lock, key);
 
@@ -224,47 +262,59 @@ int sys_mm_drv_simple_remap_region(void *virt_old, size_t size,
 		uint8_t *va_new = (uint8_t *)virt_new + offset;
 		uintptr_t pa;
 		uint32_t flags;
-		int ret2;
-		bool to_map;
 
 		/*
-		 * va_old is mapped as checked above, so no need
-		 * to check for return value here.
+		 * Grab the physical address of the old mapped page
+		 * so the new page can map to the same physical address.
 		 */
-		(void)sys_mm_drv_page_phys_get(va_old, &pa);
+		ret = sys_mm_drv_page_phys_get(va_old, &pa);
+		if (ret != 0) {
+			__ASSERT(false, "cannot query %p\n", va_old);
 
-		to_map = true;
-		ret2 = sys_mm_drv_page_flag_get(va_old, &flags);
-		if (ret2 != 0) {
+			/*
+			 * Reset the already mapped virtual addresses.
+			 * Note the offset is at the current failed address
+			 * which will not be included during unmapping.
+			 */
+			(void)unmap_locked(virt_new, offset, true);
+
+			goto unlock_out;
+		}
+
+		/*
+		 * Grab the flags of the old mapped page
+		 * so the new page can map to the same flags.
+		 */
+		ret = sys_mm_drv_page_flag_get(va_old, &flags);
+		if (ret != 0) {
 			__ASSERT(false, "cannot query page %p\n", va_old);
 
-			ret = ret2;
-			to_map = false;
-		}
-
-		ret2 = sys_mm_drv_unmap_page(va_old);
-		if (ret2 != 0) {
-			__ASSERT(false, "cannot unmap %p\n", va_old);
-
-			ret = ret2;
-		}
-
-		if (!to_map) {
 			/*
-			 * Cannot retrieve flags of mapped virtual memory.
-			 * Skip mapping this page as we don't want to map
-			 * with unknown random flags.
+			 * Reset the already mapped virtual addresses.
+			 * Note the offset is at the current failed address
+			 * which will not be included during unmapping.
 			 */
-			continue;
+			(void)unmap_locked(virt_new, offset, true);
+
+			goto unlock_out;
 		}
 
-		ret2 = sys_mm_drv_map_page(va_new, pa, flags);
-		if (ret2 != 0) {
+		ret = sys_mm_drv_map_page(va_new, pa, flags);
+		if (ret != 0) {
 			__ASSERT(false, "cannot map 0x%lx to %p\n", pa, va_new);
 
-			ret = ret2;
+			/*
+			 * Reset the already mapped virtual addresses.
+			 * Note the offset is at the current failed address
+			 * which will not be included during unmapping.
+			 */
+			(void)unmap_locked(virt_new, offset, true);
+
+			goto unlock_out;
 		}
 	}
+
+	(void)unmap_locked(virt_old, size, false);
 
 unlock_out:
 	k_spin_unlock(&sys_mm_drv_common_lock, key);
@@ -310,37 +360,45 @@ int sys_mm_drv_simple_move_region(void *virt_old, size_t size,
 		uint8_t *va_new = (uint8_t *)virt_new + offset;
 		uintptr_t pa = phys_new + offset;
 		uint32_t flags;
-		int ret2;
 
-		ret2 = sys_mm_drv_page_flag_get(va_old, &flags);
-		if (ret2 != 0) {
+		ret = sys_mm_drv_page_flag_get(va_old, &flags);
+		if (ret != 0) {
 			__ASSERT(false, "cannot query page %p\n", va_old);
 
-			ret = ret2;
-		} else {
 			/*
-			 * Only map the new page when we can retrieve
-			 * flags of the old mapped page as We don't
-			 * want to map with unknown random flags.
+			 * Reset the already mapped virtual addresses.
+			 * Note the offset is at the current failed address
+			 * which will not be included during unmapping.
 			 */
-			ret2 = sys_mm_drv_map_page(va_new, pa, flags);
-			if (ret2 != 0) {
-				__ASSERT(false, "cannot map 0x%lx to %p\n", pa, va_new);
+			(void)unmap_locked(virt_new, offset, true);
 
-				ret = ret2;
-			} else {
-				(void)memcpy(va_new, va_old,
-					     CONFIG_MM_DRV_PAGE_SIZE);
-			}
+			goto unlock_out;
 		}
 
-		ret2 = sys_mm_drv_unmap_page(va_old);
-		if (ret2 != 0) {
-			__ASSERT(false, "cannot unmap %p\n", va_old);
+		/*
+		 * Map the new page with flags of the old mapped page
+		 * so they both have the same properties.
+		 */
+		ret = sys_mm_drv_map_page(va_new, pa, flags);
+		if (ret != 0) {
+			__ASSERT(false, "cannot map 0x%lx to %p\n", pa, va_new);
 
-			ret = ret2;
+			/*
+			 * Reset the already mapped virtual addresses.
+			 * Note the offset is at the current failed address
+			 * which will not be included during unmapping.
+			 */
+			(void)unmap_locked(virt_new, offset, true);
+
+			goto unlock_out;
 		}
 	}
+
+	/* Once new mappings are in place, copy the content over. */
+	(void)memcpy(virt_new, virt_old, size);
+
+	/* Unmap old virtual memory region once the move is done. */
+	(void)unmap_locked(virt_old, size, false);
 
 unlock_out:
 	k_spin_unlock(&sys_mm_drv_common_lock, key);
@@ -388,42 +446,50 @@ int sys_mm_drv_simple_move_array(void *virt_old, size_t size,
 		uint8_t *va_old = (uint8_t *)virt_old + offset;
 		uint8_t *va_new = (uint8_t *)virt_new + offset;
 		uint32_t flags;
-		int ret2;
 
-		ret2 = sys_mm_drv_page_flag_get(va_old, &flags);
-		if (ret2 != 0) {
+		ret = sys_mm_drv_page_flag_get(va_old, &flags);
+		if (ret != 0) {
 			__ASSERT(false, "cannot query page %p\n", va_old);
 
-			ret = ret2;
-		} else {
 			/*
-			 * Only map the new page when we can retrieve
-			 * flags of the old mapped page as We don't
-			 * want to map with unknown random flags.
+			 * Reset the already mapped virtual addresses.
+			 * Note the offset is at the current failed address
+			 * which will not be included during unmapping.
 			 */
-			ret2 = sys_mm_drv_map_page(va_new, phys_new[idx], flags);
-			if (ret2 != 0) {
-				__ASSERT(false, "cannot map 0x%lx to %p\n",
-					 phys_new[idx], va_new);
+			(void)unmap_locked(virt_new, offset, true);
 
-				ret = ret2;
-			} else {
-				(void)memcpy(va_new, va_old,
-					     CONFIG_MM_DRV_PAGE_SIZE);
-			}
+			goto unlock_out;
 		}
 
-		ret2 = sys_mm_drv_unmap_page(va_old);
+		/*
+		 * Only map the new page when we can retrieve
+		 * flags of the old mapped page as We don't
+		 * want to map with unknown random flags.
+		 */
+		ret = sys_mm_drv_map_page(va_new, phys_new[idx], flags);
+		if (ret != 0) {
+			__ASSERT(false, "cannot map 0x%lx to %p\n",
+				 phys_new[idx], va_new);
 
-		if (ret2 != 0) {
-			__ASSERT(false, "cannot unmap %p\n", va_old);
+			/*
+			 * Reset the already mapped virtual addresses.
+			 * Note the offset is at the current failed address
+			 * which will not be included during unmapping.
+			 */
+			(void)unmap_locked(virt_new, offset, true);
 
-			ret = ret2;
+			goto unlock_out;
 		}
 
 		offset += CONFIG_MM_DRV_PAGE_SIZE;
 		idx++;
 	}
+
+	/* Once new mappings are in place, copy the content over. */
+	(void)memcpy(virt_new, virt_old, size);
+
+	/* Unmap old virtual memory region once the move is done. */
+	(void)unmap_locked(virt_old, size, false);
 
 unlock_out:
 	k_spin_unlock(&sys_mm_drv_common_lock, key);

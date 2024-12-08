@@ -28,7 +28,7 @@ config ENTROPY_STM32_THR_POOL_SIZE
 
 config ENTROPY_STM32_THR_THRESHOLD
 	int "Thread-mode random number pool low-water threshold"
-	range 4 255
+	range 4 $(UINT8_MAX)
 	help
 	  Low water-mark threshold in bytes to trigger entropy generation for
 	  thread mode consumers. As soon as the number of available bytes in the
@@ -46,7 +46,7 @@ config ENTROPY_STM32_ISR_POOL_SIZE
 
 config ENTROPY_STM32_ISR_THRESHOLD
 	int "ISR-mode random number pool low-water threshold"
-	range 12 255
+	range 12 $(UINT8_MAX)
 	help
 	  Low water-mark threshold in bytes to trigger entropy generation for
 	  ISR consumers. As soon as the number of available bytes in the

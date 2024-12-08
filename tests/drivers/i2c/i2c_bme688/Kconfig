@@ -1,0 +1,9 @@
+# I2C BME688 test configuration options
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config TEST_I2C_SPEED
+	int "Select I2C speed used during the test, selectable options are: I2C_SPEED_STANDARD (0x1U), I2C_SPEED_FAST (0x2U), I2C_SPEED_FAST_PLUS (0x3U)"
+	default 1
+
+source "Kconfig.zephyr"

@@ -5,6 +5,7 @@
  */
 
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #define DT_DRV_COMPAT reyax_rylrxxx
@@ -625,7 +626,7 @@ static int rylr_init(const struct device *dev)
 		return err;
 	}
 
-	err = modem_pipe_open(data->uart_pipe);
+	err = modem_pipe_open(data->uart_pipe, K_SECONDS(10));
 	if (err != 0) {
 		LOG_ERR("error opening uart pipe %d", err);
 		return err;
@@ -663,7 +664,7 @@ static int rylr_init(const struct device *dev)
 	return err;
 }
 
-static const struct lora_driver_api rylr_lora_api = {
+static DEVICE_API(lora, rylr_lora_api) = {
 	.config = rylr_config,
 	.send = rylr_send,
 	.send_async = rylr_send_async,

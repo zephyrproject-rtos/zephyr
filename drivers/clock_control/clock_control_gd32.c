@@ -43,7 +43,7 @@ struct clock_control_gd32_config {
 #if DT_HAS_COMPAT_STATUS_OKAY(gd_gd32_timer)
 /* timer identifiers */
 #define TIMER_ID_OR_NONE(nodelabel)                                            \
-	COND_CODE_1(DT_NODE_HAS_STATUS(DT_NODELABEL(nodelabel), okay),         \
+	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(nodelabel)),          \
 		    (DT_CLOCKS_CELL(DT_NODELABEL(nodelabel), id),), ())
 
 static const uint16_t timer_ids[] = {
@@ -198,7 +198,7 @@ clock_control_gd32_get_status(const struct device *dev,
 	return CLOCK_CONTROL_STATUS_OFF;
 }
 
-static const struct clock_control_driver_api clock_control_gd32_api = {
+static DEVICE_API(clock_control, clock_control_gd32_api) = {
 	.on = clock_control_gd32_on,
 	.off = clock_control_gd32_off,
 	.get_rate = clock_control_gd32_get_rate,

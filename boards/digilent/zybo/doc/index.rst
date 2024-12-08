@@ -77,7 +77,7 @@ Clone and build Das U-Boot for the Digilent Zybo:
 Flashing
 ========
 
-Here is an example for running the :ref:`hello_world` application via JTAG.
+Here is an example for running the :zephyr:code-sample:`hello_world` application via JTAG.
 
 Ensure the board is configured for JTAG boot, open a serial terminal, turn on/reset the board (press
 the ``PS-SRST`` button), and initialize the Zynq-7000 series SoC by uploading and running the U-Boot
@@ -97,7 +97,7 @@ You should see the following message in the terminal:
    *** Booting Zephyr OS vx.xx.x-xxx-gxxxxxxxxxxxx ***
    Hello World! zybo
 
-Another option is to load and run the :ref:`hello_world` application via U-Boot. Copy
+Another option is to load and run the :zephyr:code-sample:`hello_world` application via U-Boot. Copy
 ``u-boot/spl/boot.bin``, ``u-boot/u-boot.img``, and ``zephyr/zephyr.bin`` to a FAT32 formatted
 microSD card, insert the card in the ``SD MICRO`` slot on the Zybo board, ensure the board is
 configured for ``SD`` boot, and turn on the board.
@@ -116,7 +116,7 @@ Once U-boot is done initializing, load an run the Zephyr application:
 Debugging
 =========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 Ensure the board is configured for JTAG boot, open a serial terminal, turn on/reset the board (press
 the ``PS-SRST`` button), and initialize the Zynq-7000 series SoC by uploading and running the U-Boot

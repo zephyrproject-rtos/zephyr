@@ -5,6 +5,7 @@
 """
 Simple shell simulator.
 """
+
 import sys
 
 from zen_of_python import zen_of_python

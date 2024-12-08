@@ -107,7 +107,7 @@ static int32_t multicast_schedule_class_c_session(uint8_t id, uint32_t session_t
 	return time_to_start;
 }
 
-static void multicast_package_callback(uint8_t port, bool data_pending, int16_t rssi, int8_t snr,
+static void multicast_package_callback(uint8_t port, uint8_t flags, int16_t rssi, int8_t snr,
 				       uint8_t len, const uint8_t *rx_buf)
 {
 	uint8_t tx_buf[MAX_MULTICAST_CMDS_PER_PACKAGE * MAX_MULTICAST_ANS_LEN];

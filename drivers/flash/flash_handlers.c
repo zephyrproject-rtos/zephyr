@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Intel Corporation
+ * Copyright (c) 2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -36,6 +37,14 @@ static inline int z_vrfy_flash_erase(const struct device *dev, off_t offset,
 }
 #include <zephyr/syscalls/flash_erase_mrsh.c>
 
+static inline int z_vrfy_flash_get_size(const struct device *dev, uint64_t *size)
+{
+	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_FLASH));
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(size, sizeof(size)));
+	return z_impl_flash_get_size((const struct device *)dev, size);
+}
+#include <zephyr/syscalls/flash_get_size_mrsh.c>
+
 static inline size_t z_vrfy_flash_get_write_block_size(const struct device *dev)
 {
 	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_FLASH));
@@ -56,7 +65,7 @@ int z_vrfy_flash_fill(const struct device *dev, uint8_t val, off_t offset,
 	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_FLASH));
 	return z_impl_flash_fill(dev, val, offset, size);
 }
-#include <syscalls/flash_fill_mrsh.c>
+#include <zephyr/syscalls/flash_fill_mrsh.c>
 
 int z_vrfy_flash_flatten(const struct device *dev, off_t offset, size_t size)
 {
@@ -64,7 +73,7 @@ int z_vrfy_flash_flatten(const struct device *dev, off_t offset, size_t size)
 	return z_impl_flash_flatten(dev, offset, size);
 }
 
-#include <syscalls/flash_flatten_mrsh.c>
+#include <zephyr/syscalls/flash_flatten_mrsh.c>
 
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 static inline int z_vrfy_flash_get_page_info_by_offs(const struct device *dev,

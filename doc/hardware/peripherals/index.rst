@@ -18,12 +18,13 @@ Peripherals
    clock_control.rst
    can/index.rst
    charger.rst
+   comparator.rst
    coredump.rst
    counter.rst
    dac.rst
    dma.rst
    display/index.rst
-   eeprom.rst
+   eeprom/index.rst
    espi.rst
    entropy.rst
    edac/index.rst
@@ -31,6 +32,7 @@ Peripherals
    fuel_gauge.rst
    gnss.rst
    gpio.rst
+   haptics.rst
    hwinfo.rst
    i2c_eeprom_target.rst
    i3c.rst
@@ -54,6 +56,7 @@ Peripherals
    sdhc.rst
    sensor/index.rst
    spi.rst
+   stepper.rst
    smbus.rst
    uart.rst
    usbc_vbus.rst

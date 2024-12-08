@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Nordic Semiconductor ASA
+ * Copyright (c) 2023-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -48,7 +48,7 @@
 #error "Erase unit must be a multiple of program unit"
 #endif
 
-#define MOCK_FLASH(addr) (mock_flash + (addr) - FLASH_SIMULATOR_BASE_OFFSET)
+#define MOCK_FLASH(offset) (mock_flash + (offset))
 
 /* maximum number of pages that can be tracked by the stats module */
 #define STATS_PAGE_COUNT_THRESHOLD 256
@@ -158,7 +158,7 @@ static uint8_t mock_flash[FLASH_SIMULATOR_FLASH_SIZE];
 #endif
 #endif /* CONFIG_ARCH_POSIX */
 
-static const struct flash_driver_api flash_sim_api;
+static DEVICE_API(flash, flash_sim_api);
 
 static const struct flash_parameters flash_sim_parameters = {
 	.write_block_size = FLASH_SIMULATOR_PROG_UNIT,
@@ -174,9 +174,9 @@ static int flash_range_is_valid(const struct device *dev, off_t offset,
 				size_t len)
 {
 	ARG_UNUSED(dev);
-	if ((offset + len > FLASH_SIMULATOR_FLASH_SIZE +
-			    FLASH_SIMULATOR_BASE_OFFSET) ||
-	    (offset < FLASH_SIMULATOR_BASE_OFFSET)) {
+
+	if ((offset < 0 || offset >= FLASH_SIMULATOR_FLASH_SIZE ||
+	     (FLASH_SIMULATOR_FLASH_SIZE - offset) < len)) {
 		return 0;
 	}
 
@@ -274,7 +274,7 @@ static int flash_sim_write(const struct device *dev, const off_t offset,
 #endif /* CONFIG_FLASH_SIMULATOR_STATS */
 
 		/* only pull bits to zero */
-#if IS_ENABLED(CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE)
+#if defined(CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE)
 #if FLASH_SIMULATOR_ERASE_VALUE == 0xFF
 		*(MOCK_FLASH(offset + i)) &= *((uint8_t *)data + i);
 #else
@@ -299,8 +299,7 @@ static int flash_sim_write(const struct device *dev, const off_t offset,
 
 static void unit_erase(const uint32_t unit)
 {
-	const off_t unit_addr = FLASH_SIMULATOR_BASE_OFFSET +
-				(unit * FLASH_SIMULATOR_ERASE_UNIT);
+	const off_t unit_addr = unit * FLASH_SIMULATOR_ERASE_UNIT;
 
 	/* erase the memory unit by setting it to erase value */
 	memset(MOCK_FLASH(unit_addr), FLASH_SIMULATOR_ERASE_VALUE,
@@ -332,8 +331,7 @@ static int flash_sim_erase(const struct device *dev, const off_t offset,
 	}
 #endif
 	/* the first unit to be erased */
-	uint32_t unit_start = (offset - FLASH_SIMULATOR_BASE_OFFSET) /
-			   FLASH_SIMULATOR_ERASE_UNIT;
+	uint32_t unit_start = offset / FLASH_SIMULATOR_ERASE_UNIT;
 
 	/* erase as many units as necessary and increase their erase counter */
 	for (uint32_t i = 0; i < len / FLASH_SIMULATOR_ERASE_UNIT; i++) {
@@ -366,6 +364,14 @@ static void flash_sim_page_layout(const struct device *dev,
 }
 #endif
 
+static int flash_sim_get_size(const struct device *dev, uint64_t *size)
+{
+	ARG_UNUSED(dev);
+
+	*size = FLASH_SIMULATOR_FLASH_SIZE;
+
+	return 0;
+}
 static const struct flash_parameters *
 flash_sim_get_parameters(const struct device *dev)
 {
@@ -374,11 +380,12 @@ flash_sim_get_parameters(const struct device *dev)
 	return &flash_sim_parameters;
 }
 
-static const struct flash_driver_api flash_sim_api = {
+static DEVICE_API(flash, flash_sim_api) = {
 	.read = flash_sim_read,
 	.write = flash_sim_write,
 	.erase = flash_sim_erase,
 	.get_parameters = flash_sim_get_parameters,
+	.get_size = flash_sim_get_size,
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_sim_page_layout,
 #endif
@@ -437,14 +444,14 @@ DEVICE_DT_INST_DEFINE(0, flash_init, NULL,
 
 #ifdef CONFIG_ARCH_POSIX
 
-static void flash_native_posix_cleanup(void)
+static void flash_native_cleanup(void)
 {
 	flash_mock_cleanup_native(flash_in_ram, flash_fd, mock_flash,
 				  FLASH_SIMULATOR_FLASH_SIZE, flash_file_path,
 				  flash_rm_at_exit);
 }
 
-static void flash_native_posix_options(void)
+static void flash_native_options(void)
 {
 	static struct args_struct_t flash_options[] = {
 		{ .option = "flash",
@@ -476,9 +483,8 @@ static void flash_native_posix_options(void)
 	native_add_command_line_opts(flash_options);
 }
 
-
-NATIVE_TASK(flash_native_posix_options, PRE_BOOT_1, 1);
-NATIVE_TASK(flash_native_posix_cleanup, ON_EXIT, 1);
+NATIVE_TASK(flash_native_options, PRE_BOOT_1, 1);
+NATIVE_TASK(flash_native_cleanup, ON_EXIT, 1);
 
 #endif /* CONFIG_ARCH_POSIX */
 

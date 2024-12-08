@@ -27,9 +27,14 @@ static int esp_listen(struct net_context *context, int backlog)
 
 static int _sock_connect(struct esp_data *dev, struct esp_socket *sock)
 {
-	char connect_msg[sizeof("AT+CIPSTART=000,\"TCP\",\"\",65535,7200") +
-			 NET_IPV4_ADDR_LEN];
-	char addr_str[NET_IPV4_ADDR_LEN];
+	/* Calculate the largest possible AT command length based on both TCP and UDP variants. */
+	char connect_msg[MAX(sizeof("AT+CIPSTART=000,\"TCP\",\"\",65535,7200") +
+				NET_IPV4_ADDR_LEN,
+			     sizeof("AT+CIPSTART=000,\"UDP\",\"\",65535,65535,0,\"\"") +
+				2 * NET_IPV4_ADDR_LEN)];
+	char dst_addr_str[NET_IPV4_ADDR_LEN];
+	char src_addr_str[NET_IPV4_ADDR_LEN];
+	struct sockaddr src;
 	struct sockaddr dst;
 	int ret;
 
@@ -38,28 +43,44 @@ static int _sock_connect(struct esp_data *dev, struct esp_socket *sock)
 	}
 
 	k_mutex_lock(&sock->lock, K_FOREVER);
+	src = sock->src;
 	dst = sock->dst;
 	k_mutex_unlock(&sock->lock);
 
-	net_addr_ntop(dst.sa_family,
-		      &net_sin(&dst)->sin_addr,
-		      addr_str, sizeof(addr_str));
+	if (dst.sa_family == AF_INET) {
+		net_addr_ntop(dst.sa_family,
+			      &net_sin(&dst)->sin_addr,
+			      dst_addr_str, sizeof(dst_addr_str));
+	} else {
+		strcpy(dst_addr_str, "0.0.0.0");
+	}
 
 	if (esp_socket_ip_proto(sock) == IPPROTO_TCP) {
 		snprintk(connect_msg, sizeof(connect_msg),
 			 "AT+CIPSTART=%d,\"TCP\",\"%s\",%d,7200",
-			 sock->link_id, addr_str,
+			 sock->link_id, dst_addr_str,
 			 ntohs(net_sin(&dst)->sin_port));
 	} else {
-		snprintk(connect_msg, sizeof(connect_msg),
-			 "AT+CIPSTART=%d,\"UDP\",\"%s\",%d,%d",
-			 sock->link_id, addr_str,
-			 ntohs(net_sin(&dst)->sin_port), ntohs(net_sin(&dst)->sin_port));
+		if (src.sa_family == AF_INET && net_sin(&src)->sin_port != 0) {
+			net_addr_ntop(src.sa_family,
+				      &net_sin(&src)->sin_addr,
+				      src_addr_str, sizeof(src_addr_str));
+			snprintk(connect_msg, sizeof(connect_msg),
+				 "AT+CIPSTART=%d,\"UDP\",\"%s\",%d,%d,0,\"%s\"",
+				 sock->link_id, dst_addr_str,
+				 ntohs(net_sin(&dst)->sin_port), ntohs(net_sin(&src)->sin_port),
+				 src_addr_str);
+		} else {
+			snprintk(connect_msg, sizeof(connect_msg),
+				 "AT+CIPSTART=%d,\"UDP\",\"%s\",%d",
+				 sock->link_id, dst_addr_str,
+				 ntohs(net_sin(&dst)->sin_port));
+		}
 	}
 
 	LOG_DBG("link %d, ip_proto %s, addr %s", sock->link_id,
 		esp_socket_ip_proto(sock) == IPPROTO_TCP ? "TCP" : "UDP",
-		addr_str);
+		dst_addr_str);
 
 	ret = esp_cmd_send(dev, NULL, 0, connect_msg, ESP_CMD_TIMEOUT);
 	if (ret == 0) {
@@ -110,25 +131,15 @@ static int esp_bind(struct net_context *context, const struct sockaddr *addr,
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) && addr->sa_family == AF_INET) {
-		struct sockaddr_in *addr4 = (struct sockaddr_in *)addr;
-
 		LOG_DBG("link %d", sock->link_id);
-
-		if (addr4->sin_addr.s_addr == INADDR_ANY) {
-			return 0;
-		}
 
 		if (esp_socket_connected(sock)) {
 			return -EISCONN;
 		}
 
 		k_mutex_lock(&sock->lock, K_FOREVER);
-		sock->dst = *addr;
-		sock->connect_cb = NULL;
-		sock->conn_user_data = NULL;
+		sock->src = *addr;
 		k_mutex_unlock(&sock->lock);
-
-		_sock_connect(dev, sock);
 
 		return 0;
 	}
@@ -533,7 +544,7 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ciprecvdata)
 	struct sockaddr_in *recv_addr =
 			(struct sockaddr_in *) &sock->context->remote;
 
-	recv_addr->sin_port = ntohs(port);
+	recv_addr->sin_port = htons(port);
 	recv_addr->sin_family = AF_INET;
 
 	/* IP addr comes within quotation marks, which is disliked by
@@ -616,10 +627,22 @@ static int esp_recv(struct net_context *context,
 		    void *user_data)
 {
 	struct esp_socket *sock = context->offload_context;
+	struct esp_data *dev = esp_socket_to_dev(sock);
 	int ret;
 
 	LOG_DBG("link_id %d, timeout %d, cb %p, data %p",
 		sock->link_id, timeout, cb, user_data);
+
+	/*
+	 * UDP "listening" socket needs to be bound using AT+CIPSTART before any
+	 * traffic can be received.
+	 */
+	if (!esp_socket_connected(sock) &&
+	    esp_socket_ip_proto(sock) == IPPROTO_UDP &&
+	    sock->src.sa_family == AF_INET &&
+	    net_sin(&sock->src)->sin_port != 0) {
+		_sock_connect(dev, sock);
+	}
 
 	k_mutex_lock(&sock->lock, K_FOREVER);
 	sock->recv_cb = cb;

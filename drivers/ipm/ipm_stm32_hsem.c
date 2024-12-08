@@ -52,8 +52,9 @@ void stm32_hsem_mailbox_ipm_rx_isr(const struct device *dev)
 	uint32_t mask_semid = (1U << data->rx_semid);
 
 	/* Check semaphore rx_semid interrupt status */
-	if (!ll_hsem_isactiveflag_cmisr(HSEM, mask_semid))
+	if (!ll_hsem_isactiveflag_cmisr(HSEM, mask_semid)) {
 		return;
+	}
 
 	/* Notify user with NULL data pointer */
 	if (data->callback) {
@@ -183,7 +184,7 @@ static int stm32_hsem_mailbox_init(const struct device *dev)
 	return 0;
 }
 
-static const struct ipm_driver_api stm32_hsem_mailbox_ipm_dirver_api = {
+static DEVICE_API(ipm, stm32_hsem_mailbox_ipm_dirver_api) = {
 	.send = stm32_hsem_mailbox_ipm_send,
 	.register_callback = stm32_hsem_mailbox_ipm_register_callback,
 	.max_data_size_get = stm32_hsem_mailbox_ipm_max_data_size_get,

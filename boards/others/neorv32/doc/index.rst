@@ -1,7 +1,4 @@
-.. _neorv32:
-
-NEORV32
-#######
+.. zephyr:board:: neorv32
 
 Overview
 ********
@@ -121,7 +118,7 @@ etc.):
 Flashing via JTAG
 =================
 
-Here is an example for building and flashing the :ref:`hello_world` application
+Here is an example for building and flashing the :zephyr:code-sample:`hello_world` application
 for the NEORV32 via JTAG. Flashing via JTAG requires a NEORV32 SoC
 implementation with the On-Chip Debugger (OCD) and bootloader enabled.
 
@@ -185,7 +182,7 @@ built-in bootloader as described in the NEORV32 user guide.
 Debugging via JTAG
 ==================
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

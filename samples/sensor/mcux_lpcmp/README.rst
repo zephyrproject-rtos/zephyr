@@ -1,12 +1,13 @@
-.. _mcux_lpcmp:
+.. zephyr:code-sample:: mcux_lpcmp
+   :name: NXP MCUX Low-power Analog Comparator (LPCMP)
+   :relevant-api: sensor_interface
 
-NXP MCUX Low-power Analog Comparator (LPCMP)
-############################################
+   Get analog comparator data from an NXP MCUX Low-power Analog Comparator (LPCMP).
 
 Overview
 ********
 
-This sample show how to use the NXP MCUX Analog Comparator (LPCMP) driver.
+This sample show how to use the NXP MCUX Low-power Analog Comparator (LPCMP) driver.
 
 In this application, the negative input port of the LPCMP is set to 7 which
 means the input voltage comes from the LPCMP internal DAC, the reference
@@ -26,11 +27,22 @@ Building and Running
 
 Building and Running for NXP FRDM-MCXN947
 =========================================
-Build the application for the :ref:`frdm_mcxn947` board, and adjust the
+Build the application for the :zephyr:board:`frdm_mcxn947` board, and adjust the
 LPCMP positive input port voltage by changing the voltage input to J2-17.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/mcux_lpcmp
    :board: frdm_mcxn947//cpu0
+   :goals: build flash
+   :compact:
+
+Building and Running for NXP FRDM-MCXN236
+=========================================
+Build the application for the :zephyr:board:`frdm_mcxn236` board, and adjust the
+LPCMP positive input port voltage by changing the voltage input to J2-8.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/sensor/mcux_lpcmp
+   :board: frdm_mcxn236
    :goals: build flash
    :compact:

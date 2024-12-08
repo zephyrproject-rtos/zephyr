@@ -326,10 +326,11 @@ static inline void dw_wdt_response_mode_set(const uint32_t base, const bool mode
 {
 	uint32_t control = sys_read32(base + WDT_CR);
 
-	if (mode)
+	if (mode) {
 		control |= WDT_CR_RMOD;
-	else
+	} else {
 		control &= ~WDT_CR_RMOD;
+	}
 
 	sys_write32(control, base + WDT_CR);
 }

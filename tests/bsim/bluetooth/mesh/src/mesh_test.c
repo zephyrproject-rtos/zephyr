@@ -28,7 +28,7 @@ K_MEM_SLAB_DEFINE_STATIC(msg_pool, sizeof(struct bt_mesh_test_msg),
 static K_QUEUE_DEFINE(recv);
 struct bt_mesh_test_stats test_stats;
 struct bt_mesh_msg_ctx test_send_ctx;
-static void (*ra_cb)(uint8_t *, size_t);
+static void (*data_cb)(uint8_t *, size_t);
 
 static int msg_rx(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 		   struct net_buf_simple *buf)
@@ -78,8 +78,8 @@ static int msg_rx(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 	return 0;
 }
 
-static int ra_rx(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
-		 struct net_buf_simple *buf)
+static int data_rx(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
+		   struct net_buf_simple *buf)
 {
 	LOG_INF("\tlen: %d bytes", buf->len);
 	LOG_INF("\tsrc: 0x%04x", ctx->addr);
@@ -87,18 +87,15 @@ static int ra_rx(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 	LOG_INF("\tttl: %u", ctx->recv_ttl);
 	LOG_INF("\trssi: %d", ctx->recv_rssi);
 
-	if (ra_cb) {
-		ra_cb(net_buf_simple_pull_mem(buf, buf->len), buf->len);
+	if (data_cb) {
+		data_cb(buf->data, buf->len);
 	}
 
 	return 0;
 }
 
 static const struct bt_mesh_model_op model_op[] = {
-	{ TEST_MSG_OP_1, 0, msg_rx },
-	{ TEST_MSG_OP_2, 0, ra_rx },
-	BT_MESH_MODEL_OP_END
-};
+	{TEST_MSG_OP_1, 0, msg_rx}, {TEST_MSG_OP_2, 0, data_rx}, BT_MESH_MODEL_OP_END};
 
 int __weak test_model_pub_update(const struct bt_mesh_model *mod)
 {
@@ -186,6 +183,10 @@ static struct bt_mesh_priv_beacon_cli priv_beacon_cli;
 static struct bt_mesh_od_priv_proxy_cli priv_proxy_cli;
 #endif
 
+#if defined(CONFIG_BT_MESH_BRG_CFG_CLI)
+static struct bt_mesh_brg_cfg_cli brg_cfg_cli;
+#endif
+
 static const struct bt_mesh_model models[] = {
 	BT_MESH_MODEL_CFG_SRV,
 	BT_MESH_MODEL_CFG_CLI(&cfg_cli),
@@ -204,6 +205,12 @@ static const struct bt_mesh_model models[] = {
 #endif
 #if defined(CONFIG_BT_MESH_OD_PRIV_PROXY_CLI)
 	BT_MESH_MODEL_OD_PRIV_PROXY_CLI(&priv_proxy_cli),
+#endif
+#if defined(CONFIG_BT_MESH_BRG_CFG_SRV)
+	BT_MESH_MODEL_BRG_CFG_SRV,
+#endif
+#if defined(CONFIG_BT_MESH_BRG_CFG_CLI)
+	BT_MESH_MODEL_BRG_CFG_CLI(&brg_cfg_cli),
 #endif
 };
 
@@ -524,15 +531,15 @@ int bt_mesh_test_send(uint16_t addr, const uint8_t *uuid, size_t len,
 	return 0;
 }
 
-int bt_mesh_test_send_ra(uint16_t addr, uint8_t *data, size_t len,
-			 const struct bt_mesh_send_cb *send_cb,
-			 void *cb_data)
+int bt_mesh_test_send_data(uint16_t addr, const uint8_t *uuid, uint8_t *data, size_t len,
+			   const struct bt_mesh_send_cb *send_cb, void *cb_data)
 {
 	int err;
 
 	test_send_ctx.addr = addr;
 	test_send_ctx.send_rel = 0;
 	test_send_ctx.send_ttl = BT_MESH_TTL_DEFAULT;
+	test_send_ctx.uuid = uuid;
 
 	BT_MESH_MODEL_BUF_DEFINE(buf, TEST_MSG_OP_2, BT_MESH_TX_SDU_MAX);
 	bt_mesh_model_msg_init(&buf, TEST_MSG_OP_2);
@@ -548,9 +555,9 @@ int bt_mesh_test_send_ra(uint16_t addr, uint8_t *data, size_t len,
 	return 0;
 }
 
-void bt_mesh_test_ra_cb_setup(void (*cb)(uint8_t *, size_t))
+void bt_mesh_test_data_cb_setup(void (*cb)(uint8_t *, size_t))
 {
-	ra_cb = cb;
+	data_cb = cb;
 }
 
 uint16_t bt_mesh_test_own_addr_get(uint16_t start_addr)
@@ -560,16 +567,22 @@ uint16_t bt_mesh_test_own_addr_get(uint16_t start_addr)
 
 void bt_mesh_test_send_over_adv(void *data, size_t len)
 {
+	bt_mesh_test_send_over_adv_cb(data, len, NULL, NULL);
+}
+
+void bt_mesh_test_send_over_adv_cb(void *data, size_t len, const struct bt_mesh_send_cb *cb,
+				   void *cb_data)
+{
 	struct bt_mesh_adv *adv = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
 						     BT_MESH_TRANSMIT(0, 20), K_NO_WAIT);
 	net_buf_simple_add_mem(&adv->b, data, len);
-	bt_mesh_adv_send(adv, NULL, NULL);
+	bt_mesh_adv_send(adv, cb, cb_data);
 }
 
 int bt_mesh_test_wait_for_packet(bt_le_scan_cb_t scan_cb, struct k_sem *observer_sem, uint16_t wait)
 {
 	struct bt_le_scan_param scan_param = {
-		.type       = BT_HCI_LE_SCAN_PASSIVE,
+		.type       = BT_LE_SCAN_TYPE_PASSIVE,
 		.options    = BT_LE_SCAN_OPT_NONE,
 		.interval   = BT_MESH_ADV_SCAN_UNIT(1000),
 		.window     = BT_MESH_ADV_SCAN_UNIT(1000)

@@ -1,5 +1,6 @@
 board:
   name: slstk3402a
+  full_name: EFM32 Pearl Gecko 12 (SLSTK3402A)
   vendor: silabs
   socs:
   - name: efm32pg12b500f1024gl125

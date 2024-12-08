@@ -3,6 +3,7 @@
 
 board:
   name: mikroe_clicker_ra4m1
+  full_name: Clicker RA4M1
   vendor: mikroe
   socs:
     - name: r7fa4m1ab3cfm

@@ -8,7 +8,6 @@ common:
     - mcumgr
     - os_mgmt_datetime
   platform_allow:
-    - native_posix
     - native_sim
     - qemu_cortex_m0
     - qemu_riscv64
@@ -16,5 +15,7 @@ common:
     - qemu_malta
     - qemu_arc/qemu_arc_hs6x
     - qemu_leon3
+  integration_platforms:
+    - native_sim
 tests:
   mgmt.mcumgr.os.datetime: {}

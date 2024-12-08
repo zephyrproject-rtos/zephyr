@@ -10,10 +10,6 @@
 
 #include "memory.h"
 
-#ifdef CONFIG_XIP
-#error "Xtensa bootloader cannot use XIP"
-#endif
-
 /* Disable all romable LMA */
 #undef GROUP_DATA_LINK_IN
 #define GROUP_DATA_LINK_IN(vregion, lregion) > vregion
@@ -58,7 +54,6 @@ SECTIONS
     *libzephyr.a:cbprintf_nano.*(.literal .text .literal.* .text.*)
     *libzephyr.a:cpu.*(.literal .text .literal.* .text.*)
     *libzephyr.a:mmu_hal.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:cache_hal.*(.literal .text .literal.* .text.*)
     *libzephyr.a:flash_map.*(.literal .text .literal.* .text.*)
     *libzephyr.a:esp_rom_spiflash.*(.literal .text .literal.* .text.*)
     *libzephyr.a:heap.*(.literal .text .literal.* .text.*)
@@ -72,8 +67,6 @@ SECTIONS
     *libzephyr.a:rtc_clk.*(.literal .literal.* .text .text.*)
     *libzephyr.a:rtc_clk_init.*(.literal .literal.* .text .text.*)
 
-    *(.literal.bootloader_mmap .text.bootloader_mmap)
-    *(.literal.bootloader_munmap .text.bootloader_munmap)
     *(.literal.esp_intr_disable .literal.esp_intr_disable.* .text.esp_intr_disable .text.esp_intr_disable.*)
     *(.literal.default_intr_handler .text.default_intr_handler .iram1.*.default_intr_handler)
     *(.literal.esp_log_timestamp .text.esp_log_timestamp)
@@ -199,7 +192,7 @@ SECTIONS
     . = ALIGN(4);
   } > dram_seg
 
-  #include <zephyr/linker/common-rom/common-rom-cpp.ld>
+  #include <zephyr/linker/common-rom/common-rom-init.ld>
   #include <zephyr/linker/common-rom/common-rom-kernel-devices.ld>
   #include <zephyr/linker/common-rom/common-rom-debug.ld>
   #include <zephyr/linker/common-rom/common-rom-misc.ld>

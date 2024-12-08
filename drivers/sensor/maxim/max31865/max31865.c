@@ -99,9 +99,9 @@ static double calculate_temperature(double resistance, double resistance_0)
 	}
 	resistance /= resistance_0;
 	resistance *= 100.0;
-	temperature = A[0] + A[1] * resistance + A[2] * pow(resistance, 2) -
-		      A[3] * pow(resistance, 3) - A[4] * pow(resistance, 4) +
-		      A[5] * pow(resistance, 5);
+	temperature = RTD_C[0] + RTD_C[1] * resistance + RTD_C[2] * pow(resistance, 2) -
+		      RTD_C[3] * pow(resistance, 3) - RTD_C[4] * pow(resistance, 4) +
+		      RTD_C[5] * pow(resistance, 5);
 	return temperature;
 }
 
@@ -177,15 +177,19 @@ static char *max31865_error_to_string(uint8_t fault_register)
 static int max31865_fault_register(const struct device *dev)
 {
 	uint8_t fault_register;
+	uint8_t saved_fault_bits;
 
 	max31865_spi_read(dev, (REG_FAULT_STATUS), &fault_register, 1);
 	struct max31865_data *data = dev->data;
+	saved_fault_bits  = data->config_control_bits & FAULT_BITS_CLEAR_MASK;
 	/*Clear fault register */
 	WRITE_BIT(data->config_control_bits, 1, 1);
+	data->config_control_bits &= ~FAULT_BITS_CLEAR_MASK;
 	configure_device(dev);
 	LOG_ERR("Fault Register: 0x%02x, %s", fault_register,
 		max31865_error_to_string(fault_register));
 	WRITE_BIT(data->config_control_bits, 1, 0);
+	data->config_control_bits |= saved_fault_bits;
 
 	return 0;
 }
@@ -298,7 +302,7 @@ static int max31865_attr_set(const struct device *dev, enum sensor_channel chan,
 	}
 }
 
-static const struct sensor_driver_api max31865_api_funcs = {
+static DEVICE_API(sensor, max31865_api_funcs) = {
 	.sample_fetch = max31865_sample_fetch,
 	.channel_get = max31865_channel_get,
 	.attr_set = max31865_attr_set,

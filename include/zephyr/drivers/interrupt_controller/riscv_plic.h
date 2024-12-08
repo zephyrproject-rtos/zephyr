@@ -45,7 +45,26 @@ int riscv_plic_irq_is_enabled(uint32_t irq);
 void riscv_plic_set_priority(uint32_t irq, uint32_t prio);
 
 /**
+ * @brief Set IRQ affinity.
+ *
+ * @param irq IRQ line.
+ * @param cpumask CPU bit mask.
+ *
+ * @return 0 if success, negative errno value otherwise
+ */
+int riscv_plic_irq_set_affinity(uint32_t irq, uint32_t cpumask);
+
+/**
+ * @brief Set interrupt as pending
+ *
+ * @param irq Multi-level encoded interrupt ID
+ */
+void riscv_plic_irq_set_pending(uint32_t irq);
+
+/**
  * @brief Get active interrupt ID
+ *
+ * @note Should be called with interrupt locked
  *
  * @return Returns the ID of an active interrupt
  */
@@ -53,6 +72,8 @@ unsigned int riscv_plic_get_irq(void);
 
 /**
  * @brief Get active interrupt controller device
+ *
+ * @note Should be called with interrupt locked
  *
  * @return Returns device pointer of the active interrupt device
  */

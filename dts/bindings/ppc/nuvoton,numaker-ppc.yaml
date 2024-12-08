@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Nuvoton Technology Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton NuMaker USB Type-C power path controller
+
+compatible: "nuvoton,numaker-ppc"
+
+include: [base.yaml]

@@ -35,6 +35,14 @@ properties:
     description: |
       The KSO17 pin for the selected port.
 
+  kso-ignore-mask:
+    type: int
+    default: 0
+    description: |
+      Bitmask of KSO signals to ignore, this can be used to instruct the driver
+      to skip KSO signals between 0 and (col-size - 1) that are used as GPIOs.
+      Default to 0 (no signals masked).
+
   pinctrl-0:
     required: true
 

@@ -8,6 +8,7 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 # to the BIS.
 simulation_id="broadcast_iso_ticker_expire_info"
 verbosity_level=2
+EXECUTE_TIMEOUT=120
 
 cd ${BSIM_OUT_PATH}/bin
 

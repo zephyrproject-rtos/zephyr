@@ -39,6 +39,54 @@ extern volatile irq_offload_routine_t offload_routine;
  */
 #define AIRCR_VECT_KEY_PERMIT_WRITE 0x05FAUL
 
+/* Exception Return (EXC_RETURN) is provided in LR upon exception entry.
+ * It is used to perform an exception return and to detect possible state
+ * transition upon exception.
+ */
+
+/* Prefix. Indicates that this is an EXC_RETURN value.
+ * This field reads as 0b11111111.
+ */
+#define EXC_RETURN_INDICATOR_PREFIX     (0xFF << 24)
+/* bit[0]: Exception Secure. The security domain the exception was taken to. */
+#define EXC_RETURN_EXCEPTION_SECURE_Pos 0
+#define EXC_RETURN_EXCEPTION_SECURE_Msk \
+		BIT(EXC_RETURN_EXCEPTION_SECURE_Pos)
+#define EXC_RETURN_EXCEPTION_SECURE_Non_Secure 0
+#define EXC_RETURN_EXCEPTION_SECURE_Secure EXC_RETURN_EXCEPTION_SECURE_Msk
+/* bit[2]: Stack Pointer selection. */
+#define EXC_RETURN_SPSEL_Pos 2
+#define EXC_RETURN_SPSEL_Msk BIT(EXC_RETURN_SPSEL_Pos)
+#define EXC_RETURN_SPSEL_MAIN 0
+#define EXC_RETURN_SPSEL_PROCESS EXC_RETURN_SPSEL_Msk
+/* bit[3]: Mode. Indicates the Mode that was stacked from. */
+#define EXC_RETURN_MODE_Pos 3
+#define EXC_RETURN_MODE_Msk BIT(EXC_RETURN_MODE_Pos)
+#define EXC_RETURN_MODE_HANDLER 0
+#define EXC_RETURN_MODE_THREAD EXC_RETURN_MODE_Msk
+/* bit[4]: Stack frame type. Indicates whether the stack frame is a standard
+ * integer only stack frame or an extended floating-point stack frame.
+ */
+#define EXC_RETURN_STACK_FRAME_TYPE_Pos 4
+#define EXC_RETURN_STACK_FRAME_TYPE_Msk BIT(EXC_RETURN_STACK_FRAME_TYPE_Pos)
+#define EXC_RETURN_STACK_FRAME_TYPE_EXTENDED 0
+#define EXC_RETURN_STACK_FRAME_TYPE_STANDARD EXC_RETURN_STACK_FRAME_TYPE_Msk
+/* bit[5]: Default callee register stacking. Indicates whether the default
+ * stacking rules apply, or whether the callee registers are already on the
+ * stack.
+ */
+#define EXC_RETURN_CALLEE_STACK_Pos 5
+#define EXC_RETURN_CALLEE_STACK_Msk BIT(EXC_RETURN_CALLEE_STACK_Pos)
+#define EXC_RETURN_CALLEE_STACK_SKIPPED 0
+#define EXC_RETURN_CALLEE_STACK_DEFAULT EXC_RETURN_CALLEE_STACK_Msk
+/* bit[6]: Secure or Non-secure stack. Indicates whether a Secure or
+ * Non-secure stack is used to restore stack frame on exception return.
+ */
+#define EXC_RETURN_RETURN_STACK_Pos 6
+#define EXC_RETURN_RETURN_STACK_Msk BIT(EXC_RETURN_RETURN_STACK_Pos)
+#define EXC_RETURN_RETURN_STACK_Non_Secure 0
+#define EXC_RETURN_RETURN_STACK_Secure EXC_RETURN_RETURN_STACK_Msk
+
 /*
  * The current executing vector is found in the IPSR register. All
  * IRQs and system exceptions are considered as interrupt context.
@@ -182,6 +230,43 @@ static ALWAYS_INLINE void z_arm_clear_faults(void)
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
+}
+
+/**
+ * @brief Set z_arm_coredump_fault_sp to stack pointer value expected by GDB
+ *
+ * @param esf exception frame
+ * @param exc_return EXC_RETURN value present in LR after exception entry.
+ */
+static ALWAYS_INLINE void z_arm_set_fault_sp(const struct arch_esf *esf, uint32_t exc_return)
+{
+#ifdef CONFIG_DEBUG_COREDUMP
+	z_arm_coredump_fault_sp = POINTER_TO_UINT(esf);
+#if defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE) || defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+	/* Gdb expects a stack pointer that does not include the exception stack frame in order to
+	 * unwind. So adjust the stack pointer accordingly.
+	 */
+	z_arm_coredump_fault_sp += sizeof(esf->basic);
+
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
+	/* Assess whether thread had been using the FP registers and add size of additional
+	 * registers if necessary
+	 */
+	if ((exc_return & EXC_RETURN_STACK_FRAME_TYPE_STANDARD) ==
+			EXC_RETURN_STACK_FRAME_TYPE_EXTENDED) {
+		z_arm_coredump_fault_sp += sizeof(esf->fpu);
+	}
+#endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
+
+#if !(defined(CONFIG_ARMV8_M_MAINLINE) || defined(CONFIG_ARMV8_M_BASELINE))
+	if ((esf->basic.xpsr & SCB_CCR_STKALIGN_Msk) == SCB_CCR_STKALIGN_Msk) {
+		/* Adjust stack alignment after PSR bit[9] detected */
+		z_arm_coredump_fault_sp |= 0x4;
+	}
+#endif /* !CONFIG_ARMV8_M_MAINLINE */
+
+#endif /* CONFIG_ARMV7_M_ARMV8_M_MAINLINE || CONFIG_ARMV6_M_ARMV8_M_BASELINE */
+#endif /* CONFIG_DEBUG_COREDUMP */
 }
 
 /**

@@ -7,28 +7,58 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
 
+#include <openthread/error.h>
 #include <openthread/platform/diag.h>
 
 #include "platform-zephyr.h"
+#include "zephyr/sys/util.h"
 
 /**
  * Diagnostics mode variables.
  *
  */
 static bool sDiagMode;
+static void *sDiagCallbackContext;
+static otPlatDiagOutputCallback sDiagOutputCallback;
 
-otError otPlatDiagProcess(otInstance *aInstance,
-			  uint8_t argc,
-			  char   *argv[],
-			  char   *aOutput,
-			  size_t  aOutputMaxLen)
+static otError startModCarrier(otInstance *aInstance, uint8_t aArgsLength, char *aArgs[]);
+
+static void diag_output(const char *aFormat, ...)
 {
-	ARG_UNUSED(argc);
+	va_list args;
+
+	va_start(args, aFormat);
+
+	if (sDiagOutputCallback != NULL) {
+		sDiagOutputCallback(aFormat, args, sDiagCallbackContext);
+	}
+
+	va_end(args);
+}
+
+void otPlatDiagSetOutputCallback(otInstance *aInstance,
+				 otPlatDiagOutputCallback aCallback,
+				 void *aContext)
+{
+	OT_UNUSED_VARIABLE(aInstance);
+
+	sDiagOutputCallback  = aCallback;
+	sDiagCallbackContext = aContext;
+}
+
+otError otPlatDiagProcess(otInstance *aInstance, uint8_t aArgsLength, char *aArgs[])
+{
 	ARG_UNUSED(aInstance);
+	ARG_UNUSED(aArgsLength);
+
+#if defined(CONFIG_IEEE802154_CARRIER_FUNCTIONS)
+	if (strcmp(aArgs[0], "modcarrier") == 0) {
+		return startModCarrier(aInstance, aArgsLength - 1, aArgs + 1);
+	}
+#endif
 
 	/* Add more platform specific diagnostics features here. */
-	snprintk(aOutput, aOutputMaxLen,
-		 "diag feature '%s' is not supported\r\n", argv[0]);
+	diag_output("diag feature '%s' is not supported\r\n", aArgs[0]);
 
 	return OT_ERROR_NOT_IMPLEMENTED;
 }
@@ -66,6 +96,7 @@ void otPlatDiagRadioReceived(otInstance *aInstance,
 	ARG_UNUSED(aError);
 }
 
+#if defined(CONFIG_IEEE802154_CARRIER_FUNCTIONS)
 otError otPlatDiagRadioTransmitCarrier(otInstance *aInstance, bool aEnable)
 {
 	if (!otPlatDiagModeGet()) {
@@ -74,6 +105,7 @@ otError otPlatDiagRadioTransmitCarrier(otInstance *aInstance, bool aEnable)
 
 	return platformRadioTransmitCarrier(aInstance, aEnable);
 }
+#endif /* CONFIG_IEEE802154_CARRIER_FUNCTIONS */
 
 void otPlatDiagAlarmCallback(otInstance *aInstance)
 {
@@ -254,3 +286,30 @@ otError otPlatDiagGpioGetMode(uint32_t aGpio, otGpioMode *aMode)
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(openthread_config) && \
 	* DT_NODE_HAS_PROP(DT_COMPAT_GET_ANY_STATUS_OKAY(openthread_config), diag_gpios)
 	*/
+
+#if defined(CONFIG_IEEE802154_CARRIER_FUNCTIONS)
+
+static otError startModCarrier(otInstance *aInstance, uint8_t aArgsLength, char *aArgs[])
+{
+	ARG_UNUSED(aInstance);
+	ARG_UNUSED(aArgsLength);
+
+	bool enable = true;
+	uint8_t data[OT_RADIO_FRAME_MAX_SIZE + 1];
+
+	if (aArgsLength <= 0) {
+		return OT_ERROR_INVALID_ARGS;
+	}
+
+	if (strcmp(aArgs[0], "stop") == 0) {
+		enable = false;
+	} else {
+		if (hex2bin(aArgs[0], strlen(aArgs[0]), data, ARRAY_SIZE(data)) == 0) {
+			return OT_ERROR_INVALID_ARGS;
+		}
+	}
+
+	return platformRadioTransmitModulatedCarrier(aInstance, enable, data);
+}
+
+#endif

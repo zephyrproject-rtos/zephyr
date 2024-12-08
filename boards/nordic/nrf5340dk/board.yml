@@ -1,5 +1,6 @@
 board:
   name: nrf5340dk
+  full_name: nRF5340 DK
   vendor: nordic
   socs:
   - name: 'nrf5340'

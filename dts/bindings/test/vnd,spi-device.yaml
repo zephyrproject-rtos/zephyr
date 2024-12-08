@@ -7,9 +7,3 @@ compatible: "vnd,spi-device"
 
 include:
   - name: spi-device.yaml
-    property-blocklist:
-      - label
-
-properties:
-  label:
-    type: string

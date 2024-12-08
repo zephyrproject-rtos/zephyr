@@ -7,6 +7,8 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/winstream.h>
+#include <zephyr/sys/printk-hooks.h>
+#include <zephyr/sys/libc-hooks.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/cache.h>
 
@@ -46,26 +48,14 @@ int arch_printk_char_out(int c)
 	return 0;
 }
 
-#if defined(CONFIG_STDOUT_CONSOLE)
-extern void __stdout_hook_install(int (*hook)(int));
-#else
-#define __stdout_hook_install(x)		\
-	do {/* nothing */			\
-	} while ((0))
-#endif
-
-#if defined(CONFIG_PRINTK)
-extern void __printk_hook_install(int (*fn)(int));
-#else
-#define __printk_hook_install(x)		\
-	do {/* nothing */			\
-	} while ((0))
-#endif
-
 static void winstream_console_hook_install(void)
 {
+#if defined(CONFIG_STDOUT_CONSOLE)
 	__stdout_hook_install(arch_printk_char_out);
+#endif
+#if defined(CONFIG_PRINTK)
 	__printk_hook_install(arch_printk_char_out);
+#endif
 }
 
 

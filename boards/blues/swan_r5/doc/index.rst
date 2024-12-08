@@ -1,7 +1,4 @@
-.. _swan_r5_board:
-
-Blues Wireless Swan
-###################
+.. zephyr:board:: swan_r5
 
 Overview
 ********
@@ -20,8 +17,8 @@ Due to its novel design, for high-volume deployment the low-cost Swan
 can also be soldered directly to a parent PCB integrating those sensors,
 utilizing the full range of Swan's I/O capabilities.
 
-The board has three independent power options-USB, Battery, or Line power-
-and provides a software-switchable 2 Amp regulator for powering external
+The board has three independent power options---USB, Battery, or Line
+power---and provides a software-switchable 2 Amp regulator for powering external
 sensors. When operating in its low-power operating mode, the entire Swan
 board commonly draws only about 8uA while retaining all of its memory,
 making it quite suitable for battery-powered devices.
@@ -52,10 +49,6 @@ some highlights of the board:
   - tRNG
   - 12-bit ADC, 2 x 12-bit DAC
   - low-power RTC, and CRC calculation peripherals
-
-.. image:: img/swan.jpg
-     :align: center
-     :alt: Blues Wireless Swan
 
 More information about the board can be found at the `Swan Product Page`_.
 
@@ -198,7 +191,7 @@ Programming and Debugging
 
 Connect Swan to your host computer using the USB port.
 Then build and flash an application. Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 Run a serial host program to connect with your Swan:
 
@@ -221,6 +214,8 @@ You should see the following message on the console:
 
 References
 **********
+
+.. target-notes::
 
 .. _Swan Product Page:
    https://blues.io/products/swan

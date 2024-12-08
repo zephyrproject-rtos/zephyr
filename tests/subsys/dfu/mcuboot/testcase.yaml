@@ -2,8 +2,6 @@ tests:
   dfu.mcuboot:
     platform_allow:
       - nrf52840dk/nrf52840
-      - native_posix
-      - native_posix/native/64
       - native_sim
       - native_sim/native/64
     tags: dfu_mcuboot

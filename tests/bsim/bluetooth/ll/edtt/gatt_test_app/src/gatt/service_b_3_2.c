@@ -72,10 +72,12 @@ static ssize_t write_value_v6(struct bt_conn *conn,
 {
 	uint8_t *value = attr->user_data;
 
-	if (offset >= sizeof(value_v6_value))
+	if (offset >= sizeof(value_v6_value)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
-	if (offset + len > sizeof(value_v6_value))
+	}
+	if (offset + len > sizeof(value_v6_value)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+	}
 
 	memcpy(value + offset, buf, len);
 
@@ -131,8 +133,9 @@ void service_b_3_2_remove(void)
  */
 void service_b_3_2_value_v6_notify(void)
 {
-	if (!value_v6_ntf_active)
+	if (!value_v6_ntf_active) {
 		return;
+	}
 
 	bt_gatt_notify(NULL, &service_b_3_2_attrs[1], &value_v6_value,
 		       sizeof(value_v6_value));
@@ -160,8 +163,9 @@ static void value_v6_indicate_cb(struct bt_conn *conn,
  */
 void service_b_3_2_value_v6_indicate(void)
 {
-	if (!value_v6_ind_active)
+	if (!value_v6_ind_active) {
 		return;
+	}
 	/*
 	 * NOTE: Zephyr doesn't automatically bump up the attribute pointer for
 	 *   indications as it does for notifications.

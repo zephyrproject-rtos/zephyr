@@ -14,7 +14,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/usb/usb_ch9.h>
 #include <zephyr/sys/dlist.h>
 
@@ -22,6 +22,8 @@
  * @brief USB host controller (UHC) driver API
  * @defgroup uhc_api USB host controller driver API
  * @ingroup io_interfaces
+ * @since 3.3
+ * @version 0.1.0
  * @{
  */
 

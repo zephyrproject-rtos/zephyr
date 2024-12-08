@@ -27,7 +27,7 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/audio/cap.h>
-#include "shell/bt.h"
+#include "host/shell/bt.h"
 
 static size_t ad_cap_announcement_data_add(struct bt_data data[], size_t data_size)
 {

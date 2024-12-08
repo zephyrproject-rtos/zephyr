@@ -186,10 +186,14 @@ do {                                                                    \
 				"." Z_STRINGIFY(c))))
 #define __in_section(a, b, c) ___in_section(a, b, c)
 
+#ifndef __in_section_unique
 #define __in_section_unique(seg) ___in_section(seg, __FILE__, __COUNTER__)
+#endif
 
+#ifndef __in_section_unique_named
 #define __in_section_unique_named(seg, name) \
 	___in_section(seg, __FILE__, name)
+#endif
 
 /* When using XIP, using '__ramfunc' places a function into RAM instead
  * of FLASH. Make sure '__ramfunc' is defined only when
@@ -225,6 +229,10 @@ do {                                                                    \
 #define __aligned(x)	__attribute__((__aligned__(x)))
 #endif
 
+#ifndef __noinline
+#define __noinline      __attribute__((noinline))
+#endif
+
 #define __may_alias     __attribute__((__may_alias__))
 
 #ifndef __printf_like
@@ -250,6 +258,9 @@ do {                                                                    \
 
 #ifndef __deprecated
 #define __deprecated	__attribute__((deprecated))
+/* When adding this, remember to follow the instructions in
+ * https://docs.zephyrproject.org/latest/develop/api/api_lifecycle.html#deprecated
+ */
 #endif
 
 #ifndef __attribute_const__
@@ -312,6 +323,9 @@ do {                                                                    \
 /* Generic message */
 #ifndef __DEPRECATED_MACRO
 #define __DEPRECATED_MACRO __WARN("Macro is deprecated")
+/* When adding this, remember to follow the instructions in
+ * https://docs.zephyrproject.org/latest/develop/api/api_lifecycle.html#deprecated
+ */
 #endif
 
 /* These macros allow having ARM asm functions callable from thumb */

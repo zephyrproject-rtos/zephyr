@@ -1,5 +1,5 @@
 identifier: slstk3401a
-name: EFM32 Pearl Gecko Starter Kit (SLSTK3401A)
+name: EFM32 Pearl Gecko Starter Kit (SLSTK3401A, BRD2500B)
 type: mcu
 arch: arm
 ram: 32

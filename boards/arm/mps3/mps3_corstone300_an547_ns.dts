@@ -1,0 +1,102 @@
+/*
+ * Copyright (c) 2018-2021 Linaro Limited
+ * Copyright 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <arm/armv8.1-m.dtsi>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <mem.h>
+#include "mps3_common.dtsi"
+
+/ {
+	compatible = "arm,mps3-an547";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &ram;
+		zephyr,flash = &code;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m55";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv8.1m-mpu";
+				reg = <0xe000ed90 0x40>;
+			};
+		};
+	};
+
+	/* We utilize the secure addresses, if you subtract 0x10000000
+	 * you'll get the non-secure alias
+	 */
+	itcm: itcm@0 {
+		compatible = "zephyr,memory-region";
+		reg = <0x0 DT_SIZE_K(512)>;
+		zephyr,memory-region = "ITCM";
+	};
+
+	sram: sram@1000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x1000000 DT_SIZE_M(2)>;
+		zephyr,memory-region = "SRAM";
+	};
+
+	dtcm: dtcm@20000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x20000000 DT_SIZE_K(512)>;
+		zephyr,memory-region = "DTCM";
+	};
+
+	isram: sram@21000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x21000000 DT_SIZE_M(4)>;
+		zephyr,memory-region = "ISRAM";
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		/* The memory regions defined below must match what the TF-M
+		 * project has defined for that board - a single image boot is
+		 * assumed. Please see the memory layout in:
+		 * https://git.trustedfirmware.org/TF-M/trusted-firmware-m.git/tree/platform/ext/target/mps3/corstone300/common/partition/flash_layout.h
+		 */
+
+		code: memory@28080000 {
+			reg = <0x28080000 DT_SIZE_K(512)>;
+		};
+
+		ram: memory@21020000 {
+			reg = <0x21020000 DT_SIZE_M(2)>;
+		};
+	};
+
+	soc {
+		peripheral@40000000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x40000000 0x10000000>;
+
+			#include "mps3_common_soc_peripheral.dtsi"
+		};
+	};
+};

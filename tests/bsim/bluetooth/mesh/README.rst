@@ -50,7 +50,7 @@ Then separately, call
 
 ...code-block::
 
-   gdb bs_nrf52_bsim_tests_bsim_bluetooth_mesh_prj_conf \
+   gdb bs_nrf52_bsim_native_tests_bsim_bluetooth_mesh_prj_conf \
        -s=mesh_transport_seg_block -d=0 -RealEncryption=1 \
        -testid=transport_tx_seg_block
 
@@ -97,7 +97,7 @@ Test scripts should be organized by submodules under the test_scripts
 directory, and each test case needs a separate test script with a single test
 run.
 
-Each test harness is defined by a ``struct bst_test_instance` structure, that
+Each test harness is defined by a ``struct bst_test_instance`` structure, that
 is presented to the test runner through an ``install`` function called from the
 test application's main function. The harness contains a set of callback
 functions that allows starting the test behavior.

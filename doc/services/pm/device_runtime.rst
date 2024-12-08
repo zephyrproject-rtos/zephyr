@@ -26,13 +26,13 @@ asynchronously, it will be put into the
 :c:enumerator:`PM_DEVICE_STATE_SUSPENDING` state first and then into the
 :c:enumerator:`PM_DEVICE_STATE_SUSPENDED` state when the action is run.
 
-For devices on a power domain (via the devicetree 'power-domain' property), device runtime
+For devices on a power domain (via the devicetree 'power-domains' property), device runtime
 power management automatically attempts to request and release the dependent domain
 in response to :c:func:`pm_device_runtime_get` and :c:func:`pm_device_runtime_put`
 calls on the child device.
 
 For the previous to automatically control the power domain state, device runtime PM must be enabled
-on the power domain device (either through the `zephyr,pm-device-runtime-auto` devicetree property
+on the power domain device (either through the ``zephyr,pm-device-runtime-auto`` devicetree property
 or :c:func:`pm_device_runtime_enable`).
 
 .. graphviz::
@@ -124,7 +124,7 @@ by the PM subsystem to suspend or resume devices.
 .. code-block:: c
 
     static int mydev_pm_action(const struct device *dev,
-                               enum pm_device_action *action)
+                               enum pm_device_action action)
     {
         switch (action) {
         case PM_DEVICE_ACTION_SUSPEND:

@@ -4,7 +4,8 @@
 config MEMC_STM32
 	bool "STM32 Flexible Memory Controller (FMC)"
 	default y
-	depends on DT_HAS_ST_STM32_FMC_ENABLED
+	depends on DT_HAS_ST_STM32_FMC_ENABLED || DT_HAS_ST_STM32H7_FMC_ENABLED
+	select PINCTRL
 	help
 	  Enable STM32 Flexible Memory Controller.
 

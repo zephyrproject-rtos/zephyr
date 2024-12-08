@@ -59,11 +59,6 @@ int l2cap_chan_send(struct bt_l2cap_chan *chan, uint8_t *data, size_t len)
 	return ret;
 }
 
-struct net_buf *alloc_buf_cb(struct bt_l2cap_chan *chan)
-{
-	return net_buf_alloc(&sdu_pool, K_NO_WAIT);
-}
-
 void continue_sending(struct test_ctx *ctx)
 {
 	struct bt_l2cap_chan *chan = &ctx->le_chan.chan;
@@ -137,7 +132,6 @@ void l2cap_chan_disconnected_cb(struct bt_l2cap_chan *chan)
 static struct bt_l2cap_chan_ops ops = {
 	.connected = l2cap_chan_connected_cb,
 	.disconnected = l2cap_chan_disconnected_cb,
-	.alloc_buf = alloc_buf_cb,
 	.seg_recv = recv_cb,
 	.sent = sent_cb,
 };
@@ -227,10 +221,6 @@ static void disconnect_device(struct bt_conn *conn, void *data)
 	WAIT_FOR_FLAG_UNSET(is_connected);
 }
 
-#define BT_LE_ADV_CONN_OT                                                                          \
-	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_ONE_TIME,                        \
-			BT_GAP_ADV_FAST_INT_MIN_2, BT_GAP_ADV_FAST_INT_MAX_2, NULL)
-
 static void test_peripheral_main(void)
 {
 	int err;
@@ -251,7 +241,7 @@ static void test_peripheral_main(void)
 
 	LOG_DBG("Peripheral Bluetooth initialized.");
 	LOG_DBG("Connectable advertising...");
-	err = bt_le_adv_start(BT_LE_ADV_CONN_OT, NULL, 0, NULL, 0);
+	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, NULL, 0, NULL, 0);
 	if (err) {
 		FAIL("Advertising failed to start (err %d)", err);
 		return;

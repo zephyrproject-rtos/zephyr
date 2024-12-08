@@ -5,14 +5,16 @@
 '''Runner for flashing with the Intel ADSP boards.'''
 
 import argparse
-import os
-import sys
-import re
 import hashlib
+import os
 import random
+import re
 import shutil
-from runners.core import ZephyrBinaryRunner, RunnerCaps
+import sys
+
 from zephyr_ext_common import ZEPHYR_BASE
+
+from runners.core import RunnerCaps, ZephyrBinaryRunner
 
 DEFAULT_CAVSTOOL='soc/intel/intel_adsp/tools/cavstool_client.py'
 
@@ -60,7 +62,8 @@ class IntelAdspBinaryRunner(ZephyrBinaryRunner):
 
         for old_sign_param in [ '--rimage-tool', '--config-dir', '--default-key', '--key']:
             parser.add_argument(old_sign_param, action=SignParamError,
-                            help='do not use, "west sign" is now called from CMake, see "west sign -h"')
+                                help='''do not use, "west sign" is now called from CMake,
+                                see "west sign -h"''')
 
     @classmethod
     def tool_opt_help(cls) -> str:

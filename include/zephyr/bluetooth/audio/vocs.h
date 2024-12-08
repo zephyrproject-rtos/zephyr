@@ -1,5 +1,10 @@
+/**
+ * @file
+ * @brief Bluetooth Volume Offset Control Service (VOCS) APIs.
+ */
+
 /*
- * Copyright (c) 2020 Nordic Semiconductor ASA
+ * Copyright (c) 2020-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +15,7 @@
 /**
  * @brief Volume Offset Control Service (VOCS)
  *
- * @defgroup bt_gatt_vocs Volume Offset Control Service (VOCS)
+ * @defgroup bt_vocs Volume Offset Control Service (VOCS)
  *
  * @since 2.6
  * @version 0.8.0
@@ -36,13 +41,30 @@
 extern "C" {
 #endif
 
-/** Volume Offset Control Service Error codes */
+/**
+ * @name Volume Offset Control Service Error codes
+ * @{
+ */
+/**
+ * The Change_Counter operand value does not match the Change_Counter field value of the Volume
+ * Offset State characteristic.
+ */
 #define BT_VOCS_ERR_INVALID_COUNTER                0x80
+/** An invalid opcode has been used in a control point procedure. */
 #define BT_VOCS_ERR_OP_NOT_SUPPORTED               0x81
+/** An operand value used in a control point procedure is outside the permissible range. */
 #define BT_VOCS_ERR_OUT_OF_RANGE                   0x82
+/** @} */
 
+/**
+ * @name Volume Offset Control Service offset limits
+ * @{
+ */
+/** Minimum offset value */
 #define BT_VOCS_MIN_OFFSET                         -255
+/** Maximum offset value */
 #define BT_VOCS_MAX_OFFSET                         255
+/** @} */
 
 /** @brief Opaque Volume Offset Control Service instance. */
 struct bt_vocs;
@@ -190,14 +212,32 @@ typedef void (*bt_vocs_description_cb)(struct bt_vocs *inst, int err,
  */
 typedef void (*bt_vocs_discover_cb)(struct bt_vocs *inst, int err);
 
+/**
+ * @brief Struct to hold the Volume Offset Control Service callbacks
+ *
+ * These can be registered for usage with bt_vocs_client_cb_register() or bt_vocs_register()
+ * depending on the role.
+ */
 struct bt_vocs_cb {
+	/** The offset state has changed */
 	bt_vocs_state_cb                state;
+	/** The location has changed */
 	bt_vocs_location_cb             location;
+	/** The Description has changed */
 	bt_vocs_description_cb          description;
 
-#if defined(CONFIG_BT_VOCS_CLIENT)
-	/* Client only */
+#if defined(CONFIG_BT_VOCS_CLIENT) || defined(__DOXYGEN__)
+	/**
+	 * The discovery procedure has completed
+	 *
+	 * Only settable for the client and requires enabling@kconfig{CONFIG_BT_VOCS_CLIENT}.
+	 */
 	bt_vocs_discover_cb             discover;
+	/**
+	 * The set offset procedure has completed
+	 *
+	 * Only settable for the client and requires enabling@kconfig{CONFIG_BT_VOCS_CLIENT}.
+	 */
 	bt_vocs_set_offset_cb           set_offset;
 #endif /* CONFIG_BT_VOCS_CLIENT */
 };

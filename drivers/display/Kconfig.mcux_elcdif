@@ -1,4 +1,4 @@
-# Copyright 2019,2023 NXP
+# Copyright 2019,2023-2024 NXP
 # Copyright (c) 2022, Basalte bv
 # SPDX-License-Identifier: Apache-2.0
 
@@ -7,6 +7,7 @@ menuconfig DISPLAY_MCUX_ELCDIF
 	bool "MCUX eLCDIF driver"
 	default y
 	depends on DT_HAS_NXP_IMX_ELCDIF_ENABLED
+	select PINCTRL
 	help
 	  Enable support for mcux eLCDIF driver.
 
@@ -53,18 +54,6 @@ config MCUX_ELCDIF_PXP
 	  display_write is called with a framebuffer equal in size to the
 	  display.
 
-config MCUX_ELCDIF_LP
-	bool "ELCDIF low power"
-	help
-	  This option, when enabled, will enable CUR_FRAME_DONE_IRQ at the display
-	  write function and disable it at the interruption handler for each new frame.
-	  Disabling the interrupt when no new frame needs to be sent gives the CPU the
-	  possibility to enter low-power mode, thus saving energy.
-	  This option, when disabled, CUR_FRAME_DONE_IRQ will be enabled only
-	  once at initialization. This option should be disabled when the application's
-	  frame rate is close to the display's refresh rate to avoid introducing
-	  additional latency caused by frequently enabling and disabling CUR_FRAME_DONE_IRQ.
-
 if MCUX_ELCDIF_PXP
 
 choice MCUX_ELCDIF_PXP_ROTATE_DIRECTION
@@ -102,6 +91,33 @@ config MCUX_ELCDIF_PXP_ROTATE_270
 	help
 	  Rotate display counter-clockwise by 270 degrees
 	  For LVGL, this corresponds to a rotation of 90 degrees
+
+endchoice
+
+choice MCUX_ELCDIF_PXP_FLIP_DIRECTION
+	default MCUX_ELCDIF_PXP_FLIP_DISABLE
+	prompt "Flip direction of PXP"
+	help
+	  Set flip direction of PXP. The ELCDIF cannot detect the correct
+	  rotation angle based on the call to display_write, so the user should
+	  configure it here. In order for PXP flip to work, calls to
+	  display_write MUST supply a framebuffer equal in size to screen width
+	  and height (without flip applied).  Note that the width and
+	  height settings of the screen in devicetree should not be modified
+	  from their values in the default screen orientation when using this
+	  functionality.
+
+config MCUX_ELCDIF_PXP_FLIP_DISABLE
+	bool "Do not flip display"
+
+config MCUX_ELCDIF_PXP_FLIP_HORIZONTAL
+	bool "Flip display horizontally"
+
+config MCUX_ELCDIF_PXP_FLIP_VERTICAL
+	bool "Flip display vertically"
+
+config MCUX_ELCDIF_PXP_FLIP_BOTH
+	bool "Flib display both horizontally and vertically"
 
 endchoice
 

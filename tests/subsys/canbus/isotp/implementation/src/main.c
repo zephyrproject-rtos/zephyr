@@ -7,7 +7,7 @@
 #include <zephyr/ztest.h>
 #include <strings.h>
 #include "random_data.h"
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 
 #define NUMBER_OF_REPETITIONS 5
 #define DATA_SIZE_SF          7

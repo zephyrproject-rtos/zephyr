@@ -1,5 +1,6 @@
 board:
   name: sam_e70_xplained
+  full_name: SAM E70(B) Xplained
   vendor: atmel
   socs:
     - name: same70q21

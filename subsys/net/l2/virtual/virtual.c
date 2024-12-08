@@ -110,6 +110,7 @@ static int virtual_enable(struct net_if *iface, bool state)
 {
 	const struct virtual_interface_api *virt;
 	struct virtual_interface_context *ctx;
+	int ret = 0;
 
 	virt = net_if_get_device(iface)->api;
 	if (!virt) {
@@ -144,17 +145,17 @@ static int virtual_enable(struct net_if *iface, bool state)
 		}
 
 		if (virt->start) {
-			virt->start(net_if_get_device(iface));
+			ret = virt->start(net_if_get_device(iface));
 		}
 
-		return 0;
+		return ret;
 	}
 
 	if (virt->stop) {
-		virt->stop(net_if_get_device(iface));
+		ret = virt->stop(net_if_get_device(iface));
 	}
 
-	return 0;
+	return ret;
 }
 
 enum net_l2_flags virtual_flags(struct net_if *iface)

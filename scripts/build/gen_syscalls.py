@@ -159,11 +159,16 @@ syscall_tracer_void_template = """
 
 
 exported_template = """
-/* Export syscalls for extensions */
-static void * const no_handler = NULL;
+/*
+ * This symbol is placed at address 0 by llext-sections.ld. Its value and
+ * type is not important, we are only interested in its location
+ */
+static void * const no_syscall_impl Z_GENERIC_SECTION(llext_no_syscall_impl);
 
-/* Weak references, if something is not found by the linker, it will be NULL
- * and simply fail during extension load
+/*
+ * Weak references to all syscall implementations. Those not found by the
+ * linker outside this file will be exported as NULL and simply fail when
+ * an extension requiring them is loaded.
  */
 %s
 
@@ -179,6 +184,7 @@ class SyscallParseException(Exception):
 
 
 def typename_split(item):
+    item = item.strip().replace("\n", " ")
     if "[" in item:
         raise SyscallParseException(
             "Please pass arrays to syscalls as pointers, unable to process '%s'" %
@@ -339,7 +345,7 @@ def marshall_defs(func_name, func_type, args):
     else:
         mrsh += "\t\t" + "uintptr_t arg3, uintptr_t arg4, void *more, void *ssf)\n"
     mrsh += "{\n"
-    mrsh += "\t" + "_current->syscall_frame = ssf;\n"
+    mrsh += "\t" + "arch_current_thread()->syscall_frame = ssf;\n"
 
     for unused_arg in range(nmrsh, 6):
         mrsh += "\t(void) arg%d;\t/* unused */\n" % unused_arg
@@ -365,7 +371,7 @@ def marshall_defs(func_name, func_type, args):
 
     if func_type == "void":
         mrsh += "\t" + "%s;\n" % vrfy_call
-        mrsh += "\t" + "_current->syscall_frame = NULL;\n"
+        mrsh += "\t" + "arch_current_thread()->syscall_frame = NULL;\n"
         mrsh += "\t" + "return 0;\n"
     else:
         mrsh += "\t" + "%s ret = %s;\n" % (func_type, vrfy_call)
@@ -374,10 +380,10 @@ def marshall_defs(func_name, func_type, args):
             ptr = "((uint64_t *)%s)" % mrsh_rval(nmrsh - 1, nmrsh)
             mrsh += "\t" + "K_OOPS(K_SYSCALL_MEMORY_WRITE(%s, 8));\n" % ptr
             mrsh += "\t" + "*%s = ret;\n" % ptr
-            mrsh += "\t" + "_current->syscall_frame = NULL;\n"
+            mrsh += "\t" + "arch_current_thread()->syscall_frame = NULL;\n"
             mrsh += "\t" + "return 0;\n"
         else:
-            mrsh += "\t" + "_current->syscall_frame = NULL;\n"
+            mrsh += "\t" + "arch_current_thread()->syscall_frame = NULL;\n"
             mrsh += "\t" + "return (uintptr_t) ret;\n"
 
     mrsh += "}\n"
@@ -391,7 +397,7 @@ def analyze_fn(match_group, fn, userspace_only):
         if args == "void":
             args = []
         else:
-            args = [typename_split(a.strip()) for a in args.split(",")]
+            args = [typename_split(a) for a in args.split(",")]
 
         func_type, func_name = typename_split(func)
     except SyscallParseException:
@@ -495,7 +501,7 @@ def main():
     if args.syscall_export_llext:
         with open(args.syscall_export_llext, "w") as fp:
             # Export symbols for emitted syscalls
-            weak_refs = "\n".join("extern __weak ALIAS_OF(no_handler) void * const %s;"
+            weak_refs = "\n".join("extern __weak ALIAS_OF(no_syscall_impl) void * const %s;"
                                   % e for e in exported)
             exported_symbols = "\n".join("EXPORT_SYMBOL(%s);"
                                          % e for e in exported)

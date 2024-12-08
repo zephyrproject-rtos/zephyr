@@ -8,6 +8,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi/rtio.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/logging/log.h>
@@ -442,11 +443,14 @@ static int mss_spi_init(const struct device *dev)
 
 #define MICROCHIP_SPI_PM_OPS (NULL)
 
-static const struct spi_driver_api mss_spi_driver_api = {
+static DEVICE_API(spi, mss_spi_driver_api) = {
 	.transceive = mss_spi_transceive_blocking,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = mss_spi_transceive_async,
 #endif /* CONFIG_SPI_ASYNC */
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
+#endif
 	.release = mss_spi_release,
 };
 
@@ -473,8 +477,8 @@ static const struct spi_driver_api mss_spi_driver_api = {
 		SPI_CONTEXT_INIT_SYNC(mss_spi_data_##n, ctx),                                      \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, mss_spi_init_##n, NULL, &mss_spi_data_##n, &mss_spi_config_##n,   \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,                     \
-			      &mss_spi_driver_api);
+	SPI_DEVICE_DT_INST_DEFINE(n, mss_spi_init_##n, NULL, &mss_spi_data_##n,                    \
+				  &mss_spi_config_##n, POST_KERNEL,                                \
+				  CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &mss_spi_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MSS_SPI_INIT)

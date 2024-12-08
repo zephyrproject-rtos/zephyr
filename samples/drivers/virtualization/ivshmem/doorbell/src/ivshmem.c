@@ -197,8 +197,9 @@ static void ivshmem_sample_doorbell(void)
 	int ret;
 
 	ret = setup_ivshmem(true);
-	if (ret < 0)
+	if (ret < 0) {
 		return;
+	}
 	ivshmem_event_loop(&shmem_ctx);
 	/*
 	 * if ivshmem_event_loop() returns, it means the function failed

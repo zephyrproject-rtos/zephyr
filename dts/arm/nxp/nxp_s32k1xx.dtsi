@@ -17,7 +17,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		cpu@0 {
+		cpu0: cpu@0 {
 			device_type = "cpu";
 			reg = <0>;
 		};
@@ -25,7 +25,7 @@
 
 	/* Dummy pinctrl node, filled with pin mux options at board level */
 	pinctrl: pinctrl {
-		compatible = "nxp,kinetis-pinctrl";
+		compatible = "nxp,port-pinctrl";
 		status = "okay";
 	};
 
@@ -33,7 +33,7 @@
 		interrupt-parent = <&nvic>;
 
 		mpu: mpu@4000d000 {
-			compatible = "nxp,kinetis-mpu";
+			compatible = "nxp,sysmpu";
 			reg = <0x4000d000 0x1000>;
 			status = "disabled";
 		};
@@ -71,7 +71,7 @@
 		};
 
 		lpspi0: spi@4002c000 {
-			compatible = "nxp,imx-lpspi";
+			compatible = "nxp,lpspi";
 			reg = <0x4002c000 0x1000>;
 			interrupts = <26 0>;
 			clocks = <&clock NXP_S32_LPSPI0_CLK>;
@@ -81,7 +81,7 @@
 		};
 
 		lpspi1: spi@4002d000 {
-			compatible = "nxp,imx-lpspi";
+			compatible = "nxp,lpspi";
 			reg = <0x4002d000 0x1000>;
 			interrupts = <27 0>;
 			#address-cells = <1>;
@@ -90,7 +90,7 @@
 		};
 
 		lpspi2: spi@4002e000 {
-			compatible = "nxp,imx-lpspi";
+			compatible = "nxp,lpspi";
 			reg = <0x4002e000 0x1000>;
 			interrupts = <28 0>;
 			#address-cells = <1>;
@@ -99,37 +99,37 @@
 		};
 
 		porta: pinmux@40049000 {
-			compatible = "nxp,kinetis-pinmux";
+			compatible = "nxp,port-pinmux";
 			reg = <0x40049000 0x1000>;
 			clocks = <&clock NXP_S32_PORTA_CLK>;
 		};
 
 		portb: pinmux@4004a000 {
-			compatible = "nxp,kinetis-pinmux";
+			compatible = "nxp,port-pinmux";
 			reg = <0x4004a000 0x1000>;
 			clocks = <&clock NXP_S32_PORTB_CLK>;
 		};
 
 		portc: pinmux@4004b000 {
-			compatible = "nxp,kinetis-pinmux";
+			compatible = "nxp,port-pinmux";
 			reg = <0x4004b000 0x1000>;
 			clocks = <&clock NXP_S32_PORTC_CLK>;
 		};
 
 		portd: pinmux@4004c000 {
-			compatible = "nxp,kinetis-pinmux";
+			compatible = "nxp,port-pinmux";
 			reg = <0x4004c000 0x1000>;
 			clocks = <&clock NXP_S32_PORTD_CLK>;
 		};
 
 		porte: pinmux@4004d000 {
-			compatible = "nxp,kinetis-pinmux";
+			compatible = "nxp,port-pinmux";
 			reg = <0x4004d000 0x1000>;
 			clocks = <&clock NXP_S32_PORTE_CLK>;
 		};
 
 		wdog: watchdog@40052000 {
-			compatible = "nxp,kinetis-wdog32";
+			compatible = "nxp,wdog32";
 			reg = <0x40052000 0x1000>;
 			interrupts = <22 0>;
 			clocks = <&clock NXP_S32_LPO_128K_CLK>;
@@ -145,7 +145,7 @@
 		};
 
 		lpi2c0: i2c@40066000 {
-			compatible = "nxp,imx-lpi2c";
+			compatible = "nxp,lpi2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -156,7 +156,7 @@
 		};
 
 		lpi2c1: i2c@40067000 {
-			compatible = "nxp,imx-lpi2c";
+			compatible = "nxp,lpi2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -325,6 +325,28 @@
 			interrupt-names = "alarm", "seconds";
 			clock-frequency = <32000>;
 			prescaler = <32000>;
+		};
+
+		adc0: adc@4003b000 {
+			compatible = "nxp,adc12";
+			reg = <0x4003b000 0x1000>;
+			interrupts = <39 0>;
+			clk-source = <0>;
+			clk-divider = <1>;
+			clocks = <&clock NXP_S32_ADC0_CLK>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
+		adc1: adc@40027000 {
+			compatible = "nxp,adc12";
+			reg = <0x40027000 0x1000>;
+			interrupts = <40 0>;
+			clk-source = <0>;
+			clk-divider = <1>;
+			clocks = <&clock NXP_S32_ADC1_CLK>;
+			#io-channel-cells = <1>;
+			status = "disabled";
 		};
 	};
 };

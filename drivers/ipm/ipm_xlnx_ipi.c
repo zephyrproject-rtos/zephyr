@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 AMD-Xilinx Inc.
+ * Copyright (c) 2023 Advanced Micro Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -198,7 +198,7 @@ static int xlnx_ipi_init(const struct device *dev)
 	return 0;
 }
 
-static struct ipm_driver_api xlnx_ipi_api = {
+static DEVICE_API(ipm, xlnx_ipi_api) = {
 	.send = xlnx_ipi_send,
 	.register_callback = xlnx_ipi_register_callback,
 	.max_data_size_get = xlnx_ipi_max_data_size_get,

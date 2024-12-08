@@ -8,7 +8,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/iterable_sections.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
@@ -28,6 +28,7 @@
 #include "foundation.h"
 #include "access.h"
 #include "proxy.h"
+#include "gatt.h"
 #include "proxy_msg.h"
 #include "crypto.h"
 
@@ -48,8 +49,7 @@ LOG_MODULE_REGISTER(bt_mesh_gatt);
 			       BT_LE_ADV_OPT_USE_IDENTITY : (private) ? BT_LE_ADV_OPT_USE_NRPA : 0)
 
 #define ADV_OPT_PROXY(private)                                                                     \
-	(BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_SCANNABLE | ADV_OPT_ADDR(private) |             \
-	 BT_LE_ADV_OPT_ONE_TIME)
+	(BT_LE_ADV_OPT_CONN | BT_LE_ADV_OPT_SCANNABLE | ADV_OPT_ADDR(private))
 
 static void proxy_send_beacons(struct k_work *work);
 static int proxy_send(struct bt_conn *conn,
@@ -277,7 +277,7 @@ static void proxy_cfg(struct bt_mesh_proxy_role *role)
 
 	rx.local_match = 1U;
 
-	if (bt_mesh_rpl_check(&rx, NULL)) {
+	if (bt_mesh_rpl_check(&rx, NULL, false)) {
 		LOG_WRN("Replay: src 0x%04x dst 0x%04x seq 0x%06x", rx.ctx.addr, rx.ctx.recv_dst,
 			rx.seq);
 		return;
@@ -483,12 +483,6 @@ static const struct bt_data net_id_ad[] = {
 	BT_DATA(BT_DATA_SVC_DATA16, proxy_svc_data, NET_ID_LEN),
 };
 
-static const struct bt_data sd[] = {
-#if defined(CONFIG_BT_MESH_PROXY_USE_DEVICE_NAME)
-	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
-#endif
-};
-
 static int randomize_bt_addr(void)
 {
 	/* TODO: There appears to be no way to force an RPA/NRPA refresh. */
@@ -510,6 +504,7 @@ static int enc_id_adv(struct bt_mesh_subnet *sub, uint8_t type,
 					 type == BT_MESH_ID_TYPE_PRIV_NODE),
 		ADV_FAST_INT,
 	};
+	struct bt_data sd[1];
 	int err;
 
 	err = bt_mesh_encrypt(&sub->keys[SUBNET_KEY_TX_IDX(sub)].identity, hash, hash);
@@ -529,9 +524,17 @@ static int enc_id_adv(struct bt_mesh_subnet *sub, uint8_t type,
 	proxy_svc_data[2] = type;
 	memcpy(&proxy_svc_data[3], &hash[8], 8);
 
+	if (IS_ENABLED(CONFIG_BT_MESH_PROXY_USE_DEVICE_NAME)) {
+		sd[0].type = BT_DATA_NAME_COMPLETE;
+		sd[0].data_len = BT_DEVICE_NAME_LEN;
+		sd[0].data = BT_DEVICE_NAME;
+	}
+
 	err = bt_mesh_adv_gatt_start(
 		type == BT_MESH_ID_TYPE_PRIV_NET ? &slow_adv_param : &fast_adv_param,
-		duration, enc_id_ad, ARRAY_SIZE(enc_id_ad), sd, ARRAY_SIZE(sd));
+		duration, enc_id_ad, ARRAY_SIZE(enc_id_ad),
+		IS_ENABLED(CONFIG_BT_MESH_PROXY_USE_DEVICE_NAME) ? sd : NULL,
+		IS_ENABLED(CONFIG_BT_MESH_PROXY_USE_DEVICE_NAME) ? ARRAY_SIZE(sd) : 0);
 	if (err) {
 		LOG_WRN("Failed to advertise using type 0x%02x (err %d)", type, err);
 		return err;
@@ -607,6 +610,7 @@ static int net_id_adv(struct bt_mesh_subnet *sub, int32_t duration)
 		.options = ADV_OPT_PROXY(false),
 		ADV_SLOW_INT,
 	};
+	struct bt_data sd[1];
 	int err;
 
 	proxy_svc_data[2] = BT_MESH_ID_TYPE_NET;
@@ -615,8 +619,17 @@ static int net_id_adv(struct bt_mesh_subnet *sub, int32_t duration)
 
 	memcpy(proxy_svc_data + 3, sub->keys[SUBNET_KEY_TX_IDX(sub)].net_id, 8);
 
+	if (IS_ENABLED(CONFIG_BT_MESH_PROXY_USE_DEVICE_NAME)) {
+		sd[0].type = BT_DATA_NAME_COMPLETE;
+		sd[0].data_len = BT_DEVICE_NAME_LEN;
+		sd[0].data = BT_DEVICE_NAME;
+	}
+
 	err = bt_mesh_adv_gatt_start(&slow_adv_param, duration, net_id_ad,
-				     ARRAY_SIZE(net_id_ad), sd, ARRAY_SIZE(sd));
+				     ARRAY_SIZE(net_id_ad),
+				     IS_ENABLED(CONFIG_BT_MESH_PROXY_USE_DEVICE_NAME) ? sd : NULL,
+				     IS_ENABLED(CONFIG_BT_MESH_PROXY_USE_DEVICE_NAME) ?
+					ARRAY_SIZE(sd) : 0);
 	if (err) {
 		LOG_WRN("Failed to advertise using Network ID (err %d)", err);
 		return err;
@@ -783,7 +796,7 @@ static int gatt_proxy_advertise(void)
 {
 	int err;
 
-	int32_t max_adv_duration;
+	int32_t max_adv_duration = 0;
 	int cnt;
 	struct bt_mesh_subnet *sub;
 	struct proxy_adv_request request;
@@ -917,7 +930,7 @@ static ssize_t proxy_ccc_write(struct bt_conn *conn,
 	client = find_client(conn);
 	if (client->filter_type == NONE) {
 		client->filter_type = ACCEPT;
-		k_work_submit(&client->send_beacons);
+		bt_mesh_wq_submit(&client->send_beacons);
 	}
 
 	return sizeof(value);

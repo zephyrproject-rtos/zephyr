@@ -37,9 +37,9 @@ struct pl011_regs {
 };
 
 static inline
-volatile struct pl011_regs *const get_uart(const struct device *dev)
+volatile struct pl011_regs *get_uart(const struct device *dev)
 {
-	return (volatile struct pl011_regs *const)DEVICE_MMIO_GET(dev);
+	return (volatile struct pl011_regs *)DEVICE_MMIO_GET(dev);
 }
 
 #define PL011_BIT_MASK(x, y) (((2 << x) - 1) << y)

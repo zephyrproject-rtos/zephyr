@@ -10,6 +10,8 @@
 #define DT_DRV_COMPAT inventek_eswifi
 #endif
 
+#define _POSIX_C_SOURCE 200809L
+
 #include "eswifi_log.h"
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 

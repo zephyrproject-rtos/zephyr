@@ -10,7 +10,9 @@ tests:
       - v2m_musca_b1/musca_b1
     integration_platforms:
       - mps2/an521/cpu0
-    tags: ipm
+    tags:
+      - ipm
+      - openamp
     harness: console
     sysbuild: true
     harness_config:

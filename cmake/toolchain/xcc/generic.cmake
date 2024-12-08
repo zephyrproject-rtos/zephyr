@@ -6,6 +6,7 @@ set(COMPILER xcc)
 set(OPTIMIZE_FOR_DEBUG_FLAG "-O0")
 set(CC xcc)
 set(C++ xc++)
+set(LINKER xt-ld)
 
 list(APPEND TOOLCHAIN_C_FLAGS
   -imacros${ZEPHYR_BASE}/include/zephyr/toolchain/xcc_missing_defs.h

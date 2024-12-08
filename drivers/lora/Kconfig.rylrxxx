@@ -6,6 +6,7 @@
 
 config LORA_RYLRXXX
 	bool "Reyax LYLR driver"
+	default y
 	depends on DT_HAS_REYAX_RYLRXXX_ENABLED
 	select MODEM_MODULES
 	select MODEM_CHAT

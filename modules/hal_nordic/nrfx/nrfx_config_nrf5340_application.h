@@ -597,6 +597,15 @@
 #endif
 
 /**
+ * @brief NRFX_PDM0_ENABLED
+ *
+ * Boolean. Accepted values 0 and 1.
+ */
+#ifndef NRFX_PDM0_ENABLED
+#define NRFX_PDM0_ENABLED 0
+#endif
+
+/**
  * @brief NRFX_POWER_ENABLED
  *
  * Boolean. Accepted values 0 and 1.
@@ -1375,6 +1384,15 @@
  */
 #ifndef NRFX_UARTE_ENABLED
 #define NRFX_UARTE_ENABLED 0
+#endif
+
+/**
+ * @brief NRFX_UARTE_RX_FIFO_FLUSH_WORKAROUND_MAGIC_BYTE
+ *
+ * Integer value. Minimum: 0. Maximum: 255.
+ */
+#ifndef NRFX_UARTE_RX_FIFO_FLUSH_WORKAROUND_MAGIC_BYTE
+#define NRFX_UARTE_RX_FIFO_FLUSH_WORKAROUND_MAGIC_BYTE 171
 #endif
 
 /**

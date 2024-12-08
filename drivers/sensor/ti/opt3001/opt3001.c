@@ -107,7 +107,7 @@ static int opt3001_channel_get(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api opt3001_driver_api = {
+static DEVICE_API(sensor, opt3001_driver_api) = {
 	.sample_fetch = opt3001_sample_fetch,
 	.channel_get = opt3001_channel_get,
 };

@@ -7,15 +7,23 @@ config UDC_DWC2
 	depends on DT_HAS_SNPS_DWC2_ENABLED
 	select NRFS if NRFS_HAS_VBUS_DETECTOR_SERVICE
 	select NRFS_VBUS_DETECTOR_SERVICE_ENABLED if NRFS_HAS_VBUS_DETECTOR_SERVICE
+	select EVENTS
 	help
 	  DWC2 USB device controller driver.
 
 config UDC_DWC2_DMA
 	bool "DWC2 USB DMA support"
-	default n
+	default y
 	depends on UDC_DWC2
 	help
 	  Enable Buffer DMA if DWC2 USB controller supports Internal DMA.
+
+config UDC_DWC2_HIBERNATION
+	bool "DWC2 USB Hibernation support"
+	default y
+	depends on UDC_DWC2
+	help
+	  Enable Hibernation if DWC2 USB controller supports hibernation.
 
 config UDC_DWC2_STACK_SIZE
 	int "UDC DWC2 driver internal thread stack size"
@@ -31,10 +39,12 @@ config UDC_DWC2_THREAD_PRIORITY
 	help
 	  DWC2 driver thread priority.
 
-config UDC_DWC2_MAX_QMESSAGES
-	int "UDC DWC2 maximum number of ISR event messages"
+config UDC_DWC2_USBHS_VBUS_READY_TIMEOUT
+	int "UDC DWC2 USBHS VBUS ready event timeout in ms"
 	depends on UDC_DWC2
-	range 4 64
-	default 8
+	depends on NRFS_HAS_VBUS_DETECTOR_SERVICE
+	default 0
 	help
-	  DWC2 maximum number of ISR event messages.
+	  UDC DWC2 USBHS VBUS ready event timeout. If the VBUS is not ready
+	  and the Nordic USBHS controller is used, the udc_enable() is
+	  blocked for this amount of time. Set it to zero to wait forever.

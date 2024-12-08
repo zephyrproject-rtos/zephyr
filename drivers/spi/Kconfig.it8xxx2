@@ -1,0 +1,11 @@
+# Copyright (c) 2024 ITE Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_ITE_IT8XXX2
+	bool "ITE IT8XXX2 SPI Driver"
+	default y
+	depends on DT_HAS_ITE_IT8XXX2_SPI_ENABLED
+	select PINCTRL
+	select SOC_IT8XXX2_CPU_IDLE_GATING
+	help
+	  Enable support for the ITE IT8XXX2 SPI host(SSPI) driver.

@@ -6,7 +6,6 @@
 if SOC_STM32F105XC || SOC_STM32F105XB
 
 config NUM_IRQS
-	int
 	default 68
 
 endif # SOC_STM32F105XC || STM32F105XB

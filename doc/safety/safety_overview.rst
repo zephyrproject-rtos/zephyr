@@ -85,6 +85,24 @@ implementation of safety-related systems that aims to reduce the risk of acciden
 overall safety. By following the standard, organizations can ensure that their safety-related
 systems are designed and implemented to the highest level of safety integrity.
 
+Why IEC 61508?
+==============
+The IEC 61508 standard was selected because it serves as a foundational functional safety standard
+applicable across various industry sectors. It provides a robust framework that can be used as
+base for specific standards for different industries. This makes IEC 61508 particularly relevant
+for Zephyr, as the operating system's versatility allows it to be effectively utilized across a
+wide range of industry sectors.
+
+The following diagram illustrates the relationship between the IEC 61508 standard and other related
+standards:
+
+.. figure:: images/IEC-61508-basis.svg
+   :align: center
+   :alt: IEC 61508 relation to other standards
+   :figclass: align-center
+
+   IEC 61508 relation to other standards
+
 Quality
 *******
 

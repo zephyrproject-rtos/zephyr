@@ -35,20 +35,10 @@ const struct device *z_impl_device_get_binding(const char *name)
 		return NULL;
 	}
 
-	/* Split the search into two loops: in the common scenario, where
-	 * device names are stored in ROM (and are referenced by the user
-	 * with CONFIG_* macros), only cheap pointer comparisons will be
-	 * performed. Reserve string comparisons for a fallback.
-	 */
+	/* Return NULL if the device matching 'name' is not ready. */
 	STRUCT_SECTION_FOREACH(device, dev) {
-		if (z_impl_device_is_ready(dev) && (dev->name == name)) {
-			return dev;
-		}
-	}
-
-	STRUCT_SECTION_FOREACH(device, dev) {
-		if (z_impl_device_is_ready(dev) && (strcmp(name, dev->name) == 0)) {
-			return dev;
+		if ((dev->name == name) || (strcmp(name, dev->name) == 0)) {
+			return z_impl_device_is_ready(dev) ? dev : NULL;
 		}
 	}
 
@@ -98,7 +88,7 @@ const struct device *z_impl_device_get_by_dt_nodelabel(const char *nodelabel)
 	STRUCT_SECTION_FOREACH(device, dev) {
 		const struct device_dt_nodelabels *nl = device_get_dt_nodelabels(dev);
 
-		if (!z_impl_device_is_ready(dev)) {
+		if (!z_impl_device_is_ready(dev) || nl == NULL) {
 			continue;
 		}
 
@@ -117,7 +107,7 @@ const struct device *z_impl_device_get_by_dt_nodelabel(const char *nodelabel)
 #ifdef CONFIG_USERSPACE
 static inline const struct device *z_vrfy_device_get_by_dt_nodelabel(const char *nodelabel)
 {
-	const char nl_copy[Z_DEVICE_MAX_NODELABEL_LEN];
+	char nl_copy[Z_DEVICE_MAX_NODELABEL_LEN];
 
 	if (k_usermode_string_copy(nl_copy, (char *)nodelabel, sizeof(nl_copy)) != 0) {
 		return NULL;
@@ -125,7 +115,7 @@ static inline const struct device *z_vrfy_device_get_by_dt_nodelabel(const char 
 
 	return z_impl_device_get_by_dt_nodelabel(nl_copy);
 }
-#include <syscalls/device_get_by_dt_nodelabel_mrsh.c>
+#include <zephyr/syscalls/device_get_by_dt_nodelabel_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 #endif /* CONFIG_DEVICE_DT_METADATA */
 

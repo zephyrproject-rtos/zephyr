@@ -28,6 +28,9 @@
 #define LAN865x_MAC_NCR_RXEN		BIT(2)
 #define LAN865x_MAC_NCFGR		MMS_REG(0x1, 0x001)
 #define LAN865x_MAC_NCFGR_CAF		BIT(4)
+#define LAN865x_MAC_NCFGR_MTIHEN	BIT(6)
+#define LAN865x_MAC_HRB		MMS_REG(0x1, 0x020)
+#define LAN865x_MAC_HRT		MMS_REG(0x1, 0x021)
 #define LAN865x_MAC_SAB1		MMS_REG(0x1, 0x022)
 #define LAN865x_MAC_SAB2		MMS_REG(0x1, 0x024)
 #define LAN865x_MAC_SAT2		MMS_REG(0x1, 0x025)
@@ -77,5 +80,15 @@ struct lan865x_data {
 	struct k_thread thread;
 	k_tid_t tid_int;
 };
+
+static inline void lan865x_update_dev_cfg_array(oa_mem_map_t *cfg, uint8_t size,
+						uint32_t addr, uint16_t val)
+{
+	for (uint8_t i = 0; i < size; i++) {
+		if (cfg[i].address == addr) {
+			cfg[i].value = val;
+		}
+	}
+}
 
 #endif /* ETH_LAN865X_PRIV_H__ */

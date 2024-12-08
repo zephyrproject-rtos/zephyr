@@ -19,8 +19,12 @@ zephyr_get_system_include_directories_for_lang_as_string(C system_includes)
 zephyr_get_compile_definitions_for_lang_as_string(       C definitions)
 zephyr_get_compile_options_for_lang_as_string(           C options)
 
+if(DEFINED CMAKE_C_COMPILER_TARGET)
+  set(target_flag "--target=${CMAKE_C_COMPILER_TARGET}")
+endif()
+
 set(external_project_cflags
-  "${includes} ${definitions} ${options} ${system_includes}"
+  "${target_flag} ${includes} ${definitions} ${options} ${system_includes}"
   )
 
 include(ExternalProject)

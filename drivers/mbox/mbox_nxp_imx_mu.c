@@ -113,7 +113,7 @@ static int nxp_imx_mu_set_enabled(const struct device *dev, uint32_t channel, bo
 	return 0;
 }
 
-static const struct mbox_driver_api nxp_imx_mu_driver_api = {
+static DEVICE_API(mbox, nxp_imx_mu_driver_api) = {
 	.send = nxp_imx_mu_send,
 	.register_callback = nxp_imx_mu_register_callback,
 	.mtu_get = nxp_imx_mu_mtu_get,
@@ -139,7 +139,7 @@ static void handle_irq(const struct device *dev);
 		return 0;                                                                          \
 	}                                                                                          \
 	DEVICE_DT_INST_DEFINE(idx, nxp_imx_mu_##idx##_init, NULL, &nxp_imx_mu_##idx##_data,        \
-			      &nxp_imx_mu_##idx##_config, POST_KERNEL, CONFIG_MBOX_INIT_PRIORITY,  \
+			      &nxp_imx_mu_##idx##_config, PRE_KERNEL_1, CONFIG_MBOX_INIT_PRIORITY, \
 			      &nxp_imx_mu_driver_api)
 
 #define MU_IRQ_HANDLER(idx)                                                                        \

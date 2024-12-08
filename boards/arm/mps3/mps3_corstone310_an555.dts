@@ -1,0 +1,96 @@
+/*
+ * Copyright 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <arm/armv8.1-m.dtsi>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <mem.h>
+#include "mps3_common.dtsi"
+
+/ {
+	compatible = "arm,mps3-an555";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &dtcm;
+		zephyr,flash = &itcm;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m85";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv8.1m-mpu";
+				reg = <0xe000ed90 0x40>;
+			};
+		};
+	};
+
+	ethosu {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		interrupt-parent = <&nvic>;
+
+		ethosu0: ethosu@50004000 {
+			compatible = "arm,ethos-u";
+			reg = <0x50004000>;
+			interrupts = <16 3>;
+			secure-enable;
+			privilege-enable;
+			status = "okay";
+		};
+	};
+
+	/* We utilize the secure addresses, if you subtract 0x10000000
+	 * you'll get the non-secure alias
+	 */
+	itcm: itcm@10000000 {	/* alias @ 0x0 */
+		compatible = "zephyr,memory-region";
+		reg = <0x10000000 DT_SIZE_K(32)>;
+		zephyr,memory-region = "ITCM";
+	};
+
+	sram: sram@11000000 {	/* alias @ 0x01000000 */
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x11000000 DT_SIZE_M(2)>;
+		zephyr,memory-region = "SRAM";
+	};
+
+	dtcm: dtcm@30000000 {	/* alias @ 0x20000000 */
+		compatible = "zephyr,memory-region";
+		reg = <0x30000000 DT_SIZE_K(32)>;
+		zephyr,memory-region = "DTCM";
+	};
+
+	isram: sram@31000000 {/* alias @ 0x21000000 */
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x31000000 DT_SIZE_M(4)>;
+		zephyr,memory-region = "ISRAM";
+	};
+
+	soc {
+		peripheral@50000000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x50000000 0x10000000>;
+
+			#include "mps3_common_soc_peripheral.dtsi"
+		};
+	};
+};

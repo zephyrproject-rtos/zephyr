@@ -25,6 +25,8 @@
 	aliases {
 		/* Alias for lora samples */
 		lora0 = &lora;
+		/* Alias for gnss samples */
+		gnss = &gnss;
 	};
 };
 
@@ -55,6 +57,10 @@
 			reg = <0x0007a000 0x00005000>;
 		};
 	};
+};
+
+&reg {
+	regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
 };
 
 &gpiote {
@@ -147,5 +153,18 @@
 		spi-max-frequency = <8000000>;
 		status = "okay";
 		jedec-id = [c2 28 17];
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <9600>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	gnss: u_blox_m8 {
+		status = "okay";
+		compatible = "gnss-nmea-generic";
 	};
 };

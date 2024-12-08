@@ -1,7 +1,4 @@
-.. _frdm_ke17z:
-
-NXP FRDM-KE17Z
-##############
+.. zephyr:board:: frdm_ke17z
 
 Overview
 ********
@@ -11,12 +8,6 @@ MCU-based platforms. The FRDM-KE17Z contains a robust TSI module
 with up to 50 channels which makes this board highly flexible
 for touch keys. Offers options for serial
 communication, flash programming, and run-control debugging.
-
-.. figure:: frdmke17z.webp
-   :align: center
-   :alt: FRDM-KE17Z
-
-   FRDM-KE17Z (Credit: NXP)
 
 Hardware
 ********
@@ -55,9 +46,25 @@ features:
 +-----------+------------+-------------------------------------+
 | PINCTRL   | on-chip    | pinctrl                             |
 +-----------+------------+-------------------------------------+
+| ADC       | on-chip    | adc                                 |
++-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
+| LPTMR     | on-chip    | counter                             |
++-----------+------------+-------------------------------------+
 | UART      | on-chip    | uart                                |
++-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
+| DMA       | on-chip    | dma                                 |
++-----------+------------+-------------------------------------+
+| FTM       | on-chip    | pwm                                 |
++-----------+------------+-------------------------------------+
+| I2C       | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
+| ACMP      | on-chip    | sensor                              |
++-----------+------------+-------------------------------------+
+| WATCHDOG  | on-chip    | watchdog                            |
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
@@ -140,7 +147,7 @@ etc.):
 Flashing
 ========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -158,7 +165,7 @@ see the following message in the terminal:
 Debugging
 =========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

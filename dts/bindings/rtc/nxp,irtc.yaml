@@ -1,0 +1,42 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: IRTC
+
+compatible: "nxp,irtc"
+
+include:
+  - name: rtc.yaml
+  - name: rtc-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  clock-src:
+    type: int
+    required: true
+    enum:
+      - 0
+      - 1
+    description: |
+      The input clock select for IRTC.
+      0 <- 16.384 kHz
+      1 <- 32.768 kHz
+
+  output-clk-en:
+    type: int
+    default: 0
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+    description: |
+      Enable clock as an output for other peripherals to use.
+      0 <- No clock output
+      1 <- Fine 1Hz
+      2 <- Buffered Oscillator Clock
+      3 <- Coarse 1Hz
+      Default value ensures the output clock is turned off.
+      This is the reset value.

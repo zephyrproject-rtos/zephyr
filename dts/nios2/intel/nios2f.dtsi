@@ -59,7 +59,7 @@
 			interrupts = <4 10>;
 		};
 
-		dma: dma@100200 {
+		dma: dma@1002c0 {
 			compatible = "altr,msgdma";
 			reg = <0x1002c0 0x30>;
 			interrupts = <3 3>;

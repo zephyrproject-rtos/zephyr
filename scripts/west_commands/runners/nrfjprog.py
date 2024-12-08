@@ -8,8 +8,7 @@
 import subprocess
 import sys
 
-from runners.nrf_common import ErrNotAvailableBecauseProtection, ErrVerify, \
-                               NrfBinaryRunner
+from runners.nrf_common import ErrNotAvailableBecauseProtection, ErrVerify, NrfBinaryRunner
 
 # https://infocenter.nordicsemi.com/index.jsp?topic=%2Fug_nrf_cltools%2FUG%2Fcltools%2Fnrf_nrfjprogexe_return_codes.html&cp=9_1_3_1
 UnavailableOperationBecauseProtectionError = 16
@@ -18,13 +17,22 @@ VerifyError = 55
 class NrfJprogBinaryRunner(NrfBinaryRunner):
     '''Runner front-end for nrfjprog.'''
 
+    def __init__(self, cfg, family, softreset, dev_id, erase=False,
+                 reset=True, tool_opt=None, force=False, recover=False,
+                 qspi_ini=None):
+
+        super().__init__(cfg, family, softreset, dev_id, erase, reset,
+                         tool_opt, force, recover)
+
+        self.qspi_ini = qspi_ini
+
     @classmethod
     def name(cls):
         return 'nrfjprog'
 
     @classmethod
     def tool_opt_help(cls) -> str:
-        return 'Additional options for nrfjprog, e.g. "--recover"'
+        return 'Additional options for nrfjprog, e.g. "--clockspeed"'
 
     @classmethod
     def do_create(cls, cfg, args):
@@ -32,7 +40,12 @@ class NrfJprogBinaryRunner(NrfBinaryRunner):
                                     args.dev_id, erase=args.erase,
                                     reset=args.reset,
                                     tool_opt=args.tool_opt, force=args.force,
-                                    recover=args.recover)
+                                    recover=args.recover, qspi_ini=args.qspi_ini)
+    @classmethod
+    def do_add_parser(cls, parser):
+        super().do_add_parser(parser)
+        parser.add_argument('--qspiini', required=False, dest='qspi_ini',
+                            help='path to an .ini file with qspi configuration')
 
     def do_get_boards(self):
         snrs = self.check_output(['nrfjprog', '--ids'])
@@ -81,6 +94,9 @@ class NrfJprogBinaryRunner(NrfBinaryRunner):
             if _op.get('verify'):
                 # In the future there might be multiple verify modes
                 cmd.append('--verify')
+            if self.qspi_ini:
+                cmd.append('--qspiini')
+                cmd.append(self.qspi_ini)
         elif op_type == 'recover':
             cmd.append('--recover')
         elif op_type == 'reset':

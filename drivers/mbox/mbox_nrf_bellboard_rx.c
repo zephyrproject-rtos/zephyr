@@ -8,6 +8,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/mbox.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/__assert.h>
 
 #include <hal/nrf_bellboard.h>
 
@@ -47,11 +48,20 @@ static void bellboard_rx_isr(const void *parameter)
 	for (uint8_t i = 0U; i < NRF_BELLBOARD_EVENTS_TRIGGERED_COUNT; i++) {
 		nrf_bellboard_event_t event = nrf_bellboard_triggered_event_get(i);
 
-		if (nrf_bellboard_event_check(bellboard, event)) {
-			nrf_bellboard_event_clear(bellboard, event);
-		}
-
 		if ((int_pend & BIT(i)) != 0U) {
+			/* Only clear those events that have their corresponding bit set
+			 * in INTPEND at the time we read it. Otherwise, if two (or more)
+			 * events are generated in quick succession, INTPEND may be set for
+			 * only one of events, but we clear the EVENTS_TRIGGERED bit for
+			 * all of them, thus losing them.
+			 *
+			 * Assume nrf_bellboard_event_check() is true for the event
+			 * that raised this interrupt.
+			 */
+			__ASSERT_NO_MSG(nrf_bellboard_event_check(bellboard, event));
+
+			nrf_bellboard_event_clear(bellboard, event);
+
 			if (cbs[i] != NULL) {
 				cbs[i](DEVICE_DT_INST_GET(0), i, cbs_ctx[i], NULL);
 			}
@@ -125,7 +135,7 @@ static int bellboard_rx_set_enabled(const struct device *dev, uint32_t id, bool 
 	return 0;
 }
 
-static const struct mbox_driver_api bellboard_rx_driver_api = {
+static DEVICE_API(mbox, bellboard_rx_driver_api) = {
 	.max_channels_get = bellboard_rx_max_channels_get,
 	.register_callback = bellboard_rx_register_callback,
 	.set_enabled = bellboard_rx_set_enabled,

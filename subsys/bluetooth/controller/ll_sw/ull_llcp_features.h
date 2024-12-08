@@ -184,6 +184,11 @@ static inline bool feature_iso_peripheral(struct ll_conn *conn)
 	return LL_FEAT_BIT_CIS_PERIPHERAL != 0;
 }
 
+static inline bool feature_peer_periodic_sync_recv(struct ll_conn *conn)
+{
+	return (conn->llcp.fex.features_peer & BIT64(BT_LE_FEAT_BIT_PAST_RECV)) != 0;
+}
+
 /*
  * The following features are not yet defined in KConfig and do
  * not have a bitfield defined in ll_feat.h

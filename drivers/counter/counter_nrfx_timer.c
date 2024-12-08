@@ -70,7 +70,7 @@ static int stop(const struct device *dev)
 {
 	const struct counter_nrfx_config *config = dev->config;
 
-	nrf_timer_task_trigger(config->timer, NRF_TIMER_TASK_SHUTDOWN);
+	nrf_timer_task_trigger(config->timer, NRF_TIMER_TASK_STOP);
 
 	return 0;
 }
@@ -89,6 +89,7 @@ static uint32_t read(const struct device *dev)
 
 	nrf_timer_task_trigger(timer,
 			       nrf_timer_capture_task_get(COUNTER_READ_CC));
+	nrf_barrier_w();
 
 	return nrf_timer_cc_get(timer, COUNTER_READ_CC);
 }
@@ -160,6 +161,7 @@ static int set_cc(const struct device *dev, uint8_t id, uint32_t val,
 	 */
 	now = read(dev);
 	prev_val = nrf_timer_cc_get(reg, chan);
+	nrf_barrier_r();
 	nrf_timer_cc_set(reg, chan, now);
 	nrf_timer_event_clear(reg, evt);
 
@@ -388,7 +390,7 @@ static void irq_handler(const void *arg)
 	}
 }
 
-static const struct counter_driver_api counter_nrfx_driver_api = {
+static DEVICE_API(counter, counter_nrfx_driver_api) = {
 	.start = start,
 	.stop = stop,
 	.get_value = get_value,

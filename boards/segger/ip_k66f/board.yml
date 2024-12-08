@@ -1,5 +1,6 @@
 board:
   name: ip_k66f
+  full_name: IP Switch Board
   vendor: segger
   socs:
     - name: mk66f18

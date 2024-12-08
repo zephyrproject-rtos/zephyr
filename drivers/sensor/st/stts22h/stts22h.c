@@ -127,7 +127,7 @@ static int stts22h_attr_set(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api stts22h_api_funcs = {
+static DEVICE_API(sensor, stts22h_api_funcs) = {
 	.attr_set = stts22h_attr_set,
 	.sample_fetch = stts22h_sample_fetch,
 	.channel_get = stts22h_channel_get,

@@ -51,6 +51,20 @@ properties:
       Describes an offset between two channels share the same interrupt entry.
       Default value means each channel has separate interrupt entry.
 
+  no-error-irq:
+    type: boolean
+    description: |
+      If the SoCs don't have a separate interrupt id for error IRQ.
+
+  nxp,version:
+    type: int
+    enum:
+      - 2
+      - 3
+      - 4
+    description: |
+      eDMA IP revision number.
+
   "#dma-cells":
     type: int
     required: true

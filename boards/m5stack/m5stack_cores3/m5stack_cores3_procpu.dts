@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2024 TOKITA Hiroshi
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "m5stack_cores3_procpu_common.dtsi"
+
+/ {
+	model = "M5Stack CoreS3 PROCPU";
+	compatible = "m5stack,cores3";
+
+	aliases {
+		accel0 = &bmi270;
+		magn0 = &bmm150;
+	};
+};
+
+&i2c0 {
+	bmi270: bmi270@69 {
+		compatible = "bosch,bmi270";
+		reg = <0x69>;
+	};
+
+	bmm150: bmm150@10 {
+		compatible = "bosch,bmm150";
+		status = "okay";
+		reg = <0x10>;
+	};
+};

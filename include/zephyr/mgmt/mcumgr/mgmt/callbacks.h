@@ -27,6 +27,10 @@
 #include <zephyr/mgmt/mcumgr/grp/settings_mgmt/settings_mgmt_callbacks.h>
 #endif
 
+#ifdef CONFIG_MCUMGR_GRP_ENUM
+#include <zephyr/mgmt/mcumgr/grp/enum_mgmt/enum_mgmt_callbacks.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -39,7 +43,7 @@ extern "C" {
  */
 
 /** @cond INTERNAL_HIDDEN */
-/** Event which signfies that all event IDs for a particular group should be enabled. */
+/** Event which signifies that all event IDs for a particular group should be enabled. */
 #define MGMT_EVT_OP_ID_ALL 0xffff
 
 /** Get event for a particular group and event ID. */
@@ -67,7 +71,7 @@ enum mgmt_cb_return {
 
 	/**
 	 * Group (application-level) error and ``err_group`` contains the group ID that caused
-	 * the error and ``err_rc`` contians the error code of that group to return.
+	 * the error and ``err_rc`` contains the error code of that group to return.
 	 */
 	MGMT_CB_ERROR_ERR,
 };
@@ -118,6 +122,7 @@ enum mgmt_cb_groups {
 	MGMT_EVT_GRP_IMG,
 	MGMT_EVT_GRP_FS,
 	MGMT_EVT_GRP_SETTINGS,
+	MGMT_EVT_GRP_ENUM,
 
 	MGMT_EVT_GRP_USER_CUSTOM_START		= MGMT_GROUP_ID_PERUSER,
 };
@@ -137,7 +142,7 @@ enum smp_group_events {
 	/** Callback when a command is received, data is mgmt_evt_op_cmd_arg(). */
 	MGMT_EVT_OP_CMD_RECV			= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_SMP, 0),
 
-	/** Callback when a a status is updated, data is mgmt_evt_op_cmd_arg(). */
+	/** Callback when a status is updated, data is mgmt_evt_op_cmd_arg(). */
 	MGMT_EVT_OP_CMD_STATUS			= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_SMP, 1),
 
 	/** Callback when a command has been processed, data is mgmt_evt_op_cmd_arg(). */
@@ -180,6 +185,15 @@ enum img_mgmt_group_events {
 	/** Callback when an image write command has finished writing to flash. */
 	MGMT_EVT_OP_IMG_MGMT_DFU_CHUNK_WRITE_COMPLETE	= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_IMG, 5),
 
+	/** Callback when an image slot's state is encoded for a response. */
+	MGMT_EVT_OP_IMG_MGMT_IMAGE_SLOT_STATE		= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_IMG, 6),
+
+	/** Callback when an slot list command outputs fields for an image. */
+	MGMT_EVT_OP_IMG_MGMT_SLOT_INFO_IMAGE		= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_IMG, 7),
+
+	/** Callback when an slot list command outputs fields for a slot of an image. */
+	MGMT_EVT_OP_IMG_MGMT_SLOT_INFO_SLOT		= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_IMG, 8),
+
 	/** Used to enable all img_mgmt_group events. */
 	MGMT_EVT_OP_IMG_MGMT_ALL			= MGMT_DEF_EVT_OP_ALL(MGMT_EVT_GRP_IMG),
 };
@@ -198,10 +212,16 @@ enum os_mgmt_group_events {
 	MGMT_EVT_OP_OS_MGMT_INFO_APPEND		= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_OS, 2),
 
 	/** Callback when a datetime get command has been received. */
-	MGMT_EVT_OP_OS_MGMT_DATETIME_GET        = MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_OS, 3),
+	MGMT_EVT_OP_OS_MGMT_DATETIME_GET	= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_OS, 3),
 
 	/** Callback when a datetime set command has been received, data is struct rtc_time(). */
-	MGMT_EVT_OP_OS_MGMT_DATETIME_SET        = MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_OS, 4),
+	MGMT_EVT_OP_OS_MGMT_DATETIME_SET	= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_OS, 4),
+
+	/**
+	 * Callback when a bootloader info command has been received, data is
+	 * os_mgmt_bootloader_info_data.
+	 */
+	MGMT_EVT_OP_OS_MGMT_BOOTLOADER_INFO	= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_OS, 5),
 
 	/** Used to enable all os_mgmt_group events. */
 	MGMT_EVT_OP_OS_MGMT_ALL			= MGMT_DEF_EVT_OP_ALL(MGMT_EVT_GRP_OS),
@@ -216,6 +236,17 @@ enum settings_mgmt_group_events {
 
 	/** Used to enable all settings_mgmt_group events. */
 	MGMT_EVT_OP_SETTINGS_MGMT_ALL		= MGMT_DEF_EVT_OP_ALL(MGMT_EVT_GRP_SETTINGS),
+};
+
+/**
+ * MGMT event opcodes for enumeration management group.
+ */
+enum enum_mgmt_group_events {
+	/** Callback when fetching details on supported command groups. */
+	MGMT_EVT_OP_ENUM_MGMT_DETAILS		= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_ENUM, 0),
+
+	/** Used to enable all enum_mgmt_group events. */
+	MGMT_EVT_OP_ENUM_MGMT_ALL		= MGMT_DEF_EVT_OP_ALL(MGMT_EVT_GRP_ENUM),
 };
 
 /**

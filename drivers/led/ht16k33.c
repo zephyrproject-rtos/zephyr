@@ -213,7 +213,7 @@ static bool ht16k33_process_keyscan_data(const struct device *dev)
 
 	err = i2c_burst_read_dt(&config->i2c, HT16K33_CMD_KEY_DATA_ADDR, keys, sizeof(keys));
 	if (err) {
-		LOG_WRN("Failed to to read HT16K33 key data (err %d)", err);
+		LOG_WRN("Failed to read HT16K33 key data (err %d)", err);
 		/* Reprocess */
 		return true;
 	}
@@ -380,7 +380,7 @@ static int ht16k33_init(const struct device *dev)
 		err = i2c_burst_read_dt(&config->i2c, HT16K33_CMD_KEY_DATA_ADDR, keys,
 					sizeof(keys));
 		if (err) {
-			LOG_ERR("Failed to to read HT16K33 key data");
+			LOG_ERR("Failed to read HT16K33 key data");
 			return -EIO;
 		}
 
@@ -415,7 +415,7 @@ static int ht16k33_init(const struct device *dev)
 	return 0;
 }
 
-static const struct led_driver_api ht16k33_leds_api = {
+static DEVICE_API(led, ht16k33_leds_api) = {
 	.blink = ht16k33_led_blink,
 	.set_brightness = ht16k33_led_set_brightness,
 	.on = ht16k33_led_on,

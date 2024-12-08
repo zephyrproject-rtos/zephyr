@@ -1,6 +1,6 @@
 # STM32H745XI DISCOVERY board configuration
 
-# Copyright (c) 2020 Alexander Kozhinov <AlexanderKozhinov@yandex.com>
+# Copyright (c) 2020 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
 # Copyright (c) 2024 Tomas Jurena <jurena@utb.cz>
 # SPDX-License-Identifier: Apache-2.0
 
@@ -13,6 +13,10 @@ config NET_L2_ETHERNET
 
 config ETH_STM32_HAL_MII
 	default y
+
+# STM32H745I-DISCO have PHY connected to address 1
+config ETH_STM32_HAL_PHY_ADDRESS
+	default 1
 
 endif # NETWORKING
 

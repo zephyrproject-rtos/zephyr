@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Ian Morris
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: mikroe_stm32_m4_clicker
+  full_name: STM32 M4 Clicker
+  vendor: mikroe
+  socs:
+    - name: stm32f415xx

@@ -1,17 +1,10 @@
-.. _pan1782_evb:
-
-PAN1782 Evaluation Board
-########################
+.. zephyr:board:: pan1782_evb
 
 Overview
 ********
 
 The PAN1782 Evaluation Board is a development tool for the PAN1782 module
 which is based on the nRF52833 chipset from Nordic Semiconductor.
-
-.. figure:: pan1782_evaluation_board.jpg
-     :align: center
-     :alt: PAN1782 Evaluation Board
 
 You can find more information about the PAN1782 module and the PAN1782
 evaluation board on the `product website`_.
@@ -22,8 +15,8 @@ development kits for the nRF52833 from Nordic Semiconductor.
 The PAN1782 evaluation board is closely linked to these other evaluation
 boards:
 
-* :ref:`pan1780_evb`
-* :ref:`pan1781_evb`
+* :zephyr:board:`pan1780_evb`
+* :zephyr:board:`pan1781_evb`
 
 Usage
 *****

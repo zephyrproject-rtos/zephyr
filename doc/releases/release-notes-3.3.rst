@@ -210,7 +210,7 @@ Deprecated in this release
 
 * MCUmgr subsystem, specifically the SMP transport API, is dropping `zephyr_`
   prefix, deprecating prefixed functions and callback type definitions with the
-  prefix and replacing them with with prefix-less variants.
+  prefix and replacing them with prefix-less variants.
   The :c:struct:`zephyr_smp_transport` type, representing transport object,
   is now replaced with :c:struct:`smp_transport`, and the later one is used,
   instead of the former one, by all prefix-less functions.
@@ -3486,7 +3486,7 @@ Addressed issues
 * :github:`50732` - net: tests/net/ieee802154/l2/net.ieee802154.l2 failed on reel_board due to build failure
 * :github:`50709` - tests: arch: arm: arm_thread_swap fails on stm32g0 or stm32l0
 * :github:`50684` - After enabling  CONFIG_SPI_STM32_DMA in project config file for STM32MP157-dk2 Zephyr throwing error
-* :github:`50665` - MEC15xx/MEC1501: UART and and special purpose pins missing pinctrl configuration
+* :github:`50665` - MEC15xx/MEC1501: UART and special purpose pins missing pinctrl configuration
 * :github:`50658` - Bluetooth: BLE stack notifications blocks host side for too long (``drivers/bluetooth/hci/spi.c`` and ``hci_spi``)
 * :github:`50656` - Wrong definition of bank size for intel memory management driver.
 * :github:`50655` - STM32WB55 Bus Fault when connecting then disconnecting then connecting then disconnecting then connecting

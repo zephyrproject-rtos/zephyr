@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Intel Corporation
+ * Copyright (c) 2015-2024 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 #include <zephyr/drivers/ipm.h>
 #include <zephyr/drivers/console/ipm_console.h>
 #include <zephyr/device.h>
+#include <zephyr/misc/lorem_ipsum.h>
 #include <zephyr/init.h>
 #include <stdio.h>
 
@@ -33,7 +34,7 @@ extern struct ipm_driver_api ipm_dummy_api;
 struct ipm_dummy_driver_data ipm_dummy0_driver_data;
 DEVICE_DEFINE(ipm_dummy0, "ipm_dummy0", NULL,
 		NULL, &ipm_dummy0_driver_data, NULL,
-		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+		PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&ipm_dummy_api);
 
 /* Sending side of the console IPM driver, will forward anything sent
@@ -80,31 +81,35 @@ int main(void)
 	int rv, i;
 	const struct device *ipm;
 
+	rv = TC_PASS;
+
 	TC_SUITE_START("test_ipm");
 	ipm = device_get_binding("ipm_dummy0");
+	if (ipm == NULL) {
+		TC_ERROR("unable to get device 'ipm_dummy0'\n");
+		rv = TC_FAIL;
+	} else {
+		/* Try sending a raw string to the IPM device to show that the
+		 * receiver works
+		 */
+		int rc = 0;
 
-	/* Try sending a raw string to the IPM device to show that the
-	 * receiver works
-	 */
-	for (i = 0; i < strlen(thestr); i++) {
-		ipm_send(ipm, 1, thestr[i], NULL, 0);
+		for (i = 0; i < strlen(thestr) && rc == 0; i++) {
+			rc = ipm_send(ipm, 1, thestr[i], NULL, 0);
+		}
+		if (rc) {
+			TC_ERROR("ipm_send() error=%u\n", rc);
+			rv = TC_FAIL;
+		} else {
+			/* Now do this through printf() to exercise the sender */
+			/* I will be split to lines of LINE_BUF_SIZE           */
+			printf(LOREM_IPSUM_SHORT "\n");
+		}
 	}
-
-	/* Now do this through printf() to exercise the sender */
-	printf("Lorem ipsum dolor sit amet, consectetur adipiscing elit, "
-	       "sed do eiusmod tempor incididunt ut labore et dolore magna "
-	       "aliqua. Ut enim ad minim veniam, quis nostrud exercitation "
-	       "ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis "
-	       "aute irure dolor in reprehenderit in voluptate velit esse "
-	       "cillum dolore eu fugiat nulla pariatur. Excepteur sint "
-	       "occaecat cupidatat non proident, sunt in culpa qui officia "
-	       "deserunt mollit anim id est laborum.\n");
-
-	/* XXX how to tell if something was actually printed out for
-	 * automation purposes?
+	/* Twister Console Harness checks the output actually printed out for
+	 * automation purposes.
 	 */
 
-	rv = TC_PASS;
 	TC_END_RESULT(rv);
 	TC_SUITE_END("test_ipm", rv);
 	TC_END_REPORT(rv);

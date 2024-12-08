@@ -70,6 +70,7 @@ struct pma_region {
 	struct pma_region_attr attr;
 };
 
+#ifdef CONFIG_NOCACHE_MEMORY
 /*
  * Write value to CSRs pmaaddr{i}
  */
@@ -165,7 +166,6 @@ static int pma_region_is_valid(const struct pma_region *region)
 	return 0;
 }
 
-#ifdef CONFIG_NOCACHE_MEMORY
 static void configure_nocache_region(void)
 {
 	const struct pma_region nocache_region = {
@@ -187,13 +187,6 @@ static void configure_nocache_region(void)
 }
 #endif /* CONFIG_NOCACHE_MEMORY */
 
-/*
- * @brief Init PMA CSRs of each CPU core
- *
- * In SMP, each CPU has it's own PMA CSR and PMA CSR only affect one CPU.
- * We should configure CSRs of all CPUs to make memory attribute
- * (e.g. uncacheable) affects all CPUs.
- */
 void pma_init_per_core(void)
 {
 #ifdef CONFIG_NOCACHE_MEMORY
@@ -201,7 +194,7 @@ void pma_init_per_core(void)
 #endif /* CONFIG_NOCACHE_MEMORY */
 }
 
-static int pma_init(void)
+void pma_init(void)
 {
 	unsigned long mmsc_cfg;
 
@@ -216,12 +209,6 @@ static int pma_init(void)
 		LOG_ERR("CPU doesn't support PMA. "
 			"Please disable CONFIG_SOC_ANDES_V5_PMA");
 #endif
-		return -ENODEV;
+		return;
 	}
-
-	pma_init_per_core();
-
-	return 0;
 }
-
-SYS_INIT(pma_init, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

@@ -1,0 +1,36 @@
+# Copyright (c) 2024 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+description: AW9523B GPIO Controller
+
+compatible: "awinic,aw9523b-gpio"
+
+include: gpio-controller.yaml
+
+on-bus: aw9523b
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: |
+      Set GPIO connected to the controller INTN pin.
+      This is used for notifying interruption.
+
+  reset-gpios:
+    type: phandle-array
+    description: |
+      Set GPIO connected to the controller RSTN pin.
+      This is used for controlling resets via GPIO.
+
+  port0-push-pull:
+    type: boolean
+    description: |
+      Configure Port0 to Push-Pull mode.
+      Port0 is worked in Open-Drain mode by default.
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags

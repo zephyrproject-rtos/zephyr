@@ -127,7 +127,7 @@ int amg88xx_init(const struct device *dev)
 	return 0;
 }
 
-static const struct sensor_driver_api amg88xx_driver_api = {
+static DEVICE_API(sensor, amg88xx_driver_api) = {
 #ifdef CONFIG_AMG88XX_TRIGGER
 	.attr_set = amg88xx_attr_set,
 	.trigger_set = amg88xx_trigger_set,

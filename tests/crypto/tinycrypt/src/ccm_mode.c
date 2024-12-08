@@ -464,7 +464,6 @@ ZTEST(tinycrypt, test_ccm_vector_8)
 	}
 
 	result = TC_PASS;
-	TC_END_RESULT(result);
 
 	/**TESTPOINT: Check result*/
 	zassert_false(result, "CCM test #8 (no payload data) failed.");

@@ -1,27 +1,27 @@
 .. zephyr:code-sample:: bluetooth_bap_broadcast_assistant
-   :name: Bluetooth: Broadcast Audio Assistant
-   :relevant-api: bt_bap
+   :name: Basic Audio Profile (BAP) Broadcast Audio Assistant
+   :relevant-api: bluetooth bt_audio bt_bap bt_conn
 
-   Use LE Audio Broadcast Assistant functionality
+   Use BAP Broadcast Assistant functionality.
 
 Overview
 ********
 
-Application demonstrating the LE Audio broadcast assistant functionality.
+Application demonstrating the BAP Broadcast Assistant functionality.
 
 The sample will automatically try to connect to a device in the BAP Scan Delegator
 role (advertising support for the Broadcast Audio Scan Service (BASS)).
 It will then search for a broadcast source and (if found) add the broadcast ID to
 the BAP Scan Delegator.
 
-Practical use of this sample requires a sink (e.g. the Broadcast Audio Sink sample or
-a set of LE Audio Broadcast capable earbuds) and a source (e.g. the Broadcast Audio
+Practical use of this sample requires a sink (e.g. the BAP Broadcast Audio Sink sample or
+a set of BAP Broadcast capable earbuds) and a source (e.g. the BAP Broadcast Audio
 Source sample).
 
 This sample can be found under
 :zephyr_file:`samples/bluetooth/bap_broadcast_assistant` in the Zephyr tree.
 
-Check the :ref:`bluetooth samples section <bluetooth-samples>` for general information.
+Check the :zephyr:code-sample-category:`bluetooth` samples for general information.
 
 Requirements
 ************

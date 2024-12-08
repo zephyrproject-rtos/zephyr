@@ -38,6 +38,8 @@ enum lcdic_cmd_type {
 #define LCDIC_MAX_XFER 0x40000
 /* Max reset width (in terms of Timer0_Period, see RST_CTRL register) */
 #define LCDIC_MAX_RST_WIDTH 0x3F
+/* Max reset pulse count */
+#define LCDIC_MAX_RST_PULSE_COUNT 0x7
 
 /* Descriptor for LCDIC command */
 union lcdic_trx_cmd {
@@ -72,6 +74,10 @@ struct mipi_dbi_lcdic_config {
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 	bool swap_bytes;
+	uint8_t write_active_min;
+	uint8_t write_inactive_min;
+	uint8_t timer0_ratio;
+	uint8_t timer1_ratio;
 };
 
 #ifdef CONFIG_MIPI_DBI_NXP_LCDIC_DMA
@@ -122,12 +128,6 @@ struct mipi_dbi_lcdic_data {
 #define LCDIC_RX_FIFO_THRESH 0x0
 #define LCDIC_TX_FIFO_THRESH 0x3
 #endif
-
-/* Timer0 and Timer1 bases. We choose a longer timer0 base to enable
- * long reset periods
- */
-#define LCDIC_TIMER0_RATIO 0xF
-#define LCDIC_TIMER1_RATIO 0x9
 
 /* After LCDIC is enabled or disabled, there should be a wait longer than
  * 5x the module clock before other registers are read
@@ -249,10 +249,6 @@ static int mipi_dbi_lcdic_configure(const struct device *dev,
 		LOG_ERR("Invalid clock frequency %d", spi_cfg->frequency);
 		return ret;
 	}
-	if (!(spi_cfg->operation & SPI_HALF_DUPLEX)) {
-		LOG_ERR("LCDIC only supports half duplex operation");
-		return -ENOTSUP;
-	}
 	if (spi_cfg->slave != 0) {
 		/* Only one slave select line */
 		return -ENOTSUP;
@@ -265,13 +261,26 @@ static int mipi_dbi_lcdic_configure(const struct device *dev,
 	reg = base->CTRL;
 	/* Disable LCD module during configuration */
 	reg &= ~LCDIC_CTRL_LCDIC_EN_MASK;
-	/* Select SPI mode */
-	reg &= ~LCDIC_CTRL_LCDIC_MD_MASK;
-	/* Select 3 or 4 wire mode based on config selection */
-	if (dbi_config->mode == MIPI_DBI_MODE_SPI_4WIRE) {
+	if (dbi_config->mode == MIPI_DBI_MODE_8080_BUS_8_BIT) {
+		/* Enable 8080 Mode */
+		reg |= LCDIC_CTRL_LCDIC_MD_MASK;
+	} else if (dbi_config->mode == MIPI_DBI_MODE_SPI_4WIRE) {
+		/* Select SPI 4 wire mode */
 		reg |= LCDIC_CTRL_SPI_MD_MASK;
+		reg &= ~LCDIC_CTRL_LCDIC_MD_MASK;
+	} else if (dbi_config->mode == MIPI_DBI_MODE_SPI_3WIRE) {
+		/* Select SPI 3 wire mode */
+		reg &= ~(LCDIC_CTRL_LCDIC_MD_MASK |
+			 LCDIC_CTRL_SPI_MD_MASK);
 	} else {
-		reg &= ~LCDIC_CTRL_SPI_MD_MASK;
+		/* Unsupported mode */
+		return -ENOTSUP;
+	}
+	/* If using SPI mode, validate that half-duplex was requested */
+	if ((!(reg & LCDIC_CTRL_LCDIC_MD_MASK)) &&
+	    (!(spi_cfg->operation & SPI_HALF_DUPLEX))) {
+		LOG_ERR("LCDIC only supports half duplex operation");
+		return -ENOTSUP;
 	}
 	/* Enable byte swapping if user requested it */
 	reg = (reg & ~LCDIC_CTRL_DAT_ENDIAN_MASK) |
@@ -291,6 +300,15 @@ static int mipi_dbi_lcdic_configure(const struct device *dev,
 	reg = (reg & ~LCDIC_SPI_CTRL_CPOL_MASK) |
 		LCDIC_SPI_CTRL_CPOL((spi_cfg->operation & SPI_MODE_CPOL) ? 1 : 0);
 	base->SPI_CTRL = reg;
+
+	/*
+	 * Set 8080 control based on module properties. TRIW and TRAW are
+	 * set to their reset values
+	 */
+	base->I8080_CTRL1 = LCDIC_I8080_CTRL1_TRIW(0xf) |
+			LCDIC_I8080_CTRL1_TRAW(0xf) |
+			LCDIC_I8080_CTRL1_TWIW(config->write_inactive_min) |
+			LCDIC_I8080_CTRL1_TWAW(config->write_active_min);
 
 	/* Enable the module */
 	base->CTRL |= LCDIC_CTRL_LCDIC_EN_MASK;
@@ -558,12 +576,13 @@ out:
 	return ret;
 }
 
-static int mipi_dbi_lcdic_reset(const struct device *dev, uint32_t delay)
+static int mipi_dbi_lcdic_reset(const struct device *dev, k_timeout_t delay)
 {
 	const struct mipi_dbi_lcdic_config *config = dev->config;
 	LCDIC_Type *base = config->base;
 	uint32_t lcdic_freq;
-	uint8_t rst_width, pulse_cnt;
+	uint32_t delay_ms = k_ticks_to_ms_ceil32(delay.ticks);
+	uint32_t rst_width, pulse_cnt;
 
 	/* Calculate delay based off timer0 ratio. Formula given
 	 * by RM is as follows:
@@ -574,13 +593,18 @@ static int mipi_dbi_lcdic_reset(const struct device *dev, uint32_t delay)
 				   &lcdic_freq)) {
 		return -EIO;
 	}
-	rst_width = (delay * (lcdic_freq)) /
-			((1 << LCDIC_TIMER0_RATIO) * MSEC_PER_SEC);
+	rst_width = (delay_ms * (lcdic_freq)) / ((1 << config->timer0_ratio) * MSEC_PER_SEC);
 	/* If rst_width is larger than max value supported by hardware,
 	 * increase the pulse count (rounding up)
 	 */
 	pulse_cnt = ((rst_width + (LCDIC_MAX_RST_WIDTH - 1)) / LCDIC_MAX_RST_WIDTH);
 	rst_width = MIN(LCDIC_MAX_RST_WIDTH, rst_width);
+
+	if ((pulse_cnt - 1) > LCDIC_MAX_RST_PULSE_COUNT) {
+		/* Still issue reset pulse, but warn user */
+		LOG_WRN("Reset pulse is too long for configured timer0 ratio");
+		pulse_cnt = LCDIC_MAX_RST_PULSE_COUNT + 1;
+	}
 
 	/* Start the reset signal */
 	base->RST_CTRL = LCDIC_RST_CTRL_RST_WIDTH(rst_width - 1) |
@@ -644,8 +668,8 @@ static int mipi_dbi_lcdic_init(const struct device *dev)
 			LCDIC_TO_CTRL_CMD_SHORT_TO_MASK);
 
 	/* Ensure LCDIC timer ratios are at reset values */
-	base->TIMER_CTRL = LCDIC_TIMER_CTRL_TIMER_RATIO1(LCDIC_TIMER1_RATIO) |
-			LCDIC_TIMER_CTRL_TIMER_RATIO0(LCDIC_TIMER0_RATIO);
+	base->TIMER_CTRL = LCDIC_TIMER_CTRL_TIMER_RATIO1(config->timer1_ratio) |
+			LCDIC_TIMER_CTRL_TIMER_RATIO0(config->timer0_ratio);
 
 #ifdef CONFIG_MIPI_DBI_NXP_LCDIC_DMA
 	/* Attach the LCDIC DMA request signal to the DMA channel we will
@@ -660,7 +684,7 @@ static int mipi_dbi_lcdic_init(const struct device *dev)
 	return 0;
 }
 
-static struct mipi_dbi_driver_api mipi_dbi_lcdic_driver_api = {
+static DEVICE_API(mipi_dbi, mipi_dbi_lcdic_driver_api) = {
 	.command_write = mipi_dbi_lcdic_write_cmd,
 	.write_display = mipi_dbi_lcdic_write_display,
 	.reset = mipi_dbi_lcdic_reset,
@@ -783,6 +807,12 @@ static void mipi_dbi_lcdic_isr(const struct device *dev)
 		    DT_INST_CLOCKS_CELL(n, name),			\
 		.irq_config_func = mipi_dbi_lcdic_config_func_##n,	\
 		.swap_bytes = DT_INST_PROP(n, nxp_swap_bytes),		\
+		.write_active_min =					\
+		    DT_INST_PROP(n, nxp_write_active_cycles),		\
+		.write_inactive_min =					\
+		    DT_INST_PROP(n, nxp_write_inactive_cycles),		\
+		.timer0_ratio = DT_INST_PROP(n, nxp_timer0_ratio),      \
+		.timer1_ratio = DT_INST_PROP(n, nxp_timer1_ratio),      \
 	};								\
 	static struct mipi_dbi_lcdic_data mipi_dbi_lcdic_data_##n = {	\
 		LCDIC_DMA_CHANNELS(n)					\

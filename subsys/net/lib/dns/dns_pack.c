@@ -5,7 +5,7 @@
  */
 
 #include <string.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 
 #include "dns_pack.h"
 
@@ -134,7 +134,7 @@ int dns_unpack_answer(struct dns_msg_t *dns_msg, int dname_ptr, uint32_t *ttl,
 	 *
 	 * See RFC-1035 4.1.3. Resource record format
 	 */
-	rem_size = dns_msg->msg_size - dname_len;
+	rem_size = dns_msg->msg_size - dns_msg->answer_offset - dname_len;
 	if (rem_size < 2 + 2 + 4 + 2) {
 		return -EINVAL;
 	}
@@ -394,7 +394,7 @@ int dns_copy_qname(uint8_t *buf, uint16_t *len, uint16_t size,
 		/* validate that the label (i.e. size + elements),
 		 * fits the current msg buffer
 		 */
-		if (DNS_LABEL_LEN_SIZE + lb_size > size - *len) {
+		if (DNS_LABEL_LEN_SIZE + lb_size > MIN(size - *len, msg_size - pos)) {
 			rc = -ENOMEM;
 			break;
 		}
@@ -449,7 +449,8 @@ int mdns_unpack_query_header(struct dns_msg_t *msg, uint16_t *src_id)
 
 	qdcount = dns_unpack_header_qdcount(dns_header);
 	if (qdcount < 1) {
-		return -EINVAL;
+		/* Discard the message if query count is 0. RFC 6804 ch. 2 */
+		return -ENOENT;
 	}
 
 	if (src_id) {
@@ -590,7 +591,7 @@ int dns_unpack_query(struct dns_msg_t *dns_msg, struct net_buf *buf,
 	}
 
 	query_class = dns_unpack_query_qclass(end_of_label);
-	if (query_class != DNS_CLASS_IN) {
+	if ((query_class & DNS_CLASS_IN) != DNS_CLASS_IN) {
 		return -EINVAL;
 	}
 

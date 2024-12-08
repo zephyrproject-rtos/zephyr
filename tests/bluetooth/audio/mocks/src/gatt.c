@@ -1,18 +1,33 @@
 /*
  * Copyright (c) 2023 Codecoup
+ * Copyright (c) 2024 Demant A/S
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
+#include <stdint.h>
 #include <stdlib.h>
-#include <zephyr/types.h>
-#include <zephyr/bluetooth/gatt.h>
+#include <string.h>
+#include <sys/types.h>
+
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/att.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/uuid.h>
+#include <zephyr/fff.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/iterable_sections.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/types.h>
+#include <zephyr/ztest_test.h>
+#include <zephyr/ztest_assert.h>
 
 #include "gatt.h"
 #include "conn.h"
+#include "common/bt_str.h"
 
 #define LOG_LEVEL CONFIG_BT_GATT_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -27,6 +42,9 @@ DEFINE_FAKE_VALUE_FUNC(int, mock_bt_gatt_notify_cb, struct bt_conn *,
 		       struct bt_gatt_notify_params *);
 DEFINE_FAKE_VALUE_FUNC(bool, mock_bt_gatt_is_subscribed, struct bt_conn *,
 		       const struct bt_gatt_attr *, uint16_t);
+
+static uint16_t last_static_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
+static sys_slist_t db;
 
 ssize_t bt_gatt_attr_read_service(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
 				  uint16_t len, uint16_t offset)
@@ -182,9 +200,6 @@ void bt_gatt_notify_cb_reset(void)
 	RESET_FAKE(mock_bt_gatt_notify_cb);
 }
 
-#define foreach_attr_type_dyndb(...)
-#define last_static_handle BT_ATT_LAST_ATTRIBUTE_HANDLE
-
 /* Exact copy of subsys/bluetooth/host/gatt.c:gatt_foreach_iter() */
 static uint8_t gatt_foreach_iter(const struct bt_gatt_attr *attr,
 				 uint16_t handle, uint16_t start_handle,
@@ -226,6 +241,37 @@ static uint8_t gatt_foreach_iter(const struct bt_gatt_attr *attr,
 	return result;
 }
 
+/* Exact copy of subsys/bluetooth/host/gatt.c:foreach_attr_type_dyndb() */
+static void foreach_attr_type_dyndb(uint16_t start_handle, uint16_t end_handle,
+				    const struct bt_uuid *uuid, const void *attr_data,
+				    uint16_t num_matches, bt_gatt_attr_func_t func, void *user_data)
+{
+	size_t i;
+	struct bt_gatt_service *svc;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&db, svc, node) {
+		struct bt_gatt_service *next;
+
+		next = SYS_SLIST_PEEK_NEXT_CONTAINER(svc, node);
+		if (next) {
+			/* Skip ahead if start is not within service handles */
+			if (next->attrs[0].handle <= start_handle) {
+				continue;
+			}
+		}
+
+		for (i = 0; i < svc->attr_count; i++) {
+			struct bt_gatt_attr *attr = &svc->attrs[i];
+
+			if (gatt_foreach_iter(attr, attr->handle, start_handle, end_handle, uuid,
+					      attr_data, &num_matches, func,
+					      user_data) == BT_GATT_ITER_STOP) {
+				return;
+			}
+		}
+	}
+}
+
 /* Exact copy of subsys/bluetooth/host/gatt.c:bt_gatt_foreach_attr_type() */
 void bt_gatt_foreach_attr_type(uint16_t start_handle, uint16_t end_handle,
 			       const struct bt_uuid *uuid,
@@ -233,6 +279,8 @@ void bt_gatt_foreach_attr_type(uint16_t start_handle, uint16_t end_handle,
 			       bt_gatt_attr_func_t func, void *user_data)
 {
 	size_t i;
+
+	LOG_DBG("bt_gatt_foreach_attr_type");
 
 	if (!num_matches) {
 		num_matches = UINT16_MAX;
@@ -255,15 +303,161 @@ void bt_gatt_foreach_attr_type(uint16_t start_handle, uint16_t end_handle,
 						      attr_data, &num_matches,
 						      func, user_data) ==
 				    BT_GATT_ITER_STOP) {
+					LOG_DBG("Returning after searching static DB");
 					return;
 				}
 			}
 		}
 	}
 
+	LOG_DBG("foreach_attr_type_dyndb");
 	/* Iterate over dynamic db */
 	foreach_attr_type_dyndb(start_handle, end_handle, uuid, attr_data,
 				num_matches, func, user_data);
+}
+
+static void bt_gatt_service_init(void)
+{
+	last_static_handle = 0U;
+
+	STRUCT_SECTION_FOREACH(bt_gatt_service_static, svc) {
+		last_static_handle += svc->attr_count;
+	}
+}
+
+/* Exact copy of subsys/bluetooth/host/gatt.c:found_attr() */
+static uint8_t found_attr(const struct bt_gatt_attr *attr, uint16_t handle, void *user_data)
+{
+	const struct bt_gatt_attr **found = user_data;
+
+	*found = attr;
+
+	return BT_GATT_ITER_STOP;
+}
+
+/* Exact copy of subsys/bluetooth/host/gatt.c:find_attr() */
+static const struct bt_gatt_attr *find_attr(uint16_t handle)
+{
+	const struct bt_gatt_attr *attr = NULL;
+
+	bt_gatt_foreach_attr(handle, handle, found_attr, &attr);
+
+	return attr;
+}
+
+/* Exact copy of subsys/bluetooth/host/gatt.c:gatt_insert() */
+static void gatt_insert(struct bt_gatt_service *svc, uint16_t last_handle)
+{
+	struct bt_gatt_service *tmp, *prev = NULL;
+
+	if (last_handle == 0 || svc->attrs[0].handle > last_handle) {
+		sys_slist_append(&db, &svc->node);
+		return;
+	}
+
+	/* DB shall always have its service in ascending order */
+	SYS_SLIST_FOR_EACH_CONTAINER(&db, tmp, node) {
+		if (tmp->attrs[0].handle > svc->attrs[0].handle) {
+			if (prev) {
+				sys_slist_insert(&db, &prev->node, &svc->node);
+			} else {
+				sys_slist_prepend(&db, &svc->node);
+			}
+			return;
+		}
+
+		prev = tmp;
+	}
+}
+
+/* Exact copy of subsys/bluetooth/host/gatt.c:gatt_register() */
+static int gatt_register(struct bt_gatt_service *svc)
+{
+	struct bt_gatt_service *last;
+	uint16_t handle, last_handle;
+	struct bt_gatt_attr *attrs = svc->attrs;
+	uint16_t count = svc->attr_count;
+
+	if (sys_slist_is_empty(&db)) {
+		handle = last_static_handle;
+		last_handle = 0;
+		goto populate;
+	}
+
+	last = SYS_SLIST_PEEK_TAIL_CONTAINER(&db, last, node);
+	handle = last->attrs[last->attr_count - 1].handle;
+	last_handle = handle;
+
+populate:
+	/* Populate the handles and append them to the list */
+	for (; attrs && count; attrs++, count--) {
+		if (!attrs->handle) {
+			/* Allocate handle if not set already */
+			attrs->handle = ++handle;
+		} else if (attrs->handle > handle) {
+			/* Use existing handle if valid */
+			handle = attrs->handle;
+		} else if (find_attr(attrs->handle)) {
+			/* Service has conflicting handles */
+			LOG_ERR("Mock: Unable to register handle 0x%04x", attrs->handle);
+			return -EINVAL;
+		}
+
+		LOG_DBG("attr %p handle 0x%04x uuid %s perm 0x%02x", attrs, attrs->handle,
+			bt_uuid_str(attrs->uuid), attrs->perm);
+	}
+
+	gatt_insert(svc, last_handle);
+
+	return 0;
+}
+
+static int gatt_unregister(struct bt_gatt_service *svc)
+{
+	if (!sys_slist_find_and_remove(&db, &svc->node)) {
+		return -ENOENT;
+	}
+
+	return 0;
+}
+
+int bt_gatt_service_register(struct bt_gatt_service *svc)
+{
+	int err;
+
+	__ASSERT(svc, "invalid parameters\n");
+	__ASSERT(svc->attrs, "invalid parameters\n");
+	__ASSERT(svc->attr_count, "invalid parameters\n");
+
+	/* Init GATT core services */
+	bt_gatt_service_init();
+
+	/* Do no allow to register mandatory services twice */
+	if (!bt_uuid_cmp(svc->attrs[0].uuid, BT_UUID_GAP) ||
+	    !bt_uuid_cmp(svc->attrs[0].uuid, BT_UUID_GATT)) {
+		return -EALREADY;
+	}
+
+	err = gatt_register(svc);
+	if (err < 0) {
+		return err;
+	}
+
+	return 0;
+}
+
+int bt_gatt_service_unregister(struct bt_gatt_service *svc)
+{
+	int err;
+
+	__ASSERT(svc, "invalid parameters\n");
+
+	err = gatt_unregister(svc);
+	if (err) {
+		return err;
+	}
+
+	return 0;
 }
 
 /* Exact copy of subsys/bluetooth/host/gatt.c:bt_gatt_attr_read() */

@@ -2,8 +2,9 @@
 
 cmake_minimum_required(VERSION 3.20.0)
 
-project(lib_acpi)
 find_package(Zephyr COMPONENTS unittest REQUIRED HINTS $ENV{ZEPHYR_BASE})
+
+project(lib_acpi)
 
 # Assert library
 add_library(mock_assert STATIC src/assert.c)

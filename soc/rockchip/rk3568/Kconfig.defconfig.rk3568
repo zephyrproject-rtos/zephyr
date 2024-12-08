@@ -11,11 +11,9 @@ config FLASH_BASE_ADDRESS
 	default 0
 
 config NUM_IRQS
-	int
 	default 240
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	int
 	default 24000000
 
 endif

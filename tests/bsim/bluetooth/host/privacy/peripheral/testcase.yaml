@@ -1,0 +1,22 @@
+common:
+  build_only: true
+  tags:
+    - bluetooth
+  platform_allow:
+    - nrf52_bsim/native
+  harness: bsim
+
+tests:
+  bluetooth.host.privacy.peripheral:
+    harness_config:
+      bsim_exe_name: tests_bsim_bluetooth_host_privacy_peripheral_prj_conf
+  bluetooth.host.privacy.peripheral_rpa_expired:
+    harness_config:
+      bsim_exe_name: tests_bsim_bluetooth_host_privacy_peripheral_prj_rpa_expired_conf
+    extra_args:
+      EXTRA_CONF_FILE=prj_rpa_expired.conf
+  bluetooth.host.privacy.peripheral_rpa_sharing:
+    harness_config:
+      bsim_exe_name: tests_bsim_bluetooth_host_privacy_peripheral_prj_rpa_sharing_conf
+    extra_args:
+      EXTRA_CONF_FILE=prj_rpa_sharing.conf

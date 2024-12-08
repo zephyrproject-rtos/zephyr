@@ -9,9 +9,9 @@ commands are in run_common -- that's for common code used by
 commands which specifically execute runners.'''
 
 import os
+import shlex
 from pathlib import Path
 
-from west import log
 from west.commands import WestCommand
 
 # This relies on this file being zephyr/scripts/foo/bar.py.
@@ -43,5 +43,18 @@ class Forceable(WestCommand):
         self.args.force being True can allow execution to proceed.
         '''
         if not (cond or self.args.force):
-            log.err(msg)
-            log.die('refusing to proceed without --force due to above error')
+            self.err(msg)
+            self.die('refusing to proceed without --force due to above error')
+
+    def config_get_words(self, section_key, fallback=None):
+        unparsed = self.config.get(section_key)
+        self.dbg(f'west config {section_key}={unparsed}')
+        return fallback if unparsed is None else shlex.split(unparsed)
+
+    def config_get(self, section_key, fallback=None):
+        words = self.config_get_words(section_key)
+        if words is None:
+            return fallback
+        if len(words) != 1:
+            self.die(f'Single word expected for: {section_key}={words}. Use quotes?')
+        return words[0]

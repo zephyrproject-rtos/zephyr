@@ -88,11 +88,6 @@ LOG_MODULE_REGISTER(nxp_edma);
 		    (_EDMA_CHANNEL_ARRAY_EXPLICIT(inst)),				\
 		    (_EDMA_CHANNEL_ARRAY(inst)))
 
-#define EDMA_HAL_CFG_GET(inst)								\
-	COND_CODE_1(DT_NODE_HAS_PROP(DT_INST(inst, DT_DRV_COMPAT), hal_cfg_index),	\
-		    (s_edmaConfigs[DT_INST_PROP(inst, hal_cfg_index)]),			\
-		    (s_edmaConfigs[0]))
-
 /* used to register edma_isr for all specified interrupts */
 #define EDMA_CONNECT_INTERRUPTS(inst)				\
 	FOR_EACH_FIXED_ARG(_EDMA_INT_CONNECT, (;),		\
@@ -417,6 +412,8 @@ static inline int edma_chan_cyclic_produce(struct edma_channel *chan,
 static inline void edma_dump_channel_registers(struct edma_data *data,
 					       uint32_t chan_id)
 {
+	uint32_t mux_reg;
+
 	LOG_DBG("dumping channel data for channel %d", chan_id);
 
 	LOG_DBG("CH_CSR: 0x%x",
@@ -431,8 +428,13 @@ static inline void edma_dump_channel_registers(struct edma_data *data,
 		EDMA_ChannelRegRead(data->hal_cfg, chan_id, EDMA_TCD_CH_PRI));
 
 	if (EDMA_HAS_MUX(data->hal_cfg)) {
-		LOG_DBG("CH_MUX: 0x%x",
-			EDMA_ChannelRegRead(data->hal_cfg, chan_id, EDMA_TCD_CH_MUX));
+		if (data->hal_cfg->flags & EDMA_HAS_MP_MUX_FLAG) {
+			mux_reg = EDMA_MP_CH_MUX;
+		} else {
+			mux_reg = EDMA_TCD_CH_MUX;
+		}
+
+		LOG_DBG("CH_MUX: 0x%x", EDMA_ChannelRegRead(data->hal_cfg, chan_id, mux_reg));
 	}
 
 	LOG_DBG("TCD_SADDR: 0x%x",
@@ -506,6 +508,13 @@ static inline int set_slast_dlast(struct dma_config *dma_cfg,
 	/* commit configuration */
 	EDMA_ChannelRegWrite(data->hal_cfg, chan_id, EDMA_TCD_SLAST_SDA, slast);
 	EDMA_ChannelRegWrite(data->hal_cfg, chan_id, EDMA_TCD_DLAST_SGA, dlast);
+
+	if (data->hal_cfg->flags & EDMA_HAS_64BIT_TCD_FLAG) {
+		EDMA_ChannelRegWrite(data->hal_cfg, chan_id, EDMA_TCD_SLAST_SDA_HIGH,
+				     slast >= 0x0 ? 0x0 : 0xffffffff);
+		EDMA_ChannelRegWrite(data->hal_cfg, chan_id, EDMA_TCD_DLAST_SGA_HIGH,
+				     dlast >= 0x0 ? 0x0 : 0xffffffff);
+	}
 
 	return 0;
 }

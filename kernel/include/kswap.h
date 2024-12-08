@@ -97,12 +97,12 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 	 */
 # ifndef CONFIG_ARM64
 	__ASSERT(arch_irq_unlocked(key) ||
-		 _current->base.thread_state & (_THREAD_DUMMY | _THREAD_DEAD),
+		 arch_current_thread()->base.thread_state & (_THREAD_DUMMY | _THREAD_DEAD),
 		 "Context switching while holding lock!");
 # endif /* CONFIG_ARM64 */
 #endif /* CONFIG_SPIN_VALIDATE */
 
-	old_thread = _current;
+	old_thread = arch_current_thread();
 
 	z_check_stack_sentinel();
 
@@ -134,7 +134,7 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 #endif /* CONFIG_SMP */
 		z_thread_mark_switched_out();
 		z_sched_switch_spin(new_thread);
-		_current_cpu->current = new_thread;
+		arch_current_thread_set(new_thread);
 
 #ifdef CONFIG_TIMESLICING
 		z_reset_time_slice(new_thread);
@@ -147,7 +147,7 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 		arch_cohere_stacks(old_thread, NULL, new_thread);
 
 #ifdef CONFIG_SMP
-		/* Now add _current back to the run queue, once we are
+		/* Now add arch_current_thread() back to the run queue, once we are
 		 * guaranteed to reach the context switch in finite
 		 * time.  See z_sched_switch_spin().
 		 */
@@ -175,7 +175,7 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 		irq_unlock(key);
 	}
 
-	return _current->swap_retval;
+	return arch_current_thread()->swap_retval;
 }
 
 static inline int z_swap_irqlock(unsigned int key)
@@ -260,6 +260,6 @@ static inline void z_dummy_thread_init(struct k_thread *dummy_thread)
 	dummy_thread->base.slice_ticks = 0;
 #endif /* CONFIG_TIMESLICE_PER_THREAD */
 
-	_current_cpu->current = dummy_thread;
+	arch_current_thread_set(dummy_thread);
 }
 #endif /* ZEPHYR_KERNEL_INCLUDE_KSWAP_H_ */

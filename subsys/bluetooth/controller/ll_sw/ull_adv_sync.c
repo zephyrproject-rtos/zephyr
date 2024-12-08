@@ -43,6 +43,14 @@
 #include "ull_sched_internal.h"
 #include "ull_adv_internal.h"
 
+#include "ull_conn_internal.h"
+
+#include "isoal.h"
+#include "ull_iso_types.h"
+#include "lll_conn_iso.h"
+#include "ull_conn_iso_types.h"
+#include "ull_llcp.h"
+
 #include "ll.h"
 
 #include "hal/debug.h"
@@ -181,6 +189,10 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 		lll_sync->latency_prepare = 0;
 		lll_sync->latency_event = 0;
 		lll_sync->event_counter = 0;
+
+#if defined(CONFIG_BT_CTLR_ADV_PDU_LINK)
+		lll_sync->data_chan_counter = 0U;
+#endif /* CONFIG_BT_CTLR_ADV_PDU_LINK */
 
 		sync->is_enabled = 0U;
 		sync->is_started = 0U;
@@ -338,7 +350,7 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 		/* NOTE: latest PDU was not consumed by LLL and as
 		 * ull_adv_sync_pdu_alloc() has reverted back the double buffer
 		 * with the first PDU, and returned the latest PDU as the new
-		 * PDU, we need to enqueue back the new PDU which is infact
+		 * PDU, we need to enqueue back the new PDU which is in fact
 		 * the latest PDU.
 		 */
 		if (pdu_prev == pdu) {
@@ -616,6 +628,51 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 
 	return 0;
 }
+
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER)
+/* @brief Link Layer interface function corresponding to HCI LE Periodic
+ *        Advertising Set Info Transfer command.
+ *
+ * @param[in] conn_handle Connection_Handle identifying the connected device
+ *            Range: 0x0000 to 0x0EFF.
+ * @param[in] service_data Service_Data value provided by the Host for use by the
+ *            Host of the peer device.
+ * @param[in] adv_handle Advertising_Handle identifying the advertising
+ *            set. Range: 0x00 to 0xEF.
+ *
+ * @return HCI error codes as documented in Bluetooth Core Specification v5.4.
+ */
+uint8_t ll_adv_sync_set_info_transfer(uint16_t conn_handle, uint16_t service_data,
+				      uint8_t adv_handle)
+{
+	struct ll_adv_sync_set *sync;
+	struct ll_adv_set *adv;
+	struct ll_conn *conn;
+
+	conn = ll_connected_get(conn_handle);
+	if (!conn) {
+		return BT_HCI_ERR_UNKNOWN_CONN_ID;
+	}
+
+	/* Verify that adv_handle is valid and periodic advertising is enabled */
+	adv = ull_adv_is_created_get(adv_handle);
+	if (!adv) {
+		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
+	}
+
+	if (!adv->lll.sync) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	sync = HDR_LLL2ULL(adv->lll.sync);
+	if (!sync->is_enabled) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	/* Call llcp to start LLCP_PERIODIC_SYNC_IND */
+	return ull_cp_periodic_sync(conn, NULL, sync, service_data);
+}
+#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER */
 
 int ull_adv_sync_init(void)
 {
@@ -941,8 +998,10 @@ void ull_adv_sync_pdu_init(struct pdu_adv *pdu, uint8_t ext_hdr_flags,
 {
 	struct pdu_adv_com_ext_adv *com_hdr;
 	struct pdu_adv_ext_hdr *ext_hdr;
+#if defined(CONFIG_BT_CTLR_ADV_SYNC_PDU_BACK2BACK)
 	struct pdu_adv_aux_ptr *aux_ptr;
 	uint32_t cte_len_us;
+#endif
 	uint8_t *dptr;
 	uint8_t len;
 
@@ -967,6 +1026,7 @@ void ull_adv_sync_pdu_init(struct pdu_adv *pdu, uint8_t ext_hdr_flags,
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT */
 				     ULL_ADV_PDU_HDR_FIELD_SYNC_INFO)));
 
+#if defined(CONFIG_BT_CTLR_ADV_SYNC_PDU_BACK2BACK)
 	if (IS_ENABLED(CONFIG_BT_CTLR_DF_ADV_CTE_TX) &&
 	    (ext_hdr_flags & ULL_ADV_PDU_HDR_FIELD_CTE_INFO)) {
 		(void)memcpy(dptr, cte_info, sizeof(*cte_info));
@@ -975,15 +1035,18 @@ void ull_adv_sync_pdu_init(struct pdu_adv *pdu, uint8_t ext_hdr_flags,
 	} else {
 		cte_len_us = 0U;
 	}
+#endif /* CONFIG_BT_CTLR_ADV_SYNC_PDU_BACK2BACK */
 	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT) &&
 	    (ext_hdr_flags & ULL_ADV_PDU_HDR_FIELD_ADI)) {
 		dptr += sizeof(struct pdu_adv_adi);
 	}
+#if defined(CONFIG_BT_CTLR_ADV_SYNC_PDU_BACK2BACK)
 	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_SYNC_PDU_LINK) &&
 	    (ext_hdr_flags & ULL_ADV_PDU_HDR_FIELD_AUX_PTR)) {
 		aux_ptr = (void *)dptr;
 		dptr += sizeof(struct pdu_adv_aux_ptr);
 	}
+#endif /* CONFIG_BT_CTLR_ADV_SYNC_PDU_BACK2BACK */
 	if (ext_hdr_flags & ULL_ADV_PDU_HDR_FIELD_TX_POWER) {
 		dptr += sizeof(uint8_t);
 	}
@@ -1032,7 +1095,7 @@ uint8_t ull_adv_sync_pdu_alloc(struct ll_adv_set *adv,
 	if (extra_data_flag == ULL_ADV_PDU_EXTRA_DATA_ALLOC_ALWAYS ||
 	    (extra_data_flag == ULL_ADV_PDU_EXTRA_DATA_ALLOC_IF_EXIST && ed_prev)) {
 		/* If there was an extra data in past PDU data or it is required
-		 * by the hdr_add_fields then allocate memmory for it.
+		 * by the hdr_add_fields then allocate memory for it.
 		 */
 		pdu_new = lll_adv_sync_data_alloc(lll_sync, &ed_new,
 						  ter_idx);
@@ -2407,7 +2470,7 @@ static uint32_t sync_time_get(const struct ll_adv_sync_set *sync,
 	/* Calculate the PDU Tx Time and hence the radio event length,
 	 * Always use maximum length for common extended header format so that
 	 * ACAD could be update when periodic advertising is active and the
-	 * time reservation need not be updated everytime avoiding overlapping
+	 * time reservation need not be updated every time avoiding overlapping
 	 * with other active states/roles.
 	 */
 	len = pdu->len - pdu->adv_ext_ind.ext_hdr_len -

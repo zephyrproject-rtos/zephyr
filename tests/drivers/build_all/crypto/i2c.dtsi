@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2024 TOKITA Hiroshi
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/****************************************
+ * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
+ ***************************************/
+
+ataes132a@0 {
+	compatible = "atmel,ataes132a";
+	reg = <0x0>;
+	status = "okay";
+};

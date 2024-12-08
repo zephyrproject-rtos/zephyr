@@ -70,10 +70,11 @@ static void pwm_npcx_configure(const struct device *dev, int clk_bus)
 			NPCX_PWM_CLOCK_APB2_LFCLK);
 
 	/* Select clock source to LFCLK by flag, otherwise APB clock source */
-	if (clk_bus == NPCX_CLOCK_BUS_LFCLK)
+	if (clk_bus == NPCX_CLOCK_BUS_LFCLK) {
 		inst->PWMCTL |= BIT(NPCX_PWMCTL_CKSEL);
-	else
+	} else {
 		inst->PWMCTL &= ~BIT(NPCX_PWMCTL_CKSEL);
+	}
 }
 
 /* PWM api functions */
@@ -162,7 +163,7 @@ static int pwm_npcx_get_cycles_per_sec(const struct device *dev,
 }
 
 /* PWM driver registration */
-static const struct pwm_driver_api pwm_npcx_driver_api = {
+static DEVICE_API(pwm, pwm_npcx_driver_api) = {
 	.set_cycles = pwm_npcx_set_cycles,
 	.get_cycles_per_sec = pwm_npcx_get_cycles_per_sec
 };

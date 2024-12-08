@@ -188,7 +188,9 @@ static inline void dma_smartbond_pm_policy_state_lock_get(void)
 static inline void dma_smartbond_pm_policy_state_lock_put(void)
 {
 #if defined(CONFIG_PM_DEVICE)
-	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	if (pm_policy_state_lock_is_active(PM_STATE_STANDBY, PM_ALL_SUBSTATES)) {
+		pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	}
 #endif
 }
 
@@ -230,7 +232,7 @@ static void dma_smartbond_set_channel_status(const struct device *dev,
 		DMA->DMA_CLEAR_INT_REG |= BIT(channel);
 
 		/* DMA interrupts should be disabled only if all channels are disabled. */
-		if (!dma_smartbond_is_dma_active()) {
+		if (!dma_smartbond_is_dma_active() && irq_is_enabled(SMARTBOND_IRQN)) {
 			irq_disable(SMARTBOND_IRQN);
 			/* Allow entering sleep once all DMA channels are inactive */
 			dma_smartbond_pm_policy_state_lock_put();
@@ -840,7 +842,7 @@ static int dma_smartbond_get_status(const struct device *dev, uint32_t channel,
 
 	/* Convert transfers to bytes. */
 	stat->total_copied = dma_idx_reg * bus_width;
-	stat->pending_length = ((dma_len_reg + 1) - dma_idx_reg) * bus_width;
+	stat->pending_length = (dma_len_reg - dma_idx_reg) * bus_width;
 	stat->busy = DMA_CTRL_REG_GET_FIELD(DMA_ON, dma_ctrl_reg);
 	stat->dir = data->channel_data[channel].dir;
 

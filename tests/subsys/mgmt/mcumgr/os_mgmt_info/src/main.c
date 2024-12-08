@@ -7,7 +7,7 @@
 #if !defined(CONFIG_BUILD_DATE_TIME_TEST) && !defined(CONFIG_LIMITED_TEST)
 
 #include <zephyr/ztest.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
 #include <zephyr/mgmt/mcumgr/transport/smp_dummy.h>
 #include <zephyr/mgmt/mcumgr/mgmt/callbacks.h>
@@ -212,7 +212,7 @@ static enum mgmt_cb_return os_mgmt_info_custom_cmd_callback(uint32_t event,
 		}
 	}
 
-	return MGMT_ERR_EOK;
+	return MGMT_CB_OK;
 }
 
 static struct mgmt_callback custom_cmd_check_callback = {

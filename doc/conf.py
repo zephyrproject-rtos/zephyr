@@ -1,17 +1,14 @@
 # Zephyr documentation build configuration file.
 # Reference: https://www.sphinx-doc.org/en/master/usage/configuration.html
 
-import sys
 import os
-from pathlib import Path
 import re
+import sys
 import textwrap
+from pathlib import Path
 
-from sphinx.cmd.build import get_parser
-
-args = get_parser().parse_args()
 ZEPHYR_BASE = Path(__file__).resolve().parents[1]
-ZEPHYR_BUILD = Path(args.outputdir).resolve()
+ZEPHYR_BUILD = Path(os.environ.get("OUTPUT_DIR")).resolve()
 
 # Add the '_extensions' directory to sys.path, to enable finding Sphinx
 # extensions within.
@@ -28,7 +25,7 @@ sys.path.insert(0, str(ZEPHYR_BASE / "scripts" / "west_commands"))
 # Add the directory which contains the pytest-twister-pytest
 sys.path.insert(0, str(ZEPHYR_BASE / "scripts" / "pylib" / "pytest-twister-harness" / "src"))
 
-import redirects
+import redirects  # noqa: E402
 
 try:
     import west as west_found
@@ -73,7 +70,6 @@ with open(ZEPHYR_BASE / "SDK_VERSION") as f:
 # -- General configuration ------------------------------------------------
 
 extensions = [
-    "breathe",
     "sphinx_rtd_theme",
     "sphinx.ext.todo",
     "sphinx.ext.extlinks",
@@ -87,8 +83,9 @@ extensions = [
     "zephyr.link-roles",
     "sphinx_tabs.tabs",
     "sphinx_sitemap",
-    "zephyr.warnings_filter",
     "zephyr.doxyrunner",
+    "zephyr.doxybridge",
+    "zephyr.doxytooltip",
     "zephyr.gh_utils",
     "zephyr.manifest_projects_table",
     "notfound.extension",
@@ -103,7 +100,7 @@ extensions = [
 # Ensure "sphinxcontrib.rsvgconverter" is added before "sphinx.ext.imgconverter"
 # as it's better at converting SVG with extended features (like the ones from
 # draw.io) to PDF format).
-if tags.has("convertimages"):  # pylint: disable=undefined-variable
+if tags.has("convertimages"):  # pylint: disable=undefined-variable  # noqa: F821
     extensions.append("sphinxcontrib.rsvgconverter")
     extensions.append("sphinx.ext.imgconverter")
 
@@ -152,11 +149,16 @@ rst_epilog = f"""
 .. |sdk-version-ltrim| unicode:: {sdk_version}
    :ltrim:
 .. _Zephyr SDK bundle: https://github.com/zephyrproject-rtos/sdk-ng/releases/tag/v{sdk_version}
-.. |sdk-url-linux| replace:: `{SDK_URL_BASE}/v{sdk_version}/zephyr-sdk-{sdk_version}_linux-x86_64.tar.xz`
-.. |sdk-url-linux-sha| replace:: `{SDK_URL_BASE}/v{sdk_version}/sha256.sum`
-.. |sdk-url-macos| replace:: `{SDK_URL_BASE}/v{sdk_version}/zephyr-sdk-{sdk_version}_macos-x86_64.tar.xz`
-.. |sdk-url-macos-sha| replace:: `{SDK_URL_BASE}/v{sdk_version}/sha256.sum`
-.. |sdk-url-windows| replace:: `{SDK_URL_BASE}/v{sdk_version}/zephyr-sdk-{sdk_version}_windows-x86_64.7z`
+.. |sdk-url-linux| replace::
+   `{SDK_URL_BASE}/v{sdk_version}/zephyr-sdk-{sdk_version}_linux-x86_64.tar.xz`
+.. |sdk-url-linux-sha| replace::
+   `{SDK_URL_BASE}/v{sdk_version}/sha256.sum`
+.. |sdk-url-macos| replace::
+   `{SDK_URL_BASE}/v{sdk_version}/zephyr-sdk-{sdk_version}_macos-x86_64.tar.xz`
+.. |sdk-url-macos-sha| replace::
+   `{SDK_URL_BASE}/v{sdk_version}/sha256.sum`
+.. |sdk-url-windows| replace::
+   `{SDK_URL_BASE}/v{sdk_version}/zephyr-sdk-{sdk_version}_windows-x86_64.7z`
 """
 
 # -- Options for HTML output ----------------------------------------------
@@ -164,7 +166,8 @@ rst_epilog = f"""
 html_theme = "sphinx_rtd_theme"
 html_theme_options = {
     "logo_only": True,
-    "prev_next_buttons_location": None
+    "prev_next_buttons_location": None,
+    "navigation_depth": 5,
 }
 html_baseurl = "https://docs.zephyrproject.org/latest/"
 html_title = "Zephyr Project Documentation"
@@ -181,9 +184,9 @@ html_additional_pages = {
     "gsearch": "gsearch.html"
 }
 
-is_release = tags.has("release")  # pylint: disable=undefined-variable
+is_release = tags.has("release")  # pylint: disable=undefined-variable  # noqa: F821
 reference_prefix = ""
-if tags.has("publish"):  # pylint: disable=undefined-variable
+if tags.has("publish"):  # pylint: disable=undefined-variable  # noqa: F821
     reference_prefix = f"/{version}" if is_release else "/latest"
 docs_title = "Docs / {}".format(version if is_release else "Latest")
 html_context = {
@@ -193,8 +196,9 @@ html_context = {
     "current_version": version,
     "versions": (
         ("latest", "/"),
+        ("4.0.0", "/4.0.0/"),
+        ("3.7.0 (LTS)", "/3.7.0/"),
         ("3.6.0", "/3.6.0/"),
-        ("3.5.0", "/3.5.0/"),
         ("2.7.6 (LTS)", "/2.7.6/"),
     ),
     "display_gh_links": True,
@@ -214,8 +218,8 @@ html_context = {
 
 latex_elements = {
     "papersize": "a4paper",
-    "maketitle": open(ZEPHYR_BASE / "doc" / "_static" / "latex" / "title.tex").read(),
-    "preamble": open(ZEPHYR_BASE / "doc" / "_static" / "latex" / "preamble.tex").read(),
+    "maketitle": (ZEPHYR_BASE / "doc" / "_static" / "latex" / "title.tex").read_text(),
+    "preamble": (ZEPHYR_BASE / "doc" / "_static" / "latex" / "preamble.tex").read_text(),
     "makeindex": r"\usepackage[columns=1]{idxlayout}\makeindex",
     "fontpkg": textwrap.dedent(r"""
                                     \usepackage{noto}
@@ -249,44 +253,20 @@ doxyrunner_fmt = True
 doxyrunner_fmt_vars = {"ZEPHYR_BASE": str(ZEPHYR_BASE), "ZEPHYR_VERSION": version}
 doxyrunner_outdir_var = "DOXY_OUT"
 
-# -- Options for Breathe plugin -------------------------------------------
+# -- Options for zephyr.doxybridge plugin ---------------------------------
 
-breathe_projects = {"Zephyr": str(doxyrunner_outdir / "xml")}
-breathe_default_project = "Zephyr"
-breathe_domain_by_extension = {
-    "h": "c",
-    "c": "c",
-}
-breathe_show_enumvalue_initializer = True
-breathe_default_members = ("members", )
-
-cpp_id_attributes = [
-    "__syscall",
-    "__syscall_always_inline",
-    "__deprecated",
-    "__may_alias",
-    "__used",
-    "__unused",
-    "__weak",
-    "__attribute_const__",
-    "__DEPRECATED_MACRO",
-    "FUNC_NORETURN",
-    "__subsystem",
-    "ALWAYS_INLINE",
-]
-c_id_attributes = cpp_id_attributes
+doxybridge_dir = doxyrunner_outdir
 
 # -- Options for html_redirect plugin -------------------------------------
 
 html_redirect_pages = redirects.REDIRECTS
 
-# -- Options for zephyr.warnings_filter -----------------------------------
-
-warnings_filter_config = str(ZEPHYR_BASE / "doc" / "known-warnings.txt")
-
 # -- Options for zephyr.link-roles ----------------------------------------
 
 link_roles_manifest_project = "zephyr"
+link_roles_manifest_project_broken_links_ignore_globs = [
+    "releases/release-notes-[123].*.rst",
+]
 link_roles_manifest_baseurl = "https://github.com/zephyrproject-rtos/zephyr"
 
 # -- Options for notfound.extension ---------------------------------------
@@ -296,7 +276,7 @@ notfound_urls_prefix = f"/{version}/" if is_release else "/latest/"
 # -- Options for zephyr.gh_utils ------------------------------------------
 
 gh_link_version = f"v{version}" if is_release else "main"
-gh_link_base_url = f"https://github.com/zephyrproject-rtos/zephyr"
+gh_link_base_url = "https://github.com/zephyrproject-rtos/zephyr"
 gh_link_prefixes = {
     "samples/.*": "",
     "boards/.*": "",
@@ -325,6 +305,7 @@ external_content_contents = [
     (ZEPHYR_BASE, "samples/**/doc"),
     (ZEPHYR_BASE, "snippets/**/*.rst"),
     (ZEPHYR_BASE, "snippets/**/doc"),
+    (ZEPHYR_BASE, "tests/**/*.pts"),
 ]
 external_content_keep = [
     "reference/kconfig/*",
@@ -382,4 +363,3 @@ def setup(app):
     # theme customizations
     app.add_css_file("css/custom.css")
     app.add_js_file("js/custom.js")
-    app.add_js_file("js/dark-mode-toggle.min.mjs", type="module")

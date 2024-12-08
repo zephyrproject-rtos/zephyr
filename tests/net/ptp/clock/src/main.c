@@ -27,7 +27,7 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 #include <zephyr/net/ptp_time.h>
 
 #include <zephyr/net/ethernet.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_l2.h>
 
@@ -226,7 +226,7 @@ static int my_ptp_clock_rate_adjust(const struct device *dev, double ratio)
 static struct ptp_context ptp_test_1_context;
 static struct ptp_context ptp_test_2_context;
 
-static const struct ptp_clock_driver_api api = {
+static DEVICE_API(ptp_clock, api) = {
 	.set = my_ptp_clock_set,
 	.get = my_ptp_clock_get,
 	.adjust = my_ptp_clock_adjust,

@@ -118,6 +118,9 @@ static const struct i2c_driver_api api = {
 	.get_config = i2c_sbcon_get_config,
 	.transfer = i2c_sbcon_transfer,
 	.recover_bus = i2c_sbcon_recover_bus,
+#ifdef CONFIG_I2C_RTIO
+	.iodev_submit = i2c_iodev_submit_fallback,
+#endif
 };
 
 static int i2c_sbcon_init(const struct device *dev)

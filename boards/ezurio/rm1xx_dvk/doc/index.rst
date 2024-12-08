@@ -1,7 +1,4 @@
-.. _rm1xx_dvk:
-
-Ezurio RM1xx DVK
-################
+.. zephyr:board:: rm1xx_dvk
 
 Overview
 ********
@@ -27,12 +24,6 @@ This development kit has the following features:
 * :abbr:`SPI (Serial Peripheral Interface)`
 * :abbr:`UART (Universal asynchronous receiver-transmitter)`
 * :abbr:`WDT (Watchdog Timer)`
-
-.. figure:: img/RM186-DVK.jpg
-     :align: center
-     :alt: RM1xx development kit (DVK)
-
-     RM1xx development kit (DVK) (Credit: Ezurio)
 
 .. figure:: img/RM186-SM.jpg
      :align: center
@@ -143,7 +134,7 @@ found in :ref:`nordic_segger_flashing`. Then build and flash
 applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 First, run your favorite terminal program to listen for output.
 

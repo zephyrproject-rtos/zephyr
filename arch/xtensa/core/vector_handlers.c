@@ -34,7 +34,7 @@ extern char xtensa_arch_kernel_oops_epc[];
 bool xtensa_is_outside_stack_bounds(uintptr_t addr, size_t sz, uint32_t ps)
 {
 	uintptr_t start, end;
-	struct k_thread *thread = _current;
+	struct k_thread *thread = arch_current_thread();
 	bool was_in_isr, invalid;
 
 	/* Without userspace, there is no privileged stack so the thread stack
@@ -363,9 +363,13 @@ void *xtensa_excint1_c(void *esf)
 
 	switch (cause) {
 	case EXCCAUSE_LEVEL1_INTERRUPT:
+#ifdef CONFIG_XTENSA_MMU
 		if (!is_dblexc) {
 			return xtensa_int1_c(interrupted_stack);
 		}
+#else
+		return xtensa_int1_c(interrupted_stack);
+#endif /* CONFIG_XTENSA_MMU */
 		break;
 #ifndef CONFIG_USERSPACE
 	/* Syscalls are handled earlier in assembly if MMU is enabled.

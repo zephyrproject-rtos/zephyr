@@ -163,6 +163,16 @@ SECTION_FUNC(exception.entry, _isr_wrapper)
 	lr t0, ___cpu_t_current_OFFSET(s0)
 	lr tp, _thread_offset_to_tls(t0)
 
+	/* Make sure global pointer is sane */
+#ifdef CONFIG_RISCV_GP
+	.option push
+	.option norelax
+	la gp, __global_pointer$
+	.option pop
+#elif defined(CONFIG_RISCV_CURRENT_VIA_GP)
+	lr gp, ___cpu_t_current_OFFSET(s0)
+#endif /* CONFIG_RISCV_GP / CONFIG_RISCV_CURRENT_VIA_GP */
+
 	/* Clear our per-thread usermode flag */
 	lui t0, %tprel_hi(is_user_mode)
 	add t0, t0, tp, %tprel_add(is_user_mode)
@@ -289,7 +299,7 @@ is_fp:	/* Process the FP trap and quickly return from exception */
 	mv a0, sp
 	tail z_riscv_fpu_trap
 2:
-no_fp:	/* increment _current->arch.exception_depth */
+no_fp:	/* increment arch_current_thread()->arch.exception_depth */
 	lr t0, ___cpu_t_current_OFFSET(s0)
 	lb t1, _thread_offset_to_exception_depth(t0)
 	add t1, t1, 1
@@ -347,6 +357,21 @@ no_fp:	/* increment _current->arch.exception_depth */
 	 */
 	li t1, RISCV_EXC_ECALLU
 	beq t0, t1, is_user_syscall
+
+#if defined(CONFIG_PMP_STACK_GUARD) && defined(CONFIG_MULTITHREADING)
+	/*
+	 * Determine if we come from user space. If so, reconfigure the PMP for
+	 * kernel mode stack guard.
+	 */
+	csrr t0, mstatus
+	li t1, MSTATUS_MPP
+	and t0, t0, t1
+	bnez t0, 1f
+	lr a0, ___cpu_t_current_OFFSET(s0)
+	call z_riscv_pmp_stackguard_enable
+1:
+#endif /* CONFIG_PMP_STACK_GUARD */
+
 #endif /* CONFIG_USERSPACE */
 
 	/*
@@ -374,7 +399,7 @@ is_kernel_syscall:
 	addi t0, t0, 4
 	sr t0, __struct_arch_esf_mepc_OFFSET(sp)
 
-#ifdef CONFIG_PMP_STACK_GUARD
+#if defined(CONFIG_PMP_STACK_GUARD) && defined(CONFIG_MULTITHREADING)
 	/* Re-activate PMP for m-mode */
 	li t1, MSTATUS_MPP
 	csrc mstatus, t1
@@ -398,6 +423,22 @@ is_kernel_syscall:
 	bne t0, t1, skip_schedule
 	lr a0, __struct_arch_esf_a0_OFFSET(sp)
 	lr a1, __struct_arch_esf_a1_OFFSET(sp)
+
+#ifdef CONFIG_FPU_SHARING
+	/*
+	 * When an ECALL is used for a context-switch, the current thread has
+	 * been updated to the next thread.
+	 * Add the exception_depth back to the previous thread.
+	 */
+	lb t1, _thread_offset_to_exception_depth(a0)
+	add t1, t1, -1
+	sb t1, _thread_offset_to_exception_depth(a0)
+
+	lb t1, _thread_offset_to_exception_depth(a1)
+	add t1, t1, 1
+	sb t1, _thread_offset_to_exception_depth(a1)
+#endif
+
 	j reschedule
 skip_schedule:
 #endif
@@ -412,6 +453,12 @@ do_fault:
 1:	mv a1, sp
 
 #ifdef CONFIG_EXCEPTION_DEBUG
+	/*
+	 * Restore the s0 we saved early in ISR entry
+	 * so it shows up properly in the CSF.
+	 */
+	lr s0, __struct_arch_esf_s0_OFFSET(sp)
+
 	/* Allocate space for caller-saved registers on current thread stack */
 	addi sp, sp, -__callee_saved_t_SIZEOF
 
@@ -419,10 +466,15 @@ do_fault:
 	STORE_CALLEE_SAVED()		;
 	mv a2, sp
 
+#ifdef CONFIG_EXTRA_EXCEPTION_INFO
+	/* Store csf's addr into esf (a1 still holds the pointer to the esf at this point) */
+	sr a2 __struct_arch_esf_csf_OFFSET(a1)
+#endif /* CONFIG_EXTRA_EXCEPTION_INFO */
+
 	tail z_riscv_fatal_error_csf
 #else
 	tail z_riscv_fatal_error
-#endif
+#endif /* CONFIG_EXCEPTION_DEBUG */
 
 #if defined(CONFIG_IRQ_OFFLOAD)
 do_irq_offload:
@@ -458,7 +510,7 @@ do_irq_offload:
 #ifdef CONFIG_USERSPACE
 is_user_syscall:
 
-#ifdef CONFIG_PMP_STACK_GUARD
+#if defined(CONFIG_PMP_STACK_GUARD) && defined(CONFIG_MULTITHREADING)
 	/*
 	 * We came from userspace and need to reconfigure the
 	 * PMP for kernel mode stack guard.
@@ -528,7 +580,7 @@ valid_syscall_id:
 
 is_interrupt:
 
-#ifdef CONFIG_PMP_STACK_GUARD
+#if defined(CONFIG_PMP_STACK_GUARD) && defined(CONFIG_MULTITHREADING)
 #ifdef CONFIG_USERSPACE
 	/*
 	 * If we came from userspace then we need to reconfigure the
@@ -674,7 +726,7 @@ no_reschedule:
 	mv a0, sp
 	call z_riscv_fpu_exit_exc
 
-	/* decrement _current->arch.exception_depth */
+	/* decrement arch_current_thread()->arch.exception_depth */
 	lr t0, ___cpu_t_current_OFFSET(s0)
 	lb t1, _thread_offset_to_exception_depth(t0)
 	add t1, t1, -1
@@ -698,7 +750,7 @@ fp_trap_exit:
 	and t0, t2, t1
 	bnez t0, 1f
 
-#ifdef CONFIG_PMP_STACK_GUARD
+#if defined(CONFIG_PMP_STACK_GUARD) && defined(CONFIG_MULTITHREADING)
 	/* Remove kernel stack guard and Reconfigure PMP for user mode */
 	lr a0, ___cpu_t_current_OFFSET(s0)
 	call z_riscv_pmp_usermode_enable

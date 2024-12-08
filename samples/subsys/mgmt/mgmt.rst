@@ -1,10 +1,5 @@
-.. _mgmt-samples:
+.. zephyr:code-sample-category:: mgmt
+   :name: Management
+   :show-listing:
 
-Management Samples
-##################
-
-.. toctree::
-   :maxdepth: 1
-   :glob:
-
-   **/*
+   Samples that demonstrate various device management features.

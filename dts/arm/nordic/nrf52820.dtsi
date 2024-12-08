@@ -6,6 +6,7 @@
 
 #include <arm/armv7-m.dtsi>
 #include <nordic/nrf_common.dtsi>
+#include <zephyr/dt-bindings/regulator/nrf5x.h>
 
 / {
 
@@ -82,6 +83,20 @@
 				reg = <0x40000520 0x1>;
 				status = "okay";
 			};
+
+			reg1: regulator@40000578 {
+				compatible = "nordic,nrf5x-regulator";
+				reg = <0x40000578 0x1>;
+				regulator-name = "REG1";
+				regulator-initial-mode = <NRF5X_REG_MODE_LDO>;
+			};
+
+			reg0: regulator@40000580 {
+				compatible = "nordic,nrf52x-regulator-hv";
+				reg = <0x40000580 0x1>;
+				regulator-name = "REG0";
+				status = "disabled";
+			};
 		};
 
 		radio: radio@40001000 {
@@ -130,10 +145,10 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40003000 0x1000>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <3 NRF_DEFAULT_IRQ_PRIORITY>;
 			easydma-maxcnt-bits = <15>;
 			status = "disabled";
+			zephyr,pm-device-runtime-auto;
 		};
 
 		spi0: spi@40003000 {
@@ -166,10 +181,10 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40004000 0x1000>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <4 NRF_DEFAULT_IRQ_PRIORITY>;
 			easydma-maxcnt-bits = <15>;
 			status = "disabled";
+			zephyr,pm-device-runtime-auto;
 		};
 
 		spi1: spi@40004000 {
@@ -297,7 +312,6 @@
 			reg = <0x40013000 0x1000>;
 			interrupts = <19 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "disabled";
-			#io-channel-cells = <1>;
 		};
 
 		egu0: swi0: egu@40014000 {

@@ -11,6 +11,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/interrupt_controller/wuc_ite_it8xxx2.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/util.h>
 #include <soc.h>
 #include <soc_dt.h>
 #include "soc_espi.h"
@@ -208,6 +209,7 @@ static const struct ec2i_t pmc2_settings[] = {
  */
 #define IT8XXX2_ESPI_H2RAM_POOL_SIZE_MAX 0x1000
 #define IT8XXX2_ESPI_H2RAM_OFFSET_MASK   GENMASK(5, 0)
+#define IT8XXX2_ESPI_H2RAM_BASEADDR_MASK GENMASK(19, 0)
 
 #if defined(CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION)
 #define H2RAM_ACPI_SHM_MAX ((CONFIG_ESPI_IT8XXX2_ACPI_SHM_H2RAM_SIZE) + \
@@ -259,8 +261,8 @@ static void smfi_it8xxx2_init(const struct device *dev)
 	uint8_t h2ram_offset;
 
 	/* Set the host to RAM cycle address offset */
-	h2ram_offset = ((uint32_t)h2ram_pool & 0xffff) /
-				IT8XXX2_ESPI_H2RAM_POOL_SIZE_MAX;
+	h2ram_offset = ((uint32_t)h2ram_pool & IT8XXX2_ESPI_H2RAM_BASEADDR_MASK) /
+		       IT8XXX2_ESPI_H2RAM_POOL_SIZE_MAX;
 	gctrl->GCTRL_H2ROFSR =
 		(gctrl->GCTRL_H2ROFSR & ~IT8XXX2_ESPI_H2RAM_OFFSET_MASK) |
 		h2ram_offset;
@@ -501,7 +503,9 @@ static void pmc1_it8xxx2_init(const struct device *dev)
 	pmc_reg->PM1CTL |= PMC_PM1CTL_IBFIE;
 	IRQ_CONNECT(IT8XXX2_PMC1_IBF_IRQ, 0, pmc1_it8xxx2_ibf_isr,
 			DEVICE_DT_INST_GET(0), 0);
-	irq_enable(IT8XXX2_PMC1_IBF_IRQ);
+	if (!IS_ENABLED(CONFIG_ESPI_PERIPHERAL_CUSTOM_OPCODE)) {
+		irq_enable(IT8XXX2_PMC1_IBF_IRQ);
+	}
 }
 #endif
 
@@ -577,7 +581,9 @@ static void pmc2_it8xxx2_init(const struct device *dev)
 	pmc_reg->PM2CTL |= PMC_PM2CTL_IBFIE;
 	IRQ_CONNECT(IT8XXX2_PMC2_IBF_IRQ, 0, pmc2_it8xxx2_ibf_isr,
 			DEVICE_DT_INST_GET(0), 0);
-	irq_enable(IT8XXX2_PMC2_IBF_IRQ);
+	if (!IS_ENABLED(CONFIG_ESPI_PERIPHERAL_CUSTOM_OPCODE)) {
+		irq_enable(IT8XXX2_PMC2_IBF_IRQ);
+	}
 }
 #endif
 
@@ -728,15 +734,41 @@ static int espi_it8xxx2_receive_vwire(const struct device *dev,
 		return -EIO;
 	}
 
-	if (vw_reg->VW_INDEX[vw_index] & valid_mask) {
-		*level = !!(vw_reg->VW_INDEX[vw_index] & level_mask);
+	if (IS_ENABLED(CONFIG_ESPI_VWIRE_VALID_BIT_CHECK)) {
+		if (vw_reg->VW_INDEX[vw_index] & valid_mask) {
+			*level = !!(vw_reg->VW_INDEX[vw_index] & level_mask);
+		} else {
+			/* Not valid */
+			*level = 0;
+		}
 	} else {
-		/* Not valid */
-		*level = 0;
+		*level = !!(vw_reg->VW_INDEX[vw_index] & level_mask);
 	}
 
 	return 0;
 }
+
+#ifdef CONFIG_ESPI_PERIPHERAL_CUSTOM_OPCODE
+static void host_custom_opcode_enable_interrupts(void)
+{
+	if (IS_ENABLED(CONFIG_ESPI_PERIPHERAL_HOST_IO)) {
+		irq_enable(IT8XXX2_PMC1_IBF_IRQ);
+	}
+	if (IS_ENABLED(CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD)) {
+		irq_enable(IT8XXX2_PMC2_IBF_IRQ);
+	}
+}
+
+static void host_custom_opcode_disable_interrupts(void)
+{
+	if (IS_ENABLED(CONFIG_ESPI_PERIPHERAL_HOST_IO)) {
+		irq_disable(IT8XXX2_PMC1_IBF_IRQ);
+	}
+	if (IS_ENABLED(CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD)) {
+		irq_disable(IT8XXX2_PMC2_IBF_IRQ);
+	}
+}
+#endif /* CONFIG_ESPI_PERIPHERAL_CUSTOM_OPCODE */
 
 static int espi_it8xxx2_manage_callback(const struct device *dev,
 				    struct espi_callback *callback, bool set)
@@ -853,13 +885,14 @@ static int espi_it8xxx2_write_lpc_request(const struct device *dev,
 			break;
 		case E8042_RESUME_IRQ:
 			/* Enable KBC IBF interrupt */
-			kbc_reg->KBHICR |= KBC_KBHICR_IBFCIE;
+			irq_enable(IT8XXX2_KBC_IBF_IRQ);
 			break;
 		case E8042_PAUSE_IRQ:
 			/* Disable KBC IBF interrupt */
-			kbc_reg->KBHICR &= ~KBC_KBHICR_IBFCIE;
+			irq_disable(IT8XXX2_KBC_IBF_IRQ);
 			break;
 		case E8042_CLEAR_OBF:
+			volatile uint8_t _kbhicr __unused;
 			/*
 			 * After enabling IBF/OBF clear mode, we have to make
 			 * sure that IBF interrupt is not triggered before
@@ -876,6 +909,12 @@ static int espi_it8xxx2_write_lpc_request(const struct device *dev,
 			kbc_reg->KBHICR &= ~KBC_KBHICR_COBF;
 			/* Disable clear mode */
 			kbc_reg->KBHICR &= ~KBC_KBHICR_IBFOBFCME;
+			/*
+			 * I/O access synchronization, this load operation will
+			 * guarantee the above modification of SOC's register
+			 * can be seen by any following instructions.
+			 */
+			_kbhicr = kbc_reg->KBHICR;
 			irq_unlock(key);
 			break;
 		case E8042_SET_FLAG:
@@ -908,12 +947,12 @@ static int espi_it8xxx2_write_lpc_request(const struct device *dev,
 			(struct pmc_regs *)config->base_pmc;
 
 		switch (op) {
-		/* Enable/Disable PMC1 (port 62h/66h) interrupt */
+		/* Enable/Disable PMCx interrupt */
 		case ECUSTOM_HOST_SUBS_INTERRUPT_EN:
 			if (*data) {
-				pmc_reg->PM1CTL |= PMC_PM1CTL_IBFIE;
+				host_custom_opcode_enable_interrupts();
 			} else {
-				pmc_reg->PM1CTL &= ~PMC_PM1CTL_IBFIE;
+				host_custom_opcode_disable_interrupts();
 			}
 			break;
 		case ECUSTOM_HOST_CMD_SEND_RESULT:
@@ -945,7 +984,7 @@ static int espi_it8xxx2_write_lpc_request(const struct device *dev,
 		   ((((tag) & 0xF) << 4) | (((len) >> 8) & 0xF))
 
 struct espi_oob_msg_packet {
-	uint8_t data_byte[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, data_byte);
 };
 
 static int espi_it8xxx2_send_oob(const struct device *dev,
@@ -1297,7 +1336,7 @@ static void espi_it8xxx2_flash_init(const struct device *dev)
 /* eSPI driver registration */
 static int espi_it8xxx2_init(const struct device *dev);
 
-static const struct espi_driver_api espi_it8xxx2_driver_api = {
+static DEVICE_API(espi, espi_it8xxx2_driver_api) = {
 	.config = espi_it8xxx2_configure,
 	.get_channel_status = espi_it8xxx2_channel_ready,
 	.send_vwire = espi_it8xxx2_send_vwire,

@@ -57,7 +57,7 @@ endchoice
 config CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION
 	bool "LF clock calibration"
 	depends on !SOC_SERIES_NRF91X && CLOCK_CONTROL_NRF_K32SRC_RC
-	default y if !BOARD_ENABLE_CPUNET
+	default y if !SOC_NRF53_CPUNET_ENABLE
 	help
 	  If calibration is disabled when RC is used for low frequency clock then
 	  accuracy of the low frequency clock will degrade. Disable on your own
@@ -94,7 +94,7 @@ config CLOCK_CONTROL_NRF_CALIBRATION_PERIOD
 config CLOCK_CONTROL_NRF_CALIBRATION_MAX_SKIP
 	int "Maximum number of calibration skips"
 	default 1
-	range 0 255
+	range 0 $(UINT8_MAX)
 	help
 	  Calibration is skipped when temperature change since last calibration
 	  was less than configured threshold. If number of consecutive skips
@@ -132,7 +132,6 @@ choice CLOCK_CONTROL_NRF_ACCURACY_PPM
 	prompt "32KHz clock accuracy"
 	default CLOCK_CONTROL_NRF_K32SRC_500PPM if CLOCK_CONTROL_NRF_K32SRC_RC && SOC_COMPATIBLE_NRF52X
 	default CLOCK_CONTROL_NRF_K32SRC_250PPM if CLOCK_CONTROL_NRF_K32SRC_RC
-	default CLOCK_CONTROL_NRF_K32SRC_150PPM if CLOCK_CONTROL_NRF_K32SRC_XTAL && SOC_COMPATIBLE_NRF54LX
 	default CLOCK_CONTROL_NRF_K32SRC_50PPM
 
 config CLOCK_CONTROL_NRF_K32SRC_500PPM
@@ -173,3 +172,25 @@ config CLOCK_CONTROL_NRF_ACCURACY
 	default 20 if CLOCK_CONTROL_NRF_K32SRC_20PPM
 
 endif # CLOCK_CONTROL_NRF
+
+config CLOCK_CONTROL_NRF2
+	bool "nRF clock control support"
+	default y
+	depends on SOC_SERIES_NRF54HX && !RISCV_CORE_NORDIC_VPR
+	select ONOFF
+	select NRFS if HAS_NRFS
+	imply NRFS_LOCAL_DOMAIN_DVFS_SCALE_DOWN_AFTER_INIT if NRFS_DVFS_LOCAL_DOMAIN
+	help
+	  Support for nRF clock control devices.
+
+if CLOCK_CONTROL_NRF2
+
+config CLOCK_CONTROL_NRF2_NRFS_DVFS_TIMEOUT_MS
+	int "Timeout waiting for nrfs dvfs service callback in milliseconds"
+	default 2000
+
+config CLOCK_CONTROL_NRF2_NRFS_CLOCK_TIMEOUT_MS
+	int "Timeout waiting for nrfs clock service callback in milliseconds"
+	default 1000
+
+endif # CLOCK_CONTROL_NRF2

@@ -47,7 +47,7 @@ void _StackCheckHandler(void)
  * The canary value gets initialized in z_cstart().
  */
 #ifdef CONFIG_STACK_CANARIES_TLS
-__thread volatile uintptr_t __stack_chk_guard;
+Z_THREAD_LOCAL volatile uintptr_t __stack_chk_guard;
 #elif CONFIG_USERSPACE
 K_APP_DMEM(z_libc_partition) volatile uintptr_t __stack_chk_guard;
 #else

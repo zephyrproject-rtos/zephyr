@@ -1,7 +1,7 @@
 .. _tfm:
 
-Trusted Firmware-M
-##################
+Trusted Firmware-M (TF-M)
+#########################
 
 .. toctree::
    :maxdepth: 1

@@ -51,9 +51,10 @@ static bool usbserial_rx_fifo_empty(void)
  */
 static void uart_usbserial_poll_out(const struct device *dev, unsigned char c)
 {
-	 /* Wait for room in Tx FIFO */
-	while (usbserial_tx_fifo_full())
+	/* Wait for room in Tx FIFO */
+	while (usbserial_tx_fifo_full()) {
 		;
+	}
 	usbserial_regs->wdata = c;
 }
 
@@ -75,7 +76,7 @@ static int uart_usbserial_poll_in(const struct device *dev, unsigned char *c)
 	return 0;
 }
 
-static const struct uart_driver_api uart_usbserial_driver_api = {
+static DEVICE_API(uart, uart_usbserial_driver_api) = {
 	.poll_in		= uart_usbserial_poll_in,
 	.poll_out		= uart_usbserial_poll_out,
 };

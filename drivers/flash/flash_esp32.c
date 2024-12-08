@@ -146,10 +146,11 @@ flash_esp32_get_parameters(const struct device *dev)
 
 static int flash_esp32_init(const struct device *dev)
 {
-	struct flash_esp32_dev_data *const dev_data = dev->data;
 	uint32_t ret = 0;
 
 #ifdef CONFIG_MULTITHREADING
+	struct flash_esp32_dev_data *const dev_data = dev->data;
+
 	k_sem_init(&dev_data->sem, 1, 1);
 #endif /* CONFIG_MULTITHREADING */
 	ret = esp_flash_init_default_chip();
@@ -160,7 +161,7 @@ static int flash_esp32_init(const struct device *dev)
 	return 0;
 }
 
-static const struct flash_driver_api flash_esp32_driver_api = {
+static DEVICE_API(flash, flash_esp32_driver_api) = {
 	.read = flash_esp32_read,
 	.write = flash_esp32_write,
 	.erase = flash_esp32_erase,

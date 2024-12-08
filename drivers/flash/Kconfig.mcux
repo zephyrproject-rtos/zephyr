@@ -8,7 +8,7 @@ config SOC_FLASH_MCUX
 		   DT_HAS_NXP_KINETIS_FTFL_ENABLED || \
 		   DT_HAS_NXP_IAP_FMC55_ENABLED || \
 		   DT_HAS_NXP_IAP_FMC553_ENABLED || \
-		   DT_HAS_NXP_IAP_MSF1_ENABLED
+		   DT_HAS_NXP_MSF1_ENABLED
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_DRIVER_ENABLED
 	select FLASH_HAS_EXPLICIT_ERASE
@@ -29,6 +29,12 @@ config CHECK_BEFORE_READING
 	  Do a margin check flash command before reading an area.
 	  This feature prevents erroneous/forbidden reading. Some ECC enabled
 	  devices will crash when reading an erased or wrongly programmed area.
+
+config MCUX_FLASH_K4_API
+	bool
+	help
+	  Set from SOC level configuration if the platform is meant to use the
+	  flash_k4 SDK IAP API.
 
 endif # SOC_FLASH_MCUX
 
@@ -105,5 +111,10 @@ config FLASH_MCUX_FLEXSPI_HYPERFLASH_WRITE_BUFFER
 	  Copy the data to a RAM buffer before writing it to the flash.
 	  This prevents faults when the data to write would be located on the
 	  flash itself.
+
+# Avoid RWW hazards by defaulting logging to disabled
+choice FLASH_LOG_LEVEL_CHOICE
+	default FLASH_LOG_LEVEL_OFF if FLASH_MCUX_FLEXSPI_XIP
+endchoice
 
 endif # HAS_MCUX_FLEXSPI

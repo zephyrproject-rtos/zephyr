@@ -65,3 +65,9 @@ properties:
     description: |
         PLL division factor for pllx_r_ck
         Valid range: 1 - 128
+
+  fracn:
+    type: int
+    description: |
+        PLLx FRACN value
+        Valid range: 0 - 8191

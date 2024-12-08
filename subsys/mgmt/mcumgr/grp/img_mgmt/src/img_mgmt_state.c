@@ -28,16 +28,11 @@
 #include <zephyr/mgmt/mcumgr/mgmt/callbacks.h>
 #endif
 
-LOG_MODULE_DECLARE(mcumgr_img_grp, CONFIG_MCUMGR_GRP_IMG_LOG_LEVEL);
+#ifdef CONFIG_MCUMGR_GRP_IMG_IMAGE_SLOT_STATE_HOOK
+#include <mgmt/mcumgr/transport/smp_internal.h>
+#endif
 
-/* The value here sets how many "characteristics" that describe image is
- * encoded into a map per each image (like bootable flags, and so on).
- * This value is only used for zcbor to predict map size and map encoding
- * and does not affect memory allocation.
- * In case when more "characteristics" are added to image map then
- * zcbor_map_end_encode may fail it this value does not get updated.
- */
-#define MAX_IMG_CHARACTERISTICS 15
+LOG_MODULE_DECLARE(mcumgr_img_grp, CONFIG_MCUMGR_GRP_IMG_LOG_LEVEL);
 
 #ifndef CONFIG_MCUMGR_GRP_IMG_FRUGAL_LIST
 #define ZCBOR_ENCODE_FLAG(zse, label, value)					\
@@ -77,7 +72,7 @@ img_mgmt_state_flags(int query_slot)
 
 	flags = 0;
 
-	/* Determine if this is is pending or confirmed (only applicable for
+	/* Determine if this is pending or confirmed (only applicable for
 	 * unified images and loaders.
 	 */
 	swap_type = img_mgmt_swap_type(query_slot);
@@ -329,7 +324,8 @@ img_mgmt_slot_in_use(int slot)
 	int image = img_mgmt_slot_to_image(slot);
 	int active_slot = img_mgmt_active_slot(image);
 
-#if !defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP)
+#if !defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP) && \
+	!defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD)
 	enum img_mgmt_next_boot_type type = NEXT_BOOT_TYPE_NORMAL;
 	int nbs = img_mgmt_get_next_boot_slot(image, &type);
 
@@ -414,8 +410,9 @@ err:
 }
 
 /* Return zcbor encoding result */
-static bool img_mgmt_state_encode_slot(zcbor_state_t *zse, uint32_t slot, int state_flags)
+static bool img_mgmt_state_encode_slot(struct smp_streamer *ctxt, uint32_t slot, int state_flags)
 {
+	zcbor_state_t *zse = ctxt->writer->zs;
 	uint32_t flags;
 	char vers_str[IMG_MGMT_VER_MAX_STR_LEN];
 	uint8_t hash[IMAGE_HASH_LEN]; /* SHA256 hash */
@@ -424,17 +421,30 @@ static bool img_mgmt_state_encode_slot(zcbor_state_t *zse, uint32_t slot, int st
 	bool ok;
 	int rc = img_mgmt_read_info(slot, &ver, hash, &flags);
 
+#if defined(CONFIG_MCUMGR_GRP_IMG_IMAGE_SLOT_STATE_HOOK)
+	int32_t err_rc;
+	uint16_t err_group;
+	struct img_mgmt_state_slot_encode slot_encode_data = {
+		.ok = &ok,
+		.zse = zse,
+		.slot = slot,
+		.version = vers_str,
+		.hash = hash,
+		.flags = flags,
+	};
+#endif
+
 	if (rc != 0) {
 		/* zcbor encoding did not fail */
 		return true;
 	}
 
-	ok = zcbor_map_start_encode(zse, MAX_IMG_CHARACTERISTICS)	&&
+	ok = zcbor_map_start_encode(zse, CONFIG_MCUMGR_GRP_IMG_IMAGE_SLOT_STATE_STATES)	&&
 	     (CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER == 1	||
-	      (zcbor_tstr_put_lit(zse, "image")			&&
-	       zcbor_uint32_put(zse, slot >> 1)))			&&
-	     zcbor_tstr_put_lit(zse, "slot")				&&
-	     zcbor_uint32_put(zse, slot % 2)				&&
+	      (zcbor_tstr_put_lit(zse, "image")						&&
+	       zcbor_uint32_put(zse, slot >> 1)))					&&
+	     zcbor_tstr_put_lit(zse, "slot")						&&
+	     zcbor_uint32_put(zse, slot % 2)						&&
 	     zcbor_tstr_put_lit(zse, "version");
 
 	if (ok) {
@@ -446,15 +456,27 @@ static bool img_mgmt_state_encode_slot(zcbor_state_t *zse, uint32_t slot, int st
 		}
 	}
 
-	ok = ok && zcbor_tstr_put_lit(zse, "hash")						&&
+	ok = ok && zcbor_tstr_put_lit(zse, "hash")					&&
 	     zcbor_bstr_encode(zse, &zhash)						&&
 	     ZCBOR_ENCODE_FLAG(zse, "bootable", !(flags & IMAGE_F_NON_BOOTABLE))	&&
 	     ZCBOR_ENCODE_FLAG(zse, "pending", state_flags & REPORT_SLOT_PENDING)	&&
 	     ZCBOR_ENCODE_FLAG(zse, "confirmed", state_flags & REPORT_SLOT_CONFIRMED)	&&
 	     ZCBOR_ENCODE_FLAG(zse, "active", state_flags & REPORT_SLOT_ACTIVE)		&&
-	     ZCBOR_ENCODE_FLAG(zse, "permanent", state_flags & REPORT_SLOT_PERMANENT)	&&
-	     zcbor_map_end_encode(zse, MAX_IMG_CHARACTERISTICS);
+	     ZCBOR_ENCODE_FLAG(zse, "permanent", state_flags & REPORT_SLOT_PERMANENT);
 
+	if (!ok) {
+		goto failed;
+	}
+
+#if defined(CONFIG_MCUMGR_GRP_IMG_IMAGE_SLOT_STATE_HOOK)
+	/* Send notification to application to optionally append more fields */
+	(void)mgmt_callback_notify(MGMT_EVT_OP_IMG_MGMT_IMAGE_SLOT_STATE, &slot_encode_data,
+				   sizeof(slot_encode_data), &err_rc, &err_group);
+#endif
+
+	ok &= zcbor_map_end_encode(zse, CONFIG_MCUMGR_GRP_IMG_IMAGE_SLOT_STATE_STATES);
+
+failed:
 	return ok;
 }
 
@@ -498,11 +520,11 @@ img_mgmt_state_read(struct smp_streamer *ctxt)
 
 		/* Need to report slots in proper order */
 		if (slot_a < slot_o) {
-			ok = img_mgmt_state_encode_slot(zse, slot_a, flags_a)	&&
-			     img_mgmt_state_encode_slot(zse, slot_o, flags_o);
+			ok = img_mgmt_state_encode_slot(ctxt, slot_a, flags_a) &&
+			     img_mgmt_state_encode_slot(ctxt, slot_o, flags_o);
 		} else {
-			ok = img_mgmt_state_encode_slot(zse, slot_o, flags_o)	&&
-			     img_mgmt_state_encode_slot(zse, slot_a, flags_a);
+			ok = img_mgmt_state_encode_slot(ctxt, slot_o, flags_o) &&
+			     img_mgmt_state_encode_slot(ctxt, slot_a, flags_a);
 		}
 	}
 

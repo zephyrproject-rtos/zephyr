@@ -18,10 +18,8 @@
  *
  * This should be run early during the boot process but after basic hardware
  * initialization is done.
- *
- * @return 0
  */
-static int atmel_samv71_config(void)
+void atmel_samv71_config(void)
 {
 	if (IS_ENABLED(CONFIG_SOC_ATMEL_SAM_DISABLE_ERASE_PIN)) {
 		/* Disable ERASE function on PB12 pin, this is controlled
@@ -59,8 +57,4 @@ static int atmel_samv71_config(void)
 		/* Disable TDO/TRACESWO function on PB5 pin */
 		MATRIX->CCFG_SYSIO |= CCFG_SYSIO_SYSIO5;
 	}
-
-	return 0;
 }
-
-SYS_INIT(atmel_samv71_config, PRE_KERNEL_1, 1);

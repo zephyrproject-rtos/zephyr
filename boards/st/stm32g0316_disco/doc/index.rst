@@ -1,7 +1,4 @@
-.. _stm32g0316_disco_board:
-
-ST STM32G0316 Discovery
-#######################
+.. zephyr:board:: stm32g0316_disco
 
 Overview
 ********
@@ -10,10 +7,6 @@ The STM32G0316-DISCO Discovery kit helps to discover features of STM32G0 in SO8 
 This discovery kit offers an SO8 to DIL8 module designed with the STM32G031J6 microcontroller
 and allows the user to develop applications. It includes an on-board ST-LINK/V2-1 to debug
 and program the embedded STM32 microcontroller.
-
-.. image:: img/stm32g0316_disco.jpg
-   :align: center
-   :alt: STM32G0316-DISCO
 
 Hardware
 ********
@@ -81,15 +74,24 @@ Default Zephyr Peripheral Mapping:
 Programming and Debugging
 *************************
 
+The STM32G0316-DISCO board includes an ST-LINK/V2-1 embedded debug tool interface.
+
 Applications for the ``stm32g0316_disco`` board configuration can be built the
 usual way (see :ref:`build_an_application` and :ref:`application_run` for more details).
 
 Flashing
 ========
 
-The STM32G0316-DISCO board includes an ST-LINK/V2-1 embedded debug tool
-interface.
-This interface is supported by the openocd version included in the Zephyr SDK.
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
+
+Alternatively, OpenOCD or JLink can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner jlink
 
 Flashing an application to the STM32G0316-DISCO
 -----------------------------------------------
@@ -107,7 +109,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -126,3 +128,6 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. _STM32G0316-DISCO website:
    https://www.st.com/en/evaluation-tools/stm32g0316-disco.html
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

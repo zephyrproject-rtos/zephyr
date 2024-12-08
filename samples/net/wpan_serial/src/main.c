@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(wpan_serial, CONFIG_USB_DEVICE_LOG_LEVEL);
 #include <zephyr/usb/usb_device.h>
 #include <zephyr/random/random.h>
 
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <net_private.h>
 #include <zephyr/net/ieee802154_radio.h>
 

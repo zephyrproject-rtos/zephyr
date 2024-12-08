@@ -573,7 +573,10 @@ SECTIONS
 	.strtab 0 : { *(.strtab) }
 	.shstrtab 0 : { *(.shstrtab) }
 #endif
-	}
+
+	/* Sections generated from 'zephyr,memory-region' nodes */
+	LINKER_DT_SECTIONS()
+}
 
 #ifdef CONFIG_XIP
 /*

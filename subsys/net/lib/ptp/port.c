@@ -88,8 +88,9 @@ static int port_msg_send(struct ptp_port *port, struct ptp_msg *msg, enum ptp_so
 
 static void port_timer_set_timeout(struct k_timer *timer, uint8_t factor, int8_t log_seconds)
 {
-	uint64_t timeout = log_seconds < 0 ? (NSEC_PER_SEC * factor) >> (log_seconds * -1) :
-					     (NSEC_PER_SEC * factor) << log_seconds;
+	uint64_t timeout = log_seconds < 0 ?
+		(uint64_t)((NSEC_PER_SEC * factor) >> (log_seconds * -1)) :
+		(uint64_t)((NSEC_PER_SEC * factor) << log_seconds);
 
 	k_timer_start(timer, K_NSEC(timeout), K_NO_WAIT);
 }
@@ -102,14 +103,14 @@ static void port_timer_set_timeout_random(struct k_timer *timer,
 	uint64_t timeout, random_ns;
 
 	if (log_seconds < 0) {
-		timeout = (NSEC_PER_SEC * min_factor) >> -log_seconds;
-		random_ns = NSEC_PER_SEC >> -log_seconds;
+		timeout = (uint64_t)((NSEC_PER_SEC * min_factor) >> -log_seconds);
+		random_ns = (uint64_t)(NSEC_PER_SEC >> -log_seconds);
 	} else {
-		timeout = (NSEC_PER_SEC * min_factor) << log_seconds;
-		random_ns = (span * NSEC_PER_SEC) << log_seconds;
+		timeout = (uint64_t)((NSEC_PER_SEC * min_factor) << log_seconds);
+		random_ns = (uint64_t)((span * NSEC_PER_SEC) << log_seconds);
 	}
 
-	timeout = timeout + (random_ns * (sys_rand32_get() % (1 << 15) + 1) >> 15);
+	timeout = (uint64_t)(timeout + (random_ns * (sys_rand32_get() % (1 << 15) + 1) >> 15));
 	k_timer_start(timer, K_NSEC(timeout), K_NO_WAIT);
 }
 
@@ -186,9 +187,9 @@ static void port_delay_req_timestamp_cb(struct net_pkt *pkt)
 			return;
 		}
 
-		req->timestamp.host._sec.high = ntohs(pkt->timestamp._sec.high);
-		req->timestamp.host._sec.low = ntohl(pkt->timestamp._sec.low);
-		req->timestamp.host.nanosecond = ntohl(pkt->timestamp.nanosecond);
+		req->timestamp.host._sec.high = pkt->timestamp._sec.high;
+		req->timestamp.host._sec.low = pkt->timestamp._sec.low;
+		req->timestamp.host.nanosecond = pkt->timestamp.nanosecond;
 
 		LOG_DBG("Port %d registered timestamp for %d Delay_Req",
 			port->port_ds.id.port_number,
@@ -970,14 +971,14 @@ static void port_link_monitor(struct net_mgmt_event_callback *cb,
 
 	enum ptp_port_event event = PTP_EVT_NONE;
 	struct ptp_port *port = ptp_clock_port_from_iface(iface);
-	int iface_state = mgmt_event == NET_EVENT_IF_UP ? PORT_LINK_UP : PORT_LINK_DOWN;
+	uint8_t iface_state = mgmt_event == NET_EVENT_IF_UP ? PORT_LINK_UP : PORT_LINK_DOWN;
 
 	if (!port) {
 		return;
 	}
 
 	if (iface_state & port->link_status) {
-		port->link_status = port->link_status;
+		port->link_status = iface_state;
 	} else {
 		port->link_status = iface_state | PORT_LINK_CHANGED;
 		LOG_DBG("Port %d link %s",
@@ -1014,7 +1015,7 @@ void ptp_port_init(struct net_if *iface, void *user_data)
 		return;
 	}
 
-	port = ports + dds->n_ports;
+	port = &ports[dds->n_ports];
 
 	port->iface = iface;
 	port->best = NULL;
@@ -1089,7 +1090,7 @@ enum ptp_port_event ptp_port_event_gen(struct ptp_port *port, int idx)
 	case PTP_MSG_PDELAY_RESP:
 		__fallthrough;
 	case PTP_MSG_PDELAY_RESP_FOLLOW_UP:
-		/* P2P delay machanism not supported */
+		/* P2P delay mechanism not supported */
 		break;
 	case PTP_MSG_FOLLOW_UP:
 		port_follow_up_msg_process(port, msg);
@@ -1360,8 +1361,9 @@ int ptp_port_add_foreign_tt(struct ptp_port *port, struct ptp_msg *msg)
 			port->port_ds.id.port_number,
 			port_id_str(&msg->header.src_port_id));
 
-		k_mem_slab_alloc(&foreign_tts_slab, (void **)&foreign, K_NO_WAIT);
-		if (!foreign) {
+		int ret = k_mem_slab_alloc(&foreign_tts_slab, (void **)&foreign, K_NO_WAIT);
+
+		if (ret) {
 			LOG_ERR("Couldn't allocate memory for new foreign timeTransmitter");
 			return 0;
 		}

@@ -20,7 +20,7 @@
  * @brief Install callback for when this device would sends data to host
  *
  * When this host command simulator device should send data to the host, it
- * will call the the callback parameter provided by this function. Note that
+ * will call the callback parameter provided by this function. Note that
  * only one callback may be installed at a time. Calling this a second time
  * will override the first callback installation.
  *

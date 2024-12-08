@@ -1,5 +1,6 @@
 board:
   name: gd32f403z_eval
+  full_name: GD32F403Z-EVAL
   vendor: gd
   socs:
     - name: gd32f403

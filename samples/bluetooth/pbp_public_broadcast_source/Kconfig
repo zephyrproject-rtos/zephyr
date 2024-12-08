@@ -1,0 +1,20 @@
+# Copyright (c) 2024 Demant A/S
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Bluetooth: PBP Broadcast Audio Source"
+
+config STATIC_BROADCAST_ID
+	bool "Use static broadcast ID"
+	default y
+	help
+	   Enabling this option will make the application use static broadcast ID, as opposed to a
+	   randomly generated one.
+
+config BROADCAST_ID
+	hex "The static broadcast ID to use"
+	range 0x000000 0xFFFFFF
+	depends on STATIC_BROADCAST_ID
+	help
+	   This is the 3-octet broadcast ID advertised if static broadcast IDs are enabled.
+
+source "Kconfig.zephyr"

@@ -1,0 +1,14 @@
+# Copyright (c) 2024, STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ST STM32H7 Ethernet
+
+  This binding file describes the device tree properties required to configure
+  and use the Ethernet controller on STM32H7 and STM32H5 series microcontrollers.
+  The `st,stm32h7-ethernet` compatible string can be used for both series,
+  ensuring flexibility and ease of configuration.
+
+compatible: "st,stm32h7-ethernet"
+
+include: st,stm32-ethernet-common.yaml

@@ -1,6 +1,8 @@
 common:
   depends_on: netif
-  tags: net dhcpv6
+  tags:
+    - net
+    - dhcpv6
 tests:
   net.dhcpv6:
     extra_configs:

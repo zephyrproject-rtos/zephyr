@@ -28,7 +28,7 @@ static int assign_ep_addr(const struct device *dev,
 	int ret = -ENODEV;
 
 	for (unsigned int idx = 1; idx < 16U; idx++) {
-		uint16_t mps = ed->wMaxPacketSize;
+		uint16_t mps = sys_le16_to_cpu(ed->wMaxPacketSize);
 		uint8_t ep;
 
 		if (USB_EP_DIR_IS_IN(ed->bEndpointAddress)) {
@@ -50,7 +50,7 @@ static int assign_ep_addr(const struct device *dev,
 		if (ret == 0) {
 			LOG_DBG("ep 0x%02x -> 0x%02x", ed->bEndpointAddress, ep);
 			ed->bEndpointAddress = ep;
-			ed->wMaxPacketSize = mps;
+			ed->wMaxPacketSize = sys_cpu_to_le16(mps);
 			usbd_ep_bm_set(class_ep_bm, ed->bEndpointAddress);
 			usbd_ep_bm_set(config_ep_bm, ed->bEndpointAddress);
 
@@ -166,8 +166,10 @@ static int init_configuration_inst(struct usbd_context *const uds_ctx,
 				return ret;
 			}
 
-			LOG_INF("\tep 0x%02x mps %u interface ep-bm 0x%08x",
-				ed->bEndpointAddress, ed->wMaxPacketSize, class_ep_bm);
+			LOG_INF("\tep 0x%02x mps 0x%04x interface ep-bm 0x%08x",
+				ed->bEndpointAddress,
+				sys_le16_to_cpu(ed->wMaxPacketSize),
+				class_ep_bm);
 		}
 
 		dhp++;

@@ -58,8 +58,8 @@ static const struct log_backend *backend_find(char const *name)
 
 static bool shell_state_precheck(const struct shell *sh)
 {
-	if (sh->log_backend->control_block->state
-				== SHELL_LOG_BACKEND_UNINIT) {
+	if (sh->log_backend &&
+	    (sh->log_backend->control_block->state == SHELL_LOG_BACKEND_UNINIT)) {
 		shell_error(sh, "Shell log backend not initialized.");
 		return false;
 	}
@@ -142,8 +142,7 @@ static int cmd_log_self_status(const struct shell *sh,
 		return 0;
 	}
 
-	log_status(sh, sh->log_backend->backend, argc, argv);
-	return 0;
+	return log_status(sh, sh->log_backend ? sh->log_backend->backend : NULL, argc, argv);
 }
 
 static int cmd_log_backend_status(const struct shell *sh,
@@ -246,7 +245,7 @@ static int cmd_log_self_enable(const struct shell *sh,
 		return 0;
 	}
 
-	return log_enable(sh, sh->log_backend->backend, argc, argv);
+	return log_enable(sh, sh->log_backend ? sh->log_backend->backend : NULL, argc, argv);
 }
 
 static int cmd_log_backend_enable(const struct shell *sh,
@@ -271,7 +270,7 @@ static int cmd_log_self_disable(const struct shell *sh,
 		return 0;
 	}
 
-	return log_disable(sh, sh->log_backend->backend, argc, argv);
+	return log_disable(sh, sh->log_backend ? sh->log_backend->backend : NULL, argc, argv);
 }
 
 static int cmd_log_backend_disable(const struct shell *sh,
@@ -327,7 +326,7 @@ static int cmd_log_self_halt(const struct shell *sh,
 		return 0;
 	}
 
-	return log_halt(sh, sh->log_backend->backend, argc, argv);
+	return log_halt(sh, sh->log_backend ? sh->log_backend->backend : NULL, argc, argv);
 }
 
 static int cmd_log_backend_halt(const struct shell *sh,
@@ -359,7 +358,7 @@ static int cmd_log_self_go(const struct shell *sh,
 		return 0;
 	}
 
-	return log_go(sh, sh->log_backend->backend, argc, argv);
+	return log_go(sh, sh->log_backend ? sh->log_backend->backend : NULL, argc, argv);
 }
 
 static int cmd_log_backend_go(const struct shell *sh,

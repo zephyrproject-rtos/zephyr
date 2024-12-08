@@ -1,6 +1,5 @@
 common:
   platform_allow:
-    - native_posix
     - native_sim
   integration_platforms:
     - native_sim
@@ -8,7 +7,6 @@ common:
 tests:
   bindesc.define:
     platform_allow:
-      - native_posix
       - native_sim
       - qemu_x86
       - qemu_cortex_m0

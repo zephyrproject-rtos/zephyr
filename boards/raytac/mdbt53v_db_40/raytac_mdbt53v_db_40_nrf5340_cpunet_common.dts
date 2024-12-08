@@ -56,5 +56,5 @@
 	};
 };
 
-/* Include shared RAM configuration file */
-#include "raytac_mdbt53v_db_40_nrf5340_shared_sram_planning_conf.dts"
+/* Include default shared RAM configuration file */
+#include <common/nordic/nrf5340_shared_sram_partition.dtsi>

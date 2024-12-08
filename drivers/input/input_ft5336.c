@@ -11,6 +11,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/input/input.h>
+#include <zephyr/input/input_touch.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/sys/util.h>
@@ -50,6 +51,7 @@ LOG_MODULE_REGISTER(ft5336, CONFIG_INPUT_LOG_LEVEL);
 
 /** FT5336 configuration (DT). */
 struct ft5336_config {
+	struct input_touchscreen_common_config common;
 	/** I2C bus. */
 	struct i2c_dt_spec bus;
 	struct gpio_dt_spec reset_gpio;
@@ -75,6 +77,8 @@ struct ft5336_data {
 	/** Last pressed state. */
 	bool pressed_old;
 };
+
+INPUT_TOUCH_STRUCT_CHECK(struct ft5336_config);
 
 static int ft5336_process(const struct device *dev)
 {
@@ -126,8 +130,7 @@ static int ft5336_process(const struct device *dev)
 	}
 
 	if (pressed) {
-		input_report_abs(dev, INPUT_ABS_X, col, false, K_FOREVER);
-		input_report_abs(dev, INPUT_ABS_Y, row, false, K_FOREVER);
+		input_touchscreen_report_pos(dev, col, row, K_FOREVER);
 		input_report_key(dev, INPUT_BTN_TOUCH, 1, true, K_FOREVER);
 	} else if (data->pressed_old && !pressed) {
 		input_report_key(dev, INPUT_BTN_TOUCH, 0, true, K_FOREVER);
@@ -293,6 +296,7 @@ static int ft5336_pm_action(const struct device *dev,
 #define FT5336_INIT(index)								\
 	PM_DEVICE_DT_INST_DEFINE(n, ft5336_pm_action);					\
 	static const struct ft5336_config ft5336_config_##index = {			\
+		.common = INPUT_TOUCH_DT_INST_COMMON_CONFIG_INIT(index),		\
 		.bus = I2C_DT_SPEC_INST_GET(index),					\
 		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(index, reset_gpios, {0}),	\
 		IF_ENABLED(CONFIG_INPUT_FT5336_INTERRUPT,				\

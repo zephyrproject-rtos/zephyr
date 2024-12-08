@@ -1,7 +1,4 @@
-.. _esp32s2_franzininho:
-
-ESP32-S2 Franzininho
-####################
+.. zephyr:board:: esp32s2_franzininho
 
 Overview
 ********
@@ -29,10 +26,6 @@ The features include the following:
   - ADC
   - DAC
   - LED PWM with up to 8 channels
-
-.. figure:: img/esp32_s2_franzininho.jpg
-        :align: center
-        :alt: ESP32-S2 FRANZININHO
 
 System requirements
 ===================
@@ -68,7 +61,7 @@ MCUboot bootloader
 ==================
 
 User may choose to use MCUboot bootloader instead. In that case the bootloader
-must be build (and flash) at least once.
+must be built (and flashed) at least once.
 
 There are two options to be used when building an application:
 
@@ -79,9 +72,10 @@ There are two options to be used when building an application:
 
    User can select the MCUboot bootloader by adding the following line
    to the board default configuration file.
-   ```
-   CONFIG_BOOTLOADER_MCUBOOT=y
-   ```
+
+   .. code:: cfg
+
+      CONFIG_BOOTLOADER_MCUBOOT=y
 
 Sysbuild
 ========
@@ -93,7 +87,7 @@ To build the sample application using sysbuild use the command:
 
 .. zephyr-app-commands::
    :tool: west
-   :app: samples/hello_world
+   :zephyr-app: samples/hello_world
    :board: esp32s2_franzininho
    :goals: build
    :west-args: --sysbuild
@@ -129,7 +123,7 @@ Manual build
 ============
 
 During the development cycle, it is intended to build & flash as quickly possible.
-For that reason, images can be build one at a time using traditional build.
+For that reason, images can be built one at a time using traditional build.
 
 The instructions following are relevant for both manual build and sysbuild.
 The only difference is the structure of the build directory.
@@ -147,7 +141,7 @@ Build and flash applications as usual (see :ref:`build_an_application` and
    :goals: build
 
 The usual ``flash`` target will work with the ``esp32s2_franzininho`` board
-configuration. Here is an example for the :ref:`hello_world`
+configuration. Here is an example for the :zephyr:code-sample:`hello_world`
 application.
 
 .. zephyr-app-commands::
@@ -171,6 +165,8 @@ message in the monitor:
 
 References
 **********
+
+.. target-notes::
 
 .. [1] https://www.espressif.com/en/products/socs/esp32-s2
 .. _`ESP32S2 Technical Reference Manual`: https://espressif.com/sites/default/files/documentation/esp32-s2_technical_reference_manual_en.pdf

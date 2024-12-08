@@ -66,6 +66,11 @@ static int ltc166x_channel_setup(const struct device *dev,
 		return -ENOTSUP;
 	}
 
+	if (channel_cfg->internal) {
+		LOG_ERR("Internal channels not supported");
+		return -ENOTSUP;
+	}
+
 	return 0;
 }
 
@@ -98,7 +103,7 @@ static int ltc166x_init(const struct device *dev)
 	return 0;
 }
 
-static const struct dac_driver_api ltc166x_driver_api = {
+static DEVICE_API(dac, ltc166x_driver_api) = {
 	.channel_setup = ltc166x_channel_setup,
 	.write_value = ltc166x_write_value,
 };

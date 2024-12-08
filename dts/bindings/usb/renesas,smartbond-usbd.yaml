@@ -5,19 +5,9 @@ description: Renesas SmartBond USB device controller
 
 compatible: "renesas,smartbond-usbd"
 
-include: usb-controller.yaml
+include: usb-ep.yaml
 
 properties:
-  dma-chan-rx:
-    type: int
-    description: |
-      DMA Channel for USB RX (0/2/4/6).
-
-  dma-chan-tx:
-    type: int
-    description: |
-      DMA Channel for USB TX (1/3/5/7).
-
   dma-min-transfer-size:
     type: int
     description: |

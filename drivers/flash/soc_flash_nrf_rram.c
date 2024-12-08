@@ -302,6 +302,15 @@ static int nrf_rram_erase(const struct device *dev, off_t addr, size_t len)
 	return nrf_write(addr, NULL, len);
 }
 
+int nrf_rram_get_size(const struct device *dev, uint64_t *size)
+{
+	ARG_UNUSED(dev);
+
+	*size = RRAM_SIZE;
+
+	return 0;
+}
+
 static const struct flash_parameters *nrf_rram_get_parameters(const struct device *dev)
 {
 	ARG_UNUSED(dev);
@@ -333,10 +342,11 @@ static void nrf_rram_page_layout(const struct device *dev, const struct flash_pa
 }
 #endif
 
-static const struct flash_driver_api nrf_rram_api = {
+static DEVICE_API(flash, nrf_rram_api) = {
 	.read = nrf_rram_read,
 	.write = nrf_rram_write,
 	.erase = nrf_rram_erase,
+	.get_size = nrf_rram_get_size,
 	.get_parameters = nrf_rram_get_parameters,
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = nrf_rram_page_layout,

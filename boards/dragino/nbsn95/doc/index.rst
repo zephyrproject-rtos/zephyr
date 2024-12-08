@@ -1,7 +1,4 @@
-.. _dragino_nbsn95_board:
-
-Dragino NBSN95 NB-IoT Sensor Node
-#################################
+.. zephyr:board:: dragino_nbsn95
 
 Overview
 ********
@@ -21,10 +18,6 @@ This kit provides:
 - Li/SOCI2 Unchargable Battery
 - GPIOs exposed via screw terminals on the carrier board
 - Housing
-
-.. image:: img/dragino_nbsn95.jpg
-     :align: center
-     :alt: Dragino NBSN95
 
 More information about the board can be found at the `Dragino NBSN95 website`_.
 
@@ -148,7 +141,7 @@ Dragino NBSN95  board requires an external debugger.
 Flashing an application to Dragino NBSN95
 -----------------------------------------
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 Connect the Dragino NBSN95 to a STLinkV2 to your host computer using the USB port, then
 run a serial host program to connect with your board. For example:
@@ -174,7 +167,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

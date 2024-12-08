@@ -78,7 +78,7 @@
 
 /*
  * The value ALT_AVALON_UART_FC is a value set in the device flag field to
- * indicate the the device is using flow control, i.e. the driver must
+ * indicate the device is using flow control, i.e. the driver must
  * throttle on transmit if the nCTS pin is low.
  */
 #define ALT_AVALON_UART_FC 0x2
@@ -901,7 +901,7 @@ static int uart_altera_drv_cmd(const struct device *dev, uint32_t cmd,
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-static const struct uart_driver_api uart_altera_driver_api = {
+static DEVICE_API(uart, uart_altera_driver_api) = {
 	.poll_in = uart_altera_poll_in,
 	.poll_out = uart_altera_poll_out,
 	.err_check = uart_altera_err_check,

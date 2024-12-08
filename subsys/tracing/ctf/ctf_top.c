@@ -8,8 +8,11 @@
 #include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
 #include <ctf_top.h>
+#include <zephyr/net/net_core.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/socket_poll.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_pkt.h>
 
 static void _get_thread_name(struct k_thread *thread,
 			     ctf_bounded_string_t *name)
@@ -634,4 +637,285 @@ void sys_trace_socket_socketpair_enter(int family, int type, int proto, int *sv)
 void sys_trace_socket_socketpair_exit(int sock_A, int sock_B, int ret)
 {
 	ctf_top_socket_socketpair_exit(sock_A, sock_B, ret);
+}
+
+void sys_trace_net_recv_data_enter(struct net_if *iface, struct net_pkt *pkt)
+{
+	ctf_top_net_recv_data_enter((int32_t)net_if_get_by_iface(iface),
+				    (uint32_t)(uintptr_t)iface,
+				    (uint32_t)(uintptr_t)pkt,
+				    (uint32_t)net_pkt_get_len(pkt));
+}
+
+void sys_trace_net_recv_data_exit(struct net_if *iface, struct net_pkt *pkt, int ret)
+{
+	ctf_top_net_recv_data_exit((int32_t)net_if_get_by_iface(iface),
+				   (uint32_t)(uintptr_t)iface,
+				   (uint32_t)(uintptr_t)pkt,
+				   (int32_t)ret);
+}
+
+void sys_trace_net_send_data_enter(struct net_pkt *pkt)
+{
+	struct net_if *iface;
+	int ifindex;
+
+	iface = net_pkt_iface(pkt);
+	if (iface == NULL) {
+		ifindex = -1;
+	} else {
+		ifindex = net_if_get_by_iface(iface);
+	}
+
+	ctf_top_net_send_data_enter((int32_t)ifindex,
+				    (uint32_t)(uintptr_t)iface,
+				    (uint32_t)(uintptr_t)pkt,
+				    (uint32_t)net_pkt_get_len(pkt));
+}
+
+void sys_trace_net_send_data_exit(struct net_pkt *pkt, int ret)
+{
+	struct net_if *iface;
+	int ifindex;
+
+	iface = net_pkt_iface(pkt);
+	if (iface == NULL) {
+		ifindex = -1;
+	} else {
+		ifindex = net_if_get_by_iface(iface);
+	}
+
+	ctf_top_net_send_data_exit((int32_t)ifindex,
+				   (uint32_t)(uintptr_t)iface,
+				   (uint32_t)(uintptr_t)pkt,
+				   (int32_t)ret);
+}
+
+void sys_trace_net_rx_time(struct net_pkt *pkt, uint32_t end_time)
+{
+	struct net_if *iface;
+	int ifindex;
+	uint32_t diff;
+	int tc;
+	uint32_t duration_us;
+
+	iface = net_pkt_iface(pkt);
+	if (iface == NULL) {
+		ifindex = -1;
+		tc = 0;
+		duration_us = 0;
+	} else {
+		ifindex = net_if_get_by_iface(iface);
+		diff = end_time - net_pkt_create_time(pkt);
+		tc = net_rx_priority2tc(net_pkt_priority(pkt));
+		duration_us = k_cyc_to_ns_floor64(diff) / 1000U;
+	}
+
+	ctf_top_net_rx_time((int32_t)ifindex,
+			    (uint32_t)(uintptr_t)iface,
+			    (uint32_t)(uintptr_t)pkt,
+			    (uint32_t)net_pkt_priority(pkt),
+			    (uint32_t)tc,
+			    (uint32_t)duration_us);
+}
+
+void sys_trace_net_tx_time(struct net_pkt *pkt, uint32_t end_time)
+{
+	struct net_if *iface;
+	int ifindex;
+	uint32_t diff;
+	int tc;
+	uint32_t duration_us;
+
+	iface = net_pkt_iface(pkt);
+	if (iface == NULL) {
+		ifindex = -1;
+		tc = 0;
+		duration_us = 0;
+	} else {
+		ifindex = net_if_get_by_iface(iface);
+		diff = end_time - net_pkt_create_time(pkt);
+		tc = net_rx_priority2tc(net_pkt_priority(pkt));
+		duration_us = k_cyc_to_ns_floor64(diff) / 1000U;
+	}
+
+	ctf_top_net_tx_time((int32_t)ifindex,
+			    (uint32_t)(uintptr_t)iface,
+			    (uint32_t)(uintptr_t)pkt,
+			    (uint32_t)net_pkt_priority(pkt),
+			    (uint32_t)tc,
+			    (uint32_t)duration_us);
+}
+
+void sys_trace_named_event(const char *name, uint32_t arg0, uint32_t arg1)
+{
+	ctf_bounded_string_t ctf_name = {""};
+
+	strncpy(ctf_name.buf, name, CTF_MAX_STRING_LEN);
+	/* Make sure buffer is NULL terminated */
+	ctf_name.buf[CTF_MAX_STRING_LEN - 1] = '\0';
+
+	ctf_named_event(ctf_name, arg0, arg1);
+}
+
+/* GPIO */
+void sys_port_trace_gpio_pin_interrupt_configure_enter(const struct device *port, gpio_pin_t pin,
+						       gpio_flags_t flags)
+{
+	ctf_top_gpio_pin_interrupt_configure_enter((uint32_t)(uintptr_t)port, (uint32_t)pin,
+						   (uint32_t)flags);
+}
+
+void sys_port_trace_gpio_pin_interrupt_configure_exit(const struct device *port, gpio_pin_t pin,
+						      int ret)
+{
+	ctf_top_gpio_pin_interrupt_configure_exit((uint32_t)(uintptr_t)port, (uint32_t)pin,
+						  (int32_t)ret);
+}
+
+void sys_port_trace_gpio_pin_configure_enter(const struct device *port, gpio_pin_t pin,
+					     gpio_flags_t flags)
+{
+	ctf_top_gpio_pin_configure_enter((uint32_t)(uintptr_t)port, (uint32_t)pin, (uint32_t)flags);
+}
+
+void sys_port_trace_gpio_pin_configure_exit(const struct device *port, gpio_pin_t pin, int ret)
+{
+	ctf_top_gpio_pin_configure_exit((uint32_t)(uintptr_t)port, (uint32_t)pin, (int32_t)ret);
+}
+
+void sys_port_trace_gpio_port_get_direction_enter(const struct device *port, gpio_port_pins_t map,
+						  gpio_port_pins_t *inputs,
+						  gpio_port_pins_t *outputs)
+{
+	ctf_top_gpio_port_get_direction_enter((uint32_t)(uintptr_t)port, (uint32_t)map,
+					      (uint32_t)(uintptr_t)inputs,
+					      (uint32_t)(uintptr_t)outputs);
+}
+
+void sys_port_trace_gpio_port_get_direction_exit(const struct device *port, int ret)
+{
+	ctf_top_gpio_port_get_direction_exit((uint32_t)(uintptr_t)port, (int32_t)ret);
+}
+
+void sys_port_trace_gpio_pin_get_config_enter(const struct device *port, gpio_pin_t pin,
+					      gpio_flags_t flags)
+{
+	ctf_top_gpio_pin_get_config_enter((uint32_t)(uintptr_t)port, (uint32_t)pin,
+					  (uint32_t)flags);
+}
+
+void sys_port_trace_gpio_pin_get_config_exit(const struct device *port, gpio_pin_t pin, int ret)
+{
+	ctf_top_gpio_pin_get_config_exit((uint32_t)(uintptr_t)port, (uint32_t)pin, (int32_t)ret);
+}
+
+void sys_port_trace_gpio_port_get_raw_enter(const struct device *port, gpio_port_value_t *value)
+{
+	ctf_top_gpio_port_get_raw_enter((uint32_t)(uintptr_t)port, (uint32_t)(uintptr_t)value);
+}
+
+void sys_port_trace_gpio_port_get_raw_exit(const struct device *port, int ret)
+{
+	ctf_top_gpio_port_get_raw_exit((uint32_t)(uintptr_t)port, (int32_t)ret);
+}
+
+void sys_port_trace_gpio_port_set_masked_raw_enter(const struct device *port, gpio_port_pins_t mask,
+						   gpio_port_value_t value)
+{
+	ctf_top_gpio_port_set_masked_raw_enter((uint32_t)(uintptr_t)port, (uint32_t)mask,
+					       (uint32_t)value);
+}
+
+void sys_port_trace_gpio_port_set_masked_raw_exit(const struct device *port, int ret)
+{
+	ctf_top_gpio_port_set_masked_raw_exit((uint32_t)(uintptr_t)port, (int32_t)ret);
+}
+
+void sys_port_trace_gpio_port_set_bits_raw_enter(const struct device *port, gpio_port_pins_t pins)
+{
+	ctf_top_gpio_port_set_bits_raw_enter((uint32_t)(uintptr_t)port, (uint32_t)pins);
+}
+
+void sys_port_trace_gpio_port_set_bits_raw_exit(const struct device *port, int ret)
+{
+	ctf_top_gpio_port_set_bits_raw_exit((uint32_t)(uintptr_t)port, (int32_t)ret);
+}
+
+void sys_port_trace_gpio_port_clear_bits_raw_enter(const struct device *port, gpio_port_pins_t pins)
+{
+	ctf_top_gpio_port_clear_bits_raw_enter((uint32_t)(uintptr_t)port, (uint32_t)pins);
+}
+
+void sys_port_trace_gpio_port_clear_bits_raw_exit(const struct device *port, int ret)
+{
+	ctf_top_gpio_port_clear_bits_raw_exit((uint32_t)(uintptr_t)port, (int32_t)ret);
+}
+
+void sys_port_trace_gpio_port_toggle_bits_enter(const struct device *port, gpio_port_pins_t pins)
+{
+	ctf_top_gpio_port_toggle_bits_enter((uint32_t)(uintptr_t)port, (uint32_t)pins);
+}
+
+void sys_port_trace_gpio_port_toggle_bits_exit(const struct device *port, int ret)
+{
+	ctf_top_gpio_port_toggle_bits_exit((uint32_t)(uintptr_t)port, (int32_t)ret);
+}
+
+void sys_port_trace_gpio_init_callback_enter(struct gpio_callback *callback,
+					     gpio_callback_handler_t handler,
+					     gpio_port_pins_t pin_mask)
+{
+	ctf_top_gpio_init_callback_enter((uint32_t)(uintptr_t)callback,
+					 (uint32_t)(uintptr_t)handler, (uint32_t)pin_mask);
+}
+
+void sys_port_trace_gpio_init_callback_exit(struct gpio_callback *callback)
+{
+	ctf_top_gpio_init_callback_exit((uint32_t)(uintptr_t)callback);
+}
+
+void sys_port_trace_gpio_add_callback_enter(const struct device *port,
+					    struct gpio_callback *callback)
+{
+	ctf_top_gpio_add_callback_enter((uint32_t)(uintptr_t)port, (uint32_t)(uintptr_t)callback);
+}
+
+void sys_port_trace_gpio_add_callback_exit(const struct device *port, int ret)
+{
+	ctf_top_gpio_add_callback_exit((uint32_t)(uintptr_t)port, (int32_t)ret);
+}
+
+void sys_port_trace_gpio_remove_callback_enter(const struct device *port,
+					       struct gpio_callback *callback)
+{
+	ctf_top_gpio_remove_callback_enter((uint32_t)(uintptr_t)port,
+					   (uint32_t)(uintptr_t)callback);
+}
+
+void sys_port_trace_gpio_remove_callback_exit(const struct device *port, int ret)
+{
+	ctf_top_gpio_remove_callback_exit((uint32_t)(uintptr_t)port, (int32_t)ret);
+}
+
+void sys_port_trace_gpio_get_pending_int_enter(const struct device *dev)
+{
+	ctf_top_gpio_get_pending_int_enter((uint32_t)(uintptr_t)dev);
+}
+
+void sys_port_trace_gpio_get_pending_int_exit(const struct device *dev, int ret)
+{
+	ctf_top_gpio_get_pending_int_exit((uint32_t)(uintptr_t)dev, (int32_t)ret);
+}
+
+void sys_port_trace_gpio_fire_callbacks_enter(sys_slist_t *list, const struct device *port,
+					      gpio_port_pins_t pins)
+{
+	ctf_top_gpio_fire_callbacks_enter((uint32_t)(uintptr_t)list, (uint32_t)(uintptr_t)port,
+					  (uint32_t)pins);
+}
+
+void sys_port_trace_gpio_fire_callback(const struct device *port, struct gpio_callback *cb)
+{
+	ctf_top_gpio_fire_callback((uint32_t)(uintptr_t)port, (uint32_t)(uintptr_t)cb);
 }

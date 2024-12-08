@@ -1,9 +1,11 @@
 boards:
 
   - name: acrn
+    full_name: ACRN hypervisor
     socs:
       - name: atom
 
   - name: acrn_ehl_crb
+    full_name: ACRN on EHL hypervisor
     socs:
       - name: elkhart_lake

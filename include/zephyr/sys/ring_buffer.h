@@ -174,9 +174,6 @@ static inline void ring_buf_init(struct ring_buf *buf,
  * Each data item is an array of 32-bit words (from zero to 1020 bytes in
  * length), coupled with a 16-bit type identifier and an 8-bit integer value.
  *
- * Each data item is an array of 32-bit words (from zero to 1020 bytes in
- * length), coupled with a 16-bit type identifier and an 8-bit integer value.
- *
  * @param buf Address of ring buffer.
  * @param size Ring buffer size (in 32-bit words)
  * @param data Ring buffer data area (uint32_t data[size]).

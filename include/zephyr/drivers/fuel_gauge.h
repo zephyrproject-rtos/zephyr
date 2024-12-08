@@ -274,7 +274,7 @@ static inline int z_impl_fuel_gauge_get_prop(const struct device *dev, fuel_gaug
 }
 
 /**
- * @brief Fetch multiple battery fuel-gauge properies. The default implementation is the same as
+ * @brief Fetch multiple battery fuel-gauge properties. The default implementation is the same as
  * calling fuel_gauge_get_prop() multiple times. A driver may implement the `get_properties` field
  * of the fuel gauge driver APIs struct to override this implementation.
  *

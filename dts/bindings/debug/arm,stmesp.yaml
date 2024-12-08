@@ -1,0 +1,6 @@
+# Copyright 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for ARM instrumentation System Trace Macrocell Extended Stimulus Port (STMESP)
+
+include: base.yaml

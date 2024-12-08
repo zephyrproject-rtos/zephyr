@@ -178,6 +178,13 @@ static void i3c_ibi_work_handler(struct k_work *work)
 		if ((ret != 0) && (ret != -EBUSY)) {
 			LOG_ERR("i3c_do_daa returns %d", ret);
 		}
+
+		if (i3c_bus_has_sec_controller(ibi_node->controller)) {
+			ret = i3c_bus_deftgts(ibi_node->controller);
+			if (ret != 0) {
+				LOG_ERR("Error sending DEFTGTS");
+			}
+		}
 		break;
 
 	case I3C_IBI_WORKQUEUE_CB:

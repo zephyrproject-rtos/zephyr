@@ -1,0 +1,23 @@
+# Copyright (c) 2024 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ITE IT8801 I2C-based GPIO device driver
+
+compatible: "ite,it8801-gpio"
+
+include: [base.yaml, gpio-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  pin-mask:
+    type: int
+    required: true
+    description: |
+      Not every GPIO pins are usable for IT8801. This property
+      indicates the usable GPIO pin mask.
+
+gpio-cells:
+  - pin
+  - flags

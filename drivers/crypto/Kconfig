@@ -22,14 +22,14 @@ module-str = CRYPTO
 source "subsys/logging/Kconfig.template.log_config"
 
 config CRYPTO_TINYCRYPT_SHIM
-	bool "TinyCrypt shim driver [EXPERIMENTAL]"
+	bool "TinyCrypt shim driver [DEPRECATED]"
 	select TINYCRYPT
 	select TINYCRYPT_AES
 	select TINYCRYPT_AES_CBC
 	select TINYCRYPT_AES_CTR
 	select TINYCRYPT_AES_CCM
 	select TINYCRYPT_AES_CMAC
-	select EXPERIMENTAL
+	select DEPRECATED
 	help
 	  Enable TinyCrypt shim layer compliant with crypto APIs.
 
@@ -82,6 +82,7 @@ source "drivers/crypto/Kconfig.npcx"
 source "drivers/crypto/Kconfig.xec"
 source "drivers/crypto/Kconfig.it8xxx2"
 source "drivers/crypto/Kconfig.mcux_dcp"
+source "drivers/crypto/Kconfig.si32"
 source "drivers/crypto/Kconfig.smartbond"
 
 endif # CRYPTO

@@ -53,7 +53,7 @@ struct xen_memory_reservation {
 	xen_ulong_t	nr_extents;
 	unsigned int	extent_order;
 
-#if __XEN_INTERFACE_VERSION__ >= 0x00030209
+#if CONFIG_XEN_INTERFACE_VERSION >= 0x00030209
 	/* XENMEMF flags. */
 	unsigned int	mem_flags;
 #else
@@ -80,7 +80,7 @@ struct xen_add_to_physmap_batch {
 	/* Number of pages to go through */
 	uint16_t size;
 
-#if __XEN_INTERFACE_VERSION__ < 0x00040700
+#if CONFIG_XEN_INTERFACE_VERSION < 0x00040700
 	domid_t foreign_domid; /* IFF gmfn_foreign. Should be 0 for other spaces. */
 #else
 	union xen_add_to_physmap_batch_extra {

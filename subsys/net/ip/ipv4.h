@@ -357,6 +357,17 @@ typedef void (*net_ipv4_frag_cb_t)(struct net_ipv4_reassembly *reass, void *user
  */
 void net_ipv4_frag_foreach(net_ipv4_frag_cb_t cb, void *user_data);
 
+/**
+ * @brief Prepare packet for sending, this will split up a packet that is too large to send into
+ * multiple fragments so that it can be sent. It will also update PMTU destination cache if it
+ * is enabled.
+ *
+ * @param pkt Network packet
+ *
+ * @return Return verdict about the packet.
+ */
+enum net_verdict net_ipv4_prepare_for_send(struct net_pkt *pkt);
+
 #if defined(CONFIG_NET_NATIVE_IPV4)
 /**
  * @brief Initialises IPv4
@@ -384,22 +395,9 @@ static inline enum net_verdict net_ipv4_handle_fragment_hdr(struct net_pkt *pkt,
 }
 #endif /* CONFIG_NET_IPV4_FRAGMENT */
 
-/**
- * @brief Prepare packet for sending, this will split up a packet that is too large to send into
- * multiple fragments so that it can be sent.
- *
- * @param pkt Network packet
- *
- * @return Return verdict about the packet.
- */
 #if defined(CONFIG_NET_IPV4_FRAGMENT)
-enum net_verdict net_ipv4_prepare_for_send(struct net_pkt *pkt);
-#else
-static inline enum net_verdict net_ipv4_prepare_for_send(struct net_pkt *pkt)
-{
-	return NET_OK;
-}
-#endif /* CONFIG_NET_IPV4_FRAGMENT */
+enum net_verdict net_ipv4_prepare_for_send_fragment(struct net_pkt *pkt);
+#endif
 
 /**
  * @brief Sets up fragment buffers for usage, should only be called by the SYS_INIT() handler in

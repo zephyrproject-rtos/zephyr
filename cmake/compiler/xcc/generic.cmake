@@ -17,13 +17,13 @@ TOOLCHAIN_VER: ${TOOLCHAIN_VER}
 endif()
 
 execute_process(
-  COMMAND ${CMAKE_C_COMPILER} --version
+  COMMAND ${CMAKE_C_COMPILER} --version ${XTENSA_CORE_LOCAL_C_FLAG}
   RESULT_VARIABLE ret
   OUTPUT_VARIABLE stdoutput
   )
 if(ret)
   message(FATAL_ERROR "Executing the below command failed. Are permissions set correctly?
-  ${CMAKE_C_COMPILER} --version
+  ${CMAKE_C_COMPILER} --version ${XTENSA_CORE_LOCAL_C_FLAG}
   ${stdoutput}
 "
     )

@@ -83,10 +83,11 @@ static void explorir_m_uart_flush_until_end(const struct device *uart_dev)
 	uint32_t uptime;
 
 	uptime = k_uptime_get_32();
-	do {
-		uart_poll_in(uart_dev, &tmp);
-	} while (tmp != EXPLORIR_M_END_CHAR &&
-		 k_uptime_get_32() - uptime < EXPLORIR_M_MAX_RESPONSE_DELAY);
+	while (k_uptime_get_32() - uptime < EXPLORIR_M_MAX_RESPONSE_DELAY) {
+		if (uart_poll_in(uart_dev, &tmp) == 0 && tmp == EXPLORIR_M_END_CHAR) {
+			break;
+		}
+	}
 }
 
 static void explorir_m_buffer_reset(struct explorir_m_data *data)
@@ -326,7 +327,7 @@ static int explorir_m_channel_get(const struct device *dev, enum sensor_channel 
 	return 0;
 }
 
-static const struct sensor_driver_api explorir_m_api_funcs = {
+static DEVICE_API(sensor, explorir_m_api_funcs) = {
 	.attr_set = explorir_m_attr_set,
 	.attr_get = explorir_m_attr_get,
 	.sample_fetch = explorir_m_sample_fetch,

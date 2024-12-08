@@ -1,7 +1,4 @@
-.. _google_dragonclaw_board:
-
-Google Dragonclaw Development Board
-###################################
+.. zephyr:board:: google_dragonclaw
 
 Overview
 ********

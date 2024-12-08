@@ -1,0 +1,26 @@
+# Copyright(c) 2024 Sparse Technology, Mustafa Abdullah Kus
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig PROMETHEUS
+	bool "Prometheus Client Library (Pull Method)"
+	depends on NET_SOCKETS
+	depends on HTTP_SERVER
+	help
+	  Enable Prometheus client library
+
+if PROMETHEUS
+
+config PROMETHEUS_LABEL_MAX_COUNT
+	int "Max label count in metric"
+	range 1 8
+	default 1
+	help
+	  Specify how many labels can be attached to a metric.
+
+module = PROMETHEUS
+module-dep = NET_LOG
+module-str = Log level for PROMETHEUS
+module-help = Enable debug message of PROMETHEUS client library.
+source "subsys/net/Kconfig.template.log_config.net"
+
+endif # PROMETHEUS

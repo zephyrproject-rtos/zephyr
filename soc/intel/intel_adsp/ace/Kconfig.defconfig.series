@@ -40,15 +40,9 @@ config XTENSA_TIMER
 config XTENSA_TIMER_ID
 	default 0
 
-config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 393216000 if XTENSA_TIMER
-	default 38400000 if INTEL_ADSP_TIMER
-
 config SYS_CLOCK_TICKS_PER_SEC
+	default 100 if INTEL_ADSP_SIM
 	default 12000
-
-config XTENSA_CCOUNT_HZ
-	default 393216000
 
 config INTEL_ADSP_TIMER
 	default y

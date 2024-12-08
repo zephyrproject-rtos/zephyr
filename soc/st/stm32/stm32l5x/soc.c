@@ -21,15 +21,13 @@
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 LOG_MODULE_REGISTER(soc);
 
+extern void stm32_power_init(void);
 /**
  * @brief Perform basic hardware initialization at boot.
  *
  * This needs to be run from the very beginning.
- * So the init priority has to be 0 (zero).
- *
- * @return 0
  */
-static int stm32l5_init(void)
+void soc_early_init_hook(void)
 {
 	/* Enable ICACHE */
 	while (LL_ICACHE_IsActiveFlag_BUSY()) {
@@ -49,8 +47,7 @@ static int stm32l5_init(void)
 		/* Disable USB Type-C dead battery pull-down behavior */
 		LL_PWR_DisableUCPDDeadBattery();
 	}
-
-	return 0;
+#if CONFIG_PM
+	stm32_power_init();
+#endif
 }
-
-SYS_INIT(stm32l5_init, PRE_KERNEL_1, 0);

@@ -1,0 +1,108 @@
+/*
+ * Copyright (c) 2024 Henrik Brix Andersen <henrik@brixandersen.dk>
+ *
+ *  SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <st/g0/stm32g0b1Xb.dtsi>
+#include <st/g0/stm32g0b1c(b-c-e)tx-pinctrl.dtsi>
+
+/ {
+	model = "WeAct USB2CANFDV1 board";
+	compatible = "weact,usb2canfdv1";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,canbus = &fdcan1;
+	};
+
+	aliases {
+		led0 = &led_ready;
+		led1 = &led_rxd;
+		led2 = &led_txd;
+		mcuboot-led0 = &led_ready;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led_ready: led_ready {
+			gpios = <&gpioa 2 GPIO_ACTIVE_LOW>;
+			label = "LED READY";
+		};
+		led_rxd: led_rxd {
+			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
+			label = "LED RXD";
+		};
+		led_txd: led_txd {
+			gpios = <&gpioa 1 GPIO_ACTIVE_LOW>;
+			label = "LED TXD";
+		};
+	};
+};
+
+&clk_hse {
+	status = "okay";
+	clock-frequency = <DT_FREQ_M(16)>;
+};
+
+&clk_hsi48 {
+	status = "okay";
+	crs-usb-sof;
+};
+
+&pll {
+	div-m = <1>;
+	mul-n = <15>;
+	div-p = <2>;
+	div-q = <3>;
+	div-r = <4>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(60)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+};
+
+zephyr_udc0: &usb {
+	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&fdcan1 {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00001000>,
+		 <&rcc STM32_SRC_PLL_Q FDCAN_SEL(1)>;
+	pinctrl-0 = <&fdcan1_rx_pb8 &fdcan1_tx_pb9>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	can-transceiver {
+		max-bitrate = <5000000>;
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(48)>;
+			read-only;
+		};
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0x0000c000 DT_SIZE_K(80)>;
+		};
+	};
+};

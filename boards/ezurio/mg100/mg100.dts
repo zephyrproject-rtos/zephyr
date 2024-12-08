@@ -69,6 +69,10 @@
 	};
 };
 
+&reg1 {
+	regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
+};
+
 &adc {
 	status = "okay";
 };
@@ -150,6 +154,7 @@
 		spi-max-frequency = <8000000>;
 		mmc {
 			compatible = "zephyr,sdmmc-disk";
+			disk-name = "SD";
 			status = "okay";
 		};
 	};

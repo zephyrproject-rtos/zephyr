@@ -1,5 +1,6 @@
 board:
   name: bt510
+  full_name: Sentrius BT510 Sensor
   vendor: ezurio
   socs:
   - name: nrf52840

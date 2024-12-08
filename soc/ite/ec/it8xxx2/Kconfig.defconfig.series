@@ -3,9 +3,6 @@
 
 if SOC_SERIES_IT8XXX2
 
-config RISCV_GP
-	default y
-
 config ARCH_HAS_CUSTOM_BUSY_WAIT
 	default y
 
@@ -29,9 +26,6 @@ config IT8XXX2_PLL_SEQUENCE_PRIORITY
 
 config VCMP_IT8XXX2_INIT_PRIORITY
 	default 91 if VCMP_IT8XXX2_WORKQUEUE
-
-config PINCTRL
-	default y
 
 config NUM_IRQS
 	default 185

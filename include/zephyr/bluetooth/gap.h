@@ -38,56 +38,62 @@ extern "C" {
  * @name EIR/AD data type definitions
  * @{
  */
-#define BT_DATA_FLAGS                   0x01 /**< AD flags */
-#define BT_DATA_UUID16_SOME             0x02 /**< 16-bit UUID, more available */
-#define BT_DATA_UUID16_ALL              0x03 /**< 16-bit UUID, all listed */
-#define BT_DATA_UUID32_SOME             0x04 /**< 32-bit UUID, more available */
-#define BT_DATA_UUID32_ALL              0x05 /**< 32-bit UUID, all listed */
-#define BT_DATA_UUID128_SOME            0x06 /**< 128-bit UUID, more available */
-#define BT_DATA_UUID128_ALL             0x07 /**< 128-bit UUID, all listed */
-#define BT_DATA_NAME_SHORTENED          0x08 /**< Shortened name */
-#define BT_DATA_NAME_COMPLETE           0x09 /**< Complete name */
-#define BT_DATA_TX_POWER                0x0a /**< Tx Power */
-#define BT_DATA_SM_TK_VALUE             0x10 /**< Security Manager TK Value */
-#define BT_DATA_SM_OOB_FLAGS            0x11 /**< Security Manager OOB Flags */
-#define BT_DATA_PERIPHERAL_INT_RANGE    0x12 /**< Peripheral Connection Interval Range */
-#define BT_DATA_SOLICIT16               0x14 /**< Solicit UUIDs, 16-bit */
-#define BT_DATA_SOLICIT128              0x15 /**< Solicit UUIDs, 128-bit */
-#define BT_DATA_SVC_DATA16              0x16 /**< Service data, 16-bit UUID */
-#define BT_DATA_PUB_TARGET_ADDR         0x17 /**< Public Target Address */
-#define BT_DATA_RAND_TARGET_ADDR        0x18 /**< Random Target Address */
-#define BT_DATA_GAP_APPEARANCE          0x19 /**< GAP appearance */
-#define BT_DATA_ADV_INT                 0x1a /**< Advertising Interval */
-#define BT_DATA_LE_BT_DEVICE_ADDRESS    0x1b /**< LE Bluetooth Device Address */
-#define BT_DATA_LE_ROLE                 0x1c /**< LE Role */
-#define BT_DATA_SIMPLE_PAIRING_HASH     0x1d /**< Simple Pairing Hash C256 */
-#define BT_DATA_SIMPLE_PAIRING_RAND     0x1e /**< Simple Pairing Randomizer R256 */
-#define BT_DATA_SOLICIT32               0x1f /**< Solicit UUIDs, 32-bit */
-#define BT_DATA_SVC_DATA32              0x20 /**< Service data, 32-bit UUID */
-#define BT_DATA_SVC_DATA128             0x21 /**< Service data, 128-bit UUID */
-#define BT_DATA_LE_SC_CONFIRM_VALUE     0x22 /**< LE SC Confirmation Value */
-#define BT_DATA_LE_SC_RANDOM_VALUE      0x23 /**< LE SC Random Value */
-#define BT_DATA_URI                     0x24 /**< URI */
-#define BT_DATA_INDOOR_POS              0x25 /**< Indoor Positioning */
-#define BT_DATA_TRANS_DISCOVER_DATA     0x26 /**< Transport Discovery Data */
-#define BT_DATA_LE_SUPPORTED_FEATURES   0x27 /**< LE Supported Features */
-#define BT_DATA_CHANNEL_MAP_UPDATE_IND  0x28 /**< Channel Map Update Indication */
-#define BT_DATA_MESH_PROV               0x29 /**< Mesh Provisioning PDU */
-#define BT_DATA_MESH_MESSAGE            0x2a /**< Mesh Networking PDU */
-#define BT_DATA_MESH_BEACON             0x2b /**< Mesh Beacon */
-#define BT_DATA_BIG_INFO                0x2c /**< BIGInfo */
-#define BT_DATA_BROADCAST_CODE          0x2d /**< Broadcast Code */
-#define BT_DATA_CSIS_RSI                0x2e /**< CSIS Random Set ID type */
-#define BT_DATA_ADV_INT_LONG            0x2f /**< Advertising Interval long */
-#define BT_DATA_BROADCAST_NAME          0x30 /**< Broadcast Name */
-#define BT_DATA_ENCRYPTED_AD_DATA       0x31 /**< Encrypted Advertising Data */
-#define BT_DATA_3D_INFO                 0x3D /**< 3D Information Data */
+#define BT_DATA_FLAGS                    0x01 /**< AD flags */
+#define BT_DATA_UUID16_SOME              0x02 /**< 16-bit UUID, more available */
+#define BT_DATA_UUID16_ALL               0x03 /**< 16-bit UUID, all listed */
+#define BT_DATA_UUID32_SOME              0x04 /**< 32-bit UUID, more available */
+#define BT_DATA_UUID32_ALL               0x05 /**< 32-bit UUID, all listed */
+#define BT_DATA_UUID128_SOME             0x06 /**< 128-bit UUID, more available */
+#define BT_DATA_UUID128_ALL              0x07 /**< 128-bit UUID, all listed */
+#define BT_DATA_NAME_SHORTENED           0x08 /**< Shortened name */
+#define BT_DATA_NAME_COMPLETE            0x09 /**< Complete name */
+#define BT_DATA_TX_POWER                 0x0a /**< Tx Power */
+#define BT_DATA_DEVICE_CLASS             0x0d /**< Class of Device */
+#define BT_DATA_SIMPLE_PAIRING_HASH_C192 0x0e /**< Simple Pairing Hash C-192 */
+#define BT_DATA_SIMPLE_PAIRING_RAND_C192 0x0f /**< Simple Pairing Randomizer R-192 */
+#define BT_DATA_DEVICE_ID                0x10 /**< Device ID (Profile) */
+#define BT_DATA_SM_TK_VALUE              0x10 /**< Security Manager TK Value */
+#define BT_DATA_SM_OOB_FLAGS             0x11 /**< Security Manager OOB Flags */
+#define BT_DATA_PERIPHERAL_INT_RANGE     0x12 /**< Peripheral Connection Interval Range */
+#define BT_DATA_SOLICIT16                0x14 /**< Solicit UUIDs, 16-bit */
+#define BT_DATA_SOLICIT128               0x15 /**< Solicit UUIDs, 128-bit */
+#define BT_DATA_SVC_DATA16               0x16 /**< Service data, 16-bit UUID */
+#define BT_DATA_PUB_TARGET_ADDR          0x17 /**< Public Target Address */
+#define BT_DATA_RAND_TARGET_ADDR         0x18 /**< Random Target Address */
+#define BT_DATA_GAP_APPEARANCE           0x19 /**< GAP appearance */
+#define BT_DATA_ADV_INT                  0x1a /**< Advertising Interval */
+#define BT_DATA_LE_BT_DEVICE_ADDRESS     0x1b /**< LE Bluetooth Device Address */
+#define BT_DATA_LE_ROLE                  0x1c /**< LE Role */
+#define BT_DATA_SIMPLE_PAIRING_HASH      0x1d /**< Simple Pairing Hash C256 */
+#define BT_DATA_SIMPLE_PAIRING_RAND      0x1e /**< Simple Pairing Randomizer R256 */
+#define BT_DATA_SOLICIT32                0x1f /**< Solicit UUIDs, 32-bit */
+#define BT_DATA_SVC_DATA32               0x20 /**< Service data, 32-bit UUID */
+#define BT_DATA_SVC_DATA128              0x21 /**< Service data, 128-bit UUID */
+#define BT_DATA_LE_SC_CONFIRM_VALUE      0x22 /**< LE SC Confirmation Value */
+#define BT_DATA_LE_SC_RANDOM_VALUE       0x23 /**< LE SC Random Value */
+#define BT_DATA_URI                      0x24 /**< URI */
+#define BT_DATA_INDOOR_POS               0x25 /**< Indoor Positioning */
+#define BT_DATA_TRANS_DISCOVER_DATA      0x26 /**< Transport Discovery Data */
+#define BT_DATA_LE_SUPPORTED_FEATURES    0x27 /**< LE Supported Features */
+#define BT_DATA_CHANNEL_MAP_UPDATE_IND   0x28 /**< Channel Map Update Indication */
+#define BT_DATA_MESH_PROV                0x29 /**< Mesh Provisioning PDU */
+#define BT_DATA_MESH_MESSAGE             0x2a /**< Mesh Networking PDU */
+#define BT_DATA_MESH_BEACON              0x2b /**< Mesh Beacon */
+#define BT_DATA_BIG_INFO                 0x2c /**< BIGInfo */
+#define BT_DATA_BROADCAST_CODE           0x2d /**< Broadcast Code */
+#define BT_DATA_CSIS_RSI                 0x2e /**< CSIS Random Set ID type */
+#define BT_DATA_ADV_INT_LONG             0x2f /**< Advertising Interval long */
+#define BT_DATA_BROADCAST_NAME           0x30 /**< Broadcast Name */
+#define BT_DATA_ENCRYPTED_AD_DATA        0x31 /**< Encrypted Advertising Data */
+#define BT_DATA_PAWR_TIMING_INFO         0x32 /**< Periodic Advertising Response Timing Info */
+#define BT_DATA_ESL                      0x34 /**< Electronic Shelf Label Profile */
+#define BT_DATA_3D_INFO                  0x3D /**< 3D Information Data */
 
-#define BT_DATA_MANUFACTURER_DATA       0xff /**< Manufacturer Specific Data */
+#define BT_DATA_MANUFACTURER_DATA        0xff /**< Manufacturer Specific Data */
 
-#define BT_LE_AD_LIMITED                0x01 /**< Limited Discoverable */
-#define BT_LE_AD_GENERAL                0x02 /**< General Discoverable */
-#define BT_LE_AD_NO_BREDR               0x04 /**< BR/EDR not supported */
+#define BT_LE_AD_LIMITED                 0x01 /**< Limited Discoverable */
+#define BT_LE_AD_GENERAL                 0x02 /**< General Discoverable */
+#define BT_LE_AD_NO_BREDR                0x04 /**< BR/EDR not supported */
 /**
  * @}
  */
@@ -820,11 +826,224 @@ enum {
 #define BT_GAP_PER_ADV_MAX_INTERVAL             0xFFFF /* 81.91875 s */
 
 /**
+ * @brief Convert periodic advertising interval (N * 0.625 ms) to microseconds
+ *
+ * Value range of @p _interval is @ref BT_LE_ADV_INTERVAL_MIN to @ref BT_LE_ADV_INTERVAL_MAX
+ */
+#define BT_GAP_ADV_INTERVAL_TO_US(_interval) ((uint32_t)((_interval) * 625U))
+
+/**
+ * @brief Convert periodic advertising interval (N * 0.625 ms) to milliseconds
+ *
+ * Value range of @p _interval is @ref BT_LE_ADV_INTERVAL_MIN to @ref BT_LE_ADV_INTERVAL_MAX
+ *
+ * @note When intervals cannot be represented in milliseconds, this will round down.
+ * For example BT_GAP_ADV_INTERVAL_TO_MS(0x0021) will become 20 ms instead of 20.625 ms
+ */
+#define BT_GAP_ADV_INTERVAL_TO_MS(_interval) (BT_GAP_ADV_INTERVAL_TO_US(_interval) / USEC_PER_MSEC)
+
+/**
+ * @brief Convert isochronous interval (N * 1.25 ms) to microseconds
+ *
+ * Value range of @p _interval is @ref BT_HCI_ISO_INTERVAL_MIN to @ref BT_HCI_ISO_INTERVAL_MAX
+ */
+#define BT_GAP_ISO_INTERVAL_TO_US(_interval) ((uint32_t)((_interval) * 1250U))
+
+/**
+ * @brief Convert isochronous interval (N * 1.25 ms) to milliseconds
+ *
+ * Value range of @p _interval is @ref BT_HCI_ISO_INTERVAL_MIN to @ref BT_HCI_ISO_INTERVAL_MAX
+ *
+ * @note When intervals cannot be represented in milliseconds, this will round down.
+ * For example BT_GAP_ISO_INTERVAL_TO_MS(0x0005) will become 6 ms instead of 6.25 ms
+ */
+#define BT_GAP_ISO_INTERVAL_TO_MS(_interval) (BT_GAP_ISO_INTERVAL_TO_US(_interval) / USEC_PER_MSEC)
+
+/** @brief Convert periodic advertising interval (N * 1.25 ms) to microseconds *
+ *
+ * Value range of @p _interval is @ref BT_HCI_LE_PER_ADV_INTERVAL_MIN to @ref
+ * BT_HCI_LE_PER_ADV_INTERVAL_MAX
+ */
+#define BT_GAP_PER_ADV_INTERVAL_TO_US(_interval) ((uint32_t)((_interval) * 1250U))
+
+/**
  * @brief Convert periodic advertising interval (N * 1.25 ms) to milliseconds
  *
- * 5 / 4 represents 1.25 ms unit.
+ * @note When intervals cannot be represented in milliseconds, this will round down.
+ * For example BT_GAP_PER_ADV_INTERVAL_TO_MS(0x0009) will become 11 ms instead of 11.25 ms
  */
-#define BT_GAP_PER_ADV_INTERVAL_TO_MS(interval) ((interval) * 5 / 4)
+#define BT_GAP_PER_ADV_INTERVAL_TO_MS(_interval)                                                   \
+	(BT_GAP_PER_ADV_INTERVAL_TO_US(_interval) / USEC_PER_MSEC)
+
+/**
+ * @brief Convert microseconds to advertising interval units (0.625 ms)
+ *
+ * Value range of @p _interval is 20000 to 1024000
+ *
+ * @note If @p _interval is not a multiple of the unit, it will round down to nearest.
+ * For example BT_GAP_US_TO_ADV_INTERVAL(21000) will become 20625 microseconds
+ */
+#define BT_GAP_US_TO_ADV_INTERVAL(_interval) ((uint16_t)((_interval) / 625U))
+
+/**
+ * @brief Convert milliseconds to advertising interval units (0.625 ms)
+ *
+ * Value range of @p _interval is 20 to 1024
+ *
+ * @note If @p _interval is not a multiple of the unit, it will round down to nearest.
+ * For example BT_GAP_MS_TO_ADV_INTERVAL(21) will become 20.625 milliseconds
+ */
+#define BT_GAP_MS_TO_ADV_INTERVAL(_interval)                                                       \
+	(BT_GAP_US_TO_ADV_INTERVAL((_interval) * USEC_PER_MSEC))
+
+/**
+ * @brief Convert microseconds to periodic advertising interval units (1.25 ms)
+ *
+ * Value range of @p _interval is 7500 to 81918750
+ *
+ * @note If @p _interval is not a multiple of the unit, it will round down to nearest.
+ * For example BT_GAP_US_TO_PER_ADV_INTERVAL(11000) will become 10000 microseconds
+ */
+#define BT_GAP_US_TO_PER_ADV_INTERVAL(_interval) ((uint16_t)((_interval) / 1250U))
+
+/**
+ * @brief Convert milliseconds to periodic advertising interval units (1.25 ms)
+ *
+ * Value range of @p _interval is 7.5 to 81918.75
+ *
+ * @note If @p _interval is not a multiple of the unit, it will round down to nearest.
+ * For example BT_GAP_MS_TO_PER_ADV_INTERVAL(11) will become 10 milliseconds
+ */
+#define BT_GAP_MS_TO_PER_ADV_INTERVAL(_interval)                                                   \
+	(BT_GAP_US_TO_PER_ADV_INTERVAL((_interval) * USEC_PER_MSEC))
+
+/**
+ * @brief Convert milliseconds to periodic advertising sync timeout units (10 ms)
+ *
+ * Value range of @p _timeout is 100 to 163840
+ *
+ * @note If @p _timeout is not a multiple of the unit, it will round down to nearest.
+ * For example BT_GAP_MS_TO_PER_ADV_SYNC_TIMEOUT(4005) will become 4000 milliseconds
+ */
+#define BT_GAP_MS_TO_PER_ADV_SYNC_TIMEOUT(_timeout) ((uint16_t)((_timeout) / 10U))
+
+/**
+ * @brief Convert microseconds to periodic advertising sync timeout units (10 ms)
+ *
+ * Value range of @p _timeout is 100000 to 163840000
+ *
+ * @note If @p _timeout is not a multiple of the unit, it will round down to nearest.
+ * For example BT_GAP_MS_TO_PER_ADV_SYNC_TIMEOUT(4005000) will become 4000000 microseconds
+ */
+#define BT_GAP_US_TO_PER_ADV_SYNC_TIMEOUT(_timeout)                                                \
+	(BT_GAP_MS_TO_PER_ADV_SYNC_TIMEOUT((_timeout) / USEC_PER_MSEC))
+
+/**
+ * @brief Convert microseconds to scan interval units (0.625 ms)
+ *
+ * Value range of @p _interval is 2500 to 40959375 if @kconfig{CONFIG_BT_EXT_ADV} else
+ * 2500 to 10240000
+ *
+ * @note If @p _interval is not a multiple of the unit, it will round down to nearest.
+ * For example BT_GAP_US_TO_SCAN_INTERVAL(21000) will become 20625 microseconds
+ */
+#define BT_GAP_US_TO_SCAN_INTERVAL(_interval) ((uint16_t)((_interval) / 625U))
+
+/**
+ * @brief Convert milliseconds to scan interval units (0.625 ms)
+ *
+ * Value range of @p _interval is 2.5 to 40959.375 if @kconfig{CONFIG_BT_EXT_ADV} else
+ * 2500 to 10240
+ *
+ * @note If @p _interval is not a multiple of the unit, it will round down to nearest.
+ * For example BT_GAP_MS_TO_SCAN_INTERVAL(21) will become 20.625 milliseconds
+ */
+#define BT_GAP_MS_TO_SCAN_INTERVAL(_interval)                                                      \
+	(BT_GAP_US_TO_SCAN_INTERVAL((_interval) * USEC_PER_MSEC))
+
+/**
+ * @brief Convert microseconds to scan window units (0.625 ms)
+ *
+ * Value range of @p _window is 2500 to 40959375 if @kconfig{CONFIG_BT_EXT_ADV} else
+ * 2500 to 10240000
+ *
+ * @note If @p _window is not a multiple of the unit, it will round down to nearest.
+ * For example BT_GAP_US_TO_SCAN_WINDOW(21000) will become 20625 microseconds
+ */
+#define BT_GAP_US_TO_SCAN_WINDOW(_window) ((uint16_t)((_window) / 625U))
+
+/**
+ * @brief Convert milliseconds to scan window units (0.625 ms)
+ *
+ * Value range of @p _window is 2.5 to 40959.375 if @kconfig{CONFIG_BT_EXT_ADV} else
+ * 2500 to 10240
+ *
+ * @note If @p _window is not a multiple of the unit, it will round down to nearest.
+ * For example BT_GAP_MS_TO_SCAN_WINDOW(21) will become 20.625 milliseconds
+ */
+#define BT_GAP_MS_TO_SCAN_WINDOW(_window) (BT_GAP_US_TO_SCAN_WINDOW((_window) * USEC_PER_MSEC))
+
+/**
+ * @brief Convert microseconds to connection interval units (1.25 ms)
+ *
+ * Value range of @p _interval is 7500 to 4000000
+ *
+ * @note If @p _interval is not a multiple of the unit, it will round down to nearest.
+ * For example BT_GAP_US_TO_CONN_INTERVAL(21000) will become 20000 microseconds
+ */
+#define BT_GAP_US_TO_CONN_INTERVAL(_interval) ((uint16_t)((_interval) / 1250U))
+
+/**
+ * @brief Convert milliseconds to connection interval units (1.25 ms)
+ *
+ * Value range of @p _interval is 7.5 to 4000
+ *
+ * @note If @p _interval is not a multiple of the unit, it will round down to nearest.
+ * For example BT_GAP_MS_TO_CONN_INTERVAL(21) will become 20 milliseconds
+ */
+#define BT_GAP_MS_TO_CONN_INTERVAL(_interval)                                                      \
+	(BT_GAP_US_TO_CONN_INTERVAL((_interval) * USEC_PER_MSEC))
+
+/**
+ * @brief Convert milliseconds to connection supervision timeout units (10 ms)
+ *
+ * Value range of @p _timeout is 100 to 32000
+ *
+ * @note If @p _timeout is not a multiple of the unit, it will round down to nearest.
+ * For example BT_GAP_MS_TO_CONN_TIMEOUT(4005) will become 4000 milliseconds
+ */
+#define BT_GAP_MS_TO_CONN_TIMEOUT(_timeout) ((uint16_t)((_timeout) / 10U))
+
+/**
+ * @brief Convert microseconds to connection supervision timeout units (10 ms)
+
+ * Value range of @p _timeout is 100000 to 32000000
+ *
+ * @note If @p _timeout is not a multiple of the unit, it will round down to nearest.
+ * For example BT_GAP_MS_TO_CONN_TIMEOUT(4005000) will become 4000000 microseconds
+ */
+#define BT_GAP_US_TO_CONN_TIMEOUT(_timeout) (BT_GAP_MS_TO_CONN_TIMEOUT((_timeout) / USEC_PER_MSEC))
+
+/**
+ * @brief Convert milliseconds to connection event length units (0.625)
+ *
+ * Value range of @p _event_len is 0 to 40959375
+ *
+ * @note If @p _event_len is not a multiple of the unit, it will round down to nearest.
+ * For example BT_GAP_US_TO_CONN_EVENT_LEN(21000) will become 20625 milliseconds
+ */
+#define BT_GAP_US_TO_CONN_EVENT_LEN(_event_len) ((uint16_t)((_event_len) / 625U))
+
+/**
+ * @brief Convert milliseconds to connection event length units (0.625)
+ *
+ * Value range of @p _event_len is 0 to 40959.375
+ *
+ * @note If @p _event_len is not a multiple of the unit, it will round down to nearest.
+ * For example BT_GAP_MS_TO_CONN_EVENT_LEN(21) will become 20.625 milliseconds
+ */
+#define BT_GAP_MS_TO_CONN_EVENT_LEN(_event_len)                                                    \
+	(BT_GAP_US_TO_CONN_EVENT_LEN((_event_len) * USEC_PER_MSEC))
 
 /** Constant Tone Extension (CTE) types */
 enum {

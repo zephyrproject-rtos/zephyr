@@ -66,7 +66,7 @@ config WIFI_MGMT_SCAN_CHAN_MAX_MANUAL
 
 config WIFI_SHELL_MAX_AP_STA
 	int "Maximum number of APs and STAs that can be managed in Wi-Fi shell"
-	range 1 5
+	range 1 8
 	default 1
 	help
 	  This option defines the maximum number of APs and STAs that can be managed
@@ -119,3 +119,9 @@ config WIFI_MGMT_AP_MAX_NUM_STA
 	help
 	  Maximum number of stations allowed in station table. New stations will be
 	  rejected after the station table is full.
+
+config WIFI_ENT_IDENTITY_MAX_USERS
+	int "Maximum number of identity users allowed connection"
+	default 8
+	help
+	  This option defines the maximum number of identity users allowed connection.

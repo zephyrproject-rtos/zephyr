@@ -44,7 +44,7 @@ struct ili9488_regs {
 
 /* Initializer macro for ILI9488 registers. */
 #define ILI9488_REGS_INIT(n)                                                   \
-	static const struct ili9488_regs ili9xxx_regs_##n = {                  \
+	static const struct ili9488_regs ili9488_regs_##n = {                  \
 		.frmctr1 = DT_PROP(DT_INST(n, ilitek_ili9488), frmctr1),       \
 		.disctrl = DT_PROP(DT_INST(n, ilitek_ili9488), disctrl),       \
 		.pwctrl1 = DT_PROP(DT_INST(n, ilitek_ili9488), pwctrl1),       \

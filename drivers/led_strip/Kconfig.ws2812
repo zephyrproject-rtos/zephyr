@@ -30,19 +30,67 @@ config WS2812_STRIP_I2S
 
 config WS2812_STRIP_GPIO
 	bool "WS2812 LED strip GPIO driver"
-	# Only an Cortex-M0 inline assembly implementation for the nRF51
-	# is supported currently.
+	# Only an Cortex-M inline assembly implementation for the nRF91, nRF51,
+	# nRF52 and nRF53 is supported currently.
 	default y
 	depends on DT_HAS_WORLDSEMI_WS2812_GPIO_ENABLED
-	depends on SOC_SERIES_NRF51X
+	depends on (SOC_SERIES_NRF91X || SOC_SERIES_NRF51X || SOC_SERIES_NRF52X || SOC_SERIES_NRF53X)
 	select LED_STRIP_RGB_SCRATCH
 	help
-	  Enable driver for WS2812 (and compatibles) LED strip directly controlling with GPIO.
-	  The GPIO driver does bit-banging with inline assembly,
-	  and is not available on all SoCs.
+	  Enable driver for WS2812 (and compatibles) LED strip directly
+	  controlling with GPIO. The GPIO driver does bit-banging with inline
+	  assembly, and is not available on all SoCs.
 
 	  Note that this driver is not compatible with the Everlight B1414
 	  controller.
+
+if WS2812_STRIP_GPIO
+
+DT_CHOSEN_LED_STRIP := zephyr,led-strip
+DT_CHOSEN_LED_STRIP_PATH := $(dt_chosen_path,$(DT_CHOSEN_LED_STRIP))
+
+config DELAY_T1H
+	int "Delay 1 bit high pulse"
+	default $(dt_node_int_prop_int,$(DT_CHOSEN_LED_STRIP_PATH),delay-t1h) \
+		  if $(dt_node_has_prop,$(DT_CHOSEN_LED_STRIP_PATH),delay-t1h)
+	default $(div,$(mul,700,$(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)),1000000000) \
+		  if $(dt_node_has_prop,/cpus/cpu@0,clock-frequency)
+	default 7
+	help
+	  Number of NOP assembly operations to create a delay for a 1 bit, high voltage period (default 700 nsec)
+
+config DELAY_T1L
+	int "Delay 1 bit low pulse"
+	default $(dt_node_int_prop_int,$(DT_CHOSEN_LED_STRIP_PATH),delay-t1l) \
+		  if $(dt_node_has_prop,$(DT_CHOSEN_LED_STRIP_PATH),delay-t1l)
+	default $(div,$(mul,600,$(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)),1000000000) \
+		  if $(dt_node_has_prop,/cpus/cpu@0,clock-frequency)
+	default 6
+	help
+	  Number of NOP assembly operations to create a delay for a 1 bit, low voltage period (default 600 nsec)
+
+config DELAY_T0H
+	int "Delay 0 bit high pulse"
+	default $(dt_node_int_prop_int,$(DT_CHOSEN_LED_STRIP_PATH),delay-t0h) \
+		  if $(dt_node_has_prop,$(DT_CHOSEN_LED_STRIP_PATH),delay-t0h)
+	default $(div,$(mul,350,$(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)),1000000000) \
+		  if $(dt_node_has_prop,/cpus/cpu@0,clock-frequency)
+	default 3
+	help
+	  Number of NOP assembly operations to create a delay for a 0 bit, high voltage period (default 350 nsec)
+
+config DELAY_T0L
+	int "Delay 0 bit low pulse"
+	default $(dt_node_int_prop_int,$(DT_CHOSEN_LED_STRIP_PATH),delay-t0l) \
+		  if $(dt_node_has_prop,$(DT_CHOSEN_LED_STRIP_PATH),delay-t0l)
+	default $(div,$(mul,800,$(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)),1000000000) \
+		  if $(dt_node_has_prop,/cpus/cpu@0,clock-frequency)
+	default 8
+	help
+	  Number of NOP assembly operations to create a delay for a 0 bit, low voltage period  (default 800 nsec)
+
+endif
+
 
 config WS2812_STRIP_RPI_PICO_PIO
 	bool "WS2812 LED strip Raspberry Pi Pico PIO driver"

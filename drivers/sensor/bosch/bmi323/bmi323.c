@@ -1106,7 +1106,7 @@ static int bosch_bmi323_driver_api_channel_get(const struct device *dev, enum se
 	return ret;
 }
 
-static const struct sensor_driver_api bosch_bmi323_api = {
+static DEVICE_API(sensor, bosch_bmi323_api) = {
 	.attr_set = bosch_bmi323_driver_api_attr_set,
 	.attr_get = bosch_bmi323_driver_api_attr_get,
 	.trigger_set = bosch_bmi323_driver_api_trigger_set,

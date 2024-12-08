@@ -8,4 +8,5 @@ config UART_RPI_PICO_PIO
 	select SERIAL_HAS_DRIVER
 	select PICOSDK_USE_PIO
 	select PICOSDK_USE_CLAIM
+	select PINCTRL
 	depends on RESET

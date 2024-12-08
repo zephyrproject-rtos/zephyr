@@ -92,7 +92,7 @@ struct pcf8563_data {
  * with 8.4.2 Register Minutes.
  *
  * For seconds, first bit is ignored (it is used to check the clock integrity).
- * The the upper digit takes the next 3 bits for the tens place and then the rest
+ * The upper digit takes the next 3 bits for the tens place and then the rest
  * bits for the unit
  * So for example, value 43 is 40 * 10 + 3, so the tens digit is 4 and unit digit is 3.
  * Then we put the number 3 in the last 4 bits and the number 4 in next 3 bits
@@ -391,7 +391,7 @@ void gpio_callback_function(const struct device *dev, struct gpio_callback *cb,
 	struct pcf8563_data *data = CONTAINER_OF(cb, struct pcf8563_data, int1_callback);
 
 	LOG_DBG("PCF8563 interrupt detected");
-	/* By using a work we are able to to run "heavier" code */
+	/* By using a work we are able to run "heavier" code */
 	k_work_submit(&(data->callback_work));
 
 }
@@ -449,7 +449,7 @@ static int pcf8563_alarm_set_callback(const struct device *dev, uint16_t id,
 #endif
 }
 
-static const struct rtc_driver_api pcf8563_driver_api = {
+static DEVICE_API(rtc, pcf8563_driver_api) = {
 	.set_time = pcf8563_set_time,
 	.get_time = pcf8563_get_time,
 #ifdef CONFIG_RTC_ALARM

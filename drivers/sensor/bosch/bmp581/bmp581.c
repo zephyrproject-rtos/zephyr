@@ -540,9 +540,11 @@ static int bmp581_init(const struct device *dev)
 	return ret;
 }
 
-static const struct sensor_driver_api bmp581_driver_api = {.sample_fetch = bmp581_sample_fetch,
-							   .channel_get = bmp581_channel_get,
-							   .attr_set = bmp581_attr_set};
+static DEVICE_API(sensor, bmp581_driver_api) = {
+	.sample_fetch = bmp581_sample_fetch,
+	.channel_get = bmp581_channel_get,
+	.attr_set = bmp581_attr_set,
+};
 
 #define BMP581_CONFIG(i)                                                                           \
 	static const struct bmp581_config bmp581_config_##i = {                                    \

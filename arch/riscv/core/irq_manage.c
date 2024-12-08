@@ -19,6 +19,12 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 FUNC_NORETURN void z_irq_spurious(const void *unused)
 {
+#ifdef CONFIG_EMPTY_IRQ_SPURIOUS
+	while (1) {
+	}
+
+	CODE_UNREACHABLE;
+#else
 	unsigned long mcause;
 
 	ARG_UNUSED(unused);
@@ -37,6 +43,7 @@ FUNC_NORETURN void z_irq_spurious(const void *unused)
 	}
 #endif
 	z_riscv_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
+#endif /* CONFIG_EMPTY_IRQ_SPURIOUS */
 }
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS

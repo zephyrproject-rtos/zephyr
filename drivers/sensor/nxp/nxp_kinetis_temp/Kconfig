@@ -7,7 +7,6 @@ config TEMP_KINETIS
 	bool "NXP Kinetis Temperature Sensor"
 	default y
 	depends on DT_HAS_NXP_KINETIS_TEMPERATURE_ENABLED
-	depends on SOC_FAMILY_KINETIS
 	select ADC
 	help
 	  Enable driver for NXP Kinetis temperature sensor.

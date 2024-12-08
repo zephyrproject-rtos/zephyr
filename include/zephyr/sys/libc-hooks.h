@@ -44,6 +44,8 @@ __syscall size_t zephyr_fwrite(const void *ZRESTRICT ptr, size_t size,
 
 #endif /* CONFIG_NEWLIB_LIBC */
 
+void __stdout_hook_install(int (*hook)(int));
+
 #ifdef CONFIG_USERSPACE
 #ifdef CONFIG_COMMON_LIBC_MALLOC
 
@@ -56,12 +58,12 @@ __syscall size_t zephyr_fwrite(const void *ZRESTRICT ptr, size_t size,
 #define Z_MALLOC_PARTITION_EXISTS 1
 #endif
 
-#elif defined(CONFIG_NEWLIB_LIBC)
+#elif defined(CONFIG_NEWLIB_LIBC) && !defined(CONFIG_NEWLIB_LIBC_CUSTOM_SBRK)
 /* If we are using newlib, the heap arena is in one of two areas:
  *  - If we have an MPU that requires power of two alignment, the heap bounds
  *    must be specified in Kconfig via CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE.
  *  - Otherwise, the heap arena on most arches starts at a suitably
- *    aligned base addreess after the `_end` linker symbol, through to the end
+ *    aligned base address after the `_end` linker symbol, through to the end
  *    of system RAM.
  */
 #if (!defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT) || \

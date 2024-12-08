@@ -1,7 +1,4 @@
-.. _mg100:
-
-Ezurio Sentrius™ MG100 Gateway
-##############################
+.. zephyr:board:: mg100
 
 Overview
 ********
@@ -45,12 +42,6 @@ and the following devices:
 * :abbr:`LIS3DH (ST Micro 3-axis MEMS accelerometer)`
 * :abbr:`HL7800 (Sierra Wireless HL7800 LTE-M1/NB-IoT modem)`
 * :abbr:`SD Card`
-
-.. figure:: img/mg100.jpg
-     :align: center
-     :alt: MG100
-
-     MG100 (450-00054-K1)
 
 Hardware
 ********
@@ -174,7 +165,7 @@ found in :ref:`nordic_segger_flashing`. Then build and flash
 applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 First, run your favorite terminal program to listen for output.
 
@@ -213,9 +204,9 @@ Testing Bluetooth on the MG100
 Many of the Bluetooth examples will work on the MG100.
 Try them out:
 
-* :ref:`ble_peripheral`
-* :ref:`bluetooth-eddystone-sample`
-* :ref:`bluetooth-ibeacon-sample`
+* :zephyr:code-sample:`ble_peripheral`
+* :zephyr:code-sample:`bluetooth_eddystone`
+* :zephyr:code-sample:`bluetooth_ibeacon`
 
 Testing the LEDs and buttons in the MG100
 ====================================================

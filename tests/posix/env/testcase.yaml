@@ -4,7 +4,9 @@ common:
     - qemu_riscv64
   tags: posix
 tests:
-  portability.posix.env: {}
+  portability.posix.env:
+    extra_configs:
+      - CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=256
   portability.posix.env.armclang_std_libc:
     toolchain_allow: armclang
     extra_configs:

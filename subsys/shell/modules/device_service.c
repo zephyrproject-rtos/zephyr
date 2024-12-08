@@ -102,7 +102,7 @@ static int cmd_device_list(const struct shell *sh,
 #ifdef CONFIG_DEVICE_DT_METADATA
 		const struct device_dt_nodelabels *nl = device_get_dt_nodelabels(dev);
 
-		if (nl->num_nodelabels > 0) {
+		if (nl != NULL && nl->num_nodelabels > 0) {
 			shell_fprintf(sh, SHELL_NORMAL, "  DT node labels:");
 			for (size_t j = 0; j < nl->num_nodelabels; j++) {
 				const char *nodelabel = nl->nodelabels[j];

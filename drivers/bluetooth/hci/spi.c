@@ -420,7 +420,7 @@ static int bt_spi_open(const struct device *dev, bt_hci_recv_t recv)
 	return 0;
 }
 
-static const struct bt_hci_driver_api drv = {
+static DEVICE_API(bt_hci, drv) = {
 	.open		= bt_spi_open,
 	.send		= bt_spi_send,
 };

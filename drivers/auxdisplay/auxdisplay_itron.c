@@ -153,7 +153,6 @@ static int auxdisplay_itron_init(const struct device *dev)
 
 static int auxdisplay_itron_set_powered(const struct device *dev, bool enabled)
 {
-	int rc = 0;
 	uint8_t cmd[] = {AUXDISPLAY_ITRON_CMD_USER_SETTING, AUXDISPLAY_ITRON_CMD_ACTION,
 			 AUXDISPLAY_ITRON_CMD_N, AUXDISPLAY_ITRON_CMD_SCREEN_SAVER, 0};
 
@@ -407,7 +406,7 @@ static int auxdisplay_itron_write(const struct device *dev, const uint8_t *data,
 	return send_cmd(dev, data, len, false, true);
 }
 
-static const struct auxdisplay_driver_api auxdisplay_itron_auxdisplay_api = {
+static DEVICE_API(auxdisplay, auxdisplay_itron_auxdisplay_api) = {
 	.display_on = auxdisplay_itron_display_on,
 	.display_off = auxdisplay_itron_display_off,
 	.cursor_set_enabled = auxdisplay_itron_cursor_set_enabled,

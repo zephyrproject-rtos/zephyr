@@ -38,7 +38,7 @@
 			riscv,isa = "rv64imac_zicsr_zifencei";
 			status = "okay";
 
-			hlic: interrupt-controller {
+			hlic0: interrupt-controller {
 				compatible = "riscv,cpu-intc";
 				#address-cells = <0>;
 				#interrupt-cells = <1>;
@@ -52,8 +52,9 @@
 			reg = <0x1>;
 			riscv,isa = "rv64gc";
 
-			cpu1_intc: interrupt-controller {
+			hlic1: interrupt-controller {
 				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
 				#interrupt-cells = <1>;
 				interrupt-controller;
 			};
@@ -65,8 +66,9 @@
 			reg = <0x2>;
 			riscv,isa = "rv64gc";
 
-			cpu2_intc: interrupt-controller {
+			hlic2: interrupt-controller {
 				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
 				#interrupt-cells = <1>;
 				interrupt-controller;
 			};
@@ -78,8 +80,9 @@
 			reg = <0x3>;
 			riscv,isa = "rv64gc";
 
-			cpu3_intc: interrupt-controller {
+			hlic3: interrupt-controller {
 				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
 				#interrupt-cells = <1>;
 				interrupt-controller;
 			};
@@ -91,8 +94,9 @@
 			reg = <0x4>;
 			riscv,isa = "rv64gc";
 
-			cpu4_intc: interrupt-controller {
+			hlic4: interrupt-controller {
 				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
 				#interrupt-cells = <1>;
 				interrupt-controller;
 			};
@@ -125,7 +129,11 @@
 
 		clint: clint@2000000 {
 			compatible = "sifive,clint0";
-			interrupts-extended = <&hlic 3 &hlic 7>;
+			interrupts-extended = <&hlic0 3 &hlic0 7
+				&hlic1 3 &hlic1 7
+				&hlic2 3 &hlic2 7
+				&hlic3 3 &hlic3 7
+				&hlic4 3 &hlic4 7>;
 			reg = <0x0 0x2000000 0x0 0x10000>;
 		};
 
@@ -141,7 +149,11 @@
 			#address-cells = <0>;
 			#interrupt-cells = <2>;
 			interrupt-controller;
-			interrupts-extended = <&hlic 11>;
+			interrupts-extended = <&hlic0 11
+				&hlic1 11
+				&hlic2 11
+				&hlic3 11
+				&hlic4 11>;
 			reg = <0x0 0x0c000000 0x0 0x04000000>;
 			riscv,max-priority = <7>;
 			riscv,ndev = <52>;

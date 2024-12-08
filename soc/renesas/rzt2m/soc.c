@@ -90,7 +90,7 @@ void rzt2m_enable_counters(void)
 	syscon_write_reg(dev, 0, CNTCR_EN);
 }
 
-static int rzt2m_init(void)
+void soc_early_init_hook(void)
 {
 	/* Unlock the Protect Registers
 	 * so that device drivers can access configuration registers of peripherals.
@@ -115,7 +115,4 @@ static int rzt2m_init(void)
 	rzt2m_lock_prcrn(PRCRN_PRC1 | PRCRN_PRC2 | PRCRN_PRC0);
 
 	rzt2m_enable_counters();
-	return 0;
 }
-
-SYS_INIT(rzt2m_init, PRE_KERNEL_1, 0);

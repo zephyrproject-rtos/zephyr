@@ -531,4 +531,4 @@ static int disk_flash_init(void)
 	return err;
 }
 
-SYS_INIT(disk_flash_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(disk_flash_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

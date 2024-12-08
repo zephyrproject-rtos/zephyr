@@ -14,6 +14,7 @@
 
 #include <string.h>
 #include <soc.h>
+#include "rtc_utils.h"
 
 #define RTC_SAM_REG_GET_FIELD(value, field) \
 	((RTC_##field##_Msk & value) >> RTC_##field##_Pos)
@@ -358,7 +359,7 @@ static int rtc_sam_alarm_set_time(const struct device *dev, uint16_t id, uint16_
 		return -EINVAL;
 	}
 
-	if (rtc_sam_validate_tm(timeptr, mask) == false) {
+	if (rtc_utils_validate_rtc_time(timeptr, mask) == false) {
 		return -EINVAL;
 	}
 
@@ -615,7 +616,7 @@ static int rtc_sam_get_calibration(const struct device *dev, int32_t *calibratio
 }
 #endif /* CONFIG_RTC_CALIBRATION */
 
-static const struct rtc_driver_api rtc_sam_driver_api = {
+static DEVICE_API(rtc, rtc_sam_driver_api) = {
 	.set_time = rtc_sam_set_time,
 	.get_time = rtc_sam_get_time,
 #ifdef CONFIG_RTC_ALARM

@@ -29,6 +29,7 @@
 #include <zephyr/sys_clock.h>
 #include <zephyr/types.h>
 
+#include "bstests.h"
 #include "bs_types.h"
 #include "bs_tracing.h"
 
@@ -88,7 +89,7 @@ static const uint8_t mock_iso_data[] = {
 		(void)k_sleep(K_MSEC(1)); \
 	}
 
-
+extern enum bst_result_t bst_result;
 #define FAIL(...) \
 	do { \
 		bst_result = Failed; \
@@ -103,7 +104,6 @@ static const uint8_t mock_iso_data[] = {
 
 #define AD_SIZE 1
 
-#define INVALID_BROADCAST_ID (BT_AUDIO_BROADCAST_ID_MAX + 1)
 #define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 20 /* Set the timeout relative to interval */
 #define PA_SYNC_SKIP         5
 
@@ -115,12 +115,14 @@ extern struct bt_conn *default_conn;
 extern atomic_t flag_connected;
 extern atomic_t flag_disconnected;
 extern atomic_t flag_conn_updated;
+extern atomic_t flag_audio_received;
 extern volatile bt_security_t security_level;
 
 void disconnected(struct bt_conn *conn, uint8_t reason);
 void test_tick(bs_time_t HW_device_time);
 void test_init(void);
 uint16_t get_dev_cnt(void);
+uint16_t interval_to_sync_timeout(uint16_t pa_interval);
 void backchannel_sync_send(uint dev);
 void backchannel_sync_send_all(void);
 void backchannel_sync_wait(uint dev);

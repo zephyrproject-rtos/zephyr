@@ -17,7 +17,6 @@ supported:
   - pwm
   - adc
   - usb_device
-  - usb_cdc
   - watchdog
   - micromod_gpio
   - micromod_uart

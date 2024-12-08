@@ -1,7 +1,4 @@
-.. _mikroe_mini_m4_for_stm32:
-
-Mikroe MINI-M4 for STM32
-########################
+.. zephyr:board:: mikroe_mini_m4_for_stm32
 
 Overview
 ********
@@ -14,10 +11,6 @@ a 32.768KHz crystal which can be used for the internal RTCC module.
 It has a reset button and three signal LEDs.
 It operates on a 3.3V power supply. An on-board voltage regulator allows
 the board to be powered directly from a USB cable.
-
-.. image:: img/mikroe_mini_m4_for_stm32.jpg
-   :align: center
-   :alt: MINI-M4 for STM32
 
 Pin Mapping
 ===========
@@ -118,7 +111,7 @@ Unlocking with openocd makes it possible to flash.
        -f /usr/share/openocd/scripts/target/stm32f4x.cfg -c init\
        -c "reset halt" -c "stm32f4x unlock 0" -c "reset run" -c shutdown
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -135,7 +128,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

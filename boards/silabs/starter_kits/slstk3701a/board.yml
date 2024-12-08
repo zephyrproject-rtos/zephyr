@@ -1,5 +1,6 @@
 board:
   name: slstk3701a
+  full_name: EFM32 Giant Gecko 11 (SLSTK3701A)
   vendor: silabs
   socs:
   - name: efm32gg11b820f2048gl192

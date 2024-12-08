@@ -66,3 +66,10 @@ properties:
       Enable the host to detect an SD card via the DAT3 line of the SD card
       connection. Requires the board to define a function to pull DAT3 low or
       high using pullup/pulldown resistors.
+
+  detect-cd:
+    type: boolean
+    description: |
+      Use the host's internal card detect signal (USDHC_CD) to detect the SD
+      card. This signal is available as an alternative to card detect via GPIO,
+      and should be connected to the SD slot's detect pin if used.

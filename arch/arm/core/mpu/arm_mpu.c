@@ -37,6 +37,13 @@ BUILD_ASSERT((DT_FOREACH_STATUS_OKAY_NODE_VARGS(
 	      NODE_HAS_PROP_AND_OR, zephyr_memory_region_mpu) false) == false,
 	      "`zephyr,memory-region-mpu` was deprecated in favor of `zephyr,memory-attr`");
 
+#define NULL_PAGE_DETECT_NODE_FINDER(node_id, prop)                                                \
+	(DT_NODE_HAS_PROP(node_id, prop) && (DT_REG_ADDR(node_id) == 0) &&                         \
+	 (DT_REG_SIZE(node_id) >= CONFIG_CORTEX_M_NULL_POINTER_EXCEPTION_PAGE_SIZE)) ||
+
+#define DT_NULL_PAGE_DETECT_NODE_EXIST                                                             \
+	(DT_FOREACH_STATUS_OKAY_NODE_VARGS(NULL_PAGE_DETECT_NODE_FINDER, zephyr_memory_attr) false)
+
 /*
  * Global status variable holding the number of HW MPU region indices, which
  * have been reserved by the MPU driver to program the static (fixed) memory
@@ -54,6 +61,7 @@ static uint8_t static_regions_num;
 #elif defined(CONFIG_CPU_CORTEX_M23) || \
 	defined(CONFIG_CPU_CORTEX_M33) || \
 	defined(CONFIG_CPU_CORTEX_M55) || \
+	defined(CONFIG_CPU_CORTEX_M85) || \
 	defined(CONFIG_AARCH32_ARMV8_R)
 #include "arm_mpu_v8_internal.h"
 #else
@@ -469,7 +477,9 @@ int z_arm_mpu_init(void)
 	 */
 #if defined(CONFIG_NULL_POINTER_EXCEPTION_DETECTION_MPU)
 #if (defined(CONFIG_ARMV8_M_BASELINE) || defined(CONFIG_ARMV8_M_MAINLINE)) && \
-	(CONFIG_FLASH_BASE_ADDRESS > CONFIG_CORTEX_M_NULL_POINTER_EXCEPTION_PAGE_SIZE)
+	(CONFIG_FLASH_BASE_ADDRESS > CONFIG_CORTEX_M_NULL_POINTER_EXCEPTION_PAGE_SIZE) && \
+	(!DT_NULL_PAGE_DETECT_NODE_EXIST)
+
 #pragma message "Null-Pointer exception detection cannot be configured on un-mapped flash areas"
 #else
 	const struct z_arm_mpu_partition unmap_region =	{

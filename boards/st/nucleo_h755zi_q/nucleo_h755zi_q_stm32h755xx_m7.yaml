@@ -1,0 +1,20 @@
+identifier: nucleo_h755zi_q/stm32h755xx/m7
+name: ST Nucleo H755ZI-Q (M7)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 512
+flash: 1024
+supported:
+  - arduino_gpio
+  - arduino_i2c
+  - uart
+  - gpio
+  - counter
+  - i2c
+  - pwm
+  - netif:eth
+  - usb_device
+vendor: st

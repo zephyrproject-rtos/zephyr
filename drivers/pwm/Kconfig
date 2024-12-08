@@ -50,6 +50,8 @@ source "drivers/pwm/Kconfig.imx"
 
 source "drivers/pwm/Kconfig.it8xxx2"
 
+source "drivers/pwm/Kconfig.it8801"
+
 source "drivers/pwm/Kconfig.esp32"
 
 source "drivers/pwm/Kconfig.sam"
@@ -65,6 +67,8 @@ source "drivers/pwm/Kconfig.xec"
 source "drivers/pwm/Kconfig.litex"
 
 source "drivers/pwm/Kconfig.rv32m1_tpm"
+
+source "drivers/pwm/Kconfig.max32"
 
 source "drivers/pwm/Kconfig.mcux_tpm"
 
@@ -105,5 +109,9 @@ source "drivers/pwm/Kconfig.nxp_s32_emios"
 source "drivers/pwm/Kconfig.nxp_flexio"
 
 source "drivers/pwm/Kconfig.ene"
+
+source "drivers/pwm/Kconfig.renesas_ra8"
+
+source "drivers/pwm/Kconfig.ifx_cat1"
 
 endif # PWM

@@ -20,16 +20,13 @@
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 LOG_MODULE_REGISTER(soc);
 
-
+extern void stm32_power_init(void);
 /**
  * @brief Perform basic hardware initialization at boot.
  *
  * This needs to be run from the very beginning.
- * So the init priority has to be 0 (zero).
- *
- * @return 0
  */
-static int stm32l4_init(void)
+void soc_early_init_hook(void)
 {
 	/* Enable the ART Accelerator I-cache, D-cache and prefetch */
 	LL_FLASH_EnableInstCache();
@@ -39,8 +36,7 @@ static int stm32l4_init(void)
 	/* Update CMSIS SystemCoreClock variable (HCLK) */
 	/* At reset, system core clock is set to 4 MHz from MSI */
 	SystemCoreClock = 4000000;
-
-	return 0;
+#if CONFIG_PM
+	stm32_power_init();
+#endif
 }
-
-SYS_INIT(stm32l4_init, PRE_KERNEL_1, 0);

@@ -1,5 +1,5 @@
 identifier: slwrb4161a
-name: EFR32MG12 2.4 GHz 19 dBm Radio Board (SLWRB4161A)
+name: EFR32MG12 2.4 GHz 19 dBm Radio Board (SLWRB4161A, BRD4161A)
 type: mcu
 arch: arm
 ram: 256

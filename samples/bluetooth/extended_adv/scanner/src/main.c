@@ -7,6 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/hci.h>
 
 #define NAME_LEN 30
 
@@ -60,7 +61,7 @@ static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 	bt_conn_unref(default_conn);
 	default_conn = NULL;
 
-	printk("Disconnected (reason 0x%02X)\n", reason);
+	printk("Disconnected, reason 0x%02X %s\n", reason, bt_hci_err_to_str(reason));
 }
 
 static void recycled_cb(void)
@@ -78,7 +79,7 @@ BT_CONN_CB_DEFINE(conn_cb) = {
 
 static void scan_recv(const struct bt_le_scan_recv_info *info, struct net_buf_simple *buf)
 {
-	if (info->adv_type & BT_GAP_ADV_TYPE_EXT_ADV &&
+	if (info->adv_type == BT_GAP_ADV_TYPE_EXT_ADV &&
 	    info->adv_props & BT_GAP_ADV_PROP_EXT_ADV &&
 	    info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) {
 		/* Attempt connection request for device with extended advertisements */

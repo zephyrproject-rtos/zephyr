@@ -1,0 +1,6 @@
+# Copyright (c) 2021 Yonatan Schachter
+# Copyright (c) 2023 Ian Wakely
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_W5500_EVB_PICO
+	select RP2_FLASH_W25Q080

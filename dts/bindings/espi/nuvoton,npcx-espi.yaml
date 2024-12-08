@@ -40,3 +40,17 @@ properties:
     type: int
     required: true
     description: The maximum transmit channel payload size.
+
+  vw-index-extend-set:
+    type: array
+    description: |
+      Array of encoded virtual wire information
+      Update the vw index in group setting. Here is the format.
+      < ESPI_NPCX_VW_EX_VAL(direction, group_number, index) >
+      direction: 1 for ESPI_CONTROLLER_TO_TARGET and 0 for ESPI_TARGET_TO_CONTROLLER.
+      group_number: The number of VWEVMS or VWEVSM.
+      index: The index to be replaced.
+
+      For example, update the index of VWEVMS6 into 0x4A and the index of VWEVSM8 into 0x53
+        vw-index-extend-set = < ESPI_NPCX_VW_EX_VAL(1, 6, 0x4A)
+                                ESPI_NPCX_VW_EX_VAL(0, 8, 0x53) >

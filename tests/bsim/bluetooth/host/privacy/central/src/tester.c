@@ -141,9 +141,8 @@ void tester_procedure_periph_delayed_start_of_conn_adv(void)
 
 	int err;
 	struct bt_le_adv_param params =
-		BT_LE_ADV_PARAM_INIT(BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_USE_IDENTITY,
-				     BT_GAP_ADV_FAST_INT_MIN_2,
-				     BT_GAP_ADV_FAST_INT_MAX_2, NULL);
+		BT_LE_ADV_PARAM_INIT(BT_LE_ADV_OPT_CONN | BT_LE_ADV_OPT_USE_IDENTITY,
+				     BT_GAP_ADV_FAST_INT_MIN_2, BT_GAP_ADV_FAST_INT_MAX_2, NULL);
 	struct bt_data ad;
 	struct bt_le_ext_adv *adv;
 

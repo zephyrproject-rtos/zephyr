@@ -7,6 +7,7 @@ config CAN_NUMAKER
 	bool "Nuvoton NuMaker CAN FD driver"
 	default y
 	select CAN_MCAN
+	select PINCTRL
 	depends on DT_HAS_NUVOTON_NUMAKER_CANFD_ENABLED
 	depends on SOC_SERIES_M46X || SOC_SERIES_M2L31X
 	help

@@ -7,6 +7,7 @@ config UART_IMX
 	bool "NXP i.MX7 family processor UART driver"
 	default y
 	depends on DT_HAS_NXP_IMX_UART_ENABLED
+	select PINCTRL
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	help

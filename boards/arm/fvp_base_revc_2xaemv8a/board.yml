@@ -1,5 +1,6 @@
 board:
   name: fvp_base_revc_2xaemv8a
+  full_name: BASE RevC AEMv8A Fixed Virtual Platforms
   vendor: arm
   socs:
   - name: fvp_base_revc_2xaemv8a

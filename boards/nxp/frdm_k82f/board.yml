@@ -1,5 +1,6 @@
 board:
   name: frdm_k82f
+  full_name: FRDM-K82F
   vendor: nxp
   socs:
     - name: mk82f25615

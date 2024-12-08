@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <zephyr/sys/slist.h>
 
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/bluetooth/mesh.h>
 
 #include "msg.h"

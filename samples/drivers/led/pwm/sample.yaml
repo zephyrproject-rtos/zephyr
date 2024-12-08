@@ -1,0 +1,22 @@
+sample:
+  description: Demonstration of the PWM LED driver
+  name: PWM LED sample
+tests:
+  sample.drivers.led.led_pwm:
+    filter: dt_compat_enabled("pwm-leds")
+    tags: LED
+    depends_on: pwm
+    platform_exclude: reel_board
+    timeout: 20
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "Testing LED \\d+"
+        - "Turned on"
+        - "Turned off"
+        - "Increasing brightness gradually"
+        - "Blinking on: ([0-9]+) msec, off: ([0-9]+) msec"
+        - "(Blinking on: ([0-9]+) msec, off: ([0-9]+) msec|Cycle period not supported)"
+        - "Turned off, loop end"

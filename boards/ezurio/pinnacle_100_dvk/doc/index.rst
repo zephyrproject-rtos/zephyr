@@ -1,7 +1,4 @@
-.. _pinnacle_100_dvk:
-
-Ezurio Pinnacle 100 DVK
-#######################
+.. zephyr:board:: pinnacle_100_dvk
 
 Overview
 ********
@@ -48,12 +45,6 @@ and the following devices:
 * :abbr:`QSPI (Quad Serial Peripheral Interface)`
 * :abbr:`BME680 (Bosch Sensortec BME680 environmental sensor)`
 * :abbr:`HL7800 (Sierra Wireless HL7800 LTE-M1/NB-IoT modem)`
-
-.. figure:: img/pinnacle_100_dvk.jpg
-     :align: center
-     :alt: Pinnacle 100 DVK
-
-     Pinnacle 100 DVK (453-00010-K1)
 
 Hardware
 ********
@@ -144,7 +135,7 @@ found in :ref:`nordic_segger_flashing`. Then build and flash
 applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 First, run your favorite terminal program to listen for output.
 
@@ -187,9 +178,9 @@ Testing Bluetooth on the Pinnacle 100 DVK
 Many of the Bluetooth examples will work on the Pinnacle 100 DVK.
 Try them out:
 
-* :ref:`ble_peripheral`
-* :ref:`bluetooth-eddystone-sample`
-* :ref:`bluetooth-ibeacon-sample`
+* :zephyr:code-sample:`ble_peripheral`
+* :zephyr:code-sample:`bluetooth_eddystone`
+* :zephyr:code-sample:`bluetooth_ibeacon`
 
 Testing the LEDs and buttons in the Pinnacle 100 DVK
 ====================================================

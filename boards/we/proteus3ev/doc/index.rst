@@ -1,7 +1,4 @@
-.. _we_proteus3ev_nrf52840:
-
-Würth Elektronik Proteus-III-EV
-###############################
+.. zephyr:board:: we_proteus3ev
 
 Overview
 ********
@@ -24,12 +21,6 @@ nRF52840 ARM Cortex-M4F CPU and the following devices:
 * :abbr:`SPI (Serial Peripheral Interface)`
 * :abbr:`UART (Universal asynchronous receiver-transmitter)`
 * :abbr:`WDT (Watchdog Timer)`
-
-.. figure:: img/we_proteus3ev_nrf52840.jpg
-     :align: center
-     :alt: Proteus-III EV
-
-     Proteus-III EV (Credit: Würth Elektronik)
 
 More information about the radio module can be found the Würth Elektronik
 web page https://www.we-online.com/katalog/de/PROTEUS-III .
@@ -114,7 +105,7 @@ found in :ref:`nordic_segger_flashing`. Then build and flash
 applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 First, run your favorite terminal program to listen for output.
 

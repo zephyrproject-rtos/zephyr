@@ -118,7 +118,7 @@ unlock:
 	return err;
 }
 
-static const struct rtc_driver_api ds1307_driver_api = {
+static DEVICE_API(rtc, ds1307_driver_api) = {
 	.set_time = ds1307_set_time,
 	.get_time = ds1307_get_time,
 };
@@ -136,13 +136,23 @@ static int ds1307_init(const struct device *dev)
 	/* Disable squarewave output */
 	err = i2c_reg_write_byte_dt(&config->i2c_bus, DS1307_REG_CTRL, 0x00);
 	if (err < 0) {
-		LOG_ERR("Error: SQW:%d\n", err);
+		LOG_ERR("Error: SQW: %d\n", err);
 	}
 
-	/* Make clock halt = 0 */
-	err = i2c_reg_write_byte_dt(&config->i2c_bus, DS1307_REG_SECONDS, 0x00);
+	/* Ensure Clock Halt = 0 */
+	uint8_t reg = 0;
+
+	err = i2c_reg_read_byte_dt(&config->i2c_bus, DS1307_REG_SECONDS, &reg);
 	if (err < 0) {
-		LOG_ERR("Error: Set clock halt bit:%d\n", err);
+		LOG_ERR("Error: Read SECONDS/Clock Halt register: %d\n", err);
+	}
+	if (reg & ~SECONDS_BITS) {
+		/* Clock Halt bit is set */
+		err = i2c_reg_write_byte_dt(&config->i2c_bus, DS1307_REG_SECONDS,
+					    reg & SECONDS_BITS);
+		if (err < 0) {
+			LOG_ERR("Error: Clear Clock Halt bit: %d\n", err);
+		}
 	}
 
 	return 0;

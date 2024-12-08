@@ -13,7 +13,7 @@
 #include <stddef.h>
 
 #include <zephyr/types.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 
 #include <zephyr/bluetooth/mesh/keys.h>
 #include <zephyr/bluetooth/mesh/msg.h>
@@ -48,6 +48,8 @@
 #include <zephyr/bluetooth/mesh/od_priv_proxy_cli.h>
 #include <zephyr/bluetooth/mesh/sol_pdu_rpl_srv.h>
 #include <zephyr/bluetooth/mesh/sol_pdu_rpl_cli.h>
+#include <zephyr/bluetooth/mesh/brg_cfg_cli.h>
+#include <zephyr/bluetooth/mesh/brg_cfg_srv.h>
 #include <zephyr/bluetooth/mesh/statistic.h>
 
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_MESH_H_ */

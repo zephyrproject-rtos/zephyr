@@ -1,7 +1,4 @@
-.. _lpcxpresso55s69:
-
-NXP LPCXPRESSO55S69
-###################
+.. zephyr:board:: lpcxpresso55s69
 
 Overview
 ********
@@ -11,10 +8,6 @@ of and development with the LPC55S6x MCU based on the Arm® Cortex®-M33
 architecture. The board includes a high performance onboard debug probe, audio
 subsystem, and accelerometer, with several options for adding off-the-shelf
 add-on boards for networking, sensors, displays, and other interfaces.
-
-.. image:: lpcxpresso55s69.jpg
-   :align: center
-   :alt: LPCXPRESSO55S69
 
 Hardware
 ********
@@ -280,6 +273,7 @@ Build and flash applications as usual (see :ref:`build_an_application` and
 Configuring a Debug Probe
 =========================
 
+LinkServer is the default runner for this board.
 A debug probe is used for both flashing and debugging the board. This board is
 configured by default to use the LPC-Link2 CMSIS-DAP Onboard Debug Probe,
 however the :ref:`pyocd-debug-host-tools` does not yet support this probe so you
@@ -299,7 +293,7 @@ board.
 -----------------------------------------
 
         1. Install the :ref:`linkserver-debug-host-tools` and make sure they are in your search path.
-        2. To update the debug firmware, please follow the instructions on `LPCXPRESSO55S69 Debug Firmware`
+        2. To update the debug firmware, please follow the instructions on `LPCXPRESSO55S69 Debug Firmware`_
 
 :ref:`opensda-daplink-onboard-debug-probe`
 ------------------------------------------
@@ -322,8 +316,8 @@ Connect a USB cable from your PC to P6, and use the serial terminal of your choi
 Flashing
 ========
 
-Here is an example for the :ref:`hello_world` application. This example uses the
-:ref:`jlink-debug-host-tools` as default.
+Here is an example for the :zephyr:code-sample:`hello_world` application. This example uses the
+:ref:`linkserver-debug-host-tools` as default.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -335,8 +329,8 @@ see the following message in the terminal:
 
 .. code-block:: console
 
-   ***** Booting Zephyr OS v1.14.0 *****
-   Hello World! lpcxpresso55s69
+   ***** Booting Zephyr OS v3.7.0 *****
+   Hello World! lpcxpresso55s69/lpc55s69/cpu0
 
 Building and flashing secure/non-secure with Arm |reg| TrustZone |reg|
 ----------------------------------------------------------------------
@@ -365,7 +359,7 @@ an example of building for both cores with sysbuild, see
 Debugging
 =========
 
-Here is an example for the :ref:`hello_world` application. This example uses the
+Here is an example for the :zephyr:code-sample:`hello_world` application. This example uses the
 :ref:`jlink-debug-host-tools` as default.
 
 .. zephyr-app-commands::

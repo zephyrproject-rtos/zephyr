@@ -319,9 +319,17 @@ int usbd_add_configuration(struct usbd_context *const uds_ctx,
 		usbd_set_num_configs(uds_ctx, speed, num);
 	}
 
-	sys_slist_append(configs, &cfg_nd->node);
+	if (cfg_nd->str_desc_nd != NULL) {
+		ret = usbd_add_descriptor(uds_ctx, cfg_nd->str_desc_nd);
+		if (ret != 0) {
+			LOG_ERR("Failed to add configuration string descriptor");
+			goto add_configuration_exit;
+		}
 
-	usbd_device_unlock(uds_ctx);
+		desc->iConfiguration = usbd_str_desc_get_idx(cfg_nd->str_desc_nd);
+	}
+
+	sys_slist_append(configs, &cfg_nd->node);
 
 add_configuration_exit:
 	usbd_device_unlock(uds_ctx);

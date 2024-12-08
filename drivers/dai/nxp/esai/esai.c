@@ -664,7 +664,7 @@ static int esai_remove(const struct device *dev)
 	return 0;
 }
 
-static const struct dai_driver_api esai_api = {
+static DEVICE_API(dai, esai_api) = {
 	.config_set = esai_config_set,
 	.config_get = esai_config_get,
 	.trigger = esai_trigger,
@@ -683,8 +683,6 @@ static int esai_init(const struct device *dev)
 	data = dev->data;
 
 	device_map(&data->regmap, cfg->regmap_phys, cfg->regmap_size, K_MEM_CACHE_NONE);
-
-	ESAI_Reset(UINT_TO_ESAI(data->regmap));
 
 	ret = esai_parse_pinmodes(cfg, data);
 	if (ret < 0) {

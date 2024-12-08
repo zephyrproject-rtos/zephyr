@@ -110,10 +110,16 @@ static void find_suitable_clock(const struct i2s_nrfx_drv_cfg *drv_cfg,
 			 * f_actual = f_source /
 			 *            floor(1048576 * 4096 / MCKFREQ)
 			 */
+			enum { MCKCONST = 1048576 };
 			uint32_t mck_factor =
-				(uint32_t)((requested_mck * 1048576ULL) /
+				(uint32_t)(((uint64_t)requested_mck * MCKCONST) /
 					   (src_freq + requested_mck / 2));
-			uint32_t actual_mck = src_freq / (1048576 / mck_factor);
+
+			/* skip cases when mck_factor is too big for dividing */
+			if (mck_factor > MCKCONST) {
+				continue;
+			}
+			uint32_t actual_mck = src_freq / (MCKCONST / mck_factor);
 
 			uint32_t lrck_freq = actual_mck / ratios[r].ratio_val;
 			uint32_t diff = lrck_freq >= i2s_cfg->frame_clk_freq
@@ -908,7 +914,7 @@ static void init_clock_manager(const struct device *dev)
 	__ASSERT_NO_MSG(drv_data->clk_mgr != NULL);
 }
 
-static const struct i2s_driver_api i2s_nrf_drv_api = {
+static DEVICE_API(i2s, i2s_nrf_drv_api) = {
 	.configure = i2s_nrfx_configure,
 	.config_get = i2s_nrfx_config_get,
 	.read = i2s_nrfx_read,

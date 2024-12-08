@@ -3,7 +3,10 @@
 # Copyright (c) 2016 Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
+DT_CHOSEN_ZEPHYR_CAMERA := zephyr,camera
+
 config VIDEO_SW_GENERATOR
 	bool "Video Software Generator"
+	depends on !$(dt_chosen_enabled,$(DT_CHOSEN_ZEPHYR_CAMERA))
 	help
 	  Enable video pattern generator (for testing purposes).

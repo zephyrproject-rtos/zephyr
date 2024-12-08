@@ -23,6 +23,7 @@ LOG_MODULE_REGISTER(net_capture, CONFIG_NET_CAPTURE_LOG_LEVEL);
 #include "ipv4.h"
 #include "ipv6.h"
 #include "udp_internal.h"
+#include "net_stats.h"
 
 #define PKT_ALLOC_TIME K_MSEC(50)
 #define DEFAULT_PORT 4242
@@ -41,7 +42,8 @@ NET_PKT_SLAB_DEFINE(capture_pkts, CONFIG_NET_CAPTURE_PKT_COUNT);
 NET_BUF_POOL_FIXED_DEFINE(capture_bufs, CONFIG_NET_CAPTURE_BUF_COUNT,
 			  CONFIG_NET_BUF_DATA_SIZE, 4, NULL);
 #else
-#define DATA_POOL_SIZE MAX(NET_PKT_BUF_RX_DATA_POOL_SIZE, NET_PKT_BUF_TX_DATA_POOL_SIZE)
+#define DATA_POOL_SIZE MAX(CONFIG_NET_PKT_BUF_RX_DATA_POOL_SIZE, \
+			   CONFIG_NET_PKT_BUF_TX_DATA_POOL_SIZE)
 
 NET_BUF_POOL_VAR_DEFINE(capture_bufs, CONFIG_NET_CAPTURE_BUF_COUNT,
 			DATA_POOL_SIZE, 4, NULL);
@@ -425,7 +427,7 @@ int net_capture_setup(const char *remote_addr, const char *my_local_addr,
 		(void)net_capture_cleanup(ctx->dev);
 
 		/* net_context is cleared by the cleanup so no need to goto
-		 * to fail label.
+		 * the fail label.
 		 */
 		return ret;
 	}
@@ -554,7 +556,7 @@ int net_capture_pkt_with_status(struct net_if *iface, struct net_pkt *pkt)
 
 			if (captured == NULL) {
 				NET_DBG("Captured pkt %s", "dropped");
-				/* TODO: update capture data statistics */
+				net_stats_update_processing_error(ctx->tunnel_iface);
 				ret = -ENOMEM;
 				goto out;
 			}
@@ -617,9 +619,9 @@ static int capture_send(const struct device *dev, struct net_if *iface,
 		return -ENOENT;
 	}
 
-	if (ctx->local.sa_family == AF_INET) {
+	if (IS_ENABLED(CONFIG_NET_IPV4) && ctx->local.sa_family == AF_INET) {
 		len = sizeof(struct net_ipv4_hdr);
-	} else if (ctx->local.sa_family == AF_INET6) {
+	} else if (IS_ENABLED(CONFIG_NET_IPV6) && ctx->local.sa_family == AF_INET6) {
 		len = sizeof(struct net_ipv6_hdr);
 	} else {
 		return -EINVAL;
@@ -643,15 +645,17 @@ static int capture_send(const struct device *dev, struct net_if *iface,
 		return ret;
 	}
 
-	if (ctx->local.sa_family == AF_INET) {
+	if (IS_ENABLED(CONFIG_NET_IPV4) && ctx->local.sa_family == AF_INET) {
 		net_pkt_set_ipv4_ttl(ip,
 				     net_if_ipv4_get_ttl(ctx->tunnel_iface));
 
 		ret = net_ipv4_create(ip, &net_sin(&ctx->local)->sin_addr,
 				      &net_sin(&ctx->peer)->sin_addr);
-	} else {
+	} else if (IS_ENABLED(CONFIG_NET_IPV6) && ctx->local.sa_family == AF_INET6) {
 		ret = net_ipv6_create(ip, &net_sin6(&ctx->local)->sin6_addr,
 				      &net_sin6(&ctx->peer)->sin6_addr);
+	} else {
+		CODE_UNREACHABLE;
 	}
 
 	if (ret < 0) {
@@ -678,16 +682,18 @@ static int capture_send(const struct device *dev, struct net_if *iface,
 
 	net_pkt_cursor_init(pkt);
 
-	if (ctx->local.sa_family == AF_INET) {
+	if (IS_ENABLED(CONFIG_NET_IPV4) && ctx->local.sa_family == AF_INET) {
 		net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
 		net_pkt_set_ipv4_opts_len(pkt, 0);
 
 		net_ipv4_finalize(pkt, IPPROTO_UDP);
-	} else {
+	} else if (IS_ENABLED(CONFIG_NET_IPV6) && ctx->local.sa_family == AF_INET6) {
 		net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
 		net_pkt_set_ipv6_ext_opt_len(pkt, 0);
 
 		net_ipv6_finalize(pkt, IPPROTO_UDP);
+	} else {
+		CODE_UNREACHABLE;
 	}
 
 	if (DEBUG_TX) {

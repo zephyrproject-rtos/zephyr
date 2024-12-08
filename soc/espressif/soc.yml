@@ -16,6 +16,9 @@ family:
       cpuclusters:
       - name: procpu
       - name: appcpu
+  - name: esp32c2
+    socs:
+    - name: esp32c2
   - name: esp32c3
     socs:
     - name: esp32c3

@@ -15,7 +15,7 @@
 #define SOCK_NONBLOCK 2
 #define SOCK_ERROR 4
 
-int zsock_close_ctx(struct net_context *ctx);
+int zsock_close_ctx(struct net_context *ctx, int sock);
 int zsock_poll_internal(struct zsock_pollfd *fds, int nfds, k_timeout_t timeout);
 
 int zsock_wait_data(struct net_context *ctx, k_timeout_t *timeout);

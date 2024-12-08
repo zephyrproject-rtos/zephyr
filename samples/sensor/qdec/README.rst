@@ -1,7 +1,8 @@
-.. _qdec_sensor:
+.. zephyr:code-sample:: qdec
+   :name: Quadrature Decoder Sensor
+   :relevant-api: sensor_interface
 
-Quadrature Decoder Sensor
-#########################
+   Get rotation data from a quadrature decoder sensor.
 
 Overview
 ********

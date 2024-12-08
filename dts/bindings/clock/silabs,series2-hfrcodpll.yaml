@@ -1,0 +1,37 @@
+compatible: "silabs,series2-hfrcodpll"
+
+description: |
+  Silicon Labs HFRCODPLL peripheral (high-frequency RC oscillator with digital phase-locked loop).
+  Can be used as a free-running RC oscillator or with PLL lock to the crystal oscillators HFXO
+  or LFXO. To enable PLL, set the `clocks` property to the source crystal oscillator, and set
+  the `dpll-*` options to desired values.
+
+  In PLL mode, `clock-frequency` represents the target PLL frequency.
+  In free-running mode, `clock-frequency` represents the HFRCO band to use.
+
+include: fixed-clock.yaml
+
+properties:
+  dpll-n:
+    type: int
+    description: Numerator used in f_out = f_ref * (n+1) / (m+1)
+  dpll-m:
+    type: int
+    description: Denominator used in f_out = f_ref * (n+1) / (m+1)
+  dpll-edge:
+    type: string
+    description: Which edge of the reference is detected
+    enum: ["fall", "rise"]
+  dpll-lock:
+    type: string
+    description: |
+      PLL lock mode.
+      freq: Frequency-lock loop mode
+      phase: Phase-lock loop mode
+    enum: ["freq", "phase"]
+  dpll-autorecover:
+    type: boolean
+    description: Automatically re-lock if the PLL loses the lock
+  dpll-dither:
+    type: boolean
+    description: Enable dither function

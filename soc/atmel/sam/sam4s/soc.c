@@ -95,7 +95,7 @@ static ALWAYS_INLINE void clock_init(void)
 	}
 }
 
-void z_arm_platform_init(void)
+void soc_reset_hook(void)
 {
 	if (IS_ENABLED(CONFIG_SOC_ATMEL_SAM_WAIT_MODE)) {
 		/*

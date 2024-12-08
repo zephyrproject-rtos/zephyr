@@ -10,12 +10,18 @@
 /* ADC node from the devicetree. */
 #define ADC_NODE DT_ALIAS(adc0)
 
+/* Auxiliary macro to obtain channel vref, if available. */
+#define CHANNEL_VREF(node_id) DT_PROP_OR(node_id, zephyr_vref_mv, 0)
+
 /* Data of ADC device specified in devicetree. */
 static const struct device *adc = DEVICE_DT_GET(ADC_NODE);
 
 /* Data array of ADC channels for the specified ADC. */
 static const struct adc_channel_cfg channel_cfgs[] = {
 	DT_FOREACH_CHILD_SEP(ADC_NODE, ADC_CHANNEL_CFG_DT, (,))};
+
+/* Data array of ADC channel voltage references. */
+static uint32_t vrefs_mv[] = {DT_FOREACH_CHILD_SEP(ADC_NODE, CHANNEL_VREF, (,))};
 
 /* Get the number of channels defined on the DTS. */
 #define CHANNEL_COUNT ARRAY_SIZE(channel_cfgs)
@@ -54,6 +60,9 @@ int main(void)
 			printf("Could not setup channel #%d (%d)\n", i, err);
 			return 0;
 		}
+		if (channel_cfgs[i].reference == ADC_REF_INTERNAL) {
+			vrefs_mv[i] = adc_ref_internal(adc);
+		}
 	}
 
 #ifndef CONFIG_COVERAGE
@@ -82,12 +91,12 @@ int main(void)
 				val_mv = channel_reading[sample_index][channel_index];
 
 				printf("- - %" PRId32, val_mv);
-				err = adc_raw_to_millivolts(channel_cfgs[channel_index].reference,
+				err = adc_raw_to_millivolts(vrefs_mv[channel_index],
 							    channel_cfgs[channel_index].gain,
 							    CONFIG_SEQUENCE_RESOLUTION, &val_mv);
 
 				/* conversion to mV may not be supported, skip if not */
-				if ((err < 0) || channel_cfgs[channel_index].reference == 0) {
+				if ((err < 0) || vrefs_mv[channel_index] == 0) {
 					printf(" (value in mV not available)\n");
 				} else {
 					printf(" = %" PRId32 "mV\n", val_mv);

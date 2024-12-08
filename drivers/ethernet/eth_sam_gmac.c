@@ -1792,6 +1792,13 @@ static void phy_link_state_changed(const struct device *pdev,
 	}
 }
 
+static const struct device *eth_sam_gmac_get_phy(const struct device *dev)
+{
+	const struct eth_sam_dev_cfg *const cfg = dev->config;
+
+	return cfg->phy_dev;
+}
+
 static void eth0_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
@@ -2097,6 +2104,7 @@ static const struct ethernet_api eth_api = {
 	.get_capabilities = eth_sam_gmac_get_capabilities,
 	.set_config = eth_sam_gmac_set_config,
 	.get_config = eth_sam_gmac_get_config,
+	.get_phy = eth_sam_gmac_get_phy,
 	.send = eth_tx,
 
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
@@ -2390,7 +2398,7 @@ static int ptp_clock_sam_gmac_rate_adjust(const struct device *dev,
 	return -ENOTSUP;
 }
 
-static const struct ptp_clock_driver_api ptp_api = {
+static DEVICE_API(ptp_clock, ptp_api) = {
 	.set = ptp_clock_sam_gmac_set,
 	.get = ptp_clock_sam_gmac_get,
 	.adjust = ptp_clock_sam_gmac_adjust,

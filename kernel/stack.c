@@ -113,7 +113,7 @@ int z_impl_k_stack_push(struct k_stack *stack, stack_data_t data)
 
 	first_pending_thread = z_unpend_first_thread(&stack->wait_q);
 
-	if (first_pending_thread != NULL) {
+	if (unlikely(first_pending_thread != NULL)) {
 		z_thread_return_value_set_with_data(first_pending_thread,
 						   0, (void *)data);
 
@@ -182,7 +182,7 @@ int z_impl_k_stack_pop(struct k_stack *stack, stack_data_t *data,
 		return -EAGAIN;
 	}
 
-	*data = (stack_data_t)_current->base.swap_data;
+	*data = (stack_data_t)arch_current_thread()->base.swap_data;
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_stack, pop, stack, timeout, 0);
 

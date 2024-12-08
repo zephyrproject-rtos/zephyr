@@ -20,6 +20,7 @@
 #include <zephyr/app_memory/app_memdomain.h>
 #include <zephyr/sys/libc-hooks.h>
 #include <zephyr/sys/mutex.h>
+#include <zephyr/sys/util.h>
 #include <inttypes.h>
 #include <zephyr/linker/linker-defs.h>
 
@@ -51,19 +52,19 @@ static struct k_spinlock lists_lock;       /* kobj dlist */
 static struct k_spinlock objfree_lock;     /* k_object_free */
 
 #ifdef CONFIG_GEN_PRIV_STACKS
-/* On ARM & ARC MPU we may have two different alignment requirement
+/* On ARM & ARC MPU & RISC-V PMP we may have two different alignment requirement
  * when dynamically allocating thread stacks, one for the privileged
  * stack and other for the user stack, so we need to account the
  * worst alignment scenario and reserve space for that.
  */
-#if defined(CONFIG_ARM_MPU) || defined(CONFIG_ARC_MPU)
+#if defined(CONFIG_ARM_MPU) || defined(CONFIG_ARC_MPU) || defined(CONFIG_RISCV_PMP)
 #define STACK_ELEMENT_DATA_SIZE(size) \
 	(sizeof(struct z_stack_data) + CONFIG_PRIVILEGED_STACK_SIZE + \
 	Z_THREAD_STACK_OBJ_ALIGN(size) + K_THREAD_STACK_LEN(size))
 #else
 #define STACK_ELEMENT_DATA_SIZE(size) (sizeof(struct z_stack_data) + \
 	K_THREAD_STACK_LEN(size))
-#endif /* CONFIG_ARM_MPU || CONFIG_ARC_MPU */
+#endif /* CONFIG_ARM_MPU || CONFIG_ARC_MPU || CONFIG_RISCV_PMP */
 #else
 #define STACK_ELEMENT_DATA_SIZE(size) K_THREAD_STACK_LEN(size)
 #endif /* CONFIG_GEN_PRIV_STACKS */
@@ -71,7 +72,7 @@ static struct k_spinlock objfree_lock;     /* k_object_free */
 #endif /* CONFIG_DYNAMIC_OBJECTS */
 static struct k_spinlock obj_lock;         /* kobj struct data */
 
-#define MAX_THREAD_BITS		(CONFIG_MAX_THREAD_BYTES * 8)
+#define MAX_THREAD_BITS (CONFIG_MAX_THREAD_BYTES * BITS_PER_BYTE)
 
 #ifdef CONFIG_DYNAMIC_OBJECTS
 extern uint8_t _thread_idx_map[CONFIG_MAX_THREAD_BYTES];
@@ -82,7 +83,7 @@ static void clear_perms_cb(struct k_object *ko, void *ctx_ptr);
 const char *otype_to_str(enum k_objects otype)
 {
 	const char *ret;
-	/* -fdata-sections doesn't work right except in very very recent
+	/* -fdata-sections doesn't work right except in very recent
 	 * GCC and these literal strings would appear in the binary even if
 	 * otype_to_str was omitted by the linker
 	 */
@@ -134,7 +135,7 @@ uint8_t *z_priv_stack_find(k_thread_stack_t *stack)
 /*
  * Note that dyn_obj->data is where the kernel object resides
  * so it is the one that actually needs to be aligned.
- * Due to the need to get the the fields inside struct dyn_obj
+ * Due to the need to get the fields inside struct dyn_obj
  * from kernel object pointers (i.e. from data[]), the offset
  * from data[] needs to be fixed at build time. Therefore,
  * data[] is declared with __aligned(), such that when dyn_obj
@@ -150,13 +151,13 @@ uint8_t *z_priv_stack_find(k_thread_stack_t *stack)
 #endif /* ARCH_DYNAMIC_OBJ_K_THREAD_ALIGNMENT */
 
 #ifdef CONFIG_DYNAMIC_THREAD_STACK_SIZE
-#ifndef CONFIG_MPU_STACK_GUARD
-#define DYN_OBJ_DATA_ALIGN_K_THREAD_STACK \
-	Z_THREAD_STACK_OBJ_ALIGN(CONFIG_PRIVILEGED_STACK_SIZE)
-#else
+#if defined(CONFIG_MPU_STACK_GUARD) || defined(CONFIG_PMP_STACK_GUARD)
 #define DYN_OBJ_DATA_ALIGN_K_THREAD_STACK \
 	Z_THREAD_STACK_OBJ_ALIGN(CONFIG_DYNAMIC_THREAD_STACK_SIZE)
-#endif /* !CONFIG_MPU_STACK_GUARD */
+#else
+#define DYN_OBJ_DATA_ALIGN_K_THREAD_STACK \
+	Z_THREAD_STACK_OBJ_ALIGN(CONFIG_PRIVILEGED_STACK_SIZE)
+#endif /* CONFIG_MPU_STACK_GUARD || CONFIG_PMP_STACK_GUARD */
 #else
 #define DYN_OBJ_DATA_ALIGN_K_THREAD_STACK \
 	Z_THREAD_STACK_OBJ_ALIGN(ARCH_STACK_PTR_ALIGN)
@@ -349,13 +350,13 @@ static struct k_object *dynamic_object_create(enum k_objects otype, size_t align
 		stack_data->priv = (uint8_t *)dyn->data;
 		stack_data->size = adjusted_size;
 		dyn->kobj.data.stack_data = stack_data;
-#if defined(CONFIG_ARM_MPU) || defined(CONFIG_ARC_MPU)
+#if defined(CONFIG_ARM_MPU) || defined(CONFIG_ARC_MPU) || defined(CONFIG_RISCV_PMP)
 		dyn->kobj.name = (void *)ROUND_UP(
 			  ((uint8_t *)dyn->data + CONFIG_PRIVILEGED_STACK_SIZE),
 			  Z_THREAD_STACK_OBJ_ALIGN(size));
 #else
 		dyn->kobj.name = dyn->data;
-#endif /* CONFIG_ARM_MPU || CONFIG_ARC_MPU */
+#endif /* CONFIG_ARM_MPU || CONFIG_ARC_MPU || CONFIG_RISCV_PMP */
 #else
 		dyn->kobj.name = dyn->data;
 		dyn->kobj.data.stack_size = adjusted_size;
@@ -436,7 +437,7 @@ static void *z_object_alloc(enum k_objects otype, size_t size)
 	/* The allocating thread implicitly gets permission on kernel objects
 	 * that it allocates
 	 */
-	k_thread_perms_set(zo, _current);
+	k_thread_perms_set(zo, arch_current_thread());
 
 	/* Activates reference counting logic for automatic disposal when
 	 * all permissions have been revoked
@@ -653,7 +654,7 @@ static int thread_perms_test(struct k_object *ko)
 		return 1;
 	}
 
-	index = thread_index_get(_current);
+	index = thread_index_get(arch_current_thread());
 	if (index != -1) {
 		return sys_bitfield_test_bit((mem_addr_t)&ko->perms, index);
 	}
@@ -662,9 +663,9 @@ static int thread_perms_test(struct k_object *ko)
 
 static void dump_permission_error(struct k_object *ko)
 {
-	int index = thread_index_get(_current);
+	int index = thread_index_get(arch_current_thread());
 	LOG_ERR("thread %p (%d) does not have permission on %s %p",
-		_current, index,
+		arch_current_thread(), index,
 		otype_to_str(ko->type), ko->name);
 	LOG_HEXDUMP_ERR(ko->perms, sizeof(ko->perms), "permission bitmap");
 }
@@ -717,7 +718,7 @@ void k_object_access_revoke(const void *object, struct k_thread *thread)
 
 void z_impl_k_object_release(const void *object)
 {
-	k_object_access_revoke(object, _current);
+	k_object_access_revoke(object, arch_current_thread());
 }
 
 void k_object_access_all_grant(const void *object)
@@ -793,7 +794,7 @@ void k_object_recycle(const void *obj)
 
 	if (ko != NULL) {
 		(void)memset(ko->perms, 0, sizeof(ko->perms));
-		k_thread_perms_set(ko, _current);
+		k_thread_perms_set(ko, arch_current_thread());
 		ko->flags |= K_OBJ_FLAG_INITIALIZED;
 	}
 }

@@ -162,7 +162,7 @@ static int wdt_rpi_pico_init(const struct device *dev)
 	return 0;
 }
 
-static const struct wdt_driver_api wdt_rpi_pico_driver_api = {
+static DEVICE_API(wdt, wdt_rpi_pico_driver_api) = {
 	.setup = wdt_rpi_pico_setup,
 	.disable = wdt_rpi_pico_disable,
 	.install_timeout = wdt_rpi_pico_install_timeout,

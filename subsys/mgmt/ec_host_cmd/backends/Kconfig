@@ -55,6 +55,7 @@ config EC_HOST_CMD_BACKEND_SHI_NPCX
 	bool "SHI by Nuvoton"
 	depends on DT_HAS_NUVOTON_NPCX_SHI_ENABLED || \
 		   DT_HAS_NUVOTON_NPCX_SHI_ENHANCED_ENABLED
+	select PINCTRL
 	help
 	  This option enables the driver for SHI backend in the
 	  Nuvoton NPCX chip.
@@ -62,6 +63,7 @@ config EC_HOST_CMD_BACKEND_SHI_NPCX
 config EC_HOST_CMD_BACKEND_SHI_ITE
 	bool "SHI by ITE"
 	depends on DT_HAS_ITE_IT8XXX2_SHI_ENABLED
+	select PINCTRL
 	help
 	  This option enables the driver for SHI backend in the
 	  ITE IT8xxx2 chips family.
@@ -74,6 +76,13 @@ config EC_HOST_CMD_BACKEND_SHI_NPCX_ENHANCED_BUF_MODE
 	  In this mode, besides the original 128-bytes FIFO, an additional
 	  single-byte output buffer can be selected/switched to generate a
 	  response to simultaneous Read/Write transactions.
+
+config EC_HOST_CMD_BACKEND_SHI_NPCX_CS_DETECT_WORKAROUND
+	bool
+	default y if SOC_NPCX9M7FB
+	help
+	  Workaround the issue "CSnFE and CSnRE bits of EVSTATS2 Register (SHI)"
+	  in the npcx9m7fb SoC errata.
 
 config EC_HOST_CMD_BACKEND_SHI_MAX_REQUEST
 	int "Max data size for the version 3 request packet"
@@ -103,6 +112,7 @@ choice EC_HOST_CMD_BACKEND_SPI_DRIVER
 
 config EC_HOST_CMD_BACKEND_SPI_STM32
 	bool "SPI by STM32"
+	select PINCTRL
 	help
 	  This option enables the driver for SPI backend in the
 	  STM32 chip family.

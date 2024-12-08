@@ -85,7 +85,7 @@ struct os_mgmt_info_check {
 /* Structure provided in the MGMT_EVT_OP_OS_MGMT_INFO_APPEND notification callback */
 struct os_mgmt_info_append {
 	/* The format bitmask from the processed commands, the bits should be cleared once
-	 * processed, note that if all_format_specified is specified, the corrisponding bits here
+	 * processed, note that if all_format_specified is specified, the corresponding bits here
 	 * will not be set
 	 */
 	uint32_t *format_bitmask;

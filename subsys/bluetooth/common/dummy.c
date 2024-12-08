@@ -13,6 +13,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/buf.h>
 
 /*
  * The unpacked structs below are used inside __packed structures that reflect

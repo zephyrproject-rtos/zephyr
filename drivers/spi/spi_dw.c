@@ -31,6 +31,7 @@ LOG_MODULE_REGISTER(spi_dw);
 #endif
 
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi/rtio.h>
 #include <zephyr/irq.h>
 
 #include "spi_dw.h"
@@ -524,11 +525,14 @@ out:
 	completed(dev, error);
 }
 
-static const struct spi_driver_api dw_spi_api = {
+static DEVICE_API(spi, dw_spi_api) = {
 	.transceive = spi_dw_transceive,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_dw_transceive_async,
 #endif /* CONFIG_SPI_ASYNC */
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
+#endif
 	.release = spi_dw_release,
 };
 
@@ -656,7 +660,7 @@ COND_CODE_1(IS_EQ(DT_NUM_IRQS(DT_DRV_INST(inst)), 1),              \
 			.clear_bit_func = reg_clear_bit,                                    \
 			.test_bit_func = reg_test_bit,))                                    \
 	};                                                                                  \
-	DEVICE_DT_INST_DEFINE(inst,                                                         \
+	SPI_DEVICE_DT_INST_DEFINE(inst,                                                     \
 		spi_dw_init,                                                                \
 		NULL,                                                                       \
 		&spi_dw_data_##inst,                                                        \

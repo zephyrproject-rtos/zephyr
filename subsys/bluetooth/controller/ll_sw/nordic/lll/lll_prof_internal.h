@@ -25,6 +25,7 @@ static inline void lll_prof_exit_ull_low(void) {}
 #endif
 
 void lll_prof_latency_capture(void);
+uint16_t lll_prof_latency_get(void);
 void lll_prof_radio_end_backup(void);
 void lll_prof_cputime_capture(void);
 void lll_prof_send(void);

@@ -60,6 +60,7 @@ int fputc(int c, FILE *stream);
 int fputs(const char *ZRESTRICT s, FILE *ZRESTRICT stream);
 size_t fwrite(const void *ZRESTRICT ptr, size_t size, size_t nitems,
 	      FILE *ZRESTRICT stream);
+int remove(const char *path);
 #define putc(c, stream) fputc(c, stream)
 #define putchar(c) putc(c, stdout)
 

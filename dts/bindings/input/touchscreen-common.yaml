@@ -1,0 +1,35 @@
+# Copyright (c) 2024 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for touch controllers
+
+include: base.yaml
+
+properties:
+  screen-width:
+    type: int
+    default: 0
+    description: |
+      Horizontal resolution of touchscreen (maximum x coordinate reported + 1). The default
+      corresponds to a valid value for non-inverted axis, required for a display with an inverted x
+      axis.
+
+  screen-height:
+    type: int
+    default: 0
+    description: |
+      Vertical resolution of touchscreen (maximum y coordinate reported + 1). The default
+      corresponds to a valid value for non-inverted axis, required for a display with an inverted y
+      axis.
+
+  inverted-x:
+    type: boolean
+    description: X axis is inverted.
+
+  inverted-y:
+    type: boolean
+    description: Y axis is inverted.
+
+  swapped-x-y:
+    type: boolean
+    description: X and Y axis are swapped. Swapping is done after inverting the axis.

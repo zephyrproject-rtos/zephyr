@@ -22,6 +22,7 @@ if(NRF_REGTOOL)
         "Found nrf-regtool (found suitable version \"${PACKAGE_VERSION}\", "
         "minimum required is \"${PACKAGE_FIND_VERSION}\")"
       )
+      set_property(GLOBAL PROPERTY nrf_regtool_version ${PACKAGE_VERSION})
       return()
     endif()
   endif()

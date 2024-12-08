@@ -160,7 +160,7 @@ That license ties to Arduino Nano 33 BLE hardware serial number,
 it also works with the ZephyrRTOS.
 
 Follow the instruction of the tutorial for Arduino
-`Lauterbach TRACE32 GDB Front-End Debugger for Nano 33 BLE`
+`Lauterbach TRACE32 GDB Front-End Debugger for Nano 33 BLE`_
 to install the TRACE32.
 
 After installing the TRACE32, You should set the environmental variable ``T32_DIR``.

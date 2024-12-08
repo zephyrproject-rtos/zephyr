@@ -35,7 +35,7 @@
 #define MCHP_DT_ESPI_VW_FLAG_RST_SRC_MSK0	0x7
 
 #define MCHP_DT_NODE_FROM_VWTABLE(name) DT_CHILD(DT_PATH(mchp_xec_espi_vw_routing), name)
-#define MCHP_DT_VW_NODE_HAS_STATUS(name) DT_NODE_HAS_STATUS(MCHP_DT_NODE_FROM_VWTABLE(name), okay)
+#define MCHP_DT_VW_NODE_HAS_STATUS(name) DT_NODE_HAS_STATUS_OKAY(MCHP_DT_NODE_FROM_VWTABLE(name))
 
 /* Macro to store eSPI virtual wire DT flags
  * b[0] = DT status property 0 is disabled, 1 enabled,

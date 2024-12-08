@@ -881,10 +881,12 @@ static int hci_driver_open(const struct device *dev, bt_hci_recv_t recv)
 
 static int hci_driver_close(const struct device *dev)
 {
+	int err;
 	struct hci_driver_data *data = dev->data;
 
 	/* Resetting the LL stops all roles */
-	ll_deinit();
+	err = ll_deinit();
+	LL_ASSERT(!err);
 
 	/* Abort prio RX thread */
 	k_thread_abort(&prio_recv_thread_data);
@@ -898,7 +900,7 @@ static int hci_driver_close(const struct device *dev)
 	return 0;
 }
 
-static const struct bt_hci_driver_api hci_driver_api = {
+static DEVICE_API(bt_hci, hci_driver_api) = {
 	.open = hci_driver_open,
 	.close	= hci_driver_close,
 	.send = hci_driver_send,

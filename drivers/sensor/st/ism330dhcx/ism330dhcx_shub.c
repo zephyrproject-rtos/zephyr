@@ -12,7 +12,6 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/i2c.h>
-#include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/kernel.h>
@@ -165,8 +164,8 @@ static int ism330dhcx_hts221_read_conv_data(const struct device *dev, uint8_t i2
 
 	ht->y0 = buf[0] / 2;
 	ht->y1 = buf[1] / 2;
-	ht->x0 = sys_le16_to_cpu(buf[6] | (buf[7] << 8));
-	ht->x1 = sys_le16_to_cpu(buf[10] | (buf[11] << 8));
+	ht->x0 = buf[6] | (buf[7] << 8);
+	ht->x1 = buf[10] | (buf[11] << 8);
 
 	return 0;
 }

@@ -63,8 +63,8 @@ config DNS_RESOLVER_MAX_SERVERS
 
 config DNS_RESOLVER_MAX_QUERY_LEN
 	int "Max length of a DNS query"
-	range 1 255
-	default 255
+	range 1 $(UINT8_MAX)
+	default $(UINT8_MAX)
 	help
 	  Max length of a DNS query that should be looked up including the
 	  trailing 0. So e.g. "example.com" would have a query len of 12.
@@ -87,6 +87,12 @@ config DNS_SERVER1
 	  192.0.2.1:5353
 	  2001:db8::1
 	  [2001:db8::1]:5353
+	  It is possible to bind the DNS connection via a certain network
+	  interface by appending "%" and network interface name to the server
+	  address. For example: 192.0.2.1%eth1 would bind the connection socket
+	  to the network interface eth1. This is optional and by default the
+	  resolver connects to server by selecting the output network interface
+	  using normal IP routing.
 	  It is not mandatory to use this Kconfig option at all.
 	  The one calling dns_resolve_init() can use this option or not
 	  to populate the server list. If the DNS server addresses are
@@ -286,7 +292,7 @@ source "subsys/net/Kconfig.template.log_config.net"
 endif # DNS_SD
 
 # Note that we enable the DNS socket dispatcher always if either responder or
-# resolver support is enabed to simplify things. Strictly speaking the
+# resolver support is enabled to simplify things. Strictly speaking the
 # dispatcher is really needed for supporting resolver and responder at the same
 # time.
 config DNS_SOCKET_DISPATCHER

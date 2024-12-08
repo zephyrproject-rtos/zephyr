@@ -22,8 +22,8 @@ supported:
   - i2s
   - pwm
   - netif:eth
+  - rtc
   - spi
-  - usb
   - usb_device
   - watchdog
   - xpro_gpio

@@ -41,8 +41,9 @@ static void tracing_backend_adsp_memory_window_output(
 	if (length) {
 		memcpy((void *)mem_window->data, data + to_copy, length);
 		mem_window->head_offset = length;
-	} else
+	} else {
 		mem_window->head_offset += to_copy;
+	}
 }
 
 static void tracing_backend_adsp_memory_window_init(void)

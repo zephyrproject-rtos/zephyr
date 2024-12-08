@@ -6,7 +6,7 @@
 
 #include <freq.h>
 
-#include <rpi_pico/rp2040.dtsi>
+#include <raspberrypi/rpi_pico/rp2040.dtsi>
 #include "rpi_pico-pinctrl.dtsi"
 #include <zephyr/dt-bindings/pwm/pwm.h>
 
@@ -89,11 +89,6 @@
 	};
 };
 
-&clocks {
-	pinctrl-0 = <&clocks_default>;
-	pinctrl-names = "default";
-};
-
 &uart0 {
 	current-speed = <115200>;
 	status = "okay";
@@ -152,7 +147,6 @@ zephyr_udc0: &usbd {
 &pwm {
 	pinctrl-0 = <&pwm_ch4b_default>;
 	pinctrl-names = "default";
-	divider-int-0 = <255>;
 };
 
 &vreg {

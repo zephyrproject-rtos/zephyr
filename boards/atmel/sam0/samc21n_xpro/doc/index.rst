@@ -1,7 +1,4 @@
-.. _samc21n_xpro:
-
-SAM C21N Xplained Pro Evaluation Kit
-####################################
+.. zephyr:board:: samc21n_xpro
 
 Overview
 ********
@@ -11,10 +8,6 @@ prototyping with the SAM C21N Cortex®-M0+ processor-based
 microcontrollers. The kit includes Atmel’s Embedded Debugger (EDBG),
 which provides a full debug interface without the need for additional
 hardware.
-
-.. image:: img/atsamc21n_xpro.jpg
-     :align: center
-     :alt: SAMC21N-XPRO
 
 Hardware
 ********

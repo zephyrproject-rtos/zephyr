@@ -11,6 +11,8 @@
 
 #include <kernel_internal.h>
 #include <zephyr/irq.h>
+#include <zephyr/platform/hooks.h>
+#include <zephyr/arch/cache.h>
 
 static void interrupt_init(void)
 {
@@ -44,9 +46,15 @@ static void interrupt_init(void)
 
 void z_prep_c(void)
 {
+#if defined(CONFIG_SOC_PREP_HOOK)
+	soc_prep_hook();
+#endif
 	z_bss_zero();
 
 	interrupt_init();
+#if CONFIG_ARCH_CACHE
+	arch_cache_init();
+#endif
 
 	z_cstart();
 	CODE_UNREACHABLE;

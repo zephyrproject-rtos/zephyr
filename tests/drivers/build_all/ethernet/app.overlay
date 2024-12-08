@@ -1,0 +1,55 @@
+/*
+ * Copyright (c) 2024 TOKITA Hiroshi
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	test {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		test_gpio: gpio@deadbeef {
+			compatible = "vnd,gpio";
+			gpio-controller;
+			reg = <0xdeadbeef 0x1000>;
+			#gpio-cells = <0x2>;
+			status = "okay";
+		};
+
+		test_ethernet: ethernet {
+			compatible = "vnd,ethernet";
+
+			test_mdio: mdio {
+				compatible = "zephyr,mdio-gpio";
+				mdc-gpios = <&test_gpio 0 0>;
+				mdio-gpios = <&test_gpio 0 0>;
+
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				ethernet-phy@0 {
+					reg = <0x0>;
+					compatible = "realtek,rtl8211f";
+					status = "okay";
+				};
+
+				ethernet-phy@1 {
+					reg = <0x1>;
+					compatible = "nxp,tja1103";
+					status = "okay";
+					int-gpios = <&test_gpio 0 0>;
+					master-slave = "slave";
+				};
+
+				ethernet-phy@2 {
+					reg = <0x2>;
+					compatible = "microchip,ksz8081";
+					status = "okay";
+					reset-gpios = <&test_gpio 0 0>;
+					int-gpios = <&test_gpio 0 0>;
+					microchip,interface-type = "rmii";
+				};
+			};
+		};
+	};
+};

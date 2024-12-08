@@ -25,4 +25,4 @@ config BOARD_QUALIFIERS
 	  For example, if building for ``nrf5340dk/nrf5340/cpuapp`` then this will contain the
 	  value ``nrf5340/cpuapp``.
 
-osource "$(BOARD_DIR)/Kconfig.$(BOARD)"
+osource "$(KCONFIG_BOARD_DIR)/Kconfig.$(BOARD)"

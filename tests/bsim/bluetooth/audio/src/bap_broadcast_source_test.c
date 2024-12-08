@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,11 +19,13 @@
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
 
+#include "bap_common.h"
 #include "bstests.h"
 #include "common.h"
 
@@ -33,6 +35,8 @@
 #define SUPPORTED_MAX_FRAMES_PER_SDU   1
 
 #if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
+CREATE_FLAG(flag_source_started);
+
 /* When BROADCAST_ENQUEUE_COUNT > 1 we can enqueue enough buffers to ensure that
  * the controller is never idle
  */
@@ -60,8 +64,8 @@ static uint8_t bis_codec_data[] = {
 			    BT_BYTES_LIST_LE32(BT_AUDIO_LOCATION_FRONT_CENTER)),
 };
 
-static K_SEM_DEFINE(sem_started, 0U, ARRAY_SIZE(broadcast_source_streams));
-static K_SEM_DEFINE(sem_stopped, 0U, ARRAY_SIZE(broadcast_source_streams));
+static K_SEM_DEFINE(sem_stream_started, 0U, ARRAY_SIZE(broadcast_source_streams));
+static K_SEM_DEFINE(sem_stream_stopped, 0U, ARRAY_SIZE(broadcast_source_streams));
 
 static void validate_stream_codec_cfg(const struct bt_bap_stream *stream)
 {
@@ -112,7 +116,7 @@ static void validate_stream_codec_cfg(const struct bt_bap_stream *stream)
 	/* The broadcast source sets the channel allocation in the BIS to
 	 * BT_AUDIO_LOCATION_FRONT_CENTER
 	 */
-	ret = bt_audio_codec_cfg_get_chan_allocation(codec_cfg, &chan_allocation, false);
+	ret = bt_audio_codec_cfg_get_chan_allocation(codec_cfg, &chan_allocation, true);
 	if (ret == 0) {
 		if (chan_allocation != BT_AUDIO_LOCATION_FRONT_CENTER) {
 			FAIL("Unexpected channel allocation: 0x%08X", chan_allocation);
@@ -149,13 +153,13 @@ static void validate_stream_codec_cfg(const struct bt_bap_stream *stream)
 		return;
 	}
 
-	ret = bt_audio_codec_cfg_get_frame_blocks_per_sdu(codec_cfg, false);
+	ret = bt_audio_codec_cfg_get_frame_blocks_per_sdu(codec_cfg, true);
 	if (ret > 0) {
 		frames_blocks_per_sdu = (uint8_t)ret;
 	} else {
-		printk("Could not get octets per frame: %d\n", ret);
-		/* Frame blocks per SDU is optional and is implicitly 1 */
-		frames_blocks_per_sdu = 1U;
+		FAIL("Could not get frame blocks per SDU: %d\n", ret);
+
+		return;
 	}
 
 	/* An SDU can consist of X frame blocks, each with Y frames (one per channel) of size Z in
@@ -172,10 +176,14 @@ static void validate_stream_codec_cfg(const struct bt_bap_stream *stream)
 	}
 }
 
-static void started_cb(struct bt_bap_stream *stream)
+static void stream_started_cb(struct bt_bap_stream *stream)
 {
+	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
 	struct bt_bap_ep_info info;
 	int err;
+
+	test_stream->seq_num = 0U;
+	test_stream->tx_cnt = 0U;
 
 	err = bt_bap_ep_get_info(stream->ep, &info);
 	if (err != 0) {
@@ -210,13 +218,13 @@ static void started_cb(struct bt_bap_stream *stream)
 
 	printk("Stream %p started\n", stream);
 	validate_stream_codec_cfg(stream);
-	k_sem_give(&sem_started);
+	k_sem_give(&sem_stream_started);
 }
 
-static void stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
+static void steam_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 {
 	printk("Stream %p stopped with reason 0x%02X\n", stream, reason);
-	k_sem_give(&sem_stopped);
+	k_sem_give(&sem_stream_stopped);
 }
 
 static void stream_sent_cb(struct bt_bap_stream *stream)
@@ -259,12 +267,24 @@ static void stream_sent_cb(struct bt_bap_stream *stream)
 }
 
 static struct bt_bap_stream_ops stream_ops = {
-	.started = started_cb,
-	.stopped = stopped_cb,
+	.started = stream_started_cb,
+	.stopped = steam_stopped_cb,
 	.sent = stream_sent_cb,
 };
 
-static int setup_broadcast_source(struct bt_bap_broadcast_source **source)
+static void source_started_cb(struct bt_bap_broadcast_source *source)
+{
+	printk("Broadcast source %p started\n", source);
+	SET_FLAG(flag_source_started);
+}
+
+static void source_stopped_cb(struct bt_bap_broadcast_source *source, uint8_t reason)
+{
+	printk("Broadcast source %p stopped with reason 0x%02X\n", source, reason);
+	UNSET_FLAG(flag_source_started);
+}
+
+static int setup_broadcast_source(struct bt_bap_broadcast_source **source, bool encryption)
 {
 	struct bt_bap_broadcast_source_stream_param
 		stream_params[ARRAY_SIZE(broadcast_source_streams)];
@@ -297,7 +317,10 @@ static int setup_broadcast_source(struct bt_bap_broadcast_source **source)
 	create_param.params = subgroup_params;
 	create_param.qos = &preset_16_2_1.qos;
 	create_param.packing = BT_ISO_PACKING_SEQUENTIAL;
-	create_param.encryption = false;
+	create_param.encryption = encryption;
+	if (encryption) {
+		memcpy(create_param.broadcast_code, BROADCAST_CODE, sizeof(BROADCAST_CODE));
+	}
 
 	printk("Creating broadcast source with %zu subgroups and %zu streams\n",
 	       ARRAY_SIZE(subgroup_params), ARRAY_SIZE(stream_params));
@@ -314,18 +337,6 @@ static int setup_broadcast_source(struct bt_bap_broadcast_source **source)
 	}
 
 	return 0;
-}
-
-static void test_broadcast_source_get_id(struct bt_bap_broadcast_source *source,
-					 uint32_t *broadcast_id_out)
-{
-	int err;
-
-	err = bt_bap_broadcast_source_get_id(source, broadcast_id_out);
-	if (err != 0) {
-		FAIL("Unable to get broadcast ID: %d\n", err);
-		return;
-	}
 }
 
 static void test_broadcast_source_get_base(struct bt_bap_broadcast_source *source,
@@ -368,7 +379,11 @@ static int setup_extended_adv(struct bt_bap_broadcast_source *source, struct bt_
 		return err;
 	}
 
-	test_broadcast_source_get_id(source, &broadcast_id);
+	err = bt_rand(&broadcast_id, BT_AUDIO_BROADCAST_ID_SIZE);
+	if (err) {
+		printk("Unable to generate broadcast ID: %d\n", err);
+		return err;
+	}
 
 	/* Setup extended advertising data */
 	net_buf_simple_add_le16(&ad_buf, BT_UUID_BROADCAST_AUDIO_VAL);
@@ -466,10 +481,12 @@ static void test_broadcast_source_start(struct bt_bap_broadcast_source *source,
 	}
 
 	/* Wait for all to be started */
-	printk("Waiting for streams to be started\n");
+	printk("Waiting for %zu streams to be started\n", ARRAY_SIZE(broadcast_source_streams));
 	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_source_streams); i++) {
-		k_sem_take(&sem_started, K_FOREVER);
+		k_sem_take(&sem_stream_started, K_FOREVER);
 	}
+
+	WAIT_FOR_FLAG(flag_source_started);
 }
 
 static void test_broadcast_source_update_metadata(struct bt_bap_broadcast_source *source,
@@ -519,10 +536,12 @@ static void test_broadcast_source_stop(struct bt_bap_broadcast_source *source)
 	}
 
 	/* Wait for all to be stopped */
-	printk("Waiting for streams to be stopped\n");
+	printk("Waiting for %zu streams to be stopped\n", ARRAY_SIZE(broadcast_source_streams));
 	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_source_streams); i++) {
-		k_sem_take(&sem_stopped, K_FOREVER);
+		k_sem_take(&sem_stream_stopped, K_FOREVER);
 	}
+
+	WAIT_FOR_UNSET_FLAG(flag_source_started);
 }
 
 static void test_broadcast_source_delete(struct bt_bap_broadcast_source *source)
@@ -563,10 +582,12 @@ static int stop_extended_adv(struct bt_le_ext_adv *adv)
 	return 0;
 }
 
-static void test_main(void)
+static void init(void)
 {
-	struct bt_bap_broadcast_source *source;
-	struct bt_le_ext_adv *adv;
+	static struct bt_bap_broadcast_source_cb broadcast_source_cb = {
+		.started = source_started_cb,
+		.stopped = source_stopped_cb,
+	};
 	int err;
 
 	err = bt_enable(NULL);
@@ -577,7 +598,22 @@ static void test_main(void)
 
 	printk("Bluetooth initialized\n");
 
-	err = setup_broadcast_source(&source);
+	err = bt_bap_broadcast_source_register_cb(&broadcast_source_cb);
+	if (err != 0) {
+		FAIL("Failed to register broadcast source callbacks (err %d)\n", err);
+		return;
+	}
+}
+
+static void test_main(void)
+{
+	struct bt_bap_broadcast_source *source;
+	struct bt_le_ext_adv *adv;
+	int err;
+
+	init();
+
+	err = setup_broadcast_source(&source, false);
 	if (err != 0) {
 		FAIL("Unable to setup broadcast source: %d\n", err);
 		return;
@@ -630,7 +666,7 @@ static void test_main(void)
 
 	/* Recreate broadcast source to verify that it's possible */
 	printk("Recreating broadcast source\n");
-	err = setup_broadcast_source(&source);
+	err = setup_broadcast_source(&source, false);
 	if (err != 0) {
 		FAIL("Unable to setup broadcast source: %d\n", err);
 		return;
@@ -643,14 +679,74 @@ static void test_main(void)
 	PASS("Broadcast source passed\n");
 }
 
+static void test_main_encrypted(void)
+{
+	struct bt_bap_broadcast_source *source;
+	struct bt_le_ext_adv *adv;
+	int err;
+
+	init();
+
+	err = setup_broadcast_source(&source, true);
+	if (err != 0) {
+		FAIL("Unable to setup broadcast source: %d\n", err);
+		return;
+	}
+
+	err = setup_extended_adv(source, &adv);
+	if (err != 0) {
+		FAIL("Failed to setup extended advertising: %d\n", err);
+		return;
+	}
+
+	test_broadcast_source_start(source, adv);
+
+	/* Initialize sending */
+	printk("Sending data\n");
+	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_source_streams); i++) {
+		for (unsigned int j = 0U; j < BROADCAST_ENQUEUE_COUNT; j++) {
+			struct audio_test_stream *test_stream = &broadcast_source_streams[i];
+
+			test_stream->tx_active = true;
+			stream_sent_cb(&test_stream->stream.bap_stream);
+		}
+	}
+
+	/* Wait for other devices to have received data */
+	backchannel_sync_wait_any();
+
+	/* Wait for other devices to let us know when we can stop the source */
+	backchannel_sync_wait_any();
+
+	test_broadcast_source_stop(source);
+
+	test_broadcast_source_delete(source);
+	source = NULL;
+
+	err = stop_extended_adv(adv);
+	if (err != 0) {
+		FAIL("Unable to stop extended advertising: %d\n", err);
+		return;
+	}
+	adv = NULL;
+
+	PASS("Broadcast source encrypted passed\n");
+}
+
 static const struct bst_test_instance test_broadcast_source[] = {
 	{
 		.test_id = "broadcast_source",
 		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
-		.test_main_f = test_main
+		.test_main_f = test_main,
 	},
-	BSTEST_END_MARKER
+	{
+		.test_id = "broadcast_source_encrypted",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_main_encrypted,
+	},
+	BSTEST_END_MARKER,
 };
 
 struct bst_test_list *test_broadcast_source_install(struct bst_test_list *tests)

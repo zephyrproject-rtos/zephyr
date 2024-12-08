@@ -57,7 +57,7 @@ static int can_nrf_get_core_clock(const struct device *dev, uint32_t *rate)
 	return clock_control_get_rate(config->clock, NULL, rate);
 }
 
-static const struct can_driver_api can_nrf_api = {
+static DEVICE_API(can, can_nrf_api) = {
 	.get_capabilities = can_mcan_get_capabilities,
 	.start = can_mcan_start,
 	.stop = can_mcan_stop,

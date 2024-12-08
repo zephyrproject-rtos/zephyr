@@ -2,7 +2,9 @@ sample:
   description: posix env sample
   name: posix env
 common:
-  tags: posix env
+  tags:
+    - posix
+    - env
   platform_exclude:
     - native_posix
     - native_posix/native/64
@@ -14,6 +16,6 @@ common:
     regex:
       - "BOARD=.*"
       - "BUILD_VERSION=.*"
-      - "ALERT=.*"
+      - "ALERT="
 tests:
   sample.posix.env: {}

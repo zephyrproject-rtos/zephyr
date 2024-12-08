@@ -71,6 +71,8 @@ Contributor change requests or approval on pull requests are not counted with
 respect to accepting and merging a pull request. However, Contributors comments
 and requested changes should still be considered by the pull request author.
 
+.. _collaborator:
+
 Collaborator
 ++++++++++++
 
@@ -104,6 +106,9 @@ assignee to advance the review process and resolve any disagreements.
 Collaborator approval of pull requests are counted toward the minimum required
 approvals needed to merge a PR. Other criteria for merging may apply.
 
+
+.. _maintainer:
+
 Maintainer
 ++++++++++
 
@@ -128,7 +133,9 @@ in addition to those listed for Contributors and Collaborators:
 
 Contributors or Collaborators are promoted to the Maintainer role by adding the
 GitHub user name to one or more ``maintainers`` sections of the
-:ref:`maintainers_file` in the Zephyr repository.
+:ref:`maintainers_file` in the Zephyr repository. Candidates who are neither
+Contributors nor Collaborators must be approved by the TSC before they can
+assume the role of Maintainer.
 
 Maintainer approval of pull requests are counted toward the minimum
 required approvals needed to merge a PR. Other criteria for merging may apply.
@@ -285,9 +292,6 @@ MAINTAINERS File
 
 Generic guidelines for deciding and filling in the Maintainers' list
 
-* The :zephyr_file:`MAINTAINERS.yml` file shall replace the
-  :zephyr_file:`CODEOWNERS` file and will be used for both setting assignees and
-  reviewers.
 * We should keep the granularity of code maintainership at a manageable level
 * We should be looking for maintainers for areas of code that
   are orphaned (i.e. without an explicit maintainer)
@@ -381,15 +385,13 @@ Merge Criteria
   most of the conditions listed above.
 * All required checks are passing:
 
-  * Codeowners
   * Device Tree
   * Documentation
-  * Gitlint
+  * Code linters (Gitlint, Pylint, Ruff, Sphinx, etc.)
   * Identity/Emails
   * Kconfig
   * License checks
   * Checkpatch (Coding Style)
-  * Pylint
   * Integration Tests (Via twister) on emulation/simulation platforms
   * Simulated Bluetooth Tests
 

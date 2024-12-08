@@ -44,5 +44,14 @@ config EXT2_DISK_STARTING_SECTOR
 	  The current Ext2 implementation does not support GUID Partition Table. The starting sector
 	  of the file system must be specified by this option.
 
+config EXT2_SUPERBLOCK_ALIGNMENT
+	int "Ext2 superblock alignment"
+	default 1
+	help
+	  Some SD host controllers require alignment of their data buffers
+	  in order for DMA to work correctly. Devices should change default of
+	  this value if they require alignment. This represents the alignment
+	  of struct ext2_disk_superblock in bytes.
+
 endmenu
 endif

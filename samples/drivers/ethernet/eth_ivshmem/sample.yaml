@@ -3,5 +3,7 @@ sample:
 tests:
   sample.drivers.ethernet.eth_ivshmem:
     platform_allow: qemu_cortex_a53
-    tags: drivers ethernet
+    tags:
+      - drivers
+      - ethernet
     build_only: true

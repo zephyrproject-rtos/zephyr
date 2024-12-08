@@ -1,0 +1,7 @@
+common:
+  tags: cmake
+  build_only: true
+  platform_allow: native_sim
+tests:
+  buildsystem.module.yaml:
+    sysbuild: false

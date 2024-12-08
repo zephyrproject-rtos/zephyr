@@ -6,21 +6,24 @@
 
 #ifdef CONFIG_MULTITHREADING
 
+#include <stdio.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/mutex.h>
 #include <zephyr/logging/log.h>
-#include <../lib/src/c/inc/internal/thread.h>
 
 #ifndef CONFIG_USERSPACE
 #define ARCMWDT_DYN_LOCK_SZ	(sizeof(struct k_mutex))
-#define ARCMWDT_MAX_DYN_LOCKS	10
+/* The library wants 2 locks per available FILE entry, and then some more */
+#define ARCMWDT_MAX_DYN_LOCKS	(FOPEN_MAX * 2 + 5)
 
 K_MEM_SLAB_DEFINE(z_arcmwdt_lock_slab, ARCMWDT_DYN_LOCK_SZ, ARCMWDT_MAX_DYN_LOCKS, sizeof(void *));
 #endif /* !CONFIG_USERSPACE */
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
+
+typedef void *_lock_t;
 
 void _mwmutex_create(_lock_t *mutex_ptr)
 {

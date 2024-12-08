@@ -1,5 +1,6 @@
 board:
   name: bcm958402m2
+  full_name: BCM958402M2 (Cortex-M7)
   vendor: brcm
   socs:
   - name: bcm58402

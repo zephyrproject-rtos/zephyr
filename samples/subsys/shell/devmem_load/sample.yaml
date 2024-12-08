@@ -10,7 +10,7 @@ tests:
   sample.devmem_load.polled:
     integration_platforms:
       - native_sim
-    extra_args: OVERLAY_CONFIG="prj_poll.conf"
+    extra_args: CONF_FILE="prj_poll.conf"
   sample.devmem_load.uart.interrupt:
     integration_platforms:
       - frdm_k64f

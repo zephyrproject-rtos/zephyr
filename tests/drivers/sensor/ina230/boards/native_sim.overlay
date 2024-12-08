@@ -15,4 +15,12 @@
 		current-lsb-microamps = <1000>;
 		status = "okay";
 	};
+
+	ina236_default_test: ina236@41 {
+		compatible = "ti,ina236";
+		reg = <0x41>;
+		rshunt-micro-ohms = <2000>;
+		current-lsb-microamps = <1000>;
+		status = "okay";
+	};
 };

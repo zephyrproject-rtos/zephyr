@@ -1,5 +1,6 @@
 board:
   name: rpi_4b
+  full_name: Raspberry Pi 4 Model B (Cortex-A72)
   vendor: raspberrypi
   socs:
   - name: bcm2711

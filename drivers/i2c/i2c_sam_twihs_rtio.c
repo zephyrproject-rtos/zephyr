@@ -164,8 +164,6 @@ static void read_msg_start(Twihs *const twihs, const uint32_t len, const uint8_t
 
 	/* Start the transfer by sending START condition */
 	twihs->TWIHS_CR = TWIHS_CR_START | twihs_cr_stop;
-
-
 }
 
 static void i2c_sam_twihs_complete(const struct device *dev, int status);
@@ -189,11 +187,11 @@ static void i2c_sam_twihs_start(const struct device *dev)
 
 	switch (sqe->op) {
 	case RTIO_OP_RX:
-		read_msg_start(twihs, sqe->buf_len, dt_spec->addr);
+		read_msg_start(twihs, sqe->rx.buf_len, dt_spec->addr);
 		break;
 	case RTIO_OP_TX:
 		dev_data->buf_idx = 1;
-		write_msg_start(twihs, sqe->buf, 0, dt_spec->addr);
+		write_msg_start(twihs, sqe->tx.buf, 0, dt_spec->addr);
 		break;
 	default:
 		LOG_ERR("Invalid op code %d for submission %p\n", sqe->op, (void *)sqe);
@@ -245,10 +243,10 @@ static void i2c_sam_twihs_isr(const struct device *dev)
 
 	/* Byte received */
 	if (isr_status & TWIHS_SR_RXRDY) {
-		sqe->buf[dev_data->buf_idx] = twihs->TWIHS_RHR;
+		sqe->rx.buf[dev_data->buf_idx] = twihs->TWIHS_RHR;
 		dev_data->buf_idx += 1;
 
-		if (dev_data->buf_idx == sqe->buf_len - 1U) {
+		if (dev_data->buf_idx == sqe->rx.buf_len - 1U) {
 			/* Send STOP condition */
 			twihs->TWIHS_CR = TWIHS_CR_STOP;
 		}
@@ -256,7 +254,7 @@ static void i2c_sam_twihs_isr(const struct device *dev)
 
 	/* Byte sent */
 	if (isr_status & TWIHS_SR_TXRDY) {
-		if (dev_data->buf_idx == sqe->buf_len) {
+		if (dev_data->buf_idx == sqe->tx.buf_len) {
 			if (sqe->iodev_flags & RTIO_IODEV_I2C_STOP) {
 				/* Send STOP condition */
 				twihs->TWIHS_CR = TWIHS_CR_STOP;
@@ -268,7 +266,7 @@ static void i2c_sam_twihs_isr(const struct device *dev)
 				return;
 			}
 		} else {
-			twihs->TWIHS_THR = sqe->buf[dev_data->buf_idx++];
+			twihs->TWIHS_THR = sqe->tx.buf[dev_data->buf_idx++];
 		}
 	}
 

@@ -243,9 +243,41 @@ uint8_t __soc_ram_code get_irq(void *arg)
 
 void soc_interrupt_init(void)
 {
+#ifdef CONFIG_ZTEST
+	/*
+	 * After flashed EC image, we needed to manually press the reset button
+	 * on it8xxx2_evb, then run the test. Now, without pressing the button,
+	 * we can disable debug mode and trigger a watchdog hard reset then
+	 * run tests.
+	 */
+	struct wdt_it8xxx2_regs *const wdt_regs = WDT_IT8XXX2_REGS_BASE;
+	struct gctrl_it8xxx2_regs *const gctrl_regs = GCTRL_IT8XXX2_REGS_BASE;
+
+	if (gctrl_regs->GCTRL_DBGROS & IT8XXX2_GCTRL_SMB_DBGR) {
+		/* Disable debug mode through i2c */
+		IT8XXX2_SMB_SLVISELR |= BIT(4);
+		/* Enable ETWD reset */
+		wdt_regs->ETWCFG = 0;
+		wdt_regs->ET1PSR = IT8XXX2_WDT_ETPS_1P024_KHZ;
+		wdt_regs->ETWCFG = (IT8XXX2_WDT_EWDKEYEN | IT8XXX2_WDT_EWDSRC);
+		/* Enable ETWD hardware reset */
+		gctrl_regs->GCTRL_ETWDUARTCR |= IT8XXX2_GCTRL_ETWD_HW_RST_EN;
+		/* Trigger ETWD reset */
+		wdt_regs->EWDKEYR = 0;
+
+		/* Spin and wait for reboot */
+		while (1)
+			;
+	} else {
+		/* Disable ETWD hardware reset */
+		gctrl_regs->GCTRL_ETWDUARTCR &= ~IT8XXX2_GCTRL_ETWD_HW_RST_EN;
+	}
+#endif
+
 	/* Ensure interrupts of soc are disabled at default */
-	for (int i = 0; i < ARRAY_SIZE(reg_enable); i++)
+	for (int i = 0; i < ARRAY_SIZE(reg_enable); i++) {
 		*reg_enable[i] = 0;
+	}
 
 	/* Enable M-mode external interrupt */
 	csr_set(mie, MIP_MEIP);

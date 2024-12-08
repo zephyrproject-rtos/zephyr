@@ -267,6 +267,12 @@ static void map_memory(const uint32_t start, const uint32_t end,
 static void xtensa_init_page_tables(void)
 {
 	volatile uint8_t entry;
+	static bool already_inited;
+
+	if (already_inited) {
+		return;
+	}
+	already_inited = true;
 
 	init_page_table(xtensa_kernel_ptables, XTENSA_L1_PAGE_TABLE_ENTRIES);
 	atomic_set_bit(l1_page_table_track, 0);
@@ -305,17 +311,16 @@ __weak void arch_xtensa_mmu_post_init(bool is_core0)
 
 void xtensa_mmu_init(void)
 {
-	if (_current_cpu->id == 0) {
-		/* This is normally done via arch_kernel_init() inside z_cstart().
-		 * However, before that is called, we go through the sys_init of
-		 * INIT_LEVEL_EARLY, which is going to result in TLB misses.
-		 * So setup whatever necessary so the exception handler can work
-		 * properly.
-		 */
-		xtensa_init_page_tables();
-	}
+	xtensa_init_page_tables();
 
 	xtensa_init_paging(xtensa_kernel_ptables);
+
+	/*
+	 * This is used to determine whether we are faulting inside double
+	 * exception if this is not zero. Sometimes SoC starts with this not
+	 * being set to zero. So clear it during boot.
+	 */
+	XTENSA_WSR(ZSR_DEPC_SAVE_STR, 0);
 
 	arch_xtensa_mmu_post_init(_current_cpu->id == 0);
 }
@@ -1081,7 +1086,7 @@ static int mem_buffer_validate(const void *addr, size_t size, int write, int rin
 	int ret = 0;
 	uint8_t *virt;
 	size_t aligned_size;
-	const struct k_thread *thread = _current;
+	const struct k_thread *thread = arch_current_thread();
 	uint32_t *ptables = thread_page_tables_get(thread);
 
 	/* addr/size arbitrary, fix this up into an aligned region */

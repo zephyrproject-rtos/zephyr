@@ -22,6 +22,7 @@
 		zephyr,flash = &flash0;
 		zephyr,ccm = &ccm0;
 		zephyr,display = &ltdc;
+		zephyr,touch = &stmpe811;
 	};
 
 	sdram2: sdram@d0000000 {
@@ -60,8 +61,6 @@
 	lvgl_pointer {
 		compatible = "zephyr,lvgl-pointer-input";
 		input = <&stmpe811>;
-		invert-x;
-		invert-y;
 	};
 
 	mipi_dbi {
@@ -176,6 +175,8 @@
 		touch-detect-delay-us = <5000>;
 		touch-average-control = <8>;
 		tracking-index = <127>;
+		inverted-x;
+		inverted-y;
 	};
 };
 

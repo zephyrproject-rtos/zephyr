@@ -22,7 +22,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/types.h>
 
-#include "shell/bt.h"
+#include "host/shell/bt.h"
 
 static struct bt_vcp_vol_ctlr *vcp_vol_ctlr;
 static struct bt_vcp_included vcp_included;
@@ -163,7 +163,7 @@ static void vcs_aics_set_manual_mode_cb(struct bt_aics *inst, int err)
 			    "Set manual mode failed (%d) for inst %p",
 			    err, inst);
 	} else {
-		shell_print(ctx_shell, "Manuel mode set for inst %p", inst);
+		shell_print(ctx_shell, "Manual mode set for inst %p", inst);
 	}
 }
 

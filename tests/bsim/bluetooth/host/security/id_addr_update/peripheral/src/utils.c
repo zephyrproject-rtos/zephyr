@@ -153,8 +153,7 @@ void advertise_connectable(int id)
 	param.id = id;
 	param.interval_min = 0x0020;
 	param.interval_max = 0x4000;
-	param.options |= BT_LE_ADV_OPT_ONE_TIME;
-	param.options |= BT_LE_ADV_OPT_CONNECTABLE;
+	param.options |= BT_LE_ADV_OPT_CONN;
 
 	err = bt_le_adv_start(&param, NULL, 0, NULL, 0);
 	ASSERT(!err, "Advertising failed to start (err %d)\n", err);

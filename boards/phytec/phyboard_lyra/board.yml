@@ -1,5 +1,6 @@
 board:
   name: phyboard_lyra
+  full_name: phyBOARD-Lyra AM62x A53 Core
   vendor: phytec
   socs:
   - name: am6234

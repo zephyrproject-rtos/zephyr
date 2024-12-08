@@ -1,7 +1,8 @@
-.. _grove_light:
+.. zephyr:code-sample:: grove_light
+   :name: Grove Light Sensor
+   :relevant-api: sensor_interface
 
-Grove Light Sensor
-##################
+   Get illuminance data from a Grove Light Sensor.
 
 Overview
 ********

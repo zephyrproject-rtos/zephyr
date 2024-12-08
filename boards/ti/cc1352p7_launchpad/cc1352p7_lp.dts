@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2024 Alexandre Bailon
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <ti/cc1352r7.dtsi>
+#include "../common/launchxl.dtsi"
+#include "../common/launchxl-flash-p7.dtsi"
+#include "../common/launchxl_sky13317.dtsi"
+
+/ {
+	model = "TI CC1352P7 LaunchPad";
+	compatible = "ti,lp-cc1352p7";
+};

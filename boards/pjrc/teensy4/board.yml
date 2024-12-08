@@ -1,9 +1,11 @@
 boards:
   - name: teensy40
+    full_name: Teensy 4.0
     vendor: pjrc
     socs:
       - name: mimxrt1062
   - name: teensy41
+    full_name: Teensy 4.1
     vendor: pjrc
     socs:
       - name: mimxrt1062

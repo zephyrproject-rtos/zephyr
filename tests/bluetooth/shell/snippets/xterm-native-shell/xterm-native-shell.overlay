@@ -14,6 +14,11 @@
 	/delete-property/ pinctrl-0;
 	/delete-property/ pinctrl-1;
 	/delete-property/ pinctrl-names;
+
+	bt_hci_uart: bt_hci_uart {
+		compatible = "zephyr,bt-hci-uart";
+		status = "disabled";
+	};
 };
 
 &uart0 {

@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT gaisler_spimctrl
 
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi/rtio.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(spi_spimctrl);
@@ -214,11 +215,14 @@ static int init(const struct device *dev)
 	return 0;
 }
 
-static struct spi_driver_api api = {
+static DEVICE_API(spi, api) = {
 	.transceive             = transceive,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async       = transceive_async,
 #endif /* CONFIG_SPI_ASYNC */
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
+#endif
 	.release                = release,
 };
 
@@ -232,7 +236,7 @@ static struct spi_driver_api api = {
 		SPI_CONTEXT_INIT_LOCK(data_##n, ctx),                   \
 		SPI_CONTEXT_INIT_SYNC(data_##n, ctx),                   \
 	};                                                              \
-	DEVICE_DT_INST_DEFINE(n,                                        \
+	SPI_DEVICE_DT_INST_DEFINE(n,                                        \
 			init,                                           \
 			NULL,                                           \
 			&data_##n,                                      \

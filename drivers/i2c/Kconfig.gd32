@@ -5,5 +5,6 @@ config I2C_GD32
 	bool "GigaDevice GD32 I2C driver"
 	default y
 	depends on DT_HAS_GD_GD32_I2C_ENABLED
+	select PINCTRL
 	help
 	  Enables GigaDevice GD32 I2C driver

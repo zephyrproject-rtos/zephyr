@@ -260,7 +260,7 @@ static int ipm_power_ctrl(const struct device *dev,
 }
 #endif
 
-static const struct ipm_driver_api ipm_funcs = {
+static DEVICE_API(ipm, ipm_funcs) = {
 	.send = ipm_sedi_send,
 	.register_callback = ipm_sedi_register_callback,
 	.max_data_size_get = ipm_sedi_get_max_data_size,

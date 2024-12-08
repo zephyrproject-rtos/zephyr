@@ -13,6 +13,7 @@ supported:
   - spi
   - gpio
   - adc
+  - usbd
 testing:
   ignore_tags:
     - net

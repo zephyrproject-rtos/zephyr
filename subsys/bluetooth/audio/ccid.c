@@ -2,35 +2,20 @@
 
 /*
  * Copyright (c) 2020 Bose Corporation
- * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <errno.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/types.h>
 
 #include <zephyr/bluetooth/att.h>
+#include <zephyr/bluetooth/audio/ccid.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/sys/__assert.h>
-
-#include "ccid_internal.h"
-
-uint8_t bt_ccid_get_value(void)
-{
-	static uint8_t ccid_value;
-
-	/* By spec, the CCID can take all values up to and including 0xFF.
-	 * But since this is a value we provide, we do not have to use all of
-	 * them.  254 CCID values on a device should be plenty, the last one
-	 * can be used to prevent wraparound.
-	 */
-	__ASSERT(ccid_value != UINT8_MAX,
-		 "Cannot allocate any more control control IDs");
-
-	return ccid_value++;
-}
 
 struct ccid_search_param {
 	const struct bt_gatt_attr *attr;
@@ -68,4 +53,27 @@ const struct bt_gatt_attr *bt_ccid_find_attr(uint8_t ccid)
 				  BT_UUID_CCID, NULL, 0, ccid_attr_cb, &search_param);
 
 	return search_param.attr;
+}
+
+int bt_ccid_alloc_value(void)
+{
+	static uint8_t next_ccid_value;
+	const uint8_t tmp = next_ccid_value;
+
+	/* Verify that the CCID is unused and increment until we reach an unused value or until we
+	 * reach our starting point
+	 * This is not a perfect check as there may be services that are not registered that have
+	 * allocated a CCID.
+	 * Implementing a perfect solution would require a alloc and free API where we need to
+	 * keep track of all allocated CCIDs, which requires additional memory for something that's
+	 * very unlikely to be an issue.
+	 */
+	while (bt_ccid_find_attr(next_ccid_value) != NULL) {
+		next_ccid_value++;
+		if (tmp == next_ccid_value) {
+			return -ENOMEM;
+		}
+	}
+
+	return next_ccid_value++;
 }

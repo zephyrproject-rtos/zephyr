@@ -923,6 +923,9 @@ static const struct i2c_driver_api iproc_i2c_driver_api = {
 	.target_register = iproc_i2c_target_register,
 	.target_unregister = iproc_i2c_target_unregister,
 #endif
+#ifdef CONFIG_I2C_RTIO
+	.iodev_submit = i2c_iodev_submit_fallback,
+#endif
 };
 
 #define IPROC_I2C_DEVICE_INIT(n)                                                                   \

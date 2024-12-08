@@ -23,7 +23,7 @@
 #ifndef ZEPHYR_INCLUDE_NET_IEEE802154_IE_H_
 #define ZEPHYR_INCLUDE_NET_IEEE802154_IE_H_
 
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/byteorder.h>
 
 /**

@@ -1,0 +1,33 @@
+# STMicroelectronics STM32WB0 MCU series
+
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_STM32WB0X
+	bool
+	select SOC_FAMILY_STM32
+
+config SOC_SERIES
+	default "stm32wb0x" if SOC_SERIES_STM32WB0X
+
+config SOC_STM32WB05XX
+	bool
+	select SOC_SERIES_STM32WB0X
+
+config SOC_STM32WB06XX
+	bool
+	select SOC_SERIES_STM32WB0X
+
+config SOC_STM32WB07XX
+	bool
+	select SOC_SERIES_STM32WB0X
+
+config SOC_STM32WB09XX
+	bool
+	select SOC_SERIES_STM32WB0X
+
+config SOC
+	default "stm32wb05" if SOC_STM32WB05XX
+	default "stm32wb06" if SOC_STM32WB06XX
+	default "stm32wb07" if SOC_STM32WB07XX
+	default "stm32wb09" if SOC_STM32WB09XX

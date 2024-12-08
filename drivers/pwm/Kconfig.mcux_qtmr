@@ -5,6 +5,7 @@ config PWM_MCUX_QTMR
 	bool "MCUX QMTR PWM driver"
 	default y
 	depends on DT_HAS_NXP_QTMR_PWM_ENABLED
-	depends on CLOCK_CONTROL && PINCTRL
+	depends on CLOCK_CONTROL
+	select PINCTRL
 	help
 	  Enable QTMR based pwm driver.

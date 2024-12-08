@@ -16,11 +16,8 @@ supported:
   - i2c
   - clock_control
   - ble
+  - usbd
 testing:
   ignore_tags:
     - net
 vendor: ambiq
-# Provisional hack to prevent tests being run in this board, as it fails in many test & samples:
-twister: false
-# Once https://github.com/zephyrproject-rtos/zephyr/issues/74212, 73443 & 72775 are fixed
-# this should be removed

@@ -14,6 +14,8 @@
  * @brief HTTP server API
  *
  * @defgroup http_server HTTP server API
+ * @since 3.7
+ * @version 0.1.0
  * @ingroup networking
  * @{
  */
@@ -23,7 +25,9 @@
 #include <zephyr/kernel.h>
 #include <zephyr/net/http/parser.h>
 #include <zephyr/net/http/hpack.h>
+#include <zephyr/net/http/status.h>
 #include <zephyr/net/socket.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,17 +40,22 @@ extern "C" {
 #define HTTP_SERVER_MAX_STREAMS          CONFIG_HTTP_SERVER_MAX_STREAMS
 #define HTTP_SERVER_MAX_CONTENT_TYPE_LEN CONFIG_HTTP_SERVER_MAX_CONTENT_TYPE_LENGTH
 #define HTTP_SERVER_MAX_URL_LENGTH       CONFIG_HTTP_SERVER_MAX_URL_LENGTH
+#define HTTP_SERVER_MAX_HEADER_LEN       CONFIG_HTTP_SERVER_MAX_HEADER_LEN
 #else
 #define HTTP_SERVER_CLIENT_BUFFER_SIZE   0
 #define HTTP_SERVER_MAX_STREAMS          0
 #define HTTP_SERVER_MAX_CONTENT_TYPE_LEN 0
 #define HTTP_SERVER_MAX_URL_LENGTH       0
+#define HTTP_SERVER_MAX_HEADER_LEN       0
 #endif
 
-/* Maximum header field name / value length. This is only used to detect Upgrade and
- * websocket header fields and values in the http1 server so the value is quite short.
- */
-#define HTTP_SERVER_MAX_HEADER_LEN 32
+#if defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)
+#define HTTP_SERVER_CAPTURE_HEADER_BUFFER_SIZE CONFIG_HTTP_SERVER_CAPTURE_HEADER_BUFFER_SIZE
+#define HTTP_SERVER_CAPTURE_HEADER_COUNT       CONFIG_HTTP_SERVER_CAPTURE_HEADER_COUNT
+#else
+#define HTTP_SERVER_CAPTURE_HEADER_BUFFER_SIZE 0
+#define HTTP_SERVER_CAPTURE_HEADER_COUNT       0
+#endif
 
 #define HTTP2_PREFACE "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
 
@@ -58,6 +67,9 @@ extern "C" {
 enum http_resource_type {
 	/** Static resource, cannot be modified on runtime. */
 	HTTP_RESOURCE_TYPE_STATIC,
+
+	/** serves static gzipped files from a filesystem */
+	HTTP_RESOURCE_TYPE_STATIC_FS,
 
 	/** Dynamic resource, server interacts with the application via registered
 	 *  @ref http_resource_dynamic_cb_t.
@@ -115,6 +127,37 @@ struct http_resource_detail_static {
 BUILD_ASSERT(offsetof(struct http_resource_detail_static, common) == 0);
 /** @endcond */
 
+/**
+ * @brief Representation of a static filesystem server resource.
+ */
+struct http_resource_detail_static_fs {
+	/** Common resource details. */
+	struct http_resource_detail common;
+
+	/** Path in the local filesystem */
+	const char *fs_path;
+};
+
+/** @cond INTERNAL_HIDDEN */
+/* Make sure that the common is the first in the struct. */
+BUILD_ASSERT(offsetof(struct http_resource_detail_static_fs, common) == 0);
+/** @endcond */
+
+struct http_content_type {
+	const char *extension;
+	size_t extension_len;
+	const char *content_type;
+};
+
+#define HTTP_SERVER_CONTENT_TYPE(_extension, _content_type)                                        \
+	const STRUCT_SECTION_ITERABLE(http_content_type, _extension) = {                           \
+		.extension = STRINGIFY(_extension),                                                \
+		.extension_len = sizeof(STRINGIFY(_extension)) - 1,                                \
+		.content_type = _content_type,                                                     \
+	};
+
+#define HTTP_SERVER_CONTENT_TYPE_FOREACH(_it) STRUCT_SECTION_FOREACH(http_content_type, _it)
+
 struct http_client_ctx;
 
 /** Indicates the status of the currently processed piece of data.  */
@@ -127,6 +170,38 @@ enum http_data_status {
 	HTTP_SERVER_DATA_FINAL = 1,
 };
 
+/** @brief Status of captured request headers */
+enum http_header_status {
+	HTTP_HEADER_STATUS_OK,      /**< All available headers were successfully captured. */
+	HTTP_HEADER_STATUS_DROPPED, /**< One or more headers were dropped due to lack of space. */
+	HTTP_HEADER_STATUS_NONE,    /**< No header status is available. */
+};
+
+/** @brief HTTP header representation */
+struct http_header {
+	const char *name;  /**< Pointer to header name NULL-terminated string. */
+	const char *value; /**< Pointer to header value NULL-terminated string. */
+};
+
+/** @brief HTTP request context */
+struct http_request_ctx {
+	uint8_t *data;                          /**< HTTP request data */
+	size_t data_len;                        /**< Length of HTTP request data */
+	struct http_header *headers;            /**< Array of HTTP request headers */
+	size_t header_count;                    /**< Array length of HTTP request headers */
+	enum http_header_status headers_status; /**< Status of HTTP request headers */
+};
+
+/** @brief HTTP response context */
+struct http_response_ctx {
+	enum http_status status;           /**< HTTP status code to include in response */
+	const struct http_header *headers; /**< Array of HTTP headers */
+	size_t header_count;               /**< Length of headers array */
+	const uint8_t *body;               /**< Pointer to body data */
+	size_t body_len;                   /**< Length of body data */
+	bool final_chunk; /**< Flag set to true when the application has no more data to send */
+};
+
 /**
  * @typedef http_resource_dynamic_cb_t
  * @brief Callback used when data is received. Data to be sent to client
@@ -134,19 +209,17 @@ enum http_data_status {
  *
  * @param client HTTP context information for this client connection.
  * @param status HTTP data status, indicate whether more data is expected or not.
- * @param data_buffer Data received.
- * @param data_len Amount of data received.
+ * @param request_ctx Request context structure containing HTTP request data that was received.
+ * @param response_ctx Response context structure for application to populate with response data.
  * @param user_data User specified data.
  *
- * @return >0 amount of data to be sent to client, let server to call this
- *            function again when new data is received.
- *          0 nothing to sent to client, close the connection
+ * @return 0 success, server can send any response data provided in the response_ctx.
  *         <0 error, close the connection.
  */
 typedef int (*http_resource_dynamic_cb_t)(struct http_client_ctx *client,
 					  enum http_data_status status,
-					  uint8_t *data_buffer,
-					  size_t data_len,
+					  const struct http_request_ctx *request_ctx,
+					  struct http_response_ctx *response_ctx,
 					  void *user_data);
 
 /**
@@ -160,14 +233,6 @@ struct http_resource_detail_dynamic {
 	 *  application.
 	 */
 	http_resource_dynamic_cb_t cb;
-
-	/** Data buffer used to exchanged data between server and the,
-	 *  application.
-	 */
-	uint8_t *data_buffer;
-
-	/** Length of the data in the data buffer. */
-	size_t data_buffer_len;
 
 	/** A pointer to the client currently processing resource, used to
 	 *  prevent concurrent access to the resource from multiple clients.
@@ -230,14 +295,14 @@ BUILD_ASSERT(offsetof(struct http_resource_detail_websocket, common) == 0);
 
 /** @cond INTERNAL_HIDDEN */
 
-enum http_stream_state {
-	HTTP_SERVER_STREAM_IDLE,
-	HTTP_SERVER_STREAM_RESERVED_LOCAL,
-	HTTP_SERVER_STREAM_RESERVED_REMOTE,
-	HTTP_SERVER_STREAM_OPEN,
-	HTTP_SERVER_STREAM_HALF_CLOSED_LOCAL,
-	HTTP_SERVER_STREAM_HALF_CLOSED_REMOTE,
-	HTTP_SERVER_STREAM_CLOSED
+enum http2_stream_state {
+	HTTP2_STREAM_IDLE,
+	HTTP2_STREAM_RESERVED_LOCAL,
+	HTTP2_STREAM_RESERVED_REMOTE,
+	HTTP2_STREAM_OPEN,
+	HTTP2_STREAM_HALF_CLOSED_LOCAL,
+	HTTP2_STREAM_HALF_CLOSED_REMOTE,
+	HTTP2_STREAM_CLOSED
 };
 
 enum http_server_state {
@@ -253,6 +318,7 @@ enum http_server_state {
 	HTTP_SERVER_FRAME_PING_STATE,
 	HTTP_SERVER_FRAME_RST_STREAM_STATE,
 	HTTP_SERVER_FRAME_GOAWAY_STATE,
+	HTTP_SERVER_FRAME_PADDING_STATE,
 	HTTP_SERVER_DONE_STATE,
 };
 
@@ -271,19 +337,59 @@ enum http1_parser_state {
 /** @endcond */
 
 /** @brief HTTP/2 stream representation. */
-struct http_stream_ctx {
+struct http2_stream_ctx {
 	int stream_id; /**< Stream identifier. */
-	enum http_stream_state stream_state; /**< Stream state. */
+	enum http2_stream_state stream_state; /**< Stream state. */
 	int window_size; /**< Stream-level window size. */
+
+	/** Currently processed resource detail. */
+	struct http_resource_detail *current_detail;
+
+	/** Flag indicating that headers were sent in the reply. */
+	bool headers_sent : 1;
+
+	/** Flag indicating that END_STREAM flag was sent. */
+	bool end_stream_sent : 1;
 };
 
 /** @brief HTTP/2 frame representation. */
-struct http_frame {
+struct http2_frame {
 	uint32_t length; /**< Frame payload length. */
 	uint32_t stream_identifier; /**< Stream ID the frame belongs to. */
 	uint8_t type; /**< Frame type. */
 	uint8_t flags; /**< Frame flags. */
-	uint8_t *payload; /**< A pointer to the frame payload. */
+	uint8_t padding_len; /**< Frame padding length. */
+};
+
+/** @cond INTERNAL_HIDDEN */
+/** @brief Context for capturing HTTP headers */
+struct http_header_capture_ctx {
+	/** Buffer for HTTP headers captured for application use */
+	unsigned char buffer[HTTP_SERVER_CAPTURE_HEADER_BUFFER_SIZE];
+
+	/** Descriptor of each captured HTTP header */
+	struct http_header headers[HTTP_SERVER_CAPTURE_HEADER_COUNT];
+
+	/** Status of captured headers */
+	enum http_header_status status;
+
+	/** Number of headers captured */
+	size_t count;
+
+	/** Current position in buffer */
+	size_t cursor;
+
+	/** The HTTP2 stream associated with the current headers */
+	struct http2_stream_ctx *current_stream;
+
+	/** The next HTTP header value should be stored */
+	bool store_next_value;
+};
+/** @endcond */
+
+/** @brief HTTP header name representation */
+struct http_header_name {
+	const char *name; /**< Pointer to header name NULL-terminated string. */
 };
 
 /**
@@ -309,22 +415,28 @@ struct http_client_ctx {
 	enum http_server_state server_state;
 
 	/** Currently processed HTTP/2 frame. */
-	struct http_frame current_frame;
+	struct http2_frame current_frame;
 
 	/** Currently processed resource detail. */
 	struct http_resource_detail *current_detail;
+
+	/** Currently processed stream. */
+	struct http2_stream_ctx *current_stream;
 
 	/** HTTP/2 header parser context. */
 	struct http_hpack_header_buf header_field;
 
 	/** HTTP/2 streams context. */
-	struct http_stream_ctx streams[HTTP_SERVER_MAX_STREAMS];
+	struct http2_stream_ctx streams[HTTP_SERVER_MAX_STREAMS];
 
 	/** HTTP/1 parser configuration. */
 	struct http_parser_settings parser_settings;
 
 	/** HTTP/1 parser context. */
 	struct http_parser parser;
+
+	/** Header capture context */
+	struct http_header_capture_ctx header_capture_ctx;
 
 	/** Request URL. */
 	unsigned char url_buffer[HTTP_SERVER_MAX_URL_LENGTH];
@@ -359,11 +471,11 @@ struct http_client_ctx {
 	IF_ENABLED(CONFIG_WEBSOCKET, (uint8_t ws_sec_key[HTTP_SERVER_WS_MAX_SEC_KEY_LEN]));
 /** @endcond */
 
-	/** Flag indicating that headers were sent in the reply. */
-	bool headers_sent : 1;
-
 	/** Flag indicating that HTTP2 preface was sent. */
 	bool preface_sent : 1;
+
+	/** Flag indicating that HTTP1 headers were sent. */
+	bool http1_headers_sent : 1;
 
 	/** Flag indicating that upgrade header was present in the request. */
 	bool has_upgrade_header : 1;
@@ -376,7 +488,25 @@ struct http_client_ctx {
 
 	/** Flag indicating Websocket key is being processed. */
 	bool websocket_sec_key_next : 1;
+
+	/** The next frame on the stream is expectd to be a continuation frame. */
+	bool expect_continuation : 1;
 };
+
+/**
+ * @brief Register an HTTP request header to be captured by the server
+ *
+ * @param _id variable name for the header capture instance
+ * @param _header header to be captured, as literal string
+ */
+#define HTTP_SERVER_REGISTER_HEADER_CAPTURE(_id, _header)                                          \
+	BUILD_ASSERT(sizeof(_header) <= CONFIG_HTTP_SERVER_MAX_HEADER_LEN,                         \
+		     "Header is too long to be captured, try increasing "                          \
+		     "CONFIG_HTTP_SERVER_MAX_HEADER_LEN");                                         \
+	static const char *const _id##_str = _header;                                              \
+	static const STRUCT_SECTION_ITERABLE(http_header_name, _id) = {                            \
+		.name = _id##_str,                                                                 \
+	}
 
 /** @brief Start the HTTP2 server.
  *

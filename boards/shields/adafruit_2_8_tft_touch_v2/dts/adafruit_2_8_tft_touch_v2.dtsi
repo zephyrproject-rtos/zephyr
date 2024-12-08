@@ -9,6 +9,7 @@
 / {
 	chosen {
 		zephyr,display = &adafruit_2_8_tft_touch_v2_ili9340;
+		zephyr,touch = &ft5336_adafruit_2_8_tft_touch_v2;
 	};
 
 	lvgl_pointer {
@@ -57,6 +58,7 @@
 		spi-max-frequency = <24000000>;
 		mmc {
 			compatible = "zephyr,sdmmc-disk";
+			disk-name = "SD";
 			status = "okay";
 		};
 	};

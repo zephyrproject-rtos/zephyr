@@ -35,7 +35,9 @@ extern "C" {
  */
 typedef enum {
 	AUDIO_PCM_RATE_8K	= 8000,		/**< 8 kHz sample rate */
+	AUDIO_PCM_RATE_11P025K	= 11025,	/**< 11.025 kHz sample rate */
 	AUDIO_PCM_RATE_16K	= 16000,	/**< 16 kHz sample rate */
+	AUDIO_PCM_RATE_22P05K	= 22050,	/**< 22.05 kHz sample rate */
 	AUDIO_PCM_RATE_24K	= 24000,	/**< 24 kHz sample rate */
 	AUDIO_PCM_RATE_32K	= 32000,	/**< 32 kHz sample rate */
 	AUDIO_PCM_RATE_44P1K	= 44100,	/**< 44.1 kHz sample rate */
@@ -59,6 +61,10 @@ typedef enum {
  */
 typedef enum {
 	AUDIO_DAI_TYPE_I2S,	/**< I2S Interface */
+	AUDIO_DAI_TYPE_LEFT_JUSTIFIED,	/**< I2S Interface, left justified */
+	AUDIO_DAI_TYPE_RIGHT_JUSTIFIED,	/**< I2S Interface, right justified */
+	AUDIO_DAI_TYPE_PCMA,		/**< PCM Interface, variant A */
+	AUDIO_DAI_TYPE_PCMB,		/**< PCM Interface, variant B */
 	AUDIO_DAI_TYPE_INVALID,	/**< Other interfaces can be added here */
 } audio_dai_type_t;
 
@@ -68,6 +74,8 @@ typedef enum {
 typedef enum {
 	AUDIO_PROPERTY_OUTPUT_VOLUME,	/**< Output volume */
 	AUDIO_PROPERTY_OUTPUT_MUTE,	/**< Output mute/unmute */
+	AUDIO_PROPERTY_INPUT_VOLUME,	/**< Input volume */
+	AUDIO_PROPERTY_INPUT_MUTE	/**< Input mute/unmute */
 } audio_property_t;
 
 /**
@@ -83,6 +91,8 @@ typedef enum {
 	AUDIO_CHANNEL_REAR_CENTER,	/**< Rear center channel */
 	AUDIO_CHANNEL_SIDE_LEFT,	/**< Side left channel */
 	AUDIO_CHANNEL_SIDE_RIGHT,	/**< Side right channel */
+	AUDIO_CHANNEL_HEADPHONE_LEFT,   /**< Headphone left */
+	AUDIO_CHANNEL_HEADPHONE_RIGHT,  /**< Headphone right */
 	AUDIO_CHANNEL_ALL,		/**< All channels */
 } audio_channel_t;
 
@@ -96,6 +106,16 @@ typedef union {
 				/* Other DAI types go here */
 } audio_dai_cfg_t;
 
+/*
+ * DAI Route types
+ */
+typedef enum {
+	AUDIO_ROUTE_BYPASS,
+	AUDIO_ROUTE_PLAYBACK,
+	AUDIO_ROUTE_PLAYBACK_CAPTURE,
+	AUDIO_ROUTE_CAPTURE,
+} audio_route_t;
+
 /**
  * Codec configuration parameters
  */
@@ -103,13 +123,14 @@ struct audio_codec_cfg {
 	uint32_t		mclk_freq;	/**< MCLK input frequency in Hz */
 	audio_dai_type_t	dai_type;	/**< Digital interface type */
 	audio_dai_cfg_t		dai_cfg;	/**< DAI configuration info */
+	audio_route_t		dai_route;	/**< Codec route type */
 };
 
 /**
  * Codec property values
  */
 typedef union {
-	int	vol;	/**< Volume level in 0.5dB resolution */
+	int	vol;	/**< Volume level (codec-specific) */
 	bool	mute;	/**< Mute if @a true, unmute if @a false */
 } audio_property_value_t;
 
@@ -160,6 +181,8 @@ struct audio_codec_api {
 	int (*clear_errors)(const struct device *dev);
 	int (*register_error_callback)(const struct device *dev,
 			 audio_codec_error_callback_t cb);
+	int (*route_input)(const struct device *dev, audio_channel_t channel, uint32_t input);
+	int (*route_output)(const struct device *dev, audio_channel_t channel, uint32_t output);
 };
 /**
  * @endcond
@@ -304,6 +327,56 @@ static inline int audio_codec_register_error_callback(const struct device *dev,
 	}
 
 	return api->register_error_callback(dev, cb);
+}
+
+/**
+ * @brief Sets up signal routing for a given input channel.
+ *
+ * Some codecs can do input routing (multiplexing) from a chosen set of
+ * physical inputs. This function maps a given audio (stream) channel to
+ * a given physical input terminal.
+ *
+ * @param dev Pointer to the audio codec device
+ * @param channel The channel to map
+ * @param input The input terminal index, codec-specific
+ *
+ * @return 0 if successful, negative errno code if failure.
+ */
+static inline int audio_codec_route_input(const struct device *dev, audio_channel_t channel,
+					  uint32_t input)
+{
+	const struct audio_codec_api *api = (const struct audio_codec_api *)dev->api;
+
+	if (api->route_input == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->route_input(dev, channel, input);
+}
+
+/**
+ * @brief Sets up signal routing for a given output channel.
+ *
+ * Some codecs can do output routing (multiplexing) from a chosen set of
+ * physical output. This function maps a given audio (stream) channel to
+ * a given physical output terminal.
+ *
+ * @param dev Pointer to the audio codec device
+ * @param channel The channel to map
+ * @param output The output terminal index, codec-specific
+ *
+ * @return 0 if successful, negative errno code if failure.
+ */
+static inline int audio_codec_route_output(const struct device *dev, audio_channel_t channel,
+					   uint32_t output)
+{
+	const struct audio_codec_api *api = (const struct audio_codec_api *)dev->api;
+
+	if (api->route_output == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->route_output(dev, channel, output);
 }
 
 #ifdef __cplusplus

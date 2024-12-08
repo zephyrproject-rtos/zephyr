@@ -97,3 +97,25 @@ cp9314@6 {
 
 	cirrus,initial-switched-capacitor-mode = "2:1";
 };
+
+mpm54304@7 {
+	compatible = "mps,mpm54304";
+	reg = <0x7>;
+
+	BUCK1 {};
+	BUCK2 {};
+	BUCK3 {};
+	BUCK4 {};
+};
+
+npm2100@8 {
+	compatible = "nordic,npm2100";
+	reg = <0x8>;
+
+	regulators {
+		compatible = "nordic,npm2100-regulator";
+
+		BOOST {};
+		LDOSW {};
+	};
+};

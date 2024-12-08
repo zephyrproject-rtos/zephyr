@@ -27,11 +27,13 @@ config LIS2MDL_TRIGGER_NONE
 config LIS2MDL_TRIGGER_GLOBAL_THREAD
 	bool "Use global thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LIS2MDL),irq-gpios)
 	select LIS2MDL_TRIGGER
 
 config LIS2MDL_TRIGGER_OWN_THREAD
 	bool "Use own thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LIS2MDL),irq-gpios)
 	select LIS2MDL_TRIGGER
 
 endchoice # LIS2MDL_TRIGGER_MODE

@@ -1,4 +1,4 @@
-# Inspired by the the same configuration file available in the SystemView tool
+# Inspired by the same configuration file available in the SystemView tool
 
 Option    ReversePriority
 #
@@ -169,3 +169,5 @@ TaskState 0xBF 1=dummy, 2=Waiting, 4=New, 8=Terminated, 16=Suspended, 32=Termina
 161 pm_device_runtime_disable    dev=%I | Returns %u
 
 162 syscall                      name=%s
+
+163 named_event                   name=%s arg0=%u arg1=%u

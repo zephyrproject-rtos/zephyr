@@ -23,22 +23,6 @@ properties:
       and "dma-channels" are mutually exclusive, meaning you
       can't specify both properties as this will lead to a
       BUILD_ASSERT() failure.
-  hal-cfg-index:
-    type: int
-    description: |
-      Use this property to specify which HAL configuration
-      should be used. In the case of some SoCs (e.g: i.MX93),
-      there can be multiple eDMA variants, each of them having
-      different configurations (e.g: i.MX93 eDMA3 has 31 channels,
-      i.MX93 eDMA4 has 64 channels and both of them have slightly
-      different register layouts). To overcome this issue, the HAL
-      exposes an array of configurations called "edma_hal_configs".
-      To perform various operations, the HAL uses an eDMA configuration
-      which will tell it what register layout the IP has, the number of
-      channels, various flags and offsets. As such, if there's multiple
-      configurations available, the user will have to specify which
-      configuration to use through this property. If missing, the
-      configuration found at index 0 will be used.
   "#dma-cells":
     const: 2
 

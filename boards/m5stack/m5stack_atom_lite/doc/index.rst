@@ -1,7 +1,4 @@
-.. _m5stack_atom_lite:
-
-M5Stack ATOM Lite
-#################
+.. zephyr:board:: m5stack_atom_lite
 
 Overview
 ********
@@ -15,14 +12,6 @@ It features the following integrated components:
 - SK6812 RGB LED
 - Infrared LED
 - 1x Grove extension port
-
-
-.. figure:: img/m5stack_atom_lite.webp
-        :align: center
-        :alt: M5Stack ATOM Lite
-
-        M5Stack ATOM Lite
-
 
 Supported Features
 ==================
@@ -96,7 +85,7 @@ Build and flash applications as usual (see :ref:`build_an_application` and
    :goals: build
 
 The usual ``flash`` target will work with the ``m5stack_atom_lite`` board
-configuration. Here is an example for the :ref:`hello_world`
+configuration. Here is an example for the :zephyr:code-sample:`hello_world`
 application.
 
 .. zephyr-app-commands::

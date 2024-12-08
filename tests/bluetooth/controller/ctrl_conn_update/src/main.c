@@ -1992,6 +1992,130 @@ ZTEST(periph_loc, test_conn_update_periph_loc_reject)
 }
 
 /*
+ * Peripheral-initiated Connection Parameters Request procedure. (A)
+ * Peripheral requests change in LE connection parameters, central rejects due to
+ * Central-initiated Connection Update procedure (B) overlapping.
+ * Central rejects peripheral init and assumes 'own' connection update to complete
+ *
+ * +-----+                    +-------+                          +-----+
+ * | UT  |                    | LL_P  |                          | LT  |
+ * +-----+                    +-------+                          +-----+
+ *    |                           |                                 |
+ *    | LE Connection Update (A)  |                                 |
+ *    |-------------------------->|                                 |
+ *    |                           | LL_CONNECTION_PARAM_REQ         | (A)
+ *    |                           |-------------------------------->|
+ *    |                           |                                 |
+ *    |                           |<--------------------------------|
+ *    |                           |        LL_CONNECTION_UPDATE_IND | (B)
+ *    |                           |                                 |
+ *    |                           |              LL_REJECT_EXT_IND  | (A)
+ *    |                           |<--------------------------------|
+ *    |                           |                                 |
+ *    |                           |                                 |
+ *    |      LE Connection Update |                                 |
+ *    |                  Complete |                                 | (A/B)
+ *    |<--------------------------|                                 |
+ *    |                           |                                 |
+ */
+ZTEST(periph_loc, test_conn_update_periph_loc_reject_central_overlap)
+{
+	uint8_t err;
+	uint16_t instant;
+	struct node_tx *tx;
+	struct node_rx_pdu *ntf;
+	struct node_rx_pu cu2 = { .status = BT_HCI_ERR_SUCCESS };
+	struct pdu_data_llctrl_reject_ext_ind reject_ext_ind = {
+		.reject_opcode = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ,
+		.error_code = BT_HCI_ERR_LL_PROC_COLLISION
+	};
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Initiate a Connection Parameter Request Procedure */
+	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
+
+	/* Prepare */
+	event_prepare(&conn);
+	conn_param_req.reference_conn_event_count = event_counter(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_CONNECTION_PARAM_REQ, &conn, &tx, &conn_param_req);
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Release Tx */
+	ull_cp_release_tx(&conn, tx);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	cu_ind_B->instant = instant = event_counter(&conn) + 6;
+	lt_tx(LL_CONNECTION_UPDATE_IND, &conn, cu_ind_B);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Release Tx */
+	ull_cp_release_tx(&conn, tx);
+
+	/* Tx Queue should NOT have a LL Control PDU */
+	lt_rx_q_is_empty(&conn);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Rx */
+	lt_tx(LL_REJECT_EXT_IND, &conn, &reject_ext_ind);
+
+	/* Done */
+	event_done(&conn);
+
+	/* There should be no host notification */
+	ut_rx_q_is_empty();
+
+	/* */
+	while (!is_instant_reached(&conn, instant)) {
+		/* Prepare */
+		event_prepare(&conn);
+
+		/* (B) Tx Queue should NOT have a LL Control PDU */
+		lt_rx_q_is_empty(&conn);
+
+		/* Done */
+		event_done(&conn);
+
+		/* (B) There should NOT be a host notification */
+		ut_rx_q_is_empty();
+	}
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* (B) Tx Queue should NOT have a LL Control PDU */
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* (B) There should be one host notification */
+	ut_rx_node(NODE_CONN_UPDATE, &ntf, &cu2);
+	ut_rx_q_is_empty();
+
+	/* Release Ntf */
+	release_ntf(ntf);
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
+}
+
+/*
  * Peripheral-initiated Connection Parameters Request procedure.
  * Peripheral requests change in LE connection parameters, central’s Controller do not
  * support Connection Parameters Request procedure, features not exchanged.

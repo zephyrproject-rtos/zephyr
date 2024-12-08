@@ -5,7 +5,7 @@ Binary Blobs
 
 In the context of an operating system that supports multiple architectures and
 many different IC families, some functionality may be unavailable without the
-help of executable code distributed in binary form.  Binary blobs (or blobs for
+help of executable code distributed in binary form. Binary blobs (or blobs for
 short) are files containing proprietary machine code or data in a binary format,
 e.g. without corresponding source code released under an OSI approved license.
 
@@ -47,7 +47,7 @@ Blobs are fetched from official third-party sources by the :ref:`west blobs
 
 The blobs themselves must be specified in the :ref:`module.yml
 <modules-bin-blobs>` files included in separate Zephyr :ref:`module repositories
-<modules>` maintained by their respective vendors.  This means that in order to
+<modules>` maintained by their respective vendors. This means that in order to
 include a reference to a binary blob to the upstream Zephyr distribution, a
 module repository must exist first or be created as part of the submission
 process.
@@ -92,6 +92,7 @@ Tainting will be communicated to the user in the following manners:
 - The ``west spdx`` command will include the tainted status in its output
 - The kernel's default fatal error handler will also explicitly print out the
   kernel's tainted status
+- The boot banner prints the kernel's tainted status
 
 .. _bin-blobs-types:
 
@@ -104,7 +105,7 @@ The following binary blob types are acceptable in Zephyr:
   precompiled binary form, typically for SoC peripherals. An example could be an
   enablement library for a wireless peripheral
 * Firmware images: An image containing the executable code for a secondary
-  processor or CPU.  This can be full or partial (typically delta or patch data)
+  processor or CPU. This can be full or partial (typically delta or patch data)
   and is generally copied into RAM or flash memory by the main CPU. An example
   could be the firmware for the core running a Bluetooth LE Controller
 * Miscellaneous binary data files. An example could be pre-trained neural
@@ -152,13 +153,13 @@ blob requires the build system to provide.
   provided by Zephyr (or an RTOS in general), an implementation of an OS
   abstraction layer (aka porting layer) can be provided alongside the library.
   The implementation of this OS abstraction layer must be in source code form,
-  released under an OSI approved license and documented using Doxygen
+  released under an OSI approved license and documented using Doxygen.
 
 Toolchain requirements
 ======================
 
 Precompiled library blobs must be in a data format which is compatible with and
-can be linked by a toolchain supported by the Zephyr Project.  This is required
+can be linked by a toolchain supported by the Zephyr Project. This is required
 for maintainability and usability. Use of such libraries may require special
 compiler and/or linker flags, however. For example, a porting layer may require
 special flags, or a static archive may require use of specific linker flags.

@@ -11,3 +11,11 @@ properties:
     type: int
     required: true
     description: Precision configuration
+  mode:
+    type: string
+    description: |
+      Mode of operation. Defaults to "xtal", expecting a crystal oscillator on XI and XO
+      pins. May be set to "extclk" or "extclkpkdet" to use an external sinusoidal clock
+      on the XI pin with or without use of peak detector.
+    default: "xtal"
+    enum: ["xtal", "extclk", "extclkpkdet"]

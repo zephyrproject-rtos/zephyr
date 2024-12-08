@@ -106,7 +106,7 @@
 			caset = [00 01 00 a0];
 			raset = [00 1a 00 69];
 
-			mipi-mode = <MIPI_DBI_MODE_SPI_4WIRE>;
+			mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
 			mipi-max-frequency = <4000000>;
 		};
 	};
@@ -170,6 +170,7 @@
 		spi-max-frequency = <24000000>;
 		mmc {
 			compatible = "zephyr,sdmmc-disk";
+			disk-name = "SD";
 			status = "okay";
 		};
 	};

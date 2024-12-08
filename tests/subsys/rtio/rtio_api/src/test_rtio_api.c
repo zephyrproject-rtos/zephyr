@@ -25,8 +25,8 @@
 #define MEM_BLK_SIZE 16
 #define MEM_BLK_ALIGN 4
 
-#define SQE_POOL_SIZE 4
-#define CQE_POOL_SIZE 4
+#define SQE_POOL_SIZE 5
+#define CQE_POOL_SIZE 5
 
 /*
  * Purposefully double the block count and half the block size. This leaves the same size mempool,
@@ -294,11 +294,12 @@ static void test_rtio_simple_mempool_(struct rtio *r, int run_count)
 	zassert_ok(res);
 
 	TC_PRINT("submit with wait\n");
-	res = rtio_submit(r, 0);
-	zassert_ok(res, "Should return ok from rtio_execute");
+	res = rtio_submit(r, 1);
+	zassert_ok(res, "Should return ok from rtio_submit");
 
 	TC_PRINT("Calling rtio_cqe_copy_out\n");
-	zassert_equal(1, rtio_cqe_copy_out(r, &cqe, 1, K_FOREVER));
+	res = rtio_cqe_copy_out(r, &cqe, 1, K_FOREVER);
+	zassert_equal(1, res);
 	TC_PRINT("cqe result %d, userdata %p\n", cqe.result, cqe.userdata);
 	zassert_ok(cqe.result, "Result should be ok");
 	zassert_equal_ptr(cqe.userdata, mempool_data, "Expected userdata back");
@@ -654,6 +655,7 @@ ZTEST(rtio_api, test_rtio_throughput)
 
 RTIO_DEFINE(r_callback_chaining, SQE_POOL_SIZE, CQE_POOL_SIZE);
 RTIO_IODEV_TEST_DEFINE(iodev_test_callback_chaining0);
+static bool cb_no_cqe_run;
 
 /**
  * Callback for testing with
@@ -661,6 +663,12 @@ RTIO_IODEV_TEST_DEFINE(iodev_test_callback_chaining0);
 void rtio_callback_chaining_cb(struct rtio *r, const struct rtio_sqe *sqe, void *arg0)
 {
 	TC_PRINT("chaining callback with userdata %p\n", arg0);
+}
+
+void rtio_callback_chaining_cb_no_cqe(struct rtio *r, const struct rtio_sqe *sqe, void *arg0)
+{
+	TC_PRINT("Chaining callback with userdata %p (No CQE)\n", arg0);
+	cb_no_cqe_run = true;
 }
 
 /**
@@ -698,6 +706,11 @@ void test_rtio_callback_chaining_(struct rtio *r)
 
 	sqe = rtio_sqe_acquire(r);
 	zassert_not_null(sqe, "Expected a valid sqe");
+	rtio_sqe_prep_callback_no_cqe(sqe, &rtio_callback_chaining_cb_no_cqe, sqe, NULL);
+	sqe->flags |= RTIO_SQE_CHAINED;
+
+	sqe = rtio_sqe_acquire(r);
+	zassert_not_null(sqe, "Expected a valid sqe");
 	rtio_sqe_prep_callback(sqe, &rtio_callback_chaining_cb, sqe, &userdata[3]);
 
 	TC_PRINT("submitting\n");
@@ -706,6 +719,7 @@ void test_rtio_callback_chaining_(struct rtio *r)
 		 cq_count, atomic_get(&r->cq_count));
 	zassert_ok(res, "Should return ok from rtio_execute");
 	zassert_equal(atomic_get(&r->cq_count) - cq_count, 4, "Should have 4 pending completions");
+	zassert_true(cb_no_cqe_run, "Callback without CQE should have run");
 
 	for (int i = 0; i < 4; i++) {
 		TC_PRINT("consume %d\n", i);

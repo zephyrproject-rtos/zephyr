@@ -24,6 +24,8 @@ extern "C" {
  * @brief USBD HID Device API
  * @defgroup usbd_hid_device USBD HID device API
  * @ingroup usb
+ * @since 3.7
+ * @version 0.1.0
  * @{
  */
 
@@ -128,12 +130,12 @@ struct hid_device_ops {
 			  const uint16_t len, const uint8_t *const buf);
 
 	/**
-	 * Notification to limit intput report frequency.
+	 * Notification to limit input report frequency.
 	 * The device should mute an input report submission until a new
 	 * event occurs or until the time specified by the duration value has
 	 * elapsed. If a report ID is used in the report descriptor, the
 	 * device must store the duration and handle the specified report
-	 * accordingly. Duration time resolution is in miliseconds.
+	 * accordingly. Duration time resolution is in milliseconds.
 	 */
 	void (*set_idle)(const struct device *dev,
 			 const uint8_t id, const uint32_t duration);
@@ -141,7 +143,7 @@ struct hid_device_ops {
 	/**
 	 * If a report ID is used in the report descriptor, the device
 	 * must implement this callback and return the duration for the
-	 * specified report ID. Duration time resolution is in miliseconds.
+	 * specified report ID. Duration time resolution is in milliseconds.
 	 */
 	uint32_t (*get_idle)(const struct device *dev, const uint8_t id);
 

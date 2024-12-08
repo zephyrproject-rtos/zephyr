@@ -29,12 +29,14 @@ For example:
 QEMU example with Xen
 ***********************
 
-Overlay for qemu_cortex_a53 board, that is present in `board/` directory of this snippet is QEMU
-Xen control domain example. To run such setup, you need to:
+Overlay for qemu_cortex_a53 board, that is present in :zephyr_file:`snippets/xen_dom0/boards/`
+directory of this snippet is QEMU Xen control domain example.
+
+To run such setup, you need to:
 
 * fetch and build Xen (e.g. RELEASE-4.17.0) for arm64 platform
-* take and compile sample device tree from `example/` directory
-* build your Zephyr sample/application with `xen_dom0` snippet and start it as Xen control domain
+* take and compile sample device tree from :file:`example/` directory
+* build your Zephyr sample/application with ``xen_dom0`` snippet and start it as Xen control domain
 
 For starting you can use QEMU from Zephyr SDK by following command:
 
@@ -47,5 +49,7 @@ For starting you can use QEMU from Zephyr SDK by following command:
     -dtb <path to DTB>/xen.dtb -kernel <path to Xen build>/xen
 
 This will start you a Xen hypervisor with your application as Xen control domain. To make it usable,
-you can add `zephyr-xenlib` by Xen-troops library to your project. It'll provide basic domain
+you can add `zephyr-xenlib`_ by Xen-troops library to your project. It'll provide basic domain
 management functionalities - domain creation and configuration.
+
+.. _zephyr-xenlib: https://github.com/xen-troops/zephyr-xenlib

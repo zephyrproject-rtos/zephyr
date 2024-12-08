@@ -51,3 +51,9 @@ Build syslog_net sample application like this:
    :conf: <config file to use>
    :goals: build
    :compact:
+
+Wi-Fi
+=====
+
+The IPv4 Wi-Fi support can be enabled in the sample with
+:ref:`Wi-Fi snippet <snippet-wifi-ipv4>`.

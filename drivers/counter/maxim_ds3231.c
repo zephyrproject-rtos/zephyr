@@ -4,6 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifdef CONFIG_SOC_POSIX
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L /* Required for gmtime_r */
+#endif
+
 #define DT_DRV_COMPAT maxim_ds3231
 
 #include <zephyr/device.h>
@@ -1265,7 +1270,7 @@ static int ds3231_counter_set_top_value(const struct device *dev,
 	return -ENOTSUP;
 }
 
-static const struct counter_driver_api ds3231_api = {
+static DEVICE_API(counter, ds3231_api) = {
 	.start = ds3231_counter_start,
 	.stop = ds3231_counter_stop,
 	.get_value = ds3231_counter_get_value,

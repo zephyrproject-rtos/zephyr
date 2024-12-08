@@ -116,7 +116,7 @@ static void mgmt_event_work_handler(struct k_work *work)
 
 	ARG_UNUSED(work);
 
-	while (k_msgq_get(&event_msgq, &mgmt_event, K_FOREVER) == 0) {
+	while (k_msgq_get(&event_msgq, &mgmt_event, K_NO_WAIT) == 0) {
 		NET_DBG("Handling events, forwarding it relevantly");
 
 		mgmt_run_callbacks(&mgmt_event);
@@ -131,9 +131,15 @@ static void mgmt_event_work_handler(struct k_work *work)
 static inline void mgmt_push_event(uint32_t event, struct net_if *iface,
 				   const void *info, size_t length)
 {
+#ifndef CONFIG_NET_MGMT_EVENT_INFO
+	ARG_UNUSED(info);
+	ARG_UNUSED(length);
+#endif /* CONFIG_NET_MGMT_EVENT_INFO */
 	const struct mgmt_event_entry mgmt_event = {
+#if defined(CONFIG_NET_MGMT_EVENT_INFO)
 		.info = info,
 		.info_length = length,
+#endif /* CONFIG_NET_MGMT_EVENT_INFO */
 		.event = event,
 		.iface = iface,
 	};
@@ -407,7 +413,9 @@ void net_mgmt_event_init(void)
 	mgmt_rebuild_global_event_mask();
 
 #if defined(CONFIG_NET_MGMT_EVENT_THREAD)
-#if defined(CONFIG_NET_TC_THREAD_COOPERATIVE)
+#if defined(CONFIG_NET_MGMT_THREAD_PRIO_CUSTOM)
+#define THREAD_PRIORITY CONFIG_NET_MGMT_THREAD_PRIORITY
+#elif defined(CONFIG_NET_TC_THREAD_COOPERATIVE)
 /* Lowest priority cooperative thread */
 #define THREAD_PRIORITY K_PRIO_COOP(CONFIG_NUM_COOP_PRIORITIES - 1)
 #else

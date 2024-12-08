@@ -57,21 +57,21 @@ void SOC_RdcInit(void)
 static void nxp_mcimx7_gpio_config(void)
 {
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio1))
 	RDC_SetPdapAccess(RDC, rdcPdapGpio1, RDC_DT_VAL(gpio1), false, false);
 	/* Enable gpio clock gate */
 	CCM_ControlGate(CCM, ccmCcgrGateGpio1, ccmClockNeededRunWait);
 #endif
 
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio2), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio2))
 	RDC_SetPdapAccess(RDC, rdcPdapGpio2, RDC_DT_VAL(gpio2), false, false);
 	/* Enable gpio clock gate */
 	CCM_ControlGate(CCM, ccmCcgrGateGpio2, ccmClockNeededRunWait);
 #endif
 
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio7), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio7))
 	RDC_SetPdapAccess(RDC, rdcPdapGpio7, RDC_DT_VAL(gpio7), false, false);
 	/* Enable gpio clock gate */
 	CCM_ControlGate(CCM, ccmCcgrGateGpio7, ccmClockNeededRunWait);
@@ -84,7 +84,7 @@ static void nxp_mcimx7_gpio_config(void)
 static void nxp_mcimx7_uart_config(void)
 {
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart2), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart2))
 	/* We need to grasp board uart exclusively */
 	RDC_SetPdapAccess(RDC, rdcPdapUart2, RDC_DT_VAL(uart2), false, false);
 	/* Select clock derived from OSC clock(24M) */
@@ -99,7 +99,7 @@ static void nxp_mcimx7_uart_config(void)
 	CCM_ControlGate(CCM, ccmCcgrGateUart2, ccmClockNeededAll);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart6), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart6))
 	/* We need to grasp board uart exclusively */
 	RDC_SetPdapAccess(RDC, rdcPdapUart6, RDC_DT_VAL(uart6), false, false);
 	/* Select clock derived from OSC clock(24M) */
@@ -121,7 +121,7 @@ static void nxp_mcimx7_uart_config(void)
 static void nxp_mcimx7_i2c_config(void)
 {
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(i2c1))
 	/* In this example, we need to grasp board I2C exclusively */
 	RDC_SetPdapAccess(RDC, rdcPdapI2c1, RDC_DT_VAL(i2c1), false, false);
 	/* Select I2C clock derived from OSC clock(24M) */
@@ -131,7 +131,7 @@ static void nxp_mcimx7_i2c_config(void)
 	CCM_ControlGate(CCM, ccmCcgrGateI2c1, ccmClockNeededRunWait);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c2), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(i2c2))
 	/* In this example, we need to grasp board I2C exclusively */
 	RDC_SetPdapAccess(RDC, rdcPdapI2c2, RDC_DT_VAL(i2c2), false, false);
 	/* Select I2C clock derived from OSC clock(24M) */
@@ -141,7 +141,7 @@ static void nxp_mcimx7_i2c_config(void)
 	CCM_ControlGate(CCM, ccmCcgrGateI2c2, ccmClockNeededRunWait);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c3), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(i2c3))
 	/* In this example, we need to grasp board I2C exclusively */
 	RDC_SetPdapAccess(RDC, rdcPdapI2c3, RDC_DT_VAL(i2c3), false, false);
 	/* Select I2C clock derived from OSC clock(24M) */
@@ -151,7 +151,7 @@ static void nxp_mcimx7_i2c_config(void)
 	CCM_ControlGate(CCM, ccmCcgrGateI2c3, ccmClockNeededRunWait);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c4), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(i2c4))
 	/* In this example, we need to grasp board I2C exclusively */
 	RDC_SetPdapAccess(RDC, rdcPdapI2c4, RDC_DT_VAL(i2c4), false, false);
 	/* Select I2C clock derived from OSC clock(24M) */
@@ -168,7 +168,7 @@ static void nxp_mcimx7_i2c_config(void)
 static void nxp_mcimx7_pwm_config(void)
 {
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(pwm1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pwm1))
 	/* We need to grasp board pwm exclusively */
 	RDC_SetPdapAccess(RDC, rdcPdapPwm1, RDC_DT_VAL(pwm1), false, false);
 	/* Select clock derived from OSC clock(24M) */
@@ -178,7 +178,7 @@ static void nxp_mcimx7_pwm_config(void)
 	CCM_ControlGate(CCM, ccmCcgrGatePwm1, ccmClockNeededAll);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(pwm2), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pwm2))
 	/* We need to grasp board pwm exclusively */
 	RDC_SetPdapAccess(RDC, rdcPdapPwm2, RDC_DT_VAL(pwm2), false, false);
 	/* Select clock derived from OSC clock(24M) */
@@ -188,7 +188,7 @@ static void nxp_mcimx7_pwm_config(void)
 	CCM_ControlGate(CCM, ccmCcgrGatePwm2, ccmClockNeededAll);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(pwm3), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pwm3))
 	/* We need to grasp board pwm exclusively */
 	RDC_SetPdapAccess(RDC, rdcPdapPwm3, RDC_DT_VAL(pwm3), false, false);
 	/* Select clock derived from OSC clock(24M) */
@@ -198,7 +198,7 @@ static void nxp_mcimx7_pwm_config(void)
 	CCM_ControlGate(CCM, ccmCcgrGatePwm3, ccmClockNeededAll);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(pwm4), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pwm4))
 	/* We need to grasp board pwm exclusively */
 	RDC_SetPdapAccess(RDC, rdcPdapPwm4, RDC_DT_VAL(pwm4), false, false);
 	/* Select clock derived from OSC clock(24M) */
@@ -222,7 +222,7 @@ static void nxp_mcimx7_mu_config(void)
 }
 #endif /* CONFIG_IPM_IMX */
 
-static int nxp_mcimx7_init(void)
+void soc_early_init_hook(void)
 {
 
 	/* SoC specific RDC settings */
@@ -250,8 +250,4 @@ static int nxp_mcimx7_init(void)
 #ifdef CONFIG_IPM_IMX
 	nxp_mcimx7_mu_config();
 #endif /* CONFIG_IPM_IMX */
-
-	return 0;
 }
-
-SYS_INIT(nxp_mcimx7_init, PRE_KERNEL_1, 0);

@@ -186,7 +186,7 @@ though that is allowed behavior). If the architecture supports directed IPIs
 (see :kconfig:option:`CONFIG_ARCH_HAS_DIRECTED_IPIS`), then the
 architecture also provides a :c:func:`arch_sched_directed_ipi` call, which
 when invoked will flag an interrupt on the specified CPUs. When an interrupt is
-flagged on the CPUs, the :c:func:`z_sched_ipi` function implmented in the
+flagged on the CPUs, the :c:func:`z_sched_ipi` function implemented in the
 scheduler will get invoked on those CPUs. The expectation is that these
 APIs will evolve over time to encompass more functionality (e.g. cross-CPU
 calls), and that the scheduler-specific calls here will be implemented in
@@ -276,7 +276,7 @@ Per-CPU data
 ============
 
 Many elements of the core kernel data need to be implemented for each
-CPU in SMP mode.  For example, the ``_current`` thread pointer obviously
+CPU in SMP mode.  For example, the ``arch_current_thread()`` thread pointer obviously
 needs to reflect what is running locally, there are many threads
 running concurrently.  Likewise a kernel-provided interrupt stack
 needs to be created and assigned for each physical CPU, as does the

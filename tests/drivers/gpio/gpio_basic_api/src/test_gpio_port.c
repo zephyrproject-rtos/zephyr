@@ -1,22 +1,27 @@
 /*
  * Copyright (c) 2019 Nordic Semiconductor ASA
+ * Copyright 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
 
 #include "test_gpio.h"
 
 #define ALL_BITS ((gpio_port_value_t)-1)
 
-static const struct device *const dev = DEVICE_DT_GET(DEV);
+static const struct device *const dev_in = DEVICE_DT_GET(DEV_IN);
+static const struct device *const dev_out = DEVICE_DT_GET(DEV_OUT);
 
 /* Short-hand for a checked read of PIN_IN raw state */
 static bool raw_in(void)
 {
 	gpio_port_value_t v;
-	int rc = gpio_port_get_raw(dev, &v);
+	int rc = gpio_port_get_raw(dev_in, &v);
 
+#if CONFIG_READ_DELAY
+	k_sleep(K_MSEC(CONFIG_READ_DELAY));
+	rc = gpio_port_get_raw(dev_in, &v);
+#endif
 	zassert_equal(rc, 0,
 		      "raw_in failed");
 	return (v & BIT(PIN_IN)) ? true : false;
@@ -26,8 +31,12 @@ static bool raw_in(void)
 static bool logic_in(void)
 {
 	gpio_port_value_t v;
-	int rc = gpio_port_get(dev, &v);
+	int rc = gpio_port_get(dev_in, &v);
 
+#if CONFIG_READ_DELAY
+	k_sleep(K_MSEC(CONFIG_READ_DELAY));
+	rc = gpio_port_get(dev_in, &v);
+#endif
 	zassert_equal(rc, 0,
 		      "logic_in failed");
 	return (v & BIT(PIN_IN)) ? true : false;
@@ -39,9 +48,9 @@ static void raw_out(bool set)
 	int rc;
 
 	if (set) {
-		rc = gpio_port_set_bits_raw(dev, BIT(PIN_OUT));
+		rc = gpio_port_set_bits_raw(dev_out, BIT(PIN_OUT));
 	} else {
-		rc = gpio_port_clear_bits_raw(dev, BIT(PIN_OUT));
+		rc = gpio_port_clear_bits_raw(dev_out, BIT(PIN_OUT));
 	}
 	zassert_equal(rc, 0,
 		      "raw_out failed");
@@ -53,9 +62,9 @@ static void logic_out(bool set)
 	int rc;
 
 	if (set) {
-		rc = gpio_port_set_bits(dev, BIT(PIN_OUT));
+		rc = gpio_port_set_bits(dev_out, BIT(PIN_OUT));
 	} else {
-		rc = gpio_port_clear_bits(dev, BIT(PIN_OUT));
+		rc = gpio_port_clear_bits(dev_out, BIT(PIN_OUT));
 	}
 	zassert_equal(rc, 0,
 		      "raw_out failed");
@@ -69,22 +78,21 @@ static int setup(void)
 	int rc;
 	gpio_port_value_t v1;
 
-	TC_PRINT("Validate device %s\n", dev->name);
-	zassert_true(device_is_ready(dev), "GPIO dev is not ready");
+	TC_PRINT("Validate device %s and %s\n", dev_in->name, dev_out->name);
+	zassert_true(device_is_ready(dev_out), "GPIO dev is not ready");
 
-	TC_PRINT("Check %s output %d connected to input %d\n", dev->name,
-		 PIN_OUT, PIN_IN);
+	TC_PRINT("Check %s output %d connected to %s input %d\n", dev_out->name, PIN_OUT,
+		 dev_in->name, PIN_IN);
 
-	rc = gpio_pin_configure(dev, PIN_IN, GPIO_INPUT);
-	zassert_equal(rc, 0,
-		      "pin config input failed");
+	rc = gpio_pin_configure(dev_in, PIN_IN, GPIO_INPUT);
+	zassert_equal(rc, 0, "pin config input failed");
 
 	/* Test output low */
-	rc = gpio_pin_configure(dev, PIN_OUT, GPIO_OUTPUT_LOW);
+	rc = gpio_pin_configure(dev_out, PIN_OUT, GPIO_OUTPUT_LOW);
 	zassert_equal(rc, 0,
 		      "pin config output low failed");
 
-	rc = gpio_port_get_raw(dev, &v1);
+	rc = gpio_port_get_raw(dev_in, &v1);
 	zassert_equal(rc, 0,
 		      "get raw low failed");
 	if (raw_in() != false) {
@@ -98,28 +106,30 @@ static int setup(void)
 		      "out low does not read low");
 
 	/* Disconnect output */
-	rc = gpio_pin_configure(dev, PIN_OUT, GPIO_DISCONNECTED);
+	rc = gpio_pin_configure(dev_out, PIN_OUT, GPIO_DISCONNECTED);
 	if (rc == -ENOTSUP) {
 		TC_PRINT("NOTE: cannot configure pin as disconnected; trying as input\n");
-		rc = gpio_pin_configure(dev, PIN_OUT, GPIO_INPUT);
+		rc = gpio_pin_configure(dev_out, PIN_OUT, GPIO_INPUT);
 	}
 	zassert_equal(rc, 0,
 		      "output disconnect failed");
 
 	/* Test output high */
-	rc = gpio_pin_configure(dev, PIN_OUT, GPIO_OUTPUT_HIGH);
+	rc = gpio_pin_configure(dev_out, PIN_OUT, GPIO_OUTPUT_HIGH | GPIO_PULL_UP);
 	zassert_equal(rc, 0,
 		      "pin config output high failed");
 
-	rc = gpio_port_get_raw(dev, &v1);
+	rc = gpio_port_get_raw(dev_in, &v1);
 	zassert_equal(rc, 0,
 		      "get raw high failed");
 	if (raw_in() != true) {
 		TC_PRINT("FATAL output pin not wired to input pin? (out high => in low)\n");
-		while (true) {
-			k_sleep(K_FOREVER);
+		while (raw_in() != true) {
+			k_sleep(K_MSEC(100));
 		}
 	}
+	/* rread again in case the gpio changes slow */
+	gpio_port_get_raw(dev_in, &v1);
 	zassert_not_equal(v1 & BIT(PIN_IN), 0,
 			  "out high does not read low");
 
@@ -139,21 +149,21 @@ static int bits_physical(void)
 	TC_PRINT("- %s\n", __func__);
 
 	/* port_set_bits_raw */
-	rc = gpio_port_set_bits_raw(dev, BIT(PIN_OUT));
+	rc = gpio_port_set_bits_raw(dev_out, BIT(PIN_OUT));
 	zassert_equal(rc, 0,
 		      "port set raw out failed");
 	zassert_equal(raw_in(), true,
 		      "raw set mismatch");
 
 	/* port_clear_bits_raw */
-	rc = gpio_port_clear_bits_raw(dev, BIT(PIN_OUT));
+	rc = gpio_port_clear_bits_raw(dev_out, BIT(PIN_OUT));
 	zassert_equal(rc, 0,
 		      "port clear raw out failed");
 	zassert_equal(raw_in(), false,
 		      "raw clear mismatch");
 
 	/* set after clear changes */
-	rc = gpio_port_set_bits_raw(dev, BIT(PIN_OUT));
+	rc = gpio_port_set_bits_raw(dev_out, BIT(PIN_OUT));
 	zassert_equal(rc, 0,
 		      "port set raw out failed");
 	zassert_equal(raw_in(), true,
@@ -169,31 +179,31 @@ static int bits_physical(void)
 	zassert_equal(raw_in(), true,
 		      "raw_out() true mismatch");
 
-	rc = gpio_port_set_masked_raw(dev, BIT(PIN_OUT), 0);
+	rc = gpio_port_set_masked_raw(dev_out, BIT(PIN_OUT), 0);
 	zassert_equal(rc, 0,
 		      "set_masked_raw low failed");
 	zassert_equal(raw_in(), false,
 		      "set_masked_raw low mismatch");
 
-	rc = gpio_port_set_masked_raw(dev, BIT(PIN_OUT), ALL_BITS);
+	rc = gpio_port_set_masked_raw(dev_out, BIT(PIN_OUT), ALL_BITS);
 	zassert_equal(rc, 0,
 		      "set_masked_raw high failed");
 	zassert_equal(raw_in(), true,
 		      "set_masked_raw high mismatch");
 
-	rc = gpio_port_set_masked_raw(dev, BIT(PIN_IN), 0);
+	rc = gpio_port_set_masked_raw(dev_in, BIT(PIN_IN), 0);
 	zassert_equal(rc, 0,
 		      "set_masked_raw low failed");
 	zassert_equal(raw_in(), true,
 		      "set_masked_raw low affected other pins");
 
-	rc = gpio_port_set_clr_bits_raw(dev, BIT(PIN_IN), BIT(PIN_OUT));
+	rc = gpio_port_set_clr_bits_raw(dev_out, BIT(PIN_IN), BIT(PIN_OUT));
 	zassert_equal(rc, 0,
 		      "set in clear out failed");
 	zassert_equal(raw_in(), false,
 		      "set in clear out mismatch");
 
-	rc = gpio_port_set_clr_bits_raw(dev, BIT(PIN_OUT), BIT(PIN_IN));
+	rc = gpio_port_set_clr_bits_raw(dev_out, BIT(PIN_OUT), BIT(PIN_IN));
 	zassert_equal(rc, 0,
 		      "set out clear in failed");
 	zassert_equal(raw_in(), true,
@@ -204,7 +214,7 @@ static int bits_physical(void)
 	 */
 	if (false) {
 		/* preserve set */
-		rc = gpio_port_set_clr_bits_raw(dev, BIT(PIN_OUT), BIT(PIN_OUT));
+		rc = gpio_port_set_clr_bits_raw(dev_out, BIT(PIN_OUT), BIT(PIN_OUT));
 		zassert_equal(rc, 0,
 			      "s/c dup set failed");
 		zassert_equal(raw_in(), true,
@@ -212,20 +222,20 @@ static int bits_physical(void)
 
 		/* do set */
 		raw_out(false);
-		rc = gpio_port_set_clr_bits_raw(dev, BIT(PIN_OUT), BIT(PIN_OUT));
+		rc = gpio_port_set_clr_bits_raw(dev_out, BIT(PIN_OUT), BIT(PIN_OUT));
 		zassert_equal(rc, 0,
 			      "s/c dup2 set failed");
 		zassert_equal(raw_in(), true,
 			      "s/c dup2 set mismatch");
 	}
 
-	rc = gpio_port_toggle_bits(dev, BIT(PIN_OUT));
+	rc = gpio_port_toggle_bits(dev_out, BIT(PIN_OUT));
 	zassert_equal(rc, 0,
 		      "toggle_bits high-to-low failed");
 	zassert_equal(raw_in(), false,
 		      "toggle_bits high-to-low mismatch");
 
-	rc = gpio_port_toggle_bits(dev, BIT(PIN_OUT));
+	rc = gpio_port_toggle_bits(dev_out, BIT(PIN_OUT));
 	zassert_equal(rc, 0,
 		      "toggle_bits low-to-high failed");
 	zassert_equal(raw_in(), true,
@@ -244,32 +254,28 @@ static int pin_physical(void)
 	TC_PRINT("- %s\n", __func__);
 
 	raw_out(true);
-	zassert_equal(gpio_pin_get_raw(dev, PIN_IN), raw_in(),
-		      "pin_get_raw high failed");
+	zassert_equal(gpio_pin_get_raw(dev_in, PIN_IN), raw_in(), "pin_get_raw high failed");
 
 	raw_out(false);
-	zassert_equal(gpio_pin_get_raw(dev, PIN_IN), raw_in(),
-		      "pin_get_raw low failed");
+	zassert_equal(gpio_pin_get_raw(dev_in, PIN_IN), raw_in(), "pin_get_raw low failed");
 
-	rc = gpio_pin_set_raw(dev, PIN_OUT, 32);
-	zassert_equal(rc, 0,
-		      "pin_set_raw high failed");
-	zassert_equal(raw_in(), true,
-		      "pin_set_raw high failed");
+	rc = gpio_pin_set_raw(dev_out, PIN_OUT, 32);
+	zassert_equal(rc, 0, "pin_set_raw high failed");
+	zassert_equal(raw_in(), true, "pin_set_raw high failed");
 
-	rc = gpio_pin_set_raw(dev, PIN_OUT, 0);
+	rc = gpio_pin_set_raw(dev_out, PIN_OUT, 0);
 	zassert_equal(rc, 0,
 		      "pin_set_raw low failed");
 	zassert_equal(raw_in(), false,
 		      "pin_set_raw low failed");
 
-	rc = gpio_pin_toggle(dev, PIN_OUT);
+	rc = gpio_pin_toggle(dev_out, PIN_OUT);
 	zassert_equal(rc, 0,
 		      "pin_toggle low-to-high failed");
 	zassert_equal(raw_in(), true,
 		      "pin_toggle low-to-high mismatch");
 
-	rc = gpio_pin_toggle(dev, PIN_OUT);
+	rc = gpio_pin_toggle(dev_out, PIN_OUT);
 	zassert_equal(rc, 0,
 		      "pin_toggle high-to-low failed");
 	zassert_equal(raw_in(), false,
@@ -287,8 +293,8 @@ static int check_raw_output_levels(void)
 
 	TC_PRINT("- %s\n", __func__);
 
-	rc = gpio_pin_configure(dev, PIN_OUT,
-				GPIO_ACTIVE_HIGH | GPIO_OUTPUT_LOW);
+	rc = gpio_pin_configure(dev_out, PIN_OUT,
+				GPIO_ACTIVE_HIGH | GPIO_OUTPUT_LOW | PIN_OUT_FLAGS);
 	zassert_equal(rc, 0,
 		      "active high output low failed");
 	zassert_equal(raw_in(), false,
@@ -297,8 +303,8 @@ static int check_raw_output_levels(void)
 	zassert_equal(raw_in(), true,
 		      "set high mismatch");
 
-	rc = gpio_pin_configure(dev, PIN_OUT,
-				GPIO_ACTIVE_HIGH | GPIO_OUTPUT_HIGH);
+	rc = gpio_pin_configure(dev_out, PIN_OUT,
+				GPIO_ACTIVE_HIGH | GPIO_OUTPUT_HIGH | PIN_OUT_FLAGS);
 	zassert_equal(rc, 0,
 		      "active high output high failed");
 	zassert_equal(raw_in(), true,
@@ -307,8 +313,8 @@ static int check_raw_output_levels(void)
 	zassert_equal(raw_in(), false,
 		      "set low mismatch");
 
-	rc = gpio_pin_configure(dev, PIN_OUT,
-				GPIO_ACTIVE_LOW | GPIO_OUTPUT_LOW);
+	rc = gpio_pin_configure(dev_out, PIN_OUT,
+				GPIO_ACTIVE_LOW | GPIO_OUTPUT_LOW | PIN_OUT_FLAGS);
 	zassert_equal(rc, 0,
 		      "active low output low failed");
 	zassert_equal(raw_in(), false,
@@ -317,8 +323,8 @@ static int check_raw_output_levels(void)
 	zassert_equal(raw_in(), true,
 		      "set high mismatch");
 
-	rc = gpio_pin_configure(dev, PIN_OUT,
-				GPIO_ACTIVE_LOW | GPIO_OUTPUT_HIGH);
+	rc = gpio_pin_configure(dev_out, PIN_OUT,
+				GPIO_ACTIVE_LOW | GPIO_OUTPUT_HIGH | PIN_OUT_FLAGS);
 	zassert_equal(rc, 0,
 		      "active low output high failed");
 	zassert_equal(raw_in(), true,
@@ -339,8 +345,8 @@ static int check_logic_output_levels(void)
 
 	TC_PRINT("- %s\n", __func__);
 
-	rc = gpio_pin_configure(dev, PIN_OUT,
-				GPIO_ACTIVE_HIGH | GPIO_OUTPUT_INACTIVE);
+	rc = gpio_pin_configure(dev_out, PIN_OUT,
+				GPIO_ACTIVE_HIGH | GPIO_OUTPUT_INACTIVE | PIN_OUT_FLAGS);
 	zassert_equal(rc, 0,
 		      "active true output false failed: %d", rc);
 	zassert_equal(raw_in(), false,
@@ -349,8 +355,8 @@ static int check_logic_output_levels(void)
 	zassert_equal(raw_in(), true,
 		      "set true mismatch");
 
-	rc = gpio_pin_configure(dev, PIN_OUT,
-				GPIO_ACTIVE_HIGH | GPIO_OUTPUT_ACTIVE);
+	rc = gpio_pin_configure(dev_out, PIN_OUT,
+				GPIO_ACTIVE_HIGH | GPIO_OUTPUT_ACTIVE | PIN_OUT_FLAGS);
 	zassert_equal(rc, 0,
 		      "active true output true failed");
 	zassert_equal(raw_in(), true,
@@ -359,8 +365,8 @@ static int check_logic_output_levels(void)
 	zassert_equal(raw_in(), false,
 		      "set false mismatch");
 
-	rc = gpio_pin_configure(dev, PIN_OUT,
-				GPIO_ACTIVE_LOW | GPIO_OUTPUT_ACTIVE);
+	rc = gpio_pin_configure(dev_out, PIN_OUT,
+				GPIO_ACTIVE_LOW | GPIO_OUTPUT_ACTIVE | PIN_OUT_FLAGS);
 	zassert_equal(rc, 0,
 		      "active low output true failed");
 
@@ -370,8 +376,8 @@ static int check_logic_output_levels(void)
 	zassert_equal(raw_in(), true,
 		      "set false mismatch");
 
-	rc = gpio_pin_configure(dev, PIN_OUT,
-				GPIO_ACTIVE_LOW | GPIO_OUTPUT_INACTIVE);
+	rc = gpio_pin_configure(dev_out, PIN_OUT,
+				GPIO_ACTIVE_LOW | GPIO_OUTPUT_INACTIVE | PIN_OUT_FLAGS);
 	zassert_equal(rc, 0,
 		      "active low output false failed");
 	zassert_equal(raw_in(), true,
@@ -392,11 +398,11 @@ static int check_input_levels(void)
 
 	TC_PRINT("- %s\n", __func__);
 
-	rc = gpio_pin_configure(dev, PIN_OUT, GPIO_OUTPUT);
+	rc = gpio_pin_configure(dev_out, PIN_OUT, GPIO_OUTPUT | PIN_OUT_FLAGS);
 	zassert_equal(rc, 0,
 		      "output configure failed");
 
-	rc = gpio_pin_configure(dev, PIN_IN, GPIO_INPUT);
+	rc = gpio_pin_configure(dev_in, PIN_IN, GPIO_INPUT);
 	zassert_equal(rc, 0,
 		      "active high failed");
 	raw_out(true);
@@ -411,7 +417,7 @@ static int check_input_levels(void)
 	zassert_equal(logic_in(), false,
 		      "logic low mismatch");
 
-	rc = gpio_pin_configure(dev, PIN_IN, GPIO_INPUT | GPIO_ACTIVE_LOW);
+	rc = gpio_pin_configure(dev_in, PIN_IN, GPIO_INPUT | GPIO_ACTIVE_LOW);
 	zassert_equal(rc, 0,
 		      "active low failed");
 
@@ -443,15 +449,15 @@ static int check_pulls(void)
 	TC_PRINT("- %s\n", __func__);
 
 	/* Disconnect output */
-	rc = gpio_pin_configure(dev, PIN_OUT, GPIO_DISCONNECTED);
+	rc = gpio_pin_configure(dev_out, PIN_OUT, GPIO_DISCONNECTED);
 	if (rc == -ENOTSUP) {
 		TC_PRINT("NOTE: cannot configure pin as disconnected; trying as input\n");
-		rc = gpio_pin_configure(dev, PIN_OUT, GPIO_INPUT);
+		rc = gpio_pin_configure(dev_out, PIN_OUT, GPIO_INPUT);
 	}
 	zassert_equal(rc, 0,
 		      "output disconnect failed");
 
-	rc = gpio_pin_configure(dev, PIN_IN, GPIO_INPUT | GPIO_PULL_UP);
+	rc = gpio_pin_configure(dev_in, PIN_IN, GPIO_INPUT | GPIO_PULL_UP);
 	k_busy_wait(PULL_DELAY_US);
 	if (rc == -ENOTSUP) {
 		TC_PRINT("pull-up not supported\n");
@@ -463,7 +469,7 @@ static int check_pulls(void)
 	zassert_equal(raw_in(), true,
 		      "physical pull-up does not read high");
 
-	rc = gpio_pin_configure(dev, PIN_IN, GPIO_INPUT | GPIO_PULL_DOWN);
+	rc = gpio_pin_configure(dev_in, PIN_IN, GPIO_INPUT | GPIO_PULL_DOWN);
 	k_busy_wait(PULL_DELAY_US);
 	if (rc == -ENOTSUP) {
 		TC_PRINT("pull-down not supported\n");
@@ -476,7 +482,7 @@ static int check_pulls(void)
 		      "physical pull-down does not read low");
 
 	/* Test that pull is not affected by active level */
-	rc = gpio_pin_configure(dev, PIN_IN, GPIO_INPUT | GPIO_ACTIVE_LOW | GPIO_PULL_UP);
+	rc = gpio_pin_configure(dev_in, PIN_IN, GPIO_INPUT | GPIO_ACTIVE_LOW | GPIO_PULL_UP);
 	k_busy_wait(PULL_DELAY_US);
 	if (rc == -ENOTSUP) {
 		TC_PRINT("pull-up not supported\n");
@@ -490,7 +496,7 @@ static int check_pulls(void)
 	zassert_equal(logic_in(), false,
 		      "logical pull-up reads true");
 
-	rc = gpio_pin_configure(dev, PIN_IN, GPIO_INPUT | GPIO_ACTIVE_LOW | GPIO_PULL_DOWN);
+	rc = gpio_pin_configure(dev_in, PIN_IN, GPIO_INPUT | GPIO_ACTIVE_LOW | GPIO_PULL_DOWN);
 	k_busy_wait(PULL_DELAY_US);
 	if (rc == -ENOTSUP) {
 		TC_PRINT("pull-up not supported\n");
@@ -518,8 +524,8 @@ static int bits_logical(void)
 
 	TC_PRINT("- %s\n", __func__);
 
-	rc = gpio_pin_configure(dev, PIN_OUT,
-				GPIO_OUTPUT_HIGH | GPIO_ACTIVE_LOW);
+	rc = gpio_pin_configure(dev_out, PIN_OUT,
+				GPIO_OUTPUT_HIGH | GPIO_ACTIVE_LOW | PIN_OUT_FLAGS);
 	zassert_equal(rc, 0,
 		      "output configure failed");
 	zassert_equal(raw_in(), true,
@@ -528,7 +534,7 @@ static int bits_logical(void)
 		      "logic in active mismatch");
 
 	/* port_set_bits */
-	rc = gpio_port_set_bits(dev, BIT(PIN_OUT));
+	rc = gpio_port_set_bits(dev_out, BIT(PIN_OUT));
 	zassert_equal(rc, 0,
 		      "port set raw out failed");
 	zassert_equal(raw_in(), false,
@@ -537,52 +543,52 @@ static int bits_logical(void)
 		      "logic in inactive mismatch");
 
 	/* port_clear_bits */
-	rc = gpio_port_clear_bits(dev, BIT(PIN_OUT));
+	rc = gpio_port_clear_bits(dev_out, BIT(PIN_OUT));
 	zassert_equal(rc, 0,
 		      "port clear raw out failed");
 	zassert_equal(logic_in(), false,
 		      "low clear mismatch");
 
 	/* set after clear changes */
-	rc = gpio_port_set_bits_raw(dev, BIT(PIN_OUT));
+	rc = gpio_port_set_bits_raw(dev_out, BIT(PIN_OUT));
 	zassert_equal(rc, 0,
 		      "port set raw out failed");
 	zassert_equal(logic_in(), false,
 		      "raw set mismatch");
 
 	/* pin_set false */
-	rc = gpio_pin_set(dev, PIN_OUT, 0);
+	rc = gpio_pin_set(dev_out, PIN_OUT, 0);
 	zassert_equal(rc, 0,
 		      "pin clear failed");
 	zassert_equal(logic_in(), false,
 		      "pin clear mismatch");
 
 	/* pin_set true */
-	rc = gpio_pin_set(dev, PIN_OUT, 32);
+	rc = gpio_pin_set(dev_out, PIN_OUT, 32);
 	zassert_equal(rc, 0,
 		      "pin set failed");
 	zassert_equal(logic_in(), true,
 		      "pin set mismatch");
 
-	rc = gpio_port_set_masked(dev, BIT(PIN_OUT), 0);
+	rc = gpio_port_set_masked(dev_out, BIT(PIN_OUT), 0);
 	zassert_equal(rc, 0,
 		      "set_masked low failed");
 	zassert_equal(logic_in(), false,
 		      "set_masked low mismatch");
 
-	rc = gpio_port_set_masked(dev, BIT(PIN_OUT), ALL_BITS);
+	rc = gpio_port_set_masked(dev_out, BIT(PIN_OUT), ALL_BITS);
 	zassert_equal(rc, 0,
 		      "set_masked high failed");
 	zassert_equal(logic_in(), true,
 		      "set_masked high mismatch");
 
-	rc = gpio_port_set_clr_bits(dev, BIT(PIN_IN), BIT(PIN_OUT));
+	rc = gpio_port_set_clr_bits(dev_out, BIT(PIN_IN), BIT(PIN_OUT));
 	zassert_equal(rc, 0,
 		      "set in clear out failed");
 	zassert_equal(logic_in(), false,
 		      "set in clear out mismatch");
 
-	rc = gpio_port_set_clr_bits(dev, BIT(PIN_OUT), BIT(PIN_IN));
+	rc = gpio_port_set_clr_bits(dev_out, BIT(PIN_OUT), BIT(PIN_IN));
 	zassert_equal(rc, 0,
 		      "set out clear in failed");
 	zassert_equal(logic_in(), true,
@@ -593,7 +599,7 @@ static int bits_logical(void)
 	 */
 	if (false) {
 		/* preserve set */
-		rc = gpio_port_set_clr_bits(dev, BIT(PIN_OUT), BIT(PIN_OUT));
+		rc = gpio_port_set_clr_bits(dev_out, BIT(PIN_OUT), BIT(PIN_OUT));
 		zassert_equal(rc, 0,
 			      "s/c set toggle failed");
 		zassert_equal(logic_in(), false,
@@ -601,26 +607,26 @@ static int bits_logical(void)
 
 		/* force set */
 		raw_out(true);
-		rc = gpio_port_set_clr_bits(dev, BIT(PIN_OUT), BIT(PIN_OUT));
+		rc = gpio_port_set_clr_bits(dev_out, BIT(PIN_OUT), BIT(PIN_OUT));
 		zassert_equal(rc, 0,
 			      "s/c dup set failed");
 		zassert_equal(logic_in(), false,
 			      "s/c dup set mismatch");
 	}
 
-	rc = gpio_port_toggle_bits(dev, BIT(PIN_OUT));
+	rc = gpio_port_toggle_bits(dev_out, BIT(PIN_OUT));
 	zassert_equal(rc, 0,
 		      "toggle_bits active-to-inactive failed");
 	zassert_equal(logic_in(), false,
 		      "toggle_bits active-to-inactive mismatch");
 
-	rc = gpio_port_toggle_bits(dev, BIT(PIN_OUT));
+	rc = gpio_port_toggle_bits(dev_out, BIT(PIN_OUT));
 	zassert_equal(rc, 0,
 		      "toggle_bits inactive-to-active failed");
 	zassert_equal(logic_in(), true,
 		      "toggle_bits inactive-to-active mismatch");
 
-	rc = gpio_pin_toggle(dev, PIN_OUT);
+	rc = gpio_pin_toggle(dev_out, PIN_OUT);
 	zassert_equal(rc, 0,
 		      "pin_toggle low-to-high failed");
 	zassert_equal(logic_in(), false,
@@ -638,10 +644,10 @@ static int pin_get_config(void)
 	int rc;
 
 	flags_set = GPIO_OUTPUT_HIGH;
-	rc = gpio_pin_configure(dev, PIN_OUT, flags_set);
+	rc = gpio_pin_configure(dev_out, PIN_OUT, flags_set);
 	zassert_equal(rc, 0, "pin configure failed");
 
-	rc = gpio_pin_get_config(dev, PIN_OUT, &flags_get);
+	rc = gpio_pin_get_config(dev_out, PIN_OUT, &flags_get);
 	if (rc == -ENOSYS) {
 		return TC_PASS;
 	}

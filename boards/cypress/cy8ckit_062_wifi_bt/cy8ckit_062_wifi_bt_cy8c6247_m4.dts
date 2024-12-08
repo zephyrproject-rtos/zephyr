@@ -10,8 +10,8 @@
 #include "cy8ckit_062_wifi_bt_cy8c6247-pinctrl.dtsi"
 
 / {
-	model = "cy8ckit_062_wifi_bt_m4 with a Cypress PSoC6 SoC";
-	compatible = "cypress,cy8ckit_062_wifi_bt_m4", "cypress,PSoC6";
+	model = "cy8ckit_062_wifi_bt_m4 with a Cypress PSOC 6 SoC";
+	compatible = "cypress,cy8ckit_062_wifi_bt_m4", "cypress,PSOC6";
 
 	aliases {
 		uart-5 = &uart5;

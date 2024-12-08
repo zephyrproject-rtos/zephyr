@@ -50,6 +50,8 @@ source "drivers/clock_control/Kconfig.mcux_sim"
 
 source "drivers/clock_control/Kconfig.mcux_syscon"
 
+source "drivers/clock_control/Kconfig.npcm"
+
 source "drivers/clock_control/Kconfig.npcx"
 
 source "drivers/clock_control/Kconfig.rv32m1"
@@ -72,6 +74,8 @@ source "drivers/clock_control/Kconfig.gd32"
 
 source "drivers/clock_control/Kconfig.sam"
 
+source "drivers/clock_control/Kconfig.si32"
+
 source "drivers/clock_control/Kconfig.smartbond"
 
 source "drivers/clock_control/Kconfig.numaker"
@@ -80,7 +84,7 @@ source "drivers/clock_control/Kconfig.nxp_s32"
 
 source "drivers/clock_control/Kconfig.agilex5"
 
-source "drivers/clock_control/Kconfig.renesas_ra"
+source "drivers/clock_control/Kconfig.renesas_ra_cgc"
 
 source "drivers/clock_control/Kconfig.max32"
 
@@ -91,5 +95,11 @@ source "drivers/clock_control/Kconfig.pwm"
 source "drivers/clock_control/Kconfig.rpi_pico"
 
 source "drivers/clock_control/Kconfig.nrf_auxpll"
+
+source "drivers/clock_control/Kconfig.arm_scmi"
+
+source "drivers/clock_control/Kconfig.silabs"
+
+source "drivers/clock_control/Kconfig.wch_rcc"
 
 endif # CLOCK_CONTROL

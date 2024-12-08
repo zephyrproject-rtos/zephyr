@@ -31,7 +31,9 @@ LOG_MODULE_REGISTER(w1, CONFIG_W1_LOG_LEVEL);
  * W1_SEARCH_LAST_SLAVE, and in case no slave participated in the search,
  * the discrepancy is set to W1_SEARCH_NO_SLAVE.
  *
- * The implementation is similar to suggested in the maxim application note 187.
+ * The implementation is similar to that suggested in the Maxim Integrated
+ * application note 187.
+ * @see https://www.analog.com/media/en/technical-documentation/app-notes/1wire-search-algorithm.pdf
  * The master reads the first ROM bit and its complementary value of all slaves.
  * Due to physical characteristics, the value received is a
  * logical AND of all slaves' 1st bit. Slaves only continue to

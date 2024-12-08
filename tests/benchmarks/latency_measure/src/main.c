@@ -31,6 +31,14 @@ K_THREAD_STACK_DEFINE(alt_stack, ALT_STACK_SIZE);
 
 K_SEM_DEFINE(pause_sem, 0, 1);
 
+#if (CONFIG_MP_MAX_NUM_CPUS > 1)
+struct k_thread  busy_thread[CONFIG_MP_MAX_NUM_CPUS - 1];
+
+#define BUSY_THREAD_STACK_SIZE  (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
+
+K_THREAD_STACK_ARRAY_DEFINE(busy_thread_stack, CONFIG_MP_MAX_NUM_CPUS - 1, BUSY_THREAD_STACK_SIZE);
+#endif
+
 struct k_thread  start_thread;
 struct k_thread  alt_thread;
 
@@ -60,6 +68,14 @@ extern int stack_blocking_ops(uint32_t num_iterations, uint32_t start_options,
 			       uint32_t alt_options);
 extern void heap_malloc_free(void);
 
+#if (CONFIG_MP_MAX_NUM_CPUS > 1)
+static void busy_thread_entry(void *arg1, void *arg2, void *arg3)
+{
+	while (1) {
+	}
+}
+#endif
+
 static void test_thread(void *arg1, void *arg2, void *arg3)
 {
 	uint32_t freq;
@@ -67,6 +83,17 @@ static void test_thread(void *arg1, void *arg2, void *arg3)
 	ARG_UNUSED(arg1);
 	ARG_UNUSED(arg2);
 	ARG_UNUSED(arg3);
+
+#if (CONFIG_MP_MAX_NUM_CPUS > 1)
+	/* Spawn busy threads that will execute on the other cores */
+
+	for (uint32_t i = 0; i < CONFIG_MP_MAX_NUM_CPUS - 1; i++) {
+		k_thread_create(&busy_thread[i], busy_thread_stack[i],
+				BUSY_THREAD_STACK_SIZE, busy_thread_entry,
+				NULL, NULL, NULL,
+				K_HIGHEST_THREAD_PRIO, 0, K_NO_WAIT);
+	}
+#endif
 
 #ifdef CONFIG_USERSPACE
 	k_mem_domain_add_partition(&k_mem_domain_default,

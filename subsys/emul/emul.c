@@ -58,6 +58,9 @@ int emul_init_for_bus(const struct device *dev)
 		case EMUL_BUS_TYPE_MSPI:
 			emul->bus.mspi->target = emul;
 			break;
+		case EMUL_BUS_TYPE_UART:
+			emul->bus.uart->target = emul;
+			break;
 		case EMUL_BUS_TYPE_NONE:
 			break;
 		}
@@ -89,6 +92,11 @@ int emul_init_for_bus(const struct device *dev)
 			rc = mspi_emul_register(dev, emul->bus.mspi);
 			break;
 #endif /* CONFIG_MSPI_EMUL */
+#ifdef CONFIG_UART_EMUL
+		case EMUL_BUS_TYPE_UART:
+			rc = uart_emul_register(dev, emul->bus.uart);
+			break;
+#endif /* CONFIG_UART_EMUL */
 		default:
 			rc = -EINVAL;
 			LOG_WRN("Found no emulated bus enabled to register emulator %s",

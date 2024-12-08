@@ -441,7 +441,7 @@ out:
 	return ret;
 }
 
-static const struct gpio_driver_api api_table = {
+static DEVICE_API(gpio, api_table) = {
 	.pin_configure = gpio_adp5585_config,
 	.port_get_raw = gpio_adp5585_port_read,
 	.port_set_masked_raw = gpio_adp5585_port_set_masked,

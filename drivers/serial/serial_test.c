@@ -130,10 +130,10 @@ static void irq_tx_disable(const struct device *dev)
 static int irq_tx_ready(const struct device *dev)
 {
 	struct serial_vnd_data *data = dev->data;
-	bool ready = (ring_buf_space_get(data->written) != 0);
+	int available = ring_buf_space_get(data->written);
 
-	LOG_DBG("tx ready: %d", ready);
-	return ready;
+	LOG_DBG("tx ready: %d", available);
+	return available;
 }
 
 static void irq_callback_set(const struct device *dev, uart_irq_callback_user_data_t cb,
@@ -426,7 +426,7 @@ static int serial_vnd_rx_enable(const struct device *dev, uint8_t *read_buf, siz
 }
 #endif /* CONFIG_UART_ASYNC_API */
 
-static const struct uart_driver_api serial_vnd_api = {
+static DEVICE_API(uart, serial_vnd_api) = {
 	.poll_in = serial_vnd_poll_in,
 	.poll_out = serial_vnd_poll_out,
 	.err_check = serial_vnd_err_check,

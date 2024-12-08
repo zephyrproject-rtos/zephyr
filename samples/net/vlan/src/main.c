@@ -42,7 +42,7 @@ static int setup_iface(struct net_if *iface, struct net_if *vlan,
 {
 	struct net_if_addr *ifaddr;
 	struct in_addr addr4;
-	struct in6_addr addr6;
+	struct in6_addr addr6, netaddr6;
 	int ret;
 
 	ret = net_eth_vlan_enable(iface, vlan_tag);
@@ -61,6 +61,20 @@ static int setup_iface(struct net_if *iface, struct net_if *vlan,
 		if (!ifaddr) {
 			LOG_ERR("Cannot add %s to interface %p",
 				ipv6_addr, vlan);
+			return -EINVAL;
+		}
+
+		net_ipv6_addr_prefix_mask((uint8_t *)&addr6,
+					  (uint8_t *)&netaddr6,
+					  CONFIG_NET_SAMPLE_IFACE_MY_IPV6_PREFIXLEN);
+
+		if (!net_if_ipv6_prefix_add(vlan, &netaddr6,
+					    CONFIG_NET_SAMPLE_IFACE_MY_IPV6_PREFIXLEN,
+					    (uint32_t)0xffffffff)) {
+			LOG_ERR("Cannot add %s with prefix_len %d to interface %p",
+				ipv6_addr,
+				CONFIG_NET_SAMPLE_IFACE_MY_IPV6_PREFIXLEN,
+				vlan);
 			return -EINVAL;
 		}
 	}

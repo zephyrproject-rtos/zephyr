@@ -9,4 +9,4 @@ include: zephyr,bt-hci-spi.yaml
 
 properties:
   bt-hci-quirks:
-    default: ["BT_HCI_QUIRK_NO_RESET"]
+    default: ["no-reset"]

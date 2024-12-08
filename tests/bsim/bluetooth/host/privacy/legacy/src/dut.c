@@ -42,10 +42,8 @@ void start_advertising(uint32_t options)
 {
 	int err;
 
-	struct bt_le_adv_param param = BT_LE_ADV_PARAM_INIT(BT_LE_ADV_OPT_ONE_TIME,
-							    BT_GAP_ADV_FAST_INT_MIN_2,
-							    BT_GAP_ADV_FAST_INT_MAX_2,
-							    NULL);
+	struct bt_le_adv_param param =
+		BT_LE_ADV_PARAM_INIT(0, BT_GAP_ADV_FAST_INT_MIN_2, BT_GAP_ADV_FAST_INT_MAX_2, NULL);
 	param.options |= options;
 
 	err = bt_le_adv_start(&param, ad, ARRAY_SIZE(ad), NULL, 0);
@@ -82,7 +80,7 @@ void dut_procedure(void)
 	generate_new_rpa();
 
 	LOG_DBG("start adv with identity");
-	start_advertising(BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_USE_IDENTITY);
+	start_advertising(BT_LE_ADV_OPT_CONN | BT_LE_ADV_OPT_USE_IDENTITY);
 
 	/* wait for the tester to validate we're using our identity address */
 	LOG_DBG("wait for validation by tester");
@@ -94,10 +92,7 @@ void dut_procedure(void)
 	}
 
 	LOG_DBG("start adv with RPA");
-	start_advertising(BT_LE_ADV_OPT_CONNECTABLE);
-
-	/* signal tester it can start scanning again, expecting an RPA this time */
-	backchannel_sync_send();
+	start_advertising(BT_LE_ADV_OPT_CONN);
 
 	/* Test pass verdict is decided by the tester */
 	PASS("DUT done\n");

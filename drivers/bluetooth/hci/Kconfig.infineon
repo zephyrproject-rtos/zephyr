@@ -138,6 +138,7 @@ if CYW20829
 
 config CYW20829_BT_FW_TX10DBM_POWER
 	bool "CYW20829_BT_FW_TX10DBM_POWER"
+	default y
 	help
 	  Enable 10dBm TX Power variant of CYW20829 FW patch.
 
@@ -145,8 +146,8 @@ choice CYW20829_BT_FW
 	prompt "Select variant of default CYW20829 BT FW"
 	default CYW20829_BT_FW_ISOC_TX10 if BT_ISO &&  CYW20829_BT_FW_TX10DBM_POWER
 	default CYW20829_BT_FW_ISOC_TX0  if BT_ISO && !CYW20829_BT_FW_TX10DBM_POWER
-	default CYW20829_BT_FW_PAWR_TX10 if BT_PER_ADV_RSP &&  CYW20829_BT_FW_TX10DBM_POWER
-	default CYW20829_BT_FW_PAWR_TX0  if BT_PER_ADV_RSP && !CYW20829_BT_FW_TX10DBM_POWER
+	default CYW20829_BT_FW_PAWR_TX10 if (BT_PER_ADV_RSP || BT_PER_ADV_SYNC_RSP) &&  CYW20829_BT_FW_TX10DBM_POWER
+	default CYW20829_BT_FW_PAWR_TX0  if (BT_PER_ADV_RSP || BT_PER_ADV_SYNC_RSP) && !CYW20829_BT_FW_TX10DBM_POWER
 	default CYW20829_BT_FW_TX10      if CYW20829_BT_FW_TX10DBM_POWER
 	default CYW20829_BT_FW_TX0
 
@@ -190,7 +191,6 @@ endchoice
 endif # CYW20829
 
 config AIROC_CUSTOM_FIRMWARE_HCD_BLOB
-	depends on BT_AIROC_CUSTOM
 	string  "Path to user BT firmware HCD file"
 	help
 	  Path to BT firmware HCD file for custom or vendor CYW43xx modules.
@@ -199,7 +199,7 @@ config AIROC_CUSTOM_FIRMWARE_HCD_BLOB
 # Change size of command lengths. It for vendor commands related to
 # firmware downloading.
 config BT_BUF_CMD_TX_SIZE
-	default 255
+	default $(UINT8_MAX)
 
 endif # BT_AIROC
 

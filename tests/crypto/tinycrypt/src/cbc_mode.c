@@ -128,7 +128,7 @@ ZTEST(tinycrypt, test_cbc_sp_800_38a_encrypt_decrypt)
 
 	result = check_result(1, ciphertext, sizeof(encrypted),
 			      encrypted, sizeof(encrypted), 1);
-	TC_END_RESULT(result);
+	zassert_false(result, "CBC test #1 failed.");
 
 	TC_PRINT("CBC test #2 (decryption SP 800-38a tests):\n");
 	(void)tc_aes128_set_decrypt_key(&a, key);
@@ -145,5 +145,5 @@ ZTEST(tinycrypt, test_cbc_sp_800_38a_encrypt_decrypt)
 			      decrypted, sizeof(decrypted), 1);
 
 	/**TESTPOINT: Check result*/
-	zassert_false(result, "CBC test #1 failed.");
+	zassert_false(result, "CBC test #2 failed.");
 }

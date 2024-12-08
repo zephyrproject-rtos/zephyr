@@ -5,12 +5,13 @@
 set -eu
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-simulation_id="$(guess_test_long_name)"
+simulation_id="mtu_update"
 verbosity_level=2
-central_exe="${BSIM_OUT_PATH}/bin/bs_${BOARD_TS}_$(guess_test_long_name)_prj_conf"
-peripheral_exe="${central_exe}"
 
 cd ${BSIM_OUT_PATH}/bin
+
+central_exe="./bs_${BOARD_TS}_tests_bsim_bluetooth_host_att_mtu_update_prj_central_conf"
+peripheral_exe="./bs_${BOARD_TS}_tests_bsim_bluetooth_host_att_mtu_update_prj_peripheral_conf"
 
 Execute "$central_exe" \
     -v=${verbosity_level} -s=${simulation_id} -d=0 -testid=central -RealEncryption=1

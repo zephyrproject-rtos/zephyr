@@ -1,15 +1,8 @@
-.. _sltb010a:
-
-EFR32BG22 Thunderboard (SLTB010A)
-#################################
+.. zephyr:board:: sltb010a
 
 SLTB010A is a development kit based on the EFR32BG22 SoC. Early revisions of
 the kit (A00 and A01) use a slightly different PCB (BRD4184A) from later
 revisions (BRD4184B).
-
-.. image:: ./sltb010a.jpg
-   :align: center
-   :alt: SLTB010A board
 
 Hardware
 ********
@@ -131,7 +124,7 @@ Flashing an application
 -----------------------
 
 Connect your device to your host computer using the USB port.
-The sample application :ref:`hello_world` is used for this example.
+The sample application :zephyr:code-sample:`hello_world` is used for this example.
 Build the Zephyr kernel and application, then flash it to the device:
 
 BRD4184A:
@@ -149,7 +142,7 @@ BRD4184B:
    :goals: flash
 
 .. note::
-   `west flash` requires `SEGGER J-Link software`_ to be installed on you host
+   ``west flash`` requires `SEGGER J-Link software`_ to be installed on you host
    computer.
 
 Open a serial terminal (minicom, putty, etc.) with the following settings:
@@ -177,7 +170,7 @@ blobs from the SiLabs HAL repository.
    west blobs fetch hal_silabs
 
 Then build the Zephyr kernel and a Bluetooth sample with the following
-command. The :ref:`bluetooth-observer-sample` sample application is used in
+command. The :zephyr:code-sample:`bluetooth_observer` sample application is used in
 this example.
 
 BRD4184A:

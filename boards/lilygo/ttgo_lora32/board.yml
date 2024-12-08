@@ -1,5 +1,6 @@
 board:
   name: ttgo_lora32
+  full_name: TTGO LoRa32
   vendor: lilygo
   socs:
   - name: esp32

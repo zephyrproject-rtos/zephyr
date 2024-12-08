@@ -22,6 +22,8 @@ extern "C" {
 /**
  * @brief Virtual interface library
  * @defgroup virtual_mgmt Virtual Interface Library
+ * @since 2.6
+ * @version 0.8.0
  * @ingroup networking
  * @{
  */

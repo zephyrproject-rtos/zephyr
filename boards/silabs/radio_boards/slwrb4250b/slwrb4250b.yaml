@@ -1,5 +1,5 @@
 identifier: slwrb4250b
-name: EFR32FG 2400/868 MHz 13 dBm Dual Band Radio Board (SLWRB4250B)
+name: EFR32FG 2400/868 MHz 13 dBm Dual Band Radio Board (SLWRB4250B,  BRD4250B)
 type: mcu
 arch: arm
 ram: 32

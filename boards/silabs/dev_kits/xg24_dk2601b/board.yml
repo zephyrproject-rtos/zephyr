@@ -1,5 +1,6 @@
 board:
   name: xg24_dk2601b
+  full_name: EFR32xG24 Dev Kit (xG24-DK2601B)
   vendor: silabs
   socs:
   - name: efr32mg24b310f1536im48

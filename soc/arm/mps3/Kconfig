@@ -1,12 +1,23 @@
 # Copyright (c) 2017-2021 Linaro Limited
+# Copyright 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_MPS3
 	select ARM
 	select GPIO_MMIO32 if GPIO
 
-config SOC_MPS3_AN547
+config SOC_MPS3_CORSTONE300
 	select CPU_CORTEX_M55
+	select CPU_HAS_ARM_SAU
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select ARMV8_M_DSP
+	select ARMV8_1_M_MVEI
+	select ARMV8_1_M_MVEF
+	select ARMV8_1_M_PMU
+
+config SOC_MPS3_CORSTONE310
+	select CPU_CORTEX_M85
 	select CPU_HAS_ARM_SAU
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_FPU
@@ -17,4 +28,5 @@ config SOC_MPS3_AN547
 
 config ARMV8_1_M_PMU_EVENTCNT
 	int
-	default 8 if SOC_MPS3_AN547
+	default 8 if SOC_MPS3_CORSTONE300
+	default 8 if SOC_MPS3_CORSTONE310

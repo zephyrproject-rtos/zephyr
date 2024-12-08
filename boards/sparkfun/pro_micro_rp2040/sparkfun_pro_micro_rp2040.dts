@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <rpi_pico/rp2040.dtsi>
+#include <raspberrypi/rpi_pico/rp2040.dtsi>
 #include "sparkfun_pro_micro_rp2040-pinctrl.dtsi"
 #include "sparkfun_pro_micro_connector.dtsi"
 #include <freq.h>
@@ -56,11 +56,6 @@
 			read-only;
 		};
 	};
-};
-
-&clocks {
-	pinctrl-0 = <&clocks_default>;
-	pinctrl-names = "default";
 };
 
 &uart0 {

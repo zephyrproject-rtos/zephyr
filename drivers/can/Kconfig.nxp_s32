@@ -6,6 +6,7 @@ config CAN_NXP_S32_CANXL
 	default y
 	depends on DT_HAS_NXP_S32_CANXL_ENABLED
 	select CLOCK_CONTROL
+	select PINCTRL
 	help
 	  Enable support for NXP S32 CANXL driver.
 

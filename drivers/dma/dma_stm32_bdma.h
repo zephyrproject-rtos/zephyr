@@ -28,6 +28,7 @@ struct bdma_stm32_channel {
 	uint32_t dst_size;
 	void *user_data; /* holds the client data */
 	dma_callback_t bdma_callback;
+	bool cyclic;
 };
 
 struct bdma_stm32_data {
@@ -52,7 +53,7 @@ uint32_t bdma_stm32_slot_to_channel(uint32_t id);
 #endif
 
 typedef void (*bdma_stm32_clear_flag_func)(BDMA_TypeDef *DMAx);
-typedef uint32_t (*bdma_stm32_check_flag_func)(BDMA_TypeDef *DMAx);
+typedef uint32_t (*bdma_stm32_check_flag_func)(const BDMA_TypeDef *DMAx);
 
 bool bdma_stm32_is_gi_active(BDMA_TypeDef *DMAx, uint32_t id);
 void bdma_stm32_clear_gi(BDMA_TypeDef *DMAx, uint32_t id);

@@ -5,6 +5,7 @@ menuconfig I2C_SAM0
 	bool "SAM0 series I2C SERCOM driver"
 	default y
 	depends on DT_HAS_ATMEL_SAM0_I2C_ENABLED
+	select PINCTRL
 	help
 	  Enable the SAM0 series SERCOM I2C driver.
 
@@ -17,3 +18,11 @@ config I2C_SAM0_DMA_DRIVEN
 	  DMA driven mode requires fewer interrupts to handle the
 	  transaction and ensures that high speed modes are not delayed
 	  by data reloading.
+
+config I2C_SAM0_TRANSFER_TIMEOUT
+	int "Transfer timeout [ms]"
+	default 500
+	help
+	  Timeout in milliseconds used for each I2C transfer.
+	  0 means that the driver should use the K_FOREVER value,
+	  i.e. it should wait as long as necessary.

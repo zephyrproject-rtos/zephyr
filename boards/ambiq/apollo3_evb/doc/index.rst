@@ -1,13 +1,6 @@
-.. _apollo3_evb:
-
-Ambiq Apollo3 Blue EVB
-######################
+.. zephyr:board:: apollo3_evb
 
 Apollo3 Blue EVB is a board by Ambiq featuring their ultra-low power Apollo3 Blue SoC.
-
-.. image:: ./apollo3-blue-soc-eval-board.jpg
-   :align: center
-   :alt: Apollo3 Blue EVB
 
 Hardware
 ********
@@ -60,7 +53,7 @@ Flashing an application
 -----------------------
 
 Connect your device to your host computer using the JLINK USB port.
-The sample application :ref:`hello_world` is used for this example.
+The sample application :zephyr:code-sample:`hello_world` is used for this example.
 Build the Zephyr kernel and application, then flash it to the device:
 
 .. zephyr-app-commands::
@@ -69,7 +62,7 @@ Build the Zephyr kernel and application, then flash it to the device:
    :goals: flash
 
 .. note::
-   `west flash` requires `SEGGER J-Link software`_ and `pylink`_ Python module
+   ``west flash`` requires `SEGGER J-Link software`_ and `pylink`_ Python module
    to be installed on you host computer.
 
 Open a serial terminal (minicom, putty, etc.) with the following settings:

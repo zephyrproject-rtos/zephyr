@@ -71,7 +71,7 @@
  *
  * @return 0
  */
-static int soc_b91_init(void)
+void soc_early_init_hook(void)
 {
 	unsigned int cclk = DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency);
 
@@ -109,8 +109,6 @@ static int soc_b91_init(void)
 	/* Init Machine Timer source clock: 32 KHz RC */
 	clock_32k_init(CLK_32K_RC);
 	clock_cal_32k_rc();
-
-	return 0;
 }
 
 /**
@@ -122,5 +120,3 @@ void sys_arch_reboot(int type)
 
 	reg_reset = SOFT_RESET;
 }
-
-SYS_INIT(soc_b91_init, PRE_KERNEL_1, 0);

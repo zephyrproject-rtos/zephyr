@@ -21,9 +21,9 @@ supports the Arduino connector.
 Usage
 *****
 
-The shield can be used in any application by setting ``SHIELD`` to
-``npm1300_ek``. You can check :ref:`npm1300_ek_sample` for a comprehensive
-sample.
+The shield can be used in any application by setting ``--shield npm1300_ek``
+when invoking ``west build``. You can check :zephyr:code-sample:`npm1300_ek` for a
+comprehensive sample.
 
 References
 **********

@@ -1,5 +1,5 @@
 identifier: slstk3701a
-name: EFM32GG11 Giant Gecko Starter Kit (SLSTK3701A)
+name: EFM32GG11 Giant Gecko Starter Kit (SLSTK3701A, BRD2204C)
 type: mcu
 arch: arm
 ram: 512

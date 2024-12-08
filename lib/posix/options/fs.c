@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
 #include <errno.h>
 #include <zephyr/kernel.h>
 #include <limits.h>
@@ -64,6 +66,7 @@ static int posix_mode_to_zephyr(int mf)
 	int mode = (mf & O_CREAT) ? FS_O_CREATE : 0;
 
 	mode |= (mf & O_APPEND) ? FS_O_APPEND : 0;
+	mode |= (mf & O_TRUNC) ? FS_O_TRUNC : 0;
 
 	switch (mf & O_ACCMODE) {
 	case O_RDONLY:
@@ -82,7 +85,7 @@ static int posix_mode_to_zephyr(int mf)
 	return mode;
 }
 
-int zvfs_open(const char *name, int flags)
+int zvfs_open(const char *name, int flags, int mode)
 {
 	int rc, fd;
 	struct posix_fs_desc *ptr = NULL;
@@ -92,31 +95,51 @@ int zvfs_open(const char *name, int flags)
 		return zmode;
 	}
 
-	fd = z_reserve_fd();
+	fd = zvfs_reserve_fd();
 	if (fd < 0) {
 		return -1;
 	}
 
 	ptr = posix_fs_alloc_obj(false);
 	if (ptr == NULL) {
-		z_free_fd(fd);
-		errno = EMFILE;
-		return -1;
+		rc = -EMFILE;
+		goto out_err;
 	}
 
 	fs_file_t_init(&ptr->file);
 
-	rc = fs_open(&ptr->file, name, zmode);
+	if (flags & O_CREAT) {
+		flags &= ~O_CREAT;
 
-	if (rc < 0) {
-		posix_fs_free_obj(ptr);
-		z_free_fd(fd);
-		errno = -rc;
-		return -1;
+		rc = fs_open(&ptr->file, name, FS_O_CREATE | (mode & O_ACCMODE));
+		if (rc < 0) {
+			goto out_err;
+		}
+		rc = fs_close(&ptr->file);
+		if (rc < 0) {
+			goto out_err;
+		}
 	}
 
-	z_finalize_fd(fd, ptr, &fs_fd_op_vtable);
+	rc = fs_open(&ptr->file, name, zmode);
+	if (rc < 0) {
+		goto out_err;
+	}
 
+	zvfs_finalize_fd(fd, ptr, &fs_fd_op_vtable);
+
+	goto out;
+
+out_err:
+	if (ptr != NULL) {
+		posix_fs_free_obj(ptr);
+	}
+
+	zvfs_free_fd(fd);
+	errno = -rc;
+	return -1;
+
+out:
 	return fd;
 }
 
@@ -314,6 +337,40 @@ struct dirent *readdir(DIR *dirp)
 	return &pdirent;
 }
 
+#ifdef CONFIG_POSIX_FILE_SYSTEM_R
+int readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result)
+{
+	struct dirent *dir;
+
+	errno = 0;
+
+	dir = readdir(dirp);
+	if (dir == NULL) {
+		int error = errno;
+
+		if (error != 0) {
+			if (result != NULL) {
+				*result = NULL;
+			}
+
+			return 0;
+		} else {
+			return error;
+		}
+	}
+
+	if (entry != NULL) {
+		memcpy(entry, dir, sizeof(struct dirent));
+	}
+
+	if (result != NULL) {
+		*result = entry;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_POSIX_FILE_SYSTEM_R */
+
 /**
  * @brief Rename a file.
  *
@@ -428,3 +485,13 @@ int fstat(int fildes, struct stat *buf)
 #ifdef CONFIG_POSIX_FILE_SYSTEM_ALIAS_FSTAT
 FUNC_ALIAS(fstat, _fstat, int);
 #endif
+
+/**
+ * @brief Remove a directory.
+ *
+ * See IEEE 1003.1
+ */
+int rmdir(const char *path)
+{
+	return unlink(path);
+}

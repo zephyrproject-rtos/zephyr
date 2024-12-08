@@ -1,0 +1,10 @@
+identifier: candlelightfd/stm32g0b1xx/dual
+name: candleLightFD Dual
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 144
+flash: 128
+vendor: others

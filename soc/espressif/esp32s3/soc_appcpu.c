@@ -33,7 +33,12 @@
 #include <esp_app_format.h>
 #include <esp_clk_internal.h>
 
-extern void z_cstart(void);
+#define HDR_ATTR __attribute__((section(".entry_addr"))) __attribute__((used))
+
+void __appcpu_start(void);
+static HDR_ATTR void (*_entry_point)(void) = &__appcpu_start;
+
+extern void z_prep_c(void);
 
 static void core_intr_matrix_clear(void)
 {
@@ -44,11 +49,9 @@ static void core_intr_matrix_clear(void)
 	}
 }
 
-void IRAM_ATTR __app_cpu_start(void)
+void IRAM_ATTR __appcpu_start(void)
 {
 	extern uint32_t _init_start;
-	extern uint32_t _bss_start;
-	extern uint32_t _bss_end;
 
 	/* Move the exception vector table to IRAM. */
 	__asm__ __volatile__("wsr %0, vecbase" : : "r"(&_init_start));
@@ -62,7 +65,7 @@ void IRAM_ATTR __app_cpu_start(void)
 	__asm__ __volatile__("wsr %0, PS" : : "r"(PS_INTLEVEL(XCHAL_EXCM_LEVEL) | PS_UM | PS_WOE));
 
 	/* Initialize the architecture CPU pointer.  Some of the
-	 * initialization code wants a valid _current before
+	 * initialization code wants a valid arch_current_thread() before
 	 * arch_kernel_init() is invoked.
 	 */
 	__asm__ __volatile__("wsr.MISC0 %0; rsync" : : "r"(&_kernel.cpus[1]));
@@ -72,7 +75,7 @@ void IRAM_ATTR __app_cpu_start(void)
 	esp_intr_initialize();
 
 	/* Start Zephyr */
-	z_cstart();
+	z_prep_c();
 
 	CODE_UNREACHABLE;
 }

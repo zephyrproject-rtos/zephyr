@@ -1,7 +1,7 @@
 .. _rk043fn66hs_ctg:
 
-RK043FN66HS-CTG Parallel Display
-################################
+NXP RK043FN66HS-CTG Parallel Display
+####################################
 
 Overview
 ********
@@ -87,7 +87,7 @@ for the 40+6 pin parallel/I2C FPC interface
 Programming
 ***********
 
-Set ``-DSHIELD=rk043fn66hs_ctg`` when you invoke ``west build``. For
+Set ``--shield rk043fn66hs_ctg`` when you invoke ``west build``. For
 example:
 
 .. zephyr-app-commands::

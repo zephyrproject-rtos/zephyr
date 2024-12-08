@@ -26,7 +26,7 @@
 #ifndef H_SMP_
 #define H_SMP_
 
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/mgmt/mcumgr/transport/smp.h>
 
 #include <zcbor_common.h>
@@ -56,7 +56,7 @@ struct cbor_nb_writer {
 	struct net_buf *nb;
 	zcbor_state_t zs[CONFIG_MCUMGR_SMP_CBOR_MAX_ENCODING_LEVELS + 2];
 
-#if IS_ENABLED(CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL)
+#if defined(CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL)
 	uint16_t error_group;
 	uint16_t error_ret;
 #endif
@@ -121,13 +121,7 @@ int smp_process_request_packet(struct smp_streamer *streamer, void *req);
  */
 bool smp_add_cmd_err(zcbor_state_t *zse, uint16_t group, uint16_t ret);
 
-/** @deprecated Deprecated after Zephyr 3.4, use smp_add_cmd_err() instead */
-__deprecated inline bool smp_add_cmd_ret(zcbor_state_t *zse, uint16_t group, uint16_t ret)
-{
-	return smp_add_cmd_err(zse, group, ret);
-}
-
-#if IS_ENABLED(CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL)
+#if defined(CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL)
 /** @typedef	smp_translate_error_fn
  * @brief	Translates a SMP version 2 error response to a legacy SMP version 1 error code.
  *

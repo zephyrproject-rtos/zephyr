@@ -71,7 +71,7 @@ static void configure_debug_interface(void)
 #endif /* CONFIG_SOC_MEC1501_DEBUG_WITHOUT_TRACING */
 }
 
-static int soc_init(void)
+void soc_early_init_hook(void)
 {
 	uint32_t isave;
 
@@ -94,8 +94,4 @@ static int soc_init(void)
 	if (!isave) {
 		__enable_irq();
 	}
-
-	return 0;
 }
-
-SYS_INIT(soc_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

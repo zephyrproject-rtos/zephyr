@@ -1,0 +1,31 @@
+# Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_ESP32S3
+
+menu "AMP config"
+
+config ESP32S3_APPCPU_IRAM_SIZE
+	hex "ESP32S3 APPCPU IRAM size"
+	depends on SOC_ESP32S3_PROCPU || SOC_ESP32S3_APPCPU
+	default 0x10000
+	help
+	  Defines APPCPU IRAM area size in bytes.
+
+config ESP32S3_APPCPU_DRAM_SIZE
+	hex "ESP32S3 APPCPU DRAM size"
+	depends on SOC_ESP32S3_PROCPU || SOC_ESP32S3_APPCPU
+	default 0x10000
+	help
+	  Defines APPCPU DRAM area size in bytes.
+
+config SOC_ENABLE_APPCPU
+	bool
+	default y
+	depends on (IPM || MBOX) && SOC_ESP32S3_PROCPU
+	help
+	  This hidden configuration lets PROCPU core to map and start APPCPU whenever IPM is enabled.
+
+endmenu # AMP config
+
+endif # SOC_SERIES_ESP32S3

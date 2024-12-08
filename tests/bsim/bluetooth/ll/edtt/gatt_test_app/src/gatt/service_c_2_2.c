@@ -128,10 +128,12 @@ static ssize_t write_value_v2(struct bt_conn *conn,
 {
 	char *value = attr->user_data;
 
-	if (offset >= sizeof(value_v2_value))
+	if (offset >= sizeof(value_v2_value)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
-	if (offset + len > sizeof(value_v2_value))
+	}
+	if (offset + len > sizeof(value_v2_value)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+	}
 
 	memcpy(value + offset, buf, len);
 
@@ -158,10 +160,12 @@ static ssize_t write_value_v2_1(struct bt_conn *conn,
 {
 	char *value = attr->user_data;
 
-	if (offset >= sizeof(value_v2_1_value))
+	if (offset >= sizeof(value_v2_1_value)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
-	if (offset + len > sizeof(value_v2_1_value))
+	}
+	if (offset + len > sizeof(value_v2_1_value)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+	}
 
 	memcpy(value + offset, buf, len);
 
@@ -188,10 +192,12 @@ static ssize_t write_value_v2_2(struct bt_conn *conn,
 {
 	char *value = attr->user_data;
 
-	if (offset >= sizeof(value_v2_2_value))
+	if (offset >= sizeof(value_v2_2_value)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
-	if (offset + len > sizeof(value_v2_2_value))
+	}
+	if (offset + len > sizeof(value_v2_2_value)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+	}
 
 	memcpy(value + offset, buf, len);
 
@@ -218,10 +224,12 @@ static ssize_t write_value_v2_3(struct bt_conn *conn,
 {
 	char *value = attr->user_data;
 
-	if (offset >= sizeof(value_v2_3_value))
+	if (offset >= sizeof(value_v2_3_value)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
-	if (offset + len > sizeof(value_v2_3_value))
+	}
+	if (offset + len > sizeof(value_v2_3_value)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+	}
 
 	memcpy(value + offset, buf, len);
 
@@ -248,10 +256,12 @@ static ssize_t write_value_v2_4(struct bt_conn *conn,
 {
 	char *value = attr->user_data;
 
-	if (offset >= sizeof(value_v2_4_value))
+	if (offset >= sizeof(value_v2_4_value)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
-	if (offset + len > sizeof(value_v2_4_value))
+	}
+	if (offset + len > sizeof(value_v2_4_value)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+	}
 
 	memcpy(value + offset, buf, len);
 
@@ -278,10 +288,12 @@ static ssize_t write_value_v2_5(struct bt_conn *conn,
 {
 	char *value = attr->user_data;
 
-	if (offset >= sizeof(value_v2_5_value))
+	if (offset >= sizeof(value_v2_5_value)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
-	if (offset + len > sizeof(value_v2_5_value))
+	}
+	if (offset + len > sizeof(value_v2_5_value)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+	}
 
 	memcpy(value + offset, buf, len);
 

@@ -17,13 +17,12 @@ LOG_MODULE_DECLARE(net_shell);
 #include "net_shell_private.h"
 
 #if defined(CONFIG_NET_MGMT_EVENT_MONITOR)
-#define EVENT_MON_STACK_SIZE 1024
 #define THREAD_PRIORITY K_PRIO_COOP(2)
 #define MAX_EVENT_INFO_SIZE NET_EVENT_INFO_MAX_SIZE
 #define MONITOR_L2_MASK (_NET_EVENT_IF_BASE)
-#define MONITOR_L3_IPV4_MASK (_NET_EVENT_IPV4_BASE)
-#define MONITOR_L3_IPV6_MASK (_NET_EVENT_IPV6_BASE)
-#define MONITOR_L4_MASK (_NET_EVENT_L4_BASE)
+#define MONITOR_L3_IPV4_MASK (_NET_EVENT_IPV4_BASE | NET_MGMT_COMMAND_MASK)
+#define MONITOR_L3_IPV6_MASK (_NET_EVENT_IPV6_BASE | NET_MGMT_COMMAND_MASK)
+#define MONITOR_L4_MASK (_NET_EVENT_L4_BASE | NET_MGMT_COMMAND_MASK)
 
 static bool net_event_monitoring;
 static bool net_event_shutting_down;
@@ -32,7 +31,7 @@ static struct net_mgmt_event_callback l3_ipv4_cb;
 static struct net_mgmt_event_callback l3_ipv6_cb;
 static struct net_mgmt_event_callback l4_cb;
 static struct k_thread event_mon;
-static K_THREAD_STACK_DEFINE(event_mon_stack, EVENT_MON_STACK_SIZE);
+static K_THREAD_STACK_DEFINE(event_mon_stack, CONFIG_NET_MGMT_EVENT_MONITOR_STACK_SIZE);
 
 struct event_msg {
 	struct net_if *iface;
@@ -88,6 +87,11 @@ static char *get_l3_desc(struct event_msg *msg,
 {
 	static const char *desc_unknown = "<unknown event>";
 	char *info = NULL;
+
+#if defined(CONFIG_NET_PMTU)
+#define MAX_PMTU_INFO_STR_LEN sizeof("changed MTU xxxxx for")
+	static char pmtu_buf[MAX_PMTU_INFO_STR_LEN + 1];
+#endif
 
 	*desc = desc_unknown;
 
@@ -268,6 +272,34 @@ static char *get_l3_desc(struct event_msg *msg,
 		info = net_addr_ntop(AF_INET, msg->data, extra_info,
 				     extra_info_len);
 		break;
+	case NET_EVENT_IPV4_PMTU_CHANGED: {
+#if defined(CONFIG_NET_IPV4_PMTU)
+		struct net_event_ipv4_pmtu_info *pmtu_info =
+			(struct net_event_ipv4_pmtu_info *)msg->data;
+
+		*desc = "IPV4 PMTU";
+		*desc2 = pmtu_buf;
+		snprintk(pmtu_buf, MAX_PMTU_INFO_STR_LEN,
+			 "changed MTU %u for", (uint16_t)pmtu_info->mtu);
+		info = net_addr_ntop(AF_INET, &pmtu_info->dst, extra_info,
+				     extra_info_len);
+#endif
+		break;
+	}
+	case NET_EVENT_IPV6_PMTU_CHANGED: {
+#if defined(CONFIG_NET_IPV6_PMTU)
+		struct net_event_ipv6_pmtu_info *pmtu_info =
+			(struct net_event_ipv6_pmtu_info *)msg->data;
+
+		*desc = "IPV6 PMTU";
+		*desc2 = pmtu_buf;
+		snprintk(pmtu_buf, MAX_PMTU_INFO_STR_LEN,
+			 "changed MTU %u for", (uint16_t)pmtu_info->mtu);
+		info = net_addr_ntop(AF_INET6, &pmtu_info->dst, extra_info,
+				     extra_info_len);
+#endif
+		break;
+	}
 	}
 
 	return info;

@@ -1,7 +1,4 @@
-.. _nucleo_wba55cg_board:
-
-ST Nucleo WBA55CG
-#################
+.. zephyr:board:: nucleo_wba55cg
 
 Overview
 ********
@@ -36,10 +33,6 @@ platform with a wide choice of specialized shields.
 - Flexible power-supply options: ST-LINK USB VBUS or external sources
 - On-board STLINK-V3MODS debugger/programmer with USB re-enumeration capability:
   mass storage, Virtual COM port, and debug port
-
-.. image:: img/nucleowba55cg.jpg
-   :align: center
-   :alt: Nucleo WBA55CG
 
 Hardware
 ********
@@ -196,7 +189,7 @@ To fetch Binary Blobs:
 
 .. code-block:: console
 
-   west blobs fetch stm32
+   west blobs fetch hal_stm32
 
 Connections and IOs
 ===================
@@ -241,8 +234,15 @@ It could be used for flash and debug using either OpenOCD or STM32Cube ecosystem
 Flashing
 ========
 
-STM32CubeProgrammer is configured as flashing tool by default.
-If available, OpenOCD could be used. Same process applies with both tools.
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
+
+Alternatively, openocd can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
 
 Flashing an application to Nucleo WBA55CG
 -----------------------------------------
@@ -291,3 +291,6 @@ For that:
 
 .. _OpenOCD official Github mirror:
    https://github.com/openocd-org/openocd/commit/870769b0ba9f4dae6ada9d8b1a40d75bd83aaa06
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

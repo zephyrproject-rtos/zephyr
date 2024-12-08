@@ -43,7 +43,7 @@ DMA channels should be viewed as state machines that the DMA API provides transi
 the form of API calls. Every driver is expected to maintain its own channel state tracking. The busy
 state of the channel should be inspectable at any time with :c:func:`dma_get_status()`.
 
-A diagram showing those expectated possible state transitions and their API calls is provided here
+A diagram, showing those expected possible state transitions and their API calls is provided here
 for reference.
 
 .. graphviz::
@@ -61,7 +61,8 @@ for reference.
        init -> CONFIGURED [label=dma_config];
 
        CONFIGURED -> RUNNING [label=dma_start];
-       CONFIGURED -> CONFIGURED [label=dma_stop];
+       CONFIGURED -> CONFIGURED [label=dma_stop, headport=c, tailport=e];
+       CONFIGURED -> CONFIGURED [label=dma_config, headport=c, tailport=w];
 
        RUNNING -> CONFIGURED [label=dma_stop];
        RUNNING -> RUNNING [label=dma_start];

@@ -5,7 +5,8 @@
 '''Runner stub for renode-test.'''
 
 import subprocess
-from runners.core import ZephyrBinaryRunner, RunnerCaps
+
+from runners.core import RunnerCaps, ZephyrBinaryRunner
 
 
 class RenodeRobotRunner(ZephyrBinaryRunner):
@@ -28,6 +29,8 @@ class RenodeRobotRunner(ZephyrBinaryRunner):
     @classmethod
     def do_add_parser(cls, parser):
         parser.add_argument('--testsuite',
+                            metavar='SUITE',
+                            action='append',
                             help='path to Robot test suite')
         parser.add_argument('--renode-robot-arg',
                             metavar='ARG',
@@ -54,7 +57,9 @@ class RenodeRobotRunner(ZephyrBinaryRunner):
                 for arg in self.renode_robot_arg:
                     cmd.append(arg)
             if self.testsuite is not None:
-                cmd.append(self.testsuite)
+                for suite in self.testsuite:
+                    cmd.append(suite)
             else:
-                self.logger.error("No Robot testsuite passed to renode-test! Use the `--testsuite` argument to provide one.")
+                self.logger.error("No Robot testsuite passed to renode-test! "
+                                  "Use the `--testsuite` argument to provide one.")
         subprocess.run(cmd, check=True)

@@ -5,7 +5,7 @@ description: i.MX I2C node
 
 compatible: "fsl,imx21-i2c"
 
-include: [i2c-controller.yaml, pinctrl-device.yaml]
+include: [i2c-controller.yaml, pinctrl-device.yaml, "nxp,rdc-policy.yaml"]
 
 properties:
   reg:
@@ -13,8 +13,3 @@ properties:
 
   interrupts:
     required: true
-
-  rdc:
-    type: int
-    required: true
-    description: Set the RDC permission for this peripheral

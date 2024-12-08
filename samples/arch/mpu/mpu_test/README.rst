@@ -1,7 +1,7 @@
-.. _mpu_test:
+.. zephyr:code-sample:: mpu
+   :name: Memory Protection Unit (MPU)
 
-Memory Protection Unit (MPU) Sample
-###################################
+   Use memory protection to prevent common security issues.
 
 Overview
 ********

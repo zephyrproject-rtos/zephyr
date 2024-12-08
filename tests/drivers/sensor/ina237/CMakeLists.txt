@@ -10,4 +10,4 @@ target_sources(app PRIVATE ${app_sources})
 
 # Include the INA23x driver path and unit-test path for private header inclusion
 zephyr_include_directories(./src)
-zephyr_include_directories($ENV{ZEPHYR_BASE}/drivers/sensor/ti/ina23x)
+zephyr_include_directories(${ZEPHYR_BASE}/drivers/sensor/ti/ina23x)

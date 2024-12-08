@@ -7,7 +7,7 @@ set(hal_dir         ${ZEPHYR_HAL_INFINEON_MODULE_DIR}/mtb-hal-cat1)
 set(hal_cat1a_dir   ${hal_dir}/COMPONENT_CAT1A)
 set(hal_cat1b_dir   ${hal_dir}/COMPONENT_CAT1B)
 
-# PSoC 6 family defines
+# PSOC 6 family defines
 zephyr_compile_definitions_ifdef(CONFIG_SOC_FAMILY_INFINEON_CAT1A COMPONENT_CAT1A)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_FAMILY_INFINEON_CAT1B COMPONENT_CAT1B)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_FAMILY_INFINEON_CAT1 COMPONENT_CAT1)
@@ -74,10 +74,10 @@ zephyr_library_sources_ifdef(CONFIG_SOC_DIE_PSOC6_04
 
 # High level interface for interacting with CAT1 hardware
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_ADC     ${hal_dir}/source/cyhal_adc_sar.c)
+zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_ADC     ${hal_dir}/source/cyhal_analog_common.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_FLASH   ${hal_dir}/source/cyhal_nvm.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_I2C     ${hal_dir}/source/cyhal_i2c.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_LPTIMER ${hal_dir}/source/cyhal_lptimer.c)
-zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_PWM     ${hal_dir}/source/cyhal_pwm.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_RTC     ${hal_dir}/source/cyhal_rtc.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_SDIO    ${hal_dir}/source/cyhal_sdhc.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_SPI     ${hal_dir}/source/cyhal_spi.c)
@@ -86,8 +86,7 @@ zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_TRNG    ${hal_dir}/source/cyhal
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_UART    ${hal_dir}/source/cyhal_uart.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_WDT     ${hal_dir}/source/cyhal_wdt.c)
 
-if(CONFIG_USE_INFINEON_ADC)
-  zephyr_library_sources(${hal_dir}/source/cyhal_analog_common.c)
+if(CONFIG_USE_INFINEON_ADC OR CONFIG_USE_INFINEON_SMIF)
   zephyr_library_sources(${hal_dir}/source/cyhal_dma.c)
   zephyr_library_sources(${hal_dir}/source/cyhal_dma_dmac.c)
   zephyr_library_sources(${hal_dir}/source/cyhal_dma_dw.c)

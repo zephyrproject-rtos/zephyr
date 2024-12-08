@@ -20,6 +20,7 @@
 #include <zephyr/drivers/usb/udc.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
+#include <zephyr/dt-bindings/regulator/nrf5x.h>
 
 #include <nrf_usbd_common.h>
 #include <hal/nrf_usbd.h>
@@ -69,7 +70,8 @@ static struct k_thread drv_stack_data;
 
 static struct udc_ep_config ep_cfg_out[CFG_EPOUT_CNT + CFG_EP_ISOOUT_CNT + 1];
 static struct udc_ep_config ep_cfg_in[CFG_EPIN_CNT + CFG_EP_ISOIN_CNT + 1];
-static bool udc_nrf_setup_rcvd;
+static bool udc_nrf_setup_rcvd, udc_nrf_setup_set_addr, udc_nrf_fake_setup;
+static uint8_t udc_nrf_address;
 const static struct device *udc_nrf_dev;
 
 struct udc_nrf_config {
@@ -142,7 +144,9 @@ static void udc_event_xfer_ctrl_in(const struct device *dev,
 	/* Update to next stage of control transfer */
 	udc_ctrl_update_stage(dev, buf);
 
-	nrf_usbd_common_setup_clear();
+	if (!udc_nrf_setup_set_addr) {
+		nrf_usbd_common_setup_clear();
+	}
 }
 
 static void udc_event_fake_status_in(const struct device *dev)
@@ -176,7 +180,8 @@ static void udc_event_xfer_in(const struct device *dev,
 
 		udc_ep_set_busy(dev, ep, false);
 		if (ep == USB_CONTROL_EP_IN) {
-			return udc_event_xfer_ctrl_in(dev, buf);
+			udc_event_xfer_ctrl_in(dev, buf);
+			return;
 		}
 
 		udc_submit_ep_event(dev, buf, 0);
@@ -307,7 +312,7 @@ static int usbd_ctrl_feed_dout(const struct device *dev,
 		return -ENOMEM;
 	}
 
-	net_buf_put(&cfg->fifo, buf);
+	k_fifo_put(&cfg->fifo, buf);
 	udc_nrf_clear_control_out(dev);
 
 	return 0;
@@ -315,6 +320,7 @@ static int usbd_ctrl_feed_dout(const struct device *dev,
 
 static int udc_event_xfer_setup(const struct device *dev)
 {
+	nrf_usbd_common_setup_t *setup;
 	struct net_buf *buf;
 	int err;
 
@@ -326,7 +332,77 @@ static int udc_event_xfer_setup(const struct device *dev)
 	}
 
 	udc_ep_buf_set_setup(buf);
-	nrf_usbd_common_setup_get((nrf_usbd_common_setup_t *)buf->data);
+	setup = (nrf_usbd_common_setup_t *)buf->data;
+	nrf_usbd_common_setup_get(setup);
+
+	/* USBD peripheral automatically handles Set Address in slightly
+	 * different manner than the USB stack.
+	 *
+	 * USBD peripheral doesn't care about wLength, but the peripheral
+	 * switches to new address only after status stage. The device won't
+	 * automatically accept Data Stage packets.
+	 *
+	 * However, in the case the host:
+	 *   * sends SETUP Set Address with non-zero wLength
+	 *   * does not send corresponding OUT DATA packets (to match wLength)
+	 *     or sends the packets but disregards NAK
+	 *     or sends the packets that device ACKs
+	 *   * sends IN token (either incorrectly proceeds to status stage, or
+	 *     manages to send IN before SW sets STALL)
+	 * then the USBD peripheral will accept the address and USB stack won't.
+	 * This will lead to state mismatch between the stack and peripheral.
+	 *
+	 * In cases where the USB stack would like to STALL the request there is
+	 * a race condition between host issuing Set Address status stage (IN
+	 * token) and SW setting STALL bit. If host wins the race, the device
+	 * ACKs status stage and use new address. If device wins the race, the
+	 * device STALLs status stage and address remains unchanged.
+	 */
+	udc_nrf_setup_set_addr =
+		setup->bmRequestType == 0 &&
+		setup->bRequest == USB_SREQ_SET_ADDRESS;
+	if (udc_nrf_setup_set_addr) {
+		if (setup->wLength) {
+			/* Currently USB stack only STALLs OUT Data Stage when
+			 * buffer allocation fails. To prevent the device from
+			 * ACKing the Data Stage, simply ignore the request
+			 * completely.
+			 *
+			 * If host incorrectly proceeds to status stage there
+			 * will be address mismatch (unless the new address is
+			 * equal to current device address). If host does not
+			 * issue IN token then the mismatch will be avoided.
+			 */
+			net_buf_unref(buf);
+			return 0;
+		}
+
+		/* nRF52/nRF53 USBD doesn't care about wValue bits 8..15 and
+		 * wIndex value but USB device stack does.
+		 *
+		 * Just clear the bits so stack will handle the request in the
+		 * same way as USBD peripheral does, avoiding the mismatch.
+		 */
+		setup->wValue &= 0x7F;
+		setup->wIndex = 0;
+	}
+
+	if (!udc_nrf_setup_set_addr && udc_nrf_address != NRF_USBD->USBADDR) {
+		/* Address mismatch detected. Fake Set Address handling to
+		 * correct the situation, then repeat handling.
+		 */
+		udc_nrf_fake_setup = true;
+		udc_nrf_setup_set_addr = true;
+
+		setup->bmRequestType = 0;
+		setup->bRequest = USB_SREQ_SET_ADDRESS;
+		setup->wValue = NRF_USBD->USBADDR;
+		setup->wIndex = 0;
+		setup->wLength = 0;
+	} else {
+		udc_nrf_fake_setup = false;
+	}
+
 	net_buf_add(buf, sizeof(nrf_usbd_common_setup_t));
 	udc_nrf_setup_rcvd = true;
 
@@ -367,6 +443,22 @@ static void udc_nrf_thread(void *p1, void *p2, void *p3)
 		case UDC_NRF_EVT_HAL:
 			ep = evt.hal_evt.data.eptransfer.ep;
 			switch (evt.hal_evt.type) {
+			case NRF_USBD_COMMON_EVT_SUSPEND:
+				LOG_INF("SUSPEND state detected");
+				nrf_usbd_common_suspend();
+				udc_set_suspended(udc_nrf_dev, true);
+				udc_submit_event(udc_nrf_dev, UDC_EVT_SUSPEND, 0);
+				break;
+			case NRF_USBD_COMMON_EVT_RESUME:
+				LOG_INF("RESUMING from suspend");
+				udc_set_suspended(udc_nrf_dev, false);
+				udc_submit_event(udc_nrf_dev, UDC_EVT_RESUME, 0);
+				break;
+			case NRF_USBD_COMMON_EVT_WUREQ:
+				LOG_INF("Remote wakeup initiated");
+				udc_set_suspended(udc_nrf_dev, false);
+				udc_submit_event(udc_nrf_dev, UDC_EVT_RESUME, 0);
+				break;
 			case NRF_USBD_COMMON_EVT_EPTRANSFER:
 				start_xfer = true;
 				if (USB_EP_DIR_IS_IN(ep)) {
@@ -423,22 +515,6 @@ static void udc_sof_check_iso_out(const struct device *dev)
 static void usbd_event_handler(nrf_usbd_common_evt_t const *const hal_evt)
 {
 	switch (hal_evt->type) {
-	case NRF_USBD_COMMON_EVT_SUSPEND:
-		LOG_INF("SUSPEND state detected");
-		nrf_usbd_common_suspend();
-		udc_set_suspended(udc_nrf_dev, true);
-		udc_submit_event(udc_nrf_dev, UDC_EVT_SUSPEND, 0);
-		break;
-	case NRF_USBD_COMMON_EVT_RESUME:
-		LOG_INF("RESUMING from suspend");
-		udc_set_suspended(udc_nrf_dev, false);
-		udc_submit_event(udc_nrf_dev, UDC_EVT_RESUME, 0);
-		break;
-	case NRF_USBD_COMMON_EVT_WUREQ:
-		LOG_INF("Remote wakeup initiated");
-		udc_set_suspended(udc_nrf_dev, false);
-		udc_submit_event(udc_nrf_dev, UDC_EVT_RESUME, 0);
-		break;
 	case NRF_USBD_COMMON_EVT_RESET:
 		LOG_INF("Reset");
 		udc_submit_event(udc_nrf_dev, UDC_EVT_RESET, 0);
@@ -447,6 +523,9 @@ static void usbd_event_handler(nrf_usbd_common_evt_t const *const hal_evt)
 		udc_submit_event(udc_nrf_dev, UDC_EVT_SOF, 0);
 		udc_sof_check_iso_out(udc_nrf_dev);
 		break;
+	case NRF_USBD_COMMON_EVT_SUSPEND:
+	case NRF_USBD_COMMON_EVT_RESUME:
+	case NRF_USBD_COMMON_EVT_WUREQ:
 	case NRF_USBD_COMMON_EVT_EPTRANSFER:
 	case NRF_USBD_COMMON_EVT_SETUP: {
 		struct udc_nrf_evt evt = {
@@ -485,17 +564,21 @@ static void udc_nrf_power_handler(nrfx_power_usb_evt_t pwr_evt)
 	}
 }
 
-static void udc_nrf_fake_status_in(const struct device *dev)
+static bool udc_nrf_fake_status_in(const struct device *dev)
 {
 	struct udc_nrf_evt evt = {
 		.type = UDC_NRF_EVT_STATUS_IN,
 		.ep = USB_CONTROL_EP_IN,
 	};
 
-	if (nrf_usbd_common_last_setup_dir_get() == USB_CONTROL_EP_OUT) {
+	if (nrf_usbd_common_last_setup_dir_get() == USB_CONTROL_EP_OUT ||
+	    udc_nrf_fake_setup) {
 		/* Let controller perform status IN stage */
 		k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
+		return true;
 	}
+
+	return false;
 }
 
 static int udc_nrf_ep_enqueue(const struct device *dev,
@@ -510,8 +593,9 @@ static int udc_nrf_ep_enqueue(const struct device *dev,
 	udc_buf_put(cfg, buf);
 
 	if (cfg->addr == USB_CONTROL_EP_IN && buf->len == 0) {
-		udc_nrf_fake_status_in(dev);
-		return 0;
+		if (udc_nrf_fake_status_in(dev)) {
+			return 0;
+		}
 	}
 
 	k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
@@ -552,7 +636,7 @@ static int udc_nrf_ep_enable(const struct device *dev,
 	uint16_t mps;
 
 	__ASSERT_NO_MSG(cfg);
-	mps = (cfg->mps == 0) ? cfg->caps.mps : cfg->mps;
+	mps = (udc_mps_ep_size(cfg) == 0) ? cfg->caps.mps : udc_mps_ep_size(cfg);
 	nrf_usbd_common_ep_max_packet_size_set(cfg->addr, mps);
 	nrf_usbd_common_ep_enable(cfg->addr);
 	if (!NRF_USBD_EPISO_CHECK(cfg->addr)) {
@@ -606,12 +690,38 @@ static int udc_nrf_ep_clear_halt(const struct device *dev,
 
 static int udc_nrf_set_address(const struct device *dev, const uint8_t addr)
 {
-	/**
-	 * Nothing to do here. The USBD HW already takes care of initiating
-	 * STATUS stage. Just double check the address for sanity.
+	/*
+	 * If the status stage already finished (which depends entirely on when
+	 * the host sends IN token) then NRF_USBD->USBADDR will have the same
+	 * address, otherwise it won't (unless new address is unchanged).
+	 *
+	 * Store the address so the driver can detect address mismatches
+	 * between USB stack and USBD peripheral. The mismatches can occur if:
+	 *   * SW has high enough latency in SETUP handling, or
+	 *   * Host did not issue Status Stage after Set Address request
+	 *
+	 * The SETUP handling latency is a problem because the Set Address is
+	 * automatically handled by device. Because whole Set Address handling
+	 * can finish in less than 21 us, the latency required (with perfect
+	 * timing) to hit the issue is relatively short (2 ms Set Address
+	 * recovery interval + negligible Set Address handling time). If host
+	 * sends new SETUP before SW had a chance to read the Set Address one,
+	 * the Set Address one will be overwritten without a trace.
 	 */
-	if (addr != (uint8_t)NRF_USBD->USBADDR) {
-		LOG_WRN("USB Address incorrect 0x%02x", addr);
+	udc_nrf_address = addr;
+
+	if (udc_nrf_fake_setup) {
+		struct udc_nrf_evt evt = {
+			.type = UDC_NRF_EVT_HAL,
+			.hal_evt = {
+				.type = NRF_USBD_COMMON_EVT_SETUP,
+			},
+		};
+
+		/* Finished handling lost Set Address, now handle the pending
+		 * SETUP transfer.
+		 */
+		k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
 	}
 
 	return 0;
@@ -818,11 +928,12 @@ static const struct udc_nrf_config udc_nrf_cfg = {
 			     (CLOCK_CONTROL_NRF_SUBSYS_HF192M),
 			     (CLOCK_CONTROL_NRF_SUBSYS_HF)),
 	.pwr = {
-		.dcdcen = IS_ENABLED(CONFIG_SOC_DCDC_NRF52X) ||
-			  IS_ENABLED(CONFIG_SOC_DCDC_NRF53X_APP),
+		.dcdcen = (DT_PROP(DT_INST(0, nordic_nrf5x_regulator), regulator_initial_mode)
+			   == NRF5X_REG_MODE_DCDC),
 #if NRFX_POWER_SUPPORTS_DCDCEN_VDDH
-		.dcdcenhv = IS_ENABLED(CONFIG_SOC_DCDC_NRF52X_HV) ||
-			    IS_ENABLED(CONFIG_SOC_DCDC_NRF53X_HV),
+		.dcdcenhv = COND_CODE_1(CONFIG_SOC_SERIES_NRF52X,
+			(DT_NODE_HAS_STATUS_OKAY(DT_INST(0, nordic_nrf52x_regulator_hv))),
+			(DT_NODE_HAS_STATUS_OKAY(DT_INST(0, nordic_nrf53x_regulator_hv)))),
 #endif
 	},
 

@@ -1,7 +1,0 @@
-common:
-  tags:
-    - net
-    - buf
-tests:
-  net.buf_simple:
-    type: unit

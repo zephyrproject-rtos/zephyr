@@ -16,10 +16,10 @@ It should be possible to build and run this sample on almost any board or emulat
 
 Building and Running for ST Disco L475 IOT01 (B-L475E-IOT01A)
 =============================================================
-The sample can be built and executed for the :ref:`disco_l475_iot1_board` as follows:
+The sample can be built and executed for the :zephyr:board:`disco_l475_iot1` as follows:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/subsys/smf/psicc2
+   :zephyr-app: samples/subsys/smf/hsm_psicc2
    :board: disco_l475_iot1
    :goals: build flash
    :compact:

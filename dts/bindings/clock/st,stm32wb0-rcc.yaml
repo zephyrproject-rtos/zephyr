@@ -1,0 +1,56 @@
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32WB0 Reset and Clock controller node for STM32WB0 devices
+  This node is in charge of the system clock ('SYSCLK') source
+  selection and generation.
+
+compatible: "st,stm32wb0-rcc"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#clock-cells":
+    const: 2
+
+  clock-frequency:
+    required: true
+    type: int
+    description: |
+      default frequency in Hz for clock output
+
+  slow-clock:
+    type: phandle
+    description: |
+      Slow clock source selection.
+      On STM32WB0, all slow clock devices are clocked from the same
+      slow clock source, which is selected by this property.
+
+      The slow clock can be either clk_lsi, clk_lse, or clk_16mhz_div512.
+
+  clksys-prescaler:
+    type: int
+    required: true
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
+    description: |
+      CLK_SYS prescaler. Defines actual core clock frequency (CLK_SYS) based
+      on system frequency input (SYSCLK).
+      The CLK_SYS is used to clock the CPU, AHB, APB, memories and PKA.
+
+      NOTE: if the 32MHz HSE is used as SYSCLK source, the prescaler cannot
+      be set to 64.
+
+clock-cells:
+  - bus
+  - bits

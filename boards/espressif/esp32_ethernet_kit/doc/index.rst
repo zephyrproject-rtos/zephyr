@@ -1,7 +1,7 @@
-.. _esp32_ethernet_kit:
+.. zephyr:board:: esp32_ethernet_kit
 
-ESP32-ETHERNET-KIT
-##################
+Overview
+********
 
 The ESP32-Ethernet-Kit is an Ethernet-to-Wi-Fi development board that enables
 Ethernet devices to be interconnected over Wi-Fi. At the same time, to provide
@@ -10,23 +10,13 @@ over Ethernet (PoE).
 
 .. _get-started-esp32-ethernet-kit-v1.2-overview:
 
-.. figure:: img/esp32-ethernet-kit-v1.2-overview.jpg
-    :align: center
-    :alt: ESP32-Ethernet-Kit V1.2
-    :figclass: align-center
+ESP32-Ethernet-Kit is an ESP32-WROVER-E based development.
+For more information, check the datasheet at `ESP32-WROVER-E Datasheet`_.
 
-    ESP32-Ethernet-Kit V1.2 Overview
-
-Overview
-********
-
-ESP32-Ethernet-Kit is an ESP32-based development board produced by
-`Espressif <https://espressif.com>`_.
-
-It consists of two development boards, the Ethernet board A and the PoE
-board B. The `Ethernet board (A)`_ contains Bluetooth/Wi-Fi dual-mode
+It consists of two development boards, the Ethernet Board A and the PoE
+board B. The `Ethernet Board (A)`_ contains Bluetooth/Wi-Fi dual-mode
 ESP32-WROVER-E module and IP101GRI, a Single Port 10/100 Fast Ethernet
-Transceiver (PHY). The `PoE board (B)`_ provides power over Ethernet
+Transceiver (PHY). The `PoE Board (B)`_ provides power over Ethernet
 functionality. The A board can work independently, without the board B
 installed.
 
@@ -39,7 +29,7 @@ installed.
 
     ESP32-Ethernet-Kit V1.2
 
-For the application loading and monitoring, the Ethernet board (A) also
+For the application loading and monitoring, the Ethernet Board (A) also
 features FTDI FT2232H chip - an advanced multi-interface USB bridge.
 This chip enables to use JTAG for direct debugging of ESP32 through the
 USB interface without a separate JTAG debugger.
@@ -76,7 +66,7 @@ Ethernet Board (A)
     :alt: ESP32-Ethernet-Kit V1.2
     :figclass: align-center
 
-    ESP32-Ethernet-Kit - Ethernet board (A) layout
+    ESP32-Ethernet-Kit - Ethernet Board (A) layout
 
 The table below provides description starting from the picture's top right
 corner and going clockwise.
@@ -104,8 +94,7 @@ corner and going clockwise.
       ESP32. FT2232H also features USB-to-JTAG interface which is available
       on channel A of the chip, while USB-to-serial is on channel B.
       The FT2232H chip enhances user-friendliness in terms of application
-      development and debugging. See
-      `ESP32-Ethernet-Kit V1.2 Ethernet board (A) Schematic <https://dl.espressif.com/dl/schematics/SCH_ESP32-Ethernet-Kit_A_V1.2_20200528.pdf>`_.
+      development and debugging. See `ESP32-Ethernet-Kit V1.2 Ethernet Board (A) Schematic`_
   * - USB Port
     - USB interface. Power supply for the board as well as the communication
       interface between a computer and the board.
@@ -121,7 +110,7 @@ corner and going clockwise.
   * - DC/DC Converter
     - Provided DC 5 V to 3.3 V conversion, output current up to 2 A.
   * - Board B Connectors
-    - A pair male and female header pins for mounting the `PoE board (B)`_
+    - A pair male and female header pins for mounting the `PoE Board (B)`_
   * - IP101GRI (PHY)
     - The physical layer (PHY) connection to the Ethernet cable is
       implemented using the
@@ -155,27 +144,27 @@ PoE Board (B)
 ^^^^^^^^^^^^^
 
 This board coverts power delivered over the Ethernet cable (PoE) to provide a
-power supply for the Ethernet board (A). The main components of the PoE board
+power supply for the Ethernet Board (A). The main components of the PoE Board
 (B) are shown on the block diagram under `Functionality Overview`_.
 
-The PoE board (B) has the following features:
+The PoE Board (B) has the following features:
 
 * Support for IEEE 802.3at
 * Power output: 5 V, 1.4 A
 
 To take advantage of the PoE functionality the **RJ45 Port** of the Ethernet
 board (A) should be connected with an Ethernet cable to a switch that supports
-PoE. When the Ethernet board (A) detects 5 V power output from the PoE board
+PoE. When the Ethernet Board (A) detects 5 V power output from the PoE Board
 (B), the USB power will be automatically cut off.
 
 .. figure:: img/esp32-ethernet-kit-b-v1.0-layout.jpg
     :align: center
-    :alt: ESP32-Ethernet-Kit - PoE board (B)
+    :alt: ESP32-Ethernet-Kit - PoE Board (B)
     :figclass: align-center
 
-    ESP32-Ethernet-Kit - PoE board (B) layout
+    ESP32-Ethernet-Kit - PoE Board (B) layout
 
-.. list-table:: Table  PoE board (B)
+.. list-table:: Table  PoE Board (B)
   :widths: 40 150
   :header-rows: 1
 
@@ -183,11 +172,11 @@ PoE. When the Ethernet board (A) detects 5 V power output from the PoE board
     - Description
   * - Board A Connector
     - Four female (left) and four male (right) header pins for connecting the
-      PoE board (B) to `Ethernet board (A)`_. The pins on the left accept
+      PoE Board (B) to `Ethernet Board (A)`_. The pins on the left accept
       power coming from a PoE switch. The pins on the right deliver 5 V power
-      supply to the Ethernet board (A).
+      supply to the Ethernet Board (A).
   * - External Power Terminals
-    - Optional power supply (26.6 ~ 54 V) to the PoE board (B).
+    - Optional power supply (26.6 ~ 54 V) to the PoE Board (B).
 
 .. _get-started-esp32-ethernet-kit-v1.2-setup-options:
 
@@ -225,9 +214,7 @@ or generated from internal ESP32 APLL (not recommended).
 .. note::
 
     For additional information on the RMII clock selection, please refer to
-    `ESP32-Ethernet-Kit V1.2 Ethernet board (A) Schematic <https://dl.espressif.com/dl/schematics/SCH_ESP32-Ethernet-Kit_A_V1.2_20200528.pdf>`_,
-    sheet 2, location D2.
-
+    `ESP32-Ethernet-Kit V1.2 Ethernet Board (A) Schematic`_, sheet 2, location D2.
 
 RMII Clock Sourced Externally by PHY
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -267,7 +254,7 @@ for transmission line delay, and then supplied to the PHY.
 
 To implement this option, users need to remove or add some RC components on
 the board. For details please refer to
-`ESP32-Ethernet-Kit V1.2 Ethernet board (A) Schematic <https://dl.espressif.com/dl/schematics/SCH_ESP32-Ethernet-Kit_A_V1.2_20200528.pdf>`_,
+`ESP32-Ethernet-Kit V1.2 Ethernet Board (A) Schematic`_,
 sheet 2, location D2. Please note that if the APLL is already used for other
 purposes (e.g. I2S peripheral), then you have no choice but use an external
 RMII clock.
@@ -411,7 +398,7 @@ GPIO Allocation Summary
        module that can be disabled/enabled externally. Similarly like when
        using RESET_N, the oscillator module should be disabled by default and
        turned on by ESP32 after power-up. For a reference design please see
-       `ESP32-Ethernet-Kit V1.2 Ethernet board (A) Schematic <https://dl.espressif.com/dl/schematics/SCH_ESP32-Ethernet-Kit_A_V1.2_20200528.pdf>`_.
+       `ESP32-Ethernet-Kit V1.2 Ethernet Board (A) Schematic`_.
 
     2. The ESP32 pins GPIO16 and GPIO17 are not broken out to the
        ESP32-WROVER-E module and therefore not available for use. If you need
@@ -452,7 +439,7 @@ MCUboot bootloader
 ==================
 
 User may choose to use MCUboot bootloader instead. In that case the bootloader
-must be build (and flash) at least once.
+must be built (and flashed) at least once.
 
 There are two options to be used when building an application:
 
@@ -463,9 +450,10 @@ There are two options to be used when building an application:
 
    User can select the MCUboot bootloader by adding the following line
    to the board default configuration file.
-   ```
-   CONFIG_BOOTLOADER_MCUBOOT=y
-   ```
+
+   .. code:: cfg
+
+      CONFIG_BOOTLOADER_MCUBOOT=y
 
 Sysbuild
 ========
@@ -477,8 +465,8 @@ To build the sample application using sysbuild use the command:
 
 .. zephyr-app-commands::
    :tool: west
-   :app: samples/hello_world
-   :board: esp32_ethernet_kit
+   :zephyr-app: samples/hello_world
+   :board: esp32_ethernet_kit/esp32/procpu
    :goals: build
    :west-args: --sysbuild
    :compact:
@@ -513,7 +501,7 @@ Manual build
 ============
 
 During the development cycle, it is intended to build & flash as quickly possible.
-For that reason, images can be build one at a time using traditional build.
+For that reason, images can be built one at a time using traditional build.
 
 The instructions following are relevant for both manual build and sysbuild.
 The only difference is the structure of the build directory.
@@ -532,7 +520,7 @@ Build and flash applications as usual (see :ref:`build_an_application` and
    :goals: build
 
 The usual ``flash`` target will work with the ``esp32_ethernet_kit`` board
-configuration. Here is an example for the :ref:`hello_world`
+configuration. Here is an example for the :zephyr:code-sample:`hello_world`
 application.
 
 .. zephyr-app-commands::
@@ -559,13 +547,13 @@ Debugging
 
 As with much custom hardware, the ESP32 modules require patches to
 OpenOCD that are not upstreamed yet. Espressif maintains their own fork of
-the project. The custom OpenOCD can be obtained at `OpenOCD ESP32`_
+the project. The custom OpenOCD can be obtained at `OpenOCD ESP32`_.
 
 The Zephyr SDK uses a bundled version of OpenOCD by default. You can overwrite that behavior by adding the
 ``-DOPENOCD=<path/to/bin/openocd> -DOPENOCD_DEFAULT_PATH=<path/to/openocd/share/openocd/scripts>``
 parameter when building.
 
-Here is an example for building the :ref:`hello_world` application.
+Here is an example for building the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -573,7 +561,7 @@ Here is an example for building the :ref:`hello_world` application.
    :goals: build flash
    :gen-args: -DOPENOCD=<path/to/bin/openocd> -DOPENOCD_DEFAULT_PATH=<path/to/openocd/share/openocd/scripts>
 
-You can debug an application in the usual way. Here is an example for the :ref:`hello_world` application.
+You can debug an application in the usual way. Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -614,13 +602,11 @@ Board Init
 RESET_N (GPIO5) is automatically set high to enable the Ethernet PHY
 during board initialization (board_init.c)
 
-Related Documents
-*****************
+References
+**********
 
-* `ESP32-Ethernet-Kit V1.2 Ethernet Board (A) Schematic <https://dl.espressif.com/dl/schematics/SCH_ESP32-Ethernet-Kit_A_V1.2_20200528.pdf>`_ (PDF)
-* `ESP32-Ethernet-Kit PoE Board (B) Schematic <https://dl.espressif.com/dl/schematics/SCH_ESP32-ETHERNET-KIT_B_V1.0_20190517.pdf>`_ (PDF)
-* `ESP32-Ethernet-Kit V1.2 Ethernet Board (A) PCB Layout <https://dl.espressif.com/dl/schematics/PCB_ESP32-Ethernet-Kit_A_V1_2_20190829.pdf>`_ (PDF)
-* `ESP32-Ethernet-Kit PoE Board (B) PCB Layout <https://dl.espressif.com/dl/schematics/PCB_ESP32-Ethernet-Kit_B_V1_0_20190306.pdf>`_ (PDF)
-* `ESP32 Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf>`_ (PDF)
-* `ESP32-WROVER-E Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-wrover-e_esp32-wrover-ie_datasheet_en.pdf>`_ (PDF)
-* `OpenOCD ESP32 <https://github.com/espressif/openocd-esp32/releases>`_
+.. target-notes::
+
+.. _`ESP32-Ethernet-Kit V1.2 Ethernet Board (A) Schematic`: https://dl.espressif.com/dl/schematics/SCH_ESP32-Ethernet-Kit_A_V1.2_20200528.pdf
+.. _`ESP32-WROVER-E Datasheet`: https://www.espressif.com/sites/default/files/documentation/esp32-wrover-e_esp32-wrover-ie_datasheet_en.pdf
+.. _`OpenOCD ESP32`: https://github.com/espressif/openocd-esp32/releases

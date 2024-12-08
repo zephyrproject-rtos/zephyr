@@ -12,7 +12,12 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/pinctrl/pinctrl_esp32_common.h>
 
-#ifdef CONFIG_SOC_SERIES_ESP32C3
+#ifdef CONFIG_SOC_SERIES_ESP32C2
+#define out	out.val
+#define in	in.val
+#define out_w1ts out_w1ts.val
+#define out_w1tc out_w1tc.val
+#elif CONFIG_SOC_SERIES_ESP32C3
 /* gpio structs in esp32c3 series are different from xtensa ones */
 #define out out.data
 #define in in.data
@@ -249,7 +254,7 @@ static int esp32_pin_configure(const uint32_t pin_mux, const uint32_t pin_cfg)
 			gpio_dev_t *const gpio_dev =
 				(gpio_dev_t *)DT_REG_ADDR(DT_NODELABEL(gpio0));
 			gpio_dev->out_w1ts = BIT(pin_num);
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio1))
 		} else {
 			gpio_dev_t *const gpio_dev =
 				(gpio_dev_t *)DT_REG_ADDR(DT_NODELABEL(gpio1));
@@ -263,7 +268,7 @@ static int esp32_pin_configure(const uint32_t pin_mux, const uint32_t pin_cfg)
 			gpio_dev_t *const gpio_dev =
 				(gpio_dev_t *)DT_REG_ADDR(DT_NODELABEL(gpio0));
 			gpio_dev->out_w1tc = BIT(pin_num);
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio1))
 		} else {
 			gpio_dev_t *const gpio_dev =
 				(gpio_dev_t *)DT_REG_ADDR(DT_NODELABEL(gpio1));

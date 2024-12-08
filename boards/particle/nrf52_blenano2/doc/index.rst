@@ -1,7 +1,4 @@
-.. _nrf52_blenano2:
-
-Redbear Labs Nano v2
-####################
+.. zephyr:board:: nrf52_blenano2
 
 Overview
 ********
@@ -77,7 +74,7 @@ DAPLink board, then attach that to your computer via USB.
    connector.
 
 Now build and flash applications as usual. Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -89,7 +86,7 @@ Debugging
 
 After mounting the BLE Nano 2 on its DAPLink board as described above,
 you can debug an application in the usual way.  Here is an example for
-the :ref:`hello_world` application.
+the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

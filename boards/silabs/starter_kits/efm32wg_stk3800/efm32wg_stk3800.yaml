@@ -1,5 +1,5 @@
 identifier: efm32wg_stk3800
-name: EFM32 Wonder Gecko Starter Kit (EFM32WG-STK3800)
+name: EFM32 Wonder Gecko Starter Kit (EFM32WG-STK3800, BRD2400B)
 type: mcu
 arch: arm
 ram: 32

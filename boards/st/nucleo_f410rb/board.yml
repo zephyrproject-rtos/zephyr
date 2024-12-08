@@ -1,5 +1,6 @@
 board:
   name: nucleo_f410rb
+  full_name: Nucleo F410RB
   vendor: st
   socs:
     - name: stm32f410rx

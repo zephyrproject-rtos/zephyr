@@ -3,9 +3,16 @@
 # Copyright (c) 2019 Antmicro <www.antmicro.com>
 # SPDX-License-Identifier: Apache-2.0
 
-config SPI_LITESPI
+config SPI_LITEX
 	bool "LiteX SPI controller driver"
 	default y
 	depends on DT_HAS_LITEX_SPI_ENABLED
+	help
+	  Enable the SPI peripherals on LiteX
+
+config SPI_LITEX_LITESPI
+	bool "LiteX SPI LiteSPI controller driver"
+	default y
+	depends on DT_HAS_LITEX_SPI_LITESPI_ENABLED
 	help
 	  Enable the SPI peripherals on LiteX

@@ -181,7 +181,7 @@ Programming and Debugging
 Building
 ========
 
-Here is an example for building the :ref:`hello_world` application.
+Here is an example for building the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -198,7 +198,7 @@ included in the Zephyr SDK.
 Flashing an application to 96Boards STM32 Sensor Mezzanine
 ----------------------------------------------------------
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 Run a serial host program to connect with your 96Boards STM32 Sensor Mezzanine
 board.
@@ -224,7 +224,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

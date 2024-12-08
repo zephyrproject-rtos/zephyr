@@ -122,9 +122,27 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	}
 }
 
+static int start_advertising(void)
+{
+	int err;
+
+	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), NULL, 0);
+	if (err) {
+		printk("Advertising failed to start (err %d)\n", err);
+	}
+
+	return err;
+}
+
+static void recycled(void)
+{
+	start_advertising();
+}
+
 static struct bt_conn_cb conn_callbacks = {
 	.connected = connected,
 	.disconnected = disconnected,
+	.recycled = recycled,
 };
 
 static void bt_ready(void)
@@ -133,13 +151,17 @@ static void bt_ready(void)
 
 	printk("Peripheral Bluetooth initialized\n");
 
-	err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad), NULL, 0);
+	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err) {
 		FAIL("Advertising failed to start (err %d)\n", err);
 		return;
 	}
 
-	printk("Advertising successfully started\n");
+	err = start_advertising();
+
+	if (!err) {
+		printk("Advertising successfully started\n");
+	}
 }
 
 static void bas_notify(void)
@@ -187,7 +209,12 @@ static void test_con2_main(void)
 	 * of starting delayed work so we do it here
 	 */
 	while (1) {
-		k_sleep(K_SECONDS(1));
+		if (IS_ENABLED(CONFIG_TEST_CONN_INTERVAL_1MS) ||
+		    IS_ENABLED(CONFIG_BT_CTLR_TX_DEFER)) {
+			k_sleep(K_MSEC(1));
+		} else {
+			k_sleep(K_SECONDS(1));
+		}
 
 		/* Heartrate measurements simulation */
 		hrs_notify();

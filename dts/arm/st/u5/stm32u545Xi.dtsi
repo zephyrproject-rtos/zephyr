@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2024 Opito
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <mem.h>
+#include <st/u5/stm32u545.dtsi>
+
+/ {
+	sram0: memory@20000000 {
+		/* SRAM1 + SRAM2 */
+		reg = <0x20000000 DT_SIZE_K(256)>;
+	};
+
+	sram1: memory@28000000 {
+		/* SRAM4, low-power background autonomous mode */
+		reg = <0x28000000 DT_SIZE_K(16)>;
+	};
+
+	soc {
+		flash-controller@40022000 {
+			flash0: flash@8000000 {
+				reg = <0x08000000 DT_SIZE_K(512)>;
+			};
+		};
+	};
+};

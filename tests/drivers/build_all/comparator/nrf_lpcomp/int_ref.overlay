@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&comp {
+	compatible = "nordic,nrf-lpcomp";
+	psel = "AIN0";
+	refsel = "AREF";
+	extrefsel = "AIN1";
+	status = "okay";
+};

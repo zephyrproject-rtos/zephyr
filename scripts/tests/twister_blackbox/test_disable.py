@@ -76,7 +76,7 @@ class TestDisable:
     def test_disable_suite_name_check(self, capfd, out_path, test_path, test_platforms, flag, expected, expected_none):
         args = ['-i', '--outdir', out_path, '-T', test_path] + \
                [flag] + \
-               ['-vv'] + \
+               ['-vv', '-ll', 'DEBUG'] + \
                [val for pair in zip(
                    ['-p'] * len(test_platforms), test_platforms
                ) for val in pair]

@@ -1,0 +1,9 @@
+int InitTarget(void) {
+  // Base address where DMI registers can be found in the APB address space
+  JLINK_ExecCommand("CORESIGHT_SetCoreBaseAddr = 0x5F8D4400");
+
+  // Use AP[x] to communicate with the RISC-V, flpr = APP
+  JLINK_ExecCommand("CORESIGHT_SetIndexAHBAPToUse = 0");
+
+  return 0;
+}

@@ -1,4 +1,7 @@
-.. _syscall_perf:
+.. zephyr:code-sample:: syscall_perf
+   :name: Syscall performance
+
+   Measure performance overhead of a system calls compared to direct function calls.
 
 Syscall performances
 ====================

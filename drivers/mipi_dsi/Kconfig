@@ -17,11 +17,12 @@ source "subsys/logging/Kconfig.template.log_config"
 
 config MIPI_DSI_INIT_PRIORITY
 	int "Initialization priority"
-	default 86
+	default 85
 	help
 	  MIPI-DSI Host Controllers initialization priority.
 
 source "drivers/mipi_dsi/Kconfig.mcux"
 source "drivers/mipi_dsi/Kconfig.stm32"
+source "drivers/mipi_dsi/Kconfig.test"
 
 endif

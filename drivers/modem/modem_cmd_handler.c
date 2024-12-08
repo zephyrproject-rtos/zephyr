@@ -15,7 +15,7 @@ LOG_MODULE_REGISTER(modem_cmd_handler, CONFIG_MODEM_LOG_LEVEL);
 
 #include <zephyr/kernel.h>
 #include <stddef.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 
 #include "modem_context.h"
 #include "modem_cmd_handler.h"

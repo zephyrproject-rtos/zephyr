@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Alexander Kozhinov <AlexanderKozhinov@yandex.com>
+ * Copyright (c) 2020 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,6 +26,7 @@
 		zephyr,dtcm = &dtcm;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,canbus = &fdcan1;
 	};
 
 	pwmleds {
@@ -132,8 +133,26 @@
 	status = "okay";
 };
 
+&spi1 {
+	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pb5>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpiod 14 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	status = "okay";
+};
+
 zephyr_udc0: &usbotg_fs {
 	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&fdcan1 {
+	pinctrl-0 = <&fdcan1_rx_pd0 &fdcan1_tx_pd1>;
+	/* HSE will be used by default. Uncomment below to enable APB1.2 120MHz clock */
+	/*
+	 * clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000100>,
+	 *	   <&rcc STM32_SRC_PLL1_Q FDCAN_SEL(1)>;
+	 */
 	pinctrl-names = "default";
 	status = "okay";
 };

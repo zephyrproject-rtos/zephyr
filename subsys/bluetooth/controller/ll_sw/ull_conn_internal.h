@@ -17,6 +17,9 @@ uint16_t ull_conn_default_tx_octets_get(void);
 uint16_t ull_conn_default_tx_time_get(void);
 uint8_t ull_conn_default_phy_tx_get(void);
 uint8_t ull_conn_default_phy_rx_get(void);
+void ull_conn_default_past_param_set(uint8_t mode, uint16_t skip, uint16_t timeout,
+				     uint8_t cte_type);
+struct past_params ull_conn_default_past_param_get(void);
 bool ull_conn_peer_connected(uint8_t const own_id_addr_type,
 			     uint8_t const *const own_id_addr,
 			     uint8_t const peer_id_addr_type,
@@ -42,7 +45,7 @@ void ull_pdu_data_init(struct pdu_data *pdu);
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 /* Connection context pointer used as CPR mutex to serialize connection
- * parameter requests procedures across simulataneous connections so that
+ * parameter requests procedures across simultaneous connections so that
  * offsets exchanged to the peer do not get changed.
  */
 extern struct ll_conn *conn_upd_curr;
@@ -76,6 +79,10 @@ static inline void cpr_active_reset(void)
 	conn_upd_curr = NULL;
 }
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
+
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER)
+void ull_conn_past_sender_offset_request(struct ll_conn *conn);
+#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER */
 
 uint16_t ull_conn_event_counter(struct ll_conn *conn);
 

@@ -2,6 +2,7 @@
 
 # Copyright (c) 2016 Intel Corporation
 # Copyright (c) 2017 IpTronix S.r.l.
+# Copyright (c) 2024 Croxel Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig BME280
@@ -10,12 +11,13 @@ menuconfig BME280
 	depends on DT_HAS_BOSCH_BME280_ENABLED
 	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BME280),i2c)
 	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BME280),spi)
+	select RTIO_WORKQ if SENSOR_ASYNC_API
 	help
 	  Enable driver for BME280 I2C-based or SPI-based temperature and pressure sensor.
 
 if BME280
 
-choice
+choice BME280_MODE
 	prompt "BME280 sampling mode"
 	default BME280_MODE_NORMAL
 	help

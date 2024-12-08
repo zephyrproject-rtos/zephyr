@@ -5,13 +5,13 @@
 #pragma once
 
 /* LP-SRAM (16kB) memory */
-#define LPSRAM_IRAM_START  0x50000000
-#define LPSRAM_SIZE        0x4000
+#define LPSRAM_IRAM_START  DT_REG_ADDR(DT_NODELABEL(sramlp))
+#define LPSRAM_SIZE        DT_REG_SIZE(DT_NODELABEL(sramlp))
 /* HP-SRAM (512kB) memory */
-#define HPSRAM_START       0x40800000
-#define HPSRAM_SIZE        0x80000
-#define HPSRAM_DRAM_START  0x40800000
-#define HPSRAM_IRAM_START  0x40800000
+#define HPSRAM_START       DT_REG_ADDR(DT_NODELABEL(sramhp))
+#define HPSRAM_SIZE        DT_REG_SIZE(DT_NODELABEL(sramhp))
+#define HPSRAM_DRAM_START  HPSRAM_START
+#define HPSRAM_IRAM_START  HPSRAM_START
 /* ICache size is fixed to 32KB on ESP32-C6 */
 #define ICACHE_SIZE        0x8000
 
@@ -28,8 +28,12 @@
  */
 
 #define DRAM_BUFFERS_START       0x4086ad08
-#define DRAM_STACK_START         0x4087c610
+#define DRAM_BUFFERS_END         0x4087c610
+#define DRAM_STACK_START         DRAM_BUFFERS_END
 #define DRAM_ROM_BSS_DATA_START  0x4087e610
+
+/* Set the limit for the application runtime dynamic allocations */
+#define DRAM_RESERVED_START      DRAM_BUFFERS_END
 
 /* For safety margin between bootloader data section and startup stacks */
 #define BOOTLOADER_STACK_OVERHEAD      0x0
@@ -44,8 +48,7 @@
 #define BOOTLOADER_USER_SRAM_END (DRAM_BUFFERS_START - BOOTLOADER_STACK_OVERHEAD)
 
 /* Start of the lower region is determined by region size and the end of the higher region */
-#define BOOTLOADER_IRAM_LOADER_SEG_START	\
-		(BOOTLOADER_USER_SRAM_END -	BOOTLOADER_IRAM_LOADER_SEG_LEN)
+#define BOOTLOADER_IRAM_LOADER_SEG_START (BOOTLOADER_USER_SRAM_END - BOOTLOADER_IRAM_LOADER_SEG_LEN)
 #define BOOTLOADER_IRAM_SEG_START (BOOTLOADER_IRAM_LOADER_SEG_START - BOOTLOADER_IRAM_SEG_LEN)
 #define BOOTLOADER_DRAM_SEG_START (BOOTLOADER_IRAM_SEG_START - BOOTLOADER_DRAM_SEG_LEN)
 
@@ -57,6 +60,8 @@
 #endif
 
 /* Cached memory */
-#define CACHE_ALIGN        CONFIG_MMU_PAGE_SIZE
-#define CACHED_ORG         0x42000000
-#define CACHED_SIZE        FLASH_SIZE
+#define CACHE_ALIGN  CONFIG_MMU_PAGE_SIZE
+#define IROM_SEG_ORG 0x42000000
+#define IROM_SEG_LEN FLASH_SIZE
+#define DROM_SEG_ORG 0x42800000
+#define DROM_SEG_LEN FLASH_SIZE

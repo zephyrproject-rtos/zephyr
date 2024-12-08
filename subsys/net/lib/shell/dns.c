@@ -8,6 +8,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_shell);
 
+#include <zephyr/net/socket.h>
 #include <zephyr/net/dns_resolve.h>
 
 #include "net_shell_private.h"
@@ -59,29 +60,55 @@ static void dns_result_cb(enum dns_resolve_status status,
 	PR_WARNING("dns: Unhandled status %d received\n", status);
 }
 
+static const char *printable_iface(const char *iface_name,
+				   const char *found,
+				   const char *not_found)
+{
+	if (iface_name[0] != '\0') {
+		return found;
+	}
+
+	return not_found;
+}
+
 static void print_dns_info(const struct shell *sh,
 			   struct dns_resolve_context *ctx)
 {
-	int i;
+	int i, ret;
 
 	PR("DNS servers:\n");
 
 	for (i = 0; i < CONFIG_DNS_RESOLVER_MAX_SERVERS +
 		     DNS_MAX_MCAST_SERVERS; i++) {
+		char iface_name[IFNAMSIZ] = { 0 };
+
+		if (ctx->servers[i].if_index > 0) {
+			ret = net_if_get_name(
+				net_if_get_by_index(ctx->servers[i].if_index),
+				iface_name, sizeof(iface_name));
+			if (ret < 0) {
+				snprintk(iface_name, sizeof(iface_name), "%d",
+					 ctx->servers[i].if_index);
+			}
+		}
+
 		if (ctx->servers[i].dns_server.sa_family == AF_INET) {
-			PR("\t%s:%u\n",
+			PR("\t%s:%u%s%s\n",
 			   net_sprint_ipv4_addr(
 				   &net_sin(&ctx->servers[i].dns_server)->
 				   sin_addr),
-			   ntohs(net_sin(
-				 &ctx->servers[i].dns_server)->sin_port));
+			   ntohs(net_sin(&ctx->servers[i].dns_server)->sin_port),
+			   printable_iface(iface_name, " via ", ""),
+			   printable_iface(iface_name, iface_name, ""));
+
 		} else if (ctx->servers[i].dns_server.sa_family == AF_INET6) {
-			PR("\t[%s]:%u\n",
+			PR("\t[%s]:%u%s%s\n",
 			   net_sprint_ipv6_addr(
 				   &net_sin6(&ctx->servers[i].dns_server)->
 				   sin6_addr),
-			   ntohs(net_sin6(
-				 &ctx->servers[i].dns_server)->sin6_port));
+			   ntohs(net_sin6(&ctx->servers[i].dns_server)->sin6_port),
+			   printable_iface(iface_name, " via ", ""),
+			   printable_iface(iface_name, iface_name, ""));
 		}
 	}
 

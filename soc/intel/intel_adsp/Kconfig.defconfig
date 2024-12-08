@@ -48,4 +48,7 @@ choice CACHE_TYPE
 	default ARCH_CACHE
 endchoice
 
+config DCACHE_LINE_SIZE
+	default 64
+
 endif # SOC_FAMILY_INTEL_ADSP

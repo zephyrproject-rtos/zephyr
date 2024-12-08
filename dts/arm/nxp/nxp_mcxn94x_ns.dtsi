@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <mem.h>
+#include <arm/armv8-m.dtsi>
+
 / {
 	soc {
 		sram: sram@4000000 {

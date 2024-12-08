@@ -221,7 +221,7 @@ static void conn_mgr_mon_handle_update(void)
  */
 static void conn_mgr_mon_initial_state(struct net_if *iface)
 {
-	int idx = net_if_get_by_iface(iface) - 1;
+	int idx = conn_mgr_get_index_for_if(iface);
 
 	k_mutex_lock(&conn_mgr_mon_lock, K_FOREVER);
 
@@ -413,6 +413,20 @@ static int conn_mgr_mon_init(void)
 	k_thread_name_set(&conn_mgr_mon_thread, "conn_mgr_monitor");
 
 	return 0;
+}
+
+uint16_t conn_mgr_if_state(struct net_if *iface)
+{
+	int idx = conn_mgr_get_index_for_if(iface);
+	uint16_t state = CONN_MGR_IF_STATE_INVALID;
+
+	if (idx < CONN_MGR_IFACE_MAX) {
+		k_mutex_lock(&conn_mgr_mon_lock, K_FOREVER);
+		state = iface_states[idx];
+		k_mutex_unlock(&conn_mgr_mon_lock);
+	}
+
+	return state;
 }
 
 SYS_INIT(conn_mgr_mon_init, APPLICATION, CONFIG_NET_CONNECTION_MANAGER_MONITOR_PRIORITY);

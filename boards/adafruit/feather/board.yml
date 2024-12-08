@@ -1,5 +1,0 @@
-board:
-  name: adafruit_feather
-  vendor: adafruit
-  socs:
-  - name: nrf52840

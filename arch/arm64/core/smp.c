@@ -23,6 +23,7 @@
 #include <zephyr/drivers/interrupt_controller/gic.h>
 #include <zephyr/drivers/pm_cpu_ops.h>
 #include <zephyr/arch/arch_interface.h>
+#include <zephyr/platform/hooks.h>
 #include <zephyr/sys/barrier.h>
 #include <zephyr/irq.h>
 #include "boot.h"
@@ -163,6 +164,10 @@ void arch_secondary_cpu_init(int cpu_num)
 #endif
 #endif
 
+#ifdef CONFIG_SOC_PER_CORE_INIT_HOOK
+	soc_per_core_init_hook();
+#endif /* CONFIG_SOC_PER_CORE_INIT_HOOK */
+
 	fn = arm64_cpu_boot_params.fn;
 	arg = arm64_cpu_boot_params.arg;
 	barrier_dsync_fence_full();
@@ -235,7 +240,7 @@ void mem_cfg_ipi_handler(const void *unused)
 	 * This is a no-op if the page table is already the right one.
 	 * Lock irq to prevent the interrupt during mem region switch.
 	 */
-	z_arm64_swap_mem_domains(_current);
+	z_arm64_swap_mem_domains(arch_current_thread());
 	arch_irq_unlock(key);
 }
 

@@ -1,5 +1,6 @@
 board:
   name: stm32h573i_dk
+  full_name: STM32H573I-DK Discovery
   vendor: st
   socs:
     - name: stm32h573xx

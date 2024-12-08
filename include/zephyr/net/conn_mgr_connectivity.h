@@ -121,7 +121,7 @@ int conn_mgr_if_connect(struct net_if *iface);
 /**
  * @brief Disconnect interface
  *
- * If the provided iface has been bound to a connectivity implementation, disconnect/dissassociate
+ * If the provided iface has been bound to a connectivity implementation, disconnect/disassociate
  * it from the network, and cancel any pending attempts to connect/associate.
  *
  * Does nothing if the iface is currently admin-down.
@@ -255,7 +255,9 @@ int conn_mgr_if_set_timeout(struct net_if *iface, int timeout);
 /**
  * @brief Connection Manager Bulk API
  * @defgroup conn_mgr_connectivity_bulk Connection Manager Connectivity Bulk API
- * @ingroup networking
+ * @since 3.4
+ * @version 0.1.0
+ * @ingroup conn_mgr_connectivity
  * @{
  */
 

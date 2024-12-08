@@ -5,7 +5,8 @@ arch: x86
 toolchain:
   - zephyr
   - xtools
-simulation: qemu
+simulation:
+  - name: qemu
 supported:
   - acpi
   - can

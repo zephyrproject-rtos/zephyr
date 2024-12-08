@@ -19,6 +19,6 @@ supported:
   - counter
   - adc
   - rtc
-ram: 640
+ram: 192
 flash: 2048
 vendor: st

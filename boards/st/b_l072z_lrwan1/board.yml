@@ -1,5 +1,6 @@
 board:
   name: b_l072z_lrwan1
+  full_name: B-L072Z-LRWAN1 Discovery kit
   vendor: st
   socs:
     - name: stm32l072xx

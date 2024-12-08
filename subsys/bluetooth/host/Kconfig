@@ -15,8 +15,8 @@ config BT_LONG_WQ_STACK_SIZE
 	# Hidden: Long workqueue stack size. Should be derived from system
 	# requirements.
 	int
+	default 1400 if BT_SEND_ECC_EMULATION
 	default 1300 if BT_GATT_CACHING
-	default 1140 if BT_TINYCRYPT_ECC
 	default 1024
 
 config BT_LONG_WQ_PRIO
@@ -48,9 +48,9 @@ config BT_HCI_TX_STACK_SIZE
 	default 512 if BT_H4
 	default 512 if BT_H5
 	default 416 if BT_SPI
-	default 1152 if BT_CTLR && BT_LL_SW_SPLIT && (NO_OPTIMIZATIONS || BT_ISO_BROADCAST)
-	default 1024 if BT_CTLR && BT_LL_SW_SPLIT && BT_CENTRAL
-	default 768 if BT_CTLR && BT_LL_SW_SPLIT
+	default 1280 if BT_LL_SW_SPLIT && (NO_OPTIMIZATIONS || BT_ISO_BROADCAST)
+	default 1024 if BT_LL_SW_SPLIT && BT_CENTRAL
+	default 768 if BT_LL_SW_SPLIT
 	default 512 if BT_USERCHAN
 	default 640 if BT_STM32_IPM
 	# Even if no driver is selected the following default is still
@@ -129,6 +129,35 @@ config BT_DRIVER_RX_HIGH_PRIO
 	int
 	default 6
 
+config BT_CONN_TX_NOTIFY_WQ
+	bool "Use a separate workqueue for connection TX notify processing [EXPERIMENTAL]"
+	depends on BT_CONN_TX
+	select EXPERIMENTAL
+	help
+	  Use a separate workqueue instead of system workqueue for
+	  bt_conn_tx_notify processing. The option can be used to make Bluetooth
+	  stack more independent from the system workqueue.
+
+if BT_CONN_TX_NOTIFY_WQ
+
+config BT_CONN_TX_NOTIFY_WQ_STACK_SIZE
+	int "Stack size of workqueue for connection TX notify processing"
+	default SYSTEM_WORKQUEUE_STACK_SIZE
+
+config BT_CONN_TX_NOTIFY_WQ_PRIO
+	int "Cooperative priority of workqueue for connection TX notify processing"
+	default 8
+
+config BT_CONN_TX_NOTIFY_WQ_INIT_PRIORITY
+	int "Init priority of workqueue for connection TX notify processing"
+	default 50
+	help
+	  The connection TX notify processing workqueue is initialized during
+	  system initialization (at POST_KERNEL level). The Kconfig option
+	  controls the initialization priority within level.
+
+endif # BT_CONN_TX_NOTIFY_WQ
+
 menu "Bluetooth Host"
 
 if BT_HCI_HOST
@@ -139,22 +168,23 @@ rsource "../audio/Kconfig"
 config BT_HOST_CRYPTO
 	bool "Use crypto functionality implemented in the Bluetooth host"
 	default y if !BT_CTLR_CRYPTO
-	select TINYCRYPT if !BT_USE_PSA_API
-	select TINYCRYPT_AES if !BT_USE_PSA_API
-	select PSA_WANT_KEY_TYPE_AES if BT_USE_PSA_API
+	select MBEDTLS if !BUILD_WITH_TFM
+	select MBEDTLS_PSA_CRYPTO_C if !BUILD_WITH_TFM
+	select PSA_WANT_KEY_TYPE_AES
+	select PSA_WANT_ALG_ECB_NO_PADDING
 	help
-	  The option adds the AES encryption support using TinyCrypt
+	  The option adds the AES encryption support using PSA Crypto API
 	  library if this is not provided by the controller implementation.
 
 config BT_HOST_CRYPTO_PRNG
-	bool "Use Tinycrypt library for random number generation"
+	bool "Use PSA crypto API library for random number generation"
 	default y
-	select TINYCRYPT_SHA256 if !BT_USE_PSA_API
-	select TINYCRYPT_SHA256_HMAC if !BT_USE_PSA_API
-	select TINYCRYPT_SHA256_HMAC_PRNG if !BT_USE_PSA_API
+	select PSA_WANT_ALG_SHA_256
+	select PSA_WANT_KEY_TYPE_HMAC
+	select PSA_WANT_ALG_HMAC
 	depends on BT_HOST_CRYPTO
 	help
-	  When selected, will use tinycrypt library for random number generation.
+	  When selected, will use PSA Crypto API library for random number generation.
 	  This will consume additional ram, but may speed up the generation of random
 	  numbers.
 
@@ -238,6 +268,15 @@ config BT_SETTINGS_USE_PRINTK
 	  When not selected, Bluetooth settings will use a faster builtin
 	  function to encode the key string. The drawback is that if
 	  printk is enabled then the program memory footprint will be larger.
+
+config BT_SETTINGS_CCC_STORE_MAX
+	int "Max number of Client Characteristic Configuration (CCC)"
+	default 48
+	range 1 96
+	help
+	  Defines the max number of Client Characteristic Configuration (CCC)
+	  that the stack can handle
+
 endif # BT_SETTINGS
 
 config BT_FILTER_ACCEPT_LIST
@@ -271,8 +310,8 @@ config BT_CONN_TX_USER_DATA_SIZE
 	default 32 if 64BIT
 	default 16
 	help
-	  Necessary user_data size for allowing packet fragmentation when
-	  sending over HCI. See `struct tx_meta` in conn.c.
+	  Necessary user_data size for stack usage. Mostly used for passing
+	  callbacks around. See `struct closure` in conn_internal.h.
 
 config BT_CONN_FRAG_COUNT
 	int
@@ -287,7 +326,7 @@ if BT_CONN
 config BT_CONN_TX_MAX
 	int "Maximum number of pending TX buffers with a callback"
 	default BT_BUF_ACL_TX_COUNT
-	range BT_BUF_ACL_TX_COUNT 255
+	range BT_BUF_ACL_TX_COUNT $(UINT8_MAX)
 	help
 	  Maximum number of pending TX buffers that have an associated
 	  callback. Normally this can be left to the default value, which
@@ -299,11 +338,22 @@ config BT_CONN_PARAM_ANY
 	  Some controllers support additional connection parameter ranges
 	  beyond what is described in the specification. Enabling this option
 	  allows the application to set any value to all connection parameters.
-	  Tbe Host will perform no limits nor consistency checks on any of the
+	  The Host will perform no limits nor consistency checks on any of the
 	  connection parameters (conn interval min and max, latency and timeout).
 	  However, the Host will still use numerical comparisons between the
 	  min and max connection intervals in order to verify whether the
 	  desired parameters have been established in the connection.
+
+config BT_CONN_CHECK_NULL_BEFORE_CREATE
+	bool "Check if *conn is NULL when creating a connection"
+	help
+	  Enable this option to ensure that bt_conn_le_create and
+	  bt_conn_le_create_synced return an error if *conn is not initialized
+	  to NULL. This option is recommended to use to catch programming
+	  errors where the application reuses the connection pointer of an
+	  active connection object without dereferencing it. Without
+	  dereferencing, the connection object stays alive which can lead to an
+	  unpredictable behavior.
 
 config BT_USER_PHY_UPDATE
 	bool "User control of PHY Update Procedure"
@@ -363,6 +413,23 @@ config BT_SMP
 	  (SMP), making it possible to pair devices over LE.
 
 if BT_SMP
+
+config BT_SECURITY_ERR_TO_STR
+	bool "Print security error codes as strings [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This configuration enables printing of security error
+	  codes represented as strings.
+	  See bt_security_err_to_str() for more details.
+
+config BT_SMP_ERR_TO_STR
+	bool "Print SMP error codes as strings [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This configuration enables printing of SMP error
+	  codes represented as strings.
+	  See bt_smp_err_to_str() for more details.
+
 config BT_PASSKEY_KEYPRESS
 	bool "Passkey Keypress Notification support [EXPERIMENTAL]"
 	select EXPERIMENTAL
@@ -440,7 +507,7 @@ config BT_RPA_TIMEOUT
 	int "Resolvable Private Address timeout"
 	depends on BT_PRIVACY
 	default 900
-	range 1 65535
+	range 1 $(UINT16_MAX)
 	help
 	  This option defines how often resolvable private address is rotated.
 	  Value is provided in seconds and defaults to 900 seconds (15 minutes).
@@ -482,6 +549,7 @@ config BT_SMP_APP_PAIRING_ACCEPT
 
 config BT_SMP_SC_PAIR_ONLY
 	bool "Disable legacy pairing"
+	default y
 	help
 	  This option disables LE legacy pairing and forces LE secure connection
 	  pairing. All Security Mode 1 levels can be used with legacy pairing
@@ -541,9 +609,9 @@ config BT_ID_UNPAIR_MATCHING_BONDS
 	  limitation" below.
 
 	  [RL limitation]:
-	  The Host implementors have considered it unlikely that applications
+	  The Host implementers have considered it unlikely that applications
 	  would ever want to have multiple bonds with the same peer. The
-	  implementors prioritize the simplicity of the implementation over this
+	  implementers prioritize the simplicity of the implementation over this
 	  capability.
 
 	  The Resolve List on a Controller is not able to accommodate multiple
@@ -606,9 +674,13 @@ config BT_BONDABLE
 	bool "Bondable Mode"
 	default y
 	help
-	  This option enables support for Bondable Mode. In this mode,
-	  Bonding flag in AuthReq of SMP Pairing Request/Response will be set
-	  indicating the support for this mode.
+	  This option is the default value of the bonding flag for any ACL connection.
+	  If the option is true, the default bonding flag is true. Or, the default
+	  bonding flag is false.
+	  After a connection is established, the bonding flag of the connection
+	  can also be changed by calling `bt_conn_set_bondable()` if the configuration
+	  `the bonding flag per-connection` (BT_BONDABLE_PER_CONNECTION) is
+	  enabled. Please see the BT_BONDABLE_PER_CONNECTION configuration.
 
 config BT_BONDING_REQUIRED
 	bool "Always require bonding"
@@ -619,8 +691,7 @@ config BT_BONDING_REQUIRED
 	  requests will be rejected.
 
 config BT_BONDABLE_PER_CONNECTION
-	bool "Set/clear the bonding flag per-connection [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "Set/clear the bonding flag per-connection"
 	help
 	  Enable support for the bt_conn_set_bondable API function that is
 	  used to set/clear the bonding flag on a per-connection basis.
@@ -674,8 +745,7 @@ config BT_SMP_MIN_ENC_KEY_SIZE
 	int
 	prompt "Minimum encryption key size accepted in octets" if !BT_SMP_SC_ONLY
 	range 7 16
-	default 16 if BT_SMP_SC_ONLY
-	default 7
+	default 16
 	help
 	  This option sets the minimum encryption key size accepted during pairing.
 
@@ -702,7 +772,7 @@ config BT_CREATE_CONN_TIMEOUT
 config BT_CONN_PARAM_UPDATE_TIMEOUT
 	int "Peripheral connection parameter update timeout in milliseconds"
 	default 5000
-	range 0 65535
+	range 0 $(UINT16_MAX)
 	help
 	  The value is a timeout used by peripheral device to wait until it
 	  starts the first connection parameters update procedure after a
@@ -718,7 +788,7 @@ config BT_CONN_PARAM_UPDATE_TIMEOUT
 config BT_CONN_PARAM_RETRY_COUNT
 	int "Peripheral connection parameter update retry attempts"
 	default 3
-	range 0 255
+	range 0 $(UINT8_MAX)
 	help
 	  This value corresponds to number of times to retry connection
 	  parameter update to attain the preferred value set in GATT
@@ -727,7 +797,7 @@ config BT_CONN_PARAM_RETRY_COUNT
 config BT_CONN_PARAM_RETRY_TIMEOUT
 	int "Peripheral connection parameter update retry timeout in milliseconds"
 	default 5000
-	range 0 65535
+	range 0 $(UINT16_MAX)
 	help
 	  The value is a timeout used by peripheral device to wait until retry
 	  to attempt requesting again the preferred connection parameters.
@@ -765,7 +835,7 @@ config BT_SCAN_WITH_IDENTITY
 	  always use a non-resolvable private address (NRPA) in order to avoid
 	  disclosing local identity information. By not scanning with the
 	  identity address the scanner will receive directed advertise reports
-	  for for the local identity. If this use case is required, then enable
+	  for the local identity. If this use case is required, then enable
 	  this option.
 
 config BT_SCAN_AND_INITIATE_IN_PARALLEL
@@ -813,13 +883,9 @@ config BT_DEVICE_APPEARANCE_DYNAMIC
 	  Enables use of bt_set_appearance.
 	  If CONFIG_BT_SETTINGS is set, the appearance is persistently stored.
 
-config BT_DEVICE_APPEARANCE_GATT_WRITABLE
-	bool "Allow authenticated peers to set GAP Appearance"
-	depends on BT_DEVICE_APPEARANCE_DYNAMIC
-
 config BT_DEVICE_APPEARANCE
 	int "Bluetooth device appearance"
-	range 0 65535
+	range 0 $(UINT16_MAX)
 	default 0
 	help
 	  Bluetooth device appearance. For the list of possible values please
@@ -837,7 +903,7 @@ config BT_ID_MAX
 
 config BT_DF
 	bool "Direction Finding support [EXPERIMENTAL]"
-	depends on !BT_CTLR || BT_CTLR_DF_SUPPORT
+	depends on !HAS_BT_CTLR || BT_CTLR_DF_SUPPORT
 	select EXPERIMENTAL
 	help
 	  Enable support for Bluetooth 5.1 Direction Finding.
@@ -848,28 +914,28 @@ if BT_DF
 
 config BT_DF_CONNECTIONLESS_CTE_RX
 	bool "Support for receive of CTE in connectionless mode"
-	depends on !BT_CTLR || BT_CTLR_DF_CTE_RX_SUPPORT
+	depends on !HAS_BT_CTLR || BT_CTLR_DF_CTE_RX_SUPPORT
 	help
 	  Enable support for reception and sampling of Constant Tone Extension
 	  in connectionless mode.
 
 config BT_DF_CONNECTIONLESS_CTE_TX
 	bool "Support for transmission of CTE in connectionless mode"
-	depends on !BT_CTLR || BT_CTLR_DF_CTE_TX_SUPPORT
+	depends on !HAS_BT_CTLR || BT_CTLR_DF_CTE_TX_SUPPORT
 	help
 	  Enable support for transmission of Constant Tone Extension in
 	  connectionless mode.
 
 config BT_DF_CONNECTION_CTE_RX
 	bool "Support for receive of CTE in connection mode"
-	depends on !BT_CTLR || BT_CTLR_DF_CTE_RX_SUPPORT
+	depends on !HAS_BT_CTLR || BT_CTLR_DF_CTE_RX_SUPPORT
 	help
 	  Enable support for reception and sampling of Constant Tone Extension
 	  in connection mode.
 
 config BT_DF_CONNECTION_CTE_TX
 	bool "Support for transmission of CTE in connection mode"
-	depends on !BT_CTLR || BT_CTLR_DF_CTE_TX_SUPPORT
+	depends on !HAS_BT_CTLR || BT_CTLR_DF_CTE_TX_SUPPORT
 	help
 	  Enable support for transmission of Constant Tone Extension in
 	  connection mode.
@@ -911,7 +977,7 @@ config BT_DF_VS_CL_IQ_REPORT_16_BITS_IQ_SAMPLES
 	  Direction Finging connectionless IQ reports provide a set of IQ samples collected during
 	  sampling of CTE. Bluetooth 5.3 Core Specification defines IQ samples to be 8 bits signed
 	  integer, see Vol 4, Part E section 7.7.65.21. This option enables a vendor specific Host
-	  extenstion to handle connectionless IQ reports with samples that are in 16 bit signed
+	  extension to handle connectionless IQ reports with samples that are in 16 bit signed
 	  integer format.
 
 config BT_DF_VS_CONN_IQ_REPORT_16_BITS_IQ_SAMPLES
@@ -921,7 +987,7 @@ config BT_DF_VS_CONN_IQ_REPORT_16_BITS_IQ_SAMPLES
 	  Direction Finging connection IQ reports provide a set of IQ samples collected during
 	  sampling of CTE. Bluetooth 5.3 Core Specification defines IQ samples to be 8 bits signed
 	  integer, see Vol 4, Part E sections 7.7.65.22. This option enables a vendor specific Host
-	  extenstion to handle connection IQ report with samples that are in 16 bit signed integer
+	  extension to handle connection IQ report with samples that are in 16 bit signed integer
 	  format.
 
 endif # BT_DF
@@ -933,15 +999,19 @@ config BT_ECC
 	help
 	  This option adds support for ECDH HCI commands.
 
-config BT_TINYCRYPT_ECC
-	bool "Emulate ECDH in the Host using TinyCrypt library"
-	select TINYCRYPT
-	select TINYCRYPT_ECC_DH
+config BT_SEND_ECC_EMULATION
+	bool "Emulate ECDH in the Host using PSA Crypto API library"
+	select MBEDTLS if !BUILD_WITH_TFM
+	select MBEDTLS_PSA_CRYPTO_C if !BUILD_WITH_TFM
+	select PSA_WANT_ALG_ECDH
+	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE
+	select PSA_WANT_ECC_SECP_R1_256
+	select MBEDTLS_PSA_P256M_DRIVER_ENABLED if MBEDTLS_PSA_CRYPTO_C
 	select BT_LONG_WQ
 	depends on BT_ECC && (BT_HCI_RAW || BT_HCI_HOST)
-	default y if BT_CTLR && !BT_CTLR_ECDH
+	default y if HAS_BT_CTLR && !BT_CTLR_ECDH
 	help
-	  If this option is set TinyCrypt library is used for emulating the
+	  If this option is set PSA Crypto API library is used for emulating the
 	  ECDH HCI commands and events needed by e.g. LE Secure Connections.
 	  In builds including the BLE Host, if not set the controller crypto is
 	  used for ECDH and if the controller doesn't support the required HCI

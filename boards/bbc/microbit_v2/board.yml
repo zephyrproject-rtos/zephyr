@@ -1,5 +1,6 @@
 board:
   name: bbc_microbit_v2
+  full_name: "micro:bit V2"
   vendor: bbc
   socs:
   - name: nrf52833

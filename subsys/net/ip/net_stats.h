@@ -113,6 +113,52 @@ static inline void net_stats_update_ipv6_nd_drop(struct net_if *iface)
 #define net_stats_update_ipv6_nd_drop(iface)
 #endif /* CONFIG_NET_STATISTICS_IPV6_ND */
 
+#if defined(CONFIG_NET_STATISTICS_IPV6_PMTU) && defined(CONFIG_NET_NATIVE_IPV6)
+/* IPv6 Path MTU Discovery stats */
+
+static inline void net_stats_update_ipv6_pmtu_sent(struct net_if *iface)
+{
+	UPDATE_STAT(iface, stats.ipv6_pmtu.sent++);
+}
+
+static inline void net_stats_update_ipv6_pmtu_recv(struct net_if *iface)
+{
+	UPDATE_STAT(iface, stats.ipv6_pmtu.recv++);
+}
+
+static inline void net_stats_update_ipv6_pmtu_drop(struct net_if *iface)
+{
+	UPDATE_STAT(iface, stats.ipv6_pmtu.drop++);
+}
+#else
+#define net_stats_update_ipv6_pmtu_sent(iface)
+#define net_stats_update_ipv6_pmtu_recv(iface)
+#define net_stats_update_ipv6_pmtu_drop(iface)
+#endif /* CONFIG_NET_STATISTICS_IPV6_PMTU */
+
+#if defined(CONFIG_NET_STATISTICS_IPV4_PMTU) && defined(CONFIG_NET_NATIVE_IPV4)
+/* IPv4 Path MTU Discovery stats */
+
+static inline void net_stats_update_ipv4_pmtu_sent(struct net_if *iface)
+{
+	UPDATE_STAT(iface, stats.ipv4_pmtu.sent++);
+}
+
+static inline void net_stats_update_ipv4_pmtu_recv(struct net_if *iface)
+{
+	UPDATE_STAT(iface, stats.ipv4_pmtu.recv++);
+}
+
+static inline void net_stats_update_ipv4_pmtu_drop(struct net_if *iface)
+{
+	UPDATE_STAT(iface, stats.ipv4_pmtu.drop++);
+}
+#else
+#define net_stats_update_ipv4_pmtu_sent(iface)
+#define net_stats_update_ipv4_pmtu_recv(iface)
+#define net_stats_update_ipv4_pmtu_drop(iface)
+#endif /* CONFIG_NET_STATISTICS_IPV4_PMTU */
+
 #if defined(CONFIG_NET_STATISTICS_IPV4) && defined(CONFIG_NET_NATIVE_IPV4)
 /* IPv4 stats */
 
@@ -344,6 +390,27 @@ static inline void net_stats_update_ipv4_igmp_drop(struct net_if *iface)
 #define net_stats_update_ipv4_igmp_sent(iface)
 #define net_stats_update_ipv4_igmp_drop(iface)
 #endif /* CONFIG_NET_STATISTICS_IGMP */
+
+#if defined(CONFIG_NET_STATISTICS_DNS)
+static inline void net_stats_update_dns_recv(struct net_if *iface)
+{
+	UPDATE_STAT(iface, stats.dns.recv++);
+}
+
+static inline void net_stats_update_dns_sent(struct net_if *iface)
+{
+	UPDATE_STAT(iface, stats.dns.sent++);
+}
+
+static inline void net_stats_update_dns_drop(struct net_if *iface)
+{
+	UPDATE_STAT(iface, stats.dns.drop++);
+}
+#else
+#define net_stats_update_dns_recv(iface)
+#define net_stats_update_dns_sent(iface)
+#define net_stats_update_dns_drop(iface)
+#endif /* CONFIG_NET_STATISTICS_DNS */
 
 #if defined(CONFIG_NET_PKT_TXTIME_STATS) && defined(CONFIG_NET_STATISTICS)
 static inline void net_stats_update_tx_time(struct net_if *iface,

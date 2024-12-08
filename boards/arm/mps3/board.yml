@@ -1,7 +1,24 @@
 board:
   name: mps3
+  full_name: MPS3 AN547
   vendor: arm
   socs:
-  - name: 'an547'
+  - name: 'corstone300'
     variants:
-    - name: 'ns'
+    - name: 'an547'
+      variants:
+      - name: 'ns'
+    - name: 'an552'
+      variants:
+      - name: 'ns'
+    - name: 'fvp'
+      variants:
+      - name: 'ns'
+  - name: 'corstone310'
+    variants:
+    - name: 'an555'
+      variants:
+      - name: 'ns'
+    - name: 'fvp'
+      variants:
+      - name: 'ns'

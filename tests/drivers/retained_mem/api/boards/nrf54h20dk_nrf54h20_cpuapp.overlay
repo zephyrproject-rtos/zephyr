@@ -1,0 +1,22 @@
+/ {
+	cpuapp_ram0_ret@22004000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x22004000 DT_SIZE_K(16)>;
+		zephyr,memory-region = "RetainedMem";
+		status = "okay";
+
+		retainedmem0: retainedmem {
+			compatible = "zephyr,retained-ram";
+			status = "okay";
+		};
+	};
+
+	aliases {
+		retainedmemtestdevice = &retainedmem0;
+	};
+};
+
+&cpuapp_ram0 {
+	reg = <0x22000000 DT_SIZE_K(16)>;
+	ranges = <0x0 0x22000000 0x4000>;
+};

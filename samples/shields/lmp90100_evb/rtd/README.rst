@@ -27,7 +27,7 @@ Building and Running
 
 This sample runs with the LMP90100 EVB connected to any development
 board with a matching Arduino connector. For this example, we use a
-:ref:`frdm_k64f` board.
+:zephyr:board:`frdm_k64f` board.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/shields/lmp90100_evb/rtd

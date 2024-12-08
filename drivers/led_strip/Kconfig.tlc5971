@@ -5,5 +5,7 @@
 config TLC5971_STRIP
 	bool "TLC5971 (and compatible) LED strip driver"
 	depends on SPI
+	depends on DT_HAS_TI_TLC5971_ENABLED
+	default y
 	help
 	  Enable LED strip driver for daisy chains of TLC5971-ish devices

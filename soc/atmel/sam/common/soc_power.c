@@ -12,7 +12,7 @@
 #endif
 
 #if defined(CONFIG_REBOOT)
-#if DT_NODE_HAS_STATUS(SAM_DT_RSTC_DRIVER, okay)
+#if DT_NODE_HAS_STATUS_OKAY(SAM_DT_RSTC_DRIVER)
 
 void sys_arch_reboot(int type)
 {
@@ -33,5 +33,5 @@ void sys_arch_reboot(int type)
 	}
 }
 
-#endif /* DT_NODE_HAS_STATUS */
+#endif /* DT_NODE_HAS_STATUS_OKAY */
 #endif /* CONFIG_REBOOT */

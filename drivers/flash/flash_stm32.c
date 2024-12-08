@@ -92,7 +92,7 @@ static int flash_stm32_check_status(const struct device *dev)
 
 	if (FLASH_STM32_REGS(dev)->FLASH_STM32_SR & FLASH_STM32_SR_ERRORS) {
 		LOG_DBG("Status: 0x%08lx",
-			FLASH_STM32_REGS(dev)->FLASH_STM32_SR &
+			(unsigned long)FLASH_STM32_REGS(dev)->FLASH_STM32_SR &
 							FLASH_STM32_SR_ERRORS);
 		/* Clear errors to unblock usage of the flash */
 		FLASH_STM32_REGS(dev)->FLASH_STM32_SR = FLASH_STM32_REGS(dev)->FLASH_STM32_SR &
@@ -507,7 +507,7 @@ static struct flash_stm32_priv flash_data = {
 #endif
 };
 
-static const struct flash_driver_api flash_stm32_api = {
+static DEVICE_API(flash, flash_stm32_api) = {
 	.erase = flash_stm32_erase,
 	.write = flash_stm32_write,
 	.read = flash_stm32_read,

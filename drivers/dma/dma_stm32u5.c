@@ -264,7 +264,6 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 		return;
 	}
 	callback_arg = id + STM32_DMA_STREAM_OFFSET;
-	stream->busy = false;
 
 	/* The dma stream id is in range from STM32_DMA_STREAM_OFFSET..<dma-requests> */
 	if (stm32_dma_is_ht_irq_active(dma, id)) {
@@ -274,6 +273,8 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 		}
 		stream->dma_callback(dev, stream->user_data, callback_arg, DMA_STATUS_BLOCK);
 	} else if (stm32_dma_is_tc_irq_active(dma, id)) {
+		/* Assuming not cyclic transfer */
+		stream->busy = false;
 		/* Let HAL DMA handle flags on its own */
 		if (!stream->hal_override) {
 			dma_stm32_clear_tc(dma, id);
@@ -281,6 +282,7 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 		stream->dma_callback(dev, stream->user_data, callback_arg, DMA_STATUS_COMPLETE);
 	} else {
 		LOG_ERR("Transfer Error.");
+		stream->busy = false;
 		dma_stm32_dump_stream_irq(dev, id);
 		dma_stm32_clear_stream_irq(dev, id);
 		stream->dma_callback(dev, stream->user_data,
@@ -404,14 +406,13 @@ static int dma_stm32_configure(const struct device *dev,
 		return -EINVAL;
 	}
 
-	/*
-	 * STM32's circular mode will auto reset both source address
-	 * counter and destination address counter.
+	/* Continuous transfers are supported by hardware but not implemented
+	 * by this driver
 	 */
-	if (config->head_block->source_reload_en !=
+	if (config->head_block->source_reload_en ||
 		config->head_block->dest_reload_en) {
-		LOG_ERR("source_reload_en and dest_reload_en must "
-			"be the same.");
+		LOG_ERR("source_reload_en and dest_reload_en not "
+			"implemented.");
 		return -EINVAL;
 	}
 
@@ -635,6 +636,11 @@ static int dma_stm32_stop(const struct device *dev, uint32_t id)
 
 	if (id >= config->max_streams) {
 		return -EINVAL;
+	}
+
+	if (stream->hal_override) {
+		stream->busy = false;
+		return 0;
 	}
 
 	/* Repeated stop : return now if channel is already stopped */

@@ -73,9 +73,7 @@ To initially discover a device to connect to the application will likely
 use the :c:func:`bt_le_scan_start` API, wait for an appropriate device
 to be found (using the scan callback), stop scanning using
 :c:func:`bt_le_scan_stop` and then connect to the device using
-:c:func:`bt_conn_le_create`. If the central wants to keep
-automatically reconnecting to the peripheral it should use the
-:c:func:`bt_le_set_auto_conn` API.
+:c:func:`bt_conn_le_create`.
 
 There are some sample applications for the central role available in the
 tree, such as :zephyr_file:`samples/bluetooth/central_hr`.
@@ -273,6 +271,19 @@ The Generic Attribute Profile is the most common means of communication
 over LE connections. A more detailed description of this layer and the
 API reference can be found in the
 :ref:`GATT API reference section <bt_gatt>`.
+
+ATT timeout
+-----------
+
+If the peer device does not respond to an ATT request (such as read or write)
+within the ATT timeout, the host will automatically initiate a disconnect. This
+simplifies error handling by reducing rare failure conditions to a common
+disconnection, allowing developers to manage unexpected disconnects without
+special cases for ATT timeouts.
+
+.. image:: img/att_timeout.svg
+  :align: center
+  :alt: ATT timeout
 
 Mesh
 ====

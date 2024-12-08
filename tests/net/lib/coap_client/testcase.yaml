@@ -3,6 +3,7 @@ common:
 tests:
   net.coap.client:
     platform_allow:
-      - native_posix
       - native_sim
-    tags: coap net
+    tags:
+      - coap
+      - net

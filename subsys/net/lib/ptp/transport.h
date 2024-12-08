@@ -66,7 +66,7 @@ int ptp_transport_close(struct ptp_port *port);
  * @note Address specified in the message is ignored.
  *
  * @param[in] port Pointer to the PTP Port structure.
- * @param[in] msg  Pointer to the messge to be send.
+ * @param[in] msg  Pointer to the message to be send.
  * @param[in] idx  Index of the socket to be used to send message.
  *
  * @return Number of sent bytes.
@@ -78,7 +78,7 @@ int ptp_transport_send(struct ptp_port *port, struct ptp_msg *msg, enum ptp_sock
  * to the address provided with @ref ptp_msg message structure.
  *
  * @param[in] port Pointer to the PTP Port structure.
- * @param[in] msg  Pointer to the messge to be send.
+ * @param[in] msg  Pointer to the message to be send.
  * @param[in] idx  Index of the socket to be used to send message.
  *
  * @return Number of sent bytes.

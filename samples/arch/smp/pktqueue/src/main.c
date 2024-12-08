@@ -133,13 +133,14 @@ void queue_thread(void *arg1, void *arg2, void *arg3)
 	current_queue++;
 	k_mutex_unlock(&fetch_queue_mtx);
 
-	for (int i = 0; i < THREADS_NUM; i++)
+	for (int i = 0; i < THREADS_NUM; i++) {
 		k_thread_create(&tthread[i+THREADS_NUM*queue_num],
 			tstack[i+THREADS_NUM*queue_num], STACK_SIZE,
 			test_thread,
 			(void *)&sender[queue_num],
 			(void *)&receiver[queue_num], (void *)&queue_num,
 			K_PRIO_PREEMPT(10), 0, K_NO_WAIT);
+	}
 
 	/* Wait until sender queue is not empty */
 	while (sender[queue_num].count != 0) {
@@ -173,11 +174,12 @@ int main(void)
 	/* Capture initial time stamp */
 	start_time = k_cycle_get_32();
 
-	for (int i = 0; i < QUEUE_NUM; i++)
+	for (int i = 0; i < QUEUE_NUM; i++) {
 		k_thread_create(&qthread[i], qstack[i], STACK_SIZE,
 				queue_thread,
 				(void *)&sender[i], (void *)&receiver[i],
 				(void *)&i, K_PRIO_PREEMPT(11), 0, K_NO_WAIT);
+	}
 
 	/* Wait until all queues are not processed */
 	while (queues_remain > 0) {

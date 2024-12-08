@@ -23,6 +23,12 @@ properties:
       Defines the poll period in msecs between between matrix scans, set to 0
       to never exit poll mode. Defaults to 5ms if unspecified.
 
+  stable-poll-period-ms:
+    type: int
+    description: |
+      Defines the poll period in msecs between matrix scans when the matrix is
+      stable, defaults to poll-period-ms value if unspecified.
+
   poll-timeout-ms:
     type: int
     default: 100

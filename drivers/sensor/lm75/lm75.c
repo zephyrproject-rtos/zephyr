@@ -306,7 +306,7 @@ static int lm75_channel_get(const struct device *dev, enum sensor_channel chan,
 	}
 }
 
-static const struct sensor_driver_api lm75_driver_api = {
+static DEVICE_API(sensor, lm75_driver_api) = {
 	.attr_set = lm75_attr_set,
 	.attr_get = lm75_attr_get,
 #if LM75_TRIGGER_SUPPORT
@@ -346,13 +346,17 @@ int lm75_init(const struct device *dev)
 	}
 
 #if LM75_TRIGGER_SUPPORT
-	data->dev = dev;
-	k_work_queue_start(&data->workq, data->stack, K_THREAD_STACK_SIZEOF(data->stack),
-			   CONFIG_LM75_TRIGGER_THREAD_PRIO, NULL);
-	k_thread_name_set(&data->workq.thread, "lm75_trigger");
-	k_work_init(&data->work, lm75_trigger_work_handler);
-
+	/** Even if Trigger support is enabled, there may be multiple
+	 * instances. This handles those who may not have Trigger support.
+	 */
 	if (cfg->int_gpio.port != NULL) {
+
+		data->dev = dev;
+		k_work_queue_start(&data->workq, data->stack, K_THREAD_STACK_SIZEOF(data->stack),
+				CONFIG_LM75_TRIGGER_THREAD_PRIO, NULL);
+		k_thread_name_set(&data->workq.thread, "lm75_trigger");
+		k_work_init(&data->work, lm75_trigger_work_handler);
+
 		if (!device_is_ready(cfg->int_gpio.port)) {
 			LOG_ERR("INT GPIO not ready");
 			return -EINVAL;

@@ -11,7 +11,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/byteorder.h>
 
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/mesh.h>
@@ -195,7 +195,7 @@ static void prov_start(const uint8_t *data)
 		       bt_mesh_prov->static_val_len > auth_size ? auth_size
 								: bt_mesh_prov->static_val_len);
 
-		/* Padd with zeros if the Auth is shorter the required length*/
+		/* Pad with zeros if the Auth is shorter the required length */
 		if (bt_mesh_prov->static_val_len < auth_size) {
 			memset(bt_mesh_prov_link.auth + bt_mesh_prov->static_val_len, 0,
 			       auth_size - bt_mesh_prov->static_val_len);

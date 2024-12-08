@@ -1,12 +1,9 @@
-.. _ttgo_lora32:
-
-Lilygo TTGO LoRa32
-##################
+.. zephyr:board:: ttgo_lora32
 
 Overview
 ********
 
-The Lilygo TTGO LoRa32 is a development board for LoRa applications baesed on the ESP32-PICO-D4.
+The Lilygo TTGO LoRa32 is a development board for LoRa applications based on the ESP32-PICO-D4.
 
 It's available in two versions supporting two different frequency ranges and features the following integrated components:
 
@@ -17,13 +14,6 @@ It's available in two versions supporting two different frequency ranges and fea
 - TF card slot
 
 Some of the ESP32 I/O pins are accessible on the board's pin headers.
-
-.. figure:: img/ttgo_lora32.webp
-        :align: center
-        :alt: Lilygo TTGO LoRa32 module
-        :width: 400 px
-
-        Lilygo TTGO LoRa32 module
 
 Functional Description
 **********************
@@ -49,13 +39,13 @@ of the Lilygo TTGO LoRa32 board.
 +------------------+-------------------------------------------------------------------------+
 | Power Switch     | Sliding power switch.                                                   |
 +------------------+-------------------------------------------------------------------------+
-| LCD screen       | Built-in OLED display \(`SSD1306`_, 0.96", 128x64 px\) controlled       |
+| OLED display     | Built-in OLED display \(`SSD1306`_, 0.96", 128x64 px\) controlled       |
 |                  | by I2C interface                                                        |
 +------------------+-------------------------------------------------------------------------+
 | SX1276/SX1278    | LoRa radio frontend chip, connected via SPI.                            |
 |                  | Use SX1276 for 433MHz and SX1276 for 868/915/923MHz.                    |
 +------------------+-------------------------------------------------------------------------+
-| TF card slot     | TF card slot wired to the SD interface of the MCU.                      |
+| TF card slot     | TF card slot wired to the SDHC interface of the MCU.                    |
 +------------------+-------------------------------------------------------------------------+
 
 
@@ -99,7 +89,7 @@ MCUboot bootloader
 ==================
 
 User may choose to use MCUboot bootloader instead. In that case the bootloader
-must be build (and flash) at least once.
+must be built (and flashed) at least once.
 
 There are two options to be used when building an application:
 
@@ -111,9 +101,9 @@ There are two options to be used when building an application:
    User can select the MCUboot bootloader by adding the following line
    to the board default configuration file.
 
-.. code-block:: cfg
+   .. code-block:: cfg
 
-   CONFIG_BOOTLOADER_MCUBOOT=y
+      CONFIG_BOOTLOADER_MCUBOOT=y
 
 Sysbuild
 ========
@@ -125,7 +115,7 @@ To build the sample application using sysbuild use the command:
 
 .. zephyr-app-commands::
    :tool: west
-   :app: samples/hello_world
+   :zephyr-app: samples/hello_world
    :board: ttgo_lora32/esp32/procpu
    :goals: build
    :west-args: --sysbuild
@@ -161,7 +151,7 @@ Manual build
 ============
 
 During the development cycle, it is intended to build & flash as quickly possible.
-For that reason, images can be build one at a time using traditional build.
+For that reason, images can be built one at a time using traditional build.
 
 The instructions following are relevant for both manual build and sysbuild.
 The only difference is the structure of the build directory.
@@ -178,8 +168,8 @@ Build and flash applications as usual (see :ref:`build_an_application` and
    :board: ttgo_lora32/esp32/procpu
    :goals: build
 
-The usual ``flash`` target will work with the ``ttgo_lora32`` board
-configuration. Here is an example for the :ref:`hello_world`
+The usual ``flash`` target will work with the ``ttgo_lora32`` board target.
+Here is an example for the :zephyr:code-sample:`hello_world`
 application.
 
 .. zephyr-app-commands::
@@ -205,30 +195,15 @@ message in the monitor:
    ***** Booting Zephyr OS vx.x.x-xxx-gxxxxxxxxxxxx *****
    Hello World! ttgo_lora32
 
-LoRa samples
+Code samples
 ============
 
-There are two LoRa samples that will work out of the box with this board.
+The following sample applications will work out of the box with this board:
 
-To build the LoRa transmit sample application using sysbuild use the command:
-
-.. zephyr-app-commands::
-   :tool: west
-   :app: samples/drivers/lora/send
-   :board: ttgo_lora32/esp32/procpu
-   :goals: build
-   :west-args: --sysbuild
-   :compact:
-
-To build the LoRa receive sample application using sysbuild use the command:
-
-.. zephyr-app-commands::
-   :tool: west
-   :app: samples/drivers/lora/receive
-   :board: ttgo_lora32/esp32/procpu
-   :goals: build
-   :west-args: --sysbuild
-   :compact:
+* :zephyr:code-sample:`lora-send`
+* :zephyr:code-sample:`lora-receive`
+* :zephyr:code-sample:`fs`
+* :zephyr:code-sample:`character-frame-buffer`
 
 Debugging
 *********

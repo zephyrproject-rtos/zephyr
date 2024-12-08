@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(spi_emul_ctlr);
 #include <zephyr/device.h>
 #include <zephyr/drivers/emul.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi/rtio.h>
 #include <zephyr/drivers/spi_emul.h>
 
 /** Working data for the device */
@@ -129,8 +130,11 @@ int spi_emul_register(const struct device *dev, struct spi_emul *emul)
 
 /* Device instantiation */
 
-static const struct spi_driver_api spi_emul_api = {
+static DEVICE_API(spi, spi_emul_api) = {
 	.transceive = spi_emul_io,
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
+#endif
 	.release = spi_emul_release,
 };
 
@@ -147,7 +151,7 @@ static const struct spi_driver_api spi_emul_api = {
 		.num_children = ARRAY_SIZE(emuls_##n),                                             \
 	};                                                                                         \
 	static struct spi_emul_data spi_emul_data_##n;                                             \
-	DEVICE_DT_INST_DEFINE(n, spi_emul_init, NULL, &spi_emul_data_##n, &spi_emul_cfg_##n,       \
-			      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY, &spi_emul_api);
+	SPI_DEVICE_DT_INST_DEFINE(n, spi_emul_init, NULL, &spi_emul_data_##n, &spi_emul_cfg_##n,   \
+				  POST_KERNEL, CONFIG_SPI_INIT_PRIORITY, &spi_emul_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_EMUL_INIT)

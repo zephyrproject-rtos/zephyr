@@ -77,10 +77,7 @@ static int iis328dq_set_odr(const struct device *dev, uint16_t odr)
 	} else if (odr <= 1) {
 		odr_reg = IIS328DQ_ODR_1Hz;
 	} else if (odr <= 2) {
-		/* not sure what "5Hz2" is about, datasheet says PM=0b100 is 2Hz
-		 * https://github.com/STMicroelectronics/STMems_Standard_C_drivers/issues/162
-		 */
-		odr_reg = IIS328DQ_ODR_5Hz2;
+		odr_reg = IIS328DQ_ODR_2Hz;
 	} else if (odr <= 5) {
 		odr_reg = IIS328DQ_ODR_5Hz;
 	} else if (odr <= 10) {
@@ -296,7 +293,7 @@ static int iis328dq_sample_fetch(const struct device *dev, enum sensor_channel c
 	return 0;
 }
 
-static const struct sensor_driver_api iis328dq_driver_api = {
+static DEVICE_API(sensor, iis328dq_driver_api) = {
 	.attr_set = iis328dq_attr_set,
 #if CONFIG_IIS328DQ_TRIGGER
 	.trigger_set = iis328dq_trigger_set,

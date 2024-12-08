@@ -61,7 +61,7 @@ static int mem_map_test(uintptr_t virt_addr, uintptr_t phys_addr, size_t size)
 	zassert_true(mapped_nb_free_tables < initial_nb_free_tables,
 		     "%d vs %d", mapped_nb_free_tables, initial_nb_free_tables);
 	zassert_true(mapped_tables_usage > initial_tables_usage,
-		     "%#x vs %#x", mapped_tables_usage > initial_tables_usage);
+		     "%#x vs %#x", mapped_tables_usage, initial_tables_usage);
 
 	arch_mem_unmap((void *)virt_addr, size);
 
@@ -75,7 +75,7 @@ static int mem_map_test(uintptr_t virt_addr, uintptr_t phys_addr, size_t size)
 	zassert_true(unmapped_nb_free_tables == initial_nb_free_tables,
 		     "%d vs %d", unmapped_nb_free_tables, initial_nb_free_tables);
 	zassert_true(unmapped_tables_usage == initial_tables_usage,
-		     "%#x vs %#x", unmapped_tables_usage > initial_tables_usage);
+		     "%#x vs %#x", unmapped_tables_usage, initial_tables_usage);
 
 	int tables_used = unmapped_nb_free_tables - mapped_nb_free_tables;
 	return tables_used;
@@ -149,6 +149,73 @@ ZTEST(arm64_mmu, test_arm64_mmu_04_page_and_block)
 	int tables_used = mem_map_test(virt, phys, size);
 
 	zassert_true(tables_used == 2, "used %d tables", tables_used);
+}
+
+ZTEST(arm64_mmu, test_arm64_mmu_05_hole_in_block)
+{
+	/*
+	 * Create a block mapping.
+	 */
+	int table_entries = CONFIG_MMU_PAGE_SIZE / sizeof(uint64_t);
+	size_t block_size = table_entries * CONFIG_MMU_PAGE_SIZE;
+	uintptr_t virt = TEST_VIRT_ADDR & ~(block_size - 1);
+	uintptr_t phys = TEST_PHYS_ADDR & ~(block_size - 1);
+	size_t size = block_size;
+
+	arch_mem_map((void *)virt, phys, size, K_MEM_ARM_NORMAL_NC);
+
+	int mapped_nb_free_tables = arm64_mmu_nb_free_tables();
+	int mapped_tables_usage = arm64_mmu_tables_total_usage();
+
+	TC_PRINT("  After arch_mem_map:\n");
+	TC_PRINT("   current free tables:        %d\n", mapped_nb_free_tables);
+	TC_PRINT("   current total table usage:  %#x\n", mapped_tables_usage);
+
+	zassert_true(mapped_nb_free_tables < initial_nb_free_tables,
+		     "%d vs %d", mapped_nb_free_tables, initial_nb_free_tables);
+	zassert_true(mapped_tables_usage > initial_tables_usage,
+		     "%#x vs %#x", mapped_tables_usage, initial_tables_usage);
+
+	/*
+	 * Now poke a hole in the middle of this block mapping, effectively
+	 * splitting it in two disjoint sub-mappings.
+	 */
+	arch_mem_unmap((void *)(virt + CONFIG_MMU_PAGE_SIZE), CONFIG_MMU_PAGE_SIZE);
+
+	int split_nb_free_tables = arm64_mmu_nb_free_tables();
+	int split_tables_usage = arm64_mmu_tables_total_usage();
+
+	TC_PRINT("  After first arch_mem_unmap:\n");
+	TC_PRINT("   current free tables:        %d\n", split_nb_free_tables);
+	TC_PRINT("   current total table usage:  %#x\n", split_tables_usage);
+
+	zassert_true(split_nb_free_tables < mapped_nb_free_tables,
+		     "%d vs %d", split_nb_free_tables, mapped_nb_free_tables);
+	zassert_true(split_tables_usage > mapped_tables_usage,
+		     "%#x vs %#x", split_tables_usage, mapped_tables_usage);
+
+	/*
+	 * Make sure the hole is actually freed.
+	 */
+	zassert_true(arch_page_phys_get((void *)(virt + CONFIG_MMU_PAGE_SIZE), NULL)
+		     == -EFAULT, "");
+
+	/*
+	 * Then free it all.
+	 */
+	arch_mem_unmap((void *)virt, size);
+
+	int unmapped_nb_free_tables = arm64_mmu_nb_free_tables();
+	int unmapped_tables_usage = arm64_mmu_tables_total_usage();
+
+	TC_PRINT("  After second arch_mem_unmap:\n");
+	TC_PRINT("   current free tables:        %d\n", unmapped_nb_free_tables);
+	TC_PRINT("   current total table usage:  %#x\n", unmapped_tables_usage);
+
+	zassert_true(unmapped_nb_free_tables == initial_nb_free_tables,
+		     "%d vs %d", unmapped_nb_free_tables, initial_nb_free_tables);
+	zassert_true(unmapped_tables_usage == initial_tables_usage,
+		     "%#x vs %#x", unmapped_tables_usage, initial_tables_usage);
 }
 
 ZTEST_SUITE(arm64_mmu, NULL, arm64_mmu_test_init, NULL, NULL, NULL);

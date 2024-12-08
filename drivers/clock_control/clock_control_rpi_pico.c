@@ -488,13 +488,21 @@ static int clock_control_rpi_pico_on(const struct device *dev, clock_control_sub
 {
 	const struct clock_control_rpi_pico_config *config = dev->config;
 	enum rpi_pico_clkid clkid = (enum rpi_pico_clkid)sys;
-	clocks_hw_t *clocks_regs = config->clocks_regs;
 
 	if (rpi_pico_is_valid_clock_index(clkid) < 0) {
 		return -EINVAL;
 	}
 
-	hw_set_bits(&clocks_regs->clk[clkid].ctrl, CTRL_ENABLE_BITS);
+	switch (clkid) {
+	case rpi_pico_clkid_pll_sys:
+		hw_clear_bits(&config->pll_sys_regs->pwr, PLL_PWR_BITS);
+		break;
+	case rpi_pico_clkid_pll_usb:
+		hw_clear_bits(&config->pll_usb_regs->pwr, PLL_PWR_BITS);
+		break;
+	default:
+		hw_set_bits(&config->clocks_regs->clk[clkid].ctrl, CTRL_ENABLE_BITS);
+	}
 
 	return 0;
 }
@@ -503,13 +511,21 @@ static int clock_control_rpi_pico_off(const struct device *dev, clock_control_su
 {
 	const struct clock_control_rpi_pico_config *config = dev->config;
 	enum rpi_pico_clkid clkid = (enum rpi_pico_clkid)sys;
-	clocks_hw_t *clocks_regs = config->clocks_regs;
 
 	if (rpi_pico_is_valid_clock_index(clkid) < 0) {
 		return -EINVAL;
 	}
 
-	hw_clear_bits(&clocks_regs->clk[clkid].ctrl, CTRL_ENABLE_BITS);
+	switch (clkid) {
+	case rpi_pico_clkid_pll_sys:
+		hw_set_bits(&config->pll_sys_regs->pwr, PLL_PWR_BITS);
+		break;
+	case rpi_pico_clkid_pll_usb:
+		hw_set_bits(&config->pll_usb_regs->pwr, PLL_PWR_BITS);
+		break;
+	default:
+		hw_clear_bits(&config->clocks_regs->clk[clkid].ctrl, CTRL_ENABLE_BITS);
+	}
 
 	return 0;
 }
@@ -592,14 +608,13 @@ static int clock_control_rpi_pico_init(const struct device *dev)
 	/* Reset all function before clock configuring */
 	reset_block(~(RESETS_RESET_IO_QSPI_BITS | RESETS_RESET_PADS_QSPI_BITS |
 		      RESETS_RESET_PLL_USB_BITS | RESETS_RESET_USBCTRL_BITS |
-		      RESETS_RESET_PLL_USB_BITS | RESETS_RESET_SYSCFG_BITS |
-		      RESETS_RESET_PLL_SYS_BITS));
+		      RESETS_RESET_SYSCFG_BITS | RESETS_RESET_PLL_SYS_BITS));
 
 	unreset_block_wait(RESETS_RESET_BITS &
 			   ~(RESETS_RESET_ADC_BITS | RESETS_RESET_RTC_BITS |
 			     RESETS_RESET_SPI0_BITS | RESETS_RESET_SPI1_BITS |
 			     RESETS_RESET_UART0_BITS | RESETS_RESET_UART1_BITS |
-			     RESETS_RESET_USBCTRL_BITS | RESETS_RESET_PWM_BITS));
+			     RESETS_RESET_USBCTRL_BITS));
 
 	/* Start tick in watchdog */
 	watchdog_hw->tick = ((CLOCK_FREQ_xosc/1000000) | WATCHDOG_TICK_ENABLE_BITS);
@@ -698,14 +713,14 @@ static int clock_control_rpi_pico_init(const struct device *dev)
 	}
 
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
-	if (ret < 0) {
+	if (ret < 0 && ret != -ENOENT) {
 		return ret;
 	}
 
 	return 0;
 }
 
-static const struct clock_control_driver_api clock_control_rpi_pico_api = {
+static DEVICE_API(clock_control, clock_control_rpi_pico_api) = {
 	.on = clock_control_rpi_pico_on,
 	.off = clock_control_rpi_pico_off,
 	.get_rate = clock_control_rpi_pico_get_rate,
@@ -880,6 +895,6 @@ static struct clock_control_rpi_pico_data clock_control_rpi_pico_data = {
 	.rosc_ph_freq = CLOCK_FREQ(rosc_ph),
 };
 
-DEVICE_DT_INST_DEFINE(0, &clock_control_rpi_pico_init, NULL, &clock_control_rpi_pico_data,
+DEVICE_DT_INST_DEFINE(0, clock_control_rpi_pico_init, NULL, &clock_control_rpi_pico_data,
 		      &clock_control_rpi_pico_config, PRE_KERNEL_1,
 		      CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &clock_control_rpi_pico_api);

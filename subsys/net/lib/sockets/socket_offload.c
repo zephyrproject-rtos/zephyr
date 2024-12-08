@@ -37,5 +37,5 @@ void socket_offload_freeaddrinfo(struct zsock_addrinfo *res)
 	__ASSERT_NO_MSG(dns_offload);
 	__ASSERT_NO_MSG(dns_offload->freeaddrinfo);
 
-	return dns_offload->freeaddrinfo(res);
+	dns_offload->freeaddrinfo(res);
 }

@@ -9,6 +9,7 @@
 /{
 	chosen {
 		zephyr,display = &lcdif;
+		zephyr,touch = &gt911_rk055hdmipi4m;
 	};
 
 	en_mipi_display: enable-mipi-display {

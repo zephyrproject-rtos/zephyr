@@ -72,15 +72,17 @@ static void intel_adsp_gpdma_dump_registers(const struct device *dev, uint32_t c
 		channel, cap, ctl, ipptr, llpc, llpl, llpu);
 
 	/* Channel Register Dump */
-	for (i = 0; i <= DW_DMA_CHANNEL_REGISTER_OFFSET_END; i += 0x8)
+	for (i = 0; i <= DW_DMA_CHANNEL_REGISTER_OFFSET_END; i += 0x8) {
 		LOG_INF(" channel register offset: %#x value: %#x\n", chan_reg_offs[i],
 			dw_read(dw_cfg->base, DW_CHAN_OFFSET(channel) + chan_reg_offs[i]));
+	}
 
 	/* IP Register Dump */
 	for (i = DW_DMA_CHANNEL_REGISTER_OFFSET_START; i <= DW_DMA_CHANNEL_REGISTER_OFFSET_END;
-	     i += 0x8)
+	     i += 0x8) {
 		LOG_INF(" ip register offset: %#x value: %#x\n", ip_reg_offs[i],
 			dw_read(dw_cfg->base, ip_reg_offs[i]));
+	}
 }
 #endif
 
@@ -129,9 +131,15 @@ static inline void intel_adsp_gpdma_llp_read(const struct device *dev,
 {
 #ifdef CONFIG_DMA_INTEL_ADSP_GPDMA_HAS_LLP
 	const struct intel_adsp_gpdma_cfg *const dev_cfg = dev->config;
+	uint32_t tmp;
 
-	*llp_l = dw_read(dev_cfg->shim, GPDMA_CHLLPL(channel));
+	tmp = dw_read(dev_cfg->shim, GPDMA_CHLLPL(channel));
 	*llp_u = dw_read(dev_cfg->shim, GPDMA_CHLLPU(channel));
+	*llp_l = dw_read(dev_cfg->shim, GPDMA_CHLLPL(channel));
+	if (tmp > *llp_l) {
+		/* re-read the LLPU value, as LLPL just wrapped */
+		*llp_u = dw_read(dev_cfg->shim, GPDMA_CHLLPU(channel));
+	}
 #endif
 }
 

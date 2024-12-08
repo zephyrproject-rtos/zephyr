@@ -1,0 +1,44 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "frdm_mcxn947_mcxn947_cpu0.dtsi"
+
+/delete-node/ &slot0_partition;
+/delete-node/ &slot1_partition;
+/delete-node/ &storage_partition;
+
+/ {
+	model = "NXP FRDM_N94 board, QSPI variant";
+	compatible = "nxp,mcxn947", "nxp,mcx";
+
+	chosen {
+		zephyr,flash = &w25q64jvssiq;
+	};
+
+};
+
+&w25q64jvssiq {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		slot0_partition: partition@0 {
+			label = "image-0";
+			reg = <0x00000000 DT_SIZE_M(3)>;
+		};
+		slot1_partition: partition@300000 {
+			label = "image-1";
+			reg = <0x00300000 DT_SIZE_M(3)>;
+		};
+		storage_partition: partition@600000 {
+			label = "storage";
+			reg = <0x00600000 DT_SIZE_M(2)>;
+		};
+	};
+};

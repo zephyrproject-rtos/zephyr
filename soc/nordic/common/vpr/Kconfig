@@ -2,9 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config RISCV_CORE_NORDIC_VPR
-	bool "RISC-V Nordic VPR core"
-	default y
-	depends on DT_HAS_NORDIC_VPR_ENABLED
+	bool
 	select ATOMIC_OPERATIONS_C
 	select RISCV
 	select RISCV_PRIVILEGED
@@ -17,6 +15,9 @@ config RISCV_CORE_NORDIC_VPR
 	select RISCV_HAS_CLIC
 	select RISCV_SOC_CONTEXT_SAVE
 	select HAS_FLASH_LOAD_OFFSET
-	select ARCH_CPU_IDLE_CUSTOM
+	select ARCH_HAS_CUSTOM_CPU_IDLE
+	select ARCH_HAS_CUSTOM_CPU_ATOMIC_IDLE
+	select INCLUDE_RESET_VECTOR
+	imply XIP
 	help
 	  Enable support for the RISC-V Nordic VPR core.

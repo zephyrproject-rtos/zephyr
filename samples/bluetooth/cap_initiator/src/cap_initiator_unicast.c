@@ -20,6 +20,7 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/uuid.h>
@@ -27,7 +28,7 @@
 #include <zephyr/kernel/thread_stack.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/logging/log_core.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
@@ -45,6 +46,7 @@ static struct bt_bap_lc3_preset unicast_preset_16_2_1 = BT_BAP_LC3_UNICAST_PRESE
 	BT_AUDIO_LOCATION_MONO_AUDIO, BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 static struct bt_bap_unicast_group *unicast_group;
 uint64_t total_rx_iso_packet_count; /* This value is exposed to test code */
+uint64_t total_unicast_tx_iso_packet_count; /* This value is exposed to test code */
 
 /** Struct to contain information for a specific peer (CAP) device */
 struct peer_config {
@@ -74,8 +76,23 @@ static K_SEM_DEFINE(sem_state_change, 0, 1);
 static K_SEM_DEFINE(sem_mtu_exchanged, 0, 1);
 static K_SEM_DEFINE(sem_security_changed, 0, 1);
 
+static bool is_tx_stream(struct bt_bap_stream *stream)
+{
+	struct bt_bap_ep_info ep_info;
+	int err;
+
+	err = bt_bap_ep_get_info(stream->ep, &ep_info);
+	if (err != 0) {
+		LOG_ERR("Failed to get ep info: %d", err);
+
+		return false;
+	}
+
+	return ep_info.dir == BT_AUDIO_DIR_SINK;
+}
+
 static void unicast_stream_configured_cb(struct bt_bap_stream *stream,
-					 const struct bt_audio_codec_qos_pref *pref)
+					 const struct bt_bap_qos_cfg_pref *pref)
 {
 	LOG_INF("Configured stream %p", stream);
 
@@ -103,6 +120,18 @@ static void unicast_stream_started_cb(struct bt_bap_stream *stream)
 {
 	LOG_INF("Started stream %p", stream);
 	total_rx_iso_packet_count = 0U;
+	total_unicast_tx_iso_packet_count = 0U;
+
+	if (is_tx_stream(stream)) {
+		struct bt_cap_stream *cap_stream =
+			CONTAINER_OF(stream, struct bt_cap_stream, bap_stream);
+		int err;
+
+		err = cap_initiator_tx_register_stream(cap_stream);
+		if (err != 0) {
+			LOG_ERR("Failed to register %p for TX: %d", stream, err);
+		}
+	}
 }
 
 static void unicast_stream_metadata_updated_cb(struct bt_bap_stream *stream)
@@ -118,6 +147,17 @@ static void unicast_stream_disabled_cb(struct bt_bap_stream *stream)
 static void unicast_stream_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 {
 	LOG_INF("Stopped stream %p with reason 0x%02X", stream, reason);
+
+	if (is_tx_stream(stream)) {
+		struct bt_cap_stream *cap_stream =
+			CONTAINER_OF(stream, struct bt_cap_stream, bap_stream);
+		int err;
+
+		err = cap_initiator_tx_unregister_stream(cap_stream);
+		if (err != 0) {
+			LOG_ERR("Failed to unregister %p for TX: %d", stream, err);
+		}
+	}
 }
 
 static void unicast_stream_released_cb(struct bt_bap_stream *stream)
@@ -146,6 +186,17 @@ static void unicast_stream_recv_cb(struct bt_bap_stream *stream,
 	total_rx_iso_packet_count++;
 }
 
+static void unicast_stream_sent_cb(struct bt_bap_stream *stream)
+{
+	/* Triggered every time we have sent an HCI data packet to the controller */
+
+	if ((total_unicast_tx_iso_packet_count % 100U) == 0U) {
+		LOG_INF("Sent %llu HCI ISO data packets", total_unicast_tx_iso_packet_count);
+	}
+
+	total_unicast_tx_iso_packet_count++;
+}
+
 static struct bt_bap_stream_ops unicast_stream_ops = {
 	.configured = unicast_stream_configured_cb,
 	.qos_set = unicast_stream_qos_set_cb,
@@ -156,53 +207,8 @@ static struct bt_bap_stream_ops unicast_stream_ops = {
 	.stopped = unicast_stream_stopped_cb,
 	.released = unicast_stream_released_cb,
 	.recv = unicast_stream_recv_cb,
+	.sent = unicast_stream_sent_cb,
 };
-
-static void tx_thread_func(void *arg1, void *arg2, void *arg3)
-{
-	NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT,
-				  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
-				  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
-	static uint8_t data[CONFIG_BT_ISO_TX_MTU];
-	struct bt_cap_stream *cap_stream = &peer.sink_stream;
-	struct bt_bap_stream *bap_stream = &cap_stream->bap_stream;
-
-	for (size_t i = 0U; i < ARRAY_SIZE(data); i++) {
-		data[i] = (uint8_t)i;
-	}
-
-	while (true) {
-		/* No-op if stream is not configured */
-		if (bap_stream->ep != NULL) {
-			struct bt_bap_ep_info ep_info;
-			int err;
-
-			err = bt_bap_ep_get_info(bap_stream->ep, &ep_info);
-			if (err == 0) {
-				if (ep_info.state == BT_BAP_EP_STATE_STREAMING) {
-					struct net_buf *buf;
-
-					buf = net_buf_alloc(&tx_pool, K_FOREVER);
-					net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
-
-					net_buf_add_mem(buf, data, bap_stream->qos->sdu);
-
-					err = bt_cap_stream_send(cap_stream, buf, peer.tx_seq_num);
-					if (err == 0) {
-						peer.tx_seq_num++;
-						continue; /* Attempt to send again ASAP */
-					} else {
-						LOG_ERR("Unable to send: %d", err);
-						net_buf_unref(buf);
-					}
-				}
-			}
-		}
-
-		/* In case of any errors, retry with a delay */
-		k_sleep(K_MSEC(100));
-	}
-}
 
 static bool log_codec_cb(struct bt_data *data, void *user_data)
 {
@@ -522,7 +528,7 @@ static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 
 	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
-	LOG_INF("Disconnected: %s (reason 0x%02x)", addr, reason);
+	LOG_INF("Disconnected: %s, reason 0x%02x %s", addr, reason, bt_hci_err_to_str(reason));
 
 	bt_conn_unref(peer.conn);
 	peer.conn = NULL;
@@ -537,7 +543,8 @@ static void security_changed_cb(struct bt_conn *conn, bt_security_t level,
 		LOG_INF("Security changed: %u", level);
 		k_sem_give(&sem_security_changed);
 	} else {
-		LOG_ERR("Failed to set security level: %d", sec_err);
+		LOG_ERR("Failed to set security level: %s(%d)",
+			bt_security_err_to_str(sec_err), sec_err);
 
 		if (sec_err == BT_SECURITY_ERR_PIN_OR_KEY_MISSING) {
 			int err;
@@ -736,20 +743,7 @@ static int init_cap_initiator(void)
 	k_sem_init(&peer.sink_stream_sem, 0, 1);
 
 	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK)) {
-		static bool thread_started;
-
-		if (!thread_started) {
-			static K_KERNEL_STACK_DEFINE(tx_thread_stack, 1024);
-			const int tx_thread_prio = K_PRIO_PREEMPT(5);
-			static struct k_thread tx_thread;
-
-			k_thread_create(&tx_thread, tx_thread_stack,
-					K_KERNEL_STACK_SIZEOF(tx_thread_stack), tx_thread_func,
-					net_buf_pull_be16, NULL, NULL, tx_thread_prio, 0,
-					K_NO_WAIT);
-			k_thread_name_set(&tx_thread, "TX thread");
-			thread_started = true;
-		}
+		cap_initiator_tx_init();
 	}
 
 	return 0;

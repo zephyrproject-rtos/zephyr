@@ -1,0 +1,11 @@
+#
+# Copyright (c) 2024 SILA Embedded Solutions GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: This is a representation of the Microchip MCP23009 I2C GPIO Expander.
+
+compatible: "microchip,mcp23009"
+
+include: ["microchip,mcp23xxx.yaml", i2c-device.yaml]

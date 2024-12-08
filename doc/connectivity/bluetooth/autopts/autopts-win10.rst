@@ -141,7 +141,7 @@ In Git Bash, clone project repo:
 
 .. code-block::
 
-    git clone https://github.com/intel/auto-pts.git
+    git clone https://github.com/auto-pts/auto-pts.git
 
 Go into the project folder:
 

@@ -1,7 +1,4 @@
-.. _frdm_k64f:
-
-NXP FRDM-K64F
-##############
+.. zephyr:board:: frdm_k64f
 
 Overview
 ********
@@ -18,10 +15,6 @@ K63, and K24 MCUs.
 - OpenSDAv2, the NXP open source hardware embedded serial and debug adapter
   running an open source bootloader, offers options for serial communication,
   flash programming, and run-control debugging
-
-.. image:: frdm_k64f.jpg
-   :align: center
-   :alt: FRDM-K64F
 
 Hardware
 ********
@@ -309,7 +302,7 @@ etc.):
 Flashing
 ========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -327,7 +320,7 @@ see the following message in the terminal:
 Debugging
 =========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

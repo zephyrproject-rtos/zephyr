@@ -3,7 +3,9 @@
 POSIX Conformance
 #################
 
-As per `IEEE 1003.1-2017`, this section details Zephyr's POSIX conformance.
+As per `IEEE 1003.1-2017`_, this section details Zephyr's POSIX conformance.
+
+.. _IEEE 1003.1-2017: https://standards.ieee.org/ieee/1003.1/7101/
 
 .. _posix_system_interfaces:
 
@@ -42,7 +44,7 @@ POSIX System Interfaces
     :ref:`_POSIX_REALTIME_SIGNALS<posix_option_group_realtime_signals>`, -1, :kconfig:option:`CONFIG_POSIX_REALTIME_SIGNALS`
     :ref:`_POSIX_SEMAPHORES<posix_option_group_semaphores>`, 200809L, :kconfig:option:`CONFIG_POSIX_SEMAPHORES`
     :ref:`_POSIX_SPIN_LOCKS<posix_option_group_spin_locks>`, 200809L, :kconfig:option:`CONFIG_POSIX_SPIN_LOCKS`
-    :ref:`_POSIX_THREAD_SAFE_FUNCTIONS<posix_thread_safe_functions>`, -1, :kconfig:option:`CONFIG_POSIX_THREAD_SAFE_FUNCTIONS`
+    :ref:`_POSIX_THREAD_SAFE_FUNCTIONS<posix_option_thread_safe_functions>`, -1, :kconfig:option:`CONFIG_POSIX_THREAD_SAFE_FUNCTIONS`
     :ref:`_POSIX_THREADS<posix_option_group_threads_base>`, -1, :kconfig:option:`CONFIG_POSIX_THREADS`
     :ref:`_POSIX_TIMEOUTS<posix_option_timeouts>`, 200809L, :kconfig:option:`CONFIG_POSIX_TIMEOUTS`
     :ref:`_POSIX_TIMERS<posix_option_group_timers>`, 200809L, :kconfig:option:`CONFIG_POSIX_TIMERS`
@@ -78,12 +80,12 @@ POSIX System Interfaces
     :ref:`_POSIX_SHARED_MEMORY_OBJECTS <posix_shared_memory_objects>`, 200809L, :kconfig:option:`CONFIG_POSIX_SHARED_MEMORY_OBJECTS`
     _POSIX_SPAWN, -1, :ref:`†<posix_undefined_behaviour>`
     _POSIX_SPORADIC_SERVER, -1, :ref:`†<posix_undefined_behaviour>`
-    :ref:`_POSIX_SYNCHRONIZED_IO <posix_option_synchronized_io>`, -1, :kconfig:option:`CONFIG_POSIX_SYNCHRONIZED_IO`
+    :ref:`_POSIX_SYNCHRONIZED_IO <posix_option_synchronized_io>`, 200809L, :kconfig:option:`CONFIG_POSIX_SYNCHRONIZED_IO`
     :ref:`_POSIX_THREAD_ATTR_STACKADDR<posix_option_thread_attr_stackaddr>`, 200809L, :kconfig:option:`CONFIG_POSIX_THREAD_ATTR_STACKADDR`
     :ref:`_POSIX_THREAD_ATTR_STACKSIZE<posix_option_thread_attr_stacksize>`, 200809L, :kconfig:option:`CONFIG_POSIX_THREAD_ATTR_STACKSIZE`
     :ref:`_POSIX_THREAD_CPUTIME <posix_option_thread_cputime>`, 200809L, :kconfig:option:`CONFIG_POSIX_CPUTIME`
     :ref:`_POSIX_THREAD_PRIO_INHERIT <posix_option_thread_prio_inherit>`, 200809L, :kconfig:option:`CONFIG_POSIX_THREAD_PRIO_INHERIT`
-    :ref:`_POSIX_THREAD_PRIO_PROTECT <posix_option_thread_prio_protect>`, -1, :kconfig:option:`CONFIG_POSIX_THREAD_PRIO_PROTECT`
+    :ref:`_POSIX_THREAD_PRIO_PROTECT <posix_option_thread_prio_protect>`, 200809L, :kconfig:option:`CONFIG_POSIX_THREAD_PRIO_PROTECT`
     :ref:`_POSIX_THREAD_PRIORITY_SCHEDULING <posix_option_thread_priority_scheduling>`, 200809L, :kconfig:option:`CONFIG_POSIX_THREAD_PRIORITY_SCHEDULING`
     _POSIX_THREAD_PROCESS_SHARED, -1,
     _POSIX_THREAD_SPORADIC_SERVER, -1,

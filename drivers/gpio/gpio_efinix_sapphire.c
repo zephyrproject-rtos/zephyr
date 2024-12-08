@@ -206,7 +206,7 @@ static int gpio_efinix_sapphire_init(const struct device *dev)
 }
 
 /* API map */
-static const struct gpio_driver_api gpio_efinix_sapphire_api = {
+static DEVICE_API(gpio, gpio_efinix_sapphire_api) = {
 	.pin_configure = gpio_efinix_sapphire_config,
 	.port_get_raw = gpio_efinix_sapphire_port_get_raw,
 	.port_set_masked_raw = gpio_efinix_sapphire_port_set_masked_raw,

@@ -22,3 +22,7 @@
 		sdhc0 = &emmc;
 	};
 };
+
+&cpu {
+	compatible = "intel,x86_64";
+};

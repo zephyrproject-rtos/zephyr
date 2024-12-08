@@ -12,3 +12,9 @@ properties:
     type: int
     description: max erase time(millisecond) of a flash sector or page or half-page
     required: true
+  bank2-flash-size:
+    type: int
+    description: |
+      Embedded flash memory bank 2 size in KBytes.
+      Used by CM4 CPU because it cannot access flash controller register to read size.
+      Provides a way to configure this size when the flash controller driver runs on CM4 CPU.

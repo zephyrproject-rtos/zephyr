@@ -29,6 +29,8 @@ struct rpi_pinctrl_soc_pin {
 	uint32_t input_enable : 1;
 	/** Enable the internal schmitt trigger */
 	uint32_t schmitt_enable : 1;
+	/** Output-enable override */
+	uint32_t oe_override : 2;
 };
 
 typedef struct rpi_pinctrl_soc_pin pinctrl_soc_pin_t;
@@ -50,6 +52,7 @@ typedef struct rpi_pinctrl_soc_pin pinctrl_soc_pin_t;
 		DT_PROP(node_id, bias_pull_down),				\
 		DT_PROP(node_id, input_enable),					\
 		DT_PROP(node_id, input_schmitt_enable),				\
+		DT_PROP(node_id, raspberrypi_oe_override),				\
 	},
 
 /**

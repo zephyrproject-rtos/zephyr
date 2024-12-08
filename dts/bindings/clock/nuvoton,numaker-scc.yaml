@@ -29,7 +29,7 @@ properties:
       - "enable"
       - "disable"
 
-  hirc48:
+  hirc48m:
     type: string
     description: |
       Enable/disable 48 MHz high-speed internal RC oscillator (HIRC48)
@@ -47,3 +47,9 @@ properties:
     type: int
     description: |
       Configure core clock (HCLK)
+
+  powerdown-mode:
+    type: int
+    description: |
+      Configure power down mode, please choose one of NUMAKER_CLK_PMUCTL_PDMSEL_XXX
+      from numaker_xxx_clock.h

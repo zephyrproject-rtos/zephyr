@@ -1,20 +1,22 @@
 /** @file
  *  @brief Bluetooth Call Control Profile (CCP) Call Controller role.
  *
- *  Copyright (c) 2020 Nordic Semiconductor ASA
+ *  Copyright (c) 2020-2024 Nordic Semiconductor ASA
  *  Copyright (c) 2022 Codecoup
  *  Copyright 2023 NXP
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdint.h>
+#include <string.h>
+
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/audio/tbs.h>
+#include <zephyr/bluetooth/conn.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
-#include <string.h>
-
-#include <zephyr/bluetooth/conn.h>
-#include <zephyr/bluetooth/audio/tbs.h>
 
 #define URI_SEPARATOR ":"
 #define CALLER_ID "friend"
@@ -124,7 +126,11 @@ int ccp_call_ctrl_init(struct bt_conn *conn)
 	int err;
 
 	default_conn = bt_conn_ref(conn);
-	bt_tbs_client_register_cb(&tbs_client_cb);
+	err = bt_tbs_client_register_cb(&tbs_client_cb);
+	if (err != 0) {
+		return err;
+	}
+
 	err = bt_tbs_client_discover(conn);
 	if (err != 0) {
 		return err;

@@ -20,10 +20,7 @@
 #include <zephyr/drivers/dma.h>
 #include <zephyr/ztest.h>
 
-#define RX_BUFF_SIZE (48)
-
-static __aligned(32) const char tx_data[] = "It is harder to be kind than to be wise........";
-static __aligned(32) char rx_data[RX_BUFF_SIZE] = { 0 };
+#include "test_buffers.h"
 
 static void test_done(const struct device *dma_dev, void *arg,
 		      uint32_t id, int status)

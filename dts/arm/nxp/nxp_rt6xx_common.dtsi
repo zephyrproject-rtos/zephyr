@@ -68,9 +68,9 @@
 		reg = <0x1b000 DT_SIZE_K(1428)>;
 	};
 
-	sram0: memory@20180000 {
+	sram0: memory@180000 {
 		compatible = "mmio-sram";
-		reg = <0x20180000 DT_SIZE_K(3072)>;
+		reg = <0x180000 DT_SIZE_K(3072)>;
 	};
 
 	sram1: memory@40140000 {
@@ -98,6 +98,10 @@
 	 * addresses differ between non-secure (0x40000000) and secure
 	 * modes (0x50000000).
 	 */
+
+	flexspi: spi@134000 {
+		reg = <0x134000 0x1000>, <0x18000000 DT_SIZE_M(128)>;
+	};
 
 	clkctl0: clkctl@1000 {
 		/* FIXME This chip does NOT have a syscon */
@@ -331,6 +335,72 @@
 		#dma-cells = <1>;
 	};
 
+	dmic0: dmic@121000 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "nxp,dmic";
+		reg = <0x121000 0x1000>;
+		interrupts = <25 0>;
+		status = "disabled";
+		clocks = <&clkctl0 MCUX_DMIC_CLK>;
+
+		pdmc0: dmic-channel@0 {
+			compatible = "nxp,dmic-channel";
+			reg = <0>;
+			dmas = <&dma0 16>;
+			status = "disabled";
+		};
+
+		pdmc1: dmic-channel@1 {
+			compatible = "nxp,dmic-channel";
+			reg = <1>;
+			dmas = <&dma0 17>;
+			status = "disabled";
+		};
+
+		pdmc2: dmic-channel@2 {
+			compatible = "nxp,dmic-channel";
+			reg = <2>;
+			dmas = <&dma0 18>;
+			status = "disabled";
+		};
+
+		pdmc3: dmic-channel@3 {
+			compatible = "nxp,dmic-channel";
+			reg = <3>;
+			dmas = <&dma0 19>;
+			status = "disabled";
+		};
+
+		pdmc4: dmic-channel@4 {
+			compatible = "nxp,dmic-channel";
+			reg = <4>;
+			dmas = <&dma0 20>;
+			status = "disabled";
+		};
+
+		pdmc5: dmic-channel@5 {
+			compatible = "nxp,dmic-channel";
+			reg = <5>;
+			dmas = <&dma0 21>;
+			status = "disabled";
+		};
+
+		pdmc6: dmic-channel@6 {
+			compatible = "nxp,dmic-channel";
+			reg = <6>;
+			dmas = <&dma0 22>;
+			status = "disabled";
+		};
+
+		pdmc7: dmic-channel@7 {
+			compatible = "nxp,dmic-channel";
+			reg = <7>;
+			dmas = <&dma0 23>;
+			status = "disabled";
+		};
+	};
+
 	os_timer: timers@113000 {
 		compatible = "nxp,os-timer";
 		reg = <0x113000 0x1000>;
@@ -406,9 +476,9 @@
 		min-bus-freq = <400000>;
 	};
 
-	lpadc0: lpadc@13A0000 {
+	lpadc0: adc@13a000 {
 		compatible = "nxp,lpc-lpadc";
-		reg = <0x13A000 0x304>;
+		reg = <0x13a000 0x304>;
 		interrupts = <22 0>;
 		status = "disabled";
 		clk-divider = <1>;

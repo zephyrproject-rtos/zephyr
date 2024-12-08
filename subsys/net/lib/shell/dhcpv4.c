@@ -187,6 +187,66 @@ static int cmd_net_dhcpv4_server_status(const struct shell *sh, size_t argc, cha
 	return 0;
 }
 
+static int cmd_net_dhcpv4_client_start(const struct shell *sh, size_t argc, char *argv[])
+{
+#if defined(CONFIG_NET_DHCPV4)
+	struct net_if *iface = NULL;
+	int idx;
+
+	if (argc < 1) {
+		PR_ERROR("Correct usage: net dhcpv4 client %s <index>\n", "start");
+		return -EINVAL;
+	}
+
+	idx = get_iface_idx(sh, argv[1]);
+	if (idx < 0) {
+		return -ENOEXEC;
+	}
+
+	iface = net_if_get_by_index(idx);
+	if (!iface) {
+		PR_WARNING("No such interface in index %d\n", idx);
+		return -ENOEXEC;
+	}
+
+	net_dhcpv4_restart(iface);
+
+#else /* CONFIG_NET_DHCPV4 */
+	PR_INFO("Set %s to enable %s support.\n", "CONFIG_NET_DHCPV4", "DHCPv4");
+#endif /* CONFIG_NET_DHCPV4 */
+	return 0;
+}
+
+static int cmd_net_dhcpv4_client_stop(const struct shell *sh, size_t argc, char *argv[])
+{
+#if defined(CONFIG_NET_DHCPV4)
+	struct net_if *iface = NULL;
+	int idx;
+
+	if (argc < 1) {
+		PR_ERROR("Correct usage: net dhcpv4 client %s <index>\n", "stop");
+		return -EINVAL;
+	}
+
+	idx = get_iface_idx(sh, argv[1]);
+	if (idx < 0) {
+		return -ENOEXEC;
+	}
+
+	iface = net_if_get_by_index(idx);
+	if (!iface) {
+		PR_WARNING("No such interface in index %d\n", idx);
+		return -ENOEXEC;
+	}
+
+	net_dhcpv4_stop(iface);
+
+#else /* CONFIG_NET_DHCPV4 */
+	PR_INFO("Set %s to enable %s support.\n", "CONFIG_NET_DHCPV4", "DHCPv4");
+#endif /* CONFIG_NET_DHCPV4 */
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_dhcpv4_server,
 	SHELL_CMD_ARG(start, NULL, "Start the DHCPv4 server operation on the interface.\n"
 		      "'net dhcpv4 server start <index> <base address>'\n"
@@ -204,9 +264,24 @@ SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_dhcpv4_server,
 	SHELL_SUBCMD_SET_END
 );
 
+SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_dhcpv4_client,
+	SHELL_CMD_ARG(start, NULL, "Start the DHCPv4 client operation on the interface.\n"
+		      "'net dhcpv4 client start <index>'\n"
+		      "<index> is the network interface index.",
+		      cmd_net_dhcpv4_client_start, 2, 0),
+	SHELL_CMD_ARG(stop, NULL, "Stop the DHCPv4 client operation on the interface.\n"
+		      "'net dhcpv4 client stop <index>'\n"
+		      "<index> is the network interface index.",
+		      cmd_net_dhcpv4_client_stop, 2, 0),
+	SHELL_SUBCMD_SET_END
+);
+
 SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_dhcpv4,
 	SHELL_CMD(server, &net_cmd_dhcpv4_server,
 		  "DHCPv4 server service management.",
+		  NULL),
+	SHELL_CMD(client, &net_cmd_dhcpv4_client,
+		  "DHCPv4 client management.",
 		  NULL),
 	SHELL_SUBCMD_SET_END
 );

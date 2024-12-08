@@ -1,5 +1,6 @@
 board:
   name: olimex_lora_stm32wl_devkit
+  full_name: LoRa STM32WL DevKit
   vendor: olimex
   revision:
     format: letter

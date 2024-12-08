@@ -17,17 +17,26 @@ import errno
 import logging
 import os
 import platform
+import re
+import selectors
 import shlex
 import shutil
 import signal
+import socket
 import subprocess
-import re
+import sys
 from dataclasses import dataclass, field
-from functools import partial
 from enum import Enum
+from functools import partial
 from inspect import isabstract
-from typing import Dict, List, NamedTuple, NoReturn, Optional, Set, Type, \
-    Union
+from typing import NamedTuple, NoReturn
+
+try:
+    from elftools.elf.elffile import ELFFile
+    ELFTOOLS_MISSING = False
+except ImportError:
+    ELFTOOLS_MISSING = True
+
 
 # Turn on to enable just logging the commands that would be run (at
 # info rather than debug level), without actually running them. This
@@ -36,6 +45,27 @@ from typing import Dict, List, NamedTuple, NoReturn, Optional, Set, Type, \
 _DRY_RUN = False
 
 _logger = logging.getLogger('runners')
+
+# FIXME: I assume this code belongs somewhere else, but i couldn't figure out
+# a good location for it, so i put it here for now
+# We could potentially search for RTT blocks in hex or bin files as well,
+# but since the magic string is "SEGGER RTT", i thought it might be better
+# to avoid, at the risk of false positives.
+def find_rtt_block(elf_file: str) -> int | None:
+    if ELFTOOLS_MISSING:
+        raise RuntimeError('the Python dependency elftools was missing; '
+                           'see the getting started guide for details on '
+                           'how to fix')
+
+    with open(elf_file, 'rb') as f:
+        elffile = ELFFile(f)
+        for sect in elffile.iter_sections('SHT_SYMTAB'):
+            symbols = sect.get_symbol_by_name('_SEGGER_RTT')
+            if symbols is None:
+                continue
+            for s in symbols:
+                return s.entry.get('st_value')
+    return None
 
 
 class _DebugDummyPopen:
@@ -134,7 +164,7 @@ class BuildConfiguration:
 
     def __init__(self, build_dir: str):
         self.build_dir = build_dir
-        self.options: Dict[str, Union[str, int]] = {}
+        self.options: dict[str, str | int] = {}
         self.path = os.path.join(self.build_dir, 'zephyr', '.config')
         self._parse()
 
@@ -159,7 +189,7 @@ class BuildConfiguration:
         opt_value = re.compile(f'^(?P<option>{self.config_prefix}_[A-Za-z0-9_]+)=(?P<value>.*)$')
         not_set = re.compile(f'^# (?P<option>{self.config_prefix}_[A-Za-z0-9_]+) is not set$')
 
-        with open(filename, 'r') as f:
+        with open(filename) as f:
             for line in f:
                 match = opt_value.match(line)
                 if match:
@@ -219,7 +249,7 @@ class MissingProgram(FileNotFoundError):
         super().__init__(errno.ENOENT, os.strerror(errno.ENOENT), program)
 
 
-_RUNNERCAPS_COMMANDS = {'flash', 'debug', 'debugserver', 'attach', 'simulate', 'robot'}
+_RUNNERCAPS_COMMANDS = {'flash', 'debug', 'debugserver', 'attach', 'simulate', 'robot', 'rtt'}
 
 @dataclass
 class RunnerCaps:
@@ -231,7 +261,7 @@ class RunnerCaps:
     Available capabilities:
 
     - commands: set of supported commands; default is {'flash',
-      'debug', 'debugserver', 'attach', 'simulate', 'robot'}.
+      'debug', 'debugserver', 'attach', 'simulate', 'robot', 'rtt'}.
 
     - dev_id: whether the runner supports device identifiers, in the form of an
       -i, --dev-id option. This is useful when the user has multiple debuggers
@@ -268,9 +298,12 @@ class RunnerCaps:
       discovered in the build directory.
 
     - hide_load_files: whether the elf/hex/bin file arguments should be hidden.
+
+    - rtt: whether the runner supports SEGGER RTT. This adds a --rtt-address
+      option.
     '''
 
-    commands: Set[str] = field(default_factory=lambda: set(_RUNNERCAPS_COMMANDS))
+    commands: set[str] = field(default_factory=lambda: set(_RUNNERCAPS_COMMANDS))
     dev_id: bool = False
     flash_addr: bool = False
     erase: bool = False
@@ -279,13 +312,15 @@ class RunnerCaps:
     tool_opt: bool = False
     file: bool = False
     hide_load_files: bool = False
+    rtt: bool = False  # This capability exists separately from the rtt command
+                       # to allow other commands to use the rtt address
 
     def __post_init__(self):
         if not self.commands.issubset(_RUNNERCAPS_COMMANDS):
             raise ValueError(f'{self.commands=} contains invalid command')
 
 
-def _missing_cap(cls: Type['ZephyrBinaryRunner'], option: str) -> NoReturn:
+def _missing_cap(cls: type['ZephyrBinaryRunner'], option: str) -> NoReturn:
     # Helper function that's called when an option was given on the
     # command line that corresponds to a missing capability in the
     # runner class cls.
@@ -309,16 +344,17 @@ class RunnerConfig(NamedTuple):
     '''
     build_dir: str                  # application build directory
     board_dir: str                  # board definition directory
-    elf_file: Optional[str]         # zephyr.elf path, or None
-    exe_file: Optional[str]         # zephyr.exe path, or None
-    hex_file: Optional[str]         # zephyr.hex path, or None
-    bin_file: Optional[str]         # zephyr.bin path, or None
-    uf2_file: Optional[str]         # zephyr.uf2 path, or None
-    file: Optional[str]             # binary file path (provided by the user), or None
-    file_type: Optional[FileType] = FileType.OTHER  # binary file type
-    gdb: Optional[str] = None       # path to a usable gdb
-    openocd: Optional[str] = None   # path to a usable openocd
-    openocd_search: List[str] = []  # add these paths to the openocd search path
+    elf_file: str | None         # zephyr.elf path, or None
+    exe_file: str | None         # zephyr.exe path, or None
+    hex_file: str | None         # zephyr.hex path, or None
+    bin_file: str | None         # zephyr.bin path, or None
+    uf2_file: str | None         # zephyr.uf2 path, or None
+    file: str | None             # binary file path (provided by the user), or None
+    file_type: FileType | None = FileType.OTHER  # binary file type
+    gdb: str | None = None       # path to a usable gdb
+    openocd: str | None = None   # path to a usable openocd
+    openocd_search: list[str] = []  # add these paths to the openocd search path
+    rtt_address: int | None = None # address of the rtt control block
 
 
 _YN_CHOICES = ['Y', 'y', 'N', 'n', 'yes', 'no', 'YES', 'NO']
@@ -348,8 +384,8 @@ class DeprecatedAction(argparse.Action):
 
 def depr_action(*args, cls=None, replacement=None, **kwargs):
     action = DeprecatedAction(*args, **kwargs)
-    setattr(action, '_cls', cls)
-    setattr(action, '_replacement', replacement)
+    action._cls = cls
+    action._replacement = replacement
     return action
 
 class ZephyrBinaryRunner(abc.ABC):
@@ -445,11 +481,11 @@ class ZephyrBinaryRunner(abc.ABC):
         self.cfg = cfg
         '''RunnerConfig for this instance.'''
 
-        self.logger = logging.getLogger('runners.{}'.format(self.name()))
+        self.logger = logging.getLogger(f'runners.{self.name()}')
         '''logging.Logger for this instance.'''
 
     @staticmethod
-    def get_runners() -> List[Type['ZephyrBinaryRunner']]:
+    def get_runners() -> list[type['ZephyrBinaryRunner']]:
         '''Get a list of all currently defined runner classes.'''
         def inheritors(klass):
             subclasses = set()
@@ -540,16 +576,22 @@ class ZephyrBinaryRunner(abc.ABC):
         else:
             parser.add_argument('--elf-file',
                                 metavar='FILE',
-                                action=(partial(depr_action, cls=cls, replacement='-f/--file') if caps.file else None),
-                                help='path to zephyr.elf' if not caps.file else 'Deprecated, use -f/--file instead.')
+                                action=(partial(depr_action, cls=cls,
+                                                replacement='-f/--file') if caps.file else None),
+                                help='path to zephyr.elf'
+                                if not caps.file else 'Deprecated, use -f/--file instead.')
             parser.add_argument('--hex-file',
                                 metavar='FILE',
-                                action=(partial(depr_action, cls=cls, replacement='-f/--file') if caps.file else None),
-                                help='path to zephyr.hex' if not caps.file else 'Deprecated, use -f/--file instead.')
+                                action=(partial(depr_action, cls=cls,
+                                                replacement='-f/--file') if caps.file else None),
+                                help='path to zephyr.hex'
+                                if not caps.file else 'Deprecated, use -f/--file instead.')
             parser.add_argument('--bin-file',
                                 metavar='FILE',
-                                action=(partial(depr_action, cls=cls, replacement='-f/--file') if caps.file else None),
-                                help='path to zephyr.bin' if not caps.file else 'Deprecated, use -f/--file instead.')
+                                action=(partial(depr_action, cls=cls,
+                                                replacement='-f/--file') if caps.file else None),
+                                help='path to zephyr.bin'
+                                if not caps.file else 'Deprecated, use -f/--file instead.')
 
         parser.add_argument('--erase', '--no-erase', nargs=0,
                             action=_ToggleAction,
@@ -572,6 +614,14 @@ class ZephyrBinaryRunner(abc.ABC):
                             help=(cls.tool_opt_help() if caps.tool_opt
                                   else argparse.SUPPRESS))
 
+        if caps.rtt:
+            parser.add_argument('--rtt-address', dest='rtt_address',
+                                type=lambda x: int(x, 0),
+                                help="""address of RTT control block. If not supplied,
+                                it will be autodetected if possible""")
+        else:
+            parser.add_argument('--rtt-address', help=argparse.SUPPRESS)
+
         # Runner-specific options.
         cls.do_add_parser(parser)
 
@@ -579,6 +629,15 @@ class ZephyrBinaryRunner(abc.ABC):
     @abc.abstractmethod
     def do_add_parser(cls, parser):
         '''Hook for adding runner-specific options.'''
+
+    @classmethod  # noqa: B027
+    def args_from_previous_runner(cls, previous_runner,
+                                  args: argparse.Namespace):
+        '''Update arguments from a previously created runner.
+
+        This is intended for propagating relevant user responses
+        between multiple runs of the same runner, for example a
+        JTAG serial number.'''
 
     @classmethod
     def create(cls, cfg: RunnerConfig,
@@ -607,6 +666,8 @@ class ZephyrBinaryRunner(abc.ABC):
             raise ValueError("--file-type requires --file")
         if args.file_type and not caps.file:
             _missing_cap(cls, '--file-type')
+        if args.rtt_address and not caps.rtt:
+            _missing_cap(cls, '--rtt-address')
 
         ret = cls.do_create(cfg, args)
         if args.erase:
@@ -655,8 +716,7 @@ class ZephyrBinaryRunner(abc.ABC):
         This is the main entry point to this runner.'''
         caps = self.capabilities()
         if command not in caps.commands:
-            raise ValueError('runner {} does not implement command {}'.format(
-                self.name(), command))
+            raise ValueError(f'runner {self.name()} does not implement command {command}')
         self.do_run(command, **kwargs)
 
     @abc.abstractmethod
@@ -712,7 +772,7 @@ class ZephyrBinaryRunner(abc.ABC):
                   in the order they appear on the command line.'''
 
     @staticmethod
-    def require(program: str, path: Optional[str] = None) -> str:
+    def require(program: str, path: str | None = None) -> str:
         '''Require that a program is installed before proceeding.
 
         :param program: name of the program that is required,
@@ -730,6 +790,19 @@ class ZephyrBinaryRunner(abc.ABC):
         if ret is None:
             raise MissingProgram(program)
         return ret
+
+    def get_rtt_address(self) -> int | None:
+        '''Helper method for extracting a the RTT control block address.
+
+        If args.rtt_address was supplied, returns that.
+
+        Otherwise, attempt to locate an rtt block in the elf file.
+        If this is not found, None is returned'''
+        if self.cfg.rtt_address is not None:
+            return self.cfg.rtt_address
+        elif self.cfg.elf_file is not None:
+            return find_rtt_block(self.cfg.elf_file)
+        return None
 
     def run_server_and_client(self, server, client, **kwargs):
         '''Run a server that ignores SIGINT, and a client that handles it.
@@ -759,14 +832,14 @@ class ZephyrBinaryRunner(abc.ABC):
         finally:
             signal.signal(signal.SIGINT, previous)
 
-    def _log_cmd(self, cmd: List[str]):
+    def _log_cmd(self, cmd: list[str]):
         escaped = ' '.join(shlex.quote(s) for s in cmd)
         if not _DRY_RUN:
             self.logger.debug(escaped)
         else:
             self.logger.info(escaped)
 
-    def call(self, cmd: List[str], **kwargs) -> int:
+    def call(self, cmd: list[str], **kwargs) -> int:
         '''Subclass subprocess.call() wrapper.
 
         Subclasses should use this method to run command in a
@@ -778,7 +851,7 @@ class ZephyrBinaryRunner(abc.ABC):
             return 0
         return subprocess.call(cmd, **kwargs)
 
-    def check_call(self, cmd: List[str], **kwargs):
+    def check_call(self, cmd: list[str], **kwargs):
         '''Subclass subprocess.check_call() wrapper.
 
         Subclasses should use this method to run command in a
@@ -790,7 +863,7 @@ class ZephyrBinaryRunner(abc.ABC):
             return
         subprocess.check_call(cmd, **kwargs)
 
-    def check_output(self, cmd: List[str], **kwargs) -> bytes:
+    def check_output(self, cmd: list[str], **kwargs) -> bytes:
         '''Subclass subprocess.check_output() wrapper.
 
         Subclasses should use this method to run command in a
@@ -802,7 +875,7 @@ class ZephyrBinaryRunner(abc.ABC):
             return b''
         return subprocess.check_output(cmd, **kwargs)
 
-    def popen_ignore_int(self, cmd: List[str], **kwargs) -> subprocess.Popen:
+    def popen_ignore_int(self, cmd: list[str], **kwargs) -> subprocess.Popen:
         '''Spawn a child command, ensuring it ignores SIGINT.
 
         The returned subprocess.Popen object must be manually terminated.'''
@@ -846,3 +919,35 @@ class ZephyrBinaryRunner(abc.ABC):
 
         # RuntimeError avoids a stack trace saved in run_common.
         raise RuntimeError(err)
+
+    def run_telnet_client(self, host: str, port: int) -> None:
+        '''
+        Run a telnet client for user interaction.
+        '''
+        # If a `nc` command is available, run it, as it will provide the best support for
+        # CONFIG_SHELL_VT100_COMMANDS etc.
+        if shutil.which('nc') is not None:
+            client_cmd = ['nc', host, str(port)]
+            # Note: netcat (nc) does not handle sigint, so cannot use run_client()
+            self.check_call(client_cmd)
+            return
+
+        # Otherwise, use a pure python implementation. This will work well for logging,
+        # but input is line based only.
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.connect((host, port))
+        sel = selectors.DefaultSelector()
+        sel.register(sys.stdin, selectors.EVENT_READ)
+        sel.register(sock, selectors.EVENT_READ)
+        while True:
+            events = sel.select()
+            for key, _ in events:
+                if key.fileobj == sys.stdin:
+                    text = sys.stdin.readline()
+                    if text:
+                        sock.send(text.encode())
+
+                elif key.fileobj == sock:
+                    resp = sock.recv(2048)
+                    if resp:
+                        print(resp.decode())

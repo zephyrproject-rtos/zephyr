@@ -313,7 +313,7 @@ static int eeprom_at24_write(const struct device *dev, off_t offset,
 	bus_addr = eeprom_at24_translate_offset(dev, &offset);
 
 	/*
-	 * Not all I2C EEPROMs support repeated start so the the
+	 * Not all I2C EEPROMs support repeated start so the
 	 * address (offset) and data (buf) must be provided in one
 	 * write transaction (block).
 	 */
@@ -593,7 +593,7 @@ static int eeprom_at2x_init(const struct device *dev)
 	return 0;
 }
 
-static const struct eeprom_driver_api eeprom_at2x_api = {
+static DEVICE_API(eeprom, eeprom_at2x_api) = {
 	.read = eeprom_at2x_read,
 	.write = eeprom_at2x_write,
 	.size = eeprom_at2x_size,

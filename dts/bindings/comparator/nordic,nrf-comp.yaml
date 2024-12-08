@@ -1,0 +1,128 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Nordic nRF COMP (analog COMParator)
+
+  This comparator has varying configurations which require varying
+  properties be set in the devicetree.
+
+  The following example displays the minimum node layout:
+
+    comp: comp@deadbeef {
+            compatible = "nordic,nrf-comp";
+            reg = <0xdeadbeef 0x1000>;
+            interrupts = <0 NRF_DEFAULT_IRQ_PRIORITY>;
+            status = "disabled";
+    };
+
+  Enabling the comparator node requires setting the default
+  configuration of the comparator.
+
+  The following example displays enabling the comparator in
+  single-ended mode, selecting an internal reference:
+
+    &comp {
+            status = "okay";
+            main-mode = "SE";
+            psel = "AIN0";
+            refsel = "INT_1V2";
+            sp-mode = "NORMAL";
+            th-up = <36>;
+            th-down = <30>;
+            isource = "OFF";
+    };
+
+  To select an external reference, select the "AREF"
+  reference and add the external reference:
+
+    &comp {
+            ...
+            refsel = "AREF";
+            extrefsel = "AIN1";
+            ...
+    };
+
+  The following example displays enabling the comparator
+  in differential mode:
+
+    &comp {
+            status = "okay";
+            main-mode = "DIFF";
+            psel = "AIN0";
+            extrefsel = "AIN1";
+            sp-mode = "NORMAL";
+            hyst = "50MV";
+            isource = "OFF";
+    };
+
+compatible: "nordic,nrf-comp"
+
+include: base.yaml
+
+properties:
+  main-mode:
+    type: string
+    enum:
+      - "SE"
+      - "DIFF"
+
+  psel:
+    type: string
+    enum:
+      - "AIN0"
+      - "AIN1"
+      - "AIN2"
+      - "AIN3"
+      - "AIN4"
+      - "AIN5"
+      - "AIN6"
+      - "AIN7"
+      - "VDD_DIV2"
+      - "VDDH_DIV5"
+
+  extrefsel:
+    type: string
+    enum:
+      - "AIN0"
+      - "AIN1"
+      - "AIN2"
+      - "AIN3"
+      - "AIN4"
+      - "AIN5"
+      - "AIN6"
+      - "AIN7"
+
+  refsel:
+    type: string
+    enum:
+      - "INT_1V2"
+      - "INT_1V8"
+      - "INT_2V4"
+      - "AVDDAO1V8"
+      - "VDD"
+      - "AREF"
+
+  enable-hyst:
+    type: boolean
+
+  sp-mode:
+    type: string
+    enum:
+      - "LOW"
+      - "NORMAL"
+      - "HIGH"
+
+  th-up:
+    type: int
+
+  th-down:
+    type: int
+
+  isource:
+    type: string
+    enum:
+      - "DISABLED"
+      - "2UA5"
+      - "5UA"
+      - "10UA"

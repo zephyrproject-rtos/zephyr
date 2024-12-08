@@ -30,21 +30,22 @@ struct btp_bap_broadcast_remote_source {
 	struct btp_bap_broadcast_stream streams[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
 	struct bt_bap_stream *sink_streams[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
 	struct bt_bap_broadcast_sink *sink;
-	struct bt_audio_codec_qos qos;
+	struct bt_bap_qos_cfg qos;
 	/* BIS Index bitfield read from Base */
 	uint32_t bis_index_bitfield;
 	/* BIS Index bitfield read from sync request */
 	uint32_t requested_bis_sync;
 	bool assistant_request;
-	uint8_t sink_broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE];
+	uint8_t sink_broadcast_code[BT_ISO_BROADCAST_CODE_SIZE];
 	const struct bt_bap_scan_delegator_recv_state *sink_recv_state;
 };
 
 struct btp_bap_broadcast_local_source {
 	uint32_t broadcast_id;
-	struct bt_audio_codec_qos qos;
+	struct bt_bap_qos_cfg qos;
 	struct btp_bap_broadcast_stream streams[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
 	struct bt_audio_codec_cfg subgroup_codec_cfg[CONFIG_BT_BAP_BROADCAST_SRC_SUBGROUP_COUNT];
+	uint8_t stream_count;
 	/* Only for BTP BAP commands */
 	struct bt_bap_broadcast_source *bap_broadcast;
 	/* Only for BTP CAP commands */

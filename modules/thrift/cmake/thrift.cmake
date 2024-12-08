@@ -29,5 +29,9 @@ function(thrift
     DEPENDS ${source_file}
     )
 
-    target_include_directories(${target} PRIVATE ${out_dir}/gen-${lang})
+    target_include_directories(
+      ${target} PRIVATE ${out_dir}/gen-${lang}
+      ${target} PRIVATE ${ZEPHYR_BASE}/modules/thrift/src
+      ${target} PRIVATE ${ZEPHYR_THRIFT_MODULE_DIR}/lib/cpp/src
+    )
 endfunction()

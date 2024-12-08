@@ -1,0 +1,24 @@
+# TI CC1352R LaunchXL board
+
+# Copyright (c) 2021 Florin Stancu
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_CC1352_LP_SKY13317
+	bool "CC1352 LP common board antenna init"
+	default y if DT_HAS_SKYWORKS_SKY13317_ENABLED
+	help
+	  Some CC1352 boards have a SKY13317 component
+	  to select the antenna. This enables support
+	  for this component for the CC1352 boards using it.
+
+if BOARD_CC1352_LP_SKY13317
+
+config BOARD_ANTENNA_INIT_PRIO
+	int "Board antenna switch initialization priority"
+	default 70
+	help
+	  Set the priority for board init, must be greater than
+	  KERNEL_INIT_PRIORITY_DEVICE but smaller than
+	  IEEE802154_CC13XX_CC26XX_SUB_GHZ_INIT_PRIO.
+
+endif # BOARD_CC1352_LP_SKY13317

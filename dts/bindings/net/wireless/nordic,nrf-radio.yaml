@@ -227,3 +227,10 @@ properties:
     description: |
       If set, indicates that the radio hardware supports high TX power
       settings.
+
+  cs-supported:
+    type: boolean
+    description: |
+      If set, the radio hardware supports the BLE Channel Sounding feature.
+      This property should be treated as read-only and should not be overridden;
+      the correct value is provided for your target's SoC already.

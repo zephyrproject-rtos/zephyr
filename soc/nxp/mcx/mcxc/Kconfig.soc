@@ -1,0 +1,61 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_MCXC
+	bool
+	select SOC_FAMILY_NXP_MCX
+
+config SOC_SERIES
+	default "mcxc" if SOC_SERIES_MCXC
+
+config SOC_MCXC141
+	bool
+	select SOC_SERIES_MCXC
+
+config SOC_MCXC142
+	bool
+	select SOC_SERIES_MCXC
+
+config SOC_MCXC242
+	bool
+	select SOC_SERIES_MCXC
+
+config SOC_MCXC444
+	bool
+	select SOC_SERIES_MCXC
+
+config SOC
+	default "mcxc141" if SOC_MCXC141
+	default "mcxc142" if SOC_MCXC142
+	default "mcxc242" if SOC_MCXC242
+	default "mcxc444" if SOC_MCXC444
+
+config SOC_PART_NUMBER_MCXC141VLH
+	bool
+
+config SOC_PART_NUMBER_MCXC141VFM
+	bool
+
+config SOC_PART_NUMBER_MCXC142VFM
+	bool
+
+config SOC_PART_NUMBER_MCXC242VLH
+	bool
+
+config SOC_PART_NUMBER_MCXC242VFM
+	bool
+
+config SOC_PART_NUMBER_MCXC444VLH
+	bool
+
+config SOC_PART_NUMBER_MCXC444VMP
+	bool
+
+config SOC_PART_NUMBER
+	default "MCXC141VFM" if SOC_PART_NUMBER_MCXC141VLH
+	default "MCXC141VFM" if SOC_PART_NUMBER_MCXC141VFM
+	default "MCXC141VFM" if SOC_PART_NUMBER_MCXC142VFM
+	default "MCXC242VLH" if SOC_PART_NUMBER_MCXC242VLH
+	default "MCXC242VFM" if SOC_PART_NUMBER_MCXC242VFM
+	default "MCXC444VLH" if SOC_PART_NUMBER_MCXC444VLH
+	default "MCXC444VMP" if SOC_PART_NUMBER_MCXC444VMP

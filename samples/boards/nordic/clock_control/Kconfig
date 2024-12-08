@@ -1,0 +1,38 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config SAMPLE_CLOCK_FREQUENCY_HZ
+	int "Frequency specification to request from clock in Hz"
+	default 0
+	help
+	  0  -> ignore frequency
+	  >0 -> use at minimum selected frequency. To select the
+	        highest supported frequency use UINT32_MAX.
+
+config SAMPLE_CLOCK_ACCURACY_PPM
+	int "Accuracy specification to request from clock in PPM"
+	default 0
+	help
+	  0  -> ignore accuracy
+	  1  -> use max accuracy
+	  >1 -> use at minimum selected accuracy
+
+config SAMPLE_CLOCK_PRECISION
+	int "Precision specification to request from clock"
+	default 0
+	help
+	  0  -> low precision
+	  1  -> high precision
+
+config SAMPLE_PRE_REQUEST_TIMEOUT
+	int "Time to wait after boot before requesting clock specs in seconds"
+	default 2
+	help
+	  The distributed clock domains may need time to initialize
+	  before a clock request can be met.
+
+config SAMPLE_KEEP_REQUEST_TIMEOUT
+	int "Time to keep request alive in seconds"
+	default 2
+
+source "Kconfig.zephyr"

@@ -38,7 +38,7 @@ Pins Assignments
 Programming
 ***********
 
-Set ``-DSHIELD=m5stack_core2_ext`` when you invoke ``west build``.
+Set ``--shield m5stack_core2_ext`` when you invoke ``west build``.
 For example:
 
 .. zephyr-app-commands::

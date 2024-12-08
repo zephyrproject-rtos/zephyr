@@ -14,6 +14,7 @@ import re
 import sys
 import json
 
+# pylint: disable=duplicate-code
 from conftest import ZEPHYR_BASE, TEST_DATA, testsuite_filename_mock
 from twisterlib.testplan import TestPlan
 
@@ -32,7 +33,7 @@ class TestQuarantine:
 
     @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
     def test_quarantine_verify(self, out_path):
-        test_platforms = ['qemu_x86', 'frdm_k64f']
+        test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy')
         quarantine_path = os.path.join(TEST_DATA, 'twister-quarantine-list.yml')
         args = ['-i', '--outdir', out_path, '-T', path, '-y'] + \
@@ -63,7 +64,7 @@ class TestQuarantine:
         [
             (
                 os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-                ['qemu_x86', 'qemu_x86_64', 'frdm_k64f'],
+                ['qemu_x86', 'qemu_x86_64', 'intel_adl_crb'],
                 os.path.join(TEST_DATA, 'twister-quarantine-list.yml'),
             ),
         ],
@@ -75,7 +76,7 @@ class TestQuarantine:
     def test_quarantine_list(self, capfd, out_path, test_path, test_platforms, quarantine_directory):
         args = ['--outdir', out_path, '-T', test_path] +\
                ['--quarantine-list', quarantine_directory] + \
-               ['-vv'] + \
+               ['-vv', '-ll', 'DEBUG'] + \
                [val for pair in zip(
                    ['-p'] * len(test_platforms), test_platforms
                ) for val in pair]
@@ -88,11 +89,11 @@ class TestQuarantine:
         sys.stdout.write(out)
         sys.stderr.write(err)
 
-        frdm_match = re.search('agnostic/group2/dummy.agnostic.group2 SKIPPED: Quarantine: test '
-                               'frdm_k64f', err)
-        frdm_match2 = re.search(
+        board1_match1 = re.search('agnostic/group2/dummy.agnostic.group2 SKIPPED: Quarantine: test '
+                               'intel_adl_crb', err)
+        board1_match2 = re.search(
             'agnostic/group1/subgroup2/dummy.agnostic.group1.subgroup2 SKIPPED: Quarantine: test '
-            'frdm_k64f',
+            'intel_adl_crb',
             err)
         qemu_64_match = re.search(
             'agnostic/group1/subgroup2/dummy.agnostic.group1.subgroup2 SKIPPED: Quarantine: test '
@@ -111,8 +112,8 @@ class TestQuarantine:
             'all platforms',
             err)
 
-        assert frdm_match and frdm_match2, 'platform quarantine not work properly'
-        assert qemu_64_match, 'platform quarantine on scenario not work properly'
+        assert board1_match1 and board1_match2, 'platform quarantine not working properly'
+        assert qemu_64_match, 'platform quarantine on scenario not working properly'
         assert all_platforms_match and all_platforms_match2 and all_platforms_match3, 'scenario ' \
                                                                                       'quarantine' \
                                                                                       ' not work ' \

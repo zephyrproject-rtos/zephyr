@@ -81,14 +81,32 @@
 	/* On-board antenna pinmux states */
 	board_ant_tx_pa_off: board_ant_tx_pa_off {
 		pinmux = <29 IOC_PORT_GPIO>;
+		bias-disable;
 	};
 	board_ant_tx_pa_on: board_ant_tx_pa_on {
 		pinmux = <29 IOC_PORT_RFC_GPO3>;
+		bias-disable;
 	};
 	board_ant_subg_off: board_ant_subg_off {
 		pinmux = <30 IOC_PORT_GPIO>;
+		bias-disable;
 	};
 	board_ant_subg_on: board_ant_subg_on {
 		pinmux = <30 IOC_PORT_RFC_GPO0>;
+		bias-disable;
+	};
+
+	/* MB1 PWM */
+	pwm0_default: pwm0_default {
+		pinmux = <17 IOC_PORT_MCU_PORT_EVENT1>;
+		bias-disable;
+		drive-strength = <2>;
+	};
+
+	/* MB2 PWM */
+	pwm1_default: pwm1_default {
+		pinmux = <19 IOC_PORT_MCU_PORT_EVENT3>;
+		bias-disable;
+		drive-strength = <2>;
 	};
 };

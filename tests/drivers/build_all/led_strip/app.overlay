@@ -35,7 +35,10 @@
 			status = "okay";
 			clock-frequency = <DT_FREQ_M(2)>;
 
-			cs-gpios = <&test_gpio 0 0>;
+			cs-gpios = <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>;
 
 			test_spi_tlc5971: tlc5971@0 {
 				status = "okay";
@@ -46,6 +49,39 @@
 				color-mapping = <LED_COLOR_ID_BLUE>,
 						<LED_COLOR_ID_GREEN>,
 						<LED_COLOR_ID_RED>;
+			};
+
+			test_spi_apa102: apa102@1 {
+				compatible = "apa,apa102";
+				reg = <0x1>;
+				spi-max-frequency = <5250000>;
+				chain-length = <4>;
+				color-mapping = <LED_COLOR_ID_BLUE
+						 LED_COLOR_ID_GREEN
+						 LED_COLOR_ID_RED>;
+			};
+
+			test_spi_lpd8806: lpd8806@2 {
+				compatible = "greeled,lpd8806";
+				reg = <0x2>;
+				spi-max-frequency = <2000000>;
+				chain-length = <1>;
+				color-mapping = <LED_COLOR_ID_RED
+						 LED_COLOR_ID_GREEN
+						 LED_COLOR_ID_BLUE>;
+			};
+
+			test_spi_ws2812: ws2812@3 {
+				compatible = "worldsemi,ws2812-spi";
+				reg = <0x3>;
+				spi-max-frequency = <2000000>;
+
+				chain-length = <1>;
+				color-mapping = <LED_COLOR_ID_GREEN>,
+					<LED_COLOR_ID_RED>,
+					<LED_COLOR_ID_BLUE>;
+				spi-one-frame = <1>;
+				spi-zero-frame = <2>;
 			};
 		};
 	};

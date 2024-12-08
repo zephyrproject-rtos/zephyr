@@ -1,7 +1,4 @@
-.. _frdm_k22f:
-
-NXP FRDM-K22F
-##############
+.. zephyr:board:: frdm_k22f
 
 Overview
 ********
@@ -18,10 +15,6 @@ MCUs.
 - OpenSDAv2, the NXP open source hardware embedded serial and debug adapter
   running an open source bootloader, offers options for serial communication,
   flash programming, and run-control debugging
-
-.. image:: frdm_k22f.jpg
-   :align: center
-   :alt: FRDM-K22F
 
 Hardware
 ********
@@ -59,7 +52,7 @@ Supported Features
 
 The frdm_k22f board configuration supports the hardware features listed
 below.  For additional features not yet supported, please also refer to the
-:ref:`frdm_k64f`, which is the superset board in NXP's Kinetis K series.
+:zephyr:board:`frdm_k64f`, which is the superset board in NXP's Kinetis K series.
 NXP prioritizes enabling the superset board with NXP's Full Platform Support for
 Zephyr.  Therefore, the frdm_k64f board may have additional features
 already supported, which can also be re-used on this frdm_k22f board:
@@ -191,11 +184,25 @@ instructions to update from the CMSIS-DAP bootloader to the DAPLink bootloader.
 Option 1: :ref:`opensda-daplink-onboard-debug-probe` (Recommended)
 ------------------------------------------------------------------
 
-Install the :ref:`pyocd-debug-host-tools` and make sure they are in your search
-path.
-
 Follow the instructions in :ref:`opensda-daplink-onboard-debug-probe` to program
 the `OpenSDA DAPLink FRDM-K22F Firmware`_.
+
+Install the :ref:`linkserver-debug-host-tools` and make sure they are in your
+search path.  LinkServer works with the default CMSIS-DAP firmware included in
+the on-board debugger.
+
+Linkserver is the default for this board, ``west flash`` and ``west debug`` will
+call the linkserver runner.
+
+.. code-block:: console
+
+    west flash
+
+Alternatively, pyOCD can be used to flash and debug the board by using the
+``-r pyocd`` option with West. pyOCD is installed when you complete the
+:ref:`gs_python_deps` step in the Getting Started Guide. The runners supported
+by NXP are LinkServer and JLink. pyOCD is another potential option, but NXP
+does not test or support the pyOCD runner.
 
 Option 2: :ref:`opensda-jlink-onboard-debug-probe`
 --------------------------------------------------
@@ -237,7 +244,7 @@ etc.):
 Flashing
 ========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -255,7 +262,7 @@ see the following message in the terminal:
 Debugging
 =========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

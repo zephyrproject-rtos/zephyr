@@ -53,4 +53,12 @@ config NET_SAMPLE_IFACE3_VLAN_TAG
 	  Set VLAN (virtual LAN) tag (id) that is used in the sample
 	  application.
 
+config NET_SAMPLE_IFACE_MY_IPV6_PREFIXLEN
+	int "IPv6 address prefix length for the interfaces"
+	default 64
+	range 0 128
+	help
+	  Set the IPv6 address prefix length (netmask) for the interfaces
+	  that is used in the sample application.
+
 source "Kconfig.zephyr"

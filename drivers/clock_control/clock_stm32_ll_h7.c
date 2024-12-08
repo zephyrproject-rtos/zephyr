@@ -16,7 +16,6 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
-#include "clock_stm32_ll_mco.h"
 #include "stm32_hsem.h"
 
 
@@ -109,7 +108,8 @@
 	defined(CONFIG_SOC_STM32H745XX_M7) || defined(CONFIG_SOC_STM32H745XX_M4) ||\
 	defined(CONFIG_SOC_STM32H747XX_M7) || defined(CONFIG_SOC_STM32H747XX_M4) ||\
 	defined(CONFIG_SOC_STM32H750XX) ||\
-	defined(CONFIG_SOC_STM32H753XX)
+	defined(CONFIG_SOC_STM32H753XX) ||\
+	defined(CONFIG_SOC_STM32H755XX_M7) || defined(CONFIG_SOC_STM32H755XX_M4)
 /* All h7 SoC with maximum 480MHz SYSCLK */
 #define SYSCLK_FREQ_MAX		480000000UL
 #define AHB_FREQ_MAX		240000000UL
@@ -157,10 +157,6 @@
 #endif
 #if APB4_FREQ > APBx_FREQ_MAX
 #error "APB4 frequency is too high!"
-#endif
-
-#if SYSCLK_FREQ != CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
-#error "SYS clock frequency for M7 core doesn't match CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC"
 #endif
 
 /* end of clock feasibility check */
@@ -359,7 +355,7 @@ static uint32_t get_vco_output_range(uint32_t vco_input_range)
 #endif /* ! CONFIG_CPU_CORTEX_M4 */
 
 /** @brief Verifies clock is part of active clock configuration */
-static int enabled_clock(uint32_t src_clk)
+int enabled_clock(uint32_t src_clk)
 {
 
 	if ((src_clk == STM32_SRC_SYSCLK) ||
@@ -648,7 +644,7 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 	return 0;
 }
 
-static const struct clock_control_driver_api stm32_clock_control_api = {
+static DEVICE_API(clock_control, stm32_clock_control_api) = {
 	.on = stm32_clock_control_on,
 	.off = stm32_clock_control_off,
 	.get_rate = stm32_clock_control_get_subsys_rate,
@@ -678,9 +674,18 @@ static void set_up_fixed_clock_sources(void)
 	}
 
 	if (IS_ENABLED(STM32_HSI_ENABLED)) {
-		/* Enable HSI oscillator */
-		LL_RCC_HSI_Enable();
-		while (LL_RCC_HSI_IsReady() != 1) {
+		if (IS_ENABLED(STM32_PLL_SRC_HSI) || IS_ENABLED(STM32_PLL2_SRC_HSI) ||
++		    IS_ENABLED(STM32_PLL3_SRC_HSI)) {
+			/* HSI calibration */
+			LL_RCC_HSI_SetCalibTrimming(RCC_HSICALIBRATION_DEFAULT);
+		}
+		/* Enable HSI if not enabled */
+		if (LL_RCC_HSI_IsReady() != 1) {
+			/* Enable HSI oscillator */
+			LL_RCC_HSI_Enable();
+			while (LL_RCC_HSI_IsReady() != 1) {
+			/* Wait for HSI ready */
+			}
 		}
 		/* HSI divider configuration */
 		LL_RCC_HSI_SetDivider(hsi_divider(STM32_HSI_DIVISOR));
@@ -766,7 +771,36 @@ static int set_up_plls(void)
 		stm32_clock_switch_to_hsi();
 		LL_RCC_SetAHBPrescaler(LL_RCC_SYSCLK_DIV_1);
 	}
+
+#if defined(CONFIG_STM32_MEMMAP) && defined(CONFIG_BOOTLOADER_MCUBOOT)
+	/*
+	 * Don't disable PLL during application initialization
+	 * that runs in memmap mode when (Q/O)SPI uses PLL
+	 * as its clock source.
+	 */
+#if defined(OCTOSPI1) || defined(OCTOSPI2)
+	if (LL_RCC_GetOSPIClockSource(LL_RCC_OSPI_CLKSOURCE) != LL_RCC_OSPI_CLKSOURCE_PLL1Q) {
+		LL_RCC_PLL1_Disable();
+	}
+	if (LL_RCC_GetOSPIClockSource(LL_RCC_OSPI_CLKSOURCE) != LL_RCC_OSPI_CLKSOURCE_PLL2R) {
+		LL_RCC_PLL2_Disable();
+	}
+#elif defined(QUADSPI)
+	if (LL_RCC_GetQSPIClockSource(LL_RCC_QSPI_CLKSOURCE) != LL_RCC_QSPI_CLKSOURCE_PLL1Q) {
+		LL_RCC_PLL1_Disable();
+	}
+	if (LL_RCC_GetQSPIClockSource(LL_RCC_QSPI_CLKSOURCE) != LL_RCC_QSPI_CLKSOURCE_PLL2R) {
+		LL_RCC_PLL2_Disable();
+	}
+#else
 	LL_RCC_PLL1_Disable();
+	LL_RCC_PLL2_Disable();
+#endif
+#else
+	LL_RCC_PLL1_Disable();
+	LL_RCC_PLL2_Disable();
+#endif
+	LL_RCC_PLL3_Disable();
 
 	/* Configure PLL source */
 
@@ -799,8 +833,11 @@ static int set_up_plls(void)
 
 	LL_RCC_PLL1_SetN(STM32_PLL_N_MULTIPLIER);
 
-	/* FRACN disable DIVP,DIVQ,DIVR enable*/
 	LL_RCC_PLL1FRACN_Disable();
+	if (IS_ENABLED(STM32_PLL_FRACN_ENABLED)) {
+		LL_RCC_PLL1_SetFRACN(STM32_PLL_FRACN_VALUE);
+		LL_RCC_PLL1FRACN_Enable();
+	}
 
 	if (IS_ENABLED(STM32_PLL_P_ENABLED)) {
 		LL_RCC_PLL1_SetP(STM32_PLL_P_DIVISOR);
@@ -845,6 +882,10 @@ static int set_up_plls(void)
 	LL_RCC_PLL2_SetN(STM32_PLL2_N_MULTIPLIER);
 
 	LL_RCC_PLL2FRACN_Disable();
+	if (IS_ENABLED(STM32_PLL2_FRACN_ENABLED)) {
+		LL_RCC_PLL2_SetFRACN(STM32_PLL2_FRACN_VALUE);
+		LL_RCC_PLL2FRACN_Enable();
+	}
 
 	if (IS_ENABLED(STM32_PLL2_P_ENABLED)) {
 		LL_RCC_PLL2_SetP(STM32_PLL2_P_DIVISOR);
@@ -895,6 +936,10 @@ static int set_up_plls(void)
 	LL_RCC_PLL3_SetN(STM32_PLL3_N_MULTIPLIER);
 
 	LL_RCC_PLL3FRACN_Disable();
+	if (IS_ENABLED(STM32_PLL3_FRACN_ENABLED)) {
+		LL_RCC_PLL3_SetFRACN(STM32_PLL3_FRACN_VALUE);
+		LL_RCC_PLL3FRACN_Enable();
+	}
 
 	if (IS_ENABLED(STM32_PLL3_P_ENABLED)) {
 		LL_RCC_PLL3_SetP(STM32_PLL3_P_DIVISOR);
@@ -1037,9 +1082,6 @@ int stm32_clock_control_init(const struct device *dev)
 #endif
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 
-	/* Configure MCO1/MCO2 based on Kconfig */
-	stm32_clock_control_mco_init();
-
 	/* Set up individual enabled clocks */
 	set_up_fixed_clock_sources();
 
@@ -1151,7 +1193,7 @@ void HAL_RCC_CSSCallback(void)
  * that the device init runs just after SOC init
  */
 DEVICE_DT_DEFINE(DT_NODELABEL(rcc),
-		    &stm32_clock_control_init,
+		    stm32_clock_control_init,
 		    NULL,
 		    NULL, NULL,
 		    PRE_KERNEL_1,

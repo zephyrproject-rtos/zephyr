@@ -7,11 +7,7 @@
 #include <zephyr/init.h>
 #include <soc.h>
 
-static int gd32l23x_init(void)
+void soc_early_init_hook(void)
 {
 	SystemInit();
-
-	return 0;
 }
-
-SYS_INIT(gd32l23x_init, PRE_KERNEL_1, 0);

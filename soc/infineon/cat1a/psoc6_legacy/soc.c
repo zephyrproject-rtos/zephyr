@@ -38,7 +38,7 @@
 #define CY_CFG_PWR_USING_ULP 0
 
 /* Dummy symbols, requres for cy_sysint.c module.
- * NOTE: in this PSoC 6 integration, PSoC 6 Zephyr drivers (uart, spi, gpio)
+ * NOTE: in this PSOC 6 integration, PSOC 6 Zephyr drivers (uart, spi, gpio)
  * do not use cy_sysint.c implementation to handle interrupt routine.
  * Instead this they use IRQ_CONNECT to define ISR.
  */

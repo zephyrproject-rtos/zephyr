@@ -1,7 +1,4 @@
- .. _saml21_xpro:
-
-SAM L21 Xplained Pro Evaluation Kit
-###################################
+.. zephyr:board:: saml21_xpro
 
 Overview
 ********
@@ -11,10 +8,6 @@ prototyping with the SAM L21 Cortex®-M0+ processor-based
 microcontrollers. The kit includes Atmel’s Embedded Debugger (EDBG),
 which provides a full debug interface without the need for additional
 hardware.
-
-.. image:: img/atsaml21-xpro.jpg
-     :align: center
-     :alt: SAML21-XPRO
 
 Hardware
 ********

@@ -7,6 +7,7 @@
 #include <zephyr/init.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/reboot.h>
 #include <string.h>
 #include <DA1469xAB.h>
 #include <da1469x_clock.h>
@@ -36,9 +37,26 @@ static uint32_t z_renesas_cache_configured;
 
 void sys_arch_reboot(int type)
 {
-	ARG_UNUSED(type);
+	if (type == SYS_REBOOT_WARM) {
+		NVIC_SystemReset();
+	} else if (type == SYS_REBOOT_COLD) {
+		if ((SYS_WDOG->WATCHDOG_REG & SYS_WDOG_WATCHDOG_REG_WDOG_VAL_NEG_Msk) == 0) {
+			/* Cannot write WATCHDOG_REG while WRITE_BUSY */
+			while ((SYS_WDOG->WATCHDOG_REG &
+				SYS_WDOG_WATCHDOG_CTRL_REG_WRITE_BUSY_Msk) != 0) {
+			}
+			/* Write WATCHDOG_REG */
+			SYS_WDOG->WATCHDOG_REG = BIT(SYS_WDOG_WATCHDOG_REG_WDOG_VAL_Pos);
 
-	NVIC_SystemReset();
+			GPREG->RESET_FREEZE_REG = GPREG_SET_FREEZE_REG_FRZ_SYS_WDOG_Msk;
+			SYS_WDOG->WATCHDOG_CTRL_REG &=
+				~SYS_WDOG_WATCHDOG_CTRL_REG_WDOG_FREEZE_EN_Msk;
+		}
+		/* Wait */
+		for (;;) {
+			__NOP();
+		}
+	}
 }
 
 #if defined(CONFIG_BOOTLOADER_MCUBOOT)
@@ -109,7 +127,7 @@ static void z_renesas_configure_cache(void)
 }
 #endif /* CONFIG_HAS_FLASH_LOAD_OFFSET */
 
-void z_arm_platform_init(void)
+void soc_reset_hook(void)
 {
 #if defined(CONFIG_PM)
 	uint32_t *ivt;
@@ -131,7 +149,10 @@ void z_arm_platform_init(void)
 #endif
 }
 
-static int renesas_da1469x_init(void)
+/* defined in power.c */
+extern int renesas_da1469x_pm_init(void);
+
+void soc_early_init_hook(void)
 {
 	/* Freeze watchdog until configured */
 	GPREG->SET_FREEZE_REG = GPREG_SET_FREEZE_REG_FRZ_SYS_WDOG_Msk;
@@ -176,8 +197,7 @@ static int renesas_da1469x_init(void)
 	da1469x_pd_acquire(MCU_PD_DOMAIN_TIM);
 
 	da1469x_pdc_reset();
-
-	return 0;
+#if CONFIG_PM
+	renesas_da1469x_pm_init();
+#endif
 }
-
-SYS_INIT(renesas_da1469x_init, PRE_KERNEL_1, 0);

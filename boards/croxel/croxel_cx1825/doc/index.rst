@@ -1,7 +1,4 @@
-.. _croxel_cx1825_nrf52840:
-
-CX1825 nRF52840
-###############
+.. zephyr:board:: croxel_cx1825
 
 Overview
 ********
@@ -23,12 +20,6 @@ Semiconductor nRF52840 ARM Cortex-M4F CPU and the following devices:
 * :abbr:`SPI (Serial Peripheral Interface)`
 * :abbr:`USB (Universal Serial Bus)`
 * :abbr:`WDT (Watchdog Timer)`
-
-.. figure:: img/cx1825_nrf52840.jpg
-     :align: center
-     :alt: CX1825
-
-     Croxel's CX1825 Bluetooth Prototyping board (Credit: Croxel)
 
 Hardware
 ********

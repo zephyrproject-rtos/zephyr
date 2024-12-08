@@ -28,8 +28,6 @@ static inline void mpsc_state_print(struct mpsc_pbuf_buffer *buffer)
 void mpsc_pbuf_init(struct mpsc_pbuf_buffer *buffer,
 		    const struct mpsc_pbuf_buffer_config *cfg)
 {
-	int err;
-
 	memset(buffer, 0, offsetof(struct mpsc_pbuf_buffer, buf));
 	buffer->get_wlen = cfg->get_wlen;
 	buffer->notify_drop = cfg->notify_drop;
@@ -42,9 +40,13 @@ void mpsc_pbuf_init(struct mpsc_pbuf_buffer *buffer,
 		buffer->flags |= MPSC_PBUF_SIZE_POW2;
 	}
 
-	err = k_sem_init(&buffer->sem, 0, 1);
-	__ASSERT_NO_MSG(err == 0);
-	ARG_UNUSED(err);
+	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
+		int err;
+
+		err = k_sem_init(&buffer->sem, 0, 1);
+		__ASSERT_NO_MSG(err == 0);
+		ARG_UNUSED(err);
+	}
 }
 
 /* Calculate free space available or till end of buffer.
@@ -370,7 +372,8 @@ union mpsc_pbuf_generic *mpsc_pbuf_alloc(struct mpsc_pbuf_buffer *buffer,
 		} else if (wrap) {
 			add_skip_item(buffer, free_wlen);
 			cont = true;
-		} else if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT) && !k_is_in_isr()) {
+		} else if (IS_ENABLED(CONFIG_MULTITHREADING) && !K_TIMEOUT_EQ(timeout, K_NO_WAIT) &&
+			   !k_is_in_isr()) {
 			int err;
 
 			k_spin_unlock(&buffer->lock, key);
@@ -600,14 +603,18 @@ void mpsc_pbuf_free(struct mpsc_pbuf_buffer *buffer,
 	MPSC_PBUF_DBG(buffer, "<<freed: %p", item);
 
 	k_spin_unlock(&buffer->lock, key);
-	k_sem_give(&buffer->sem);
+	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
+		k_sem_give(&buffer->sem);
+	}
 }
 
 bool mpsc_pbuf_is_pending(struct mpsc_pbuf_buffer *buffer)
 {
 	uint32_t a;
+	k_spinlock_key_t key = k_spin_lock(&buffer->lock);
 
 	(void)available(buffer, &a);
+	k_spin_unlock(&buffer->lock, key);
 
 	return a ? true : false;
 }

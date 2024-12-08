@@ -12,7 +12,8 @@ target_sources(app
 
 target_include_directories(app
 	PRIVATE
-	${ZEPHYR_BASE}/subsys/bluetooth/mesh)
+	${ZEPHYR_BASE}/subsys/bluetooth/mesh
+	${ZEPHYR_MBEDTLS_MODULE_DIR}/include)
 
 target_compile_options(app
 	PRIVATE
@@ -20,4 +21,4 @@ target_compile_options(app
 	-DCONFIG_BT_MESH_ACCESS_DELAYABLE_MSG_COUNT=4
 	-DCONFIG_BT_MESH_ACCESS_DELAYABLE_MSG_CHUNK_SIZE=20
 	-DCONFIG_BT_MESH_ACCESS_DELAYABLE_MSG_CHUNK_COUNT=20
-	-DCONFIG_BT_MESH_USES_TINYCRYPT)
+	-DCONFIG_BT_MESH_USES_MBEDTLS_PSA)

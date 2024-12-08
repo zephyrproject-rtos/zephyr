@@ -17,8 +17,8 @@
 
 static void flash_waitstates_init(void)
 {
-	/* One wait state at 48 MHz. */
-	NVMCTRL->CTRLB.bit.RWS = NVMCTRL_CTRLB_RWS_HALF_Val;
+	/* Two wait state at 48 MHz. */
+	NVMCTRL->CTRLB.bit.RWS = NVMCTRL_CTRLB_RWS_DUAL_Val;
 }
 
 static void osc48m_init(void)
@@ -43,7 +43,7 @@ static void gclks_init(void)
 			     | GCLK_GENCTRL_GENEN;
 }
 
-void z_arm_platform_init(void)
+void soc_reset_hook(void)
 {
 	flash_waitstates_init();
 	osc48m_init();

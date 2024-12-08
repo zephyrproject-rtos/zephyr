@@ -1,0 +1,63 @@
+# Copyright (c) 2024 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Silicon Labs Series 2 DC-DC converter.
+
+  Include the bindings header file <zephyr/dt-bindings/regulator/silabs_dcdc.h> to get
+  access to relevant symbols for configuration.
+
+  The following standard properties are supported:
+
+  `regulator-boot-on`
+    Enable DC-DC converter at boot. If not set, the DC-DC converter is powered off.
+  `regulator-allow-bypass`
+    Enable bypass mode. If combined with `regulator-boot-on`, the DC-DC converter
+    is initialized to bypass mode.
+  `regulator-initial-mode`
+    DCDC operating mode. One of `SILABS_DCDC_MODE_BUCK` or `SILABS_DCDC_MODE_BOOST`.
+  `regulator-init-microvolt`
+    Output voltage for boost mode. Not used in buck mode.
+
+compatible: "silabs,series2-dcdc"
+
+include:
+  - name: base.yaml
+  - name: regulator.yaml
+    property-allowlist:
+      - regulator-boot-on
+      - regulator-allow-bypass
+      - regulator-initial-mode
+      - regulator-init-microvolt
+
+properties:
+  reg:
+    required: true
+
+  regulator-initial-mode:
+    enum: [0, 1]
+
+  regulator-init-microvolt:
+    enum:
+      - 1800000
+      - 1900000
+      - 2000000
+      - 2100000
+      - 2200000
+      - 2300000
+      - 2400000
+
+  silabs,pfmx-peak-current-milliamp:
+    type: int
+    description: Peak current draw in PFMX mode (CCM, continuous conduction mode).
+    enum:
+      - 50
+      - 65
+      - 73
+      - 80
+      - 86
+      - 93
+      - 100
+      - 106
+      - 113
+      - 120

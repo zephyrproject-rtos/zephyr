@@ -7,3 +7,4 @@ config PIO_RPI_PICO
 	depends on DT_HAS_RASPBERRYPI_PICO_PIO_ENABLED
 	depends on RESET
 	select PICOSDK_USE_PIO
+	select PINCTRL

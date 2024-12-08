@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(lorawan_clock_sync, CONFIG_LORAWAN_SERVICES_LOG_LEVEL);
  * Version of LoRaWAN Application Layer Clock Synchronization Specification
  *
  * This implementation only supports TS003-2.0.0, as the previous revision TS003-1.0.0
- * requested to temporarily disable ADR and and set nb_trans to 1. This causes issues on the
+ * requested to temporarily disable ADR and set nb_trans to 1. This causes issues on the
  * server side and is not recommended anymore.
  */
 #define CLOCK_SYNC_PACKAGE_VERSION 2
@@ -91,7 +91,7 @@ static inline k_timeout_t clock_sync_calc_periodicity(void)
 	return K_SECONDS(ctx.periodicity - 30 + sys_rand32_get() % 61);
 }
 
-static void clock_sync_package_callback(uint8_t port, bool data_pending, int16_t rssi, int8_t snr,
+static void clock_sync_package_callback(uint8_t port, uint8_t flags, int16_t rssi, int8_t snr,
 					uint8_t len, const uint8_t *rx_buf)
 {
 	uint8_t tx_buf[3 * MAX_CLOCK_SYNC_ANS_LEN];

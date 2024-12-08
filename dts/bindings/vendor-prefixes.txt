@@ -11,6 +11,7 @@
 # <vendor-prefix><TAB><Full name of vendor>
 
 # zephyr-keep-sorted-start
+01space	01Space
 96boards	96Boards
 aaeon	AAEON Technology Inc.
 abb	ABB
@@ -247,6 +248,7 @@ fsl	Freescale Semiconductor
 ftdi	Future Technology Devices International Ltd.
 fujitsu	Fujitsu Ltd.
 futaba	Futaba Corporation
+fysetc	Shenzhen Fuyuansheng Electronic Technology Co., Ltd.
 gaisler	Gaisler
 galaxycore	Galaxycore, Inc.
 gardena	GARDENA GmbH
@@ -327,6 +329,7 @@ isentek	Isentek Inc.
 isil	Intersil
 issi	Integrated Silicon Solutions Inc.
 ist	Innovative Sensor Technology IST AG
+istech	Integrated Solutions Technology Inc.
 ite	ITE Tech. Inc.
 itead	ITEAD Intelligent Systems Co.Ltd
 ivo	InfoVision Optoelectronics Kunshan Co. Ltd.
@@ -392,6 +395,7 @@ lxa	Linux Automation GmbH
 m5stack	M5Stack
 macnica	Macnica Americas
 madmachine	Shenzhen FeiKaiTe Technology Co., Ltd.
+makerbase	Makerbase Co., Ltd.
 makerdiary	Shenzhen Zaowubang Technology Co., Ltd.
 mantix	Mantix Display Technology Co.,Ltd.
 mapleboard	Mapleboard.org
@@ -461,6 +465,7 @@ nintendo	Nintendo
 nlt	NLT Technologies, Ltd.
 nokia	Nokia
 nordic	Nordic Semiconductor
+norik	Norik Systems
 noritake	Noritake Co., Inc. Electronics Division
 novtech	NovTech, Inc.
 nuclei	Nuclei System Technology
@@ -586,6 +591,7 @@ seirobotics	Shenzhen SEI Robotics Co., Ltd
 semtech	Semtech Corporation
 sensirion	Sensirion AG
 sensortek	Sensortek Technology Corporation
+sensry	sensry.io
 sff	Small Form Factor Committee
 sgd	Solomon Goldentek Display Corporation
 sgmicro	SG Micro Corp
@@ -692,7 +698,7 @@ udoo	Udoo
 ugoos	Ugoos Industrial Co., Ltd.
 ultrachip	UltraChip Inc.
 uniwest	United Western Technologies Corp (UniWest)
-up-brige-the-gap	UP Bridge the Gap
+up-bridge-the-gap	UP Bridge the Gap
 upisemi	uPI Semiconductor Corp.
 urt	United Radiant Technology Corporation
 usi	Universal Scientific Industrial Co., Ltd.
@@ -719,6 +725,7 @@ vot	Vision Optical Technology Co., Ltd.
 vxt	VXT Ltd
 wand	Wandbord (Technexion)
 waveshare	Waveshare Electronics
+wch	WinChipHead
 wd	Western Digital Corp.
 we	Würth Elektronik GmbH.
 weact	WeAct Studio
@@ -731,6 +738,7 @@ winbond	Winbond Electronics corp.
 winsen	Zhengzhou Winsen Electronics Technology Co., Ltd.
 winstar	Winstar Display Corp.
 wits	Shenzhen Merrii Technology Co., Ltd. (WITS)
+witte	Witte Technology
 wiznet	WIZnet Co., Ltd.
 wlf	Wolfson Microelectronics
 wm	Wondermedia Technologies, Inc.

@@ -6,6 +6,7 @@
  */
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 
 #include <zephyr/autoconf.h>
@@ -54,7 +55,7 @@ static volatile bool g_aics_active = 1;
 static char g_aics_desc[AICS_DESC_SIZE];
 static volatile bool g_cb;
 
-static void vcs_state_cb(int err, uint8_t volume, uint8_t mute)
+static void vcs_state_cb(struct bt_conn *conn, int err, uint8_t volume, uint8_t mute)
 {
 	if (err != 0) {
 		FAIL("VCP state cb err (%d)", err);
@@ -66,7 +67,7 @@ static void vcs_state_cb(int err, uint8_t volume, uint8_t mute)
 	g_cb = true;
 }
 
-static void vcs_flags_cb(int err, uint8_t flags)
+static void vcs_flags_cb(struct bt_conn *conn, int err, uint8_t flags)
 {
 	if (err != 0) {
 		FAIL("VCP flags cb err (%d)", err);
@@ -1043,7 +1044,7 @@ static void test_main(void)
 
 	printk("VCP initialized\n");
 
-	err = bt_le_adv_start(BT_LE_ADV_CONN_ONE_TIME, ad, AD_SIZE, NULL, 0);
+	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, AD_SIZE, NULL, 0);
 	if (err != 0) {
 		FAIL("Advertising failed to start (err %d)\n", err);
 		return;

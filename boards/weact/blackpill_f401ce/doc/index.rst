@@ -1,7 +1,4 @@
-.. _blackpill_f401ce:
-
-WeAct Studio Black Pill V3.0
-############################
+.. zephyr:board:: blackpill_f401ce
 
 Overview
 ********
@@ -11,10 +8,6 @@ development board featuring the STM32F401CE, see `STM32F401CE website`_.
 This is the 48-pin variant of the STM32F401x series,
 see `STM32F401x reference manual`_. More info about the board available
 `here <stm32-base-board-page_>`_ and on `WeAct Github`_.
-
-.. image:: img/blackpill-v3.jpg
-      :align: center
-      :alt: Black Pill V3.0+
 
 Hardware
 ********

@@ -4,8 +4,6 @@ tests:
       - nrf52840dk/nrf52840
       - nrf52dk/nrf52832
       - nrf51dk/nrf51822
-      - native_posix
-      - native_posix/native/64
       - native_sim
       - native_sim/native/64
       - mr_canhubk3
@@ -14,10 +12,22 @@ tests:
       - nrf52840dk/nrf52840
   filesystem.fcb.no_erase:
     platform_allow:
-      - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
   filesystem.fcb.native_sim.no_erase:
     extra_args: CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE=n
     platform_allow: native_sim
+  filesystem.fcb.fixed_endmarker:
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf52dk/nrf52832
+      - nrf51dk/nrf51822
+      - native_sim
+      - native_sim/native/64
+      - mr_canhubk3
+    tags: flash_circural_buffer
+    integration_platforms:
+      - nrf52840dk/nrf52840
+    extra_args: CONFIG_FCB_ALLOW_FIXED_ENDMARKER=y
   filesystem.fcb.native_sim.fcb_0x00:
     extra_args: DTC_OVERLAY_FILE=boards/native_sim_ev_0x00.overlay
     platform_allow: native_sim

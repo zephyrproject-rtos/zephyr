@@ -14,14 +14,15 @@ extern "C" {
 #endif
 
 /**
- * @brief LLEXT buffer loader
- * @defgroup llext_buf_loader Linkable loadable extensions buffer loader
- * @ingroup llext
+ * @file
+ * @brief LLEXT buffer loader implementation.
+ *
+ * @addtogroup llext_loader_apis
  * @{
  */
 
 /**
- * @brief An extension loader from a provided buffer containing an ELF
+ * @brief Implementation of @ref llext_loader that reads from a memory buffer.
  */
 struct llext_buf_loader {
 	/** Extension loader */
@@ -41,21 +42,24 @@ void *llext_buf_peek(struct llext_loader *ldr, size_t pos);
 /** @endcond */
 
 /**
- * @brief Initialize an extension buf loader
+ * @brief Initializer for an llext_buf_loader structure
  *
- * @param _buf Buffer containing an ELF binary
+ * @param _buf Buffer containing the ELF binary
  * @param _buf_len Buffer length in bytes
  */
-#define LLEXT_BUF_LOADER(_buf, _buf_len)		\
-	{						\
-		.loader = {				\
-			.read = llext_buf_read,		\
-			.seek = llext_buf_seek,		\
-			.peek = llext_buf_peek,		\
-		},					\
-		.buf = (_buf),				\
-		.len = (_buf_len),			\
-		.pos = 0				\
+#define LLEXT_BUF_LOADER(_buf, _buf_len)                                                           \
+	{                                                                                          \
+		.loader =                                                                          \
+			{                                                                          \
+				.prepare = NULL,                                                   \
+				.read = llext_buf_read,                                            \
+				.seek = llext_buf_seek,                                            \
+				.peek = llext_buf_peek,                                            \
+				.finalize = NULL,                                                  \
+			},                                                                         \
+		.buf = (_buf),                                                                     \
+		.len = (_buf_len),                                                                 \
+		.pos = 0,                                                                          \
 	}
 
 /**

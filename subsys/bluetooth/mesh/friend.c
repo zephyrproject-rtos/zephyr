@@ -8,7 +8,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/iterable_sections.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/mesh.h>
 
@@ -1506,7 +1506,7 @@ static void friend_lpn_enqueue_tx(struct bt_mesh_friend *frnd,
 
 	if (type == BT_MESH_FRIEND_PDU_SINGLE && !info.ctl) {
 		/* Unsegmented application packets may be reencrypted later,
-		 * as they depend on the the sequence number being the same
+		 * as they depend on the sequence number being the same
 		 * when encrypting in transport and network.
 		 */
 		FRIEND_ADV(buf)->app_idx = tx->ctx->app_idx;

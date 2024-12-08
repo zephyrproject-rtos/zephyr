@@ -23,6 +23,7 @@
 	{.dt_addr = DT_REG_ADDR(node_id),                                                          \
 	 .dt_size = DT_REG_SIZE(node_id),                                                          \
 	 .dt_attr = DT_PROP(node_id, zephyr_memory_attr),                                          \
+	 .dt_align = DMM_REG_ALIGN_SIZE(node_id),                                                  \
 	 .dt_allc = &_BUILD_LINKER_END_VAR(node_id)},
 
 /* Generate declarations of linker variables used to determine size of preallocated variables
@@ -36,6 +37,7 @@ struct dmm_region {
 	uintptr_t dt_addr;
 	size_t dt_size;
 	uint32_t dt_attr;
+	uint32_t dt_align;
 	void *dt_allc;
 };
 
@@ -91,7 +93,7 @@ static bool is_user_buffer_correctly_preallocated(void const *user_buffer, size_
 		return true;
 	}
 
-	if (IS_ALIGNED(addr, DMM_DCACHE_LINE_SIZE)) {
+	if (IS_ALIGNED(addr, region->dt_align)) {
 		/* If buffer is in cacheable region it must be aligned to data cache line size. */
 		return true;
 	}
@@ -101,7 +103,7 @@ static bool is_user_buffer_correctly_preallocated(void const *user_buffer, size_
 
 static size_t dmm_heap_start_get(struct dmm_heap *dh)
 {
-	return ROUND_UP(dh->region->dt_allc, DMM_DCACHE_LINE_SIZE);
+	return ROUND_UP(dh->region->dt_allc, dh->region->dt_align);
 }
 
 static size_t dmm_heap_size_get(struct dmm_heap *dh)
@@ -111,8 +113,8 @@ static size_t dmm_heap_size_get(struct dmm_heap *dh)
 
 static void *dmm_buffer_alloc(struct dmm_heap *dh, size_t length)
 {
-	length = ROUND_UP(length, DMM_DCACHE_LINE_SIZE);
-	return sys_heap_aligned_alloc(&dh->heap, DMM_DCACHE_LINE_SIZE, length);
+	length = ROUND_UP(length, dh->region->dt_align);
+	return sys_heap_aligned_alloc(&dh->heap, dh->region->dt_align, length);
 }
 
 static void dmm_buffer_free(struct dmm_heap *dh, void *buffer)
@@ -293,5 +295,3 @@ int dmm_init(void)
 
 	return 0;
 }
-
-SYS_INIT(dmm_init, POST_KERNEL, 0);

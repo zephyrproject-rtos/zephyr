@@ -26,5 +26,6 @@ extern void __start(void);
 #define BOOT_PARAM_UDF_SP_OFFSET	16
 #define BOOT_PARAM_SVC_SP_OFFSET	20
 #define BOOT_PARAM_SYS_SP_OFFSET	24
+#define BOOT_PARAM_VOTING_OFFSET	28
 
 #endif /* _BOOT_H_ */

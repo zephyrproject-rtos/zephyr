@@ -1,0 +1,57 @@
+#Copyright (c) 2024 BayLibre SAS
+
+#SPDX-License-Identifier: Apache-2.0
+
+#Zephyr Memory Storage ZMS
+
+config ZMS
+	bool "Zephyr Memory Storage"
+	select CRC
+	help
+	  Enable support of Zephyr Memory Storage.
+
+if ZMS
+
+config ZMS_LOOKUP_CACHE
+	bool "ZMS lookup cache"
+	help
+	  Enable ZMS cache to reduce the ZMS data lookup time.
+	  Each cache entry holds an address of the most recent allocation
+	  table entry (ATE) for all ZMS IDs that fall into that cache position.
+
+config ZMS_LOOKUP_CACHE_SIZE
+	int "ZMS Storage lookup cache size"
+	default 128
+	range 1 65536
+	depends on ZMS_LOOKUP_CACHE
+	help
+	  Number of entries in ZMS lookup cache.
+	  It is recommended that it should be a power of 2.
+	  Every additional entry in cache will add 8 bytes in RAM
+
+config ZMS_DATA_CRC
+	bool "ZMS DATA CRC"
+	help
+	  Enables DATA CRC
+
+config ZMS_CUSTOMIZE_BLOCK_SIZE
+	bool "Customize the size of the buffer used internally for reads and writes"
+	help
+	  ZMS uses an internal buffer to read/write and compare stored data.
+	  Increasing the size of this buffer should be done carefully in order to not
+	  overflow the stack.
+	  Increasing this buffer means as well that ZMS could work with storage devices
+	  that have larger write-block-size which decreases ZMS performance
+
+config ZMS_CUSTOM_BLOCK_SIZE
+	int "ZMS internal buffer size"
+	default 32
+	depends on ZMS_CUSTOMIZE_BLOCK_SIZE
+	help
+	  Changes the internal buffer size of ZMS
+
+module = ZMS
+module-str = zms
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # ZMS

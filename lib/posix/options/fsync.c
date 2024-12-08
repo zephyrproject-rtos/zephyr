@@ -16,3 +16,10 @@ int fsync(int fd)
 #ifdef CONFIG_POSIX_FILE_SYSTEM_ALIAS_FSYNC
 FUNC_ALIAS(fsync, _fsync, int);
 #endif
+
+#ifdef CONFIG_POSIX_SYNCHRONIZED_IO
+int fdatasync(int fd)
+{
+	return fsync(fd);
+}
+#endif /* CONFIG_POSIX_SYNCHRONIZED_IO */

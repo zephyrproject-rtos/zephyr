@@ -25,11 +25,13 @@ config MPU6050_TRIGGER_NONE
 config MPU6050_TRIGGER_GLOBAL_THREAD
 	bool "Use global thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_MPU6050),int-gpios)
 	select MPU6050_TRIGGER
 
 config MPU6050_TRIGGER_OWN_THREAD
 	bool "Use own thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_MPU6050),int-gpios)
 	select MPU6050_TRIGGER
 
 endchoice

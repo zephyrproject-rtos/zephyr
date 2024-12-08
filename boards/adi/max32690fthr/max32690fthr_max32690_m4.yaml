@@ -1,0 +1,20 @@
+identifier: max32690fthr/max32690/m4
+name: max32690fthr m4
+vendor: adi
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - gpio
+  - serial
+  - i2c
+  - spi
+  - feather_serial
+  - feather_i2c
+  - feather_spi
+  - flash
+ram: 1024
+flash: 3072

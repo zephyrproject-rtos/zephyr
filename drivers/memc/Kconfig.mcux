@@ -30,6 +30,12 @@ config MEMC_MCUX_FLEXSPI_IS66WVQ8M4
 	depends on DT_HAS_NXP_IMX_FLEXSPI_IS66WVQ8M4_ENABLED
 	select MEMC_MCUX_FLEXSPI
 
+config MEMC_MCUX_FLEXSPI_APS6404L
+	bool "MCUX FlexSPI AP Memory APS6404L pSRAM driver"
+	default y
+	depends on DT_HAS_NXP_IMX_FLEXSPI_APS6404L_ENABLED
+	select MEMC_MCUX_FLEXSPI
+
 config MEMC_MCUX_FLEXSPI_INIT_PRIORITY
 	int "MCUX FLEXSPI MEMC driver initialization priority"
 	default MEMC_INIT_PRIORITY
@@ -53,6 +59,11 @@ config MEMC_MCUX_FLEXSPI_INIT_XIP
 config MEMC_MCUX_FLEXSPI
 	bool
 	select PINCTRL
+
+# Avoid RWW hazards by defaulting logging to disabled
+choice MEMC_LOG_LEVEL_CHOICE
+	default MEMC_LOG_LEVEL_OFF if FLASH_MCUX_FLEXSPI_XIP
+endchoice
 
 endif # DT_HAS_NXP_IMX_FLEXSPI_ENABLED
 

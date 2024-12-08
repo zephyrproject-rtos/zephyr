@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2024 Marcin Niestroj
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&arduino_spi {
+	status = "okay";
+
+	eth_w5500: eth-w5500@0 {
+		compatible = "wiznet,w5500";
+		reg = <0x0>;
+		spi-max-frequency = <DT_FREQ_M(20)>;
+		int-gpios = <&arduino_header 8 GPIO_ACTIVE_LOW>;	/* D2 */
+	};
+};

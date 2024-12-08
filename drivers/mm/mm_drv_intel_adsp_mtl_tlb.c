@@ -187,8 +187,6 @@ int sys_mm_drv_map_page(void *virt, uintptr_t phys, uint32_t flags)
 	uintptr_t pa = POINTER_TO_UINT(sys_cache_cached_ptr_get(UINT_TO_POINTER(phys)));
 	uintptr_t va = POINTER_TO_UINT(sys_cache_cached_ptr_get(virt));
 
-	ARG_UNUSED(flags);
-
 	/* Make sure VA is page-aligned */
 	CHECKIF(!sys_mm_drv_is_addr_aligned(va)) {
 		ret = -EINVAL;
@@ -338,6 +336,7 @@ static int sys_mm_drv_unmap_page_wflush(void *virt, bool flush_data)
 	k_spinlock_key_t key;
 	uint32_t entry_idx, bank_idx;
 	uint16_t *tlb_entries = UINT_TO_POINTER(TLB_BASE);
+	uint16_t entry;
 	uintptr_t pa;
 	int ret = 0;
 
@@ -359,6 +358,17 @@ static int sys_mm_drv_unmap_page_wflush(void *virt, bool flush_data)
 
 	key = k_spin_lock(&tlb_lock);
 
+	entry_idx = get_tlb_entry_idx(va);
+	entry = tlb_entries[entry_idx];
+
+	/* Check if the translation is enabled in the TLB entry.
+	 * Attempt to flush the cache of an inactive address will result in a cpu exception.
+	 */
+	if (!(entry & TLB_ENABLE_BIT)) {
+		ret = -EFAULT;
+		goto out_unlock;
+	}
+
 	/*
 	 * Flush the cache to make sure the backing physical page
 	 * has the latest data.
@@ -371,8 +381,7 @@ static int sys_mm_drv_unmap_page_wflush(void *virt, bool flush_data)
 #endif
 	}
 
-	entry_idx = get_tlb_entry_idx(va);
-	pa = tlb_entry_to_pa(tlb_entries[entry_idx]);
+	pa = tlb_entry_to_pa(entry);
 
 	/* Restore default entry settings with cleared the enable bit. */
 	tlb_entries[entry_idx] = 0;
@@ -395,6 +404,7 @@ static int sys_mm_drv_unmap_page_wflush(void *virt, bool flush_data)
 		}
 	}
 
+out_unlock:
 	k_spin_unlock(&tlb_lock, key);
 
 out:
@@ -451,6 +461,10 @@ int sys_mm_drv_update_page_flags(void *virt, uint32_t flags)
 
 	tlb_entries[entry_idx] = entry;
 
+#ifdef CONFIG_MMU
+	arch_mem_map(virt, tlb_entry_to_pa(entry), CONFIG_MM_DRV_PAGE_SIZE, flags);
+#endif
+
 out:
 	k_spin_unlock(&tlb_lock, key);
 	return ret;
@@ -478,7 +492,11 @@ static int sys_mm_drv_unmap_region_initial(void *virt_in, size_t size)
 
 		int ret2 = sys_mm_drv_unmap_page_wflush(va, false);
 
-		if (ret2 != 0) {
+		/* -EFAULT means that this page is not mapped.
+		 * This is not an error since we want to unmap all virtual memory without knowing
+		 * which pages are mapped.
+		 */
+		if (ret2 != 0 && ret2 != -EFAULT) {
 			__ASSERT(false, "cannot unmap %p\n", va);
 
 			ret = ret2;
@@ -822,18 +840,25 @@ static void adsp_mm_save_context(void *storage_buffer)
 
 		if (((tlb_entries[entry_idx] & TLB_PADDR_MASK) != entry) ||
 		    ((tlb_entries[entry_idx] & TLB_ENABLE_BIT) != TLB_ENABLE_BIT)) {
-			/* this page needs remapping, invalidate cache to avoid stalled data
-			 * all cache data has been flushed before
-			 * do this for pages to remap only
-			 */
-			sys_cache_data_invd_range(UINT_TO_POINTER(phys_addr),
-						  CONFIG_MM_DRV_PAGE_SIZE);
+			/* This page needs remapping */
 
 			/* Enable the translation in the TLB entry */
 			entry |= TLB_ENABLE_BIT;
 
 			/* map the page 1:1 virtual to physical */
 			tlb_entries[entry_idx] = entry;
+
+#ifdef CONFIG_MMU
+			arch_mem_map(UINT_TO_POINTER(phys_addr), phys_addr, CONFIG_MM_DRV_PAGE_SIZE,
+				     K_MEM_CACHE_WB);
+#endif
+
+			/* Invalidate cache to avoid stalled data
+			 * all cache data has been flushed before
+			 * do this for pages to remap only
+			 */
+			sys_cache_data_invd_range(UINT_TO_POINTER(phys_addr),
+						  CONFIG_MM_DRV_PAGE_SIZE);
 		}
 
 		/* save physical address */

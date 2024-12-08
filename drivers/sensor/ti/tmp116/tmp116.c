@@ -10,6 +10,7 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/sensor/tmp116.h>
+#include <zephyr/dt-bindings/sensor/tmp116.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/__assert.h>
@@ -46,6 +47,23 @@ static int tmp116_reg_write(const struct device *dev, uint8_t reg,
 	uint8_t tx_buf[3] = {reg, val >> 8, val & 0xFF};
 
 	return i2c_write_dt(&cfg->bus, tx_buf, sizeof(tx_buf));
+}
+
+int tmp116_write_config(const struct device *dev, uint16_t mask, uint16_t conf)
+{
+	uint16_t config = 0;
+	int result;
+
+	result = tmp116_reg_read(dev, TMP116_REG_CFGR, &config);
+
+	if (result < 0) {
+		return result;
+	}
+
+	config &= ~mask;
+	config |= conf;
+
+	return tmp116_reg_write(dev, TMP116_REG_CFGR, config);
 }
 
 static bool check_eeprom_bounds(const struct device *dev, off_t offset,
@@ -225,6 +243,33 @@ static int tmp116_channel_get(const struct device *dev,
 	return 0;
 }
 
+static int16_t tmp116_conv_value(const struct sensor_value *val)
+{
+	uint32_t freq_micro = sensor_value_to_micro(val);
+
+	switch (freq_micro) {
+	case 64000000: /* 1 / 15.5 ms has been rounded down */
+		return TMP116_DT_ODR_15_5_MS;
+	case 8000000:
+		return TMP116_DT_ODR_125_MS;
+	case 4000000:
+		return TMP116_DT_ODR_250_MS;
+	case 2000000:
+		return TMP116_DT_ODR_500_MS;
+	case 1000000:
+		return TMP116_DT_ODR_1000_MS;
+	case 250000:
+		return TMP116_DT_ODR_4000_MS;
+	case 125000:
+		return TMP116_DT_ODR_8000_MS;
+	case 62500:
+		return TMP116_DT_ODR_16000_MS;
+	default:
+		LOG_ERR("%" PRIu32 " uHz not supported", freq_micro);
+		return -EINVAL;
+	}
+}
+
 static int tmp116_attr_set(const struct device *dev,
 			   enum sensor_channel chan,
 			   enum sensor_attribute attr,
@@ -232,12 +277,21 @@ static int tmp116_attr_set(const struct device *dev,
 {
 	struct tmp116_data *drv_data = dev->data;
 	int16_t value;
+	uint16_t avg;
 
 	if (chan != SENSOR_CHAN_AMBIENT_TEMP) {
 		return -ENOTSUP;
 	}
 
-	switch (attr) {
+	switch ((int)attr) {
+	case SENSOR_ATTR_SAMPLING_FREQUENCY:
+		value = tmp116_conv_value(val);
+		if (value < 0) {
+			return value;
+		}
+
+		return tmp116_write_config(dev, TMP116_CFGR_CONV, value);
+
 	case SENSOR_ATTR_OFFSET:
 		if (drv_data->id != TMP117_DEVICE_ID) {
 			LOG_ERR("%s: Offset is only supported by TMP117",
@@ -251,6 +305,38 @@ static int tmp116_attr_set(const struct device *dev,
 						/ (int32_t)TMP116_RESOLUTION;
 
 		return tmp116_reg_write(dev, TMP117_REG_TEMP_OFFSET, value);
+
+	case SENSOR_ATTR_OVERSAMPLING:
+		/* sensor supports averaging 1, 8, 32 and 64 samples */
+		switch (val->val1) {
+		case 1:
+			avg = TMP116_AVG_1_SAMPLE;
+			break;
+
+		case 8:
+			avg = TMP116_AVG_8_SAMPLES;
+			break;
+
+		case 32:
+			avg = TMP116_AVG_32_SAMPLES;
+			break;
+
+		case 64:
+			avg = TMP116_AVG_64_SAMPLES;
+			break;
+
+		default:
+			return -EINVAL;
+		}
+		return tmp116_write_config(dev, TMP116_CFGR_AVG, avg);
+	case SENSOR_ATTR_TMP116_SHUTDOWN_MODE:
+		return tmp116_write_config(dev, TMP116_CFGR_MODE, TMP116_MODE_SHUTDOWN);
+
+	case SENSOR_ATTR_TMP116_CONTINUOUS_CONVERSION_MODE:
+		return tmp116_write_config(dev, TMP116_CFGR_MODE, TMP116_MODE_CONTINUOUS);
+
+	case SENSOR_ATTR_TMP116_ONE_SHOT_MODE:
+		return tmp116_write_config(dev, TMP116_CFGR_MODE, TMP116_MODE_ONE_SHOT);
 
 	default:
 		return -ENOTSUP;
@@ -284,7 +370,7 @@ static int tmp116_attr_get(const struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
-static const struct sensor_driver_api tmp116_driver_api = {
+static DEVICE_API(sensor, tmp116_driver_api) = {
 	.attr_set = tmp116_attr_set,
 	.attr_get = tmp116_attr_get,
 	.sample_fetch = tmp116_sample_fetch,
@@ -311,13 +397,16 @@ static int tmp116_init(const struct device *dev)
 	LOG_DBG("Got device ID: %x", id);
 	drv_data->id = id;
 
-	return 0;
+	rc = tmp116_write_config(dev, TMP116_CFGR_CONV, cfg->odr);
+
+	return rc;
 }
 
 #define DEFINE_TMP116(_num) \
 	static struct tmp116_data tmp116_data_##_num; \
 	static const struct tmp116_dev_config tmp116_config_##_num = { \
-		.bus = I2C_DT_SPEC_INST_GET(_num) \
+		.bus = I2C_DT_SPEC_INST_GET(_num), \
+		.odr = DT_INST_PROP(_num, odr), \
 	}; \
 	SENSOR_DEVICE_DT_INST_DEFINE(_num, tmp116_init, NULL, \
 		&tmp116_data_##_num, &tmp116_config_##_num, POST_KERNEL, \

@@ -70,7 +70,7 @@ SECTION_FUNC(TEXT, z_arm_do_swap)
 
 #if defined(CONFIG_FPU_SHARING)
     ldrb r0, [r2, #_thread_offset_to_user_options]
-    tst r0, #K_FP_REGS /* _current->base.user_options & K_FP_REGS */
+    tst r0, #K_FP_REGS /* arch_current_thread()->base.user_options & K_FP_REGS */
     beq out_fp_inactive
 
     mov ip, #FPEXC_EN
@@ -126,7 +126,7 @@ out_fp_inactive:
      * TPIDRURW is used as a base pointer to all
      * thread variables with offsets added by toolchain.
      */
-    mcr 15, 0, r0, c13, c0, 2
+    mcr p15, 0, r0, c13, c0, 2
 #endif
 
 #if defined(CONFIG_ARM_STORE_EXC_RETURN)
@@ -152,7 +152,7 @@ out_fp_inactive:
 
 #if defined(CONFIG_FPU_SHARING)
     ldrb r0, [r2, #_thread_offset_to_user_options]
-    tst r0, #K_FP_REGS /* _current->base.user_options & K_FP_REGS */
+    tst r0, #K_FP_REGS /* arch_current_thread()->base.user_options & K_FP_REGS */
     beq in_fp_inactive
 
     mov r3, #FPEXC_EN
@@ -336,12 +336,14 @@ _context_switch:
 
 _oops:
     /*
-     * Pass the exception frame to z_do_kernel_oops.  r0 contains the
-     * exception reason.
+     * Pass the exception frame to z_do_kernel_oops.
      */
     cps #MODE_SYS
     mov r0, sp
     cps #MODE_SVC
+    /* Zero callee_regs and exc_return (only used on Cortex-M) */
+    mov r1, #0
+    mov r2, #0
     bl z_do_kernel_oops
     b z_arm_int_exit
 

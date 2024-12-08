@@ -975,7 +975,7 @@ static void uart_npcx_rx_refresh_timeout(struct k_work *work)
 #endif
 
 /* UART driver registration */
-static const struct uart_driver_api uart_npcx_driver_api = {
+static DEVICE_API(uart, uart_npcx_driver_api) = {
 	.poll_in = uart_npcx_poll_in,
 	.poll_out = uart_npcx_poll_out,
 	.err_check = uart_npcx_err_check,
@@ -1147,7 +1147,7 @@ static int uart_npcx_init(const struct device *dev)
 		.baud_rate = DT_INST_PROP(i, current_speed),                                       \
 	};                                                                                         \
 	                                                                                           \
-	DEVICE_DT_INST_DEFINE(i, &uart_npcx_init, NULL, &uart_npcx_data_##i, &uart_npcx_cfg_##i,   \
+	DEVICE_DT_INST_DEFINE(i, uart_npcx_init, NULL, &uart_npcx_data_##i, &uart_npcx_cfg_##i,    \
 			      PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY, &uart_npcx_driver_api);   \
 												   \
 	NPCX_UART_IRQ_CONFIG_FUNC(i)

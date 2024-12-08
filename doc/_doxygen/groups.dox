@@ -68,6 +68,7 @@
 
 @brief Modem APIs
 @defgroup modem Modem APIs
+@ingroup connectivity
 @since 3.5
 @version 0.1.0
 @{
@@ -75,6 +76,16 @@
 
 @brief Memory Management APIs
 @defgroup mem_mgmt Memory Management APIs
+@{
+@}
+
+@brief Tests
+@defgroup all_tests Tests
+@{
+@}
+
+@defgroup kernel_memprotect_tests Memory Protection
+@ingroup all_tests
 @{
 @}
 

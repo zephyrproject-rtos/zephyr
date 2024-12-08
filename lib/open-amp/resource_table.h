@@ -17,8 +17,8 @@ extern "C" {
 #if (CONFIG_OPENAMP_RSC_TABLE_NUM_RPMSG_BUFF > 0)
 
 #define VDEV_ID                 0xFF
-#define VRING0_ID 0 /* (master to remote) fixed to 0 for Linux compatibility */
-#define VRING1_ID 1 /* (remote to master) fixed to 1 for Linux compatibility */
+#define VRING0_ID               CONFIG_OPENAMP_RSC_TABLE_IPM_RX_ID /* (host to remote) */
+#define VRING1_ID               CONFIG_OPENAMP_RSC_TABLE_IPM_TX_ID /* (remote to host) */
 
 #define VRING_COUNT             2
 #define RPMSG_IPU_C0_FEATURES   1

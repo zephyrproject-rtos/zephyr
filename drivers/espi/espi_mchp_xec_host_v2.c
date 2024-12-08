@@ -108,7 +108,7 @@ static uint8_t ec_host_cmd_sram[CONFIG_ESPI_XEC_PERIPHERAL_HOST_CMD_PARAM_SIZE] 
 
 #ifdef CONFIG_ESPI_PERIPHERAL_XEC_MAILBOX
 
-BUILD_ASSERT(DT_NODE_HAS_STATUS(DT_NODELABEL(mbox0), okay),
+BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(mbox0)),
 	     "XEC mbox0 DT node is disabled!");
 
 static struct xec_mbox_config {
@@ -171,7 +171,7 @@ static int init_mbox0(const struct device *dev)
 
 #ifdef CONFIG_ESPI_PERIPHERAL_8042_KBC
 
-BUILD_ASSERT(DT_NODE_HAS_STATUS(DT_NODELABEL(kbc0), okay),
+BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(kbc0)),
 	     "XEC kbc0 DT node is disabled!");
 
 struct xec_kbc0_config {
@@ -665,7 +665,7 @@ static int init_acpi_ec1(const struct device *dev)
 
 #ifdef CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD
 
-BUILD_ASSERT(DT_NODE_HAS_STATUS(DT_NODELABEL(emi0), okay),
+BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(emi0)),
 	     "XEC EMI0 DT node is disabled!");
 
 struct xec_emi_config {
@@ -855,6 +855,7 @@ static void p80bd0_isr(const struct device *dev)
 			espi_send_callbacks(&data->callbacks, dev, evt);
 			evt.evt_details = 0;
 		}
+		dattr = p80regs->EC_DA;
 	}
 
 	/* clear GIRQ status */

@@ -60,7 +60,9 @@ struct btp_cap_unicast_audio_update_data {
 #define BTP_CAP_UNICAST_AUDIO_STOP		0x06
 struct btp_cap_unicast_audio_stop_cmd {
 	uint8_t cig_id;
+	uint8_t flags;
 } __packed;
+#define BTP_CAP_UNICAST_AUDIO_STOP_FLAG_RELEASE BIT(0)
 
 #define BTP_CAP_BROADCAST_SOURCE_SETUP_STREAM	0x07
 struct btp_cap_broadcast_source_setup_stream_cmd {
@@ -97,7 +99,7 @@ struct btp_cap_broadcast_source_setup_cmd {
 	uint16_t max_transport_latency;
 	uint8_t presentation_delay[3];
 	uint8_t flags;
-	uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE];
+	uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE];
 } __packed;
 struct btp_cap_broadcast_source_setup_rp {
 	uint8_t source_id;

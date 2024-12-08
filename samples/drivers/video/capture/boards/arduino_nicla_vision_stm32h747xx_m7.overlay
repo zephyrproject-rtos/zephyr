@@ -1,0 +1,18 @@
+/*
+ * Copyright 2024 Felipe Neves
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/ {
+	chosen {
+		zephyr,console = &cdc_acm_uart0;
+		zephyr,shell-uart = &cdc_acm_uart0;
+	};
+};
+
+zephyr_udc0: &usbotg_hs {
+	status = "okay";
+	cdc_acm_uart0: cdc_acm_uart0 {
+		compatible = "zephyr,cdc-acm-uart";
+	};
+};

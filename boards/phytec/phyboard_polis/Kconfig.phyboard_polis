@@ -1,0 +1,7 @@
+# Copyright (c) 2022 PHYTEC Messtechnik GmbH
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_PHYBOARD_POLIS
+	select SOC_PART_NUMBER_MIMX8MM6DVTLZ
+	select SOC_MIMX8MM6_M4 if BOARD_PHYBOARD_POLIS_MIMX8MM6_M4

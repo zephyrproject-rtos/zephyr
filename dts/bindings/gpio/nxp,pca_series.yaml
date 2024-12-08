@@ -1,0 +1,44 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: Base binding for PCA series I2C-based GPIO expander
+
+include: [gpio-controller.yaml, i2c-device.yaml]
+
+# Currently supported device:
+#   pca9538    pca9539
+#   pca9574    pca9575
+#   pcal9538   pcal9539
+#   pcal6408a  pcal6416a
+#   pcal6524   pcal6534
+#
+#   PCA9538   compatible with  PCA9534   PCA9554
+#   PCA9539   compatible with  PCA9535   PCA9555
+#   PCAL9538  compatible with  PCAL9554  PCAL6408A(*a)
+#   PCAL9539  compatible with  PCAL9555  PCAL6416A(*a)
+#   (a) PCAL64xxA series support voltage level translation,
+#       but has no difference from driver's view.
+#   (b) PCAL6534 has 34 GPIO pins in 4x 8-bit port and 1x
+#       2-bit port. This driver only support 4x 8-bit port.
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description:
+      Reset GPIO pin (active-low)
+      Left blank if the device does not have reset pin
+      or the pin is not connected in your application.
+
+  int-gpios:
+    type: phandle-array
+    description:
+      Interrupt GPIO pin (active-low open-drain)
+      Left blank if the pin is not connected in your
+      application.
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags

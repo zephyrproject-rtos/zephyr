@@ -20,6 +20,16 @@ schema;scenario-schema:
     "arch_allow":
       type: any
       required: false
+    "vendor_exclude":
+      type: seq
+      required: false
+      sequence:
+        - type: str
+    "vendor_allow":
+      type: seq
+      required: false
+      sequence:
+        - type: str
     "testcases":
       type: seq
       required: false
@@ -120,8 +130,11 @@ schema;scenario-schema:
           required: false
           sequence:
             - type: str
-        "robot_test_path":
-          type: str
+        "robot_testsuite":
+          type: any
+          required: false
+        "robot_option":
+          type: any
           required: false
         "record":
           type: map

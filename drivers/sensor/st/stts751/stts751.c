@@ -131,7 +131,7 @@ static int stts751_attr_set(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api stts751_api_funcs = {
+static DEVICE_API(sensor, stts751_api_funcs) = {
 	.attr_set = stts751_attr_set,
 	.sample_fetch = stts751_sample_fetch,
 	.channel_get = stts751_channel_get,

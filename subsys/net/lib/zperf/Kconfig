@@ -28,7 +28,7 @@ config ZPERF_WORK_Q_STACK_SIZE
 module = NET_ZPERF
 module-dep = NET_LOG
 module-str = Log level for zperf
-module-help = Enable debug message of zperf libray.
+module-help = Enable debug message of zperf library.
 source "subsys/net/Kconfig.template.log_config.net"
 
 config NET_ZPERF_MAX_PACKET_SIZE

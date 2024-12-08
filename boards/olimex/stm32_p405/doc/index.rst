@@ -1,19 +1,10 @@
-.. _olimex_stm32_p405:
-
-OLIMEX-STM32-P405
-#################
+.. zephyr:board:: olimex_stm32_p405
 
 Overview
 ********
 
 The OLIMEX-STM32-P405 board is based on the STMicroelectronics STM32F405RG ARM
 Cortex-M4 CPU.
-
-.. figure:: img/olimex_stm32_p405.jpg
-     :align: center
-     :alt: OLIMEX-STM32-P405
-
-     OLIMEX-STM32-P405
 
 Hardware
 ********
@@ -216,7 +207,7 @@ In the following examples a ST-Link V2 USB dongle is used.
 Flashing an application to the Olimex-STM32-P405
 ================================================
 
-The sample application :ref:`hello_world` is being used in this tutorial.
+The sample application :zephyr:code-sample:`hello_world` is being used in this tutorial.
 
 Connect the ST-Link USB dongle to your host computer and to the JTAG port of
 the OLIMEX-STM32-P405 board.
@@ -245,7 +236,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

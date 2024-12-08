@@ -1,0 +1,17 @@
+# Copyright 2024 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.i2c.emul.target_pio:
+    platform_allow:
+      - native_sim
+    extra_configs:
+      - CONFIG_I2C_TARGET_BUFFER_MODE=n
+  drivers.i2c.emul.target_buf:
+    platform_allow:
+      - native_sim
+    extra_configs:
+      - CONFIG_I2C_TARGET_BUFFER_MODE=y
+    extra_dtc_overlay_files:
+      - "boards/native_sim.overlay"
+      - "boards/native_sim.buf.overlay"

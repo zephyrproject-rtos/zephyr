@@ -27,6 +27,7 @@
 
 static unsigned int seed = 0x5678;
 static bool seed_random;
+static bool seed_set;
 
 static int entropy_native_posix_get_entropy(const struct device *dev,
 					    uint8_t *buffer,
@@ -69,13 +70,16 @@ static int entropy_native_posix_get_entropy_isr(const struct device *dev,
 static int entropy_native_posix_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
-	entropy_native_seed(seed, seed_random);
+	if (seed_set || seed_random ||
+	    IS_ENABLED(CONFIG_FAKE_ENTROPY_NATIVE_POSIX_SEED_BY_DEFAULT)) {
+		entropy_native_seed(seed, seed_random);
+	}
 	posix_print_warning("WARNING: "
 			    "Using a test - not safe - entropy source\n");
 	return 0;
 }
 
-static const struct entropy_driver_api entropy_native_posix_api_funcs = {
+static DEVICE_API(entropy, entropy_native_posix_api_funcs) = {
 	.get_entropy     = entropy_native_posix_get_entropy,
 	.get_entropy_isr = entropy_native_posix_get_entropy_isr
 };
@@ -86,6 +90,13 @@ DEVICE_DT_INST_DEFINE(0,
 		    PRE_KERNEL_1, CONFIG_ENTROPY_INIT_PRIORITY,
 		    &entropy_native_posix_api_funcs);
 
+static void seed_was_set(char *argv, int offset)
+{
+	ARG_UNUSED(argv);
+	ARG_UNUSED(offset);
+	seed_set = true;
+}
+
 static void add_fake_entropy_option(void)
 {
 	static struct args_struct_t entropy_options[] = {
@@ -94,6 +105,7 @@ static void add_fake_entropy_option(void)
 			.name = "r_seed",
 			.type = 'u',
 			.dest = (void *)&seed,
+			.call_when_found = seed_was_set,
 			.descript = "A 32-bit integer seed value for the entropy device, such as "
 				    "97229 (decimal), 0x17BCD (hex), or 0275715 (octal)"
 		},

@@ -21,3 +21,6 @@ ExternalZephyrProject_Add(
 # remote core's build, such as the output image's LMA
 add_dependencies(${DEFAULT_IMAGE} ${REMOTE_APP})
 sysbuild_add_dependencies(CONFIGURE ${DEFAULT_IMAGE} ${REMOTE_APP})
+
+native_simulator_set_child_images(${DEFAULT_IMAGE} remote)
+native_simulator_set_final_executable(${DEFAULT_IMAGE})

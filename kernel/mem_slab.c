@@ -204,7 +204,6 @@ out:
 	return rc;
 }
 
-#if __ASSERT_ON
 static bool slab_ptr_is_good(struct k_mem_slab *slab, const void *ptr)
 {
 	const char *p = ptr;
@@ -214,7 +213,6 @@ static bool slab_ptr_is_good(struct k_mem_slab *slab, const void *ptr)
 	       (offset < (slab->info.block_size * slab->info.num_blocks)) &&
 	       ((offset % slab->info.block_size) == 0);
 }
-#endif
 
 int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem, k_timeout_t timeout)
 {
@@ -250,7 +248,7 @@ int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem, k_timeout_t timeout)
 		/* wait for a free block or timeout */
 		result = z_pend_curr(&slab->lock, key, &slab->wait_q, timeout);
 		if (result == 0) {
-			*mem = _current->base.swap_data;
+			*mem = arch_current_thread()->base.swap_data;
 		}
 
 		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mem_slab, alloc, slab, timeout, result);
@@ -267,15 +265,19 @@ int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem, k_timeout_t timeout)
 
 void k_mem_slab_free(struct k_mem_slab *slab, void *mem)
 {
-	k_spinlock_key_t key = k_spin_lock(&slab->lock);
+	if (!slab_ptr_is_good(slab, mem)) {
+		__ASSERT(false, "Invalid memory pointer provided");
+		k_panic();
+		return;
+	}
 
-	__ASSERT(slab_ptr_is_good(slab, mem), "Invalid memory pointer provided");
+	k_spinlock_key_t key = k_spin_lock(&slab->lock);
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_mem_slab, free, slab);
 	if ((slab->free_list == NULL) && IS_ENABLED(CONFIG_MULTITHREADING)) {
 		struct k_thread *pending_thread = z_unpend_first_thread(&slab->wait_q);
 
-		if (pending_thread != NULL) {
+		if (unlikely(pending_thread != NULL)) {
 			SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mem_slab, free, slab);
 
 			z_thread_return_value_set_with_data(pending_thread, 0, mem);

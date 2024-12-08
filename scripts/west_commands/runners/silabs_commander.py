@@ -11,8 +11,8 @@ See SiLabs UG162: "Simplicity Commander Reference Guide" for more info.
 
 import os
 import shlex
-from runners.core import ZephyrBinaryRunner, RunnerCaps, FileType
 
+from runners.core import FileType, RunnerCaps, ZephyrBinaryRunner
 
 DEFAULT_APP = 'commander'
 
@@ -119,9 +119,10 @@ class SiLabsCommanderBinaryRunner(ZephyrBinaryRunner):
                 flash_file = self.bin_name
                 flash_args = ['--binary', '--address', f'0x{flash_addr:x}', flash_file]
             else:
-                raise ValueError(f'Cannot flash; no hex ({self.hex_name}) or bin ({self.bin_name}) files found.')
+                raise ValueError(f'Cannot flash; no hex ({self.hex_name}) or '
+                                 f'bin ({self.bin_name}) files found.')
 
         args = [self.commander, 'flash'] + opts + self.tool_opt + flash_args
 
-        self.logger.info('Flashing file: {}'.format(flash_file))
+        self.logger.info(f'Flashing file: {flash_file}')
         self.check_call(args)

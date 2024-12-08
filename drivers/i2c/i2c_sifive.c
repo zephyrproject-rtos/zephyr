@@ -316,10 +316,12 @@ static int i2c_sifive_init(const struct device *dev)
 	return 0;
 }
 
-
 static const struct i2c_driver_api i2c_sifive_api = {
 	.configure = i2c_sifive_configure,
 	.transfer = i2c_sifive_transfer,
+#ifdef CONFIG_I2C_RTIO
+	.iodev_submit = i2c_iodev_submit_fallback,
+#endif
 };
 
 /* Device instantiation */

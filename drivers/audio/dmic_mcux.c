@@ -686,7 +686,7 @@ static const struct _dmic_ops dmic_ops = {
 
 /* Gets pointer for a given PDM channel node */
 #define PDM_DMIC_CHAN_GET(pdm_node)						\
-	COND_CODE_1(DT_NODE_HAS_STATUS(pdm_node, okay),				\
+	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(pdm_node),				\
 		    (&pdm_channel_##pdm_node), (NULL)),
 
 /* Gets array of pointers to PDM channels */

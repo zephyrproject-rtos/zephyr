@@ -225,6 +225,8 @@ enum bmm150_presets {
 
 int bmm150_trigger_mode_init(const struct device *dev);
 
+int bmm150_trigger_mode_power_ctrl(const struct device *dev, bool enable);
+
 int bmm150_trigger_set(const struct device *dev,
 		       const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler);

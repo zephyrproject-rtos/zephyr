@@ -24,6 +24,7 @@ if WEBSOCKET_CLIENT
 
 config WEBSOCKET_MAX_CONTEXTS
 	int "Max number of websockets to allocate"
+	default SHELL_WEBSOCKET_BACKEND_COUNT if SHELL_BACKEND_WEBSOCKET
 	default 1
 	help
 	  How many Websockets can be created in the system.

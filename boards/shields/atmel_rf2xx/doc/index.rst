@@ -289,13 +289,13 @@ config file. See :zephyr:code-sample:`sockets-echo-server` and
 Build and Programming
 *********************
 
-Set ``-DSHIELD=<shield designator>`` when you invoke ``west build``.
+Set ``--shield <shield designator>`` when you invoke ``west build``.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/sockets/echo_server
    :host-os: unix
    :board: sam4s_xplained
-   :gen-args: -DOVERLAY_CONFIG=overlay-802154.conf
+   :gen-args: -DEXTRA_CONF_FILE=overlay-802154.conf
    :shield: atmel_rf2xx_xplained
    :goals: build flash
    :compact:
@@ -304,7 +304,7 @@ Set ``-DSHIELD=<shield designator>`` when you invoke ``west build``.
    :zephyr-app: samples/net/sockets/echo_server
    :host-os: unix
    :board: [sam4e_xpro | sam_v71_xult/samv71q21]
-   :gen-args: -DOVERLAY_CONFIG=overlay-802154.conf
+   :gen-args: -DEXTRA_CONF_FILE=overlay-802154.conf
    :shield: [atmel_rf2xx_xpro | atmel_rf2xx_legacy]
    :goals: build flash
    :compact:
@@ -313,7 +313,7 @@ Set ``-DSHIELD=<shield designator>`` when you invoke ``west build``.
    :zephyr-app: samples/net/sockets/echo_server
    :host-os: unix
    :board: [sam_v71_xult/samv71q21 | frdm_k64f | nucleo_f767zi]
-   :gen-args: -DOVERLAY_CONFIG=overlay-802154.conf
+   :gen-args: -DEXTRA_CONF_FILE=overlay-802154.conf
    :shield: atmel_rf2xx_arduino
    :goals: build flash
    :compact:
@@ -322,7 +322,7 @@ Set ``-DSHIELD=<shield designator>`` when you invoke ``west build``.
    :zephyr-app: samples/net/sockets/echo_server
    :host-os: unix
    :board: lpcxpresso55s69_ns
-   :gen-args: -DOVERLAY_CONFIG=overlay-802154.conf
+   :gen-args: -DEXTRA_CONF_FILE=overlay-802154.conf
    :shield: atmel_rf2xx_microbus
    :goals: build flash
    :compact:

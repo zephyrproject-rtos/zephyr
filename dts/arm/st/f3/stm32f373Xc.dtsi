@@ -22,7 +22,7 @@
 		dma2: dma@40020400 {
 			compatible = "st,stm32-dma-v2bis";
 			reg = <0x40020400 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x2>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 1U)>;
 			interrupts = <56 0 57 0 58 0 59 0 60 0>;
 			status = "disabled";
 		};
@@ -30,7 +30,7 @@
 		dac2: dac@40009800 {
 			compatible = "st,stm32-dac";
 			reg = <0x40009800 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x04000000>;
+			clocks = <&rcc STM32_CLOCK(APB1, 26U)>;
 			status = "disabled";
 			#io-channel-cells = <1>;
 		};

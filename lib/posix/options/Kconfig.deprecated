@@ -24,15 +24,6 @@ config FNMATCH
 
 	  Please use CONFIG_POSIX_C_LIB_EXT instead.
 
-config GETENTROPY
-	bool "Support for getentropy [DEPRECATED]"
-	select DEPRECATED
-	select POSIX_C_LIB_EXT
-	help
-	  This option is deprecated.
-
-	  Please use CONFIG_POSIX_C_LIB_EXT instead.
-
 config GETOPT
 	bool "Getopt library support [DEPRECATED]"
 	select DEPRECATED
@@ -90,24 +81,6 @@ config POSIX_CLOCK
 	  This option is deprecated.
 
 	  Please use CONFIG_POSIX_TIMERS instead.
-
-config POSIX_CONFSTR
-	bool "Retrieve string system configuration [DEPRECATED]"
-	select DEPRECATED
-	select POSIX_SINGLE_PROCESS
-	help
-	  This option is deprecated.
-
-	  Please use CONFIG_POSIX_SINGLE_PROCESS instead.
-
-config POSIX_ENV
-	bool "Support for environ, getenv(), getenv_r(), setenv(), and unsetenv() [DEPRECATED]"
-	select DEPRECATED
-	select POSIX_SINGLE_PROCESS
-	help
-	  This option is deprecated.
-
-	  Please use CONFIG_POSIX_SINGLE_PROCESS instead.
 
 config POSIX_FS
 	bool "Support for environ, getenv(), getenv_r(), setenv(), and unsetenv() [DEPRECATED]"
@@ -182,15 +155,6 @@ config POSIX_SYSCONF
 	  This option is deprecated.
 
 	  Please use CONFIG_POSIX_SINGLE_PROCESS instead.
-
-config POSIX_SYSLOG
-	bool "Support for syslog() [DEPRECATED]"
-	select DEPRECATED
-	select XSI_SYSTEM_LOGGING
-	help
-	  This option is deprecated.
-
-	  Please use CONFIG_XSI_SYSTEM_LOGGING instead.
 
 config POSIX_UNAME
 	bool "Support for uname [DEPRECATED]"

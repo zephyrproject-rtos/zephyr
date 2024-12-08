@@ -28,7 +28,7 @@ LOG_MODULE_DECLARE(llext, CONFIG_LLEXT_LOG_LEVEL);
 K_HEAP_DEFINE(llext_heap, CONFIG_LLEXT_HEAP_SIZE * 1024);
 
 /*
- * Initialize the memory partition associated with the extension memory
+ * Initialize the memory partition associated with the specified memory region
  */
 static void llext_init_mem_part(struct llext *ext, enum llext_mem mem_idx,
 			uintptr_t start, size_t len)
@@ -52,17 +52,14 @@ static void llext_init_mem_part(struct llext *ext, enum llext_mem mem_idx,
 		default:
 			break;
 		}
-		LOG_DBG("mem partition %d start 0x%lx, size %d", mem_idx,
-			ext->mem_parts[mem_idx].start,
-			ext->mem_parts[mem_idx].size);
 	}
 #endif
 
-	LOG_DBG("mem idx %d: start 0x%zx, size %zd", mem_idx, (size_t)start, len);
+	LOG_DBG("region %d: start 0x%zx, size %zd", mem_idx, (size_t)start, len);
 }
 
 static int llext_copy_section(struct llext_loader *ldr, struct llext *ext,
-			      enum llext_mem mem_idx)
+			      enum llext_mem mem_idx, const struct llext_load_param *ldr_parm)
 {
 	int ret;
 
@@ -71,15 +68,29 @@ static int llext_copy_section(struct llext_loader *ldr, struct llext *ext,
 	}
 	ext->mem_size[mem_idx] = ldr->sects[mem_idx].sh_size;
 
-	if (ldr->sects[mem_idx].sh_type != SHT_NOBITS &&
-	    IS_ENABLED(CONFIG_LLEXT_STORAGE_WRITABLE)) {
-		ext->mem[mem_idx] = llext_peek(ldr, ldr->sects[mem_idx].sh_offset);
-		if (ext->mem[mem_idx]) {
-			llext_init_mem_part(ext, mem_idx, (uintptr_t)ext->mem[mem_idx],
-				ldr->sects[mem_idx].sh_size);
+	if (IS_ENABLED(CONFIG_LLEXT_STORAGE_WRITABLE)) {
+		if (ldr->sects[mem_idx].sh_type != SHT_NOBITS) {
+			/* Directly use data from the ELF buffer if peek() is supported */
+			ext->mem[mem_idx] = llext_peek(ldr, ldr->sects[mem_idx].sh_offset);
+			if (ext->mem[mem_idx]) {
+				llext_init_mem_part(ext, mem_idx, (uintptr_t)ext->mem[mem_idx],
+						    ldr->sects[mem_idx].sh_size);
+				ext->mem_on_heap[mem_idx] = false;
+				return 0;
+			}
+		} else if (ldr_parm && ldr_parm->pre_located) {
+			/*
+			 * ldr_parm cannot be NULL here with the current flow, but
+			 * we add a check to make it future-proof
+			 */
+			ext->mem[mem_idx] = NULL;
 			ext->mem_on_heap[mem_idx] = false;
 			return 0;
 		}
+	}
+
+	if (ldr_parm && ldr_parm->pre_located) {
+		return -EFAULT;
 	}
 
 	/* On ARM with an MPU a pow(2, N)*32 sized and aligned region is needed,
@@ -134,16 +145,17 @@ err:
 
 int llext_copy_strings(struct llext_loader *ldr, struct llext *ext)
 {
-	int ret = llext_copy_section(ldr, ext, LLEXT_MEM_SHSTRTAB);
+	int ret = llext_copy_section(ldr, ext, LLEXT_MEM_SHSTRTAB, NULL);
 
 	if (!ret) {
-		ret = llext_copy_section(ldr, ext, LLEXT_MEM_STRTAB);
+		ret = llext_copy_section(ldr, ext, LLEXT_MEM_STRTAB, NULL);
 	}
 
 	return ret;
 }
 
-int llext_copy_sections(struct llext_loader *ldr, struct llext *ext)
+int llext_copy_regions(struct llext_loader *ldr, struct llext *ext,
+		       const struct llext_load_param *ldr_parm)
 {
 	for (enum llext_mem mem_idx = 0; mem_idx < LLEXT_MEM_COUNT; mem_idx++) {
 		/* strings have already been copied */
@@ -151,7 +163,7 @@ int llext_copy_sections(struct llext_loader *ldr, struct llext *ext)
 			continue;
 		}
 
-		int ret = llext_copy_section(ldr, ext, mem_idx);
+		int ret = llext_copy_section(ldr, ext, mem_idx, ldr_parm);
 
 		if (ret < 0) {
 			return ret;
@@ -161,9 +173,51 @@ int llext_copy_sections(struct llext_loader *ldr, struct llext *ext)
 	return 0;
 }
 
-void llext_free_sections(struct llext *ext)
+void llext_adjust_mmu_permissions(struct llext *ext)
+{
+#ifdef CONFIG_MMU
+	void *addr;
+	size_t size;
+	uint32_t flags;
+
+	for (enum llext_mem mem_idx = 0; mem_idx < LLEXT_MEM_PARTITIONS; mem_idx++) {
+		addr = ext->mem[mem_idx];
+		size = ROUND_UP(ext->mem_size[mem_idx], LLEXT_PAGE_SIZE);
+		if (size == 0) {
+			continue;
+		}
+		switch (mem_idx) {
+		case LLEXT_MEM_TEXT:
+			sys_cache_instr_invd_range(addr, size);
+			flags = K_MEM_PERM_EXEC;
+			break;
+		case LLEXT_MEM_DATA:
+		case LLEXT_MEM_BSS:
+			/* memory is already K_MEM_PERM_RW by default */
+			continue;
+		case LLEXT_MEM_RODATA:
+			flags = 0;
+			break;
+		default:
+			continue;
+		}
+		sys_cache_data_flush_range(addr, size);
+		k_mem_update_flags(addr, size, flags);
+	}
+#endif
+}
+
+void llext_free_regions(struct llext *ext)
 {
 	for (int i = 0; i < LLEXT_MEM_COUNT; i++) {
+#ifdef CONFIG_MMU
+		if (ext->mem_size[i] != 0) {
+			/* restore default RAM permissions */
+			k_mem_update_flags(ext->mem[i],
+					   ROUND_UP(ext->mem_size[i], LLEXT_PAGE_SIZE),
+					   K_MEM_PERM_RW);
+		}
+#endif
 		if (ext->mem_on_heap[i]) {
 			LOG_DBG("freeing memory region %d", i);
 			llext_free(ext->mem[i]);

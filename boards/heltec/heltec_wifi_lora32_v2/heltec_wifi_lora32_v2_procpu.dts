@@ -8,6 +8,7 @@
 #include <espressif/esp32/esp32_d0wd_v3.dtsi>
 #include "heltec_wifi_lora32_v2-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <espressif/partitions_0x1000_amp.dtsi>
 
 / {
 	model = "Heltec Wi-Fi Lora32 V2 PROCPU";
@@ -50,13 +51,17 @@
 	};
 
 	chosen {
-		zephyr,sram = &sram0;
+		zephyr,sram = &sram1;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,bt-hci = &esp32_bt_hci;
 	};
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(4)>;
 };
 
 &uart0 {
@@ -103,50 +108,6 @@
 			<&gpio1 2 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
 		spi-max-frequency = <1000000>;
 		power-amplifier-output = "pa-boost";
-	};
-};
-
-&flash0 {
-	/* the board is using plain d0wd SoC part without the flash
-	 * so any additional flash size should be defined at the board level
-	 */
-	reg = <0x0 DT_SIZE_M(8)>;
-
-	status = "okay";
-	partitions {
-		compatible = "fixed-partitions";
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		/* Reserve 60kB for the bootloader */
-		boot_partition: partition@1000 {
-			label = "mcuboot";
-			reg = <0x00001000 0x0000F000>;
-			read-only;
-		};
-
-		/* Reserve 1024kB for the application in slot 0 */
-		slot0_partition: partition@10000 {
-			label = "image-0";
-			reg = <0x00010000 0x00100000>;
-		};
-
-		/* Reserve 1024kB for the application in slot 1 */
-		slot1_partition: partition@110000 {
-			label = "image-1";
-			reg = <0x00110000 0x00100000>;
-		};
-
-		/* Reserve 256kB for the scratch partition */
-		scratch_partition: partition@210000 {
-			   label = "image-scratch";
-			   reg = <0x00210000 0x00040000>;
-		};
-
-		storage_partition: partition@250000 {
-			label = "storage";
-			reg = <0x00250000 0x00006000>;
-		};
 	};
 };
 

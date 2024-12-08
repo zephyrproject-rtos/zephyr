@@ -1,17 +1,10 @@
-.. _hifive_unmatched:
-
-SiFive HiFive Unmatched
-#######################
+.. zephyr:board:: hifive_unmatched
 
 Overview
 ********
 
 The HiFive Unmatched is a development board with a SiFive FU740-C000
 multi-core 64bit RISC-V SoC.
-
-.. image:: img/hifive_unmatched.jpg
-   :align: center
-   :alt: SiFive HiFive Unmatched board
 
 Programming and debugging
 *************************
@@ -22,9 +15,21 @@ Building
 Applications for the ``hifive_unmatched`` board configuration can be built as
 usual (see :ref:`build_an_application`) using the corresponding board name:
 
-.. zephyr-app-commands::
-   :board: hifive_unmatched
-   :goals: build
+.. tabs::
+
+   .. group-tab:: S7
+
+      .. zephyr-app-commands::
+         :zephyr-app: samples/hello_world
+         :board: hifive_unmatched/fu740/s7
+         :goals: build
+
+   .. group-tab:: U74
+
+      .. zephyr-app-commands::
+         :zephyr-app: samples/hello_world
+         :board: hifive_unmatched/fu740/u74
+         :goals: build
 
 Flashing
 ========

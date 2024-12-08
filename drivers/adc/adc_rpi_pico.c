@@ -91,8 +91,9 @@ static inline void adc_clear_errors(void)
 static inline void adc_enable(void)
 {
 	adc_hw->cs = ADC_CS_EN_BITS;
-	while (!(adc_hw->cs & ADC_CS_READY_BITS))
+	while (!(adc_hw->cs & ADC_CS_READY_BITS)) {
 		;
+	}
 }
 
 static int adc_rpi_channel_setup(const struct device *dev,
@@ -353,7 +354,7 @@ static int adc_rpi_init(const struct device *dev)
 #define ADC_RPI_INIT(idx)                                                                          \
 	IRQ_CONFIGURE_FUNC(idx)                                                                    \
 	PINCTRL_DT_INST_DEFINE(idx);                                                               \
-	static struct adc_driver_api adc_rpi_api_##idx = {                                         \
+	static DEVICE_API(adc, adc_rpi_api_##idx) = {                                              \
 		.channel_setup = adc_rpi_channel_setup,                                            \
 		.read = adc_rpi_read,                                                              \
 		.ref_internal = DT_INST_PROP(idx, vref_mv),                                        \

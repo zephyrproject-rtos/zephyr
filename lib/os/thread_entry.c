@@ -15,11 +15,11 @@
 #ifdef CONFIG_CURRENT_THREAD_USE_TLS
 #include <zephyr/random/random.h>
 
-__thread k_tid_t z_tls_current;
+Z_THREAD_LOCAL k_tid_t z_tls_current;
 #endif
 
 #ifdef CONFIG_STACK_CANARIES_TLS
-extern __thread volatile uintptr_t __stack_chk_guard;
+extern Z_THREAD_LOCAL volatile uintptr_t __stack_chk_guard;
 #endif /* CONFIG_STACK_CANARIES_TLS */
 
 /*

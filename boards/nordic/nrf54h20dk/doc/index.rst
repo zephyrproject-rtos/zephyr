@@ -20,11 +20,17 @@ The nRF54H20 is a multicore SoC with:
   Extensions, running at up to 320 MHz, referred to as the **application core**
 * an Arm Cortex-M33 core with DSP instructions, FPU, and Armv8-M Security
   Extensions, running at up to 256 MHz, referred to as the **radio core**.
+* a Nordic VPR RISC-V core, referred to as the **ppr core** (Peripheral
+  Processor).
 
 The ``nrf54h20dk/nrf54h20/cpuapp`` build target provides support for
 the application core on the nRF54H20 SoC.
 The ``nrf54h20dk/nrf54h20/cpurad`` build target provides support for
 the radio core on the nRF54H20 SoC.
+The ``nrf54h20dk/nrf54h20/cpuppr`` build target provides support for
+the PPR core on the nRF54H20 SoC executing from RAM.
+The ``nrf54h20dk/nrf54h20/cpuppr/xip`` build target provides support for
+the PPR core on the nRF54H20 SoC executing from MRAM.
 
 nRF54H20 SoC provides support for the following devices:
 
@@ -33,6 +39,7 @@ nRF54H20 SoC provides support for the following devices:
 * :abbr:`GPIO (General Purpose Input Output)`
 * :abbr:`GRTC (Global real-time counter)`
 * :abbr:`I2C (Inter-Integrated Circuit)`
+* MEMCONF
 * MRAM
 * :abbr:`PWM (Pulse Width Modulation)`
 * RADIO (Bluetooth Low Energy and 802.15.4)
@@ -64,6 +71,8 @@ hardware features:
 +-----------+------------+----------------------+
 | I2C(M)    | on-chip    | i2c                  |
 +-----------+------------+----------------------+
+| MEMCONF   | on-chip    | retained_mem         |
++-----------+------------+----------------------+
 | SPI(M/S)  | on-chip    | spi                  |
 +-----------+------------+----------------------+
 | UART      | on-chip    | serial               |
@@ -82,6 +91,8 @@ hardware features:
 | GRTC      | on-chip    | system clock         |
 +-----------+------------+----------------------+
 | I2C(M)    | on-chip    | i2c                  |
++-----------+------------+----------------------+
+| MEMCONF   | on-chip    | retained_mem         |
 +-----------+------------+----------------------+
 | SPI(M/S)  | on-chip    | spi                  |
 +-----------+------------+----------------------+
@@ -115,24 +126,21 @@ Push buttons
 Programming and Debugging
 *************************
 
-Applications for both the ``nrf54h20dk/nrf54h20/cpuapp`` and
-``nrf54h20dk/nrf54h20/cpurad`` targets can be built, flashed,
-and debugged in the usual way. See :ref:`build_an_application`
-and :ref:`application_run` for more details on building and running.
+Applications for all targets can be built and flashed the usual way.
+See :ref:`build_an_application` and :ref:`application_run` for more details on
+building and running. Debugging is for now limited to the application and radio
+cores only, using :ref:`nordic_segger`.
 
 Flashing
 ========
 
-As an example, this section shows how to build and flash the :ref:`hello_world`
+As an example, this section shows how to build and flash the :zephyr:code-sample:`hello_world`
 application.
-
-Follow the instructions in the :ref:`nordic_segger` page to install
-and configure all the necessary software. Further information can be
-found in :ref:`nordic_segger_flashing`.
 
 To build and program the sample to the nRF54H20 DK, complete the following steps:
 
 1. Connect the nRF54H20 DK to your computer using the IMCU USB port on the DK.
+2. Install `nRF Util`_
 #. Build the sample by running the following command:
 
    .. zephyr-app-commands::
@@ -152,3 +160,6 @@ on the board are working properly with Zephyr:
 You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The button and LED definitions can be found in
 :zephyr_file:`boards/nordic/nrf54h20dk/nrf54h20dk_nrf54h20_cpuapp.dts`.
+
+.. _nRF Util:
+   https://www.nordicsemi.com/Products/Development-tools/nrf-util

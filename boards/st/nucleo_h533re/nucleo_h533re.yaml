@@ -10,8 +10,15 @@ toolchain:
 ram: 272
 flash: 512
 supported:
+  - arduino_gpio
+  - arduino_serial
+  - arduino_spi
   - gpio
+  - spi
   - watchdog
   - pwm
   - rtc
+  - adc
+  - usb_device
+  - backup_sram
 vendor: st

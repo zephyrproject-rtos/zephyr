@@ -1,7 +1,4 @@
-.. _sam4l_ek:
-
-SAM4L-EK
-########
+.. zephyr:board:: sam4l_ek
 
 Overview
 ********
@@ -21,10 +18,6 @@ The SAM4L-EK is a full featured design to develop for Atmel SAM4L SoC series.
 The kit is equipped with a rich set of peripherals that make the ATSAM4L-EK a
 perfect evaluation platform.  Download the `SAM4L-EK Online User Guide`_ for
 more details.
-
-.. image:: img/atmel-sam4l-ek-callouts.jpg
-     :align: center
-     :alt: SAM4L-EK
 
 Hardware
 ********
@@ -140,7 +133,7 @@ Flashing
    - Stop bits: 1
 
 #. Connect the SAM4L-EK board to your host computer using the USB debug port.
-   Then build and flash the :ref:`hello_world` application.
+   Then build and flash the :zephyr:code-sample:`hello_world` application.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
@@ -153,7 +146,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

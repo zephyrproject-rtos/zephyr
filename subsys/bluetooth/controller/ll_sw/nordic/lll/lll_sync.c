@@ -132,9 +132,11 @@ static void prepare(void *param)
 
 	lll = p->param;
 
+	lll->lazy_prepare = p->lazy;
+
 	/* Accumulate window widening */
 	lll->window_widening_prepare_us += lll->window_widening_periodic_us *
-					   (p->lazy + 1U);
+					   (lll->lazy_prepare + 1U);
 	if (lll->window_widening_prepare_us > lll->window_widening_max_us) {
 		lll->window_widening_prepare_us = lll->window_widening_max_us;
 	}
@@ -272,7 +274,7 @@ static int create_prepare_cb(struct lll_prepare_param *p)
 	lll = p->param;
 
 	/* Calculate the current event latency */
-	lll->skip_event = lll->skip_prepare + p->lazy;
+	lll->skip_event = lll->skip_prepare + lll->lazy_prepare;
 
 	/* Calculate the current event counter value */
 	event_counter = lll->event_counter + lll->skip_event;
@@ -360,7 +362,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	lll = p->param;
 
 	/* Calculate the current event latency */
-	lll->skip_event = lll->skip_prepare + p->lazy;
+	lll->skip_event = lll->skip_prepare + lll->lazy_prepare;
 
 	/* Calculate the current event counter value */
 	event_counter = lll->event_counter + lll->skip_event;
@@ -562,6 +564,13 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 
 		lll_sync_next = ull_sync_lll_is_valid_get(next);
 		if (!lll_sync_next) {
+			lll_sync_curr = curr;
+
+			/* Do not abort if near supervision timeout */
+			if (lll_sync_curr->forced) {
+				return 0;
+			}
+
 			/* Abort current event as next event is not a
 			 * scan and not a scan aux event.
 			 */
@@ -624,7 +633,7 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 
 	/* Accumulate the latency as event is aborted while being in pipeline */
 	lll = prepare_param->param;
-	lll->skip_prepare += (prepare_param->lazy + 1U);
+	lll->skip_prepare += (lll->lazy_prepare + 1U);
 
 	/* Extra done event, to check sync lost */
 	e = ull_event_done_extra_get();
@@ -738,6 +747,7 @@ static void isr_aux_setup(void *param)
 	aux_start_us -= EVENT_JITTER_US;
 
 	start_us = radio_tmr_start_us(0, aux_start_us);
+	LL_ASSERT(start_us == (aux_start_us + 1U));
 
 	/* Setup header complete timeout */
 	hcto = start_us;
@@ -804,6 +814,11 @@ static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t crc_ok,
 		 * again a node_rx for periodic report incomplete.
 		 */
 		if (node_type != NODE_RX_TYPE_EXT_AUX_REPORT) {
+			/* Reset Sync context association with any Aux context
+			 * as a new chain is being setup for reception here.
+			 */
+			lll->lll_aux = NULL;
+
 			node_rx = ull_pdu_rx_alloc_peek(4);
 		} else {
 			node_rx = ull_pdu_rx_alloc_peek(3);
@@ -858,7 +873,7 @@ static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t crc_ok,
 				 * report with valid packet_status if there were free nodes for
 				 * that. Or report insufficient resources for IQ data report.
 				 *
-				 * Retunred value is not checked because it does not matter if there
+				 * Returned value is not checked because it does not matter if there
 				 * is a IQ report to be send towards ULL. There is always periodic
 				 * sync report to be send.
 				 */
@@ -1146,8 +1161,8 @@ isr_rx_aux_chain_done:
 #endif /* CONFIG_BT_CTLR_DF_SAMPLE_CTE_FOR_PDU_WITH_BAD_CRC */
 		} else {
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
-			/* Report insufficient resurces for IQ data report and relese additional
-			 * noder_rx_iq_data stored in lll_sync object, to vaoid buffers leakage.
+			/* Report insufficient resources for IQ data report and release additional
+			 * noder_rx_iq_data stored in lll_sync object, to avoid buffers leakage.
 			 */
 			iq_report_incomplete_create_put(lll);
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
@@ -1281,7 +1296,7 @@ static void iq_report_incomplete_create(struct lll_sync *lll, struct node_rx_iq_
 	 * may be invalid in case of insufficient resources.
 	 */
 	iq_report->rssi_ant_id = radio_df_pdu_antenna_switch_pattern_get();
-	/* Accodring to BT 5.3, Vol 4, Part E, section 7.7.65.21 below
+	/* According to BT 5.3, Vol 4, Part E, section 7.7.65.21 below
 	 * fields have invalid values in case of insufficient resources.
 	 */
 	iq_report->cte_info =

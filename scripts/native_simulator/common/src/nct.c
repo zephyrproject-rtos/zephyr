@@ -60,6 +60,8 @@
 
 #define NCT_DEBUG_PRINTS 0
 
+/* For pthread_setname_np() */
+#define _GNU_SOURCE
 #include <pthread.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -645,6 +647,14 @@ int nct_get_unique_thread_id(void *this_arg, int thread_idx)
 	struct threads_table_el *tt_el = ttable_get_element(this, thread_idx);
 
 	return tt_el->thead_cnt;
+}
+
+int nct_thread_name_set(void *this_arg, int thread_idx, const char *str)
+{
+	struct te_status_t *this = (struct te_status_t *)this_arg;
+	struct threads_table_el *tt_el = ttable_get_element(this, thread_idx);
+
+	return pthread_setname_np(tt_el->thread, str);
 }
 
 /*

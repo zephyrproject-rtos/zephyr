@@ -67,6 +67,7 @@ struct flash_flexspi_nor_data {
 	const struct device *controller;
 	flexspi_device_config_t config;
 	flexspi_port_t port;
+	uint64_t size;
 	struct flash_pages_layout layout;
 	struct flash_parameters flash_parameters;
 };
@@ -497,6 +498,15 @@ static const struct flash_parameters *flash_flexspi_nor_get_parameters(
 	return &data->flash_parameters;
 }
 
+static int flash_flexspi_nor_get_size(const struct device *dev, uint64_t *size)
+{
+	const struct flash_flexspi_nor_data *data = dev->data;
+
+	*size = data->size;
+
+	return 0;
+}
+
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 static void flash_flexspi_nor_pages_layout(const struct device *dev,
 		const struct flash_pages_layout **layout, size_t *layout_size)
@@ -547,11 +557,12 @@ static int flash_flexspi_nor_init(const struct device *dev)
 	return 0;
 }
 
-static const struct flash_driver_api flash_flexspi_nor_api = {
+static DEVICE_API(flash, flash_flexspi_nor_api) = {
 	.erase = flash_flexspi_nor_erase,
 	.write = flash_flexspi_nor_write,
 	.read = flash_flexspi_nor_read,
 	.get_parameters = flash_flexspi_nor_get_parameters,
+	.get_size = flash_flexspi_nor_get_size,
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = flash_flexspi_nor_pages_layout,
 #endif
@@ -595,6 +606,7 @@ static const struct flash_driver_api flash_flexspi_nor_api = {
 		.controller = DEVICE_DT_GET(DT_INST_BUS(n)),		\
 		.config = FLASH_FLEXSPI_DEVICE_CONFIG(n),		\
 		.port = DT_INST_REG_ADDR(n),				\
+		.size = DT_INST_PROP(n, size) / 8,			\
 		.layout = {						\
 			.pages_count = DT_INST_PROP(n, size) / 8	\
 				/ SPI_NOR_SECTOR_SIZE,			\

@@ -127,7 +127,7 @@ static int neorv32_trng_pm_action(const struct device *dev, enum pm_device_actio
 }
 #endif /* CONFIG_PM_DEVICE */
 
-static const struct entropy_driver_api neorv32_trng_driver_api = {
+static DEVICE_API(entropy, neorv32_trng_driver_api) = {
 	.get_entropy = neorv32_trng_get_entropy,
 	.get_entropy_isr = neorv32_trng_get_entropy_isr,
 };

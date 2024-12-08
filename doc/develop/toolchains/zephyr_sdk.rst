@@ -151,7 +151,7 @@ Zephyr SDK installation
             curl -L -O |sdk-url-macos|
             curl -L |sdk-url-macos-sha| | shasum --check --ignore-missing
 
-         If your host architecture is 64-bit ARM (Apple Silicon, also known as M1), replace
+         If your host architecture is 64-bit ARM (Apple Silicon), replace
          ``x86_64`` with ``aarch64`` in order to download the 64-bit ARM macOS SDK.
 
       #. Extract the Zephyr SDK bundle archive:

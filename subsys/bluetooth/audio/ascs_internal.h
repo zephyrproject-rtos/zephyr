@@ -3,6 +3,7 @@
 
  * Copyright (c) 2020 Intel Corporation
  * Copyright (c) 2022-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2024 Demant A/S
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -351,10 +352,13 @@ int ascs_ep_set_state(struct bt_bap_ep *ep, uint8_t state);
 
 int bt_ascs_config_ase(struct bt_conn *conn, struct bt_bap_stream *stream,
 		       struct bt_audio_codec_cfg *codec_cfg,
-		       const struct bt_audio_codec_qos_pref *qos_pref);
+		       const struct bt_bap_qos_cfg_pref *qos_pref);
 int bt_ascs_disable_ase(struct bt_bap_ep *ep);
 int bt_ascs_release_ase(struct bt_bap_ep *ep);
 
 void bt_ascs_foreach_ep(struct bt_conn *conn, bt_bap_ep_func_t func, void *user_data);
+
+int bt_ascs_register(uint8_t snk_cnt, uint8_t src_cnt);
+int bt_ascs_unregister(void);
 
 #endif /* BT_ASCS_INTERNAL_H */

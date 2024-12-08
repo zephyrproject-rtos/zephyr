@@ -26,23 +26,6 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-m4f";
 			reg = <0>;
-			cpu-power-states = <&suspend_to_idle0 &suspend_to_idle1>;
-		};
-
-		power-states {
-			suspend_to_idle0: suspend-to-idle0 {
-				compatible = "zephyr,power-state";
-				power-state-name = "suspend-to-idle";
-				substate-id = <0>;
-				min-residency-us = <1000>;
-			};
-
-			suspend_to_idle1: suspend-to-idle1 {
-				compatible = "zephyr,power-state";
-				power-state-name = "suspend-to-idle";
-				substate-id = <1>;
-				min-residency-us = <201000>;
-			};
 		};
 	};
 

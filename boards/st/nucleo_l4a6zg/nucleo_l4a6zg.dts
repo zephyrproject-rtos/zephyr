@@ -141,3 +141,7 @@
 &wwdg {
 	status = "okay";
 };
+
+&aes {
+	status = "okay";
+};

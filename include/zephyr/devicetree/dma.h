@@ -221,6 +221,25 @@ extern "C" {
 	DT_PHA_BY_NAME(node_id, dmas, name, cell)
 
 /**
+ * @brief Like DT_DMAS_CELL_BY_NAME(), but with a fallback to @p default_value
+ *
+ * If the value exists, this expands to DT_DMAS_CELL_BY_NAME(node_id,
+ * name, cell). The @p default_value parameter is not expanded in this case.
+ *
+ * Otherwise, this expands to @p default_value.
+ *
+ * @param node_id node identifier for a node with a dmas property
+ * @param name lowercase-and-underscores name of a dmas element
+ *             as defined by the node's dma-names property
+ * @param cell lowercase-and-underscores cell name
+ * @param default_value a fallback value to expand to
+ * @return the cell's value or @p default_value
+ * @see DT_PHA_BY_NAME_OR()
+ */
+#define DT_DMAS_CELL_BY_NAME_OR(node_id, name, cell, default_value) \
+	DT_PHA_BY_NAME_OR(node_id, dmas, name, cell, default_value)
+
+/**
  * @brief Get a DT_DRV_COMPAT instance's DMA specifier's cell value by name
  * @param inst DT_DRV_COMPAT instance number
  * @param name lowercase-and-underscores name of a dmas element

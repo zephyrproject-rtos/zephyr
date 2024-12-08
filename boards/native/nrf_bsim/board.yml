@@ -1,13 +1,16 @@
 boards:
 - name: nrf52_bsim
+  full_name: nRF52 simulated board (BabbleSim)
   vendor: zephyr
   socs:
   - name: native
 - name: nrf5340bsim
+  full_name: nRF5340 simulated boards (BabbleSim)
   vendor: zephyr
   socs:
   - name: nrf5340
 - name: nrf54l15bsim
+  full_name: nRF54L15 simulated boards (BabbleSim)
   vendor: zephyr
   socs:
   - name: nrf54l15

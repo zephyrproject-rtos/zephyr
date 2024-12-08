@@ -51,8 +51,10 @@ static bool input_dump_enabled(void)
 }
 #endif /* CONFIG_INPUT_SHELL */
 
-static void input_dump_cb(struct input_event *evt)
+static void input_dump_cb(struct input_event *evt, void *user_data)
 {
+	ARG_UNUSED(user_data);
+
 	if (!input_dump_enabled()) {
 		return;
 	}
@@ -64,7 +66,7 @@ static void input_dump_cb(struct input_event *evt)
 		evt->code,
 		evt->value);
 }
-INPUT_CALLBACK_DEFINE(NULL, input_dump_cb);
+INPUT_CALLBACK_DEFINE(NULL, input_dump_cb, NULL);
 #endif /* CONFIG_INPUT_EVENT_DUMP */
 
 #ifdef CONFIG_INPUT_SHELL
@@ -162,11 +164,13 @@ static void kbd_matrix_state_log_entry(char *header, kbd_row_t *data)
 		kbd_matrix_state_dev->name, header, kbd_matrix_buf, count);
 }
 
-static void kbd_matrix_state_log(struct input_event *evt)
+static void kbd_matrix_state_log(struct input_event *evt, void *user_data)
 {
 	const struct input_kbd_matrix_common_config *cfg;
 	static uint32_t row, col;
 	static bool val;
+
+	ARG_UNUSED(user_data);
 
 	if (kbd_matrix_state_dev == NULL || kbd_matrix_state_dev != evt->dev) {
 		return;
@@ -212,7 +216,7 @@ static void kbd_matrix_state_log(struct input_event *evt)
 
 	kbd_matrix_state_log_entry("state", kbd_matrix_state);
 }
-INPUT_CALLBACK_DEFINE(NULL, kbd_matrix_state_log);
+INPUT_CALLBACK_DEFINE(NULL, kbd_matrix_state_log, NULL);
 
 static int input_cmd_kbd_matrix_state_dump(const struct shell *sh,
 					   size_t argc, char *argv[])

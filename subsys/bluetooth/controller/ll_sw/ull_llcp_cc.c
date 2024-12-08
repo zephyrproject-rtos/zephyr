@@ -299,14 +299,6 @@ static void rp_cc_state_idle(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 	}
 }
 
-static inline bool phy_valid(uint8_t phy)
-{
-	/* This is equivalent to:
-	 * exactly one bit set, and no bit set is rfu's
-	 */
-	return (phy == PHY_1M || phy == PHY_2M || phy == PHY_CODED);
-}
-
 static uint8_t rp_cc_check_phy(struct ll_conn *conn, struct proc_ctx *ctx,
 					    struct pdu_data *pdu)
 {

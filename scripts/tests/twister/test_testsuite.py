@@ -17,6 +17,7 @@ from contextlib import nullcontext
 ZEPHYR_BASE = os.getenv('ZEPHYR_BASE')
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, 'scripts', 'pylib', 'twister'))
 
+from twisterlib.statuses import TwisterStatus
 from twisterlib.testsuite import (
     _find_src_dir_path,
     _get_search_area_boundary,
@@ -164,7 +165,7 @@ TESTDATA_2 = [
         ),
         ScanPathResult(
             warnings=None,
-            matches=['1a', '1b'],
+            matches=['feature5.1a', 'feature5.1b'],
             has_registered_test_suites=False,
             has_run_registered_test_suites=True,
             has_test_main=False,
@@ -647,7 +648,10 @@ def test_scan_testsuite_path(
 
     def mock_stat(filename, *args, **kwargs):
         result = mock.Mock()
-        type(result).st_size = sizes[filename]
+        # as we may call os.stat in code
+        # some protection need add here
+        if filename in sizes:
+            type(result).st_size = sizes[filename]
 
         return result
 
@@ -856,11 +860,11 @@ def test_testsuite_load(
 def test_testcase_dunders():
     case_lesser = TestCase(name='A lesser name')
     case_greater = TestCase(name='a greater name')
-    case_greater.status = 'success'
+    case_greater.status = TwisterStatus.FAIL
 
     assert case_lesser < case_greater
     assert str(case_greater) == 'a greater name'
-    assert repr(case_greater) == '<TestCase a greater name with success>'
+    assert repr(case_greater) == f'<TestCase a greater name with {str(TwisterStatus.FAIL)}>'
 
 
 TESTDATA_11 = [

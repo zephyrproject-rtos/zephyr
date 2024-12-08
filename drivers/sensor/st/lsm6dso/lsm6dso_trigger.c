@@ -37,8 +37,9 @@ static int lsm6dso_enable_t_int(const struct device *dev, int enable)
 	}
 
 	/* set interrupt (TEMP DRDY interrupt is only on INT2) */
-	if (cfg->int_pin == 1)
+	if (cfg->int_pin == 1) {
 		return -EIO;
+	}
 
 	lsm6dso_read_reg(ctx, LSM6DSO_INT2_CTRL, (uint8_t *)&int2_ctrl, 1);
 	int2_ctrl.int2_drdy_temp = enable;

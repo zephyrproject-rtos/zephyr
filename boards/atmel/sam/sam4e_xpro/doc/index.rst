@@ -1,17 +1,10 @@
-.. _sam4e_xpro:
-
-SAM4E Xplained Pro
-###################
+.. zephyr:board:: sam4e_xpro
 
 Overview
 ********
 
 The SAM4E Xplained Pro evaluation kit is a development platform to evaluate the
 Atmel SAM4E series microcontrollers.
-
-.. image:: img/sam4e_xpro.jpg
-     :align: center
-     :alt: SAM4E Xplained Pro
 
 Hardware
 ********
@@ -122,7 +115,7 @@ Using OpenOCD
 -------------
 
 #. Connect the SAM4E Xplained Pro board to your host computer using the USB
-   debug port. Then build and flash the :ref:`hello_world` application.
+   debug port. Then build and flash the :zephyr:code-sample:`hello_world` application.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
@@ -138,7 +131,7 @@ Using SAM-BA bootloader
 #. Open the ``ERASE`` jumper.
 
 #. Connect the SAM4E Xplained Pro board to your host computer using the SoC
-   USB port. Then build and flash the :ref:`hello_world` application.
+   USB port. Then build and flash the :zephyr:code-sample:`hello_world` application.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
@@ -175,7 +168,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

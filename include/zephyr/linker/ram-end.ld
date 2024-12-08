@@ -12,4 +12,4 @@
 	_image_ram_size = _image_ram_end - _image_ram_start;
 	_end = .; /* end of image */
 	z_mapped_end = .;
-    } GROUP_NOLOAD_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
+    } GROUP_NOLOAD_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)

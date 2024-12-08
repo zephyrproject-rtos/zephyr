@@ -24,6 +24,7 @@
 		zephyr,dtcm = &dtcm;
 		zephyr,flash-controller = &n25q128a1;
 		zephyr,display = &ltdc;
+		zephyr,touch = &ft5336;
 	};
 
 	leds {

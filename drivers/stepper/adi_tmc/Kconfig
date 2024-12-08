@@ -1,0 +1,32 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 Carl Zeiss Meditec AG
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig STEPPER_ADI_TMC
+	bool "Trinamic Stepper Controller"
+	depends on STEPPER
+	default y
+	help
+	  Enable trinamic stepper controller
+
+if STEPPER_ADI_TMC
+
+config STEPPER_ADI_TMC_RAMP_GEN
+	bool "Use Trinamic Stepper Controller with Ramp Generator"
+	depends on STEPPER_ADI_TMC
+	default y
+	help
+	  Enable ramp generator for trinamic stepper controller
+
+config STEPPER_ADI_TMC_SPI
+	bool "Use Trinamic Stepper Controller with SPI"
+	depends on STEPPER_ADI_TMC
+	select SPI
+	help
+	  A Trinamic Stepper Controller with SPI is enabled
+
+comment "Trinamic Stepper Drivers"
+
+rsource "Kconfig.tmc22xx"
+rsource "Kconfig.tmc5041"
+
+endif # STEPPER_ADI_TMC

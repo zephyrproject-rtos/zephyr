@@ -35,7 +35,7 @@ The following :ref:`Kconfig <kconfig>` options enable additional subcommands and
   well.
 * :kconfig:option:`CONFIG_CAN_MANUAL_RECOVERY_MODE` enables the ``can recover`` subcommand.
 
-For example, building the :ref:`hello_world` sample for the :ref:`frdm_k64f` with the CAN shell and
+For example, building the :zephyr:code-sample:`hello_world` sample for the :zephyr:board:`frdm_k64f` with the CAN shell and
 CAN statistics enabled:
 
 .. zephyr-app-commands::

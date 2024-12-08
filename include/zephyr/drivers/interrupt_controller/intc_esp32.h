@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_ESP_INTR_ALLOC_H__
-#define ZEPHYR_INCLUDE_DRIVERS_ESP_INTR_ALLOC_H__
+#ifndef ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_ESP32_H_
+#define ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_ESP32_H_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -43,6 +43,17 @@
 #define ESP_INTR_FLAG_LEVELMASK	(ESP_INTR_FLAG_LEVEL1|ESP_INTR_FLAG_LEVEL2|ESP_INTR_FLAG_LEVEL3| \
 				 ESP_INTR_FLAG_LEVEL4|ESP_INTR_FLAG_LEVEL5|ESP_INTR_FLAG_LEVEL6| \
 				 ESP_INTR_FLAG_NMI)
+
+/*
+ * Get the interrupt flags from the supplied priority.
+ */
+#define ESP_PRIO_TO_FLAGS(priority) \
+	((priority) > 0 ? ((1 << (priority)) & ESP_INTR_FLAG_LEVELMASK) : 0)
+
+/*
+ * Check interrupt flags from input and filter unallowed values.
+ */
+#define ESP_INT_FLAGS_CHECK(int_flags) ((int_flags) & ESP_INTR_FLAG_SHARED)
 
 /*
  * The esp_intr_alloc* functions can allocate an int for all *_INTR_SOURCE int sources that
@@ -295,10 +306,9 @@ int esp_intr_set_in_iram(struct intr_handle_data_t *handle, bool is_in_iram);
  */
 void esp_intr_noniram_disable(void);
 
-
 /**
  * @brief Re-enable interrupts disabled by esp_intr_noniram_disable
  */
 void esp_intr_noniram_enable(void);
 
-#endif
+#endif /* ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_ESP32_H_ */

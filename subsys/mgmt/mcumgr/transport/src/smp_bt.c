@@ -49,6 +49,27 @@ LOG_MODULE_DECLARE(mcumgr_smp, CONFIG_MCUMGR_TRANSPORT_LOG_LEVEL);
 					CONFIG_BT_PERIPHERAL_PREF_TIMEOUT),		\
 				    (NULL))
 
+/* Permission levels for GATT characteristics of the SMP service. */
+#ifndef CONFIG_MCUMGR_TRANSPORT_BT_PERM_RW_AUTHEN
+#define CONFIG_MCUMGR_TRANSPORT_BT_PERM_RW_AUTHEN 0
+#endif
+#ifndef CONFIG_MCUMGR_TRANSPORT_BT_PERM_RW_ENCRYPT
+#define CONFIG_MCUMGR_TRANSPORT_BT_PERM_RW_ENCRYPT 0
+#endif
+#ifndef CONFIG_MCUMGR_TRANSPORT_BT_PERM_RW
+#define CONFIG_MCUMGR_TRANSPORT_BT_PERM_RW 0
+#endif
+
+#define SMP_GATT_PERM (							\
+	CONFIG_MCUMGR_TRANSPORT_BT_PERM_RW_AUTHEN ?			\
+	(BT_GATT_PERM_READ_AUTHEN | BT_GATT_PERM_WRITE_AUTHEN) :	\
+	CONFIG_MCUMGR_TRANSPORT_BT_PERM_RW_ENCRYPT ?			\
+	(BT_GATT_PERM_READ_ENCRYPT | BT_GATT_PERM_WRITE_ENCRYPT) :	\
+	(BT_GATT_PERM_READ | BT_GATT_PERM_WRITE))			\
+
+#define SMP_GATT_PERM_WRITE_MASK \
+	(BT_GATT_PERM_WRITE | BT_GATT_PERM_WRITE_ENCRYPT | BT_GATT_PERM_WRITE_AUTHEN)
+
 /* Minimum number of bytes that must be able to be sent with a notification to a target device
  * before giving up
  */
@@ -87,18 +108,6 @@ struct conn_param_data {
 static uint8_t next_id;
 static struct smp_transport smp_bt_transport;
 static struct conn_param_data conn_data[CONFIG_BT_MAX_CONN];
-
-/* SMP service.
- * {8D53DC1D-1DB7-4CD3-868B-8A527460AA84}
- */
-static const struct bt_uuid_128 smp_bt_svc_uuid = BT_UUID_INIT_128(
-	BT_UUID_128_ENCODE(0x8d53dc1d, 0x1db7, 0x4cd3, 0x868b, 0x8a527460aa84));
-
-/* SMP characteristic; used for both requests and responses.
- * {DA2E7828-FBCE-4E01-AE9E-261174997C48}
- */
-static const struct bt_uuid_128 smp_bt_chr_uuid = BT_UUID_INIT_128(
-	BT_UUID_128_ENCODE(0xda2e7828, 0xfbce, 0x4e01, 0xae9e, 0x261174997c48));
 
 static void connected(struct bt_conn *conn, uint8_t err);
 static void disconnected(struct bt_conn *conn, uint8_t reason);
@@ -354,18 +363,14 @@ static void smp_bt_ccc_changed(const struct bt_gatt_attr *attr, uint16_t value)
 }
 
 #define SMP_BT_ATTRS									\
-	BT_GATT_PRIMARY_SERVICE(&smp_bt_svc_uuid),					\
-	BT_GATT_CHARACTERISTIC(&smp_bt_chr_uuid.uuid,					\
+	BT_GATT_PRIMARY_SERVICE(SMP_BT_SVC_UUID),					\
+	BT_GATT_CHARACTERISTIC(SMP_BT_CHR_UUID,						\
 			       BT_GATT_CHRC_WRITE_WITHOUT_RESP |			\
 			       BT_GATT_CHRC_NOTIFY,					\
-			       COND_CODE_1(CONFIG_MCUMGR_TRANSPORT_BT_AUTHEN,		\
-					   (BT_GATT_PERM_WRITE_AUTHEN),			\
-					   (BT_GATT_PERM_WRITE)),			\
+			       SMP_GATT_PERM & SMP_GATT_PERM_WRITE_MASK,		\
 			       NULL, smp_bt_chr_write, NULL),				\
 	BT_GATT_CCC(smp_bt_ccc_changed,							\
-		    COND_CODE_1(CONFIG_MCUMGR_TRANSPORT_BT_AUTHEN,			\
-				(BT_GATT_PERM_READ_AUTHEN | BT_GATT_PERM_WRITE_AUTHEN),	\
-				(BT_GATT_PERM_READ | BT_GATT_PERM_WRITE))),
+		    SMP_GATT_PERM),
 
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_BT_DYNAMIC_SVC_REGISTRATION
@@ -464,7 +469,7 @@ static int smp_bt_tx_pkt(struct net_buf *nb)
 
 	/* Verify that the device is connected, the necessity for this check is that the remote
 	 * device might have sent a command and disconnected before the command has been processed
-	 * completely, if this happens then the the connection details will still be valid due to
+	 * completely, if this happens then the connection details will still be valid due to
 	 * the incremented connection reference count, but the connection has actually been
 	 * dropped, this avoids waiting for a semaphore that will never be given which would
 	 * otherwise cause a deadlock.

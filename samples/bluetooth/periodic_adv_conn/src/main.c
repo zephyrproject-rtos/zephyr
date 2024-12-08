@@ -7,6 +7,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/hci.h>
 
 #define NUM_RSP_SLOTS	  5
 #define NUM_SUBEVENTS	  5
@@ -133,7 +134,7 @@ static void connected_cb(struct bt_conn *conn, uint8_t err)
 
 static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 {
-	printk("Disconnected (reason 0x%02X)\n", reason);
+	printk("Disconnected, reason 0x%02X %s\n", reason, bt_hci_err_to_str(reason));
 
 	__ASSERT(conn == default_conn, "Unexpected disconnected callback");
 

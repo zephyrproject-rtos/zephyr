@@ -1,10 +1,6 @@
-.. _mmu_mpu-samples:
+.. zephyr:code-sample-category:: mmu_mpu
+   :name: MMU/MPU
+   :show-listing:
 
-MMU/MPU Samples
-###############
-
-.. toctree::
-   :maxdepth: 1
-   :glob:
-
-   **/*
+   Samples that demonstrate the Memory Management Unit (MMU) and Memory Protection Unit (MPU)
+   features.

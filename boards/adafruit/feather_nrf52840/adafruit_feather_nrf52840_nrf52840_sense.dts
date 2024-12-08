@@ -1,0 +1,35 @@
+/*
+ * Copyright (c) 2024 Jacob Winther
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include "adafruit_feather_nrf52840_common.dtsi"
+#include <nordic/nrf52840_partition.dtsi>
+
+/ {
+	model = "Adafruit Feather nRF52840 Sense";
+	compatible = "adafruit,feather-nrf52840-sense-uf2";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-mcumgr = &uart0;
+		zephyr,bt-mon-uart = &uart0;
+		zephyr,bt-c2h-uart = &uart0;
+	};
+
+	leds {
+		led0: led_0 {
+			gpios = <&gpio1 9 0>;
+		};
+	};
+};
+
+&i2c0 {
+	SHT3XD: sht3xd@44 {
+		compatible = "sensirion,sht3xd";
+		reg = <0x44>;
+	};
+};

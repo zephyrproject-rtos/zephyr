@@ -1,7 +1,7 @@
-.. _tensorflow_hello_world:
+.. zephyr:code-sample:: tflite-hello-world
+   :name: Hello World
 
-TensorFlow Lite Micro Hello World sample
-########################################
+   Replicate a sine wave using TensorFlow Lite for Microcontrollers.
 
 Overview
 ********
@@ -61,11 +61,11 @@ or as a
 that can be emulated on a host machine.
 
 Assuming that the Corstone-300 FVP has been downloaded, installed and added to
-the `PATH` variable, then building and testing can be done with following
+the :envvar:`PATH` variable, then building and testing can be done with following
 commands.
 
 ```
-$ west build -p auto -b mps3/an547 samples/modules/tflite-micro/hello_world/ -T sample.tensorflow.helloworld.cmsis_nn
+$ west build -p auto -b mps3/corstone300/an547 samples/modules/tflite-micro/hello_world/ -T sample.tensorflow.helloworld.cmsis_nn
 $ FVP_Corstone_SSE-300_Ethos-U55 build/zephyr/zephyr.elf
 ```
 

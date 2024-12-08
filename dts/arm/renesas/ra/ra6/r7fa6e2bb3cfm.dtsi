@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2024 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/renesas/ra/ra6/r7fa6e2bx.dtsi>
+
+/ {
+	soc {
+		flash-controller@407e0000 {
+			reg = <0x407e0000 0x10000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				reg = <0x0 DT_SIZE_K(256)>;
+			};
+		};
+	};
+};

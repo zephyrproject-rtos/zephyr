@@ -36,6 +36,8 @@
 
 #define TLE9104_CFG_CWDTIME_LENGTH 2
 #define TLE9104_CFG_CWDTIME_POS    6
+#define TLE9104_CFG_OUT34PAR_POS   5
+#define TLE9104_CFG_OUT12PAR_POS   4
 
 #define TLE9104_OFFDIAGCFG_DIAGFILTCFG_LENGTH 2
 #define TLE9104_OFFDIAGCFG_DIAGFILTCFG_POS    4
@@ -101,6 +103,8 @@ struct tle9104_config {
 	uint16_t diagnostic_filter_time;
 	uint16_t overcurrent_shutdown_delay_time;
 	uint16_t overcurrent_shutdown_threshold;
+	bool parallel_mode_out12;
+	bool parallel_mode_out34;
 };
 
 struct tle9104_data {
@@ -527,6 +531,16 @@ static int tle9104_init(const struct device *dev)
 	tle9104_set_register_bits(&register_cfg, TLE9104_CFG_CWDTIME_POS,
 				  TLE9104_CFG_CWDTIME_LENGTH, 0);
 
+	if (config->parallel_mode_out12) {
+		LOG_DBG("use parallel mode for OUT1 and OUT2");
+		register_cfg |= BIT(TLE9104_CFG_OUT12PAR_POS);
+	}
+
+	if (config->parallel_mode_out34) {
+		LOG_DBG("use parallel mode for OUT3 and OUT4");
+		register_cfg |= BIT(TLE9104_CFG_OUT34PAR_POS);
+	}
+
 	result = tle9104_write_register(dev, TLE9104REGISTER_CFG, register_cfg);
 	if (result != 0) {
 		LOG_ERR("unable to write configuration");
@@ -598,6 +612,8 @@ static int tle9104_init(const struct device *dev)
 			DT_INST_ENUM_IDX(inst, overcurrent_shutdown_delay_time),                   \
 		.overcurrent_shutdown_threshold =                                                  \
 			DT_INST_ENUM_IDX(inst, overcurrent_shutdown_threshold),                    \
+		.parallel_mode_out12 = DT_INST_PROP(inst, parallel_out12),                         \
+		.parallel_mode_out34 = DT_INST_PROP(inst, parallel_out34),                         \
 	};                                                                                         \
                                                                                                    \
 	static struct tle9104_data tle9104_##inst##_data;                                          \

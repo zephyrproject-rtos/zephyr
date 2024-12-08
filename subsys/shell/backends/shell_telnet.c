@@ -39,10 +39,10 @@ struct shell_telnet *sh_telnet;
 
 /* Basic TELNET implementation. */
 
-static void telnet_server_cb(struct k_work *work);
+static void telnet_server_cb(struct net_socket_service_event *evt);
 static int telnet_init(struct shell_telnet *ctx);
 
-NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(telnet_server, NULL, telnet_server_cb,
+NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(telnet_server, telnet_server_cb,
 				      SHELL_TELNET_POLLFD_COUNT);
 
 
@@ -462,10 +462,8 @@ error:
 	}
 }
 
-static void telnet_server_cb(struct k_work *work)
+static void telnet_server_cb(struct net_socket_service_event *evt)
 {
-	struct net_socket_service_event *evt =
-		CONTAINER_OF(work, struct net_socket_service_event, work);
 	int sock_error;
 	socklen_t optlen = sizeof(int);
 
@@ -480,7 +478,8 @@ static void telnet_server_cb(struct k_work *work)
 		NET_ERR("Telnet socket %d error (%d)", evt->event.fd, sock_error);
 
 		if (evt->event.fd == sh_telnet->fds[SOCK_ID_CLIENT].fd) {
-			return telnet_end_client_connection();
+			telnet_end_client_connection();
+			return;
 		}
 
 		goto error;
@@ -491,11 +490,14 @@ static void telnet_server_cb(struct k_work *work)
 	}
 
 	if (evt->event.fd == sh_telnet->fds[SOCK_ID_IPV4_LISTEN].fd) {
-		return telnet_accept(&sh_telnet->fds[SOCK_ID_IPV4_LISTEN]);
+		telnet_accept(&sh_telnet->fds[SOCK_ID_IPV4_LISTEN]);
+		return;
 	} else if (evt->event.fd == sh_telnet->fds[SOCK_ID_IPV6_LISTEN].fd) {
-		return telnet_accept(&sh_telnet->fds[SOCK_ID_IPV6_LISTEN]);
+		telnet_accept(&sh_telnet->fds[SOCK_ID_IPV6_LISTEN]);
+		return;
 	} else if (evt->event.fd == sh_telnet->fds[SOCK_ID_CLIENT].fd) {
-		return telnet_recv(&sh_telnet->fds[SOCK_ID_CLIENT]);
+		telnet_recv(&sh_telnet->fds[SOCK_ID_CLIENT]);
+		return;
 	}
 
 	NET_ERR("Unexpected FD received for telnet, restarting service.");
@@ -704,7 +706,12 @@ static int telnet_write(const struct shell_transport *transport,
 			err = telnet_send(true);
 			if (err != 0) {
 				*cnt = length;
-				return err;
+				if ((err == -ENOTCONN) || (err == -ENETDOWN)) {
+					LOG_ERR("Network disconnected, shutting down");
+				} else {
+					LOG_ERR("Error %d, shutting down", err);
+				}
+				return 0; /* Return 0 to not trigger ASSERT in shell_ops.c */
 			}
 		}
 

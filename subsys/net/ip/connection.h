@@ -166,7 +166,7 @@ static inline int net_conn_unregister(struct net_conn_handle *handle)
  * @param remote_addr Remote address
  * @param remote_port Remote port
  *
- * @return Return 0 if the the change succeed, <0 otherwise.
+ * @return Return 0 if the change succeed, <0 otherwise.
  */
 int net_conn_update(struct net_conn_handle *handle,
 		    net_conn_cb_t cb,

@@ -1,0 +1,11 @@
+# Copyright (c) 2024 GARDENA GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_SIM3U
+	select ARM
+	select CLOCK_CONTROL
+	select CPU_CORTEX_M3
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select HAS_SILABS_SI32
+	select SOC_EARLY_INIT_HOOK

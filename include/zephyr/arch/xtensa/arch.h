@@ -45,6 +45,7 @@
 
 /**
  * @defgroup xtensa_apis Xtensa APIs
+ * @ingroup arch-interface
  * @{
  * @}
  *
@@ -62,7 +63,7 @@ extern "C" {
 
 struct arch_mem_domain {
 #ifdef CONFIG_XTENSA_MMU
-	uint32_t *ptables __aligned(CONFIG_MMU_PAGE_SIZE);
+	uint32_t *ptables;
 	uint8_t asid;
 	bool dirty;
 #endif
@@ -228,7 +229,7 @@ static inline bool arch_mem_coherent(void *ptr)
 
 #if defined(CONFIG_XTENSA_MMU) || defined(__DOXYGEN__)
 /**
- * @brief Peform additional steps after MMU initialization.
+ * @brief Perform additional steps after MMU initialization.
  *
  * This performs additional steps related to memory management
  * after the main MMU initialization code. This needs to defined

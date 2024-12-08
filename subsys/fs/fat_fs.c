@@ -176,10 +176,11 @@ static int fatfs_rename(struct fs_mount_t *mountp, const char *from,
 
 	/* Check if 'to' path exists; remove it if it does */
 	res = f_stat(translate_path(to), &fno);
-	if (FR_OK == res) {
+	if (res == FR_OK) {
 		res = f_unlink(translate_path(to));
-		if (FR_OK != res)
+		if (res != FR_OK) {
 			return translate_error(res);
+		}
 	}
 
 	res = f_rename(translate_path(from), translate_path(to));

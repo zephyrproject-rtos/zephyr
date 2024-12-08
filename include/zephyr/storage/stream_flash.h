@@ -65,8 +65,8 @@ struct stream_flash_ctx {
 #ifdef CONFIG_STREAM_FLASH_ERASE
 	off_t last_erased_page_start_offset; /* Last erased offset */
 #endif
+	size_t write_block_size;	/* Offset/size device write alignment */
 	uint8_t erase_value;
-	uint8_t write_block_size;	/* Offset/size device write alignment */
 };
 
 /**
@@ -97,7 +97,7 @@ int stream_flash_init(struct stream_flash_ctx *ctx, const struct device *fdev,
  *
  * @return Number of payload bytes written to flash.
  */
-size_t stream_flash_bytes_written(struct stream_flash_ctx *ctx);
+size_t stream_flash_bytes_written(const struct stream_flash_ctx *ctx);
 
 /**
  * @brief Process input buffers to be written to flash device in single blocks.
@@ -149,7 +149,8 @@ int stream_flash_erase_page(struct stream_flash_ctx *ctx, off_t off);
  * @param settings_key key to use with the settings module for loading
  *                     the stream write progress
  *
- * @return non-negative on success, negative errno code on fail
+ * @return non-negative on success, -ERANGE in case when @p off is out
+ * of area designated for stream or negative errno code on fail
  */
 int stream_flash_progress_load(struct stream_flash_ctx *ctx,
 			       const char *settings_key);
@@ -163,7 +164,7 @@ int stream_flash_progress_load(struct stream_flash_ctx *ctx,
  *
  * @return non-negative on success, negative errno code on fail
  */
-int stream_flash_progress_save(struct stream_flash_ctx *ctx,
+int stream_flash_progress_save(const struct stream_flash_ctx *ctx,
 			       const char *settings_key);
 
 /**
@@ -175,7 +176,7 @@ int stream_flash_progress_save(struct stream_flash_ctx *ctx,
  *
  * @return non-negative on success, negative errno code on fail
  */
-int stream_flash_progress_clear(struct stream_flash_ctx *ctx,
+int stream_flash_progress_clear(const struct stream_flash_ctx *ctx,
 				const char *settings_key);
 
 #ifdef __cplusplus

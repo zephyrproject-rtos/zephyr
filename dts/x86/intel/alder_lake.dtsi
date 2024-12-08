@@ -16,11 +16,18 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		cpu@0 {
+		cpu: cpu@0 {
+			device_type = "cpu";
+			compatible = "intel,alder-lake", "intel,x86_64";
+			d-cache-line-size = <64>;
+			reg = <0>;
+		};
+
+		cpu@1 {
 			device_type = "cpu";
 			compatible = "intel,alder-lake";
 			d-cache-line-size = <64>;
-			reg = <0>;
+			reg = <1>;
 		};
 
 	};
@@ -348,6 +355,7 @@
 
 			mmc {
 				compatible = "zephyr,mmc-disk";
+				disk-name = "SD2";
 				bus-width = <8>;
 				status = "okay";
 			};

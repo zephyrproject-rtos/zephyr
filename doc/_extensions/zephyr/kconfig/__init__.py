@@ -33,10 +33,11 @@ import json
 import os
 import re
 import sys
+from collections.abc import Iterable
 from itertools import chain
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any
 
 from docutils import nodes
 from sphinx.addnodes import pending_xref
@@ -53,22 +54,19 @@ from sphinx.util.nodes import make_refnode
 __version__ = "0.1.0"
 
 
-RESOURCES_DIR = Path(__file__).parent / "static"
-ZEPHYR_BASE = Path(__file__).parents[4]
-
-SCRIPTS = ZEPHYR_BASE / "scripts"
-sys.path.insert(0, str(SCRIPTS))
-
-KCONFIGLIB = SCRIPTS / "kconfig"
-sys.path.insert(0, str(KCONFIGLIB))
+sys.path.insert(0, str(Path(__file__).parents[4] / "scripts"))
+sys.path.insert(0, str(Path(__file__).parents[4] / "scripts/kconfig"))
 
 import kconfiglib
 import list_boards
 import list_hardware
 import zephyr_module
 
+RESOURCES_DIR = Path(__file__).parent / "static"
+ZEPHYR_BASE = Path(__file__).parents[4]
 
-def kconfig_load(app: Sphinx) -> Tuple[kconfiglib.Kconfig, Dict[str, str]]:
+
+def kconfig_load(app: Sphinx) -> tuple[kconfiglib.Kconfig, dict[str, str]]:
     """Load Kconfig"""
     with TemporaryDirectory() as td:
         modules = zephyr_module.parse_modules(ZEPHYR_BASE)
@@ -91,7 +89,7 @@ def kconfig_load(app: Sphinx) -> Tuple[kconfiglib.Kconfig, Dict[str, str]]:
         root_args = argparse.Namespace(**{'soc_roots': [Path(ZEPHYR_BASE)]})
         v2_systems = list_hardware.find_v2_systems(root_args)
 
-        soc_folders = {soc.folder for soc in v2_systems.get_socs()}
+        soc_folders = {soc.folder[0] for soc in v2_systems.get_socs()}
         with open(Path(td) / "soc" / "Kconfig.defconfig", "w") as f:
             f.write('')
 
@@ -114,8 +112,9 @@ def kconfig_load(app: Sphinx) -> Tuple[kconfiglib.Kconfig, Dict[str, str]]:
 
         (Path(td) / 'boards').mkdir(exist_ok=True)
         root_args = argparse.Namespace(**{'board_roots': [Path(ZEPHYR_BASE)],
-                                          'soc_roots': [Path(ZEPHYR_BASE)], 'board': None})
-        v2_boards = list_boards.find_v2_boards(root_args)
+                                          'soc_roots': [Path(ZEPHYR_BASE)], 'board': None,
+                                          'board_dir': []})
+        v2_boards = list_boards.find_v2_boards(root_args).values()
 
         with open(Path(td) / "boards" / "Kconfig.boards", "w") as f:
             for board in v2_boards:
@@ -130,7 +129,7 @@ def kconfig_load(app: Sphinx) -> Tuple[kconfiglib.Kconfig, Dict[str, str]]:
 
         # base environment
         os.environ["ZEPHYR_BASE"] = str(ZEPHYR_BASE)
-        os.environ["srctree"] = str(ZEPHYR_BASE)
+        os.environ["srctree"] = str(ZEPHYR_BASE)  # noqa: SIM112
         os.environ["KCONFIG_DOC_MODE"] = "1"
         os.environ["KCONFIG_BINARY_DIR"] = td
 
@@ -140,7 +139,7 @@ def kconfig_load(app: Sphinx) -> Tuple[kconfiglib.Kconfig, Dict[str, str]]:
         os.environ["HWM_SCHEME"] = "v2"
 
         os.environ["BOARD"] = "boards"
-        os.environ["BOARD_DIR"] = str(Path(td) / "boards")
+        os.environ["KCONFIG_BOARD_DIR"] = str(Path(td) / "boards")
 
         # insert external Kconfigs to the environment
         module_paths = dict()
@@ -231,14 +230,13 @@ class KconfigDomain(Domain):
     object_types = {"option": ObjType("option", "option")}
     roles = {"option": XRefRole()}
     directives = {"search": KconfigSearch}
-    initial_data: Dict[str, Any] = {"options": []}
+    initial_data: dict[str, Any] = {"options": set()}
 
-    def get_objects(self) -> Iterable[Tuple[str, str, str, str, str, int]]:
-        for obj in self.data["options"]:
-            yield obj
+    def get_objects(self) -> Iterable[tuple[str, str, str, str, str, int]]:
+        yield from self.data["options"]
 
-    def merge_domaindata(self, docnames: List[str], otherdata: Dict) -> None:
-        self.data["options"] += otherdata["options"]
+    def merge_domaindata(self, docnames: list[str], otherdata: dict) -> None:
+        self.data["options"].update(otherdata["options"])
 
     def resolve_xref(
         self,
@@ -249,7 +247,7 @@ class KconfigDomain(Domain):
         target: str,
         node: pending_xref,
         contnode: nodes.Element,
-    ) -> Optional[nodes.Element]:
+    ) -> nodes.Element | None:
         match = [
             (docname, anchor)
             for name, _, _, docname, anchor, _ in self.get_objects()
@@ -268,7 +266,7 @@ class KconfigDomain(Domain):
     def add_option(self, option):
         """Register a new Kconfig option to the domain."""
 
-        self.data["options"].append(
+        self.data["options"].add(
             (option, option, "option", self.env.docname, option, 1)
         )
 
@@ -442,8 +440,8 @@ def kconfig_install(
     app: Sphinx,
     pagename: str,
     templatename: str,
-    context: Dict,
-    doctree: Optional[nodes.Node],
+    context: dict,
+    doctree: nodes.Node | None,
 ) -> None:
     """Install the Kconfig library files on pages that require it."""
     if (

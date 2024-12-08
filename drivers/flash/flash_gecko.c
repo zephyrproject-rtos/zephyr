@@ -191,6 +191,15 @@ flash_gecko_get_parameters(const struct device *dev)
 	return &flash_gecko_parameters;
 }
 
+static int flash_gecko_get_size(const struct device *dev, uint64_t *size)
+{
+	ARG_UNUSED(dev);
+
+	*size = (uint64_t)DT_REG_SIZE(SOC_NV_FLASH_NODE);
+
+	return 0;
+}
+
 static int flash_gecko_init(const struct device *dev)
 {
 	struct flash_gecko_data *const dev_data = dev->data;
@@ -207,11 +216,12 @@ static int flash_gecko_init(const struct device *dev)
 	return 0;
 }
 
-static const struct flash_driver_api flash_gecko_driver_api = {
+static DEVICE_API(flash, flash_gecko_driver_api) = {
 	.read = flash_gecko_read,
 	.write = flash_gecko_write,
 	.erase = flash_gecko_erase,
 	.get_parameters = flash_gecko_get_parameters,
+	.get_size = flash_gecko_get_size,
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_gecko_page_layout,
 #endif

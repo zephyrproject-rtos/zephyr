@@ -124,8 +124,9 @@ static int read_port_reg(const struct device *dev, uint8_t reg, uint8_t pin,
 	uint8_t b_buf;
 	int ret;
 
-	if (pin >= 8)
+	if (pin >= 8) {
 		reg++;
+	}
 
 	ret = i2c_reg_read_byte_dt(&config->bus, reg, &b_buf);
 	if (ret != 0) {
@@ -758,7 +759,7 @@ static int gpio_pca95xx_manage_callback(const struct device *dev,
 }
 #endif /* CONFIG_GPIO_PCA95XX_INTERRUPT */
 
-static const struct gpio_driver_api gpio_pca95xx_drv_api_funcs = {
+static DEVICE_API(gpio, gpio_pca95xx_drv_api_funcs) = {
 	.pin_configure = gpio_pca95xx_config,
 	.port_get_raw = gpio_pca95xx_port_get_raw,
 	.port_set_masked_raw = gpio_pca95xx_port_set_masked_raw,

@@ -591,7 +591,7 @@ static void i2s_litex_isr_tx(void *arg)
 	k_mem_slab_free(stream->cfg.mem_slab, stream->mem_block);
 }
 
-static const struct i2s_driver_api i2s_litex_driver_api = {
+static DEVICE_API(i2s, i2s_litex_driver_api) = {
 	.configure = i2s_litex_configure,
 	.read = i2s_litex_read,
 	.write = i2s_litex_write,
@@ -634,9 +634,9 @@ static const struct i2s_driver_api i2s_litex_driver_api = {
 		irq_enable(DT_IRQN(DT_NODELABEL(i2s_##dir)));                  \
 	}
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2s_rx), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(i2s_rx))
 I2S_INIT(rx);
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2s_tx), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(i2s_tx))
 I2S_INIT(tx);
 #endif

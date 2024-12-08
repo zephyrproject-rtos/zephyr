@@ -7,10 +7,11 @@ config VIDEO_MCUX_CSI
 	bool "NXP MCUX CMOS Sensor Interface (CSI) driver"
 	default y
 	depends on DT_HAS_NXP_IMX_CSI_ENABLED
+	select PINCTRL
 
 config VIDEO_MCUX_CSI_INIT_PRIORITY
 	int "NXP MCUX CSI init priority"
-	default 61
+	default 59
 	depends on VIDEO_MCUX_CSI
 	help
 	  Initialization priority for the CSI interface on an NXP MCUX device.

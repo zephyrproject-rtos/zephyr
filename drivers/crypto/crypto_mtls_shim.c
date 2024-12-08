@@ -599,7 +599,7 @@ static int mtls_query_caps(const struct device *dev)
 	return MTLS_SUPPORT;
 }
 
-static struct crypto_driver_api mtls_crypto_funcs = {
+static DEVICE_API(crypto, mtls_crypto_funcs) = {
 	.cipher_begin_session = mtls_session_setup,
 	.cipher_free_session = mtls_session_free,
 	.cipher_async_callback_set = NULL,

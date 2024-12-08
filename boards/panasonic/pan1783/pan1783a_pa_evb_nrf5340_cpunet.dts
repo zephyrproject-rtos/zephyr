@@ -29,5 +29,5 @@
 	fem = <&nrf_radio_fem>;
 };
 
-/* Include shared RAM configuration file */
-#include "pan1783_nrf5340_shared_sram_planning_conf.dtsi"
+/* Include default shared RAM configuration file */
+#include <common/nordic/nrf5340_shared_sram_partition.dtsi>

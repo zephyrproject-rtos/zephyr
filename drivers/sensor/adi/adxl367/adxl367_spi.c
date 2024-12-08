@@ -7,14 +7,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT adi_adxl367
-
 #include <string.h>
 #include <zephyr/logging/log.h>
 
 #include "adxl367.h"
 
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+#ifdef ADXL367_BUS_SPI
 
 LOG_MODULE_DECLARE(ADXL367, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -32,13 +30,12 @@ static int adxl367_bus_access(const struct device *dev, uint8_t reg,
 
 	addr_reg = ADXL367_TO_REG(reg);
 
-	const struct spi_buf buf[3] = {
+	uint8_t access[2] = {rw_reg, addr_reg};
+
+	const struct spi_buf buf[2] = {
 		{
-			.buf = &rw_reg,
-			.len = 1
-		}, {
-			.buf = &addr_reg,
-			.len = 1
+			.buf = access,
+			.len = 2
 		}, {
 			.buf = data,
 			.len = length
@@ -52,15 +49,15 @@ static int adxl367_bus_access(const struct device *dev, uint8_t reg,
 	if ((reg & ADXL367_READ) != 0) {
 		const struct spi_buf_set rx = {
 			.buffers = buf,
-			.count = 3
+			.count = 2
 		};
 
-		tx.count = 2;
+		tx.count = 1;
 
 		return spi_transceive_dt(&config->spi, &tx, &rx);
 	}
 
-	tx.count = 3;
+	tx.count = 2;
 
 	return spi_write_dt(&config->spi, &tx);
 }
@@ -128,4 +125,4 @@ int adxl367_spi_init(const struct device *dev)
 	return 0;
 }
 
-#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
+#endif /* ADXL367_BUS_SPI */

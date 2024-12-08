@@ -1,7 +1,7 @@
-.. _bluetooth-samples:
+.. zephyr:code-sample-category:: bluetooth
+   :name: Bluetooth
 
-Bluetooth samples
-#################
+   These samples demonstrate the use of Bluetooth in Zephyr.
 
 To build any of the Bluetooth samples, follow the same steps as building
 any other Zephyr application. Refer to :ref:`bluetooth-dev` for more information.
@@ -20,7 +20,7 @@ documentation and are prefixed with :literal:`hci_` in their folder names.
    ``-DBOARD=nrf5340dk/nrf5340/cpuapp`` or
    ``-DBOARD=nrf5340dk/nrf5340/cpuapp/ns``) you must also build
    and program the corresponding sample for the nRF5340 network core
-   :ref:`bluetooth-hci-ipc-sample` which implements the Bluetooth
+   :zephyr:code-sample:`bluetooth_hci_ipc` which implements the Bluetooth
    Low Energy controller.
 
 .. note::
@@ -29,8 +29,6 @@ documentation and are prefixed with :literal:`hci_` in their folder names.
    connections will fail. You can force a re-paring and new key to be created
    by removing the device from the associated devices list on the host.
 
-.. toctree::
-   :maxdepth: 1
-   :glob:
-
-   **/*
+.. zephyr:code-sample-listing::
+   :categories: bluetooth
+   :live-search:

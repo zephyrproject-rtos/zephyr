@@ -1,7 +1,4 @@
-.. _lpcxpresso55s36:
-
-NXP LPCXpresso55S36
-###################
+.. zephyr:board:: lpcxpresso55s36
 
 Overview
 ********
@@ -12,10 +9,6 @@ architecture. Arduino® UNO compatible shield connectors are included,
 with additional expansion ports around the Arduino footprint, along
 with a PMod/host interface port and MikroElektronika Click module
 site.
-
-.. image:: lpcxpresso55S36.jpg
-   :align: center
-   :alt: LPCXpresso55S36
 
 Hardware
 ********
@@ -52,7 +45,7 @@ family of MCUs.  This board is a focus for NXP's Full Platform Support for
 Zephyr, to better enable the entire LPC55(S)3x family.  NXP prioritizes enabling
 this board with new support for Zephyr features.  The lpcxpresso55s36 board
 configuration supports the hardware features below.  Another similar superset
-board is the :ref:`lpcxpresso55s69`, and that board may have additional features
+board is the :zephyr:board:`lpcxpresso55s69`, and that board may have additional features
 already supported, which can also be re-used on this lpcxpresso55s36 board:
 
 +-----------+------------+-------------------------------------+
@@ -166,19 +159,17 @@ and :ref:`application_run` for more details).
 Configuring a Debug Probe
 =========================
 
-A debug probe is used for both flashing and debugging the board. This
-board is configured by default to use the LPC-Link2 CMSIS-DAP Onboard
-Debug Probe, however the :ref:`pyocd-debug-host-tools` does not yet
-support the LPC55S36 so you must reconfigure the board for one of the
-J-Link debug probe instead.
+A debug probe is used for both flashing and debugging the board. This board is
+configured by default to use the integrated :ref:`mcu-link-onboard-debug-probe`
+in the CMSIS-DAP mode. To use this probe with Zephyr, you need to install the
+:ref:`linkserver-debug-host-tools` and make sure they are in your search path.
+Then, use the ``linkserver`` runner option to flash and debug the board. Refer
+to the detailed overview about :ref:`application_debugging` for additional
+information.
 
-First install the :ref:`jlink-debug-host-tools` and make sure they are
-in your search path.
-
-Then follow the instructions in
-:ref:`lpclink2-jlink-onboard-debug-probe` to program the J-Link
-firmware. Please make sure you have the latest firmware for this
-board.
+The integrated MCU-Link hardware can also be used as a J-Link probe with a
+firmware update, as described in :ref:`mcu-link-jlink-onboard-debug-probe`.
+The :ref:`jlink-debug-host-tools` should be available in this case.
 
 Configuring a Console
 =====================
@@ -195,7 +186,7 @@ settings:
 Flashing
 ========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -213,7 +204,7 @@ see the following message in the terminal:
 Debugging
 =========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

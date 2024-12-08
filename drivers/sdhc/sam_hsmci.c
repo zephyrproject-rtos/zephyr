@@ -660,7 +660,7 @@ static int sam_hsmci_request(const struct device *dev, struct sdhc_command *cmd,
 	return ret;
 }
 
-static const struct sdhc_driver_api hsmci_api = {
+static DEVICE_API(sdhc, hsmci_api) = {
 	.reset = sam_hsmci_reset,
 	.get_host_props = sam_hsmci_get_host_props,
 	.set_io = sam_hsmci_set_io,

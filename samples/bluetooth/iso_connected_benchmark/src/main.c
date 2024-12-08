@@ -5,15 +5,21 @@
  */
 
 #include <ctype.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gap.h>
 #include <zephyr/kernel.h>
 #include <string.h>
+#include <stdint.h>
 #include <stdlib.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys_clock.h>
 #include <zephyr/types.h>
 
 
 #include <zephyr/console/console.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/iso.h>
+#include <zephyr/bluetooth/hci.h>
 #include <zephyr/sys/byteorder.h>
 
 #include <zephyr/logging/log.h>
@@ -201,7 +207,7 @@ static void iso_send(struct bt_iso_chan *chan)
 	interval = (role == ROLE_CENTRAL) ?
 		   cig_create_param.c_to_p_interval : cig_create_param.p_to_c_interval;
 
-	buf = net_buf_alloc(&tx_pool, K_FOREVER);
+	buf = net_buf_alloc(&tx_pool, K_NO_WAIT);
 	if (buf == NULL) {
 		LOG_ERR("Could not allocate buffer");
 		k_work_reschedule(&chan_work->send_work, K_USEC(interval));
@@ -475,7 +481,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	if (err != 0 && role == ROLE_CENTRAL) {
-		LOG_INF("Failed to connect to %s: %u", addr, err);
+		LOG_INF("Failed to connect to %s: %u %s", addr, err, bt_hci_err_to_str(err));
 
 		bt_conn_unref(default_conn);
 		default_conn = NULL;
@@ -495,7 +501,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
-	LOG_INF("Disconnected: %s (reason 0x%02x)", addr, reason);
+	LOG_INF("Disconnected: %s, reason 0x%02x %s", addr, reason, bt_hci_err_to_str(reason));
 
 	bt_conn_unref(default_conn);
 	default_conn = NULL;
@@ -1045,6 +1051,12 @@ static int change_central_settings(void)
 
 static int central_create_connection(void)
 {
+	/* Give the controller a large range of intervals to pick from. In this benchmark sample we
+	 * want to prioritize ISO over ACL, but will leave the actual choice up to the controller.
+	 */
+	const struct bt_le_conn_param *conn_param =
+		BT_LE_CONN_PARAM(BT_GAP_INIT_CONN_INT_MIN, BT_GAP_MS_TO_CONN_INTERVAL(500U), 0,
+				 BT_GAP_MS_TO_CONN_TIMEOUT(4000));
 	int err;
 
 	advertiser_found = false;
@@ -1070,8 +1082,7 @@ static int central_create_connection(void)
 	}
 
 	LOG_INF("Connecting");
-	err = bt_conn_le_create(&adv_addr, BT_CONN_LE_CREATE_CONN,
-				BT_LE_CONN_PARAM_DEFAULT, &default_conn);
+	err = bt_conn_le_create(&adv_addr, BT_CONN_LE_CREATE_CONN, conn_param, &default_conn);
 	if (err != 0) {
 		LOG_ERR("Create connection failed: %d", err);
 		return err;
@@ -1088,7 +1099,6 @@ static int central_create_connection(void)
 
 static int central_create_cig(void)
 {
-	struct bt_iso_connect_param connect_param[CONFIG_BT_ISO_MAX_CHAN];
 	int err;
 
 	iso_conn_start_time = 0;
@@ -1100,6 +1110,16 @@ static int central_create_cig(void)
 		LOG_ERR("Failed to create CIG: %d", err);
 		return err;
 	}
+
+	return 0;
+}
+
+static int central_connect_cis(void)
+{
+	struct bt_iso_connect_param connect_param[CONFIG_BT_ISO_MAX_CHAN];
+	int err;
+
+	iso_conn_start_time = 0;
 
 	LOG_INF("Connecting ISO channels");
 
@@ -1204,15 +1224,26 @@ static int run_central(void)
 		}
 	}
 
+	/* Creating the CIG before connecting verified that it's possible before establishing a
+	 * connection, while also providing the controller information about our use case before
+	 * creating the connection, which should provide additional information to the controller
+	 * about which connection interval to use
+	 */
+	err = central_create_cig();
+	if (err != 0) {
+		LOG_ERR("Failed to create CIG: %d", err);
+		return err;
+	}
+
 	err = central_create_connection();
 	if (err != 0) {
 		LOG_ERR("Failed to create connection: %d", err);
 		return err;
 	}
 
-	err = central_create_cig();
+	err = central_connect_cis();
 	if (err != 0) {
-		LOG_ERR("Failed to create CIG or connect CISes: %d", err);
+		LOG_ERR("Failed to connect CISes: %d", err);
 		return err;
 	}
 
@@ -1278,10 +1309,7 @@ static int run_peripheral(void)
 	}
 
 	LOG_INF("Starting advertising");
-	err = bt_le_adv_start(
-		BT_LE_ADV_PARAM(BT_LE_ADV_OPT_ONE_TIME | BT_LE_ADV_OPT_CONNECTABLE,
-				BT_GAP_ADV_FAST_INT_MIN_2, BT_GAP_ADV_FAST_INT_MAX_2, NULL),
-		NULL, 0, sd, ARRAY_SIZE(sd));
+	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, NULL, 0, sd, ARRAY_SIZE(sd));
 	if (err != 0) {
 		LOG_ERR("Advertising failed to start: %d", err);
 		return err;

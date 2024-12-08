@@ -5,6 +5,9 @@ arch: x86
 toolchain:
   - zephyr
 ram: 640
+simulation:
+  - name: simics
+    exec: simics
 supported:
   - serial
 testing:

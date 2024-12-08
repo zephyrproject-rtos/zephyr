@@ -118,6 +118,10 @@ GEN_OFFSET_STRUCT(arch_esf, s0);
 GEN_OFFSET_STRUCT(arch_esf, sp);
 #endif
 
+#ifdef CONFIG_EXTRA_EXCEPTION_INFO
+GEN_OFFSET_STRUCT(arch_esf, csf);
+#endif /* CONFIG_EXTRA_EXCEPTION_INFO */
+
 #if defined(CONFIG_RISCV_SOC_CONTEXT_SAVE)
 GEN_OFFSET_STRUCT(arch_esf, soc_context);
 #endif

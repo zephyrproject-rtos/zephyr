@@ -71,11 +71,18 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 static struct ll_adv_aux_set ll_adv_aux_pool[CONFIG_BT_CTLR_ADV_AUX_SET];
 static void *adv_aux_free;
 
-#if defined(CONFIG_BT_CTLR_ADV_PERIODIC) && defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+#if defined(CONFIG_BT_CTLR_ADV_AUX_SLOT_WINDOW_DRIFT) || \
+	(defined(CONFIG_BT_CTLR_ADV_PERIODIC) && \
+	 defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO))
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC) && \
+	defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 static void ticker_update_op_cb(uint32_t status, void *param);
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC && CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 
 static struct ticker_ext ll_adv_aux_ticker_ext[CONFIG_BT_CTLR_ADV_AUX_SET];
-#endif /* !CONFIG_BT_CTLR_ADV_PERIODIC && CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
+#endif /* CONFIG_BT_CTLR_ADV_AUX_SLOT_WINDOW_DRIFT ||
+	* (CONFIG_BT_CTLR_ADV_PERIODIC && CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+	*/
 #endif /* (CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
 
 static uint16_t did_unique[PDU_ADV_SID_COUNT];
@@ -344,7 +351,7 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 				 * the double buffer with the first PDU, and
 				 * returned the latest PDU as the new PDU, we
 				 * need to enqueue back the new PDU which is
-				 * infact the latest PDU.
+				 * in fact the latest PDU.
 				 */
 				if (pdu_prev == pdu) {
 					lll_adv_aux_data_enqueue(adv->lll.aux,
@@ -574,7 +581,7 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 				 * the double buffer with the first PDU, and
 				 * returned the latest PDU as the new PDU, we
 				 * need to enqueue back the new PDU which is
-				 * infact the latest PDU.
+				 * in fact the latest PDU.
 				 */
 				if (pdu_prev == pdu) {
 					lll_adv_aux_data_enqueue(adv->lll.aux,
@@ -594,7 +601,7 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 			 * the double buffer with the first PDU, and
 			 * returned the latest PDU as the new PDU, we
 			 * need to enqueue back the new PDU which is
-			 * infact the latest PDU.
+			 * in fact the latest PDU.
 			 */
 			if (pdu_prev == pdu) {
 				lll_adv_aux_data_enqueue(adv->lll.aux, sec_idx);
@@ -1055,7 +1062,7 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 				 * the double buffer with the first PDU, and
 				 * returned the latest PDU as the new PDU, we
 				 * need to enqueue back the new PDU which is
-				 * infact the latest PDU.
+				 * in fact the latest PDU.
 				 */
 				if (sr_pdu_prev == sr_pdu) {
 					lll_adv_scan_rsp_enqueue(lll, sr_idx);
@@ -1218,7 +1225,7 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 				 * the double buffer with the first PDU, and
 				 * returned the latest PDU as the new PDU, we
 				 * need to enqueue back the new PDU which is
-				 * infact the latest PDU.
+				 * in fact the latest PDU.
 				 */
 				if (sr_pdu_prev == sr_pdu) {
 					lll_adv_scan_rsp_enqueue(lll, sr_idx);
@@ -1239,7 +1246,7 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 			 * the double buffer with the first PDU, and
 			 * returned the latest PDU as the new PDU, we
 			 * need to enqueue back the new PDU which is
-			 * infact the latest PDU.
+			 * in fact the latest PDU.
 			 */
 			if (sr_pdu_prev == sr_pdu) {
 				lll_adv_aux_data_enqueue(adv->lll.aux, sr_idx);
@@ -2020,7 +2027,7 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 
 		sec_dptr -= BDADDR_SIZE;
 
-		(void)memcpy(sec_dptr, bdaddr, BDADDR_SIZE);
+		(void)memmove(sec_dptr, bdaddr, BDADDR_SIZE);
 	}
 
 	/* Set the common extended header format flags in the current primary
@@ -2600,6 +2607,12 @@ uint32_t ull_adv_aux_start(struct ll_adv_aux_set *aux, uint32_t ticks_anchor,
 	aux_handle = ull_adv_aux_handle_get(aux);
 	interval_us = aux->interval * PERIODIC_INT_UNIT_US;
 
+#if defined(CONFIG_BT_CTLR_ADV_AUX_SLOT_WINDOW_DRIFT)
+	ll_adv_aux_ticker_ext[aux_handle].ticks_slot_window =
+		ULL_ADV_RANDOM_DELAY + aux->ull.ticks_slot;
+	ll_adv_aux_ticker_ext[aux_handle].is_drift_in_window = 1U;
+#endif /* CONFIG_BT_CTLR_ADV_AUX_SLOT_WINDOW_DRIFT */
+
 #if defined(CONFIG_BT_CTLR_ADV_PERIODIC) && defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 	if (aux->lll.adv->sync) {
 		const struct ll_adv_sync_set *sync = HDR_LLL2ULL(aux->lll.adv->sync);
@@ -2612,14 +2625,22 @@ uint32_t ull_adv_aux_start(struct ll_adv_aux_set *aux, uint32_t ticks_anchor,
 	}
 
 	ll_adv_aux_ticker_ext[aux_handle].ext_timeout_func = ticker_cb;
+#endif /* !CONFIG_BT_CTLR_ADV_PERIODIC || !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 
+#if defined(CONFIG_BT_CTLR_ADV_AUX_SLOT_WINDOW_DRIFT) || \
+	(defined(CONFIG_BT_CTLR_ADV_PERIODIC) && \
+	 defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO))
 	ret_cb = TICKER_STATUS_BUSY;
 	ret = ticker_start_ext(
-#else /* !CONFIG_BT_CTLR_ADV_PERIODIC || !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
+#else  /* !CONFIG_BT_CTLR_ADV_AUX_SLOT_WINDOW_DRIFT &&
+	* !(CONFIG_BT_CTLR_ADV_PERIODIC && CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+	*/
 
 	ret_cb = TICKER_STATUS_BUSY;
 	ret = ticker_start(
-#endif /* !CONFIG_BT_CTLR_ADV_PERIODIC || !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
+#endif /* !CONFIG_BT_CTLR_ADV_AUX_SLOT_WINDOW_DRIFT &&
+	* !(CONFIG_BT_CTLR_ADV_PERIODIC && CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+	*/
 			   TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
 			   (TICKER_ID_ADV_AUX_BASE + aux_handle),
 			   ticks_anchor, 0U,
@@ -2628,10 +2649,14 @@ uint32_t ull_adv_aux_start(struct ll_adv_aux_set *aux, uint32_t ticks_anchor,
 			   (aux->ull.ticks_slot + ticks_slot_overhead),
 			   ticker_cb, aux,
 			   ull_ticker_status_give, (void *)&ret_cb
-#if defined(CONFIG_BT_CTLR_ADV_PERIODIC) && defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+#if defined(CONFIG_BT_CTLR_ADV_AUX_SLOT_WINDOW_DRIFT) || \
+	(defined(CONFIG_BT_CTLR_ADV_PERIODIC) && \
+	 defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO))
 			   ,
 			   &ll_adv_aux_ticker_ext[aux_handle]
-#endif /* !CONFIG_BT_CTLR_ADV_PERIODIC || !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
+#endif /* CONFIG_BT_CTLR_ADV_AUX_SLOT_WINDOW_DRIFT ||
+	* (CONFIG_BT_CTLR_ADV_PERIODIC && CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+	*/
 			   );
 	ret = ull_ticker_status_take(ret, &ret_cb);
 
@@ -2993,7 +3018,7 @@ static uint32_t aux_time_get(const struct ll_adv_aux_set *aux,
 
 	/* NOTE: 16-bit values are sufficient for minimum radio event time
 	 *       reservation, 32-bit are used here so that reservations for
-	 *       whole back-to-back chaining of PDUs can be accomodated where
+	 *       whole back-to-back chaining of PDUs can be accommodated where
 	 *       the required microseconds could overflow 16-bits, example,
 	 *       back-to-back chained Coded PHY PDUs.
 	 */
@@ -3050,7 +3075,7 @@ static uint32_t aux_time_min_get(const struct ll_adv_aux_set *aux)
 	/* Calculate the PDU Tx Time and hence the radio event length,
 	 * Always use maximum length for common extended header format so that
 	 * ACAD could be update when periodic advertising is active and the
-	 * time reservation need not be updated everytime avoiding overlapping
+	 * time reservation need not be updated every time avoiding overlapping
 	 * with other active states/roles.
 	 */
 	pdu_len = pdu->len - pdu->adv_ext_ind.ext_hdr_len -
@@ -3120,14 +3145,18 @@ void ull_adv_aux_lll_auxptr_fill(struct pdu_adv *pdu, struct lll_adv *adv)
 
 	chan_counter = lll_aux->data_chan_counter;
 
-	/* The offset has to be at least T_MAFS microseconds from the end of packet
+	/* The offset has to be at least T_MAFS microseconds from the end of packet.
+	 *
+	 * BLUETOOTH CORE SPECIFICATION Version 5.4 | Vol 6, Part B, Section 2.3.4.5 AuxPtr field,
+	 * The Aux Offset shall be at least the length of the packet plus T_MAFS
+	 *
 	 * In addition, the offset recorded in the aux ptr has the same requirement and this
 	 * offset is in steps of 30 microseconds; So use the quantized value in check
 	 */
 	pdu_us = PDU_AC_US(pdu->len, adv->phy_p, adv->phy_flags);
 	offset_us = HAL_TICKER_TICKS_TO_US(lll_aux->ticks_pri_pdu_offset) +
 		    lll_aux->us_pri_pdu_offset;
-	if ((offset_us/OFFS_UNIT_30_US)*OFFS_UNIT_30_US < EVENT_MAFS_US + pdu_us) {
+	if (((offset_us / OFFS_UNIT_30_US) * OFFS_UNIT_30_US) < (EVENT_MAFS_MIN_US + pdu_us)) {
 		uint32_t interval_us;
 
 		/* Offset too small, point to next aux packet instead */
@@ -3165,10 +3194,13 @@ static void mfy_aux_offset_get(void *param)
 	uint32_t ticks_current;
 	uint32_t ticks_elapsed;
 	struct ll_adv_set *adv;
+	uint16_t chan_counter;
 	struct pdu_adv *pdu;
 	uint32_t ticks_now;
 	uint32_t remainder;
+	uint32_t offset_us;
 	uint8_t ticker_id;
+	uint16_t pdu_us;
 	uint8_t retry;
 	uint8_t id;
 
@@ -3226,13 +3258,6 @@ static void mfy_aux_offset_get(void *param)
 	 */
 	lll_aux->ticks_pri_pdu_offset = ticks_to_expire;
 
-	/* NOTE: as first primary channel PDU does not use remainder, the packet
-	 * timer is started one tick in advance to start the radio with
-	 * microsecond precision, hence compensate for the higher start_us value
-	 * captured at radio start of the first primary channel PDU.
-	 */
-	lll_aux->ticks_pri_pdu_offset += 1U;
-
 	/* Store the microsecond remainder offset for population in other
 	 * advertising primary channel PDUs.
 	 */
@@ -3241,8 +3266,43 @@ static void mfy_aux_offset_get(void *param)
 	/* Fill the aux offset in the first Primary channel PDU */
 	/* FIXME: we are in ULL_LOW context, fill offset in LLL context? */
 	pdu = lll_adv_data_latest_peek(&adv->lll);
-	aux_ptr = ull_adv_aux_lll_offset_fill(pdu, ticks_to_expire, remainder,
-					      0U);
+
+	/* data channel counter that will be used for auxiliary PDU channel */
+	chan_counter = lll_aux->data_chan_counter;
+
+	/* The offset has to be at least T_MAFS microseconds from the end of packet.
+	 *
+	 * BLUETOOTH CORE SPECIFICATION Version 5.4 | Vol 6, Part B, Section 2.3.4.5 AuxPtr field,
+	 * The Aux Offset shall be at least the length of the packet plus T_MAFS
+	 *
+	 * In addition, the offset recorded in the aux ptr has the same requirement and this
+	 * offset is in steps of 30 microseconds; So use the quantized value in check
+	 */
+	pdu_us = PDU_AC_US(pdu->len, adv->lll.phy_p, adv->lll.phy_flags);
+	offset_us = HAL_TICKER_TICKS_TO_US(lll_aux->ticks_pri_pdu_offset) +
+		    lll_aux->us_pri_pdu_offset;
+	if (((offset_us / OFFS_UNIT_30_US) * OFFS_UNIT_30_US) < (EVENT_MAFS_MIN_US + pdu_us)) {
+		uint32_t interval_us;
+
+		/* Offset too small, point to next aux packet instead */
+		interval_us = aux->interval * PERIODIC_INT_UNIT_US;
+		offset_us = offset_us + interval_us;
+		lll_aux->ticks_pri_pdu_offset = HAL_TICKER_US_TO_TICKS(offset_us);
+		lll_aux->us_pri_pdu_offset = offset_us -
+					     HAL_TICKER_TICKS_TO_US(lll_aux->ticks_pri_pdu_offset);
+		chan_counter++;
+	}
+
+	/* Fill the aux offset */
+	aux_ptr = ull_adv_aux_lll_offset_fill(pdu, lll_aux->ticks_pri_pdu_offset,
+					      lll_aux->us_pri_pdu_offset, 0U);
+
+	/* NOTE: as first primary channel PDU does not use remainder, the packet
+	 * timer is started one tick in advance to start the radio with
+	 * microsecond precision, hence compensate for the higher start_us value
+	 * captured at radio start of the first primary channel PDU.
+	 */
+	lll_aux->ticks_pri_pdu_offset += 1U;
 
 	/* Process channel map update, if any */
 	if (aux->chm_first != aux->chm_last) {
@@ -3253,10 +3313,11 @@ static void mfy_aux_offset_get(void *param)
 	/* Calculate the radio channel to use */
 	data_chan_map = aux->chm[aux->chm_first].data_chan_map;
 	data_chan_count = aux->chm[aux->chm_first].data_chan_count;
-	aux_ptr->chan_idx = lll_chan_sel_2(lll_aux->data_chan_counter,
+	aux_ptr->chan_idx = lll_chan_sel_2(chan_counter,
 					   aux->data_chan_id,
 					   data_chan_map, data_chan_count);
 
+	/* Assertion check for delayed aux_offset calculations */
 	ticks_now = ticker_ticks_now_get();
 	ticks_elapsed = ticker_ticks_diff_get(ticks_now, ticks_current);
 	ticks_to_start = MAX(adv->ull.ticks_active_to_start,

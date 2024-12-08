@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(board, CONFIG_LOG_DEFAULT_LEVEL);
 
 #define DAPLINK_QSPI_MUX_NODE DT_NODELABEL(daplink_qspi_mux)
 
-#if DT_NODE_HAS_STATUS(DAPLINK_QSPI_MUX_NODE, okay)
+#if DT_NODE_HAS_STATUS_OKAY(DAPLINK_QSPI_MUX_NODE)
 int board_daplink_qspi_mux_select(enum board_daplink_qspi_mux_mode mode)
 {
 	struct gpio_dt_spec mux = GPIO_DT_SPEC_GET(DAPLINK_QSPI_MUX_NODE, mux_gpios);
@@ -77,4 +77,4 @@ static int board_init(void)
 }
 
 SYS_INIT(board_init, POST_KERNEL, CONFIG_BOARD_INIT_PRIORITY);
-#endif /* DT_NODE_HAS_STATUS(DAPLINK_QSPI_MUX_NODE, okay) */
+#endif /* DT_NODE_HAS_STATUS_OKAY(DAPLINK_QSPI_MUX_NODE) */

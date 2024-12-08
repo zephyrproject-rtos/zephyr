@@ -2,12 +2,20 @@ name: Backport Issue Check
 
 on:
   pull_request_target:
+    types:
+      - edited
+      - opened
+      - reopened
+      - synchronize
     branches:
       - v*-branch
 
 jobs:
   backport:
     name: Backport Issue Check
+    concurrency:
+      group: backport-issue-check-${{ github.ref }}
+      cancel-in-progress: true
     runs-on: ubuntu-22.04
     if: github.repository == 'zephyrproject-rtos/zephyr'
 

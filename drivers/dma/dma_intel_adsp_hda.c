@@ -219,6 +219,8 @@ int intel_adsp_hda_dma_status(const struct device *dev, uint32_t channel,
 	struct dma_status *stat)
 {
 	const struct intel_adsp_hda_dma_cfg *const cfg = dev->config;
+	uint32_t llp_l = 0;
+	uint32_t llp_u = 0;
 	bool xrun_det;
 
 	__ASSERT(channel < cfg->dma_channels, "Channel does not exist");
@@ -232,6 +234,22 @@ int intel_adsp_hda_dma_status(const struct device *dev, uint32_t channel,
 	stat->read_position = *DGBRP(cfg->base, cfg->regblock_size, channel);
 	stat->pending_length = used;
 	stat->free = unused;
+
+#if CONFIG_SOC_INTEL_ACE20_LNL || CONFIG_SOC_INTEL_ACE30
+	/* Linear Link Position via HDA-DMA is only supported on ACE2 or newer */
+	if (cfg->direction == MEMORY_TO_PERIPHERAL || cfg->direction == PERIPHERAL_TO_MEMORY) {
+		uint32_t tmp;
+
+		tmp = *DGLLLPL(cfg->base, cfg->regblock_size, channel);
+		llp_u = *DGLLLPU(cfg->base, cfg->regblock_size, channel);
+		llp_l = *DGLLLPL(cfg->base, cfg->regblock_size, channel);
+		if (tmp > llp_l) {
+			/* re-read the LLPU value, as LLPL just wrapped */
+			llp_u = *DGLLLPU(cfg->base, cfg->regblock_size, channel);
+		}
+	}
+#endif
+	stat->total_copied = ((uint64_t)llp_u << 32) | llp_l;
 
 	switch (cfg->direction) {
 	case MEMORY_TO_PERIPHERAL:
@@ -441,6 +459,7 @@ void intel_adsp_hda_dma_isr(void)
 	bool triggered_interrupts = false;
 	int i, j;
 	int expected_interrupts = 0;
+	atomic_val_t enabled_chs;
 	const struct device *host_dev[] = {
 #if CONFIG_DMA_INTEL_ADSP_HDA_HOST_OUT
 		DT_FOREACH_STATUS_OKAY(intel_adsp_hda_host_out, DEVICE_DT_GET_AND_COMMA)
@@ -461,14 +480,17 @@ void intel_adsp_hda_dma_isr(void)
 	for (i = 0; i < ARRAY_SIZE(host_dev); i++) {
 		dma_ctx = (struct dma_context *)host_dev[i]->data;
 		cfg = host_dev[i]->config;
-
-		for (j = 0; j < dma_ctx->dma_channels; j++) {
-			if (!atomic_test_bit(dma_ctx->atomic, j))
+		enabled_chs = atomic_get(dma_ctx->atomic);
+		for (j = 0; enabled_chs && j < dma_ctx->dma_channels; j++) {
+			if (!(enabled_chs & BIT(j))) {
 				continue;
+			}
+			enabled_chs &= ~(BIT(j));
 
 			if (!intel_adsp_hda_is_buffer_interrupt_enabled(cfg->base,
-									cfg->regblock_size, j))
+									cfg->regblock_size, j)) {
 				continue;
+			}
 
 			if (intel_adsp_hda_check_buffer_interrupt(cfg->base,
 								  cfg->regblock_size, j)) {

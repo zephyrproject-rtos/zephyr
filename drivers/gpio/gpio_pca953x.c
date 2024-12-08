@@ -467,7 +467,7 @@ out:
 	return rc;
 }
 
-static const struct gpio_driver_api api_table = {
+static DEVICE_API(gpio, api_table) = {
 	.pin_configure = gpio_pca953x_config,
 	.port_get_raw = gpio_pca953x_port_read,
 	.port_set_masked_raw = gpio_pca953x_port_set_masked,

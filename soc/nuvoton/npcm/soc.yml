@@ -1,0 +1,6 @@
+family:
+- name: npcm
+  series:
+  - name: npcm4
+    socs:
+    - name: npcm400

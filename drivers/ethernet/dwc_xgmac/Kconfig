@@ -1,0 +1,87 @@
+#
+# Synopsys DesignWare XGMAC configuration options
+#
+# Copyright(c) 2024, Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+#
+
+DT_COMPAT_DWC_XGMAC := snps,dwcxgmac
+
+menu "DWC XGMAC configuration"
+
+config ETH_DWC_XGMAC
+	bool "Synopsys DesignWareCore XGMAC Ethernet driver"
+	default y
+	depends on DT_HAS_SNPS_DWCXGMAC_ENABLED
+	help
+	  This is a driver for the Synopsys DesignWare XGMAC, also referred to
+	  as "DesignWare Cores Ethernet XGMAC". Hardware versions
+	  3.x are supported.
+
+	  Platform specific glue support is also required. This driver is
+	  currently available on targets using the Intel Agilex5 series.
+
+if  ETH_DWC_XGMAC
+
+config ETH_DWC_XGMAC_BOTTOM_HALF_WORK_QUEUE
+	bool "IRQ Bottom Half work Queue"
+	default y
+
+config ETH_DWC_XGMAC_SW_RESET_TIMEOUT
+	int "A timeout value in us to check software reset status"
+	default 1000
+	help
+	  A timeout value in ms to check software reset status
+
+config ETH_DWC_XGMAC_POLLING_MODE
+	bool "Polling mode"
+
+config ETH_DWC_XGMAC_INTERRUPT_POLLING_INTERVAL_US
+	int "XGMAC interrupt polling interval in us"
+	default 500
+	depends on ETH_DWC_XGMAC_POLLING_MODE
+	help
+	  XGMAC interrupt polling interval in us
+
+config ETH_XGMAC_MAX_QUEUES
+	int
+	default 8
+	help
+	  Number hardware queues supported by the XGMAC IP
+
+config ETH_DWC_XGMAC_RX_CS_OFFLOAD
+	bool "RX checksum offload"
+	default y
+	help
+	  Enable receive checksum offload for TCP/UDP/IP packets
+
+config ETH_DWC_XGMAC_TX_CS_OFFLOAD
+	bool "TX checksum offload"
+	default y
+	help
+	  Enable transmit checksum offload for TCP/UDP/IP packets
+
+config ETH_DWC_XGMAC_PROMISCUOUS_EXCEPTION
+	bool "Promiscuous mode"
+	depends on NET_PROMISCUOUS_MODE
+	help
+	  Disables the promiscuous mode support in XGMAC device.
+
+config ETH_DWC_XGMAC_HW_FILTERING
+	bool "H/W L2 Filtering"
+	help
+	  Enable Hardware support for L2 filtering of packets.
+
+config ETH_DWC_XGMAC_HW_L3_L4_FILTERING
+	bool "H/W L3 L4 Filtering"
+	help
+	  Enable Hardware support for L3 L4 filtering of packets.
+
+config ETH_DWC_XGMAC_ARP_OFFLOAD
+	bool "ARP Offload"
+	help
+	  Enable ARP hardware offloading support.
+
+endif # ETH_DWC_XGMAC
+
+endmenu

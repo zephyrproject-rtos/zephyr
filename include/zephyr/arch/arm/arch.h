@@ -19,9 +19,6 @@
 /* Add include for DTS generated information */
 #include <zephyr/devicetree.h>
 
-/* ARM GPRs are often designated by two different names */
-#define sys_define_gpr_with_alias(name1, name2) union { uint32_t name1, name2; }
-
 #include <zephyr/arch/arm/thread.h>
 #include <zephyr/arch/arm/exception.h>
 #include <zephyr/arch/arm/irq.h>
@@ -270,9 +267,9 @@ enum k_fatal_error_reason_arch {
 #ifdef CONFIG_CPU_HAS_ARM_MPU
 #include <zephyr/arch/arm/mpu/arm_mpu.h>
 #endif /* CONFIG_CPU_HAS_ARM_MPU */
-#ifdef CONFIG_CPU_HAS_NXP_MPU
+#ifdef CONFIG_CPU_HAS_NXP_SYSMPU
 #include <zephyr/arch/arm/mpu/nxp_mpu.h>
-#endif /* CONFIG_CPU_HAS_NXP_MPU */
+#endif /* CONFIG_CPU_HAS_NXP_SYSMPU */
 #endif /* CONFIG_ARM_MPU */
 #ifdef CONFIG_ARM_AARCH32_MMU
 #include <zephyr/arch/arm/mmu/arm_mmu.h>

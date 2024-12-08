@@ -54,8 +54,9 @@ static void ti_dm_timer_write_masks(uint32_t data, uint32_t reg, uint32_t mask, 
 static void ti_dmtimer_isr(void *data)
 {
 	/* If no pending event */
-	if (!TI_DM_TIMER_READ(IRQSTATUS))
+	if (!TI_DM_TIMER_READ(IRQSTATUS)) {
 		return;
+	}
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
@@ -136,6 +137,9 @@ static int sys_clock_driver_init(void)
 	last_cycle = 0;
 
 	IRQ_CONNECT(TIMER_IRQ_NUM, TIMER_IRQ_PRIO, ti_dmtimer_isr, NULL, TIMER_IRQ_FLAGS);
+
+	/* Disable prescalar */
+	TI_DM_TIMER_WRITE(0, TCLR, PRE);
 
 	/* Select autoreload mode */
 	TI_DM_TIMER_WRITE(1, TCLR, AR);

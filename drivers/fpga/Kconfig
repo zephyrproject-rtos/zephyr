@@ -10,7 +10,7 @@ menuconfig FPGA
 
 if FPGA
 
-module = fpga
+module = FPGA
 module-str = fpga
 source "subsys/logging/Kconfig.template.log_config"
 
@@ -31,5 +31,6 @@ source "drivers/fpga/Kconfig.eos_s3"
 source "drivers/fpga/Kconfig.ice40"
 source "drivers/fpga/Kconfig.mpfs"
 source "drivers/fpga/Kconfig.zynqmp"
+source "drivers/fpga/Kconfig.slg471x5"
 
 endif # FPGA

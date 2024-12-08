@@ -118,13 +118,7 @@ static int line_out(uint8_t *data, size_t length, void *output_ctx)
 	ARG_UNUSED(output_ctx);
 	const uint16_t mtu_size = bt_gatt_get_mtu(ble_backend_conn);
 	const uint16_t attr_data_len = mtu_size - ATT_NOTIFY_SIZE;
-	uint16_t notify_len;
-
-	if (attr_data_len < LOG_BACKEND_BLE_BUF_SIZE) {
-		notify_len = attr_data_len;
-	} else {
-		notify_len = LOG_BACKEND_BLE_BUF_SIZE;
-	}
+	const uint16_t notify_len = MIN(length, MIN(attr_data_len, LOG_BACKEND_BLE_BUF_SIZE));
 
 	struct bt_gatt_notify_params notify_param = {
 		.uuid = NULL,

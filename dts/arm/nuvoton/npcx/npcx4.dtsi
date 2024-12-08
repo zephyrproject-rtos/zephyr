@@ -21,6 +21,21 @@
 #include "npcx.dtsi"
 
 / {
+	cpus {
+		cpu0: cpu@0 {
+			cpu-power-states = <&suspend_to_idle0>;
+		};
+
+		power-states {
+			suspend_to_idle0: suspend-to-idle0 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <0>;
+				min-residency-us = <1000>;
+			};
+		};
+	};
+
 	def-io-conf-list {
 		pinmux = <&alt0_gpio_no_spip
 			  &alt0_gpio_no_fpip
@@ -373,6 +388,7 @@
 			status = "disabled";
 			#address-cells = <3>;
 			#size-cells = <0>;
+			instance-id = <0x00>;
 		};
 
 		i3c1: i3c@400f2000 {
@@ -398,6 +414,7 @@
 			status = "disabled";
 			#address-cells = <3>;
 			#size-cells = <0>;
+			instance-id = <0x10>;
 		};
 
 		i3c2: i3c@400f4000 {
@@ -423,6 +440,7 @@
 			status = "disabled";
 			#address-cells = <3>;
 			#size-cells = <0>;
+			instance-id = <0x20>;
 		};
 	};
 

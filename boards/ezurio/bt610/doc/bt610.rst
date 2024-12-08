@@ -1,7 +1,4 @@
-.. _bt610:
-
-Ezurio Sentrius BT610 Sensor
-############################
+.. zephyr:board:: bt610
 
 Overview
 ********
@@ -27,12 +24,6 @@ The sensor has the following features:
 * :abbr:`SPI (Serial Peripheral Interface)`
 * :abbr:`UART (Universal Asynchronous Receiver-Transmitter)`
 * :abbr:`WDT (Watchdog Timer)`
-
-.. figure:: img/bt610_front.jpg
-     :align: center
-     :alt: Sentrius BT610 Sensor, front view
-
-     Sentrius BT610 Sensor, front view
 
 .. figure:: img/bt610_back.jpg
      :align: center
@@ -545,7 +536,7 @@ found in :ref:`nordic_segger_flashing`. Then build and flash
 applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 First, run your favorite terminal program to listen for output.
 
@@ -582,9 +573,9 @@ Testing Bluetooth on the BT610
 Many of the Bluetooth examples will work on the BT610.
 Try them out:
 
-* :ref:`ble_peripheral`
-* :ref:`bluetooth-eddystone-sample`
-* :ref:`bluetooth-ibeacon-sample`
+* :zephyr:code-sample:`ble_peripheral`
+* :zephyr:code-sample:`bluetooth_eddystone`
+* :zephyr:code-sample:`bluetooth_ibeacon`
 
 
 Testing the LEDs and buttons on the BT610

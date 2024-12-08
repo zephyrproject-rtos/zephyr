@@ -14,6 +14,10 @@ void arch_irq_offload(irq_offload_routine_t routine, const void *parameter)
 {
 	posix_irq_offload(routine, parameter);
 }
+
+void arch_irq_offload_init(void)
+{
+}
 #endif
 
 void arch_irq_enable(unsigned int irq)

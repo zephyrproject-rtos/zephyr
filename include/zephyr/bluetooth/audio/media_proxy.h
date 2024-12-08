@@ -1,5 +1,10 @@
+/**
+ * @file
+ * @brief Bluetooth Media Proxy APIs
+ */
+
 /*
- * Copyright (c) 2019 - 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2019 - 2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,7 +12,8 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MEDIA_PROXY_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MEDIA_PROXY_H_
 
-/** @brief Media proxy module
+/**
+ * @brief Media proxy module
  *
  * @defgroup bt_media_proxy Media Proxy
  *
@@ -49,13 +55,15 @@
 extern "C" {
 #endif
 
-
 /**
  * @brief Media player command
  */
 struct mpl_cmd {
+	/** The opcode. See the MEDIA_PROXY_OP_* values */
 	uint8_t  opcode;
+	/** Whether or not the @ref mpl_cmd.param is used */
 	bool  use_param;
+	/** A 32-bit signed parameter. The parameter value depends on the @ref mpl_cmd.opcode */
 	int32_t param;
 };
 
@@ -63,7 +71,9 @@ struct mpl_cmd {
  * @brief Media command notification
  */
 struct mpl_cmd_ntf {
+	/** The opcode that was sent */
 	uint8_t requested_opcode;
+	/** The result of the operation  */
 	uint8_t result_code;
 };
 
@@ -80,101 +90,188 @@ struct mpl_sci {
  * @brief Search
  */
 struct mpl_search {
+	/** The length of the @ref mpl_search.search value */
 	uint8_t len;
-	char    search[SEARCH_LEN_MAX]; /* Concatenated search control items */
-};                                      /* - (type, length, param) */
+	/** Concatenated search control items - (type, length, param) */
+	char search[SEARCH_LEN_MAX];
+};
 
 /**
- * @brief Playback speed parameters
+ * @name Playback speed parameters
  *
  * All values from -128 to 127 allowed, only some defined
+ * @{
  */
+/** Minimum playback speed, resulting in 25 % speed */
 #define MEDIA_PROXY_PLAYBACK_SPEED_MIN     -128
+/** Quarter playback speed, resulting in 25 % speed */
 #define MEDIA_PROXY_PLAYBACK_SPEED_QUARTER -128
-#define MEDIA_PROXY_PLAYBACK_SPEED_HALF     -64
-#define MEDIA_PROXY_PLAYBACK_SPEED_UNITY      0
-#define MEDIA_PROXY_PLAYBACK_SPEED_DOUBLE    64
-#define MEDIA_PROXY_PLAYBACK_SPEED_MAX      127
+/** Half playback speed, resulting in 50 % speed */
+#define MEDIA_PROXY_PLAYBACK_SPEED_HALF    -64
+/** Unity playback speed, resulting in 100 % speed */
+#define MEDIA_PROXY_PLAYBACK_SPEED_UNITY   0
+/** Double playback speed, resulting in 200 % speed */
+#define MEDIA_PROXY_PLAYBACK_SPEED_DOUBLE  64
+/** Max playback speed, resulting in 395.7 % speed (nearly 400 %) */
+#define MEDIA_PROXY_PLAYBACK_SPEED_MAX     127
+/** @} */
 
 /**
- * @brief Seeking speed factors
+ * @name Seeking speed factors
  *
  * The allowed values for seeking speed are the range -64 to -4
  * (endpoints included), the value 0, and the range 4 to 64
  * (endpoints included).
+ * @{
  */
+/** Maximum seeking speed - Can be negated */
 #define MEDIA_PROXY_SEEKING_SPEED_FACTOR_MAX  64
-#define MEDIA_PROXY_SEEKING_SPEED_FACTOR_MIN   4
-#define MEDIA_PROXY_SEEKING_SPEED_FACTOR_ZERO  0
+/** Minimum seeking speed - Can be negated */
+#define MEDIA_PROXY_SEEKING_SPEED_FACTOR_MIN  4
+/** No seeking */
+#define MEDIA_PROXY_SEEKING_SPEED_FACTOR_ZERO 0
+/** @} */
 
 /**
- * @brief Playing orders
+ * @name Playing orders
+ * @{
  */
+/** A single track is played once; there is no next track. */
 #define MEDIA_PROXY_PLAYING_ORDER_SINGLE_ONCE    0x01
+/** A single track is played repeatedly; the next track is the current track. */
 #define MEDIA_PROXY_PLAYING_ORDER_SINGLE_REPEAT  0x02
+/** The tracks within a group are played once in track order. */
 #define MEDIA_PROXY_PLAYING_ORDER_INORDER_ONCE   0x03
+/** The tracks within a group are played in track order repeatedly. */
 #define MEDIA_PROXY_PLAYING_ORDER_INORDER_REPEAT 0x04
+/** The tracks within a group are played once only from the oldest first. */
 #define MEDIA_PROXY_PLAYING_ORDER_OLDEST_ONCE    0x05
+/** The tracks within a group are played from the oldest first repeatedly. */
 #define MEDIA_PROXY_PLAYING_ORDER_OLDEST_REPEAT  0x06
+/** The tracks within a group are played once only from the newest first. */
 #define MEDIA_PROXY_PLAYING_ORDER_NEWEST_ONCE    0x07
+/** The tracks within a group are played from the newest first repeatedly. */
 #define MEDIA_PROXY_PLAYING_ORDER_NEWEST_REPEAT  0x08
+/** The tracks within a group are played in random order once. */
 #define MEDIA_PROXY_PLAYING_ORDER_SHUFFLE_ONCE   0x09
+/** The tracks within a group are played in random order repeatedly. */
 #define MEDIA_PROXY_PLAYING_ORDER_SHUFFLE_REPEAT 0x0a
+/** @} */
 
 /**
- * @brief Playing orders supported
+ * @name Playing orders supported
  *
  * A bitmap, in the same order as the playing orders above.
  * Note that playing order 1 corresponds to bit 0, and so on.
+ * @{
  */
+/** A single track is played once; there is no next track. */
 #define MEDIA_PROXY_PLAYING_ORDERS_SUPPORTED_SINGLE_ONCE    BIT(0)
+/** A single track is played repeatedly; the next track is the current track. */
 #define MEDIA_PROXY_PLAYING_ORDERS_SUPPORTED_SINGLE_REPEAT  BIT(1)
+/** The tracks within a group are played once in track order. */
 #define MEDIA_PROXY_PLAYING_ORDERS_SUPPORTED_INORDER_ONCE   BIT(2)
+/** The tracks within a group are played in track order repeatedly. */
 #define MEDIA_PROXY_PLAYING_ORDERS_SUPPORTED_INORDER_REPEAT BIT(3)
+/** The tracks within a group are played once only from the oldest first. */
 #define MEDIA_PROXY_PLAYING_ORDERS_SUPPORTED_OLDEST_ONCE    BIT(4)
+/** The tracks within a group are played from the oldest first repeatedly. */
 #define MEDIA_PROXY_PLAYING_ORDERS_SUPPORTED_OLDEST_REPEAT  BIT(5)
+/** The tracks within a group are played once only from the newest first. */
 #define MEDIA_PROXY_PLAYING_ORDERS_SUPPORTED_NEWEST_ONCE    BIT(6)
+/** The tracks within a group are played from the newest first repeatedly. */
 #define MEDIA_PROXY_PLAYING_ORDERS_SUPPORTED_NEWEST_REPEAT  BIT(7)
+/** The tracks within a group are played in random order once. */
 #define MEDIA_PROXY_PLAYING_ORDERS_SUPPORTED_SHUFFLE_ONCE   BIT(8)
+/** The tracks within a group are played in random order repeatedly. */
 #define MEDIA_PROXY_PLAYING_ORDERS_SUPPORTED_SHUFFLE_REPEAT BIT(9)
+/** @} */
 
 /**
- * @brief Media player states
+ * @name Media player states
+ * @{
  */
+/** The current track is invalid, and no track has been selected. */
 #define MEDIA_PROXY_STATE_INACTIVE 0x00
+/** The media player is playing the current track. */
 #define MEDIA_PROXY_STATE_PLAYING  0x01
+/** The current track is paused. The media player has a current track, but it is not being played */
 #define MEDIA_PROXY_STATE_PAUSED   0x02
+/** The current track is fast forwarding or fast rewinding. */
 #define MEDIA_PROXY_STATE_SEEKING  0x03
+/** Used internally as the last state value */
 #define MEDIA_PROXY_STATE_LAST     0x04
+/** @} */
 
 /**
- * @brief Media player command opcodes
+ * @name Media player command opcodes
+ * @{
  */
-#define MEDIA_PROXY_OP_PLAY          0x01
-#define MEDIA_PROXY_OP_PAUSE         0x02
-#define MEDIA_PROXY_OP_FAST_REWIND   0x03
-#define MEDIA_PROXY_OP_FAST_FORWARD  0x04
-#define MEDIA_PROXY_OP_STOP          0x05
+/** Start playing the current track. */
+#define MEDIA_PROXY_OP_PLAY         0x01
+/** Pause playing the current track. */
+#define MEDIA_PROXY_OP_PAUSE        0x02
+/** Fast rewind the current track. */
+#define MEDIA_PROXY_OP_FAST_REWIND  0x03
+/** Fast forward the current track. */
+#define MEDIA_PROXY_OP_FAST_FORWARD 0x04
+/**
+ * Stop current activity and return to the paused state and set the current track position to the
+ * start of the current track.
+ */
+#define MEDIA_PROXY_OP_STOP         0x05
 
+/** Set a new current track position relative to the current track position. */
 #define MEDIA_PROXY_OP_MOVE_RELATIVE 0x10
 
+/**
+ * Set the current track position to the starting position of the previous segment of the current
+ * track.
+ */
 #define MEDIA_PROXY_OP_PREV_SEGMENT  0x20
+/**
+ * Set the current track position to the starting position of
+ * the next segment of the current track.
+ */
 #define MEDIA_PROXY_OP_NEXT_SEGMENT  0x21
+/**
+ * Set the current track position to the starting position of
+ * the first segment of the current track.
+ */
 #define MEDIA_PROXY_OP_FIRST_SEGMENT 0x22
+/**
+ * Set the current track position to the starting position of
+ * the last segment of the current track.
+ */
 #define MEDIA_PROXY_OP_LAST_SEGMENT  0x23
+/**
+ * Set the current track position to the starting position of
+ * the nth segment of the current track.
+ */
 #define MEDIA_PROXY_OP_GOTO_SEGMENT  0x24
 
-#define MEDIA_PROXY_OP_PREV_TRACK    0x30
-#define MEDIA_PROXY_OP_NEXT_TRACK    0x31
-#define MEDIA_PROXY_OP_FIRST_TRACK   0x32
-#define MEDIA_PROXY_OP_LAST_TRACK    0x33
-#define MEDIA_PROXY_OP_GOTO_TRACK    0x34
+/** Set the current track to the previous track based on the playing order. */
+#define MEDIA_PROXY_OP_PREV_TRACK  0x30
+/** Set the current track to the next track based on the playing order. */
+#define MEDIA_PROXY_OP_NEXT_TRACK  0x31
+/** Set the current track to the first track based on the playing order. */
+#define MEDIA_PROXY_OP_FIRST_TRACK 0x32
+/** Set the current track to the last track based on the playing order. */
+#define MEDIA_PROXY_OP_LAST_TRACK  0x33
+/** Set the current track to the nth track based on the playing order. */
+#define MEDIA_PROXY_OP_GOTO_TRACK  0x34
 
-#define MEDIA_PROXY_OP_PREV_GROUP    0x40
-#define MEDIA_PROXY_OP_NEXT_GROUP    0x41
-#define MEDIA_PROXY_OP_FIRST_GROUP   0x42
-#define MEDIA_PROXY_OP_LAST_GROUP    0x43
-#define MEDIA_PROXY_OP_GOTO_GROUP    0x44
+/** Set the current group to the previous group in the sequence of groups. */
+#define MEDIA_PROXY_OP_PREV_GROUP  0x40
+/** Set the current group to the next group in the sequence of groups. */
+#define MEDIA_PROXY_OP_NEXT_GROUP  0x41
+/** Set the current group to the first group in the sequence of groups. */
+#define MEDIA_PROXY_OP_FIRST_GROUP 0x42
+/** Set the current group to the last group in the sequence of groups. */
+#define MEDIA_PROXY_OP_LAST_GROUP  0x43
+/** Set the current group to the nth group in the sequence of groups. */
+#define MEDIA_PROXY_OP_GOTO_GROUP  0x44
+/** @} */
 
 /**
  * @brief Media player supported opcodes length
@@ -183,64 +280,122 @@ struct mpl_search {
 
 /**
  * @brief Media player supported command opcodes
+ * @{
  */
-#define MEDIA_PROXY_OP_SUP_PLAY          BIT(0)
-#define MEDIA_PROXY_OP_SUP_PAUSE         BIT(1)
-#define MEDIA_PROXY_OP_SUP_FAST_REWIND   BIT(2)
-#define MEDIA_PROXY_OP_SUP_FAST_FORWARD  BIT(3)
-#define MEDIA_PROXY_OP_SUP_STOP          BIT(4)
+/** Support the Play opcode */
+#define MEDIA_PROXY_OP_SUP_PLAY         BIT(0)
+/** Support the Pause opcode */
+#define MEDIA_PROXY_OP_SUP_PAUSE        BIT(1)
+/** Support the Fast Rewind opcode */
+#define MEDIA_PROXY_OP_SUP_FAST_REWIND  BIT(2)
+/** Support the Fast Forward opcode */
+#define MEDIA_PROXY_OP_SUP_FAST_FORWARD BIT(3)
+/** Support the Stop opcode */
+#define MEDIA_PROXY_OP_SUP_STOP         BIT(4)
 
+/** Support the Move Relative opcode */
 #define MEDIA_PROXY_OP_SUP_MOVE_RELATIVE BIT(5)
 
+/** Support the Previous Segment opcode */
 #define MEDIA_PROXY_OP_SUP_PREV_SEGMENT  BIT(6)
+/** Support the Next Segment opcode */
 #define MEDIA_PROXY_OP_SUP_NEXT_SEGMENT  BIT(7)
+/** Support the First Segment opcode */
 #define MEDIA_PROXY_OP_SUP_FIRST_SEGMENT BIT(8)
+/** Support the Last Segment opcode */
 #define MEDIA_PROXY_OP_SUP_LAST_SEGMENT  BIT(9)
+/** Support the Goto Segment opcode */
 #define MEDIA_PROXY_OP_SUP_GOTO_SEGMENT  BIT(10)
 
-#define MEDIA_PROXY_OP_SUP_PREV_TRACK    BIT(11)
-#define MEDIA_PROXY_OP_SUP_NEXT_TRACK    BIT(12)
-#define MEDIA_PROXY_OP_SUP_FIRST_TRACK   BIT(13)
-#define MEDIA_PROXY_OP_SUP_LAST_TRACK    BIT(14)
-#define MEDIA_PROXY_OP_SUP_GOTO_TRACK    BIT(15)
+/** Support the Previous Track opcode */
+#define MEDIA_PROXY_OP_SUP_PREV_TRACK  BIT(11)
+/** Support the Next Track opcode */
+#define MEDIA_PROXY_OP_SUP_NEXT_TRACK  BIT(12)
+/** Support the First Track opcode */
+#define MEDIA_PROXY_OP_SUP_FIRST_TRACK BIT(13)
+/** Support the Last Track opcode */
+#define MEDIA_PROXY_OP_SUP_LAST_TRACK  BIT(14)
+/** Support the Goto Track opcode */
+#define MEDIA_PROXY_OP_SUP_GOTO_TRACK  BIT(15)
 
-#define MEDIA_PROXY_OP_SUP_PREV_GROUP    BIT(16)
-#define MEDIA_PROXY_OP_SUP_NEXT_GROUP    BIT(17)
-#define MEDIA_PROXY_OP_SUP_FIRST_GROUP   BIT(18)
-#define MEDIA_PROXY_OP_SUP_LAST_GROUP    BIT(19)
-#define MEDIA_PROXY_OP_SUP_GOTO_GROUP    BIT(20)
+/** Support the Previous Group opcode */
+#define MEDIA_PROXY_OP_SUP_PREV_GROUP  BIT(16)
+/** Support the Next Group opcode */
+#define MEDIA_PROXY_OP_SUP_NEXT_GROUP  BIT(17)
+/** Support the First Group opcode */
+#define MEDIA_PROXY_OP_SUP_FIRST_GROUP BIT(18)
+/** Support the Last Group opcode */
+#define MEDIA_PROXY_OP_SUP_LAST_GROUP  BIT(19)
+/** Support the Goto Group opcode */
+#define MEDIA_PROXY_OP_SUP_GOTO_GROUP  BIT(20)
+/** @} */
 
 /**
- * @brief Media player command result codes
+ * @name Media player command result codes
+ * @{
  */
+/** Action requested by the opcode write was completed successfully. */
 #define MEDIA_PROXY_CMD_SUCCESS             0x01
+/** An invalid or unsupported opcode was used for the Media Control Point write. */
 #define MEDIA_PROXY_CMD_NOT_SUPPORTED       0x02
+/**
+ * The Media Player State characteristic value is Inactive when the opcode is received or the
+ * result of the requested action of the opcode results in the Media Player State characteristic
+ * being set to Inactive.
+ */
 #define MEDIA_PROXY_CMD_PLAYER_INACTIVE     0x03
+/**
+ * The requested action of any Media Control Point write cannot be completed successfully because of
+ * a condition within the player.
+ */
 #define MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED 0x04
+/** @} */
 
 /**
- * @brief Search operation type values
+ * @name Search operation type values
+ * @{
  */
+/** Search for Track Name */
 #define MEDIA_PROXY_SEARCH_TYPE_TRACK_NAME    0x01
+/** Search for Artist Name */
 #define MEDIA_PROXY_SEARCH_TYPE_ARTIST_NAME   0x02
+/** Search for Album Name */
 #define MEDIA_PROXY_SEARCH_TYPE_ALBUM_NAME    0x03
+/** Search for Group Name */
 #define MEDIA_PROXY_SEARCH_TYPE_GROUP_NAME    0x04
+/** Search for Earliest Year */
 #define MEDIA_PROXY_SEARCH_TYPE_EARLIEST_YEAR 0x05
+/** Search for Latest Year */
 #define MEDIA_PROXY_SEARCH_TYPE_LATEST_YEAR   0x06
+/** Search for Genre */
 #define MEDIA_PROXY_SEARCH_TYPE_GENRE         0x07
+/** Search for Tracks only */
 #define MEDIA_PROXY_SEARCH_TYPE_ONLY_TRACKS   0x08
+/** Search for Groups only */
 #define MEDIA_PROXY_SEARCH_TYPE_ONLY_GROUPS   0x09
+/** @} */
 
 /**
- * @brief Search operation result codes
+ * @name Search notification result codes
+ *
+ * @{
  */
-#define MEDIA_PROXY_SEARCH_SUCCESS  0x01
-#define MEDIA_PROXY_SEARCH_FAILURE  0x02
+/** Search request was accepted; search has started. */
+#define MEDIA_PROXY_SEARCH_SUCCESS 0x01
+/** Search request was invalid; no search started. */
+#define MEDIA_PROXY_SEARCH_FAILURE 0x02
+/** @} */
 
-/* Group object object types */
+/**
+ * @name Group object object types
+ *
+ * @{
+ */
+/** Group object type is track */
 #define MEDIA_PROXY_GROUP_OBJECT_TRACK_TYPE 0x00
+/** Group object type is group */
 #define MEDIA_PROXY_GROUP_OBJECT_GROUP_TYPE 0x01
-
+/** @} */
 
 /**
  * @brief Opaque media player instance
@@ -249,9 +404,10 @@ struct media_player;
 
 /* PUBLIC API FOR CONTROLLERS */
 
-/** @brief Callbacks to a controller, from the media proxy
+/**
+ * @brief Callbacks to a controller, from the media proxy
  *
- *  Given by a controller when registering
+ * Given by a controller when registering
  */
 struct media_proxy_ctrl_cbs {
 
@@ -787,7 +943,7 @@ int media_proxy_ctrl_get_track_position(struct media_player *player);
  * @brief Set Track Position
  *
  * Set the playing position of the media player in the current
- * track. The position is given in in hundredths of a second,
+ * track. The position is given in hundredths of a second,
  * from the beginning of the track of the track for positive
  * values, and (backwards) from the end of the track for
  * negative values.
@@ -1066,7 +1222,7 @@ int media_proxy_ctrl_get_commands_supported(struct media_player *player);
  * May result in up to three callbacks
  * - one for the actual sending of the search to the player
  * - one for the result code for the search from the player
- * - if the search is successful, one for the the search results object ID in the OTs
+ * - if the search is successful, one for the search results object ID in the OTs
  *
  * Requires Object Transfer Service
  *
@@ -1108,10 +1264,8 @@ int media_proxy_ctrl_get_search_results_id(struct media_player *player);
  */
 uint8_t media_proxy_ctrl_get_content_ctrl_id(struct media_player *player);
 
-
-/* PUBLIC API FOR PLAYERS */
-
-/** @brief Available calls in a player, that the media proxy can call
+/**
+ * @brief Available calls in a player, that the media proxy can call
  *
  * Given by a player when registering.
  */
@@ -1178,7 +1332,7 @@ struct media_proxy_pl_calls {
 	 * @brief Set Track Position
 	 *
 	 * Set the playing position of the media player in the current
-	 * track. The position is given in in hundredths of a second,
+	 * track. The position is given in hundredths of a second,
 	 * from the beginning of the track of the track for positive
 	 * values, and (backwards) from the end of the track for
 	 * negative values.
@@ -1443,13 +1597,20 @@ struct media_proxy_pl_calls {
  */
 int media_proxy_pl_register(struct media_proxy_pl_calls *pl_calls);
 
-/* Initialize player - TODO: Move to player header file */
+/**
+ * @brief Initialize player
+ *
+ * TODO: Move to player header file
+ */
 int media_proxy_pl_init(void);
 
-/* TODO: Find best location for this call, and move this one also */
+/**
+ * @brief Get the pointer of the Object Transfer Service used by the Media Control Service
+ *
+ * TODO: Find best location for this call, and move this one also
+ */
 struct bt_ots *bt_mcs_get_ots(void);
 
-/* Callbacks from the player to the media proxy */
 /**
  * @brief Player name changed callback
  *

@@ -1,0 +1,19 @@
+#
+# Copyright (c) 2024 Jamie McCrae
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+common:
+  platform_allow: rm1xx_dvk
+  tags:
+    - mgmt
+    - mcumgr
+    - all_options
+    - transport
+    - lorawan
+  build_only: true
+tests:
+  mgmt.mcumgr.transport.lorawan: {}
+  mgmt.mcumgr.transport.lorawan.all:
+    extra_args:
+      - EXTRA_CONF_FILE="lorawan_all.conf"

@@ -118,7 +118,13 @@ static int st7796s_get_pixelfmt(const struct device *dev)
 	 * and vice versa.
 	 */
 	if (config->dbi_config.mode == MIPI_DBI_MODE_8080_BUS_8_BIT) {
-		if (config->madctl & ST7796S_MADCTL_BGR) {
+		/*
+		 * Similar to the handling for other interface modes,
+		 * invert the reported pixel format if "rgb_is_inverted"
+		 * is enabled
+		 */
+		if (((bool)(config->madctl & ST7796S_MADCTL_BGR)) !=
+		    config->rgb_is_inverted) {
 			return PIXEL_FORMAT_RGB_565;
 		} else {
 			return PIXEL_FORMAT_BGR_565;
@@ -133,7 +139,8 @@ static int st7796s_get_pixelfmt(const struct device *dev)
 	 * if rgb_is_inverted is enabled.
 	 * It is a workaround for supporting buggy modules that display RGB as BGR.
 	 */
-	if (!(config->madctl & ST7796S_MADCTL_BGR) != !config->rgb_is_inverted) {
+	if (((bool)(config->madctl & ST7796S_MADCTL_BGR)) !=
+	    config->rgb_is_inverted) {
 		return PIXEL_FORMAT_BGR_565;
 	} else {
 		return PIXEL_FORMAT_RGB_565;
@@ -340,7 +347,7 @@ static int st7796s_init(const struct device *dev)
 	return 0;
 }
 
-static const struct display_driver_api st7796s_api = {
+static DEVICE_API(display, st7796s_api) = {
 	.blanking_on = st7796s_blanking_on,
 	.blanking_off = st7796s_blanking_off,
 	.write = st7796s_write,
@@ -357,7 +364,7 @@ static const struct display_driver_api st7796s_api = {
 						SPI_OP_MODE_MASTER |		\
 						SPI_WORD_SET(8),		\
 						0),				\
-			.mode = DT_INST_PROP_OR(n, mipi_mode,			\
+			.mode = DT_INST_STRING_UPPER_TOKEN_OR(n, mipi_mode,     \
 						MIPI_DBI_MODE_SPI_4WIRE),	\
 		},								\
 		.width = DT_INST_PROP(n, width),				\

@@ -1,7 +1,4 @@
-.. _adafruit_trinket_m0:
-
-Adafruit Trinket M0
-###################
+.. zephyr:board:: adafruit_trinket_m0
 
 Overview
 ********
@@ -9,10 +6,6 @@ Overview
 The Adafruit Trinket M0 is a tiny (27 mm x 15 mm) ARM development
 board with an onboard RGB LED, USB port, and range of I/O broken out
 onto 5 pins.
-
-.. image:: img/adafruit_trinket_m0.jpg
-     :align: center
-     :alt: Adafruit Trinket M0
 
 Hardware
 ********
@@ -98,7 +91,7 @@ USB Device Port
 ===============
 
 The SAMD21 MCU has a USB device port that can be used to communicate
-with a host PC.  See the :ref:`usb-samples` sample applications for
+with a host PC.  See the :zephyr:code-sample-category:`usb` sample applications for
 more, such as the :zephyr:code-sample:`usb-cdc-acm` sample which sets up a virtual
 serial port that echos characters back to the host PC.
 
@@ -114,7 +107,7 @@ will be entered automatically when you run :code:`west flash`.
 Flashing
 ========
 
-#. Build the Zephyr kernel and the :ref:`hello_world` sample application:
+#. Build the Zephyr kernel and the :zephyr:code-sample:`hello_world` sample application:
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world

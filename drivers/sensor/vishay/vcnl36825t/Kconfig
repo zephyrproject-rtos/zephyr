@@ -10,3 +10,49 @@ config VCNL36825T
 	select I2C
 	help
 	  Enable driver for VCNL36825T sensors.
+
+if VCNL36825T
+
+config VCNL36825T_TRIGGER
+	bool
+
+choice VCNL36825T_TRIGGER_CHOICE
+	prompt "trigger mode"
+	default VCNL36825T_TRIGGER_NONE
+	help
+	  Specify the type of triggering to be used by the driver.
+	  Note: Since figuring out which interrupt was triggered, using the Zephyr
+	  standard types will deactivate the other interrupt.
+
+config VCNL36825T_TRIGGER_NONE
+	bool "no trigger"
+
+config VCNL36825T_TRIGGER_GLOBAL_THREAD
+	bool "use global thread"
+	select VCNL36825T_TRIGGER
+
+config VCNL36825T_TRIGGER_OWN_THREAD
+	bool "use own thread"
+	select VCNL36825T_TRIGGER
+
+endchoice
+
+if VCNL36825T_TRIGGER
+
+config VCNL36825T_THREAD_PRIORITY
+	int "thread priority"
+	depends on VCNL36825T_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config VCNL36825T_THREAD_STACK_SIZE
+	int "thread stack size"
+	depends on VCNL36825T_TRIGGER_OWN_THREAD
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+endif # VCNL36825T_TRIGGER
+
+endif # VCNL36825T

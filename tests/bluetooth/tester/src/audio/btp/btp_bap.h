@@ -167,7 +167,7 @@ struct btp_bap_modify_broadcast_src_cmd {
 struct btp_bap_set_broadcast_code_cmd {
 	bt_addr_le_t address;
 	uint8_t src_id;
-	uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE];
+	uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE];
 } __packed;
 
 #define BTP_BAP_SEND_PAST			0x18

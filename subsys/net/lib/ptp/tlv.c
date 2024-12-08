@@ -51,7 +51,7 @@ static int tlv_mgmt_post_recv(struct ptp_tlv_mgmt *mgmt_tlv, uint16_t length)
 	enum ptp_mgmt_id id = (enum ptp_mgmt_id)mgmt_tlv->id;
 	struct ptp_tlv_container *container;
 	uint8_t *data;
-	uint16_t data_length;
+	int32_t data_length;
 
 	switch (id) {
 	case PTP_MGMT_NULL_PTP_MANAGEMENT:

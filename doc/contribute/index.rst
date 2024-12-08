@@ -27,7 +27,7 @@ General Guidelines
    merged.
 
 :ref:`contributor-expectations`
-   This document is another mandatory read that describes the expected behavior of `all`
+   This document is another mandatory read that describes the expected behavior of *all*
    contributors to the project.
 
 :ref:`coding_guidelines`

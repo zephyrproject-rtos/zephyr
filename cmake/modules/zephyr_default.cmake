@@ -82,6 +82,7 @@ list(APPEND zephyr_cmake_modules basic_settings)
 
 list(APPEND zephyr_cmake_modules west)
 list(APPEND zephyr_cmake_modules ccache)
+list(APPEND zephyr_cmake_modules yaml)
 
 # Load default root settings
 list(APPEND zephyr_cmake_modules root)

@@ -110,7 +110,6 @@ ZTEST(bt_id_set_scan_own_addr_invalid_inputs, test_set_random_address_fails)
  *  Expected behaviour:
  *   - bt_id_set_scan_own_addr() fails and returns the same error code returned by
  *     bt_id_set_private_addr()
- *   - Address type reference isn't set
  */
 ZTEST(bt_id_set_scan_own_addr_invalid_inputs, test_bt_id_set_private_addr_fails_privacy_enabled)
 {
@@ -131,6 +130,4 @@ ZTEST(bt_id_set_scan_own_addr_invalid_inputs, test_bt_id_set_private_addr_fails_
 #endif
 
 	zassert_true(err < 0, "Unexpected error code '%d' was returned", err);
-	zassert_true(own_addr_type == BT_ADDR_LE_ANONYMOUS,
-		     "Address type reference was unexpectedly modified");
 }

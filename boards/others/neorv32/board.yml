@@ -1,5 +1,6 @@
 board:
   name: neorv32
+  full_name: NEORV32
   vendor: others
   revision:
     format: major.minor.patch

@@ -9,7 +9,7 @@
 #include <errno.h>
 #include <string.h>
 
-#if DT_NODE_HAS_STATUS(DT_INST(0, greeled_lpd8806), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_INST(0, greeled_lpd8806))
 #define DT_DRV_COMPAT greeled_lpd8806
 #else
 #define DT_DRV_COMPAT greeled_lpd8803
@@ -78,7 +78,7 @@ static int lpd880x_update(const struct device *dev, void *data, size_t size)
 
 	rc = spi_write_dt(&config->bus, &tx);
 	if (rc) {
-		LOG_ERR("can't update strip: %d", rc);
+		LOG_ERR("can't update strip: %zu", rc);
 	}
 
 	return rc;
@@ -150,7 +150,7 @@ static const struct lpd880x_config lpd880x_config = {
 	.length = DT_INST_PROP(0, chain_length),
 };
 
-static const struct led_strip_driver_api lpd880x_strip_api = {
+static DEVICE_API(led_strip, lpd880x_strip_api) = {
 	.update_rgb = lpd880x_strip_update_rgb,
 	.update_channels = lpd880x_strip_update_channels,
 	.length = lpd880x_strip_length,

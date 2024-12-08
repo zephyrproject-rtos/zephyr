@@ -26,4 +26,5 @@ endif()
 
 if(CONFIG_MULTI_LEVEL_INTERRUPTS)
   target_sources_ifdef(CONFIG_DYNAMIC_INTERRUPTS app PRIVATE src/sw_isr_table.c)
+  target_sources_ifdef(CONFIG_TEST_MULTILEVEL_IRQ app PRIVATE src/multilevel_irq.c)
 endif()

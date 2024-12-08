@@ -104,8 +104,8 @@ int main(void)
 		/* Voltage is retrieved as a fixed point number with 16 bits below binary point */
 		voltage = ((float)priv.voltage_channel0 / 65536);
 
-		printk("Got response of transaction id 0x%02x and voltage is %fv\n", trans_id,
-		       voltage);
+		printk("Got response of transaction id 0x%02x and voltage is %fv\n",
+			trans_id, (double)voltage);
 
 		err = sip_svc_close(mb_smc_ctrl, mb_c_token, NULL);
 		__ASSERT(err != SIP_SVC_ID_INVALID, "Failed to close with sip_svc");

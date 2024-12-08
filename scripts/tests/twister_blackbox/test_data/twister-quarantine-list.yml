@@ -4,13 +4,13 @@
     test all platforms
 
 - platforms:
-  - frdm_k64f
+  - intel_adl_crb/alder_lake
   comment: >
-    test frdm_k64f
+    test intel_adl_crb
 
 - scenarios:
   - dummy.agnostic.group1.subgroup2
   platforms:
-  - qemu_x86_64
+  - qemu_x86_64/atom
   comment: >
     test qemu_x86_64

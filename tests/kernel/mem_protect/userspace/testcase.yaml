@@ -23,8 +23,8 @@ tests:
     arch_allow: arm
     platform_allow:
       - slwrb4180a
-      - mps3/an547
+      - mps3/corstone300/an547
       - nrf9160dk/nrf9160
     integration_platforms:
-      - mps3/an547
+      - mps3/corstone300/an547
     extra_args: CONFIG_MPU_GAP_FILLING=y

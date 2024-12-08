@@ -1,5 +1,6 @@
 board:
   name: lpcxpresso54114
+  full_name: LPCXPRESSO54114
   vendor: nxp
   socs:
     - name: lpc54114

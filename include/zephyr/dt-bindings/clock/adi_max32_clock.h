@@ -21,5 +21,7 @@
 #define ADI_MAX32_PRPH_CLK_SRC_INRO      5 /* Internal Nano Ring Oscillator */
 #define ADI_MAX32_PRPH_CLK_SRC_ISO       6 /* Internal Secondary Oscillator */
 #define ADI_MAX32_PRPH_CLK_SRC_IBRO_DIV8 7 /* IBRO/8 */
+#define ADI_MAX32_PRPH_CLK_SRC_IPLL      8 /* Internal Phase Lock Loop Oscillator */
+#define ADI_MAX32_PRPH_CLK_SRC_EBO       9 /* External Base Oscillator */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_ADI_MAX32_CLOCK_H_ */

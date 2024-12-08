@@ -1,5 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
+# As minimal libc will be built as a zephyr_library, clear c_library to
+# prevent accidentally requiring or linking against another libc implementation.
+set_property(TARGET linker PROPERTY c_library "")
+
 zephyr_system_include_directories(include)
 
 zephyr_library()

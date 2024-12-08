@@ -432,6 +432,8 @@
 		string-enum = "foo_bar";
 		tokenizable-enum = "123 is ok";
 		tokenizable-lower-enum = "bar";
+		array-enum = <0 40 40 10>;
+		string-array-enum = "foo", "bar";
 		no-enum = "baz";
 	};
 

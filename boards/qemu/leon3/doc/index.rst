@@ -1,7 +1,4 @@
-.. _qemu_leon3:
-
-LEON3 Emulation (QEMU)
-######################
+.. zephyr:board:: qemu_leon3
 
 Overview
 ********

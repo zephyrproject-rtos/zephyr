@@ -15,15 +15,17 @@
 #include <zephyr/bluetooth/audio/cap.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/lc3.h>
+#include <zephyr/bluetooth/audio/tbs.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/byteorder.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
 
 #include "bap_common.h"
@@ -31,22 +33,23 @@
 #include "common.h"
 
 #if defined(CONFIG_BT_CAP_INITIATOR) && defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
+CREATE_FLAG(flag_source_started);
+
 /* Zephyr Controller works best while Extended Advertising interval to be a multiple
  * of the ISO Interval minus 10 ms (max. advertising random delay). This is
  * required to place the AUX_ADV_IND PDUs in a non-overlapping interval with the
  * Broadcast ISO radio events.
  */
-#define BT_LE_EXT_ADV_CUSTOM \
-		BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV, \
-				0x0080, 0x0080, NULL)
+#define BT_LE_EXT_ADV_CUSTOM                                                                       \
+	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV, BT_GAP_MS_TO_ADV_INTERVAL(140),                     \
+			BT_GAP_MS_TO_ADV_INTERVAL(140), NULL)
 
-#define BT_LE_PER_ADV_CUSTOM \
-		BT_LE_PER_ADV_PARAM(0x0048, \
-				    0x0048, \
-				    BT_LE_PER_ADV_OPT_NONE)
+#define BT_LE_PER_ADV_CUSTOM                                                                       \
+	BT_LE_PER_ADV_PARAM(BT_GAP_MS_TO_PER_ADV_INTERVAL(150),                                    \
+			    BT_GAP_MS_TO_PER_ADV_INTERVAL(150), BT_LE_PER_ADV_OPT_NONE)
 
 #define BROADCAST_STREMT_CNT    CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT
-#define BROADCAST_ENQUEUE_COUNT 2U
+#define BROADCAST_ENQUEUE_COUNT 18U
 #define TOTAL_BUF_NEEDED        (BROADCAST_ENQUEUE_COUNT * BROADCAST_STREMT_CNT)
 #define CAP_AC_MAX_STREAM       2
 #define LOCATION                (BT_AUDIO_LOCATION_FRONT_LEFT | BT_AUDIO_LOCATION_FRONT_RIGHT)
@@ -74,8 +77,8 @@ static struct bt_bap_lc3_preset broadcast_preset_16_2_1 =
 	BT_BAP_LC3_BROADCAST_PRESET_16_2_1(LOCATION, CONTEXT);
 static size_t stream_count;
 
-static K_SEM_DEFINE(sem_broadcast_started, 0U, ARRAY_SIZE(broadcast_streams));
-static K_SEM_DEFINE(sem_broadcast_stopped, 0U, ARRAY_SIZE(broadcast_streams));
+static K_SEM_DEFINE(sem_broadcast_stream_started, 0U, ARRAY_SIZE(broadcast_streams));
+static K_SEM_DEFINE(sem_broadcast_stream_stopped, 0U, ARRAY_SIZE(broadcast_streams));
 
 static const struct named_lc3_preset lc3_broadcast_presets[] = {
 	{"8_1_1", BT_BAP_LC3_BROADCAST_PRESET_8_1_1(LOCATION, CONTEXT)},
@@ -113,19 +116,24 @@ static const struct named_lc3_preset lc3_broadcast_presets[] = {
 	{"48_6_2", BT_BAP_LC3_BROADCAST_PRESET_48_6_2(LOCATION, CONTEXT)},
 };
 
-static void broadcast_started_cb(struct bt_bap_stream *stream)
+static void broadcast_stream_started_cb(struct bt_bap_stream *stream)
 {
+	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
+
+	test_stream->seq_num = 0U;
+	test_stream->tx_cnt = 0U;
+
 	printk("Stream %p started\n", stream);
-	k_sem_give(&sem_broadcast_started);
+	k_sem_give(&sem_broadcast_stream_started);
 }
 
-static void broadcast_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
+static void broadcast_stream_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 {
 	printk("Stream %p stopped with reason 0x%02X\n", stream, reason);
-	k_sem_give(&sem_broadcast_stopped);
+	k_sem_give(&sem_broadcast_stream_stopped);
 }
 
-static void broadcast_sent_cb(struct bt_bap_stream *bap_stream)
+static void broadcast_stream_sent_cb(struct bt_bap_stream *bap_stream)
 {
 	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(bap_stream);
 	struct bt_cap_stream *cap_stream = cap_stream_from_audio_test_stream(test_stream);
@@ -172,13 +180,30 @@ static void broadcast_sent_cb(struct bt_bap_stream *bap_stream)
 }
 
 static struct bt_bap_stream_ops broadcast_stream_ops = {
-	.started = broadcast_started_cb,
-	.stopped = broadcast_stopped_cb,
-	.sent = broadcast_sent_cb,
+	.started = broadcast_stream_started_cb,
+	.stopped = broadcast_stream_stopped_cb,
+	.sent = broadcast_stream_sent_cb,
 };
+
+static void broadcast_source_started_cb(struct bt_cap_broadcast_source *broadcast_source)
+{
+	printk("Broadcast source %p started\n", broadcast_source);
+	SET_FLAG(flag_source_started);
+}
+
+static void broadcast_source_stopped_cb(struct bt_cap_broadcast_source *broadcast_source,
+					uint8_t reason)
+{
+	printk("Broadcast source %p stopped with reason 0x%02X\n", broadcast_source, reason);
+	UNSET_FLAG(flag_source_started);
+}
 
 static void init(void)
 {
+	static struct bt_cap_initiator_cb broadcast_cbs = {
+		.broadcast_started = broadcast_source_started_cb,
+		.broadcast_stopped = broadcast_source_stopped_cb,
+	};
 	int err;
 
 	err = bt_enable(NULL);
@@ -193,6 +218,33 @@ static void init(void)
 		broadcast_streams[i] =
 			cap_stream_from_audio_test_stream(&broadcast_source_streams[i]);
 		bt_cap_stream_ops_register(broadcast_streams[i], &broadcast_stream_ops);
+	}
+
+	if (IS_ENABLED(CONFIG_BT_TBS)) {
+		const struct bt_tbs_register_param gtbs_param = {
+			.provider_name = "Generic TBS",
+			.uci = "un000",
+			.uri_schemes_supported = "tel,skype",
+			.gtbs = true,
+			.authorization_required = false,
+			.technology = BT_TBS_TECHNOLOGY_3G,
+			.supported_features = CONFIG_BT_TBS_SUPPORTED_FEATURES,
+		};
+
+		err = bt_tbs_register_bearer(&gtbs_param);
+		if (err < 0) {
+			FAIL("Failed to register GTBS (err %d)\n", err);
+
+			return;
+		}
+
+		printk("Registered GTBS\n");
+	}
+
+	err = bt_cap_initiator_register_cb(&broadcast_cbs);
+	if (err != 0) {
+		FAIL("Failed to register broadcast callbacks: %d\n", err);
+		return;
 	}
 }
 
@@ -226,9 +278,9 @@ static void setup_extended_adv_data(struct bt_cap_broadcast_source *source,
 	uint32_t broadcast_id;
 	int err;
 
-	err = bt_cap_initiator_broadcast_get_id(source, &broadcast_id);
-	if (err != 0) {
-		FAIL("Unable to get broadcast ID: %d\n", err);
+	err = bt_rand(&broadcast_id, BT_AUDIO_BROADCAST_ID_SIZE);
+	if (err) {
+		FAIL("Unable to generate broadcast ID: %d\n", err);
 		return;
 	}
 
@@ -449,14 +501,15 @@ static void test_broadcast_audio_start(struct bt_cap_broadcast_source *broadcast
 
 static void test_broadcast_audio_update_inval(struct bt_cap_broadcast_source *broadcast_source)
 {
-	const uint16_t mock_ccid = 0xAB;
 	const uint8_t new_metadata[] = {
 		BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT,
 				    BT_BYTES_LIST_LE16(BT_AUDIO_CONTEXT_TYPE_MEDIA)),
-		BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_CCID_LIST, mock_ccid),
+		BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_PARENTAL_RATING,
+				    BT_AUDIO_PARENTAL_RATING_AGE_ANY),
 	};
 	const uint8_t invalid_metadata[] = {
-		BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_CCID_LIST, mock_ccid),
+		BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_PARENTAL_RATING,
+				    BT_AUDIO_PARENTAL_RATING_AGE_ANY),
 	};
 	int err;
 
@@ -577,8 +630,10 @@ static void test_broadcast_audio_stop(struct bt_cap_broadcast_source *broadcast_
 	/* Wait for all to be stopped */
 	printk("Waiting for broadcast_streams to be stopped\n");
 	for (size_t i = 0U; i < stream_count; i++) {
-		k_sem_take(&sem_broadcast_stopped, K_FOREVER);
+		k_sem_take(&sem_broadcast_stream_stopped, K_FOREVER);
 	}
+
+	WAIT_FOR_UNSET_FLAG(flag_source_started);
 
 	printk("Broadcast source stopped\n");
 
@@ -651,8 +706,10 @@ static void test_main_cap_initiator_broadcast(void)
 	/* Wait for all to be started */
 	printk("Waiting for broadcast_streams to be started\n");
 	for (size_t i = 0U; i < stream_count; i++) {
-		k_sem_take(&sem_broadcast_started, K_FOREVER);
+		k_sem_take(&sem_broadcast_stream_started, K_FOREVER);
 	}
+
+	WAIT_FOR_FLAG(flag_source_started);
 
 	/* Initialize sending */
 	for (size_t i = 0U; i < stream_count; i++) {
@@ -661,7 +718,7 @@ static void test_main_cap_initiator_broadcast(void)
 		test_stream->tx_active = true;
 
 		for (unsigned int j = 0U; j < BROADCAST_ENQUEUE_COUNT; j++) {
-			broadcast_sent_cb(bap_stream_from_audio_test_stream(test_stream));
+			broadcast_stream_sent_cb(bap_stream_from_audio_test_stream(test_stream));
 		}
 	}
 
@@ -703,7 +760,7 @@ static int test_cap_initiator_ac(const struct cap_initiator_ac_param *param)
 	struct bt_cap_initiator_broadcast_create_param create_param = {0};
 	struct bt_cap_broadcast_source *broadcast_source;
 	struct bt_audio_codec_cfg codec_cfg;
-	struct bt_audio_codec_qos qos;
+	struct bt_bap_qos_cfg qos;
 	struct bt_le_ext_adv *adv;
 	int err;
 
@@ -757,8 +814,10 @@ static int test_cap_initiator_ac(const struct cap_initiator_ac_param *param)
 	/* Wait for all to be started */
 	printk("Waiting for broadcast_streams to be started\n");
 	for (size_t i = 0U; i < stream_count; i++) {
-		k_sem_take(&sem_broadcast_started, K_FOREVER);
+		k_sem_take(&sem_broadcast_stream_started, K_FOREVER);
 	}
+
+	WAIT_FOR_FLAG(flag_source_started);
 
 	/* Initialize sending */
 	for (size_t i = 0U; i < stream_count; i++) {
@@ -767,7 +826,7 @@ static int test_cap_initiator_ac(const struct cap_initiator_ac_param *param)
 		test_stream->tx_active = true;
 
 		for (unsigned int j = 0U; j < BROADCAST_ENQUEUE_COUNT; j++) {
-			broadcast_sent_cb(bap_stream_from_audio_test_stream(test_stream));
+			broadcast_stream_sent_cb(bap_stream_from_audio_test_stream(test_stream));
 		}
 	}
 

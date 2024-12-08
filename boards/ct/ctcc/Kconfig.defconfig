@@ -52,7 +52,4 @@ endif # USB_DEVICE_STACK
 
 endif # BOARD_SERIAL_BACKEND_CDC_ACM
 
-config BT_CTLR
-	default BT
-
 endif # BOARD_CTCC_NRF52840

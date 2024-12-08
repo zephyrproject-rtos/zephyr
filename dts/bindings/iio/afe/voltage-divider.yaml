@@ -36,3 +36,12 @@ properties:
 
       If present the corresponding GPIO must be set to an active level
       to enable the divider input.
+
+  power-on-sample-delay-us:
+    type: int
+    default: 100
+    description: |
+      Duration to delay sampling after enabling the circuitry with
+      `power-gpios`. In most cases the switched voltage rail will
+      require some non-zero time to settle to its final value. The
+      default value of 100us should be sufficient in most situations.

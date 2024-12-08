@@ -2,24 +2,28 @@
 
 /*
  * Copyright (c) 2023 Codecoup
+ * Copyright (c) 2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdint.h>
+
 #include <zephyr/bluetooth/audio/cap.h>
 
 #define BTP_BAP_UNICAST_MAX_SNK_STREAMS_COUNT MIN(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT, \
-						  CONFIG_BT_ASCS_ASE_SNK_COUNT)
+						  CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT)
 #define BTP_BAP_UNICAST_MAX_SRC_STREAMS_COUNT MIN(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT, \
-						  CONFIG_BT_ASCS_ASE_SRC_COUNT)
+						  CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT)
 #define BTP_BAP_UNICAST_MAX_STREAMS_COUNT BTP_BAP_UNICAST_MAX_SNK_STREAMS_COUNT + \
 					  BTP_BAP_UNICAST_MAX_SRC_STREAMS_COUNT
 #define BTP_BAP_UNICAST_MAX_END_POINTS_COUNT CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT + \
 					     CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT
 
 struct btp_bap_unicast_group {
-	struct bt_audio_codec_qos qos[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT];
+	struct bt_bap_qos_cfg qos[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT];
 	struct bt_bap_unicast_group *cig;
+	uint8_t cig_id;
 	bool in_use;
 };
 

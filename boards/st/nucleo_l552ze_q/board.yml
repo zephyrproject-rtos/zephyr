@@ -1,5 +1,6 @@
 board:
   name: nucleo_l552ze_q
+  full_name: Nucleo L552ZE Q
   vendor: st
   socs:
     - name: stm32l552xx

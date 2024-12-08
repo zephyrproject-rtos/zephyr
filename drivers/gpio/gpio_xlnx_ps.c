@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
  * An API is required for this driver, but as no pin access is provided at
  * this level, use the default API contents provided by the driver subsystem.
  */
-static const struct gpio_driver_api gpio_xlnx_ps_default_apis;
+static DEVICE_API(gpio, gpio_xlnx_ps_default_apis);
 
 /**
  * @brief Initialize a Xilinx PS GPIO controller parent device

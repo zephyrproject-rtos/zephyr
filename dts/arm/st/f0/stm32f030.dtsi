@@ -15,9 +15,10 @@
 		compatible = "st,stm32c0-temp-cal";
 		ts-cal1-addr = <0x1FFFF7B8>;
 		ts-cal1-temp = <30>;
-		ntc;
 		ts-cal-vrefanalog = <3300>;
+		avgslope = "4.3";
 		io-channels = <&adc1 16>;
+		ntc;
 		status = "disabled";
 	};
 };

@@ -1,5 +1,6 @@
 board:
   name: sltb009a
+  full_name: EFM32GG12 Thunderboard (SLTB009A)
   vendor: silabs
   socs:
   - name: efm32gg12b810f1024gm64

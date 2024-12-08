@@ -1,5 +1,6 @@
 board:
   name: nsim_arc_v
+  full_name: RISC-V nSIM and HAPS FPGA boards
   vendor: snps
   socs:
   - name: rmx100

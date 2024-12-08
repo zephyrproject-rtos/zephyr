@@ -139,10 +139,10 @@ applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
 The flashing tool will depend on the carrier used along with the board.
-In the case of `Sparkfun asset tracking carrier`, it is possible to use
+In the case of `Sparkfun asset tracking carrier`_, it is possible to use
 the SWD interface along with a J-Link.
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 First, run your favorite terminal program to listen for output.
 
@@ -199,6 +199,7 @@ References
 .. target-notes::
 
 .. _Micromod specification website: https://www.sparkfun.com/micromod
+.. _Sparkfun asset tracking carrier: https://www.sparkfun.com/products/17272
 .. _Micromod nRF52840 guide: https://learn.sparkfun.com/tutorials/micromod-nrf52840-processor-hookup-guide
 .. _J-Link Software and documentation pack: https://www.segger.com/jlink-software.html
 .. _nRF52840 Product Specification: http://infocenter.nordicsemi.com/pdf/nRF52840_PS_v1.0.pdf

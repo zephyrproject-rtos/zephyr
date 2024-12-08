@@ -26,8 +26,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(swdp, CONFIG_DP_DRIVER_LOG_LEVEL);
 
-#define CLOCK_DELAY(swclk_freq, port_write_cycles) \
-	((CPU_CLOCK / 2 / swclk_freq) - port_write_cycles)
+#define MAX_SWJ_CLOCK(delay_cycles, port_write_cycles) \
+	((CPU_CLOCK / 2U) / (port_write_cycles + delay_cycles))
 
 /*
  * Default SWCLK frequency in Hz.
@@ -35,6 +35,7 @@ LOG_MODULE_REGISTER(swdp, CONFIG_DP_DRIVER_LOG_LEVEL);
  */
 #define SWDP_DEFAULT_SWCLK_FREQUENCY	1000000U
 
+#define DELAY_FAST_CYCLES		2U
 #define DELAY_SLOW_CYCLES		3U
 
 struct sw_config {
@@ -528,14 +529,19 @@ static int sw_set_clock(const struct device *dev, const uint32_t clock)
 	struct sw_cfg_data *sw_data = dev->data;
 	uint32_t delay;
 
-	sw_data->fast_clock = false;
-	delay = ((CPU_CLOCK / 2U) + (clock - 1U)) / clock;
-
-	if (delay > config->port_write_cycles) {
-		delay -= config->port_write_cycles;
-		delay = (delay + (DELAY_SLOW_CYCLES - 1U)) / DELAY_SLOW_CYCLES;
-	} else {
+	if (clock >= MAX_SWJ_CLOCK(DELAY_FAST_CYCLES, config->port_write_cycles)) {
+		sw_data->fast_clock = true;
 		delay = 1U;
+	} else {
+		sw_data->fast_clock = false;
+
+		delay = ((CPU_CLOCK / 2U) + (clock - 1U)) / clock;
+		if (delay > config->port_write_cycles) {
+			delay -= config->port_write_cycles;
+			delay = (delay + (DELAY_SLOW_CYCLES - 1U)) / DELAY_SLOW_CYCLES;
+		} else {
+			delay = 1U;
+		}
 	}
 
 	sw_data->clock_delay = delay;
@@ -562,77 +568,13 @@ static int sw_configure(const struct device *dev,
 static int sw_port_on(const struct device *dev)
 {
 	const struct sw_config *config = dev->config;
-
-	gpio_pin_set_dt(&config->clk, 1);
-
-	if (config->dnoe.port) {
-		gpio_pin_set_dt(&config->dnoe, 1);
-	}
-
-	if (config->dout.port) {
-		gpio_pin_set_dt(&config->dout, 1);
-	} else {
-		int ret;
-
-		ret = gpio_pin_configure_dt(&config->dio, GPIO_OUTPUT_ACTIVE);
-		if (ret) {
-			return ret;
-		}
-	}
-
-	if (config->noe.port) {
-		gpio_pin_set_dt(&config->noe, 1);
-	}
-	if (config->reset.port) {
-		gpio_pin_set_dt(&config->reset, 1);
-	}
-
-	return 0;
-}
-
-static int sw_port_off(const struct device *dev)
-{
-	const struct sw_config *config = dev->config;
-
-	if (config->dnoe.port) {
-		gpio_pin_set_dt(&config->dnoe, 0);
-	}
-
-	if (config->dout.port) {
-		gpio_pin_set_dt(&config->dout, 0);
-	} else {
-		int ret;
-
-		ret = gpio_pin_configure_dt(&config->dio, GPIO_INPUT);
-		if (ret) {
-			return ret;
-		}
-	}
-
-	if (config->noe.port) {
-		gpio_pin_set_dt(&config->noe, 0);
-	}
-	if (config->reset.port) {
-		gpio_pin_set_dt(&config->reset, 1);
-	}
-
-	return 0;
-}
-
-static int sw_gpio_init(const struct device *dev)
-{
-	const struct sw_config *config = dev->config;
-	struct sw_cfg_data *sw_data = dev->data;
 	int ret;
 
-	ret = gpio_pin_configure_dt(&config->clk, GPIO_OUTPUT_ACTIVE);
-	if (ret) {
-		return ret;
-	}
-
-	ret = gpio_pin_configure_dt(&config->dio, GPIO_INPUT);
-	if (ret) {
-		return ret;
+	if (config->dnoe.port) {
+		ret = gpio_pin_configure_dt(&config->dnoe, GPIO_OUTPUT_ACTIVE);
+		if (ret) {
+			return ret;
+		}
 	}
 
 	if (config->dout.port) {
@@ -642,18 +584,21 @@ static int sw_gpio_init(const struct device *dev)
 		}
 	}
 
-	if (config->dnoe.port) {
-		ret = gpio_pin_configure_dt(&config->dnoe, GPIO_OUTPUT_INACTIVE);
+	ret = gpio_pin_configure_dt(&config->dio, GPIO_INPUT);
+	if (ret) {
+		return ret;
+	}
+
+	if (config->noe.port) {
+		ret = gpio_pin_configure_dt(&config->noe, GPIO_OUTPUT_ACTIVE);
 		if (ret) {
 			return ret;
 		}
 	}
 
-	if (config->noe.port) {
-		ret = gpio_pin_configure_dt(&config->noe, GPIO_OUTPUT_INACTIVE);
-		if (ret) {
-			return ret;
-		}
+	ret = gpio_pin_configure_dt(&config->clk, GPIO_OUTPUT_ACTIVE);
+	if (ret) {
+		return ret;
 	}
 
 	if (config->reset.port) {
@@ -663,11 +608,90 @@ static int sw_gpio_init(const struct device *dev)
 		}
 	}
 
+	return 0;
+}
+
+static int sw_port_off(const struct device *dev)
+{
+	const struct sw_config *config = dev->config;
+	int ret;
+
+	/* If there is a transceiver connected to IO, pins should always be driven. */
+	if (config->dnoe.port) {
+		ret = gpio_pin_configure_dt(&config->dnoe, GPIO_OUTPUT_INACTIVE);
+		if (ret) {
+			return ret;
+		}
+
+		if (config->dout.port) {
+			ret = gpio_pin_configure_dt(&config->dout, GPIO_OUTPUT_ACTIVE);
+			if (ret) {
+				return ret;
+			}
+		}
+
+		ret = gpio_pin_configure_dt(&config->dio, GPIO_INPUT);
+		if (ret) {
+			return ret;
+		}
+	} else {
+		if (config->dout.port) {
+			ret = gpio_pin_configure_dt(&config->dout, GPIO_DISCONNECTED);
+			if (ret) {
+				return ret;
+			}
+		}
+
+		ret = gpio_pin_configure_dt(&config->dio, GPIO_DISCONNECTED);
+		if (ret) {
+			return ret;
+		}
+	}
+
+	/* If there is a transceiver connected to CLK, pins should always be driven. */
+	if (config->noe.port) {
+		ret = gpio_pin_configure_dt(&config->noe, GPIO_OUTPUT_INACTIVE);
+		if (ret) {
+			return ret;
+		}
+
+		ret = gpio_pin_configure_dt(&config->clk, GPIO_OUTPUT_ACTIVE);
+		if (ret) {
+			return ret;
+		}
+
+	} else {
+		ret = gpio_pin_configure_dt(&config->clk, GPIO_DISCONNECTED);
+		if (ret) {
+			return ret;
+		}
+	}
+
+	if (config->reset.port) {
+		ret = gpio_pin_configure_dt(&config->reset, GPIO_DISCONNECTED);
+		if (ret) {
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
+static int sw_gpio_init(const struct device *dev)
+{
+	struct sw_cfg_data *sw_data = dev->data;
+	int ret;
+
+	/* start with the port turned off */
+	ret = sw_port_off(dev);
+	if (ret) {
+		return ret;
+	}
+
 	sw_data->turnaround = 1U;
 	sw_data->data_phase = false;
 	sw_data->fast_clock = false;
-	sw_data->clock_delay = CLOCK_DELAY(SWDP_DEFAULT_SWCLK_FREQUENCY,
-					   config->port_write_cycles);
+	sw_set_clock(dev, SWDP_DEFAULT_SWCLK_FREQUENCY);
 
 	return 0;
 }

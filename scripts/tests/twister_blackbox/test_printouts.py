@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2023 Intel Corporation
+# Copyright (c) 2023-2024 Intel Corporation
 #
 # SPDX-License-Identifier: Apache-2.0
 """
@@ -13,6 +13,7 @@ import pytest
 import sys
 import re
 
+# pylint: disable=no-name-in-module
 from conftest import (
     TEST_DATA,
     ZEPHYR_BASE,
@@ -40,17 +41,18 @@ class TestPrintOuts:
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
             [
-                'dummy.agnostic.group1.subgroup1.assert',
-                'dummy.agnostic.group1.subgroup2.assert',
-                'dummy.agnostic.group2.assert1',
-                'dummy.agnostic.group2.assert2',
-                'dummy.agnostic.group2.assert3'
+                'dummy.agnostic.group1.subgroup1.a1_1_tests.assert',
+                'dummy.agnostic.group1.subgroup2.a1_2_tests.assert',
+                'dummy.agnostic.group2.a2_tests.assert1',
+                'dummy.agnostic.group2.a2_tests.assert2',
+                'dummy.agnostic.group2.a3_tests.assert1',
+                'dummy.agnostic.group2.a2_tests.assert3'
             ]
         ),
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'device'),
             [
-                'dummy.device.group.assert'
+                'dummy.device.group.d_tests.assert'
             ]
         ),
     ]
@@ -63,11 +65,12 @@ class TestPrintOuts:
             '└── Tests\n' \
             '    └── dummy\n' \
             '        └── agnostic\n' \
-            '            ├── dummy.agnostic.group1.subgroup1.assert\n' \
-            '            ├── dummy.agnostic.group1.subgroup2.assert\n' \
-            '            ├── dummy.agnostic.group2.assert1\n' \
-            '            ├── dummy.agnostic.group2.assert2\n' \
-            '            └── dummy.agnostic.group2.assert3\n'
+            '            ├── dummy.agnostic.group1.subgroup1.a1_1_tests.assert\n' \
+            '            ├── dummy.agnostic.group1.subgroup2.a1_2_tests.assert\n' \
+            '            ├── dummy.agnostic.group2.a2_tests.assert1\n' \
+            '            ├── dummy.agnostic.group2.a2_tests.assert2\n' \
+            '            ├── dummy.agnostic.group2.a2_tests.assert3\n' \
+            '            └── dummy.agnostic.group2.a3_tests.assert1\n'
         ),
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'device'),
@@ -76,14 +79,14 @@ class TestPrintOuts:
             '└── Tests\n'
             '    └── dummy\n'
             '        └── device\n'
-            '            └── dummy.device.group.assert\n'
+            '            └── dummy.device.group.d_tests.assert\n'
         ),
     ]
 
     TESTDATA_4 = [
         (
             os.path.join(TEST_DATA, 'tests', 'dummy'),
-            ['qemu_x86', 'qemu_x86_64', 'frdm_k64f']
+            ['qemu_x86', 'qemu_x86_64', 'intel_adl_crb']
         )
     ]
 
@@ -189,6 +192,8 @@ class TestPrintOuts:
                 pytest.raises(SystemExit) as sys_exit:
             self.loader.exec_module(self.twister_module)
 
+        assert str(sys_exit.value) == '0'
+
         info_regex = r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3} - (?:INFO|DEBUG|ERROR)'
 
         out, err = capfd.readouterr()
@@ -197,6 +202,7 @@ class TestPrintOuts:
 
         output = err.split('\n')
 
+        # Will give false positives on lines with newlines inside of them
         err_lines = []
         for line in output:
             if line.strip():
@@ -207,7 +213,6 @@ class TestPrintOuts:
 
         if err_lines:
             assert False, f'No timestamp in line {err_lines}'
-        assert str(sys_exit.value) == '0'
 
     @pytest.mark.parametrize(
         'flag',
@@ -271,7 +276,7 @@ class TestPrintOuts:
 
     @mock.patch.object(TestPlan, 'SAMPLE_FILENAME', sample_filename_mock)
     def test_size(self, capfd, out_path):
-        test_platforms = ['qemu_x86', 'frdm_k64f']
+        test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'samples', 'hello_world')
         args = ['-i', '--outdir', out_path, '-T', path] + \
                [val for pair in zip(
@@ -288,7 +293,7 @@ class TestPrintOuts:
         capfd.readouterr()
 
         p = os.path.relpath(path, ZEPHYR_BASE)
-        prev_path = os.path.join(out_path, 'qemu_x86', p,
+        prev_path = os.path.join(out_path, 'qemu_x86_atom', p,
                                  'sample.basic.helloworld', 'zephyr', 'zephyr.elf')
         args = ['--size', prev_path]
 

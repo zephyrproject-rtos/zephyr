@@ -178,7 +178,7 @@ static int tmp112_channel_get(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api tmp112_driver_api = {
+static DEVICE_API(sensor, tmp112_driver_api) = {
 	.attr_set = tmp112_attr_set,
 	.sample_fetch = tmp112_sample_fetch,
 	.channel_get = tmp112_channel_get,

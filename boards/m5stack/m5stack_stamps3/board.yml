@@ -1,5 +1,6 @@
 board:
   name: m5stack_stamps3
+  full_name: StampS3
   vendor: m5stack
   socs:
   - name: esp32s3

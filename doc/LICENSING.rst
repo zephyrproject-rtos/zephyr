@@ -30,3 +30,22 @@ licensing in this document.
   *Origin:* GCC, the GNU Compiler Collection
 
   *Licensing:* `GPLv2 License`_ with Runtime Library Exception
+
+*boards/ene/kb1200_evb/support/openocd.cfg*
+  *Licensing:* `GPLv2 License`_
+
+.. _MIT License:
+  https://opensource.org/licenses/MIT
+
+*tests/benchmarks/thread_metric/{thread_metric_readme.txt,src/\*}*
+  *Origin:* ThreadX
+
+  *Licensing:* `MIT License`_
+
+.. _BSD-3-clause:
+   https://opensource.org/license/bsd-3-clause
+
+*modules/openthread/platform/{hdlc_interface.cpp,hdlc_interface.hpp,radio_spinel.cpp}*
+  *Origin:* OpenThread
+
+  *Licensing:* `BSD-3-clause`_

@@ -2,11 +2,13 @@
 
 /*
  * Copyright (c) 2023 Codecoup
+ * Copyright (c) 2024 Demant A/S
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <stdlib.h>
+#include <zephyr/kernel.h>
 #include <zephyr/types.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
@@ -40,23 +42,45 @@ static void *test_ase_state_transition_invalid_setup(void)
 	fixture = malloc(sizeof(*fixture));
 	zassert_not_null(fixture);
 
-	memset(fixture, 0, sizeof(*fixture));
-	fixture->ase_cp = test_ase_control_point_get();
-	test_conn_init(&fixture->conn);
-	test_ase_snk_get(1, &fixture->ase_snk);
-	test_ase_src_get(1, &fixture->ase_src);
 
 	return fixture;
 }
 
 static void test_ase_state_transition_invalid_before(void *f)
 {
-	bt_bap_unicast_server_register_cb(&mock_bap_unicast_server_cb);
+	struct test_ase_state_transition_invalid_fixture *fixture =
+		(struct test_ase_state_transition_invalid_fixture *)f;
+	struct bt_bap_unicast_server_register_param param = {
+		CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT,
+		CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT
+	};
+	int err;
+
+	err = bt_bap_unicast_server_register(&param);
+	zassert_equal(err, 0, "unexpected err response %d", err);
+
+	err = bt_bap_unicast_server_register_cb(&mock_bap_unicast_server_cb);
+	zassert_equal(err, 0, "unexpected err response %d", err);
+
+	memset(fixture, 0, sizeof(struct test_ase_state_transition_invalid_fixture));
+	fixture->ase_cp = test_ase_control_point_get();
+	test_conn_init(&fixture->conn);
+	test_ase_snk_get(CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT, &fixture->ase_snk);
+	test_ase_src_get(CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT, &fixture->ase_src);
 }
 
 static void test_ase_state_transition_invalid_after(void *f)
 {
-	bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
+	int err;
+
+	err = bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
+	zassert_equal(err, 0, "unexpected err response %d", err);
+
+	/* Sleep to trigger any pending state changes from unregister_cb */
+	k_sleep(K_SECONDS(1));
+
+	err = bt_bap_unicast_server_unregister();
+	zassert_equal(err, 0, "Unexpected err response %d", err);
 }
 
 static void test_ase_state_transition_invalid_teardown(void *f)

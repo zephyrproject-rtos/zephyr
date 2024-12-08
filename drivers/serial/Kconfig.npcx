@@ -11,6 +11,7 @@ config UART_NPCX
 	depends on DT_HAS_NUVOTON_NPCX_UART_ENABLED
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
+	select PINCTRL
 	help
 	  This option enables the UART driver for NPCX family of
 	  processors.

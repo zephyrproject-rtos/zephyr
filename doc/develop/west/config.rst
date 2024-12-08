@@ -130,6 +130,9 @@ commands are documented in the pages for those commands.
 
    * - Option
      - Description
+   * - :samp:`alias.{ALIAS}`
+     - String. If non-empty the ``<ALIAS>`` can be used as a west command.
+       See :ref:`west-aliases`.
    * - ``color.ui``
      - Boolean. If ``true`` (the default), then west output is colorized when
        stdout is a terminal.

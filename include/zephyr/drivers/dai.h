@@ -268,7 +268,7 @@ struct dai_config {
 	size_t block_size;
 	/** DAI specific link configuration. */
 	uint16_t link_config;
-	/**< tdm slot goup number*/
+	/**< tdm slot group number*/
 	uint32_t  tdm_slot_group;
 };
 
@@ -330,6 +330,8 @@ __subsystem struct dai_driver_api {
 	int (*ts_stop)(const struct device *dev, struct dai_ts_cfg *cfg);
 	int (*ts_get)(const struct device *dev, struct dai_ts_cfg *cfg,
 		      struct dai_ts_data *tsd);
+	int (*config_update)(const struct device *dev, const void *bespoke_cfg,
+			     size_t size);
 };
 
 /**
@@ -475,8 +477,9 @@ static inline int dai_ts_config(const struct device *dev, struct dai_ts_cfg *cfg
 {
 	const struct dai_driver_api *api = (const struct dai_driver_api *)dev->api;
 
-	if (!api->ts_config)
+	if (!api->ts_config) {
 		return -EINVAL;
+	}
 
 	return api->ts_config(dev, cfg);
 }
@@ -494,8 +497,9 @@ static inline int dai_ts_start(const struct device *dev, struct dai_ts_cfg *cfg)
 {
 	const struct dai_driver_api *api = (const struct dai_driver_api *)dev->api;
 
-	if (!api->ts_start)
+	if (!api->ts_start) {
 		return -EINVAL;
+	}
 
 	return api->ts_start(dev, cfg);
 }
@@ -513,8 +517,9 @@ static inline int dai_ts_stop(const struct device *dev, struct dai_ts_cfg *cfg)
 {
 	const struct dai_driver_api *api = (const struct dai_driver_api *)dev->api;
 
-	if (!api->ts_stop)
+	if (!api->ts_stop) {
 		return -EINVAL;
+	}
 
 	return api->ts_stop(dev, cfg);
 }
@@ -534,10 +539,43 @@ static inline int dai_ts_get(const struct device *dev, struct dai_ts_cfg *cfg,
 {
 	const struct dai_driver_api *api = (const struct dai_driver_api *)dev->api;
 
-	if (!api->ts_get)
+	if (!api->ts_get) {
 		return -EINVAL;
+	}
 
 	return api->ts_get(dev, cfg, tsd);
+}
+
+/**
+ * @brief Update DAI configuration at runtime.
+ *
+ * This function updates the configuration of a DAI interface at runtime.
+ * It allows setting bespoke configuration parameters that are specific to
+ * the DAI implementation, enabling updates outside of the regular flow with
+ * the full configuration blob. The details of the bespoke configuration are
+ * specific to each DAI implementation. This function should only be called
+ * when the DAI is in the READY state, ensuring that the configuration updates
+ * are applied before data transmission or reception begins.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param bespoke_cfg Pointer to the buffer containing bespoke configuration parameters.
+ * @param size Size of the bespoke_cfg buffer in bytes.
+ *
+ * @retval 0 If successful.
+ * @retval -ENOSYS If the configuration update operation is not implemented.
+ * @retval Negative errno code if failure.
+ */
+static inline int dai_config_update(const struct device *dev,
+									const void *bespoke_cfg,
+									size_t size)
+{
+	const struct dai_driver_api *api = (const struct dai_driver_api *)dev->api;
+
+	if (!api->config_update) {
+		return -ENOSYS;
+	}
+
+	return api->config_update(dev, bespoke_cfg, size);
 }
 
 /**

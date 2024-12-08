@@ -100,7 +100,7 @@ or Nordic based examples.
    Trusted Firmware-M (TF-M) and building the ``ns`` target is not supported for this board.
 
 Some of the examples do not use secure mode, so they do not require the
-``ns`` suffix. A great example of this is the `hello_world` below.
+``ns`` suffix. A great example of this is the ``hello_world`` below.
 
 Flashing
 ========
@@ -111,7 +111,7 @@ found in :ref:`nordic_segger_flashing`. Then build and flash
 applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 First, run your favorite terminal program to listen for output.
 

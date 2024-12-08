@@ -17,8 +17,8 @@ to enable the static analysis tool ``sparse``.
 SCA Tool infrastructure
 ***********************
 
-Support for an SCA tool is implemented in a file:`sca.cmake` file.
-The file:`sca.cmake` must be placed under file:`<SCA_ROOT>/cmake/sca/<tool>/sca.cmake`.
+Support for an SCA tool is implemented in a :file:`sca.cmake` file.
+The :file:`sca.cmake` must be placed under :file:`{SCA_ROOT}/cmake/sca/{tool}/sca.cmake`.
 Zephyr itself is always added as an :makevar:`SCA_ROOT` but the build system offers the
 possibility to add additional folders to the :makevar:`SCA_ROOT` setting.
 
@@ -65,3 +65,4 @@ The following is a list of SCA tools natively supported by Zephyr build system.
    sparse
    gcc
    cpptest
+   eclair

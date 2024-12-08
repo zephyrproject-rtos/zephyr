@@ -6,6 +6,8 @@
 
 #define DT_DRV_COMPAT zephyr_devmux
 
+#include <limits.h>
+
 #include <zephyr/device.h>
 #include <zephyr/drivers/misc/devmux/devmux.h>
 #include <zephyr/kernel.h>
@@ -72,9 +74,9 @@ struct devmux_data *devmux_data_get(const struct device *dev)
 	return NULL;
 }
 
-ssize_t z_impl_devmux_select_get(const struct device *dev)
+int z_impl_devmux_select_get(const struct device *dev)
 {
-	ssize_t index;
+	int index;
 	struct devmux_data *const data = devmux_data_get(dev);
 
 	if (!devmux_device_is_valid(dev)) {
@@ -90,7 +92,7 @@ ssize_t z_impl_devmux_select_get(const struct device *dev)
 }
 
 #ifdef CONFIG_USERSPACE
-ssize_t z_vrfy_devmux_select_get(const struct device *dev)
+int z_vrfy_devmux_select_get(const struct device *dev)
 {
 	return z_impl_devmux_select_get(dev);
 }
@@ -158,6 +160,8 @@ static int devmux_init(struct device *const dev)
 	BUILD_ASSERT(DT_INST_PROP_OR(_n, zephyr_mutable, 0),                                       \
 		     "devmux nodes must contain the 'zephyr,mutable' property");                   \
 	BUILD_ASSERT(DT_INST_PROP_LEN(_n, devices) > 0, "devices array must have non-zero size");  \
+	BUILD_ASSERT(DT_INST_PROP_LEN(_n, devices) <= INT_MAX,                                     \
+		     "devices array must be less than INT_MAX");                                   \
 	BUILD_ASSERT(DEVMUX_SELECTED(_n) >= 0, "selected must be > 0");                            \
 	BUILD_ASSERT(DEVMUX_SELECTED(_n) < DT_INST_PROP_LEN(_n, devices),                          \
 		     "selected must be within bounds of devices phandle array");                   \

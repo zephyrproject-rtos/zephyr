@@ -1,0 +1,14 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: nrf9280pdk/nrf9280/cpuppr/xip
+name: nRF9280-DK-nRF9280-PPR (MRAM XIP)
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+sysbuild: true
+ram: 22
+flash: 64
+supported:
+  - gpio
