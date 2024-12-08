@@ -80,7 +80,7 @@ static int is31fl3194_set_color(const struct device *dev, uint32_t led, uint8_t 
 {
 	const struct is31fl3194_config *config = dev->config;
 	const struct led_info *info = is31fl3194_led_to_info(config, led);
-	int ret;
+	int ret = 0;
 
 	if (info == NULL) {
 		return -ENODEV;
