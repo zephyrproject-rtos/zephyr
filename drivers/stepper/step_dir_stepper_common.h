@@ -37,7 +37,7 @@ struct step_dir_stepper_common_config {
 #define STEP_DIR_STEPPER_DT_COMMON_CONFIG_INIT(node_id)                                            \
 	{                                                                                          \
 		.step_pin = GPIO_DT_SPEC_GET(node_id, step_gpios),                                 \
-		.dir_pin = GPIO_DT_SPEC_GET(node_id, direction_gpios),                             \
+		.dir_pin = GPIO_DT_SPEC_GET(node_id, dir_gpios),	                           \
 		.dual_edge = DT_PROP_OR(node_id, dual_edge_step, false),                           \
 	}
 
