@@ -1,0 +1,128 @@
+/*
+ * Copyright (c) 2024 TOKITA Hiroshi
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	grove_header_a0: grove_header_a0 {
+		compatible = "grove-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &arduino_header 0 0>,    /* A0 */
+			   <1 0 &arduino_header 1 0>;    /* A1 */
+	};
+
+	grove_header_a1: grove_header_a1 {
+		compatible = "grove-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &arduino_header 1 0>,    /* A1 */
+			   <1 0 &arduino_header 2 0>;    /* A2 */
+	};
+
+	grove_header_a2: grove_header_a2 {
+		compatible = "grove-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &arduino_header 2 0>,    /* A2 */
+			   <1 0 &arduino_header 3 0>;    /* A3 */
+	};
+
+	grove_header_a3: grove_header_a3 {
+		compatible = "grove-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &arduino_header 3 0>,    /* A3 */
+			   <1 0 &arduino_header 4 0>;    /* A4 */
+	};
+
+	grove_header_uart: grove_header {
+		compatible = "grove-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &arduino_header 6 0>,    /* D0/RX */
+			   <1 0 &arduino_header 7 0>;    /* D1/TX */
+	};
+
+	grove_header_d2: grove_header_d2 {
+		compatible = "grove-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &arduino_header 8 0>,    /* D2 */
+			   <1 0 &arduino_header 9 0>;    /* D3 */
+	};
+
+	grove_header_d3: grove_header_d3 {
+		compatible = "grove-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &arduino_header 9 0>,    /* D3 */
+			   <1 0 &arduino_header 10 0>;   /* D4 */
+	};
+
+	grove_header_d4: grove_header_d4 {
+		compatible = "grove-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &arduino_header 10 0>,    /* D4 */
+			   <1 0 &arduino_header 11 0>;    /* D5 */
+	};
+
+	grove_header_d5: grove_header_d5 {
+		compatible = "grove-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &arduino_header 11 0>,    /* D5 */
+			   <1 0 &arduino_header 12 0>;    /* D6 */
+	};
+
+	grove_header_d6: grove_header_d6 {
+		compatible = "grove-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &arduino_header 12 0>,    /* D6 */
+			   <1 0 &arduino_header 13 0>;    /* D7 */
+	};
+
+	grove_header_d7: grove_header_d7 {
+		compatible = "grove-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &arduino_header 13 0>,    /* D7 */
+			   <1 0 &arduino_header 14 0>;    /* D8 */
+	};
+
+	grove_header_d8: grove_header_d8 {
+		compatible = "grove-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &arduino_header 14 0>,    /* D8 */
+			   <1 0 &arduino_header 15 0>;    /* D9 */
+	};
+
+	grove_header_i2c: grove_header_i2c {
+		compatible = "grove-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &arduino_header 21 0>,    /* D15/SCL */
+			   <1 0 &arduino_header 20 0>;    /* D14/SDA */
+	};
+};
+
+grove_i2c: &arduino_i2c {};
+grove_serial: &arduino_serial {};
+grove_header: &grove_header_i2c {};
