@@ -65,16 +65,6 @@ config NET_TCP_TIME_WAIT_DELAY
 	  to this, Zephyr uses much lower value of 1500ms by default.
 	  Value of 0 disables TIME_WAIT state completely.
 
-config NET_TCP_ACK_TIMEOUT
-	int "[DEPRECATED] How long to wait for ACK (in milliseconds)"
-	depends on NET_TCP
-	default 1000
-	range 1 $(INT32_MAX)
-	help
-	  Deprecated. Use CONFIG_NET_TCP_INIT_RETRANSMISSION_TIMEOUT and
-	  CONFIG_NET_TCP_RETRY_COUNT to control the total timeout at the TCP
-	  level.
-
 config NET_TCP_INIT_RETRANSMISSION_TIMEOUT
 	int "Initial value of Retransmission Timeout (RTO) (in milliseconds)"
 	depends on NET_TCP
