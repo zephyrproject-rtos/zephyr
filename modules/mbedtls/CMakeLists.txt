@@ -7,8 +7,11 @@ if(CONFIG_MBEDTLS)
 zephyr_interface_library_named(mbedTLS)
 
   if(CONFIG_MBEDTLS_BUILTIN)
-    if(CONFIG_MBEDTLS_ENTROPY_POLL_ZEPHYR AND NOT CONFIG_ENTROPY_HAS_DRIVER)
-      message(WARNING "No entropy device on the system, using fake entropy source!")
+    if(CONFIG_MBEDTLS_ENTROPY_POLL_ZEPHYR AND NOT CONFIG_CSPRNG_ENABLED)
+      message(WARNING "
+        No HW random number generator device enabled, using a fake one!
+        Be aware that this source is extremely insecure when used in cryptographic
+        operations, so don't use this in production.")
     endif()
 
     if(CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG)
