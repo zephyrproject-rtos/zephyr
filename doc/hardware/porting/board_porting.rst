@@ -650,6 +650,9 @@ while porting.
 - If available, configure and enable a serial output for the console
   using the ``zephyr,console`` chosen node in the devicetree.
 
+- If available, configure and enable a hardware entropy generator using the
+  ``zephyr,entropy`` chosen node in the devicetree.
+
 - If your board supports networking, configure a default interface.
 
 - Enable all GPIO ports connected to peripherals or expansion connectors.
