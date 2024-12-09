@@ -114,7 +114,7 @@ extern char _heap_sentry[];
 
 # endif /* else ALLOCATE_HEAP_AT_STARTUP */
 
-Z_LIBC_DATA static struct sys_heap z_malloc_heap;
+Z_LIBC_DATA struct sys_heap z_malloc_heap;
 
 #ifdef CONFIG_MULTITHREADING
 Z_LIBC_DATA SYS_MUTEX_DEFINE(z_malloc_heap_mutex);
