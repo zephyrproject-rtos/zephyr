@@ -121,6 +121,10 @@ Entropy
   processor needs to get random data before BT is fully enabled.
   (:github:`79931`)
 
+* :kconfig:option:`CONFIG_ENTROPY_GENERATOR` is now automatically enabled as soon
+  as the devicetree property :dtcompatible:`zephyr,entropy` is set.
+  (:github:82497)
+
 GNSS
 ====
 
