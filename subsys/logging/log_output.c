@@ -163,19 +163,11 @@ static int timestamp_print(const struct log_output *output,
 		uint64_t total_seconds;
 #endif
 		uint32_t remainder;
-		uint32_t seconds;
-		uint32_t hours;
-		uint32_t mins;
 		uint32_t ms;
 		uint32_t us;
 
 		timestamp /= timestamp_div;
 		total_seconds = timestamp / freq;
-		seconds = total_seconds;
-		hours = seconds / 3600U;
-		seconds -= hours * 3600U;
-		mins = seconds / 60U;
-		seconds -= mins * 60U;
 
 		remainder = timestamp % freq;
 		ms = (remainder * 1000U) / freq;
@@ -258,6 +250,15 @@ static int timestamp_print(const struct log_output *output,
 #endif /* CONFIG_REQUIRES_FULL_LIBC */
 #endif /* CONFIG_POSIX_C_LANG_SUPPORT_R */
 			} else {
+				uint32_t seconds;
+				uint32_t hours;
+				uint32_t mins;
+
+				seconds = total_seconds;
+				hours = seconds / 3600U;
+				seconds -= hours * 3600U;
+				mins = seconds / 60U;
+				seconds -= mins * 60U;
 				length = print_formatted(output,
 							"[%02u:%02u:%02u.%03u,%03u] ",
 							hours, mins, seconds, ms, us);
