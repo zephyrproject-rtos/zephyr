@@ -90,6 +90,14 @@ static int spi_emul_io(const struct device *dev, const struct spi_config *config
 	return api->io(emul->target, config, tx_bufs, rx_bufs);
 }
 
+static int spi_emul_acquire(const struct device *dev, const struct spi_config *config)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(config);
+
+	return 0;
+}
+
 /**
  * @brief This is a no-op stub of the SPI API's `release` method to protect drivers under test
  *        from hitting a segmentation fault when using SPI_LOCK_ON plus spi_release()
@@ -135,6 +143,7 @@ static DEVICE_API(spi, spi_emul_api) = {
 #ifdef CONFIG_SPI_RTIO
 	.iodev_submit = spi_rtio_iodev_default_submit,
 #endif
+	.acquire = spi_emul_acquire,
 	.release = spi_emul_release,
 };
 
