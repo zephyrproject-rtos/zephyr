@@ -442,9 +442,13 @@ class RimageSigner(Signer):
         preproc_cmd += ['-I', str(self.sof_src_dir / 'src')]
         preproc_cmd += ['-imacros',
                         str(pathlib.Path('zephyr') / 'include' / 'generated' / 'zephyr' / 'autoconf.h')]
+        # Need to preprocess the TOML file twice: once with
+        # LLEXT_FORCE_ALL_MODULAR defined and once without it
+        full_preproc_cmd = preproc_cmd + ['-o', str(subdir / 'rimage_config_full.toml'), '-DLLEXT_FORCE_ALL_MODULAR']
         preproc_cmd += ['-o', str(subdir / 'rimage_config.toml')]
         self.command.inf(quote_sh_list(preproc_cmd))
         subprocess.run(preproc_cmd, check=True, cwd=self.build_dir)
+        subprocess.run(full_preproc_cmd, check=True, cwd=self.build_dir)
 
     def sign(self, command, build_dir, build_conf, formats):
         self.command = command
