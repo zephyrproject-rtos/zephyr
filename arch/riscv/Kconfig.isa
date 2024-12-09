@@ -94,6 +94,88 @@ config RISCV_ISA_EXT_C
 	  which reduces static and dynamic code size by adding short 16-bit
 	  instruction encodings for common operations.
 
+config RISCV_ISA_EXT_XTHEADBA
+	bool
+	help
+	  (XTheadBa) - T-head address calculation extension.
+
+	  The XTheadBa ISA extension provides bitmanipulation instructions
+	  for address calculation.
+
+config RISCV_ISA_EXT_XTHEADBB
+	bool
+	help
+	  (XTheadBb) - T-head basic bit-manipulation extension.
+
+	  The XTheadBb ISA extension provides conditional basic
+	  bit-manipulation instructions.
+
+config RISCV_ISA_EXT_XTHEADBS
+	bool
+	help
+	  (XTheadBs) - T-head single-bit instructions extension.
+
+	  The XTheadBs ISA extension provides instructions to access a single
+	  bit in a register.
+
+config RISCV_ISA_EXT_XTHEADCMO
+	bool
+	help
+	  (XTheadCmo) - T-head cache management operations extension.
+
+	  The XTheadCmo ISA extension provides cache management operations.
+
+config RISCV_ISA_EXT_XTHEADCONDMOV
+	bool
+	help
+	  (XTheadCondMov) - T-head conditional move extension.
+
+	  The XTheadCondMov ISA extension provides conditional move
+	  instructions.
+
+config RISCV_ISA_EXT_XTHEADFMV
+	bool
+	depends on RISCV_ISA_EXT_D
+	help
+	  (XTheadFmv) - T-head double floating-point high-bit data transmission extension.
+
+	  The XTheadFmv ISA extension provides double-precision floating-point
+	  high-bit data transmission intructions for RV32.
+
+config RISCV_ISA_EXT_XTHEADINT
+	bool
+	help
+	  (XTheadInt) - T-head acceleration interruption extension.
+
+	  The XTheadInt ISA extension provides instructions to reduce the code
+	  size of ISRs and/or the interrupt latencies that are caused by ISR
+	  entry/exit code.
+
+
+config RISCV_ISA_EXT_XTHEADMAC
+	bool
+	help
+	  (XTheadMac) - T-head multiply-accumulate extension.
+
+	  The XTheadMac ISA extension provides multiply-accumulate
+	  instructions.
+
+config RISCV_ISA_EXT_XTHEADMEMIDX
+	bool
+	help
+	  (XTheadMemIdx) - T-head indexed memory operation extension.
+
+	  The XTheadMemIdx ISA extension provides indexed memory operations
+	  for GP registers.
+
+config RISCV_ISA_EXT_XTHEADSYNC
+	bool
+	help
+	  (XTheadSync) - T-head multi-core synchronization extension.
+
+	  The XTheadSync ISA extension provides multi-core synchronization
+	  instructions.
+
 config RISCV_ISA_EXT_ZICSR
 	bool
 	help
