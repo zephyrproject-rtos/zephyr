@@ -4046,6 +4046,9 @@ STM32 Wireless Platforms:
   maintainers:
     - erwango
   collaborators:
+    - asm5878
+    - HoZHel
+    - benothmn-st
     - mathieuchopstm
   files:
     - boards/shields/x_nucleo_bnrg2a1/
@@ -4929,6 +4932,9 @@ West:
     - FRASTM
     - gautierg-st
     - marwaiehm-st
+    - asm5878
+    - HoZHel
+    - benothmn-st
   files:
     - modules/Kconfig.stm32
   labels:
