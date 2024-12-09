@@ -1,0 +1,62 @@
+# Copyright (c) 2024 Texas Instruments Incorporated
+# Copyright (c) 2024 BayLibre, SAS
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    TI SimpleLink CC23X0 pinctrl node.
+
+    Device pin configuration should be placed in the child nodes of this node.
+    Populate the 'pinmux' field with a pair consisting of a pin number and its IO
+    functions.
+
+    The node has the 'pinctrl' node label set in your SoC's devicetree,
+    so you can modify it like this:
+
+      &pinctrl {
+              /* your modifications go here */
+      };
+
+    All device pin configurations should be placed in child nodes of the
+    'pinctrl' node, as in the i2c0 example shown at the end.
+
+    Here is a list of
+    supported standard pin properties:
+
+    - bias-disable: Disable pull-up/down.
+    - bias-pull-down: Enable pull-down resistor.
+    - bias-pull-up: Enable pull-up resistor.
+    - drive-open-drain: Output driver is open-drain.
+    - drive-open-source: Output driver is open-source.
+    - input-enable: enable input.
+    - input-schmitt-enable: enable input schmitt circuit.
+
+compatible: "ti,cc23x0-pinctrl"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+child-binding:
+  description: |
+    This binding gives a base representation of the CC23X0
+    pins configuration.
+
+  include:
+    - name: pincfg-node.yaml
+      property-allowlist:
+        - bias-disable
+        - bias-pull-down
+        - bias-pull-up
+        - drive-open-drain
+        - drive-open-source
+        - input-enable
+        - input-schmitt-enable
+
+  properties:
+    pinmux:
+      required: true
+      type: array
+      description: |
+        CC23X0 pin's configuration (IO pin, IO function).
