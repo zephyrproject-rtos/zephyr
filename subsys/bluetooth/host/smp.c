@@ -4311,6 +4311,9 @@ static uint8_t smp_public_key(struct bt_smp *smp, struct net_buf *buf)
 		if (!update_debug_keys_check(smp)) {
 			return BT_SMP_ERR_AUTH_REQUIREMENTS;
 		}
+	} else if (!bt_pub_key_is_valid(smp->pkey)) {
+		LOG_WRN("Received invalid public key");
+		return BT_SMP_ERR_INVALID_PARAMS;
 	}
 
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
