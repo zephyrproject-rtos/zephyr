@@ -85,3 +85,9 @@
 	pinctrl-0 = <&uart0_tx_pa10 &uart0_rx_pa11>;
 	pinctrl-names = "default";
 };
+
+&spi1 {
+	pinctrl-0 = <&spi1_sclk_pb9 &spi1_pico_pb8 &spi1_poci_pb7 &spi1_cs0_pb6>;
+	pinctrl-names = "default";
+	status = "okay";
+};
