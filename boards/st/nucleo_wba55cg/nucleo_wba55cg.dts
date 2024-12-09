@@ -156,6 +156,17 @@
 	status = "okay";
 };
 
+&timers3 {
+	st,prescaler = <10000>;
+	status = "okay";
+
+	pwm3: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim3_ch2_pa9>;
+		pinctrl-names = "default";
+	};
+};
+
 stm32_lp_tick_source: &lptim1 {
 	clocks = <&rcc STM32_CLOCK_BUS_APB7 0x00000800>,
 		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
