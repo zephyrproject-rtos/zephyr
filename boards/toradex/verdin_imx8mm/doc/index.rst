@@ -65,7 +65,7 @@ More information about the board can be found at the
 Supported Features
 ==================
 
-The Zephyr verdin_imx8mm_m4 board configuration supports the following hardware
+The Zephyr `verdin_imx8mm_mimx8mm6_m4_defconfig` board target supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+
