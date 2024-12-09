@@ -3351,26 +3351,26 @@ SHELL_SUBCMD_ADD((wifi), dpp, &wifi_cmd_dpp,
 
 SHELL_SUBCMD_SET_CREATE(wifi_commands, (wifi));
 
-SHELL_SUBCMD_ADD((wifi), 11k, &wifi_commands,
+SHELL_SUBCMD_ADD((wifi), 11k, NULL,
 		 "Configure 11k or get 11k status.\n"
 		 "[enable/disable]\n",
 		 cmd_wifi_11k,
 		 1, 1);
 
-SHELL_SUBCMD_ADD((wifi), 11k_neighbor_request, &wifi_commands,
+SHELL_SUBCMD_ADD((wifi), 11k_neighbor_request, NULL,
 		 "Send Neighbor Report Request frame.\n"
 		 "[ssid <ssid>]\n",
 		 cmd_wifi_11k_neighbor_request,
 		 1, 2);
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
-SHELL_SUBCMD_ADD((wifi), 11v_btm_query, &wifi_commands,
+SHELL_SUBCMD_ADD((wifi), 11v_btm_query, NULL,
 		 "<query_reason: The reason code for a BSS transition management query>.\n",
 		 cmd_wifi_btm_query,
 		 2, 0);
 #endif
 
-SHELL_SUBCMD_ADD((wifi), channel, &wifi_commands,
+SHELL_SUBCMD_ADD((wifi), channel, NULL,
 		 "wifi channel setting\n"
 		 "This command is used to set the channel when\n"
 		 "monitor or TX-Injection mode is enabled\n"
@@ -3386,7 +3386,7 @@ SHELL_SUBCMD_ADD((wifi), channel, &wifi_commands,
 		 cmd_wifi_channel,
 		 2, 4);
 
-SHELL_SUBCMD_ADD((wifi), connect, &wifi_commands,
+SHELL_SUBCMD_ADD((wifi), connect, NULL,
 		  "Connect to a Wi-Fi AP\n"
 		  "<-s --ssid \"<SSID>\">: SSID.\n"
 		  "[-c --channel]: Channel that needs to be scanned for connection. "
@@ -3415,12 +3415,12 @@ SHELL_SUBCMD_ADD((wifi), connect, &wifi_commands,
 		  cmd_wifi_connect,
 		 2, 19);
 
-SHELL_SUBCMD_ADD((wifi), disconnect, &wifi_commands,
+SHELL_SUBCMD_ADD((wifi), disconnect, NULL,
 		 "Disconnect from the Wi-Fi AP.\n",
 		 cmd_wifi_disconnect,
 		 1, 0);
 
-SHELL_SUBCMD_ADD((wifi), mode, &wifi_commands,
+SHELL_SUBCMD_ADD((wifi), mode, NULL,
 		 "mode operational setting\n"
 		 "This command may be used to set the Wi-Fi device into a specific "
 		 "mode of operation\n"
@@ -3438,7 +3438,7 @@ SHELL_SUBCMD_ADD((wifi), mode, &wifi_commands,
 		 cmd_wifi_mode,
 		 1, 9);
 
-SHELL_SUBCMD_ADD((wifi), packet_filter, &wifi_commands,
+SHELL_SUBCMD_ADD((wifi), packet_filter, NULL,
 		 "mode filter setting\n"
 		 "This command is used to set packet filter setting when\n"
 		 "monitor, TX-Injection and promiscuous mode is enabled\n"
@@ -3460,37 +3460,37 @@ SHELL_SUBCMD_ADD((wifi), packet_filter, &wifi_commands,
 		 cmd_wifi_packet_filter,
 		 2, 8);
 
-SHELL_SUBCMD_ADD((wifi), pmksa_flush, &wifi_commands,
+SHELL_SUBCMD_ADD((wifi), pmksa_flush, NULL,
 		 "Flush PMKSA cache entries.\n",
 		 cmd_wifi_pmksa_flush,
 		 1, 0);
 
-SHELL_SUBCMD_ADD((wifi), ps, &wifi_commands,
+SHELL_SUBCMD_ADD((wifi), ps, NULL,
 		 "Configure or display Wi-Fi power save state.\n[on/off]\n",
 		 cmd_wifi_ps,
 		 1, 1);
 
-SHELL_SUBCMD_ADD((wifi), ps_listen_interval, &wifi_commands,
+SHELL_SUBCMD_ADD((wifi), ps_listen_interval, NULL,
 		 "<val> - Listen interval in the range of <0-65535>.\n",
 		 cmd_wifi_listen_interval,
 		 2, 0);
 
-SHELL_SUBCMD_ADD((wifi), ps_mode, &wifi_commands,
+SHELL_SUBCMD_ADD((wifi), ps_mode, NULL,
 		 "<mode: legacy/WMM>.\n",
 		 cmd_wifi_ps_mode,
 		 2, 0);
 
-SHELL_SUBCMD_ADD((wifi), ps_timeout, &wifi_commands,
+SHELL_SUBCMD_ADD((wifi), ps_timeout, NULL,
 		 "<val> - PS inactivity timer(in ms).\n",
 		 cmd_wifi_ps_timeout,
 		 2, 0);
 
-SHELL_SUBCMD_ADD((wifi), ps_wakeup_mode, &wifi_commands,
+SHELL_SUBCMD_ADD((wifi), ps_wakeup_mode, NULL,
 		 "<wakeup_mode: DTIM/Listen Interval>.\n",
 		 cmd_wifi_ps_wakeup_mode,
 		 2, 0);
 
-SHELL_SUBCMD_ADD((wifi), reg_domain, &wifi_commands,
+SHELL_SUBCMD_ADD((wifi), reg_domain, NULL,
 		 "Set or Get Wi-Fi regulatory domain\n"
 		 "[ISO/IEC 3166-1 alpha2]: Regulatory domain\n"
 		 "[-f]: Force to use this regulatory hint over any other regulatory hints\n"
@@ -3499,12 +3499,12 @@ SHELL_SUBCMD_ADD((wifi), reg_domain, &wifi_commands,
 		 cmd_wifi_reg_domain,
 		 1, 2);
 
-SHELL_SUBCMD_ADD((wifi), rts_threshold, &wifi_commands,
+SHELL_SUBCMD_ADD((wifi), rts_threshold, NULL,
 		 "<rts_threshold: rts threshold/off>.\n",
 		 cmd_wifi_set_rts_threshold,
 		 1, 1);
 
-SHELL_SUBCMD_ADD((wifi), scan, &wifi_commands,
+SHELL_SUBCMD_ADD((wifi), scan, NULL,
 		 "Scan for Wi-Fi APs\n"
 		 "[-t, --type <active/passive>] : Preferred mode of scan. "
 		 "The actual mode of scan can depend on factors such as the Wi-Fi chip "
@@ -3531,35 +3531,35 @@ SHELL_SUBCMD_ADD((wifi), scan, &wifi_commands,
 		 cmd_wifi_scan,
 		 1, 8);
 
-SHELL_SUBCMD_ADD((wifi), statistics, &wifi_commands,
+SHELL_SUBCMD_ADD((wifi), statistics, NULL,
 		 "Wi-Fi interface statistics.\n"
 		 "[reset] : Reset Wi-Fi interface statistics\n"
 		 "[help] :  Print out the help for the statistics command.",
 		 cmd_wifi_stats,
 		 1, 1);
 
-SHELL_SUBCMD_ADD((wifi), status, &wifi_commands,
+SHELL_SUBCMD_ADD((wifi), status, NULL,
 		 "Status of the Wi-Fi interface.\n",
 		 cmd_wifi_status,
 		 1, 0);
 
-SHELL_SUBCMD_ADD((wifi), version, &wifi_commands,
+SHELL_SUBCMD_ADD((wifi), version, NULL,
 		 "Print Wi-Fi Driver and Firmware versions\n",
 		 cmd_wifi_version,
 		 1, 0);
 
-SHELL_SUBCMD_ADD((wifi), wps_pbc, &wifi_commands,
+SHELL_SUBCMD_ADD((wifi), wps_pbc, NULL,
 		 "Start a WPS PBC connection.\n",
 		 cmd_wifi_wps_pbc,
 		 1, 0);
 
-SHELL_SUBCMD_ADD((wifi), wps_pin, &wifi_commands,
+SHELL_SUBCMD_ADD((wifi), wps_pin, NULL,
 		 "Set and get WPS pin.\n"
 		 "[pin] Only applicable for set.\n",
 		 cmd_wifi_wps_pin,
 		 1, 1);
 
-SHELL_SUBCMD_ADD((wifi), ps_exit_strategy, &wifi_commands,
+SHELL_SUBCMD_ADD((wifi), ps_exit_strategy, NULL,
 		 "<tim> : Set PS exit strategy to Every TIM\n"
 		 "<custom> : Set PS exit strategy to Custom",
 		 cmd_wifi_ps_exit_strategy,
