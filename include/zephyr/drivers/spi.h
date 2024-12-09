@@ -829,6 +829,14 @@ typedef void (*spi_api_iodev_submit)(const struct device *dev,
 #endif /* CONFIG_SPI_RTIO */
 
 /**
+ * @typedef spi_api_acquire
+ * @brief Callback API for locking SPI device.
+ * See spi_acquire() for argument descriptions
+ */
+typedef int (*spi_api_acquire)(const struct device *dev,
+			       const struct spi_config *config);
+
+/**
  * @typedef spi_api_release
  * @brief Callback API for unlocking SPI device.
  * See spi_release() for argument descriptions
@@ -849,6 +857,7 @@ __subsystem struct spi_driver_api {
 #ifdef CONFIG_SPI_RTIO
 	spi_api_iodev_submit iodev_submit;
 #endif /* CONFIG_SPI_RTIO */
+	spi_api_acquire acquire;
 	spi_api_release release;
 };
 
@@ -1313,6 +1322,41 @@ static inline bool spi_is_ready_iodev(const struct rtio_iodev *spi_iodev)
 /** @} */
 
 #endif /* CONFIG_SPI_RTIO */
+
+/**
+ * @brief Acquire the SPI device without a transaction
+ *
+ * Lock the SPI device without initiating a SPI transaction. The device
+ * must be unlocked at some point in the future through a call to
+ * @ref spi_release. This operation can only be applied if the @a config
+ * structure specifies @ref SPI_LOCK_ON.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param config Pointer to a valid spi_config structure instance.
+ *
+ * @retval 0 If successful.
+ * @retval -ENOSYS If operation is not supported.
+ * @retval -EINVAL If provided configuration does not specify @ref SPI_LOCK_ON.
+ * @retval -errno Negative errno code on failure.
+ */
+__syscall int spi_acquire(const struct device *dev,
+			  const struct spi_config *config);
+
+static inline int z_impl_spi_acquire(const struct device *dev,
+				     const struct spi_config *config)
+{
+	const struct spi_driver_api *api =
+		(const struct spi_driver_api *)dev->api;
+
+	if (api->acquire == NULL) {
+		return -ENOSYS;
+	}
+	/* Operation only makes sense for contexts with locking */
+	if (!(config->operation & SPI_LOCK_ON)) {
+		return -EINVAL;
+	}
+	return api->acquire(dev, config);
+}
 
 /**
  * @brief Release the SPI device locked on and/or the CS by the current config
