@@ -802,4 +802,14 @@ config NRF70_PASSIVE_SCAN_ONLY
 	help
 	  Enable this configuration to force passive scan on all channels.
 	  This will override application-specified scan type.
+config NRF_WIFI_DISPLAY_SCAN_BSS_LIMIT
+	# Display scan BSS entries limit
+	# By default, the limit is 250 in scan-only mode and 150 in regular mode.
+	int "Display scan bss limit"
+	range 1 450 if NRF70_SCAN_ONLY
+	def_int 250 if NRF70_SCAN_ONLY
+	range 1 160
+	def_int 150
+	help
+	  Number of BSS entries in scan result.
 endif # WIFI_NRF70
