@@ -307,7 +307,7 @@ const char *wifi_ps_wakeup_mode_txt(enum wifi_ps_wakeup_mode ps_wakeup_mode)
 	}
 }
 
-const char * const wifi_ps_exit_strategy_txt(enum wifi_ps_exit_strategy ps_exit_strategy)
+const char *wifi_ps_exit_strategy_txt(enum wifi_ps_exit_strategy ps_exit_strategy)
 {
 	switch (ps_exit_strategy) {
 	case WIFI_PS_EXIT_EVERY_TIM:

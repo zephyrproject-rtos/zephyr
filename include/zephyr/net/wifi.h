@@ -607,7 +607,7 @@ enum wifi_ps_exit_strategy {
 };
 
 /** Helper function to get user-friendly ps exit strategy name. */
-const char * const wifi_ps_exit_strategy_txt(enum wifi_ps_exit_strategy ps_exit_strategy);
+const char *wifi_ps_exit_strategy_txt(enum wifi_ps_exit_strategy ps_exit_strategy);
 
 /** @brief Wi-Fi power save error codes. */
 enum wifi_config_ps_param_fail_reason {
