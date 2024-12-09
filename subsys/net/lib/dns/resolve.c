@@ -561,7 +561,8 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 		ret = register_dispatcher(ctx, &resolve_svc, &ctx->servers[i], local_addr,
 						  addr6, addr4);
 		if (ret < 0) {
-			NET_DBG("Cannot register dispatcher for %s (%d)", "mDNS", ret);
+			NET_DBG("Cannot register dispatcher for %s (%d)",
+				ctx->servers[i].is_mdns ? "mDNS" : "DNS", ret);
 			goto fail;
 		}
 
