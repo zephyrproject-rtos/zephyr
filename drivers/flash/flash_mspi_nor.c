@@ -581,7 +581,7 @@ static int drv_init(const struct device *dev)
 	return pm_device_driver_init(dev, dev_pm_action_cb);
 }
 
-static const struct flash_driver_api drv_api = {
+static DEVICE_API(flash, drv_api) = {
 	.read = api_read,
 	.write = api_write,
 	.erase = api_erase,

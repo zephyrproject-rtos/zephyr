@@ -1276,7 +1276,7 @@ static int dev_init(const struct device *dev)
 	return pm_device_driver_init(dev, dev_pm_action_cb);
 }
 
-static const struct mspi_driver_api drv_api = {
+static DEVICE_API(mspi, drv_api) = {
 	.config             = api_config,
 	.dev_config         = api_dev_config,
 	.get_channel_status = api_get_channel_status,
