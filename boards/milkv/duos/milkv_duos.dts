@@ -1,0 +1,76 @@
+/*
+ * Copyright (c) 2024 Chen Xingyu <hi@xingrz.me>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <sophgo/cv181x.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+#include "milkv_duos-pinctrl.dtsi"
+
+/ {
+	model = "Milk-V Duo S";
+	compatible = "milkv,duo-s";
+
+	chosen {
+		zephyr,sram = &sram;
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+	};
+
+	aliases {
+		led0 = &led;
+		sw0 = &button;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led: led {
+			gpios = <&gpioa 29 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		button: button {
+			label = "RECOVERY";
+			gpios = <&gpiob 4 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	soc {
+		/*
+		 * Memory region reserved for the RTOS core.
+		 *
+		 * Keep in sync with FREERTOS_ADDR and FREERTOS_SIZE in
+		 * build/boards/cv181x/cv1813h_milkv_duos_sd/memmap.py
+		 *
+		 * see: https://github.com/milkv-duo/duo-buildroot-sdk
+		 */
+		sram: memory@9fe00000 {
+			compatible = "mmio-sram";
+			reg = <0x9fe00000 DT_SIZE_M(2)>;
+		};
+	};
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&uart1 {
+	status = "okay";
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+};
