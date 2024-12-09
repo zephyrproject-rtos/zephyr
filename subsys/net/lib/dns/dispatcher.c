@@ -292,6 +292,11 @@ int dns_dispatcher_unregister(struct dns_socket_dispatcher *ctx)
 
 	(void)sys_slist_find_and_remove(&sockets, &ctx->node);
 
+	(void)net_socket_service_unregister(ctx->svc);
+
+	/* Mark the context as unregistered */
+	ctx->sock = -1;
+
 	for (int i = 0; i < ctx->fds_len; i++) {
 		dispatch_table[ctx->fds[i].fd].ctx = NULL;
 	}
