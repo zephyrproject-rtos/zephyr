@@ -36,7 +36,7 @@
 			compatible = "st,stm32-fdcan";
 			reg = <0x40006400 0x400>, <0x4000b400 0x350>;
 			reg-names = "m_can", "message_ram";
-			interrupts = <21 0>, <22 0>;
+			interrupts-extended = <&itline21_mux 1 0>, <&itline22_mux 1 0>;
 			interrupt-names = "int0", "int1";
 			clocks = <&rcc STM32_CLOCK(APB1, 12U)>;
 			bosch,mram-cfg = <0x0 28 8 3 3 0 3 3>;
@@ -47,7 +47,7 @@
 			compatible = "st,stm32-fdcan";
 			reg = <0x40006800 0x400>, <0x4000b750 0x350>;
 			reg-names = "m_can", "message_ram";
-			interrupts = <21 0>, <22 0>;
+			interrupts-extended = <&itline21_mux 2 0>, <&itline22_mux 2 0>;
 			interrupt-names = "int0", "int1";
 			clocks = <&rcc STM32_CLOCK(APB1, 12U)>;
 			bosch,mram-cfg = <0x0 28 8 3 3 0 3 3>;
@@ -165,6 +165,14 @@
 		i2c = <&i2c3>;
 		status = "disabled";
 	};
+};
+
+&itline21_mux {
+	status = "okay";
+};
+
+&itline22_mux {
+	status = "okay";
 };
 
 &itline24_mux {
