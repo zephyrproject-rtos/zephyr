@@ -1207,6 +1207,7 @@ static void nxp_wifi_auto_connect(void)
 }
 #endif
 
+#ifdef CONFIG_NXP_WIFI_11K
 static int nxp_wifi_11k_cfg(const struct device *dev, struct wifi_11k_params *params)
 {
 	if (params->oper == WIFI_MGMT_GET) {
@@ -1217,6 +1218,7 @@ static int nxp_wifi_11k_cfg(const struct device *dev, struct wifi_11k_params *pa
 
 	return 0;
 }
+#endif
 
 static int nxp_wifi_power_save(const struct device *dev, struct wifi_ps_params *params)
 {
@@ -1866,7 +1868,9 @@ static const struct wifi_mgmt_ops nxp_wifi_sta_mgmt = {
 #if defined(CONFIG_NET_STATISTICS_WIFI)
 	.get_stats = nxp_wifi_stats,
 #endif
+#ifdef CONFIG_NXP_WIFI_11K
 	.cfg_11k = nxp_wifi_11k_cfg,
+#endif
 	.set_power_save = nxp_wifi_power_save,
 	.get_power_save_config = nxp_wifi_get_power_save,
 	.set_twt = nxp_wifi_set_twt,
