@@ -1529,6 +1529,26 @@ static int adc_stm32_set_clock(const struct device *dev)
 	return ret;
 }
 
+static void adc_stm32_enable_analog_supply(void)
+{
+#if defined(CONFIG_SOC_SERIES_STM32N6X)
+	LL_PWR_EnableVddADC();
+#elif defined(CONFIG_SOC_SERIES_STM32U5X)
+	LL_PWR_EnableVDDA();
+#endif /* CONFIG_SOC_SERIES_STM32U5X */
+}
+
+#ifdef CONFIG_PM_DEVICE
+static void adc_stm32_disable_analog_supply(void)
+{
+#if defined(CONFIG_SOC_SERIES_STM32N6X)
+	LL_PWR_DisableVddADC();
+#elif defined(CONFIG_SOC_SERIES_STM32U5X)
+	LL_PWR_DisableVDDA();
+#endif /* CONFIG_SOC_SERIES_STM32U5X */
+}
+#endif
+
 static int adc_stm32_init(const struct device *dev)
 {
 	struct adc_stm32_data *data = dev->data;
@@ -1574,13 +1594,7 @@ static int adc_stm32_init(const struct device *dev)
 		return err;
 	}
 
-#if defined(CONFIG_SOC_SERIES_STM32U5X)
-	/* Enable the independent analog supply */
-	LL_PWR_EnableVDDA();
-#elif defined(CONFIG_SOC_SERIES_STM32N6X)
-	/* Enable the independent analog supply */
-	LL_PWR_EnableVddADC();
-#endif /* CONFIG_SOC_SERIES_STM32N6X */
+	adc_stm32_enable_analog_supply();
 
 #ifdef CONFIG_ADC_STM32_DMA
 	if ((data->dma.dma_dev != NULL) &&
@@ -1689,13 +1703,7 @@ static int adc_stm32_suspend_setup(const struct device *dev)
 	LL_ADC_EnableDeepPowerDown(adc);
 #endif
 
-#if defined(CONFIG_SOC_SERIES_STM32U5X)
-	/* Disable the independent analog supply */
-	LL_PWR_DisableVDDA();
-#elif defined(CONFIG_SOC_SERIES_STM32N6X)
-	/* Disable the independent analog supply */
-	LL_PWR_DisableVddADC();
-#endif /* CONFIG_SOC_SERIES_STM32N6X */
+	adc_stm32_disable_analog_supply();
 
 	/* Stop device clock. Note: fixed clocks are not handled yet. */
 	err = clock_control_off(clk, (clock_control_subsys_t)&config->pclken[0]);
