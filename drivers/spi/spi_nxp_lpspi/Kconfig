@@ -1,6 +1,4 @@
-# MCUXpresso SDK SPI
-
-# Copyright (c) 2018, NXP
+# Copyright 2018, 2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config SPI_MCUX_LPSPI
