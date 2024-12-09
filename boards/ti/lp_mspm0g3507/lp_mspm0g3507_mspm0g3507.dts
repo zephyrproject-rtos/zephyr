@@ -99,6 +99,16 @@
 	pinctrl-0 = <&spi1_sclk_pb9 &spi1_pico_pb8 &spi1_poci_pb7 &spi1_cs0_pb6>;
 	pinctrl-names = "default";
 	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	ads1310: ads1310@0 {
+		compatible = "ti,ads131m02";
+		reg = <0>;
+		#io-channel-cells = <1>;
+		drdy-gpios = <&gpiob 18 (GPIO_ACTIVE_LOW)>;
+		spi-max-frequency = <8000000>;
+	};
 };
 
 &uart0 {
