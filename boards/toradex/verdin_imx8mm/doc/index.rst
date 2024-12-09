@@ -6,7 +6,7 @@ Toradex Verdin iMX8M Mini M4
 Overview
 ********
 
-.. image:: img/verdin_imx8mm_m4.jpg
+.. image:: img/verdin_imx8mm_m4.webp
    :align: center
    :alt: VERDIN IMX8MM M4
 
