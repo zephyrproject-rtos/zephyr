@@ -178,7 +178,7 @@ config LOG_BACKEND_FORMAT_TIMESTAMP
 
 choice LOG_BACKEND_FORMAT_TIMESTAMP_MODE
 	prompt "Timestamp format mode"
-	default LOG_OUTPUT_FORMAT_DATE_TIMESTAMP if LOG_TIMESTAMP_USE_REALTIME
+	default LOG_OUTPUT_FORMAT_DATE_TIMESTAMP if LOG_TIMESTAMP_USE_REALTIME && POSIX_C_LANG_SUPPORT_R
 	default LOG_OUTPUT_FORMAT_TIME_TIMESTAMP
 
 config LOG_OUTPUT_FORMAT_TIME_TIMESTAMP
@@ -188,11 +188,13 @@ config LOG_OUTPUT_FORMAT_TIME_TIMESTAMP
 
 config LOG_OUTPUT_FORMAT_DATE_TIMESTAMP
 	bool "Format timestamp in date format"
+	depends on POSIX_C_LANG_SUPPORT_R
 	help
 	  When enabled timestamp is formatted to YYYY-MM-DD hh:mm:ss.ms,us.
 
 config LOG_OUTPUT_FORMAT_ISO8601_TIMESTAMP
 	bool "Format timestamp in ISO 8601 format"
+	depends on POSIX_C_LANG_SUPPORT_R
 	help
 	  When enabled timestamp is formatted to YYYY-MM-DDThh:mm:ss,ffffffZ.
 
