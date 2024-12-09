@@ -26,6 +26,7 @@ extern "C" {
 					  I2C_BITRATE_STANDARD))
 
 struct i2c_nrfx_twi_common_data {
+	struct i2c_common_data common;
 	uint32_t dev_config;
 };
 
