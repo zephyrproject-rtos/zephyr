@@ -29,3 +29,13 @@ tests:
     extra_args: CONF_FILE="device_and_host_prj.conf"
     platform_allow: qemu_cortex_m3
     build_only: true
+  sample.usbh.shell.host_only:
+    harness: keyboard
+    tags: usb
+    extra_args: CONF_FILE="host_only.conf"
+    platform_allow:
+      - ek_ra8m1
+      - ek_ra8d1
+      - ek_ra6m3
+      - ek_ra6m5
+    build_only: true
