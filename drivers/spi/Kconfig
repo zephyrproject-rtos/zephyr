@@ -97,7 +97,6 @@ source "drivers/spi/Kconfig.mcux_dspi"
 source "drivers/spi/Kconfig.mcux_ecspi"
 source "drivers/spi/Kconfig.mcux_flexcomm"
 source "drivers/spi/Kconfig.mcux_flexio"
-source "drivers/spi/Kconfig.mcux_lpspi"
 source "drivers/spi/Kconfig.npcx"
 source "drivers/spi/Kconfig.nrfx"
 source "drivers/spi/Kconfig.numaker"
@@ -122,6 +121,7 @@ source "drivers/spi/Kconfig.test"
 source "drivers/spi/Kconfig.xec_qmspi"
 source "drivers/spi/Kconfig.xlnx"
 source "drivers/spi/Kconfig.xmc4xxx"
+source "drivers/spi/spi_nxp_lpspi/Kconfig"
 # zephyr-keep-sorted-stop
 
 endif # SPI
