@@ -73,6 +73,8 @@ Supported Features
 +-----------+------------+-----------------------------------+
 | ENET      | on-chip    | ethernet                          |
 +-----------+------------+-----------------------------------+
+| Wi-Fi     | on-chip    | Wi-Fi                             |
++-----------+------------+-----------------------------------+
 
 The default configuration can be found in the defconfig file:
 
@@ -136,7 +138,7 @@ display sample can be built for the module like so:
 Fetch Binary Blobs
 ******************
 
-To support Bluetooth, rd_rw612_bga requires fetching binary blobs, which can be
+To support Bluetooth or Wi-Fi, rd_rw612_bga requires fetching binary blobs, which can be
 achieved by running the following command:
 
 .. code-block:: console
@@ -212,6 +214,16 @@ the ``Fetch Binary Blobs`` section first.
 
 rd_rw612_bga platform supports the monolithic feature. The required binary blob
 ``<zephyr workspace>/modules/hal/nxp/zephyr/blobs/rw61x_sb_ble_a2.bin`` will be linked
+with the application image directly, forming one single monolithic image.
+
+Wi-Fi
+*****
+
+Wi-Fi functionality requires to fetch binary blobs, so make sure to follow
+the ``Fetch Binary Blobs`` section first.
+
+rd_rw612_bga platform supports the monolithic feature. The required binary blob
+``<zephyr workspace>/modules/hal/nxp/zephyr/blobs/rw61x_sb_wifi_a2.bin`` will be linked
 with the application image directly, forming one single monolithic image.
 
 Board variants
