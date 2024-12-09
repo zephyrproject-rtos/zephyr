@@ -8,6 +8,8 @@
 #include <renesas/ra/ra8/r7fa8d1bhecbd.dtsi>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#include <zephyr/dt-bindings/memory-controller/renesas,ra-sdram.h>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include "ek_ra8d1-pinctrl.dtsi"
 
@@ -53,6 +55,14 @@
 			label = "Push button switch 2";
 			zephyr,code = <INPUT_KEY_1>;
 		};
+	};
+
+	sdram1: sdram@68000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		device_type = "memory";
+		reg = <0x68000000 DT_SIZE_M(64)>;	/* 512 Mbits */
+		zephyr,memory-region = "SDRAM";
+		status = "okay";
 	};
 
 	aliases {
@@ -228,4 +238,27 @@
 &port_irq13 {
 	interrupts = <89 12>;
 	status = "okay";
+};
+
+&sdram {
+	pinctrl-0 = <&sdram_default>;
+	pinctrl-names = "default";
+	status = "okay";
+	auto-refresh-interval = <SDRAM_AUTO_REFREDSH_INTERVEL_10CYCLES>;
+	auto-refresh-count = <SDRAM_AUTO_REFREDSH_COUNT_8TIMES>;
+	precharge-cycle-count = <SDRAM_AUTO_PRECHARGE_CYCLE_3CYCLES>;
+	multiplex-addr-shift = "10-bit";
+	edian-mode = "little-endian";
+	continuous-access;
+	bus-width = "16-bit";
+	bank@0 {
+		reg = <0>;
+		renesas,ra-sdram-timing = <SDRAM_TRAS_6CYCLES
+		SDRAM_TRCD_3CYCLES
+		SDRAM_TRP_3CYCLES
+		SDRAM_TWR_2CYCLES
+		SDRAM_TCL_3CYCLES
+		937
+		SDRAM_TREFW_8CYCLES>;
+	};
 };
