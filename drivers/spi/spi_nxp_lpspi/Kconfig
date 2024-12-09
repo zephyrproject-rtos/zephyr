@@ -2,15 +2,17 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SPI_MCUX_LPSPI
-	bool "MCUX LPSPI driver"
+	bool "NXP LPSPI peripheral"
 	default y
 	depends on DT_HAS_NXP_LPSPI_ENABLED
 	depends on CLOCK_CONTROL
 	select PINCTRL
 	help
-	  Enable support for MCUX LPSPI driver.
+	  Enable support for NXP LPSPI.
 
 if SPI_MCUX_LPSPI
+
+if !SPI_RTIO
 config SPI_MCUX_LPSPI_DMA
 	bool "MCUX LPSPI SPI DMA Support"
 	select DMA
@@ -18,7 +20,20 @@ config SPI_MCUX_LPSPI_DMA
 	  Enable the SPI DMA mode for SPI instances
 	  that enable dma channels in their device tree node.
 
+config SPI_MCUX_LPSPI_NORMAL
+	bool "NXP MCUX LPSPI driver"
+	default y
+	help
+	  Use the traditional (non-RTIO) SPI driver for NXP LPSPI.
+endif # !SPI_RTIO
+
 if SPI_RTIO
+config SPI_MCUX_LPSPI_RTIO
+	bool "NXP MCUX LPSPI RTIO based driver"
+	default y
+	help
+	  Use the RTIO-based SPI driver for the NXP LPSPI.
+
 config SPI_MCUX_RTIO_SQ_SIZE
 	int "number of available submission queue entries"
 	default 8 # sensible default that covers most common spi transactions
