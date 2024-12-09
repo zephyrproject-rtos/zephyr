@@ -18,7 +18,7 @@ LOG_MODULE_REGISTER(spi_mcux_lpspi, CONFIG_SPI_LOG_LEVEL);
 #include <zephyr/drivers/spi/rtio.h>
 #endif
 
-#include "spi_context.h"
+#include "../spi_context.h"
 
 #if CONFIG_NXP_LP_FLEXCOMM
 #include <zephyr/drivers/mfd/nxp_lp_flexcomm.h>
