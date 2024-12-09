@@ -129,3 +129,6 @@ int spi_mcux_release(const struct device *dev, const struct spi_config *spi_cfg)
 	SPI_CONTEXT_INIT_LOCK(spi_mcux_data_##n, ctx),                                             \
 		SPI_CONTEXT_INIT_SYNC(spi_mcux_data_##n, ctx),                                     \
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)
+
+#define SPI_NXP_LPSPI_HAS_DMAS(n)                                                                  \
+	UTIL_AND(DT_INST_DMAS_HAS_NAME(n, tx), DT_INST_DMAS_HAS_NAME(n, rx))
