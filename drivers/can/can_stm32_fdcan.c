@@ -560,14 +560,14 @@ static const struct can_mcan_ops can_stm32fd_ops = {
 static void config_can_##inst##_irq(void)                                      \
 {                                                                              \
 	LOG_DBG("Enable CAN" #inst " IRQ");                                    \
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, int0, irq),                      \
+	IRQ_CONNECT(DT_INST_IRQN_BY_NAME(inst, int0),                          \
 		    DT_INST_IRQ_BY_NAME(inst, int0, priority),                 \
 		    can_mcan_line_0_isr, DEVICE_DT_INST_GET(inst), 0);         \
-	irq_enable(DT_INST_IRQ_BY_NAME(inst, int0, irq));                      \
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, int1, irq),                      \
+	irq_enable(DT_INST_IRQN_BY_NAME(inst, int0));                          \
+	IRQ_CONNECT(DT_INST_IRQN_BY_NAME(inst, int1),                          \
 		    DT_INST_IRQ_BY_NAME(inst, int1, priority),                 \
 		    can_mcan_line_1_isr, DEVICE_DT_INST_GET(inst), 0);         \
-	irq_enable(DT_INST_IRQ_BY_NAME(inst, int1, irq));                      \
+	irq_enable(DT_INST_IRQN_BY_NAME(inst, int1));                          \
 }
 
 #define CAN_STM32FD_CFG_INST(inst)					\
