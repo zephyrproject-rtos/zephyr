@@ -12,6 +12,37 @@ LOG_MODULE_REGISTER(spi_mcux_lpspi_rtio, CONFIG_SPI_LOG_LEVEL);
 #include <zephyr/drivers/spi/rtio.h>
 #include "spi_nxp_lpspi_priv.h"
 
+static int spi_mcux_transfer_next_packet(const struct device *dev)
+{
+	struct spi_mcux_data *data = dev->data;
+	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
+	struct spi_context *ctx = &data->ctx;
+	size_t max_chunk = spi_context_max_continuous_chunk(ctx);
+	lpspi_transfer_t transfer;
+	status_t status;
+
+	if (max_chunk == 0) {
+		spi_context_cs_control(ctx, false);
+		spi_context_complete(ctx, dev, 0);
+		return 0;
+	}
+
+	data->transfer_len = max_chunk;
+
+	transfer.configFlags = LPSPI_MASTER_XFER_CFG_FLAGS(ctx->config->slave);
+	transfer.txData = (ctx->tx_len == 0 ? NULL : ctx->tx_buf);
+	transfer.rxData = (ctx->rx_len == 0 ? NULL : ctx->rx_buf);
+	transfer.dataSize = max_chunk;
+
+	status = LPSPI_MasterTransferNonBlocking(base, &data->handle, &transfer);
+	if (status != kStatus_Success) {
+		LOG_ERR("Transfer could not start on %s: %d", dev->name, status);
+		return status == kStatus_LPSPI_Busy ? -EBUSY : -EINVAL;
+	}
+
+	return 0;
+}
+
 static void spi_mcux_iodev_complete(const struct device *dev, int status);
 
 static void spi_mcux_master_rtio_callback(LPSPI_Type *base, lpspi_master_handle_t *handle,
@@ -25,7 +56,10 @@ static void spi_mcux_master_rtio_callback(LPSPI_Type *base, lpspi_master_handle_
 		return;
 	}
 
-	spi_mcux_master_callback(base, handle, status, userData);
+	spi_context_update_tx(&data->ctx, 1, data->transfer_len);
+	spi_context_update_rx(&data->ctx, 1, data->transfer_len);
+
+	spi_mcux_transfer_next_packet(data->dev);
 }
 
 static void spi_mcux_iodev_start(const struct device *dev)

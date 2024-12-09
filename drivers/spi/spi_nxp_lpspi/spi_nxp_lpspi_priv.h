@@ -72,7 +72,6 @@ struct spi_mcux_data {
 #endif
 };
 
-
 static int spi_nxp_init_common(const struct device *dev)
 {
 	const struct spi_mcux_config *config = dev->config;
@@ -194,48 +193,6 @@ static int spi_mcux_release(const struct device *dev, const struct spi_config *s
 	return 0;
 }
 
-static int spi_mcux_transfer_next_packet(const struct device *dev)
-{
-	struct spi_mcux_data *data = dev->data;
-	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
-	struct spi_context *ctx = &data->ctx;
-	size_t max_chunk = spi_context_max_continuous_chunk(ctx);
-	lpspi_transfer_t transfer;
-	status_t status;
-
-	if (max_chunk == 0) {
-		spi_context_cs_control(ctx, false);
-		spi_context_complete(ctx, dev, 0);
-		return 0;
-	}
-
-	data->transfer_len = max_chunk;
-
-	transfer.configFlags = LPSPI_MASTER_XFER_CFG_FLAGS(ctx->config->slave);
-	transfer.txData = (ctx->tx_len == 0 ? NULL : ctx->tx_buf);
-	transfer.rxData = (ctx->rx_len == 0 ? NULL : ctx->rx_buf);
-	transfer.dataSize = max_chunk;
-
-	status = LPSPI_MasterTransferNonBlocking(base, &data->handle, &transfer);
-	if (status != kStatus_Success) {
-		LOG_ERR("Transfer could not start on %s: %d", dev->name, status);
-		return status == kStatus_LPSPI_Busy ? -EBUSY : -EINVAL;
-	}
-
-	return 0;
-}
-
-static void spi_mcux_master_callback(LPSPI_Type *base, lpspi_master_handle_t *handle,
-				     status_t status, void *userData)
-{
-	struct spi_mcux_data *data = userData;
-
-	spi_context_update_tx(&data->ctx, 1, data->transfer_len);
-	spi_context_update_rx(&data->ctx, 1, data->transfer_len);
-
-	spi_mcux_transfer_next_packet(data->dev);
-}
-
 /* Argument to MCUX SDK IRQ handler */
 #define LPSPI_IRQ_HANDLE_ARG COND_CODE_1(CONFIG_NXP_LP_FLEXCOMM, (LPSPI_GetInstance(base)), (base))
 
@@ -247,12 +204,12 @@ static void lpspi_isr(const struct device *dev);
 				      LP_FLEXCOMM_PERIPH_LPSPI, lpspi_isr);
 #else
 #define SPI_MCUX_LPSPI_IRQ_FUNC(n)                                                                 \
-	IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), lpspi_isr,                       \
-		    DEVICE_DT_INST_GET(n), 0);                                                     \
+	IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), lpspi_isr, DEVICE_DT_INST_GET(n),   \
+		    0);                                                                            \
 	irq_enable(DT_INST_IRQN(n));
 #endif
 
-#define SPI_MCUX_LPSPI_CONFIG_INIT(n)	\
+#define SPI_MCUX_LPSPI_CONFIG_INIT(n)                                                              \
 	static const struct spi_mcux_config spi_mcux_config_##n = {                                \
 		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(n)),                              \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
@@ -266,17 +223,20 @@ static void lpspi_isr(const struct device *dev);
 					   DT_INST_PROP(n, transfer_delay)),                       \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
 		.data_pin_config = DT_INST_ENUM_IDX(n, data_pin_config),                           \
-	};                                                                                         \
+	};
 
-#define SPI_NXP_LPSPI_COMMON_INIT(n)								   \
+#define SPI_NXP_LPSPI_COMMON_INIT(n)                                                               \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-												   \
+                                                                                                   \
 	static void spi_mcux_config_func_##n(const struct device *dev)                             \
 	{                                                                                          \
 		SPI_MCUX_LPSPI_IRQ_FUNC(n)                                                         \
-	}                                                                                          \
+	}
 
-#define SPI_NXP_LPSPI_COMMON_DATA_INIT(n)							   \
-		SPI_CONTEXT_INIT_LOCK(spi_mcux_data_##n, ctx),                                     \
+#define SPI_NXP_LPSPI_COMMON_DATA_INIT(n)                                                          \
+	SPI_CONTEXT_INIT_LOCK(spi_mcux_data_##n, ctx),                                             \
 		SPI_CONTEXT_INIT_SYNC(spi_mcux_data_##n, ctx),                                     \
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)
+
+#define SPI_NXP_LPSPI_HAS_DMAS(n)                                                                  \
+	UTIL_AND(DT_INST_DMAS_HAS_NAME(n, tx), DT_INST_DMAS_HAS_NAME(n, rx))
