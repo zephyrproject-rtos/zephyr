@@ -104,19 +104,19 @@
 			zephyr,memory-region = "SRAM2";
 		};
 
-		ipmmem0: memory@3fcb2000 {
+		ipmmem0: memory@3fce5000 {
 			compatible = "mmio-sram";
-			reg = <0x3fcb2000 0x400>;
+			reg = <0x3fce5000 0x400>;
 		};
 
-		shm0: memory@3fcb2400 {
+		shm0: memory@3fce5400 {
 			compatible = "mmio-sram";
-			reg = <0x3fcb2400 0x3c00>;
+			reg = <0x3fce5400 0x4000>;
 		};
 
-		ipm0: ipm@3fcb6000 {
+		ipm0: ipm@3fce9400 {
 			compatible = "espressif,esp32-ipm";
-			reg = <0x3fcb6000 0x8>;
+			reg = <0x3fce9400 0x8>;
 			status = "disabled";
 			shared-memory = <&ipmmem0>;
 			shared-memory-size = <0x400>;
@@ -126,9 +126,9 @@
 			interrupt-parent = <&intc>;
 		};
 
-		mbox0: mbox@3fcb6008 {
+		mbox0: mbox@3fce9408 {
 			compatible = "espressif,mbox-esp32";
-			reg = <0x3fcb6008 0x8>;
+			reg = <0x3fce9408 0x8>;
 			status = "disabled";
 			shared-memory = <&ipmmem0>;
 			shared-memory-size = <0x400>;
