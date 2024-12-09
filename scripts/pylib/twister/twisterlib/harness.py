@@ -906,6 +906,86 @@ class Test(Harness):
                 tc.reason = "Test failure"
 
 
+class Cpputest(Harness):
+    TEST_START_PATTERN = r".*(?<!Failure in )TEST\((?P<suite_name>[^,]+), (?P<test_name>[^\)]+)\)"
+    TEST_FAIL_PATTERN = r".*Failure in TEST\((?P<suite_name>[^,]+), (?P<test_name>[^\)]+)\).*"
+    FINISHED_PATTERN = r".*(OK|Errors) \(\d+ tests, \d+ ran, \d+ checks, \d+ ignored, \d+ filtered out, \d+ ms\)"
+
+    def __init__(self):
+        super().__init__()
+        self.tc = None
+        self.has_failures = False
+        self.started = False
+
+    def handle(self, line):
+        if not self.started:
+            self.instance.testcases = []
+            self.started = True
+        if self.status != TwisterStatus.NONE:
+            return
+
+        # Check if a new test starts
+        test_start_match = re.search(self.TEST_START_PATTERN, line)
+        if test_start_match:
+            # If a new test starts and there is an unfinished test, mark it as passed
+            if self.tc is not None:
+                self.tc.status = TwisterStatus.PASS
+                self.tc.output = self.testcase_output
+                self.testcase_output = ""
+                self.tc = None
+
+            suite_name = test_start_match.group("suite_name")
+            test_name = test_start_match.group("test_name")
+            if suite_name not in self.detected_suite_names:
+                self.detected_suite_names.append(suite_name)
+
+            name = "{}.{}.{}".format(self.id, suite_name, test_name)
+
+            tc = self.instance.get_case_by_name(name)
+            assert tc is None, "CppUTest error, {} running twice".format(name)
+
+            tc = self.instance.get_case_or_create(name)
+            self.tc = tc
+            self.tc.status = TwisterStatus.STARTED
+            self.testcase_output += line + "\n"
+            self._match = True
+
+        # Check if a test failure occurred
+        test_fail_match = re.search(self.TEST_FAIL_PATTERN, line)
+        if test_fail_match:
+            suite_name = test_fail_match.group("suite_name")
+            test_name = test_fail_match.group("test_name")
+            name = "{}.{}.{}".format(self.id, suite_name, test_name)
+
+            tc = self.instance.get_case_by_name(name)
+            if tc is not None:
+                tc.status = TwisterStatus.FAIL
+                self.has_failures = True
+                tc.output = self.testcase_output
+                self.testcase_output = ""
+                self.tc = None
+            return
+
+        # Check if the test run finished
+        finished_match = re.search(self.FINISHED_PATTERN, line)
+        if finished_match:
+            # No need to check result if previously there was a failure
+            # or no tests were run
+            if self.has_failures or self.tc is None:
+                return
+
+            tc = self.instance.get_case_or_create(self.tc.name)
+
+            finish_result = finished_match.group(1)
+            if finish_result == "OK":
+                self.status = TwisterStatus.PASS
+                tc.status = TwisterStatus.PASS
+            else:
+                self.status = TwisterStatus.FAIL
+                tc.status = TwisterStatus.FAIL
+            return
+
+
 class Ztest(Test):
     pass
 
