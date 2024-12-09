@@ -35,6 +35,15 @@ include(extensions)
 # Check that SHIELD has not changed.
 zephyr_check_cache(SHIELD WATCH)
 
+set(GEN_SHIELD_DERIVED_OVERLAY_SCRIPT    ${ZEPHYR_BASE}/scripts/build/gen_shield_derived_overlay.py)
+set(GENERATED_SHIELDS_DIR                ${PROJECT_BINARY_DIR}/include/generated/shields)
+
+# Add the directory derived overlay files to the SHIELD_DIRS output variable.
+list(APPEND
+  SHIELD_DIRS
+  ${GENERATED_SHIELDS_DIR}
+)
+
 if(SHIELD)
   message(STATUS "Shield(s): ${SHIELD}")
 endif()
@@ -44,7 +53,7 @@ if(DEFINED SHIELD)
 endif()
 # SHIELD-NOTFOUND is a real CMake list, from which valid shields can be popped.
 # After processing all shields, only invalid shields will be left in this list.
-set(SHIELD-NOTFOUND ${SHIELD_AS_LIST})
+string(REGEX REPLACE "([@:][^;]*)" "" SHIELD-NOTFOUND "${SHIELD}")
 
 foreach(root ${BOARD_ROOT})
   set(shield_dir ${root}/boards/shields)
@@ -74,18 +83,16 @@ endforeach()
 
 # Process shields in-order
 if(DEFINED SHIELD)
-  foreach(s ${SHIELD_AS_LIST})
+  foreach(shld ${SHIELD_AS_LIST})
+    string(REGEX MATCH [[^([^@:]*)([@:].*)?$]] matched "${shld}")
+    set(s ${CMAKE_MATCH_1})         # name part
+    set(shield_opts ${CMAKE_MATCH_2}) # options part
+
     if(NOT ${s} IN_LIST SHIELD_LIST)
       continue()
     endif()
 
     list(REMOVE_ITEM SHIELD-NOTFOUND ${s})
-
-    # Add <shield>.overlay to the shield_dts_files output variable.
-    list(APPEND
-      shield_dts_files
-      ${SHIELD_DIR_${s}}/${s}.overlay
-      )
 
     # Add the shield's directory to the SHIELD_DIRS output variable.
     list(APPEND
@@ -93,24 +100,59 @@ if(DEFINED SHIELD)
       ${SHIELD_DIR_${s}}
       )
 
-    # Search for shield/shield.conf file
-    if(EXISTS ${SHIELD_DIR_${s}}/${s}.conf)
-      list(APPEND
-        shield_conf_files
-        ${SHIELD_DIR_${s}}/${s}.conf
-        )
-    endif()
-
-    # Add board-specific .conf and .overlay files to their
-    # respective output variables.
+    # get board-specific .conf and .overlay filenames
     zephyr_file(CONF_FILES ${SHIELD_DIR_${s}}/boards
-                DTS   shield_dts_files
-                KCONF shield_conf_files
+                DTS   board_overlay_file
+                KCONF board_conf_file
     )
+
     zephyr_file(CONF_FILES ${SHIELD_DIR_${s}}/boards/${s}
-                DTS   shield_dts_files
-                KCONF shield_conf_files
+                DTS   board_shield_overlay_file
+                KCONF board_shield_conf_file
     )
+
+    get_filename_component(board_overlay_stem "${board_overlay_file}" NAME_WE)
+    get_filename_component(shield_overlay_stem "${board_shield_overlay_file}" NAME_WE)
+
+    set(shield_conf_list
+        "${SHIELD_DIR_${s}}/${s}.conf"
+        "${board_conf_file}"
+        "${board_shield_conf_file}")
+
+    set(shield_overlay_list
+        "${SHIELD_DIR_${s}}/${s}.overlay"
+        "${board_overlay_file}"
+        "${board_shield_overlay_file}")
+
+    set(derived_overlay_list
+        "${GENERATED_SHIELDS_DIR}/${shld}.overlay"
+        "${GENERATED_SHIELDS_DIR}/${shld}_${board_overlay_stem}.overlay"
+        "${GENERATED_SHIELDS_DIR}/${shld}_${board_overlay_stem}_${shield_overlay_stem}.overlay")
+
+    # Add board-specific .conf files to the shield_conf_files output variable.
+    foreach(src_conf ${shield_conf_list})
+      if(EXISTS ${src_conf})
+        list(APPEND shield_conf_files ${src_conf})
+      endif()
+    endforeach()
+
+    foreach(shield_overlay derived_overlay IN ZIP_LISTS shield_overlay_list derived_overlay_list)
+      if (EXISTS ${shield_overlay})
+        # Generate a derived overlay for each file, reflecting the options.
+        execute_process(COMMAND
+                        ${PYTHON_EXECUTABLE}
+                        ${GEN_SHIELD_DERIVED_OVERLAY_SCRIPT}
+                        "${shield_overlay}"
+                        "--derived-overlay=${derived_overlay}"
+                        "--shield-options=${shield_opts}"
+                        COMMAND_ERROR_IS_FATAL ANY
+                        )
+
+        # Add the derived overlay file to the shield_dts_files output variable.
+        list(APPEND shield_dts_files "${derived_overlay}")
+      endif()
+    endforeach()
+
   endforeach()
 endif()
 

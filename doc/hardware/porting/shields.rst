@@ -17,15 +17,25 @@ under :zephyr_file:`boards/shields`:
 .. code-block:: none
 
    boards/shields/<shield>
+   ├── shield.yml
    ├── <shield>.overlay
    ├── Kconfig.shield
    └── Kconfig.defconfig
 
 These files provides shield configuration as follows:
 
+* **shield.yml**: This file defines the name of the shield, its variant
+  information, and the information it accepts if parameterized.
+  The :ref:`shield_yaml_format` section for details.
+
 * **<shield>.overlay**: This file provides a shield description in devicetree
   format that is merged with the board's :ref:`devicetree <dt-guide>`
   before compilation.
+  The shield framework provides a mechanism for tweaking shield configurations at build time.
+  This capability allows developers to tailor shield behavior to specific use cases,
+  such as adjusting connections, setting hardware parameters, or enabling multiple
+  instances of the same shield with distinct configurations.
+  The :ref:`shield_parametrization` section for details.
 
 * **Kconfig.shield**: This file defines shield Kconfig symbols that will be
   used for default shield configuration. To ease use with applications,
@@ -47,6 +57,158 @@ to provide a device nodelabel is the form <device>_<shield>, for instance:
                 reg = <1>;
                 ...
         };
+
+
+.. _shield_yaml_format:
+
+Shield YAML Format
+******************
+
+The ``shield.yml`` file is the shield schema located in each shield directory.
+It defines the shield's metadata.  And also parameterization options, as described in later sections.
+
+YAML Schema Field Descriptions
+==============================
+
+- **shield**:
+  A top-level key that groups all metadata and configuration details related to the shield.
+
+- **name**:
+  The short identifier or slug name for the shield. This name is a unique reference within the build system and configurations.
+
+- **full\_name**:
+  The complete, human-readable name of the shield. It provides a detailed description, including the vendor and functionality.
+
+- **vendor**:
+  The name of the company or organization that manufactures or provides the shield.
+
+- **options**:
+  A dictionary of customizable parameters for the shield. Each option defines a configurable property using the following fields:
+  This is similar to the YAML properties format for defining devicetree bindings, but the difference is that
+  type is limited to int, boolean and string only, and the default value is required.
+
+  - **type**:
+    Specifies the data type of the option. Common types include ``int``, ``boolean`` and ``string``.
+    This field is required.
+
+  - **default**:
+    Specifies the default value assigned to the option if no explicit value is provided during configuration.
+    This field is required except in the boolean case.
+
+  - **description**:
+    Provides a human-readable explanation of the option's purpose and functionality.
+
+- **variants**:
+  A list of shield variations, each element having the same fields as the shield, excluding the variants.
+  These are interpreted as overlays on the base shield definition.
+
+
+Example shield.yml File
+-----------------------
+
+.. code-block:: yaml
+
+   shield:
+     name: example_grove_i2c
+     full_name: Example Grove I2C Shield
+     vendor: example_vendor
+     options:
+       conn:
+         type: string
+         default: "grove_i2c"
+         description: Specifies the shield’s connection type.
+       addr:
+         type: int
+         default: 0x11
+         description: Defines the I2C address for the shield.
+       irq-gpio-pin:
+         type: int
+         default: 0
+         description: Specifies the GPIO pin used for interrupts.
+
+.. _shield_parametrization:
+
+Shield Parametrization
+**********************
+
+The ``–shield`` option in the ``west build`` command allows shield options to be appended with a key-value
+format after the shield name.
+Using it, you can customize how a shield interacts with your hardware.
+For example, you can specify the connection type, assign specific addresses for I2C,
+or configure GPIO pins for interrupts. This ensures flexibility and adaptability across
+a wide range of hardware configurations.
+
+Specifying Parameters
+=====================
+
+Parameters are specified as part of the ``--shield`` argument using the following syntax:
+
+``<shield_name>[@<index>][:<option>{=<value>}[:<option>{=<value>}]]``
+
+- **<shield_name>**: The unique name of the shield.
+- **<index>**: *(Optional)* Index value, typically used for identifying specific instances of a shield or connectors.
+- **<option>**: *(Optional)* The name of a configurable parameter.
+- **<value>**: *(Optional)* The value assigned to the parameter.
+
+Example
+-------
+
+This command configures two instances of a shield with different settings:
+
+  .. zephyr-app-commands::
+     :app: your_app
+     :board: your_board
+     :shield: example_grove_i2c:irq-gpio-pin=1,example_grove_i2c@1:addr=0x10
+     :goals: build
+
+1. The first instance uses ``grove_i2c``, with an interrupt on GPIO pin ``1``.
+2. The second instance connects to ``grove_i2c1`` with an I2C address of ``0x10``.
+
+Derived Overlay
+===============
+
+The build system generates "derived overlays" for each shield configuration specified via
+the ``—shield`` argument. This mechanism allows you to instantiate multiple instances of
+the same shield and tweak its options.
+
+Derived overlays translate options into macros used during devicetree generation and make them able to reference by shield overlay.
+These macros enable parameterized configurations while maintaining context isolation for multiple instances of the shield.
+
+This diagram illustrates how ``shield.yml`` and ``--shield`` command-line arguments
+are processed to generate the derived overlay, which in turn includes the original
+shield overlay to produce a devicetree fragment.
+
+.. graphviz::
+
+   digraph DerivedOverlayCreation {
+       rankdir=TB;
+
+       ORG [label="Original <shield>.overlay", shape=box, style="solid,filled", fillcolor=pink];
+       YML [label="shield.yml", shape=box, style="solid,filled", fillcolor=pink];
+       ARG [label="--shield argument", shape=ellipse,  shape=box, style="solid,filled", fillcolor=lightblue];
+       MAC [label="Shield option macros", shape=ellipse];
+       DRV [label="Derived overlay", shape=box, style="solid,filled", fillcolor=lightgoldenrod];
+       OUT [label="Devicetree fragment", shape=ellipse, style=bold];
+
+       ORG -> DRV [label="Included by", style=dashed];
+       YML -> MAC [label="Generates defaults"];
+       ARG -> MAC [label="Parses options"];
+       MAC -> DRV [label="Embedding"];
+       DRV -> OUT [label="Preprocess"];
+   }
+
+Advanced Topics and Internals
+=============================
+
+For detailed technical insights, consult the API reference.
+
+- **Macro Structures**
+  Learn how shield options are transformed into macros for internal use.
+
+- **DTS Overlay Examples**
+  Review practical examples of integrating shield parameters into DTS files.
+
+.. doxygengroup:: dts_shield_option_apis
 
 Adding Source Code
 ******************
@@ -87,7 +249,7 @@ This should be done at two different level:
         arduino_i2c: &i2c1 {};
 
 Board specific shield configuration
------------------------------------
+===================================
 
 If modifications are needed to fit a shield to a particular board or board
 revision, you can override a shield description for a specific board by adding
@@ -116,6 +278,14 @@ to the west command:
      :goals: build
 
 
+We can use parameterized options if the shield is supporting.
+Specify the shield name followed by either ``:`` or ``@``.
+
+  .. zephyr-app-commands::
+     :app: your_app
+     :shield: seeed_grove_lis3dhtr@1:addr=0x10
+     :goals: build
+
 Alternatively, it could be set by default in a project's CMakeLists.txt:
 
 .. code-block:: cmake
@@ -131,6 +301,7 @@ possible to provide multiple version of the shields description:
 .. code-block:: none
 
    boards/shields/<shield>
+   ├── shield.yml
    ├── <shield_v1>.overlay
    ├── <shield_v1>.defconfig
    ├── <shield_v2>.overlay
@@ -149,6 +320,7 @@ revision:
 .. code-block:: none
 
    boards/shields/<shield>
+   ├── shield.yml
    ├── <shield_v1>.overlay
    ├── <shield_v1>.defconfig
    ├── <shield_v2>.overlay
