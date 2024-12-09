@@ -189,6 +189,8 @@ config SHELL_BACKEND_RTT
 	select RTT_CONSOLE
 	select SEGGER_RTT_CUSTOM_LOCKING
 	depends on USE_SEGGER_RTT
+	# RTT backend can only be called from thread context.
+	depends on !(SHELL_LOG_BACKEND && LOG_MODE_IMMEDIATE)
 	help
 	  Enable RTT backend.
 
