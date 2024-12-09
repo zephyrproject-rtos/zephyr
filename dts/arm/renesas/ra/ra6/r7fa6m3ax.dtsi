@@ -6,6 +6,7 @@
 
 #include <arm/renesas/ra/ra6/ra6-cm4-common.dtsi>
 #include <zephyr/dt-bindings/clock/ra_clock.h>
+#include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-ra.h>
 
 / {
 	soc {
@@ -101,6 +102,20 @@
 			channel = <2>;
 			reg = <0x40053200 0x100>;
 			status = "disabled";
+		};
+
+		usbhs: usbhs@40060000 {
+			compatible = "renesas,ra-usb";
+			reg = <0x40060000 0x2000>;
+			interrupts = <54 12>, <55 12>, <56 12>;
+			interrupt-names = "usbhs-ir", "usbhs-d0", "usbhs-d1";
+			num-bidir-endpoints = <10>;
+			phys = <&usbhs_phy>;
+			status = "disabled";
+			uhc {
+				compatible = "renesas,ra-uhc";
+				status = "disabled";
+			};
 		};
 	};
 
@@ -229,5 +244,10 @@
 				status = "disabled";
 			};
 		};
+	};
+
+	usbhs_phy: usbhs-phy {
+		compatible = "renesas,ra-usbphyc";
+		#phy-cells = <0>;
 	};
 };
