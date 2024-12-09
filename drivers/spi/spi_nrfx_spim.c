@@ -728,6 +728,20 @@ static int spi_nrfx_transceive_async(const struct device *dev,
 }
 #endif /* CONFIG_SPI_ASYNC */
 
+static int spi_nrfx_acquire(const struct device *dev,
+			    const struct spi_config *spi_cfg)
+{
+	struct spi_nrfx_data *dev_data = dev->data;
+
+	if (spi_context_configured(&dev_data->ctx, spi_cfg)) {
+		return -EINVAL;
+	}
+
+	spi_context_lock(&dev_data->ctx, false, NULL, NULL, spi_cfg);
+
+	return 0;
+}
+
 static int spi_nrfx_release(const struct device *dev,
 			    const struct spi_config *spi_cfg)
 {
@@ -755,6 +769,7 @@ static DEVICE_API(spi, spi_nrfx_driver_api) = {
 #ifdef CONFIG_SPI_RTIO
 	.iodev_submit = spi_rtio_iodev_default_submit,
 #endif
+	.acquire = spi_nrfx_acquire,
 	.release = spi_nrfx_release,
 };
 
