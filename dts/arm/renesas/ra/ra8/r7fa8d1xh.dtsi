@@ -8,6 +8,16 @@
 #include <zephyr/dt-bindings/clock/ra_clock.h>
 
 / {
+	soc {
+		sdram: sdram-controller@40002000 {
+			compatible = "renesas,ra-sdram";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40002000 0xFFF>;
+			status = "disabled";
+		};
+	};
+
 	clocks: clocks {
 		#address-cells = <1>;
 		#size-cells = <1>;
