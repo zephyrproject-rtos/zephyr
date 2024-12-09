@@ -15,7 +15,7 @@ config BT_LONG_WQ_STACK_SIZE
 	# Hidden: Long workqueue stack size. Should be derived from system
 	# requirements.
 	int
-	default 1400 if BT_SEND_ECC_EMULATION
+	default 1400 if BT_ECC
 	default 1300 if BT_GATT_CACHING
 	default 1024
 
@@ -407,7 +407,7 @@ config BT_SMP
 	bool "Security Manager Protocol support"
 	select BT_CRYPTO
 	select BT_RPA
-	select BT_ECC
+	select BT_ECC if !BT_SMP_OOB_LEGACY_PAIR_ONLY
 	help
 	  This option enables support for the Security Manager Protocol
 	  (SMP), making it possible to pair devices over LE.
@@ -991,16 +991,9 @@ config BT_DF_VS_CONN_IQ_REPORT_16_BITS_IQ_SAMPLES
 	  format.
 
 endif # BT_DF
-endif # BT_HCI_HOST
 
 config BT_ECC
 	bool "ECDH key generation support"
-	default y if BT_SMP && !BT_SMP_OOB_LEGACY_PAIR_ONLY
-	help
-	  This option adds support for ECDH HCI commands.
-
-config BT_SEND_ECC_EMULATION
-	bool "Emulate ECDH in the Host using PSA Crypto API library"
 	select MBEDTLS if !BUILD_WITH_TFM
 	select MBEDTLS_PSA_CRYPTO_C if !BUILD_WITH_TFM
 	select PSA_WANT_ALG_ECDH
@@ -1008,19 +1001,11 @@ config BT_SEND_ECC_EMULATION
 	select PSA_WANT_ECC_SECP_R1_256
 	imply MBEDTLS_PSA_P256M_DRIVER_ENABLED if MBEDTLS_PSA_CRYPTO_C
 	select BT_LONG_WQ
-	depends on BT_ECC && (BT_HCI_RAW || BT_HCI_HOST)
-	default y if HAS_BT_CTLR && !BT_CTLR_ECDH
 	help
-	  If this option is set PSA Crypto API library is used for emulating the
-	  ECDH HCI commands and events needed by e.g. LE Secure Connections.
-	  In builds including the BLE Host, if not set the controller crypto is
-	  used for ECDH and if the controller doesn't support the required HCI
-	  commands the LE Secure Connections support will be disabled.
-	  In builds including the HCI Raw interface and the BLE Controller, this
-	  option injects support for the 2 HCI commands required for LE Secure
-	  Connections so that Hosts can make use of those. The option defaults
-	  to enabled for a combined build with Zephyr's own controller, since it
-	  does not have any special ECC support itself (at least not currently).
+	  If this option is set PSA Crypto API library is used for performing ECDH
+	  operations needed e.g. by LE Secure Connections.
+
+endif # BT_HCI_HOST
 
 config BT_HOST_CCM
 	bool "Host side AES-CCM module"
