@@ -727,6 +727,12 @@ static int sdhc_spi_set_io(const struct device *dev, struct sdhc_io *ios)
 					return -EIO;
 				}
 
+				/* Wait until VDD is stable. Per the spec:
+				 *   Maximum VDD rise time of 35ms.
+				 *   Minimum 1ms VDD stable time.
+				 */
+				k_sleep(K_MSEC(36));
+
 				LOG_INF("Powered up");
 			}
 
