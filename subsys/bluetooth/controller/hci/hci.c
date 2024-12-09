@@ -21,8 +21,6 @@
 #include <zephyr/bluetooth/hci_vs.h>
 #include <zephyr/bluetooth/buf.h>
 
-#include "../host/hci_ecc.h"
-
 #include "util/util.h"
 #include "util/memq.h"
 #include "util/mem.h"
@@ -1048,10 +1046,6 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 	/* LE Set Default Periodic Advertising Sync Transfer Parameters */
 	rp->commands[41] |= BIT(1);
 #endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER */
-
-#if defined(CONFIG_BT_HCI_RAW) && defined(CONFIG_BT_SEND_ECC_EMULATION)
-	bt_hci_ecc_supported_commands(rp->commands);
-#endif /* CONFIG_BT_HCI_RAW && CONFIG_BT_SEND_ECC_EMULATION */
 
 	/* LE Read TX Power. */
 	rp->commands[38] |= BIT(7);
