@@ -30,7 +30,7 @@ description: |
             sp-mode = "NORMAL";
             th-up = <36>;
             th-down = <30>;
-            isource = "OFF";
+            isource = "DISABLED";
     };
 
   To select an external reference, select the "AREF"
@@ -52,8 +52,8 @@ description: |
             psel = "AIN0";
             extrefsel = "AIN1";
             sp-mode = "NORMAL";
-            hyst = "50MV";
-            isource = "OFF";
+            enable-hyst;
+            isource = "DISABLED";
     };
 
 compatible: "nordic,nrf-comp"
