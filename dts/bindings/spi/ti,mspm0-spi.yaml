@@ -1,0 +1,21 @@
+compatible: "ti,mspm0-spi"
+include: [spi-controller.yaml, "pinctrl-device.yaml"]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  clock-frequency:
+    type: int
+    required: true
+    description: |
+      Maximum data rate the SPI peripheral can be driven at, in Hz. This
+      property must be set at SoC level DTS files.
+
+

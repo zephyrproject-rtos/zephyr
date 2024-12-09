@@ -1,0 +1,6 @@
+config SPI_MSPM0
+	bool "TI's MSPM0 SPI"
+	default y
+	select PINCTRL
+	help
+	 This driver enable TI MSPM0 spi driver.

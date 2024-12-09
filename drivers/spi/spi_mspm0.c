@@ -210,7 +210,7 @@ static void spi_mspm0_start_transfer(const struct device *dev, const struct spi_
 	
 	while (spi_mspm0_transfer_ongoing(ctx)) {
 		//pin toggle here for debugging
-		DL_GPIO_togglePins(GPIO_LEDS_PORT, GPIO_LEDS_PIN_0_PIN);
+		//DL_GPIO_togglePins(GPIO_LEDS_PORT, GPIO_LEDS_PIN_0_PIN);
 		spi_mspm0_frame_tx(dev);
 		spi_mspm0_frame_rx(dev);
 	}
