@@ -4032,11 +4032,34 @@ STM32 Platforms:
     - dts/bindings/*/*stm32*
     - soc/st/stm32/
     - samples/boards/st/
+  files-exclude:
+    - boards/st/*wb*/
+    - drivers/bluetooth/hci/*stm32*.c
+    - soc/st/stm32/stm32wb*/
   labels:
     - "platform: STM32"
   description: >-
-    STM32 SOCs, dts files and related drivers. ST nucleo, disco and eval
-    boards.
+    STM32 SOCs, dts files and related drivers. ST development boards.
+
+STM32 Wireless Platforms:
+  status: maintained
+  maintainers:
+    - erwango
+  collaborators:
+    - mathieuchopstm
+  files:
+    - boards/shields/x_nucleo_bnrg2a1/
+    - boards/shields/x_nucleo_idb05a1/
+    - boards/shields/x_nucleo_wb05kn1/
+    - boards/st/*wb*/
+    - drivers/bluetooth/hci/*stm32*.c
+    - drivers/bluetooth/hci/hci_spi_st.c
+    - soc/st/stm32/stm32wb*/
+  labels:
+    - "platform: STM32"
+  description: >-
+    STM32WB SOCs, dts files and related drivers. STM32WB development boards
+    and ST bluetooth shields.
 
 Espressif Platforms:
   status: maintained
