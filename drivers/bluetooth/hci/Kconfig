@@ -127,6 +127,13 @@ config BT_SILABS_EFR32
 	select MBEDTLS_PSA_CRYPTO_C
 	select MBEDTLS_ENTROPY_C
 	select HAS_BT_CTLR
+	select BT_CTLR_PHY_UPDATE_SUPPORT
+	select BT_CTLR_PER_INIT_FEAT_XCHG_SUPPORT
+	select BT_CTLR_DATA_LEN_UPDATE_SUPPORT
+	select BT_CTLR_EXT_REJ_IND_SUPPORT
+	select BT_CTLR_CHAN_SEL_2_SUPPORT
+	select BT_CTLR_CONN_RSSI_SUPPORT
+	select BT_CTLR_ADV_EXT_SUPPORT
 	help
 	  Use Silicon Labs binary Bluetooth library to connect to the
 	  controller.
