@@ -4177,9 +4177,6 @@ Toradex Platforms:
   status: maintained
   maintainers:
     - drewmoseley
-  collaborators:
-    - GabrielHAFs
-    - hiagofranco
   files:
     - boards/arm/verdin_imx8m*/
   labels:
