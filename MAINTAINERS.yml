@@ -4178,7 +4178,7 @@ Toradex Platforms:
   maintainers:
     - drewmoseley
   files:
-    - boards/arm/verdin_imx8m*/
+    - boards/toradex/verdin_imx8m*/
   labels:
     - "platform: Toradex"
 
