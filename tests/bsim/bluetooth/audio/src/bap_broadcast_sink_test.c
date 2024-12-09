@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -251,7 +251,18 @@ static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap
 		return;
 	}
 
-	bis_index_bitfield = base_bis_index_bitfield & bis_index_mask;
+	if (requested_bis_sync == 0) {
+		bis_index_bitfield = base_bis_index_bitfield & bis_index_mask;
+	} else {
+		if ((requested_bis_sync & base_bis_index_bitfield) != requested_bis_sync) {
+			FAIL("Assistant has request BIS indexes 0x%08x that is not in the BASE "
+			     "0x%08x\n",
+			     requested_bis_sync, base_bis_index_bitfield);
+			return;
+		}
+
+		bis_index_bitfield = requested_bis_sync & bis_index_mask;
+	}
 
 	SET_FLAG(flag_base_received);
 }
@@ -771,7 +782,7 @@ static void test_broadcast_sync(const uint8_t broadcast_code[BT_ISO_BROADCAST_CO
 {
 	int err;
 
-	printk("Syncing sink %p\n", g_sink);
+	printk("Syncing sink %p to 0x%08x\n", g_sink, bis_index_bitfield);
 	err = bt_bap_broadcast_sink_sync(g_sink, bis_index_bitfield, streams, broadcast_code);
 	if (err != 0) {
 		FAIL("Unable to sync the sink: %d\n", err);

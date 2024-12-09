@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -966,7 +966,7 @@ static void create_and_sync_sink(struct bt_bap_stream *bap_streams[], size_t *st
 		bap_streams[i] = bap_stream_from_audio_test_stream(&broadcast_sink_streams[i]);
 	}
 
-	printk("Syncing the sink\n");
+	printk("Syncing the sink to 0x%08x\n", bis_index_bitfield);
 	*stream_count = 0;
 	for (int i = 1; i < BT_ISO_MAX_GROUP_ISO_COUNT; i++) {
 		if ((bis_index_bitfield & BIT(i)) != 0) {

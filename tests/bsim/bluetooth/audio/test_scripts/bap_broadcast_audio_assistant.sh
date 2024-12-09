@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright (c) 2023 Nordic Semiconductor ASA
+# Copyright (c) 2023-2025 Nordic Semiconductor ASA
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -25,7 +25,7 @@ Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
 Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=2 \
   -testid=broadcast_source -RealEncryption=1 -rs=69 -D=3 \
-  -start_offset=5e3
+  -start_offset=5e3 -argstest subgroup_cnt 1 streams_per_subgroup_cnt 2
 
 # Simulation time should be larger than the WAIT_TIME in common.h
 Execute ./bs_2G4_phy_v1 -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -D=3 -sim_length=60e6 $@

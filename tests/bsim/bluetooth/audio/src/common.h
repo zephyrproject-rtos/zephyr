@@ -80,9 +80,13 @@ static const uint8_t mock_iso_data[] = {
 #define SET_FLAG(flag) (void)atomic_set(&flag, (atomic_t)true)
 #define UNSET_FLAG(flag) (void)atomic_clear(&flag)
 #define TEST_FLAG(flag) (atomic_get(&flag) == (atomic_t)true)
-#define WAIT_FOR_FLAG(flag) \
-	while (!(bool)atomic_get(&flag)) { \
-		(void)k_sleep(K_MSEC(1)); \
+#define WAIT_FOR_FLAG(flag)                                                                        \
+	while (!(bool)atomic_get(&flag)) {                                                         \
+		(void)k_sleep(K_MSEC(1));                                                          \
+	}
+#define WAIT_FOR_AND_CLEAR_FLAG(flag)                                                              \
+	while (!(bool)atomic_clear(&flag)) {                                                       \
+		(void)k_sleep(K_MSEC(1));                                                          \
 	}
 #define WAIT_FOR_UNSET_FLAG(flag) \
 	while (atomic_get(&flag) != (atomic_t)false) { \
