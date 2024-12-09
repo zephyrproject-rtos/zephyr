@@ -127,10 +127,8 @@ endif()
 
 zephyr_library_sources_ifdef(CONFIG_POSIX_PRIORITY_SCHEDULING sched.c)
 
-if (NOT CONFIG_TC_PROVIDES_POSIX_READER_WRITER_LOCKS)
-  # Note: the Option is _POSIX_READER_WRITER_LOCKS, while the Option Group is POSIX_RW_LOCKS.
-  # We have opted to use POSIX_READER_WRITER_LOCKS here to match the Option name.
-  zephyr_library_sources_ifdef(CONFIG_POSIX_READER_WRITER_LOCKS rwlock.c)
+if (NOT CONFIG_TC_PROVIDES_POSIX_RW_LOCKS)
+  zephyr_library_sources_ifdef(CONFIG_POSIX_RW_LOCKS rwlock.c)
 endif()
 
 if (NOT CONFIG_TC_PROVIDES_POSIX_SEMAPHORES)
