@@ -13,3 +13,23 @@ config SOC_SERIES_CYW20829
 	select DYNAMIC_INTERRUPTS
 	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
 	select HAS_PM
+
+config INFINEON_SECURE_LCS
+	bool "SECURE LCS stage support"
+	help
+		Enable support of SECURE LCS stage. In this stage, the protection
+		state is set to “secure”. A secured device will boot only when the
+		authentication of its flash boot and application code succeeds.
+
+config INFINEON_SECURE_POLICY
+	string "Path to policy JSON file"
+	help
+		Policy is a text file in JSON format that contains a set of properties
+		for the device configuration (e.g., enabling/disabling debug access ports,
+		SMIF configuration, keys information, etc).
+
+config INFINEON_SMIF_ENCRYPTION
+	bool "SMIF encryption support"
+	depends on INFINEON_SECURE_LCS
+	help
+		Enables SMIF encryption.
