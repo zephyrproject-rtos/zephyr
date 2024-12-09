@@ -173,6 +173,53 @@
 			status = "okay";
 		};
 
+		hdamluaol: hdamluaol@d40 {
+			compatible = "intel,adsp-hda-uaol-cap";
+			reg = <0xd40 0x40>;
+			status = "okay";
+		};
+
+		uaol0: uaol@f000 {
+			compatible = "intel,adsp-uaol";
+			reg = <0x0000f000 0x1000>;
+			shim-offset = <0x0>;
+			ip-offset = <0x100>;
+			link = <0>;
+			power-domain = <&hst_domain>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			uaol00: uaol-dai@d {
+				compatible = "intel,uaol-dai";
+				reg = <0x0d>;
+				stream = <0>;
+			};
+			uaol01: uaol-dai@e {
+				compatible = "intel,uaol-dai";
+				reg = <0x0e>;
+				stream = <1>;
+			};
+			uaol02: uaol-dai@f {
+				compatible = "intel,uaol-dai";
+				reg = <0x0f>;
+				stream = <2>;
+			};
+			uaol03: uaol-dai@10 {
+				compatible = "intel,uaol-dai";
+				reg = <0x10>;
+				stream = <3>;
+			};
+			uaol04: uaol-dai@1d {
+				compatible = "intel,uaol-dai";
+				reg = <0x1d>;
+				stream = <4>;
+			};
+			uaol05: uaol-dai@1e {
+				compatible = "intel,uaol-dai";
+				reg = <0x1e>;
+				stream = <5>;
+			};
+		};
+
 		dmic0: dai-dmic0@10100 {
 			compatible = "intel,dai-dmic";
 			reg = <0x10100 0x8000>;
