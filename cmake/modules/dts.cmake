@@ -113,6 +113,8 @@ set(EDT_PICKLE                  ${PROJECT_BINARY_DIR}/edt.pickle)
 set(ZEPHYR_DTS                  ${PROJECT_BINARY_DIR}/zephyr.dts)
 # The generated C header needed by <zephyr/devicetree.h>
 set(DEVICETREE_GENERATED_H      ${BINARY_DIR_INCLUDE_GENERATED}/devicetree_generated.h)
+
+set(SHIELD_OPTIONS_GENERATED_H  ${BINARY_DIR_INCLUDE_GENERATED}/shield_options_generated.h)
 # Generated build system internals.
 set(DTS_POST_CPP                ${PROJECT_BINARY_DIR}/zephyr.dts.pre)
 set(DTS_DEPS                    ${PROJECT_BINARY_DIR}/zephyr.dts.d)
@@ -186,6 +188,10 @@ set(dts_files
   ${board_extension_dts_files}
   ${shield_dts_files}
   )
+
+if(EXISTS ${SHIELD_OPTIONS_GENERATED_H})
+  list(INSERT dts_files 0 ${SHIELD_OPTIONS_GENERATED_H})
+endif()
 
 if(DTC_OVERLAY_FILE)
   zephyr_list(TRANSFORM DTC_OVERLAY_FILE NORMALIZE_PATHS
