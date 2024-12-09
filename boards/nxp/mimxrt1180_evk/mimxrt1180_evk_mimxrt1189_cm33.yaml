@@ -24,4 +24,5 @@ supported:
   - netif:eth
   - pwm
   - uart
+  - watchdog
 vendor: nxp
