@@ -12,6 +12,7 @@ supported:
   - spi
   - entropy
   - i2c
+  - netif:openthread
 testing:
   ignore_tags:
     - tracing

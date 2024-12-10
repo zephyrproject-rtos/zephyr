@@ -21,6 +21,7 @@
 		zephyr,shell-uart = &uart0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,ieee802154 = &ieee802154;
 	};
 
 	aliases {
@@ -69,5 +70,9 @@
 };
 
 &wdt0 {
+	status = "okay";
+};
+
+&ieee802154 {
 	status = "okay";
 };
