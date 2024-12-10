@@ -21,6 +21,17 @@
 			interrupt-names = "combined";
 			status = "disabled";
 		};
+
+		lptim3: timers@40009000 {
+			compatible = "st,stm32-lptim";
+			clocks = <&rcc STM32_CLOCK(APB1, 26U)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40009000 0x400>;
+			interrupts = <19 1>;
+			interrupt-names = "wakeup";
+			status = "disabled";
+		};
 	};
 
 	sram1: memory@20000000 {
