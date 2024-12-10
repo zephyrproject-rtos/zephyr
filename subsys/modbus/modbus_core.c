@@ -232,12 +232,6 @@ int modbus_init_server(const int iface, struct modbus_iface_param param)
 		goto init_server_error;
 	}
 
-	if (param.server.user_cb == NULL) {
-		LOG_ERR("User callbacks should be available");
-		rc = -EINVAL;
-		goto init_server_error;
-	}
-
 	ctx = modbus_init_iface(iface);
 	if (ctx == NULL) {
 		rc = -EINVAL;

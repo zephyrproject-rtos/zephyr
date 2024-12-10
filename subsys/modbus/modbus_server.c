@@ -75,6 +75,9 @@ static void update_noresp_ctr(struct modbus_context *ctx)
 #define update_noresp_ctr(...)
 #endif /* CONFIG_MODBUS_FC08_DIAGNOSTIC */
 
+#define HAS_MBS_USER_CB(_cb_name)                                                                  \
+	((ctx->mbs_user_cb != NULL) && (ctx->mbs_user_cb->_cb_name != NULL))
+
 /*
  * This function sets the indicated error response code into the response frame.
  * Then the routine is called to calculate the error check value.
@@ -124,7 +127,7 @@ static bool mbs_fc01_coil_read(struct modbus_context *ctx)
 		return false;
 	}
 
-	if (ctx->mbs_user_cb->coil_rd == NULL) {
+	if (!HAS_MBS_USER_CB(coil_rd)) {
 		mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_FC);
 		return true;
 	}
@@ -225,7 +228,7 @@ static bool mbs_fc02_di_read(struct modbus_context *ctx)
 		return false;
 	}
 
-	if (ctx->mbs_user_cb->discrete_input_rd == NULL) {
+	if (!HAS_MBS_USER_CB(discrete_input_rd)) {
 		mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_FC);
 		return true;
 	}
@@ -329,8 +332,7 @@ static bool mbs_fc03_hreg_read(struct modbus_context *ctx)
 	reg_qty = sys_get_be16(&ctx->rx_adu.data[2]);
 
 	if (reg_qty == 0 || reg_qty > regs_limit) {
-		LOG_ERR("Wrong register quantity, %u (limit is %u)",
-			reg_qty, regs_limit);
+		LOG_ERR("Wrong register quantity, %u (limit is %u)", reg_qty, regs_limit);
 		mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_VAL);
 		return true;
 	}
@@ -340,14 +342,14 @@ static bool mbs_fc03_hreg_read(struct modbus_context *ctx)
 
 	if ((reg_addr < MODBUS_FP_EXTENSIONS_ADDR) || !IS_ENABLED(CONFIG_MODBUS_FP_EXTENSIONS)) {
 		/* Read integer register */
-		if (ctx->mbs_user_cb->holding_reg_rd == NULL) {
+		if (!HAS_MBS_USER_CB(holding_reg_rd)) {
 			mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_FC);
 			return true;
 		}
 
 	} else {
 		/* Read floating-point register */
-		if (ctx->mbs_user_cb->holding_reg_rd_fp == NULL) {
+		if (!HAS_MBS_USER_CB(holding_reg_rd_fp)) {
 			mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_FC);
 			return true;
 		}
@@ -402,7 +404,6 @@ static bool mbs_fc03_hreg_read(struct modbus_context *ctx)
 			mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_ADDR);
 			return true;
 		}
-
 	}
 
 	return true;
@@ -442,8 +443,7 @@ static bool mbs_fc04_inreg_read(struct modbus_context *ctx)
 	reg_qty = sys_get_be16(&ctx->rx_adu.data[2]);
 
 	if (reg_qty == 0 || reg_qty > regs_limit) {
-		LOG_ERR("Wrong register quantity, %u (limit is %u)",
-			reg_qty, regs_limit);
+		LOG_ERR("Wrong register quantity, %u (limit is %u)", reg_qty, regs_limit);
 		mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_VAL);
 		return true;
 	}
@@ -453,14 +453,14 @@ static bool mbs_fc04_inreg_read(struct modbus_context *ctx)
 
 	if ((reg_addr < MODBUS_FP_EXTENSIONS_ADDR) || !IS_ENABLED(CONFIG_MODBUS_FP_EXTENSIONS)) {
 		/* Read integer register */
-		if (ctx->mbs_user_cb->input_reg_rd == NULL) {
+		if (!HAS_MBS_USER_CB(input_reg_rd)) {
 			mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_FC);
 			return true;
 		}
 
 	} else {
 		/* Read floating-point register */
-		if (ctx->mbs_user_cb->input_reg_rd_fp == NULL) {
+		if (!HAS_MBS_USER_CB(input_reg_rd_fp)) {
 			mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_FC);
 			return true;
 		}
@@ -549,7 +549,7 @@ static bool mbs_fc05_coil_write(struct modbus_context *ctx)
 		return false;
 	}
 
-	if (ctx->mbs_user_cb->coil_wr == NULL) {
+	if (!HAS_MBS_USER_CB(coil_wr)) {
 		mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_FC);
 		return true;
 	}
@@ -609,7 +609,7 @@ static bool mbs_fc06_hreg_write(struct modbus_context *ctx)
 		return false;
 	}
 
-	if (ctx->mbs_user_cb->holding_reg_wr == NULL) {
+	if (!HAS_MBS_USER_CB(holding_reg_wr)) {
 		mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_FC);
 		return true;
 	}
@@ -755,7 +755,7 @@ static bool mbs_fc15_coils_write(struct modbus_context *ctx)
 		return false;
 	}
 
-	if (ctx->mbs_user_cb->coil_wr == NULL) {
+	if (!HAS_MBS_USER_CB(coil_wr)) {
 		mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_FC);
 		return true;
 	}
@@ -867,13 +867,13 @@ static bool mbs_fc16_hregs_write(struct modbus_context *ctx)
 
 	if ((reg_addr < MODBUS_FP_EXTENSIONS_ADDR) || !IS_ENABLED(CONFIG_MODBUS_FP_EXTENSIONS)) {
 		/* Write integer register */
-		if (ctx->mbs_user_cb->holding_reg_wr == NULL) {
+		if (!HAS_MBS_USER_CB(holding_reg_wr)) {
 			mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_FC);
 			return true;
 		}
 	} else {
 		/* Write floating-point register */
-		if (ctx->mbs_user_cb->holding_reg_wr_fp == NULL) {
+		if (!HAS_MBS_USER_CB(holding_reg_wr_fp)) {
 			mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_FC);
 			return true;
 		}
