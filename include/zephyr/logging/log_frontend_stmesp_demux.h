@@ -121,11 +121,14 @@ struct log_frontend_stmesp_demux_trace_point {
 	/** Flag indicating if trace point includes data. */
 	uint64_t has_data: 1;
 
-	/** Timestamp. */
-	uint64_t timestamp: 58;
+	/** Timestamp. 54 bits at 40MHz is >14 years. */
+	uint64_t timestamp: 54;
 
 	/** Major ID. */
-	uint16_t major;
+	uint64_t major: 4;
+
+	/** Source ID - used for compressed logging. */
+	uint16_t source_id;
 
 	/** ID */
 	uint16_t id;
@@ -180,6 +183,12 @@ struct log_frontend_stmesp_demux_config {
 
 	/** Array length. Must be not bigger than @ref LOG_FRONTEND_STMESP_DEMUX_MAJOR_MAX. */
 	uint32_t m_ids_cnt;
+
+	/** Buffer for storing source ID's. Used for turbo logging. */
+	uint32_t *source_id_buf;
+
+	/** It must be multiple of number of major ID's count. */
+	size_t source_id_buf_len;
 };
 
 /** @brief Initialize the demultiplexer.
@@ -209,6 +218,19 @@ void log_frontend_stmesp_demux_channel(uint16_t id);
  * @param ts	Timestamp. Can be NULL.
  */
 int log_frontend_stmesp_demux_packet_start(uint32_t *data, uint64_t *ts);
+
+/** @brief Indicate optimized log message with no arguments.
+ *
+ * @param source_id Source ID.
+ * @param ts	Timestamp. Can be NULL.
+ */
+int log_frontend_stmesp_demux_log0(uint16_t source_id, uint64_t *ts);
+
+/** @brief Indicate source ID.
+ *
+ * @param source_id Source ID.
+ */
+void log_frontend_stmesp_demux_source_id(uint16_t source_id);
 
 /** @brief Indicate timestamp.
  *
@@ -253,6 +275,21 @@ union log_frontend_stmesp_demux_packet log_frontend_stmesp_demux_claim(void);
  * @param packet Packet.
  */
 void log_frontend_stmesp_demux_free(union log_frontend_stmesp_demux_packet packet);
+
+/** @brief Get source name for a turbo log message.
+ *
+ * During a boot cooprocessors (FLPR and PPR) are sending location in memory where
+ * their source data is stored. If application core is an owner of those cores
+ * it has access to that memory and based on chip ID and source ID it can retrieve
+ * the source name.
+ *
+ * @param m_id Major ID.
+ * @param s_id Source ID.
+ *
+ * @return Pointer to a string which is a source name or unknown name if source name
+ *         cannot be retrieved.
+ */
+const char *log_frontend_stmesp_demux_sname_get(uint32_t m_id, uint16_t s_id);
 
 /** @brief Check if there are any started but not completed log messages.
  *
