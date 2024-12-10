@@ -3178,6 +3178,7 @@ struct bt_hci_evt_le_phy_update_complete {
 #define BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE   0
 #define BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL    1
 #define BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_INCOMPLETE 2
+#define BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_RESERVED   3
 #define BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_RX_FAILED  0xFF
 
 struct bt_hci_evt_le_ext_advertising_info {
