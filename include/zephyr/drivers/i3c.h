@@ -1257,6 +1257,21 @@ struct i3c_device_desc *i3c_dev_list_i3c_addr_find(const struct device *dev,
 						   uint8_t addr);
 
 /**
+ * @brief Find a I3C target device descriptor by static address.
+ *
+ * This finds the I3C target device descriptor in the attached
+ * device list matching the static address (@p addr)
+ *
+ * @param dev Pointer to controller device driver instance.
+ * @param addr static address to be matched.
+ *
+ * @return Pointer to the I3C target device descriptor, or
+ *         `NULL` if none is found.
+ */
+struct i3c_device_desc *i3c_dev_list_i3c_static_addr_find(const struct device *dev,
+						   uint8_t addr);
+
+/**
  * @brief Find a I2C target device descriptor by address.
  *
  * This finds the I2C target device descriptor in the attached
