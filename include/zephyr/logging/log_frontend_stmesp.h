@@ -132,7 +132,7 @@ TYPE_SECTION_START_EXTERN(const char *, log_stmesp_ptr);
 		uint32_t idx =                                                                     \
 			((uintptr_t)&_str_ptr - (uintptr_t)TYPE_SECTION_START(log_stmesp_ptr)) /   \
 			sizeof(void *);                                                            \
-		log_frontend_stmesp_log1(_source, idx, (uintptr_t)GET_ARG_N(2, __VA_ARGS__));      \
+		log_frontend_stmesp_log1(_source, idx, (uintptr_t)(GET_ARG_N(2, __VA_ARGS__)));    \
 	} while (0)
 
 #ifdef __cplusplus
