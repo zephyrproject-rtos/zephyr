@@ -396,7 +396,12 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         self.print_gdbserver_message()
 
         if command in ('attach', 'debug'):
-            self.run_server_and_client(server_cmd, gdb_cmd)
+            server_proc = self.popen_ignore_int(server_cmd, stderr=subprocess.DEVNULL)
+            try:
+                self.run_client(gdb_cmd)
+            finally:
+                server_proc.terminate()
+                server_proc.wait()
         elif command == 'rtt':
             self.print_rttserver_message()
             server_proc = self.popen_ignore_int(server_cmd)
