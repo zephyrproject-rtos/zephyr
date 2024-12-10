@@ -1,0 +1,74 @@
+/* Copyright (c) 2024 sensry.io */
+/* SPDX-License-Identifier: Apache-2.0 */
+
+#include <zephyr/dt-bindings/pinctrl/sy1xx-pinctrl.h>
+
+&pinctrl {
+
+	/* UART0 */
+	/omit-if-no-ref/ uart0_tx: uart0_tx {
+		pinmux = <SY1XX_UART0_PAD_CFG0 SY1XX_PAD(0)>;
+	};
+
+	/omit-if-no-ref/ uart0_rx: uart0_rx {
+		pinmux = <SY1XX_UART0_PAD_CFG0 SY1XX_PAD(1)>;
+		input-enable;
+	};
+
+	/* UART1 */
+	/omit-if-no-ref/ uart1_tx: uart1_tx {
+		pinmux = <SY1XX_UART1_PAD_CFG0 SY1XX_PAD(0)>;
+	};
+
+	/omit-if-no-ref/ uart1_rx: uart1_rx {
+		pinmux = <SY1XX_UART1_PAD_CFG0 SY1XX_PAD(1)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uart1_cts: uart1_cts {
+		pinmux = <SY1XX_UART1_PAD_CFG0 SY1XX_PAD(2)>;
+	};
+
+	/omit-if-no-ref/ uart1_rts: uart1_rts {
+		pinmux = <SY1XX_UART1_PAD_CFG0 SY1XX_PAD(3)>;
+		input-enable;
+		bias-pull-up;
+	};
+
+	/* UART2 */
+	/omit-if-no-ref/ uart2_tx: uart2_tx {
+		pinmux = <SY1XX_UART2_PAD_CFG0 SY1XX_PAD(0)>;
+	};
+
+	/omit-if-no-ref/ uart2_rx: uart2_rx {
+		pinmux = <SY1XX_UART2_PAD_CFG0 SY1XX_PAD(1)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uart2_cts: uart2_cts {
+		pinmux = <SY1XX_UART2_PAD_CFG0 SY1XX_PAD(2)>;
+	};
+
+	/omit-if-no-ref/ uart2_rts: uart2_rts {
+		pinmux = <SY1XX_UART2_PAD_CFG0 SY1XX_PAD(3)>;
+		input-enable;
+		bias-pull-up;
+	};
+
+};
+
+
+&uart0 {
+	pinctrl-0 = <&uart0_tx &uart0_rx>;
+	pinctrl-names = "default";
+};
+
+&uart1 {
+	pinctrl-0 = <&uart1_tx &uart1_rx &uart1_cts &uart1_rts>;
+	pinctrl-names = "default";
+};
+
+&uart2 {
+	pinctrl-0 = <&uart2_tx &uart2_rx &uart2_cts &uart2_rts>;
+	pinctrl-names = "default";
+};
