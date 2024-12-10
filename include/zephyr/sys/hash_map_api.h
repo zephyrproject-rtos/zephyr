@@ -218,6 +218,23 @@ struct sys_hashmap_config {
 	}
 
 /**
+ * @brief Initialize @p sys_hashmap_config
+ *
+ * This macro helps to initialize a structure of type @p sys_hashmap_config.
+ *
+* @param _name Name of the Hashmap
+ * @param _max_size Maximum number of entries
+ * @param _load_factor Maximum load factor of expressed in hundredths
+ */
+#define SYS_HASHMAP_CONFIG_INIT(_name, _max_size, _load_factor) \
+	{ \
+		memset(&_name##_config, 0, sizeof(_name##_config)); \
+		_name##_config.max_size = (size_t)_max_size; \
+		_name##_config.load_factor = (uint8_t)_load_factor; \
+		_name##_config.initial_n_buckets = NHPOT(DIV_ROUND_UP(100, _load_factor)); \
+	}
+
+/**
  * @brief Generic Hashmap data
  *
  * @note When @a size is zero, @a buckets should be `NULL`.
