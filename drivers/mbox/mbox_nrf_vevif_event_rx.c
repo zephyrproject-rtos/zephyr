@@ -135,7 +135,7 @@ static int vevif_event_rx_init(const struct device *dev)
 		.enabled_mask = 0,                                                                 \
 	};                                                                                         \
 	static const struct mbox_vevif_event_rx_conf conf##inst = {                                \
-		.vpr = (NRF_VPR_Type *)DT_INST_REG_ADDR(inst),                                     \
+		.vpr = (NRF_VPR_Type *)DT_REG_ADDR(DT_INST_PARENT(inst)),                          \
 		.events = DT_INST_PROP(inst, nordic_events),                                       \
 		.events_mask = DT_INST_PROP(inst, nordic_events_mask),                             \
 		.irq_connect = irq_connect##inst,                                                  \
