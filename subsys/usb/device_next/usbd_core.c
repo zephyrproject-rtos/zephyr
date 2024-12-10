@@ -228,12 +228,14 @@ int usbd_device_shutdown_core(struct usbd_context *const uds_ctx)
 	struct usbd_config_node *cfg_nd;
 	int ret;
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&uds_ctx->hs_configs, cfg_nd, node) {
-		uint8_t cfg_value = usbd_config_get_value(cfg_nd);
+	if (USBD_SUPPORTS_HIGH_SPEED) {
+		SYS_SLIST_FOR_EACH_CONTAINER(&uds_ctx->hs_configs, cfg_nd, node) {
+			uint8_t cfg_value = usbd_config_get_value(cfg_nd);
 
-		ret = usbd_class_remove_all(uds_ctx, USBD_SPEED_HS, cfg_value);
-		if (ret) {
-			LOG_ERR("Failed to cleanup registered classes, %d", ret);
+			ret = usbd_class_remove_all(uds_ctx, USBD_SPEED_HS, cfg_value);
+			if (ret) {
+				LOG_ERR("Failed to cleanup registered classes, %d", ret);
+			}
 		}
 	}
 
