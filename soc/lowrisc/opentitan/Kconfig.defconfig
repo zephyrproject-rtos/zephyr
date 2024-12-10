@@ -18,4 +18,11 @@ config 2ND_LVL_INTR_00_OFFSET
 config NUM_IRQS
 	default 256
 
+# The OpenTitan SoC needs a manifest in front of the
+# application binary. Because of this, the ROM_START_OFFSET
+# is set to 0x0 and should not be changed.
+config ROM_START_OFFSET
+	range 0x0 0x0
+	default 0x0
+
 endif # SOC_OPENTITAN
