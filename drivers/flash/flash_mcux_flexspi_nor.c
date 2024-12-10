@@ -885,9 +885,9 @@ static int flash_flexspi_nor_check_jedec(struct flash_flexspi_nor_data *data,
 	}
 
 	/* Switch on manufacturer and vendor ID */
-	switch (vendor_id & 0xFFFF) {
-	case 0x40ef:
-		/* W25Q512JV flash, use 4 byte read/write */
+	switch (vendor_id & 0xFFFFFF) {
+	case 0x2040ef:
+		/* W25Q512JV-IQ/IN flash, use 4 byte read/write */
 		flexspi_lut[READ][0] = FLEXSPI_LUT_SEQ(
 				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_4READ_4B,
 				kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_4PAD, 32);
@@ -917,8 +917,8 @@ static int flash_flexspi_nor_check_jedec(struct flash_flexspi_nor_data *data,
 		/* Device uses bit 1 of status reg 2 for QE */
 		return flash_flexspi_nor_quad_enable(data, flexspi_lut,
 						     JESD216_DW15_QER_VAL_S2B1v5);
-	case 0x25C2:
-		/* MX25 flash, use 4 byte read/write */
+	case 0x3A25C2:
+		/* MX25U51245G flash, use 4 byte read/write */
 		flexspi_lut[READ][0] = FLEXSPI_LUT_SEQ(
 				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_4READ_4B,
 				kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_4PAD, 32);
