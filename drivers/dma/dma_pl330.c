@@ -565,7 +565,7 @@ static int dma_pl330_initialize(const struct device *dev)
 	return 0;
 }
 
-static const struct dma_driver_api pl330_driver_api = {
+static DEVICE_API(dma, pl330_driver_api) = {
 	.config = dma_pl330_configure,
 	.start = dma_pl330_transfer_start,
 	.stop = dma_pl330_transfer_stop,

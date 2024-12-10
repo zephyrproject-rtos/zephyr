@@ -487,7 +487,7 @@ static int gpdma_pm_action(const struct device *dev, enum pm_device_action actio
 }
 #endif
 
-static const struct dma_driver_api intel_adsp_gpdma_driver_api = {
+static DEVICE_API(dma, intel_adsp_gpdma_driver_api) = {
 	.config = intel_adsp_gpdma_config,
 	.reload = intel_adsp_gpdma_copy,
 	.start = intel_adsp_gpdma_start,
