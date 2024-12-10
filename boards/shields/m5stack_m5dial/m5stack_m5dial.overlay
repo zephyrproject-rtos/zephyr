@@ -1,0 +1,139 @@
+/*
+ * Copyright (c) 2023 Martin Kiepfer <mrmarteng@teleschirm.org>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/display/panel.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
+
+/ {
+	chosen {
+		zephyr,display = &gc9x01x_lcd;
+		zephyr,display-backlight = &backlight_pwm;
+		zephyr,rtc = &pfc8563_rtc;
+	};
+
+	aliases {
+		sw0 = &user_button_1; /* overwrite StampS3 user button */
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_button_1: button_1 {
+			label = "User button 1";
+			gpios = <&m5stack_stamps3_header 24 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		rotary_left: rotary_left {
+			label = "rotary left";
+			gpios = <&m5stack_stamps3_header 20 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_LEFT>;
+		};
+
+		rotary_right: rotary_right {
+			label = "rotary right";
+			gpios = <&m5stack_stamps3_header 22 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_RIGHT>;
+		};
+	};
+
+	mipi_dbi_gc9x01x_240x240 {
+		compatible = "zephyr,mipi-dbi-spi";
+		spi-dev = <&m5stack_stamps3_spilcd>;
+		dc-gpios = <&m5stack_stamps3_header 3 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&m5stack_stamps3_header 7 GPIO_ACTIVE_LOW>;
+		write-only;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		gc9x01x_lcd: gc9x01x_lcd@0 {
+			compatible = "galaxycore,gc9x01x";
+			reg = <0>;
+			mipi-max-frequency = <100000000>;
+			display-inversion;
+			pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+
+			width = <240>;
+			height = <240>;
+
+			mipi-mode = <MIPI_DBI_MODE_SPI_4WIRE>;
+		};
+	};
+
+	backlight_pwm: backlight_pwm {
+		status = "okay";
+		compatible = "pwm-clock";
+		#clock-cells = <1>;
+		pwms = <&m5stack_stamps3_clkout0 0 PWM_MSEC(5) PWM_POLARITY_NORMAL>;
+	};
+
+	beeper_pwm: beeper_pwm {
+		status = "okay";
+		compatible = "pwm-clock";
+		#clock-cells = <1>;
+		pwms = <&m5stack_stamps3_clkout0 2 PWM_USEC(1500) PWM_POLARITY_NORMAL>;
+	};
+
+	battery_hold {
+		compatible = "regulator-fixed";
+		regulator-name = "battery_hold";
+		enable-gpios = <&m5stack_stamps3_header 26 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+	};
+
+	grove_headerA: grove_headerA {
+		compatible = "grove-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &m5stack_stamps3_header 16 0>,
+			   <1 0 &m5stack_stamps3_header 14 0>;
+	};
+
+	grove_headerB: grove_headerB {
+		compatible = "grove-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &m5stack_stamps3_header 0 0>,
+			   <1 0 &m5stack_stamps3_header 1 0>;
+	};
+
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&ft5267_touch>;
+		swap-xy;
+	};
+
+};
+&m5stack_stamps3_clkout0 {
+	status = "okay";
+
+};
+
+&m5stack_stamps3_i2c1 {
+	status = "okay";
+
+	ft5267_touch: ft3267@38 {
+		compatible = "focaltech,ft5336";
+		reg = <0x38>;
+		int-gpios = <&m5stack_stamps3_header 15 0>;
+	};
+
+	pfc8563_rtc: pfc8563@51 {
+		compatible = "nxp,pcf8563";
+		reg = <0x51>;
+		status = "okay";
+	};
+};
+
+&m5stack_stamps3_spilcd {
+	status = "okay";
+	dma-enabled;
+};
+
+groveA_i2c: &m5stack_stamps3_i2c0 {};
