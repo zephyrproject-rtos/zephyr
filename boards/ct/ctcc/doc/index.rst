@@ -3,19 +3,27 @@
 Overview
 ********
 
-The Connectivity Card nRF52840 enables BLE and IEEE 802.15.4 connectivity
-over mPCIe or M.2 using USB port with on-board nRF52840 SoC.
+Connectivity Cards come with either M.2 or mPCIe form factor with various SoCs, enabling different
+radio interfaces.
 
-This board has following features:
+* The Connectivity Card nRF52840 enables BLE and IEEE 802.15.4 over mPCIe or M.2
+  using USB device with on-board nRF52840 SoC
+
+* The Connectivity Card nRF9161 enables LTE-M/NB-IoT and DECT NR+ over mPCIe or M.2
+  using on-board USB-UART converter
+
+Connectivity Card has following features:
 
 * CLOCK
 * FLASH
 * :abbr:`GPIO (General Purpose Input Output)`
 * :abbr:`MPU (Memory Protection Unit)`
 * :abbr:`NVIC (Nested Vectored Interrupt Controller)`
-* RADIO (Bluetooth Low Energy and 802.15.4)
+* RADIO (Bluetooth Low Energy and 802.15.4) (only nRF52840)
+* RADIO (LTE-M/NB-IoT and DECT NR+) (only nRF9161)
 * :abbr:`RTC (nRF RTC System Clock)`
-* :abbr:`USB (Universal Serial Bus)`
+* :abbr:`USB (Universal Serial Bus)` (only nRF52840)
+* :abbr:`UARTE (Universal asynchronous receiver-transmitter with EasyDMA)` (only nRF9161)
 * :abbr:`WDT (Watchdog Timer)`
 
 .. figure:: img/ctcc_nrf52840_mpcie.webp
@@ -30,13 +38,21 @@ This board has following features:
 
      ctcc/nrf52840 M.2 board
 
+.. figure:: img/ctcc_nrf9161_mpcie.webp
+     :align: center
+     :alt: CTCC nRF9161 mPCIe
+
+     ctcc/nrf9161 mPCIe board
+
 More information about the board can be found at the
-`ctcc_nrf52840 Website`_ and for SoC information: `Nordic Semiconductor Infocenter`_.
+`Connectivity Cards Website`_ and for SoC information: `Nordic Semiconductor Infocenter`_.
 
 Hardware
 ********
 
-The ``ctcc/nrf52840`` board target has one external oscillator of the 32.768 kHz.
+* The ``ctcc/nrf52840`` board target has one external oscillator of the 32.768 kHz.
+* The ``ctcc/nrf9161`` board target has one external SPI NOR 64Mbit memory and one on-board USB-UART
+  converter (CP210X).
 
 Supported Features
 ==================
@@ -67,22 +83,61 @@ hardware features:
 | WDT       | on-chip    | watchdog             |
 +-----------+------------+----------------------+
 
+The ``ctcc/nrf9161`` board target supports the following
+hardware features:
+
++-----------+------------+----------------------+
+| Interface | Controller | Driver/Component     |
++===========+============+======================+
+| CLOCK     | on-chip    | clock_control        |
++-----------+------------+----------------------+
+| FLASH     | on-chip    | flash                |
++-----------+------------+----------------------+
+| FLASH     | external   | spi                  |
++-----------+------------+----------------------+
+| GPIO      | on-chip    | gpio                 |
++-----------+------------+----------------------+
+| MPU       | on-chip    | arch/arm             |
++-----------+------------+----------------------+
+| NVIC      | on-chip    | arch/arm             |
++-----------+------------+----------------------+
+| RADIO     | on-chip    | LTE-M/NB-IoT,        |
+|           |            | DECT NR\+            |
++-----------+------------+----------------------+
+| SPI(M/S)  | on-chip    | spi                  |
++-----------+------------+----------------------+
+| SPU       | on-chip    | system protection    |
++-----------+------------+----------------------+
+| UARTE     | on-chip    | serial               |
++-----------+------------+----------------------+
+| RTC       | on-chip    | system clock         |
++-----------+------------+----------------------+
+| WDT       | on-chip    | watchdog             |
++-----------+------------+----------------------+
+
 Connections and IOs
 ===================
 
 LED
 ---
 
-Note that board does not have on-board LEDs, however it exposes
+Note that boards do not have on-board LEDs, however they expose
 LED signals on mPCIe/M.2 pins.
+
+nRF52840:
 
 * LED1 = P0.23
 * LED2 = P0.22
 
+nRF9161:
+
+* LED1 = P0.11
+* LED2 = P0.12
+
 Programming and Debugging
 *************************
 
-Applications for the ``ctcc/nrf52840`` board target can be
+Applications for ``ctcc`` boards can be
 built in the usual way (see :ref:`build_an_application` for more details).
 
 Flashing
@@ -91,7 +146,10 @@ Flashing
 The board supports the following programming options:
 
 1. Using an external :ref:`debug probe <debug-probes>`
-2. Using MCUboot with DFU support
+2. Using `MCUboot`_ with MCUmgr support
+
+Below instructions are provided for ``ctcc/nrf52840``, to use ``nrf9161`` target, the USB device configs have
+to be replaced with UART configurations.
 
 Option 1: Using an External Debug Probe
 ---------------------------------------
@@ -114,58 +172,65 @@ logs on emulated USB port.
    :board: ctcc/nrf52840
    :goals: build flash
 
-Debugging
-=========
+Option 2: Using MCUboot with MCUmgr support
+-------------------------------------------
 
-The ``ctcc/nrf52840`` board target does not have an on-board J-Link debug IC, however
-instructions from the :ref:`nordic_segger` page also apply to this board,
-with the additional step of connecting an external debugger.
+It is also possible to use the MCUboot bootloader with :ref:`mcu_mgr` support to flash
+Zephyr applications.
 
-Option 2: Using MCUboot with DFU support
-----------------------------------------
+Install a MCUmgr-compatible tool from :ref:`supported list <mcumgr_tools_libraries>`
+and make sure MCUboot's ``imgtool`` is available for signing your binary
+for MCUboot as described on :ref:`west-sign`.
 
-It is also possible to use the MCUboot bootloader with DFU support to flash
-Zephyr applications. You need to flash MCUboot with DFU support and fill in slot0 with
-some application one-time using Option 1. Then you can re-flash an application using DFU utility
-by loading images to slot1. Note, it's not possible to have only MCUboot and load directly
-software to slot0 due to DFU implementation in Zephyr, which for present slot0 and slot1 in flash
-map, it assumes only slot1 partition as writeable.
+#. Compile MCUboot as a Zephyr application with ``MCUmgr`` support.
 
-Install ``dfu-util`` first and make sure MCUboot's ``imgtool`` is
-available for signing your binary for MCUboot as described on :ref:`west-sign`.
+   .. tabs::
 
-Next, do the **one-time setup** to flash MCUboot with DFU support.
-We'll assume you've cloned the `MCUboot`_ as a submodule when initializing
-Zephyr repositories using :ref:`west` tool.
+      .. group-tab:: nRF52840
 
-#. Compile MCUboot as a Zephyr application with DFU support.
+         To build the MCUboot:
 
-   .. zephyr-app-commands::
-      :app: mcuboot/boot/zephyr
-      :board: ctcc/nrf52840
-      :build-dir: mcuboot
-      :goals: build
-      :gen-args: -DCONFIG_BOOT_USB_DFU_WAIT=y
+         .. zephyr-app-commands::
+            :app: mcuboot/boot/zephyr
+            :board: ctcc/nrf52840
+            :build-dir: mcuboot
+            :goals: build
+
+      .. group-tab:: nRF9161
+
+         To build the MCUboot:
+
+         .. zephyr-app-commands::
+            :app: mcuboot/boot/zephyr
+            :board: ctcc/nrf9161
+            :build-dir: mcuboot
+            :goals: build
 
 #. Flash it onto the board as described in Option 1.
 
-#. Flash other Zephyr application to fill in slot0 e.g:
+#. Flash other Zephyr application over USB using :ref:`MCUmgr-compatible tool <mcumgr_tools_libraries>` and reset target to boot into the image.
 
-   .. zephyr-app-commands::
-      :zephyr-app: samples/subsys/usb/dfu
-      :board: ctcc/nrf52840
-      :build-dir: dfu
-      :goals: build
-      :gen-args: -DCONFIG_BOOTLOADER_MCUBOOT=y -DCONFIG_MCUBOOT_SIGNATURE_KEY_FILE=\"path/to/mcuboot/boot/root-rsa-2048.pem\"
+   .. tabs::
 
-You can now flash a Zephyr application to the board using DFU util.
-As an example we'll use the :zephyr:code-sample:`usb-cdc-acm-console` sample.
+      .. group-tab:: nRF52840
 
-   .. zephyr-app-commands::
-      :zephyr-app: samples/subsys/usb/console
-      :board: ctcc/nrf52840
-      :goals: build flash
-      :gen-args: -DCONFIG_BOOTLOADER_MCUBOOT=y -DCONFIG_MCUBOOT_SIGNATURE_KEY_FILE=\"path/to/mcuboot/boot/root-rsa-2048.pem\"
+         Build the blinky example with MCUboot support:
+
+         .. zephyr-app-commands::
+            :zephyr-app: samples/basic/blinky
+            :board: ctcc/nrf52840
+            :goals: build
+            :gen-args: -DCONFIG_BOOTLOADER_MCUBOOT=y -DCONFIG_MCUBOOT_SIGNATURE_KEY_FILE=\"path/to/mcuboot/boot/root-rsa-2048.pem\"
+
+      .. group-tab:: nRF9161
+
+         Build the blinky example with MCUboot support:
+
+         .. zephyr-app-commands::
+            :zephyr-app: samples/basic/blinky
+            :board: ctcc/nrf9161
+            :goals: build
+            :gen-args: -DCONFIG_BOOTLOADER_MCUBOOT=y -DCONFIG_MCUBOOT_SIGNATURE_KEY_FILE=\"path/to/mcuboot/boot/root-rsa-2048.pem\"
 
 .. note::
 
@@ -173,25 +238,26 @@ As an example we'll use the :zephyr:code-sample:`usb-cdc-acm-console` sample.
    directory. Providing certificate in build args produces signed binary automatically.
    Do not use this certificate in your production firmware!
 
-#. Plug in ``ctcc/nrf52840`` card to mPCIe/M.2 slot or use mPCIe/M.2 adapter to USB
-   and plug such adapter to USB port.
+Debugging
+=========
 
-   You should see ``NordicSemiconductor MCUBOOT`` or ``NordicSemiconductor Zephyr DFU sample``
-   (if you flashed ``dfu`` sample to slot0) device once plugging it into host
-   USB port. You can check that on Linux system by entering ``lsusb`` command.
+These boards do not have an on-board J-Link debug IC, however
+instructions from the :ref:`nordic_segger` page also apply to them,
+with the additional step of connecting an external debugger.
 
-   To check if DFU device is visible you can enter ``sudo dfu-util -l`` command. Once the
-   device is visible you can flash Zephyr image using DFU util: ``sudo dfu-util --alt 1 --download build/zephyr/zephyr.signed.bin``
+To test flashed software, plug in ``ctcc`` card to mPCIe/M.2 slot or use mPCIe/M.2 adapter to USB and plug such adapter to USB port.
 
+   * For ``ctcc/nrf52840`` check on Linux system by entering ``lsusb`` command if the following device appears: ``NordicSemiconductor MCUBOOT`` or ``NordicSemiconductor USB-DEV`` (when booted into blinky example).
+   * For ``ctcc/nrf9161`` it's not possible to see a change in ``lsusb`` due to the on-board USB-UART converter. Intead, connect to the UART console using a terminal emulation program of your choice.
 
 References
 **********
 
 .. target-notes::
 
-.. _ctcc_nrf52840 Website:
+.. _Connectivity Cards Website:
    https://cthings.co/products/connectivity-cards
 .. _Nordic Semiconductor Infocenter:
    https://infocenter.nordicsemi.com
 .. _MCUboot:
-   https://github.com/JuulLabs-OSS/mcuboot
+   https://github.com/zephyrproject-rtos/mcuboot
