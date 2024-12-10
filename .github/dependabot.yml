@@ -1,0 +1,35 @@
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "ci: github: "
+    labels: []
+    groups:
+      actions-deps:
+        patterns:
+          - "*"
+  - package-ecosystem: "pip"
+    directory: "/scripts"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "scripts: requirements: "
+    labels: []
+    groups:
+      scripts-deps:
+        patterns:
+          - "*"
+  - package-ecosystem: "pip"
+    directory: "/docs"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "doc: requirements: "
+    labels: []
+    groups:
+      doc-deps:
+        patterns:
+          - "*"
