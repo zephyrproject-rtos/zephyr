@@ -1,0 +1,26 @@
+shield:
+  name: seeed_grove_accel
+  full_name: Seeed Studio Grove - 3-Axis Digital Accelerometer
+  vendor: seeed
+  variants:
+    - name: lis3dhtr
+      full_name: Seeed Studio Grove - 3-Axis Digital Accelerometer (LIS3DHTR)
+      options:
+        addr:
+          default: 0x19
+        irq-gpio-pin:
+          type: int
+          default: 0
+        irq-gpio-port:
+          type: string
+          default: "gpio0"
+        irq-gpio-flag:
+          type: string
+          default: "GPIO_ACTIVE_HIGH"
+  options:
+    conn:
+      type: string
+      default: "grove_i2c"
+    addr:
+      type: int
+      default: 0x19
