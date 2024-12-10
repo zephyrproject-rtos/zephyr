@@ -76,7 +76,10 @@ tests:
       - riscv
       - arc
     platform_exclude:
-      - qemu_arc/qemu_arc_hs5x  # See #80949
+      - qemu_arc/qemu_arc_hs5x     # See #80949
+      - nsim/nsim_hs5x             # See #80949
+      - nsim/nsim_hs5x/smp         # See #80949
+      - nsim/nsim_hs5x/smp/12cores # See #80949
     integration_platforms:
       - qemu_xtensa/dc233c      # Xtensa ISA
     filter: not CONFIG_MPU and not CONFIG_MMU
@@ -107,7 +110,10 @@ tests:
       - riscv
       - arc
     platform_exclude:
-      - qemu_arc/qemu_arc_hs5x  # See #80949
+      - qemu_arc/qemu_arc_hs5x     # See #80949
+      - nsim/nsim_hs5x             # See #80949
+      - nsim/nsim_hs5x/smp         # See #80949
+      - nsim/nsim_hs5x/smp/12cores # See #80949
     integration_platforms:
       - qemu_xtensa/dc233c      # Xtensa ISA
     filter: not CONFIG_MPU and not CONFIG_MMU
