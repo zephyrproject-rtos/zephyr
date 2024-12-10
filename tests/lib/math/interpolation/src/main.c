@@ -6,6 +6,11 @@
 #include <math.h>
 
 #include <zephyr/ztest.h>
+
+#ifdef __clang__
+#pragma STDC FP_CONTRACT OFF
+#endif
+
 #include <zephyr/math/interpolation.h>
 
 ZTEST(interpolation, test_interpolation_oob)
