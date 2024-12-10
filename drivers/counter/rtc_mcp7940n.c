@@ -36,10 +36,16 @@ LOG_MODULE_REGISTER(MCP7940N, CONFIG_COUNTER_LOG_LEVEL);
 /* Largest block size */
 #define MAX_WRITE_SIZE                  (RTC_TIME_REGISTERS_SIZE)
 
-/* tm struct uses years since 1900 but unix time uses years since
- * 1970. MCP7940N default year is '1' so the offset is 69
+/* tm struct uses years since 1900.
+ * Encode the MCP7940N year field as years since the millennium,
+ * so an offset of 100.
+ * 
+ * Take care when changing this, because the MCP7940N has some
+ * built in leap year detection, which will do the wrong thing
+ * if the year doesn't represent the current year, or is not
+ * divisible by four without remainder when the current year is.
  */
-#define UNIX_YEAR_OFFSET		69
+#define YEAR_OFFSET		100
 
 /* Macro used to decode BCD to UNIX time to avoid potential copy and paste
  * errors.
@@ -85,12 +91,13 @@ static time_t decode_rtc(const struct device *dev)
 	time.tm_min = RTC_BCD_DECODE(data->registers.rtc_min.min);
 	time.tm_hour = RTC_BCD_DECODE(data->registers.rtc_hours.hr);
 	time.tm_mday = RTC_BCD_DECODE(data->registers.rtc_date.date);
-	time.tm_wday = data->registers.rtc_weekday.weekday;
+	/* tm struct starts weekday at 0, Sunday, mcp7940n starts at 1 */
+	time.tm_wday = data->registers.rtc_weekday.weekday - 1;
 	/* tm struct starts months at 0, mcp7940n starts at 1 */
 	time.tm_mon = RTC_BCD_DECODE(data->registers.rtc_month.month) - 1;
-	/* tm struct uses years since 1900 but unix time uses years since 1970 */
+	/* tm struct uses years since 1900, we store year as since 2000 */
 	time.tm_year = RTC_BCD_DECODE(data->registers.rtc_year.year) +
-		UNIX_YEAR_OFFSET;
+		YEAR_OFFSET;
 
 	time_unix = timeutil_timegm(&time);
 
@@ -112,15 +119,15 @@ static int encode_rtc(const struct device *dev, struct tm *time_buffer)
 {
 	struct mcp7940n_data *data = dev->data;
 	uint8_t month;
-	uint8_t year_since_epoch;
+	uint8_t year_since_millennium;
 
 	/* In a tm struct, months start at 0, mcp7940n starts with 1 */
 	month = time_buffer->tm_mon + 1;
 
-	if (time_buffer->tm_year < UNIX_YEAR_OFFSET) {
+	if (time_buffer->tm_year < YEAR_OFFSET) {
 		return -EINVAL;
 	}
-	year_since_epoch = time_buffer->tm_year - UNIX_YEAR_OFFSET;
+	year_since_millennium = time_buffer->tm_year - YEAR_OFFSET;
 
 	/* Set external oscillator configuration bit */
 	data->registers.rtc_sec.start_osc = 1;
@@ -131,13 +138,13 @@ static int encode_rtc(const struct device *dev, struct tm *time_buffer)
 	data->registers.rtc_min.min_ten = time_buffer->tm_min / 10;
 	data->registers.rtc_hours.hr_one = time_buffer->tm_hour % 10;
 	data->registers.rtc_hours.hr_ten = time_buffer->tm_hour / 10;
-	data->registers.rtc_weekday.weekday = time_buffer->tm_wday;
+	data->registers.rtc_weekday.weekday = time_buffer->tm_wday + 1;
 	data->registers.rtc_date.date_one = time_buffer->tm_mday % 10;
 	data->registers.rtc_date.date_ten = time_buffer->tm_mday / 10;
 	data->registers.rtc_month.month_one = month % 10;
 	data->registers.rtc_month.month_ten = month / 10;
-	data->registers.rtc_year.year_one = year_since_epoch % 10;
-	data->registers.rtc_year.year_ten = year_since_epoch / 10;
+	data->registers.rtc_year.year_one = year_since_millennium % 10;
+	data->registers.rtc_year.year_ten = year_since_millennium / 10;
 
 	return 0;
 }
@@ -174,7 +181,7 @@ static int encode_alarm(const struct device *dev, struct tm *time_buffer, uint8_
 	alm_regs->alm_min.min_ten = time_buffer->tm_min / 10;
 	alm_regs->alm_hours.hr_one = time_buffer->tm_hour % 10;
 	alm_regs->alm_hours.hr_ten = time_buffer->tm_hour / 10;
-	alm_regs->alm_weekday.weekday = time_buffer->tm_wday;
+	alm_regs->alm_weekday.weekday = time_buffer->tm_wday + 1;
 	alm_regs->alm_date.date_one = time_buffer->tm_mday % 10;
 	alm_regs->alm_date.date_ten = time_buffer->tm_mday / 10;
 	alm_regs->alm_month.month_one = month % 10;
@@ -312,7 +319,7 @@ static int set_day_of_week(const struct device *dev, time_t *unix_time)
 	int rc = 0;
 
 	if (gmtime_r(unix_time, &time_buffer) != NULL) {
-		data->registers.rtc_weekday.weekday = time_buffer.tm_wday;
+		data->registers.rtc_weekday.weekday = time_buffer.tm_wday + 1;
 		rc = write_register(dev, REG_RTC_WDAY,
 			*((uint8_t *)(&data->registers.rtc_weekday)));
 	} else {
