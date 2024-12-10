@@ -1,0 +1,67 @@
+/*
+ * Copyright 2022 Google LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/esp-pinctrl-common.h>
+#include <dt-bindings/pinctrl/esp32s3-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/esp32s3-gpio-sigmap.h>
+
+&pinctrl {
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <UART0_TX_GPIO5>;
+			output-high;
+		};
+		group2 {
+			pinmux = <UART0_RX_GPIO16>;
+			bias-pull-up;
+		};
+	};
+
+	spim2_default: spim2_default {
+		group1 {
+			pinmux = <SPIM2_MISO_GPIO37>,
+				 <SPIM2_SCLK_GPIO36>;
+		};
+		group2 {
+			pinmux = <SPIM2_MOSI_GPIO35>;
+			output-low;
+		};
+	};
+
+	spim3_ws2812_led: spim3_ws2812_led {
+		group1 {
+			pinmux = <SPIM3_MOSI_GPIO39>;
+			output-low;
+		};
+	};
+
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <I2C0_SDA_GPIO7>,
+				 <I2C0_SCL_GPIO6>;
+			bias-pull-up;
+			drive-open-drain;
+			output-high;
+		};
+	};
+
+	i2c1_default: i2c1_default {
+		group1 {
+			pinmux = <I2C1_SDA_GPIO41>,
+				 <I2C1_SCL_GPIO40>;
+			bias-pull-up;
+			drive-open-drain;
+			output-high;
+		};
+	};
+
+	twai_default: twai_default {
+		group1 {
+			pinmux = <TWAI_TX_GPIO9>,
+				<TWAI_RX_GPIO8>;
+		};
+	};
+};
