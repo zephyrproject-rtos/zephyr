@@ -71,6 +71,16 @@ struct fd_op_vtable {
 	int (*ioctl)(void *obj, unsigned int request, va_list args);
 };
 
+struct fd_entry {
+	void *obj;
+	const struct fd_op_vtable *vtable;
+	atomic_t refcount;
+	struct k_mutex lock;
+	struct k_condvar cond;
+	size_t offset;
+	uint32_t mode;
+};
+
 /**
  * @brief Reserve file descriptor.
  *
@@ -115,6 +125,8 @@ static inline void zvfs_finalize_fd(int fd, void *obj, const struct fd_op_vtable
 {
 	zvfs_finalize_typed_fd(fd, obj, vtable, ZVFS_MODE_UNSPEC);
 }
+
+struct fd_entry *zvfs_get_fd_entry(int fd);
 
 /**
  * @brief Allocate file descriptor for underlying I/O object.
