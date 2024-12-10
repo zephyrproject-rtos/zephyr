@@ -419,6 +419,16 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
  * @return Pointer to flash_area type object representing partition
  */
 #define FIXED_PARTITION(label)	FIXED_PARTITION_1(DT_NODELABEL(label))
+
+/**
+ * Get pointer to flash_area object by partition node in DTS
+ *
+ * @param node DTS node of a partition
+ *
+ * @return Pointer to flash_area type object representing partition
+ */
+#define FIXED_PARTITION_BY_NODE(node)	FIXED_PARTITION_1(node)
+
 #define FIXED_PARTITION_1(node)	FIXED_PARTITION_0(DT_DEP_ORD(node))
 #define FIXED_PARTITION_0(ord)							\
 	((const struct flash_area *)&DT_CAT(global_fixed_partition_ORD_, ord))
