@@ -7,7 +7,6 @@ flash: 768
 toolchain:
   - zephyr
   - gnuarmemb
-  - xtools
 supported:
   - bluetooth
   - counter
