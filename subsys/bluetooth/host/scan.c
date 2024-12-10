@@ -880,7 +880,7 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 			 * this is the first report from the new advertiser.
 			 * Initialize the new advertiser.
 			 */
-			__ASSERT_NO_MSG(reassembling_advertiser.state == FRAG_ADV_INACTIVE);
+			__ASSERT_NO_MSG(reassembling_advertiser.state != FRAG_ADV_REASSEMBLING);
 			init_reassembling_advertiser(&evt->addr, evt->sid);
 		}
 
