@@ -95,8 +95,7 @@ static struct bt_gatt_exchange_params exchange_params;
 static void exchange_func(struct bt_conn *conn, uint8_t err,
 			  struct bt_gatt_exchange_params *params)
 {
-	bt_shell_print("Exchange %s", err == 0U ? "successful" :
-		       "failed");
+	bt_shell_print("Exchange %s", err == 0U ? "successful" : "failed");
 
 	/* Release global `exchange_params`. */
 	__ASSERT_NO_MSG(params == &exchange_params);
@@ -104,7 +103,7 @@ static void exchange_func(struct bt_conn *conn, uint8_t err,
 }
 
 static int cmd_exchange_mtu(const struct shell *sh,
-			     size_t argc, char *argv[])
+			    size_t argc, char *argv[])
 {
 	int err;
 
@@ -199,9 +198,8 @@ static uint8_t discover_func(struct bt_conn *conn,
 	case BT_GATT_DISCOVER_PRIMARY:
 		gatt_service = attr->user_data;
 		bt_uuid_to_str(gatt_service->uuid, str, sizeof(str));
-		bt_shell_print("Service %s found: start handle %x, "
-			       "end_handle %x", str, attr->handle,
-			       gatt_service->end_handle);
+		bt_shell_print("Service %s found: start handle %x, end_handle %x",
+			       str, attr->handle, gatt_service->end_handle);
 		break;
 	case BT_GATT_DISCOVER_CHARACTERISTIC:
 		gatt_chrc = attr->user_data;
@@ -213,15 +211,12 @@ static uint8_t discover_func(struct bt_conn *conn,
 	case BT_GATT_DISCOVER_INCLUDE:
 		gatt_include = attr->user_data;
 		bt_uuid_to_str(gatt_include->uuid, str, sizeof(str));
-		bt_shell_print("Include %s found: handle %x, start %x, "
-			       "end %x", str, attr->handle,
-			       gatt_include->start_handle,
-			       gatt_include->end_handle);
+		bt_shell_print("Include %s found: handle %x, start %x, end %x", str, attr->handle,
+			       gatt_include->start_handle, gatt_include->end_handle);
 		break;
 	default:
 		bt_uuid_to_str(attr->uuid, str, sizeof(str));
-		bt_shell_print("Descriptor %s found: handle %x", str,
-			       attr->handle);
+		bt_shell_print("Descriptor %s found: handle %x", str, attr->handle);
 		break;
 	}
 
@@ -354,9 +349,8 @@ static int cmd_mread(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	if ((argc - 1) >  ARRAY_SIZE(h)) {
-		shell_print(sh, "Enter max %zu handle items to read",
-			    ARRAY_SIZE(h));
+	if ((argc - 1) > ARRAY_SIZE(h)) {
+		shell_print(sh, "Enter max %zu handle items to read", ARRAY_SIZE(h));
 		return -EINVAL;
 	}
 
@@ -372,8 +366,7 @@ static int cmd_mread(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_gatt_read(default_conn, &read_params);
 	if (err) {
-		shell_error(sh, "GATT multiple read request failed (err %d)",
-			    err);
+		shell_error(sh, "GATT multiple read request failed (err %d)", err);
 	}
 
 	return err;
@@ -409,8 +402,7 @@ static int cmd_read_uuid(const struct shell *sh, size_t argc, char *argv[])
 	if (argc > 2) {
 		read_params.by_uuid.start_handle = strtoul(argv[2], NULL, 16);
 		if (argc > 3) {
-			read_params.by_uuid.end_handle = strtoul(argv[3],
-								 NULL, 16);
+			read_params.by_uuid.end_handle = strtoul(argv[3], NULL, 16);
 		}
 	}
 
@@ -544,7 +536,6 @@ static int cmd_write_without_rsp(const struct shell *sh,
 		}
 
 		k_yield();
-
 	}
 
 	shell_print(sh, "Write Complete (err %d)", err);
@@ -575,8 +566,8 @@ static int cmd_subscribe(const struct shell *sh, size_t argc, char *argv[])
 	int err;
 
 	if (subscribe_params.value_handle) {
-		shell_error(sh, "Cannot subscribe: subscription to %x "
-			    "already exists", subscribe_params.value_handle);
+		shell_error(sh, "Cannot subscribe: subscription to %x already exists",
+			    subscribe_params.value_handle);
 		return -ENOEXEC;
 	}
 
@@ -600,7 +591,6 @@ static int cmd_subscribe(const struct shell *sh, size_t argc, char *argv[])
 	}
 #endif /* CONFIG_BT_GATT_AUTO_DISCOVER_CCC */
 
-
 	if (argc > 3 && !strcmp(argv[3], "ind")) {
 		subscribe_params.value = BT_GATT_CCC_INDICATE;
 	}
@@ -623,8 +613,8 @@ static int cmd_resubscribe(const struct shell *sh, size_t argc,
 	int err;
 
 	if (subscribe_params.value_handle) {
-		shell_error(sh, "Cannot resubscribe: subscription to %x"
-			    " already exists", subscribe_params.value_handle);
+		shell_error(sh, "Cannot resubscribe: subscription to %x already exists",
+			    subscribe_params.value_handle);
 		return -ENOEXEC;
 	}
 
