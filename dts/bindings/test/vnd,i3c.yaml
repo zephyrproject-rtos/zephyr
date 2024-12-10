@@ -9,3 +9,4 @@ compatible: "vnd,i3c"
 
 include:
   - name: i3c-controller.yaml
+  - name: i3c-device.yaml
