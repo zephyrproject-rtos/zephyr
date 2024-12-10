@@ -137,3 +137,8 @@ i2c0: &i2c0 {
 &pit0_channel1 {
 	status = "okay";
 };
+
+zephyr_udc0: &usb {
+	status = "okay";
+	num-bidir-endpoints = <8>;
+};
