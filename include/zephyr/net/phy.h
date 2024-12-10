@@ -116,6 +116,12 @@ __subsystem struct ethphy_driver_api {
 
 	/** Write PHY register */
 	int (*write)(const struct device *dev, uint16_t reg_addr, uint32_t data);
+
+	/** Read PHY C45 register */
+	int (*read_c45)(const struct device *dev, uint8_t devad, uint16_t regad, uint16_t *data);
+
+	/** Write PHY C45 register */
+	int (*write_c45)(const struct device *dev, uint8_t devad, uint16_t regad, uint16_t data);
 };
 /**
  * @endcond
@@ -218,6 +224,48 @@ static inline int phy_write(const struct device *dev, uint16_t reg_addr, uint32_
 	const struct ethphy_driver_api *api = (const struct ethphy_driver_api *)dev->api;
 
 	return api->write(dev, reg_addr, value);
+}
+
+/**
+ * @brief      Read PHY C45 register
+ *
+ * This routine provides a generic interface to read to a PHY C45 register.
+ *
+ * @param[in]  dev       PHY device structure
+ * @param[in]  devad       Device address
+ * @param[in]  regad       Register address
+ * @param      data        Pointer to receive read data
+ *
+ * @retval 0 If successful.
+ * @retval -EIO If communication with PHY failed.
+ */
+static inline int phy_read_c45(const struct device *dev, uint8_t devad, uint16_t regad,
+			       uint16_t *data)
+{
+	const struct ethphy_driver_api *api = (const struct ethphy_driver_api *)dev->api;
+
+	return api->read_c45(dev, devad, regad, data);
+}
+
+/**
+ * @brief      Write PHY C45 register
+ *
+ * This routine provides a generic interface to write to a PHY C45 register.
+ *
+ * @param[in]  dev       PHY device structure
+ * @param[in]  devad       Device address
+ * @param[in]  regad       Register address
+ * @param[in]  data        Data to write
+ *
+ * @retval 0 If successful.
+ * @retval -EIO If communication with PHY failed.
+ */
+static inline int phy_write_c45(const struct device *dev, uint8_t devad, uint16_t regad,
+				uint16_t data)
+{
+	const struct ethphy_driver_api *api = (const struct ethphy_driver_api *)dev->api;
+
+	return api->write_c45(dev, devad, regad, data);
 }
 
 #ifdef __cplusplus
