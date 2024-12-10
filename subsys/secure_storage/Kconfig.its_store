@@ -7,12 +7,10 @@ choice SECURE_STORAGE_ITS_STORE_IMPLEMENTATION
 config SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_SETTINGS
 	bool "ITS store module implementation using the settings subsystem for storage"
 	DT_STORAGE_PARTITION := $(dt_nodelabel_path,storage_partition)
-	depends on FLASH_HAS_DRIVER_ENABLED \
-		&& $(dt_path_enabled,$(DT_STORAGE_PARTITION)) \
-		&& $(dt_node_has_compat,$(dt_node_parent,$(DT_STORAGE_PARTITION)),fixed-partitions)
-	imply FLASH_MAP
-	imply NVS
-	select SETTINGS
+	depends on FLASH_HAS_DRIVER_ENABLED
+	depends on $(dt_path_enabled,$(DT_STORAGE_PARTITION))
+	depends on $(dt_node_has_compat,$(dt_node_parent,$(DT_STORAGE_PARTITION)),fixed-partitions)
+	depends on SETTINGS
 
 config SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_NONE
 	bool "No ITS store module implementation"
