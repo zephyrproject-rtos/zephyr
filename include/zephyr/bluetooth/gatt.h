@@ -2087,6 +2087,9 @@ struct bt_gatt_subscribe_params {
  *  notified value. One may then decide whether to unsubscribe directly from
  *  this callback. Notification callback with NULL data will not be called if
  *  subscription was removed by this method.
+ *  If a different user/application has already subscribed to the same handle,
+ *  then the callback will contain the values aggregated of all the
+ *  users/applications.
  *
  *  The Response comes in callback @p params->subscribe. The callback is run from
  *  the context specified by 'config BT_RECV_CONTEXT'.
@@ -2105,6 +2108,8 @@ struct bt_gatt_subscribe_params {
  *
  *  @retval 0 Successfully queued request. Will call @p params->write on
  *  resolution.
+ *
+ *  @retval -EINVAL if the @p params->value is out of range
  *
  *  @retval -ENOMEM ATT request queue is full and blocking would cause deadlock.
  *  Allow a pending request to resolve before retrying, or call this function
