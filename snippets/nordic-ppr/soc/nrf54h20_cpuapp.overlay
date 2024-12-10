@@ -10,3 +10,8 @@
 &uart135 {
 	status = "reserved";
 };
+
+&pwm130 {
+	status = "reserved";
+	interrupt-parent = <&cpuppr_clic>;
+};
