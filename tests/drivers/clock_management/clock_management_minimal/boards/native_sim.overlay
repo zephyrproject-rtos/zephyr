@@ -1,0 +1,134 @@
+/*
+ * Copyright (c) 2024 Tenstorrent AI ULC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Define clock tree with emulated clock nodes.
+ * These node labels are chosen so that they won't conflict with SOC clock
+ * tree nodelabels. The clock driver implementations used by this tree are
+ * stored within the test itself
+ */
+
+#include <freq.h>
+
+/ {
+	emul_clock_root {
+		emul_source1: emul-source1 {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(10)>;
+			#clock-cells = <0>;
+
+			emul_div1: emul-div1 {
+				compatible = "vnd,emul-clock-div";
+				max-div = <64>;
+				#clock-cells = <1>;
+			};
+		};
+
+		emul_source2: emul-source2 {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(50)>;
+			#clock-cells = <0>;
+
+			emul_div2: emul-div2 {
+				compatible = "vnd,emul-clock-div";
+				max-div = <256>;
+				#clock-cells = <1>;
+			};
+		};
+
+		emul_source3: emul-source3 {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(100)>;
+			#clock-cells = <0>;
+		};
+
+		emul_mux1: emul-mux1 {
+			compatible = "vnd,emul-clock-mux";
+			inputs = <&emul_div1 &emul_div2>;
+			#clock-cells = <1>;
+
+			dev1_out_slow: dev1-out-slow {
+				compatible = "clock-output";
+				#clock-cells = <0>;
+
+				/* Expect a clock frequency of 10 MHz */
+				dev1_10mhz: dev1-10mhz {
+					compatible = "clock-state";
+					clocks = <&emul_div1 1 &emul_mux1 0>;
+					clock-frequency = <DT_FREQ_M(10)>;
+				};
+
+				/* Expect a clock frequency of 5 MHz */
+				dev1_5mhz: dev1-5mhz {
+					compatible = "clock-state";
+					clocks = <&emul_div1 2 &emul_mux1 0>;
+					clock-frequency = <DT_FREQ_M(5)>;
+				};
+
+				/* Expect a clock frequency of 3.333333 MHz */
+				dev1_3mhz: dev1-3mhz {
+					compatible = "clock-state";
+					clocks = <&emul_div1 3 &emul_mux1 0>;
+					clock-frequency = <3333333>;
+				};
+			};
+		};
+
+		emul_mux2: emul-mux2 {
+			compatible = "vnd,emul-clock-mux";
+			inputs = <&emul_mux1 &emul_source3>;
+			#clock-cells = <1>;
+
+			dev1_out_fast: dev1-out-fast {
+				compatible = "clock-output";
+				#clock-cells = <0>;
+
+				/* Expect a clock frequency of 100 MHz */
+				dev1_100mhz: dev1-100mhz {
+					compatible = "clock-state";
+					clocks = <&emul_mux2 1>;
+					clock-frequency = <DT_FREQ_M(100)>;
+				};
+
+				/* Expect a clock frequency of 50 MHz */
+				dev1_50mhz: dev1-50mhz {
+					compatible = "clock-state";
+					clocks = <&emul_mux2 0
+						&emul_mux1 1
+						&emul_div2 1>;
+					clock-frequency = <DT_FREQ_M(50)>;
+				};
+
+				/* Expect a clock frequency of 25 MHz */
+				dev1_25mhz: dev1-25mhz {
+					compatible = "clock-state";
+					clocks = <&emul_mux2 0
+						&emul_mux1 1
+						&emul_div2 2>;
+					clock-frequency = <DT_FREQ_M(25)>;
+				};
+			};
+		};
+	};
+
+	/* Emulated device clock consumer */
+	emul_device {
+		emul_dev1: emul-dev1 {
+			compatible = "vnd,emul-clock-consumer";
+			clock-outputs = <&dev1_out_slow &dev1_out_fast>;
+			clock-output-names = "slow", "fast";
+			clock-state-0 = <&dev1_10mhz &dev1_100mhz>;
+			slow-default-freq = <DT_FREQ_M(10)>;
+			fast-default-freq = <DT_FREQ_M(100)>;
+			slow-sleep-freq = <3333333>;
+			fast-sleep-freq = <DT_FREQ_M(25)>;
+			clock-state-1 = <&dev1_3mhz &dev1_25mhz>;
+			slow-request-freq = <DT_FREQ_M(5)>;
+			fast-request-freq = <DT_FREQ_M(50)>;
+			clock-state-names = "default", "sleep";
+		};
+	};
+};
