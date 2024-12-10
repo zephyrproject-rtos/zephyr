@@ -261,12 +261,13 @@ static int mt9m114_read_reg(const struct device *dev, uint16_t reg_addr, uint8_t
 	return 0;
 }
 
-static int mt9m114_modify_reg(const struct device *dev, const uint16_t addr, const uint8_t mask,
-			      const uint8_t val)
+static int mt9m114_modify_reg(const struct device *dev, const uint16_t addr,
+			      uint8_t reg_size, const uint32_t mask, const uint32_t val)
 {
-	uint8_t oldVal;
-	uint8_t newVal;
-	int ret = mt9m114_read_reg(dev, addr, sizeof(oldVal), &oldVal);
+	uint32_t oldVal = 0;
+	uint32_t newVal = 0;
+
+	int ret = mt9m114_read_reg(dev, addr, reg_size, &oldVal);
 
 	if (ret) {
 		return ret;
@@ -274,7 +275,7 @@ static int mt9m114_modify_reg(const struct device *dev, const uint16_t addr, con
 
 	newVal = (oldVal & ~mask) | (val & mask);
 
-	return mt9m114_write_reg(dev, addr, sizeof(newVal), &newVal);
+	return mt9m114_write_reg(dev, addr, reg_size, &newVal);
 }
 
 static int mt9m114_write_all(const struct device *dev, struct mt9m114_reg *reg)
@@ -297,7 +298,7 @@ static int mt9m114_write_all(const struct device *dev, struct mt9m114_reg *reg)
 
 static int mt9m114_software_reset(const struct device *dev)
 {
-	int ret = mt9m114_modify_reg(dev, MT9M114_RST_AND_MISC_CONTROL, 0x01, 0x01);
+	int ret = mt9m114_modify_reg(dev, MT9M114_RST_AND_MISC_CONTROL, 2, 0x01, 0x01);
 
 	if (ret) {
 		return ret;
@@ -305,7 +306,7 @@ static int mt9m114_software_reset(const struct device *dev)
 
 	k_sleep(K_MSEC(1));
 
-	ret = mt9m114_modify_reg(dev, MT9M114_RST_AND_MISC_CONTROL, 0x01, 0x00);
+	ret = mt9m114_modify_reg(dev, MT9M114_RST_AND_MISC_CONTROL, 2, 0x01, 0x00);
 	if (ret) {
 		return ret;
 	}
