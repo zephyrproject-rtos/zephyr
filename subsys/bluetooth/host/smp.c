@@ -3640,6 +3640,49 @@ static uint8_t sc_smp_check_confirm(struct bt_smp *smp)
 	return 0;
 }
 
+#if defined(CONFIG_BT_PERIPHERAL) || !defined(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)
+static uint8_t generate_dhkey(struct bt_smp *smp)
+{
+	if (IS_ENABLED(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)) {
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
+
+	atomic_set_bit(smp->flags, SMP_FLAG_DHKEY_PENDING);
+	if (!smp_find(SMP_FLAG_DHKEY_GEN)) {
+		return smp_dhkey_generate(smp);
+	}
+
+	return 0;
+}
+
+static uint8_t display_passkey(struct bt_smp *smp)
+{
+	struct bt_conn *conn = smp->chan.chan.conn;
+	const struct bt_conn_auth_cb *smp_auth_cb = latch_auth_cb(smp);
+
+	if (IS_ENABLED(CONFIG_BT_FIXED_PASSKEY) &&
+	    fixed_passkey != BT_PASSKEY_INVALID) {
+		smp->passkey = fixed_passkey;
+	} else {
+		if (bt_rand(&smp->passkey, sizeof(smp->passkey))) {
+			return BT_SMP_ERR_UNSPECIFIED;
+		}
+
+		smp->passkey %= 1000000;
+	}
+
+	smp->passkey_round = 0U;
+
+	if (smp_auth_cb && smp_auth_cb->passkey_display) {
+		atomic_set_bit(smp->flags, SMP_FLAG_DISPLAY);
+		smp_auth_cb->passkey_display(conn, smp->passkey);
+	}
+
+	smp->passkey = sys_cpu_to_le32(smp->passkey);
+
+	return 0;
+}
+
 static bool le_sc_oob_data_req_check(struct bt_smp *smp)
 {
 	struct bt_smp_pairing *req = (struct bt_smp_pairing *)&smp->preq[1];
@@ -3684,6 +3727,7 @@ static void le_sc_oob_config_set(struct bt_smp *smp,
 
 	info->lesc.oob_config = oob_config;
 }
+#endif /* defined(CONFIG_BT_PERIPHERAL) || !defined(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY) */
 
 static uint8_t smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 {
@@ -4183,48 +4227,6 @@ static uint8_t smp_security_request(struct bt_smp *smp, struct net_buf *buf)
 	return BT_SMP_ERR_CMD_NOTSUPP;
 }
 #endif /* CONFIG_BT_CENTRAL */
-
-static uint8_t generate_dhkey(struct bt_smp *smp)
-{
-	if (IS_ENABLED(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)) {
-		return BT_SMP_ERR_UNSPECIFIED;
-	}
-
-	atomic_set_bit(smp->flags, SMP_FLAG_DHKEY_PENDING);
-	if (!smp_find(SMP_FLAG_DHKEY_GEN)) {
-		return smp_dhkey_generate(smp);
-	}
-
-	return 0;
-}
-
-static uint8_t display_passkey(struct bt_smp *smp)
-{
-	struct bt_conn *conn = smp->chan.chan.conn;
-	const struct bt_conn_auth_cb *smp_auth_cb = latch_auth_cb(smp);
-
-	if (IS_ENABLED(CONFIG_BT_FIXED_PASSKEY) &&
-	    fixed_passkey != BT_PASSKEY_INVALID) {
-		smp->passkey = fixed_passkey;
-	} else {
-		if (bt_rand(&smp->passkey, sizeof(smp->passkey))) {
-			return BT_SMP_ERR_UNSPECIFIED;
-		}
-
-		smp->passkey %= 1000000;
-	}
-
-	smp->passkey_round = 0U;
-
-	if (smp_auth_cb && smp_auth_cb->passkey_display) {
-		atomic_set_bit(smp->flags, SMP_FLAG_DISPLAY);
-		smp_auth_cb->passkey_display(conn, smp->passkey);
-	}
-
-	smp->passkey = sys_cpu_to_le32(smp->passkey);
-
-	return 0;
-}
 
 #if defined(CONFIG_BT_PERIPHERAL)
 static uint8_t smp_public_key_periph(struct bt_smp *smp)
