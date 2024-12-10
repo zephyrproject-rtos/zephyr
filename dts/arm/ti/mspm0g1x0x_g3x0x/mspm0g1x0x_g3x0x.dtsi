@@ -68,6 +68,20 @@
 	};
 
 	soc {
+		wdt0: wdt0@40080000 {
+			compatible = "ti,mspm0-watchdog";
+			reg = <0x40080000 0x2000>;
+			status = "disabled";
+			ti,watchdog-reset-action = <1>;
+		};
+
+		wdt1: wdt1@40082000 {
+			compatible = "ti,mspm0-watchdog";
+			reg = <0x40082000 0x2000>;
+			status = "disabled";
+			ti,watchdog-reset-action = <1>;
+		};
+
 		rtc0: rtc@40094000 {
 			compatible = "ti,rtc";
 			reg = <0x40094000 0x2000>;
