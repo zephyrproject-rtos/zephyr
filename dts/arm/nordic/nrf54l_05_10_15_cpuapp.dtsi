@@ -37,7 +37,7 @@ nvic: &cpuapp_nvic {};
 &cpuflpr_vpr {
 	cpuapp_vevif_rx: mailbox@1 {
 		compatible = "nordic,nrf-vevif-event-rx";
-		reg = <0x0 0x1000>;
+		reg = <0x1 0x1000>;
 		status = "disabled";
 		interrupts = <76 NRF_DEFAULT_IRQ_PRIORITY>;
 		#mbox-cells = <1>;
