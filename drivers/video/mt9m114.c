@@ -12,6 +12,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/drivers/video.h>
+#include <zephyr/drivers/video-controls.h>
 #include <zephyr/drivers/i2c.h>
 
 LOG_MODULE_REGISTER(video_mt9m114, CONFIG_VIDEO_LOG_LEVEL);
@@ -31,6 +32,7 @@ LOG_MODULE_REGISTER(video_mt9m114, CONFIG_VIDEO_LOG_LEVEL);
 #define MT9M114_CAM_SENSOR_CFG_Y_ADDR_END       0xC804
 #define MT9M114_CAM_SENSOR_CFG_X_ADDR_END       0xC806
 #define MT9M114_CAM_SENSOR_CFG_CPIPE_LAST_ROW   0xC818
+#define MT9M114_CAM_SENSOR_CTRL_READ_MODE       0xC834
 #define MT9M114_CAM_CROP_WINDOW_WIDTH           0xC858
 #define MT9M114_CAM_CROP_WINDOW_HEIGHT          0xC85A
 #define MT9M114_CAM_OUTPUT_WIDTH                0xC868
@@ -52,6 +54,10 @@ LOG_MODULE_REGISTER(video_mt9m114, CONFIG_VIDEO_LOG_LEVEL);
 /* Camera output format */
 #define MT9M114_CAM_OUTPUT_FORMAT_FORMAT_YUV (0 << 8)
 #define MT9M114_CAM_OUTPUT_FORMAT_FORMAT_RGB (1 << 8)
+
+/* Camera control masks */
+#define MT9M114_CAM_SENSOR_CTRL_HORZ_FLIP_EN BIT(0)
+#define MT9M114_CAM_SENSOR_CTRL_VERT_FLIP_EN BIT(1)
 
 struct mt9m114_config {
 	struct i2c_dt_spec i2c;
@@ -462,12 +468,40 @@ static int mt9m114_get_caps(const struct device *dev, enum video_endpoint_id ep,
 	return 0;
 }
 
+static int mt9m114_set_ctrl(const struct device *dev, unsigned int cid, void *value)
+{
+	int ret = 0;
+
+	switch (cid) {
+	case VIDEO_CID_HFLIP:
+		ret = mt9m114_modify_reg(dev, MT9M114_CAM_SENSOR_CTRL_READ_MODE, 2,
+					MT9M114_CAM_SENSOR_CTRL_HORZ_FLIP_EN,
+					(int)value ? MT9M114_CAM_SENSOR_CTRL_HORZ_FLIP_EN : 0);
+		break;
+	case VIDEO_CID_VFLIP:
+		ret = mt9m114_modify_reg(dev, MT9M114_CAM_SENSOR_CTRL_READ_MODE, 2,
+					MT9M114_CAM_SENSOR_CTRL_VERT_FLIP_EN,
+					(int)value ? MT9M114_CAM_SENSOR_CTRL_VERT_FLIP_EN : 0);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Apply Config */
+	return mt9m114_set_state(dev, MT9M114_SYS_STATE_ENTER_CONFIG_CHANGE);
+}
+
 static DEVICE_API(video, mt9m114_driver_api) = {
 	.set_format = mt9m114_set_fmt,
 	.get_format = mt9m114_get_fmt,
 	.get_caps = mt9m114_get_caps,
 	.stream_start = mt9m114_stream_start,
 	.stream_stop = mt9m114_stream_stop,
+	.set_ctrl = mt9m114_set_ctrl,
 };
 
 static int mt9m114_init(const struct device *dev)
