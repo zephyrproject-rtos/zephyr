@@ -136,7 +136,6 @@ static struct vlan_context *get_vlan_ctx(struct net_if *main_iface,
 		}
 
 		ctx = net_if_get_device(vctx->virtual_iface)->data;
-		NET_ASSERT(vctx != NULL);
 
 		if (any_tag) {
 			if (ctx->tag != NET_VLAN_TAG_UNSPEC) {

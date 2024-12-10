@@ -99,8 +99,6 @@ static int websocket_context_unref(struct websocket_context *ctx)
 
 static inline bool websocket_context_is_used(struct websocket_context *ctx)
 {
-	NET_ASSERT(ctx);
-
 	return !!atomic_get(&ctx->refcount);
 }
 
