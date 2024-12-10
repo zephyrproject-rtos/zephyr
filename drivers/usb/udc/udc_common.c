@@ -592,6 +592,11 @@ int udc_ep_enqueue(const struct device *dev, struct net_buf *const buf)
 		goto ep_enqueue_error;
 	}
 
+	if (!cfg->stat.enabled) {
+		ret = -ENODEV;
+		goto ep_enqueue_error;
+	}
+
 	LOG_DBG("Queue ep 0x%02x %p len %u", cfg->addr, buf,
 		USB_EP_DIR_IS_IN(cfg->addr) ? buf->len : buf->size);
 

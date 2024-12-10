@@ -459,11 +459,7 @@ static void *bt_hci_get_desc(struct usbd_class_data *const c_data,
 
 static int bt_hci_init(struct usbd_class_data *const c_data)
 {
-
-	struct bt_hci_data *data = usbd_class_get_private(c_data);
-	struct usbd_bt_hci_desc *desc = data->desc;
-
-	desc->iad.bFirstInterface = desc->if0.bInterfaceNumber;
+	ARG_UNUSED(c_data);
 
 	return 0;
 }
