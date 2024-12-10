@@ -28,6 +28,19 @@ config DEBUG_COREDUMP_BACKEND_FLASH_PARTITION
 	  Core dump is saved to a flash partition with DTS alias
 	  "coredump-partition".
 
+config DEBUG_COREDUMP_BACKEND_DEVICE_WITHOUT_ERASE
+	bool "Device used for coredump does not require erase prior to write"
+	depends on FLASH_HAS_NO_EXPLICIT_ERASE
+	help
+	  Caution: this option is available if ANY device, under Flash API,
+	  in a system has no erase-prior-to-write requirement.
+	  If device where coredump will be done does not require erase,
+	  for example it is EEPROM, RRAM, MRAM with separate erase functions,
+	  disabling this option improves coredump time as for such devices
+	  the designated area does not have to be erased first and instead
+	  only coredump header is scrambled before write happens and updated,
+	  after coredump write completes.
+
 config DEBUG_COREDUMP_BACKEND_INTEL_ADSP_MEM_WINDOW
 	bool "Use memory window for coredump on Intel ADSP"
 	depends on DT_HAS_INTEL_ADSP_MEM_WINDOW_ENABLED
