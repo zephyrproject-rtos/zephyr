@@ -748,8 +748,6 @@ static void init(void)
 		for (size_t i = 0U; i < ARRAY_SIZE(unicast_streams); i++) {
 			bt_cap_stream_ops_register(&unicast_streams[i], &unicast_stream_ops);
 		}
-
-		test_start_adv();
 	}
 
 	if (IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SINK)) {
@@ -868,6 +866,8 @@ static void test_cap_acceptor_unicast(void)
 {
 	init();
 
+	test_start_adv();
+
 	auto_start_sink_streams = true;
 
 	/* TODO: wait for audio stream to pass */
@@ -880,6 +880,8 @@ static void test_cap_acceptor_unicast(void)
 static void test_cap_acceptor_unicast_timeout(void)
 {
 	init();
+
+	test_start_adv();
 
 	auto_start_sink_streams = false; /* Cause unicast_audio_start timeout */
 
@@ -1035,6 +1037,8 @@ static void test_cap_acceptor_broadcast_reception(void)
 
 	init();
 
+	test_start_adv();
+
 	WAIT_FOR_FLAG(flag_pa_request);
 	WAIT_FOR_FLAG(flag_bis_sync_requested);
 
@@ -1071,6 +1075,8 @@ static void test_cap_acceptor_broadcast_reception(void)
 static void test_cap_acceptor_capture_and_render(void)
 {
 	init();
+
+	test_start_adv();
 
 	WAIT_FOR_FLAG(flag_connected);
 
