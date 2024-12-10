@@ -5,6 +5,9 @@ zephyr_library_sources(
 	utils.c
 	)
 
+# Adds bt_shell_private.c if CONFIG_BT_SHELL is not defined, as it is already built when enabled.
+zephyr_library_sources_ifndef(CONFIG_BT_SHELL ../../host/shell/bt_shell_private.c)
+
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_SHELL_HEALTH_CLI health.c)
 
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_SHELL_CFG_CLI cfg.c)

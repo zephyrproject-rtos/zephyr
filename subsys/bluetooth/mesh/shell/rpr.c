@@ -17,8 +17,6 @@ static const struct bt_mesh_model *mod;
  * Implementation of the model's instance
  **************************************************************************************************/
 
-extern const struct shell *bt_mesh_shell_ctx_shell;
-
 static void rpr_scan_report(struct bt_mesh_rpr_cli *cli,
 			    const struct bt_mesh_rpr_node *srv,
 			    struct bt_mesh_rpr_unprov *unprov,
@@ -28,11 +26,10 @@ static void rpr_scan_report(struct bt_mesh_rpr_cli *cli,
 
 	bin2hex(unprov->uuid, 16, uuid_hex_str, sizeof(uuid_hex_str));
 
-	shell_print(bt_mesh_shell_ctx_shell,
-		    "Server 0x%04x:\n"
-		    "\tuuid:   %s\n"
-		    "\tOOB:    0x%04x",
-		    srv->addr, uuid_hex_str, unprov->oob);
+	bt_shell_print("Server 0x%04x:\n"
+		       "\tuuid:   %s\n"
+		       "\tOOB:    0x%04x",
+		       srv->addr, uuid_hex_str, unprov->oob);
 
 	while (adv_data && adv_data->len > 2) {
 		uint8_t len, type;
@@ -61,15 +58,14 @@ static void rpr_scan_report(struct bt_mesh_rpr_cli *cli,
 		data[len] = '\0';
 
 		if (type == BT_DATA_URI) {
-			shell_print(bt_mesh_shell_ctx_shell, "\tURI:    \"\\x%02x%s\"",
-				    data[0], &data[1]);
+			bt_shell_print("\tURI:    \"\\x%02x%s\"", data[0], &data[1]);
 		} else if (type == BT_DATA_NAME_COMPLETE) {
-			shell_print(bt_mesh_shell_ctx_shell, "\tName:   \"%s\"", data);
+			bt_shell_print("\tName:   \"%s\"", data);
 		} else {
 			char string[64 + 1];
 
 			bin2hex(data, len, string, sizeof(string));
-			shell_print(bt_mesh_shell_ctx_shell, "\t0x%02x:  %s", type, string);
+			bt_shell_print("\t0x%02x:  %s", type, string);
 		}
 	}
 }
