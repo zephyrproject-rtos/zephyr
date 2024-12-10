@@ -1,0 +1,63 @@
+tests:
+  testing.ztest.repeat_suite_regex:
+    platform_allow: qemu_x86
+    harness: console
+    harness_config:
+      ztest_suite_repeat: 3
+      ztest_test_repeat: 2
+      type: multi_line
+      regex:
+        - "Running TESTSUITE testsuite"
+        - "Running TESTSUITE testsuite"
+        - "Running TESTSUITE testsuite"
+
+  testing.ztest.repeat_testcase_regex:
+    platform_allow: qemu_x86
+    harness: console
+    harness_config:
+      ztest_suite_repeat: 1
+      ztest_test_repeat: 5
+      type: multi_line
+      regex:
+        - "START - test_repeating1"
+        - "START - test_repeating1"
+        - "START - test_repeating1"
+        - "START - test_repeating1"
+        - "START - test_repeating1"
+
+  testing.ztest.repeat_no_shuffle_regex:
+    platform_allow: qemu_x86
+    harness: console
+    harness_config:
+      ztest_suite_repeat: 1
+      ztest_test_repeat: 3
+      type: multi_line
+      regex:
+        - "START - test_repeating1"
+        - "START - test_repeating2"
+        - "START - test_repeating3"
+        - "START - test_repeating1"
+        - "START - test_repeating2"
+        - "START - test_repeating3"
+        - "START - test_repeating1"
+        - "START - test_repeating2"
+        - "START - test_repeating3"
+
+  testing.ztest.repeat_shuffle_regex:
+    platform_allow: qemu_x86
+    harness: console
+    harness_config:
+      ztest_suite_repeat: 1
+      ztest_test_repeat: 3
+      ztest_test_shuffle: true
+      type: multi_line
+      regex:
+        - "START - test_repeating2"
+        - "START - test_repeating1"
+        - "START - test_repeating3"
+        - "START - test_repeating2"
+        - "START - test_repeating1"
+        - "START - test_repeating3"
+        - "START - test_repeating2"
+        - "START - test_repeating3"
+        - "START - test_repeating1"
