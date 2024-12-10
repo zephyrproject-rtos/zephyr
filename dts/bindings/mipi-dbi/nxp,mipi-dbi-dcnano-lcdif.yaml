@@ -1,0 +1,135 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  DBI settings for NXP DCnano LCD controller. DCNano is used in DPI mode by default,
+  when used in DBI mode the compatible need to change in example overlay. For example:
+
+  &lcdif {
+      compatible = "nxp,dcnano-lcdif-dbi";
+      mipi-dsi = <0x40417000>;
+      mipi-mode = <MIPI_DBI_MODE_8080_BUS_16_BIT>;
+      color-coding = "D16-RGB565";
+      clock-frequency = <279000000>;
+      wr-period = <14>;
+      wr-assert = <6>;
+      wr-deassert = <13>;
+      cs-assert = <1>;
+      cs-deassert = <4>;
+  };
+
+compatible: "nxp,dcnano-lcdif-dbi"
+
+include: [base.yaml]
+
+properties:
+  mipi-mode:
+    type: int
+    description: |
+      MIPI DBI mode in use. Use the macros, not the actual enum value. Here is
+      the concordance list (see dt-bindings/mipi_dbi/mipi_dbi.h)
+        1     MIPI_DBI_MODE_SPI_3WIRE
+        2     MIPI_DBI_MODE_SPI_4WIRE
+        3     MIPI_DBI_MODE_6800_BUS_16_BIT
+        4     MIPI_DBI_MODE_6800_BUS_9_BIT
+        5     MIPI_DBI_MODE_6800_BUS_8_BIT
+        6     MIPI_DBI_MODE_8080_BUS_16_BIT
+        7     MIPI_DBI_MODE_8080_BUS_9_BIT
+        8     MIPI_DBI_MODE_8080_BUS_8_BIT
+    enum:
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+
+  clock-frequency:
+    type: int
+    required: true
+    description: |
+      The DBI clock source frequency.
+
+  reset-gpios:
+    type: phandle-array
+    description: |
+      Reset GPIO pin.
+
+  divider:
+    type: int
+    description: |
+      Divider of the DBI clock source frequency, the final DBI frequency is clock-frequency / divider.
+
+  wr-period:
+    type: int
+    required: true
+    description: |
+      How many clock cycles does one write cycle take.
+
+  wr-assert:
+    type: int
+    required: true
+    description: |
+      At which clock cycle to assert E signal for TypeA_ClockedE, or WRX signal for TypeB.
+
+  wr-deassert:
+    type: int
+    required: true
+    description: |
+      At which clock cycle to deassert E signal for TypeA_ClockedE, or WRX signal for TypeB.
+
+  cs-assert:
+    type: int
+    required: true
+    description: |
+      At which clock cycle to assert CSX signal for TypeA_FixedE or TypeB.
+
+  cs-deassert:
+    type: int
+    required: true
+    description: |
+      At which clock cycle to deassert CSX signal for TypeA_FixedE or TypeB.
+
+  endian:
+    type: string
+    description: |
+      Input data endian mode.
+    enum:
+      - "no-swap"
+      - "half-word"
+      - "word"
+
+  swizzle:
+    type: string
+    description: |
+      Bus data output order.
+    enum:
+      - "RGB"
+      - "BGR"
+
+  color-coding:
+    type: string
+    required: true
+    description: |
+      Interface color coding.
+    enum:
+      - "D8-RGB332" # 8-bit data bus width, pixel RGB332. For type A or B. 1 pixel sent in 1 cycle.
+      - "D8-RGB444" # 8-bit data bus width, pixel RGB444. For type A or B. 2 pixels sent in 3 cycles.
+      - "D8-RGB565" # 8-bit data bus width, pixel RGB565. For type A or B. 1 pixel sent in 2 cycles.
+      - "D8-RGB666" # 8-bit data bus width, pixel RGB666. For type A or B. 1 pixel sent in 3 cycles, data bus 2 LSB not used.
+      - "D8-RGB888" # 8-bit data bus width, pixel RGB888. For type A or B. 1 pixel sent in 3 cycles.
+      - "D9-RGB666" # 9-bit data bus width, pixel RGB666. For type A or B. 1 pixel sent in 2 cycles.
+      - "D16-RGB332" # 16-bit data bus width, pixel RGB332. For type A or B. 2 pixels sent in 1 cycle.
+      - "D16-RGB444" # 16-bit data bus width, pixel RGB444. For type A or B. 1 pixel sent in 1 cycle, data bus 4 MSB not used.
+      - "D16-RGB565" # 16-bit data bus width, pixel RGB565. For type A or B. 1 pixel sent in 1 cycle.
+      - "D16-RGB666-Option1" # 16-bit data bus width, pixel RGB666. For type A or B. 2 pixels sent in 3 cycles.
+      - "D16-RGB666-Option2" # 16-bit data bus width, pixel RGB666. For type A or B. 1 pixel sent in 2 cycles.
+      - "D16-RGB888-Option1" # 16-bit data bus width, pixel RGB888. For type A or B. 2 pixels sent in 3 cycles.
+      - "D16-RGB888-Option2" # 16-bit data bus width, pixel RGB888. For type A or B. 1 pixel sent in 2 cycles.
+
+  mipi-dsi:
+    type: int
+    description: |
+      The base address of the MIPI-DSI instance that used with the DBI controller for MIPI interface panels.

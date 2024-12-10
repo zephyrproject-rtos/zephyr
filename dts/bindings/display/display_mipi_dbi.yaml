@@ -1,0 +1,31 @@
+#
+# Copyright 2023, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Display DBI driver
+
+compatible: "display_mipi_dbi"
+
+include: [display-controller.yaml]
+
+properties:
+  bl-gpios:
+    type: phandle-array
+    description: |
+      The BLn pin is asserted to control the backlight of the panel.
+      The sensor receives this as an active-high signal.
+
+  te-gpios:
+    type: phandle-array
+    description: |
+      The tearing effect pin is asserted by the controller at a display
+      VSYNC interval. This permits the controller to send new display
+      data during a VSYNC interval, removing tearing.
+
+  current-pixel-format:
+    type: int
+    required: true
+    description:
+      Pixel format. Available formats in display_pixel_format in inclu/zephyr/drivers/display.h.
