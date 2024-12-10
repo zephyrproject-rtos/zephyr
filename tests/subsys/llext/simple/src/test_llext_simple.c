@@ -437,6 +437,51 @@ ZTEST(llext, test_find_section)
 	zassert_equal(symbol_ptr, section_ptr,
 		      "symbol at %p != .data section at %p (%zd bytes in the ELF)",
 		      symbol_ptr, section_ptr, section_ofs);
+
+	llext_unload(&ext);
+}
+
+static LLEXT_CONST uint8_t test_detached_ext[] ELF_ALIGN = {
+	#include "detached_fn.inc"
+};
+
+static struct llext_loader *detached_loader;
+static struct llext *detached_llext;
+
+static bool test_section_detached(const elf_shdr_t *shdr)
+{
+	elf_shdr_t det_shdr;
+	int res = llext_get_section_header(detached_loader, detached_llext, ".detach", &det_shdr);
+
+	zassert_ok(res, "get_section_header should succeed");
+
+	return shdr->sh_name == det_shdr.sh_name;
+}
+
+ZTEST(llext, test_detached)
+{
+	struct llext_buf_loader buf_loader =
+		LLEXT_BUF_LOADER(test_detached_ext, sizeof(test_detached_ext));
+	struct llext_load_param ldr_parm = LLEXT_LOAD_PARAM_DEFAULT;
+	int res;
+
+	ldr_parm.section_detached = test_section_detached;
+	detached_loader = &buf_loader.loader;
+
+	res = llext_load(detached_loader, "test_detached", &detached_llext, &ldr_parm);
+	zassert_ok(res, "load should succeed");
+
+	void (*test_entry_fn)() = llext_find_sym(&detached_llext->exp_tab, "test_entry");
+
+	zassert_not_null(test_entry_fn, "test_entry should be an exported symbol");
+	test_entry_fn();
+
+	test_entry_fn = llext_find_sym(&detached_llext->exp_tab, "detached_entry");
+
+	zassert_not_null(test_entry_fn, "test_entry should be an exported symbol");
+	test_entry_fn();
+
+	llext_unload(&detached_llext);
 }
 #endif
 
