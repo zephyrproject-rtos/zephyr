@@ -14,6 +14,10 @@ and can be built and executed on boards supporting RTC.
 Building and Running
 ********************
 
+Be sure that the rtc node is enabled.
+
+The sample runs when rtc is aliased by *rtc* or on stm32-compatible *st,stm32-rtc*
+
 Build and flash as follows, replacing ``stm32f3_disco`` with your board:
 
 .. zephyr-app-commands::
@@ -27,8 +31,7 @@ Sample Output
 
 .. code-block:: console
 
-   RTC date and time: 2024-11-17 04:21:47
-   RTC date and time: 2024-11-17 04:21:48
-   RTC date and time: 2024-11-17 04:21:49
+   RTC date and time: 2024-11-17 04:19:00
+   RTC date and time: 2024-11-17 04:19:01
 
    <repeats endlessly>
