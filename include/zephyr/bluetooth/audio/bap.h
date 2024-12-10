@@ -32,6 +32,7 @@
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/slist.h>
@@ -49,6 +50,100 @@ extern "C" {
 
 /** An invalid Broadcast ID */
 #define BT_BAP_INVALID_BROADCAST_ID 0xFFFFFFFFU
+
+/**
+ * @brief Recommended connectable advertising parameters
+ *
+ * If connection has not been established after 30 seconds, the device should switch to
+ * @ref BT_BAP_ADV_PARAM_CONN_REDUCED
+ *
+ * Defined by Table 8.1 in BAP 1.0.2
+ */
+#define BT_BAP_ADV_PARAM_CONN_QUICK                                                                \
+	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONN | BT_LE_ADV_OPT_EXT_ADV, BT_GAP_MS_TO_ADV_INTERVAL(20), \
+			BT_GAP_MS_TO_ADV_INTERVAL(30), NULL)
+
+/**
+ * @brief Reduced connectable advertising parameters
+ *
+ * Defined by Table 8.1 in BAP 1.0.2
+ */
+#define BT_BAP_ADV_PARAM_CONN_REDUCED                                                              \
+	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONN | BT_LE_ADV_OPT_EXT_ADV,                                \
+			BT_GAP_MS_TO_ADV_INTERVAL(150), BT_GAP_MS_TO_ADV_INTERVAL(150), NULL)
+
+/**
+ * @brief Recommended connection parameters for initial connection request for 7.5 ms SDU interval
+ *
+ * Once service discovery has completed and a stream is setup, it is recommended to switch to
+ * @ref BT_BAP_CONN_PARAM_RELAXED
+ *
+ * Defined by Table 8.3 in BAP 1.0.2
+ */
+#define BT_BAP_CONN_PARAM_SHORT_7_5                                                                \
+	BT_LE_CONN_PARAM(BT_GAP_US_TO_CONN_INTERVAL(7500), BT_GAP_MS_TO_CONN_INTERVAL(30), 0,      \
+			 BT_GAP_MS_TO_CONN_TIMEOUT(4000))
+
+/**
+ * @brief Recommended connection parameters for initial connection request for 10 ms SDU interval
+ *
+ * Once service discovery has completed and a stream is setup, it is recommended to switch to
+ * @ref BT_BAP_CONN_PARAM_RELAXED
+ *
+ * Defined by Table 8.3 in BAP 1.0.2
+ */
+#define BT_BAP_CONN_PARAM_SHORT_10                                                                 \
+	BT_LE_CONN_PARAM(BT_GAP_MS_TO_CONN_INTERVAL(10), BT_GAP_MS_TO_CONN_INTERVAL(30), 0,        \
+			 BT_GAP_MS_TO_CONN_TIMEOUT(4000))
+
+/**
+ * @brief Recommended connection parameters for coexistence of ACL and ISO
+ *
+ * Defined by Table 8.3 in BAP 1.0.2
+ */
+#define BT_BAP_CONN_PARAM_RELAXED                                                                  \
+	BT_LE_CONN_PARAM(BT_GAP_MS_TO_CONN_INTERVAL(50), BT_GAP_MS_TO_CONN_INTERVAL(70), 0,        \
+			 BT_GAP_MS_TO_CONN_TIMEOUT(4000))
+
+/**
+ * @brief Fast advertising parameters for broadcast audio
+ *
+ * This is suitable for both 7.5 ms and 10 ms SDU intervals, but prioritizes lower time to
+ * synchronize over coexistence with ISO and power consumption.
+ */
+#define BT_BAP_ADV_PARAM_BROADCAST_FAST                                                            \
+	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV, BT_GAP_MS_TO_ADV_INTERVAL(60),                      \
+			BT_GAP_MS_TO_ADV_INTERVAL(60), NULL)
+
+/**
+ * @brief Slow advertising parameters for broadcast audio
+ *
+ * This is suitable for both 7.5 ms and 10 ms SDU intervals, but prioritizes coexistence with ISO
+ * and power consumption over lower time to synchronize.
+ */
+#define BT_BAP_ADV_PARAM_BROADCAST_SLOW                                                            \
+	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV, BT_GAP_MS_TO_ADV_INTERVAL(150),                     \
+			BT_GAP_MS_TO_ADV_INTERVAL(150), NULL)
+
+/**
+ * @brief Fast advertising parameters for broadcast audio
+ *
+ * This is suitable for both 7.5 ms and 10 ms SDU intervals, but prioritizes lower time to
+ * synchronize over coexistence with ISO and power consumption.
+ */
+#define BT_BAP_PER_ADV_PARAM_BROADCAST_FAST                                                        \
+	BT_LE_PER_ADV_PARAM(BT_GAP_MS_TO_PER_ADV_INTERVAL(60), BT_GAP_MS_TO_PER_ADV_INTERVAL(60),  \
+			    BT_LE_PER_ADV_OPT_NONE)
+
+/**
+ * @brief Slow advertising parameters for broadcast audio
+ *
+ * This is suitable for both 7.5 ms and 10 ms SDU intervals, but prioritizes coexistence with ISO
+ * and power consumption over lower time to synchronize.
+ */
+#define BT_BAP_PER_ADV_PARAM_BROADCAST_SLOW                                                        \
+	BT_LE_PER_ADV_PARAM(BT_GAP_MS_TO_PER_ADV_INTERVAL(150),                                    \
+			    BT_GAP_MS_TO_PER_ADV_INTERVAL(150), BT_LE_PER_ADV_OPT_NONE)
 
 /**
  * @brief Check if a BAP BASS BIS_Sync bitfield is valid
