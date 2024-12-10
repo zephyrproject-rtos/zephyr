@@ -137,7 +137,13 @@ extern "C" {
  * @return 1 if @p config_macro is defined to 1, 0 otherwise (including
  *         if @p config_macro is not defined)
  */
+#if !defined(__cppcheck__)
 #define IS_ENABLED(config_macro) Z_IS_ENABLED1(config_macro)
+#else
+#define IS_ENABLED(c)  Z_IS_ENABLED(c)
+#define Z_IS_ENABLED(c)  (#c[0] == '1')
+#endif
+
 /* INTERNAL: the first pass above is just to expand any existing
  * macros, we need the macro value to be e.g. a literal "1" at
  * expansion time in the next macro, not "(1)", etc... Standard
