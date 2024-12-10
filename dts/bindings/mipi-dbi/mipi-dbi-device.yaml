@@ -26,3 +26,21 @@ properties:
       - "MIPI_DBI_MODE_8080_BUS_16_BIT"
       - "MIPI_DBI_MODE_8080_BUS_9_BIT"
       - "MIPI_DBI_MODE_8080_BUS_8_BIT"
+
+  te-mode:
+    type: string
+    default: "MIPI_DBI_TE_NO_EDGE"
+    description: |
+      MIPI DBI tearing enable signal mode. Defaults to disabled.
+    enum:
+      - "MIPI_DBI_TE_NO_EDGE"
+      - "MIPI_DBI_TE_RISING_EDGE"
+      - "MIPI_DBI_TE_FALLING_EDGE"
+
+  te-delay:
+    type: int
+    default: 0
+    description: |
+      Delay in microseconds to wait before transmitting display data after a
+      tearing enable synchronization signal is seen. Defaults to 0 since most
+      controllers will not need a delay.
