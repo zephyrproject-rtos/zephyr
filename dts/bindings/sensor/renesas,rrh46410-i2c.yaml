@@ -1,0 +1,10 @@
+#
+# Copyright (c) 2024 Renesas Electronics Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RRH46410 TVOC sensor
+
+compatible: "renesas,rrh46410"
+
+include: [i2c-device.yaml, "renesas,rrh46410-common.yaml"]
