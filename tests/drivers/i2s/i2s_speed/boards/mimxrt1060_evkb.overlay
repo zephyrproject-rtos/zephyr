@@ -1,0 +1,52 @@
+/* i2s_speed with CONFIG_I2S_TEST_SEPARATE_DEVICES=y uses two I2S peripherals:
+ *	i2s-node0 is the receiver    - uses SAI1 peripheral on RT1060
+ *	i2s-node1 is the transmitter - uses SAI2 peripheral
+ */
+
+/ {
+	aliases {
+		i2s-node0 = &sai1;
+		i2s-node1 = &sai2;
+	};
+};
+
+/* Enable SAI2, and set clocks to match SAI1 */
+&sai2 {
+	status = "okay";
+	pre-div = <0x3>;
+	podf = <0x0F>;
+	nxp,tx-channel = < 0x1 >;
+	pinctrl-0 = <&pinmux_sai2>;
+	pinctrl-names = "default";
+};
+
+/* On MIMXRT1060-EVK, there is a conflict with SAI signal shared with
+ * ENET_RST.  For i2s_speed test, disable ENET peripheral.
+ */
+&enet {
+	status = "disabled";
+};
+
+&pinctrl {
+	pinmux_sai1: pinmux_sai1 {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_b1_12_sai1_rx_data0>,
+				<&iomuxc_gpio_ad_b1_11_sai1_rx_bclk>,
+				<&iomuxc_gpio_ad_b1_10_sai1_rx_sync>;
+			drive-strength = "r0-6";
+			slew-rate = "slow";
+			nxp,speed = "100-mhz";
+		};
+	};
+
+	pinmux_sai2: pinmux_sai2 {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_b0_09_sai2_tx_data>,
+				<&iomuxc_gpio_ad_b0_05_sai2_tx_bclk>,
+				<&iomuxc_gpio_ad_b0_04_sai2_tx_sync>;
+			drive-strength = "r0-6";
+			slew-rate = "slow";
+			nxp,speed = "100-mhz";
+		};
+	};
+};
