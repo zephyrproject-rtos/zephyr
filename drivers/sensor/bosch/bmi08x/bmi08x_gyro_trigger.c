@@ -89,8 +89,8 @@ int bmi08x_trigger_set_gyr(const struct device *dev, const struct sensor_trigger
 	struct bmi08x_gyro_data *data = dev->data;
 
 	if ((trig->chan == SENSOR_CHAN_GYRO_XYZ) && (trig->type == SENSOR_TRIG_DATA_READY)) {
-		data->handler_drdy_gyr = handler;
 		data->drdy_trig_gyr = trig;
+		data->handler_drdy_gyr = handler;
 		return 0;
 	}
 
