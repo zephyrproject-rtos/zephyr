@@ -1,4 +1,5 @@
 # Copyright (c) 2020 Google LLC.
+# Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
 description: Atmel SAM0 TCC in PWM mode
@@ -21,6 +22,12 @@ properties:
     required: true
 
   clock-names:
+    required: true
+
+  assigned-clocks:
+    required: true
+
+  assigned-clock-names:
     required: true
 
   channels:

@@ -71,6 +71,12 @@
 	pinctrl-names = "default";
 };
 
+&rtc {
+	status = "okay";
+	counter-mode = "clock";
+	prescaler = <1024>;
+};
+
 &sercom0 {
 	status = "okay";
 	compatible = "atmel,sam0-uart";

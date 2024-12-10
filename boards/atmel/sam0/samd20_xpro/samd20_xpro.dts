@@ -51,6 +51,12 @@
 	clock-frequency = <DT_FREQ_M(48)>;
 };
 
+&rtc {
+	status = "okay";
+	counter-mode = "clock";
+	prescaler = <1024>;
+};
+
 &sercom0 {
 	status = "okay";
 	compatible = "atmel,sam0-spi";

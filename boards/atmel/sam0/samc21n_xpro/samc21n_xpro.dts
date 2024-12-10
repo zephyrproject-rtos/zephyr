@@ -82,6 +82,14 @@
 	pinctrl-names = "default";
 };
 
+&rtc {
+	status = "okay";
+	counter-mode = "clock";
+	prescaler = <1024>;
+
+	assigned-clocks = <&osc32kctrl 4>;
+};
+
 &sercom0 {
 	status = "okay";
 	compatible = "atmel,sam0-uart";

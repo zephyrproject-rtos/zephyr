@@ -18,6 +18,7 @@ supported:
   - i2c
   - netif:eth
   - pwm
+  - rtc
   - spi
   - uart
   - usb_device

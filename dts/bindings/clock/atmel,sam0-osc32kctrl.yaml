@@ -1,0 +1,37 @@
+# Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Atmel SAM0 32kHz Oscillator Controller (OSC32KCTRL)
+
+compatible: "atmel,sam0-osc32kctrl"
+
+include:
+  - base.yaml
+  - clock-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  "#clock-cells":
+    const: 0
+
+  "#assigned-clock-cells":
+    required: true
+    type: int
+    const: 1
+    description: |
+      It selects the OSC32CTRL clock to be routed to RTC peripheral
+
+      Example: Connect the XOSC32K to RTC on SAMD5x
+
+        &rtc {
+          clocks = <&mclk 0x14 9 &osc32kctrl>;
+          clock-names = "MCLK", "OSC32KCTRL";
+
+          assigned-clocks = <&osc32kctrl 4>;
+          assigned-clock-names = "OSC32KCTRL";
+        };
+
+assigned-clock-cells:
+  - src
