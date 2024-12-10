@@ -279,9 +279,27 @@ static void can_shell_print_extended_modes(const struct shell *sh, can_mode_t ca
 	}
 }
 
+static const struct device *get_can_controller(char *id)
+{
+	const struct device *dev = device_get_binding(id);
+
+	if (dev != NULL) {
+		return dev;
+	}
+
+#ifdef CONFIG_DEVICE_DT_METADATA
+	dev = device_get_by_dt_nodelabel(id);
+	if (dev != NULL) {
+		return dev;
+	}
+#endif /* CONFIG_DEVICE_DT_METADATA */
+
+	return NULL;
+}
+
 static int cmd_can_start(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct device *dev = device_get_binding(argv[1]);
+	const struct device *dev = get_can_controller(argv[1]);
 	int err;
 
 	if (!can_device_check(dev)) {
@@ -302,7 +320,7 @@ static int cmd_can_start(const struct shell *sh, size_t argc, char **argv)
 
 static int cmd_can_stop(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct device *dev = device_get_binding(argv[1]);
+	const struct device *dev = get_can_controller(argv[1]);
 	int err;
 
 	if (!can_device_check(dev)) {
@@ -323,7 +341,7 @@ static int cmd_can_stop(const struct shell *sh, size_t argc, char **argv)
 
 static int cmd_can_show(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct device *dev = device_get_binding(argv[1]);
+	const struct device *dev = get_can_controller(argv[1]);
 	const struct device *phy;
 	const struct can_timing *timing_min;
 	const struct can_timing *timing_max;
@@ -434,7 +452,7 @@ static int cmd_can_show(const struct shell *sh, size_t argc, char **argv)
 
 static int cmd_can_bitrate_set(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct device *dev = device_get_binding(argv[1]);
+	const struct device *dev = get_can_controller(argv[1]);
 	struct can_timing timing = { 0 };
 	uint16_t sample_pnt;
 	uint32_t bitrate;
@@ -505,7 +523,7 @@ static int cmd_can_bitrate_set(const struct shell *sh, size_t argc, char **argv)
 
 static int cmd_can_dbitrate_set(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct device *dev = device_get_binding(argv[1]);
+	const struct device *dev = get_can_controller(argv[1]);
 	struct can_timing timing = { 0 };
 	uint16_t sample_pnt;
 	uint32_t bitrate;
@@ -614,7 +632,7 @@ static int can_shell_parse_timing(const struct shell *sh, size_t argc, char **ar
 
 static int cmd_can_timing_set(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct device *dev = device_get_binding(argv[1]);
+	const struct device *dev = get_can_controller(argv[1]);
 	struct can_timing timing = { 0 };
 	int err;
 
@@ -643,7 +661,7 @@ static int cmd_can_timing_set(const struct shell *sh, size_t argc, char **argv)
 
 static int cmd_can_dtiming_set(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct device *dev = device_get_binding(argv[1]);
+	const struct device *dev = get_can_controller(argv[1]);
 	struct can_timing timing = { 0 };
 	int err;
 
@@ -672,7 +690,7 @@ static int cmd_can_dtiming_set(const struct shell *sh, size_t argc, char **argv)
 
 static int cmd_can_mode_set(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct device *dev = device_get_binding(argv[1]);
+	const struct device *dev = get_can_controller(argv[1]);
 	can_mode_t mode = CAN_MODE_NORMAL;
 	can_mode_t raw;
 	char *endptr;
@@ -720,7 +738,7 @@ static int cmd_can_mode_set(const struct shell *sh, size_t argc, char **argv)
 
 static int cmd_can_send(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct device *dev = device_get_binding(argv[1]);
+	const struct device *dev = get_can_controller(argv[1]);
 	static unsigned int frame_counter;
 	unsigned int frame_no;
 	struct can_frame frame = { 0 };
@@ -841,7 +859,7 @@ static int cmd_can_send(const struct shell *sh, size_t argc, char **argv)
 
 static int cmd_can_filter_add(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct device *dev = device_get_binding(argv[1]);
+	const struct device *dev = get_can_controller(argv[1]);
 	struct can_filter filter;
 	uint32_t id_mask;
 	int argidx = 2;
@@ -941,7 +959,7 @@ static int cmd_can_filter_add(const struct shell *sh, size_t argc, char **argv)
 
 static int cmd_can_filter_remove(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct device *dev = device_get_binding(argv[1]);
+	const struct device *dev = get_can_controller(argv[1]);
 	int filter_id;
 	char *endptr;
 
@@ -965,7 +983,7 @@ static int cmd_can_filter_remove(const struct shell *sh, size_t argc, char **arg
 
 static int cmd_can_recover(const struct shell *sh, size_t argc, char **argv)
 {
-	const struct device *dev = device_get_binding(argv[1]);
+	const struct device *dev = get_can_controller(argv[1]);
 	k_timeout_t timeout = K_FOREVER;
 	int millisec;
 	char *endptr;
