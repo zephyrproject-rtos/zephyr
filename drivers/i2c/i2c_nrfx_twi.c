@@ -125,7 +125,7 @@ static void event_handler(nrfx_twi_evt_t const *p_event, void *p_context)
 	k_sem_give(&dev_data->completion_sync);
 }
 
-static const struct i2c_driver_api i2c_nrfx_twi_driver_api = {
+static DEVICE_API(i2c, i2c_nrfx_twi_driver_api) = {
 	.configure   = i2c_nrfx_twi_configure,
 	.transfer    = i2c_nrfx_twi_transfer,
 	.recover_bus = i2c_nrfx_twi_recover_bus,

@@ -832,7 +832,7 @@ static void i2c_max32_isr(const struct device *dev)
 }
 #endif /* CONFIG_I2C_TARGET || CONFIG_I2C_MAX32_INTERRUPT */
 
-static const struct i2c_driver_api api = {
+static DEVICE_API(i2c, api) = {
 	.configure = api_configure,
 	.transfer = api_transfer,
 #ifdef CONFIG_I2C_TARGET

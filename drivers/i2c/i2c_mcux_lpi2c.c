@@ -550,7 +550,7 @@ static int mcux_lpi2c_init(const struct device *dev)
 	return 0;
 }
 
-static const struct i2c_driver_api mcux_lpi2c_driver_api = {
+static DEVICE_API(i2c, mcux_lpi2c_driver_api) = {
 	.configure = mcux_lpi2c_configure,
 	.transfer = mcux_lpi2c_transfer,
 #if CONFIG_I2C_MCUX_LPI2C_BUS_RECOVERY
