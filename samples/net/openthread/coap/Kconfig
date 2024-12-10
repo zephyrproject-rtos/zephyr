@@ -1,0 +1,32 @@
+# Config options for OpenThread Border Router sample app
+
+# Copyright (c) 2020 Tridonic GmbH & Co KG
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "OpenThread CoAP Sample"
+
+menu "Application configuration"
+
+config OT_COAP_SAMPLE
+	bool "OpenThread CoAP Sample"
+	default y
+
+if OT_COAP_SAMPLE
+
+config OT_COAP_SAMPLE_SERVER
+	bool "Build the sample CoAP server application"
+	default n
+
+config OT_COAP_SAMPLE_LED
+	bool "Enable LED support"
+	default y
+
+config OT_COAP_SAMPLE_SW
+	bool "Enable switch support"
+	default y
+endif
+
+
+endmenu
+
+source "Kconfig.zephyr"
