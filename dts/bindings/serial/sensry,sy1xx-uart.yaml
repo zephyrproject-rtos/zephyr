@@ -5,7 +5,7 @@ description: Sensry SY1xx UART
 
 compatible: "sensry,sy1xx-uart"
 
-include: uart-controller.yaml
+include: [uart-controller.yaml, pinctrl-device.yaml]
 
 properties:
   reg:
