@@ -12,6 +12,8 @@
 
 #if defined(CONFIG_NORDIC_QSPI_NOR)
 #define TEST_AREA_DEV_NODE	DT_INST(0, nordic_qspi_nor)
+#elif defined(CONFIG_FLASH_OSPI_B_RENESAS_RA)
+#define TEST_AREA_DEV_NODE DT_INST(0, renesas_ra_ospi_b_nor)
 #elif defined(CONFIG_SPI_NOR)
 #define TEST_AREA_DEV_NODE	DT_INST(0, jedec_spi_nor)
 #else
@@ -30,7 +32,11 @@
 #elif defined(TEST_AREA_DEV_NODE)
 
 #define TEST_AREA_DEVICE	DEVICE_DT_GET(TEST_AREA_DEV_NODE)
+#if defined CONFIG_FLASH_OSPI_B_RENESAS_RA
+#define TEST_AREA_OFFSET 0x40000
+#else
 #define TEST_AREA_OFFSET	0xff000
+#endif
 
 #if DT_NODE_HAS_PROP(TEST_AREA_DEV_NODE, size_in_bytes)
 #define TEST_AREA_MAX DT_PROP(TEST_AREA_DEV_NODE, size_in_bytes)
