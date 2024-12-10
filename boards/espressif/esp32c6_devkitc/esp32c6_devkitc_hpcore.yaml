@@ -17,6 +17,8 @@ supported:
   - entropy
   - i2c
   - i2s
+  - netif:openthread
+
 testing:
   ignore_tags:
     - bluetooth
