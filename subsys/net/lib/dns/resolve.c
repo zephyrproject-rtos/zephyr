@@ -561,7 +561,12 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 		ret = register_dispatcher(ctx, &resolve_svc, &ctx->servers[i], local_addr,
 						  addr6, addr4);
 		if (ret < 0) {
-			NET_DBG("Cannot register dispatcher for %s (%d)", "mDNS", ret);
+			if (ret == -EALREADY) {
+				goto skip_event;
+			}
+
+			NET_DBG("Cannot register dispatcher for %s (%d)",
+				ctx->servers[i].is_mdns ? "mDNS" : "DNS", ret);
 			goto fail;
 		}
 
@@ -573,6 +578,8 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 		} else {
 			net_mgmt_event_notify(NET_EVENT_DNS_SERVER_ADD, iface);
 		}
+
+skip_event:
 
 #if defined(CONFIG_NET_IPV6)
 		local_addr6.sin6_port = 0;
