@@ -396,6 +396,11 @@ ZTEST(util, test_IS_EQ) {
 	zassert_true(IS_EQ(0, 0), "Unexpected IS_EQ result");
 	zassert_true(IS_EQ(1, 1), "Unexpected IS_EQ result");
 	zassert_true(IS_EQ(7, 7), "Unexpected IS_EQ result");
+	zassert_true(IS_EQ(0U, 0U), "Unexpected IS_EQ result");
+	zassert_true(IS_EQ(1U, 1U), "Unexpected IS_EQ result");
+	zassert_true(IS_EQ(7U, 7U), "Unexpected IS_EQ result");
+	zassert_true(IS_EQ(1, 1U), "Unexpected IS_EQ result");
+	zassert_true(IS_EQ(1U, 1), "Unexpected IS_EQ result");
 
 	zassert_false(IS_EQ(0, 1), "Unexpected IS_EQ result");
 	zassert_false(IS_EQ(1, 7), "Unexpected IS_EQ result");
