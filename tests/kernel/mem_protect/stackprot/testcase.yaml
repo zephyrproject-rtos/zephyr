@@ -1,20 +1,26 @@
+common:
+  tags:
+    - kernel
+    - userspace
+  ignore_faults: true
+  arch_exclude:
+    - nios2
+    - xtensa
+    - posix
+    - sparc
 tests:
   kernel.memory_protection.stackprot:
-    arch_exclude:
-      - nios2
-      - xtensa
-      - posix
-      - sparc
-    tags:
-      - kernel
-      - userspace
-    ignore_faults: true
+    extra_configs:
+      - CONFIG_STACK_CANARIES=y
+  kernel.memory_protection.stackprot_strong:
+    extra_configs:
+      - CONFIG_STACK_CANARIES_STRONG=y
+  kernel.memory_protection.stackprot_explicit:
+    toolchain_allow: gcc
+    extra_configs:
+      - CONFIG_STACK_CANARIES_EXPLICIT=y
   kernel.memory_protection.stackprot_tls:
     filter: CONFIG_ARCH_HAS_STACK_CANARIES_TLS and CONFIG_ARCH_HAS_THREAD_LOCAL_STORAGE
-    tags:
-      - kernel
-      - userspace
-    ignore_faults: true
     extra_configs:
       - CONFIG_THREAD_LOCAL_STORAGE=y
       - CONFIG_STACK_CANARIES_TLS=y
