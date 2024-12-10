@@ -98,7 +98,11 @@ tests:
     platform_allow: frdm_kw41z
     filter: CONFIG_FULL_LIBC_SUPPORTED and not CONFIG_NATIVE_LIBC
   sample.net.sockets.echo_client.rw612_openthread_rcp_host:
-    extra_args: OVERLAY_CONFIG="overlay-ot-rcp-host-nxp.conf"
+    build_only: true
+    extra_args:
+      # Disabling monolithic since CI environment doesn't use blobs
+      - CONFIG_NXP_MONOLITHIC_NBU=n
+      - OVERLAY_CONFIG="overlay-ot-rcp-host-nxp.conf"
     slow: true
     tags:
       - net
