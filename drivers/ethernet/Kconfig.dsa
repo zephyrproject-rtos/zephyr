@@ -4,14 +4,8 @@
 #               Lukasz Majewski <lukma@denx.de>
 # SPDX-License-Identifier: Apache-2.0
 
-config ETH_DSA_SUPPORT
-	bool
-	help
-	  Set by an ethernet driver that supports DSA.
-
 menuconfig NET_DSA
 	bool "Distributed Switch Architecture support"
-	depends on ETH_DSA_SUPPORT
 	help
 	  Enable Distributed Switch Architecture support. For now it
 	  only supports Kinetics and STM32 ENET drivers.
@@ -50,6 +44,13 @@ config DSA_SPI
 	depends on SPI && (DSA_KSZ8794 || DSA_KSZ8863)
 	help
 	  Use SPI bus to communicate with PHY
+
+config DSA_NXP_IMX_NETC
+	bool "Support for NXP i.MX NETC"
+	default y
+	depends on DT_HAS_NXP_IMX_NETC_DSA_ENABLED
+	help
+	  Add support for NXP i.MX NETC DSA device driver.
 
 module = NET_DSA
 module-dep = NET_LOG
