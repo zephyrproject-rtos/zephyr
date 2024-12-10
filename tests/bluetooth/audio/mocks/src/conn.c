@@ -9,6 +9,7 @@
 
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/sys/iterable_sections.h>
+#include <zephyr/fff.h>
 
 #include "conn.h"
 
@@ -40,6 +41,11 @@ void mock_bt_conn_connected(struct bt_conn *conn, uint8_t err)
 			cb->connected(conn, err);
 		}
 	}
+}
+
+void bt_conn_foreach(enum bt_conn_type type, void (*func)(struct bt_conn *conn, void *data),
+		     void *data)
+{
 }
 
 void mock_bt_conn_disconnected(struct bt_conn *conn, uint8_t err)
