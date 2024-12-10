@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT nxp_kinetis_lpuart
+#define DT_DRV_COMPAT nxp_lpuart
 
 #include <errno.h>
 #include <zephyr/device.h>

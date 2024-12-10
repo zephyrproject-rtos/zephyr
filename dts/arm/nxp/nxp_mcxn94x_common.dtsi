@@ -187,7 +187,7 @@
 		#size-cells = <1>;
 
 		flexcomm0_lpuart0: lpuart@92000 {
-			compatible = "nxp,kinetis-lpuart";
+			compatible = "nxp,lpuart";
 			reg = <0x92000 0x1000>;
 			clocks = <&syscon MCUX_FLEXCOMM0_CLK>;
 			status = "disabled";
@@ -221,7 +221,7 @@
 		#size-cells = <1>;
 
 		flexcomm1_lpuart1: lpuart@93000 {
-			compatible = "nxp,kinetis-lpuart";
+			compatible = "nxp,lpuart";
 			reg = <0x93000 0x1000>;
 			clocks = <&syscon MCUX_FLEXCOMM1_CLK>;
 			/* DMA channels 0 and 1, muxed to LPUART1 RX and TX */
@@ -261,7 +261,7 @@
 		#size-cells = <1>;
 
 		flexcomm2_lpuart2: lpuart@94000 {
-			compatible = "nxp,kinetis-lpuart";
+			compatible = "nxp,lpuart";
 			reg = <0x94000 0x1000>;
 			clocks = <&syscon MCUX_FLEXCOMM2_CLK>;
 			/* DMA channels 4 and 5, muxed to LPUART2 RX and TX */
@@ -301,7 +301,7 @@
 		#size-cells = <1>;
 
 		flexcomm3_lpuart3: lpuart@95000 {
-			compatible = "nxp,kinetis-lpuart";
+			compatible = "nxp,lpuart";
 			reg = <0x95000 0x1000>;
 			clocks = <&syscon MCUX_FLEXCOMM3_CLK>;
 			status = "disabled";
@@ -335,7 +335,7 @@
 		#size-cells = <1>;
 
 		flexcomm4_lpuart4: lpuart@b4000 {
-			compatible = "nxp,kinetis-lpuart";
+			compatible = "nxp,lpuart";
 			reg = <0xb4000 0x1000>;
 			clocks = <&syscon MCUX_FLEXCOMM4_CLK>;
 			/* DMA channels 2 and 3, muxed to LPUART4 RX and TX */
@@ -375,7 +375,7 @@
 		#size-cells = <1>;
 
 		flexcomm5_lpuart5: lpuart@b5000 {
-			compatible = "nxp,kinetis-lpuart";
+			compatible = "nxp,lpuart";
 			reg = <0xb5000 0x1000>;
 			clocks = <&syscon MCUX_FLEXCOMM5_CLK>;
 			status = "disabled";
@@ -409,7 +409,7 @@
 		#size-cells = <1>;
 
 		flexcomm6_lpuart6: lpuart@b6000 {
-			compatible = "nxp,kinetis-lpuart";
+			compatible = "nxp,lpuart";
 			reg = <0xb6000 0x1000>;
 			clocks = <&syscon MCUX_FLEXCOMM6_CLK>;
 			status = "disabled";
@@ -443,7 +443,7 @@
 		#size-cells = <1>;
 
 		flexcomm7_lpuart7: lpuart@b7000 {
-			compatible = "nxp,kinetis-lpuart";
+			compatible = "nxp,lpuart";
 			reg = <0xb7000 0x1000>;
 			clocks = <&syscon MCUX_FLEXCOMM7_CLK>;
 			status = "disabled";
@@ -477,7 +477,7 @@
 		#size-cells = <1>;
 
 		flexcomm8_lpuart8: lpuart@b8000 {
-			compatible = "nxp,kinetis-lpuart";
+			compatible = "nxp,lpuart";
 			reg = <0xb8000 0x1000>;
 			clocks = <&syscon MCUX_FLEXCOMM8_CLK>;
 			status = "disabled";
@@ -511,7 +511,7 @@
 		#size-cells = <1>;
 
 		flexcomm9_lpuart9: lpuart@b9000 {
-			compatible = "nxp,kinetis-lpuart";
+			compatible = "nxp,lpuart";
 			reg = <0xb9000 0x1000>;
 			clocks = <&syscon MCUX_FLEXCOMM9_CLK>;
 			status = "disabled";
