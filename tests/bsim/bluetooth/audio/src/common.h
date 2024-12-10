@@ -107,7 +107,7 @@ extern enum bst_result_t bst_result;
 #define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 20 /* Set the timeout relative to interval */
 #define PA_SYNC_SKIP         5
 
-#define PBP_STREAMS_TO_SEND  2
+#define PBP_STREAMS_TO_SEND 2
 
 extern struct bt_le_scan_cb common_scan_cb;
 extern const struct bt_data ad[AD_SIZE];
@@ -135,7 +135,6 @@ struct audio_test_stream {
 	struct bt_cap_stream stream;
 
 	uint16_t seq_num;
-	bool tx_active;
 	size_t tx_cnt;
 	uint16_t tx_sdu_size;
 
