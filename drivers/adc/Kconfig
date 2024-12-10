@@ -136,4 +136,6 @@ source "drivers/adc/Kconfig.renesas_ra"
 
 source "drivers/adc/Kconfig.max32"
 
+source "drivers/adc/Kconfig.ad4114"
+
 endif # ADC
