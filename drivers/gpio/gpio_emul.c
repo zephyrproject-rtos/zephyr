@@ -333,10 +333,21 @@ int gpio_emul_input_set_masked(const struct device *port, gpio_port_pins_t mask,
 			      gpio_port_value_t values)
 {
 	struct gpio_emul_data *drv_data = (struct gpio_emul_data *)port->data;
+	const struct gpio_emul_config *config = (const struct gpio_emul_config *)port->config;
 	gpio_port_pins_t prev_input_values;
 	gpio_port_pins_t input_values;
 	k_spinlock_key_t key;
 	int rv;
+
+	if (mask == 0) {
+		return 0;
+	}
+
+	if (~config->common.port_pin_mask & mask) {
+		LOG_ERR("Pin not supported port_pin_mask=%x mask=%x",
+			config->common.port_pin_mask, mask);
+		return -EINVAL;
+	}
 
 	key = k_spin_lock(&drv_data->lock);
 	prev_input_values = drv_data->input_vals;
@@ -473,6 +484,13 @@ static int gpio_emul_pin_get_config(const struct device *port, gpio_pin_t pin,
 {
 	struct gpio_emul_data *drv_data =
 		(struct gpio_emul_data *)port->data;
+	const struct gpio_emul_config *config =
+		(const struct gpio_emul_config *)port->config;
+
+	if ((config->common.port_pin_mask & BIT(pin)) == 0) {
+		return -EINVAL;
+	}
+
 	k_spinlock_key_t key;
 
 	key = k_spin_lock(&drv_data->lock);
@@ -522,8 +540,15 @@ static int gpio_emul_port_set_masked_raw(const struct device *port,
 	gpio_port_pins_t input_mask;
 	struct gpio_emul_data *drv_data =
 		(struct gpio_emul_data *)port->data;
+	const struct gpio_emul_config *config =
+		(const struct gpio_emul_config *)port->config;
+
 	k_spinlock_key_t key;
 	int rv;
+
+	if (~config->common.port_pin_mask & mask) {
+		return -EINVAL;
+	}
 
 	key = k_spin_lock(&drv_data->lock);
 	output_mask = get_output_pins(port);
@@ -556,11 +581,18 @@ static int gpio_emul_port_set_bits_raw(const struct device *port,
 {
 	struct gpio_emul_data *drv_data =
 		(struct gpio_emul_data *)port->data;
+	const struct gpio_emul_config *config =
+		(const struct gpio_emul_config *)port->config;
+
 	k_spinlock_key_t key;
 	gpio_port_pins_t prev_input_values;
 	gpio_port_pins_t input_values;
 	gpio_port_pins_t input_mask;
 	int rv;
+
+	if (~config->common.port_pin_mask & pins) {
+		return -EINVAL;
+	}
 
 	key = k_spin_lock(&drv_data->lock);
 	pins &= get_output_pins(port);
@@ -584,11 +616,18 @@ static int gpio_emul_port_clear_bits_raw(const struct device *port,
 {
 	struct gpio_emul_data *drv_data =
 		(struct gpio_emul_data *)port->data;
+	const struct gpio_emul_config *config =
+		(const struct gpio_emul_config *)port->config;
+
 	k_spinlock_key_t key;
 	gpio_port_pins_t prev_input_values;
 	gpio_port_pins_t input_values;
 	gpio_port_pins_t input_mask;
 	int rv;
+
+	if (~config->common.port_pin_mask & pins) {
+		return -EINVAL;
+	}
 
 	key = k_spin_lock(&drv_data->lock);
 	pins &= get_output_pins(port);
@@ -610,8 +649,15 @@ static int gpio_emul_port_toggle_bits(const struct device *port, gpio_port_pins_
 {
 	struct gpio_emul_data *drv_data =
 		(struct gpio_emul_data *)port->data;
+	const struct gpio_emul_config *config =
+		(const struct gpio_emul_config *)port->config;
+
 	k_spinlock_key_t key;
 	int rv;
+
+	if (~config->common.port_pin_mask & pins) {
+		return -EINVAL;
+	}
 
 	key = k_spin_lock(&drv_data->lock);
 	drv_data->output_vals ^= (pins & get_output_pins(port));
