@@ -162,15 +162,25 @@ struct gnss_time {
 	uint8_t century_year;
 };
 
-/** GNSS API structure */
+/**
+ * @driver_api{GNSS}
+ */
 __subsystem struct gnss_driver_api {
+	/** @copydoc gnss_set_fix_rate */
 	gnss_set_fix_rate_t set_fix_rate;
+	/** @copydoc gnss_get_fix_rate */
 	gnss_get_fix_rate_t get_fix_rate;
+	/** @copydoc gnss_set_navigation_mode */
 	gnss_set_navigation_mode_t set_navigation_mode;
+	/** @copydoc gnss_get_navigation_mode */
 	gnss_get_navigation_mode_t get_navigation_mode;
+	/** @copydoc gnss_set_enabled_systems */
 	gnss_set_enabled_systems_t set_enabled_systems;
+	/** @copydoc gnss_get_enabled_systems */
 	gnss_get_enabled_systems_t get_enabled_systems;
+	/** @copydoc gnss_get_supported_systems */
 	gnss_get_supported_systems_t get_supported_systems;
+	/** @copydoc gnss_get_latest_timepulse */
 	gnss_get_latest_timepulse_t get_latest_timepulse;
 };
 
