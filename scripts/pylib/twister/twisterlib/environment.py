@@ -431,6 +431,11 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
                         help="Do not filter based on toolchain, use the set "
                              " toolchain unconditionally")
 
+    parser.add_argument("--force-platform-toolchain", action="append",
+                        help="Force a toolchain variant for a platform in the "
+                             "form of <platform>:<toolchain variant>. "
+                             "(Can be specified multiple time)")
+
     parser.add_argument("--gcov-tool", type=Path, default=None,
                         help="Path to the gcov tool to use for code coverage "
                              "reports")
