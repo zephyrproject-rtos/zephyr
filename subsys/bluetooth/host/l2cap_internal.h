@@ -43,7 +43,7 @@ struct bt_l2cap_sig_hdr {
 #define BT_L2CAP_CMD_REJECT             0x01
 struct bt_l2cap_cmd_reject {
 	uint16_t reason;
-	uint8_t  data[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, data);
 } __packed;
 
 struct bt_l2cap_cmd_reject_cid_data {
@@ -122,7 +122,7 @@ struct bt_l2cap_ecred_conn_req {
 	uint16_t mtu;
 	uint16_t mps;
 	uint16_t credits;
-	uint16_t scid[0];
+	FLEXIBLE_ARRAY_DECLARE(uint16_t, scid);
 } __packed;
 
 #define BT_L2CAP_ECRED_CONN_RSP         0x18
@@ -131,14 +131,14 @@ struct bt_l2cap_ecred_conn_rsp {
 	uint16_t mps;
 	uint16_t credits;
 	uint16_t result;
-	uint16_t dcid[0];
+	FLEXIBLE_ARRAY_DECLARE(uint16_t, dcid);
 } __packed;
 
 #define BT_L2CAP_ECRED_RECONF_REQ       0x19
 struct bt_l2cap_ecred_reconf_req {
 	uint16_t mtu;
 	uint16_t mps;
-	uint16_t scid[0];
+	FLEXIBLE_ARRAY_DECLARE(uint16_t, scid);
 } __packed;
 
 #define BT_L2CAP_RECONF_SUCCESS         0x0000

@@ -600,7 +600,7 @@ struct net_tcp_hdr {
 	uint8_t wnd[2];
 	uint16_t chksum;
 	uint8_t urg[2];
-	uint8_t optdata[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, optdata);
 } __packed;
 
 static inline const char *net_addr_type2str(enum net_addr_type type)
