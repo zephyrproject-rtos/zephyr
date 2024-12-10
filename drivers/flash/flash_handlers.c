@@ -40,7 +40,7 @@ static inline int z_vrfy_flash_erase(const struct device *dev, off_t offset,
 static inline int z_vrfy_flash_get_size(const struct device *dev, uint64_t *size)
 {
 	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_FLASH));
-	K_OOPS(K_SYSCALL_MEMORY_WRITE(size, sizeof(size)));
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(size, sizeof(*size)));
 	return z_impl_flash_get_size((const struct device *)dev, size);
 }
 #include <zephyr/syscalls/flash_get_size_mrsh.c>
