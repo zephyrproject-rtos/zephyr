@@ -38,6 +38,7 @@ config RTC_CALIBRATION
 config RTC_SHELL
 	bool "RTC Shell commands"
 	depends on SHELL
+	imply DEVICE_DT_METADATA
 	help
 	  RTC Shell commands
 
