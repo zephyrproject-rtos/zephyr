@@ -1,0 +1,39 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/pwm/rx_mtu_pwm.h>
+
+/ {
+	pwm_loopback_0 {
+		compatible = "test-pwm-loopback";
+		pwms =<&pwm4 RX_MTIOCxA 0 PWM_POLARITY_NORMAL>,
+		 <&pwm1 RX_MTIOCxA 0 PWM_POLARITY_NORMAL>;
+	};
+};
+
+&pinctrl {
+	pwm4_default: pwm4_default {
+		group1 {
+			psels = <RX_PSEL(RX_PSEL_PAnPFS_MTIOC4A, 10, 0)>;
+		};
+	};
+};
+
+&mtu4 {
+	status = "okay";
+	pinctrl-0 = <&pwm4_default>;
+	pinctrl-names = "default";
+	pwm4: pwm {
+		status = "okay";
+		prescaler = <RX_MTU_PWM_SOURCE_DIV_16>;
+	};
+};
+
+
+&pclkb {
+	div = <4>;
+};
