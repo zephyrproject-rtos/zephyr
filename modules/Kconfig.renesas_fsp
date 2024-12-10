@@ -98,4 +98,19 @@ config USE_RA_FSP_ETHER
 	help
 	  Enable RA FSP Ethernet driver
 
+config USB_RA_FSP_SDRAM
+	bool
+	help
+	  Enable RA FSP SDRAM support
+
+config USE_RA_FSP_DISPLAY
+	bool
+	help
+	  Enable RA FSP Display driver
+
+config USE_RA_FSP_MIPI_DSI
+	bool
+	help
+	  Enable RA FSP MIPI DSI driver
+
 endif # HAS_RENESAS_RA_FSP

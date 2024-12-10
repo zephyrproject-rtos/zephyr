@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2024 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	iic1_default: iic1_default {
+		group1 {
+			/* SCL1 SDA1 */
+			psels = <RA_PSEL(RA_PSEL_I2C, 5, 12)>,
+					<RA_PSEL(RA_PSEL_I2C, 5, 11)>;
+			drive-strength = "medium";
+		};
+	};
+};
+
+&iic1 {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <DT_FREQ_K(100)>;
+	pinctrl-0 = <&iic1_default>;
+	pinctrl-names = "default";
+};

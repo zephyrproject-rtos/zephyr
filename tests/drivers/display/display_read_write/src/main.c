@@ -14,8 +14,14 @@ LOG_MODULE_DECLARE(display_api, CONFIG_DISPLAY_LOG_LEVEL);
 static const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 static const uint32_t display_width = DT_PROP(DT_CHOSEN(zephyr_display), width);
 static const uint32_t display_height = DT_PROP(DT_CHOSEN(zephyr_display), height);
+#if defined(CONFIG_RENESAS_RA_GLCDC)
+static uint8_t disp_buffer[DT_PROP(DT_CHOSEN(zephyr_display), width) *
+			   DT_PROP(DT_CHOSEN(zephyr_display), height) * 4]
+	__aligned(64) Z_GENERIC_SECTION(".sdram");
+#else
 static uint8_t disp_buffer[DT_PROP(DT_CHOSEN(zephyr_display), width) *
 			   DT_PROP(DT_CHOSEN(zephyr_display), height) * 4];
+#endif
 static struct display_capabilities cfg;
 static uint8_t bpp;
 static bool is_tiled;
@@ -26,7 +32,11 @@ static inline uint8_t bytes_per_pixel(enum display_pixel_format pixel_format)
 	case PIXEL_FORMAT_ARGB_8888:
 		return 4;
 	case PIXEL_FORMAT_RGB_888:
+#if defined(CONFIG_RENESAS_RA_GLCDC)
+		return 4;
+#else
 		return 3;
+#endif
 	case PIXEL_FORMAT_RGB_565:
 	case PIXEL_FORMAT_BGR_565:
 		return 2;
