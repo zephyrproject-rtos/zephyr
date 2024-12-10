@@ -63,17 +63,22 @@
 		status = "okay";
 	};
 
-	wifi: wifi {
-		compatible = "espressif,esp32-wifi";
-		status = "disabled";
-	};
-
 	clock: clock {
 		compatible = "espressif,esp32-clock";
 		fast-clk-src = <ESP32_RTC_FAST_CLK_SRC_RC_FAST>;
 		slow-clk-src = <ESP32_RTC_SLOW_CLK_SRC_RC_SLOW>;
 		#clock-cells = <1>;
 		status = "okay";
+	};
+
+	wifi: wifi {
+		compatible = "espressif,esp32-wifi";
+		status = "disabled";
+	};
+
+	ieee802154: ieee802154 {
+		compatible = "espressif,esp32-ieee802154";
+		status = "disabled";
 	};
 
 	soc {
