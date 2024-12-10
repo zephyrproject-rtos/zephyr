@@ -139,6 +139,10 @@
 		pinmux = <MSP_PINMUX(56,MSPM0_PIN_FUNCTION_ANALOG)>;
 	};
 
+	/omit-if-no-ref/ adc1_pa15: adc1_pa15 {
+		pinmux = <MSP_PINMUX(37, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
 	/omit-if-no-ref/ adc1_pb19: adc1_pb19 {
 		pinmux = <MSP_PINMUX(45,MSPM0_PIN_FUNCTION_ANALOG)>;
 	};

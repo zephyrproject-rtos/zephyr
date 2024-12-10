@@ -5,6 +5,7 @@
 #include <ti/mspm0g1x0x_g3x0x/mspm0g3507.dtsi>
 #include <ti/mspm0g1x0x_g3x0x/mspm0g350x-pinctrl.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/adc/mspm0_adc.h>
 
 / {
 	model = "TI LP_MSPM0G3507/MSPM0G3507";
@@ -59,6 +60,26 @@
 			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
+};
+
+&adc0 {
+	ti,clk-source = <MSP_ADC_CLOCK_ULPCLK>;
+	ti,clk-divider = <8>;
+	ti,clk-range = <MSP_ADC_CLOCK_RANGE_24TO32>;
+	vref-mv = <2500>;
+	pinctrl-0 = <&adc0_pa27>;
+	pinctrl-names = "default";
+	status = "disabled";
+};
+
+&adc1 {
+	ti,clk-source = <MSP_ADC_CLOCK_ULPCLK>;
+	ti,clk-divider = <8>;
+	ti,clk-range = <MSP_ADC_CLOCK_RANGE_24TO32>;
+	vref-mv = <2500>;
+	pinctrl-0 = <&adc1_pa15>;
+	pinctrl-names = "default";
+	status = "disabled";
 };
 
 &cpu0 {

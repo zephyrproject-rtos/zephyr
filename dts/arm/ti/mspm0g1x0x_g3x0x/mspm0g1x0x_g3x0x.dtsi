@@ -68,6 +68,22 @@
 	};
 
 	soc {
+		adc0: adc@40000000 {
+			compatible = "ti,mspm0-adc12";
+			reg = <0x40000000 0x1000>;
+			interrupts = <4 0>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+
+		adc1: adc@40002000 {
+			compatible = "ti,mspm0-adc12";
+			reg = <0x40002000 0x1000>;
+			interrupts = <5 0>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+
 		wdt0: wdt0@40080000 {
 			compatible = "ti,mspm0-watchdog";
 			reg = <0x40080000 0x2000>;
