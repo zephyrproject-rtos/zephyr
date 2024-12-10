@@ -115,6 +115,7 @@ config ARCMWDT_LIBC
 	bool "ARC MWDT C library"
 	depends on !NATIVE_APPLICATION
 	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "arcmwdt"
+	select LIBC_ERRNO if RISCV
 	help
 	  C library provided by ARC MWDT toolchain.
 
