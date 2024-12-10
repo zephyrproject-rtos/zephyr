@@ -190,6 +190,8 @@ __subsystem struct nrf_clock_control_driver_api {
 	int (*cancel_or_release)(const struct device *dev,
 				 const struct nrf_clock_spec *spec,
 				 struct onoff_client *cli);
+	void (*request_zli)(const struct device *dev);
+	void (*release_zli)(const struct device *dev);
 };
 
 /**
@@ -290,6 +292,24 @@ int nrf_clock_control_cancel_or_release(const struct device *dev,
 		(const struct nrf_clock_control_driver_api *)dev->api;
 
 	return api->cancel_or_release(dev, spec, cli);
+}
+
+static inline
+void nrf_clock_control_request_zli(const struct device *dev)
+{
+	const struct nrf_clock_control_driver_api *api =
+		(const struct nrf_clock_control_driver_api *)dev->api;
+
+	api->request_zli(dev);
+}
+
+static inline
+void nrf_clock_control_release_zli(const struct device *dev)
+{
+	const struct nrf_clock_control_driver_api *api =
+		(const struct nrf_clock_control_driver_api *)dev->api;
+
+	api->release_zli(dev);
 }
 
 #endif /* defined(CONFIG_CLOCK_CONTROL_NRF2) */
