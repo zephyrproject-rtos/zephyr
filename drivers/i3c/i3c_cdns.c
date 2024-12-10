@@ -2001,7 +2001,7 @@ static int cdns_i3c_master_get_rr_slot(const struct device *dev, uint8_t dyn_add
 		rr_idx = i - 1;
 		if (activedevs & BIT(rr_idx)) {
 			rr = sys_read32(config->base + DEV_ID_RR0(rr_idx));
-			if ((rr & DEV_ID_RR0_IS_I3C) && DEV_ID_RR0_GET_DEV_ADDR(rr) == dyn_addr) {
+			if ((rr & DEV_ID_RR0_IS_I3C) && (DEV_ID_RR0_GET_DEV_ADDR(rr) == dyn_addr)) {
 				return rr_idx;
 			}
 		}
@@ -2025,8 +2025,7 @@ static int cdns_i3c_attach_device(const struct device *dev, struct i3c_device_de
 		const struct cdns_i3c_config *config = dev->config;
 		struct cdns_i3c_data *data = dev->data;
 
-		int slot = cdns_i3c_master_get_rr_slot(dev, desc->dynamic_addr ? desc->dynamic_addr
-									       : desc->static_addr);
+		int slot = cdns_i3c_master_get_rr_slot(dev, desc->dynamic_addr);
 
 		if (slot < 0) {
 			LOG_ERR("%s: no space for i3c device: %s", dev->name, desc->dev->name);
