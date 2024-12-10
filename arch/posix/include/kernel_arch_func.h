@@ -42,6 +42,8 @@ static inline bool arch_is_in_isr(void)
 	return _kernel.cpus[0].nested != 0U;
 }
 
+int arch_swap(unsigned int key);
+
 #endif /* _ASMLANGUAGE */
 
 #endif /* ZEPHYR_ARCH_POSIX_INCLUDE_KERNEL_ARCH_FUNC_H_ */
