@@ -10,6 +10,11 @@
 #define ZEPHYR_DRIVERS_I2C_I2C_LL_STM32_H_
 
 #include <zephyr/drivers/i2c/stm32.h>
+#include <zephyr/kernel.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
+#include <zephyr/logging/log.h>
 
 #ifdef CONFIG_I2C_STM32_BUS_RECOVERY
 #include <zephyr/drivers/gpio.h>
@@ -100,15 +105,63 @@ int32_t stm32_i2c_configure_timing(const struct device *dev, uint32_t clk);
 int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config);
 int i2c_stm32_get_config(const struct device *dev, uint32_t *config);
 
-void stm32_i2c_event_isr(void *arg);
-void stm32_i2c_error_isr(void *arg);
-#ifdef CONFIG_I2C_STM32_COMBINED_INTERRUPT
-void stm32_i2c_combined_isr(void *arg);
-#endif
-
 #ifdef CONFIG_I2C_TARGET
 int i2c_stm32_target_register(const struct device *dev, struct i2c_target_config *config);
 int i2c_stm32_target_unregister(const struct device *dev, struct i2c_target_config *config);
 #endif
+
+int i2c_stm32_activate(const struct device *dev);
+
+#ifdef CONFIG_PM_DEVICE
+int i2c_stm32_pm_action(const struct device *dev, enum pm_device_action action);
+int i2c_stm32_suspend(const struct device *dev)
+#endif
+
+
+int i2c_stm32_error(const struct device *dev);
+void i2c_stm32_event(const struct device *dev);
+
+#ifdef CONFIG_I2C_STM32_COMBINED_INTERRUPT
+void i2c_stm32_combined_isr(void *arg);
+#else
+void i2c_stm32_event_isr(void *arg);
+void i2c_stm32_error_isr(void *arg);
+#endif
+
+#ifdef CONFIG_I2C_STM32_COMBINED_INTERRUPT
+#define STM32_I2C_IRQ_CONNECT_AND_ENABLE(index)				\
+	do {								\
+		IRQ_CONNECT(DT_INST_IRQN(index),			\
+			    DT_INST_IRQ(index, priority),		\
+			    i2c_stm32_combined_isr,			\
+			    DEVICE_DT_INST_GET(index), 0);		\
+		irq_enable(DT_INST_IRQN(index));			\
+	} while (false)
+#else
+#define STM32_I2C_IRQ_CONNECT_AND_ENABLE(index)				\
+	do {								\
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, event, irq),	\
+			    DT_INST_IRQ_BY_NAME(index, event, priority),\
+			    i2c_stm32_event_isr,			\
+			    DEVICE_DT_INST_GET(index), 0);		\
+		irq_enable(DT_INST_IRQ_BY_NAME(index, event, irq));	\
+									\
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, error, irq),	\
+			    DT_INST_IRQ_BY_NAME(index, error, priority),\
+			    i2c_stm32_error_isr,			\
+			    DEVICE_DT_INST_GET(index), 0);		\
+		irq_enable(DT_INST_IRQ_BY_NAME(index, error, irq));	\
+	} while (false)
+#endif /* CONFIG_I2C_STM32_COMBINED_INTERRUPT */
+
+#define STM32_I2C_IRQ_HANDLER_DECL(index)				\
+static void i2c_stm32_irq_config_func_##index(const struct device *dev)
+#define STM32_I2C_IRQ_HANDLER_FUNCTION(index)				\
+	.irq_config_func = i2c_stm32_irq_config_func_##index,
+#define STM32_I2C_IRQ_HANDLER(index)					\
+static void i2c_stm32_irq_config_func_##index(const struct device *dev)	\
+{									\
+	STM32_I2C_IRQ_CONNECT_AND_ENABLE(index);			\
+}
 
 #endif	/* ZEPHYR_DRIVERS_I2C_I2C_LL_STM32_H_ */
