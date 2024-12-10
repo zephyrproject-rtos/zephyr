@@ -4,14 +4,8 @@
 #               Lukasz Majewski <lukma@denx.de>
 # SPDX-License-Identifier: Apache-2.0
 
-config ETH_DSA_SUPPORT
-	bool
-	help
-	  Set by an ethernet driver that supports DSA.
-
 menuconfig NET_DSA
 	bool "Distributed Switch Architecture support"
-	depends on ETH_DSA_SUPPORT
 	help
 	  Enable Distributed Switch Architecture support. For now it
 	  only supports Kinetics and STM32 ENET drivers.
