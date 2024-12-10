@@ -722,20 +722,27 @@ static int sdhc_spi_set_io(const struct device *dev, struct sdhc_io *ios)
 	}
 	if (data->power_mode != ios->power_mode) {
 		if (ios->power_mode == SDHC_POWER_ON) {
+			if (cfg->pwr_gpio.port) {
+				if (gpio_pin_set_dt(&cfg->pwr_gpio, 1)) {
+					return -EIO;
+				}
+
+				/* Wait until VDD is stable. Per the spec:
+				 *   Maximum VDD rise time of 35ms.
+				 *   Minimum 1ms VDD stable time.
+				 */
+				k_sleep(K_MSEC(36));
+
+				LOG_INF("Powered up");
+			}
+
 			/* Send 74 clock cycles to start card */
 			if (sdhc_spi_init_card(dev) != 0) {
 				LOG_ERR("Card SCLK init sequence failed");
 				return -EIO;
 			}
-		}
-		if (cfg->pwr_gpio.port) {
-			/* If power control GPIO is defined, toggle SD power */
-			if (ios->power_mode == SDHC_POWER_ON) {
-				if (gpio_pin_set_dt(&cfg->pwr_gpio, 1)) {
-					return -EIO;
-				}
-				LOG_INF("Powered up");
-			} else {
+		} else {
+			if (cfg->pwr_gpio.port) {
 				if (gpio_pin_set_dt(&cfg->pwr_gpio, 0)) {
 					return -EIO;
 				}
