@@ -650,7 +650,8 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
 
     parser.add_argument("--pre-script",
                         help="""specify a pre script. This will be executed
-                        before device handler open serial port and invoke runner.
+                        before device handler open serial port and invoke runner,
+                        and testinstance name will be its first parameter.
                         """)
 
     parser.add_argument(

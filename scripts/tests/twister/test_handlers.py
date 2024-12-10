@@ -1479,16 +1479,16 @@ def test_devicehandler_handle(
         return
 
     handler.run_custom_script.assert_has_calls([
-        mock.call('dummy pre script', mock.ANY)
+        mock.call(['dummy pre script', mock.ANY], mock.ANY)
     ])
 
     if raise_create_serial:
         return
 
     handler.run_custom_script.assert_has_calls([
-        mock.call('dummy pre script', mock.ANY),
-        mock.call('dummy post flash script', mock.ANY),
-        mock.call('dummy post script', mock.ANY)
+        mock.call(['dummy pre script', mock.ANY], mock.ANY),
+        mock.call(['dummy post flash script', mock.ANY], mock.ANY),
+        mock.call(['dummy post script', mock.ANY], mock.ANY)
     ])
 
     if expected_reason:
