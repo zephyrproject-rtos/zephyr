@@ -4345,12 +4345,17 @@ int bt_enable(bt_ready_cb_t cb)
 	k_fifo_init(&bt_dev.cmd_tx_queue);
 
 #if defined(CONFIG_BT_RECV_WORKQ_BT)
+	struct k_work_queue_config bt_workq_cfg = {
+		.name = "BT RX WQ",
+		.no_block = true,
+	};
+
 	/* RX thread */
 	k_work_queue_init(&bt_workq);
+
 	k_work_queue_start(&bt_workq, rx_thread_stack,
 			   CONFIG_BT_RX_STACK_SIZE,
-			   K_PRIO_COOP(CONFIG_BT_RX_PRIO), NULL);
-	k_thread_name_set(&bt_workq.thread, "BT RX WQ");
+			   K_PRIO_COOP(CONFIG_BT_RX_PRIO), &bt_workq_cfg);
 #endif
 
 	err = bt_hci_open(bt_dev.hci, bt_hci_recv);
