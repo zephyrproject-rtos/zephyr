@@ -7,7 +7,11 @@ if(BOARD STREQUAL "unit_testing" OR BOARD STREQUAL "unit_testing/unit_testing")
 
   # This test suite depends on having this CONFIG_ value, so define it
   add_definitions( -DCONFIG_BUGxxxxx )
-  target_sources(testbinary PRIVATE src/main.c)
+  target_sources(testbinary
+    PRIVATE
+    src/main.c
+    ${ZEPHYR_BASE}/lib/utils/printk_hexdump.c
+  )
 else()
   find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
   project(base)
