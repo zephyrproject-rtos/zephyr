@@ -1,0 +1,10 @@
+# Copyright (c) 2024 Nordic Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_NRF54H20_GENERATE_BICR
+	bool "Generate nRF54H20 BICR file"
+	depends on SOC_NRF54H20_CPUAPP
+	default y
+	help
+	  This option generates a BICR file for the board being used. Board
+	  directory must contain a "bicr.json" file for this option to work.

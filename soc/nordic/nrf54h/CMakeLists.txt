@@ -16,4 +16,5 @@ zephyr_include_directories(.)
 # for the image correctly
 zephyr_linker_sources(SECTIONS SORT_KEY zzz_place_align_at_end align.ld)
 
+add_subdirectory(bicr)
 add_subdirectory(gpd)
