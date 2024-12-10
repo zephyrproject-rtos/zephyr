@@ -1,0 +1,8 @@
+/*
+ * Copyright (c) 2024, Andrew Featherstone
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/rpi-pico-rp2350a-pinctrl.h>
+
+#include "../common/rpi_pico-pinctrl-common.dtsi"
