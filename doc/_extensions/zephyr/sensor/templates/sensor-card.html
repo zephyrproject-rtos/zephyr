@@ -1,0 +1,47 @@
+<a class="board-card sensor-card"
+    href="{{sensor.compatible.org}},{{sensor.compatible.part}}.html"
+    data-rst-ref="{{sensor.extras['doc-link']}}"
+    data-compatible="{{sensor.compatible.org}},{{sensor.compatible.part}}"
+    data-channels="{{sensor.channels.keys() | join(';') | upper}}"
+    data-triggers="{{sensor.triggers | join(';') | upper}}"
+    data-attributes="{% for attr in sensor.attributes %}{{'%s/%s' | format(attr.attribute.upper(), attr.channel.upper())}};{% endfor %}"
+    data-buses="{{sensor.supported_buses | join(';') | upper}}">
+    <div class="sensor-card-content">
+        <div class="sensor-card-info">
+            <div class="sensor-vendor-part-name">
+                <h3>{{sensor.compatible.org}},</h3>
+                <h4>{{sensor.compatible.part}}</h4>
+            </div>
+            <div class="sensor-card-details">
+                <p>Channels: {{ sensor.channels | length }}</p>
+                <p>Attributes: {{ sensor.attributes | length }}</p>
+                <p>Triggers: {{ sensor.triggers | length }}</p>
+            </div>
+        </div>
+        <div class="sensor-card-buses">
+            <p> <b>Buses:</b>
+                {% for bus in sensor.supported_buses -%}
+                <span>{{bus}}</span>
+                {% endfor %}
+            </p>
+        </div>
+        <hr />
+        <div class="sensor-card-icon-list">
+            {% if 'MAGN_XYZ' in sensor.channels|upper or 'MAGN_X' in sensor.channels|upper or 'MAGN_Y' in
+            sensor.channels|upper or 'MAGN_Z' in
+            sensor.channels|upper %}
+            <img src="../../_static/images/magnetic-field.svg" />
+            {% endif %}
+            {% if 'ACCEL_XYZ' in sensor.channels|upper or 'ACCEL_X' in sensor.channels|upper or 'ACCEL_Y' in
+            sensor.channels|upper or 'ACCEL_Z' in
+            sensor.channels|upper %}
+            <img src="../../_static/images/acceleration.svg" />
+            {% endif %}
+            {% if 'GYRO_XYZ' in sensor.channels|upper or 'GYRO_X' in sensor.channels|upper or 'GYRO_Y' in
+            sensor.channels|upper or 'GYRO_Z' in
+            sensor.channels|upper %}
+            <img src="../../_static/images/rotational-velocity.svg" />
+            {% endif %}
+        </div>
+    </div>
+</a>

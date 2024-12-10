@@ -97,6 +97,83 @@ Implementing Read and Decode
 * MUST implement :c:type:`sensor_get_decoder_t` returning the
   :c:struct:`sensor_decoder_api` for that device type.
 
+Adding your ``sensor.yaml``
+===========================
+
+Sensor YAML files can be added to enhance your driver writing experience. Each
+sensor can introduce a ``sensor.yaml`` file which follows the schema described
+in `pw_sensor`_. The file will automatically be picked up by the build system
+and entries will be created for your driver. See the example at
+``tests/drivers/sensor/generator/`` for the macro usage, you can do things
+like:
+
+* Get the number of attributes, channels, and triggers supported by a specific
+  compatible string.
+* Get the number of instances of a specific channel of a sensor.
+* Check if a driver supports setting a specific attribute/channel pair.
+* Automatically index your drivers into the Zephyr documentation
+
+The primary use case for these is to verify that a DT entry's compatible value
+supports specific requirements. For example:
+
+* Assume we're building a lid angle calculation which requires 2
+  accelerometers. These accelerometers will be specified in the devicetree
+  using the chosen nodes so we can access them via ``DT_CHOSEN(lid_accel)``
+  and ``DT_CHOSEN(base_accel)``.
+* We can now run a static assert like
+  ``BUILD_ASSERT(SENSOR_SPEC_CHAN_INST_COUNT(DT_PROP(DT_CHOSEN(lid_accel), compatible), accel_xyz) > 0);``
+
+Additional features are in development and will allow drivers to:
+
+* Generate boilerplate code for the sensor API such as attribute set/get,
+  submit, etc.
+* Generate common config/data struct definitions.
+* Abstract the bus API so you can read/write registers without worrying about
+  i2c/spi/etc.
+* Optimize memory allocation based to YAML metadata. Using the static data
+  available in the ``sensor.yaml`` file, we will be able to allocate the right
+  size buffer for streaming and one-shot reading APIs as well as client side
+  buffers.
+
+Documenting your driver
+-----------------------
+
+In your ``sensor.yaml`` include a field:
+
+.. code-block:: yaml
+
+   extras:
+      doc-link: "my-document-link"
+
+Then include a document in your driver that uses the same anchor name:
+
+.. code-block:: rst
+
+   .. _my-document-link:
+
+   My driver
+   =========
+
+   ...
+
+Adding sensors out of tree
+--------------------------
+
+Zephyr supports adding sensors from modules. There are 3 CMake variables that
+should be updated to make that happen:
+
+- ``ZEPHYR_EXTRA_SENSOR_YAML_FILES``: this is a cmake list containing full
+  paths to sensor YAML files that are not in the Zephyr tree.
+- ``ZEPHYR_EXTRA_SENSOR_INCLUDE_PATHS``: this is a cmake list containing full
+  paths to directories which contains custom attributes, channels, triggers, or
+  units. These paths are directories which the ``zephyr_sensor_library`` cmake
+  function will use to find definition files which are included in your sensor
+  YAML file. It's similar to header include paths.
+- ``ZEPHYR_EXTRA_SENSOR_DEFINITION_FILES``: this is a cmake list containing
+  full paths to files containing custom attributes, channels, triggers, or
+  units. The file list is used to determine when the sensor library needs to be
+  rebuilt.
+
 .. _sensor-api-reference:
 
 API Reference
@@ -104,3 +181,5 @@ API Reference
 
 .. doxygengroup:: sensor_interface
 .. doxygengroup:: sensor_emulator_backend
+
+.. _`pw_sensor`: https://pigweed.dev/pw_sensor/py/

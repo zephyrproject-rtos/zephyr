@@ -73,6 +73,7 @@ jobs:
           # and start over. (Workaround until we implement more robust module
           # west caching).
           west update --path-cache /repo-cache/zephyrproject 2>&1 1> west.log || west update --path-cache /repo-cache/zephyrproject 2>&1 1> west2.log || ( rm -rf ../modules ../bootloader ../tools && west update --path-cache /repo-cache/zephyrproject)
+          pip3 install pigweed
 
           echo "ZEPHYR_SDK_INSTALL_DIR=/opt/toolchains/zephyr-sdk-$( cat SDK_VERSION )" >> $GITHUB_ENV
 
@@ -143,7 +144,7 @@ jobs:
           path: artifacts
       - name: Merge Test Results
         run: |
-          pip3 install junitparser junit2html
+          pip3 install junitparser junit2html pigweed
           junitparser merge artifacts/*/twister.xml junit.xml
           junit2html junit.xml junit-clang.html
 
