@@ -355,6 +355,12 @@ static const char *get_l4_desc(uint32_t event)
 	case NET_EVENT_CAPTURE_STOPPED:
 		desc = "Capture stopped";
 		break;
+	case NET_EVENT_CONNECTIVITY_ONLINE:
+		desc = "online";
+		break;
+	case NET_EVENT_CONNECTIVITY_OFFLINE:
+		desc = "offline";
+		break;
 	}
 
 	return desc;

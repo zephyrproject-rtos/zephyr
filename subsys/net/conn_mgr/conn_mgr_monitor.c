@@ -9,13 +9,16 @@ LOG_MODULE_REGISTER(conn_mgr, CONFIG_NET_CONNECTION_MANAGER_LOG_LEVEL);
 
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
+#include <zephyr/random/random.h>
 #include <errno.h>
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/net/conn_mgr_connectivity.h>
+#include <zephyr/net/conn_mgr_monitor.h>
 #include "conn_mgr_private.h"
+#include "net_private.h"
 
 #if defined(CONFIG_NET_TC_THREAD_COOPERATIVE)
 #define THREAD_PRIORITY K_PRIO_COOP(CONFIG_NUM_COOP_PRIORITIES - 1)
@@ -50,13 +53,20 @@ K_SEM_DEFINE(conn_mgr_mon_updated, 1, 1);
 /* Used to protect conn_mgr_monitor state */
 K_MUTEX_DEFINE(conn_mgr_mon_lock);
 
+int conn_mgr_get_iface_states(uint16_t **states)
+{
+	*states = iface_states;
+
+	return ARRAY_SIZE(iface_states);
+}
+
 /**
  * @brief Retrieves pointer to an iface by the index that corresponds to it in iface_states
  *
  * @param index - The index in iface_states to find the corresponding iface for.
  * @return net_if* - The corresponding iface.
  */
-static struct net_if *conn_mgr_mon_get_if_by_index(int index)
+struct net_if *conn_mgr_mon_get_if_by_index(int index)
 {
 	return net_if_get_by_index(index + 1);
 }
@@ -67,7 +77,7 @@ static struct net_if *conn_mgr_mon_get_if_by_index(int index)
  * @param iface - iface to find the index of.
  * @return int - The index found.
  */
-static int conn_mgr_get_index_for_if(struct net_if *iface)
+int conn_mgr_get_index_for_if(struct net_if *iface)
 {
 	return net_if_get_by_iface(iface) - 1;
 }
@@ -177,9 +187,16 @@ static void conn_mgr_mon_handle_update(void)
 		if (ready_count == 0) {
 			/* We just lost connectivity */
 			net_mgmt_event_notify(NET_EVENT_L4_DISCONNECTED, blame);
+
+			conn_mgr_refresh_online_connectivity_check();
 		} else if (last_ready_count == 0) {
 			/* We just gained connectivity */
 			net_mgmt_event_notify(NET_EVENT_L4_CONNECTED, blame);
+		}
+
+		if (ready_count > 0) {
+			/* Trigger online check to be done for each ready interface */
+			conn_mgr_trigger_online_connectivity_check();
 		}
 		last_ready_count = ready_count;
 		last_blame = blame;
@@ -279,6 +296,13 @@ static void conn_mgr_mon_thread_fn(void *p1, void *p2, void *p3)
 
 		/* Respond to changes */
 		conn_mgr_mon_handle_update();
+
+#if defined(CONFIG_NET_CONNECTION_MANAGER_ONLINE_CONNECTIVITY_CHECK)
+		if (conn_mgr_trigger_online_checks) {
+			conn_mgr_trigger_online_checks = false;
+			conn_mgr_online_connectivity_check();
+		}
+#endif
 	}
 }
 
@@ -303,6 +327,8 @@ void conn_mgr_mon_resend_status(void)
 	} else {
 		net_mgmt_event_notify(NET_EVENT_L4_IPV4_CONNECTED, last_blame_ipv4);
 	}
+
+	conn_mgr_trigger_online_connectivity_check();
 
 	k_mutex_unlock(&conn_mgr_mon_lock);
 }
