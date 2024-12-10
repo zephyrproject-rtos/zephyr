@@ -14,6 +14,7 @@ import pytest
 import sys
 import json
 
+# pylint: disable=no-name-in-module
 from conftest import ZEPHYR_BASE, TEST_DATA, testsuite_filename_mock, clear_log_in_test
 from twisterlib.testplan import TestPlan
 
@@ -74,7 +75,12 @@ class TestOutput:
         assert len(filtered_j) > 0, "No dummy tests found."
 
         expected_start = os.path.relpath(TEST_DATA, ZEPHYR_BASE) if expect_paths else 'dummy.'
-        assert all([testsuite.startswith(expected_start)for _, testsuite, _ in filtered_j])
+        assert all([testsuite.startswith(expected_start) for _, testsuite, _ in filtered_j])
+        if expect_paths:
+            assert all([(tc_name.count('.') > 1) for _, _, tc_name in filtered_j])
+        else:
+            assert all([(tc_name.count('.') == 1) for _, _, tc_name in filtered_j])
+
 
     def test_inline_logs(self, out_path):
         test_platforms = ['qemu_x86', 'intel_adl_crb']

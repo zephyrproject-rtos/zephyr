@@ -1186,12 +1186,8 @@ class ProjectBuilder(FilterBuilder):
         return symbol_name
 
     def determine_testcases(self, results):
-        yaml_testsuite_name = self.instance.testsuite.id
-        logger.debug(f"Determine test cases for test suite: {yaml_testsuite_name}")
+        logger.debug(f"Determine test cases for test suite: {self.instance.testsuite.id}")
 
-        logger.debug(
-            f"Test instance {self.instance.name} already has {len(self.instance.testcases)} cases."
-        )
         new_ztest_unit_test_regex = re.compile(r"z_ztest_unit_test__([^\s]+?)__([^\s]*)")
         detected_cases = []
 
@@ -1220,9 +1216,14 @@ class ProjectBuilder(FilterBuilder):
                                 f"not present in: {self.instance.testsuite.ztest_suite_names}"
                             )
                         test_func_name = m_[2].replace("test_", "", 1)
-                        testcase_id = f"{yaml_testsuite_name}.{new_ztest_suite}.{test_func_name}"
+                        testcase_id = self.instance.compose_case_name(
+                            f"{new_ztest_suite}.{test_func_name}"
+                        )
                         detected_cases.append(testcase_id)
 
+        logger.debug(
+            f"Test instance {self.instance.name} already has {len(self.instance.testcases)} cases."
+        )
         if detected_cases:
             logger.debug(f"Detected Ztest cases: [{', '.join(detected_cases)}] in {elf_file}")
             tc_keeper = {
@@ -1232,16 +1233,17 @@ class ProjectBuilder(FilterBuilder):
             self.instance.testcases.clear()
             self.instance.testsuite.testcases.clear()
 
-            # When the old regex-based test case collection is fully deprecated,
-            # this will be the sole place where test cases get added to the test instance.
-            # Then we can further include the new_ztest_suite info in the testcase_id.
-
             for testcase_id in detected_cases:
                 testcase = self.instance.add_testcase(name=testcase_id)
                 self.instance.testsuite.add_testcase(name=testcase_id)
 
                 # Keep previous statuses and reasons
                 tc_info = tc_keeper.get(testcase_id, {})
+                if not tc_info and self.trace:
+                    # Also happens when Ztest uses macroses, eg. DEFINE_TEST_VARIANT
+                    logger.debug(f"Ztest case '{testcase_id}' discovered for "
+                                 f"'{self.instance.testsuite.source_dir_rel}' "
+                                 f"with {list(tc_keeper)}")
                 testcase.status = tc_info.get('status', TwisterStatus.NONE)
                 testcase.reason = tc_info.get('reason')
 

@@ -1562,17 +1562,31 @@ def test_projectbuilder_process(
 
 TESTDATA_7 = [
     (
+        True,
         [
             'z_ztest_unit_test__dummy_suite1_name__dummy_test_name1',
             'z_ztest_unit_test__dummy_suite2_name__test_dummy_name2',
             'no match'
         ],
         [
-         ('dummy_id.dummy_suite1_name.dummy_name1'),
-         ('dummy_id.dummy_suite2_name.dummy_name2')
+            'dummy.test_id.dummy_suite1_name.dummy_name1',
+            'dummy.test_id.dummy_suite2_name.dummy_name2'
         ]
     ),
     (
+        False,
+        [
+            'z_ztest_unit_test__dummy_suite1_name__dummy_test_name1',
+            'z_ztest_unit_test__dummy_suite2_name__test_dummy_name2',
+            'no match'
+        ],
+        [
+            'dummy_suite1_name.dummy_name1',
+            'dummy_suite2_name.dummy_name2'
+        ]
+    ),
+    (
+        True,
         [
             'z_ztest_unit_test__dummy_suite2_name__test_dummy_name2',
             'z_ztest_unit_test__bad_suite3_name_no_test',
@@ -1583,27 +1597,48 @@ TESTDATA_7 = [
             '_ZN15foobarnamespaceL54z_ztest_unit_test__dummy_suite3_name__test_dummy_name6E',
         ],
         [
-         ('dummy_id.dummy_suite2_name.dummy_name2'),
-         ('dummy_id.dummy_suite3_name.dummy_name4'),
-         ('dummy_id.dummy_suite3_name.bad_name1E'),
-         ('dummy_id.dummy_suite3_name.dummy_name5'),
-         ('dummy_id.dummy_suite3_name.dummy_name6'),
+           'dummy.test_id.dummy_suite2_name.dummy_name2',
+           'dummy.test_id.dummy_suite3_name.dummy_name4',
+           'dummy.test_id.dummy_suite3_name.bad_name1E',
+           'dummy.test_id.dummy_suite3_name.dummy_name5',
+           'dummy.test_id.dummy_suite3_name.dummy_name6',
         ]
     ),
     (
+        True,
+        [
+            'z_ztest_unit_test__dummy_suite2_name__test_dummy_name2',
+            'z_ztest_unit_test__bad_suite3_name_no_test',
+            '_ZN12_GLOBAL__N_1L54z_ztest_unit_test__dummy_suite3_name__test_dummy_name4E',
+            '_ZN12_GLOBAL__N_1L54z_ztest_unit_test__dummy_suite3_name__test_bad_name1E',
+            '_ZN12_GLOBAL__N_1L51z_ztest_unit_test_dummy_suite3_name__test_bad_name2E',
+            '_ZN12_GLOBAL__N_1L54z_ztest_unit_test__dummy_suite3_name__test_dummy_name5E',
+            '_ZN15foobarnamespaceL54z_ztest_unit_test__dummy_suite3_name__test_dummy_name6E',
+        ],
+        [
+           'dummy_suite2_name.dummy_name2',
+           'dummy_suite3_name.dummy_name4',
+           'dummy_suite3_name.bad_name1E',
+           'dummy_suite3_name.dummy_name5',
+           'dummy_suite3_name.dummy_name6',
+        ]
+    ),
+    (
+        True,
         ['no match'],
         []
     ),
 ]
 
 @pytest.mark.parametrize(
-    'symbols_names, added_tcs',
+    'detailed_id, symbols_names, added_tcs',
     TESTDATA_7,
-    ids=['two hits, one miss', 'demangle', 'nothing']
+    ids=['two hits, one miss', 'two hits short id', 'demangle', 'demangle short id', 'nothing']
 )
 def test_projectbuilder_determine_testcases(
     mocked_jobserver,
     mocked_env,
+    detailed_id,
     symbols_names,
     added_tcs
 ):
@@ -1621,8 +1656,10 @@ def test_projectbuilder_determine_testcases(
 
     instance_mock = mock.Mock()
     instance_mock.testcases = []
-    instance_mock.testsuite.id = 'dummy_id'
+    instance_mock.testsuite.id = 'dummy.test_id'
     instance_mock.testsuite.ztest_suite_names = []
+    instance_mock.testsuite.detailed_test_id = detailed_id
+    instance_mock.compose_case_name = mock.Mock(side_effect=iter(added_tcs))
 
     pb = ProjectBuilder(instance_mock, mocked_env, mocked_jobserver)
 
