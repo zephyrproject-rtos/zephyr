@@ -3658,10 +3658,10 @@ function(topological_sort)
 endfunction()
 
 # Usage:
-#   build_info(<tag>... VALUE <value>... )
+#   build_info(<tag>... VALUE <value>... [GENEX])
 #   build_info(<tag>... PATH  <path>... )
 #
-# This function populates updates the build_info.yml info file with exchangable build information
+# This function populates the build_info.yml info file with exchangable build information
 # related to the current build.
 #
 # Example:
@@ -3679,17 +3679,27 @@ endfunction()
 # PATH  <path>... : path(s) to place in the build_info.yml file. All paths are converted to CMake
 #                   style. If no conversion is required, for example when paths are already
 #                   guaranteed to be CMake style, then VALUE can also be used.
+# GENEX : the value(s) contain a generator expression. Cannot be used with PATH.
+#         Resulting context must be saved with yaml_generate().
 function(build_info)
-  set(convert_path FALSE)
-  set(arg_list ${ARGV})
-  list(FIND arg_list VALUE index)
-  if(index EQUAL -1)
-    list(FIND arg_list PATH index)
-    set(convert_path TRUE)
-  endif()
+  cmake_parse_arguments(ARG_BUILD_INFO "GENEX" "" "VALUE;PATH" ${ARGN})
 
-  if(index EQUAL -1)
-    message(FATAL_ERROR "${CMAKE_CURRENT_FUNCTION}(...) missing a required argument: VALUE or PATH")
+  zephyr_check_arguments_required_allow_empty(${CMAKE_CURRENT_FUNCTION} ARG_BUILD_INFO VALUE PATH)
+  zephyr_check_arguments_exclusive(${CMAKE_CURRENT_FUNCTION} ARG_BUILD_INFO VALUE PATH)
+
+  set(keys ${ARG_BUILD_INFO_UNPARSED_ARGUMENTS})
+  if (DEFINED ARG_BUILD_INFO_PATH)
+    set(convert_path TRUE)
+    set(values ${ARG_BUILD_INFO_PATH})
+  else()
+    set(convert_path FALSE)
+    set(values ${ARG_BUILD_INFO_VALUE})
+  endif()
+  if (ARG_BUILD_INFO_GENEX)
+    if (convert_path)
+      message(FATAL_ERROR "build_info: GENEX is unsupported on PATH entries")
+    endif()
+    set(genex_flag "GENEX")
   endif()
 
   yaml_context(EXISTS NAME build_info result)
@@ -3702,10 +3712,6 @@ function(build_info)
     endif()
     yaml_set(NAME build_info KEY version VALUE "0.1.0")
   endif()
-
-  list(SUBLIST arg_list 0 ${index} keys)
-  list(SUBLIST arg_list ${index} -1 values)
-  list(POP_FRONT values)
 
   if(convert_path)
     set(converted_values)
@@ -3734,7 +3740,7 @@ function(build_info)
     endif()
   endif()
 
-  yaml_set(NAME build_info KEY cmake ${keys} ${type} "${values}")
+  yaml_set(NAME build_info KEY cmake ${keys} ${type} "${values}" ${genex_flag})
 endfunction()
 
 ########################################################
