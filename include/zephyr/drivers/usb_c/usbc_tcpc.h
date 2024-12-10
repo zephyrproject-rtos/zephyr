@@ -83,6 +83,8 @@ enum tcpc_alert {
  * @brief TCPC Status register
  */
 enum tcpc_status_reg {
+	/** The Altert register */
+	TCPC_ALERT_STATUS,
 	/** The CC Status register */
 	TCPC_CC_STATUS,
 	/** The Power Status register */
