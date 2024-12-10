@@ -12,6 +12,7 @@ supported:
   - bluetooth
   - gpio
   - uart
+  - dma
   - watchdog
 testing:
   ignore_tags:

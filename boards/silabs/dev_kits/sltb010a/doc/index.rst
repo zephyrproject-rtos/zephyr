@@ -63,6 +63,8 @@ The sltb010a board configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial                              |
 +-----------+------------+-------------------------------------+
+| DMA       | on-chip    | ldma                                |
++-----------+------------+-------------------------------------+
 | WATCHDOG  | on-chip    | watchdog                            |
 +-----------+------------+-------------------------------------+
 | TRNG      | on-chip    | true random number generator        |
