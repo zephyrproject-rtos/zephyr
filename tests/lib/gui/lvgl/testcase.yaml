@@ -80,3 +80,15 @@ tests:
       - EXTRA_CONF_FILE=prj_blk.conf
     tags:
       - shield
+  libraries.gui.lvgl.osal:
+    extra_configs:
+      - CONFIG_LV_Z_USE_OSAL=y
+      - CONFIG_DYNAMIC_THREAD=y
+      - CONFIG_DYNAMIC_THREAD_POOL_SIZE=4
+      - CONFIG_DYNAMIC_THREAD_ALLOC=y
+    platform_allow:
+      - native_posix/native/64
+      - native_sim/native/64
+      - native_sim
+    integration_platforms:
+      - native_sim

@@ -6,16 +6,61 @@
 
 #include <zephyr/kernel.h>
 #include <lvgl.h>
+#include <string.h>
 #include "lvgl_display.h"
 
-void lvgl_flush_cb_mono(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t *color_p)
+static uint8_t *vtile_buffer;
+static uint32_t vtile_buffer_size;
+
+static ALWAYS_INLINE uint8_t reverse_bits(uint8_t byte)
+{
+	byte = (byte & 0xF0) >> 4 | (byte & 0x0F) << 4;
+	byte = (byte & 0xCC) >> 2 | (byte & 0x33) << 2;
+	byte = (byte & 0xAA) >> 1 | (byte & 0x55) << 1;
+	return byte;
+}
+
+static void lvgl_transform_buffer(uint8_t **px_map, uint32_t width, uint32_t height,
+				  const struct display_capabilities *caps)
+{
+	uint32_t src_buf_size = (width * height) / 8U;
+	bool is_lsb = !(caps->screen_info & SCREEN_INFO_MONO_MSB_FIRST);
+
+	/* Needed because LVGL reserves 2x4 bytes in the buffer for the color palette. */
+	*px_map += 8;
+
+	/* LVGL renders in a htiled MSB buffer layout. */
+	if (caps->screen_info & SCREEN_INFO_MONO_VTILED) {
+
+#ifdef CONFIG_LV_Z_MONOCHROME_VTILE_CONVERSION_BUFFER
+		lv_draw_sw_i1_convert_to_vtiled(*px_map, src_buf_size, width, height, vtile_buffer,
+						vtile_buffer_size, is_lsb);
+		memcpy(*px_map, vtile_buffer, src_buf_size);
+#endif /* CONFIG_LV_Z_MONOCHROME_VTILE_CONVERSION_BUFFER */
+
+	} else {
+		/* Handle bit order */
+		for (uint32_t i = 0; i < src_buf_size; i++) {
+			*px_map[i] = reverse_bits(*px_map[i]);
+		}
+	}
+
+	/* LVGL sets the bit if the luminescence of the corresponding RGB color >127. */
+	if (caps->current_pixel_format == PIXEL_FORMAT_MONO10) {
+		lv_draw_sw_i1_invert(*px_map, src_buf_size);
+	}
+}
+
+void lvgl_flush_cb_mono(lv_display_t *display, const lv_area_t *area, uint8_t *px_map)
 {
 	uint16_t w = area->x2 - area->x1 + 1;
 	uint16_t h = area->y2 - area->y1 + 1;
-	struct lvgl_disp_data *data = (struct lvgl_disp_data *)disp_drv->user_data;
+	struct lvgl_disp_data *data = (struct lvgl_disp_data *)lv_display_get_user_data(display);
 	const struct device *display_dev = data->display_dev;
 	const bool is_epd = data->cap.screen_info & SCREEN_INFO_EPD;
-	const bool is_last = lv_disp_flush_is_last(disp_drv);
+	const bool is_last = lv_display_flush_is_last(display);
+
+	lvgl_transform_buffer(&px_map, w, h, &data->cap);
 
 	if (is_epd && !data->blanking_on && !is_last) {
 		/*
@@ -36,9 +81,9 @@ void lvgl_flush_cb_mono(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color
 		.frame_incomplete = !is_last,
 	};
 
-	display_write(display_dev, area->x1, area->y1, &desc, (void *)color_p);
+	display_write(display_dev, area->x1, area->y1, &desc, (void *)px_map);
 	if (data->cap.screen_info & SCREEN_INFO_DOUBLE_BUFFER) {
-		display_write(display_dev, area->x1, area->y1, &desc, (void *)color_p);
+		display_write(display_dev, area->x1, area->y1, &desc, (void *)px_map);
 	}
 
 	if (is_epd && is_last && data->blanking_on) {
@@ -50,63 +95,30 @@ void lvgl_flush_cb_mono(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color
 		data->blanking_on = false;
 	}
 
-	lv_disp_flush_ready(disp_drv);
+	lv_display_flush_ready(display);
 }
 
-void lvgl_set_px_cb_mono(lv_disp_drv_t *disp_drv, uint8_t *buf, lv_coord_t buf_w, lv_coord_t x,
-			 lv_coord_t y, lv_color_t color, lv_opa_t opa)
+void lvgl_rounder_cb_mono(lv_event_t *e)
 {
-	struct lvgl_disp_data *data = (struct lvgl_disp_data *)disp_drv->user_data;
-	uint8_t *buf_xy;
-	uint8_t bit;
-
-	if (data->cap.screen_info & SCREEN_INFO_MONO_VTILED) {
-		buf_xy = buf + x + y / 8 * buf_w;
-
-		if (data->cap.screen_info & SCREEN_INFO_MONO_MSB_FIRST) {
-			bit = 7 - y % 8;
-		} else {
-			bit = y % 8;
-		}
-	} else {
-		buf_xy = buf + x / 8 + y * buf_w / 8;
-
-		if (data->cap.screen_info & SCREEN_INFO_MONO_MSB_FIRST) {
-			bit = 7 - x % 8;
-		} else {
-			bit = x % 8;
-		}
-	}
-
-	if (data->cap.current_pixel_format == PIXEL_FORMAT_MONO10) {
-		if (color.full == 0) {
-			*buf_xy &= ~BIT(bit);
-		} else {
-			*buf_xy |= BIT(bit);
-		}
-	} else {
-		if (color.full == 0) {
-			*buf_xy |= BIT(bit);
-		} else {
-			*buf_xy &= ~BIT(bit);
-		}
-	}
-}
-
-void lvgl_rounder_cb_mono(lv_disp_drv_t *disp_drv, lv_area_t *area)
-{
-	struct lvgl_disp_data *data = (struct lvgl_disp_data *)disp_drv->user_data;
+	lv_area_t *area = lv_event_get_param(e);
+	lv_display_t *display = lv_event_get_user_data(e);
+	struct lvgl_disp_data *data = (struct lvgl_disp_data *)lv_display_get_user_data(display);
 
 	if (data->cap.screen_info & SCREEN_INFO_X_ALIGNMENT_WIDTH) {
 		area->x1 = 0;
 		area->x2 = data->cap.x_resolution - 1;
 	} else {
+		area->x1 &= ~0x7;
+		area->x2 |= 0x7;
 		if (data->cap.screen_info & SCREEN_INFO_MONO_VTILED) {
 			area->y1 &= ~0x7;
 			area->y2 |= 0x7;
-		} else {
-			area->x1 &= ~0x7;
-			area->x2 |= 0x7;
 		}
 	}
+}
+
+void lvgl_set_mono_vtile_buffer(uint8_t *buffer, uint32_t buffer_size)
+{
+	vtile_buffer = buffer;
+	vtile_buffer_size = buffer_size;
 }
