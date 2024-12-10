@@ -1,185 +1,72 @@
 /*
+ * Copyright (c) 2024 TDK Invensense
  * Copyright (c) 2022 Esco Medical ApS
  * Copyright (c) 2020 TDK Invensense
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/kernel.h>
-#include <zephyr/sys/util.h>
+/*
+ * Bus-specific functionality for ICM42670 accessed via SPI.
+ */
+
 #include "icm42670.h"
-#include "icm42670_reg.h"
 
-#if ICM42670_BUS_SPI
-static inline int spi_write_register(const union icm42670_bus *bus, uint8_t reg, uint8_t data)
-{
-	const struct spi_buf buf[2] = {
-		{
-			.buf = &reg,
-			.len = 1,
-		},
-		{
-			.buf = &data,
-			.len = 1,
-		}
-	};
+#if CONFIG_SPI
 
-	const struct spi_buf_set tx = {
-		.buffers = buf,
-		.count = 2,
-	};
-
-	return spi_write_dt(&bus->spi, &tx);
-}
-
-static inline int spi_read_register(const union icm42670_bus *bus, uint8_t reg, uint8_t *data,
-				    size_t len)
-{
-	uint8_t tx_buffer = REG_SPI_READ_BIT | reg;
-
-	const struct spi_buf tx_buf = {
-		.buf = &tx_buffer,
-		.len = 1,
-	};
-
-	const struct spi_buf_set tx = {
-		.buffers = &tx_buf,
-		.count = 1,
-	};
-
-	struct spi_buf rx_buf[2] = {
-		{
-			.buf = NULL,
-			.len = 1,
-		},
-		{
-			.buf = data,
-			.len = len,
-		}
-	};
-
-	const struct spi_buf_set rx = {
-		.buffers = rx_buf,
-		.count = 2,
-	};
-
-	return spi_transceive_dt(&bus->spi, &tx, &rx);
-}
-
-static inline int spi_read_mreg(const union icm42670_bus *bus, uint8_t reg, uint8_t bank,
-				uint8_t *buf, size_t len)
-{
-	int res = spi_write_register(bus, REG_BLK_SEL_R, bank);
-
-	if (res) {
-		return res;
-	}
-
-	/* reads from MREG registers must be done byte-by-byte */
-	for (size_t i = 0; i < len; i++) {
-		uint8_t addr = reg + i;
-
-		res = spi_write_register(bus, REG_MADDR_R, addr);
-
-		if (res) {
-			return res;
-		}
-
-		k_usleep(MREG_R_W_WAIT_US);
-		res = spi_read_register(bus, REG_M_R, &buf[i], 1);
-
-		if (res) {
-			return res;
-		}
-
-		k_usleep(MREG_R_W_WAIT_US);
-	}
-
-	return 0;
-}
-
-static inline int spi_write_mreg(const union icm42670_bus *bus, uint8_t reg, uint8_t bank,
-				 uint8_t buf)
-{
-	int res = spi_write_register(bus, REG_BLK_SEL_W, bank);
-
-	if (res) {
-		return res;
-	}
-
-	res = spi_write_register(bus, REG_MADDR_W, reg);
-
-	if (res) {
-		return res;
-	}
-
-	res = spi_write_register(bus, REG_M_W, buf);
-
-	if (res) {
-		return res;
-	}
-
-	k_usleep(MREG_R_W_WAIT_US);
-
-	return 0;
-}
-
-int icm42670_spi_read(const union icm42670_bus *bus, uint16_t reg, uint8_t *data, size_t len)
-{
-	int res = 0;
-	uint8_t bank = FIELD_GET(REG_BANK_MASK, reg);
-	uint8_t address = FIELD_GET(REG_ADDRESS_MASK, reg);
-
-	if (bank) {
-		res = spi_read_mreg(bus, address, bank, data, len);
-	} else {
-		res = spi_read_register(bus, address, data, len);
-	}
-
-	return res;
-}
-
-int icm42670_spi_single_write(const union icm42670_bus *bus, uint16_t reg, uint8_t data)
-{
-	int res = 0;
-	uint8_t bank = FIELD_GET(REG_BANK_MASK, reg);
-	uint8_t address = FIELD_GET(REG_ADDRESS_MASK, reg);
-
-	if (bank) {
-		res = spi_write_mreg(bus, address, bank, data);
-	} else {
-		res = spi_write_register(bus, address, data);
-	}
-
-	return res;
-}
-
-int icm42670_spi_update_register(const union icm42670_bus *bus, uint16_t reg, uint8_t mask,
-				 uint8_t data)
-{
-	uint8_t temp = 0;
-	int res = icm42670_spi_read(bus, reg, &temp, 1);
-
-	if (res) {
-		return res;
-	}
-
-	temp &= ~mask;
-	temp |= FIELD_PREP(mask, data);
-
-	return icm42670_spi_single_write(bus, reg, temp);
-}
+#include <zephyr/logging/log.h>
+LOG_MODULE_DECLARE(ICM42670, CONFIG_SENSOR_LOG_LEVEL);
 
 static int icm42670_bus_check_spi(const union icm42670_bus *bus)
 {
 	return spi_is_ready_dt(&bus->spi) ? 0 : -ENODEV;
 }
 
+static int icm42670_reg_read_spi(const union icm42670_bus *bus, uint8_t start, uint8_t *buf,
+				 uint32_t size)
+
+{
+	uint8_t cmd[] = {(start | 0x80)};
+	const struct spi_buf tx_buf = {.buf = cmd, .len = sizeof(cmd)};
+	const struct spi_buf_set tx = {.buffers = &tx_buf, .count = 1};
+	struct spi_buf rx_buf[2];
+	const struct spi_buf_set rx = {.buffers = rx_buf, .count = ARRAY_SIZE(rx_buf)};
+	int ret;
+
+	rx_buf[0].buf = NULL;
+	rx_buf[0].len = 1;
+
+	rx_buf[1].len = size;
+	rx_buf[1].buf = buf;
+
+	ret = spi_transceive_dt(&bus->spi, &tx, &rx);
+	if (ret) {
+		LOG_ERR("spi_transceive FAIL %d\n", ret);
+		return ret;
+	}
+	return 0;
+}
+
+static int icm42670_reg_write_spi(const union icm42670_bus *bus, uint8_t reg, uint8_t *buf,
+				  uint32_t size)
+{
+	uint8_t cmd[] = {reg & 0x7F};
+	const struct spi_buf tx_buf[2] = {{.buf = cmd, .len = sizeof(cmd)},
+					  {.buf = buf, .len = size}};
+	const struct spi_buf_set tx = {.buffers = tx_buf, .count = 2};
+	int ret = spi_write_dt(&bus->spi, &tx);
+
+	if (ret) {
+		LOG_ERR("spi_write FAIL %d\n", ret);
+		return ret;
+	}
+	return 0;
+}
+
 const struct icm42670_bus_io icm42670_bus_io_spi = {
 	.check = icm42670_bus_check_spi,
-	.read = icm42670_spi_read,
-	.write = icm42670_spi_single_write,
-	.update = icm42670_spi_update_register,
+	.read = icm42670_reg_read_spi,
+	.write = icm42670_reg_write_spi,
 };
 
-#endif /* ICM42670_BUS_SPI */
+#endif /* CONFIG_SPI */
