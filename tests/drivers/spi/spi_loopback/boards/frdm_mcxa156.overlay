@@ -1,0 +1,21 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* To test this sample, connect
+ * LPSPI0 MOSI(J6-6, P1_0/LPSPI0_SDO)     -->        LPSPI0 MISO(J6-5, P1_2/LPSPI0_SDI)
+ */
+&lpspi0 {
+	slow@0 {
+		compatible = "test-spi-loopback-slow";
+		reg = <0>;
+		spi-max-frequency = <500000>;
+	};
+	fast@0 {
+		compatible = "test-spi-loopback-fast";
+		reg = <0>;
+		spi-max-frequency = <16000000>;
+	};
+};
