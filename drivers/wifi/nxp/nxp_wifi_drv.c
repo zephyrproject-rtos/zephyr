@@ -569,9 +569,31 @@ static int nxp_wifi_ap_config_params(const struct device *dev, struct wifi_ap_co
 			ret = wlan_uap_set_sta_ageout_timer(params->max_inactivity * 10);
 			if (ret != WM_SUCCESS) {
 				status = NXP_WIFI_RET_FAIL;
+				LOG_ERR("Failed to set maximum inactivity duration for stations");
+			} else {
+				LOG_INF("Set maximum inactivity duration for stations: %d (s)",
+					params->max_inactivity);
 			}
-		} else {
-			return -EINVAL;
+		}
+
+		if (params->type & WIFI_AP_CONFIG_PARAM_MAX_NUM_STA) {
+			ret = wlan_set_uap_max_clients(params->max_num_sta);
+			if (ret != WM_SUCCESS) {
+				status = NXP_WIFI_RET_FAIL;
+				LOG_ERR("Failed to set maximum number of stations");
+			} else {
+				LOG_INF("Set maximum number of stations: %d", params->max_num_sta);
+			}
+		}
+
+		if (params->type & WIFI_AP_CONFIG_PARAM_BANDWIDTH) {
+			ret = wlan_uap_set_bandwidth(params->bandwidth);
+			if (ret != WM_SUCCESS) {
+				status = NXP_WIFI_RET_FAIL;
+				LOG_ERR("Failed to set Wi-Fi AP bandwidth");
+			} else {
+				LOG_INF("Set  Wi-Fi AP bandwidth: %d", params->bandwidth);
+			}
 		}
 	}
 
@@ -850,6 +872,17 @@ static int nxp_wifi_connect(const struct device *dev, struct wifi_connect_req_pa
 
 	if (status != NXP_WIFI_RET_SUCCESS) {
 		LOG_ERR("Failed to connect to Wi-Fi access point");
+		return -EAGAIN;
+	}
+
+	switch (params->bandwidth) {
+	case WIFI_FREQ_BANDWIDTH_20MHZ:
+	case WIFI_FREQ_BANDWIDTH_40MHZ:
+	case WIFI_FREQ_BANDWIDTH_80MHZ:
+		wlan_uap_set_bandwidth(params->bandwidth);
+		break;
+	default:
+		LOG_ERR("Invalid bandwidth");
 		return -EAGAIN;
 	}
 
