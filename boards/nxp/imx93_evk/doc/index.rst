@@ -240,9 +240,19 @@ prompt.
 
 Use U-Boot to load and kick zephyr.bin to Cortex-M33 Core:
 
+Boot with code from TCM
+=======================
+
 .. code-block:: console
 
     load mmc 1:1 0x80000000 zephyr.bin;cp.b 0x80000000 0x201e0000 0x30000;bootaux 0x1ffe0000 0
+
+Boot with code from DDR
+=======================
+
+.. code-block:: console
+
+    load mmc 1:1 0x84000000 zephyr.bin;dcache flush;bootaux 0x84000000 0
 
 Use this configuration to run basic Zephyr applications and kernel tests,
 for example, with the :zephyr:code-sample:`synchronization` sample:
