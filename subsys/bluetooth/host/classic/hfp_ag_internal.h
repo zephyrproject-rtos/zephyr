@@ -9,17 +9,69 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* HFP AG Features in SDP */
+#define BT_HFP_AG_SDP_FEATURE_3WAY_CALL       BIT(0) /* Three-way calling */
+#define BT_HFP_AG_SDP_FEATURE_ECNR            BIT(1) /* EC and/or NR function */
+#define BT_HFP_AG_SDP_FEATURE_VOICE_RECG      BIT(2) /* Voice recognition */
+#define BT_HFP_AG_SDP_FEATURE_INBAND_RINGTONE BIT(3) /* In-band ring tone capability */
+#define BT_HFP_AG_SDP_FEATURE_VOICE_TAG       BIT(4) /* Attach no. to voice tag */
+#define BT_HFP_AG_SDP_FEATURE_WBS             BIT(5) /* Wide Band Speech */
+#define BT_HFP_AG_SDP_FEATURE_ENH_VOICE_RECG  BIT(6) /* Enhanced Voice Recognition Status */
+#define BT_HFP_AG_SDP_FEATURE_VOICE_RECG_TEXT BIT(7) /* Voice Recognition Text */
+#define BT_HFP_AG_SDP_FEATURE_SUPER_WBS       BIT(8) /* Super Wide Band Speech */
+
+#if defined(CONFIG_BT_HFP_AG_EXT_ERR)
+#define BT_HFP_AG_FEATURE_EXT_ERR_ENABLE BT_HFP_AG_FEATURE_EXT_ERR
+#else
+#define BT_HFP_AG_FEATURE_EXT_ERR_ENABLE 0
+#endif /* CONFIG_BT_HFP_AG_EXT_ERR */
+
+#if defined(CONFIG_BT_HFP_AG_CODEC_NEG)
+#define BT_HFP_AG_FEATURE_CODEC_NEG_ENABLE BT_HFP_AG_FEATURE_CODEC_NEG
+#else
+#define BT_HFP_AG_FEATURE_CODEC_NEG_ENABLE 0
+#endif /* CONFIG_BT_HFP_AG_CODEC_NEG */
+
+#if defined(CONFIG_BT_HFP_AG_ECNR)
+#define BT_HFP_AG_FEATURE_ECNR_ENABLE BT_HFP_AG_FEATURE_ECNR
+#define BT_HFP_AG_SDP_FEATURE_ECNR_ENABLE BT_HFP_AG_SDP_FEATURE_ECNR
+#else
+#define BT_HFP_AG_FEATURE_ECNR_ENABLE 0
+#define BT_HFP_AG_SDP_FEATURE_ECNR_ENABLE 0
+#endif /* CONFIG_BT_HFP_AG_CODEC_NEG */
+
+#if defined(CONFIG_BT_HFP_AG_ECS)
+#define BT_HFP_AG_FEATURE_ECS_ENABLE BT_HFP_AG_FEATURE_ECS
+#else
+#define BT_HFP_AG_FEATURE_ECS_ENABLE 0
+#endif /* CONFIG_BT_HFP_AG_ECS*/
+
 /* HFP AG Supported features */
-#define BT_HFP_AG_SUPPORTED_FEATURES (BT_HFP_AG_FEATURE_INBAND_RINGTONE | BT_HFP_AG_FEATURE_EXT_ERR)
+#define BT_HFP_AG_SUPPORTED_FEATURES (\
+	BT_HFP_AG_FEATURE_3WAY_CALL | \
+	BT_HFP_AG_FEATURE_INBAND_RINGTONE | \
+	BT_HFP_AG_FEATURE_EXT_ERR_ENABLE | \
+	BT_HFP_AG_FEATURE_CODEC_NEG_ENABLE | \
+	BT_HFP_AG_FEATURE_ECNR_ENABLE | \
+	BT_HFP_AG_FEATURE_ECS_ENABLE)
+
+/* HFP AG Supported features in SDP */
+#define BT_HFP_AG_SDP_SUPPORTED_FEATURES (\
+	BT_HFP_AG_SDP_FEATURE_3WAY_CALL | \
+	BT_HFP_AG_SDP_FEATURE_INBAND_RINGTONE | \
+	BT_HFP_AG_SDP_FEATURE_ECNR_ENABLE)
 
 /* bt_hfp_ag flags: the flags defined here represent HFP AG parameters */
 enum {
 	BT_HFP_AG_CMEE_ENABLE,   /* Extended Audio Gateway Error Result Code */
 	BT_HFP_AG_CMER_ENABLE,   /* Indicator Events Reporting */
 	BT_HFP_AG_CLIP_ENABLE,   /* Calling Line Identification notification */
+	BT_HFP_AG_CCWA_ENABLE,   /* Call Waiting notification */
 	BT_HFP_AG_INBAND_RING,   /* In-band ring */
 	BT_HFP_AG_COPS_SET,      /* Query Operator selection */
 	BT_HFP_AG_INCOMING_CALL, /* Incoming call */
+	BT_HFP_AG_INCOMING_HELD, /* Incoming call held */
+	BT_HFP_AG_AUDIO_CONN,    /* Audio connection */
 	BT_HFP_AG_CODEC_CONN,    /* Codec connection is ongoing */
 	BT_HFP_AG_CODEC_CHANGED, /* Codec Id Changed */
 	BT_HFP_AG_TX_ONGOING,    /* TX is ongoing */
@@ -102,6 +154,7 @@ struct bt_hfp_ag {
 	uint8_t hf_indicator_value[HFP_HF_IND_MAX];
 
 	/* operator */
+	uint8_t mode;
 	char operator[AT_COPS_OPERATOR_MAX_LEN + 1];
 
 	/* SCO Connection Object */

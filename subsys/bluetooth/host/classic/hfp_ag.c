@@ -176,7 +176,8 @@ static void bt_hfp_ag_set_call_state(struct bt_hfp_ag *ag, bt_hfp_call_state_t c
 
 	switch (call_state) {
 	case BT_HFP_CALL_TERMINATE:
-		atomic_clear(ag->flags);
+		atomic_clear_bit(ag->flags, BT_HFP_AG_CREATING_SCO);
+		atomic_clear_bit(ag->flags, BT_HFP_AG_INCOMING_CALL);
 		k_work_cancel_delayable(&ag->deferred_work);
 		break;
 	case BT_HFP_CALL_OUTGOING:
@@ -490,9 +491,24 @@ static int bt_hfp_ag_bac_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 		}
 	}
 
+	if (!(codec_ids & BIT(BT_HFP_AG_CODEC_CVSD))) {
+		return -EOPNOTSUPP;
+	}
+
 	hfp_ag_lock(ag);
 	ag->hf_codec_ids = codec_ids;
+	ag->selected_codec_id = 0;
 	hfp_ag_unlock(ag);
+
+	atomic_set_bit(ag->flags, BT_HFP_AG_CODEC_CHANGED);
+
+	if (atomic_test_and_clear_bit(ag->flags, BT_HFP_AG_CODEC_CONN)) {
+		/* Codec connection is ended. It needs to be restarted. */
+		LOG_DBG("Codec connection is ended. It needs to be restarted.");
+		if (bt_ag && bt_ag->codec_negotiate) {
+			bt_ag->codec_negotiate(ag, -EAGAIN);
+		}
+	}
 
 	if (bt_ag && bt_ag->codec) {
 		bt_ag->codec(ag, ag->hf_codec_ids);
@@ -750,9 +766,12 @@ static int bt_hfp_ag_cmee_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 		return -ENOTSUP;
 	}
 
-	atomic_set_bit_to(ag->flags, BT_HFP_AG_CMEE_ENABLE, cmee == 1);
+	if (BT_HFP_AG_FEATURE_EXT_ERR_ENABLE) {
+		atomic_set_bit_to(ag->flags, BT_HFP_AG_CMEE_ENABLE, cmee == 1);
+		return 0;
+	}
 
-	return 0;
+	return -ENOTSUP;
 }
 
 static int hfp_ag_update_indicator(struct bt_hfp_ag *ag, enum bt_hfp_ag_indicator index,
@@ -804,7 +823,11 @@ static void hfp_ag_close_sco(struct bt_hfp_ag *ag)
 
 static void bt_hfp_ag_reject_cb(struct bt_hfp_ag *ag, void *user_data)
 {
-	hfp_ag_close_sco(ag);
+	if (!atomic_test_bit(ag->flags, BT_HFP_AG_AUDIO_CONN)) {
+		LOG_DBG("It is not audio connection");
+		hfp_ag_close_sco(ag);
+	}
+
 	bt_hfp_ag_set_call_state(ag, BT_HFP_CALL_TERMINATE);
 
 	if (bt_ag && bt_ag->reject) {
@@ -823,7 +846,11 @@ static void bt_hfp_ag_call_reject(struct bt_hfp_ag *ag, void *user_data)
 
 static void bt_hfp_ag_terminate_cb(struct bt_hfp_ag *ag, void *user_data)
 {
-	hfp_ag_close_sco(ag);
+	if (!atomic_test_bit(ag->flags, BT_HFP_AG_AUDIO_CONN)) {
+		LOG_DBG("It is not audio connection");
+		hfp_ag_close_sco(ag);
+	}
+
 	bt_hfp_ag_set_call_state(ag, BT_HFP_CALL_TERMINATE);
 
 	if (bt_ag && bt_ag->terminate) {
@@ -1065,6 +1092,7 @@ static struct bt_conn *bt_hfp_ag_create_sco(struct bt_hfp_ag *ag)
 static int hfp_ag_open_sco(struct bt_hfp_ag *ag)
 {
 	bool create_sco;
+	bt_hfp_call_state_t call_state;
 
 	if (atomic_test_bit(ag->flags, BT_HFP_AG_CREATING_SCO)) {
 		LOG_WRN("SCO connection is creating!");
@@ -1072,6 +1100,7 @@ static int hfp_ag_open_sco(struct bt_hfp_ag *ag)
 	}
 
 	hfp_ag_lock(ag);
+	call_state = ag->call_state;
 	create_sco = (ag->sco_chan.sco == NULL) ? true : false;
 	if (create_sco) {
 		atomic_set_bit(ag->flags, BT_HFP_AG_CREATING_SCO);
@@ -1082,13 +1111,21 @@ static int hfp_ag_open_sco(struct bt_hfp_ag *ag)
 		struct bt_conn *sco_conn = bt_hfp_ag_create_sco(ag);
 
 		atomic_clear_bit(ag->flags, BT_HFP_AG_CREATING_SCO);
+		atomic_clear_bit(ag->flags, BT_HFP_AG_AUDIO_CONN);
 
 		if (sco_conn == NULL) {
 			LOG_ERR("Fail to create sco connection!");
 			return -ENOTCONN;
 		}
 
+		atomic_set_bit_to(ag->flags, BT_HFP_AG_AUDIO_CONN, call_state == BT_HFP_CALL_TERMINATE);
+
 		LOG_DBG("SCO connection created (%p)", sco_conn);
+	} else {
+		if (call_state == BT_HFP_CALL_INCOMING) {
+			bt_hfp_ag_set_call_state(ag, BT_HFP_CALL_ALERTING);
+			bt_hfp_ag_call_ringing_cb(ag, true);
+		}
 	}
 
 	return 0;
@@ -1102,9 +1139,8 @@ static int bt_hfp_ag_codec_select(struct bt_hfp_ag *ag)
 
 	hfp_ag_lock(ag);
 	if (ag->selected_codec_id == 0) {
-		LOG_ERR("Codec is invalid");
-		hfp_ag_unlock(ag);
-		return -EINVAL;
+		LOG_WRN("Codec is invalid, set default value");
+		ag->selected_codec_id = BT_HFP_AG_CODEC_CVSD;
 	}
 
 	if (!(ag->hf_codec_ids & BIT(ag->selected_codec_id))) {
@@ -1131,8 +1167,8 @@ static int bt_hfp_ag_create_audio_connection(struct bt_hfp_ag *ag)
 	hfp_ag_unlock(ag);
 
 	if ((hf_codec_ids != 0) && atomic_test_bit(ag->flags, BT_HFP_AG_CODEC_CHANGED)) {
-		atomic_set_bit(ag->flags, BT_HFP_AG_CODEC_CONN);
 		err = bt_hfp_ag_codec_select(ag);
+		atomic_set_bit_to(ag->flags, BT_HFP_AG_CODEC_CONN, err == 0);
 	} else {
 		err = hfp_ag_open_sco(ag);
 	}
@@ -1231,7 +1267,8 @@ static int bt_hfp_ag_cops_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 		return -ENOTSUP;
 	}
 
-	err = hfp_ag_send_data(ag, NULL, NULL, "\r\n+COPS:%d,%d,\"%s\"\r\n", 0, 0, ag->operator);
+	err = hfp_ag_send_data(ag, NULL, NULL, "\r\n+COPS:%d,%d,\"%s\"\r\n",
+		    ag->mode, 0, ag->operator);
 	if (err != 0) {
 		LOG_ERR("Fail to send err :(%d)", err);
 	}
@@ -1241,6 +1278,7 @@ static int bt_hfp_ag_cops_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 
 static int bt_hfp_ag_bcc_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 {
+#if BT_HFP_AG_FEATURE_CODEC_NEG_ENABLE
 	int err;
 
 	if (!is_char(buf, '\r')) {
@@ -1248,18 +1286,28 @@ static int bt_hfp_ag_bcc_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 	}
 
 	hfp_ag_lock(ag);
-	if ((ag->selected_codec_id == 0) ||
-		(!(ag->hf_codec_ids & BIT(ag->selected_codec_id))) ||
-		(ag->call_state == BT_HFP_CALL_TERMINATE) ||
-		(ag->sco_chan.sco != NULL)) {
+	if (ag->selected_codec_id && (!(ag->hf_codec_ids & BIT(ag->selected_codec_id)))) {
 		hfp_ag_unlock(ag);
 		return -ENOTSUP;
 	}
+
+	if (ag->sco_chan.sco) {
+		hfp_ag_unlock(ag);
+		return -ECONNREFUSED;
+	}
 	hfp_ag_unlock(ag);
+
+	if (bt_ag && bt_ag->audio_connect_req) {
+		bt_ag->audio_connect_req(ag);
+		return 0;
+	}
 
 	err = hfp_ag_next_step(ag, bt_hfp_ag_audio_connection, NULL);
 
-	return 0;
+	return err;
+#else
+	return -ENOTSUP;
+#endif /* BT_HFP_AG_FEATURE_CODEC_NEG_ENABLE */
 }
 
 static void bt_hfp_ag_unit_codec_conn_setup(struct bt_hfp_ag *ag, void *user_data)
@@ -1275,6 +1323,7 @@ static int bt_hfp_ag_bcs_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 {
 	int err;
 	uint32_t number;
+	bool codec_conn;
 
 	if (!is_char(buf, '=')) {
 		return -ENOTSUP;
@@ -1305,13 +1354,20 @@ static int bt_hfp_ag_bcs_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 	}
 	hfp_ag_unlock(ag);
 
-	atomic_clear_bit(ag->flags, BT_HFP_AG_CODEC_CONN);
+	codec_conn = atomic_test_and_clear_bit(ag->flags, BT_HFP_AG_CODEC_CONN);
 	atomic_clear_bit(ag->flags, BT_HFP_AG_CODEC_CHANGED);
 
 	if (err == 0) {
+		if (codec_conn && bt_ag && bt_ag->codec_negotiate) {
+			bt_ag->codec_negotiate(ag, err);
+		}
 		err = hfp_ag_next_step(ag, bt_hfp_ag_unit_codec_conn_setup, NULL);
 	} else {
 		bt_hfp_call_state_t call_state;
+
+		if (codec_conn && bt_ag && bt_ag->codec_negotiate) {
+			bt_ag->codec_negotiate(ag, err);
+		}
 
 		hfp_ag_lock(ag);
 		call_state = ag->call_state;
@@ -1365,6 +1421,14 @@ static int bt_hfp_ag_atd_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 		}
 	} else {
 		number = &buf->data[0];
+		if (bt_ag && bt_ag->number_call) {
+			err = bt_ag->number_call(ag, &buf->data[0]);
+			if (err) {
+				return err;
+			}
+		} else {
+			return -ENOTSUP;
+		}
 	}
 
 	len = strlen(number);
@@ -1421,6 +1485,10 @@ static int bt_hfp_ag_clip_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 	int err;
 	uint32_t clip;
 
+	if (!is_char(buf, '=')) {
+		return -ENOTSUP;
+	}
+
 	err = get_number(buf, &clip);
 	if (err != 0) {
 		return -ENOTSUP;
@@ -1439,6 +1507,254 @@ static int bt_hfp_ag_clip_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 	return err;
 }
 
+static int bt_hfp_ag_vgm_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
+{
+	int err;
+	uint32_t vgm;
+
+	if (!is_char(buf, '=')) {
+		return -ENOTSUP;
+	}
+
+	err = get_number(buf, &vgm);
+	if (err != 0) {
+		return -ENOTSUP;
+	}
+
+	if (!is_char(buf, '\r')) {
+		return -ENOTSUP;
+	}
+
+	if (vgm > BT_HFP_HF_VGM_GAIN_MAX) {
+		LOG_ERR("Invalid vgm (%d>%d)", vgm, BT_HFP_HF_VGM_GAIN_MAX);
+		return -ENOTSUP;
+	}
+
+	if (bt_ag && bt_ag->vgm) {
+		bt_ag->vgm(ag, (uint8_t)vgm);
+	}
+	return err;
+}
+
+static int bt_hfp_ag_vgs_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
+{
+	int err;
+	uint32_t vgs;
+
+	if (!is_char(buf, '=')) {
+		return -ENOTSUP;
+	}
+
+	err = get_number(buf, &vgs);
+	if (err != 0) {
+		return -ENOTSUP;
+	}
+
+	if (!is_char(buf, '\r')) {
+		return -ENOTSUP;
+	}
+
+	if (vgs > BT_HFP_HF_VGS_GAIN_MAX) {
+		LOG_ERR("Invalid vgs (%d>%d)", vgs, BT_HFP_HF_VGS_GAIN_MAX);
+		return -ENOTSUP;
+	}
+
+	if (bt_ag && bt_ag->vgs) {
+		bt_ag->vgs(ag, (uint8_t)vgs);
+	}
+	return err;
+}
+
+static int bt_hfp_ag_nrec_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
+{
+	int err;
+	uint32_t disable;
+
+	if (!is_char(buf, '=')) {
+		return -ENOTSUP;
+	}
+
+	err = get_number(buf, &disable);
+	if (err != 0) {
+		return -ENOTSUP;
+	}
+
+	if (!is_char(buf, '\r')) {
+		return -ENOTSUP;
+	}
+
+	if (!(ag->ag_features & BT_HFP_AG_SDP_FEATURE_3WAY_CALL)) {
+		return -ENOTSUP;
+	}
+
+	if (disable) {
+		LOG_ERR("Only support EC NR disable");
+		return -ENOTSUP;
+	}
+
+#if defined(CONFIG_BT_HFP_AG_ECNR)
+	if (bt_ag && bt_ag->ecnr_turn_off) {
+		bt_ag->ecnr_turn_off(ag);
+		return 0;
+	}
+#endif /* CONFIG_BT_HFP_AG_ECNR */
+	return -ENOTSUP;
+}
+
+static void btrh_held_call_updated_cb(struct bt_hfp_ag *ag, void *user_data)
+{
+	bt_hfp_ag_set_call_state(ag, BT_HFP_CALL_ACTIVE);
+}
+
+static void btrh_held_call_setup_updated_cb(struct bt_hfp_ag *ag, void *user_data)
+{
+	if (bt_ag && bt_ag->incoming_held) {
+		bt_ag->incoming_held(ag);
+	}
+}
+
+static void btrh_held_cb(struct bt_hfp_ag *ag, void *user_data)
+{
+	int err;
+
+	err = hfp_ag_update_indicator(ag, BT_HFP_AG_CALL_IND, 1, btrh_held_call_updated_cb, NULL);
+	if (err != 0) {
+		LOG_ERR("Fail to send err :(%d)", err);
+		bt_hfp_ag_unit_call_terminate(ag, user_data);
+	}
+
+	err = hfp_ag_update_indicator(ag, BT_HFP_AG_CALL_SETUP_IND, BT_HFP_CALL_SETUP_NONE,
+					btrh_held_call_setup_updated_cb, NULL);
+	if (err) {
+		LOG_ERR("Fail to send err :(%d)", err);
+		bt_hfp_ag_unit_call_terminate(ag, user_data);
+	}
+}
+
+static void btrh_accept_cb(struct bt_hfp_ag *ag, void *user_data)
+{
+	int err;
+
+	if (bt_ag && bt_ag->accept) {
+		bt_ag->accept(ag);
+	}
+
+	err = bt_hfp_ag_create_audio_connection(ag);
+	if (err) {
+		bt_hfp_ag_unit_call_terminate(ag, user_data);
+	}
+}
+
+static void btrh_reject_cb(struct bt_hfp_ag *ag, void *user_data)
+{
+	int err;
+
+	err = hfp_ag_update_indicator(ag, BT_HFP_AG_CALL_IND, 0, bt_hfp_ag_reject_cb, NULL);
+	if (err) {
+		bt_hfp_ag_unit_call_terminate(ag, user_data);
+	}
+}
+
+static int bt_hfp_ag_btrh_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
+{
+	int err;
+	uint32_t action;
+	bt_hfp_call_state_t call_state;
+
+	hfp_ag_lock(ag);
+	call_state = ag->call_state;
+	hfp_ag_unlock(ag);
+
+	if (is_char(buf, '?')) {
+		if (atomic_test_bit(ag->flags, BT_HFP_AG_INCOMING_HELD) &&
+			(call_state == BT_HFP_CALL_ACTIVE)) {
+			err = hfp_ag_send_data(ag, NULL, NULL, "\r\n+BTRH:%d\r\n",
+					BT_HFP_BTRH_ON_HOLD);
+			if (err) {
+				LOG_ERR("Fail to send err :(%d)", err);
+			}
+			return err;
+		}
+		return 0;
+	}
+
+	if (!is_char(buf, '=')) {
+		return -ENOTSUP;
+	}
+
+	err = get_number(buf, &action);
+	if (err != 0) {
+		return -ENOTSUP;
+	}
+
+	if (!is_char(buf, '\r')) {
+		return -ENOTSUP;
+	}
+
+	if (atomic_test_bit(ag->flags, BT_HFP_AG_INCOMING_CALL)) {
+		if (action == BT_HFP_BTRH_ON_HOLD) {
+			if ((call_state == BT_HFP_CALL_ALERTING) ||
+				(call_state == BT_HFP_CALL_INCOMING)) {
+				atomic_set_bit(ag->flags, BT_HFP_AG_INCOMING_HELD);
+				err = hfp_ag_send_data(ag, btrh_held_cb, NULL, "\r\n+BTRH:%d\r\n",
+						BT_HFP_BTRH_ON_HOLD);
+				if (err) {
+					LOG_ERR("Fail to send err :(%d)", err);
+				}
+				return err;
+			}
+		} else if (action == BT_HFP_BTRH_ACCEPTED) {
+			if (atomic_test_and_clear_bit(ag->flags, BT_HFP_AG_INCOMING_HELD) &&
+				(call_state == BT_HFP_CALL_ACTIVE)) {
+				err = hfp_ag_send_data(ag, btrh_accept_cb, NULL, "\r\n+BTRH:%d\r\n",
+						BT_HFP_BTRH_ACCEPTED);
+				if (err) {
+					LOG_ERR("Fail to send err :(%d)", err);
+				}
+				return err;
+			}
+		} else if (action == BT_HFP_BTRH_REJECTED) {
+			if (atomic_test_and_clear_bit(ag->flags, BT_HFP_AG_INCOMING_HELD) &&
+				(call_state == BT_HFP_CALL_ACTIVE)) {
+				err = hfp_ag_send_data(ag, btrh_reject_cb, NULL, "\r\n+BTRH:%d\r\n",
+						BT_HFP_BTRH_REJECTED);
+				if (err) {
+					LOG_ERR("Fail to send err :(%d)", err);
+				}
+				return err;
+			}
+		}
+	}
+
+	return -ENOTSUP;
+}
+
+static int bt_hfp_ag_ccwa_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
+{
+	int err;
+	uint32_t value;
+
+	if (!is_char(buf, '=')) {
+		return -ENOTSUP;
+	}
+
+	err = get_number(buf, &value);
+	if (err != 0) {
+		return -ENOTSUP;
+	}
+
+	if (!is_char(buf, '\r')) {
+		return -ENOTSUP;
+	}
+
+	if (value > 1) {
+		return -ENOTSUP;
+	}
+
+	atomic_set_bit_to(ag->flags, BT_HFP_AG_CCWA_ENABLE, value);
+	return 0;
+}
+
 static struct bt_hfp_ag_at_cmd_handler cmd_handlers[] = {
 	{"AT+BRSF", bt_hfp_ag_brsf_handler}, {"AT+BAC", bt_hfp_ag_bac_handler},
 	{"AT+CIND", bt_hfp_ag_cind_handler}, {"AT+CMER", bt_hfp_ag_cmer_handler},
@@ -1448,7 +1764,9 @@ static struct bt_hfp_ag_at_cmd_handler cmd_handlers[] = {
 	{"ATA", bt_hfp_ag_ata_handler},      {"AT+COPS", bt_hfp_ag_cops_handler},
 	{"AT+BCC", bt_hfp_ag_bcc_handler},   {"AT+BCS", bt_hfp_ag_bcs_handler},
 	{"ATD", bt_hfp_ag_atd_handler},      {"AT+BLDN", bt_hfp_ag_bldn_handler},
-	{"AT+CLIP", bt_hfp_ag_clip_handler},
+	{"AT+CLIP", bt_hfp_ag_clip_handler}, {"AT+VGM", bt_hfp_ag_vgm_handler},
+	{"AT+VGS", bt_hfp_ag_vgs_handler},   {"AT+NREC", bt_hfp_ag_nrec_handler},
+	{"AT+BTRH", bt_hfp_ag_btrh_handler}, {"AT+CCWA", bt_hfp_ag_ccwa_handler},
 };
 
 static void hfp_ag_connected(struct bt_rfcomm_dlc *dlc)
@@ -1597,7 +1915,7 @@ static void hfp_ag_sent(struct bt_rfcomm_dlc *dlc, int err)
 	}
 
 	tx = CONTAINER_OF(node, struct bt_ag_tx, node);
-	LOG_ERR("Completed pending tx %p", tx);
+	LOG_DBG("Completed pending tx %p", tx);
 
 	/* Restart the tx work */
 	k_work_reschedule(&ag->tx_work, K_NO_WAIT);
@@ -1812,8 +2130,6 @@ int bt_hfp_ag_connect(struct bt_conn *conn, struct bt_hfp_ag **ag, uint8_t chann
 
 		k_work_init_delayable(&_ag->tx_work, bt_ag_tx_work);
 
-		atomic_set_bit(_ag->flags, BT_HFP_AG_CODEC_CHANGED);
-
 		*ag = _ag;
 	}
 
@@ -1948,9 +2264,10 @@ int bt_hfp_ag_remote_incoming(struct bt_hfp_ag *ag, const char *number)
 	return err;
 }
 
-int bt_hfp_ag_reject(struct bt_hfp_ag *ag)
+int bt_hfp_ag_hold_incoming(struct bt_hfp_ag *ag)
 {
-	int err;
+	int err = 0;
+	bt_hfp_call_state_t call_state;
 
 	LOG_DBG("");
 
@@ -1964,25 +2281,76 @@ int bt_hfp_ag_reject(struct bt_hfp_ag *ag)
 		return -ENOTCONN;
 	}
 
-	if ((ag->call_state != BT_HFP_CALL_ALERTING) && (ag->call_state != BT_HFP_CALL_INCOMING)) {
-		hfp_ag_unlock(ag);
-		return -EINVAL;
-	}
+	call_state = ag->call_state;
 	hfp_ag_unlock(ag);
 
 	if (!atomic_test_bit(ag->flags, BT_HFP_AG_INCOMING_CALL)) {
 		return -EINVAL;
 	}
 
-	err = hfp_ag_update_indicator(ag, BT_HFP_AG_CALL_SETUP_IND, BT_HFP_CALL_SETUP_NONE,
-					bt_hfp_ag_reject_cb, NULL);
+	if ((call_state == BT_HFP_CALL_ALERTING) ||
+		(call_state == BT_HFP_CALL_INCOMING)) {
+		atomic_set_bit(ag->flags, BT_HFP_AG_INCOMING_HELD);
+		err = hfp_ag_send_data(ag, btrh_held_cb, NULL, "\r\n+BTRH:%d\r\n",
+				BT_HFP_BTRH_ON_HOLD);
+		if (err) {
+			LOG_ERR("Fail to send err :(%d)", err);
+		}
+		return err;
+	}
 
-	return err;
+	return -EINVAL;
+}
+
+int bt_hfp_ag_reject(struct bt_hfp_ag *ag)
+{
+	int err;
+	bt_hfp_call_state_t call_state;
+
+	LOG_DBG("");
+
+	if (ag == NULL) {
+		return -EINVAL;
+	}
+
+	hfp_ag_lock(ag);
+	if (ag->state != BT_HFP_CONNECTED) {
+		hfp_ag_unlock(ag);
+		return -ENOTCONN;
+	}
+
+	call_state = ag->call_state;
+	hfp_ag_unlock(ag);
+
+	if (!atomic_test_bit(ag->flags, BT_HFP_AG_INCOMING_CALL)) {
+		return -EINVAL;
+	}
+
+	if ((call_state == BT_HFP_CALL_ALERTING) ||
+		(call_state == BT_HFP_CALL_INCOMING)) {
+		err = hfp_ag_update_indicator(ag, BT_HFP_AG_CALL_SETUP_IND, BT_HFP_CALL_SETUP_NONE,
+						bt_hfp_ag_reject_cb, NULL);
+
+		return err;
+	}
+
+	if ((call_state == BT_HFP_CALL_ACTIVE) &&
+		atomic_test_and_clear_bit(ag->flags, BT_HFP_AG_INCOMING_HELD)) {
+		err = hfp_ag_send_data(ag, btrh_reject_cb, NULL, "\r\n+BTRH:%d\r\n",
+				BT_HFP_BTRH_REJECTED);
+		if (err) {
+			LOG_ERR("Fail to send err :(%d)", err);
+		}
+		return err;
+	}
+
+	return -EINVAL;
 }
 
 int bt_hfp_ag_accept(struct bt_hfp_ag *ag)
 {
 	int err;
+	bt_hfp_call_state_t call_state;
 
 	LOG_DBG("");
 
@@ -1996,33 +2364,45 @@ int bt_hfp_ag_accept(struct bt_hfp_ag *ag)
 		return -ENOTCONN;
 	}
 
-	if (ag->call_state != BT_HFP_CALL_ALERTING) {
-		hfp_ag_unlock(ag);
-		return -EINVAL;
-	}
+	call_state = ag->call_state;
 	hfp_ag_unlock(ag);
 
 	if (!atomic_test_bit(ag->flags, BT_HFP_AG_INCOMING_CALL)) {
 		return -EINVAL;
 	}
 
-	err = hfp_ag_update_indicator(ag, BT_HFP_AG_CALL_IND, 1, bt_hfp_ag_accept_cb, NULL);
-	if (err != 0) {
-		LOG_ERR("Fail to send err :(%d)", err);
+	if (call_state == BT_HFP_CALL_ALERTING) {
+		err = hfp_ag_update_indicator(ag, BT_HFP_AG_CALL_IND, 1, bt_hfp_ag_accept_cb, NULL);
+		if (err) {
+			LOG_ERR("Fail to send err :(%d)", err);
+		}
+
+		err = hfp_ag_update_indicator(ag, BT_HFP_AG_CALL_SETUP_IND, BT_HFP_CALL_SETUP_NONE,
+						bt_hfp_ag_audio_connection, NULL);
+		if (err) {
+			LOG_ERR("Fail to send err :(%d)", err);
+		}
+
+		return err;
 	}
 
-	err = hfp_ag_update_indicator(ag, BT_HFP_AG_CALL_SETUP_IND, BT_HFP_CALL_SETUP_NONE,
-					bt_hfp_ag_audio_connection, NULL);
-	if (err != 0) {
-		LOG_ERR("Fail to send err :(%d)", err);
+	if (atomic_test_and_clear_bit(ag->flags, BT_HFP_AG_INCOMING_HELD) &&
+		(call_state == BT_HFP_CALL_ACTIVE)) {
+		err = hfp_ag_send_data(ag, btrh_accept_cb, NULL, "\r\n+BTRH:%d\r\n",
+				BT_HFP_BTRH_ACCEPTED);
+		if (err) {
+			LOG_ERR("Fail to send err :(%d)", err);
+		}
+		return err;
 	}
 
-	return err;
+	return -EINVAL;
 }
 
 int bt_hfp_ag_terminate(struct bt_hfp_ag *ag)
 {
 	int err;
+	bt_hfp_call_state_t call_state;
 
 	LOG_DBG("");
 
@@ -2036,11 +2416,23 @@ int bt_hfp_ag_terminate(struct bt_hfp_ag *ag)
 		return -ENOTCONN;
 	}
 
-	if ((ag->call_state != BT_HFP_CALL_ACTIVE) && (ag->call_state != BT_HFP_CALL_HOLD)) {
-		hfp_ag_unlock(ag);
+	call_state = ag->call_state;
+	hfp_ag_unlock(ag);
+
+	if (atomic_test_and_clear_bit(ag->flags, BT_HFP_AG_INCOMING_HELD) &&
+		atomic_test_bit(ag->flags, BT_HFP_AG_INCOMING_CALL) &&
+		(call_state == BT_HFP_CALL_ACTIVE)) {
+		err = hfp_ag_send_data(ag, btrh_reject_cb, NULL, "\r\n+BTRH:%d\r\n",
+				BT_HFP_BTRH_REJECTED);
+		if (err) {
+			LOG_ERR("Fail to send err :(%d)", err);
+		}
+		return err;
+	}
+
+	if ((call_state != BT_HFP_CALL_ACTIVE) && (call_state != BT_HFP_CALL_HOLD)) {
 		return -EINVAL;
 	}
-	hfp_ag_unlock(ag);
 
 	err = hfp_ag_update_indicator(ag, BT_HFP_AG_CALL_IND, 0, bt_hfp_ag_terminate_cb, NULL);
 
@@ -2296,7 +2688,7 @@ int bt_hfp_ag_set_indicator(struct bt_hfp_ag *ag, enum bt_hfp_ag_indicator index
 	return err;
 }
 
-int bt_hfp_ag_set_operator(struct bt_hfp_ag *ag, char *name)
+int bt_hfp_ag_set_operator(struct bt_hfp_ag *ag, uint8_t mode, char *name)
 {
 	int len;
 
@@ -2316,12 +2708,13 @@ int bt_hfp_ag_set_operator(struct bt_hfp_ag *ag, char *name)
 	len = MIN(sizeof(ag->operator) - 1, len);
 	memcpy(ag->operator, name, len);
 	ag->operator[len] = '\0';
+	ag->mode = mode;
 	hfp_ag_unlock(ag);
 
 	return 0;
 }
 
-int bt_hfp_ag_select_codec(struct bt_hfp_ag *ag, uint8_t id)
+int bt_hfp_ag_audio_connect(struct bt_hfp_ag *ag, uint8_t id)
 {
 	int err;
 
@@ -2337,9 +2730,22 @@ int bt_hfp_ag_select_codec(struct bt_hfp_ag *ag, uint8_t id)
 		return -ENOTCONN;
 	}
 
-	if (!(ag->hf_codec_ids && BIT(id))) {
+	if (ag->hf_codec_ids) {
+		if (!(ag->hf_codec_ids & BIT(id))) {
+			hfp_ag_unlock(ag);
+			return -EINVAL;
+		}
+	} else {
+		if (id != BT_HFP_AG_CODEC_CVSD) {
+			hfp_ag_unlock(ag);
+			return -ENOTSUP;
+		}
+	}
+
+	if (ag->sco_chan.sco) {
+		LOG_ERR("Audio conenction has been connected");
 		hfp_ag_unlock(ag);
-		return -ENOTSUP;
+		return -ECONNREFUSED;
 	}
 	hfp_ag_unlock(ag);
 
@@ -2348,12 +2754,112 @@ int bt_hfp_ag_select_codec(struct bt_hfp_ag *ag, uint8_t id)
 	}
 
 	hfp_ag_lock(ag);
+	if (ag->selected_codec_id != id) {
+		atomic_set_bit(ag->flags, BT_HFP_AG_CODEC_CHANGED);
+	}
 	ag->selected_codec_id = id;
 	hfp_ag_unlock(ag);
-
-	atomic_set_bit(ag->flags, BT_HFP_AG_CODEC_CHANGED);
 
 	err = bt_hfp_ag_create_audio_connection(ag);
 
 	return err;
+}
+
+int bt_hfp_ag_vgm(struct bt_hfp_ag *ag, uint8_t vgm)
+{
+	int err;
+
+	LOG_DBG("");
+
+	if (ag == NULL) {
+		return -EINVAL;
+	}
+
+	if (vgm > BT_HFP_HF_VGM_GAIN_MAX) {
+		LOG_ERR("Invalid VGM (%d>%d)", vgm, BT_HFP_HF_VGM_GAIN_MAX);
+		return -EINVAL;
+	}
+
+	hfp_ag_lock(ag);
+	if (ag->state != BT_HFP_CONNECTED) {
+		hfp_ag_unlock(ag);
+		return -ENOTCONN;
+	}
+
+	if (!(ag->hf_features & BT_HFP_HF_FEATURE_VOLUME)) {
+		hfp_ag_unlock(ag);
+		LOG_ERR("Remote Audio Volume Control is unsupported");
+		return -ENOTSUP;
+	}
+	hfp_ag_unlock(ag);
+
+	err = hfp_ag_send_data(ag, NULL, NULL, "\r\n+VGM=%d\r\n", vgm);
+	if (err) {
+		LOG_ERR("Fail to notify vgm err :(%d)", err);
+	}
+
+	return err;
+}
+
+int bt_hfp_ag_vgs(struct bt_hfp_ag *ag, uint8_t vgs)
+{
+	int err;
+
+	LOG_DBG("");
+
+	if (ag == NULL) {
+		return -EINVAL;
+	}
+
+	if (vgs > BT_HFP_HF_VGS_GAIN_MAX) {
+		LOG_ERR("Invalid VGM (%d>%d)", vgs, BT_HFP_HF_VGS_GAIN_MAX);
+		return -EINVAL;
+	}
+
+	hfp_ag_lock(ag);
+	if (ag->state != BT_HFP_CONNECTED) {
+		hfp_ag_unlock(ag);
+		return -ENOTCONN;
+	}
+
+	if (!(ag->hf_features & BT_HFP_HF_FEATURE_VOLUME)) {
+		hfp_ag_unlock(ag);
+		LOG_ERR("Remote Audio Volume Control is unsupported");
+		return -ENOTSUP;
+	}
+	hfp_ag_unlock(ag);
+
+	err = hfp_ag_send_data(ag, NULL, NULL, "\r\n+VGS=%d\r\n", vgs);
+	if (err) {
+		LOG_ERR("Fail to notify vgs err :(%d)", err);
+	}
+
+	return err;
+}
+
+int bt_hfp_ag_inband_ringtone(struct bt_hfp_ag *ag, bool inband)
+{
+	int err;
+
+	LOG_DBG("");
+
+	if (ag == NULL) {
+		return -EINVAL;
+	}
+
+	hfp_ag_lock(ag);
+	if (ag->state != BT_HFP_CONNECTED) {
+		hfp_ag_unlock(ag);
+		return -ENOTCONN;
+	}
+	hfp_ag_unlock(ag);
+
+	err = hfp_ag_send_data(ag, NULL, NULL, "\r\n+BSIR=%d\r\n", inband ? 1 : 0);
+	if (err) {
+		LOG_ERR("Fail to set inband ringtone err :(%d)", err);
+		return err;
+	}
+
+	atomic_set_bit_to(ag->flags, BT_HFP_AG_INBAND_RING, inband);
+	return 0;
 }
