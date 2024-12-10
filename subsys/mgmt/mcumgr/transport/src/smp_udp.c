@@ -164,6 +164,7 @@ static int create_socket(enum proto_type proto, int *sock)
 	int tmp_sock;
 	int err;
 	struct sockaddr *addr;
+	socklen_t addr_len = 0;
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV4
 	struct sockaddr_in addr4;
@@ -175,6 +176,7 @@ static int create_socket(enum proto_type proto, int *sock)
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV4
 	if (proto == PROTOCOL_IPV4) {
+		addr_len = sizeof(struct sockaddr_in);
 		memset(&addr4, 0, sizeof(addr4));
 		addr4.sin_family = AF_INET;
 		addr4.sin_port = htons(CONFIG_MCUMGR_TRANSPORT_UDP_PORT);
@@ -185,6 +187,7 @@ static int create_socket(enum proto_type proto, int *sock)
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV6
 	if (proto == PROTOCOL_IPV6) {
+		addr_len = sizeof(struct sockaddr_in6);
 		memset(&addr6, 0, sizeof(addr6));
 		addr6.sin6_family = AF_INET6;
 		addr6.sin6_port = htons(CONFIG_MCUMGR_TRANSPORT_UDP_PORT);
@@ -203,7 +206,7 @@ static int create_socket(enum proto_type proto, int *sock)
 		return -err;
 	}
 
-	if (zsock_bind(tmp_sock, addr, sizeof(*addr)) < 0) {
+	if (zsock_bind(tmp_sock, addr, addr_len) < 0) {
 		err = errno;
 		LOG_ERR("Could not bind to receive socket (%s), err: %i",
 			smp_udp_proto_to_name(proto), err);
