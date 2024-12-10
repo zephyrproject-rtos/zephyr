@@ -147,7 +147,7 @@ def main(options: argparse.Namespace, default_options: argparse.Namespace):
                     continue
                 logger.debug(
                     f"{i.platform.name:<25} {i.testsuite.name:<50}"
-                    f" {Fore.YELLOW}SKIPPED{Fore.RESET}: {i.reason}"
+                    f" {Fore.YELLOW}FILTERED{Fore.RESET}: {i.reason}"
                 )
 
     report = Reporting(tplan, env)

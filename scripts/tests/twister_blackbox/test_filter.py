@@ -24,47 +24,47 @@ class TestFilter:
         (
             'x86',
             [
-                r'(it8xxx2_evb/it81302bx).*?(SKIPPED: Command line testsuite arch filter)',
+                r'(it8xxx2_evb/it81302bx).*?(FILTERED: Command line testsuite arch filter)',
             ],
         ),
         (
             'arm',
             [
-                r'(it8xxx2_evb/it81302bx).*?(SKIPPED: Command line testsuite arch filter)',
-                r'(qemu_x86/atom).*?(SKIPPED: Command line testsuite arch filter)',
-                r'(hsdk/arc_hsdk).*?(SKIPPED: Command line testsuite arch filter)',
+                r'(it8xxx2_evb/it81302bx).*?(FILTERED: Command line testsuite arch filter)',
+                r'(qemu_x86/atom).*?(FILTERED: Command line testsuite arch filter)',
+                r'(hsdk/arc_hsdk).*?(FILTERED: Command line testsuite arch filter)',
             ]
         ),
         (
             'riscv',
             [
-                r'(qemu_x86/atom).*?(SKIPPED: Command line testsuite arch filter)',
-                r'(hsdk/arc_hsdk).*?(SKIPPED: Command line testsuite arch filter)',            ]
+                r'(qemu_x86/atom).*?(FILTERED: Command line testsuite arch filter)',
+                r'(hsdk/arc_hsdk).*?(FILTERED: Command line testsuite arch filter)',            ]
         )
     ]
     TESTDATA_2 = [
         (
             'nxp',
             [
-                r'(it8xxx2_evb/it81302bx).*?(SKIPPED: Not a selected vendor platform)',
-                r'(hsdk/arc_hsdk).*?(SKIPPED: Not a selected vendor platform)',
-                r'(qemu_x86).*?(SKIPPED: Not a selected vendor platform)',
+                r'(it8xxx2_evb/it81302bx).*?(FILTERED: Not a selected vendor platform)',
+                r'(hsdk/arc_hsdk).*?(FILTERED: Not a selected vendor platform)',
+                r'(qemu_x86).*?(FILTERED: Not a selected vendor platform)',
             ],
         ),
         (
             'intel',
             [
-                r'(it8xxx2_evb/it81302bx).*?(SKIPPED: Not a selected vendor platform)',
-                r'(qemu_x86/atom).*?(SKIPPED: Not a selected vendor platform)',
+                r'(it8xxx2_evb/it81302bx).*?(FILTERED: Not a selected vendor platform)',
+                r'(qemu_x86/atom).*?(FILTERED: Not a selected vendor platform)',
                 r'(DEBUG\s+- adding intel_adl_crb)'
             ]
         ),
         (
             'ite',
             [
-                r'(qemu_x86/atom).*?(SKIPPED: Not a selected vendor platform)',
-                r'(intel_adl_crb/alder_lake).*?(SKIPPED: Not a selected vendor platform)',
-                r'(hsdk/arc_hsdk).*?(SKIPPED: Not a selected vendor platform)',
+                r'(qemu_x86/atom).*?(FILTERED: Not a selected vendor platform)',
+                r'(intel_adl_crb/alder_lake).*?(FILTERED: Not a selected vendor platform)',
+                r'(hsdk/arc_hsdk).*?(FILTERED: Not a selected vendor platform)',
                 r'(DEBUG\s+- adding it8xxx2_evb)'
             ]
         )
