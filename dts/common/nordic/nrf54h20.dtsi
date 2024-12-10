@@ -942,11 +942,8 @@
 				reg = <0x99c000 0x1000>;
 				status = "disabled";
 				cc-num = <16>;
-				/* GRTC uses both LFCLK and FLL16M, but its accuracy and
-				 * precision are inherited from LFCLK. that's why this
-				 *  one is linked here.
-				 */
-				clocks = <&lfclk>;
+				clocks = <&lfclk>, <&fll16m>;
+				clock-names = "lfclock", "hfclock";
 				power-domains = <&gpd NRF_GPD_SLOW_ACTIVE>;
 			};
 
