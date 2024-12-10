@@ -615,7 +615,7 @@ static int wifi_ap_disable(uint32_t mgmt_request, struct net_if *iface,
 	const struct device *dev = net_if_get_device(iface);
 	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
 
-	if (wifi_mgmt_api == NULL || wifi_mgmt_api->ap_enable == NULL) {
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->ap_disable == NULL) {
 		return -ENOTSUP;
 	}
 
