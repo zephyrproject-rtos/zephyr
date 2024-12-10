@@ -7,8 +7,11 @@
 
 #include <stdint.h>
 
+#include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/bluetooth/hci.h>
+
+#include <psa/crypto.h>
 
 #include "ecc.h"
 #include "hci_core.h"
@@ -37,6 +40,35 @@ static const uint8_t debug_public_key[BT_PUB_KEY_LEN] = {
 bool bt_pub_key_is_debug(uint8_t *cmp_pub_key)
 {
 	return memcmp(cmp_pub_key, debug_public_key, BT_PUB_KEY_LEN) == 0;
+}
+
+bool bt_pub_key_is_valid(const uint8_t key[BT_PUB_KEY_LEN])
+{
+	uint8_t key_be[BT_PUB_KEY_LEN + 1];
+	psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
+	psa_status_t ret;
+	psa_key_id_t handle;
+
+	psa_set_key_type(&attr, PSA_KEY_TYPE_ECC_PUBLIC_KEY(PSA_ECC_FAMILY_SECP_R1));
+	psa_set_key_bits(&attr, 256);
+	psa_set_key_usage_flags(&attr, PSA_KEY_USAGE_DERIVE);
+	psa_set_key_algorithm(&attr, PSA_ALG_ECDH);
+
+	/* PSA expects secp256r1 public key to start with a predefined 0x04 byte */
+	key_be[0] = 0x04;
+	sys_memcpy_swap(&key_be[1], key, BT_PUB_KEY_COORD_LEN);
+	sys_memcpy_swap(&key_be[1 + BT_PUB_KEY_COORD_LEN], &key[BT_PUB_KEY_COORD_LEN],
+			BT_PUB_KEY_COORD_LEN);
+
+	ret = psa_import_key(&attr, key_be, sizeof(key_be), &handle);
+	psa_reset_key_attributes(&attr);
+
+	if (ret == PSA_SUCCESS) {
+		psa_destroy_key(handle);
+		return true;
+	}
+
+	return false;
 }
 
 int bt_pub_key_gen(struct bt_pub_key_cb *new_cb)
