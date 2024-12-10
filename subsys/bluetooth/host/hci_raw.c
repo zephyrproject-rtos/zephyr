@@ -35,8 +35,20 @@ static uint8_t raw_mode = BT_HCI_RAW_MODE_H4;
 static uint8_t raw_mode;
 #endif
 
-NET_BUF_POOL_FIXED_DEFINE(hci_rx_pool, BT_BUF_RX_COUNT,
-			  BT_BUF_RX_SIZE, sizeof(struct bt_buf_data), NULL);
+static bt_buf_rx_freed_cb_t buf_rx_freed_cb;
+
+static void hci_rx_buf_destroy(struct net_buf *buf)
+{
+	net_buf_destroy(buf);
+
+	if (buf_rx_freed_cb) {
+		/* bt_buf_get_rx is used for all types of RX buffers */
+		buf_rx_freed_cb(BT_BUF_EVT | BT_BUF_ACL_IN | BT_BUF_ISO_IN);
+	}
+}
+
+NET_BUF_POOL_FIXED_DEFINE(hci_rx_pool, BT_BUF_RX_COUNT, BT_BUF_RX_SIZE, sizeof(struct bt_buf_data),
+			  hci_rx_buf_destroy);
 NET_BUF_POOL_FIXED_DEFINE(hci_cmd_pool, CONFIG_BT_BUF_CMD_TX_COUNT,
 			  BT_BUF_CMD_SIZE(CONFIG_BT_BUF_CMD_TX_SIZE),
 			  sizeof(struct bt_buf_data), NULL);
@@ -91,6 +103,11 @@ struct net_buf *bt_buf_get_rx(enum bt_buf_type type, k_timeout_t timeout)
 	bt_buf_set_type(buf, type);
 
 	return buf;
+}
+
+void bt_buf_rx_freed_cb_set(bt_buf_rx_freed_cb_t cb)
+{
+	buf_rx_freed_cb = cb;
 }
 
 struct net_buf *bt_buf_get_tx(enum bt_buf_type type, k_timeout_t timeout,
