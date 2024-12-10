@@ -38,14 +38,14 @@ config ESP32_TIMER_TASK_PRIO
 	  Set the task priority for the internal high resolution ESP Timer
 	  used in Wi-Fi and BLE peripherals.
 
-if (BT_ESP32 || WIFI_ESP32)
+if (BT_ESP32 || WIFI_ESP32 || IEEE802154_ESP32)
 
 config ESP32_PHY_MAX_TX_POWER
-	int "Max Wi-Fi/BLE TX power (dBm)"
+	int "Max Wi-Fi/BLE/IEEE802154 TX power (dBm)"
 	range 10 20
 	default 20
 	help
-	  Set maximum transmit power for Wi-Fi radio. Actual transmit power for high
+	  Set maximum transmit power for the ESP32 radio. Actual transmit power for high
 	  data rates may be lower than this setting.
 
 config ESP32_SW_COEXIST_ENABLE
