@@ -8,6 +8,14 @@
 #include <nxp/mcx/MCXC444VLH-pinctrl.h>
 
 &pinctrl {
+	pinmux_adc0: pinmux_adc0 {
+		group0 {
+			pinmux = <ADC0_SE0_PTE20>,
+				 <ADC0_SE3_PTE22>;
+			drive-strength = "low";
+			slew-rate = "slow";
+		};
+	};
 	pinmux_i2c0: pinmux_i2c0 {
 		group0 {
 			pinmux = <I2C0_SCL_PTE24>,
