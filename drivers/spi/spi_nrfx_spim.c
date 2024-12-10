@@ -92,7 +92,7 @@ static inline void finalize_spi_transaction(const struct device *dev, bool deact
 		nrfy_spim_disable(reg);
 	}
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
-		pm_device_runtime_put(dev);
+		pm_device_runtime_put_async(dev, K_NO_WAIT);
 	}
 }
 
