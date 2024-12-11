@@ -62,14 +62,6 @@ config IEEE802154_NRF5_UICR_EUI64_REG
 
 endif # IEEE802154_NRF5_UICR_EUI64_ENABLE
 
-config IEEE802154_NRF5_FCS_IN_LENGTH
-	bool "Include FCS field in the overall packet length"
-	default y if IEEE802154_RAW_MODE || NET_L2_OPENTHREAD
-	help
-	  Some 802.15.4 L2 implementations expect that FCS length is included in
-	  the overall packet length while others not. Allow to configure this
-	  behavior, based on the selected upper layer.
-
 config IEEE802154_NRF5_DELAY_TRX_ACC
 	int "Clock accuracy for delayed operations"
 	default CLOCK_CONTROL_NRF_ACCURACY if (CLOCK_CONTROL_NRF && (CLOCK_CONTROL_NRF_ACCURACY < $(UINT8_MAX)))

@@ -272,8 +272,7 @@ static void b91_rf_rx_isr(void)
 	/* check CRC */
 	if (rf_zigbee_packet_crc_ok(data.rx_buffer)) {
 		/* get payload length */
-		if (IS_ENABLED(CONFIG_IEEE802154_RAW_MODE) ||
-		    IS_ENABLED(CONFIG_NET_L2_OPENTHREAD)) {
+		if (IS_ENABLED(CONFIG_IEEE802154_L2_PKT_INCL_FCS)) {
 			length = data.rx_buffer[B91_LENGTH_OFFSET];
 		} else {
 			length = data.rx_buffer[B91_LENGTH_OFFSET] - B91_FCS_LENGTH;
