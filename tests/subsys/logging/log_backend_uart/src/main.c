@@ -60,10 +60,10 @@ ZTEST_F(log_backend_uart, test_log_backend_uart_multi_instance)
 	LOG_RAW(TEST_DATA);
 
 	for (size_t i = 0; i < EMUL_UART_NUM; i++) {
-		uint8_t tx_content[SAMPLE_DATA_SIZE] = {0};
+		uint8_t tx_content[sizeof(TEST_DATA)] = {0};
 		size_t tx_len;
 
-		tx_len = uart_emul_get_tx_data(fixture->dev[i], tx_content, sizeof(tx_content));
+		tx_len = uart_emul_get_tx_data(fixture->dev[i], tx_content, SAMPLE_DATA_SIZE);
 		zassert_equal(tx_len, strlen(TEST_DATA),
 			      "%d: TX buffer length does not match. Expected %d, got %d",
 			      i, strlen(TEST_DATA), tx_len);
