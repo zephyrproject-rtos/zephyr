@@ -48,12 +48,6 @@
  */
 #define __TZ_WRAP_FUNC_RAW(preface, name, postface, store_lr, load_lr) \
 		__asm__ volatile( \
-			".global "#preface"; .type "#preface", %function"); \
-		__asm__ volatile( \
-			".global "#name"; .type "#name", %function"); \
-		__asm__ volatile( \
-			".global "#postface"; .type "#postface", %function"); \
-		__asm__ volatile( \
 			store_lr "\n\t" \
 			"push {r0-r3}\n\t" \
 			"bl " #preface "\n\t" \
