@@ -25,46 +25,43 @@
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/sys/atomic.h>
 
+#if defined(CONFIG_MINIMAL_LIBC) && !defined(CONFIG_POSIX_DEVICE_IO)
+#include <sys/_stdvtables.h>
+#endif
+
 struct stat;
 
-struct fd_entry {
-	void *obj;
-	const struct fd_op_vtable *vtable;
-	atomic_t refcount;
-	struct k_mutex lock;
-	struct k_condvar cond;
-	size_t offset;
-	uint32_t mode;
-};
-
 #if defined(CONFIG_POSIX_DEVICE_IO)
-static const struct fd_op_vtable stdinout_fd_op_vtable;
+// Forward declaration
+static const struct fd_op_vtable stdin_fd_op_vtable;
+static const struct fd_op_vtable stdout_fd_op_vtable;
+static const struct fd_op_vtable stderr_fd_op_vtable;
 
 BUILD_ASSERT(CONFIG_ZVFS_OPEN_MAX >= 3, "CONFIG_ZVFS_OPEN_MAX >= 3 for CONFIG_POSIX_DEVICE_IO");
 #endif /* defined(CONFIG_POSIX_DEVICE_IO) */
 
 static struct fd_entry fdtable[CONFIG_ZVFS_OPEN_MAX] = {
-#if defined(CONFIG_POSIX_DEVICE_IO)
+#if defined(CONFIG_POSIX_DEVICE_IO) || defined(CONFIG_MINIMAL_LIBC)
 	/*
 	 * Predefine entries for stdin/stdout/stderr.
 	 */
 	{
 		/* STDIN */
-		.vtable = &stdinout_fd_op_vtable,
+		.vtable = &stdin_fd_op_vtable,
 		.refcount = ATOMIC_INIT(1),
 		.lock = Z_MUTEX_INITIALIZER(fdtable[0].lock),
 		.cond = Z_CONDVAR_INITIALIZER(fdtable[0].cond),
 	},
 	{
 		/* STDOUT */
-		.vtable = &stdinout_fd_op_vtable,
+		.vtable = &stdout_fd_op_vtable,
 		.refcount = ATOMIC_INIT(1),
 		.lock = Z_MUTEX_INITIALIZER(fdtable[1].lock),
 		.cond = Z_CONDVAR_INITIALIZER(fdtable[1].cond),
 	},
 	{
 		/* STDERR */
-		.vtable = &stdinout_fd_op_vtable,
+		.vtable = &stderr_fd_op_vtable,
 		.refcount = ATOMIC_INIT(1),
 		.lock = Z_MUTEX_INITIALIZER(fdtable[2].lock),
 		.cond = Z_CONDVAR_INITIALIZER(fdtable[2].cond),
@@ -161,6 +158,15 @@ bool fdtable_fd_is_initialized(int fd)
 	return true;
 }
 #endif /* CONFIG_ZTEST */
+
+struct fd_entry *zvfs_get_fd_entry(int fd)
+{
+	if(_check_fd(fd) < 0) {
+		return NULL;
+	}
+
+	return &fdtable[fd];
+}
 
 void *zvfs_get_fd_obj(int fd, const struct fd_op_vtable *vtable, int err)
 {
@@ -560,10 +566,23 @@ static int stdinout_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 }
 
 
-static const struct fd_op_vtable stdinout_fd_op_vtable = {
+static const struct fd_op_vtable stdin_fd_op_vtable = {
 	.read = stdinout_read_vmeth,
 	.write = stdinout_write_vmeth,
 	.ioctl = stdinout_ioctl_vmeth,
 };
+
+static const struct fd_op_vtable stdout_fd_op_vtable = {
+	.read = stdinout_read_vmeth,
+	.write = stdinout_write_vmeth,
+	.ioctl = stdinout_ioctl_vmeth,
+};
+
+static const struct fd_op_vtable stderr_fd_op_vtable = {
+	.read = stdinout_read_vmeth,
+	.write = stdinout_write_vmeth,
+	.ioctl = stdinout_ioctl_vmeth,
+};
+
 
 #endif /* defined(CONFIG_POSIX_DEVICE_IO) */
