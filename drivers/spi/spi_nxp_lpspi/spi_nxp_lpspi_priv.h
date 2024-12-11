@@ -62,6 +62,7 @@ struct spi_mcux_data {
 	lpspi_master_handle_t handle;
 	struct spi_context ctx;
 	size_t transfer_len;
+	uint8_t word_size_bytes;
 #ifdef CONFIG_SPI_RTIO
 	struct spi_rtio *rtio_ctx;
 #endif
