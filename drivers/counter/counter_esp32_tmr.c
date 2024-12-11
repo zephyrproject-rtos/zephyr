@@ -13,7 +13,6 @@
 
 #include <zephyr/drivers/counter.h>
 #include <zephyr/drivers/clock_control.h>
-#include <zephyr/spinlock.h>
 #include <zephyr/kernel.h>
 #if defined(CONFIG_RISCV)
 #include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
@@ -62,8 +61,6 @@ struct counter_esp32_data {
 	struct timer_isr_func_t timer_isr_fun;
 };
 
-static struct k_spinlock lock;
-
 static int counter_esp32_init(const struct device *dev)
 {
 	const struct counter_esp32_config *cfg = dev->config;
@@ -77,8 +74,6 @@ static int counter_esp32_init(const struct device *dev)
 	 * by another timer of the same group.
 	 */
 	clock_control_on(cfg->clock_dev, cfg->clock_subsys);
-
-	k_spinlock_key_t key = k_spin_lock(&lock);
 
 	timer_hal_init(&data->hal_ctx, cfg->group, cfg->index);
 	data->alarm_cfg.callback = NULL;
@@ -95,8 +90,6 @@ static int counter_esp32_init(const struct device *dev)
 	timer_ll_enable_alarm(data->hal_ctx.dev, data->hal_ctx.timer_id, cfg->config.alarm_en);
 	timer_ll_set_reload_value(data->hal_ctx.dev, data->hal_ctx.timer_id, 0);
 	timer_ll_enable_counter(data->hal_ctx.dev, data->hal_ctx.timer_id, cfg->config.counter_en);
-
-	k_spin_unlock(&lock, key);
 
 	esp_clk_tree_src_get_freq_hz(GPTIMER_CLK_SRC_DEFAULT,
 				     ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &data->clock_src_hz);
@@ -116,10 +109,8 @@ static int counter_esp32_init(const struct device *dev)
 static int counter_esp32_start(const struct device *dev)
 {
 	struct counter_esp32_data *data = dev->data;
-	k_spinlock_key_t key = k_spin_lock(&lock);
 
 	timer_ll_enable_counter(data->hal_ctx.dev, data->hal_ctx.timer_id, TIMER_START);
-	k_spin_unlock(&lock, key);
 
 	return 0;
 }
@@ -127,10 +118,8 @@ static int counter_esp32_start(const struct device *dev)
 static int counter_esp32_stop(const struct device *dev)
 {
 	struct counter_esp32_data *data = dev->data;
-	k_spinlock_key_t key = k_spin_lock(&lock);
 
 	timer_ll_enable_counter(data->hal_ctx.dev, data->hal_ctx.timer_id, TIMER_PAUSE);
-	k_spin_unlock(&lock, key);
 
 	return 0;
 }
@@ -138,12 +127,9 @@ static int counter_esp32_stop(const struct device *dev)
 static int counter_esp32_get_value(const struct device *dev, uint32_t *ticks)
 {
 	struct counter_esp32_data *data = dev->data;
-	k_spinlock_key_t key = k_spin_lock(&lock);
 
 	timer_ll_trigger_soft_capture(data->hal_ctx.dev, data->hal_ctx.timer_id);
 	*ticks = (uint32_t)timer_ll_get_counter_value(data->hal_ctx.dev, data->hal_ctx.timer_id);
-
-	k_spin_unlock(&lock, key);
 
 	return 0;
 }
@@ -151,12 +137,9 @@ static int counter_esp32_get_value(const struct device *dev, uint32_t *ticks)
 static int counter_esp32_get_value_64(const struct device *dev, uint64_t *ticks)
 {
 	struct counter_esp32_data *data = dev->data;
-	k_spinlock_key_t key = k_spin_lock(&lock);
 
 	timer_ll_trigger_soft_capture(data->hal_ctx.dev, data->hal_ctx.timer_id);
 	*ticks = timer_ll_get_counter_value(data->hal_ctx.dev, data->hal_ctx.timer_id);
-
-	k_spin_unlock(&lock, key);
 
 	return 0;
 }
@@ -170,8 +153,6 @@ static int counter_esp32_set_alarm(const struct device *dev, uint8_t chan_id,
 
 	counter_esp32_get_value(dev, &now);
 
-	k_spinlock_key_t key = k_spin_lock(&lock);
-
 	if ((alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE) == 0) {
 		timer_ll_set_alarm_value(data->hal_ctx.dev, data->hal_ctx.timer_id,
 					 (now + alarm_cfg->ticks));
@@ -184,7 +165,6 @@ static int counter_esp32_set_alarm(const struct device *dev, uint8_t chan_id,
 	timer_ll_enable_alarm(data->hal_ctx.dev, data->hal_ctx.timer_id, TIMER_ALARM_EN);
 	data->alarm_cfg.callback = alarm_cfg->callback;
 	data->alarm_cfg.user_data = alarm_cfg->user_data;
-	k_spin_unlock(&lock, key);
 
 	return 0;
 }
@@ -194,12 +174,9 @@ static int counter_esp32_cancel_alarm(const struct device *dev, uint8_t chan_id)
 	ARG_UNUSED(chan_id);
 	struct counter_esp32_data *data = dev->data;
 
-	k_spinlock_key_t key = k_spin_lock(&lock);
-
 	timer_ll_enable_intr(data->hal_ctx.dev, TIMER_LL_EVENT_ALARM(data->hal_ctx.timer_id),
 			     false);
 	timer_ll_enable_alarm(data->hal_ctx.dev, data->hal_ctx.timer_id, TIMER_ALARM_DIS);
-	k_spin_unlock(&lock, key);
 
 	return 0;
 }
