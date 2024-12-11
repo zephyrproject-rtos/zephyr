@@ -36,7 +36,7 @@ static int cmd_setup(const struct shell *sh, size_t argc, char **argv)
 	int argidx;
 	int err;
 
-	dac = device_get_binding(argv[args_indx.device]);
+	dac = shell_device_get_binding(argv[args_indx.device]);
 	if (!dac) {
 		shell_error(sh, "DAC device not found");
 		return -EINVAL;
@@ -76,7 +76,7 @@ static int cmd_write_value(const struct shell *sh, size_t argc, char **argv)
 	uint32_t value;
 	int err;
 
-	dac = device_get_binding(argv[args_indx.device]);
+	dac = shell_device_get_binding(argv[args_indx.device]);
 	if (!dac) {
 		shell_error(sh, "DAC device not found");
 		return -EINVAL;

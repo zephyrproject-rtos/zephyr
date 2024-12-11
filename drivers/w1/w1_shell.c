@@ -52,7 +52,7 @@ static int cmd_w1_reset_bus(const struct shell *sh, size_t argc, char **argv)
 	const struct device *dev;
 	int ret;
 
-	dev = device_get_binding(argv[1]);
+	dev = shell_device_get_binding(argv[1]);
 	if (!dev) {
 		shell_error(sh, W1DEV_X_NOT_FOUND, argv[1]);
 		return -EINVAL;
@@ -74,7 +74,7 @@ static int cmd_w1_read_bit(const struct shell *sh, size_t argc, char **argv)
 	const struct device *dev;
 	int ret;
 
-	dev = device_get_binding(argv[1]);
+	dev = shell_device_get_binding(argv[1]);
 	if (!dev) {
 		shell_error(sh, W1DEV_X_NOT_FOUND, argv[1]);
 		return -EINVAL;
@@ -98,7 +98,7 @@ static int cmd_w1_read_byte(const struct shell *sh, size_t argc, char **argv)
 	const struct device *dev;
 	int ret;
 
-	dev = device_get_binding(argv[1]);
+	dev = shell_device_get_binding(argv[1]);
 	if (!dev) {
 		shell_error(sh, W1DEV_X_NOT_FOUND, argv[1]);
 		return -EINVAL;
@@ -124,7 +124,7 @@ static int cmd_w1_read_block(const struct shell *sh, size_t argc, char **argv)
 	size_t read_len;
 	int ret;
 
-	dev = device_get_binding(argv[1]);
+	dev = shell_device_get_binding(argv[1]);
 	if (!dev) {
 		shell_error(sh, W1DEV_X_NOT_FOUND, argv[1]);
 		return -EINVAL;
@@ -165,7 +165,7 @@ static int cmd_w1_write_bit(const struct shell *sh, size_t argc, char **argv)
 	unsigned long input = strtoul(argv[2], NULL, 0);
 	int ret;
 
-	dev = device_get_binding(argv[1]);
+	dev = shell_device_get_binding(argv[1]);
 	if (!dev) {
 		shell_error(sh, W1DEV_X_NOT_FOUND, argv[1]);
 		return -EINVAL;
@@ -194,7 +194,7 @@ static int cmd_w1_write_byte(const struct shell *sh, size_t argc, char **argv)
 	bool reset = false;
 	int ret;
 
-	dev = device_get_binding(argv[pos]);
+	dev = shell_device_get_binding(argv[pos]);
 	if (!dev) {
 		shell_error(sh, W1DEV_X_NOT_FOUND, argv[pos]);
 		return -EINVAL;
@@ -243,7 +243,7 @@ static int cmd_w1_write_block(const struct shell *sh, size_t argc, char **argv)
 	bool reset = false;
 	int ret;
 
-	dev = device_get_binding(argv[pos]);
+	dev = shell_device_get_binding(argv[pos]);
 	if (!dev) {
 		shell_error(sh, W1DEV_X_NOT_FOUND, argv[1]);
 		return -EINVAL;
@@ -297,7 +297,7 @@ static int cmd_w1_configure(const struct shell *sh, size_t argc, char **argv)
 	uint32_t type = strtoul(type_name, &type_endptr, 0);
 	uint32_t value = strtoul(argv[3], NULL, 0);
 
-	dev = device_get_binding(argv[1]);
+	dev = shell_device_get_binding(argv[1]);
 	if (!dev) {
 		shell_error(sh, W1DEV_X_NOT_FOUND, argv[1]);
 		return -EINVAL;
@@ -350,7 +350,7 @@ static int cmd_w1_search(const struct shell *sh, size_t argc, char **argv)
 	const struct device *dev;
 	int ret;
 
-	dev = device_get_binding(argv[1]);
+	dev = shell_device_get_binding(argv[1]);
 	if (!dev) {
 		shell_error(sh, W1DEV_X_NOT_FOUND, argv[1]);
 		return -EINVAL;

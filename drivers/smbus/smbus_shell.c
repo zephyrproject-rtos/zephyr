@@ -48,7 +48,7 @@ static int cmd_smbus_scan(const struct shell *sh, size_t argc, char **argv)
 	const struct device *dev;
 	uint8_t cnt = 0, first = 0x04, last = 0x77;
 
-	dev = device_get_binding(argv[ARGV_DEV]);
+	dev = shell_device_get_binding(argv[ARGV_DEV]);
 	if (!dev) {
 		shell_error(sh, "SMBus: Device %s not found", argv[ARGV_DEV]);
 		return -ENODEV;
@@ -87,7 +87,7 @@ static int cmd_smbus_quick(const struct shell *sh, size_t argc, char **argv)
 	uint8_t addr;
 	int ret;
 
-	dev = device_get_binding(argv[ARGV_DEV]);
+	dev = shell_device_get_binding(argv[ARGV_DEV]);
 	if (!dev) {
 		shell_error(sh, "SMBus: Device %s not found", argv[ARGV_DEV]);
 		return -ENODEV;
@@ -111,7 +111,7 @@ static int cmd_smbus_byte_read(const struct shell *sh, size_t argc, char **argv)
 	uint8_t out;
 	int ret;
 
-	dev = device_get_binding(argv[ARGV_DEV]);
+	dev = shell_device_get_binding(argv[ARGV_DEV]);
 	if (!dev) {
 		shell_error(sh, "SMBus: Device %s not found", argv[ARGV_DEV]);
 		return -ENODEV;
@@ -140,7 +140,7 @@ static int cmd_smbus_byte_write(const struct shell *sh,
 	uint8_t value;
 	int ret;
 
-	dev = device_get_binding(argv[ARGV_DEV]);
+	dev = shell_device_get_binding(argv[ARGV_DEV]);
 	if (!dev) {
 		shell_error(sh, "SMBus: Device %s not found", argv[ARGV_DEV]);
 		return -ENODEV;
@@ -169,7 +169,7 @@ static int cmd_smbus_byte_data_read(const struct shell *sh,
 	uint8_t out;
 	int ret;
 
-	dev = device_get_binding(argv[ARGV_DEV]);
+	dev = shell_device_get_binding(argv[ARGV_DEV]);
 	if (!dev) {
 		shell_error(sh, "SMBus: Device %s not found", argv[ARGV_DEV]);
 		return -ENODEV;
@@ -199,7 +199,7 @@ static int cmd_smbus_byte_data_write(const struct shell *sh,
 	uint8_t value;
 	int ret;
 
-	dev = device_get_binding(argv[ARGV_DEV]);
+	dev = shell_device_get_binding(argv[ARGV_DEV]);
 	if (!dev) {
 		shell_error(sh, "SMBus: Device %s not found", argv[ARGV_DEV]);
 		return -ENODEV;
@@ -228,7 +228,7 @@ static int cmd_smbus_word_data_read(const struct shell *sh,
 	uint16_t out;
 	int ret;
 
-	dev = device_get_binding(argv[ARGV_DEV]);
+	dev = shell_device_get_binding(argv[ARGV_DEV]);
 	if (!dev) {
 		shell_error(sh, "SMBus: Device %s not found", argv[ARGV_DEV]);
 		return -ENODEV;
@@ -258,7 +258,7 @@ static int cmd_smbus_word_data_write(const struct shell *sh,
 	uint16_t value;
 	int ret;
 
-	dev = device_get_binding(argv[ARGV_DEV]);
+	dev = shell_device_get_binding(argv[ARGV_DEV]);
 	if (!dev) {
 		shell_error(sh, "SMBus: Device %s not found", argv[ARGV_DEV]);
 		return -ENODEV;
@@ -293,7 +293,7 @@ static int cmd_smbus_block_write(const struct shell *sh,
 		return -EINVAL;
 	}
 
-	dev = device_get_binding(argv[ARGV_DEV]);
+	dev = shell_device_get_binding(argv[ARGV_DEV]);
 	if (!dev) {
 		shell_error(sh, "SMBus: Device %s not found", argv[ARGV_DEV]);
 		return -ENODEV;
@@ -328,7 +328,7 @@ static int cmd_smbus_block_read(const struct shell *sh,
 	uint8_t count;
 	int ret;
 
-	dev = device_get_binding(argv[ARGV_DEV]);
+	dev = shell_device_get_binding(argv[ARGV_DEV]);
 	if (!dev) {
 		shell_error(sh, "SMBus: Device %s not found", argv[ARGV_DEV]);
 		return -ENODEV;

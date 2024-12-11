@@ -72,7 +72,7 @@ static int cmd_setup(const struct shell *sh, size_t argc, char *argv[])
 {
 	const struct device *dev;
 
-	dev = device_get_binding(argv[args_indx.device]);
+	dev = shell_device_get_binding(argv[args_indx.device]);
 	if (!dev) {
 		shell_error(sh, "WDT device not found");
 		return -ENODEV;
@@ -85,7 +85,7 @@ static int cmd_disable(const struct shell *sh, size_t argc, char *argv[])
 {
 	const struct device *dev;
 
-	dev = device_get_binding(argv[args_indx.device]);
+	dev = shell_device_get_binding(argv[args_indx.device]);
 	if (!dev) {
 		shell_error(sh, "WDT device not found");
 		return -ENODEV;
@@ -103,7 +103,7 @@ static int cmd_timeout(const struct shell *sh, size_t argc, char *argv[])
 	struct wdt_timeout_cfg cfg;
 	int rc;
 
-	dev = device_get_binding(argv[args_indx.device]);
+	dev = shell_device_get_binding(argv[args_indx.device]);
 	if (!dev) {
 		shell_error(sh, "WDT device not found");
 		return -ENODEV;
@@ -145,7 +145,7 @@ static int cmd_feed(const struct shell *sh, size_t argc, char *argv[])
 	const struct device *dev;
 	int channel_id;
 
-	dev = device_get_binding(argv[args_indx.device]);
+	dev = shell_device_get_binding(argv[args_indx.device]);
 	if (!dev) {
 		shell_error(sh, "WDT device not found");
 		return -ENODEV;
