@@ -343,6 +343,25 @@ void nrf_clock_control_hfxo_release(void);
 
 #endif /* defined(CONFIG_CLOCK_CONTROL_NRF2) */
 
+/** @brief Get clock frequency that is used for the given node.
+ *
+ * Macro checks if node has clock property and if yes then if clock has clock_frequency property
+ * then it is returned. If it has supported_clock_frequency property with the list of supported
+ * frequencies then the last one is returned with assumption that they are ordered and the last
+ * one is the highest. If node does not have clock then 16 MHz is returned which is the default
+ * frequency.
+ *
+ * @param node Devicetree node.
+ *
+ * @return Frequency of the clock that is used for the node.
+ */
+#define NRF_PERIPH_GET_FREQUENCY(node) \
+	COND_CODE_1(DT_CLOCKS_HAS_IDX(node, 0),							\
+		(COND_CODE_1(DT_NODE_HAS_PROP(DT_CLOCKS_CTLR(node), clock_frequency),		\
+			     (DT_PROP(DT_CLOCKS_CTLR(node), clock_frequency)),			\
+			     (DT_PROP_LAST(DT_CLOCKS_CTLR(node), supported_clock_frequency)))),	\
+		(NRFX_MHZ_TO_HZ(16)))
+
 #ifdef __cplusplus
 }
 #endif
