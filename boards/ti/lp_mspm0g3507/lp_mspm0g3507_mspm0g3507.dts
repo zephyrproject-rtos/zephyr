@@ -138,3 +138,29 @@
 	pinctrl-0 = <&uart0_tx_pa10 &uart0_rx_pa11>;
 	pinctrl-names = "default";
 };
+
+&pwm8 {
+	status = "okay";
+	pinctrl-0 = <&timg8c0_pb6>;
+	pinctrl-names = "default";
+
+	channel = <0>;
+	ti,pwm-mode = "EDGE_ALIGN";
+	ti,prescaler = <100>;
+	ti,period = <15000>;
+	ti,pulse-cycle = <3000>;
+	ti,cc-index = <0>;
+};
+
+&pwma1 {
+	status = "okay";
+	pinctrl-0 = <&tima1c1_pb0>;
+	pinctrl-names = "default";
+
+	channel = <0>;
+	ti,pwm-mode = "EDGE_ALIGN_UP";
+	ti,prescaler = <0>;
+	ti,period = <1500>;
+	ti,pulse-cycle = <600>;
+	ti,cc-index = <0>;
+};
