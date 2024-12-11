@@ -15,21 +15,19 @@ from colorama import Fore
 from twisterlib.coverage import run_coverage
 from twisterlib.environment import TwisterEnv
 from twisterlib.hardwaremap import HardwareMap
-from twisterlib.log_helper import setup_logging
+from twisterlib.log_helper import close_logging, setup_logging
 from twisterlib.package import Artifacts
 from twisterlib.reports import Reporting
 from twisterlib.runner import TwisterRunner
 from twisterlib.statuses import TwisterStatus
 from twisterlib.testplan import TestPlan
 
-logger = logging.getLogger("twister")
-logger.setLevel(logging.DEBUG)
 
 def init_color(colorama_strip):
     colorama.init(strip=colorama_strip)
 
 
-def main(options: argparse.Namespace, default_options: argparse.Namespace):
+def twister(options: argparse.Namespace, default_options: argparse.Namespace):
     start_time = time.time()
 
     # Configure color output
@@ -78,6 +76,7 @@ def main(options: argparse.Namespace, default_options: argparse.Namespace):
             fp.write(previous_results)
 
     setup_logging(options.outdir, options.log_file, options.log_level, options.timestamps)
+    logger = logging.getLogger("twister")
 
     env = TwisterEnv(options, default_options)
     env.discover()
@@ -222,3 +221,11 @@ def main(options: argparse.Namespace, default_options: argparse.Namespace):
 
     logger.info("Run completed")
     return 0
+
+
+def main(options: argparse.Namespace, default_options: argparse.Namespace):
+    try:
+        return_code = twister(options, default_options)
+    finally:
+        close_logging()
+    return return_code
