@@ -193,6 +193,35 @@ enum sensor_channel {
 	/** Desired charging current in mA */
 	SENSOR_CHAN_GAUGE_DESIRED_CHARGING_CURRENT,
 
+	/** AC active energy */
+	SENSOR_CHAN_AC_ACTIVE_ENERGY,
+	/** AC fundamental reactive energy */
+	SENSOR_CHAN_AC_FUNDAMENTAL_REACTIVE_ENERGY,
+	/** AC apparent energy */
+	SENSOR_CHAN_AC_APPARENT_ENERGY,
+	/** AC active power */
+	SENSOR_CHAN_AC_ACTIVE_POWER,
+	/** AC fundamental reactive power */
+	SENSOR_CHAN_AC_FUNDAMENTAL_REACTIVE_POWER,
+	/** AC apparent power */
+	SENSOR_CHAN_AC_APPARENT_POWER,
+	/** AC current RMS */
+	SENSOR_CHAN_AC_CURRENT_RMS,
+	/** AC half current RMS */
+	SENSOR_CHAN_AC_HALF_CURRENT_RMS,
+	/** AC voltage RMS */
+	SENSOR_CHAN_AC_VOLTAGE_RMS,
+	/** AC half voltage RMS */
+	SENSOR_CHAN_AC_HALF_VOLTAGE_RMS,
+	/** AC power factor */
+	SENSOR_CHAN_AC_POWER_FACTOR,
+	/** AC period */
+	SENSOR_CHAN_AC_PERIOD,
+	/** AC frequency */
+	SENSOR_CHAN_AC_FREQUENCY,
+	/** AC angle */
+	SENSOR_CHAN_AC_ANGLE,
+
 	/** All channels. */
 	SENSOR_CHAN_ALL,
 
