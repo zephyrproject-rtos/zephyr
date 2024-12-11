@@ -6,6 +6,10 @@
 
 #include <zephyr/toolchain.h>
 
+#ifndef CONFIG_VECTOR_TABLE_SIZE
+#error "VECTOR_TABLE_SIZE must be defined"
+#endif
+
 /* Exports */
 GTEXT(__start)
 
@@ -15,7 +19,7 @@ GTEXT(__initialize)
 SECTION_FUNC(vectors, ivt)
 	.option norvc
 	j       __start
-	.rept 38
+	.rept   CONFIG_VECTOR_TABLE_SIZE
 	.word	_isr_wrapper
 	.endr
 
