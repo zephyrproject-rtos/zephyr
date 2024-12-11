@@ -24,6 +24,7 @@ LOG_MODULE_REGISTER(i2c_nrfx_twi, CONFIG_I2C_LOG_LEVEL);
 #endif
 
 struct i2c_nrfx_twi_data {
+	struct i2c_common_data common;
 	uint32_t dev_config;
 	struct k_sem transfer_sync;
 	struct k_sem completion_sync;
@@ -146,7 +147,11 @@ static const struct i2c_driver_api i2c_nrfx_twi_driver_api = {
 		if (err < 0) {						       \
 			return err;					       \
 		}							       \
-		return i2c_nrfx_twi_init(dev);				       \
+		err = i2c_nrfx_twi_init(dev);				       \
+		if (err < 0) {						       \
+			return err;					       \
+		}							       \
+		return i2c_common_init(dev);                                   \
 	}								       \
 	static struct i2c_nrfx_twi_data twi_##idx##_data = {		       \
 		.transfer_sync = Z_SEM_INITIALIZER(                            \

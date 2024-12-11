@@ -146,6 +146,10 @@ static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msg,
 	struct i2c_msg *current, *next;
 	int ret = 0;
 
+	if (!i2c_is_stop_op(&msg[num_msgs - 1])) {
+		return -EINVAL;
+	}
+
 	/* Check for validity of all messages, to prevent having to abort
 	 * in the middle of a transfer
 	 */
