@@ -161,5 +161,11 @@ int main(void)
 	LOG_INF("Received %zu [Bytes] in total", received);
 	LOG_INF("IPC-service REMOTE demo ended");
 
+#if defined(CONFIG_MULTITHREADING)
+	while (1) {
+		LOG_INF("Alive");
+		k_msleep(2000);
+	}
+#endif
 	return 0;
 }
