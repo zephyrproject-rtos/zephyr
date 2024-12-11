@@ -359,14 +359,14 @@ static bool eeprom_at25_bus_is_ready(const struct device *dev)
 static int eeprom_at25_rdsr(const struct device *dev, uint8_t *status)
 {
 	const struct eeprom_at2x_config *config = dev->config;
-	uint8_t rdsr[2] = { EEPROM_AT25_RDSR, 0 };
+	static const uint8_t rdsr[2] = { EEPROM_AT25_RDSR, 0 };
 	uint8_t sr[2];
 	int err;
-	const struct spi_buf tx_buf = {
-		.buf = rdsr,
+	static const struct spi_buf tx_buf = {
+		.buf = (void *)rdsr,
 		.len = sizeof(rdsr),
 	};
-	const struct spi_buf_set tx = {
+	static const struct spi_buf_set tx = {
 		.buffers = &tx_buf,
 		.count = 1,
 	};
@@ -419,7 +419,6 @@ static int eeprom_at25_read(const struct device *dev, off_t offset, void *buf,
 			    size_t len)
 {
 	const struct eeprom_at2x_config *config = dev->config;
-	struct eeprom_at2x_data *data = dev->data;
 	size_t cmd_len = 1 + config->addr_width / 8;
 	uint8_t cmd[4] = { EEPROM_AT25_READ, 0, 0, 0 };
 	uint8_t *paddr;
@@ -474,7 +473,6 @@ static int eeprom_at25_read(const struct device *dev, off_t offset, void *buf,
 	err = eeprom_at25_wait_for_idle(dev);
 	if (err) {
 		LOG_ERR("EEPROM idle wait failed (err %d)", err);
-		k_mutex_unlock(&data->lock);
 		return err;
 	}
 
@@ -489,12 +487,12 @@ static int eeprom_at25_read(const struct device *dev, off_t offset, void *buf,
 static int eeprom_at25_wren(const struct device *dev)
 {
 	const struct eeprom_at2x_config *config = dev->config;
-	uint8_t cmd = EEPROM_AT25_WREN;
-	const struct spi_buf tx_buf = {
-		.buf = &cmd,
+	static const uint8_t cmd = EEPROM_AT25_WREN;
+	static const struct spi_buf tx_buf = {
+		.buf = (void *)&cmd,
 		.len = 1,
 	};
-	const struct spi_buf_set tx = {
+	static const struct spi_buf_set tx = {
 		.buffers = &tx_buf,
 		.count = 1,
 	};
@@ -648,7 +646,7 @@ static DEVICE_API(eeprom, eeprom_at2x_api) = {
 		.write_fn = eeprom_at##t##_write, \
 	}; \
 	static struct eeprom_at2x_data eeprom_at##t##_data_##n; \
-	DEVICE_DT_DEFINE(INST_DT_AT2X(n, t), &eeprom_at2x_init, \
+	DEVICE_DT_DEFINE(INST_DT_AT2X(n, t), eeprom_at2x_init, \
 			    NULL, &eeprom_at##t##_data_##n, \
 			    &eeprom_at##t##_config_##n, POST_KERNEL, \
 			    CONFIG_EEPROM_AT2X_INIT_PRIORITY, \
