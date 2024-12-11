@@ -289,6 +289,8 @@ Networking
 
 * Wi-Fi:
 
+  * hostap: Removed the unused default Crypto module :kconfig:option:`CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO` Kconfig option.
+
 * zperf:
 
 USB
