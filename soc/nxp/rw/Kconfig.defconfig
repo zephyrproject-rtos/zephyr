@@ -34,9 +34,9 @@ config NXP_MONOLITHIC_WIFI
 	default y if WIFI
 
 config NXP_FW_LOADER
-	default y if (BT || WIFI)
+	default y if (BT || WIFI || IEEE802154)
 
 config NXP_RF_IMU
-	default y if (BT || WIFI)
+	default y if (BT || WIFI || IEEE802154)
 
 endif # SOC_SERIES_RW6XX
