@@ -20,10 +20,12 @@ static K_SEM_DEFINE(dvfs_service_idle_sem, 0, 1);
 
 #define DVFS_SERV_HDL_INIT_DONE_BIT_POS (0)
 #define DVFS_SERV_HDL_FREQ_CHANGE_REQ_PENDING_BIT_POS (1)
+#define DVFS_SERV_HDL_FREQ_CHANGE_REQ_IN_QUEUE_BIT_POS (2)
 
 static atomic_t dvfs_service_handler_state_bits;
 static volatile enum dvfs_frequency_setting current_freq_setting;
 static volatile enum dvfs_frequency_setting requested_freq_setting;
+static volatile enum dvfs_frequency_setting queued_freq_setting;
 static dvfs_service_handler_callback dvfs_frequency_change_applied_clb;
 
 static void dvfs_service_handler_set_state_bit(uint32_t bit_pos)
@@ -49,6 +51,24 @@ static bool dvfs_service_handler_init_done(void)
 static bool dvfs_service_handler_freq_change_req_pending(void)
 {
 	return dvfs_service_handler_get_state_bit(DVFS_SERV_HDL_FREQ_CHANGE_REQ_PENDING_BIT_POS);
+}
+
+static void dvfs_service_handler_add_req_to_queue(enum dvfs_frequency_setting freq_setting)
+{
+	queued_freq_setting = freq_setting;
+	atomic_set_bit(&dvfs_service_handler_state_bits,
+		       DVFS_SERV_HDL_FREQ_CHANGE_REQ_IN_QUEUE_BIT_POS);
+}
+
+static void dvfs_service_handler_check_and_send_request_from_queue(void)
+{
+	if (atomic_test_bit(&dvfs_service_handler_state_bits,
+			    DVFS_SERV_HDL_FREQ_CHANGE_REQ_IN_QUEUE_BIT_POS)) {
+		atomic_clear_bit(&dvfs_service_handler_state_bits,
+				 DVFS_SERV_HDL_FREQ_CHANGE_REQ_IN_QUEUE_BIT_POS);
+
+		dvfs_service_handler_change_freq_setting(queued_freq_setting);
+	}
 }
 
 static void dvfs_service_handler_nrfs_error_check(nrfs_err_t err)
@@ -157,6 +177,7 @@ static void dvfs_service_handler_scaling_finish(enum dvfs_frequency_setting oppo
 	if (dvfs_frequency_change_applied_clb) {
 		dvfs_frequency_change_applied_clb(current_freq_setting);
 	}
+	dvfs_service_handler_check_and_send_request_from_queue();
 }
 
 /* Function to set hsfll to highest frequency when switched to ABB. */
@@ -220,6 +241,7 @@ static void nrfs_dvfs_evt_handler(nrfs_dvfs_evt_t const *p_evt, void *context)
 				dvfs_frequency_change_applied_clb(p_evt->freq);
 			}
 		}
+		dvfs_service_handler_check_and_send_request_from_queue();
 		break;
 	case NRFS_DVFS_EVT_OPPOINT_SCALING_PREPARE:
 		/*Target oppoint will be received here.*/
@@ -323,8 +345,9 @@ int32_t dvfs_service_handler_change_freq_setting(enum dvfs_frequency_setting fre
 	}
 
 	if (dvfs_service_handler_freq_change_req_pending()) {
-		LOG_DBG("Frequency change request pending.");
-		return -EBUSY;
+		LOG_DBG("Frequency change request pending, adding request to queue.");
+		dvfs_service_handler_add_req_to_queue(requested_freq_setting);
+		return NRFS_SUCCESS;
 	}
 
 	dvfs_service_handler_set_state_bit(DVFS_SERV_HDL_FREQ_CHANGE_REQ_PENDING_BIT_POS);
