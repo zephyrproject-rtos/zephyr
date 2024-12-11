@@ -380,7 +380,7 @@ static uint8_t sdp_hfp_ag_user(struct bt_conn *conn,
 
 	conn_addr_str(conn, addr, sizeof(addr));
 
-	if (result) {
+	if (result && result->resp_buf) {
 		shell_print(ctx_shell, "SDP HFPAG data@%p (len %u) hint %u from"
 			    " remote %s", result->resp_buf,
 			    result->resp_buf->len, result->next_record_hint,
@@ -440,7 +440,7 @@ static uint8_t sdp_a2src_user(struct bt_conn *conn,
 
 	conn_addr_str(conn, addr, sizeof(addr));
 
-	if (result) {
+	if (result && result->resp_buf) {
 		shell_print(ctx_shell, "SDP A2SRC data@%p (len %u) hint %u from"
 			    " remote %s", result->resp_buf,
 			    result->resp_buf->len, result->next_record_hint,
