@@ -52,7 +52,10 @@ struct counter_alarm_cfg alarm_cfg;
 #elif defined(CONFIG_COUNTER_SNPS_DW)
 #define TIMER DT_NODELABEL(timer0)
 #elif defined(CONFIG_COUNTER_TIMER_RPI_PICO)
+#ifdef CONFIG_SOC_SERIES_RP2040
 #define TIMER DT_NODELABEL(timer)
+#elif CONFIG_SOC_SERIES_RP2350
+#define TIMER DT_NODELABEL(timer0)
 #elif defined(CONFIG_COUNTER_TIMER_MAX32)
 #define TIMER DT_NODELABEL(counter0)
 #elif defined(CONFIG_COUNTER_RA_AGT)

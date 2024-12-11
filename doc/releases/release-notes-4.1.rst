@@ -93,9 +93,13 @@ Boards & SoC Support
 
 * Added support for these SoC series:
 
+  * Added Raspberry Pi RP2350
+
 * Made these changes in other SoC series:
 
 * Added support for these boards:
+
+   * :zephyr:board:`Raspberry Pi Pico 2 <rpi_pico2>`: ``rpi_pico2``
 
 * Made these board changes:
 
