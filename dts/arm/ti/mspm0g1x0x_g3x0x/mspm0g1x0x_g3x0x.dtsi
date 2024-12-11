@@ -11,6 +11,10 @@
 		rtc = &rtc0;
 	};
 
+	chosen {
+		zephyr,flash-controller = &flashctl;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -131,6 +135,20 @@
 				#gpio-cells = <2>;
 			};
 
+		};
+
+		flashctl: flash-controller@400cd000 {
+			compatible = "ti,mspm0-flash-controller";
+			reg = <0x400cd000 0x2000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			nvm-flash@0 {
+				compatible = "soc-nv-flash";
+				reg = <0>;
+				erase-block-size = <4096>;
+				write-block-size = <4>;
+			};
 		};
 
 		i2c0: i2c@400f0000 {
