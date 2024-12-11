@@ -1,10 +1,7 @@
 # Copyright (c) 2024 Michael Hope
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_CH32V003
-
-config NUM_IRQS
-	default 48
+if SOC_SERIES_QINGKE_V2A
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
@@ -21,4 +18,6 @@ config ISR_STACK_SIZE
 config CLOCK_CONTROL
 	default y
 
-endif # SOC_CH32V003
+rsource "Kconfig.defconfig.*"
+
+endif # SOC_SERIES_QINGKE_V2A
