@@ -44,6 +44,7 @@ struct spi_mcux_config {
 	bool output_config;
 	uint8_t tx_fifo_size;
 	uint8_t rx_fifo_size;
+	uint8_t irqn;
 };
 
 struct spi_mcux_data {
@@ -86,6 +87,9 @@ int spi_mcux_release(const struct device *dev, const struct spi_config *spi_cfg)
 						(SPI_MCUX_LPSPI_IRQ_FUNC_LP_FLEXCOMM(n)),	   \
 						(SPI_MCUX_LPSPI_IRQ_FUNC_DISTINCT(n)))
 
+#define LPSPI_IRQN(n) COND_CODE_1(DT_NODE_HAS_COMPAT(DT_INST_PARENT(n), nxp_lp_flexcomm),	   \
+					(DT_IRQN(DT_INST_PARENT(n))), (DT_INST_IRQN(n)))
+
 #define SPI_MCUX_LPSPI_CONFIG_INIT(n)                                                              \
 	static const struct spi_mcux_config spi_mcux_config_##n = {                                \
 		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(n)),                              \
@@ -103,6 +107,7 @@ int spi_mcux_release(const struct device *dev, const struct spi_config *spi_cfg)
 		.output_config = DT_INST_PROP(n, tristate_output),                                 \
 		.rx_fifo_size = (uint8_t)DT_INST_PROP(n, rx_fifo_size),                            \
 		.tx_fifo_size = (uint8_t)DT_INST_PROP(n, tx_fifo_size),                            \
+		.irqn = (uint8_t)LPSPI_IRQN(n),                                                    \
 	};
 
 #define SPI_NXP_LPSPI_COMMON_INIT(n)                                                               \
