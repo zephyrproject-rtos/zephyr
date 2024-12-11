@@ -168,6 +168,7 @@ static int stm32_ltdc_write(const struct device *dev, const uint16_t x,
 	const struct display_stm32_ltdc_config *config = dev->config;
 	struct display_stm32_ltdc_data *data = dev->data;
 	uint8_t *dst = NULL;
+	uint8_t *old = NULL;
 	const uint8_t *pend_buf = NULL;
 	const uint8_t *src = buf;
 	uint16_t row;
@@ -185,13 +186,13 @@ static int stm32_ltdc_write(const struct device *dev, const uint16_t x,
 		}
 
 		dst = data->frame_buffer;
+		old = data->frame_buffer + data->frame_buffer_len;
 
 		if (CONFIG_STM32_LTDC_FB_NUM == 2) {
 			if (data->front_buf == data->frame_buffer) {
 				dst = data->frame_buffer + data->frame_buffer_len;
+				old = data->frame_buffer;
 			}
-
-			memcpy(dst, data->front_buf, data->frame_buffer_len);
 		}
 
 		pend_buf = dst;
@@ -211,15 +212,40 @@ static int stm32_ltdc_write(const struct device *dev, const uint16_t x,
 
 	}
 
+	/* More to come? */
+	if (desc->frame_incomplete) {
+		return 0;
+	}
+
 	if (data->front_buf == pend_buf) {
 		return 0;
 	}
 
+	/* At this point, we know the entire frame has been written, so let's swap them */
 	k_sem_reset(&data->sem);
 
 	data->pend_buf = pend_buf;
 
 	k_sem_take(&data->sem, K_FOREVER);
+
+	/* Frame has been swapped by ISR, safe to copy the new frame to the old one */
+#if DT_INST_NODE_HAS_PROP(0, ext_sdram)
+	/* Copy into an intermediate buffer to speed up copying,
+	 * as linear access is faster in SDRAM memories, as compared to byte-wise copying
+	 */
+	static uint8_t tmp[CONFIG_STM32_LTDC_INTERMEDIATE_BUF_SIZE];
+	size_t copied = 0;
+
+	do {
+		size_t tocopy = MIN(sizeof(tmp), data->frame_buffer_len - copied);
+
+		memcpy(tmp, &pend_buf[copied], tocopy);
+		memcpy(&old[copied], tmp, tocopy);
+		copied += tocopy;
+	} while (copied < data->frame_buffer_len);
+#else
+	memcpy(old, pend_buf, data->frame_buffer_len);
+#endif
 
 	return 0;
 }
