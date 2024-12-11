@@ -89,7 +89,7 @@ static int cmd_enable(const struct shell *sh, size_t argc, char **argv)
 
 	ARG_UNUSED(argc);
 
-	dev = device_get_binding(argv[1]);
+	dev = shell_device_get_binding(argv[1]);
 	if (dev == NULL) {
 		shell_error(sh, "Regulator device %s not available", argv[1]);
 		return -ENODEV;
@@ -111,7 +111,7 @@ static int cmd_disable(const struct shell *sh, size_t argc, char **argv)
 
 	ARG_UNUSED(argc);
 
-	dev = device_get_binding(argv[1]);
+	dev = shell_device_get_binding(argv[1]);
 	if (dev == NULL) {
 		shell_error(sh, "Regulator device %s not available", argv[1]);
 		return -ENODEV;
@@ -132,7 +132,7 @@ static int cmd_is_enabled(const struct shell *sh, size_t argc, char **argv)
 
 	ARG_UNUSED(argc);
 
-	dev = device_get_binding(argv[1]);
+	dev = shell_device_get_binding(argv[1]);
 	if (dev == NULL) {
 		shell_error(sh, "Regulator device %s not available", argv[1]);
 		return -ENODEV;
@@ -155,7 +155,7 @@ static int cmd_vlist(const struct shell *sh, size_t argc, char **argv)
 
 	ARG_UNUSED(argc);
 
-	dev = device_get_binding(argv[1]);
+	dev = shell_device_get_binding(argv[1]);
 	if (dev == NULL) {
 		shell_error(sh, "Regulator device %s not available", argv[1]);
 		return -ENODEV;
@@ -185,7 +185,7 @@ static int cmd_vset(const struct shell *sh, size_t argc, char **argv)
 	int32_t min_uv, max_uv;
 	int ret;
 
-	dev = device_get_binding(argv[1]);
+	dev = shell_device_get_binding(argv[1]);
 	if (dev == NULL) {
 		shell_error(sh, "Regulator device %s not available", argv[1]);
 		return -ENODEV;
@@ -224,7 +224,7 @@ static int cmd_vget(const struct shell *sh, size_t argc, char **argv)
 
 	ARG_UNUSED(argc);
 
-	dev = device_get_binding(argv[1]);
+	dev = shell_device_get_binding(argv[1]);
 	if (dev == NULL) {
 		shell_error(sh, "Regulator device %s not available", argv[1]);
 		return -ENODEV;
@@ -249,7 +249,7 @@ static int cmd_clist(const struct shell *sh, size_t argc, char **argv)
 
 	ARG_UNUSED(argc);
 
-	dev = device_get_binding(argv[1]);
+	dev = shell_device_get_binding(argv[1]);
 	if (dev == NULL) {
 		shell_error(sh, "Regulator device %s not available", argv[1]);
 		return -ENODEV;
@@ -279,7 +279,7 @@ static int cmd_iset(const struct shell *sh, size_t argc, char **argv)
 	int32_t min_ua, max_ua;
 	int ret;
 
-	dev = device_get_binding(argv[1]);
+	dev = shell_device_get_binding(argv[1]);
 	if (dev == NULL) {
 		shell_error(sh, "Regulator device %s not available", argv[1]);
 		return -ENODEV;
@@ -317,7 +317,7 @@ static int cmd_iget(const struct shell *sh, size_t argc, char **argv)
 
 	ARG_UNUSED(argc);
 
-	dev = device_get_binding(argv[1]);
+	dev = shell_device_get_binding(argv[1]);
 	if (dev == NULL) {
 		shell_error(sh, "Regulator device %s not available", argv[1]);
 		return -ENODEV;
@@ -342,7 +342,7 @@ static int cmd_modeset(const struct shell *sh, size_t argc, char **argv)
 
 	ARG_UNUSED(argc);
 
-	dev = device_get_binding(argv[1]);
+	dev = shell_device_get_binding(argv[1]);
 	if (dev == NULL) {
 		shell_error(sh, "Regulator device %s not available", argv[1]);
 		return -ENODEV;
@@ -367,7 +367,7 @@ static int cmd_modeget(const struct shell *sh, size_t argc, char **argv)
 
 	ARG_UNUSED(argc);
 
-	dev = device_get_binding(argv[1]);
+	dev = shell_device_get_binding(argv[1]);
 	if (dev == NULL) {
 		shell_error(sh, "Regulator device %s not available", argv[1]);
 		return -ENODEV;
@@ -392,7 +392,7 @@ static int cmd_adset(const struct shell *sh, size_t argc, char **argv)
 
 	ARG_UNUSED(argc);
 
-	dev = device_get_binding(argv[1]);
+	dev = shell_device_get_binding(argv[1]);
 	if (dev == NULL) {
 		shell_error(sh, "Regulator device %s not available", argv[1]);
 		return -ENODEV;
@@ -424,7 +424,7 @@ static int cmd_adget(const struct shell *sh, size_t argc, char **argv)
 
 	ARG_UNUSED(argc);
 
-	dev = device_get_binding(argv[1]);
+	dev = shell_device_get_binding(argv[1]);
 	if (dev == NULL) {
 		shell_error(sh, "Regulator device %s not available", argv[1]);
 		return -ENODEV;
@@ -449,7 +449,7 @@ static int cmd_errors(const struct shell *sh, size_t argc, char **argv)
 
 	ARG_UNUSED(argc);
 
-	dev = device_get_binding(argv[1]);
+	dev = shell_device_get_binding(argv[1]);
 	if (dev == NULL) {
 		shell_error(sh, "Regulator device %s not available", argv[1]);
 		return -ENODEV;
@@ -479,7 +479,7 @@ static int cmd_dvsset(const struct shell *sh, size_t argc, char **argv)
 	int ret = 0;
 	regulator_dvs_state_t state;
 
-	dev = device_get_binding(argv[1]);
+	dev = shell_device_get_binding(argv[1]);
 	if (dev == NULL) {
 		shell_error(sh, "Regulator device %s not available", argv[1]);
 		return -ENODEV;
@@ -507,7 +507,7 @@ static int cmd_shipmode(const struct shell *sh, size_t argc, char **argv)
 
 	ARG_UNUSED(argc);
 
-	dev = device_get_binding(argv[1]);
+	dev = shell_device_get_binding(argv[1]);
 	if (dev == NULL) {
 		shell_error(sh, "Regulator device %s not available", argv[1]);
 		return -ENODEV;

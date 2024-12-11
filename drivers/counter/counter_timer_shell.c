@@ -42,7 +42,7 @@ static inline int parse_device(const struct shell *shctx, size_t argc, char *arg
 {
 	ARG_UNUSED(argc);
 
-	*timer_dev = device_get_binding(argv[ARGV_DEV]);
+	*timer_dev = shell_device_get_binding(argv[ARGV_DEV]);
 	if (*timer_dev == NULL) {
 		shell_error(shctx, "Timer: Device %s not found", argv[ARGV_DEV]);
 		return -ENODEV;

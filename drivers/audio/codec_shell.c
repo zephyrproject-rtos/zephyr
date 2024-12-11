@@ -81,7 +81,7 @@ static int cmd_start(const struct shell *sh, size_t argc, char *argv[])
 {
 	const struct device *dev;
 
-	dev = device_get_binding(argv[args_indx.device]);
+	dev = shell_device_get_binding(argv[args_indx.device]);
 	if (!dev) {
 		shell_error(sh, "Audio Codec device not found");
 		return -ENODEV;
@@ -95,7 +95,7 @@ static int cmd_stop(const struct shell *sh, size_t argc, char *argv[])
 {
 	const struct device *dev;
 
-	dev = device_get_binding(argv[args_indx.device]);
+	dev = shell_device_get_binding(argv[args_indx.device]);
 	if (!dev) {
 		shell_error(sh, "Audio Codec device not found");
 		return -ENODEV;
@@ -114,7 +114,7 @@ static int cmd_set_prop(const struct shell *sh, size_t argc, char *argv[])
 	char *endptr;
 	audio_property_value_t property_value;
 
-	dev = device_get_binding(argv[args_indx.device]);
+	dev = shell_device_get_binding(argv[args_indx.device]);
 	if (!dev) {
 		shell_error(sh, "Audio Codec device not found");
 		return -ENODEV;
@@ -159,7 +159,7 @@ static int cmd_apply_prop(const struct shell *sh, size_t argc, char *argv[])
 {
 	const struct device *dev;
 
-	dev = device_get_binding(argv[args_indx.device]);
+	dev = shell_device_get_binding(argv[args_indx.device]);
 	if (!dev) {
 		shell_error(sh, "Audio Codec device not found");
 		return -ENODEV;

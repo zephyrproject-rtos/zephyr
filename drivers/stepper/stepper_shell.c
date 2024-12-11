@@ -159,7 +159,7 @@ SHELL_DYNAMIC_CMD_CREATE(dsub_pos_stepper_motor_name_microstep,
 
 static int parse_device_arg(const struct shell *sh, char **argv, const struct device **dev)
 {
-	*dev = device_get_binding(argv[ARG_IDX_DEV]);
+	*dev = shell_device_get_binding(argv[ARG_IDX_DEV]);
 	if (!*dev) {
 		shell_error(sh, "Stepper device %s not found", argv[ARG_IDX_DEV]);
 		return -ENODEV;
