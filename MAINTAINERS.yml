@@ -2833,14 +2833,17 @@ Networking:
     - doc/connectivity/networking/api/ieee802154.rst
     - doc/connectivity/networking/api/ptp.rst
     - doc/connectivity/networking/api/wifi.rst
+    - doc/connectivity/networking/api/http*.rst
     - include/zephyr/net/gptp.h
     - include/zephyr/net/ieee802154*.h
     - include/zephyr/net/ptp.h
     - include/zephyr/net/wifi*.h
     - include/zephyr/net/buf.h
     - include/zephyr/net/dhcpv4*.h
+    - include/zephyr/net/http/
     - samples/net/gptp/
     - samples/net/sockets/coap_*/
+    - samples/net/sockets/*http*/
     - samples/net/lwm2m_client/
     - samples/net/wifi/
     - samples/net/dhcpv4_client/
@@ -2849,12 +2852,14 @@ Networking:
     - subsys/net/l2/wifi/
     - subsys/net/lib/coap/
     - subsys/net/lib/config/ieee802154*
+    - subsys/net/lib/http/
     - subsys/net/lib/lwm2m/
     - subsys/net/lib/ptp/
     - subsys/net/lib/tls_credentials/
     - subsys/net/lib/dhcpv4/
     - tests/net/dhcpv4/
     - tests/net/ieee802154/
+    - tests/net/lib/http*/
     - tests/net/wifi/
   labels:
     - "area: Networking"
@@ -3075,6 +3080,23 @@ Networking:
     - "area: Wi-Fi"
   tests:
     - net.wifi
+
+"Networking: HTTP":
+  status: maintained
+  maintainers:
+    - jukkar
+    - rlubos
+  files:
+    - doc/connectivity/networking/api/http*.rst
+    - include/zephyr/net/http/
+    - subsys/net/lib/http/
+    - samples/net/sockets/*http*/
+    - tests/net/lib/http*/
+  labels:
+    - "area: Networking"
+    - "area: HTTP"
+  tests:
+    - net.http
 
 NIOS-2 arch:
   status: maintained
