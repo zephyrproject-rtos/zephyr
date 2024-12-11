@@ -1,0 +1,75 @@
+/*
+ * Copyright (c) 2024 Ali Sarlak
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <ambiq/ambiq_apollo3_blue.dtsi>
+
+#include "artemis_nano-pinctrl.dtsi"
+
+/ {
+	model = "Sparkfun Artemis Nano";
+	compatible = "ambiq,artemis_nano";
+
+	chosen {
+		zephyr,itcm = &tcm;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+		zephyr,uart-pipe = &uart1;
+		zephyr,flash-controller = &flash;
+	};
+
+	aliases {
+		watchdog0 = &wdt0;
+		led0 = &led0;
+	};
+
+	leds{
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpio0_31 19 GPIO_ACTIVE_HIGH>;
+			label = "USER LED";
+		};
+	};
+};
+
+&flash0 {
+	erase-block-size = <8192>;
+	write-block-size = <4>;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Set 16KB of storage at the end of the 976KB of flash */
+		storage_partition: partition@f0000 {
+			label = "storage";
+			reg = <0x000f0000 0x4000>;
+		};
+	};
+};
+
+&uart1 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&stimer0 {
+	clk-source = <3>;
+};
+
+&gpio0_31 {
+	status = "okay";
+};
+
+&i2c2 {
+	status = "disabled";
+};
