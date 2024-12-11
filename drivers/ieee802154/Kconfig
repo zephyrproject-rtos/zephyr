@@ -60,6 +60,14 @@ config IEEE802154_VENDOR_OUI
 
 endif # IEEE802154_VENDOR_OUI_ENABLE
 
+config IEEE802154_L2_PKT_INCL_FCS
+	bool "Include FCS field in the L2 packet"
+	default y if IEEE802154_RAW_MODE || NET_L2_OPENTHREAD
+	help
+	  Some 802.15.4 L2 implementations expect FCS to be included in the
+	  packet, while others do not. Allow to configure this behavior based
+	  on the upper layer selected.
+
 source "drivers/ieee802154/Kconfig.b91"
 
 source "drivers/ieee802154/Kconfig.cc2520"
