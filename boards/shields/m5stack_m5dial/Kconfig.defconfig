@@ -1,0 +1,22 @@
+# M5Stack M5Dial shield configuration
+# Copyright (c) 2023 Martin Kiepfer <mrmarteng@teleschirm.org>
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_M5STACK_M5DIAL
+
+config INPUT
+	default y
+
+config INPUT_FT5336_INTERRUPT
+	default y if INPUT
+
+config LV_COLOR_16_SWAP
+	default y if LVGL
+
+config PWM
+	default y
+
+config REGULATOR
+	default y
+
+endif # SHIELD_M5STACK_M5DIAL
