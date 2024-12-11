@@ -677,6 +677,13 @@ config POLL
 	  concurrently, which can be either directly triggered or triggered by
 	  the availability of some kernel objects (semaphores and FIFOs).
 
+config MEM_SLAB_POINTER_VALIDATE
+	bool "Validate the memory slab pointer when allocating or freeing"
+	default ASSERT
+	help
+	  This enables additional runtime checks to validate the memory slab
+	  pointer during when allocating or freeing a memory slab.
+
 config MEM_SLAB_TRACE_MAX_UTILIZATION
 	bool "Getting maximum slab utilization"
 	help

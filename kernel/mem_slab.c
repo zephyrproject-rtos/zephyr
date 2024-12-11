@@ -206,6 +206,10 @@ out:
 
 static bool slab_ptr_is_good(struct k_mem_slab *slab, const void *ptr)
 {
+	if (!IS_ENABLED(CONFIG_MEM_SLAB_POINTER_VALIDATE)) {
+		return true;
+	}
+
 	const char *p = ptr;
 	ptrdiff_t offset = p - slab->buffer;
 
