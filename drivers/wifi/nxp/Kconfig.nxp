@@ -17,6 +17,10 @@ if WIFI_NXP
 
 module = WIFI_NXP
 
+config HEAP_MEM_POOL_ADD_SIZE_NXP_WIFI
+	def_int 25984 if WIFI_NM_WPA_SUPPLICANT
+	def_int 51200
+
 config WIFI_MGMT_SCAN_CHAN_MAX_MANUAL
 	default 50
 
