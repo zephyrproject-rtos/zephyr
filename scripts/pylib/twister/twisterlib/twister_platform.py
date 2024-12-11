@@ -53,9 +53,7 @@ class Platform:
     )
 
     def __init__(self):
-        """Constructor.
-
-        """
+        """Constructor."""
 
         self.name = ""
         self.aliases = []
@@ -137,10 +135,8 @@ class Platform:
         self.type = variant_data.get('type', data.get('type', self.type))
 
         self.simulators = [
-            Simulator(data) for data in variant_data.get(
-                'simulation',
-                data.get('simulation', self.simulators)
-            )
+            Simulator(data)
+            for data in variant_data.get('simulation', data.get('simulation', self.simulators))
         ]
         default_sim = self.simulator_by_name(None)
         if default_sim:
@@ -151,21 +147,22 @@ class Platform:
             self.supported_toolchains = []
 
         support_toolchain_variants = {
-          # we don't provide defaults for 'arc' intentionally: some targets can't be built with GNU
-          # toolchain ("zephyr", "cross-compile" options) and for some targets we haven't provided
-          # MWDT compiler / linker options in corresponding SoC file in Zephyr, so these targets
-          # can't be built with ARC MWDT toolchain ("arcmwdt" option) by Zephyr build system Instead
-          # for 'arc' we rely on 'toolchain' option in board yaml configuration.
-          "arm": ["zephyr", "gnuarmemb", "armclang", "llvm"],
-          "arm64": ["zephyr", "cross-compile"],
-          "mips": ["zephyr"],
-          "nios2": ["zephyr"],
-          "riscv": ["zephyr", "cross-compile"],
-          "posix": ["host", "llvm"],
-          "sparc": ["zephyr"],
-          "x86": ["zephyr", "llvm"],
-          # Xtensa is not listed on purpose, since there is no single toolchain
-          # that is supported on all board targets for xtensa.
+            # We don't provide defaults for 'arc' intentionally: some targets can't be built with
+            # GNU toolchain ("zephyr", "cross-compile" options) and for some targets we haven't
+            # provided MWDT compiler / linker options in corresponding SoC file in Zephyr, so
+            # these targets can't be built with ARC MWDT toolchain ("arcmwdt" option)
+            # by Zephyr build system.
+            # Instead for 'arc' we rely on 'toolchain' option in board yaml configuration.
+            "arm": ["zephyr", "gnuarmemb", "armclang", "llvm"],
+            "arm64": ["zephyr", "cross-compile"],
+            "mips": ["zephyr"],
+            "nios2": ["zephyr"],
+            "riscv": ["zephyr", "cross-compile"],
+            "posix": ["host", "llvm"],
+            "sparc": ["zephyr"],
+            "x86": ["zephyr", "llvm"],
+            # Xtensa is not listed on purpose, since there is no single toolchain
+            # that is supported on all board targets for xtensa.
         }
 
         if self.arch in support_toolchain_variants:
@@ -204,8 +201,13 @@ def generate_platforms(board_roots, soc_roots, arch_roots):
     dir2data = {}
     legacy_files = []
 
-    lb_args = Namespace(board_roots=board_roots, soc_roots=soc_roots, arch_roots=arch_roots,
-                        board=None, board_dir=None)
+    lb_args = Namespace(
+        board_roots=board_roots,
+        soc_roots=soc_roots,
+        arch_roots=arch_roots,
+        board=None,
+        board_dir=None,
+    )
 
     for board in list_boards.find_v2_boards(lb_args).values():
         for board_dir in board.directories:
@@ -238,8 +240,11 @@ def generate_platforms(board_roots, soc_roots, arch_roots):
                     else:
                         target = f"{board.name}/{qual}"
                         alias2target[target] = target
-                        if '/' not in qual and len(board.socs) == 1 \
-                                and rev.name == board.revision_default:
+                        if (
+                            '/' not in qual
+                            and len(board.socs) == 1
+                            and rev.name == board.revision_default
+                        ):
                             alias2target[f"{board.name}"] = target
 
                     target2board[target] = board

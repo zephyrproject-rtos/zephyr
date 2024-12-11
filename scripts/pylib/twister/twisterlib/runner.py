@@ -46,10 +46,10 @@ from twisterlib.coverage import run_coverage_instance
 from twisterlib.environment import TwisterEnv
 from twisterlib.harness import Ctest, HarnessImporter, Pytest
 from twisterlib.log_helper import log_command
-from twisterlib.platform import Platform
 from twisterlib.testinstance import TestInstance
 from twisterlib.testplan import change_skip_to_error_if_integration
 from twisterlib.testsuite import TestSuite
+from twisterlib.twister_platform import Platform
 
 try:
     from yaml import CSafeLoader as SafeLoader
