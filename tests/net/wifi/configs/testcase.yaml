@@ -7,12 +7,8 @@ common:
   platform_allow:
     - native_sim
 tests:
-  wifi.build.crypto_default:
-    extra_configs:
-      - CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO=y
   wifi.build.crypto_alt:
-    extra_configs:
-      - CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ALT=y
+    extra_configs: []
   wifi.build.crypto_none:
     extra_configs:
       - CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE=y
@@ -22,7 +18,6 @@ tests:
       - CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_MBEDTLS_PSA=y
   wifi.build.crypto_enterprise:
     extra_configs:
-      - CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ALT=y
       - CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE=y
       - CONFIG_MBEDTLS_TLS_VERSION_1_2=y
       - CONFIG_EAP_TLS=y
@@ -48,17 +43,14 @@ tests:
     extra_configs:
       - CONFIG_WIFI_NM_WPA_SUPPLICANT_WPS=y
       - CONFIG_WIFI_NM_WPA_SUPPLICANT_EAPOL=y
-      - CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO=y
   wifi.build.p2p:
     extra_configs:
       - CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P=y
-      - CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO=y
   wifi.build.hostapd_ap:
     extra_configs:
       - CONFIG_WIFI_NM_HOSTAPD_AP=y
       - CONFIG_WIFI_NM_WPA_SUPPLICANT_INF_MON=n
   wifi.build.dpp:
     extra_configs:
-      - CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ALT=y
       - CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE=y
       - CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP=y
