@@ -121,6 +121,7 @@ zephyr_include_directories(
   ${STDINCLUDE}
 )
 
+include(${ZEPHYR_BASE}/cmake/zpp.cmake)
 include(${ZEPHYR_BASE}/cmake/linker_script/${ARCH}/linker.cmake OPTIONAL)
 
 zephyr_include_directories(${SOC_FULL_DIR})
