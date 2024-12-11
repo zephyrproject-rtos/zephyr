@@ -1,5 +1,5 @@
 identifier: nsim/nsim_sem
-name: SEM Nsim simulator
+name: SEM nSIM simulator
 type: sim
 arch: arc
 simulation:
