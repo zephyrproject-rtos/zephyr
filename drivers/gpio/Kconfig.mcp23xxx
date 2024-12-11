@@ -9,6 +9,14 @@ config GPIO_MCP23XXX
 	  Enable support for the Microchip 23xxx I2C/SPI IO
 	  expanders.
 
+config GPIO_MCP23XXX_RESET_TIME_US
+	int "MCP23XXX reset pulse time in microseconds"
+	default 1
+	help
+	  Time in microseconds used to pulse the reset pin. It might be
+	  necessary to increase this value if your reset trace is long and
+	  increases rise time, otherwise the reset might not be detected.
+
 menuconfig GPIO_MCP230XX
 	bool "MCP230XX I2C-based GPIO chip"
 	default y
