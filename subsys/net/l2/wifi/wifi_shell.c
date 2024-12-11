@@ -1533,6 +1533,10 @@ static int cmd_wifi_twt_setup_quick(const struct shell *sh, size_t argc,
 	struct wifi_twt_params params = { 0 };
 	int idx = 1;
 	long value;
+	double twt_mantissa_scale = 0.0;
+	double twt_interval_scale = 0.0;
+	uint16_t scale = 1000;
+	int exponent = 0;
 
 	context.sh = sh;
 
@@ -1556,6 +1560,13 @@ static int cmd_wifi_twt_setup_quick(const struct shell *sh, size_t argc,
 		return -EINVAL;
 	}
 	params.setup.twt_interval = (uint64_t)value;
+
+	/* control the region of mantissa filed */
+	twt_interval_scale = (double)(params.setup.twt_interval / scale);
+	/* derive mantissa and exponent from interval */
+	twt_mantissa_scale = frexp(twt_interval_scale, &exponent);
+	params.setup.twt_mantissa = ceil(twt_mantissa_scale * scale);
+	params.setup.twt_exponent = exponent;
 
 	if (net_mgmt(NET_REQUEST_WIFI_TWT, iface, &params, sizeof(params))) {
 		PR_WARNING("%s with %s failed, reason : %s\n",
