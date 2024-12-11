@@ -9,6 +9,13 @@ if SOC_SERIES_BGM24
 config CMU_NEED_LFXO
 	default n
 
+# Required for librail memory management
+config BT
+	depends on KERNEL_MEM_POOL
+
+config HEAP_MEM_POOL_SIZE
+	default 16384 if BT
+
 config NUM_IRQS
 	# must be >= the highest interrupt number used
 	default 75
