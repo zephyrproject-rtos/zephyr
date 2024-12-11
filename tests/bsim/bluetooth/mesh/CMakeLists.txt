@@ -45,6 +45,7 @@ elseif(CONFIG_BT_MESH_GATT_PROXY)
   src/test_advertiser.c
   src/test_suspend.c
   src/test_beacon.c
+  src/test_provision.c
  )
 
 elseif(CONFIG_BT_CTLR_LOW_LAT)
