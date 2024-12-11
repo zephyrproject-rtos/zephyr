@@ -174,38 +174,29 @@ int arch_elf_relocate(elf_rela_t *rel, uintptr_t loc_unsigned, uintptr_t sym_bas
 		return riscv_relocation_fits(jump_target, RISCV_MAX_JUMP_DISTANCE_U_PLUS_I_TYPE,
 					     reloc_type);
 	case R_RISCV_PCREL_LO12_I:
-		/* need the same jump target as preceding U-type relocation */
-		if (last_u_type_jump_target == 0) {
-			LOG_ERR("R_RISCV_PCREL_LO12_I relocation without preceding U-type "
-				"relocation!");
-			return -ENOEXEC;
-		}
+		/*
+		 * Jump target is resolved in llext_riscv_find_sym_pcrel in llext_link.c
+		 * as it depends on other relocations.
+		 */
 		modified_operand = UNALIGNED_GET(loc32);
-		jump_target = last_u_type_jump_target; /* S - P */
-		last_u_type_jump_target = 0;
-		imm8 = jump_target;
+		imm8 = (int32_t)sym_base_addr; /* already computed */
 		modified_operand = R_RISCV_CLEAR_ITYPE_IMM8(modified_operand);
 		modified_operand = R_RISCV_SET_ITYPE_IMM8(modified_operand, imm8);
 		UNALIGNED_PUT(modified_operand, loc32);
-		return riscv_relocation_fits(jump_target, RISCV_MAX_JUMP_DISTANCE_U_PLUS_I_TYPE,
-					     reloc_type);
+		/* we have checked that this fits with the associated relocation */
 		break;
 	case R_RISCV_PCREL_LO12_S:
-		/* need the same jump target as preceding U-type relocation */
-		if (last_u_type_jump_target == 0) {
-			LOG_ERR("R_RISCV_PCREL_LO12_I relocation without preceding U-type "
-				"relocation!");
-			return -ENOEXEC;
-		}
+		/*
+		 * Jump target is resolved in llext_riscv_find_sym_pcrel in llext_link.c
+		 * as it depends on other relocations.
+		 */
 		modified_operand = UNALIGNED_GET(loc32);
-		jump_target = last_u_type_jump_target; /* S - P */
-		last_u_type_jump_target = 0;
-		imm8 = jump_target;
+		imm8 = (int32_t)sym_base_addr; /* already computed */
 		modified_operand = R_RISCV_CLEAR_STYPE_IMM8(modified_operand);
 		modified_operand = R_RISCV_SET_STYPE_IMM8(modified_operand, imm8);
 		UNALIGNED_PUT(modified_operand, loc32);
-		return riscv_relocation_fits(jump_target, RISCV_MAX_JUMP_DISTANCE_U_PLUS_I_TYPE,
-					     reloc_type);
+		/* we have checked that this fits with the associated relocation */
+		break;
 	case R_RISCV_HI20:
 		jump_target = sym_base_addr + rel->r_addend; /* S + A */
 		modified_operand = UNALIGNED_GET(loc32);
