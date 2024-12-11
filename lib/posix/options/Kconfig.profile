@@ -169,7 +169,7 @@ config POSIX_AEP_REALTIME_DEDICATED
 	# Option Groups
 	select POSIX_MULTI_PROCESS
 	select POSIX_NETWORKING
-	# select POSIX_PIPE
+	select POSIX_PIPE
 	# select POSIX_SIGNAL_JUMP
 	# Options
 	select POSIX_CPUTIME
