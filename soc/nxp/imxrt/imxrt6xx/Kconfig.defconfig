@@ -39,8 +39,7 @@ config ZTEST_NO_YIELD
 	default y if (ZTEST && PM)
 
 config MBEDTLS
-	default y if CSPRNG_ENABLED
-	depends on ENTROPY_GENERATOR
+	default y if CSPRNG_AVAILABLE
 
 if MBEDTLS
 #
