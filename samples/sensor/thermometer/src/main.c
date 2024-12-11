@@ -2,6 +2,7 @@
  * Copyright (c) 2016 ARM Ltd.
  * Copyright (c) 2023 FTP Technologies
  * Copyright (c) 2023 Daniel DeGrasse <daniel@degrasse.com>
+ * Copyright (c) 2024 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,8 +11,10 @@
 #include <zephyr/drivers/sensor.h>
 #include <stdio.h>
 
+#if CONFIG_SAMPLES_SENSOR_THERMOMETER_ALERT
 static double high_temp;
 static double low_temp;
+#endif /* CONFIG_SAMPLES_SENSOR_THERMOMETER_ALERT */
 
 int read_temperature(const struct device *dev, struct sensor_value *val)
 {
@@ -30,6 +33,7 @@ int read_temperature(const struct device *dev, struct sensor_value *val)
 	return ret;
 }
 
+#if CONFIG_SAMPLES_SENSOR_THERMOMETER_ALERT
 void temp_alert_handler(const struct device *dev, const struct sensor_trigger *trig)
 {
 	int ret;
@@ -51,17 +55,20 @@ void temp_alert_handler(const struct device *dev, const struct sensor_trigger *t
 		printf("Error: temperature alert triggered without valid condition\n");
 	}
 }
+#endif /* CONFIG_SAMPLES_SENSOR_THERMOMETER_ALERT */
 
 int main(void)
 {
 	const struct device *const dev = DEVICE_DT_GET(DT_ALIAS(ambient_temp0));
-	struct sensor_value value;
-	double temp;
 	int ret;
+	struct sensor_value value;
+#if CONFIG_SAMPLES_SENSOR_THERMOMETER_ALERT
+	double temp;
 	const struct sensor_trigger trig = {
 		.chan = SENSOR_CHAN_AMBIENT_TEMP,
 		.type = SENSOR_TRIG_THRESHOLD,
 	};
+#endif /* CONFIG_SAMPLES_SENSOR_THERMOMETER_ALERT */
 
 	printf("Thermometer Example (%s)\n", CONFIG_ARCH);
 
@@ -72,6 +79,7 @@ int main(void)
 
 	printf("Temperature device is %p, name is %s\n", dev, dev->name);
 
+#if CONFIG_SAMPLES_SENSOR_THERMOMETER_ALERT
 	/* First, fetch a sensor sample to use for sensor thresholds */
 	ret = read_temperature(dev, &value);
 	if (ret != 0) {
@@ -111,6 +119,7 @@ int main(void)
 	if (ret == 0) {
 		printf("Enabled sensor threshold triggers\n");
 	}
+#endif /* CONFIG_SAMPLES_SENSOR_THERMOMETER_ALERT */
 
 	while (1) {
 		ret = read_temperature(dev, &value);
