@@ -16,12 +16,12 @@
 #include <stm32_ll_i2c.h>
 #include <errno.h>
 #include <zephyr/drivers/i2c.h>
-#include "i2c_ll_stm32.h"
 
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_ll_stm32_v1);
 
+#include "i2c_ll_stm32.h"
 #include "i2c-priv.h"
 
 #define STM32_I2C_TRANSFER_TIMEOUT_MSEC  500
@@ -564,9 +564,8 @@ int i2c_stm32_target_unregister(const struct device *dev, struct i2c_target_conf
 }
 #endif /* defined(CONFIG_I2C_TARGET) */
 
-void stm32_i2c_event_isr(void *arg)
+void i2c_stm32_event(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *i2c = cfg->i2c;
@@ -593,9 +592,8 @@ void stm32_i2c_event_isr(void *arg)
 	}
 }
 
-void stm32_i2c_error_isr(void *arg)
+int i2c_stm32_error(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *i2c = cfg->i2c;
@@ -634,9 +632,10 @@ void stm32_i2c_error_isr(void *arg)
 		goto end;
 	}
 #endif
-	return;
+	return 0;
 end:
 	stm32_i2c_master_mode_end(dev);
+	return -EIO;
 }
 
 static int32_t stm32_i2c_msg_write(const struct device *dev, struct i2c_msg *msg,
