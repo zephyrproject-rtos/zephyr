@@ -44,33 +44,12 @@ struct spi_mcux_config {
 	bool output_config;
 };
 
-#ifdef CONFIG_SPI_MCUX_LPSPI_DMA
-#include <zephyr/drivers/dma.h>
-
-struct spi_dma_stream {
-	const struct device *dma_dev;
-	uint32_t channel; /* stores the channel for dma */
-	struct dma_config dma_cfg;
-	struct dma_block_config dma_blk_cfg;
-};
-#endif /* CONFIG_SPI_MCUX_LPSPI_DMA */
-
 struct spi_mcux_data {
 	DEVICE_MMIO_NAMED_RAM(reg_base);
 	const struct device *dev;
-	lpspi_master_handle_t handle;
 	struct spi_context ctx;
+	void *driver_data;
 	size_t transfer_len;
-#ifdef CONFIG_SPI_RTIO
-	struct spi_rtio *rtio_ctx;
-#endif
-#ifdef CONFIG_SPI_MCUX_LPSPI_DMA
-	volatile uint32_t status_flags;
-	struct spi_dma_stream dma_rx;
-	struct spi_dma_stream dma_tx;
-	/* dummy value used for transferring NOP when tx buf is null */
-	uint32_t dummy_buffer;
-#endif
 };
 
 /* common configure function that verifies spi_cfg validity and set up configuration parameters */

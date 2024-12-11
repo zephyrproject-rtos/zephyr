@@ -12,9 +12,16 @@ LOG_MODULE_REGISTER(spi_mcux_lpspi_rtio, CONFIG_SPI_LOG_LEVEL);
 #include <zephyr/drivers/spi/rtio.h>
 #include "spi_nxp_lpspi_priv.h"
 
+struct spi_mcux_rtio_data {
+	lpspi_master_handle_t handle;
+	struct spi_rtio *rtio_ctx;
+	size_t transfer_len;
+};
+
 static int spi_mcux_transfer_next_packet(const struct device *dev)
 {
 	struct spi_mcux_data *data = dev->data;
+	struct spi_mcux_rtio_data *rtio_data = (struct spi_mcux_rtio_data *)data->driver_data;
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 	struct spi_context *ctx = &data->ctx;
 	size_t max_chunk = spi_context_max_continuous_chunk(ctx);
@@ -27,14 +34,14 @@ static int spi_mcux_transfer_next_packet(const struct device *dev)
 		return 0;
 	}
 
-	data->transfer_len = max_chunk;
+	rtio_data->transfer_len = max_chunk;
 
 	transfer.configFlags = LPSPI_MASTER_XFER_CFG_FLAGS(ctx->config->slave);
 	transfer.txData = (ctx->tx_len == 0 ? NULL : ctx->tx_buf);
 	transfer.rxData = (ctx->rx_len == 0 ? NULL : ctx->rx_buf);
 	transfer.dataSize = max_chunk;
 
-	status = LPSPI_MasterTransferNonBlocking(base, &data->handle, &transfer);
+	status = LPSPI_MasterTransferNonBlocking(base, &rtio_data->handle, &transfer);
 	if (status != kStatus_Success) {
 		LOG_ERR("Transfer could not start on %s: %d", dev->name, status);
 		return status == kStatus_LPSPI_Busy ? -EBUSY : -EINVAL;
@@ -49,15 +56,16 @@ static void spi_mcux_master_rtio_callback(LPSPI_Type *base, lpspi_master_handle_
 					  status_t status, void *userData)
 {
 	struct spi_mcux_data *data = userData;
-	struct spi_rtio *rtio_ctx = data->rtio_ctx;
+	struct spi_mcux_rtio_data *rtio_data = (struct spi_mcux_rtio_data *)data->driver_data;
+	struct spi_rtio *rtio_ctx = rtio_data->rtio_ctx;
 
 	if (rtio_ctx->txn_head != NULL) {
 		spi_mcux_iodev_complete(data->dev, status);
 		return;
 	}
 
-	spi_context_update_tx(&data->ctx, 1, data->transfer_len);
-	spi_context_update_rx(&data->ctx, 1, data->transfer_len);
+	spi_context_update_tx(&data->ctx, 1, rtio_data->transfer_len);
+	spi_context_update_rx(&data->ctx, 1, rtio_data->transfer_len);
 
 	spi_mcux_transfer_next_packet(data->dev);
 }
@@ -65,7 +73,8 @@ static void spi_mcux_master_rtio_callback(LPSPI_Type *base, lpspi_master_handle_
 static void spi_mcux_iodev_start(const struct device *dev)
 {
 	struct spi_mcux_data *data = dev->data;
-	struct spi_rtio *rtio_ctx = data->rtio_ctx;
+	struct spi_mcux_rtio_data *rtio_data = (struct spi_mcux_rtio_data *)data->driver_data;
+	struct spi_rtio *rtio_ctx = rtio_data->rtio_ctx;
 	struct rtio_sqe *sqe = &rtio_ctx->txn_curr->sqe;
 	struct spi_dt_spec *spi_dt_spec = sqe->iodev->data;
 	struct spi_config *spi_cfg = &spi_dt_spec->config;
@@ -79,7 +88,8 @@ static void spi_mcux_iodev_start(const struct device *dev)
 		return;
 	}
 
-	LPSPI_MasterTransferCreateHandle(base, &data->handle, spi_mcux_master_rtio_callback, data);
+	LPSPI_MasterTransferCreateHandle(base, &rtio_data->handle, spi_mcux_master_rtio_callback,
+					 data);
 
 	transfer.configFlags = LPSPI_MASTER_XFER_CFG_FLAGS(spi_cfg->slave);
 
@@ -110,11 +120,11 @@ static void spi_mcux_iodev_start(const struct device *dev)
 		return;
 	}
 
-	data->transfer_len = transfer.dataSize;
+	rtio_data->transfer_len = transfer.dataSize;
 
 	spi_context_cs_control(&data->ctx, true);
 
-	status = LPSPI_MasterTransferNonBlocking(base, &data->handle, &transfer);
+	status = LPSPI_MasterTransferNonBlocking(base, &rtio_data->handle, &transfer);
 	if (status != kStatus_Success) {
 		LOG_ERR("Transfer could not start on %s: %d", dev->name, status);
 		spi_mcux_iodev_complete(dev, -EIO);
@@ -124,7 +134,8 @@ static void spi_mcux_iodev_start(const struct device *dev)
 static void spi_mcux_iodev_complete(const struct device *dev, int status)
 {
 	struct spi_mcux_data *data = dev->data;
-	struct spi_rtio *rtio_ctx = data->rtio_ctx;
+	struct spi_mcux_rtio_data *rtio_data = (struct spi_mcux_rtio_data *)data->driver_data;
+	struct spi_rtio *rtio_ctx = rtio_data->rtio_ctx;
 
 	if (!status && rtio_ctx->txn_curr->sqe.flags & RTIO_SQE_TRANSACTION) {
 		rtio_ctx->txn_curr = rtio_txn_next(rtio_ctx->txn_curr);
@@ -143,7 +154,8 @@ static void spi_mcux_iodev_complete(const struct device *dev, int status)
 static void spi_mcux_iodev_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 {
 	struct spi_mcux_data *data = dev->data;
-	struct spi_rtio *rtio_ctx = data->rtio_ctx;
+	struct spi_mcux_rtio_data *rtio_data = (struct spi_mcux_rtio_data *)data->driver_data;
+	struct spi_rtio *rtio_ctx = rtio_data->rtio_ctx;
 
 	if (spi_rtio_submit(rtio_ctx, iodev_sqe)) {
 		spi_mcux_iodev_start(dev);
@@ -154,7 +166,8 @@ static int transceive_rtio(const struct device *dev, const struct spi_config *sp
 			   const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs)
 {
 	struct spi_mcux_data *data = dev->data;
-	struct spi_rtio *rtio_ctx = data->rtio_ctx;
+	struct spi_mcux_rtio_data *rtio_data = (struct spi_mcux_rtio_data *)data->driver_data;
+	struct spi_rtio *rtio_ctx = rtio_data->rtio_ctx;
 	int ret;
 
 	spi_context_lock(&data->ctx, false, NULL, NULL, spi_cfg);
@@ -195,6 +208,7 @@ static DEVICE_API(spi, spi_mcux_rtio_driver_api) = {
 static int spi_mcux_rtio_init(const struct device *dev)
 {
 	struct spi_mcux_data *data = dev->data;
+	struct spi_mcux_rtio_data *rtio_data = (struct spi_mcux_rtio_data *)data->driver_data;
 	int err = 0;
 
 	err = spi_nxp_init_common(dev);
@@ -202,7 +216,7 @@ static int spi_mcux_rtio_init(const struct device *dev)
 		return err;
 	}
 
-	spi_rtio_init(data->rtio_ctx, dev);
+	spi_rtio_init(rtio_data->rtio_ctx, dev);
 
 	spi_context_unlock_unconditionally(&data->ctx);
 
@@ -212,9 +226,10 @@ static int spi_mcux_rtio_init(const struct device *dev)
 static void lpspi_isr(const struct device *dev)
 {
 	struct spi_mcux_data *data = dev->data;
+	struct spi_mcux_rtio_data *rtio_data = (struct spi_mcux_rtio_data *)data->driver_data;
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 
-	LPSPI_MasterTransferHandleIRQ(LPSPI_IRQ_HANDLE_ARG, &data->handle);
+	LPSPI_MasterTransferHandleIRQ(LPSPI_IRQ_HANDLE_ARG, &rtio_data->handle);
 }
 
 #define SPI_MCUX_RTIO_DEFINE(n)                                                                    \
@@ -226,7 +241,11 @@ static void lpspi_isr(const struct device *dev)
 	SPI_NXP_LPSPI_COMMON_INIT(n)                                                               \
 	SPI_MCUX_LPSPI_CONFIG_INIT(n)                                                              \
                                                                                                    \
-	static struct spi_mcux_data spi_mcux_data_##n = {.rtio_ctx = &spi_mcux_rtio_##n,           \
+	static struct spi_mcux_rtio_data lpspi_rtio_data_##n = {                                   \
+		.rtio_ctx = &spi_mcux_rtio_##n,                                                    \
+	};                                                                                         \
+                                                                                                   \
+	static struct spi_mcux_data spi_mcux_data_##n = {.driver_data = &lpspi_rtio_data_##n,      \
 							 SPI_NXP_LPSPI_COMMON_DATA_INIT(n)};       \
                                                                                                    \
 	SPI_DEVICE_DT_INST_DEFINE(n, spi_mcux_rtio_init, NULL, &spi_mcux_data_##n,                 \
