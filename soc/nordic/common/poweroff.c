@@ -50,6 +50,15 @@ void z_sys_poweroff(void)
 
 	/* Disable retention for all memory blocks */
 	nrfx_ram_ctrl_retention_enable_set(ram_start, ram_size, false);
+#if defined(DEVELOP_IN_NRF54L15) && defined(NRF54L05_XXAA)
+	nrf_memconf_ramblock_ret_mask_enable_set(NRF_MEMCONF, 0, 0x1F8, false);
+	nrf_memconf_ramblock_ret2_mask_enable_set(NRF_MEMCONF, 0, 0x1F8, false);
+#endif
+#if defined(DEVELOP_IN_NRF54L15) && defined(NRF54L10_XXAA)
+	nrf_memconf_ramblock_ret_mask_enable_set(NRF_MEMCONF, 0, 0x1C0, false);
+	nrf_memconf_ramblock_ret2_mask_enable_set(NRF_MEMCONF, 0, 0x1C0, false);
+#endif
+
 #endif
 
 #if defined(CONFIG_RETAINED_MEM_NRF_RAM_CTRL)
