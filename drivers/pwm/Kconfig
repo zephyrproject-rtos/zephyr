@@ -116,6 +116,8 @@ source "drivers/pwm/Kconfig.renesas_ra8"
 
 source "drivers/pwm/Kconfig.ifx_cat1"
 
+source "drivers/pwm/Kconfig.mspm0"
+
 source "drivers/pwm/Kconfig.fake"
 
 endif # PWM

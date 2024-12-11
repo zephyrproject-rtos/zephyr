@@ -1,0 +1,12 @@
+# MSPM0 PWM configuration options
+
+# Copyright (c) 2024 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+config PWM_MSPM0
+	bool "MSPM0 PWM driver"
+	default y
+	depends on DT_HAS_TI_MSPM0G1X0X_G3X0X_TIMER_PWM_ENABLED
+	select PINCTRL
+	help
+	  Enable mspm0 pwm driver.
