@@ -1942,16 +1942,21 @@ static int cmd_wifi_reg_domain(const struct shell *sh, size_t argc,
 	int ret, chan_idx = 0;
 	int opt;
 	bool force = false;
+	bool verbose = false;
 	int opt_index = 0;
 	static const struct option long_options[] = {
 		{"force", no_argument, 0, 'f'},
+		{"verbose", no_argument, 0, 'v'},
 		{NULL, 0, NULL, 0}
 	};
 
-	while ((opt = getopt_long(argc, argv, "f", long_options, &opt_index)) != -1) {
+	while ((opt = getopt_long(argc, argv, "fv", long_options, &opt_index)) != -1) {
 		switch (opt) {
 		case 'f':
 			force = true;
+			break;
+		case 'v':
+			verbose = true;
 			break;
 		default:
 			return -ENOEXEC;
@@ -1993,6 +1998,9 @@ static int cmd_wifi_reg_domain(const struct shell *sh, size_t argc,
 	if (regd.oper == WIFI_MGMT_GET) {
 		PR("Wi-Fi Regulatory domain is: %c%c\n",
 		   regd.country_code[0], regd.country_code[1]);
+		if (!verbose) {
+			return 0;
+		}
 		PR("<channel>\t<center frequency>\t<supported(y/n)>\t"
 		   "<max power(dBm)>\t<passive transmission only(y/n)>\t<DFS supported(y/n)>\n");
 		for (chan_idx = 0; chan_idx < regd.num_channels; chan_idx++) {
@@ -3508,9 +3516,10 @@ SHELL_SUBCMD_ADD((wifi), reg_domain, NULL,
 		 "[ISO/IEC 3166-1 alpha2]: Regulatory domain\n"
 		 "[-f]: Force to use this regulatory hint over any other regulatory hints\n"
 		 "Note1: The behavior of this command is dependent on the Wi-Fi driver/chipset implementation\n"
-		 "Note2: This may cause regulatory compliance issues, use it at your own risk.\n",
+		 "Note2: This may cause regulatory compliance issues, use it at your own risk.\n"
+		 "[-v]: Verbose, display the per-channel regulatory information\n",
 		 cmd_wifi_reg_domain,
-		 1, 2);
+		 1, 3);
 
 SHELL_SUBCMD_ADD((wifi), rts_threshold, NULL,
 		 "<rts_threshold: rts threshold/off>.\n",
