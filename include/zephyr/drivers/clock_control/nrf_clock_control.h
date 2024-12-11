@@ -243,6 +243,24 @@ int nrf_clock_control_request(const struct device *dev,
 }
 
 /**
+ * @brief Synchronously request a reservation to use a given clock with specified attributes.
+ *
+ * Function can only be called from thread context as it blocks until request is completed.
+ * @see nrf_clock_control_request().
+ *
+ * @param dev pointer to the clock device structure.
+ * @param spec See nrf_clock_control_request().
+ * @param timeout Request timeout.
+ *
+ * @retval 0 if request is fulfilled.
+ * @retval -EWOULDBLOCK if request is called from the interrupt context.
+ * @retval negative See error codes returned by nrf_clock_control_request().
+ */
+int nrf_clock_control_request_sync(const struct device *dev,
+				   const struct nrf_clock_spec *spec,
+				   k_timeout_t timeout);
+
+/**
  * @brief Release a reserved use of a clock.
  *
  * @param dev pointer to the clock device structure.
