@@ -41,3 +41,15 @@ endif # LOG
 endif # USB_DEVICE_STACK
 
 endif # BOARD_ARDUINO_PORTENTA_H7
+
+if BT
+
+choice AIROC_PART
+	default CYW4343W
+endchoice
+
+choice CYW4343W_MODULE
+	default CYW4343W_MURATA_1DX
+endchoice
+
+endif # BT
