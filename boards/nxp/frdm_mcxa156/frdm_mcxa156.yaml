@@ -20,5 +20,6 @@ supported:
   - gpio
   - counter
   - dac
+  - i2c
   - pwm
 vendor: nxp
