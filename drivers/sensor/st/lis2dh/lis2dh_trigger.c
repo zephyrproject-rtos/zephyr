@@ -361,22 +361,6 @@ int lis2dh_acc_slope_config(const struct device *dev,
 	return status;
 }
 
-#ifdef CONFIG_LIS2DH_ACCEL_HP_FILTERS
-int lis2dh_acc_hp_filter_set(const struct device *dev, int32_t val)
-{
-	struct lis2dh_data *lis2dh = dev->data;
-	int status;
-
-	status = lis2dh->hw_tf->update_reg(dev, LIS2DH_REG_CTRL2,
-					   LIS2DH_HPIS_EN_MASK, val);
-	if (status < 0) {
-		LOG_ERR("Failed to set high pass filters");
-	}
-
-	return status;
-}
-#endif
-
 static void lis2dh_gpio_int1_callback(const struct device *dev,
 				      struct gpio_callback *cb, uint32_t pins)
 {
