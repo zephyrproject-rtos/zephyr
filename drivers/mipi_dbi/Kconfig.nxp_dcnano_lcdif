@@ -5,6 +5,6 @@ config MIPI_DBI_NXP_DCNANO_LCDIF
 	bool "MIPI DBI driver for NXP DCnano LCDIF"
 	default y
 	depends on DT_HAS_NXP_DCNANO_LCDIF_DBI_ENABLED
-    select PINCTRL
+	select PINCTRL
 	help
 	  Enable support for MIPI DBI driver for NXP FlexIO based LCDIF controller.
