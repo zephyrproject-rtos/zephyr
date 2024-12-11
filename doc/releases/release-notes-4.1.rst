@@ -1,5 +1,28 @@
 :orphan:
 
+..
+  What goes here: removed/deprecated apis, new boards, new drivers, notable
+  features. If you feel like something new can be useful to a user, put it
+  under "Other Enhancements" in the first paragraph, if you feel like something
+  is worth mentioning in the project media (release blog post, release
+  livestream) put it under "Major enhancement".
+
+  No list of bugfixes, minor changes, those are already in the git log, this is
+  not a changelog.
+
+  Does the entry have a link that contains the details? Just add the link, if
+  you think it needs more details, put them in the content that shows up on the
+  link.
+
+  Are you thinking about generating this? Don't put anything at all.
+
+  Does the thing require the user to change their application? Put it on the
+  migration guide instead. (TODO: move the removed APIs section in the
+  migration guide)
+
+  Could the detailed paragraph that you are about to write go in the actual
+  project documentation instead and just be linked here? Do that instead.
+
 .. _zephyr_4.1:
 
 Zephyr 4.1.0 (Working Draft)
@@ -24,359 +47,178 @@ https://docs.zephyrproject.org/latest/security/vulnerabilities.html
 API Changes
 ***********
 
-Removed APIs in this release
-============================
+Removed APIs
+============
 
- * The deprecated Bluetooth HCI driver API has been removed. It has been replaced by a
-   :c:group:`new API<bt_hci_api>` that follows the normal Zephyr driver model.
- * The deprecated ``CAN_MAX_STD_ID`` (replaced by :c:macro:`CAN_STD_ID_MASK`) and ``CAN_MAX_EXT_ID``
-   (replaced by :c:macro:`CAN_EXT_ID_MASK`) CAN API macros have been removed.
- * The deprecated ``can_get_min_bitrate()`` (replaced by :c:func:`can_get_bitrate_min`) and
-   ``can_get_max_bitrate()`` (replaced by :c:func:`can_get_bitrate_max`) CAN API functions have been
-   removed.
- * The deprecated ``can_calc_prescaler()`` CAN API function has been removed.
+ * The legacy Bluetooth HCI driver API has been removed. It has been replaced
+   by a :c:group:`new API<bt_hci_api>` that follows the normal Zephyr driver
+   model.
 
-Deprecated in this release
-==========================
+ * The ``CAN_MAX_STD_ID`` (replaced by :c:macro:`CAN_STD_ID_MASK`) and
+   ``CAN_MAX_EXT_ID`` (replaced by :c:macro:`CAN_EXT_ID_MASK`) CAN API macros
+   have been removed.
 
-* Deprecated the :c:func:`bt_le_set_auto_conn` API function. Application developers can achieve
+ * The ``can_get_min_bitrate()`` (replaced by :c:func:`can_get_bitrate_min`)
+   and ``can_get_max_bitrate()`` (replaced by :c:func:`can_get_bitrate_max`)
+   CAN API functions have been removed.
+
+ * The ``can_calc_prescaler()`` CAN API function has been removed.
+
+ * The :kconfig:option:`CONFIG_NET_SOCKETS_POSIX_NAMES` option has been
+   removed.  It was a legacy option and was used to allow user to call BSD
+   socket API while not enabling POSIX API.  This removal means that in order
+   to use POSIX API socket calls, one needs to enable the
+   :kconfig:option:`CONFIG_POSIX_API` option.  If the application does not want
+   or is not able to enable that option, then the socket API calls need to be
+   prefixed by a ``zsock_`` string.
+
+Deprecated APIs
+===============
+
+* the :c:func:`bt_le_set_auto_conn` API function. Application developers can achieve
   the same functionality in their application code by reconnecting to the peer when the
   :c:member:`bt_conn_cb.disconnected` callback is invoked.
 
-Architectures
-*************
+* :kconfig:option:`CONFIG_NATIVE_APPLICATION` has been deprecated.
 
-* Common
+* For the native_sim target :kconfig:option:`CONFIG_NATIVE_SIM_NATIVE_POSIX_COMPAT` has been
+  switched to ``n`` by default, and this option has been deprecated.
 
-  * Introduced :kconfig:option:`CONFIG_ARCH_HAS_CUSTOM_CURRENT_IMPL`, which can be selected when
-    an architecture implemented and enabled its own :c:func:`arch_current_thread` and
-    :c:func:`arch_current_thread_set` functions for faster retrieval of the current CPU's thread
-    pointer. When enabled, ``_current`` variable will be routed to the
-    :c:func:`arch_current_thread` (:github:`80716`).
+* :kconfig:option:`CONFIG_BT_BUF_ACL_RX_COUNT`
 
-* ARC
+* All HWMv1 board name aliases which were added as deprecated in v3.7 are now removed
+  (:github:`82247`).
 
-* ARM
+New APIs and options
+====================
 
-* ARM64
+..
+  Link to new APIs here, in a group if you think it's necessary, no need to get
+  fancy just list the link, that should contain the documentation. If you feel
+  like you need to add more details, add them in the API documentation code
+  instead.
 
-* RISC-V
+* Architectures
 
-  * Implements :c:func:`arch_current_thread_set` & :c:func:`arch_current_thread`, which can be enabled
-    by :kconfig:option:`CONFIG_RISCV_CURRENT_VIA_GP` (:github:`80716`).
+  * :kconfig:option:`CONFIG_ARCH_HAS_CUSTOM_CURRENT_IMPL`
+  * :kconfig:option:`CONFIG_RISCV_CURRENT_VIA_GP`
 
-* Xtensa
+* Crypto
 
-* native/POSIX
+  * :kconfig:option:`CONFIG_MBEDTLS_PSA_STATIC_KEY_SLOTS`
+  * :kconfig:option:`CONFIG_MBEDTLS_PSA_KEY_SLOT_COUNT`
 
-  * :kconfig:option:`CONFIG_NATIVE_APPLICATION` has been deprecated.
-  * For the native_sim target :kconfig:option:`CONFIG_NATIVE_SIM_NATIVE_POSIX_COMPAT` has been
-    switched to ``n`` by default, and this option has been deprecated.
+* Other
 
-Kernel
-******
+  * :kconfig:option:`CONFIG_BT_BUF_ACL_RX_COUNT_EXTRA`
+  * :c:macro:`DT_ANY_INST_HAS_BOOL_STATUS_OKAY`
+  * :c:struct:`led_dt_spec`
 
-Bluetooth
-*********
+New Boards & SoC
+****************
+..
+  Just link the board, details go in the board description
 
-* Audio
+* :zephyr:board:`max78002evkit`
+* :zephyr:board:`acp_6_0_adsp`
+* :zephyr:board:`ucan`
+* :zephyr:board:`ttgo_t7v1_5`
+* :zephyr:board:`ttgo_t8s3`
+* :zephyr:board:`m5stack_cores3`
+* :zephyr:board:`mks_canable_v20`
+* :zephyr:board:`octopus_io_board`
+* :zephyr:board:`octopus_som`
+* :zephyr:board:`candlelight`
+* :zephyr:board:`candlelightfd`
+* :zephyr:board:`xiao_esp32c6`
+* :zephyr:board:`rp2040_zero`
+* :zephyr:board:`ch32v003evt`
+* :zephyr:board:`we_orthosie1ev`
+* :zephyr:board:`mini_stm32h7b0`
 
-* Host
+New Drivers
+***********
+..
+  Just link the driver, details go in the binding description
 
-  * :kconfig:option:`CONFIG_BT_BUF_ACL_RX_COUNT` has been deprecated and
-    :kconfig:option:`CONFIG_BT_BUF_ACL_RX_COUNT_EXTRA` has been added.
+* :dtcompatible:`silabs,dbus-pinctrl`
 
-* HCI Drivers
+* :dtcompatible:`renesas,bt-hci-da1453x`
+* :dtcompatible:`st,hci-stm32wb0`
+* :dtcompatible:`nuvoton,npcm-pcc`
+* :dtcompatible:`wch,ch32v00x-hse-clock`
+* :dtcompatible:`wch,ch32v00x-hsi-clock`
+* :dtcompatible:`wch,ch32v00x-pll-clock`
+* :dtcompatible:`wch,rcc`
+* :dtcompatible:`adi,max32-rtc-counter`
+* :dtcompatible:`wch,qingke-v2`
+* :dtcompatible:`xlnx,axi-dma-1.00.a`
+* :dtcompatible:`xlnx,eth-dma`
+* :dtcompatible:`renesas,ra-ethernet`
+* :dtcompatible:`lattice,ice40-fpga-base`
+* :dtcompatible:`lattice,ice40-fpga-bitbang`
+* :dtcompatible:`awinic,aw9523b-gpio`
+* :dtcompatible:`ite,it8801-gpio`
+* :dtcompatible:`nordic,npm2100-gpio`
+* :dtcompatible:`stemma-qt-connector`
+* :dtcompatible:`wch,gpio`
+* :dtcompatible:`nxp,hdlc-rcp-if`
+* :dtcompatible:`ti,tca9544a`
+* :dtcompatible:`ti,tca9544a-channel`
+* :dtcompatible:`ite,it8801-kbd`
+* :dtcompatible:`wch,pfic`
+* :dtcompatible:`linaro,ivshmem-mbox`
+* :dtcompatible:`renesas,ra-mdio`
+* :dtcompatible:`awinic,aw9523b`
+* :dtcompatible:`ite,it8801-altctrl`
+* :dtcompatible:`ite,it8801-mfd-map`
+* :dtcompatible:`ite,it8801-mfd`
+* :dtcompatible:`nordic,npm2100`
+* :dtcompatible:`nordic,nrf-ppib`
+* :dtcompatible:`fujitsu,mb85rsxx`
+* :dtcompatible:`silabs,dbus-pinctrl`
+* :dtcompatible:`wch,afio`
+* :dtcompatible:`ite,it8801-pwm`
+* :dtcompatible:`nordic,npm2100-regulator`
+* :dtcompatible:`adi,adxl366`
+* :dtcompatible:`adi,adxl366`
+* :dtcompatible:`hc-sr04`
+* :dtcompatible:`nordic,npm2100-vbat`
+* :dtcompatible:`sensirion,scd40`
+* :dtcompatible:`sensirion,scd41`
+* :dtcompatible:`sensirion,sts4x`
+* :dtcompatible:`wch,usart`
+* :dtcompatible:`ite,it8xxx2-spi`
+* :dtcompatible:`renesas,ra-spi`
+* :dtcompatible:`vnd,i2s`
+* :dtcompatible:`mediatek,ostimer64`
+* :dtcompatible:`wch,systick`
+* :dtcompatible:`ambiq,usb`
+* :dtcompatible:`zephyr,video-emul-imager`
+* :dtcompatible:`zephyr,video-emul-rx`
+* :dtcompatible:`nordic,npm2100-wdt`
 
-Boards & SoC Support
-********************
+New Samples
+***********
 
-* Added support for these SoC series:
+..
+  Just link the samples, details go in the sample documentation itself
 
-* Made these changes in other SoC series:
+* :zephyr:code-sample:`ble_cs`
+* :zephyr:code-sample:`coresight_stm_sample`
+* :zephyr:code-sample:`lvgl-screen-transparency`
+* :zephyr:code-sample:`mqtt-sn-publisher`
+* :zephyr:code-sample:`rtc`
+* :zephyr:code-sample:`webusb-next`
 
-* Added support for these boards:
+Other notable changes
+*********************
 
-* Made these board changes:
-
-  * All HWMv1 board name aliases which were added as deprecated in v3.7 are now removed
-    (:github:`82247`).
-  * Enabled USB, RTC on NXP ``frdm_mcxn236``
-
-* Added support for the following shields:
-
-Build system and Infrastructure
-*******************************
+..
+  Any more descriptive subsystem or driver changes. Do you really want to write
+  a paragraph or is it enough to link to the api/driver/Kconfig/board page above?
 
 * Space-separated lists support has been removed from Twister configuration
   files. This feature was deprecated a long time ago. Projects that do still use
   them can use the :zephyr_file:`scripts/utils/twister_to_list.py` script to
   automatically migrate Twister configuration files.
-
-Drivers and Sensors
-*******************
-
-* ADC
-
-* Battery
-
-* CAN
-
-* Charger
-
-* Clock control
-
-* Counter
-
-* DAC
-
-* Disk
-
-* Display
-
-  * Added flag ``frame_incomplete`` to ``display_write`` that indicates whether a write is the last
-    write of the frame, allowing display drivers to implement double buffering / tearing enable
-    signal handling (:github:`81250`)
-  * Added ``frame_incomplete`` handling to SDL display driver (:dtcompatible:`zephyr,sdl-dc`)
-    (:github:`81250`)
-  * Added transparency support to SDL display driver (:dtcompatible:`zephyr,sdl-dc`) (:github:`81184`)
-
-* Ethernet
-
-* Flash
-
-* FPGA
-
-  * Extracted from :dtcompatible:`lattice,ice40-fpga` the compatible and driver for
-    :dtcompatible:`lattice,ice40-fpga-bitbang`. This replaces the original ``load_mode`` property from
-    the binding, which selected either the SPI or GPIO bitbang load mode.
-
-* GNSS
-
-* GPIO
-
-* Hardware info
-
-* I2C
-
-* I2S
-
-* I3C
-
-* Input
-
-* LED
-
-  * Added a new set of devicetree based LED APIs, see :c:struct:`led_dt_spec`.
-  * lp5569: added use of auto-increment functionality.
-  * lp5569: implemented ``write_channels`` api.
-  * lp5569: demonstrate ``led_write_channels`` in the sample.
-
-* LED Strip
-
-* LoRa
-
-* Mailbox
-
-* MDIO
-
-* MFD
-
-* Modem
-
-* MIPI-DBI
-
-* MSPI
-
-* Pin control
-
-  * Added new driver for Silabs Series 2 (:dtcompatible:`silabs,dbus-pinctrl`).
-
-* PWM
-
-* Regulators
-
-* Reset
-
-* RTC
-
-* RTIO
-
-* SDHC
-
-* Sensors
-
-* Serial
-
-* SPI
-
-* USB
-
-* Video
-
-  * Changed :file:`include/zephyr/drivers/video-controls.h` to have control IDs (CIDs) matching
-    those present in the Linux kernel.
-
-* Watchdog
-
-* Wi-Fi
-
-Networking
-**********
-
-* ARP:
-
-* CoAP:
-
-* Connection manager:
-
-* DHCPv4:
-
-* DHCPv6:
-
-* DNS/mDNS/LLMNR:
-
-* gPTP/PTP:
-
-* HTTP:
-
-* IPSP:
-
-* IPv4:
-
-* IPv6:
-
-* LwM2M:
-
-* Misc:
-
-* MQTT:
-
-* Network Interface:
-
-* OpenThread:
-
-  * Removed the implicit enabling of the :kconfig:option:`CONFIG_NVS` Kconfig option by the :kconfig:option:`CONFIG_NET_L2_OPENTHREAD` symbol.
-
-* PPP
-
-* Shell:
-
-* Sockets:
-
-  * The deprecated :kconfig:option:`CONFIG_NET_SOCKETS_POSIX_NAMES` option has been removed.
-    It was a legacy option and was used to allow user to call BSD socket API while not enabling POSIX API.
-    This removal means that in order to use POSIX API socket calls, one needs to enable the
-    :kconfig:option:`CONFIG_POSIX_API` option.
-    If the application does not want or is not able to enable that option, then the socket API
-    calls need to be prefixed by a ``zsock_`` string.
-
-* Syslog:
-
-* TCP:
-
-* Websocket:
-
-* Wi-Fi:
-
-* zperf:
-
-USB
-***
-
-Devicetree
-**********
-
-* Added :c:macro:`DT_ANY_INST_HAS_BOOL_STATUS_OKAY`.
-
-Kconfig
-*******
-
-Libraries / Subsystems
-**********************
-
-* Debug
-
-* Demand Paging
-
-* Formatted output
-
-* Management
-
-* Logging
-
-* Modem modules
-
-* Power management
-
-* Crypto
-
-  * The Kconfig symbol :kconfig:option:`CONFIG_MBEDTLS_PSA_STATIC_KEY_SLOTS` was
-    added to allow Mbed TLS to use statically allocated buffers to store key material
-    in its PSA Crypto core instead of heap-allocated ones. This can help reduce
-    (or remove, if no other component makes use of it) heap memory requirements
-    from the final application.
-
-  * The Kconfig symbol :kconfig:option:`CONFIG_MBEDTLS_PSA_KEY_SLOT_COUNT` was
-    added to allow selecting the number of key slots available in the Mbed TLS
-    implementation of the PSA Crypto core. It defaults to 16. Since each
-    slot consumes RAM memory even if unused, this value can be tweaked in order
-    to minimize RAM usage.
-
-* CMSIS-NN
-
-* FPGA
-
-* Random
-
-* SD
-
-* State Machine Framework
-
-* Storage
-
-* Task Watchdog
-
-* POSIX API
-
-* LoRa/LoRaWAN
-
-* ZBus
-
-HALs
-****
-
-* Nordic
-
-* STM32
-
-* ADI
-
-* Espressif
-
-MCUboot
-*******
-
-OSDP
-****
-
-Trusted Firmware-M
-******************
-
-LVGL
-****
-
-* Added ``frame_incomplete`` support to indicate whether a write is the last
-  write of the frame (:github:`81250`)
-
-Tests and Samples
-*****************
-
-* Fixed incorrect alpha values in :zephyr_file:`samples/drivers/display`. (:github:`81184`)
-* Added :zephyr_file:`samples/modules/lvgl/screen_transparency`. (:github:`81184`)
-
-Issue Related Items
-*******************
-
-Known Issues
-============
