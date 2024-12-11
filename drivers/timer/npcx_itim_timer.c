@@ -217,15 +217,18 @@ static inline uint32_t npcx_itim_get_evt_cyc32(void)
 {
 	uint32_t cnt1, cnt2;
 
-	cnt1 = evt_tmr->ITCNT32;
-	/*
-	 * Wait for two consecutive equal values are read since the source clock
-	 * of event timer is 32KHz.
-	 */
-	while ((cnt2 = evt_tmr->ITCNT32) != cnt1) {
-		cnt1 = cnt2;
-	}
-
+	__asm__ volatile(
+		"ldr    %[c2], [%[tmr], %[itcnt32_off]]\n\t"
+		".read_itim_cnt_loop_%=:\n\t"
+		"mov    %[c1], %[c2]\n\t"
+		"ldr    %[c2], [%[tmr], %[itcnt32_off]]\n\t"
+		"nop\n\t"
+		"nop\n\t"
+		"cmp    %[c1], %[c2]\n\t"
+		"bne    .read_itim_cnt_loop_%=\n\t"
+		: [c1] "=&r"(cnt1), [c2] "=&r"(cnt2)
+		: [tmr] "r"(evt_tmr), [itcnt32_off] "i"(offsetof(struct itim32_reg, ITCNT32))
+		: "memory");
 	/* Return current value of 32-bit counter of event timer  */
 	return cnt2;
 }
