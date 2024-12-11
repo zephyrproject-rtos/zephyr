@@ -64,4 +64,4 @@ uint16_t mem_index_get(const void *mem, const void *mem_pool, uint16_t mem_size)
 void mem_rcopy(uint8_t *dst, uint8_t const *src, uint16_t len);
 uint8_t mem_nz(uint8_t *src, uint16_t len);
 
-uint32_t mem_ut(void);
+int mem_ut(void);
