@@ -11,9 +11,14 @@ LOG_MODULE_REGISTER(spi_mcux_lpspi, CONFIG_SPI_LOG_LEVEL);
 
 #include "spi_nxp_lpspi_priv.h"
 
+struct lpspi_driver_data {
+	lpspi_master_handle_t handle;
+};
+
 static int spi_mcux_transfer_next_packet(const struct device *dev)
 {
 	struct spi_mcux_data *data = dev->data;
+	struct lpspi_driver_data *lpspi_data = (struct lpspi_driver_data *)data->driver_data;
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 	struct spi_context *ctx = &data->ctx;
 	size_t max_chunk = spi_context_max_continuous_chunk(ctx);
@@ -33,7 +38,7 @@ static int spi_mcux_transfer_next_packet(const struct device *dev)
 	transfer.rxData = (ctx->rx_len == 0 ? NULL : ctx->rx_buf);
 	transfer.dataSize = max_chunk;
 
-	status = LPSPI_MasterTransferNonBlocking(base, &data->handle, &transfer);
+	status = LPSPI_MasterTransferNonBlocking(base, &lpspi_data->handle, &transfer);
 	if (status != kStatus_Success) {
 		LOG_ERR("Transfer could not start on %s: %d", dev->name, status);
 		return status == kStatus_LPSPI_Busy ? -EBUSY : -EINVAL;
@@ -45,9 +50,10 @@ static int spi_mcux_transfer_next_packet(const struct device *dev)
 static void lpspi_isr(const struct device *dev)
 {
 	struct spi_mcux_data *data = dev->data;
+	struct lpspi_driver_data *lpspi_data = (struct lpspi_driver_data *)data->driver_data;
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 
-	LPSPI_MasterTransferHandleIRQ(LPSPI_IRQ_HANDLE_ARG, &data->handle);
+	LPSPI_MasterTransferHandleIRQ(LPSPI_IRQ_HANDLE_ARG, &lpspi_data->handle);
 }
 
 static void spi_mcux_master_callback(LPSPI_Type *base, lpspi_master_handle_t *handle,
@@ -67,6 +73,7 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 {
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 	struct spi_mcux_data *data = dev->data;
+	struct lpspi_driver_data *lpspi_data = (struct lpspi_driver_data *)data->driver_data;
 	int ret;
 
 	spi_context_lock(&data->ctx, asynchronous, cb, userdata, spi_cfg);
@@ -76,7 +83,7 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 		goto out;
 	}
 
-	LPSPI_MasterTransferCreateHandle(base, &data->handle, spi_mcux_master_callback, data);
+	LPSPI_MasterTransferCreateHandle(base, &lpspi_data->handle, spi_mcux_master_callback, data);
 
 	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
 
@@ -138,7 +145,12 @@ static int spi_mcux_init(const struct device *dev)
 	SPI_NXP_LPSPI_COMMON_INIT(n)                                                               \
 	SPI_MCUX_LPSPI_CONFIG_INIT(n)                                                              \
                                                                                                    \
-	static struct spi_mcux_data spi_mcux_data_##n = {SPI_NXP_LPSPI_COMMON_DATA_INIT(n)};       \
+	static struct lpspi_driver_data lpspi_##n##_driver_data;                                   \
+                                                                                                   \
+	static struct spi_mcux_data spi_mcux_data_##n = {                                          \
+		SPI_NXP_LPSPI_COMMON_DATA_INIT(n)                                                  \
+		.driver_data = &lpspi_##n##_driver_data,                                           \
+	};                                                                                         \
                                                                                                    \
 	SPI_DEVICE_DT_INST_DEFINE(n, spi_mcux_init, NULL, &spi_mcux_data_##n,                      \
 				  &spi_mcux_config_##n, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,     \
