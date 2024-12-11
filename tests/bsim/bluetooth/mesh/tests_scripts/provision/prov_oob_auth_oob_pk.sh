@@ -8,6 +8,10 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 RunTest mesh_prov_pb_adv_oob_public_key \
 	prov_device_pb_adv_oob_public_key prov_provisioner_pb_adv_oob_public_key
 
+overlay=overlay_pb_gatt_conf
+RunTest mesh_prov_pb_gatt_oob_public_key \
+	prov_device_pb_gatt_oob_public_key prov_provisioner_pb_gatt_oob_public_key
+
 overlay=overlay_psa_conf
 RunTest mesh_prov_pb_adv_oob_public_key_psa \
 	prov_device_pb_adv_oob_public_key prov_provisioner_pb_adv_oob_public_key

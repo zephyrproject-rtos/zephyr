@@ -39,6 +39,12 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define IS_RPR_PRESENT  (CONFIG_BT_MESH_RPR_SRV && CONFIG_BT_MESH_RPR_CLI)
 #define IMPOSTER_MODEL_ID 0xe000
 
+#if defined(CONFIG_BT_MESH_PB_ADV)
+#define BT_MESH_PROV_BEARER BT_MESH_PROV_ADV
+#elif defined(CONFIG_BT_MESH_PB_GATT)
+#define BT_MESH_PROV_BEARER BT_MESH_PROV_GATT
+#endif
+
 enum test_flags {
 	IS_PROVISIONER,
 
@@ -272,6 +278,19 @@ static void unprovisioned_beacon(uint8_t uuid[16],
 	bt_mesh_provision_adv(uuid, 0, prov_addr, 0);
 }
 
+static void unprovisioned_beacon_gatt(uint8_t uuid[16], bt_mesh_prov_oob_info_t oob_info)
+{
+	if (!atomic_test_bit(test_flags, IS_PROVISIONER)) {
+		return;
+	}
+
+	if (uuid_to_provision && memcmp(uuid, uuid_to_provision, 16)) {
+		return;
+	}
+
+	bt_mesh_provision_gatt(uuid, 0, prov_addr, 0);
+}
+
 static void prov_complete(uint16_t net_idx, uint16_t addr)
 {
 	if (!atomic_test_bit(test_flags, IS_PROVISIONER)) {
@@ -305,7 +324,7 @@ static void prov_reprovisioned(uint16_t addr)
 
 static void prov_reset(void)
 {
-	ASSERT_OK(bt_mesh_prov_enable(BT_MESH_PROV_ADV));
+	ASSERT_OK(bt_mesh_prov_enable(BT_MESH_PROV_BEARER));
 }
 
 static bt_mesh_input_action_t gact;
@@ -363,6 +382,7 @@ static void capabilities(const struct bt_mesh_dev_capabilities *cap);
 static struct bt_mesh_prov prov = {
 	.uuid = dev_uuid,
 	.unprovisioned_beacon = unprovisioned_beacon,
+	.unprovisioned_beacon_gatt = unprovisioned_beacon_gatt,
 	.complete = prov_complete,
 	.link_open = prov_link_open,
 	.link_close = prov_link_close,
@@ -483,7 +503,7 @@ static void oob_device(bool use_oob_pk)
 	for (int i = 0; i < ARRAY_SIZE(oob_auth_test_vector); i++) {
 		oob_auth_set(i);
 
-		ASSERT_OK(bt_mesh_prov_enable(BT_MESH_PROV_ADV));
+		ASSERT_OK(bt_mesh_prov_enable(BT_MESH_PROV_BEARER));
 
 		/* Keep a long timeout so the prov multi case has time to finish: */
 		ASSERT_OK(k_sem_take(&prov_sem, K_SECONDS(40)));
@@ -606,13 +626,13 @@ static void node_configure_and_reset(void)
 
 /** @brief Verify that this device pb-adv provision.
  */
-static void test_device_pb_adv_no_oob(void)
+static void test_device_no_oob(void)
 {
 	k_sem_init(&prov_sem, 0, 1);
 
 	bt_mesh_device_setup(&prov, &comp);
 
-	ASSERT_OK(bt_mesh_prov_enable(BT_MESH_PROV_ADV));
+	ASSERT_OK(bt_mesh_prov_enable(BT_MESH_PROV_BEARER));
 
 	LOG_INF("Mesh initialized\n");
 
@@ -624,13 +644,13 @@ static void test_device_pb_adv_no_oob(void)
 
 /** @brief Verify that this device can be reprovisioned after resets
  */
-static void test_device_pb_adv_reprovision(void)
+static void test_device_reprovision(void)
 {
 	k_sem_init(&prov_sem, 0, 1);
 
 	bt_mesh_device_setup(&prov, &comp);
 
-	ASSERT_OK(bt_mesh_prov_enable(BT_MESH_PROV_ADV));
+	ASSERT_OK(bt_mesh_prov_enable(BT_MESH_PROV_BEARER));
 
 	LOG_INF("Mesh initialized\n");
 
@@ -645,7 +665,7 @@ static void test_device_pb_adv_reprovision(void)
 
 /** @brief Verify that this provisioner pb-adv provision.
  */
-static void test_provisioner_pb_adv_no_oob(void)
+static void test_provisioner_no_oob(void)
 {
 	k_sem_init(&prov_sem, 0, 1);
 
@@ -660,14 +680,14 @@ static void test_provisioner_pb_adv_no_oob(void)
 	PASS();
 }
 
-static void test_device_pb_adv_oob_auth(void)
+static void test_device_oob_auth(void)
 {
 	oob_device(false);
 
 	PASS();
 }
 
-static void test_provisioner_pb_adv_oob_auth(void)
+static void test_provisioner_oob_auth(void)
 {
 	oob_provisioner(false, false);
 
@@ -683,21 +703,21 @@ static void test_back_channel_pre_init(void)
 	}
 }
 
-static void test_device_pb_adv_oob_public_key(void)
+static void test_device_oob_public_key(void)
 {
 	oob_device(true);
 
 	PASS();
 }
 
-static void test_provisioner_pb_adv_oob_public_key(void)
+static void test_provisioner_oob_public_key(void)
 {
 	oob_provisioner(true, true);
 
 	PASS();
 }
 
-static void test_provisioner_pb_adv_oob_auth_no_oob_public_key(void)
+static void test_provisioner_oob_auth_no_oob_public_key(void)
 {
 	oob_provisioner(true, false);
 
@@ -706,7 +726,7 @@ static void test_provisioner_pb_adv_oob_auth_no_oob_public_key(void)
 
 /** @brief Verify that the provisioner can provision multiple devices in a row
  */
-static void test_provisioner_pb_adv_multi(void)
+static void test_provisioner_multi(void)
 {
 	k_sem_init(&prov_sem, 0, 1);
 
@@ -767,7 +787,7 @@ static void test_provisioner_iv_update_flag_one(void)
 
 /** @brief Verify that the provisioner can provision a device multiple times after resets
  */
-static void test_provisioner_pb_adv_reprovision(void)
+static void test_provisioner_reprovision(void)
 {
 	k_sem_init(&prov_sem, 0, 1);
 
@@ -798,7 +818,7 @@ static void test_device_unresponsive(void)
 
 	k_sem_init(&prov_sem, 0, 1);
 
-	ASSERT_OK(bt_mesh_prov_enable(BT_MESH_PROV_ADV));
+	ASSERT_OK(bt_mesh_prov_enable(BT_MESH_PROV_BEARER));
 
 	/* stop responding for 30s to timeout PB-ADV link establishment. */
 	bt_mesh_scan_disable();
@@ -1739,35 +1759,50 @@ static void test_device_pb_remote_server_ncrp_second_time(void)
 }
 #endif /* IS_RPR_PRESENT */
 
-#define TEST_CASE(role, name, description)                                     \
-	{                                                                      \
-		.test_id = "prov_" #role "_" #name, .test_descr = description, \
-		.test_post_init_f = test_##role##_init,                        \
-		.test_tick_f = bt_mesh_test_timeout,                           \
-		.test_main_f = test_##role##_##name,                           \
-		.test_delete_f = test_terminate                                \
-	}
-#define TEST_CASE_WBACKCHANNEL(role, name, description)                                     \
-	{                                                                      \
-		.test_id = "prov_" #role "_" #name, .test_descr = description, \
-		.test_post_init_f = test_##role##_init,                        \
-		.test_pre_init_f = test_back_channel_pre_init,                 \
-		.test_tick_f = bt_mesh_test_timeout,                           \
-		.test_main_f = test_##role##_##name,                           \
-		.test_delete_f = test_terminate                                \
-	}
+/* Test cases by default will run over PB_ADV*/
+#define TEST_CASE(role, name, description)                                                         \
+	{.test_id = "prov_" #role "_" #name,                                                       \
+	 .test_descr = description,                                                                \
+	 .test_post_init_f = test_##role##_init,                                                   \
+	 .test_tick_f = bt_mesh_test_timeout,                                                      \
+	 .test_main_f = test_##role##_##name,                                                      \
+	 .test_delete_f = test_terminate}
+/* Test cases that will run over either PB_ADV or PB_GATT */
+#define TEST_CASE_BEARER(role, bearer, name, description)                                          \
+	{.test_id = "prov_" #role "_" #bearer "_" #name,                                           \
+	 .test_descr = description,                                                                \
+	 .test_post_init_f = test_##role##_init,                                                   \
+	 .test_tick_f = bt_mesh_test_timeout,                                                      \
+	 .test_main_f = test_##role##_##name,                                                      \
+	 .test_delete_f = test_terminate}
+/* Test cases that will run over either PB_ADV or PB_GATT */
+#define TEST_CASE_WBACKCHANNEL(role, bearer, name, description)                                    \
+	{.test_id = "prov_" #role "_" #bearer "_" #name,                                           \
+	 .test_descr = description,                                                                \
+	 .test_post_init_f = test_##role##_init,                                                   \
+	 .test_pre_init_f = test_back_channel_pre_init,                                            \
+	 .test_tick_f = bt_mesh_test_timeout,                                                      \
+	 .test_main_f = test_##role##_##name,                                                      \
+	 .test_delete_f = test_terminate}
 
 static const struct bst_test_instance test_connect[] = {
-	TEST_CASE(device, pb_adv_no_oob,
-		  "Device: pb-adv provisioning use no-oob method"),
-	TEST_CASE_WBACKCHANNEL(device, pb_adv_oob_auth,
-		  "Device: pb-adv provisioning use oob authentication"),
-	TEST_CASE_WBACKCHANNEL(device, pb_adv_oob_public_key,
-		  "Device: pb-adv provisioning use oob public key"),
-	TEST_CASE(device, pb_adv_reprovision,
-		  "Device: pb-adv provisioning, reprovision"),
 	TEST_CASE(device, unresponsive,
 		  "Device: pb-adv provisioning, stops and resumes responding to provisioning"),
+#if defined(CONFIG_BT_MESH_PB_ADV)
+	TEST_CASE_BEARER(device, pb_adv, no_oob, "Device: pb-adv provisioning use no-oob method"),
+	TEST_CASE_WBACKCHANNEL(device, pb_adv, oob_auth,
+			       "Device: pb-adv provisioning use oob authentication"),
+	TEST_CASE_WBACKCHANNEL(device, pb_adv, oob_public_key,
+			       "Device: pb-adv provisioning use oob public key"),
+	TEST_CASE_BEARER(device, pb_adv, reprovision, "Device: pb-adv provisioning, reprovision"),
+#elif defined(CONFIG_BT_MESH_PB_GATT)
+	TEST_CASE_BEARER(device, pb_gatt, no_oob, "Device: pb-gatt provisioning use no-oob method"),
+	TEST_CASE_WBACKCHANNEL(device, pb_gatt, oob_auth,
+			       "Device: pb-gatt provisioning use oob authentication"),
+	TEST_CASE_WBACKCHANNEL(device, pb_gatt, oob_public_key,
+			       "Device: pb-gatt provisioning use oob public key"),
+	TEST_CASE_BEARER(device, pb_gatt, reprovision, "Device: pb-gatt provisioning, reprovision"),
+#endif
 #if IS_RPR_PRESENT
 	TEST_CASE(device, pb_remote_server_unproved,
 		  "Device: used for remote provisioning, starts unprovisioned"),
@@ -1780,23 +1815,41 @@ static const struct bst_test_instance test_connect[] = {
 	TEST_CASE(device, pb_remote_server_same_dev,
 		  "Device: used for remote reprovisioning, with both client and server"),
 #endif
-
-	TEST_CASE(provisioner, pb_adv_no_oob,
-		  "Provisioner: pb-adv provisioning use no-oob method"),
-	TEST_CASE(provisioner, pb_adv_multi,
-		  "Provisioner: pb-adv provisioning multiple devices"),
 	TEST_CASE(provisioner, iv_update_flag_zero,
 		  "Provisioner: effect on ivu_duration when IV Update flag is set to zero"),
 	TEST_CASE(provisioner, iv_update_flag_one,
 		  "Provisioner: effect on ivu_duration when IV Update flag is set to one"),
-	TEST_CASE_WBACKCHANNEL(provisioner, pb_adv_oob_auth,
-		  "Provisioner: pb-adv provisioning use oob authentication"),
-	TEST_CASE_WBACKCHANNEL(provisioner, pb_adv_oob_public_key,
-		  "Provisioner: pb-adv provisioning use oob public key"),
-	TEST_CASE_WBACKCHANNEL(provisioner, pb_adv_oob_auth_no_oob_public_key,
+#if defined(CONFIG_BT_MESH_PB_ADV)
+	TEST_CASE_BEARER(provisioner, pb_adv, no_oob,
+			 "Provisioner: pb-adv provisioning use no-oob method"),
+	TEST_CASE_BEARER(provisioner, pb_adv, multi,
+			 "Provisioner: pb-adv provisioning multiple devices"),
+	TEST_CASE_WBACKCHANNEL(provisioner, pb_adv, oob_auth,
+			       "Provisioner: pb-adv provisioning use oob authentication"),
+	TEST_CASE_WBACKCHANNEL(provisioner, pb_adv, oob_public_key,
+			       "Provisioner: pb-adv provisioning use oob public key"),
+	TEST_CASE_WBACKCHANNEL(
+		provisioner, pb_adv, oob_auth_no_oob_public_key,
 		"Provisioner: pb-adv provisioning use oob authentication, ignore oob public key"),
-	TEST_CASE(provisioner, pb_adv_reprovision,
-		  "Provisioner: pb-adv provisioning, resetting and reprovisioning multiple times."),
+	TEST_CASE_BEARER(
+		provisioner, pb_adv, reprovision,
+		"Provisioner: pb-adv provisioning, resetting and reprovisioning multiple times."),
+#elif defined(CONFIG_BT_MESH_PB_GATT)
+	TEST_CASE_BEARER(provisioner, pb_gatt, no_oob,
+			 "Provisioner: pb-gatt provisioning use no-oob method"),
+	TEST_CASE_BEARER(provisioner, pb_gatt, multi,
+			 "Provisioner: pb-gatt provisioning multiple devices"),
+	TEST_CASE_WBACKCHANNEL(provisioner, pb_gatt, oob_auth,
+			       "Provisioner: pb-gatt provisioning use oob authentication"),
+	TEST_CASE_WBACKCHANNEL(provisioner, pb_gatt, oob_public_key,
+			       "Provisioner: pb-gatt provisioning use oob public key"),
+	TEST_CASE_WBACKCHANNEL(
+		provisioner, pb_gatt, oob_auth_no_oob_public_key,
+		"Provisioner: pb-gatt provisioning use oob authentication, ignore oob public key"),
+	TEST_CASE_BEARER(
+		provisioner, pb_gatt, reprovision,
+		"Provisioner: pb-gatt provisioning, resetting and reprovisioning multiple times."),
+#endif
 #if IS_RPR_PRESENT
 	TEST_CASE(provisioner, pb_remote_client_reprovision,
 		  "Provisioner: pb-remote provisioning, resetting and reprov-ing multiple times."),
@@ -1808,8 +1861,7 @@ static const struct bst_test_instance test_connect[] = {
 		  "Provisioner: provisioning test, devices stop responding"),
 #endif
 
-	BSTEST_END_MARKER
-};
+	BSTEST_END_MARKER};
 
 struct bst_test_list *test_provision_install(struct bst_test_list *tests)
 {

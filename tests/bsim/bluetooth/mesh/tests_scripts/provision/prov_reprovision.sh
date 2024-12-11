@@ -8,6 +8,11 @@ RunTest mesh_prov_pb_adv_repr \
 	prov_device_pb_adv_reprovision \
 	prov_provisioner_pb_adv_reprovision
 
+overlay=overlay_pb_gatt_conf
+RunTest mesh_prov_pb_gatt_repr \
+	prov_device_pb_gatt_reprovision \
+	prov_provisioner_pb_gatt_reprovision
+
 overlay=overlay_psa_conf
 RunTest mesh_prov_pb_adv_repr_psa \
 	prov_device_pb_adv_reprovision \
