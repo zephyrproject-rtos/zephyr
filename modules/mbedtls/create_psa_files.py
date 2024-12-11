@@ -14,7 +14,7 @@ INPUT_REL_PATH = os.path.join("..", "..", "..", "modules", "crypto", "mbedtls",
                               "include", "psa", "crypto_config.h")
 INPUT_FILE = os.path.normpath(os.path.join(SCRIPT_PATH, INPUT_REL_PATH))
 
-KCONFIG_PATH=os.path.join(SCRIPT_PATH, "Kconfig.psa")
+KCONFIG_PATH=os.path.join(SCRIPT_PATH, "Kconfig.psa.auto")
 HEADER_PATH=os.path.join(SCRIPT_PATH, "configs", "config-psa.h")
 
 KCONFIG_HEADER="""\
