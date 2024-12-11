@@ -21,11 +21,11 @@ from twisterlib.runner import TwisterRunner
 from twisterlib.statuses import TwisterStatus
 from twisterlib.testplan import TestPlan
 
-logger = logging.getLogger("twister")
-logger.setLevel(logging.DEBUG)
-
 
 def setup_logging(outdir, log_file, log_level, timestamps):
+    logger = logging.getLogger("twister")
+    logger.setLevel(logging.DEBUG)
+
     # create file handler which logs even debug messages
     if log_file:
         fh = logging.FileHandler(log_file)
@@ -55,11 +55,27 @@ def setup_logging(outdir, log_file, log_level, timestamps):
     logger.addHandler(fh)
 
 
+def close_logging():
+    logger = logging.getLogger("twister")
+    handlers = logger.handlers[:]
+
+    for handler in handlers:
+        logger.removeHandler(handler)
+        handler.close()
+
+    loggers = [logging.getLogger(name) for name in logging.root.manager.loggerDict]
+    for logg in loggers:
+        handls = logg.handlers[:]
+        for handl in handls:
+            logg.removeHandler(handl)
+            handl.close()
+
+
 def init_color(colorama_strip):
     colorama.init(strip=colorama_strip)
 
 
-def main(options: argparse.Namespace, default_options: argparse.Namespace):
+def twister(options: argparse.Namespace, default_options: argparse.Namespace):
     start_time = time.time()
 
     # Configure color output
@@ -108,6 +124,7 @@ def main(options: argparse.Namespace, default_options: argparse.Namespace):
             fp.write(previous_results)
 
     setup_logging(options.outdir, options.log_file, options.log_level, options.timestamps)
+    logger = logging.getLogger("twister")
 
     env = TwisterEnv(options, default_options)
     env.discover()
@@ -252,3 +269,11 @@ def main(options: argparse.Namespace, default_options: argparse.Namespace):
 
     logger.info("Run completed")
     return 0
+
+
+def main(options: argparse.Namespace, default_options: argparse.Namespace):
+    try:
+        return_code = twister(options, default_options)
+    finally:
+        close_logging()
+    return return_code
