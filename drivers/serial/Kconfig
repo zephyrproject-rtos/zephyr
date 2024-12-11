@@ -148,6 +148,12 @@ config UART_ASYNC_TO_INT_DRIVEN_RX_TIMEOUT
 	help
 	  Receiver inactivity timeout. It is used to calculate timeout in microseconds.
 
+config UART_SHELL
+	bool "UART Shell commands"
+	depends on SHELL
+	help
+	  UART Shell commands
+
 comment "Serial Drivers"
 
 # zephyr-keep-sorted-start
