@@ -12,8 +12,8 @@ on:
       - "dts/*/nordic/**"
       - "tests/bluetooth/common/testlib/**"
       - "samples/bluetooth/**"
-      - "boards/posix/**"
-      - "soc/posix/**"
+      - "boards/native/**"
+      - "soc/native/**"
       - "arch/posix/**"
       - "include/zephyr/arch/posix/**"
       - "scripts/native_simulator/**"
@@ -96,8 +96,8 @@ jobs:
             .github/workflows/bsim-tests.yaml
             .github/workflows/bsim-tests-publish.yaml
             west.yml
-            boards/posix/
-            soc/posix/
+            boards/native/
+            soc/native/
             arch/posix/
             include/zephyr/arch/posix/
             scripts/native_simulator/
