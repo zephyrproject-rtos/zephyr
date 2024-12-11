@@ -158,8 +158,8 @@ isoal_status_t sink_sdu_alloc_hci(const struct isoal_sink    *sink_ctx,
 	struct net_buf *buf  = bt_buf_get_rx(BT_BUF_ISO_IN, K_FOREVER);
 
 	if (buf) {
-		/* Reserve space for headers */
-		net_buf_reserve(buf, SDU_HCI_HDR_SIZE);
+		/* Increase reserved space for headers */
+		net_buf_reserve(buf, SDU_HCI_HDR_SIZE + net_buf_headroom(buf));
 
 		sdu_buffer->dbuf = buf;
 		sdu_buffer->size = net_buf_tailroom(buf);
