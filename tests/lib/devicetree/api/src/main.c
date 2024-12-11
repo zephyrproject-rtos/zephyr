@@ -124,6 +124,7 @@ ZTEST(devicetree_api, test_path_props)
 	zassert_equal(DT_PROP_LEN(TEST_DEADBEEF, compatible), 1, "");
 	zassert_true(!strcmp(DT_PROP_BY_IDX(TEST_DEADBEEF, compatible, 0),
 			     "vnd,gpio-device"), "");
+	zassert_true(!strcmp(DT_PROP_LAST(TEST_DEADBEEF, compatible), "vnd,gpio-device"), "");
 	zassert_true(DT_NODE_HAS_PROP(TEST_DEADBEEF, status), "");
 	zassert_false(DT_NODE_HAS_PROP(TEST_DEADBEEF, foobar), "");
 
@@ -1637,6 +1638,7 @@ ZTEST(devicetree_api, test_arrays)
 	zassert_equal(DT_PROP_BY_IDX(TEST_ARRAYS, a, 0), a[0], "");
 	zassert_equal(DT_PROP_BY_IDX(TEST_ARRAYS, a, 1), a[1], "");
 	zassert_equal(DT_PROP_BY_IDX(TEST_ARRAYS, a, 2), a[2], "");
+	zassert_equal(DT_PROP_LAST(TEST_ARRAYS, a), a[2], "");
 
 	zassert_equal(DT_PROP_LEN(TEST_ARRAYS, a), 3, "");
 
