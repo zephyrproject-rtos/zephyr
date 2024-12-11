@@ -25,6 +25,11 @@ Currently, two types of Wi-Fi drivers are supported:
 * Networking or socket offloaded drivers
 * Native L2 Ethernet drivers
 
+Wi-Fi PSA crypto supported build
+********************************
+
+To enable PSA crypto API supported Wi-Fi build, the :kconfig:option:`CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ALT` and the :kconfig:option:`CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_MBEDTLS_PSA` need to be set.
+
 Wi-Fi Enterprise test: X.509 Certificate header generation
 **********************************************************
 
