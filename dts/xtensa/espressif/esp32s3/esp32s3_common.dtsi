@@ -104,6 +104,14 @@
 			zephyr,memory-region = "SRAM2";
 		};
 
+		/* NOTE: Addresses used in the following multi-processor nodes
+		 * are hard-coded and depends on the memory layout defined in
+		 * the memory.h. Changing following defines will affect the
+		 * current setup and would lead to runtime crashes.
+		 * - CONFIG_ESP_APPCPU_IRAM_SIZE
+		 * - CONFIG_ESP_APPCPU_DRAM_SIZE
+		 * - BOOTLOADER_IRAM_LOADER_SEG_LEN
+		 */
 		ipmmem0: memory@3fcb2000 {
 			compatible = "mmio-sram";
 			reg = <0x3fcb2000 0x400>;

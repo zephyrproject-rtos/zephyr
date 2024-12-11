@@ -3,9 +3,3 @@
 # SPDX-License-Identifier: Apache-2.0
 
 source "share/sysbuild/Kconfig"
-
-config IPM_REMOTE_BOARD
-	string
-	default "esp32_devkitc_wrover/esp32/appcpu" if $(BOARD) = "esp32_devkitc_wroom"
-	default "esp32_devkitc_wroom/esp32/appcpu" if $(BOARD) = "esp32_devkitc_wroom"
-	default "esp32s3_devkitm/esp32s3/appcpu" if $(BOARD) = "esp32s3_devkitm"

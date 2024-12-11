@@ -18,6 +18,7 @@
 #include "esp_mcuboot_image.h"
 #include "esp_memory_utils.h"
 
+/* AMP support */
 #ifdef CONFIG_SOC_ENABLE_APPCPU
 
 #include "bootloader_flash_priv.h"
@@ -66,16 +67,12 @@ int IRAM_ATTR esp_appcpu_image_load(unsigned int hdr_offset, unsigned int *entry
 	const uint32_t img_off = FIXED_PARTITION_OFFSET(slot0_appcpu_partition);
 	const uint32_t fa_size = FIXED_PARTITION_SIZE(slot0_appcpu_partition);
 	const uint8_t fa_id = FIXED_PARTITION_ID(slot0_appcpu_partition);
-	int rc = 0;
 
 	if (entry_addr == NULL) {
 		ets_printf("Can't return the entry address. Aborting!\n");
 		abort();
 		return -1;
 	}
-
-	ets_printf("Loading appcpu image, area id: %d, offset: 0x%x, hdr.off: 0x%x, size: %d kB\n",
-		   fa_id, img_off, hdr_offset, fa_size / 1024);
 
 	uint32_t mcuboot_header[8] = {0};
 	esp_image_load_header_t image_header = {0};
@@ -89,7 +86,8 @@ int IRAM_ATTR esp_appcpu_image_load(unsigned int hdr_offset, unsigned int *entry
 	sys_munmap(data);
 
 	if (image_header.header_magic == ESP_LOAD_HEADER_MAGIC) {
-		ets_printf("MCUboot image format\n");
+		ets_printf("APPCPU image, area id: %d, offset: 0x%x, hdr.off: 0x%x, size: %d kB\n",
+			   fa_id, img_off, hdr_offset, fa_size / 1024);
 	} else if ((image_header.header_magic & 0xff) == 0xE9) {
 		ets_printf("ESP image format is not supported\n");
 		abort();
@@ -130,13 +128,13 @@ int IRAM_ATTR esp_appcpu_image_load(unsigned int hdr_offset, unsigned int *entry
 	load_segment(img_off + image_header.dram_flash_offset, image_header.dram_size,
 		     image_header.dram_dest_addr);
 
-	ets_printf("Application start=%xh\n", image_header.entry_addr);
+	ets_printf("Application start=%xh\n\n", image_header.entry_addr);
 	esp_rom_uart_tx_wait_idle(0);
 
 	assert(entry_addr != NULL);
 	*entry_addr = image_header.entry_addr;
 
-	return rc;
+	return 0;
 }
 
 void esp_appcpu_image_stop(void)

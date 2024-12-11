@@ -7,7 +7,7 @@
 
 #include <espressif/esp32/esp32_wrover_e_n16r4.dtsi>
 #include "odroid_go-pinctrl.dtsi"
-#include "odroid_go-flash_partition_table.dtsi"
+#include <espressif/partitions_0x1000_amp.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {

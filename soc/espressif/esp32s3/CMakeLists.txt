@@ -62,9 +62,11 @@ if(CONFIG_ESP_SIMPLE_BOOT OR CONFIG_MCUBOOT)
       -o ${CMAKE_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.bin
       ${CMAKE_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.elf)
 
-  endif()
+ eppppcpndif()
 
 endif()
+
+set_property(TARGET bintools PROPERTY disassembly_flag_inline_source)
 
 # Select the image origin depending on the boot configuration
 if(CONFIG_SOC_ESP32S3_APPCPU)
@@ -91,17 +93,15 @@ if(CONFIG_MCUBOOT)
         ${PYTHON_EXECUTABLE} ${ESP_IDF_PATH}/tools/ci/check_callgraph.py
       ARGS
         --rtl-dirs ${CMAKE_BINARY_DIR}/zephyr
-	--elf-file ${CMAKE_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.elf
+        --elf-file ${CMAKE_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.elf
         find-refs
-	--from-section='.iram0.loader_text'
-	--to-section='.iram0.text'
+        --from-section='.iram0.loader_text'
+        --to-section='.iram0.text'
         --exit-code)
 endif()
 
 if(CONFIG_MCUBOOT)
   set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/mcuboot.ld CACHE INTERNAL "")
-elseif(CONFIG_SOC_ESP32S3_APPCPU)
-  set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/default_appcpu.ld CACHE INTERNAL "")
 else()
   set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/default.ld CACHE INTERNAL "")
 endif()
