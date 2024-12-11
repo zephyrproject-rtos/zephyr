@@ -548,7 +548,7 @@ static int cmd_get_sensor(const struct shell *sh, size_t argc, char *argv[])
 		return err;
 	}
 
-	dev = device_get_binding(argv[1]);
+	dev = shell_device_get_binding(argv[1]);
 	if (dev == NULL || !sensor_device_check(dev)) {
 		shell_error(sh, "Sensor device unknown (%s)", argv[1]);
 		k_mutex_unlock(&cmd_get_mutex);
@@ -617,7 +617,7 @@ static int cmd_sensor_attr_set(const struct shell *shell_ptr, size_t argc, char 
 	const struct device *dev;
 	int rc;
 
-	dev = device_get_binding(argv[1]);
+	dev = shell_device_get_binding(argv[1]);
 	if (dev == NULL || !sensor_device_check(dev)) {
 		shell_error(shell_ptr, "Sensor device unknown (%s)", argv[1]);
 		return -ENODEV;
@@ -701,7 +701,7 @@ static int cmd_sensor_attr_get(const struct shell *shell_ptr, size_t argc, char 
 {
 	const struct device *dev;
 
-	dev = device_get_binding(argv[1]);
+	dev = shell_device_get_binding(argv[1]);
 	if (dev == NULL || !sensor_device_check(dev)) {
 		shell_error(shell_ptr, "Sensor device unknown (%s)", argv[1]);
 		return -ENODEV;
@@ -1051,7 +1051,7 @@ static int cmd_trig_sensor(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	/* Parse device name */
-	dev = device_get_binding(argv[1]);
+	dev = shell_device_get_binding(argv[1]);
 	if (dev == NULL || !sensor_device_check(dev)) {
 		shell_error(sh, "Sensor device unknown (%s)", argv[1]);
 		return -ENODEV;

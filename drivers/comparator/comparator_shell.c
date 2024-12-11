@@ -30,7 +30,7 @@ static int get_device_from_str(const struct shell *sh,
 			       const char *dev_str,
 			       const struct device **dev)
 {
-	*dev = device_get_binding(dev_str);
+	*dev = shell_device_get_binding(dev_str);
 
 	if (*dev == NULL) {
 		shell_error(sh, "%s not %s", dev_str, "found");

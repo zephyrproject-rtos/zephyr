@@ -27,7 +27,7 @@ static int cmd_ppc_dump(const struct shell *sh, size_t argc, char **argv)
 	if (argc <= 1) {
 		DT_FOREACH_STATUS_OKAY_VARGS(usb_c_connector, CALL_IF_HAS_PPC, ppc_dump_regs);
 	} else {
-		const struct device *dev = device_get_binding(argv[1]);
+		const struct device *dev = shell_device_get_binding(argv[1]);
 
 		ret = ppc_dump_regs(dev);
 	}
@@ -66,7 +66,7 @@ static int cmd_ppc_status(const struct shell *sh, size_t argc, char **argv)
 	if (argc <= 1) {
 		DT_FOREACH_STATUS_OKAY_VARGS(usb_c_connector, CALL_IF_HAS_PPC, print_status);
 	} else {
-		const struct device *dev = device_get_binding(argv[1]);
+		const struct device *dev = shell_device_get_binding(argv[1]);
 
 		ret = print_status(dev);
 	}
@@ -90,7 +90,7 @@ static int cmd_ppc_exit_db(const struct shell *sh, size_t argc, char **argv)
 		DT_FOREACH_STATUS_OKAY_VARGS(usb_c_connector, CALL_IF_HAS_PPC,
 					     ppc_exit_dead_battery_mode);
 	} else {
-		const struct device *dev = device_get_binding(argv[1]);
+		const struct device *dev = shell_device_get_binding(argv[1]);
 
 		ret = ppc_exit_dead_battery_mode(dev);
 	}
