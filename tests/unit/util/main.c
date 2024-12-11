@@ -867,6 +867,27 @@ ZTEST(util, test_utf8_lcpy_truncated)
 	zassert_str_equal(dest_str, expected_result, "Failed to copy");
 }
 
+ZTEST(util, test_utf8_is_valid)
+{
+	/* Test whether the verification function meets the requirements */
+	zassert_true(utf8_is_valid("κόσμε", 11));
+	zassert_true(utf8_is_valid("\x00", 1), "1 byte (U-00000000)");
+	zassert_true(utf8_is_valid("\xc2\x80", 2)), "2 bytes (U-00000080)";
+	zassert_true(utf8_is_valid("\xef\xbf\xbf", 3), "(U-0000FFFF)");
+	zassert_true(utf8_is_valid("\xed\x9f\xbf", 3), "U-0000D7FF");
+	zassert_true(utf8_is_valid("\xef\xbf\xbf", 3), "Replacement Character U+FFFF");
+	zassert_true(utf8_is_valid("\xef\xbf\xbe", 3), "Byte Order Mark (BOM) U+FFFE");
+	zassert_false(utf8_is_valid("\x80", 1), "First continuation byte 0x80");
+	zassert_false(utf8_is_valid("\xc0", 1), "2-bytes U+0000, last byte missing");
+	zassert_false(utf8_is_valid("\xfe", 1), "impossible byte");
+	zassert_false(utf8_is_valid("\xfe\xfe\xff\xff", 4), "several impossible bytes");
+	zassert_false(utf8_is_valid("\xc0\x7f", 2), "no continuation byte");
+	zassert_false(utf8_is_valid("\xc0\xaf", 2), "Overlong U+002F");
+	zassert_false(utf8_is_valid("\xc1\xbf", 2), "Overlong U-0000007F");
+	zassert_false(utf8_is_valid("\xc0\x80", 2), "2 bytes overlong U+0000");
+	zassert_false(utf8_is_valid(NULL, 1), "NULL str argument");
+}
+
 ZTEST(util, test_utf8_lcpy_not_truncated)
 {
 	/* dest_str size is based on storing 3 * € plus the null terminator  */
