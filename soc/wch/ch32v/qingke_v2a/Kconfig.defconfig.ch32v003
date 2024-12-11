@@ -3,6 +3,9 @@
 
 if SOC_CH32V003
 
+config VECTOR_TABLE_SIZE
+	default 38
+
 config NUM_IRQS
 	default 48
 
