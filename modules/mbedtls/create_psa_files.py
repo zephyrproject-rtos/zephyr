@@ -57,6 +57,20 @@ H_HEADER="""\
 
 H_FOOTER="\n#endif /* CONFIG_PSA_H */\n"
 
+# In Mbed TLS the PSA_WANT_KEY_TYPE_[ECC|RSA|DH]_KEY_PAIR_BASIC build symbols
+# are automatically enabled whenever any other _IMPORT, _EXPORT, _GENERATE or
+# _DERIVE feature is set for the same key type
+# (see "modules/crypto/mbedtls/include/psa/crypto_adjust_config_key_pair_types.h").
+# Therefore we mimic the same pattern with Kconfigs as follows:
+# - do not add _BASIC Kconfigs to the automatic generated file (KCONFIG_PATH);
+# - add _BASIC Kconfigs to Kconfig.psa.logic and let them "default y" as soon as
+#   any other _IMPORT, _EXPORT, _GENERATE or _DERIVE Kconfigs are enabled.
+SKIP_SYMBOLS = [
+    "PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_BASIC",
+    "PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_BASIC",
+    "PSA_WANT_KEY_TYPE_DH_KEY_PAIR_BASIC"
+]
+
 def parse_psa_symbols(input_file: str):
     symbols = []
     with open(input_file) as file:
@@ -70,6 +84,8 @@ def parse_psa_symbols(input_file: str):
 def generate_kconfig_content(symbols: List[str]) -> str:
     output = []
     for sym in symbols:
+        if sym in SKIP_SYMBOLS:
+            continue
         output.append("""
 config {0}
 \tbool "{0}" if !MBEDTLS_PROMPTLESS
