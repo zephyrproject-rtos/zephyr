@@ -162,6 +162,20 @@
 #define NRF_FUN_CAN_TX 46U
 /** CAN RX */
 #define NRF_FUN_CAN_RX 47U
+/** TDM SCK in master mode */
+#define NRF_FUN_TDM_SCK_M 48U
+/** TDM SCK in slave mode */
+#define NRF_FUN_TDM_SCK_S 49U
+/** TDM LRCK in master mode */
+#define NRF_FUN_TDM_FSYNC_M 50U
+/** TDM LRCK in slave mode */
+#define NRF_FUN_TDM_FSYNC_S 51U
+/** TDM SDIN */
+#define NRF_FUN_TDM_SDIN 52U
+/** TDM SDOUT */
+#define NRF_FUN_TDM_SDOUT 53U
+/** TDM MCK */
+#define NRF_FUN_TDM_MCK 54U
 
 /** @} */
 
