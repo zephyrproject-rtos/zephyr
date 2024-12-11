@@ -96,6 +96,7 @@ config NRF70_STA_MODE
 config NRF70_AP_MODE
 	bool "Access point mode"
 	depends on WIFI_NM_WPA_SUPPLICANT_AP
+	default y if WIFI_NM_WPA_SUPPLICANT_AP
 
 config NRF70_P2P_MODE
 	bool "P2P support in driver"
