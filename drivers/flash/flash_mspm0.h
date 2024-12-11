@@ -8,7 +8,7 @@
 
 #define FLASH_SIZE (CONFIG_FLASH_SIZE * 1024)
 #define FLASH_PAGE_SIZE          (CONFIG_FLASH_MSPM0_LAYOUT_PAGE_SIZE)
-#define FLASH_MSPM0_BASE_ADDRESS DT_REG_ADDR(DT_INST(0, ti_mspm0_nv_flash))
+#define FLASH_MSPM0_BASE_ADDRESS DT_REG_ADDR(DT_INST(0, soc_nv_flash))
 
 #if DT_PROP(DT_INST(0, soc_nv_flash), write_block_size)
 #define FLASH_MSPM0_WRITE_BLOCK_SIZE \
