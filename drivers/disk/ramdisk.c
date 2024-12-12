@@ -142,6 +142,21 @@ static const struct disk_operations ram_disk_ops = {
 		.buf = UINT_TO_POINTER(DT_REG_ADDR(DT_INST_PHANDLE(n, ram_region))),	\
 	}
 
+#define RAMDISK_DEVICE_CONFIG_DEFINE_DISKIMG(n)                                         \
+	__asm__(".section   " STRINGIFY(.ramdisk_##n) "\n\t"                            \
+		".incbin    \"" DT_INST_PROP(n, zephyr_disk_image_path) "\"\n");        \
+											\
+	extern uint8_t __disk_buf_##n[];                                                \
+	extern uint8_t __disk_buf_size_##n[];                                           \
+	extern uint8_t __disk_buf_sector_count_##n[];                                   \
+											\
+	static struct ram_disk_config disk_config_##n = {				\
+		.sector_size = DT_INST_PROP(n, sector_size),				\
+		.sector_count = (size_t)__disk_buf_sector_count_##n,			\
+		.size = (size_t)__disk_buf_size_##n,					\
+		.buf = __disk_buf_##n,							\
+	}
+
 #define RAMDISK_DEVICE_CONFIG_DEFINE_LOCAL(n)						\
 	static uint8_t disk_buf_##n[DT_INST_PROP(n, sector_size) *			\
 				    DT_INST_PROP(n, sector_count)];			\
@@ -156,7 +171,9 @@ static const struct disk_operations ram_disk_ops = {
 #define RAMDISK_DEVICE_CONFIG_DEFINE(n)							\
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, ram_region),				\
 		    (RAMDISK_DEVICE_CONFIG_DEFINE_MEMREG(n)),				\
-		    (RAMDISK_DEVICE_CONFIG_DEFINE_LOCAL(n)))
+			(COND_CODE_1(DT_INST_NODE_HAS_PROP(n, zephyr_disk_image_path),	\
+				(RAMDISK_DEVICE_CONFIG_DEFINE_DISKIMG(n)),		\
+				(RAMDISK_DEVICE_CONFIG_DEFINE_LOCAL(n)))))
 
 #define RAMDISK_DEVICE_DEFINE(n)							\
 											\
