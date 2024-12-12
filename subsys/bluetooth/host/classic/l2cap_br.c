@@ -313,7 +313,7 @@ int bt_l2cap_br_send_cb(struct bt_conn *conn, uint16_t cid, struct net_buf *buf,
 	hdr->cid = sys_cpu_to_le16(cid);
 
 	if (buf->user_data_size < sizeof(struct closure)) {
-		LOG_DBG("not enough room in user_data %d < %d pool %u",
+		LOG_WRN("not enough room in user_data %d < %d pool %u",
 			buf->user_data_size,
 			CONFIG_BT_CONN_TX_USER_DATA_SIZE,
 			buf->pool_id);
