@@ -582,6 +582,11 @@
 			/* MCXN94x ROM Flash API supports writing of 128B pages. */
 			write-block-size = <128>;
 		};
+
+		uuid: uuid@1100000 {
+			compatible = "nxp,lpc-uid";
+			reg = <0x1100000 0x10>;
+		};
 	};
 
 	os_timer: timers@49000 {
