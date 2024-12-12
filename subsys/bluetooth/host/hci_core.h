@@ -7,7 +7,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* Skip devicetree.h for unit test as it causes some define collitions. */
+#ifndef ZTEST_UNITTEST
 #include <zephyr/devicetree.h>
+#endif
 
 /* LL connection parameters */
 #define LE_CONN_LATENCY		0x0000
