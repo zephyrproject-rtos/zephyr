@@ -178,8 +178,8 @@ test_spi_i3g4250d: i3g4250d@17 {
 	spi-max-frequency = <0>;
 };
 
-test_spi_icm42670: icm42670@18 {
-	compatible = "invensense,icm42670";
+test_spi_icm42670p: icm42670p@18 {
+	compatible = "invensense,icm42670p";
 	reg = <0x18>;
 	spi-max-frequency = <0>;
 	int-gpios = <&test_gpio 0 0>;
