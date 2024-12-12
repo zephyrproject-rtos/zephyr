@@ -20,6 +20,7 @@ def test_runner_imports():
         'blackmagicprobe',
         'bossac',
         'canopen',
+        'cvi-fiptool',
         'dediprog',
         'dfu-util',
         'esp32',
