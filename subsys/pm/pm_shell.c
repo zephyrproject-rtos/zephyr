@@ -31,7 +31,7 @@ static int pm_cmd_suspend(const struct shell *sh, size_t argc, char *argv[])
 	const struct device *dev;
 	int ret;
 
-	dev = device_get_binding(argv[1]);
+	dev = shell_device_get_binding(argv[1]);
 	if (dev == NULL) {
 		shell_error(sh, "Invalid device: %s", argv[1]);
 		return -ENODEV;
@@ -57,7 +57,7 @@ static int pm_cmd_resume(const struct shell *sh, size_t argc, char *argv[])
 	const struct device *dev;
 	int ret;
 
-	dev = device_get_binding(argv[1]);
+	dev = shell_device_get_binding(argv[1]);
 	if (dev == NULL) {
 		shell_error(sh, "Invalid device: %s", argv[1]);
 		return -ENODEV;
@@ -84,7 +84,7 @@ static int pm_cmd_runtime_get(const struct shell *sh, size_t argc, char *argv[])
 	const struct device *dev;
 	int ret;
 
-	dev = device_get_binding(argv[1]);
+	dev = shell_device_get_binding(argv[1]);
 	if (dev == NULL) {
 		shell_error(sh, "Invalid device: %s", argv[1]);
 		return -ENODEV;
@@ -109,7 +109,7 @@ static int pm_cmd_runtime_put(const struct shell *sh, size_t argc, char *argv[])
 	const struct device *dev;
 	int ret;
 
-	dev = device_get_binding(argv[1]);
+	dev = shell_device_get_binding(argv[1]);
 	if (dev == NULL) {
 		shell_error(sh, "Invalid device: %s", argv[1]);
 		return -ENODEV;
@@ -134,7 +134,7 @@ static int pm_cmd_runtime_put_async(const struct shell *sh, size_t argc, char *a
 	const struct device *dev;
 	int ret;
 
-	dev = device_get_binding(argv[1]);
+	dev = shell_device_get_binding(argv[1]);
 	if (dev == NULL) {
 		shell_error(sh, "Invalid device: %s", argv[1]);
 		return -ENODEV;
