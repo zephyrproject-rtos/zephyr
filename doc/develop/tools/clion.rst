@@ -3,6 +3,15 @@
 CLion
 #####
 
+.. note::
+
+   This guide describes how to set up, build, and debug Zephyr's sample application in CLion, using
+   the IDE's CMake integration. This approach is no longer optimal.
+
+   CLion now features `native Zephyr West integration`_ which provides an easier and more intuitive
+   way to open, build, and run/debug Zephyr projects. This guide will be updated soon, but is still
+   valid if you prefer to use CMake.
+
 CLion_ is a cross-platform C/C++ IDE that supports multi-threaded RTOS debugging.
 
 This guide describes the process of setting up, building, and debugging Zephyr's
@@ -200,6 +209,7 @@ Start debugging
 
    Refer to `CLion web help`_ for detailed description of the IDE debug capabilities.
 
+.. _native Zephyr West integration: https://www.jetbrains.com/help/clion/zephyr.html
 .. _CLion: https://www.jetbrains.com/clion/
 .. _Download CLion: https://www.jetbrains.com/clion/download
 .. _Project security: https://www.jetbrains.com/help/clion/project-security.html#projects_security
