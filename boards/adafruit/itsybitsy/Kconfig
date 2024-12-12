@@ -1,9 +1,0 @@
-# Adafruit ItsyBitsy nRF52840 Express board configuration
-
-# Copyright (c) 2022 Embla Flatlandsmo <embla.flatlandsmo@gmail.com>
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_SERIAL_BACKEND_CDC_ACM
-	bool "USB CDC"
-	default y
-	depends on BOARD_ADAFRUIT_ITSYBITSY
