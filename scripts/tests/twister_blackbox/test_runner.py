@@ -128,9 +128,9 @@ class TestRunner:
             os.path.join(TEST_DATA, 'tests', 'dummy'),
             ['qemu_x86/atom'],
             ['device'],
-            ['dummy.agnostic.group2 SKIPPED: Command line testsuite tag filter',
-             'dummy.agnostic.group1.subgroup2 SKIPPED: Command line testsuite tag filter',
-             'dummy.agnostic.group1.subgroup1 SKIPPED: Command line testsuite tag filter',
+            ['dummy.agnostic.group2 FILTERED: Command line testsuite tag filter',
+             'dummy.agnostic.group1.subgroup2 FILTERED: Command line testsuite tag filter',
+             'dummy.agnostic.group1.subgroup1 FILTERED: Command line testsuite tag filter',
              r'0 of 0 executed test configurations passed \(0.00%\), 0 built \(not run\), 0 failed, 0 errored'
              ]
         ),
@@ -138,7 +138,7 @@ class TestRunner:
             os.path.join(TEST_DATA, 'tests', 'dummy'),
             ['qemu_x86/atom'],
             ['subgrouped'],
-            ['dummy.agnostic.group2 SKIPPED: Command line testsuite tag filter',
+            ['dummy.agnostic.group2 FILTERED: Command line testsuite tag filter',
              r'1 of 2 executed test configurations passed \(50.00%\), 1 built \(not run\), 0 failed, 0 errored'
              ]
         ),

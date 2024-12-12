@@ -89,26 +89,26 @@ class TestQuarantine:
         sys.stdout.write(out)
         sys.stderr.write(err)
 
-        board1_match1 = re.search('agnostic/group2/dummy.agnostic.group2 SKIPPED: Quarantine: test '
+        board1_match1 = re.search('agnostic/group2/dummy.agnostic.group2 FILTERED: Quarantine: test '
                                'intel_adl_crb', err)
         board1_match2 = re.search(
-            'agnostic/group1/subgroup2/dummy.agnostic.group1.subgroup2 SKIPPED: Quarantine: test '
+            'agnostic/group1/subgroup2/dummy.agnostic.group1.subgroup2 FILTERED: Quarantine: test '
             'intel_adl_crb',
             err)
         qemu_64_match = re.search(
-            'agnostic/group1/subgroup2/dummy.agnostic.group1.subgroup2 SKIPPED: Quarantine: test '
+            'agnostic/group1/subgroup2/dummy.agnostic.group1.subgroup2 FILTERED: Quarantine: test '
             'qemu_x86_64',
             err)
         all_platforms_match = re.search(
-            'agnostic/group1/subgroup1/dummy.agnostic.group1.subgroup1 SKIPPED: Quarantine: test '
+            'agnostic/group1/subgroup1/dummy.agnostic.group1.subgroup1 FILTERED: Quarantine: test '
             'all platforms',
             err)
         all_platforms_match2 = re.search(
-            'agnostic/group1/subgroup1/dummy.agnostic.group1.subgroup1 SKIPPED: Quarantine: test '
+            'agnostic/group1/subgroup1/dummy.agnostic.group1.subgroup1 FILTERED: Quarantine: test '
             'all platforms',
             err)
         all_platforms_match3 = re.search(
-            'agnostic/group1/subgroup1/dummy.agnostic.group1.subgroup1 SKIPPED: Quarantine: test '
+            'agnostic/group1/subgroup1/dummy.agnostic.group1.subgroup1 FILTERED: Quarantine: test '
             'all platforms',
             err)
 
