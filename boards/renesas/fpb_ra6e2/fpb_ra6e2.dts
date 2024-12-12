@@ -7,6 +7,7 @@
 
 #include <renesas/ra/ra6/r7fa6e2bb3cfm.dtsi>
 #include <dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 
 #include "fpb_ra6e2-pinctrl.dtsi"
 
@@ -86,4 +87,10 @@
 	div = <1>;
 	mul = <10 0>;
 	status = "okay";
+};
+
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
 };

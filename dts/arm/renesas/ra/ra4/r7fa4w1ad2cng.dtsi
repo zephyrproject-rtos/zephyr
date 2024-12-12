@@ -7,6 +7,8 @@
 #include <zephyr/dt-bindings/clock/ra_clock.h>
 #include <arm/renesas/ra/ra4/ra4-cm4-common.dtsi>
 
+/delete-node/ &adc1;
+
 / {
 	soc {
 		sram0: memory@20000000 {
@@ -39,6 +41,12 @@
 			compatible = "renesas,ra-spi";
 			interrupts = <28 1>, <29 1>, <30 1>, <31 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
+		};
+
+		adc@4005c000 {
+			interrupts = <20 1>;
+			channel-count = <8>;
+			channel-available-mask = <0x1a0670>;
 		};
 	};
 

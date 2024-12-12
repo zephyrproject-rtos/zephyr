@@ -12,7 +12,6 @@ tests:
       fixture: dac_adc_loopback
     platform_allow:
       - frdm_k64f
-      - ek_ra8m1
   drivers.adc.accuracy.ref_volt:
     harness_config:
       fixture: adc_ref_volt
@@ -23,5 +22,19 @@ tests:
       - nrf52840dk/nrf52840
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
+      - ek_ra8d1
+      - mck_ra8t1
+      - ek_ra6e2
+      - ek_ra6m1
+      - ek_ra6m2
+      - ek_ra6m3
+      - ek_ra6m4
+      - ek_ra6m5
+      - fpb_ra6e1
+      - fpb_ra6e2
+      - ek_ra4e2
+      - ek_ra4m2
+      - ek_ra4m3
+      - ek_ra4w1
     integration_platforms:
       - frdm_kl25z
