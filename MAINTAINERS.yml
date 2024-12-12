@@ -1392,6 +1392,7 @@ Release Notes:
     - decsny
     - lmajewski
     - pdgendt
+    - maass-hamburg
   files:
     - drivers/ethernet/
     - include/zephyr/dt-bindings/ethernet/
@@ -1648,6 +1649,7 @@ Release Notes:
   status: odd fixes
   collaborators:
     - decsny
+    - maass-hamburg
   files:
     - doc/hardware/peripherals/mdio.rst
     - drivers/mdio/
