@@ -390,6 +390,14 @@
 			ambiq,pwrcfg = <&pwrcfg 0x8 0x2000>;
 		};
 
+		rtc0: rtc@40004240 {
+			compatible = "ambiq,rtc";
+			reg = <0x40004240 0xD0>;
+			interrupts = <2 0>;
+			alarms-count = <1>;
+			status = "disabled";
+		};
+
 		bleif: spi@5000c000 {
 			compatible = "ambiq,spi-bleif";
 			reg = <0x5000c000 0x414>;
