@@ -1,0 +1,13 @@
+# Copyright (c) 2024 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  pm.power_states:
+    platform_allow:
+      - stm32l562e_dk
+    tags:
+      - pm
+    harness: pytest
+    harness_config:
+      pytest_dut_scope: session
+      pytest_args: [--powershield=<path_to>/STMicroelectronics_PowerShield__Virtual_ComPort]
