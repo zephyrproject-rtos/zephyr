@@ -750,6 +750,7 @@
 					STM32_ADC_RES(6, 0x3)>;
 			sampling-times = <3 7 13 25 48 93 248 641>;
 			st,adc-sequencer = <FULLY_CONFIGURABLE>;
+			st,adc-oversampler = "OVERSAMPLER_MINIMAL";
 		};
 
 		adc2: adc@40022100 {
@@ -765,6 +766,7 @@
 					STM32_ADC_RES(6, 0x03)>;
 			sampling-times = <3 7 13 25 48 93 248 641>;
 			st,adc-sequencer = <FULLY_CONFIGURABLE>;
+			st,adc-oversampler = "OVERSAMPLER_MINIMAL";
 		};
 
 		rng: rng@48020000 {
