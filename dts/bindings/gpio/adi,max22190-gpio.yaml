@@ -1,0 +1,118 @@
+# Copyright (c) 2024 Analog Devices Inc.
+# Copyright (c) 2024 BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ADI MAX22190 octal industrial Input with advanced diagnostic
+  capabilities like Wire break and over/under volatage.
+  Fiter configuration could be done on per channel bases, which
+  mean WB functionality and filters could be set. Reffering to:
+  filter-wbes = <CH0 CH1 CH2 ... CH7 >  for wire break
+  To enable wire break set 1 else 0. Same principle is followed for:
+  filter-fbps and filter-delays.
+  Sample binding
+  &sdp_spi {
+    status = "okay";
+    pinctrl-names = "default";
+    max22190_gpio0: max22190_gpio@0 {
+      compatible = "adi,max22190-gpio";
+      reg = <0>;
+
+      spi-max-frequency = <1000000>;
+      status = "okay";
+
+      gpio-controller;
+      #gpio-cells = <2>;
+      ngpios = <8>;
+      status = "okay";
+
+      max22190-mode = <1>; // modes range from 0-4
+
+      drdy-gpios = <&gpioj 12 GPIO_ACTIVE_LOW>; /* SDP-GPIO5 - PMOD-PIN8 */
+      fault-gpios = <&gpioc 11 GPIO_ACTIVE_LOW>; /* SDP-SERIAL_INT - PMOD-PIN7 */
+      latch-gpios = <&gpioj 13 GPIO_ACTIVE_LOW>; /* SDP-GPIO6 - PMOD-PIN9 */
+
+      filter-wbes = <1 0 0 0  0 0 0 0>; // wirebreak WBEx
+      filter-fbps = <0 0 0 0  0 0 0 0>; // programmable filter INx
+      filter-delays = <50 100 400 800 1600 3200 12800 20000>; // 1000 us == 1ms
+    };
+  };
+
+compatible: "adi,max22190-gpio"
+
+properties:
+  "#gpio-cells":
+    const: 2
+  ngpios:
+    type: int
+    required: true
+    const: 8
+    description: Number of gpios supported
+  drdy-gpios:
+    description: Ready pin which show when chip is ready
+    type: phandle-array
+  fault-gpios:
+    description: |
+      Fault pin indicates when there is Fault state in either FAULT1 or FAULT2
+      bothe of which are cleaned on read once problem is not persistent
+    type: phandle-array
+  latch-gpios:
+    description: |
+      Latch the data so it could be read (partially duplicate CS)
+    type: phandle-array
+  max22190-mode:
+    type: int
+    required: true
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+    description: |
+      Default mode set to 1, because in MAX22190PMB devkit this is hardwired
+      mode set by manufacturer.
+      max22190 mode is configured from M0 and M1 pins with
+      pull up or down resistors.
+      MODE| M1| M0| FRAME  | CRC | DAISY CHAIN
+      ----+---+---+--------+-----+------------
+        0 | 0 | 0 | 24-bit | yes | no
+        1 | 0 | 1 | 16-bit | no  | no
+        2 | 1 | 0 | 24-bit | yes | yes
+        3 | 1 | 1 | 16-bit | no  | yes
+  filter-wbes:
+    type: array
+    default: [0, 0, 0, 0, 0, 0, 0, 0]
+    description: |
+      The default value corresponds to the default value of the hardware.
+      Wire break is disabled in all channels.
+      WBE bit in all Filter registers stand for wire break enable on each
+      channel, so to enable WB functionality set 1.
+      If WB on specific channel is disabled , FAULT will not be rised in case
+      wire is cut.
+      - 1 wire break enable
+      - 0 wire break disable
+      channels indentation start from CH0...CH7
+  filter-fbps:
+    type: array
+    default: [1, 1, 1, 1, 1, 1, 1, 1]
+    description: |
+      The default value corresponds to the default value of the hardware.
+      All channels are in bypass.
+      Enable or disable filter
+      - 1 mean bypass
+      - 0 mean filter is used
+      channels indentation start from CH0...CH7
+  filter-delays:
+    type: array
+    default: [50, 50, 50, 50, 50, 50, 50, 50]
+    description: |
+      The default value corresponds to the default value of the hardware.
+      Used to setup filter delay. Values are set in us. Default value is 50 = 50 us.
+      Value : 50, 100, 400, 800, 1600, 3200, 12800, 20000
+      channels indentation start from CH0...CH7
+
+gpio-cells:
+  - pin
+  - flags
+
+include: [gpio-controller.yaml, spi-device.yaml]
