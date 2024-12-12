@@ -498,7 +498,10 @@ static int drv2605_reset(const struct device *dev)
 	k_msleep(100);
 
 	while (retries > 0) {
-		i2c_reg_read_byte_dt(&config->i2c, DRV2605_REG_MODE, &value);
+		ret = i2c_reg_read_byte_dt(&config->i2c, DRV2605_REG_MODE, &value);
+		if (ret < 0) {
+			return ret;
+		}
 
 		if ((value & DRV2605_DEV_RESET) == 0U) {
 			i2c_reg_update_byte_dt(&config->i2c, DRV2605_REG_MODE, DRV2605_STANDBY, 0);
