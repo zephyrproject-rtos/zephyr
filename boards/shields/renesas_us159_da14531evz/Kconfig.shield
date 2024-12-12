@@ -1,0 +1,5 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_RENESAS_US159_DA14531EVZ
+	def_bool $(shields_list_contains,renesas_us159_da14531evz)
