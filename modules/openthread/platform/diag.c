@@ -8,10 +8,18 @@
 #include <zephyr/drivers/gpio.h>
 
 #include <openthread/error.h>
+#include <openthread/platform/alarm-milli.h>
 #include <openthread/platform/diag.h>
+#include <openthread/platform/radio.h>
 
 #include "platform-zephyr.h"
 #include "zephyr/sys/util.h"
+
+typedef enum {
+	kDiagTransmitModeIdle,
+	kDiagTransmitModePackets,
+	kDiagTransmitModeCarrier
+} DiagTrasmitMode;
 
 /**
  * Diagnostics mode variables.
@@ -20,8 +28,21 @@
 static bool sDiagMode;
 static void *sDiagCallbackContext;
 static otPlatDiagOutputCallback sDiagOutputCallback;
+static DiagTrasmitMode sTransmitMode = kDiagTransmitModeIdle;
+static uint8_t sChannel = 20;
+static uint32_t sTxPeriod = 1;
+static int32_t sTxCount = 0;
+static int32_t sTxRequestedCount = 1;
 
 static otError startModCarrier(otInstance *aInstance, uint8_t aArgsLength, char *aArgs[]);
+static otError processTransmit(otInstance *aInstance, uint8_t aArgsLength, char *aArgs[]);
+
+static otError parseLong(char *aArgs, long *aValue)
+{
+	char *endptr;
+	*aValue = strtol(aArgs, &endptr, 0);
+	return (*endptr == '\0') ? OT_ERROR_NONE : OT_ERROR_PARSE;
+}
 
 static void diag_output(const char *aFormat, ...)
 {
@@ -57,6 +78,10 @@ otError otPlatDiagProcess(otInstance *aInstance, uint8_t aArgsLength, char *aArg
 	}
 #endif
 
+	if (strcmp(aArgs[0], "transmit") == 0) {
+		return processTransmit(aInstance, aArgsLength - 1, aArgs + 1);
+	}
+
 	/* Add more platform specific diagnostics features here. */
 	diag_output("diag feature '%s' is not supported\r\n", aArgs[0]);
 
@@ -80,6 +105,7 @@ bool otPlatDiagModeGet(void)
 void otPlatDiagChannelSet(uint8_t aChannel)
 {
 	ARG_UNUSED(aChannel);
+	sChannel = aChannel;
 }
 
 void otPlatDiagTxPowerSet(int8_t aTxPower)
@@ -313,3 +339,77 @@ static otError startModCarrier(otInstance *aInstance, uint8_t aArgsLength, char 
 }
 
 #endif
+
+static otError processTransmit(otInstance *aInstance, uint8_t aArgsLength, char *aArgs[])
+{
+	otError error = OT_ERROR_NONE;
+
+	if (aArgsLength == 0) {
+		diag_output("transmit will send %" PRId32 " diagnostic messages with %" PRIu32
+			    " ms interval\r\nstatus 0x%02x\r\n",
+			    sTxRequestedCount, sTxPeriod, error);
+	} else if (strcmp(aArgs[0], "stop") == 0) {
+		if (sTransmitMode == kDiagTransmitModeIdle) {
+			error = OT_ERROR_INVALID_STATE;
+		}
+
+		otPlatAlarmMilliStop(aInstance);
+		diag_output("diagnostic message transmission is stopped\r\nstatus 0x%02x\r\n",
+			    error);
+		sTransmitMode = kDiagTransmitModeIdle;
+		otPlatRadioReceive(aInstance, sChannel);
+	} else if (strcmp(aArgs[0], "start") == 0) {
+		if (sTransmitMode != kDiagTransmitModeIdle) {
+			error = OT_ERROR_INVALID_STATE;
+		}
+
+		otPlatAlarmMilliStop(aInstance);
+		sTransmitMode = kDiagTransmitModePackets;
+		sTxCount = sTxRequestedCount;
+		uint32_t now = otPlatAlarmMilliGetNow();
+		otPlatAlarmMilliStartAt(aInstance, now, sTxPeriod);
+		diag_output("sending %" PRId32 " diagnostic messages with %" PRIu32
+			    " ms interval\r\nstatus 0x%02x\r\n",
+			    sTxRequestedCount, sTxPeriod, error);
+	} else if (strcmp(aArgs[0], "interval") == 0) {
+		long value;
+
+		if (aArgsLength != 2) {
+			error = OT_ERROR_INVALID_ARGS;
+		}
+
+		error = parseLong(aArgs[1], &value);
+		if (error != OT_ERROR_NONE) {
+			goto exit;
+		}
+		if (value <= 0) {
+			error = OT_ERROR_INVALID_ARGS;
+		}
+		sTxPeriod = (uint32_t)(value);
+		diag_output("set diagnostic messages interval to %" PRIu32
+			    " ms\r\nstatus 0x%02x\r\n",
+			    sTxPeriod, error);
+	} else if (strcmp(aArgs[0], "count") == 0) {
+		long value;
+
+		if (aArgsLength != 2) {
+			error = OT_ERROR_INVALID_ARGS;
+		}
+
+		error = parseLong(aArgs[1], &value);
+		if (error != OT_ERROR_NONE) {
+			goto exit;
+		}
+		if ((value <= 0) && (value != -1)) {
+			error = OT_ERROR_INVALID_ARGS;
+		}
+		sTxRequestedCount = (uint32_t)(value);
+		diag_output("set diagnostic messages count to %" PRId32 "\r\nstatus 0x%02x\r\n",
+			    sTxRequestedCount, error);
+	} else {
+		error = OT_ERROR_INVALID_ARGS;
+	}
+
+exit:
+	return error;
+}
