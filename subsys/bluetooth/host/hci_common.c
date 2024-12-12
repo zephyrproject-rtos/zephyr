@@ -9,6 +9,10 @@
 #include <zephyr/drivers/bluetooth.h>
 #include "common/assert.h"
 
+/** @file
+ *  @brief Implements part of <zephyr/drivers/bluetooth.h>
+ */
+
 struct net_buf *bt_hci_evt_create(uint8_t evt, uint8_t len)
 {
 	struct bt_hci_evt_hdr *hdr;

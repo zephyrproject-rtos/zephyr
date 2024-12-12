@@ -6,7 +6,8 @@ zephyr_library_link_libraries(subsys__bluetooth)
 add_subdirectory_ifdef(CONFIG_BT_CLASSIC classic)
 add_subdirectory_ifdef(CONFIG_BT_SHELL shell)
 
-zephyr_library_sources_ifdef(CONFIG_BT_HCI_RAW          hci_raw.c hci_common.c)
+zephyr_library_sources(hci_common.c)
+zephyr_library_sources_ifdef(CONFIG_BT_HCI_RAW          hci_raw.c)
 zephyr_library_sources_ifdef(CONFIG_BT_MONITOR          monitor.c)
 zephyr_library_sources_ifdef(CONFIG_BT_SEND_ECC_EMULATION          hci_ecc.c)
 zephyr_library_sources_ifdef(CONFIG_BT_SETTINGS         settings.c)
@@ -20,7 +21,6 @@ if(CONFIG_BT_HCI_HOST)
     buf.c
     data.c
     hci_core.c
-    hci_common.c
     id.c
     )
   zephyr_library_sources_ifdef(
