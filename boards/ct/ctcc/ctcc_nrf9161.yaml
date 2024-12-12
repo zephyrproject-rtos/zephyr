@@ -1,15 +1,15 @@
-identifier: ctcc/nrf52840
-name: CTHINGS.CO Connectivity Card nRF52840
+identifier: ctcc/nrf9161
+name: CTHINGS.CO Connectivity Card nRF9161
 type: mcu
 arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
   - xtools
+ram: 88
+flash: 1024
 supported:
-  - ble
   - gpio
-  - usb_device
   - watchdog
   - counter
 vendor: ct
