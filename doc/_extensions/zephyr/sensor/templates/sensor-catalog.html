@@ -1,0 +1,76 @@
+{#
+Copyright (c) 2024, Google LLC.
+SPDX-License-Identifier: Apache-2.0
+#}
+<script>
+  const attributeChannelFilters = JSON.parse('{{ attributes | tojson | safe }}');
+</script>
+
+<form class="filter-form" aria-label="Filter sensor by properties">
+  <div class="form-group" style="flex-basis: 100%">
+    <label for="compat">Compatible</label>
+    <input type="text" id="compat"
+      placeholder='Compatible string (or partial compatible string) of the sensor, e.g. "bosch", "bma", &hellip;'
+      oninput="filterSensors()" />
+  </div>
+
+  <div class="form-group"
+    style="flex-basis: 100%; display: flex; gap: 10px; flex-direction: row; align-content: center; align-items: center;">
+    <div class="dropdown-filter dropdown-filter-channels">
+      <button class="dropdown-filter-button btn btn-info">
+        Channels &#x25BC;
+      </button>
+      <div class="dropdown-filter-content">
+        {% for channel in (channels) -%}
+        <label><input type="checkbox" name="channels[]" value="{{ channel }}">{{ channel }}</label>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="dropdown-filter dropdown-filter-attributes">
+      <button class="dropdown-filter-button btn btn-info">
+        Attributes &#x25BC;
+      </button>
+      <div class="dropdown-filter-content">
+        <div id="attribute-channel-lists">
+          <div id="sensor-filter-attribute-list"></div>
+          <div id="sensor-filter-channel-list"></div>
+        </div>
+        <div style="display: flex; flex-direction: row-reverse; padding: 5px 10px;">
+          <button id="add-attribute-filter" class="btn btn-info">Add</button>
+        </div>
+      </div>
+    </div>
+    <div class="dropdown-filter dropdown-filter-buses">
+      <button class="dropdown-filter-button btn btn-info">
+        Buses &#x25BC;
+      </button>
+      <div class="dropdown-filter-content">
+        {% for bus in (buses) -%}
+        <label><input type="checkbox" name="buses[]" value="{{ bus }}">{{ bus }}</label>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="dropdown-filter dropdown-filter-triggers">
+      <button class="dropdown-filter-button btn btn-info">
+        Triggers &#x25BC;
+      </button>
+      <div class="dropdown-filter-content">
+        {% for trigger in (triggers) -%}
+        <label><input type="checkbox" name="triggers[]" value="{{ trigger }}">{{ trigger }}</label>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  <div class="form-group"
+    style="flex-basis: 100%; display: flex; gap: 10px; flex-direction: row; align-content: center; align-items: center; flex-wrap: wrap;"
+    id="attribute-channel-active-filters">
+  </div>
+</form>
+
+<div id="sensor-matches" style="text-align: center;"></div>
+
+<div id="catalog">
+  {% for sensor_name, sensor in sensors | items | sort -%}
+  {% include "sensor-card.html" %}
+  {% endfor %}
+</div>
