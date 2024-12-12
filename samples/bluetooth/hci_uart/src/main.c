@@ -20,8 +20,6 @@
 #include <zephyr/init.h>
 #include <zephyr/drivers/uart.h>
 
-#include <zephyr/usb/usb_device.h>
-
 #include <zephyr/net_buf.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/l2cap.h>
@@ -232,17 +230,19 @@ static void bt_uart_isr(const struct device *unused, void *user_data)
 	ARG_UNUSED(unused);
 	ARG_UNUSED(user_data);
 
-	if (!(uart_irq_rx_ready(hci_uart_dev) ||
-	      uart_irq_tx_ready(hci_uart_dev))) {
-		LOG_DBG("spurious interrupt");
-	}
+	while (uart_irq_update(hci_uart_dev) && uart_irq_is_pending(hci_uart_dev)) {
+		if (!(uart_irq_rx_ready(hci_uart_dev) ||
+		      uart_irq_tx_ready(hci_uart_dev))) {
+			LOG_DBG("spurious interrupt");
+		}
 
-	if (uart_irq_tx_ready(hci_uart_dev)) {
-		tx_isr();
-	}
+		if (uart_irq_tx_ready(hci_uart_dev)) {
+			tx_isr();
+		}
 
-	if (uart_irq_rx_ready(hci_uart_dev)) {
-		rx_isr();
+		if (uart_irq_rx_ready(hci_uart_dev)) {
+			rx_isr();
+		}
 	}
 }
 
@@ -329,13 +329,6 @@ void bt_ctlr_assert_handle(char *file, uint32_t line)
 static int hci_uart_init(void)
 {
 	LOG_DBG("");
-
-	if (IS_ENABLED(CONFIG_USB_CDC_ACM)) {
-		if (usb_enable(NULL)) {
-			LOG_ERR("Failed to enable USB");
-			return -EINVAL;
-		}
-	}
 
 	if (!device_is_ready(hci_uart_dev)) {
 		LOG_ERR("HCI UART %s is not ready", hci_uart_dev->name);
