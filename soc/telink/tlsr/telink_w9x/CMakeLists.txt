@@ -91,6 +91,9 @@ zephyr_link_libraries(
 	-Wl,--wrap,mbedtls_ecp_mul_restartable
 	-Wl,--wrap,mbedtls_ecp_muladd
 	-Wl,--wrap,mbedtls_ecp_muladd_restartable
+	-Wl,--wrap,mbedtls_ecp_gen_key
+	-Wl,--wrap,mbedtls_ecp_gen_keypair
+	-Wl,--wrap,mbedtls_ecp_gen_keypair_base
 	-Wl,--wrap,mbedtls_ecp_self_test
 )
 endif()

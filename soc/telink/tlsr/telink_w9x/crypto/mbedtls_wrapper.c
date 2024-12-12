@@ -103,6 +103,43 @@ int __wrap_mbedtls_ecp_muladd(mbedtls_ecp_group *grp,
 	return __wrap_mbedtls_ecp_muladd_restartable(grp, R, m, P, n, Q, NULL);
 }
 
+int __wrap_mbedtls_ecp_gen_keypair_base(mbedtls_ecp_group *grp,
+	const mbedtls_ecp_point *G,
+	mbedtls_mpi *d, mbedtls_ecp_point *Q,
+	int (*f_rng)(void *, unsigned char *, size_t),
+	void *p_rng)
+{
+	int ret = mbedtls_ecp_gen_privkey(grp, d, f_rng, p_rng);
+
+	if (!ret) {
+		__wrap_mbedtls_ecp_mul(grp, Q, d, G, f_rng, p_rng);
+	}
+
+	return ret;
+}
+
+int __wrap_mbedtls_ecp_gen_keypair(mbedtls_ecp_group *grp,
+	mbedtls_mpi *d, mbedtls_ecp_point *Q,
+	int (*f_rng)(void *, unsigned char *, size_t),
+	void *p_rng)
+{
+	return __wrap_mbedtls_ecp_gen_keypair_base(grp, &grp->G, d, Q, f_rng, p_rng);
+}
+
+int __wrap_mbedtls_ecp_gen_key(mbedtls_ecp_group_id grp_id, mbedtls_ecp_keypair *key,
+	int (*f_rng)(void *, unsigned char *, size_t), void *p_rng)
+{
+	int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
+
+	ret = mbedtls_ecp_group_load(&key->MBEDTLS_PRIVATE(grp), grp_id);
+	if (ret != 0) {
+		return ret;
+	}
+
+	return __wrap_mbedtls_ecp_gen_keypair(&key->MBEDTLS_PRIVATE(grp), &key->MBEDTLS_PRIVATE(d),
+		&key->MBEDTLS_PRIVATE(Q), f_rng, p_rng);
+}
+
 #ifdef MBEDTLS_SELF_TEST
 int __wrap_mbedtls_ecp_self_test(int verbose)
 {
