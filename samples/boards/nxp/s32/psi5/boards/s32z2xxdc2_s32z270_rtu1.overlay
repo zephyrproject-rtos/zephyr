@@ -1,0 +1,58 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	psi5_0_default: psi5_0_default {
+		group1 {
+			pinmux = <PA7_PSI5_0_SDOUT1>, <PB3_PSI5_0_SDOUT2>;
+			output-enable;
+		};
+		group2 {
+			pinmux = <PA6_PSI5_0_SDIN1>, <PB2_PSI5_0_SDIN2>;
+			input-enable;
+		};
+	};
+};
+
+&psi5_0 {
+	pinctrl-0 = <&psi5_0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&psi5_0_ch1 {
+	target-pulse-us = <500>;
+	decoder-offset-us = <0>;
+	low-pulse-width-us = <100>;
+	high-pulse-width-us = <127>;
+	tx-mode = "long-frame-31";
+	num-rx-buf = <32>;
+	rx-bitrate-kbps = <189>;
+	array-slot-duration-us = <150>;
+	array-slot-start-offset-us = <110>;
+	array-slot-data-length = <16>;
+	array-slot-data-msb-first = <0>;
+	array-slot-has-smc = <0>;
+	array-slot-has-parity = <0>;
+	status = "okay";
+};
+
+&psi5_0_ch2 {
+	target-pulse-us = <8>;
+	decoder-offset-us = <0>;
+	low-pulse-width-us = <2>;
+	high-pulse-width-us = <6>;
+	tx-mode = "long-frame-31";
+	num-rx-buf = <32>;
+	rx-bitrate-kbps = <189>;
+	array-slot-duration-us = <500>;
+	array-slot-start-offset-us = <0>;
+	array-slot-data-length = <16>;
+	array-slot-data-msb-first = <0>;
+	array-slot-has-smc = <0>;
+	array-slot-has-parity = <0>;
+	status = "okay";
+};
