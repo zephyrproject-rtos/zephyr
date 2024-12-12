@@ -137,6 +137,26 @@ static int frdm_mcxa156_init(void)
 	SPC_EnableActiveModeAnalogModules(SPC0, (kSPC_controlCmp0 | kSPC_controlCmp0Dac));
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpi2c0))
+	CLOCK_SetClockDiv(kCLOCK_DivLPI2C0, 1u);
+	CLOCK_AttachClk(kFRO12M_to_LPI2C0);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpi2c1))
+	CLOCK_SetClockDiv(kCLOCK_DivLPI2C1, 1u);
+	CLOCK_AttachClk(kFRO12M_to_LPI2C1);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpi2c2))
+	CLOCK_SetClockDiv(kCLOCK_DivLPI2C2, 1u);
+	CLOCK_AttachClk(kFRO12M_to_LPI2C2);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpi2c3))
+	CLOCK_SetClockDiv(kCLOCK_DivLPI2C3, 1u);
+	CLOCK_AttachClk(kFRO12M_to_LPI2C3);
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lptmr0))
 
 /*

@@ -8,6 +8,7 @@
 #include <arm/armv8-m.dtsi>
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	cpus {
@@ -284,6 +285,50 @@
 			interrupts = <65 0>;
 			status = "disabled";
 			#io-channel-cells = <2>;
+		};
+
+		lpi2c0: i2c@4009a000 {
+			compatible = "nxp,lpi2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x4009a000 0x1000>;
+			interrupts = <26 0>;
+			clocks = <&syscon MCUX_LPI2C0_CLK>;
+			status = "disabled";
+		};
+
+		lpi2c1: i2c@4009b000 {
+			compatible = "nxp,lpi2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x4009b000 0x1000>;
+			interrupts = <27 0>;
+			clocks = <&syscon MCUX_LPI2C1_CLK>;
+			status = "disabled";
+		};
+
+		lpi2c2: i2c@400d4000 {
+			compatible = "nxp,lpi2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x400d4000 0x1000>;
+			interrupts = <77 0>;
+			clocks = <&syscon MCUX_LPI2C2_CLK>;
+			status = "disabled";
+		};
+
+		lpi2c3: i2c@400d5000 {
+			compatible = "nxp,lpi2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x400d5000 0x1000>;
+			interrupts = <78 0>;
+			clocks = <&syscon MCUX_LPI2C3_CLK>;
+			status = "disabled";
 		};
 
 		lptmr0: lptmr@400ab000 {
