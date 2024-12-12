@@ -12,6 +12,7 @@ supported:
   - dma
   - spi
   - entropy
+  - netif:openthread
 testing:
   ignore_tags:
     - net
