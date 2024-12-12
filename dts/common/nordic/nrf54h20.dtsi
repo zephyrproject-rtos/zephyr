@@ -182,10 +182,14 @@
 		};
 
 		hsfll120: hsfll120 {
-			compatible = "fixed-clock";
+			compatible = "nordic,nrf-hsfll-global";
 			clocks = <&fll16m>;
 			#clock-cells = <0>;
-			clock-frequency = <DT_FREQ_M(320)>;
+			clock-frequency = <320000000>;
+			supported-clock-frequencies = <64000000
+						       128000000
+						       256000000
+						       320000000>;
 		};
 
 		lfclk: lfclk {
@@ -257,7 +261,7 @@
 			ranges = <0x0 0x52000000 0x1000000>;
 
 			cpuapp_hsfll: clock@d000 {
-				compatible = "nordic,nrf-hsfll";
+				compatible = "nordic,nrf-hsfll-local";
 				#clock-cells = <0>;
 				reg = <0xd000 0x1000>;
 				clocks = <&fll16m>;
@@ -311,7 +315,7 @@
 			ranges = <0x0 0x53000000 0x1000000>;
 
 			cpurad_hsfll: clock@d000 {
-				compatible = "nordic,nrf-hsfll";
+				compatible = "nordic,nrf-hsfll-local";
 				#clock-cells = <0>;
 				reg = <0xd000 0x1000>;
 				clocks = <&fll16m>;

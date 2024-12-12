@@ -29,3 +29,15 @@ tests:
     extra_args:
       - CONF_FILE="configs/cpuapp_hsfll.conf"
       - DTC_OVERLAY_FILE="configs/cpuapp_hsfll.overlay"
+  sample.boards.nrf.clock_control.global_hsfll:
+    filter: dt_nodelabel_enabled("hsfll120")
+    extra_args:
+      - CONF_FILE="configs/global_hsfll.conf"
+      - DTC_OVERLAY_FILE="configs/global_hsfll.overlay"
+  sample.boards.nrf.clock_control.global_hsfll.req_low_freq_n:
+    filter: dt_nodelabel_enabled("hsfll120")
+    extra_configs:
+      - CONFIG_CLOCK_CONTROL_NRF2_GLOBAL_HSFLL_REQ_LOW_FREQ=n
+    extra_args:
+      - CONF_FILE="configs/global_hsfll.conf"
+      - DTC_OVERLAY_FILE="configs/global_hsfll.overlay"
