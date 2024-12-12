@@ -21,4 +21,6 @@ supported:
   - counter
   - dac
   - pwm
+  - usb_device
+  - usbd
 vendor: nxp

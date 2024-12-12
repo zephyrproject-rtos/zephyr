@@ -156,6 +156,11 @@ static int frdm_mcxa156_init(void)
 
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb))
+	RESET_PeripheralReset(kUSB0_RST_SHIFT_RSTn);
+	CLOCK_EnableUsbfsClock();
+#endif
+
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
 
