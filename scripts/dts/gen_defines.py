@@ -245,13 +245,13 @@ def write_idents_and_existence(node: edtlib.Node) -> None:
     idents.extend(f"N_NODELABEL_{str2ident(label)}" for label in node.labels)
 
     out_comment("Existence and alternate IDs:")
-    out_dt_define(node.z_path_id + "_EXISTS", 1)
+    out_dt_define(f"{node.z_path_id}_EXISTS", 1)
 
     # Only determine maxlen if we have any idents
     if idents:
-        maxlen = max(len("DT_" + ident) for ident in idents)
+        maxlen = max(len(f"DT_{ident}") for ident in idents)
     for ident in idents:
-        out_dt_define(ident, "DT_" + node.z_path_id, width=maxlen)
+        out_dt_define(ident, f"DT_{node.z_path_id}", width=maxlen)
 
 
 def write_bus(node: edtlib.Node) -> None:
@@ -593,8 +593,8 @@ def write_vanilla_props(node: edtlib.Node) -> None:
             # DT_N_<node-id>_P_<prop-id>_IDX_0_EXISTS:
             # Allows treating the string like a degenerate case of a
             # string-array of length 1.
-            macro2val[macro + "_IDX_0"] = quote_str(prop.val)
-            macro2val[macro + "_IDX_0_EXISTS"] = 1
+            macro2val[f"{macro}_IDX_0"] = quote_str(prop.val)
+            macro2val[f"{macro}_IDX_0_EXISTS"] = 1
 
         if prop.enum_indices is not None:
             macro2val.update(enum_macros(prop, macro))
@@ -631,7 +631,7 @@ def write_vanilla_props(node: edtlib.Node) -> None:
                     for i in range(plen))
 
             # DT_N_<node-id>_P_<prop-id>_LEN
-            macro2val[macro + "_LEN"] = plen
+            macro2val[f"{macro}_LEN"] = plen
 
         # DT_N_<node-id>_P_<prop-id>_EXISTS
         macro2val[f"{macro}_EXISTS"] = 1
@@ -669,9 +669,9 @@ def enum_macros(prop: edtlib.Property, macro: str):
 
     for i, subval in enumerate(val):
         # DT_N_<node-id>_P_<prop-id>_IDX_<i>_EXISTS
-        ret[macro + f"_IDX_{i}_EXISTS"] = 1
+        ret[f"{macro}_IDX_{i}_EXISTS"] = 1
         # DT_N_<node-id>_P_<prop-id>_IDX_<i>_ENUM_VAL_<val>_EXISTS 1
-        ret[macro + f"_IDX_{i}_ENUM_VAL_{subval}_EXISTS"] = 1
+        ret[f"{macro}_IDX_{i}_ENUM_VAL_{subval}_EXISTS"] = 1
 
     return ret
 
@@ -683,15 +683,15 @@ def array_macros(prop: edtlib.Property, macro: str):
     ret = {}
     for i, subval in enumerate(prop.val):
         # DT_N_<node-id>_P_<prop-id>_IDX_<i>_EXISTS
-        ret[macro + f"_IDX_{i}_EXISTS"] = 1
+        ret[f"{macro}_IDX_{i}_EXISTS"] = 1
 
         # DT_N_<node-id>_P_<prop-id>_IDX_<i>
         if isinstance(subval, str):
-            ret[macro + f"_IDX_{i}"] = quote_str(subval)
+            ret[f"{macro}_IDX_{i}"] = quote_str(subval)
             # DT_N_<node-id>_P_<prop-id>_IDX_<i>_STRING_...
-            ret.update(string_macros(macro + f"_IDX_{i}", subval))
+            ret.update(string_macros(f"{macro}_IDX_{i}", subval))
         else:
-            ret[macro + f"_IDX_{i}"] = subval
+            ret[f"{macro}_IDX_{i}"] = subval
 
     return ret
 
@@ -985,7 +985,7 @@ def out_dt_define(
     # generate a warning if used, via __WARN(<deprecation_msg>)).
     #
     # Returns the full generated macro for 'macro', with leading "DT_".
-    ret = "DT_" + macro
+    ret = f"DT_{macro}"
     out_define(ret, val, width=width, deprecation_msg=deprecation_msg)
     return ret
 
@@ -1031,15 +1031,14 @@ def out_comment(s: str, blank_before=True) -> None:
         for line in s.splitlines():
             # Avoid an extra space after '*' for empty lines. They turn red in
             # Vim if space error checking is on, which is annoying.
-            res.append(" *" if not line.strip() else " * " + line)
+            res.append(f" * {line}".rstrip())
         res.append(" */")
         print("\n".join(res), file=header_file)
     else:
         # Format single-line comments like
         #
         #   /* foo bar */
-        print("/* " + s + " */", file=header_file)
-
+        print(f"/* {s} */", file=header_file)
 
 ESCAPE_TABLE = str.maketrans(
     {
