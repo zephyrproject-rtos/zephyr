@@ -53,11 +53,20 @@ function(zephyr_process_snippets)
     file(REMOVE ${snippets_generated})
   else()
     string(REPLACE " " ";" SNIPPET_AS_LIST "${SNIPPET}")
+    if(Sysbuild_DIR)
+      string(REPLACE " " ";" SYSBUILD_SNIPPET_AS_LIST_LOCAL "${sysbuild_SNIPPET}")
+      list(APPEND SNIPPET_AS_LIST ${SYSBUILD_SNIPPET_AS_LIST_LOCAL})
+    endif()
     set(SNIPPET_AS_LIST "${SNIPPET_AS_LIST}" PARENT_SCOPE)
   endif()
 
   # Set SNIPPET_ROOT.
-  list(APPEND SNIPPET_ROOT ${APPLICATION_SOURCE_DIR})
+  zephyr_get(SNIPPET_ROOT MERGE SYSBUILD GLOBAL)
+  if(Sysbuild_DIR)
+    list(APPEND SNIPPET_ROOT ${APP_DIR})
+  else()
+    list(APPEND SNIPPET_ROOT ${APPLICATION_SOURCE_DIR})
+  endif()
   list(APPEND SNIPPET_ROOT ${ZEPHYR_BASE})
   unset(real_snippet_root)
   foreach(snippet_dir ${SNIPPET_ROOT})
@@ -80,11 +89,16 @@ function(zephyr_process_snippets)
   foreach(snippet_name ${SNIPPET_AS_LIST})
     list(APPEND requested_snippet_args --snippet "${snippet_name}")
   endforeach()
+  set(sysbuild_arg)
+  if(Sysbuild_DIR)
+    set(sysbuild_arg --sysbuild)
+  endif()
   execute_process(COMMAND ${PYTHON_EXECUTABLE}
     ${snippets_py}
     ${snippet_root_args}
     ${requested_snippet_args}
     --cmake-out ${snippets_generated}
+    ${sysbuild_arg}
     OUTPUT_VARIABLE output
     ERROR_VARIABLE output
     RESULT_VARIABLE ret)
