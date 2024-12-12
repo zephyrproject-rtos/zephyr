@@ -1966,8 +1966,8 @@ class EDT:
 
         werror (default: False):
           If True, some edtlib specific warnings become errors. This currently
-          errors out if 'dts' has any deprecated properties set, or an unknown
-          vendor prefix is used.
+          errors out if 'dts' has any deprecated properties set, warn_reg_unit_address_mismatch
+          triggers a warning or an unknown vendor prefix is used.
         """
         # All instance attributes should be initialized here.
         # This makes it easy to keep track of them, which makes
@@ -1994,6 +1994,7 @@ class EDT:
         self._infer_binding_for_paths: Set[str] = set(infer_binding_for_paths or [])
         self._vendor_prefixes: Dict[str, str] = vendor_prefixes or {}
         self._werror: bool = bool(werror)
+        self._warn_handler: Any = _err if werror else _LOG.warning
 
         # Other internal state
         self._compat2binding: Dict[Tuple[str, Optional[str]], Binding] = {}
@@ -2292,9 +2293,9 @@ class EDT:
                 # Address mismatch is ok for PCI devices
                 if (node.regs and node.regs[0].addr != node.unit_addr and
                         not node.is_pci_device):
-                    _LOG.warning("unit address and first address in 'reg' "
-                                 f"(0x{node.regs[0].addr:x}) don't match for "
-                                 f"{node.path}")
+                    self._warn_handler("unit address and first address in 'reg' "
+                                       f"(0x{node.regs[0].addr:x}) don't match for "
+                                       f"{node.path}")
 
     def _init_luts(self) -> None:
         # Initialize node lookup tables (LUTs).
@@ -2328,11 +2329,7 @@ class EDT:
                     # As an exception, the root node can have whatever
                     # compatibles it wants. Other nodes get checked.
                     elif node.path != '/':
-                        if self._werror:
-                            handler_fn: Any = _err
-                        else:
-                            handler_fn = _LOG.warning
-                        handler_fn(
+                        self._warn_handler(
                             f"node '{node.path}' compatible '{compat}' "
                             f"has unknown vendor prefix '{vendor}'")
 
