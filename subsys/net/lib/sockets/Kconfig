@@ -340,7 +340,7 @@ config NET_SOCKETPAIR_BUFFER_SIZE
 
 choice
 	prompt "Memory management for socketpair"
-	default NET_SOCKETPAIR_HEAP if HEAP_MEM_POOL_SIZE != 0
+	default NET_SOCKETPAIR_HEAP if KERNEL_MEM_POOL
 
 config NET_SOCKETPAIR_STATIC
 	bool "Pre-allocate memory statically"
