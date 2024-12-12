@@ -319,7 +319,7 @@ class TestInstance:
 
         if hardware_map:
             for h in hardware_map.duts:
-                if (h.platform == self.platform.name and
+                if (h.platform in self.platform.aliases and
                         self.testsuite_runnable(self.testsuite, h.fixtures)):
                     testsuite_runnable = True
                     break
