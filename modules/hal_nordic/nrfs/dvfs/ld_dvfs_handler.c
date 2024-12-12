@@ -142,6 +142,12 @@ static void dvfs_service_handler_scaling_background_job(enum dvfs_frequency_sett
 /* Perform scaling finnish procedure. */
 static void dvfs_service_handler_scaling_finish(enum dvfs_frequency_setting oppoint_freq)
 {
+	extern uint32_t SystemCoreClock;
+
+	/* MDK variable which is used by nrfx_coredep_delay_us (k_busy_wait). */
+	SystemCoreClock = oppoint_freq == DVFS_FREQ_HIGH ? 320000000 :
+			  oppoint_freq == DVFS_FREQ_MEDLOW ? 128000000 : 64000000;
+
 	LOG_DBG("Scaling finnish oppoint freq %d", oppoint_freq);
 	ld_dvfs_scaling_finish(dvfs_service_handler_is_downscaling(oppoint_freq));
 	if (!dvfs_service_handler_is_downscaling(oppoint_freq)) {
