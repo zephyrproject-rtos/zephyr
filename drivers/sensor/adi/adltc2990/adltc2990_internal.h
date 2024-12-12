@@ -1,5 +1,6 @@
 /*
  * SPDX-FileCopyrightText: Copyright (c) 2023 Carl Zeiss Meditec AG
+ * SPDX-FileCopyrightText: Copyright (c) 2024 Jilay Sandeep Pandya
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -45,6 +46,7 @@ struct pins_configuration {
 };
 
 struct adltc2990_data {
+	uint8_t acq_format;
 	int32_t internal_temperature;
 	int32_t supply_voltage;
 	int32_t pins_v1_v2_values[2];
@@ -54,7 +56,6 @@ struct adltc2990_data {
 struct adltc2990_config {
 	struct i2c_dt_spec bus;
 	uint8_t temp_format;
-	uint8_t acq_format;
 	uint8_t measurement_mode[2];
 	struct pins_configuration pins_v1_v2;
 	struct pins_configuration pins_v3_v4;
