@@ -1056,7 +1056,7 @@ static int cmd_i3c_ccc_rstact_bc(const struct shell *sh, size_t argc, char **arg
 	return ret;
 }
 
-/* i3c ccc rstact <device> <target> <defining byte> */
+/* i3c ccc rstact <device> <target> <"set"/"get"> <defining byte> */
 static int cmd_i3c_ccc_rstact(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev, *tdev;
@@ -1070,11 +1070,11 @@ static int cmd_i3c_ccc_rstact(const struct shell *sh, size_t argc, char **argv)
 		return ret;
 	}
 
-	action = strtol(argv[5], NULL, 16);
+	action = strtol(argv[4], NULL, 16);
 
-	if (strcmp(argv[4], "get") == 0) {
+	if (strcmp(argv[3], "get") == 0) {
 		ret = i3c_ccc_do_rstact_fmt3(desc, action, &data);
-	} else if (strcmp(argv[4], "set") == 0) {
+	} else if (strcmp(argv[3], "set") == 0) {
 		ret = i3c_ccc_do_rstact_fmt2(desc, action);
 	} else {
 		shell_error(sh, "I3C: invalid parameter");
