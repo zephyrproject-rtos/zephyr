@@ -210,8 +210,8 @@
 				rst-gpios = <&test_gpio 1 0>;
 			};
 
-			cap1203@3 {
-				compatible = "microchip,cap1203";
+			cap12xx@3 {
+				compatible = "microchip,cap12xx";
 				reg = <0x3>;
 				int-gpios = <&test_gpio 0 0>;
 				input-codes = <0 1 2>;
