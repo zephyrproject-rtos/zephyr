@@ -1,0 +1,15 @@
+tests:
+  kernel.system_test:
+    timeout: 120
+    extra_configs:
+      - platform:native_sim:CONFIG_SYS_CLOCK_TICKS_PER_SEC=10000
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - ".*Timer: .*PASSED.*"
+        - ".*Thread: .*PASSED.*"
+        - ".*Fifo: .*PASSED.*"
+        - ".*Lifo: .*PASSED.*"
+        - ".*Stack: .*PASSED.*"
+        - ".*Ring Buffer: .*PASSED.*"
