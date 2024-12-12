@@ -15,6 +15,7 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 
 /* Control Point opcodes */
@@ -68,7 +69,7 @@ struct bt_has {
 
 struct bt_has_cp_hdr {
 	uint8_t opcode;
-	uint8_t data[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, data);
 } __packed;
 
 struct bt_has_cp_read_presets_req {
@@ -80,25 +81,25 @@ struct bt_has_cp_read_preset_rsp {
 	uint8_t is_last;
 	uint8_t index;
 	uint8_t properties;
-	uint8_t name[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, name);
 } __packed;
 
 struct bt_has_cp_preset_changed {
 	uint8_t change_id;
 	uint8_t is_last;
-	uint8_t additional_params[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, additional_params);
 } __packed;
 
 struct bt_has_cp_generic_update {
 	uint8_t prev_index;
 	uint8_t index;
 	uint8_t properties;
-	uint8_t name[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, name);
 } __packed;
 
 struct bt_has_cp_write_preset_name {
 	uint8_t index;
-	uint8_t name[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, name);
 } __packed;
 
 struct bt_has_cp_set_active_preset {

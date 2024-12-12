@@ -19,6 +19,7 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/types.h>
 
 #define BT_TBS_MAX_UCI_SIZE                        6
@@ -246,12 +247,12 @@ struct bt_tbs_call_cp_retrieve {
 
 struct bt_tbs_call_cp_originate {
 	uint8_t opcode;
-	uint8_t uri[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, uri);
 } __packed;
 
 struct bt_tbs_call_cp_join {
 	uint8_t opcode;
-	uint8_t call_indexes[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, call_indexes);
 } __packed;
 
 union bt_tbs_call_cp_t {
