@@ -21,4 +21,5 @@ supported:
   - counter
   - dac
   - pwm
+  - spi
 vendor: nxp
