@@ -386,7 +386,6 @@
 				interrupts = <40 NRF_DEFAULT_IRQ_PRIORITY>;
 				clocks = <&hfxo>;
 				max-bit-width = <32>;
-				max-frequency = <DT_FREQ_M(32)>;
 				prescaler = <0>;
 			};
 
@@ -398,7 +397,6 @@
 				interrupts = <41 NRF_DEFAULT_IRQ_PRIORITY>;
 				clocks = <&hfxo>;
 				max-bit-width = <32>;
-				max-frequency = <DT_FREQ_M(32)>;
 				prescaler = <0>;
 			};
 
@@ -410,7 +408,6 @@
 				interrupts = <42 NRF_DEFAULT_IRQ_PRIORITY>;
 				clocks = <&hfxo>;
 				max-bit-width = <32>;
-				max-frequency = <DT_FREQ_M(32)>;
 				prescaler = <0>;
 			};
 
@@ -623,7 +620,6 @@
 				interrupts = <226 NRF_DEFAULT_IRQ_PRIORITY>;
 				power-domains = <&gpd NRF_GPD_FAST_ACTIVE1>;
 				max-bit-width = <32>;
-				max-frequency = <DT_FREQ_M(320)>;
 				clocks = <&hsfll120>;
 				prescaler = <0>;
 			};
@@ -636,7 +632,6 @@
 				interrupts = <227 NRF_DEFAULT_IRQ_PRIORITY>;
 				power-domains = <&gpd NRF_GPD_FAST_ACTIVE1>;
 				max-bit-width = <32>;
-				max-frequency = <DT_FREQ_M(320)>;
 				clocks = <&hsfll120>;
 				prescaler = <0>;
 			};
