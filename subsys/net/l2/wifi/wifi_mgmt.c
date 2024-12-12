@@ -48,8 +48,42 @@ struct wifi_roaming_params {
 static struct wifi_roaming_params roaming_params;
 #endif
 
+const bool is_enterprise_security(enum wifi_security_type security)
+{
+	switch (security) {
+	case WIFI_SECURITY_TYPE_EAP_TLS:
+	case WIFI_SECURITY_TYPE_EAP_TLS_SHA256:
+	case WIFI_SECURITY_TYPE_EAP_PEAP_MSCHAPV2:
+	case WIFI_SECURITY_TYPE_EAP_PEAP_GTC:
+	case WIFI_SECURITY_TYPE_EAP_TTLS_MSCHAPV2:
+	case WIFI_SECURITY_TYPE_EAP_PEAP_TLS:
+		return true;
+	default:
+		return false;
+	}
+}
+
+const char *wifi_suiteb_txt(enum wifi_cipher_suite_b suiteb)
+{
+	switch (suiteb) {
+	case WIFI_CIPHER_SUITE_B_NA:
+		return "Not Applicable";
+	case WIFI_CIPHER_SUITE_B_NONE:
+		return "Not Enabled";
+	case WIFI_CIPHER_SUITE_B:
+		return "SUITE-B";
+	case WIFI_CIPHER_SUITE_B_192:
+		return "SUITE-B-192";
+	default:
+		return "UNKNOWN";
+	}
+}
 const char *wifi_security_txt(enum wifi_security_type security)
 {
+	if (is_enterprise_security(security)) {
+		return "IEEE_8021_x";
+	}
+
 	switch (security) {
 	case WIFI_SECURITY_TYPE_NONE:
 		return "OPEN";
@@ -65,8 +99,6 @@ const char *wifi_security_txt(enum wifi_security_type security)
 		return "WPA3-SAE-AUTO";
 	case WIFI_SECURITY_TYPE_WAPI:
 		return "WAPI";
-	case WIFI_SECURITY_TYPE_EAP_TLS:
-		return "EAP-TLS";
 	case WIFI_SECURITY_TYPE_WEP:
 		return "WEP";
 	case WIFI_SECURITY_TYPE_WPA_PSK:
@@ -75,16 +107,6 @@ const char *wifi_security_txt(enum wifi_security_type security)
 		return "WPA/WPA2/WPA3 PSK";
 	case WIFI_SECURITY_TYPE_DPP:
 		return "DPP";
-	case WIFI_SECURITY_TYPE_EAP_PEAP_MSCHAPV2:
-		return "EAP-PEAP-MSCHAPV2";
-	case WIFI_SECURITY_TYPE_EAP_PEAP_GTC:
-		return "EAP-PEAP-GTC";
-	case WIFI_SECURITY_TYPE_EAP_TTLS_MSCHAPV2:
-		return "EAP-TTLS-MSCHAPV2";
-	case WIFI_SECURITY_TYPE_EAP_PEAP_TLS:
-		return "EAP-PEAP-TLS";
-	case WIFI_SECURITY_TYPE_EAP_TLS_SHA256:
-		return "EAP-TLS-SHA256";
 	case WIFI_SECURITY_TYPE_FT_PSK:
 		return "FT-PSK";
 	case WIFI_SECURITY_TYPE_FT_SAE:

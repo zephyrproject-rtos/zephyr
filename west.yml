@@ -309,7 +309,7 @@ manifest:
       revision: fbc6e614686b69dfa56f9694350b9488cf83d3f7
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
-      revision: 71261e2b719b98500b7741c3398a74a5fb631596
+      revision: f6b950a3b5c0187fe499b0e518426d5bf88b7e68
       path: modules/lib/nrf_wifi
     - name: open-amp
       revision: b735edbc739ad59156eb55bb8ce2583d74537719
