@@ -1,8 +1,0 @@
-common:
-  tags:
-    - test_framework
-    - bluetooth
-    - host
-tests:
-  bluetooth.host.bt_pub_key_is_debug.default:
-    type: unit
