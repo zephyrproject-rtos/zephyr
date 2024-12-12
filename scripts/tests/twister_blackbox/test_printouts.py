@@ -13,15 +13,14 @@ import pytest
 import sys
 import re
 
-# pylint: disable=no-name-in-module
-from conftest import (
+from .conftest import (
     TEST_DATA,
     ZEPHYR_BASE,
     clear_log_in_test,
     sample_filename_mock,
     testsuite_filename_mock
 )
-from twisterlib.testplan import TestPlan
+from pylib.twister.twisterlib.testplan import TestPlan
 
 
 @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)

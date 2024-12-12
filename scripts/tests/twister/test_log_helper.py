@@ -12,7 +12,7 @@ import pytest
 
 from importlib import reload
 
-import twisterlib.log_helper
+import pylib.twister.twisterlib.log_helper
 
 
 TESTDATA = [
@@ -33,9 +33,9 @@ def test_log_command(caplog, system, expected_log):
     args = ['dummy', 'command', '-flag']
 
     with mock.patch('platform.system', return_value=system):
-        reload(twisterlib.log_helper)
-        twisterlib.log_helper.log_command(logger, message, args)
+        reload(pylib.twister.twisterlib.log_helper)
+        pylib.twister.twisterlib.log_helper.log_command(logger, message, args)
 
-    reload(twisterlib.log_helper)
+    reload(pylib.twister.twisterlib.log_helper)
 
     assert expected_log in caplog.text

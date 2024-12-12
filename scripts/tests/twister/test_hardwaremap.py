@@ -12,7 +12,7 @@ import sys
 
 from pathlib import Path
 
-from twisterlib.hardwaremap import(
+from pylib.twister.twisterlib.hardwaremap import(
     DUT,
     HardwareMap
 )
@@ -443,11 +443,11 @@ def test_hardwaremap_scan(
     with mock.patch('platform.system', return_value=system), \
          mock.patch('serial.tools.list_ports.comports',
                     return_value=comports_mock), \
-         mock.patch('twisterlib.hardwaremap.Path.resolve',
+         mock.patch('pylib.twister.twisterlib.hardwaremap.Path.resolve',
                     autospec=True, side_effect=mock_resolve), \
-         mock.patch('twisterlib.hardwaremap.Path.iterdir',
+         mock.patch('pylib.twister.twisterlib.hardwaremap.Path.iterdir',
                     autospec=True, side_effect=mock_iterdir), \
-         mock.patch('twisterlib.hardwaremap.Path.exists',
+         mock.patch('pylib.twister.twisterlib.hardwaremap.Path.exists',
                     autospec=True, side_effect=mock_exists):
         mocked_hm.scan(persistent)
 
@@ -672,7 +672,7 @@ def test_hardwaremap_save(mocked_hm, hwm, expected_dump):
 
     with mock.patch('os.path.exists', return_value=hwm is not None), \
          mock.patch('builtins.open', open_mock), \
-         mock.patch('twisterlib.hardwaremap.yaml.dump', dump_mock):
+         mock.patch('pylib.twister.twisterlib.hardwaremap.yaml.dump', dump_mock):
         mocked_hm.save('hwm.yaml')
 
     dump_mock.assert_called_once_with(expected_dump, mock.ANY, Dumper=mock.ANY,

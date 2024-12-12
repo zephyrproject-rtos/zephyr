@@ -10,10 +10,15 @@ Tests for config_parser.py
 import os
 import pytest
 import mock
-import scl
+import pylib.twister.scl
 
-from twisterlib.config_parser import TwisterConfigParser, extract_fields_from_arg_list, ConfigurationError
 from contextlib import nullcontext
+
+from pylib.twister.twisterlib.config_parser import (
+    TwisterConfigParser,
+    extract_fields_from_arg_list,
+    ConfigurationError
+)
 
 def test_extract_single_field_from_string_argument():
     target_fields = {"FIELD1"}
@@ -60,7 +65,7 @@ def test_load_yaml_with_extra_args_and_retrieve_scenario_data(zephyr_base):
       filter: 'filter2'
     '''
 
-    loaded_schema = scl.yaml_load(
+    loaded_schema = pylib.twister.scl.yaml_load(
         os.path.join(zephyr_base, 'scripts', 'schemas','twister', 'testsuite-schema.yaml')
     )
 
@@ -86,7 +91,7 @@ def test_default_values(zephyr_base):
         extra_args: ''
     '''
 
-    loaded_schema = scl.yaml_load(
+    loaded_schema = pylib.twister.scl.yaml_load(
         os.path.join(zephyr_base, 'scripts', 'schemas', 'twister','testsuite-schema.yaml')
     )
 
@@ -148,7 +153,7 @@ def test_default_values(zephyr_base):
 )
 
 def test_cast_value(zephyr_base, value, typestr, expected, expected_warning):
-    loaded_schema = scl.yaml_load(
+    loaded_schema = pylib.twister.scl.yaml_load(
         os.path.join(zephyr_base, 'scripts', 'schemas', 'twister','testsuite-schema.yaml')
     )
 
@@ -169,7 +174,7 @@ def test_load_invalid_test_config_yaml(zephyr_base):
     gibberish data
     '''
 
-    loaded_schema = scl.yaml_load(
+    loaded_schema = pylib.twister.scl.yaml_load(
         os.path.join(zephyr_base, 'scripts', 'schemas','twister', 'test-config-schema.yaml')
     )
 
@@ -188,7 +193,7 @@ def test_load_yaml_with_no_scenario_data(zephyr_base):
         extra_args: '--CONF_FILE=file2.conf --OVERLAY_CONFIG=config2.conf'
     '''
 
-    loaded_schema = scl.yaml_load(
+    loaded_schema = pylib.twister.scl.yaml_load(
         os.path.join(zephyr_base, 'scripts', 'schemas','twister', 'testsuite-schema.yaml')
     )
 

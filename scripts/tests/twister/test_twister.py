@@ -8,24 +8,22 @@ This test file contains foundational testcases for Twister tool
 """
 
 import os
-import sys
 import mock
 import pytest
 
 from pathlib import Path
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
-sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
 
-import scl
-from twisterlib.error import ConfigurationError
-from twisterlib.testplan import TwisterConfigParser
+import pylib.twister.scl
+from pylib.twister.twisterlib.error import ConfigurationError
+from pylib.twister.twisterlib.testplan import TwisterConfigParser
 
 def test_yamlload():
     """ Test to check if loading the non-existent files raises the errors """
     filename = 'testcase_nc.yaml'
     with pytest.raises(FileNotFoundError):
-        scl.yaml_load(filename)
+        pylib.twister.scl.yaml_load(filename)
 
 
 @pytest.mark.parametrize("filename, schema",
@@ -34,7 +32,7 @@ def test_yamlload():
 def test_correct_schema(filename, schema, test_data):
     """ Test to validate the testsuite schema"""
     filename = test_data + filename
-    schema = scl.yaml_load(ZEPHYR_BASE +'/scripts/schemas/twister//' + schema)
+    schema = pylib.twister.scl.yaml_load(ZEPHYR_BASE +'/scripts/schemas/twister//' + schema)
     data = TwisterConfigParser(filename, schema)
     data.load()
     assert data
@@ -46,15 +44,15 @@ def test_correct_schema(filename, schema, test_data):
 def test_incorrect_schema(filename, schema, test_data):
     """ Test to validate the exception is raised for incorrect testsuite schema"""
     filename = test_data + filename
-    schema = scl.yaml_load(ZEPHYR_BASE +'/scripts/schemas/twister//' + schema)
+    schema = pylib.twister.scl.yaml_load(ZEPHYR_BASE +'/scripts/schemas/twister//' + schema)
     with pytest.raises(Exception) as exception:
-        scl.yaml_load_verify(filename, schema)
+        pylib.twister.scl.yaml_load_verify(filename, schema)
         assert str(exception.value) == "Schema validation failed"
 
 def test_testsuite_config_files():
     """ Test to validate conf and overlay files are extracted properly """
     filename = Path(ZEPHYR_BASE) / "scripts/tests/twister/test_data/test_data_with_deprecation_warnings.yaml"
-    schema = scl.yaml_load(Path(ZEPHYR_BASE) / "scripts/schemas/twister/testsuite-schema.yaml")
+    schema = pylib.twister.scl.yaml_load(Path(ZEPHYR_BASE) / "scripts/schemas/twister/testsuite-schema.yaml")
     data = TwisterConfigParser(filename, schema)
     data.load()
 
