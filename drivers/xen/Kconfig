@@ -20,6 +20,15 @@ config XEN_GRANT_TABLE_INIT_PRIORITY
 	depends on XEN_GRANT_TABLE
 	default 50
 
+config NR_GRANT_FRAMES
+	int "Number of grant frames mapped to Zephyr"
+	depends on XEN_GRANT_TABLE
+	default 1
+	help
+	  This value configures how much grant frames will be supported by Zephyr
+	  grant table driver in runtime. This value should be <= max_grant_frames
+	  configured for domain in Xen hypervisor.
+
 endmenu
 
 endif # XEN
