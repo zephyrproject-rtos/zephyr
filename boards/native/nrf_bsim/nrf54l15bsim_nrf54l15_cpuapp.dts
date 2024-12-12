@@ -22,7 +22,6 @@
 	};
 
 	/delete-node/ cpus;
-	/delete-node/ clocks;
 	/delete-node/ sw-pwm;
 
 	soc {
