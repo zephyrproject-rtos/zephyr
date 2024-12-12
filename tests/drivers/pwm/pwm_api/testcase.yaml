@@ -22,8 +22,10 @@ tests:
       CONFIG_DT_HAS_NXP_FLEXIO_PWM_ENABLED
     depends_on: pwm
   drivers.pwm.pwm_fast:
-    extra_args: DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_fast.overlay"
-    platform_allow:
+      extra_args: 
+        - DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_fast.overlay"
+        - CONFIG_CLOCK_CONTROL=y
+        - CONFIG_PWM_INIT_PRIORITY=99
       - nrf54h20dk/nrf54h20/cpuapp
   drivers.pwm.frdm_mcxn947_mcxn947_cpu0_sctimer:
     extra_args: DTC_OVERLAY_FILE="boards/frdm_mcxn947_mcxn947_cpu0_sctimer.overlay"
