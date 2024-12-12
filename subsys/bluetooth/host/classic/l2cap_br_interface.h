@@ -70,3 +70,6 @@ struct bt_l2cap_chan *bt_l2cap_br_lookup_tx_cid(struct bt_conn *conn,
 
 /* Get remote supported fixed channels */
 uint8_t bt_l2cap_br_get_remote_fixed_chan(struct bt_conn *conn);
+
+/* L2CAP data receiving complete. */
+int bt_l2cap_br_chan_recv_complete(struct bt_l2cap_chan *chan);
