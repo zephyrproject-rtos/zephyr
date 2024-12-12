@@ -319,6 +319,7 @@
 			sampling-times = <2 4 8 13 20 40 80 161>;
 			num-sampling-time-common-channels = <1>;
 			st,adc-sequencer = <NOT_FULLY_CONFIGURABLE>;
+			st,adc-oversampler = "OVERSAMPLER_MINIMAL";
 		};
 
 		dma1: dma@40020000 {
