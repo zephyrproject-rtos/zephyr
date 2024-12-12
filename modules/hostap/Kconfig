@@ -67,7 +67,7 @@ config WIFI_NM_WPA_SUPPLICANT_DEBUG_LEVEL
 	default 3 if WIFI_NM_WPA_SUPPLICANT_LOG_LEVEL_INF # MSG_INFO
 	default 4 if WIFI_NM_WPA_SUPPLICANT_LOG_LEVEL_WRN # MSG_WARNING
 	default 5 if WIFI_NM_WPA_SUPPLICANT_LOG_LEVEL_ERR # MSG_ERROR
-	default 6
+	default 5
 	help
 	  Minimum priority level of a debug message emitted by WPA supplicant that
 	  is compiled-in the firmware. See wpa_debug.h file of the supplicant for
