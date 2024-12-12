@@ -18,3 +18,4 @@ supported:
   - gpio
   - spi
 vendor: nordic
+sysbuild: true
