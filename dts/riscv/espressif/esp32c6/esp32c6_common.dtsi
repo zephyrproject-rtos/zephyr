@@ -6,6 +6,7 @@
 #include <mem.h>
 #include <freq.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/interrupt-controller/esp-esp32c6-intmux.h>
 #include <zephyr/dt-bindings/clock/esp32c6_clock.h>
 #include <dt-bindings/pinctrl/esp32c6-pinctrl.h>
@@ -191,6 +192,17 @@
 			interrupts = <GPIO_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			ngpios = <30>;   /* 0..29 */
+		};
+
+		i2c0: i2c@60004000 {
+			compatible = "espressif,esp32-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x60004000 0x1000>;
+			interrupts = <I2C_EXT0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_I2C0_MODULE>;
+			status = "disabled";
 		};
 
 		uart0: uart@60000000 {
