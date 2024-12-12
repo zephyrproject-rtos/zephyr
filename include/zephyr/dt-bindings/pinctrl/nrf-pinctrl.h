@@ -162,6 +162,10 @@
 #define NRF_FUN_CAN_TX 46U
 /** CAN RX */
 #define NRF_FUN_CAN_RX 47U
+/** GRTC fast clock output */
+#define NRF_FUN_GRTC_CLKOUT_FAST 55U
+/** GRTC slow clock output */
+#define NRF_FUN_GRTC_CLKOUT_32K  56U
 
 /** @} */
 
