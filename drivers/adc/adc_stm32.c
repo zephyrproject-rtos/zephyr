@@ -58,20 +58,26 @@ LOG_MODULE_REGISTER(adc_stm32);
 #include <zephyr/arch/cache.h>
 #endif /* CONFIG_NOCACHE_MEMORY */
 
+
+/* Here are some redefinitions of ADC versions for better readability */
 #if defined(CONFIG_SOC_SERIES_STM32F3X)
 #if defined(ADC1_V2_5)
-/* ADC1_V2_5 is the ADC version for STM32F37x */
-#define STM32F3X_ADC_V2_5
+#define STM32F37X_ADC /* F37x */
 #elif defined(ADC5_V1_1)
-/* ADC5_V1_1 is the ADC version for other STM32F3x */
-#define STM32F3X_ADC_V1_1
-#endif
-#endif
+#define STM32F3XX_ADC /* Other F3xx */
+#endif /* ADC5_V1_1 */
+#elif defined(CONFIG_SOC_SERIES_STM32H7X)
+#if defined(ADC_VER_V5_V90)
+#define STM32H72X_ADC /* H72x and H73x */
+#elif defined(ADC_VER_V5_X)
+#define STM32H74X_ADC /* H74x and H75x */
+#elif defined(ADC_VER_V5_3)
+#define STM32H7AX_ADC /* H7Ax and H7Bx */
+#endif /* ADC_VER_V5_3 */
+#endif /* CONFIG_SOC_SERIES_STM32H7X */
+
 /*
  * Other ADC versions:
- * ADC_VER_V5_V90 -> STM32H72x/H73x
- * ADC_VER_V5_X -> STM32H74x/H75x && U5
- * ADC_VER_V5_3 -> STM32H7Ax/H7Bx
  * compat st_stm32f1_adc -> STM32F1, F37x (ADC1_V2_5)
  * compat st_stm32f4_adc -> STM32F2, F4, F7, L1
  */
@@ -221,13 +227,13 @@ static void adc_stm32_enable_dma_support(ADC_TypeDef *adc)
 
 #if defined(CONFIG_SOC_SERIES_STM32H7X)
 
-#if defined(ADC_VER_V5_V90)
+#if defined(STM32H72X_ADC)
 	if (adc == ADC3) {
 		LL_ADC_REG_SetDMATransferMode(adc, LL_ADC3_REG_DMA_TRANSFER_LIMITED);
 	} else {
 		LL_ADC_REG_SetDataTransferMode(adc, LL_ADC_REG_DMA_TRANSFER_LIMITED);
 	}
-#elif defined(ADC_VER_V5_X)
+#elif defined(STM32H74X_ADC)
 	LL_ADC_REG_SetDataTransferMode(adc, LL_ADC_REG_DMA_TRANSFER_LIMITED);
 #else
 #error "Unsupported ADC version"
@@ -521,7 +527,7 @@ static void adc_stm32_calibration_start(const struct device *dev)
 		(const struct adc_stm32_cfg *)dev->config;
 	ADC_TypeDef *adc = config->base;
 
-#if defined(STM32F3X_ADC_V1_1) || \
+#if defined(STM32F3XX_ADC) || \
 	defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32L5X) || \
 	defined(CONFIG_SOC_SERIES_STM32H5X) || \
@@ -752,7 +758,7 @@ static int adc_stm32_oversampling(ADC_TypeDef *adc, uint8_t ratio)
 	/* Certain variants of the H7, such as STM32H72x/H73x has ADC3
 	 * as a separate entity and require special handling.
 	 */
-#if defined(ADC_VER_V5_V90)
+#if defined(STM32H72X_ADC)
 	if (adc != ADC3) {
 		/* the LL function expects a value from 1 to 1024 */
 		adc_stm32_oversampling_ratioshift(adc, 1 << ratio, shift);
@@ -763,7 +769,7 @@ static int adc_stm32_oversampling(ADC_TypeDef *adc, uint8_t ratio)
 #else
 	/* the LL function expects a value from 1 to 1024 */
 	adc_stm32_oversampling_ratioshift(adc, 1 << ratio, shift);
-#endif /* defined(ADC_VER_V5_V90) */
+#endif /* defined(STM32H72X_ADC) */
 #elif defined(CONFIG_SOC_SERIES_STM32U5X)
 	if (adc != ADC4) {
 		/* the LL function expects a value from 1 to 1024 */
@@ -1389,7 +1395,7 @@ static inline int adc_stm32_get_input_freq_prescaler(void)
 {
 	int presc = 2;
 
-#ifdef ADC_VER_V5_X
+#ifdef STM32H74X_ADC
 	/* For revision Y we have no prescaler of 2 */
 	if (LL_DBGMCU_GetRevisionID() <= 0x1003) {
 		presc = 1;
@@ -1620,7 +1626,7 @@ static int adc_stm32_init(const struct device *dev)
 	/* Wait for Internal regulator stabilisation
 	 * Some series have a dedicated status bit, others relie on a delay
 	 */
-#if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(ADC_VER_V5_V90)
+#if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(STM32H72X_ADC)
 	/* ADC3 on H72x/H73x doesn't have the LDORDY status bit */
 	if (adc == ADC3) {
 		k_busy_wait(LL_ADC_DELAY_INTERNAL_REGUL_STAB_US);
