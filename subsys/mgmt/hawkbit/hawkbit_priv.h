@@ -20,7 +20,7 @@
 enum hawkbit_http_request {
 	HAWKBIT_PROBE,
 	HAWKBIT_CONFIG_DEVICE,
-	HAWKBIT_CLOSE,
+	HAWKBIT_CANCEL,
 	HAWKBIT_PROBE_DEPLOYMENT_BASE,
 	HAWKBIT_REPORT,
 	HAWKBIT_DOWNLOAD,
@@ -40,11 +40,6 @@ enum hawkbit_status_exec {
 	HAWKBIT_STATUS_EXEC_REJECTED,
 	HAWKBIT_STATUS_EXEC_RESUMED,
 	HAWKBIT_STATUS_EXEC_NONE,
-};
-
-enum hawkbit_dev_acid_t {
-	HAWKBIT_ACTION_ID_CURRENT = 0,
-	HAWKBIT_ACTION_ID_UPDATE,
 };
 
 struct hawkbit_href {
@@ -88,7 +83,7 @@ struct hawkbit_cfg {
 	struct hawkbit_cfg_data data;
 };
 
-struct hawkbit_close {
+struct hawkbit_cancel {
 	struct hawkbit_status status;
 };
 
@@ -137,24 +132,6 @@ struct hawkbit_dep_res {
 
 struct hawkbit_dep_fbk {
 	struct hawkbit_status status;
-};
-
-struct hawkbit_cancel {
-	struct hawkbit_href cancelBase;
-};
-
-struct entry {
-	char *http_req_str;
-	int n;
-};
-
-struct entry http_request[] = {
-	{"HAWKBIT_PROBE", 0},
-	{"HAWKBIT_CONFIG_DEVICE", 1},
-	{"HAWKBIT_CLOSE", 2},
-	{"HAWKBIT_PROBE_DEPLOYMENT_BASE", 3},
-	{"HAWKBIT_REPORT", 4},
-	{"HAWKBIT_DOWNLOAD", 5},
 };
 
 #endif /* __HAWKBIT_PRIV_H__ */
