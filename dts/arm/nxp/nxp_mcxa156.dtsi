@@ -296,6 +296,16 @@
 			resolution = <32>;
 			status = "disabled";
 		};
+
+		usb: usbd@400a4000 {
+			compatible = "nxp,kinetis-usbd";
+			reg = <0x400a4000 0x1000>;
+			interrupts = <36 1>;
+			interrupt-names = "usb";
+			num-bidir-endpoints = <16>;
+			status = "disabled";
+			no-voltage-regulator;
+		};
 	};
 };
 
