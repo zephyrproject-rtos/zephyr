@@ -25,10 +25,14 @@ message(STATUS "Application: ${APPLICATION_SOURCE_DIR}")
 message(STATUS "CMake version: ${CMAKE_VERSION}")
 
 # Find and execute workspace build configuration
-find_package(ZephyrBuildConfiguration
-  QUIET NO_POLICY_SCOPE
-  NAMES ZephyrBuild
-  PATHS ${ZEPHYR_BASE}/../*
+find_package(
+  ZephyrBuildConfiguration
+  QUIET
+  NO_POLICY_SCOPE
+  NAMES
+  ZephyrBuild
+  PATHS
+  ${ZEPHYR_BASE}/../*
   NO_CMAKE_PATH
   NO_CMAKE_ENVIRONMENT_PATH
   NO_SYSTEM_ENVIRONMENT_PATH
@@ -38,10 +42,14 @@ find_package(ZephyrBuildConfiguration
 )
 
 # Find and execute application-specific build configuration
-find_package(ZephyrAppConfiguration
-  QUIET NO_POLICY_SCOPE
-  NAMES ZephyrApp
-  PATHS ${APPLICATION_SOURCE_DIR}
+find_package(
+  ZephyrAppConfiguration
+  QUIET
+  NO_POLICY_SCOPE
+  NAMES
+  ZephyrApp
+  PATHS
+  ${APPLICATION_SOURCE_DIR}
   NO_CMAKE_PATH
   NO_CMAKE_ENVIRONMENT_PATH
   NO_SYSTEM_ENVIRONMENT_PATH
@@ -55,12 +63,14 @@ if(${CMAKE_VERSION} VERSION_EQUAL 3.22.1 OR ${CMAKE_VERSION} VERSION_EQUAL 3.22.
   # It seems only pip-installed builds are affected so we test to see if we are affected
   cmake_path(GET ZEPHYR_BASE PARENT_PATH test_cmake_path)
   if(ZEPHYR_BASE STREQUAL test_cmake_path)
-    message(FATAL_ERROR "The CMake version ${CMAKE_VERSION} installed suffers"
-            " the \n 'cmake_path(... PARENT_PATH)' bug, see: \n"
-	    "https://gitlab.kitware.com/cmake/cmake/-/issues/23187\n"
-	    "https://github.com/scikit-build/cmake-python-distributions/issues/221\n"
-	    "Please install another CMake version or use a build of CMake that"
-	    " does not come from PyPI."
+    message(
+      FATAL_ERROR
+        "The CMake version ${CMAKE_VERSION} installed suffers"
+        " the \n 'cmake_path(... PARENT_PATH)' bug, see: \n"
+        "https://gitlab.kitware.com/cmake/cmake/-/issues/23187\n"
+        "https://github.com/scikit-build/cmake-python-distributions/issues/221\n"
+        "Please install another CMake version or use a build of CMake that"
+        " does not come from PyPI."
     )
   endif()
 endif()
@@ -116,9 +126,9 @@ list(APPEND zephyr_cmake_modules soc_v2)
 
 foreach(component ${SUB_COMPONENTS})
   if(NOT ${component} IN_LIST zephyr_cmake_modules)
-    message(FATAL_ERROR
-      "Subcomponent '${component}' not default module for Zephyr CMake build system.\n"
-      "Please choose one or more valid components: ${zephyr_cmake_modules}"
+    message(
+      FATAL_ERROR "Subcomponent '${component}' not default module for Zephyr CMake build system.\n"
+                  "Please choose one or more valid components: ${zephyr_cmake_modules}"
     )
   endif()
 endforeach()
