@@ -293,7 +293,7 @@ static int i2c_kb1200_transfer(const struct device *dev, struct i2c_msg *msgs, u
 }
 
 /* I2C Master driver registration */
-static const struct i2c_driver_api i2c_kb1200_api = {
+static DEVICE_API(i2c, i2c_kb1200_api) = {
 	.configure = i2c_kb1200_configure,
 	.get_config = i2c_kb1200_get_config,
 	.transfer = i2c_kb1200_transfer,
