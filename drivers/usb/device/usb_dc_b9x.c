@@ -190,7 +190,6 @@ struct b9x_usbd_ep_ctx {
 	struct b9x_usbd_ep_buf buf;
 	bool reading;
 	uint8_t writing_len;
-	struct k_timer retry_timer;
 };
 
 /**
@@ -204,7 +203,6 @@ struct b9x_usbd_ep_ctx {
  * @param ready				USBD Ready flag set after pullup
  * @param suspend			Suspend flag
  * @param suspend_ignore	Ignore suspend interrupt
- * @param usb_work			USBD work item
  * @param drv_lock			Mutex for thread-safe b9x driver use
  * @param ep_ctx			Endpoint contexts
  */
@@ -217,7 +215,6 @@ struct b9x_usbd_ctx {
 	bool ready;
 	bool suspend;
 	bool suspend_ignore;
-	struct k_work usb_work;
 	struct k_mutex drv_lock;
 	struct b9x_usbd_ep_ctx ep_ctx[USBD_EP_TOTAL_CNT];
 };
@@ -295,33 +292,6 @@ static struct b9x_usbd_ep_ctx *out_endpoint_ctx(const uint8_t ep)
 	return endpoint_ctx(USBD_EPOUT(ep));
 }
 
-/** @brief FIFO used for queuing up events from ISR. */
-K_FIFO_DEFINE(usbd_evt_fifo);
-
-/** @brief Work queue used for handling the ISR events (i.e. for notifying the USB
- * device stack, for executing the endpoints callbacks, etc.) out of the ISR context.
- *
- * @details The system work queue cannot be used for this purpose as it might be used
- * in applications for scheduling USB transfers and this could lead to a deadlock
- * when the USB device stack would not be notified about certain event because of
- * a system work queue item waiting for a USB transfer to be finished.
- */
-static struct k_work_q usbd_work_queue;
-#if CONFIG_USB_TELINK_B9X
-static K_KERNEL_STACK_DEFINE(usbd_work_queue_stack, CONFIG_USB_B9X_WORK_QUEUE_STACK_SIZE);
-#endif
-
-static inline void usbd_work_schedule(void)
-{
-	k_work_submit_to_queue(&usbd_work_queue, &(get_usbd_ctx()->usb_work));
-}
-
-enum usbd_ep_event_type {
-	EP_EVT_SETUP_RECV,
-	EP_EVT_RECV_REQ,
-	EP_EVT_RECV_COMPLETE,
-	EP_EVT_WRITE_COMPLETE,
-};
 
 enum usbd_event_type {
 	USBD_EVT_IRQ_EP,
@@ -334,133 +304,35 @@ enum usbd_event_type {
 	USBD_EVT_RESET,
 	USBD_EVT_SUSPEND,
 	USBD_EVT_SLEEP,
-	USBD_EVT_EP_RETRY,
-};
-
-struct usbd_mem_block {
-	void *data;
 };
 
 struct usbd_event {
-	sys_snode_t node;
-	struct usbd_mem_block block;
 	enum usbd_event_type evt_type;
 	uint8_t ep_bits;
 	uint8_t ep_idx;
 };
 
-#define FIFO_ELEM_SZ	sizeof(struct usbd_event)
-#define FIFO_ELEM_ALIGN sizeof(uint32_t)
-
-#if CONFIG_USB_TELINK_B9X
-K_MEM_SLAB_DEFINE(fifo_elem_slab, FIFO_ELEM_SZ, CONFIG_USB_B9X_EVT_QUEUE_SIZE, FIFO_ELEM_ALIGN);
-#endif
-
-/**
- * @brief Free previously allocated USBD event.
- *
- * @note Should be called after usbd_evt_get().
- *
- * @param ev	Pointer to the USBD event structure.
- */
-static inline void usbd_evt_free(struct usbd_event *ev)
-{
-	k_mem_slab_free(&fifo_elem_slab, (void **)&ev->block.data);
-}
-
-/**
- * @brief Enqueue USBD event.
- *
- * @param ev	Pointer to the previously allocated and filled event structure.
- */
-static inline void usbd_evt_put(struct usbd_event *ev)
-{
-	k_fifo_put(&usbd_evt_fifo, ev);
-}
-
-/**
- * @brief Get next enqueued USBD event if present.
- */
-static inline struct usbd_event *usbd_evt_get(void)
-{
-	return k_fifo_get(&usbd_evt_fifo, K_NO_WAIT);
-}
-
-/**
- * @brief Drop all enqueued events.
- */
-static inline void usbd_evt_flush(void)
-{
-	struct usbd_event *ev;
-
-	do {
-		ev = usbd_evt_get();
-		if (ev) {
-			usbd_evt_free(ev);
-		}
-	} while (ev != NULL);
-}
-
-static inline struct usbd_event *usbd_evt_alloc(void)
-{
-	struct usbd_event *ev;
-	struct usbd_mem_block block;
-
-	if (k_mem_slab_alloc(&fifo_elem_slab, (void **)&block.data, K_NO_WAIT)) {
-		LOG_ERR("USBD event allocation failed!");
-
-		/*
-		 * Allocation may fail if workqueue thread is starved or event
-		 * queue size is too small (CONFIG_USB_B9x_EVT_QUEUE_SIZE).
-		 * Wipe all events, free the space and schedule
-		 * reinitialization.
-		 */
-		usbd_evt_flush();
-
-		if (k_mem_slab_alloc(&fifo_elem_slab, (void **)&block.data, K_NO_WAIT)) {
-			LOG_ERR("USBD event memory corrupted");
-			__ASSERT_NO_MSG(0);
-			return NULL;
-		}
-
-		ev = (struct usbd_event *)block.data;
-		ev->block = block;
-		ev->evt_type = USBD_EVT_REINIT;
-		usbd_evt_put(ev);
-		usbd_work_schedule();
-
-		return NULL;
-	}
-
-	ev = (struct usbd_event *)block.data;
-	ev->block = block;
-
-	return ev;
-}
+K_MSGQ_DEFINE(usbd_event_msgq, sizeof(struct usbd_event),
+	CONFIG_USB_B9X_EVT_QUEUE_SIZE, sizeof(uint32_t));
+static void usbd_work_handler(struct k_msgq *event_msgq);
+static K_THREAD_DEFINE(usbd_b9x, CONFIG_USB_B9X_THREAD_STACK_SIZE,
+	usbd_work_handler, &usbd_event_msgq, NULL, NULL, CONFIG_USB_B9X_THREAD_PRIORITY, 0, 0);
 
 static void submit_usbd_event(enum usbd_event_type evt_type, uint8_t value)
 {
-	struct usbd_event *ev = usbd_evt_alloc();
+	struct usbd_event ev = {
+		.evt_type = evt_type
+	};
 
-	if (!ev) {
-		return;
+	if (evt_type == USBD_EVT_IRQ_EP) {
+		ev.ep_bits = value;
+	} else if (evt_type == USBD_EVT_EP_COMPLETE) {
+		ev.ep_idx = value;
+	} else if (evt_type == USBD_EVT_EP_BUSY) {
+		ev.ep_idx = value;
 	}
-
-	ev->evt_type = evt_type;
-
-	if (ev->evt_type == USBD_EVT_IRQ_EP) {
-		ev->ep_bits = value;
-	} else if (ev->evt_type == USBD_EVT_EP_COMPLETE) {
-		ev->ep_idx = value;
-	} else if (ev->evt_type == USBD_EVT_EP_BUSY) {
-		ev->ep_idx = value;
-	} else if (ev->evt_type == USBD_EVT_EP_RETRY) {
-		ev->ep_idx = value;
-	}
-	usbd_evt_put(ev);
-
-	if (usbd_ctx.attached) {
-		usbd_work_schedule();
+	if (k_msgq_put(&usbd_event_msgq, &ev, K_NO_WAIT)) {
+		LOG_ERR("Can't rise event %u", evt_type);
 	}
 }
 
@@ -1629,146 +1501,111 @@ static void ep_read(enum usbd_endpoint_index_e ep_idx)
 	k_mutex_unlock(&ctx->drv_lock);
 }
 
-static void usbd_work_handler(struct k_work *item)
+static void usbd_work_handler(struct k_msgq *event_msgq)
 {
-	struct b9x_usbd_ctx *ctx;
-	struct b9x_usbd_ep_ctx *ep_ctx;
-	struct usbd_event *ev;
+	for (;;) {
+		struct usbd_event ev;
 
-	ctx = CONTAINER_OF(item, struct b9x_usbd_ctx, usb_work);
-	while ((ev = usbd_evt_get()) != NULL) {
-		if (!dev_ready()) {
-			usbd_evt_free(ev);
-			LOG_DBG("USBD is not ready, event drops.");
-			continue;
-		}
+		if (!k_msgq_get(event_msgq, &ev, K_FOREVER)) {
 
-		switch (ev->evt_type) {
-		case USBD_EVT_IRQ_EP:
-			LOG_DBG("USBD_EVT_IRQ_EP");
-			if (ev->ep_bits & FLD_USB_EDP5_IRQ) {
-				ep_read(USBD_OUT_EP5_IDX);
+			if (!dev_ready()) {
+				LOG_DBG("USBD is not ready, event drops.");
+				continue;
 			}
-			if (ev->ep_bits & FLD_USB_EDP6_IRQ) {
-				ep_read(USBD_OUT_EP6_IDX);
-			}
-			break;
 
-		case USBD_EVT_EP_COMPLETE:
-			LOG_DBG("USBD_EVT_EP_COMPLETE");
-			if ((ev->ep_idx == USBD_OUT_EP5_IDX) || (ev->ep_idx == USBD_OUT_EP6_IDX)) {
-				ep_ctx = endpoint_ctx(USB_EP_GET_ADDR(ev->ep_idx, USB_EP_DIR_OUT));
-				if (ep_ctx->cfg.cb) {
-					ep_ctx->cfg.cb(ep_ctx->cfg.addr, USB_DC_EP_DATA_OUT);
+			struct b9x_usbd_ctx *ctx = get_usbd_ctx();
+			struct b9x_usbd_ep_ctx *ep_ctx;
+
+			switch (ev.evt_type) {
+			case USBD_EVT_IRQ_EP:
+				LOG_DBG("USBD_EVT_IRQ_EP");
+				if (ev.ep_bits & FLD_USB_EDP5_IRQ) {
+					ep_read(USBD_OUT_EP5_IDX);
 				}
-			} else {
-				ep_ctx = endpoint_ctx(USB_EP_GET_ADDR(ev->ep_idx, USB_EP_DIR_IN));
+				if (ev.ep_bits & FLD_USB_EDP6_IRQ) {
+					ep_read(USBD_OUT_EP6_IDX);
+				}
+				break;
+			case USBD_EVT_EP_COMPLETE:
+				LOG_DBG("USBD_EVT_EP_COMPLETE");
+				if ((ev.ep_idx == USBD_OUT_EP5_IDX) ||
+					(ev.ep_idx == USBD_OUT_EP6_IDX)) {
+					ep_ctx = endpoint_ctx(USB_EP_GET_ADDR(ev.ep_idx,
+						USB_EP_DIR_OUT));
+					if (ep_ctx->cfg.cb) {
+						ep_ctx->cfg.cb(ep_ctx->cfg.addr,
+							USB_DC_EP_DATA_OUT);
+					}
+				} else {
+					ep_ctx = endpoint_ctx(USB_EP_GET_ADDR(ev.ep_idx,
+						USB_EP_DIR_IN));
+					if (ep_ctx->cfg.cb) {
+						ep_ctx->cfg.cb(ep_ctx->cfg.addr, USB_DC_EP_DATA_IN);
+					}
+				}
+				break;
+			case USBD_EVT_EP_BUSY:
+				LOG_DBG("USBD_EVT_EP_BUSY");
+				k_usleep(USBD_EPIN_BUSY_RETRY_TIMEOUT_US);
+				ep_ctx = endpoint_ctx(USB_EP_GET_ADDR(ev.ep_idx, USB_EP_DIR_IN));
 				if (ep_ctx->cfg.cb) {
 					ep_ctx->cfg.cb(ep_ctx->cfg.addr, USB_DC_EP_DATA_IN);
 				}
-			}
-			break;
-
-		case USBD_EVT_EP_BUSY:
-			LOG_DBG("USBD_EVT_EP_BUSY");
-			ep_ctx = endpoint_ctx(USB_EP_GET_ADDR(ev->ep_idx, USB_EP_DIR_IN));
-			if (ep_ctx->cfg.cb) {
-				k_timer_start(&ep_ctx->retry_timer,
-					K_USEC(USBD_EPIN_BUSY_RETRY_TIMEOUT_US), K_NO_WAIT);
-			}
-			if (ev->ep_idx == USBD_EP0_IDX) {
-				if (ep_ctx->cfg.stall) {
-					usbhw_write_ctrl_ep_ctrl(FLD_EP_DAT_STALL);
-				} else if ((ep_ctx->buf.total_len % 8 == 0)
-						&& (ep_ctx->buf.current_len == 0)
-						&& (ep_ctx->buf.total_len != ctx->setup.wLength)
-						&& !ctx->ctrl_zlp) {
-					reg_usb_sups_cyc_cali = CTRL_EP_ZLP_REG_VALUE;
-					ctx->ctrl_zlp = true;
-					usbhw_write_ctrl_ep_ctrl(FLD_EP_DAT_ACK);
-				} else {
-					usbhw_write_ctrl_ep_ctrl(FLD_EP_DAT_ACK);
+				if (ev.ep_idx == USBD_EP0_IDX) {
+					if (ep_ctx->cfg.stall) {
+						usbhw_write_ctrl_ep_ctrl(FLD_EP_DAT_STALL);
+					} else if ((ep_ctx->buf.total_len % 8 == 0) &&
+						(ep_ctx->buf.current_len == 0) &&
+						(ep_ctx->buf.total_len != ctx->setup.wLength) &&
+						!ctx->ctrl_zlp) {
+						reg_usb_sups_cyc_cali = CTRL_EP_ZLP_REG_VALUE;
+						ctx->ctrl_zlp = true;
+						usbhw_write_ctrl_ep_ctrl(FLD_EP_DAT_ACK);
+					} else {
+						usbhw_write_ctrl_ep_ctrl(FLD_EP_DAT_ACK);
+					}
 				}
+				break;
+			case USBD_EVT_DATA:
+				LOG_DBG("USBD_EVT_DATA");
+				usb_irq_data_handler();
+				break;
+			case USBD_EVT_SETUP:
+				LOG_DBG("USBD_EVT_SETUP");
+				usb_irq_setup_handler();
+				break;
+			case USBD_EVT_STATUS:
+				LOG_DBG("USBD_EVT_STATUS");
+				usb_irq_status_handler();
+				break;
+			case USBD_EVT_SUSPEND:
+				LOG_DBG("USBD_EVT_SUSPEND");
+				usb_irq_suspend_handler();
+				break;
+			case USBD_EVT_RESET:
+				LOG_DBG("USBD_EVT_RESET");
+				usb_irq_reset_handler();
+				break;
+			case USBD_EVT_REINIT:
+				LOG_DBG("USBD_EVT_REINIT");
+				break;
+			default:
+				LOG_ERR("Unknown USBD event: %" PRId16, ev.evt_type);
+				break;
 			}
-			break;
-
-		case USBD_EVT_EP_RETRY:
-			LOG_DBG("USBD_EVT_EP_RETRY");
-			ep_ctx = endpoint_ctx(USB_EP_GET_ADDR(ev->ep_idx, USB_EP_DIR_IN));
-			if (ep_ctx->cfg.cb) {
-				ep_ctx->cfg.cb(ep_ctx->cfg.addr, USB_DC_EP_DATA_IN);
-			}
-			break;
-
-		case USBD_EVT_DATA:
-			LOG_DBG("USBD_EVT_DATA");
-			usb_irq_data_handler();
-			break;
-
-		case USBD_EVT_SETUP:
-			LOG_DBG("USBD_EVT_SETUP");
-			usb_irq_setup_handler();
-			break;
-
-		case USBD_EVT_STATUS:
-			LOG_DBG("USBD_EVT_STATUS");
-			usb_irq_status_handler();
-			break;
-
-		case USBD_EVT_SUSPEND:
-			LOG_DBG("USBD_EVT_SUSPEND");
-			usb_irq_suspend_handler();
-			break;
-
-		case USBD_EVT_RESET:
-			LOG_DBG("USBD_EVT_RESET");
-			usb_irq_reset_handler();
-			break;
-
-		case USBD_EVT_REINIT:
-			LOG_DBG("USBD_EVT_REINIT");
-			break;
-
-		default:
-			LOG_ERR("Unknown USBD event: %" PRId16, ev->evt_type);
-			break;
 		}
-
-		usbd_evt_free(ev);
 	}
-}
-
-static void usbd_retry_timer_expire(struct k_timer *timer)
-{
-	struct b9x_usbd_ep_ctx *ep_ctx = k_timer_user_data_get(timer);
-
-	submit_usbd_event(USBD_EVT_EP_RETRY, ep_ctx - usbd_ctx.ep_ctx);
 }
 
 static int usb_init(void)
 {
-	int ret;
-
 	reg_wakeup_en = 0;
 #if CONFIG_SOC_RISCV_TELINK_B95
 	usbhw_init();
 	usbhw_set_ctrl_ep_size(SIZE_64_BYTE);
 #endif
-
-	for (size_t i = 0; i <  USBD_EP_TOTAL_CNT; i++) {
-		k_timer_init(&usbd_ctx.ep_ctx[i].retry_timer, usbd_retry_timer_expire, NULL);
-		k_timer_user_data_set(&usbd_ctx.ep_ctx[i].retry_timer, &usbd_ctx.ep_ctx[i]);
-	}
-
 	usb_set_pin_en();
-	ret = usb_irq_init();
-	k_work_queue_start(&usbd_work_queue, usbd_work_queue_stack,
-			   K_KERNEL_STACK_SIZEOF(usbd_work_queue_stack),
-			   CONFIG_SYSTEM_WORKQUEUE_PRIORITY, NULL);
-
-	k_work_init(&get_usbd_ctx()->usb_work, usbd_work_handler);
-
-	return ret;
+	return usb_irq_init();
 }
 
 SYS_INIT(usb_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
