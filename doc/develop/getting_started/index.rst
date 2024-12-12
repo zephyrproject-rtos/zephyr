@@ -379,6 +379,8 @@ additional Python dependencies in a `Python virtual environment`_.
 
             west packages pip --install
 
+.. _gs_install_zephyr_sdk:
+
 Install the Zephyr SDK
 **********************
 
