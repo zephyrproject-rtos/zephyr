@@ -26,4 +26,5 @@ app=tests/bsim/bluetooth/mesh \
   conf_overlay="overlay_pst.conf;overlay_gatt.conf;overlay_psa.conf" compile
 app=tests/bsim/bluetooth/mesh \
   conf_overlay="overlay_pst.conf;overlay_gatt.conf;overlay_workq_sys.conf" compile
+app=tests/bsim/bluetooth/mesh conf_overlay=overlay_pb_gatt.conf compile
 wait_for_background_jobs
