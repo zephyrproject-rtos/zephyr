@@ -9,7 +9,7 @@
 #define SRAM0_SIZE         DT_REG_SIZE(DT_NODELABEL(sram0))
 /* SRAM1 (384kB) memory */
 #define SRAM1_DRAM_START   DT_REG_ADDR(DT_NODELABEL(sram1))
-#define SRAM1_IRAM_START   (SRAM0_IRAM_START + SRAM0_SIZE)
+#define SRAM1_IRAM_START   (SRAM1_DRAM_START + IRAM_DRAM_OFFSET)
 #define SRAM1_SIZE         DT_REG_SIZE(DT_NODELABEL(sram1))
 /* ICache size is fixed to 16KB on ESP32-C3 */
 #define ICACHE_SIZE        SRAM0_SIZE

@@ -80,9 +80,9 @@
 		compatible = "simple-bus";
 		ranges;
 
-		sram0: memory@40370000 {
+		sram0: memory@4037c000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
-			reg = <0x40370000 DT_SIZE_K(16)>;
+			reg = <0x4037c000 DT_SIZE_K(16)>;
 			zephyr,memory-region = "SRAM0";
 		};
 
