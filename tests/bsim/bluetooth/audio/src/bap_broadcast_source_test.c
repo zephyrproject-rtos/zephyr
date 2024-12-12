@@ -563,7 +563,7 @@ static void init(void)
 	}
 }
 
-static void test_main(void)
+static void test_broadcast_source_run(size_t acceptor_cnt)
 {
 	struct bt_bap_broadcast_source *source;
 	struct bt_le_ext_adv *adv;
@@ -593,11 +593,14 @@ static void test_main(void)
 	/* Update metadata while streaming */
 	test_broadcast_source_update_metadata(source, adv);
 
-	/* Wait for other devices to have received what they wanted */
-	backchannel_sync_wait_any();
-
-	/* Wait for other devices to let us know when we can stop the source */
-	backchannel_sync_wait_any();
+	/* wait for all acceptors to:
+	 * 1. have received data
+	 * 2. let us know that we can stop the source
+	 */
+	for (int i = 0; i < acceptor_cnt; i++) {
+		backchannel_sync_wait_any();
+		backchannel_sync_wait_any();
+	}
 
 	test_broadcast_source_stop(source);
 
@@ -624,6 +627,32 @@ static void test_main(void)
 	source = NULL;
 
 	PASS("Broadcast source passed\n");
+}
+
+static void test_main(void)
+{
+	size_t acceptor_cnt;
+
+	/* The test consists of N devices
+	 * 1 device is the broadcast source
+	 * This leaves N - 1 devices for the acceptor
+	 */
+	acceptor_cnt = get_dev_cnt() - 1;
+	printk("Running with %d devices\n", acceptor_cnt);
+	test_broadcast_source_run(acceptor_cnt);
+}
+
+static void test_main_asst(void)
+{
+	size_t acceptor_cnt;
+
+	/* The test consists of N devices
+	 * 1 device is the broadcast source
+	 * 1 device is the CAP commander or broadcast assistant
+	 * This leaves N - 2 devices for the acceptor
+	 */
+	acceptor_cnt = get_dev_cnt() - 2;
+	test_broadcast_source_run(acceptor_cnt);
 }
 
 static void test_main_encrypted(void)
@@ -681,6 +710,12 @@ static const struct bst_test_instance test_broadcast_source[] = {
 		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main_encrypted,
+	},
+	{
+		.test_id = "broadcast_source_w_asst",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_main_asst,
 	},
 	BSTEST_END_MARKER,
 };

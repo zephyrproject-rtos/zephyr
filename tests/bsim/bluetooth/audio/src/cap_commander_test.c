@@ -727,12 +727,6 @@ static void discover_bass(size_t acceptor_cnt)
 {
 	k_sem_reset(&sem_bass_discovered);
 
-	if (acceptor_cnt > 1) {
-		FAIL("Current implementation does not support multiple connections for the "
-		     "broadcast assistant");
-		return;
-	}
-
 	for (size_t i = 0U; i < acceptor_cnt; i++) {
 		int err;
 
@@ -1133,9 +1127,12 @@ static void test_main_cap_commander_broadcast_reception(void)
 
 	test_broadcast_reception_start(acceptor_count);
 
-	backchannel_sync_wait_any(); /* wait for the acceptor to receive data */
+	for (size_t i = 0; i < acceptor_count; i++) {
+		backchannel_sync_wait_any(); /* wait for the acceptor to receive data */
 
-	backchannel_sync_wait_any(); /* wait for the acceptor to receive a metadata update */
+		backchannel_sync_wait_any(); /* wait for the acceptor to receive a metadata update
+					      */
+	}
 
 	test_broadcast_reception_stop(acceptor_count);
 
