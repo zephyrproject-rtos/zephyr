@@ -206,12 +206,19 @@ out:
 
 static bool slab_ptr_is_good(struct k_mem_slab *slab, const void *ptr)
 {
+#ifdef CONFIG_MEM_SLAB_POINTER_VALIDATE
 	const char *p = ptr;
 	ptrdiff_t offset = p - slab->buffer;
 
 	return (offset >= 0) &&
 	       (offset < (slab->info.block_size * slab->info.num_blocks)) &&
 	       ((offset % slab->info.block_size) == 0);
+#else
+	ARG_UNUSED(slab);
+	ARG_UNUSED(ptr);
+
+	return true;
+#endif
 }
 
 int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem, k_timeout_t timeout)
@@ -274,7 +281,7 @@ void k_mem_slab_free(struct k_mem_slab *slab, void *mem)
 	k_spinlock_key_t key = k_spin_lock(&slab->lock);
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_mem_slab, free, slab);
-	if ((slab->free_list == NULL) && IS_ENABLED(CONFIG_MULTITHREADING)) {
+	if (unlikely(slab->free_list == NULL) && IS_ENABLED(CONFIG_MULTITHREADING)) {
 		struct k_thread *pending_thread = z_unpend_first_thread(&slab->wait_q);
 
 		if (unlikely(pending_thread != NULL)) {
