@@ -43,6 +43,7 @@ zephyr_library_sources_ifdef(CONFIG_ETH_XMC4XXX		eth_xmc4xxx.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_TEST		eth_test.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_RENESAS_RA     eth_renesas_ra.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_LAN9250    eth_lan9250.c)
+zephyr_library_sources_ifdef(CONFIG_ETH_SY1XX   eth_sensry_sy1xx_mac.c)
 
 if(CONFIG_ETH_NXP_S32_NETC)
   zephyr_library_sources(eth_nxp_s32_netc.c)
