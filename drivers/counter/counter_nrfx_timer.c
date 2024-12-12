@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/drivers/counter.h>
+#include <zephyr/drivers/clock_control/nrf_clock_control.h>
 #include <hal/nrf_timer.h>
 #include <zephyr/sys/atomic.h>
 
@@ -421,7 +422,7 @@ static DEVICE_API(counter, counter_nrfx_driver_api) = {
 
 #if !defined(CONFIG_SOC_SERIES_BSIM_NRFXX) && !defined(NRF_SKIP_CLOCK_CONFIGURATION)
 #define CHECK_MAX_FREQ(idx)									\
-		BUILD_ASSERT(DT_INST_PROP(idx, max_frequency) ==				\
+		BUILD_ASSERT(NRF_PERIPH_GET_FREQUENCY(DT_DRV_INST(idx)) ==			\
 			NRF_TIMER_BASE_FREQUENCY_GET((NRF_TIMER_Type *)DT_INST_REG_ADDR(idx)))
 #else
 #define CHECK_MAX_FREQ(idx)
@@ -456,7 +457,7 @@ static DEVICE_API(counter, counter_nrfx_driver_api) = {
 	static MAYBE_CONST_CONFIG struct counter_nrfx_config nrfx_counter_##idx##_config = {	\
 		.info = {									\
 			.max_top_value = (uint32_t)BIT64_MASK(DT_INST_PROP(idx, max_bit_width)),\
-			.freq = DT_INST_PROP(idx, max_frequency) /				\
+			.freq = NRF_PERIPH_GET_FREQUENCY(DT_DRV_INST(idx)) /			\
 				BIT(DT_INST_PROP(idx, prescaler)),				\
 			.flags = COUNTER_CONFIG_INFO_COUNT_UP,					\
 			.channels = CC_TO_ID(DT_INST_PROP(idx, cc_num)),			\
