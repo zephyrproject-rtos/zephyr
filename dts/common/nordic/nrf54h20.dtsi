@@ -385,7 +385,7 @@
 				status = "disabled";
 				cc-num = <8>;
 				interrupts = <40 NRF_DEFAULT_IRQ_PRIORITY>;
-				clocks = <&fll16m>;
+				clocks = <&hfxo>;
 				max-bit-width = <32>;
 				max-frequency = <DT_FREQ_M(32)>;
 				prescaler = <0>;
@@ -397,7 +397,7 @@
 				status = "disabled";
 				cc-num = <8>;
 				interrupts = <41 NRF_DEFAULT_IRQ_PRIORITY>;
-				clocks = <&fll16m>;
+				clocks = <&hfxo>;
 				max-bit-width = <32>;
 				max-frequency = <DT_FREQ_M(32)>;
 				prescaler = <0>;
@@ -409,7 +409,7 @@
 				status = "disabled";
 				cc-num = <8>;
 				interrupts = <42 NRF_DEFAULT_IRQ_PRIORITY>;
-				clocks = <&fll16m>;
+				clocks = <&hfxo>;
 				max-bit-width = <32>;
 				max-frequency = <DT_FREQ_M(32)>;
 				prescaler = <0>;
