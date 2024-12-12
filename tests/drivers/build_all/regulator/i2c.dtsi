@@ -117,5 +117,28 @@ npm2100@8 {
 
 		BOOST {};
 		LDOSW {};
+};
+
+axp2101@9 {
+	compatible = "x-powers,axp2101";
+	reg = <0x9>;
+
+	regulators {
+		compatible = "x-powers,axp2101-regulator";
+
+		DCDC1 {};
+		DCDC2 {};
+		DCDC3 {};
+		DCDC4 {};
+		DCDC5 {};
+		ALDO1 {};
+		ALDO2 {};
+		ALDO3 {};
+		ALDO4 {};
+		BLDO1 {};
+		BLDO2 {};
+		CPUSLDO {};
+		DLDO1 {};
+		DLDO2 {};
 	};
 };
