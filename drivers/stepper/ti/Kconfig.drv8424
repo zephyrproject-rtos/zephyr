@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 Navimatix GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config DRV8424
+	bool "TI DRV8424 stepper motor driver"
+	default y
+	depends on DT_HAS_TI_DRV8424_ENABLED
+	select COUNTER
+	help
+	  Enable driver for TI DRV8424 stepper motor driver.
+
+if DRV8424
+
+config DRV8424_EVENT_QUEUE_LEN
+	int "Maximum number of pending stepper events"
+	default 4
+	help
+	  The maximum number of stepper events that can be pending before new events
+	  are dropped.
+
+endif # DRV8424
