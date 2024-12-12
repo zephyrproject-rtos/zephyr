@@ -19,6 +19,11 @@ extern char _mtk_adsp_dram_end[];
 #define DRAM_SIZE  DT_REG_SIZE(DT_NODELABEL(dram0))
 #define DRAM_END   (DRAM_START + DRAM_SIZE)
 
+#define DMA_START DT_REG_ADDR(DT_NODELABEL(dram1))
+#define DMA_SIZE  DT_REG_SIZE(DT_NODELABEL(dram1))
+#define DMA_END   (DMA_START + DMA_SIZE)
+
+
 #ifdef CONFIG_SOC_MT8196
 #define INIT_STACK "0x90400000"
 #define LOG_BASE   0x90580000
@@ -197,6 +202,8 @@ static void enable_mpu(void)
 		{ DRAM_START, 0xf7f00 },          /* cached DRAM */
 		{ (uint32_t)&_mtk_adsp_dram_end, 0x06f00 }, /* uncached DRAM */
 		{ DRAM_END,   0x06000 },          /* inaccessible top of mem */
+		{ DMA_START,  0x06f00 },          /* uncached host "DMA" area */
+		{ DMA_END,    0x06000 },          /* inaccessible top of mem */
 	};
 
 	/* Must write BACKWARDS FROM THE END to avoid introducing a
