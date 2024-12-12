@@ -908,6 +908,32 @@
 		status = "disabled";
 		#pwm-cells = <3>;
 	};
+
+	i3c1: i3c@4330000 {
+		compatible = "nxp,mcux-i3c";
+		reg = <0x4330000 0x1000>;
+		interrupts = <12 0>;
+		clocks = <&ccm IMX_CCM_I3C1_CLK 0x67 0>;
+		clk-divider = <2>;
+		clk-divider-slow = <1>;
+		clk-divider-tc = <1>;
+		status = "disabled";
+		#address-cells = <3>;
+		#size-cells = <0>;
+	};
+
+	i3c2: i3c@2520000 {
+		compatible = "nxp,mcux-i3c";
+		reg = <0x2520000 0x1000>;
+		interrupts = <61 0>;
+		clocks = <&ccm IMX_CCM_I3C2_CLK 0x68 0>;
+		clk-divider = <2>;
+		clk-divider-slow = <1>;
+		clk-divider-tc = <1>;
+		status = "disabled";
+		#address-cells = <3>;
+		#size-cells = <0>;
+	};
 };
 
 &flexspi {

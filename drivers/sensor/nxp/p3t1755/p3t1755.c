@@ -51,7 +51,7 @@ static int p3t1755_sample_fetch(const struct device *dev, enum sensor_channel ch
 {
 	const struct p3t1755_config *config = dev->config;
 	struct p3t1755_data *data = dev->data;
-	uint8_t raw_temp[2];
+	uint8_t raw_temp[2] = {0};
 
 	if (chan != SENSOR_CHAN_ALL && chan != SENSOR_CHAN_AMBIENT_TEMP) {
 		LOG_ERR("Invalid channel provided");
@@ -65,7 +65,12 @@ static int p3t1755_sample_fetch(const struct device *dev, enum sensor_channel ch
 		k_sleep(K_MSEC(12));
 	}
 
-	config->ops.read(dev, P3T1755_TEMPERATURE_REG, raw_temp, 2);
+	int status = config->ops.read(dev, P3T1755_TEMPERATURE_REG, raw_temp, 2);
+
+	if (status) {
+		LOG_ERR("read return error %d", status);
+		return -ENOTSUP;
+	}
 
 	/* Byte 1 contains the MSByte and Byte 2 contains the LSByte, we need to swap the 2 bytes.
 	 * The 4 least significant bits of the LSByte are zero and should be ignored.
