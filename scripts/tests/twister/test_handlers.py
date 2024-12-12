@@ -510,8 +510,8 @@ def test_binaryhandler_create_env(
 
 TESTDATA_6 = [
     (TwisterStatus.NONE, False, 2, True, TwisterStatus.FAIL, 'Valgrind error', False),
-    (TwisterStatus.NONE, False, 1, False, TwisterStatus.FAIL, 'Failed', False),
-    (TwisterStatus.FAIL, False, 0, False, TwisterStatus.FAIL, 'Failed', False),
+    (TwisterStatus.NONE, False, 1, False, TwisterStatus.FAIL, 'Failed (rc=1)', False),
+    (TwisterStatus.FAIL, False, 0, False, TwisterStatus.FAIL, 'Failed harness', False),
     ('success', False, 0, False, 'success', 'Unknown', False),
     (TwisterStatus.NONE, True, 1, True, TwisterStatus.FAIL, 'Timeout', True),
 ]
