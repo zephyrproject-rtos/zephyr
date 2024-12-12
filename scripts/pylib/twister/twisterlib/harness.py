@@ -389,7 +389,7 @@ class Pytest(Harness):
             f'--build-dir={self.running_dir}',
             f'--junit-xml={self.report_file}',
             '--log-file-level=DEBUG',
-            '--log-file-format=%(asctime)s.%(msecs)d:%(levelname)s:%(name)s: %(message)s',
+            '--log-file-format=%(asctime)s.%(msecs)03d:%(levelname)s:%(name)s: %(message)s',
             f'--log-file={self.pytest_log_file_path}',
             f'--platform={self.instance.platform.name}'
         ]
