@@ -277,6 +277,11 @@ def main():
     elif sys.argv[1] == "log":
         log(dev)
 
+    elif sys.argv[1] == "mem":
+        print("Memory Regions:")
+        for m in mmio.keys():
+            print(f"  {m}: {mmio[m][1]} @ 0x{mmio[m][0]:08x}")
+
     elif sys.argv[1] == "dump":
         sz = mmio[sys.argv[2]][1]
         mm = maps[sys.argv[2]]
