@@ -6,9 +6,12 @@
 
 /dts-v1/;
 
+#define ICCM_SIZE DT_SIZE_K(512)
+#define DCCM_SIZE DT_SIZE_K(512)
+
 #include "nsim_em-sec.dtsi"
 
 / {
-	model = "snps,nsim_sem_mpu_stack_guard";
-	compatible = "snps,nsim_sem_mpu_stack_guard.dts";
+	model = "snps,nsim_sem";
+	compatible = "snps,nsim_sem";
 };
