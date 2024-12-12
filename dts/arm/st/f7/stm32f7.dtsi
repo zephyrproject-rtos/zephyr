@@ -763,6 +763,7 @@
 			sampling-times = <3 15 28 56 84 112 144 480>;
 			st,adc-clock-source = <SYNC>;
 			st,adc-sequencer = <FULLY_CONFIGURABLE>;
+			st,adc-oversampler = "OVERSAMPLER_NONE";
 		};
 
 		adc2: adc@40012100 {
@@ -779,6 +780,7 @@
 			sampling-times = <3 15 28 56 84 112 144 480>;
 			st,adc-clock-source = <SYNC>;
 			st,adc-sequencer = <FULLY_CONFIGURABLE>;
+			st,adc-oversampler = "OVERSAMPLER_NONE";
 		};
 
 		adc3: adc@40012200 {
@@ -795,6 +797,7 @@
 			sampling-times = <3 15 28 56 84 112 144 480>;
 			st,adc-clock-source = <SYNC>;
 			st,adc-sequencer = <FULLY_CONFIGURABLE>;
+			st,adc-oversampler = "OVERSAMPLER_NONE";
 		};
 
 		dac1: dac@40007400 {

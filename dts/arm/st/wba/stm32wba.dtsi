@@ -426,6 +426,7 @@
 			num-sampling-time-common-channels = <2>;
 			st,adc-clock-source = <ASYNC>;
 			st,adc-sequencer = <NOT_FULLY_CONFIGURABLE>;
+			st,adc-oversampler = "OVERSAMPLER_MINIMAL";
 		};
 
 		lptim1: timers@46004400 {

@@ -793,6 +793,7 @@
 			sampling-times = <5 6 12 20 36 68 391 814>;
 			st,adc-clock-source = <ASYNC>;
 			st,adc-sequencer = <FULLY_CONFIGURABLE>;
+			st,adc-oversampler = "OVERSAMPLER_EXTENDED";
 		};
 
 		adc4: adc@46021000 {
@@ -811,6 +812,7 @@
 			num-sampling-time-common-channels = <2>;
 			st,adc-clock-source = <ASYNC>;
 			st,adc-sequencer = <NOT_FULLY_CONFIGURABLE>;
+			st,adc-oversampler = "OVERSAMPLER_MINIMAL";
 		};
 
 		fdcan1: can@4000a400 {
