@@ -5,4 +5,11 @@ description: Native POSIX Counter
 
 compatible: "zephyr,native-posix-counter"
 
-include: base.yaml
+include: "counter.yaml"
+
+properties:
+  "#counter-cells":
+    const: 1
+
+counter-cells:
+  - channel
