@@ -29,6 +29,7 @@ LOG_MODULE_REGISTER(net_wifi_shell, LOG_LEVEL_INF);
 #include <zephyr/sys/slist.h>
 
 #include "net_shell_private.h"
+#include <math.h>
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 static const char ca_cert_test[] = {
 	#include <wifi_enterprise_test_certs/ca.pem.inc>
@@ -1528,6 +1529,10 @@ static int cmd_wifi_twt_setup_quick(const struct shell *sh, size_t argc,
 	struct wifi_twt_params params = { 0 };
 	int idx = 1;
 	long value;
+	double twt_mantissa_scale = 0.0;
+	double twt_interval_scale = 0.0;
+	uint16_t scale = 1000;
+	int exponent = 0;
 
 	context.sh = sh;
 
@@ -1552,6 +1557,13 @@ static int cmd_wifi_twt_setup_quick(const struct shell *sh, size_t argc,
 	}
 	params.setup.twt_interval = (uint64_t)value;
 
+	/* control the region of mantissa filed */
+	twt_interval_scale = (double)(params.setup.twt_interval / scale);
+	/* derive mantissa and exponent from interval */
+	twt_mantissa_scale = frexp(twt_interval_scale, &exponent);
+	params.setup.twt_mantissa = ceil(twt_mantissa_scale * scale);
+	params.setup.twt_exponent = exponent;
+
 	if (net_mgmt(NET_REQUEST_WIFI_TWT, iface, &params, sizeof(params))) {
 		PR_WARNING("%s with %s failed, reason : %s\n",
 			   wifi_twt_operation_txt(params.operation),
@@ -1568,74 +1580,236 @@ static int cmd_wifi_twt_setup_quick(const struct shell *sh, size_t argc,
 	return 0;
 }
 
+static int cmd_wifi_btwt_setup(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = net_if_get_wifi_sap();
+	struct wifi_twt_params params = {0};
+	int idx = 1;
+	long value;
+	int ret = 0;
+
+	context.sh = sh;
+
+	params.btwt.sub_id = (uint16_t)shell_strtol(argv[idx++], 10, &ret);
+	params.btwt.nominal_wake = (uint8_t)shell_strtol(argv[idx++], 10, &ret);
+	params.btwt.max_sta_support = (uint8_t)shell_strtol(argv[idx++], 10, &ret);
+
+	if (!parse_number(sh, &value, argv[idx++], NULL, 1, 0xFFFF)) {
+		return -EINVAL;
+	}
+	params.btwt.twt_mantissa = (uint16_t)value;
+
+	params.btwt.twt_offset = (uint16_t)shell_strtol(argv[idx++], 10, &ret);
+
+	if (!parse_number(sh, &value, argv[idx++], NULL, 0, WIFI_MAX_TWT_EXPONENT)) {
+		return -EINVAL;
+	}
+	params.btwt.twt_exponent = (uint8_t)value;
+
+	params.btwt.sp_gap = (uint8_t)shell_strtol(argv[idx++], 10, &ret);
+
+	if (ret) {
+		PR_ERROR("Invalid argument (ret %d)\n", ret);
+		return -EINVAL;
+	}
+
+	if (net_mgmt(NET_REQUEST_WIFI_BTWT, iface, &params, sizeof(params))) {
+		PR_WARNING("Failed reason : %s\n",
+			   wifi_twt_get_err_code_str(params.fail_reason));
+
+		return -ENOEXEC;
+	}
+
+	PR("BTWT setup\n");
+
+	return 0;
+}
+
+static int twt_args_to_params(const struct shell *sh, size_t argc, char *argv[],
+				 struct wifi_twt_params *params)
+{
+	int opt;
+	int opt_index = 0;
+	struct getopt_state *state;
+	long value;
+	double twt_mantissa_scale = 0.0;
+	double twt_interval_scale = 0.0;
+	uint16_t scale = 1000;
+	int exponent = 0;
+	static const struct option long_options[] = {
+		{"negotiation-type", required_argument, 0, 'n'},
+		{"setup-cmd", required_argument, 0, 'c'},
+		{"dialog-token", required_argument, 0, 't'},
+		{"flow-id", required_argument, 0, 'f'},
+		{"responder", required_argument, 0, 'r'},
+		{"trigger", required_argument, 0, 'T'},
+		{"implicit", required_argument, 0, 'I'},
+		{"announce", required_argument, 0, 'a'},
+		{"wake-interval", required_argument, 0, 'w'},
+		{"interval", required_argument, 0, 'i'},
+		{"wake-ahead-duration", required_argument, 0, 'D'},
+		{"info-disable", required_argument, 0, 'd'},
+		{"exponent", required_argument, 0, 'e'},
+		{"mantissa", required_argument, 0, 'm'},
+		{"help", no_argument, 0, 'h'},
+		{0, 0, 0, 0}};
+
+	params->operation = WIFI_TWT_SETUP;
+
+	while ((opt = getopt_long(argc, argv, "n:c:t:f:r:T:I:a:t:w:i:D:d:e:m:h",
+				  long_options, &opt_index)) != -1) {
+		state = getopt_state_get();
+		switch (opt) {
+		case 'n':
+			if (!parse_number(sh, &value, state->optarg, NULL,
+					  WIFI_TWT_INDIVIDUAL,
+					  WIFI_TWT_WAKE_TBTT)) {
+				return -EINVAL;
+			}
+			params->negotiation_type = (enum wifi_twt_negotiation_type)value;
+			break;
+
+		case 'c':
+			if (!parse_number(sh, &value, state->optarg, NULL,
+					  WIFI_TWT_SETUP_CMD_REQUEST,
+					  WIFI_TWT_SETUP_CMD_DEMAND)) {
+				return -EINVAL;
+			}
+			params->setup_cmd = (enum wifi_twt_setup_cmd)value;
+			break;
+
+		case 't':
+			if (!parse_number(sh, &value, state->optarg, NULL, 1, 255)) {
+				return -EINVAL;
+			}
+			params->dialog_token = (uint8_t)value;
+			break;
+
+		case 'f':
+			if (!parse_number(sh, &value, state->optarg, NULL, 0,
+					  (WIFI_MAX_TWT_FLOWS - 1))) {
+				return -EINVAL;
+			}
+			params->flow_id = (uint8_t)value;
+			break;
+
+		case 'r':
+			if (!parse_number(sh, &value, state->optarg, NULL, 0, 1)) {
+				return -EINVAL;
+			}
+			params->setup.responder = (bool)value;
+			break;
+
+		case 'T':
+			if (!parse_number(sh, &value, state->optarg, NULL, 0, 1)) {
+				return -EINVAL;
+			}
+			params->setup.trigger = (bool)value;
+			break;
+
+		case 'I':
+			if (!parse_number(sh, &value, state->optarg, NULL, 0, 1)) {
+				return -EINVAL;
+			}
+			params->setup.implicit = (bool)value;
+			break;
+
+		case 'a':
+			if (!parse_number(sh, &value, state->optarg, NULL, 0, 1)) {
+				return -EINVAL;
+			}
+			params->setup.announce = (bool)value;
+			break;
+
+		case 'w':
+			if (!parse_number(sh, &value, state->optarg, NULL, 1,
+					  WIFI_MAX_TWT_WAKE_INTERVAL_US)) {
+				return -EINVAL;
+			}
+			params->setup.twt_wake_interval = (uint32_t)value;
+			break;
+
+		case 'i':
+			if (!parse_number(sh, &value, state->optarg, NULL, 1,
+					  WIFI_MAX_TWT_INTERVAL_US)) {
+				return -EINVAL;
+			}
+			params->setup.twt_interval = (uint64_t)value;
+			break;
+
+		case 'D':
+			if (!parse_number(sh, &value, state->optarg, NULL, 0,
+					  WIFI_MAX_TWT_WAKE_AHEAD_DURATION_US)) {
+				return -EINVAL;
+			}
+			params->setup.twt_wake_ahead_duration = (uint32_t)value;
+			break;
+
+		case 'd':
+			if (!parse_number(sh, &value, state->optarg, NULL, 0, 1)) {
+				return -EINVAL;
+			}
+			params->setup.twt_info_disable = (bool)value;
+			break;
+
+		case 'e':
+			if (!parse_number(sh, &value, state->optarg, NULL, 0,
+					  WIFI_MAX_TWT_EXPONENT)) {
+				return -EINVAL;
+			}
+			params->setup.twt_exponent = (uint8_t)value;
+			break;
+
+		case 'm':
+			if (!parse_number(sh, &value, state->optarg, NULL, 0, 0xFFFF)) {
+				return -EINVAL;
+			}
+			params->setup.twt_mantissa = (uint16_t)value;
+			break;
+
+		case 'h':
+			return -ENOEXEC;
+		}
+	}
+
+	if ((params->setup.twt_interval != 0) &&
+	   ((params->setup.twt_exponent != 0) ||
+	   (params->setup.twt_mantissa != 0))) {
+		PR_ERROR("Only one of TWT internal or (mantissa, exponent) should be used\n");
+		return -EINVAL;
+	}
+
+	if (params->setup.twt_interval) {
+		/* control the region of mantissa filed */
+		twt_interval_scale = (double)(params->setup.twt_interval / scale);
+		/* derive mantissa and exponent from interval */
+		twt_mantissa_scale = frexp(twt_interval_scale, &exponent);
+		params->setup.twt_mantissa = ceil(twt_mantissa_scale * scale);
+		params->setup.twt_exponent = exponent;
+	} else if ((params->setup.twt_exponent != 0) ||
+		   (params->setup.twt_mantissa != 0)) {
+		params->setup.twt_interval = floor(ldexp(params->setup.twt_mantissa,
+							 params->setup.twt_exponent));
+	} else {
+		PR_ERROR("Either TWT interval or (mantissa, exponent) is needed\n");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static int cmd_wifi_twt_setup(const struct shell *sh, size_t argc,
 			      char *argv[])
 {
 	struct net_if *iface = net_if_get_wifi_sta();
 	struct wifi_twt_params params = { 0 };
-	int idx = 1;
-	long value;
 
 	context.sh = sh;
 
-	params.operation = WIFI_TWT_SETUP;
-
-	if (!parse_number(sh, &value, argv[idx++], NULL, WIFI_TWT_INDIVIDUAL,
-			  WIFI_TWT_WAKE_TBTT)) {
-		return -EINVAL;
+	if (twt_args_to_params(sh, argc, argv, &params)) {
+		shell_help(sh);
+		return -ENOEXEC;
 	}
-	params.negotiation_type = (enum wifi_twt_negotiation_type)value;
-
-	if (!parse_number(sh, &value, argv[idx++], NULL, WIFI_TWT_SETUP_CMD_REQUEST,
-			  WIFI_TWT_SETUP_CMD_DEMAND)) {
-		return -EINVAL;
-	}
-	params.setup_cmd = (enum wifi_twt_setup_cmd)value;
-
-	if (!parse_number(sh, &value, argv[idx++], NULL, 1, 255)) {
-		return -EINVAL;
-	}
-	params.dialog_token = (uint8_t)value;
-
-	if (!parse_number(sh, &value, argv[idx++], NULL, 0, (WIFI_MAX_TWT_FLOWS - 1))) {
-		return -EINVAL;
-	}
-	params.flow_id = (uint8_t)value;
-
-	if (!parse_number(sh, &value, argv[idx++], NULL, 0, 1)) {
-		return -EINVAL;
-	}
-	params.setup.responder = (bool)value;
-
-	if (!parse_number(sh, &value, argv[idx++], NULL, 0, 1)) {
-		return -EINVAL;
-	}
-	params.setup.trigger = (bool)value;
-
-	if (!parse_number(sh, &value, argv[idx++], NULL, 0, 1)) {
-		return -EINVAL;
-	}
-	params.setup.implicit = (bool)value;
-
-	if (!parse_number(sh, &value, argv[idx++], NULL, 0, 1)) {
-		return -EINVAL;
-	}
-	params.setup.announce = (bool)value;
-
-	if (!parse_number(sh, &value, argv[idx++], NULL, 1, WIFI_MAX_TWT_WAKE_INTERVAL_US)) {
-		return -EINVAL;
-	}
-	params.setup.twt_wake_interval = (uint32_t)value;
-
-	if (!parse_number(sh, &value, argv[idx++], NULL, 1, WIFI_MAX_TWT_INTERVAL_US)) {
-		return -EINVAL;
-	}
-	params.setup.twt_interval = (uint64_t)value;
-
-	if (!parse_number(sh, &value, argv[idx++], NULL, 0, WIFI_MAX_TWT_WAKE_AHEAD_DURATION_US)) {
-		return -EINVAL;
-	}
-	params.setup.twt_wake_ahead_duration = (uint32_t)value;
 
 	if (net_mgmt(NET_REQUEST_WIFI_TWT, iface, &params, sizeof(params))) {
 		PR_WARNING("%s with %s failed. reason : %s\n",
@@ -3245,13 +3419,30 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_twt_ops,
 		cmd_wifi_twt_setup_quick,
 		3, 0),
 	SHELL_CMD_ARG(setup, NULL, " Start a TWT flow:\n"
-		"<negotiation_type, 0: Individual, 1: Broadcast, 2: Wake TBTT>\n"
-		"<setup_cmd: 0: Request, 1: Suggest, 2: Demand>\n"
-		"<dialog_token: 1-255> <flow_id: 0-7> <responder: 0/1> <trigger: 0/1> <implicit:0/1> "
-		"<announce: 0/1> <twt_wake_interval: 1-262144us> <twt_interval: 1us-2^31us>.\n"
-		"<twt_wake_ahead_duration>: 0us-2^31us>\n",
+		"<-n --negotiation-type>: 0: Individual, 1: Broadcast, 2: Wake TBTT\n"
+		"<-c --setup-cmd>: 0: Request, 1: Suggest, 2: Demand\n"
+		"<-t --dialog-token>: 1-255\n"
+		"<-f --flow-id>: 0-7\n"
+		"<-r --responder>: 0/1\n"
+		"<-T --trigger>: 0/1\n"
+		"<-I --implicit>:0/1\n"
+		"<-a --announce>: 0/1\n"
+		"<-w --wake-interval>: 1-262144us\n"
+		"<-i --interval>: 1us-2^31us\n"
+		"<-D --wake-ahead-duration>: 0us-2^31us\n"
+		"<-d --info-disable>: 0/1\n"
+		"<-e --exponent>: 0-31\n"
+		"<-m --mantissa>: 1-2^16\n"
+		"[-h, --help]: Print out command usage.\n",
 		cmd_wifi_twt_setup,
-		12, 0),
+		25, 5),
+	SHELL_CMD_ARG(
+		btwt_setup, NULL,
+		" Start a BTWT flow:\n"
+		"<sub_id: Broadcast TWT AP config> <nominal_wake: 64-255> <max_sta_support>"
+		"<twt_mantissa:0-sizeof(UINT16)> <twt_offset> <twt_exponent: 0-31> <sp_gap>.\n",
+		cmd_wifi_btwt_setup,
+		8, 0),
 	SHELL_CMD_ARG(teardown, NULL, " Teardown a TWT flow:\n"
 		"<negotiation_type, 0: Individual, 1: Broadcast, 2: Wake TBTT>\n"
 		"<setup_cmd: 0: Request, 1: Suggest, 2: Demand>\n"
