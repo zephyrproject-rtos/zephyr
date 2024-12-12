@@ -139,7 +139,7 @@ void frag_destroy(struct net_buf *frag)
 	/* allow next view to be allocated (and unlock the parent buf) */
 	bt_buf_destroy_view(frag, &get_frag_md(frag)->view_meta);
 
-	LOG_DBG("");
+	LOG_DBG("%s", __func__);
 
 	/* Kick the TX processor to send the rest of the frags. */
 	bt_tx_irq_raise();

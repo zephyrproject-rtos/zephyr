@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/bluetooth/conn.h>
 
 #include "scan.h"
 
