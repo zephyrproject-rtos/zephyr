@@ -15,6 +15,7 @@ flash: 324
 supported:
   - adc
   - counter
+  - dmic
   - gpio
   - i2c
   - pwm

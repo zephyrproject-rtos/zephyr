@@ -365,7 +365,6 @@ static int dmic_nrfx_pdm_configure(const struct device *dev,
 
 	channel->act_num_streams = 1;
 	channel->act_chan_map_hi = 0;
-	channel->act_chan_map_lo = def_map;
 
 	if (channel->req_num_streams != 1 ||
 	    channel->req_num_chan > 2 ||
@@ -396,9 +395,13 @@ static int dmic_nrfx_pdm_configure(const struct device *dev,
 	nrfx_cfg.mode = channel->req_num_chan == 1
 		      ? NRF_PDM_MODE_MONO
 		      : NRF_PDM_MODE_STEREO;
-	nrfx_cfg.edge = channel->req_chan_map_lo == def_map
-		      ? NRF_PDM_EDGE_LEFTFALLING
-		      : NRF_PDM_EDGE_LEFTRISING;
+	if (channel->req_chan_map_lo == def_map) {
+		nrfx_cfg.edge = NRF_PDM_EDGE_LEFTFALLING;
+		channel->act_chan_map_lo = def_map;
+	} else {
+		nrfx_cfg.edge = NRF_PDM_EDGE_LEFTRISING;
+		channel->act_chan_map_lo = alt_map;
+	}
 #if NRF_PDM_HAS_MCLKCONFIG
 	nrfx_cfg.mclksrc = drv_cfg->clk_src == ACLK
 			 ? NRF_PDM_MCLKSRC_ACLK
