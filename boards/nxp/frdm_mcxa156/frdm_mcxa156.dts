@@ -117,3 +117,8 @@
 &lptmr0 {
 	status = "okay";
 };
+
+zephyr_udc0: &usb {
+	status = "okay";
+	num-bidir-endpoints = <8>;
+};
