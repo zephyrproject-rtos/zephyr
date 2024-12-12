@@ -1185,3 +1185,8 @@ test_i2c_lsm6dso32: lsm6dso32@a5 {
 	gyro-range = <LSM6DSO_DT_FS_2000DPS>;
 	gyro-odr = <LSM6DSO_DT_ODR_6667Hz>;
 };
+
+test_i2c_hs400x: hs400x@a6 {
+	compatible = "renesas,hs400x";
+	reg = <0xa6>;
+};
