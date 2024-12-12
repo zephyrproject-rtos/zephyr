@@ -1,6 +1,6 @@
 tests:
   # section.subsection
-  prometheus.gauge:
+  net.prometheus.gauge:
     depends_on: netif
     integration_platforms:
       - native_sim
