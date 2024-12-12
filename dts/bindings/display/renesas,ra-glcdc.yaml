@@ -1,4 +1,4 @@
-# Copyright (c) 2024 Renesas Electronics Corporation
+# Copyright (c) 2024-2025 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 description: Renesas Graphic LCD controller
@@ -15,10 +15,9 @@ properties:
     required: true
 
   pinctrl-0:
-    required: true
-
-  pinctrl-names:
-    required: true
+    description: |
+      Provide a pin configuration for using parallel pixel output. In combination with DSI HOST
+      the pin configuration is not necessary due to dedicated (MIPI D-PHY) pins.
 
   interrupts:
     required: true
@@ -30,10 +29,73 @@ properties:
 
   backlight-gpios:
     type: phandle-array
-    required: true
     description: |
       The BLn pin is asserted to control the backlight of the panel.
       The sensor receives this as an active-high signal.
+
+  output-pin-hsync:
+    type: string
+    enum:
+      - "TCON_PIN_NONE"
+      - "TCON_PIN_0"
+      - "TCON_PIN_1"
+      - "TCON_PIN_2"
+      - "TCON_PIN_3"
+    description: Select the Parallel LCD HSYNC pin. Please do not select if using DSI Display.
+
+  output-pin-vsync:
+    type: string
+    enum:
+      - "TCON_PIN_NONE"
+      - "TCON_PIN_0"
+      - "TCON_PIN_1"
+      - "TCON_PIN_2"
+      - "TCON_PIN_3"
+    description: Select the Parallel LCD VSYNC pin. Please do not select if using DSI Display.
+
+  output-pin-de:
+    type: string
+    enum:
+      - "TCON_PIN_NONE"
+      - "TCON_PIN_0"
+      - "TCON_PIN_1"
+      - "TCON_PIN_2"
+      - "TCON_PIN_3"
+    description: Select the Parallel LCD DE pin. Please do not select if using DSI Display.
+
+  output-clock-divisor:
+    type: int
+    enum: [1, 2, 3, 4, 5, 6, 7, 8, 9, 12, 16, 24, 32]
+    description: |
+      Select the GLCDC clock frequency division ratio to output for panel.
+
+  output-endian:
+    type: string
+    enum:
+      - "LITTLE"
+      - "BIG"
+    description: Select the output data bit order. Default is little endian.
+
+  output-color-oder:
+    type: string
+    enum:
+      - "RGB"
+      - "GBR"
+    description: Select the output color order in pixel. Default is RGB.
+
+  output-data-signal-polarity:
+    type: string
+    enum:
+      - "LOACTIVE"
+      - "HIACTIVE"
+    description: Select the output data enable signal polarity. Default is high active.
+
+  output-signal-sync-edge:
+    type: string
+    enum:
+      - "FALLING"
+      - "RISING"
+    description: Select the output signal synchronization edge. Default is falling edge.
 
   input-pixel-format:
     type: int
@@ -46,3 +108,19 @@ properties:
     required: true
     description: |
       Initial output Pixel format for Graphic LCD controller.
+
+  def-back-color-alpha:
+    type: int
+    description: Default display background color - alpha
+
+  def-back-color-red:
+    type: int
+    description: Default display background color - red
+
+  def-back-color-green:
+    type: int
+    description: Default display background color - green
+
+  def-back-color-blue:
+    type: int
+    description: Default display background color - blue
