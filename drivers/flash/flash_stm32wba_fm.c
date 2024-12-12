@@ -66,17 +66,6 @@ bool flash_stm32_valid_range(const struct device *dev, off_t offset,
 	return flash_stm32_range_exists(dev, offset, len);
 }
 
-
-static inline void flash_stm32_sem_take(const struct device *dev)
-{
-	k_sem_take(&FLASH_STM32_PRIV(dev)->sem, K_FOREVER);
-}
-
-static inline void flash_stm32_sem_give(const struct device *dev)
-{
-	k_sem_give(&FLASH_STM32_PRIV(dev)->sem);
-}
-
 static int flash_stm32_read(const struct device *dev, off_t offset,
 			    void *data,
 			    size_t len)
