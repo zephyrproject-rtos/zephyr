@@ -114,4 +114,10 @@
 			drive-strength = "high";
 		};
 	};
+
+	usbhs_default: usbhs_default {
+		group1 {
+			psels = <RA_PSEL(RA_PSEL_USBHS, 4, 8)>;	/* USBHS_VBUSEN */
+		};
+	};
 };
