@@ -26,6 +26,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
@@ -38,6 +39,20 @@
 LOG_MODULE_REGISTER(bt_tbs, CONFIG_BT_TBS_LOG_LEVEL);
 
 #define BT_TBS_VALID_STATUS_FLAGS(val) ((val) <= (BIT(0) | BIT(1)))
+
+enum tbs_flag {
+	TBS_FLAG_BEARER_PROVIDER_NAME_CHANGED,
+	TBS_FLAG_BEARER_TECHNOLOGY_CHANGED,
+	TBS_FLAG_BEARER_SIGNAL_STRENGTH_CHANGED,
+	TBS_FLAG_BEARER_LIST_CURRENT_CALLS_CHANGED,
+	TBS_FLAG_STATUS_FLAGS_CHANGED,
+	TBS_FLAG_INCOMING_CALL_TARGET_BEARER_URI_CHANGED,
+	TBS_FLAG_CALL_STATE_CHANGED,
+	TBS_FLAG_TERMINATION_REASON_CHANGED,
+	TBS_FLAG_INCOMING_CALL_CHANGED,
+	TBS_FLAG_CALL_FRIENDLY_NAME_CHANGED,
+	TBS_FLAG_NUM,
+};
 
 /* A service instance can either be a GTBS or a TBS instance */
 struct tbs_inst {
@@ -68,6 +83,22 @@ struct tbs_inst {
 	size_t attr_count;
 
 	bool authorization_required;
+
+	struct client_state {
+		ATOMIC_DEFINE(flags, TBS_FLAG_NUM);
+	} client_states[CONFIG_BT_MAX_CONN];
+	/* Control point notifications are handled separately from other notifications - We will not
+	 * accept any new control point operations while a notification is pending
+	 */
+	struct cp_ntf {
+		/** The opcode that was sent */
+		uint8_t opcode;
+		/** The result of the operation  */
+		uint8_t result;
+
+		bool pending;
+	} cp_ntf;
+	struct k_work notify_work;
 };
 
 static struct tbs_inst svc_insts[CONFIG_BT_TBS_BEARER_COUNT];
@@ -302,6 +333,135 @@ static struct tbs_inst *lookup_inst_by_uri_scheme(const uint8_t *uri, uint8_t ur
 
 	return NULL;
 }
+
+static void notify(struct bt_conn *conn, const struct bt_uuid *uuid, uint8_t *value,
+		   size_t value_len)
+{
+	const uint8_t att_header_size = 3; /* opcode + handle */
+	uint16_t att_mtu;
+	uint16_t maxlen;
+	int err;
+
+	att_mtu = bt_gatt_get_mtu(conn);
+	__ASSERT(att_mtu > att_header_size, "Could not get valid ATT MTU");
+	maxlen = att_mtu - att_header_size; /* Subtract opcode and handle */
+
+	/* Send notification potentially truncated to the MTU */
+	err = bt_gatt_notify_uuid(conn, uuid, mcs.attrs, (void *)str, MIN(strlen(str), maxlen));
+	if (err != 0) {
+		LOG_ERR("Notification error: %d", err);
+	}
+}
+
+static void notify_handler_cb(struct bt_conn *conn, void *data)
+{
+	struct client_state *client = &clients[bt_conn_index(conn)];
+	struct bt_conn_info info;
+	int err;
+
+	err = bt_conn_get_info(conn, &info);
+	if (err != 0) {
+		LOG_ERR("Failed to get conn info: %d", err);
+		return;
+	}
+
+	if (info.state != BT_CONN_STATE_CONNECTED) {
+		/* Not connected */
+		return;
+	}
+
+	if (atomic_test_and_clear_bit(client->flags, TBS_FLAG_BEARER_PROVIDER_NAME_CHANGED)) {
+		const char *name = media_proxy_sctrl_get_player_name();
+
+		LOG_DBG("Notifying player name: %s", name);
+		notify_string(conn, BT_UUID_MCS_PLAYER_NAME, name);
+	}
+
+	if (atomic_test_and_clear_bit(client->flags, FLAG_TRACK_TITLE_CHANGED)) {
+		const char *title = media_proxy_sctrl_get_track_title();
+
+		LOG_DBG("Notifying track title: %s", title);
+		notify_string(conn, BT_UUID_MCS_TRACK_TITLE, title);
+	}
+
+	if (atomic_test_and_clear_bit(client->flags, FLAG_TRACK_DURATION_CHANGED)) {
+		int32_t duration = media_proxy_sctrl_get_track_duration();
+		int32_t duration_le = sys_cpu_to_le32(duration);
+
+		LOG_DBG("Notifying track duration: %d", duration);
+		notify(BT_UUID_MCS_TRACK_DURATION, &duration_le, sizeof(duration_le));
+	}
+
+	if (atomic_test_and_clear_bit(client->flags, FLAG_TRACK_POSITION_CHANGED)) {
+		int32_t position = media_proxy_sctrl_get_track_position();
+		int32_t position_le = sys_cpu_to_le32(position);
+
+		LOG_DBG("Notifying track position: %d", position);
+		notify(BT_UUID_MCS_TRACK_POSITION, &position_le, sizeof(position_le));
+	}
+
+	if (atomic_test_and_clear_bit(client->flags, FLAG_PLAYBACK_SPEED_CHANGED)) {
+		int8_t speed = media_proxy_sctrl_get_playback_speed();
+
+		LOG_DBG("Notifying playback speed: %d", speed);
+		notify(BT_UUID_MCS_PLAYBACK_SPEED, &speed, sizeof(speed));
+	}
+
+	if (atomic_test_and_clear_bit(client->flags, FLAG_SEEKING_SPEED_CHANGED)) {
+		int8_t speed = media_proxy_sctrl_get_seeking_speed();
+
+		LOG_DBG("Notifying seeking speed: %d", speed);
+		notify(BT_UUID_MCS_SEEKING_SPEED, &speed, sizeof(speed));
+	}
+
+	if (atomic_test_and_clear_bit(client->flags, FLAG_TRACK_CHANGED)) {
+		LOG_DBG("Notifying track change");
+		notify(BT_UUID_MCS_TRACK_CHANGED, NULL, 0);
+	}
+
+	if (atomic_test_and_clear_bit(client->flags, FLAG_PLAYING_ORDER_CHANGED)) {
+		uint8_t order = media_proxy_sctrl_get_playing_order();
+
+		LOG_DBG("Notifying playing order: %d", order);
+		notify(BT_UUID_MCS_PLAYING_ORDER, &order, sizeof(order));
+	}
+
+	if (atomic_test_and_clear_bit(client->flags, FLAG_MEDIA_STATE_CHANGED)) {
+		uint8_t state = media_proxy_sctrl_get_media_state();
+
+		LOG_DBG("Notifying media state: %d", state);
+		notify(BT_UUID_MCS_MEDIA_STATE, &state, sizeof(state));
+	}
+
+	if (atomic_test_and_clear_bit(client->flags, FLAG_MEDIA_CONTROL_OPCODES_CHANGED)) {
+		uint32_t opcodes = media_proxy_sctrl_get_commands_supported();
+		uint32_t opcodes_le = sys_cpu_to_le32(opcodes);
+
+		LOG_DBG("Notifying command opcodes supported: %d (0x%08x)", opcodes, opcodes);
+		notify(BT_UUID_MCS_MEDIA_CONTROL_OPCODES, &opcodes_le, sizeof(opcodes_le));
+	}
+
+	if (atomic_test_and_clear_bit(client->flags, FLAG_MEDIA_CONTROL_POINT_RESULT)) {
+		LOG_DBG("Notifying control point command - opcode: %d, result: %d",
+			client->cmd_ntf.requested_opcode, client->cmd_ntf.result_code);
+		notify(BT_UUID_MCS_MEDIA_CONTROL_POINT, &client->cmd_ntf, sizeof(client->cmd_ntf));
+	}
+}
+
+static void deferred_nfy_work_handler(struct k_work *work)
+{
+	bt_conn_foreach(BT_CONN_TYPE_LE, notify_handler_cb, NULL);
+}
+
+/**
+ * 1) When value is changed, set a bit, and schedule work if not already
+ * 2)
+Adopt MCS ways of scheduling notifications in TBS
+Add truncation of values
+Add long read dirty bit
+Need to reject certain operations while notifications are pending
+	BT_TBS_RESULT_CODE_OPERATION_NOT_POSSIBLE
+ */
 
 static void tbs_set_terminate_reason(struct tbs_inst *inst, uint8_t call_index, uint8_t reason)
 {
