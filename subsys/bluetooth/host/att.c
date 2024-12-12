@@ -1548,15 +1548,22 @@ static uint8_t att_read_type_req(struct bt_att_chan *chan, struct net_buf *buf)
 		return 0;
 	}
 
-	/* Reading Database Hash is special as it may be used to make client change aware
+	/* If a client that has indicated support for robust caching (by setting the Robust
+	 * Caching bit in the Client Supported Features characteristic) is change-unaware
+	 * then the server shall send an ATT_ERROR_RSP PDU with the Error Code
+	 * parameter set to Database Out Of Sync (0x12) when either of the following happen:
+	 * • That client requests an operation at any Attribute Handle or list of Attribute
+	 *   Handles by sending an ATT request.
+	 * • That client sends an ATT_READ_BY_TYPE_REQ PDU with Attribute Type
+	 *   other than «Include» or «Characteristic» and an Attribute Handle range
+	 *   other than 0x0001 to 0xFFFF.
 	 * (Core Specification 5.4 Vol 3. Part G. 2.5.2.1 Robust Caching).
-	 *
-	 * GATT client shall always use GATT Read Using Characteristic UUID sub-procedure for
-	 * reading Database Hash
-	 * (Core Specification 5.4 Vol 3. Part G. 7.3 Databse Hash)
 	 */
-	if (bt_uuid_cmp(&u.uuid, BT_UUID_GATT_DB_HASH) != 0) {
-		if (!bt_gatt_change_aware(chan->att->conn, true)) {
+	if (!bt_gatt_change_aware(chan->chan.chan.conn, true)) {
+		if (bt_uuid_cmp(&u.uuid, BT_UUID_GATT_INCLUDE) != 0 &&
+		    bt_uuid_cmp(&u.uuid, BT_UUID_GATT_CHRC) != 0 &&
+		    (start_handle != BT_ATT_FIRST_ATTRIBUTE_HANDLE ||
+		     end_handle != BT_ATT_LAST_ATTRIBUTE_HANDLE)) {
 			if (!atomic_test_and_set_bit(chan->flags, ATT_OUT_OF_SYNC_SENT)) {
 				return BT_ATT_ERR_DB_OUT_OF_SYNC;
 			} else {
