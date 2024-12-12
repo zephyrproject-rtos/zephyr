@@ -984,10 +984,22 @@ static inline enum wifi_security_type nxp_wifi_security_type(enum wlan_security_
 #ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
 static int nxp_wifi_uap_status(const struct device *dev, struct wifi_iface_status *status)
 {
-	enum wlan_connection_state connection_state = WLAN_DISCONNECTED;
+	enum wlan_connection_state connection_state = WLAN_UAP_STOPPED;
 	struct interface *if_handle = (struct interface *)&g_uap;
 
 	wlan_get_uap_connection_state(&connection_state);
+
+	switch (connection_state) {
+	case WLAN_UAP_STARTED:
+		status->state = WIFI_SAP_IFACE_ENABLED;
+		break;
+	case WLAN_UAP_STOPPED:
+		status->state = WIFI_SAP_IFACE_DISABLED;
+		break;
+	default:
+		status->state = WIFI_SAP_IFACE_DISABLED;
+		break;
+	}
 
 	if (connection_state == WLAN_UAP_STARTED) {
 
@@ -1065,7 +1077,8 @@ static int nxp_wifi_status(const struct device *dev, struct wifi_iface_status *s
 		status->state = WIFI_STATE_ASSOCIATING;
 	} else if (connection_state == WLAN_ASSOCIATED) {
 		status->state = WIFI_STATE_ASSOCIATED;
-	} else if (connection_state == WLAN_CONNECTED) {
+	} else if (connection_state == WLAN_AUTHENTICATED
+			|| connection_state == WLAN_CONNECTED) {
 		status->state = WIFI_STATE_COMPLETED;
 
 		if (!wlan_get_current_network(&nxp_wlan_network)) {
