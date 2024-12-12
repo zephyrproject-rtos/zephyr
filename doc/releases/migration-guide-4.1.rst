@@ -178,6 +178,11 @@ Pin Control
       };
 
 
+PWM
+===
+
+* Renamed the ``compatible`` from ``nxp,kinetis-ftm-pwm`` to :dtcompatible:`nxp,ftm-pwm`.
+
 Sensors
 =======
 
@@ -203,6 +208,12 @@ SPI
 
 Regulator
 =========
+
+Timer
+=====
+
+* Renamed the ``compatible`` from ``nxp,kinetis-ftm`` to :dtcompatible:`nxp,ftm` and relocate it
+  under ``dts/bindings/timer``.
 
 Video
 =====
