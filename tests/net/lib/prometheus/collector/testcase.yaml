@@ -1,6 +1,6 @@
 tests:
   # section.subsection
-  prometheus.collector:
+  net.prometheus.collector:
     depends_on: netif
     integration_platforms:
       - native_sim
