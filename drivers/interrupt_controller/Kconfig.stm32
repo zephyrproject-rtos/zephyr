@@ -19,4 +19,13 @@ config GPIO_INTC_STM32WB0
 	help
 	  Enable GPIO interrupt controller driver for STM32WB0 series
 
+config SYSCFG_STM32
+	bool "System Configuration Controller (SYSCFG) Driver for STM32"
+	default n
+	depends on DT_HAS_ST_STM32_SYSCFG_ENABLED
+	select MULTI_LEVEL_INTERRUPTS
+	select 2ND_LEVEL_INTERRUPTS
+	help
+	  Enable SYSCFG driver for STM32 line of MCUs
+
 endif # SOC_FAMILY_STM32
