@@ -60,6 +60,8 @@ The boards support the following hardware features:
 +-----------+------------+-------------------------------------+
 | DSPI      | on-chip    | spi                                 |
 +-----------+------------+-------------------------------------+
+| QSPI      | on-chip    | flash                               |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not currently supported by the port.
 
@@ -169,6 +171,12 @@ EDMA
 
 The EDMA modules feature four EDMA3 instances: Instance 0 with 32 channels,
 and instances 1, 4, and 5, each with 16 channels.
+
+External Flash
+==============
+
+The on-board S26HS512T 512M-bit HyperFlash memory is connected to the QSPI controller
+port A1. This board configuration selects it as the default flash controller.
 
 Programming and Debugging
 *************************
