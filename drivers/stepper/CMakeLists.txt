@@ -5,6 +5,7 @@ zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/stepper.h)
 
 # zephyr-keep-sorted-start
 add_subdirectory_ifdef(CONFIG_STEPPER_ADI_TMC adi_tmc)
+add_subdirectory_ifdef(CONFIG_STEPPER_TI ti)
 # zephyr-keep-sorted-stop
 
 zephyr_library()

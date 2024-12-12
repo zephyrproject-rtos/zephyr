@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 Navimatix GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config STEPPER_TI
+	bool "TI Stepper Controller"
+	depends on STEPPER
+	default y
+	help
+	  Enable ti stepper controller
+
+if STEPPER_TI
+
+comment "TI Stepper Drivers"
+
+rsource "Kconfig.drv8424"
+
+endif # STEPPER_TI
