@@ -576,14 +576,14 @@ void arch_switch_to_main_thread(struct k_thread *main_thread, char *stack_ptr,
 	"mov   r4,  %0\n"	/* force _main to be stored in a register */
 	"msr   PSP, %1\n"	/* __set_PSP(stack_ptr) */
 
-	"mov   r0,  #0\n"	/* arch_irq_unlock(0) */
+	"movs  r0,  #0\n"	/* arch_irq_unlock(0) */
 	"ldr   r3, =arch_irq_unlock_outlined\n"
 	"blx   r3\n"
 
 	"mov   r0, r4\n"	/* z_thread_entry(_main, NULL, NULL, NULL) */
-	"mov   r1, #0\n"
-	"mov   r2, #0\n"
-	"mov   r3, #0\n"
+	"movs  r1, #0\n"
+	"movs  r2, #0\n"
+	"movs  r3, #0\n"
 	"ldr   r4, =z_thread_entry\n"
 	"bx    r4\n"		/* We don’t intend to return, so there is no need to link. */
 	:
