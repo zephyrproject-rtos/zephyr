@@ -3088,6 +3088,8 @@ Networking:
   maintainers:
     - jukkar
     - rlubos
+  collaborators:
+    - mrodgers-witekio
   files:
     - doc/connectivity/networking/api/http*.rst
     - include/zephyr/net/http/
