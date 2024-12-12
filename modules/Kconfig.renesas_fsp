@@ -98,4 +98,9 @@ config USE_RA_FSP_ETHER
 	help
 	  Enable RA FSP Ethernet driver
 
+config USE_RA_FSP_OSPI_B_NOR_FLASH
+	bool
+	help
+	  Enable RA FSP Octal-SPI driver
+
 endif # HAS_RENESAS_RA_FSP
