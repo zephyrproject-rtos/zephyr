@@ -67,6 +67,7 @@ jobs:
           git config --global user.email "bot@zephyrproject.org"
           git config --global user.name "Zephyr Bot"
           rm -fr ".git/rebase-apply"
+          rm -fr ".git/rebase-merge"
           git rebase origin/${BASE_REF}
           git clean -f -d
           git log  --pretty=oneline | head -n 10
