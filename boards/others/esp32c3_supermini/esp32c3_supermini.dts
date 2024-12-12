@@ -1,0 +1,91 @@
+/*
+ * Copyright (c) 2024 Arrel Neumiller
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <espressif/esp32c3/esp32c3_fx4.dtsi>
+#include "esp32c3_supermini-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/led/led.h>
+#include <espressif/partitions_0x0_default.dtsi>
+
+/ {
+	model = "ESP32C3-SUPERMINI";
+	compatible = "espressif,esp32c3_supermini";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &usb_serial;
+		zephyr,shell-uart = &usb_serial;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	aliases {
+		led0 = &blue_led_0;
+		sw0 = &user_button1;
+		i2c-0 = &i2c0;
+		watchdog0 = &wdt0;
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button1: button_1 {
+			label = "User SW1";
+			gpios = <&gpio0 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		blue_led_0: led_0 {
+			gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
+			label = "Blue LED 0";
+		};
+	};
+
+};
+
+&spi2 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	pinctrl-0 = <&spim2_default>;
+	pinctrl-names = "default";
+
+};
+
+&usb_serial {
+	status = "okay";
+};
+
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&uart0 {
+	status = "disabled";
+};
+
+&esp32_bt_hci {
+	status = "okay";
+};
