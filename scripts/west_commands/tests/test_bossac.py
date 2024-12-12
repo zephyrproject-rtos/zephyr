@@ -27,7 +27,7 @@ EXPECTED_COMMANDS = [
     ['stty', '-F', TEST_BOSSAC_PORT, 'raw', 'ispeed', '115200',
      'ospeed', '115200', 'cs8', '-cstopb', 'ignpar', 'eol', '255',
      'eof', '255'],
-    ['bossac', '-p', TEST_BOSSAC_PORT, '-R', '-e', '-w', '-v',
+    ['bossac', '-p', TEST_BOSSAC_PORT, '-R', '-w', '-v',
      '-b', RC_KERNEL_BIN],
 ]
 
@@ -35,15 +35,22 @@ EXPECTED_COMMANDS_WITH_SPEED = [
     ['stty', '-F', TEST_BOSSAC_PORT, 'raw', 'ispeed', TEST_BOSSAC_SPEED,
      'ospeed', TEST_BOSSAC_SPEED, 'cs8', '-cstopb', 'ignpar', 'eol', '255',
      'eof', '255'],
-    ['bossac', '-p', TEST_BOSSAC_PORT, '-R', '-e', '-w', '-v',
+    ['bossac', '-p', TEST_BOSSAC_PORT, '-R', '-w', '-v',
      '-b', RC_KERNEL_BIN],
 ]
 
+EXPECTED_COMMANDS_WITH_ERASE = [
+    ['stty', '-F', TEST_BOSSAC_PORT, 'raw', 'ispeed', '115200',
+     'ospeed', '115200', 'cs8', '-cstopb', 'ignpar', 'eol', '255',
+     'eof', '255'],
+    ['bossac', '-p', TEST_BOSSAC_PORT, '-R', '-w', '-v',
+     '-b', RC_KERNEL_BIN, '-e'],
+]
 EXPECTED_COMMANDS_WITH_OFFSET = [
     ['stty', '-F', TEST_BOSSAC_PORT, 'raw', 'ispeed', '115200',
      'ospeed', '115200', 'cs8', '-cstopb', 'ignpar', 'eol', '255',
      'eof', '255'],
-    ['bossac', '-p', TEST_BOSSAC_PORT, '-R', '-e', '-w', '-v',
+    ['bossac', '-p', TEST_BOSSAC_PORT, '-R', '-w', '-v',
      '-b', RC_KERNEL_BIN, '-o', str(TEST_OFFSET)],
 ]
 
@@ -54,7 +61,7 @@ EXPECTED_COMMANDS_WITH_FLASH_ADDRESS = [
         'eof', '255'
     ],
     [
-        'bossac', '-p', TEST_BOSSAC_PORT, '-R', '-e', '-w', '-v',
+        'bossac', '-p', TEST_BOSSAC_PORT, '-R', '-w', '-v',
         '-b', RC_KERNEL_BIN, '-o', str(TEST_FLASH_ADDRESS),
     ],
 ]
@@ -66,7 +73,7 @@ EXPECTED_COMMANDS_WITH_EXTENDED = [
         'eof', '255'
     ],
     [
-        'bossac', '-p', TEST_BOSSAC_PORT, '-R', '-e', '-w', '-v',
+        'bossac', '-p', TEST_BOSSAC_PORT, '-R', '-w', '-v',
         '-b', RC_KERNEL_BIN, '-o', str(TEST_FLASH_ADDRESS),
     ],
 ]
@@ -175,6 +182,7 @@ def test_bossac_init(cc, req, get_cod_par, sup, runner_config, tmpdir):
 
     Output:
 	no --offset
+	no -e
     """
     runner_config = adjust_runner_config(runner_config, tmpdir, DOTCONFIG_STD)
     runner = BossacBinaryRunner(runner_config, port=TEST_BOSSAC_PORT)
@@ -207,6 +215,7 @@ def test_bossac_create(cc, req, get_cod_par, sup, runner_config, tmpdir):
 
     Output:
 	no --offset
+	no -e
     """
     args = ['--bossac-port', str(TEST_BOSSAC_PORT)]
     parser = argparse.ArgumentParser(allow_abbrev=False)
@@ -256,6 +265,42 @@ def test_bossac_create_with_speed(cc, req, get_cod_par, sup, runner_config, tmpd
         runner.run('flash')
     assert cc.call_args_list == [call(x) for x in EXPECTED_COMMANDS_WITH_SPEED]
 
+
+@patch('runners.bossac.BossacBinaryRunner.supports',
+	return_value=False)
+@patch('runners.bossac.BossacBinaryRunner.get_chosen_code_partition_node',
+	return_value=None)
+@patch('runners.core.ZephyrBinaryRunner.require',
+	side_effect=require_patch)
+@patch('runners.core.ZephyrBinaryRunner.check_call')
+def test_bossac_create_with_erase(cc, req, get_cod_par, sup, runner_config, tmpdir):
+    """
+    Test commands using a runner created from command line parameters.
+
+    Requirements:
+	Any SDK
+
+    Configuration:
+	ROM bootloader
+	CONFIG_USE_DT_CODE_PARTITION=n
+	without zephyr,code-partition
+
+    Input:
+	--erase
+
+    Output:
+	no --offset
+    """
+    args = ['--bossac-port', str(TEST_BOSSAC_PORT),
+            '--erase']
+    parser = argparse.ArgumentParser(allow_abbrev=False)
+    BossacBinaryRunner.add_parser(parser)
+    arg_namespace = parser.parse_args(args)
+    runner_config = adjust_runner_config(runner_config, tmpdir, DOTCONFIG_STD)
+    runner = BossacBinaryRunner.create(runner_config, arg_namespace)
+    with patch('os.path.isfile', side_effect=os_path_isfile_patch):
+        runner.run('flash')
+    assert cc.call_args_list == [call(x) for x in EXPECTED_COMMANDS_WITH_ERASE]
 
 @patch('runners.bossac.BossacBinaryRunner.supports',
 	return_value=True)
