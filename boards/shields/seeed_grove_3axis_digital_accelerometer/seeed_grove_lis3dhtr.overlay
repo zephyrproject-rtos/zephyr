@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2024 TOKITA Hiroshi <tokita.hiroshi@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifdef SHIELD_SEEED_GROVE_LIS3DHTR_OPTION0
+#define GROVE_BUS_NAME SHIELD_SEEED_GROVE_LIS3DHTR_OPTION0
+#else
+#define GROVE_BUS_NAME grove_i2c
+#endif
+
+&GROVE_BUS_NAME {
+	lis3dh: lis3dh@19 {
+		compatible = "st,lis3dh", "st,lis2dh";
+		reg = <0x19>;
+	};
+};
+
+#undef GROVE_BUS_NAME

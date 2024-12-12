@@ -32,6 +32,8 @@ include_guard(GLOBAL)
 
 include(extensions)
 
+set(SHIELD_OPTIONS_GENERATED_H      ${BINARY_DIR_INCLUDE_GENERATED}/shield_options_generated.h)
+
 # Check that SHIELD has not changed.
 zephyr_check_cache(SHIELD WATCH)
 
@@ -74,12 +76,17 @@ endforeach()
 
 # Process shields in-order
 if(DEFINED SHIELD)
-  foreach(s ${SHIELD_AS_LIST})
+  set(shield_opts_tmp ${SHIELD_OPTIONS_GENERATED_H}.new)
+  file(WRITE ${shield_opts_tmp} "/*********************/\n")
+
+  foreach(shld ${SHIELD_AS_LIST})
+
+    string(REGEX REPLACE [[([^@]*)@(.*)]] [[\1]] s "${shld}")
     if(NOT ${s} IN_LIST SHIELD_LIST)
       continue()
     endif()
 
-    list(REMOVE_ITEM SHIELD-NOTFOUND ${s})
+    list(REMOVE_ITEM SHIELD-NOTFOUND ${shld})
 
     # Add <shield>.overlay to the shield_dts_files output variable.
     list(APPEND
@@ -111,7 +118,36 @@ if(DEFINED SHIELD)
                 DTS   shield_dts_files
                 KCONF shield_conf_files
     )
+
+    if("${shld}" MATCHES ".*@.*")
+      string(REGEX REPLACE [[([^@]*)@(.*)]] [[\2]] shld_opts "${shld}")
+      string(TOUPPER ${s} s_upper)
+      string(REPLACE "@" ";" opts_list "${shld_opts}")
+      list(LENGTH opts_list opts_list_len)
+      math(EXPR opts_list_last "${opts_list_len} - 1")
+      foreach (idx RANGE 0 ${opts_list_last})
+        list(GET opts_list ${idx} opt)
+        if (NOT "${opt}" STREQUAL "")
+          file(APPEND ${shield_opts_tmp} "#define SHIELD_${s_upper}_OPTION${idx} ${opt}\n")
+        endif()
+      endforeach()
+    endif()
+
   endforeach()
+
+  if(EXISTS "${SHIELD_OPTIONS_GENERATED_H}")
+    file(SHA256 "${SHIELD_OPTIONS_GENERATED_H}" old_file_hash)
+    file(SHA256 "${shield_opts_tmp}" new_file_hash)
+    if ("${old_file_hash}" STREQUAL "${new_file_hash}")
+      file(REMOVE "${shield_opts_tmp}")
+    else()
+      file(REMOVE "${SHIELD_OPTIONS_GENERATED_H}")
+      file(RENAME "${shield_opts_tmp}" "${SHIELD_OPTIONS_GENERATED_H}")
+    endif()
+  else()
+    file(RENAME ${shield_opts_tmp} ${SHIELD_OPTIONS_GENERATED_H})
+  endif()
+
 endif()
 
 # Prepare shield usage command printing.
@@ -124,7 +160,8 @@ if(DEFINED SHIELD AND NOT (SHIELD-NOTFOUND STREQUAL ""))
   # Convert the list to pure string with newlines for printing.
   string(REPLACE ";" "\n" shield_string "${SHIELD_LIST}")
 
-  foreach (s ${SHIELD-NOTFOUND})
+  foreach (shld ${SHIELD-NOTFOUND})
+    string(REGEX REPLACE ":.*" "" s "${shld}")
     message("No shield named '${s}' found")
   endforeach()
   message("Please choose from among the following shields:\n"
