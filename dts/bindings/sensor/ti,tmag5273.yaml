@@ -168,3 +168,17 @@ properties:
     description: |
       Ignore detected diagnostic fail.
       According to the manual, this should be done if VCC < 2.3V.
+
+  i2c-startup-address:
+    type: int
+    description: |
+      Startup address of the sensor.
+
+      This is only interesting if i2c-update is used.
+      Specifies the hardware assigned address of the sensor (see datasheet for your version),
+      which is used to communicate the final I2C-address.
+
+      - 0x35 # TMAG5273_DT_I2C_STARTUP_ADDRESS_A1_A2 (TMAG5273A1/A2)
+      - 0x22 # TMAG5273_DT_I2C_STARTUP_ADDRESS_B1_B2 (TMAG5273B1/B2)
+      - 0x78 # TMAG5273_DT_I2C_STARTUP_ADDRESS_C1_C2 (TMAG5273C1/C2)
+      - 0x44 # TMAG5273_DT_I2C_STARTUP_ADDRESS_D1_D2 (TMAG5273D1/D2)
