@@ -326,11 +326,13 @@ class BinaryHandler(Handler):
             else:
                 # When a process is killed, the default handler returns 128 + SIGTERM
                 # so in that case the return code itself is not meaningful
-                self.instance.reason = "Failed"
+                self.instance.reason = f"Failed (rc={self.returncode})"
+            self.instance.add_missing_case_status(TwisterStatus.BLOCK)
         elif harness_status != TwisterStatus.NONE:
             self.instance.status = harness_status
             if harness_status == TwisterStatus.FAIL:
-                self.instance.reason = "Failed"
+                self.instance.reason = "Failed harness"
+            self.instance.add_missing_case_status(TwisterStatus.BLOCK)
         else:
             self.instance.status = TwisterStatus.FAIL
             self.instance.reason = "Timeout"
