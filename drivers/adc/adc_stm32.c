@@ -82,6 +82,11 @@ LOG_MODULE_REGISTER(adc_stm32);
  * compat st_stm32f4_adc -> STM32F2, F4, F7, L1
  */
 
+/* Oversampler type */
+#define OVERSAMPLER_NONE	0
+#define OVERSAMPLER_MINIMAL	1
+#define OVERSAMPLER_EXTENDED	2
+
 #define ANY_NUM_COMMON_SAMPLING_TIME_CHANNELS_IS(value) \
 	(DT_INST_FOREACH_STATUS_OKAY_VARGS(IS_EQ_PROP_OR, \
 					   num_sampling_time_common_channels,\
@@ -92,8 +97,16 @@ LOG_MODULE_REGISTER(adc_stm32);
 					   st_adc_sequencer,\
 					   0, value) 0)
 
+#define ANY_ADC_OVERSAMPLER_TYPE_IS(value) \
+	(DT_INST_FOREACH_STATUS_OKAY_VARGS(IS_EQ_STRING_PROP, \
+					   st_adc_oversampler,\
+					   value) 0)
+
 #define IS_EQ_PROP_OR(inst, prop, default_value, compare_value) \
 	IS_EQ(DT_INST_PROP_OR(inst, prop, default_value), compare_value) ||
+
+#define IS_EQ_STRING_PROP(inst, prop, compare_value) \
+	IS_EQ(DT_INST_STRING_UPPER_TOKEN(inst, prop), compare_value) ||
 
 /* reference voltage for the ADC */
 #define STM32_ADC_VREF_MV DT_INST_PROP(0, vref_mv)
@@ -216,6 +229,7 @@ struct adc_stm32_cfg {
 	const uint16_t sampling_time_table[STM32_NB_SAMPLING_TIME];
 	int8_t num_sampling_time_common_channels;
 	int8_t sequencer_type;
+	int8_t oversampler_type;
 	int8_t res_table_size;
 	const uint32_t res_table[];
 };
@@ -670,14 +684,13 @@ static const uint32_t table_oversampling_shift[] = {
 	OVS_SHIFT(6),
 	OVS_SHIFT(7),
 	OVS_SHIFT(8),
-#if defined(CONFIG_SOC_SERIES_STM32H7X) || \
-	defined(CONFIG_SOC_SERIES_STM32U5X)
+#if defined(LL_ADC_OVS_SHIFT_RIGHT_9)
 	OVS_SHIFT(9),
 	OVS_SHIFT(10),
 #endif
 };
 
-#ifdef LL_ADC_OVS_RATIO_2
+#if ANY_ADC_OVERSAMPLER_TYPE_IS(OVERSAMPLER_MINIMAL)
 #define OVS_RATIO(n)		LL_ADC_OVS_RATIO_##n
 static const uint32_t table_oversampling_ratio[] = {
 	0,
@@ -740,8 +753,11 @@ static void adc_stm32_oversampling_ratioshift(ADC_TypeDef *adc, uint32_t ratio, 
  * ratio is directly the sequence->oversampling (a 2^n value)
  * shift is the corresponding LL_ADC_OVS_SHIFT_RIGHT_x constant
  */
-static int adc_stm32_oversampling(ADC_TypeDef *adc, uint8_t ratio)
+static int adc_stm32_oversampling(const struct device *dev, uint8_t ratio)
 {
+	const struct adc_stm32_cfg *config = dev->config;
+	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
+
 	if (ratio == 0) {
 		adc_stm32_oversampling_scope(adc, LL_ADC_OVS_DISABLE);
 		return 0;
@@ -754,33 +770,19 @@ static int adc_stm32_oversampling(ADC_TypeDef *adc, uint8_t ratio)
 
 	uint32_t shift = table_oversampling_shift[ratio];
 
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
-	/* Certain variants of the H7, such as STM32H72x/H73x has ADC3
-	 * as a separate entity and require special handling.
-	 */
-#if defined(STM32H72X_ADC)
-	if (adc != ADC3) {
+#if ANY_ADC_OVERSAMPLER_TYPE_IS(OVERSAMPLER_MINIMAL)
+	if (config->oversampler_type == OVERSAMPLER_MINIMAL) {
+		/* the LL function expects a value LL_ADC_OVS_RATIO_x */
+		adc_stm32_oversampling_ratioshift(adc, table_oversampling_ratio[ratio], shift);
+	}
+#endif
+
+#if ANY_ADC_OVERSAMPLER_TYPE_IS(OVERSAMPLER_EXTENDED)
+	if (config->oversampler_type == OVERSAMPLER_EXTENDED) {
 		/* the LL function expects a value from 1 to 1024 */
 		adc_stm32_oversampling_ratioshift(adc, 1 << ratio, shift);
-	} else {
-		/* the LL function expects a value LL_ADC_OVS_RATIO_x */
-		adc_stm32_oversampling_ratioshift(adc, table_oversampling_ratio[ratio], shift);
 	}
-#else
-	/* the LL function expects a value from 1 to 1024 */
-	adc_stm32_oversampling_ratioshift(adc, 1 << ratio, shift);
-#endif /* defined(STM32H72X_ADC) */
-#elif defined(CONFIG_SOC_SERIES_STM32U5X)
-	if (adc != ADC4) {
-		/* the LL function expects a value from 1 to 1024 */
-		adc_stm32_oversampling_ratioshift(adc, (1 << ratio), shift);
-	} else {
-		/* the LL function expects a value LL_ADC_OVS_RATIO_x */
-		adc_stm32_oversampling_ratioshift(adc, table_oversampling_ratio[ratio], shift);
-	}
-#else /* CONFIG_SOC_SERIES_STM32H7X */
-	adc_stm32_oversampling_ratioshift(adc, table_oversampling_ratio[ratio], shift);
-#endif /* CONFIG_SOC_SERIES_STM32H7X */
+#endif
 
 	return 0;
 }
@@ -1026,7 +1028,7 @@ static int start_read(const struct device *dev,
 	}
 
 #ifdef HAS_OVERSAMPLING
-	err = adc_stm32_oversampling(adc, sequence->oversampling);
+	err = adc_stm32_oversampling(dev, sequence->oversampling);
 	if (err) {
 		return err;
 	}
@@ -1933,6 +1935,7 @@ static const struct adc_stm32_cfg adc_stm32_cfg_##index = {		\
 	.clk_prescaler = ADC_STM32_DT_PRESC(index),			\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),			\
 	.sequencer_type = DT_INST_PROP(index, st_adc_sequencer),	\
+	.oversampler_type = DT_INST_STRING_UPPER_TOKEN(index, st_adc_oversampler),	\
 	.sampling_time_table = DT_INST_PROP(index, sampling_times),	\
 	.num_sampling_time_common_channels =				\
 		DT_INST_PROP_OR(index, num_sampling_time_common_channels, 0),\
