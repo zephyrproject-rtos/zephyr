@@ -104,13 +104,12 @@ static void cap_commander_test_broadcast_reception_before(void *f)
 static void cap_commander_test_broadcast_reception_after(void *f)
 {
 	struct cap_commander_test_broadcast_reception_fixture *fixture = f;
-	int err;
 
 	bt_cap_commander_unregister_cb(&mock_cap_commander_cb);
 	bt_bap_broadcast_assistant_unregister_cb(&fixture->broadcast_assistant_cb);
 
 	/* We need to cleanup since the CAP commander remembers state */
-	err = bt_cap_commander_cancel();
+	(void)bt_cap_commander_cancel();
 
 	for (size_t i = 0; i < ARRAY_SIZE(fixture->conns); i++) {
 		mock_bt_conn_disconnected(&fixture->conns[i], BT_HCI_ERR_REMOTE_USER_TERM_CONN);
