@@ -1,0 +1,15 @@
+# Copyright (c) 2023 Aurelien Jarno
+# SPDX-License-Identifier: Apache-2.0
+
+description: STMicroelectronics STM32 System Configuration Controller
+
+compatible: "st,stm32-syscfg"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true

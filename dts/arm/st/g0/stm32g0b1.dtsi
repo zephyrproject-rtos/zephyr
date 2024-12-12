@@ -36,7 +36,7 @@
 			compatible = "st,stm32-fdcan";
 			reg = <0x40006400 0x400>, <0x4000b400 0x350>;
 			reg-names = "m_can", "message_ram";
-			interrupts = <21 0>, <22 0>;
+			interrupts-extended = <&itline21_mux 1 0>, <&itline22_mux 1 0>;
 			interrupt-names = "int0", "int1";
 			clocks = <&rcc STM32_CLOCK(APB1, 12U)>;
 			bosch,mram-cfg = <0x0 28 8 3 3 0 3 3>;
@@ -47,7 +47,7 @@
 			compatible = "st,stm32-fdcan";
 			reg = <0x40006800 0x400>, <0x4000b750 0x350>;
 			reg-names = "m_can", "message_ram";
-			interrupts = <21 0>, <22 0>;
+			interrupts-extended = <&itline21_mux 2 0>, <&itline22_mux 2 0>;
 			interrupt-names = "int0", "int1";
 			clocks = <&rcc STM32_CLOCK(APB1, 12U)>;
 			bosch,mram-cfg = <0x0 28 8 3 3 0 3 3>;
@@ -105,7 +105,8 @@
 			#size-cells = <0>;
 			reg = <0x40008800 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 23U)>;
-			interrupts = <24 0>;
+			interrupt-parent = < &itline24_mux >;
+			interrupts = <1 0>;
 			interrupt-names = "combined";
 			status = "disabled";
 		};
@@ -116,7 +117,8 @@
 			#size-cells = <0>;
 			reg = <0x40003c00 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 15U)>;
-			interrupts = <26 3>;
+			interrupt-parent = < &itline26_mux >;
+			interrupts = <1 0>;
 			status = "disabled";
 		};
 
@@ -139,7 +141,8 @@
 		usb: usb@40005c00 {
 			compatible = "st,stm32-usb";
 			reg = <0x40005c00 0x400>;
-			interrupts = <8 0>;
+			interrupt-parent = < &itline8_mux >;
+			interrupts = <2 0>;
 			interrupt-names = "usb";
 			num-bidir-endpoints = <8>;
 			ram-size = <2048>;
@@ -162,4 +165,30 @@
 		i2c = <&i2c3>;
 		status = "disabled";
 	};
+};
+
+&itline21_mux {
+	status = "okay";
+};
+
+&itline22_mux {
+	status = "okay";
+};
+
+&itline24_mux {
+	status = "okay";
+};
+
+&i2c2 {
+	interrupt-parent = < &itline24_mux >;
+	interrupts = <0 0>;
+};
+
+&itline26_mux {
+	status = "okay";
+};
+
+&spi2 {
+	interrupt-parent = < &itline26_mux >;
+	interrupts = <0 0>;
 };
