@@ -1,4 +1,4 @@
-# Copyright 2021,2023 NXP
+# Copyright 2021,2023-2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: NXP mcux SAI-I2S controller
@@ -62,6 +62,9 @@ properties:
     description: tx channel the maximum number is SOC dependent
 
   clock-mux:
-    required: true
     type: int
     description: Clock mux source for SAI root clock
+
+pinmux-cells:
+  - pin
+  - function
