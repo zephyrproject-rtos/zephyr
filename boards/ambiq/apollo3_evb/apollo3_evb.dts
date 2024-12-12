@@ -30,6 +30,7 @@
 		sw1 = &button1;
 		bootloader-led0 = &led0;
 		mcuboot-led0 = &led0;
+		rtc = &rtc0;
 	};
 
 	leds {
@@ -187,6 +188,11 @@
 
 &counter7 {
 	status = "okay";
+};
+
+&rtc0 {
+	status = "okay";
+	clock = "XTAL";
 };
 
 &adc0 {
