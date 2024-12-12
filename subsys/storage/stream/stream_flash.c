@@ -165,6 +165,8 @@ static int flash_sync(struct stream_flash_ctx *ctx)
 		return rc;
 	}
 
+#if defined(CONFIG_STREAM_FLASH_POST_WRITE_CALLBACK)
+
 	if (ctx->callback) {
 		/* Invert to ensure that caller is able to discover a faulty
 		 * flash_read() even if no error code is returned.
@@ -186,6 +188,8 @@ static int flash_sync(struct stream_flash_ctx *ctx)
 			return rc;
 		}
 	}
+
+#endif
 
 	ctx->bytes_written += ctx->buf_bytes;
 	ctx->buf_bytes = 0U;
@@ -317,7 +321,12 @@ int stream_flash_init(struct stream_flash_ctx *ctx, const struct device *fdev,
 	ctx->offset = offset;
 	ctx->available = (size == 0 ? inspect_flash_ctx.total_size - offset :
 				      size);
+
+#if !defined(CONFIG_STREAM_FLASH_POST_WRITE_CALLBACK)
+	ARG_UNUSED(cb);
+#else
 	ctx->callback = cb;
+#endif
 
 #ifdef CONFIG_STREAM_FLASH_ERASE
 	ctx->last_erased_page_start_offset = -1;

@@ -61,7 +61,9 @@ struct stream_flash_ctx {
 	size_t bytes_written; /* Number of bytes written to flash */
 	size_t offset; /* Offset from base of flash device to write area */
 	size_t available; /* Available bytes in write area */
+#ifdef CONFIG_STREAM_FLASH_POST_WRITE_CALLBACK
 	stream_flash_callback_t callback; /* Callback invoked after write op */
+#endif
 #ifdef CONFIG_STREAM_FLASH_ERASE
 	off_t last_erased_page_start_offset; /* Last erased offset */
 #endif
@@ -82,6 +84,8 @@ struct stream_flash_ctx {
  *             If this is '0', the size will be set to the total size
  *             of the flash device minus the offset.
  * @param cb Callback to be invoked on completed flash write operations.
+ *           Callback is supported when CONFIG_STREAM_FLASH_POST_WRITE_CALLBACK
+ *           is enabled.
  *
  * @return non-negative on success, negative errno code on fail
  */
